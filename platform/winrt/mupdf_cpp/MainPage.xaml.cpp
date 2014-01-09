@@ -149,7 +149,8 @@ void MainPage::SetUpDirectX()
 	m_d2d_factory->CreateDevice(dxgi_device.Get(), &m_d2d_device);
 }
 
-/* Used during launch of application from file */
+/* Used during launch of application from file when application was not 
+   already running */
 void MainPage::Page_Loaded(Object^ sender, RoutedEventArgs^ e)
 {
 	MainPage^ rootPage = dynamic_cast<MainPage^>(sender);
@@ -159,6 +160,23 @@ void MainPage::Page_Loaded(Object^ sender, RoutedEventArgs^ e)
 		if (rootPage->FileEvent->Files->Size > 0)
 		{
 			IStorageItem ^file = rootPage->FileEvent->Files->GetAt(0);
+			StorageFile ^sfile = safe_cast<StorageFile^>(file);
+
+			OpenDocumentPrep(sfile);
+		}
+	}
+}
+
+/* Used during launch of application from file when application was already 
+   running */
+void MainPage::FromFile()
+{
+	if (this->FileEvent != nullptr)
+	{
+		/* Launched with an "open with", or as default app */
+		if (this->FileEvent->Files->Size > 0)
+		{
+			IStorageItem ^file = this->FileEvent->Files->GetAt(0);
 			StorageFile ^sfile = safe_cast<StorageFile^>(file);
 
 			OpenDocumentPrep(sfile);
@@ -351,10 +369,10 @@ void MainPage::ReplaceImage(int page_num, InMemoryRandomAccessStream^ ras,
 }
 
 int MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num, 
-								Point *point)
+								Point *render_size, float *scale_factor)
 {
 	Point screenSize;
-	Point pageSize;
+	Point renpageSize;
 	Point size;
 	
 	try
@@ -376,10 +394,12 @@ int MainPage::ComputePageSize(spatial_info_t spatial_info, int page_num,
 	float hscale = screenSize.X / size.X;
 	float vscale = screenSize.Y / size.Y;
 	float scale = min(hscale, vscale);
-	pageSize.X = (float) (size.X * scale * spatial_info.scale_factor);
-	pageSize.Y = (float) (size.Y * scale * spatial_info.scale_factor);
+	renpageSize.X = (float)(size.X * scale * spatial_info.scale_factor);
+	renpageSize.Y = (float)(size.Y * scale * spatial_info.scale_factor);
 
-	*point = pageSize;
+	*scale_factor = (float) (scale * spatial_info.scale_factor);
+	*render_size = renpageSize;
+
 	return S_ISOK;
 }
 
@@ -618,6 +638,7 @@ void MainPage::RenderThumbs()
 		Point ras_size;
 		Array<unsigned char>^ bmp_data;
 		int code;
+		float scale_factor;
 
 		/* The renderings run on a background thread */
 		assert(IsBackgroundThread());
@@ -625,10 +646,11 @@ void MainPage::RenderThumbs()
 
 		for (int k = 0; k < num_pages; k++)
 		{
-			if (ComputePageSize(spatial_info_local, k, &ras_size) == S_ISOK)
+			if (ComputePageSize(spatial_info_local, k, &ras_size, &scale_factor) == S_ISOK)
 			{
 				code = mu_doc->RenderPageBitmapSync(k, (int)ras_size.X,
-					(int)ras_size.Y, false, true, &bmp_data);
+					(int)ras_size.Y, scale_factor, false, true, false, { 0, 0 }, 
+					{ ras_size.X, ras_size.Y }, &bmp_data);
 
 				DocumentPage^ doc_page = ref new DocumentPage();
 				doc_page->Height = (int)(ras_size.Y / SCALE_THUMB);
@@ -809,9 +831,11 @@ void MainPage::InitialRender()
 		if (m_num_pages > k )
 		{
 			Point ras_size;
-			if (ComputePageSize(spatial_info, k, &ras_size) == S_ISOK)
+			float scale_factor;
+
+			if (ComputePageSize(spatial_info, k, &ras_size, &scale_factor) == S_ISOK)
 			{
-				auto render_task = create_task(mu_doc->RenderPageAsync(k, (int) ras_size.X, (int) ras_size.Y, true));
+				auto render_task = create_task(mu_doc->RenderPageAsync(k, (int)ras_size.X, (int)ras_size.Y, true, scale_factor));
 				render_task.then([this, k, ras_size](InMemoryRandomAccessStream^ ras)
 				{
 					if (ras != nullptr)
@@ -857,10 +881,11 @@ void MainPage::RenderRange(int curr_page)
 				doc->PageZoom != m_doczoom)
 			{
 				Point ras_size;
-				if (ComputePageSize(spatial_info, k, &ras_size) == S_ISOK)
+				float scale_factor;
+				if (ComputePageSize(spatial_info, k, &ras_size, &scale_factor) == S_ISOK)
 				{
 					double zoom = m_doczoom;
-					auto render_task = create_task(mu_doc->RenderPageAsync(k, (int) ras_size.X, (int) ras_size.Y, true));
+					auto render_task = create_task(mu_doc->RenderPageAsync(k, (int)ras_size.X, (int)ras_size.Y, true, scale_factor));
 					render_task.then([this, k, ras_size, zoom, curr_page](InMemoryRandomAccessStream^ ras)
 					{
 						if (ras != nullptr)
@@ -1627,10 +1652,11 @@ void MainPage::ScrollChanged(Platform::Object^ sender,
 		/* Render at new resolution. */
 		spatial_info_t spatial_info = InitSpatial(m_doczoom);
 		Point ras_size;
-		if (ComputePageSize(spatial_info, page, &ras_size) == S_ISOK)
+		float scale_factor;
+		if (ComputePageSize(spatial_info, page, &ras_size, &scale_factor) == S_ISOK)
 		{
 			doc_page->PageZoom = m_doczoom;
-			auto render_task = create_task(mu_doc->RenderPageAsync(page, (int) ras_size.X, (int) ras_size.Y, true));
+			auto render_task = create_task(mu_doc->RenderPageAsync(page, (int)ras_size.X, (int)ras_size.Y, true, scale_factor));
 			render_task.then([this, page, ras_size, scrollviewer](InMemoryRandomAccessStream^ ras)
 			{
 				if (ras != nullptr)
@@ -2078,7 +2104,7 @@ void MainPage::DrawPreviewSurface(float width, float height, float scale_in,
 
 	D2D1_BITMAP_PROPERTIES1 bitmap_properties =
 		D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-				D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
+		D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE));
 
 	// Create surface bitmap on which page content is drawn.
 	ComPtr<ID2D1Bitmap1> d2d_surfacebitmap;
@@ -2092,8 +2118,9 @@ void MainPage::DrawPreviewSurface(float width, float height, float scale_in,
 	spatial_info.size.X = width;
 	spatial_info.size.Y = height;
 	Point ras_size;
+	float scale_factor;
 
-	if (ComputePageSize(spatial_info, ren_page_num, &ras_size) != S_ISOK)
+	if (ComputePageSize(spatial_info, ren_page_num, &ras_size, &scale_factor) != S_ISOK)
 		return;
 
 	ras_size.X = ceil(ras_size.X);
@@ -2101,22 +2128,22 @@ void MainPage::DrawPreviewSurface(float width, float height, float scale_in,
 
 	Array<unsigned char>^ bmp_data;
 	int code = mu_doc->RenderPageBitmapSync(ren_page_num, (int) ras_size.X, 
-											(int) ras_size.Y,  true, false, 
-											&bmp_data);
+		(int)ras_size.Y, scale_factor, true, false, false, { 0, 0 }, 
+		{ ras_size.X, ras_size.Y }, &bmp_data);
 	if (bmp_data == nullptr)
 		return;
 	D2D1_SIZE_U bit_map_rect;
 	bit_map_rect.width = (UINT32) (ras_size.X);
 	bit_map_rect.height = (UINT32) (ras_size.Y);
 
-	D2D1_BITMAP_PROPERTIES1 bitmap_properties2 =
+	D2D1_BITMAP_PROPERTIES1 bitmap_prop =
 		D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,
-		D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
+		D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE));
 
 	ID2D1Bitmap1 *bit_map;
 	ThrowIfFailed(d2d_context->CreateBitmap(bit_map_rect,  &(bmp_data[0]), 
 											(UINT32) (ras_size.X * 4), 
-											&bitmap_properties2, &bit_map));
+											&bitmap_prop, &bit_map));
 	D2D1_SIZE_F size = bit_map->GetSize();
 
 	/* Handle centering */
@@ -2141,12 +2168,19 @@ HRESULT MainPage::ClosePrintControl()
 	return (m_d2d_printcontrol == nullptr) ? S_OK : m_d2d_printcontrol->Close();
 }
 
+/* To support high resolution printing, we tile renderings at the maxbitmap size
+   allowed with DirectX for this particular device.  e.g the low end surface
+   will have a smaller maxbitmap size compared to a laptop or desktop. */
 void MainPage::PrintPage(uint32 page_num, D2D1_RECT_F image_area, D2D1_SIZE_F page_area, 
 						 float device_dpi, IStream* print_ticket) 
 {
 	int dpi = m_printresolution;
 	int index_page_num = page_num - 1;
 	int ren_page_num = index_page_num;
+	bool tile = false;
+	Point tile_count;
+	D2D1_SIZE_U bit_map_rect;
+	Array<unsigned char>^ bmp_data;
 
 	if (index_page_num == 0)
 	{
@@ -2157,7 +2191,7 @@ void MainPage::PrintPage(uint32 page_num, D2D1_RECT_F image_area, D2D1_SIZE_F pa
 		}));
 	}
 
-	/* Windoze seems to hand me a bogus dpi */
+	/* Windoze seems to hand me a bogus dpi.  Need to follow up on this */
 	device_dpi = 96;
 
 	if (m_ppage_num_list.size() > 0)
@@ -2170,65 +2204,124 @@ void MainPage::PrintPage(uint32 page_num, D2D1_RECT_F image_area, D2D1_SIZE_F pa
 	ComPtr<ID2D1DeviceContext> d2d_context;
 	ThrowIfFailed(m_d2d_device->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
 													&d2d_context));
+
+	/* This should let us work in pixel dimensions but after much testing
+	   it clearly has some issues.  May investigate this further later. */
+	//d2d_context->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
 	ComPtr<ID2D1CommandList> clist;
 	ThrowIfFailed(d2d_context->CreateCommandList(&clist));
 	d2d_context->SetTarget(clist.Get());
 
-	/* Figure out all the sizing.  Width and height here are for device_dpi */
+	/* Width and height here are at 96 dpi */
 	float width = image_area.right - image_area.left;
 	float height  = image_area.bottom - image_area.top;
 
+	/*  MuPDF native resolution is 72dpi */
 	spatial_info_t spatial_info;
 	spatial_info.scale_factor = 1.0;
-	/* width and height are based upon device dpi (96) and MuPDF native 
-		resolution is 72dpi */
-	spatial_info.size.X = (width /device_dpi) * (m_printresolution);
+	spatial_info.size.X = (width / device_dpi) * (m_printresolution);
 	spatial_info.size.Y = (height /device_dpi) * (m_printresolution);
 	Point ras_size;
-	if (ComputePageSize(spatial_info, ren_page_num, &ras_size) != S_ISOK)
+	float scale_factor;
+
+	if (ComputePageSize(spatial_info, ren_page_num, &ras_size, &scale_factor) != S_ISOK)
 		return;
 	ras_size.X = ceil(ras_size.X);
 	ras_size.Y = ceil(ras_size.Y);
 
-	Array<unsigned char>^ bmp_data;
-	int code = mu_doc->RenderPageBitmapSync(ren_page_num, (int) ras_size.X, 
-											(int) ras_size.Y, true, false,
-											&bmp_data);
-	if (bmp_data == nullptr)
-		return;
-	D2D1_SIZE_U bit_map_rect;
-	bit_map_rect.width = (UINT32) (ras_size.X);
-	bit_map_rect.height = (UINT32) (ras_size.Y);
-
-	D2D1_BITMAP_PROPERTIES1 bitmap_properties2 =
-		D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,
-		D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED));
-
-	ID2D1Bitmap1 *bit_map;
-	ThrowIfFailed(d2d_context->CreateBitmap(bit_map_rect, &(bmp_data[0]),
-				(UINT32)(ras_size.X * 4), &bitmap_properties2, &bit_map));
-	D2D1_SIZE_F size = bit_map->GetSize();
-
-	/* Handle centering */
-	float y_offset = 0;
-	float x_offset = 0;
-	if (m_centerprint) 
+	/* Determine if we need to do any tiling */
+	int tile_size = d2d_context->GetMaximumBitmapSize();
+	tile_count.Y = 1;
+	if (ras_size.X > tile_size)
 	{
-		/* Offsets need to be provided in the device dpi */
-		y_offset = (float) ((page_area.height - (size.height * device_dpi / m_printresolution)) / 2.0);
-		x_offset = (float) ((page_area.width - (size.width * device_dpi / m_printresolution)) / 2.0);
+		tile = true;
+		tile_count.X = (float) ceil((float) ras_size.X / (float) tile_size);
+		bit_map_rect.width = (UINT32) (tile_size);
+	}
+	else
+	{
+		tile_count.X = 1;
+		bit_map_rect.width = (UINT32) (ras_size.X);
+	}
+	if (ras_size.Y > tile_size)
+	{
+		tile = true;
+		tile_count.Y = (float) ceil((float) ras_size.Y / (float) tile_size);
+		bit_map_rect.height = (UINT32) (tile_size);
+	}
+	else
+	{
+		tile_count.Y = 1;
+		bit_map_rect.height = (UINT32) (ras_size.Y);
 	}
 
-	float image_height = (bit_map_rect.height / m_printresolution) * device_dpi;
-	float image_width = (bit_map_rect.width / m_printresolution) * device_dpi;
+	/* Adjust for centering in media page */
+	float y_offset = 0;
+	float x_offset = 0;
+	if (m_centerprint)
+	{
+		y_offset = (float)round(((page_area.height - (ras_size.Y) * device_dpi / m_printresolution) / 2.0));
+		x_offset = (float)round(((page_area.width - (ras_size.X) * device_dpi / m_printresolution) / 2.0));
+	}
+
+	D2D1_BITMAP_PROPERTIES1 bitmap_prop =
+		D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,
+		D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), 
+		(float) m_printresolution, (float) m_printresolution);
+
+	ID2D1Bitmap1 *bit_map = NULL;
+	Point top_left, top_left_dip;
+	Point bottom_right, bottom_right_dip;
+
+	/* Initialize X location */
+	top_left.X = 0;
+	bottom_right.X = (float) bit_map_rect.width;
 
 	d2d_context->BeginDraw();
-	d2d_context->DrawBitmap(bit_map, D2D1::RectF(x_offset, y_offset, 
-							image_width + x_offset, image_height + y_offset));
+	/* Useful for debugging */
+	//d2d_context->Clear(D2D1::ColorF(D2D1::ColorF::Coral));
+	int total_tile = (int) (tile_count.X * tile_count.Y);
+
+	for (int x = 0; x < tile_count.X; x++)
+	{
+		/* Reset Y location */
+		top_left.Y = 0;
+		bottom_right.Y = (float) bit_map_rect.height;
+
+		for (int y = 0; y < tile_count.Y; y++)
+		{
+			int code = mu_doc->RenderPageBitmapSync(ren_page_num, (int)bit_map_rect.width,
+				(int)bit_map_rect.height, scale_factor, true, false, tile, top_left,
+				bottom_right, &bmp_data);
+			if (bmp_data == nullptr || code != 0)
+				break;
+
+			ThrowIfFailed(d2d_context->CreateBitmap(bit_map_rect, &(bmp_data[0]),
+				(UINT32)(bit_map_rect.width * 4), &bitmap_prop, &bit_map));  
+
+			// This is where D2D1_UNIT_MODE_PIXELS fails to work.  Essentially,
+			// DirectX ends up clipping based upon the origin still in DIPS 
+			// instead of actual pixel positions.  
+			top_left_dip.X = (float)((double) top_left.X * (double)device_dpi / (double)m_printresolution + x_offset - 0.5);
+			top_left_dip.Y = (float)((double)top_left.Y * (double)device_dpi / (double)m_printresolution + y_offset - 0.5);
+			bottom_right_dip.X = (float)((double)bottom_right.X * (double)device_dpi / (double)m_printresolution + x_offset + 0.5);
+			bottom_right_dip.Y = (float)((double)bottom_right.Y * (double)device_dpi / (double)m_printresolution + y_offset + 0.5);
+			d2d_context->DrawBitmap(bit_map, D2D1::RectF(top_left_dip.X, top_left_dip.Y,
+				bottom_right_dip.X, bottom_right_dip.Y));
+			bit_map->Release();
+
+			/* Increment Y location */
+			top_left.Y += (float) bit_map_rect.height;
+			bottom_right.Y += (float) bit_map_rect.height;
+			PrintProgressTile(total_tile);
+		}
+		/* Increment X location */
+		top_left.X += (float) bit_map_rect.width;
+		bottom_right.X += (float) bit_map_rect.width;
+	}
 	ThrowIfFailed(d2d_context->EndDraw());
 	ThrowIfFailed(clist->Close());
 	ThrowIfFailed(m_d2d_printcontrol->AddPage(clist.Get(), page_area, print_ticket));
-	bit_map->Release();
 }
 
 void MainPage::RefreshPreview()
@@ -2260,6 +2353,23 @@ void MainPage::PrintProgress(PrintTask^ sender, PrintTaskProgressingEventArgs^ a
 	}));
 }
 
+void MainPage::PrintProgressTile(int total_tiles)
+{
+	assert(IsBackgroundThread());
+	double step_size = 100.0 / ((double)GetPrintPageCount() * (double)total_tiles);
+	/* Update the progress bar if it is still active.  The tiling of each
+	   page can be slow on the surface if the resolution is high, hence
+	   the need for this feedback */
+	this->Dispatcher->RunAsync(CoreDispatcherPriority::Low,
+		ref new DispatchedHandler([this, step_size]()
+	{
+		if (this->xaml_PrintStack->Visibility != Windows::UI::Xaml::Visibility::Collapsed)
+		{
+			xaml_PrintProgress->Value += step_size;
+		}
+	}));
+}
+
 void MainPage::PrintCompleted(PrintTask^ sender, PrintTaskCompletedEventArgs^ args)
 {
 	assert(IsBackgroundThread());
@@ -2268,6 +2378,7 @@ void MainPage::PrintCompleted(PrintTask^ sender, PrintTaskCompletedEventArgs^ ar
 		ref new DispatchedHandler([this]()
 	{
 		xaml_PrintStack->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
+		xaml_PrintProgress->Value = 0;
 	}));
 }
 

@@ -127,6 +127,7 @@ status_t muctx::InitializeContext()
 	}
 	else
 	{
+		fz_register_document_handlers(this->mu_ctx);
 		return S_ISOK;
 	}
 }
@@ -159,7 +160,7 @@ muctx::~muctx(void)
 status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
 {
 	win_stream.stream = readStream;
-	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file);
+	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file, NULL);
 	mu_stream->seek = win_seek_file;
 	mu_stream->state =  reinterpret_cast <void*> (&win_stream);
 
@@ -442,9 +443,10 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 }
 
 /* Render display list bmp_data buffer.  No lock needed for this operation */
-status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
+status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height, 
 							 unsigned char *bmp_data, int bmp_width, int bmp_height,
-							 bool flipy)
+							 float scale, bool flipy, bool tile, Point top_left, 
+							 Point bottom_right)
 {
 	fz_device *dev = NULL;
 	fz_pixmap *pix = NULL;
@@ -460,16 +462,22 @@ status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
 
 	fz_try(ctx_clone)
 	{
-		/* Figure out scale factors so that we get the desired size */
-		pctm = fz_scale(pctm, (float) bmp_width / page_width, (float) bmp_height / page_height);
-		/* Flip on Y */
+		pctm = fz_scale(pctm, scale, scale);
+		/* Flip on Y. */
 		if (flipy) 
 		{
-			ctm.f = bmp_height;
+			ctm.f = (float) page_height * ctm.d;
 			ctm.d = -ctm.d;
+			ctm.f += top_left.Y;
 		}
-		pix = fz_new_pixmap_with_data(ctx_clone, fz_device_bgr(ctx_clone), bmp_width, 
-										bmp_height, bmp_data);
+		else
+		{
+			ctm.f -= top_left.Y;
+		}
+		ctm.e -= top_left.X;
+
+		pix = fz_new_pixmap_with_data(ctx_clone, fz_device_bgr(ctx_clone),
+										bmp_width, bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(ctx_clone, pix, 255);
 		dev = fz_new_draw_device(ctx_clone, pix);
 		fz_run_display_list(display_list, dev, pctm, NULL, NULL);
@@ -485,14 +493,13 @@ status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
 		fz_free_context(ctx_clone);
 		return E_FAILURE;
 	}
-
 	fz_free_context(ctx_clone);
 	return S_ISOK;
 }
 
 /* Render page_num to size width by height into bmp_data buffer.  Lock needed. */
 status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width, 
-						   int bmp_height, bool flipy)
+						   int bmp_height, float scale, bool flipy)
 {
 	fz_device *dev = NULL;
 	fz_pixmap *pix = NULL;
@@ -508,10 +515,7 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 	{
 		page = fz_load_page(mu_doc, page_num);
 		page_size = MeasurePage(page);
-
-		/* Figure out scale factors so that we get the desired size */
-		pctm = fz_scale(pctm, (float) bmp_width / page_size.X, 
-						(float) bmp_height / page_size.Y);
+		pctm = fz_scale(pctm, scale, scale);
 		/* Flip on Y */
 		if (flipy)
 		{

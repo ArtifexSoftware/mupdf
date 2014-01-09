@@ -95,17 +95,23 @@ void App::OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEvent
 	}
 }
 
-// Handle file activations.
+/* Handle case where we do a association file opening and the app is already
+   running */
 void App::OnFileActivated(Windows::ApplicationModel::Activation::FileActivatedEventArgs^ args)
 {
-	auto rootFrame = ref new Frame();
-	TypeName pageType = { "mupdf_cpp.MainPage", TypeKind::Custom };
-	rootFrame->Navigate(pageType, args);
-	Window::Current->Content = rootFrame;
-	auto rootPage = safe_cast<MainPage^>(rootFrame->Content);
-	rootPage->FileEvent = args;
-	rootPage->ProtocolEvent = nullptr;
+	auto rootFrame = dynamic_cast<Frame^>(Window::Current->Content);
 
+	if (rootFrame->Content == nullptr)
+	{
+		if (!rootFrame->Navigate(TypeName(MainPage::typeid)))
+		{
+			throw ref new FailureException("Failed to create initial page");
+		}
+	}
+	auto p = dynamic_cast<MainPage^>(rootFrame->Content);
+	p->FileEvent = args;
+	p->ProtocolEvent = nullptr;
+	p->FromFile();
 	Window::Current->Activate();
 }
 

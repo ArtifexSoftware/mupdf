@@ -173,7 +173,9 @@ Windows::Foundation::IAsyncOperationWithProgress<int, double>^
 	thread to ensure that the thumbs are created in order and we don't create
 	thousands of threads */
 int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height, 
-								bool use_dlist, bool flipy, Array<unsigned char>^* bit_map)
+								float scale, bool use_dlist, bool flipy, bool tile,
+								Point top_left, Point bottom_right, 
+								Array<unsigned char>^* bit_map)
 {
 	status_t code;
 	/* Allocate space for bmp */
@@ -206,14 +208,20 @@ int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height
 		}
 		code = mu_object.RenderPageMT(dlist, page_width, page_height, 
 										&(bmp_data[0]), bmp_width, bmp_height,
-										flipy);
+										scale, flipy, tile, top_left, bottom_right);
 	} 
 	else 
 	{
+		/* Not dealing with the case of tiling and no display list at this time. */
+		if (tile)
+		{
+			*bit_map = nullptr;
+			return E_FAILURE;
+		}
 		/* Rendering in immediate mode.  Keep lock in place */
 		mutex_lock.lock();
 		code = mu_object.RenderPage(page_num, &(bmp_data[0]), bmp_width, 
-									bmp_height, flipy);
+									bmp_height, scale, flipy);
 		mutex_lock.unlock();
 	}
 	if (code != S_ISOK)
@@ -229,9 +237,9 @@ int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height
 /* Pack the page into a bmp stream */
 Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 	mudocument::RenderPageAsync(int page_num, int bmp_width, int bmp_height, 
-								bool use_dlist)
+								bool use_dlist, float scale)
 {
-	return create_async([this, bmp_width, bmp_height, page_num, use_dlist]
+	return create_async([this, bmp_width, bmp_height, page_num, use_dlist, scale]
 						(cancellation_token ct) -> InMemoryRandomAccessStream^
 	{
 		/* Allocate space for bmp */
@@ -270,14 +278,15 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 			/* Rendering of display list can occur with other threads so unlock */
 			code = mu_object.RenderPageMT(dlist, page_width, page_height, 
 										  &(bmp_data[0]), bmp_width, bmp_height,
-										  true);
+										  scale, true, false, { 0.0, 0.0 }, 
+										  { (float) bmp_width, (float) bmp_height });
 		} 
 		else 
-		{
+		{ 
 			/* Rendering in immediate mode.  Keep lock in place */
 			mutex_lock.lock();
 			code = mu_object.RenderPage(page_num, &(bmp_data[0]), bmp_width, 
-										bmp_height, true);
+										bmp_height, scale, true);
 			mutex_lock.unlock();
 		}
 		if (code != S_ISOK)

@@ -381,6 +381,15 @@
     <ClCompile Include="..\..\source\fitz\glyph.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\document-all.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\fitz\document-no-run.c">
+      <Filter>!include\fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\fitz\load-jxr.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\ucdn.h">

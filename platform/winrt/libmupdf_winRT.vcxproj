@@ -51,6 +51,8 @@
     <ClCompile Include="..\..\source\fitz\crypt-md5.c" />
     <ClCompile Include="..\..\source\fitz\crypt-sha2.c" />
     <ClCompile Include="..\..\source\fitz\device.c" />
+    <ClCompile Include="..\..\source\fitz\document-all.c" />
+    <ClCompile Include="..\..\source\fitz\document-no-run.c" />
     <ClCompile Include="..\..\source\fitz\document.c" />
     <ClCompile Include="..\..\source\fitz\draw-affine.c" />
     <ClCompile Include="..\..\source\fitz\draw-blend.c" />
@@ -82,6 +84,7 @@
     <ClCompile Include="..\..\source\fitz\list-device.c" />
     <ClCompile Include="..\..\source\fitz\load-jpeg.c" />
     <ClCompile Include="..\..\source\fitz\load-jpx.c" />
+    <ClCompile Include="..\..\source\fitz\load-jxr.c" />
     <ClCompile Include="..\..\source\fitz\load-png.c" />
     <ClCompile Include="..\..\source\fitz\load-tiff.c" />
     <ClCompile Include="..\..\source\fitz\memento.c" />

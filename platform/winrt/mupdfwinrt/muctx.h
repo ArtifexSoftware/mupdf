@@ -86,10 +86,11 @@ public:
 	int GetPageCount();
 	status_t InitializeContext();
 	status_t RenderPage(int page_num, unsigned char *bmp_data, int bmp_width, 
-						int bmp_height, bool flipy);
+						int bmp_height, float scale, bool flipy);
 	status_t RenderPageMT(void *dlist, int page_width, int page_height,
 							unsigned char *bmp_data, int bmp_width, int bmp_height,
-							bool flipy);
+							float scale, bool flipy, bool tile, Point top_left, 
+							Point bottom_right);
 	fz_display_list* CreateDisplayList(int page_num, int *width, int *height);
 	int MeasurePage(int page_num, Point *size);
 	Point MeasurePage(fz_page *page);

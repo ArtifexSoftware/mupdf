@@ -152,6 +152,7 @@ namespace mupdf_cpp
 			void set(Windows::ApplicationModel::Activation::FileActivatedEventArgs^ value) { _fileEventArgs = value; }
 		}
 		void NotifyUser(String^ strMessage, int type);
+		void FromFile();  /* For association cases when we are already running */
 
 	protected:
 		virtual void OnNavigatedTo(Windows::UI::Xaml::Navigation::NavigationEventArgs^ e) override;
@@ -264,7 +265,7 @@ namespace mupdf_cpp
 		void UpdateAppBarButtonViewState();
 		void ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command);
 		void OKInvokedHandler(Windows::UI::Popups::IUICommand^ command);
-		int ComputePageSize(spatial_info_t spatial_info, int page_num, Point *Point);
+		int ComputePageSize(spatial_info_t spatial_info, int page_num, Point *ren_size, float *scale_factor);
 		void ScrollChanged(Platform::Object^ sender, Windows::UI::Xaml::Controls::ScrollViewerViewChangedEventArgs^ e);
 		void LinkTapped(Platform::Object^ sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs^ e);
 		void SearchProgress(IAsyncOperationWithProgress<int, double>^ operation, double status);
@@ -309,6 +310,7 @@ namespace mupdf_cpp
 		int GetPrintPageCount();
 		void SetPrintTarget(void *print_struct);
 		void PrintProgress(PrintTask^ sender, PrintTaskProgressingEventArgs^ args);
+		void PrintProgressTile(int total_tiles);
 		void PrintCompleted(PrintTask^ sender, PrintTaskCompletedEventArgs^ args);
 private:
 	void Testing(Platform::Object^ sender, Windows::UI::Xaml::Input::ManipulationCompletedRoutedEventArgs^ e);
