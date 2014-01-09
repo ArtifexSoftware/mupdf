@@ -1233,6 +1233,8 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 	/* Avoid extreme scales where overflows become problematic. */
 	if (w > (1<<24) || h > (1<<24) || w < -(1<<24) || h < -(1<<24))
 		return NULL;
+	if (x > (1<<24) || y > (1<<24) || x < -(1<<24) || y < -(1<<24))
+		return NULL;
 
 	/* Clamp small ranges of w and h */
 	if (w <= -1)
@@ -1327,6 +1329,7 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 	patch.y1 = dst_h_int;
 	if (clip)
 	{
+		DBUG(("Clip: (%d,%d) -> (%d,%d)\n", clip->x0, clip->y0, clip->x1, clip->y1));
 		if (flip_x)
 		{
 			if (dst_x_int + dst_w_int > clip->x1)
@@ -1369,6 +1372,7 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 			}
 		}
 	}
+	DBUG(("Patch: (%g,%g) -> (%g,%g)\n", patch.x0, patch.y0, patch.x1, patch.y1));
 	if (patch.x0 >= patch.x1 || patch.y0 >= patch.y1)
 		return NULL;
 
