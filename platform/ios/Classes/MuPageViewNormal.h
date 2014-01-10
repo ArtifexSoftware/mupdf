@@ -13,6 +13,7 @@
 #import "MuTextSelectView.h"
 #import "MuInkView.h"
 #import "MuAnnotSelectView.h"
+#import "MuUpdater.h"
 
 @interface MuPageViewNormal : UIScrollView <UIScrollViewDelegate,MuPageView>
 {
@@ -42,8 +43,9 @@
 	float tileScale;
 	BOOL cancel;
 	id<MuDialogCreator> dialogCreator;
+	id<MuUpdater> updater;
 }
-- (id) initWithFrame: (CGRect)frame dialogCreator:(id<MuDialogCreator>)dia document: (MuDocRef *)aDoc page: (int)aNumber;
+- (id) initWithFrame: (CGRect)frame dialogCreator:(id<MuDialogCreator>)dia updater:(id<MuUpdater>)upd document: (MuDocRef *)aDoc page: (int)aNumber;
 - (void) displayImage: (UIImage*)image;
 - (void) resizeImage;
 - (void) loadPage;

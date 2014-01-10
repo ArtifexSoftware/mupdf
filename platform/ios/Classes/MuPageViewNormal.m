@@ -631,7 +631,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		annot_list = create_annot_list(doc, page);
 }
 
--(id) initWithFrame:(CGRect)frame dialogCreator:(id<MuDialogCreator>)dia document:(MuDocRef *)aDoc page:(int)aNumber
+-(id) initWithFrame:(CGRect)frame dialogCreator:(id<MuDialogCreator>)dia updater:(id<MuUpdater>)upd document:(MuDocRef *)aDoc page:(int)aNumber
 {
 	self = [super initWithFrame: frame];
 	if (self) {
@@ -640,6 +640,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		number = aNumber;
 		cancel = NO;
 		dialogCreator = dia;
+		updater = upd;
 		selectedAnnotationIndex = -1;
 
 		[self setShowsVerticalScrollIndicator: NO];
@@ -1212,7 +1213,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			if (accepted)
 			{
 				dispatch_async(dispatch_get_main_queue(), ^{
-					[self update];
+					[updater update];
 				});
 			}
 			else
@@ -1233,7 +1234,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			if (accepted)
 			{
 				dispatch_async(dispatch_get_main_queue(), ^{
-					[self update];
+					[updater update];
 				});
 			}
 			else
@@ -1360,7 +1361,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 				int changed = [self passTapToPage:ipt];
 				if (changed)
 					dispatch_async(dispatch_get_main_queue(), ^{
-						[self update];
+						[updater update];
 					});
 			});
 			return [[[MuTapResultWidget alloc] init] autorelease];

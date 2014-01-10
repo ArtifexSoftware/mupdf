@@ -19,4 +19,5 @@
 -(void) inkModeOff;
 -(void) saveSelectionAsMarkup:(int)type;
 -(void) saveInk;
+-(void) update;
 @end

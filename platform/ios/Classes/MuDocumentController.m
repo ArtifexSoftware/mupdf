@@ -433,6 +433,12 @@ static void saveDoc(char *current_path, fz_document *doc)
 	barmode = BARMODE_ANNOTATION;
 }
 
+- (void) update
+{
+	for (UIView<MuPageView> *view in [canvas subviews])
+		[view update];
+}
+
 - (void) onMore: (id)sender
 {
 	[self showAnnotationMenu];
@@ -887,7 +893,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 		UIView<MuPageView> *view
 			= reflowMode
 				? [[MuPageViewReflow alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) document:docRef page:number]
-				: [[MuPageViewNormal alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) dialogCreator:self document:docRef page:number];
+		: [[MuPageViewNormal alloc] initWithFrame:CGRectMake(number * width, 0, width-GAP, height) dialogCreator:self updater:self document:docRef page:number];
 		[view setScale:scale];
 		[canvas addSubview: view];
 		if (showLinks)

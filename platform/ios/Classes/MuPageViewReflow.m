@@ -123,6 +123,7 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 -(void) saveInk {}
 -(void) deselectAnnotation {}
 -(void) deleteSelectedAnnotation {}
+-(void) update {}
 
 -(void) resetZoomAnimated: (BOOL)animated
 {

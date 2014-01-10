@@ -9,6 +9,7 @@
 #import "MuOutlineController.h"
 #import "MuDocRef.h"
 #import "MuDialogCreator.h"
+#import "MuUpdater.h"
 
 enum
 {
@@ -22,7 +23,7 @@ enum
 	BARMODE_DELETE
 };
 
-@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, MuDialogCreator>
+@interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, MuDialogCreator, MuUpdater>
 {
 	fz_document *doc;
 	MuDocRef *docRef;
