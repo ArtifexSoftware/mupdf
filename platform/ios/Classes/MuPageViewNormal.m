@@ -799,12 +799,6 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 -(void) saveSelectionAsMarkup:(int)type
 {
-	CGRect tframe = tileFrame;
-	float tscale = tileScale;
-	CGRect vframe = tframe;
-	vframe.origin.x -= imageView.frame.origin.x;
-	vframe.origin.y -= imageView.frame.origin.y;
-
 	NSArray *rects = [textSelectView selectionRects];
 	if (rects.count == 0)
 		return;
@@ -814,7 +808,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	dispatch_async(queue, ^{
 		addMarkupAnnot(doc, page, type, rects);
 		[rects release];
-		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self update];
+		});
 		[self loadAnnotations];
 	});
 	[self textSelectModeOff];
@@ -822,12 +818,6 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 -(void) saveInk
 {
-	CGRect tframe = tileFrame;
-	float tscale = tileScale;
-	CGRect vframe = tframe;
-	vframe.origin.x -= imageView.frame.origin.x;
-	vframe.origin.y -= imageView.frame.origin.y;
-
 	NSArray *curves = inkView.curves;
 	if (curves.count == 0)
 		return;
@@ -837,7 +827,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	dispatch_async(queue, ^{
 		addInkAnnot(doc, page, curves);
 		[curves release];
-		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self update];
+		});
 		[self loadAnnotations];
 	});
 	[self inkModeOff];
@@ -862,18 +854,14 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 -(void) deleteSelectedAnnotation
 {
-	CGRect tframe = tileFrame;
-	float tscale = tileScale;
-	CGRect vframe = tframe;
-	vframe.origin.x -= imageView.frame.origin.x;
-	vframe.origin.y -= imageView.frame.origin.y;
-
 	int index = selectedAnnotationIndex;
 	if (index >= 0)
 	{
 		dispatch_async(queue, ^{
 			deleteAnnotation(doc, page, index);
-			[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[self update];
+			});
 			[self loadAnnotations];
 		});
 	}
@@ -1203,20 +1191,29 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	});
 }
 
+- (void) update
+{
+	CGRect tframe = tileFrame;
+	float tscale = tileScale;
+	CGRect vframe = tframe;
+	vframe.origin.x -= imageView.frame.origin.x;
+	vframe.origin.y -= imageView.frame.origin.y;
+
+	dispatch_async(queue, ^{
+		[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+	});
+}
+
 - (void) invokeTextDialog:(NSString *)text
 {
 	[dialogCreator invokeTextDialog:text okayAction:^(NSString *newText) {
-		CGRect tframe = tileFrame;
-		float tscale = tileScale;
-		CGRect vframe = tframe;
-		vframe.origin.x -= imageView.frame.origin.x;
-		vframe.origin.y -= imageView.frame.origin.y;
-
 		dispatch_async(queue, ^{
 			BOOL accepted = setFocussedWidgetText(doc, page, [newText UTF8String]);
 			if (accepted)
 			{
-				[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+				dispatch_async(dispatch_get_main_queue(), ^{
+					[self update];
+				});
 			}
 			else
 			{
@@ -1231,17 +1228,13 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 - (void) invokeChoiceDialog:(NSArray *)choices
 {
 	[dialogCreator invokeChoiceDialog:choices okayAction:^(NSArray *selection) {
-		CGRect tframe = tileFrame;
-		float tscale = tileScale;
-		CGRect vframe = tframe;
-		vframe.origin.x -= imageView.frame.origin.x;
-		vframe.origin.y -= imageView.frame.origin.y;
-
 		dispatch_async(queue, ^{
 			BOOL accepted = setFocussedWidgetChoice(doc, page, [[selection objectAtIndex:0] UTF8String]);
 			if (accepted)
 			{
-				[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+				dispatch_async(dispatch_get_main_queue(), ^{
+					[self update];
+				});
 			}
 			else
 			{
@@ -1363,16 +1356,12 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		CGRect r = [[widgetRects objectAtIndex:i] CGRectValue];
 		if (CGRectContainsPoint(r, ipt))
 		{
-			CGRect tframe = tileFrame;
-			float tscale = tileScale;
-			CGRect vframe = tframe;
-			vframe.origin.x -= imageView.frame.origin.x;
-			vframe.origin.y -= imageView.frame.origin.y;
-
 			dispatch_async(queue, ^{
 				int changed = [self passTapToPage:ipt];
 				if (changed)
-					[self updatePageAndTileWithTileFrame:tframe tileScale:tscale viewFrame:vframe];
+					dispatch_async(dispatch_get_main_queue(), ^{
+						[self update];
+					});
 			});
 			return [[[MuTapResultWidget alloc] init] autorelease];
 		}
