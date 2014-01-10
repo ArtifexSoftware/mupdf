@@ -957,7 +957,9 @@ void *Memento_label(void *ptr, const char *label)
     if (ptr == NULL)
         return NULL;
     block = MEMBLK_FROMBLK(ptr);
+    VALGRIND_MAKE_MEM_DEFINED(block, sizeof(*block));
     block->label = label;
+    VALGRIND_MAKE_MEM_UNDEFINED(block, sizeof(*block));
     return ptr;
 }
 
@@ -1093,6 +1095,7 @@ void Memento_free(void *blk)
     if (checkBlock(memblk, "free"))
         return;
 
+    VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     if (memblk->flags & Memento_Flag_BreakOnFree)
         Memento_breakpoint();
 
@@ -1136,14 +1139,17 @@ void *Memento_realloc(void *blk, size_t newsize)
     if (checkBlock(memblk, "realloc"))
         return NULL;
 
+    VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     if (memblk->flags & Memento_Flag_BreakOnRealloc)
         Memento_breakpoint();
 
+    VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     if (globals.maxMemory != 0 && globals.alloc - memblk->rawsize + newsize > globals.maxMemory)
         return NULL;
 
     newsizemem = MEMBLK_SIZE(newsize);
     Memento_removeBlock(&globals.used, memblk);
+    VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     flags = memblk->flags;
     newmemblk  = MEMENTO_UNDERLYING_REALLOC(memblk, newsizemem);
     if (newmemblk == NULL)
@@ -1160,6 +1166,7 @@ void *Memento_realloc(void *blk, size_t newsize)
     newmemblk->flags = flags;
     if (newmemblk->rawsize < newsize) {
         char *newbytes = ((char *)MEMBLK_TOBLK(newmemblk))+newmemblk->rawsize;
+        VALGRIND_MAKE_MEM_DEFINED(newbytes, newsize - newmemblk->rawsize);
 #ifndef MEMENTO_LEAKONLY
         memset(newbytes, MEMENTO_ALLOCFILL, newsize - newmemblk->rawsize);
 #endif
