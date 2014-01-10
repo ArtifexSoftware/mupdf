@@ -7,6 +7,7 @@
 #include "MainPage.xaml.h"
 #include <regex>
 #include <sstream>
+#include "DXGI1_3.h"
 
 #define LOOK_AHEAD 1 /* A +/- count on the pages to pre-render */
 #define THUMB_PREADD 10
@@ -106,7 +107,9 @@ MainPage::MainPage()
 	SetUpDirectX();
 	RegisterForPrinting();
 	CleanUp();
+#ifndef NDEBUG
 	RecordMainThread();
+#endif
 	/* So that we can catch special loading events (e.g. open with) */
 	_pageLoadedHandlerToken = Loaded += ref new RoutedEventHandler(this, &MainPage::Page_Loaded);
 }
@@ -211,9 +214,12 @@ void MainPage::ExceptionHandler(Object^ sender, UnhandledExceptionEventArgs^ e)
 	}
 }
 
+/* We need to clean up (Trim) the directX memory on suspension */
 void MainPage::App_Suspending(Object^ sender, SuspendingEventArgs^ e)
 {
-
+	ComPtr<IDXGIDevice3> pDXGIDevice;
+	ThrowIfFailed(m_d3d_device.As(&pDXGIDevice));
+	pDXGIDevice->Trim();
 }
 
 void MainPage::ExitInvokedHandler(Windows::UI::Popups::IUICommand^ command)

@@ -95,6 +95,7 @@
     <PackageCertificateThumbprint>03074CFDB8E2AB0CD384A1FFA139F7959DC8A656</PackageCertificateThumbprint>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <PackageCertificateKeyFile>mupdf_cpp_StoreKey.pfx</PackageCertificateKeyFile>
+    <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
@@ -136,6 +137,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>D3D11.lib;D2d1.lib;kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -160,6 +162,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>D3D11.lib;D2d1.lib;kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -184,6 +187,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>D3D11.lib;D2d1.lib;kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>

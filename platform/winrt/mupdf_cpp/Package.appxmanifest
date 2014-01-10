@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest">
-  <Identity Name="ArtifexSoftware.MuPDF" Publisher="CN=B93265AA-82AD-458A-A08E-7069B8ED88B5" Version="1.1.0.10" />
+  <Identity Name="ArtifexSoftware.MuPDF" Publisher="CN=B93265AA-82AD-458A-A08E-7069B8ED88B5" Version="1.2.0.16" />
   <Properties>
     <DisplayName>MuPDF</DisplayName>
     <PublisherDisplayName>Artifex Software</PublisherDisplayName>
@@ -28,7 +28,7 @@
           </FileTypeAssociation>
         </Extension>
       </Extensions>
-      <m2:VisualElements DisplayName="MuPDF" Description="A lightweight, high quality PDF/XPS/CBZ viewer for Windows 8 devices." BackgroundColor="#464646" ForegroundText="light" Square150x150Logo="Assets\Logo.png" Square30x30Logo="assets/mupdf_smallogo.png">
+      <m2:VisualElements DisplayName="MuPDF" Description="A lightweight, high quality PDF/XPS/CBZ viewer/print driver for Windows 8.1 devices." BackgroundColor="#464646" ForegroundText="light" Square150x150Logo="Assets\Logo.png" Square30x30Logo="assets/mupdf_smallogo.png">
         <m2:DefaultTile>
           <m2:ShowNameOnTiles>
             <m2:ShowOn Tile="square150x150Logo" />
