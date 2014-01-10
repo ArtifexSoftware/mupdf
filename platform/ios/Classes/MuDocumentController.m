@@ -1,5 +1,6 @@
 #include "common.h"
 
+#import <TapImage.h>
 #import "MuPageViewNormal.h"
 #import "MuPageViewReflow.h"
 #import "MuDocumentController.h"
@@ -152,7 +153,17 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (UIBarButtonItem *) resourceBasedButton:(NSString *)resource withAction:(SEL)selector
 {
-	return [[UIBarButtonItem alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:resource ofType:@"png"]] style:UIBarButtonItemStylePlain target:self action:selector];
+	if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
+	{
+		return [[UIBarButtonItem alloc] initWithImage:[UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:resource ofType:@"png"]] style:UIBarButtonItemStylePlain target:self action:selector];
+	}
+	else
+	{
+		UIView *iv = [[TapImage alloc] initWithResource:resource target:self action:selector];
+		UIBarButtonItem *ib = [[UIBarButtonItem alloc] initWithCustomView:iv];
+		[iv release];
+		return ib;
+	}
 }
 
 - (void) addMainMenuButtons
