@@ -6,7 +6,7 @@
     <Grid>
         <Menu IsMainMenu="True">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open..." Click="OpenFile">
+                <MenuItem Header="_Open..." Click="OpenFile" Command="Open">
                     <MenuItem.Icon>
                         <Image Source="Resources/OpenFile.png" />
                     </MenuItem.Icon>
@@ -45,11 +45,36 @@
                         <Image Source="Resources/Message.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-
             </MenuItem>
-            <MenuItem Header="_Edit" />
-            <MenuItem Header="_View" />
-            <MenuItem Header="_Window" />
+            <MenuItem Header="_Edit" >
+                <MenuItem Header="_Copy" Command="Copy">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/copy.ico" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="Paste To..." />
+                <MenuItem Header="Convert Bitmap" />
+                <Separator />
+                <MenuItem Header="Add EPS Preview" />
+                <MenuItem Header="Extract EPS" />
+                <Separator />
+                <MenuItem Header="Measure" />
+                <MenuItem Header="Convert to vector format..." />
+                <MenuItem Header="Text Extract" />
+                <MenuItem Header="_Find" Command="Find"/>
+                <MenuItem Header="Find Next"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="Next Page" />
+                <MenuItem Header="Previous Page" />
+                <MenuItem Header="Goto Page" />
+            </MenuItem>
+
+
+
+
+        <MenuItem Header="_Window" />
             <MenuItem Header="_Help" />
         </Menu>
 
