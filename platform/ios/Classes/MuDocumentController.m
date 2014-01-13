@@ -230,9 +230,12 @@ static void saveDoc(char *current_path, fz_document *doc)
 	[slider setMaximumValue: fz_count_pages(doc) - 1];
 	[slider addTarget: self action: @selector(onSlide:) forControlEvents: UIControlEventValueChanged];
 
-	sliderWrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
+	if ([[[UIDevice currentDevice] systemVersion] floatValue] < 7.0)
+	{
+		sliderWrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
 
-	[self setToolbarItems: [NSArray arrayWithObjects: sliderWrapper, nil]];
+		[self setToolbarItems: [NSArray arrayWithObjects: sliderWrapper, nil]];
+	}
 
 	// Set up the buttons on the navigation and search bar
 
@@ -302,6 +305,9 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 	[slider setValue: current];
 
+	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+		[[[self navigationController] toolbar] addSubview:slider];
+
 	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(doc)]];
 
 	[[self navigationController] setToolbarHidden: NO animated: animated];
@@ -321,6 +327,13 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 	[sliderWrapper setWidth: SLIDER_W];
 	[searchBar setFrame: CGRectMake(0,0,SEARCH_W,32)];
+	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+	{
+		CGRect r = [[self navigationController] toolbar].frame;
+		r.origin.x = 0;
+		r.origin.y = 0;
+		[slider setFrame:r];
+	}
 
 	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
 
@@ -349,6 +362,9 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) viewWillDisappear: (BOOL)animated
 {
+	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+		[slider removeFromSuperview];
+
 	[self setTitle: @"Resume"];
 	[[NSUserDefaults standardUserDefaults] removeObjectForKey: @"OpenDocumentKey"];
 	[[self navigationController] setToolbarHidden: YES animated: animated];
