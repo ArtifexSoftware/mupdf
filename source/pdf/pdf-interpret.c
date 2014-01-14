@@ -2954,6 +2954,7 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	pdf_lexbuf *buf;
 	int save_in_text;
 	int save_gbot;
+	pdf_obj *save_obj;
 
 	fz_var(buf);
 
@@ -2966,9 +2967,16 @@ pdf_run_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	csi->in_text = 0;
 	save_gbot = csi->gbot;
 	csi->gbot = csi->gtop;
+	save_obj = csi->obj;
+	csi->obj = NULL;
 	fz_try(ctx)
 	{
 		pdf_run_stream(csi, rdb, file, buf);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(csi->obj);
+		csi->obj = save_obj;
 	}
 	fz_catch(ctx)
 	{
