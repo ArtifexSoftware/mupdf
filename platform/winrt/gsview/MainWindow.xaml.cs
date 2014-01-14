@@ -17,7 +17,6 @@ using mupdfwinrt;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices.WindowsRuntime;
 
-
 enum AppBar_t
 {
 	TEXT_SEARCH,
@@ -181,15 +180,17 @@ namespace gsview
 			var index = filename.LastIndexOfAny(anyOf);
 			string extension = filename.Substring(index + 1);
 
-			int result = await mu_doc.OpenFileAsync(filename, extension);
+			int result = mu_doc.OpenFileName(filename, extension);
+
+			//int result = await mu_doc.OpenFileAsync(filename, extension);
 			/* Check if we need password */
-			if (mu_doc.RequiresPassword())
-			{
+			//if (mu_doc.RequiresPassword())
+			//{
 				//SetView(view_t.VIEW_PASSWORD);
-				return;
-			}
-			else
-				InitialRender();
+			//	return;
+			//}
+			//else
+			//	InitialRender();
 		}
 	}
 }

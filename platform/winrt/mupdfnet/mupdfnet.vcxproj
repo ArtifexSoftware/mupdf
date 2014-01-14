@@ -183,21 +183,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\mupdfwinrt\Cache.h" />
-    <ClInclude Include="..\mupdfwinrt\ContentItem.h" />
-    <ClInclude Include="..\mupdfwinrt\Links.h" />
     <ClInclude Include="..\mupdfwinrt\muctx.h" />
     <ClInclude Include="..\mupdfwinrt\status.h" />
-    <ClInclude Include="..\mupdfwinrt\utils.h" />
+    <ClInclude Include="mudocnet.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\mupdfwinrt\Cache.cpp" />
-    <ClCompile Include="..\mupdfwinrt\ContentItem.cpp" />
-    <ClCompile Include="..\mupdfwinrt\Links.cpp" />
     <ClCompile Include="..\mupdfwinrt\muctx.cpp" />
-    <ClCompile Include="..\mupdfwinrt\utils.cpp" />
+    <ClCompile Include="mudocnet.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

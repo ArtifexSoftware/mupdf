@@ -2,11 +2,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="gsview" Height="350" Width="525">
-
+<!-- To do add in command short cuts and bindings -->
     <Grid>
         <Menu IsMainMenu="True">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open..." Click="OpenFile" Command="Open">
+                <MenuItem Header="_Open..." Click="OpenFile">
                     <MenuItem.Icon>
                         <Image Source="Resources/OpenFile.png" />
                     </MenuItem.Icon>
