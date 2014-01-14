@@ -216,12 +216,6 @@ pdf_load_jpx(pdf_document *doc, pdf_obj *dict, int forcemask)
 
 		img = fz_load_jpx(ctx, buf->data, buf->len, colorspace, indexed);
 
-		if (colorspace == NULL)
-			colorspace = fz_keep_colorspace(ctx, img->colorspace);
-
-		fz_drop_buffer(ctx, buf);
-		buf = NULL;
-
 		obj = pdf_dict_getsa(dict, "SMask", "Mask");
 		if (pdf_is_dict(obj))
 		{
@@ -243,14 +237,17 @@ pdf_load_jpx(pdf_document *doc, pdf_obj *dict, int forcemask)
 			fz_decode_tile(img, decode);
 		}
 	}
+	fz_always(ctx)
+	{
+		fz_drop_colorspace(ctx, colorspace);
+		fz_drop_buffer(ctx, buf);
+	}
 	fz_catch(ctx)
 	{
-		if (colorspace)
-			fz_drop_colorspace(ctx, colorspace);
-		fz_drop_buffer(ctx, buf);
 		fz_drop_pixmap(ctx, img);
 		fz_rethrow(ctx);
 	}
+
 	return fz_new_image_from_pixmap(ctx, img, mask);
 }
 
