@@ -5,7 +5,6 @@
 #include <vector>
 #include <windows.h>
 #include <mutex>
-#include "utils.h"
 #include "Cache.h"
 #include "status.h"
 
@@ -15,18 +14,18 @@ extern "C" {
 
 #define MAX_SEARCH 500
 
-using namespace Platform;  /* For String */
-using namespace Windows::Foundation;  /* For Point */
-
-/* These are the std objects used to interface to muctx.  We do use windows
-	String and Point types however */
+typedef struct point_s
+{
+	double X;
+	double Y;
+} point_t;
 
 /* Links */
 typedef struct document_link_s
 {
 	link_t type;
-	Point upper_left;
-	Point lower_right;
+	point_t upper_left;
+	point_t lower_right;
 	std::unique_ptr<char[]> uri;
 	int page_num;
 } document_link_t;
@@ -36,8 +35,8 @@ typedef struct document_link_s
 /* Text Search */
 typedef struct text_search_s
 {
-	Point upper_left;
-	Point lower_right;
+	point_t upper_left;
+	point_t lower_right;
 } text_search_t;
 #define sh_text std::shared_ptr<text_search_t>
 #define sh_vector_text std::shared_ptr<std::vector<sh_text>>
@@ -46,16 +45,13 @@ typedef struct text_search_s
 typedef struct content_s
 {
 	int  page;
-	String^ string_orig;
-	String^ string_margin;
+	std::string string_orig;
+	std::string string_margin;
 } content_t;
 #define sh_content std::shared_ptr<content_t>
 #define sh_vector_content std::shared_ptr<std::vector<sh_content>>
 
-/* Used for HTML return */
-#define sh_vector_char std::shared_ptr<std::vector<char>>
-
-/* Needed for file handling */
+#ifdef _WINRT_DLL
 using namespace Windows::Storage::Streams;
 using namespace Windows::Foundation;
 
@@ -63,6 +59,7 @@ typedef struct win_stream_struct_s
 {
 	IRandomAccessStream^ stream;
 } win_stream_struct;
+#endif
 
 class muctx
 {
@@ -82,22 +79,25 @@ public:
 	muctx(void);
 	~muctx(void);
 	void CleanUp(void);
-	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);
 	int GetPageCount();
 	status_t InitializeContext();
 	status_t RenderPage(int page_num, unsigned char *bmp_data, int bmp_width, 
 						int bmp_height, float scale, bool flipy);
 	status_t RenderPageMT(void *dlist, int page_width, int page_height,
 							unsigned char *bmp_data, int bmp_width, int bmp_height,
-							float scale, bool flipy, bool tile, Point top_left, 
-							Point bottom_right);
+							float scale, bool flipy, bool tile, point_t top_left,
+							point_t bottom_right);
 	fz_display_list* CreateDisplayList(int page_num, int *width, int *height);
-	int MeasurePage(int page_num, Point *size);
-	Point MeasurePage(fz_page *page);
+	int MeasurePage(int page_num, point_t *size);
+	point_t MeasurePage(fz_page *page);
 	unsigned int GetLinks(int page_num, sh_vector_link links_vec);
 	int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
 	int GetContents(sh_vector_content contents_vec);
-	String^ GetHTML(int page_num);
+	std::string GetHTML(int page_num);
 	bool RequiresPassword(void);
 	bool ApplyPassword(char* password);
+#ifdef _WINRT_DLL
+	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);
+#endif
+
 };

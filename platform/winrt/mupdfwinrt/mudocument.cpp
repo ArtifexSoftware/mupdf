@@ -7,6 +7,7 @@
 #include "pch.h"
 #include "mudocument.h"
 #include "status.h"
+#include "utils.h"
 
 using namespace mupdfwinrt;
 using namespace concurrency;
@@ -43,14 +44,18 @@ int mudocument::GetNumPages()
 
 Point mudocument::GetPageSize(int page_num)
 {
-	Point size;
+	Point size_out;
+	point_t size;
 
 	mutex_lock.lock();
 	int code = this->mu_object.MeasurePage(page_num, &size);
 	mutex_lock.unlock();
 	if (code < 0)
         throw ref new Exception(code, ref new String(L"Get Page Size Failed"));
-	return size;
+
+	size_out.X = size.X;
+	size_out.Y = size.Y;
+	return size_out;
 }
 
 Windows::Foundation::IAsyncOperation<int>^ mudocument::OpenFileAsync(StorageFile^ file)
@@ -208,7 +213,8 @@ int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height
 		}
 		code = mu_object.RenderPageMT(dlist, page_width, page_height, 
 										&(bmp_data[0]), bmp_width, bmp_height,
-										scale, flipy, tile, top_left, bottom_right);
+										scale, flipy, tile, { top_left.X, top_left.Y }, 
+										{ bottom_right.X, bottom_right.Y });
 	} 
 	else 
 	{
@@ -323,8 +329,8 @@ unsigned int mudocument::ComputeLinks(int page_num)
 			return 0;
 		}
 		sh_link muctx_link = link_smart_ptr_vec->at(k);
-		new_link->LowerRight = muctx_link->lower_right;
-		new_link->UpperLeft = muctx_link->upper_left;
+		new_link->LowerRight = { (float) muctx_link->lower_right.X, (float) muctx_link->lower_right.Y };
+		new_link->UpperLeft = { (float) muctx_link->upper_left.X, (float) muctx_link->upper_left.Y };
 		new_link->PageNum = muctx_link->page_num;
 		new_link->Type = muctx_link->type;
 		if (new_link->Type == LINK_URI)
@@ -377,8 +383,8 @@ int mudocument::ComputeTextSearch(String^ text, int page_num)
 			return 0;
 		}
 		sh_text muctx_text = text_smart_ptr_vec->at(k);
-		new_link->LowerRight = muctx_text->lower_right;
-		new_link->UpperLeft = muctx_text->upper_left;
+		new_link->LowerRight = { (float) muctx_text->lower_right.X, (float) muctx_text->lower_right.Y };
+		new_link->UpperLeft = { (float) muctx_text->upper_left.X, (float) muctx_text->upper_left.Y };
 		new_link->Type = TEXTBOX;
 		this->textsearch->Append(new_link);
 	}
@@ -416,7 +422,7 @@ unsigned int mudocument::ComputeContents()
 
 	if (!has_content)
 		return 0;
-	/* Pack into winRT type*/
+	/* Pack into winRT type */
 	this->contents = ref new Platform::Collections::Vector<ContentItem^>();
 	if (this->contents == nullptr)
 		return 0;
@@ -432,8 +438,8 @@ unsigned int mudocument::ComputeContents()
 		}
 		sh_content muctx_content = content_smart_ptr_vec->at(k);
 		new_content->Page = muctx_content->page;
-		new_content->StringMargin = muctx_content->string_margin;
-		new_content->StringOrig = muctx_content->string_orig;
+		new_content->StringMargin = char_to_String(muctx_content->string_margin.c_str());
+		new_content->StringOrig = char_to_String(muctx_content->string_orig.c_str());
 		this->contents->Append(new_content);
 	}
 	return num_items;
@@ -448,10 +454,13 @@ ContentItem^ mudocument::GetContent(unsigned int k)
 
 String^ mudocument::ComputeHTML(int page_num)
 {
-	String^ html;
+	String^ html = nullptr;
+	std::string html_cstr;
 
 	mutex_lock.lock();
-	html = mu_object.GetHTML(page_num);
+	html_cstr = mu_object.GetHTML(page_num);
 	mutex_lock.unlock();
+
+	html = char_to_String(html_cstr.c_str());
 	return html;
 }

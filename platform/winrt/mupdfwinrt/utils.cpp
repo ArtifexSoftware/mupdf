@@ -2,7 +2,7 @@
 #include "utils.h"
 
 /* Window string hurdles.... */
-String^ char_to_String(char *char_in)
+String^ char_to_String(const char *char_in)
 {
 	size_t size = MultiByteToWideChar(CP_UTF8, 0, char_in, -1, NULL, 0);
 	wchar_t *pw;

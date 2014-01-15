@@ -6,13 +6,8 @@
 /* This class interfaces to mupdf API with minimal windows objects
  * (other than the file streaming stuff) */
 
-/* File streaming set up for mupdf */
-
-/* win_read_file etc.  Reading of windows managed stream.  This is
- * not ideal as I have to read into a managed buffer and then transfer
- * to the actual buffer I want.  I would like a more direct approach.
- * Alternate approach is to push this off outside the winrt and read
- * from a memory buffer. */
+#ifdef _WINRT_DLL
+/* File streaming set up for WinRT */
 static int win_read_file(fz_stream *stm, unsigned char *buf, int len)
 {
 	void *temp = stm->state;
@@ -79,6 +74,30 @@ static void win_close_file(fz_context *ctx, void *state)
 	IRandomAccessStream^ stream = win_stream->stream;
 	delete stream;
 }
+
+status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
+{
+	win_stream.stream = readStream;
+	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file, NULL);
+	mu_stream->seek = win_seek_file;
+	mu_stream->state = reinterpret_cast <void*> (&win_stream);
+
+	/* Now lets see if we can open the file */
+	fz_try(mu_ctx)
+	{
+		mu_doc = fz_open_document_with_stream(mu_ctx, ext, mu_stream);
+	}
+	fz_always(mu_ctx)
+	{
+		fz_close(mu_stream);
+	}
+	fz_catch(mu_ctx)
+	{
+		return E_FAILURE;
+	}
+	return S_ISOK;
+}
+#endif
 
 /* mutext functions see mupdf readme for details */
 static void lock_mutex(void *user, int lock)
@@ -156,30 +175,6 @@ muctx::~muctx(void)
 	page_cache = NULL;
 }
 
-/* Set up the stream access */
-status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
-{
-	win_stream.stream = readStream;
-	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file, NULL);
-	mu_stream->seek = win_seek_file;
-	mu_stream->state =  reinterpret_cast <void*> (&win_stream);
-
-	/* Now lets see if we can open the file */
-	fz_try(mu_ctx)
-	{
-		mu_doc = fz_open_document_with_stream(mu_ctx, ext, mu_stream);
-	}
-	fz_always(mu_ctx)
-	{
-		fz_close(mu_stream);
-	}
-	fz_catch(mu_ctx)
-	{
-		return E_FAILURE;
-	}
-	return S_ISOK;
-}
-
 /* Return the documents page count */
 int muctx::GetPageCount()
 {
@@ -190,7 +185,7 @@ int muctx::GetPageCount()
 }
 
 /* Get page size */
-int muctx::MeasurePage(int page_num, Point *size)
+int muctx::MeasurePage(int page_num, point_t *size)
 {
 	fz_rect rect;
 	fz_page *page;
@@ -211,9 +206,9 @@ int muctx::MeasurePage(int page_num, Point *size)
 }
 
 /* Get page size */
-Point muctx::MeasurePage(fz_page *page)
+point_t muctx::MeasurePage(fz_page *page)
 {
-	Point pageSize;
+	point_t pageSize;
 	fz_rect rect;
 	fz_rect *bounds;
 
@@ -233,8 +228,8 @@ void muctx::FlattenOutline(fz_outline *outline, int level,
 	memset(indent, ' ', level * 4);
 	indent[level * 4] = 0;
 
-	String^ indent_str = char_to_String(indent);
-	String^ str_indent;
+	std::string indent_str = indent;
+	std::string str_indent;
 
 	while (outline)
 	{
@@ -246,9 +241,10 @@ void muctx::FlattenOutline(fz_outline *outline, int level,
 				/* Add to the contents std:vec */
 				sh_content content_item(new content_t());
 				content_item->page = page;
-				content_item->string_orig = char_to_String(outline->title);
-				content_item->string_margin =
-					str_indent->Concat(indent_str, content_item->string_orig);
+				content_item->string_orig = outline->title;
+				str_indent = content_item->string_orig;
+				str_indent.insert(0, indent_str);
+				content_item->string_margin = str_indent;
 				contents_vec->push_back(content_item);
 			}
 		}
@@ -403,7 +399,7 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 {
 	fz_device *dev = NULL;
 	fz_page *page = NULL;
-	Point page_size;
+	point_t page_size;
 
 	/* First see if we have this one in the cache */
 	fz_display_list *dlist = page_cache->Use(page_num, width, height, mu_ctx);
@@ -445,8 +441,8 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 /* Render display list bmp_data buffer.  No lock needed for this operation */
 status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height, 
 							 unsigned char *bmp_data, int bmp_width, int bmp_height,
-							 float scale, bool flipy, bool tile, Point top_left, 
-							 Point bottom_right)
+							 float scale, bool flipy, bool tile, point_t top_left,
+							 point_t bottom_right)
 {
 	fz_device *dev = NULL;
 	fz_pixmap *pix = NULL;
@@ -505,7 +501,7 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 	fz_pixmap *pix = NULL;
 	fz_page *page = NULL;
 	fz_matrix ctm, *pctm = &ctm;
-	Point page_size;
+	point_t page_size;
 
 	fz_var(dev);
 	fz_var(pix);
@@ -551,7 +547,7 @@ bool muctx::ApplyPassword(char* password)
 	return fz_authenticate_password(mu_doc, password) != 0;
 }
 
-String^ muctx::GetHTML(int page_num)
+std::string muctx::GetHTML(int page_num)
 {
 	fz_output *out = NULL;
 	fz_device *dev = NULL;
@@ -559,7 +555,7 @@ String^ muctx::GetHTML(int page_num)
 	fz_text_sheet *sheet = NULL;
 	fz_text_page *text = NULL;
 	fz_buffer *buf = NULL;
-	String^ html;
+	std::string html;
 
 	fz_var(dev);
 	fz_var(page);
@@ -579,7 +575,7 @@ String^ muctx::GetHTML(int page_num)
 		buf = fz_new_buffer(mu_ctx, 256);
 		out = fz_new_output_with_buffer(mu_ctx, buf);
 		fz_print_text_page_html(mu_ctx, out, text);
-		html = char_to_String((char*) buf->data);
+		html = std::string(((char*) buf->data));
 	}
 	fz_always(mu_ctx)
 	{
