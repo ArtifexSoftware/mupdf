@@ -137,7 +137,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>D3D11.lib;D2d1.lib;kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -162,7 +162,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>D3D11.lib;D2d1.lib;kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>
@@ -187,7 +187,7 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>../../include/;../mupdfwinrt/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;NDEBUG;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>D3D11.lib;D2d1.lib;kernel32.lib;%(AdditionalDependencies);../$(Platform)/$(Configuration)/libmupdf_winRT.lib;../$(Platform)/$(Configuration)/libthirdparty_winRT.lib;../$(Platform)/$(Configuration)/libmupdf-nov8_winRT.lib;../$(Platform)/$(Configuration)/mupdfwinrt.lib</AdditionalDependencies>

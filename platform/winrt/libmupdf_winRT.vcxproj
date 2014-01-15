@@ -398,7 +398,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINRT;_UNICODE;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -440,7 +440,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINRT;NDEBUG;_UNICODE;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -482,7 +482,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_WINRT;NDEBUG;_UNICODE;UNICODE;NDEBUG%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
