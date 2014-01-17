@@ -292,7 +292,7 @@ pdf_load_version(pdf_document *doc)
 	if (memcmp(buf, "%PDF-", 5) != 0)
 		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "cannot recognize version marker");
 
-	doc->version = atoi(buf + 5) * 10 + atoi(buf + 7);
+	doc->version = 10 * (fz_atof(buf+5) + 0.05);
 }
 
 static void
@@ -1177,8 +1177,7 @@ pdf_init_document(pdf_document *doc)
 		version_str = pdf_to_name(obj);
 		if (*version_str)
 		{
-			/* TODO: use fz_atof for parsing instead? */
-			int version = atoi(version_str) * 10 + atoi(version_str + 2);
+			int version = 10 * (fz_atof(version_str) + 0.05);
 			if (version > doc->version)
 				doc->version = version;
 		}
