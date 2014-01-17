@@ -409,13 +409,15 @@ end_softmask(pdf_csi *csi, softmask_save *save)
 	fz_pop_clip(csi->dev);
 }
 
-static void
+static pdf_gstate *
 pdf_begin_group(pdf_csi *csi, const fz_rect *bbox, softmask_save *softmask)
 {
 	pdf_gstate *gstate = begin_softmask(csi, softmask);
 
 	if (gstate->blendmode)
 		fz_begin_group(csi->dev, bbox, 1, 0, gstate->blendmode, 1);
+
+	return csi->gstate + csi->gtop;
 }
 
 static void
@@ -442,7 +444,7 @@ pdf_show_shade(pdf_csi *csi, fz_shade *shd)
 
 	fz_bound_shade(ctx, shd, &gstate->ctm, &bbox);
 
-	pdf_begin_group(csi, &bbox, &softmask);
+	gstate = pdf_begin_group(csi, &bbox, &softmask);
 
 	/* FIXME: The gstate->ctm in the next line may be wrong; maybe
 	 * it should be the parent gstates ctm? */
@@ -477,7 +479,7 @@ pdf_show_image(pdf_csi *csi, fz_image *image)
 		fz_clip_image_mask(csi->dev, image->mask, &bbox, &image_ctm);
 	}
 	else
-		pdf_begin_group(csi, &bbox, &softmask);
+		gstate = pdf_begin_group(csi, &bbox, &softmask);
 
 	if (!image->colorspace)
 	{
@@ -567,7 +569,7 @@ pdf_show_path(pdf_csi *csi, int doclose, int dofill, int dostroke, int even_odd)
 			dostroke = dofill = 0;
 
 		if (dofill || dostroke)
-			pdf_begin_group(csi, &bbox, &softmask);
+			gstate = pdf_begin_group(csi, &bbox, &softmask);
 
 		if (dofill && dostroke)
 		{
@@ -709,7 +711,7 @@ pdf_flush_text(pdf_csi *csi)
 		if (text->len == 0)
 			break;
 
-		pdf_begin_group(csi, &tb, &softmask);
+		gstate = pdf_begin_group(csi, &tb, &softmask);
 
 		if (doinvisible)
 			fz_ignore_text(csi->dev, text, &gstate->ctm);
