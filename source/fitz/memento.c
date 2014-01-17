@@ -1174,8 +1174,12 @@ void *Memento_realloc(void *blk, size_t newsize)
     }
     newmemblk->rawsize = newsize;
 #ifndef MEMENTO_LEAKONLY
+    VALGRIND_MAKE_MEM_DEFINED(newmemblk->preblk, Memento_PreSize);
     memset(newmemblk->preblk, MEMENTO_PREFILL, Memento_PreSize);
+    VALGRIND_MAKE_MEM_UNDEFINED(newmemblk->preblk, Memento_PreSize);
+    VALGRIND_MAKE_MEM_DEFINED(MEMBLK_POSTPTR(newmemblk), Memento_PostSize);
     memset(MEMBLK_POSTPTR(newmemblk), MEMENTO_POSTFILL, Memento_PostSize);
+    VALGRIND_MAKE_MEM_UNDEFINED(MEMBLK_POSTPTR(newmemblk), Memento_PostSize);
 #endif
     Memento_addBlockHead(&globals.used, newmemblk, 2);
     return MEMBLK_TOBLK(newmemblk);
