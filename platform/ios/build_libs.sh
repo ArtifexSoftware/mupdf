@@ -25,9 +25,9 @@ OUT=build/$build-$OS-$(echo $ARCHS | tr ' ' '-')
 echo Compiling libraries for $ARCHS.
 make -j4 -C ../.. OUT=$OUT XCFLAGS="$FLAGS" XLDFLAGS="$FLAGS" JSCORE_PRESENT="yes" third libs || exit 1
 
-echo Copying library to $TARGET_BUILD_DIR/.
-mkdir -p "$TARGET_BUILD_DIR"
-cp -f ../../$OUT/lib*.a $TARGET_BUILD_DIR
-ranlib $TARGET_BUILD_DIR/lib*.a
+echo Copying library to $BUILT_PRODUCTS_DIR/.
+mkdir -p "$BUILT_PRODUCTS_DIR"
+cp -f ../../$OUT/lib*.a $BUILT_PRODUCTS_DIR
+ranlib $BUILT_PRODUCTS_DIR/lib*.a
 
 echo Done.
