@@ -240,16 +240,17 @@ pdf_map_range_to_table(fz_context *ctx, pdf_cmap *cmap, int low, int *table, int
 	int high = low + len;
 	int offset = cmap->tlen;
 	if (cmap->tlen + len >= USHRT_MAX + 1)
-		fz_warn(ctx, "cannot map range to table; table is full");
+	{
+		/* no space in the table; emit as a set of single lookups instead */
+		for (i = 0; i < len; i++)
+			add_range(ctx, cmap, low + i, low + i, PDF_CMAP_SINGLE, table[i]);
+	}
 	else
 	{
-		int fail = 0;
+		/* add table cannot fail here, we already checked that it will fit */
 		for (i = 0; i < len; i++)
-			fail |= add_table(ctx, cmap, table[i]);
-		if (!fail)
-			add_range(ctx, cmap, low, high, PDF_CMAP_TABLE, offset);
-		else
-			cmap->tlen = offset;
+			add_table(ctx, cmap, table[i]);
+		add_range(ctx, cmap, low, high, PDF_CMAP_TABLE, offset);
 	}
 }
 
@@ -302,7 +303,7 @@ pdf_map_one_to_many(fz_context *ctx, pdf_cmap *cmap, int low, int *values, int l
 		if (!fail)
 			add_range(ctx, cmap, low, low, PDF_CMAP_MULTI, offset);
 		else
-			cmap->tlen = offset;
+			cmap->tlen = offset; /* ignore one-to-many mappings when the table is full */
 	}
 }
 
