@@ -296,6 +296,8 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 		return 0;
 	}
 
+	fz_register_document_handlers(ctx);
+
 	glo->doc = NULL;
 	fz_try(ctx)
 	{
