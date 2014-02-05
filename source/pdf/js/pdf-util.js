@@ -57,6 +57,7 @@ util.printd = function(fmt, d)
 {
 	var regexp = /(m+|d+|y+|H+|h+|M+|s+|t+|[^mdyHhMst]+)/g;
 	var res = '';
+	var i;
 
 	if (!d)
 		return null;
@@ -64,7 +65,7 @@ util.printd = function(fmt, d)
 	var tokens = fmt.match(regexp);
 	var length = tokens ? tokens.length : 0;
 
-	for (var i = 0; i < length; i++)
+	for (i = 0; i < length; i++)
 	{
 		switch(tokens[i])
 		{
@@ -164,6 +165,8 @@ util.printx = function(fmt, val)
 
 util.printf = function()
 {
+	var i;
+
 	if (arguments.length < 1)
 		return "";
 
@@ -173,7 +176,7 @@ util.printf = function()
 	var tokens = arguments[0].match(regexp);
 	var length = tokens ? tokens.length : 0;
 
-	for (var i = 0; i < length; i++)
+	for (i = 0; i < length; i++)
 	{
 		var tok = tokens[i];
 		if (tok.match(/^%/))
@@ -345,12 +348,13 @@ function AFExtractTime(dt)
 
 function AFParseDateOrder(fmt)
 {
+	var i;
 	var order = '';
 
 	// Ensure all present with those not added in default order
 	fmt += "mdy";
 
-	for (var i = 0; i < fmt.length; i++)
+	for (i = 0; i < fmt.length; i++)
 	{
 		var c = fmt.charAt(i);
 
@@ -415,6 +419,7 @@ function AFParseTime(str, d)
 
 function AFParseDateEx(d, fmt)
 {
+	var i;
 	var dt = AFExtractTime(d);
 	var nums = dt[0].match(/\d+/g);
 	var order = AFParseDateOrder(fmt);
@@ -442,7 +447,7 @@ function AFParseDateEx(d, fmt)
 	if (order === "ym" || (order === "y" && text_month))
 		date = 1;
 
-	for (var i = 0; i < nums.length; i++)
+	for (i = 0; i < nums.length; i++)
 	{
 		switch (order.charAt(i))
 		{
@@ -794,7 +799,7 @@ function AFPercent_Format(nDec, sepStyle)
 
 function AFSimple_Calculate(op, list)
 {
-	var res;
+	var i, res;
 
 	switch (op)
 	{
@@ -812,7 +817,7 @@ function AFSimple_Calculate(op, list)
 	if (typeof list === 'string')
 		list = list.split(/ *, */);
 
-	for (var i = 0; i < list.length; i++)
+	for (i = 0; i < list.length; i++)
 	{
 		var field = getField(list[i]);
 		var value = Number(field.value);
