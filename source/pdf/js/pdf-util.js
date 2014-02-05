@@ -281,7 +281,7 @@ util.printf = function()
 					if (fval >= 0)
 						fval = poschar + fval;
 
-					if (point != '.')
+					if (point !== '.')
 						fval.replace(/\./, point);
 
 					if (thou)
@@ -354,7 +354,7 @@ function AFParseDateOrder(fmt)
 	{
 		var c = fmt.charAt(i);
 
-		if ('ymd'.indexOf(c) != -1 && order.indexOf(c) == -1)
+		if ('ymd'.indexOf(c) !== -1 && order.indexOf(c) === -1)
 			order += c;
 	}
 
@@ -439,7 +439,7 @@ function AFParseDateEx(d, fmt)
 	order = order.substring(0, nums.length);
 
 	// If year and month specified but not date then use the 1st
-	if (order == "ym" || (order == "y" && text_month))
+	if (order === "ym" || (order === "y" && text_month))
 		date = 1;
 
 	for (var i = 0; i < nums.length; i++)
@@ -454,7 +454,7 @@ function AFParseDateEx(d, fmt)
 
 	if (year < 100)
 	{
-		if (fmt.search("yyyy") != -1)
+		if (fmt.search("yyyy") !== -1)
 			return null;
 
 		if (year >= 50)
@@ -542,7 +542,7 @@ function AFSpecial_KeystrokeEx(fmt)
 				if (i >= length)
 					break;
 				res += fmt.charAt(i);
-				if (val && val.charAt(0) == fmt.charAt(i))
+				if (val && val.charAt(0) === fmt.charAt(i))
 					val = val.substring(1);
 				break;
 
@@ -602,7 +602,7 @@ function AFSpecial_KeystrokeEx(fmt)
 
 			default:
 				res += fmt.charAt(i);
-				if (val && val.charAt(0) == fmt.charAt(i))
+				if (val && val.charAt(0) === fmt.charAt(i))
 					val = val.substring(1);
 				break;
 		}
@@ -727,7 +727,7 @@ function AFNumber_Format(nDec,sepStyle,negStyle,currStyle,strCurrency,bCurrencyP
 	if (!intpart)
 		intpart = '0';
 
-	if ((sepStyle & 1) == 0)
+	if ((sepStyle & 1) === 0)
 	{
 		// Add the thousands sepearators: pad to length multiple of 3 with zeros,
 		// split into 3s, join with separator, and remove the leading zeros
@@ -809,7 +809,7 @@ function AFSimple_Calculate(op, list)
 			break;
 	}
 
-	if (typeof list == 'string')
+	if (typeof list === 'string')
 		list = list.split(/ *, */);
 
 	for (var i = 0; i < list.length; i++)
@@ -829,17 +829,17 @@ function AFSimple_Calculate(op, list)
 				res += value;
 				break;
 			case 'MIN':
-				if (i == 0 || value < res)
+				if (i === 0 || value < res)
 					res = value;
 				break;
 			case 'MAX':
-				if (i == 0 || value > res)
+				if (i === 0 || value > res)
 					res = value;
 				break;
 		}
 	}
 
-	if (op == 'AVG')
+	if (op === 'AVG')
 		res /= list.length;
 
 	event.value = res;
