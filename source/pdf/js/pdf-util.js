@@ -1,34 +1,24 @@
-var MuPDF = {};
+var MuPDF = {
+	monthName: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+	shortMonthName: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+	monthPattern: /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/,
+	dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
 
-MuPDF.monthName = [
-	'January', 'February', 'March', 'April', 'May', 'June',
-	'July', 'August', 'September', 'October', 'November', 'December' ];
+	padZeros: function(num, places) {
+		var s = num.toString();
+		if (s.length < places)
+			s = new Array(places-s.length+1).join('0') + s;
+		return s;
+	},
 
-MuPDF.dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-MuPDF.shortMonthName = [];
-for (var i = 0; i < MuPDF.monthName.length; i++)
-	MuPDF.shortMonthName.push(MuPDF.monthName[i].substring(0,3));
-
-MuPDF.monthPattern = new RegExp('('+MuPDF.shortMonthName.join('|')+')');
-
-MuPDF.padZeros = function(num, places)
-{
-	var s = num.toString();
-	if (s.length < places)
-		s = new Array(places-s.length+1).join('0') + s;
-	return s;
-}
-
-MuPDF.convertCase = function(str, cmd)
-{
-	switch (cmd)
-	{
-		case '>': return str.toUpperCase();
-		case '<': return str.toLowerCase();
-		default: return str;
-	}
-}
+	convertCase: function(str, cmd) {
+		switch (cmd) {
+			case '>': return str.toUpperCase();
+			case '<': return str.toLowerCase();
+			default: return str;
+		}
+	},
+};
 
 /* display must be kept in sync with an enum in pdf_form.c */
 var display = {
