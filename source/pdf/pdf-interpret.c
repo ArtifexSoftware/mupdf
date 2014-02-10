@@ -2762,14 +2762,13 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 {
 	fz_context *ctx = csi->dev->ctx;
 	pdf_token tok = PDF_TOK_ERROR;
-	int in_array;
+	int in_text_array = 0;
 	int ignoring_errors = 0;
 
 	/* make sure we have a clean slate if we come here from flush_text */
 	pdf_clear_stack(csi);
-	in_array = 0;
 
-	fz_var(in_array);
+	fz_var(in_text_array);
 	fz_var(tok);
 
 	if (csi->cookie)
@@ -2797,39 +2796,45 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 
 				tok = pdf_lex(file, buf);
 
-				if (in_array)
+				if (in_text_array)
 				{
-					if (tok == PDF_TOK_CLOSE_ARRAY)
+					switch(tok)
 					{
-						in_array = 0;
-					}
-					else if (tok == PDF_TOK_REAL)
-					{
-						pdf_gstate *gstate = csi->gstate + csi->gtop;
-						pdf_show_space(csi, -buf->f * gstate->size * 0.001f);
-					}
-					else if (tok == PDF_TOK_INT)
-					{
-						pdf_gstate *gstate = csi->gstate + csi->gtop;
-						pdf_show_space(csi, -buf->i * gstate->size * 0.001f);
-					}
-					else if (tok == PDF_TOK_STRING)
-					{
-						pdf_show_string(csi, (unsigned char *)buf->scratch, buf->len);
-					}
-					else if (tok == PDF_TOK_KEYWORD)
-					{
-						if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
-							fz_warn(ctx, "ignoring keyword '%s' inside array", buf->scratch);
-						else
-							fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in array");
-					}
-					else if (tok == PDF_TOK_EOF)
+					case PDF_TOK_CLOSE_ARRAY:
+						in_text_array = 0;
 						break;
-					else
+					case PDF_TOK_REAL:
+						pdf_array_push(csi->obj, pdf_new_real(csi->doc, buf->f));
+						break;
+					case PDF_TOK_INT:
+						pdf_array_push(csi->obj, pdf_new_int(csi->doc, buf->i));
+						break;
+					case PDF_TOK_STRING:
+						pdf_array_push(csi->obj, pdf_new_string(csi->doc, buf->scratch, buf->len));
+						break;
+					case PDF_TOK_EOF:
+						break;
+					case PDF_TOK_KEYWORD:
+						if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
+						{
+							int l = pdf_array_len(csi->obj);
+							if (l > 0)
+							{
+								pdf_obj *o = pdf_array_get(csi->obj, l-1);
+								if (pdf_is_number(o))
+								{
+									csi->stack[0] = pdf_to_real(o);
+									pdf_array_delete(csi->obj, l-1);
+									if (pdf_run_keyword(csi, buf->scratch) == 0)
+										break;
+								}
+							}
+						}
+						/* Deliberate Fallthrough! */
+					default:
 						fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in array");
+					}
 				}
-
 				else switch (tok)
 				{
 				case PDF_TOK_ENDSTREAM:
@@ -2838,18 +2843,19 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 					break;
 
 				case PDF_TOK_OPEN_ARRAY:
-					if (!csi->in_text)
+					if (csi->obj)
 					{
-						if (csi->obj)
-						{
-							pdf_drop_obj(csi->obj);
-							csi->obj = NULL;
-						}
-						csi->obj = pdf_parse_array(csi->doc, file, buf);
+						pdf_drop_obj(csi->obj);
+						csi->obj = NULL;
+					}
+					if (csi->in_text)
+					{
+						in_text_array = 1;
+						csi->obj = pdf_new_array(csi->doc, 4);
 					}
 					else
 					{
-						in_array = 1;
+						csi->obj = pdf_parse_array(csi->doc, file, buf);
 					}
 					break;
 
@@ -2939,7 +2945,7 @@ pdf_run_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file, pdf_lexbuf *buf)
 			}
 			/* If we do catch an error, then reset ourselves to a
 			 * base lexing state */
-			in_array = 0;
+			in_text_array = 0;
 		}
 	}
 	while (tok != PDF_TOK_EOF);
