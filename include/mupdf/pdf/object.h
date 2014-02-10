@@ -35,6 +35,7 @@ int pdf_is_null(pdf_obj *obj);
 int pdf_is_bool(pdf_obj *obj);
 int pdf_is_int(pdf_obj *obj);
 int pdf_is_real(pdf_obj *obj);
+int pdf_is_number(pdf_obj *obj);
 int pdf_is_name(pdf_obj *obj);
 int pdf_is_string(pdf_obj *obj);
 int pdf_is_array(pdf_obj *obj);

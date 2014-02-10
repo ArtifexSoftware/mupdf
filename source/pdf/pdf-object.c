@@ -218,6 +218,12 @@ int pdf_is_real(pdf_obj *obj)
 	return obj ? obj->kind == PDF_REAL : 0;
 }
 
+int pdf_is_number(pdf_obj *obj)
+{
+	RESOLVE(obj);
+	return obj ? (obj->kind == PDF_REAL || obj->kind == PDF_INT) : 0;
+}
+
 int pdf_is_string(pdf_obj *obj)
 {
 	RESOLVE(obj);
