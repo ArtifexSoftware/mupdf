@@ -1,17 +1,74 @@
 ﻿<Window x:Class="gsview.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="gsview" Height="350" Width="525">
-<!-- To do add in command short cuts and bindings -->
-    <Grid>
-        <Menu IsMainMenu="True">
+        Title="gsview" Height="800" Width="650">
+
+    <Window.Resources>
+        <DataTemplate x:Key="PageTemplate">
+            <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill"  HorizontalAlignment="Center" Source="{Binding BitMap}" Margin="24,24,0,0">
+                <Image.BitmapEffect>
+                    <DropShadowBitmapEffect Color="Black" Direction="-50"
+                    ShadowDepth="40" Softness=".7" />
+                </Image.BitmapEffect>
+            </Image>
+        </DataTemplate>
+
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="Black" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Customize listview to turn off selection -->
+        <Style TargetType="{x:Type ListViewItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListViewItem}">
+                        <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="true">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="true">
+                                <Setter Property="Background" TargetName="Bd" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="true"/>
+                                    <Condition Property="Selector.IsSelectionActive" Value="false"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Background" TargetName="Bd" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- To do add in command short cuts and bindings -->
+    <DockPanel LastChildFill="True">
+        <!-- Menu item at top -->
+        <Menu IsMainMenu="True" DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open..." Click="OpenFile">
                     <MenuItem.Icon>
                         <Image Source="Resources/OpenFile.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Save As..." >
+                <MenuItem Header="MuPDF Save As..." >
                     <MenuItem.Icon>
                         <Image Source="Resources/saveHS.png" />
                     </MenuItem.Icon>
@@ -20,14 +77,14 @@
                     <MenuItem.Icon>
                         <Image Source="Resources/Close.ico" />
                     </MenuItem.Icon>
-                </MenuItem>               
+                </MenuItem>
                 <MenuItem Header="Info">
                     <MenuItem.Icon>
                         <Image Source="Resources/info.png" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Convert..." >
+                <MenuItem Header="Ghostscript Convert..." Click="ConvertClick">
                 </MenuItem>
                 <MenuItem Header="Extract..." >
                 </MenuItem>
@@ -40,7 +97,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Show Messages">
+                <MenuItem Header="Show Messages" Click="ShowGSMessage">
                     <MenuItem.Icon>
                         <Image Source="Resources/Message.png" />
                     </MenuItem.Icon>
@@ -70,18 +127,306 @@
                 <MenuItem Header="Previous Page" />
                 <MenuItem Header="Goto Page" />
             </MenuItem>
+            <MenuItem Header="_Options">
+                <MenuItem Header="Ghostscript" />
+                <MenuItem Header="Color" />
+            </MenuItem>
 
-
-
-
-        <MenuItem Header="_Window" />
+            <MenuItem Header="_Window" />
             <MenuItem Header="_Help" />
         </Menu>
+        
+        <!-- List of icons for page navigation, print, etc -->
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Background="WhiteSmoke">
+            <Button  Width="20" Height="20" Name="BackPage" Click="OnBackPageClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/Left.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Width="20" Height="20" Name="ForwardPage2" Click="OnForwardPageClick" Background="Transparent" BorderBrush="Transparent">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/Right.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="ZoomIn" Background="Transparent" BorderBrush="Transparent">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/zoom_in.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="ZoomOut" Background="Transparent" BorderBrush="Transparent">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/zoom_out.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="ToggleThumbs" Background="Transparent" BorderBrush="Transparent">
+                <Button.ToolTip>
+                    <TextBlock Text="Thumbnails"/>
+                </Button.ToolTip>
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/thumbnail.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="ToggleContents" Background="Transparent" BorderBrush="Transparent">
+                <Button.ToolTip>
+                    <TextBlock Text="Contents"/>
+                </Button.ToolTip>
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Width="20" Height="20">
+                                <Rectangle.Fill>
+                                    <ImageBrush ImageSource="Resources/contents.ico"/>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="Search" Background="Transparent" BorderBrush="Transparent">
+                <Button.ToolTip>
+                    <TextBlock Text="Search"/>
+                </Button.ToolTip>
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Width="20" Height="20">
+                                <Rectangle.Fill>
+                                    <ImageBrush ImageSource="Resources/search.png"/>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="LinksToggle" Background="Transparent" BorderBrush="Transparent">
+                <Button.ToolTip>
+                    <TextBlock Text="Hyperlinks"/>
+                </Button.ToolTip>
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/hyperlink.png"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="Print" Background="Transparent" BorderBrush="Transparent">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Width="20" Height="20">
+                                <Rectangle.Fill>
+                                    <ImageBrush ImageSource="Resources/printer.ico"/>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </StackPanel>
 
-   
+        <!-- The progress bar that runs while the thumbnails are rendered -->
+        <Grid x:Name="xaml_ProgressGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_ThumbProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Creating Thumbs</Bold></TextBlock>
+            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelThumb" Click="CancelLoadClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Cancel</Bold></TextBlock>
+            </Button>
+        </Grid>
+
+        <!-- The progress bar that runs during text search -->
+        <Grid x:Name="xaml_SearchGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_SearchProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Searching</Bold></TextBlock>
+            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelSearch" Click="CancelSearchClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Cancel</Bold></TextBlock>
+            </Button>
+        </Grid>
+
+        <!-- The progress bar that runs during printing -->
+        <Grid x:Name="xaml_PrintGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_PrintProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Printing</Bold></TextBlock>
+            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelPrint" Click="CancelPrintClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Cancel</Bold></TextBlock>
+            </Button>
+        </Grid>
 
 
+        <!-- The progress bar that runs during distilling -->
+        <Grid x:Name="xaml_DistillGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_DistillProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Distilling</Bold></TextBlock>
+            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelDistill" Click="CancelDistillClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Cancel</Bold></TextBlock>
+            </Button>
+        </Grid>
+        
+        <!-- Thumb viewer/selector -->
+        <Grid x:Name="xaml_ThumbGrid" Width="100" Background="DarkGray" DockPanel.Dock="Left" Visibility="Collapsed">
+            <ListView x:Name="xaml_ThumbList" HorizontalAlignment="Stretch" 
+                      ItemTemplate="{StaticResource PageTemplate}" 
+                      ScrollViewer.CanContentScroll="False" 
+                      Background="DarkGray" ScrollViewer.PanningMode="Both"
+                      PreviewMouseLeftButtonUp="ThumbSelected">
+            </ListView>
+        </Grid>
 
-    </Grid>
+        <!-- Contents viewer/selector -->
+        <Grid x:Name="xaml_ContentGrid" Width="250" Background="DarkGray" DockPanel.Dock="Left" Visibility="Collapsed">
+            <ListView x:Name="xaml_ContentList" HorizontalAlignment="Stretch" 
+                      ScrollViewer.CanContentScroll="False" PreviewMouseLeftButtonUp="ContentSelected"
+                      Background="DarkGray" ScrollViewer.PanningMode="Both">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="5,5,0,0" HorizontalAlignment="Left">
+                            <TextBlock TextWrapping="Wrap" Text="{Binding StringMargin}" FontFamily="Segoe UI" FontSize="11" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+
+        <!-- Pages are last child fill.  This goes in the center of our dock panel -->
+        <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" >
+            <ListView x:Name="xaml_PageList" HorizontalAlignment="Stretch" 
+                      ItemTemplate="{StaticResource PageTemplate}" 
+                      ScrollViewer.CanContentScroll="False" 
+                      Background="DarkGray" ScrollViewer.PanningMode="Both"
+                      ScrollViewer.ScrollChanged="ListViewScrollChanged">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+        </Grid>
+
+    </DockPanel>
 
 </Window>

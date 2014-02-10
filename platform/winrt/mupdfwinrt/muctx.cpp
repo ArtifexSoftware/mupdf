@@ -2,6 +2,8 @@
 
 #include "pch.h"
 #include "muctx.h"
+#include "Cache.h"
+#include <mutex>
 
 /* This class interfaces to mupdf API with minimal windows objects
  * (other than the file streaming stuff) */
@@ -106,6 +108,19 @@ status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
 	fz_always(mu_ctx)
 	{
 		fz_close(mu_stream);
+	}
+	fz_catch(mu_ctx)
+	{
+		return E_FAILURE;
+	}
+	return S_ISOK;
+}
+#else
+status_t muctx::OpenDocument(char *filename)
+{
+	fz_try(mu_ctx)
+	{
+		this->mu_doc = fz_open_document(mu_ctx, filename);
 	}
 	fz_catch(mu_ctx)
 	{

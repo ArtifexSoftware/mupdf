@@ -4,13 +4,12 @@
 #include <functional>
 #include <vector>
 #include <windows.h>
-#include <mutex>
-#include "Cache.h"
 #include "status.h"
-
+#include "Cache.h"
 extern "C" {
-	#include "mupdf/fitz.h"
+#include "mupdf/fitz.h"
 }
+
 
 #define MAX_SEARCH 500
 
@@ -60,6 +59,11 @@ typedef struct win_stream_struct_s
 	IRandomAccessStream^ stream;
 	unsigned char public_buffer[4096];
 } win_stream_struct;
+#else
+typedef struct win_stream_struct_s
+{
+	char* stream;
+} win_stream_struct;
 #endif
 
 class muctx
@@ -99,6 +103,8 @@ public:
 	bool ApplyPassword(char* password);
 #ifdef _WINRT_DLL
 	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);
+#else
+	status_t OpenDocument(char *filename);
 #endif
 
 };
