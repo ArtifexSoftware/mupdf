@@ -33,7 +33,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdf_cpp", "mupdf_cpp\mupd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gsview", "gsview\gsview.csproj", "{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "munet", "munet\munet.vcxproj", "{4468C2E0-6C90-4FA5-8A48-0A9629776167}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdfnet", "mupdfnet\mupdfnet.vcxproj", "{4468C2E0-6C90-4FA5-8A48-0A9629776167}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -195,12 +195,12 @@
   <ItemGroup>
     <ClCompile Include="..\mupdfwinrt\Cache.cpp" />
     <ClCompile Include="..\mupdfwinrt\muctx.cpp" />
-    <ClCompile Include="munet.cpp" />
+    <ClCompile Include="mupdfnet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\mupdfwinrt\Cache.h" />
     <ClInclude Include="..\mupdfwinrt\muctx.h" />
-    <ClInclude Include="munet.h" />
+    <ClInclude Include="mupdfnet.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

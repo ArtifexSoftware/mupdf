@@ -24,7 +24,7 @@
     <ClCompile Include="..\mupdfwinrt\muctx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="munet.cpp">
+    <ClCompile Include="mupdfnet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,7 +35,7 @@
     <ClInclude Include="..\mupdfwinrt\muctx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="munet.h">
+    <ClInclude Include="mupdfnet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

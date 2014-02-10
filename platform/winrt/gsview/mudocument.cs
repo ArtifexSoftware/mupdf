@@ -33,61 +33,61 @@ namespace gsview
 		 * Calling into C++ code from managed code is complex. Since CLR 
 		 * compiling is needed and that does not support mutex. Hence the C
 		 * interface */
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern IntPtr mInitialize();
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern status_t mOpenDocument(IntPtr ctx, string filename);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern void mCleanUp(IntPtr ctx);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int mGetPageCount(IntPtr ctx);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern bool mRequiresPassword(IntPtr ctx);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern bool mApplyPassword(IntPtr ctx, string password);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int mRenderPage(IntPtr ctx,
 			int page_num, Byte[] bmp_data, int bmp_width, 
 			int bmp_height, double scale, bool flipy);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int mMeasurePage(IntPtr ctx, int page_num,
 			ref double width, ref double height);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int mGetContents(IntPtr ctx);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern void mReleaseContents();
 
 		/* The managed code Marshal actually releases the allocated string from C */
-		[DllImport("munet.dll", CharSet = CharSet.Ansi,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
 		[return: MarshalAs(UnmanagedType.LPStr)]
 		public static extern string mGetContentsItem(int k, ref int len, ref int page);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern IntPtr mCreateDisplayList(IntPtr ctx, int page_num,
 				ref int page_width, ref int page_height);
 
-		[DllImport("munet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern int mRenderPageMT(IntPtr ctx, IntPtr dlist,
 			int page_width, int page_height, Byte[] bmp_data, int bmp_width, 
