@@ -795,6 +795,7 @@ pdf_load_xref(pdf_document *doc, pdf_lexbuf *buf)
 {
 	int i;
 	int xref_len;
+	pdf_xref_entry *entry;
 	fz_context *ctx = doc->ctx;
 
 	pdf_read_start_xref(doc);
@@ -804,8 +805,15 @@ pdf_load_xref(pdf_document *doc, pdf_lexbuf *buf)
 	if (pdf_xref_len(doc) == 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "found xref was empty");
 
+	entry = pdf_get_xref_entry(doc, 0);
+	/* broken pdfs where first object is missing */
+	if (!entry->type)
+	{
+		entry->type = 'f';
+		entry->gen = 65535;
+	}
 	/* broken pdfs where first object is not free */
-	if (pdf_get_xref_entry(doc, 0)->type != 'f')
+	else if (entry->type != 'f')
 		fz_throw(ctx, FZ_ERROR_GENERIC, "first object in xref is not free");
 
 	/* broken pdfs where object offsets are out of range */
