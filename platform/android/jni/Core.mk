@@ -31,6 +31,7 @@ LOCAL_C_INCLUDES := \
 	../../source/xps \
 	../../source/cbz \
 	../../source/img \
+	../../source/tiff \
 	../../scripts/freetype \
 	../../scripts/jpeg \
 	../../scripts/openjpeg \
@@ -51,7 +52,8 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/pdf/*.c) \
 	$(wildcard $(MY_ROOT)/source/xps/*.c) \
 	$(wildcard $(MY_ROOT)/source/cbz/*.c) \
-	$(wildcard $(MY_ROOT)/source/img/*.c)
+	$(wildcard $(MY_ROOT)/source/img/*.c) \
+	$(wildcard $(MY_ROOT)/source/tiff/*.c)
 ifdef MEMENTO
 LOCAL_SRC_FILES += $(MY_ROOT)/fitz/memento.c
 endif
