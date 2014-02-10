@@ -2819,13 +2819,13 @@ pdf_run_stream(pdf_csi *csi, pdf_lexbuf *buf)
 						in_text_array = 0;
 						break;
 					case PDF_TOK_REAL:
-						pdf_array_push(csi->obj, pdf_new_real(csi->doc, buf->f));
+						pdf_array_push_drop(csi->obj, pdf_new_real(csi->doc, buf->f));
 						break;
 					case PDF_TOK_INT:
-						pdf_array_push(csi->obj, pdf_new_int(csi->doc, buf->i));
+						pdf_array_push_drop(csi->obj, pdf_new_int(csi->doc, buf->i));
 						break;
 					case PDF_TOK_STRING:
-						pdf_array_push(csi->obj, pdf_new_string(csi->doc, buf->scratch, buf->len));
+						pdf_array_push_drop(csi->obj, pdf_new_string(csi->doc, buf->scratch, buf->len));
 						break;
 					case PDF_TOK_EOF:
 						break;
