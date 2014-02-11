@@ -130,9 +130,9 @@
             <MenuItem Header="_Options">
                 <MenuItem Header="Ghostscript" />
                 <MenuItem Header="Color" />
+                <MenuItem Header="Footer Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
             </MenuItem>
 
-            <MenuItem Header="_Window" />
             <MenuItem Header="_Help" />
         </Menu>
         
@@ -359,7 +359,6 @@
             </Button>
         </Grid>
 
-
         <!-- The progress bar that runs during distilling -->
         <Grid x:Name="xaml_DistillGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -386,7 +385,25 @@
                 <TextBlock><Bold>Cancel</Bold></TextBlock>
             </Button>
         </Grid>
-        
+
+        <!-- Footer control -->
+        <Grid x:Name="xaml_FooterControl" Background="WhiteSmoke" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Margin="5,0,0,0"><Bold>Zoom:</Bold></TextBlock>
+            <Slider x:Name="xaml_ZoomSlider" Grid.Row="0" Grid.Column="1" Margin="10, 0, 0, 0" 
+                Width="150" Orientation="Horizontal" HorizontalAlignment="Center" 
+                Value="100" Minimum="25" Maximum="400" 
+                SmallChange="1" LargeChange="1"
+                TickPlacement="None" TickFrequency="1"  IsSnapToTickEnabled="True" MouseLeftButtonUp="ZoomReleased" PreviewMouseUp="Testing"/>
+            <TextBox Grid.Row="0"  Grid.Column="2" Width="30" Height="20" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" 
+                     HorizontalScrollBarVisibility="Hidden"  TextAlignment="Center" 
+                     Text="{Binding Mode=TwoWay, ElementName=xaml_ZoomSlider,Path=Value, UpdateSourceTrigger=PropertyChanged}" />
+        </Grid>
+
         <!-- Thumb viewer/selector -->
         <Grid x:Name="xaml_ThumbGrid" Width="100" Background="DarkGray" DockPanel.Dock="Left" Visibility="Collapsed">
             <ListView x:Name="xaml_ThumbList" HorizontalAlignment="Stretch" 
@@ -418,7 +435,8 @@
                       ItemTemplate="{StaticResource PageTemplate}" 
                       ScrollViewer.CanContentScroll="False" 
                       Background="DarkGray" ScrollViewer.PanningMode="Both"
-                      ScrollViewer.ScrollChanged="ListViewScrollChanged">
+                      ScrollViewer.ScrollChanged="ListViewScrollChanged"
+                      PreviewMouseLeftButtonUp="PageSelected">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>

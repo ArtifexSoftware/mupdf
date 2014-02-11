@@ -75,13 +75,13 @@ public struct spatial_info_t
 /* C# has no defines.... */
 static class Constants
 {
-	public const int LOOK_AHEAD = 2;  /* A +/- count on the pages to pre-render */
+	public const int LOOK_AHEAD = 1;  /* A +/- count on the pages to pre-render */
 	public const int THUMB_PREADD = 10;
 	public const double MIN_SCALE = 0.5;
 	public const double SCALE_THUMB = 0.05;
 	public const int BLANK_WIDTH = 17;
 	public const int BLANK_HEIGHT = 22;
-	public const double KEYBOARD_ZOOM_STEP = 0.25;
+	public const double ZOOM_STEP = 0.25;
 	public const int ZOOM_MAX = 4;
 	public const double ZOOM_MIN = 0.25;
 	public const int KEY_PLUS = 0xbb;
@@ -144,6 +144,7 @@ namespace gsview
 		bool m_isXPS;
 		gsOutput m_gsoutput;
 		Convert m_convertwin;
+		bool m_zoomhandled;
 
 		public MainWindow()
 		{
@@ -225,6 +226,7 @@ namespace gsview
 			m_rectlist_page = -1;
 			m_doczoom = 1.0;
 			m_isXPS = false;
+			m_zoomhandled = false;
 			return result;
 		}
 
@@ -232,20 +234,18 @@ namespace gsview
 		{
 			if (type == NotifyType_t.MESS_ERROR)
 			{
-			//	System.Windows.Forms.MessageBox.Show(Message, "Error",
-			//		MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+				System.Windows.Forms.MessageBox.Show(Message, "Error",
+					MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 			}
 			else
 			{
-			//	System.Windows.Forms.MessageBox.Show(Message, "Notice",
-			//		MessageBoxButtons.OK);
+				System.Windows.Forms.MessageBox.Show(Message, "Notice",
+					MessageBoxButtons.OK);
 			}
 		}
 
 		private void CloseDoc()
 		{
-
-
 
 		}
 
@@ -424,9 +424,7 @@ namespace gsview
 				/* Set if this is already xps for printing */
 				if (extension.ToUpper() == ".XPS")
 					m_isXPS = true;
-
 				StartViewer(dlg.FileName);
-
 			}
 		}
 
@@ -546,7 +544,7 @@ namespace gsview
 
 		private void OnBackPageClick(object sender, RoutedEventArgs e)
 		{
-			if (m_currpage == 0) return;
+			if (m_currpage == 0 || !m_init_done) return;
 
 			m_currpage = m_currpage - 1;
 			xaml_PageList.ScrollIntoView(m_docPages[m_currpage]);
@@ -554,7 +552,7 @@ namespace gsview
 
 		private void OnForwardPageClick(object sender, RoutedEventArgs e)
 		{
-			if (m_currpage == m_num_pages - 1) return;
+			if (m_currpage == m_num_pages - 1 || !m_init_done) return;
 
 			m_currpage = m_currpage + 1;
 			xaml_PageList.ScrollIntoView(m_docPages[m_currpage]);
@@ -607,6 +605,7 @@ namespace gsview
 			var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
 			if (item != null)
 			{
+				m_currpage = item.PageNum;
 				xaml_PageList.ScrollIntoView(m_docPages[item.PageNum]);
 			}
 		}
@@ -616,6 +615,7 @@ namespace gsview
 			var item = ((FrameworkElement)e.OriginalSource).DataContext as ContentItem;
 			if (item != null && item.Page < m_num_pages)
 			{
+				m_currpage = m_docPages[item.Page].PageNum;
 				xaml_PageList.ScrollIntoView(m_docPages[item.Page]);
 			}
 		}
@@ -632,6 +632,7 @@ namespace gsview
 					if (found != null)
 					{
 						var Item = (DocPage)found;
+						m_currpage = Item.PageNum;
 						RenderRange(Item.PageNum);
 					}
 					return;
@@ -645,7 +646,6 @@ namespace gsview
 			spatial_info_t spatial_info = InitSpatial(m_doczoom);
 			int range = Constants.LOOK_AHEAD;
 
-			range = 0;  // debug
 			for (int k = curr_page - range; k <= curr_page + range; k++)
 			{
 				if (k >= 0 && k < m_num_pages)
@@ -747,12 +747,20 @@ namespace gsview
 
 		private void ZoomOut(object sender, RoutedEventArgs e)
 		{
-
+			m_doczoom = m_doczoom - Constants.ZOOM_STEP;
+			if (m_doczoom < Constants.ZOOM_MIN)
+				m_doczoom = Constants.ZOOM_MIN;
+			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			RenderRange(m_currpage);
 		}
 
 		private void ZoomIn(object sender, RoutedEventArgs e)
 		{
-
+			m_doczoom = m_doczoom + Constants.ZOOM_STEP;
+			if (m_doczoom > Constants.ZOOM_MAX)
+				m_doczoom = Constants.ZOOM_MAX;
+			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			RenderRange(m_currpage);
 		}
 
 		private void CancelSearchClick(object sender, RoutedEventArgs e)
@@ -811,11 +819,9 @@ namespace gsview
 					break;
 
 				case GS_Task_t.SAVE_RESULT:
-
 					break;
 			}
 		}
-
 
 		/* Printing is achieved using xpswrite device in ghostscript and
 		 * pushing that file through the XPS print queue */
@@ -901,6 +907,45 @@ namespace gsview
 				m_convertwin.Show();
 			}
 		}
+
+		private void ShowFooter(object sender, RoutedEventArgs e)
+		{
+			xaml_FooterControl.Visibility = System.Windows.Visibility.Visible;
+		}
+
+		private void HideFooter(object sender, RoutedEventArgs e)
+		{
+			xaml_FooterControl.Visibility = System.Windows.Visibility.Collapsed;
+		}
+
+		private void PageSelected(object sender, MouseButtonEventArgs e)
+		{
+			var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
+			if (item != null)
+			{
+				m_currpage = item.PageNum;
+				xaml_PageList.ScrollIntoView(m_docPages[item.PageNum]);
+			}
+		}
+
+		private void ZoomReleased(object sender, MouseButtonEventArgs e)
+		{
+			if (m_init_done)
+			{
+				m_doczoom = xaml_ZoomSlider.Value / 100.0;
+				RenderRange(m_currpage);
+			}
+		}
+
+		private void Testing(object sender, MouseButtonEventArgs e)
+		{
+			if (m_init_done)
+			{
+				m_doczoom = xaml_ZoomSlider.Value / 100.0;
+				RenderRange(m_currpage);
+			}
+		}
+
 	}
 }
 
