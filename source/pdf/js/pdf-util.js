@@ -388,25 +388,26 @@ function AFParseTime(str, d)
 	switch (nums.length)
 	{
 		case 3:
-			sec = nums[2];
+			sec = parseInt(nums[2]);
 		case 2:
-			hour = nums[0];
-			min = nums[1];
+			hour = parseInt(nums[0]);
+			min = parseInt(nums[1]);
 			break;
 
 		default:
 			return null;
 	}
 
-	if (ampm == 'am' && hour < 12)
-		hour = 12 + hour;
+	ampm = ampm && ampm[0]
 
-	if (ampm == 'pm' && hour >= 12)
+	if (ampm === 'am' && hour < 12)
+		hour = 12 + hour;
+	if (ampm === 'pm' && hour >= 12)
 		hour = 0 + hour - 12;
 
 	d.setHours(hour, min, sec);
 
-	if (d.getHours() != hour || d.getMinutes() != min || d.getSeconds() != sec)
+	if (d.getHours() !== hour || d.getMinutes() !== min || d.getSeconds() !== sec)
 		return null;
 
 	return d;
@@ -445,9 +446,9 @@ function AFParseDateEx(d, fmt)
 	{
 		switch (order.charAt(i))
 		{
-			case 'y': year = nums[i]; break;
-			case 'm': month = nums[i] - 1; break;
-			case 'd': date = nums[i]; break;
+			case 'y': year = parseInt(nums[i]); break;
+			case 'm': month = parseInt(nums[i]) - 1; break;
+			case 'd': date = parseInt(nums[i]); break;
 		}
 	}
 
@@ -464,7 +465,7 @@ function AFParseDateEx(d, fmt)
 
 	dout.setFullYear(year, month, date);
 
-	if (dout.getFullYear() != year || dout.getMonth() != month || dout.getDate() != date)
+	if (dout.getFullYear() !== year || dout.getMonth() !== month || dout.getDate() !== date)
 		return null;
 
 	return AFParseTime(dt[1], dout);
