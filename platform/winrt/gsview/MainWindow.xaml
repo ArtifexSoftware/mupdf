@@ -5,7 +5,7 @@
 
     <Window.Resources>
         <DataTemplate x:Key="PageTemplate">
-            <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill"  HorizontalAlignment="Center" Source="{Binding BitMap}" Margin="24,24,0,0">
+            <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}" Margin="24,24,0,0">
                 <Image.BitmapEffect>
                     <DropShadowBitmapEffect Color="Black" Direction="-50"
                     ShadowDepth="40" Softness=".7" />
@@ -398,7 +398,7 @@
                 Width="150" Orientation="Horizontal" HorizontalAlignment="Center" 
                 Value="100" Minimum="25" Maximum="400" 
                 SmallChange="1" LargeChange="1"
-                TickPlacement="None" TickFrequency="1"  IsSnapToTickEnabled="True" MouseLeftButtonUp="ZoomReleased" PreviewMouseUp="Testing"/>
+                TickPlacement="None" TickFrequency="1"  IsSnapToTickEnabled="True" MouseLeftButtonUp="ZoomReleased"/>
             <TextBox Grid.Row="0"  Grid.Column="2" Width="30" Height="20" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" 
                      HorizontalScrollBarVisibility="Hidden"  TextAlignment="Center" 
                      Text="{Binding Mode=TwoWay, ElementName=xaml_ZoomSlider,Path=Value, UpdateSourceTrigger=PropertyChanged}" />
@@ -414,7 +414,7 @@
             </ListView>
         </Grid>
 
-        <!-- Contents viewer/selector -->
+        <!-- Contents viewer/selector.  -->
         <Grid x:Name="xaml_ContentGrid" Width="250" Background="DarkGray" DockPanel.Dock="Left" Visibility="Collapsed">
             <ListView x:Name="xaml_ContentList" HorizontalAlignment="Stretch" 
                       ScrollViewer.CanContentScroll="False" PreviewMouseLeftButtonUp="ContentSelected"
@@ -429,14 +429,15 @@
             </ListView>
         </Grid>
 
-        <!-- Pages are last child fill.  This goes in the center of our dock panel -->
-        <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" >
-            <ListView x:Name="xaml_PageList" HorizontalAlignment="Stretch" 
+        <!-- Pages are last child fill.  This goes in the center of our dock panel ScrollViewer.CanContentScroll False allows continuous scrolling-->
+        <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" DockPanel.Dock="Left">
+            <ListView x:Name="xaml_PageList" HorizontalAlignment="Stretch"
                       ItemTemplate="{StaticResource PageTemplate}" 
                       ScrollViewer.CanContentScroll="False" 
                       Background="DarkGray" ScrollViewer.PanningMode="Both"
                       ScrollViewer.ScrollChanged="ListViewScrollChanged"
                       PreviewMouseLeftButtonUp="PageSelected">
+                <!-- This keeps the pages in the center of the panel -->
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>

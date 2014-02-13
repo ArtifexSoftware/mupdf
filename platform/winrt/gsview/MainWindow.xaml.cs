@@ -306,22 +306,20 @@ namespace gsview
 		{
 			Point ras_size;
 			status_t code;
-			double scale_factor;
-			spatial_info_t spatial_info = InitSpatial(1);
+			double scale_factor = Constants.SCALE_THUMB;
 			BackgroundWorker worker = sender as BackgroundWorker;
 
-			spatial_info.scale_factor = Constants.SCALE_THUMB;
 			Byte[] bitmap;
 
 			for (int k = 0; k < m_num_pages; k++)
 			{
-				if (ComputePageSize(spatial_info, k, out ras_size, out scale_factor) == status_t.S_ISOK)
+				if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
 				{
 					try
 					{
 						bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
 						/* Synchronous call on our background thread */
-						code = (status_t) mu_doc.RenderPage(k, bitmap, (int)ras_size.X, (int)ras_size.Y, scale_factor, false, false);
+						code = (status_t)mu_doc.RenderPage(k, bitmap, (int)ras_size.X, (int)ras_size.Y, scale_factor, false, false);
 					}
 					catch (OutOfMemoryException em)
 					{
@@ -366,7 +364,7 @@ namespace gsview
 			this to be cancelled if we open a new doc while we are in loop
 			rendering.  Put the UI updates in the progress changed which will
 			run on the main thread */
-			try 
+			try
 			{
 				BackgroundWorker worker = new BackgroundWorker();
 				worker.WorkerReportsProgress = true;
@@ -382,16 +380,6 @@ namespace gsview
 				Console.WriteLine("Memory allocation failed during thumb rendering\n");
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
 			}
-		}
-
-		private spatial_info_t InitSpatial(double scale)
-		{
-			spatial_info_t value = new spatial_info_t();
-
-			value.size.Y = this.ActualHeight;
-			value.size.X = this.ActualWidth;
-			value.scale_factor = scale;
-			return value;
 		}
 
 		private void OpenFile(object sender, RoutedEventArgs e)
@@ -445,30 +433,18 @@ namespace gsview
 			}
 		}
 
-		private status_t ComputePageSize(spatial_info_t spatial_info, int page_num,
-									out Point render_size, out double scale_factor)
+		private status_t ComputePageSize(int page_num, double scale_factor,
+									out Point render_size)
 		{
-			Point screenSize = new Point();
 			Point renpageSize = new Point();
 
 			status_t code = (status_t)mu_doc.GetPageSize(page_num, out render_size);
 			if (code != status_t.S_ISOK)
-			{
-				scale_factor = 1.0;
 				return code;
-			}
 
-			screenSize = spatial_info.size;
-			screenSize.Y *= Constants.SCREEN_SCALE;
-			screenSize.X *= Constants.SCREEN_SCALE;
+			renpageSize.X = (render_size.X * scale_factor);
+			renpageSize.Y = (render_size.Y * scale_factor);
 
-			double hscale = screenSize.X / render_size.X;
-			double vscale = screenSize.Y / render_size.Y;
-			double scale = Math.Min(hscale, vscale);
-			renpageSize.X = (render_size.X * scale * spatial_info.scale_factor);
-			renpageSize.Y = (render_size.Y * scale * spatial_info.scale_factor);
-
-			scale_factor = (scale * spatial_info.scale_factor);
 			render_size = renpageSize;
 
 			return status_t.S_ISOK;
@@ -506,15 +482,14 @@ namespace gsview
 			}
 
 			/* Do the first few full res pages */
-			spatial_info_t spatial_info = InitSpatial(1);
 			for (int k = 0; k < Constants.LOOK_AHEAD + 2; k++)
 			{
 				if (m_num_pages > k)
 				{
 					Point ras_size;
-					double scale_factor;
+					double scale_factor = 1.0;
 
-					if (ComputePageSize(spatial_info, k, out ras_size, out scale_factor) == status_t.S_ISOK)
+					if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
 					{
 						try
 						{
@@ -590,7 +565,7 @@ namespace gsview
 			if (m_num_pages < 0)
 				return;
 
-			if (xaml_ContentList.Items.IsEmpty) 
+			if (xaml_ContentList.Items.IsEmpty)
 			{
 				int size_content = mu_doc.ComputeContents();
 				if (size_content == 0)
@@ -620,9 +595,10 @@ namespace gsview
 			}
 		}
 
+		/* We need to avoid rendering due to size changes */
 		private void ListViewScrollChanged(object sender, ScrollChangedEventArgs e)
 		{
-			var lv = (System.Windows.Controls.ListView) sender;
+			var lv = (System.Windows.Controls.ListView)sender;
 			foreach (var lvi in lv.Items)
 			{
 				var container = lv.ItemContainerGenerator.ContainerFromItem(lvi) as ListBoxItem;
@@ -643,7 +619,6 @@ namespace gsview
 		/* Render +/- the look ahead from where we are if blank page is present */
 		async private void RenderRange(int curr_page)
 		{
-			spatial_info_t spatial_info = InitSpatial(m_doczoom);
 			int range = Constants.LOOK_AHEAD;
 
 			for (int k = curr_page - range; k <= curr_page + range; k++)
@@ -656,9 +631,9 @@ namespace gsview
 						doc.Zoom != m_doczoom)
 					{
 						Point ras_size;
-						double scale_factor;
+						double scale_factor = m_doczoom;
 
-						if (ComputePageSize(spatial_info, k, out ras_size, out scale_factor) == status_t.S_ISOK)
+						if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
 						{
 							try
 							{
@@ -696,7 +671,7 @@ namespace gsview
 			Rect bounds = elem.TransformToAncestor(cont).TransformBounds(new Rect(0.0, 0.0, elem.ActualWidth, elem.ActualHeight));
 			Rect bounds2 = new Rect(new Point(bounds.TopLeft.X, bounds.TopLeft.Y), new Point(bounds.BottomRight.X, bounds.BottomRight.Y - 5));
 			return rect.Contains(bounds2.TopLeft) || rect.Contains(bounds2.BottomRight);
-		} 
+		}
 
 		private void ReleasePages(int old_page, int new_page)
 		{
@@ -843,7 +818,7 @@ namespace gsview
 				{
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 				}
-					
+
 			}
 			PrintXPS(m_currfile);
 		}
@@ -879,7 +854,7 @@ namespace gsview
 			}
 			else
 			{
-				xaml_PrintProgress.Value = 100 * (double) asyncInformation.Page / (double) m_num_pages;
+				xaml_PrintProgress.Value = 100 * (double)asyncInformation.Page / (double)m_num_pages;
 			}
 		}
 
@@ -936,16 +911,5 @@ namespace gsview
 				RenderRange(m_currpage);
 			}
 		}
-
-		private void Testing(object sender, MouseButtonEventArgs e)
-		{
-			if (m_init_done)
-			{
-				m_doczoom = xaml_ZoomSlider.Value / 100.0;
-				RenderRange(m_currpage);
-			}
-		}
-
 	}
 }
-
