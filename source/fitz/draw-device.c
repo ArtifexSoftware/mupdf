@@ -256,6 +256,9 @@ fz_draw_fill_path(fz_device *devp, fz_path *path, int even_odd, const fz_matrix 
 	if (model == NULL)
 		model = fz_device_gray(dev->ctx);
 
+	if (flatness < 0.001f)
+		flatness = 0.001f;
+
 	fz_reset_gel(dev->gel, &state->scissor);
 	fz_flatten_fill_path(dev->gel, path, ctm, flatness);
 	fz_sort_gel(dev->gel);
@@ -308,6 +311,8 @@ fz_draw_stroke_path(fz_device *devp, fz_path *path, fz_stroke_state *stroke, con
 
 	if (linewidth * expansion < 0.1f)
 		linewidth = 1 / expansion;
+	if (flatness < 0.001f)
+		flatness = 0.001f;
 
 	fz_reset_gel(dev->gel, &state->scissor);
 	if (stroke->dash_len > 0)
@@ -357,6 +362,9 @@ fz_draw_clip_path(fz_device *devp, fz_path *path, const fz_rect *rect, int even_
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
 	fz_context *ctx = dev->ctx;
+
+	if (flatness < 0.001f)
+		flatness = 0.001f;
 
 	fz_reset_gel(dev->gel, &state->scissor);
 	fz_flatten_fill_path(dev->gel, path, ctm, flatness);
@@ -422,6 +430,8 @@ fz_draw_clip_stroke_path(fz_device *devp, fz_path *path, const fz_rect *rect, fz
 
 	if (linewidth * expansion < 0.1f)
 		linewidth = 1 / expansion;
+	if (flatness < 0.001f)
+		flatness = 0.001f;
 
 	fz_reset_gel(dev->gel, &state->scissor);
 	if (stroke->dash_len > 0)
