@@ -436,7 +436,7 @@
                       ScrollViewer.CanContentScroll="False" 
                       Background="DarkGray" ScrollViewer.PanningMode="Both"
                       ScrollViewer.ScrollChanged="ListViewScrollChanged"
-                      PreviewMouseLeftButtonUp="PageSelected">
+                      PreviewMouseLeftButtonUp="PageSelected" MouseDoubleClick="PageDoubleClick">
                 <!-- This keeps the pages in the center of the panel -->
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">

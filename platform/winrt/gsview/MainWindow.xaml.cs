@@ -609,7 +609,7 @@ namespace gsview
 					{
 						var Item = (DocPage)found;
 						m_currpage = Item.PageNum;
-						RenderRange(Item.PageNum);
+						RenderRange(Item.PageNum, false);
 					}
 					return;
 				}
@@ -617,7 +617,7 @@ namespace gsview
 		}
 
 		/* Render +/- the look ahead from where we are if blank page is present */
-		async private void RenderRange(int curr_page)
+		async private void RenderRange(int curr_page, bool scrollto)
 		{
 			int range = Constants.LOOK_AHEAD;
 
@@ -647,8 +647,10 @@ namespace gsview
 									status_t code = (status_t)ren_task.Result;
 									if (code == status_t.S_ISOK)
 									{
-										UpdatePage(k, bitmap, ras_size, Page_Content_t.FULL_RESOLUTION, 1.0);
+										UpdatePage(k, bitmap, ras_size, Page_Content_t.FULL_RESOLUTION, m_doczoom);
 										m_docPages[k].PageRefresh();
+										if (k == curr_page && scrollto)
+											xaml_PageList.ScrollIntoView(m_docPages[k]);
 									}
 								}, TaskScheduler.FromCurrentSynchronizationContext());
 							}
@@ -726,7 +728,7 @@ namespace gsview
 			if (m_doczoom < Constants.ZOOM_MIN)
 				m_doczoom = Constants.ZOOM_MIN;
 			xaml_ZoomSlider.Value = m_doczoom * 100.0;
-			RenderRange(m_currpage);
+			RenderRange(m_currpage, false);
 		}
 
 		private void ZoomIn(object sender, RoutedEventArgs e)
@@ -735,7 +737,7 @@ namespace gsview
 			if (m_doczoom > Constants.ZOOM_MAX)
 				m_doczoom = Constants.ZOOM_MAX;
 			xaml_ZoomSlider.Value = m_doczoom * 100.0;
-			RenderRange(m_currpage);
+			RenderRange(m_currpage, false);
 		}
 
 		private void CancelSearchClick(object sender, RoutedEventArgs e)
@@ -908,7 +910,22 @@ namespace gsview
 			if (m_init_done)
 			{
 				m_doczoom = xaml_ZoomSlider.Value / 100.0;
-				RenderRange(m_currpage);
+				RenderRange(m_currpage, false);
+			}
+		}
+
+		/* If the zoom is not equalto 1 then set the zoom to 1 and scoll to this page */
+		private void PageDoubleClick(object sender, MouseButtonEventArgs e)
+		{
+			if (m_doczoom != 1.0)
+			{
+				m_doczoom = 1.0;
+				var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
+				if (item != null)
+				{
+					m_currpage = item.PageNum;
+					RenderRange(m_currpage, true);
+				}
 			}
 		}
 	}
