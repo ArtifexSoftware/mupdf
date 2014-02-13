@@ -480,7 +480,7 @@ function AFDate_KeystrokeEx(fmt)
 {
 	if (event.willCommit && !AFParseDateEx(event.value, fmt))
 	{
-		app.alert("Invalid date/time. please ensure that the date/time exists. Field [ "+event.target.name+" ] should match format "+fmt);
+		app.alert("The date/time entered ("+event.value+") does not match the format ("+fmt+") of the field [ "+event.target.name+" ]");
 		event.rc = false;
 	}
 }
@@ -510,7 +510,7 @@ function AFTime_Keystroke(index)
 {
 	if (event.willCommit && !AFParseTime(event.value, null))
 	{
-		app.alert("The value entered does not match the format of the field [ "+event.target.name+" ]");
+		app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ]");
 		event.rc = false;
 	}
 }
@@ -618,7 +618,7 @@ function AFSpecial_KeystrokeEx(fmt)
 	if (event.rc)
 		event.value = res;
 	else if (event.willCommit)
-		app.alert("The value entered does not match the format of the field [ "+event.target.name+" ] should be "+fmt);
+		app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ] should be "+fmt);
 }
 
 function AFSpecial_Keystroke(index)
@@ -646,7 +646,7 @@ function AFSpecial_Keystroke(index)
 		}
 
 		if (!event.rc)
-			app.alert("The value entered does not match the format of the field [ "+event.target.name+" ]");
+			app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ]");
 	}
 }
 
@@ -693,7 +693,7 @@ function AFNumber_Keystroke(nDec, sepStyle, negStyle, currStyle, strCurrency, bC
 			event.rc = false;
 
 		if (!event.rc)
-			app.alert("The value entered ("+event.value+") does not match the format of the field ["+event.target.name+"]");
+			app.alert("The value entered ("+event.value+") does not match the format of the field [ "+event.target.name+" ]");
 	}
 }
 
@@ -865,10 +865,10 @@ function AFRange_Validate(lowerCheck, lowerLimit, upperCheck, upperLimit)
 	if (!event.rc)
 	{
 		if (lowerCheck && upperCheck)
-			app.alert(util.printf("Invalid value: must be greater than or equal to %s and less than or equal to %s", lowerLimit, upperLimit));
+			app.alert(util.printf("The entered value ("+event.value+") must be greater than or equal to %s and less than or equal to %s", lowerLimit, upperLimit));
 		else if (lowerCheck)
-			app.alert(util.printf("Invalid value: must be greater than or equal to %s", lowerLimit));
+			app.alert(util.printf("The entered value ("+event.value+") must be greater than or equal to %s", lowerLimit));
 		else
-			app.alert(util.printf("Invalid value: must be less than or equal to %s", upperLimit));
+			app.alert(util.printf("The entered value ("+event.value+") must be less than or equal to %s", upperLimit));
 	}
 }
