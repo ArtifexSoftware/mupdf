@@ -122,10 +122,10 @@ util.printx = function(fmt, val)
 				break;
 
 			case 'A':
-				m = val.match(/[A-z]/);
+				m = val.match(/[A-Za-z]/);
 				if (!m) return res;
 				res += MuPDF.convertCase(m[0],cs);
-				val = val.replace(/^[^A-z]*[A-z]/,'');
+				val = val.replace(/^[^A-Za-z]*[A-Za-z]/,'');
 				break;
 
 			case '9':
@@ -563,7 +563,7 @@ function AFSpecial_KeystrokeEx(fmt)
 				break;
 
 			case 'A':
-				m = val.match(/^[A-z]/);
+				m = val.match(/^[A-Za-z]/);
 				if (!m)
 				{
 					event.rc = false;
@@ -693,7 +693,7 @@ function AFNumber_Keystroke(nDec, sepStyle, negStyle, currStyle, strCurrency, bC
 			event.rc = false;
 
 		if (!event.rc)
-			app.alert("The value entered does not match the format of the field [ "+event.target.name+" ]");
+			app.alert("The value entered ("+event.value+") does not match the format of the field ["+event.target.name+"]");
 	}
 }
 
