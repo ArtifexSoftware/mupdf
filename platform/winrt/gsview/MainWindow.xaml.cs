@@ -145,6 +145,7 @@ namespace gsview
 		gsOutput m_gsoutput;
 		Convert m_convertwin;
 		bool m_zoomhandled;
+		BackgroundWorker m_thumbworker = null;
 
 		public MainWindow()
 		{
@@ -227,6 +228,7 @@ namespace gsview
 			m_doczoom = 1.0;
 			m_isXPS = false;
 			m_zoomhandled = false;
+			xaml_CancelThumb.IsEnabled = true;
 			return result;
 		}
 
@@ -337,6 +339,11 @@ namespace gsview
 						worker.ReportProgress((int)percent, curr_thumb);
 					}
 				}
+				if (worker.CancellationPending == true)
+				{
+					e.Cancel = true;
+					break;
+				}
 			}
 		}
 
@@ -346,6 +353,8 @@ namespace gsview
 			xaml_ThumbProgress.Value = 0;
 			xaml_ThumbList.ItemsSource = m_thumbnails;
 			m_have_thumbs = true;
+			m_thumbworker = null;
+			xaml_CancelThumb.IsEnabled = true;
 		}
 
 		private void ThumbsProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -366,14 +375,14 @@ namespace gsview
 			run on the main thread */
 			try
 			{
-				BackgroundWorker worker = new BackgroundWorker();
-				worker.WorkerReportsProgress = true;
-				worker.WorkerSupportsCancellation = true;
-				worker.DoWork += new DoWorkEventHandler(ThumbsWork);
-				worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(ThumbsCompleted);
-				worker.ProgressChanged += new ProgressChangedEventHandler(ThumbsProgressChanged);
+				m_thumbworker = new BackgroundWorker();
+				m_thumbworker.WorkerReportsProgress = true;
+				m_thumbworker.WorkerSupportsCancellation = true;
+				m_thumbworker.DoWork += new DoWorkEventHandler(ThumbsWork);
+				m_thumbworker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(ThumbsCompleted);
+				m_thumbworker.ProgressChanged += new ProgressChangedEventHandler(ThumbsProgressChanged);
 				xaml_ProgressGrid.Visibility = System.Windows.Visibility.Visible;
-				worker.RunWorkerAsync();
+				m_thumbworker.RunWorkerAsync();
 			}
 			catch (OutOfMemoryException e)
 			{
@@ -473,6 +482,7 @@ namespace gsview
 			for (int k = 0; k < m_num_pages; k++)
 			{
 				m_docPages.Add(InitDocPage());
+				m_docPages[k].PageNum = k;
 				m_thumbnails.Add(InitDocPage());
 				/* Create empty lists for our links and specify that they have
 					not been computed for these pages */
@@ -537,6 +547,8 @@ namespace gsview
 		{
 			/* Cancel during thumbnail loading. Deactivate the button 
 			 * and cancel the thumbnail rendering */
+			m_thumbworker.CancelAsync();
+			xaml_CancelThumb.IsEnabled = false;
 		}
 
 		private void ToggleThumbs(object sender, RoutedEventArgs e)
@@ -580,6 +592,8 @@ namespace gsview
 			var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
 			if (item != null)
 			{
+				if (item.PageNum < 0)
+					return;
 				m_currpage = item.PageNum;
 				xaml_PageList.ScrollIntoView(m_docPages[item.PageNum]);
 			}
@@ -900,6 +914,8 @@ namespace gsview
 			var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
 			if (item != null)
 			{
+				if (item.PageNum < 0)
+					return;
 				m_currpage = item.PageNum;
 				xaml_PageList.ScrollIntoView(m_docPages[item.PageNum]);
 			}
