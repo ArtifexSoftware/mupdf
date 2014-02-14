@@ -152,7 +152,7 @@ namespace gsview
 			var item = xaml_PageList.SelectedItem;
 
 			/* If none are selected then get all the odds. otherwise just get
-				* all the odds of the pages that have been selected */
+				all the odds of the pages that have been selected */
 			if (item == null)
 			{
 				/* Turn on the odds */

@@ -144,6 +144,7 @@ namespace gsview
 		bool m_isXPS;
 		gsOutput m_gsoutput;
 		Convert m_convertwin;
+		Password m_password = null;
 		bool m_zoomhandled;
 		BackgroundWorker m_thumbworker = null;
 
@@ -394,6 +395,9 @@ namespace gsview
 
 		private void OpenFile(object sender, RoutedEventArgs e)
 		{
+			if (m_password != null && m_password.IsActive)
+				m_password.Close();
+
 			OpenFileDialog dlg = new OpenFileDialog();
 			dlg.Filter = "Document Files(*.ps;*.eps;*.pdf;*.xps;*.cbz)|*.ps;*.eps;*.pdf;*.xps;*.cbz|All files (*.*)|*.*";
 			dlg.FilterIndex = 1;
@@ -421,25 +425,35 @@ namespace gsview
 				/* Set if this is already xps for printing */
 				if (extension.ToUpper() == ".XPS")
 					m_isXPS = true;
-				StartViewer(dlg.FileName);
+				OpenFile2(dlg.FileName);
 			}
 		}
 
-		private void StartViewer(String File)
+		private void OpenFile2(String File)
 		{
 			m_currfile = File;
+
 			status_t code = mu_doc.OpenFile(m_currfile);
 			if (code == status_t.S_ISOK)
 			{
-				InitialRender();
-				RenderThumbs();
-				m_file_open = true;
+				/* Check if we need a password */
+				if (mu_doc.RequiresPassword())
+					GetPassword();
+				else
+					StartViewer();
 			}
 			else
 			{
 				m_currfile = null;
 				ShowMessage(NotifyType_t.MESS_ERROR, "Failed to open file!");
 			}
+		}
+
+		private void StartViewer()
+		{
+			InitialRender();
+			RenderThumbs();
+			m_file_open = true;
 		}
 
 		private status_t ComputePageSize(int page_num, double scale_factor,
@@ -807,7 +821,7 @@ namespace gsview
 
 				case GS_Task_t.PS_DISTILL:
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
-					StartViewer(result.outputfile);
+					OpenFile2(result.outputfile);
 					break;
 
 				case GS_Task_t.SAVE_RESULT:
@@ -898,6 +912,29 @@ namespace gsview
 				m_convertwin.Activate();
 				m_convertwin.Show();
 			}
+		}
+
+		private void GetPassword()
+		{
+			if (m_password == null)
+			{
+				m_password = new Password();
+				m_password.PassUpdateMain += new Password.PassCallBackMain(PasswordReturn);
+				m_password.Activate();
+				m_password.Show();
+			}
+		}
+
+		private void PasswordReturn(object sender)
+		{
+			if (mu_doc.ApplyPassword(m_password.xaml_Password.Password))
+			{
+				m_password.Close();
+				m_password = null;
+				StartViewer();
+			}
+			else
+				ShowMessage(NotifyType_t.MESS_STATUS, "Password Incorrect");
 		}
 
 		private void ShowFooter(object sender, RoutedEventArgs e)
