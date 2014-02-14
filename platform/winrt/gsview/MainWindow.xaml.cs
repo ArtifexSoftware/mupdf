@@ -229,6 +229,7 @@ namespace gsview
 			m_isXPS = false;
 			m_zoomhandled = false;
 			xaml_CancelThumb.IsEnabled = true;
+			m_currpage = 0;
 			return result;
 		}
 
@@ -248,7 +249,7 @@ namespace gsview
 
 		private void CloseDoc()
 		{
-
+			CleanUp();
 		}
 
 		/* Set the page with the new raster information */
@@ -417,7 +418,6 @@ namespace gsview
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 					return;
 				}
-
 				/* Set if this is already xps for printing */
 				if (extension.ToUpper() == ".XPS")
 					m_isXPS = true;
@@ -806,6 +806,7 @@ namespace gsview
 					break;
 
 				case GS_Task_t.PS_DISTILL:
+					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
 					StartViewer(result.outputfile);
 					break;
 
