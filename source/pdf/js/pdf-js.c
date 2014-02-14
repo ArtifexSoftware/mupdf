@@ -749,12 +749,19 @@ static void declare_dom(pdf_js *js)
 
 static void preload_helpers(pdf_js *js)
 {
-	/* When testing on the cluster, redefine the Date object
-	 * to use a fixed date */
+	/* When testing on the cluster:
+	 * Use a fixed date for "new Date" and Date.now().
+	 * Sadly, this breaks uses of the Date function without the new keyword.
+	 * Return a fixed number from Math.random().
+	 */
 #ifdef CLUSTER
 	pdf_jsimp_execute(js->imp,
 "var MuPDFOldDate = Date\n"
-"Date = function() { return new MuPDFOldDate(1979,5,15); }\n"
+"Date = function() { return new MuPDFOldDate(298252800000); }\n"
+"Date.now = function() { return 298252800000; }\n"
+"Date.UTC = function() { return 298252800000; }\n"
+"Date.parse = MuPDFOldDate.parse;\n"
+"Math.random = function() { return 0.4; }\n"
 	);
 #endif
 
