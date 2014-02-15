@@ -64,7 +64,8 @@ namespace gsview
 	public enum GS_Result_t
 	{
 		gsOK,
-		gsFAILED
+		gsFAILED,
+		gsCANCELLED
 	}
 
 	/* Parameters */
@@ -129,6 +130,13 @@ namespace gsview
 		GS_ERROR
 	};
 
+	static class gsConstants
+	{
+		public const int E_QUIT = -101;
+		public const int GS_READ_BUFFER = 2048;
+	}
+
+
 	[SuppressUnmanagedCodeSecurity]
 	class ghostsharp
 	{
@@ -168,6 +176,21 @@ namespace gsview
 			CallingConvention = CallingConvention.StdCall)]
 			public static extern int gsapi_set_stdio(IntPtr instance, 
 			gsStdIOHandler stdin, gsStdIOHandler stdout, gsStdIOHandler stderr);
+
+		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern void gsapi_run_string_begin(IntPtr instance,
+			int usererr, ref int exitcode);
+
+		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		CallingConvention = CallingConvention.StdCall)]
+		public static extern void gsapi_run_string_continue(IntPtr instance, 
+			IntPtr command, int count, int usererr, ref int exitcode);
+
+		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern void gsapi_run_string_end(IntPtr instance,
+			int usererr, ref int exitcode);
 
 		private int StdInCallback(IntPtr handle, IntPtr pointer, int count)
 		{
@@ -214,7 +237,6 @@ namespace gsview
 			var argPtrs = new IntPtr[num_params];
 			String[] strParams = new String[num_params];
 			List<byte[]> CharacterArray = new List<byte[]>(num_params);
-			int e_Quit = -101;
 			GCHandle argPtrsStable;
 
 			/* New instance */
@@ -235,7 +257,6 @@ namespace gsview
 			var stdErrPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdErrCallback);
 
 			// Setup stdio callback functions
-			//code = gsapi_set_stdio(gsInstance, stdInPtr, stdOutPtr, stdErrPtr); 
 			code = gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback); 
 
 			code = gsapi_set_arg_encoding(gsInstance, (int) gsEncoding.GS_ARG_ENCODING_UTF8);
@@ -279,7 +300,7 @@ namespace gsview
 			}
 
 			int code1 = gsapi_exit(gsInstance);
-			if ((code == 0) || (code == e_Quit))
+			if ((code == 0) || (code == gsConstants.E_QUIT))
 				code = code1;
 
 			RaiseStdInCallback = null;
@@ -287,7 +308,7 @@ namespace gsview
 			RaiseStdErrCallback = null;
 
 			gsapi_delete_instance(gsInstance);
-			if ((code == 0) || (code == e_Quit))
+			if ((code == 0) || (code == gsConstants.E_QUIT))
 			{
 				Params.result = GS_Result_t.gsOK;
 				e.Result = Params;
@@ -305,14 +326,22 @@ namespace gsview
 			gsParams_t Params = (gsParams_t)e.Argument;
 			String out_file = Params.outputfile;
 			String in_file = Params.inputfile;
-			int num_params = 10;
+			int num_params = 7;
+			int exitcode = 0;
 			var argParam = new GCHandle[num_params];
 			var argPtrs = new IntPtr[num_params];
+			var Feed = new GCHandle();
+			var FeedPtr = new IntPtr();
 			String[] strParams = new String[num_params];
 			List<byte[]> CharacterArray = new List<byte[]>(num_params);
-			int e_Quit = -101;
 			GCHandle argPtrsStable;
+			bool done = false;
+			Byte[] Buffer = new Byte[gsConstants.GS_READ_BUFFER];
+			BackgroundWorker worker = sender as BackgroundWorker;
 
+			/* Open the file */
+			var fs = new FileStream(in_file, FileMode.Open);
+			var len = (int) fs.Length;
 			/* New instance */
 			int code = gsapi_new_instance(out gsInstance, IntPtr.Zero);
 			if (code < 0)
@@ -322,7 +351,19 @@ namespace gsview
 				return;
 			}
 
+			var RaiseStdInCallback = new gsStdIOHandler(StdInCallback);
+			var RaiseStdOutCallback = new gsStdIOHandler(StdOutCallback);
+			var RaiseStdErrCallback = new gsStdIOHandler(StdErrCallback);
+
+			var stdInPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdInCallback);
+			var stdOutPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdOutCallback);
+			var stdErrPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdErrCallback);
+
+			// Setup stdio callback functions
+			code = gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback); 
+
 			code = gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+
 			if (code == 0)
 			{
 				strParams[0] = "gs";   /* This does not matter */
@@ -331,19 +372,16 @@ namespace gsview
 				strParams[3] = "-dSAFER";
 				strParams[4] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), Params.device);
 				strParams[5] = "-r" + Params.resolution;
-				strParams[6] = "-sstdout=%sstderr";  /* Need to get setup to capture stdout and stderr */
 				/* Create temp file if file not specified */
 				if (out_file == null)
 				{
 					out_file = Path.GetTempFileName();
 					Params.outputfile = out_file;
 				}
-				strParams[7] = "-sOutputFile=" + out_file;
-				strParams[8] = "-f";
-				strParams[9] = in_file;
+				strParams[6] = "-o" + out_file;
 
 				/* Now convert our Strings to char* and get pinned handles to these.
-				 * This keeps the c# GC from moving stuff around on us */
+					* This keeps the c# GC from moving stuff around on us */
 				for (int k = 0; k < num_params; k++)
 				{
 					CharacterArray.Add(System.Text.Encoding.UTF8.GetBytes(strParams[k].ToCharArray()));
@@ -355,42 +393,82 @@ namespace gsview
 
 				code = gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 
+				/* First pin the data buffer */
+				Feed = GCHandle.Alloc(Buffer, GCHandleType.Pinned);
+				FeedPtr = Feed.AddrOfPinnedObject();
+
+				/* Now start feeding the input piece meal and do a call back
+					* with our progress */
+				if (code == 0)
+				{
+					int count;
+					double perc;
+					int total = 0;
+
+					gsapi_run_string_begin(gsInstance, 0, ref exitcode);
+					while ((count = fs.Read(Buffer, 0, gsConstants.GS_READ_BUFFER)) > 0)
+					{
+						gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
+						total =  total + count;
+						perc = 100.0 * (double) total / (double) len;
+						worker.ReportProgress((int)perc);
+						if (worker.CancellationPending == true)
+						{
+							e.Cancel = true;
+							break;
+						}
+					}
+					gsapi_run_string_end(gsInstance, 0, ref exitcode);
+				}
+
 				/* All the pinned items need to be freed so the GC can do its job */
 				for (int k = 0; k < num_params; k++)
 				{
 					argParam[k].Free();
 				}
 				argPtrsStable.Free();
+				Feed.Free();
 			}
 
 			int code1 = gsapi_exit(gsInstance);
-			if ((code == 0) || (code == e_Quit))
+			if ((code == 0) || (code == gsConstants.E_QUIT))
 				code = code1;
 
 			gsapi_delete_instance(gsInstance);
-			if ((code == 0) || (code == e_Quit))
+			if ((code == 0) || (code == gsConstants.E_QUIT))
 			{
 				Params.result = GS_Result_t.gsOK;
 				e.Result = Params;
 				return;
 			}
-
 			Params.result = GS_Result_t.gsFAILED;
 			e.Result = Params;
 			return;
 		}
 
+		/* Callback */
 		private void gsCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
-			/* Get the result and do the callback */
-			gsParams_t Value = (gsParams_t)e.Result;
-			gsEventArgs info = new gsEventArgs(true, 100, Value);
+			gsParams_t Value;
+			gsEventArgs info;
+
+			if (e.Cancelled)
+			{
+				Value = new gsParams_t();
+				Value.result = GS_Result_t.gsCANCELLED;
+				info = new gsEventArgs(true, 100, Value);
+			} 
+			else
+			{
+				Value = (gsParams_t)e.Result;
+				info = new gsEventArgs(true, 100, Value);
+			}
 			gsUpdateMain(this, info);
 		}
 
 		private void gsProgressChanged(object sender, ProgressChangedEventArgs e)
 		{
-			/* Get the result and do the callback */
+			/* Callback with progress */
 			gsParams_t Value = new gsParams_t();
 			gsEventArgs info = new gsEventArgs(false, e.ProgressPercentage, Value);
 			gsUpdateMain(this, info);
@@ -428,17 +506,20 @@ namespace gsview
 			run on the main thread */
 			try
 			{
-				if (m_worker != null)
+				if (m_worker != null && m_worker.IsBusy)
 				{
 					m_worker.CancelAsync();
 					return gsStatus.GS_BUSY;
 				}
-				m_worker = new BackgroundWorker();
-				m_worker.WorkerReportsProgress = true;
-				m_worker.WorkerSupportsCancellation = true;
-				m_worker.DoWork += new DoWorkEventHandler(gsWork1);
-				m_worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(gsCompleted);
-				m_worker.ProgressChanged += new ProgressChangedEventHandler(gsProgressChanged);
+				if (m_worker == null)
+				{
+					m_worker = new BackgroundWorker();
+					m_worker.WorkerReportsProgress = true;
+					m_worker.WorkerSupportsCancellation = true;
+					m_worker.DoWork += new DoWorkEventHandler(gsWork2);
+					m_worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(gsCompleted);
+					m_worker.ProgressChanged += new ProgressChangedEventHandler(gsProgressChanged);
+				}
 				m_worker.RunWorkerAsync(Params);
 				return gsStatus.GS_READY;
 			}
@@ -449,5 +530,9 @@ namespace gsview
 			}
 		}
 
+		public void Cancel()
+		{
+			m_worker.CancelAsync();
+		}
 	}
 }

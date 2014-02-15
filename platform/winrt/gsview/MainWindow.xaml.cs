@@ -561,7 +561,8 @@ namespace gsview
 		{
 			/* Cancel during thumbnail loading. Deactivate the button 
 			 * and cancel the thumbnail rendering */
-			m_thumbworker.CancelAsync();
+			if (m_thumbworker != null)
+				m_thumbworker.CancelAsync();
 			xaml_CancelThumb.IsEnabled = false;
 		}
 
@@ -806,22 +807,28 @@ namespace gsview
 			}
 			else
 			{
-				xaml_PrintProgress.Value = asyncInformation.Progress;
+				this.xaml_DistillProgress.Value = asyncInformation.Progress;
 			}
 		}
 
 		/* GS Result*/
-		public void GSResult(gsParams_t result)
+		public void GSResult(gsParams_t gs_result)
 		{
-			switch (result.task)
+			if (gs_result.result == GS_Result_t.gsCANCELLED)
+			{
+				xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+				return;
+			}
+			switch (gs_result.task)
 			{
 				case GS_Task_t.CREATE_XPS:
-					PrintXPS(result.outputfile);
+					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+					PrintXPS(gs_result.outputfile);
 					break;
 
 				case GS_Task_t.PS_DISTILL:
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
-					OpenFile2(result.outputfile);
+					OpenFile2(gs_result.outputfile);
 					break;
 
 				case GS_Task_t.SAVE_RESULT:
@@ -891,7 +898,9 @@ namespace gsview
 
 		private void CancelDistillClick(object sender, RoutedEventArgs e)
 		{
-
+			xaml_CancelDistill.IsEnabled = false;
+			if (m_ghostscript != null)
+				m_ghostscript.Cancel();
 		}
 
 		private void CancelPrintClick(object sender, RoutedEventArgs e)
