@@ -1,18 +1,18 @@
 #include "mupdf/fitz.h"
 
 void
-fz_eval_function(fz_context *ctx, fz_function *func, float *in_, int inlen, float *out_, int outlen)
+fz_eval_function(fz_context *ctx, fz_function *func, const float *in_, int inlen, float *out_, int outlen)
 {
 	float fakein[FZ_FN_MAXM];
 	float fakeout[FZ_FN_MAXN];
-	float *in = in_;
+	const float *in = in_;
 	float *out = out_;
 
 	if (inlen < func->m)
 	{
 		in = fakein;
-		memset(in, 0, sizeof(float) * func->m);
-		memcpy(in, in_, sizeof(float) * inlen);
+		memset(fakein, 0, sizeof(float) * func->m);
+		memcpy(fakein, in_, sizeof(float) * inlen);
 	}
 
 	if (outlen < func->n)

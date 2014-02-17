@@ -129,7 +129,7 @@ struct fz_rect_s
 */
 static inline fz_point *fz_rect_min(fz_rect *f)
 {
-	return (fz_point *)(void *)&f->x0;
+	return (fz_point *)&f->x0;
 }
 
 /*
@@ -137,7 +137,7 @@ static inline fz_point *fz_rect_min(fz_rect *f)
 */
 static inline fz_point *fz_rect_max(fz_rect *f)
 {
-	return (fz_point *)(void *)&f->x1;
+	return (fz_point *)&f->x1;
 }
 
 /*
