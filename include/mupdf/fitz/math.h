@@ -561,6 +561,7 @@ fz_irect *fz_translate_irect(fz_irect *a, int xoff, int yoff);
 	Does not throw exceptions.
 */
 fz_point *fz_transform_point(fz_point *restrict point, const fz_matrix *restrict transform);
+fz_point *fz_transform_point_xy(fz_point *restrict point, const fz_matrix *restrict transform, float x, float y);
 
 /*
 	fz_transform_vector: Apply a transformation to a vector.
