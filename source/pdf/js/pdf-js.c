@@ -761,7 +761,7 @@ static void preload_helpers(pdf_js *js)
 "Date.now = function() { return 298252800000; }\n"
 "Date.UTC = function() { return 298252800000; }\n"
 "Date.parse = MuPDFOldDate.parse;\n"
-"Math.random = function() { return 0.4; }\n"
+"Math.random = function() { return 1/4; }\n"
 	);
 #endif
 
