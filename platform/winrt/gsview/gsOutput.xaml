@@ -8,7 +8,23 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+            <Button  Grid.Row="0" Grid.Column="1" Width="50" Height="20" Click="ClearContents" Background="Transparent" BorderBrush="Transparent" Margin="5,0,15,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Clear</Bold></TextBlock>
+            </Button>
             <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Click="HideWindow" Background="Transparent" BorderBrush="Transparent" Margin="5,0,15,0">
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">

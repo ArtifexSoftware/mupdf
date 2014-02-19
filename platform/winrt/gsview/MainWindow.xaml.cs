@@ -186,6 +186,10 @@ namespace gsview
 		{
 			m_init_done = false;
 
+			/* Collapse this stuff since it is going to be released */
+			xaml_ThumbGrid.Visibility = System.Windows.Visibility.Collapsed;
+			xaml_ContentGrid.Visibility = System.Windows.Visibility.Collapsed;
+
 			/* Clear out everything */
 			if (m_docPages != null && m_docPages.Count > 0)
 				m_docPages.Clear();
@@ -398,6 +402,14 @@ namespace gsview
 			if (m_password != null && m_password.IsActive)
 				m_password.Close();
 
+			/* Check if gs is currently busy. If it is then don't allow a new
+			 * file to be opened. They can cancel gs with the cancel button if
+			 * they want */
+			if (m_ghostscript.GetStatus() != gsStatus.GS_READY)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy. Cancel to open new file."); 
+				return;
+			}
 			OpenFileDialog dlg = new OpenFileDialog();
 			dlg.Filter = "Document Files(*.ps;*.eps;*.pdf;*.xps;*.cbz)|*.ps;*.eps;*.pdf;*.xps;*.cbz|All files (*.*)|*.*";
 			dlg.FilterIndex = 1;
@@ -784,7 +796,7 @@ namespace gsview
 			if (asyncInformation.Completed)
 			{
 				xaml_DistillProgress.Value = 100;
-				xaml_DistillProgress.Visibility = System.Windows.Visibility.Collapsed;
+				xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
 				if (asyncInformation.Params.result == GS_Result_t.gsFAILED)
 				{
 					switch (asyncInformation.Params.task)

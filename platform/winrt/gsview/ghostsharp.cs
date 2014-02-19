@@ -133,7 +133,7 @@ namespace gsview
 	static class gsConstants
 	{
 		public const int E_QUIT = -101;
-		public const int GS_READ_BUFFER = 2048;
+		public const int GS_READ_BUFFER = 32768;
 	}
 
 
@@ -409,6 +409,11 @@ namespace gsview
 					while ((count = fs.Read(Buffer, 0, gsConstants.GS_READ_BUFFER)) > 0)
 					{
 						gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
+						if (exitcode < 0)
+						{
+							code = exitcode;
+							break;
+						}
 						total =  total + count;
 						perc = 100.0 * (double) total / (double) len;
 						worker.ReportProgress((int)perc);
@@ -419,6 +424,8 @@ namespace gsview
 						}
 					}
 					gsapi_run_string_end(gsInstance, 0, ref exitcode);
+					if (code == 0)
+						code = exitcode;
 				}
 
 				/* All the pinned items need to be freed so the GC can do its job */
@@ -496,6 +503,14 @@ namespace gsview
 			Params.inputfile = FileName;
 			Params.outputfile = null;
 			return RunGhostscript(Params);
+		}
+
+		public gsStatus GetStatus()
+		{
+			if (m_worker != null && m_worker.IsBusy)
+				return gsStatus.GS_BUSY;
+			else
+				return gsStatus.GS_READY;
 		}
 
 		private gsStatus RunGhostscript(gsParams_t Params)

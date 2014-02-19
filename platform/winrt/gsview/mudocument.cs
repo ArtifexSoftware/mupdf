@@ -129,7 +129,10 @@ namespace gsview
 		public void CleanUp()
 		{
 			if (mu_object != null)
-				mCleanUp(mu_object);
+			{
+				lock(m_lock)
+					mCleanUp(mu_object);
+			}
 		}
 
 		public int GetPageCount()

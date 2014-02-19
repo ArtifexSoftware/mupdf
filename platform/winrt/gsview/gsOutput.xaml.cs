@@ -50,5 +50,11 @@ namespace gsview
 			m_gsIO.gsIOString += newstring.Substring(0, len);
 			m_gsIO.PageRefresh();
 		}
+
+		private void ClearContents(object sender, RoutedEventArgs e)
+		{
+			m_gsIO.gsIOString = null;
+			m_gsIO.PageRefresh();
+		}
 	}
 }
