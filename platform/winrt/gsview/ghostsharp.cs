@@ -77,6 +77,7 @@ namespace gsview
 		public String inputfile;
 		public GS_Task_t task;
 		public GS_Result_t result;
+		public int num_pages;
 	};
 
 	public class gsEventArgs : EventArgs
@@ -202,6 +203,31 @@ namespace gsview
 		{
 			String output = Marshal.PtrToStringAnsi(pointer);
 			gsIOUpdateMain(this, output, count);
+			if (m_params.task == GS_Task_t.CREATE_XPS)
+			{
+				/* See if we have a page number */
+				if (count >= 7 && output.Substring(0, 4) == "Page")
+				{
+					String page = output.Substring(5, count - 6);
+					int numVal;
+					try
+					{
+						numVal = System.Convert.ToInt32(page);
+
+						double perc = 100.0 * (double)numVal / (double)m_params.num_pages;
+						m_worker.ReportProgress((int)perc);
+					}
+					catch (FormatException e)
+					{
+						Console.WriteLine("XPSPrint Error: Input string is not a sequence of digits.");
+					}
+					catch (OverflowException e)
+					{
+						Console.WriteLine("XPSPrint Error: The number cannot fit in an Int32.");
+					}
+					
+				}
+			}
 			return count;
 		}
 
@@ -214,6 +240,7 @@ namespace gsview
 
 		IntPtr gsInstance;
 		BackgroundWorker m_worker;
+		gsParams_t m_params;
 		/* Callbacks to Main */
 		internal delegate void gsIOCallBackMain(object gsObject, String mess, int len);
 		internal event gsIOCallBackMain gsIOUpdateMain;
@@ -458,6 +485,12 @@ namespace gsview
 		{
 			gsParams_t Value;
 			gsEventArgs info;
+			gsParams_t Params = (gsParams_t) e.Result;
+
+			if (Params.task == GS_Task_t.PS_DISTILL)
+				m_worker.DoWork -= new DoWorkEventHandler(gsWork2);
+			else
+				m_worker.DoWork -= new DoWorkEventHandler(gsWork1);
 
 			if (e.Cancelled)
 			{
@@ -481,27 +514,31 @@ namespace gsview
 			gsUpdateMain(this, info);
 		}
 
-		public gsStatus DistillPS(String FileName)
+		public gsStatus DistillPS(String FileName, int resolution)
 		{
 			gsParams_t Params = new gsParams_t(); ;
 
 			Params.device = gsDevice_t.pdfwrite;
 			Params.outputfile = null;
-			Params.resolution = 300;
+			Params.resolution = resolution;
 			Params.inputfile = FileName;
 			Params.outputfile = null;
+			Params.num_pages = -1;
+			Params.task = GS_Task_t.PS_DISTILL;
 			return RunGhostscript(Params);
 		}
 
-		public gsStatus CreateXPS(String FileName)
+		public gsStatus CreateXPS(String FileName, int resolution, int num_pages)
 		{
 			gsParams_t Params = new gsParams_t(); ;
 
 			Params.device = gsDevice_t.xpswrite;
 			Params.outputfile = null;
-			Params.resolution = 300;
+			Params.resolution = resolution;
 			Params.inputfile = FileName;
 			Params.outputfile = null;
+			Params.task = GS_Task_t.CREATE_XPS;
+			Params.num_pages = num_pages;
 			return RunGhostscript(Params);
 		}
 
@@ -531,10 +568,15 @@ namespace gsview
 					m_worker = new BackgroundWorker();
 					m_worker.WorkerReportsProgress = true;
 					m_worker.WorkerSupportsCancellation = true;
-					m_worker.DoWork += new DoWorkEventHandler(gsWork2);
 					m_worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(gsCompleted);
 					m_worker.ProgressChanged += new ProgressChangedEventHandler(gsProgressChanged);
 				}
+				if (Params.task == GS_Task_t.PS_DISTILL)
+					m_worker.DoWork += new DoWorkEventHandler(gsWork2);
+				else
+					m_worker.DoWork += new DoWorkEventHandler(gsWork1);
+
+				m_params = Params;
 				m_worker.RunWorkerAsync(Params);
 				return gsStatus.GS_READY;
 			}

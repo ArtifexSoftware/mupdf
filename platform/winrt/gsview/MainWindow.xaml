@@ -342,7 +342,8 @@
             <ProgressBar x:Name="xaml_PrintProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
                      Maximum="100" Height="20" HorizontalAlignment="Stretch" />
             <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Printing</Bold></TextBlock>
-            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelPrint" Click="CancelPrintClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+            <!-- Asyc Cancel crashes in windows 8 for this xps creation -->
+           <!-- <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelPrint" Click="CancelPrintClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Grid>
@@ -356,7 +357,7 @@
                     </ControlTemplate>
                 </Button.Template>
                 <TextBlock><Bold>Cancel</Bold></TextBlock>
-            </Button>
+            </Button> -->
         </Grid>
 
         <!-- The progress bar that runs during distilling -->
@@ -368,7 +369,7 @@
             </Grid.ColumnDefinitions>
             <ProgressBar x:Name="xaml_DistillProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
                      Maximum="100" Height="20" HorizontalAlignment="Stretch"/>
-            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Distilling</Bold></TextBlock>
+            <TextBlock x:Name="xaml_DistillName" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Distilling</Bold></TextBlock>
             <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelDistill" Click="CancelDistillClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">

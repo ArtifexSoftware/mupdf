@@ -48,6 +48,17 @@ namespace gsview
 		private XpsDocumentWriter m_docWriter = null;
 		internal delegate void AsyncPrintCallBack(object printObject, gsPrintEventArgs info);
 		internal event AsyncPrintCallBack PrintUpdate;
+		private bool m_busy;
+
+		public bool IsBusy()
+		{
+			return m_busy;
+		}
+
+		public gsprint()
+		{
+			m_busy = false;
+		}
 
 		/* Show std. print dialog */
 		public PrintDialog GetPrintDialog()
@@ -58,6 +69,7 @@ namespace gsview
 			//dlg.UserPageRangeEnabled = true;
 			//dlg.CurrentPageEnabled = true;
 			dlg.SelectedPagesEnabled = false;
+			m_busy = false;
 			if (dlg.ShowDialog() == true)
 				return dlg;
 			return null;
@@ -67,7 +79,8 @@ namespace gsview
 		public void Print(PrintQueue queu, FixedDocumentSequence fixdoc)
 		{
 			XpsDocumentWriter docwrite = GetDocWriter(queu);
-			
+
+			m_busy = true;
 			docwrite.WritingPrintTicketRequired +=
 				new WritingPrintTicketRequiredEventHandler(PrintTicket);
 			PrintPages(docwrite, fixdoc);
@@ -95,6 +108,7 @@ namespace gsview
 		private void AsyncCompleted(object sender, WritingCompletedEventArgs e)
 		{
 			string status = null;
+
 			if (e.Cancelled)
 				status = "Print Canceled";
 			else if (e.Error != null)
@@ -107,6 +121,7 @@ namespace gsview
 				gsPrintEventArgs info = new gsPrintEventArgs(status, true, 0);
 				PrintUpdate(this, info);
 			}
+			m_busy = false;
 		}
 
 		/* Do this update with each fixed document (page) that is handled */

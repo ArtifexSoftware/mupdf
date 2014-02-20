@@ -93,6 +93,7 @@ static class Constants
 	public const int SEARCH_FORWARD = 1;
 	public const int SEARCH_BACKWARD = -1;
 	public const int TEXT_NOT_FOUND = -1;
+	public const int DEFAULT_GS_RES = 300;
 }
 
 namespace gsview
@@ -410,6 +411,13 @@ namespace gsview
 				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy. Cancel to open new file."); 
 				return;
 			}
+
+			if (m_ghostprint != null && m_ghostprint.IsBusy())
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "Let printing complete"); 
+				return;
+			}
+
 			OpenFileDialog dlg = new OpenFileDialog();
 			dlg.Filter = "Document Files(*.ps;*.eps;*.pdf;*.xps;*.cbz)|*.ps;*.eps;*.pdf;*.xps;*.cbz|All files (*.*)|*.*";
 			dlg.FilterIndex = 1;
@@ -426,11 +434,14 @@ namespace gsview
 				if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
 				{
 					xaml_DistillProgress.Value = 0;
-					if (m_ghostscript.DistillPS(dlg.FileName) == gsStatus.GS_BUSY)
+					if (m_ghostscript.DistillPS(dlg.FileName, Constants.DEFAULT_GS_RES) == gsStatus.GS_BUSY)
 					{
 						ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
 						return;
 					}
+					xaml_DistillName.Text = "Distilling";
+					xaml_CancelDistill.Visibility = System.Windows.Visibility.Visible;
+					xaml_DistillName.FontWeight = FontWeights.Bold;
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 					return;
 				}
@@ -859,18 +870,23 @@ namespace gsview
 			if (!m_isXPS)
 			{
 				xaml_DistillProgress.Value = 0;
-				if (m_ghostscript.CreateXPS(m_currfile) == gsStatus.GS_BUSY)
+				if (m_ghostscript.CreateXPS(m_currfile, Constants.DEFAULT_GS_RES, m_num_pages) == gsStatus.GS_BUSY)
 				{
 					ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
 					return;
 				}
 				else
 				{
+					/* Right now this is not possible to cancel due to the way 
+					 * that gs is run for xpswrite from pdf */
+					xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
+					xaml_DistillName.Text = "Convert to XPS";
+					xaml_DistillName.FontWeight = FontWeights.Bold;
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 				}
-
-			}
-			PrintXPS(m_currfile);
+			} 
+			else
+				PrintXPS(m_currfile);
 		}
 
 		private void PrintXPS(String file)
