@@ -1855,7 +1855,6 @@ void pdf_update_text_annot_appearance(pdf_document *doc, pdf_annot *annot)
 	static float black[3] = {0.0, 0.0, 0.0};
 	fz_context *ctx = doc->ctx;
 	const fz_matrix *page_ctm = &annot->page->ctm;
-	pdf_obj *obj = annot->obj;
 	fz_display_list *dlist = NULL;
 	fz_device *dev = NULL;
 	fz_colorspace *cs = NULL;
