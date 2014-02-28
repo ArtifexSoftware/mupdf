@@ -850,8 +850,6 @@ pdf_copy_dict(pdf_obj *obj)
 	int i, n;
 	pdf_document *doc;
 
-	if (!obj)
-		return NULL; /* Can't warn :( */
 	RESOLVE(obj);
 	if (!obj)
 		return NULL; /* Can't warn :( */
