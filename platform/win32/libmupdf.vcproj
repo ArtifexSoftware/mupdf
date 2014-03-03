@@ -806,6 +806,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-op-filter.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-op-run.c"
 				>
 			</File>
