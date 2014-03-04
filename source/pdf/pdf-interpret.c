@@ -461,17 +461,16 @@ pdf_process_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, const pdf
 	pdf_csi *csi;
 	int flags;
 
-	flags = pdf_to_int(pdf_dict_gets(annot->obj, "F"));
-
-	/* TODO: NoZoom and NoRotate */
-	if (flags & (1 << 0)) /* Invisible */
-		return;
-	if (flags & (1 << 1)) /* Hidden */
-		return;
-
 	csi = pdf_new_csi(doc, cookie, process);
 	fz_try(ctx)
 	{
+		flags = pdf_to_int(pdf_dict_gets(annot->obj, "F"));
+
+		/* Check not invisible (bit 0) and hidden (bit 1) */
+		/* TODO: NoZoom and NoRotate */
+		if (flags & ((1 << 0) | (1 << 1)))
+			break;
+
 		csi->process.processor->process_annot(csi, csi->process.state, page->resources, annot);
 	}
 	fz_always(ctx)
