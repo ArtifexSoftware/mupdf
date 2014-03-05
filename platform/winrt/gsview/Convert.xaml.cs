@@ -24,6 +24,12 @@ namespace gsview
 			internal set;
 		}
 
+		public bool SupportsMultiPage
+		{
+			get;
+			internal set;
+		}
+
 		public event PropertyChangedEventHandler PropertyChanged;
 
 		public void PageRefresh()
@@ -65,7 +71,6 @@ namespace gsview
 		}
 	};
 
-
 	/// <summary>
 	/// Interaction logic for Convert.xaml
 	/// </summary>
@@ -73,6 +78,11 @@ namespace gsview
 	{
 		List<Device> GSDevices;
 		List<SelectPage> ConvertPages;
+
+		/* Callback to Main */
+		internal delegate void ConvertCallBackMain(object gsObject);
+		internal event ConvertCallBackMain ConvertUpdateMain;
+
 		public Convert(int num_pages)
 		{
 			InitializeComponent();
@@ -90,6 +100,10 @@ namespace gsview
 			{
 				Device device_t = new Device();
 				device_t.DeviceName = Enum.GetName(typeof(gsDevice_t), device);
+				if (device > gsDevice_t.psdrgb)
+					device_t.SupportsMultiPage = true;
+				else
+					device_t.SupportsMultiPage = false;
 				GSDevices.Add(device_t);
 			}
 		}
@@ -107,12 +121,12 @@ namespace gsview
 
 		private void ConvertClick(object sender, RoutedEventArgs e)
 		{
-
+			ConvertUpdateMain(this);
 		}
 
 		private void ConvertCancel(object sender, RoutedEventArgs e)
 		{
-
+			this.Close();
 		}
 
 		private void HelpConvert(object sender, RoutedEventArgs e)

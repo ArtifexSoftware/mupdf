@@ -13,6 +13,15 @@
             </Image>
         </DataTemplate>
 
+        <DataTemplate x:Key="ThumbTemplate">
+            <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}" Margin="24,24,0,0">
+                <Image.BitmapEffect>
+                    <DropShadowBitmapEffect Color="Black" Direction="-50"
+                    ShadowDepth="5" Softness=".7" />
+                </Image.BitmapEffect>
+            </Image>
+        </DataTemplate>
+
         <Style TargetType="{x:Type Button}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -78,7 +87,7 @@
                         <Image Source="Resources/Close.ico" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Info">
+                <MenuItem Header="Info" Click="ShowInfo">
                     <MenuItem.Icon>
                         <Image Source="Resources/info.png" />
                     </MenuItem.Icon>
@@ -408,7 +417,7 @@
         <!-- Thumb viewer/selector -->
         <Grid x:Name="xaml_ThumbGrid" Width="100" Background="DarkGray" DockPanel.Dock="Left" Visibility="Collapsed">
             <ListView x:Name="xaml_ThumbList" HorizontalAlignment="Stretch" 
-                      ItemTemplate="{StaticResource PageTemplate}" 
+                      ItemTemplate="{StaticResource ThumbTemplate}" 
                       ScrollViewer.CanContentScroll="False" 
                       Background="DarkGray" ScrollViewer.PanningMode="Both"
                       PreviewMouseLeftButtonUp="ThumbSelected">

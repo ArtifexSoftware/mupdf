@@ -90,6 +90,9 @@
       <DependentUpon>gsOutput.xaml</DependentUpon>
     </Compile>
     <Compile Include="gsprint.cs" />
+    <Compile Include="Info.xaml.cs">
+      <DependentUpon>Info.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Links.cs" />
     <Compile Include="mudocument.cs" />
     <Compile Include="Password.xaml.cs">
@@ -101,6 +104,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="gsOutput.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Info.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

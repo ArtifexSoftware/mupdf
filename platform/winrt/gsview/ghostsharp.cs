@@ -10,6 +10,10 @@ using System.ComponentModel;
 
 namespace gsview
 {
+	/* Warning. This list is in a particular order. The devices before 
+	 * psdrgb do not support multiple pages.  Those including psdrgb do 
+	 * support multiple pages.  This is used in the conversion process */
+
 	public enum gsDevice_t
 	{
 		bmp16,
@@ -32,10 +36,10 @@ namespace gsview
 		pngalpha,
 		pnggray,
 		pngmono,
+		psdcmyk,
+		psdrgb,  /* Add single page devices before this device */
 		pdfwrite,
 		ps2write,
-		psdcmyk,
-		psdrgb,
 		pxlcolor,
 		pxlmono,
 		tiff12nc,
@@ -73,11 +77,15 @@ namespace gsview
 	{
 		public int resolution;
 		public gsDevice_t device;
+		public String devicename;
 		public String outputfile;
 		public String inputfile;
 		public GS_Task_t task;
 		public GS_Result_t result;
 		public int num_pages;
+		public String options;
+		public bool need_multi_page;
+		public System.Collections.IList pages;
 	};
 
 	public class gsEventArgs : EventArgs
@@ -253,13 +261,44 @@ namespace gsview
 			gsInstance = IntPtr.Zero;
 		}
 
+		private List<String> GetOptions(String options)
+		{
+			List<String> optionlist = new List<String>();
+
+			if (options != "")
+			{
+				string[] words = options.Split(' ');
+				for (int k = 0; k < words.Length; k++)
+				{
+					if (words[k].Length > 0)
+					{
+						optionlist.Add(words[k]);
+					}
+				}
+			}
+			return optionlist;
+		}
+
 		/* A standard command line approach to using gs API */
 		private void gsWork1(object sender, DoWorkEventArgs e)
 		{
-			gsParams_t Params = (gsParams_t) e.Argument;
-			String out_file = Params.outputfile;
-			String in_file = Params.inputfile;
-			int num_params = 9;
+			gsParams_t gsparams = (gsParams_t) e.Argument;
+			String out_file = gsparams.outputfile;
+			String in_file = gsparams.inputfile;
+			int num_params = 9;  /* base number */
+			int rend_count = 1;
+			String options;
+			int count;
+			List<String> optionlist;
+
+			optionlist = GetOptions(gsparams.options);
+			num_params = num_params + optionlist.Count;
+			if (gsparams.pages != null)
+			{
+				rend_count = gsparams.pages.Count;
+				num_params = num_params + 2;
+			}
+
 			var argParam = new GCHandle[num_params];
 			var argPtrs = new IntPtr[num_params];
 			String[] strParams = new String[num_params];
@@ -270,8 +309,8 @@ namespace gsview
 			int code = gsapi_new_instance(out gsInstance, IntPtr.Zero);
 			if (code < 0)
 			{
-				Params.result = GS_Result_t.gsFAILED;
-				e.Result = Params;
+				gsparams.result = GS_Result_t.gsFAILED;
+				e.Result = gsparams;
 				return;
 			}
 
@@ -287,43 +326,99 @@ namespace gsview
 			code = gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback); 
 
 			code = gsapi_set_arg_encoding(gsInstance, (int) gsEncoding.GS_ARG_ENCODING_UTF8);
+
 			if (code == 0)
 			{
-				strParams[0] = "gs";   /* This does not matter */
-				strParams[1] = "-dNOPAUSE";
-				strParams[2] = "-dBATCH";
-				strParams[3] = "-dSAFER";
-				strParams[4] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), Params.device);
-				strParams[5] = "-r" + Params.resolution;
-				/* Create temp file if file not specified */
-				if (out_file == null)
+				for (int jj = 0; jj < rend_count; jj++)
 				{
-					out_file = Path.GetTempFileName();
-					Params.outputfile = out_file;
-				}
-				strParams[6] = "-o" + out_file;
-				strParams[7] = "-f";
-				strParams[8] = in_file;
+					strParams[0] = "gs";   /* This does not matter */
+					strParams[1] = "-dNOPAUSE";
+					strParams[2] = "-dBATCH";
+					strParams[3] = "-dSAFER";
+					if (gsparams.devicename != null)
+					{
+						strParams[4] = "-sDEVICE=" + gsparams.devicename;
+					}
+					else
+					{
+						strParams[4] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), gsparams.device);
+					}
+					strParams[5] = "-r" + gsparams.resolution;
+					/* Create temp file if file not specified */
+					if (out_file == null)
+					{
+						out_file = Path.GetTempFileName();
+						gsparams.outputfile = out_file;
+					}
 
-				/* Now convert our Strings to char* and get pinned handles to these.
-				 * This keeps the c# GC from moving stuff around on us */
-				for (int k = 0; k < num_params; k++)
-				{
-					CharacterArray.Add(System.Text.Encoding.UTF8.GetBytes(strParams[k].ToCharArray()));
-					argParam[k] = GCHandle.Alloc(CharacterArray[k], GCHandleType.Pinned);
-					argPtrs[k] = argParam[k].AddrOfPinnedObject();
-				}
-				/* Also stick the array of pointers into memory that will not be GCd */
-				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
+					count = 6;
+					/* Add in the options */
+					for (int kk = 0; kk < optionlist.Count; kk++)
+					{
+						strParams[count] = optionlist[kk];
+						count++;
+					}
+					/* We have discontinuous page selection */
+					if (gsparams.pages != null)
+					{
+						String firstpage, lastpage;
+						options = gsparams.options;
+						SelectPage curr_page = (SelectPage)(gsparams.pages[jj]);
+						firstpage = "-dFirstPage=" + curr_page.Page;
+						lastpage =  "-dLastPage=" + curr_page.Page;
+						strParams[count] = firstpage;
+						count++;
+						strParams[count] = lastpage;
+						count++;
+						/* Look for file extension. */
+						string extension = System.IO.Path.GetExtension(out_file);
+						int len = extension.Length;
+						String new_out_file = out_file.Substring(0, out_file.Length - len);
+						strParams[count] = "-o" + new_out_file + "_page" + curr_page.Page + extension;
+					}
+					else
+					{
+						if (gsparams.need_multi_page)
+						{
+							/* Look for file extension. */
+							string extension = System.IO.Path.GetExtension(out_file);
+							int len = extension.Length;
+							String new_out_file = out_file.Substring(0, out_file.Length - len);
+							strParams[count] = "-o" + new_out_file + "_page%d" + extension;
+						}
+						else
+							strParams[count] = "-o" + out_file;
+					}
+					count++;
+					strParams[count] = "-f";
+					count++;
+					strParams[count] = in_file;
 
-				code = gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+					/* Now convert our Strings to char* and get pinned handles to these.
+					 * This keeps the c# GC from moving stuff around on us */
+					for (int k = 0; k < num_params; k++)
+					{
+						CharacterArray.Add(System.Text.Encoding.UTF8.GetBytes(strParams[k].ToCharArray()));
+						argParam[k] = GCHandle.Alloc(CharacterArray[k], GCHandleType.Pinned);
+						argPtrs[k] = argParam[k].AddrOfPinnedObject();
+					}
+					/* Also stick the array of pointers into memory that will not be GCd */
+					argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
-				/* All the pinned items need to be freed so the GC can do its job */
-				for (int k = 0; k < num_params; k++)
-				{
-					argParam[k].Free();
+					code = gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+
+					/* All the pinned items need to be freed so the GC can do its job */
+					for (int k = 0; k < num_params; k++)
+					{
+						argParam[k].Free();
+					}
+					argPtrsStable.Free();
+					/* Free the character array list in case we have multiple runs */
+					CharacterArray.Clear();
+					
+					if (code < 0)
+						break;
 				}
-				argPtrsStable.Free();
 			}
 
 			int code1 = gsapi_exit(gsInstance);
@@ -337,13 +432,13 @@ namespace gsview
 			gsapi_delete_instance(gsInstance);
 			if ((code == 0) || (code == gsConstants.E_QUIT))
 			{
-				Params.result = GS_Result_t.gsOK;
-				e.Result = Params;
+				gsparams.result = GS_Result_t.gsOK;
+				e.Result = gsparams;
 				return;
 			}
 
-			Params.result = GS_Result_t.gsFAILED;
-			e.Result = Params;
+			gsparams.result = GS_Result_t.gsFAILED;
+			e.Result = gsparams;
 			return;
 		}
 
@@ -354,6 +449,9 @@ namespace gsview
 			String out_file = Params.outputfile;
 			String in_file = Params.inputfile;
 			int num_params = 7;
+			if (Params.options.Length > 0)
+				num_params = num_params + 1;
+
 			int exitcode = 0;
 			var argParam = new GCHandle[num_params];
 			var argPtrs = new IntPtr[num_params];
@@ -397,7 +495,14 @@ namespace gsview
 				strParams[1] = "-dNOPAUSE";
 				strParams[2] = "-dBATCH";
 				strParams[3] = "-dSAFER";
-				strParams[4] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), Params.device);
+				if (Params.devicename != null)
+				{
+					strParams[4] = "-sDEVICE=" + Params.devicename;
+				}
+				else
+				{
+					strParams[4] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), Params.device);
+				}
 				strParams[5] = "-r" + Params.resolution;
 				/* Create temp file if file not specified */
 				if (out_file == null)
@@ -405,7 +510,12 @@ namespace gsview
 					out_file = Path.GetTempFileName();
 					Params.outputfile = out_file;
 				}
-				strParams[6] = "-o" + out_file;
+				if (Params.options.Length > 0)
+				{
+					strParams[6] = Params.options;
+					strParams[7] = "-o" + out_file;
+				} else 
+					strParams[6] = "-o" + out_file;
 
 				/* Now convert our Strings to char* and get pinned handles to these.
 					* This keeps the c# GC from moving stuff around on us */
@@ -514,32 +624,54 @@ namespace gsview
 			gsUpdateMain(this, info);
 		}
 
-		public gsStatus DistillPS(String FileName, int resolution)
+		public gsStatus DistillPS(String fileName, int resolution)
 		{
-			gsParams_t Params = new gsParams_t(); ;
+			gsParams_t gsparams = new gsParams_t(); ;
 
-			Params.device = gsDevice_t.pdfwrite;
-			Params.outputfile = null;
-			Params.resolution = resolution;
-			Params.inputfile = FileName;
-			Params.outputfile = null;
-			Params.num_pages = -1;
-			Params.task = GS_Task_t.PS_DISTILL;
-			return RunGhostscript(Params);
+			gsparams.device = gsDevice_t.pdfwrite;
+			gsparams.devicename = null;
+			gsparams.outputfile = null;
+			gsparams.resolution = resolution;
+			gsparams.inputfile = fileName;
+			gsparams.num_pages = -1;
+			gsparams.task = GS_Task_t.PS_DISTILL;
+			gsparams.options = "";
+			gsparams.need_multi_page = false;
+			gsparams.pages = null;
+			return RunGhostscript(gsparams);
 		}
 
-		public gsStatus CreateXPS(String FileName, int resolution, int num_pages)
+		public gsStatus CreateXPS(String fileName, int resolution, int num_pages)
 		{
-			gsParams_t Params = new gsParams_t(); ;
+			gsParams_t gsparams = new gsParams_t(); ;
 
-			Params.device = gsDevice_t.xpswrite;
-			Params.outputfile = null;
-			Params.resolution = resolution;
-			Params.inputfile = FileName;
-			Params.outputfile = null;
-			Params.task = GS_Task_t.CREATE_XPS;
-			Params.num_pages = num_pages;
-			return RunGhostscript(Params);
+			gsparams.device = gsDevice_t.xpswrite;
+			gsparams.outputfile = null;
+			gsparams.resolution = resolution;
+			gsparams.inputfile = fileName;
+			gsparams.task = GS_Task_t.CREATE_XPS;
+			gsparams.num_pages = num_pages;
+			gsparams.options = "";
+			gsparams.need_multi_page = false;
+			gsparams.pages = null;
+			return RunGhostscript(gsparams);
+		}
+
+		public gsStatus Convert(String fileName, String options, String device, 
+								String outputFile, int num_pages, int resolution,
+								bool multi_page_needed, System.Collections.IList pages)
+		{
+			gsParams_t gsparams = new gsParams_t();
+			gsparams.devicename = device;
+			gsparams.outputfile = outputFile;
+			gsparams.inputfile = fileName;
+			gsparams.task = GS_Task_t.SAVE_RESULT;
+			gsparams.num_pages = num_pages;
+			gsparams.options = options;
+			gsparams.resolution = resolution;
+			gsparams.need_multi_page = multi_page_needed;
+			gsparams.pages = pages;
+			return RunGhostscript(gsparams);
 		}
 
 		public gsStatus GetStatus()
@@ -552,10 +684,6 @@ namespace gsview
 
 		private gsStatus RunGhostscript(gsParams_t Params)
 		{
-			/* Create background task for rendering the thumbnails.  Allow
-			this to be cancelled if we open a new doc while we are in loop
-			rendering.  Put the UI updates in the progress changed which will
-			run on the main thread */
 			try
 			{
 				if (m_worker != null && m_worker.IsBusy)

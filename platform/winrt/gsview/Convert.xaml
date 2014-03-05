@@ -105,7 +105,7 @@
             <TextBlock Grid.Column="0" Grid.Row="1" Margin="5,10,0,0">
                 <Bold>Options:</Bold>
             </TextBlock>
-            <TextBox Grid.Column="0" Grid.Row="2" Background="White" Height="40" Margin="5,5,5,5" Text=""></TextBox>
+            <TextBox x:Name="xaml_options" Grid.Row="2" Background="White" Height="40" Margin="5,5,5,5" Text=""></TextBox>
         </Grid>
 
 

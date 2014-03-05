@@ -96,6 +96,17 @@ static class Constants
 	public const int DEFAULT_GS_RES = 300;
 }
 
+
+public static class DocumentTypes
+{
+	public const string PDF = "Portable Document Format";
+	public const string PS = "PostScript";
+	public const string XPS = "XPS";
+	public const string EPS = "Encapsulated PostScript";
+	public const string CBZ = "Comic Book Archive";
+	public const string UNKNOWN = "Unknown";
+}
+
 namespace gsview
 {
 	/// <summary>
@@ -148,6 +159,8 @@ namespace gsview
 		Password m_password = null;
 		bool m_zoomhandled;
 		BackgroundWorker m_thumbworker = null;
+		String m_document_type;
+		Info m_infowindow;
 
 		public MainWindow()
 		{
@@ -236,6 +249,7 @@ namespace gsview
 			m_zoomhandled = false;
 			xaml_CancelThumb.IsEnabled = true;
 			m_currpage = 0;
+			m_document_type = DocumentTypes.UNKNOWN;
 			return result;
 		}
 
@@ -403,6 +417,9 @@ namespace gsview
 			if (m_password != null && m_password.IsActive)
 				m_password.Close();
 
+			if (m_infowindow != null && m_infowindow.IsActive)
+				m_infowindow.Close();
+
 			/* Check if gs is currently busy. If it is then don't allow a new
 			 * file to be opened. They can cancel gs with the cancel button if
 			 * they want */
@@ -431,6 +448,29 @@ namespace gsview
 				 * and then we will get a temp pdf file which will be opened by
 				 * mupdf */
 				string extension = System.IO.Path.GetExtension(dlg.FileName);
+				/* We are doing this based on the extension but like should do
+				 * it based upon the content */
+				switch(extension.ToUpper())
+				{
+					case ".PS":
+						m_document_type =  DocumentTypes.PS;
+						break;
+					case ".EPS":
+						m_document_type =  DocumentTypes.EPS;
+						break;
+					case ".XPS":
+						m_document_type =  DocumentTypes.XPS;
+						break;
+					case ".PDF":
+						m_document_type =  DocumentTypes.PDF;
+						break;
+					case ".CBZ":
+						m_document_type =  DocumentTypes.CBZ;
+						break;
+					default:
+						m_document_type =  DocumentTypes.UNKNOWN;
+						break;
+				}
 				if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
 				{
 					xaml_DistillProgress.Value = 0;
@@ -821,7 +861,7 @@ namespace gsview
 							break;
 
 						case GS_Task_t.SAVE_RESULT:
-
+							ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to convert document");
 							break;
 					}
 					return;
@@ -842,6 +882,12 @@ namespace gsview
 				xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
 				return;
 			}
+			if (gs_result.result == GS_Result_t.gsFAILED)
+			{
+				xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS Failed Conversion");
+				return;
+			}
 			switch (gs_result.task)
 			{
 				case GS_Task_t.CREATE_XPS:
@@ -855,6 +901,7 @@ namespace gsview
 					break;
 
 				case GS_Task_t.SAVE_RESULT:
+					ShowMessage(NotifyType_t.MESS_STATUS, "GS Completed Conversion");
 					break;
 			}
 		}
@@ -896,31 +943,30 @@ namespace gsview
 
 			if (pDialog == null)
 				return;
-
+			/* We have to create the XPS document on a different thread */
 			XpsDocument xpsDocument = new XpsDocument(file, FileAccess.Read);
 			FixedDocumentSequence fixedDocSeq = xpsDocument.GetFixedDocumentSequence();
-
 			PrintQueue printQueue = pDialog.PrintQueue;
 
 			m_ghostprint = ghostprint;
 			xaml_PrintGrid.Visibility = System.Windows.Visibility.Visible;
-			m_ghostprint.PrintUpdate += new gsprint.AsyncPrintCallBack(PrintProgress);
 
 			xaml_PrintProgress.Value = 0;
 
 			ghostprint.Print(printQueue, fixedDocSeq);
 		}
 
-		private void PrintProgress(object printHelper, gsPrintEventArgs asyncInformation)
+		private void PrintProgress(object printHelper, gsPrintEventArgs Information)
 		{
-			if (asyncInformation.Completed)
+			if (Information.Status != PrintStatus_t.PRINT_BUSY)
 			{
 				xaml_PrintProgress.Value = 100;
 				xaml_PrintGrid.Visibility = System.Windows.Visibility.Collapsed;
 			}
 			else
 			{
-				xaml_PrintProgress.Value = 100 * (double)asyncInformation.Page / (double)m_num_pages;
+				xaml_PrintProgress.Value = 
+					100.0 * (double) Information.Page / (double)m_num_pages;
 			}
 		}
 
@@ -943,12 +989,90 @@ namespace gsview
 
 		private void ConvertClick(object sender, RoutedEventArgs e)
 		{
-			if (m_convertwin == null)
+			if (m_ghostscript.GetStatus() != gsStatus.GS_READY)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
+				return;
+			}
+
+			if (m_convertwin == null || !m_convertwin.IsActive)
 			{
 				m_convertwin = new Convert(m_num_pages);
+				m_convertwin.ConvertUpdateMain += new Convert.ConvertCallBackMain(ConvertReturn);
 				m_convertwin.Activate();
 				m_convertwin.Show();
 			}
+		}
+
+		private void ConvertReturn(object sender)
+		{
+			if (m_ghostscript.GetStatus() != gsStatus.GS_READY)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy"); 
+				return;
+			}
+
+			Device device = (Device)m_convertwin.xaml_DeviceList.SelectedItem;
+			System.Collections.IList pages = m_convertwin.xaml_PageList.SelectedItems;
+			System.Collections.IList pages_selected = null;
+			String options = m_convertwin.xaml_options.Text;
+			int resolution = 72;
+			bool multi_page_needed = false;
+
+			if (pages.Count == 0)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "No Pages Selected");
+				return;
+			}
+
+			if (device == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "No Device Selected");
+				return;
+			}
+
+			/* Get a filename */
+			SaveFileDialog dlg = new SaveFileDialog();
+			dlg.Filter = "All files (*.*)|*.*";
+			dlg.FilterIndex = 1;
+			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+			{
+				if (!device.SupportsMultiPage && m_num_pages > 1)
+					multi_page_needed = true;
+
+				if (pages.Count != m_num_pages)
+				{
+					/* We may need to go through page by page. Determine if
+					 * selection of pages is continuous.  This is done by 
+					 * looking at the first one in the list and the last one
+					 * in the list and checking the length */
+					SelectPage lastpage = (SelectPage) pages[pages.Count -1];
+					SelectPage firstpage = (SelectPage) pages[0];
+					int temp = lastpage.Page - firstpage.Page + 1;
+					if (temp == pages.Count)
+					{
+						/* Pages are contiguous.  Add first and last page 
+						 * as command line option */
+						options = options + " -dFirstPage=" + firstpage.Page + " -dLastPage=" + lastpage.Page;
+					}
+					else
+					{
+						/* Pages are not continguous.  We will do this page 
+						 * by page.*/
+						pages_selected = pages;
+						multi_page_needed = true;  /* need to put in separate outputs */
+					} 
+				}
+				if (m_ghostscript.Convert(m_currfile, options,
+					device.DeviceName, dlg.FileName, m_num_pages, resolution,
+					multi_page_needed, pages_selected) == gsStatus.GS_BUSY)
+				{
+					ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
+					return;
+				}
+				m_convertwin.Close();
+			}
+			return;
 		}
 
 		private void GetPassword()
@@ -1017,6 +1141,25 @@ namespace gsview
 					m_currpage = item.PageNum;
 					RenderRange(m_currpage, true);
 				}
+			}
+		}
+
+		private void ShowInfo(object sender, RoutedEventArgs e)
+		{
+			String Message;
+
+			if (m_file_open)
+			{
+				Message =
+					"         File: " + m_currfile + "\n" +
+					"Document Type: " + m_document_type + "\n" +
+					"        Pages: " + m_num_pages + "\n" +
+					" Current Page: " + (m_currpage + 1) + "\n";
+				if (m_infowindow == null || !(m_infowindow.IsActive))
+					m_infowindow = new Info();
+				m_infowindow.xaml_TextInfo.Text = Message;
+				m_infowindow.FontFamily = new FontFamily("Courier New");
+				m_infowindow.Show();
 			}
 		}
 	}

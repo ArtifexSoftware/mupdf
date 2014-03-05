@@ -13,14 +13,22 @@ using System.Windows.Xps.Serialization;
 
 namespace gsview
 {
+	public enum PrintStatus_t
+	{
+		PRINT_READY,
+		PRINT_BUSY,
+		PRINT_ERROR,
+		PRINT_CANCELLED
+	};
+
 	/* Class for handling async print progress callback */
 	public class gsPrintEventArgs : EventArgs
 	{
-		private String m_status;
+		private PrintStatus_t m_status;
 		private bool m_completed;
 		private int m_page;
 
-		public String Status
+		public PrintStatus_t Status
 		{
 			get { return m_status; }
 		}
@@ -35,7 +43,7 @@ namespace gsview
 			get { return m_page; }
 		}
 
-		public gsPrintEventArgs(String status, bool completed, int page)
+		public gsPrintEventArgs(PrintStatus_t status, bool completed, int page)
 		{
 			m_completed = completed;
 			m_status = status;
@@ -107,14 +115,14 @@ namespace gsview
 		/* Done */
 		private void AsyncCompleted(object sender, WritingCompletedEventArgs e)
 		{
-			string status = null;
+			PrintStatus_t status;
 
 			if (e.Cancelled)
-				status = "Print Canceled";
+				status = PrintStatus_t.PRINT_CANCELLED;
 			else if (e.Error != null)
-				status = "Print Error";
+				status = PrintStatus_t.PRINT_ERROR;
 			else
-				status = "Print Completed";
+				status = PrintStatus_t.PRINT_READY;
 
 			if (PrintUpdate != null)
 			{
@@ -129,8 +137,8 @@ namespace gsview
 		{
 			if (PrintUpdate != null)
 			{
-				String progress = "Page " + e.Number;
-				gsPrintEventArgs info = new gsPrintEventArgs(progress, false, e.Number);
+				gsPrintEventArgs info = new gsPrintEventArgs(PrintStatus_t.PRINT_BUSY, 
+									false, e.Number);
 				PrintUpdate(this, info);
 			}
 		}

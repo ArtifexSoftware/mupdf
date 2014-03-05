@@ -1,0 +1,11 @@
+﻿<Window x:Class="gsview.Info"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Info" Height="216.304" Width="430.434" Background="WhiteSmoke">
+    <DockPanel LastChildFill="True">
+        <Button  DockPanel.Dock="Bottom" Width="70" Height="20" Name="xaml_CloseInfo" Click="OKClose" Margin="0,0,0,20" IsDefault="True">
+            <TextBlock Name="xaml_ButtonText" FontFamily="Courier" Text="OK"/>
+        </Button>
+        <TextBlock Name="xaml_TextInfo" Text="File not open"  Margin="10,10,10,10" FontFamily="Courier New"></TextBlock>
+    </DockPanel>
+</Window>
