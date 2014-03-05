@@ -1697,6 +1697,10 @@ static void pdf_run_BDC(pdf_csi *csi, void *state)
 	pdf_obj *ocg;
 	pdf_obj *rdb = csi->rdb;
 
+	/* We only understand OC groups so far */
+	if (strcmp(csi->name, "OC") != 0)
+		return;
+
 	/* If we are already in a hidden OCG, then we'll still be hidden -
 	 * just increment the depth so we pop back to visibility when we've
 	 * seen enough EDCs. */
@@ -1706,7 +1710,13 @@ static void pdf_run_BDC(pdf_csi *csi, void *state)
 		return;
 	}
 
-	ocg = pdf_dict_gets(pdf_dict_gets(rdb, "Properties"), csi->name);
+	if (pdf_is_name(csi->obj))
+	{
+		ocg = pdf_dict_gets(pdf_dict_gets(rdb, "Properties"), pdf_to_name(csi->obj));
+	}
+	else
+		ocg = csi->obj;
+
 	if (!ocg)
 	{
 		/* No Properties array, or name not found in the properties
