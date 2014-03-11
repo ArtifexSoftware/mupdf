@@ -1741,6 +1741,7 @@ static void pdf_run_BI(pdf_csi *csi, void *state)
 	int ch;
 	fz_image *img;
 	pdf_obj *obj;
+	int found;
 
 	obj = pdf_parse_dict(csi->doc, file, &csi->doc->lexbuf.base);
 
@@ -1768,11 +1769,27 @@ static void pdf_run_BI(pdf_csi *csi, void *state)
 	fz_drop_image(ctx, img);
 
 	/* find EI */
+	found = 0;
 	ch = fz_read_byte(file);
-	while (ch != 'E' && ch != EOF)
-		ch = fz_read_byte(file);
-	ch = fz_read_byte(file);
-	if (ch != 'I')
+	do
+	{
+		while (ch != 'E' && ch != EOF)
+			ch = fz_read_byte(file);
+		if (ch == 'E')
+		{
+			ch = fz_read_byte(file);
+			if (ch == 'I')
+			{
+				ch = fz_peek_byte(file);
+				if (ch == ' ' || ch <= 32 || ch == EOF || ch == '<' || ch == '/')
+				{
+					found = 1;
+					break;
+				}
+			}
+		}
+	} while (ch != EOF);
+	if (!found)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error after inline image");
 }
 

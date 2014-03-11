@@ -46,6 +46,8 @@ struct curl_stream_state_s
 	void (*more_data)(void *, int);
 	void *more_data_arg;
 
+	unsigned char public_buffer[4096];
+
 #ifdef _WIN32
 	void *thread;
 	DWORD thread_id;
@@ -311,13 +313,17 @@ fetcher_thread(curl_stream_state *state)
 }
 
 static int
-stream_read(fz_stream *stream, unsigned char *buf, int len)
+stream_next(fz_stream *stream, int len)
 {
 	curl_stream_state *state = (curl_stream_state *)stream->state;
 	int len_read = 0;
 	int read_point = stream->pos;
 	int block = read_point>>BLOCK_SHIFT;
 	int left_over = (-read_point) & (BLOCK_SIZE-1);
+	unsigned char *buf = state->public_buffer;
+
+	if (len > sizeof(state->public_buffer))
+		len = sizeof(state->public_buffer);
 
 	if (state->content_length == 0)
 		fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (A) (offset=%d)", read_point);
@@ -328,11 +334,16 @@ stream_read(fz_stream *stream, unsigned char *buf, int len)
 		 * content length. */
 		if (read_point + len > state->current_fill_point)
 		{
-			stream->rp = stream->wp = stream->bp;
+			stream->rp = stream->wp;
 			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (B) (offset=%d)", read_point);
 		}
 		memcpy(buf, state->buffer + read_point, len);
-		return len;
+		stream->rp = buf;
+		stream->wp = buf + len;
+		stream->pos += len;
+		if (len == 0)
+			return EOF;
+		return *stream->rp++;
 	}
 
 	if (read_point + len > state->content_length)
@@ -348,7 +359,7 @@ stream_read(fz_stream *stream, unsigned char *buf, int len)
 			lock(state);
 			state->fill_point = block;
 			unlock(state);
-			stream->rp = stream->wp = stream->bp;
+			stream->rp = stream->wp;
 			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (C) (offset=%d)", read_point);
 		}
 		block++;
@@ -369,7 +380,7 @@ stream_read(fz_stream *stream, unsigned char *buf, int len)
 			lock(state);
 			state->fill_point = block;
 			unlock(state);
-			stream->rp = stream->wp = stream->bp;
+			stream->rp = stream->wp;
 			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (D) (offset=%d)", read_point);
 		}
 		block++;
@@ -388,14 +399,18 @@ stream_read(fz_stream *stream, unsigned char *buf, int len)
 			lock(state);
 			state->fill_point = block;
 			unlock(state);
-			stream->rp = stream->wp = stream->bp;
+			stream->rp = stream->wp;
 			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (E) (offset=%d)", read_point);
 		}
 		memcpy(buf, state->buffer + read_point, len);
 		len_read += len;
 	}
-
-	return len_read;
+	stream->rp = state->public_buffer;
+	stream->wp = stream->rp + len_read;
+	stream->pos += len_read;
+	if (len_read == 0)
+		return EOF;
+	return *stream->rp++;
 }
 
 static void
@@ -449,7 +464,7 @@ stream_seek(fz_stream *stream, int offset, int whence)
 		offset = 0;
 	else if (state->content_length > 0 && offset > state->content_length)
 		offset = state->content_length;
-	stream->wp = stream->rp = stream->bp;
+	stream->wp = stream->rp;
 	stream->pos = offset;
 	hack = *state;
 	hack_pos = offset;
@@ -518,7 +533,7 @@ fz_stream *fz_stream_from_curl(fz_context *ctx, char *filename, void (*more_data
 
 #endif
 
-	stream = fz_new_stream(ctx, state, stream_read, stream_close, NULL);
+	stream = fz_new_stream(ctx, state, stream_next, stream_close, NULL);
 	stream->seek = stream_seek;
 	stream->meta = stream_meta;
 	return stream;
