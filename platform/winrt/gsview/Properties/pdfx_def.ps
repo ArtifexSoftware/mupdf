@@ -1,0 +1,48 @@
+%!
+% This is a sample prefix file for creating a PDF/X-3 document.
+% Feel free to modify entries marked with "Customize".
+
+% This assumes an ICC profile to reside in the file (ICCPROFILE),
+% unless the user modifies the corresponding line below.
+
+systemdict /ProcessColorModel known {
+  systemdict /ProcessColorModel get dup /DeviceGray ne exch /DeviceCMYK ne and
+} {
+  true
+} ifelse
+{ (ERROR: ProcessColorModel must be /DeviceGray or DeviceCMYK.)=
+  /ProcessColorModel cvx /rangecheck signalerror
+} if
+
+% Define entries to the document Info dictionary :
+
+/ICCProfile (ICCPROFILE) def  % Customize or remove.
+
+[ /GTS_PDFXVersion (PDF/X-3:2002) % Must be so (the standard requires).
+  /Title (TITLE)                  % Customize.
+  /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
+  /DOCINFO pdfmark
+
+% Define an ICC profile :
+
+currentdict /ICCProfile known {
+  [/_objdef {icc_PDFX} /type /stream /OBJ pdfmark
+  [{icc_PDFX} <</N systemdict /ProcessColorModel get /DeviceGray eq {1} {4} ifelse >> /PUT pdfmark
+  [{icc_PDFX} ICCProfile (r) file /PUT pdfmark
+} if
+
+% Define the output intent dictionary :
+
+[/_objdef {OutputIntent_PDFX} /type /dict /OBJ pdfmark
+[{OutputIntent_PDFX} <<
+  /Type /OutputIntent              % Must be so (the standard requires).
+  /S /GTS_PDFX                     % Must be so (the standard requires).
+  /OutputCondition (Created using ghostscript) % Customize
+  /Info (Through gsview)                     % Customize
+  /OutputConditionIdentifier (ICC Profile)      % Customize
+  /RegistryName (http://www.color.org)   % Must be so (the standard requires).
+  currentdict /ICCProfile known {
+    /DestOutputProfile {icc_PDFX}  % Must be so (see above).
+  } if
+>> /PUT pdfmark
+[{Catalog} <</OutputIntents [ {OutputIntent_PDFX} ]>> /PUT pdfmark

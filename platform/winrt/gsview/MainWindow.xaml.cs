@@ -20,6 +20,12 @@ using System.Windows.Xps.Packaging;
 using System.Printing;
 using System.Windows.Markup;
 
+enum PDFType_t
+{
+	PDFX,
+	PDFA
+}
+
 enum AppBar_t
 {
 	TEXT_SEARCH,
@@ -65,6 +71,36 @@ public enum Page_Content_t
 	OLD_RESOLUTION,
 	NOTSET
 };
+
+/* Put all the PDF types first to make the switch statment shorter 
+   Save_Type_t.PDF is the test */
+public enum Save_Type_t
+{
+	PDF13,
+	PDFA1_RGB,
+	PDFA1_CMYK,
+	PDFA2_RGB,
+	PDFA2_CMYK,
+	PDFX3_GRAY,
+	PDFX3_CMYK,
+	PDF,
+	PCLXL,
+	XPS,
+	SVG,
+	PCLBitmap,
+	PNG,
+	PWG,
+	PNM,
+	TEXT
+}
+
+public enum Extract_Type_t
+{
+	PDF,
+	EPS,
+	PS,
+	SVG
+}
 
 public struct spatial_info_t
 {
@@ -161,6 +197,7 @@ namespace gsview
 		BackgroundWorker m_thumbworker = null;
 		String m_document_type;
 		Info m_infowindow;
+		OutputIntent m_outputintents;
 
 		public MainWindow()
 		{
@@ -181,6 +218,8 @@ namespace gsview
 				m_ghostscript.gsUpdateMain += new ghostsharp.gsCallBackMain(gsProgress);
 				m_gsoutput = new gsOutput();
 				m_gsoutput.Activate();
+				m_outputintents = new OutputIntent();
+				m_outputintents.Activate();
 				m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
 				m_convertwin = null;
 			}
@@ -194,6 +233,25 @@ namespace gsview
 		void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			m_gsoutput.RealWindowClosing();
+			m_outputintents.RealWindowClosing();
+		}
+
+		void EnabletoPDF()
+		{
+			xaml_savepdf13.IsEnabled = true;
+			xaml_savepdfa.IsEnabled = true;
+			xaml_savepdfx3_cmyk.IsEnabled = true;
+			xaml_savepdfx3_gray.IsEnabled = true;
+			xaml_savepclxl.IsEnabled = true;
+		}
+
+		void DisabletoPDF()
+		{
+			xaml_savepdf13.IsEnabled = false;
+			xaml_savepdfa.IsEnabled = false;
+			xaml_savepdfx3_cmyk.IsEnabled = false;
+			xaml_savepdfx3_gray.IsEnabled = false;
+			xaml_savepclxl.IsEnabled = false;
 		}
 
 		private status_t CleanUp()
@@ -250,6 +308,7 @@ namespace gsview
 			xaml_CancelThumb.IsEnabled = true;
 			m_currpage = 0;
 			m_document_type = DocumentTypes.UNKNOWN;
+			EnabletoPDF();
 			return result;
 		}
 
@@ -487,7 +546,10 @@ namespace gsview
 				}
 				/* Set if this is already xps for printing */
 				if (extension.ToUpper() == ".XPS")
+				{
+					DisabletoPDF();
 					m_isXPS = true;
+				}
 				OpenFile2(dlg.FileName);
 			}
 		}
@@ -1065,7 +1127,7 @@ namespace gsview
 				}
 				if (m_ghostscript.Convert(m_currfile, options,
 					device.DeviceName, dlg.FileName, m_num_pages, resolution,
-					multi_page_needed, pages_selected) == gsStatus.GS_BUSY)
+					multi_page_needed, pages_selected, null, null) == gsStatus.GS_BUSY)
 				{
 					ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
 					return;
@@ -1161,6 +1223,281 @@ namespace gsview
 				m_infowindow.FontFamily = new FontFamily("Courier New");
 				m_infowindow.Show();
 			}
+		}
+
+		String CreatePDFXA(Save_Type_t type)
+		{
+			Byte[] Resource;
+			String Profile;
+
+			switch (type)
+			{
+				case Save_Type_t.PDFA1_CMYK:
+				case Save_Type_t.PDFA2_CMYK:
+					Resource = Properties.Resources.PDFA_def;
+					Profile = m_outputintents.cmyk_icc;
+					break;
+
+				case Save_Type_t.PDFA1_RGB:
+				case Save_Type_t.PDFA2_RGB:
+					Resource = Properties.Resources.PDFA_def;
+					Profile = m_outputintents.rgb_icc;
+					break;
+
+				case Save_Type_t.PDFX3_CMYK:
+					Resource = Properties.Resources.PDFX_def;
+					Profile = m_outputintents.cmyk_icc;
+					break;
+
+				case Save_Type_t.PDFX3_GRAY:
+					Resource = Properties.Resources.PDFX_def;
+					Profile = m_outputintents.gray_icc;
+					break;
+
+				default:
+					return null;
+			}
+
+			String Profile_new = Profile.Replace("\\", "/");
+			String result = System.Text.Encoding.UTF8.GetString(Resource);
+			String pdfx_cust = result.Replace("ICCPROFILE", Profile_new);
+			var out_file = System.IO.Path.GetTempFileName();
+			System.IO.File.WriteAllText(out_file, pdfx_cust);
+			return out_file;
+		}
+
+		private void SaveFile(Save_Type_t type)
+		{
+			if (!m_file_open)
+				return;
+
+			SaveFileDialog dlg = new SaveFileDialog();
+			dlg.FilterIndex = 1;
+
+			/* PDF output types */
+			if (type <= Save_Type_t.PDF)
+			{
+				dlg.Filter = "PDF Files(*.pdf)|*.pdf";
+				if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+				{
+					String options = null;
+					bool use_gs = true;
+					String init_file = CreatePDFXA(type);
+					;
+					switch (type)
+					{
+						case Save_Type_t.PDF:
+							/* All done.  No need to use gs */
+							System.IO.File.Copy(m_currfile, dlg.FileName, true);
+							use_gs = false;
+							break;
+						case Save_Type_t.PDF13:
+							options = "-dCompatibilityLevel=1.3";
+							break;
+						case Save_Type_t.PDFA1_CMYK:
+							options = "-dPDFA=1 -dNOOUTERSAVE -dPDFACompatibilityPolicy=1 -sProcessColorModel=DeviceCMYK -dColorConversionStrategy=/CMYK -sOutputICCProfile=" + m_outputintents.cmyk_icc;
+							break;
+						case Save_Type_t.PDFA1_RGB:
+							options = "-dPDFA=1 -dNOOUTERSAVE -dPDFACompatibilityPolicy=1 -sProcessColorModel=DeviceRGB -dColorConversionStrategy=/RGB -sOutputICCProfile=" + m_outputintents.rgb_icc;
+							break;
+						case Save_Type_t.PDFA2_CMYK:
+							options = "-dPDFA=2 -dNOOUTERSAVE -dPDFACompatibilityPolicy=1 -sProcessColorModel=DeviceCMYK -dColorConversionStrategy=/CMYK -sOutputICCProfile=" + m_outputintents.cmyk_icc;
+							break;
+						case Save_Type_t.PDFA2_RGB:
+							options = "-dPDFA=2 -dNOOUTERSAVE -dPDFACompatibilityPolicy=1 -sProcessColorModel=DeviceRGB -dColorConversionStrategy=/RGB -sOutputICCProfile=" + m_outputintents.rgb_icc;
+							break;
+						case Save_Type_t.PDFX3_CMYK:
+							options = "-dPDFX -dNOOUTERSAVE -dPDFACompatibilityPolicy=1 -sProcessColorModel=DeviceCMYK -dColorConversionStrategy=/CMYK -sOutputICCProfile=" + m_outputintents.cmyk_icc;
+							break;
+						case Save_Type_t.PDFX3_GRAY:
+							options = "-dPDFX -dNOOUTERSAVE -dPDFACompatibilityPolicy=1 -sProcessColorModel=DeviceGray -dColorConversionStrategy=/Gray -sOutputICCProfile=" + m_outputintents.cmyk_icc;
+							break;
+
+					}
+					if (use_gs)
+					{
+						if (m_ghostscript.Convert(m_currfile, options,
+							Enum.GetName(typeof(gsDevice_t), gsDevice_t.pdfwrite),
+							dlg.FileName, m_num_pages, 300, false, null, init_file, null) == 
+								gsStatus.GS_BUSY)
+						{
+							ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
+							return;
+						}
+					}
+				}
+			}
+			else
+			{
+				/* Non PDF output */
+				switch (type)
+				{
+					case Save_Type_t.PCLXL:
+						break;
+					case Save_Type_t.PCLBitmap:
+						break;
+					case Save_Type_t.PNG:
+						break;
+					case Save_Type_t.PWG:
+						break;
+					case Save_Type_t.SVG:
+						break;
+					case Save_Type_t.TEXT:
+						break;
+					case Save_Type_t.XPS:
+						break;
+				}
+			}
+		}
+
+		private void SavePNG(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.PNG);
+		}
+
+		private void SavePWG(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.PWG);
+		}
+
+		private void SavePNM(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.PNM);
+		}
+
+		private void SaveSVG(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.SVG);
+		}
+
+		private void SavePCL(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.PCLBitmap);
+		}
+
+		private void SavePDF(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.PDF);
+		}
+
+		private void CopyPage(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void PastePage(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void SaveText(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.TEXT);
+		}
+		private void SavePDF13(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.PDF13);
+		}
+		private void SavePDFX3_Gray(object sender, RoutedEventArgs e)
+		{
+			if (m_outputintents.gray_icc == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "Set Gray Output Intent ICC Profile");
+				return;
+			}
+			SaveFile(Save_Type_t.PDFX3_GRAY);
+		}
+		private void SavePDFX3_CMYK(object sender, RoutedEventArgs e)
+		{
+			if (m_outputintents.cmyk_icc == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "Set CMYK Output Intent ICC Profile");
+				return;
+			}
+			SaveFile(Save_Type_t.PDFX3_CMYK);
+		}
+		private void SavePDFA1_RGB(object sender, RoutedEventArgs e)
+		{
+			if (m_outputintents.rgb_icc == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "Set RGB Output Intent ICC Profile");
+				return;
+			} 
+			SaveFile(Save_Type_t.PDFA1_RGB);
+		}
+
+		private void SavePDFA1_CMYK(object sender, RoutedEventArgs e)
+		{
+			if (m_outputintents.cmyk_icc == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "Set CMYK Output Intent ICC Profile");
+				return;
+			} 
+			SaveFile(Save_Type_t.PDFA1_CMYK);
+		}
+
+		private void SavePDFA2_RGB(object sender, RoutedEventArgs e)
+		{
+			if (m_outputintents.rgb_icc == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "Set RGB Output Intent ICC Profile");
+				return;
+			} 
+			SaveFile(Save_Type_t.PDFA2_RGB);
+		}
+
+		private void SavePDFA2_CMYK(object sender, RoutedEventArgs e)
+		{
+			if (m_outputintents.cmyk_icc == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "Set CMYK Output Intent ICC Profile");
+				return;
+			} 
+			SaveFile(Save_Type_t.PDFA2_CMYK);
+		}
+
+		private void SavePCLXL(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.PCLXL);
+		}
+		private void SaveXPS(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.XPS);
+		}		
+		private void Extract(Extract_Type_t type)
+		{
+			switch (type)
+			{
+				case Extract_Type_t.PDF:
+					break;
+				case Extract_Type_t.EPS:
+					break;
+				case Extract_Type_t.PS:
+					break;
+				case Extract_Type_t.SVG:
+					break;
+			}
+		}
+
+		private void ExtractPDF(object sender, RoutedEventArgs e)
+		{
+			Extract(Extract_Type_t.PDF);
+		}
+		private void ExtractEPS(object sender, RoutedEventArgs e)
+		{
+			Extract(Extract_Type_t.EPS);
+		}
+		private void ExtractPS(object sender, RoutedEventArgs e)
+		{
+			Extract(Extract_Type_t.PS);
+		}
+		private void ExtractSVG(object sender, RoutedEventArgs e)
+		{
+			Extract(Extract_Type_t.SVG);
+		}
+		private void OutputIntents(object sender, RoutedEventArgs e)
+		{
+			m_outputintents.Show();
 		}
 	}
 }

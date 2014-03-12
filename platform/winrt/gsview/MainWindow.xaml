@@ -77,10 +77,28 @@
                         <Image Source="Resources/OpenFile.png" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="MuPDF Save As..." >
+                <MenuItem Header="Save As...">
                     <MenuItem.Icon>
                         <Image Source="Resources/saveHS.png" />
                     </MenuItem.Icon>
+                    <MenuItem Header="PDF" Click="SavePDF" />
+                    <MenuItem Header="PDF-1.3" Click="SavePDF13" x:Name="xaml_savepdf13"/>
+                    <MenuItem Header="PDF/A" x:Name="xaml_savepdfa">
+                        <MenuItem Header="PDF/A-1 RGB" Click="SavePDFA1_RGB" x:Name="xaml_savepdfa1_rgb"/>
+                        <MenuItem Header="PDF/A-1 CMYK" Click="SavePDFA1_CMYK" x:Name="xaml_savepdfa1_cmyk"/>
+                        <MenuItem Header="PDF/A-2 RGB" Click="SavePDFA2_RGB" x:Name="xaml_savepdfa2_rgb"/>
+                        <MenuItem Header="PDF/A-2 CMYK" Click="SavePDFA2_CMYK" x:Name="xaml_savepdfa2_cmyk"/>
+                    </MenuItem>
+                    <MenuItem Header="PDF/X-3 Gray" Click="SavePDFX3_Gray" x:Name="xaml_savepdfx3_gray"/>
+                    <MenuItem Header="PDF/X-3 CMYK" Click="SavePDFX3_CMYK" x:Name="xaml_savepdfx3_cmyk"/>
+                    <MenuItem Header="PCL-XL" Click="SavePCLXL" x:Name="xaml_savepclxl"/>
+                    <MenuItem Header="XPS" Click="SaveXPS"/>
+                    <MenuItem Header="SVG" Click="SaveSVG"/>
+                    <MenuItem Header="PCL/Bitmap" Click="SavePCL"/>
+                    <MenuItem Header="PNG" Click="SavePNG"/>
+                    <MenuItem Header="PWG" Click="SavePWG"/>
+                    <MenuItem Header="PNM" Click="SavePNM"/>
+                    <MenuItem Header="TEXT" Click="SaveText"/>
                 </MenuItem>
                 <MenuItem Header="_Close" >
                     <MenuItem.Icon>
@@ -93,11 +111,20 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator />
+                <MenuItem Header="Extract Page/Selection...">
+                    <MenuItem.Icon>
+                        <Image Source="Resources/saveHS.png" />
+                    </MenuItem.Icon>
+                    <MenuItem Header="PDF" Click="ExtractPDF" x:Name="xaml_extractpdf">
+                    </MenuItem>
+                    <MenuItem Header="EPS" Click="ExtractEPS" x:Name="xaml_extracteps">
+                    </MenuItem>
+                    <MenuItem Header="PS" Click="ExtractPS" x:Name="xaml_extractps">
+                    </MenuItem>
+                    <MenuItem Header="SVG" Click="ExtractSVG" x:Name="xaml_extractsvg">
+                    </MenuItem>
+                </MenuItem>
                 <MenuItem Header="Ghostscript Convert..." Click="ConvertClick">
-                </MenuItem>
-                <MenuItem Header="Extract..." >
-                </MenuItem>
-                <MenuItem Header="PS to EPS..." >
                 </MenuItem>
                 <Separator />
                 <MenuItem Header="Print...">
@@ -113,38 +140,33 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_Edit" >
-                <MenuItem Header="_Copy" Command="Copy">
+                <MenuItem Header="_Copy" Command="Copy" Click="CopyPage">
                     <MenuItem.Icon>
                         <Image Source="Resources/copy.ico" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Paste To..." />
-                <MenuItem Header="Convert Bitmap" />
-                <Separator />
-                <MenuItem Header="Add EPS Preview" />
-                <MenuItem Header="Extract EPS" />
-                <Separator />
+                <MenuItem Header="Paste To..." Click="PastePage"/>
                 <MenuItem Header="Measure" />
-                <MenuItem Header="Convert to vector format..." />
-                <MenuItem Header="Text Extract" />
+                <MenuItem Header="Copy Text" />
                 <MenuItem Header="_Find" Command="Find"/>
                 <MenuItem Header="Find Next"/>
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="Next Page" />
-                <MenuItem Header="Previous Page" />
+                <MenuItem Header="Next Page" Click="OnForwardPageClick"/>
+                <MenuItem Header="Previous Page" Click="OnBackPageClick"/>
                 <MenuItem Header="Goto Page" />
             </MenuItem>
             <MenuItem Header="_Options">
-                <MenuItem Header="Ghostscript" />
-                <MenuItem Header="Color" />
+                <MenuItem Header="Output Intents" Click="OutputIntents">
+                </MenuItem>
                 <MenuItem Header="Footer Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
             </MenuItem>
 
             <MenuItem Header="_Help" />
+            <MenuItem Header="About"/>
+
         </Menu>
-        
         <!-- List of icons for page navigation, print, etc -->
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Background="WhiteSmoke">
             <Button  Width="20" Height="20" Name="BackPage" Click="OnBackPageClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">

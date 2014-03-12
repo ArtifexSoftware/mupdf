@@ -1,0 +1,50 @@
+﻿<Window x:Class="gsview.OutputIntent"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OutputIntent" Height="176" Width="338"
+        SizeToContent="Width">
+
+    <DockPanel LastChildFill="True" Margin="0,0,0,0">
+
+        <Grid Background="DarkGray" DockPanel.Dock="Bottom" >
+            <Button Width="50" Height="20" Click="ClickOK" Margin="0,5,0,5">
+                <TextBlock>OK</TextBlock>
+            </Button>
+        </Grid>
+
+        <Grid Background="DarkGray" DockPanel.Dock="Top" >
+        <Grid Background="DarkGray" Grid.Row="0" Grid.Column="0" Margin="25,15,25,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Button  Grid.Column="0" Grid.Row="0" Width="50" Height="20" Click="SelectGray" Margin="0,0,0,0">
+                <TextBlock>Gray</TextBlock>
+            </Button>
+            <TextBox x:Name="xaml_gray" Grid.Column="1" Grid.Row="0" Background="DarkGray" Height="20" Margin="5,5,5,5"  IsReadOnly="True" Text="Not Set" BorderBrush="Red"></TextBox>
+
+            <Button  Grid.Column="0" Grid.Row="1" Width="50" Height="20" Click="SelectRGB" Margin="0,0,0,0">
+                <TextBlock>RGB</TextBlock>
+            </Button>
+            <TextBox x:Name="xaml_rgb" Grid.Column="1" Grid.Row="1" Background="DarkGray" Height="20" Margin="5,5,5,5" IsReadOnly="True" Text="Not Set" BorderBrush="Red"></TextBox>
+
+            <Button  Grid.Column="0" Grid.Row="2" Width="50" Height="20" Click="SelectCMYK" Margin="0,0,0,0">
+                <TextBlock>CMYK</TextBlock>
+            </Button>
+            <TextBox x:Name="xaml_cmyk" Grid.Column="1" Grid.Row="2" Background="DarkGray" Height="20" Margin="5,5,5,5" IsReadOnly="True" Text="Not Set" BorderBrush="Red"></TextBox>
+
+
+
+
+            </Grid>
+        </Grid>
+
+
+    </DockPanel>
+</Window>

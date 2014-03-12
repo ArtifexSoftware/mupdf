@@ -75,6 +75,8 @@ namespace gsview
 	/* Parameters */
 	public struct gsParams_t
 	{
+		public String init_string;
+		public String init_file;
 		public int resolution;
 		public gsDevice_t device;
 		public String devicename;
@@ -285,7 +287,7 @@ namespace gsview
 			gsParams_t gsparams = (gsParams_t) e.Argument;
 			String out_file = gsparams.outputfile;
 			String in_file = gsparams.inputfile;
-			int num_params = 9;  /* base number */
+			int num_params = 8;  /* base number */
 			int rend_count = 1;
 			String options;
 			int count;
@@ -298,6 +300,10 @@ namespace gsview
 				rend_count = gsparams.pages.Count;
 				num_params = num_params + 2;
 			}
+			if (gsparams.init_file != null)
+				num_params = num_params + 1;
+			if (gsparams.init_string != null)
+				num_params = num_params + 1;
 
 			var argParam = new GCHandle[num_params];
 			var argPtrs = new IntPtr[num_params];
@@ -334,24 +340,22 @@ namespace gsview
 					strParams[0] = "gs";   /* This does not matter */
 					strParams[1] = "-dNOPAUSE";
 					strParams[2] = "-dBATCH";
-					strParams[3] = "-dSAFER";
 					if (gsparams.devicename != null)
 					{
-						strParams[4] = "-sDEVICE=" + gsparams.devicename;
+						strParams[3] = "-sDEVICE=" + gsparams.devicename;
 					}
 					else
 					{
-						strParams[4] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), gsparams.device);
+						strParams[3] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), gsparams.device);
 					}
-					strParams[5] = "-r" + gsparams.resolution;
+					strParams[4] = "-r" + gsparams.resolution;
 					/* Create temp file if file not specified */
 					if (out_file == null)
 					{
 						out_file = Path.GetTempFileName();
 						gsparams.outputfile = out_file;
 					}
-
-					count = 6;
+					count = 5;
 					/* Add in the options */
 					for (int kk = 0; kk < optionlist.Count; kk++)
 					{
@@ -389,8 +393,18 @@ namespace gsview
 						else
 							strParams[count] = "-o" + out_file;
 					}
+					if (gsparams.init_string != null)
+					{
+						count++;
+						strParams[count] = gsparams.init_string;
+					}
 					count++;
 					strParams[count] = "-f";
+					if (gsparams.init_file != null)
+					{
+						count++;
+						strParams[count] = gsparams.init_file;
+					}
 					count++;
 					strParams[count] = in_file;
 
@@ -448,7 +462,7 @@ namespace gsview
 			gsParams_t Params = (gsParams_t)e.Argument;
 			String out_file = Params.outputfile;
 			String in_file = Params.inputfile;
-			int num_params = 7;
+			int num_params = 6;
 			if (Params.options.Length > 0)
 				num_params = num_params + 1;
 
@@ -460,7 +474,6 @@ namespace gsview
 			String[] strParams = new String[num_params];
 			List<byte[]> CharacterArray = new List<byte[]>(num_params);
 			GCHandle argPtrsStable;
-			bool done = false;
 			Byte[] Buffer = new Byte[gsConstants.GS_READ_BUFFER];
 			BackgroundWorker worker = sender as BackgroundWorker;
 
@@ -494,16 +507,15 @@ namespace gsview
 				strParams[0] = "gs";   /* This does not matter */
 				strParams[1] = "-dNOPAUSE";
 				strParams[2] = "-dBATCH";
-				strParams[3] = "-dSAFER";
 				if (Params.devicename != null)
 				{
-					strParams[4] = "-sDEVICE=" + Params.devicename;
+					strParams[3] = "-sDEVICE=" + Params.devicename;
 				}
 				else
 				{
-					strParams[4] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), Params.device);
+					strParams[3] = "-sDEVICE=" + Enum.GetName(typeof(gsDevice_t), Params.device);
 				}
-				strParams[5] = "-r" + Params.resolution;
+				strParams[4] = "-r" + Params.resolution;
 				/* Create temp file if file not specified */
 				if (out_file == null)
 				{
@@ -512,10 +524,10 @@ namespace gsview
 				}
 				if (Params.options.Length > 0)
 				{
-					strParams[6] = Params.options;
-					strParams[7] = "-o" + out_file;
-				} else 
+					strParams[5] = Params.options;
 					strParams[6] = "-o" + out_file;
+				} else 
+					strParams[7] = "-o" + out_file;
 
 				/* Now convert our Strings to char* and get pinned handles to these.
 					* This keeps the c# GC from moving stuff around on us */
@@ -628,6 +640,8 @@ namespace gsview
 		{
 			gsParams_t gsparams = new gsParams_t(); ;
 
+			gsparams.init_file = null;
+			gsparams.init_string = null;
 			gsparams.device = gsDevice_t.pdfwrite;
 			gsparams.devicename = null;
 			gsparams.outputfile = null;
@@ -643,8 +657,10 @@ namespace gsview
 
 		public gsStatus CreateXPS(String fileName, int resolution, int num_pages)
 		{
-			gsParams_t gsparams = new gsParams_t(); ;
+			gsParams_t gsparams = new gsParams_t();
 
+			gsparams.init_file = null;
+			gsparams.init_string = null;
 			gsparams.device = gsDevice_t.xpswrite;
 			gsparams.outputfile = null;
 			gsparams.resolution = resolution;
@@ -659,9 +675,13 @@ namespace gsview
 
 		public gsStatus Convert(String fileName, String options, String device, 
 								String outputFile, int num_pages, int resolution,
-								bool multi_page_needed, System.Collections.IList pages)
+								bool multi_page_needed, System.Collections.IList pages, 
+								String init_file, String init_string)
 		{
 			gsParams_t gsparams = new gsParams_t();
+
+			gsparams.init_file = init_file;
+			gsparams.init_string = init_string;
 			gsparams.devicename = device;
 			gsparams.outputfile = outputFile;
 			gsparams.inputfile = fileName;
