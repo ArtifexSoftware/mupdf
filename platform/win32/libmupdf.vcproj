@@ -510,6 +510,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\filter-leech.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\filter-lzw.c"
 				>
 			</File>
