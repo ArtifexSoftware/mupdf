@@ -198,6 +198,9 @@ namespace gsview
 		String m_document_type;
 		Info m_infowindow;
 		OutputIntent m_outputintents;
+		Selection m_selection;
+		private Point startPoint;
+		private Rectangle rect;
 
 		public MainWindow()
 		{
@@ -222,6 +225,7 @@ namespace gsview
 				m_outputintents.Activate();
 				m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
 				m_convertwin = null;
+				m_selection = null;
 			}
 			catch (OutOfMemoryException e)
 			{
@@ -232,6 +236,8 @@ namespace gsview
 
 		void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
+			if (m_selection != null && m_selection.IsActive)
+				m_selection.Close();
 			m_gsoutput.RealWindowClosing();
 			m_outputintents.RealWindowClosing();
 		}
@@ -1080,6 +1086,8 @@ namespace gsview
 			String options = m_convertwin.xaml_options.Text;
 			int resolution = 72;
 			bool multi_page_needed = false;
+			int first_page = -1;
+			int last_page = -1;
 
 			if (pages.Count == 0)
 			{
@@ -1116,6 +1124,8 @@ namespace gsview
 						/* Pages are contiguous.  Add first and last page 
 						 * as command line option */
 						options = options + " -dFirstPage=" + firstpage.Page + " -dLastPage=" + lastpage.Page;
+						first_page = firstpage.Page;
+						last_page = lastpage.Page;
 					}
 					else
 					{
@@ -1125,13 +1135,19 @@ namespace gsview
 						multi_page_needed = true;  /* need to put in separate outputs */
 					} 
 				}
+				xaml_DistillProgress.Value = 0;
 				if (m_ghostscript.Convert(m_currfile, options,
-					device.DeviceName, dlg.FileName, m_num_pages, resolution,
-					multi_page_needed, pages_selected, null, null) == gsStatus.GS_BUSY)
+					device.DeviceName, dlg.FileName, pages.Count, resolution,
+					multi_page_needed, pages_selected, first_page, last_page,
+					null, null) == gsStatus.GS_BUSY)
 				{
 					ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
 					return;
 				}
+				xaml_DistillName.Text = "GS Converting Document";
+				xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
+				xaml_DistillName.FontWeight = FontWeights.Bold;
+				xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 				m_convertwin.Close();
 			}
 			return;
@@ -1316,24 +1332,29 @@ namespace gsview
 					}
 					if (use_gs)
 					{
+						xaml_DistillProgress.Value = 0;
 						if (m_ghostscript.Convert(m_currfile, options,
 							Enum.GetName(typeof(gsDevice_t), gsDevice_t.pdfwrite),
-							dlg.FileName, m_num_pages, 300, false, null, init_file, null) == 
-								gsStatus.GS_BUSY)
+							dlg.FileName, m_num_pages, 300, false, null, -1, -1,
+							init_file, null) ==  gsStatus.GS_BUSY)
 						{
 							ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
 							return;
 						}
+						xaml_DistillName.Text = "Creating PDF";
+						xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
+						xaml_DistillName.FontWeight = FontWeights.Bold;
+						xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 					}
 				}
 			}
 			else
 			{
 				/* Non PDF output */
+				gsDevice_t Device = gsDevice_t.xpswrite;
+				bool use_mupdf = true;
 				switch (type)
 				{
-					case Save_Type_t.PCLXL:
-						break;
 					case Save_Type_t.PCLBitmap:
 						break;
 					case Save_Type_t.PNG:
@@ -1342,10 +1363,34 @@ namespace gsview
 						break;
 					case Save_Type_t.SVG:
 						break;
+					case Save_Type_t.PCLXL:
+						use_mupdf = false;
+						dlg.Filter = "PCL-XL (*.bin)|*.bin";
+						Device = gsDevice_t.pxlcolor;
+						break;
 					case Save_Type_t.TEXT:
+						use_mupdf = false;
+						dlg.Filter = "Text Files(*.txt)|*.txt";
+						Device = gsDevice_t.txtwrite;
 						break;
 					case Save_Type_t.XPS:
+						use_mupdf = false;
+						dlg.Filter = "XPS Files(*.xps)|*.xps";
 						break;
+				}
+				if (!use_mupdf)
+				{
+					if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+					{
+						if (m_ghostscript.Convert(m_currfile, "",
+							Enum.GetName(typeof(gsDevice_t), Device),
+							dlg.FileName, 1, 300, false, null, -1, -1,
+							null, null) == gsStatus.GS_BUSY)
+						{
+							ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
+							return;
+						}
+					}
 				}
 			}
 		}
@@ -1466,15 +1511,126 @@ namespace gsview
 		}		
 		private void Extract(Extract_Type_t type)
 		{
-			switch (type)
+			if (m_selection != null)
+				return;
+
+			m_selection = new Selection(m_currpage + 1, m_doczoom, type);
+			m_selection.UpdateMain += new Selection.CallBackMain(SelectionMade);
+			m_selection.Show();
+			m_selection.xaml_Image.Source = m_docPages[m_currpage].BitMap;
+			m_selection.xaml_Image.Height = m_docPages[m_currpage].Height;
+			m_selection.xaml_Image.Width = m_docPages[m_currpage].Width;
+		}
+
+		async private void SelectionZoom(int page_num, double zoom)
+		{
+			Point ras_size;
+			if (ComputePageSize(page_num, zoom, out ras_size) == status_t.S_ISOK)
 			{
-				case Extract_Type_t.PDF:
+				try
+				{
+					Byte[] bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+
+					Task<int> ren_task =
+						new Task<int>(() => mu_doc.RenderPage(page_num, bitmap, (int)ras_size.X, (int)ras_size.Y, zoom, false, true));
+					ren_task.Start();
+					await ren_task.ContinueWith((antecedent) =>
+					{
+						status_t code = (status_t)ren_task.Result;
+						if (code == status_t.S_ISOK)
+						{
+							if (m_selection != null)
+							{
+								int stride = (int) ras_size.X * 4;
+								m_selection.xaml_Image.Source = BitmapSource.Create((int) ras_size.X, (int) ras_size.Y, 72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
+								m_selection.xaml_Image.Height = (int)ras_size.Y;
+								m_selection.xaml_Image.Width = (int)ras_size.X;
+								m_selection.UpdateRect();
+								m_selection.m_curr_state = SelectStatus_t.OK;
+							}
+						}
+					}, TaskScheduler.FromCurrentSynchronizationContext());
+				}
+				catch (OutOfMemoryException e)
+				{
+					Console.WriteLine("Memory allocation failed page " + page_num + "\n");
+					ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
+				}
+			}
+		}
+		private void SelectionMade(object gsObject, SelectEventArgs results)
+		{
+			switch (results.State)
+			{
+				case SelectStatus_t.CANCEL:
+				case SelectStatus_t.CLOSE:
+					m_selection = null;
+					return;
+				case SelectStatus_t.SELECT:
+					/* Get the information we need */
+					double zoom = results.ZoomFactor;
+					Point start = results.TopLeft;
+					Point size = results.Size;
+					int page = results.PageNum;
+					gsDevice_t Device = gsDevice_t.pdfwrite;
+
+					start.X = start.X / zoom;
+					start.Y = start.Y / zoom;
+					size.X = size.X / zoom;
+					size.Y = size.Y / zoom;
+
+					/* Do the actual extraction */
+					String options;
+					SaveFileDialog dlg = new SaveFileDialog();
+					dlg.FilterIndex = 1;
+
+					/* Get us set up to do a fixed size */
+					options = "-dFirstPage=" + page + " -dLastPage=" + page +
+						" -dDEVICEWIDTHPOINTS=" + size.X + " -dDEVICEHEIGHTPOINTS=" +
+						size.Y + " -dFIXEDMEDIA";
+
+					/* Set up the translation */
+					String init_string = "<</Install {-" + start.X + " -" +
+						start.Y + " translate (testing) == flush}>> setpagedevice";
+
+					switch (results.Type)
+					{
+						case Extract_Type_t.PDF:
+							dlg.Filter = "PDF Files(*.pdf)|*.pdf";
+							break;
+						case Extract_Type_t.EPS:
+							dlg.Filter = "EPS Files(*.eps)|*.eps";
+							Device = gsDevice_t.eps2write;
+							break;
+						case Extract_Type_t.PS:
+							dlg.Filter = "PostScript Files(*.ps)|*.ps";
+							Device = gsDevice_t.ps2write;
+							break;
+						case Extract_Type_t.SVG:
+							dlg.Filter = "SVG Files(*.svg)|*.svg";
+							break;
+					}
+					if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+					{
+						if (m_ghostscript.Convert(m_currfile, options,
+							Enum.GetName(typeof(gsDevice_t), Device),
+							dlg.FileName, 1, 300, false, null, page, page,
+							null, init_string) == gsStatus.GS_BUSY)
+						{
+							ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
+							return;
+						}
+					}
+
+					m_selection.Close();
 					break;
-				case Extract_Type_t.EPS:
+				case SelectStatus_t.ZOOMIN:
+					/* Render new page at this resolution and hand it off */
+					SelectionZoom(results.PageNum - 1, results.ZoomFactor);
 					break;
-				case Extract_Type_t.PS:
-					break;
-				case Extract_Type_t.SVG:
+				case SelectStatus_t.ZOOMOUT:
+					/* Render new page at this resolution and hand it off */
+					SelectionZoom(results.PageNum - 1, results.ZoomFactor);
 					break;
 			}
 		}

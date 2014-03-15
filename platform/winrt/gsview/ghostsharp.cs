@@ -22,7 +22,7 @@ namespace gsview
 		bmp32b,
 		bmpgray,
 		bmpmono,
-		epswrite,
+		eps2write,
 		jpeg,
 		jpegcmyk,
 		jpeggray,
@@ -88,6 +88,9 @@ namespace gsview
 		public String options;
 		public bool need_multi_page;
 		public System.Collections.IList pages;
+		public int firstpage;
+		public int lastpage;
+		public int currpage; /* valid only when pages != null */
 	};
 
 	public class gsEventArgs : EventArgs
@@ -213,7 +216,7 @@ namespace gsview
 		{
 			String output = Marshal.PtrToStringAnsi(pointer);
 			gsIOUpdateMain(this, output, count);
-			if (m_params.task == GS_Task_t.CREATE_XPS)
+			if (m_params.task != GS_Task_t.PS_DISTILL)
 			{
 				/* See if we have a page number */
 				if (count >= 7 && output.Substring(0, 4) == "Page")
@@ -222,9 +225,27 @@ namespace gsview
 					int numVal;
 					try
 					{
+						double perc = 0.0;
 						numVal = System.Convert.ToInt32(page);
-
-						double perc = 100.0 * (double)numVal / (double)m_params.num_pages;
+						if (m_params.firstpage == -1 && m_params.lastpage == -1 &&
+							m_params.pages == null)
+						{
+							/* Doing full document */
+							perc = 100.0 * (double)numVal / (double)m_params.num_pages;
+						}
+						else
+						{
+							if (m_params.pages != null)
+							{
+								perc = 100.0 * ((double)numVal - m_params.currpage) / (double)m_params.num_pages;
+								m_params.currpage = m_params.currpage + 1;
+							}
+							else
+							{
+								/* continugous set of pages */
+								perc = 100.0 * ((double)numVal - m_params.firstpage + 1) / (double)m_params.num_pages;
+							}
+						}
 						m_worker.ReportProgress((int)perc);
 					}
 					catch (FormatException e)
@@ -303,7 +324,7 @@ namespace gsview
 			if (gsparams.init_file != null)
 				num_params = num_params + 1;
 			if (gsparams.init_string != null)
-				num_params = num_params + 1;
+				num_params = num_params + 2;
 
 			var argParam = new GCHandle[num_params];
 			var argPtrs = new IntPtr[num_params];
@@ -395,6 +416,8 @@ namespace gsview
 					}
 					if (gsparams.init_string != null)
 					{
+						count++;
+						strParams[count] = "-c";
 						count++;
 						strParams[count] = gsparams.init_string;
 					}
@@ -652,6 +675,9 @@ namespace gsview
 			gsparams.options = "";
 			gsparams.need_multi_page = false;
 			gsparams.pages = null;
+			gsparams.firstpage = -1;
+			gsparams.lastpage = -1;
+			gsparams.currpage = -1;
 			return RunGhostscript(gsparams);
 		}
 
@@ -670,13 +696,16 @@ namespace gsview
 			gsparams.options = "";
 			gsparams.need_multi_page = false;
 			gsparams.pages = null;
+			gsparams.firstpage = -1;
+			gsparams.lastpage = -1;
+			gsparams.currpage = -1;
 			return RunGhostscript(gsparams);
 		}
 
 		public gsStatus Convert(String fileName, String options, String device, 
 								String outputFile, int num_pages, int resolution,
 								bool multi_page_needed, System.Collections.IList pages, 
-								String init_file, String init_string)
+								int firstpage, int lastpage, String init_file, String init_string)
 		{
 			gsParams_t gsparams = new gsParams_t();
 
@@ -691,6 +720,9 @@ namespace gsview
 			gsparams.resolution = resolution;
 			gsparams.need_multi_page = multi_page_needed;
 			gsparams.pages = pages;
+			gsparams.firstpage = firstpage;
+			gsparams.lastpage = lastpage;
+			gsparams.currpage = 1;
 			return RunGhostscript(gsparams);
 		}
 

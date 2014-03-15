@@ -7,9 +7,9 @@
         <DataTemplate x:Key="PageTemplate">
             <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}" Margin="24,24,0,0">
                 <Image.BitmapEffect>
-                    <DropShadowBitmapEffect Color="Black" Direction="-50"
+                        <DropShadowBitmapEffect Color="Black" Direction="-50"
                     ShadowDepth="40" Softness=".7" />
-                </Image.BitmapEffect>
+                    </Image.BitmapEffect>
             </Image>
         </DataTemplate>
 
@@ -111,7 +111,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Extract Page/Selection...">
+                <MenuItem Header="Extract Selection...">
                     <MenuItem.Icon>
                         <Image Source="Resources/saveHS.png" />
                     </MenuItem.Icon>
@@ -127,7 +127,7 @@
                 <MenuItem Header="Ghostscript Convert..." Click="ConvertClick">
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Print...">
+                <MenuItem Header="Print..." Click="Print">
                     <MenuItem.Icon>
                         <Image Source="Resources/printer.ico" />
                     </MenuItem.Icon>
@@ -140,7 +140,7 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_Edit" >
-                <MenuItem Header="_Copy" Command="Copy" Click="CopyPage">
+                <MenuItem Header="_Copy Page" Command="Copy" Click="CopyPage">
                     <MenuItem.Icon>
                         <Image Source="Resources/copy.ico" />
                     </MenuItem.Icon>
@@ -468,7 +468,8 @@
                       ScrollViewer.CanContentScroll="False" 
                       Background="DarkGray" ScrollViewer.PanningMode="Both"
                       ScrollViewer.ScrollChanged="ListViewScrollChanged"
-                      PreviewMouseLeftButtonUp="PageSelected" MouseDoubleClick="PageDoubleClick">
+                      PreviewMouseLeftButtonUp="PageSelected" MouseDoubleClick="PageDoubleClick"
+                      >
                 <!-- This keeps the pages in the center of the panel -->
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
@@ -477,7 +478,15 @@
                 </ListView.ItemContainerStyle>
             </ListView>
         </Grid>
-
+        
+        
+        
+        
+        
+        
+        
+        
+        
     </DockPanel>
 
 </Window>

@@ -1,0 +1,49 @@
+﻿<Window x:Class="gsview.Selection"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Selection" Height="524" Width="452">
+
+    <DockPanel LastChildFill="True">
+        <Menu IsMainMenu="True" DockPanel.Dock="Top">
+            <MenuItem Header="OK" Click="ClickOK"/>
+            <MenuItem Header="Exit" Click="ClickExit"/>
+            <MenuItem Header="Clear" Click="ClickClear"/>
+        </Menu>
+
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Background="WhiteSmoke">
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="ZoomIn" Background="Transparent" BorderBrush="Transparent">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/zoom_in.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button  Margin="10 0 0 0" Width="20" Height="20" Click="ZoomOut" Background="Transparent" BorderBrush="Transparent">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/zoom_out.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Stretch" Background="DarkGray" DockPanel.Dock="Left">
+            <Canvas x:Name="xaml_Canvas" MouseDown="Canvas_MouseDown" MouseMove="Canvas_MouseMove" Background="Transparent" Width="{Binding ActualWidth, ElementName=xaml_Image}" Height="{Binding ActualHeight, ElementName=xaml_Image}">
+                <Image x:Name="xaml_Image" Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}"/>
+            </Canvas>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
