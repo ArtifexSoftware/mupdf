@@ -614,6 +614,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\printf.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\shade.c"
 				>
 			</File>
