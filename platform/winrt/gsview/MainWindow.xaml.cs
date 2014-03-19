@@ -157,6 +157,15 @@ namespace gsview
 		public Point size;
 	}
 
+	public struct searchResults_t
+	{
+		public String needle;
+		public bool done;
+		public int page_found;
+		public List<Rect> rectangles;
+		public int num_rects;
+	}
+
 	public partial class MainWindow : Window
 	{
 		mudocument mu_doc;
@@ -166,7 +175,7 @@ namespace gsview
 		int m_contents_size;
 		int m_content_item;
 		List<bool> m_linkset;
-		List<RectList> m_text_list;
+		List<RectList> m_text_list = null;
 		private int m_rectlist_page;
 		private List<ContentEntry> m_content_list;
 		private bool m_file_open;
@@ -177,8 +186,8 @@ namespace gsview
 		private bool m_links_on;
 		private int m_search_rect_count;
 		private bool m_page_update;
-		String m_textcolor;
-		String m_linkcolor;
+		String m_textcolor = "#402572AC";
+		String m_linkcolor = "#40AC7225";
 		RenderingStatus_t m_ren_status;
 		private bool m_insearch;
 		private bool m_search_active;
@@ -195,12 +204,14 @@ namespace gsview
 		Password m_password = null;
 		bool m_zoomhandled;
 		BackgroundWorker m_thumbworker = null;
+		BackgroundWorker m_textsearch = null;
 		String m_document_type;
 		Info m_infowindow;
 		OutputIntent m_outputintents;
 		Selection m_selection;
 		private Point startPoint;
 		private Rectangle rect;
+		String m_prevsearch = null;
 
 		public MainWindow()
 		{
@@ -215,7 +226,6 @@ namespace gsview
 				m_docPages = new Pages();
 				m_thumbnails = new List<DocPage>();
 				m_page_link_list = new List<List<RectList>>();
-				m_text_list = new List<RectList>();
 				m_linkset = new List<bool>();
 				m_ghostscript = new ghostsharp();
 				m_ghostscript.gsUpdateMain += new ghostsharp.gsCallBackMain(gsProgress);
@@ -276,7 +286,10 @@ namespace gsview
 			if (m_page_link_list != null && m_page_link_list.Count > 0)
 				m_page_link_list.Clear();
 			if (m_text_list != null && m_text_list.Count > 0)
+			{
 				m_text_list.Clear();
+				m_text_list = null;
+			}
 			if (m_linkset != null && m_linkset.Count > 0)
 				m_linkset.Clear();
 
@@ -807,6 +820,8 @@ namespace gsview
 									status_t code = (status_t)ren_task.Result;
 									if (code == status_t.S_ISOK)
 									{
+										if (m_docPages[k].TextBox != null)
+											ScaleTextBox(k);
 										UpdatePage(k, bitmap, ras_size, Page_Content_t.FULL_RESOLUTION, m_doczoom);
 										m_docPages[k].PageRefresh();
 										if (k == curr_page && scrollto)
@@ -877,11 +892,6 @@ namespace gsview
 
 		}
 
-		private void Search(object sender, RoutedEventArgs e)
-		{
-
-		}
-
 		private void ZoomOut(object sender, RoutedEventArgs e)
 		{
 			m_doczoom = m_doczoom - Constants.ZOOM_STEP;
@@ -898,11 +908,6 @@ namespace gsview
 				m_doczoom = Constants.ZOOM_MAX;
 			xaml_ZoomSlider.Value = m_doczoom * 100.0;
 			RenderRange(m_currpage, false);
-		}
-
-		private void CancelSearchClick(object sender, RoutedEventArgs e)
-		{
-
 		}
 
 		private void gsIO(object gsObject, String mess, int len)
@@ -1621,7 +1626,6 @@ namespace gsview
 							return;
 						}
 					}
-
 					m_selection.Close();
 					break;
 				case SelectStatus_t.ZOOMIN:
@@ -1654,6 +1658,239 @@ namespace gsview
 		private void OutputIntents(object sender, RoutedEventArgs e)
 		{
 			m_outputintents.Show();
+		}
+
+		/* Search related code */
+		private void Search(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done || (m_textsearch != null && m_textsearch.IsBusy))
+				return;
+
+			m_textsearch = null; /* Start out fresh */
+			if (xaml_SearchControl.Visibility == System.Windows.Visibility.Collapsed)
+				xaml_SearchControl.Visibility = System.Windows.Visibility.Visible;
+			else
+			{
+				xaml_SearchControl.Visibility = System.Windows.Visibility.Collapsed;
+				ClearTextSearch();
+			}
+		}
+
+		private void OnSearchBackClick(object sender, RoutedEventArgs e)
+		{
+			String textToFind = xaml_SearchText.Text;
+			TextSearchSetUp(-1, textToFind);
+		}
+
+		private void OnSearchForwardClick(object sender, RoutedEventArgs e)
+		{
+			String textToFind = xaml_SearchText.Text;
+			TextSearchSetUp(1, textToFind);
+		}
+
+		/* The thread that is actually doing the search work */
+		void SearchWork(object sender, DoWorkEventArgs e)
+		{
+			BackgroundWorker worker = sender as BackgroundWorker;
+			List<object> genericlist = e.Argument as List<object>;
+			int direction = (int) genericlist[0];
+			String needle = (String) genericlist[1];
+			/* To make sure we get the next page or current page during search */
+			int in_search = (int)genericlist[2];
+			m_searchpage = m_currpage + direction * in_search;
+			searchResults_t results = new searchResults_t();
+
+			/* Break if we find something, get to the end (or start of doc) 
+			 * or if we have a cancel occur */
+			while (true)
+			{
+				int box_count = mu_doc.TextSearchPage(m_searchpage, needle);
+				int percent;
+
+				if (direction == 1)
+					percent = (int)(100.0 * ((double)m_searchpage + 1) / (double)m_num_pages);
+				else
+					percent = 100 - (int)(100.0 * ((double)m_searchpage) / (double)m_num_pages);
+
+				if (box_count > 0)
+				{
+					/* This page has something lets go ahead and extract and 
+					 * signal to the UI thread and end this thread */
+					results.done = false;
+					results.num_rects = box_count;
+					results.page_found = m_searchpage;
+					results.rectangles = new List<Rect>();
+
+					for (int kk = 0; kk < box_count; kk++ )
+					{
+						Point top_left;
+						Size size;
+						mu_doc.GetTextSearchItem(kk, out top_left, out size);
+						var rect = new Rect(top_left, size);
+						results.rectangles.Add(rect);
+					}
+					worker.ReportProgress(percent, results);
+					break;
+				}
+				else
+				{
+					/* This page has nothing.  Lets go ahead and just update
+					 * the progress bar */
+					worker.ReportProgress(percent, null);
+					if (percent >= 100)
+					{
+						results.done = true;
+						results.needle = needle;
+						break;
+					}
+					m_searchpage = m_searchpage + direction;
+				}
+				if (worker.CancellationPending == true)
+				{
+					e.Cancel = true;
+					break;
+				}
+			}
+			e.Result = results;
+		}
+
+		private void SearchProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			if (e.UserState == null)
+			{
+				/* Nothing found */
+				xaml_SearchProgress.Value = e.ProgressPercentage;
+			} 
+			else
+			{
+				m_text_list = new List<RectList>();
+				/* found something go to page and show results */
+				searchResults_t results = (searchResults_t)e.UserState;
+				xaml_SearchProgress.Value = e.ProgressPercentage;
+				m_currpage = results.page_found;
+				/* Add in the rectangles */
+				for (int kk = 0; kk < results.num_rects; kk++)
+				{
+					var rect_item = new RectList();
+					rect_item.Scale = m_doczoom;
+					rect_item.Color = m_textcolor;
+					rect_item.Height = results.rectangles[kk].Height * m_doczoom;
+					rect_item.Width = results.rectangles[kk].Width * m_doczoom;
+					rect_item.X = results.rectangles[kk].X * m_doczoom;
+					rect_item.Y = results.rectangles[kk].Y * m_doczoom;
+					rect_item.Index = kk.ToString();
+					m_text_list.Add(rect_item);
+				}
+				m_docPages[results.page_found].TextBox = m_text_list;
+				m_docPages[results.page_found].PageRefresh();
+				xaml_PageList.ScrollIntoView(m_docPages[results.page_found]);
+			}
+		}
+		
+		private void SearchCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			if (e.Cancelled == true)
+			{
+				xaml_SearchGrid.Visibility = System.Windows.Visibility.Collapsed;
+				m_textsearch = null;
+			}
+			else
+			{
+				searchResults_t results = (searchResults_t) e.Result;
+				if (results.done == true)
+				{
+					xaml_SearchGrid.Visibility = System.Windows.Visibility.Collapsed;
+					m_textsearch = null;
+					ShowMessage(NotifyType_t.MESS_STATUS, "End of document search for \"" + results.needle + "\"");
+				}
+			}
+		}
+
+		private void CancelSearchClick(object sender, RoutedEventArgs e)
+		{
+			if (m_textsearch != null && m_textsearch.IsBusy)
+				m_textsearch.CancelAsync();
+			xaml_SearchGrid.Visibility = System.Windows.Visibility.Collapsed;
+			m_textsearch = null;
+			ClearTextSearch();
+		}
+
+		private void ClearTextSearch()
+		{
+			for (int kk = 0; kk < m_num_pages; kk++)
+			{
+				var temp = m_docPages[kk].TextBox;
+				if (temp != null)
+				{
+					m_docPages[kk].TextBox = null;
+					m_docPages[kk].PageRefresh();
+				}
+			}
+		}
+
+		private void ScaleTextBox(int pagenum)
+		{
+			var temp = m_docPages[pagenum].TextBox;
+			for (int kk = 0; kk < temp.Count; kk++)
+			{
+				var rect_item = temp[kk];
+				double factor = m_doczoom / temp[kk].Scale;
+
+				temp[kk].Height = temp[kk].Height * factor;
+				temp[kk].Width = temp[kk].Width * factor;
+				temp[kk].X = temp[kk].X * factor;
+				temp[kk].Y = temp[kk].Y * factor;
+
+				temp[kk].Scale = m_doczoom;
+				temp[kk].PageRefresh();
+			}
+			m_docPages[pagenum].TextBox = temp;
+		}
+
+		private void TextSearchSetUp(int direction, String needle)
+		{
+			/* Create background task for performing text search. */
+			try
+			{
+				int in_text_search = 0;
+
+				if (m_textsearch != null && m_textsearch.IsBusy)
+					return;
+
+				if (m_textsearch != null)
+				{
+					in_text_search = 1;
+					m_textsearch = null;
+				}
+
+				if (m_prevsearch != null && needle != m_prevsearch)
+				{
+					in_text_search = 0;
+					ClearTextSearch();
+				}
+
+				if (m_textsearch == null)
+				{
+					m_prevsearch = needle;
+					m_textsearch = new BackgroundWorker();
+					m_textsearch.WorkerReportsProgress = true;
+					m_textsearch.WorkerSupportsCancellation = true;
+					var arguments = new List<object>();
+					arguments.Add(direction);
+					arguments.Add(needle);
+					arguments.Add(in_text_search);
+					m_textsearch.DoWork += new DoWorkEventHandler(SearchWork);
+					m_textsearch.RunWorkerCompleted += new RunWorkerCompletedEventHandler(SearchCompleted);
+					m_textsearch.ProgressChanged += new ProgressChangedEventHandler(SearchProgressChanged);
+					xaml_SearchGrid.Visibility = System.Windows.Visibility.Visible;
+					m_textsearch.RunWorkerAsync(arguments);
+				}
+			}
+			catch (OutOfMemoryException e)
+			{
+				Console.WriteLine("Memory allocation failed during text search\n");
+				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
+			}
 		}
 	}
 }

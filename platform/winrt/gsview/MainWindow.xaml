@@ -5,12 +5,59 @@
 
     <Window.Resources>
         <DataTemplate x:Key="PageTemplate">
-            <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}" Margin="24,24,0,0">
-                <Image.BitmapEffect>
+            <Canvas HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Height="{Binding Height}" Width="{Binding Width}" Margin="24,24,0,0">
+                <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}">
+                    <Image.BitmapEffect>
                         <DropShadowBitmapEffect Color="Black" Direction="-50"
                     ShadowDepth="40" Softness=".7" />
                     </Image.BitmapEffect>
-            </Image>
+                </Image>
+                <ItemsControl ItemsSource="{Binding Path=TextBox}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding Left}"/>
+                            <Setter Property="Canvas.Top" Value="{Binding Top}"/>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ItemsControl ItemsSource="{Binding Path=LinkBox}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding Left}"/>
+                            <Setter Property="Canvas.Top" Value="{Binding Top}"/>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Canvas>
         </DataTemplate>
 
         <DataTemplate x:Key="ThumbTemplate">
@@ -309,6 +356,66 @@
             </Button>
         </StackPanel>
 
+        <!-- Search control -->
+        <Grid x:Name="xaml_SearchControl" Background="WhiteSmoke" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Margin="5,5,0,5"><Bold>Search:</Bold></TextBlock>
+            <TextBox x:Name="xaml_SearchText" Grid.Row="0"  Grid.Column="1" Width="100" Height="20" VerticalScrollBarVisibility="Hidden" 
+                     HorizontalScrollBarVisibility="Hidden"  TextAlignment="Center" Margin="5,5,0,5"/>
+            <Button Grid.Row="0" Grid.Column="2" Width="20" Height="20" Click="OnSearchBackClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/Left.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+            <Button Grid.Row="0" Grid.Column="3" Width="20" Height="20" Click="OnSearchForwardClick" Background="Transparent" BorderBrush="Transparent">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse>
+                                <Ellipse.Fill >
+                                    <ImageBrush ImageSource="Resources/Right.ico"/>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+
+
+        <!-- Footer control -->
+        <Grid x:Name="xaml_FooterControl" Background="WhiteSmoke" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Margin="5,0,0,0"><Bold>Zoom:</Bold></TextBlock>
+            <Slider x:Name="xaml_ZoomSlider" Grid.Row="0" Grid.Column="1" Margin="10, 0, 0, 0" 
+                Width="150" Orientation="Horizontal" HorizontalAlignment="Center" 
+                Value="100" Minimum="25" Maximum="400" 
+                SmallChange="1" LargeChange="1"
+                TickPlacement="None" TickFrequency="1"  IsSnapToTickEnabled="True" MouseLeftButtonUp="ZoomReleased"/>
+            <TextBox Grid.Row="0"  Grid.Column="2" Width="30" Height="20" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" 
+                     HorizontalScrollBarVisibility="Hidden"  TextAlignment="Center" 
+                     Text="{Binding Mode=TwoWay, ElementName=xaml_ZoomSlider,Path=Value, UpdateSourceTrigger=PropertyChanged}" />
+        </Grid>
+
         <!-- The progress bar that runs while the thumbnails are rendered -->
         <Grid x:Name="xaml_ProgressGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -335,7 +442,7 @@
                 <TextBlock><Bold>Cancel</Bold></TextBlock>
             </Button>
         </Grid>
-
+        
         <!-- The progress bar that runs during text search -->
         <Grid x:Name="xaml_SearchGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -416,24 +523,6 @@
                 </Button.Template>
                 <TextBlock><Bold>Cancel</Bold></TextBlock>
             </Button>
-        </Grid>
-
-        <!-- Footer control -->
-        <Grid x:Name="xaml_FooterControl" Background="WhiteSmoke" DockPanel.Dock="Bottom" Visibility="Collapsed">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="0" Grid.Column="0" Margin="5,0,0,0"><Bold>Zoom:</Bold></TextBlock>
-            <Slider x:Name="xaml_ZoomSlider" Grid.Row="0" Grid.Column="1" Margin="10, 0, 0, 0" 
-                Width="150" Orientation="Horizontal" HorizontalAlignment="Center" 
-                Value="100" Minimum="25" Maximum="400" 
-                SmallChange="1" LargeChange="1"
-                TickPlacement="None" TickFrequency="1"  IsSnapToTickEnabled="True" MouseLeftButtonUp="ZoomReleased"/>
-            <TextBox Grid.Row="0"  Grid.Column="2" Width="30" Height="20" VerticalScrollBarVisibility="Hidden" IsReadOnly="True" 
-                     HorizontalScrollBarVisibility="Hidden"  TextAlignment="Center" 
-                     Text="{Binding Mode=TwoWay, ElementName=xaml_ZoomSlider,Path=Value, UpdateSourceTrigger=PropertyChanged}" />
         </Grid>
 
         <!-- Thumb viewer/selector -->

@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace gsview
 {
-	public class RectList
+	public class RectList : INotifyPropertyChanged
 	{
 		public String Index
 		{
@@ -20,25 +21,31 @@ namespace gsview
 			set;
 		}
 
-		public int Height
+		public double Height
 		{
 			get;
 			set;
 		}
 
-		public int Width
+		public double Width
 		{
 			get;
 			set;
 		}
 
-		public int X
+		public double X
 		{
 			get;
 			set;
 		}
 
-		public int Y
+		public double Y
+		{
+			get;
+			set;
+		}
+
+		public double Scale
 		{
 			get;
 			set;
@@ -60,6 +67,20 @@ namespace gsview
 		{
 			get;
 			set;
+		}
+
+		public event PropertyChangedEventHandler PropertyChanged;
+
+		public void PageRefresh()
+		{
+			if (PropertyChanged != null)
+			{
+				PropertyChanged(this, new PropertyChangedEventArgs("X"));
+				PropertyChanged(this, new PropertyChangedEventArgs("Height"));
+				PropertyChanged(this, new PropertyChangedEventArgs("Width"));
+				PropertyChanged(this, new PropertyChangedEventArgs("Y"));
+			}
+
 		}
 	}
 }

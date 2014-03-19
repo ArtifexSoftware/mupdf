@@ -16,6 +16,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 }
 
 std::shared_ptr<std::vector<sh_content>> gContents;
+std::shared_ptr<std::vector<sh_text>> gTextResults;
 
 char* String_to_char(PCWSTR text)
 {
@@ -144,6 +145,37 @@ SYMBOL_DECLSPEC char* __stdcall mGetContentsItem(int k, int *len, int *page)
 	retstr = (char*)::CoTaskMemAlloc(*len + 1);
 	strcpy(retstr, str);
 	return retstr;
+}
+
+SYMBOL_DECLSPEC int __stdcall mTextSearchPage(void *ctx, int page_num, PCWSTR needle)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+
+	sh_vector_text text_smart_ptr_vec(new std::vector<sh_text>());
+	gTextResults = text_smart_ptr_vec;
+	
+	return mu_ctx->GetTextSearch(page_num, String_to_char(needle), gTextResults);
+}
+
+SYMBOL_DECLSPEC bool __stdcall mGetTextSearchItem(int k, double *top_x, double
+	*top_y, double *height, double *width)
+{
+	char* retstr = NULL;
+
+	if (k < 0 || k > gTextResults->size())
+		return false;
+	sh_text muctx_search = gTextResults->at(k);
+	*top_x = muctx_search->upper_left.X;
+	*top_y = muctx_search->upper_left.Y;
+	*width = muctx_search->lower_right.X - muctx_search->upper_left.X;
+	*height = muctx_search->lower_right.Y - muctx_search->upper_left.Y;
+	return true;
+}
+
+SYMBOL_DECLSPEC void __stdcall mReleaseTextSearch()
+{
+	if (gTextResults != nullptr)
+		gTextResults.reset();
 }
 
 SYMBOL_DECLSPEC void* __stdcall mCreateDisplayList(void *ctx, int page_num,

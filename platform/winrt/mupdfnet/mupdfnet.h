@@ -32,7 +32,10 @@ EXTERN_C SYMBOL_DECLSPEC int __stdcall mRenderPage(void *ctx, int page_num,
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetContents(void *ctx);
 EXTERN_C SYMBOL_DECLSPEC char* __stdcall mGetContentsItem(int k, int *len, int *page);
 EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseContents();
-
+EXTERN_C SYMBOL_DECLSPEC int __stdcall mTextSearchPage(void *ctx, int page_num, PCWSTR needle);
+EXTERN_C SYMBOL_DECLSPEC bool __stdcall mGetTextSearchItem(int k, double *top_x, double
+	*top_y, double *height, double *width);
+EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseTextSearch();
 EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayList(void *ctx, int page_num,
 	int *page_width, int *page_height);
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,

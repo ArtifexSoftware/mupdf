@@ -31,6 +31,9 @@
     <Filter Include="tools">
       <UniqueIdentifier>{d7d9ecf3-3abb-4238-a833-0c0f8ed08976}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tiff">
+      <UniqueIdentifier>{631e9425-7a6a-4529-95c8-06ea5b145899}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\cbz\mucbz.c">

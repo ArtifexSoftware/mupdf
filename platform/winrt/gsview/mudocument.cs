@@ -93,14 +93,24 @@ namespace gsview
 			int page_width, int page_height, Byte[] bmp_data, int bmp_width, 
 			int bmp_height, double scale, bool flipy);
 
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int mTextSearchPage(IntPtr ctx, int page_num,
+			string needle);
+
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern bool mGetTextSearchItem(int k, ref double top_x,
+			ref double top_y, ref double height, ref double width);
+		
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern void mReleaseTextSearch();
+
 /*
 		[DllImport("mugs.dll", CharSet = CharSet.Auto,
 	CallingConvention = CallingConvention.StdCall)]
 		public static extern void GetLinks(IntPtr ctx);
-
-		[DllImport("mugs.dll", CharSet = CharSet.Auto,
-	CallingConvention = CallingConvention.StdCall)]
-		public static extern void GetTextSearch(IntPtr ctx);
 
 				[DllImport("mugs.dll", CharSet = CharSet.Auto,
 	CallingConvention = CallingConvention.StdCall)]
@@ -109,7 +119,6 @@ namespace gsview
 	~muctx(void);
 
 	unsigned int GetLinks(int page_num, sh_vector_link links_vec);
-	int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
 	std::string GetHTML(int page_num);
 */
 
@@ -233,6 +242,37 @@ namespace gsview
 		public void ReleaseContents()
 		{
 			mReleaseContents();
+		}
+
+		public int TextSearchPage(int page_num, String needle)
+		{
+			int num_found;
+			lock (m_lock)
+			{
+				num_found = mTextSearchPage(mu_object, page_num, needle);
+			}
+			return num_found;
+		}
+
+		public bool GetTextSearchItem(int k, out Point top_left, out Size size_rect)
+		{
+			double top_x = 0, top_y = 0 , height = 0, width = 0;
+			bool found = mGetTextSearchItem(k, ref top_x, ref top_y, ref height, ref width);
+
+			top_left = new Point();
+			size_rect = new Size();
+
+			top_left.X = top_x;
+			top_left.Y = top_y;
+			size_rect.Width = width;
+			size_rect.Height = height;
+
+			return found;
+		}
+
+		public void ReleaseTextSearch()
+		{
+			mReleaseTextSearch();
 		}
 	}
 }
