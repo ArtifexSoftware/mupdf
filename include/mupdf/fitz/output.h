@@ -97,6 +97,7 @@ fz_write_byte(fz_output *out, int x)
 	see fz_ftoa for specifics.
 	%C outputs a utf8 encoded int.
 	%M outputs a fz_matrix*. %R outputs a fz_rect*. %P outputs a fz_point*.
+	%q and %( output escaped strings in C/PDF syntax.
 */
 int fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args);
 

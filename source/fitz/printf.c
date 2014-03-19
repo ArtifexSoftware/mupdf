@@ -123,6 +123,35 @@ static void fmtint(struct fmtbuf *out, int value, int z, int base)
 		fmtputc(out, buf[--i]);
 }
 
+static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
+{
+	int c;
+	fmtputc(out, sq);
+	while ((c = *s++)) {
+		switch (c) {
+		default:
+			if (c < 32 || c > 127) {
+				fmtputc(out, '\\');
+				fmtputc(out, '0' + ((c >> 6) & 7));
+				fmtputc(out, '0' + ((c >> 3) & 7));
+				fmtputc(out, '0' + ((c) & 7));
+			} else {
+				if (c == sq || c == eq)
+					fmtputc(out, '\\');
+				fmtputc(out, c);
+			}
+			break;
+		case '\\': fmtputc(out, '\\'); fmtputc(out, '\\'); break;
+		case '\b': fmtputc(out, '\\'); fmtputc(out, 'b'); break;
+		case '\f': fmtputc(out, '\\'); fmtputc(out, 'f'); break;
+		case '\n': fmtputc(out, '\\'); fmtputc(out, 'n'); break;
+		case '\r': fmtputc(out, '\\'); fmtputc(out, 'r'); break;
+		case '\t': fmtputc(out, '\\'); fmtputc(out, 't'); break;
+		}
+	}
+	fmtputc(out, eq);
+}
+
 int
 fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args)
 {
@@ -216,6 +245,16 @@ fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args)
 					s = "(null)";
 				while ((c = *s++))
 					fmtputc(&out, c);
+				break;
+			case 'q':
+				s = va_arg(args, char*);
+				if (!s) s = "";
+				fmtquote(&out, s, '"', '"');
+				break;
+			case '(':
+				s = va_arg(args, char*);
+				if (!s) s = "";
+				fmtquote(&out, s, '(', ')');
 				break;
 			}
 		} else {
