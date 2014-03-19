@@ -25,6 +25,7 @@ static void usage(void)
 		"\t-g\tgarbage collect unused objects\n"
 		"\t-gg\tin addition to -g compact xref table\n"
 		"\t-ggg\tin addition to -gg merge duplicate objects\n"
+		"\t-s\tclean content streams\n"
 		"\t-d\tdecompress all streams\n"
 		"\t-l\tlinearize PDF\n"
 		"\t-i\ttoggle decompression of image streams\n"
@@ -260,8 +261,9 @@ int pdfclean_main(int argc, char **argv)
 	opts.do_linear = 0;
 	opts.continue_on_error = 1;
 	opts.errors = &errors;
+	opts.do_clean = 0;
 
-	while ((c = fz_getopt(argc, argv, "adfgilp:")) != -1)
+	while ((c = fz_getopt(argc, argv, "adfgilp:s")) != -1)
 	{
 		switch (c)
 		{
@@ -272,6 +274,7 @@ int pdfclean_main(int argc, char **argv)
 		case 'i': opts.do_expand ^= fz_expand_images; break;
 		case 'l': opts.do_linear ++; break;
 		case 'a': opts.do_ascii ++; break;
+		case 's': opts.do_clean ++; break;
 		default: usage(); break;
 		}
 	}
