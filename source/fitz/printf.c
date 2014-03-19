@@ -1,8 +1,13 @@
 #include "mupdf/fitz.h"
 
 #ifdef _MSC_VER /* Microsoft Visual C */
-#define va_copy(a, oa) a=oa
+#define va_copy(a, oa) do { a=oa; } while (0)
+#ifndef va_end
 #define va_end(a)
+#endif
+#ifndef strtof
+#define strtof(a, b) ((float)strtod((a), (b)))
+#endif
 #endif
 
 struct fmtbuf
