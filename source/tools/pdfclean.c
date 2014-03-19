@@ -34,15 +34,32 @@ static void usage(void)
 	exit(1);
 }
 
+static int
+string_in_names_list(pdf_obj *p, pdf_obj *names_list)
+{
+	int n = pdf_array_len(names_list);
+	int i;
+	char *str = pdf_to_str_buf(p);
+
+	for (i = 0; i < n ; i += 2)
+	{
+		if (!strcmp(pdf_to_str_buf(pdf_array_get(names_list, i)), str))
+			return 1;
+	}
+	return 0;
+}
+
 /*
  * Recreate page tree to only retain specified pages.
  */
-
 static void retainpages(globals *glo, int argc, char **argv)
 {
 	pdf_obj *oldroot, *root, *pages, *kids, *countobj, *parent, *olddests;
 	pdf_document *doc = glo->doc;
 	int argidx = 0;
+	pdf_obj *names_list = NULL;
+	int pagecount;
+	int i;
 
 	/* Keep only pages/type and (reduced) dest entries to avoid
 	 * references to unretained pages */
@@ -65,7 +82,7 @@ static void retainpages(globals *glo, int argc, char **argv)
 	/* Retain pages specified */
 	while (argc - argidx)
 	{
-		int page, spage, epage, pagecount;
+		int page, spage, epage;
 		char *spec, *dash;
 		char *pagelist = argv[argidx];
 
@@ -123,26 +140,26 @@ static void retainpages(globals *glo, int argc, char **argv)
 	/* Also preserve the (partial) Dests name tree */
 	if (olddests)
 	{
-		int i;
 		pdf_obj *names = pdf_new_dict(doc, 1);
 		pdf_obj *dests = pdf_new_dict(doc, 1);
-		pdf_obj *names_list = pdf_new_array(doc, 32);
 		int len = pdf_dict_len(olddests);
+
+		names_list = pdf_new_array(doc, 32);
 
 		for (i = 0; i < len; i++)
 		{
 			pdf_obj *key = pdf_dict_get_key(olddests, i);
 			pdf_obj *val = pdf_dict_get_val(olddests, i);
-			pdf_obj *key_str = pdf_new_string(doc, pdf_to_name(key), strlen(pdf_to_name(key)));
 			pdf_obj *dest = pdf_dict_gets(val, "D");
 
 			dest = pdf_array_get(dest ? dest : val, 0);
 			if (pdf_array_contains(pdf_dict_gets(pages, "Kids"), dest))
 			{
+				pdf_obj *key_str = pdf_new_string(doc, pdf_to_name(key), strlen(pdf_to_name(key)));
 				pdf_array_push(names_list, key_str);
 				pdf_array_push(names_list, val);
+				pdf_drop_obj(key_str);
 			}
-			pdf_drop_obj(key_str);
 		}
 
 		root = pdf_dict_gets(pdf_trailer(doc), "Root");
@@ -154,6 +171,45 @@ static void retainpages(globals *glo, int argc, char **argv)
 		pdf_drop_obj(dests);
 		pdf_drop_obj(names_list);
 		pdf_drop_obj(olddests);
+	}
+
+	/* Force the next call to pdf_count_pages to recount */
+	glo->doc->page_count = 0;
+
+	/* Edit each pages /Annot list to remove any links that point to
+	 * nowhere. */
+	pagecount = pdf_count_pages(doc);
+	for (i = 0; i < pagecount; i++)
+	{
+		pdf_obj *pageref = pdf_lookup_page_obj(doc, i);
+		pdf_obj *pageobj = pdf_resolve_indirect(pageref);
+
+		pdf_obj *annots = pdf_dict_gets(pageobj, "Annots");
+
+		int len = pdf_array_len(annots);
+		int j;
+
+		for (j = 0; j < len; j++)
+		{
+			pdf_obj *o = pdf_array_get(annots, j);
+			pdf_obj *p;
+
+			if (strcmp(pdf_to_name(pdf_dict_gets(o, "Subtype")), "Link"))
+				continue;
+
+			p = pdf_dict_gets(o, "A");
+			if (strcmp(pdf_to_name(pdf_dict_gets(p, "S")), "GoTo"))
+				continue;
+
+			if (string_in_names_list(pdf_dict_gets(p, "D"), names_list))
+				continue;
+
+			/* FIXME: Should probably look at Next too */
+
+			/* Remove this annotation */
+			pdf_array_delete(annots, j);
+			j--;
+		}
 	}
 }
 
