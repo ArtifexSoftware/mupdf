@@ -714,6 +714,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-annot-edit.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-appearance.c"
 				>
 			</File>
