@@ -1,6 +1,9 @@
 [submodule "thirdparty/jbig2dec"]
 	path = thirdparty/jbig2dec
 	url = git://git.ghostscript.com/jbig2dec.git
+[submodule "thirdparty/mujs"]
+	path = thirdparty/mujs
+	url = git://git.ghostscript.com/mujs.git
 [submodule "thirdparty/freetype"]
 	path = thirdparty/freetype
 	url = git://git.ghostscript.com/thirdparty/freetype.git
