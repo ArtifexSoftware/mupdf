@@ -53,6 +53,18 @@ string_in_names_list(pdf_obj *p, pdf_obj *names_list)
 /*
  * Recreate page tree to only retain specified pages.
  */
+
+static void retainpage(pdf_document *doc, pdf_obj *parent, pdf_obj *kids, int page)
+{
+	pdf_obj *pageref = pdf_lookup_page_obj(doc, page-1);
+	pdf_obj *pageobj = pdf_resolve_indirect(pageref);
+
+	pdf_dict_puts(pageobj, "Parent", parent);
+
+	/* Store page object in new kids array */
+	pdf_array_push(kids, pageref);
+}
+
 static void retainpages(globals *glo, int argc, char **argv)
 {
 	pdf_obj *oldroot, *root, *pages, *kids, *countobj, *parent, *olddests;
@@ -106,22 +118,15 @@ static void retainpages(globals *glo, int argc, char **argv)
 					epage = pagecount;
 			}
 
-			if (spage > epage)
-				page = spage, spage = epage, epage = page;
-
 			spage = fz_clampi(spage, 1, pagecount);
 			epage = fz_clampi(epage, 1, pagecount);
 
-			for (page = spage; page <= epage; page++)
-			{
-				pdf_obj *pageref = pdf_lookup_page_obj(doc, page-1);
-				pdf_obj *pageobj = pdf_resolve_indirect(pageref);
-
-				pdf_dict_puts(pageobj, "Parent", parent);
-
-				/* Store page object in new kids array */
-				pdf_array_push(kids, pageref);
-			}
+			if (spage < epage)
+				for (page = spage; page <= epage; ++page)
+					retainpage(doc, parent, kids, page);
+			else
+				for (page = spage; page >= epage; --page)
+					retainpage(doc, parent, kids, page);
 
 			spec = fz_strsep(&pagelist, ",");
 		}
