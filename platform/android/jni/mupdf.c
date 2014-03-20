@@ -199,6 +199,9 @@ static void alerts_init(globals *glo)
 	if (!idoc || glo->alerts_initialised)
 		return;
 
+	if (idoc)
+		pdf_enable_js(idoc);
+
 	glo->alerts_active = 0;
 	glo->alert_request = 0;
 	glo->alert_reply = 0;
@@ -572,7 +575,8 @@ JNI_FN(MuPDFCore_getPageHeight)(JNIEnv *env, jobject thiz)
 JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_javascriptSupported)(JNIEnv *env, jobject thiz)
 {
-	return fz_javascript_supported();
+	globals *glo = get_globals(env, thiz);
+	return pdf_js_supported(glo->doc);
 }
 
 static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *idoc)

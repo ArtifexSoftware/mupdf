@@ -249,7 +249,10 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 		idoc = pdf_specifics(app->doc);
 
 		if (idoc)
+		{
+			pdf_enable_js(idoc);
 			pdf_set_doc_event_callback(idoc, event_cb, app);
+		}
 
 		if (fz_needs_password(app->doc))
 		{
