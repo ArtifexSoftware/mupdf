@@ -244,6 +244,11 @@ $(MUTOOL) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUTOOL) : $(MUTOOL_OBJ)
 	$(LINK_CMD)
 
+MJSGEN := $(OUT)/mjsgen
+$(MJSGEN) : $(MUPDF_LIB) $(THIRD_LIBS)
+$(MJSGEN) : $(addprefix $(OUT)/tools/, mjsgen.o)
+	$(LINK_CMD)
+
 MUJSTEST := $(OUT)/mujstest
 $(MUJSTEST) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUJSTEST) : $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
