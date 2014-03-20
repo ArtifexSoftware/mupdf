@@ -7,6 +7,14 @@ using System.ComponentModel;
 
 namespace gsview
 {
+	public enum Link_t
+	{
+		LINK_GOTO,
+		LINK_URI,
+		TEXTBOX,
+		NOT_SET
+	};
+
 	public class RectList : INotifyPropertyChanged
 	{
 		public String Index
@@ -51,7 +59,7 @@ namespace gsview
 			set;
 		}
 
-		public int Type
+		public Link_t Type
 		{
 			get;
 			set;

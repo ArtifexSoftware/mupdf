@@ -17,6 +17,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 std::shared_ptr<std::vector<sh_content>> gContents;
 std::shared_ptr<std::vector<sh_text>> gTextResults;
+std::shared_ptr<std::vector<sh_link>> gLinkResults;
 
 char* String_to_char(PCWSTR text)
 {
@@ -173,6 +174,52 @@ SYMBOL_DECLSPEC bool __stdcall mGetTextSearchItem(int k, double *top_x, double
 }
 
 SYMBOL_DECLSPEC void __stdcall mReleaseTextSearch()
+{
+	if (gTextResults != nullptr)
+		gTextResults.reset();
+}
+
+SYMBOL_DECLSPEC int __stdcall mGetLinksPage(void *ctx, int page_num)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+
+	sh_vector_link link_smart_ptr_vec(new std::vector<sh_link>());
+	gLinkResults = link_smart_ptr_vec;
+
+	return mu_ctx->GetLinks(page_num, gLinkResults);
+}
+
+SYMBOL_DECLSPEC char* __stdcall mGetLinkItem(int k, double *top_x, double
+	*top_y, double *height, double *width, int *topage, int *type)
+{
+	char* retstr = NULL;
+
+	if (k < 0 || k > gLinkResults->size())
+		return false;
+	sh_link muctx_link = gLinkResults->at(k);
+	*top_x = muctx_link->upper_left.X;
+	*top_y = muctx_link->upper_left.Y;
+	*width = muctx_link->lower_right.X - muctx_link->upper_left.X;
+	*height = muctx_link->lower_right.Y - muctx_link->upper_left.Y;
+	*topage = muctx_link->page_num;
+	*type = (int) muctx_link->type;
+
+	if (muctx_link->type == LINK_URI)
+	{
+		const char* str = muctx_link->uri.get();
+		int len = strlen(str);
+		if (len > 0)
+		{
+			/* This allocation ensures that Marshal will release in the managed code */
+			retstr = (char*)::CoTaskMemAlloc(len + 1);
+			strcpy(retstr, str);
+		}
+		muctx_link->uri.release();
+	}
+	return retstr;
+}
+
+SYMBOL_DECLSPEC void __stdcall mReleaseLink()
 {
 	if (gTextResults != nullptr)
 		gTextResults.reset();

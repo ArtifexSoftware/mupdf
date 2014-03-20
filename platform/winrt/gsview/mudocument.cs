@@ -25,8 +25,6 @@ namespace gsview
 	{
 		IntPtr mu_object;
 		private System.Object m_lock = new System.Object();  
-		List<Links> links;
-		List<Links> textsearch;
 		public List<ContentItem> contents;
 
 		/* The list of functions that we use to call into C interface of muctx.
@@ -100,25 +98,35 @@ namespace gsview
 
 		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern bool mGetTextSearchItem(int k, ref double top_x,
+		public static extern bool mGetTextSearchItem(int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width);
 		
 		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern void mReleaseTextSearch();
 
-/*
-		[DllImport("mugs.dll", CharSet = CharSet.Auto,
-	CallingConvention = CallingConvention.StdCall)]
-		public static extern void GetLinks(IntPtr ctx);
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int mGetLinksPage(IntPtr ctx, int page_num);
 
+		/* The managed code Marshal actually releases the allocated string from C */
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		[return: MarshalAs(UnmanagedType.LPStr)]
+		public static extern string mGetLinkItem(int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width, ref int topage, 
+			ref int type);
+
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern void mReleaseLink();
+		/*
 				[DllImport("mugs.dll", CharSet = CharSet.Auto,
 	CallingConvention = CallingConvention.StdCall)]
 		public static extern void GetHTML(IntPtr ctx);
 
 	~muctx(void);
 
-	unsigned int GetLinks(int page_num, sh_vector_link links_vec);
 	std::string GetHTML(int page_num);
 */
 
@@ -273,6 +281,42 @@ namespace gsview
 		public void ReleaseTextSearch()
 		{
 			mReleaseTextSearch();
+		}
+
+		public int GetLinksPage(int page_num)
+		{
+			int num_found;
+			lock (m_lock)
+			{
+				num_found = mGetLinksPage(mu_object, page_num);
+			}
+			return num_found;
+		}
+
+		public void GetLinkItem(int k, out Point top_left, out Size size_rect, 
+			out String uri, out int topage, out int typea)
+		{
+			double top_x = 0, top_y = 0, height = 0, width = 0;
+			int typeb = 0;
+			int linkpage = 0;
+
+			uri = mGetLinkItem(k, ref top_x, ref top_y, ref height, ref width,
+				ref linkpage, ref typeb);
+
+			topage = linkpage;
+			typea = typeb;
+			top_left = new Point();
+			size_rect = new Size();
+
+			top_left.X = top_x;
+			top_left.Y = top_y;
+			size_rect.Width = width;
+			size_rect.Height = height;
+		}
+
+		public void ReleaseLink()
+		{
+			mReleaseLink();
 		}
 	}
 }

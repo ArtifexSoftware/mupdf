@@ -49,7 +49,7 @@
                     </ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}">
+                            <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}" IsEnabled="True" MouseDown="LinkClick">
                                 <Rectangle.RenderTransform>
                                     <TranslateTransform X="{Binding Path=X}" Y="{Binding Path=Y}"/>
                                 </Rectangle.RenderTransform>
@@ -557,7 +557,7 @@
                       ScrollViewer.CanContentScroll="False" 
                       Background="DarkGray" ScrollViewer.PanningMode="Both"
                       ScrollViewer.ScrollChanged="ListViewScrollChanged"
-                      PreviewMouseLeftButtonUp="PageSelected" MouseDoubleClick="PageDoubleClick"
+                       MouseDoubleClick="PageDoubleClick"
                       >
                 <!-- This keeps the pages in the center of the panel -->
                 <ListView.ItemContainerStyle>

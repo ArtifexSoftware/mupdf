@@ -171,10 +171,9 @@ namespace gsview
 		mudocument mu_doc;
 		public Pages m_docPages;
 		List<DocPage> m_thumbnails;
-		List<List<RectList>> m_page_link_list;
+		List<List<RectList>> m_page_link_list = null;
 		int m_contents_size;
 		int m_content_item;
-		List<bool> m_linkset;
 		List<RectList> m_text_list = null;
 		private int m_rectlist_page;
 		private List<ContentEntry> m_content_list;
@@ -185,7 +184,6 @@ namespace gsview
 		private bool m_init_done;
 		private bool m_links_on;
 		private int m_search_rect_count;
-		private bool m_page_update;
 		String m_textcolor = "#402572AC";
 		String m_linkcolor = "#40AC7225";
 		RenderingStatus_t m_ren_status;
@@ -205,6 +203,7 @@ namespace gsview
 		bool m_zoomhandled;
 		BackgroundWorker m_thumbworker = null;
 		BackgroundWorker m_textsearch = null;
+		BackgroundWorker m_linksearch = null;
 		String m_document_type;
 		Info m_infowindow;
 		OutputIntent m_outputintents;
@@ -212,6 +211,7 @@ namespace gsview
 		private Point startPoint;
 		private Rectangle rect;
 		String m_prevsearch = null;
+		int m_numpagesvisible;
 
 		public MainWindow()
 		{
@@ -225,8 +225,6 @@ namespace gsview
 			{
 				m_docPages = new Pages();
 				m_thumbnails = new List<DocPage>();
-				m_page_link_list = new List<List<RectList>>();
-				m_linkset = new List<bool>();
 				m_ghostscript = new ghostsharp();
 				m_ghostscript.gsUpdateMain += new ghostsharp.gsCallBackMain(gsProgress);
 				m_gsoutput = new gsOutput();
@@ -284,15 +282,15 @@ namespace gsview
 			if (m_thumbnails != null && m_thumbnails.Count > 0)
 				m_thumbnails.Clear();
 			if (m_page_link_list != null && m_page_link_list.Count > 0)
+			{
 				m_page_link_list.Clear();
+				m_page_link_list = null;
+			}
 			if (m_text_list != null && m_text_list.Count > 0)
 			{
 				m_text_list.Clear();
 				m_text_list = null;
 			}
-			if (m_linkset != null && m_linkset.Count > 0)
-				m_linkset.Clear();
-
 			if (mu_doc != null)
 				mu_doc.CleanUp();
 			try
@@ -328,6 +326,7 @@ namespace gsview
 			m_currpage = 0;
 			m_document_type = DocumentTypes.UNKNOWN;
 			EnabletoPDF();
+			m_numpagesvisible = 3;
 			return result;
 		}
 
@@ -642,11 +641,6 @@ namespace gsview
 				m_docPages.Add(InitDocPage());
 				m_docPages[k].PageNum = k;
 				m_thumbnails.Add(InitDocPage());
-				/* Create empty lists for our links and specify that they have
-					not been computed for these pages */
-				List<RectList> temp_link = new List<RectList>();
-				m_page_link_list.Add(temp_link);
-				m_linkset.Add(false);
 			}
 
 			/* Do the first few full res pages */
@@ -688,17 +682,13 @@ namespace gsview
 		private void OnBackPageClick(object sender, RoutedEventArgs e)
 		{
 			if (m_currpage == 0 || !m_init_done) return;
-
-			m_currpage = m_currpage - 1;
-			xaml_PageList.ScrollIntoView(m_docPages[m_currpage]);
+			RenderRange(m_currpage - 1, true);
 		}
 
 		private void OnForwardPageClick(object sender, RoutedEventArgs e)
 		{
 			if (m_currpage == m_num_pages - 1 || !m_init_done) return;
-
-			m_currpage = m_currpage + 1;
-			xaml_PageList.ScrollIntoView(m_docPages[m_currpage]);
+			RenderRange(m_currpage + 1, true);
 		}
 
 		private void CancelLoadClick(object sender, RoutedEventArgs e)
@@ -753,8 +743,7 @@ namespace gsview
 			{
 				if (item.PageNum < 0)
 					return;
-				m_currpage = item.PageNum;
-				xaml_PageList.ScrollIntoView(m_docPages[item.PageNum]);
+				RenderRange(item.PageNum, true);
 			}
 		}
 
@@ -763,8 +752,9 @@ namespace gsview
 			var item = ((FrameworkElement)e.OriginalSource).DataContext as ContentItem;
 			if (item != null && item.Page < m_num_pages)
 			{
-				m_currpage = m_docPages[item.Page].PageNum;
-				xaml_PageList.ScrollIntoView(m_docPages[item.Page]);
+				int page = m_docPages[item.Page].PageNum;
+				if (page >= 0 && page < m_num_pages)
+					RenderRange(page, true);
 			}
 		}
 
@@ -781,7 +771,6 @@ namespace gsview
 					if (found != null)
 					{
 						var Item = (DocPage)found;
-						m_currpage = Item.PageNum;
 						RenderRange(Item.PageNum, false);
 					}
 					return;
@@ -790,11 +779,11 @@ namespace gsview
 		}
 
 		/* Render +/- the look ahead from where we are if blank page is present */
-		async private void RenderRange(int curr_page, bool scrollto)
+		async private void RenderRange(int new_page, bool scrollto)
 		{
-			int range = Constants.LOOK_AHEAD;
+			int range = (int) Math.Ceiling(((double) m_numpagesvisible - 1.0) / 2.0);
 
-			for (int k = curr_page - range; k <= curr_page + range; k++)
+			for (int k = new_page - range; k <= new_page + range; k++)
 			{
 				if (k >= 0 && k < m_num_pages)
 				{
@@ -822,9 +811,19 @@ namespace gsview
 									{
 										if (m_docPages[k].TextBox != null)
 											ScaleTextBox(k);
+										if (m_links_on && m_page_link_list != null)
+										{
+											m_docPages[k].LinkBox = m_page_link_list[k];
+											if (m_docPages[k].LinkBox != null)
+												ScaleLinkBox(k);
+										}
+										else
+										{
+											m_docPages[k].LinkBox = null;
+										}
 										UpdatePage(k, bitmap, ras_size, Page_Content_t.FULL_RESOLUTION, m_doczoom);
 										m_docPages[k].PageRefresh();
-										if (k == curr_page && scrollto)
+										if (k == new_page && scrollto)
 											xaml_PageList.ScrollIntoView(m_docPages[k]);
 									}
 								}, TaskScheduler.FromCurrentSynchronizationContext());
@@ -836,8 +835,18 @@ namespace gsview
 							}
 						}
 					}
+					else
+					{
+						/* We did not have to render the page but we may need to
+						 * scroll to it */
+						if (k == new_page && scrollto)
+							xaml_PageList.ScrollIntoView(m_docPages[k]);
+					}
 				}
 			}
+			/* Release old range and set new page */
+			ReleasePages(m_currpage, new_page, range);
+			m_currpage = new_page;
 		}
 
 		private bool Visible(FrameworkElement elem, FrameworkElement cont)
@@ -850,14 +859,14 @@ namespace gsview
 			return rect.Contains(bounds2.TopLeft) || rect.Contains(bounds2.BottomRight);
 		}
 
-		private void ReleasePages(int old_page, int new_page)
+		private void ReleasePages(int old_page, int new_page, int range)
 		{
 			if (old_page == new_page) return;
 			/* To keep from having memory issue reset the page back to
 				the thumb if we are done rendering the thumbnails */
-			for (int k = old_page - Constants.LOOK_AHEAD; k <= old_page + Constants.LOOK_AHEAD; k++)
+			for (int k = old_page - range; k <= old_page + range; k++)
 			{
-				if (k < new_page - Constants.LOOK_AHEAD || k > new_page + Constants.LOOK_AHEAD)
+				if (k < new_page - range || k > new_page + range)
 				{
 					if (k >= 0 && k < m_num_pages)
 					{
@@ -867,29 +876,29 @@ namespace gsview
 			}
 		}
 
-		/* Return this page from a full res image to the thumb image or only set
-		   to thumb if it has not already been set */
+		/* Return this page from a full res image to the thumb image */
 		private void SetThumb(int page_num)
 		{
 			/* See what is there now */
-			var doc = m_docPages[page_num];
-			if (doc.Content == Page_Content_t.THUMBNAIL && doc.Zoom == m_doczoom) return;
+			var doc_page = m_docPages[page_num];
+			if (doc_page.Content == Page_Content_t.THUMBNAIL && 
+				doc_page.Zoom == m_doczoom) return;
 
 			if (m_thumbnails.Count > page_num)
 			{
-				m_page_update = true;
-				var thumb_page = m_thumbnails[page_num];
-				thumb_page.Height = (int)(thumb_page.NativeHeight * m_doczoom);
-				thumb_page.Width = (int)(thumb_page.NativeWidth * m_doczoom);
-				thumb_page.Zoom = 1.0;
-				m_docPages[page_num] = thumb_page;
-				m_page_update = false;
+				doc_page.Content = Page_Content_t.THUMBNAIL;
+				doc_page.Zoom = m_doczoom;
+
+				doc_page.BitMap = m_thumbnails[page_num].BitMap;
+				doc_page.Width = (int)(m_doczoom * doc_page.BitMap.PixelWidth / Constants.SCALE_THUMB);
+				doc_page.Height = (int)(m_doczoom * doc_page.BitMap.PixelHeight / Constants.SCALE_THUMB);
+				doc_page.PageNum = page_num;
+				doc_page.LinkBox = null;
+				doc_page.TextBox = null;
+				/* No need to refresh unless it just occurs during other stuff
+				 * we just want to make sure we can release the bitmaps */
+				//doc_page.PageRefresh();
 			}
-		}
-
-		private void LinksToggle(object sender, RoutedEventArgs e)
-		{
-
 		}
 
 		private void ZoomOut(object sender, RoutedEventArgs e)
@@ -898,6 +907,7 @@ namespace gsview
 			if (m_doczoom < Constants.ZOOM_MIN)
 				m_doczoom = Constants.ZOOM_MIN;
 			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			m_numpagesvisible = (int)(Math.Ceiling((1.0 / m_doczoom) + 2));
 			RenderRange(m_currpage, false);
 		}
 
@@ -907,6 +917,7 @@ namespace gsview
 			if (m_doczoom > Constants.ZOOM_MAX)
 				m_doczoom = Constants.ZOOM_MAX;
 			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			m_numpagesvisible = (int) (Math.Ceiling((1.0 / m_doczoom) + 2));
 			RenderRange(m_currpage, false);
 		}
 
@@ -1191,18 +1202,6 @@ namespace gsview
 			xaml_FooterControl.Visibility = System.Windows.Visibility.Collapsed;
 		}
 
-		private void PageSelected(object sender, MouseButtonEventArgs e)
-		{
-			var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
-			if (item != null)
-			{
-				if (item.PageNum < 0)
-					return;
-				m_currpage = item.PageNum;
-				xaml_PageList.ScrollIntoView(m_docPages[item.PageNum]);
-			}
-		}
-
 		private void ZoomReleased(object sender, MouseButtonEventArgs e)
 		{
 			if (m_init_done)
@@ -1220,10 +1219,7 @@ namespace gsview
 				m_doczoom = 1.0;
 				var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
 				if (item != null)
-				{
-					m_currpage = item.PageNum;
-					RenderRange(m_currpage, true);
-				}
+					RenderRange(item.PageNum, true);
 			}
 		}
 
@@ -1660,6 +1656,7 @@ namespace gsview
 			m_outputintents.Show();
 		}
 
+#region Search Code
 		/* Search related code */
 		private void Search(object sender, RoutedEventArgs e)
 		{
@@ -1672,6 +1669,7 @@ namespace gsview
 			else
 			{
 				xaml_SearchControl.Visibility = System.Windows.Visibility.Collapsed;
+				xaml_SearchProgress.Visibility = System.Windows.Visibility.Collapsed;
 				ClearTextSearch();
 			}
 		}
@@ -1729,6 +1727,8 @@ namespace gsview
 						var rect = new Rect(top_left, size);
 						results.rectangles.Add(rect);
 					}
+					/* Reset global smart pointer once we have everything */
+					mu_doc.ReleaseTextSearch();
 					worker.ReportProgress(percent, results);
 					break;
 				}
@@ -1862,13 +1862,12 @@ namespace gsview
 					in_text_search = 1;
 					m_textsearch = null;
 				}
-
 				if (m_prevsearch != null && needle != m_prevsearch)
 				{
 					in_text_search = 0;
 					ClearTextSearch();
 				}
-
+				
 				if (m_textsearch == null)
 				{
 					m_prevsearch = needle;
@@ -1892,5 +1891,185 @@ namespace gsview
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
 			}
 		}
+#endregion Search Code
+
+#region Link Code
+		private void LinksToggle(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done)
+				return;
+
+			m_links_on = !m_links_on;
+
+			if (m_page_link_list == null)
+			{
+				if (m_linksearch != null && m_linksearch.IsBusy)
+					return;
+
+				m_page_link_list = new List<List<RectList>>();
+				m_linksearch = new BackgroundWorker();
+				m_linksearch.WorkerReportsProgress = false;
+				m_linksearch.WorkerSupportsCancellation = true;
+				m_linksearch.DoWork += new DoWorkEventHandler(LinkWork);
+				m_linksearch.RunWorkerCompleted += new RunWorkerCompletedEventHandler(LinkCompleted);
+				m_linksearch.RunWorkerAsync();
+			}
+			else
+			{
+				if (m_links_on)
+					LinksOn();
+				else
+					LinksOff();
+			}
+		}
+
+		private void LinkWork(object sender, DoWorkEventArgs e)
+		{
+			BackgroundWorker worker = sender as BackgroundWorker;
+
+			for (int k = 0; k < m_num_pages; k++)
+			{
+				int box_count = mu_doc.GetLinksPage(k);
+				List<RectList> links = new List<RectList>();
+				if (box_count > 0)
+				{
+					var rectlist = new RectList();
+					for (int j = 0; j < box_count; j++)
+					{
+						Point top_left;
+						Size size;
+						String uri;
+						int type;
+						int topage;
+
+						mu_doc.GetLinkItem(j, out top_left, out size, out uri, 
+							out topage, out type);
+						rectlist.Height = size.Height * m_doczoom;
+						rectlist.Width = size.Width * m_doczoom;
+						rectlist.X = top_left.X * m_doczoom;
+						rectlist.Y = top_left.Y * m_doczoom;
+						rectlist.Color = m_linkcolor;
+						rectlist.Index = k.ToString() + "." + j.ToString();
+						rectlist.PageNum = topage;
+						rectlist.Scale = m_doczoom;
+						if (uri != null)
+							rectlist.Urilink = new Uri(uri);
+						rectlist.Type = (Link_t) type;
+						links.Add(rectlist);
+					}
+				}
+				mu_doc.ReleaseLink();
+				m_page_link_list.Add(links);
+
+				if (worker.CancellationPending == true)
+				{
+					e.Cancel = true;
+					break;
+				}
+			}
+		}
+
+		private void LinkCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			LinksOn();
+		}
+
+		private void ScaleLinkBox(int pagenum)
+		{
+			var temp = m_docPages[pagenum].LinkBox;
+			for (int kk = 0; kk < temp.Count; kk++)
+			{
+				var rect_item = temp[kk];
+				double factor = m_doczoom / temp[kk].Scale;
+
+				temp[kk].Height = temp[kk].Height * factor;
+				temp[kk].Width = temp[kk].Width * factor;
+				temp[kk].X = temp[kk].X * factor;
+				temp[kk].Y = temp[kk].Y * factor;
+
+				temp[kk].Scale = m_doczoom;
+				temp[kk].PageRefresh();
+			}
+			m_docPages[pagenum].LinkBox = temp;
+		}
+
+		/* Only visible pages */
+		private void LinksOff()
+		{
+			int range = (int)Math.Ceiling(((double)m_numpagesvisible - 1.0) / 2.0);
+
+			for (int kk = m_currpage - range; kk <= m_currpage + range; kk++)
+			{
+				var temp = m_docPages[kk].LinkBox;
+				if (temp != null)
+				{
+					m_docPages[kk].LinkBox = null;
+					m_docPages[kk].PageRefresh();
+				}
+			}
+		}
+
+		/* Only visible pages */
+		private void LinksOn()
+		{
+			int range = (int)Math.Ceiling(((double)m_numpagesvisible - 1.0) / 2.0);
+
+			for (int kk = m_currpage - range; kk <= m_currpage + range; kk++)
+			{
+				var temp = m_docPages[kk].LinkBox;
+				if (temp == null)
+				{
+					m_docPages[kk].LinkBox = m_page_link_list[kk];
+					m_docPages[kk].PageRefresh();
+				}
+			}
+		}
+
+		private void LinkClick(object sender, MouseButtonEventArgs e)
+		{
+			var item = (Rectangle)sender;
+
+			if (item == null)
+				return;
+
+			String tag = (String)item.Tag;
+			int page = 0;
+			int index = 0;
+
+			if (tag == null || tag.Length < 3 || !(tag.Contains('.')))
+				return;
+
+			String[] parts = tag.Split('.');
+			try
+			{
+				page = System.Convert.ToInt32(parts[0]);
+				index = System.Convert.ToInt32(parts[1]);
+
+			}
+			catch (FormatException e1)
+			{
+				Console.WriteLine("String is not a sequence of digits.");
+			}
+			catch (OverflowException e2)
+			{
+				Console.WriteLine("The number cannot fit in an Int32.");
+			}
+
+			if (index >= 0 && index < m_num_pages && page >= 0 && page < m_num_pages)
+			{
+				var link_list = m_page_link_list[page];
+				var link = link_list[index];
+
+				if (link.Type == Link_t.LINK_GOTO)
+				{
+					if (m_currpage != link.PageNum && link.PageNum >= 0 && 
+						link.PageNum < m_num_pages)
+							RenderRange(link.PageNum, true);
+				}
+				else if (link.Type == Link_t.LINK_URI)
+					System.Diagnostics.Process.Start(link.Urilink.AbsoluteUri);
+			}
+		}
+#endregion Link Code
 	}
 }

@@ -89,6 +89,7 @@ namespace gsview
 				PropertyChanged(this, new PropertyChangedEventArgs("Height"));
 				PropertyChanged(this, new PropertyChangedEventArgs("Width"));
 				PropertyChanged(this, new PropertyChangedEventArgs("TextBox"));
+				PropertyChanged(this, new PropertyChangedEventArgs("LinkBox"));
 			}
 		}
 

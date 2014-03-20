@@ -423,6 +423,9 @@
     <ClCompile Include="..\..\source\pdf\pdf-clean.c">
       <Filter>pdf</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\tools\pdfclean.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\ucdn.h">
