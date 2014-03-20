@@ -7,27 +7,39 @@
  * (other than the file streaming stuff) */
 
 #ifdef _WINRT_DLL
+// Attempt to use t.wait()
+//#include <ppltasks.h>
+//using namespace concurrency;
 /* File streaming set up for WinRT */
-static int win_read_file(fz_stream *stm, unsigned char *buf, int len)
+static int win_next_file(fz_stream *stm, int len)
 {
 	void *temp = stm->state;
-	win_stream_struct *stream = reinterpret_cast <win_stream_struct*> (temp);
-	IRandomAccessStream^ Stream = stream->stream;
+	win_stream_struct *state = reinterpret_cast <win_stream_struct*> (temp);
+	IRandomAccessStream^ Stream = state->stream;
+	unsigned char *buf = state->public_buffer;
 	unsigned long long curr_pos = Stream->Position;
 	unsigned long long length = Stream->Size;
 	DataReader^ local_reader = ref new DataReader(Stream);
 	if (local_reader == nullptr)
 		return 0;
+
+	// This does not work here.  mupdf is not set up to wait for win_next_file
+	// to complete in an ansyn manner 
+	//auto t = create_task(local_reader->LoadAsync(len));
+	//t.wait();
 	DataReaderLoadOperation^ result = local_reader->LoadAsync(len);
-
-	/* Block on the Async call.  This is not on the UI thread. */
-	while(result->Status != AsyncStatus::Completed) {
-
+	while (result->Status != AsyncStatus::Completed) {
 	}
 	result->GetResults();
+
+	/* First see what is available */
 	int curr_len2 = local_reader->UnconsumedBufferLength;
 	if (curr_len2 < len)
 		len = curr_len2;
+
+	/* And make sure that we have enough room */
+	if (len > sizeof(state->public_buffer))
+		len = sizeof(state->public_buffer);
 
 	Platform::Array<unsigned char>^ arrByte = ref new Platform::Array<unsigned char>(len);
 	if (arrByte == nullptr)
@@ -37,7 +49,12 @@ static int win_read_file(fz_stream *stm, unsigned char *buf, int len)
 	memcpy(buf, arrByte->Data, len);
 	local_reader->DetachStream();
 
-	return len;
+	stm->rp = buf;
+	stm->wp = buf + len;
+	stm->pos += len;
+	if (len == 0)
+		return EOF;
+	return *stm->rp++;
 }
 
 static void win_seek_file(fz_stream *stm, int offset, int whence)
@@ -64,8 +81,7 @@ static void win_seek_file(fz_stream *stm, int offset, int whence)
 	Stream->Seek(n);
 	curr_pos = Stream->Position;
 	stm->pos = n;
-	stm->rp = stm->bp;
-	stm->wp = stm->bp;
+	stm->wp = stm->rp;
 }
 
 static void win_close_file(fz_context *ctx, void *state)
@@ -78,7 +94,7 @@ static void win_close_file(fz_context *ctx, void *state)
 status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
 {
 	win_stream.stream = readStream;
-	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_read_file, win_close_file, NULL);
+	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_next_file, win_close_file, NULL);
 	mu_stream->seek = win_seek_file;
 	mu_stream->state = reinterpret_cast <void*> (&win_stream);
 

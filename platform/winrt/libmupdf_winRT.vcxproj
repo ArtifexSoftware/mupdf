@@ -70,6 +70,7 @@
     <ClCompile Include="..\..\source\fitz\filter-fax.c" />
     <ClCompile Include="..\..\source\fitz\filter-flate.c" />
     <ClCompile Include="..\..\source\fitz\filter-jbig2.c" />
+    <ClCompile Include="..\..\source\fitz\filter-leech.c" />
     <ClCompile Include="..\..\source\fitz\filter-lzw.c" />
     <ClCompile Include="..\..\source\fitz\filter-predict.c" />
     <ClCompile Include="..\..\source\fitz\font.c" />
@@ -95,6 +96,7 @@
     <ClCompile Include="..\..\source\fitz\output.c" />
     <ClCompile Include="..\..\source\fitz\path.c" />
     <ClCompile Include="..\..\source\fitz\pixmap.c" />
+    <ClCompile Include="..\..\source\fitz\printf.c" />
     <ClCompile Include="..\..\source\fitz\shade.c" />
     <ClCompile Include="..\..\source\fitz\stext-device.c" />
     <ClCompile Include="..\..\source\fitz\stext-output.c" />
@@ -114,6 +116,7 @@
     <ClCompile Include="..\..\source\img\muimage.c" />
     <ClCompile Include="..\..\source\pdf\pdf-annot.c" />
     <ClCompile Include="..\..\source\pdf\pdf-appearance.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-clean.c" />
     <ClCompile Include="..\..\source\pdf\pdf-cmap-load.c" />
     <ClCompile Include="..\..\source\pdf\pdf-cmap-parse.c" />
     <ClCompile Include="..\..\source\pdf\pdf-cmap-table.c" />
@@ -134,12 +137,16 @@
     <ClCompile Include="..\..\source\pdf\pdf-metrics.c" />
     <ClCompile Include="..\..\source\pdf\pdf-nametree.c" />
     <ClCompile Include="..\..\source\pdf\pdf-object.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-op-buffer.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-op-filter.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-op-run.c" />
     <ClCompile Include="..\..\source\pdf\pdf-outline.c" />
     <ClCompile Include="..\..\source\pdf\pdf-page.c" />
     <ClCompile Include="..\..\source\pdf\pdf-parse.c" />
     <ClCompile Include="..\..\source\pdf\pdf-pattern.c" />
     <ClCompile Include="..\..\source\pdf\pdf-pkcs7.c" />
     <ClCompile Include="..\..\source\pdf\pdf-repair.c" />
+    <ClCompile Include="..\..\source\pdf\pdf-run.c" />
     <ClCompile Include="..\..\source\pdf\pdf-shade.c" />
     <ClCompile Include="..\..\source\pdf\pdf-store.c" />
     <ClCompile Include="..\..\source\pdf\pdf-stream.c" />
@@ -149,6 +156,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-xobject.c" />
     <ClCompile Include="..\..\source\pdf\pdf-xref-aux.c" />
     <ClCompile Include="..\..\source\pdf\pdf-xref.c" />
+    <ClCompile Include="..\..\source\tiff\mutiff.c" />
     <ClCompile Include="..\..\source\xps\xps-common.c" />
     <ClCompile Include="..\..\source\xps\xps-doc.c" />
     <ClCompile Include="..\..\source\xps\xps-glyphs.c" />
@@ -228,6 +236,7 @@
     <ClInclude Include="..\..\source\fitz\unicodedata_db.h" />
     <ClInclude Include="..\..\source\pdf\pdf-encodings.h" />
     <ClInclude Include="..\..\source\pdf\pdf-glyphlist.h" />
+    <ClInclude Include="..\..\source\pdf\pdf-interpret-imp.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0715f3cf-5d1b-4617-a331-6527371365b7}</ProjectGuid>

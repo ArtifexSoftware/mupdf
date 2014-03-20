@@ -25,6 +25,9 @@
     <Filter Include="!include\pdf">
       <UniqueIdentifier>{7b0f7938-a977-4cd9-a8bc-aeef816ae84c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tiff">
+      <UniqueIdentifier>{90cc5056-84ea-40ea-9d8a-66a753c2e637}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\source\cbz\mucbz.c">
@@ -390,6 +393,30 @@
     <ClCompile Include="..\..\source\fitz\load-jxr.c">
       <Filter>fitz</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\printf.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\fitz\filter-leech.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-op-filter.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-op-buffer.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-run.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-op-run.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\tiff\mutiff.c">
+      <Filter>tiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\pdf\pdf-clean.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\ucdn.h">
@@ -589,6 +616,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\mupdf\pdf\appearance.h">
       <Filter>!include\pdf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\pdf\pdf-interpret-imp.h">
+      <Filter>pdf</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

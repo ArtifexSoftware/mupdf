@@ -58,6 +58,7 @@ using namespace Windows::Foundation;
 typedef struct win_stream_struct_s
 {
 	IRandomAccessStream^ stream;
+	unsigned char public_buffer[4096];
 } win_stream_struct;
 #endif
 
