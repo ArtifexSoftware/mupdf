@@ -8,6 +8,7 @@ LOCAL_C_INCLUDES := \
 	../../thirdparty/jbig2dec \
 	../../thirdparty/openjpeg/libopenjpeg \
 	../../thirdparty/jpeg \
+	../../thirdparty/mujs \
 	../../thirdparty/zlib \
 	../../thirdparty/freetype/include \
 	../../scripts/freetype \
@@ -28,6 +29,7 @@ endif
 
 LOCAL_MODULE := mupdfthirdparty
 LOCAL_SRC_FILES := \
+	$(MY_ROOT)/thirdparty/mujs/one.c \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2.c \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2_arith.c \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2_arith_iaid.c \

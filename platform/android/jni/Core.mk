@@ -4,8 +4,6 @@ include $(CLEAR_VARS)
 
 MY_ROOT := ../..
 
-V8 := v8-3.9
-
 ifeq ($(TARGET_ARCH),arm)
 LOCAL_CFLAGS += -DARCH_ARM -DARCH_THUMB -DARCH_ARM_CAN_LOAD_UNALIGNED
 ifdef NDK_PROFILER
@@ -24,6 +22,7 @@ LOCAL_C_INCLUDES := \
 	../../thirdparty/jbig2dec \
 	../../thirdparty/openjpeg/libopenjpeg \
 	../../thirdparty/jpeg \
+	../../thirdparty/mujs \
 	../../thirdparty/zlib \
 	../../thirdparty/freetype/include \
 	../../source/fitz \
@@ -54,17 +53,11 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/cbz/*.c) \
 	$(wildcard $(MY_ROOT)/source/img/*.c) \
 	$(wildcard $(MY_ROOT)/source/tiff/*.c)
-ifdef MEMENTO
-LOCAL_SRC_FILES += $(MY_ROOT)/fitz/memento.c
-endif
-ifdef V8_BUILD
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/source/pdf/js/pdf-js.c \
-	$(MY_ROOT)/source/pdf/js/pdf-jsimp-cpp.c \
-	$(MY_ROOT)/source/pdf/js/pdf-jsimp-v8.cpp
-else
-LOCAL_SRC_FILES += \
-	$(MY_ROOT)/source/pdf/js/pdf-js-none.c
+	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.cpp
+ifdef MEMENTO
+LOCAL_SRC_FILES += $(MY_ROOT)/fitz/memento.c
 endif
 
 LOCAL_LDLIBS    := -lm -llog -ljnigraphics
