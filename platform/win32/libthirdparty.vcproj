@@ -1114,6 +1114,18 @@
 				</Filter>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="libmujs"
+			>
+			<File
+				RelativePath="..\..\thirdparty\mujs\mujs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\mujs\one.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
