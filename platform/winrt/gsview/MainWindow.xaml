@@ -187,27 +187,37 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_Edit" >
-                <MenuItem Header="_Copy Page" Command="Copy" Click="CopyPage">
+                <MenuItem Header="Copy Page" Click="CopyPage">
                     <MenuItem.Icon>
                         <Image Source="Resources/copy.ico" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Paste To..." Click="PastePage"/>
-                <MenuItem Header="Measure" />
+                <MenuItem Header="Paste Page To">
+                    <MenuItem Header="BMP" Click="PastePage" Tag="BMP">
+                    </MenuItem>
+                    <MenuItem Header="GIF" Click="PastePage" Tag="GIF">
+                    </MenuItem>
+                    <MenuItem Header="JPEG" Click="PastePage" Tag="JPG">
+                    </MenuItem>
+                    <MenuItem Header="PNG" Click="PastePage" Tag="PNG">
+                    </MenuItem>
+                    <MenuItem Header="TIFF" Click="PastePage" Tag="TIF">
+                    </MenuItem>
+                    <MenuItem Header="WDP" Click="PastePage" Tag="WDP">
+                    </MenuItem>
+                </MenuItem>
                 <MenuItem Header="Copy Text" />
-                <MenuItem Header="_Find" Command="Find"/>
-                <MenuItem Header="Find Next"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="Next Page" Click="OnForwardPageClick"/>
                 <MenuItem Header="Previous Page" Click="OnBackPageClick"/>
-                <MenuItem Header="Goto Page" />
+                <MenuItem Header="_Find" Click="Search"/>
             </MenuItem>
             <MenuItem Header="_Options">
                 <MenuItem Header="Output Intents" Click="OutputIntents">
                 </MenuItem>
-                <MenuItem Header="Footer Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
+                <MenuItem Header="Zoom Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
             </MenuItem>
 
             <MenuItem Header="_Help" />
@@ -567,15 +577,6 @@
                 </ListView.ItemContainerStyle>
             </ListView>
         </Grid>
-        
-        
-        
-        
-        
-        
-        
-        
-        
     </DockPanel>
 
 </Window>

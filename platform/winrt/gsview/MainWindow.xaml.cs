@@ -212,6 +212,7 @@ namespace gsview
 		private Rectangle rect;
 		String m_prevsearch = null;
 		int m_numpagesvisible;
+		bool m_clipboardset;
 
 		public MainWindow()
 		{
@@ -327,6 +328,7 @@ namespace gsview
 			m_document_type = DocumentTypes.UNKNOWN;
 			EnabletoPDF();
 			m_numpagesvisible = 3;
+			m_clipboardset = false;
 			return result;
 		}
 
@@ -771,7 +773,7 @@ namespace gsview
 					if (found != null)
 					{
 						var Item = (DocPage)found;
-						RenderRange(Item.PageNum, false);
+						RenderRange(Item.PageNum - 1, false);
 					}
 					return;
 				}
@@ -1242,6 +1244,80 @@ namespace gsview
 			}
 		}
 
+#region Copy Paste Code
+		/* Copy the current page as a bmp to the clipboard this is done at the 
+		 * current resolution */
+		private void CopyPage(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done)
+				return;
+			var curr_page = m_docPages[m_currpage];
+			System.Windows.Clipboard.SetImage(curr_page.BitMap);
+			m_clipboardset = true;
+		}
+
+		/* Paste the page to various types supported by the windows encoder class */
+		private void PastePage(object sender, RoutedEventArgs e)
+		{
+			var menu = (System.Windows.Controls.MenuItem)sender;
+
+			String tag = (String) menu.Tag;
+
+			if (!m_clipboardset || !System.Windows.Clipboard.ContainsImage() || 
+				!m_init_done)
+				return;
+			var bitmap = System.Windows.Clipboard.GetImage();
+
+			BitmapEncoder encoder;
+			SaveFileDialog dlg = new SaveFileDialog();
+			dlg.FilterIndex = 1;
+
+			switch (tag)
+			{
+				case "PNG":
+					dlg.Filter = "PNG Files(*.png)|*.png";
+					encoder = new PngBitmapEncoder();
+
+					break;
+				case "JPG":
+					dlg.Filter = "JPEG Files(*.jpg)|*.jpg";
+					encoder = new JpegBitmapEncoder();
+					break;
+
+				case "WDP":
+					dlg.Filter = "HDP Files(*.wdp)|*.wdp";
+					encoder = new WmpBitmapEncoder();
+					break;
+
+				case "TIF":
+					dlg.Filter = "TIFF Files(*.tif)|*.tif";
+					encoder = new TiffBitmapEncoder();
+					break;
+
+				case "BMP":
+					dlg.Filter = "BMP Files(*.bmp)|*.bmp";
+					encoder = new BmpBitmapEncoder();
+					break;
+
+				case "GIF":
+					dlg.Filter = "GIF Files(*.gif)|*.gif";
+					encoder = new GifBitmapEncoder();
+					break;
+
+				default:
+					return;
+			}
+
+			encoder.Frames.Add(BitmapFrame.Create(bitmap));
+			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+			{
+				using (var stream = dlg.OpenFile())
+					encoder.Save(stream);
+			}
+		}
+#endregion Copy Paste Code
+		
+#region SaveAs Code
 		String CreatePDFXA(Save_Type_t type)
 		{
 			Byte[] Resource;
@@ -1426,16 +1502,6 @@ namespace gsview
 			SaveFile(Save_Type_t.PDF);
 		}
 
-		private void CopyPage(object sender, RoutedEventArgs e)
-		{
-
-		}
-
-		private void PastePage(object sender, RoutedEventArgs e)
-		{
-
-		}
-
 		private void SaveText(object sender, RoutedEventArgs e)
 		{
 			SaveFile(Save_Type_t.TEXT);
@@ -1509,10 +1575,13 @@ namespace gsview
 		private void SaveXPS(object sender, RoutedEventArgs e)
 		{
 			SaveFile(Save_Type_t.XPS);
-		}		
+		}
+#endregion SaveAs Code
+
+#region Extract Code
 		private void Extract(Extract_Type_t type)
 		{
-			if (m_selection != null)
+			if (m_selection != null || !m_init_done)
 				return;
 
 			m_selection = new Selection(m_currpage + 1, m_doczoom, type);
@@ -1559,6 +1628,7 @@ namespace gsview
 				}
 			}
 		}
+
 		private void SelectionMade(object gsObject, SelectEventArgs results)
 		{
 			switch (results.State)
@@ -1655,6 +1725,7 @@ namespace gsview
 		{
 			m_outputintents.Show();
 		}
+#endregion Extract Code
 
 #region Search Code
 		/* Search related code */
@@ -1669,7 +1740,7 @@ namespace gsview
 			else
 			{
 				xaml_SearchControl.Visibility = System.Windows.Visibility.Collapsed;
-				xaml_SearchProgress.Visibility = System.Windows.Visibility.Collapsed;
+				xaml_SearchGrid.Visibility = System.Windows.Visibility.Collapsed;
 				ClearTextSearch();
 			}
 		}
