@@ -1,13 +1,11 @@
 #include "mupdf/fitz.h"
 
-#ifdef _MSC_VER /* Microsoft Visual C */
+/* Microsoft Visual C up to VS2012 */
+#if _MSC_VER < 1800
 #define va_copy(a, oa) do { a=oa; } while (0)
-#ifndef va_end
+#undef va_end
 #define va_end(a)
-#endif
-#ifndef strtof
 #define strtof(a, b) ((float)strtod((a), (b)))
-#endif
 #endif
 
 struct fmtbuf
@@ -132,7 +130,7 @@ static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
 {
 	int c;
 	fmtputc(out, sq);
-	while ((c = *s++)) {
+	while ((c = *s++) != 0) {
 		switch (c) {
 		default:
 			if (c < 32 || c > 127) {
@@ -172,7 +170,7 @@ fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args)
 	out.s = space;
 	out.n = 0;
 
-	while ((c = *fmt++))
+	while ((c = *fmt++) != 0)
 	{
 		if (c == '%') {
 			c = *fmt++;
@@ -248,7 +246,7 @@ fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args)
 				s = va_arg(args, char*);
 				if (!s)
 					s = "(null)";
-				while ((c = *s++))
+				while ((c = *s++) != 0)
 					fmtputc(&out, c);
 				break;
 			case 'q':
