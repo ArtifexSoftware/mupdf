@@ -17,7 +17,7 @@
 		96C8ED181779A9AE00A30AF4 /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED111779A9AE00A30AF4 /* libfreetype.a */; };
 		96C8ED191779A9AE00A30AF4 /* libjbig2dec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED121779A9AE00A30AF4 /* libjbig2dec.a */; };
 		96C8ED1A1779A9AF00A30AF4 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED131779A9AE00A30AF4 /* libjpeg.a */; };
-		96C8ED1B1779A9AF00A30AF4 /* libmupdf-js-jscore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED141779A9AE00A30AF4 /* libmupdf-js-jscore.a */; };
+		96C8ED1B1779A9AF00A30AF4 /* libmujs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED141779A9AE00A30AF4 /* libmujs.a */; };
 		96C8ED1C1779A9AF00A30AF4 /* libmupdf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED151779A9AE00A30AF4 /* libmupdf.a */; };
 		96C8ED1D1779A9AF00A30AF4 /* libopenjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED161779A9AE00A30AF4 /* libopenjpeg.a */; };
 		96C8ED1E1779A9AF00A30AF4 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED171779A9AE00A30AF4 /* libz.a */; };
@@ -35,7 +35,6 @@
 		DA1C68B317E86A500061F586 /* MuDocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A717E864180061F586 /* MuDocumentController.m */; };
 		DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68A917E864CB0061F586 /* MuAppDelegate.m */; };
 		DA1C68C417E8969C0061F586 /* common.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C68C317E8969C0061F586 /* common.m */; };
-		DA300CA41847A64C004F92BB /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DA300CA31847A64C004F92BB /* JavaScriptCore.framework */; };
 		DA442E2D183B796F008EF49B /* ic_pen.png in Resources */ = {isa = PBXBuildFile; fileRef = DA442E2C183B796F008EF49B /* ic_pen.png */; };
 		DA442E30183B9F13008EF49B /* MuInkView.m in Sources */ = {isa = PBXBuildFile; fileRef = DA442E2F183B9F13008EF49B /* MuInkView.m */; };
 		DA4C0622187B1EA200755D0D /* MuTextFieldController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA4C0620187B1EA200755D0D /* MuTextFieldController.m */; };
@@ -88,7 +87,7 @@
 		96C8ED111779A9AE00A30AF4 /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreetype.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C8ED121779A9AE00A30AF4 /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjbig2dec.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C8ED131779A9AE00A30AF4 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		96C8ED141779A9AE00A30AF4 /* libmupdf-js-jscore.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libmupdf-js-jscore.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		96C8ED141779A9AE00A30AF4 /* libmujs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmujs.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C8ED151779A9AE00A30AF4 /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmupdf.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C8ED161779A9AE00A30AF4 /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopenjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C8ED171779A9AE00A30AF4 /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libz.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -163,11 +162,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				968E1E411779A54F0050CEA3 /* UIKit.framework in Frameworks */,
-				DA300CA41847A64C004F92BB /* JavaScriptCore.framework in Frameworks */,
 				968E1E431779A54F0050CEA3 /* Foundation.framework in Frameworks */,
 				968E1E451779A54F0050CEA3 /* CoreGraphics.framework in Frameworks */,
 				96C8ED1C1779A9AF00A30AF4 /* libmupdf.a in Frameworks */,
-				96C8ED1B1779A9AF00A30AF4 /* libmupdf-js-jscore.a in Frameworks */,
+				96C8ED1B1779A9AF00A30AF4 /* libmujs.a in Frameworks */,
 				96C8ED181779A9AE00A30AF4 /* libfreetype.a in Frameworks */,
 				96C8ED191779A9AE00A30AF4 /* libjbig2dec.a in Frameworks */,
 				96C8ED1A1779A9AF00A30AF4 /* libjpeg.a in Frameworks */,
@@ -197,7 +195,7 @@
 			children = (
 				968E1E3D1779A54F0050CEA3 /* MuPDF.app */,
 				96C8ED151779A9AE00A30AF4 /* libmupdf.a */,
-				96C8ED141779A9AE00A30AF4 /* libmupdf-js-jscore.a */,
+				96C8ED141779A9AE00A30AF4 /* libmujs.a */,
 				96C8ED111779A9AE00A30AF4 /* libfreetype.a */,
 				96C8ED121779A9AE00A30AF4 /* libjbig2dec.a */,
 				96C8ED131779A9AE00A30AF4 /* libjpeg.a */,
@@ -414,7 +412,7 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/libmupdf.a",
-				"$(DERIVED_FILE_DIR)/libmupdf-js-jscore.a",
+				"$(DERIVED_FILE_DIR)/libmujs.a",
 				"$(DERIVED_FILE_DIR)/libfreetype.a",
 				"$(DERIVED_FILE_DIR)/libjbig2dec.a",
 				"$(DERIVED_FILE_DIR)/libjpeg.a",
