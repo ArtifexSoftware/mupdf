@@ -221,7 +221,7 @@ namespace gsview
 			m_file_open = false;
 			status_t result = CleanUp();
 
-			/* Allocations */
+			/* Allocations and set up */
 			try
 			{
 				m_docPages = new Pages();
@@ -235,6 +235,24 @@ namespace gsview
 				m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
 				m_convertwin = null;
 				m_selection = null;
+				xaml_ZoomSlider.AddHandler(MouseLeftButtonUpEvent, new MouseButtonEventHandler(ZoomReleased), true);
+			
+				mxaml_BackPage.Opacity = 0.5;
+				mxaml_Contents.Opacity = 0.5;
+				mxaml_currPage.Opacity = 0.5;
+				mxaml_ForwardPage.Opacity = 0.5;
+				mxaml_Links.Opacity = 0.5;
+				mxaml_Print.Opacity = 0.5;
+				mxaml_SavePDF.Opacity = 0.5;
+				mxaml_Search.Opacity = 0.5;
+				mxaml_Thumbs.Opacity = 0.5;
+				mxaml_TotalPages.Opacity = 0.5;
+				mxaml_zoomIn.Opacity = 0.5;
+				mxaml_zoomOut.Opacity = 0.5;
+				mxaml_Zoomsize.Opacity = 0.5;
+				mxaml_Zoomsize.IsEnabled = false;
+				xaml_ZoomSlider.Opacity = 0.5;
+				xaml_ZoomSlider.IsEnabled = false;
 			}
 			catch (OutOfMemoryException e)
 			{
@@ -374,123 +392,6 @@ namespace gsview
 			}
 		}
 
-		void SetThumbInit(int page_num, Byte[] bitmap, Point ras_size, double zoom_in)
-		{
-			/* Two jobs. Store the thumb and possibly update the full page */
-			DocPage doc_page = m_thumbnails[page_num];
-
-			doc_page.Width = (int)ras_size.X;
-			doc_page.Height = (int)ras_size.Y;
-			doc_page.Content = Page_Content_t.THUMBNAIL;
-			doc_page.Zoom = zoom_in;
-			int stride = doc_page.Width * 4;
-			doc_page.BitMap = BitmapSource.Create(doc_page.Width, doc_page.Height, 72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
-			doc_page.PageNum = page_num;
-
-			/* And the main page */
-			var doc = m_docPages[page_num];
-			if (doc.Content == Page_Content_t.THUMBNAIL || doc.Content == Page_Content_t.FULL_RESOLUTION)
-				return;
-			else
-			{
-				doc_page = this.m_docPages[page_num];
-				doc_page.Content = Page_Content_t.THUMBNAIL;
-				doc_page.Zoom = zoom_in;
-
-				doc_page.BitMap = m_thumbnails[page_num].BitMap;
-				doc_page.Width = (int)(ras_size.X / Constants.SCALE_THUMB);
-				doc_page.Height = (int)(ras_size.Y / Constants.SCALE_THUMB);
-				doc_page.PageNum = page_num;
-			}
-		}
-
-		private void ThumbsWork(object sender, DoWorkEventArgs e)
-		{
-			Point ras_size;
-			status_t code;
-			double scale_factor = Constants.SCALE_THUMB;
-			BackgroundWorker worker = sender as BackgroundWorker;
-
-			Byte[] bitmap;
-
-			for (int k = 0; k < m_num_pages; k++)
-			{
-				if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
-				{
-					try
-					{
-						bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
-						/* Synchronous call on our background thread */
-						code = (status_t)mu_doc.RenderPage(k, bitmap, (int)ras_size.X, (int)ras_size.Y, scale_factor, false, false);
-					}
-					catch (OutOfMemoryException em)
-					{
-						Console.WriteLine("Memory allocation failed thumb page " + k + em.Message + "\n");
-						break;
-					}
-					/* Use thumb if we rendered ok */
-					if (code == status_t.S_ISOK)
-					{
-						double percent = 100 * (double)(k + 1) / (double)m_num_pages;
-						thumb_t curr_thumb = new thumb_t();
-						curr_thumb.page_num = k;
-						curr_thumb.bitmap = bitmap;
-						curr_thumb.size = ras_size;
-						worker.ReportProgress((int)percent, curr_thumb);
-					}
-				}
-				if (worker.CancellationPending == true)
-				{
-					e.Cancel = true;
-					break;
-				}
-			}
-		}
-
-		private void ThumbsCompleted(object sender, RunWorkerCompletedEventArgs e)
-		{
-			xaml_ProgressGrid.Visibility = System.Windows.Visibility.Collapsed;
-			xaml_ThumbProgress.Value = 0;
-			xaml_ThumbList.ItemsSource = m_thumbnails;
-			m_have_thumbs = true;
-			m_thumbworker = null;
-			xaml_CancelThumb.IsEnabled = true;
-		}
-
-		private void ThumbsProgressChanged(object sender, ProgressChangedEventArgs e)
-		{
-			thumb_t thumb = (thumb_t)(e.UserState);
-
-			xaml_ThumbProgress.Value = e.ProgressPercentage;
-			SetThumbInit(thumb.page_num, thumb.bitmap, thumb.size, 1.0);
-			m_docPages[thumb.page_num].PageRefresh();
-			m_thumbnails[thumb.page_num].PageRefresh();
-		}
-
-		private void RenderThumbs()
-		{
-			/* Create background task for rendering the thumbnails.  Allow
-			this to be cancelled if we open a new doc while we are in loop
-			rendering.  Put the UI updates in the progress changed which will
-			run on the main thread */
-			try
-			{
-				m_thumbworker = new BackgroundWorker();
-				m_thumbworker.WorkerReportsProgress = true;
-				m_thumbworker.WorkerSupportsCancellation = true;
-				m_thumbworker.DoWork += new DoWorkEventHandler(ThumbsWork);
-				m_thumbworker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(ThumbsCompleted);
-				m_thumbworker.ProgressChanged += new ProgressChangedEventHandler(ThumbsProgressChanged);
-				xaml_ProgressGrid.Visibility = System.Windows.Visibility.Visible;
-				m_thumbworker.RunWorkerAsync();
-			}
-			catch (OutOfMemoryException e)
-			{
-				Console.WriteLine("Memory allocation failed during thumb rendering\n");
-				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
-			}
-		}
-
 		private void OpenFile(object sender, RoutedEventArgs e)
 		{
 			if (m_password != null && m_password.IsActive)
@@ -599,6 +500,24 @@ namespace gsview
 			InitialRender();
 			RenderThumbs();
 			m_file_open = true;
+			mxaml_BackPage.Opacity = 1;
+			mxaml_Contents.Opacity = 1;
+			mxaml_currPage.Opacity = 1;
+			mxaml_ForwardPage.Opacity = 1;
+			mxaml_Links.Opacity = 1;
+			mxaml_Print.Opacity = 1;
+			mxaml_SavePDF.Opacity = 1;
+			mxaml_Search.Opacity = 1;
+			mxaml_Thumbs.Opacity = 1;
+			mxaml_TotalPages.Opacity = 1;
+			mxaml_zoomIn.Opacity = 1;
+			mxaml_zoomOut.Opacity = 1;
+			mxaml_Zoomsize.Opacity = 1;
+			mxaml_Zoomsize.IsEnabled = true;
+			mxaml_TotalPages.Text = "/ " + m_num_pages.ToString();
+			mxaml_currPage.Text = "1";
+			xaml_ZoomSlider.Opacity = 1.0;
+			xaml_ZoomSlider.IsEnabled = true;
 		}
 
 		private status_t ComputePageSize(int page_num, double scale_factor,
@@ -693,6 +612,29 @@ namespace gsview
 			RenderRange(m_currpage + 1, true);
 		}
 
+		private void PageEnterClicked(object sender, System.Windows.Input.KeyEventArgs e)
+		{
+			if (e.Key == Key.Return)
+			{
+				e.Handled = true;
+				var desired_page = mxaml_currPage.Text;
+				try
+				{
+					int page = System.Convert.ToInt32(desired_page);
+					if (page > 0 && page < (m_num_pages + 1))
+						RenderRange(page - 1, true);
+				}
+				catch (FormatException e1)
+				{
+					Console.WriteLine("String is not a sequence of digits.");
+				}
+				catch (OverflowException e2)
+				{
+					Console.WriteLine("The number cannot fit in an Int32.");
+				}
+			}
+		}
+
 		private void CancelLoadClick(object sender, RoutedEventArgs e)
 		{
 			/* Cancel during thumbnail loading. Deactivate the button 
@@ -773,7 +715,7 @@ namespace gsview
 					if (found != null)
 					{
 						var Item = (DocPage)found;
-						RenderRange(Item.PageNum - 1, false);
+						RenderRange(Item.PageNum, false);
 					}
 					return;
 				}
@@ -785,7 +727,7 @@ namespace gsview
 		{
 			int range = (int) Math.Ceiling(((double) m_numpagesvisible - 1.0) / 2.0);
 
-			for (int k = new_page - range; k <= new_page + range; k++)
+			for (int k = new_page - range; k <= new_page + range + 1; k++)
 			{
 				if (k >= 0 && k < m_num_pages)
 				{
@@ -849,6 +791,7 @@ namespace gsview
 			/* Release old range and set new page */
 			ReleasePages(m_currpage, new_page, range);
 			m_currpage = new_page;
+			mxaml_currPage.Text = (m_currpage + 1).ToString();
 		}
 
 		private bool Visible(FrameworkElement elem, FrameworkElement cont)
@@ -901,26 +844,6 @@ namespace gsview
 				 * we just want to make sure we can release the bitmaps */
 				//doc_page.PageRefresh();
 			}
-		}
-
-		private void ZoomOut(object sender, RoutedEventArgs e)
-		{
-			m_doczoom = m_doczoom - Constants.ZOOM_STEP;
-			if (m_doczoom < Constants.ZOOM_MIN)
-				m_doczoom = Constants.ZOOM_MIN;
-			xaml_ZoomSlider.Value = m_doczoom * 100.0;
-			m_numpagesvisible = (int)(Math.Ceiling((1.0 / m_doczoom) + 2));
-			RenderRange(m_currpage, false);
-		}
-
-		private void ZoomIn(object sender, RoutedEventArgs e)
-		{
-			m_doczoom = m_doczoom + Constants.ZOOM_STEP;
-			if (m_doczoom > Constants.ZOOM_MAX)
-				m_doczoom = Constants.ZOOM_MAX;
-			xaml_ZoomSlider.Value = m_doczoom * 100.0;
-			m_numpagesvisible = (int) (Math.Ceiling((1.0 / m_doczoom) + 2));
-			RenderRange(m_currpage, false);
 		}
 
 		private void gsIO(object gsObject, String mess, int len)
@@ -1194,37 +1117,6 @@ namespace gsview
 				ShowMessage(NotifyType_t.MESS_STATUS, "Password Incorrect");
 		}
 
-		private void ShowFooter(object sender, RoutedEventArgs e)
-		{
-			xaml_FooterControl.Visibility = System.Windows.Visibility.Visible;
-		}
-
-		private void HideFooter(object sender, RoutedEventArgs e)
-		{
-			xaml_FooterControl.Visibility = System.Windows.Visibility.Collapsed;
-		}
-
-		private void ZoomReleased(object sender, MouseButtonEventArgs e)
-		{
-			if (m_init_done)
-			{
-				m_doczoom = xaml_ZoomSlider.Value / 100.0;
-				RenderRange(m_currpage, false);
-			}
-		}
-
-		/* If the zoom is not equalto 1 then set the zoom to 1 and scoll to this page */
-		private void PageDoubleClick(object sender, MouseButtonEventArgs e)
-		{
-			if (m_doczoom != 1.0)
-			{
-				m_doczoom = 1.0;
-				var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
-				if (item != null)
-					RenderRange(item.PageNum, true);
-			}
-		}
-
 		private void ShowInfo(object sender, RoutedEventArgs e)
 		{
 			String Message;
@@ -1244,7 +1136,219 @@ namespace gsview
 			}
 		}
 
-#region Copy Paste Code
+#region Zoom Control
+		private void ZoomOut(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done)
+				return;
+			m_doczoom = m_doczoom - Constants.ZOOM_STEP;
+			if (m_doczoom < Constants.ZOOM_MIN)
+				m_doczoom = Constants.ZOOM_MIN;
+			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			m_numpagesvisible = (int)(Math.Ceiling((1.0 / m_doczoom) + 2));
+			RenderRange(m_currpage, false);
+		}
+
+		private void ZoomIn(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done)
+				return;
+			m_doczoom = m_doczoom + Constants.ZOOM_STEP;
+			if (m_doczoom > Constants.ZOOM_MAX)
+				m_doczoom = Constants.ZOOM_MAX;
+			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			m_numpagesvisible = (int)(Math.Ceiling((1.0 / m_doczoom) + 2));
+			RenderRange(m_currpage, false);
+		}
+
+		private void ShowFooter(object sender, RoutedEventArgs e)
+		{
+			xaml_FooterControl.Visibility = System.Windows.Visibility.Visible;
+		}
+
+		private void HideFooter(object sender, RoutedEventArgs e)
+		{
+			xaml_FooterControl.Visibility = System.Windows.Visibility.Collapsed;
+		}
+
+		private void ZoomReleased(object sender, MouseButtonEventArgs e)
+		{
+			if (m_init_done)
+			{
+				double zoom = xaml_ZoomSlider.Value / 100.0;
+				if (zoom > Constants.ZOOM_MAX)
+					zoom = Constants.ZOOM_MAX;
+				if (zoom < Constants.ZOOM_MIN)
+					zoom = Constants.ZOOM_MIN;
+				m_numpagesvisible = (int)(Math.Ceiling((1.0 / zoom) + 2));
+				m_doczoom = zoom;
+				RenderRange(m_currpage, false);
+			}
+		}
+
+		/* If the zoom is not equalto 1 then set the zoom to 1 and scoll to this page */
+		private void PageDoubleClick(object sender, MouseButtonEventArgs e)
+		{
+			if (m_doczoom != 1.0)
+			{
+				m_doczoom = 1.0;
+				mxaml_Zoomsize.Text = "100";
+				var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
+				if (item != null)
+					RenderRange(item.PageNum, true);
+			}
+		}
+
+		private void ZoomEnterClicked(object sender, System.Windows.Input.KeyEventArgs e)
+		{
+			if (e.Key == Key.Return)
+			{
+				e.Handled = true;
+				var desired_zoom = mxaml_Zoomsize.Text;
+				try
+				{
+					double zoom = (double) System.Convert.ToInt32(desired_zoom) / 100.0;
+					if (zoom > Constants.ZOOM_MAX)
+						zoom = Constants.ZOOM_MAX;
+					if (zoom < Constants.ZOOM_MIN)
+						zoom = Constants.ZOOM_MIN;
+					m_numpagesvisible = (int)(Math.Ceiling((1.0 / zoom) + 2));
+					m_doczoom = zoom;
+					RenderRange(m_currpage, false);
+				}
+				catch (FormatException e1)
+				{
+					Console.WriteLine("String is not a sequence of digits.");
+				}
+				catch (OverflowException e2)
+				{
+					Console.WriteLine("The number cannot fit in an Int32.");
+				}
+			}
+		}
+
+#endregion Zoom Control
+
+#region Thumb Rendering
+		void SetThumbInit(int page_num, Byte[] bitmap, Point ras_size, double zoom_in)
+		{
+			/* Two jobs. Store the thumb and possibly update the full page */
+			DocPage doc_page = m_thumbnails[page_num];
+
+			doc_page.Width = (int)ras_size.X;
+			doc_page.Height = (int)ras_size.Y;
+			doc_page.Content = Page_Content_t.THUMBNAIL;
+			doc_page.Zoom = zoom_in;
+			int stride = doc_page.Width * 4;
+			doc_page.BitMap = BitmapSource.Create(doc_page.Width, doc_page.Height, 72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
+			doc_page.PageNum = page_num;
+
+			/* And the main page */
+			var doc = m_docPages[page_num];
+			if (doc.Content == Page_Content_t.THUMBNAIL || doc.Content == Page_Content_t.FULL_RESOLUTION)
+				return;
+			else
+			{
+				doc_page = this.m_docPages[page_num];
+				doc_page.Content = Page_Content_t.THUMBNAIL;
+				doc_page.Zoom = zoom_in;
+
+				doc_page.BitMap = m_thumbnails[page_num].BitMap;
+				doc_page.Width = (int)(ras_size.X / Constants.SCALE_THUMB);
+				doc_page.Height = (int)(ras_size.Y / Constants.SCALE_THUMB);
+				doc_page.PageNum = page_num;
+			}
+		}
+
+		private void ThumbsWork(object sender, DoWorkEventArgs e)
+		{
+			Point ras_size;
+			status_t code;
+			double scale_factor = Constants.SCALE_THUMB;
+			BackgroundWorker worker = sender as BackgroundWorker;
+
+			Byte[] bitmap;
+
+			for (int k = 0; k < m_num_pages; k++)
+			{
+				if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
+				{
+					try
+					{
+						bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+						/* Synchronous call on our background thread */
+						code = (status_t)mu_doc.RenderPage(k, bitmap, (int)ras_size.X, (int)ras_size.Y, scale_factor, false, false);
+					}
+					catch (OutOfMemoryException em)
+					{
+						Console.WriteLine("Memory allocation failed thumb page " + k + em.Message + "\n");
+						break;
+					}
+					/* Use thumb if we rendered ok */
+					if (code == status_t.S_ISOK)
+					{
+						double percent = 100 * (double)(k + 1) / (double)m_num_pages;
+						thumb_t curr_thumb = new thumb_t();
+						curr_thumb.page_num = k;
+						curr_thumb.bitmap = bitmap;
+						curr_thumb.size = ras_size;
+						worker.ReportProgress((int)percent, curr_thumb);
+					}
+				}
+				if (worker.CancellationPending == true)
+				{
+					e.Cancel = true;
+					break;
+				}
+			}
+		}
+
+		private void ThumbsCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			xaml_ProgressGrid.Visibility = System.Windows.Visibility.Collapsed;
+			xaml_ThumbProgress.Value = 0;
+			xaml_ThumbList.ItemsSource = m_thumbnails;
+			m_have_thumbs = true;
+			m_thumbworker = null;
+			xaml_CancelThumb.IsEnabled = true;
+		}
+
+		private void ThumbsProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			thumb_t thumb = (thumb_t)(e.UserState);
+
+			xaml_ThumbProgress.Value = e.ProgressPercentage;
+			SetThumbInit(thumb.page_num, thumb.bitmap, thumb.size, 1.0);
+			m_docPages[thumb.page_num].PageRefresh();
+			m_thumbnails[thumb.page_num].PageRefresh();
+		}
+
+		private void RenderThumbs()
+		{
+			/* Create background task for rendering the thumbnails.  Allow
+			this to be cancelled if we open a new doc while we are in loop
+			rendering.  Put the UI updates in the progress changed which will
+			run on the main thread */
+			try
+			{
+				m_thumbworker = new BackgroundWorker();
+				m_thumbworker.WorkerReportsProgress = true;
+				m_thumbworker.WorkerSupportsCancellation = true;
+				m_thumbworker.DoWork += new DoWorkEventHandler(ThumbsWork);
+				m_thumbworker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(ThumbsCompleted);
+				m_thumbworker.ProgressChanged += new ProgressChangedEventHandler(ThumbsProgressChanged);
+				xaml_ProgressGrid.Visibility = System.Windows.Visibility.Visible;
+				m_thumbworker.RunWorkerAsync();
+			}
+			catch (OutOfMemoryException e)
+			{
+				Console.WriteLine("Memory allocation failed during thumb rendering\n");
+				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
+			}
+		}
+#endregion Thumb Rendering
+
+#region Copy Paste
 		/* Copy the current page as a bmp to the clipboard this is done at the 
 		 * current resolution */
 		private void CopyPage(object sender, RoutedEventArgs e)
@@ -1315,9 +1419,9 @@ namespace gsview
 					encoder.Save(stream);
 			}
 		}
-#endregion Copy Paste Code
-		
-#region SaveAs Code
+#endregion Copy Paste
+
+#region SaveAs
 		String CreatePDFXA(Save_Type_t type)
 		{
 			Byte[] Resource;
@@ -1576,9 +1680,9 @@ namespace gsview
 		{
 			SaveFile(Save_Type_t.XPS);
 		}
-#endregion SaveAs Code
+#endregion SaveAs
 
-#region Extract Code
+#region Extract
 		private void Extract(Extract_Type_t type)
 		{
 			if (m_selection != null || !m_init_done)
@@ -1725,9 +1829,9 @@ namespace gsview
 		{
 			m_outputintents.Show();
 		}
-#endregion Extract Code
+#endregion Extract
 
-#region Search Code
+#region Search
 		/* Search related code */
 		private void Search(object sender, RoutedEventArgs e)
 		{
@@ -1962,9 +2066,9 @@ namespace gsview
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
 			}
 		}
-#endregion Search Code
+#endregion Search
 
-#region Link Code
+#region Link
 		private void LinksToggle(object sender, RoutedEventArgs e)
 		{
 			if (!m_init_done)
@@ -2141,6 +2245,7 @@ namespace gsview
 					System.Diagnostics.Process.Start(link.Urilink.AbsoluteUri);
 			}
 		}
-#endregion Link Code
+#endregion Link
+
 	}
 }
