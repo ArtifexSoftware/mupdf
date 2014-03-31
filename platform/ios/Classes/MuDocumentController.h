@@ -15,6 +15,7 @@ enum
 {
 	BARMODE_MAIN,
 	BARMODE_SEARCH,
+	BARMODE_MORE,
 	BARMODE_ANNOTATION,
 	BARMODE_HIGHLIGHT,
 	BARMODE_UNDERLINE,
@@ -37,6 +38,7 @@ enum
 	UISearchBar *searchBar;
 	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton, *linkButton;
 	UIBarButtonItem *moreButton;
+	UIBarButtonItem *printButton, *annotButton;
 	UIBarButtonItem *highlightButton, *underlineButton, *strikeoutButton;
 	UIBarButtonItem *inkButton;
 	UIBarButtonItem *tickButton;

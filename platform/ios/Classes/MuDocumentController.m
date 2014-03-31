@@ -249,6 +249,8 @@ static void saveDoc(char *current_path, fz_document *doc)
 	nextButton = [self resourceBasedButton:@"ic_arrow_right" withAction:@selector(onSearchNext:)];
 	reflowButton = [self resourceBasedButton:@"ic_reflow" withAction:@selector(onToggleReflow:)];
 	moreButton = [self resourceBasedButton:@"ic_more" withAction:@selector(onMore:)];
+	annotButton = [self resourceBasedButton:@"ic_annotation" withAction:@selector(onAnnot:)];
+	printButton = [self resourceBasedButton:@"ic_print" withAction:@selector(onPrint:)];
 	highlightButton = [self resourceBasedButton:@"ic_highlight" withAction:@selector(onHighlight:)];
 	underlineButton = [self resourceBasedButton:@"ic_underline" withAction:@selector(onUnderline:)];
 	strikeoutButton = [self resourceBasedButton:@"ic_strike" withAction:@selector(onStrikeout:)];
@@ -443,6 +445,14 @@ static void saveDoc(char *current_path, fz_document *doc)
 	[self scrollViewDidScroll:canvas];
 }
 
+- (void) showMoreMenu
+{
+	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:printButton, annotButton, nil]];
+	[[self navigationItem] setLeftBarButtonItem:cancelButton];
+
+	barmode = BARMODE_MORE;
+}
+
 - (void) showAnnotationMenu
 {
 	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:inkButton, strikeoutButton, underlineButton, highlightButton, nil]];
@@ -465,7 +475,41 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) onMore: (id)sender
 {
+	[self showMoreMenu];
+}
+
+- (void) onAnnot: (id)sender
+{
 	[self showAnnotationMenu];
+}
+
+- (void) onPrint: (id)sender
+{
+	NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filePath]];
+	UIPrintInteractionController *pic = [UIPrintInteractionController sharedPrintController];
+    if  (pic && [UIPrintInteractionController canPrintURL:url] ) {
+
+        UIPrintInfo *printInfo = [UIPrintInfo printInfo];
+        printInfo.outputType = UIPrintInfoOutputGeneral;
+        printInfo.jobName = key;
+        printInfo.duplex = UIPrintInfoDuplexLongEdge;
+        pic.printInfo = printInfo;
+        pic.showsPageRange = YES;
+        pic.printingItem = url;
+
+        void (^completionHandler)(UIPrintInteractionController *, BOOL, NSError *) =
+		^(UIPrintInteractionController *pic, BOOL completed, NSError *error) {
+			if (!completed && error)
+				NSLog(@"FAILED! due to error in domain %@ with error code %u",
+					  error.domain, (unsigned int)error.code);
+        };
+        if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+			[pic presentFromBarButtonItem:printButton animated:YES
+						completionHandler:completionHandler];
+        } else {
+			[pic presentAnimated:YES completionHandler:completionHandler];
+		}
+	}
 }
 
 - (void) textSelectModeOn
@@ -594,6 +638,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 			[self resetSearch];
 			/* fallthrough */
 		case BARMODE_ANNOTATION:
+		case BARMODE_MORE:
 			[[self navigationItem] setTitleView: nil];
 			[self addMainMenuButtons];
 			barmode = BARMODE_MAIN;
