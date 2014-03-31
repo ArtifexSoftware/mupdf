@@ -373,6 +373,14 @@ static void saveDoc(char *current_path, fz_document *doc)
 - (void) showNavigationBar
 {
 	if ([[self navigationController] isNavigationBarHidden]) {
+		[sliderWrapper setWidth: SLIDER_W];
+		if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+		{
+			CGRect r = [[self navigationController] toolbar].frame;
+			r.origin.x = 0;
+			r.origin.y = 0;
+			[slider setFrame:r];
+		}
 		[[self navigationController] setNavigationBarHidden: NO];
 		[[self navigationController] setToolbarHidden: NO];
 		[indicator setHidden: NO];
