@@ -20,7 +20,7 @@ LOCAL_C_INCLUDES := \
 LOCAL_CFLAGS :=
 LOCAL_MODULE    := mupdf
 LOCAL_SRC_FILES := mupdf.c
-LOCAL_STATIC_LIBRARIES := mupdfcore mupdfcore2 mupdfthirdparty
+LOCAL_STATIC_LIBRARIES := mupdfcore mupdfthirdparty
 ifdef NDK_PROFILER
 LOCAL_CFLAGS += -pg -DNDK_PROFILER
 LOCAL_STATIC_LIBRARIES += andprof

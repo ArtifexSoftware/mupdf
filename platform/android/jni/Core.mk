@@ -55,7 +55,7 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/tiff/*.c)
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/source/pdf/js/pdf-js.c \
-	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.cpp
+	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.c
 ifdef MEMENTO
 LOCAL_SRC_FILES += $(MY_ROOT)/fitz/memento.c
 endif
