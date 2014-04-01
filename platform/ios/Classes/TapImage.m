@@ -7,6 +7,8 @@ static const NSTimeInterval TapDuration = 0.05;
 - (id)initWithResource:(NSString *)resource target:(id)targ action:(SEL)selector
 {
 	UIImage *image = [UIImage imageWithContentsOfFile:[[NSBundle mainBundle] pathForResource:resource ofType:@"png"]];
+	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+		image = [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
 	self = [super initWithImage:image];
 	if (self)
 	{
