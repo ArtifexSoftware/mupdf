@@ -1,3 +1,9 @@
+mupdf (1.4-1) unstable; urgency=low
+
+  * MuPDF version 1.4
+
+ -- Tor Andersson <tor.andersson@artifex.com>  Wed, 01 Apr 2014 12:00:00 +0200
+
 mupdf (1.3-1) unstable; urgency=low
 
   * MuPDF version 1.3
