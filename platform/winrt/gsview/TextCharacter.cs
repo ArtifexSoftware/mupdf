@@ -7,33 +7,9 @@ using System.ComponentModel;
 
 namespace gsview
 {
-	public enum Link_t
+	public class TextCharacter
 	{
-		LINK_GOTO,
-		LINK_URI,
-		TEXTBOX,
-		NOT_SET
-	};
-
-	public class RectList : INotifyPropertyChanged
-	{
-		public String Character
-		{
-			get;
-			set;
-		}
-
-		public String Index
-		{
-			get;
-			set;
-		}
-
-		public String Color
-		{
-			get;
-			set;
-		}
+		public String character;
 
 		public double Height
 		{
@@ -65,27 +41,29 @@ namespace gsview
 			set;
 		}
 
-		public Link_t Type
+		public String Color
 		{
 			get;
 			set;
 		}
 
-		public int PageNum
+		/* Here we only worry about intersection in the x direction TODO */
+		public Intersection_t CheckIntersection(double rect_x, double rect_y, double rect_w, double rect_h)
 		{
-			get;
-			set;
+			if (rect_w == 0 || rect_x > X + Width  || rect_x + rect_w < X)
+				return Intersection_t.NONE;
+
+			if (rect_x <= X && X + Width <= rect_x + rect_w)
+				return Intersection_t.FULL;
+
+			return Intersection_t.PARTIAL;
 		}
 
-		public Uri Urilink
-		{
-			get;
-			set;
-		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		//public event PropertyChangedEventHandler PropertyChanged;
 
-		public void PageRefresh()
+		/*
+		public void CharRefresh()
 		{
 			if (PropertyChanged != null)
 			{
@@ -96,5 +74,6 @@ namespace gsview
 				PropertyChanged(this, new PropertyChangedEventArgs("Color"));
 			}
 		}
+		 * */
 	}
 }

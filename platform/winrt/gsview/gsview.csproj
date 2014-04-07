@@ -110,6 +110,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Messages.resx</DependentUpon>
     </Compile>
+    <Compile Include="TextBlock.cs" />
+    <Compile Include="TextCharacter.cs" />
+    <Compile Include="TextLine.cs" />
     <Page Include="Convert.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -233,6 +236,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\FloppyDisk.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\copy.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

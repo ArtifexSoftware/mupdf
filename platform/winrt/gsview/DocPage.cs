@@ -12,84 +12,204 @@ namespace gsview
 {
 	public class DocPage : INotifyPropertyChanged
 	{
+		private LinesText m_lines;
+		private BlocksText m_blocks;
+		private int height;
+		private int width;
+		private int nativeheight;
+		private int nativewidth;
+		private double zoom;
+		private BitmapSource bitmap;
+		private IList<RectList> textbox;
+		private List<RectList> linkbox;
+		private Page_Content_t content;
+		private String pagename;
+		private int pagenum;
+		private double sely;
+		private double selx;
+		private double selheight;
+		private double selwidth;
+		private String selcolor;
+		private double sel_anchorx;
+		private double sel_anchory;
+
+		public double SelAnchorX
+		{
+			get { return sel_anchorx; }
+			set { sel_anchorx = value; }
+		}
+
+		public double SelAnchorY
+		{
+			get { return sel_anchory; }
+			set { sel_anchory = value; }
+		}
+
+		public double SelY
+		{
+			get { return sely; }
+			set
+			{
+				sely = value;
+				OnPropertyChanged("SelY");
+			}
+		}
+
+		public double SelX
+		{
+			get { return selx; }
+			set
+			{
+				selx = value;
+				OnPropertyChanged("SelX");
+			}
+		}
+
+		public double SelHeight
+		{
+			get { return selheight; }
+			set
+			{
+				selheight = value;
+				OnPropertyChanged("SelHeight");
+			}
+		}
+
+		public double SelWidth
+		{
+			get { return selwidth; }
+			set
+			{
+				selwidth = value;
+				OnPropertyChanged("SelWidth");
+			}
+		}
+
+		public String SelColor
+		{
+			get { return selcolor; }
+			set
+			{
+				selcolor = value;
+				OnPropertyChanged("SelColor");
+			}
+		}
+
 		public int Height
 		{
-			get;
-			internal set;
+			get { return height; }
+			set 
+			{ 
+				height = value;
+				OnPropertyChanged("Height");
+			}
 		}
 
 		public int Width
 		{
-			get;
-			internal set;
+			get { return width; }
+			set
+			{
+				width = value;
+				OnPropertyChanged("Width");
+			}
 		}
-
 
 		public int NativeHeight
 		{
-			get;
-			set;
+			get { return nativewidth; }
+			set { nativewidth = value; }
 		}
 
 		public int NativeWidth
 		{
-			get;
-			set;
+			get { return nativeheight; }
+			set { nativeheight = value; }
 		}
 
 		public double Zoom
 		{
-			get;
-			set;
+			get { return zoom; }
+			set { zoom = value; }
 		}
 
 		public BitmapSource BitMap
 		{
-			get;
-			set;
+			get { return bitmap; }
+			set
+			{
+				bitmap = value;
+				OnPropertyChanged("BitMap");
+			}
 		}
 
-		public List<RectList> TextBox
+		public IList<RectList> TextBox
 		{
-			get;
-			set;
+			get { return textbox; }
+			set
+			{
+				textbox = value;
+				OnPropertyChanged("TextBox");
+			}
 		}
 
 		public List<RectList> LinkBox
 		{
-			get;
-			set;
+			get { return linkbox; }
+			set
+			{
+				linkbox = value;
+				OnPropertyChanged("LinkBox");
+			}
+		}
+
+		public BlocksText TextBlocks
+		{
+			get { return m_blocks; }
+			set
+			{
+				m_blocks = value;
+				OnPropertyChanged("TextBlocks");
+			}
+		}
+
+		public LinesText SelectedLines
+		{
+			get { return m_lines; }
+			set
+			{
+				m_lines = value;
+				OnPropertyChanged("SelectedLines");
+			}
 		}
 
 		public Page_Content_t Content
 		{
-			get;
-			set;
+			get { return content; }
+			set { content = value; }
 		}
 
 		public String PageName
 		{
-			get;
-			set;
+			get { return pagename; }
+			set { pagename = value; }
 		}
 
 		public int PageNum
 		{
-			get;
-			set;
+			get { return pagenum; }
+			set { pagenum = value; }
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
-		public void PageRefresh()
+		// Create the OnPropertyChanged method to raise the event 
+		protected void OnPropertyChanged(string name)
 		{
-			if (PropertyChanged != null)
+			PropertyChangedEventHandler handler = PropertyChanged;
+			if (handler != null)
 			{
-				PropertyChanged(this, new PropertyChangedEventArgs("BitMap"));
-				PropertyChanged(this, new PropertyChangedEventArgs("Height"));
-				PropertyChanged(this, new PropertyChangedEventArgs("Width"));
-				PropertyChanged(this, new PropertyChangedEventArgs("TextBox"));
-				PropertyChanged(this, new PropertyChangedEventArgs("LinkBox"));
+				handler(this, new PropertyChangedEventArgs(name));
 			}
 		}
 
@@ -106,11 +226,12 @@ namespace gsview
 			this.Content = Page_Content_t.NOTSET;
 			this.PageNum = -1;
 			this.PageName = "";
+			this.TextBlocks = null;
 		}
 
 		public DocPage(int Height, int Width, double Zoom, BitmapSource BitMap,
 							List<RectList> TextBox, List<RectList> LinkBox,
-							Page_Content_t Content, int PageNum)
+							Page_Content_t Content, int PageNum, BlocksText TextBlocks)
 		{
 			this.Height = Height;
 			this.Width = Width;
@@ -121,6 +242,7 @@ namespace gsview
 			this.Content = Content;
 			this.PageNum = PageNum;
 			this.PageName = ("Page " + (PageNum + 1));
+			this.TextBlocks = TextBlocks;
 		}
 	};
 	public class Pages : ObservableCollection<DocPage>

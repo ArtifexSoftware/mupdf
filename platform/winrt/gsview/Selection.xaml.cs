@@ -100,6 +100,7 @@ namespace gsview
 			m_zoom = init_zoom;
 			m_curr_state = SelectStatus_t.OK;
 			m_type = type;
+			m_rect = null;
 		}
 
 		void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)

@@ -19,6 +19,7 @@ using System.IO;
 using System.Windows.Xps.Packaging;
 using System.Printing;
 using System.Windows.Markup;
+using System.Runtime.InteropServices;
 
 enum PDFType_t
 {
@@ -130,8 +131,10 @@ static class Constants
 	public const int SEARCH_BACKWARD = -1;
 	public const int TEXT_NOT_FOUND = -1;
 	public const int DEFAULT_GS_RES = 300;
+	public const int DISPATCH_TIME = 50;
+	public const int SCROLL_STEP = 10;
+	public const int SCROLL_EDGE_BUFFER = 90;
 }
-
 
 public static class DocumentTypes
 {
@@ -150,6 +153,12 @@ namespace gsview
 	/// </summary>
 	/// 
 
+	public struct ContextMenu_t
+	{
+		public int page_num;
+		public Point mouse_position;
+	}
+
 	public struct thumb_t
 	{
 		public int page_num;
@@ -166,32 +175,36 @@ namespace gsview
 		public int num_rects;
 	}
 
+	public struct textSelectInfo_t
+	{
+		public int pagenum;
+		public bool first_line_full;
+		public bool last_line_full;
+	}
+
 	public partial class MainWindow : Window
 	{
 		mudocument mu_doc;
 		public Pages m_docPages;
+		List<textSelectInfo_t> m_textSelect;
 		List<DocPage> m_thumbnails;
 		List<List<RectList>> m_page_link_list = null;
-		int m_contents_size;
-		int m_content_item;
-		List<RectList> m_text_list = null;
-		private int m_rectlist_page;
-		private List<ContentEntry> m_content_list;
+		IList<RectList> m_text_list;
+		public List<LinesText> m_lineptrs = null;
+		public List<BlocksText> m_textptrs = null;
+		List<Boolean> m_textset = null;
 		private bool m_file_open;
 		private int m_currpage;
 		private int m_searchpage;
 		private int m_num_pages;
 		private bool m_init_done;
 		private bool m_links_on;
-		private int m_search_rect_count;
-		String m_textcolor = "#402572AC";
+		String m_textsearchcolor = "#4072AC25";
+		String m_textselectcolor = "#402572AC";
+		String m_regionselect = "#00FFFFFF";
+		//String m_regionselect = "#FFFF0000";  /* Debug */
 		String m_linkcolor = "#40AC7225";
-		RenderingStatus_t m_ren_status;
-		private bool m_insearch;
-		private bool m_search_active;
-		private bool m_handlingzoom;
 		private bool m_have_thumbs;
-		private bool m_have_contents;
 		double m_doczoom;
 		ghostsharp m_ghostscript;
 		String m_currfile;
@@ -200,7 +213,6 @@ namespace gsview
 		gsOutput m_gsoutput;
 		Convert m_convertwin;
 		Password m_password = null;
-		bool m_zoomhandled;
 		BackgroundWorker m_thumbworker = null;
 		BackgroundWorker m_textsearch = null;
 		BackgroundWorker m_linksearch = null;
@@ -208,11 +220,15 @@ namespace gsview
 		Info m_infowindow;
 		OutputIntent m_outputintents;
 		Selection m_selection;
-		private Point startPoint;
-		private Rectangle rect;
 		String m_prevsearch = null;
 		int m_numpagesvisible;
 		bool m_clipboardset;
+		bool m_doscroll;
+		bool m_intxtselect;
+		bool m_textselected;
+		System.Windows.Threading.DispatcherTimer m_dispatcherTimer = null;
+		double m_lastY;
+		double m_maxY;
 
 		public MainWindow()
 		{
@@ -226,6 +242,9 @@ namespace gsview
 			{
 				m_docPages = new Pages();
 				m_thumbnails = new List<DocPage>();
+				m_lineptrs = new List<LinesText>();
+				m_textptrs = new List<BlocksText>();
+				m_textset = new List<Boolean>();
 				m_ghostscript = new ghostsharp();
 				m_ghostscript.gsUpdateMain += new ghostsharp.gsCallBackMain(gsProgress);
 				m_gsoutput = new gsOutput();
@@ -236,7 +255,7 @@ namespace gsview
 				m_convertwin = null;
 				m_selection = null;
 				xaml_ZoomSlider.AddHandler(MouseLeftButtonUpEvent, new MouseButtonEventHandler(ZoomReleased), true);
-			
+
 				mxaml_BackPage.Opacity = 0.5;
 				mxaml_Contents.Opacity = 0.5;
 				mxaml_currPage.Opacity = 0.5;
@@ -290,7 +309,7 @@ namespace gsview
 		private status_t CleanUp()
 		{
 			m_init_done = false;
-
+			this.Cursor = System.Windows.Input.Cursors.Arrow;
 			/* Collapse this stuff since it is going to be released */
 			xaml_ThumbGrid.Visibility = System.Windows.Visibility.Collapsed;
 			xaml_ContentGrid.Visibility = System.Windows.Visibility.Collapsed;
@@ -298,8 +317,16 @@ namespace gsview
 			/* Clear out everything */
 			if (m_docPages != null && m_docPages.Count > 0)
 				m_docPages.Clear();
+			if (m_textSelect != null)
+				m_textSelect.Clear();
+			if (m_textset != null)
+				m_textset.Clear();
+			if (m_lineptrs != null && m_lineptrs.Count > 0)
+				m_lineptrs.Clear();
 			if (m_thumbnails != null && m_thumbnails.Count > 0)
 				m_thumbnails.Clear();
+			if (m_textptrs != null && m_textptrs.Count > 0)
+				m_textptrs.Clear();
 			if (m_page_link_list != null && m_page_link_list.Count > 0)
 			{
 				m_page_link_list.Clear();
@@ -332,21 +359,19 @@ namespace gsview
 
 			m_have_thumbs = false;
 			m_file_open = false;
-			m_insearch = false;
-			m_search_active = false;
 			m_num_pages = -1;
-			m_search_rect_count = 0;
 			m_links_on = false;
-			m_rectlist_page = -1;
 			m_doczoom = 1.0;
 			m_isXPS = false;
-			m_zoomhandled = false;
 			xaml_CancelThumb.IsEnabled = true;
 			m_currpage = 0;
 			m_document_type = DocumentTypes.UNKNOWN;
 			EnabletoPDF();
 			m_numpagesvisible = 3;
 			m_clipboardset = false;
+			m_doscroll = false;
+			m_intxtselect = false;
+			m_textselected = false;
 			return result;
 		}
 
@@ -405,13 +430,13 @@ namespace gsview
 			 * they want */
 			if (m_ghostscript.GetStatus() != gsStatus.GS_READY)
 			{
-				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy. Cancel to open new file."); 
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy. Cancel to open new file.");
 				return;
 			}
 
 			if (m_ghostprint != null && m_ghostprint.IsBusy())
 			{
-				ShowMessage(NotifyType_t.MESS_STATUS, "Let printing complete"); 
+				ShowMessage(NotifyType_t.MESS_STATUS, "Let printing complete");
 				return;
 			}
 
@@ -430,25 +455,25 @@ namespace gsview
 				string extension = System.IO.Path.GetExtension(dlg.FileName);
 				/* We are doing this based on the extension but like should do
 				 * it based upon the content */
-				switch(extension.ToUpper())
+				switch (extension.ToUpper())
 				{
 					case ".PS":
-						m_document_type =  DocumentTypes.PS;
+						m_document_type = DocumentTypes.PS;
 						break;
 					case ".EPS":
-						m_document_type =  DocumentTypes.EPS;
+						m_document_type = DocumentTypes.EPS;
 						break;
 					case ".XPS":
-						m_document_type =  DocumentTypes.XPS;
+						m_document_type = DocumentTypes.XPS;
 						break;
 					case ".PDF":
-						m_document_type =  DocumentTypes.PDF;
+						m_document_type = DocumentTypes.PDF;
 						break;
 					case ".CBZ":
-						m_document_type =  DocumentTypes.CBZ;
+						m_document_type = DocumentTypes.CBZ;
 						break;
 					default:
-						m_document_type =  DocumentTypes.UNKNOWN;
+						m_document_type = DocumentTypes.UNKNOWN;
 						break;
 				}
 				if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
@@ -549,6 +574,10 @@ namespace gsview
 			doc_page.Content = Page_Content_t.DUMMY;
 			doc_page.TextBox = null;
 			doc_page.LinkBox = null;
+			doc_page.SelHeight = 0;
+			doc_page.SelWidth = 0;
+			doc_page.SelX = 0;
+			doc_page.SelY = 0;
 			return doc_page;
 		}
 
@@ -562,6 +591,9 @@ namespace gsview
 				m_docPages.Add(InitDocPage());
 				m_docPages[k].PageNum = k;
 				m_thumbnails.Add(InitDocPage());
+				m_textptrs.Add(new BlocksText());
+				m_lineptrs.Add(new LinesText());
+				m_textset.Add(false);
 			}
 
 			/* Do the first few full res pages */
@@ -577,15 +609,24 @@ namespace gsview
 						try
 						{
 							Byte[] bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+							BlocksText charlist = null;
 
 							Task<int> ren_task =
-								new Task<int>(() => mu_doc.RenderPage(k, bitmap, (int)ras_size.X, (int)ras_size.Y, scale_factor, false, true));
+								new Task<int>(() => mu_doc.RenderPage(k, bitmap,
+									(int)ras_size.X, (int)ras_size.Y, scale_factor,
+									false, true, !(m_textset[k]), out charlist));
 							ren_task.Start();
 							await ren_task.ContinueWith((antecedent) =>
 							{
 								status_t code = (status_t)ren_task.Result;
 								if (code == status_t.S_ISOK)
-									UpdatePage(k, bitmap, ras_size, Page_Content_t.FULL_RESOLUTION, 1.0);
+								{
+									m_textset[k] = true;
+									m_textptrs[k] = charlist;
+									m_docPages[k].TextBlocks = charlist;
+									UpdatePage(k, bitmap, ras_size,
+										Page_Content_t.FULL_RESOLUTION, 1.0);
+								}
 							}, TaskScheduler.FromCurrentSynchronizationContext());
 						}
 						catch (OutOfMemoryException e)
@@ -597,6 +638,7 @@ namespace gsview
 				}
 			}
 			m_init_done = true;
+			m_currpage = 0;
 			xaml_PageList.ItemsSource = m_docPages;
 		}
 
@@ -715,8 +757,10 @@ namespace gsview
 					if (found != null)
 					{
 						var Item = (DocPage)found;
-						RenderRange(Item.PageNum, false);
+						if (!(m_dispatcherTimer != null && m_dispatcherTimer.IsEnabled == true))
+							RenderRange(Item.PageNum, false);
 					}
+					e.Handled = true;
 					return;
 				}
 			}
@@ -725,7 +769,7 @@ namespace gsview
 		/* Render +/- the look ahead from where we are if blank page is present */
 		async private void RenderRange(int new_page, bool scrollto)
 		{
-			int range = (int) Math.Ceiling(((double) m_numpagesvisible - 1.0) / 2.0);
+			int range = (int)Math.Ceiling(((double)m_numpagesvisible - 1.0) / 2.0);
 
 			for (int k = new_page - range; k <= new_page + range + 1; k++)
 			{
@@ -738,15 +782,22 @@ namespace gsview
 					{
 						Point ras_size;
 						double scale_factor = m_doczoom;
+						/* To avoid multiple page renderings on top of one 
+						 * another with scroll changes mark this as being 
+						 * full resolution */
+						m_docPages[k].Content = Page_Content_t.FULL_RESOLUTION;
 
 						if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
 						{
 							try
 							{
 								Byte[] bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+								BlocksText charlist = null;
 
 								Task<int> ren_task =
-									new Task<int>(() => mu_doc.RenderPage(k, bitmap, (int)ras_size.X, (int)ras_size.Y, scale_factor, false, true));
+									new Task<int>(() => mu_doc.RenderPage(k, bitmap,
+										(int)ras_size.X, (int)ras_size.Y, scale_factor,
+										false, true, !(m_textset[k]), out charlist));
 								ren_task.Start();
 								await ren_task.ContinueWith((antecedent) =>
 								{
@@ -765,10 +816,35 @@ namespace gsview
 										{
 											m_docPages[k].LinkBox = null;
 										}
-										UpdatePage(k, bitmap, ras_size, Page_Content_t.FULL_RESOLUTION, m_doczoom);
-										m_docPages[k].PageRefresh();
+										if (!(m_textset[k]) && charlist != null)
+										{
+											m_textptrs[k] = charlist;
+											if (scale_factor != 1.0)
+												ScaleTextBlocks(k, scale_factor);
+											m_docPages[k].TextBlocks = m_textptrs[k];
+											m_textset[k] = true;
+										}
+										else
+										{
+											/* We had to rerender due to scale */
+											if (m_textptrs[k] != null)
+											{
+												ScaleTextBlocks(k, scale_factor);
+												m_docPages[k].TextBlocks = m_textptrs[k];
+											}
+											if (m_lineptrs[k] != null)
+											{
+												ScaleTextLines(k, scale_factor);
+												m_docPages[k].SelectedLines = m_lineptrs[k];
+											}
+										}
+										UpdatePage(k, bitmap, ras_size,
+											Page_Content_t.FULL_RESOLUTION, m_doczoom);
 										if (k == new_page && scrollto)
+										{
+											m_doscroll = true;
 											xaml_PageList.ScrollIntoView(m_docPages[k]);
+										}
 									}
 								}, TaskScheduler.FromCurrentSynchronizationContext());
 							}
@@ -784,7 +860,15 @@ namespace gsview
 						/* We did not have to render the page but we may need to
 						 * scroll to it */
 						if (k == new_page && scrollto)
+						{
+							m_doscroll = true;
 							xaml_PageList.ScrollIntoView(m_docPages[k]);
+						}
+						/*
+						if (k == new_page && m_docPages[k].TextBlocks == null)
+						{
+							m_docPages[k].TextBlocks = m_textptrs[k];
+						} */
 					}
 				}
 			}
@@ -802,6 +886,15 @@ namespace gsview
 			Rect bounds = elem.TransformToAncestor(cont).TransformBounds(new Rect(0.0, 0.0, elem.ActualWidth, elem.ActualHeight));
 			Rect bounds2 = new Rect(new Point(bounds.TopLeft.X, bounds.TopLeft.Y), new Point(bounds.BottomRight.X, bounds.BottomRight.Y - 5));
 			return rect.Contains(bounds2.TopLeft) || rect.Contains(bounds2.BottomRight);
+		}
+
+		/* Avoids the next page jumping into view when touched by mouse */
+		private void AvoidScrollIntoView(object sender, RequestBringIntoViewEventArgs e)
+		{
+			if (!m_doscroll)
+				e.Handled = true;
+			else
+				m_doscroll = false;
 		}
 
 		private void ReleasePages(int old_page, int new_page, int range)
@@ -826,7 +919,7 @@ namespace gsview
 		{
 			/* See what is there now */
 			var doc_page = m_docPages[page_num];
-			if (doc_page.Content == Page_Content_t.THUMBNAIL && 
+			if (doc_page.Content == Page_Content_t.THUMBNAIL &&
 				doc_page.Zoom == m_doczoom) return;
 
 			if (m_thumbnails.Count > page_num)
@@ -940,7 +1033,7 @@ namespace gsview
 					xaml_DistillName.FontWeight = FontWeights.Bold;
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 				}
-			} 
+			}
 			else
 				PrintXPS(m_currfile);
 		}
@@ -974,8 +1067,8 @@ namespace gsview
 			}
 			else
 			{
-				xaml_PrintProgress.Value = 
-					100.0 * (double) Information.Page / (double)m_num_pages;
+				xaml_PrintProgress.Value =
+					100.0 * (double)Information.Page / (double)m_num_pages;
 			}
 		}
 
@@ -1017,7 +1110,7 @@ namespace gsview
 		{
 			if (m_ghostscript.GetStatus() != gsStatus.GS_READY)
 			{
-				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy"); 
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
 				return;
 			}
 
@@ -1057,8 +1150,8 @@ namespace gsview
 					 * selection of pages is continuous.  This is done by 
 					 * looking at the first one in the list and the last one
 					 * in the list and checking the length */
-					SelectPage lastpage = (SelectPage) pages[pages.Count -1];
-					SelectPage firstpage = (SelectPage) pages[0];
+					SelectPage lastpage = (SelectPage)pages[pages.Count - 1];
+					SelectPage firstpage = (SelectPage)pages[0];
 					int temp = lastpage.Page - firstpage.Page + 1;
 					if (temp == pages.Count)
 					{
@@ -1074,7 +1167,7 @@ namespace gsview
 						 * by page.*/
 						pages_selected = pages;
 						multi_page_needed = true;  /* need to put in separate outputs */
-					} 
+					}
 				}
 				xaml_DistillProgress.Value = 0;
 				if (m_ghostscript.Convert(m_currfile, options,
@@ -1136,7 +1229,7 @@ namespace gsview
 			}
 		}
 
-#region Zoom Control
+		#region Zoom Control
 		private void ZoomOut(object sender, RoutedEventArgs e)
 		{
 			if (!m_init_done)
@@ -1189,6 +1282,7 @@ namespace gsview
 		/* If the zoom is not equalto 1 then set the zoom to 1 and scoll to this page */
 		private void PageDoubleClick(object sender, MouseButtonEventArgs e)
 		{
+			return; /* Disable this for now */
 			if (m_doczoom != 1.0)
 			{
 				m_doczoom = 1.0;
@@ -1207,7 +1301,7 @@ namespace gsview
 				var desired_zoom = mxaml_Zoomsize.Text;
 				try
 				{
-					double zoom = (double) System.Convert.ToInt32(desired_zoom) / 100.0;
+					double zoom = (double)System.Convert.ToInt32(desired_zoom) / 100.0;
 					if (zoom > Constants.ZOOM_MAX)
 						zoom = Constants.ZOOM_MAX;
 					if (zoom < Constants.ZOOM_MIN)
@@ -1227,9 +1321,9 @@ namespace gsview
 			}
 		}
 
-#endregion Zoom Control
+		#endregion Zoom Control
 
-#region Thumb Rendering
+		#region Thumb Rendering
 		void SetThumbInit(int page_num, Byte[] bitmap, Point ras_size, double zoom_in)
 		{
 			/* Two jobs. Store the thumb and possibly update the full page */
@@ -1276,8 +1370,12 @@ namespace gsview
 					try
 					{
 						bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+						BlocksText charlist;
+
 						/* Synchronous call on our background thread */
-						code = (status_t)mu_doc.RenderPage(k, bitmap, (int)ras_size.X, (int)ras_size.Y, scale_factor, false, false);
+						code = (status_t)mu_doc.RenderPage(k, bitmap, (int)ras_size.X,
+							(int)ras_size.Y, scale_factor, false, false, false,
+							out charlist);
 					}
 					catch (OutOfMemoryException em)
 					{
@@ -1319,8 +1417,6 @@ namespace gsview
 
 			xaml_ThumbProgress.Value = e.ProgressPercentage;
 			SetThumbInit(thumb.page_num, thumb.bitmap, thumb.size, 1.0);
-			m_docPages[thumb.page_num].PageRefresh();
-			m_thumbnails[thumb.page_num].PageRefresh();
 		}
 
 		private void RenderThumbs()
@@ -1346,9 +1442,9 @@ namespace gsview
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
 			}
 		}
-#endregion Thumb Rendering
+		#endregion Thumb Rendering
 
-#region Copy Paste
+		#region Copy Paste
 		/* Copy the current page as a bmp to the clipboard this is done at the 
 		 * current resolution */
 		private void CopyPage(object sender, RoutedEventArgs e)
@@ -1365,9 +1461,9 @@ namespace gsview
 		{
 			var menu = (System.Windows.Controls.MenuItem)sender;
 
-			String tag = (String) menu.Tag;
+			String tag = (String)menu.Tag;
 
-			if (!m_clipboardset || !System.Windows.Clipboard.ContainsImage() || 
+			if (!m_clipboardset || !System.Windows.Clipboard.ContainsImage() ||
 				!m_init_done)
 				return;
 			var bitmap = System.Windows.Clipboard.GetImage();
@@ -1419,9 +1515,9 @@ namespace gsview
 					encoder.Save(stream);
 			}
 		}
-#endregion Copy Paste
+		#endregion Copy Paste
 
-#region SaveAs
+		#region SaveAs
 		String CreatePDFXA(Save_Type_t type)
 		{
 			Byte[] Resource;
@@ -1517,7 +1613,7 @@ namespace gsview
 						if (m_ghostscript.Convert(m_currfile, options,
 							Enum.GetName(typeof(gsDevice_t), gsDevice_t.pdfwrite),
 							dlg.FileName, m_num_pages, 300, false, null, -1, -1,
-							init_file, null) ==  gsStatus.GS_BUSY)
+							init_file, null) == gsStatus.GS_BUSY)
 						{
 							ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
 							return;
@@ -1638,7 +1734,7 @@ namespace gsview
 			{
 				ShowMessage(NotifyType_t.MESS_STATUS, "Set RGB Output Intent ICC Profile");
 				return;
-			} 
+			}
 			SaveFile(Save_Type_t.PDFA1_RGB);
 		}
 
@@ -1648,7 +1744,7 @@ namespace gsview
 			{
 				ShowMessage(NotifyType_t.MESS_STATUS, "Set CMYK Output Intent ICC Profile");
 				return;
-			} 
+			}
 			SaveFile(Save_Type_t.PDFA1_CMYK);
 		}
 
@@ -1658,7 +1754,7 @@ namespace gsview
 			{
 				ShowMessage(NotifyType_t.MESS_STATUS, "Set RGB Output Intent ICC Profile");
 				return;
-			} 
+			}
 			SaveFile(Save_Type_t.PDFA2_RGB);
 		}
 
@@ -1668,7 +1764,7 @@ namespace gsview
 			{
 				ShowMessage(NotifyType_t.MESS_STATUS, "Set CMYK Output Intent ICC Profile");
 				return;
-			} 
+			}
 			SaveFile(Save_Type_t.PDFA2_CMYK);
 		}
 
@@ -1680,9 +1776,9 @@ namespace gsview
 		{
 			SaveFile(Save_Type_t.XPS);
 		}
-#endregion SaveAs
+		#endregion SaveAs
 
-#region Extract
+		#region Extract
 		private void Extract(Extract_Type_t type)
 		{
 			if (m_selection != null || !m_init_done)
@@ -1704,9 +1800,12 @@ namespace gsview
 				try
 				{
 					Byte[] bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+					BlocksText charlist;
 
 					Task<int> ren_task =
-						new Task<int>(() => mu_doc.RenderPage(page_num, bitmap, (int)ras_size.X, (int)ras_size.Y, zoom, false, true));
+						new Task<int>(() => mu_doc.RenderPage(page_num, bitmap,
+							(int)ras_size.X, (int)ras_size.Y, zoom, false, true,
+							false, out charlist));
 					ren_task.Start();
 					await ren_task.ContinueWith((antecedent) =>
 					{
@@ -1715,8 +1814,8 @@ namespace gsview
 						{
 							if (m_selection != null)
 							{
-								int stride = (int) ras_size.X * 4;
-								m_selection.xaml_Image.Source = BitmapSource.Create((int) ras_size.X, (int) ras_size.Y, 72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
+								int stride = (int)ras_size.X * 4;
+								m_selection.xaml_Image.Source = BitmapSource.Create((int)ras_size.X, (int)ras_size.Y, 72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
 								m_selection.xaml_Image.Height = (int)ras_size.Y;
 								m_selection.xaml_Image.Width = (int)ras_size.X;
 								m_selection.UpdateRect();
@@ -1829,9 +1928,9 @@ namespace gsview
 		{
 			m_outputintents.Show();
 		}
-#endregion Extract
+		#endregion Extract
 
-#region Search
+		#region Search
 		/* Search related code */
 		private void Search(object sender, RoutedEventArgs e)
 		{
@@ -1866,8 +1965,8 @@ namespace gsview
 		{
 			BackgroundWorker worker = sender as BackgroundWorker;
 			List<object> genericlist = e.Argument as List<object>;
-			int direction = (int) genericlist[0];
-			String needle = (String) genericlist[1];
+			int direction = (int)genericlist[0];
+			String needle = (String)genericlist[1];
 			/* To make sure we get the next page or current page during search */
 			int in_search = (int)genericlist[2];
 			m_searchpage = m_currpage + direction * in_search;
@@ -1894,7 +1993,7 @@ namespace gsview
 					results.page_found = m_searchpage;
 					results.rectangles = new List<Rect>();
 
-					for (int kk = 0; kk < box_count; kk++ )
+					for (int kk = 0; kk < box_count; kk++)
 					{
 						Point top_left;
 						Size size;
@@ -1935,7 +2034,7 @@ namespace gsview
 			{
 				/* Nothing found */
 				xaml_SearchProgress.Value = e.ProgressPercentage;
-			} 
+			}
 			else
 			{
 				m_text_list = new List<RectList>();
@@ -1948,7 +2047,7 @@ namespace gsview
 				{
 					var rect_item = new RectList();
 					rect_item.Scale = m_doczoom;
-					rect_item.Color = m_textcolor;
+					rect_item.Color = m_textsearchcolor;
 					rect_item.Height = results.rectangles[kk].Height * m_doczoom;
 					rect_item.Width = results.rectangles[kk].Width * m_doczoom;
 					rect_item.X = results.rectangles[kk].X * m_doczoom;
@@ -1957,11 +2056,11 @@ namespace gsview
 					m_text_list.Add(rect_item);
 				}
 				m_docPages[results.page_found].TextBox = m_text_list;
-				m_docPages[results.page_found].PageRefresh();
+				m_doscroll = true;
 				xaml_PageList.ScrollIntoView(m_docPages[results.page_found]);
 			}
 		}
-		
+
 		private void SearchCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
 			if (e.Cancelled == true)
@@ -1971,7 +2070,7 @@ namespace gsview
 			}
 			else
 			{
-				searchResults_t results = (searchResults_t) e.Result;
+				searchResults_t results = (searchResults_t)e.Result;
 				if (results.done == true)
 				{
 					xaml_SearchGrid.Visibility = System.Windows.Visibility.Collapsed;
@@ -1998,7 +2097,6 @@ namespace gsview
 				if (temp != null)
 				{
 					m_docPages[kk].TextBox = null;
-					m_docPages[kk].PageRefresh();
 				}
 			}
 		}
@@ -2042,7 +2140,7 @@ namespace gsview
 					in_text_search = 0;
 					ClearTextSearch();
 				}
-				
+
 				if (m_textsearch == null)
 				{
 					m_prevsearch = needle;
@@ -2066,9 +2164,9 @@ namespace gsview
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
 			}
 		}
-#endregion Search
+		#endregion Search
 
-#region Link
+		#region Link
 		private void LinksToggle(object sender, RoutedEventArgs e)
 		{
 			if (!m_init_done)
@@ -2117,7 +2215,7 @@ namespace gsview
 						int type;
 						int topage;
 
-						mu_doc.GetLinkItem(j, out top_left, out size, out uri, 
+						mu_doc.GetLinkItem(j, out top_left, out size, out uri,
 							out topage, out type);
 						rectlist.Height = size.Height * m_doczoom;
 						rectlist.Width = size.Width * m_doczoom;
@@ -2129,7 +2227,7 @@ namespace gsview
 						rectlist.Scale = m_doczoom;
 						if (uri != null)
 							rectlist.Urilink = new Uri(uri);
-						rectlist.Type = (Link_t) type;
+						rectlist.Type = (Link_t)type;
 						links.Add(rectlist);
 					}
 				}
@@ -2167,6 +2265,42 @@ namespace gsview
 			}
 			m_docPages[pagenum].LinkBox = temp;
 		}
+		/* Merge these */
+		private void ScaleTextLines(int pagenum, double scale_factor)
+		{
+			var temp = m_lineptrs[pagenum];
+			for (int kk = 0; kk < temp.Count; kk++)
+			{
+				var rect_item = temp[kk];
+				double factor = scale_factor / temp[kk].Scale;
+
+				temp[kk].Height = temp[kk].Height * factor;
+				temp[kk].Width = temp[kk].Width * factor;
+				temp[kk].X = temp[kk].X * factor;
+				temp[kk].Y = temp[kk].Y * factor;
+
+				temp[kk].Scale = scale_factor;
+			}
+			m_lineptrs[pagenum] = temp;
+		}
+
+		private void ScaleTextBlocks(int pagenum, double scale_factor)
+		{
+			var temp = m_textptrs[pagenum];
+			for (int kk = 0; kk < temp.Count; kk++)
+			{
+				var rect_item = temp[kk];
+				double factor = scale_factor / temp[kk].Scale;
+
+				temp[kk].Height = temp[kk].Height * factor;
+				temp[kk].Width = temp[kk].Width * factor;
+				temp[kk].X = temp[kk].X * factor;
+				temp[kk].Y = temp[kk].Y * factor;
+
+				temp[kk].Scale = scale_factor;
+			}
+			m_textptrs[pagenum] = temp;
+		}
 
 		/* Only visible pages */
 		private void LinksOff()
@@ -2179,7 +2313,6 @@ namespace gsview
 				if (temp != null)
 				{
 					m_docPages[kk].LinkBox = null;
-					m_docPages[kk].PageRefresh();
 				}
 			}
 		}
@@ -2191,11 +2324,13 @@ namespace gsview
 
 			for (int kk = m_currpage - range; kk <= m_currpage + range; kk++)
 			{
-				var temp = m_docPages[kk].LinkBox;
-				if (temp == null)
+				if (!(kk < 0 || kk > m_num_pages - 1))
 				{
-					m_docPages[kk].LinkBox = m_page_link_list[kk];
-					m_docPages[kk].PageRefresh();
+					var temp = m_docPages[kk].LinkBox;
+					if (temp == null)
+					{
+						m_docPages[kk].LinkBox = m_page_link_list[kk];
+					}
 				}
 			}
 		}
@@ -2237,15 +2372,1037 @@ namespace gsview
 
 				if (link.Type == Link_t.LINK_GOTO)
 				{
-					if (m_currpage != link.PageNum && link.PageNum >= 0 && 
+					if (m_currpage != link.PageNum && link.PageNum >= 0 &&
 						link.PageNum < m_num_pages)
-							RenderRange(link.PageNum, true);
+						RenderRange(link.PageNum, true);
 				}
 				else if (link.Type == Link_t.LINK_URI)
 					System.Diagnostics.Process.Start(link.Urilink.AbsoluteUri);
 			}
 		}
-#endregion Link
+		#endregion Link
+
+		#region TextSelection
+
+		/* Change cursor if we are over text block */
+		private void ExitTextBlock(object sender, System.Windows.Input.MouseEventArgs e)
+		{
+			this.Cursor = System.Windows.Input.Cursors.Arrow;
+		}
+
+		private void EnterTextBlock(object sender, System.Windows.Input.MouseEventArgs e)
+		{
+			this.Cursor = System.Windows.Input.Cursors.IBeam;
+		}
+
+		private void ClearSelections()
+		{
+			for (int kk = 0; kk < m_textSelect.Count; kk++)
+			{
+				m_lineptrs[m_textSelect[kk].pagenum].Clear();
+				if (m_docPages[m_textSelect[kk].pagenum].SelectedLines != null)
+					m_docPages[m_textSelect[kk].pagenum].SelectedLines.Clear();
+			}
+			m_textSelect.Clear();
+			m_textselected = false;
+		}
+
+		private void InitTextSelection(DocPage page)
+		{
+			if (m_textSelect != null)
+				ClearSelections();
+			else
+				m_textSelect = new List<textSelectInfo_t>();
+
+			m_intxtselect = true;
+
+			textSelectInfo_t selinfo = new textSelectInfo_t();
+			selinfo.pagenum = page.PageNum;
+			selinfo.first_line_full = false;
+			selinfo.last_line_full = false;
+			m_textSelect.Add(selinfo);
+		}
+
+		private void PageMouseDown(object sender, MouseButtonEventArgs e)
+		{
+			if (this.Cursor != System.Windows.Input.Cursors.IBeam)
+				return;
+
+			var page = ((FrameworkElement)e.Source).DataContext as DocPage;
+			Canvas can = ((FrameworkElement)e.Source).Parent as Canvas;
+			if (page == null || can == null)
+				return;
+
+			InitTextSelection(page);
+			var posit = e.GetPosition(can);
+
+			page.SelX = posit.X;
+			page.SelY = posit.Y;
+			page.SelAnchorX = posit.X;
+			page.SelAnchorY = posit.Y;
+			page.SelColor = m_regionselect;
+
+			/* Create new holder for lines highlighted */
+			m_lineptrs[page.PageNum] = new LinesText();
+		}
+
+		private void PageMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+		{
+			if (e.LeftButton == MouseButtonState.Released || m_intxtselect == false)
+				return;
+
+			var page = ((FrameworkElement)e.Source).DataContext as DocPage;
+			Canvas can = ((FrameworkElement)e.Source).Parent as Canvas;
+			if (page == null || can == null)
+				return;
+			if (page.PageNum < 0)
+				return;
+			/* Store the location of our most recent page in case we exit window */
+			var pos = e.GetPosition(can);
+			m_lastY = pos.Y;
+			m_maxY = can.Height;
+			/* Don't allow the listview to maintain control of the mouse, we need
+			 * to detect if we leave the window */
+			/* Make sure page is rendered */
+			if (page.Content != Page_Content_t.FULL_RESOLUTION ||
+				page.Zoom != m_doczoom)
+			{
+				RenderRange(page.PageNum, false);
+			}
+
+			UpdateSelection(pos, page);
+		}
+
+		/* Resize selection rect */
+		private void UpdateSelection(System.Windows.Point pos, DocPage page)
+		{
+			bool new_page = true;
+			TextLine start_line, end_line;
+			double x = 0, y, w = 0, h;
+			bool found_first = false;
+			bool above_anchor = true;
+			bool first_line_full = false;
+			bool last_line_full = false;
+
+			for (int kk = 0; kk < m_textSelect.Count; kk++)
+				if (m_textSelect[kk].pagenum == page.PageNum)
+					new_page = false;
+
+			/* See if we have gone back to a previous page */
+			if (!new_page && page.PageNum != m_textSelect[m_textSelect.Count - 1].pagenum)
+			{
+				DocPage curr_page = m_docPages[m_textSelect[m_textSelect.Count - 1].pagenum];
+				curr_page.SelHeight = 0;
+				curr_page.SelWidth = 0;
+				m_textSelect.RemoveAt(m_textSelect.Count - 1);
+				m_lineptrs[curr_page.PageNum].Clear();
+				curr_page.SelectedLines.Clear();
+			}
+			if (new_page)
+			{
+				/* New page */
+				page.SelX = pos.X;
+				page.SelY = pos.Y;
+				page.SelAnchorX = m_docPages[m_textSelect[m_textSelect.Count - 1].pagenum].SelAnchorX;
+				if (m_textSelect[m_textSelect.Count - 1].pagenum > page.PageNum)
+				{
+					page.SelAnchorY = page.Height;
+				}
+				else
+				{
+					page.SelAnchorY = 0;
+				}
+				page.SelColor = m_regionselect;
+				textSelectInfo_t info = new textSelectInfo_t();
+				info.pagenum = page.PageNum;
+				info.first_line_full = false;
+				info.last_line_full = false;
+				m_textSelect.Add(info);
+				/* Create new holder for lines highlighted */
+				m_lineptrs[page.PageNum] = new LinesText();
+			}
+
+			if (page.TextBlocks == null || page.TextBlocks.Count == 0)
+				return;
+
+			/* Width changes translate across the pages */
+			for (int jj = 0; jj < m_textSelect.Count; jj++)
+			{
+				DocPage curr_page = m_docPages[m_textSelect[jj].pagenum];
+				x = Math.Min(pos.X, curr_page.SelAnchorX);
+				w = Math.Max(pos.X, curr_page.SelAnchorX) - x;
+				curr_page.SelX = x;
+				curr_page.SelWidth = w;
+			}
+			/* Height is just the current page */
+			y = Math.Min(pos.Y, page.SelAnchorY);
+			h = Math.Max(pos.Y, page.SelAnchorY) - y;
+
+			/* Determine if we are going up or down */
+			if (pos.Y > page.SelAnchorY)
+				above_anchor = false;
+			page.SelY = y;
+			page.SelHeight = h;
+
+			/* Clear out what we currently have */
+			m_lineptrs[page.PageNum].Clear();
+
+			/* Stuff already selected above us */
+			if (m_textSelect.Count > 1)
+				found_first = true;
+			/* Moving backwards through pages */
+			if (m_textSelect.Count > 1 && m_textSelect[m_textSelect.Count - 2].pagenum > page.PageNum)
+				found_first = false;
+
+			for (int jj = 0; jj < page.TextBlocks.Count; jj++)
+			{
+				/* Text blocks are already scaled. Lines are not */
+				var intersect_blk = page.TextBlocks[jj].CheckIntersection(x, y, w, h);
+				var lines = page.TextBlocks[jj].TextLines;
+
+				if (intersect_blk == Intersection_t.FULL)
+				{
+					/* Just add all the lines for this block */
+					for (int kk = 0; kk < lines.Count; kk++)
+						m_lineptrs[page.PageNum].Add(lines[kk]);
+					if (jj == 0)
+					{
+						first_line_full = true;
+						found_first = true;
+					}
+					if (jj == page.TextBlocks.Count - 1)
+						last_line_full = true;
+				}
+				else if (intersect_blk != Intersection_t.NONE)
+				{
+					/* Now go through the lines */
+					for (int kk = 0; kk < lines.Count; kk++)
+					{
+						double scale = m_doczoom / lines[kk].Scale;
+						var intersect_line = lines[kk].CheckIntersection(x * scale, y * scale, w * scale, h * scale);
+						if (intersect_line == Intersection_t.FULL)
+						{
+							m_lineptrs[page.PageNum].Add(lines[kk]);
+							found_first = true;
+							if (jj == 0 && kk == 0)
+								first_line_full = true;
+							if (jj == page.TextBlocks.Count - 1 && 
+								kk == lines.Count - 1)
+								last_line_full = true;
+
+						}
+						else if (intersect_line == Intersection_t.PARTIAL)
+						{
+							double val;
+							var lett = lines[kk].TextCharacters;
+
+							/* Now go through the width. */
+							if (found_first)
+							{
+								if (above_anchor)
+									val = page.SelAnchorX;
+								else
+									val = pos.X;
+
+								/* our second partial line */
+								if (val > lines[kk].X * scale + lines[kk].Width * scale)
+									m_lineptrs[page.PageNum].Add(lines[kk]);
+								else
+								{
+									/* Use either anchor point or mouse pos */
+									end_line = new TextLine();
+									end_line.TextCharacters = new List<TextCharacter>();
+									end_line.Height = 0;
+									end_line.Scale = m_doczoom;
+									for (int mm = 0; mm < lett.Count; mm++)
+									{
+										double letscale = m_doczoom / lett[mm].Scale;
+										if (lett[mm].X * letscale < val)
+										{
+											/* Can set to special color for debug */
+											end_line.Color = m_textselectcolor;
+											/* special color for debug */
+											//end_line.Color = "#4000FF00";
+											end_line.Height = lines[kk].Height * scale;
+											end_line.Width = lett[mm].X * letscale + lett[mm].Width * letscale - lines[kk].X * scale;
+											end_line.Y = lines[kk].Y * scale;
+											end_line.X = lines[kk].X * scale;
+											end_line.TextCharacters.Add(lett[mm]);
+										}
+										else
+											break;
+									}
+									if (end_line.Height != 0)
+										m_lineptrs[page.PageNum].Add(end_line);
+								}
+							}
+							else
+							{
+								if (!above_anchor)
+									val = page.SelAnchorX;
+								else
+									val = pos.X;
+
+								/* our first partial line */
+								found_first = true;
+								if (val < lines[kk].X * scale)
+									m_lineptrs[page.PageNum].Add(lines[kk]);
+								else
+								{
+									start_line = new TextLine();
+									start_line.TextCharacters = new List<TextCharacter>();
+									start_line.Height = 0;
+									start_line.Scale = m_doczoom;
+									/* Use either anchor point or mouse pos */
+									for (int mm = 0; mm < lett.Count; mm++)
+									{
+										double letscale = m_doczoom / lett[mm].Scale;
+										if (lett[mm].X * letscale + lett[mm].Width * letscale >= val)
+										{
+											start_line.Color = m_textselectcolor;
+											/* special color for debug */
+											//start_line.Color = "#40FF0000";
+											start_line.Height = lines[kk].Height * scale;
+											start_line.Width = lines[kk].X * scale + lines[kk].Width * scale - lett[mm].X * letscale;
+											start_line.X = lett[mm].X * letscale;
+											start_line.Y = lines[kk].Y * scale;
+											start_line.TextCharacters.Add(lett[mm]);
+											break;
+										}
+									}
+									if (start_line.Height > 0)
+										m_lineptrs[page.PageNum].Add(start_line);
+								}
+							}
+						}
+					}
+				}
+			}
+			var txtsel = m_textSelect[m_textSelect.Count - 1];
+			txtsel.first_line_full = first_line_full;
+			txtsel.last_line_full = last_line_full;
+			m_textSelect[m_textSelect.Count - 1] = txtsel;
+
+			/* Adjust for scale before assigning */
+			var temp = m_lineptrs[page.PageNum];
+			for (int kk = 0; kk < temp.Count; kk++)
+			{
+				var rect_item = temp[kk];
+				double factor = m_doczoom / rect_item.Scale;
+
+				temp[kk].Height = temp[kk].Height * factor;
+				temp[kk].Width = temp[kk].Width * factor;
+				temp[kk].X = temp[kk].X * factor;
+				temp[kk].Y = temp[kk].Y * factor;
+
+				temp[kk].Scale = m_doczoom;
+			}
+			page.SelectedLines = m_lineptrs[page.PageNum];
+		}
+
+		/* A fix for handling column cases TODO FIXME */
+		private void UpdateSelectionCol(System.Windows.Point pos, DocPage page)
+		{
+			bool new_page = true;
+			TextLine start_line, end_line;
+			double x = 0, y, w = 0, h;
+			bool found_first = false;
+			bool above_anchor = true;
+			bool first_line_full = false;
+			bool last_line_full = false;
+
+			for (int kk = 0; kk < m_textSelect.Count; kk++)
+				if (m_textSelect[kk].pagenum == page.PageNum)
+					new_page = false;
+
+			/* See if we have gone back to a previous page */
+			if (!new_page && page.PageNum != m_textSelect[m_textSelect.Count - 1].pagenum)
+			{
+				DocPage curr_page = m_docPages[m_textSelect[m_textSelect.Count - 1].pagenum];
+				curr_page.SelHeight = 0;
+				curr_page.SelWidth = 0;
+				m_textSelect.RemoveAt(m_textSelect.Count - 1);
+				m_lineptrs[curr_page.PageNum].Clear();
+				curr_page.SelectedLines.Clear();
+			}
+			if (new_page)
+			{
+				/* New page */
+				page.SelX = pos.X;
+				page.SelY = pos.Y;
+				page.SelAnchorX = m_docPages[m_textSelect[m_textSelect.Count - 1].pagenum].SelAnchorX;
+				if (m_textSelect[m_textSelect.Count - 1].pagenum > page.PageNum)
+				{
+					page.SelAnchorY = page.Height;
+				}
+				else
+				{
+					page.SelAnchorY = 0;
+				}
+				page.SelColor = m_regionselect;
+				textSelectInfo_t info = new textSelectInfo_t();
+				info.pagenum = page.PageNum;
+				info.first_line_full = false;
+				info.last_line_full = false;
+				m_textSelect.Add(info);
+				/* Create new holder for lines highlighted */
+				m_lineptrs[page.PageNum] = new LinesText();
+			}
+
+			if (page.TextBlocks == null || page.TextBlocks.Count == 0)
+				return;
+
+			/* Width changes translate across the pages */
+			for (int jj = 0; jj < m_textSelect.Count; jj++)
+			{
+				DocPage curr_page = m_docPages[m_textSelect[jj].pagenum];
+				x = Math.Min(pos.X, curr_page.SelAnchorX);
+				w = Math.Max(pos.X, curr_page.SelAnchorX) - x;
+				curr_page.SelX = x;
+				curr_page.SelWidth = w;
+			}
+			/* Height is just the current page */
+			y = Math.Min(pos.Y, page.SelAnchorY);
+			h = Math.Max(pos.Y, page.SelAnchorY) - y;
+
+			/* Determine if we are going up or down */
+			if (pos.Y > page.SelAnchorY)
+				above_anchor = false;
+			page.SelY = y;
+			page.SelHeight = h;
+
+			/* Clear out what we currently have */
+			m_lineptrs[page.PageNum].Clear();
+
+			/* Stuff already selected above us */
+			if (m_textSelect.Count > 1)
+				found_first = true;
+			/* Moving backwards through pages */
+			if (m_textSelect.Count > 1 && m_textSelect[m_textSelect.Count - 2].pagenum > page.PageNum)
+				found_first = false;
+
+			/* To properly handle the multiple columns we have to find the last 
+			 * line and make sure that all blocks between our first and last
+			 * line are included. To do this we do an initial step through the
+			 * blocks looking at our intersections */
+			int first_block = -1;
+			int last_block = -1;
+			for (int jj = 0; jj < page.TextBlocks.Count; jj++ )
+			{
+				var intersect_blk = page.TextBlocks[jj].CheckIntersection(x, y, w, h);
+				if (intersect_blk == Intersection_t.NONE && first_block != -1)
+				{
+					last_block = jj; /* NB: this is just past last block */
+					break;
+				}
+				else if (intersect_blk != Intersection_t.NONE && first_block == -1)
+					first_block = jj; /* NB: this is the first block */
+			}
+			if (first_block == -1)
+				return;
+			if (last_block == -1)
+			{
+				/* Only 1 block */
+				last_block = first_block + 1;
+			}
+
+			for (int jj = first_block; jj < last_block; jj++)
+			{
+				/* Text blocks are already scaled. Lines are not */
+				var intersect_blk = page.TextBlocks[jj].CheckIntersection(x, y, w, h);
+				var lines = page.TextBlocks[jj].TextLines;
+
+				if (jj == first_block || jj == last_block - 1)
+				{
+					/* Partial cases */
+					if (intersect_blk == Intersection_t.FULL)
+					{
+						for (int kk = 0; kk < lines.Count; kk++)
+							m_lineptrs[page.PageNum].Add(lines[kk]);
+						if (jj == first_block)
+						{
+							first_line_full = true;
+							found_first = true;
+						}
+						if (jj == last_block - 1)
+						{
+							last_line_full = true;
+						}
+					}
+					else if (intersect_blk == Intersection_t.PARTIAL)
+					{
+						for (int kk = 0; kk < lines.Count; kk++)
+						{
+							double scale = m_doczoom / lines[kk].Scale;
+							var intersect_line = lines[kk].CheckIntersection(x * scale, y * scale, w * scale, h * scale);
+							if (intersect_line == Intersection_t.FULL)
+							{
+								m_lineptrs[page.PageNum].Add(lines[kk]);
+								found_first = true;
+								if (jj == 0 && kk == 0)
+									first_line_full = true;
+								if (jj == page.TextBlocks.Count - 1 &&
+									kk == lines.Count - 1)
+									last_line_full = true;
+
+							}
+							else if (intersect_line == Intersection_t.PARTIAL)
+							{
+								double val;
+								var lett = lines[kk].TextCharacters;
+
+								/* Now go through the width. */
+								if (found_first)
+								{
+									if (above_anchor)
+										val = page.SelAnchorX;
+									else
+										val = pos.X;
+
+									/* our second partial line */
+									if (val > lines[kk].X * scale + lines[kk].Width * scale)
+										m_lineptrs[page.PageNum].Add(lines[kk]);
+									else
+									{
+										/* Use either anchor point or mouse pos */
+										end_line = new TextLine();
+										end_line.TextCharacters = new List<TextCharacter>();
+										end_line.Height = 0;
+										end_line.Scale = m_doczoom;
+										for (int mm = 0; mm < lett.Count; mm++)
+										{
+											double letscale = m_doczoom / lett[mm].Scale;
+											if (lett[mm].X * letscale < val)
+											{
+												/* Can set to special color for debug */
+												end_line.Color = m_textselectcolor;
+												/* special color for debug */
+												//end_line.Color = "#4000FF00";
+												end_line.Height = lines[kk].Height * scale;
+												end_line.Width = lett[mm].X * letscale + lett[mm].Width * letscale - lines[kk].X * scale;
+												end_line.Y = lines[kk].Y * scale;
+												end_line.X = lines[kk].X * scale;
+												end_line.TextCharacters.Add(lett[mm]);
+											}
+											else
+												break;
+										}
+										if (end_line.Height != 0)
+											m_lineptrs[page.PageNum].Add(end_line);
+									}
+								}
+								else
+								{
+									if (!above_anchor)
+										val = page.SelAnchorX;
+									else
+										val = pos.X;
+
+									/* our first partial line */
+									found_first = true;
+									if (val < lines[kk].X * scale)
+										m_lineptrs[page.PageNum].Add(lines[kk]);
+									else
+									{
+										start_line = new TextLine();
+										start_line.TextCharacters = new List<TextCharacter>();
+										start_line.Height = 0;
+										start_line.Scale = m_doczoom;
+										/* Use either anchor point or mouse pos */
+										for (int mm = 0; mm < lett.Count; mm++)
+										{
+											double letscale = m_doczoom / lett[mm].Scale;
+											if (lett[mm].X * letscale + lett[mm].Width * letscale >= val)
+											{
+												start_line.Color = m_textselectcolor;
+												/* special color for debug */
+												//start_line.Color = "#40FF0000";
+												start_line.Height = lines[kk].Height * scale;
+												start_line.Width = lines[kk].X * scale + lines[kk].Width * scale - lett[mm].X * letscale;
+												start_line.X = lett[mm].X * letscale;
+												start_line.Y = lines[kk].Y * scale;
+												start_line.TextCharacters.Add(lett[mm]);
+												break;
+											}
+										}
+										if (start_line.Height > 0)
+											m_lineptrs[page.PageNum].Add(start_line);
+									}
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					/* Add all the lines for the blocks between the first and last */
+					for (int kk = 0; kk < lines.Count; kk++)
+						m_lineptrs[page.PageNum].Add(lines[kk]);
+				}
+			}
+
+			var txtsel = m_textSelect[m_textSelect.Count - 1];
+			txtsel.first_line_full = first_line_full;
+			txtsel.last_line_full = last_line_full;
+			m_textSelect[m_textSelect.Count - 1] = txtsel;
+
+			/* Adjust for scale before assigning */
+			var temp = m_lineptrs[page.PageNum];
+			for (int kk = 0; kk < temp.Count; kk++)
+			{
+				var rect_item = temp[kk];
+				double factor = m_doczoom / rect_item.Scale;
+
+				temp[kk].Height = temp[kk].Height * factor;
+				temp[kk].Width = temp[kk].Width * factor;
+				temp[kk].X = temp[kk].X * factor;
+				temp[kk].Y = temp[kk].Y * factor;
+
+				temp[kk].Scale = m_doczoom;
+			}
+			page.SelectedLines = m_lineptrs[page.PageNum];
+		}
+
+		private void CheckIfSelected()
+		{
+			m_textselected = false;
+			/* Check if anything was selected */
+			for (int kk = 0; kk < m_lineptrs.Count; kk++)
+			{
+				if (m_lineptrs[kk].Count > 0)
+				{
+					m_textselected = true;
+					break;
+				}
+			}
+		}
+
+		/* Rect should be removed */
+		private void PageLeftClickUp(object sender, MouseButtonEventArgs e)
+		{
+			m_intxtselect = false;
+			CheckIfSelected();
+		}
+
+		private void StepScroll(int stepsize)
+		{
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer != null)
+			{
+				var scrollpos = viewer.VerticalOffset;
+				viewer.ScrollToVerticalOffset(scrollpos + stepsize);
+			}
+		}
+
+		/* Recursive call to find the scroll viewer */
+		private ScrollViewer FindScrollViewer(DependencyObject d)
+		{
+			if (d is ScrollViewer)
+				return d as ScrollViewer;
+
+			for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+			{
+				var sw = FindScrollViewer(VisualTreeHelper.GetChild(d, i));
+				if (sw != null) return sw;
+			}
+			return null;
+		}
+
+		/* Only worry about cases where we are moving and left button is down */
+		private void ListPreviewMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+		{
+			var relPoint = e.GetPosition(xaml_PageList);
+			var absPoint = this.PointToScreen(relPoint);
+			Console.Write("abs Y position = " + absPoint.Y + "\n");
+			Console.Write("rel Y position = " + relPoint.Y + "\n");
+			Console.Write("Height is = " + (this.Top + this.Height) + "\n");
+
+			if (xaml_PageList.IsMouseCaptured == true)
+			{
+				if (!m_intxtselect)
+				{
+					xaml_PageList.ReleaseMouseCapture();
+					e.Handled = true;
+					return;
+				}
+
+				if (relPoint.Y < Constants.SCROLL_EDGE_BUFFER ||
+					absPoint.Y > (this.Top + this.Height - Constants.SCROLL_EDGE_BUFFER))
+				{
+					if (m_dispatcherTimer == null)
+					{
+						m_dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+						m_dispatcherTimer.Tick += new EventHandler(dispatcherTimerTick);
+						m_dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, Constants.DISPATCH_TIME);
+					}
+					if (m_dispatcherTimer.IsEnabled == false)
+						m_dispatcherTimer.Start();
+					e.Handled = true;
+				}
+
+				/* This is not desirable, but the scrollviewer behaves badly
+				 * when it has captured the mouse and we move beyond the
+				 * range. So we wont allow it */
+				if (relPoint.Y < 0 ||
+					absPoint.Y > (this.Top + this.Height) - Constants.SCROLL_EDGE_BUFFER / 2.0)
+				{
+					xaml_PageList.ReleaseMouseCapture();
+					e.Handled = true;
+					if (m_dispatcherTimer != null && m_dispatcherTimer.IsEnabled == true)
+						m_dispatcherTimer.Stop();
+					return;
+				}
+			}
+		}
+
+		private void ListPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+		{
+			if (m_dispatcherTimer != null && m_dispatcherTimer.IsEnabled)
+			{
+				m_dispatcherTimer.Stop();
+			}
+		}
+
+		private void ListMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+		{
+			if (m_dispatcherTimer != null && m_dispatcherTimer.IsEnabled)
+			{
+				m_dispatcherTimer.Stop();
+			}
+			if (xaml_PageList.IsMouseCaptured == true)
+				xaml_PageList.ReleaseMouseCapture();
+		}
+
+		/* Get mouse position, update selection accordingly */
+		private void dispatcherTimerTick(object sender, EventArgs e)
+		{
+			var position = this.PointToScreen(Mouse.GetPosition(xaml_PageList));
+			Console.Write("Y position = " + position.Y + "\n");
+			Console.Write("Top position = " + this.Top + "\n");
+			Console.Write("Bottom position = " + (this.Top + this.Height) + "\n");
+
+			DocPage page;
+			int page_num;
+
+			if (!xaml_PageList.IsMouseCaptured)
+			{
+				Console.Write("Lost capture\n");
+				return;
+			}
+			else
+			{
+				Console.Write("Have capture\n");
+			}
+			/* Get our most recent page */
+			var pageinfo = m_textSelect[m_textSelect.Count - 1];
+			page_num = pageinfo.pagenum;
+
+			/* Scrolling up */
+			if (position.Y > this.Top + this.Height - Constants.SCROLL_EDGE_BUFFER)
+			{
+				/* See if we have the last line for this page */
+				if (pageinfo.last_line_full)
+				{
+					page_num = page_num + 1;
+					m_lastY = 0;
+					if (page_num >= m_num_pages)
+						return;
+				}
+				page = m_docPages[page_num];
+				StepScroll(Constants.SCROLL_STEP);
+				/* Set position for proper selection update */
+				m_lastY = m_lastY + Constants.SCROLL_STEP;
+				if (m_lastY > m_maxY)
+					m_lastY = m_maxY;
+				position.Y = m_lastY;
+				UpdateSelection(position, page);
+			}
+			else if (position.Y < this.Top + Constants.SCROLL_EDGE_BUFFER)
+			{
+				/* See if we have the first line for this page */
+				if (pageinfo.first_line_full)
+				{
+					if (page_num <= 0)
+						return;
+					page_num = page_num - 1;
+					m_lastY = m_docPages[page_num].Height;
+				}
+				page = m_docPages[page_num];
+				StepScroll(-Constants.SCROLL_STEP);
+				/* Set position for proper selection update */
+				m_lastY = m_lastY - Constants.SCROLL_STEP;
+				if (m_lastY < 0)
+					m_lastY = 0;
+				position.Y = m_lastY;
+				UpdateSelection(position, page);
+			}
+		}
+
+		private void ListPreviewLeftButtonUp(object sender, MouseButtonEventArgs e)
+		{
+			if (m_dispatcherTimer != null && m_dispatcherTimer.IsEnabled)
+			{
+				m_dispatcherTimer.Stop();
+			}
+		}
+
+		private void ShowContextMenu(object sender, MouseButtonEventArgs e)
+		{
+			if (this.Cursor != System.Windows.Input.Cursors.IBeam)
+				return;
+
+			var contextmenu = new System.Windows.Controls.ContextMenu();
+			Canvas can = ((FrameworkElement)e.Source).Parent as Canvas;
+			var page = ((FrameworkElement)e.Source).DataContext as DocPage;
+			if (can == null || page == null)
+				return;
+
+			var posit = e.GetPosition(can);
+			ContextMenu_t info = new ContextMenu_t();
+			info.mouse_position = posit;
+			info.page_num = page.PageNum;
+			can.ContextMenu = contextmenu;
+
+			if (m_textselected)
+			{
+				var m1 = new System.Windows.Controls.MenuItem();
+				m1.Header = "Copy";
+
+				/* amazing what I have to do here to get the icon out of the
+				 * resources into something that wpf can use */
+				var iconres = Properties.Resources.copy;
+				var bitmap = iconres.ToBitmap();
+				using (MemoryStream memory = new MemoryStream())
+				{
+					bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+					memory.Position = 0;
+					BitmapImage bitmapImage = new BitmapImage();
+					bitmapImage.BeginInit();
+					bitmapImage.StreamSource = memory;
+					bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+					bitmapImage.EndInit();
+					Image iconImage = new Image();
+					iconImage.Source = bitmapImage;
+					m1.Icon = iconImage;
+					m1.Click += cntxMenuCopy;
+					contextmenu.Items.Add(m1);
+				}
+
+				var m6 = new System.Windows.Controls.MenuItem();
+				m6.Header = "Deselect All";
+				m6.Click += cntxMenuDeselectAll;
+				contextmenu.Items.Add(m6);
+
+				/* Below to be enabled when we add annotations */
+				/*
+				var ma1 = new System.Windows.Controls.MenuItem();
+				ma1.Header = "Highlight";
+				ma1.Click += cntxMenuHighlight;
+				contextmenu.Items.Add(ma1);
+
+				var ma2 = new System.Windows.Controls.MenuItem();
+				ma2.Header = "Underline";
+				ma2.Click += cntxMenuUnderline;
+				contextmenu.Items.Add(ma2);
+
+				var ma3 = new System.Windows.Controls.MenuItem();
+				ma3.Header = "Strikeout";
+				ma3.Click += cntxMenuStrike;
+				contextmenu.Items.Add(ma3);*/
+
+			}
+			var m2 = new System.Windows.Controls.MenuItem();
+			m2.Header = "Select Line";
+			m2.Click += cntxMenuSelectLine;
+			m2.Tag = info;
+			contextmenu.Items.Add(m2); 
+				
+			var m3 = new System.Windows.Controls.MenuItem();
+			m3.Header = "Select Block";
+			m3.Click += cntxMenuSelectBlock;
+			m3.Tag = info;
+			contextmenu.Items.Add(m3);
+
+			var m4 = new System.Windows.Controls.MenuItem();
+			m4.Header = "Select Page";
+			m4.Click += cntxMenuSelectPage;
+			m4.Tag = info;
+			contextmenu.Items.Add(m4);
+
+			var m5 = new System.Windows.Controls.MenuItem();
+			m5.Header = "Select All";
+			m5.Click += cntxMenuSelectAll;
+			contextmenu.Items.Add(m5);
+		}
+
+		private void cntxMenuCopy(object sender, RoutedEventArgs e)
+		{
+			/* Go through and get each line of text */
+			String result = null;
+
+			for (int kk = 0; kk < m_textSelect.Count; kk++)
+			{
+				var lines = m_lineptrs[m_textSelect[kk].pagenum];
+				for (int jj = 0; jj < lines.Count; jj++)
+				{
+					var text = lines[jj].TextCharacters;
+					for (int mm = 0; mm < text.Count; mm++)
+					{
+						result += text[mm].character;
+					}
+					result += "\r\n";
+				}
+			}
+			System.Windows.Clipboard.SetText(result);
+		}
+
+		private void cntxMenuSelectLine(object sender, RoutedEventArgs e)
+		{
+			var mi = sender as System.Windows.Controls.MenuItem;
+			ContextMenu_t info = (ContextMenu_t)mi.Tag;
+			var page = m_docPages[info.page_num];
+
+			InitTextSelection(page);
+
+			page.SelX = 0;
+			page.SelY = info.mouse_position.Y - 1;
+			page.SelAnchorX = 0;
+			page.SelAnchorY = info.mouse_position.Y - 1;
+			page.SelColor = m_regionselect;
+
+			/* Create new holder for lines highlighted */
+			m_lineptrs[page.PageNum] = new LinesText();
+
+			Point pos = new Point();
+			pos.X = page.Width;
+			pos.Y += info.mouse_position.Y + 1;
+
+			UpdateSelection(pos, page);
+			CheckIfSelected();
+		}
+
+		/* This one requires its own special handling TODO FIXME */
+		private void cntxMenuSelectBlock(object sender, RoutedEventArgs e)
+		{
+			var mi = sender as System.Windows.Controls.MenuItem;
+			ContextMenu_t info = (ContextMenu_t)mi.Tag;
+			var page = m_docPages[info.page_num];
+			bool found = false;
+			int jj;
+
+			InitTextSelection(page);
+
+			/* Find the block that we are in */
+			for (jj = 0; jj < page.TextBlocks.Count; jj++)
+			{
+				var intersect_blk = page.TextBlocks[jj].CheckIntersection(info.mouse_position.X, info.mouse_position.Y, 1, 1);
+				if (intersect_blk != Intersection_t.NONE)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (found)
+			{
+				page.SelX = page.TextBlocks[jj].X;
+				page.SelY = page.TextBlocks[jj].Y;
+				page.SelAnchorX = page.TextBlocks[jj].X;
+				page.SelAnchorY = page.TextBlocks[jj].Y;
+				page.SelColor = m_regionselect;
+
+				/* Create new holder for lines highlighted */
+				m_lineptrs[page.PageNum] = new LinesText();
+
+				Point pos = new Point();
+				pos.X = page.TextBlocks[jj].X + page.TextBlocks[jj].Width;
+				pos.Y = page.TextBlocks[jj].Y + page.TextBlocks[jj].Height;
+
+				UpdateSelection(pos, page);
+				CheckIfSelected();
+			}
+			else
+				m_textselected = false;
+		}
+
+		private void SelectFullPage(int page_num)
+		{
+			var page = m_docPages[page_num];
+
+			InitTextSelection(page);
+
+			page.SelX = 0;
+			page.SelY = 0;
+			page.SelAnchorX = 0;
+			page.SelAnchorY = 0;
+			page.SelColor = m_regionselect;
+
+			/* Create new holder for lines highlighted */
+			m_lineptrs[page.PageNum] = new LinesText();
+
+			Point pos = new Point();
+			pos.X = page.Width;
+			pos.Y = page.Height;
+
+			UpdateSelection(pos, page);
+		}
+
+		private void cntxMenuSelectPage(object sender, RoutedEventArgs e)
+		{
+			var mi = sender as System.Windows.Controls.MenuItem;
+			ContextMenu_t info = (ContextMenu_t)mi.Tag;
+
+			SelectFullPage(info.page_num);
+			CheckIfSelected();
+		}
+
+		/* We need to await on the render range TODO FIXME */
+		private void cntxMenuSelectAll(object sender, RoutedEventArgs e)
+		{
+			var mi = sender as System.Windows.Controls.MenuItem;
+			if (m_textSelect != null)
+				ClearSelections();
+			else
+				m_textSelect = new List<textSelectInfo_t>();
+
+			/* Do first one and then the rest occur as new pages */
+			/* Note that we have to render the pages TODO FIXME */
+			SelectFullPage(0);
+			for (int kk = 1; kk < m_num_pages; kk++)
+			{
+				if (!m_textset[kk])
+					RenderRange(kk, false);
+				var page = m_docPages[kk];
+				Point pos = new Point();
+				pos.X = page.Width;
+				pos.Y = page.Height;
+				UpdateSelection(pos, page);
+			}
+			CheckIfSelected();
+		}
+
+		private void cntxMenuDeselectAll(object sender, RoutedEventArgs e)
+		{
+			ClearSelections();
+		}
+
+		/* To add with annotation support */
+		/*
+		private void cntxMenuHighlight(object sender, RoutedEventArgs e)
+		{
+		
+		}
+
+		private void cntxMenuUnderline(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void cntxMenuStrike(object sender, RoutedEventArgs e)
+		{
+
+		}
+		*/
+		#endregion TextSelection
 
 	}
 }

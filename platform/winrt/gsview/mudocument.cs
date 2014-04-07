@@ -87,6 +87,11 @@ namespace gsview
 
 		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
+		public static extern IntPtr mCreateDisplayListText(IntPtr ctx, int page_num,
+				ref int page_width, ref int page_height, ref IntPtr text, ref int length);
+
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
 		public static extern int mRenderPageMT(IntPtr ctx, IntPtr dlist,
 			int page_width, int page_height, Byte[] bmp_data, int bmp_width, 
 			int bmp_height, double scale, bool flipy);
@@ -120,15 +125,27 @@ namespace gsview
 		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		public static extern void mReleaseLink();
-		/*
-				[DllImport("mugs.dll", CharSet = CharSet.Auto,
-	CallingConvention = CallingConvention.StdCall)]
-		public static extern void GetHTML(IntPtr ctx);
 
-	~muctx(void);
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern void mReleaseText(IntPtr ctx, IntPtr textpage);
 
-	std::string GetHTML(int page_num);
-*/
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int mGetTextBlock(IntPtr textpage, int block_num,
+			ref double top_x,ref double top_y, ref double height, ref double width);
+
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int mGetTextLine(IntPtr textpage, int block_num, 
+			int line_num, ref double top_x, ref double top_y, ref double height, 
+			ref double width);
+
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int mGetTextCharacter(IntPtr textpage, int block_num, 
+			int line_num, int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width);
 
 		public status_t Initialize()
 		{
@@ -168,20 +185,103 @@ namespace gsview
 		}
 
 		public int RenderPage(int page_num, Byte[] bmp_data, int bmp_width,
-			int bmp_height, double scale, bool flipy, bool use_dlist)
+			int bmp_height, double scale, bool flipy, bool use_dlist, bool
+			get_text, out BlocksText blocks)
 		{
 			int code;
+			blocks = null;
+			String blockcolor = "#00FFFFFF";
+			String linecolor = "#402572AC";
+			/* Debug */
+			//blockcolor = "#4000FF00";
 
 			if (use_dlist) 
 			{
-				IntPtr dlist;
+				IntPtr dlist = IntPtr.Zero;
+				IntPtr text = IntPtr.Zero;
+				int num_blocks = 0;
+
 				int page_height = 0;
 				int page_width = 0;
 
-				lock(m_lock)
+				if (get_text)
 				{
-					dlist = mCreateDisplayList(mu_object, page_num, ref page_width, ref page_height);
+					lock (m_lock)
+					{
+						dlist = mCreateDisplayListText(mu_object, page_num,
+							ref page_width, ref page_height, ref text, ref num_blocks);
+					}
+					/* If we have some text go ahead and get the bounding boxes 
+					 * now. There is likely a better way to do this with passing
+					 * a structure across the boundary in a single call.  ToDO */
+					/* Length here is the number of blocks.  mupdf splits block
+					 * into lines (spans) and then these into text characters 
+					 * Our goal here is to get them into a structure that we 
+					 * can rapidly use in our ui display.  Maintaining the block
+					 * and span stucture so that we can minimize the number of
+					 * rects that are introduced */
+					if (num_blocks > 0)
+					{
+						blocks = new BlocksText();
+						for (int kk = 0; kk < num_blocks; kk++)
+						{
+							double top_x = 0, top_y = 0, height = 0, width = 0;
+							var block = new TextBlock();
+
+							int num_lines = mGetTextBlock(text, kk, ref top_x,
+								ref top_y, ref height, ref width);
+
+							block.X = top_x;
+							block.Y = top_y;
+							block.Width = width;
+							block.Height = height;
+							block.Color = blockcolor;
+							block.Scale = 1.0;
+							block.PageNumber = page_num;
+							blocks.Add(block);
+
+							blocks[kk].TextLines = new List<TextLine>();
+							for (int jj = 0; jj < num_lines; jj++)
+							{
+								var line = new TextLine();
+								int num_chars = mGetTextLine(text, kk, jj, ref top_x,
+									ref top_y, ref height, ref width);
+								line.X = top_x;
+								line.Y = top_y;
+								line.Width = width;
+								line.Height = height;
+								line.Scale = 1.0;
+								line.Color = linecolor;
+								blocks[kk].TextLines.Add(line);
+
+								blocks[kk].TextLines[jj].TextCharacters = new List<TextCharacter>();
+								for (int mm = 0; mm < num_chars; mm++)
+								{
+									var textchars = new TextCharacter();
+									int character = mGetTextCharacter(text, kk, jj, mm, ref top_x,
+										ref top_y, ref height, ref width);
+									textchars.X = top_x;
+									textchars.Y = top_y;
+									textchars.Width = width;
+									textchars.Height = height;
+									textchars.Scale = 1.0;
+									textchars.Color = linecolor;
+									textchars.character = System.Convert.ToChar(character).ToString();
+									blocks[kk].TextLines[jj].TextCharacters.Add(textchars);
+								}
+							}
+						}
+						/* We are done with the text object */
+						mReleaseText(mu_object, text);
+					}
 				}
+				else
+					lock (m_lock)
+					{
+						dlist = mCreateDisplayList(mu_object, page_num, 
+							ref page_width, ref page_height);
+					}
+
 				/* Rendering of display list can occur with other threads so unlock */
 				if (dlist == null)
 				{
@@ -317,6 +417,11 @@ namespace gsview
 		public void ReleaseLink()
 		{
 			mReleaseLink();
+		}
+
+		public void ReleaseText(IntPtr textpage)
+		{
+			mReleaseText(mu_object, textpage);
 		}
 	}
 }

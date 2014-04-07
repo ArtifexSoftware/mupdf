@@ -232,6 +232,17 @@ SYMBOL_DECLSPEC void* __stdcall mCreateDisplayList(void *ctx, int page_num,
 	return (void*)mu_ctx->CreateDisplayList(page_num, page_width, page_height);
 }
 
+SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListText(void *ctx, int page_num,
+	int *page_width, int *page_height, void **text_out, int *length)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+	fz_text_page *text;
+	void *text_ptr = (void*)mu_ctx->CreateDisplayListText(page_num, page_width, page_height,
+		&text, length);
+	*text_out = (void*) text;
+	return text_ptr;
+}
+
 SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,
 	int page_width, int page_height, byte *bmp_data, int bmp_width,
 	int bmp_height, double scale, bool flipy)
@@ -241,4 +252,84 @@ SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,
 	return (int) mu_ctx->RenderPageMT(dlist, page_width, page_height,
 		&(bmp_data[0]), bmp_width, bmp_height,
 		scale, flipy, false, { 0, 0 }, { 0, 0 });
+}
+
+SYMBOL_DECLSPEC void __stdcall mReleaseText(void *ctx, void *page)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+	mu_ctx->ReleaseText(page);
+}
+
+/* Information about a block of text */
+SYMBOL_DECLSPEC int __stdcall mGetTextBlock(void *page, int block_num,
+	double *top_x, double *top_y, double *height, double *width)
+{
+	fz_text_page *text = (fz_text_page*) page;
+	fz_text_block *block;
+
+	if (text->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+		return 0;
+	block = text->blocks[block_num].u.text;
+
+	*top_x = block->bbox.x0;
+	*top_y = block->bbox.y0;
+	*height = block->bbox.y1 - *top_y;
+	*width = block->bbox.x1 - *top_x;
+	return block->len;
+}
+
+/* Information about a line of text */
+SYMBOL_DECLSPEC int __stdcall mGetTextLine(void *page, int block_num, int line_num,
+	double *top_x, double *top_y, double *height, double *width)
+{
+	int len = 0;
+	fz_text_block *block;
+	fz_text_line line;
+	fz_text_span *span;
+	fz_text_page *text = (fz_text_page*)page;
+
+	block = text->blocks[block_num].u.text;
+	line = block->lines[line_num];
+	
+	*top_x = line.bbox.x0;
+	*top_y = line.bbox.y0;
+	*height = line.bbox.y1 - *top_y;
+	*width = line.bbox.x1 - *top_x;
+
+	for (span = line.first_span; span; span = span->next)
+	{
+		len += span->len;
+	}
+	return len;
+}
+
+/* Information down to the character level */
+SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *page, int block_num, int line_num,
+	int item_num, double *top_x, double *top_y, double *height, double *width)
+{
+	fz_text_block *block;
+	fz_text_line line;
+	fz_text_span *span;
+	fz_text_page *text = (fz_text_page*)page;
+	fz_char_and_box cab;
+	int index = item_num;
+
+	block = text->blocks[block_num].u.text;
+	line = block->lines[line_num];
+
+	span = line.first_span;
+	while (index >= span->len)
+	{
+		index = index - span->len;  /* Reset to start of next span */
+		span = span->next;  /* Get next span */
+	}
+
+	cab.c = span->text[index].c;
+	fz_text_char_bbox(&(cab.bbox), span, index);
+	*top_x = cab.bbox.x0;
+	*top_y = cab.bbox.y0;
+	*height = cab.bbox.y1 - *top_y;
+	*width = cab.bbox.x1 - *top_x;
+
+	return cab.c;
 }

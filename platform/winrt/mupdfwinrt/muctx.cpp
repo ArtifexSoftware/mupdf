@@ -7,6 +7,7 @@
 
 /* This class interfaces to mupdf API with minimal windows objects
  * (other than the file streaming stuff) */
+static int textlen(fz_text_page *page);
 
 #ifdef _WINRT_DLL
 // Attempt to use t.wait()
@@ -469,6 +470,74 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 	return dlist;
 }
 
+/* A special version which will create the display list AND get the information
+   that we need for various text selection tasks */
+fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, int *height,
+	fz_text_page **text_out, int *length)
+{
+	fz_text_sheet *sheet = NULL;
+	fz_text_page *text = NULL;
+	fz_device *dev = NULL;
+	fz_device *textdev = NULL;
+	fz_page *page = NULL;
+
+	point_t page_size;
+	*length = 0;
+
+	/* First see if we have this one in the cache */
+	fz_display_list *dlist = page_cache->Use(page_num, width, height, mu_ctx);
+	if (dlist != NULL)
+		return dlist;
+
+	/* Apparently not, lets go ahead and create and add to cache */
+	fz_var(dev);
+	fz_var(textdev);
+	fz_var(page);
+	fz_var(dlist);
+	fz_var(sheet);
+	fz_var(text);
+
+	fz_try(mu_ctx)
+	{
+		page = fz_load_page(mu_doc, page_num);
+		sheet = fz_new_text_sheet(mu_ctx);
+		text = fz_new_text_page(mu_ctx);
+
+		/* Create a new list */
+		dlist = fz_new_display_list(mu_ctx);
+		dev = fz_new_list_device(mu_ctx, dlist);
+
+		/* Deal with text device */
+		textdev = fz_new_text_device(mu_ctx, sheet, text);
+		fz_run_page(mu_doc, page, textdev, &fz_identity, NULL);
+
+		*length = text->len;
+		fz_free_device(textdev);
+		textdev = NULL;
+		*text_out = text;
+
+		fz_run_page_contents(mu_doc, page, dev, &fz_identity, NULL);
+		page_size = MeasurePage(page);
+		*width = page_size.X;
+		*height = page_size.Y;
+		/* Add it to the cache and set that it is in use */
+		page_cache->Add(page_num, *width, *height, dlist, mu_ctx);
+	}
+	fz_always(mu_ctx)
+	{
+		fz_free_device(dev);
+		fz_free_page(mu_doc, page);
+		fz_free_text_sheet(mu_ctx, sheet);
+
+	}
+	fz_catch(mu_ctx)
+	{
+		fz_drop_display_list(mu_ctx, dlist);
+		return NULL;
+	}
+	return dlist;
+}
+
 /* Render display list bmp_data buffer.  No lock needed for this operation */
 status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height, 
 							 unsigned char *bmp_data, int bmp_width, int bmp_height,
@@ -621,4 +690,10 @@ std::string muctx::GetHTML(int page_num)
 		return nullptr;
 	}
 	return html;
+}
+
+void muctx::ReleaseText(void *text)
+{
+	fz_text_page *text_page = (fz_text_page*) text;
+	fz_free_text_page(mu_ctx, text_page);
 }

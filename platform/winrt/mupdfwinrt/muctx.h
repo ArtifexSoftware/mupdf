@@ -93,12 +93,15 @@ public:
 							float scale, bool flipy, bool tile, point_t top_left,
 							point_t bottom_right);
 	fz_display_list* CreateDisplayList(int page_num, int *width, int *height);
+	fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, 
+							int *height, fz_text_page **text, int *length);
 	int MeasurePage(int page_num, point_t *size);
 	point_t MeasurePage(fz_page *page);
 	unsigned int GetLinks(int page_num, sh_vector_link links_vec);
 	int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
 	int GetContents(sh_vector_content contents_vec);
 	std::string GetHTML(int page_num);
+	void ReleaseText(void *text);
 	bool RequiresPassword(void);
 	bool ApplyPassword(char* password);
 #ifdef _WINRT_DLL

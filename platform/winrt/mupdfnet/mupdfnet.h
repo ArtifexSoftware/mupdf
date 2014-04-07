@@ -44,7 +44,21 @@ EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseLink();
 
 EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayList(void *ctx, int page_num,
 	int *page_width, int *page_height);
+EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListText(void *ctx, int page_num,
+	int *page_width, int *page_height, void **textptr, int *length);
+
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,
 	int page_width, int page_height, byte *bmp_data, int bmp_width,
 	int bmp_height, double scale, bool flipy);
 
+EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextBlock(void *text, int block_num,
+	double *top_x, double *top_y, double *height, double *width);
+
+EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextLine(void *text, int block_num, 
+	int line_num, double *top_x, double *top_y, double *height, double *width);
+
+EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *text, int block_num, 
+	int line_num, int item_num, double *top_x, double *top_y, double *height, 
+	double *width);
+
+EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseText(void *ctx, void *page);
