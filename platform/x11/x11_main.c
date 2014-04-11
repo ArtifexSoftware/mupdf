@@ -295,11 +295,15 @@ static void winopen(void)
 
 void winclose(pdfapp_t *app)
 {
-	closing = 1;
+	if (pdfapp_preclose(app))
+	{
+		closing = 1;
+	}
 }
 
 int winsavequery(pdfapp_t *app)
 {
+	fprintf(stderr, "mupdf: discarded changes to document\n");
 	/* FIXME: temporary dummy implementation */
 	return DISCARD;
 }
