@@ -1625,8 +1625,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	fz_rect hitbox;
 	fz_matrix ctm;
 	fz_text_page *page = app->page_text;
-	int c, i, p;
-	int seen = 0;
+	int c, i, p, need_newline;
 	int block_num;
 
 	int x0 = app->selr.x0;
@@ -1637,6 +1636,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	pdfapp_viewctm(&ctm, app);
 
 	p = 0;
+	need_newline = 0;
 
 	for (block_num = 0; block_num < page->len; block_num++)
 	{
@@ -1650,20 +1650,10 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
+			int saw_text = 0;
+
 			for (span = line->first_span; span; span = span->next)
 			{
-				if (seen)
-				{
-#ifdef _WIN32
-					if (p < ucslen - 1)
-						ucsbuf[p++] = '\r';
-#endif
-					if (p < ucslen - 1)
-						ucsbuf[p++] = '\n';
-				}
-
-				seen = 0;
-
 				for (i = 0; i < span->len; i++)
 				{
 					fz_text_char_bbox(&hitbox, span, i);
@@ -1673,14 +1663,27 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 						c = '?';
 					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
 					{
+						saw_text = 1;
+
+						if (need_newline)
+						{
+#ifdef _WIN32
+							if (p < ucslen - 1)
+								ucsbuf[p++] = '\r';
+#endif
+							if (p < ucslen - 1)
+								ucsbuf[p++] = '\n';
+							need_newline = 0;
+						}
+
 						if (p < ucslen - 1)
 							ucsbuf[p++] = c;
-						seen = 1;
 					}
 				}
-
-				seen = (seen && span == line->last_span);
 			}
+
+			if (saw_text)
+				need_newline = 1;
 		}
 	}
 
