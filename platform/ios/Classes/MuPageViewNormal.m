@@ -11,34 +11,10 @@
 #define LINE_THICKNESS (0.07f)
 #define INK_THICKNESS (4.0f)
 
-static void releasePixmap(void *info, const void *data, size_t size)
-{
-	if (queue)
-		dispatch_async(queue, ^{
-			fz_drop_pixmap(ctx, info);
-		});
-	else
-	{
-		fz_drop_pixmap(ctx, info);
-	}
-}
-
-static CGDataProviderRef wrapPixmap(fz_pixmap *pix)
-{
-	unsigned char *samples = fz_pixmap_samples(ctx, pix);
-	int w = fz_pixmap_width(ctx, pix);
-	int h = fz_pixmap_height(ctx, pix);
-	return CGDataProviderCreateWithData(pix, samples, w * 4 * h, releasePixmap);
-}
-
 static UIImage *newImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
 {
-	int w = fz_pixmap_width(ctx, pix);
-	int h = fz_pixmap_height(ctx, pix);
-	CGColorSpaceRef cgcolor = CGColorSpaceCreateDeviceRGB();
-	CGImageRef cgimage = CGImageCreate(w, h, 8, 32, 4 * w, cgcolor, kCGBitmapByteOrderDefault, cgdata, NULL, NO, kCGRenderingIntentDefault);
+	CGImageRef cgimage = newCGImageWithPixmap(pix, cgdata);
 	UIImage *image = [[UIImage alloc] initWithCGImage: cgimage scale: screenScale orientation: UIImageOrientationUp];
-	CGColorSpaceRelease(cgcolor);
 	CGImageRelease(cgimage);
 	return image;
 }

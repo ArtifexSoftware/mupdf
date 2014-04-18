@@ -28,6 +28,7 @@
 		96E1CDF21779A60700FCF717 /* iTunesArtwork.png in Resources */ = {isa = PBXBuildFile; fileRef = 96E1CDEB1779A60700FCF717 /* iTunesArtwork.png */; };
 		96E1CDF31779A60700FCF717 /* x_alt_blue.png in Resources */ = {isa = PBXBuildFile; fileRef = 96E1CDEC1779A60700FCF717 /* x_alt_blue.png */; };
 		96E1CDF41779A60700FCF717 /* x_alt_blue@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 96E1CDED1779A60700FCF717 /* x_alt_blue@2x.png */; };
+		DA0354EB18FFF48400EE31BA /* MuPrintPageRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = DA0354EA18FFF48400EE31BA /* MuPrintPageRenderer.m */; };
 		DA1C68AB17E86A500061F586 /* MuLibraryController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C689917E85E8E0061F586 /* MuLibraryController.m */; };
 		DA1C68AD17E86A500061F586 /* MuOutlineController.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C689D17E861020061F586 /* MuOutlineController.m */; };
 		DA1C68AF17E86A500061F586 /* MuHitView.m in Sources */ = {isa = PBXBuildFile; fileRef = DA1C689F17E861870061F586 /* MuHitView.m */; };
@@ -101,6 +102,8 @@
 		96E1CDEC1779A60700FCF717 /* x_alt_blue.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = x_alt_blue.png; sourceTree = "<group>"; };
 		96E1CDED1779A60700FCF717 /* x_alt_blue@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "x_alt_blue@2x.png"; sourceTree = "<group>"; };
 		DA012CA218803D1C00E47712 /* MuUpdater.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MuUpdater.h; path = Classes/MuUpdater.h; sourceTree = "<group>"; };
+		DA0354E918FFF48400EE31BA /* MuPrintPageRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPrintPageRenderer.h; path = Classes/MuPrintPageRenderer.h; sourceTree = "<group>"; };
+		DA0354EA18FFF48400EE31BA /* MuPrintPageRenderer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuPrintPageRenderer.m; path = Classes/MuPrintPageRenderer.m; sourceTree = "<group>"; };
 		DA1C689817E85E8E0061F586 /* MuLibraryController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuLibraryController.h; path = Classes/MuLibraryController.h; sourceTree = "<group>"; };
 		DA1C689917E85E8E0061F586 /* MuLibraryController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuLibraryController.m; path = Classes/MuLibraryController.m; sourceTree = "<group>"; };
 		DA1C689C17E861020061F586 /* MuOutlineController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuOutlineController.h; path = Classes/MuOutlineController.h; sourceTree = "<group>"; };
@@ -296,6 +299,8 @@
 				DAF81D5918800D1800B0F028 /* TapImage.h */,
 				DAF81D5A18800D1800B0F028 /* TapImage.m */,
 				DA012CA218803D1C00E47712 /* MuUpdater.h */,
+				DA0354E918FFF48400EE31BA /* MuPrintPageRenderer.h */,
+				DA0354EA18FFF48400EE31BA /* MuPrintPageRenderer.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -445,6 +450,7 @@
 				DA1C68AF17E86A500061F586 /* MuHitView.m in Sources */,
 				DA1C68B117E86A500061F586 /* MuPageViewNormal.m in Sources */,
 				DA1C68B317E86A500061F586 /* MuDocumentController.m in Sources */,
+				DA0354EB18FFF48400EE31BA /* MuPrintPageRenderer.m in Sources */,
 				DA1C68B517E86A500061F586 /* MuAppDelegate.m in Sources */,
 				96C8ED011779A88E00A30AF4 /* main.m in Sources */,
 				DA1C68C417E8969C0061F586 /* common.m in Sources */,

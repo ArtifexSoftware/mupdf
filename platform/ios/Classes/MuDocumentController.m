@@ -6,6 +6,7 @@
 #import "MuDocumentController.h"
 #import "MuTextFieldController.h"
 #import "MuChoiceFieldController.h"
+#import "MuPrintPageRenderer.h"
 
 #define GAP 20
 #define INDICATOR_Y -44-24
@@ -485,9 +486,8 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) onPrint: (id)sender
 {
-	NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filePath]];
 	UIPrintInteractionController *pic = [UIPrintInteractionController sharedPrintController];
-    if  (pic && [UIPrintInteractionController canPrintURL:url] ) {
+    if  (pic) {
 
         UIPrintInfo *printInfo = [UIPrintInfo printInfo];
         printInfo.outputType = UIPrintInfoOutputGeneral;
@@ -495,7 +495,7 @@ static void saveDoc(char *current_path, fz_document *doc)
         printInfo.duplex = UIPrintInfoDuplexLongEdge;
         pic.printInfo = printInfo;
         pic.showsPageRange = YES;
-        pic.printingItem = url;
+        pic.printPageRenderer = [[[MuPrintPageRenderer alloc] initWithDocRef:docRef] autorelease];
 
         void (^completionHandler)(UIPrintInteractionController *, BOOL, NSError *) =
 		^(UIPrintInteractionController *pic, BOOL completed, NSError *error) {
