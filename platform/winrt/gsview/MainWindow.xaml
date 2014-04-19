@@ -156,6 +156,7 @@
                     <MenuItem Header="PWG" Click="SavePWG"/>
                     <MenuItem Header="PNM" Click="SavePNM"/>
                     <MenuItem Header="TEXT" Click="SaveText"/>
+                    <MenuItem Header="HTML" Click="SaveHTML"/>
                 </MenuItem>
                 <MenuItem Header="_Close" >
                     <MenuItem.Icon>
@@ -197,6 +198,7 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_Edit" >
+                <MenuItem Header="Extract PDF Pages" Click="ExtractPages"/>
                 <MenuItem Header="Copy Page" Click="CopyPage">
                     <MenuItem.Icon>
                         <Image Source="Resources/copy.ico" />
@@ -230,8 +232,8 @@
                 <MenuItem Header="Zoom Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
             </MenuItem>
 
-            <MenuItem Header="_Help" />
-            <MenuItem Header="About"/>
+            <MenuItem Header="_Help" Click="OnHelpClick"/>
+            <MenuItem Header="About" Click="OnAboutClick"/>
 
         </Menu>
         <!-- List of icons for page navigation, print, etc -->

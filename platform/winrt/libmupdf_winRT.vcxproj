@@ -158,6 +158,7 @@
     <ClCompile Include="..\..\source\pdf\pdf-xref.c" />
     <ClCompile Include="..\..\source\tiff\mutiff.c" />
     <ClCompile Include="..\..\source\tools\pdfclean.c" />
+    <ClCompile Include="..\..\source\tools\pdfinfo.c" />
     <ClCompile Include="..\..\source\xps\xps-common.c" />
     <ClCompile Include="..\..\source\xps\xps-doc.c" />
     <ClCompile Include="..\..\source\xps\xps-glyphs.c" />

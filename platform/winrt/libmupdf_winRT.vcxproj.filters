@@ -424,7 +424,10 @@
       <Filter>pdf</Filter>
     </ClCompile>
     <ClCompile Include="..\..\source\tools\pdfclean.c">
-      <Filter>fitz</Filter>
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\tools\pdfinfo.c">
+      <Filter>tools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

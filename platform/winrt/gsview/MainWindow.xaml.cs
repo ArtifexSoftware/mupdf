@@ -1706,10 +1706,17 @@ namespace gsview
 		{
 			SaveFile(Save_Type_t.TEXT);
 		}
+
+		private void SaveHTML(object sender, RoutedEventArgs e)
+		{
+
+		}
+
 		private void SavePDF13(object sender, RoutedEventArgs e)
 		{
 			SaveFile(Save_Type_t.PDF13);
 		}
+
 		private void SavePDFX3_Gray(object sender, RoutedEventArgs e)
 		{
 			if (m_outputintents.gray_icc == null)
@@ -1719,6 +1726,7 @@ namespace gsview
 			}
 			SaveFile(Save_Type_t.PDFX3_GRAY);
 		}
+
 		private void SavePDFX3_CMYK(object sender, RoutedEventArgs e)
 		{
 			if (m_outputintents.cmyk_icc == null)
@@ -1728,6 +1736,7 @@ namespace gsview
 			}
 			SaveFile(Save_Type_t.PDFX3_CMYK);
 		}
+
 		private void SavePDFA1_RGB(object sender, RoutedEventArgs e)
 		{
 			if (m_outputintents.rgb_icc == null)
@@ -3404,5 +3413,19 @@ namespace gsview
 		*/
 		#endregion TextSelection
 
+		private void OnAboutClick(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void OnHelpClick(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void ExtractPages(object sender, RoutedEventArgs e)
+		{
+
+		}
 	}
 }
