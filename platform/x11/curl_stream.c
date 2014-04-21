@@ -45,6 +45,7 @@ struct curl_stream_state_s
 	int kill_thread;
 	void (*more_data)(void *, int);
 	void *more_data_arg;
+	const char *error;
 
 	unsigned char public_buffer[4096];
 
@@ -252,6 +253,7 @@ fetch_chunk(curl_stream_state *state)
 {
 	char text[32];
 	int fill, start, end;
+	CURLcode ret;
 
 	lock(state);
 
@@ -302,7 +304,9 @@ fetch_chunk(curl_stream_state *state)
 		end = state->content_length-1;
 	snprintf(text, 32, "%d-%d", start, end);
 	curl_easy_setopt(state->handle, CURLOPT_RANGE, text);
-	curl_easy_perform(state->handle);
+	ret = curl_easy_perform(state->handle);
+	if (ret != CURLE_OK)
+		state->error = curl_easy_strerror(ret);
 }
 
 static void
@@ -321,6 +325,9 @@ stream_next(fz_stream *stream, int len)
 	int block = read_point>>BLOCK_SHIFT;
 	int left_over = (-read_point) & (BLOCK_SIZE-1);
 	unsigned char *buf = state->public_buffer;
+
+	if (state->error != NULL)
+		fz_throw(stream->ctx, FZ_ERROR_GENERIC, "cannot fetch data: %s", state->error);
 
 	if (len > sizeof(state->public_buffer))
 		len = sizeof(state->public_buffer);
