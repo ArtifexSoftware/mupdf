@@ -144,8 +144,44 @@ static void showAlert(NSString *msg, NSString *filename)
 	[self openDocument: [files objectAtIndex: row]];
 }
 
+static NSString *alteredfilename(NSString *name, int i)
+{
+	if (i == 0)
+		return name;
+
+	NSString *nam = [name stringByDeletingPathExtension];
+	NSString *e = [name pathExtension];
+	return [[[NSString alloc] initWithFormat:@"%@(%d)%@", nam, i, e] autorelease];
+}
+
+static NSString *moveOutOfInbox(NSString *docpath)
+{
+	if ([docpath hasPrefix:@"Inbox/"])
+	{
+		NSFileManager *fileMan = [NSFileManager defaultManager];
+		NSString *base = [docpath stringByReplacingOccurrencesOfString:@"Inbox/" withString:@""];
+
+		for (int i = 0; YES; i++)
+		{
+			NSString *newname = alteredfilename(base, i);
+			NSString *newfullpath = [NSString pathWithComponents:[NSArray arrayWithObjects:NSHomeDirectory(), @"Documents", newname, nil]];
+
+			if (![fileMan fileExistsAtPath:newfullpath])
+			{
+				NSString *fullpath = [NSString pathWithComponents:[NSArray arrayWithObjects:NSHomeDirectory(), @"Documents", docpath, nil]];
+				[fileMan copyItemAtPath:fullpath toPath:newfullpath error:nil];
+				[fileMan removeItemAtPath:fullpath error:nil];
+				return newname;
+			}
+		}
+	}
+
+	return docpath;
+}
+
 - (void) openDocument: (NSString*)nsfilename
 {
+	nsfilename = moveOutOfInbox(nsfilename);
 	NSString *nspath = [[NSArray arrayWithObjects:NSHomeDirectory(), @"Documents", nsfilename, nil]
 							componentsJoinedByString:@"/"];
 	_filePath = malloc(strlen([nspath UTF8String])+1);
