@@ -487,26 +487,25 @@ static void saveDoc(char *current_path, fz_document *doc)
 - (void) onPrint: (id)sender
 {
 	UIPrintInteractionController *pic = [UIPrintInteractionController sharedPrintController];
-    if  (pic) {
+	if (pic) {
+		UIPrintInfo *printInfo = [UIPrintInfo printInfo];
+		printInfo.outputType = UIPrintInfoOutputGeneral;
+		printInfo.jobName = key;
+		printInfo.duplex = UIPrintInfoDuplexLongEdge;
+		pic.printInfo = printInfo;
+		pic.showsPageRange = YES;
+		pic.printPageRenderer = [[[MuPrintPageRenderer alloc] initWithDocRef:docRef] autorelease];
 
-        UIPrintInfo *printInfo = [UIPrintInfo printInfo];
-        printInfo.outputType = UIPrintInfoOutputGeneral;
-        printInfo.jobName = key;
-        printInfo.duplex = UIPrintInfoDuplexLongEdge;
-        pic.printInfo = printInfo;
-        pic.showsPageRange = YES;
-        pic.printPageRenderer = [[[MuPrintPageRenderer alloc] initWithDocRef:docRef] autorelease];
-
-        void (^completionHandler)(UIPrintInteractionController *, BOOL, NSError *) =
-		^(UIPrintInteractionController *pic, BOOL completed, NSError *error) {
-			if (!completed && error)
-				NSLog(@"FAILED! due to error in domain %@ with error code %u",
-					  error.domain, (unsigned int)error.code);
-        };
-        if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+		void (^completionHandler)(UIPrintInteractionController *, BOOL, NSError *) =
+			^(UIPrintInteractionController *pic, BOOL completed, NSError *error) {
+				if (!completed && error)
+					NSLog(@"FAILED! due to error in domain %@ with error code %u",
+							error.domain, (unsigned int)error.code);
+			};
+		if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
 			[pic presentFromBarButtonItem:printButton animated:YES
-						completionHandler:completionHandler];
-        } else {
+				completionHandler:completionHandler];
+		} else {
 			[pic presentAnimated:YES completionHandler:completionHandler];
 		}
 	}
@@ -895,7 +894,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	if (sender.scale > MAX_SCALE)
 		sender.scale = MAX_SCALE;
 
-	if (sender.state ==  UIGestureRecognizerStateEnded)
+	if (sender.state == UIGestureRecognizerStateEnded)
 		scale = sender.scale;
 
 	for (UIView<MuPageView> *view in [canvas subviews])

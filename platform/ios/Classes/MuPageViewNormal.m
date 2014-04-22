@@ -26,7 +26,7 @@ static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page)
 	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
 
 	if (!idoc)
-		return  nil;
+		return nil;
 
 	for (widget = pdf_first_widget(idoc, (pdf_page *)page); widget; widget = pdf_next_widget(widget))
 	{
@@ -1159,7 +1159,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	}
 	CGSize fscale = fitPageToScreen(pageSize, self.bounds.size);
 	CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * fscale.width, pageSize.height * fscale.height}};
-	updatePixmap(doc, page_list, annot_list, image_pix, rlist,  pageSize, self.bounds.size, rect, 1.0);
+	updatePixmap(doc, page_list, annot_list, image_pix, rlist, pageSize, self.bounds.size, rect, 1.0);
 	drop_list(rlist);
 	UIImage *image = newImageWithPixmap(image_pix, imageData);
 	dispatch_async(dispatch_get_main_queue(), ^{

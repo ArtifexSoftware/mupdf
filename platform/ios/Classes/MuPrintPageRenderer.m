@@ -1,10 +1,3 @@
-//
-//  MuPrintPageRenderer.m
-//  MuPDF
-//
-//  Copyright (c) 2014 Artifex Software, Inc. All rights reserved.
-//
-
 #include "common.h"
 #import "MuPrintPageRenderer.h"
 
@@ -17,7 +10,7 @@
 	{
 		docRef = [aDocRef retain];
 	}
-	return  self;
+	return self;
 }
 
 -(void) dealloc

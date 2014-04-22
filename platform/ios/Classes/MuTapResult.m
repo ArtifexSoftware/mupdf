@@ -68,7 +68,7 @@
 		pageNumber = aNumber;
 		newWindow = aBool;
 	}
-	return  self;
+	return self;
 }
 
 -(void) dealloc

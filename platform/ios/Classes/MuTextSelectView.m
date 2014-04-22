@@ -33,14 +33,14 @@
 	__block CGRect r;
 
 	[MuWord selectFrom:start to:end fromWords:words
-		   onStartLine:^{
-			   r = CGRectNull;
-		   } onWord:^(MuWord *w) {
-			   r = CGRectUnion(r, w.rect);
-		   } onEndLine:^{
-			   if (!CGRectIsNull(r))
-				   [arr addObject:[NSValue valueWithCGRect:r]];
-		   }];
+		onStartLine:^{
+			r = CGRectNull;
+		} onWord:^(MuWord *w) {
+			r = CGRectUnion(r, w.rect);
+		} onEndLine:^{
+			if (!CGRectIsNull(r))
+				[arr addObject:[NSValue valueWithCGRect:r]];
+		}];
 
 	return arr;
 }
@@ -51,17 +51,17 @@
 	__block NSMutableString *line;
 
 	[MuWord selectFrom:start to:end fromWords:words
-		   onStartLine:^{
-			   line = [NSMutableString string];
-		   } onWord:^(MuWord *w) {
-			   if (line.length > 0)
-				   [line appendString:@" "];
-			   [line appendString:w.string];
-		   } onEndLine:^{
-			   if (text.length > 0)
-				   [text appendString:@"\n"];
-			   [text appendString:line];
-		   }];
+		onStartLine:^{
+			line = [NSMutableString string];
+		} onWord:^(MuWord *w) {
+			if (line.length > 0)
+				[line appendString:@" "];
+			[line appendString:w.string];
+		} onEndLine:^{
+			if (text.length > 0)
+				[text appendString:@"\n"];
+			[text appendString:line];
+		}];
 
 	return text;
 }
@@ -91,14 +91,14 @@
 	[color set];
 
 	[MuWord selectFrom:start to:end fromWords:words
-		   onStartLine:^{
-			   r = CGRectNull;
-		   } onWord:^(MuWord *w) {
-			   r = CGRectUnion(r, w.rect);
-		   } onEndLine:^{
-			   if (!CGRectIsNull(r))
-				   UIRectFill(r);
-		   }];
+		onStartLine:^{
+			r = CGRectNull;
+		} onWord:^(MuWord *w) {
+			r = CGRectUnion(r, w.rect);
+		} onEndLine:^{
+			if (!CGRectIsNull(r))
+				UIRectFill(r);
+		}];
 }
 
 @end

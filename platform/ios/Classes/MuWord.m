@@ -12,7 +12,7 @@
 		self.string = [NSMutableString string];
 		self.rect = CGRectNull;
 	}
-	return  self;
+	return self;
 }
 
 - (void) dealloc
