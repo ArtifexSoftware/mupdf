@@ -131,6 +131,8 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 	CGDataProviderRef dataref = NULL;
 	CGImageRef img = NULL;
 	CGContextRef cgctx = UIGraphicsGetCurrentContext();
+	float dpi = 300.0;
+	float ppi = 72.0;
 
 	if (!cgctx) return;
 
@@ -143,10 +145,12 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 		goto exit;
 
 	CGSize scale = fitPageToScreen(pageSize, paperSize);
-	pageSize.width = roundf(pageSize.width * scale.width);
-	pageSize.height = roundf(pageSize.height *scale.height);
+	pageSize.width *= scale.width;
+	pageSize.height *= scale.height;
 
-	pix = createPixMap(pageSize);
+	CGSize pageSizePix = {roundf(pageSize.width * dpi / ppi), roundf(pageSize.height * dpi /ppi)};
+
+	pix = createPixMap(pageSizePix);
 	if (!pix)
 		goto exit;
 
@@ -159,7 +163,7 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 		goto exit;
 
 	fz_matrix ctm;
-	fz_scale(&ctm, scale.width, -scale.height);
+	fz_scale(&ctm, scale.width * dpi / ppi, -scale.height * dpi / ppi);
 	fz_pre_translate(&ctm, 0, -pageSize.height);
 
 	renderPage(docRef->doc, page, pix, &ctm);
