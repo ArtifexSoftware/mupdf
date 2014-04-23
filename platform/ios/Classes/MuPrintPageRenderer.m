@@ -1,6 +1,8 @@
 #include "common.h"
 #import "MuPrintPageRenderer.h"
 
+const int MaxStripPixels = 1024*1024;
+
 @implementation MuPrintPageRenderer
 
 -(id) initWithDocRef:(MuDocRef *)aDocRef
@@ -149,27 +151,48 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 	pageSize.height *= scale.height;
 
 	CGSize pageSizePix = {roundf(pageSize.width * dpi / ppi), roundf(pageSize.height * dpi /ppi)};
+	int max_strip_height = MaxStripPixels / (int)pageSizePix.width;
+	if (pageSizePix.height > max_strip_height)
+		pageSizePix.height = max_strip_height;
+	CGSize stripSize = {pageSize.width, pageSizePix.height * ppi / dpi};
 
-	pix = createPixMap(pageSizePix);
-	if (!pix)
-		goto exit;
+	float cursor = 0.0;
 
-	dataref = wrapPixmap(pix);
-	if (dataref == NULL)
-		goto exit;
+	while (cursor < pageSize.height)
+	{
+		// Overlap strips by 1 point
+		if (cursor > 0.0)
+			cursor -= 1.0;
 
-	img = newCGImageWithPixmap(pix, dataref);
-	if (img == NULL)
-		goto exit;
+		pix = createPixMap(pageSizePix);
+		if (!pix)
+			goto exit;
 
-	fz_matrix ctm;
-	fz_scale(&ctm, scale.width * dpi / ppi, -scale.height * dpi / ppi);
-	fz_pre_translate(&ctm, 0, -pageSize.height);
+		dataref = wrapPixmap(pix);
+		if (dataref == NULL)
+			goto exit;
 
-	renderPage(docRef->doc, page, pix, &ctm);
+		img = newCGImageWithPixmap(pix, dataref);
+		if (img == NULL)
+			goto exit;
 
-	CGRect rect = {{0.0,0.0},pageSize};
-	CGContextDrawImage(cgctx, rect, img);
+		fz_matrix ctm;
+		fz_scale(&ctm, dpi / ppi, -dpi / ppi);
+		fz_pre_translate(&ctm, 0, -stripSize.height-cursor);
+		fz_pre_scale(&ctm, scale.width, scale.height);
+
+		renderPage(docRef->doc, page, pix, &ctm);
+
+		CGRect rect = {{0.0,cursor},stripSize};
+		CGContextDrawImage(cgctx, rect, img);
+
+		CGImageRelease(img);
+		img = NULL;
+		CGDataProviderRelease(dataref); // releases pix
+		dataref = NULL;
+
+		cursor += stripSize.height;
+	}
 
 exit:
 	freePage(docRef->doc, page);
