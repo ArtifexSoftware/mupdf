@@ -38,7 +38,7 @@ enum
 	UISearchBar *searchBar;
 	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton, *linkButton;
 	UIBarButtonItem *moreButton;
-	UIBarButtonItem *printButton, *annotButton;
+	UIBarButtonItem *shareButton, *printButton, *annotButton;
 	UIBarButtonItem *highlightButton, *underlineButton, *strikeoutButton;
 	UIBarButtonItem *inkButton;
 	UIBarButtonItem *tickButton;

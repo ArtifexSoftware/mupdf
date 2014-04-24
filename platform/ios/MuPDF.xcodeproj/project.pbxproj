@@ -62,6 +62,7 @@
 		DAD47D301832615900E173A0 /* ic_underline.png in Resources */ = {isa = PBXBuildFile; fileRef = DAD47D2D1832615900E173A0 /* ic_underline.png */; };
 		DAD72802183E53F0005C14FA /* MuAnnotSelectView.m in Sources */ = {isa = PBXBuildFile; fileRef = DAD72801183E53F0005C14FA /* MuAnnotSelectView.m */; };
 		DAD72804183E6F33005C14FA /* ic_trash.png in Resources */ = {isa = PBXBuildFile; fileRef = DAD72803183E6F33005C14FA /* ic_trash.png */; };
+		DADF824D1905242800855662 /* ic_share.png in Resources */ = {isa = PBXBuildFile; fileRef = DADF824C1905241900855662 /* ic_share.png */; };
 		DAF81D5B18800D1800B0F028 /* TapImage.m in Sources */ = {isa = PBXBuildFile; fileRef = DAF81D5A18800D1800B0F028 /* TapImage.m */; };
 		DAFF997B187C12430081C756 /* MuChoiceFieldController.m in Sources */ = {isa = PBXBuildFile; fileRef = DAFF9979187C12430081C756 /* MuChoiceFieldController.m */; };
 		DAFF997C187C12430081C756 /* MuChoiceFieldController.xib in Resources */ = {isa = PBXBuildFile; fileRef = DAFF997A187C12430081C756 /* MuChoiceFieldController.xib */; };
@@ -156,6 +157,7 @@
 		DAD72801183E53F0005C14FA /* MuAnnotSelectView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuAnnotSelectView.m; path = Classes/MuAnnotSelectView.m; sourceTree = "<group>"; };
 		DAD72803183E6F33005C14FA /* ic_trash.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_trash.png; path = "../android/res/drawable-ldpi/ic_trash.png"; sourceTree = "<group>"; };
 		DADD8D6917EB24C000C49E0B /* MuPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageView.h; path = Classes/MuPageView.h; sourceTree = "<group>"; };
+		DADF824C1905241900855662 /* ic_share.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_share.png; path = "../android/res/drawable-ldpi/ic_share.png"; sourceTree = "<group>"; };
 		DAF81D5918800D1800B0F028 /* TapImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TapImage.h; path = Classes/TapImage.h; sourceTree = "<group>"; };
 		DAF81D5A18800D1800B0F028 /* TapImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TapImage.m; path = Classes/TapImage.m; sourceTree = "<group>"; };
 		DAFF9978187C12430081C756 /* MuChoiceFieldController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuChoiceFieldController.h; path = Classes/MuChoiceFieldController.h; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 		968E1E461779A54F0050CEA3 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				DADF824C1905241900855662 /* ic_share.png */,
 				DA7AAA3A18E45FA300A577E3 /* ic_annotation.png */,
 				DA32FC7218E33CC7001D7902 /* ic_print.png */,
 				DAD72803183E6F33005C14FA /* ic_trash.png */,
@@ -410,6 +413,7 @@
 				DACD12271833CDA600D4B9C5 /* ic_check.png in Resources */,
 				DA442E2D183B796F008EF49B /* ic_pen.png in Resources */,
 				DAD72804183E6F33005C14FA /* ic_trash.png in Resources */,
+				DADF824D1905242800855662 /* ic_share.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
