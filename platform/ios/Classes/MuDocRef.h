@@ -6,6 +6,7 @@
 {
 @public
 	fz_document *doc;
+	bool interactive;
 }
 -(id) initWithFilename:(char *)aFilename;
 @end

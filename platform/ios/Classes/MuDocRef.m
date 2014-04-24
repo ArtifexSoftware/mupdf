@@ -19,6 +19,7 @@
 		{
 			pdf_document *idoc = pdf_specifics(doc);
 			if (idoc) pdf_enable_js(idoc);
+			interactive = (idoc != NULL);
 		}
 	}
 	return self;

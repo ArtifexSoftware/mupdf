@@ -459,7 +459,10 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) showMoreMenu
 {
-	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:annotButton, printButton, shareButton, nil]];
+	NSMutableArray *rightbuttons = [NSMutableArray arrayWithObjects:printButton, shareButton, nil];
+	if (docRef->interactive)
+		[rightbuttons insertObject:annotButton atIndex:0];
+	[[self navigationItem] setRightBarButtonItems:rightbuttons];
 	[[self navigationItem] setLeftBarButtonItem:cancelButton];
 
 	barmode = BARMODE_MORE;
