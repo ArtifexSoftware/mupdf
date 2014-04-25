@@ -426,9 +426,6 @@
     <ClCompile Include="..\..\source\tools\pdfclean.c">
       <Filter>tools</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\tools\pdfinfo.c">
-      <Filter>tools</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\fitz\ucdn.h">
@@ -631,6 +628,9 @@
     </ClInclude>
     <ClInclude Include="..\..\source\pdf\pdf-interpret-imp.h">
       <Filter>pdf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\mupdf\pdf-tools.h">
+      <Filter>!include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

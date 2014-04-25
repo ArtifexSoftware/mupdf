@@ -333,3 +333,95 @@ SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *page, int block_num, int l
 
 	return cab.c;
 }
+
+/* pdf clean methods */
+SYMBOL_DECLSPEC int __stdcall mExtractPages(PCWSTR infile, PCWSTR outfile,
+	PCWSTR password, bool has_password, bool linearize, int num_pages, void *pages)
+{
+	int argc = 3 + ((has_password) ? (2) : (0)) + ((linearize) ? (1) : (0)) + ((num_pages > 0) ? (1) : (0));
+	char **argv;
+	int size_pages;
+	char *infilechar = String_to_char(infile);
+	char *outfilechar = String_to_char(outfile);
+	char *passchar;
+	int *pagenum = (int*) pages;
+	char *pagenums;
+	char* num;
+	int num_size;
+	int result;
+	int pos = 1;
+
+	argv = new char*[argc];
+
+	if (has_password)
+	{
+		passchar = String_to_char(password);
+		argv[pos++] = "-p";
+		argv[pos++] = passchar;
+	}
+	if (linearize)
+	{
+		argv[pos++] = "-l";
+	}
+
+	argv[pos++] = infilechar;
+	argv[pos++] = outfilechar;
+
+	if (num_pages > 0)
+	{
+		/* Get last page, for number length and number of pages */
+		int last = pagenum[num_pages - 1];
+		if (last == 0)
+		{
+			num_size = 1;
+			size_pages = num_size;
+		}
+		else
+		{
+			num_size = floor(log10(last)) + 1;
+			size_pages = (num_size + 1) * num_pages;
+		}
+
+		/* Create the list of page numbers */
+		pagenums = new char[size_pages + 1];
+		pagenums[0] = '\0';
+		num = new char[num_size + 2];
+		for (int kk = 0; kk < num_pages; kk++)
+		{
+			if (kk < num_pages - 1)
+				sprintf(num, "%d,", pagenum[kk]);
+			else
+				sprintf(num, "%d", pagenum[kk]);
+			strcat(pagenums, num);
+		}
+		argv[pos++] = pagenums;
+	}
+
+	
+	result = pdfclean_main(argc, argv);
+	
+	delete(num);
+	delete(infilechar);
+	delete(outfilechar);
+	if (has_password)
+		delete(passchar);
+	if (num_pages > 0)
+		delete(pagenums);
+	delete(argv);
+	return result;
+}
+
+/* output methods */
+SYMBOL_DECLSPEC int __stdcall mSavePage(void *ctx, PCWSTR outfile, int page_num,
+	int resolution, int type, bool append)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+	char *outfilechar = String_to_char(outfile);
+	status_t result = mu_ctx->SavePage(outfilechar, page_num, resolution, type,
+		append);
+	delete(outfilechar);
+	if (result == S_ISOK)
+		return 0;
+	else
+		return -1;
+}

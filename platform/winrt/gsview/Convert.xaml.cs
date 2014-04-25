@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 
 namespace gsview
 {
@@ -24,7 +25,19 @@ namespace gsview
 			internal set;
 		}
 
+		public gsDevice_t DeviceType
+		{
+			get;
+			internal set;
+		}
+
 		public bool SupportsMultiPage
+		{
+			get;
+			internal set;
+		}
+
+		public bool MuPDFDevice
 		{
 			get;
 			internal set;
@@ -67,6 +80,7 @@ namespace gsview
 			if (PropertyChanged != null)
 			{
 				PropertyChanged(this, new PropertyChangedEventArgs("Page"));
+				PropertyChanged(this, new PropertyChangedEventArgs("PageString"));
 			}
 		}
 	};
@@ -100,10 +114,15 @@ namespace gsview
 			{
 				Device device_t = new Device();
 				device_t.DeviceName = Enum.GetName(typeof(gsDevice_t), device);
+				device_t.DeviceType = device;
 				if (device > gsDevice_t.psdrgb)
 					device_t.SupportsMultiPage = true;
 				else
 					device_t.SupportsMultiPage = false;
+				if (device < gsDevice_t.bmp16)
+					device_t.MuPDFDevice = true;
+				else
+					device_t.MuPDFDevice = false;
 				GSDevices.Add(device_t);
 			}
 		}
@@ -179,6 +198,18 @@ namespace gsview
 				for (int kk = 1; kk < ConvertPages.Count; kk = kk + 2)
 					(xaml_PageList.ItemContainerGenerator.ContainerFromIndex(kk) as ListViewItem).IsSelected = false;
 			}
+		}
+
+		/* Allow only numbers */
+		private void PreviewInput(object sender, TextCompositionEventArgs e)
+		{
+			e.Handled = !IsTextAllowed(e.Text);
+		}
+
+		private static bool IsTextAllowed(string text)
+		{
+			Regex regex = new Regex("[^0-9]+");
+			return !regex.IsMatch(text);
 		}
 	}
 }

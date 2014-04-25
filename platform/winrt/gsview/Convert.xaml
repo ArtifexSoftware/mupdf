@@ -1,7 +1,7 @@
 ﻿<Window x:Class="gsview.Convert"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Ghostscript Convert" Height="215.96" Width="440.424">
+        Title="Convert Pages" Height="270.96" Width="419.424">
 
     <DockPanel LastChildFill="True">
 
@@ -55,8 +55,10 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            
+
             <Grid Grid.Column="0" Grid.Row="0" Background="DarkGray">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -103,9 +105,14 @@
 
 
             <TextBlock Grid.Column="0" Grid.Row="1" Margin="5,10,0,0">
-                <Bold>Options:</Bold>
+                <Bold>GhostScript Options:</Bold>
             </TextBlock>
             <TextBox x:Name="xaml_options" Grid.Row="2" Background="White" Height="40" Margin="5,5,5,5" Text=""></TextBox>
+            <TextBlock Grid.Column="0" Grid.Row="3" Margin="5,10,0,0">
+                <Bold>MuPDF Resolution:</Bold>
+            </TextBlock>
+            <TextBox x:Name="xaml_resolution" Grid.Row="4" Background="White" Margin="5,5,153,19" Text=""
+                     PreviewTextInput="PreviewInput"/>
         </Grid>
 
 

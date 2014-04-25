@@ -158,7 +158,6 @@
     <ClCompile Include="..\..\source\pdf\pdf-xref.c" />
     <ClCompile Include="..\..\source\tiff\mutiff.c" />
     <ClCompile Include="..\..\source\tools\pdfclean.c" />
-    <ClCompile Include="..\..\source\tools\pdfinfo.c" />
     <ClCompile Include="..\..\source\xps\xps-common.c" />
     <ClCompile Include="..\..\source\xps\xps-doc.c" />
     <ClCompile Include="..\..\source\xps\xps-glyphs.c" />
@@ -215,6 +214,7 @@
     <ClInclude Include="..\..\include\mupdf\fitz\xml.h" />
     <ClInclude Include="..\..\include\mupdf\img.h" />
     <ClInclude Include="..\..\include\mupdf\memento.h" />
+    <ClInclude Include="..\..\include\mupdf\pdf-tools.h" />
     <ClInclude Include="..\..\include\mupdf\pdf.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\annot.h" />
     <ClInclude Include="..\..\include\mupdf\pdf\appearance.h" />

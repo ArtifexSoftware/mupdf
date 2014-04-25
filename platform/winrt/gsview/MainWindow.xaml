@@ -1,7 +1,7 @@
 ﻿<Window x:Class="gsview.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="gsview" Height="800" Width="650" UseLayoutRounding="True" >
+        Title="gsview" Height="850" Width="714" UseLayoutRounding="True" >
     <!-- UseLayoutRouding needed to avoid funny interpolation effects on pages -->
 
     <Window.Resources>
@@ -80,12 +80,6 @@
                             <Canvas/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
-                    <!--       <ItemsControl.ItemContainerStyle>
-                        <Style TargetType="ContentPresenter">
-                            <Setter Property="Canvas.Left" Value="{Binding Left}"/>
-                            <Setter Property="Canvas.Top" Value="{Binding Top}"/>
-                        </Style>
-                    </ItemsControl.ItemContainerStyle>  -->
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Rectangle Tag="{Binding Path=Index}" Width="{Binding Path=Width}" Height="{Binding Path=Height}" Fill="{Binding Path=Color}" IsEnabled="True" MouseDown="LinkClick">
@@ -139,6 +133,7 @@
                         <Image Source="Resources/saveHS.png" />
                     </MenuItem.Icon>
                     <MenuItem Header="PDF" Click="SavePDF" />
+                    <MenuItem Header="Linearized PDF" Click="Linearize" x:Name="xaml_linearize_pdf"/>
                     <MenuItem Header="PDF-1.3" Click="SavePDF13" x:Name="xaml_savepdf13"/>
                     <MenuItem Header="PDF/A" x:Name="xaml_savepdfa">
                         <MenuItem Header="PDF/A-1 RGB" Click="SavePDFA1_RGB" x:Name="xaml_savepdfa1_rgb"/>
@@ -150,13 +145,9 @@
                     <MenuItem Header="PDF/X-3 CMYK" Click="SavePDFX3_CMYK" x:Name="xaml_savepdfx3_cmyk"/>
                     <MenuItem Header="PCL-XL" Click="SavePCLXL" x:Name="xaml_savepclxl"/>
                     <MenuItem Header="XPS" Click="SaveXPS"/>
-                    <MenuItem Header="SVG" Click="SaveSVG"/>
-                    <MenuItem Header="PCL/Bitmap" Click="SavePCL"/>
-                    <MenuItem Header="PNG" Click="SavePNG"/>
-                    <MenuItem Header="PWG" Click="SavePWG"/>
-                    <MenuItem Header="PNM" Click="SavePNM"/>
                     <MenuItem Header="TEXT" Click="SaveText"/>
                     <MenuItem Header="HTML" Click="SaveHTML"/>
+                    <MenuItem Header="XML" Click="SaveXML"/>
                 </MenuItem>
                 <MenuItem Header="_Close" >
                     <MenuItem.Icon>
@@ -182,7 +173,7 @@
                     <MenuItem Header="SVG" Click="ExtractSVG" x:Name="xaml_extractsvg">
                     </MenuItem>
                 </MenuItem>
-                <MenuItem Header="Ghostscript Convert..." Click="ConvertClick">
+                <MenuItem Header="Page Conversions..." Click="ConvertClick">
                 </MenuItem>
                 <Separator />
                 <MenuItem Header="Print..." Click="Print">
@@ -198,7 +189,11 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_Edit" >
-                <MenuItem Header="Extract PDF Pages" Click="ExtractPages"/>
+                <MenuItem Header="Extract PDF Pages" Click="ExtractPages" x:Name="xaml_Extract">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/saveHS.png" />
+                        </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="Copy Page" Click="CopyPage">
                     <MenuItem.Icon>
                         <Image Source="Resources/copy.ico" />
@@ -231,7 +226,6 @@
                 </MenuItem>
                 <MenuItem Header="Zoom Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
             </MenuItem>
-
             <MenuItem Header="_Help" Click="OnHelpClick"/>
             <MenuItem Header="About" Click="OnAboutClick"/>
 
@@ -575,7 +569,34 @@
             </Button> -->
         </Grid>
 
-        <!-- The progress bar that runs during distilling -->
+        <!-- The progress bar that runs during MuPDF page by page conversion to file-->
+        <Grid x:Name="xaml_MuPDFGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_MuPDFProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>MuPDF Converting Document</Bold></TextBlock>
+            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelMuPDF" Click="CancelMuPDFClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Cancel</Bold></TextBlock>
+            </Button>
+        </Grid>
+        
+        <!-- The progress bar that runs during GS distilling -->
         <Grid x:Name="xaml_DistillGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />

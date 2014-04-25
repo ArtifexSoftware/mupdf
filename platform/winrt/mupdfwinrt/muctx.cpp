@@ -220,7 +220,7 @@ int muctx::GetPageCount()
 int muctx::MeasurePage(int page_num, point_t *size)
 {
 	fz_rect rect;
-	fz_page *page;
+	fz_page *page = NULL;
 	fz_rect *bounds;
 
 	fz_try(mu_ctx)
@@ -229,6 +229,10 @@ int muctx::MeasurePage(int page_num, point_t *size)
 		bounds = fz_bound_page(mu_doc, page, &rect);
 		size->X = bounds->x1 - bounds->x0;
 		size->Y = bounds->y1 - bounds->y0;
+	}
+	fz_always(mu_ctx)
+	{
+		fz_free_page(mu_doc, page);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -696,4 +700,99 @@ void muctx::ReleaseText(void *text)
 {
 	fz_text_page *text_page = (fz_text_page*) text;
 	fz_free_text_page(mu_ctx, text_page);
+}
+
+/* To do: banding */
+status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
+	bool append)
+{
+	float zoom;
+	fz_matrix ctm;
+	fz_rect bounds, tbounds;
+	FILE *file = NULL;
+	fz_output *out = NULL;
+	fz_device *dev = NULL;
+	int width, height;
+	fz_display_list *dlist = NULL;
+	fz_page *page = NULL;
+	bool valid = true;
+	fz_pixmap *pix = NULL;
+	fz_irect ibounds;
+
+	fz_var(dev);
+	fz_var(page);
+	fz_var(dlist);
+	fz_var(pix);
+
+	fz_try(mu_ctx)
+	{
+		page = fz_load_page(mu_doc, page_num);
+		fz_bound_page(mu_doc, page, &bounds);
+		zoom = resolution / 72;
+		fz_scale(&ctm, zoom, zoom);
+		tbounds = bounds;
+		fz_transform_rect(&tbounds, &ctm);
+		fz_round_rect(&ibounds, &tbounds);
+
+		/* First see if we have this one in the cache */
+		dlist = page_cache->Use(page_num, &width, &height, mu_ctx);
+
+		if (type == SVG_OUT)
+		{
+			file = fopen(filename, "wb");
+			if (file == NULL)
+				fz_throw(mu_ctx, FZ_ERROR_GENERIC, "cannot open file '%s'", filename);
+			out = fz_new_output_with_file(mu_ctx, file);
+
+			dev = fz_new_svg_device(mu_ctx, out, tbounds.x1 - tbounds.x0, tbounds.y1 - tbounds.y0);
+			if (dlist != NULL)
+				fz_run_display_list(dlist, dev, &ctm, &tbounds, NULL);
+			else
+				fz_run_page(mu_doc, page, dev, &ctm, NULL);
+		}
+		else
+		{
+			pix = fz_new_pixmap_with_bbox(mu_ctx, fz_device_rgb(mu_ctx), &ibounds);
+			fz_pixmap_set_resolution(pix, resolution);
+			fz_clear_pixmap_with_value(mu_ctx, pix, 255);
+			dev = fz_new_draw_device(mu_ctx, pix);
+			if (dlist != NULL)
+				fz_run_display_list(dlist, dev, &ctm, &tbounds, NULL);
+			else
+				fz_run_page(mu_doc, page, dev, &ctm, NULL);
+			switch (type)
+			{
+				case PNM_OUT:
+					fz_write_pnm(mu_ctx, pix, filename);
+					break;
+				case PCL_OUT: /* This can do multi-page */
+					fz_pcl_options options;
+					fz_pcl_preset(mu_ctx, &options, "ljet4");
+					fz_write_pcl(mu_ctx, pix, filename, append, &options);
+					break;
+				case PWG_OUT: /* This can do multi-page */
+					fz_write_pwg(mu_ctx, pix, filename, append, NULL);
+					break;
+			}
+		}
+	}
+	fz_always(mu_ctx)
+	{
+		if (pix != NULL)
+			fz_drop_pixmap(mu_ctx, pix);
+		fz_free_device(dev);
+		fz_free_page(mu_doc, page);
+		if (dlist != NULL)
+			fz_drop_display_list(mu_ctx, dlist);
+		if (out != NULL)
+		{
+			fz_close_output(out);
+			fclose(file);
+		}
+	}
+	fz_catch(mu_ctx)
+	{
+		return E_FAILURE;
+	}
+	return S_ISOK;
 }

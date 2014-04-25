@@ -7,12 +7,62 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Windows;
+using System.ComponentModel;
 
 /* This file contains the interface between the muctx cpp class, which
 	implements the mupdf calls and the .net managed code  */
 
 namespace gsview
 {
+	/* Parameters for conversion */
+	public struct ConvertParams_t
+	{
+		public int resolution;
+		public gsDevice_t device;
+		public String outputfile;
+		public int num_pages;
+		public System.Collections.IList pages;
+		public int currpage;
+		public GS_Result_t result;
+	};
+
+	/* Must match enum in muctx.h */
+	enum mudevice_t
+	{
+		SVG_OUT,
+		PNM_OUT,
+		PCL_OUT,
+		PWG_OUT,
+	};
+
+	public class muPDFEventArgs : EventArgs
+	{
+		private bool m_completed;
+		private int m_progress;
+		private ConvertParams_t m_param;
+
+		public bool Completed
+		{
+			get { return m_completed; }
+		}
+
+		public ConvertParams_t Params
+		{
+			get { return m_param; }
+		}
+
+		public int Progress
+		{
+			get { return m_progress; }
+		}
+
+		public muPDFEventArgs(bool completed, int progress, ConvertParams_t param)
+		{
+			m_completed = completed;
+			m_progress = progress;
+			m_param = param;
+		}
+	}
 
 	public struct content_s
 	{
@@ -24,6 +74,12 @@ namespace gsview
 	class mudocument
 	{
 		IntPtr mu_object;
+		BackgroundWorker m_worker;
+		ConvertParams_t m_params;
+		/* Callbacks to Main */
+		internal delegate void mupdfCallBackMain(object gsObject, muPDFEventArgs info);
+		internal event mupdfCallBackMain mupdfUpdateMain;
+
 		private System.Object m_lock = new System.Object();  
 		public List<ContentItem> contents;
 
@@ -146,6 +202,17 @@ namespace gsview
 		public static extern int mGetTextCharacter(IntPtr textpage, int block_num, 
 			int line_num, int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width);
+
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int mExtractPages(String infile, String outfile, 
+			String password, bool has_password, bool linearize, int num_pages, 
+			IntPtr pages);
+
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		public static extern int mSavePage(IntPtr ctx, String outfile, 
+			int page_num, int res, int type, bool append);
 
 		public status_t Initialize()
 		{
@@ -422,6 +489,179 @@ namespace gsview
 		public void ReleaseText(IntPtr textpage)
 		{
 			mReleaseText(mu_object, textpage);
+		}
+
+		public void PDFExtract(String infile, String outfile, String password, 
+			bool has_password, bool linearize, int num_pages, System.Collections.IList pages)
+		{
+			if (num_pages > 0)
+			{
+				/* We need to do an allocation for our array of page numbers and
+				 * perform pinning to avoid GC while in the c++ code */
+				GCHandle pagesPtrStable;
+				int[] page_list;
+				page_list = new int[pages.Count];
+
+				for (int kk = 0; kk < pages.Count; kk++)
+				{
+					SelectPage currpage = (SelectPage)pages[kk];
+					page_list[kk] = currpage.Page;
+				}
+				pagesPtrStable = GCHandle.Alloc(page_list, GCHandleType.Pinned);
+				mExtractPages(infile, outfile, password, has_password, linearize,
+					num_pages, pagesPtrStable.AddrOfPinnedObject());
+				pagesPtrStable.Free();
+			}
+			else
+			{
+				mExtractPages(infile, outfile, password, has_password, linearize,
+							num_pages, IntPtr.Zero);
+			}
+		}
+
+		public gsStatus ConvertSave(gsDevice_t device, String outputFile, int num_pages, 
+			System.Collections.IList pages, int resolution)
+		{
+			ConvertParams_t convertparams = new ConvertParams_t();
+
+			convertparams.device = device;
+			convertparams.outputfile = outputFile;
+			convertparams.num_pages = num_pages;
+			convertparams.resolution = resolution;
+			convertparams.pages = pages;
+			convertparams.currpage = 1;
+			return ConvertMuPDF(convertparams);
+		}
+
+		/* Render page by page in background with progress call back */
+		private gsStatus ConvertMuPDF(ConvertParams_t Params)
+		{
+			try
+			{
+				if (m_worker != null && m_worker.IsBusy)
+				{
+					m_worker.CancelAsync();
+					return gsStatus.GS_BUSY;
+				}
+				if (m_worker == null)
+				{
+					m_worker = new BackgroundWorker();
+					m_worker.WorkerReportsProgress = true;
+					m_worker.WorkerSupportsCancellation = true;
+					m_worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(MuPDFCompleted);
+					m_worker.ProgressChanged += new ProgressChangedEventHandler(MuPDFProgressChanged);
+					m_worker.DoWork += new DoWorkEventHandler(MuPDFWork);
+				}
+
+				m_params = Params;
+				m_worker.RunWorkerAsync(Params);
+				return gsStatus.GS_READY;
+			}
+			catch (OutOfMemoryException e)
+			{
+				Console.WriteLine("Memory allocation failed during mupdf rendering\n");
+				return gsStatus.GS_ERROR;
+			}
+		}
+
+		private void MuPDFCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			ConvertParams_t Value;
+			muPDFEventArgs info;
+
+			if (e.Cancelled)
+			{
+				Value = new ConvertParams_t();
+				Value.result = GS_Result_t.gsCANCELLED;
+				info = new muPDFEventArgs(true, 100, Value);
+			}
+			else
+			{
+				Value = (ConvertParams_t)e.Result;
+				info = new muPDFEventArgs(true, 100, Value);
+			}
+			mupdfUpdateMain(this, info);
+		}
+
+		private void MuPDFProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			/* Callback with progress */
+			ConvertParams_t Value = new ConvertParams_t();
+			muPDFEventArgs info = new muPDFEventArgs(false, e.ProgressPercentage, Value);
+			mupdfUpdateMain(this, info);
+		}
+
+		public void Cancel()
+		{
+			m_worker.CancelAsync();
+		}
+
+		/* ToDo:  do we report pages that failed? or just push on */
+		private void MuPDFWork(object sender, DoWorkEventArgs e)
+		{
+			ConvertParams_t muparams = (ConvertParams_t)e.Argument;
+			String out_file = muparams.outputfile;
+			int num_pages = muparams.num_pages;
+			int resolution = muparams.resolution;
+			var pages = muparams.pages;
+			BackgroundWorker worker = sender as BackgroundWorker;
+
+			muparams.result = GS_Result_t.gsOK;
+
+			int result;
+
+			for (int kk = 0; kk < num_pages; kk++)
+			{
+				SelectPage curr_page = (SelectPage)pages[kk];
+				int page_num = curr_page.Page;
+				bool append = (kk != 0);
+
+				/* Look for file extension. */
+				string extension = System.IO.Path.GetExtension(out_file);
+				int len = extension.Length;
+				String new_out_file = out_file.Substring(0, out_file.Length - len);
+				String out_file_name = new_out_file + "_" + page_num + extension;
+
+				/* Question:  is lock valid when done from this worker thread? */
+				switch (muparams.device)
+				{
+					case gsDevice_t.svg:
+						lock (this.m_lock)  /* Single-page format */
+							result = mSavePage(mu_object, out_file_name,
+								page_num - 1, resolution, (int) mudevice_t.SVG_OUT,
+								false);
+						break;
+					case gsDevice_t.pnm:
+						lock (this.m_lock) /* Single-page format */
+							result = mSavePage(mu_object, out_file_name,
+								page_num - 1, resolution, (int)mudevice_t.PNM_OUT,
+								false);
+						break;
+					case gsDevice_t.pclbitmap:  /* Multi-page format */
+						lock (this.m_lock)
+							result = mSavePage(mu_object, out_file,
+								page_num - 1, resolution, (int)mudevice_t.PCL_OUT,
+								append);
+						break;
+					case gsDevice_t.pwg:  /* Multi-page format */
+						lock (this.m_lock)
+							result = mSavePage(mu_object, out_file,
+								page_num - 1, resolution, (int)mudevice_t.PWG_OUT,
+								append);
+						break;
+				}
+				double prog = (double) (kk+1.0)/((double) num_pages) * 100.0;
+				worker.ReportProgress((int)prog);
+
+				if (worker.CancellationPending == true)
+				{
+					e.Cancel = true;
+					muparams.result = GS_Result_t.gsCANCELLED;
+					break;
+				}
+			}
+			e.Result = muparams;
+			return;
 		}
 	}
 }

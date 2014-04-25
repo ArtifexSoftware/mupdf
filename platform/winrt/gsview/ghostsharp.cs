@@ -12,11 +12,16 @@ namespace gsview
 {
 	/* Warning. This list is in a particular order. The devices before 
 	 * psdrgb do not support multiple pages.  Those including psdrgb do 
-	 * support multiple pages.  This is used in the conversion process */
+	 * support multiple pages.  This is used in the conversion process.
+	 * Also note that mupdf devices go at the beginning of the list */
 
 	public enum gsDevice_t
 	{
-		bmp16,
+		svg, 
+		pnm,
+		pclbitmap,
+		pwg,
+		bmp16,  /* Add mupdf devices before this one */
 		bmp16m,
 		bmp256,
 		bmp32b,
@@ -37,7 +42,7 @@ namespace gsview
 		pnggray,
 		pngmono,
 		psdcmyk,
-		psdrgb,  /* Add single page devices before this device */
+		psdrgb,  /* Add single page gs devices before this device */
 		pdfwrite,
 		ps2write,
 		pxlcolor,

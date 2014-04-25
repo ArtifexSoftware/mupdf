@@ -88,11 +88,10 @@ public enum Save_Type_t
 	PCLXL,
 	XPS,
 	SVG,
-	PCLBitmap,
-	PNG,
-	PWG,
-	PNM,
-	TEXT
+	TEXT,
+	HTML,
+	XML,
+	LINEAR_PDF
 }
 
 public enum Extract_Type_t
@@ -212,7 +211,9 @@ namespace gsview
 		bool m_isXPS;
 		gsOutput m_gsoutput;
 		Convert m_convertwin;
+		PageExtractSave m_extractwin;
 		Password m_password = null;
+		String m_currpassword = null;
 		BackgroundWorker m_thumbworker = null;
 		BackgroundWorker m_textsearch = null;
 		BackgroundWorker m_linksearch = null;
@@ -253,6 +254,7 @@ namespace gsview
 				m_outputintents.Activate();
 				m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
 				m_convertwin = null;
+				m_extractwin = null;
 				m_selection = null;
 				xaml_ZoomSlider.AddHandler(MouseLeftButtonUpEvent, new MouseButtonEventHandler(ZoomReleased), true);
 
@@ -349,6 +351,7 @@ namespace gsview
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
 			}
 			status_t result = mu_doc.Initialize();
+			mu_doc.mupdfUpdateMain += new mudocument.mupdfCallBackMain(mupdfUpdate);
 
 			if (result != status_t.S_ISOK)
 			{
@@ -372,6 +375,7 @@ namespace gsview
 			m_doscroll = false;
 			m_intxtselect = false;
 			m_textselected = false;
+			m_currpassword = null;
 			return result;
 		}
 
@@ -495,7 +499,10 @@ namespace gsview
 				{
 					DisabletoPDF();
 					m_isXPS = true;
+					xaml_Extract.IsEnabled = false;
 				}
+				else
+					xaml_Extract.IsEnabled = true;
 				OpenFile2(dlg.FileName);
 			}
 		}
@@ -944,6 +951,41 @@ namespace gsview
 			m_gsoutput.Update(mess, len);
 		}
 
+		private void mupdfUpdate(object muObject, muPDFEventArgs asyncInformation)
+		{
+			if (asyncInformation.Completed)
+			{
+				xaml_MuPDFProgress.Value = 100;
+				xaml_MuPDFGrid.Visibility = System.Windows.Visibility.Collapsed;
+				if (asyncInformation.Params.result == GS_Result_t.gsFAILED)
+				{
+					ShowMessage(NotifyType_t.MESS_STATUS, "MuPDF failed to convert document");
+				}
+				MuPDFResult(asyncInformation.Params);
+			}
+			else
+			{
+				this.xaml_MuPDFProgress.Value = asyncInformation.Progress;
+			}
+		}
+
+		/* MuPDF Result*/
+		public void MuPDFResult(ConvertParams_t gs_result)
+		{
+			if (gs_result.result == GS_Result_t.gsCANCELLED)
+			{
+				xaml_MuPDFGrid.Visibility = System.Windows.Visibility.Collapsed;
+				return;
+			}
+			if (gs_result.result == GS_Result_t.gsFAILED)
+			{
+				xaml_MuPDFGrid.Visibility = System.Windows.Visibility.Collapsed;
+				ShowMessage(NotifyType_t.MESS_STATUS, "MuPDF Failed Conversion");
+				return;
+			}
+			ShowMessage(NotifyType_t.MESS_STATUS, "MuPDF Completed Conversion");
+		}
+
 		private void gsProgress(object gsObject, gsEventArgs asyncInformation)
 		{
 			if (asyncInformation.Completed)
@@ -1072,6 +1114,12 @@ namespace gsview
 			}
 		}
 
+		private void CancelMuPDFClick(object sender, RoutedEventArgs e)
+		{
+			xaml_CancelMuPDF.IsEnabled = false;
+			mu_doc.Cancel();
+		}
+
 		private void CancelDistillClick(object sender, RoutedEventArgs e)
 		{
 			xaml_CancelDistill.IsEnabled = false;
@@ -1108,13 +1156,20 @@ namespace gsview
 
 		private void ConvertReturn(object sender)
 		{
-			if (m_ghostscript.GetStatus() != gsStatus.GS_READY)
+			Device device = (Device)m_convertwin.xaml_DeviceList.SelectedItem;
+			if (device == null)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "No Device Selected");
+				return;
+			} 
+
+			if (m_ghostscript.GetStatus() != gsStatus.GS_READY &&
+				!device.MuPDFDevice)
 			{
 				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
 				return;
 			}
 
-			Device device = (Device)m_convertwin.xaml_DeviceList.SelectedItem;
 			System.Collections.IList pages = m_convertwin.xaml_PageList.SelectedItems;
 			System.Collections.IList pages_selected = null;
 			String options = m_convertwin.xaml_options.Text;
@@ -1129,60 +1184,142 @@ namespace gsview
 				return;
 			}
 
-			if (device == null)
-			{
-				ShowMessage(NotifyType_t.MESS_STATUS, "No Device Selected");
-				return;
-			}
-
 			/* Get a filename */
 			SaveFileDialog dlg = new SaveFileDialog();
 			dlg.Filter = "All files (*.*)|*.*";
 			dlg.FilterIndex = 1;
 			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 			{
-				if (!device.SupportsMultiPage && m_num_pages > 1)
-					multi_page_needed = true;
+				if (device.MuPDFDevice)
+				{
+					/* Allow only one of these as a time */
+					pages_selected = pages;
+					var val = m_convertwin.xaml_resolution.Text;
+					if (val.Length > 0)
+					{
+						bool isok = true;
+						int num = resolution;
+						try
+						{
+							num = System.Convert.ToInt32(val);
+						}
+						catch (FormatException e)
+						{
+							isok = false;
+							Console.WriteLine("Input string is not a sequence of digits.");
+						}
+						catch (OverflowException e)
+						{
+							isok = false;
+							Console.WriteLine("The number cannot fit in an Int32.");
+						}
+						if (isok && num > 0)
+							resolution = num;
+					}
 
-				if (pages.Count != m_num_pages)
-				{
-					/* We may need to go through page by page. Determine if
-					 * selection of pages is continuous.  This is done by 
-					 * looking at the first one in the list and the last one
-					 * in the list and checking the length */
-					SelectPage lastpage = (SelectPage)pages[pages.Count - 1];
-					SelectPage firstpage = (SelectPage)pages[0];
-					int temp = lastpage.Page - firstpage.Page + 1;
-					if (temp == pages.Count)
+					if (mu_doc.ConvertSave(device.DeviceType, dlg.FileName,
+						pages.Count, pages_selected, resolution) == gsStatus.GS_BUSY)
 					{
-						/* Pages are contiguous.  Add first and last page 
-						 * as command line option */
-						options = options + " -dFirstPage=" + firstpage.Page + " -dLastPage=" + lastpage.Page;
-						first_page = firstpage.Page;
-						last_page = lastpage.Page;
+						ShowMessage(NotifyType_t.MESS_STATUS, "MuPDF conversion busy");
+						return;
 					}
-					else
-					{
-						/* Pages are not continguous.  We will do this page 
-						 * by page.*/
-						pages_selected = pages;
-						multi_page_needed = true;  /* need to put in separate outputs */
-					}
+					xaml_CancelMuPDF.Visibility = System.Windows.Visibility.Visible;
+					xaml_MuPDFGrid.Visibility = System.Windows.Visibility.Visible;
 				}
-				xaml_DistillProgress.Value = 0;
-				if (m_ghostscript.Convert(m_currfile, options,
-					device.DeviceName, dlg.FileName, pages.Count, resolution,
-					multi_page_needed, pages_selected, first_page, last_page,
-					null, null) == gsStatus.GS_BUSY)
+				else
 				{
-					ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
-					return;
+					if (!device.SupportsMultiPage && m_num_pages > 1)
+						multi_page_needed = true;
+
+					if (pages.Count != m_num_pages)
+					{
+						/* We may need to go through page by page. Determine if
+						 * selection of pages is continuous.  This is done by 
+						 * looking at the first one in the list and the last one
+						 * in the list and checking the length */
+						SelectPage lastpage = (SelectPage)pages[pages.Count - 1];
+						SelectPage firstpage = (SelectPage)pages[0];
+						int temp = lastpage.Page - firstpage.Page + 1;
+						if (temp == pages.Count)
+						{
+							/* Pages are contiguous.  Add first and last page 
+							 * as command line option */
+							options = options + " -dFirstPage=" + firstpage.Page + " -dLastPage=" + lastpage.Page;
+							first_page = firstpage.Page;
+							last_page = lastpage.Page;
+						}
+						else
+						{
+							/* Pages are not continguous.  We will do this page 
+							 * by page.*/
+							pages_selected = pages;
+							multi_page_needed = true;  /* need to put in separate outputs */
+						}
+					}
+					xaml_DistillProgress.Value = 0;
+					if (m_ghostscript.Convert(m_currfile, options,
+						device.DeviceName, dlg.FileName, pages.Count, resolution,
+						multi_page_needed, pages_selected, first_page, last_page,
+						null, null) == gsStatus.GS_BUSY)
+					{
+						ShowMessage(NotifyType_t.MESS_STATUS, "GS busy");
+						return;
+					}
+					xaml_DistillName.Text = "GS Converting Document";
+					xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
+					xaml_DistillName.FontWeight = FontWeights.Bold;
+					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 				}
-				xaml_DistillName.Text = "GS Converting Document";
-				xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
-				xaml_DistillName.FontWeight = FontWeights.Bold;
-				xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
 				m_convertwin.Close();
+			}
+			return;
+		}
+
+		private void ExtractPages(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done || m_isXPS)
+				return;
+
+			if (m_extractwin == null || !m_extractwin.IsActive)
+			{
+				m_extractwin = new PageExtractSave(m_num_pages);
+				m_extractwin.ExtractMain += new PageExtractSave.ExtractCallBackMain(ExtractReturn);
+				m_extractwin.Activate();
+				m_extractwin.Show();
+			}
+		}
+
+		private void ExtractReturn(object sender)
+		{
+			if (m_extractwin.xaml_PageList.SelectedItems.Count == 0)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "No Pages Selected");
+				return;
+			}
+
+			/* Go through the actual list not the selected items list. The 
+			 * selected items list contains them in the order that the were
+			 * selected not the order graphically shown */
+			List<SelectPage> pages = new List<SelectPage>(m_extractwin.xaml_PageList.SelectedItems.Count);
+
+			for (int kk = 0; kk < m_extractwin.xaml_PageList.Items.Count; kk++)
+			{
+				var item = (m_extractwin.xaml_PageList.ItemContainerGenerator.ContainerFromIndex(kk)) as System.Windows.Controls.ListViewItem;
+				if (item.IsSelected == true)
+				{
+					pages.Add((SelectPage) m_extractwin.Pages[kk]);
+				}
+			}
+
+			/* Get a filename */
+			SaveFileDialog dlg = new SaveFileDialog();
+			dlg.Filter = "All files (*.pdf)|*.pdf";
+			dlg.FilterIndex = 1;
+			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+			{
+				mu_doc.PDFExtract(m_currfile, dlg.FileName, m_currpassword, m_currpassword != null,
+					false, pages.Count, pages);
+				m_extractwin.Close();
 			}
 			return;
 		}
@@ -1202,6 +1339,7 @@ namespace gsview
 		{
 			if (mu_doc.ApplyPassword(m_password.xaml_Password.Password))
 			{
+				m_currpassword = m_password.xaml_Password.Password;
 				m_password.Close();
 				m_password = null;
 				StartViewer();
@@ -1576,11 +1714,11 @@ namespace gsview
 					String options = null;
 					bool use_gs = true;
 					String init_file = CreatePDFXA(type);
-					;
+
 					switch (type)
 					{
 						case Save_Type_t.PDF:
-							/* All done.  No need to use gs */
+							/* All done.  No need to use gs or mupdf */
 							System.IO.File.Copy(m_currfile, dlg.FileName, true);
 							use_gs = false;
 							break;
@@ -1632,13 +1770,13 @@ namespace gsview
 				bool use_mupdf = true;
 				switch (type)
 				{
-					case Save_Type_t.PCLBitmap:
-						break;
-					case Save_Type_t.PNG:
-						break;
-					case Save_Type_t.PWG:
-						break;
-					case Save_Type_t.SVG:
+					case Save_Type_t.LINEAR_PDF:
+						dlg.Filter = "PDF (*.pdf)|*.pdf";
+						if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+						{
+							mu_doc.PDFExtract(m_currfile, dlg.FileName, m_currpassword, 
+								m_currpassword != null, true, -1, null);
+						}
 						break;
 					case Save_Type_t.PCLXL:
 						use_mupdf = false;
@@ -1672,29 +1810,9 @@ namespace gsview
 			}
 		}
 
-		private void SavePNG(object sender, RoutedEventArgs e)
-		{
-			SaveFile(Save_Type_t.PNG);
-		}
-
-		private void SavePWG(object sender, RoutedEventArgs e)
-		{
-			SaveFile(Save_Type_t.PWG);
-		}
-
-		private void SavePNM(object sender, RoutedEventArgs e)
-		{
-			SaveFile(Save_Type_t.PNM);
-		}
-
 		private void SaveSVG(object sender, RoutedEventArgs e)
 		{
 			SaveFile(Save_Type_t.SVG);
-		}
-
-		private void SavePCL(object sender, RoutedEventArgs e)
-		{
-			SaveFile(Save_Type_t.PCLBitmap);
 		}
 
 		private void SavePDF(object sender, RoutedEventArgs e)
@@ -1709,7 +1827,12 @@ namespace gsview
 
 		private void SaveHTML(object sender, RoutedEventArgs e)
 		{
+			SaveFile(Save_Type_t.HTML);
+		}
 
+		private void Linearize(object sender, RoutedEventArgs e)
+		{
+			SaveFile(Save_Type_t.LINEAR_PDF);
 		}
 
 		private void SavePDF13(object sender, RoutedEventArgs e)
@@ -3022,9 +3145,9 @@ namespace gsview
 		{
 			var relPoint = e.GetPosition(xaml_PageList);
 			var absPoint = this.PointToScreen(relPoint);
-			Console.Write("abs Y position = " + absPoint.Y + "\n");
+			/* Console.Write("abs Y position = " + absPoint.Y + "\n");
 			Console.Write("rel Y position = " + relPoint.Y + "\n");
-			Console.Write("Height is = " + (this.Top + this.Height) + "\n");
+			Console.Write("Height is = " + (this.Top + this.Height) + "\n"); */
 
 			if (xaml_PageList.IsMouseCaptured == true)
 			{
@@ -3086,22 +3209,21 @@ namespace gsview
 		private void dispatcherTimerTick(object sender, EventArgs e)
 		{
 			var position = this.PointToScreen(Mouse.GetPosition(xaml_PageList));
-			Console.Write("Y position = " + position.Y + "\n");
+			/* Console.Write("Y position = " + position.Y + "\n");
 			Console.Write("Top position = " + this.Top + "\n");
-			Console.Write("Bottom position = " + (this.Top + this.Height) + "\n");
-
+			Console.Write("Bottom position = " + (this.Top + this.Height) + "\n"); */
 			DocPage page;
 			int page_num;
 
 			if (!xaml_PageList.IsMouseCaptured)
 			{
-				Console.Write("Lost capture\n");
+				//Console.Write("Lost capture\n");
 				return;
 			}
-			else
+			/*else
 			{
 				Console.Write("Have capture\n");
-			}
+			} */
 			/* Get our most recent page */
 			var pageinfo = m_textSelect[m_textSelect.Count - 1];
 			page_num = pageinfo.pagenum;
@@ -3423,7 +3545,7 @@ namespace gsview
 
 		}
 
-		private void ExtractPages(object sender, RoutedEventArgs e)
+		private void SaveXML(object sender, RoutedEventArgs e)
 		{
 
 		}

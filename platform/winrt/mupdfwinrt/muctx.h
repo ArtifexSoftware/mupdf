@@ -8,10 +8,13 @@
 #include "Cache.h"
 extern "C" {
 #include "mupdf/fitz.h"
+#include "mupdf/pdf-tools.h"
 }
 
 
 #define MAX_SEARCH 500
+
+enum { SVG_OUT, PNM_OUT, PCL_OUT, PWG_OUT };
 
 typedef struct point_s
 {
@@ -104,6 +107,9 @@ public:
 	void ReleaseText(void *text);
 	bool RequiresPassword(void);
 	bool ApplyPassword(char* password);
+	status_t SavePage(char *filename, int pagenum, int resolution, int type,
+		bool append);
+
 #ifdef _WINRT_DLL
 	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);
 #else

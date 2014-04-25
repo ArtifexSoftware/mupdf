@@ -98,6 +98,9 @@
     <Compile Include="OutputIntent.xaml.cs">
       <DependentUpon>OutputIntent.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PageExtractSave.xaml.cs">
+      <DependentUpon>PageExtractSave.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Password.xaml.cs">
       <DependentUpon>Password.xaml</DependentUpon>
     </Compile>
@@ -138,6 +141,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="OutputIntent.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PageExtractSave.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
