@@ -126,7 +126,7 @@ next_concat(fz_stream *stm, int max)
 			fz_close(state->chain[state->current-1]);
 			if (state->pad)
 			{
-				stm->rp = &state->ws_buf;
+				stm->rp = (&state->ws_buf)+1;
 				stm->wp = stm->rp + 1;
 				stm->pos++;
 				return 32;
