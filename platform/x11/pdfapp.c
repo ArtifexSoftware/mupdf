@@ -281,6 +281,8 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 			fz_try(ctx)
 			{
 				app->pagecount = fz_count_pages(app->doc);
+				if (app->pagecount <= 0)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "No pages in document");
 			}
 			fz_catch(ctx)
 			{
