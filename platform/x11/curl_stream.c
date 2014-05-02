@@ -14,7 +14,7 @@
 #define DEBUG_MESSAGE(A) do { } while(0)
 #endif
 
-#define BLOCK_SHIFT 12
+#define BLOCK_SHIFT 20
 #define BLOCK_SIZE (1<<BLOCK_SHIFT)
 
 #ifdef _WIN32
