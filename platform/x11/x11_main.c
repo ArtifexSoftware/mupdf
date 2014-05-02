@@ -117,13 +117,7 @@ static void showmessage(pdfapp_t *app, int timeout, char *msg)
 
 	fz_strlcpy(message, msg, sizeof message);
 
-	if (!tmo_at.tv_sec && !tmo_at.tv_usec)
-	{
-		tmo.tv_sec = timeout;
-		gettimeofday(&now, NULL);
-		timeradd(&now, &tmo, &tmo_at);
-	}
-	else if (tmo.tv_sec < timeout)
+	if ((!tmo_at.tv_sec && !tmo_at.tv_usec) || tmo.tv_sec < timeout)
 	{
 		tmo.tv_sec = timeout;
 		tmo.tv_usec = 0;
@@ -860,15 +854,15 @@ int main(int argc, char **argv)
 	gapp.resolution = resolution;
 	gapp.pageno = pageno;
 
+	tmo_at.tv_sec = 0;
+	tmo_at.tv_usec = 0;
+	timeout = NULL;
+
 	pdfapp_open(&gapp, filename, 0);
 
 	FD_ZERO(&fds);
 
 	signal(SIGHUP, signal_handler);
-
-	tmo_at.tv_sec = 0;
-	tmo_at.tv_usec = 0;
-	timeout = NULL;
 
 	while (!closing)
 	{
