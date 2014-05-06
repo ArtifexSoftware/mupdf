@@ -431,11 +431,13 @@ fast_cmyk_to_rgb_ARM(unsigned char *dst, unsigned char *src, int n)
 	"b	2f			@ enter loop			\n"
 	"1:				@ White or Black		\n"
 	"@ Cunning trick: On entry r11 = 0 if black, r11 = FF if white	\n"
+	"eor    r12,r11,#0xFF           @ r12= FF if black, 0 if white  \n"
 	"ldrb	r7, [r1],#1		@ r8 = s[4]			\n"
 	"strb	r11,[r0],#1		@ d[0] = r			\n"
 	"strb	r11,[r0],#1		@ d[1] = g			\n"
 	"strb	r11,[r0],#1		@ d[2] = b			\n"
 	"strb	r7, [r0],#1		@ d[3] = s[4]			\n"
+	"mov    r12,r12,LSL #24         @ r12 = CMYK                    \n"
 	"subs	r2, r2, #1		@ r2 = n--			\n"
 	"beq	9f							\n"
 	"2:				@ Main loop starts here		\n"
@@ -639,10 +641,18 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		else if (k == 0 && c == 0 && m == 0 && y == 0)
 		{
 			r = g = b = 255;
+			C = 0;
+			M = 0;
+			Y = 0;
+			K = 0;
 		}
 		else if (k == 255)
 		{
 			r = g = b = 0;
+			C = 0;
+			M = 0;
+			Y = 0;
+			K = 255;
 		}
 		else
 		{
