@@ -75,7 +75,6 @@ fz_pixmap *
 fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs, int indexed)
 {
 	fz_pixmap *img;
-	fz_colorspace *origcs;
 	opj_dparameters_t params;
 	opj_codec_t *codec;
 	opj_image_t *jpx;
@@ -179,7 +178,6 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	else if (n > 4) { n = 4; a = 1; }
 	else { a = 0; }
 
-	origcs = defcs;
 	if (defcs)
 	{
 		if (defcs->n == n)
@@ -244,14 +242,6 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 			img = tmp;
 		}
 		fz_premultiply_pixmap(ctx, img);
-	}
-
-	if (origcs != defcs)
-	{
-		fz_pixmap *tmp = fz_new_pixmap(ctx, origcs, w, h);
-		fz_convert_pixmap(ctx, tmp, img);
-		fz_drop_pixmap(ctx, img);
-		img = tmp;
 	}
 
 	return img;
