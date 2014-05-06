@@ -65,7 +65,7 @@ EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseText(void *ctx, void *page);
 
 /* pdfclean methods */
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mExtractPages(PCWSTR infile, PCWSTR outfile,
-	PCWSTR password, bool has_password, int num_pages, void *pages);
+    PCWSTR password, bool has_password, bool linearize, int num_pages, void *pages);
 /* output */
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mSavePage(void *ctx, PCWSTR outfile, int page_num,
 	int resolution, int type, bool append);

@@ -555,7 +555,7 @@ namespace gsview
 					strParams[5] = Params.options;
 					strParams[6] = "-o" + out_file;
 				} else 
-					strParams[7] = "-o" + out_file;
+					strParams[5] = "-o" + out_file;
 
 				/* Now convert our Strings to char* and get pinned handles to these.
 					* This keeps the c# GC from moving stuff around on us */

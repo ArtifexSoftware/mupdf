@@ -397,7 +397,7 @@ SYMBOL_DECLSPEC int __stdcall mExtractPages(PCWSTR infile, PCWSTR outfile,
 		argv[pos++] = pagenums;
 	}
 
-	
+	fz_optind = 1;
 	result = pdfclean_main(argc, argv);
 	
 	delete(num);

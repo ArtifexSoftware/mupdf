@@ -72,6 +72,7 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -189,7 +190,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="Resources\ActualSize48.png" />
     <Resource Include="Resources\Close.ico" />
+    <Resource Include="Resources\ContScrollFill48.png" />
+    <Resource Include="Resources\ExpandFill48.png" />
     <Resource Include="Resources\info.png" />
     <Resource Include="Resources\Message.png" />
     <Resource Include="Resources\OpenFile.png" />

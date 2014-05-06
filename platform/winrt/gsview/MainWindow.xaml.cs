@@ -68,7 +68,6 @@ public enum Page_Content_t
 {
 	FULL_RESOLUTION = 0,
 	THUMBNAIL,
-	DUMMY,
 	OLD_RESOLUTION,
 	NOTSET
 };
@@ -102,16 +101,11 @@ public enum Extract_Type_t
 	SVG
 }
 
-public struct spatial_info_t
-{
-	public Point size;
-	public double scale_factor;
-};
-
 /* C# has no defines.... */
 static class Constants
 {
-	public const int LOOK_AHEAD = 1;  /* A +/- count on the pages to pre-render */
+	public const int SCROLL_STEPSIZE = 48;
+	public const int INIT_LOOK_AHEAD = 2;  /* A + count on the pages to pre-render */
 	public const int THUMB_PREADD = 10;
 	public const double MIN_SCALE = 0.5;
 	public const double SCALE_THUMB = 0.05;
@@ -151,6 +145,14 @@ namespace gsview
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
 	/// 
+
+	public struct pageprogress_t
+	{
+		public Byte[] bitmap;
+		public BlocksText charlist;
+		public int pagenum;
+		public Point size;
+	}
 
 	public struct ContextMenu_t
 	{
@@ -217,12 +219,13 @@ namespace gsview
 		BackgroundWorker m_thumbworker = null;
 		BackgroundWorker m_textsearch = null;
 		BackgroundWorker m_linksearch = null;
+		BackgroundWorker m_openfile = null;
+		BackgroundWorker m_initrender = null;
 		String m_document_type;
 		Info m_infowindow;
 		OutputIntent m_outputintents;
 		Selection m_selection;
 		String m_prevsearch = null;
-		int m_numpagesvisible;
 		bool m_clipboardset;
 		bool m_doscroll;
 		bool m_intxtselect;
@@ -230,6 +233,8 @@ namespace gsview
 		System.Windows.Threading.DispatcherTimer m_dispatcherTimer = null;
 		double m_lastY;
 		double m_maxY;
+		bool m_ignorescrollchange;
+		double m_totalpageheight;
 
 		public MainWindow()
 		{
@@ -257,23 +262,8 @@ namespace gsview
 				m_extractwin = null;
 				m_selection = null;
 				xaml_ZoomSlider.AddHandler(MouseLeftButtonUpEvent, new MouseButtonEventHandler(ZoomReleased), true);
-
-				mxaml_BackPage.Opacity = 0.5;
-				mxaml_Contents.Opacity = 0.5;
-				mxaml_currPage.Opacity = 0.5;
-				mxaml_ForwardPage.Opacity = 0.5;
-				mxaml_Links.Opacity = 0.5;
-				mxaml_Print.Opacity = 0.5;
-				mxaml_SavePDF.Opacity = 0.5;
-				mxaml_Search.Opacity = 0.5;
-				mxaml_Thumbs.Opacity = 0.5;
-				mxaml_TotalPages.Opacity = 0.5;
-				mxaml_zoomIn.Opacity = 0.5;
-				mxaml_zoomOut.Opacity = 0.5;
-				mxaml_Zoomsize.Opacity = 0.5;
-				mxaml_Zoomsize.IsEnabled = false;
-				xaml_ZoomSlider.Opacity = 0.5;
-				xaml_ZoomSlider.IsEnabled = false;
+				DimSelections();
+				/* Set up for windows forms control */
 			}
 			catch (OutOfMemoryException e)
 			{
@@ -282,30 +272,92 @@ namespace gsview
 			}
 		}
 
-		void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		void CloseExtraWindows(bool shutdown)
 		{
-			if (m_selection != null && m_selection.IsActive)
+			if (m_selection != null)
 				m_selection.Close();
-			m_gsoutput.RealWindowClosing();
-			m_outputintents.RealWindowClosing();
+			if (m_convertwin != null)
+				m_convertwin.Close();
+			if (m_extractwin != null)
+				m_extractwin.Close();
+			if (m_infowindow != null)
+				m_infowindow.Close();
+			if (shutdown)
+			{
+				if (m_gsoutput != null)
+					m_gsoutput.RealWindowClosing();
+				if (m_outputintents != null)
+					m_outputintents.RealWindowClosing();
+			}
+			else
+			{
+				if (m_gsoutput != null)
+					m_gsoutput.Hide();
+				if (m_outputintents != null)
+					m_outputintents.Hide();
+			}
 		}
 
+		void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			CloseExtraWindows(true);
+		}
+
+		/* Stuff not enabled when source is XPS */
 		void EnabletoPDF()
 		{
-			xaml_savepdf13.IsEnabled = true;
-			xaml_savepdfa.IsEnabled = true;
-			xaml_savepdfx3_cmyk.IsEnabled = true;
-			xaml_savepdfx3_gray.IsEnabled = true;
-			xaml_savepclxl.IsEnabled = true;
+			xaml_savepdf.IsEnabled = true;
+			xaml_linearize_pdf.IsEnabled = true;
+			xaml_saveas.IsEnabled = true;
+			xaml_Extract.IsEnabled = true;
+			xaml_conversions.IsEnabled = true;
+			xaml_extractselection.IsEnabled = true;
 		}
 
 		void DisabletoPDF()
 		{
-			xaml_savepdf13.IsEnabled = false;
-			xaml_savepdfa.IsEnabled = false;
-			xaml_savepdfx3_cmyk.IsEnabled = false;
-			xaml_savepdfx3_gray.IsEnabled = false;
-			xaml_savepclxl.IsEnabled = false;
+			xaml_savepdf.IsEnabled = false;
+			xaml_linearize_pdf.IsEnabled = false;
+			xaml_saveas.IsEnabled = false;
+			xaml_Extract.IsEnabled = false;
+			xaml_conversions.IsEnabled = false;
+			xaml_extractselection.IsEnabled = false;
+		}
+
+		private void DimSelections()
+		{
+			xaml_currPage.Text = "";
+			xaml_TotalPages.Text = "/ 0";
+			xaml_Zoomsize.Text = "100";
+			xaml_BackPage.Opacity = 0.5;
+			xaml_Contents.Opacity = 0.5;
+			xaml_currPage.Opacity = 0.5;
+			xaml_currPage.IsEnabled = false;
+			xaml_ForwardPage.Opacity = 0.5;
+			xaml_Links.Opacity = 0.5;
+			xaml_Print.Opacity = 0.5;
+			xaml_SavePDF.Opacity = 0.5;
+			xaml_Search.Opacity = 0.5;
+			xaml_Thumbs.Opacity = 0.5;
+			xaml_TotalPages.Opacity = 0.5;
+			xaml_zoomIn.Opacity = 0.5;
+			xaml_zoomOut.Opacity = 0.5;
+			xaml_Zoomsize.Opacity = 0.5;
+			xaml_ExpandFill.Opacity = 0.5;
+			xaml_ContScrollFill.Opacity = 0.5;
+			xaml_ActualSize.Opacity = 0.5;
+			xaml_Zoomsize.IsEnabled = false;
+			xaml_ZoomSlider.Opacity = 0.5;
+			xaml_ZoomSlider.IsEnabled = false;
+			xaml_saveas.IsEnabled = false;
+			xaml_closefile.IsEnabled = false;
+			xaml_showinfo.IsEnabled = false;
+			xaml_extractselection.IsEnabled = false;
+			xaml_conversions.IsEnabled = false;
+			xaml_gsmessage.IsEnabled = false;
+			xaml_print.IsEnabled = false;
+			xaml_view.IsEnabled = false;
+			xaml_edit.IsEnabled = false;
 		}
 
 		private status_t CleanUp()
@@ -315,6 +367,7 @@ namespace gsview
 			/* Collapse this stuff since it is going to be released */
 			xaml_ThumbGrid.Visibility = System.Windows.Visibility.Collapsed;
 			xaml_ContentGrid.Visibility = System.Windows.Visibility.Collapsed;
+			xaml_VerticalScroll.Visibility = System.Windows.Visibility.Collapsed;
 
 			/* Clear out everything */
 			if (m_docPages != null && m_docPages.Count > 0)
@@ -368,14 +421,17 @@ namespace gsview
 			m_isXPS = false;
 			xaml_CancelThumb.IsEnabled = true;
 			m_currpage = 0;
+			m_ignorescrollchange = false;
 			m_document_type = DocumentTypes.UNKNOWN;
 			EnabletoPDF();
-			m_numpagesvisible = 3;
 			m_clipboardset = false;
 			m_doscroll = false;
 			m_intxtselect = false;
 			m_textselected = false;
 			m_currpassword = null;
+			CloseExtraWindows(false);
+			ResetScroll();
+			m_totalpageheight = 0;
 			return result;
 		}
 
@@ -496,13 +552,7 @@ namespace gsview
 				}
 				/* Set if this is already xps for printing */
 				if (extension.ToUpper() == ".XPS")
-				{
-					DisabletoPDF();
 					m_isXPS = true;
-					xaml_Extract.IsEnabled = false;
-				}
-				else
-					xaml_Extract.IsEnabled = true;
 				OpenFile2(dlg.FileName);
 			}
 		}
@@ -510,9 +560,27 @@ namespace gsview
 		private void OpenFile2(String File)
 		{
 			m_currfile = File;
+			xaml_OpenProgressGrid.Visibility = System.Windows.Visibility.Visible;
+			xaml_openfilestatus.Text = "Opening File";
+		/* The file open can take a fair amount of time. So that we can show
+			* an indeterminate progress bar while opening, go ahead an do this
+			* on a separate thread */
+			OpenFileBG();
+		}
+
+		private void OpenWork(object sender, DoWorkEventArgs e)
+		{
+			BackgroundWorker worker = sender as BackgroundWorker;
 
 			status_t code = mu_doc.OpenFile(m_currfile);
-			if (code == status_t.S_ISOK)
+			worker.ReportProgress(100, code);
+		}
+
+		private void OpenProgress(object sender, ProgressChangedEventArgs e)
+		{
+			status_t result = (status_t)(e.UserState);
+
+			if (result == status_t.S_ISOK)
 			{
 				/* Check if we need a password */
 				if (mu_doc.RequiresPassword())
@@ -523,33 +591,179 @@ namespace gsview
 			else
 			{
 				m_currfile = null;
-				ShowMessage(NotifyType_t.MESS_ERROR, "Failed to open file!");
 			}
 		}
 
-		private void StartViewer()
+		private void OpenFileBG()
 		{
-			InitialRender();
+			try
+			{
+				m_openfile = new BackgroundWorker();
+				m_openfile.WorkerReportsProgress = true;
+				m_openfile.WorkerSupportsCancellation = false;
+				m_openfile.DoWork += new DoWorkEventHandler(OpenWork);
+				m_openfile.ProgressChanged += new ProgressChangedEventHandler(OpenProgress);
+				m_openfile.RunWorkerAsync();
+			}
+			catch (OutOfMemoryException e)
+			{
+				Console.WriteLine("Memory allocation failed during opening\n");
+				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
+			}
+		}
+
+		private void InitialRenderWork(object sender, DoWorkEventArgs e)
+		{
+			BackgroundWorker worker = sender as BackgroundWorker;
+			int look_ahead = Math.Min(m_num_pages, Constants.INIT_LOOK_AHEAD);
+
+			/* Do the first few full res pages */
+			for (int k = 0; k < look_ahead; k++)
+			{
+				if (m_num_pages > k)
+				{
+					Point ras_size;
+					double scale_factor = 1.0;
+					Byte[] bitmap;
+					BlocksText charlist;
+					status_t code;
+
+					if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
+					{
+						try
+						{
+							bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+
+							/* Synchronous call on our background thread */
+							code = (status_t)mu_doc.RenderPage(k, bitmap, (int)ras_size.X,
+								(int)ras_size.Y, scale_factor, false, true,
+								!(m_textset[k]), out charlist);
+						}
+						catch (OutOfMemoryException em)
+						{
+							Console.WriteLine("Memory allocation failed init page " + k + em.Message + "\n");
+							break;
+						}
+						/* create new page if we rendered ok. set ui value with 
+						 * progress call back, pass page number, charlist and bitmap */
+						if (code == status_t.S_ISOK)
+						{
+							pageprogress_t page_prog = new pageprogress_t();
+							page_prog.bitmap = bitmap;
+							page_prog.charlist = charlist;
+							page_prog.pagenum = k;
+							page_prog.size = ras_size;
+							worker.ReportProgress(100, page_prog);
+						}
+					}
+				}
+			}
+		}
+
+		private void InitialRenderProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			pageprogress_t result = (pageprogress_t)(e.UserState);
+			int k = result.pagenum;
+
+			m_textset[k] = true;
+			m_textptrs[k] = result.charlist;
+			m_docPages[k].TextBlocks = result.charlist;
+			UpdatePage(k, result.bitmap, result.size, Page_Content_t.FULL_RESOLUTION, 1.0);
+			m_docPages[k].NativeHeight = (int) result.size.Y;
+			m_docPages[k].NativeWidth = (int)result.size.X;
+		}
+
+		private void InitialRenderCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			m_init_done = true;
+			m_currpage = 0;
 			RenderThumbs();
 			m_file_open = true;
-			mxaml_BackPage.Opacity = 1;
-			mxaml_Contents.Opacity = 1;
-			mxaml_currPage.Opacity = 1;
-			mxaml_ForwardPage.Opacity = 1;
-			mxaml_Links.Opacity = 1;
-			mxaml_Print.Opacity = 1;
-			mxaml_SavePDF.Opacity = 1;
-			mxaml_Search.Opacity = 1;
-			mxaml_Thumbs.Opacity = 1;
-			mxaml_TotalPages.Opacity = 1;
-			mxaml_zoomIn.Opacity = 1;
-			mxaml_zoomOut.Opacity = 1;
-			mxaml_Zoomsize.Opacity = 1;
-			mxaml_Zoomsize.IsEnabled = true;
-			mxaml_TotalPages.Text = "/ " + m_num_pages.ToString();
-			mxaml_currPage.Text = "1";
+			xaml_BackPage.Opacity = 1;
+			xaml_Contents.Opacity = 1;
+			xaml_currPage.Opacity = 1;
+			xaml_ForwardPage.Opacity = 1;
+			xaml_Links.Opacity = 1;
+			xaml_Print.Opacity = 1;
+			xaml_SavePDF.Opacity = 1;
+			xaml_Search.Opacity = 1;
+			xaml_Thumbs.Opacity = 1;
+			xaml_TotalPages.Opacity = 1;
+			xaml_zoomIn.Opacity = 1;
+			xaml_zoomOut.Opacity = 1;
+			xaml_Zoomsize.Opacity = 1;
+			xaml_ExpandFill.Opacity = 1;
+			xaml_ContScrollFill.Opacity = 1;
+			xaml_ActualSize.Opacity = 1;
+			xaml_Zoomsize.IsEnabled = true;
+			xaml_currPage.IsEnabled = true;
+			xaml_TotalPages.Text = "/ " + m_num_pages.ToString();
+			xaml_currPage.Text = "1";
 			xaml_ZoomSlider.Opacity = 1.0;
 			xaml_ZoomSlider.IsEnabled = true;
+			xaml_closefile.IsEnabled = true;
+			xaml_saveas.IsEnabled = true;
+			xaml_showinfo.IsEnabled = true;
+			xaml_extractselection.IsEnabled = true;
+			xaml_conversions.IsEnabled = true;
+			xaml_gsmessage.IsEnabled = true;
+			xaml_print.IsEnabled = true;
+			xaml_view.IsEnabled = true;
+			xaml_edit.IsEnabled = true;
+			if (m_isXPS)
+				DisabletoPDF();
+			xaml_OpenProgressGrid.Visibility = System.Windows.Visibility.Collapsed;
+			xaml_VerticalScroll.Visibility = System.Windows.Visibility.Visible;
+			xaml_VerticalScroll.Value = 0;
+		}
+
+		private void InitialRenderBG()
+		{
+			m_num_pages = mu_doc.GetPageCount();
+			int look_ahead = Math.Min(Constants.INIT_LOOK_AHEAD, m_num_pages);
+			m_currpage = 0;
+			m_thumbnails.Capacity = m_num_pages;
+			
+			for (int k = 0; k < Constants.INIT_LOOK_AHEAD; k++)
+			{
+				m_docPages.Add(InitDocPage());
+				m_docPages[k].PageNum = k;
+				m_textptrs.Add(new BlocksText());
+				m_lineptrs.Add(new LinesText());
+				m_textset.Add(false);
+			}
+			var dummy = InitDocPage();
+			for (int k = Constants.INIT_LOOK_AHEAD; k < m_num_pages; k++)
+			{
+				m_docPages.Add(dummy);
+				m_textptrs.Add(new BlocksText());
+				m_lineptrs.Add(new LinesText());
+				m_textset.Add(false);
+			}
+
+			xaml_PageList.ItemsSource = m_docPages;
+
+			try
+			{
+				m_initrender = new BackgroundWorker();
+				m_initrender.WorkerReportsProgress = true;
+				m_initrender.WorkerSupportsCancellation = false;
+				m_initrender.DoWork += new DoWorkEventHandler(InitialRenderWork);
+				m_initrender.RunWorkerCompleted += new RunWorkerCompletedEventHandler(InitialRenderCompleted);
+				m_initrender.ProgressChanged += new ProgressChangedEventHandler(InitialRenderProgressChanged);
+				m_initrender.RunWorkerAsync();
+			}
+			catch (OutOfMemoryException e)
+			{
+				Console.WriteLine("Memory allocation failed during initial render\n");
+				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
+			}
+		}
+		private void StartViewer()
+		{
+			xaml_openfilestatus.Text = "Initial Page Rendering";
+			xaml_openfilestatus.UpdateLayout();
+			InitialRenderBG();
 		}
 
 		private status_t ComputePageSize(int page_num, double scale_factor,
@@ -578,7 +792,7 @@ namespace gsview
 			doc_page.Width = Constants.BLANK_WIDTH;
 			doc_page.NativeHeight = Constants.BLANK_HEIGHT;
 			doc_page.NativeWidth = Constants.BLANK_WIDTH;
-			doc_page.Content = Page_Content_t.DUMMY;
+			doc_page.Content = Page_Content_t.NOTSET;
 			doc_page.TextBox = null;
 			doc_page.LinkBox = null;
 			doc_page.SelHeight = 0;
@@ -588,77 +802,18 @@ namespace gsview
 			return doc_page;
 		}
 
-		async private void InitialRender()
-		{
-			m_num_pages = mu_doc.GetPageCount();
-			m_currpage = 0;
-
-			for (int k = 0; k < m_num_pages; k++)
-			{
-				m_docPages.Add(InitDocPage());
-				m_docPages[k].PageNum = k;
-				m_thumbnails.Add(InitDocPage());
-				m_textptrs.Add(new BlocksText());
-				m_lineptrs.Add(new LinesText());
-				m_textset.Add(false);
-			}
-
-			/* Do the first few full res pages */
-			for (int k = 0; k < Constants.LOOK_AHEAD + 2; k++)
-			{
-				if (m_num_pages > k)
-				{
-					Point ras_size;
-					double scale_factor = 1.0;
-
-					if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
-					{
-						try
-						{
-							Byte[] bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
-							BlocksText charlist = null;
-
-							Task<int> ren_task =
-								new Task<int>(() => mu_doc.RenderPage(k, bitmap,
-									(int)ras_size.X, (int)ras_size.Y, scale_factor,
-									false, true, !(m_textset[k]), out charlist));
-							ren_task.Start();
-							await ren_task.ContinueWith((antecedent) =>
-							{
-								status_t code = (status_t)ren_task.Result;
-								if (code == status_t.S_ISOK)
-								{
-									m_textset[k] = true;
-									m_textptrs[k] = charlist;
-									m_docPages[k].TextBlocks = charlist;
-									UpdatePage(k, bitmap, ras_size,
-										Page_Content_t.FULL_RESOLUTION, 1.0);
-								}
-							}, TaskScheduler.FromCurrentSynchronizationContext());
-						}
-						catch (OutOfMemoryException e)
-						{
-							Console.WriteLine("Memory allocation failed page " + k + "\n");
-							ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
-						}
-					}
-				}
-			}
-			m_init_done = true;
-			m_currpage = 0;
-			xaml_PageList.ItemsSource = m_docPages;
-		}
-
 		private void OnBackPageClick(object sender, RoutedEventArgs e)
 		{
 			if (m_currpage == 0 || !m_init_done) return;
-			RenderRange(m_currpage - 1, true);
+			m_ignorescrollchange = true;
+			RenderRange(m_currpage - 1, true, false, 0);
 		}
 
 		private void OnForwardPageClick(object sender, RoutedEventArgs e)
 		{
 			if (m_currpage == m_num_pages - 1 || !m_init_done) return;
-			RenderRange(m_currpage + 1, true);
+			m_ignorescrollchange = true;
+			RenderRange(m_currpage + 1, true, false, 0);
 		}
 
 		private void PageEnterClicked(object sender, System.Windows.Input.KeyEventArgs e)
@@ -666,12 +821,15 @@ namespace gsview
 			if (e.Key == Key.Return)
 			{
 				e.Handled = true;
-				var desired_page = mxaml_currPage.Text;
+				var desired_page = xaml_currPage.Text;
 				try
 				{
 					int page = System.Convert.ToInt32(desired_page);
 					if (page > 0 && page < (m_num_pages + 1))
-						RenderRange(page - 1, true);
+					{
+						m_ignorescrollchange = true;
+						RenderRange(page - 1, true, false, 0);
+					}
 				}
 				catch (FormatException e1)
 				{
@@ -736,7 +894,7 @@ namespace gsview
 			{
 				if (item.PageNum < 0)
 					return;
-				RenderRange(item.PageNum, true);
+				RenderRange(item.PageNum, true, false, 0);
 			}
 		}
 
@@ -747,38 +905,131 @@ namespace gsview
 			{
 				int page = m_docPages[item.Page].PageNum;
 				if (page >= 0 && page < m_num_pages)
-					RenderRange(page, true);
+					RenderRange(page, true, false, 0);
 			}
 		}
 
 		/* We need to avoid rendering due to size changes */
 		private void ListViewScrollChanged(object sender, ScrollChangedEventArgs e)
 		{
-			var lv = (System.Windows.Controls.ListView)sender;
-			foreach (var lvi in lv.Items)
+			/* This makes sure we dont call render range a second time due to 
+			 * page advances */
+			int first_item = -1;
+			int second_item = -1;
+			//Console.WriteLine("***************************************/n");
+			//Console.WriteLine("VerticalChange = " + e.VerticalChange + "/n");
+			//Console.WriteLine("ExtentHeightChange = " + e.ExtentHeightChange + "/n");
+			//Console.WriteLine("ExtentWidthChange = " + e.ExtentWidthChange + "/n");
+			//Console.WriteLine("HorizontalChange = " + e.HorizontalChange + "/n");
+			//Console.WriteLine("ViewportHeightChange = " + e.ViewportHeightChange + "/n");
+			//Console.WriteLine("ViewportWidthChange = " + e.ViewportWidthChange + "/n");
+			//Console.WriteLine("ExtentHeight = " + e.ExtentHeight + "/n");
+			//Console.WriteLine("ViewportHeight = " + e.ViewportHeight + "/n");
+			//Console.WriteLine("VerticalOffset = " + e.VerticalOffset + "/n");
+			//Console.WriteLine("***************************************/n");
+			if (m_ignorescrollchange == true)
 			{
-				var container = lv.ItemContainerGenerator.ContainerFromItem(lvi) as ListBoxItem;
-				if (container != null && Visible(container, lv))
+				m_ignorescrollchange = false;
+				return;
+			}
+			if (!m_init_done)
+				return;
+			if (e.VerticalChange == 0)
+				return;
+
+			/* From current page go forward and backward checking if pages are
+			 * visible */
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer != null)
+			{
+				double bottom = this.ActualHeight;
+				/* first going forward */
+				for (int kk = m_currpage + 1; kk < m_num_pages; kk++)
 				{
-					var found = container.Content;
-					if (found != null)
+					UIElement uiElement = (UIElement)xaml_PageList.ItemContainerGenerator.ContainerFromIndex(kk);
+					double y_top = uiElement.TranslatePoint(new System.Windows.Point(0, 0), xaml_PageList).Y;
+					double y_bottom = uiElement.TranslatePoint(new System.Windows.Point(0, m_docPages[kk].Height), xaml_PageList).Y;
+					/* Test if this and all further pages are outside window */
+					if (y_top > bottom)
+						break;
+					/* Test if page is not even yet in window */
+					if (y_bottom > 0)
 					{
-						var Item = (DocPage)found;
 						if (!(m_dispatcherTimer != null && m_dispatcherTimer.IsEnabled == true))
-							RenderRange(Item.PageNum, false);
+						{
+							/* In this case grab the first one that we find */
+							if (second_item == -1)
+								second_item = kk;
+						}
 					}
-					e.Handled = true;
-					return;
+				}
+
+				/* and now going backward */
+				for (int kk = m_currpage; kk > -1; kk--)
+				{
+					UIElement uiElement = (UIElement)xaml_PageList.ItemContainerGenerator.ContainerFromIndex(kk);
+					double y_top = uiElement.TranslatePoint(new System.Windows.Point(0, 0), xaml_PageList).Y;
+					double y_bottom = uiElement.TranslatePoint(new System.Windows.Point(0, m_docPages[kk].Height), xaml_PageList).Y;
+					/* Test if this and all further pages are outside window */
+					if (y_bottom < 0)
+						break;
+					if (y_top < bottom)
+						if (!(m_dispatcherTimer != null && m_dispatcherTimer.IsEnabled == true))
+							first_item = kk;
+				}
+				e.Handled = true;
+				if (first_item != -1)
+					second_item = first_item;
+				/* Finish */
+				double perc = (double)second_item / (double)(m_num_pages - 1);
+				xaml_VerticalScroll.Value = perc * xaml_VerticalScroll.Maximum;
+				RenderRange(second_item, false, false, 0);
+			}
+		}
+
+		/* ScrollIntoView will not scroll to top on its own.  If item is already
+		 * in view it just sits there */
+		private void ScrollPageToTop(int k, double offset, bool from_scroller)
+		{
+			/* Get access to the scrollviewer */
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer != null)
+			{
+				UIElement uiElement = (UIElement) xaml_PageList.ItemContainerGenerator.ContainerFromIndex(k);
+				double y = uiElement.TranslatePoint(new System.Windows.Point(0, offset), xaml_PageList).Y;
+				double curr_value = viewer.VerticalOffset;
+				viewer.ScrollToVerticalOffset(curr_value + y);
+
+				if (!from_scroller)
+				{
+					double perc = (double) k / (double) ( m_num_pages - 1);
+					xaml_VerticalScroll.Value = perc * xaml_VerticalScroll.Maximum;
 				}
 			}
 		}
 
 		/* Render +/- the look ahead from where we are if blank page is present */
-		async private void RenderRange(int new_page, bool scrollto)
+		async private void RenderRange(int new_page, bool scrollto, bool newzoom, double zoom_offset)
 		{
-			int range = (int)Math.Ceiling(((double)m_numpagesvisible - 1.0) / 2.0);
+			/* Need to figure out what pages are going to be visible */
+			double bottom = this.ActualHeight;
+			bool done = false;
+			int final_page = new_page;
+			double count = -zoom_offset;
+			int offset = -1;
 
-			for (int k = new_page - range; k <= new_page + range + 1; k++)
+			if (newzoom)
+				offset = 0;
+
+			while (!done)
+			{
+				count = count + m_thumbnails[final_page].NativeHeight * m_doczoom;
+				final_page = final_page + 1;
+				if (final_page == m_num_pages || count > bottom)
+					done = true;
+			}
+
+			for (int k = new_page + offset; k <= final_page + 1; k++)
 			{
 				if (k >= 0 && k < m_num_pages)
 				{
@@ -800,6 +1051,8 @@ namespace gsview
 							{
 								Byte[] bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
 								BlocksText charlist = null;
+								m_docPages[k].NativeWidth = (int)(ras_size.X / scale_factor);
+								m_docPages[k].NativeHeight = (int)(ras_size.Y / scale_factor);
 
 								Task<int> ren_task =
 									new Task<int>(() => mu_doc.RenderPage(k, bitmap,
@@ -845,12 +1098,21 @@ namespace gsview
 												m_docPages[k].SelectedLines = m_lineptrs[k];
 											}
 										}
+										/* This needs to be handled here to reduce 
+										 * flashing effects */
+										if (newzoom && k == new_page)
+										{
+											m_ignorescrollchange = true;
+											UpdatePageSizes();
+											xaml_VerticalScroll.Maximum = m_totalpageheight * m_doczoom + 4 * m_num_pages;
+											ScrollPageToTop(new_page, zoom_offset, false);
+										}
 										UpdatePage(k, bitmap, ras_size,
 											Page_Content_t.FULL_RESOLUTION, m_doczoom);
-										if (k == new_page && scrollto)
+										if (k == new_page && scrollto && new_page != m_currpage)
 										{
 											m_doscroll = true;
-											xaml_PageList.ScrollIntoView(m_docPages[k]);
+											ScrollPageToTop(k, 0, false);
 										}
 									}
 								}, TaskScheduler.FromCurrentSynchronizationContext());
@@ -866,10 +1128,10 @@ namespace gsview
 					{
 						/* We did not have to render the page but we may need to
 						 * scroll to it */
-						if (k == new_page && scrollto)
+						if (k == new_page && scrollto && new_page != m_currpage)
 						{
-							m_doscroll = true;
-							xaml_PageList.ScrollIntoView(m_docPages[k]);
+							m_ignorescrollchange = true;
+							ScrollPageToTop(k, 0, false);
 						}
 						/*
 						if (k == new_page && m_docPages[k].TextBlocks == null)
@@ -880,22 +1142,12 @@ namespace gsview
 				}
 			}
 			/* Release old range and set new page */
-			ReleasePages(m_currpage, new_page, range);
+			//ReleasePages(m_currpage, new_page - 1, final_page + 1);
 			m_currpage = new_page;
-			mxaml_currPage.Text = (m_currpage + 1).ToString();
+			xaml_currPage.Text = (m_currpage + 1).ToString();
 		}
 
-		private bool Visible(FrameworkElement elem, FrameworkElement cont)
-		{
-			if (!elem.IsVisible)
-				return false;
-			Rect rect = new Rect(0.0, 0.0, cont.ActualWidth, cont.ActualHeight);
-			Rect bounds = elem.TransformToAncestor(cont).TransformBounds(new Rect(0.0, 0.0, elem.ActualWidth, elem.ActualHeight));
-			Rect bounds2 = new Rect(new Point(bounds.TopLeft.X, bounds.TopLeft.Y), new Point(bounds.BottomRight.X, bounds.BottomRight.Y - 5));
-			return rect.Contains(bounds2.TopLeft) || rect.Contains(bounds2.BottomRight);
-		}
-
-		/* Avoids the next page jumping into view when touched by mouse */
+		/* Avoids the next page jumping into view when touched by mouse. See xaml code */
 		private void AvoidScrollIntoView(object sender, RequestBringIntoViewEventArgs e)
 		{
 			if (!m_doscroll)
@@ -904,14 +1156,14 @@ namespace gsview
 				m_doscroll = false;
 		}
 
-		private void ReleasePages(int old_page, int new_page, int range)
+		private void ReleasePages(int old_page, int new_page, int final_page)
 		{
 			if (old_page == new_page) return;
 			/* To keep from having memory issue reset the page back to
 				the thumb if we are done rendering the thumbnails */
-			for (int k = old_page - range; k <= old_page + range; k++)
+			for (int k = 0; k < m_num_pages; k++)
 			{
-				if (k < new_page - range || k > new_page + range)
+				if (k < new_page || k > final_page)
 				{
 					if (k >= 0 && k < m_num_pages)
 					{
@@ -1368,28 +1620,104 @@ namespace gsview
 		}
 
 		#region Zoom Control
+
+		/* Find out where the current page is */
+		private double ComputeOffset(double old_zoom)
+		{
+			double y = 0;
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer != null)
+			{
+				/* Look at the offset and where it falls relative to the top of our current page */
+				UIElement uiElement = (UIElement)xaml_PageList.ItemContainerGenerator.ContainerFromIndex(m_currpage);
+				y = viewer.TranslatePoint(new System.Windows.Point(0, 0), uiElement).Y;
+			}
+			return y * m_doczoom / old_zoom;
+		}
+
 		private void ZoomOut(object sender, RoutedEventArgs e)
 		{
 			if (!m_init_done)
 				return;
+			double old_zoom = m_doczoom;
 			m_doczoom = m_doczoom - Constants.ZOOM_STEP;
 			if (m_doczoom < Constants.ZOOM_MIN)
 				m_doczoom = Constants.ZOOM_MIN;
 			xaml_ZoomSlider.Value = m_doczoom * 100.0;
-			m_numpagesvisible = (int)(Math.Ceiling((1.0 / m_doczoom) + 2));
-			RenderRange(m_currpage, false);
+			double offset = ComputeOffset(old_zoom);
+			RenderRange(m_currpage, false, true, offset);
 		}
 
 		private void ZoomIn(object sender, RoutedEventArgs e)
 		{
 			if (!m_init_done)
 				return;
+			double old_zoom = m_doczoom;
 			m_doczoom = m_doczoom + Constants.ZOOM_STEP;
 			if (m_doczoom > Constants.ZOOM_MAX)
 				m_doczoom = Constants.ZOOM_MAX;
 			xaml_ZoomSlider.Value = m_doczoom * 100.0;
-			m_numpagesvisible = (int)(Math.Ceiling((1.0 / m_doczoom) + 2));
-			RenderRange(m_currpage, false);
+			double offset = ComputeOffset(old_zoom);
+			RenderRange(m_currpage, false, true, offset);
+		}
+
+		private void ActualSize(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done)
+				return;
+			double old_zoom = m_doczoom;
+			m_doczoom = 1.0;
+			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			double offset = ComputeOffset(old_zoom);
+			RenderRange(m_currpage, false, true, offset);
+		}
+
+		private void ContScrollFill(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done)
+				return;
+			/* Scale our pages based upon the size of scrollviewer */
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer == null)
+				return;
+			double width = viewer.ViewportWidth;
+			double page_width = m_thumbnails[m_currpage].NativeWidth;
+			double scale = width / page_width;
+			if (scale < Constants.ZOOM_MIN)
+				scale = Constants.ZOOM_MIN;
+			if (scale > Constants.ZOOM_MAX)
+				scale = Constants.ZOOM_MAX;
+			if (m_doczoom == scale)
+				return;
+			m_doczoom = scale;
+			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			RenderRange(m_currpage, true, false, 0);
+		}
+
+		private void ExpandFill(object sender, RoutedEventArgs e)
+		{
+			if (!m_init_done)
+				return;
+			/* Scale our pages based upon the size of scrollviewer */
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer == null)
+				return;
+			double height = viewer.ViewportHeight;
+			double width = viewer.ViewportWidth;
+			double page_height = m_thumbnails[m_currpage].NativeHeight;
+			double page_width = m_thumbnails[m_currpage].NativeWidth;
+			double height_scale = height / page_height;
+			double width_scale = width / page_width;
+			double scale = Math.Min(height_scale, width_scale);
+			if (scale < Constants.ZOOM_MIN)
+				scale = Constants.ZOOM_MIN;
+			if (scale > Constants.ZOOM_MAX)
+				scale = Constants.ZOOM_MAX;
+			if (m_doczoom == scale)
+				return;
+			m_doczoom = scale;
+			xaml_ZoomSlider.Value = m_doczoom * 100.0;
+			RenderRange(m_currpage, true, false, 0);
 		}
 
 		private void ShowFooter(object sender, RoutedEventArgs e)
@@ -1411,9 +1739,10 @@ namespace gsview
 					zoom = Constants.ZOOM_MAX;
 				if (zoom < Constants.ZOOM_MIN)
 					zoom = Constants.ZOOM_MIN;
-				m_numpagesvisible = (int)(Math.Ceiling((1.0 / zoom) + 2));
+				double old_zoom = zoom;
 				m_doczoom = zoom;
-				RenderRange(m_currpage, false);
+				double offset = ComputeOffset(old_zoom);
+				RenderRange(m_currpage, false, true, offset);
 			}
 		}
 
@@ -1423,11 +1752,15 @@ namespace gsview
 			return; /* Disable this for now */
 			if (m_doczoom != 1.0)
 			{
+				double old_zoom = m_doczoom; 
 				m_doczoom = 1.0;
-				mxaml_Zoomsize.Text = "100";
+				xaml_Zoomsize.Text = "100";
 				var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
 				if (item != null)
-					RenderRange(item.PageNum, true);
+				{
+					double offset = ComputeOffset(old_zoom);
+					RenderRange(item.PageNum, true, true, offset);
+				}
 			}
 		}
 
@@ -1436,7 +1769,7 @@ namespace gsview
 			if (e.Key == Key.Return)
 			{
 				e.Handled = true;
-				var desired_zoom = mxaml_Zoomsize.Text;
+				var desired_zoom = xaml_Zoomsize.Text;
 				try
 				{
 					double zoom = (double)System.Convert.ToInt32(desired_zoom) / 100.0;
@@ -1444,9 +1777,10 @@ namespace gsview
 						zoom = Constants.ZOOM_MAX;
 					if (zoom < Constants.ZOOM_MIN)
 						zoom = Constants.ZOOM_MIN;
-					m_numpagesvisible = (int)(Math.Ceiling((1.0 / zoom) + 2));
+					double old_zoom = m_doczoom;
 					m_doczoom = zoom;
-					RenderRange(m_currpage, false);
+					double offset = ComputeOffset(old_zoom);
+					RenderRange(m_currpage, false, true, offset);
 				}
 				catch (FormatException e1)
 				{
@@ -1459,36 +1793,71 @@ namespace gsview
 			}
 		}
 
+		/* Rescale the pages based upon the zoom value and the native size */
+		private void UpdatePageSizes()
+		{
+			for (int k = 0; k > m_num_pages; k++)
+			{
+				var thumbpage = m_thumbnails[k];
+				var page = m_docPages[k];
+
+				if (page.Zoom == m_doczoom)
+					continue;
+				int scale_zoom = (int)Math.Round((double)page.Height / (double)thumbpage.NativeHeight);
+				if (scale_zoom != m_doczoom)
+				{
+					page.Height = (int)Math.Round(thumbpage.NativeHeight * m_doczoom);
+					page.Width = (int)Math.Round(thumbpage.NativeWidth * m_doczoom);
+				}
+			}
+		}
 		#endregion Zoom Control
 
 		#region Thumb Rendering
 		void SetThumbInit(int page_num, Byte[] bitmap, Point ras_size, double zoom_in)
 		{
-			/* Two jobs. Store the thumb and possibly update the full page */
-			DocPage doc_page = m_thumbnails[page_num];
+			/* Three jobs. Store the thumb and possibly update the full page. Also
+			 add to collection of pages.  Set up page geometry info (scale of
+			 100 percent ) */
+
+			DocPage doc_page = new DocPage();
+			m_thumbnails.Add(doc_page);
 
 			doc_page.Width = (int)ras_size.X;
+			
 			doc_page.Height = (int)ras_size.Y;
+			doc_page.NativeWidth = (int)(ras_size.X / Constants.SCALE_THUMB);
+			doc_page.NativeHeight = (int)(ras_size.Y / Constants.SCALE_THUMB);
+			m_totalpageheight = m_totalpageheight + doc_page.NativeHeight;
+
 			doc_page.Content = Page_Content_t.THUMBNAIL;
 			doc_page.Zoom = zoom_in;
 			int stride = doc_page.Width * 4;
-			doc_page.BitMap = BitmapSource.Create(doc_page.Width, doc_page.Height, 72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
+			doc_page.BitMap = BitmapSource.Create(doc_page.Width, doc_page.Height, 
+				72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
 			doc_page.PageNum = page_num;
 
-			/* And the main page */
+			/* Lets see if we need to set the main page */
 			var doc = m_docPages[page_num];
-			if (doc.Content == Page_Content_t.THUMBNAIL || doc.Content == Page_Content_t.FULL_RESOLUTION)
-				return;
-			else
+			switch (doc.Content)
 			{
-				doc_page = this.m_docPages[page_num];
-				doc_page.Content = Page_Content_t.THUMBNAIL;
-				doc_page.Zoom = zoom_in;
+				case Page_Content_t.FULL_RESOLUTION:
+				case Page_Content_t.THUMBNAIL:
+					return;
+					
+				case Page_Content_t.NOTSET:
+					doc_page = InitDocPage();
+					doc_page.Content = Page_Content_t.THUMBNAIL;
+					doc_page.Zoom = zoom_in;
+					doc_page.BitMap = m_thumbnails[page_num].BitMap;
+					doc_page.Width = (int)(ras_size.X / Constants.SCALE_THUMB);
+					doc_page.Height = (int)(ras_size.Y / Constants.SCALE_THUMB);
+					doc_page.PageNum = page_num;
+					this.m_docPages[page_num] = doc_page;
+					break;
 
-				doc_page.BitMap = m_thumbnails[page_num].BitMap;
-				doc_page.Width = (int)(ras_size.X / Constants.SCALE_THUMB);
-				doc_page.Height = (int)(ras_size.Y / Constants.SCALE_THUMB);
-				doc_page.PageNum = page_num;
+				case Page_Content_t.OLD_RESOLUTION:
+					return;
 			}
 		}
 
@@ -1547,6 +1916,9 @@ namespace gsview
 			m_have_thumbs = true;
 			m_thumbworker = null;
 			xaml_CancelThumb.IsEnabled = true;
+			xaml_ThumbList.Items.Refresh();
+			xaml_VerticalScroll.Minimum = 0;
+			xaml_VerticalScroll.Maximum = m_totalpageheight + 4 * m_num_pages;
 		}
 
 		private void ThumbsProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -2434,12 +2806,29 @@ namespace gsview
 			m_textptrs[pagenum] = temp;
 		}
 
+		private int GetVisibleRange()
+		{
+			/* Need to figure out what pages are going to be visible */
+			double bottom = this.ActualHeight;
+			bool done = false;
+			int final_page = m_currpage;
+			double count = 0;
+
+			while (!done)
+			{
+				count = count + m_thumbnails[final_page].NativeHeight * m_doczoom;
+				final_page = final_page + 1;
+				if (final_page == m_num_pages || count > bottom)
+					done = true;
+			}
+			return final_page;
+		}
+
 		/* Only visible pages */
 		private void LinksOff()
 		{
-			int range = (int)Math.Ceiling(((double)m_numpagesvisible - 1.0) / 2.0);
-
-			for (int kk = m_currpage - range; kk <= m_currpage + range; kk++)
+			int final_page = GetVisibleRange();
+			for (int kk = m_currpage - 1; kk <= final_page + 1; kk++)
 			{
 				var temp = m_docPages[kk].LinkBox;
 				if (temp != null)
@@ -2452,9 +2841,8 @@ namespace gsview
 		/* Only visible pages */
 		private void LinksOn()
 		{
-			int range = (int)Math.Ceiling(((double)m_numpagesvisible - 1.0) / 2.0);
-
-			for (int kk = m_currpage - range; kk <= m_currpage + range; kk++)
+			int final_page = GetVisibleRange();
+			for (int kk = m_currpage - 1; kk <= final_page + 1; kk++)
 			{
 				if (!(kk < 0 || kk > m_num_pages - 1))
 				{
@@ -2506,7 +2894,7 @@ namespace gsview
 				{
 					if (m_currpage != link.PageNum && link.PageNum >= 0 &&
 						link.PageNum < m_num_pages)
-						RenderRange(link.PageNum, true);
+						RenderRange(link.PageNum, true, false, 0);
 				}
 				else if (link.Type == Link_t.LINK_URI)
 					System.Diagnostics.Process.Start(link.Urilink.AbsoluteUri);
@@ -2599,7 +2987,7 @@ namespace gsview
 			if (page.Content != Page_Content_t.FULL_RESOLUTION ||
 				page.Zoom != m_doczoom)
 			{
-				RenderRange(page.PageNum, false);
+				RenderRange(page.PageNum, false, false, 0);
 			}
 
 			UpdateSelection(pos, page);
@@ -3126,6 +3514,13 @@ namespace gsview
 			}
 		}
 
+		private void ResetScroll()
+		{
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer != null)
+				viewer.ScrollToVerticalOffset(0);
+		}
+
 		/* Recursive call to find the scroll viewer */
 		private ScrollViewer FindScrollViewer(DependencyObject d)
 		{
@@ -3501,7 +3896,7 @@ namespace gsview
 			for (int kk = 1; kk < m_num_pages; kk++)
 			{
 				if (!m_textset[kk])
-					RenderRange(kk, false);
+					RenderRange(kk, false, false, 0);
 				var page = m_docPages[kk];
 				Point pos = new Point();
 				pos.X = page.Width;
@@ -3548,6 +3943,56 @@ namespace gsview
 		private void SaveXML(object sender, RoutedEventArgs e)
 		{
 
+		}
+
+		private void CloseFile(object sender, RoutedEventArgs e)
+		{
+			CleanUp();
+			DimSelections();
+		}
+
+		/* Due to the scroll viewer being wonky on its updating during zooming
+		 * we have to do this */
+		private void VerticalScroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
+		{
+			var mi = sender as System.Windows.Controls.Primitives.ScrollBar;
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer == null || mi == null)
+				return;
+
+			if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.EndScroll)
+			{
+				/* figure out where we are percent wise */
+				double perc = mi.Value / mi.Maximum;
+				/* Get the page that we are in.  This needs to be cleaned
+					up to handle docs with variable page sizes and to acount
+					for being partially in page */
+				double step = 100.0 / m_num_pages;
+				int page_num = (int) Math.Floor(perc * 100.0 / step);
+				if (page_num > m_num_pages - 1)
+					page_num = m_num_pages - 1;
+
+				m_ignorescrollchange = true;
+				RenderRange(page_num, true, false, 0);
+			}
+			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.SmallDecrement)
+			{
+				double curr_value = viewer.VerticalOffset;
+				viewer.ScrollToVerticalOffset(curr_value - 48);
+			}
+			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.SmallIncrement)
+			{
+				double curr_value = viewer.VerticalOffset;
+				viewer.ScrollToVerticalOffset(curr_value + 48);
+			}
+			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.LargeDecrement)
+			{
+				OnBackPageClick(null, null);
+			}
+			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.LargeIncrement)
+			{
+				OnForwardPageClick(null, null);
+			}
 		}
 	}
 }
