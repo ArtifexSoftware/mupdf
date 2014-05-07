@@ -987,8 +987,6 @@ frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			info();
 			return 0;
 		}
-		if (wParam == SC_MAXIMIZE)
-			gapp.shrinkwrap = 0;
 		break;
 
 	case WM_SIZE:
@@ -999,6 +997,8 @@ frameproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		GetClientRect(hwnd, &rect);
 		MoveWindow(hwndview, rect.left, rect.top,
 		rect.right-rect.left, rect.bottom-rect.top, TRUE);
+		if (wParam == SIZE_MAXIMIZED)
+			gapp.shrinkwrap = 0;
 		return 0;
 	}
 
