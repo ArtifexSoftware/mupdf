@@ -36,6 +36,8 @@ EXTERN_C SYMBOL_DECLSPEC int __stdcall mTextSearchPage(void *ctx, int page_num, 
 EXTERN_C SYMBOL_DECLSPEC bool __stdcall mGetTextSearchItem(int k, double *top_x, double
 	*top_y, double *height, double *width);
 EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseTextSearch();
+EXTERN_C SYMBOL_DECLSPEC char* __stdcall mGetVers();
+
 
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetLinksPage(void *ctx, int page_num);
 EXTERN_C SYMBOL_DECLSPEC char* __stdcall mGetLinkItem(int k, double *top_x, double

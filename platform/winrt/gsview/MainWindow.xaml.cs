@@ -3932,7 +3932,15 @@ namespace gsview
 
 		private void OnAboutClick(object sender, RoutedEventArgs e)
 		{
-
+			String muversion;
+			About about = new About(this);
+			var desc = about.VariableDescription;
+			/* Get our gs and mupdf version numbers to add to the description */
+			mu_doc.GetVersion(out muversion);
+			String gs_vers = m_ghostscript.GetVersion();
+			desc = desc + "\nBuilt with MuPDF Version " + muversion + "\nGhostscript DLL: " + gs_vers;
+			about.VariableDescription = desc;
+			about.ShowDialog();
 		}
 
 		private void OnHelpClick(object sender, RoutedEventArgs e)

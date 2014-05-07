@@ -214,6 +214,12 @@ namespace gsview
 		public static extern int mSavePage(IntPtr ctx, String outfile, 
 			int page_num, int res, int type, bool append);
 
+		/* The managed code Marshal actually releases the allocated string from C */
+		[DllImport("mupdfnet.dll", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		[return: MarshalAs(UnmanagedType.LPStr)]
+		public static extern string mGetVers();
+
 		public status_t Initialize()
 		{
 			mu_object = mInitialize();
@@ -234,6 +240,11 @@ namespace gsview
 				lock(m_lock)
 					mCleanUp(mu_object);
 			}
+		}
+
+		public void GetVersion(out String vers)
+		{
+			vers = mGetVers();
 		}
 
 		public int GetPageCount()

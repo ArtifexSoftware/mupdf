@@ -189,6 +189,20 @@ SYMBOL_DECLSPEC int __stdcall mGetLinksPage(void *ctx, int page_num)
 	return mu_ctx->GetLinks(page_num, gLinkResults);
 }
 
+SYMBOL_DECLSPEC char* __stdcall mGetVers()
+{
+	int len = strlen(FZ_VERSION);
+	char* retstr = NULL;
+
+	if (len > 0)
+	{
+		/* This allocation ensures that Marshal will release in the managed code */
+		retstr = (char*)::CoTaskMemAlloc(len + 1);
+		strcpy(retstr, FZ_VERSION);
+	}
+	return retstr;
+}
+
 SYMBOL_DECLSPEC char* __stdcall mGetLinkItem(int k, double *top_x, double
 	*top_y, double *height, double *width, int *topage, int *type)
 {

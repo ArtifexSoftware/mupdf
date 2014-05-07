@@ -128,12 +128,12 @@ namespace gsview
 	}
 
 	/* from gs */
-	struct gsapi_revision_t 
+	public struct gsapi_revision_t 
 	{
-		IntPtr product;
-		IntPtr copyright;
-		long revision;
-		long revisiondate;
+		public IntPtr product;
+		public IntPtr copyright;
+		public int revision;
+		public int revisiondate;
 	}
 
 	public enum gsEncoding {
@@ -155,7 +155,6 @@ namespace gsview
 		public const int GS_READ_BUFFER = 32768;
 	}
 
-
 	[SuppressUnmanagedCodeSecurity]
 	class ghostsharp
 	{
@@ -166,7 +165,7 @@ namespace gsview
 		/* Ghostscript API */
 		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_revision(IntPtr stuct, int size);
+		public static extern int gsapi_revision(ref gsapi_revision_t vers, int size);
 
 		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
@@ -737,6 +736,29 @@ namespace gsview
 				return gsStatus.GS_BUSY;
 			else
 				return gsStatus.GS_READY;
+		}
+
+		public String GetVersion()
+		{
+			gsapi_revision_t vers;
+			vers.copyright = IntPtr.Zero;
+			vers.product = IntPtr.Zero;
+			vers.revision = 0;
+			vers.revisiondate = 0;
+			int size = System.Runtime.InteropServices.Marshal.SizeOf(vers);
+
+			if (gsapi_revision(ref vers, size) == 0)
+			{
+				String product = Marshal.PtrToStringAnsi(vers.product);
+				String output;
+				int major = vers.revision / 100;
+				int minor = vers.revision - major * 100;
+				String versnum = major + "." + minor;
+				output = product + " " + versnum;
+				return output;
+			}
+			else
+				return null;
 		}
 
 		private gsStatus RunGhostscript(gsParams_t Params)
