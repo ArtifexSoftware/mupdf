@@ -279,20 +279,15 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 		tile = fz_load_jxr(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
 	case FZ_IMAGE_JPEG:
-		/* Scan JPEG stream and patch missing width/height values in header */
+		/* Scan JPEG stream and patch missing height values in header */
 		{
 			unsigned char *d = image->buffer->buffer->data;
 			unsigned char *e = d + image->buffer->buffer->len;
 			for (d += 2; d + 9 < e && d[0] == 0xFF; d += (d[2] << 8 | d[3]) + 2)
 			{
-				if (d[1] < 0xC0 || 0xC3 < d[1])
+				if (d[1] < 0xC0 || (0xC3 < d[1] && d[1] < 0xC9) || 0xCB < d[1])
 					continue;
-				if (d[7] == 0xFF && d[8] == 0xFF)
-				{
-					d[7] = (image->w >> 8) & 0xFF;
-					d[8] = image->w & 0xFF;
-				}
-				if (d[5] == 0xFF && d[6] == 0xFF)
+				if ((d[5] == 0 && d[6] == 0) || ((d[5] << 8) | d[6]) > image->h)
 				{
 					d[5] = (image->h >> 8) & 0xFF;
 					d[6] = image->h & 0xFF;
