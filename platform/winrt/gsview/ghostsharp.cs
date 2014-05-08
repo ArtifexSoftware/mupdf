@@ -210,6 +210,251 @@ namespace gsview
 		public static extern void gsapi_run_string_end(IntPtr instance,
 			int usererr, ref int exitcode);
 
+
+		/* In case the DLL is not found we need to wrap the methods up with
+		 * a try/catch */
+		private int tc_gsapi_revision(ref gsapi_revision_t vers, int size)
+		{
+			int code = 0;
+			try
+			{
+				code = gsapi_revision(ref vers, size);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return code;
+		}
+
+		private int tc_gsapi_new_instance(out IntPtr pinstance, IntPtr caller_handle)
+		{
+			int code = 0;
+			pinstance = IntPtr.Zero;
+			try
+			{
+				code = gsapi_new_instance(out pinstance, caller_handle);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return code;
+		}
+
+		private int tc_gsapi_delete_instance(IntPtr instance)
+		{
+			try
+			{
+				gsapi_delete_instance(instance);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return 0;
+		}
+
+		private int tc_gsapi_init_with_args(IntPtr instance, int argc, IntPtr argv)
+		{
+			int code;
+			try
+			{
+				code = gsapi_init_with_args(instance, argc, argv);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return code;
+		}
+
+		private int tc_gsapi_exit(IntPtr instance)
+		{
+			int code;
+			try
+			{
+				code = gsapi_exit(instance);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return code;
+		}
+
+		private int tc_gsapi_set_arg_encoding(IntPtr instance, int encoding)
+		{
+			int code;
+			try
+			{
+				code = gsapi_set_arg_encoding(instance, encoding);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return code;
+		}
+
+		private int tc_gsapi_set_stdio(IntPtr instance, gsStdIOHandler stdin, 
+			gsStdIOHandler stdout, gsStdIOHandler stderr)
+		{
+			int code;
+			try
+			{
+				code = gsapi_set_stdio(instance, stdin, stdout, stderr);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return code;
+		}
+
+		private int tc_gsapi_run_string_begin(IntPtr instance, int usererr, 
+			ref int exitcode)
+		{
+			try
+			{
+				gsapi_run_string_begin(instance, usererr, ref exitcode);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return 0;
+		}
+
+		private int tc_gsapi_run_string_continue(IntPtr instance, IntPtr command, 
+			int count, int usererr, ref int exitcode)
+		{
+			try
+			{
+				gsapi_run_string_continue(instance, command, count, usererr, 
+					ref exitcode);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return 0;
+		}
+
+		private int tc_gsapi_run_string_end(IntPtr instance, int usererr, 
+			ref int exitcode)
+		{
+			try
+			{
+				gsapi_run_string_end(instance, usererr, ref exitcode);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String output = "DllNotFoundException: Ghostscript DLL not found";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String output = "BadImageFormatException: Incorrect Ghostscript DLL";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+			return 0;
+		}
+
 		private int StdInCallback(IntPtr handle, IntPtr pointer, int count)
 		{
 			String output = Marshal.PtrToStringAnsi(pointer);
@@ -277,6 +522,8 @@ namespace gsview
 		BackgroundWorker m_worker;
 		gsParams_t m_params;
 		/* Callbacks to Main */
+		internal delegate void gsDLLProblem(object gsObject, String mess);
+		internal event gsDLLProblem gsDLLProblemMain;
 		internal delegate void gsIOCallBackMain(object gsObject, String mess, int len);
 		internal event gsIOCallBackMain gsIOUpdateMain;
 		internal delegate void gsCallBackMain(object gsObject, gsEventArgs info);
@@ -337,7 +584,7 @@ namespace gsview
 			GCHandle argPtrsStable;
 
 			/* New instance */
-			int code = gsapi_new_instance(out gsInstance, IntPtr.Zero);
+			int code = tc_gsapi_new_instance(out gsInstance, IntPtr.Zero);
 			if (code < 0)
 			{
 				gsparams.result = GS_Result_t.gsFAILED;
@@ -354,9 +601,9 @@ namespace gsview
 			var stdErrPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdErrCallback);
 
 			// Setup stdio callback functions
-			code = gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback); 
+			code = tc_gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback);
 
-			code = gsapi_set_arg_encoding(gsInstance, (int) gsEncoding.GS_ARG_ENCODING_UTF8);
+			code = tc_gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 
 			if (code == 0)
 			{
@@ -446,7 +693,7 @@ namespace gsview
 					/* Also stick the array of pointers into memory that will not be GCd */
 					argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
-					code = gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+					code = tc_gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 
 					/* All the pinned items need to be freed so the GC can do its job */
 					for (int k = 0; k < num_params; k++)
@@ -462,7 +709,7 @@ namespace gsview
 				}
 			}
 
-			int code1 = gsapi_exit(gsInstance);
+			int code1 = tc_gsapi_exit(gsInstance);
 			if ((code == 0) || (code == gsConstants.E_QUIT))
 				code = code1;
 
@@ -470,7 +717,7 @@ namespace gsview
 			RaiseStdOutCallback = null;
 			RaiseStdErrCallback = null;
 
-			gsapi_delete_instance(gsInstance);
+			tc_gsapi_delete_instance(gsInstance);
 			if ((code == 0) || (code == gsConstants.E_QUIT))
 			{
 				gsparams.result = GS_Result_t.gsOK;
@@ -508,7 +755,7 @@ namespace gsview
 			var fs = new FileStream(in_file, FileMode.Open);
 			var len = (int) fs.Length;
 			/* New instance */
-			int code = gsapi_new_instance(out gsInstance, IntPtr.Zero);
+			int code = tc_gsapi_new_instance(out gsInstance, IntPtr.Zero);
 			if (code < 0)
 			{
 				Params.result = GS_Result_t.gsFAILED;
@@ -525,9 +772,9 @@ namespace gsview
 			var stdErrPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdErrCallback);
 
 			// Setup stdio callback functions
-			code = gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback); 
+			code = tc_gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback);
 
-			code = gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+			code = tc_gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 
 			if (code == 0)
 			{
@@ -567,7 +814,7 @@ namespace gsview
 				/* Also stick the array of pointers into memory that will not be GCd */
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
-				code = gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
+				code = tc_gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 
 				/* First pin the data buffer */
 				Feed = GCHandle.Alloc(Buffer, GCHandleType.Pinned);
@@ -581,10 +828,10 @@ namespace gsview
 					double perc;
 					int total = 0;
 
-					gsapi_run_string_begin(gsInstance, 0, ref exitcode);
+					tc_gsapi_run_string_begin(gsInstance, 0, ref exitcode);
 					while ((count = fs.Read(Buffer, 0, gsConstants.GS_READ_BUFFER)) > 0)
 					{
-						gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
+						tc_gsapi_run_string_continue(gsInstance, FeedPtr, count, 0, ref exitcode);
 						if (exitcode < 0)
 						{
 							code = exitcode;
@@ -599,7 +846,7 @@ namespace gsview
 							break;
 						}
 					}
-					gsapi_run_string_end(gsInstance, 0, ref exitcode);
+					tc_gsapi_run_string_end(gsInstance, 0, ref exitcode);
 					if (code == 0)
 						code = exitcode;
 				}
@@ -613,11 +860,11 @@ namespace gsview
 				Feed.Free();
 			}
 
-			int code1 = gsapi_exit(gsInstance);
+			int code1 = tc_gsapi_exit(gsInstance);
 			if ((code == 0) || (code == gsConstants.E_QUIT))
 				code = code1;
 
-			gsapi_delete_instance(gsInstance);
+			tc_gsapi_delete_instance(gsInstance);
 			if ((code == 0) || (code == gsConstants.E_QUIT))
 			{
 				Params.result = GS_Result_t.gsOK;
@@ -747,7 +994,7 @@ namespace gsview
 			vers.revisiondate = 0;
 			int size = System.Runtime.InteropServices.Marshal.SizeOf(vers);
 
-			if (gsapi_revision(ref vers, size) == 0)
+			if (tc_gsapi_revision(ref vers, size) == 0)
 			{
 				String product = Marshal.PtrToStringAnsi(vers.product);
 				String output;

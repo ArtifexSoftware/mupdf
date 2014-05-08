@@ -258,6 +258,7 @@ namespace gsview
 				m_outputintents = new OutputIntent();
 				m_outputintents.Activate();
 				m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
+				m_ghostscript.gsDLLProblemMain += new ghostsharp.gsDLLProblem(gsDLL);
 				m_convertwin = null;
 				m_extractwin = null;
 				m_selection = null;
@@ -1196,6 +1197,11 @@ namespace gsview
 				 * we just want to make sure we can release the bitmaps */
 				//doc_page.PageRefresh();
 			}
+		}
+
+		private void gsDLL(object gsObject, String mess)
+		{
+			ShowMessage(NotifyType_t.MESS_STATUS, mess);
 		}
 
 		private void gsIO(object gsObject, String mess, int len)
@@ -3934,12 +3940,17 @@ namespace gsview
 		{
 			String muversion;
 			About about = new About(this);
-			var desc = about.VariableDescription;
+			var desc_static = about.Description;
+			String desc;
+
 			/* Get our gs and mupdf version numbers to add to the description */
 			mu_doc.GetVersion(out muversion);
 			String gs_vers = m_ghostscript.GetVersion();
-			desc = desc + "\nBuilt with MuPDF Version " + muversion + "\nGhostscript DLL: " + gs_vers;
-			about.VariableDescription = desc;
+			if (gs_vers == null)
+				desc = desc_static + "\nBuilt with MuPDF Version " + muversion + "\nGhostscript DLL: Not Found";
+			else
+				desc = desc_static + "\nBuilt with MuPDF Version " + muversion + "\nGhostscript DLL: " + gs_vers;
+			about.description.Text = desc;
 			about.ShowDialog();
 		}
 

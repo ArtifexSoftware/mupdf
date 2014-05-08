@@ -264,11 +264,6 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="AboutLogo.png">
-      <SubType>Image</SubType>
-    </Resource>
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\banner.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

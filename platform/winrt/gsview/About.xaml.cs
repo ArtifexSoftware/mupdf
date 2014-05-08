@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
 using System.Xml;
+using System.ComponentModel;
 
 namespace gsview
 {
@@ -19,13 +20,8 @@ namespace gsview
 		protected About()
 		{
 			InitializeComponent();
-			InitDescription();
 		}
 
-		private void InitDescription()
-		{
-			VariableDescription = CalculatePropertyValue<AssemblyDescriptionAttribute>(propertyNameDescription, xPathDescription);
-		}
 
 		/// <summary>
 		/// Constructor that takes a parent for this About dialog.
@@ -54,8 +50,8 @@ namespace gsview
 
 		#region AboutData Provider
 		#region Member data
-		public String VariableDescription;
 		private XmlDocument xmlDoc = null;
+		private string variabledescription;
 		private const string propertyNameTitle = "Title";
 		private const string propertyNameDescription = "Description";
 		private const string propertyNameProduct = "Product";
@@ -118,7 +114,13 @@ namespace gsview
 		/// </summary>
 		public string Description
 		{
-			get { return VariableDescription; }
+			get { return CalculatePropertyValue<AssemblyDescriptionAttribute>(propertyNameDescription, xPathDescription);}
+		}
+
+		public string VariableDescription
+		{
+			get;
+			set;
 		}
 
 		/// <summary>
