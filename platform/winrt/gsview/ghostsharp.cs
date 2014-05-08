@@ -163,62 +163,113 @@ namespace gsview
 			int len);
 
 		/* Ghostscript API */
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_revision", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_revision(ref gsapi_revision_t vers, int size);
+		private static extern int gsapi_revision64(ref gsapi_revision_t vers, int size);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint="gsapi_new_instance", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_new_instance(out IntPtr pinstance, 
+		private static extern int gsapi_new_instance64(out IntPtr pinstance, 
 			IntPtr caller_handle);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_delete_instance", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern void gsapi_delete_instance(IntPtr instance);
+		private static extern void gsapi_delete_instance64(IntPtr instance);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_init_with_args", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_init_with_args(IntPtr instance, int argc, 
+		private static extern int gsapi_init_with_args64(IntPtr instance, int argc, 
 			IntPtr argv);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_exit", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_exit(IntPtr instance);
+		private static extern int gsapi_exit64(IntPtr instance);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_set_arg_encoding", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int gsapi_set_arg_encoding(IntPtr instance, 
+		private static extern int gsapi_set_arg_encoding64(IntPtr instance, 
 			int encoding);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_set_stdio", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-			public static extern int gsapi_set_stdio(IntPtr instance, 
+		private static extern int gsapi_set_stdio64(IntPtr instance, 
 			gsStdIOHandler stdin, gsStdIOHandler stdout, gsStdIOHandler stderr);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_run_string_begin", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern void gsapi_run_string_begin(IntPtr instance,
+		private static extern void gsapi_run_string_begin64(IntPtr instance,
 			int usererr, ref int exitcode);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_run_string_continue", CharSet = CharSet.Ansi,
 		CallingConvention = CallingConvention.StdCall)]
-		public static extern void gsapi_run_string_continue(IntPtr instance, 
+		private static extern void gsapi_run_string_continue64(IntPtr instance, 
 			IntPtr command, int count, int usererr, ref int exitcode);
 
-		[DllImport("gsdll64.dll", CharSet = CharSet.Ansi,
+		[DllImport("gsdll64.dll", EntryPoint = "gsapi_run_string_end", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern void gsapi_run_string_end(IntPtr instance,
+		private static extern void gsapi_run_string_end64(IntPtr instance,
 			int usererr, ref int exitcode);
 
+		/* 32 Bit DLL */
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_revision", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int gsapi_revision32(ref gsapi_revision_t vers, int size);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_new_instance", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int gsapi_new_instance32(out IntPtr pinstance,
+			IntPtr caller_handle);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_delete_instance", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void gsapi_delete_instance32(IntPtr instance);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_init_with_args", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int gsapi_init_with_args32(IntPtr instance, int argc,
+			IntPtr argv);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_exit", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int gsapi_exit32(IntPtr instance);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_set_arg_encoding", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int gsapi_set_arg_encoding32(IntPtr instance,
+			int encoding);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_set_stdio", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int gsapi_set_stdio32(IntPtr instance,
+		gsStdIOHandler stdin, gsStdIOHandler stdout, gsStdIOHandler stderr);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_run_string_begin", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void gsapi_run_string_begin32(IntPtr instance,
+			int usererr, ref int exitcode);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_run_string_continue", CharSet = CharSet.Ansi,
+		CallingConvention = CallingConvention.StdCall)]
+		private static extern void gsapi_run_string_continue32(IntPtr instance,
+			IntPtr command, int count, int usererr, ref int exitcode);
+
+		[DllImport("gsdll32.dll", EntryPoint = "gsapi_run_string_end", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void gsapi_run_string_end32(IntPtr instance,
+			int usererr, ref int exitcode);
 
 		/* In case the DLL is not found we need to wrap the methods up with
-		 * a try/catch */
+		 * a try/catch.  Also select 32 or 64 bit DLL at this time.  This 
+		 * C# code is compiled as ANYCPU type */
 		private int tc_gsapi_revision(ref gsapi_revision_t vers, int size)
 		{
 			int code = 0;
 			try
 			{
-				code = gsapi_revision(ref vers, size);
+				if (is64bit)
+					code = gsapi_revision64(ref vers, size);
+				else
+					code = gsapi_revision32(ref vers, size);
 			}
 			catch (DllNotFoundException)
 			{
@@ -243,7 +294,10 @@ namespace gsview
 			pinstance = IntPtr.Zero;
 			try
 			{
-				code = gsapi_new_instance(out pinstance, caller_handle);
+				if (is64bit)
+					code = gsapi_new_instance64(out pinstance, caller_handle);
+				else
+					code = gsapi_new_instance32(out pinstance, caller_handle);
 			}
 			catch (DllNotFoundException)
 			{
@@ -266,7 +320,10 @@ namespace gsview
 		{
 			try
 			{
-				gsapi_delete_instance(instance);
+				if (is64bit)
+					gsapi_delete_instance64(instance);
+				else
+					gsapi_delete_instance32(instance);
 			}
 			catch (DllNotFoundException)
 			{
@@ -290,7 +347,10 @@ namespace gsview
 			int code;
 			try
 			{
-				code = gsapi_init_with_args(instance, argc, argv);
+				if (is64bit)
+					code = gsapi_init_with_args64(instance, argc, argv);
+				else
+					code = gsapi_init_with_args32(instance, argc, argv);
 			}
 			catch (DllNotFoundException)
 			{
@@ -314,7 +374,10 @@ namespace gsview
 			int code;
 			try
 			{
-				code = gsapi_exit(instance);
+				if (is64bit)
+					code = gsapi_exit64(instance);
+				else
+					code = gsapi_exit32(instance);
 			}
 			catch (DllNotFoundException)
 			{
@@ -338,7 +401,10 @@ namespace gsview
 			int code;
 			try
 			{
-				code = gsapi_set_arg_encoding(instance, encoding);
+				if (is64bit)
+					code = gsapi_set_arg_encoding64(instance, encoding);
+				else
+					code = gsapi_set_arg_encoding32(instance, encoding);
 			}
 			catch (DllNotFoundException)
 			{
@@ -363,7 +429,10 @@ namespace gsview
 			int code;
 			try
 			{
-				code = gsapi_set_stdio(instance, stdin, stdout, stderr);
+				if (is64bit)
+					code = gsapi_set_stdio64(instance, stdin, stdout, stderr);
+				else
+					code = gsapi_set_stdio32(instance, stdin, stdout, stderr);
 			}
 			catch (DllNotFoundException)
 			{
@@ -387,7 +456,10 @@ namespace gsview
 		{
 			try
 			{
-				gsapi_run_string_begin(instance, usererr, ref exitcode);
+				if (is64bit)
+					gsapi_run_string_begin64(instance, usererr, ref exitcode);
+				else
+					gsapi_run_string_begin32(instance, usererr, ref exitcode);
 			}
 			catch (DllNotFoundException)
 			{
@@ -411,8 +483,12 @@ namespace gsview
 		{
 			try
 			{
-				gsapi_run_string_continue(instance, command, count, usererr, 
-					ref exitcode);
+				if (is64bit)
+					gsapi_run_string_continue64(instance, command, count, usererr,
+						ref exitcode);
+				else
+					gsapi_run_string_continue32(instance, command, count, usererr,
+						ref exitcode);
 			}
 			catch (DllNotFoundException)
 			{
@@ -436,7 +512,10 @@ namespace gsview
 		{
 			try
 			{
-				gsapi_run_string_end(instance, usererr, ref exitcode);
+				if (is64bit)
+					gsapi_run_string_end64(instance, usererr, ref exitcode);
+				else
+					gsapi_run_string_end32(instance, usererr, ref exitcode);
 			}
 			catch (DllNotFoundException)
 			{
@@ -520,6 +599,7 @@ namespace gsview
 
 		IntPtr gsInstance;
 		BackgroundWorker m_worker;
+		bool is64bit;
 		gsParams_t m_params;
 		/* Callbacks to Main */
 		internal delegate void gsDLLProblem(object gsObject, String mess);
@@ -531,6 +611,8 @@ namespace gsview
 
 		public ghostsharp()
 		{
+			/* Determine now if we are 64 or 32 bit */
+			is64bit = EnvironmentCheck.IS64Bit;
 			m_worker = null;
 			gsInstance = IntPtr.Zero;
 		}
@@ -1044,6 +1126,51 @@ namespace gsview
 		public void Cancel()
 		{
 			m_worker.CancelAsync();
+		}
+	}
+
+	/* We need to determine if we are a 64 bit or 32 bit process. In .NET 4+
+	 * there is a simple check, Environment.Is64BitProcess. I don't want to
+	 * rely upon having that new of version. Hence, the following */
+	public static class EnvironmentCheck
+	{
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct SYSTEM_INFO
+		{
+			public ushort processorArchitecture;
+			ushort reserved;
+			public uint pageSize;
+			public IntPtr minimumApplicationAddress;
+			public IntPtr maximumApplicationAddress;
+			public IntPtr activeProcessorMask;
+			public uint numberOfProcessors;
+			public uint processorType;
+			public uint allocationGranularity;
+			public ushort processorLevel;
+			public ushort processorRevision;
+		}
+
+		[DllImport("kernel32.dll")]
+		internal static extern void GetNativeSystemInfo(ref SYSTEM_INFO si);
+		[DllImport("kernel32.dll")]
+		internal static extern bool IsWow64Process(IntPtr handle, out bool result);
+		[DllImport("kernel32.dll")]
+		internal static extern IntPtr GetCurrentProcess();
+
+		public static bool IS64Bit
+		{
+			get
+			{
+				SYSTEM_INFO si = new SYSTEM_INFO();
+				GetNativeSystemInfo(ref si);
+				if (si.processorArchitecture == 0)   // zero meaning x86 (check the docs)
+					return false;
+				// 64 bit OS, is it a 64 bit process?
+				bool result;
+				if (!IsWow64Process(GetCurrentProcess(), out result))
+					throw new InvalidOperationException();
+				return !result;
+			}
 		}
 	}
 }
