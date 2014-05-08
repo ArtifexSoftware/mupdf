@@ -127,6 +127,7 @@ static class Constants
 	public const int DISPATCH_TIME = 50;
 	public const int SCROLL_STEP = 10;
 	public const int SCROLL_EDGE_BUFFER = 90;
+	public const int VERT_SCROLL_STEP = 48;
 }
 
 public static class DocumentTypes
@@ -404,6 +405,7 @@ namespace gsview
 				Console.WriteLine("Memory allocation failed during clean up\n");
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
 			}
+			mu_doc.mupdfDLLProblemMain += new mudocument.mupdfDLLProblem(muDLL);
 			status_t result = mu_doc.Initialize();
 			mu_doc.mupdfUpdateMain += new mudocument.mupdfCallBackMain(mupdfUpdate);
 
@@ -1202,6 +1204,17 @@ namespace gsview
 		private void gsDLL(object gsObject, String mess)
 		{
 			ShowMessage(NotifyType_t.MESS_STATUS, mess);
+		}
+
+		/* Catastrophic */
+		private void muDLL(object gsObject, String mess)
+		{
+			ShowMessage(NotifyType_t.MESS_ERROR, mess);
+			/* Disable even the ability to open a file */
+			xaml_open.Opacity = 0.5;
+			xaml_open.IsEnabled = false;
+			xaml_file.Opacity = 0.5;
+			xaml_file.IsEnabled = false;
 		}
 
 		private void gsIO(object gsObject, String mess, int len)
@@ -3945,11 +3958,15 @@ namespace gsview
 
 			/* Get our gs and mupdf version numbers to add to the description */
 			mu_doc.GetVersion(out muversion);
+			if (muversion == null)
+				desc = desc_static + "\nMuPDF DLL: Not Found";
+			else
+				desc = desc_static + "\nUsing MuPDF Version " + muversion;
 			String gs_vers = m_ghostscript.GetVersion();
 			if (gs_vers == null)
-				desc = desc_static + "\nBuilt with MuPDF Version " + muversion + "\nGhostscript DLL: Not Found";
+				desc = desc + "\nGhostscript DLL: Not Found";
 			else
-				desc = desc_static + "\nBuilt with MuPDF Version " + muversion + "\nGhostscript DLL: " + gs_vers;
+				desc = desc + "\nGhostscript DLL: " + gs_vers;
 			about.description.Text = desc;
 			about.ShowDialog();
 		}
@@ -3997,12 +4014,12 @@ namespace gsview
 			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.SmallDecrement)
 			{
 				double curr_value = viewer.VerticalOffset;
-				viewer.ScrollToVerticalOffset(curr_value - 48);
+				viewer.ScrollToVerticalOffset(curr_value - Constants.VERT_SCROLL_STEP);
 			}
 			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.SmallIncrement)
 			{
 				double curr_value = viewer.VerticalOffset;
-				viewer.ScrollToVerticalOffset(curr_value + 48);
+				viewer.ScrollToVerticalOffset(curr_value + Constants.VERT_SCROLL_STEP);
 			}
 			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.LargeDecrement)
 			{

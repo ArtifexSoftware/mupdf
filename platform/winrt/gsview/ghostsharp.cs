@@ -14,7 +14,6 @@ namespace gsview
 	 * psdrgb do not support multiple pages.  Those including psdrgb do 
 	 * support multiple pages.  This is used in the conversion process.
 	 * Also note that mupdf devices go at the beginning of the list */
-
 	public enum gsDevice_t
 	{
 		svg, 
@@ -162,6 +161,7 @@ namespace gsview
 		public delegate int gsStdIOHandler(IntPtr caller_handle, IntPtr buffer, 
 			int len);
 
+		#region DLLInterface
 		/* Ghostscript API */
 		[DllImport("gsdll64.dll", EntryPoint = "gsapi_revision", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
@@ -257,7 +257,9 @@ namespace gsview
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern void gsapi_run_string_end32(IntPtr instance,
 			int usererr, ref int exitcode);
+		#endregion DLLInterface
 
+		#region DLLErrorCatch
 		/* In case the DLL is not found we need to wrap the methods up with
 		 * a try/catch.  Also select 32 or 64 bit DLL at this time.  This 
 		 * C# code is compiled as ANYCPU type */
@@ -533,6 +535,7 @@ namespace gsview
 			}
 			return 0;
 		}
+		#endregion DLLErrorCatch
 
 		private int StdInCallback(IntPtr handle, IntPtr pointer, int count)
 		{
@@ -1163,10 +1166,10 @@ namespace gsview
 			{
 				SYSTEM_INFO si = new SYSTEM_INFO();
 				GetNativeSystemInfo(ref si);
-				if (si.processorArchitecture == 0)   // zero meaning x86 (check the docs)
+				if (si.processorArchitecture == 0) // zero means x86
 					return false;
-				// 64 bit OS, is it a 64 bit process?
 				bool result;
+				/* Check process */
 				if (!IsWow64Process(GetCurrentProcess(), out result))
 					throw new InvalidOperationException();
 				return !result;

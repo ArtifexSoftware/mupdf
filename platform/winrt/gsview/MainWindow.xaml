@@ -124,7 +124,7 @@
     <DockPanel LastChildFill="True">
         <!-- Menu item at top -->
         <Menu IsMainMenu="True" DockPanel.Dock="Top">
-            <MenuItem Header="_File">
+            <MenuItem Header="_File" x:Name="xaml_file">
                 <MenuItem Header="_Open..." Click="OpenFile">
                     <MenuItem.Icon>
                         <Image Source="Resources/OpenFile.png" />
@@ -234,7 +234,7 @@
         </Menu>
         <!-- List of icons for page navigation, print, etc -->
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Background="WhiteSmoke">
-            <Button  Width="20" Height="20" Click="OpenFile" Background="Transparent" BorderBrush="Transparent" Margin="10,0,0,0">
+            <Button  x:Name="xaml_open" Width="20" Height="20" Click="OpenFile" Background="Transparent" BorderBrush="Transparent" Margin="10,0,0,0">
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Grid>

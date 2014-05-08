@@ -73,164 +73,1067 @@ namespace gsview
 	[SuppressUnmanagedCodeSecurity]
 	class mudocument
 	{
+		bool is64bit;
 		IntPtr mu_object;
 		BackgroundWorker m_worker;
 		ConvertParams_t m_params;
 		/* Callbacks to Main */
-		internal delegate void mupdfCallBackMain(object gsObject, muPDFEventArgs info);
+		internal delegate void mupdfDLLProblem(object muObject, String mess);
+		internal event mupdfDLLProblem mupdfDLLProblemMain;
+		internal delegate void mupdfCallBackMain(object muObject, muPDFEventArgs info);
 		internal event mupdfCallBackMain mupdfUpdateMain;
 
 		private System.Object m_lock = new System.Object();  
 		public List<ContentItem> contents;
 
+		#region DLLInterface
 		/* The list of functions that we use to call into C interface of muctx.
 		 * Calling into C++ code from managed code is complex. Since CLR 
 		 * compiling is needed and that does not support mutex. Hence the C
 		 * interface */
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mInitialize", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern IntPtr mInitialize();
+		private static extern IntPtr mInitialize64();
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mOpenDocument", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern status_t mOpenDocument(IntPtr ctx, string filename);
+		private static extern status_t mOpenDocument64(IntPtr ctx, string filename);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mCleanUp", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern void mCleanUp(IntPtr ctx);
+		private static extern void mCleanUp64(IntPtr ctx);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetPageCount", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mGetPageCount(IntPtr ctx);
+		private static extern int mGetPageCount64(IntPtr ctx);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mRequiresPassword", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern bool mRequiresPassword(IntPtr ctx);
+		private static extern bool mRequiresPassword64(IntPtr ctx);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mApplyPassword", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern bool mApplyPassword(IntPtr ctx, string password);
+		private static extern bool mApplyPassword64(IntPtr ctx, string password);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mRenderPage", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mRenderPage(IntPtr ctx,
-			int page_num, Byte[] bmp_data, int bmp_width, 
-			int bmp_height, double scale, bool flipy);
+		private static extern int mRenderPage64(IntPtr ctx, int page_num, 
+			Byte[] bmp_data, int bmp_width, int bmp_height, double scale, 
+			bool flipy);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mMeasurePage", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mMeasurePage(IntPtr ctx, int page_num,
+		private static extern int mMeasurePage64(IntPtr ctx, int page_num,
 			ref double width, ref double height);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetContents", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mGetContents(IntPtr ctx);
+		private static extern int mGetContents64(IntPtr ctx);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mReleaseContents", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern void mReleaseContents();
+		private static extern void mReleaseContents64();
 
 		/* The managed code Marshal actually releases the allocated string from C */
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Ansi,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetContentsItem", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
 		[return: MarshalAs(UnmanagedType.LPStr)]
-		public static extern string mGetContentsItem(int k, ref int len, ref int page);
+		private static extern string mGetContentsItem64(int k, ref int len, ref int page);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mCreateDisplayList", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern IntPtr mCreateDisplayList(IntPtr ctx, int page_num,
+		private static extern IntPtr mCreateDisplayList64(IntPtr ctx, int page_num,
 				ref int page_width, ref int page_height);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mCreateDisplayListText", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern IntPtr mCreateDisplayListText(IntPtr ctx, int page_num,
+		private static extern IntPtr mCreateDisplayListText64(IntPtr ctx, int page_num,
 				ref int page_width, ref int page_height, ref IntPtr text, ref int length);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mRenderPageMT", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mRenderPageMT(IntPtr ctx, IntPtr dlist,
+		private static extern int mRenderPageMT64(IntPtr ctx, IntPtr dlist,
 			int page_width, int page_height, Byte[] bmp_data, int bmp_width, 
 			int bmp_height, double scale, bool flipy);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mTextSearchPage", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mTextSearchPage(IntPtr ctx, int page_num,
+		private static extern int mTextSearchPage64(IntPtr ctx, int page_num,
 			string needle);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetTextSearchItem", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern bool mGetTextSearchItem(int item_num, ref double top_x,
+		private static extern bool mGetTextSearchItem64(int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width);
-		
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
-			CallingConvention = CallingConvention.StdCall)]
-		public static extern void mReleaseTextSearch();
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mReleaseTextSearch", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mGetLinksPage(IntPtr ctx, int page_num);
+		private static extern void mReleaseTextSearch64();
+
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetLinksPage", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mGetLinksPage64(IntPtr ctx, int page_num);
 
 		/* The managed code Marshal actually releases the allocated string from C */
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Ansi,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetLinkItem", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
 		[return: MarshalAs(UnmanagedType.LPStr)]
-		public static extern string mGetLinkItem(int item_num, ref double top_x,
+		private static extern string mGetLinkItem64(int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width, ref int topage, 
 			ref int type);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mReleaseLink", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern void mReleaseLink();
+		private static extern void mReleaseLink64();
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mReleaseText", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern void mReleaseText(IntPtr ctx, IntPtr textpage);
+		private static extern void mReleaseText64(IntPtr ctx, IntPtr textpage);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetTextBlock", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mGetTextBlock(IntPtr textpage, int block_num,
+		private static extern int mGetTextBlock64(IntPtr textpage, int block_num,
 			ref double top_x,ref double top_y, ref double height, ref double width);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetTextLine", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mGetTextLine(IntPtr textpage, int block_num, 
+		private static extern int mGetTextLine64(IntPtr textpage, int block_num, 
 			int line_num, ref double top_x, ref double top_y, ref double height, 
 			ref double width);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetTextCharacter", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mGetTextCharacter(IntPtr textpage, int block_num, 
+		private static extern int mGetTextCharacter64(IntPtr textpage, int block_num, 
 			int line_num, int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mExtractPages", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mExtractPages(String infile, String outfile, 
+		private static extern int mExtractPages64(String infile, String outfile, 
 			String password, bool has_password, bool linearize, int num_pages, 
 			IntPtr pages);
 
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Auto,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mSavePage", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		public static extern int mSavePage(IntPtr ctx, String outfile, 
+		private static extern int mSavePage64(IntPtr ctx, String outfile, 
 			int page_num, int res, int type, bool append);
 
 		/* The managed code Marshal actually releases the allocated string from C */
-		[DllImport("mupdfnet.dll", CharSet = CharSet.Ansi,
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetVers", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
 		[return: MarshalAs(UnmanagedType.LPStr)]
-		public static extern string mGetVers();
+		private static extern string mGetVers64();
 
-		public status_t Initialize()
+		/* And the 32bit version */
+		[DllImport("mupdfnet32.dll", EntryPoint = "mInitialize", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern IntPtr mInitialize32();
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mOpenDocument", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern status_t mOpenDocument32(IntPtr ctx, string filename);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mCleanUp", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mCleanUp32(IntPtr ctx);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetPageCount", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mGetPageCount32(IntPtr ctx);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mRequiresPassword", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern bool mRequiresPassword32(IntPtr ctx);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mApplyPassword", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern bool mApplyPassword32(IntPtr ctx, string password);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mRenderPage", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mRenderPage32(IntPtr ctx, int page_num,
+			Byte[] bmp_data, int bmp_width, int bmp_height, double scale,
+			bool flipy);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mMeasurePage", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mMeasurePage32(IntPtr ctx, int page_num,
+			ref double width, ref double height);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetContents", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mGetContents32(IntPtr ctx);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mReleaseContents", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mReleaseContents32();
+
+		/* The managed code Marshal actually releases the allocated string from C */
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetContentsItem", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		[return: MarshalAs(UnmanagedType.LPStr)]
+		private static extern string mGetContentsItem32(int k, ref int len, ref int page);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mCreateDisplayList", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern IntPtr mCreateDisplayList32(IntPtr ctx, int page_num,
+				ref int page_width, ref int page_height);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mCreateDisplayListText", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern IntPtr mCreateDisplayListText32(IntPtr ctx, int page_num,
+				ref int page_width, ref int page_height, ref IntPtr text, ref int length);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mRenderPageMT", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mRenderPageMT32(IntPtr ctx, IntPtr dlist,
+			int page_width, int page_height, Byte[] bmp_data, int bmp_width,
+			int bmp_height, double scale, bool flipy);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mTextSearchPage", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mTextSearchPage32(IntPtr ctx, int page_num,
+			string needle);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetTextSearchItem", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern bool mGetTextSearchItem32(int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mReleaseTextSearch", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mReleaseTextSearch32();
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetLinksPage", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mGetLinksPage32(IntPtr ctx, int page_num);
+
+		/* The managed code Marshal actually releases the allocated string from C */
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetLinkItem", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		[return: MarshalAs(UnmanagedType.LPStr)]
+		private static extern string mGetLinkItem32(int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width, ref int topage,
+			ref int type);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mReleaseLink", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mReleaseLink32();
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mReleaseText", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mReleaseText32(IntPtr ctx, IntPtr textpage);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetTextBlock", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mGetTextBlock32(IntPtr textpage, int block_num,
+			ref double top_x, ref double top_y, ref double height, ref double width);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetTextLine", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mGetTextLine32(IntPtr textpage, int block_num,
+			int line_num, ref double top_x, ref double top_y, ref double height,
+			ref double width);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetTextCharacter", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mGetTextCharacter32(IntPtr textpage, int block_num,
+			int line_num, int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mExtractPages", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mExtractPages32(String infile, String outfile,
+			String password, bool has_password, bool linearize, int num_pages,
+			IntPtr pages);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mSavePage", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern int mSavePage32(IntPtr ctx, String outfile,
+			int page_num, int res, int type, bool append);
+
+		/* The managed code Marshal actually releases the allocated string from C */
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetVers", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		[return: MarshalAs(UnmanagedType.LPStr)]
+		private static extern string mGetVers32();
+
+		#endregion DLLInterface
+
+		#region DLLErrorTrap
+		/* And make sure we can catch any issues in finding the DLL or if we have
+		 * a 32bit 64bit issue */
+		private IntPtr tc_mInitialize()
 		{
-			mu_object = mInitialize();
-			if (mu_object == null)
+			IntPtr output;
+			try
 			{
+				if (is64bit)
+					output = mInitialize64();
+				else
+					output = mInitialize32();
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			return output;
+		}
+
+		private status_t tc_mOpenDocument(IntPtr ctx, string filename)
+		{
+			status_t output;
+			try
+			{
+				if (is64bit)
+					output = mOpenDocument64(ctx, filename);
+				else
+					output = mOpenDocument32(ctx, filename);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
 				return status_t.E_FAILURE;
 			}
-			else
+			catch (BadImageFormatException)
 			{
-				return status_t.S_ISOK;
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return status_t.E_FAILURE;
 			}
+			return output;
+		}
+
+		private int tc_mCleanUp(IntPtr ctx)
+		{
+			try
+			{
+				if (is64bit)
+					mCleanUp64(ctx);
+				else
+					mCleanUp32(ctx);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return 0;
+		}
+
+		private int tc_mGetPageCount(IntPtr ctx)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mGetPageCount64(ctx);
+				else
+					output = mGetPageCount32(ctx);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private bool tc_mRequiresPassword(IntPtr ctx)
+		{
+			bool output;
+			try
+			{
+				if (is64bit)
+					output = mRequiresPassword64(ctx);
+				else
+					output = mRequiresPassword32(ctx);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return false;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return false;
+			}
+			return output;
+		}
+		
+		private bool tc_mApplyPassword(IntPtr ctx, string password)
+		{
+			bool output;
+			try
+			{
+				if (is64bit)
+					output = mApplyPassword64(ctx, password);
+				else
+					output = mApplyPassword32(ctx, password);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return false;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return false;
+			}
+			return output;
+		}
+
+		private int tc_mRenderPage(IntPtr ctx, int page_num, Byte[] bmp_data, 
+			int bmp_width, int bmp_height, double scale, bool flipy)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mRenderPage64(ctx, page_num, bmp_data, bmp_width,
+						bmp_height, scale, flipy);
+				else
+					output = mRenderPage32(ctx, page_num, bmp_data, bmp_width,
+						bmp_height, scale, flipy);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private int tc_mMeasurePage(IntPtr ctx, int page_num, ref double width, 
+			ref double height)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mMeasurePage64(ctx, page_num, ref width, ref height);
+				else
+					output = mMeasurePage32(ctx, page_num, ref width, ref height);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+		
+		private int tc_mGetContents(IntPtr ctx)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mGetContents64(ctx);
+				else
+					output = mGetContents32(ctx);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private int tc_mReleaseContents()
+		{
+			try
+			{
+				if (is64bit)
+					mReleaseContents64();
+				else
+					mReleaseContents32();
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return 0;
+		}
+
+		private string tc_mGetContentsItem(int k, ref int len, ref int page)
+		{
+			String output;
+			try
+			{
+				if (is64bit)
+					output = mGetContentsItem64(k, ref len, ref page);
+				else
+					output = mGetContentsItem32(k, ref len, ref page);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			return output;
+		}
+
+		private IntPtr tc_mCreateDisplayList(IntPtr ctx, int page_num, 
+			ref int page_width, ref int page_height)
+		{
+			IntPtr output;
+			try
+			{
+				if (is64bit)
+					output = mCreateDisplayList64(ctx, page_num, ref page_width, 
+						ref page_height);
+				else
+					output = mCreateDisplayList32(ctx, page_num, ref page_width,
+						ref page_height);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			return output;
+		}
+
+		private IntPtr tc_mCreateDisplayListText(IntPtr ctx, int page_num,
+				ref int page_width, ref int page_height, ref IntPtr text, ref int length)
+		{
+			IntPtr output;
+			try
+			{
+				if (is64bit)
+					output = mCreateDisplayListText64(ctx, page_num, ref page_width, 
+						ref page_height, ref text, ref length);
+				else
+					output = mCreateDisplayListText32(ctx, page_num, ref page_width,
+						ref page_height, ref text, ref length);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			return output;
+		}
+
+		private int tc_mRenderPageMT(IntPtr ctx, IntPtr dlist, int page_width, 
+			int page_height, Byte[] bmp_data, int bmp_width, int bmp_height, 
+			double scale, bool flipy)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mRenderPageMT64(ctx, dlist, page_width, page_height, 
+						bmp_data, bmp_width, bmp_height, scale, flipy);
+				else
+					output = mRenderPageMT32(ctx, dlist, page_width, page_height,
+						bmp_data, bmp_width, bmp_height, scale, flipy);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private int tc_mTextSearchPage(IntPtr ctx, int page_num, string needle)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mTextSearchPage64(ctx, page_num, needle);
+				else
+					output = mTextSearchPage32(ctx, page_num, needle);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private bool tc_mGetTextSearchItem(int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width)
+		{
+			bool output;
+			try
+			{
+				if (is64bit)
+					output = mGetTextSearchItem64(item_num, ref top_x, ref top_y, 
+						ref height, ref width);
+				else
+					output = mGetTextSearchItem32(item_num, ref top_x, ref top_y,
+						ref height, ref width);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return false;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return false;
+			}
+			return output;
+		}
+
+		private int tc_mReleaseTextSearch()
+		{
+			try
+			{
+				if (is64bit)
+					mReleaseTextSearch64();
+				else
+					mReleaseTextSearch32();
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return 0;
+		}
+
+		private int tc_mGetLinksPage(IntPtr ctx, int page_num)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mGetLinksPage64(ctx, page_num);
+				else
+					output = mGetLinksPage32(ctx, page_num);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private string tc_mGetLinkItem(int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width, ref int topage,
+			ref int type)
+		{
+			String output;
+			try
+			{
+				if (is64bit)
+					output = mGetLinkItem64(item_num, ref top_x, ref top_y, ref height,
+						ref width, ref topage, ref type);
+				else
+					output = mGetLinkItem32(item_num, ref top_x, ref top_y, ref height,
+						ref width, ref topage, ref type);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			return output;
+		}
+
+		private int tc_mReleaseLink()
+		{
+			try
+			{
+				if (is64bit)
+					mReleaseLink64();
+				else
+					mReleaseLink32();
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return 0;
+		}
+
+		private int tc_mReleaseText(IntPtr ctx, IntPtr textpage)
+		{
+			try
+			{
+				if (is64bit)
+					mReleaseText64(ctx, textpage);
+				else
+					mReleaseText32(ctx, textpage);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return 0;
+		}
+
+		private int tc_mGetTextBlock(IntPtr textpage, int block_num,
+			ref double top_x, ref double top_y, ref double height, ref double width)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mGetTextBlock64(textpage, block_num, ref top_x,
+						ref top_y, ref height, ref width);
+				else
+					output = mGetTextBlock32(textpage, block_num, ref top_x,
+						ref top_y, ref height, ref width);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private int tc_mGetTextLine(IntPtr textpage, int block_num,
+			int line_num, ref double top_x, ref double top_y, ref double height,
+			ref double width)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mGetTextLine64(textpage, block_num, line_num,
+						ref top_x, ref top_y, ref height, ref width);
+				else
+					output = mGetTextLine32(textpage, block_num, line_num,
+						ref top_x, ref top_y, ref height, ref width);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private int tc_mGetTextCharacter(IntPtr textpage, int block_num,
+			int line_num, int item_num, ref double top_x,
+			ref double top_y, ref double height, ref double width)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mGetTextCharacter64(textpage, block_num, line_num,
+						item_num, ref top_x, ref top_y, ref height, ref width);
+				else
+					output = mGetTextCharacter32(textpage, block_num, line_num,
+						item_num, ref top_x, ref top_y, ref height, ref width);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private int tc_mExtractPages(String infile, String outfile,
+			String password, bool has_password, bool linearize, int num_pages,
+			IntPtr pages)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mExtractPages64(infile, outfile, password, has_password,
+						linearize, num_pages, pages);
+				else
+					output = mExtractPages32(infile, outfile, password, has_password,
+						linearize, num_pages, pages);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+
+		private string tc_mGetVers()
+		{
+			String output;
+			try
+			{
+				if (is64bit)
+					output = mGetVers64();
+				else
+					output = mGetVers32();
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			return output;
+		}
+
+		private int tc_mSavePage(IntPtr ctx, String outfile, int page_num, 
+			int res, int type, bool append)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					output = mSavePage64(ctx, outfile, page_num, res, type, append);
+				else
+					output = mSavePage32(ctx, outfile, page_num, res, type, append);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return output;
+		}
+		#endregion DLLErrorTrap
+
+		/* Now the actual code that does some work */
+		public status_t Initialize()
+		{
+			is64bit = EnvironmentCheck.IS64Bit;
+			mu_object = tc_mInitialize();
+			if (mu_object == null)
+				return status_t.E_FAILURE;
+			else
+				return status_t.S_ISOK;
 		}
 
 		public void CleanUp()
@@ -238,28 +1141,28 @@ namespace gsview
 			if (mu_object != null)
 			{
 				lock(m_lock)
-					mCleanUp(mu_object);
+					tc_mCleanUp(mu_object);
 			}
 		}
 
 		public void GetVersion(out String vers)
 		{
-			vers = mGetVers();
+			vers = tc_mGetVers();
 		}
 
 		public int GetPageCount()
 		{
-			return mGetPageCount(mu_object);
+			return tc_mGetPageCount(mu_object);
 		}
 
 		public bool RequiresPassword()
 		{
-			return mRequiresPassword(mu_object);
+			return tc_mRequiresPassword(mu_object);
 		}
 
 		public bool ApplyPassword(String password)
 		{
-			return mApplyPassword(mu_object, password);
+			return tc_mApplyPassword(mu_object, password);
 		}
 
 		public int RenderPage(int page_num, Byte[] bmp_data, int bmp_width,
@@ -286,7 +1189,7 @@ namespace gsview
 				{
 					lock (m_lock)
 					{
-						dlist = mCreateDisplayListText(mu_object, page_num,
+						dlist = tc_mCreateDisplayListText(mu_object, page_num,
 							ref page_width, ref page_height, ref text, ref num_blocks);
 					}
 					/* If we have some text go ahead and get the bounding boxes 
@@ -306,7 +1209,7 @@ namespace gsview
 							double top_x = 0, top_y = 0, height = 0, width = 0;
 							var block = new TextBlock();
 
-							int num_lines = mGetTextBlock(text, kk, ref top_x,
+							int num_lines = tc_mGetTextBlock(text, kk, ref top_x,
 								ref top_y, ref height, ref width);
 
 							block.X = top_x;
@@ -322,7 +1225,7 @@ namespace gsview
 							for (int jj = 0; jj < num_lines; jj++)
 							{
 								var line = new TextLine();
-								int num_chars = mGetTextLine(text, kk, jj, ref top_x,
+								int num_chars = tc_mGetTextLine(text, kk, jj, ref top_x,
 									ref top_y, ref height, ref width);
 								line.X = top_x;
 								line.Y = top_y;
@@ -336,7 +1239,7 @@ namespace gsview
 								for (int mm = 0; mm < num_chars; mm++)
 								{
 									var textchars = new TextCharacter();
-									int character = mGetTextCharacter(text, kk, jj, mm, ref top_x,
+									int character = tc_mGetTextCharacter(text, kk, jj, mm, ref top_x,
 										ref top_y, ref height, ref width);
 									textchars.X = top_x;
 									textchars.Y = top_y;
@@ -350,13 +1253,13 @@ namespace gsview
 							}
 						}
 						/* We are done with the text object */
-						mReleaseText(mu_object, text);
+						tc_mReleaseText(mu_object, text);
 					}
 				}
 				else
 					lock (m_lock)
 					{
-						dlist = mCreateDisplayList(mu_object, page_num, 
+						dlist = tc_mCreateDisplayList(mu_object, page_num, 
 							ref page_width, ref page_height);
 					}
 
@@ -365,7 +1268,7 @@ namespace gsview
 				{
 					return (int) status_t.E_FAILURE;
 				}
-				code = mRenderPageMT(mu_object, dlist, page_width, page_height,
+				code = tc_mRenderPageMT(mu_object, dlist, page_width, page_height,
 									bmp_data, bmp_width, bmp_height,
 									scale, flipy);
 			} 
@@ -373,7 +1276,7 @@ namespace gsview
  			{
 				lock(m_lock)
 				{
-					code = mRenderPage(mu_object, page_num, bmp_data, bmp_width,
+					code = tc_mRenderPage(mu_object, page_num, bmp_data, bmp_width,
 						bmp_height, scale, flipy);
 				}
 			}
@@ -382,7 +1285,7 @@ namespace gsview
 
 		public status_t OpenFile(string filename)
 		{
-			return mOpenDocument(mu_object, filename);
+			return tc_mOpenDocument(mu_object, filename);
 		}
 
 		public int GetPageSize(int page_num, out Point size_out)
@@ -394,7 +1297,7 @@ namespace gsview
 
 			lock(m_lock)
 			{
-				code = mMeasurePage(mu_object, page_num, ref width, ref height);
+				code = tc_mMeasurePage(mu_object, page_num, ref width, ref height);
 			}
 
 			size_out.X = width;
@@ -409,7 +1312,7 @@ namespace gsview
 
 			lock(m_lock)
 			{
-				num_items = mGetContents(mu_object);
+				num_items = tc_mGetContents(mu_object);
 			}
 
 			if (contents == null)
@@ -418,7 +1321,7 @@ namespace gsview
 			for (int k = 0; k < num_items; k++)
 			{
 				ContentItem item = new ContentItem();
-				item.StringMargin = mGetContentsItem(k, ref len, ref page);
+				item.StringMargin = tc_mGetContentsItem(k, ref len, ref page);
 				item.Page = page;
 				contents.Add(item);
 			}
@@ -427,7 +1330,7 @@ namespace gsview
 
 		public void ReleaseContents()
 		{
-			mReleaseContents();
+			tc_mReleaseContents();
 		}
 
 		public int TextSearchPage(int page_num, String needle)
@@ -435,7 +1338,7 @@ namespace gsview
 			int num_found;
 			lock (m_lock)
 			{
-				num_found = mTextSearchPage(mu_object, page_num, needle);
+				num_found = tc_mTextSearchPage(mu_object, page_num, needle);
 			}
 			return num_found;
 		}
@@ -443,7 +1346,7 @@ namespace gsview
 		public bool GetTextSearchItem(int k, out Point top_left, out Size size_rect)
 		{
 			double top_x = 0, top_y = 0 , height = 0, width = 0;
-			bool found = mGetTextSearchItem(k, ref top_x, ref top_y, ref height, ref width);
+			bool found = tc_mGetTextSearchItem(k, ref top_x, ref top_y, ref height, ref width);
 
 			top_left = new Point();
 			size_rect = new Size();
@@ -458,7 +1361,7 @@ namespace gsview
 
 		public void ReleaseTextSearch()
 		{
-			mReleaseTextSearch();
+			tc_mReleaseTextSearch();
 		}
 
 		public int GetLinksPage(int page_num)
@@ -466,7 +1369,7 @@ namespace gsview
 			int num_found;
 			lock (m_lock)
 			{
-				num_found = mGetLinksPage(mu_object, page_num);
+				num_found = tc_mGetLinksPage(mu_object, page_num);
 			}
 			return num_found;
 		}
@@ -478,7 +1381,7 @@ namespace gsview
 			int typeb = 0;
 			int linkpage = 0;
 
-			uri = mGetLinkItem(k, ref top_x, ref top_y, ref height, ref width,
+			uri = tc_mGetLinkItem(k, ref top_x, ref top_y, ref height, ref width,
 				ref linkpage, ref typeb);
 
 			topage = linkpage;
@@ -494,12 +1397,12 @@ namespace gsview
 
 		public void ReleaseLink()
 		{
-			mReleaseLink();
+			tc_mReleaseLink();
 		}
 
 		public void ReleaseText(IntPtr textpage)
 		{
-			mReleaseText(mu_object, textpage);
+			tc_mReleaseText(mu_object, textpage);
 		}
 
 		public void PDFExtract(String infile, String outfile, String password, 
@@ -519,13 +1422,13 @@ namespace gsview
 					page_list[kk] = currpage.Page;
 				}
 				pagesPtrStable = GCHandle.Alloc(page_list, GCHandleType.Pinned);
-				mExtractPages(infile, outfile, password, has_password, linearize,
+				tc_mExtractPages(infile, outfile, password, has_password, linearize,
 					num_pages, pagesPtrStable.AddrOfPinnedObject());
 				pagesPtrStable.Free();
 			}
 			else
 			{
-				mExtractPages(infile, outfile, password, has_password, linearize,
+				tc_mExtractPages(infile, outfile, password, has_password, linearize,
 							num_pages, IntPtr.Zero);
 			}
 		}
@@ -638,25 +1541,25 @@ namespace gsview
 				{
 					case gsDevice_t.svg:
 						lock (this.m_lock)  /* Single-page format */
-							result = mSavePage(mu_object, out_file_name,
+							result = tc_mSavePage(mu_object, out_file_name,
 								page_num - 1, resolution, (int) mudevice_t.SVG_OUT,
 								false);
 						break;
 					case gsDevice_t.pnm:
 						lock (this.m_lock) /* Single-page format */
-							result = mSavePage(mu_object, out_file_name,
+							result = tc_mSavePage(mu_object, out_file_name,
 								page_num - 1, resolution, (int)mudevice_t.PNM_OUT,
 								false);
 						break;
 					case gsDevice_t.pclbitmap:  /* Multi-page format */
 						lock (this.m_lock)
-							result = mSavePage(mu_object, out_file,
+							result = tc_mSavePage(mu_object, out_file,
 								page_num - 1, resolution, (int)mudevice_t.PCL_OUT,
 								append);
 						break;
 					case gsDevice_t.pwg:  /* Multi-page format */
 						lock (this.m_lock)
-							result = mSavePage(mu_object, out_file,
+							result = tc_mSavePage(mu_object, out_file,
 								page_num - 1, resolution, (int)mudevice_t.PWG_OUT,
 								append);
 						break;
