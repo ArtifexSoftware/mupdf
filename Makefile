@@ -226,7 +226,7 @@ $(OUT)/pdf/pdf-cmap-table.o : $(CMAP_GEN)
 $(OUT)/pdf/pdf-fontfile.o : $(FONT_GEN)
 $(OUT)/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
 $(OUT)/pdf/js/pdf-js.o : $(JAVASCRIPT_GEN)
-$(OUT)/cmapdump.o : source/pdf/pdf-cmap.c source/pdf/pdf-cmap-parse.c
+$(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/pdf/pdf-cmap.c source/pdf/pdf-cmap-parse.c
 
 # --- Tools and Apps ---
 
