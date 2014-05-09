@@ -111,6 +111,11 @@ static int extract_exif_resolution(jpeg_saved_marker_ptr marker, int *xres, int 
 		*xres = (int)(x_res * 254 / 100);
 		*yres = (int)(y_res * 254 / 100);
 	}
+	else
+	{
+		*xres = 0;
+		*yres = 0;
+	}
 	return 1;
 }
 
