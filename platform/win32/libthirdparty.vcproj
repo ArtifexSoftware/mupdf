@@ -313,9 +313,6 @@
 				RelativePath="..\..\thirdparty\jpeg\jmemmgr.c"
 				>
 			</File>
-			<File
-				RelativePath="..\..\thirdparty\jpeg\jmemnobs.c"
-				>
 			</File>
 			<File
 				RelativePath="..\..\thirdparty\jpeg\jquant1.c"

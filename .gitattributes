@@ -11,3 +11,4 @@ Make*			tabs
 *.xml			tabs
 memento.*		spaces
 *.vcxproj*		spaces
+jmem*			spaces

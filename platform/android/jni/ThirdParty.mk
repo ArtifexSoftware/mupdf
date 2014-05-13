@@ -97,7 +97,6 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/thirdparty/jpeg/jidctfst.c \
 	$(MY_ROOT)/thirdparty/jpeg/jidctint.c \
 	$(MY_ROOT)/thirdparty/jpeg/jmemmgr.c \
-	$(MY_ROOT)/thirdparty/jpeg/jmemnobs.c \
 	$(MY_ROOT)/thirdparty/jpeg/jquant1.c \
 	$(MY_ROOT)/thirdparty/jpeg/jquant2.c \
 	$(MY_ROOT)/thirdparty/jpeg/jutils.c \
