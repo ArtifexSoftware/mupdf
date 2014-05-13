@@ -8,7 +8,7 @@ using System.Windows;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("GSView")]
-[assembly: AssemblyDescription("GSView is a PDF, XPS, PS, and CBZ document viewer. It makes use of the MuPDF and Ghostscript rendering libraries to provide a number of features including conversion to other file formats. GSview was created and is maintained by Artifex Software Incorporated.\n")]
+[assembly: AssemblyDescription("GSView is a PDF, XPS, PS, and CBZ document viewer. It makes use of the MuPDF and Ghostscript rendering libraries to provide a number of features including conversion to other file formats. GSView was created and is maintained by Artifex Software Incorporated.\n")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Artifex Software Incorporated")]
 [assembly: AssemblyProduct("GSView")]

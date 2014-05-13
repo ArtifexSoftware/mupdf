@@ -17,7 +17,7 @@
 
             <ListView Grid.Column="0" Grid.Row="1" x:Name="xaml_DeviceList" HorizontalAlignment="Stretch" 
                     ScrollViewer.CanContentScroll="False" 
-                    Background="White" ScrollViewer.PanningMode="Both" Margin="10,5,10,10" SelectionMode="Single">
+                    Background="White" Margin="10,5,10,10" SelectionMode="Single">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="5,5,0,0" HorizontalAlignment="Left">
@@ -38,7 +38,7 @@
             </TextBlock>
             <ListView Grid.Column="0" Grid.Row="1"  x:Name="xaml_PageList" HorizontalAlignment="Stretch" 
                     ScrollViewer.CanContentScroll="False" 
-                    Background="White" ScrollViewer.PanningMode="Both" Margin="10,5,10,10">
+                    Background="White" Margin="10,5,10,10">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="5,5,0,0" HorizontalAlignment="Left">

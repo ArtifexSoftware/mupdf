@@ -3,7 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="gsview" Height="850" Width="714" UseLayoutRounding="True" >
-    <!-- UseLayoutRouding needed to avoid funny interpolation effects on pages -->
+    <!-- UseLayoutRounding needed to avoid funny interpolation effects on pages -->
 
     <Window.Resources>
         <DataTemplate x:Key="PageTemplate">
@@ -18,7 +18,7 @@
                 </Image>
                 
                 <!-- Single selection rectangle.  Not a list -->
-          <!--      <Rectangle Width="{Binding Path=SelWidth}" Height="{Binding Path=SelHeight}" Stroke="{Binding Path=SelColor}">
+                <Rectangle Width="{Binding Path=SelWidth}" Height="{Binding Path=SelHeight}" Stroke="{Binding Path=SelColor}">
                     <Rectangle.RenderTransform>
                         <TranslateTransform X="{Binding Path=SelX}" Y="{Binding Path=SelY}"/>
                     </Rectangle.RenderTransform>
@@ -75,7 +75,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-               <ItemsControl ItemsSource="{Binding Path=LinkBox}">
+                <ItemsControl ItemsSource="{Binding Path=LinkBox}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas/>
@@ -90,8 +90,8 @@
                             </Rectangle>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
-                </ItemsControl> -->
-                
+                </ItemsControl>
+
             </Canvas>
         </DataTemplate> 
 
@@ -546,7 +546,7 @@
             <ProgressBar x:Name="xaml_ThumbProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
                      Maximum="100" Height="20" HorizontalAlignment="Stretch" />
             <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Creating Thumbs</Bold></TextBlock>
-            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelThumb" Click="CancelLoadClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+           <!-- <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelThumb" Click="CancelLoadClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Grid>
@@ -560,7 +560,7 @@
                     </ControlTemplate>
                 </Button.Template>
                 <TextBlock><Bold>Cancel</Bold></TextBlock>
-            </Button>
+            </Button> -->
         </Grid>
         
         <!-- The progress bar that runs during text search -->
@@ -677,7 +677,7 @@
             <ListView x:Name="xaml_ThumbList" HorizontalAlignment="Stretch" 
                       ItemTemplate="{StaticResource ThumbTemplate}" 
                       ScrollViewer.CanContentScroll="False" 
-                      Background="DarkGray" ScrollViewer.PanningMode="Both"
+                      Background="DarkGray" 
                       PreviewMouseLeftButtonUp="ThumbSelected">
             </ListView>
         </Grid>
@@ -686,7 +686,7 @@
         <Grid x:Name="xaml_ContentGrid" Width="250" Background="DarkGray" DockPanel.Dock="Left" Visibility="Collapsed">
             <ListView x:Name="xaml_ContentList" HorizontalAlignment="Stretch" 
                       ScrollViewer.CanContentScroll="False" PreviewMouseLeftButtonUp="ContentSelected"
-                      Background="DarkGray" ScrollViewer.PanningMode="Both">
+                      Background="DarkGray" >
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="5,5,0,0" HorizontalAlignment="Left">
@@ -714,11 +714,11 @@
                    Scroll="VerticalScroll"/>
 
         <!-- Pages are last child fill.  This goes in the center of our dock panel ScrollViewer.CanContentScroll False allows continuous scrolling-->
-        <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" DockPanel.Dock="Left">
+        <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" DockPanel.Dock="Left" AllowDrop="True">
             <ListView x:Name="xaml_PageList" HorizontalAlignment="Stretch"
                       ItemTemplate="{StaticResource PageTemplate}" 
                       ScrollViewer.CanContentScroll="False"
-                      Background="DarkGray" ScrollViewer.PanningMode="None"
+                      Background="DarkGray"
                       ScrollViewer.ScrollChanged="ListViewScrollChanged"
                       MouseDoubleClick="PageDoubleClick" IsHitTestVisible="True"
                       SelectionMode="Single" 

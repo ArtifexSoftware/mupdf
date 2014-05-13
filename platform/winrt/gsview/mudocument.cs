@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+//using System.Threading.Tasks;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -73,7 +73,7 @@ namespace gsview
 	[SuppressUnmanagedCodeSecurity]
 	class mudocument
 	{
-		bool is64bit;
+		public bool is64bit;
 		IntPtr mu_object;
 		BackgroundWorker m_worker;
 		ConvertParams_t m_params;

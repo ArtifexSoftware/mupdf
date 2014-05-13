@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;using System.Runtime.InteropServices;
+//using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using System.IO;
 using System.Security;
 using System.ComponentModel;
@@ -1169,7 +1170,7 @@ namespace gsview
 				if (si.processorArchitecture == 0) // zero means x86
 					return false;
 				bool result;
-				/* Check process */
+
 				if (!IsWow64Process(GetCurrentProcess(), out result))
 					throw new InvalidOperationException();
 				return !result;

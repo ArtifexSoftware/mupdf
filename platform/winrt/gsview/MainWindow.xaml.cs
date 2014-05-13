@@ -264,6 +264,8 @@ namespace gsview
 				m_extractwin = null;
 				m_selection = null;
 				xaml_ZoomSlider.AddHandler(MouseLeftButtonUpEvent, new MouseButtonEventHandler(ZoomReleased), true);
+				xaml_PageGrid.AddHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver), true);
+				xaml_PageGrid.AddHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop), true);
 				DimSelections();
 				/* Set up for windows forms control */
 			}
@@ -271,6 +273,28 @@ namespace gsview
 			{
 				Console.WriteLine("Memory allocation failed at initialization\n");
 				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
+			}
+		}
+
+		private void Grid_DragOver(object sender, System.Windows.DragEventArgs e)
+		{
+			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			{
+				e.Effects = System.Windows.DragDropEffects.All;
+			}
+			else
+			{
+				e.Effects = System.Windows.DragDropEffects.None;
+			}
+			e.Handled = false;
+		}
+
+		private void Grid_Drop(object sender, System.Windows.DragEventArgs e)
+		{
+			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			{
+				string[] docPath = (string[]) e.Data.GetData(System.Windows.DataFormats.FileDrop);
+				ProcessFile(String.Join("",docPath));
 			}
 		}
 
@@ -422,7 +446,7 @@ namespace gsview
 			m_links_on = false;
 			m_doczoom = 1.0;
 			m_isXPS = false;
-			xaml_CancelThumb.IsEnabled = true;
+			//xaml_CancelThumb.IsEnabled = true;
 			m_currpage = 0;
 			m_ignorescrollchange = false;
 			m_document_type = DocumentTypes.UNKNOWN;
@@ -507,57 +531,62 @@ namespace gsview
 			dlg.Filter = "Document Files(*.ps;*.eps;*.pdf;*.xps;*.cbz)|*.ps;*.eps;*.pdf;*.xps;*.cbz|All files (*.*)|*.*";
 			dlg.FilterIndex = 1;
 			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+				ProcessFile(dlg.FileName);
+		}
+
+		private void ProcessFile(String FileName)
+		{
+			if (m_file_open)
 			{
-				if (m_file_open)
-				{
-					CloseDoc();
-				}
-				/* If we have a ps or eps file then launch the distiller first
-				 * and then we will get a temp pdf file which will be opened by
-				 * mupdf */
-				string extension = System.IO.Path.GetExtension(dlg.FileName);
-				/* We are doing this based on the extension but like should do
-				 * it based upon the content */
-				switch (extension.ToUpper())
-				{
-					case ".PS":
-						m_document_type = DocumentTypes.PS;
-						break;
-					case ".EPS":
-						m_document_type = DocumentTypes.EPS;
-						break;
-					case ".XPS":
-						m_document_type = DocumentTypes.XPS;
-						break;
-					case ".PDF":
-						m_document_type = DocumentTypes.PDF;
-						break;
-					case ".CBZ":
-						m_document_type = DocumentTypes.CBZ;
-						break;
-					default:
-						m_document_type = DocumentTypes.UNKNOWN;
-						break;
-				}
-				if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
-				{
-					xaml_DistillProgress.Value = 0;
-					if (m_ghostscript.DistillPS(dlg.FileName, Constants.DEFAULT_GS_RES) == gsStatus.GS_BUSY)
+				CloseDoc();
+			}
+			/* If we have a ps or eps file then launch the distiller first
+			 * and then we will get a temp pdf file which will be opened by
+			 * mupdf */
+			string extension = System.IO.Path.GetExtension(FileName);
+			/* We are doing this based on the extension but like should do
+			 * it based upon the content */
+			switch (extension.ToUpper())
+			{
+				case ".PS":
+					m_document_type = DocumentTypes.PS;
+					break;
+				case ".EPS":
+					m_document_type = DocumentTypes.EPS;
+					break;
+				case ".XPS":
+					m_document_type = DocumentTypes.XPS;
+					break;
+				case ".PDF":
+					m_document_type = DocumentTypes.PDF;
+					break;
+				case ".CBZ":
+					m_document_type = DocumentTypes.CBZ;
+					break;
+				default:
 					{
-						ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
+						ShowMessage(NotifyType_t.MESS_STATUS, "Unknown File Type");
 						return;
 					}
-					xaml_DistillName.Text = "Distilling";
-					xaml_CancelDistill.Visibility = System.Windows.Visibility.Visible;
-					xaml_DistillName.FontWeight = FontWeights.Bold;
-					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
+			}
+			if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
+			{
+				xaml_DistillProgress.Value = 0;
+				if (m_ghostscript.DistillPS(FileName, Constants.DEFAULT_GS_RES) == gsStatus.GS_BUSY)
+				{
+					ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
 					return;
 				}
-				/* Set if this is already xps for printing */
-				if (extension.ToUpper() == ".XPS")
-					m_isXPS = true;
-				OpenFile2(dlg.FileName);
+				xaml_DistillName.Text = "Distilling";
+				xaml_CancelDistill.Visibility = System.Windows.Visibility.Visible;
+				xaml_DistillName.FontWeight = FontWeights.Bold;
+				xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
+				return;
 			}
+			/* Set if this is already xps for printing */
+			if (extension.ToUpper() == ".XPS")
+				m_isXPS = true;
+			OpenFile2(FileName);
 		}
 
 		private void OpenFile2(String File)
@@ -851,7 +880,7 @@ namespace gsview
 			 * and cancel the thumbnail rendering */
 			if (m_thumbworker != null)
 				m_thumbworker.CancelAsync();
-			xaml_CancelThumb.IsEnabled = false;
+			//xaml_CancelThumb.IsEnabled = false;
 		}
 
 		private void ToggleThumbs(object sender, RoutedEventArgs e)
@@ -939,6 +968,8 @@ namespace gsview
 				return;
 			if (e.VerticalChange == 0)
 				return;
+			if (m_num_pages == 1)
+				return;
 
 			/* From current page go forward and backward checking if pages are
 			 * visible */
@@ -994,6 +1025,8 @@ namespace gsview
 		 * in view it just sits there */
 		private void ScrollPageToTop(int k, double offset, bool from_scroller)
 		{
+			if (m_num_pages == 1)
+				return;
 			/* Get access to the scrollviewer */
 			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
 			if (viewer != null)
@@ -1024,13 +1057,17 @@ namespace gsview
 			if (newzoom)
 				offset = 0;
 
-			while (!done)
-			{
-				count = count + m_thumbnails[final_page].NativeHeight * m_doczoom;
+			if (m_thumbnails.Count < m_num_pages)
 				final_page = final_page + 1;
-				if (final_page == m_num_pages || count > bottom)
-					done = true;
-			}
+			else
+				while (!done && final_page >= 0 && final_page < m_num_pages)
+				{
+					count = count + m_thumbnails[final_page].NativeHeight * m_doczoom;
+					final_page = final_page + 1;
+					if (final_page == m_num_pages || count > bottom)
+						done = true;
+				}
+
 
 			for (int k = new_page + offset; k <= final_page + 1; k++)
 			{
@@ -1934,7 +1971,7 @@ namespace gsview
 			xaml_ThumbList.ItemsSource = m_thumbnails;
 			m_have_thumbs = true;
 			m_thumbworker = null;
-			xaml_CancelThumb.IsEnabled = true;
+			//xaml_CancelThumb.IsEnabled = true;
 			xaml_ThumbList.Items.Refresh();
 			xaml_VerticalScroll.Minimum = 0;
 			xaml_VerticalScroll.Maximum = m_totalpageheight + 4 * m_num_pages;
@@ -3774,10 +3811,10 @@ namespace gsview
 			m4.Tag = info;
 			contextmenu.Items.Add(m4);
 
-			var m5 = new System.Windows.Controls.MenuItem();
+			/*var m5 = new System.Windows.Controls.MenuItem();
 			m5.Header = "Select All";
 			m5.Click += cntxMenuSelectAll;
-			contextmenu.Items.Add(m5);
+			contextmenu.Items.Add(m5);*/
 		}
 
 		private void cntxMenuCopy(object sender, RoutedEventArgs e)
@@ -3900,7 +3937,8 @@ namespace gsview
 			CheckIfSelected();
 		}
 
-		/* We need to await on the render range TODO FIXME */
+		/* We need to await on the render range TODO FIXME Disable for now */
+		/*
 		private void cntxMenuSelectAll(object sender, RoutedEventArgs e)
 		{
 			var mi = sender as System.Windows.Controls.MenuItem;
@@ -3909,8 +3947,6 @@ namespace gsview
 			else
 				m_textSelect = new List<textSelectInfo_t>();
 
-			/* Do first one and then the rest occur as new pages */
-			/* Note that we have to render the pages TODO FIXME */
 			SelectFullPage(0);
 			for (int kk = 1; kk < m_num_pages; kk++)
 			{
@@ -3924,6 +3960,7 @@ namespace gsview
 			}
 			CheckIfSelected();
 		}
+		*/
 
 		private void cntxMenuDeselectAll(object sender, RoutedEventArgs e)
 		{
@@ -3961,12 +3998,28 @@ namespace gsview
 			if (muversion == null)
 				desc = desc_static + "\nMuPDF DLL: Not Found";
 			else
-				desc = desc_static + "\nUsing MuPDF Version " + muversion;
+			{
+				if (mu_doc.is64bit)
+				{
+					desc = desc_static + "\nUsing MuPDF Version " + muversion + " 64 bit\n";
+				} 
+				else
+				{
+					desc = desc_static + "\nUsing MuPDF Version " + muversion + " 32 bit\n";
+				}
+			}
 			String gs_vers = m_ghostscript.GetVersion();
 			if (gs_vers == null)
 				desc = desc + "\nGhostscript DLL: Not Found";
 			else
-				desc = desc + "\nGhostscript DLL: " + gs_vers;
+				if (mu_doc.is64bit)
+				{
+					desc = desc + "\nGhostscript DLL: " + gs_vers + " 64 bit\n";
+				}
+				else
+				{
+					desc = desc + "\nGhostscript DLL: " + gs_vers + " 64 bit\n";
+				}
 			about.description.Text = desc;
 			about.ShowDialog();
 		}
@@ -4001,7 +4054,7 @@ namespace gsview
 				/* figure out where we are percent wise */
 				double perc = mi.Value / mi.Maximum;
 				/* Get the page that we are in.  This needs to be cleaned
-					up to handle docs with variable page sizes and to acount
+					up to handle docs with variable page sizes and to account
 					for being partially in page */
 				double step = 100.0 / m_num_pages;
 				int page_num = (int) Math.Floor(perc * 100.0 / step);

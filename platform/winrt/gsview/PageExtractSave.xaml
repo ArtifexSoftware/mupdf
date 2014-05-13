@@ -14,7 +14,7 @@
             </TextBlock>
             <ListView Grid.Column="0" Grid.Row="1"  x:Name="xaml_PageList" HorizontalAlignment="Stretch" 
                     ScrollViewer.CanContentScroll="False" 
-                    Background="White" ScrollViewer.PanningMode="Both" Margin="10,5,10,10"
+                    Background="White" Margin="10,5,10,10"
                       PreviewMouseLeftButtonDown="ExtractLeftButtonDown" PreviewMouseLeftButtonUp="ExtractLeftButtonUp"
                       PreviewMouseMove="ExtractMouseMove" MouseLeave="ExtractMouseLeave" PreviewMouseRightButtonDown="RightButtonDown">
                 <ListView.ItemTemplate>
