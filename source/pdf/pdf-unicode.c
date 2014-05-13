@@ -6,36 +6,39 @@ void
 pdf_load_to_unicode(pdf_document *doc, pdf_font_desc *font,
 	char **strings, char *collection, pdf_obj *cmapstm)
 {
-	pdf_cmap *cmap;
 	unsigned int cpt;
-	int cid;
+	int gid;
 	int ucsbuf[8];
 	int ucslen;
+	int i;
 	fz_context *ctx = doc->ctx;
 
 	if (pdf_is_stream(doc, pdf_to_num(cmapstm), pdf_to_gen(cmapstm)))
 	{
-		cmap = pdf_load_embedded_cmap(doc, cmapstm);
+		pdf_cmap *gid_from_cpt = font->encoding;
+		pdf_cmap *ucs_from_cpt = pdf_load_embedded_cmap(doc, cmapstm);
 
 		font->to_unicode = pdf_new_cmap(ctx);
 
-		/* TODO: use codespace ranges */
-		for (cpt = 0; cpt < (strings ? 256 : 65536); cpt++)
+		for (i = 0; i < gid_from_cpt->codespace_len; ++i)
 		{
-			cid = pdf_lookup_cmap(font->encoding, cpt);
-			if (cid >= 0)
+			for (cpt = gid_from_cpt->codespace[i].low; cpt <= gid_from_cpt->codespace[i].high; ++cpt)
 			{
-				ucslen = pdf_lookup_cmap_full(cmap, cpt, ucsbuf);
-				if (ucslen == 1)
-					pdf_map_range_to_range(ctx, font->to_unicode, cid, cid, ucsbuf[0]);
-				if (ucslen > 1)
-					pdf_map_one_to_many(ctx, font->to_unicode, cid, ucsbuf, ucslen);
+				gid = pdf_lookup_cmap(gid_from_cpt, cpt);
+				if (gid >= 0)
+				{
+					ucslen = pdf_lookup_cmap_full(ucs_from_cpt, cpt, ucsbuf);
+					if (ucslen == 1)
+						pdf_map_range_to_range(ctx, font->to_unicode, gid, gid, ucsbuf[0]);
+					if (ucslen > 1)
+						pdf_map_one_to_many(ctx, font->to_unicode, gid, ucsbuf, ucslen);
+				}
 			}
 		}
 
 		pdf_sort_cmap(ctx, font->to_unicode);
 
-		pdf_drop_cmap(ctx, cmap);
+		pdf_drop_cmap(ctx, ucs_from_cpt);
 		font->size += pdf_cmap_size(ctx, font->to_unicode);
 	}
 
@@ -58,8 +61,8 @@ pdf_load_to_unicode(pdf_document *doc, pdf_font_desc *font,
 		/* TODO one-to-many mappings */
 
 		font->cid_to_ucs_len = 256;
-		font->cid_to_ucs = fz_malloc_array(ctx, 256, sizeof(unsigned short));
-		font->size += 256 * sizeof(unsigned short);
+		font->cid_to_ucs = fz_malloc_array(ctx, 256, sizeof *font->cid_to_ucs);
+		font->size += 256 * sizeof *font->cid_to_ucs;
 
 		for (cpt = 0; cpt < 256; cpt++)
 		{
