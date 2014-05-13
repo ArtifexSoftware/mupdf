@@ -7,10 +7,10 @@ pdf_load_to_unicode(pdf_document *doc, pdf_font_desc *font,
 	char **strings, char *collection, pdf_obj *cmapstm)
 {
 	pdf_cmap *cmap;
+	unsigned int cpt;
 	int cid;
 	int ucsbuf[8];
 	int ucslen;
-	int i;
 	fz_context *ctx = doc->ctx;
 
 	if (pdf_is_stream(doc, pdf_to_num(cmapstm), pdf_to_gen(cmapstm)))
@@ -19,12 +19,13 @@ pdf_load_to_unicode(pdf_document *doc, pdf_font_desc *font,
 
 		font->to_unicode = pdf_new_cmap(ctx);
 
-		for (i = 0; i < (strings ? 256 : 65536); i++)
+		/* TODO: use codespace ranges */
+		for (cpt = 0; cpt < (strings ? 256 : 65536); cpt++)
 		{
-			cid = pdf_lookup_cmap(font->encoding, i);
+			cid = pdf_lookup_cmap(font->encoding, cpt);
 			if (cid >= 0)
 			{
-				ucslen = pdf_lookup_cmap_full(cmap, i, ucsbuf);
+				ucslen = pdf_lookup_cmap_full(cmap, cpt, ucsbuf);
 				if (ucslen == 1)
 					pdf_map_range_to_range(ctx, font->to_unicode, cid, cid, ucsbuf[0]);
 				if (ucslen > 1)
@@ -60,12 +61,12 @@ pdf_load_to_unicode(pdf_document *doc, pdf_font_desc *font,
 		font->cid_to_ucs = fz_malloc_array(ctx, 256, sizeof(unsigned short));
 		font->size += 256 * sizeof(unsigned short);
 
-		for (i = 0; i < 256; i++)
+		for (cpt = 0; cpt < 256; cpt++)
 		{
-			if (strings[i])
-				font->cid_to_ucs[i] = pdf_lookup_agl(strings[i]);
+			if (strings[cpt])
+				font->cid_to_ucs[cpt] = pdf_lookup_agl(strings[cpt]);
 			else
-				font->cid_to_ucs[i] = '?';
+				font->cid_to_ucs[cpt] = '?';
 		}
 	}
 
