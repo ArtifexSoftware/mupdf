@@ -137,6 +137,8 @@ public static class DocumentTypes
 	public const string XPS = "XPS";
 	public const string EPS = "Encapsulated PostScript";
 	public const string CBZ = "Comic Book Archive";
+	public const string PNG = "Portable Network Graphics Image";
+	public const string JPG = "Joint Photographic Experts Group Image";
 	public const string UNKNOWN = "Unknown";
 }
 
@@ -562,6 +564,15 @@ namespace gsview
 					break;
 				case ".CBZ":
 					m_document_type = DocumentTypes.CBZ;
+					break;
+				case ".PNG":
+					m_document_type = DocumentTypes.PNG;
+					break;
+				case ".JPG":
+					m_document_type = DocumentTypes.JPG;
+					break;
+				case ".JPEG":
+					m_document_type = DocumentTypes.JPG;
 					break;
 				default:
 					{
@@ -1041,6 +1052,22 @@ namespace gsview
 					double perc = (double) k / (double) ( m_num_pages - 1);
 					xaml_VerticalScroll.Value = perc * xaml_VerticalScroll.Maximum;
 				}
+			}
+		}
+
+		/* Scroll to offset */
+		private void OffsetScroll(double offset)
+		{
+			if (m_num_pages == 1)
+				return;
+			/* Get access to the scrollviewer */
+			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
+			if (viewer != null)
+			{
+				double curr_value = viewer.VerticalOffset;
+				if (curr_value < 0 || curr_value > viewer.MaxHeight)
+					return;
+				viewer.ScrollToVerticalOffset(curr_value + offset);
 			}
 		}
 
@@ -4081,6 +4108,47 @@ namespace gsview
 			else if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.LargeIncrement)
 			{
 				OnForwardPageClick(null, null);
+			}
+		}
+
+		private void OnAAChecked(object sender, RoutedEventArgs e)
+		{
+
+		}
+
+		private void OnKeyDownHandler(object sender, System.Windows.Input.KeyEventArgs e)
+		{
+			switch (e.Key)
+			{
+				case Key.Left:
+				if (m_currpage == 0 || !m_init_done) 
+					return;
+				m_ignorescrollchange = true;
+				RenderRange(m_currpage - 1, true, false, 0);
+				e.Handled = true;
+				break;
+
+				case Key.Right:
+				if (m_currpage == m_num_pages - 1 || !m_init_done) 
+					return;
+				m_ignorescrollchange = true;
+				RenderRange(m_currpage + 1, true, false, 0);
+				e.Handled = true;
+				break;
+
+				case Key.Up:
+				if (!m_init_done)
+					return;
+				e.Handled = true;
+				OffsetScroll(-Constants.VERT_SCROLL_STEP);
+				break;
+
+				case Key.Down:
+				if (!m_init_done)
+					return;
+				e.Handled = true;
+				OffsetScroll(Constants.VERT_SCROLL_STEP);
+				break;
 			}
 		}
 	}
