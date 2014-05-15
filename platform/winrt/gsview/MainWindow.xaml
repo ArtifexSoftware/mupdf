@@ -3,7 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="gsview" Height="850" Width="714" UseLayoutRounding="True" 
-        KeyDown="OnKeyDownHandler">
+        KeyDown="OnKeyDownHandler" Closing="AppClosing">
     <!-- UseLayoutRounding needed to avoid funny interpolation effects on pages -->
 
     <Window.Resources>
@@ -217,7 +217,7 @@
             <MenuItem Header="_Options">
                 <MenuItem Header="Output Intents" Click="OutputIntents" />
                 <MenuItem Header="Zoom Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
-                <MenuItem Header="Enable AntiAlias" IsCheckable="True" IsChecked="True" Checked="OnAAChecked"/>
+                <MenuItem x:Name="xaml_AA" Header="Enable AntiAlias" IsCheckable="True" IsChecked="True" Checked="OnAAChecked" Unchecked="OnAAChecked"/>
             </MenuItem>
 
             <MenuItem Header="_Help">

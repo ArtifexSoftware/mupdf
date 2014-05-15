@@ -201,6 +201,12 @@ namespace gsview
 			set { pagenum = value; }
 		}
 
+		public bool AA
+		{
+			get;
+			set;
+		}
+
 		public event PropertyChangedEventHandler PropertyChanged;
 
 		// Create the OnPropertyChanged method to raise the event 
@@ -227,11 +233,13 @@ namespace gsview
 			this.PageNum = -1;
 			this.PageName = "";
 			this.TextBlocks = null;
+			this.AA = true;
 		}
 
 		public DocPage(int Height, int Width, double Zoom, BitmapSource BitMap,
 							List<RectList> TextBox, List<RectList> LinkBox,
-							Page_Content_t Content, int PageNum, BlocksText TextBlocks)
+							Page_Content_t Content, int PageNum, BlocksText TextBlocks,
+							bool AA)
 		{
 			this.Height = Height;
 			this.Width = Width;
@@ -243,6 +251,7 @@ namespace gsview
 			this.PageNum = PageNum;
 			this.PageName = ("Page " + (PageNum + 1));
 			this.TextBlocks = TextBlocks;
+			this.AA = AA;
 		}
 	};
 	public class Pages : ObservableCollection<DocPage>

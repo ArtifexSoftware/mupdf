@@ -55,6 +55,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
         "Release"
         {
@@ -71,6 +79,22 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.5"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.5 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.5"
+                    }
+                }
+            }
         }
     }
     "Deployable"
@@ -174,6 +198,29 @@
         }
         "FileType"
         {
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_A8EDD49D509A4974B971BF4FBD093455"
+            {
+            "Name" = "8:PDF"
+            "Description" = "8:PDF"
+            "Extensions" = "8:pdf;ps;eps;xps;oxps;png;jpeg;jpg;cbz"
+            "MIME" = "8:"
+            "Icon" = "8:_44A71C9401B94929A3DF6828309FE684"
+            "IconIndex" = "3:32512"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_9396BB7A2A2841B0890D2DB6A6360F4E"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
         }
         "Folder"
         {
@@ -237,9 +284,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:GSview 6.0 "
+        "ProductName" = "8:GSview 6.0"
         "ProductCode" = "8:{A22596C0-BCF4-46F9-9CF2-1C66E8588C30}"
-        "PackageCode" = "8:{9134FE53-5F05-449C-9B39-317BDE645FA5}"
+        "PackageCode" = "8:{2D4D7754-2AE5-45B4-B5CD-D3672BA861A7}"
         "UpgradeCode" = "8:{B494B7A2-738F-4F9D-87F4-31830A16FB76}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -689,7 +736,7 @@
                             "Type" = "3:8"
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
-                            "Setting" = "3:1"
+                            "Setting" = "3:0"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"

@@ -20,6 +20,7 @@ using System.Windows.Xps.Packaging;
 using System.Printing;
 using System.Windows.Markup;
 using System.Runtime.InteropServices;
+using Microsoft.Win32; /* For registry */
 
 enum PDFType_t
 {
@@ -212,6 +213,7 @@ namespace gsview
 		double m_doczoom;
 		ghostsharp m_ghostscript;
 		String m_currfile;
+		String m_origfile;
 		private gsprint m_ghostprint = null;
 		bool m_isXPS;
 		gsOutput m_gsoutput;
@@ -238,12 +240,16 @@ namespace gsview
 		double m_maxY;
 		bool m_ignorescrollchange;
 		double m_totalpageheight;
+		bool m_AA;
+		bool m_regstartup;
+		int m_initpage;
 
 		public MainWindow()
 		{
 			InitializeComponent();
 			this.Closing += new System.ComponentModel.CancelEventHandler(Window_Closing);
 			m_file_open = false;
+			m_regstartup = true;
 			status_t result = CleanUp();
 
 			/* Allocations and set up */
@@ -269,7 +275,18 @@ namespace gsview
 				xaml_PageGrid.AddHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver), true);
 				xaml_PageGrid.AddHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop), true);
 				DimSelections();
-				/* Set up for windows forms control */
+
+				string[] arguments = Environment.GetCommandLineArgs();
+				if (arguments.Length > 1)
+				{
+					string filePath = arguments[1];
+					ProcessFile(filePath);
+				}
+				else
+				{
+					if (m_regstartup)
+						InitFromRegistry();
+				}
 			}
 			catch (OutOfMemoryException e)
 			{
@@ -461,7 +478,76 @@ namespace gsview
 			CloseExtraWindows(false);
 			ResetScroll();
 			m_totalpageheight = 0;
+			m_AA = xaml_AA.IsChecked;
+			m_origfile = null;
+			m_initpage = 0;
 			return result;
+		}
+
+		/* Initialize from registry */
+		private void InitFromRegistry()
+		{
+			RegistryKey key = Registry.CurrentUser.CreateSubKey("Software");
+			RegistryKey keyA = key.CreateSubKey("Artifex Software");
+			RegistryKey keygs = keyA.CreateSubKey("GSview 6.0");
+			String filepath = null;
+			Int32 page;
+			bool aa_on = true;
+
+			try
+			{
+				filepath = (String)keygs.GetValue("File", null);
+				aa_on = System.Convert.ToBoolean((Int32) keygs.GetValue("AA"));
+				page = (Int32)keygs.GetValue("Page");
+			}
+			catch
+			{
+				return;
+			}
+			keygs.Close();
+			keyA.Close();
+			key.Close();
+
+			xaml_AA.IsChecked = aa_on;
+			m_AA = aa_on;
+
+			if (filepath != null && File.Exists(filepath))
+			{
+				m_initpage = page;
+				ProcessFile(filepath);
+			}
+			else
+				m_initpage = 0;
+		}
+
+		private void SetRegistry()
+		{
+			if (m_currfile == null)
+				return;
+
+			RegistryKey key = Registry.CurrentUser.CreateSubKey("Software");
+			RegistryKey keyA = key.CreateSubKey("Artifex Software");
+			RegistryKey keygs = keyA.CreateSubKey("GSview 6.0");
+
+			if (m_origfile != null && (m_document_type == DocumentTypes.PS ||
+				m_document_type == DocumentTypes.EPS))
+			{
+				keygs.SetValue("File", m_origfile, RegistryValueKind.String);
+			}
+			else
+			{
+				keygs.SetValue("File", m_currfile, RegistryValueKind.String);
+			}
+			keygs.SetValue("Page", m_currpage, RegistryValueKind.DWord);
+			keygs.SetValue("AA", System.Convert.ToInt32(xaml_AA.IsChecked), RegistryValueKind.DWord);
+			keygs.Close();
+			keyA.Close();
+			key.Close();
+		}
+
+		private void AppClosing(object sender, CancelEventArgs e)
+		{
+			SetRegistry();
 		}
 
 		private void ShowMessage(NotifyType_t type, String Message)
@@ -485,7 +571,7 @@ namespace gsview
 
 		/* Set the page with the new raster information */
 		private void UpdatePage(int page_num, Byte[] bitmap, Point ras_size,
-			Page_Content_t content, double zoom_in)
+			Page_Content_t content, double zoom_in, bool AA)
 		{
 			DocPage doc_page = this.m_docPages[page_num];
 
@@ -496,8 +582,10 @@ namespace gsview
 			doc_page.Zoom = zoom_in;
 
 			int stride = doc_page.Width * 4;
-			doc_page.BitMap = BitmapSource.Create(doc_page.Width, doc_page.Height, 72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
+			doc_page.BitMap = BitmapSource.Create(doc_page.Width, doc_page.Height, 
+				72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, bitmap, stride);
 			doc_page.PageNum = page_num;
+			doc_page.AA = AA;
 
 			if (content == Page_Content_t.THUMBNAIL)
 			{
@@ -529,7 +617,7 @@ namespace gsview
 				return;
 			}
 
-			OpenFileDialog dlg = new OpenFileDialog();
+			System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
 			dlg.Filter = "Document Files(*.ps;*.eps;*.pdf;*.xps;*.cbz)|*.ps;*.eps;*.pdf;*.xps;*.cbz|All files (*.*)|*.*";
 			dlg.FilterIndex = 1;
 			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -711,7 +799,7 @@ namespace gsview
 			m_textset[k] = true;
 			m_textptrs[k] = result.charlist;
 			m_docPages[k].TextBlocks = result.charlist;
-			UpdatePage(k, result.bitmap, result.size, Page_Content_t.FULL_RESOLUTION, 1.0);
+			UpdatePage(k, result.bitmap, result.size, Page_Content_t.FULL_RESOLUTION, 1.0, m_AA);
 			m_docPages[k].NativeHeight = (int) result.size.Y;
 			m_docPages[k].NativeWidth = (int)result.size.X;
 		}
@@ -1103,7 +1191,7 @@ namespace gsview
 					/* Check if page is already rendered */
 					var doc = m_docPages[k];
 					if (doc.Content != Page_Content_t.FULL_RESOLUTION ||
-						doc.Zoom != m_doczoom)
+						doc.Zoom != m_doczoom || m_AA != doc.AA)
 					{
 						Point ras_size;
 						double scale_factor = m_doczoom;
@@ -1175,7 +1263,7 @@ namespace gsview
 											ScrollPageToTop(new_page, zoom_offset, false);
 										}
 										UpdatePage(k, bitmap, ras_size,
-											Page_Content_t.FULL_RESOLUTION, m_doczoom);
+											Page_Content_t.FULL_RESOLUTION, m_doczoom, m_AA);
 										if (k == new_page && scrollto && new_page != m_currpage)
 										{
 											m_doscroll = true;
@@ -1279,6 +1367,10 @@ namespace gsview
 			xaml_open.IsEnabled = false;
 			xaml_file.Opacity = 0.5;
 			xaml_file.IsEnabled = false;
+			/* And to drag - drop or registry start up */
+			xaml_PageGrid.RemoveHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver));
+			xaml_PageGrid.RemoveHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop));
+			m_regstartup = false;
 		}
 
 		private void gsIO(object gsObject, String mess, int len)
@@ -1376,6 +1468,7 @@ namespace gsview
 
 				case GS_Task_t.PS_DISTILL:
 					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+					m_origfile = gs_result.inputfile;
 					OpenFile2(gs_result.outputfile);
 					break;
 
@@ -1520,7 +1613,7 @@ namespace gsview
 			}
 
 			/* Get a filename */
-			SaveFileDialog dlg = new SaveFileDialog();
+			System.Windows.Forms.SaveFileDialog dlg = new System.Windows.Forms.SaveFileDialog();
 			dlg.Filter = "All files (*.*)|*.*";
 			dlg.FilterIndex = 1;
 			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -1647,7 +1740,7 @@ namespace gsview
 			}
 
 			/* Get a filename */
-			SaveFileDialog dlg = new SaveFileDialog();
+			System.Windows.Forms.SaveFileDialog dlg = new System.Windows.Forms.SaveFileDialog();
 			dlg.Filter = "All files (*.pdf)|*.pdf";
 			dlg.FilterIndex = 1;
 			if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -1689,8 +1782,16 @@ namespace gsview
 
 			if (m_file_open)
 			{
+				String filename;
+
+				if (m_origfile != null && (m_document_type == DocumentTypes.PS ||
+					m_document_type == DocumentTypes.EPS))
+					filename = m_origfile;
+				else
+					filename = m_currfile;
+				
 				Message =
-					"         File: " + m_currfile + "\n" +
+					"         File: " + filename + "\n" +
 					"Document Type: " + m_document_type + "\n" +
 					"        Pages: " + m_num_pages + "\n" +
 					" Current Page: " + (m_currpage + 1) + "\n";
@@ -2062,7 +2163,7 @@ namespace gsview
 			var bitmap = System.Windows.Clipboard.GetImage();
 
 			BitmapEncoder encoder;
-			SaveFileDialog dlg = new SaveFileDialog();
+			System.Windows.Forms.SaveFileDialog dlg = new System.Windows.Forms.SaveFileDialog();
 			dlg.FilterIndex = 1;
 
 			switch (tag)
@@ -2157,7 +2258,7 @@ namespace gsview
 			if (!m_file_open)
 				return;
 
-			SaveFileDialog dlg = new SaveFileDialog();
+			System.Windows.Forms.SaveFileDialog dlg = new System.Windows.Forms.SaveFileDialog();
 			dlg.FilterIndex = 1;
 
 			/* PDF output types */
@@ -2442,7 +2543,7 @@ namespace gsview
 
 					/* Do the actual extraction */
 					String options;
-					SaveFileDialog dlg = new SaveFileDialog();
+					System.Windows.Forms.SaveFileDialog dlg = new System.Windows.Forms.SaveFileDialog();
 					dlg.FilterIndex = 1;
 
 					/* Get us set up to do a fixed size */
@@ -4113,7 +4214,11 @@ namespace gsview
 
 		private void OnAAChecked(object sender, RoutedEventArgs e)
 		{
-
+			m_AA = xaml_AA.IsChecked;
+			if (mu_doc != null)
+				mu_doc.SetAA(m_AA);
+			if (m_init_done)
+				RenderRange(m_currpage, false, false, 0);
 		}
 
 		private void OnKeyDownHandler(object sender, System.Windows.Input.KeyEventArgs e)
@@ -4140,14 +4245,14 @@ namespace gsview
 				if (!m_init_done)
 					return;
 				e.Handled = true;
-				OffsetScroll(-Constants.VERT_SCROLL_STEP);
+				OffsetScroll(-Constants.VERT_SCROLL_STEP * m_doczoom);
 				break;
 
 				case Key.Down:
 				if (!m_init_done)
 					return;
 				e.Handled = true;
-				OffsetScroll(Constants.VERT_SCROLL_STEP);
+				OffsetScroll(Constants.VERT_SCROLL_STEP * m_doczoom);
 				break;
 			}
 		}

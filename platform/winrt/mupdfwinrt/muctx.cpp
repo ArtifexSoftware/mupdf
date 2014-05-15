@@ -158,6 +158,11 @@ void muctx::CleanUp(void)
 	this->mu_outline = NULL;
 }
 
+void muctx::SetAA(int level)
+{
+	fz_set_aa_level(mu_ctx, level);
+}
+
 /* Set up the context, mutex and cookie */
 status_t muctx::InitializeContext()
 {

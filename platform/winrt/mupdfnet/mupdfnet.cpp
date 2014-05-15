@@ -189,6 +189,12 @@ SYMBOL_DECLSPEC int __stdcall mGetLinksPage(void *ctx, int page_num)
 	return mu_ctx->GetLinks(page_num, gLinkResults);
 }
 
+SYMBOL_DECLSPEC void __stdcall mSetAA(void *ctx, int level)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+	mu_ctx->SetAA(level);
+}
+
 SYMBOL_DECLSPEC char* __stdcall mGetVers()
 {
 	int len = strlen(FZ_VERSION);

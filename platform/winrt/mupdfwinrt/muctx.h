@@ -101,6 +101,7 @@ public:
 	int MeasurePage(int page_num, point_t *size);
 	point_t MeasurePage(fz_page *page);
 	unsigned int GetLinks(int page_num, sh_vector_link links_vec);
+	void SetAA(int level);
 	int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
 	int GetContents(sh_vector_content contents_vec);
 	std::string GetHTML(int page_num);

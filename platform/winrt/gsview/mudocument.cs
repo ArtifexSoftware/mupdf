@@ -134,6 +134,10 @@ namespace gsview
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern void mReleaseContents64();
 
+		[DllImport("mupdfnet64.dll", EntryPoint = "mSetAA", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mSetAA64(IntPtr ctx, int level);
+
 		/* The managed code Marshal actually releases the allocated string from C */
 		[DllImport("mupdfnet64.dll", EntryPoint = "mGetContentsItem", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
@@ -267,6 +271,10 @@ namespace gsview
 		[DllImport("mupdfnet32.dll", EntryPoint = "mReleaseContents", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern void mReleaseContents32();
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mSetAA", CharSet = CharSet.Auto,
+		CallingConvention = CallingConvention.StdCall)]
+		private static extern void mSetAA32(IntPtr ctx, int level);
 
 		/* The managed code Marshal actually releases the allocated string from C */
 		[DllImport("mupdfnet32.dll", EntryPoint = "mGetContentsItem", CharSet = CharSet.Ansi,
@@ -690,6 +698,32 @@ namespace gsview
 				return IntPtr.Zero;
 			}
 			return output;
+		}
+
+		private int tc_mSetAA(IntPtr ctx, int level)
+		{
+			try
+			{
+				if (is64bit)
+					mSetAA64(ctx, level);
+				else
+					mSetAA32(ctx, level);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return -1;
+			}
+			return 0;
 		}
 
 		private IntPtr tc_mCreateDisplayListText(IntPtr ctx, int page_num,
@@ -1163,6 +1197,20 @@ namespace gsview
 		public bool ApplyPassword(String password)
 		{
 			return tc_mApplyPassword(mu_object, password);
+		}
+
+		public void SetAA(bool AAon)
+		{
+			if (AAon)
+				lock (m_lock)
+				{
+					tc_mSetAA(mu_object, 8);
+				}
+			else
+				lock (m_lock)
+				{
+					tc_mSetAA(mu_object, 0);
+				}
 		}
 
 		public int RenderPage(int page_num, Byte[] bmp_data, int bmp_width,

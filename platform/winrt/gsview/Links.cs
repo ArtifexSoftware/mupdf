@@ -18,8 +18,6 @@ namespace gsview
 	class Links
 	{
 		link_t type;
-		//PointF upper_left;
-		//PointF lower_right;
 		Uri uri;
 		int page_num;
 
