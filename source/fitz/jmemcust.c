@@ -17,7 +17,6 @@
 
 #include "jinclude.h"
 #include "jpeglib.h"
-#include "jmorecfg.h"
 #include "jmemsys.h"
 #include "jerror.h"
 #include "jmemcust.h"
