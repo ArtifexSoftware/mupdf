@@ -117,6 +117,34 @@ fz_mask_color_key(fz_pixmap *pix, int n, int *colorkey)
 	}
 }
 
+static void
+fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
+{
+	fz_pixmap *mask = image->mask->get_pixmap(ctx, image->mask, tile->w, tile->h);
+	unsigned char *s = mask->samples, *end = s + mask->w * mask->h;
+	unsigned char *d = tile->samples;
+	int k;
+
+	if (tile->w != mask->w || tile->h != mask->h)
+	{
+		fz_warn(ctx, "mask must be of same size as image for /Matte");
+		fz_drop_pixmap(ctx, mask);
+		return;
+	}
+
+	for (; s < end; s++, d += tile->n)
+	{
+		if (*s == 0)
+			for (k = 0; k < image->n - 1; k++)
+				d[k] = image->colorkey[k];
+		else
+			for (k = 0; k < image->n - 1; k++)
+				d[k] = fz_clampi(image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s, 0, 255);
+	}
+
+	fz_drop_pixmap(ctx, mask);
+}
+
 fz_pixmap *
 fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int indexed, int l2factor, int native_l2factor)
 {
@@ -163,7 +191,8 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 		fz_free(ctx, samples);
 		samples = NULL;
 
-		if (image->usecolorkey)
+		/* color keyed transparency */
+		if (image->usecolorkey && !image->mask)
 			fz_mask_color_key(tile, image->n, image->colorkey);
 
 		if (indexed)
@@ -178,6 +207,10 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 		{
 			fz_decode_tile(tile, image->decode);
 		}
+
+		/* pre-blended matte color */
+		if (image->usecolorkey && image->mask)
+			fz_unblend_masked_tile(ctx, tile, image);
 	}
 	fz_always(ctx)
 	{
