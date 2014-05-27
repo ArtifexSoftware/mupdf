@@ -5,6 +5,7 @@
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
+#include <X11/XF86keysym.h>
 
 #include <sys/select.h>
 #include <sys/time.h>
@@ -913,9 +914,11 @@ int main(int argc, char **argv)
 						break;
 
 					case XK_Page_Up:
+					case XF86XK_Back:
 						len = 1; buf[0] = ',';
 						break;
 					case XK_Page_Down:
+					case XF86XK_Forward:
 						len = 1; buf[0] = '.';
 						break;
 					}
