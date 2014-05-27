@@ -115,6 +115,8 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->scrh = 480;
 	app->resolution = 72;
 	app->ctx = ctx;
+	app->transition.duration = 0.25;
+	app->transition.type = FZ_TRANSITION_FADE;
 #ifdef _WIN32
 	app->colorspace = fz_device_bgr(ctx);
 #else
@@ -834,15 +836,6 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		new_trans = fz_page_presentation(app->doc, app->page, &app->duration);
 		if (new_trans)
 			app->transition = *new_trans;
-		else
-		{
-			/* If no transition specified, use a default one */
-			memset(&app->transition, 0, sizeof(*new_trans));
-			app->transition.duration = 1.0;
-			app->transition.type = FZ_TRANSITION_WIPE;
-			app->transition.vertical = 0;
-			app->transition.direction = 0;
-		}
 		if (app->duration == 0)
 			app->duration = 5;
 		app->in_transit = fz_generate_transition(app->image, app->old_image, app->new_image, 0, &app->transition);
