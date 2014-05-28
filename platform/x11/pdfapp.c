@@ -891,13 +891,21 @@ void pdfapp_gotopage(pdfapp_t *app, int number)
 	app->issearching = 0;
 	winrepaint(app);
 
+	if (number < 1)
+		number = 1;
+	if (number > app->pagecount)
+		number = app->pagecount;
+
+	if (number == app->pageno)
+		return;
+
 	if (app->histlen + 1 == 256)
 	{
 		memmove(app->hist, app->hist + 1, sizeof(int) * 255);
 		app->histlen --;
 	}
 	app->hist[app->histlen++] = app->pageno;
-	app->pageno = number + 1;
+	app->pageno = number;
 	pdfapp_showpage(app, 1, 1, 1, 0, 0);
 }
 
@@ -1200,20 +1208,19 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 	case '\n':
 	case '\r':
 		if (app->numberlen > 0)
-			app->pageno = atoi(app->number);
+			pdfapp_gotopage(app, atoi(app->number));
 		else
-			app->pageno = 1;
+			pdfapp_gotopage(app, 1);
 		break;
 
 	case 'G':
-		app->pageno = app->pagecount;
+		pdfapp_gotopage(app, app->pagecount);
 		break;
 
 	case 'm':
 		if (app->numberlen > 0)
 		{
 			int idx = atoi(app->number);
-
 			if (idx >= 0 && idx < nelem(app->marks))
 				app->marks[idx] = app->pageno;
 		}
@@ -1514,7 +1521,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			if (link->dest.kind == FZ_LINK_URI)
 				pdfapp_gotouri(app, link->dest.ld.uri.uri);
 			else if (link->dest.kind == FZ_LINK_GOTO)
-				pdfapp_gotopage(app, link->dest.ld.gotor.page);
+				pdfapp_gotopage(app, link->dest.ld.gotor.page + 1);
 			return;
 		}
 	}
