@@ -149,9 +149,12 @@ void muctx::CleanUp(void)
 	fz_free_outline(mu_ctx, mu_outline);
 	fz_close_document(mu_doc);
 	page_cache->Empty(mu_ctx);
+	annot_cache->Empty(mu_ctx);
 	fz_free_context(mu_ctx);
 
 	delete page_cache;
+	delete annot_cache;
+	annot_cache = NULL;
 	page_cache = NULL;
 	this->mu_ctx = NULL;
 	this->mu_doc = NULL;
@@ -195,6 +198,7 @@ muctx::muctx(void)
 	mu_doc = NULL;
 	mu_outline = NULL;
 	page_cache = new Cache();
+	annot_cache = new Cache();
 }
 
 /* Destructor */
@@ -203,6 +207,7 @@ muctx::~muctx(void)
 	fz_free_outline(mu_ctx, mu_outline);
 	fz_close_document(mu_doc);
 	page_cache->Empty(mu_ctx);
+	annot_cache->Empty(mu_ctx);
 	fz_free_context(mu_ctx);
 
 	mu_ctx = NULL;
@@ -210,6 +215,8 @@ muctx::~muctx(void)
 	mu_outline = NULL;
 	delete page_cache;
 	page_cache = NULL;
+	delete annot_cache;
+	annot_cache = NULL;
 }
 
 /* Return the documents page count */
@@ -436,6 +443,51 @@ unsigned int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	return num_links;
 }
 
+fz_display_list * muctx::CreateAnnotationList(int page_num)
+{
+	fz_device *dev = NULL;
+	fz_page *page = NULL;
+	int width, height;
+
+	/* First see if we have this one in the cache */
+	fz_display_list *dlist = annot_cache->Use(page_num, &width, &height, mu_ctx);
+	if (dlist != NULL)
+		return dlist;
+
+	/* Apparently not, lets go ahead and create and add to cache */
+	fz_var(dev);
+	fz_var(page);
+	fz_var(dlist);
+
+	fz_try(mu_ctx)
+	{
+		fz_annot *annot;
+		page = fz_load_page(mu_doc, page_num);
+		annot = fz_first_annot(mu_doc, page);
+		if (annot != NULL)
+		{
+			/* Create display list */
+			dlist = fz_new_display_list(mu_ctx);
+			dev = fz_new_list_device(mu_ctx, dlist);
+
+			for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
+				fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
+			annot_cache->Add(page_num, 0, 0, dlist, mu_ctx);
+		}
+	}
+	fz_always(mu_ctx)
+	{
+		fz_free_device(dev);
+		fz_free_page(mu_doc, page);
+	}
+	fz_catch(mu_ctx)
+	{
+		fz_drop_display_list(mu_ctx, dlist);
+		return NULL;
+	}
+	return dlist;
+}
+
 fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height)
 {
 	fz_device *dev = NULL;
@@ -548,7 +600,7 @@ fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, int *he
 }
 
 /* Render display list bmp_data buffer.  No lock needed for this operation */
-status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height, 
+status_t muctx::RenderPageMT(void *dlist, void *a_dlist, int page_width, int page_height, 
 							 unsigned char *bmp_data, int bmp_width, int bmp_height,
 							 float scale, bool flipy, bool tile, point_t top_left,
 							 point_t bottom_right)
@@ -558,12 +610,14 @@ status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
 	fz_matrix ctm, *pctm = &ctm;
 	fz_context *ctx_clone = NULL;
 	fz_display_list *display_list = (fz_display_list*) dlist; 
+	fz_display_list *annot_displaylist = (fz_display_list*) a_dlist;
 
 	ctx_clone = fz_clone_context(mu_ctx);
 
 	fz_var(dev);
 	fz_var(pix);
 	fz_var(display_list);
+	fz_var(annot_displaylist);
 
 	fz_try(ctx_clone)
 	{
@@ -586,12 +640,16 @@ status_t muctx::RenderPageMT(void *dlist, int page_width, int page_height,
 		fz_clear_pixmap_with_value(ctx_clone, pix, 255);
 		dev = fz_new_draw_device(ctx_clone, pix);
 		fz_run_display_list(display_list, dev, pctm, NULL, NULL);
+		if (annot_displaylist != NULL)
+			fz_run_display_list(annot_displaylist, dev, pctm, NULL, NULL);
+
 	}
 	fz_always(ctx_clone)
 	{
 		fz_free_device(dev);
 		fz_drop_pixmap(ctx_clone, pix);
 		fz_drop_display_list(ctx_clone, display_list);
+		fz_drop_display_list(ctx_clone, annot_displaylist);
 	}
 	fz_catch(ctx_clone)
 	{
@@ -631,7 +689,11 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 										bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(mu_ctx, pix, 255);
 		dev = fz_new_draw_device(mu_ctx, pix);
-			fz_run_page(mu_doc, page, dev, pctm, NULL);
+		fz_run_page(mu_doc, page, dev, pctm, NULL);
+
+		fz_annot *annot;
+		for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
+			fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
 	}
 	fz_always(mu_ctx)
 	{
@@ -656,7 +718,7 @@ bool muctx::ApplyPassword(char* password)
 	return fz_authenticate_password(mu_doc, password) != 0;
 }
 
-std::string muctx::GetHTML(int page_num)
+std::string muctx::GetText(int page_num, int type)
 {
 	fz_output *out = NULL;
 	fz_device *dev = NULL;
@@ -664,7 +726,7 @@ std::string muctx::GetHTML(int page_num)
 	fz_text_sheet *sheet = NULL;
 	fz_text_page *text = NULL;
 	fz_buffer *buf = NULL;
-	std::string html;
+	std::string output;
 
 	fz_var(dev);
 	fz_var(page);
@@ -683,8 +745,19 @@ std::string muctx::GetHTML(int page_num)
 		fz_analyze_text(mu_ctx, sheet, text);
 		buf = fz_new_buffer(mu_ctx, 256);
 		out = fz_new_output_with_buffer(mu_ctx, buf);
-		fz_print_text_page_html(mu_ctx, out, text);
-		html = std::string(((char*) buf->data));
+		if (type == HTML)
+		{
+			fz_print_text_page_html(mu_ctx, out, text);
+		}
+		else if (type == XML)
+		{
+			fz_print_text_page_xml(mu_ctx, out, text);
+		}
+		else
+		{
+			fz_print_text_page(mu_ctx, out, text);
+		}
+		output = std::string(((char*)buf->data));
 	}
 	fz_always(mu_ctx)
 	{
@@ -698,7 +771,7 @@ std::string muctx::GetHTML(int page_num)
 	{
 		return nullptr;
 	}
-	return html;
+	return output;
 }
 
 void muctx::ReleaseText(void *text)
@@ -719,6 +792,7 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 	fz_device *dev = NULL;
 	int width, height;
 	fz_display_list *dlist = NULL;
+	fz_display_list *annot_dlist = NULL;
 	fz_page *page = NULL;
 	bool valid = true;
 	fz_pixmap *pix = NULL;
@@ -727,6 +801,7 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 	fz_var(dev);
 	fz_var(page);
 	fz_var(dlist);
+	fz_var(annot_dlist);
 	fz_var(pix);
 
 	fz_try(mu_ctx)
@@ -741,6 +816,7 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 
 		/* First see if we have this one in the cache */
 		dlist = page_cache->Use(page_num, &width, &height, mu_ctx);
+		annot_dlist = annot_cache->Use(page_num, &width, &height, mu_ctx);
 
 		if (type == SVG_OUT)
 		{
@@ -754,6 +830,14 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 				fz_run_display_list(dlist, dev, &ctm, &tbounds, NULL);
 			else
 				fz_run_page(mu_doc, page, dev, &ctm, NULL);
+			if (annot_dlist != NULL)
+				fz_run_display_list(annot_dlist, dev, &ctm, &tbounds, NULL);
+			else
+			{
+				fz_annot *annot;
+				for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
+					fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
+			}
 		}
 		else
 		{
@@ -765,6 +849,14 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 				fz_run_display_list(dlist, dev, &ctm, &tbounds, NULL);
 			else
 				fz_run_page(mu_doc, page, dev, &ctm, NULL);
+			if (annot_dlist != NULL)
+				fz_run_display_list(annot_dlist, dev, &ctm, &tbounds, NULL);
+			else
+			{
+				fz_annot *annot;
+				for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
+					fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
+			}
 			switch (type)
 			{
 				case PNM_OUT:

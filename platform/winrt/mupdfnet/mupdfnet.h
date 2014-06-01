@@ -37,7 +37,7 @@ EXTERN_C SYMBOL_DECLSPEC bool __stdcall mGetTextSearchItem(int k, double *top_x,
 	*top_y, double *height, double *width);
 EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseTextSearch();
 EXTERN_C SYMBOL_DECLSPEC char* __stdcall mGetVers();
-
+EXTERN_C SYMBOL_DECLSPEC char * __stdcall mGetText(void *ctx, int pagenum, int type);
 
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetLinksPage(void *ctx, int page_num);
 EXTERN_C SYMBOL_DECLSPEC char* __stdcall mGetLinkItem(int k, double *top_x, double
@@ -48,9 +48,11 @@ EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayList(void *ctx, int page_
 	int *page_width, int *page_height);
 EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListText(void *ctx, int page_num,
 	int *page_width, int *page_height, void **textptr, int *length);
+EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListAnnot(void *ctx, 
+	int page_num);
 
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,
-	int page_width, int page_height, byte *bmp_data, int bmp_width,
+	void *annot_dlist, int page_width, int page_height, byte *bmp_data, int bmp_width,
 	int bmp_height, double scale, bool flipy);
 
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextBlock(void *text, int block_num,

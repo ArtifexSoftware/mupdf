@@ -15,6 +15,7 @@ extern "C" {
 #define MAX_SEARCH 500
 
 enum { SVG_OUT, PNM_OUT, PCL_OUT, PWG_OUT };
+enum { HTML = 0, XML, TEXT };
 
 typedef struct point_s
 {
@@ -82,6 +83,7 @@ private:
 	void FlattenOutline(fz_outline *outline, int level,
 						sh_vector_content contents_vec);
 	Cache *page_cache;
+	Cache *annot_cache;
 
 public:
 	muctx(void);
@@ -91,20 +93,21 @@ public:
 	status_t InitializeContext();
 	status_t RenderPage(int page_num, unsigned char *bmp_data, int bmp_width, 
 						int bmp_height, float scale, bool flipy);
-	status_t RenderPageMT(void *dlist, int page_width, int page_height,
+	status_t RenderPageMT(void *dlist, void *a_dlist, int page_width, int page_height,
 							unsigned char *bmp_data, int bmp_width, int bmp_height,
 							float scale, bool flipy, bool tile, point_t top_left,
 							point_t bottom_right);
 	fz_display_list* CreateDisplayList(int page_num, int *width, int *height);
-	fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, 
-							int *height, fz_text_page **text, int *length);
+	fz_display_list * CreateDisplayListText(int page_num, int *width,
+		int *height, fz_text_page **text, int *length);
+	fz_display_list * CreateAnnotationList(int page_num);
 	int MeasurePage(int page_num, point_t *size);
 	point_t MeasurePage(fz_page *page);
 	unsigned int GetLinks(int page_num, sh_vector_link links_vec);
 	void SetAA(int level);
 	int GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec);
 	int GetContents(sh_vector_content contents_vec);
-	std::string GetHTML(int page_num);
+	std::string GetText(int page_num, int type);
 	void ReleaseText(void *text);
 	bool RequiresPassword(void);
 	bool ApplyPassword(char* password);

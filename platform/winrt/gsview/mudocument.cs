@@ -149,6 +149,10 @@ namespace gsview
 		private static extern IntPtr mCreateDisplayList64(IntPtr ctx, int page_num,
 				ref int page_width, ref int page_height);
 
+		[DllImport("mupdfnet64.dll", EntryPoint = "mCreateDisplayListAnnot", 
+			CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+		private static extern IntPtr mCreateDisplayListAnnot64(IntPtr ctx, int page_num);
+
 		[DllImport("mupdfnet64.dll", EntryPoint = "mCreateDisplayListText", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern IntPtr mCreateDisplayListText64(IntPtr ctx, int page_num,
@@ -157,8 +161,8 @@ namespace gsview
 		[DllImport("mupdfnet64.dll", EntryPoint = "mRenderPageMT", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern int mRenderPageMT64(IntPtr ctx, IntPtr dlist,
-			int page_width, int page_height, Byte[] bmp_data, int bmp_width, 
-			int bmp_height, double scale, bool flipy);
+			IntPtr annot_dlist, int page_width, int page_height, Byte[] bmp_data, 
+			int bmp_width, int bmp_height, double scale, bool flipy);
 
 		[DllImport("mupdfnet64.dll", EntryPoint = "mTextSearchPage", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
@@ -228,6 +232,12 @@ namespace gsview
 		[return: MarshalAs(UnmanagedType.LPStr)]
 		private static extern string mGetVers64();
 
+		/* The managed code Marshal actually releases the allocated string from C */
+		[DllImport("mupdfnet64.dll", EntryPoint = "mGetText", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		[return: MarshalAs(UnmanagedType.LPStr)]
+		private static extern string mGetText64(IntPtr ctx, int pagenum, int type);
+
 		/* And the 32bit version */
 		[DllImport("mupdfnet32.dll", EntryPoint = "mInitialize", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
@@ -287,6 +297,11 @@ namespace gsview
 		private static extern IntPtr mCreateDisplayList32(IntPtr ctx, int page_num,
 				ref int page_width, ref int page_height);
 
+		[DllImport("mupdfnet32.dll", EntryPoint = "mCreateDisplayListAnnot",
+			CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+		private static extern IntPtr mCreateDisplayListAnnot32(IntPtr ctx, int page_num);
+
+
 		[DllImport("mupdfnet32.dll", EntryPoint = "mCreateDisplayListText", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern IntPtr mCreateDisplayListText32(IntPtr ctx, int page_num,
@@ -295,8 +310,8 @@ namespace gsview
 		[DllImport("mupdfnet32.dll", EntryPoint = "mRenderPageMT", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern int mRenderPageMT32(IntPtr ctx, IntPtr dlist,
-			int page_width, int page_height, Byte[] bmp_data, int bmp_width,
-			int bmp_height, double scale, bool flipy);
+			IntPtr annot_dlist, int page_width, int page_height, Byte[] bmp_data, 
+			int bmp_width, int bmp_height, double scale, bool flipy);
 
 		[DllImport("mupdfnet32.dll", EntryPoint = "mTextSearchPage", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
@@ -365,6 +380,12 @@ namespace gsview
 			CallingConvention = CallingConvention.StdCall)]
 		[return: MarshalAs(UnmanagedType.LPStr)]
 		private static extern string mGetVers32();
+
+		/* The managed code Marshal actually releases the allocated string from C */
+		[DllImport("mupdfnet32.dll", EntryPoint = "mGetText", CharSet = CharSet.Ansi,
+			CallingConvention = CallingConvention.StdCall)]
+		[return: MarshalAs(UnmanagedType.LPStr)]
+		private static extern string mGetText32(IntPtr ctx, int pagenum, int type);
 
 		#endregion DLLInterface
 
@@ -670,6 +691,33 @@ namespace gsview
 			return output;
 		}
 
+		private IntPtr tc_mCreateDisplayListAnnot(IntPtr ctx, int page_num)
+		{
+			IntPtr output;
+			try
+			{
+				if (is64bit)
+					output = mCreateDisplayListAnnot64(ctx, page_num);
+				else
+					output = mCreateDisplayListAnnot32(ctx, page_num);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return IntPtr.Zero;
+			}
+			return output;
+		}
+
 		private IntPtr tc_mCreateDisplayList(IntPtr ctx, int page_num, 
 			ref int page_width, ref int page_height)
 		{
@@ -756,19 +804,19 @@ namespace gsview
 			return output;
 		}
 
-		private int tc_mRenderPageMT(IntPtr ctx, IntPtr dlist, int page_width, 
-			int page_height, Byte[] bmp_data, int bmp_width, int bmp_height, 
-			double scale, bool flipy)
+		private int tc_mRenderPageMT(IntPtr ctx, IntPtr dlist, IntPtr annot_dlist,
+			int page_width, int page_height, Byte[] bmp_data, int bmp_width, 
+			int bmp_height, double scale, bool flipy)
 		{
 			int output;
 			try
 			{
 				if (is64bit)
-					output = mRenderPageMT64(ctx, dlist, page_width, page_height, 
-						bmp_data, bmp_width, bmp_height, scale, flipy);
+					output = mRenderPageMT64(ctx, dlist, annot_dlist, page_width, 
+						page_height, bmp_data, bmp_width, bmp_height, scale, flipy);
 				else
-					output = mRenderPageMT32(ctx, dlist, page_width, page_height,
-						bmp_data, bmp_width, bmp_height, scale, flipy);
+					output = mRenderPageMT32(ctx, dlist, annot_dlist, page_width, 
+						page_height, bmp_data, bmp_width, bmp_height, scale, flipy);
 			}
 			catch (DllNotFoundException)
 			{
@@ -1130,6 +1178,35 @@ namespace gsview
 			return output;
 		}
 
+		private string tc_mGetText(IntPtr ctx, int pagenum, textout_t type)
+		{
+			String output;
+			try
+			{
+				if (is64bit)
+					output = mGetText64(ctx, pagenum, (int) type);
+				else
+					output = mGetText32(ctx, pagenum, (int) type);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return null;
+			}
+			return output;
+		}
+
+
+
 		private int tc_mSavePage(IntPtr ctx, String outfile, int page_num, 
 			int res, int type, bool append)
 		{
@@ -1162,7 +1239,8 @@ namespace gsview
 		/* Now the actual code that does some work */
 		public status_t Initialize()
 		{
-			is64bit = EnvironmentCheck.IS64Bit;
+			is64bit = is64bit = Environment.Is64BitOperatingSystem &&
+				Environment.Is64BitProcess;
 			mu_object = tc_mInitialize();
 			if (mu_object == null)
 				return status_t.E_FAILURE;
@@ -1177,6 +1255,11 @@ namespace gsview
 				lock(m_lock)
 					tc_mCleanUp(mu_object);
 			}
+		}
+
+		public String GetText(int page_num, textout_t type)
+		{
+			return tc_mGetText(mu_object, page_num, type);
 		}
 
 		public void GetVersion(out String vers)
@@ -1199,34 +1282,31 @@ namespace gsview
 			return tc_mApplyPassword(mu_object, password);
 		}
 
-		public void SetAA(bool AAon)
+		public void SetAA(AA_t AAlevel)
 		{
-			if (AAon)
-				lock (m_lock)
-				{
-					tc_mSetAA(mu_object, 8);
-				}
-			else
-				lock (m_lock)
-				{
-					tc_mSetAA(mu_object, 0);
-				}
+			lock (m_lock)
+			{
+				tc_mSetAA(mu_object, (int)AAlevel);
+			}
 		}
 
 		public int RenderPage(int page_num, Byte[] bmp_data, int bmp_width,
 			int bmp_height, double scale, bool flipy, bool use_dlist, bool
-			get_text, out BlocksText blocks)
+			get_text, out BlocksText blocks, bool annotation, 
+			out Annotate_t annot_type)
 		{
 			int code;
 			blocks = null;
 			String blockcolor = "#00FFFFFF";
 			String linecolor = "#402572AC";
 			/* Debug */
-			//blockcolor = "#4000FF00";
+			//blockcolor = "#20FFFF00";
 
+			annot_type = Annotate_t.UNKNOWN;
 			if (use_dlist) 
 			{
 				IntPtr dlist = IntPtr.Zero;
+				IntPtr annot_dlist = IntPtr.Zero;
 				IntPtr text = IntPtr.Zero;
 				int num_blocks = 0;
 
@@ -1310,15 +1390,25 @@ namespace gsview
 						dlist = tc_mCreateDisplayList(mu_object, page_num, 
 							ref page_width, ref page_height);
 					}
+				if (annotation)
+				{
+					lock (m_lock)
+					{
+						annot_dlist = tc_mCreateDisplayListAnnot(mu_object, page_num);
+						if (annot_dlist == IntPtr.Zero)
+							annot_type = Annotate_t.NO_ANNOTATE;
+						else
+							annot_type = Annotate_t.HAS_ANNOTATE;
+					}
+				}
 
 				/* Rendering of display list can occur with other threads so unlock */
 				if (dlist == null)
 				{
 					return (int) status_t.E_FAILURE;
 				}
-				code = tc_mRenderPageMT(mu_object, dlist, page_width, page_height,
-									bmp_data, bmp_width, bmp_height,
-									scale, flipy);
+				code = tc_mRenderPageMT(mu_object, dlist, annot_dlist, page_width, 
+					page_height, bmp_data, bmp_width, bmp_height, scale, flipy);
 			} 
 			else
  			{
@@ -1451,6 +1541,34 @@ namespace gsview
 		public void ReleaseText(IntPtr textpage)
 		{
 			tc_mReleaseText(mu_object, textpage);
+		}
+
+		public void HTMLSaveAs(String infile, String outfile, String password, 
+			bool has_password, bool linearize, int num_pages, System.Collections.IList pages)
+		{
+			if (num_pages > 0)
+			{
+				/* We need to do an allocation for our array of page numbers and
+				 * perform pinning to avoid GC while in the c++ code */
+				GCHandle pagesPtrStable;
+				int[] page_list;
+				page_list = new int[pages.Count];
+
+				for (int kk = 0; kk < pages.Count; kk++)
+				{
+					SelectPage currpage = (SelectPage)pages[kk];
+					page_list[kk] = currpage.Page;
+				}
+				pagesPtrStable = GCHandle.Alloc(page_list, GCHandleType.Pinned);
+				tc_mExtractPages(infile, outfile, password, has_password, linearize,
+					num_pages, pagesPtrStable.AddrOfPinnedObject());
+				pagesPtrStable.Free();
+			}
+			else
+			{
+				tc_mExtractPages(infile, outfile, password, has_password, linearize,
+							num_pages, IntPtr.Zero);
+			}
 		}
 
 		public void PDFExtract(String infile, String outfile, String password, 

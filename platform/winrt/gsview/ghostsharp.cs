@@ -193,7 +193,7 @@ namespace gsview
 
 		[DllImport("gsdll64.dll", EntryPoint = "gsapi_set_stdio", CharSet = CharSet.Ansi,
 			CallingConvention = CallingConvention.StdCall)]
-		private static extern int gsapi_set_stdio64(IntPtr instance, 
+		private static extern int gsapi_set_stdio64(IntPtr instance,
 			gsStdIOHandler stdin, gsStdIOHandler stdout, gsStdIOHandler stderr);
 
 		[DllImport("gsdll64.dll", EntryPoint = "gsapi_run_string_begin", CharSet = CharSet.Ansi,
@@ -348,6 +348,7 @@ namespace gsview
 		private int tc_gsapi_init_with_args(IntPtr instance, int argc, IntPtr argv)
 		{
 			int code;
+
 			try
 			{
 				if (is64bit)
@@ -369,6 +370,13 @@ namespace gsview
 				gsDLLProblemMain(this, output);
 				return -1;
 			}
+			catch(System.Reflection.TargetInvocationException ee)
+			{
+				String output = "TargetInvocationException";
+				gsDLLProblemMain(this, output);
+				return -1;
+			}
+
 			return code;
 		}
 
@@ -612,13 +620,24 @@ namespace gsview
 		internal event gsIOCallBackMain gsIOUpdateMain;
 		internal delegate void gsCallBackMain(object gsObject, gsEventArgs info);
 		internal event gsCallBackMain gsUpdateMain;
+		/* These need to be declared as members, to keep a reference and avoid GC
+		 * You do not pin delegates */
+		gsStdIOHandler RaiseStdInCallback;
+		gsStdIOHandler RaiseStdOutCallback;
+		gsStdIOHandler RaiseStdErrCallback;
 
 		public ghostsharp()
 		{
 			/* Determine now if we are 64 or 32 bit */
-			is64bit = EnvironmentCheck.IS64Bit;
+			is64bit = Environment.Is64BitOperatingSystem &&
+				Environment.Is64BitProcess;
 			m_worker = null;
 			gsInstance = IntPtr.Zero;
+
+			/* Go ahead and do the assignment here */
+			RaiseStdInCallback = StdInCallback;
+			RaiseStdOutCallback = StdOutCallback;
+			RaiseStdErrCallback = StdErrCallback;
 		}
 
 		private List<String> GetOptions(String options)
@@ -678,17 +697,8 @@ namespace gsview
 				return;
 			}
 
-			var RaiseStdInCallback = new gsStdIOHandler(StdInCallback);
-			var RaiseStdOutCallback = new gsStdIOHandler(StdOutCallback);
-			var RaiseStdErrCallback = new gsStdIOHandler(StdErrCallback);
-
-			var stdInPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdInCallback);
-			var stdOutPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdOutCallback);
-			var stdErrPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdErrCallback);
-
-			// Setup stdio callback functions
-			code = tc_gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback);
-
+			code = tc_gsapi_set_stdio(gsInstance, RaiseStdInCallback, 
+				RaiseStdOutCallback, RaiseStdErrCallback);
 			code = tc_gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 
 			if (code == 0)
@@ -780,7 +790,6 @@ namespace gsview
 					argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 					code = tc_gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
-
 					/* All the pinned items need to be freed so the GC can do its job */
 					for (int k = 0; k < num_params; k++)
 					{
@@ -789,7 +798,7 @@ namespace gsview
 					argPtrsStable.Free();
 					/* Free the character array list in case we have multiple runs */
 					CharacterArray.Clear();
-					
+
 					if (code < 0)
 						break;
 				}
@@ -798,10 +807,6 @@ namespace gsview
 			int code1 = tc_gsapi_exit(gsInstance);
 			if ((code == 0) || (code == gsConstants.E_QUIT))
 				code = code1;
-
-			RaiseStdInCallback = null;
-			RaiseStdOutCallback = null;
-			RaiseStdErrCallback = null;
 
 			tc_gsapi_delete_instance(gsInstance);
 			if ((code == 0) || (code == gsConstants.E_QUIT))
@@ -849,17 +854,8 @@ namespace gsview
 				return;
 			}
 
-			var RaiseStdInCallback = new gsStdIOHandler(StdInCallback);
-			var RaiseStdOutCallback = new gsStdIOHandler(StdOutCallback);
-			var RaiseStdErrCallback = new gsStdIOHandler(StdErrCallback);
-
-			var stdInPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdInCallback);
-			var stdOutPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdOutCallback);
-			var stdErrPtr = Marshal.GetFunctionPointerForDelegate(RaiseStdErrCallback);
-
-			// Setup stdio callback functions
-			code = tc_gsapi_set_stdio(gsInstance, RaiseStdInCallback, RaiseStdOutCallback, RaiseStdErrCallback);
-
+			code = tc_gsapi_set_stdio(gsInstance, RaiseStdInCallback, 
+				RaiseStdOutCallback, RaiseStdErrCallback);
 			code = tc_gsapi_set_arg_encoding(gsInstance, (int)gsEncoding.GS_ARG_ENCODING_UTF8);
 
 			if (code == 0)
@@ -967,8 +963,40 @@ namespace gsview
 		{
 			gsParams_t Value;
 			gsEventArgs info;
-			gsParams_t Params = (gsParams_t) e.Result;
+			gsParams_t Params;
 
+			try
+			{
+				Params = (gsParams_t)e.Result;
+			}
+			catch(System.Reflection.TargetInvocationException ee)
+			{
+				/* Something went VERY wrong with GS */
+				/* Following is to help debug these issues */
+				/* var inner = ee.InnerException;
+				var message = ee.Message;
+				var inner_message = inner.Message;
+				String bound = "\n************\n";
+				gsIOUpdateMain(this, bound, bound.Length);
+				gsIOUpdateMain(this, message, message.Length);
+				gsIOUpdateMain(this, bound, bound.Length);
+				gsIOUpdateMain(this, inner_message, inner_message.Length);
+				gsIOUpdateMain(this, bound, bound.Length);
+				var temp = inner.Source;
+				gsIOUpdateMain(this, bound, bound.Length);
+				gsIOUpdateMain(this, temp, temp.Length);
+				var method = inner.TargetSite;
+				gsIOUpdateMain(this, bound, bound.Length);
+				var method_name = method.Name;
+				gsIOUpdateMain(this, method_name, method_name.Length);
+				var stack = inner.StackTrace;
+				gsIOUpdateMain(this, bound, bound.Length);
+				gsIOUpdateMain(this, stack, stack.Length); */
+				String output = "Ghostscript DLL Invalid Access.";
+				gsDLLProblemMain(this, output);
+				return;
+			}
+			
 			if (Params.task == GS_Task_t.PS_DISTILL)
 				m_worker.DoWork -= new DoWorkEventHandler(gsWork2);
 			else
@@ -1111,6 +1139,7 @@ namespace gsview
 					m_worker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(gsCompleted);
 					m_worker.ProgressChanged += new ProgressChangedEventHandler(gsProgressChanged);
 				}
+
 				if (Params.task == GS_Task_t.PS_DISTILL)
 					m_worker.DoWork += new DoWorkEventHandler(gsWork2);
 				else
@@ -1130,51 +1159,6 @@ namespace gsview
 		public void Cancel()
 		{
 			m_worker.CancelAsync();
-		}
-	}
-
-	/* We need to determine if we are a 64 bit or 32 bit process. In .NET 4+
-	 * there is a simple check, Environment.Is64BitProcess. I don't want to
-	 * rely upon having that new of version. Hence, the following */
-	public static class EnvironmentCheck
-	{
-		[StructLayout(LayoutKind.Sequential)]
-		internal struct SYSTEM_INFO
-		{
-			public ushort processorArchitecture;
-			ushort reserved;
-			public uint pageSize;
-			public IntPtr minimumApplicationAddress;
-			public IntPtr maximumApplicationAddress;
-			public IntPtr activeProcessorMask;
-			public uint numberOfProcessors;
-			public uint processorType;
-			public uint allocationGranularity;
-			public ushort processorLevel;
-			public ushort processorRevision;
-		}
-
-		[DllImport("kernel32.dll")]
-		internal static extern void GetNativeSystemInfo(ref SYSTEM_INFO si);
-		[DllImport("kernel32.dll")]
-		internal static extern bool IsWow64Process(IntPtr handle, out bool result);
-		[DllImport("kernel32.dll")]
-		internal static extern IntPtr GetCurrentProcess();
-
-		public static bool IS64Bit
-		{
-			get
-			{
-				SYSTEM_INFO si = new SYSTEM_INFO();
-				GetNativeSystemInfo(ref si);
-				if (si.processorArchitecture == 0) // zero means x86
-					return false;
-				bool result;
-
-				if (!IsWow64Process(GetCurrentProcess(), out result))
-					throw new InvalidOperationException();
-				return !result;
-			}
 		}
 	}
 }

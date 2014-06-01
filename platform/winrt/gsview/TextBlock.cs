@@ -89,7 +89,7 @@ namespace gsview
 			set
 			{
 				color = value;
-				//OnPropertyChanged("Color");
+				OnPropertyChanged("Color");
 			}
 		}
 

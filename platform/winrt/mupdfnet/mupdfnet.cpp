@@ -148,6 +148,24 @@ SYMBOL_DECLSPEC char* __stdcall mGetContentsItem(int k, int *len, int *page)
 	return retstr;
 }
 
+SYMBOL_DECLSPEC char * __stdcall mGetText(void *ctx, int pagenum, int type)
+{
+	char* retstr = NULL;
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+	std::string text_cstr;
+	int len;
+
+	text_cstr = mu_ctx->GetText(pagenum, type);
+	if (text_cstr.size() > 0)
+	{
+		auto text = text_cstr.c_str();
+		len = strlen(text);
+		retstr = (char*)::CoTaskMemAlloc(len + 1);
+		strcpy(retstr, text);
+	}
+	return retstr;
+}
+
 SYMBOL_DECLSPEC int __stdcall mTextSearchPage(void *ctx, int page_num, PCWSTR needle)
 {
 	muctx *mu_ctx = static_cast<muctx*>(ctx);
@@ -252,6 +270,12 @@ SYMBOL_DECLSPEC void* __stdcall mCreateDisplayList(void *ctx, int page_num,
 	return (void*)mu_ctx->CreateDisplayList(page_num, page_width, page_height);
 }
 
+SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListAnnot(void *ctx, int page_num)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+	return (void*)mu_ctx->CreateAnnotationList(page_num);
+}
+
 SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListText(void *ctx, int page_num,
 	int *page_width, int *page_height, void **text_out, int *length)
 {
@@ -264,12 +288,12 @@ SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListText(void *ctx, int page_num,
 }
 
 SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,
-	int page_width, int page_height, byte *bmp_data, int bmp_width,
+	void *annot_dlist, int page_width, int page_height, byte *bmp_data, int bmp_width,
 	int bmp_height, double scale, bool flipy)
 {
 	muctx *mu_ctx = static_cast<muctx*>(ctx);
 
-	return (int) mu_ctx->RenderPageMT(dlist, page_width, page_height,
+	return (int) mu_ctx->RenderPageMT(dlist, annot_dlist, page_width, page_height,
 		&(bmp_data[0]), bmp_width, bmp_height,
 		scale, flipy, false, { 0, 0 }, { 0, 0 });
 }

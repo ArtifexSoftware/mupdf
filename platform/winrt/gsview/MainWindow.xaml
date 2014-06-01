@@ -121,12 +121,30 @@
         <!-- Customize listview to turn off selection -->
     </Window.Resources>
 
+    <!-- The following is needed to set up all the keyboard short cuts -->
+    <Window.CommandBindings>
+        <CommandBinding Command="Open" Executed="OpenFileCommand"></CommandBinding>
+        <CommandBinding Command="SelectAll" Executed="SelectAllCommand"></CommandBinding>
+        <CommandBinding Command="Copy" Executed="CopyCommand"></CommandBinding>
+        <CommandBinding Command="Print" Executed="PrintCommand"></CommandBinding>
+        <CommandBinding Command="Help" Executed="HelpCommand"></CommandBinding>
+        <CommandBinding Command="Close" Executed="CloseCommand"></CommandBinding>
+    </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Control" Command="Open"></KeyBinding>
+        <KeyBinding Key="A" Modifiers="Control" Command="SelectAll"></KeyBinding>
+        <KeyBinding Key="C" Modifiers="Control" Command="Copy"></KeyBinding>
+        <KeyBinding Key="P" Modifiers="Control" Command="Print"></KeyBinding>
+        <KeyBinding Key="W" Modifiers="Control" Command="Close"></KeyBinding>
+        <KeyBinding Key="F1" Command="Help"></KeyBinding>
+    </Window.InputBindings>
+
     <!-- To do add in command short cuts and bindings -->
     <DockPanel LastChildFill="True">
         <!-- Menu item at top -->
         <Menu IsMainMenu="True" DockPanel.Dock="Top">
             <MenuItem Header="_File" x:Name="xaml_file">
-                <MenuItem Header="_Open..." Click="OpenFile">
+                <MenuItem Header="_Open..." Command="Open" InputGestureText="Ctrl+O">
                     <MenuItem.Icon>
                         <Image Source="Resources/OpenFile.png" />
                     </MenuItem.Icon>
@@ -152,7 +170,7 @@
                     <MenuItem Header="HTML" Click="SaveHTML"/>
                     <MenuItem Header="XML" Click="SaveXML"/>
                 </MenuItem>
-                <MenuItem Header="_Close" Click="CloseFile" x:Name="xaml_closefile">
+                <MenuItem Header="_Close" Command="Close" InputGestureText="Ctrl+W" x:Name="xaml_closefile">
                     <MenuItem.Icon>
                         <Image Source="Resources/Close.ico" />
                     </MenuItem.Icon>
@@ -170,12 +188,11 @@
                     <MenuItem Header="PDF" Click="ExtractPDF" x:Name="xaml_extractpdf"/>
                     <MenuItem Header="EPS" Click="ExtractEPS" x:Name="xaml_extracteps"/>
                     <MenuItem Header="PS" Click="ExtractPS" x:Name="xaml_extractps"/>
-                    <MenuItem Header="SVG" Click="ExtractSVG" x:Name="xaml_extractsvg"/>
                 </MenuItem>
                 <MenuItem Header="Page Conversions..." Click="ConvertClick" x:Name="xaml_conversions">
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Print..." Click="Print" x:Name="xaml_print">
+                <MenuItem Header="Print..." Command="Print" InputGestureText="Ctrl+P" x:Name="xaml_print">
                     <MenuItem.Icon>
                         <Image Source="Resources/printer.ico" />
                     </MenuItem.Icon>
@@ -193,21 +210,24 @@
                             <Image Source="Resources/saveHS.png" />
                         </MenuItem.Icon>
                 </MenuItem>
+                <Separator />
                 <MenuItem Header="Copy Page" Click="CopyPage" x:Name="xaml_copypage">
                     <MenuItem.Icon>
                         <Image Source="Resources/copy.ico" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <Separator />
                 <MenuItem Header="Paste Page To" x:Name="xaml_pastpageto">
                     <MenuItem Header="BMP" Click="PastePage" Tag="BMP"/>
                     <MenuItem Header="GIF" Click="PastePage" Tag="GIF"/>
                     <MenuItem Header="JPEG" Click="PastePage" Tag="JPG"/>
                     <MenuItem Header="PNG" Click="PastePage" Tag="PNG"/>
                     <MenuItem Header="TIFF" Click="PastePage" Tag="TIF"/>
-                    <MenuItem Header="WDP" Click="PastePage" Tag="WDP"/>
+                    <MenuItem Header="WDP (HD Photo)" Click="PastePage" Tag="WDP"/>
                 </MenuItem>
-                <MenuItem Header="Copy Text" x:Name="xaml_copytext"/>
+                <Separator />
+                <MenuItem Header="Select Text All" Command="SelectAll" InputGestureText="Ctrl+A" x:Name="xaml_selectalltext" />
+                <MenuItem Header="Deselect Text" x:Name="xaml_deselecttext" />
+                <MenuItem Header="Copy Text" Command="Copy" InputGestureText="Ctrl+C" x:Name="xaml_copytext" />
             </MenuItem>
             <MenuItem Header="_View" x:Name="xaml_view">
                 <MenuItem Header="Next Page" Click="OnForwardPageClick"/>
@@ -217,11 +237,19 @@
             <MenuItem Header="_Options">
                 <MenuItem Header="Output Intents" Click="OutputIntents" />
                 <MenuItem Header="Zoom Control" IsCheckable="true" Checked="ShowFooter" Unchecked="HideFooter"/>
-                <MenuItem x:Name="xaml_AA" Header="Enable AntiAlias" IsCheckable="True" IsChecked="True" Checked="OnAAChecked" Unchecked="OnAAChecked"/>
+                <MenuItem Header="Show Annotations" IsCheckable="True" IsChecked ="True"  Checked="AnnotationOn" Unchecked="AnnotationOff"/>
+                <MenuItem Header="AntiAlias" >
+                    <MenuItem x:Name="xaml_AA_High" Header="High" IsCheckable="True" IsChecked="True" Checked="OnAAChecked" />
+                    <MenuItem x:Name="xaml_AA_MedHigh" Header="Medium High" IsCheckable="True" IsChecked="False" Checked="OnAAChecked"/>
+                    <MenuItem x:Name="xaml_AA_Med" Header="Medium" IsCheckable="True" IsChecked="False" Checked="OnAAChecked"/>
+                    <MenuItem x:Name="xaml_AA_Low" Header="Low" IsCheckable="True" IsChecked="False" Checked="OnAAChecked" />
+                    <MenuItem x:Name="xaml_AA_None" Header="None" IsCheckable="True" IsChecked="False" Checked="OnAAChecked" />
+                </MenuItem>
+                
             </MenuItem>
 
             <MenuItem Header="_Help">
-                <MenuItem Header="GSView Help" Click="OnHelpClick"/>
+                <MenuItem Header="GSView Help" Command="Help" InputGestureText="F1"/>
                 <MenuItem Header="About" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>
@@ -584,6 +612,33 @@
             </Button>
         </Grid>
 
+        <!-- The progress bar that runs during copy all text to clipboard -->
+        <Grid x:Name="xaml_CopyTextGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_CopyTextProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0" 
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Printing</Bold></TextBlock>
+            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelCopyText" Click="CancelCopyText" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Cancel</Bold></TextBlock>
+            </Button>
+        </Grid>
+        
         <!-- The progress bar that runs during printing -->
         <Grid x:Name="xaml_PrintGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
             <Grid.ColumnDefinitions>

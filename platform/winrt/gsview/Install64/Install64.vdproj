@@ -62,6 +62,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.5"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.5 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.5"
+                    }
+                }
             }
         }
         "Release"
@@ -286,7 +294,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:GSview 6.0"
         "ProductCode" = "8:{A22596C0-BCF4-46F9-9CF2-1C66E8588C30}"
-        "PackageCode" = "8:{2D4D7754-2AE5-45B4-B5CD-D3672BA861A7}"
+        "PackageCode" = "8:{472F1001-38CC-432D-9105-A519D7DD8F99}"
         "UpgradeCode" = "8:{B494B7A2-738F-4F9D-87F4-31830A16FB76}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

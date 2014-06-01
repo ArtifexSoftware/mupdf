@@ -10,6 +10,15 @@ using System.Windows.Media;
 
 namespace gsview
 {
+	public enum Annotate_t
+	{
+		UNKNOWN,
+		NO_ANNOTATE,
+		HAS_ANNOTATE,
+		ANNOTATE_VISIBLE,
+		ANNOTATE_HIDDEN
+	}
+
 	public class DocPage : INotifyPropertyChanged
 	{
 		private LinesText m_lines;
@@ -19,6 +28,7 @@ namespace gsview
 		private int nativeheight;
 		private int nativewidth;
 		private double zoom;
+		private Annotate_t annotate;
 		private BitmapSource bitmap;
 		private IList<RectList> textbox;
 		private List<RectList> linkbox;
@@ -127,6 +137,12 @@ namespace gsview
 			set { nativeheight = value; }
 		}
 
+		public Annotate_t Annotate
+		{
+			get { return annotate; }
+			set { annotate = value; }
+		}
+
 		public double Zoom
 		{
 			get { return zoom; }
@@ -201,7 +217,7 @@ namespace gsview
 			set { pagenum = value; }
 		}
 
-		public bool AA
+		public AA_t AA
 		{
 			get;
 			set;
@@ -233,13 +249,13 @@ namespace gsview
 			this.PageNum = -1;
 			this.PageName = "";
 			this.TextBlocks = null;
-			this.AA = true;
+			this.AA = AA_t.HIGH;
 		}
 
 		public DocPage(int Height, int Width, double Zoom, BitmapSource BitMap,
 							List<RectList> TextBox, List<RectList> LinkBox,
 							Page_Content_t Content, int PageNum, BlocksText TextBlocks,
-							bool AA)
+							AA_t AA)
 		{
 			this.Height = Height;
 			this.Width = Width;
