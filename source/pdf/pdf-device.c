@@ -41,6 +41,7 @@ typedef struct image_entry_s image_entry;
 struct image_entry_s
 {
 	char digest[16];
+	int id;
 	pdf_obj *ref;
 };
 
@@ -77,6 +78,7 @@ struct pdf_device_s
 	pdf_document *doc;
 	pdf_obj *contents;
 	pdf_obj *resources;
+	fz_buffer *buffer;
 
 	int in_text;
 
@@ -1234,7 +1236,8 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 
 	pdf_dev_end_text(ctx, pdev);
 
-	pdf_dict_puts_drop(ctx, pdev->contents, "Length", pdf_new_int(ctx, doc, gs->buf->len));
+	if (pdev->contents)
+		pdf_dict_puts_drop(ctx, pdev->contents, "Length", pdf_new_int(ctx, doc, gs->buf->len));
 
 	for (i = pdev->num_gstates-1; i >= 0; i--)
 	{
@@ -1251,10 +1254,17 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 		pdf_drop_obj(ctx, pdev->images[i].ref);
 	}
 
-	pdf_update_stream(ctx, doc, pdf_to_num(ctx, pdev->contents), pdev->gstates[0].buf);
-	fz_drop_buffer(ctx, pdev->gstates[0].buf);
+	if (pdev->contents)
+	{
+		pdf_update_stream(ctx, doc, pdf_to_num(ctx, pdev->contents), pdev->gstates[0].buf);
+		pdf_drop_obj(ctx, pdev->contents);
+	}
 
-	pdf_drop_obj(ctx, pdev->contents);
+	if (pdev->buffer != pdev->gstates[0].buf)
+	{
+		fz_drop_buffer(ctx, pdev->gstates[0].buf);
+	}
+
 	pdf_drop_obj(ctx, pdev->resources);
 
 	fz_free(ctx, pdev->images);
@@ -1262,7 +1272,7 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->gstates);
 }
 
-fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm)
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm, fz_buffer *buf)
 {
 	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
 
@@ -1296,11 +1306,14 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *conte
 
 	fz_try(ctx)
 	{
+		dev->buffer = fz_keep_buffer(ctx, buf);
+		if (!buf)
+			buf = fz_new_buffer(ctx, 256);
 		dev->doc = doc;
 		dev->contents = pdf_keep_obj(ctx, contents);
 		dev->resources = pdf_keep_obj(ctx, resources);
 		dev->gstates = fz_malloc_struct(ctx, gstate);
-		dev->gstates[0].buf = fz_new_buffer(ctx, 256);
+		dev->gstates[0].buf = buf;
 		dev->gstates[0].ctm = *ctm;
 		dev->gstates[0].colorspace[0] = fz_device_gray(ctx);
 		dev->gstates[0].colorspace[1] = fz_device_gray(ctx);
@@ -1315,7 +1328,7 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *conte
 	}
 	fz_catch(ctx)
 	{
-		if (dev->gstates)
+		if (dev->gstates && dev->buffer == NULL)
 			fz_drop_buffer(ctx, dev->gstates[0].buf);
 		fz_free(ctx, dev);
 		fz_rethrow(ctx);
@@ -1354,5 +1367,5 @@ fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		}
 	}
 
-	return pdf_new_pdf_device(ctx, doc, page->contents, resources, &ctm);
+	return pdf_new_pdf_device(ctx, doc, page->contents, resources, &ctm, NULL);
 }

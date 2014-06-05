@@ -1374,7 +1374,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 			pdf_dict_puts_drop(ctx, ap_obj, "Matrix", pdf_new_matrix(ctx, doc, &mat));
 		}
 
-		dev = pdf_new_pdf_device(ctx, doc, ap_obj, pdf_dict_gets(ctx, ap_obj, "Resources"), &mat);
+		dev = pdf_new_pdf_device(ctx, doc, ap_obj, pdf_dict_gets(ctx, ap_obj, "Resources"), &mat, NULL);
 		fz_run_display_list(ctx, disp_list, dev, &ctm, &fz_infinite_rect, NULL);
 		fz_drop_device(ctx, dev);
 

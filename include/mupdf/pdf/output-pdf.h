@@ -6,7 +6,7 @@
 	new pdf content. WARNING: this device is work in progress. It doesn't
 	currently support all rendering cases.
 */
-fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm);
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm, fz_buffer *buf);
 
 /*
 	pdf_write_document: Write out the document to a file with all changes finalised.
