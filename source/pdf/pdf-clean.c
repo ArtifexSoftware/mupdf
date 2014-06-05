@@ -117,7 +117,7 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 	}
 }
 
-void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie)
+void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie, pdf_page_contents_process_fn *proc_fn, void *proc_arg)
 {
 	pdf_process process, process2;
 	fz_buffer *buffer = fz_new_buffer(ctx, 1024);
@@ -166,7 +166,6 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 			num = pdf_to_num(ctx, contents);
 			pdf_dict_dels(ctx, contents, "Filter");
 		}
-		pdf_update_stream(ctx, doc, num, buffer);
 
 		/* Now deal with resources. The spec allows for Type3 fonts and form
 		 * XObjects to omit a resource dictionary and look in the parent.
@@ -260,6 +259,10 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 
 		/* Properties - no cleaning possible. */
 
+		if (proc_fn)
+			(*proc_fn)(proc_arg, buffer, res);
+
+		pdf_update_stream(ctx, doc, num, buffer);
 		pdf_drop_obj(ctx, page->resources);
 		ref = pdf_new_ref(ctx, doc, res);
 		page->resources = pdf_keep_obj(ctx, ref);

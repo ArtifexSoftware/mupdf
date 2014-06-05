@@ -2533,7 +2533,7 @@ static void sanitise(fz_context *ctx, pdf_document *doc)
 	{
 		pdf_page *page = pdf_load_page(ctx, doc, i);
 
-		pdf_clean_page_contents(ctx, doc, page, NULL);
+		pdf_clean_page_contents(ctx, doc, page, NULL, NULL, NULL);
 
 		fz_drop_page(ctx, &page->super);
 	}

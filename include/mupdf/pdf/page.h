@@ -72,11 +72,36 @@ void pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page,
 void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 
 /*
-	pdf_clean_page_contents: Clean a loaded pages rendering operations.
-	This involves filtering the PDF operators used to avoid (some cases
+	pdf_page_contents_process_fn: A function used for processing the
+	cleaned page contents/resources gathered as part of
+	pdf_clean_page_contents.
+
+	arg: An opaque arg specific to the particular function.
+
+	buffer: A buffer holding the page contents.
+
+	res: A pdf_obj holding the page resources.
+*/
+typedef void (pdf_page_contents_process_fn)(void *arg, fz_buffer *buffer, pdf_obj *res);
+
+/*
+	pdf_clean_page_contents: Clean a loaded pages rendering operations,
+	with an optional post processing step.
+
+	Firstly, this filters the PDF operators used to avoid (some cases
 	of) repetition, and leaves the page in a balanced state with an
-	unchanged top level matrix etc. Just the main page contents without
-	the annotations
+	unchanged top level matrix etc. At the same time, the resources
+	used by the page contents are collected.
+
+	Next, the resources themselves are cleaned (as appropriate) in the
+	same way.
+
+	Next, an optional post processing stage is called.
+
+	Finally, the page contents and resources in the documents page tree
+	are replaced by these processed versions.
+
+	Annotations remain unaffected.
 
 	page: A page loaded by pdf_load_page.
 
@@ -85,7 +110,8 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, cons
 	cookie: A pointer to an optional fz_cookie structure that can be used
 	to track progress, collect errors etc.
 */
-void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie);
+void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie,
+	pdf_page_contents_process_fn *proc, void *proc_arg);
 
 /*
 	Presentation interface.
