@@ -558,14 +558,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\jmemcust.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\source\fitz\jmemcust.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\fitz\link.c"
 				>
 			</File>
