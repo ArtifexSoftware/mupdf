@@ -276,7 +276,7 @@ namespace gsview
 
 	public partial class MainWindow : Window
 	{
-		mudocument mu_doc;
+		mudocument mu_doc = null;
 		public Pages m_docPages;
 		List<textSelectInfo_t> m_textSelect;
 		List<DocPage> m_thumbnails;
@@ -342,7 +342,6 @@ namespace gsview
 			m_file_open = false;
 			m_regstartup = true;
 			m_showannot = true;
-			status_t result = CleanUp();
 
 			/* Allocations and set up */
 			try
@@ -367,6 +366,7 @@ namespace gsview
 				xaml_PageGrid.AddHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver), true);
 				xaml_PageGrid.AddHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop), true);
 				DimSelections();
+				status_t result = CleanUp();
 
 				string[] arguments = Environment.GetCommandLineArgs();
 				if (arguments.Length > 1)
@@ -3288,7 +3288,6 @@ namespace gsview
 				List<RectList> links = new List<RectList>();
 				if (box_count > 0)
 				{
-					var rectlist = new RectList();
 					for (int j = 0; j < box_count; j++)
 					{
 						Point top_left;
@@ -3299,6 +3298,7 @@ namespace gsview
 
 						mu_doc.GetLinkItem(j, out top_left, out size, out uri,
 							out topage, out type);
+						var rectlist = new RectList();
 						rectlist.Height = size.Height * m_doczoom;
 						rectlist.Width = size.Width * m_doczoom;
 						rectlist.X = top_left.X * m_doczoom;

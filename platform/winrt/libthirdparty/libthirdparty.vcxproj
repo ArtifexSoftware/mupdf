@@ -1,0 +1,418 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftbase.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftbbox.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftbitmap.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftgasp.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftglyph.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftinit.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftstroke.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftsynth.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftsystem.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\fttype1.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\base\ftxf86.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\cff\cff.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\cid\type1cid.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\psaux\psaux.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\pshinter\pshinter.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\psnames\psnames.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\raster\raster.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\sfnt\sfnt.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\smooth\smooth.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\truetype\truetype.c" />
+    <ClCompile Include="..\..\..\thirdparty\freetype\src\type1\type1.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_arith.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_arith_iaid.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_arith_int.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_generic.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_halftone.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_huffman.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_image.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_metadata.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_mmr.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_page.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_refinement.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_segment.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_symbol_dict.c" />
+    <ClCompile Include="..\..\..\thirdparty\jbig2dec\jbig2_text.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jaricom.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jcomapi.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdapimin.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdapistd.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdarith.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdatadst.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdatasrc.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdcoefct.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdcolor.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jddctmgr.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdhuff.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdinput.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdmainct.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdmarker.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdmaster.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdmerge.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdpostct.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdsample.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jdtrans.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jerror.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jfdctflt.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jfdctfst.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jfdctint.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jidctflt.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jidctfst.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jidctint.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jmemmgr.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jmemnobs.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jquant1.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jquant2.c" />
+    <ClCompile Include="..\..\..\thirdparty\jpeg\jutils.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsarray.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsboolean.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsbuiltin.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jscompile.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsdate.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsdtoa.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsdump.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jserror.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsfunction.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsgc.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsintern.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jslex.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsmath.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsnumber.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsobject.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\json.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsparse.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsproperty.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsregexp.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsrun.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsstate.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsstring.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\jsvalue.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\main.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\one.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\regex.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\utf.c" />
+    <ClCompile Include="..\..\..\thirdparty\mujs\utftype.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\bio.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\cidx_manager.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\cio.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\dwt.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\event.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\function_list.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\image.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\invert.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\j2k.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\j2k_lib.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\jp2.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\mct.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\mqc.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\openjpeg.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\phix_manager.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\pi.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\ppix_manager.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\raw.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\t1.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\t1_generate_luts.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\t2.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\tcd.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\tgt.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\thix_manager.c" />
+    <ClCompile Include="..\..\..\thirdparty\openjpeg\libopenjpeg\tpix_manager.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\adler32.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\compress.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\crc32.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\deflate.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\inffast.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\inflate.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\inftrees.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\trees.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\uncompr.c" />
+    <ClCompile Include="..\..\..\thirdparty\zlib\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\config\ftconfig.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\config\ftheader.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\config\ftmodule.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\config\ftoption.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\config\ftstdlib.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\freetype.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftadvanc.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftautoh.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftbbox.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftbdf.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftbitmap.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftbzip2.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftcache.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftchapters.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftcid.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\fterrdef.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\fterrors.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftgasp.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftglyph.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftgxval.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftgzip.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftimage.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftincrem.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftlcdfil.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftlist.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftlzw.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftmac.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftmm.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftmodapi.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftmoderr.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftotval.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftoutln.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftpfr.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftrender.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftsizes.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftsnames.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftstroke.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftsynth.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftsystem.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\fttrigon.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\fttypes.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftwinfnt.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ftxf86.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\autohint.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftcalc.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftdebug.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftdriver.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftgloadr.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftmemory.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftobjs.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftpic.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftrfork.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftserv.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftstream.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\fttrace.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\ftvalid.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\internal.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\psaux.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\pshints.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svbdf.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svcid.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svgldict.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svgxval.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svkern.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svmm.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svotval.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svpfr.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svpostnm.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svprop.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svpscmap.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svpsinfo.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svsfnt.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svttcmap.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svtteng.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svttglyf.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svwinfnt.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\services\svxf86nm.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\sfnt.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\t1types.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\internal\tttypes.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\t1tables.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ttnameid.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\tttables.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\tttags.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\freetype\ttunpat.h" />
+    <ClInclude Include="..\..\..\thirdparty\freetype\include\ft2build.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\astnames.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\jsbuiltin.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\jscompile.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\jsi.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\jslex.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\jsrun.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\jsvalue.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\mujs.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\opnames.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\regex.h" />
+    <ClInclude Include="..\..\..\thirdparty\mujs\utf.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\bio.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\cidx_manager.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\cio.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\dwt.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\event.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\fix.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\function_list.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\image.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\indexbox_manager.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\int.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\invert.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\j2k.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\j2k_lib.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\jp2.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\mct.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\mqc.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\openjpeg.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\opj_config.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\opj_config_private.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\opj_includes.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\opj_intmath.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\opj_inttypes.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\opj_malloc.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\opj_stdint.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\pi.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\raw.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\t1.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\t1_luts.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\t2.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\tcd.h" />
+    <ClInclude Include="..\..\..\thirdparty\openjpeg\libopenjpeg\tgt.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{DF87E242-8B2C-4F04-9A7E-61C578FD994C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libthirdparty</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>..\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>..\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>NO_GETENV;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\scripts\freetype;..\..\..\scripts\jpeg;..\..\..\scripts\openjpeg;..\..\..\thirdparty\jbig2dec;..\..\..\thirdparty\jpeg;..\..\..\thirdparty\openjpeg\libopenjpeg;..\..\..\thirdparty\zlib;..\..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>NO_GETENV;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\scripts\freetype;..\..\..\scripts\jpeg;..\..\..\scripts\openjpeg;..\..\..\thirdparty\jbig2dec;..\..\..\thirdparty\jpeg;..\..\..\thirdparty\openjpeg\libopenjpeg;..\..\..\thirdparty\zlib;..\..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NO_GETENV;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\scripts\freetype;..\..\..\scripts\jpeg;..\..\..\scripts\openjpeg;..\..\..\thirdparty\jbig2dec;..\..\..\thirdparty\jpeg;..\..\..\thirdparty\openjpeg\libopenjpeg;..\..\..\thirdparty\zlib;..\..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NO_GETENV;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H="slimftmodules.h";FT_CONFIG_OPTIONS_H="slimftoptions.h";DEBUG=1;verbose=-1;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\scripts\freetype;..\..\..\scripts\jpeg;..\..\..\scripts\openjpeg;..\..\..\thirdparty\jbig2dec;..\..\..\thirdparty\jpeg;..\..\..\thirdparty\openjpeg\libopenjpeg;..\..\..\thirdparty\zlib;..\..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -775,9 +775,9 @@
                       PreviewMouseLeftButtonUp="ListPreviewLeftButtonUp"
                       MouseLeave="ListMouseLeave"
                       PreviewMouseMove="ListPreviewMouseMove"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
                       ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                      ScrollViewer.IsDeferredScrollingEnabled ="True">
+                      ScrollViewer.IsDeferredScrollingEnabled ="False">
                 <!-- This keeps the pages in the center of the panel -->
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">

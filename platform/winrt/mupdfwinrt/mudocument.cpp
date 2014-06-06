@@ -196,6 +196,7 @@ int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height
 	if (use_dlist) 
 	{
 		void *dlist;
+		void *annotlist;
 		int page_height;
 		int page_width;
 
@@ -204,6 +205,7 @@ int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height
 			in the page cache */
 		dlist = (void*) mu_object.CreateDisplayList(page_num, &page_width, 
 													&page_height);
+		annotlist = (void*)mu_object.CreateAnnotationList(page_num);
 		/* Rendering of display list can occur with other threads so unlock */
 		mutex_lock.unlock();
 		if (dlist == NULL)
@@ -211,7 +213,7 @@ int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height
 			*bit_map = nullptr;
 			return E_FAILURE;
 		}
-		code = mu_object.RenderPageMT(dlist, page_width, page_height, 
+		code = mu_object.RenderPageMT(dlist, annotlist, page_width, page_height,
 										&(bmp_data[0]), bmp_width, bmp_height,
 										scale, flipy, tile, { top_left.X, top_left.Y }, 
 										{ bottom_right.X, bottom_right.Y });
@@ -270,6 +272,7 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 		if (use_dlist) 
 		{
 			void *dlist;
+			void *annotlist;
 			int page_height;
 			int page_width;
 
@@ -278,11 +281,12 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 			   in the page cache */
 			dlist = (void*) mu_object.CreateDisplayList(page_num, &page_width, 
 														&page_height);
+			annotlist = (void*)mu_object.CreateAnnotationList(page_num);
 			mutex_lock.unlock();
 			if (dlist == NULL)
 				return nullptr;
 			/* Rendering of display list can occur with other threads so unlock */
-			code = mu_object.RenderPageMT(dlist, page_width, page_height, 
+			code = mu_object.RenderPageMT(dlist, annotlist, page_width, page_height,
 										  &(bmp_data[0]), bmp_width, bmp_height,
 										  scale, true, false, { 0.0, 0.0 }, 
 										  { (float) bmp_width, (float) bmp_height });
@@ -458,7 +462,7 @@ String^ mudocument::ComputeHTML(int page_num)
 	std::string html_cstr;
 
 	mutex_lock.lock();
-	html_cstr = mu_object.GetHTML(page_num);
+	html_cstr = mu_object.GetText(page_num, HTML);
 	mutex_lock.unlock();
 
 	html = char_to_String(html_cstr.c_str());

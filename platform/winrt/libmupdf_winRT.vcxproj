@@ -81,6 +81,7 @@
     <ClCompile Include="..\..\source\fitz\halftone.c" />
     <ClCompile Include="..\..\source\fitz\hash.c" />
     <ClCompile Include="..\..\source\fitz\image.c" />
+    <ClCompile Include="..\..\source\fitz\jmemcust.c" />
     <ClCompile Include="..\..\source\fitz\link.c" />
     <ClCompile Include="..\..\source\fitz\list-device.c" />
     <ClCompile Include="..\..\source\fitz\load-jpeg.c" />
@@ -234,6 +235,7 @@
     <ClInclude Include="..\..\include\mupdf\pdf\xref.h" />
     <ClInclude Include="..\..\include\mupdf\xps.h" />
     <ClInclude Include="..\..\source\fitz\draw-imp.h" />
+    <ClInclude Include="..\..\source\fitz\jmemcust.h" />
     <ClInclude Include="..\..\source\fitz\ucdn.h" />
     <ClInclude Include="..\..\source\fitz\unicodedata_db.h" />
     <ClInclude Include="..\..\source\pdf\pdf-encodings.h" />
@@ -466,6 +468,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG=1;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -494,6 +497,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\ucdn;..\..\include;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_WINRT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

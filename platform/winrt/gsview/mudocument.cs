@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Windows;
 using System.ComponentModel;
+using System.Windows.Forms;
 
 /* This file contains the interface between the muctx cpp class, which
 	implements the mupdf calls and the .net managed code  */
@@ -405,7 +406,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 1";
 				mupdfDLLProblemMain(this, err);
 				return IntPtr.Zero;
 			}
@@ -432,7 +433,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 2";
 				mupdfDLLProblemMain(this, err);
 				return status_t.E_FAILURE;
 			}
@@ -458,7 +459,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 3";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -485,7 +486,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 4";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -512,7 +513,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 5";
 				mupdfDLLProblemMain(this, err);
 				return false;
 			}
@@ -539,7 +540,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 6";
 				mupdfDLLProblemMain(this, err);
 				return false;
 			}
@@ -569,7 +570,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 7";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -597,7 +598,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 8";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -624,7 +625,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 9";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -650,7 +651,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 10";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -677,7 +678,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 11";
 				mupdfDLLProblemMain(this, err);
 				return null;
 			}
@@ -704,7 +705,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 12";
 				mupdfDLLProblemMain(this, err);
 				return IntPtr.Zero;
 			}
@@ -734,7 +735,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 13";
 				mupdfDLLProblemMain(this, err);
 				return IntPtr.Zero;
 			}
@@ -760,7 +761,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 14";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -790,7 +791,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 15";
 				mupdfDLLProblemMain(this, err);
 				return IntPtr.Zero;
 			}
@@ -821,7 +822,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 16";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -848,7 +849,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 17";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -878,7 +879,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 18";
 				mupdfDLLProblemMain(this, err);
 				return false;
 			}
@@ -904,7 +905,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 18";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -931,7 +932,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 19";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -962,7 +963,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 20";
 				mupdfDLLProblemMain(this, err);
 				return null;
 			}
@@ -988,7 +989,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 21";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -1014,7 +1015,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 22";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -1044,7 +1045,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 23";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -1075,7 +1076,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 24";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -1106,7 +1107,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 25";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -1137,7 +1138,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 26";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -1164,7 +1165,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 27";
 				mupdfDLLProblemMain(this, err);
 				return null;
 			}
@@ -1191,7 +1192,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 28";
 				mupdfDLLProblemMain(this, err);
 				return null;
 			}
@@ -1204,8 +1205,6 @@ namespace gsview
 			}
 			return output;
 		}
-
-
 
 		private int tc_mSavePage(IntPtr ctx, String outfile, int page_num, 
 			int res, int type, bool append)
@@ -1221,7 +1220,7 @@ namespace gsview
 			catch (DllNotFoundException)
 			{
 				/* DLL not found */
-				String err = "DllNotFoundException: MuPDF DLL not found";
+				String err = "DllNotFoundException: MuPDF DLL not found 29";
 				mupdfDLLProblemMain(this, err);
 				return -1;
 			}
@@ -1239,8 +1238,9 @@ namespace gsview
 		/* Now the actual code that does some work */
 		public status_t Initialize()
 		{
-			is64bit = is64bit = Environment.Is64BitOperatingSystem &&
+			is64bit = Environment.Is64BitOperatingSystem &&
 				Environment.Is64BitProcess;
+
 			mu_object = tc_mInitialize();
 			if (mu_object == null)
 				return status_t.E_FAILURE;
