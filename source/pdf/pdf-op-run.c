@@ -1604,6 +1604,7 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 	fz_matrix gparent_save_ctm;
 	pdf_run_state *pr = (pdf_run_state *)state;
 	int cleanup_state = 0;
+	char errmess[256] = "";
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(xobj->me))
@@ -1683,9 +1684,29 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 		if (xobj->transparency)
 		{
 			if (cleanup_state >= 2)
-				fz_end_group(pr->dev);
+			{
+				fz_try(ctx)
+				{
+					fz_end_group(pr->dev);
+				}
+				fz_catch(ctx)
+				{
+					/* Postpone the problem */
+					strcpy(errmess, fz_caught_message(ctx));
+				}
+			}
 			if (cleanup_state >= 1)
-				end_softmask(csi, pr, &softmask);
+			{
+				fz_try(ctx)
+				{
+					end_softmask(csi, pr, &softmask);
+				}
+				fz_catch(ctx)
+				{
+					/* Postpone the problem */
+					strcpy(errmess, fz_caught_message(ctx));
+				}
+			}
 		}
 
 		pr->gstate[pr->gparent].ctm = gparent_save_ctm;
@@ -1705,6 +1726,10 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 	{
 		fz_rethrow(ctx);
 	}
+
+	/* Rethrow postponed errors */
+	if (errmess[0])
+		fz_throw(ctx, FZ_ERROR_GENERIC, errmess);
 }
 
 static void pdf_run_BDC(pdf_csi *csi, void *state)
