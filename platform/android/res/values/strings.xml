@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">MuPDF</string>
-	<string name="version">1.4 (git build)</string>
+	<string name="version">1.5 (git build)</string>
 	<string name="no_media_warning">Storage media not present</string>
 	<string name="no_media_hint">Sharing the storage media with a PC can make it inaccessible</string>
 	<string name="cancel">Cancel</string>
