@@ -856,7 +856,8 @@ namespace gsview
 
 		private void SetPageAnnot(int page_num, Annotate_t render_result)
 		{
-			if (m_docPages[page_num].Annotate == Annotate_t.UNKNOWN)
+			if (m_docPages[page_num].Annotate == Annotate_t.UNKNOWN ||
+				m_docPages[page_num].Annotate == Annotate_t.COMPUTING)
 			{
 				if (render_result == Annotate_t.NO_ANNOTATE)
 					m_docPages[page_num].Annotate = Annotate_t.NO_ANNOTATE;
@@ -1439,7 +1440,9 @@ namespace gsview
 						 * another with scroll changes mark this as being 
 						 * full resolution */
 						m_docPages[k].Content = Page_Content_t.FULL_RESOLUTION;
-
+						/* Avoid launching another thread just because we don't 
+						 * know the annotation condition for this page */
+						m_docPages[k].Annotate = Annotate_t.COMPUTING;
 						if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
 						{
 							try

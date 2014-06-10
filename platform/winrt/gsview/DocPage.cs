@@ -13,6 +13,7 @@ namespace gsview
 	public enum Annotate_t
 	{
 		UNKNOWN,
+		COMPUTING,
 		NO_ANNOTATE,
 		HAS_ANNOTATE,
 		ANNOTATE_VISIBLE,
