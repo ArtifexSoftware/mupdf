@@ -334,6 +334,7 @@ namespace gsview
 		int m_initpage;
 		bool m_selectall;
 		bool m_showannot;
+		bool m_ScrolledChanged;
 
 		public MainWindow()
 		{
@@ -363,8 +364,8 @@ namespace gsview
 				m_extractwin = null;
 				m_selection = null;
 				xaml_ZoomSlider.AddHandler(MouseLeftButtonUpEvent, new MouseButtonEventHandler(ZoomReleased), true);
-				xaml_PageGrid.AddHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver), true);
-				xaml_PageGrid.AddHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop), true);
+				xaml_PageList.AddHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver), true);
+				xaml_PageList.AddHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop), true);
 				DimSelections();
 				status_t result = CleanUp();
 
@@ -1208,6 +1209,7 @@ namespace gsview
 		private void ThumbSelected(object sender, MouseButtonEventArgs e)
 		{
 			var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
+
 			if (item != null)
 			{
 				if (item.PageNum < 0)
@@ -1301,8 +1303,16 @@ namespace gsview
 				if (first_item != -1)
 					second_item = first_item;
 				/* Finish */
-				double perc = (double)second_item / (double)(m_num_pages - 1);
-				xaml_VerticalScroll.Value = perc * xaml_VerticalScroll.Maximum;
+				if (m_ScrolledChanged)
+				{
+					m_ScrolledChanged = false;
+				}
+				else
+				{
+					/* We have to update the vertical scroll position */
+					double perc = (e.VerticalOffset) / (e.ExtentHeight - e.ViewportHeight);
+					xaml_VerticalScroll.Value = perc * xaml_VerticalScroll.Maximum;
+				}
 				if (second_item < 0)
 					second_item = 0;
 				RenderRange(second_item, false, zoom_t.NO_ZOOM, 0);
@@ -1357,7 +1367,7 @@ namespace gsview
 				double curr_value = viewer.VerticalOffset;
 				if (curr_value < 0 || curr_value > viewer.MaxHeight)
 					return;
-				var extentheight = viewer.ExtentHeight;
+				var extentheight = viewer.ExtentHeight - viewer.ViewportHeight;
 
 				var pos = extentheight * percent;
 				viewer.ScrollToVerticalOffset(pos);
@@ -1605,8 +1615,8 @@ namespace gsview
 			xaml_file.Opacity = 0.5;
 			xaml_file.IsEnabled = false;
 			/* And to drag - drop or registry start up */
-			xaml_PageGrid.RemoveHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver));
-			xaml_PageGrid.RemoveHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop));
+			xaml_PageList.RemoveHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver));
+			xaml_PageList.RemoveHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop));
 			m_regstartup = false;
 		}
 
@@ -4693,7 +4703,9 @@ namespace gsview
 			ScrollViewer viewer = FindScrollViewer(xaml_PageList);
 			if (viewer == null || mi == null)
 				return;
-				
+
+			m_ScrolledChanged = true;
+
 			if (e.ScrollEventType == System.Windows.Controls.Primitives.ScrollEventType.ThumbTrack)
 			{
 				OffsetScrollPercent(mi.Value / mi.Maximum);

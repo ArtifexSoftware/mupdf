@@ -763,7 +763,7 @@
                    Scroll="VerticalScroll"/>
 
         <!-- Pages are last child fill.  This goes in the center of our dock panel ScrollViewer.CanContentScroll False allows continuous scrolling-->
-        <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" DockPanel.Dock="Left" AllowDrop="True">
+        <!--  <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" DockPanel.Dock="Left" AllowDrop="True"> -->     
             <ListView x:Name="xaml_PageList" HorizontalAlignment="Stretch"
                       ItemTemplate="{StaticResource PageTemplate}" 
                       ScrollViewer.CanContentScroll="False"
@@ -777,15 +777,18 @@
                       PreviewMouseMove="ListPreviewMouseMove"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
                       ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                      ScrollViewer.IsDeferredScrollingEnabled ="False">
+                      ScrollViewer.IsDeferredScrollingEnabled ="False" DockPanel.Dock="Left" AllowDrop="True"
+                      >
                 <!-- This keeps the pages in the center of the panel -->
-                <ListView.ItemContainerStyle>
+
+            <ListView.ItemContainerStyle>
+                                
                     <Style TargetType="ListViewItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        <EventSetter Event="RequestBringIntoView" Handler="AvoidScrollIntoView"/>
-                    </Style>
+                    <EventSetter Event="RequestBringIntoView" Handler="AvoidScrollIntoView"/>
+                </Style>
                 </ListView.ItemContainerStyle>
             </ListView>
-        </Grid>
+        <!-- </Grid> --> 
     </DockPanel>
 </Window>
