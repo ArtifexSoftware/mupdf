@@ -643,7 +643,8 @@ namespace gsview
 
 		private void AppClosing(object sender, CancelEventArgs e)
 		{
-			SetRegistry();
+			if (m_init_done)
+				SetRegistry();
 		}
 
 		private void ShowMessage(NotifyType_t type, String Message)

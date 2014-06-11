@@ -56,7 +56,7 @@
     <StartupObject />
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>ghosty.ico</ApplicationIcon>
+    <ApplicationIcon>gsview_app.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ReachFramework" />
@@ -247,12 +247,6 @@
     <Resource Include="Resources\contents.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\gsview.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="gsview.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\folder_open.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -268,10 +262,13 @@
     <Resource Include="Resources\banner.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\ghosty.ico" />
+    <Resource Include="Resources\gsview_app.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="ghosty.ico" />
+    <Resource Include="gsview_app.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\PDF.bmp" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

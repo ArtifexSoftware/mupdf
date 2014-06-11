@@ -15,6 +15,24 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_0BD3A92E2F2F40A3B601C2CF21584C48"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_157FB597E59745DFAD45AE54F232D39D"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_28423EA654C8488A8F59859D947164F4"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_372F38F3347F4E0491FA521F236BA54C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -28,6 +46,42 @@
         "Entry"
         {
         "MsmKey" = "8:_528DB596D02340538C9E6E35872234C5"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_6724F24524E24AA1907957AF0812BD09"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_9F16FF3C56C249B58F3F64B821ABBF97"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_AB1B21BC24164EF4929937FE8C3ED270"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BC8D174211B84DE6968562ECF0A0443B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_C11D0300BF42444AA9362921375DF910"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D300E715CB524AF1AE46CE9EB3ED67C8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -132,6 +186,66 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0BD3A92E2F2F40A3B601C2CF21584C48"
+            {
+            "SourcePath" = "8:..\\Resources\\pageEPS.ico"
+            "TargetName" = "8:pageEPS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_157FB597E59745DFAD45AE54F232D39D"
+            {
+            "SourcePath" = "8:..\\Resources\\pageXPS.ico"
+            "TargetName" = "8:pageXPS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_28423EA654C8488A8F59859D947164F4"
+            {
+            "SourcePath" = "8:..\\Resources\\pageOXPS.ico"
+            "TargetName" = "8:pageOXPS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_372F38F3347F4E0491FA521F236BA54C"
             {
             "SourcePath" = "8:..\\bin\\Release\\mupdfnet64.dll"
@@ -203,17 +317,275 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6724F24524E24AA1907957AF0812BD09"
+            {
+            "SourcePath" = "8:..\\Resources\\pagePS.ico"
+            "TargetName" = "8:pagePS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9F16FF3C56C249B58F3F64B821ABBF97"
+            {
+            "SourcePath" = "8:..\\Resources\\pageCBZ.ico"
+            "TargetName" = "8:pageCBZ.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AB1B21BC24164EF4929937FE8C3ED270"
+            {
+            "SourcePath" = "8:..\\Resources\\pagePDF.ico"
+            "TargetName" = "8:pagePDF.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BC8D174211B84DE6968562ECF0A0443B"
+            {
+            "SourcePath" = "8:..\\gsview.visualelementsmanifest.xml"
+            "TargetName" = "8:gsview.visualelementsmanifest.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_CDB2B40979C34EBAA8A815DA144BF441"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C11D0300BF42444AA9362921375DF910"
+            {
+            "SourcePath" = "8:..\\Resources\\pagePNG.ico"
+            "TargetName" = "8:pagePNG.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D300E715CB524AF1AE46CE9EB3ED67C8"
+            {
+            "SourcePath" = "8:..\\Resources\\pageJPG.ico"
+            "TargetName" = "8:pageJPG.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_52FA2F218E56408DA37ABFD7E103994C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_11428E8F96C54BA3900AF3407233AAC0"
+            {
+            "Name" = "8:PostScript File"
+            "Description" = "8:PostScript File"
+            "Extensions" = "8:ps"
+            "MIME" = "8:"
+            "Icon" = "8:_6724F24524E24AA1907957AF0812BD09"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_8E3935BB44F543D5B0E48ACB12FF306D"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_5C233C0E4937479FB108F39E16FABDE6"
+            {
+            "Name" = "8:CDisplay ZIP Archived Comic Book file"
+            "Description" = "8:CDisplay ZIP Archived Comic Book file"
+            "Extensions" = "8:cbz"
+            "MIME" = "8:"
+            "Icon" = "8:_9F16FF3C56C249B58F3F64B821ABBF97"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_8D3603F262824461A9EA284DBB30D575"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_61007590E6A24BA1A769A064AC2AC094"
+            {
+            "Name" = "8:JPEG image"
+            "Description" = "8:JPEG image"
+            "Extensions" = "8:jpeg"
+            "MIME" = "8:"
+            "Icon" = "8:_D300E715CB524AF1AE46CE9EB3ED67C8"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_0E6BD260F46C4A89891F1D0A7029A6EF"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_962DBD1C82974C33960B863AB9E1FC9F"
+            {
+            "Name" = "8:Open XPS Document"
+            "Description" = "8:Open XPS Document"
+            "Extensions" = "8:oxps"
+            "MIME" = "8:"
+            "Icon" = "8:_28423EA654C8488A8F59859D947164F4"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_6B19B65AF043423897A64F9129571FE9"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_A59FDC99A2564A0089516522926CE6C3"
+            {
+            "Name" = "8:PNG image"
+            "Description" = "8:PNG image"
+            "Extensions" = "8:png"
+            "MIME" = "8:"
+            "Icon" = "8:_C11D0300BF42444AA9362921375DF910"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_948A77318E904662886D34BDC0BCFE0E"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_A8D59D004BB94148B529FD692DDC5460"
+            {
+            "Name" = "8:XPS Document"
+            "Description" = "8:XPS Document"
+            "Extensions" = "8:xps"
+            "MIME" = "8:"
+            "Icon" = "8:_157FB597E59745DFAD45AE54F232D39D"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_A9ABA43924574B7A992B78537E7F2FB7"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
             "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_A8EDD49D509A4974B971BF4FBD093455"
             {
             "Name" = "8:PDF"
             "Description" = "8:PDF"
-            "Extensions" = "8:pdf;ps;eps;xps;oxps;png;jpeg;jpg;cbz"
+            "Extensions" = "8:pdf"
             "MIME" = "8:"
-            "Icon" = "8:_44A71C9401B94929A3DF6828309FE684"
-            "IconIndex" = "3:32512"
+            "Icon" = "8:_AB1B21BC24164EF4929937FE8C3ED270"
+            "IconIndex" = "3:0"
                 "Command"
                 {
                 "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
@@ -221,6 +593,29 @@
                 "Verbs"
                 {
                     "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_9396BB7A2A2841B0890D2DB6A6360F4E"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_AA94DC1A560A4224A9410A3EAAB34D77"
+            {
+            "Name" = "8:EPS File"
+            "Description" = "8:EPS File"
+            "Extensions" = "8:eps"
+            "MIME" = "8:"
+            "Icon" = "8:_0BD3A92E2F2F40A3B601C2CF21584C48"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_44A71C9401B94929A3DF6828309FE684"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_BAFA7BE3B6AF4D9283D623A69D266E9B"
                     {
                     "Command" = "8:&Open"
                     "Verb" = "8:open"
@@ -275,6 +670,17 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_52FA2F218E56408DA37ABFD7E103994C"
+                    {
+                    "Name" = "8:Resources"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_0E795A41F6474AC8ACB9997020B3421A"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -294,7 +700,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:GSview 6.0"
         "ProductCode" = "8:{A22596C0-BCF4-46F9-9CF2-1C66E8588C30}"
-        "PackageCode" = "8:{B047ABB8-305D-425E-93FF-C459288AEA0C}"
+        "PackageCode" = "8:{3F02128C-B018-4DD5-B18D-5C202F2A3A48}"
         "UpgradeCode" = "8:{B494B7A2-738F-4F9D-87F4-31830A16FB76}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -305,11 +711,11 @@
         "Manufacturer" = "8:Artifex Software"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.artifex.com"
-        "Title" = "8:Install GSView 6.0 x64"
+        "Title" = "8:Install GSview 6.0 x64"
         "Subject" = "8:"
         "ARPCONTACT" = "8:Artifex Software"
         "Keywords" = "8:"
-        "ARPCOMMENTS" = "8:Install GSView 6.0 for x64"
+        "ARPCOMMENTS" = "8:Install GSview 6.0 for x64"
         "ARPURLINFOABOUT" = "8:http://www.artifex.com"
         "ARPPRODUCTICON" = "8:_44A71C9401B94929A3DF6828309FE684"
         "ARPIconIndex" = "3:32512"
