@@ -57,7 +57,7 @@ LOCAL_SRC_FILES += \
 	$(MY_ROOT)/source/pdf/js/pdf-js.c \
 	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.c
 ifdef MEMENTO
-LOCAL_SRC_FILES += $(MY_ROOT)/fitz/memento.c
+LOCAL_SRC_FILES += $(MY_ROOT)/source/fitz/memento.c
 endif
 
 LOCAL_LDLIBS    := -lm -llog -ljnigraphics
