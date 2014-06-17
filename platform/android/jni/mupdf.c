@@ -515,6 +515,8 @@ JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 	fz_irect bbox;
 	page_cache *pc;
 	globals *glo = get_globals(env, thiz);
+	if (glo == NULL)
+		return;
 	fz_context *ctx = glo->ctx;
 
 	for (i = 0; i < NUM_CACHE; i++)
@@ -1803,6 +1805,8 @@ JNI_FN(MuPDFCore_getWidgetAreasInternal)(JNIEnv * env, jobject thiz, int pageNum
 	int count;
 	page_cache *pc;
 	globals *glo = get_globals(env, thiz);
+	if (glo == NULL)
+		return NULL;
 
 	rectFClass = (*env)->FindClass(env, "android/graphics/RectF");
 	if (rectFClass == NULL) return NULL;
@@ -1860,6 +1864,8 @@ JNI_FN(MuPDFCore_getAnnotationsInternal)(JNIEnv * env, jobject thiz, int pageNum
 	int count;
 	page_cache *pc;
 	globals *glo = get_globals(env, thiz);
+	if (glo == NULL)
+		return NULL;
 
 	annotClass = (*env)->FindClass(env, PACKAGENAME "/Annotation");
 	if (annotClass == NULL) return NULL;
