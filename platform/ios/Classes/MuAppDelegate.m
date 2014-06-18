@@ -1,8 +1,12 @@
 #include "common.h"
+#include "mupdf/fitz.h"
 
 #import "MuAppDelegate.h"
 
 @implementation MuAppDelegate
+{
+	BOOL _isInBackground;
+}
 
 - (BOOL) application: (UIApplication*)application didFinishLaunchingWithOptions: (NSDictionary*)launchOptions
 {
@@ -10,8 +14,7 @@
 
 	queue = dispatch_queue_create("com.artifex.mupdf.queue", NULL);
 
-	// use at most 128M for resource cache
-	ctx = fz_new_context(NULL, NULL, 128<<20);
+	ctx = fz_new_context(NULL, NULL, ResourceCacheMaxSize);
 	fz_register_document_handlers(ctx);
 
 	screenScale = [[UIScreen mainScreen] scale];
@@ -57,11 +60,13 @@
 {
 	printf("applicationDidEnterBackground!\n");
 	[[NSUserDefaults standardUserDefaults] synchronize];
+	_isInBackground = YES;
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application
 {
 	printf("applicationWillEnterForeground!\n");
+	_isInBackground = NO;
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
@@ -77,7 +82,9 @@
 
 - (void)applicationDidReceiveMemoryWarning:(UIApplication *)application
 {
-	printf("applicationDidReceiveMemoryWarning\n");
+	NSLog(@"applicationDidReceiveMemoryWarning");
+	int success = fz_shrink_store(ctx, _isInBackground ? 0 : 50);
+	NSLog(@"fz_shrink_store: success = %d", success);
 }
 
 - (void) dealloc

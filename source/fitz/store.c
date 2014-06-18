@@ -636,3 +636,41 @@ int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
 #endif
 	return 0;
 }
+
+int 
+fz_shrink_store(fz_context *ctx, unsigned int percent)
+{
+	int success;
+	fz_store *store;
+
+	if (ctx == NULL) 
+		return 0;
+
+	if (percent >= 100)
+		return 1;
+
+	store = ctx->store;
+	if (store == NULL)
+		return 0;
+
+#ifdef DEBUG_SCAVENGING
+	fprintf(stderr, "fz_shrink_store: %d\n", store->size/(1024*1024));
+#endif
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+
+	unsigned int maxSize = (unsigned int)(((uint64_t)store->size * percent) / 100);
+	if (store->size > maxSize)
+	{
+		unsigned int toFree = store->size - maxSize;
+		scavenge(ctx, store->size - maxSize);
+	}
+
+	success = (store->size <= maxSize) ? 1 : 0;
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+#ifdef DEBUG_SCAVENGING
+	fprintf(stderr, "fz_shrink_store after: %d\n", store->size/(1024*1024));
+#endif
+
+	return success;
+}
+
