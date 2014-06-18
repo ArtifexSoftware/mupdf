@@ -2,6 +2,7 @@ package com.artifex.mupdfdemo;
 
 import java.util.ArrayList;
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.Context;
@@ -398,6 +399,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		return Hit.Nothing;
 	}
 
+	@TargetApi(11)
 	public boolean copySelection() {
 		final StringBuilder text = new StringBuilder();
 
