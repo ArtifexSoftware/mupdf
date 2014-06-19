@@ -660,10 +660,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 
 	unsigned int maxSize = (unsigned int)(((uint64_t)store->size * percent) / 100);
 	if (store->size > maxSize)
-	{
-		unsigned int toFree = store->size - maxSize;
 		scavenge(ctx, store->size - maxSize);
-	}
 
 	success = (store->size <= maxSize) ? 1 : 0;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
