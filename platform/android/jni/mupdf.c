@@ -623,7 +623,7 @@ static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *ido
 
 JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
-		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH)
+		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH, jlong cookiePtr)
 {
 	AndroidBitmapInfo info;
 	void *pixels;
@@ -641,6 +641,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 	page_cache *pc = &glo->pages[glo->current];
 	int hq = (patchW < pageW || patchH < pageH);
 	fz_matrix scale;
+	fz_cookie *cookie = (fz_cookie *)(unsigned int)cookiePtr;
 
 	if (pc->page == NULL)
 		return 0;
@@ -690,9 +691,15 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			/* Render to list */
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
-			fz_run_page_contents(doc, pc->page, dev, &fz_identity, NULL);
+			fz_run_page_contents(doc, pc->page, dev, &fz_identity, cookie);
 			fz_free_device(dev);
 			dev = NULL;
+			if (cookie != NULL && cookie->abort)
+			{
+				fz_drop_display_list(ctx, pc->page_list);
+				pc->page_list = NULL;
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+			}
 		}
 		if (pc->annot_list == NULL)
 		{
@@ -700,9 +707,15 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
-				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, NULL);
+				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, cookie);
 			fz_free_device(dev);
 			dev = NULL;
+			if (cookie != NULL && cookie->abort)
+			{
+				fz_drop_display_list(ctx, pc->annot_list);
+				pc->annot_list = NULL;
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+			}
 		}
 		bbox.x0 = patchX;
 		bbox.y0 = patchY;
@@ -742,9 +755,15 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			for (i=0; i<100;i++) {
 #endif
 				if (pc->page_list)
-					fz_run_display_list(pc->page_list, dev, &ctm, &rect, NULL);
+					fz_run_display_list(pc->page_list, dev, &ctm, &rect, cookie);
+				if (cookie != NULL && cookie->abort)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+
 				if (pc->annot_list)
-					fz_run_display_list(pc->annot_list, dev, &ctm, &rect, NULL);
+					fz_run_display_list(pc->annot_list, dev, &ctm, &rect, cookie);
+				if (cookie != NULL && cookie->abort)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+
 #ifdef TIME_DISPLAY_LIST
 			}
 			time = clock() - time;
@@ -787,7 +806,7 @@ static char *widget_type_string(int t)
 }
 JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, int page,
-		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH)
+		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH, jlong cookiePtr)
 {
 	AndroidBitmapInfo info;
 	void *pixels;
@@ -808,6 +827,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	fz_document *doc = glo->doc;
 	rect_node *crect;
 	fz_matrix scale;
+	fz_cookie *cookie = (fz_cookie *)(unsigned int)cookiePtr;
 
 	for (i = 0; i < NUM_CACHE; i++)
 	{
@@ -823,7 +843,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		/* Without a cached page object we cannot perform a partial update so
 		render the entire bitmap instead */
 		JNI_FN(MuPDFCore_gotoPageInternal)(env, thiz, page);
-		return JNI_FN(MuPDFCore_drawPage)(env, thiz, bitmap, pageW, pageH, patchX, patchY, patchW, patchH);
+		return JNI_FN(MuPDFCore_drawPage)(env, thiz, bitmap, pageW, pageH, patchX, patchY, patchW, patchH, (jlong)(unsigned int)cookie);
 	}
 
 	idoc = pdf_specifics(doc);
@@ -869,18 +889,30 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			/* Render to list */
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
-			fz_run_page_contents(doc, pc->page, dev, &fz_identity, NULL);
+			fz_run_page_contents(doc, pc->page, dev, &fz_identity, cookie);
 			fz_free_device(dev);
 			dev = NULL;
+			if (cookie != NULL && cookie->abort)
+			{
+				fz_drop_display_list(ctx, pc->page_list);
+				pc->page_list = NULL;
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+			}
 		}
 
 		if (pc->annot_list == NULL) {
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
-				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, NULL);
+				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, cookie);
 			fz_free_device(dev);
 			dev = NULL;
+			if (cookie != NULL && cookie->abort)
+			{
+				fz_drop_display_list(ctx, pc->annot_list);
+				pc->annot_list = NULL;
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+			}
 		}
 
 		bbox.x0 = patchX;
@@ -920,9 +952,15 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 				fz_clear_pixmap_rect_with_value(ctx, pix, 0xff, &abox);
 				dev = fz_new_draw_device_with_bbox(ctx, pix, &abox);
 				if (pc->page_list)
-					fz_run_display_list(pc->page_list, dev, &ctm, &arect, NULL);
+					fz_run_display_list(pc->page_list, dev, &ctm, &arect, cookie);
+				if (cookie != NULL && cookie->abort)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+
 				if (pc->annot_list)
-					fz_run_display_list(pc->annot_list, dev, &ctm, &arect, NULL);
+					fz_run_display_list(pc->annot_list, dev, &ctm, &arect, cookie);
+				if (cookie != NULL && cookie->abort)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
+
 				fz_free_device(dev);
 				dev = NULL;
 			}
@@ -2549,4 +2587,35 @@ JNI_FN(MuPDFCore_dumpMemoryInternal)(JNIEnv * env, jobject thiz)
 	Memento_stats();
 	LOGE("dumpMemoryInternal end");
 #endif
+}
+
+JNIEXPORT jlong JNICALL
+JNI_FN(MuPDFCore_createCookie)(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	if (glo == NULL)
+		return 0;
+	fz_context *ctx = glo->ctx;
+
+	return (jlong) (unsigned int) fz_calloc_no_throw(ctx,1, sizeof(fz_cookie));
+}
+
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_destroyCookie)(JNIEnv * env, jobject thiz, jlong cookiePtr)
+{
+	fz_cookie *cookie = (fz_cookie *) (unsigned int) cookiePtr;
+	globals *glo = get_globals(env, thiz);
+	if (glo == NULL)
+		return;
+	fz_context *ctx = glo->ctx;
+
+	fz_free(ctx, cookie);
+}
+
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_abortCookie)(JNIEnv * env, jobject thiz, jlong cookiePtr)
+{
+	fz_cookie *cookie = (fz_cookie *) (unsigned int) cookiePtr;
+	if (cookie != NULL)
+		cookie->abort = 1;
 }

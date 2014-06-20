@@ -21,18 +21,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 
-class PatchInfo {
-	public Point patchViewSize;
-	public Rect  patchArea;
-	public boolean completeRedraw;
-
-	public PatchInfo(Point aPatchViewSize, Rect aPatchArea, boolean aCompleteRedraw) {
-		patchViewSize = aPatchViewSize;
-		patchArea = aPatchArea;
-		completeRedraw = aCompleteRedraw;
-	}
-}
-
 // Make our ImageViews opaque to optimize redraw
 class OpaqueImageView extends ImageView {
 
@@ -117,13 +105,13 @@ public abstract class PageView extends ViewGroup {
 	private       Matrix    mEntireMat;
 	private       AsyncTask<Void,Void,TextWord[][]> mGetText;
 	private       AsyncTask<Void,Void,LinkInfo[]> mGetLinkInfo;
-	private       AsyncTask<Void,Void,Void> mDrawEntire;
+	private       CancellableAsyncTask<Void, Void> mDrawEntire;
 
 	private       Point     mPatchViewSize; // View size on the basis of which the patch was created
 	private       Rect      mPatchArea;
 	private       ImageView mPatch;
 	private       Bitmap    mPatchBm;
-	private       AsyncTask<PatchInfo,Void,PatchInfo> mDrawPatch;
+	private       CancellableAsyncTask<Void,Void> mDrawPatch;
 	private       RectF     mSearchBoxes[];
 	protected     LinkInfo  mLinks[];
 	private       RectF     mSelectBox;
@@ -147,8 +135,8 @@ public abstract class PageView extends ViewGroup {
 		mEntireMat = new Matrix();
 	}
 
-	protected abstract void drawPage(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
-	protected abstract void updatePage(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
+	protected abstract CancellableTaskDefinition<Void, Void> getDrawPageTask(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
+	protected abstract CancellableTaskDefinition<Void, Void> getUpdatePageTask(Bitmap bm, int sizeX, int sizeY, int patchX, int patchY, int patchWidth, int patchHeight);
 	protected abstract LinkInfo[] getLinkInfo();
 	protected abstract TextWord[][] getText();
 	protected abstract void addMarkup(PointF[] quadPoints, Annotation.Type type);
@@ -156,12 +144,12 @@ public abstract class PageView extends ViewGroup {
 	private void reinit() {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
-			mDrawEntire.cancel(true);
+			mDrawEntire.cancelAndWait();
 			mDrawEntire = null;
 		}
 
 		if (mDrawPatch != null) {
-			mDrawPatch.cancel(true);
+			mDrawPatch.cancelAndWait();
 			mDrawPatch = null;
 		}
 
@@ -233,7 +221,7 @@ public abstract class PageView extends ViewGroup {
 	public void setPage(int page, PointF size) {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
-			mDrawEntire.cancel(true);
+			mDrawEntire.cancelAndWait();
 			mDrawEntire = null;
 		}
 
@@ -274,13 +262,10 @@ public abstract class PageView extends ViewGroup {
 		mGetLinkInfo.execute();
 
 		// Render the page in the background
-		mDrawEntire = new AsyncTask<Void,Void,Void>() {
-			protected Void doInBackground(Void... v) {
-				drawPage(mEntireBm, mSize.x, mSize.y, 0, 0, mSize.x, mSize.y);
-				return null;
-			}
+		mDrawEntire = new CancellableAsyncTask<Void, Void>(getDrawPageTask(mEntireBm, mSize.x, mSize.y, 0, 0, mSize.x, mSize.y)) {
 
-			protected void onPreExecute() {
+			@Override
+			public void onPreExecute() {
 				setBackgroundColor(BACKGROUND_COLOR);
 				mEntire.setImageBitmap(null);
 				mEntire.invalidate();
@@ -300,12 +285,14 @@ public abstract class PageView extends ViewGroup {
 				}
 			}
 
-			protected void onPostExecute(Void v) {
+			@Override
+			public void onPostExecute(Void result) {
 				removeView(mBusyIndicator);
 				mBusyIndicator = null;
 				mEntire.setImageBitmap(mEntireBm);
 				mEntire.invalidate();
 				setBackgroundColor(Color.TRANSPARENT);
+
 			}
 		};
 
@@ -588,8 +575,8 @@ public abstract class PageView extends ViewGroup {
 				mPatch.invalidate();
 			}
 		} else {
-			Point patchViewSize = new Point(viewArea.width(), viewArea.height());
-			Rect patchArea = new Rect(0, 0, mParentSize.x, mParentSize.y);
+			final Point patchViewSize = new Point(viewArea.width(), viewArea.height());
+			final Rect patchArea = new Rect(0, 0, mParentSize.x, mParentSize.y);
 
 			// Intersect and test that there is an intersection
 			if (!patchArea.intersect(viewArea))
@@ -608,7 +595,7 @@ public abstract class PageView extends ViewGroup {
 
 			// Stop the drawing of previous patch if still going
 			if (mDrawPatch != null) {
-				mDrawPatch.cancel(true);
+				mDrawPatch.cancelAndWait();
 				mDrawPatch = null;
 			}
 
@@ -620,24 +607,22 @@ public abstract class PageView extends ViewGroup {
 				mSearchView.bringToFront();
 			}
 
-			mDrawPatch = new AsyncTask<PatchInfo,Void,PatchInfo>() {
-				protected PatchInfo doInBackground(PatchInfo... v) {
-					if (v[0].completeRedraw) {
-						drawPage(mPatchBm, v[0].patchViewSize.x, v[0].patchViewSize.y,
-									v[0].patchArea.left, v[0].patchArea.top,
-									v[0].patchArea.width(), v[0].patchArea.height());
-					} else {
-						updatePage(mPatchBm, v[0].patchViewSize.x, v[0].patchViewSize.y,
-									v[0].patchArea.left, v[0].patchArea.top,
-									v[0].patchArea.width(), v[0].patchArea.height());
-					}
+			CancellableTaskDefinition<Void, Void> task;
 
-					return v[0];
-				}
+			if (completeRedraw)
+				task = getDrawPageTask(mPatchBm, patchViewSize.x, patchViewSize.y,
+								patchArea.left, patchArea.top,
+								patchArea.width(), patchArea.height());
+			else
+				task = getUpdatePageTask(mPatchBm, patchViewSize.x, patchViewSize.y,
+						patchArea.left, patchArea.top,
+						patchArea.width(), patchArea.height());
 
-				protected void onPostExecute(PatchInfo v) {
-					mPatchViewSize = v.patchViewSize;
-					mPatchArea     = v.patchArea;
+			mDrawPatch = new CancellableAsyncTask<Void,Void>(task) {
+
+				public void onPostExecute(Void result) {
+					mPatchViewSize = patchViewSize;
+					mPatchArea     = patchArea;
 					mPatch.setImageBitmap(mPatchBm);
 					mPatch.invalidate();
 					//requestLayout();
@@ -647,30 +632,27 @@ public abstract class PageView extends ViewGroup {
 				}
 			};
 
-			mDrawPatch.execute(new PatchInfo(patchViewSize, patchArea, completeRedraw));
+			mDrawPatch.execute();
 		}
 	}
 
 	public void update() {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
-			mDrawEntire.cancel(true);
+			mDrawEntire.cancelAndWait();
 			mDrawEntire = null;
 		}
 
 		if (mDrawPatch != null) {
-			mDrawPatch.cancel(true);
+			mDrawPatch.cancelAndWait();
 			mDrawPatch = null;
 		}
 
-		// Render the page in the background
-		mDrawEntire = new AsyncTask<Void,Void,Void>() {
-			protected Void doInBackground(Void... v) {
-				updatePage(mEntireBm, mSize.x, mSize.y, 0, 0, mSize.x, mSize.y);
-				return null;
-			}
 
-			protected void onPostExecute(Void v) {
+		// Render the page in the background
+		mDrawEntire = new CancellableAsyncTask<Void, Void>(getUpdatePageTask(mEntireBm, mSize.x, mSize.y, 0, 0, mSize.x, mSize.y)) {
+
+			public void onPostExecute(Void result) {
 				mEntire.setImageBitmap(mEntireBm);
 				mEntire.invalidate();
 			}
@@ -684,7 +666,7 @@ public abstract class PageView extends ViewGroup {
 	public void removeHq() {
 			// Stop the drawing of the patch if still going
 			if (mDrawPatch != null) {
-				mDrawPatch.cancel(true);
+				mDrawPatch.cancelAndWait();
 				mDrawPatch = null;
 			}
 

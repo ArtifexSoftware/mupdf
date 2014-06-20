@@ -33,12 +33,14 @@ public class MuPDFCore
 	private native void drawPage(Bitmap bitmap,
 			int pageW, int pageH,
 			int patchX, int patchY,
-			int patchW, int patchH);
+			int patchW, int patchH,
+			long cookiePtr);
 	private native void updatePageInternal(Bitmap bitmap,
 			int page,
 			int pageW, int pageH,
 			int patchX, int patchY,
-			int patchW, int patchH);
+			int patchW, int patchH,
+			long cookiePtr);
 	private native RectF[] searchPage(String text);
 	private native TextChar[][][][] text();
 	private native byte[] textAsHtml();
@@ -69,8 +71,35 @@ public class MuPDFCore
 	private native void destroying();
 	private native boolean hasChangesInternal();
 	private native void saveInternal();
+	private native long createCookie();
+	private native void destroyCookie(long cookie);
+	private native void abortCookie(long cookie);
 
 	public native boolean javascriptSupported();
+
+	public class Cookie
+	{
+		private final long cookiePtr;
+
+		public Cookie()
+		{
+			cookiePtr = createCookie();
+			if (cookiePtr == 0)
+				throw new OutOfMemoryError();
+		}
+
+		public void abort()
+		{
+			abortCookie(cookiePtr);
+		}
+
+		public void destroy()
+		{
+			// We could do this in finalize, but there's no guarantee that
+			// a finalize will occur before the muPDF context occurs.
+			destroyCookie(cookiePtr);
+		}
+	}
 
 	public MuPDFCore(Context context, String filename) throws Exception
 	{
@@ -152,16 +181,18 @@ public class MuPDFCore
 	public synchronized void drawPage(Bitmap bm, int page,
 			int pageW, int pageH,
 			int patchX, int patchY,
-			int patchW, int patchH) {
+			int patchW, int patchH,
+			MuPDFCore.Cookie cookie) {
 		gotoPage(page);
-		drawPage(bm, pageW, pageH, patchX, patchY, patchW, patchH);
+		drawPage(bm, pageW, pageH, patchX, patchY, patchW, patchH, cookie.cookiePtr);
 	}
 
 	public synchronized void updatePage(Bitmap bm, int page,
 			int pageW, int pageH,
 			int patchX, int patchY,
-			int patchW, int patchH) {
-		updatePageInternal(bm, page, pageW, pageH, patchX, patchY, patchW, patchH);
+			int patchW, int patchH,
+			MuPDFCore.Cookie cookie) {
+		updatePageInternal(bm, page, pageW, pageH, patchX, patchY, patchW, patchH, cookie.cookiePtr);
 	}
 
 	public synchronized PassClickResult passClickEvent(int page, float x, float y) {
