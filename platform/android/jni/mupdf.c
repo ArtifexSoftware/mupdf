@@ -249,6 +249,7 @@ static void alerts_fin(globals *glo)
 	glo->alerts_initialised = 0;
 }
 
+// Should only be called from the single background AsyncTask thread
 static globals *get_globals(JNIEnv *env, jobject thiz)
 {
 	globals *glo = (globals *)(void *)((*env)->GetLongField(env, thiz, global_fid));
@@ -258,6 +259,13 @@ static globals *get_globals(JNIEnv *env, jobject thiz)
 		glo->thiz = thiz;
 	}
 	return glo;
+}
+
+// May be called from any thread, provided the values of glo->env and glo->thiz
+// are not used.
+static globals *get_globals_any_thread(JNIEnv *env, jobject thiz)
+{
+	return (globals *)(void *)((*env)->GetLongField(env, thiz, global_fid));
 }
 
 JNIEXPORT jlong JNICALL
@@ -2594,7 +2602,7 @@ JNI_FN(MuPDFCore_dumpMemoryInternal)(JNIEnv * env, jobject thiz)
 JNIEXPORT jlong JNICALL
 JNI_FN(MuPDFCore_createCookie)(JNIEnv * env, jobject thiz)
 {
-	globals *glo = get_globals(env, thiz);
+	globals *glo = get_globals_any_thread(env, thiz);
 	if (glo == NULL)
 		return 0;
 	fz_context *ctx = glo->ctx;
@@ -2606,7 +2614,7 @@ JNIEXPORT void JNICALL
 JNI_FN(MuPDFCore_destroyCookie)(JNIEnv * env, jobject thiz, jlong cookiePtr)
 {
 	fz_cookie *cookie = (fz_cookie *) (unsigned int) cookiePtr;
-	globals *glo = get_globals(env, thiz);
+	globals *glo = get_globals_any_thread(env, thiz);
 	if (glo == NULL)
 		return;
 	fz_context *ctx = glo->ctx;
