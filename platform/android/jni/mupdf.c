@@ -363,6 +363,7 @@ static int bufferStreamNext(fz_stream *stream, int max)
 
 	stream->rp = bs->buffer;
 	stream->wp = stream->rp + len;
+	stream->pos += len;
 	if (len == 0)
 		return EOF;
 	return *stream->rp++;
@@ -432,6 +433,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 		return 0;
 	}
 
+	fz_register_document_handlers(ctx);
 	fz_var(stream);
 
 	glo->doc = NULL;
