@@ -320,6 +320,8 @@ static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *te
 {
 	int accepted = 0;
 
+	fz_var(accepted);
+
 	fz_try(ctx)
 	{
 		pdf_document *idoc = pdf_specifics(doc);
@@ -343,6 +345,8 @@ static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *te
 static int setFocussedWidgetChoice(fz_document *doc, fz_page *page, const char *text)
 {
 	int accepted = 0;
+
+	fz_var(accepted);
 
 	fz_try(ctx)
 	{
