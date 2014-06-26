@@ -151,7 +151,7 @@ static NSString *alteredfilename(NSString *name, int i)
 
 	NSString *nam = [name stringByDeletingPathExtension];
 	NSString *e = [name pathExtension];
-	return [[[NSString alloc] initWithFormat:@"%@(%d)%@", nam, i, e] autorelease];
+	return [[[NSString alloc] initWithFormat:@"%@(%d).%@", nam, i, e] autorelease];
 }
 
 static NSString *moveOutOfInbox(NSString *docpath)
