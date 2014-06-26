@@ -557,50 +557,36 @@ fz_list_end_tile(fz_device *dev)
 fz_device *
 fz_new_list_device(fz_context *ctx, fz_display_list *list)
 {
-	fz_device *dev = NULL;
+	fz_device *dev = fz_new_device(ctx, list);
 
-	fz_var(list);
-	fz_var(dev);
-	fz_try(ctx)
-	{
-		dev = fz_new_device(ctx, list);
-		list = NULL;
+	dev->begin_page = fz_list_begin_page;
+	dev->end_page = fz_list_end_page;
 
-		dev->begin_page = fz_list_begin_page;
-		dev->end_page = fz_list_end_page;
+	dev->fill_path = fz_list_fill_path;
+	dev->stroke_path = fz_list_stroke_path;
+	dev->clip_path = fz_list_clip_path;
+	dev->clip_stroke_path = fz_list_clip_stroke_path;
 
-		dev->fill_path = fz_list_fill_path;
-		dev->stroke_path = fz_list_stroke_path;
-		dev->clip_path = fz_list_clip_path;
-		dev->clip_stroke_path = fz_list_clip_stroke_path;
+	dev->fill_text = fz_list_fill_text;
+	dev->stroke_text = fz_list_stroke_text;
+	dev->clip_text = fz_list_clip_text;
+	dev->clip_stroke_text = fz_list_clip_stroke_text;
+	dev->ignore_text = fz_list_ignore_text;
 
-		dev->fill_text = fz_list_fill_text;
-		dev->stroke_text = fz_list_stroke_text;
-		dev->clip_text = fz_list_clip_text;
-		dev->clip_stroke_text = fz_list_clip_stroke_text;
-		dev->ignore_text = fz_list_ignore_text;
+	dev->fill_shade = fz_list_fill_shade;
+	dev->fill_image = fz_list_fill_image;
+	dev->fill_image_mask = fz_list_fill_image_mask;
+	dev->clip_image_mask = fz_list_clip_image_mask;
 
-		dev->fill_shade = fz_list_fill_shade;
-		dev->fill_image = fz_list_fill_image;
-		dev->fill_image_mask = fz_list_fill_image_mask;
-		dev->clip_image_mask = fz_list_clip_image_mask;
+	dev->pop_clip = fz_list_pop_clip;
 
-		dev->pop_clip = fz_list_pop_clip;
+	dev->begin_mask = fz_list_begin_mask;
+	dev->end_mask = fz_list_end_mask;
+	dev->begin_group = fz_list_begin_group;
+	dev->end_group = fz_list_end_group;
 
-		dev->begin_mask = fz_list_begin_mask;
-		dev->end_mask = fz_list_end_mask;
-		dev->begin_group = fz_list_begin_group;
-		dev->end_group = fz_list_end_group;
-
-		dev->begin_tile = fz_list_begin_tile;
-		dev->end_tile = fz_list_end_tile;
-	}
-	fz_catch(ctx)
-	{
-		fz_free_device(dev);
-		fz_drop_display_list(ctx, list);
-		fz_rethrow(ctx);
-	}
+	dev->begin_tile = fz_list_begin_tile;
+	dev->end_tile = fz_list_end_tile;
 
 	return dev;
 }
