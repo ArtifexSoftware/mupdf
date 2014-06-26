@@ -93,7 +93,7 @@ static void showAlert(NSString *msg, NSString *filename)
 
 		strcpy(filename, [NSHomeDirectory() UTF8String]);
 		strcat(filename, "/Documents/");
-		strcat(filename, [[files objectAtIndex: row - 1] UTF8String]);
+		strcat(filename, [[files objectAtIndex: row] UTF8String]);
 
 		printf("delete document '%s'\n", filename);
 
@@ -106,7 +106,7 @@ static void showAlert(NSString *msg, NSString *filename)
 - (void) onTapDelete: (UIControl*)sender
 {
 	int row = [sender tag];
-	NSString *title = [NSString stringWithFormat: @"Delete %@?", [files objectAtIndex: row - 1]];
+	NSString *title = [NSString stringWithFormat: @"Delete %@?", [files objectAtIndex:row]];
 	UIActionSheet *sheet = [[UIActionSheet alloc]
 							initWithTitle: title
 							delegate: self
