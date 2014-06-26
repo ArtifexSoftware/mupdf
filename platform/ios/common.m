@@ -53,7 +53,7 @@ static void releasePixmap(void *info, const void *data, size_t size)
 	}
 }
 
-CGDataProviderRef wrapPixmap(fz_pixmap *pix)
+CGDataProviderRef CreateWrappedPixmap(fz_pixmap *pix)
 {
 	unsigned char *samples = fz_pixmap_samples(ctx, pix);
 	int w = fz_pixmap_width(ctx, pix);
@@ -61,7 +61,7 @@ CGDataProviderRef wrapPixmap(fz_pixmap *pix)
 	return CGDataProviderCreateWithData(pix, samples, w * 4 * h, releasePixmap);
 }
 
-CGImageRef newCGImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
+CGImageRef CreateCGImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
 {
 	int w = fz_pixmap_width(ctx, pix);
 	int h = fz_pixmap_height(ctx, pix);

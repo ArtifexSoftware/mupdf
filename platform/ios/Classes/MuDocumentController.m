@@ -157,7 +157,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	return self;
 }
 
-- (UIBarButtonItem *) resourceBasedButton:(NSString *)resource withAction:(SEL)selector
+- (UIBarButtonItem *) newResourceBasedButton:(NSString *)resource withAction:(SEL)selector
 {
 	if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 	{
@@ -246,26 +246,26 @@ static void saveDoc(char *current_path, fz_document *doc)
 	// Set up the buttons on the navigation and search bar
 
 	if (outline) {
-		outlineButton = [self resourceBasedButton:@"ic_list" withAction:@selector(onShowOutline:)];
+		outlineButton = [self newResourceBasedButton:@"ic_list" withAction:@selector(onShowOutline:)];
 	}
-	linkButton = [self resourceBasedButton:@"ic_link" withAction:@selector(onToggleLinks:)];
-	cancelButton = [self resourceBasedButton:@"ic_cancel" withAction:@selector(onCancel:)];
-	searchButton = [self resourceBasedButton:@"ic_magnifying_glass" withAction:@selector(onShowSearch:)];
-	prevButton = [self resourceBasedButton:@"ic_arrow_left" withAction:@selector(onSearchPrev:)];
-	nextButton = [self resourceBasedButton:@"ic_arrow_right" withAction:@selector(onSearchNext:)];
-	reflowButton = [self resourceBasedButton:@"ic_reflow" withAction:@selector(onToggleReflow:)];
-	moreButton = [self resourceBasedButton:@"ic_more" withAction:@selector(onMore:)];
-	annotButton = [self resourceBasedButton:@"ic_annotation" withAction:@selector(onAnnot:)];
-	shareButton = [self resourceBasedButton:@"ic_share" withAction:@selector(onShare:)];
-	printButton = [self resourceBasedButton:@"ic_print" withAction:@selector(onPrint:)];
-	highlightButton = [self resourceBasedButton:@"ic_highlight" withAction:@selector(onHighlight:)];
-	underlineButton = [self resourceBasedButton:@"ic_underline" withAction:@selector(onUnderline:)];
-	strikeoutButton = [self resourceBasedButton:@"ic_strike" withAction:@selector(onStrikeout:)];
-	inkButton = [self resourceBasedButton:@"ic_pen" withAction:@selector(onInk:)];
-	tickButton = [self resourceBasedButton:@"ic_check" withAction:@selector(onTick:)];
-	deleteButton = [self resourceBasedButton:@"ic_trash" withAction:@selector(onDelete:)];
+	linkButton = [self newResourceBasedButton:@"ic_link" withAction:@selector(onToggleLinks:)];
+	cancelButton = [self newResourceBasedButton:@"ic_cancel" withAction:@selector(onCancel:)];
+	searchButton = [self newResourceBasedButton:@"ic_magnifying_glass" withAction:@selector(onShowSearch:)];
+	prevButton = [self newResourceBasedButton:@"ic_arrow_left" withAction:@selector(onSearchPrev:)];
+	nextButton = [self newResourceBasedButton:@"ic_arrow_right" withAction:@selector(onSearchNext:)];
+	reflowButton = [self newResourceBasedButton:@"ic_reflow" withAction:@selector(onToggleReflow:)];
+	moreButton = [self newResourceBasedButton:@"ic_more" withAction:@selector(onMore:)];
+	annotButton = [self newResourceBasedButton:@"ic_annotation" withAction:@selector(onAnnot:)];
+	shareButton = [self newResourceBasedButton:@"ic_share" withAction:@selector(onShare:)];
+	printButton = [self newResourceBasedButton:@"ic_print" withAction:@selector(onPrint:)];
+	highlightButton = [self newResourceBasedButton:@"ic_highlight" withAction:@selector(onHighlight:)];
+	underlineButton = [self newResourceBasedButton:@"ic_underline" withAction:@selector(onUnderline:)];
+	strikeoutButton = [self newResourceBasedButton:@"ic_strike" withAction:@selector(onStrikeout:)];
+	inkButton = [self newResourceBasedButton:@"ic_pen" withAction:@selector(onInk:)];
+	tickButton = [self newResourceBasedButton:@"ic_check" withAction:@selector(onTick:)];
+	deleteButton = [self newResourceBasedButton:@"ic_trash" withAction:@selector(onDelete:)];
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
-	backButton = [self resourceBasedButton:@"ic_arrow_left" withAction:@selector(onBack:)];
+	backButton = [self newResourceBasedButton:@"ic_arrow_left" withAction:@selector(onBack:)];
 	[searchBar setPlaceholder: @"Search"];
 	[searchBar setDelegate: self];
 
@@ -530,6 +530,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filePath]];
 	UIActivityViewController *cont = [[UIActivityViewController alloc] initWithActivityItems:[NSArray arrayWithObject:url] applicationActivities:nil];
 	[self presentViewController:cont animated:YES completion:nil];
+	[cont release];
 }
 
 - (void) onShare: (id)sender

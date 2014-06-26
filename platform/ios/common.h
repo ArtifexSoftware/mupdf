@@ -20,8 +20,8 @@ int search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie);
 
 fz_rect search_result_bbox(fz_document *doc, int i);
 
-CGDataProviderRef wrapPixmap(fz_pixmap *pix);
+CGDataProviderRef CreateWrappedPixmap(fz_pixmap *pix);
 
-CGImageRef newCGImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata);
+CGImageRef CreateCGImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata);
 
 #endif

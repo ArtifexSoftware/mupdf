@@ -13,7 +13,7 @@
 
 static UIImage *newImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
 {
-	CGImageRef cgimage = newCGImageWithPixmap(pix, cgdata);
+	CGImageRef cgimage = CreateCGImageWithPixmap(pix, cgdata);
 	UIImage *image = [[UIImage alloc] initWithCGImage: cgimage scale: screenScale orientation: UIImageOrientationUp];
 	CGImageRelease(cgimage);
 	return image;
@@ -45,7 +45,6 @@ static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page)
 
 static NSArray *enumerateAnnotations(fz_document *doc, fz_page *page)
 {
-	pdf_document *idoc = pdf_specifics(doc);
 	fz_annot *annot;
 	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
 
@@ -190,6 +189,9 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 			line_thickness = LINE_THICKNESS;
 			line_height = STRIKE_HEIGHT;
 			break;
+
+		default:
+			return;
 	}
 
 	fz_var(quadpts);
@@ -316,7 +318,7 @@ static void deleteAnnotation(fz_document *doc, fz_page *page, int index)
 
 static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *text)
 {
-	int accepted;
+	int accepted = 0;
 
 	fz_try(ctx)
 	{
@@ -340,7 +342,7 @@ static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *te
 
 static int setFocussedWidgetChoice(fz_document *doc, fz_page *page, const char *text)
 {
-	int accepted;
+	int accepted = 0;
 
 	fz_try(ctx)
 	{
@@ -365,7 +367,7 @@ static int setFocussedWidgetChoice(fz_document *doc, fz_page *page, const char *
 
 static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
 {
-	fz_display_list *list;
+	fz_display_list *list = NULL;
 	fz_device *dev = NULL;
 
 	fz_var(dev);
@@ -389,7 +391,7 @@ static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
 
 static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 {
-	fz_display_list *list;
+	fz_display_list *list = NULL;
 	fz_device *dev = NULL;
 
 	fz_var(dev);
@@ -891,7 +893,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * scale.width, pageSize.height * scale.height}};
 			image_pix = renderPixmap(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
 			CGDataProviderRelease(imageData);
-			imageData = wrapPixmap(image_pix);
+			imageData = CreateWrappedPixmap(image_pix);
 			UIImage *image = newImageWithPixmap(image_pix, imageData);
 			widgetRects = enumerateWidgetRects(doc, page);
 			[self loadAnnotations];
@@ -1060,7 +1062,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		printf("render tile\n");
 		tile_pix = renderPixmap(doc, page_list, annot_list, pageSize, screenSize, viewFrame, scale);
 		CGDataProviderRelease(tileData);
-		tileData = wrapPixmap(tile_pix);
+		tileData = CreateWrappedPixmap(tile_pix);
 		UIImage *image = newImageWithPixmap(tile_pix, tileData);
 
 		dispatch_async(dispatch_get_main_queue(), ^{
@@ -1234,7 +1236,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	char *text = NULL;
 
 	if (!idoc)
-		return;
+		return 0;
 
 	fz_var(opts);
 	fz_var(text);

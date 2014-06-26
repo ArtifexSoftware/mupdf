@@ -168,11 +168,11 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 		if (!pix)
 			goto exit;
 
-		dataref = wrapPixmap(pix);
+		dataref = CreateWrappedPixmap(pix);
 		if (dataref == NULL)
 			goto exit;
 
-		img = newCGImageWithPixmap(pix, dataref);
+		img = CreateCGImageWithPixmap(pix, dataref);
 		if (img == NULL)
 			goto exit;
 
