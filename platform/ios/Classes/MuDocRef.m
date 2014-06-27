@@ -19,7 +19,7 @@
 		{
 			pdf_document *idoc = pdf_specifics(doc);
 			if (idoc) pdf_enable_js(idoc);
-			interactive = (idoc != NULL);
+			interactive = (idoc != NULL) && (pdf_crypt_version(idoc) == 0);
 		}
 	}
 	return self;
