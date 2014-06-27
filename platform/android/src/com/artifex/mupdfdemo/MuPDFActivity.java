@@ -483,7 +483,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			}
 		});
 
-		if (core.fileFormat().startsWith("PDF"))
+		if (core.fileFormat().startsWith("PDF") && core.isUnencryptedPDF())
 		{
 			mAnnotButton.setOnClickListener(new View.OnClickListener() {
 				public void onClick(View v) {

@@ -514,6 +514,22 @@ JNI_FN(MuPDFCore_fileFormatInternal)(JNIEnv * env, jobject thiz)
 	return (*env)->NewStringUTF(env, info);
 }
 
+JNIEXPORT jboolean JNICALL
+JNI_FN(MuPDFCore_isUnencryptedPDFInternal)(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals_any_thread(env, thiz);
+	if (glo == NULL)
+		return JNI_FALSE;
+
+	pdf_document *idoc = pdf_specifics(glo->doc);
+	if (idoc == NULL)
+		return JNI_FALSE; // Not a PDF
+
+	int cryptVer = pdf_crypt_version(idoc);
+	return (cryptVer == 0) ? JNI_TRUE : JNI_FALSE;
+}
+
+
 JNIEXPORT void JNICALL
 JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 {
