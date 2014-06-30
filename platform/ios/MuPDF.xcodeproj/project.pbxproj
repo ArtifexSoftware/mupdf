@@ -367,7 +367,7 @@
 				ORGANIZATIONNAME = "Artifex Software, Inc";
 				TargetAttributes = {
 					968E1E3C1779A54F0050CEA3 = {
-						DevelopmentTeam = M2AA22CUFZ;
+						DevelopmentTeam = 7M9658FA5G;
 					};
 				};
 			};
