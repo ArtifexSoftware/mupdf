@@ -29,13 +29,27 @@
 			</array>
 		</dict>
 		<dict>
+			<key>CFBundleTypeIconFiles</key>
+			<array/>
 			<key>CFBundleTypeName</key>
 			<string>CBZ</string>
 			<key>LSHandlerRank</key>
 			<string>Alternate</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>public.zip-archive</string>
+				<string>public.cbz-archive</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeIconFiles</key>
+			<array/>
+			<key>CFBundleTypeName</key>
+			<string>OXPS</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.microsoft.oxps</string>
 			</array>
 		</dict>
 	</array>
@@ -137,8 +151,9 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>xps</string>
-					<string>oxps</string>
 				</array>
+				<key>public.mime-type</key>
+				<string>application/vnd.ms-xpsdocument</string>
 			</dict>
 		</dict>
 		<dict>
@@ -147,14 +162,15 @@
 				<string>public.data</string>
 			</array>
 			<key>UTTypeIdentifier</key>
-			<string>public.zip-archive</string>
+			<string>public.cbz-archive</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>zip</string>
 					<string>cbz</string>
 				</array>
+				<key>public.mime-type</key>
+				<string>application/x-cbz</string>
 			</dict>
 		</dict>
 		<dict>
@@ -170,6 +186,25 @@
 				<array>
 					<string>pdf</string>
 				</array>
+				<key>public.mime-type</key>
+				<string>application/pdf</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeIdentifier</key>
+			<string>com.microsoft.oxps</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>oxps</string>
+				</array>
+				<key>public.mime-type</key>
+				<string>application/oxps</string>
 			</dict>
 		</dict>
 	</array>
