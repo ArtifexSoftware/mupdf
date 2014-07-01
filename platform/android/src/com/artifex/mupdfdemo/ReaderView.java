@@ -72,10 +72,23 @@ public class ReaderView
 
 	public ReaderView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		mGestureDetector = new GestureDetector(this);
-		mScaleGestureDetector = new ScaleGestureDetector(context, this);
-		mScroller        = new Scroller(context);
-		mStepper = new Stepper(this, this);
+		
+		// "Edit mode" means when the View is being displayed in the Android GUI editor. (this class
+		// is instantiated in the IDE, so we need to be a bit careful what we do).
+		if (isInEditMode())
+		{
+			mGestureDetector = null;
+			mScaleGestureDetector = null;
+			mScroller = null;
+			mStepper = null;
+		}
+		else
+		{
+			mGestureDetector = new GestureDetector(this);
+			mScaleGestureDetector = new ScaleGestureDetector(context, this);
+			mScroller        = new Scroller(context);
+			mStepper = new Stepper(this, this);
+		}
 	}
 
 	public ReaderView(Context context, AttributeSet attrs, int defStyle) {
@@ -526,6 +539,11 @@ public class ReaderView
 	protected void onLayout(boolean changed, int left, int top, int right,
 			int bottom) {
 		super.onLayout(changed, left, top, right, bottom);
+
+		// "Edit mode" means when the View is being displayed in the Android GUI editor. (this class
+		// is instantiated in the IDE, so we need to be a bit careful what we do).
+		if (isInEditMode())
+			return;
 
 		View cv = mChildViews.get(mCurrent);
 		Point cvOffset;

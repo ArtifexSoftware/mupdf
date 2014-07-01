@@ -4,10 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.WindowManager;
 
 public class MuPDFReaderView extends ReaderView {
 	enum Mode {Viewing, Selecting, Drawing}
@@ -30,9 +32,8 @@ public class MuPDFReaderView extends ReaderView {
 		mMode = m;
 	}
 
-	public MuPDFReaderView(Activity act) {
-		super(act);
-		mContext = act;
+	private void setup()
+	{
 		// Get the screen size etc to customise tap margins.
 		// We calculate the size of 1 inch of the screen for tapping.
 		// On some devices the dpi values returned are wrong, so we
@@ -41,12 +42,26 @@ public class MuPDFReaderView extends ReaderView {
 		// dimension I've seen is 480 pixels or so). Then we check
 		// to ensure we are never more than 1/5 of the screen width.
 		DisplayMetrics dm = new DisplayMetrics();
-		act.getWindowManager().getDefaultDisplay().getMetrics(dm);
+		WindowManager wm = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+		wm.getDefaultDisplay().getMetrics(dm);
 		tapPageMargin = (int)dm.xdpi;
 		if (tapPageMargin < 100)
 			tapPageMargin = 100;
 		if (tapPageMargin > dm.widthPixels/5)
 			tapPageMargin = dm.widthPixels/5;
+	}
+
+	public MuPDFReaderView(Context context) {
+		super(context);
+		mContext = context;
+		setup();
+	}
+
+	public MuPDFReaderView(Context context, AttributeSet attrs)
+	{
+		super(context, attrs);
+		mContext = context;
+		setup();
 	}
 
 	public boolean onSingleTapUp(MotionEvent e) {
