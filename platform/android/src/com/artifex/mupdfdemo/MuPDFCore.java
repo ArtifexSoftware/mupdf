@@ -25,7 +25,7 @@ public class MuPDFCore
 
 	/* The native functions */
 	private native long openFile(String filename);
-	private native long openBuffer();
+	private native long openBuffer(String magic);
 	private native String fileFormatInternal();
 	private native boolean isUnencryptedPDFInternal();
 	private native int countPagesInternal();
@@ -114,10 +114,9 @@ public class MuPDFCore
 		isUnencryptedPDF = isUnencryptedPDFInternal();
 	}
 
-	public MuPDFCore(Context context, byte buffer[]) throws Exception
-	{
+	public MuPDFCore(Context context, byte buffer[], String magic) throws Exception {
 		fileBuffer = buffer;
-		globals = openBuffer();
+		globals = openBuffer(magic != null ? magic : "");
 		if (globals == 0)
 		{
 			throw new Exception(context.getString(R.string.cannot_open_buffer));

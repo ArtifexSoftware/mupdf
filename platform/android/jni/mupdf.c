@@ -408,13 +408,14 @@ static void bufferStreamSeek(fz_stream *stream, int offset, int whence)
 }
 
 JNIEXPORT jlong JNICALL
-JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
+JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz, jstring jmagic)
 {
 	globals *glo;
 	fz_context *ctx;
 	jclass clazz;
 	fz_stream *stream = NULL;
 	buffer_state *bs;
+	const char *magic;
 
 #ifdef NDK_PROFILER
 	monstartup("libmupdf.so");
@@ -432,11 +433,20 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 	glo->thiz = thiz;
 	buffer_fid = (*env)->GetFieldID(env, clazz, "fileBuffer", "[B");
 
+	magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
+	if (magic == NULL)
+	{
+		LOGE("Failed to get magic");
+		free(glo);
+		return 0;
+	}
+
 	/* 128 MB store for low memory devices. Tweak as necessary. */
 	glo->ctx = ctx = fz_new_context(NULL, NULL, 128 << 20);
 	if (!ctx)
 	{
 		LOGE("Failed to initialise context");
+		(*env)->ReleaseStringUTFChars(env, jmagic, magic);
 		free(glo);
 		return 0;
 	}
@@ -458,7 +468,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 		fz_try(ctx)
 		{
 			glo->current_path = NULL;
-			glo->doc = fz_open_document_with_stream(ctx, "", stream);
+			glo->doc = fz_open_document_with_stream(ctx, magic, stream);
 			alerts_init(glo);
 		}
 		fz_catch(ctx)
@@ -481,6 +491,8 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz)
 		free(glo);
 		glo = NULL;
 	}
+
+	(*env)->ReleaseStringUTFChars(env, jmagic, magic);
 
 	return (jlong)(intptr_t)glo;
 }

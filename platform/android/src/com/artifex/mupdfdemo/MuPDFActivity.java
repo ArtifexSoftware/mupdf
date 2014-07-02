@@ -223,12 +223,12 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		return core;
 	}
 
-	private MuPDFCore openBuffer(byte buffer[])
+	private MuPDFCore openBuffer(byte buffer[], String magic)
 	{
 		System.out.println("Trying to open byte buffer");
 		try
 		{
-			core = new MuPDFCore(this, buffer);
+			core = new MuPDFCore(this, buffer, magic);
 			// New file: drop the old outline data
 			OutlineActivityData.set(null);
 		}
@@ -314,7 +314,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 					}
 				}
 				if (buffer != null) {
-					core = openBuffer(buffer);
+					core = openBuffer(buffer, intent.getType());
 				} else {
 					core = openFile(Uri.decode(uri.getEncodedPath()));
 				}
