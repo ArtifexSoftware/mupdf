@@ -261,47 +261,56 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 				Uri uri = intent.getData();
 				if (uri.toString().startsWith("content://")) {
-					// Handle view requests from the Transformer Prime's file manager
-					// Hopefully other file managers will use this same scheme, if not
-					// using explicit paths.
-					Cursor cursor = getContentResolver().query(uri, new String[]{"_data"}, null, null, null);
-					if (cursor.moveToFirst()) {
-						String str = cursor.getString(0);
-						String reason = null;
-						if (str == null) {
-							try {
-								InputStream is = getContentResolver().openInputStream(uri);
-								int len = is.available();
-								buffer = new byte[len];
-								is.read(buffer, 0, len);
-								is.close();
+					String reason = null;
+					try {
+						InputStream is = getContentResolver().openInputStream(uri);
+						int len = is.available();
+						buffer = new byte[len];
+						is.read(buffer, 0, len);
+						is.close();
+					}
+					catch (java.lang.OutOfMemoryError e) {
+						System.out.println("Out of memory during buffer reading");
+						reason = e.toString();
+					}
+					catch (Exception e) {
+						System.out.println("Exception reading from stream: " + e);
+
+						// Handle view requests from the Transformer Prime's file manager
+						// Hopefully other file managers will use this same scheme, if not
+						// using explicit paths.
+						// I'm hoping that this case below is no longer needed...but it's
+						// hard to test as the file manager seems to have changed in 4.x.
+						try {
+							Cursor cursor = getContentResolver().query(uri, new String[]{"_data"}, null, null, null);
+							if (cursor.moveToFirst()) {
+								String str = cursor.getString(0);
+								if (str == null) {
+									reason = "Couldn't parse data in intent";
+								}
+								else {
+									uri = Uri.parse(str);
+								}
 							}
-							catch (java.lang.OutOfMemoryError e)
-							{
-								System.out.println("Out of memory during buffer reading");
-								reason = e.toString();
-							}
-							catch (Exception e) {
-								reason = e.toString();
-							}
-							if (reason != null)
-							{
-								buffer = null;
-								Resources res = getResources();
-								AlertDialog alert = mAlertBuilder.create();
-								setTitle(String.format(res.getString(R.string.cannot_open_document_Reason), reason));
-								alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dismiss),
-										new DialogInterface.OnClickListener() {
-											public void onClick(DialogInterface dialog, int which) {
-												finish();
-											}
-										});
-								alert.show();
-								return;
-							}
-						} else {
-							uri = Uri.parse(str);
 						}
+						catch (Exception e2) {
+							System.out.println("Exception in Transformer Prime file manager code: " + e2);
+							reason = e2.toString();
+						}
+					}
+					if (reason != null) {
+						buffer = null;
+						Resources res = getResources();
+						AlertDialog alert = mAlertBuilder.create();
+						setTitle(String.format(res.getString(R.string.cannot_open_document_Reason), reason));
+						alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.dismiss),
+								new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog, int which) {
+										finish();
+									}
+								});
+						alert.show();
+						return;
 					}
 				}
 				if (buffer != null) {
