@@ -260,6 +260,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			byte buffer[] = null;
 			if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 				Uri uri = intent.getData();
+				System.out.println("URI to open is: " + uri);
 				if (uri.toString().startsWith("content://")) {
 					String reason = null;
 					try {
@@ -492,7 +493,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			}
 		});
 
-		if (core.fileFormat().startsWith("PDF") && core.isUnencryptedPDF())
+		if (core.fileFormat().startsWith("PDF") && core.isUnencryptedPDF() && !core.wasOpenedFromBuffer())
 		{
 			mAnnotButton.setOnClickListener(new View.OnClickListener() {
 				public void onClick(View v) {

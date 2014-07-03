@@ -22,6 +22,7 @@ public class MuPDFCore
 	private byte fileBuffer[];
 	private String file_format;
 	private boolean isUnencryptedPDF;
+	private final boolean wasOpenedFromBuffer;
 
 	/* The native functions */
 	private native long openFile(String filename);
@@ -112,6 +113,7 @@ public class MuPDFCore
 		}
 		file_format = fileFormatInternal();
 		isUnencryptedPDF = isUnencryptedPDFInternal();
+		wasOpenedFromBuffer = false;
 	}
 
 	public MuPDFCore(Context context, byte buffer[], String magic) throws Exception {
@@ -123,6 +125,7 @@ public class MuPDFCore
 		}
 		file_format = fileFormatInternal();
 		isUnencryptedPDF = isUnencryptedPDFInternal();
+		wasOpenedFromBuffer = true;
 	}
 
 	public  int countPages()
@@ -141,6 +144,11 @@ public class MuPDFCore
 	public boolean isUnencryptedPDF()
 	{
 		return isUnencryptedPDF;
+	}
+
+	public boolean wasOpenedFromBuffer()
+	{
+		return wasOpenedFromBuffer;
 	}
 
 	private synchronized int countPagesSynchronized() {
