@@ -12,13 +12,13 @@
 		dispatch_sync(queue, ^{});
 
 		fz_var(self);
-		fz_var(doc);
 
 		fz_try(ctx)
 		{
 			doc = fz_open_document(ctx, aFilename);
 			if (!doc)
 			{
+				[self release];
 				self = nil;
 			}
 			else
@@ -32,6 +32,7 @@
 		{
 			if (doc != NULL)
 				fz_close_document(doc);
+			[self release];
 			self = nil;
 		}
 	}
