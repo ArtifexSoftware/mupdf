@@ -1537,7 +1537,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 		float zoom = glo->resolution / 72;
 		zoom = 1.0 / zoom;
 		fz_scale(&ctm, zoom, zoom);
-		pt_cls = (*env)->FindClass(env, "android.graphics.PointF");
+		pt_cls = (*env)->FindClass(env, "android/graphics/PointF");
 		if (pt_cls == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "FindClass");
 		x_fid = (*env)->GetFieldID(env, pt_cls, "x", "F");
 		if (x_fid == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "GetFieldID(x)");
@@ -1610,7 +1610,7 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 		float zoom = glo->resolution / 72;
 		zoom = 1.0 / zoom;
 		fz_scale(&ctm, zoom, zoom);
-		pt_cls = (*env)->FindClass(env, "android.graphics.PointF");
+		pt_cls = (*env)->FindClass(env, "android/graphics/PointF");
 		if (pt_cls == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "FindClass");
 		x_fid = (*env)->GetFieldID(env, pt_cls, "x", "F");
 		if (x_fid == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "GetFieldID(x)");
