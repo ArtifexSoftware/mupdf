@@ -453,6 +453,12 @@ static void saveDoc(char *current_path, fz_document *doc)
 - (void) onToggleReflow: (id)sender
 {
 	reflowMode = !reflowMode;
+
+	[annotButton setEnabled:!reflowMode];
+	[searchButton setEnabled:!reflowMode];
+	[linkButton setEnabled:!reflowMode];
+	[moreButton setEnabled:!reflowMode];
+
 	[[canvas subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
 	[self scrollViewDidScroll:canvas];
 }
