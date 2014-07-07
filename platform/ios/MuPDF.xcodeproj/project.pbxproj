@@ -63,7 +63,6 @@
 		DAD72802183E53F0005C14FA /* MuAnnotSelectView.m in Sources */ = {isa = PBXBuildFile; fileRef = DAD72801183E53F0005C14FA /* MuAnnotSelectView.m */; };
 		DAD72804183E6F33005C14FA /* ic_trash.png in Resources */ = {isa = PBXBuildFile; fileRef = DAD72803183E6F33005C14FA /* ic_trash.png */; };
 		DADF824D1905242800855662 /* ic_share.png in Resources */ = {isa = PBXBuildFile; fileRef = DADF824C1905241900855662 /* ic_share.png */; };
-		DAF81D5B18800D1800B0F028 /* TapImage.m in Sources */ = {isa = PBXBuildFile; fileRef = DAF81D5A18800D1800B0F028 /* TapImage.m */; };
 		DAFDB695191A32ED003956EF /* Icon-76.png in Resources */ = {isa = PBXBuildFile; fileRef = DAFDB692191A32ED003956EF /* Icon-76.png */; };
 		DAFDB696191A32ED003956EF /* Icon-76@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = DAFDB693191A32ED003956EF /* Icon-76@2x.png */; };
 		DAFDB697191A32ED003956EF /* Icon-120.png in Resources */ = {isa = PBXBuildFile; fileRef = DAFDB694191A32ED003956EF /* Icon-120.png */; };
@@ -161,8 +160,6 @@
 		DAD72803183E6F33005C14FA /* ic_trash.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_trash.png; path = "../android/res/drawable-ldpi/ic_trash.png"; sourceTree = "<group>"; };
 		DADD8D6917EB24C000C49E0B /* MuPageView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuPageView.h; path = Classes/MuPageView.h; sourceTree = "<group>"; };
 		DADF824C1905241900855662 /* ic_share.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = ic_share.png; path = "../android/res/drawable-ldpi/ic_share.png"; sourceTree = "<group>"; };
-		DAF81D5918800D1800B0F028 /* TapImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TapImage.h; path = Classes/TapImage.h; sourceTree = "<group>"; };
-		DAF81D5A18800D1800B0F028 /* TapImage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TapImage.m; path = Classes/TapImage.m; sourceTree = "<group>"; };
 		DAFDB692191A32ED003956EF /* Icon-76.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-76.png"; sourceTree = "<group>"; };
 		DAFDB693191A32ED003956EF /* Icon-76@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-76@2x.png"; sourceTree = "<group>"; };
 		DAFDB694191A32ED003956EF /* Icon-120.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-120.png"; sourceTree = "<group>"; };
@@ -309,8 +306,6 @@
 				DAFF9978187C12430081C756 /* MuChoiceFieldController.h */,
 				DAFF9979187C12430081C756 /* MuChoiceFieldController.m */,
 				DAFF997A187C12430081C756 /* MuChoiceFieldController.xib */,
-				DAF81D5918800D1800B0F028 /* TapImage.h */,
-				DAF81D5A18800D1800B0F028 /* TapImage.m */,
 				DA012CA218803D1C00E47712 /* MuUpdater.h */,
 				DA0354E918FFF48400EE31BA /* MuPrintPageRenderer.h */,
 				DA0354EA18FFF48400EE31BA /* MuPrintPageRenderer.m */,
@@ -462,7 +457,6 @@
 			files = (
 				DAA6E56F17F03F96002B1E4E /* MuPageViewReflow.m in Sources */,
 				DA1C68AB17E86A500061F586 /* MuLibraryController.m in Sources */,
-				DAF81D5B18800D1800B0F028 /* TapImage.m in Sources */,
 				DA1C68AD17E86A500061F586 /* MuOutlineController.m in Sources */,
 				DA1C68AF17E86A500061F586 /* MuHitView.m in Sources */,
 				DA1C68B117E86A500061F586 /* MuPageViewNormal.m in Sources */,

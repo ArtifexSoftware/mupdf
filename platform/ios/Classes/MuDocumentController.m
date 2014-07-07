@@ -1,6 +1,5 @@
 #include "common.h"
 
-#import <TapImage.h>
 #import "MuPageViewNormal.h"
 #import "MuPageViewReflow.h"
 #import "MuDocumentController.h"
@@ -165,10 +164,15 @@ static void saveDoc(char *current_path, fz_document *doc)
 	}
 	else
 	{
-		UIView *iv = [[TapImage alloc] initWithResource:resource target:self action:selector];
-		UIBarButtonItem *ib = [[UIBarButtonItem alloc] initWithCustomView:iv];
-		[iv release];
-		return ib;
+		UIView *buttonView;
+		BOOL iOS7Style = ([[UIDevice currentDevice].systemVersion floatValue] >= 7.0f);
+		UIButton *button = [UIButton buttonWithType:iOS7Style ? UIButtonTypeSystem : UIButtonTypeCustom];
+		[button setImage:[UIImage imageNamed:resource] forState:UIControlStateNormal];
+		[button addTarget:self action:selector forControlEvents:UIControlEventTouchUpInside];
+		[button sizeToFit];
+		buttonView = button;
+
+		return [[UIBarButtonItem alloc] initWithCustomView:buttonView];
 	}
 }
 
