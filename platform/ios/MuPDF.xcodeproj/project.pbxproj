@@ -204,6 +204,7 @@
 				968E1E3E1779A54F0050CEA3 /* Products */,
 			);
 			sourceTree = "<group>";
+			usesTabs = 1;
 		};
 		968E1E3E1779A54F0050CEA3 /* Products */ = {
 			isa = PBXGroup;
