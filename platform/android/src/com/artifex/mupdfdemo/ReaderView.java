@@ -56,7 +56,6 @@ public class ReaderView
 	private final Stepper     mStepper;
 	private int               mScrollerLastX;
 	private int               mScrollerLastY;
-	private boolean           mScrollDisabled;
 
 	static abstract class ViewMapper {
 		abstract void applyToView(View view);
@@ -366,7 +365,7 @@ public class ReaderView
 
 	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX,
 			float velocityY) {
-		if (mScrollDisabled)
+		if (mScaling)
 			return true;
 
 		View v = mChildViews.get(mCurrent);
@@ -424,7 +423,7 @@ public class ReaderView
 
 	public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
 			float distanceY) {
-		if (!mScrollDisabled) {
+		if (!mScaling) {
 			mXScroll -= distanceX;
 			mYScroll -= distanceY;
 			requestLayout();
@@ -473,9 +472,6 @@ public class ReaderView
 		// screen is not showing the effect of them, so they can
 		// only confuse the user
 		mXScroll = mYScroll = 0;
-		// Avoid jump at end of scaling by disabling scrolling
-		// until the next start of gesture
-		mScrollDisabled = true;
 		return true;
 	}
 
@@ -494,15 +490,12 @@ public class ReaderView
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		mScaleGestureDetector.onTouchEvent(event);
-
-		if (!mScaling)
-			mGestureDetector.onTouchEvent(event);
+		mGestureDetector.onTouchEvent(event);
 
 		if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_DOWN) {
 			mUserInteracting = true;
 		}
 		if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP) {
-			mScrollDisabled = false;
 			mUserInteracting = false;
 
 			View v = mChildViews.get(mCurrent);
