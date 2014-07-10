@@ -327,6 +327,7 @@
 				968E1E391779A54F0050CEA3 /* Sources */,
 				968E1E3A1779A54F0050CEA3 /* Frameworks */,
 				968E1E3B1779A54F0050CEA3 /* Resources */,
+				C9E0CC68196EE93F006EB94D /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -434,6 +435,19 @@
 			shellPath = /bin/sh;
 			shellScript = "bash build_libs.sh";
 		};
+		C9E0CC68196EE93F006EB94D /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$COMMAND_LINE_POSTBUILD_SCRIPT\" != \"\" ] ;\nthen\n    exec $COMMAND_LINE_POSTBUILD_SCRIPT\nfi\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -495,8 +509,14 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_MODULES_AUTOLINK = YES;
+				COMMAND_LINE_DEFINES = "";
+				COMMAND_LINE_FRAMEWORK_SEARCH_PATHS = "";
+				COMMAND_LINE_LINKER_FLAGS = "";
+				FRAMEWORK_SEARCH_PATHS = "$(COMMAND_LINE_FRAMEWORKS_SEARCH_PATH)";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(COMMAND_LINE_DEFINES)";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "$(COMMAND_LINE_LINKER_FLAGS)";
 			};
 			name = Debug;
 		};
@@ -505,7 +525,13 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_MODULES_AUTOLINK = YES;
+				COMMAND_LINE_DEFINES = "";
+				COMMAND_LINE_FRAMEWORK_SEARCH_PATHS = "";
+				COMMAND_LINE_LINKER_FLAGS = "";
+				FRAMEWORK_SEARCH_PATHS = "$(COMMAND_LINE_FRAMEWORKS_SEARCH_PATH)";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(COMMAND_LINE_DEFINES)";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				OTHER_LDFLAGS = "$(COMMAND_LINE_LINKER_FLAGS)";
 			};
 			name = Release;
 		};

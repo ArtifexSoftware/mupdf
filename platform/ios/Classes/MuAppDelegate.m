@@ -3,6 +3,10 @@
 
 #import "MuAppDelegate.h"
 
+#ifdef CRASHLYTICS_ENABLE
+#import <Crashlytics/Crashlytics.h>
+#endif
+
 @implementation MuAppDelegate
 {
 	BOOL _isInBackground;
@@ -16,6 +20,11 @@
 
 	ctx = fz_new_context(NULL, NULL, ResourceCacheMaxSize);
 	fz_register_document_handlers(ctx);
+
+#ifdef CRASHLYTICS_ENABLE
+	NSLog(@"Starting Crashlytics");
+	[Crashlytics startWithAPIKey:CRASHLYTICS_API_KEY];
+#endif
 
 	screenScale = [[UIScreen mainScreen] scale];
 
