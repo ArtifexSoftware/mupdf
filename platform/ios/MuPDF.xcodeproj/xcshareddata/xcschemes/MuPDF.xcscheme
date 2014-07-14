@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "0510"
-   version = "1.3">
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -82,5 +82,23 @@
    <ArchiveAction
       buildConfiguration = "Release"
       revealArchiveInOrganizer = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Run Script"
+               scriptText = "if [ &quot;$COMMAND_LINE_POSTARCHIVE_SCRIPT&quot; != &quot;&quot; ] ;&#10;then&#10;   bash $COMMAND_LINE_POSTARCHIVE_SCRIPT&#10;   RESULT=$?&#10;&#10;   # Manually pass the result of the script back to the caller, as errors&#10;   # that occur here do not cause the Archive step to fail. I believe this&#10;   # is an Xcode bug.&#10;   if [ &quot;$COMMAND_LINE_POSTARCHIVE_SCRIPT_RESULT_FILE&quot; != &quot;&quot; ] ;&#10;   then&#10;     echo $RESULT &gt;$COMMAND_LINE_POSTARCHIVE_SCRIPT_RESULT_FILE&#10;   fi&#10;fi&#10;&#10;exit 1&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "968E1E3C1779A54F0050CEA3"
+                     BuildableName = "MuPDF.app"
+                     BlueprintName = "MuPDF"
+                     ReferencedContainer = "container:MuPDF.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
    </ArchiveAction>
 </Scheme>

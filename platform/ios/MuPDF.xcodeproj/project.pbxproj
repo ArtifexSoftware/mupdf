@@ -446,7 +446,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$COMMAND_LINE_POSTBUILD_SCRIPT\" != \"\" ] ;\nthen\n    exec $COMMAND_LINE_POSTBUILD_SCRIPT\nfi\n";
+			shellScript = "if [ \"$COMMAND_LINE_POSTBUILD_SCRIPT\" != \"\" ] ;\nthen\n    exec bash $COMMAND_LINE_POSTBUILD_SCRIPT\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
