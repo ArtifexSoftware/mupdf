@@ -123,6 +123,9 @@ static void saveDoc(char *current_path, fz_document *doc)
 }
 
 @implementation MuDocumentController
+{
+	BOOL _isRotating;
+}
 
 - (id) initWithFilename: (NSString*)filename path:(char *)cstr document: (MuDocRef *)aDoc
 {
@@ -974,6 +977,16 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) scrollViewDidScroll: (UIScrollView*)scrollview
 {
+	// scrollViewDidScroll seems to get called part way through a screen rotation.
+	// (This is possibly a UIScrollView bug - see
+	// http://stackoverflow.com/questions/4123991/uiscrollview-disable-scrolling-while-rotating-on-iphone-ipad/8141423#8141423 ).
+	// This ends up corrupting the current page number, because the calculation
+	// 'current = x / width' is using the new value of 'width' before the
+	// pages have been resized/repositioned. To avoid this problem, we filter out
+	// calls to scrollViewDidScroll during rotation.
+	if (_isRotating)
+		return;
+
 	if (width == 0)
 		return; // not visible yet
 
@@ -1097,8 +1110,18 @@ static void saveDoc(char *current_path, fz_document *doc)
 	return YES;
 }
 
+- (void) willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+	_isRotating = YES;
+}
+
 - (void) didRotateFromInterfaceOrientation: (UIInterfaceOrientation)o
 {
+	_isRotating = NO;
+
+	// We need to set these here, because during the animation we may use a wider
+	// size (the maximum of the landscape/portrait widths), to avoid clipping during
+	// the rotation.
 	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
