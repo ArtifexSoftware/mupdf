@@ -49,7 +49,6 @@ static void showAlert(NSString *msg, NSString *filename)
 	BOOL isdir;
 	while (file = [direnum nextObject]) {
 		NSString *filepath = [docdir stringByAppendingPathComponent:file];
-		NSLog(@"file %@\n", file);
 		if ([fileman fileExistsAtPath:filepath isDirectory:&isdir] && !isdir) {
 			[outfiles addObject:file];
 		}
