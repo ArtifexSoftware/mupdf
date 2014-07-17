@@ -203,6 +203,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	UIView *view = [[UIView alloc] initWithFrame: CGRectZero];
 	[view setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 	[view setAutoresizesSubviews: YES];
+	view.backgroundColor = [UIColor grayColor];
 
 	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,GAP,0)];
 	[canvas setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
