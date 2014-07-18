@@ -216,8 +216,10 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 	offset = getlong(doc->file); /* offset to central directory */
 
 	/* ZIP64 */
-	if (count == 0xFFFF)
+	if (count == 0xFFFF || offset == 0xFFFFFFFF)
 	{
+		int offset64, count64;
+
 		fz_seek(doc->file, start_offset - 20, 0);
 
 		sig = getlong(doc->file);
@@ -225,11 +227,11 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "wrong zip64 end of central directory locator signature (0x%x)", sig);
 
 		(void) getlong(doc->file); /* start disk */
-		offset = getlong64(doc->file); /* offset to end of central directory record */
-		if (offset < 0)
+		offset64 = getlong64(doc->file); /* offset to end of central directory record */
+		if (offset64 < 0)
 			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB aren't supported");
 
-		fz_seek(doc->file, offset, 0);
+		fz_seek(doc->file, offset64, 0);
 
 		sig = getlong(doc->file);
 		if (sig != ZIP64_END_OF_CENTRAL_DIRECTORY_SIG)
@@ -240,11 +242,15 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 		(void) getshort(doc->file); /* version to extract */
 		(void) getlong(doc->file); /* disk number */
 		(void) getlong(doc->file); /* disk number start */
-		count = getlong64(doc->file); /* entries in central directory disk */
+		count64 = getlong64(doc->file); /* entries in central directory disk */
 		(void) getlong64(doc->file); /* entries in central directory */
 		(void) getlong64(doc->file); /* size of central directory */
-		offset = getlong64(doc->file); /* offset to central directory */
+		offset64 = getlong64(doc->file); /* offset to central directory */
 
+		if (count == 0xFFFF)
+			count = count64;
+		if (offset == 0xFFFFFFFF)
+			offset = offset64;
 		if (count < 0 || offset < 0)
 			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB aren't supported");
 	}
@@ -288,10 +294,23 @@ xps_read_zip_dir(xps_document *doc, int start_offset)
 			int size = getshort(doc->file);
 			if (type == ZIP64_EXTRA_FIELD_SIG)
 			{
-				doc->zip_table[i].usize = getlong64(doc->file);
-				doc->zip_table[i].csize = getlong64(doc->file);
-				doc->zip_table[i].offset = getlong64(doc->file);
-				fz_seek(doc->file, -24, 1);
+				int sizeleft = size;
+				if (doc->zip_table[i].usize == 0xFFFFFFFF && sizeleft >= 8)
+				{
+					doc->zip_table[i].usize = getlong64(doc->file);
+					sizeleft -= 8;
+				}
+				if (doc->zip_table[i].csize == 0xFFFFFFFF && sizeleft >= 8)
+				{
+					doc->zip_table[i].csize = getlong64(doc->file);
+					sizeleft -= 8;
+				}
+				if (doc->zip_table[i].offset == 0xFFFFFFFF && sizeleft >= 8)
+				{
+					doc->zip_table[i].offset = getlong64(doc->file);
+					sizeleft -= 8;
+				}
+				fz_seek(doc->file, sizeleft - size, 1);
 			}
 			fz_seek(doc->file, size, 1);
 			metasize -= 4 + size;
