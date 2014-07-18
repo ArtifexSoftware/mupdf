@@ -957,6 +957,16 @@ xps_parse_path(xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_reso
 				while (*s && *s != ' ')
 					s++;
 			}
+			if (dash_len > 0)
+			{
+				/* fz_stroke_path doesn't draw non-empty paths with phase length zero */
+				float phase_len = 0;
+				int i;
+				for (i = 0; i < dash_len; i++)
+					phase_len += stroke->dash_list[i];
+				if (phase_len == 0)
+					dash_len = 0;
+			}
 			stroke->dash_len = dash_len;
 		}
 	}
