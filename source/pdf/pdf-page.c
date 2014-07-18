@@ -273,6 +273,8 @@ static int
 pdf_xobject_uses_blending(pdf_document *doc, pdf_obj *dict)
 {
 	pdf_obj *obj = pdf_dict_gets(dict, "Resources");
+	if (!strcmp(pdf_to_name(pdf_dict_getp(dict, "Group/S")), "Transparency"))
+		return 1;
 	return pdf_resources_use_blending(doc, obj);
 }
 
@@ -496,6 +498,8 @@ pdf_load_page(pdf_document *doc, int number)
 		page->contents = pdf_keep_obj(obj);
 
 		if (pdf_resources_use_blending(doc, page->resources))
+			page->transparency = 1;
+		else if (!strcmp(pdf_to_name(pdf_dict_getp(pageobj, "Group/S")), "Transparency"))
 			page->transparency = 1;
 
 		for (annot = page->annots; annot && !page->transparency; annot = annot->next)
