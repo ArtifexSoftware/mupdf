@@ -182,7 +182,7 @@ cbz_strnatcmp(const char *a, const char *b)
 {
 	int x, y;
 
-	for (;;)
+	while (*a || *b)
 	{
 		if (cbz_isdigit(*a) && cbz_isdigit(*b))
 		{
