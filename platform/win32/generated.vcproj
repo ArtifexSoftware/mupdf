@@ -23,8 +23,8 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="generate.bat"
-				ReBuildCommandLine="del /q ..\generated &amp;&amp; generate.bat"
-				CleanCommandLine="del /q ..\generated"
+				ReBuildCommandLine="del /q ..\..\generated &amp;&amp; generate.bat"
+				CleanCommandLine="del /q ..\..\generated"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath=""
