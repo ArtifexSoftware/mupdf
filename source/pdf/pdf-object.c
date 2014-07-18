@@ -1672,7 +1672,7 @@ static void fmt_obj(struct fmt *fmt, pdf_obj *obj)
 		int i, c;
 		for (i = 0; i < len; i++) {
 			c = (unsigned char)str[i];
-			if (strchr("()\\\n\r\t\b\f", c))
+			if (c != 0 && strchr("()\\\n\r\t\b\f", c))
 				added ++;
 			else if (c < 32 || c >= 127)
 				added += 3;
