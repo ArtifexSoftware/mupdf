@@ -2588,7 +2588,10 @@ void pdf_write_document(pdf_document *doc, char *filename, fz_write_options *fz_
 	{
 		opts.out = fopen(filename, "ab");
 		if (opts.out)
+		{
 			fseek(opts.out, 0, SEEK_END);
+			fprintf(opts.out, "\n");
+		}
 	}
 	else
 	{
