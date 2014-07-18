@@ -1,9 +1,5 @@
 #include "mupdf/fitz.h"
 
-#if defined(_WIN32) && !defined(NDEBUG)
-#define USE_OUTPUT_DEBUG_STRING
-#endif
-
 #ifdef USE_OUTPUT_DEBUG_STRING
 #include <windows.h>
 #endif
