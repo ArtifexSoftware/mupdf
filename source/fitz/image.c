@@ -135,10 +135,10 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 	for (; s < end; s++, d += tile->n)
 	{
 		if (*s == 0)
-			for (k = 0; k < image->n - 1; k++)
+			for (k = 0; k < image->n; k++)
 				d[k] = image->colorkey[k];
 		else
-			for (k = 0; k < image->n - 1; k++)
+			for (k = 0; k < image->n; k++)
 				d[k] = fz_clampi(image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s, 0, 255);
 	}
 
