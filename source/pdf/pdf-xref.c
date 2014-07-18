@@ -1169,6 +1169,10 @@ pdf_init_document(pdf_document *doc)
 				pdf_drop_obj(dict);
 				dict = NULL;
 			}
+
+			/* ensure that strings are not used in their repaired, non-decrypted form */
+			if (doc->crypt)
+				pdf_clear_xref(doc);
 		}
 	}
 	fz_catch(ctx)
