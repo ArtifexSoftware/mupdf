@@ -84,9 +84,10 @@
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <NMakeBuildCommandLine>generate.bat</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>del /q ..\generated &amp;&amp; generate.bat</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>del /q ..\generated</NMakeCleanCommandLine>
-    <NMakeOutput />
+    <NMakeReBuildCommandLine>del /q ..\..\generated &amp;&amp; generate.bat</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>del /q ..\..\generated</NMakeCleanCommandLine>
+    <NMakeOutput>
+    </NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
@@ -100,9 +101,10 @@
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <NMakeBuildCommandLine>generate.bat</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>del /q ..\generated &amp;&amp; generate.bat</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>del /q ..\generated</NMakeCleanCommandLine>
-    <NMakeOutput>generated\cmap_cns.h</NMakeOutput>
+    <NMakeReBuildCommandLine>del /q ..\..\generated &amp;&amp; generate.bat</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>del /q ..\..\generated</NMakeCleanCommandLine>
+    <NMakeOutput>
+    </NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
@@ -116,9 +118,10 @@
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <NMakeBuildCommandLine>generate.bat</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>del /q ..\generated &amp;&amp; generate.bat</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>del /q ..\generated</NMakeCleanCommandLine>
-    <NMakeOutput>generated\cmap_cns.h</NMakeOutput>
+    <NMakeReBuildCommandLine>del /q ..\..\generated &amp;&amp; generate.bat</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>del /q ..\..\generated</NMakeCleanCommandLine>
+    <NMakeOutput>
+    </NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|ARM'">

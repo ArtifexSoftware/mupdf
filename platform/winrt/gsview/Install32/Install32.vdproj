@@ -15,7 +15,43 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_29FAF27F8AE14B06AA30971B590EE862"
+        "MsmKey" = "8:_016DC0AD4FFB4399B8519ACA84400E23"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_14D6D6CD543648468701A0FE8D5A2463"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1F1881EE52A84F49A62D42DE7E4D9D24"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_200E66532F6140579FA9390D6F7CC178"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2684CEAF38794D53AF9D906A7F8D677C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_389C02C6991141428A41BC2459A55E76"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4826B6F3283A4770935083729B0777B2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -27,7 +63,25 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_791D64A55F0847788638D3FCDD1802DD"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_87036B53E422457DBCA496540B818802"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A62B07FE876C4ACBBE7DEF7A219A570E"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B2090A11BD04495DACDA72D4E5D72B7E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -55,6 +109,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
         "Release"
         {
@@ -71,6 +133,22 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.5"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.5 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.5"
+                    }
+                }
+            }
         }
     }
     "Deployable"
@@ -100,12 +178,132 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_29FAF27F8AE14B06AA30971B590EE862"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_016DC0AD4FFB4399B8519ACA84400E23"
             {
-            "SourcePath" = "8:..\\bin\\Release\\gsdll32.dll"
-            "TargetName" = "8:gsdll32.dll"
+            "SourcePath" = "8:..\\Resources\\pagePNG.ico"
+            "TargetName" = "8:pagePNG.ico"
             "Tag" = "8:"
-            "Folder" = "8:_F115E751BD3842299C96BA6F8A5B0F40"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_14D6D6CD543648468701A0FE8D5A2463"
+            {
+            "SourcePath" = "8:..\\Resources\\pageCBZ.ico"
+            "TargetName" = "8:pageCBZ.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1F1881EE52A84F49A62D42DE7E4D9D24"
+            {
+            "SourcePath" = "8:..\\Resources\\pageEPS.ico"
+            "TargetName" = "8:pageEPS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_200E66532F6140579FA9390D6F7CC178"
+            {
+            "SourcePath" = "8:..\\Resources\\pagePDF.ico"
+            "TargetName" = "8:pagePDF.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2684CEAF38794D53AF9D906A7F8D677C"
+            {
+            "SourcePath" = "8:..\\Resources\\pagePS.ico"
+            "TargetName" = "8:pagePS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_389C02C6991141428A41BC2459A55E76"
+            {
+            "SourcePath" = "8:..\\Resources\\pageOXPS.ico"
+            "TargetName" = "8:pageOXPS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4826B6F3283A4770935083729B0777B2"
+            {
+            "SourcePath" = "8:..\\Resources\\pageJPG.ico"
+            "TargetName" = "8:pageJPG.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -127,16 +325,31 @@
             "AssemblyAsmDisplayName" = "8:gsview, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_4879181DB5BD4512A8A1790BC22435A0"
-                    {
-                    "Name" = "8:gsview.exe"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:..\\bin\\Release\\gsview.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_F115E751BD3842299C96BA6F8A5B0F40"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_791D64A55F0847788638D3FCDD1802DD"
+            {
+            "SourcePath" = "8:..\\Resources\\pageXPS.ico"
+            "TargetName" = "8:pageXPS.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_F28BDA152FBB403EAF109B8E144140A8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -171,9 +384,233 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A62B07FE876C4ACBBE7DEF7A219A570E"
+            {
+            "SourcePath" = "8:..\\gsview.visualelementsmanifest.xml"
+            "TargetName" = "8:gsview.visualelementsmanifest.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_F115E751BD3842299C96BA6F8A5B0F40"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B2090A11BD04495DACDA72D4E5D72B7E"
+            {
+            "SourcePath" = "8:..\\gslib\\gsdll32.dll"
+            "TargetName" = "8:gsdll32.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_F115E751BD3842299C96BA6F8A5B0F40"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_12B01738B600492AA1C8D89AD0821413"
+            {
+            "Name" = "8:CDisplay ZIP Archived Comic Book file"
+            "Description" = "8:CDisplay ZIP Archived Comic Book file"
+            "Extensions" = "8:cbz"
+            "MIME" = "8:"
+            "Icon" = "8:_14D6D6CD543648468701A0FE8D5A2463"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_33B319EC439B40E38BD09902607AFE0B"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_13D929725BF0460F823C23414FB2F0A1"
+            {
+            "Name" = "8:Open XPS Document"
+            "Description" = "8:Open XPS Document"
+            "Extensions" = "8:oxps"
+            "MIME" = "8:"
+            "Icon" = "8:_389C02C6991141428A41BC2459A55E76"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_02319B3587ED4701B20BE6C84D578514"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_65F612197D8D450C8AC251D615131D21"
+            {
+            "Name" = "8:PostScript File"
+            "Description" = "8:PostScript File"
+            "Extensions" = "8:ps"
+            "MIME" = "8:"
+            "Icon" = "8:_2684CEAF38794D53AF9D906A7F8D677C"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_1CC8050B2F6146E6A1F7C71C12ACB66E"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_69F979C4C92C4C348E8001B157A92FED"
+            {
+            "Name" = "8:EPS File"
+            "Description" = "8:EPS File"
+            "Extensions" = "8:eps"
+            "MIME" = "8:"
+            "Icon" = "8:_1F1881EE52A84F49A62D42DE7E4D9D24"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_EA00D9AD05ED40BE82A6F8CF37AA21EE"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_A5691CEB907F4D66A3FE718B4FF65E8D"
+            {
+            "Name" = "8:PNG image"
+            "Description" = "8:PNG image"
+            "Extensions" = "8:png"
+            "MIME" = "8:"
+            "Icon" = "8:_016DC0AD4FFB4399B8519ACA84400E23"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_95A3859E50134298ACEA0E1EACA47513"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_CD91C7FED2C94607AC5CFB7F6571A963"
+            {
+            "Name" = "8:XPS Document"
+            "Description" = "8:XPS Document"
+            "Extensions" = "8:xps"
+            "MIME" = "8:"
+            "Icon" = "8:_791D64A55F0847788638D3FCDD1802DD"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_C39CD59228F345E48878777D30252120"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_EA8DCA7319A3441EA0A8F07F20C7EC71"
+            {
+            "Name" = "8:JPEG image"
+            "Description" = "8:JPEG image"
+            "Extensions" = "8:jpeg"
+            "MIME" = "8:"
+            "Icon" = "8:_4826B6F3283A4770935083729B0777B2"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_90799BABA05F49D6AB9D093411DD157E"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
+            "{5EB83D71-FA18-4901-BE56-DE22E13CC478}:_EA91006930CC4A349642A7F0AD319AA4"
+            {
+            "Name" = "8:PDF"
+            "Description" = "8:PDF"
+            "Extensions" = "8:pdf"
+            "MIME" = "8:"
+            "Icon" = "8:_200E66532F6140579FA9390D6F7CC178"
+            "IconIndex" = "3:0"
+                "Command"
+                {
+                "Command" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+                }
+                "Verbs"
+                {
+                    "{95C0C507-CBF0-42B8-B119-07219E384A4A}:_D9041E3AC16C43E4AF1822F9103B24D6"
+                    {
+                    "Command" = "8:&Open"
+                    "Verb" = "8:open"
+                    "Arguments" = "8:\"%1\""
+                    "Order" = "3:0"
+                    }
+                }
+            }
         }
         "Folder"
         {
@@ -186,6 +623,17 @@
             "Property" = "8:ProgramMenuFolder"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_8ADA7142ADE14DFFA878A5107FE5C304"
+                    {
+                    "Name" = "8:Artifex Software"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_AF85737E4DAA4E318495768F54D7F0AF"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
             "{1525181F-901A-416C-8A58-119130FE478E}:_74B5607A82364A9E8F63FA435CF2C5FA"
@@ -209,6 +657,17 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_F28BDA152FBB403EAF109B8E144140A8"
+                    {
+                    "Name" = "8:Resources"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_76594C33BABA488DBC160B0B115E0F1B"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -226,25 +685,25 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:Install32"
-        "ProductCode" = "8:{A6EC46B0-8B42-42E9-9BDE-E9C33B45AAAE}"
-        "PackageCode" = "8:{42A67127-1F5A-4E6C-A5E8-9A40A0F297F1}"
+        "ProductName" = "8:GSview 6.0"
+        "ProductCode" = "8:{BB8C85F6-5B3C-4163-9B55-6B07E747E947}"
+        "PackageCode" = "8:{85959242-0814-4BFE-8891-EE46ADB397D6}"
         "UpgradeCode" = "8:{00F5E049-7C22-449F-9879-A4D6A7634B7E}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
-        "RemovePreviousVersions" = "11:FALSE"
+        "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
-        "Manufacturer" = "8:Default Company Name"
+        "InstallAllUsers" = "11:TRUE"
+        "ProductVersion" = "8:6.0.0"
+        "Manufacturer" = "8:Artifex Software"
         "ARPHELPTELEPHONE" = "8:"
-        "ARPHELPLINK" = "8:"
-        "Title" = "8:Install32"
+        "ARPHELPLINK" = "8:http://www.artifex.com"
+        "Title" = "8:Install GSview 6.0 x86"
         "Subject" = "8:"
-        "ARPCONTACT" = "8:Default Company Name"
+        "ARPCONTACT" = "8:Artifex Software"
         "Keywords" = "8:"
-        "ARPCOMMENTS" = "8:"
-        "ARPURLINFOABOUT" = "8:"
+        "ARPCOMMENTS" = "8:Install GSview 6.0 for x86"
+        "ARPURLINFOABOUT" = "8:http://www.artifex.com"
         "ARPPRODUCTICON" = "8:"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
@@ -348,6 +807,20 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_027434B1EED34DEF86F7CF3635B5FD30"
+            {
+            "Name" = "8:GSView 6.0"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:32512"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+            "Folder" = "8:_8ADA7142ADE14DFFA878A5107FE5C304"
+            "WorkingFolder" = "8:_F115E751BD3842299C96BA6F8A5B0F40"
+            "Icon" = "8:_4879181DB5BD4512A8A1790BC22435A0"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {

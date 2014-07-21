@@ -265,10 +265,10 @@
     <Resource Include="Resources\gsview_app.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="gsview_app.ico" />
+    <None Include="Resources\PDF.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\PDF.bmp" />
+    <Resource Include="gsview_app.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

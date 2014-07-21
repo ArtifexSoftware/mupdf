@@ -27,6 +27,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_1BF4736955034DCEBB4B7C53AEFECA2A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_28423EA654C8488A8F59859D947164F4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -40,12 +46,6 @@
         "Entry"
         {
         "MsmKey" = "8:_44A71C9401B94929A3DF6828309FE684"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_528DB596D02340538C9E6E35872234C5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -226,6 +226,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1BF4736955034DCEBB4B7C53AEFECA2A"
+            {
+            "SourcePath" = "8:..\\gslib\\gsdll64.dll"
+            "TargetName" = "8:gsdll64.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CDB2B40979C34EBAA8A815DA144BF441"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_28423EA654C8488A8F59859D947164F4"
             {
             "SourcePath" = "8:..\\Resources\\pageOXPS.ico"
@@ -281,26 +301,6 @@
                 }
             "SourcePath" = "8:..\\bin\\Release\\gsview.exe"
             "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_CDB2B40979C34EBAA8A815DA144BF441"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_528DB596D02340538C9E6E35872234C5"
-            {
-            "SourcePath" = "8:..\\bin\\Release\\gsdll64.dll"
-            "TargetName" = "8:gsdll64.dll"
             "Tag" = "8:"
             "Folder" = "8:_CDB2B40979C34EBAA8A815DA144BF441"
             "Condition" = "8:"
@@ -700,7 +700,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:GSview 6.0"
         "ProductCode" = "8:{A22596C0-BCF4-46F9-9CF2-1C66E8588C30}"
-        "PackageCode" = "8:{3F02128C-B018-4DD5-B18D-5C202F2A3A48}"
+        "PackageCode" = "8:{8B802149-336B-4DEB-A58A-ABDF1941600D}"
         "UpgradeCode" = "8:{B494B7A2-738F-4F9D-87F4-31830A16FB76}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
