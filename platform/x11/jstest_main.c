@@ -14,7 +14,7 @@ static pdfapp_t gapp;
 static int file_open = 0;
 static char filename[1024] = "";
 static char *scriptname;
-static char *output = NULL;
+static char *output = "out%03d.png";
 static char *prefix = NULL;
 static int shotcount = 0;
 static int verbosity = 0;
