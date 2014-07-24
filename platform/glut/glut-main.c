@@ -147,6 +147,26 @@ static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
 
+static void auto_zoom_w(void)
+{
+	currentzoom = fz_clamp(currentzoom * screen_w / (float)page_w, MINRES, MAXRES);
+}
+
+static void auto_zoom_h(void)
+{
+	currentzoom = fz_clamp(currentzoom * screen_h / (float)page_h, MINRES, MAXRES);
+}
+
+static void auto_zoom(void)
+{
+	float page_a = (float) page_w / page_h;
+	float screen_a = (float) screen_w / screen_h;
+	if (page_a > screen_a)
+		auto_zoom_w();
+	else
+		auto_zoom_h();
+}
+
 static void reshape(int w, int h)
 {
 	screen_w = w;
@@ -193,6 +213,10 @@ static void keyboard(unsigned char key, int x, int y)
 
 	switch (key)
 	{
+	case 'W': auto_zoom_w(); break;
+	case 'H': auto_zoom_h(); break;
+	case 'Z': auto_zoom(); break;
+	case 'z': currentzoom = number > 0 ? number : DEFRES; break;
 	case '<': currentpage -= 10 * fz_maxi(number, 1); break;
 	case '>': currentpage += 10 * fz_maxi(number, 1); break;
 	case ',': case 'b': currentpage -= fz_maxi(number, 1); break;
