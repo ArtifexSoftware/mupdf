@@ -147,6 +147,28 @@ static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
 
+static void toggle_fullscreen(void)
+{
+	static int oldw = 100, oldh = 100, oldx = 0, oldy = 0;
+	static int isfullscreen = 0;
+
+	if (!isfullscreen)
+	{
+		oldw = glutGet(GLUT_WINDOW_WIDTH);
+		oldh = glutGet(GLUT_WINDOW_HEIGHT);
+		oldx = glutGet(GLUT_WINDOW_X);
+		oldy = glutGet(GLUT_WINDOW_Y);
+		glutFullScreen();
+		isfullscreen = 1;
+	}
+	else
+	{
+		glutPositionWindow(oldx, oldy);
+		glutReshapeWindow(oldw, oldh);
+		isfullscreen = 0;
+	}
+}
+
 static void auto_zoom_w(void)
 {
 	currentzoom = fz_clamp(currentzoom * screen_w / (float)page_w, MINRES, MAXRES);
@@ -213,6 +235,7 @@ static void keyboard(unsigned char key, int x, int y)
 
 	switch (key)
 	{
+	case 'f': toggle_fullscreen(); break;
 	case 'W': auto_zoom_w(); break;
 	case 'H': auto_zoom_h(); break;
 	case 'Z': auto_zoom(); break;
