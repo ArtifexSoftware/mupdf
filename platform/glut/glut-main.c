@@ -8,8 +8,6 @@
 #include <GL/freeglut.h>
 #endif
 
-#define ZOOMSTEP 1.25
-
 const char *ogl_error_string(GLenum code)
 {
 #define CASE(E) case E: return #E; break
@@ -76,6 +74,30 @@ void draw_image(int tex, fz_rect *r)
 	glDisable(GL_TEXTURE_2D);
 }
 
+static const int zoom_list[] = { 18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288 };
+
+static int zoom_in(int oldres)
+{
+	int i;
+	for (i = 0; i < nelem(zoom_list) - 1; ++i)
+		if (zoom_list[i] <= oldres && zoom_list[i+1] > oldres)
+			return zoom_list[i+1];
+	return zoom_list[i];
+}
+
+static int zoom_out(int oldres)
+{
+	int i;
+	for (i = 0; i < nelem(zoom_list) - 1; ++i)
+		if (zoom_list[i] < oldres && zoom_list[i+1] >= oldres)
+			return zoom_list[i];
+	return zoom_list[0];
+}
+
+#define MINRES (zoom_list[0])
+#define MAXRES (zoom_list[nelem(zoom_list)-1])
+#define DEFRES 96
+
 static fz_context *ctx = NULL;
 static fz_document *doc = NULL;
 
@@ -91,7 +113,7 @@ void render_page(int pagenumber, float zoom, float rotate)
 	fz_pixmap *pix;
 	fz_device *dev;
 
-	fz_scale(&ctm, zoom, zoom);
+	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
 
 	page = fz_load_page(ctx, doc, pagenumber);
@@ -122,7 +144,7 @@ void render_page(int pagenumber, float zoom, float rotate)
 static int screen_w = 1, screen_h = 1;
 
 static int oldpage = 0, currentpage = 0;
-static float oldzoom = 1, currentzoom = 1;
+static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
 
 static void reshape(int w, int h)
@@ -177,8 +199,8 @@ static void keyboard(unsigned char key, int x, int y)
 	case '.': case ' ': currentpage += fz_maxi(number, 1); break;
 	case 'g': currentpage = number - 1; break;
 	case 'G': currentpage = fz_count_pages(ctx, doc) - 1; break;
-	case '+': currentzoom *= ZOOMSTEP; break;
-	case '-': currentzoom *= 1 / ZOOMSTEP; break;
+	case '+': currentzoom = zoom_in(currentzoom); break;
+	case '-': currentzoom = zoom_out(currentzoom); break;
 	case '[': currentrotate += 90; break;
 	case ']': currentrotate -= 90; break;
 	}
@@ -189,7 +211,7 @@ static void keyboard(unsigned char key, int x, int y)
 		number = 0;
 
 	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
-	currentzoom = fz_clamp(currentzoom, powf(ZOOMSTEP, -10), powf(ZOOMSTEP, 10));
+	currentzoom = fz_clamp(currentzoom, MINRES, MAXRES);
 	while (currentrotate < 0) currentrotate += 360;
 	while (currentrotate >= 360) currentrotate -= 360;
 
