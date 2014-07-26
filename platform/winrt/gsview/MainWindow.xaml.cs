@@ -1131,6 +1131,7 @@ namespace gsview
 			switch (e.Key)
 			{
 				case Key.Left:
+				case Key.PageUp:
 					if (m_currpage == 0 || !m_init_done)
 						return;
 					m_ignorescrollchange = true;
@@ -1139,6 +1140,7 @@ namespace gsview
 					break;
 
 				case Key.Right:
+				case Key.PageDown:
 					if (m_currpage == m_num_pages - 1 || !m_init_done)
 						return;
 					m_ignorescrollchange = true;
