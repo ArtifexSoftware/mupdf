@@ -822,6 +822,7 @@ namespace gsview
 		}
 
 		/* Feeding gs piecemeal so that we can have some progress callback */
+		/* Used only for PS Distill */
 		private void gsWork2(object sender, DoWorkEventArgs e)
 		{
 			gsParams_t Params = (gsParams_t)e.Argument;
@@ -1058,7 +1059,7 @@ namespace gsview
 			gsparams.inputfile = fileName;
 			gsparams.task = GS_Task_t.CREATE_XPS;
 			gsparams.num_pages = num_pages;
-			gsparams.options = "";
+			gsparams.options = "-dNOCACHE";
 			gsparams.need_multi_page = false;
 			gsparams.pages = null;
 			gsparams.firstpage = -1;
