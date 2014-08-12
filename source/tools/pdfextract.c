@@ -166,14 +166,21 @@ static void showobject(int num)
 	if (!doc)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 
-	obj = pdf_load_object(doc, num, 0);
+	fz_try(ctx)
+	{
+		obj = pdf_load_object(doc, num, 0);
 
-	if (isimage(obj))
-		saveimage(num);
-	else if (isfontdesc(obj))
-		savefont(obj, num);
+		if (isimage(obj))
+			saveimage(num);
+		else if (isfontdesc(obj))
+			savefont(obj, num);
 
-	pdf_drop_obj(obj);
+		pdf_drop_obj(obj);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "ignoring object %d", num);
+	}
 }
 
 int pdfextract_main(int argc, char **argv)
