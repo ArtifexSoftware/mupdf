@@ -413,7 +413,7 @@ pdf_repair_xref(pdf_document *doc, pdf_lexbuf *buf)
 				}
 
 				obj = pdf_dict_gets(dict, "ID");
-				if (obj)
+				if (obj && (!id || !encrypt || pdf_dict_gets(dict, "Encrypt")))
 				{
 					pdf_drop_obj(id);
 					id = pdf_keep_obj(obj);
