@@ -812,7 +812,8 @@ int main(int argc, char **argv)
 	struct timeval now;
 	struct timeval *timeout;
 	struct timeval tmo_advance_delay;
-	int tint, tint_r, tint_g, tint_b;
+	int tint = 0;
+	int tint_r, tint_g, tint_b;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
