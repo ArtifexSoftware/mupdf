@@ -122,6 +122,9 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 #else
 	app->colorspace = fz_device_rgb(ctx);
 #endif
+	app->tint_r = 255;
+	app->tint_g = 250;
+	app->tint_b = 240;
 }
 
 void pdfapp_invert(pdfapp_t *app, const fz_rect *rect)
@@ -820,6 +823,8 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		}
 		if (app->invert)
 			fz_invert_pixmap(app->ctx, app->image);
+		if (app->tint)
+			fz_tint_pixmap(app->ctx, app->image, app->tint_r, app->tint_g, app->tint_b);
 	}
 
 	if (transition)
@@ -1113,6 +1118,11 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 		break;
 	case 'R':
 		app->rotate += 90;
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
+		break;
+
+	case 'C':
+		app->tint ^= 1;
 		pdfapp_showpage(app, 0, 1, 1, 0, 0);
 		break;
 
