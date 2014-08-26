@@ -152,6 +152,7 @@ static fz_link *links = NULL;
 
 static unsigned int page_tex = 0;
 static int page_x, page_y, page_w, page_h;
+static int offset_x = 0, offset_y = 0;
 
 void render_page(int pagenumber, float zoom, float rotate)
 {
@@ -322,6 +323,7 @@ static void draw_outline(fz_outline *node, int w)
 	static int y = 0;
 	int h;
 
+	w -= 15;
 	h = measure_outline_height(outline);
 
 	ui_scrollbar(w, 0, w+15, screen_h, &y, screen_h, h);
@@ -450,6 +452,7 @@ static void display(void)
 	fz_rect r;
 	float x, y;
 	int canvas_x, canvas_w;
+	int canvas_y, canvas_h;
 
 	glViewport(0, 0, screen_w, screen_h);
 	glClearColor(0.3, 0.3, 0.4, 1.0);
@@ -491,8 +494,34 @@ static void display(void)
 		canvas_w = screen_w;
 	}
 
-	x = canvas_x + (canvas_w - page_w) / 2;
-	y = (screen_h - page_h) / 2;
+	canvas_y = 0;
+	canvas_h = screen_h;
+
+	if (page_w <= canvas_w)
+	{
+		x = canvas_x + (canvas_w - page_w) / 2;
+	}
+	else
+	{
+		if (offset_x > 0)
+			offset_x = 0;
+		if (offset_x + page_w < canvas_w)
+			offset_x = canvas_w - page_w;
+		x = canvas_x + offset_x;
+	}
+
+	if (page_h <= canvas_h)
+	{
+		y = canvas_y + (canvas_h - page_h) / 2;
+	}
+	else
+	{
+		if (offset_y > 0)
+			offset_y = 0;
+		if (offset_y + page_h < canvas_h)
+			offset_y = canvas_h - page_h;
+		y = canvas_y + offset_y;
+	}
 
 	r.x0 = x;
 	r.y0 = y;
@@ -558,8 +587,19 @@ static void keyboard(unsigned char key, int x, int y)
 static void special(int key, int x, int y)
 {
 	int mod = glutGetModifiers();
+
 	if (key == GLUT_KEY_F4 && mod == GLUT_ACTIVE_ALT)
 		exit(0);
+
+	switch (key)
+	{
+	case GLUT_KEY_UP: offset_y += 10; break;
+	case GLUT_KEY_DOWN: offset_y -= 10; break;
+	case GLUT_KEY_LEFT: offset_x += 10; break;
+	case GLUT_KEY_RIGHT: offset_x -= 10; break;
+	}
+
+	glutPostRedisplay();
 }
 
 static void mouse(int button, int state, int x, int y)
