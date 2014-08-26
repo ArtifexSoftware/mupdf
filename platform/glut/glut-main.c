@@ -10,7 +10,7 @@
 
 struct ui
 {
-	int x, y, down;
+	int x, y, down, middle, right;
 	void *hot, *active;
 } ui;
 
@@ -21,15 +21,8 @@ static void ui_begin(void)
 
 static void ui_end(void)
 {
-	if (!ui.down)
-	{
+	if (!ui.down && !ui.middle && !ui.right)
 		ui.active = NULL;
-	}
-	else
-	{
-		if (!ui.active)
-			ui.active = ui.hot;
-	}
 }
 
 static void open_browser(const char *uri)
@@ -454,6 +447,11 @@ static void display(void)
 	int canvas_x, canvas_w;
 	int canvas_y, canvas_h;
 
+	static int save_offset_x = 0;
+	static int save_offset_y = 0;
+	static int save_ui_x = 0;
+	static int save_ui_y = 0;
+
 	glViewport(0, 0, screen_w, screen_h);
 	glClearColor(0.3, 0.3, 0.4, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -496,6 +494,25 @@ static void display(void)
 
 	canvas_y = 0;
 	canvas_h = screen_h;
+
+	if (ui.active == doc)
+	{
+		offset_x = save_offset_x + ui.x - save_ui_x;
+		offset_y = save_offset_y + ui.y - save_ui_y;
+	}
+
+	if (ui.x >= canvas_x && ui.x < canvas_x + canvas_w && ui.y >= canvas_y && ui.y < canvas_y + canvas_h)
+	{
+		ui.hot = doc;
+		if (!ui.active && ui.middle)
+		{
+			ui.active = doc;
+			save_offset_x = offset_x;
+			save_offset_y = offset_y;
+			save_ui_x = ui.x;
+			save_ui_y = ui.y;
+		}
+	}
 
 	if (page_w <= canvas_w)
 	{
@@ -604,8 +621,12 @@ static void special(int key, int x, int y)
 
 static void mouse(int button, int state, int x, int y)
 {
-	if (button == GLUT_LEFT_BUTTON)
-		ui.down = state == GLUT_DOWN;
+	switch (button)
+	{
+	case GLUT_LEFT_BUTTON: ui.down = (state == GLUT_DOWN); break;
+	case GLUT_MIDDLE_BUTTON: ui.middle = (state == GLUT_DOWN); break;
+	case GLUT_RIGHT_BUTTON: ui.right = (state == GLUT_DOWN); break;
+	}
 	ui.x = x;
 	ui.y = y;
 	glutPostRedisplay();
@@ -628,6 +649,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: mupdf-glut input.pdf\n");
 		exit(1);
 	}
+
+	memset(&ui, 0, sizeof ui);
 
 	glutCreateWindow("MuPDF/GL");
 
