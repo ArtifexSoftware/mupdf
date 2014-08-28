@@ -443,18 +443,18 @@ static void toggle_fullscreen(void)
 
 static void auto_zoom_w(void)
 {
-	currentzoom = fz_clamp(currentzoom * screen_w / (float)page_w, MINRES, MAXRES);
+	currentzoom = fz_clamp(currentzoom * canvas_w / (float)page_w, MINRES, MAXRES);
 }
 
 static void auto_zoom_h(void)
 {
-	currentzoom = fz_clamp(currentzoom * screen_h / (float)page_h, MINRES, MAXRES);
+	currentzoom = fz_clamp(currentzoom * canvas_h / (float)page_h, MINRES, MAXRES);
 }
 
 static void auto_zoom(void)
 {
 	float page_a = (float) page_w / page_h;
-	float screen_a = (float) screen_w / screen_h;
+	float screen_a = (float) canvas_w / canvas_h;
 	if (page_a > screen_a)
 		auto_zoom_w();
 	else
