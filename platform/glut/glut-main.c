@@ -290,33 +290,65 @@ static float measure_string(const char *s)
 
 static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
 {
-	int h = y1 - y0;
-	int t, b;
+	static float save_top = 0;
+	static int save_ui_y = 0;
+	float top;
 
-	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
+	int total_h = y1 - y0;
+	int thumb_h = fz_maxi(x1 - x0, total_h * page / max);
+	int avail_h = total_h - thumb_h;
+
+	max -= page;
+
+	if (max <= 0)
 	{
-		ui.hot = value;
-		if (!ui.active && ui.down)
-			ui.active = value;
+		glColor4f(0.6, 0.6, 0.6, 1);
+		glRectf(x0, y0, x1, y1);
+		return;
+	}
+
+	top = (float) *value * avail_h / max;
+
+	if (ui.down && !ui.active)
+	{
+		if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
+		{
+			if (ui.y < top)
+			{
+				ui.active = "pgdn";
+				*value -= page;
+			}
+			else if (ui.y >= top + thumb_h)
+			{
+				ui.active = "pgup";
+				*value += page;
+			}
+			else
+			{
+				ui.hot = value;
+				ui.active = value;
+				save_top = top;
+				save_ui_y = ui.y;
+			}
+		}
 	}
 
 	if (ui.active == value)
 	{
-		*value = fz_clampi((ui.y - y0) * max / h, 0, max);
+		*value = (save_top + ui.y - save_ui_y) * max / avail_h;
 	}
 
-	t = *value * h / max;
-	b = t + page * h / max;
-	if (b - t < 2)
-	{
-		t = t - 1;
-		b = t + 2;
-	}
+	if (*value < 0)
+		*value = 0;
+	else if (*value > max)
+		*value = max;
+
+	top = (float) *value * avail_h / max;
 
 	glColor4f(0.6, 0.6, 0.6, 1);
 	glRectf(x0, y0, x1, y1);
 	glColor4f(0.8, 0.8, 0.8, 1);
-	glRectf(x0, t, x1, b);
+	glRectf(x0, top, x1, top + thumb_h);
 }
 
 static int measure_outline_height(fz_outline *node)
