@@ -35,14 +35,20 @@ fz_test_color(fz_device *dev, fz_colorspace *colorspace, const float *color)
 		if (colorspace == fz_device_rgb(ctx))
 		{
 			if (is_rgb_color(t->threshold, color[0], color[1], color[2]))
+			{
 				*t->is_color = 1;
+				dev->hints |= FZ_IGNORE_IMAGE;
+			}
 		}
 		else
 		{
 			float rgb[3];
 			fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, color);
 			if (is_rgb_color(t->threshold, rgb[0], rgb[1], rgb[2]))
+			{
 				*t->is_color = 1;
+				dev->hints |= FZ_IGNORE_IMAGE;
+			}
 		}
 	}
 }
@@ -51,28 +57,32 @@ static void
 fz_test_fill_path(fz_device *dev, fz_path *path, int even_odd, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_test_color(dev, colorspace, color);
+	if (alpha != 0.0f)
+		fz_test_color(dev, colorspace, color);
 }
 
 static void
 fz_test_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke,
 	const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_test_color(dev, colorspace, color);
+	if (alpha != 0.0f)
+		fz_test_color(dev, colorspace, color);
 }
 
 static void
 fz_test_fill_text(fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_test_color(dev, colorspace, color);
+	if (alpha != 0.0f)
+		fz_test_color(dev, colorspace, color);
 }
 
 static void
 fz_test_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke,
 	const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_test_color(dev, colorspace, color);
+	if (alpha != 0.0f)
+		fz_test_color(dev, colorspace, color);
 }
 
 struct shadearg
@@ -139,6 +149,7 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 			if (is_rgb_color_u8(threshold_u8, s[0], s[1], s[2]))
 			{
 				*t->is_color = 1;
+				dev->hints |= FZ_IGNORE_IMAGE;
 				break;
 			}
 			s += 4;
@@ -147,7 +158,7 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 	else
 	{
 		fz_color_converter cc;
-		int n = pix->n-1;
+		unsigned int n = (unsigned int)pix->n-1;
 
 		fz_init_cached_color_converter(ctx, &cc, fz_device_rgb(ctx), pix->colorspace);
 		for (i = 0; i < count; i++)
@@ -164,6 +175,7 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 			if (is_rgb_color(t->threshold, ds[0], ds[1], ds[2]))
 			{
 				*t->is_color = 1;
+				dev->hints |= FZ_IGNORE_IMAGE;
 				break;
 			}
 		}
