@@ -99,9 +99,9 @@ xps_parse_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *a
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(fz_xml_tag(node), "ImageBrush.Transform"))
+		if (fz_xml_is_tag(node, "ImageBrush.Transform"))
 			transform_tag = fz_xml_down(node);
-		if (!strcmp(fz_xml_tag(node), "VisualBrush.Transform"))
+		if (fz_xml_is_tag(node, "VisualBrush.Transform"))
 			transform_tag = fz_xml_down(node);
 	}
 
@@ -232,7 +232,7 @@ xps_parse_visual_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *a
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(fz_xml_tag(node), "VisualBrush.Visual"))
+		if (fz_xml_is_tag(node, "VisualBrush.Visual"))
 			visual_tag = fz_xml_down(node);
 	}
 
@@ -273,7 +273,7 @@ xps_parse_canvas(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, c
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(fz_xml_tag(node), "Canvas.Resources") && fz_xml_down(node))
+		if (fz_xml_is_tag(node, "Canvas.Resources") && fz_xml_down(node))
 		{
 			if (new_dict)
 			{
@@ -290,11 +290,11 @@ xps_parse_canvas(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, c
 			}
 		}
 
-		if (!strcmp(fz_xml_tag(node), "Canvas.RenderTransform"))
+		if (fz_xml_is_tag(node, "Canvas.RenderTransform"))
 			transform_tag = fz_xml_down(node);
-		if (!strcmp(fz_xml_tag(node), "Canvas.Clip"))
+		if (fz_xml_is_tag(node, "Canvas.Clip"))
 			clip_tag = fz_xml_down(node);
-		if (!strcmp(fz_xml_tag(node), "Canvas.OpacityMask"))
+		if (fz_xml_is_tag(node, "Canvas.OpacityMask"))
 			opacity_mask_tag = fz_xml_down(node);
 	}
 
@@ -360,7 +360,7 @@ xps_parse_fixed_page(xps_document *doc, const fz_matrix *ctm, xps_page *page)
 
 	for (node = fz_xml_down(page->root); node; node = fz_xml_next(node))
 	{
-		if (!strcmp(fz_xml_tag(node), "FixedPage.Resources") && fz_xml_down(node))
+		if (fz_xml_is_tag(node, "FixedPage.Resources") && fz_xml_down(node))
 		{
 			if (dict)
 				fz_warn(doc->ctx, "ignoring follow-up resource dictionaries");

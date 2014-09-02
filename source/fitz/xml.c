@@ -148,7 +148,14 @@ char *fz_xml_text(fz_xml *item)
 
 char *fz_xml_tag(fz_xml *item)
 {
-	return item->name;
+	if (item->name[0])
+		return item->name;
+	return NULL;
+}
+
+int fz_xml_is_tag(fz_xml *item, const char *name)
+{
+	return item->name && !strcmp(item->name, name);
 }
 
 char *fz_xml_att(fz_xml *item, const char *name)
