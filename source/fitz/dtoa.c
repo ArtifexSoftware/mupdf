@@ -20,6 +20,13 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#ifndef INFINITY
+#define INFINITY (DBL_MAX+DBL_MAX)
+#endif
+#ifndef NAN
+#define NAN (INFINITY-INFINITY)
+#endif
+
 typedef unsigned long ulong;
 
 enum { NSIGNIF	= 17 };
