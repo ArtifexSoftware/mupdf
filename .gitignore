@@ -6,8 +6,11 @@ build
 DerivedData
 generated
 cscope.*
+*.epub
 *.pdf
 *.pnm
+*.html
+*.xhtml
 tags
 TAGS
 *.xcworkspace

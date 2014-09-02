@@ -66,6 +66,7 @@ ALL_DIR += $(OUT)/xps
 ALL_DIR += $(OUT)/cbz
 ALL_DIR += $(OUT)/img
 ALL_DIR += $(OUT)/tiff
+ALL_DIR += $(OUT)/html
 ALL_DIR += $(OUT)/tools
 ALL_DIR += $(OUT)/platform/x11
 ALL_DIR += $(OUT)/platform/x11/curl
@@ -82,6 +83,7 @@ XPS_SRC := $(wildcard source/xps/*.c)
 CBZ_SRC := $(wildcard source/cbz/*.c)
 IMG_SRC := $(wildcard source/img/*.c)
 TIFF_SRC := $(wildcard source/tiff/*.c)
+HTML_SRC := $(wildcard source/html/*.c)
 
 FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
 PDF_SRC_HDR := $(wildcard source/pdf/*.h)
@@ -89,6 +91,7 @@ XPS_SRC_HDR := $(wildcard source/xps/*.h)
 CBZ_SRC_HDR := $(wildcard source/cbz/*.h)
 IMG_SRC_HDR := $(wildcard source/img/*.h)
 TIFF_SRC_HDR := $(wildcard source/tiff/*.h)
+HTML_SRC_HDR := $(wildcard source/html/*.h)
 
 FITZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(FITZ_SRC))))
 PDF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(PDF_SRC))))
@@ -96,6 +99,7 @@ XPS_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(XPS_SRC))))
 CBZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(CBZ_SRC))))
 IMG_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(IMG_SRC))))
 TIFF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(TIFF_SRC))))
+HTML_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(HTML_SRC))))
 
 # --- Choice of Javascript library ---
 
@@ -125,12 +129,13 @@ $(XPS_OBJ) : $(FITZ_HDR) $(XPS_HDR) $(XPS_SRC_HDR)
 $(CBZ_OBJ) : $(FITZ_HDR) $(CBZ_HDR) $(CBZ_SRC_HDR)
 $(IMG_OBJ) : $(FITZ_HDR) $(IMG_HDR) $(IMG_SRC_HDR)
 $(TIFF_OBJ) : $(FITZ_HDR) $(IMG_HDR) $(TIFF_SRC_HDR)
+$(HTML_OBJ) : $(FITZ_HDR) $(IMG_HDR) $(HTML_SRC_HDR)
 
 # --- Library ---
 
 MUPDF_LIB := $(OUT)/libmupdf.a
 
-$(MUPDF_LIB) : $(FITZ_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(CBZ_OBJ) $(IMG_OBJ) $(TIFF_OBJ)
+$(MUPDF_LIB) : $(FITZ_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(CBZ_OBJ) $(IMG_OBJ) $(TIFF_OBJ) $(HTML_OBJ)
 
 INSTALL_LIBS := $(MUPDF_LIB)
 
