@@ -159,6 +159,7 @@ static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
 
+static int isfullscreen = 0;
 static int showoutline = 0;
 static int showlinks = 0;
 
@@ -526,7 +527,6 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 static void toggle_fullscreen(void)
 {
 	static int oldw = 100, oldh = 100, oldx = 0, oldy = 0;
-	static int isfullscreen = 0;
 
 	if (!isfullscreen)
 	{
@@ -543,6 +543,15 @@ static void toggle_fullscreen(void)
 		glutReshapeWindow(oldw, oldh);
 		isfullscreen = 0;
 	}
+}
+
+static void shrinkwrap(void)
+{
+	int w = page_w + canvas_x;
+	int h = page_h + canvas_y;
+	if (isfullscreen)
+		toggle_fullscreen();
+	glutReshapeWindow(w, h);
 }
 
 static void auto_zoom_w(void)
@@ -633,7 +642,7 @@ static void display(void)
 	static int save_ui_y = 0;
 
 	glViewport(0, 0, screen_w, screen_h);
-	glClearColor(0.3, 0.3, 0.4, 1.0);
+	glClearColor(0.3, 0.3, 0.3, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
@@ -775,6 +784,7 @@ static void keyboard(unsigned char key, int x, int y)
 		}
 		break;
 	case 'f': toggle_fullscreen(); break;
+	case 'w': shrinkwrap(); break;
 	case 'W': auto_zoom_w(); break;
 	case 'H': auto_zoom_h(); break;
 	case 'Z': auto_zoom(); break;
@@ -883,6 +893,7 @@ int main(int argc, char **argv)
 
 	render_page(currentpage, currentzoom, currentrotate);
 	update_title();
+	shrinkwrap();
 
 	glutReshapeFunc(reshape);
 	glutDisplayFunc(display);
