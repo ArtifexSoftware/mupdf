@@ -181,6 +181,8 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 		}
 		fz_fin_cached_color_converter(&cc);
 	}
+
+	fz_drop_pixmap(ctx, pix);
 }
 
 static void
@@ -189,6 +191,15 @@ fz_test_fill_image_mask(fz_device *dev, fz_image *image, const fz_matrix *ctm,
 {
 	/* We assume that at least some of the image pixels are non-zero */
 	fz_test_color(dev, colorspace, color);
+}
+
+static void
+fz_test_free(fz_device *dev)
+{
+	if (dev == NULL)
+		return;
+	fz_free(dev->ctx, dev->user);
+	dev->user = NULL;
 }
 
 fz_device *
@@ -218,6 +229,7 @@ fz_new_test_device(fz_context *ctx, int *is_color, float threshold)
 	dev->fill_shade = fz_test_fill_shade;
 	dev->fill_image = fz_test_fill_image;
 	dev->fill_image_mask = fz_test_fill_image_mask;
+	dev->free_user = fz_test_free;
 
 	*t->is_color = 0;
 
