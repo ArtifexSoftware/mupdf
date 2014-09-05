@@ -140,14 +140,17 @@ void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
 	va_end(args);
 
-	fz_flush_warnings(ctx);
-	fprintf(stderr, "error: %s\n", ctx->error->message);
-	LOGE("error: %s\n", ctx->error->message);
+	if (code != FZ_ERROR_ABORT)
+	{
+		fz_flush_warnings(ctx);
+		fprintf(stderr, "error: %s\n", ctx->error->message);
+		LOGE("error: %s\n", ctx->error->message);
 #ifdef USE_OUTPUT_DEBUG_STRING
-	OutputDebugStringA("error: ");
-	OutputDebugStringA(ctx->error->message);
-	OutputDebugStringA("\n");
+		OutputDebugStringA("error: ");
+		OutputDebugStringA(ctx->error->message);
+		OutputDebugStringA("\n");
 #endif
+	}
 
 	throw(ctx->error);
 }
@@ -168,14 +171,17 @@ void fz_rethrow_message(fz_context *ctx, const char *fmt, ...)
 	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
 	va_end(args);
 
-	fz_flush_warnings(ctx);
-	fprintf(stderr, "error: %s\n", ctx->error->message);
-	LOGE("error: %s\n", ctx->error->message);
+	if (ctx->error->errcode != FZ_ERROR_ABORT)
+	{
+		fz_flush_warnings(ctx);
+		fprintf(stderr, "error: %s\n", ctx->error->message);
+		LOGE("error: %s\n", ctx->error->message);
 #ifdef USE_OUTPUT_DEBUG_STRING
-	OutputDebugStringA("error: ");
-	OutputDebugStringA(ctx->error->message);
-	OutputDebugStringA("\n");
+		OutputDebugStringA("error: ");
+		OutputDebugStringA(ctx->error->message);
+		OutputDebugStringA("\n");
 #endif
+	}
 
 	throw(ctx->error);
 }
