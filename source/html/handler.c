@@ -1,12 +1,5 @@
 #include "mupdf/html.h"
 
-struct html_document_s
-{
-	fz_document super;
-	fz_context *ctx;
-	fz_xml *root;
-};
-
 struct html_page_s
 {
 };
@@ -28,7 +21,7 @@ html_page *
 html_load_page(html_document *doc, int number)
 {
 	printf("html: load page %d\n", number);
-	return NULL;
+	return "nothing";
 }
 
 void
@@ -73,6 +66,8 @@ html_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.bound_page = (void*)html_bound_page;
 	doc->super.run_page_contents = (void*)html_run_page;
 	doc->super.free_page = (void*)html_free_page;
+
+	html_layout_document(doc, 400, 600);
 
 	return doc;
 }

@@ -76,6 +76,7 @@ PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
 XPS_HDR := include/mupdf/xps.h
 CBZ_HDR := include/mupdf/cbz.h
 IMG_HDR := include/mupdf/img.h
+HTML_HDR := include/mupdf/html.h
 
 FITZ_SRC := $(wildcard source/fitz/*.c)
 PDF_SRC := $(wildcard source/pdf/*.c)
@@ -129,7 +130,7 @@ $(XPS_OBJ) : $(FITZ_HDR) $(XPS_HDR) $(XPS_SRC_HDR)
 $(CBZ_OBJ) : $(FITZ_HDR) $(CBZ_HDR) $(CBZ_SRC_HDR)
 $(IMG_OBJ) : $(FITZ_HDR) $(IMG_HDR) $(IMG_SRC_HDR)
 $(TIFF_OBJ) : $(FITZ_HDR) $(IMG_HDR) $(TIFF_SRC_HDR)
-$(HTML_OBJ) : $(FITZ_HDR) $(IMG_HDR) $(HTML_SRC_HDR)
+$(HTML_OBJ) : $(FITZ_HDR) $(HTML_HDR) $(HTML_SRC_HDR)
 
 # --- Library ---
 
