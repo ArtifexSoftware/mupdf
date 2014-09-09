@@ -700,7 +700,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:GSview 6.0"
         "ProductCode" = "8:{A22596C0-BCF4-46F9-9CF2-1C66E8588C30}"
-        "PackageCode" = "8:{8B802149-336B-4DEB-A58A-ABDF1941600D}"
+        "PackageCode" = "8:{980224C0-59E3-4811-81F5-6EF5D4BA2270}"
         "UpgradeCode" = "8:{B494B7A2-738F-4F9D-87F4-31830A16FB76}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

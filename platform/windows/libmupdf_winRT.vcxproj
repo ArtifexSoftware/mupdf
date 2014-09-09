@@ -64,6 +64,7 @@
     <ClCompile Include="..\..\source\fitz\draw-path.c" />
     <ClCompile Include="..\..\source\fitz\draw-scale-simple.c" />
     <ClCompile Include="..\..\source\fitz\draw-unpack.c" />
+    <ClCompile Include="..\..\source\fitz\dtoa.c" />
     <ClCompile Include="..\..\source\fitz\error.c" />
     <ClCompile Include="..\..\source\fitz\filter-basic.c" />
     <ClCompile Include="..\..\source\fitz\filter-dct.c" />

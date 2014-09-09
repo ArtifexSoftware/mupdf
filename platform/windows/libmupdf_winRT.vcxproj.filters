@@ -429,6 +429,9 @@
     <ClCompile Include="..\..\source\xps\xps-zip.c">
       <Filter>xps</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\dtoa.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\mupdf\fitz\function.h">
