@@ -3771,20 +3771,30 @@ namespace gsview
 									start_line.Height = 0;
 									start_line.Scale = m_doczoom;
 									/* Use either anchor point or mouse pos */
+									bool highlight_done = false;
 									for (int mm = 0; mm < lett.Count; mm++)
 									{
 										double letscale = m_doczoom / lett[mm].Scale;
 										if (lett[mm].X * letscale + lett[mm].Width * letscale >= val)
 										{
-											start_line.Color = m_textselectcolor;
-											/* special color for debug */
-											//start_line.Color = "#40FF0000";
-											start_line.Height = lines[kk].Height * scale;
-											start_line.Width = lines[kk].X * scale + lines[kk].Width * scale - lett[mm].X * letscale;
-											start_line.X = lett[mm].X * letscale;
-											start_line.Y = lines[kk].Y * scale;
+											/* In this case, we are done with the 
+											 * highlight section as it only
+											 * depends upon the first character
+											 * we encounter and the line end. 
+											 * But we must continue to add in 
+											 * the selected characters */
+											if (!highlight_done)
+											{
+												start_line.Color = m_textselectcolor;
+												/* special color for debug */
+												/* start_line.Color = "#40FF0000"; */
+												start_line.Height = lines[kk].Height * scale;
+												start_line.Width = lines[kk].X * scale + lines[kk].Width * scale - lett[mm].X * letscale;
+												start_line.X = lett[mm].X * letscale;
+												start_line.Y = lines[kk].Y * scale;
+												highlight_done = true;
+											}
 											start_line.TextCharacters.Add(lett[mm]);
-											break;
 										}
 									}
 									if (start_line.Height > 0)
