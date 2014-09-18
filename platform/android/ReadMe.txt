@@ -21,10 +21,17 @@ Whatever directory it unpacks to, ensure that both the 'tools' and
 
 2) Download the android ndk, and unpack it. These instructions were written
 with NDK r6b (the latest version at the time of writing) in mind, but the
-build has now been tweaked to work with r8b. Other versions may give problems.
+build has now been tweaked to work with r10b. Other versions may give problems.
+
+It's important that you use the correct NDK for the target platform. If you're
+targeting a 32-bit platform (such as "ARM EABI v7a" or "Intel x86 Arm") then
+you MUST use the 32-bit target NDK. If you get UnsatisfiedLinkError when
+opening a document in MuPDF, then you've tried to use the 64-bit target NDK
+with a 32-bit target!
+
 On windows I unpacked it as:
 
-   C:\android-ndk-r8b
+   C:\android-ndk-r10b
 
 on Macos an older version unpacked as:
 
@@ -34,7 +41,7 @@ on Linux as:
 
    mkdir ~/android-ndk
    cd ~/android-ndk
-   tar jxvf ~/Downloads/android-ndk-r8b-linux-x86.tar.bz2
+   tar jxvf ~/Downloads/android-ndk32-r10b-linux-x86.tar.bz2
 
 It is very important that you should unpack it to a directory with no
 spaces in the name! (Don't be tempted to put it in C:\Program Files etc)
