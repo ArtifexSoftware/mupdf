@@ -219,6 +219,7 @@ public class ChoosePDFActivity extends ListActivity {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		mPositions.put(mDirectory.getAbsolutePath(), getListView().getFirstVisiblePosition());
+		if (mDirectory != null)
+			mPositions.put(mDirectory.getAbsolutePath(), getListView().getFirstVisiblePosition());
 	}
 }
