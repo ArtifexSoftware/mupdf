@@ -2,11 +2,45 @@
 
 /* Load or synthesize ToUnicode map for fonts */
 
+static void find_min_max_cpt(pdf_cmap *cmap, unsigned int *minp, unsigned int *maxp)
+{
+	unsigned int min = UINT_MAX;
+	unsigned int max = 0;
+	int i;
+
+	for (i = 0; i < cmap->rlen; ++i)
+	{
+		if (cmap->ranges[i].low < min)
+			min = cmap->ranges[i].low;
+		if (cmap->ranges[i].high > max)
+			max = cmap->ranges[i].high;
+	}
+
+	for (i = 0; i < cmap->xlen; ++i)
+	{
+		if (cmap->xranges[i].low < min)
+			min = cmap->xranges[i].low;
+		if (cmap->xranges[i].high > max)
+			max = cmap->xranges[i].high;
+	}
+
+	for (i = 0; i < cmap->mlen; ++i)
+	{
+		if (cmap->mranges[i].low < min)
+			min = cmap->mranges[i].low;
+		if (cmap->mranges[i].low > max)
+			max = cmap->mranges[i].low;
+	}
+
+	*minp = min;
+	*maxp = max;
+}
+
 void
 pdf_load_to_unicode(pdf_document *doc, pdf_font_desc *font,
 	char **strings, char *collection, pdf_obj *cmapstm)
 {
-	unsigned int cpt;
+	unsigned int cpt, min, max;
 	int gid;
 	int ucsbuf[8];
 	int ucslen;
@@ -20,9 +54,16 @@ pdf_load_to_unicode(pdf_document *doc, pdf_font_desc *font,
 
 		font->to_unicode = pdf_new_cmap(ctx);
 
+		/* in case the code space range is much larger than the actual number of characters */
+		find_min_max_cpt(gid_from_cpt, &min, &max);
+
 		for (i = 0; i < gid_from_cpt->codespace_len; ++i)
 		{
-			for (cpt = gid_from_cpt->codespace[i].low; cpt <= gid_from_cpt->codespace[i].high; ++cpt)
+			unsigned int l = gid_from_cpt->codespace[i].low;
+			unsigned int h = gid_from_cpt->codespace[i].high;
+			l = l < min ? min : l > max ? max : l;
+			h = h < min ? min : h > max ? max : h;
+			for (cpt = l; cpt <= h; ++cpt)
 			{
 				gid = pdf_lookup_cmap(gid_from_cpt, cpt);
 				if (gid >= 0)
