@@ -96,5 +96,6 @@ double fz_strtod(const char *s, char **es);
 	Assumes special cases (NaN, +Inf, -Inf) have been handled.
 */
 void fz_dtoa(double f, char *s, int *exp, int *neg, int *ns);
+void fz_ftoa(float f, char *s, int *exp, int *neg, int *ns);
 
 #endif
