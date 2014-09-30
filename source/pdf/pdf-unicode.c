@@ -24,7 +24,8 @@ static pdf_cmap *
 pdf_remap_cmap(fz_context *ctx, pdf_cmap *gid_from_cpt, pdf_cmap *ucs_from_cpt)
 {
 	pdf_cmap *ucs_from_gid;
-	unsigned int i, a, b, x;
+	unsigned int a, b, x;
+	int i;
 
 	ucs_from_gid = pdf_new_cmap(ctx);
 
