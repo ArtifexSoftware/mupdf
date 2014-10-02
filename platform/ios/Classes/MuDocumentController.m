@@ -352,6 +352,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) viewWillAppear: (BOOL)animated
 {
+	[super viewWillAppear:animated];
 	[self setTitle: [key lastPathComponent]];
 
 	[slider setValue: current];
@@ -408,11 +409,13 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) viewDidAppear: (BOOL)animated
 {
+	[super viewDidAppear:animated];
 	[self scrollViewDidScroll: canvas];
 }
 
 - (void) viewWillDisappear: (BOOL)animated
 {
+	[super viewWillDisappear:animated];
 	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
 		[slider removeFromSuperview];
 

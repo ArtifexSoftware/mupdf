@@ -25,6 +25,7 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) viewWillAppear: (BOOL)animated
 {
+	[super viewWillAppear:animated];
 	[self setTitle: @"PDF, XPS and CBZ Documents"];
 	[self reload];
 	printf("library viewWillAppear (starting reload timer)\n");
@@ -36,6 +37,7 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) viewWillDisappear: (BOOL)animated
 {
+	[super viewWillDisappear:animated];
 	printf("library viewWillDisappear (stopping reload timer)\n");
 	[timer invalidate];
 	timer = nil;
