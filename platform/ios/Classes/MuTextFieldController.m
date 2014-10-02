@@ -9,6 +9,10 @@
 @end
 
 @implementation MuTextFieldController
+{
+	void (^okayBlock)(NSString *);
+	NSString *initialText;
+}
 
 -(id)initWithText:(NSString *)text okayAction:(void (^)(NSString *))block
 {

@@ -75,6 +75,10 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 }
 
 @implementation MuPageViewReflow
+{
+	int number;
+	float scale;
+}
 
 - (id)initWithFrame:(CGRect)frame document:(MuDocRef *)aDoc page:(int)aNumber
 {

@@ -9,9 +9,4 @@ enum
 };
 
 @interface MuAppDelegate : NSObject <UIApplicationDelegate, UINavigationControllerDelegate>
-{
-	UIWindow *window;
-	UINavigationController *navigator;
-	MuLibraryController *library;
-}
 @end

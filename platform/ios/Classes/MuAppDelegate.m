@@ -9,6 +9,9 @@
 
 @implementation MuAppDelegate
 {
+	UIWindow *window;
+	UINavigationController *navigator;
+	MuLibraryController *library;
 	BOOL _isInBackground;
 }
 

@@ -2,6 +2,11 @@
 #import "MuInkView.h"
 
 @implementation MuInkView
+{
+	CGSize pageSize;
+	NSMutableArray *curves;
+	UIColor *color;
+}
 
 - (id) initWithPageSize:(CGSize)_pageSize
 {

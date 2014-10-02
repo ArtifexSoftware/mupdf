@@ -1,6 +1,10 @@
 #import "MuAnnotation.h"
 
 @implementation MuAnnotation
+{
+	int type;
+	CGRect rect;
+}
 
 @synthesize type, rect;
 

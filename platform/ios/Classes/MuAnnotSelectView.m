@@ -1,6 +1,11 @@
 #import "MuAnnotSelectView.h"
 
 @implementation MuAnnotSelectView
+{
+	MuAnnotation *annot;
+	CGSize pageSize;
+	UIColor *color;
+}
 
 - (id)initWithAnnot:(MuAnnotation *)_annot pageSize:(CGSize)_pageSize
 {

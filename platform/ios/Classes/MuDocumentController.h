@@ -25,37 +25,6 @@ enum
 };
 
 @interface MuDocumentController : UIViewController <UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, MuDialogCreator, MuUpdater>
-{
-	fz_document *doc;
-	MuDocRef *docRef;
-	NSString *key;
-	char *filePath;
-	BOOL reflowMode;
-	MuOutlineController *outline;
-	UIScrollView *canvas;
-	UILabel *indicator;
-	UISlider *slider;
-	UISearchBar *searchBar;
-	UIBarButtonItem *nextButton, *prevButton, *cancelButton, *searchButton, *outlineButton, *linkButton;
-	UIBarButtonItem *moreButton;
-	UIBarButtonItem *shareButton, *printButton, *annotButton;
-	UIBarButtonItem *highlightButton, *underlineButton, *strikeoutButton;
-	UIBarButtonItem *inkButton;
-	UIBarButtonItem *tickButton;
-	UIBarButtonItem *deleteButton;
-	UIBarButtonItem *reflowButton;
-	UIBarButtonItem *backButton;
-	UIBarButtonItem *sliderWrapper;
-	int barmode;
-	int searchPage;
-	int cancelSearch;
-	int showLinks;
-	int width; // current screen size
-	int height;
-	int current; // currently visible page
-	int scroll_animating; // stop view updates during scrolling animations
-	float scale; // scale applied to views (only used in reflow mode)
-}
 - (id) initWithFilename: (NSString*)nsfilename path:(char *)cstr document:(MuDocRef *)aDoc;
 - (void) createPageView: (int)number;
 - (void) gotoPage: (int)number animated: (BOOL)animated;

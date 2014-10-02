@@ -9,13 +9,6 @@
 #import "MuDocRef.h"
 
 @interface MuLibraryController : UITableViewController <UIActionSheetDelegate>
-{
-	NSArray *files;
-	NSTimer *timer;
-	MuDocRef *doc;
-	NSString *_filename;
-	char *_filePath;
-}
 - (void) openDocument: (NSString*)filename;
 - (void) askForPassword: (NSString*)prompt;
 - (void) onPasswordOkay;

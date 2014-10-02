@@ -2,6 +2,11 @@
 #import "MuOutlineController.h"
 
 @implementation MuOutlineController
+{
+	MuDocumentController *target;
+	NSMutableArray *titles;
+	NSMutableArray *pages;
+}
 
 - (id) initWithTarget: (id)aTarget titles: (NSMutableArray*)aTitles pages: (NSMutableArray*)aPages
 {

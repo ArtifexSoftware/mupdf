@@ -4,6 +4,9 @@
 const int MaxStripPixels = 1024*1024;
 
 @implementation MuPrintPageRenderer
+{
+	MuDocRef *docRef;
+}
 
 -(id) initWithDocRef:(MuDocRef *)aDocRef
 {

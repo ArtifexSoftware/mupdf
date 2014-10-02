@@ -1,6 +1,10 @@
 #import "MuWord.h"
 
 @implementation MuWord
+{
+	NSMutableString *string;
+	CGRect rect;
+}
 
 @synthesize string, rect;
 

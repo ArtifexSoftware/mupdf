@@ -15,6 +15,13 @@ static void showAlert(NSString *msg, NSString *filename)
 }
 
 @implementation MuLibraryController
+{
+	NSArray *files;
+	NSTimer *timer;
+	MuDocRef *doc;
+	NSString *_filename;
+	char *_filePath;
+}
 
 - (void) viewWillAppear: (BOOL)animated
 {

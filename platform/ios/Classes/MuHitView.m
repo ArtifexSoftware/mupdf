@@ -2,6 +2,14 @@
 #import "MuHitView.h"
 
 @implementation MuHitView
+{
+	CGSize pageSize;
+	int hitCount;
+	CGRect hitRects[500];
+	int linkPage[500];
+	char *linkUrl[500];
+	UIColor *color;
+}
 
 - (id) initWithSearchResults: (int)n forDocument: (fz_document *)doc
 {

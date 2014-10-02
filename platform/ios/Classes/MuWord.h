@@ -2,10 +2,6 @@
 #import <UIKit/UIKit.h>
 
 @interface MuWord : NSObject
-{
-	NSMutableString *string;
-	CGRect rect;
-}
 @property(retain) NSString *string;
 @property(assign) CGRect rect;
 + (MuWord *) word;

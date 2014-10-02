@@ -3,6 +3,13 @@
 #import "MuWord.h"
 
 @implementation MuTextSelectView
+{
+	NSArray *words;
+	CGSize pageSize;
+	UIColor *color;
+	CGPoint start;
+	CGPoint end;
+}
 
 - (id) initWithWords:(NSArray *)_words pageSize:(CGSize)_pageSize
 {

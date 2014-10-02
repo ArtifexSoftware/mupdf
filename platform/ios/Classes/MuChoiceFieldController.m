@@ -7,6 +7,11 @@
 @end
 
 @implementation MuChoiceFieldController
+{
+	void (^okayBlock)(NSArray *);
+	NSArray *choices;
+	int selected;
+}
 
 - (id)initWithChoices:(NSArray *)_choices okayAction:(void (^)(NSArray *))block
 {

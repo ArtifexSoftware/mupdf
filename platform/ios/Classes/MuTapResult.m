@@ -6,6 +6,9 @@
 
 
 @implementation MuTapResultInternalLink
+{
+	int pageNumber;
+}
 
 @synthesize pageNumber;
 
@@ -28,6 +31,9 @@
 
 
 @implementation MuTapResultExternalLink
+{
+	NSString *url;
+}
 
 @synthesize url;
 
@@ -56,6 +62,11 @@
 
 
 @implementation MuTapResultRemoteLink
+{
+	NSString *fileSpec;
+	int pageNumber;
+	BOOL newWindow;
+}
 
 @synthesize fileSpec, pageNumber, newWindow;
 
@@ -96,6 +107,9 @@
 
 
 @implementation MuTapResultAnnotation
+{
+	MuAnnotation *annot;
+}
 
 @synthesize annot;
 
