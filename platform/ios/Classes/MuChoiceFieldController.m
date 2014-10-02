@@ -10,7 +10,7 @@
 {
 	void (^okayBlock)(NSArray *);
 	NSArray *choices;
-	int selected;
+	NSInteger selected;
 }
 
 - (id)initWithChoices:(NSArray *)_choices okayAction:(void (^)(NSArray *))block

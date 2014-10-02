@@ -88,7 +88,8 @@ static void saveDoc(char *current_path, fz_document *doc)
 			FILE *fin = fopen(current_path, "rb");
 			FILE *fout = fopen(tmp, "wb");
 			char buf[256];
-			int n, err = 1;
+			size_t n;
+			int err = 1;
 
 			if (fin && fout)
 			{

@@ -95,7 +95,7 @@ static void showAlert(NSString *msg, NSString *filename)
 	if (buttonIndex == [actionSheet destructiveButtonIndex])
 	{
 		char filename[PATH_MAX];
-		int row = [actionSheet tag];
+		NSInteger row = [actionSheet tag];
 
 		dispatch_sync(queue, ^{});
 
@@ -113,7 +113,7 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) onTapDelete: (UIControl*)sender
 {
-	int row = [sender tag];
+	NSInteger row = [sender tag];
 	NSString *title = [NSString stringWithFormat: @"Delete %@?", [files objectAtIndex:row]];
 	UIActionSheet *sheet = [[UIActionSheet alloc]
 							initWithTitle: title
@@ -132,7 +132,7 @@ static void showAlert(NSString *msg, NSString *filename)
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier: cellid];
 	if (!cell)
 		cell = [[[UITableViewCell alloc] initWithStyle: UITableViewCellStyleDefault reuseIdentifier: cellid] autorelease];
-	int row = [indexPath row];
+	NSInteger row = [indexPath row];
 	[[cell textLabel] setText: [files objectAtIndex: row]];
 	[[cell textLabel] setFont: [UIFont systemFontOfSize: 20]];
 
@@ -148,7 +148,7 @@ static void showAlert(NSString *msg, NSString *filename)
 
 - (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
 {
-	int row = [indexPath row];
+	NSInteger row = [indexPath row];
 	[self openDocument: [files objectAtIndex: row]];
 }
 
