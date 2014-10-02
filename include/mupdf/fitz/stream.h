@@ -218,7 +218,7 @@ void fz_read_line(fz_stream *stm, char *buf, int max);
 static inline int fz_available(fz_stream *stm, int max)
 {
 	int len = stm->wp - stm->rp;
-	int c;
+	int c = EOF;
 
 	if (len)
 		return len;
@@ -244,7 +244,7 @@ static inline int fz_available(fz_stream *stm, int max)
 
 static inline int fz_read_byte(fz_stream *stm)
 {
-	int c;
+	int c = EOF;
 
 	if (stm->rp != stm->wp)
 		return *stm->rp++;

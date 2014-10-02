@@ -21,8 +21,6 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 
 	fz_try(ctx)
 	{
-		int b, l, s, c;
-
 		ctm = fz_identity;
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx);

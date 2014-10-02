@@ -101,12 +101,6 @@ static void freePage(fz_document *doc, fz_page *page)
 	});
 }
 
-static void dropPixmap(fz_pixmap *pix)
-{
-	dispatch_sync(queue, ^{
-		fz_drop_pixmap(ctx, pix);
-	});
-}
 static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matrix *ctm)
 {
 	dispatch_sync(queue, ^{
