@@ -30,10 +30,13 @@
 		}
 		fz_catch(ctx)
 		{
-			if (doc != NULL)
-				fz_close_document(doc);
-			[self release];
-			self = nil;
+			if (self)
+			{
+				if (doc != NULL)
+					fz_close_document(doc);
+				[self release];
+				self = nil;
+			}
 		}
 	}
 	return self;
