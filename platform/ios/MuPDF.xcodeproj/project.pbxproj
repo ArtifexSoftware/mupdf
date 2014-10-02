@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7C6152E819DDD6A90095ECAC /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7C6152E719DDD6A90095ECAC /* Images.xcassets */; };
+		7C6152EA19DDF05B0095ECAC /* Launch Screen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7C6152E919DDF05B0095ECAC /* Launch Screen.xib */; };
 		96C8ED011779A88E00A30AF4 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 96C8ED001779A88E00A30AF4 /* main.m */; };
 		96C8ED181779A9AE00A30AF4 /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED111779A9AE00A30AF4 /* libfreetype.a */; };
 		96C8ED191779A9AE00A30AF4 /* libjbig2dec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED121779A9AE00A30AF4 /* libjbig2dec.a */; };
@@ -69,6 +70,7 @@
 
 /* Begin PBXFileReference section */
 		7C6152E719DDD6A90095ECAC /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = MuPDF/Images.xcassets; sourceTree = "<group>"; };
+		7C6152E919DDF05B0095ECAC /* Launch Screen.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = "Launch Screen.xib"; path = "MuPDF/Launch Screen.xib"; sourceTree = "<group>"; };
 		968E1E3D1779A54F0050CEA3 /* MuPDF.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MuPDF.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		968E1E481779A54F0050CEA3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		96C8ED001779A88E00A30AF4 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -199,6 +201,7 @@
 			isa = PBXGroup;
 			children = (
 				7C6152E719DDD6A90095ECAC /* Images.xcassets */,
+				7C6152E919DDF05B0095ECAC /* Launch Screen.xib */,
 				DADF824C1905241900855662 /* ic_share.png */,
 				DA7AAA3A18E45FA300A577E3 /* ic_annotation.png */,
 				DA32FC7218E33CC7001D7902 /* ic_print.png */,
@@ -360,6 +363,7 @@
 				DAB9F4BE17F1B24000117D2E /* ic_link.png in Resources */,
 				DAB9F4BF17F1B24000117D2E /* ic_list.png in Resources */,
 				DAB9F4C017F1B24000117D2E /* ic_magnifying_glass.png in Resources */,
+				7C6152EA19DDF05B0095ECAC /* Launch Screen.xib in Resources */,
 				DAB9F4C217F1CB6D00117D2E /* ic_reflow.png in Resources */,
 				DAD47D2A1832475C00E173A0 /* ic_more.png in Resources */,
 				DAD47D2E1832615900E173A0 /* ic_highlight.png in Resources */,
