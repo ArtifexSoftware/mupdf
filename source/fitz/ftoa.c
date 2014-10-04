@@ -27,7 +27,10 @@
 #define NAN (INFINITY-INFINITY)
 #endif
 
+#ifndef DEFINED_ULONG
+#define DEFINED_ULONG
 typedef unsigned long ulong;
+#endif
 
 enum { NSIGNIF	= 9 };
 
