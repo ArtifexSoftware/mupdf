@@ -21,7 +21,7 @@ html_page *
 html_load_page(html_document *doc, int number)
 {
 	printf("html: load page %d\n", number);
-	return "nothing";
+	return (html_page*)"nothing";
 }
 
 void

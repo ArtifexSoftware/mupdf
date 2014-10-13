@@ -156,6 +156,8 @@ count_selector_names(struct selector *sel)
 	return n;
 }
 
+#define INLINE_SPECIFICITY 1000
+
 int
 selector_specificity(struct selector *sel)
 {
@@ -595,7 +597,7 @@ add_property(struct style *style, const char *name, struct value *value, int spe
 }
 
 void
-apply_styles(struct rule *rule, struct style *style, fz_xml *node)
+apply_styles(struct style *style, struct rule *rule, fz_xml *node)
 {
 	struct selector *sel;
 	struct property *prop;
@@ -614,6 +616,16 @@ apply_styles(struct rule *rule, struct style *style, fz_xml *node)
 			sel = sel->next;
 		}
 		rule = rule->next;
+	}
+}
+
+void
+apply_inline_style(struct style *style, struct property *prop)
+{
+	while (prop)
+	{
+		add_property(style, prop->name, prop->value, INLINE_SPECIFICITY);
+		prop = prop->next;
 	}
 }
 

@@ -448,14 +448,14 @@ static struct property *parse_declaration_list(struct lexbuf *buf)
 {
 	struct property *p, *pp;
 
-	if (buf->lookahead == '}')
+	if (buf->lookahead == '}' || buf->lookahead == EOF)
 		return NULL;
 
 	pp = parse_declaration(buf);
 
 	while (accept(buf, ';'))
 	{
-		if (buf->lookahead != '}' && buf->lookahead != ';')
+		if (buf->lookahead != '}' && buf->lookahead != ';' && buf->lookahead != EOF)
 		{
 			p = parse_declaration(buf);
 			p->next = pp;
@@ -723,6 +723,14 @@ static struct rule *parse_stylesheet(struct lexbuf *buf, struct rule *chain)
 	}
 
 	return chain;
+}
+
+struct property *fz_parse_css_properties(fz_context *ctx, const char *source)
+{
+	struct lexbuf buf;
+	css_lex_init(ctx, &buf, source);
+	next(&buf);
+	return parse_declaration_list(&buf);
 }
 
 struct rule *fz_parse_css(fz_context *ctx, struct rule *chain, const char *source)

@@ -93,7 +93,7 @@ static void layout_text(struct rule *rule, struct style *style, fz_xml *node)
 	printf("%s\n", fz_xml_text(node));
 }
 
-static void layout_tree(struct rule *rule, struct style *up, fz_xml *node)
+static void layout_tree(fz_context *ctx, struct rule *rule, struct style *up, fz_xml *node)
 {
 	while (node)
 	{
@@ -103,16 +103,19 @@ static void layout_tree(struct rule *rule, struct style *up, fz_xml *node)
 
 		if (fz_xml_tag(node))
 		{
-			printf("open '%s'\n", fz_xml_tag(node));
 			struct computed_style cstyle;
-			apply_styles(rule, &style, node);
+			const char *s;
 
-			// TODO: check inline style attribute!
-			//s = fz_xml_att(node, "style");
-			//if (s) {
-			//	istyle = parse_declarations(s);
-			//	apply_styles(istyle);
-			//}
+			printf("open '%s'\n", fz_xml_tag(node));
+			apply_styles(&style, rule, node);
+
+			s = fz_xml_att(node, "style");
+			if (s)
+			{
+				struct property *props = fz_parse_css_properties(ctx, s);
+				apply_inline_style(&style, props);
+				// free props
+			}
 
 			compute_style(&cstyle, &style);
 			print_style(&cstyle);
@@ -124,7 +127,7 @@ static void layout_tree(struct rule *rule, struct style *up, fz_xml *node)
 		// TODO: <img>
 
 		if (fz_xml_down(node))
-			layout_tree(rule, &style, fz_xml_down(node));
+			layout_tree(ctx, rule, &style, fz_xml_down(node));
 
 		printf("end\n");
 		node = fz_xml_next(node);
@@ -149,5 +152,5 @@ html_layout_document(html_document *doc, float w, float h)
 
 	print_rules(css);
 
-	layout_tree(css, NULL, doc->root);
+	layout_tree(doc->ctx, css, NULL, doc->root);
 }

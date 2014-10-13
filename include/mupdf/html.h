@@ -88,6 +88,7 @@ struct property *new_property(const char *name, struct value *value, int spec);
 struct value *new_value(int type, const char *value);
 
 struct rule *fz_parse_css(fz_context *ctx, struct rule *old, const char *source);
+struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 
 enum { NONE, BLOCK, INLINE, LIST_ITEM };
 enum { STATIC, RELATIVE, ABSOLUTE, FIXED };
@@ -119,7 +120,8 @@ struct computed_style
 	int text_indent;
 };
 
-void apply_styles(struct rule *rule, struct style *style, fz_xml *node);
+void apply_styles(struct style *style, struct rule *rule, fz_xml *node);
+void apply_inline_style(struct style *style, struct property *prop);
 void compute_style(struct computed_style *cstyle, struct style *style);
 
 #endif
