@@ -103,21 +103,21 @@ struct computed_style
 {
 	int display;
 	int position;
-	int top, right, bottom, left;
-	int margin[4];
-	int padding[4];
-	int border_width[4];
+	float top, right, bottom, left;
+	float margin[4];
+	float padding[4];
+	float border_width[4];
 	int border_style;
 	struct color border_color;
 	struct color color;
 	struct color background_color;
 	const char *font_family;
 	int bold, italic, smallcaps;
-	int font_size;
-	int line_height;
+	float font_size;
+	float line_height;
 	int vertical_align;
 	int text_align;
-	int text_indent;
+	float text_indent;
 };
 
 void apply_styles(struct style *style, struct rule *rule, fz_xml *node);

@@ -696,8 +696,8 @@ get_style_property_string(struct style *node, const char *name, const char *init
 	return value->data;
 }
 
-static int
-compute_number(struct value *value, int em, int hundred, int scale, int initial)
+static float
+compute_number(struct value *value, float em, float hundred, float scale, float initial)
 {
 	char *p;
 
@@ -722,9 +722,9 @@ compute_number(struct value *value, int em, int hundred, int scale, int initial)
 		if (p[0] == 'i' && p[1] == 'n')
 			return x * 72;
 		if (p[0] == 'c' && p[1] == 'm')
-			return x * 72 / 2.54;
+			return x * 7200 / 254;
 		if (p[0] == 'm' && p[1] == 'm')
-			return x * 72 / 25.4;
+			return x * 720 / 254;
 		if (p[0] == 'p' && p[1] == 'c')
 			return x * 12;
 
@@ -743,8 +743,8 @@ void
 compute_style(struct computed_style *style, struct style *node)
 {
 	struct value *value;
-	int em = 12;
-	int hundred = 100;
+	float em = 12;
+	float hundred = 100;
 
 	memset(style, 0, sizeof *style);
 
@@ -875,13 +875,13 @@ print_style(struct computed_style *style)
 	printf("\tfont-weight = %s;\n", style->bold ? "bold" : "normal");
 	printf("\tfont-style = %s;\n", style->italic ? "italic" : "normal");
 	printf("\tfont-variant = %s;\n", style->smallcaps ? "small-caps" : "normal");
-	printf("\tfont-size = %d;\n", style->font_size);
-	printf("\tline-height = %d;\n", style->line_height);
-	printf("\ttext-indent = %d;\n", style->text_indent);
+	printf("\tfont-size = %g;\n", style->font_size);
+	printf("\tline-height = %g;\n", style->line_height);
+	printf("\ttext-indent = %g;\n", style->text_indent);
 	printf("\tvertical-align = %d;\n", style->vertical_align);
-	printf("\tmargin = %d %d %d %d;\n",
+	printf("\tmargin = %g %g %g %g;\n",
 		style->margin[0], style->margin[1], style->margin[2], style->margin[3]);
-	printf("\tpadding = %d %d %d %d;\n",
+	printf("\tpadding = %g %g %g %g;\n",
 		style->padding[0], style->padding[1], style->padding[2], style->padding[3]);
 	printf("}\n");
 }
