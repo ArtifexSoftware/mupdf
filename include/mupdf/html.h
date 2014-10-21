@@ -120,8 +120,7 @@ struct computed_style
 	float text_indent;
 };
 
-void apply_styles(struct style *style, struct rule *rule, fz_xml *node);
-void apply_inline_style(struct style *style, struct property *prop);
+void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
 void compute_style(struct computed_style *cstyle, struct style *style);
 
 #endif

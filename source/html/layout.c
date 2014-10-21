@@ -30,10 +30,195 @@ static const char *default_css =
 "center{text-align:center}"
 "svg{display:none}";
 
-char dirname[2048];
-char filename[2048];
+enum
+{
+	BOX_BLOCK,	/* block-level: contains other block and anonymous boxes */
+	BOX_ANONYMOUS,	/* block-level: contains only inline boxes */
+	BOX_INLINE,	/* inline-level: contains only inline boxes */
+};
 
-static char *concat_text(fz_xml *root)
+struct box
+{
+	int type;
+
+	float x, y, w, h;
+	float padding[4];
+	float border[4];
+	float margin[4];
+
+	fz_xml *node;
+	const char *text;
+
+	struct box *up, *down, *last, *next;
+};
+
+struct box *new_box(fz_context *ctx, struct box *root, int type, struct computed_style *cstyle, fz_xml *node)
+{
+	struct box *box;
+	int i;
+
+	box = fz_malloc_struct(ctx, struct box);
+	box->type = type;
+	box->x = box->y = 0;
+	box->w = box->h = 0;
+	for (i = 0; i < 4; ++i)
+	{
+		box->padding[i] = cstyle->padding[i];
+		box->margin[i] = cstyle->margin[i];
+		box->border[i] = cstyle->border_width[i];
+	}
+
+	box->node = node;
+
+	box->up = root;
+	box->last = NULL;
+	box->down = NULL;
+	box->next = NULL;
+
+	if (root)
+	{
+		if (!root->last)
+		{
+			root->down = root->last = box;
+		}
+		else
+		{
+			root->last->next = box;
+			root->last = box;
+		}
+	}
+
+	return box;
+}
+
+static struct box *new_block_box(fz_context *ctx, struct box *box, struct computed_style *cstyle, fz_xml *node)
+{
+	if (box->type == BOX_BLOCK)
+	{
+		box = new_box(ctx, box, BOX_BLOCK, cstyle, node);
+	}
+	else if (box->type == BOX_ANONYMOUS)
+	{
+		fz_warn(ctx, "block-level box inside anonymous box");
+		while (box->type != BOX_BLOCK)
+			box = box->up;
+		box = new_box(ctx, box, BOX_BLOCK, cstyle, node);
+	}
+	else if (box->type == BOX_INLINE)
+	{
+		fz_warn(ctx, "block-level box inside inline box");
+		while (box->type != BOX_BLOCK)
+			box = box->up;
+		box = new_box(ctx, box, BOX_BLOCK, cstyle, node);
+	}
+	return box;
+}
+
+static struct box *new_inline_box(fz_context *ctx, struct box *box, struct computed_style *cstyle, fz_xml *node)
+{
+	if (box->type == BOX_BLOCK)
+	{
+		if (box->last && box->last->type == BOX_ANONYMOUS)
+			box = box->last;
+		else
+			box = new_box(ctx, box, BOX_ANONYMOUS, cstyle, NULL);
+		box = new_box(ctx, box, BOX_INLINE, cstyle, node);
+	}
+	else if (box->type == BOX_ANONYMOUS)
+	{
+		box = new_box(ctx, box, BOX_INLINE, cstyle, node);
+	}
+	else if (box->type == BOX_INLINE)
+	{
+		box = new_box(ctx, box, BOX_INLINE, cstyle, node);
+	}
+	return box;
+}
+
+static void layout_tree(fz_context *ctx, fz_xml *node, struct box *box, struct style *up_style, struct rule *rule)
+{
+	struct style style;
+	struct computed_style cstyle;
+	struct box *save_box;
+
+	while (node)
+	{
+		style.up = up_style;
+		style.count = 0;
+
+		if (fz_xml_tag(node))
+		{
+			apply_styles(ctx, &style, rule, node);
+			compute_style(&cstyle, &style);
+			// print_style(&cstyle);
+
+			// TOOD: <br>
+			// TODO: <img>
+
+			if (cstyle.display != NONE)
+			{
+				save_box = box;
+
+				if (cstyle.display == BLOCK)
+				{
+					box = new_block_box(ctx, box, &cstyle, node);
+				}
+				else if (cstyle.display == INLINE)
+				{
+					box = new_inline_box(ctx, box, &cstyle, node);
+				}
+				else
+				{
+					fz_warn(ctx, "unknown box display type");
+					box = new_box(ctx, box, BOX_BLOCK, &cstyle, node);
+				}
+
+				if (fz_xml_down(node))
+					layout_tree(ctx, fz_xml_down(node), box, &style, rule);
+
+				box = save_box;
+			}
+		}
+		else
+		{
+			compute_style(&cstyle, &style);
+			new_inline_box(ctx, box, &cstyle, node);
+		}
+
+		node = fz_xml_next(node);
+	}
+}
+
+static void indent(int level)
+{
+	while (level--) printf("    ");
+}
+
+static void print_box(fz_context *ctx, struct box *box, int level)
+{
+	while (box)
+	{
+		indent(level);
+		switch (box->type)
+		{
+		case BOX_BLOCK: printf("block"); break;
+		case BOX_ANONYMOUS: printf("anonymous"); break;
+		case BOX_INLINE: printf("inline"); break;
+		}
+		if (box->node) {
+			const char *tag = fz_xml_tag(box->node);
+			const char *text = fz_xml_text(box->node);
+			if (tag) printf(" <%s>", tag);
+			if (text) printf(" \"%s\"", text);
+		}
+		printf("\n");
+		if (box->down)
+			print_box(ctx, box->down, level + 1);
+		box = box->next;
+	}
+}
+
+static char *concat_text(fz_context *ctx, fz_xml *root)
 {
 	fz_xml  *node;
 	int i = 0, n = 1;
@@ -43,7 +228,7 @@ static char *concat_text(fz_xml *root)
 		const char *text = fz_xml_text(node);
 		n += text ? strlen(text) : 0;
 	}
-	s = malloc(n);
+	s = fz_malloc(ctx, n);
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
 		const char *text = fz_xml_text(node);
@@ -77,10 +262,9 @@ static struct rule *load_css(fz_context *ctx, struct rule *css, fz_xml *root)
 		}
 #endif
 		if (tag && !strcmp(tag, "style")) {
-printf("found inline style sheet!\n");
-			char *s = concat_text(node);
-printf("'%s'\n", s);
+			char *s = concat_text(ctx, node);
 			css = fz_parse_css(ctx, css, s);
+			fz_free(ctx, s);
 		}
 		if (fz_xml_down(node))
 			css = load_css(ctx, css, fz_xml_down(node));
@@ -88,56 +272,13 @@ printf("'%s'\n", s);
 	return css;
 }
 
-static void layout_text(struct rule *rule, struct style *style, fz_xml *node)
-{
-	printf("%s\n", fz_xml_text(node));
-}
-
-static void layout_tree(fz_context *ctx, struct rule *rule, struct style *up, fz_xml *node)
-{
-	while (node)
-	{
-		struct style style;
-		style.up = up;
-		style.count = 0;
-
-		if (fz_xml_tag(node))
-		{
-			struct computed_style cstyle;
-			const char *s;
-
-			printf("open '%s'\n", fz_xml_tag(node));
-			apply_styles(&style, rule, node);
-
-			s = fz_xml_att(node, "style");
-			if (s)
-			{
-				struct property *props = fz_parse_css_properties(ctx, s);
-				apply_inline_style(&style, props);
-				// free props
-			}
-
-			compute_style(&cstyle, &style);
-			print_style(&cstyle);
-		}
-		else
-			layout_text(rule, &style, node);
-
-		// TOOD: <br>
-		// TODO: <img>
-
-		if (fz_xml_down(node))
-			layout_tree(ctx, rule, &style, fz_xml_down(node));
-
-		printf("end\n");
-		node = fz_xml_next(node);
-	}
-}
-
 void
 html_layout_document(html_document *doc, float w, float h)
 {
 	struct rule *css = NULL;
+	struct box *root_box;
+	struct style style;
+	struct computed_style cstyle;
 
 #if 0
 	strcpy(dirname, argv[i]);
@@ -152,5 +293,11 @@ html_layout_document(html_document *doc, float w, float h)
 
 	print_rules(css);
 
-	layout_tree(doc->ctx, css, NULL, doc->root);
+	style.up = NULL;
+	style.count = 0;
+	compute_style(&cstyle, &style);
+	root_box = new_box(doc->ctx, NULL, BOX_BLOCK, &cstyle, NULL);
+
+	layout_tree(doc->ctx, doc->root, root_box, NULL, css);
+	print_box(doc->ctx, root_box, 0);
 }

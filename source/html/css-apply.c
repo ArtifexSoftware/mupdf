@@ -597,10 +597,11 @@ add_property(struct style *style, const char *name, struct value *value, int spe
 }
 
 void
-apply_styles(struct style *style, struct rule *rule, fz_xml *node)
+apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node)
 {
 	struct selector *sel;
 	struct property *prop;
+	const char *s;
 
 	while (rule)
 	{
@@ -617,15 +618,17 @@ apply_styles(struct style *style, struct rule *rule, fz_xml *node)
 		}
 		rule = rule->next;
 	}
-}
 
-void
-apply_inline_style(struct style *style, struct property *prop)
-{
-	while (prop)
+	s = fz_xml_att(node, "style");
+	if (s)
 	{
-		add_property(style, prop->name, prop->value, INLINE_SPECIFICITY);
-		prop = prop->next;
+		prop = fz_parse_css_properties(ctx, s);
+		while (prop)
+		{
+			add_property(style, prop->name, prop->value, INLINE_SPECIFICITY);
+			prop = prop->next;
+		}
+		// TODO: free props
 	}
 }
 
