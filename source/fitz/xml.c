@@ -406,7 +406,7 @@ static char *xml_parse_document_imp(struct parser *x, char *p)
 parse_text:
 	mark = p;
 	while (*p && *p != '<') ++p;
-	xml_emit_text(x, mark, p);
+	if (mark != p) xml_emit_text(x, mark, p);
 	if (*p == '<') { ++p; goto parse_element; }
 	return NULL;
 
