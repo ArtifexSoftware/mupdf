@@ -699,6 +699,24 @@ get_style_property_string(struct style *node, const char *name, const char *init
 	return value->data;
 }
 
+int
+get_style_property_display(struct style *node)
+{
+	struct value *value = get_style_property(node, "display");
+	if (value)
+	{
+		if (!strcmp(value->data, "none"))
+			return NONE;
+		if (!strcmp(value->data, "inline"))
+			return INLINE;
+		if (!strcmp(value->data, "block"))
+			return BLOCK;
+		if (!strcmp(value->data, "list-item"))
+			return LIST_ITEM;
+	}
+	return INLINE;
+}
+
 static float
 compute_number(struct value *value, float em, float hundred, float scale, float initial)
 {
@@ -751,23 +769,9 @@ compute_style(struct computed_style *style, struct style *node)
 
 	memset(style, 0, sizeof *style);
 
-	style->display = INLINE;
 	style->position = STATIC;
 	style->text_align = LEFT;
 	style->font_size = 12;
-
-	value = get_style_property(node, "display");
-	if (value)
-	{
-		if (!strcmp(value->data, "none"))
-			style->display = NONE;
-		if (!strcmp(value->data, "inline"))
-			style->display = INLINE;
-		if (!strcmp(value->data, "block"))
-			style->display = BLOCK;
-		if (!strcmp(value->data, "list-item"))
-			style->display = LIST_ITEM;
-	}
 
 	value = get_style_property(node, "position");
 	if (value)
@@ -871,7 +875,6 @@ void
 print_style(struct computed_style *style)
 {
 	printf("style {\n");
-	printf("\tdisplay = %d;\n", style->display);
 	printf("\tposition = %d;\n", style->position);
 	printf("\ttext-align = %d;\n", style->text_align);
 	printf("\tfont-family = %s;\n", style->font_family);

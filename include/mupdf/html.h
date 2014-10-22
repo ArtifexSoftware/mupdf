@@ -65,12 +65,12 @@ struct property
 struct style
 {
 	struct style *up;
+	int count;
 	struct {
 		const char *name;
 		struct value *value;
 		int spec;
 	} prop[64];
-	int count;
 };
 
 struct value
@@ -87,6 +87,7 @@ struct condition *new_condition(int type, const char *key, const char *val);
 struct property *new_property(const char *name, struct value *value, int spec);
 struct value *new_value(int type, const char *value);
 
+int get_style_property_display(struct style *node);
 struct rule *fz_parse_css(fz_context *ctx, struct rule *old, const char *source);
 struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 
@@ -101,7 +102,6 @@ struct color
 
 struct computed_style
 {
-	int display;
 	int position;
 	float top, right, bottom, left;
 	float margin[4];
