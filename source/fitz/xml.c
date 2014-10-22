@@ -83,7 +83,7 @@ struct fz_xml_s
 	char name[40];
 	char *text;
 	struct attribute *atts;
-	fz_xml *up, *down, *prev, *next;
+	fz_xml *up, *down, *tail, *prev, *next;
 };
 
 static inline void indent(int n)
@@ -285,13 +285,13 @@ static void xml_emit_open_tag(struct parser *parser, char *a, char *b)
 
 	if (!parser->head->down) {
 		parser->head->down = head;
+		parser->head->tail = head;
 	}
 	else {
-		tail = parser->head->down;
-		while (tail->next)
-			tail = tail->next;
+		tail = parser->head->tail;
 		tail->next = head;
 		head->prev = tail;
+		parser->head->tail = head;
 	}
 
 	parser->head = head;
