@@ -446,24 +446,22 @@ static struct property *parse_declaration(struct lexbuf *buf)
 
 static struct property *parse_declaration_list(struct lexbuf *buf)
 {
-	struct property *p, *pp;
+	struct property *head, *tail;
 
 	if (buf->lookahead == '}' || buf->lookahead == EOF)
 		return NULL;
 
-	pp = parse_declaration(buf);
+	head = tail = parse_declaration(buf);
 
 	while (accept(buf, ';'))
 	{
 		if (buf->lookahead != '}' && buf->lookahead != ';' && buf->lookahead != EOF)
 		{
-			p = parse_declaration(buf);
-			p->next = pp;
-			pp = p;
+			tail = tail->next = parse_declaration(buf);
 		}
 	}
 
-	return pp;
+	return head;
 }
 
 static const char *parse_attrib_value(struct lexbuf *buf)
@@ -547,16 +545,14 @@ static struct condition *parse_condition(struct lexbuf *buf)
 
 static struct condition *parse_condition_list(struct lexbuf *buf)
 {
-	struct condition *c, *cc;
+	struct condition *head, *tail;
 
-	cc = parse_condition(buf);
+	head = tail = parse_condition(buf);
 	while (iscond(buf->lookahead))
 	{
-		c = parse_condition(buf);
-		c->next = cc;
-		cc = c;
+		tail = tail->next = parse_condition(buf);
 	}
-	return cc;
+	return head;
 }
 
 static struct selector *parse_simple_selector(struct lexbuf *buf)
@@ -641,16 +637,14 @@ static struct selector *parse_descendant_selector(struct lexbuf *buf)
 
 static struct selector *parse_selector_list(struct lexbuf *buf)
 {
-	struct selector *s, *ss;
+	struct selector *head, *tail;
 
-	ss = parse_descendant_selector(buf);
+	head = tail = parse_descendant_selector(buf);
 	while (accept(buf, ','))
 	{
-		s = parse_descendant_selector(buf);
-		s->next = ss;
-		ss = s;
+		tail = tail->next = parse_descendant_selector(buf);
 	}
-	return ss;
+	return head;
 }
 
 static struct rule *parse_rule(struct lexbuf *buf)
@@ -706,7 +700,19 @@ static void parse_at_rule(struct lexbuf *buf)
 
 static struct rule *parse_stylesheet(struct lexbuf *buf, struct rule *chain)
 {
-	struct rule *r;
+	struct rule *rule, **nextp, *tail;
+
+	tail = chain;
+	if (tail)
+	{
+		while (tail->next)
+			tail = tail->next;
+		nextp = &tail->next;
+	}
+	else
+	{
+		nextp = &tail;
+	}
 
 	while (buf->lookahead != EOF)
 	{
@@ -716,13 +722,12 @@ static struct rule *parse_stylesheet(struct lexbuf *buf, struct rule *chain)
 		}
 		else
 		{
-			r = parse_rule(buf);
-			r->next = chain;
-			chain = r;
+			rule = *nextp = parse_rule(buf);
+			nextp = &rule->next;
 		}
 	}
 
-	return chain;
+	return chain ? chain : tail;
 }
 
 struct property *fz_parse_css_properties(fz_context *ctx, const char *source)
