@@ -157,13 +157,13 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 			// TOOD: <br>
 			// TODO: <img>
 
-			if (display != NONE)
+			if (display != DIS_NONE)
 			{
-				if (display == BLOCK)
+				if (display == DIS_BLOCK)
 				{
 					top = insert_block_box(ctx, box, top);
 				}
-				else if (display == INLINE)
+				else if (display == DIS_INLINE)
 				{
 					insert_inline_box(ctx, box, top);
 				}
@@ -190,14 +190,27 @@ static void layout_inline(fz_context *ctx, struct box *box, struct box *top)
 {
 	struct computed_style style;
 	struct box *child;
+	const char *s;
 
 	compute_style(&style, &box->style, top->w);
 
+	box->x = top->x + top->w;
 	box->y = top->y;
 	box->h = style.font_size;
+	box->w = 0;
+
+	s = fz_xml_text(box->node);
+	if (s)
+	{
+		box->w += strlen(s) * 0.5 * style.font_size;
+	}
+
 	for (child = box->down; child; child = child->next)
 	{
 		layout_inline(ctx, child, top);
+		if (child->h > box->h)
+			box->h = child->h;
+		top->w += child->w;
 	}
 }
 
@@ -208,13 +221,17 @@ static void layout_anonymous(fz_context *ctx, struct box *box, struct box *top)
 
 	compute_style(&style, &box->style, top->w);
 
+	box->x = top->x;
 	box->y = top->y + top->h;
 	box->h = 0;
+	box->w = 0;
+
 	for (child = box->down; child; child = child->next)
 	{
 		layout_inline(ctx, child, box);
 		if (child->h > box->h)
 			box->h = child->h;
+		box->w += child->w;
 	}
 }
 
@@ -225,8 +242,11 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top)
 
 	compute_style(&style, &box->style, top->w);
 
-	box->y = top->y + top->h;
+	box->x = top->x + style.margin[LEFT];
+	box->y = top->y + top->h + style.margin[TOP];
+	box->w = top->w - (style.margin[LEFT] + style.margin[RIGHT]);
 	box->h = 0;
+
 	for (child = box->down; child; child = child->next)
 	{
 		if (child->type == BOX_BLOCK)
@@ -235,6 +255,8 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top)
 			layout_anonymous(ctx, child, box);
 		box->h += child->h;
 	}
+
+	box->h += style.margin[BOTTOM];
 }
 
 static void indent(int level)
@@ -246,7 +268,7 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 {
 	while (box)
 	{
-		printf("%-5d", (int)box->y);
+		printf("%-5d %-5d", (int)box->x, (int)box->y);
 		indent(level);
 		switch (box->type)
 		{
@@ -346,7 +368,7 @@ html_layout_document(html_document *doc, float w, float h)
 	css = fz_parse_css(doc->ctx, NULL, default_css);
 	css = load_css(doc->ctx, css, doc->root);
 
-//	print_rules(css);
+	print_rules(css);
 
 	root_box = new_box(doc->ctx, NULL, NULL);
 	generate_boxes(doc->ctx, doc->root, root_box, css);

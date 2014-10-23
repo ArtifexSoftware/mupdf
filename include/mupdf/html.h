@@ -91,9 +91,11 @@ int get_style_property_display(struct style *node);
 struct rule *fz_parse_css(fz_context *ctx, struct rule *old, const char *source);
 struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 
-enum { NONE, BLOCK, INLINE, LIST_ITEM };
-enum { STATIC, RELATIVE, ABSOLUTE, FIXED };
-enum { LEFT, RIGHT, CENTER, JUSTIFY };
+enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM };
+enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
+enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
+
+enum { TOP, RIGHT, BOTTOM, LEFT };
 
 struct color
 {

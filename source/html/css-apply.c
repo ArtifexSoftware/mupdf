@@ -706,15 +706,15 @@ get_style_property_display(struct style *node)
 	if (value)
 	{
 		if (!strcmp(value->data, "none"))
-			return NONE;
+			return DIS_NONE;
 		if (!strcmp(value->data, "inline"))
-			return INLINE;
+			return DIS_INLINE;
 		if (!strcmp(value->data, "block"))
-			return BLOCK;
+			return DIS_BLOCK;
 		if (!strcmp(value->data, "list-item"))
-			return LIST_ITEM;
+			return DIS_LIST_ITEM;
 	}
-	return INLINE;
+	return DIS_INLINE;
 }
 
 static float
@@ -768,34 +768,34 @@ compute_style(struct computed_style *style, struct style *node, float width)
 
 	memset(style, 0, sizeof *style);
 
-	style->position = STATIC;
-	style->text_align = LEFT;
+	style->position = POS_STATIC;
+	style->text_align = TA_LEFT;
 	style->font_size = 12;
 
 	value = get_style_property(node, "position");
 	if (value)
 	{
 		if (!strcmp(value->data, "static"))
-			style->position = STATIC;
+			style->position = POS_STATIC;
 		if (!strcmp(value->data, "relative"))
-			style->position = RELATIVE;
+			style->position = POS_RELATIVE;
 		if (!strcmp(value->data, "absolute"))
-			style->position = ABSOLUTE;
+			style->position = POS_ABSOLUTE;
 		if (!strcmp(value->data, "fixed"))
-			style->position = FIXED;
+			style->position = POS_FIXED;
 	}
 
 	value = get_style_property(node, "text-align");
 	if (value)
 	{
 		if (!strcmp(value->data, "left"))
-			style->text_align = LEFT;
+			style->text_align = TA_LEFT;
 		if (!strcmp(value->data, "right"))
-			style->text_align = RIGHT;
+			style->text_align = TA_RIGHT;
 		if (!strcmp(value->data, "center"))
-			style->text_align = CENTER;
+			style->text_align = TA_CENTER;
 		if (!strcmp(value->data, "justify"))
-			style->text_align = JUSTIFY;
+			style->text_align = TA_JUSTIFY;
 	}
 
 	value = get_style_property(node, "vertical-align");
