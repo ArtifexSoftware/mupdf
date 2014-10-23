@@ -186,8 +186,55 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 	}
 }
 
-static void layout_boxes(fz_context *ctx, struct box *top, float w, float h)
+static void layout_inline(fz_context *ctx, struct box *box, struct box *top)
 {
+	struct computed_style style;
+	struct box *child;
+
+	compute_style(&style, &box->style, top->w);
+
+	box->y = top->y;
+	box->h = style.font_size;
+	for (child = box->down; child; child = child->next)
+	{
+		layout_inline(ctx, child, top);
+	}
+}
+
+static void layout_anonymous(fz_context *ctx, struct box *box, struct box *top)
+{
+	struct computed_style style;
+	struct box *child;
+
+	compute_style(&style, &box->style, top->w);
+
+	box->y = top->y + top->h;
+	box->h = 0;
+	for (child = box->down; child; child = child->next)
+	{
+		layout_inline(ctx, child, box);
+		if (child->h > box->h)
+			box->h = child->h;
+	}
+}
+
+static void layout_block(fz_context *ctx, struct box *box, struct box *top)
+{
+	struct computed_style style;
+	struct box *child;
+
+	compute_style(&style, &box->style, top->w);
+
+	box->y = top->y + top->h;
+	box->h = 0;
+	for (child = box->down; child; child = child->next)
+	{
+		if (child->type == BOX_BLOCK)
+			layout_block(ctx, child, box);
+		else if (child->type == BOX_ANONYMOUS)
+			layout_anonymous(ctx, child, box);
+		box->h += child->h;
+	}
 }
 
 static void indent(int level)
@@ -199,6 +246,7 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 {
 	while (box)
 	{
+		printf("%-5d", (int)box->y);
 		indent(level);
 		switch (box->type)
 		{
@@ -285,6 +333,7 @@ html_layout_document(html_document *doc, float w, float h)
 {
 	struct rule *css = NULL;
 	struct box *root_box;
+	struct box *win_box;
 
 #if 0
 	strcpy(dirname, argv[i]);
@@ -301,6 +350,12 @@ html_layout_document(html_document *doc, float w, float h)
 
 	root_box = new_box(doc->ctx, NULL, NULL);
 	generate_boxes(doc->ctx, doc->root, root_box, css);
-	layout_boxes(doc->ctx, root_box, w, h);
+
+	win_box = new_box(doc->ctx, NULL, NULL);
+	win_box->w = w;
+	win_box->h = 0;
+
+	layout_block(doc->ctx, root_box, win_box);
+
 	print_box(doc->ctx, root_box, 0);
 }

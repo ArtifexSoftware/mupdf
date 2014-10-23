@@ -761,11 +761,10 @@ compute_number(struct value *value, float em, float hundred, float scale, float 
 }
 
 void
-compute_style(struct computed_style *style, struct style *node)
+compute_style(struct computed_style *style, struct style *node, float width)
 {
 	struct value *value;
 	float em = 12;
-	float hundred = 100;
 
 	memset(style, 0, sizeof *style);
 
@@ -829,25 +828,25 @@ compute_style(struct computed_style *style, struct style *node)
 	style->line_height = compute_number(value, em, em, em, 1.2 * em);
 
 	value = get_style_property(node, "text-indent");
-	style->text_indent = compute_number(value, em, hundred, 1, 0);
+	style->text_indent = compute_number(value, em, width, 1, 0);
 
 	value = get_style_property(node, "margin-top");
-	style->margin[0] = compute_number(value, em, hundred, 1, 0);
+	style->margin[0] = compute_number(value, em, width, 1, 0);
 	value = get_style_property(node, "margin-right");
-	style->margin[1] = compute_number(value, em, hundred, 1, 0);
+	style->margin[1] = compute_number(value, em, width, 1, 0);
 	value = get_style_property(node, "margin-bottom");
-	style->margin[2] = compute_number(value, em, hundred, 1, 0);
+	style->margin[2] = compute_number(value, em, width, 1, 0);
 	value = get_style_property(node, "margin-left");
-	style->margin[3] = compute_number(value, em, hundred, 1, 0);
+	style->margin[3] = compute_number(value, em, width, 1, 0);
 
 	value = get_style_property(node, "padding-top");
-	style->padding[0] = compute_number(value, em, hundred, 1, 0);
+	style->padding[0] = compute_number(value, em, width, 1, 0);
 	value = get_style_property(node, "padding-right");
-	style->padding[1] = compute_number(value, em, hundred, 1, 0);
+	style->padding[1] = compute_number(value, em, width, 1, 0);
 	value = get_style_property(node, "padding-bottom");
-	style->padding[2] = compute_number(value, em, hundred, 1, 0);
+	style->padding[2] = compute_number(value, em, width, 1, 0);
 	value = get_style_property(node, "padding-left");
-	style->padding[3] = compute_number(value, em, hundred, 1, 0);
+	style->padding[3] = compute_number(value, em, width, 1, 0);
 
 	{
 		const char *font_family = get_style_property_string(node, "font-family", "serif");

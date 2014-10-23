@@ -121,6 +121,6 @@ struct computed_style
 };
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
-void compute_style(struct computed_style *cstyle, struct style *style);
+void compute_style(struct computed_style *cstyle, struct style *style, float width);
 
 #endif
