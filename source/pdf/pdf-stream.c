@@ -385,7 +385,7 @@ pdf_load_compressed_inline_image(pdf_document *doc, pdf_obj *dict, int length, f
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, bc);
+		fz_free_compressed_buffer(ctx, bc);
 		fz_rethrow(ctx);
 	}
 	image->buffer = bc;
