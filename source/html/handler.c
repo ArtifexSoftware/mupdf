@@ -1,9 +1,5 @@
 #include "mupdf/html.h"
 
-struct html_page_s
-{
-};
-
 void
 html_close_document(html_document *doc)
 {
@@ -21,7 +17,7 @@ html_page *
 html_load_page(html_document *doc, int number)
 {
 	printf("html: load page %d\n", number);
-	return (html_page*)"nothing";
+	return doc->box;
 }
 
 void
@@ -43,6 +39,7 @@ void
 html_run_page(html_document *doc, html_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	printf("html: run page\n");
+	html_run_box(doc->ctx, page, dev, ctm);
 }
 
 html_document *
@@ -50,15 +47,14 @@ html_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	html_document *doc;
 	fz_buffer *buf;
-	fz_xml *root;
+	fz_xml *xml;
 
 	buf = fz_read_all(file, 0);
-	root = fz_parse_xml(ctx, buf->data, buf->len, 1);
+	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 	fz_drop_buffer(ctx, buf);
 
 	doc = fz_malloc_struct(ctx, html_document);
 	doc->ctx = ctx;
-	doc->root = root;
 
 	doc->super.close = (void*)html_close_document;
 	doc->super.count_pages = (void*)html_count_pages;
@@ -66,6 +62,9 @@ html_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.bound_page = (void*)html_bound_page;
 	doc->super.run_page_contents = (void*)html_run_page;
 	doc->super.free_page = (void*)html_free_page;
+
+	doc->xml = xml;
+	doc->box = NULL;
 
 	html_layout_document(doc, 400, 600);
 

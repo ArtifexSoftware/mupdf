@@ -717,60 +717,84 @@ get_style_property_display(struct style *node)
 	return DIS_INLINE;
 }
 
-static float
-compute_number(struct value *value, float em, float hundred, float scale, float initial)
+static struct number
+make_number(float v, int u)
+{
+	struct number n;
+	n.value = v;
+	n.unit = u;
+	return n;
+}
+
+static struct number
+number_from_value(struct value *value, float initial, int initial_unit)
 {
 	char *p;
 
 	if (!value)
-		return initial;
+		return make_number(initial, initial_unit);
 
 	if (value->type == CSS_PERCENT)
-		return strtof(value->data, &p) * hundred / 100;
+		return make_number(strtof(value->data, NULL), N_PERCENT);
 
 	if (value->type == CSS_NUMBER)
-		return strtof(value->data, &p) * scale;
+		return make_number(strtof(value->data, NULL), N_NUMBER);
 
 	if (value->type == CSS_LENGTH)
 	{
 		float x = strtof(value->data, &p);
 
 		if (p[0] == 'e' && p[1] == 'm')
-			return x * em;
+			return make_number(x, N_SCALE);
 		if (p[0] == 'e' && p[1] == 'x')
-			return x * em / 2;
+			return make_number(x / 2, N_SCALE);
 
 		if (p[0] == 'i' && p[1] == 'n')
-			return x * 72;
+			return make_number(x * 72, N_NUMBER);
 		if (p[0] == 'c' && p[1] == 'm')
-			return x * 7200 / 254;
+			return make_number(x * 7200 / 254, N_NUMBER);
 		if (p[0] == 'm' && p[1] == 'm')
-			return x * 720 / 254;
+			return make_number(x * 720 / 254, N_NUMBER);
 		if (p[0] == 'p' && p[1] == 'c')
-			return x * 12;
+			return make_number(x * 12, N_NUMBER);
 
 		if (p[0] == 'p' && p[1] == 't')
-			return x;
+			return make_number(x, N_NUMBER);
 		if (p[0] == 'p' && p[1] == 'x')
-			return x;
+			return make_number(x, N_NUMBER);
 
-		return x;
+		return make_number(x, N_NUMBER);
 	}
 
-	return initial;
+	return make_number(initial, initial_unit);
+}
+
+static struct number number_from_property(struct style *node, const char *property, float initial, int initial_unit)
+{
+	return number_from_value(get_style_property(node, property), initial, initial_unit);
+}
+
+float
+from_number(struct number number, float em, float width)
+{
+	switch (number.unit) {
+	default:
+	case N_NUMBER: return number.value;
+	case N_SCALE: return number.value * em;
+	case N_PERCENT: return number.value * width;
+	}
 }
 
 void
-compute_style(struct computed_style *style, struct style *node, float width)
+compute_style(struct computed_style *style, struct style *node)
 {
 	struct value *value;
-	float em = 12;
 
 	memset(style, 0, sizeof *style);
 
 	style->position = POS_STATIC;
 	style->text_align = TA_LEFT;
-	style->font_size = 12;
+	style->font_size = make_number(1, N_SCALE);
 
 	value = get_style_property(node, "position");
 	if (value)
@@ -808,45 +832,37 @@ compute_style(struct computed_style *style, struct style *node, float width)
 	}
 
 	value = get_style_property(node, "font-size");
-	if (value) {
-		if (!strcmp(value->data, "xx-large")) style->font_size = 20;
-		else if (!strcmp(value->data, "x-large")) style->font_size = 16;
-		else if (!strcmp(value->data, "large")) style->font_size = 14;
-		else if (!strcmp(value->data, "medium")) style->font_size = 12;
-		else if (!strcmp(value->data, "small")) style->font_size = 10;
-		else if (!strcmp(value->data, "x-small")) style->font_size = 8;
-		else if (!strcmp(value->data, "xx-small")) style->font_size = 6;
-		else if (!strcmp(value->data, "larger")) style->font_size = em + 2;
-		else if (!strcmp(value->data, "smaller")) style->font_size = em - 2;
-		else style->font_size = compute_number(value, em, em, 1, 12);
-	} else {
-		style->font_size = 12;
+	if (value)
+	{
+		if (!strcmp(value->data, "xx-large")) style->font_size = make_number(20, N_NUMBER);
+		else if (!strcmp(value->data, "x-large")) style->font_size = make_number(16, N_NUMBER);
+		else if (!strcmp(value->data, "large")) style->font_size = make_number(14, N_NUMBER);
+		else if (!strcmp(value->data, "medium")) style->font_size = make_number(12, N_NUMBER);
+		else if (!strcmp(value->data, "small")) style->font_size = make_number(10, N_NUMBER);
+		else if (!strcmp(value->data, "x-small")) style->font_size = make_number(8, N_NUMBER);
+		else if (!strcmp(value->data, "xx-small")) style->font_size = make_number(6, N_NUMBER);
+		else if (!strcmp(value->data, "larger")) style->font_size = make_number(1.25f, N_SCALE);
+		else if (!strcmp(value->data, "smaller")) style->font_size = make_number(0.8f, N_SCALE);
+		else style->font_size = number_from_value(value, 12, N_NUMBER);
 	}
-	em = style->font_size;
+	else
+	{
+		style->font_size = make_number(1, N_SCALE);
+	}
 
-	value = get_style_property(node, "line-height");
-	style->line_height = compute_number(value, em, em, em, 1.2 * em);
+	style->line_height = number_from_property(node, "line-height", 1.2, N_SCALE);
 
-	value = get_style_property(node, "text-indent");
-	style->text_indent = compute_number(value, em, width, 1, 0);
+	style->text_indent = number_from_property(node, "text-indent", 0, N_NUMBER);
 
-	value = get_style_property(node, "margin-top");
-	style->margin[0] = compute_number(value, em, width, 1, 0);
-	value = get_style_property(node, "margin-right");
-	style->margin[1] = compute_number(value, em, width, 1, 0);
-	value = get_style_property(node, "margin-bottom");
-	style->margin[2] = compute_number(value, em, width, 1, 0);
-	value = get_style_property(node, "margin-left");
-	style->margin[3] = compute_number(value, em, width, 1, 0);
+	style->margin[0] = number_from_property(node, "margin-top", 0, N_NUMBER);
+	style->margin[1] = number_from_property(node, "margin-right", 0, N_NUMBER);
+	style->margin[2] = number_from_property(node, "margin-bottom", 0, N_NUMBER);
+	style->margin[3] = number_from_property(node, "margin-left", 0, N_NUMBER);
 
-	value = get_style_property(node, "padding-top");
-	style->padding[0] = compute_number(value, em, width, 1, 0);
-	value = get_style_property(node, "padding-right");
-	style->padding[1] = compute_number(value, em, width, 1, 0);
-	value = get_style_property(node, "padding-bottom");
-	style->padding[2] = compute_number(value, em, width, 1, 0);
-	value = get_style_property(node, "padding-left");
-	style->padding[3] = compute_number(value, em, width, 1, 0);
+	style->padding[0] = number_from_property(node, "padding-top", 0, N_NUMBER);
+	style->padding[1] = number_from_property(node, "padding-right", 0, N_NUMBER);
+	style->padding[2] = number_from_property(node, "padding-bottom", 0, N_NUMBER);
+	style->padding[3] = number_from_property(node, "padding-left", 0, N_NUMBER);
 
 	{
 		const char *font_family = get_style_property_string(node, "font-family", "serif");
@@ -880,13 +896,20 @@ print_style(struct computed_style *style)
 	printf("\tfont-weight = %s;\n", style->bold ? "bold" : "normal");
 	printf("\tfont-style = %s;\n", style->italic ? "italic" : "normal");
 	printf("\tfont-variant = %s;\n", style->smallcaps ? "small-caps" : "normal");
-	printf("\tfont-size = %g;\n", style->font_size);
-	printf("\tline-height = %g;\n", style->line_height);
-	printf("\ttext-indent = %g;\n", style->text_indent);
+
+	printf("\tfont-size = %g%c;\n", style->font_size.value, style->font_size.unit);
+	printf("\tline-height = %g%c;\n", style->line_height.value, style->line_height.unit);
+	printf("\ttext-indent = %g%c;\n", style->text_indent.value, style->text_indent.unit);
 	printf("\tvertical-align = %d;\n", style->vertical_align);
-	printf("\tmargin = %g %g %g %g;\n",
-		style->margin[0], style->margin[1], style->margin[2], style->margin[3]);
-	printf("\tpadding = %g %g %g %g;\n",
-		style->padding[0], style->padding[1], style->padding[2], style->padding[3]);
+	printf("\tmargin = %g%c %g%c %g%c %g%c;\n",
+		style->margin[0].value, style->margin[0].unit,
+		style->margin[1].value, style->margin[1].unit,
+		style->margin[2].value, style->margin[2].unit,
+		style->margin[3].value, style->margin[3].unit);
+	printf("\tpadding = %g%c %g%c %g%c %g%c;\n",
+		style->padding[0].value, style->padding[0].unit,
+		style->padding[1].value, style->padding[1].unit,
+		style->padding[2].value, style->padding[2].unit,
+		style->padding[3].value, style->padding[3].unit);
 	printf("}\n");
 }

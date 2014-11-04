@@ -43,10 +43,10 @@ struct box
 	float x, y, w, h;
 	struct box *up, *down, *last, *next;
 	fz_xml *node;
-	struct style style;
+	struct computed_style style;
 };
 
-struct box *new_box(fz_context *ctx, fz_xml *node, struct style *up_style)
+struct box *new_box(fz_context *ctx, fz_xml *node)
 {
 	struct box *box;
 
@@ -62,9 +62,6 @@ struct box *new_box(fz_context *ctx, fz_xml *node, struct style *up_style)
 	box->next = NULL;
 
 	box->node = node;
-
-	box->style.up = up_style;
-	box->style.count = 0;
 
 	return box;
 }
@@ -120,7 +117,7 @@ static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 		}
 		else
 		{
-			struct box *flow = new_box(ctx, NULL, &top->style);
+			struct box *flow = new_box(ctx, NULL);
 			insert_box(ctx, flow, BOX_FLOW, top);
 			insert_box(ctx, box, BOX_INLINE, flow);
 		}
@@ -135,24 +132,24 @@ static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 	}
 }
 
-static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struct rule *rule)
+static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struct rule *rule, struct style *up_style)
 {
-	struct style *up_style;
+	struct style style;
 	struct box *box;
 	int display;
 
-	/* link styles separately because splitting inline blocks breaks the style/box tree symmetry */
-	up_style = &top->style;
-
 	while (node)
 	{
-		box = new_box(ctx, node, up_style);
+		style.up = up_style;
+		style.count = 0;
+
+		box = new_box(ctx, node);
 
 		if (fz_xml_tag(node))
 		{
-			apply_styles(ctx, &box->style, rule, node);
+			apply_styles(ctx, &style, rule, node);
 
-			display = get_style_property_display(&box->style);
+			display = get_style_property_display(&style);
 
 			// TOOD: <br>
 			// TODO: <img>
@@ -174,7 +171,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 				}
 
 				if (fz_xml_down(node))
-					generate_boxes(ctx, fz_xml_down(node), box, rule);
+					generate_boxes(ctx, fz_xml_down(node), box, rule, &style);
 			}
 		}
 		else
@@ -182,44 +179,44 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 			insert_inline_box(ctx, box, top);
 		}
 
+		compute_style(&box->style, &style);
+
 		node = fz_xml_next(node);
 	}
 }
 
-static void layout_inline(fz_context *ctx, struct box *box, struct box *top)
+static void layout_inline(fz_context *ctx, struct box *box, struct box *top, float em)
 {
-	struct computed_style style;
 	struct box *child;
 	const char *s;
 
-	compute_style(&style, &box->style, top->w);
+	em = from_number(box->style.font_size, em, em);
 
 	box->x = top->x + top->w;
 	box->y = top->y;
-	box->h = style.font_size;
+	box->h = em;
 	box->w = 0;
 
 	s = fz_xml_text(box->node);
 	if (s)
 	{
-		box->w += strlen(s) * 0.5 * style.font_size;
+		box->w += strlen(s) * 0.5 * em;
 	}
 
 	for (child = box->down; child; child = child->next)
 	{
-		layout_inline(ctx, child, top);
+		layout_inline(ctx, child, top, em);
 		if (child->h > box->h)
 			box->h = child->h;
 		top->w += child->w;
 	}
 }
 
-static void layout_flow(fz_context *ctx, struct box *box, struct box *top)
+static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float em)
 {
-	struct computed_style style;
 	struct box *child;
 
-	compute_style(&style, &box->style, top->w);
+	em = from_number(box->style.font_size, em, em);
 
 	box->x = top->x;
 	box->y = top->y + top->h;
@@ -228,35 +225,40 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top)
 
 	for (child = box->down; child; child = child->next)
 	{
-		layout_inline(ctx, child, box);
+		layout_inline(ctx, child, box, em);
 		if (child->h > box->h)
 			box->h = child->h;
 		box->w += child->w;
 	}
 }
 
-static void layout_block(fz_context *ctx, struct box *box, struct box *top)
+static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em)
 {
-	struct computed_style style;
 	struct box *child;
+	float margin[4];
 
-	compute_style(&style, &box->style, top->w);
+	em = from_number(box->style.font_size, em, em);
 
-	box->x = top->x + style.margin[LEFT];
-	box->y = top->y + top->h + style.margin[TOP];
-	box->w = top->w - (style.margin[LEFT] + style.margin[RIGHT]);
+	margin[0] = from_number(box->style.margin[0], em, top->w);
+	margin[1] = from_number(box->style.margin[1], em, top->w);
+	margin[2] = from_number(box->style.margin[2], em, top->w);
+	margin[3] = from_number(box->style.margin[3], em, top->w);
+
+	box->x = top->x + margin[LEFT];
+	box->y = top->y + top->h + margin[TOP];
+	box->w = top->w - (margin[LEFT] + margin[RIGHT]);
 	box->h = 0;
 
 	for (child = box->down; child; child = child->next)
 	{
 		if (child->type == BOX_BLOCK)
-			layout_block(ctx, child, box);
+			layout_block(ctx, child, box, em);
 		else if (child->type == BOX_FLOW)
-			layout_flow(ctx, child, box);
+			layout_flow(ctx, child, box, em);
 		box->h += child->h;
 	}
 
-	box->h += style.margin[BOTTOM];
+	box->h += margin[BOTTOM];
 }
 
 static void indent(int level)
@@ -288,6 +290,12 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 			print_box(ctx, box->down, level + 1);
 		box = box->next;
 	}
+}
+
+void
+html_run_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix *ctm)
+{
+
 }
 
 static char *concat_text(fz_context *ctx, fz_xml *root)
@@ -356,6 +364,7 @@ html_layout_document(html_document *doc, float w, float h)
 	struct rule *css = NULL;
 	struct box *root_box;
 	struct box *win_box;
+	struct style style;
 
 #if 0
 	strcpy(dirname, argv[i]);
@@ -366,18 +375,23 @@ html_layout_document(html_document *doc, float w, float h)
 #endif
 
 	css = fz_parse_css(doc->ctx, NULL, default_css);
-	css = load_css(doc->ctx, css, doc->root);
+	css = load_css(doc->ctx, css, doc->xml);
 
 	print_rules(css);
 
-	root_box = new_box(doc->ctx, NULL, NULL);
-	generate_boxes(doc->ctx, doc->root, root_box, css);
+	style.up = NULL;
+	style.count = 0;
+	root_box = new_box(doc->ctx, NULL);
 
-	win_box = new_box(doc->ctx, NULL, NULL);
+	generate_boxes(doc->ctx, doc->xml, root_box, css, &style);
+
+	win_box = new_box(doc->ctx, NULL);
 	win_box->w = w;
 	win_box->h = 0;
 
-	layout_block(doc->ctx, root_box, win_box);
+	layout_block(doc->ctx, root_box, win_box, 12);
 
 	print_box(doc->ctx, root_box, 0);
+
+	doc->box = root_box;
 }

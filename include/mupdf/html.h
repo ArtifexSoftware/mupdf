@@ -4,19 +4,21 @@
 #include "mupdf/fitz.h"
 
 typedef struct html_document_s html_document;
-typedef struct html_page_s html_page;
+typedef struct box html_page;
 
 struct html_document_s
 {
 	fz_document super;
 	fz_context *ctx;
-	fz_xml *root;
+	fz_xml *xml;
+	struct box *box;
 };
 
 html_document *html_open_document(fz_context *ctx, const char *filename);
 html_document *html_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
 void html_layout_document(html_document *doc, float w, float h);
+void html_run_box(fz_context *ctx, struct box *page, fz_device *dev, const fz_matrix *ctm);
 
 enum
 {
@@ -97,6 +99,14 @@ enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
 
 enum { TOP, RIGHT, BOTTOM, LEFT };
 
+enum { N_NUMBER='p', N_SCALE='m', N_PERCENT='%' };
+
+struct number
+{
+	float value;
+	int unit;
+};
+
 struct color
 {
 	unsigned char r, g, b;
@@ -105,24 +115,25 @@ struct color
 struct computed_style
 {
 	int position;
-	float top, right, bottom, left;
-	float margin[4];
-	float padding[4];
-	float border_width[4];
+	struct number top, right, bottom, left;
+	struct number margin[4];
+	struct number padding[4];
+	struct number border_width[4];
 	int border_style;
 	struct color border_color;
 	struct color color;
 	struct color background_color;
 	const char *font_family;
 	int bold, italic, smallcaps;
-	float font_size;
-	float line_height;
+	struct number font_size;
+	struct number line_height;
 	int vertical_align;
 	int text_align;
-	float text_indent;
+	struct number text_indent;
 };
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
-void compute_style(struct computed_style *cstyle, struct style *style, float width);
+void compute_style(struct computed_style *cstyle, struct style *style);
+float from_number(struct number, float em, float width);
 
 #endif
