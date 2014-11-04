@@ -114,22 +114,15 @@ struct color
 
 struct computed_style
 {
-	int position;
-	struct number top, right, bottom, left;
+	struct number font_size;
 	struct number margin[4];
 	struct number padding[4];
-	struct number border_width[4];
-	int border_style;
-	struct color border_color;
-	struct color color;
-	struct color background_color;
+	struct number text_indent;
+	int text_align;
+	int vertical_align;
+	struct number line_height;
 	const char *font_family;
 	int bold, italic, smallcaps;
-	struct number font_size;
-	struct number line_height;
-	int vertical_align;
-	int text_align;
-	struct number text_indent;
 };
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);

@@ -792,22 +792,8 @@ compute_style(struct computed_style *style, struct style *node)
 
 	memset(style, 0, sizeof *style);
 
-	style->position = POS_STATIC;
 	style->text_align = TA_LEFT;
 	style->font_size = make_number(1, N_SCALE);
-
-	value = get_style_property(node, "position");
-	if (value)
-	{
-		if (!strcmp(value->data, "static"))
-			style->position = POS_STATIC;
-		if (!strcmp(value->data, "relative"))
-			style->position = POS_RELATIVE;
-		if (!strcmp(value->data, "absolute"))
-			style->position = POS_ABSOLUTE;
-		if (!strcmp(value->data, "fixed"))
-			style->position = POS_FIXED;
-	}
 
 	value = get_style_property(node, "text-align");
 	if (value)
@@ -890,16 +876,14 @@ void
 print_style(struct computed_style *style)
 {
 	printf("style {\n");
-	printf("\tposition = %d;\n", style->position);
-	printf("\ttext-align = %d;\n", style->text_align);
-	printf("\tfont-family = %s;\n", style->font_family);
-	printf("\tfont-weight = %s;\n", style->bold ? "bold" : "normal");
-	printf("\tfont-style = %s;\n", style->italic ? "italic" : "normal");
-	printf("\tfont-variant = %s;\n", style->smallcaps ? "small-caps" : "normal");
-
 	printf("\tfont-size = %g%c;\n", style->font_size.value, style->font_size.unit);
+	printf("\tfont = %s", style->font_family);
+	printf(" %s", style->bold ? "bold" : "normal");
+	printf(" %s", style->italic ? "italic" : "normal");
+	printf(" %s;\n", style->smallcaps ? "small-caps" : "normal");
 	printf("\tline-height = %g%c;\n", style->line_height.value, style->line_height.unit);
 	printf("\ttext-indent = %g%c;\n", style->text_indent.value, style->text_indent.unit);
+	printf("\ttext-align = %d;\n", style->text_align);
 	printf("\tvertical-align = %d;\n", style->vertical_align);
 	printf("\tmargin = %g%c %g%c %g%c %g%c;\n",
 		style->margin[0].value, style->margin[0].unit,
