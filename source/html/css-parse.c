@@ -1,4 +1,3 @@
-#include "mupdf/fitz.h"
 #include "mupdf/html.h"
 
 struct lexbuf

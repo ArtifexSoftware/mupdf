@@ -699,24 +699,6 @@ get_style_property_string(struct style *node, const char *name, const char *init
 	return value->data;
 }
 
-int
-get_style_property_display(struct style *node)
-{
-	struct value *value = get_style_property(node, "display");
-	if (value)
-	{
-		if (!strcmp(value->data, "none"))
-			return DIS_NONE;
-		if (!strcmp(value->data, "inline"))
-			return DIS_INLINE;
-		if (!strcmp(value->data, "block"))
-			return DIS_BLOCK;
-		if (!strcmp(value->data, "list-item"))
-			return DIS_LIST_ITEM;
-	}
-	return DIS_INLINE;
-}
-
 static struct number
 make_number(float v, int u)
 {
@@ -785,6 +767,39 @@ from_number(struct number number, float em, float width)
 	}
 }
 
+int
+get_style_property_display(struct style *node)
+{
+	struct value *value = get_style_property(node, "display");
+	if (value)
+	{
+		if (!strcmp(value->data, "none"))
+			return DIS_NONE;
+		if (!strcmp(value->data, "inline"))
+			return DIS_INLINE;
+		if (!strcmp(value->data, "block"))
+			return DIS_BLOCK;
+		if (!strcmp(value->data, "list-item"))
+			return DIS_LIST_ITEM;
+	}
+	return DIS_INLINE;
+}
+
+int
+get_style_property_white_space(struct style *node)
+{
+	struct value *value = get_style_property(node, "white-space");
+	if (value)
+	{
+		if (!strcmp(value->data, "normal")) return WS_NORMAL;
+		if (!strcmp(value->data, "pre")) return WS_PRE;
+		if (!strcmp(value->data, "nowrap")) return WS_NOWRAP;
+		if (!strcmp(value->data, "pre-wrap")) return WS_PRE_WRAP;
+		if (!strcmp(value->data, "pre-line")) return WS_PRE_LINE;
+	}
+	return WS_NORMAL;
+}
+
 void
 compute_style(struct computed_style *style, struct style *node)
 {
@@ -793,7 +808,11 @@ compute_style(struct computed_style *style, struct style *node)
 	memset(style, 0, sizeof *style);
 
 	style->text_align = TA_LEFT;
+	style->vertical_align = 0;
+	style->white_space = WS_NORMAL;
 	style->font_size = make_number(1, N_SCALE);
+
+	style->white_space = get_style_property_white_space(node);
 
 	value = get_style_property(node, "text-align");
 	if (value)

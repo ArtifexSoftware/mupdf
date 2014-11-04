@@ -96,6 +96,7 @@ struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM };
 enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
+enum { WS_NORMAL, WS_PRE, WS_NOWRAP, WS_PRE_WRAP, WS_PRE_LINE };
 
 enum { TOP, RIGHT, BOTTOM, LEFT };
 
@@ -118,6 +119,7 @@ struct computed_style
 	struct number margin[4];
 	struct number padding[4];
 	struct number text_indent;
+	int white_space;
 	int text_align;
 	int vertical_align;
 	struct number line_height;
