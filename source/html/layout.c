@@ -32,8 +32,8 @@ static const char *default_css =
 
 enum
 {
-	BOX_BLOCK,	/* block-level: contains other block and anonymous boxes */
-	BOX_ANONYMOUS,	/* block-level: contains only inline boxes */
+	BOX_BLOCK,	/* block-level: contains block and flow boxes */
+	BOX_FLOW,	/* block-level: contains only inline boxes */
 	BOX_INLINE,	/* inline-level: contains only inline boxes */
 };
 
@@ -95,7 +95,7 @@ static struct box *insert_block_box(fz_context *ctx, struct box *box, struct box
 	{
 		insert_box(ctx, box, BOX_BLOCK, top);
 	}
-	else if (top->type == BOX_ANONYMOUS)
+	else if (top->type == BOX_FLOW)
 	{
 		while (top->type != BOX_BLOCK)
 			top = top->up;
@@ -114,22 +114,22 @@ static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 {
 	if (top->type == BOX_BLOCK)
 	{
-		if (top->last && top->last->type == BOX_ANONYMOUS)
+		if (top->last && top->last->type == BOX_FLOW)
 		{
 			insert_box(ctx, box, BOX_INLINE, top->last);
 		}
 		else
 		{
-			struct box *anon = new_box(ctx, NULL, &top->style);
-			insert_box(ctx, anon, BOX_ANONYMOUS, top);
-			insert_box(ctx, box, BOX_INLINE, anon);
+			struct box *flow = new_box(ctx, NULL, &top->style);
+			insert_box(ctx, flow, BOX_FLOW, top);
+			insert_box(ctx, box, BOX_INLINE, flow);
 		}
 	}
-	else if (box->type == BOX_ANONYMOUS)
+	else if (top->type == BOX_FLOW)
 	{
 		insert_box(ctx, box, BOX_INLINE, top);
 	}
-	else if (box->type == BOX_INLINE)
+	else if (top->type == BOX_INLINE)
 	{
 		insert_box(ctx, box, BOX_INLINE, top);
 	}
@@ -214,7 +214,7 @@ static void layout_inline(fz_context *ctx, struct box *box, struct box *top)
 	}
 }
 
-static void layout_anonymous(fz_context *ctx, struct box *box, struct box *top)
+static void layout_flow(fz_context *ctx, struct box *box, struct box *top)
 {
 	struct computed_style style;
 	struct box *child;
@@ -251,8 +251,8 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top)
 	{
 		if (child->type == BOX_BLOCK)
 			layout_block(ctx, child, box);
-		else if (child->type == BOX_ANONYMOUS)
-			layout_anonymous(ctx, child, box);
+		else if (child->type == BOX_FLOW)
+			layout_flow(ctx, child, box);
 		box->h += child->h;
 	}
 
@@ -273,7 +273,7 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 		switch (box->type)
 		{
 		case BOX_BLOCK: printf("block"); break;
-		case BOX_ANONYMOUS: printf("anonymous"); break;
+		case BOX_FLOW: printf("flow"); break;
 		case BOX_INLINE: printf("inline"); break;
 		}
 		if (box->node)
