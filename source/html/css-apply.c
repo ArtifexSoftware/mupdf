@@ -801,16 +801,21 @@ get_style_property_white_space(struct style *node)
 }
 
 void
-compute_style(struct computed_style *style, struct style *node)
+default_computed_style(struct computed_style *style)
 {
-	struct value *value;
-
 	memset(style, 0, sizeof *style);
-
 	style->text_align = TA_LEFT;
 	style->vertical_align = 0;
 	style->white_space = WS_NORMAL;
 	style->font_size = make_number(1, N_SCALE);
+}
+
+void
+compute_style(struct computed_style *style, struct style *node)
+{
+	struct value *value;
+
+	default_computed_style(style);
 
 	style->white_space = get_style_property_white_space(node);
 

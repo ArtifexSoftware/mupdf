@@ -56,15 +56,71 @@ enum
 struct flow
 {
 	int type;
+	float x, y, w, h;
 	struct computed_style *style;
 	char *text, *broken_text;
-	float width, broken_width;
 	struct flow *next;
 };
 
 static int iswhite(int c)
 {
 	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
+
+static struct flow *add_flow(fz_context *ctx, struct box *top, struct computed_style *style, int type)
+{
+	struct flow *flow = fz_malloc_struct(ctx, struct flow);
+	flow->type = type;
+	flow->style = style;
+	*top->flow_tail = flow;
+	top->flow_tail = &flow->next;
+	return flow;
+}
+
+static void add_flow_space(fz_context *ctx, struct box *top, struct computed_style *style)
+{
+	struct flow *flow;
+
+	/* delete space at the beginning of the line */
+	if (!top->flow_head)
+		return;
+
+	flow = add_flow(ctx, top, style, FLOW_GLUE);
+	flow->text = " ";
+	flow->broken_text = "";
+}
+
+static void add_flow_word(fz_context *ctx, struct box *top, struct computed_style *style, const char *a, const char *b)
+{
+	struct flow *flow = add_flow(ctx, top, style, FLOW_WORD);
+	flow->text = fz_malloc(ctx, b - a + 1);
+	memcpy(flow->text, a, b - a);
+	flow->text[b - a] = 0;
+}
+
+static void generate_text(fz_context *ctx, struct box *box, const char *text)
+{
+	struct box *flow = box;
+	while (flow->type != BOX_FLOW)
+		flow = flow->up;
+
+	while (*text)
+	{
+		if (iswhite(*text))
+		{
+			++text;
+			while (iswhite(*text))
+				++text;
+			add_flow_space(ctx, flow, &box->style);
+		}
+		if (*text)
+		{
+			const char *mark = text++;
+			while (*text && !iswhite(*text))
+				++text;
+			add_flow_word(ctx, flow, &box->style, mark, text);
+		}
+	}
 }
 
 struct box *new_box(fz_context *ctx, fz_xml *node)
@@ -86,6 +142,8 @@ struct box *new_box(fz_context *ctx, fz_xml *node)
 
 	box->flow_head = NULL;
 	box->flow_tail = &box->flow_head;
+
+	default_computed_style(&box->style);
 
 	return box;
 }
@@ -175,7 +233,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 
 			display = get_style_property_display(&style);
 
-			// TOOD: <br>
+			// TODO: <br>
 			// TODO: <img>
 
 			if (display != DIS_NONE)
@@ -196,11 +254,14 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 
 				if (fz_xml_down(node))
 					generate_boxes(ctx, fz_xml_down(node), box, rule, &style);
+
+				// TODO: remove empty flow boxes
 			}
 		}
 		else
 		{
 			insert_inline_box(ctx, box, top);
+			generate_text(ctx, box, fz_xml_text(node));
 		}
 
 		compute_style(&box->style, &style);
@@ -209,93 +270,18 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 	}
 }
 
-static struct flow *add_flow(fz_context *ctx, struct box *top, struct computed_style *style, int type)
+static void layout_text(fz_context *ctx, struct flow *node, struct box *top, float em)
 {
-	struct flow *flow = fz_malloc_struct(ctx, struct flow);
-	flow->type = type;
-	flow->style = style;
-	*top->flow_tail = flow;
-	top->flow_tail = &flow->next;
-	return flow;
-}
-
-static void add_flow_space(fz_context *ctx, struct box *top, struct computed_style *style, float em)
-{
-	struct flow *flow;
-
-	/* delete space at the beginning of the line */
-	if (!top->flow_head)
-		return;
-
-	flow = add_flow(ctx, top, style, FLOW_GLUE);
-	flow->text = " ";
-	flow->width = 0.5 * em;
-	flow->broken_text = "";
-	flow->broken_width = 0;
-}
-
-static void add_flow_word(fz_context *ctx, struct box *top, struct computed_style *style, float em, const char *a, const char *b)
-{
-	struct flow *flow = add_flow(ctx, top, style, FLOW_WORD);
-	flow->text = fz_malloc(ctx, b - a + 1);
-	memcpy(flow->text, a, b - a);
-	flow->text[b - a] = 0;
-	flow->width = (b - a) * 0.5 * em;
-}
-
-static void layout_text(fz_context *ctx, struct box *top, const char *text, struct computed_style *style, float em)
-{
-	while (*text)
-	{
-		if (iswhite(*text))
-		{
-			++text;
-			while (iswhite(*text))
-				++text;
-			add_flow_space(ctx, top, style, em);
-		}
-		if (*text)
-		{
-			const char *mark = text++;
-			while (*text && !iswhite(*text))
-				++text;
-			add_flow_word(ctx, top, style, em, mark, text);
-		}
-	}
-}
-
-static void layout_inline(fz_context *ctx, struct box *box, struct box *top, float em)
-{
-	struct box *child;
-	const char *s;
-
-	em = from_number(box->style.font_size, em, em);
-
-	box->x = top->x + top->w;
-	box->y = top->y;
-	box->h = em;
-	box->w = 0;
-
-	s = fz_xml_text(box->node);
-	if (s)
-	{
-		layout_text(ctx, top, s, &box->style, em);
-
-		box->w += strlen(s) * 0.5 * em;
-	}
-
-	for (child = box->down; child; child = child->next)
-	{
-		layout_inline(ctx, child, top, em);
-		if (child->h > box->h)
-			box->h = child->h;
-		top->w += child->w;
-	}
+	em = from_number(node->style->font_size, em, em);
+	node->x = top->x + top->w;
+	node->y = top->y;
+	node->h = em;
+	node->w = strlen(node->text) * 0.5 * em;
 }
 
 static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float em)
 {
-	struct box *child;
+	struct flow *node;
 
 	em = from_number(box->style.font_size, em, em);
 
@@ -304,12 +290,12 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 	box->h = 0;
 	box->w = 0;
 
-	for (child = box->down; child; child = child->next)
+	for (node = box->flow_head; node; node = node->next)
 	{
-		layout_inline(ctx, child, box, em);
-		if (child->h > box->h)
-			box->h = child->h;
-		box->w += child->w;
+		layout_text(ctx, node, box, em);
+		if (node->h > box->h)
+			box->h = node->h;
+		box->w += node->w;
 	}
 }
 
@@ -335,10 +321,7 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 		if (child->type == BOX_BLOCK)
 			layout_block(ctx, child, box, em);
 		else if (child->type == BOX_FLOW)
-		{
 			layout_flow(ctx, child, box, em);
-			// TOOD: remove flow box if no flow content
-		}
 		box->h += child->h;
 	}
 
@@ -354,7 +337,7 @@ static void print_flow(fz_context *ctx, struct flow *flow, int level)
 {
 	while (flow)
 	{
-		printf("           ");
+		printf("%-5d %-5d", (int)flow->x, (int)flow->y);
 		indent(level);
 		switch (flow->type)
 		{
@@ -482,13 +465,14 @@ html_layout_document(html_document *doc, float w, float h)
 
 	style.up = NULL;
 	style.count = 0;
-	root_box = new_box(doc->ctx, NULL);
 
-	generate_boxes(doc->ctx, doc->xml, root_box, css, &style);
+	root_box = new_box(doc->ctx, NULL);
 
 	win_box = new_box(doc->ctx, NULL);
 	win_box->w = w;
 	win_box->h = 0;
+
+	generate_boxes(doc->ctx, doc->xml, root_box, css, &style);
 
 	layout_block(doc->ctx, root_box, win_box, 12);
 

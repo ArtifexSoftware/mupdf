@@ -128,6 +128,7 @@ struct computed_style
 };
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
+void default_computed_style(struct computed_style *cstyle);
 void compute_style(struct computed_style *cstyle, struct style *style);
 float from_number(struct number, float em, float width);
 
