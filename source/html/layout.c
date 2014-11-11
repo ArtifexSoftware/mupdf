@@ -317,9 +317,11 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 	}
 }
 
-static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em)
+static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em, float top_collapse_margin)
 {
 	struct box *child;
+	float box_collapse_margin;
+	float bottom;
 
 	em = from_number(box->style.font_size, em, em);
 
@@ -333,7 +335,14 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 	box->padding[2] = from_number(box->style.padding[2], em, top->w);
 	box->padding[3] = from_number(box->style.padding[3], em, top->w);
 
-	// TODO: collapse vertical margins
+	// TODO: collapse top/top and bottom/bottom margins
+
+	box_collapse_margin = 0;
+
+	if (box->margin[TOP] > top_collapse_margin)
+		box->margin[TOP] -= top_collapse_margin;
+	else
+		box->margin[TOP] = 0;
 
 	box->x = top->x + box->margin[LEFT] + box->padding[LEFT];
 	box->y = top->y + top->h + box->margin[TOP] + box->padding[TOP];
@@ -343,10 +352,20 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 	for (child = box->down; child; child = child->next)
 	{
 		if (child->type == BOX_BLOCK)
-			layout_block(ctx, child, box, em);
+		{
+			layout_block(ctx, child, box, em, box_collapse_margin);
+			box->h += child->h + child->padding[TOP] + child->padding[BOTTOM] + child->margin[TOP] + child->margin[BOTTOM];
+			box_collapse_margin = child->margin[BOTTOM];
+		}
 		else if (child->type == BOX_FLOW)
+		{
 			layout_flow(ctx, child, box, em);
-		box->h += child->h + child->padding[TOP] + child->padding[BOTTOM] + child->margin[TOP] + child->margin[BOTTOM];
+			if (child->h > 0)
+			{
+				box->h += child->h;
+				box_collapse_margin = 0;
+			}
+		}
 	}
 }
 
@@ -574,7 +593,7 @@ html_layout_document(html_document *doc, float w, float h)
 
 	generate_boxes(doc->ctx, doc->xml, root_box, css, &style);
 
-	layout_block(doc->ctx, root_box, win_box, 12);
+	layout_block(doc->ctx, root_box, win_box, 12, 0);
 
 	print_box(doc->ctx, root_box, 0);
 
