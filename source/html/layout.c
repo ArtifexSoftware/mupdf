@@ -30,6 +30,8 @@ static const char *default_css =
 "center{text-align:center}"
 "svg{display:none}";
 
+static fz_font *font = NULL;
+
 enum
 {
 	BOX_BLOCK,	/* block-level: contains block and flow boxes */
@@ -40,7 +42,9 @@ enum
 struct box
 {
 	int type;
-	float x, y, w, h;
+	float x, y, w, h; /* content */
+	float padding[4];
+	float margin[4];
 	struct box *up, *down, *last, *next;
 	fz_xml *node;
 	struct flow *flow_head, **flow_tail;
@@ -56,7 +60,7 @@ enum
 struct flow
 {
 	int type;
-	float x, y, w, h;
+	float x, y, w, h, em;
 	struct computed_style *style;
 	char *text, *broken_text;
 	struct flow *next;
@@ -272,11 +276,25 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 
 static void layout_text(fz_context *ctx, struct flow *node, struct box *top, float em)
 {
+	const char *s;
+	int c, g;
+	float w;
+
 	em = from_number(node->style->font_size, em, em);
 	node->x = top->x + top->w;
 	node->y = top->y;
 	node->h = em;
-	node->w = strlen(node->text) * 0.5 * em;
+
+	w = 0;
+	s = node->text;
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+		g = fz_encode_character(ctx, font, c);
+		w += fz_advance_glyph(ctx, font, g) * em;
+	}
+	node->w = w;
+	node->em = em;
 }
 
 static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float em)
@@ -302,18 +320,24 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em)
 {
 	struct box *child;
-	float margin[4];
 
 	em = from_number(box->style.font_size, em, em);
 
-	margin[0] = from_number(box->style.margin[0], em, top->w);
-	margin[1] = from_number(box->style.margin[1], em, top->w);
-	margin[2] = from_number(box->style.margin[2], em, top->w);
-	margin[3] = from_number(box->style.margin[3], em, top->w);
+	box->margin[0] = from_number(box->style.margin[0], em, top->w);
+	box->margin[1] = from_number(box->style.margin[1], em, top->w);
+	box->margin[2] = from_number(box->style.margin[2], em, top->w);
+	box->margin[3] = from_number(box->style.margin[3], em, top->w);
 
-	box->x = top->x + margin[LEFT];
-	box->y = top->y + top->h + margin[TOP];
-	box->w = top->w - (margin[LEFT] + margin[RIGHT]);
+	box->padding[0] = from_number(box->style.padding[0], em, top->w);
+	box->padding[1] = from_number(box->style.padding[1], em, top->w);
+	box->padding[2] = from_number(box->style.padding[2], em, top->w);
+	box->padding[3] = from_number(box->style.padding[3], em, top->w);
+
+	// TODO: collapse vertical margins
+
+	box->x = top->x + box->margin[LEFT] + box->padding[LEFT];
+	box->y = top->y + top->h + box->margin[TOP] + box->padding[TOP];
+	box->w = top->w - (box->margin[LEFT] + box->margin[RIGHT] + box->padding[LEFT] + box->padding[RIGHT]);
 	box->h = 0;
 
 	for (child = box->down; child; child = child->next)
@@ -322,10 +346,8 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 			layout_block(ctx, child, box, em);
 		else if (child->type == BOX_FLOW)
 			layout_flow(ctx, child, box, em);
-		box->h += child->h;
+		box->h += child->h + child->padding[TOP] + child->padding[BOTTOM] + child->margin[TOP] + child->margin[BOTTOM];
 	}
-
-	box->h += margin[BOTTOM];
 }
 
 static void indent(int level)
@@ -376,10 +398,86 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 	}
 }
 
+static void
+draw_flow_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix *ctm)
+{
+	struct flow *node;
+	fz_text *text;
+	fz_matrix trm;
+	const char *s;
+	float black[1];
+	float x, y;
+	int c, g;
+
+	black[0] = 0;
+
+	for (node = box->flow_head; node; node = node->next)
+	{
+		if (node->type == FLOW_WORD)
+		{
+			fz_scale(&trm, node->em, -node->em);
+			text = fz_new_text(ctx, font, &trm, 0);
+
+			x = node->x;
+			y = node->y + node->em * 0.8;
+			s = node->text;
+			while (*s)
+			{
+				s += fz_chartorune(&c, s);
+				g = fz_encode_character(ctx, font, c);
+				fz_add_text(ctx, text, g, c, x, y);
+				x += fz_advance_glyph(ctx, font, g) * node->em;
+			}
+
+			fz_fill_text(dev, text, ctm, fz_device_gray(ctx), black, 1);
+
+			fz_free_text(ctx, text);
+		}
+	}
+}
+
+static void
+draw_block_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix *ctm)
+{
+	fz_path *path;
+	float black[1];
+	float x0, y0, x1, y1;
+
+	// TODO: background fill
+	// TODO: border stroke
+
+	black[0] = 0;
+
+	x0 = box->x - box->padding[LEFT];
+	y0 = box->y - box->padding[TOP];
+	x1 = box->x + box->w + box->padding[RIGHT];
+	y1 = box->y + box->h + box->padding[BOTTOM];
+
+	path = fz_new_path(ctx);
+	fz_moveto(ctx, path, x0, y0);
+	fz_lineto(ctx, path, x1, y0);
+	fz_lineto(ctx, path, x1, y1);
+	fz_lineto(ctx, path, x0, y1);
+	fz_closepath(ctx, path);
+
+	fz_fill_path(dev, path, 0, ctm, fz_device_gray(ctx), black, 0.1);
+
+	fz_free_path(ctx, path);
+
+	for (box = box->down; box; box = box->next)
+	{
+		switch (box->type)
+		{
+		case BOX_BLOCK: draw_block_box(ctx, box, dev, ctm); break;
+		case BOX_FLOW: draw_flow_box(ctx, box, dev, ctm); break;
+		}
+	}
+}
+
 void
 html_run_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix *ctm)
 {
-
+	draw_block_box(ctx, box, dev, ctm);
 }
 
 static char *concat_text(fz_context *ctx, fz_xml *root)
@@ -457,6 +555,8 @@ html_layout_document(html_document *doc, float w, float h)
 	if (s) s[1] = 0;
 	else strcpy(dirname, "./");
 #endif
+
+	font = html_load_font(doc->ctx, "serif", "normal", "normal", "normal");
 
 	css = fz_parse_css(doc->ctx, NULL, default_css);
 	css = load_css(doc->ctx, css, doc->xml);
