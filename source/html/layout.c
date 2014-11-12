@@ -335,9 +335,10 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 	box->padding[2] = from_number(box->style.padding[2], em, top->w);
 	box->padding[3] = from_number(box->style.padding[3], em, top->w);
 
-	// TODO: collapse top/top and bottom/bottom margins
-
-	box_collapse_margin = 0;
+	if (box->padding[TOP] == 0)
+		box_collapse_margin = box->margin[TOP];
+	else
+		box_collapse_margin = 0;
 
 	if (box->margin[TOP] > top_collapse_margin)
 		box->margin[TOP] -= top_collapse_margin;
@@ -365,6 +366,16 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 				box->h += child->h;
 				box_collapse_margin = 0;
 			}
+		}
+	}
+
+	if (box->padding[BOTTOM] == 0)
+	{
+		if (box->margin[BOTTOM] > 0)
+		{
+			box->h -= box_collapse_margin;
+			if (box->margin[BOTTOM] < box_collapse_margin)
+				box->margin[BOTTOM] = box_collapse_margin;
 		}
 	}
 }
