@@ -763,7 +763,7 @@ from_number(struct number number, float em, float width)
 	default:
 	case N_NUMBER: return number.value;
 	case N_SCALE: return number.value * em;
-	case N_PERCENT: return number.value * width;
+	case N_PERCENT: return number.value * 0.01 * width;
 	}
 }
 
