@@ -767,6 +767,17 @@ from_number(struct number number, float em, float width)
 	}
 }
 
+float
+from_number_scale(struct number number, float scale, float em, float width)
+{
+	switch (number.unit) {
+	default:
+	case N_NUMBER: return number.value * scale;
+	case N_SCALE: return number.value * em;
+	case N_PERCENT: return number.value * 0.01 * width;
+	}
+}
+
 int
 get_style_property_display(struct style *node)
 {
@@ -811,7 +822,7 @@ default_computed_style(struct computed_style *style)
 }
 
 void
-compute_style(struct computed_style *style, struct style *node)
+compute_style(html_document *doc, struct computed_style *style, struct style *node)
 {
 	struct value *value;
 
@@ -879,20 +890,7 @@ compute_style(struct computed_style *style, struct style *node)
 		const char *font_variant = get_style_property_string(node, "font-variant", "normal");
 		const char *font_style = get_style_property_string(node, "font-style", "normal");
 		const char *font_weight = get_style_property_string(node, "font-weight", "normal");
-
-		style->font_family = font_family;
-
-		style->smallcaps = 0;
-		if (!strcmp(font_variant, "small-caps"))
-			style->smallcaps = 1;
-
-		style->italic = 0;
-		if (!strcmp(font_style, "italic") || !strcmp(font_style, "oblique"))
-			style->italic = 1;
-
-		style->bold = 0;
-		if (!strcmp(font_weight, "bold") || !strcmp(font_weight, "bolder") || atoi(font_weight) > 400)
-			style->bold = 1;
+		style->font = html_load_font(doc, font_family, font_variant, font_style, font_weight);
 	}
 }
 
@@ -901,10 +899,7 @@ print_style(struct computed_style *style)
 {
 	printf("style {\n");
 	printf("\tfont-size = %g%c;\n", style->font_size.value, style->font_size.unit);
-	printf("\tfont = %s", style->font_family);
-	printf(" %s", style->bold ? "bold" : "normal");
-	printf(" %s", style->italic ? "italic" : "normal");
-	printf(" %s;\n", style->smallcaps ? "small-caps" : "normal");
+	printf("\tfont = %s;\n", style->font->name);
 	printf("\tline-height = %g%c;\n", style->line_height.value, style->line_height.unit);
 	printf("\ttext-indent = %g%c;\n", style->text_indent.value, style->text_indent.unit);
 	printf("\ttext-align = %d;\n", style->text_align);

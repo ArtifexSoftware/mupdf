@@ -11,6 +11,7 @@ struct html_document_s
 	fz_document super;
 	fz_context *ctx;
 	fz_xml *xml;
+	fz_font *fonts[16];
 	struct box *box;
 };
 
@@ -123,13 +124,16 @@ struct computed_style
 	int text_align;
 	int vertical_align;
 	struct number line_height;
-	const char *font_family;
-	int bold, italic, smallcaps;
+	fz_font *font;
 };
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
 void default_computed_style(struct computed_style *cstyle);
-void compute_style(struct computed_style *cstyle, struct style *style);
+void compute_style(html_document *doc, struct computed_style *cstyle, struct style *style);
 float from_number(struct number, float em, float width);
+float from_number_scale(struct number number, float scale, float em, float width);
+
+fz_font *html_load_font(html_document *doc,
+	const char *family, const char *variant, const char *style, const char *weight);
 
 #endif

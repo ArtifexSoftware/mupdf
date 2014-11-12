@@ -1,40 +1,36 @@
 #include "mupdf/html.h"
-#include "mupdf/pdf.h" /* for pdf_lookup_substitute_font */
+#include "mupdf/pdf.h" /* for pdf_lookup_builtin_font */
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-static int ft_is_bold(FT_Face face)
-{
-	return face->style_flags & FT_STYLE_FLAG_BOLD;
-}
-
-static int ft_is_italic(FT_Face face)
-{
-	return face->style_flags & FT_STYLE_FLAG_ITALIC;
-}
+static const char *font_names[16] = {
+	"Times-Roman", "Times-Italic", "Times-Bold", "Times-BoldItalic",
+	"Helvetica", "Helvetica-Oblique", "Helvetica-Bold", "Helvetica-BoldOblique",
+	"Courier", "Courier-Oblique", "Courier-Bold", "Courier-BoldOblique",
+	"Courier", "Courier-Oblique", "Courier-Bold", "Courier-BoldOblique",
+};
 
 fz_font *
-html_load_font(fz_context *ctx,
+html_load_font(html_document *doc,
 	const char *family, const char *variant, const char *style, const char *weight)
 {
+	fz_context *ctx = doc->ctx;
 	unsigned char *data;
 	unsigned int size;
-	fz_font *font;
-
-	int is_bold = !strcmp(weight, "bold");
-	int is_italic = !strcmp(style, "italic");
 
 	int is_mono = !strcmp(family, "monospace");
 	int is_sans = !strcmp(family, "sans-serif");
+	int is_bold = !strcmp(weight, "bold") || !strcmp(weight, "bolder") || atoi(weight) > 400;
+	int is_italic = !strcmp(style, "italic") || !strcmp(style, "oblique");
 
-	// TODO: keep a cache of loaded fonts
+	int idx = is_mono * 8 + is_sans * 4 + is_bold * 2 + is_italic;
+	if (!doc->fonts[idx])
+	{
+		data = pdf_lookup_builtin_font(font_names[idx], &size);
+		if (!data) {
+		printf("data=%p idx=%d s=%s\n", data, idx, font_names[idx]);
+			abort();
+		}
+		doc->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);
+	}
 
-	data = pdf_lookup_substitute_font(is_mono, !is_sans, is_bold, is_italic, &size);
-
-	font = fz_new_font_from_memory(ctx, family, data, size, 0, 1);
-	font->ft_bold = is_bold && !ft_is_bold(font->ft_face);
-	font->ft_italic = is_italic && !ft_is_italic(font->ft_face);
-
-	return font;
+	return doc->fonts[idx];
 }

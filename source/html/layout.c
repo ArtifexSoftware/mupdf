@@ -30,8 +30,6 @@ static const char *default_css =
 "center{text-align:center}"
 "svg{display:none}";
 
-static fz_font *font = NULL;
-
 enum
 {
 	BOX_BLOCK,	/* block-level: contains block and flow boxes */
@@ -218,8 +216,9 @@ static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 	}
 }
 
-static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struct rule *rule, struct style *up_style)
+static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, struct rule *rule, struct style *up_style)
 {
+	fz_context *ctx = doc->ctx;
 	struct style style;
 	struct box *box;
 	int display;
@@ -257,7 +256,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 				}
 
 				if (fz_xml_down(node))
-					generate_boxes(ctx, fz_xml_down(node), box, rule, &style);
+					generate_boxes(doc, fz_xml_down(node), box, rule, &style);
 
 				// TODO: remove empty flow boxes
 			}
@@ -268,60 +267,117 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, struct box *top, struc
 			generate_text(ctx, box, fz_xml_text(node));
 		}
 
-		compute_style(&box->style, &style);
+		compute_style(doc, &box->style, &style);
 
 		node = fz_xml_next(node);
 	}
 }
 
-static void layout_text(fz_context *ctx, struct flow *node, struct box *top, float em)
+static void measure_word(fz_context *ctx, struct flow *node, float em)
 {
 	const char *s;
 	int c, g;
 	float w;
 
 	em = from_number(node->style->font_size, em, em);
-	node->x = top->x + top->w;
-	node->y = top->y;
-	node->h = em;
+	node->x = 0;
+	node->y = 0;
+	node->h = from_number_scale(node->style->line_height, em, em, em);
 
 	w = 0;
 	s = node->text;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		g = fz_encode_character(ctx, font, c);
-		w += fz_advance_glyph(ctx, font, g) * em;
+		g = fz_encode_character(ctx, node->style->font, c);
+		w += fz_advance_glyph(ctx, node->style->font, g) * em;
 	}
 	node->w = w;
 	node->em = em;
 }
 
+static float layout_line(fz_context *ctx, float indent, struct flow *node, struct flow *end, struct box *box)
+{
+	float x = box->x + indent;
+	float y = box->y + box->h;
+	float h = 0;
+
+	while (node != end)
+	{
+		node->x = x;
+		node->y = y;
+		x += node->w;
+		if (node->h > h)
+			h = node->h;
+		node = node->next;
+	}
+
+	return h;
+}
+
 static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float em)
 {
-	struct flow *node;
+	struct flow *node, *first_word, *last_glue;
+	float line_w, line_h;
+	float indent;
 
 	em = from_number(box->style.font_size, em, em);
 
+	indent = from_number(top->style.text_indent, em, top->w);
+
 	box->x = top->x;
 	box->y = top->y + top->h;
-	box->h = 0;
 	box->w = 0;
+	box->h = 0;
 
+	first_word = box->flow_head;
+	last_glue = NULL;
+	line_w = indent;
 	for (node = box->flow_head; node; node = node->next)
 	{
-		layout_text(ctx, node, box, em);
-		if (node->h > box->h)
-			box->h = node->h;
-		box->w += node->w;
+		if (node->type == FLOW_GLUE)
+			last_glue = node;
+
+		measure_word(ctx, node, em);
+		if (last_glue && line_w + node->w > top->w)
+		{
+			line_h = layout_line(ctx, indent, first_word, last_glue, box);
+			if (line_w > box->w)
+				box->w = line_w;
+			box->h += line_h;
+
+			if (node == last_glue && node->next)
+			{
+				node = node->next;
+				measure_word(ctx, node, em);
+			}
+
+			first_word = node;
+			last_glue = NULL;
+			line_w = node->w;
+			indent = 0;
+		}
+		else if (line_w + node->w > top->w)
+		{
+			printf("WARNING: line overflow! (%s)\n", node->text);
+			line_w += node->w;
+		}
+		else
+		{
+			line_w += node->w;
+		}
 	}
+
+	line_h = layout_line(ctx, indent, first_word, NULL, box);
+	if (line_w > box->w)
+		box->w = line_w;
+	box->h += line_h;
 }
 
 static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em, float top_collapse_margin)
 {
 	struct box *child;
 	float box_collapse_margin;
-	float bottom;
 
 	em = from_number(box->style.font_size, em, em);
 
@@ -422,8 +478,8 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 		printf("\n");
 		if (box->down)
 			print_box(ctx, box->down, level + 1);
-		if (box->flow_head)
-			print_flow(ctx, box->flow_head, level + 1);
+//		if (box->flow_head)
+//			print_flow(ctx, box->flow_head, level + 1);
 		box = box->next;
 	}
 }
@@ -446,7 +502,7 @@ draw_flow_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix 
 		if (node->type == FLOW_WORD)
 		{
 			fz_scale(&trm, node->em, -node->em);
-			text = fz_new_text(ctx, font, &trm, 0);
+			text = fz_new_text(ctx, node->style->font, &trm, 0);
 
 			x = node->x;
 			y = node->y + node->em * 0.8;
@@ -454,9 +510,9 @@ draw_flow_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix 
 			while (*s)
 			{
 				s += fz_chartorune(&c, s);
-				g = fz_encode_character(ctx, font, c);
+				g = fz_encode_character(ctx, node->style->font, c);
 				fz_add_text(ctx, text, g, c, x, y);
-				x += fz_advance_glyph(ctx, font, g) * node->em;
+				x += fz_advance_glyph(ctx, node->style->font, g) * node->em;
 			}
 
 			fz_fill_text(dev, text, ctm, fz_device_gray(ctx), black, 1);
@@ -586,8 +642,6 @@ html_layout_document(html_document *doc, float w, float h)
 	else strcpy(dirname, "./");
 #endif
 
-	font = html_load_font(doc->ctx, "serif", "normal", "normal", "normal");
-
 	css = fz_parse_css(doc->ctx, NULL, default_css);
 	css = load_css(doc->ctx, css, doc->xml);
 
@@ -602,7 +656,7 @@ html_layout_document(html_document *doc, float w, float h)
 	win_box->w = w;
 	win_box->h = 0;
 
-	generate_boxes(doc->ctx, doc->xml, root_box, css, &style);
+	generate_boxes(doc, doc->xml, root_box, css, &style);
 
 	layout_block(doc->ctx, root_box, win_box, 12, 0);
 
