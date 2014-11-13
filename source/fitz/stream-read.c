@@ -86,7 +86,6 @@ fz_read_best(fz_stream *stm, int initial, int *truncated)
 			fz_rethrow(ctx);
 		}
 	}
-	fz_trim_buffer(ctx, buf);
 
 	return buf;
 }
