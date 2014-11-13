@@ -408,19 +408,20 @@ static struct value *parse_value(struct lexbuf *buf)
 
 static struct value *parse_value_list(struct lexbuf *buf)
 {
-	struct value *v, *vv;
+	struct value *head, *tail;
 
-	vv = NULL;
+	head = tail = NULL;
 
 	while (buf->lookahead != '}' && buf->lookahead != ';' && buf->lookahead != '!' &&
 			buf->lookahead != ')' && buf->lookahead != EOF)
 	{
-		v = parse_value(buf);
-		v->next = vv;
-		vv = v;
+		if (!head)
+			head = tail = parse_value(buf);
+		else
+			tail = tail->next = parse_value(buf);
 	}
 
-	return vv;
+	return head;
 }
 
 static struct property *parse_declaration(struct lexbuf *buf)
