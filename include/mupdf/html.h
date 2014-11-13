@@ -10,8 +10,10 @@ struct html_document_s
 {
 	fz_document super;
 	fz_context *ctx;
+	char *dirname;
 	fz_xml *xml;
 	fz_font *fonts[16];
+	float page_w, page_h;
 	struct box *box;
 };
 
@@ -19,7 +21,7 @@ html_document *html_open_document(fz_context *ctx, const char *filename);
 html_document *html_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
 void html_layout_document(html_document *doc, float w, float h);
-void html_run_box(fz_context *ctx, struct box *page, fz_device *dev, const fz_matrix *ctm);
+void html_run_box(fz_context *ctx, struct box *box, float offset, fz_device *dev, const fz_matrix *ctm);
 
 enum
 {
@@ -92,6 +94,7 @@ struct value *new_value(int type, const char *value);
 
 int get_style_property_display(struct style *node);
 struct rule *fz_parse_css(fz_context *ctx, struct rule *old, const char *source);
+struct rule *fz_parse_css_file(fz_context *ctx, struct rule *chain, const char *filename);
 struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM };
@@ -135,5 +138,39 @@ float from_number_scale(struct number number, float scale, float em, float width
 
 fz_font *html_load_font(html_document *doc,
 	const char *family, const char *variant, const char *style, const char *weight);
+
+enum
+{
+	BOX_BLOCK,	/* block-level: contains block and flow boxes */
+	BOX_FLOW,	/* block-level: contains only inline boxes */
+	BOX_INLINE,	/* inline-level: contains only inline boxes */
+};
+
+struct box
+{
+	int type;
+	float x, y, w, h; /* content */
+	float padding[4];
+	float margin[4];
+	struct box *up, *down, *last, *next;
+	fz_xml *node;
+	struct flow *flow_head, **flow_tail;
+	struct computed_style style;
+};
+
+enum
+{
+	FLOW_WORD,
+	FLOW_GLUE,
+};
+
+struct flow
+{
+	int type;
+	float x, y, w, h, em;
+	struct computed_style *style;
+	char *text, *broken_text;
+	struct flow *next;
+};
 
 #endif

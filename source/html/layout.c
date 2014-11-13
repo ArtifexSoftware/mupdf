@@ -5,7 +5,7 @@ static const char *default_css =
 "span{display:inline}"
 "li{display:list-item}"
 "head{display:none}"
-"body{margin:0px}"
+"body{margin:1em}"
 "h1{font-size:2em;margin:.67em 0}"
 "h2{font-size:1.5em;margin:.75em 0}"
 "h3{font-size:1.17em;margin:.83em 0}"
@@ -29,40 +29,6 @@ static const char *default_css =
 "u,ins{text-decoration:underline}"
 "center{text-align:center}"
 "svg{display:none}";
-
-enum
-{
-	BOX_BLOCK,	/* block-level: contains block and flow boxes */
-	BOX_FLOW,	/* block-level: contains only inline boxes */
-	BOX_INLINE,	/* inline-level: contains only inline boxes */
-};
-
-struct box
-{
-	int type;
-	float x, y, w, h; /* content */
-	float padding[4];
-	float margin[4];
-	struct box *up, *down, *last, *next;
-	fz_xml *node;
-	struct flow *flow_head, **flow_tail;
-	struct computed_style style;
-};
-
-enum
-{
-	FLOW_WORD,
-	FLOW_GLUE,
-};
-
-struct flow
-{
-	int type;
-	float x, y, w, h, em;
-	struct computed_style *style;
-	char *text, *broken_text;
-	struct flow *next;
-};
 
 static int iswhite(int c)
 {
@@ -561,9 +527,11 @@ draw_block_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix
 }
 
 void
-html_run_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix *ctm)
+html_run_box(fz_context *ctx, struct box *box, float offset, fz_device *dev, const fz_matrix *inctm)
 {
-	draw_block_box(ctx, box, dev, ctm);
+	fz_matrix ctm = *inctm;
+	fz_pre_translate(&ctm, 0, -offset);
+	draw_block_box(ctx, box, dev, &ctm);
 }
 
 static char *concat_text(fz_context *ctx, fz_xml *root)
@@ -591,13 +559,16 @@ static char *concat_text(fz_context *ctx, fz_xml *root)
 	return s;
 }
 
-static struct rule *load_css(fz_context *ctx, struct rule *css, fz_xml *root)
+static struct rule *load_css(html_document *doc, struct rule *css, fz_xml *root)
 {
+	fz_context *ctx = doc->ctx;
 	fz_xml *node;
+	char filename[2048];
+
 	for (node = root; node; node = fz_xml_next(node))
 	{
 		const char *tag = fz_xml_tag(node);
-#if 0
+#if 1
 		if (tag && !strcmp(tag, "link"))
 		{
 			char *rel = fz_xml_att(node, "rel");
@@ -607,9 +578,9 @@ static struct rule *load_css(fz_context *ctx, struct rule *css, fz_xml *root)
 				if ((type && !strcmp(type, "text/css")) || !type)
 				{
 					char *href = fz_xml_att(node, "href");
-					strcpy(filename, dirname);
-					strcat(filename, href);
-					css = css_parse_file(css, filename);
+					fz_strlcpy(filename, doc->dirname, sizeof filename);
+					fz_strlcat(filename, href, sizeof filename);
+					css = fz_parse_css_file(ctx, css, filename);
 				}
 			}
 		}
@@ -621,29 +592,24 @@ static struct rule *load_css(fz_context *ctx, struct rule *css, fz_xml *root)
 			fz_free(ctx, s);
 		}
 		if (fz_xml_down(node))
-			css = load_css(ctx, css, fz_xml_down(node));
+			css = load_css(doc, css, fz_xml_down(node));
 	}
 	return css;
 }
 
 void
-html_layout_document(html_document *doc, float w, float h)
+html_layout_document(html_document *doc, float page_w, float page_h)
 {
 	struct rule *css = NULL;
 	struct box *root_box;
-	struct box *win_box;
+	struct box *page_box;
 	struct style style;
 
-#if 0
-	strcpy(dirname, argv[i]);
-	s = strrchr(dirname, '/');
-	if (!s) s = strrchr(dirname, '\\');
-	if (s) s[1] = 0;
-	else strcpy(dirname, "./");
-#endif
+	doc->page_w = page_w;
+	doc->page_h = page_h;
 
 	css = fz_parse_css(doc->ctx, NULL, default_css);
-	css = load_css(doc->ctx, css, doc->xml);
+	css = load_css(doc, css, doc->xml);
 
 	print_rules(css);
 
@@ -652,15 +618,15 @@ html_layout_document(html_document *doc, float w, float h)
 
 	root_box = new_box(doc->ctx, NULL);
 
-	win_box = new_box(doc->ctx, NULL);
-	win_box->w = w;
-	win_box->h = 0;
+	page_box = new_box(doc->ctx, NULL);
+	page_box->w = page_w;
+	page_box->h = 0;
 
 	generate_boxes(doc, doc->xml, root_box, css, &style);
 
-	layout_block(doc->ctx, root_box, win_box, 12, 0);
+	layout_block(doc->ctx, root_box, page_box, 12, 0);
 
-	print_box(doc->ctx, root_box, 0);
+	// print_box(doc->ctx, root_box, 0);
 
 	doc->box = root_box;
 }

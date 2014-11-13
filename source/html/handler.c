@@ -10,14 +10,21 @@ html_close_document(html_document *doc)
 int
 html_count_pages(html_document *doc)
 {
-	return 1;
+	int count;
+
+	if (!doc->box) html_layout_document(doc, 400, 400);
+
+	count = ceilf(doc->box->h / doc->page_h);
+printf("count pages! %g / %g = %d\n", doc->box->h, doc->page_h, count);
+	return count;
 }
 
 html_page *
 html_load_page(html_document *doc, int number)
 {
-	printf("html: load page %d\n", number);
-	return doc->box;
+printf("load page %d\n", number);
+	if (!doc->box) html_layout_document(doc, 400, 400);
+	return (void*)((intptr_t)number + 1);
 }
 
 void
@@ -28,18 +35,20 @@ html_free_page(html_document *doc, html_page *page)
 fz_rect *
 html_bound_page(html_document *doc, html_page *page, fz_rect *bbox)
 {
+	if (!doc->box) html_layout_document(doc, 400, 400);
 	printf("html: bound page\n");
 	bbox->x0 = bbox->y0 = 0;
-	bbox->x1 = 400;
-	bbox->y1 = 600;
+	bbox->x1 = doc->page_w;
+	bbox->y1 = doc->page_h;
 	return bbox;
 }
 
 void
 html_run_page(html_document *doc, html_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
-	printf("html: run page\n");
-	html_run_box(doc->ctx, page, dev, ctm);
+	int n = ((intptr_t)page) - 1;
+	printf("html: run page %d\n", n);
+	html_run_box(doc->ctx, doc->box, n * doc->page_h, dev, ctm);
 }
 
 html_document *
@@ -50,11 +59,13 @@ html_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	fz_xml *xml;
 
 	buf = fz_read_all(file, 0);
+	fz_write_buffer_byte(ctx, buf, 0);
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 	fz_drop_buffer(ctx, buf);
 
 	doc = fz_malloc_struct(ctx, html_document);
 	doc->ctx = ctx;
+	doc->dirname = NULL;
 
 	doc->super.close = (void*)html_close_document;
 	doc->super.count_pages = (void*)html_count_pages;
@@ -66,8 +77,6 @@ html_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->xml = xml;
 	doc->box = NULL;
 
-	html_layout_document(doc, 400, 600);
-
 	return doc;
 }
 
@@ -76,6 +85,7 @@ html_open_document(fz_context *ctx, const char *filename)
 {
 	fz_stream *file;
 	html_document *doc;
+	char *s;
 
 	file = fz_open_file(ctx, filename);
 	if (!file)
@@ -93,6 +103,12 @@ html_open_document(fz_context *ctx, const char *filename)
 	{
 		fz_rethrow(ctx);
 	}
+
+	doc->dirname = fz_strdup(ctx, filename);
+	s = strrchr(doc->dirname, '/');
+	if (!s) s = strrchr(doc->dirname, '\\');
+	if (s) s[1] = 0;
+	else doc->dirname[0] = 0;
 
 	return doc;
 }
