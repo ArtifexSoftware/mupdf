@@ -262,17 +262,35 @@ static void measure_word(fz_context *ctx, struct flow *node, float em)
 	node->em = em;
 }
 
-static float layout_line(fz_context *ctx, float indent, struct flow *node, struct flow *end, struct box *box)
+static float layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, struct flow *node, struct flow *end, struct box *box)
 {
 	float x = box->x + indent;
 	float y = box->y + box->h;
 	float h = 0;
+	float slop = page_w - line_w;
+	float justify = 0;
+	int n = 0;
+
+	if (align == TA_JUSTIFY)
+	{
+		struct flow *it;
+		for (it = node; it != end; it = it->next)
+			if (it->type == FLOW_GLUE)
+				++n;
+		justify = slop / n;
+	}
+	else if (align == TA_RIGHT)
+		x += slop;
+	else if (align == TA_CENTER)
+		x += slop / 2;
 
 	while (node != end)
 	{
 		node->x = x;
 		node->y = y;
 		x += node->w;
+		if (node->type == FLOW_GLUE)
+			x += justify;
 		if (node->h > h)
 			h = node->h;
 		node = node->next;
@@ -281,63 +299,89 @@ static float layout_line(fz_context *ctx, float indent, struct flow *node, struc
 	return h;
 }
 
+static struct flow *find_next_glue(struct flow *node, float *w)
+{
+	while (node && node->type == FLOW_GLUE)
+	{
+		*w += node->w;
+		node = node->next;
+	}
+	while (node && node->type != FLOW_GLUE)
+	{
+		*w += node->w;
+		node = node->next;
+	}
+	return node;
+}
+
+static struct flow *find_next_word(struct flow *node, float *w)
+{
+	while (node && node->type != FLOW_WORD)
+	{
+		*w += node->w;
+		node = node->next;
+	}
+	return node;
+}
+
 static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float em)
 {
-	struct flow *node, *first_word, *last_glue;
-	float line_w, line_h;
+	struct flow *node, *line_start, *word_start, *word_end, *line_end;
+	float glue_w;
+	float word_w;
+	float line_w;
 	float indent;
+	int align;
 
 	em = from_number(box->style.font_size, em, em);
-
 	indent = from_number(top->style.text_indent, em, top->w);
+	align = top->style.text_align;
 
 	box->x = top->x;
 	box->y = top->y + top->h;
-	box->w = 0;
+	box->w = top->w;
 	box->h = 0;
 
-	first_word = box->flow_head;
-	last_glue = NULL;
-	line_w = indent;
+	if (!box->flow_head)
+		return;
+
 	for (node = box->flow_head; node; node = node->next)
-	{
-		if (node->type == FLOW_GLUE)
-			last_glue = node;
-
 		measure_word(ctx, node, em);
-		if (last_glue && line_w + node->w > top->w)
-		{
-			line_h = layout_line(ctx, indent, first_word, last_glue, box);
-			if (line_w > box->w)
-				box->w = line_w;
-			box->h += line_h;
 
-			if (node == last_glue && node->next)
-			{
-				node = node->next;
-				measure_word(ctx, node, em);
-			}
+	line_start = find_next_word(box->flow_head, &glue_w);
+	line_end = NULL;
 
-			first_word = node;
-			last_glue = NULL;
-			line_w = node->w;
-			indent = 0;
-		}
-		else if (line_w + node->w > top->w)
+	line_w = indent;
+	word_w = 0;
+	word_start = line_start;
+	while (word_start)
+	{
+		word_end = find_next_glue(word_start, &word_w);
+		if (line_w + word_w <= top->w)
 		{
-			printf("WARNING: line overflow! (%s)\n", node->text);
-			line_w += node->w;
+			line_w += word_w;
+			glue_w = 0;
+			line_end = word_end;
+			word_start = find_next_word(word_end, &glue_w);
+			word_w = glue_w;
 		}
 		else
 		{
-			line_w += node->w;
+			box->h += layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
+			line_start = word_start;
+			line_end = NULL;
+			indent = 0;
+			line_w = 0;
+			word_w = 0;
 		}
 	}
 
-	line_h = layout_line(ctx, indent, first_word, NULL, box);
-	if (line_w > box->w)
-		box->w = line_w;
-	box->h += line_h;
+	/* don't justify the last line of a paragraph */
+	if (align == TA_JUSTIFY)
+		align = TA_LEFT;
+
+	if (line_start)
+		box->h += layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
 }
 
 static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em, float top_collapse_margin)
