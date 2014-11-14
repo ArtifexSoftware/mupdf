@@ -35,13 +35,13 @@ static int iswhite(int c)
 
 static int isnmstart(int c)
 {
-	return c == '\\' || c == '_' || (c >= 'a' && c <= 'z') ||
+	return c == '\\' || c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 		(c >= 128 && c <= 255);
 }
 
 static int isnmchar(int c)
 {
-	return c == '\\' || c == '_' || (c >= 'a' && c <= 'z') ||
+	return c == '\\' || c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 		(c >= '0' && c <= '9') || c == '-' || (c >= 128 && c <= 255);
 }
 
@@ -196,6 +196,7 @@ static int css_lex(struct lexbuf *buf)
 
 	while (buf->c)
 	{
+restart:
 		while (iswhite(buf->c))
 			css_lex_next(buf);
 
@@ -213,7 +214,7 @@ static int css_lex(struct lexbuf *buf)
 						while (buf->c == '*')
 							css_lex_next(buf);
 						if (css_lex_accept(buf, '/'))
-							continue;
+							goto restart;
 					}
 					css_lex_next(buf);
 				}
