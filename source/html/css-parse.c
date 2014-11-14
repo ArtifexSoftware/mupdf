@@ -759,7 +759,7 @@ struct rule *fz_parse_css_file(fz_context *ctx, struct rule *chain, const char *
 	{
 		buf = fz_read_all(stm, 0);
 		fz_write_buffer_byte(ctx, buf, 0);
-		chain = fz_parse_css(ctx, chain, buf->data);
+		chain = fz_parse_css(ctx, chain, (char*)buf->data);
 	}
 	fz_always(ctx)
 	{

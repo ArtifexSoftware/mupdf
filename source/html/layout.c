@@ -495,7 +495,7 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 }
 
 static void
-draw_flow_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix *ctm)
+draw_flow_box(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
 	struct flow *node;
 	fz_text *text;
@@ -509,6 +509,9 @@ draw_flow_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix 
 
 	for (node = box->flow_head; node; node = node->next)
 	{
+		if (node->y > page_bot || node->y + node->h < page_top)
+			continue;
+
 		if (node->type == FLOW_WORD)
 		{
 			fz_scale(&trm, node->em, -node->em);
@@ -533,7 +536,7 @@ draw_flow_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix 
 }
 
 static void
-draw_block_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix *ctm)
+draw_block_box(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
 	fz_path *path;
 	float black[1];
@@ -548,6 +551,9 @@ draw_block_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix
 	y0 = box->y - box->padding[TOP];
 	x1 = box->x + box->w + box->padding[RIGHT];
 	y1 = box->y + box->h + box->padding[BOTTOM];
+
+	if (y0 > page_bot || y1 < page_top)
+		return;
 
 	path = fz_new_path(ctx);
 	fz_moveto(ctx, path, x0, y0);
@@ -564,18 +570,18 @@ draw_block_box(fz_context *ctx, struct box *box, fz_device *dev, const fz_matrix
 	{
 		switch (box->type)
 		{
-		case BOX_BLOCK: draw_block_box(ctx, box, dev, ctm); break;
-		case BOX_FLOW: draw_flow_box(ctx, box, dev, ctm); break;
+		case BOX_BLOCK: draw_block_box(ctx, box, page_top, page_bot, dev, ctm); break;
+		case BOX_FLOW: draw_flow_box(ctx, box, page_top, page_bot, dev, ctm); break;
 		}
 	}
 }
 
 void
-html_run_box(fz_context *ctx, struct box *box, float offset, fz_device *dev, const fz_matrix *inctm)
+html_run_box(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *inctm)
 {
 	fz_matrix ctm = *inctm;
-	fz_pre_translate(&ctm, 0, -offset);
-	draw_block_box(ctx, box, dev, &ctm);
+	fz_pre_translate(&ctm, 0, -page_top);
+	draw_block_box(ctx, box, page_top, page_bot, dev, &ctm);
 }
 
 static char *concat_text(fz_context *ctx, fz_xml *root)

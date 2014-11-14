@@ -48,7 +48,7 @@ html_run_page(html_document *doc, html_page *page, fz_device *dev, const fz_matr
 {
 	int n = ((intptr_t)page) - 1;
 	printf("html: run page %d\n", n);
-	html_run_box(doc->ctx, doc->box, n * doc->page_h, dev, ctm);
+	html_run_box(doc->ctx, doc->box, n * doc->page_h, (n+1) * doc->page_h, dev, ctm);
 }
 
 html_document *
