@@ -262,11 +262,22 @@ static void measure_word(fz_context *ctx, struct flow *node, float em)
 	node->em = em;
 }
 
-static float layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, struct flow *node, struct flow *end, struct box *box)
+static float measure_line(struct flow *node, struct flow *end)
+{
+	float h = 0;
+	while (node)
+	{
+		if (node->h > h)
+			h = node->h;
+		node = node->next;
+	}
+	return h;
+}
+
+static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, struct flow *node, struct flow *end, struct box *box)
 {
 	float x = box->x + indent;
 	float y = box->y + box->h;
-	float h = 0;
 	float slop = page_w - line_w;
 	float justify = 0;
 	int n = 0;
@@ -291,12 +302,8 @@ static float layout_line(fz_context *ctx, float indent, float page_w, float line
 		x += node->w;
 		if (node->type == FLOW_GLUE)
 			x += justify;
-		if (node->h > h)
-			h = node->h;
 		node = node->next;
 	}
-
-	return h;
 }
 
 static struct flow *find_next_glue(struct flow *node, float *w)
@@ -324,13 +331,14 @@ static struct flow *find_next_word(struct flow *node, float *w)
 	return node;
 }
 
-static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float em)
+static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float em, float page_h)
 {
 	struct flow *node, *line_start, *word_start, *word_end, *line_end;
 	float glue_w;
 	float word_w;
 	float line_w;
 	float indent;
+	float avail, line_h;
 	int align;
 
 	em = from_number(box->style.font_size, em, em);
@@ -367,7 +375,12 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 		}
 		else
 		{
-			box->h += layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
+			avail = page_h - fmodf(box->y + box->h, page_h);
+			line_h = measure_line(line_start, line_end);
+			if (line_h > avail)
+				box->h += avail;
+			layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
+			box->h += line_h;
 			line_start = word_start;
 			line_end = NULL;
 			indent = 0;
@@ -381,10 +394,17 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 		align = TA_LEFT;
 
 	if (line_start)
-		box->h += layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
+	{
+		avail = page_h - fmodf(box->y + box->h, page_h);
+		line_h = measure_line(line_start, line_end);
+		if (line_h > avail)
+			box->h += avail;
+		layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
+		box->h += line_h;
+	}
 }
 
-static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em, float top_collapse_margin)
+static void layout_block(fz_context *ctx, struct box *box, struct box *top, float em, float top_collapse_margin, float page_h)
 {
 	struct box *child;
 	float box_collapse_margin;
@@ -420,13 +440,13 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 	{
 		if (child->type == BOX_BLOCK)
 		{
-			layout_block(ctx, child, box, em, box_collapse_margin);
+			layout_block(ctx, child, box, em, box_collapse_margin, page_h);
 			box->h += child->h + child->padding[TOP] + child->padding[BOTTOM] + child->margin[TOP] + child->margin[BOTTOM];
 			box_collapse_margin = child->margin[BOTTOM];
 		}
 		else if (child->type == BOX_FLOW)
 		{
-			layout_flow(ctx, child, box, em);
+			layout_flow(ctx, child, box, em, page_h);
 			if (child->h > 0)
 			{
 				box->h += child->h;
@@ -676,7 +696,7 @@ printf("html: parsing style sheets.\n");
 printf("html: applying styles and generating boxes.\n");
 	generate_boxes(doc, doc->xml, root_box, css, &style);
 printf("html: laying out text.\n");
-	layout_block(doc->ctx, root_box, page_box, 12, 0);
+	layout_block(doc->ctx, root_box, page_box, 12, 0, page_h);
 printf("html: finished.\n");
 
 	// print_box(doc->ctx, root_box, 0);
