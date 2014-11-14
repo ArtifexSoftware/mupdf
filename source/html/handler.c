@@ -60,6 +60,8 @@ html_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	buf = fz_read_all(file, 0);
 	fz_write_buffer_byte(ctx, buf, 0);
+
+printf("html: parsing XHTML.\n");
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 	fz_drop_buffer(ctx, buf);
 

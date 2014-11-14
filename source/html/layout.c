@@ -652,10 +652,11 @@ html_layout_document(html_document *doc, float page_w, float page_h)
 	doc->page_w = page_w;
 	doc->page_h = page_h;
 
+printf("html: parsing style sheets.\n");
 	css = fz_parse_css(doc->ctx, NULL, default_css);
 	css = load_css(doc, css, doc->xml);
 
-	print_rules(css);
+	// print_rules(css);
 
 	style.up = NULL;
 	style.count = 0;
@@ -666,9 +667,11 @@ html_layout_document(html_document *doc, float page_w, float page_h)
 	page_box->w = page_w;
 	page_box->h = 0;
 
+printf("html: applying styles and generating boxes.\n");
 	generate_boxes(doc, doc->xml, root_box, css, &style);
-
+printf("html: laying out text.\n");
 	layout_block(doc->ctx, root_box, page_box, 12, 0);
+printf("html: finished.\n");
 
 	// print_box(doc->ctx, root_box, 0);
 
