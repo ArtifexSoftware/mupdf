@@ -156,6 +156,7 @@ struct box
 	fz_xml *node;
 	struct flow *flow_head, **flow_tail;
 	struct computed_style style;
+	int is_first_flow; /* for text-indent */
 };
 
 enum

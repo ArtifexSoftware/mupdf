@@ -22,13 +22,14 @@ static const char *default_css =
 "sub{vertical-align:sub}"
 "sup{vertical-align:super}"
 "s,strike,del{text-decoration:line-through}"
-"hr{border:1px inset}"
+"hr{border-width:1px;border-color:black}"
 "ol,ul,dir,menu,dd{margin-left:40px}"
 "ol{list-style-type:decimal}"
 "ol ul,ul ol,ul ul,ol ol{margin-top:0;margin-bottom:0}"
 "u,ins{text-decoration:underline}"
 "center{text-align:center}"
-"svg{display:none}";
+"svg{display:none}"
+;
 
 static int iswhite(int c)
 {
@@ -168,6 +169,7 @@ static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 		else
 		{
 			struct box *flow = new_box(ctx, NULL);
+			flow->is_first_flow = !top->last;
 			insert_box(ctx, flow, BOX_FLOW, top);
 			insert_box(ctx, box, BOX_INLINE, flow);
 		}
@@ -345,7 +347,7 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 	int align;
 
 	em = from_number(box->style.font_size, em, em);
-	indent = from_number(top->style.text_indent, em, top->w);
+	indent = box->is_first_flow ? from_number(top->style.text_indent, em, top->w) : 0;
 	align = top->style.text_align;
 
 	box->x = top->x;
