@@ -265,7 +265,7 @@ static void measure_word(fz_context *ctx, struct flow *node, float em)
 static float measure_line(struct flow *node, struct flow *end)
 {
 	float h = 0;
-	while (node)
+	while (node != end)
 	{
 		if (node->h > h)
 			h = node->h;
@@ -381,6 +381,7 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 				box->h += avail;
 			layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
 			box->h += line_h;
+			word_start = find_next_word(line_end, &glue_w);
 			line_start = word_start;
 			line_end = NULL;
 			indent = 0;
