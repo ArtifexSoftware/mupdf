@@ -187,6 +187,7 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 	fz_context *ctx = doc->ctx;
 	struct style style;
 	struct box *box;
+	const char *tag;
 	int display;
 
 	while (node)
@@ -194,9 +195,8 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 		style.up = up_style;
 		style.count = 0;
 
-		box = new_box(ctx, node);
-
-		if (fz_xml_tag(node))
+		tag = fz_xml_tag(node);
+		if (tag)
 		{
 			apply_styles(ctx, &style, rule, node);
 
@@ -207,6 +207,8 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 
 			if (display != DIS_NONE)
 			{
+				box = new_box(ctx, node);
+
 				if (display == DIS_BLOCK)
 				{
 					top = insert_block_box(ctx, box, top);
@@ -224,16 +226,17 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 				if (fz_xml_down(node))
 					generate_boxes(doc, fz_xml_down(node), box, rule, &style);
 
+				compute_style(doc, &box->style, &style);
 				// TODO: remove empty flow boxes
 			}
 		}
 		else
 		{
+			box = new_box(ctx, node);
 			insert_inline_box(ctx, box, top);
 			generate_text(ctx, box, fz_xml_text(node));
+			compute_style(doc, &box->style, &style);
 		}
-
-		compute_style(doc, &box->style, &style);
 
 		node = fz_xml_next(node);
 	}
