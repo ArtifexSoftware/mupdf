@@ -594,7 +594,7 @@ static struct selector *parse_adjacent_selector(struct lexbuf *buf)
 	{
 		b = parse_adjacent_selector(buf);
 		s = new_selector(NULL);
-		s->combine = '>';
+		s->combine = '+';
 		s->left = a;
 		s->right = b;
 		return s;

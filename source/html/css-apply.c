@@ -349,7 +349,7 @@ match_selector(struct selector *sel, fz_xml *node)
 		if (sel->combine == '+')
 		{
 			fz_xml *prev = fz_xml_prev(node);
-			while (prev && !fz_xml_tag(prev) && fz_xml_prev(prev))
+			while (prev && !fz_xml_tag(prev))
 				prev = fz_xml_prev(prev);
 			if (!prev)
 				return 0;
