@@ -242,6 +242,10 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 				{
 					top = insert_block_box(ctx, box, top);
 				}
+				else if (display == DIS_LIST_ITEM)
+				{
+					top = insert_block_box(ctx, box, top);
+				}
 				else if (display == DIS_INLINE)
 				{
 					insert_inline_box(ctx, box, top);
@@ -256,6 +260,7 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 					generate_boxes(doc, fz_xml_down(node), box, rule, &style);
 
 				compute_style(doc, &box->style, &style);
+
 				// TODO: remove empty flow boxes
 			}
 		}
