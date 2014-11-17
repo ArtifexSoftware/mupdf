@@ -158,6 +158,27 @@ static struct box *insert_block_box(fz_context *ctx, struct box *box, struct box
 	return top;
 }
 
+static struct box *insert_break_box(fz_context *ctx, struct box *box, struct box *top)
+{
+	if (top->type == BOX_BLOCK)
+	{
+		insert_box(ctx, box, BOX_BREAK, top);
+	}
+	else if (top->type == BOX_FLOW)
+	{
+		while (top->type != BOX_BLOCK)
+			top = top->up;
+		insert_box(ctx, box, BOX_BREAK, top);
+	}
+	else if (top->type == BOX_INLINE)
+	{
+		while (top->type != BOX_BLOCK)
+			top = top->up;
+		insert_box(ctx, box, BOX_BREAK, top);
+	}
+	return top;
+}
+
 static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 {
 	if (top->type == BOX_BLOCK)
@@ -204,10 +225,16 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 
 			display = get_style_property_display(&style);
 
-			// TODO: <br>
+			if (!strcmp(tag, "br"))
+			{
+				box = new_box(ctx, node);
+				top = insert_break_box(ctx, box, top);
+				compute_style(doc, &box->style, &style);
+			}
+
 			// TODO: <img>
 
-			if (display != DIS_NONE)
+			else if (display != DIS_NONE)
 			{
 				box = new_box(ctx, node);
 
@@ -414,6 +441,7 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 {
 	struct box *child;
 	float box_collapse_margin;
+	int prev_br;
 
 	em = from_number(box->style.font_size, em, em);
 
@@ -442,6 +470,7 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 	box->w = top->w - (box->margin[LEFT] + box->margin[RIGHT] + box->padding[LEFT] + box->padding[RIGHT]);
 	box->h = 0;
 
+	prev_br = 0;
 	for (child = box->down; child; child = child->next)
 	{
 		if (child->type == BOX_BLOCK)
@@ -449,6 +478,14 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 			layout_block(ctx, child, box, em, box_collapse_margin, page_h);
 			box->h += child->h + child->padding[TOP] + child->padding[BOTTOM] + child->margin[TOP] + child->margin[BOTTOM];
 			box_collapse_margin = child->margin[BOTTOM];
+			prev_br = 0;
+		}
+		else if (child->type == BOX_BREAK)
+		{
+			/* TODO: interaction with page breaks */
+			if (prev_br)
+				box->h += from_number_scale(box->style.line_height, em, em, em);
+			prev_br = 1;
 		}
 		else if (child->type == BOX_FLOW)
 		{
@@ -457,6 +494,7 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 			{
 				box->h += child->h;
 				box_collapse_margin = 0;
+				prev_br = 0;
 			}
 		}
 	}
@@ -501,6 +539,7 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 		switch (box->type)
 		{
 		case BOX_BLOCK: printf("block"); break;
+		case BOX_BREAK: printf("break"); break;
 		case BOX_FLOW: printf("flow"); break;
 		case BOX_INLINE: printf("inline"); break;
 		}

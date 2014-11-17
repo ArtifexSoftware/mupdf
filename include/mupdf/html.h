@@ -141,7 +141,8 @@ fz_font *html_load_font(html_document *doc,
 
 enum
 {
-	BOX_BLOCK,	/* block-level: contains block and flow boxes */
+	BOX_BLOCK,	/* block-level: contains block, break, and flow boxes */
+	BOX_BREAK,	/* block-level: empty <br> tag boxes */
 	BOX_FLOW,	/* block-level: contains only inline boxes */
 	BOX_INLINE,	/* inline-level: contains only inline boxes */
 };
