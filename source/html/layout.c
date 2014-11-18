@@ -1,5 +1,10 @@
 #include "mupdf/html.h"
 
+#define L LEFT
+#define R RIGHT
+#define T TOP
+#define B BOTTOM
+
 static const char *default_css =
 "html,address,blockquote,body,dd,div,dl,dt,h1,h2,h3,h4,h5,h6,ol,p,ul,center,hr,pre{display:block}"
 "span{display:inline}"
@@ -22,7 +27,7 @@ static const char *default_css =
 "sub{vertical-align:sub}"
 "sup{vertical-align:super}"
 "s,strike,del{text-decoration:line-through}"
-"hr{border-width:1px;border-color:black}"
+"hr{border-width:thin;border-color:black;border-style:solid;margin:.5em 0}"
 "ol,ul,dir,menu,dd{margin-left:40px}"
 "ol{list-style-type:decimal}"
 "ol ul,ul ol,ul ul,ol ol{margin-top:0;margin-bottom:0}"
@@ -448,31 +453,45 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 	float box_collapse_margin;
 	int prev_br;
 
+	float *margin = box->margin;
+	float *border = box->border;
+	float *padding = box->padding;
+
 	em = from_number(box->style.font_size, em, em);
 
-	box->margin[0] = from_number(box->style.margin[0], em, top->w);
-	box->margin[1] = from_number(box->style.margin[1], em, top->w);
-	box->margin[2] = from_number(box->style.margin[2], em, top->w);
-	box->margin[3] = from_number(box->style.margin[3], em, top->w);
+	margin[0] = from_number(box->style.margin[0], em, top->w);
+	margin[1] = from_number(box->style.margin[1], em, top->w);
+	margin[2] = from_number(box->style.margin[2], em, top->w);
+	margin[3] = from_number(box->style.margin[3], em, top->w);
 
-	box->padding[0] = from_number(box->style.padding[0], em, top->w);
-	box->padding[1] = from_number(box->style.padding[1], em, top->w);
-	box->padding[2] = from_number(box->style.padding[2], em, top->w);
-	box->padding[3] = from_number(box->style.padding[3], em, top->w);
+	padding[0] = from_number(box->style.padding[0], em, top->w);
+	padding[1] = from_number(box->style.padding[1], em, top->w);
+	padding[2] = from_number(box->style.padding[2], em, top->w);
+	padding[3] = from_number(box->style.padding[3], em, top->w);
 
-	if (box->padding[TOP] == 0)
-		box_collapse_margin = box->margin[TOP];
+	if (box->style.border_style)
+	{
+		border[0] = from_number(box->style.border_width[0], em, top->w);
+		border[1] = from_number(box->style.border_width[1], em, top->w);
+		border[2] = from_number(box->style.border_width[2], em, top->w);
+		border[3] = from_number(box->style.border_width[3], em, top->w);
+	}
+	else
+		border[0] = border[1] = border[2] = border[3] = 0;
+
+	if (padding[T] == 0 && border[T] == 0)
+		box_collapse_margin = margin[T];
 	else
 		box_collapse_margin = 0;
 
-	if (box->margin[TOP] > top_collapse_margin)
-		box->margin[TOP] -= top_collapse_margin;
+	if (margin[T] > top_collapse_margin)
+		margin[T] -= top_collapse_margin;
 	else
-		box->margin[TOP] = 0;
+		margin[T] = 0;
 
-	box->x = top->x + box->margin[LEFT] + box->padding[LEFT];
-	box->y = top->y + top->h + box->margin[TOP] + box->padding[TOP];
-	box->w = top->w - (box->margin[LEFT] + box->margin[RIGHT] + box->padding[LEFT] + box->padding[RIGHT]);
+	box->x = top->x + margin[L] + border[L] + padding[L];
+	box->y = top->y + top->h + margin[T] + border[T] + padding[T];
+	box->w = top->w - (margin[L] + margin[R] + border[L] + border[R] + padding[L] + padding[R]);
 	box->h = 0;
 
 	prev_br = 0;
@@ -481,8 +500,11 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 		if (child->type == BOX_BLOCK)
 		{
 			layout_block(ctx, child, box, em, box_collapse_margin, page_h);
-			box->h += child->h + child->padding[TOP] + child->padding[BOTTOM] + child->margin[TOP] + child->margin[BOTTOM];
-			box_collapse_margin = child->margin[BOTTOM];
+			box->h += child->h +
+				child->padding[T] + child->padding[B] +
+				child->border[T] + child->border[B] +
+				child->margin[T] + child->margin[B];
+			box_collapse_margin = child->margin[B];
 			prev_br = 0;
 		}
 		else if (child->type == BOX_BREAK)
@@ -504,13 +526,13 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 		}
 	}
 
-	if (box->padding[BOTTOM] == 0)
+	if (padding[B] == 0 && border[B] == 0)
 	{
-		if (box->margin[BOTTOM] > 0)
+		if (margin[B] > 0)
 		{
 			box->h -= box_collapse_margin;
-			if (box->margin[BOTTOM] < box_collapse_margin)
-				box->margin[BOTTOM] = box_collapse_margin;
+			if (margin[B] < box_collapse_margin)
+				margin[B] = box_collapse_margin;
 		}
 	}
 }
@@ -608,40 +630,64 @@ draw_flow_box(fz_context *ctx, struct box *box, float page_top, float page_bot, 
 }
 
 static void
+draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, float *rgba, float x0, float y0, float x1, float y1)
+{
+	fz_path *path = fz_new_path(ctx);
+
+	fz_moveto(ctx, path, x0, y0);
+	fz_lineto(ctx, path, x1, y0);
+	fz_lineto(ctx, path, x1, y1);
+	fz_lineto(ctx, path, x0, y1);
+	fz_closepath(ctx, path);
+
+	fz_fill_path(dev, path, 0, ctm, fz_device_rgb(ctx), rgba, rgba[3]);
+
+	fz_free_path(ctx, path);
+}
+
+static void
 draw_block_box(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
-	fz_path *path;
 	float x0, y0, x1, y1;
+	float color[4];
 
 	// TODO: background fill
 	// TODO: border stroke
 
-	x0 = box->x - box->padding[LEFT];
-	y0 = box->y - box->padding[TOP];
-	x1 = box->x + box->w + box->padding[RIGHT];
-	y1 = box->y + box->h + box->padding[BOTTOM];
+	float *border = box->border;
+	float *padding = box->padding;
+
+	x0 = box->x - padding[L];
+	y0 = box->y - padding[T];
+	x1 = box->x + box->w + padding[R];
+	y1 = box->y + box->h + padding[B];
 
 	if (y0 > page_bot || y1 < page_top)
 		return;
 
 	if (box->style.background_color.a > 0)
 	{
-		float color[3];
-
 		color[0] = box->style.background_color.r / 255.0f;
 		color[1] = box->style.background_color.g / 255.0f;
 		color[2] = box->style.background_color.b / 255.0f;
+		color[3] = box->style.background_color.a / 255.0f;
+		draw_rect(ctx, dev, ctm, color, x0, y0, x1, y1);
+	}
 
-		path = fz_new_path(ctx);
-		fz_moveto(ctx, path, x0, y0);
-		fz_lineto(ctx, path, x1, y0);
-		fz_lineto(ctx, path, x1, y1);
-		fz_lineto(ctx, path, x0, y1);
-		fz_closepath(ctx, path);
-
-		fz_fill_path(dev, path, 0, ctm, fz_device_rgb(ctx), color, box->style.background_color.a / 255.0f);
-
-		fz_free_path(ctx, path);
+	if (box->style.border_color.a > 0)
+	{
+		color[0] = box->style.border_color.r / 255.0f;
+		color[1] = box->style.border_color.g / 255.0f;
+		color[2] = box->style.border_color.b / 255.0f;
+		color[3] = box->style.border_color.a / 255.0f;
+		if (border[T] > 0)
+			draw_rect(ctx, dev, ctm, color, x0 - border[L], y0 - border[T], x1 + border[R], y0);
+		if (border[B] > 0)
+			draw_rect(ctx, dev, ctm, color, x0 - border[L], y1, x1 + border[R], y1 + border[B]);
+		if (border[L] > 0)
+			draw_rect(ctx, dev, ctm, color, x0 - border[L], y0 - border[T], x0, y1 + border[B]);
+		if (border[R] > 0)
+			draw_rect(ctx, dev, ctm, color, x1, y0 - border[T], x1 + border[R], y1 + border[B]);
 	}
 
 	for (box = box->down; box; box = box->next)

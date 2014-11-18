@@ -500,10 +500,10 @@ add_shorthand_border_width(struct style *style, struct value *value, int spec)
 
 	if (n == 1)
 	{
-		add_property(style, "border-top-width", value, spec);
-		add_property(style, "border-right-width", value, spec);
-		add_property(style, "border-bottom-width", value, spec);
-		add_property(style, "border-left-width", value, spec);
+		add_property(style, "border-width-top", value, spec);
+		add_property(style, "border-width-right", value, spec);
+		add_property(style, "border-width-bottom", value, spec);
+		add_property(style, "border-width-left", value, spec);
 	}
 
 	if (n == 2)
@@ -511,10 +511,10 @@ add_shorthand_border_width(struct style *style, struct value *value, int spec)
 		struct value *a = new_value(value->type, value->data);
 		struct value *b = new_value(value->next->type, value->next->data);
 
-		add_property(style, "border-top-width", a, spec);
-		add_property(style, "border-right-width", b, spec);
-		add_property(style, "border-bottom-width", a, spec);
-		add_property(style, "border-left-width", b, spec);
+		add_property(style, "border-width-top", a, spec);
+		add_property(style, "border-width-right", b, spec);
+		add_property(style, "border-width-bottom", a, spec);
+		add_property(style, "border-width-left", b, spec);
 	}
 
 	if (n == 3)
@@ -523,10 +523,10 @@ add_shorthand_border_width(struct style *style, struct value *value, int spec)
 		struct value *b = new_value(value->next->type, value->next->data);
 		struct value *c = new_value(value->next->next->type, value->next->next->data);
 
-		add_property(style, "border-top-width", a, spec);
-		add_property(style, "border-right-width", b, spec);
-		add_property(style, "border-bottom-width", c, spec);
-		add_property(style, "border-left-width", b, spec);
+		add_property(style, "border-width-top", a, spec);
+		add_property(style, "border-width-right", b, spec);
+		add_property(style, "border-width-bottom", c, spec);
+		add_property(style, "border-width-left", b, spec);
 	}
 
 	if (n == 4)
@@ -536,11 +536,16 @@ add_shorthand_border_width(struct style *style, struct value *value, int spec)
 		struct value *c = new_value(value->next->next->type, value->next->next->data);
 		struct value *d = new_value(value->next->next->next->type, value->next->next->next->data);
 
-		add_property(style, "border-top-width", a, spec);
-		add_property(style, "border-right-width", b, spec);
-		add_property(style, "border-bottom-width", c, spec);
-		add_property(style, "border-left-width", d, spec);
+		add_property(style, "border-width-top", a, spec);
+		add_property(style, "border-width-right", b, spec);
+		add_property(style, "border-width-bottom", c, spec);
+		add_property(style, "border-width-left", d, spec);
 	}
+}
+
+static void
+add_shorthand_border(struct style *style, struct value *value, int spec)
+{
 }
 
 static void
@@ -563,10 +568,15 @@ add_property(struct style *style, const char *name, struct value *value, int spe
 		add_shorthand_border_width(style, value, spec);
 		return;
 	}
+	if (!strcmp(name, "border"))
+	{
+		add_shorthand_border(style, value, spec);
+		return;
+	}
 
+	/* shorthand expansions: */
 	/* TODO: border-color */
 	/* TODO: border-style */
-	/* TODO: border */
 	/* TODO: font */
 	/* TODO: list-style */
 	/* TODO: background */
@@ -757,6 +767,23 @@ number_from_property(struct style *node, const char *property, float initial, in
 	return number_from_value(get_style_property(node, property), initial, initial_unit);
 }
 
+static struct number
+border_width_from_property(struct style *node, const char *property)
+{
+	struct value *value = get_style_property(node, property);
+	if (value)
+	{
+		if (!strcmp(value->data, "thin"))
+			return make_number(1, N_NUMBER);
+		if (!strcmp(value->data, "medium"))
+			return make_number(2, N_NUMBER);
+		if (!strcmp(value->data, "thick"))
+			return make_number(4, N_NUMBER);
+		return number_from_value(value, 0, N_NUMBER);
+	}
+	return make_number(2, N_NUMBER); /* initial: 'medium' */
+}
+
 float
 from_number(struct number number, float em, float width)
 {
@@ -798,10 +825,10 @@ static int tohex(int c)
 }
 
 static struct color
-color_from_value(struct value *value)
+color_from_value(struct value *value, struct color initial)
 {
 	if (!value)
-		return make_color(0, 0, 0, 0);
+		return initial;
 	if (value->type == CSS_COLOR)
 	{
 		int r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
@@ -849,13 +876,13 @@ color_from_value(struct value *value)
 			return make_color(0x80, 0x80, 0x80, 255);
 		return make_color(0, 0, 0, 255);
 	}
-	return make_color(0, 0, 0, 0);
+	return initial;
 }
 
 static struct color
-color_from_property(struct style *node, const char *property)
+color_from_property(struct style *node, const char *property, struct color initial)
 {
-	return color_from_value(get_style_property(node, property));
+	return color_from_value(get_style_property(node, property), initial);
 }
 
 int
@@ -899,14 +926,15 @@ default_computed_style(struct computed_style *style)
 	style->vertical_align = 0;
 	style->white_space = WS_NORMAL;
 	style->font_size = make_number(1, N_SCALE);
-	style->background_color = make_color(0, 0, 0, 0);
-	style->color = make_color(0, 0, 0, 255);
 }
 
 void
 compute_style(html_document *doc, struct computed_style *style, struct style *node)
 {
 	struct value *value;
+
+	struct color black = { 0, 0, 0, 255 };
+	struct color transparent = { 0, 0, 0, 0 };
 
 	default_computed_style(style);
 
@@ -967,8 +995,16 @@ compute_style(html_document *doc, struct computed_style *style, struct style *no
 	style->padding[2] = number_from_property(node, "padding-bottom", 0, N_NUMBER);
 	style->padding[3] = number_from_property(node, "padding-left", 0, N_NUMBER);
 
-	style->color = color_from_property(node, "color");
-	style->background_color = color_from_property(node, "background-color");
+	style->border_width[0] = border_width_from_property(node, "border-width-top");
+	style->border_width[1] = border_width_from_property(node, "border-width-right");
+	style->border_width[2] = border_width_from_property(node, "border-width-bottom");
+	style->border_width[3] = border_width_from_property(node, "border-width-left");
+
+	style->color = color_from_property(node, "color", black);
+	style->background_color = color_from_property(node, "background-color", transparent);
+	style->border_color = color_from_property(node, "border-color", style->color);
+
+	style->border_style = !strcmp(get_style_property_string(node, "border-style", "none"), "solid");
 
 	{
 		const char *font_family = get_style_property_string(node, "font-family", "serif");

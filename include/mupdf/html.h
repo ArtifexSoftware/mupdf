@@ -122,12 +122,15 @@ struct computed_style
 	struct number font_size;
 	struct number margin[4];
 	struct number padding[4];
+	struct number border_width[4];
 	struct number text_indent;
 	int white_space;
 	int text_align;
 	int vertical_align;
+	int border_style;
 	struct number line_height;
 	struct color background_color;
+	struct color border_color;
 	struct color color;
 	fz_font *font;
 };
@@ -155,6 +158,7 @@ struct box
 	float x, y, w, h; /* content */
 	float padding[4];
 	float margin[4];
+	float border[4];
 	struct box *up, *down, *last, *next;
 	fz_xml *node;
 	struct flow *flow_head, **flow_tail;
