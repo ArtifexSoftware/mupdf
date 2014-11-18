@@ -230,8 +230,8 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 			if (!strcmp(tag, "br"))
 			{
 				box = new_box(ctx, node);
-				top = insert_break_box(ctx, box, top);
 				compute_style(doc, &box->style, &style);
+				top = insert_break_box(ctx, box, top);
 			}
 
 			// TODO: <img>
@@ -239,6 +239,7 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 			else if (display != DIS_NONE)
 			{
 				box = new_box(ctx, node);
+				compute_style(doc, &box->style, &style);
 
 				if (display == DIS_BLOCK)
 				{
@@ -261,17 +262,22 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 				if (fz_xml_down(node))
 					generate_boxes(doc, fz_xml_down(node), box, rule, &style);
 
-				compute_style(doc, &box->style, &style);
-
 				// TODO: remove empty flow boxes
 			}
 		}
 		else
 		{
-			box = new_box(ctx, node);
-			insert_inline_box(ctx, box, top);
-			generate_text(ctx, box, fz_xml_text(node));
-			compute_style(doc, &box->style, &style);
+			if (top->type != BOX_INLINE)
+			{
+				box = new_box(ctx, node);
+				insert_inline_box(ctx, box, top);
+				box->style = top->style;
+				generate_text(ctx, box, fz_xml_text(node));
+			}
+			else
+			{
+				generate_text(ctx, top, fz_xml_text(node));
+			}
 		}
 
 		node = fz_xml_next(node);
@@ -301,24 +307,29 @@ static void measure_word(fz_context *ctx, struct flow *node, float em)
 	node->em = em;
 }
 
-static float measure_line(struct flow *node, struct flow *end)
+static float measure_line(struct flow *node, struct flow *end, float *baseline)
 {
-	float h = 0;
+	float max_a = 0, max_d = 0, h = 0;
 	while (node != end)
 	{
-		if (node->h > h)
-			h = node->h;
+		float a = node->em * 0.8;
+		float d = node->em * 0.2;
+		if (a > max_a) max_a = a;
+		if (d > max_d) max_d = d;
+		if (node->h > h) h = node->h;
 		node = node->next;
 	}
+	*baseline = max_a + (h - max_a - max_d) / 2;
 	return h;
 }
 
-static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, struct flow *node, struct flow *end, struct box *box)
+static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, struct flow *node, struct flow *end, struct box *box, float baseline)
 {
 	float x = box->x + indent;
 	float y = box->y + box->h;
 	float slop = page_w - line_w;
 	float justify = 0;
+	float va;
 	int n = 0;
 
 	if (align == TA_JUSTIFY)
@@ -336,8 +347,21 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 
 	while (node != end)
 	{
+		switch (node->style->vertical_align)
+		{
+		default:
+		case VA_BASELINE:
+			va = 0;
+			break;
+		case VA_SUB:
+			va = node->em * 0.2f;
+			break;
+		case VA_SUPER:
+			va = node->em * -0.3f;
+			break;
+		}
 		node->x = x;
-		node->y = y;
+		node->y = y + baseline + va;
 		x += node->w;
 		if (node->type == FLOW_GLUE)
 			x += justify;
@@ -378,6 +402,7 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 	float line_w;
 	float indent;
 	float avail, line_h;
+	float baseline;
 	int align;
 
 	em = from_number(box->style.font_size, em, em);
@@ -415,10 +440,10 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 		else
 		{
 			avail = page_h - fmodf(box->y + box->h, page_h);
-			line_h = measure_line(line_start, line_end);
+			line_h = measure_line(line_start, line_end, &baseline);
 			if (line_h > avail)
 				box->h += avail;
-			layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
+			layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box, baseline);
 			box->h += line_h;
 			word_start = find_next_word(line_end, &glue_w);
 			line_start = word_start;
@@ -436,10 +461,10 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 	if (line_start)
 	{
 		avail = page_h - fmodf(box->y + box->h, page_h);
-		line_h = measure_line(line_start, line_end);
+		line_h = measure_line(line_start, line_end, &baseline);
 		if (line_h > avail)
 			box->h += avail;
-		layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box);
+		layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box, baseline);
 		box->h += line_h;
 	}
 }
@@ -570,9 +595,8 @@ static void print_box(fz_context *ctx, struct box *box, int level)
 		if (box->node)
 		{
 			const char *tag = fz_xml_tag(box->node);
-			const char *text = fz_xml_text(box->node);
 			if (tag) printf(" <%s>", tag);
-			if (text) printf(" \"%s\"", text);
+			else printf(" anonymous");
 		}
 		printf("\n");
 		if (box->down)
@@ -605,7 +629,7 @@ draw_flow_box(fz_context *ctx, struct box *box, float page_top, float page_bot, 
 			text = fz_new_text(ctx, node->style->font, &trm, 0);
 
 			x = node->x;
-			y = node->y + node->em * 0.8;
+			y = node->y;
 			s = node->text;
 			while (*s)
 			{
