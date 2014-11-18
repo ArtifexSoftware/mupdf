@@ -1,9 +1,6 @@
 #include "mupdf/html.h"
 
-#define L LEFT
-#define R RIGHT
-#define T TOP
-#define B BOTTOM
+enum { T, R, B, L };
 
 static const char *default_css =
 "html,address,blockquote,body,dd,div,dl,dt,h1,h2,h3,h4,h5,h6,ol,p,ul,center,hr,pre{display:block}"

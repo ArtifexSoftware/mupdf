@@ -984,7 +984,7 @@ default_computed_style(struct computed_style *style)
 {
 	memset(style, 0, sizeof *style);
 	style->text_align = TA_LEFT;
-	style->vertical_align = 0;
+	style->vertical_align = VA_BASELINE;
 	style->white_space = WS_NORMAL;
 	style->font_size = make_number(1, N_SCALE);
 }
@@ -1017,10 +1017,16 @@ compute_style(html_document *doc, struct computed_style *style, struct style *no
 	value = get_style_property(node, "vertical-align");
 	if (value)
 	{
-		if (!strcmp(value->data, "super"))
-			style->vertical_align = 1;
+		if (!strcmp(value->data, "baseline"))
+			style->vertical_align = VA_BASELINE;
 		if (!strcmp(value->data, "sub"))
-			style->vertical_align = -1;
+			style->vertical_align = VA_SUB;
+		if (!strcmp(value->data, "super"))
+			style->vertical_align = VA_SUPER;
+		if (!strcmp(value->data, "top"))
+			style->vertical_align = VA_TOP;
+		if (!strcmp(value->data, "bottom"))
+			style->vertical_align = VA_BOTTOM;
 	}
 
 	value = get_style_property(node, "font-size");
@@ -1040,6 +1046,17 @@ compute_style(html_document *doc, struct computed_style *style, struct style *no
 	else
 	{
 		style->font_size = make_number(1, N_SCALE);
+	}
+
+	value = get_style_property(node, "border-style");
+	if (value)
+	{
+		if (!strcmp(value->data, "none"))
+			style->border_style = BS_NONE;
+		if (!strcmp(value->data, "hidden"))
+			style->border_style = BS_NONE;
+		if (!strcmp(value->data, "solid"))
+			style->border_style = BS_SOLID;
 	}
 
 	style->line_height = number_from_property(node, "line-height", 1.2, N_SCALE);
@@ -1064,8 +1081,6 @@ compute_style(html_document *doc, struct computed_style *style, struct style *no
 	style->color = color_from_property(node, "color", black);
 	style->background_color = color_from_property(node, "background-color", transparent);
 	style->border_color = color_from_property(node, "border-color", style->color);
-
-	style->border_style = !strcmp(get_style_property_string(node, "border-style", "none"), "solid");
 
 	{
 		const char *font_family = get_style_property_string(node, "font-family", "serif");
