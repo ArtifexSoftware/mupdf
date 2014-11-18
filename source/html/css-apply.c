@@ -381,6 +381,19 @@ match_selector(struct selector *sel, fz_xml *node)
  * Annotating nodes with properties and expanding shorthand forms.
  */
 
+static const char *border_width_kw[] = {
+	"thin", "medium", "thick",
+};
+
+static const char *border_style_kw[] = {
+	"none", "hidden", "dotted", "dashed", "solid", "double", "groove", "ridge", "inset", "outset",
+};
+
+static const char *color_kw[] = {
+	"transparent", "maroon", "red", "orange", "yellow", "olive", "purple", "fuchsia", "white",
+	"lime", "green", "navy", "blue", "aqua", "teal", "black", "silver", "gray",
+};
+
 static int
 count_values(struct value *value)
 {
@@ -546,6 +559,54 @@ add_shorthand_border_width(struct style *style, struct value *value, int spec)
 static void
 add_shorthand_border(struct style *style, struct value *value, int spec)
 {
+	int i;
+
+	while (value)
+	{
+		if (value->type == CSS_COLOR)
+		{
+			add_property(style, "border-color", value, spec);
+		}
+		else if (value->type == CSS_KEYWORD)
+		{
+			for (i = 0; i < nelem(border_width_kw); ++i)
+			{
+				if (!strcmp(value->data, border_width_kw[i]))
+				{
+					add_property(style, "border-width-top", value, spec);
+					add_property(style, "border-width-right", value, spec);
+					add_property(style, "border-width-bottom", value, spec);
+					add_property(style, "border-width-left", value, spec);
+					goto next;
+				}
+			}
+			for (i = 0; i < nelem(border_style_kw); ++i)
+			{
+				if (!strcmp(value->data, border_style_kw[i]))
+				{
+					add_property(style, "border-style", value, spec);
+					goto next;
+				}
+			}
+			for (i = 0; i < nelem(color_kw); ++i)
+			{
+				if (!strcmp(value->data, color_kw[i]))
+				{
+					add_property(style, "border-color", value, spec);
+					goto next;
+				}
+			}
+		}
+		else
+		{
+			add_property(style, "border-width-top", value, spec);
+			add_property(style, "border-width-right", value, spec);
+			add_property(style, "border-width-bottom", value, spec);
+			add_property(style, "border-width-left", value, spec);
+		}
+next:
+		value = value->next;
+	}
 }
 
 static void
