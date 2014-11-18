@@ -114,7 +114,7 @@ struct number
 
 struct color
 {
-	unsigned char r, g, b;
+	unsigned char r, g, b, a;
 };
 
 struct computed_style
@@ -127,6 +127,8 @@ struct computed_style
 	int text_align;
 	int vertical_align;
 	struct number line_height;
+	struct color background_color;
+	struct color color;
 	fz_font *font;
 };
 

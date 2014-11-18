@@ -571,11 +571,9 @@ draw_flow_box(fz_context *ctx, struct box *box, float page_top, float page_bot, 
 	fz_text *text;
 	fz_matrix trm;
 	const char *s;
-	float black[1];
+	float color[3];
 	float x, y;
 	int c, g;
-
-	black[0] = 0;
 
 	for (node = box->flow_head; node; node = node->next)
 	{
@@ -598,7 +596,11 @@ draw_flow_box(fz_context *ctx, struct box *box, float page_top, float page_bot, 
 				x += fz_advance_glyph(ctx, node->style->font, g) * node->em;
 			}
 
-			fz_fill_text(dev, text, ctm, fz_device_gray(ctx), black, 1);
+			color[0] = node->style->color.r / 255.0f;
+			color[1] = node->style->color.g / 255.0f;
+			color[2] = node->style->color.b / 255.0f;
+
+			fz_fill_text(dev, text, ctm, fz_device_rgb(ctx), color, 1);
 
 			fz_free_text(ctx, text);
 		}
@@ -609,13 +611,10 @@ static void
 draw_block_box(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
 	fz_path *path;
-	float black[1];
 	float x0, y0, x1, y1;
 
 	// TODO: background fill
 	// TODO: border stroke
-
-	black[0] = 0;
 
 	x0 = box->x - box->padding[LEFT];
 	y0 = box->y - box->padding[TOP];
@@ -625,16 +624,25 @@ draw_block_box(fz_context *ctx, struct box *box, float page_top, float page_bot,
 	if (y0 > page_bot || y1 < page_top)
 		return;
 
-	path = fz_new_path(ctx);
-	fz_moveto(ctx, path, x0, y0);
-	fz_lineto(ctx, path, x1, y0);
-	fz_lineto(ctx, path, x1, y1);
-	fz_lineto(ctx, path, x0, y1);
-	fz_closepath(ctx, path);
+	if (box->style.background_color.a > 0)
+	{
+		float color[3];
 
-	fz_fill_path(dev, path, 0, ctm, fz_device_gray(ctx), black, 0.1);
+		color[0] = box->style.background_color.r / 255.0f;
+		color[1] = box->style.background_color.g / 255.0f;
+		color[2] = box->style.background_color.b / 255.0f;
 
-	fz_free_path(ctx, path);
+		path = fz_new_path(ctx);
+		fz_moveto(ctx, path, x0, y0);
+		fz_lineto(ctx, path, x1, y0);
+		fz_lineto(ctx, path, x1, y1);
+		fz_lineto(ctx, path, x0, y1);
+		fz_closepath(ctx, path);
+
+		fz_fill_path(dev, path, 0, ctm, fz_device_rgb(ctx), color, box->style.background_color.a / 255.0f);
+
+		fz_free_path(ctx, path);
+	}
 
 	for (box = box->down; box; box = box->next)
 	{

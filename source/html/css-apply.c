@@ -751,7 +751,8 @@ number_from_value(struct value *value, float initial, int initial_unit)
 	return make_number(initial, initial_unit);
 }
 
-static struct number number_from_property(struct style *node, const char *property, float initial, int initial_unit)
+static struct number
+number_from_property(struct style *node, const char *property, float initial, int initial_unit)
 {
 	return number_from_value(get_style_property(node, property), initial, initial_unit);
 }
@@ -776,6 +777,85 @@ from_number_scale(struct number number, float scale, float em, float width)
 	case N_SCALE: return number.value * em;
 	case N_PERCENT: return number.value * 0.01 * width;
 	}
+}
+
+static struct color
+make_color(int r, int g, int b, int a)
+{
+	struct color c;
+	c.r = r;
+	c.g = g;
+	c.b = b;
+	c.a = a;
+	return c;
+}
+
+static int tohex(int c)
+{
+	if (c - '0' < 10)
+		return c - '0';
+	return (c | 32) - 'a' + 10;
+}
+
+static struct color
+color_from_value(struct value *value)
+{
+	if (!value)
+		return make_color(0, 0, 0, 0);
+	if (value->type == CSS_COLOR)
+	{
+		int r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
+		int g = tohex(value->data[2]) * 16 + tohex(value->data[3]);
+		int b = tohex(value->data[4]) * 16 + tohex(value->data[5]);
+		return make_color(r, g, b, 255);
+	}
+	if (value->type == CSS_KEYWORD)
+	{
+		if (!strcmp(value->data, "transparent"))
+			return make_color(0, 0, 0, 0);
+		if (!strcmp(value->data, "maroon"))
+			return make_color(0x80, 0x00, 0x00, 255);
+		if (!strcmp(value->data, "red"))
+			return make_color(0xFF, 0x00, 0x00, 255);
+		if (!strcmp(value->data, "orange"))
+			return make_color(0xFF, 0xA5, 0x00, 255);
+		if (!strcmp(value->data, "yellow"))
+			return make_color(0xFF, 0xFF, 0x00, 255);
+		if (!strcmp(value->data, "olive"))
+			return make_color(0x80, 0x80, 0x00, 255);
+		if (!strcmp(value->data, "purple"))
+			return make_color(0x80, 0x00, 0x80, 255);
+		if (!strcmp(value->data, "fuchsia"))
+			return make_color(0xFF, 0x00, 0xFF, 255);
+		if (!strcmp(value->data, "white"))
+			return make_color(0xFF, 0xFF, 0xFF, 255);
+		if (!strcmp(value->data, "lime"))
+			return make_color(0x00, 0xFF, 0x00, 255);
+		if (!strcmp(value->data, "green"))
+			return make_color(0x00, 0x80, 0x00, 255);
+		if (!strcmp(value->data, "navy"))
+			return make_color(0x00, 0x00, 0x80, 255);
+		if (!strcmp(value->data, "blue"))
+			return make_color(0x00, 0x00, 0xFF, 255);
+		if (!strcmp(value->data, "aqua"))
+			return make_color(0x00, 0xFF, 0xFF, 255);
+		if (!strcmp(value->data, "teal"))
+			return make_color(0x00, 0x80, 0x80, 255);
+		if (!strcmp(value->data, "black"))
+			return make_color(0x00, 0x00, 0x00, 255);
+		if (!strcmp(value->data, "silver"))
+			return make_color(0xC0, 0xC0, 0xC0, 255);
+		if (!strcmp(value->data, "gray"))
+			return make_color(0x80, 0x80, 0x80, 255);
+		return make_color(0, 0, 0, 255);
+	}
+	return make_color(0, 0, 0, 0);
+}
+
+static struct color
+color_from_property(struct style *node, const char *property)
+{
+	return color_from_value(get_style_property(node, property));
 }
 
 int
@@ -819,6 +899,8 @@ default_computed_style(struct computed_style *style)
 	style->vertical_align = 0;
 	style->white_space = WS_NORMAL;
 	style->font_size = make_number(1, N_SCALE);
+	style->background_color = make_color(0, 0, 0, 0);
+	style->color = make_color(0, 0, 0, 255);
 }
 
 void
@@ -884,6 +966,9 @@ compute_style(html_document *doc, struct computed_style *style, struct style *no
 	style->padding[1] = number_from_property(node, "padding-right", 0, N_NUMBER);
 	style->padding[2] = number_from_property(node, "padding-bottom", 0, N_NUMBER);
 	style->padding[3] = number_from_property(node, "padding-left", 0, N_NUMBER);
+
+	style->color = color_from_property(node, "color");
+	style->background_color = color_from_property(node, "background-color");
 
 	{
 		const char *font_family = get_style_property_string(node, "font-family", "serif");
