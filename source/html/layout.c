@@ -321,12 +321,18 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 	}
 }
 
-static void measure_image(fz_context *ctx, struct flow *node, float em)
+static void measure_image(fz_context *ctx, struct flow *node, float w, float h)
 {
+	float xs = 1, ys = 1, s = 1;
 	node->x = 0;
 	node->y = 0;
-	node->w = node->image->w;
-	node->h = node->image->h;
+	if (node->image->w > w)
+		xs = w / node->image->w;
+	if (node->image->h > h)
+		ys = h / node->image->h;
+	s = fz_min(xs, ys);
+	node->w = node->image->w * s;
+	node->h = node->image->h * s;
 }
 
 static void measure_word(fz_context *ctx, struct flow *node, float em)
@@ -476,7 +482,7 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 
 	for (node = box->flow_head; node; node = node->next)
 		if (node->type == FLOW_IMAGE)
-			measure_image(ctx, node, em);
+			measure_image(ctx, node, top->w, page_h);
 		else
 			measure_word(ctx, node, em);
 
