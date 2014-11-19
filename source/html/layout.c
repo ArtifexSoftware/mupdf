@@ -69,6 +69,12 @@ static void add_flow_word(fz_context *ctx, struct box *top, struct computed_styl
 	flow->text[b - a] = 0;
 }
 
+static void add_flow_image(fz_context *ctx, struct box *top, struct computed_style *style, fz_image *img)
+{
+	struct flow *flow = add_flow(ctx, top, style, FLOW_IMAGE);
+	flow->image = fz_keep_image(ctx, img);
+}
+
 static void generate_text(fz_context *ctx, struct box *box, const char *text)
 {
 	struct box *flow = box;
@@ -92,6 +98,27 @@ static void generate_text(fz_context *ctx, struct box *box, const char *text)
 			add_flow_word(ctx, flow, &box->style, mark, text);
 		}
 	}
+}
+
+static void generate_image(html_document *doc, struct box *box, const char *src)
+{
+	fz_context *ctx = doc->ctx;
+	fz_image *img;
+	fz_buffer *buf;
+	char filename[2048];
+
+	struct box *flow = box;
+	while (flow->type != BOX_FLOW)
+		flow = flow->up;
+
+	fz_strlcpy(filename, doc->dirname, sizeof filename);
+	fz_strlcat(filename, src, sizeof filename);
+
+	buf = fz_read_file(ctx, filename);
+	img = fz_new_image_from_buffer(ctx, buf);
+	fz_drop_buffer(ctx, buf);
+
+	add_flow_image(ctx, flow, &box->style, img);
 }
 
 struct box *new_box(fz_context *ctx, fz_xml *node)
@@ -234,7 +261,17 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 				top = insert_break_box(ctx, box, top);
 			}
 
-			// TODO: <img>
+			else if (!strcmp(tag, "img"))
+			{
+				const char *src = fz_xml_att(node, "src");
+				if (src)
+				{
+					box = new_box(ctx, node);
+					compute_style(doc, &box->style, &style);
+					insert_inline_box(ctx, box, top);
+					generate_image(doc, box, src);
+				}
+			}
 
 			else if (display != DIS_NONE)
 			{
@@ -284,6 +321,14 @@ static void generate_boxes(html_document *doc, fz_xml *node, struct box *top, st
 	}
 }
 
+static void measure_image(fz_context *ctx, struct flow *node, float em)
+{
+	node->x = 0;
+	node->y = 0;
+	node->w = node->image->w;
+	node->h = node->image->h;
+}
+
 static void measure_word(fz_context *ctx, struct flow *node, float em)
 {
 	const char *s;
@@ -312,11 +357,20 @@ static float measure_line(struct flow *node, struct flow *end, float *baseline)
 	float max_a = 0, max_d = 0, h = 0;
 	while (node != end)
 	{
-		float a = node->em * 0.8;
-		float d = node->em * 0.2;
-		if (a > max_a) max_a = a;
-		if (d > max_d) max_d = d;
+		if (node->type == FLOW_IMAGE)
+		{
+			if (node->h > max_a)
+				max_a = node->h;
+		}
+		else
+		{
+			float a = node->em * 0.8;
+			float d = node->em * 0.2;
+			if (a > max_a) max_a = a;
+			if (d > max_d) max_d = d;
+		}
 		if (node->h > h) h = node->h;
+		if (max_a + max_d > h) h = max_a + max_d;
 		node = node->next;
 	}
 	*baseline = max_a + (h - max_a - max_d) / 2;
@@ -361,7 +415,10 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			break;
 		}
 		node->x = x;
-		node->y = y + baseline + va;
+		if (node->type == FLOW_IMAGE)
+			node->y = y + baseline - node->h;
+		else
+			node->y = y + baseline + va;
 		x += node->w;
 		if (node->type == FLOW_GLUE)
 			x += justify;
@@ -386,7 +443,7 @@ static struct flow *find_next_glue(struct flow *node, float *w)
 
 static struct flow *find_next_word(struct flow *node, float *w)
 {
-	while (node && node->type != FLOW_WORD)
+	while (node && node->type == FLOW_GLUE)
 	{
 		*w += node->w;
 		node = node->next;
@@ -418,7 +475,10 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 		return;
 
 	for (node = box->flow_head; node; node = node->next)
-		measure_word(ctx, node, em);
+		if (node->type == FLOW_IMAGE)
+			measure_image(ctx, node, em);
+		else
+			measure_word(ctx, node, em);
 
 	line_start = find_next_word(box->flow_head, &glue_w);
 	line_end = NULL;
@@ -574,6 +634,7 @@ static void print_flow(fz_context *ctx, struct flow *flow, int level)
 		{
 		case FLOW_WORD: printf("word \"%s\"\n", flow->text); break;
 		case FLOW_GLUE: printf("glue \"%s\" / \"%s\"\n", flow->text, flow->broken_text); break;
+		case FLOW_IMAGE: printf("image\n"); break;
 		}
 		flow = flow->next;
 	}
@@ -620,8 +681,16 @@ draw_flow_box(fz_context *ctx, struct box *box, float page_top, float page_bot, 
 
 	for (node = box->flow_head; node; node = node->next)
 	{
-		if (node->y > page_bot || node->y + node->h < page_top)
-			continue;
+		if (node->type == FLOW_IMAGE)
+		{
+			if (node->y > page_bot || node->y + node->h < page_top)
+				continue;
+		}
+		else
+		{
+			if (node->y > page_bot || node->y < page_top)
+				continue;
+		}
 
 		if (node->type == FLOW_WORD)
 		{
@@ -646,6 +715,13 @@ draw_flow_box(fz_context *ctx, struct box *box, float page_top, float page_bot, 
 			fz_fill_text(dev, text, ctm, fz_device_rgb(ctx), color, 1);
 
 			fz_free_text(ctx, text);
+		}
+		else if (node->type == FLOW_IMAGE)
+		{
+			fz_matrix local_ctm = *ctm;
+			fz_pre_translate(&local_ctm, node->x, node->y);
+			fz_pre_scale(&local_ctm, node->w, node->h);
+			fz_fill_image(dev, node->image, &local_ctm, 1);
 		}
 	}
 }

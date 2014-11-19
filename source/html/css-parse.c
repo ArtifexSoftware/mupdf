@@ -749,22 +749,16 @@ struct rule *fz_parse_css(fz_context *ctx, struct rule *chain, const char *sourc
 
 struct rule *fz_parse_css_file(fz_context *ctx, struct rule *chain, const char *filename)
 {
-	fz_stream *stm = NULL;
-	fz_buffer *buf = NULL;
+	fz_buffer *buf = fz_read_file(ctx, filename);
 
-	fz_var(buf);
-
-	stm = fz_open_file(ctx, filename);
 	fz_try(ctx)
 	{
-		buf = fz_read_all(stm, 0);
 		fz_write_buffer_byte(ctx, buf, 0);
 		chain = fz_parse_css(ctx, chain, (char*)buf->data);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, buf);
-		fz_close(stm);
 	}
 	fz_catch(ctx)
 	{

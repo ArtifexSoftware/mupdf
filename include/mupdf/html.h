@@ -170,6 +170,7 @@ enum
 {
 	FLOW_WORD,
 	FLOW_GLUE,
+	FLOW_IMAGE,
 };
 
 struct flow
@@ -178,6 +179,7 @@ struct flow
 	float x, y, w, h, em;
 	struct computed_style *style;
 	char *text, *broken_text;
+	fz_image *image;
 	struct flow *next;
 };
 
