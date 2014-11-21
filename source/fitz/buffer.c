@@ -135,7 +135,7 @@ void fz_write_buffer(fz_context *ctx, fz_buffer *buf, const void *data, int len)
 
 void fz_write_buffer_byte(fz_context *ctx, fz_buffer *buf, int val)
 {
-	if (buf->len > buf->cap)
+	if (buf->len + 1 > buf->cap)
 		fz_grow_buffer(ctx, buf);
 	buf->data[buf->len++] = val;
 	buf->unused_bits = 0;
