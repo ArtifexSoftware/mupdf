@@ -15,7 +15,7 @@ html_count_pages(html_document *doc)
 {
 	int count;
 
-	if (!doc->box) html_layout_document(doc, DEFW, DEFH);
+	if (!doc->box) html_layout_document(doc, DEFW, DEFH, 12);
 
 	count = ceilf(doc->box->h / doc->page_h);
 printf("count pages! %g / %g = %d\n", doc->box->h, doc->page_h, count);
@@ -26,7 +26,7 @@ html_page *
 html_load_page(html_document *doc, int number)
 {
 printf("load page %d\n", number);
-	if (!doc->box) html_layout_document(doc, DEFW, DEFH);
+	if (!doc->box) html_layout_document(doc, DEFW, DEFH, 12);
 	return (void*)((intptr_t)number + 1);
 }
 
@@ -38,7 +38,7 @@ html_free_page(html_document *doc, html_page *page)
 fz_rect *
 html_bound_page(html_document *doc, html_page *page, fz_rect *bbox)
 {
-	if (!doc->box) html_layout_document(doc, DEFW, DEFH);
+	if (!doc->box) html_layout_document(doc, DEFW, DEFH, 12);
 	printf("html: bound page\n");
 	bbox->x0 = bbox->y0 = 0;
 	bbox->x1 = doc->page_w;
@@ -73,6 +73,7 @@ printf("html: parsing XHTML.\n");
 	doc->dirname = NULL;
 
 	doc->super.close = (void*)html_close_document;
+	doc->super.layout = (void*)html_layout_document;
 	doc->super.count_pages = (void*)html_count_pages;
 	doc->super.load_page = (void*)html_load_page;
 	doc->super.bound_page = (void*)html_bound_page;

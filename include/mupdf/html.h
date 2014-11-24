@@ -20,7 +20,7 @@ struct html_document_s
 html_document *html_open_document(fz_context *ctx, const char *filename);
 html_document *html_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
-void html_layout_document(html_document *doc, float w, float h);
+void html_layout_document(html_document *doc, float w, float h, float em);
 void html_run_box(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
 
 enum

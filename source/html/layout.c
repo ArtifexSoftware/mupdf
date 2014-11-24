@@ -875,7 +875,7 @@ static struct rule *load_css(html_document *doc, struct rule *css, fz_xml *root)
 }
 
 void
-html_layout_document(html_document *doc, float page_w, float page_h)
+html_layout_document(html_document *doc, float page_w, float page_h, float em)
 {
 	struct rule *css = NULL;
 	struct box *root_box;
@@ -900,10 +900,12 @@ printf("html: parsing style sheets.\n");
 	page_box->w = page_w;
 	page_box->h = 0;
 
+	// TODO: split generate and layout
+
 printf("html: applying styles and generating boxes.\n");
 	generate_boxes(doc, doc->xml, root_box, css, &style);
 printf("html: laying out text.\n");
-	layout_block(doc->ctx, root_box, page_box, 12, 0, page_h);
+	layout_block(doc->ctx, root_box, page_box, em, 0, page_h);
 printf("html: finished.\n");
 
 	// print_box(doc->ctx, root_box, 0);
