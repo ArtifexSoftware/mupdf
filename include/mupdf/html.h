@@ -3,25 +3,22 @@
 
 #include "mupdf/fitz.h"
 
-typedef struct html_document_s html_document;
-typedef struct box html_page;
+typedef struct html_context_s html_context;
 
-struct html_document_s
+struct html_context_s
 {
-	fz_document super;
-	fz_context *ctx;
-	char *dirname;
-	fz_xml *xml;
+	fz_archive *zip;
 	fz_font *fonts[16];
-	float page_w, page_h;
-	struct box *box;
+	float page_w, page_h, em;
 };
 
-html_document *html_open_document(fz_context *ctx, const char *filename);
-html_document *html_open_document_with_stream(fz_context *ctx, fz_stream *file);
+void html_init(fz_context *ctx, html_context *htx, fz_archive *zip);
+void html_fini(fz_context *ctx, html_context *htx);
+void html_rebind(html_context *htx, fz_context *ctx);
 
-void html_layout_document(html_document *doc, float w, float h, float em);
-void html_run_box(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
+struct box *html_generate(fz_context *ctx, html_context *htx, const char *base_uri, fz_buffer *buf);
+void html_layout(fz_context *ctx, html_context *htx, struct box *box, float w, float h, float em);
+void html_draw(fz_context *ctx, html_context *htx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
 
 enum
 {
@@ -137,11 +134,11 @@ struct computed_style
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
 void default_computed_style(struct computed_style *cstyle);
-void compute_style(html_document *doc, struct computed_style *cstyle, struct style *style);
+void compute_style(fz_context *ctx, html_context *htx, struct computed_style *cstyle, struct style *style);
 float from_number(struct number, float em, float width);
 float from_number_scale(struct number number, float scale, float em, float width);
 
-fz_font *html_load_font(html_document *doc,
+fz_font *html_load_font(fz_context *ctx, html_context *htx,
 	const char *family, const char *variant, const char *style, const char *weight);
 
 enum

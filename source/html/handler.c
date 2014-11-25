@@ -2,125 +2,141 @@
 
 #define DEFW (450)
 #define DEFH (600)
+#define DEFEM (12)
 
-void
-html_close_document(html_document *doc)
+typedef struct html_document_s html_document;
+
+struct html_document_s
+{
+	fz_document super;
+	fz_context *ctx;
+	html_context htx;
+	struct box *box;
+};
+
+static void
+htdoc_close_document(html_document *doc)
 {
 	fz_context *ctx = doc->ctx;
+	html_fini(ctx, &doc->htx);
 	fz_free(ctx, doc);
 }
 
-int
-html_count_pages(html_document *doc)
+static int
+htdoc_count_pages(html_document *doc)
 {
 	int count;
 
-	if (!doc->box) html_layout_document(doc, DEFW, DEFH, 12);
+	// TODO: reflow
 
-	count = ceilf(doc->box->h / doc->page_h);
-printf("count pages! %g / %g = %d\n", doc->box->h, doc->page_h, count);
+	count = ceilf(doc->box->h / doc->htx.page_h);
+printf("count pages! %g / %g = %d\n", doc->box->h, doc->htx.page_h, count);
 	return count;
 }
 
-html_page *
-html_load_page(html_document *doc, int number)
+static void *
+htdoc_load_page(html_document *doc, int number)
 {
 printf("load page %d\n", number);
-	if (!doc->box) html_layout_document(doc, DEFW, DEFH, 12);
+	// TODO: reflow
 	return (void*)((intptr_t)number + 1);
 }
 
-void
-html_free_page(html_document *doc, html_page *page)
+static void
+htdoc_free_page(html_document *doc, void *page)
 {
 }
 
-fz_rect *
-html_bound_page(html_document *doc, html_page *page, fz_rect *bbox)
+static void
+htdoc_layout(html_document *doc, float w, float h, float em)
 {
-	if (!doc->box) html_layout_document(doc, DEFW, DEFH, 12);
+	html_layout(doc->ctx, &doc->htx, doc->box, w, h, em);
+}
+
+static fz_rect *
+htdoc_bound_page(html_document *doc, void *page, fz_rect *bbox)
+{
+	// TODO: reflow
 	printf("html: bound page\n");
 	bbox->x0 = bbox->y0 = 0;
-	bbox->x1 = doc->page_w;
-	bbox->y1 = doc->page_h;
+	bbox->x1 = doc->htx.page_w;
+	bbox->y1 = doc->htx.page_h;
 	return bbox;
 }
 
-void
-html_run_page(html_document *doc, html_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+static void
+htdoc_run_page(html_document *doc, void *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	int n = ((intptr_t)page) - 1;
 	printf("html: run page %d\n", n);
-	html_run_box(doc->ctx, doc->box, n * doc->page_h, (n+1) * doc->page_h, dev, ctm);
+	html_draw(doc->ctx, &doc->htx, doc->box, n * doc->htx.page_h, (n+1) * doc->htx.page_h, dev, ctm);
 }
 
-html_document *
-html_open_document_with_stream(fz_context *ctx, fz_stream *file)
+
+static html_document *
+htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	html_document *doc;
+	fz_archive *zip;
 	fz_buffer *buf;
-	fz_xml *xml;
 
-	buf = fz_read_all(file, 0);
-	fz_write_buffer_byte(ctx, buf, 0);
-
-printf("html: parsing XHTML.\n");
-	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
-	fz_drop_buffer(ctx, buf);
+	zip = fz_open_directory(ctx, ".");
 
 	doc = fz_malloc_struct(ctx, html_document);
 	doc->ctx = ctx;
-	doc->dirname = NULL;
+	html_init(ctx, &doc->htx, zip);
 
-	doc->super.close = (void*)html_close_document;
-	doc->super.layout = (void*)html_layout_document;
-	doc->super.count_pages = (void*)html_count_pages;
-	doc->super.load_page = (void*)html_load_page;
-	doc->super.bound_page = (void*)html_bound_page;
-	doc->super.run_page_contents = (void*)html_run_page;
-	doc->super.free_page = (void*)html_free_page;
+	doc->super.close = (void*)htdoc_close_document;
+	doc->super.layout = (void*)htdoc_layout;
+	doc->super.count_pages = (void*)htdoc_count_pages;
+	doc->super.load_page = (void*)htdoc_load_page;
+	doc->super.bound_page = (void*)htdoc_bound_page;
+	doc->super.run_page_contents = (void*)htdoc_run_page;
+	doc->super.free_page = (void*)htdoc_free_page;
 
-	doc->xml = xml;
-	doc->box = NULL;
+	buf = fz_read_all(file, 0);
+	fz_write_buffer_byte(ctx, buf, 0);
+	doc->box = html_generate(ctx, &doc->htx, ".", buf);
+	fz_drop_buffer(ctx, buf);
 
 	return doc;
 }
 
-html_document *
-html_open_document(fz_context *ctx, const char *filename)
+static html_document *
+htdoc_open_document(fz_context *ctx, const char *filename)
 {
-	fz_stream *file;
+	char dirname[2048];
+	fz_archive *zip;
+	fz_buffer *buf;
 	html_document *doc;
-	char *s;
 
-	file = fz_open_file(ctx, filename);
-	if (!file)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
+	fz_dirname(dirname, filename, sizeof dirname);
+	zip = fz_open_directory(ctx, dirname);
 
-	fz_try(ctx)
-	{
-		doc = html_open_document_with_stream(ctx, file);
-	}
-	fz_always(ctx)
-	{
-		fz_close(file);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+	doc = fz_malloc_struct(ctx, html_document);
+	doc->ctx = ctx;
+	html_init(ctx, &doc->htx, zip);
 
-	doc->dirname = fz_strdup(ctx, filename);
-	s = strrchr(doc->dirname, '/');
-	if (!s) s = strrchr(doc->dirname, '\\');
-	if (s) s[1] = 0;
-	else doc->dirname[0] = 0;
+	doc->super.close = (void*)htdoc_close_document;
+	doc->super.layout = (void*)htdoc_layout;
+	doc->super.count_pages = (void*)htdoc_count_pages;
+	doc->super.load_page = (void*)htdoc_load_page;
+	doc->super.bound_page = (void*)htdoc_bound_page;
+	doc->super.run_page_contents = (void*)htdoc_run_page;
+	doc->super.free_page = (void*)htdoc_free_page;
+
+	buf = fz_read_file(ctx, filename);
+	fz_write_buffer_byte(ctx, buf, 0);
+	doc->box = html_generate(ctx, &doc->htx, ".", buf);
+	fz_drop_buffer(ctx, buf);
+
+	htdoc_layout(doc, DEFW, DEFH, DEFEM);
 
 	return doc;
 }
 
 static int
-html_recognize(fz_context *doc, const char *magic)
+htdoc_recognize(fz_context *doc, const char *magic)
 {
 	char *ext = strrchr(magic, '.');
 
@@ -137,7 +153,7 @@ html_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler html_document_handler =
 {
-	(fz_document_recognize_fn *)&html_recognize,
-	(fz_document_open_fn *)&html_open_document,
-	(fz_document_open_with_stream_fn *)&html_open_document_with_stream
+	(fz_document_recognize_fn *)&htdoc_recognize,
+	(fz_document_open_fn *)&htdoc_open_document,
+	(fz_document_open_with_stream_fn *)&htdoc_open_document_with_stream
 };

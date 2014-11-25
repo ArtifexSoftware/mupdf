@@ -9,10 +9,9 @@ static const char *font_names[16] = {
 };
 
 fz_font *
-html_load_font(html_document *doc,
+html_load_font(fz_context *ctx, html_context *htx,
 	const char *family, const char *variant, const char *style, const char *weight)
 {
-	fz_context *ctx = doc->ctx;
 	unsigned char *data;
 	unsigned int size;
 
@@ -22,15 +21,15 @@ html_load_font(html_document *doc,
 	int is_italic = !strcmp(style, "italic") || !strcmp(style, "oblique");
 
 	int idx = is_mono * 8 + is_sans * 4 + is_bold * 2 + is_italic;
-	if (!doc->fonts[idx])
+	if (!htx->fonts[idx])
 	{
 		data = pdf_lookup_builtin_font(font_names[idx], &size);
 		if (!data) {
 		printf("data=%p idx=%d s=%s\n", data, idx, font_names[idx]);
 			abort();
 		}
-		doc->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);
+		htx->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);
 	}
 
-	return doc->fonts[idx];
+	return htx->fonts[idx];
 }
