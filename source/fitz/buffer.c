@@ -44,12 +44,7 @@ fz_buffer *
 fz_keep_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	if (buf)
-	{
-		if (buf->refs == 1 && buf->cap > buf->len+1)
-			fz_resize_buffer(ctx, buf, buf->len);
 		buf->refs ++;
-	}
-
 	return buf;
 }
 
