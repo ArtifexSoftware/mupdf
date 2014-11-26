@@ -3,22 +3,19 @@
 
 #include "mupdf/fitz.h"
 
-typedef struct html_context_s html_context;
+typedef struct fz_html_font_set_s fz_html_font_set;
 
-struct html_context_s
+struct fz_html_font_set_s
 {
-	fz_archive *zip;
 	fz_font *fonts[16];
-	float page_w, page_h, em;
 };
 
-void html_init(fz_context *ctx, html_context *htx, fz_archive *zip);
-void html_fini(fz_context *ctx, html_context *htx);
-void html_rebind(html_context *htx, fz_context *ctx);
+fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
+void fz_free_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 
-struct box *html_generate(fz_context *ctx, html_context *htx, const char *base_uri, fz_buffer *buf);
-void html_layout(fz_context *ctx, html_context *htx, struct box *box, float w, float h, float em);
-void html_draw(fz_context *ctx, html_context *htx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
+struct box *fz_generate_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf);
+void fz_layout_html(fz_context *ctx, struct box *box, float w, float h, float em);
+void fz_draw_html(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
 
 enum
 {
@@ -134,11 +131,11 @@ struct computed_style
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
 void default_computed_style(struct computed_style *cstyle);
-void compute_style(fz_context *ctx, html_context *htx, struct computed_style *cstyle, struct style *style);
+void compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *cstyle, struct style *style);
 float from_number(struct number, float em, float width);
 float from_number_scale(struct number number, float scale, float em, float width);
 
-fz_font *html_load_font(fz_context *ctx, html_context *htx,
+fz_font *fz_html_load_font(fz_context *ctx, fz_html_font_set *set,
 	const char *family, const char *variant, const char *style, const char *weight);
 
 enum

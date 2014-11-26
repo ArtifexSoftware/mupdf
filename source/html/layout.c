@@ -100,7 +100,7 @@ static void generate_text(fz_context *ctx, struct box *box, const char *text)
 	}
 }
 
-static void generate_image(fz_context *ctx, html_context *htx, const char *base_uri, struct box *box, const char *src)
+static void generate_image(fz_context *ctx, fz_archive *zip, const char *base_uri, struct box *box, const char *src)
 {
 	fz_image *img;
 	fz_buffer *buf;
@@ -115,7 +115,7 @@ static void generate_image(fz_context *ctx, html_context *htx, const char *base_
 	fz_strlcat(path, src, sizeof path);
 	fz_cleanname(path);
 
-	buf = fz_read_archive_entry(ctx, htx->zip, path);
+	buf = fz_read_archive_entry(ctx, zip, path);
 	img = fz_new_image_from_buffer(ctx, buf);
 	fz_drop_buffer(ctx, buf);
 
@@ -236,7 +236,7 @@ static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 	}
 }
 
-static void generate_boxes(fz_context *ctx, html_context *htx, const char *base_uri,
+static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri,
 	fz_xml *node, struct box *top, struct rule *rule, struct style *up_style)
 {
 	struct style style;
@@ -259,7 +259,7 @@ static void generate_boxes(fz_context *ctx, html_context *htx, const char *base_
 			if (!strcmp(tag, "br"))
 			{
 				box = new_box(ctx, node);
-				compute_style(ctx, htx, &box->style, &style);
+				compute_style(ctx, set, &box->style, &style);
 				top = insert_break_box(ctx, box, top);
 			}
 
@@ -269,16 +269,16 @@ static void generate_boxes(fz_context *ctx, html_context *htx, const char *base_
 				if (src)
 				{
 					box = new_box(ctx, node);
-					compute_style(ctx, htx, &box->style, &style);
+					compute_style(ctx, set, &box->style, &style);
 					insert_inline_box(ctx, box, top);
-					generate_image(ctx, htx, base_uri, box, src);
+					generate_image(ctx, zip, base_uri, box, src);
 				}
 			}
 
 			else if (display != DIS_NONE)
 			{
 				box = new_box(ctx, node);
-				compute_style(ctx, htx, &box->style, &style);
+				compute_style(ctx, set, &box->style, &style);
 
 				if (display == DIS_BLOCK)
 				{
@@ -299,7 +299,7 @@ static void generate_boxes(fz_context *ctx, html_context *htx, const char *base_
 				}
 
 				if (fz_xml_down(node))
-					generate_boxes(ctx, htx, base_uri, fz_xml_down(node), box, rule, &style);
+					generate_boxes(ctx, set, zip, base_uri, fz_xml_down(node), box, rule, &style);
 
 				// TODO: remove empty flow boxes
 			}
@@ -806,7 +806,7 @@ draw_block_box(fz_context *ctx, struct box *box, float page_top, float page_bot,
 }
 
 void
-html_draw(fz_context *ctx, html_context *htx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *inctm)
+fz_draw_html(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *inctm)
 {
 	fz_matrix ctm = *inctm;
 	fz_pre_translate(&ctm, 0, -page_top);
@@ -838,7 +838,7 @@ static char *concat_text(fz_context *ctx, fz_xml *root)
 	return s;
 }
 
-static struct rule *html_load_css(fz_context *ctx, html_context *htx, const char *base_uri, struct rule *css, fz_xml *root)
+static struct rule *html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, struct rule *css, fz_xml *root)
 {
 	fz_xml *node;
 	fz_buffer *buf;
@@ -863,7 +863,7 @@ static struct rule *html_load_css(fz_context *ctx, html_context *htx, const char
 						fz_strlcat(path, href, sizeof path);
 						fz_cleanname(path);
 
-						buf = fz_read_archive_entry(ctx, htx->zip, path);
+						buf = fz_read_archive_entry(ctx, zip, path);
 						fz_write_buffer_byte(ctx, buf, 0);
 						css = fz_parse_css(ctx, css, (char*)buf->data);
 						fz_drop_buffer(ctx, buf);
@@ -878,18 +878,15 @@ static struct rule *html_load_css(fz_context *ctx, html_context *htx, const char
 			fz_free(ctx, s);
 		}
 		if (fz_xml_down(node))
-			css = html_load_css(ctx, htx, base_uri, css, fz_xml_down(node));
+			css = html_load_css(ctx, zip, base_uri, css, fz_xml_down(node));
 	}
 	return css;
 }
 
 void
-html_layout(fz_context *ctx, html_context *htx, struct box *box, float w, float h, float em)
+fz_layout_html(fz_context *ctx, struct box *box, float w, float h, float em)
 {
 	struct box page_box;
-
-	htx->page_w = w;
-	htx->page_h = h;
 
 	printf("html: laying out text.\n");
 
@@ -903,7 +900,7 @@ html_layout(fz_context *ctx, html_context *htx, struct box *box, float w, float 
 }
 
 struct box *
-html_generate(fz_context *ctx, html_context *htx, const char *base_uri, fz_buffer *buf)
+fz_generate_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf)
 {
 	fz_xml *xml;
 	struct rule *css;
@@ -915,7 +912,7 @@ html_generate(fz_context *ctx, html_context *htx, const char *base_uri, fz_buffe
 
 	printf("html: parsing style sheets.\n");
 	css = fz_parse_css(ctx, NULL, default_css);
-	css = html_load_css(ctx, htx, base_uri, css, xml);
+	css = html_load_css(ctx, zip, base_uri, css, xml);
 
 	// print_rules(css);
 
@@ -925,23 +922,7 @@ html_generate(fz_context *ctx, html_context *htx, const char *base_uri, fz_buffe
 	style.up = NULL;
 	style.count = 0;
 
-	generate_boxes(ctx, htx, base_uri, xml, box, css, &style);
+	generate_boxes(ctx, set, zip, base_uri, xml, box, css, &style);
 
 	return box;
-}
-
-void html_init(fz_context *ctx, html_context *html, fz_archive *zip)
-{
-	memset(html, 0, sizeof *html);
-	html->zip = zip;
-}
-
-void html_rebind(html_context *html, fz_context *ctx)
-{
-	fz_rebind_archive(html->zip, ctx);
-}
-
-void html_fini(fz_context *ctx, html_context *html)
-{
-	fz_close_archive(ctx, html->zip);
 }

@@ -10,16 +10,18 @@ struct html_document_s
 {
 	fz_document super;
 	fz_context *ctx;
-	html_context htx;
+	fz_archive *zip;
+	fz_html_font_set *set;
+	float page_w, page_h, em;
 	struct box *box;
 };
 
 static void
 htdoc_close_document(html_document *doc)
 {
-	fz_context *ctx = doc->ctx;
-	html_fini(ctx, &doc->htx);
-	fz_free(ctx, doc);
+	fz_close_archive(doc->ctx, doc->zip);
+	fz_free_html_font_set(doc->ctx, doc->set);
+	fz_free(doc->ctx, doc);
 }
 
 static int
@@ -29,8 +31,8 @@ htdoc_count_pages(html_document *doc)
 
 	// TODO: reflow
 
-	count = ceilf(doc->box->h / doc->htx.page_h);
-printf("count pages! %g / %g = %d\n", doc->box->h, doc->htx.page_h, count);
+	count = ceilf(doc->box->h / doc->page_h);
+printf("count pages! %g / %g = %d\n", doc->box->h, doc->page_h, count);
 	return count;
 }
 
@@ -50,7 +52,10 @@ htdoc_free_page(html_document *doc, void *page)
 static void
 htdoc_layout(html_document *doc, float w, float h, float em)
 {
-	html_layout(doc->ctx, &doc->htx, doc->box, w, h, em);
+	doc->page_w = w;
+	doc->page_h = h;
+	doc->em = em;
+	fz_layout_html(doc->ctx, doc->box, w, h, em);
 }
 
 static fz_rect *
@@ -59,8 +64,8 @@ htdoc_bound_page(html_document *doc, void *page, fz_rect *bbox)
 	// TODO: reflow
 	printf("html: bound page\n");
 	bbox->x0 = bbox->y0 = 0;
-	bbox->x1 = doc->htx.page_w;
-	bbox->y1 = doc->htx.page_h;
+	bbox->x1 = doc->page_w;
+	bbox->y1 = doc->page_h;
 	return bbox;
 }
 
@@ -69,22 +74,19 @@ htdoc_run_page(html_document *doc, void *page, fz_device *dev, const fz_matrix *
 {
 	int n = ((intptr_t)page) - 1;
 	printf("html: run page %d\n", n);
-	html_draw(doc->ctx, &doc->htx, doc->box, n * doc->htx.page_h, (n+1) * doc->htx.page_h, dev, ctm);
+	fz_draw_html(doc->ctx, doc->box, n * doc->page_h, (n+1) * doc->page_h, dev, ctm);
 }
-
 
 static html_document *
 htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	html_document *doc;
-	fz_archive *zip;
 	fz_buffer *buf;
-
-	zip = fz_open_directory(ctx, ".");
 
 	doc = fz_malloc_struct(ctx, html_document);
 	doc->ctx = ctx;
-	html_init(ctx, &doc->htx, zip);
+	doc->zip = fz_open_directory(ctx, ".");
+	doc->set = fz_new_html_font_set(ctx);
 
 	doc->super.close = (void*)htdoc_close_document;
 	doc->super.layout = (void*)htdoc_layout;
@@ -96,8 +98,10 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	buf = fz_read_all(file, 0);
 	fz_write_buffer_byte(ctx, buf, 0);
-	doc->box = html_generate(ctx, &doc->htx, ".", buf);
+	doc->box = fz_generate_html(ctx, doc->set, doc->zip, ".", buf);
 	fz_drop_buffer(ctx, buf);
+
+	htdoc_layout(doc, DEFW, DEFH, DEFEM);
 
 	return doc;
 }
@@ -106,16 +110,15 @@ static html_document *
 htdoc_open_document(fz_context *ctx, const char *filename)
 {
 	char dirname[2048];
-	fz_archive *zip;
 	fz_buffer *buf;
 	html_document *doc;
 
 	fz_dirname(dirname, filename, sizeof dirname);
-	zip = fz_open_directory(ctx, dirname);
 
 	doc = fz_malloc_struct(ctx, html_document);
 	doc->ctx = ctx;
-	html_init(ctx, &doc->htx, zip);
+	doc->zip = fz_open_directory(ctx, dirname);
+	doc->set = fz_new_html_font_set(ctx);
 
 	doc->super.close = (void*)htdoc_close_document;
 	doc->super.layout = (void*)htdoc_layout;
@@ -127,7 +130,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 
 	buf = fz_read_file(ctx, filename);
 	fz_write_buffer_byte(ctx, buf, 0);
-	doc->box = html_generate(ctx, &doc->htx, ".", buf);
+	doc->box = fz_generate_html(ctx, doc->set, doc->zip, ".", buf);
 	fz_drop_buffer(ctx, buf);
 
 	htdoc_layout(doc, DEFW, DEFH, DEFEM);

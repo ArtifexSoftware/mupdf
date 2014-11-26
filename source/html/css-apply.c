@@ -990,7 +990,7 @@ default_computed_style(struct computed_style *style)
 }
 
 void
-compute_style(fz_context *ctx, html_context *htx, struct computed_style *style, struct style *node)
+compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *style, struct style *node)
 {
 	struct value *value;
 
@@ -1087,7 +1087,7 @@ compute_style(fz_context *ctx, html_context *htx, struct computed_style *style, 
 		const char *font_variant = get_style_property_string(node, "font-variant", "normal");
 		const char *font_style = get_style_property_string(node, "font-style", "normal");
 		const char *font_weight = get_style_property_string(node, "font-weight", "normal");
-		style->font = html_load_font(ctx, htx, font_family, font_variant, font_style, font_weight);
+		style->font = fz_html_load_font(ctx, set, font_family, font_variant, font_style, font_weight);
 	}
 }
 
