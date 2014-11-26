@@ -456,6 +456,7 @@ fz_close_archive(fz_context *ctx, fz_archive *zip)
 	int i;
 	if (zip)
 	{
+		fz_free(ctx, zip->directory);
 		fz_close(zip->file);
 		for (i = 0; i < zip->count; ++i)
 			fz_free(ctx, zip->table[i].name);
