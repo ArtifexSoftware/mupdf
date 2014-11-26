@@ -4,9 +4,8 @@
 #include "mupdf/fitz.h"
 
 typedef struct fz_html_font_set_s fz_html_font_set;
-typedef struct rule fz_css;
-typedef struct property fz_css_property;
-typedef struct box fz_html;
+typedef struct fz_css_rule_s fz_css_rule;
+typedef struct fz_css_match_s fz_css_match;
 
 struct fz_html_font_set_s
 {
@@ -24,11 +23,11 @@ enum
 	CSS_URI,
 };
 
-struct rule
+struct fz_css_rule_s
 {
 	struct selector *selector;
 	struct property *declaration;
-	struct rule *next;
+	fz_css_rule *next;
 };
 
 struct selector
@@ -57,23 +56,23 @@ struct property
 	struct property *next;
 };
 
-struct style
-{
-	struct style *up;
-	int count;
-	struct {
-		const char *name;
-		struct value *value;
-		int spec;
-	} prop[64];
-};
-
 struct value
 {
 	int type;
 	const char *data;
 	struct value *args; /* function arguments */
 	struct value *next;
+};
+
+struct fz_css_match_s
+{
+	fz_css_match *up;
+	int count;
+	struct {
+		const char *name;
+		struct value *value;
+		int spec;
+	} prop[64];
 };
 
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM };
@@ -153,20 +152,14 @@ struct flow
 	struct flow *next;
 };
 
-struct rule *fz_parse_css(fz_context *ctx, struct rule *old, const char *source);
+fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *old, const char *source);
 struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 
-struct rule *fz_new_css_rule(fz_context *ctx, struct selector *selector, struct property *declaration);
-struct selector *fz_new_css_selector(fz_context *ctx, const char *name);
-struct condition *fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val);
-struct property *fz_new_css_property(fz_context *ctx, const char *name, struct value *value, int spec);
-struct value *fz_new_css_value(fz_context *ctx, int type, const char *value);
+void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node);
 
-int fz_get_css_style_property_display(struct style *node);
-
-void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
-void default_computed_style(struct computed_style *cstyle);
-void compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *cstyle, struct style *style);
+int fz_get_css_match_display(fz_css_match *node);
+void fz_default_css_style(fz_context *ctx, struct computed_style *style);
+void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *style, fz_css_match *match);
 
 float fz_from_css_number(struct number, float em, float width);
 float fz_from_css_number_scale(struct number number, float scale, float em, float width);

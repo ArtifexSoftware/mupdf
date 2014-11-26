@@ -148,7 +148,7 @@ static void init_box(fz_context *ctx, struct box *box, fz_xml *node)
 	box->flow_head = NULL;
 	box->flow_tail = &box->flow_head;
 
-	default_computed_style(&box->style);
+	fz_default_css_style(ctx, &box->style);
 }
 
 static struct box *new_box(fz_context *ctx, fz_xml *node)
@@ -247,29 +247,29 @@ static void insert_inline_box(fz_context *ctx, struct box *box, struct box *top)
 }
 
 static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri,
-	fz_xml *node, struct box *top, struct rule *rule, struct style *up_style)
+	fz_xml *node, struct box *top, fz_css_rule *rule, fz_css_match *up_match)
 {
-	struct style style;
+	fz_css_match match;
 	struct box *box;
 	const char *tag;
 	int display;
 
 	while (node)
 	{
-		style.up = up_style;
-		style.count = 0;
+		match.up = up_match;
+		match.count = 0;
 
 		tag = fz_xml_tag(node);
 		if (tag)
 		{
-			apply_styles(ctx, &style, rule, node);
+			fz_match_css(ctx, &match, rule, node);
 
-			display = fz_get_css_style_property_display(&style);
+			display = fz_get_css_match_display(&match);
 
 			if (!strcmp(tag, "br"))
 			{
 				box = new_box(ctx, node);
-				compute_style(ctx, set, &box->style, &style);
+				fz_apply_css_style(ctx, set, &box->style, &match);
 				top = insert_break_box(ctx, box, top);
 			}
 
@@ -279,7 +279,7 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 				if (src)
 				{
 					box = new_box(ctx, node);
-					compute_style(ctx, set, &box->style, &style);
+					fz_apply_css_style(ctx, set, &box->style, &match);
 					insert_inline_box(ctx, box, top);
 					generate_image(ctx, zip, base_uri, box, src);
 				}
@@ -288,7 +288,7 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 			else if (display != DIS_NONE)
 			{
 				box = new_box(ctx, node);
-				compute_style(ctx, set, &box->style, &style);
+				fz_apply_css_style(ctx, set, &box->style, &match);
 
 				if (display == DIS_BLOCK)
 				{
@@ -309,7 +309,7 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 				}
 
 				if (fz_xml_down(node))
-					generate_boxes(ctx, set, zip, base_uri, fz_xml_down(node), box, rule, &style);
+					generate_boxes(ctx, set, zip, base_uri, fz_xml_down(node), box, rule, &match);
 
 				// TODO: remove empty flow boxes
 			}
@@ -848,7 +848,7 @@ static char *concat_text(fz_context *ctx, fz_xml *root)
 	return s;
 }
 
-static struct rule *html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, struct rule *css, fz_xml *root)
+static fz_css_rule *html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rule *css, fz_xml *root)
 {
 	fz_xml *node;
 	fz_buffer *buf;
@@ -913,9 +913,9 @@ struct box *
 fz_generate_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf)
 {
 	fz_xml *xml;
-	struct rule *css;
+	fz_css_rule *css;
 	struct box *box;
-	struct style style;
+	fz_css_match match;
 
 	printf("html: parsing XHTML.\n");
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
@@ -929,10 +929,10 @@ fz_generate_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const 
 	printf("html: applying styles and generating boxes.\n");
 	box = new_box(ctx, NULL);
 
-	style.up = NULL;
-	style.count = 0;
+	match.up = NULL;
+	match.count = 0;
 
-	generate_boxes(ctx, set, zip, base_uri, xml, box, css, &style);
+	generate_boxes(ctx, set, zip, base_uri, xml, box, css, &match);
 
 	return box;
 }

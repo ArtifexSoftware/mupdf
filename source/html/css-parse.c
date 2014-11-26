@@ -1,5 +1,61 @@
 #include "mupdf/html.h"
 
+static fz_css_rule *
+fz_new_css_rule(fz_context *ctx, struct selector *selector, struct property *declaration)
+{
+	fz_css_rule *rule = fz_malloc_struct(ctx, fz_css_rule);
+	rule->selector = selector;
+	rule->declaration = declaration;
+	rule->next = NULL;
+	return rule;
+}
+
+static struct selector *
+fz_new_css_selector(fz_context *ctx, const char *name)
+{
+	struct selector *sel = fz_malloc_struct(ctx, struct selector);
+	sel->name = name ? fz_strdup(ctx, name) : NULL;
+	sel->combine = 0;
+	sel->cond = NULL;
+	sel->left = NULL;
+	sel->right = NULL;
+	sel->next = NULL;
+	return sel;
+}
+
+static struct condition *
+fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val)
+{
+	struct condition *cond = fz_malloc_struct(ctx, struct condition);
+	cond->type = type;
+	cond->key = key ? fz_strdup(ctx, key) : NULL;
+	cond->val = val ? fz_strdup(ctx, val) : NULL;
+	cond->next = NULL;
+	return cond;
+}
+
+static struct property *
+fz_new_css_property(fz_context *ctx, const char *name, struct value *value, int spec)
+{
+	struct property *prop = fz_malloc_struct(ctx, struct property);
+	prop->name = fz_strdup(ctx, name);
+	prop->value = value;
+	prop->spec = spec;
+	prop->next = NULL;
+	return prop;
+}
+
+static struct value *
+fz_new_css_value(fz_context *ctx, int type, const char *data)
+{
+	struct value *val = fz_malloc_struct(ctx, struct value);
+	val->type = type;
+	val->data = fz_strdup(ctx, data);
+	val->args = NULL;
+	val->next = NULL;
+	return val;
+}
+
 struct lexbuf
 {
 	fz_context *ctx;
@@ -648,7 +704,7 @@ static struct selector *parse_selector_list(struct lexbuf *buf)
 	return head;
 }
 
-static struct rule *parse_rule(struct lexbuf *buf)
+static fz_css_rule *parse_rule(struct lexbuf *buf)
 {
 	struct selector *s;
 	struct property *p;
@@ -662,7 +718,7 @@ static struct rule *parse_rule(struct lexbuf *buf)
 
 static void parse_media_list(struct lexbuf *buf)
 {
-	struct rule *r;
+	fz_css_rule *r;
 
 	while (buf->lookahead != '}' && buf->lookahead != EOF)
 	{
@@ -699,9 +755,9 @@ static void parse_at_rule(struct lexbuf *buf)
 	}
 }
 
-static struct rule *parse_stylesheet(struct lexbuf *buf, struct rule *chain)
+static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 {
-	struct rule *rule, **nextp, *tail;
+	fz_css_rule *rule, **nextp, *tail;
 
 	tail = chain;
 	if (tail)
@@ -739,7 +795,7 @@ struct property *fz_parse_css_properties(fz_context *ctx, const char *source)
 	return parse_declaration_list(&buf);
 }
 
-struct rule *fz_parse_css(fz_context *ctx, struct rule *chain, const char *source)
+fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source)
 {
 	struct lexbuf buf;
 	css_lex_init(ctx, &buf, source);

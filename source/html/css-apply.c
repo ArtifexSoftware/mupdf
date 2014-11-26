@@ -1,61 +1,86 @@
 #include "mupdf/html.h"
 
-static void add_property(struct style *style, const char *name, struct value *value, int spec);
+static const char *inherit_list[] = {
+	"color",
+	"direction",
+	"font-family",
+	"font-size",
+	"font-style",
+	"font-variant",
+	"font-weight",
+	"letter-spacing",
+	"line-height",
+	"list-style-image",
+	"list-style-position",
+	"list-style-type",
+	"orphans",
+	"quotes",
+	"text-align",
+	"text-indent",
+	"text-transform",
+	"visibility",
+	"white-space",
+	"widows",
+	"word-spacing",
+};
 
-struct rule *
-fz_new_css_rule(fz_context *ctx, struct selector *selector, struct property *declaration)
-{
-	struct rule *rule = fz_malloc_struct(ctx, struct rule);
-	rule->selector = selector;
-	rule->declaration = declaration;
-	rule->next = NULL;
-	return rule;
-}
+static const char *border_width_kw[] = {
+	"medium",
+	"thick",
+	"thin",
+};
 
-struct selector *
-fz_new_css_selector(fz_context *ctx, const char *name)
-{
-	struct selector *sel = fz_malloc_struct(ctx, struct selector);
-	sel->name = name ? strdup(name) : NULL;
-	sel->combine = 0;
-	sel->cond = NULL;
-	sel->left = NULL;
-	sel->right = NULL;
-	sel->next = NULL;
-	return sel;
-}
+static const char *border_style_kw[] = {
+	"dashed",
+	"dotted",
+	"double",
+	"groove",
+	"hidden",
+	"inset",
+	"none",
+	"outset",
+	"ridge",
+	"solid",
+};
 
-struct condition *
-fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val)
-{
-	struct condition *cond = fz_malloc_struct(ctx, struct condition);
-	cond->type = type;
-	cond->key = key ? strdup(key) : NULL;
-	cond->val = val ? strdup(val) : NULL;
-	cond->next = NULL;
-	return cond;
-}
+static const char *color_kw[] = {
+	"aqua",
+	"black",
+	"blue",
+	"fuchsia",
+	"gray",
+	"green",
+	"lime",
+	"maroon",
+	"navy",
+	"olive",
+	"orange",
+	"purple",
+	"red",
+	"silver",
+	"teal",
+	"transparent",
+	"white",
+	"yellow",
+};
 
-struct property *
-fz_new_css_property(fz_context *ctx, const char *name, struct value *value, int spec)
+static int
+keyword_in_list(const char *name, const char **list, int n)
 {
-	struct property *prop = fz_malloc_struct(ctx, struct property);
-	prop->name = strdup(name);
-	prop->value = value;
-	prop->spec = spec;
-	prop->next = NULL;
-	return prop;
-}
-
-struct value *
-fz_new_css_value(fz_context *ctx, int type, const char *data)
-{
-	struct value *val = fz_malloc_struct(ctx, struct value);
-	val->type = type;
-	val->data = strdup(data);
-	val->args = NULL;
-	val->next = NULL;
-	return val;
+	int l = 0;
+	int r = n - 1;
+	while (l <= r)
+	{
+		int m = (l + r) >> 1;
+		int c = strcmp(name, list[m]);
+		if (c < 0)
+			r = m - 1;
+		else if (c > 0)
+			l = m + 1;
+		else
+			return 1;
+	}
+	return 0;
 }
 
 /*
@@ -150,104 +175,6 @@ selector_specificity(struct selector *sel)
 	int c = count_selector_atts(sel);
 	int d = count_selector_names(sel);
 	return b * 100 + c * 10 + d;
-}
-
-/*
- * Pretty printing
- */
-
-void
-print_value(struct value *val)
-{
-	printf("%s", val->data);
-	if (val->args)
-	{
-		printf("(");
-		print_value(val->args);
-		printf(")");
-	}
-	if (val->next)
-	{
-		printf(" ");
-		print_value(val->next);
-	}
-}
-
-void
-print_property(struct property *prop)
-{
-	printf("\t%s: ", prop->name);
-	print_value(prop->value);
-	printf(" !%d;\n", prop->spec);
-}
-
-void
-print_condition(struct condition *cond)
-{
-	if (cond->type == '=')
-		printf("[%s=%s]", cond->key, cond->val);
-	else if (cond->type == '[')
-		printf("[%s]", cond->key);
-	else
-		printf("%c%s", cond->type, cond->val);
-	if (cond->next)
-		print_condition(cond->next);
-}
-
-void
-print_selector(struct selector *sel)
-{
-	if (sel->combine)
-	{
-putchar('(');
-		print_selector(sel->left);
-		if (sel->combine == ' ')
-			printf(" ");
-		else
-			printf(" %c ", sel->combine);
-		print_selector(sel->right);
-putchar(')');
-	}
-	else if (sel->name)
-		printf("%s", sel->name);
-	else
-		printf("*");
-	if (sel->cond)
-	{
-		print_condition(sel->cond);
-	}
-}
-
-void
-print_rule(struct rule *rule)
-{
-	struct selector *sel;
-	struct property *prop;
-
-	for (sel = rule->selector; sel; sel = sel->next)
-	{
-		print_selector(sel);
-		printf(" !%d", selector_specificity(sel));
-		if (sel->next)
-			printf(", ");
-	}
-
-	printf("\n{\n");
-	for (prop = rule->declaration; prop; prop = prop->next)
-	{
-		print_property(prop);
-	}
-	printf("}\n");
-}
-
-void
-print_rules(struct rule *rule)
-{
-	while (rule)
-	{
-		print_rule(rule);
-		rule = rule->next;
-	}
 }
 
 /*
@@ -366,19 +293,6 @@ match_selector(struct selector *sel, fz_xml *node)
  * Annotating nodes with properties and expanding shorthand forms.
  */
 
-static const char *border_width_kw[] = {
-	"thin", "medium", "thick",
-};
-
-static const char *border_style_kw[] = {
-	"none", "hidden", "dotted", "dashed", "solid", "double", "groove", "ridge", "inset", "outset",
-};
-
-static const char *color_kw[] = {
-	"transparent", "maroon", "red", "orange", "yellow", "olive", "purple", "fuchsia", "white",
-	"lime", "green", "navy", "blue", "aqua", "teal", "black", "silver", "gray",
-};
-
 static int
 count_values(struct value *value)
 {
@@ -391,18 +305,20 @@ count_values(struct value *value)
 	return n;
 }
 
+static void add_property(fz_css_match *match, const char *name, struct value *value, int spec);
+
 static void
-add_shorthand_trbl(struct style *style, struct value *value, int spec,
+add_shorthand_trbl(fz_css_match *match, struct value *value, int spec,
 	const char *name_t, const char *name_r, const char *name_b, const char *name_l)
 {
 	int n = count_values(value);
 
 	if (n == 1)
 	{
-		add_property(style, name_t, value, spec);
-		add_property(style, name_r, value, spec);
-		add_property(style, name_b, value, spec);
-		add_property(style, name_l, value, spec);
+		add_property(match, name_t, value, spec);
+		add_property(match, name_r, value, spec);
+		add_property(match, name_b, value, spec);
+		add_property(match, name_l, value, spec);
 	}
 
 	if (n == 2)
@@ -410,10 +326,10 @@ add_shorthand_trbl(struct style *style, struct value *value, int spec,
 		struct value *a = value;
 		struct value *b = value->next;
 
-		add_property(style, name_t, a, spec);
-		add_property(style, name_r, b, spec);
-		add_property(style, name_b, a, spec);
-		add_property(style, name_l, b, spec);
+		add_property(match, name_t, a, spec);
+		add_property(match, name_r, b, spec);
+		add_property(match, name_b, a, spec);
+		add_property(match, name_l, b, spec);
 	}
 
 	if (n == 3)
@@ -422,10 +338,10 @@ add_shorthand_trbl(struct style *style, struct value *value, int spec,
 		struct value *b = value->next;
 		struct value *c = value->next->next;
 
-		add_property(style, name_t, a, spec);
-		add_property(style, name_r, b, spec);
-		add_property(style, name_b, c, spec);
-		add_property(style, name_l, b, spec);
+		add_property(match, name_t, a, spec);
+		add_property(match, name_r, b, spec);
+		add_property(match, name_b, c, spec);
+		add_property(match, name_l, b, spec);
 	}
 
 	if (n == 4)
@@ -435,110 +351,95 @@ add_shorthand_trbl(struct style *style, struct value *value, int spec,
 		struct value *c = value->next->next;
 		struct value *d = value->next->next->next;
 
-		add_property(style, name_t, a, spec);
-		add_property(style, name_r, b, spec);
-		add_property(style, name_b, c, spec);
-		add_property(style, name_l, d, spec);
+		add_property(match, name_t, a, spec);
+		add_property(match, name_r, b, spec);
+		add_property(match, name_b, c, spec);
+		add_property(match, name_l, d, spec);
 	}
 }
 
 static void
-add_shorthand_margin(struct style *style, struct value *value, int spec)
+add_shorthand_margin(fz_css_match *match, struct value *value, int spec)
 {
-	add_shorthand_trbl(style, value, spec,
+	add_shorthand_trbl(match, value, spec,
 		"margin-top", "margin-right", "margin-bottom", "margin-left");
 }
 
 static void
-add_shorthand_padding(struct style *style, struct value *value, int spec)
+add_shorthand_padding(fz_css_match *match, struct value *value, int spec)
 {
-	add_shorthand_trbl(style, value, spec,
+	add_shorthand_trbl(match, value, spec,
 		"padding-top", "padding-right", "padding-bottom", "padding-left");
 }
 
 static void
-add_shorthand_border_width(struct style *style, struct value *value, int spec)
+add_shorthand_border_width(fz_css_match *match, struct value *value, int spec)
 {
-	add_shorthand_trbl(style, value, spec,
+	add_shorthand_trbl(match, value, spec,
 		"border-width-top", "border-width-right", "border-width-bottom", "border-width-left");
 }
 
 static void
-add_shorthand_border(struct style *style, struct value *value, int spec)
+add_shorthand_border(fz_css_match *match, struct value *value, int spec)
 {
-	int i;
-
 	while (value)
 	{
 		if (value->type == CSS_COLOR)
 		{
-			add_property(style, "border-color", value, spec);
+			add_property(match, "border-color", value, spec);
 		}
 		else if (value->type == CSS_KEYWORD)
 		{
-			for (i = 0; i < nelem(border_width_kw); ++i)
+			if (keyword_in_list(value->data, border_width_kw, nelem(border_width_kw)))
 			{
-				if (!strcmp(value->data, border_width_kw[i]))
-				{
-					add_property(style, "border-width-top", value, spec);
-					add_property(style, "border-width-right", value, spec);
-					add_property(style, "border-width-bottom", value, spec);
-					add_property(style, "border-width-left", value, spec);
-					goto next;
-				}
+				add_property(match, "border-width-top", value, spec);
+				add_property(match, "border-width-right", value, spec);
+				add_property(match, "border-width-bottom", value, spec);
+				add_property(match, "border-width-left", value, spec);
 			}
-			for (i = 0; i < nelem(border_style_kw); ++i)
+			else if (keyword_in_list(value->data, border_style_kw, nelem(border_style_kw)))
 			{
-				if (!strcmp(value->data, border_style_kw[i]))
-				{
-					add_property(style, "border-style", value, spec);
-					goto next;
-				}
+				add_property(match, "border-style", value, spec);
 			}
-			for (i = 0; i < nelem(color_kw); ++i)
+			else if (keyword_in_list(value->data, color_kw, nelem(color_kw)))
 			{
-				if (!strcmp(value->data, color_kw[i]))
-				{
-					add_property(style, "border-color", value, spec);
-					goto next;
-				}
+				add_property(match, "border-color", value, spec);
 			}
 		}
 		else
 		{
-			add_property(style, "border-width-top", value, spec);
-			add_property(style, "border-width-right", value, spec);
-			add_property(style, "border-width-bottom", value, spec);
-			add_property(style, "border-width-left", value, spec);
+			add_property(match, "border-width-top", value, spec);
+			add_property(match, "border-width-right", value, spec);
+			add_property(match, "border-width-bottom", value, spec);
+			add_property(match, "border-width-left", value, spec);
 		}
-next:
 		value = value->next;
 	}
 }
 
 static void
-add_property(struct style *style, const char *name, struct value *value, int spec)
+add_property(fz_css_match *match, const char *name, struct value *value, int spec)
 {
 	int i;
 
 	if (!strcmp(name, "margin"))
 	{
-		add_shorthand_margin(style, value, spec);
+		add_shorthand_margin(match, value, spec);
 		return;
 	}
 	if (!strcmp(name, "padding"))
 	{
-		add_shorthand_padding(style, value, spec);
+		add_shorthand_padding(match, value, spec);
 		return;
 	}
 	if (!strcmp(name, "border-width"))
 	{
-		add_shorthand_border_width(style, value, spec);
+		add_shorthand_border_width(match, value, spec);
 		return;
 	}
 	if (!strcmp(name, "border"))
 	{
-		add_shorthand_border(style, value, spec);
+		add_shorthand_border(match, value, spec);
 		return;
 	}
 
@@ -549,33 +450,33 @@ add_property(struct style *style, const char *name, struct value *value, int spe
 	/* TODO: list-style */
 	/* TODO: background */
 
-	for (i = 0; i < style->count; ++i)
+	for (i = 0; i < match->count; ++i)
 	{
-		if (!strcmp(style->prop[i].name, name))
+		if (!strcmp(match->prop[i].name, name))
 		{
-			if (style->prop[i].spec <= spec)
+			if (match->prop[i].spec <= spec)
 			{
-				style->prop[i].value = value;
-				style->prop[i].spec = spec;
+				match->prop[i].value = value;
+				match->prop[i].spec = spec;
 			}
 			return;
 		}
 	}
 
-	if (style->count + 1 >= nelem(style->prop))
+	if (match->count + 1 >= nelem(match->prop))
 	{
 		// fz_warn(ctx, "too many css properties");
 		return;
 	}
 
-	style->prop[style->count].name = name;
-	style->prop[style->count].value = value;
-	style->prop[style->count].spec = spec;
-	++style->count;
+	match->prop[match->count].name = name;
+	match->prop[match->count].value = value;
+	match->prop[match->count].spec = spec;
+	++match->count;
 }
 
 void
-apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node)
+fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node)
 {
 	struct selector *sel;
 	struct property *prop;
@@ -589,7 +490,7 @@ apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *no
 			if (match_selector(sel, node))
 			{
 				for (prop = rule->declaration; prop; prop = prop->next)
-					add_property(style, prop->name, prop->value, selector_specificity(sel));
+					add_property(match, prop->name, prop->value, selector_specificity(sel));
 				break;
 			}
 			sel = sel->next;
@@ -603,75 +504,44 @@ apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *no
 		prop = fz_parse_css_properties(ctx, s);
 		while (prop)
 		{
-			add_property(style, prop->name, prop->value, INLINE_SPECIFICITY);
+			add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
 			prop = prop->next;
 		}
 		// TODO: free props
 	}
 }
 
-static const char *inherit_list[] = {
-	"color", "direction",
-	"font-family", "font-size", "font-style", "font-variant", "font-weight",
-	"letter-spacing", "line-height",
-	"list-style-image", "list-style-position", "list-style-type",
-	"orphans", "quotes", "text-align", "text-indent", "text-transform",
-	"visibility", "white-space", "widows", "word-spacing",
-
-	/* this is not supposed to be inherited: */
-	"vertical-align",
-};
-
 static struct value *
-get_raw_property(struct style *node, const char *name)
+value_from_raw_property(fz_css_match *match, const char *name)
 {
 	int i;
-	for (i = 0; i < node->count; ++i)
-		if (!strcmp(node->prop[i].name, name))
-			return node->prop[i].value;
+	for (i = 0; i < match->count; ++i)
+		if (!strcmp(match->prop[i].name, name))
+			return match->prop[i].value;
 	return NULL;
 }
 
-static int
-should_inherit_property(const char *name)
-{
-	int l = 0;
-	int r = nelem(inherit_list) - 1;
-	while (l <= r)
-	{
-		int m = (l + r) >> 1;
-		int c = strcmp(name, inherit_list[m]);
-		if (c < 0)
-			r = m - 1;
-		else if (c > 0)
-			l = m + 1;
-		else
-			return 1;
-	}
-	return 0;
-}
-
 static struct value *
-get_style_property(struct style *node, const char *name)
+value_from_property(fz_css_match *match, const char *name)
 {
 	struct value *value;
 
-	value = get_raw_property(node, name);
-	if (node->up)
+	value = value_from_raw_property(match, name);
+	if (match->up)
 	{
 		if (value && !strcmp(value->data, "inherit"))
-			return get_style_property(node->up, name);
-		if (!value && should_inherit_property(name))
-			return get_style_property(node->up, name);
+			return value_from_property(match->up, name);
+		if (!value && keyword_in_list(name, inherit_list, nelem(inherit_list)))
+			return value_from_property(match->up, name);
 	}
 	return value;
 }
 
 static const char *
-get_style_property_string(struct style *node, const char *name, const char *initial)
+string_from_property(fz_css_match *match, const char *name, const char *initial)
 {
 	struct value *value;
-	value = get_style_property(node, name);
+	value = value_from_property(match, name);
 	if (!value)
 		return initial;
 	return value->data;
@@ -730,15 +600,15 @@ number_from_value(struct value *value, float initial, int initial_unit)
 }
 
 static struct number
-number_from_property(struct style *node, const char *property, float initial, int initial_unit)
+number_from_property(fz_css_match *match, const char *property, float initial, int initial_unit)
 {
-	return number_from_value(get_style_property(node, property), initial, initial_unit);
+	return number_from_value(value_from_property(match, property), initial, initial_unit);
 }
 
 static struct number
-border_width_from_property(struct style *node, const char *property)
+border_width_from_property(fz_css_match *match, const char *property)
 {
-	struct value *value = get_style_property(node, property);
+	struct value *value = value_from_property(match, property);
 	if (value)
 	{
 		if (!strcmp(value->data, "thin"))
@@ -848,15 +718,15 @@ color_from_value(struct value *value, struct color initial)
 }
 
 static struct color
-color_from_property(struct style *node, const char *property, struct color initial)
+color_from_property(fz_css_match *match, const char *property, struct color initial)
 {
-	return color_from_value(get_style_property(node, property), initial);
+	return color_from_value(value_from_property(match, property), initial);
 }
 
 int
-fz_get_css_style_property_display(struct style *node)
+fz_get_css_match_display(fz_css_match *match)
 {
-	struct value *value = get_style_property(node, "display");
+	struct value *value = value_from_property(match, "display");
 	if (value)
 	{
 		if (!strcmp(value->data, "none"))
@@ -872,9 +742,9 @@ fz_get_css_style_property_display(struct style *node)
 }
 
 static int
-get_style_property_white_space(struct style *node)
+white_space_from_property(fz_css_match *match)
 {
-	struct value *value = get_style_property(node, "white-space");
+	struct value *value = value_from_property(match, "white-space");
 	if (value)
 	{
 		if (!strcmp(value->data, "normal")) return WS_NORMAL;
@@ -887,7 +757,7 @@ get_style_property_white_space(struct style *node)
 }
 
 void
-default_computed_style(struct computed_style *style)
+fz_default_css_style(fz_context *ctx, struct computed_style *style)
 {
 	memset(style, 0, sizeof *style);
 	style->text_align = TA_LEFT;
@@ -897,18 +767,18 @@ default_computed_style(struct computed_style *style)
 }
 
 void
-compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *style, struct style *node)
+fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *style, fz_css_match *match)
 {
 	struct value *value;
 
 	struct color black = { 0, 0, 0, 255 };
 	struct color transparent = { 0, 0, 0, 0 };
 
-	default_computed_style(style);
+	fz_default_css_style(ctx, style);
 
-	style->white_space = get_style_property_white_space(node);
+	style->white_space = white_space_from_property(match);
 
-	value = get_style_property(node, "text-align");
+	value = value_from_property(match, "text-align");
 	if (value)
 	{
 		if (!strcmp(value->data, "left"))
@@ -921,7 +791,7 @@ compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *sty
 			style->text_align = TA_JUSTIFY;
 	}
 
-	value = get_style_property(node, "vertical-align");
+	value = value_from_property(match, "vertical-align");
 	if (value)
 	{
 		if (!strcmp(value->data, "baseline"))
@@ -936,7 +806,7 @@ compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *sty
 			style->vertical_align = VA_BOTTOM;
 	}
 
-	value = get_style_property(node, "font-size");
+	value = value_from_property(match, "font-size");
 	if (value)
 	{
 		if (!strcmp(value->data, "xx-large")) style->font_size = make_number(20, N_NUMBER);
@@ -955,7 +825,7 @@ compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *sty
 		style->font_size = make_number(1, N_SCALE);
 	}
 
-	value = get_style_property(node, "border-style");
+	value = value_from_property(match, "border-style");
 	if (value)
 	{
 		if (!strcmp(value->data, "none"))
@@ -966,35 +836,133 @@ compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *sty
 			style->border_style = BS_SOLID;
 	}
 
-	style->line_height = number_from_property(node, "line-height", 1.2, N_SCALE);
+	style->line_height = number_from_property(match, "line-height", 1.2, N_SCALE);
 
-	style->text_indent = number_from_property(node, "text-indent", 0, N_NUMBER);
+	style->text_indent = number_from_property(match, "text-indent", 0, N_NUMBER);
 
-	style->margin[0] = number_from_property(node, "margin-top", 0, N_NUMBER);
-	style->margin[1] = number_from_property(node, "margin-right", 0, N_NUMBER);
-	style->margin[2] = number_from_property(node, "margin-bottom", 0, N_NUMBER);
-	style->margin[3] = number_from_property(node, "margin-left", 0, N_NUMBER);
+	style->margin[0] = number_from_property(match, "margin-top", 0, N_NUMBER);
+	style->margin[1] = number_from_property(match, "margin-right", 0, N_NUMBER);
+	style->margin[2] = number_from_property(match, "margin-bottom", 0, N_NUMBER);
+	style->margin[3] = number_from_property(match, "margin-left", 0, N_NUMBER);
 
-	style->padding[0] = number_from_property(node, "padding-top", 0, N_NUMBER);
-	style->padding[1] = number_from_property(node, "padding-right", 0, N_NUMBER);
-	style->padding[2] = number_from_property(node, "padding-bottom", 0, N_NUMBER);
-	style->padding[3] = number_from_property(node, "padding-left", 0, N_NUMBER);
+	style->padding[0] = number_from_property(match, "padding-top", 0, N_NUMBER);
+	style->padding[1] = number_from_property(match, "padding-right", 0, N_NUMBER);
+	style->padding[2] = number_from_property(match, "padding-bottom", 0, N_NUMBER);
+	style->padding[3] = number_from_property(match, "padding-left", 0, N_NUMBER);
 
-	style->border_width[0] = border_width_from_property(node, "border-width-top");
-	style->border_width[1] = border_width_from_property(node, "border-width-right");
-	style->border_width[2] = border_width_from_property(node, "border-width-bottom");
-	style->border_width[3] = border_width_from_property(node, "border-width-left");
+	style->border_width[0] = border_width_from_property(match, "border-width-top");
+	style->border_width[1] = border_width_from_property(match, "border-width-right");
+	style->border_width[2] = border_width_from_property(match, "border-width-bottom");
+	style->border_width[3] = border_width_from_property(match, "border-width-left");
 
-	style->color = color_from_property(node, "color", black);
-	style->background_color = color_from_property(node, "background-color", transparent);
-	style->border_color = color_from_property(node, "border-color", style->color);
+	style->color = color_from_property(match, "color", black);
+	style->background_color = color_from_property(match, "background-color", transparent);
+	style->border_color = color_from_property(match, "border-color", style->color);
 
 	{
-		const char *font_family = get_style_property_string(node, "font-family", "serif");
-		const char *font_variant = get_style_property_string(node, "font-variant", "normal");
-		const char *font_style = get_style_property_string(node, "font-style", "normal");
-		const char *font_weight = get_style_property_string(node, "font-weight", "normal");
+		const char *font_family = string_from_property(match, "font-family", "serif");
+		const char *font_variant = string_from_property(match, "font-variant", "normal");
+		const char *font_style = string_from_property(match, "font-style", "normal");
+		const char *font_weight = string_from_property(match, "font-weight", "normal");
 		style->font = fz_load_html_font(ctx, set, font_family, font_variant, font_style, font_weight);
+	}
+}
+
+/*
+ * Pretty printing
+ */
+
+void
+print_value(struct value *val)
+{
+	printf("%s", val->data);
+	if (val->args)
+	{
+		printf("(");
+		print_value(val->args);
+		printf(")");
+	}
+	if (val->next)
+	{
+		printf(" ");
+		print_value(val->next);
+	}
+}
+
+void
+print_property(struct property *prop)
+{
+	printf("\t%s: ", prop->name);
+	print_value(prop->value);
+	printf(" !%d;\n", prop->spec);
+}
+
+void
+print_condition(struct condition *cond)
+{
+	if (cond->type == '=')
+		printf("[%s=%s]", cond->key, cond->val);
+	else if (cond->type == '[')
+		printf("[%s]", cond->key);
+	else
+		printf("%c%s", cond->type, cond->val);
+	if (cond->next)
+		print_condition(cond->next);
+}
+
+void
+print_selector(struct selector *sel)
+{
+	if (sel->combine)
+	{
+putchar('(');
+		print_selector(sel->left);
+		if (sel->combine == ' ')
+			printf(" ");
+		else
+			printf(" %c ", sel->combine);
+		print_selector(sel->right);
+putchar(')');
+	}
+	else if (sel->name)
+		printf("%s", sel->name);
+	else
+		printf("*");
+	if (sel->cond)
+	{
+		print_condition(sel->cond);
+	}
+}
+
+void
+print_rule(fz_css_rule *rule)
+{
+	struct selector *sel;
+	struct property *prop;
+
+	for (sel = rule->selector; sel; sel = sel->next)
+	{
+		print_selector(sel);
+		printf(" !%d", selector_specificity(sel));
+		if (sel->next)
+			printf(", ");
+	}
+
+	printf("\n{\n");
+	for (prop = rule->declaration; prop; prop = prop->next)
+	{
+		print_property(prop);
+	}
+	printf("}\n");
+}
+
+void
+print_rules(fz_css_rule *rule)
+{
+	while (rule)
+	{
+		print_rule(rule);
+		rule = rule->next;
 	}
 }
 
