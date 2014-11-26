@@ -476,13 +476,14 @@ add_property(fz_css_match *match, const char *name, fz_css_value *value, int spe
 }
 
 void
-fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node)
+fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *node)
 {
+	fz_css_rule *rule;
 	fz_css_selector *sel;
-	fz_css_property *prop;
+	fz_css_property *prop, *head, *tail;
 	const char *s;
 
-	while (rule)
+	for (rule = css; rule; rule = rule->next)
 	{
 		sel = rule->selector;
 		while (sel)
@@ -495,19 +496,21 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *no
 			}
 			sel = sel->next;
 		}
-		rule = rule->next;
 	}
 
 	s = fz_xml_att(node, "style");
 	if (s)
 	{
-		prop = fz_parse_css_properties(ctx, s);
+		head = tail = prop = fz_parse_css_properties(ctx, s);
 		while (prop)
 		{
 			add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
+			tail = prop;
 			prop = prop->next;
 		}
-		// TODO: free props (hitch a ride with fz_css_rule?)
+		if (tail)
+			tail->next = css->garbage;
+		css->garbage = head;
 	}
 }
 

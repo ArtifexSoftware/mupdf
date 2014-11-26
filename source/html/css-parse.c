@@ -16,6 +16,7 @@ static fz_css_rule *fz_new_css_rule(fz_context *ctx, fz_css_selector *selector, 
 	fz_css_rule *rule = fz_malloc_struct(ctx, fz_css_rule);
 	rule->selector = selector;
 	rule->declaration = declaration;
+	rule->garbage = NULL;
 	rule->next = NULL;
 	return rule;
 }
@@ -119,6 +120,7 @@ void fz_free_css(fz_context *ctx, fz_css_rule *rule)
 		fz_css_rule *next = rule->next;
 		fz_free_css_selector(ctx, rule->selector);
 		fz_free_css_property(ctx, rule->declaration);
+		fz_free_css_property(ctx, rule->garbage);
 		fz_free(ctx, rule);
 		rule = next;
 	}
