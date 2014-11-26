@@ -4,8 +4,12 @@
 #include "mupdf/fitz.h"
 
 typedef struct fz_html_font_set_s fz_html_font_set;
+typedef struct fz_html_box_s fz_html_box;
+typedef struct fz_html_flow_s fz_html_flow;
+
 typedef struct fz_css_rule_s fz_css_rule;
 typedef struct fz_css_match_s fz_css_match;
+typedef struct fz_css_style_s fz_css_style;
 
 struct fz_html_font_set_s
 {
@@ -95,7 +99,7 @@ struct color
 	unsigned char r, g, b, a;
 };
 
-struct computed_style
+struct fz_css_style_s
 {
 	struct number font_size;
 	struct number margin[4];
@@ -121,16 +125,16 @@ enum
 	BOX_INLINE,	/* inline-level: contains only inline boxes */
 };
 
-struct box
+struct fz_html_box_s
 {
 	int type;
 	float x, y, w, h; /* content */
 	float padding[4];
 	float margin[4];
 	float border[4];
-	struct box *up, *down, *last, *next;
-	struct flow *flow_head, **flow_tail;
-	struct computed_style style;
+	fz_html_box *up, *down, *last, *next;
+	fz_html_flow *flow_head, **flow_tail;
+	fz_css_style style;
 	int is_first_flow; /* for text-indent */
 };
 
@@ -141,14 +145,14 @@ enum
 	FLOW_IMAGE,
 };
 
-struct flow
+struct fz_html_flow_s
 {
 	int type;
 	float x, y, w, h, em;
-	struct computed_style *style;
+	fz_css_style *style;
 	char *text, *broken_text;
 	fz_image *image;
-	struct flow *next;
+	fz_html_flow *next;
 };
 
 fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *old, const char *source);
@@ -157,8 +161,8 @@ struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node);
 
 int fz_get_css_match_display(fz_css_match *node);
-void fz_default_css_style(fz_context *ctx, struct computed_style *style);
-void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *style, fz_css_match *match);
+void fz_default_css_style(fz_context *ctx, fz_css_style *style);
+void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match);
 
 float fz_from_css_number(struct number, float em, float width);
 float fz_from_css_number_scale(struct number number, float scale, float em, float width);
@@ -168,8 +172,8 @@ fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	const char *family, const char *variant, const char *style, const char *weight);
 void fz_free_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 
-struct box *fz_generate_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf);
-void fz_layout_html(fz_context *ctx, struct box *box, float w, float h, float em);
-void fz_draw_html(fz_context *ctx, struct box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
+fz_html_box *fz_generate_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf);
+void fz_layout_html(fz_context *ctx, fz_html_box *box, float w, float h, float em);
+void fz_draw_html(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
 
 #endif

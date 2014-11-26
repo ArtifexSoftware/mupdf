@@ -22,7 +22,7 @@ struct epub_document_s
 struct epub_chapter_s
 {
 	int start;
-	struct box *box;
+	fz_html_box *box;
 	epub_chapter *next;
 };
 

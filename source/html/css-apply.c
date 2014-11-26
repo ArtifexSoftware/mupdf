@@ -757,7 +757,7 @@ white_space_from_property(fz_css_match *match)
 }
 
 void
-fz_default_css_style(fz_context *ctx, struct computed_style *style)
+fz_default_css_style(fz_context *ctx, fz_css_style *style)
 {
 	memset(style, 0, sizeof *style);
 	style->text_align = TA_LEFT;
@@ -767,7 +767,7 @@ fz_default_css_style(fz_context *ctx, struct computed_style *style)
 }
 
 void
-fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *style, fz_css_match *match)
+fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match)
 {
 	struct value *value;
 
@@ -967,7 +967,7 @@ print_rules(fz_css_rule *rule)
 }
 
 void
-print_style(struct computed_style *style)
+print_style(fz_css_style *style)
 {
 	printf("style {\n");
 	printf("\tfont-size = %g%c;\n", style->font_size.value, style->font_size.unit);

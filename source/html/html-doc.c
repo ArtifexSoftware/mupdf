@@ -13,7 +13,7 @@ struct html_document_s
 	fz_archive *zip;
 	fz_html_font_set *set;
 	float page_w, page_h, em;
-	struct box *box;
+	fz_html_box *box;
 };
 
 static void
