@@ -373,7 +373,7 @@ static struct value *parse_value(struct lexbuf *buf)
 
 	if (buf->lookahead == CSS_KEYWORD)
 	{
-		v = new_value(CSS_KEYWORD, buf->string);
+		v = fz_new_css_value(buf->ctx, CSS_KEYWORD, buf->string);
 		next(buf);
 
 		if (accept(buf, '('))
@@ -394,15 +394,15 @@ static struct value *parse_value(struct lexbuf *buf)
 	case CSS_STRING:
 	case CSS_COLOR:
 	case CSS_URI:
-		v = new_value(buf->lookahead, buf->string);
+		v = fz_new_css_value(buf->ctx, buf->lookahead, buf->string);
 		next(buf);
 		return v;
 	}
 
 	if (accept(buf, ','))
-		return new_value(',', ",");
+		return fz_new_css_value(buf->ctx, ',', ",");
 	if (accept(buf, '/'))
-		return new_value('/', "/");
+		return fz_new_css_value(buf->ctx, '/', "/");
 
 	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected value");
 }
@@ -431,7 +431,7 @@ static struct property *parse_declaration(struct lexbuf *buf)
 
 	if (buf->lookahead != CSS_KEYWORD)
 		fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword in property");
-	p = new_property(buf->string, NULL, 0);
+	p = fz_new_css_property(buf->ctx, buf->string, NULL, 0);
 	next(buf);
 
 	expect(buf, ':');
@@ -487,7 +487,7 @@ static struct condition *parse_condition(struct lexbuf *buf)
 	{
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after ':'");
-		c = new_condition(':', "pseudo", buf->string);
+		c = fz_new_css_condition(buf->ctx, ':', "pseudo", buf->string);
 		next(buf);
 		return c;
 	}
@@ -496,7 +496,7 @@ static struct condition *parse_condition(struct lexbuf *buf)
 	{
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after '.'");
-		c = new_condition('.', "class", buf->string);
+		c = fz_new_css_condition(buf->ctx, '.', "class", buf->string);
 		next(buf);
 		return c;
 	}
@@ -505,7 +505,7 @@ static struct condition *parse_condition(struct lexbuf *buf)
 	{
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after '#'");
-		c = new_condition('#', "id", buf->string);
+		c = fz_new_css_condition(buf->ctx, '#', "id", buf->string);
 		next(buf);
 		return c;
 	}
@@ -515,7 +515,7 @@ static struct condition *parse_condition(struct lexbuf *buf)
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after '['");
 
-		c = new_condition('[', buf->string, NULL);
+		c = fz_new_css_condition(buf->ctx, '[', buf->string, NULL);
 		next(buf);
 
 		if (accept(buf, '='))
@@ -562,14 +562,14 @@ static struct selector *parse_simple_selector(struct lexbuf *buf)
 
 	if (accept(buf, '*'))
 	{
-		s = new_selector(NULL);
+		s = fz_new_css_selector(buf->ctx, NULL);
 		if (iscond(buf->lookahead))
 			s->cond = parse_condition_list(buf);
 		return s;
 	}
 	else if (buf->lookahead == CSS_KEYWORD)
 	{
-		s = new_selector(buf->string);
+		s = fz_new_css_selector(buf->ctx, buf->string);
 		next(buf);
 		if (iscond(buf->lookahead))
 			s->cond = parse_condition_list(buf);
@@ -577,7 +577,7 @@ static struct selector *parse_simple_selector(struct lexbuf *buf)
 	}
 	else if (iscond(buf->lookahead))
 	{
-		s = new_selector(NULL);
+		s = fz_new_css_selector(buf->ctx, NULL);
 		s->cond = parse_condition_list(buf);
 		return s;
 	}
@@ -593,7 +593,7 @@ static struct selector *parse_adjacent_selector(struct lexbuf *buf)
 	if (accept(buf, '+'))
 	{
 		b = parse_adjacent_selector(buf);
-		s = new_selector(NULL);
+		s = fz_new_css_selector(buf->ctx, NULL);
 		s->combine = '+';
 		s->left = a;
 		s->right = b;
@@ -610,7 +610,7 @@ static struct selector *parse_child_selector(struct lexbuf *buf)
 	if (accept(buf, '>'))
 	{
 		b = parse_child_selector(buf);
-		s = new_selector(NULL);
+		s = fz_new_css_selector(buf->ctx, NULL);
 		s->combine = '>';
 		s->left = a;
 		s->right = b;
@@ -627,7 +627,7 @@ static struct selector *parse_descendant_selector(struct lexbuf *buf)
 	if (buf->lookahead != ',' && buf->lookahead != '{' && buf->lookahead != EOF)
 	{
 		b = parse_descendant_selector(buf);
-		s = new_selector(NULL);
+		s = fz_new_css_selector(buf->ctx, NULL);
 		s->combine = ' ';
 		s->left = a;
 		s->right = b;
@@ -657,7 +657,7 @@ static struct rule *parse_rule(struct lexbuf *buf)
 	expect(buf, '{');
 	p = parse_declaration_list(buf);
 	expect(buf, '}');
-	return new_rule(s, p);
+	return fz_new_css_rule(buf->ctx, s, p);
 }
 
 static void parse_media_list(struct lexbuf *buf)

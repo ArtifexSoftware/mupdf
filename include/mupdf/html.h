@@ -156,22 +156,23 @@ struct flow
 struct rule *fz_parse_css(fz_context *ctx, struct rule *old, const char *source);
 struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
 
-struct rule *new_rule(struct selector *selector, struct property *declaration);
-struct selector *new_selector(const char *name);
-struct condition *new_condition(int type, const char *key, const char *val);
-struct property *new_property(const char *name, struct value *value, int spec);
-struct value *new_value(int type, const char *value);
+struct rule *fz_new_css_rule(fz_context *ctx, struct selector *selector, struct property *declaration);
+struct selector *fz_new_css_selector(fz_context *ctx, const char *name);
+struct condition *fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val);
+struct property *fz_new_css_property(fz_context *ctx, const char *name, struct value *value, int spec);
+struct value *fz_new_css_value(fz_context *ctx, int type, const char *value);
 
-int get_style_property_display(struct style *node);
+int fz_get_css_style_property_display(struct style *node);
 
 void apply_styles(fz_context *ctx, struct style *style, struct rule *rule, fz_xml *node);
 void default_computed_style(struct computed_style *cstyle);
 void compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *cstyle, struct style *style);
-float from_number(struct number, float em, float width);
-float from_number_scale(struct number number, float scale, float em, float width);
+
+float fz_from_css_number(struct number, float em, float width);
+float fz_from_css_number_scale(struct number number, float scale, float em, float width);
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
-fz_font *fz_html_load_font(fz_context *ctx, fz_html_font_set *set,
+fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	const char *family, const char *variant, const char *style, const char *weight);
 void fz_free_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 

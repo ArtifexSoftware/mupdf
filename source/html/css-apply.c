@@ -3,73 +3,58 @@
 static void add_property(struct style *style, const char *name, struct value *value, int spec);
 
 struct rule *
-new_rule(struct selector *selector, struct property *declaration)
+fz_new_css_rule(fz_context *ctx, struct selector *selector, struct property *declaration)
 {
-	struct rule *rule;
-
-	rule = malloc(sizeof(struct rule));
+	struct rule *rule = fz_malloc_struct(ctx, struct rule);
 	rule->selector = selector;
 	rule->declaration = declaration;
 	rule->next = NULL;
-
 	return rule;
 }
 
 struct selector *
-new_selector(const char *name)
+fz_new_css_selector(fz_context *ctx, const char *name)
 {
-	struct selector *sel;
-
-	sel = malloc(sizeof(struct selector));
+	struct selector *sel = fz_malloc_struct(ctx, struct selector);
 	sel->name = name ? strdup(name) : NULL;
 	sel->combine = 0;
 	sel->cond = NULL;
 	sel->left = NULL;
 	sel->right = NULL;
 	sel->next = NULL;
-
 	return sel;
 }
 
 struct condition *
-new_condition(int type, const char *key, const char *val)
+fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val)
 {
-	struct condition *cond;
-
-	cond = malloc(sizeof(struct condition));
+	struct condition *cond = fz_malloc_struct(ctx, struct condition);
 	cond->type = type;
 	cond->key = key ? strdup(key) : NULL;
 	cond->val = val ? strdup(val) : NULL;
 	cond->next = NULL;
-
 	return cond;
 }
 
 struct property *
-new_property(const char *name, struct value *value, int spec)
+fz_new_css_property(fz_context *ctx, const char *name, struct value *value, int spec)
 {
-	struct property *prop;
-
-	prop = malloc(sizeof(struct property));
+	struct property *prop = fz_malloc_struct(ctx, struct property);
 	prop->name = strdup(name);
 	prop->value = value;
 	prop->spec = spec;
 	prop->next = NULL;
-
 	return prop;
 }
 
 struct value *
-new_value(int type, const char *data)
+fz_new_css_value(fz_context *ctx, int type, const char *data)
 {
-	struct value *val;
-
-	val = malloc(sizeof(struct value));
+	struct value *val = fz_malloc_struct(ctx, struct value);
 	val->type = type;
 	val->data = strdup(data);
 	val->args = NULL;
 	val->next = NULL;
-
 	return val;
 }
 
@@ -158,7 +143,7 @@ count_selector_names(struct selector *sel)
 
 #define INLINE_SPECIFICITY 1000
 
-int
+static int
 selector_specificity(struct selector *sel)
 {
 	int b = count_selector_ids(sel);
@@ -269,7 +254,7 @@ print_rules(struct rule *rule)
  * Selector matching
  */
 
-int
+static int
 match_id_condition(fz_xml *node, const char *p)
 {
 	const char *s = fz_xml_att(node, "id");
@@ -278,7 +263,7 @@ match_id_condition(fz_xml *node, const char *p)
 	return 0;
 }
 
-int
+static int
 match_class_condition(fz_xml *node, const char *p)
 {
 	const char *s = fz_xml_att(node, "class");
@@ -295,7 +280,7 @@ match_class_condition(fz_xml *node, const char *p)
 	return 0;
 }
 
-int
+static int
 match_condition(struct condition *cond, fz_xml *node)
 {
 	if (!cond)
@@ -311,7 +296,7 @@ match_condition(struct condition *cond, fz_xml *node)
 	return match_condition(cond->next, node);
 }
 
-int
+static int
 match_selector(struct selector *sel, fz_xml *node)
 {
 	if (!node)
@@ -407,153 +392,75 @@ count_values(struct value *value)
 }
 
 static void
-add_shorthand_margin(struct style *style, struct value *value, int spec)
+add_shorthand_trbl(struct style *style, struct value *value, int spec,
+	const char *name_t, const char *name_r, const char *name_b, const char *name_l)
 {
 	int n = count_values(value);
 
 	if (n == 1)
 	{
-		add_property(style, "margin-top", value, spec);
-		add_property(style, "margin-right", value, spec);
-		add_property(style, "margin-bottom", value, spec);
-		add_property(style, "margin-left", value, spec);
+		add_property(style, name_t, value, spec);
+		add_property(style, name_r, value, spec);
+		add_property(style, name_b, value, spec);
+		add_property(style, name_l, value, spec);
 	}
 
 	if (n == 2)
 	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
+		struct value *a = value;
+		struct value *b = value->next;
 
-		add_property(style, "margin-top", a, spec);
-		add_property(style, "margin-right", b, spec);
-		add_property(style, "margin-bottom", a, spec);
-		add_property(style, "margin-left", b, spec);
+		add_property(style, name_t, a, spec);
+		add_property(style, name_r, b, spec);
+		add_property(style, name_b, a, spec);
+		add_property(style, name_l, b, spec);
 	}
 
 	if (n == 3)
 	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-		struct value *c = new_value(value->next->next->type, value->next->next->data);
+		struct value *a = value;
+		struct value *b = value->next;
+		struct value *c = value->next->next;
 
-		add_property(style, "margin-top", a, spec);
-		add_property(style, "margin-right", b, spec);
-		add_property(style, "margin-bottom", c, spec);
-		add_property(style, "margin-left", b, spec);
+		add_property(style, name_t, a, spec);
+		add_property(style, name_r, b, spec);
+		add_property(style, name_b, c, spec);
+		add_property(style, name_l, b, spec);
 	}
 
 	if (n == 4)
 	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-		struct value *c = new_value(value->next->next->type, value->next->next->data);
-		struct value *d = new_value(value->next->next->next->type, value->next->next->next->data);
+		struct value *a = value;
+		struct value *b = value->next;
+		struct value *c = value->next->next;
+		struct value *d = value->next->next->next;
 
-		add_property(style, "margin-top", a, spec);
-		add_property(style, "margin-right", b, spec);
-		add_property(style, "margin-bottom", c, spec);
-		add_property(style, "margin-left", d, spec);
+		add_property(style, name_t, a, spec);
+		add_property(style, name_r, b, spec);
+		add_property(style, name_b, c, spec);
+		add_property(style, name_l, d, spec);
 	}
+}
+
+static void
+add_shorthand_margin(struct style *style, struct value *value, int spec)
+{
+	add_shorthand_trbl(style, value, spec,
+		"margin-top", "margin-right", "margin-bottom", "margin-left");
 }
 
 static void
 add_shorthand_padding(struct style *style, struct value *value, int spec)
 {
-	int n = count_values(value);
-
-	if (n == 1)
-	{
-		add_property(style, "padding-top", value, spec);
-		add_property(style, "padding-right", value, spec);
-		add_property(style, "padding-bottom", value, spec);
-		add_property(style, "padding-left", value, spec);
-	}
-
-	if (n == 2)
-	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-
-		add_property(style, "padding-top", a, spec);
-		add_property(style, "padding-right", b, spec);
-		add_property(style, "padding-bottom", a, spec);
-		add_property(style, "padding-left", b, spec);
-	}
-
-	if (n == 3)
-	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-		struct value *c = new_value(value->next->next->type, value->next->next->data);
-
-		add_property(style, "padding-top", a, spec);
-		add_property(style, "padding-right", b, spec);
-		add_property(style, "padding-bottom", c, spec);
-		add_property(style, "padding-left", b, spec);
-	}
-
-	if (n == 4)
-	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-		struct value *c = new_value(value->next->next->type, value->next->next->data);
-		struct value *d = new_value(value->next->next->next->type, value->next->next->next->data);
-
-		add_property(style, "padding-top", a, spec);
-		add_property(style, "padding-right", b, spec);
-		add_property(style, "padding-bottom", c, spec);
-		add_property(style, "padding-left", d, spec);
-	}
+	add_shorthand_trbl(style, value, spec,
+		"padding-top", "padding-right", "padding-bottom", "padding-left");
 }
 
 static void
 add_shorthand_border_width(struct style *style, struct value *value, int spec)
 {
-	int n = count_values(value);
-
-	if (n == 1)
-	{
-		add_property(style, "border-width-top", value, spec);
-		add_property(style, "border-width-right", value, spec);
-		add_property(style, "border-width-bottom", value, spec);
-		add_property(style, "border-width-left", value, spec);
-	}
-
-	if (n == 2)
-	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-
-		add_property(style, "border-width-top", a, spec);
-		add_property(style, "border-width-right", b, spec);
-		add_property(style, "border-width-bottom", a, spec);
-		add_property(style, "border-width-left", b, spec);
-	}
-
-	if (n == 3)
-	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-		struct value *c = new_value(value->next->next->type, value->next->next->data);
-
-		add_property(style, "border-width-top", a, spec);
-		add_property(style, "border-width-right", b, spec);
-		add_property(style, "border-width-bottom", c, spec);
-		add_property(style, "border-width-left", b, spec);
-	}
-
-	if (n == 4)
-	{
-		struct value *a = new_value(value->type, value->data);
-		struct value *b = new_value(value->next->type, value->next->data);
-		struct value *c = new_value(value->next->next->type, value->next->next->data);
-		struct value *d = new_value(value->next->next->next->type, value->next->next->next->data);
-
-		add_property(style, "border-width-top", a, spec);
-		add_property(style, "border-width-right", b, spec);
-		add_property(style, "border-width-bottom", c, spec);
-		add_property(style, "border-width-left", d, spec);
-	}
+	add_shorthand_trbl(style, value, spec,
+		"border-width-top", "border-width-right", "border-width-bottom", "border-width-left");
 }
 
 static void
@@ -846,7 +753,7 @@ border_width_from_property(struct style *node, const char *property)
 }
 
 float
-from_number(struct number number, float em, float width)
+fz_from_css_number(struct number number, float em, float width)
 {
 	switch (number.unit) {
 	default:
@@ -857,7 +764,7 @@ from_number(struct number number, float em, float width)
 }
 
 float
-from_number_scale(struct number number, float scale, float em, float width)
+fz_from_css_number_scale(struct number number, float scale, float em, float width)
 {
 	switch (number.unit) {
 	default:
@@ -947,7 +854,7 @@ color_from_property(struct style *node, const char *property, struct color initi
 }
 
 int
-get_style_property_display(struct style *node)
+fz_get_css_style_property_display(struct style *node)
 {
 	struct value *value = get_style_property(node, "display");
 	if (value)
@@ -964,7 +871,7 @@ get_style_property_display(struct style *node)
 	return DIS_INLINE;
 }
 
-int
+static int
 get_style_property_white_space(struct style *node)
 {
 	struct value *value = get_style_property(node, "white-space");
@@ -1087,7 +994,7 @@ compute_style(fz_context *ctx, fz_html_font_set *set, struct computed_style *sty
 		const char *font_variant = get_style_property_string(node, "font-variant", "normal");
 		const char *font_style = get_style_property_string(node, "font-style", "normal");
 		const char *font_weight = get_style_property_string(node, "font-weight", "normal");
-		style->font = fz_html_load_font(ctx, set, font_family, font_variant, font_style, font_weight);
+		style->font = fz_load_html_font(ctx, set, font_family, font_variant, font_style, font_weight);
 	}
 }
 

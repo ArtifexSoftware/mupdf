@@ -9,7 +9,7 @@ static const char *font_names[16] = {
 };
 
 fz_font *
-fz_html_load_font(fz_context *ctx, fz_html_font_set *set,
+fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	const char *family, const char *variant, const char *style, const char *weight)
 {
 	unsigned char *data;

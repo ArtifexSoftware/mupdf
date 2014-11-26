@@ -255,7 +255,7 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 		{
 			apply_styles(ctx, &style, rule, node);
 
-			display = get_style_property_display(&style);
+			display = fz_get_css_style_property_display(&style);
 
 			if (!strcmp(tag, "br"))
 			{
@@ -344,10 +344,10 @@ static void measure_word(fz_context *ctx, struct flow *node, float em)
 	int c, g;
 	float w;
 
-	em = from_number(node->style->font_size, em, em);
+	em = fz_from_css_number(node->style->font_size, em, em);
 	node->x = 0;
 	node->y = 0;
-	node->h = from_number_scale(node->style->line_height, em, em, em);
+	node->h = fz_from_css_number_scale(node->style->line_height, em, em, em);
 
 	w = 0;
 	s = node->text;
@@ -471,8 +471,8 @@ static void layout_flow(fz_context *ctx, struct box *box, struct box *top, float
 	float baseline;
 	int align;
 
-	em = from_number(box->style.font_size, em, em);
-	indent = box->is_first_flow ? from_number(top->style.text_indent, em, top->w) : 0;
+	em = fz_from_css_number(box->style.font_size, em, em);
+	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
 	align = top->style.text_align;
 
 	box->x = top->x;
@@ -548,24 +548,24 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 	float *border = box->border;
 	float *padding = box->padding;
 
-	em = from_number(box->style.font_size, em, em);
+	em = fz_from_css_number(box->style.font_size, em, em);
 
-	margin[0] = from_number(box->style.margin[0], em, top->w);
-	margin[1] = from_number(box->style.margin[1], em, top->w);
-	margin[2] = from_number(box->style.margin[2], em, top->w);
-	margin[3] = from_number(box->style.margin[3], em, top->w);
+	margin[0] = fz_from_css_number(box->style.margin[0], em, top->w);
+	margin[1] = fz_from_css_number(box->style.margin[1], em, top->w);
+	margin[2] = fz_from_css_number(box->style.margin[2], em, top->w);
+	margin[3] = fz_from_css_number(box->style.margin[3], em, top->w);
 
-	padding[0] = from_number(box->style.padding[0], em, top->w);
-	padding[1] = from_number(box->style.padding[1], em, top->w);
-	padding[2] = from_number(box->style.padding[2], em, top->w);
-	padding[3] = from_number(box->style.padding[3], em, top->w);
+	padding[0] = fz_from_css_number(box->style.padding[0], em, top->w);
+	padding[1] = fz_from_css_number(box->style.padding[1], em, top->w);
+	padding[2] = fz_from_css_number(box->style.padding[2], em, top->w);
+	padding[3] = fz_from_css_number(box->style.padding[3], em, top->w);
 
 	if (box->style.border_style)
 	{
-		border[0] = from_number(box->style.border_width[0], em, top->w);
-		border[1] = from_number(box->style.border_width[1], em, top->w);
-		border[2] = from_number(box->style.border_width[2], em, top->w);
-		border[3] = from_number(box->style.border_width[3], em, top->w);
+		border[0] = fz_from_css_number(box->style.border_width[0], em, top->w);
+		border[1] = fz_from_css_number(box->style.border_width[1], em, top->w);
+		border[2] = fz_from_css_number(box->style.border_width[2], em, top->w);
+		border[3] = fz_from_css_number(box->style.border_width[3], em, top->w);
 	}
 	else
 		border[0] = border[1] = border[2] = border[3] = 0;
@@ -602,7 +602,7 @@ static void layout_block(fz_context *ctx, struct box *box, struct box *top, floa
 		{
 			/* TODO: interaction with page breaks */
 			if (prev_br)
-				box->h += from_number_scale(box->style.line_height, em, em, em);
+				box->h += fz_from_css_number_scale(box->style.line_height, em, em, em);
 			prev_br = 1;
 		}
 		else if (child->type == BOX_FLOW)
