@@ -129,7 +129,6 @@ struct box
 	float margin[4];
 	float border[4];
 	struct box *up, *down, *last, *next;
-	fz_xml *node;
 	struct flow *flow_head, **flow_tail;
 	struct computed_style style;
 	int is_first_flow; /* for text-indent */
