@@ -31,6 +31,7 @@ static const char *default_css =
 "u,ins{text-decoration:underline}"
 "center{text-align:center}"
 "svg{display:none}"
+"a{color:blue}"
 ;
 
 static int iswhite(int c)
