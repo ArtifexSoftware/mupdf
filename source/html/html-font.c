@@ -1,7 +1,8 @@
 #include "mupdf/html.h"
 #include "mupdf/pdf.h" /* for pdf_lookup_builtin_font */
 
-static const char *font_names[16] = {
+static const char *font_names[16] =
+{
 	"Times-Roman", "Times-Italic", "Times-Bold", "Times-BoldItalic",
 	"Helvetica", "Helvetica-Oblique", "Helvetica-Bold", "Helvetica-BoldOblique",
 	"Courier", "Courier-Oblique", "Courier-Bold", "Courier-BoldOblique",
@@ -24,10 +25,8 @@ fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	if (!set->fonts[idx])
 	{
 		data = pdf_lookup_builtin_font(font_names[idx], &size);
-		if (!data) {
-		printf("data=%p idx=%d s=%s\n", data, idx, font_names[idx]);
-			abort();
-		}
+		if (!data)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load html font: %s", font_names[idx]);
 		set->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);
 	}
 
@@ -41,5 +40,8 @@ fz_html_font_set *fz_new_html_font_set(fz_context *ctx)
 
 void fz_free_html_font_set(fz_context *ctx, fz_html_font_set *set)
 {
+	int i;
+	for (i = 0; i < nelem(set->fonts); ++i)
+		fz_drop_font(ctx, set->fonts[i]);
 	fz_free(ctx, set);
 }

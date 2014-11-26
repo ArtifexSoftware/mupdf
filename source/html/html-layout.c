@@ -116,11 +116,20 @@ static void generate_image(fz_context *ctx, fz_archive *zip, const char *base_ur
 	fz_strlcat(path, src, sizeof path);
 	fz_cleanname(path);
 
-	buf = fz_read_archive_entry(ctx, zip, path);
-	img = fz_new_image_from_buffer(ctx, buf);
-	fz_drop_buffer(ctx, buf);
+	fz_try(ctx)
+	{
+		buf = fz_read_archive_entry(ctx, zip, path);
+		img = fz_new_image_from_buffer(ctx, buf);
+		fz_drop_buffer(ctx, buf);
 
-	add_flow_image(ctx, flow, &box->style, img);
+		add_flow_image(ctx, flow, &box->style, img);
+	}
+	fz_catch(ctx)
+	{
+		const char *alt = "[image]";
+		fz_warn(ctx, "html: cannot add image src='%s'", src);
+		add_flow_word(ctx, flow, &box->style, alt, alt + 7);
+	}
 }
 
 static void init_box(fz_context *ctx, struct box *box, fz_xml *node)
