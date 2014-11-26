@@ -88,7 +88,7 @@ keyword_in_list(const char *name, const char **list, int n)
  */
 
 static int
-count_condition_ids(struct condition *cond)
+count_condition_ids(fz_css_condition *cond)
 {
 	int n = 0;
 	while (cond)
@@ -101,7 +101,7 @@ count_condition_ids(struct condition *cond)
 }
 
 static int
-count_selector_ids(struct selector *sel)
+count_selector_ids(fz_css_selector *sel)
 {
 	int n = count_condition_ids(sel->cond);
 	if (sel->left && sel->right)
@@ -113,7 +113,7 @@ count_selector_ids(struct selector *sel)
 }
 
 static int
-count_condition_atts(struct condition *cond)
+count_condition_atts(fz_css_condition *cond)
 {
 	int n = 0;
 	while (cond)
@@ -126,7 +126,7 @@ count_condition_atts(struct condition *cond)
 }
 
 static int
-count_selector_atts(struct selector *sel)
+count_selector_atts(fz_css_selector *sel)
 {
 	int n = count_condition_atts(sel->cond);
 	if (sel->left && sel->right)
@@ -138,7 +138,7 @@ count_selector_atts(struct selector *sel)
 }
 
 static int
-count_condition_names(struct condition *cond)
+count_condition_names(fz_css_condition *cond)
 {
 	int n = 0;
 	while (cond)
@@ -151,7 +151,7 @@ count_condition_names(struct condition *cond)
 }
 
 static int
-count_selector_names(struct selector *sel)
+count_selector_names(fz_css_selector *sel)
 {
 	int n = count_condition_names(sel->cond);
 	if (sel->left && sel->right)
@@ -169,7 +169,7 @@ count_selector_names(struct selector *sel)
 #define INLINE_SPECIFICITY 1000
 
 static int
-selector_specificity(struct selector *sel)
+selector_specificity(fz_css_selector *sel)
 {
 	int b = count_selector_ids(sel);
 	int c = count_selector_atts(sel);
@@ -208,7 +208,7 @@ match_class_condition(fz_xml *node, const char *p)
 }
 
 static int
-match_condition(struct condition *cond, fz_xml *node)
+match_condition(fz_css_condition *cond, fz_xml *node)
 {
 	if (!cond)
 		return 1;
@@ -224,7 +224,7 @@ match_condition(struct condition *cond, fz_xml *node)
 }
 
 static int
-match_selector(struct selector *sel, fz_xml *node)
+match_selector(fz_css_selector *sel, fz_xml *node)
 {
 	if (!node)
 		return 0;
@@ -294,7 +294,7 @@ match_selector(struct selector *sel, fz_xml *node)
  */
 
 static int
-count_values(struct value *value)
+count_values(fz_css_value *value)
 {
 	int n = 0;
 	while (value)
@@ -305,10 +305,10 @@ count_values(struct value *value)
 	return n;
 }
 
-static void add_property(fz_css_match *match, const char *name, struct value *value, int spec);
+static void add_property(fz_css_match *match, const char *name, fz_css_value *value, int spec);
 
 static void
-add_shorthand_trbl(fz_css_match *match, struct value *value, int spec,
+add_shorthand_trbl(fz_css_match *match, fz_css_value *value, int spec,
 	const char *name_t, const char *name_r, const char *name_b, const char *name_l)
 {
 	int n = count_values(value);
@@ -323,8 +323,8 @@ add_shorthand_trbl(fz_css_match *match, struct value *value, int spec,
 
 	if (n == 2)
 	{
-		struct value *a = value;
-		struct value *b = value->next;
+		fz_css_value *a = value;
+		fz_css_value *b = value->next;
 
 		add_property(match, name_t, a, spec);
 		add_property(match, name_r, b, spec);
@@ -334,9 +334,9 @@ add_shorthand_trbl(fz_css_match *match, struct value *value, int spec,
 
 	if (n == 3)
 	{
-		struct value *a = value;
-		struct value *b = value->next;
-		struct value *c = value->next->next;
+		fz_css_value *a = value;
+		fz_css_value *b = value->next;
+		fz_css_value *c = value->next->next;
 
 		add_property(match, name_t, a, spec);
 		add_property(match, name_r, b, spec);
@@ -346,10 +346,10 @@ add_shorthand_trbl(fz_css_match *match, struct value *value, int spec,
 
 	if (n == 4)
 	{
-		struct value *a = value;
-		struct value *b = value->next;
-		struct value *c = value->next->next;
-		struct value *d = value->next->next->next;
+		fz_css_value *a = value;
+		fz_css_value *b = value->next;
+		fz_css_value *c = value->next->next;
+		fz_css_value *d = value->next->next->next;
 
 		add_property(match, name_t, a, spec);
 		add_property(match, name_r, b, spec);
@@ -359,28 +359,28 @@ add_shorthand_trbl(fz_css_match *match, struct value *value, int spec,
 }
 
 static void
-add_shorthand_margin(fz_css_match *match, struct value *value, int spec)
+add_shorthand_margin(fz_css_match *match, fz_css_value *value, int spec)
 {
 	add_shorthand_trbl(match, value, spec,
 		"margin-top", "margin-right", "margin-bottom", "margin-left");
 }
 
 static void
-add_shorthand_padding(fz_css_match *match, struct value *value, int spec)
+add_shorthand_padding(fz_css_match *match, fz_css_value *value, int spec)
 {
 	add_shorthand_trbl(match, value, spec,
 		"padding-top", "padding-right", "padding-bottom", "padding-left");
 }
 
 static void
-add_shorthand_border_width(fz_css_match *match, struct value *value, int spec)
+add_shorthand_border_width(fz_css_match *match, fz_css_value *value, int spec)
 {
 	add_shorthand_trbl(match, value, spec,
 		"border-width-top", "border-width-right", "border-width-bottom", "border-width-left");
 }
 
 static void
-add_shorthand_border(fz_css_match *match, struct value *value, int spec)
+add_shorthand_border(fz_css_match *match, fz_css_value *value, int spec)
 {
 	while (value)
 	{
@@ -418,7 +418,7 @@ add_shorthand_border(fz_css_match *match, struct value *value, int spec)
 }
 
 static void
-add_property(fz_css_match *match, const char *name, struct value *value, int spec)
+add_property(fz_css_match *match, const char *name, fz_css_value *value, int spec)
 {
 	int i;
 
@@ -478,8 +478,8 @@ add_property(fz_css_match *match, const char *name, struct value *value, int spe
 void
 fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node)
 {
-	struct selector *sel;
-	struct property *prop;
+	fz_css_selector *sel;
+	fz_css_property *prop;
 	const char *s;
 
 	while (rule)
@@ -511,7 +511,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *no
 	}
 }
 
-static struct value *
+static fz_css_value *
 value_from_raw_property(fz_css_match *match, const char *name)
 {
 	int i;
@@ -521,10 +521,10 @@ value_from_raw_property(fz_css_match *match, const char *name)
 	return NULL;
 }
 
-static struct value *
+static fz_css_value *
 value_from_property(fz_css_match *match, const char *name)
 {
-	struct value *value;
+	fz_css_value *value;
 
 	value = value_from_raw_property(match, name);
 	if (match->up)
@@ -540,24 +540,24 @@ value_from_property(fz_css_match *match, const char *name)
 static const char *
 string_from_property(fz_css_match *match, const char *name, const char *initial)
 {
-	struct value *value;
+	fz_css_value *value;
 	value = value_from_property(match, name);
 	if (!value)
 		return initial;
 	return value->data;
 }
 
-static struct number
+static fz_css_number
 make_number(float v, int u)
 {
-	struct number n;
+	fz_css_number n;
 	n.value = v;
 	n.unit = u;
 	return n;
 }
 
-static struct number
-number_from_value(struct value *value, float initial, int initial_unit)
+static fz_css_number
+number_from_value(fz_css_value *value, float initial, int initial_unit)
 {
 	char *p;
 
@@ -599,16 +599,16 @@ number_from_value(struct value *value, float initial, int initial_unit)
 	return make_number(initial, initial_unit);
 }
 
-static struct number
+static fz_css_number
 number_from_property(fz_css_match *match, const char *property, float initial, int initial_unit)
 {
 	return number_from_value(value_from_property(match, property), initial, initial_unit);
 }
 
-static struct number
+static fz_css_number
 border_width_from_property(fz_css_match *match, const char *property)
 {
-	struct value *value = value_from_property(match, property);
+	fz_css_value *value = value_from_property(match, property);
 	if (value)
 	{
 		if (!strcmp(value->data, "thin"))
@@ -623,7 +623,7 @@ border_width_from_property(fz_css_match *match, const char *property)
 }
 
 float
-fz_from_css_number(struct number number, float em, float width)
+fz_from_css_number(fz_css_number number, float em, float width)
 {
 	switch (number.unit) {
 	default:
@@ -634,7 +634,7 @@ fz_from_css_number(struct number number, float em, float width)
 }
 
 float
-fz_from_css_number_scale(struct number number, float scale, float em, float width)
+fz_from_css_number_scale(fz_css_number number, float scale, float em, float width)
 {
 	switch (number.unit) {
 	default:
@@ -644,10 +644,10 @@ fz_from_css_number_scale(struct number number, float scale, float em, float widt
 	}
 }
 
-static struct color
+static fz_css_color
 make_color(int r, int g, int b, int a)
 {
-	struct color c;
+	fz_css_color c;
 	c.r = r;
 	c.g = g;
 	c.b = b;
@@ -662,8 +662,8 @@ static int tohex(int c)
 	return (c | 32) - 'a' + 10;
 }
 
-static struct color
-color_from_value(struct value *value, struct color initial)
+static fz_css_color
+color_from_value(fz_css_value *value, fz_css_color initial)
 {
 	if (!value)
 		return initial;
@@ -717,8 +717,8 @@ color_from_value(struct value *value, struct color initial)
 	return initial;
 }
 
-static struct color
-color_from_property(fz_css_match *match, const char *property, struct color initial)
+static fz_css_color
+color_from_property(fz_css_match *match, const char *property, fz_css_color initial)
 {
 	return color_from_value(value_from_property(match, property), initial);
 }
@@ -726,7 +726,7 @@ color_from_property(fz_css_match *match, const char *property, struct color init
 int
 fz_get_css_match_display(fz_css_match *match)
 {
-	struct value *value = value_from_property(match, "display");
+	fz_css_value *value = value_from_property(match, "display");
 	if (value)
 	{
 		if (!strcmp(value->data, "none"))
@@ -744,7 +744,7 @@ fz_get_css_match_display(fz_css_match *match)
 static int
 white_space_from_property(fz_css_match *match)
 {
-	struct value *value = value_from_property(match, "white-space");
+	fz_css_value *value = value_from_property(match, "white-space");
 	if (value)
 	{
 		if (!strcmp(value->data, "normal")) return WS_NORMAL;
@@ -769,10 +769,10 @@ fz_default_css_style(fz_context *ctx, fz_css_style *style)
 void
 fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match)
 {
-	struct value *value;
+	fz_css_value *value;
 
-	struct color black = { 0, 0, 0, 255 };
-	struct color transparent = { 0, 0, 0, 0 };
+	fz_css_color black = { 0, 0, 0, 255 };
+	fz_css_color transparent = { 0, 0, 0, 0 };
 
 	fz_default_css_style(ctx, style);
 
@@ -873,7 +873,7 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
  */
 
 void
-print_value(struct value *val)
+print_value(fz_css_value *val)
 {
 	printf("%s", val->data);
 	if (val->args)
@@ -890,7 +890,7 @@ print_value(struct value *val)
 }
 
 void
-print_property(struct property *prop)
+print_property(fz_css_property *prop)
 {
 	printf("\t%s: ", prop->name);
 	print_value(prop->value);
@@ -898,7 +898,7 @@ print_property(struct property *prop)
 }
 
 void
-print_condition(struct condition *cond)
+print_condition(fz_css_condition *cond)
 {
 	if (cond->type == '=')
 		printf("[%s=%s]", cond->key, cond->val);
@@ -911,7 +911,7 @@ print_condition(struct condition *cond)
 }
 
 void
-print_selector(struct selector *sel)
+print_selector(fz_css_selector *sel)
 {
 	if (sel->combine)
 	{
@@ -937,8 +937,8 @@ putchar(')');
 void
 print_rule(fz_css_rule *rule)
 {
-	struct selector *sel;
-	struct property *prop;
+	fz_css_selector *sel;
+	fz_css_property *prop;
 
 	for (sel = rule->selector; sel; sel = sel->next)
 	{

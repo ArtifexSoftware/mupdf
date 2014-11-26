@@ -11,6 +11,13 @@ typedef struct fz_css_rule_s fz_css_rule;
 typedef struct fz_css_match_s fz_css_match;
 typedef struct fz_css_style_s fz_css_style;
 
+typedef struct fz_css_selector_s fz_css_selector;
+typedef struct fz_css_condition_s fz_css_condition;
+typedef struct fz_css_property_s fz_css_property;
+typedef struct fz_css_value_s fz_css_value;
+typedef struct fz_css_number_s fz_css_number;
+typedef struct fz_css_color_s fz_css_color;
+
 struct fz_html_font_set_s
 {
 	fz_font *fonts[16];
@@ -29,43 +36,43 @@ enum
 
 struct fz_css_rule_s
 {
-	struct selector *selector;
-	struct property *declaration;
+	fz_css_selector *selector;
+	fz_css_property *declaration;
 	fz_css_rule *next;
 };
 
-struct selector
+struct fz_css_selector_s
 {
 	const char *name;
 	int combine;
-	struct condition *cond;
-	struct selector *left;
-	struct selector *right;
-	struct selector *next;
+	fz_css_condition *cond;
+	fz_css_selector *left;
+	fz_css_selector *right;
+	fz_css_selector *next;
 };
 
-struct condition
+struct fz_css_condition_s
 {
 	int type;
 	const char *key;
 	const char *val;
-	struct condition *next;
+	fz_css_condition *next;
 };
 
-struct property
+struct fz_css_property_s
 {
 	const char *name;
-	struct value *value;
+	fz_css_value *value;
 	int spec;
-	struct property *next;
+	fz_css_property *next;
 };
 
-struct value
+struct fz_css_value_s
 {
 	int type;
 	const char *data;
-	struct value *args; /* function arguments */
-	struct value *next;
+	fz_css_value *args; /* function arguments */
+	fz_css_value *next;
 };
 
 struct fz_css_match_s
@@ -74,7 +81,7 @@ struct fz_css_match_s
 	int count;
 	struct {
 		const char *name;
-		struct value *value;
+		fz_css_value *value;
 		int spec;
 	} prop[64];
 };
@@ -88,32 +95,32 @@ enum { BS_NONE, BS_SOLID };
 
 enum { N_NUMBER='p', N_SCALE='m', N_PERCENT='%' };
 
-struct number
+struct fz_css_number_s
 {
 	float value;
 	int unit;
 };
 
-struct color
+struct fz_css_color_s
 {
 	unsigned char r, g, b, a;
 };
 
 struct fz_css_style_s
 {
-	struct number font_size;
-	struct number margin[4];
-	struct number padding[4];
-	struct number border_width[4];
-	struct number text_indent;
+	fz_css_number font_size;
+	fz_css_number margin[4];
+	fz_css_number padding[4];
+	fz_css_number border_width[4];
+	fz_css_number text_indent;
 	int white_space;
 	int text_align;
 	int vertical_align;
 	int border_style;
-	struct number line_height;
-	struct color background_color;
-	struct color border_color;
-	struct color color;
+	fz_css_number line_height;
+	fz_css_color background_color;
+	fz_css_color border_color;
+	fz_css_color color;
 	fz_font *font;
 };
 
@@ -156,7 +163,7 @@ struct fz_html_flow_s
 };
 
 fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *old, const char *source);
-struct property *fz_parse_css_properties(fz_context *ctx, const char *source);
+fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source);
 
 void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node);
 
@@ -164,8 +171,8 @@ int fz_get_css_match_display(fz_css_match *node);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);
 void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match);
 
-float fz_from_css_number(struct number, float em, float width);
-float fz_from_css_number_scale(struct number number, float scale, float em, float width);
+float fz_from_css_number(fz_css_number, float em, float width);
+float fz_from_css_number_scale(fz_css_number number, float scale, float em, float width);
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
 fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set,

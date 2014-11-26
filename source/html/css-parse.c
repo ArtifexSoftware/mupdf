@@ -1,61 +1,5 @@
 #include "mupdf/html.h"
 
-static fz_css_rule *
-fz_new_css_rule(fz_context *ctx, struct selector *selector, struct property *declaration)
-{
-	fz_css_rule *rule = fz_malloc_struct(ctx, fz_css_rule);
-	rule->selector = selector;
-	rule->declaration = declaration;
-	rule->next = NULL;
-	return rule;
-}
-
-static struct selector *
-fz_new_css_selector(fz_context *ctx, const char *name)
-{
-	struct selector *sel = fz_malloc_struct(ctx, struct selector);
-	sel->name = name ? fz_strdup(ctx, name) : NULL;
-	sel->combine = 0;
-	sel->cond = NULL;
-	sel->left = NULL;
-	sel->right = NULL;
-	sel->next = NULL;
-	return sel;
-}
-
-static struct condition *
-fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val)
-{
-	struct condition *cond = fz_malloc_struct(ctx, struct condition);
-	cond->type = type;
-	cond->key = key ? fz_strdup(ctx, key) : NULL;
-	cond->val = val ? fz_strdup(ctx, val) : NULL;
-	cond->next = NULL;
-	return cond;
-}
-
-static struct property *
-fz_new_css_property(fz_context *ctx, const char *name, struct value *value, int spec)
-{
-	struct property *prop = fz_malloc_struct(ctx, struct property);
-	prop->name = fz_strdup(ctx, name);
-	prop->value = value;
-	prop->spec = spec;
-	prop->next = NULL;
-	return prop;
-}
-
-static struct value *
-fz_new_css_value(fz_context *ctx, int type, const char *data)
-{
-	struct value *val = fz_malloc_struct(ctx, struct value);
-	val->type = type;
-	val->data = fz_strdup(ctx, data);
-	val->args = NULL;
-	val->next = NULL;
-	return val;
-}
-
 struct lexbuf
 {
 	fz_context *ctx;
@@ -66,6 +10,57 @@ struct lexbuf
 	int string_len;
 	char string[1024];
 };
+
+static fz_css_rule *fz_new_css_rule(fz_context *ctx, fz_css_selector *selector, fz_css_property *declaration)
+{
+	fz_css_rule *rule = fz_malloc_struct(ctx, fz_css_rule);
+	rule->selector = selector;
+	rule->declaration = declaration;
+	rule->next = NULL;
+	return rule;
+}
+
+static fz_css_selector *fz_new_css_selector(fz_context *ctx, const char *name)
+{
+	fz_css_selector *sel = fz_malloc_struct(ctx, fz_css_selector);
+	sel->name = name ? fz_strdup(ctx, name) : NULL;
+	sel->combine = 0;
+	sel->cond = NULL;
+	sel->left = NULL;
+	sel->right = NULL;
+	sel->next = NULL;
+	return sel;
+}
+
+static fz_css_condition *fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val)
+{
+	fz_css_condition *cond = fz_malloc_struct(ctx, fz_css_condition);
+	cond->type = type;
+	cond->key = key ? fz_strdup(ctx, key) : NULL;
+	cond->val = val ? fz_strdup(ctx, val) : NULL;
+	cond->next = NULL;
+	return cond;
+}
+
+static fz_css_property *fz_new_css_property(fz_context *ctx, const char *name, fz_css_value *value, int spec)
+{
+	fz_css_property *prop = fz_malloc_struct(ctx, fz_css_property);
+	prop->name = fz_strdup(ctx, name);
+	prop->value = value;
+	prop->spec = spec;
+	prop->next = NULL;
+	return prop;
+}
+
+static fz_css_value *fz_new_css_value(fz_context *ctx, int type, const char *data)
+{
+	fz_css_value *val = fz_malloc_struct(ctx, fz_css_value);
+	val->type = type;
+	val->data = fz_strdup(ctx, data);
+	val->args = NULL;
+	val->next = NULL;
+	return val;
+}
 
 static void css_lex_next(struct lexbuf *buf)
 {
@@ -421,11 +416,11 @@ static int iscond(int t)
 	return t == ':' || t == '.' || t == '#' || t == '[';
 }
 
-static struct value *parse_value_list(struct lexbuf *buf);
+static fz_css_value *parse_value_list(struct lexbuf *buf);
 
-static struct value *parse_value(struct lexbuf *buf)
+static fz_css_value *parse_value(struct lexbuf *buf)
 {
-	struct value *v;
+	fz_css_value *v;
 
 	if (buf->lookahead == CSS_KEYWORD)
 	{
@@ -463,9 +458,9 @@ static struct value *parse_value(struct lexbuf *buf)
 	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected value");
 }
 
-static struct value *parse_value_list(struct lexbuf *buf)
+static fz_css_value *parse_value_list(struct lexbuf *buf)
 {
-	struct value *head, *tail;
+	fz_css_value *head, *tail;
 
 	head = tail = NULL;
 
@@ -481,9 +476,9 @@ static struct value *parse_value_list(struct lexbuf *buf)
 	return head;
 }
 
-static struct property *parse_declaration(struct lexbuf *buf)
+static fz_css_property *parse_declaration(struct lexbuf *buf)
 {
-	struct property *p;
+	fz_css_property *p;
 
 	if (buf->lookahead != CSS_KEYWORD)
 		fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword in property");
@@ -501,9 +496,9 @@ static struct property *parse_declaration(struct lexbuf *buf)
 	return p;
 }
 
-static struct property *parse_declaration_list(struct lexbuf *buf)
+static fz_css_property *parse_declaration_list(struct lexbuf *buf)
 {
-	struct property *head, *tail;
+	fz_css_property *head, *tail;
 
 	if (buf->lookahead == '}' || buf->lookahead == EOF)
 		return NULL;
@@ -535,9 +530,9 @@ static const char *parse_attrib_value(struct lexbuf *buf)
 	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected attribute value");
 }
 
-static struct condition *parse_condition(struct lexbuf *buf)
+static fz_css_condition *parse_condition(struct lexbuf *buf)
 {
-	struct condition *c;
+	fz_css_condition *c;
 
 	if (accept(buf, ':'))
 	{
@@ -600,9 +595,9 @@ static struct condition *parse_condition(struct lexbuf *buf)
 	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected condition");
 }
 
-static struct condition *parse_condition_list(struct lexbuf *buf)
+static fz_css_condition *parse_condition_list(struct lexbuf *buf)
 {
-	struct condition *head, *tail;
+	fz_css_condition *head, *tail;
 
 	head = tail = parse_condition(buf);
 	while (iscond(buf->lookahead))
@@ -612,9 +607,9 @@ static struct condition *parse_condition_list(struct lexbuf *buf)
 	return head;
 }
 
-static struct selector *parse_simple_selector(struct lexbuf *buf)
+static fz_css_selector *parse_simple_selector(struct lexbuf *buf)
 {
-	struct selector *s;
+	fz_css_selector *s;
 
 	if (accept(buf, '*'))
 	{
@@ -641,9 +636,9 @@ static struct selector *parse_simple_selector(struct lexbuf *buf)
 	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected selector");
 }
 
-static struct selector *parse_adjacent_selector(struct lexbuf *buf)
+static fz_css_selector *parse_adjacent_selector(struct lexbuf *buf)
 {
-	struct selector *s, *a, *b;
+	fz_css_selector *s, *a, *b;
 
 	a = parse_simple_selector(buf);
 	if (accept(buf, '+'))
@@ -658,9 +653,9 @@ static struct selector *parse_adjacent_selector(struct lexbuf *buf)
 	return a;
 }
 
-static struct selector *parse_child_selector(struct lexbuf *buf)
+static fz_css_selector *parse_child_selector(struct lexbuf *buf)
 {
-	struct selector *s, *a, *b;
+	fz_css_selector *s, *a, *b;
 
 	a = parse_adjacent_selector(buf);
 	if (accept(buf, '>'))
@@ -675,9 +670,9 @@ static struct selector *parse_child_selector(struct lexbuf *buf)
 	return a;
 }
 
-static struct selector *parse_descendant_selector(struct lexbuf *buf)
+static fz_css_selector *parse_descendant_selector(struct lexbuf *buf)
 {
-	struct selector *s, *a, *b;
+	fz_css_selector *s, *a, *b;
 
 	a = parse_child_selector(buf);
 	if (buf->lookahead != ',' && buf->lookahead != '{' && buf->lookahead != EOF)
@@ -692,9 +687,9 @@ static struct selector *parse_descendant_selector(struct lexbuf *buf)
 	return a;
 }
 
-static struct selector *parse_selector_list(struct lexbuf *buf)
+static fz_css_selector *parse_selector_list(struct lexbuf *buf)
 {
-	struct selector *head, *tail;
+	fz_css_selector *head, *tail;
 
 	head = tail = parse_descendant_selector(buf);
 	while (accept(buf, ','))
@@ -706,8 +701,8 @@ static struct selector *parse_selector_list(struct lexbuf *buf)
 
 static fz_css_rule *parse_rule(struct lexbuf *buf)
 {
-	struct selector *s;
-	struct property *p;
+	fz_css_selector *s;
+	fz_css_property *p;
 
 	s = parse_selector_list(buf);
 	expect(buf, '{');
@@ -729,8 +724,8 @@ static void parse_media_list(struct lexbuf *buf)
 
 static void parse_at_rule(struct lexbuf *buf)
 {
-	struct property *p;
-	struct value *v;
+	fz_css_property *p;
+	fz_css_value *v;
 
 	expect(buf, CSS_KEYWORD);
 	if (accept(buf, '{')) /* @page */
@@ -787,7 +782,7 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 	return chain ? chain : tail;
 }
 
-struct property *fz_parse_css_properties(fz_context *ctx, const char *source)
+fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source)
 {
 	struct lexbuf buf;
 	css_lex_init(ctx, &buf, source);
