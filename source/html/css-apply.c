@@ -507,7 +507,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *no
 			add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
 			prop = prop->next;
 		}
-		// TODO: free props
+		// TODO: free props (hitch a ride with fz_css_rule?)
 	}
 }
 

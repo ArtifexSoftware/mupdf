@@ -95,10 +95,19 @@ epub_run_page(epub_document *doc, epub_page *page, fz_device *dev, const fz_matr
 static void
 epub_close_document(epub_document *doc)
 {
-	/* TODO:free all chapters */
-	fz_close_archive(doc->ctx, doc->zip);
-	fz_free_html_font_set(doc->ctx, doc->set);
-	fz_free(doc->ctx, doc);
+	fz_context *ctx = doc->ctx;
+	epub_chapter *ch, *next;
+	ch = doc->spine;
+	while (ch)
+	{
+		next = ch->next;
+		fz_free_html(ctx, ch->box);
+		fz_free(ctx, ch);
+		ch = next;
+	}
+	fz_close_archive(ctx, doc->zip);
+	fz_free_html_font_set(ctx, doc->set);
+	fz_free(ctx, doc);
 }
 
 static const char *

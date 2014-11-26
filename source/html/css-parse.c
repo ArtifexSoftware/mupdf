@@ -62,6 +62,68 @@ static fz_css_value *fz_new_css_value(fz_context *ctx, int type, const char *dat
 	return val;
 }
 
+static void fz_free_css_value(fz_context *ctx, fz_css_value *val)
+{
+	while (val)
+	{
+		fz_css_value *next = val->next;
+		fz_free_css_value(ctx, val->args);
+		fz_free(ctx, val->data);
+		fz_free(ctx, val);
+		val = next;
+	}
+}
+
+static void fz_free_css_condition(fz_context *ctx, fz_css_condition *cond)
+{
+	while (cond)
+	{
+		fz_css_condition *next = cond->next;
+		fz_free(ctx, cond->key);
+		fz_free(ctx, cond->val);
+		fz_free(ctx, cond);
+		cond = next;
+	}
+}
+
+static void fz_free_css_selector(fz_context *ctx, fz_css_selector *sel)
+{
+	while (sel)
+	{
+		fz_css_selector *next = sel->next;
+		fz_free(ctx, sel->name);
+		fz_free_css_condition(ctx, sel->cond);
+		fz_free_css_selector(ctx, sel->left);
+		fz_free_css_selector(ctx, sel->right);
+		fz_free(ctx, sel);
+		sel = next;
+	}
+}
+
+static void fz_free_css_property(fz_context *ctx, fz_css_property *prop)
+{
+	while (prop)
+	{
+		fz_css_property *next = prop->next;
+		fz_free(ctx, prop->name);
+		fz_free_css_value(ctx, prop->value);
+		fz_free(ctx, prop);
+		prop = next;
+	}
+}
+
+void fz_free_css(fz_context *ctx, fz_css_rule *rule)
+{
+	while (rule)
+	{
+		fz_css_rule *next = rule->next;
+		fz_free_css_selector(ctx, rule->selector);
+		fz_free_css_property(ctx, rule->declaration);
+		fz_free(ctx, rule);
+		rule = next;
+	}
+}
+
 static void css_lex_next(struct lexbuf *buf)
 {
 	// buf->s += fz_chartorune(&buf->c, buf->s);
@@ -516,13 +578,13 @@ static fz_css_property *parse_declaration_list(struct lexbuf *buf)
 	return head;
 }
 
-static const char *parse_attrib_value(struct lexbuf *buf)
+static char *parse_attrib_value(struct lexbuf *buf)
 {
-	const char *s;
+	char *s;
 
 	if (buf->lookahead == CSS_KEYWORD || buf->lookahead == CSS_STRING)
 	{
-		s = strdup(buf->string);
+		s = fz_strdup(buf->ctx, buf->string);
 		next(buf);
 		return s;
 	}
@@ -718,7 +780,7 @@ static void parse_media_list(struct lexbuf *buf)
 	while (buf->lookahead != '}' && buf->lookahead != EOF)
 	{
 		r = parse_rule(buf);
-		// TODO: free_rule(r);
+		fz_free_css(buf->ctx, r);
 	}
 }
 
@@ -731,13 +793,13 @@ static void parse_at_rule(struct lexbuf *buf)
 	if (accept(buf, '{')) /* @page */
 	{
 		p = parse_declaration_list(buf);
-		// TODO: free_properties(p);
+		fz_free_css_property(buf->ctx, p);
 		expect(buf, '}');
 	}
 	else
 	{
 		v = parse_value_list(buf);
-		// TODO: free_value_list(v);
+		fz_free_css_value(buf->ctx, v);
 		if (accept(buf, '{')) /* @media */
 		{
 			parse_media_list(buf);

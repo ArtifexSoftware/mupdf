@@ -20,6 +20,7 @@ static void
 htdoc_close_document(html_document *doc)
 {
 	fz_close_archive(doc->ctx, doc->zip);
+	fz_free_html(doc->ctx, doc->box);
 	fz_free_html_font_set(doc->ctx, doc->set);
 	fz_free(doc->ctx, doc);
 }

@@ -39,6 +39,20 @@ static int iswhite(int c)
 	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
+static void fz_free_html_flow(fz_context *ctx, fz_html_flow *flow)
+{
+	while (flow)
+	{
+		fz_html_flow *next = flow->next;
+		if (flow->type == FLOW_WORD)
+			fz_free(ctx, flow->text);
+		if (flow->type == FLOW_IMAGE)
+			fz_drop_image(ctx, flow->image);
+		fz_free(ctx, flow);
+		flow = next;
+	}
+}
+
 static fz_html_flow *add_flow(fz_context *ctx, fz_html_box *top, fz_css_style *style, int type)
 {
 	fz_html_flow *flow = fz_malloc_struct(ctx, fz_html_flow);
@@ -147,6 +161,18 @@ static void init_box(fz_context *ctx, fz_html_box *box)
 	box->flow_tail = &box->flow_head;
 
 	fz_default_css_style(ctx, &box->style);
+}
+
+void fz_free_html(fz_context *ctx, fz_html_box *box)
+{
+	while (box)
+	{
+		fz_html_box *next = box->next;
+		fz_free_html_flow(ctx, box->flow_head);
+		fz_free_html(ctx, box->down);
+		fz_free(ctx, box);
+		box = next;
+	}
 }
 
 static fz_html_box *new_box(fz_context *ctx)
@@ -880,6 +906,9 @@ fz_generate_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const 
 	match.count = 0;
 
 	generate_boxes(ctx, set, zip, base_uri, xml, box, css, &match);
+
+	fz_free_css(ctx, css);
+	fz_free_xml(ctx, xml);
 
 	return box;
 }

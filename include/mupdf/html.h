@@ -43,7 +43,7 @@ struct fz_css_rule_s
 
 struct fz_css_selector_s
 {
-	const char *name;
+	char *name;
 	int combine;
 	fz_css_condition *cond;
 	fz_css_selector *left;
@@ -54,14 +54,14 @@ struct fz_css_selector_s
 struct fz_css_condition_s
 {
 	int type;
-	const char *key;
-	const char *val;
+	char *key;
+	char *val;
 	fz_css_condition *next;
 };
 
 struct fz_css_property_s
 {
-	const char *name;
+	char *name;
 	fz_css_value *value;
 	int spec;
 	fz_css_property *next;
@@ -70,7 +70,7 @@ struct fz_css_property_s
 struct fz_css_value_s
 {
 	int type;
-	const char *data;
+	char *data;
 	fz_css_value *args; /* function arguments */
 	fz_css_value *next;
 };
@@ -80,8 +80,8 @@ struct fz_css_match_s
 	fz_css_match *up;
 	int count;
 	struct {
-		const char *name;
-		fz_css_value *value;
+		const char *name; /* not owned */
+		fz_css_value *value; /* not owned */
 		int spec;
 	} prop[64];
 };
@@ -164,6 +164,7 @@ struct fz_html_flow_s
 
 fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *old, const char *source);
 fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source);
+void fz_free_css(fz_context *ctx, fz_css_rule *rule);
 
 void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node);
 
@@ -182,5 +183,6 @@ void fz_free_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 fz_html_box *fz_generate_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf);
 void fz_layout_html(fz_context *ctx, fz_html_box *box, float w, float h, float em);
 void fz_draw_html(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
+void fz_free_html(fz_context *ctx, fz_html_box *box);
 
 #endif
