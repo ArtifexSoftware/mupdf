@@ -163,7 +163,7 @@ struct fz_html_flow_s
 	fz_html_flow *next;
 };
 
-fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *old, const char *source);
+fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file, int line);
 fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source);
 void fz_free_css(fz_context *ctx, fz_css_rule *rule);
 

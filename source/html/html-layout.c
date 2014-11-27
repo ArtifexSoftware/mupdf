@@ -848,7 +848,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 
 						buf = fz_read_archive_entry(ctx, zip, path);
 						fz_write_buffer_byte(ctx, buf, 0);
-						css = fz_parse_css(ctx, css, (char*)buf->data);
+						css = fz_parse_css(ctx, css, (char*)buf->data, path, 1);
 						fz_drop_buffer(ctx, buf);
 					}
 				}
@@ -857,7 +857,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 		if (tag && !strcmp(tag, "style"))
 		{
 			char *s = concat_text(ctx, node);
-			css = fz_parse_css(ctx, css, s);
+			css = fz_parse_css(ctx, css, s, "<style>", 1);
 			fz_free(ctx, s);
 		}
 		if (fz_xml_down(node))
@@ -894,7 +894,7 @@ fz_generate_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const 
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 
 	printf("html: parsing style sheets.\n");
-	css = fz_parse_css(ctx, NULL, default_css);
+	css = fz_parse_css(ctx, NULL, default_css, "<default>", 1);
 	css = html_load_css(ctx, zip, base_uri, css, xml);
 
 	// print_rules(css);

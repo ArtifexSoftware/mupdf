@@ -4,12 +4,19 @@ struct lexbuf
 {
 	fz_context *ctx;
 	const char *s;
+	const char *file;
+	int line;
 	int lookahead;
 	int c;
 	int color;
 	int string_len;
 	char string[1024];
 };
+
+FZ_NORETURN static void fz_css_error(struct lexbuf *buf, const char *msg)
+{
+	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "css syntax error: %s (%s:%d)", msg, buf->file, buf->line);
+}
 
 static fz_css_rule *fz_new_css_rule(fz_context *ctx, fz_css_selector *selector, fz_css_property *declaration)
 {
@@ -128,15 +135,18 @@ void fz_free_css(fz_context *ctx, fz_css_rule *rule)
 
 static void css_lex_next(struct lexbuf *buf)
 {
-	// buf->s += fz_chartorune(&buf->c, buf->s);
 	buf->c = *(buf->s++);
+	if (buf->c == '\n')
+		++buf->line;
 }
 
-static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s)
+static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s, const char *file, int line)
 {
 	buf->ctx = ctx;
 	buf->s = s;
 	buf->c = 0;
+	buf->file = file;
+	buf->line = line;
 	css_lex_next(buf);
 
 	buf->color = 0;
@@ -163,7 +173,7 @@ static int isnmchar(int c)
 static void css_push_char(struct lexbuf *buf, int c)
 {
 	if (buf->string_len + 1 >= nelem(buf->string))
-		fz_throw(buf->ctx, FZ_ERROR_GENERIC, "token too long");
+		fz_css_error(buf, "token too long");
 	buf->string[buf->string_len++] = c;
 }
 
@@ -180,7 +190,7 @@ static int css_lex_accept(struct lexbuf *buf, int t)
 static void css_lex_expect(struct lexbuf *buf, int t)
 {
 	if (!css_lex_accept(buf, t))
-		fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected '%c'", t);
+		fz_css_error(buf, "unexpected character");
 }
 
 static int ishex(int c, int *v)
@@ -333,7 +343,7 @@ restart:
 					}
 					css_lex_next(buf);
 				}
-				fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: unterminated comment");
+				fz_css_error(buf, "unterminated comment");
 			}
 			return '/';
 		}
@@ -400,7 +410,7 @@ restart:
 			sprintf(buf->string, "%06x", buf->color); // XXX
 			return CSS_COLOR;
 colorerror:
-			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error in color");
+			fz_css_error(buf, "invalid color");
 		}
 
 		if (css_lex_accept(buf, '"'))
@@ -469,10 +479,7 @@ static void expect(struct lexbuf *buf, int t)
 {
 	if (accept(buf, t))
 		return;
-	if (t < 256)
-		fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected '%c'", t);
-	else
-		fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: unexpected token");
+	fz_css_error(buf, "unexpected token");
 }
 
 static int iscond(int t)
@@ -519,7 +526,7 @@ static fz_css_value *parse_value(struct lexbuf *buf)
 	if (accept(buf, '/'))
 		return fz_new_css_value(buf->ctx, '/', "/");
 
-	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected value");
+	fz_css_error(buf, "expected value");
 }
 
 static fz_css_value *parse_value_list(struct lexbuf *buf)
@@ -545,7 +552,7 @@ static fz_css_property *parse_declaration(struct lexbuf *buf)
 	fz_css_property *p;
 
 	if (buf->lookahead != CSS_KEYWORD)
-		fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword in property");
+		fz_css_error(buf, "expected keyword in property");
 	p = fz_new_css_property(buf->ctx, buf->string, NULL, 0);
 	next(buf);
 
@@ -591,7 +598,7 @@ static char *parse_attrib_value(struct lexbuf *buf)
 		return s;
 	}
 
-	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected attribute value");
+	fz_css_error(buf, "expected attribute value");
 }
 
 static fz_css_condition *parse_condition(struct lexbuf *buf)
@@ -601,7 +608,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 	if (accept(buf, ':'))
 	{
 		if (buf->lookahead != CSS_KEYWORD)
-			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after ':'");
+			fz_css_error(buf, "expected keyword after ':'");
 		c = fz_new_css_condition(buf->ctx, ':', "pseudo", buf->string);
 		next(buf);
 		return c;
@@ -610,7 +617,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 	if (accept(buf, '.'))
 	{
 		if (buf->lookahead != CSS_KEYWORD)
-			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after '.'");
+			fz_css_error(buf, "expected keyword after '.'");
 		c = fz_new_css_condition(buf->ctx, '.', "class", buf->string);
 		next(buf);
 		return c;
@@ -619,7 +626,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 	if (accept(buf, '#'))
 	{
 		if (buf->lookahead != CSS_KEYWORD)
-			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after '#'");
+			fz_css_error(buf, "expected keyword after '#'");
 		c = fz_new_css_condition(buf->ctx, '#', "id", buf->string);
 		next(buf);
 		return c;
@@ -628,7 +635,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 	if (accept(buf, '['))
 	{
 		if (buf->lookahead != CSS_KEYWORD)
-			fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected keyword after '['");
+			fz_css_error(buf, "expected keyword after '['");
 
 		c = fz_new_css_condition(buf->ctx, '[', buf->string, NULL);
 		next(buf);
@@ -656,7 +663,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 		return c;
 	}
 
-	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected condition");
+	fz_css_error(buf, "expected condition");
 }
 
 static fz_css_condition *parse_condition_list(struct lexbuf *buf)
@@ -697,7 +704,7 @@ static fz_css_selector *parse_simple_selector(struct lexbuf *buf)
 		return s;
 	}
 
-	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "syntax error: expected selector");
+	fz_css_error(buf, "expected selector");
 }
 
 static fz_css_selector *parse_adjacent_selector(struct lexbuf *buf)
@@ -849,15 +856,15 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, source);
+	css_lex_init(ctx, &buf, source, "<inline>", 1);
 	next(&buf);
 	return parse_declaration_list(&buf);
 }
 
-fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source)
+fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file, int line)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, source);
+	css_lex_init(ctx, &buf, source, file, line);
 	next(&buf);
 	return parse_stylesheet(&buf, chain);
 }
