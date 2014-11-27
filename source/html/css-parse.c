@@ -381,6 +381,13 @@ restart:
 			return '-';
 		}
 
+		if (css_lex_accept(buf, '+'))
+		{
+			if (buf->c >= '0' && buf->c <= '9')
+				return css_lex_number(buf);
+			return '+';
+		}
+
 		if (css_lex_accept(buf, '.'))
 		{
 			if (buf->c >= '0' && buf->c <= '9')
