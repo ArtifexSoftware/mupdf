@@ -789,42 +789,30 @@ static fz_css_rule *parse_rule(struct lexbuf *buf)
 	return fz_new_css_rule(buf->ctx, s, p);
 }
 
-static void parse_media_list(struct lexbuf *buf)
-{
-	fz_css_rule *r;
-
-	while (buf->lookahead != '}' && buf->lookahead != EOF)
-	{
-		r = parse_rule(buf);
-		fz_free_css(buf->ctx, r);
-	}
-}
-
 static void parse_at_rule(struct lexbuf *buf)
 {
-	fz_css_property *p;
-	fz_css_value *v;
-
 	expect(buf, CSS_KEYWORD);
-	if (accept(buf, '{')) /* @page */
+
+	/* skip until '{' or ';' */
+	while (buf->lookahead != EOF)
 	{
-		p = parse_declaration_list(buf);
-		fz_free_css_property(buf->ctx, p);
-		expect(buf, '}');
-	}
-	else
-	{
-		v = parse_value_list(buf);
-		fz_free_css_value(buf->ctx, v);
-		if (accept(buf, '{')) /* @media */
+		if (accept(buf, ';'))
+			return;
+		if (accept(buf, '{'))
 		{
-			parse_media_list(buf);
-			expect(buf, '}');
+			int depth = 1;
+			while (buf->lookahead != EOF && depth > 0)
+			{
+				if (accept(buf, '{'))
+					++depth;
+				else if (accept(buf, '}'))
+					--depth;
+				else
+					next(buf);
+			}
+			return;
 		}
-		else /* @import */
-		{
-			expect(buf, ';');
-		}
+		next(buf);
 	}
 }
 
