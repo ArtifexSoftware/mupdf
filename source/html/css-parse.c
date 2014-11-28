@@ -140,13 +140,13 @@ static void css_lex_next(struct lexbuf *buf)
 		++buf->line;
 }
 
-static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s, const char *file, int line)
+static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s, const char *file)
 {
 	buf->ctx = ctx;
 	buf->s = s;
 	buf->c = 0;
 	buf->file = file;
-	buf->line = line;
+	buf->line = 1;
 	css_lex_next(buf);
 
 	buf->color = 0;
@@ -851,15 +851,15 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, source, "<inline>", 1);
+	css_lex_init(ctx, &buf, source, "<inline>");
 	next(&buf);
 	return parse_declaration_list(&buf);
 }
 
-fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file, int line)
+fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, source, file, line);
+	css_lex_init(ctx, &buf, source, file);
 	next(&buf);
 	return parse_stylesheet(&buf, chain);
 }

@@ -4,7 +4,7 @@
 #include "mupdf/fitz.h"
 
 typedef struct fz_html_font_set_s fz_html_font_set;
-typedef struct fz_html_box_s fz_html_box;
+typedef struct fz_html_s fz_html;
 typedef struct fz_html_flow_s fz_html_flow;
 
 typedef struct fz_css_rule_s fz_css_rule;
@@ -133,14 +133,14 @@ enum
 	BOX_INLINE,	/* inline-level: contains only inline boxes */
 };
 
-struct fz_html_box_s
+struct fz_html_s
 {
 	int type;
 	float x, y, w, h; /* content */
 	float padding[4];
 	float margin[4];
 	float border[4];
-	fz_html_box *up, *down, *last, *next;
+	fz_html *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
 	fz_css_style style;
 	int is_first_flow; /* for text-indent */
@@ -163,7 +163,7 @@ struct fz_html_flow_s
 	fz_html_flow *next;
 };
 
-fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file, int line);
+fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file);
 fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source);
 void fz_free_css(fz_context *ctx, fz_css_rule *rule);
 
@@ -181,9 +181,9 @@ fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	const char *family, const char *variant, const char *style, const char *weight);
 void fz_free_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 
-fz_html_box *fz_generate_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf);
-void fz_layout_html(fz_context *ctx, fz_html_box *box, float w, float h, float em);
-void fz_draw_html(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
-void fz_free_html(fz_context *ctx, fz_html_box *box);
+fz_html *fz_parse_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css);
+void fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em);
+void fz_draw_html(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
+void fz_free_html(fz_context *ctx, fz_html *box);
 
 #endif

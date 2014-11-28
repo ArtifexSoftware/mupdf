@@ -22,7 +22,7 @@ struct epub_document_s
 struct epub_chapter_s
 {
 	int start;
-	fz_html_box *box;
+	fz_html *box;
 	epub_chapter *next;
 };
 
@@ -157,7 +157,7 @@ epub_parse_chapter(epub_document *doc, const char *path)
 	fz_write_buffer_byte(ctx, buf, 0);
 
 	ch = fz_malloc_struct(ctx, epub_chapter);
-	ch->box = fz_generate_html(ctx, doc->set, zip, base_uri, buf);
+	ch->box = fz_parse_html(ctx, doc->set, zip, base_uri, buf, NULL);
 	ch->next = NULL;
 
 	fz_drop_buffer(ctx, buf);

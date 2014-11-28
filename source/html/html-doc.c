@@ -13,7 +13,7 @@ struct html_document_s
 	fz_archive *zip;
 	fz_html_font_set *set;
 	float page_w, page_h, em;
-	fz_html_box *box;
+	fz_html *box;
 };
 
 static void
@@ -28,20 +28,13 @@ htdoc_close_document(html_document *doc)
 static int
 htdoc_count_pages(html_document *doc)
 {
-	int count;
-
-	// TODO: reflow
-
-	count = ceilf(doc->box->h / doc->page_h);
-printf("count pages! %g / %g = %d\n", doc->box->h, doc->page_h, count);
+	int count = ceilf(doc->box->h / doc->page_h);
 	return count;
 }
 
 static void *
 htdoc_load_page(html_document *doc, int number)
 {
-printf("load page %d\n", number);
-	// TODO: reflow
 	return (void*)((intptr_t)number + 1);
 }
 
@@ -62,8 +55,6 @@ htdoc_layout(html_document *doc, float w, float h, float em)
 static fz_rect *
 htdoc_bound_page(html_document *doc, void *page, fz_rect *bbox)
 {
-	// TODO: reflow
-	printf("html: bound page\n");
 	bbox->x0 = bbox->y0 = 0;
 	bbox->x1 = doc->page_w;
 	bbox->y1 = doc->page_h;
@@ -74,7 +65,6 @@ static void
 htdoc_run_page(html_document *doc, void *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	int n = ((intptr_t)page) - 1;
-	printf("html: run page %d\n", n);
 	fz_draw_html(doc->ctx, doc->box, n * doc->page_h, (n+1) * doc->page_h, dev, ctm);
 }
 
@@ -99,7 +89,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	buf = fz_read_all(file, 0);
 	fz_write_buffer_byte(ctx, buf, 0);
-	doc->box = fz_generate_html(ctx, doc->set, doc->zip, ".", buf);
+	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, NULL);
 	fz_drop_buffer(ctx, buf);
 
 	htdoc_layout(doc, DEFW, DEFH, DEFEM);
@@ -131,7 +121,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 
 	buf = fz_read_file(ctx, filename);
 	fz_write_buffer_byte(ctx, buf, 0);
-	doc->box = fz_generate_html(ctx, doc->set, doc->zip, ".", buf);
+	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, NULL);
 	fz_drop_buffer(ctx, buf);
 
 	htdoc_layout(doc, DEFW, DEFH, DEFEM);

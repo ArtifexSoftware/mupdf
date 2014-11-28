@@ -53,7 +53,7 @@ static void fz_free_html_flow(fz_context *ctx, fz_html_flow *flow)
 	}
 }
 
-static fz_html_flow *add_flow(fz_context *ctx, fz_html_box *top, fz_css_style *style, int type)
+static fz_html_flow *add_flow(fz_context *ctx, fz_html *top, fz_css_style *style, int type)
 {
 	fz_html_flow *flow = fz_malloc_struct(ctx, fz_html_flow);
 	flow->type = type;
@@ -63,7 +63,7 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_html_box *top, fz_css_style *s
 	return flow;
 }
 
-static void add_flow_space(fz_context *ctx, fz_html_box *top, fz_css_style *style)
+static void add_flow_space(fz_context *ctx, fz_html *top, fz_css_style *style)
 {
 	fz_html_flow *flow;
 
@@ -76,7 +76,7 @@ static void add_flow_space(fz_context *ctx, fz_html_box *top, fz_css_style *styl
 	flow->broken_text = "";
 }
 
-static void add_flow_word(fz_context *ctx, fz_html_box *top, fz_css_style *style, const char *a, const char *b)
+static void add_flow_word(fz_context *ctx, fz_html *top, fz_css_style *style, const char *a, const char *b)
 {
 	fz_html_flow *flow = add_flow(ctx, top, style, FLOW_WORD);
 	flow->text = fz_malloc(ctx, b - a + 1);
@@ -84,15 +84,15 @@ static void add_flow_word(fz_context *ctx, fz_html_box *top, fz_css_style *style
 	flow->text[b - a] = 0;
 }
 
-static void add_flow_image(fz_context *ctx, fz_html_box *top, fz_css_style *style, fz_image *img)
+static void add_flow_image(fz_context *ctx, fz_html *top, fz_css_style *style, fz_image *img)
 {
 	fz_html_flow *flow = add_flow(ctx, top, style, FLOW_IMAGE);
 	flow->image = fz_keep_image(ctx, img);
 }
 
-static void generate_text(fz_context *ctx, fz_html_box *box, const char *text)
+static void generate_text(fz_context *ctx, fz_html *box, const char *text)
 {
-	fz_html_box *flow = box;
+	fz_html *flow = box;
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
 
@@ -115,13 +115,13 @@ static void generate_text(fz_context *ctx, fz_html_box *box, const char *text)
 	}
 }
 
-static void generate_image(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_html_box *box, const char *src)
+static void generate_image(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_html *box, const char *src)
 {
 	fz_image *img;
 	fz_buffer *buf;
 	char path[2048];
 
-	fz_html_box *flow = box;
+	fz_html *flow = box;
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
 
@@ -146,7 +146,7 @@ static void generate_image(fz_context *ctx, fz_archive *zip, const char *base_ur
 	}
 }
 
-static void init_box(fz_context *ctx, fz_html_box *box)
+static void init_box(fz_context *ctx, fz_html *box)
 {
 	box->type = BOX_BLOCK;
 	box->x = box->y = 0;
@@ -163,11 +163,11 @@ static void init_box(fz_context *ctx, fz_html_box *box)
 	fz_default_css_style(ctx, &box->style);
 }
 
-void fz_free_html(fz_context *ctx, fz_html_box *box)
+void fz_free_html(fz_context *ctx, fz_html *box)
 {
 	while (box)
 	{
-		fz_html_box *next = box->next;
+		fz_html *next = box->next;
 		fz_free_html_flow(ctx, box->flow_head);
 		fz_free_html(ctx, box->down);
 		fz_free(ctx, box);
@@ -175,14 +175,14 @@ void fz_free_html(fz_context *ctx, fz_html_box *box)
 	}
 }
 
-static fz_html_box *new_box(fz_context *ctx)
+static fz_html *new_box(fz_context *ctx)
 {
-	fz_html_box *box = fz_malloc_struct(ctx, fz_html_box);
+	fz_html *box = fz_malloc_struct(ctx, fz_html);
 	init_box(ctx, box);
 	return box;
 }
 
-static void insert_box(fz_context *ctx, fz_html_box *box, int type, fz_html_box *top)
+static void insert_box(fz_context *ctx, fz_html *box, int type, fz_html *top)
 {
 	box->type = type;
 
@@ -202,7 +202,7 @@ static void insert_box(fz_context *ctx, fz_html_box *box, int type, fz_html_box 
 	}
 }
 
-static fz_html_box *insert_block_box(fz_context *ctx, fz_html_box *box, fz_html_box *top)
+static fz_html *insert_block_box(fz_context *ctx, fz_html *box, fz_html *top)
 {
 	if (top->type == BOX_BLOCK)
 	{
@@ -223,7 +223,7 @@ static fz_html_box *insert_block_box(fz_context *ctx, fz_html_box *box, fz_html_
 	return top;
 }
 
-static fz_html_box *insert_break_box(fz_context *ctx, fz_html_box *box, fz_html_box *top)
+static fz_html *insert_break_box(fz_context *ctx, fz_html *box, fz_html *top)
 {
 	if (top->type == BOX_BLOCK)
 	{
@@ -244,7 +244,7 @@ static fz_html_box *insert_break_box(fz_context *ctx, fz_html_box *box, fz_html_
 	return top;
 }
 
-static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *top)
+static void insert_inline_box(fz_context *ctx, fz_html *box, fz_html *top)
 {
 	if (top->type == BOX_BLOCK)
 	{
@@ -254,7 +254,7 @@ static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *to
 		}
 		else
 		{
-			fz_html_box *flow = new_box(ctx);
+			fz_html *flow = new_box(ctx);
 			flow->is_first_flow = !top->last;
 			insert_box(ctx, flow, BOX_FLOW, top);
 			insert_box(ctx, box, BOX_INLINE, flow);
@@ -271,10 +271,10 @@ static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *to
 }
 
 static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri,
-	fz_xml *node, fz_html_box *top, fz_css_rule *rule, fz_css_match *up_match)
+	fz_xml *node, fz_html *top, fz_css_rule *rule, fz_css_match *up_match)
 {
 	fz_css_match match;
-	fz_html_box *box;
+	fz_html *box;
 	const char *tag;
 	int display;
 
@@ -419,7 +419,7 @@ static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline
 	return h;
 }
 
-static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, fz_html_flow *node, fz_html_flow *end, fz_html_box *box, float baseline)
+static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, fz_html_flow *node, fz_html_flow *end, fz_html *box, float baseline)
 {
 	float x = box->x + indent;
 	float y = box->y + box->h;
@@ -493,7 +493,7 @@ static fz_html_flow *find_next_word(fz_html_flow *node, float *w)
 	return node;
 }
 
-static void layout_flow(fz_context *ctx, fz_html_box *box, fz_html_box *top, float em, float page_h)
+static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h)
 {
 	fz_html_flow *node, *line_start, *word_start, *word_end, *line_end;
 	float glue_w;
@@ -571,9 +571,9 @@ static void layout_flow(fz_context *ctx, fz_html_box *box, fz_html_box *top, flo
 	}
 }
 
-static void layout_block(fz_context *ctx, fz_html_box *box, fz_html_box *top, float em, float top_collapse_margin, float page_h)
+static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, float top_collapse_margin, float page_h)
 {
-	fz_html_box *child;
+	fz_html *child;
 	float box_collapse_margin;
 	int prev_br;
 
@@ -661,7 +661,7 @@ static void layout_block(fz_context *ctx, fz_html_box *box, fz_html_box *top, fl
 	}
 }
 
-static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
+static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
 	fz_html_flow *node;
 	fz_text *text;
@@ -733,7 +733,7 @@ static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, flo
 	fz_free_path(ctx, path);
 }
 
-static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
+static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
 	float x0, y0, x1, y1;
 	float color[4];
@@ -788,7 +788,7 @@ static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, fl
 }
 
 void
-fz_draw_html(fz_context *ctx, fz_html_box *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *inctm)
+fz_draw_html(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *inctm)
 {
 	fz_matrix ctm = *inctm;
 	fz_pre_translate(&ctm, 0, -page_top);
@@ -848,7 +848,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 
 						buf = fz_read_archive_entry(ctx, zip, path);
 						fz_write_buffer_byte(ctx, buf, 0);
-						css = fz_parse_css(ctx, css, (char*)buf->data, path, 1);
+						css = fz_parse_css(ctx, css, (char*)buf->data, path);
 						fz_drop_buffer(ctx, buf);
 					}
 				}
@@ -857,7 +857,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 		if (tag && !strcmp(tag, "style"))
 		{
 			char *s = concat_text(ctx, node);
-			css = fz_parse_css(ctx, css, s, "<style>", 1);
+			css = fz_parse_css(ctx, css, s, "<style>");
 			fz_free(ctx, s);
 		}
 		if (fz_xml_down(node))
@@ -867,39 +867,34 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 }
 
 void
-fz_layout_html(fz_context *ctx, fz_html_box *box, float w, float h, float em)
+fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 {
-	fz_html_box page_box;
-
-	printf("html: laying out text.\n");
+	fz_html page_box;
 
 	init_box(ctx, &page_box);
 	page_box.w = w;
 	page_box.h = 0;
 
 	layout_block(ctx, box, &page_box, em, 0, h);
-
-	printf("html: finished.\n");
 }
 
-fz_html_box *
-fz_generate_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf)
+fz_html *
+fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
 	fz_xml *xml;
 	fz_css_rule *css;
-	fz_html_box *box;
 	fz_css_match match;
+	fz_html *box;
 
-	printf("html: parsing XHTML.\n");
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 
-	printf("html: parsing style sheets.\n");
-	css = fz_parse_css(ctx, NULL, default_css, "<default>", 1);
+	css = fz_parse_css(ctx, NULL, default_css, "<default>");
+	if (user_css)
+		css = fz_parse_css(ctx, NULL, user_css, "<user>");
 	css = html_load_css(ctx, zip, base_uri, css, xml);
 
 	// print_rules(css);
 
-	printf("html: applying styles and generating boxes.\n");
 	box = new_box(ctx);
 
 	match.up = NULL;
