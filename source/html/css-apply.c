@@ -812,15 +812,15 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	value = value_from_property(match, "font-size");
 	if (value)
 	{
-		if (!strcmp(value->data, "xx-large")) style->font_size = make_number(20, N_NUMBER);
-		else if (!strcmp(value->data, "x-large")) style->font_size = make_number(16, N_NUMBER);
-		else if (!strcmp(value->data, "large")) style->font_size = make_number(14, N_NUMBER);
-		else if (!strcmp(value->data, "medium")) style->font_size = make_number(12, N_NUMBER);
-		else if (!strcmp(value->data, "small")) style->font_size = make_number(10, N_NUMBER);
-		else if (!strcmp(value->data, "x-small")) style->font_size = make_number(8, N_NUMBER);
-		else if (!strcmp(value->data, "xx-small")) style->font_size = make_number(6, N_NUMBER);
-		else if (!strcmp(value->data, "larger")) style->font_size = make_number(1.25f, N_SCALE);
-		else if (!strcmp(value->data, "smaller")) style->font_size = make_number(0.8f, N_SCALE);
+		if (!strcmp(value->data, "xx-large")) style->font_size = make_number(1.73, N_SCALE);
+		else if (!strcmp(value->data, "x-large")) style->font_size = make_number(1.44, N_SCALE);
+		else if (!strcmp(value->data, "large")) style->font_size = make_number(1.2, N_SCALE);
+		else if (!strcmp(value->data, "medium")) style->font_size = make_number(1, N_SCALE);
+		else if (!strcmp(value->data, "small")) style->font_size = make_number(0.83, N_SCALE);
+		else if (!strcmp(value->data, "x-small")) style->font_size = make_number(0.69, N_SCALE);
+		else if (!strcmp(value->data, "xx-small")) style->font_size = make_number(0.69, N_SCALE);
+		else if (!strcmp(value->data, "larger")) style->font_size = make_number(1.2f, N_SCALE);
+		else if (!strcmp(value->data, "smaller")) style->font_size = make_number(1/1.2f, N_SCALE);
 		else style->font_size = number_from_value(value, 12, N_NUMBER);
 	}
 	else

@@ -13,7 +13,7 @@ static const char *default_css =
 "h3{font-size:1.17em;margin:.83em 0}"
 "h4,p,blockquote,ul,ol,dl,dir,menu{margin:1.12em 0}"
 "h5{font-size:.83em;margin:1.5em 0}"
-"h6{font-size:.75em;margin:1.67em 0}"
+"h6{font-size:.67em;margin:1.67em 0}"
 "h1,h2,h3,h4,h5,h6,b,strong{font-weight:bold}"
 "blockquote{margin-left:40px;margin-right:40px}"
 "i,cite,em,var,address{font-style:italic}"
