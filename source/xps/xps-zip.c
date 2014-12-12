@@ -96,7 +96,8 @@ xps_read_part(xps_document *doc, char *partname)
 
 	/* take over the data */
 	data = buf->data;
-	size = buf->len;
+	/* size doesn't include the added zero-terminator */
+	size = buf->len - 1;
 	fz_free(ctx, buf);
 
 	return xps_new_part(doc, partname, data, size);
