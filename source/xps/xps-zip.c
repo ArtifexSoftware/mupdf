@@ -85,6 +85,7 @@ xps_read_part(xps_document *doc, char *partname)
 				}
 				else
 				{
+					fz_drop_buffer(ctx, buf);
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find all pieces for part '%s'", partname);
 				}
 			}
@@ -149,10 +150,10 @@ xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc = fz_malloc_struct(ctx, xps_document);
 	xps_init_document(doc);
 	doc->ctx = ctx;
-	doc->zip = fz_open_archive_with_stream(ctx, file);
 
 	fz_try(ctx)
 	{
+		doc->zip = fz_open_archive_with_stream(ctx, file);
 		xps_read_page_list(doc);
 	}
 	fz_catch(ctx)
