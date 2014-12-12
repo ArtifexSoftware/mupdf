@@ -98,7 +98,7 @@ printf("found page %d = '%s'\n", i, name);
 		}
 	}
 
-	qsort(doc->page, doc->page_count, sizeof *doc->page, cbz_compare_page_names);
+	qsort((char **)doc->page, doc->page_count, sizeof *doc->page, cbz_compare_page_names);
 
 	for (i = 0; i < doc->page_count; ++i)
 		printf("  %d = %s\n", i, doc->page[i]);
@@ -159,7 +159,7 @@ void
 cbz_close_document(cbz_document *doc)
 {
 	fz_close_archive(doc->ctx, doc->zip);
-	fz_free(doc->ctx, doc->page);
+	fz_free(doc->ctx, (char **)doc->page);
 	fz_free(doc->ctx, doc);
 }
 
