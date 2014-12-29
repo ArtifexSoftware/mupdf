@@ -230,7 +230,7 @@ pdf_xref_entry *pdf_get_xref_entry(pdf_document *doc, int i)
 	{
 		xref = &doc->xref_sections[j];
 
-		if (i >= 0 && i < xref->num_objects)
+		if (i < xref->num_objects)
 		{
 			for (sub = xref->subsec; sub != NULL; sub = sub->next)
 			{
