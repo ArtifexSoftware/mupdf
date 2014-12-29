@@ -1833,7 +1833,7 @@ read_hinted_object(pdf_document *doc, int num)
 	return 1;
 }
 
-void
+pdf_xref_entry *
 pdf_cache_object(pdf_document *doc, int num, int gen)
 {
 	pdf_xref_entry *x;
@@ -1851,8 +1851,8 @@ object_updated:
 
 	x = pdf_get_xref_entry(doc, num);
 
-	if (x->obj)
-		return;
+	if (x->obj != NULL)
+		return x;
 
 	if (x->type == 'f')
 	{
@@ -1930,6 +1930,7 @@ object_updated:
 	}
 
 	pdf_set_obj_parent(x->obj, num);
+	return x;
 }
 
 pdf_obj *
@@ -1940,16 +1941,14 @@ pdf_load_object(pdf_document *doc, int num, int gen)
 
 	fz_try(ctx)
 	{
-		pdf_cache_object(doc, num, gen);
+		entry = pdf_cache_object(doc, num, gen);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow_message(ctx, "cannot load object (%d %d R) into cache", num, gen);
 	}
 
-	entry = pdf_get_xref_entry(doc, num);
-
-	assert(entry->obj);
+	assert(entry->obj != NULL);
 
 	return pdf_keep_obj(entry->obj);
 }
@@ -1986,7 +1985,7 @@ pdf_resolve_indirect(pdf_obj *ref)
 
 		fz_try(ctx)
 		{
-			pdf_cache_object(doc, num, gen);
+			entry = pdf_cache_object(doc, num, gen);
 		}
 		fz_catch(ctx)
 		{
@@ -1994,8 +1993,8 @@ pdf_resolve_indirect(pdf_obj *ref)
 			fz_warn(ctx, "cannot load object (%d %d R) into cache", num, gen);
 			return NULL;
 		}
-		entry = pdf_get_xref_entry(doc, num);
-		if (!entry->obj)
+
+		if (entry->obj == NULL)
 			return NULL;
 		ref = entry->obj;
 	}
