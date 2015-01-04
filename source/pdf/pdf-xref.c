@@ -658,8 +658,8 @@ pdf_xref_find_subsection(pdf_document *doc, int ofs, int len)
 	else
 	{
 		/* Case 3 */
-		ensure_solid_xref(doc, new_max, 0);
-		xref = &doc->xref_sections[0];
+		ensure_solid_xref(doc, new_max, doc->num_xref_sections-1);
+		xref = &doc->xref_sections[doc->num_xref_sections-1];
 		sub = xref->subsec;
 	}
 	return &sub->table[ofs-sub->start];
