@@ -1494,8 +1494,8 @@ pdf_print_xref(pdf_document *doc)
  * compressed object streams
  */
 
-static void
-pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf)
+static pdf_xref_entry *
+pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf, int target)
 {
 	fz_stream *stm = NULL;
 	pdf_obj *objstm = NULL;
@@ -1508,6 +1508,7 @@ pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf)
 	int i;
 	pdf_token tok;
 	fz_context *ctx = doc->ctx;
+	pdf_xref_entry *ret_entry = NULL;
 
 	fz_var(numbuf);
 	fz_var(ofsbuf);
@@ -1577,6 +1578,8 @@ pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf)
 					pdf_drop_obj(obj);
 				} else
 					entry->obj = obj;
+				if (numbuf[i] == target)
+					ret_entry = entry;
 			}
 			else
 			{
@@ -1595,6 +1598,7 @@ pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf)
 	{
 		fz_rethrow_message(ctx, "cannot open object stream (%d %d R)", num, gen);
 	}
+	return ret_entry;
 }
 
 /*
@@ -1905,13 +1909,14 @@ object_updated:
 		{
 			fz_try(ctx)
 			{
-				pdf_load_obj_stm(doc, x->ofs, 0, &doc->lexbuf.base);
+				x = pdf_load_obj_stm(doc, x->ofs, 0, &doc->lexbuf.base, num);
 			}
 			fz_catch(ctx)
 			{
 				fz_rethrow_message(ctx, "cannot load object stream containing object (%d %d R)", num, gen);
 			}
-			x = pdf_get_xref_entry(doc, num);
+			if (x == NULL)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load object stream containing object (%d %d R)", num, gen);
 			if (!x->obj)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "object (%d %d R) was not found in its object stream", num, gen);
 		}
