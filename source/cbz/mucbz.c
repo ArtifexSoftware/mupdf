@@ -216,9 +216,12 @@ fz_rect *
 cbz_bound_page(cbz_document *doc, cbz_page *page, fz_rect *bbox)
 {
 	fz_image *image = page->image;
+	int xres, yres;
+
+	fz_image_get_sanitised_res(image, &xres, &yres);
 	bbox->x0 = bbox->y0 = 0;
-	bbox->x1 = image->w * DPI / image->xres;
-	bbox->y1 = image->h * DPI / image->yres;
+	bbox->x1 = image->w * DPI / xres;
+	bbox->y1 = image->h * DPI / yres;
 	return bbox;
 }
 
@@ -227,8 +230,12 @@ cbz_run_page(cbz_document *doc, cbz_page *page, fz_device *dev, const fz_matrix 
 {
 	fz_matrix local_ctm = *ctm;
 	fz_image *image = page->image;
-	float w = image->w * DPI / image->xres;
-	float h = image->h * DPI / image->yres;
+	int xres, yres;
+	float w, h;
+
+	fz_image_get_sanitised_res(image, &xres, &yres);
+	w = image->w * DPI / xres;
+	h = image->h * DPI / yres;
 	fz_pre_scale(&local_ctm, w, h);
 	fz_fill_image(dev, image, &local_ctm, 1);
 }

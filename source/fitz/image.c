@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#define SANE_DPI 72.0f
+
 fz_pixmap *
 fz_new_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
 {
@@ -541,4 +543,44 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	}
 
 	return fz_new_image(ctx, w, h, 8, cspace, xres, yres, 0, 0, NULL, NULL, bc, NULL);
+}
+
+void
+fz_image_get_sanitised_res(fz_image *image, int *xres, int *yres)
+{
+	*xres = image->xres;
+	*yres = image->yres;
+	if (*xres < 0 || *yres < 0 || (*xres == 0 && *yres == 0))
+	{
+		/* If neither xres or yres is sane, pick a sane value */
+		*xres = SANE_DPI; *yres = SANE_DPI;
+	}
+	else if (*xres == 0)
+	{
+		*xres = *yres;
+	}
+	else if (*yres == 0)
+	{
+		*yres = *xres;
+	}
+
+	/* Scale xres and yres up until we get beleivable values */
+	if (*xres < SANE_DPI || *yres < SANE_DPI)
+	{
+		if (*xres == *yres)
+		{
+			*xres = SANE_DPI;
+			*yres = SANE_DPI;
+		}
+		else if (*xres < *yres)
+		{
+			*yres = *yres * SANE_DPI / *xres;
+			*xres = SANE_DPI;
+		}
+		else
+		{
+			*xres = *xres * SANE_DPI / *yres;
+			*yres = SANE_DPI;
+		}
+	}
 }
