@@ -1640,11 +1640,13 @@ pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf, int targe
 				 * a pointer to the old one will be left with a
 				 * stale pointer. Instead, we drop the new one
 				 * and trust that the old one is correct. */
-				if (entry->obj) {
+				if (entry->obj)
+				{
 					if (pdf_objcmp(entry->obj, obj))
 						fz_warn(ctx, "Encountered new definition for object %d - keeping the original one", numbuf[i]);
 					pdf_drop_obj(obj);
-				} else
+				}
+				else
 					entry->obj = obj;
 				if (numbuf[i] == target)
 					ret_entry = entry;
