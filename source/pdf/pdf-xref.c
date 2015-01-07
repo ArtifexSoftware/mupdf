@@ -1491,6 +1491,7 @@ pdf_close_document(pdf_document *doc)
 		doc->drop_js(doc->js);
 
 	pdf_free_xref_sections(doc);
+	fz_free(ctx, doc->xref_index);
 
 	if (doc->focus_obj)
 		pdf_drop_obj(doc->focus_obj);
