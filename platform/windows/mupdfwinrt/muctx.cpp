@@ -648,8 +648,6 @@ status_t muctx::RenderPageMT(void *dlist, void *a_dlist, int page_width, int pag
 	{
 		fz_free_device(dev);
 		fz_drop_pixmap(ctx_clone, pix);
-		fz_drop_display_list(ctx_clone, display_list);
-		fz_drop_display_list(ctx_clone, annot_displaylist);
 	}
 	fz_catch(ctx_clone)
 	{
@@ -689,11 +687,11 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 										bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(mu_ctx, pix, 255);
 		dev = fz_new_draw_device(mu_ctx, pix);
-		fz_run_page(mu_doc, page, dev, pctm, NULL);
+		fz_run_page_contents(mu_doc, page, dev, pctm, NULL);
 
 		fz_annot *annot;
 		for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
-			fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
+			fz_run_annot(mu_doc, page, annot, dev, pctm, NULL);
 	}
 	fz_always(mu_ctx)
 	{
@@ -879,8 +877,6 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 			fz_drop_pixmap(mu_ctx, pix);
 		fz_free_device(dev);
 		fz_free_page(mu_doc, page);
-		if (dlist != NULL)
-			fz_drop_display_list(mu_ctx, dlist);
 		if (out != NULL)
 		{
 			fz_close_output(out);

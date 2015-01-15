@@ -22,7 +22,6 @@ void Cache::Empty(fz_context *mu_ctx)
 			cache_entry_t *old_entry = curr_entry;
 			curr_entry = old_entry->next;
 			fz_drop_display_list(mu_ctx, old_entry->dlist);
-			
 			delete old_entry;
 		}
 		this->size = 0;
@@ -76,8 +75,6 @@ void Cache::Add(int value, int width_in, int height_in, fz_display_list *dlist,
 		head = new_entry;
 	}
 	size++;
-	/* We are going to use this item now */
-	fz_keep_display_list(mu_ctx, new_entry->dlist);
 }
 
 fz_display_list* Cache::Use(int value, int *width_out, int *height_out, fz_context *mu_ctx)
@@ -93,7 +90,6 @@ fz_display_list* Cache::Use(int value, int *width_out, int *height_out, fz_conte
 	}
 	if (curr_entry != NULL)
 	{
-		fz_keep_display_list(mu_ctx, curr_entry->dlist);
 		/* Move this to the front */
 		if (curr_entry != head)
 		{
