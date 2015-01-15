@@ -64,7 +64,6 @@
     <ClCompile Include="..\..\source\fitz\draw-path.c" />
     <ClCompile Include="..\..\source\fitz\draw-scale-simple.c" />
     <ClCompile Include="..\..\source\fitz\draw-unpack.c" />
-    <ClCompile Include="..\..\source\fitz\dtoa.c" />
     <ClCompile Include="..\..\source\fitz\error.c" />
     <ClCompile Include="..\..\source\fitz\filter-basic.c" />
     <ClCompile Include="..\..\source\fitz\filter-dct.c" />
@@ -75,6 +74,7 @@
     <ClCompile Include="..\..\source\fitz\filter-lzw.c" />
     <ClCompile Include="..\..\source\fitz\filter-predict.c" />
     <ClCompile Include="..\..\source\fitz\font.c" />
+    <ClCompile Include="..\..\source\fitz\ftoa.c" />
     <ClCompile Include="..\..\source\fitz\function.c" />
     <ClCompile Include="..\..\source\fitz\geometry.c" />
     <ClCompile Include="..\..\source\fitz\getopt.c" />
@@ -108,12 +108,14 @@
     <ClCompile Include="..\..\source\fitz\stream-open.c" />
     <ClCompile Include="..\..\source\fitz\stream-read.c" />
     <ClCompile Include="..\..\source\fitz\string.c" />
+    <ClCompile Include="..\..\source\fitz\strtod.c" />
     <ClCompile Include="..\..\source\fitz\svg-device.c" />
     <ClCompile Include="..\..\source\fitz\text.c" />
     <ClCompile Include="..\..\source\fitz\time.c" />
     <ClCompile Include="..\..\source\fitz\trace-device.c" />
     <ClCompile Include="..\..\source\fitz\transition.c" />
     <ClCompile Include="..\..\source\fitz\ucdn.c" />
+    <ClCompile Include="..\..\source\fitz\unzip.c" />
     <ClCompile Include="..\..\source\fitz\xml.c" />
     <ClCompile Include="..\..\source\img\muimage.c" />
     <ClCompile Include="..\..\source\pdf\pdf-annot.c" />

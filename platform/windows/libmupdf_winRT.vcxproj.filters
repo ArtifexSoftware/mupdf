@@ -429,10 +429,13 @@
     <ClCompile Include="..\..\source\xps\xps-zip.c">
       <Filter>xps</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\source\fitz\ftoa.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\source\fitz\strtod.c">
       <Filter>fitz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\source\fitz\ftoa.c">
+    <ClCompile Include="..\..\source\fitz\unzip.c">
       <Filter>fitz</Filter>
     </ClCompile>
   </ItemGroup>
