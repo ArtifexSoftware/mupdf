@@ -1047,10 +1047,10 @@ namespace gsview
 			return RunGhostscript(gsparams);
 		}
 
-		public gsStatus CreateXPS(String fileName, int resolution, int num_pages)
+		public gsStatus CreateXPS(String fileName, int resolution, int num_pages,
+								PrintControl printsettings)
 		{
 			gsParams_t gsparams = new gsParams_t();
-
 			gsparams.init_file = null;
 			gsparams.init_string = null;
 			gsparams.device = gsDevice_t.xpswrite;
@@ -1065,6 +1065,19 @@ namespace gsview
 			gsparams.firstpage = -1;
 			gsparams.lastpage = -1;
 			gsparams.currpage = -1;
+
+			if (printsettings != null)
+			{
+				double paperheight = printsettings.m_pagedetails.PaperSize.Height;
+				double paperwidth = printsettings.m_pagedetails.PaperSize.Width;
+				double width = paperwidth * 72.0 / 100.0;
+				double height = paperheight * 72.0 / 100.0;
+				String temp = " -dDEVICEWIDTHPOINTS=" + width + " -dDEVICEHEIGHTPOINTS=" + height + " -dFIXEDMEDIA";
+				/* Scale and translate and rotate if needed */
+				if (printsettings.xaml_autofit.IsChecked == true)
+					temp = temp + " -dFitPage";
+				gsparams.options = gsparams.options + temp;
+			}
 			return RunGhostscript(gsparams);
 		}
 

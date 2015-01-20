@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "generated", "generated.vcxproj", "{A5053AA7-02E5-4903-B596-04F17AEB1526}"
 EndProject
@@ -25,6 +25,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mupdf_cpp", "mupdf_cpp\mupd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gsview", "gsview\gsview.csproj", "{5DA0ECC9-4026-4427-862F-E3226EFEFEB1}"
 	ProjectSection(ProjectDependencies) = postProject
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1} = {09FE8E75-9952-44E7-95F8-E8D74707FBA1}
 		{4468C2E0-6C90-4FA5-8A48-0A9629776167} = {4468C2E0-6C90-4FA5-8A48-0A9629776167}
 	EndProjectSection
 EndProject
@@ -52,6 +53,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmupdf", "libmupdf\libmup
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libthirdparty", "libthirdparty\libthirdparty.vcxproj", "{DF87E242-8B2C-4F04-9A7E-61C578FD994C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gsprint", "gsprint.vcxproj", "{09FE8E75-9952-44E7-95F8-E8D74707FBA1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -755,6 +758,66 @@ Global
 		{DF87E242-8B2C-4F04-9A7E-61C578FD994C}.SingleImage|x64.Build.0 = Release|x64
 		{DF87E242-8B2C-4F04-9A7E-61C578FD994C}.SingleImage|x86.ActiveCfg = Release|Win32
 		{DF87E242-8B2C-4F04-9A7E-61C578FD994C}.SingleImage|x86.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|Any CPU.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|ARM.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|Mixed Platforms.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|Mixed Platforms.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|Win32.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|Win32.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|x64.ActiveCfg = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|x64.Build.0 = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|x86.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.CD_ROM|x86.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|ARM.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|Win32.Build.0 = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|x64.ActiveCfg = Debug|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|x64.Build.0 = Debug|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|x86.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Debug|x86.Build.0 = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|Any CPU.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|ARM.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|Mixed Platforms.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|Mixed Platforms.Build.0 = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|Win32.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|Win32.Build.0 = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|x64.ActiveCfg = Debug|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|x64.Build.0 = Debug|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|x86.ActiveCfg = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.DVD-5|x86.Build.0 = Debug|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|Any CPU.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|ARM.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|Mixed Platforms.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|Mixed Platforms.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|Win32.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|Win32.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|x64.ActiveCfg = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|x64.Build.0 = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|x86.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Memento|x86.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|Any CPU.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|ARM.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|Win32.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|Win32.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|x64.ActiveCfg = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|x64.Build.0 = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|x86.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.Release|x86.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|Any CPU.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|ARM.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|Mixed Platforms.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|Mixed Platforms.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|Win32.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|Win32.Build.0 = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|x64.ActiveCfg = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|x64.Build.0 = Release|x64
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|x86.ActiveCfg = Release|Win32
+		{09FE8E75-9952-44E7-95F8-E8D74707FBA1}.SingleImage|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

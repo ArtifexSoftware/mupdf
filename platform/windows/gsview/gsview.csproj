@@ -111,6 +111,9 @@
     <Compile Include="Password.xaml.cs">
       <DependentUpon>Password.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PrintControl.xaml.cs">
+      <DependentUpon>PrintControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="RectList.cs" />
     <Compile Include="Selection.xaml.cs">
       <DependentUpon>Selection.xaml</DependentUpon>
@@ -160,6 +163,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Password.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PrintControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

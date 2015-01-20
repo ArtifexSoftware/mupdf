@@ -153,6 +153,7 @@ static class Constants
 	public const int SCROLL_EDGE_BUFFER = 90;
 	public const int VERT_SCROLL_STEP = 48;
 	public const int PAGE_MARGIN = 1;
+	public const int MAX_PRINT_PREVIEW_LENGTH = 250;
 }
 
 public static class DocumentTypes
@@ -203,6 +204,15 @@ namespace gsview
 		public int page_found;
 		public List<Rect> rectangles;
 		public int num_rects;
+	}
+
+	public struct printPreviewPage_t
+	{
+		public Byte[] bitmap;
+		public int width;
+		public int height;
+		public double width_inches;
+		public double height_inches;
 	}
 
 	public struct textSelectInfo_t
@@ -282,6 +292,7 @@ namespace gsview
 		List<DocPage> m_thumbnails;
 		List<List<RectList>> m_page_link_list = null;
 		IList<RectList> m_text_list;
+		DocPage m_PrintPreviewPage;
 		public List<LinesText> m_lineptrs = null;
 		public List<BlocksText> m_textptrs = null;
 		List<Boolean> m_textset = null;
@@ -308,12 +319,14 @@ namespace gsview
 		Convert m_convertwin;
 		PageExtractSave m_extractwin;
 		Password m_password = null;
+		PrintControl m_printcontrol = null;
 		String m_currpassword = null;
 		BackgroundWorker m_thumbworker = null;
 		BackgroundWorker m_textsearch = null;
 		BackgroundWorker m_linksearch = null;
 		BackgroundWorker m_openfile = null;
 		BackgroundWorker m_initrender = null;
+		BackgroundWorker m_printerpreview = null;
 		BackgroundWorker m_copytext = null;
 		String m_document_type;
 		Info m_infowindow;
@@ -349,6 +362,7 @@ namespace gsview
 			{
 				m_docPages = new Pages();
 				m_thumbnails = new List<DocPage>();
+				m_PrintPreviewPage = new DocPage();
 				m_lineptrs = new List<LinesText>();
 				m_textptrs = new List<BlocksText>();
 				m_textset = new List<Boolean>();
@@ -426,6 +440,8 @@ namespace gsview
 					m_gsoutput.RealWindowClosing();
 				if (m_outputintents != null)
 					m_outputintents.RealWindowClosing();
+				if (m_printcontrol != null)
+					m_printcontrol.RealWindowClosing();
 			}
 			else
 			{
@@ -433,6 +449,8 @@ namespace gsview
 					m_gsoutput.Hide();
 				if (m_outputintents != null)
 					m_outputintents.Hide();
+				if (m_printcontrol != null)
+					m_printcontrol.Hide();
 			}
 		}
 
@@ -706,6 +724,12 @@ namespace gsview
 		{
 			if (m_password != null && m_password.IsActive)
 				m_password.Close();
+
+			if (m_printcontrol != null && m_printcontrol.IsActive)
+			{
+				m_printcontrol.Close();
+				m_printcontrol = null;
+			}
 
 			if (m_infowindow != null && m_infowindow.IsActive)
 				m_infowindow.Close();
@@ -1743,47 +1767,40 @@ namespace gsview
 			if (!m_file_open)
 				return;
 
-			/* If file is already xps then gs need not do this */
-			if (!m_isXPS)
+			if (m_printcontrol == null)
 			{
-				xaml_DistillProgress.Value = 0;
-				if (m_ghostscript.CreateXPS(m_currfile, Constants.DEFAULT_GS_RES, m_num_pages) == gsStatus.GS_BUSY)
-				{
-					ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
-					return;
-				}
-				else
-				{
-					/* Right now this is not possible to cancel due to the way 
-					 * that gs is run for xpswrite from pdf */
-					xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
-					xaml_DistillName.Text = "Convert to XPS";
-					xaml_DistillName.FontWeight = FontWeights.Bold;
-					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
-				}
+				m_printcontrol = new PrintControl(m_num_pages, m_currpage);
+				m_printcontrol.PrintDiagUpdatePreview += new PrintControl.PrintDiagCallBackPreview(PrintDiagUpdatePreview);
+				m_printcontrol.PrintDiagPrint += new PrintControl.PrintDiagCallBackPrint(PrintDiagPrint);
+				m_printcontrol.PrintDLLProblemMain += new PrintControl.PrintDLLProblem(gsDLL);
+				m_printcontrol.Activate();
+				m_printcontrol.Show();  /* Makes it modal */
+				PrintDiagEventArgs args = new PrintDiagEventArgs(0);
+				PrintDiagUpdatePreview(null, args);
 			}
 			else
-				PrintXPS(m_currfile);
+				m_printcontrol.Show();
+			return;
 		}
 
 		private void PrintXPS(String file)
 		{
 			gsprint ghostprint = new gsprint();
-			System.Windows.Controls.PrintDialog pDialog = ghostprint.GetPrintDialog();
 
-			if (pDialog == null)
-				return;
 			/* We have to create the XPS document on a different thread */
 			XpsDocument xpsDocument = new XpsDocument(file, FileAccess.Read);
 			FixedDocumentSequence fixedDocSeq = xpsDocument.GetFixedDocumentSequence();
-			PrintQueue printQueue = pDialog.PrintQueue;
+			System.Windows.Size temp = new Size(200, 200);
+			fixedDocSeq.DocumentPaginator.PageSize = temp;
+
+			PrintQueue printq = m_printcontrol.m_selectedPrinter;
 
 			m_ghostprint = ghostprint;
 			xaml_PrintGrid.Visibility = System.Windows.Visibility.Visible;
 
 			xaml_PrintProgress.Value = 0;
 
-			ghostprint.Print(printQueue, fixedDocSeq);
+			ghostprint.Print(printq, fixedDocSeq, m_printcontrol);
 		}
 
 		private void PrintProgress(object printHelper, gsPrintEventArgs Information)
@@ -4901,6 +4918,107 @@ namespace gsview
 				return;
 			m_showannot = false;
 			RenderRange(m_currpage, false, zoom_t.NO_ZOOM, 0);
+		}
+
+		/* Print preview rendering and control */
+		private void RenderPrintPreview(object sender, DoWorkEventArgs e)
+		{
+			BackgroundWorker worker = sender as BackgroundWorker;
+			List<object> genericlist = e.Argument as List<object>;
+			int k = (int)genericlist[0];
+			int desiredMax = Constants.MAX_PRINT_PREVIEW_LENGTH;
+
+			Point ras_size;
+			double scale_factor = 1.0;
+			Byte[] bitmap;
+			BlocksText charlist;
+			status_t code;
+			Annotate_t annot;
+
+			if (ComputePageSize(k, scale_factor, out ras_size) == status_t.S_ISOK)
+			{
+				/* Adjust the scale factor to ensure max length is set as desired */
+				int maxSize = Math.Max((int)ras_size.X, (int)ras_size.Y);
+				scale_factor = (double)desiredMax / (double)maxSize;
+				ComputePageSize(k, scale_factor, out ras_size);
+				printPreviewPage_t result;
+
+				try
+				{
+					bitmap = new byte[(int)ras_size.X * (int)ras_size.Y * 4];
+					code = (status_t)mu_doc.RenderPage(k, bitmap, (int)ras_size.X,
+						(int)ras_size.Y, scale_factor, false, true,
+						false, out charlist, m_showannot, out annot);
+					result.width = (int)ras_size.X;
+					result.height = (int)ras_size.Y;
+					result.bitmap = bitmap;
+					ComputePageSize(k, 1.0, out ras_size);
+					result.height_inches = ras_size.Y / 72.0; 
+					result.width_inches = ras_size.X / 72.0; 
+					e.Result = result;
+				}
+				catch (OutOfMemoryException em)
+				{
+					Console.WriteLine("Memory allocation failed print preview page " + k + em.Message + "\n");
+				}
+			}
+		}
+
+		private void RenderPrintPreviewCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			BitmapSource BitMapSrc;
+			printPreviewPage_t Result = (printPreviewPage_t)e.Result;
+
+			int stride = Result.width * 4;
+			BitMapSrc = BitmapSource.Create(Result.width, Result.height,
+				72, 72, PixelFormats.Pbgra32, BitmapPalettes.Halftone256, Result.bitmap, stride);
+
+			m_printcontrol.SetImage(BitMapSrc, Result.height_inches, Result.width_inches);
+		}
+
+		private bool PrintDiagUpdatePreview(object PrintDiag, PrintDiagEventArgs args)
+		{
+			try
+			{
+				m_printerpreview = new BackgroundWorker();
+				m_printerpreview.WorkerReportsProgress = false;
+				m_printerpreview.WorkerSupportsCancellation = false;
+				m_printerpreview.DoWork += new DoWorkEventHandler(RenderPrintPreview);
+				m_printerpreview.RunWorkerCompleted += new RunWorkerCompletedEventHandler(RenderPrintPreviewCompleted);
+				var arguments = new List<object>();
+				arguments.Add(args.m_page);
+				m_printerpreview.RunWorkerAsync(arguments);
+			}
+			catch (OutOfMemoryException e)
+			{
+				Console.WriteLine("Memory allocation failed during printpreview render\n");
+				ShowMessage(NotifyType_t.MESS_ERROR, "Out of memory: " + e.Message);
+			}
+			return true;
+		}
+
+		private void PrintDiagPrint(object PrintDiag)
+		{
+
+			/* If file is already xps then gs need not do this */
+			if (!m_isXPS)
+			{
+				xaml_DistillProgress.Value = 0;
+				if (m_ghostscript.CreateXPS(m_currfile, Constants.DEFAULT_GS_RES, m_num_pages, m_printcontrol) == gsStatus.GS_BUSY)
+				{
+					ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
+					return;
+				}
+				else
+				{
+					xaml_CancelDistill.Visibility = System.Windows.Visibility.Collapsed;
+					xaml_DistillName.Text = "Convert to XPS";
+					xaml_DistillName.FontWeight = FontWeights.Bold;
+					xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
+				}
+			}
+			else
+				PrintXPS(m_currfile);
 		}
 	}
 }
