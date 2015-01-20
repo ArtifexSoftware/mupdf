@@ -2553,7 +2553,7 @@ static void sanitise(pdf_document *doc)
 
 		pdf_clean_page_contents(doc, page, NULL);
 
-		pdf_free_page(doc, page);
+		pdf_drop_page(doc, page);
 	}
 }
 

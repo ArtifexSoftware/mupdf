@@ -78,7 +78,7 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, page, dev, &fz_identity, NULL);
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 
 		for (b = 0; b < text->len; b++)
@@ -138,9 +138,9 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 	}
 	fz_always(ctx);
 	{
-		fz_free_text_page(ctx, text);
-		fz_free_text_sheet(ctx, sheet);
-		fz_free_device(dev);
+		fz_drop_text_page(ctx, text);
+		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{
@@ -383,7 +383,7 @@ static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{
@@ -413,7 +413,7 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{
@@ -461,7 +461,7 @@ static fz_pixmap *renderPixmap(fz_document *doc, fz_display_list *page_list, fz_
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{
@@ -563,7 +563,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 				dev = fz_new_draw_device_with_bbox(ctx, pixmap, &abox);
 				fz_run_display_list(page_list, dev, &ctm, &arect, NULL);
 				fz_run_display_list(annot_list, dev, &ctm, &arect, NULL);
-				fz_free_device(dev);
+				fz_drop_device(dev);
 				dev = NULL;
 			}
 			rlist = rlist->next;
@@ -571,7 +571,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{

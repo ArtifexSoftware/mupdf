@@ -43,7 +43,7 @@ fz_keep_id_context(fz_context *ctx)
 }
 
 void
-fz_free_context(fz_context *ctx)
+fz_drop_context(fz_context *ctx)
 {
 	if (!ctx)
 		return;
@@ -52,7 +52,7 @@ fz_free_context(fz_context *ctx)
 	fz_drop_document_handler_context(ctx);
 	fz_drop_glyph_cache_context(ctx);
 	fz_drop_store_context(ctx);
-	fz_free_aa_context(ctx);
+	fz_drop_aa_context(ctx);
 	fz_drop_colorspace_context(ctx);
 	fz_drop_font_context(ctx);
 	fz_drop_id_context(ctx);
@@ -117,7 +117,7 @@ new_context_phase1(fz_alloc_context *alloc, fz_locks_context *locks)
 
 cleanup:
 	fprintf(stderr, "cannot create context (phase 1)\n");
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 	return NULL;
 }
 
@@ -155,7 +155,7 @@ fz_new_context_imp(fz_alloc_context *alloc, fz_locks_context *locks, unsigned in
 	fz_catch(ctx)
 	{
 		fprintf(stderr, "cannot create context (phase 2)\n");
-		fz_free_context(ctx);
+		fz_drop_context(ctx);
 		return NULL;
 	}
 	return ctx;

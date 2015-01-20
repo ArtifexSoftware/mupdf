@@ -12,7 +12,7 @@ typedef struct fz_hash_table_s fz_hash_table;
 
 fz_hash_table *fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock);
 void fz_empty_hash(fz_context *ctx, fz_hash_table *table);
-void fz_free_hash(fz_context *ctx, fz_hash_table *table);
+void fz_drop_hash(fz_context *ctx, fz_hash_table *table);
 
 void *fz_hash_find(fz_context *ctx, fz_hash_table *table, const void *key);
 void *fz_hash_insert(fz_context *ctx, fz_hash_table *table, const void *key, void *val);

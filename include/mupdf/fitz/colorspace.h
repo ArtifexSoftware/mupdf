@@ -84,7 +84,7 @@ fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int n);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
 fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
-void fz_free_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
+void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
 void fz_convert_color(fz_context *ctx, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, const float *srcv);
 

@@ -337,7 +337,7 @@ pdf_drop_font(fz_context *ctx, pdf_font_desc *fontdesc)
 }
 
 static void
-pdf_free_font_imp(fz_context *ctx, fz_storable *fontdesc_)
+pdf_drop_font_imp(fz_context *ctx, fz_storable *fontdesc_)
 {
 	pdf_font_desc *fontdesc = (pdf_font_desc *)fontdesc_;
 
@@ -362,7 +362,7 @@ pdf_new_font_desc(fz_context *ctx)
 	pdf_font_desc *fontdesc;
 
 	fontdesc = fz_malloc_struct(ctx, pdf_font_desc);
-	FZ_INIT_STORABLE(fontdesc, 1, pdf_free_font_imp);
+	FZ_INIT_STORABLE(fontdesc, 1, pdf_drop_font_imp);
 	fontdesc->size = sizeof(pdf_font_desc);
 
 	fontdesc->font = NULL;
@@ -825,7 +825,7 @@ pdf_load_hail_mary_font(pdf_document *doc)
 	pdf_font_desc *fontdesc;
 	pdf_font_desc *existing;
 
-	if ((fontdesc = fz_find_item(ctx, pdf_free_font_imp, &hail_mary_store_type, &hail_mary_store_type)) != NULL)
+	if ((fontdesc = fz_find_item(ctx, pdf_drop_font_imp, &hail_mary_store_type, &hail_mary_store_type)) != NULL)
 	{
 		return fontdesc;
 	}
@@ -1221,7 +1221,7 @@ pdf_load_font(pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, int nested_depth)
 	pdf_font_desc *fontdesc;
 	int type3 = 0;
 
-	if ((fontdesc = pdf_find_item(ctx, pdf_free_font_imp, dict)) != NULL)
+	if ((fontdesc = pdf_find_item(ctx, pdf_drop_font_imp, dict)) != NULL)
 	{
 		return fontdesc;
 	}

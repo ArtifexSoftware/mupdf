@@ -368,7 +368,7 @@ fz_new_text_sheet(fz_context *ctx)
 }
 
 void
-fz_free_text_sheet(fz_context *ctx, fz_text_sheet *sheet)
+fz_drop_text_sheet(fz_context *ctx, fz_text_sheet *sheet)
 {
 	fz_text_style *style;
 
@@ -447,7 +447,7 @@ fz_new_text_page(fz_context *ctx)
 }
 
 static void
-fz_free_text_line_contents(fz_context *ctx, fz_text_line *line)
+fz_drop_text_line_contents(fz_context *ctx, fz_text_line *line)
 {
 	fz_text_span *span, *next;
 	for (span = line->first_span; span; span=next)
@@ -459,19 +459,19 @@ fz_free_text_line_contents(fz_context *ctx, fz_text_line *line)
 }
 
 static void
-fz_free_text_block(fz_context *ctx, fz_text_block *block)
+fz_drop_text_block(fz_context *ctx, fz_text_block *block)
 {
 	fz_text_line *line;
 	if (block == NULL)
 		return;
 	for (line = block->lines; line < block->lines + block->len; line++)
-		fz_free_text_line_contents(ctx, line);
+		fz_drop_text_line_contents(ctx, line);
 	fz_free(ctx, block->lines);
 	fz_free(ctx, block);
 }
 
 static void
-fz_free_image_block(fz_context *ctx, fz_image_block *block)
+fz_drop_image_block(fz_context *ctx, fz_image_block *block)
 {
 	if (block == NULL)
 		return;
@@ -481,7 +481,7 @@ fz_free_image_block(fz_context *ctx, fz_image_block *block)
 }
 
 void
-fz_free_text_page(fz_context *ctx, fz_text_page *page)
+fz_drop_text_page(fz_context *ctx, fz_text_page *page)
 {
 	fz_page_block *block;
 	if (page == NULL)
@@ -491,10 +491,10 @@ fz_free_text_page(fz_context *ctx, fz_text_page *page)
 		switch (block->type)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
-			fz_free_text_block(ctx, block->u.text);
+			fz_drop_text_block(ctx, block->u.text);
 			break;
 		case FZ_PAGE_BLOCK_IMAGE:
-			fz_free_image_block(ctx, block->u.image);
+			fz_drop_image_block(ctx, block->u.image);
 			break;
 		}
 	}
@@ -994,7 +994,7 @@ fz_text_end_page(fz_device *dev)
 }
 
 static void
-fz_text_free_user(fz_device *dev)
+fz_text_drop_user(fz_device *dev)
 {
 	fz_text_device *tdev = dev->user;
 	free_span_soup(tdev->spans);
@@ -1017,7 +1017,7 @@ fz_new_text_device(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 	dev->hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
 	dev->begin_page = fz_text_begin_page;
 	dev->end_page = fz_text_end_page;
-	dev->free_user = fz_text_free_user;
+	dev->drop_user = fz_text_drop_user;
 	dev->fill_text = fz_text_fill_text;
 	dev->stroke_text = fz_text_stroke_text;
 	dev->clip_text = fz_text_clip_text;

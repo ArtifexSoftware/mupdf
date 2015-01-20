@@ -371,10 +371,10 @@ void pdfapp_close(pdfapp_t *app)
 	fz_drop_display_list(app->ctx, app->annotations_list);
 	app->annotations_list = NULL;
 
-	fz_free_text_page(app->ctx, app->page_text);
+	fz_drop_text_page(app->ctx, app->page_text);
 	app->page_text = NULL;
 
-	fz_free_text_sheet(app->ctx, app->page_sheet);
+	fz_drop_text_sheet(app->ctx, app->page_sheet);
 	app->page_sheet = NULL;
 
 	fz_drop_link(app->ctx, app->page_links);
@@ -395,7 +395,7 @@ void pdfapp_close(pdfapp_t *app)
 	fz_drop_pixmap(app->ctx, app->old_image);
 	app->old_image = NULL;
 
-	fz_free_outline(app->ctx, app->outline);
+	fz_drop_outline(app->ctx, app->outline);
 	app->outline = NULL;
 
 	fz_free_page(app->doc, app->page);
@@ -405,7 +405,7 @@ void pdfapp_close(pdfapp_t *app)
 	app->doc = NULL;
 
 #ifdef HAVE_CURL
-	fz_close(app->stream);
+	fz_drop_stream(app->stream);
 #endif
 
 	fz_flush_warnings(app->ctx);
@@ -552,8 +552,8 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 
 	fz_drop_display_list(app->ctx, app->page_list);
 	fz_drop_display_list(app->ctx, app->annotations_list);
-	fz_free_text_page(app->ctx, app->page_text);
-	fz_free_text_sheet(app->ctx, app->page_sheet);
+	fz_drop_text_page(app->ctx, app->page_text);
+	fz_drop_text_sheet(app->ctx, app->page_sheet);
 	fz_drop_link(app->ctx, app->page_links);
 	fz_free_page(app->doc, app->page);
 
@@ -595,7 +595,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 			fz_enable_device_hints(mdev, FZ_NO_CACHE);
 		cookie.incomplete_ok = 1;
 		fz_run_page_contents(app->doc, app->page, mdev, &fz_identity, &cookie);
-		fz_free_device(mdev);
+		fz_drop_device(mdev);
 		mdev = NULL;
 		app->annotations_list = fz_new_display_list(app->ctx);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
@@ -614,7 +614,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	}
 	fz_always(app->ctx)
 	{
-		fz_free_device(mdev);
+		fz_drop_device(mdev);
 	}
 	fz_catch(app->ctx)
 	{
@@ -674,7 +674,7 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 	}
 	fz_always(app->ctx)
 	{
-		fz_free_device(mdev);
+		fz_drop_device(mdev);
 	}
 	fz_catch(app->ctx)
 	{
@@ -717,7 +717,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
 		idev = fz_new_draw_device_with_bbox(app->ctx, app->image, &ibounds);
 		pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
-		fz_free_device(idev);
+		fz_drop_device(idev);
 	}
 
 	pdfapp_showpage(app, 0, 0, 1, 0, 0);
@@ -778,7 +778,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		{
 			tdev = fz_new_text_device(app->ctx, app->page_sheet, app->page_text);
 			pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
-			fz_free_device(tdev);
+			fz_drop_device(tdev);
 		}
 	}
 
@@ -819,7 +819,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		{
 			idev = fz_new_draw_device(app->ctx, app->image);
 			pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
-			fz_free_device(idev);
+			fz_drop_device(idev);
 		}
 		if (app->invert)
 			fz_invert_pixmap(app->ctx, app->image);

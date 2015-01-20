@@ -152,7 +152,7 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 				{
 					*t->is_color = 1;
 					dev->hints |= FZ_IGNORE_IMAGE;
-					fz_close(stream);
+					fz_drop_stream(stream);
 					fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
 					break;
 				}
@@ -183,7 +183,7 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 			}
 			fz_fin_cached_color_converter(&cc);
 		}
-		fz_close(stream);
+		fz_drop_stream(stream);
 		return;
 	}
 
@@ -287,7 +287,7 @@ fz_new_test_device(fz_context *ctx, int *is_color, float threshold)
 	dev->fill_shade = fz_test_fill_shade;
 	dev->fill_image = fz_test_fill_image;
 	dev->fill_image_mask = fz_test_fill_image_mask;
-	dev->free_user = fz_test_free;
+	dev->drop_user = fz_test_free;
 
 	*t->is_color = 0;
 

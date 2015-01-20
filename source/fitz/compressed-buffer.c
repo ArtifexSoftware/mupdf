@@ -4,7 +4,7 @@
  * pulled into cmapdump.c */
 
 void
-fz_free_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buf)
+fz_drop_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buf)
 {
 	if (!buf)
 		return;

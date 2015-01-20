@@ -267,8 +267,7 @@ void fz_convert_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src);
 
 	free_samples: Is zero when an application has provided its own
 	buffer for pixel data through fz_new_pixmap_with_bbox_and_data.
-	If not zero the buffer will be freed when fz_drop_pixmap is
-	called for the pixmap.
+	If non-zero the buffer will be freed along with the the pixmap.
 */
 struct fz_pixmap_s
 {
@@ -281,7 +280,7 @@ struct fz_pixmap_s
 	int free_samples;
 };
 
-void fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix);
+void fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix);
 
 void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *r);
 void fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
@@ -293,7 +292,7 @@ fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, fl
 typedef struct fz_scale_cache_s fz_scale_cache;
 
 fz_scale_cache *fz_new_scale_cache(fz_context *ctx);
-void fz_free_scale_cache(fz_context *ctx, fz_scale_cache *cache);
+void fz_drop_scale_cache(fz_context *ctx, fz_scale_cache *cache);
 fz_pixmap *fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, const fz_irect *clip, fz_scale_cache *cache_x, fz_scale_cache *cache_y);
 
 void fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor);

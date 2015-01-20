@@ -55,12 +55,12 @@ void fz_print_outline_xml(fz_context *ctx, fz_output *out, fz_outline *outline);
 void fz_print_outline(fz_context *ctx, fz_output *out, fz_outline *outline);
 
 /*
-	fz_free_outline: Free hierarchical outline.
+	fz_drop_outline: Free hierarchical outline.
 
 	Free an outline obtained from fz_load_outline.
 
 	Does not throw exceptions.
 */
-void fz_free_outline(fz_context *ctx, fz_outline *outline);
+void fz_drop_outline(fz_context *ctx, fz_outline *outline);
 
 #endif

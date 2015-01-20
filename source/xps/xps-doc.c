@@ -218,7 +218,7 @@ xps_lookup_link_target(xps_document *doc, char *target_uri)
 }
 
 static void
-xps_free_link_targets(xps_document *doc)
+xps_drop_link_targets(xps_document *doc)
 {
 	xps_target *target = doc->target, *next;
 	while (target)
@@ -231,13 +231,13 @@ xps_free_link_targets(xps_document *doc)
 }
 
 static void
-xps_free_fixed_pages(xps_document *doc)
+xps_drop_fixed_pages(xps_document *doc)
 {
 	xps_page *page = doc->first_page;
 	while (page)
 	{
 		xps_page *next = page->next;
-		xps_free_page(doc, page);
+		xps_drop_page(doc, page);
 		fz_drop_link(doc->ctx, page->links);
 		fz_free(doc->ctx, page->name);
 		fz_free(doc->ctx, page);
@@ -248,7 +248,7 @@ xps_free_fixed_pages(xps_document *doc)
 }
 
 static void
-xps_free_fixed_documents(xps_document *doc)
+xps_drop_fixed_documents(xps_document *doc)
 {
 	xps_fixdoc *fixdoc = doc->first_fixdoc;
 	while (fixdoc)
@@ -264,11 +264,11 @@ xps_free_fixed_documents(xps_document *doc)
 }
 
 void
-xps_free_page_list(xps_document *doc)
+xps_drop_page_list(xps_document *doc)
 {
-	xps_free_fixed_documents(doc);
-	xps_free_fixed_pages(doc);
-	xps_free_link_targets(doc);
+	xps_drop_fixed_documents(doc);
+	xps_drop_fixed_pages(doc);
+	xps_drop_link_targets(doc);
 }
 
 /*
@@ -362,7 +362,7 @@ xps_parse_metadata(xps_document *doc, xps_part *part, xps_fixdoc *fixdoc)
 
 	root = fz_parse_xml(doc->ctx, part->data, part->size, 0);
 	xps_parse_metadata_imp(doc, root, fixdoc);
-	fz_free_xml(doc->ctx, root);
+	fz_drop_xml(doc->ctx, root);
 
 	doc->base_uri = NULL;
 	doc->part_uri = NULL;
@@ -384,7 +384,7 @@ xps_read_and_process_metadata_part(xps_document *doc, char *name, xps_fixdoc *fi
 	}
 	fz_always(ctx)
 	{
-		xps_free_part(doc, part);
+		xps_drop_part(doc, part);
 	}
 	fz_catch(ctx)
 	{
@@ -443,7 +443,7 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 	}
 	fz_always(ctx)
 	{
-		xps_free_part(doc, part);
+		xps_drop_part(doc, part);
 	}
 	fz_catch(ctx)
 	{
@@ -458,31 +458,31 @@ xps_load_fixed_page(xps_document *doc, xps_page *page)
 		fz_xml *node = xps_lookup_alternate_content(root);
 		if (!node)
 		{
-			fz_free_xml(doc->ctx, root);
+			fz_drop_xml(doc->ctx, root);
 			fz_throw(doc->ctx, FZ_ERROR_GENERIC, "FixedPage missing alternate root element");
 		}
 		fz_detach_xml(node);
-		fz_free_xml(doc->ctx, root);
+		fz_drop_xml(doc->ctx, root);
 		root = node;
 	}
 
 	if (strcmp(fz_xml_tag(root), "FixedPage"))
 	{
-		fz_free_xml(doc->ctx, root);
+		fz_drop_xml(doc->ctx, root);
 		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "expected FixedPage element");
 	}
 
 	width_att = fz_xml_att(root, "Width");
 	if (!width_att)
 	{
-		fz_free_xml(doc->ctx, root);
+		fz_drop_xml(doc->ctx, root);
 		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Width");
 	}
 
 	height_att = fz_xml_att(root, "Height");
 	if (!height_att)
 	{
-		fz_free_xml(doc->ctx, root);
+		fz_drop_xml(doc->ctx, root);
 		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "FixedPage missing required attribute: Height");
 	}
 
@@ -522,13 +522,13 @@ xps_bound_page(xps_document *doc, xps_page *page, fz_rect *bounds)
 }
 
 void
-xps_free_page(xps_document *doc, xps_page *page)
+xps_drop_page(xps_document *doc, xps_page *page)
 {
 	if (page == NULL)
 		return;
 	/* only free the XML contents */
 	if (page->root)
-		fz_free_xml(doc->ctx, page->root);
+		fz_drop_xml(doc->ctx, page->root);
 	page->root = NULL;
 }
 

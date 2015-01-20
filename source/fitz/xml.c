@@ -205,7 +205,7 @@ static void xml_free_attribute(fz_context *ctx, struct attribute *att)
 	}
 }
 
-void fz_free_xml(fz_context *ctx, fz_xml *item)
+void fz_drop_xml(fz_context *ctx, fz_xml *item)
 {
 	while (item)
 	{
@@ -215,7 +215,7 @@ void fz_free_xml(fz_context *ctx, fz_xml *item)
 		if (item->atts)
 			xml_free_attribute(ctx, item->atts);
 		if (item->down)
-			fz_free_xml(ctx, item->down);
+			fz_drop_xml(ctx, item->down);
 		fz_free(ctx, item);
 		item = next;
 	}
@@ -618,7 +618,7 @@ fz_parse_xml(fz_context *ctx, unsigned char *s, int n, int preserve_white)
 	}
 	fz_catch(ctx)
 	{
-		fz_free_xml(ctx, root.down);
+		fz_drop_xml(ctx, root.down);
 		fz_rethrow(ctx);
 	}
 

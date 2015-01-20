@@ -5,7 +5,7 @@
  */
 
 void
-pdf_free_cmap_imp(fz_context *ctx, fz_storable *cmap_)
+pdf_drop_cmap_imp(fz_context *ctx, fz_storable *cmap_)
 {
 	pdf_cmap *cmap = (pdf_cmap *)cmap_;
 	if (cmap->usecmap)
@@ -20,7 +20,7 @@ pdf_cmap *
 pdf_new_cmap(fz_context *ctx)
 {
 	pdf_cmap *cmap = fz_malloc_struct(ctx, pdf_cmap);
-	FZ_INIT_STORABLE(cmap, 1, pdf_free_cmap_imp);
+	FZ_INIT_STORABLE(cmap, 1, pdf_drop_cmap_imp);
 	return cmap;
 }
 

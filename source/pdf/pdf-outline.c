@@ -50,7 +50,7 @@ pdf_load_outline_imp(pdf_document *doc, pdf_obj *dict)
 	}
 	fz_catch(ctx)
 	{
-		fz_free_outline(ctx, first);
+		fz_drop_outline(ctx, first);
 		fz_rethrow(ctx);
 	}
 

@@ -62,7 +62,7 @@ image_open_document(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{
@@ -77,7 +77,7 @@ image_close_document(image_document *doc)
 {
 	fz_context *ctx = doc->ctx;
 	fz_drop_image(ctx, doc->image);
-	fz_close(doc->file);
+	fz_drop_stream(doc->file);
 	fz_free(ctx, doc);
 }
 

@@ -32,11 +32,11 @@ fz_link *pdf_load_links(pdf_document *doc, pdf_page *page);
 fz_rect *pdf_bound_page(pdf_document *doc, pdf_page *page, fz_rect *);
 
 /*
-	pdf_free_page: Frees a page and its resources.
+	pdf_drop_page: Frees a page and its resources.
 
 	Does not throw exceptions.
 */
-void pdf_free_page(pdf_document *doc, pdf_page *page);
+void pdf_drop_page(pdf_document *doc, pdf_page *page);
 
 /*
 	pdf_run_page: Interpret a loaded page and render it on a device.

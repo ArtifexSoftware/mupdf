@@ -6,7 +6,7 @@
  */
 
 pdf_crypt *pdf_new_crypt(fz_context *ctx, pdf_obj *enc, pdf_obj *id);
-void pdf_free_crypt(fz_context *ctx, pdf_crypt *crypt);
+void pdf_drop_crypt(fz_context *ctx, pdf_crypt *crypt);
 
 void pdf_crypt_obj(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, int num, int gen);
 void pdf_crypt_buffer(fz_context *ctx, pdf_crypt *crypt, fz_buffer *buf, int num, int gen);
@@ -33,7 +33,7 @@ typedef struct pdf_designated_name_s
 }
 pdf_designated_name;
 
-void pdf_free_designated_name(pdf_designated_name *dn);
+void pdf_drop_designated_name(pdf_designated_name *dn);
 
 
 pdf_signer *pdf_read_pfx(fz_context *ctx, const char *sigfile, const char *password);

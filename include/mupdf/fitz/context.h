@@ -131,7 +131,7 @@ enum {
 
 	The global state contains an exception stack, resource store,
 	etc. Most functions in MuPDF take a context argument to be
-	able to reference the global state. See fz_free_context for
+	able to reference the global state. See fz_drop_context for
 	freeing an allocated context.
 
 	alloc: Supply a custom memory allocator through a set of
@@ -176,7 +176,7 @@ fz_context *fz_new_context_imp(fz_alloc_context *alloc, fz_locks_context *locks,
 fz_context *fz_clone_context(fz_context *ctx);
 
 /*
-	fz_free_context: Free a context and its global state.
+	fz_drop_context: Free a context and its global state.
 
 	The context and all of its global state is freed, and any
 	buffered warnings are flushed (see fz_flush_warnings). If NULL
@@ -184,7 +184,7 @@ fz_context *fz_clone_context(fz_context *ctx);
 
 	Does not throw exceptions.
 */
-void fz_free_context(fz_context *ctx);
+void fz_drop_context(fz_context *ctx);
 
 /*
 	fz_aa_level: Get the number of bits of antialiasing we are
@@ -410,7 +410,7 @@ struct fz_warn_context_s
 fz_context *fz_clone_context_internal(fz_context *ctx);
 
 void fz_new_aa_context(fz_context *ctx);
-void fz_free_aa_context(fz_context *ctx);
+void fz_drop_aa_context(fz_context *ctx);
 void fz_copy_aa_context(fz_context *dst, fz_context *src);
 
 void fz_new_document_handler_context(fz_context *ctx);

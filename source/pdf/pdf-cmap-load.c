@@ -36,7 +36,7 @@ pdf_load_embedded_cmap(pdf_document *doc, pdf_obj *stmobj)
 	if (pdf_obj_marked(stmobj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Recursion in embedded cmap");
 
-	if ((cmap = pdf_find_item(ctx, pdf_free_cmap_imp, stmobj)) != NULL)
+	if ((cmap = pdf_find_item(ctx, pdf_drop_cmap_imp, stmobj)) != NULL)
 	{
 		return cmap;
 	}
@@ -47,7 +47,7 @@ pdf_load_embedded_cmap(pdf_document *doc, pdf_obj *stmobj)
 		phase = 1;
 		cmap = pdf_load_cmap(ctx, file);
 		phase = 2;
-		fz_close(file);
+		fz_drop_stream(file);
 		file = NULL;
 
 		wmode = pdf_dict_gets(stmobj, "WMode");
@@ -76,7 +76,7 @@ pdf_load_embedded_cmap(pdf_document *doc, pdf_obj *stmobj)
 	fz_catch(ctx)
 	{
 		if (file)
-			fz_close(file);
+			fz_drop_stream(file);
 		if (cmap)
 			pdf_drop_cmap(ctx, cmap);
 		if (phase < 1)

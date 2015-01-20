@@ -58,7 +58,7 @@ struct pdf_cmap_s
 pdf_cmap *pdf_new_cmap(fz_context *ctx);
 pdf_cmap *pdf_keep_cmap(fz_context *ctx, pdf_cmap *cmap);
 void pdf_drop_cmap(fz_context *ctx, pdf_cmap *cmap);
-void pdf_free_cmap_imp(fz_context *ctx, fz_storable *cmap);
+void pdf_drop_cmap_imp(fz_context *ctx, fz_storable *cmap);
 unsigned int pdf_cmap_size(fz_context *ctx, pdf_cmap *cmap);
 
 int pdf_cmap_wmode(fz_context *ctx, pdf_cmap *cmap);

@@ -27,7 +27,7 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 		dev = fz_new_text_device(ctx, sheet, text);
 		page = fz_load_page(doc, pageNum);
 		fz_run_page(doc, page, dev, &ctm, NULL);
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 
 		fz_analyze_text(ctx, sheet, text);
@@ -57,9 +57,9 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 	}
 	fz_always(ctx)
 	{
-		fz_free_text_page(ctx, text);
-		fz_free_text_sheet(ctx, sheet);
-		fz_free_device(dev);
+		fz_drop_text_page(ctx, text);
+		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_device(dev);
 		fz_close_output(out);
 		fz_drop_buffer(ctx, buf);
 		fz_free_page(doc, page);

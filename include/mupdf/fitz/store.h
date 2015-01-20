@@ -27,16 +27,16 @@
 
 typedef struct fz_storable_s fz_storable;
 
-typedef void (fz_store_free_fn)(fz_context *, fz_storable *);
+typedef void (fz_store_drop_fn)(fz_context *, fz_storable *);
 
 struct fz_storable_s {
 	int refs;
-	fz_store_free_fn *free;
+	fz_store_drop_fn *drop;
 };
 
-#define FZ_INIT_STORABLE(S_,RC,FREE) \
+#define FZ_INIT_STORABLE(S_,RC,DROP) \
 	do { fz_storable *S = &(S_)->storable; S->refs = (RC); \
-	S->free = (FREE); \
+	S->drop = (DROP); \
 	} while (0)
 
 void *fz_keep_storable(fz_context *, fz_storable *);
@@ -62,7 +62,7 @@ typedef struct fz_store_hash_s fz_store_hash;
 
 struct fz_store_hash_s
 {
-	fz_store_free_fn *free;
+	fz_store_drop_fn *drop;
 	union
 	{
 		struct
@@ -138,7 +138,7 @@ void *fz_store_item(fz_context *ctx, void *key, void *val, unsigned int itemsize
 /*
 	fz_find_item: Find an item within the store.
 
-	free: The function used to free the value (to ensure we get a value
+	drop: The function used to free the value (to ensure we get a value
 	of the correct type).
 
 	key: The key to use to index the item.
@@ -148,21 +148,21 @@ void *fz_store_item(fz_context *ctx, void *key, void *val, unsigned int itemsize
 	Returns NULL for not found, otherwise returns a pointer to the value
 	indexed by key to which a reference has been taken.
 */
-void *fz_find_item(fz_context *ctx, fz_store_free_fn *free, void *key, fz_store_type *type);
+void *fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *type);
 
 /*
 	fz_remove_item: Remove an item from the store.
 
 	If an item indexed by the given key exists in the store, remove it.
 
-	free: The function used to free the value (to ensure we get a value
+	drop: The function used to free the value (to ensure we get a value
 	of the correct type).
 
 	key: The key to use to find the item to remove.
 
 	type: Functions used to manipulate the key.
 */
-void fz_remove_item(fz_context *ctx, fz_store_free_fn *free, void *key, fz_store_type *type);
+void fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *type);
 
 /*
 	fz_empty_store: Evict everything from the store.

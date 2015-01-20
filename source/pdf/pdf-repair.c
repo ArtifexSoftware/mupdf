@@ -225,7 +225,7 @@ pdf_repair_obj_stm(pdf_document *doc, int num, int gen)
 	}
 	fz_always(ctx)
 	{
-		fz_close(stm);
+		fz_drop_stream(stm);
 		pdf_lexbuf_fin(&buf);
 	}
 	fz_catch(ctx)

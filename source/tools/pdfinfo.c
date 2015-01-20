@@ -1071,7 +1071,7 @@ int pdfinfo_main(int argc, char **argv)
 	{
 		ret = 1;
 	}
-	fz_close_output(out);
-	fz_free_context(ctx);
+	fz_drop_output(out);
+	fz_drop_context(ctx);
 	return ret;
 }

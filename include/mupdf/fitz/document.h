@@ -147,7 +147,7 @@ int fz_authenticate_password(fz_document *doc, const char *password);
 /*
 	fz_load_outline: Load the hierarchical document outline.
 
-	Should be freed by fz_free_outline.
+	Should be freed by fz_drop_outline.
 */
 fz_outline *fz_load_outline(fz_document *doc);
 

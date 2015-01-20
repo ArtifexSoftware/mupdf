@@ -13,7 +13,7 @@ fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix)
 }
 
 void
-fz_free_pixmap_imp(fz_context *ctx, fz_storable *pix_)
+fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix_)
 {
 	fz_pixmap *pix = (fz_pixmap *)pix_;
 
@@ -33,7 +33,7 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal dimensions for pixmap %d %d", w, h);
 
 	pix = fz_malloc_struct(ctx, fz_pixmap);
-	FZ_INIT_STORABLE(pix, 1, fz_free_pixmap_imp);
+	FZ_INIT_STORABLE(pix, 1, fz_drop_pixmap_imp);
 	pix->x = 0;
 	pix->y = 0;
 	pix->w = w;
@@ -583,7 +583,7 @@ fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 	fz_output *out = fz_new_output_to_filename(ctx, filename);
 	fz_output_pnm_header(out, pixmap->w, pixmap->h, pixmap->n);
 	fz_output_pnm_band(out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
-	fz_close_output(out);
+	fz_drop_output(out);
 }
 
 /*
@@ -645,7 +645,7 @@ fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 	fz_output *out = fz_new_output_to_filename(ctx, filename);
 	fz_output_pam_header(out, pixmap->w, pixmap->h, pixmap->n, savealpha);
 	fz_output_pam_band(out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
-	fz_close_output(out);
+	fz_drop_output(out);
 }
 
 /*
@@ -690,7 +690,7 @@ fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 	fz_always(ctx)
 	{
 		fz_output_png_trailer(out, poc);
-		fz_close_output(out);
+		fz_drop_output(out);
 	}
 	fz_catch(ctx)
 	{
@@ -929,7 +929,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 	fz_always(ctx)
 	{
 		fz_drop_pixmap(ctx, drop ? pix : pix2);
-		fz_close_output(out);
+		fz_drop_output(out);
 	}
 	fz_catch(ctx)
 	{
@@ -1029,7 +1029,7 @@ fz_write_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savea
 	}
 	fz_write(out, "\0\0\0\0\0\0\0\0TRUEVISION-XFILE.\0", 26);
 
-	fz_close_output(out);
+	fz_drop_output(out);
 }
 
 unsigned int

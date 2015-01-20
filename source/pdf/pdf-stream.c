@@ -54,7 +54,7 @@ pdf_load_jbig2_globals(pdf_document *doc, pdf_obj *dict)
 
 	fz_var(buf);
 
-	if ((globals = pdf_find_item(ctx, fz_free_jbig2_globals_imp, dict)) != NULL)
+	if ((globals = pdf_find_item(ctx, fz_drop_jbig2_globals_imp, dict)) != NULL)
 	{
 		return globals;
 	}
@@ -256,7 +256,7 @@ build_filter_chain(fz_stream *chain, pdf_document *doc, pdf_obj *fs, pdf_obj *ps
 	}
 	fz_catch(ctx)
 	{
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 
@@ -332,7 +332,7 @@ pdf_open_filter(fz_stream *chain, pdf_document *doc, pdf_obj *stmobj, int num, i
 	}
 	fz_catch(doc->ctx)
 	{
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(doc->ctx);
 	}
 
@@ -384,7 +384,7 @@ pdf_load_compressed_inline_image(pdf_document *doc, pdf_obj *dict, int length, f
 	}
 	fz_catch(ctx)
 	{
-		fz_free_compressed_buffer(ctx, bc);
+		fz_drop_compressed_buffer(ctx, bc);
 		fz_rethrow(ctx);
 	}
 	image->buffer = bc;
@@ -483,7 +483,7 @@ pdf_load_raw_renumbered_stream(pdf_document *doc, int num, int gen, int orig_num
 
 	buf = fz_read_all(stm, len);
 
-	fz_close(stm);
+	fz_drop_stream(stm);
 	return buf;
 }
 
@@ -543,7 +543,7 @@ pdf_load_image_stream(pdf_document *doc, int num, int gen, int orig_num, int ori
 	}
 	fz_always(ctx)
 	{
-		fz_close(stm);
+		fz_drop_stream(stm);
 	}
 	fz_catch(ctx)
 	{

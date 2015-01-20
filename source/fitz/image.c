@@ -216,7 +216,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 	}
 	fz_always(ctx)
 	{
-		fz_close(stm);
+		fz_drop_stream(stm);
 	}
 	fz_catch(ctx)
 	{
@@ -239,14 +239,14 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 }
 
 void
-fz_free_image(fz_context *ctx, fz_storable *image_)
+fz_drop_image_imp(fz_context *ctx, fz_storable *image_)
 {
 	fz_image *image = (fz_image *)image_;
 
 	if (image == NULL)
 		return;
 	fz_drop_pixmap(ctx, image->tile);
-	fz_free_compressed_buffer(ctx, image->buffer);
+	fz_drop_compressed_buffer(ctx, image->buffer);
 	fz_drop_colorspace(ctx, image->colorspace);
 	fz_drop_image(ctx, image->mask);
 	fz_free(ctx, image);
@@ -293,7 +293,7 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 	key.l2factor = l2factor;
 	do
 	{
-		tile = fz_find_item(ctx, fz_free_pixmap_imp, &key, &fz_image_store_type);
+		tile = fz_find_item(ctx, fz_drop_pixmap_imp, &key, &fz_image_store_type);
 		if (tile)
 			return tile;
 		key.l2factor--;
@@ -393,7 +393,7 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 	fz_try(ctx)
 	{
 		image = fz_malloc_struct(ctx, fz_image);
-		FZ_INIT_STORABLE(image, 1, fz_free_image);
+		FZ_INIT_STORABLE(image, 1, fz_drop_image_imp);
 		image->w = pixmap->w;
 		image->h = pixmap->h;
 		image->n = pixmap->n;
@@ -427,7 +427,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 	fz_try(ctx)
 	{
 		image = fz_malloc_struct(ctx, fz_image);
-		FZ_INIT_STORABLE(image, 1, fz_free_image);
+		FZ_INIT_STORABLE(image, 1, fz_drop_image_imp);
 		image->get_pixmap = fz_image_get_pixmap;
 		image->w = w;
 		image->h = h;
@@ -458,7 +458,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 	}
 	fz_catch(ctx)
 	{
-		fz_free_compressed_buffer(ctx, buffer);
+		fz_drop_compressed_buffer(ctx, buffer);
 		fz_rethrow(ctx);
 	}
 
@@ -538,7 +538,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	}
 	fz_catch(ctx)
 	{
-		fz_free_compressed_buffer(ctx, bc);
+		fz_drop_compressed_buffer(ctx, bc);
 		fz_rethrow(ctx);
 	}
 

@@ -1238,7 +1238,7 @@ pdf_dev_end_tile(fz_device *dev)
 }
 
 static void
-pdf_dev_free_user(fz_device *dev)
+pdf_dev_drop_user(fz_device *dev)
 {
 	pdf_device *pdev = dev->user;
 	pdf_document *doc = pdev->doc;
@@ -1322,7 +1322,7 @@ fz_device *pdf_new_pdf_device(pdf_document *doc, pdf_obj *contents, pdf_obj *res
 	}
 
 	dev->rebind = pdf_dev_rebind;
-	dev->free_user = pdf_dev_free_user;
+	dev->drop_user = pdf_dev_drop_user;
 
 	dev->fill_path = pdf_dev_fill_path;
 	dev->stroke_path = pdf_dev_stroke_path;

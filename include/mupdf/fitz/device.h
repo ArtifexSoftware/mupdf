@@ -100,7 +100,7 @@ struct fz_device_s
 	int flags;
 
 	void *user;
-	void (*free_user)(fz_device *);
+	void (*drop_user)(fz_device *);
 	fz_context *ctx;
 
 	void (*rebind)(fz_device *);
@@ -171,9 +171,9 @@ void fz_end_tile(fz_device *dev);
 fz_device *fz_new_device(fz_context *ctx, void *user);
 
 /*
-	fz_free_device: Free a devices of any type and its resources.
+	fz_drop_device: Free a devices of any type and its resources.
 */
-void fz_free_device(fz_device *dev);
+void fz_drop_device(fz_device *dev);
 
 /*
 	fz_enable_device_hints : Enable hints in a device.
@@ -304,7 +304,7 @@ fz_device *fz_new_test_device(fz_context *ctx, int *is_color, float threshold);
 	for how to obtain a pixmap. The pixmap is not cleared by the
 	draw device, see fz_clear_pixmap* for how to clear it prior to
 	calling fz_new_draw_device. Free the device by calling
-	fz_free_device.
+	fz_drop_device.
 */
 fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 
@@ -315,7 +315,7 @@ fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 	for how to obtain a pixmap. The pixmap is not cleared by the
 	draw device, see fz_clear_pixmap* for how to clear it prior to
 	calling fz_new_draw_device. Free the device by calling
-	fz_free_device.
+	fz_drop_device.
 
 	clip: Bounding box to restrict any marking operations of the
 	draw device.

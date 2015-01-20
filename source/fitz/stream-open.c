@@ -58,7 +58,7 @@ fz_keep_stream(fz_stream *stm)
 }
 
 void
-fz_close(fz_stream *stm)
+fz_drop_stream(fz_stream *stm)
 {
 	if (!stm)
 		return;

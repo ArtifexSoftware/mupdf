@@ -229,7 +229,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		fz_always(ctx)
 		{
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 		}
 		fz_catch(ctx)
@@ -252,7 +252,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		fz_always(ctx)
 		{
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 		}
 		fz_catch(ctx)
@@ -279,7 +279,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				fz_run_display_list(list, dev, &fz_identity, &fz_infinite_rect, &cookie);
 			else
 				fz_run_page(doc, page, dev, &fz_identity, &cookie);
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 			if (showtext == TEXT_XML)
 			{
@@ -298,9 +298,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		fz_always(ctx)
 		{
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
-			fz_free_text_page(ctx, text);
+			fz_drop_text_page(ctx, text);
 		}
 		fz_catch(ctx)
 		{
@@ -326,7 +326,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		fz_always(ctx)
 		{
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 		}
 		fz_catch(ctx)
@@ -356,12 +356,12 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				fz_run_display_list(list, dev, &ctm, &tbounds, &cookie);
 			else
 				fz_run_page(doc, page, dev, &ctm, &cookie);
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 		}
 		fz_always(ctx)
 		{
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 		}
 		fz_catch(ctx)
@@ -371,7 +371,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_rethrow(ctx);
 		}
 		pdf_insert_page(pdfout, newpage, INT_MAX);
-		pdf_free_page(pdfout, newpage);
+		pdf_drop_page(pdfout, newpage);
 	}
 
 	if (output && output_format == OUT_SVG)
@@ -408,14 +408,14 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				fz_run_display_list(list, dev, &ctm, &tbounds, &cookie);
 			else
 				fz_run_page(doc, page, dev, &ctm, &cookie);
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 		}
 		fz_always(ctx)
 		{
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
-			fz_close_output(out);
+			fz_drop_output(out);
 			if (file != stdout)
 				fclose(file);
 		}
@@ -556,7 +556,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_run_display_list(list, dev, &ctm, &tbounds, &cookie);
 				else
 					fz_run_page(doc, page, dev, &ctm, &cookie);
-				fz_free_device(dev);
+				fz_drop_device(dev);
 				dev = NULL;
 
 				if (invert)
@@ -639,11 +639,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_output_png_trailer(output_file, poc);
 			}
 
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 			fz_drop_pixmap(ctx, pix);
 			if (output_file)
-				fz_close_output(output_file);
+				fz_drop_output(output_file);
 		}
 		fz_catch(ctx)
 		{
@@ -749,8 +749,8 @@ static void drawoutline(fz_context *ctx, fz_document *doc)
 	}
 	fz_always(ctx)
 	{
-		fz_close_output(out);
-		fz_free_outline(ctx, outline);
+		fz_drop_output(out);
+		fz_drop_outline(ctx, outline);
 	}
 	fz_catch(ctx)
 	{
@@ -1105,11 +1105,11 @@ int main(int argc, char **argv)
 	}
 
 	if (showtext)
-		fz_free_text_sheet(ctx, sheet);
+		fz_drop_text_sheet(ctx, sheet);
 
 	if (showxml || showtext)
 	{
-		fz_close_output(out);
+		fz_drop_output(out);
 		out = NULL;
 	}
 
@@ -1131,7 +1131,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 
 	if (showmemory)
 	{

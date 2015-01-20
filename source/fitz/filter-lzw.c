@@ -189,7 +189,7 @@ close_lzwd(fz_context *ctx, void *state_)
 {
 	fz_lzwd *lzw = (fz_lzwd *)state_;
 	fz_sync_bits(lzw->chain);
-	fz_close(lzw->chain);
+	fz_drop_stream(lzw->chain);
 	fz_free(ctx, lzw);
 }
 
@@ -243,7 +243,7 @@ fz_open_lzwd(fz_stream *chain, int early_change)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, lzw);
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 

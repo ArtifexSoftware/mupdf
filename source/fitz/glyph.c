@@ -15,7 +15,7 @@ fz_drop_glyph(fz_context *ctx, fz_glyph *glyph)
 }
 
 static void
-fz_free_glyph_imp(fz_context *ctx, fz_storable *glyph_)
+fz_drop_glyph_imp(fz_context *ctx, fz_storable *glyph_)
 {
 	fz_glyph *glyph = (fz_glyph *)glyph_;
 
@@ -136,7 +136,7 @@ fz_new_glyph_from_pixmap(fz_context *ctx, fz_pixmap *pix)
 		if (pix->n != 1 || pix->w * pix->h < RLE_THRESHOLD)
 		{
 			glyph = fz_malloc_struct(ctx, fz_glyph);
-			FZ_INIT_STORABLE(glyph, 1, fz_free_glyph_imp);
+			FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 			glyph->x = pix->x;
 			glyph->y = pix->y;
 			glyph->w = pix->w;
@@ -181,7 +181,7 @@ fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		size = h * w;
 		fill = h * sizeof(int);
 		glyph = fz_malloc(ctx, sizeof(fz_glyph) + size);
-		FZ_INIT_STORABLE(glyph, 1, fz_free_glyph_imp);
+		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		glyph->x = x;
 		glyph->y = y;
 		glyph->w = w;
@@ -288,7 +288,7 @@ fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		 * critical. */
 try_pixmap:
 		glyph = fz_resize_array(ctx, glyph, 1, sizeof(fz_glyph));
-		FZ_INIT_STORABLE(glyph, 1, fz_free_glyph_imp);
+		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		pix = fz_new_pixmap_from_8bpp_data(ctx, x, y, w, h, orig_sp, span);
 		glyph->x = pix->x;
 		glyph->y = pix->y;
@@ -329,7 +329,7 @@ fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		size = h * w;
 		fill = h * sizeof(int);
 		glyph = fz_malloc(ctx, sizeof(fz_glyph) + size);
-		FZ_INIT_STORABLE(glyph, 1, fz_free_glyph_imp);
+		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		glyph->x = x;
 		glyph->y = y;
 		glyph->w = w;
@@ -420,7 +420,7 @@ fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigne
 		 * critical. */
 try_pixmap:
 		glyph = fz_resize_array(ctx, glyph, 1, sizeof(fz_glyph));
-		FZ_INIT_STORABLE(glyph, 1, fz_free_glyph_imp);
+		FZ_INIT_STORABLE(glyph, 1, fz_drop_glyph_imp);
 		pix = fz_new_pixmap_from_1bpp_data(ctx, x, y, w, h, orig_sp, span);
 		glyph->x = pix->x;
 		glyph->y = pix->y;

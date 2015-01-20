@@ -114,7 +114,7 @@ xps_parse_image_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *ar
 	}
 	fz_always(doc->ctx)
 	{
-		xps_free_part(doc, part);
+		xps_drop_part(doc, part);
 	}
 	fz_catch(doc->ctx)
 	{

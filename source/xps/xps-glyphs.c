@@ -539,7 +539,7 @@ xps_parse_glyphs(xps_document *doc, const fz_matrix *ctm,
 		fz_always(doc->ctx)
 		{
 			fz_drop_buffer(doc->ctx, buf);
-			xps_free_part(doc, part);
+			xps_drop_part(doc, part);
 		}
 		fz_catch(doc->ctx)
 		{

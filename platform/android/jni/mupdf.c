@@ -332,7 +332,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 		LOGE("Failed: %s", ctx->error->message);
 		fz_drop_document(glo->doc);
 		glo->doc = NULL;
-		fz_free_context(ctx);
+		fz_drop_context(ctx);
 		glo->ctx = NULL;
 		free(glo);
 		glo = NULL;
@@ -479,14 +479,14 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz, jstring jmagic)
 	}
 	fz_always(ctx)
 	{
-		fz_close(stream);
+		fz_drop_stream(stream);
 	}
 	fz_catch(ctx)
 	{
 		LOGE("Failed: %s", ctx->error->message);
 		fz_drop_document(glo->doc);
 		glo->doc = NULL;
-		fz_free_context(ctx);
+		fz_drop_context(ctx);
 		glo->ctx = NULL;
 		free(glo);
 		glo = NULL;
@@ -730,7 +730,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(doc, pc->page, dev, &fz_identity, cookie);
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
 			{
@@ -746,7 +746,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
 				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, cookie);
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
 			{
@@ -808,14 +808,14 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			LOGI("100 renders in %d (%d per sec)", time, CLOCKS_PER_SEC);
 		}
 #endif
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 		fz_drop_pixmap(ctx, pix);
 		LOGI("Rendered");
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 	}
 	fz_catch(ctx)
@@ -928,7 +928,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			pc->page_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(doc, pc->page, dev, &fz_identity, cookie);
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
 			{
@@ -943,7 +943,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(doc, pc->page); annot; annot = fz_next_annot(doc, annot))
 				fz_run_annot(doc, pc->page, annot, dev, &fz_identity, cookie);
-			fz_free_device(dev);
+			fz_drop_device(dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
 			{
@@ -999,7 +999,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 				if (cookie != NULL && cookie->abort)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
 
-				fz_free_device(dev);
+				fz_drop_device(dev);
 				dev = NULL;
 			}
 		}
@@ -1012,7 +1012,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 	}
 	fz_catch(ctx)
@@ -1146,7 +1146,7 @@ JNI_FN(MuPDFCore_hasOutlineInternal)(JNIEnv * env, jobject thiz)
 	globals *glo = get_globals(env, thiz);
 	fz_outline *outline = fz_load_outline(glo->doc);
 
-	fz_free_outline(glo->ctx, outline);
+	fz_drop_outline(glo->ctx, outline);
 	return (outline == NULL) ? JNI_FALSE : JNI_TRUE;
 }
 
@@ -1179,7 +1179,7 @@ JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 	ret = fillInOutlineItems(env, olClass, ctor, arr, 0, outline, 0) > 0
 			? arr
 			:NULL;
-	fz_free_outline(glo->ctx, outline);
+	fz_drop_outline(glo->ctx, outline);
 	return ret;
 }
 
@@ -1227,16 +1227,16 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 
 		hit_count = fz_search_text_page(ctx, text, str, glo->hit_bbox, MAX_SEARCH_HITS);
 	}
 	fz_always(ctx)
 	{
-		fz_free_text_page(ctx, text);
-		fz_free_text_sheet(ctx, sheet);
-		fz_free_device(dev);
+		fz_drop_text_page(ctx, text);
+		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{
@@ -1317,7 +1317,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 
 		barr = (*env)->NewObjectArray(env, text->len, textBlockClass, NULL);
@@ -1378,9 +1378,9 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 	}
 	fz_always(ctx)
 	{
-		fz_free_text_page(ctx, text);
-		fz_free_text_sheet(ctx, sheet);
-		fz_free_device(dev);
+		fz_drop_text_page(ctx, text);
+		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{
@@ -1425,7 +1425,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
 		fz_run_page(doc, pc->page, dev, &ctm, NULL);
-		fz_free_device(dev);
+		fz_drop_device(dev);
 		dev = NULL;
 
 		fz_analyze_text(ctx, sheet, text);
@@ -1448,7 +1448,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_printf(out, "<style>\n");
 		fz_print_text_sheet(ctx, out, sheet);
 		fz_printf(out, "</style>\n</html>\n");
-		fz_close_output(out);
+		fz_drop_output(out);
 		out = NULL;
 
 		bArray = (*env)->NewByteArray(env, buf->len);
@@ -1459,10 +1459,10 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 	}
 	fz_always(ctx)
 	{
-		fz_free_text_page(ctx, text);
-		fz_free_text_sheet(ctx, sheet);
-		fz_free_device(dev);
-		fz_close_output(out);
+		fz_drop_text_page(ctx, text);
+		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_device(dev);
+		fz_drop_output(out);
 		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
@@ -1733,7 +1733,7 @@ JNI_FN(MuPDFCore_destroying)(JNIEnv * env, jobject thiz)
 	fz_free(glo->ctx, glo->current_path);
 	glo->current_path = NULL;
 	close_doc(glo);
-	fz_free_context(glo->ctx);
+	fz_drop_context(glo->ctx);
 	glo->ctx = NULL;
 	free(glo);
 #ifdef MEMENTO

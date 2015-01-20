@@ -778,7 +778,7 @@ close_faxd(fz_context *ctx, void *state_)
 	while (i--)
 		fz_unread_byte(fax->chain);
 
-	fz_close(fax->chain);
+	fz_drop_stream(fax->chain);
 	fz_free(ctx, fax->ref);
 	fz_free(ctx, fax->dst);
 	fz_free(ctx, fax);
@@ -848,7 +848,7 @@ fz_open_faxd(fz_stream *chain,
 			fz_free(ctx, fax->ref);
 		}
 		fz_free(ctx, fax);
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 

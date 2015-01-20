@@ -3,7 +3,7 @@
 #define SLOWCMYK
 
 void
-fz_free_colorspace_imp(fz_context *ctx, fz_storable *cs_)
+fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 {
 	fz_colorspace *cs = (fz_colorspace *)cs_;
 
@@ -15,8 +15,8 @@ fz_free_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 fz_colorspace *
 fz_new_colorspace(fz_context *ctx, char *name, int n)
 {
-	fz_colorspace *cs = Memento_label(fz_malloc(ctx, sizeof(fz_colorspace)), "fz_colorspace");
-	FZ_INIT_STORABLE(cs, 1, fz_free_colorspace_imp);
+	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
+	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
 	cs->size = sizeof(fz_colorspace);
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
@@ -169,10 +169,10 @@ static void rgb_to_cmyk(fz_context *ctx, fz_colorspace *cs, const float *rgb, fl
 	cmyk[3] = k;
 }
 
-static fz_colorspace k_default_gray = { {-1, fz_free_colorspace_imp}, 0, "DeviceGray", 1, gray_to_rgb, rgb_to_gray };
-static fz_colorspace k_default_rgb = { {-1, fz_free_colorspace_imp}, 0, "DeviceRGB", 3, rgb_to_rgb, rgb_to_rgb };
-static fz_colorspace k_default_bgr = { {-1, fz_free_colorspace_imp}, 0, "DeviceBGR", 3, bgr_to_rgb, rgb_to_bgr };
-static fz_colorspace k_default_cmyk = { {-1, fz_free_colorspace_imp}, 0, "DeviceCMYK", 4, cmyk_to_rgb, rgb_to_cmyk };
+static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, gray_to_rgb, rgb_to_gray };
+static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, rgb_to_rgb, rgb_to_rgb };
+static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, bgr_to_rgb, rgb_to_bgr };
+static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, cmyk_to_rgb, rgb_to_cmyk };
 
 static fz_colorspace *fz_default_gray = &k_default_gray;
 static fz_colorspace *fz_default_rgb = &k_default_rgb;
@@ -948,7 +948,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 			}
 		}
 
-		fz_free_hash(ctx, lookup);
+		fz_drop_hash(ctx, lookup);
 	}
 }
 
@@ -1337,7 +1337,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 	}
 	fz_catch(ctx)
 	{
-		fz_free_hash(ctx, cached->hash);
+		fz_drop_hash(ctx, cached->hash);
 		fz_rethrow(ctx);
 	}
 }
@@ -1363,6 +1363,6 @@ void fz_fin_cached_color_converter(fz_color_converter *cc_)
 		if (v)
 			fz_free(ctx, v);
 	}
-	fz_free_hash(ctx, cc->hash);
+	fz_drop_hash(ctx, cc->hash);
 	fz_free(ctx, cc);
 }

@@ -867,7 +867,7 @@ load_postscript_func(pdf_function *func, pdf_document *doc, pdf_obj *dict, int n
 	}
 	fz_always(ctx)
 	{
-		fz_close(stream);
+		fz_drop_stream(stream);
 		pdf_lexbuf_fin(&buf);
 	}
 	fz_catch(ctx)
@@ -1035,7 +1035,7 @@ load_sample_func(pdf_function *func, pdf_document *doc, pdf_obj *dict, int num, 
 	}
 	fz_always(ctx)
 	{
-		fz_close(stream);
+		fz_drop_stream(stream);
 	}
 	fz_catch(ctx)
 	{
@@ -1363,7 +1363,7 @@ eval_stitching_func(fz_context *ctx, pdf_function *func, float in, float *out)
  */
 
 static void
-pdf_free_function_imp(fz_context *ctx, fz_storable *func_)
+pdf_drop_function_imp(fz_context *ctx, fz_storable *func_)
 {
 	pdf_function *func = (pdf_function *)func_;
 	int i;
@@ -1637,13 +1637,13 @@ pdf_load_function(pdf_document *doc, pdf_obj *dict, int in, int out)
 	if (pdf_obj_marked(dict))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Recursion in function definition");
 
-	if ((func = pdf_find_item(ctx, pdf_free_function_imp, dict)) != NULL)
+	if ((func = pdf_find_item(ctx, pdf_drop_function_imp, dict)) != NULL)
 	{
 		return (fz_function *)func;
 	}
 
 	func = fz_malloc_struct(ctx, pdf_function);
-	FZ_INIT_STORABLE(&func->base, 1, pdf_free_function_imp);
+	FZ_INIT_STORABLE(&func->base, 1, pdf_drop_function_imp);
 	func->base.size = sizeof(*func);
 	func->base.evaluate = pdf_eval_function;
 #ifndef NDEBUG

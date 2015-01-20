@@ -183,7 +183,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 			outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
 		[titles release];
 		[pages release];
-		fz_free_outline(ctx, root);
+		fz_drop_outline(ctx, root);
 	}
 
 	return self;

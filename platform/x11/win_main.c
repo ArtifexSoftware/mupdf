@@ -1220,7 +1220,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	}
 
 	do_close(&gapp);
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 
 	return 0;
 }

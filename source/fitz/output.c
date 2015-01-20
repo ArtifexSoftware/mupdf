@@ -71,7 +71,7 @@ fz_new_output_to_filename(fz_context *ctx, const char *filename)
 }
 
 void
-fz_close_output(fz_output *out)
+fz_drop_output(fz_output *out)
 {
 	if (!out)
 		return;

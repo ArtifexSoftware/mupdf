@@ -28,7 +28,7 @@ xps_document *xps_open_document(fz_context *ctx, const char *filename);
 	filename to locate the document to open. Increments the
 	reference count of the stream. See fz_open_file,
 	fz_open_file_w or fz_open_fd for opening a stream, and
-	fz_close for closing an open stream.
+	fz_drop_stream for closing an open stream.
 */
 xps_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
@@ -47,7 +47,7 @@ xps_page *xps_load_page(xps_document *doc, int number);
 fz_rect *xps_bound_page(xps_document *doc, xps_page *page, fz_rect *rect);
 void xps_run_page(xps_document *doc, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 fz_link *xps_load_links(xps_document *doc, xps_page *page);
-void xps_free_page(xps_document *doc, xps_page *page);
+void xps_drop_page(xps_document *doc, xps_page *page);
 
 fz_outline *xps_load_outline(xps_document *doc);
 
@@ -77,7 +77,7 @@ struct xps_part_s
 
 int xps_has_part(xps_document *doc, char *partname);
 xps_part *xps_read_part(xps_document *doc, char *partname);
-void xps_free_part(xps_document *doc, xps_part *part);
+void xps_drop_part(xps_document *doc, xps_part *part);
 
 /*
  * Document structure.
@@ -114,7 +114,7 @@ struct xps_target_s
 
 void xps_read_page_list(xps_document *doc);
 void xps_print_page_list(xps_document *doc);
-void xps_free_page_list(xps_document *doc);
+void xps_drop_page_list(xps_document *doc);
 
 int xps_lookup_link_target(xps_document *doc, char *target_uri);
 void xps_add_link(xps_document *doc, const fz_rect *area, char *base_uri, char *target_uri);
@@ -168,7 +168,7 @@ struct xps_resource_s
 };
 
 xps_resource * xps_parse_resource_dictionary(xps_document *doc, char *base_uri, fz_xml *root);
-void xps_free_resource_dictionary(xps_document *doc, xps_resource *dict);
+void xps_drop_resource_dictionary(xps_document *doc, xps_resource *dict);
 void xps_resolve_resource_reference(xps_document *doc, xps_resource *dict, char **attp, fz_xml **tagp, char **urip);
 
 void xps_print_resource_dictionary(xps_resource *dict);

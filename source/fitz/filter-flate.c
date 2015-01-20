@@ -93,7 +93,7 @@ close_flated(fz_context *ctx, void *state_)
 	if (code != Z_OK)
 		fz_warn(ctx, "zlib error: inflateEnd: %s", state->z.msg);
 
-	fz_close(state->chain);
+	fz_drop_stream(state->chain);
 	fz_free(ctx, state);
 }
 
@@ -134,7 +134,7 @@ fz_open_flated(fz_stream *chain, int window_bits)
 		if (state && code == Z_OK)
 			inflateEnd(&state->z);
 		fz_free(ctx, state);
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 	return fz_new_stream(ctx, state, next_flated, close_flated, rebind_flated);

@@ -114,7 +114,7 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 		}
 		fz_always(ctx)
 		{
-			fz_free_device(dev);
+			fz_drop_device(dev);
 		}
 		fz_catch(ctx)
 		{

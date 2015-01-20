@@ -84,7 +84,7 @@ rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
 	lab[2] = rgb[2];
 }
 
-static fz_colorspace k_device_lab = { {-1, fz_free_colorspace_imp}, 0, "Lab", 3, lab_to_rgb, rgb_to_lab };
+static fz_colorspace k_device_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, lab_to_rgb, rgb_to_lab };
 static fz_colorspace *fz_device_lab = &k_device_lab;
 
 /* Separation and DeviceN */
@@ -219,7 +219,7 @@ load_indexed(pdf_document *doc, pdf_obj *array)
 			}
 			fz_always(ctx)
 			{
-				fz_close(file);
+				fz_drop_stream(file);
 			}
 			fz_catch(ctx)
 			{
@@ -359,7 +359,7 @@ pdf_load_colorspace(pdf_document *doc, pdf_obj *obj)
 	fz_context *ctx = doc->ctx;
 	fz_colorspace *cs;
 
-	if ((cs = pdf_find_item(ctx, fz_free_colorspace_imp, obj)) != NULL)
+	if ((cs = pdf_find_item(ctx, fz_drop_colorspace_imp, obj)) != NULL)
 	{
 		return cs;
 	}

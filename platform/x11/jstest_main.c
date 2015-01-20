@@ -426,7 +426,7 @@ main(int argc, char *argv[])
 	if (file_open)
 		pdfapp_close(&gapp);
 
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 
 	return 0;
 }

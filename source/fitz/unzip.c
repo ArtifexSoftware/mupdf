@@ -452,13 +452,13 @@ fz_list_archive_entry(fz_context *ctx, fz_archive *zip, int idx)
 }
 
 void
-fz_close_archive(fz_context *ctx, fz_archive *zip)
+fz_drop_archive(fz_context *ctx, fz_archive *zip)
 {
 	int i;
 	if (zip)
 	{
 		fz_free(ctx, zip->directory);
-		fz_close(zip->file);
+		fz_drop_stream(zip->file);
 		for (i = 0; i < zip->count; ++i)
 			fz_free(ctx, zip->table[i].name);
 		fz_free(ctx, zip->table);
@@ -497,7 +497,7 @@ fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		fz_close_archive(ctx, zip);
+		fz_drop_archive(ctx, zip);
 		fz_rethrow(ctx);
 	}
 
@@ -517,7 +517,7 @@ fz_open_archive(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{

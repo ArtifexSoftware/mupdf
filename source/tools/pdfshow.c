@@ -118,7 +118,7 @@ static void showstream(int num, int gen)
 			showsafe(buf, n);
 	}
 
-	fz_close(stm);
+	fz_drop_stream(stm);
 }
 
 static void showobject(int num, int gen)
@@ -265,6 +265,6 @@ int pdfshow_main(int argc, char **argv)
 		fclose(out);
 
 	pdf_close_document(doc);
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 	return 0;
 }

@@ -1315,7 +1315,7 @@ void pdf_clean_obj(pdf_obj *obj)
 }
 
 static void
-pdf_free_array(pdf_obj *obj)
+pdf_drop_array(pdf_obj *obj)
 {
 	fz_context *ctx = obj->doc->ctx;
 	int i;
@@ -1328,7 +1328,7 @@ pdf_free_array(pdf_obj *obj)
 }
 
 static void
-pdf_free_dict(pdf_obj *obj)
+pdf_drop_dict(pdf_obj *obj)
 {
 	int i;
 	fz_context *ctx = obj->doc->ctx;
@@ -1350,9 +1350,9 @@ pdf_drop_obj(pdf_obj *obj)
 	if (--obj->refs)
 		return;
 	if (obj->kind == PDF_ARRAY)
-		pdf_free_array(obj);
+		pdf_drop_array(obj);
 	else if (obj->kind == PDF_DICT)
-		pdf_free_dict(obj);
+		pdf_drop_dict(obj);
 	else
 		fz_free(obj->doc->ctx, obj);
 }
@@ -1402,7 +1402,7 @@ pdf_obj *pdf_new_obj_from_str(pdf_document *doc, const char *src)
 	fz_always(ctx)
 	{
 		pdf_lexbuf_fin(&lexbuf);
-		fz_close(stream);
+		fz_drop_stream(stream);
 	}
 	fz_catch(ctx)
 	{

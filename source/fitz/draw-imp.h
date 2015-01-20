@@ -12,7 +12,7 @@ void fz_insert_gel(fz_gel *gel, float x0, float y0, float x1, float y1);
 void fz_reset_gel(fz_gel *gel, const fz_irect *clip);
 void fz_sort_gel(fz_gel *gel);
 fz_irect *fz_bound_gel(const fz_gel *gel, fz_irect *bbox);
-void fz_free_gel(fz_gel *gel);
+void fz_drop_gel(fz_gel *gel);
 int fz_is_rect_gel(fz_gel *gel);
 fz_rect *fz_gel_scissor(const fz_gel *gel, fz_rect *rect);
 

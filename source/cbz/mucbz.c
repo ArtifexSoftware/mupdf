@@ -145,7 +145,7 @@ cbz_open_document(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{
@@ -158,7 +158,7 @@ cbz_open_document(fz_context *ctx, const char *filename)
 void
 cbz_close_document(cbz_document *doc)
 {
-	fz_close_archive(doc->ctx, doc->zip);
+	fz_drop_archive(doc->ctx, doc->zip);
 	fz_free(doc->ctx, (char **)doc->page);
 	fz_free(doc->ctx, doc);
 }

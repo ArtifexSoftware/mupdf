@@ -177,7 +177,7 @@ fz_read_file(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_close(stm);
+		fz_drop_stream(stm);
 	}
 	fz_catch(ctx)
 	{

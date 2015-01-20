@@ -10,7 +10,7 @@
 	directions.
 
 	Streams are reference counted, so references must be dropped
-	by a call to fz_close.
+	by a call to fz_drop_stream.
 
 	Only the data between rp and wp is valid.
 */
@@ -91,7 +91,7 @@ fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 fz_stream *fz_open_leecher(fz_stream *chain, fz_buffer *buf);
 
 /*
-	fz_close: Close an open stream.
+	fz_drop_stream: Close an open stream.
 
 	Drops a reference for the stream. Once no references remain
 	the stream will be closed, as will any file descriptor the
@@ -99,7 +99,7 @@ fz_stream *fz_open_leecher(fz_stream *chain, fz_buffer *buf);
 
 	Does not throw exceptions.
 */
-void fz_close(fz_stream *stm);
+void fz_drop_stream(fz_stream *stm);
 
 /*
 	fz_tell: return the current reading position within a stream

@@ -71,7 +71,7 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 	}
 	fz_always(ctx)
 	{
-		xps_free_part(doc, part);
+		xps_drop_part(doc, part);
 	}
 	fz_catch(ctx)
 	{
@@ -84,7 +84,7 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 
 	if (strcmp(fz_xml_tag(xml), "ResourceDictionary"))
 	{
-		fz_free_xml(doc->ctx, xml);
+		fz_drop_xml(doc->ctx, xml);
 		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "expected ResourceDictionary element");
 	}
 
@@ -138,14 +138,14 @@ xps_parse_resource_dictionary(xps_document *doc, char *base_uri, fz_xml *root)
 }
 
 void
-xps_free_resource_dictionary(xps_document *doc, xps_resource *dict)
+xps_drop_resource_dictionary(xps_document *doc, xps_resource *dict)
 {
 	xps_resource *next;
 	while (dict)
 	{
 		next = dict->next;
 		if (dict->base_xml)
-			fz_free_xml(doc->ctx, dict->base_xml);
+			fz_drop_xml(doc->ctx, dict->base_xml);
 		if (dict->base_uri)
 			fz_free(doc->ctx, dict->base_uri);
 		fz_free(doc->ctx, dict);

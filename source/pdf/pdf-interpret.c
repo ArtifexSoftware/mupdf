@@ -55,7 +55,7 @@ pdf_clear_stack(pdf_csi *csi)
 }
 
 static void
-pdf_free_csi(pdf_csi *csi)
+pdf_drop_csi(pdf_csi *csi)
 {
 	fz_context *ctx = csi->doc->ctx;
 
@@ -557,7 +557,7 @@ pdf_process_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, const pdf
 	}
 	fz_always(ctx)
 	{
-		pdf_free_csi(csi);
+		pdf_drop_csi(csi);
 	}
 	fz_catch(ctx)
 	{
@@ -581,7 +581,7 @@ pdf_process_contents_object(pdf_csi *csi, pdf_obj *rdb, pdf_obj *contents)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{
@@ -605,7 +605,7 @@ pdf_process_contents_buffer(pdf_csi *csi, pdf_obj *rdb, fz_buffer *contents)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{
@@ -626,7 +626,7 @@ pdf_process_stream_object(pdf_document *doc, pdf_obj *obj, const pdf_process *pr
 	}
 	fz_always(ctx)
 	{
-		pdf_free_csi(csi);
+		pdf_drop_csi(csi);
 	}
 	fz_catch(ctx)
 	{
@@ -648,7 +648,7 @@ pdf_process_glyph(pdf_document *doc, pdf_obj *resources, fz_buffer *contents, pd
 	}
 	fz_always(ctx)
 	{
-		pdf_free_csi(csi);
+		pdf_drop_csi(csi);
 	}
 	fz_catch(ctx)
 	{

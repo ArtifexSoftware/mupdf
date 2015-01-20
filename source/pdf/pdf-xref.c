@@ -20,7 +20,7 @@ static inline int iswhite(int ch)
  * xref tables
  */
 
-static void pdf_free_xref_sections(pdf_document *doc)
+static void pdf_drop_xref_sections(pdf_document *doc)
 {
 	fz_context *ctx = doc->ctx;
 	int x, e;
@@ -439,7 +439,7 @@ void pdf_replace_xref(pdf_document *doc, pdf_xref_entry *entries, int n)
 		sub = fz_malloc_struct(ctx, pdf_xref_subsec);
 
 		/* The new table completely replaces the previous separate sections */
-		pdf_free_xref_sections(doc);
+		pdf_drop_xref_sections(doc);
 
 		sub->table = entries;
 		sub->start = 0;
@@ -877,7 +877,7 @@ pdf_read_new_xref(pdf_document *doc, pdf_lexbuf *buf)
 	}
 	fz_always(ctx)
 	{
-		fz_close(stm);
+		fz_drop_stream(stm);
 	}
 	fz_catch(ctx)
 	{
@@ -1306,7 +1306,7 @@ pdf_read_ocg(pdf_document *doc)
 }
 
 static void
-pdf_free_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
+pdf_drop_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
 {
 	if (!desc)
 		return;
@@ -1359,7 +1359,7 @@ pdf_init_document(pdf_document *doc)
 	}
 	fz_catch(ctx)
 	{
-		pdf_free_xref_sections(doc);
+		pdf_drop_xref_sections(doc);
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		fz_warn(ctx, "trying to repair broken xref");
 		repaired = 1;
@@ -1492,15 +1492,15 @@ pdf_close_document(pdf_document *doc)
 	if (doc->js)
 		doc->drop_js(doc->js);
 
-	pdf_free_xref_sections(doc);
+	pdf_drop_xref_sections(doc);
 	fz_free(ctx, doc->xref_index);
 
 	if (doc->focus_obj)
 		pdf_drop_obj(doc->focus_obj);
 	if (doc->file)
-		fz_close(doc->file);
+		fz_drop_stream(doc->file);
 	if (doc->crypt)
-		pdf_free_crypt(ctx, doc->crypt);
+		pdf_drop_crypt(ctx, doc->crypt);
 
 	pdf_drop_obj(doc->linear_obj);
 	if (doc->linear_page_refs)
@@ -1531,7 +1531,7 @@ pdf_close_document(pdf_document *doc)
 	}
 	fz_free(ctx, doc->type3_fonts);
 
-	pdf_free_ocg(ctx, doc->ocg);
+	pdf_drop_ocg(ctx, doc->ocg);
 
 	fz_empty_store(ctx);
 
@@ -1659,7 +1659,7 @@ pdf_load_obj_stm(pdf_document *doc, int num, int gen, pdf_lexbuf *buf, int targe
 	}
 	fz_always(ctx)
 	{
-		fz_close(stm);
+		fz_drop_stream(stm);
 		fz_free(ctx, ofsbuf);
 		fz_free(ctx, numbuf);
 		pdf_drop_obj(objstm);
@@ -2282,7 +2282,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.bound_annot = (fz_document_bound_annot_fn *)pdf_bound_annot;
 	doc->super.run_page_contents = NULL; /* see pdf_xref_aux.c */
 	doc->super.run_annot = NULL; /* see pdf_xref_aux.c */
-	doc->super.free_page = (fz_document_free_page_fn *)pdf_free_page;
+	doc->super.free_page = (fz_document_free_page_fn *)pdf_drop_page;
 	doc->super.meta = (fz_document_meta_fn *)pdf_meta;
 	doc->super.page_presentation = (fz_document_page_presentation_fn *)pdf_page_presentation;
 	doc->super.write = (fz_document_write_fn *)pdf_write_document;
@@ -2331,7 +2331,7 @@ pdf_open_document_no_run(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{
@@ -2543,7 +2543,7 @@ pdf_load_hints(pdf_document *doc, int objnum, int gennum)
 	}
 	fz_always(ctx)
 	{
-		fz_close(stream);
+		fz_drop_stream(stream);
 	}
 	fz_catch(ctx)
 	{

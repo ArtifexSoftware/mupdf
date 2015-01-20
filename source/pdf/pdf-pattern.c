@@ -13,7 +13,7 @@ pdf_drop_pattern(fz_context *ctx, pdf_pattern *pat)
 }
 
 static void
-pdf_free_pattern_imp(fz_context *ctx, fz_storable *pat_)
+pdf_drop_pattern_imp(fz_context *ctx, fz_storable *pat_)
 {
 	pdf_pattern *pat = (pdf_pattern *)pat_;
 
@@ -39,13 +39,13 @@ pdf_load_pattern(pdf_document *doc, pdf_obj *dict)
 	pdf_obj *obj;
 	fz_context *ctx = doc->ctx;
 
-	if ((pat = pdf_find_item(ctx, pdf_free_pattern_imp, dict)) != NULL)
+	if ((pat = pdf_find_item(ctx, pdf_drop_pattern_imp, dict)) != NULL)
 	{
 		return pat;
 	}
 
 	pat = fz_malloc_struct(ctx, pdf_pattern);
-	FZ_INIT_STORABLE(pat, 1, pdf_free_pattern_imp);
+	FZ_INIT_STORABLE(pat, 1, pdf_drop_pattern_imp);
 	pat->resources = NULL;
 	pat->contents = NULL;
 
@@ -75,7 +75,7 @@ pdf_load_pattern(pdf_document *doc, pdf_obj *dict)
 	}
 	fz_catch(ctx)
 	{
-		pdf_remove_item(ctx, pdf_free_pattern_imp, dict);
+		pdf_remove_item(ctx, pdf_drop_pattern_imp, dict);
 		pdf_drop_pattern(ctx, pat);
 		fz_rethrow_message(ctx, "cannot load pattern stream (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
 	}

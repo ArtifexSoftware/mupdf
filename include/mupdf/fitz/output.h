@@ -60,13 +60,13 @@ int fz_write(fz_output *out, const void *data, int len);
 void fz_putc(fz_output *out, char c);
 
 /*
-	fz_close_output: Close a previously opened fz_output stream.
+	fz_drop_output: Close a previously opened fz_output stream.
 
 	Note: whether or not this closes the underlying output method is
 	method dependent. FILE * streams created by fz_new_output_with_file
 	are NOT closed.
 */
-void fz_close_output(fz_output *);
+void fz_drop_output(fz_output *);
 
 void fz_rebind_output(fz_output *, fz_context *ctx);
 

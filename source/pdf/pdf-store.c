@@ -66,13 +66,13 @@ pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, unsigned int itemsize)
 }
 
 void *
-pdf_find_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key)
+pdf_find_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key)
 {
-	return fz_find_item(ctx, free, key, &pdf_obj_store_type);
+	return fz_find_item(ctx, drop, key, &pdf_obj_store_type);
 }
 
 void
-pdf_remove_item(fz_context *ctx, fz_store_free_fn *free, pdf_obj *key)
+pdf_remove_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key)
 {
-	fz_remove_item(ctx, free, key, &pdf_obj_store_type);
+	fz_remove_item(ctx, drop, key, &pdf_obj_store_type);
 }

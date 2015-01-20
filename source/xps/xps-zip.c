@@ -26,7 +26,7 @@ xps_new_part(xps_document *doc, char *name, unsigned char *data, int size)
 }
 
 void
-xps_free_part(xps_document *doc, xps_part *part)
+xps_drop_part(xps_document *doc, xps_part *part)
 {
 	fz_free(doc->ctx, part->name);
 	fz_free(doc->ctx, part->data);
@@ -194,7 +194,7 @@ xps_open_document(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{
@@ -212,7 +212,7 @@ xps_close_document(xps_document *doc)
 		return;
 
 	if (doc->zip)
-		fz_close_archive(doc->ctx, doc->zip);
+		fz_drop_archive(doc->ctx, doc->zip);
 
 	font = doc->font_table;
 	while (font)
@@ -224,7 +224,7 @@ xps_close_document(xps_document *doc)
 		font = next;
 	}
 
-	xps_free_page_list(doc);
+	xps_drop_page_list(doc);
 
 	fz_free(doc->ctx, doc->start_part);
 	fz_free(doc->ctx, doc);
@@ -262,7 +262,7 @@ xps_init_document(xps_document *doc)
 	doc->super.load_links = (fz_document_load_links_fn *)xps_load_links;
 	doc->super.bound_page = (fz_document_bound_page_fn *)xps_bound_page;
 	doc->super.run_page_contents = (fz_document_run_page_contents_fn *)xps_run_page;
-	doc->super.free_page = (fz_document_free_page_fn *)xps_free_page;
+	doc->super.free_page = (fz_document_free_page_fn *)xps_drop_page;
 	doc->super.meta = (fz_document_meta_fn *)xps_meta;
 	doc->super.rebind = (fz_document_rebind_fn *)xps_rebind;
 }

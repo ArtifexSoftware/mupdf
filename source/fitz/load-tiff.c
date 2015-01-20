@@ -145,7 +145,7 @@ static void
 fz_decode_tiff_uncompressed(struct tiff *tiff, fz_stream *stm, unsigned char *wp, int wlen)
 {
 	fz_read(stm, wp, wlen);
-	fz_close(stm);
+	fz_drop_stream(stm);
 }
 
 static void
@@ -153,7 +153,7 @@ fz_decode_tiff_packbits(struct tiff *tiff, fz_stream *chain, unsigned char *wp, 
 {
 	fz_stream *stm = fz_open_rld(chain);
 	fz_read(stm, wp, wlen);
-	fz_close(stm);
+	fz_drop_stream(stm);
 }
 
 static void
@@ -161,7 +161,7 @@ fz_decode_tiff_lzw(struct tiff *tiff, fz_stream *chain, unsigned char *wp, int w
 {
 	fz_stream *stm = fz_open_lzwd(chain, 1);
 	fz_read(stm, wp, wlen);
-	fz_close(stm);
+	fz_drop_stream(stm);
 }
 
 static void
@@ -169,7 +169,7 @@ fz_decode_tiff_flate(struct tiff *tiff, fz_stream *chain, unsigned char *wp, int
 {
 	fz_stream *stm = fz_open_flated(chain, 15);
 	fz_read(stm, wp, wlen);
-	fz_close(stm);
+	fz_drop_stream(stm);
 }
 
 static void
@@ -183,7 +183,7 @@ fz_decode_tiff_fax(struct tiff *tiff, int comp, fz_stream *chain, unsigned char 
 			k, 0, encoded_byte_align,
 			tiff->imagewidth, tiff->imagelength, 0, black_is_1);
 	fz_read(stm, wp, wlen);
-	fz_close(stm);
+	fz_drop_stream(stm);
 }
 
 static void
@@ -198,7 +198,7 @@ fz_decode_tiff_jpeg(struct tiff *tiff, fz_stream *chain, unsigned char *wp, int 
 		color_transform = 0;
 	stm = fz_open_dctd(chain, color_transform, 0, jpegtables);
 	fz_read(stm, wp, wlen);
-	fz_close(stm);
+	fz_drop_stream(stm);
 }
 
 static inline int getcomp(unsigned char *line, int x, int bpc)

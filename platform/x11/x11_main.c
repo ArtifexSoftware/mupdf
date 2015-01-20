@@ -344,7 +344,7 @@ void cleanup(pdfapp_t *app)
 
 	XCloseDisplay(xdpy);
 
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 }
 
 static int winresolution()

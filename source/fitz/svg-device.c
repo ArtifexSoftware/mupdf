@@ -1027,7 +1027,7 @@ svg_dev_end_tile(fz_device *dev)
 }
 
 static void
-svg_dev_free_user(fz_device *dev)
+svg_dev_drop_user(fz_device *dev)
 {
 	svg_device *sdev = dev->user;
 	fz_context *ctx = sdev->ctx;
@@ -1035,7 +1035,7 @@ svg_dev_free_user(fz_device *dev)
 
 	fz_free(ctx, sdev->tiles);
 	fz_drop_buffer(ctx, sdev->defs_buffer);
-	fz_close_output(sdev->defs);
+	fz_drop_output(sdev->defs);
 
 	fz_printf(out, "</svg>\n");
 
@@ -1072,7 +1072,7 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 	}
 
 	dev->rebind = svg_rebind;
-	dev->free_user = svg_dev_free_user;
+	dev->drop_user = svg_dev_drop_user;
 
 	dev->fill_path = svg_dev_fill_path;
 	dev->stroke_path = svg_dev_stroke_path;

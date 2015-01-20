@@ -90,7 +90,7 @@ xps_load_document_structure(xps_document *doc, xps_fixdoc *fixdoc)
 	}
 	fz_always(doc->ctx)
 	{
-		xps_free_part(doc, part);
+		xps_drop_part(doc, part);
 	}
 	fz_catch(doc->ctx)
 	{
@@ -105,7 +105,7 @@ xps_load_document_structure(xps_document *doc, xps_fixdoc *fixdoc)
 	}
 	fz_always(doc->ctx)
 	{
-		fz_free_xml(doc->ctx, root);
+		fz_drop_xml(doc->ctx, root);
 	}
 	fz_catch(doc->ctx)
 	{

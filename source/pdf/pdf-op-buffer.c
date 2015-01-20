@@ -790,7 +790,7 @@ free_processor_buffer(pdf_csi *csi, void *state_)
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 	fz_context *ctx = state->ctx;
 
-	fz_close_output(state->out);
+	fz_drop_output(state->out);
 	fz_free(ctx, state);
 }
 
@@ -930,7 +930,7 @@ pdf_process *pdf_process_buffer(pdf_process *process, fz_context *ctx, fz_buffer
 	}
 	fz_catch(ctx)
 	{
-		fz_close_output(out);
+		fz_drop_output(out);
 		fz_rethrow(ctx);
 	}
 

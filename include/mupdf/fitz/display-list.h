@@ -40,7 +40,7 @@ fz_display_list *fz_new_display_list(fz_context *ctx);
 	display list can later be reused to render a page many times
 	without having to re-interpret the page from the document file
 	for each rendering. Once the device is no longer needed, free
-	it with fz_free_device.
+	it with fz_drop_device.
 
 	list: A display list that the list device takes ownership of.
 */

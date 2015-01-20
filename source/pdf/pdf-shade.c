@@ -330,7 +330,7 @@ pdf_load_shading_dict(pdf_document *doc, pdf_obj *dict, const fz_matrix *transfo
 	fz_try(ctx)
 	{
 		shade = fz_malloc_struct(ctx, fz_shade);
-		FZ_INIT_STORABLE(shade, 1, fz_free_shade_imp);
+		FZ_INIT_STORABLE(shade, 1, fz_drop_shade_imp);
 		shade->type = FZ_MESH_TYPE4;
 		shade->use_background = 0;
 		shade->use_function = 0;
@@ -456,7 +456,7 @@ pdf_load_shading(pdf_document *doc, pdf_obj *dict)
 	fz_context *ctx = doc->ctx;
 	fz_shade *shade;
 
-	if ((shade = pdf_find_item(ctx, fz_free_shade_imp, dict)) != NULL)
+	if ((shade = pdf_find_item(ctx, fz_drop_shade_imp, dict)) != NULL)
 	{
 		return shade;
 	}

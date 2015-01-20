@@ -310,7 +310,7 @@ int pdfclean_main(int argc, char **argv)
 	{
 		errors++;
 	}
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 
 	return errors == 0;
 }

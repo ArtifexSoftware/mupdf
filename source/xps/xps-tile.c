@@ -329,7 +329,7 @@ xps_parse_canvas(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, c
 		fz_pop_clip(doc->dev);
 
 	if (new_dict)
-		xps_free_resource_dictionary(doc, new_dict);
+		xps_drop_resource_dictionary(doc, new_dict);
 }
 
 void
@@ -371,7 +371,7 @@ xps_parse_fixed_page(xps_document *doc, const fz_matrix *ctm, xps_page *page)
 	}
 
 	if (dict)
-		xps_free_resource_dictionary(doc, dict);
+		xps_drop_resource_dictionary(doc, dict);
 }
 
 void

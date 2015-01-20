@@ -370,7 +370,7 @@ fz_test_buffer_write(fz_context *ctx)
 			fprintf(stderr, "Copied buffer is different!\n");
 		fz_seek(stm, 0, 0);
 	}
-	fz_close(stm);
+	fz_drop_stream(stm);
 	fz_drop_buffer(ctx, master);
 	fz_drop_buffer(ctx, copy);
 }

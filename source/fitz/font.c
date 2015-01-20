@@ -1065,7 +1065,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 			FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
 	font->t3run(font->t3doc, font->t3resources, contents, dev, &fz_identity, NULL, 0);
 	font->t3flags[gid] = dev->flags;
-	fz_free_device(dev);
+	fz_drop_device(dev);
 }
 
 static fz_rect *
@@ -1091,7 +1091,7 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm,
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{
@@ -1168,7 +1168,7 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 	}
 	fz_always(ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(dev);
 	}
 	fz_catch(ctx)
 	{

@@ -25,12 +25,12 @@ int search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 	fz_text_page *text = fz_new_text_page(ctx);
 	fz_device *dev = fz_new_text_device(ctx, sheet, text);
 	fz_run_page(doc, page, dev, &fz_identity, cookie);
-	fz_free_device(dev);
+	fz_drop_device(dev);
 
 	hit_count = fz_search_text_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));
 
-	fz_free_text_page(ctx, text);
-	fz_free_text_sheet(ctx, sheet);
+	fz_drop_text_page(ctx, text);
+	fz_drop_text_sheet(ctx, sheet);
 	fz_free_page(doc, page);
 
 	return hit_count;

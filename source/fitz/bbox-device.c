@@ -180,7 +180,7 @@ fz_bbox_end_tile(fz_device *dev)
 }
 
 static void
-fz_bbox_free_user(fz_device *dev)
+fz_bbox_drop_user(fz_device *dev)
 {
 	fz_bbox_data *data = dev->user;
 	if (data->top > 0)
@@ -198,7 +198,7 @@ fz_new_bbox_device(fz_context *ctx, fz_rect *result)
 	user->top = 0;
 	user->ignore = 0;
 	dev = fz_new_device(ctx, user);
-	dev->free_user = fz_bbox_free_user;
+	dev->drop_user = fz_bbox_drop_user;
 
 	dev->fill_path = fz_bbox_fill_path;
 	dev->stroke_path = fz_bbox_stroke_path;

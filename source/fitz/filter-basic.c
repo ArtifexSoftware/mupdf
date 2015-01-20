@@ -50,7 +50,7 @@ close_null(fz_context *ctx, void *state_)
 	struct null_filter *state = (struct null_filter *)state_;
 	fz_stream *chain = state->chain;
 	fz_free(ctx, state);
-	fz_close(chain);
+	fz_drop_stream(chain);
 }
 
 static fz_stream *
@@ -77,7 +77,7 @@ fz_open_null(fz_stream *chain, int len, int offset)
 	}
 	fz_catch(ctx)
 	{
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 
@@ -123,7 +123,7 @@ next_concat(fz_stream *stm, int max)
 				break;
 			}
 			state->current++;
-			fz_close(state->chain[state->current-1]);
+			fz_drop_stream(state->chain[state->current-1]);
 			if (state->pad)
 			{
 				stm->rp = (&state->ws_buf)+1;
@@ -147,7 +147,7 @@ close_concat(fz_context *ctx, void *state_)
 
 	for (i = state->current; i < state->count; i++)
 	{
-		fz_close(state->chain[i]);
+		fz_drop_stream(state->chain[i]);
 	}
 	fz_free(ctx, state);
 }
@@ -293,7 +293,7 @@ close_ahxd(fz_context *ctx, void *state_)
 	fz_ahxd *state = (fz_ahxd *)state_;
 	fz_stream *chain = state->chain;
 	fz_free(ctx, state);
-	fz_close(chain);
+	fz_drop_stream(chain);
 }
 
 static fz_stream *
@@ -317,7 +317,7 @@ fz_open_ahxd(fz_stream *chain)
 	}
 	fz_catch(ctx)
 	{
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 
@@ -445,7 +445,7 @@ close_a85d(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_close(chain);
+	fz_drop_stream(chain);
 }
 
 static fz_stream *
@@ -469,7 +469,7 @@ fz_open_a85d(fz_stream *chain)
 	}
 	fz_catch(ctx)
 	{
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 
@@ -564,7 +564,7 @@ close_rld(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_close(chain);
+	fz_drop_stream(chain);
 }
 
 static fz_stream *
@@ -590,7 +590,7 @@ fz_open_rld(fz_stream *chain)
 	}
 	fz_catch(ctx)
 	{
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 
@@ -635,7 +635,7 @@ close_arc4(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_close(chain);
+	fz_drop_stream(chain);
 }
 
 static fz_stream *
@@ -659,7 +659,7 @@ fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen)
 	}
 	fz_catch(ctx)
 	{
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 
@@ -745,7 +745,7 @@ close_aesd(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_close(chain);
+	fz_drop_stream(chain);
 }
 
 static fz_stream *
@@ -776,7 +776,7 @@ fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, state);
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 

@@ -233,6 +233,6 @@ int pdfextract_main(int argc, char **argv)
 
 	pdf_close_document(doc);
 	fz_flush_warnings(ctx);
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 	return 0;
 }

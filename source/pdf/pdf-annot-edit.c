@@ -140,7 +140,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 
 		/*
 			Linking must be done after any call that might throw because
-			pdf_free_annot below actually frees a list. Put the new annot
+			pdf_drop_annot below actually frees a list. Put the new annot
 			at the end of the list, so that it will be drawn last.
 		*/
 		*page->annot_tailp = annot;
@@ -155,7 +155,7 @@ pdf_create_annot(pdf_document *doc, pdf_page *page, fz_annot_type type)
 	}
 	fz_catch(ctx)
 	{
-		pdf_free_annot(ctx, annot);
+		pdf_drop_annot(ctx, annot);
 		fz_rethrow(ctx);
 	}
 

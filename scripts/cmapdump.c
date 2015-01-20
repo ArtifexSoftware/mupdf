@@ -98,7 +98,7 @@ main(int argc, char **argv)
 
 		fi = fz_open_file(ctx, argv[i]);
 		cmap = pdf_load_cmap(ctx, fi);
-		fz_close(fi);
+		fz_drop_stream(fi);
 
 		fprintf(fo, "\n/* %s */\n\n", cmap->cmap_name);
 
@@ -140,7 +140,7 @@ main(int argc, char **argv)
 		}
 
 		fprintf(fo, "static pdf_cmap cmap_%s = {\n", name);
-		fprintf(fo, "\t{-1, pdf_free_cmap_imp}, ");
+		fprintf(fo, "\t{-1, pdf_drop_cmap_imp}, ");
 		fprintf(fo, "\"%s\", ", cmap->cmap_name);
 		fprintf(fo, "\"%s\", 0, ", cmap->usecmap_name);
 		fprintf(fo, "%u, ", cmap->wmode);
@@ -180,7 +180,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 	return 0;
 }
 
@@ -214,7 +214,7 @@ void fz_new_aa_context(fz_context *ctx)
 {
 }
 
-void fz_free_aa_context(fz_context *ctx)
+void fz_drop_aa_context(fz_context *ctx)
 {
 }
 

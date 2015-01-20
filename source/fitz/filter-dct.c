@@ -308,8 +308,8 @@ skip:
 	fz_dct_mem_term(state);
 
 	fz_free(ctx, state->scanline);
-	fz_close(state->chain);
-	fz_close(state->jpegtables);
+	fz_drop_stream(state->chain);
+	fz_drop_stream(state->jpegtables);
 	fz_free(ctx, state);
 }
 
@@ -344,8 +344,8 @@ fz_open_dctd(fz_stream *chain, int color_transform, int l2factor, fz_stream *jpe
 	fz_catch(ctx)
 	{
 		fz_free(ctx, state);
-		fz_close(chain);
-		fz_close(jpegtables);
+		fz_drop_stream(chain);
+		fz_drop_stream(jpegtables);
 		fz_rethrow(ctx);
 	}
 

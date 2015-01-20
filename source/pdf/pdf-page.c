@@ -508,7 +508,7 @@ pdf_load_page(pdf_document *doc, int number)
 	{
 		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
 		{
-			pdf_free_page(doc, page);
+			pdf_drop_page(doc, page);
 			fz_rethrow_message(ctx, "cannot load page %d contents (%d 0 R)", number + 1, pdf_to_num(pageref));
 		}
 		page->incomplete |= PDF_PAGE_INCOMPLETE_CONTENTS;
@@ -536,7 +536,7 @@ pdf_load_links(pdf_document *doc, pdf_page *page)
 }
 
 void
-pdf_free_page(pdf_document *doc, pdf_page *page)
+pdf_drop_page(pdf_document *doc, pdf_page *page)
 {
 	if (page == NULL)
 		return;
@@ -545,11 +545,11 @@ pdf_free_page(pdf_document *doc, pdf_page *page)
 	if (page->links)
 		fz_drop_link(doc->ctx, page->links);
 	if (page->annots)
-		pdf_free_annot(doc->ctx, page->annots);
+		pdf_drop_annot(doc->ctx, page->annots);
 	if (page->deleted_annots)
-		pdf_free_annot(doc->ctx, page->deleted_annots);
+		pdf_drop_annot(doc->ctx, page->deleted_annots);
 	if (page->tmp_annots)
-		pdf_free_annot(doc->ctx, page->tmp_annots);
+		pdf_drop_annot(doc->ctx, page->tmp_annots);
 	/* doc->focus, when not NULL, refers to one of
 	 * the annotations and must be NULLed when the
 	 * annotations are destroyed. doc->focus_obj

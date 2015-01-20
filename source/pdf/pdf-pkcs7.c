@@ -357,7 +357,7 @@ struct pdf_signer_s
 	EVP_PKEY *pkey;
 };
 
-void pdf_free_designated_name(pdf_designated_name *dn)
+void pdf_drop_designated_name(pdf_designated_name *dn)
 {
 	if (dn)
 		fz_free(((pdf_designated_name_openssl *)dn)->ctx, dn);
@@ -776,7 +776,7 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 	fz_always(ctx)
 	{
 		pdf_drop_signer(signer);
-		pdf_free_designated_name(dn);
+		pdf_drop_designated_name(dn);
 		fz_drop_buffer(ctx, fzbuf);
 	}
 	fz_catch(ctx)

@@ -60,9 +60,9 @@ char *fz_xml_att(fz_xml *item, const char *att);
 char *fz_xml_text(fz_xml *item);
 
 /*
-	fz_free_xml: Free the XML node and all its children and siblings.
+	fz_drop_xml: Free the XML node and all its children and siblings.
 */
-void fz_free_xml(fz_context *doc, fz_xml *item);
+void fz_drop_xml(fz_context *doc, fz_xml *item);
 
 /*
 	fz_detach_xml: Detach a node from the tree, unlinking it from its parent.

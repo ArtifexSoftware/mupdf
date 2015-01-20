@@ -1498,7 +1498,7 @@ cleanup:
 }
 
 void
-fz_free_scale_cache(fz_context *ctx, fz_scale_cache *sc)
+fz_drop_scale_cache(fz_context *ctx, fz_scale_cache *sc)
 {
 	if (!sc)
 		return;

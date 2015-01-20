@@ -65,7 +65,7 @@ tiff_open_document(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_close(file);
+		fz_drop_stream(file);
 	}
 	fz_catch(ctx)
 	{
@@ -80,7 +80,7 @@ tiff_close_document(tiff_document *doc)
 {
 	fz_context *ctx = doc->ctx;
 	fz_drop_buffer(ctx, doc->buffer);
-	fz_close(doc->file);
+	fz_drop_stream(doc->file);
 	fz_free(ctx, doc);
 }
 

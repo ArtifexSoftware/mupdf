@@ -40,7 +40,7 @@ close_leech(fz_context *ctx, void *state_)
 {
 	fz_leech *state = (fz_leech *)state_;
 
-	fz_close(state->chain);
+	fz_drop_stream(state->chain);
 	fz_free(ctx, state);
 }
 
@@ -68,7 +68,7 @@ fz_open_leecher(fz_stream *chain, fz_buffer *buffer)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, state);
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 	return fz_new_stream(ctx, state, next_leech, close_leech, rebind_leech);

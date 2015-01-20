@@ -13,7 +13,7 @@ pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj)
 }
 
 static void
-pdf_free_xobject_imp(fz_context *ctx, fz_storable *xobj_)
+pdf_drop_xobject_imp(fz_context *ctx, fz_storable *xobj_)
 {
 	pdf_xobject *xobj = (pdf_xobject *)xobj_;
 
@@ -40,13 +40,13 @@ pdf_load_xobject(pdf_document *doc, pdf_obj *dict)
 	pdf_obj *obj;
 	fz_context *ctx = doc->ctx;
 
-	if ((form = pdf_find_item(ctx, pdf_free_xobject_imp, dict)) != NULL)
+	if ((form = pdf_find_item(ctx, pdf_drop_xobject_imp, dict)) != NULL)
 	{
 		return form;
 	}
 
 	form = fz_malloc_struct(ctx, pdf_xobject);
-	FZ_INIT_STORABLE(form, 1, pdf_free_xobject_imp);
+	FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
 	form->resources = NULL;
 	form->contents = NULL;
 	form->colorspace = NULL;
@@ -105,7 +105,7 @@ pdf_load_xobject(pdf_document *doc, pdf_obj *dict)
 	}
 	fz_catch(ctx)
 	{
-		pdf_remove_item(ctx, pdf_free_xobject_imp, dict);
+		pdf_remove_item(ctx, pdf_drop_xobject_imp, dict);
 		pdf_drop_xobject(ctx, form);
 		fz_rethrow_message(ctx, "cannot load xobject content stream (%d %d R)", pdf_to_num(dict), pdf_to_gen(dict));
 	}
@@ -182,7 +182,7 @@ pdf_new_xobject(pdf_document *doc, const fz_rect *bbox, const fz_matrix *mat)
 		obj = NULL;
 
 		form = fz_malloc_struct(ctx, pdf_xobject);
-		FZ_INIT_STORABLE(form, 1, pdf_free_xobject_imp);
+		FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
 		form->resources = NULL;
 		form->contents = NULL;
 		form->colorspace = NULL;

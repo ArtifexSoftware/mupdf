@@ -35,7 +35,7 @@ close_jbig2d(fz_context *ctx, void *state_)
 	if (state->gctx)
 		fz_drop_jbig2_globals(ctx, state->gctx);
 	jbig2_ctx_free(state->ctx);
-	fz_close(state->chain);
+	fz_drop_stream(state->chain);
 	fz_free(ctx, state);
 }
 
@@ -112,14 +112,14 @@ fz_load_jbig2_globals(fz_context *ctx, unsigned char *data, int size)
 	Jbig2Ctx *jctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL, error_callback, ctx);
 	jbig2_data_in(jctx, data, size);
 
-	FZ_INIT_STORABLE(globals, 1, fz_free_jbig2_globals_imp);
+	FZ_INIT_STORABLE(globals, 1, fz_drop_jbig2_globals_imp);
 	globals->gctx = jbig2_make_global_ctx(jctx);
 
 	return globals;
 }
 
 void
-fz_free_jbig2_globals_imp(fz_context *ctx, fz_storable *globals_)
+fz_drop_jbig2_globals_imp(fz_context *ctx, fz_storable *globals_)
 {
 	fz_jbig2_globals *globals = (fz_jbig2_globals *)globals_;
 	jbig2_global_ctx_free(globals->gctx);
@@ -153,7 +153,7 @@ fz_open_jbig2d(fz_stream *chain, fz_jbig2_globals *globals)
 				jbig2_ctx_free(state->ctx);
 		}
 		fz_free(ctx, state);
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 

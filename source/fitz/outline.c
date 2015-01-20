@@ -1,14 +1,14 @@
 #include "mupdf/fitz.h"
 
 void
-fz_free_outline(fz_context *ctx, fz_outline *outline)
+fz_drop_outline(fz_context *ctx, fz_outline *outline)
 {
 	while (outline)
 	{
 		fz_outline *next = outline->next;
-		fz_free_outline(ctx, outline->down);
+		fz_drop_outline(ctx, outline->down);
 		fz_free(ctx, outline->title);
-		fz_free_link_dest(ctx, &outline->dest);
+		fz_drop_link_dest(ctx, &outline->dest);
 		fz_free(ctx, outline);
 		outline = next;
 	}

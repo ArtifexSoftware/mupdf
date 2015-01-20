@@ -48,7 +48,7 @@ void fz_copy_aa_context(fz_context *dst, fz_context *src)
 		memcpy(dst->aa, src->aa, sizeof(*src->aa));
 }
 
-void fz_free_aa_context(fz_context *ctx)
+void fz_drop_aa_context(fz_context *ctx)
 {
 #ifndef AA_BITS
 	fz_free(ctx, ctx->aa);
@@ -228,7 +228,7 @@ fz_reset_gel(fz_gel *gel, const fz_irect *clip)
 }
 
 void
-fz_free_gel(fz_gel *gel)
+fz_drop_gel(fz_gel *gel)
 {
 	if (gel == NULL)
 		return;

@@ -592,7 +592,7 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 }
 
 static void
-fz_free_display_list(fz_context *ctx, fz_storable *list_)
+fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 {
 	fz_display_list *list = (fz_display_list *)list_;
 	fz_display_node *node;
@@ -613,7 +613,7 @@ fz_display_list *
 fz_new_display_list(fz_context *ctx)
 {
 	fz_display_list *list = fz_malloc_struct(ctx, fz_display_list);
-	FZ_INIT_STORABLE(list, 1, fz_free_display_list);
+	FZ_INIT_STORABLE(list, 1, fz_drop_display_list_imp);
 	list->first = NULL;
 	list->last = NULL;
 	list->len = 0;

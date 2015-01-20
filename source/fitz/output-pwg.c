@@ -283,7 +283,7 @@ fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, con
 	}
 	fz_always(ctx)
 	{
-		fz_close_output(out);
+		fz_drop_output(out);
 		fclose(fp);
 	}
 	fz_catch(ctx)
@@ -315,7 +315,7 @@ fz_write_pwg_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int appe
 	}
 	fz_always(ctx)
 	{
-		fz_close_output(out);
+		fz_drop_output(out);
 		fclose(fp);
 	}
 	fz_catch(ctx)

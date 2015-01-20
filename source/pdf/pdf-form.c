@@ -720,7 +720,7 @@ void pdf_update_page(pdf_document *doc, pdf_page *page)
 	*/
 	if (page->tmp_annots)
 	{
-		pdf_free_annot(ctx, page->tmp_annots);
+		pdf_drop_annot(ctx, page->tmp_annots);
 		page->tmp_annots = NULL;
 	}
 

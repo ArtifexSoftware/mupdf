@@ -1,7 +1,7 @@
 #include "mupdf/fitz.h"
 
 void
-fz_free_link_dest(fz_context *ctx, fz_link_dest *dest)
+fz_drop_link_dest(fz_context *ctx, fz_link_dest *dest)
 {
 	switch (dest->kind)
 	{
@@ -35,7 +35,7 @@ fz_new_link(fz_context *ctx, const fz_rect *bbox, fz_link_dest dest)
 	}
 	fz_catch(ctx)
 	{
-		fz_free_link_dest(ctx, &dest);
+		fz_drop_link_dest(ctx, &dest);
 		fz_rethrow(ctx);
 	}
 	link->dest = dest;
@@ -58,7 +58,7 @@ fz_drop_link(fz_context *ctx, fz_link *link)
 	while (link && --link->refs == 0)
 	{
 		fz_link *next = link->next;
-		fz_free_link_dest(ctx, &link->dest);
+		fz_drop_link_dest(ctx, &link->dest);
 		fz_free(ctx, link);
 		link = next;
 	}

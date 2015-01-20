@@ -28,6 +28,6 @@ fz_stream *fz_open_predict(fz_stream *chain, int predictor, int columns, int col
 fz_stream *fz_open_jbig2d(fz_stream *chain, fz_jbig2_globals *globals);
 
 fz_jbig2_globals *fz_load_jbig2_globals(fz_context *ctx, unsigned char *data, int size);
-void fz_free_jbig2_globals_imp(fz_context *ctx, fz_storable *globals);
+void fz_drop_jbig2_globals_imp(fz_context *ctx, fz_storable *globals);
 
 #endif

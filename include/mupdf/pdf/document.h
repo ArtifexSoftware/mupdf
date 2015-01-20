@@ -82,7 +82,7 @@ pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 	filename to locate the PDF document to open. Increments the
 	reference count of the stream. See fz_open_file,
 	fz_open_file_w or fz_open_fd for opening a stream, and
-	fz_close for closing an open stream.
+	fz_drop_stream for closing an open stream.
 */
 pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 

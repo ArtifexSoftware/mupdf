@@ -287,7 +287,7 @@ int main(int argc, char **argv)
 	}
 
 	fclose(mujstest_file);
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 	return 0;
 }
 

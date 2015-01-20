@@ -209,7 +209,7 @@ static void
 close_predict(fz_context *ctx, void *state_)
 {
 	fz_predict *state = (fz_predict *)state_;
-	fz_close(state->chain);
+	fz_drop_stream(state->chain);
 	fz_free(ctx, state->in);
 	fz_free(ctx, state->out);
 	fz_free(ctx, state->ref);
@@ -288,7 +288,7 @@ fz_open_predict(fz_stream *chain, int predictor, int columns, int colors, int bp
 			fz_free(ctx, state->out);
 		}
 		fz_free(ctx, state);
-		fz_close(chain);
+		fz_drop_stream(chain);
 		fz_rethrow(ctx);
 	}
 

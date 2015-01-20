@@ -169,6 +169,6 @@ int pdfposter_main(int argc, char **argv)
 	pdf_write_document(doc, outfile, &opts);
 
 	pdf_close_document(doc);
-	fz_free_context(ctx);
+	fz_drop_context(ctx);
 	return 0;
 }

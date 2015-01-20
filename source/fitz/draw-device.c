@@ -1753,7 +1753,7 @@ static fz_store_type fz_tile_store_type =
 };
 
 static void
-fz_free_tile_record_imp(fz_context *ctx, fz_storable *storable)
+fz_drop_tile_record_imp(fz_context *ctx, fz_storable *storable)
 {
 	tile_record *tr = (tile_record *)(void *)storable;
 
@@ -1774,7 +1774,7 @@ static tile_record *
 fz_new_tile_record(fz_context *ctx, fz_pixmap *dest, fz_pixmap *shape)
 {
 	tile_record *tile = fz_malloc_struct(ctx, tile_record);
-	FZ_INIT_STORABLE(tile, 1, fz_free_tile_record_imp);
+	FZ_INIT_STORABLE(tile, 1, fz_drop_tile_record_imp);
 	tile->dest = fz_keep_pixmap(ctx, dest);
 	tile->shape = fz_keep_pixmap(ctx, shape);
 	return tile;
@@ -1828,7 +1828,7 @@ fz_draw_begin_tile(fz_device *devp, const fz_rect *area, const fz_rect *view, fl
 		tk.ctm[3] = ctm->d;
 		tk.id = id;
 
-		tile = fz_find_item(ctx, fz_free_tile_record_imp, &tk, &fz_tile_store_type);
+		tile = fz_find_item(ctx, fz_drop_tile_record_imp, &tk, &fz_tile_store_type);
 		if (tile)
 		{
 			state[1].dest = fz_keep_pixmap(ctx, tile->dest);
@@ -2038,7 +2038,7 @@ fz_draw_end_tile(fz_device *devp)
 }
 
 static void
-fz_draw_free_user(fz_device *devp)
+fz_draw_drop_user(fz_device *devp)
 {
 	fz_draw_device *dev = devp->user;
 	fz_context *ctx = dev->ctx;
@@ -2062,9 +2062,9 @@ fz_draw_free_user(fz_device *devp)
 	 */
 	if (dev->stack != &dev->init_stack[0])
 		fz_free(ctx, dev->stack);
-	fz_free_scale_cache(ctx, dev->cache_x);
-	fz_free_scale_cache(ctx, dev->cache_y);
-	fz_free_gel(dev->gel);
+	fz_drop_scale_cache(ctx, dev->cache_x);
+	fz_drop_scale_cache(ctx, dev->cache_y);
+	fz_drop_gel(dev->gel);
 	fz_free(ctx, dev);
 }
 
@@ -2098,13 +2098,13 @@ fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 	}
 	fz_catch(ctx)
 	{
-		fz_free_scale_cache(ctx, ddev->cache_x);
-		fz_free_scale_cache(ctx, ddev->cache_y);
-		fz_free_gel(ddev->gel);
+		fz_drop_scale_cache(ctx, ddev->cache_x);
+		fz_drop_scale_cache(ctx, ddev->cache_y);
+		fz_drop_gel(ddev->gel);
 		fz_free(ctx, ddev);
 		fz_rethrow(ctx);
 	}
-	dev->free_user = fz_draw_free_user;
+	dev->drop_user = fz_draw_drop_user;
 
 	dev->fill_path = fz_draw_fill_path;
 	dev->stroke_path = fz_draw_stroke_path;
@@ -2177,7 +2177,7 @@ fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor,
 	else
 		fz_flatten_fill_path(gel, path, ctm, flatness);
 	fz_bound_gel(gel, bbox);
-	fz_free_gel(gel);
+	fz_drop_gel(gel);
 
 	return bbox;
 }

@@ -173,6 +173,6 @@ fz_link *fz_keep_link(fz_context *ctx, fz_link *link);
 */
 void fz_drop_link(fz_context *ctx, fz_link *link);
 
-void fz_free_link_dest(fz_context *ctx, fz_link_dest *dest);
+void fz_drop_link_dest(fz_context *ctx, fz_link_dest *dest);
 
 #endif
