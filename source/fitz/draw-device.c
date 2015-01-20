@@ -619,7 +619,7 @@ fz_draw_fill_text(fz_device *devp, fz_text *text, const fz_matrix *ctm,
 			if (path)
 			{
 				fz_draw_fill_path(devp, path, 0, ctm, colorspace, color, alpha);
-				fz_free_path(dev->ctx, path);
+				fz_drop_path(dev->ctx, path);
 			}
 			else
 			{
@@ -682,7 +682,7 @@ fz_draw_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke,
 			if (path)
 			{
 				fz_draw_stroke_path(devp, path, stroke, ctm, colorspace, color, alpha);
-				fz_free_path(dev->ctx, path);
+				fz_drop_path(dev->ctx, path);
 			}
 			else
 			{
@@ -805,7 +805,7 @@ fz_draw_clip_text(fz_device *devp, fz_text *text, const fz_matrix *ctm, int accu
 						{
 							state[1].mask = state[1].dest;
 							state[1].dest = old_dest;
-							fz_free_path(dev->ctx, path);
+							fz_drop_path(dev->ctx, path);
 						}
 						fz_catch(ctx)
 						{
@@ -911,7 +911,7 @@ fz_draw_clip_stroke_text(fz_device *devp, fz_text *text, fz_stroke_state *stroke
 						{
 							state[0].mask = state[0].dest;
 							state[0].dest = old_dest;
-							fz_free_path(dev->ctx, path);
+							fz_drop_path(dev->ctx, path);
 						}
 						fz_catch(ctx)
 						{

@@ -30,6 +30,7 @@ struct fz_text_item_s
 
 struct fz_text_s
 {
+	int refs;
 	fz_font *font;
 	fz_matrix trm;
 	int wmode;
@@ -38,10 +39,11 @@ struct fz_text_s
 };
 
 fz_text *fz_new_text(fz_context *ctx, fz_font *face, const fz_matrix *trm, int wmode);
+fz_text *fz_keep_text(fz_context *ctx, fz_text *text);
+void fz_drop_text(fz_context *ctx, fz_text *text);
+
 void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y);
-void fz_free_text(fz_context *ctx, fz_text *text);
 fz_rect *fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
-fz_text *fz_clone_text(fz_context *ctx, fz_text *old);
 void fz_print_text(fz_context *ctx, FILE *out, fz_text*);
 
 #endif

@@ -6,6 +6,7 @@ fz_new_text(fz_context *ctx, fz_font *font, const fz_matrix *trm, int wmode)
 	fz_text *text;
 
 	text = fz_malloc_struct(ctx, fz_text);
+	text->refs = 1;
 	text->font = fz_keep_font(ctx, font);
 	text->trm = *trm;
 	text->wmode = wmode;
@@ -16,40 +17,24 @@ fz_new_text(fz_context *ctx, fz_font *font, const fz_matrix *trm, int wmode)
 	return text;
 }
 
-void
-fz_free_text(fz_context *ctx, fz_text *text)
+fz_text *
+fz_keep_text(fz_context *ctx, fz_text *text)
 {
-	if (text != NULL)
+	++text->refs;
+	return text;
+}
+
+void
+fz_drop_text(fz_context *ctx, fz_text *text)
+{
+	if (text == NULL)
+		return;
+	if (--text->refs == 0)
 	{
 		fz_drop_font(ctx, text->font);
 		fz_free(ctx, text->items);
-	}
-	fz_free(ctx, text);
-}
-
-fz_text *
-fz_clone_text(fz_context *ctx, fz_text *old)
-{
-	fz_text *text;
-
-	text = fz_malloc_struct(ctx, fz_text);
-	text->len = old->len;
-	fz_try(ctx)
-	{
-		text->items = fz_malloc_array(ctx, text->len, sizeof(fz_text_item));
-	}
-	fz_catch(ctx)
-	{
 		fz_free(ctx, text);
-		fz_rethrow(ctx);
 	}
-	memcpy(text->items, old->items, text->len * sizeof(fz_text_item));
-	text->font = fz_keep_font(ctx, old->font);
-	text->trm = old->trm;
-	text->wmode = old->wmode;
-	text->cap = text->len;
-
-	return text;
 }
 
 fz_rect *
@@ -117,6 +102,9 @@ fz_grow_text(fz_context *ctx, fz_text *text, int n)
 void
 fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y)
 {
+	if (text->refs != 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot modify shared text objects");
+
 	fz_grow_text(ctx, text, 1);
 	text->items[text->len].ucs = ucs;
 	text->items[text->len].gid = gid;

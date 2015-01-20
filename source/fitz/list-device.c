@@ -193,14 +193,14 @@ fz_free_display_node(fz_context *ctx, fz_display_node *node)
 	case FZ_CMD_STROKE_PATH:
 	case FZ_CMD_CLIP_PATH:
 	case FZ_CMD_CLIP_STROKE_PATH:
-		fz_free_path(ctx, node->item.path);
+		fz_drop_path(ctx, node->item.path);
 		break;
 	case FZ_CMD_FILL_TEXT:
 	case FZ_CMD_STROKE_TEXT:
 	case FZ_CMD_CLIP_TEXT:
 	case FZ_CMD_CLIP_STROKE_TEXT:
 	case FZ_CMD_IGNORE_TEXT:
-		fz_free_text(ctx, node->item.text);
+		fz_drop_text(ctx, node->item.text);
 		break;
 	case FZ_CMD_FILL_SHADE:
 		fz_drop_shade(ctx, node->item.shade);
@@ -256,7 +256,7 @@ fz_list_fill_path(fz_device *dev, fz_path *path, int even_odd, const fz_matrix *
 	fz_try(ctx)
 	{
 		fz_bound_path(dev->ctx, path, NULL, ctm, &node->rect);
-		node->item.path = fz_clone_path(dev->ctx, path);
+		node->item.path = fz_keep_path(dev->ctx, path);
 		node->flag = even_odd;
 	}
 	fz_catch(ctx)
@@ -277,7 +277,7 @@ fz_list_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke,
 	fz_try(ctx)
 	{
 		fz_bound_path(dev->ctx, path, stroke, ctm, &node->rect);
-		node->item.path = fz_clone_path(dev->ctx, path);
+		node->item.path = fz_keep_path(dev->ctx, path);
 		node->stroke = fz_keep_stroke_state(dev->ctx, stroke);
 	}
 	fz_catch(ctx)
@@ -299,7 +299,7 @@ fz_list_clip_path(fz_device *dev, fz_path *path, const fz_rect *rect, int even_o
 		fz_bound_path(dev->ctx, path, NULL, ctm, &node->rect);
 		if (rect)
 			fz_intersect_rect(&node->rect, rect);
-		node->item.path = fz_clone_path(dev->ctx, path);
+		node->item.path = fz_keep_path(dev->ctx, path);
 		node->flag = even_odd;
 	}
 	fz_catch(ctx)
@@ -321,7 +321,7 @@ fz_list_clip_stroke_path(fz_device *dev, fz_path *path, const fz_rect *rect, fz_
 		fz_bound_path(dev->ctx, path, stroke, ctm, &node->rect);
 		if (rect)
 			fz_intersect_rect(&node->rect, rect);
-		node->item.path = fz_clone_path(dev->ctx, path);
+		node->item.path = fz_keep_path(dev->ctx, path);
 		node->stroke = fz_keep_stroke_state(dev->ctx, stroke);
 	}
 	fz_catch(ctx)
@@ -342,7 +342,7 @@ fz_list_fill_text(fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	fz_try(ctx)
 	{
 		fz_bound_text(dev->ctx, text, NULL, ctm, &node->rect);
-		node->item.text = fz_clone_text(dev->ctx, text);
+		node->item.text = fz_keep_text(dev->ctx, text);
 	}
 	fz_catch(ctx)
 	{
@@ -363,7 +363,7 @@ fz_list_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, cons
 	fz_try(ctx)
 	{
 		fz_bound_text(dev->ctx, text, stroke, ctm, &node->rect);
-		node->item.text = fz_clone_text(dev->ctx, text);
+		node->item.text = fz_keep_text(dev->ctx, text);
 		node->stroke = fz_keep_stroke_state(dev->ctx, stroke);
 	}
 	fz_catch(ctx)
@@ -383,7 +383,7 @@ fz_list_clip_text(fz_device *dev, fz_text *text, const fz_matrix *ctm, int accum
 	fz_try(ctx)
 	{
 		fz_bound_text(dev->ctx, text, NULL, ctm, &node->rect);
-		node->item.text = fz_clone_text(dev->ctx, text);
+		node->item.text = fz_keep_text(dev->ctx, text);
 		node->flag = accumulate;
 		/* when accumulating, be conservative about culling */
 		if (accumulate)
@@ -406,7 +406,7 @@ fz_list_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke,
 	fz_try(ctx)
 	{
 		fz_bound_text(dev->ctx, text, stroke, ctm, &node->rect);
-		node->item.text = fz_clone_text(dev->ctx, text);
+		node->item.text = fz_keep_text(dev->ctx, text);
 		node->stroke = fz_keep_stroke_state(dev->ctx, stroke);
 	}
 	fz_catch(ctx)
@@ -426,7 +426,7 @@ fz_list_ignore_text(fz_device *dev, fz_text *text, const fz_matrix *ctm)
 	fz_try(ctx)
 	{
 		fz_bound_text(dev->ctx, text, NULL, ctm, &node->rect);
-		node->item.text = fz_clone_text(dev->ctx, text);
+		node->item.text = fz_keep_text(dev->ctx, text);
 	}
 	fz_catch(ctx)
 	{

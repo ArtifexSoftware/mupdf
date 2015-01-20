@@ -622,7 +622,7 @@ xps_parse_glyphs(xps_document *doc, const fz_matrix *ctm,
 
 	xps_end_opacity(doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
-	fz_free_text(doc->ctx, text);
+	fz_drop_text(doc->ctx, text);
 
 	if (clip_att || clip_tag)
 		fz_pop_clip(doc->dev);

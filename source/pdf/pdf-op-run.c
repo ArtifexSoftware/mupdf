@@ -920,7 +920,7 @@ pdf_show_path(pdf_csi *csi, pdf_run_state *pr, int doclose, int dofill, int dost
 	}
 	fz_always(ctx)
 	{
-		fz_free_path(ctx, path);
+		fz_drop_path(ctx, path);
 	}
 	fz_catch(ctx)
 	{
@@ -1051,7 +1051,7 @@ pdf_flush_text(pdf_csi *csi, pdf_run_state *pr)
 	}
 	fz_always(ctx)
 	{
-		fz_free_text(ctx, text);
+		fz_drop_text(ctx, text);
 	}
 	fz_catch(ctx)
 	{
@@ -2642,8 +2642,8 @@ static void free_processor_normal(pdf_csi *csi, void *state)
 	while (pr->gstate[0].clip_depth--)
 		fz_pop_clip(pr->dev);
 
-	if (pr->path) fz_free_path(ctx, pr->path);
-	if (pr->text) fz_free_text(ctx, pr->text);
+	if (pr->path) fz_drop_path(ctx, pr->path);
+	if (pr->text) fz_drop_text(ctx, pr->text);
 
 	fz_free(ctx, pr->gstate);
 	fz_free(ctx, pr);
@@ -2849,7 +2849,7 @@ pdf_process *pdf_process_run(pdf_process *process, fz_device *dev, const fz_matr
 	}
 	fz_catch(ctx)
 	{
-		fz_free_path(ctx, pr->path);
+		fz_drop_path(ctx, pr->path);
 		fz_free(ctx, pr);
 		fz_rethrow(ctx);
 	}

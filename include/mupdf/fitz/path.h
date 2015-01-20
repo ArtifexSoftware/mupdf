@@ -43,6 +43,7 @@ typedef enum fz_linejoin_e
 
 struct fz_path_s
 {
+	int refs;
 	int cmd_len, cmd_cap;
 	unsigned char *cmds;
 	int coord_len, coord_cap;
@@ -65,6 +66,9 @@ struct fz_stroke_state_s
 };
 
 fz_path *fz_new_path(fz_context *ctx);
+fz_path *fz_keep_path(fz_context *ctx, fz_path *path);
+void fz_drop_path(fz_context *ctx, fz_path *path);
+
 fz_point fz_currentpoint(fz_context *ctx, fz_path *path);
 void fz_moveto(fz_context*, fz_path*, float x, float y);
 void fz_lineto(fz_context*, fz_path*, float x, float y);
@@ -72,11 +76,8 @@ void fz_curveto(fz_context*,fz_path*, float, float, float, float, float, float);
 void fz_curvetov(fz_context*,fz_path*, float, float, float, float);
 void fz_curvetoy(fz_context*,fz_path*, float, float, float, float);
 void fz_closepath(fz_context*,fz_path*);
-void fz_free_path(fz_context *ctx, fz_path *path);
 
 void fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *transform);
-
-fz_path *fz_clone_path(fz_context *ctx, fz_path *old);
 
 fz_rect *fz_bound_path(fz_context *ctx, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
 fz_rect *fz_adjust_rect_for_stroke(fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm);

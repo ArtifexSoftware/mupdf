@@ -7,6 +7,7 @@ fz_new_path(fz_context *ctx)
 	fz_path *path;
 
 	path = fz_malloc_struct(ctx, fz_path);
+	path->refs = 1;
 	path->last_cmd = 0;
 	path->current.x = 0;
 	path->current.y = 0;
@@ -17,48 +18,31 @@ fz_new_path(fz_context *ctx)
 }
 
 fz_path *
-fz_clone_path(fz_context *ctx, fz_path *old)
+fz_keep_path(fz_context *ctx, fz_path *path)
 {
-	fz_path *path;
-
-	assert(old);
-	path = fz_malloc_struct(ctx, fz_path);
-	fz_try(ctx)
-	{
-		path->cmd_len = old->cmd_len;
-		path->cmd_cap = old->cmd_len;
-		path->cmds = fz_malloc_array(ctx, path->cmd_cap, sizeof(unsigned char));
-		memcpy(path->cmds, old->cmds, sizeof(unsigned char) * path->cmd_len);
-
-		path->coord_len = old->coord_len;
-		path->coord_cap = old->coord_len;
-		path->coords = fz_malloc_array(ctx, path->coord_cap, sizeof(float));
-		memcpy(path->coords, old->coords, sizeof(float) * path->coord_len);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, path->cmds);
-		fz_free(ctx, path->coords);
-		fz_free(ctx, path);
-		fz_rethrow(ctx);
-	}
-
+	++path->refs;
 	return path;
 }
 
 void
-fz_free_path(fz_context *ctx, fz_path *path)
+fz_drop_path(fz_context *ctx, fz_path *path)
 {
 	if (path == NULL)
 		return;
-	fz_free(ctx, path->cmds);
-	fz_free(ctx, path->coords);
-	fz_free(ctx, path);
+	if (--path->refs == 0)
+	{
+		fz_free(ctx, path->cmds);
+		fz_free(ctx, path->coords);
+		fz_free(ctx, path);
+	}
 }
 
 static void
 push_cmd(fz_context *ctx, fz_path *path, int cmd)
 {
+	if (path->refs != 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot modify shared paths");
+
 	if (path->cmd_len + 1 >= path->cmd_cap)
 	{
 		int new_cmd_cap = fz_maxi(16, path->cmd_cap * 2);

@@ -775,7 +775,7 @@ xps_clip(xps_document *doc, const fz_matrix *ctm, xps_resource *dict, char *clip
 	else
 		path = fz_new_path(doc->ctx);
 	fz_clip_path(doc->dev, path, NULL, fill_rule == 0, ctm);
-	fz_free_path(doc->ctx, path);
+	fz_drop_path(doc->ctx, path);
 }
 
 /*
@@ -1049,8 +1049,8 @@ xps_parse_path(xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_reso
 	xps_end_opacity(doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	if (stroke_path != path)
-		fz_free_path(doc->ctx, stroke_path);
-	fz_free_path(doc->ctx, path);
+		fz_drop_path(doc->ctx, stroke_path);
+	fz_drop_path(doc->ctx, path);
 	path = NULL;
 	fz_drop_stroke_state(doc->ctx, stroke);
 

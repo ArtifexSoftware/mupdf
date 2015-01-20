@@ -1504,7 +1504,7 @@ void pdf_set_markup_appearance(pdf_document *doc, pdf_annot *annot, float color[
 					fz_stroke_path(dev, path, stroke, page_ctm, fz_device_rgb(ctx), color, alpha);
 					fz_drop_stroke_state(ctx, stroke);
 					stroke = NULL;
-					fz_free_path(ctx, path);
+					fz_drop_path(ctx, path);
 					path = NULL;
 				}
 
@@ -1530,7 +1530,7 @@ void pdf_set_markup_appearance(pdf_document *doc, pdf_annot *annot, float color[
 		fz_free(ctx, qp);
 		fz_free_device(dev);
 		fz_drop_stroke_state(ctx, stroke);
-		fz_free_path(ctx, path);
+		fz_drop_path(ctx, path);
 		fz_drop_display_list(ctx, strike_list);
 	}
 	fz_catch(ctx)
@@ -1664,7 +1664,7 @@ void pdf_update_ink_appearance(pdf_document *doc, pdf_annot *annot)
 		fz_drop_colorspace(ctx, cs);
 		fz_free_device(dev);
 		fz_drop_stroke_state(ctx, stroke);
-		fz_free_path(ctx, path);
+		fz_drop_path(ctx, path);
 		fz_drop_display_list(ctx, strike_list);
 	}
 	fz_catch(ctx)
@@ -1706,7 +1706,7 @@ static fz_text *layout_text(fz_context *ctx, font_info *font_rec, char *str, flo
 	}
 	fz_catch(ctx)
 	{
-		fz_free_text(ctx, text);
+		fz_drop_text(ctx, text);
 		fz_rethrow(ctx);
 	}
 
@@ -1739,8 +1739,7 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 			float x = 0.0;
 			float y = 0.0;
 
-
-			fz_free_text(ctx, text);
+			fz_drop_text(ctx, text);
 			text = NULL;
 			font_size = font_rec->da_rec.font_size;
 			fz_scale(&tm, font_size, font_size);
@@ -1790,7 +1789,7 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 	}
 	fz_catch(ctx)
 	{
-		fz_free_text(ctx, text);
+		fz_drop_text(ctx, text);
 		fz_rethrow(ctx);
 	}
 
@@ -1888,7 +1887,7 @@ void pdf_update_text_annot_appearance(pdf_document *doc, pdf_annot *annot)
 		cs = fz_device_rgb(ctx);
 		fz_fill_path(dev, path, 0, &tm, cs, yellow, 1.0f);
 		fz_stroke_path(dev, path, stroke, &tm, cs, black, 1.0f);
-		fz_free_path(ctx, path);
+		fz_drop_path(ctx, path);
 		path = NULL;
 
 		path = fz_new_path(ctx);
@@ -1909,7 +1908,7 @@ void pdf_update_text_annot_appearance(pdf_document *doc, pdf_annot *annot)
 		fz_free_device(dev);
 		fz_drop_display_list(ctx, dlist);
 		fz_drop_stroke_state(ctx, stroke);
-		fz_free_path(ctx, path);
+		fz_drop_path(ctx, path);
 		fz_drop_colorspace(ctx, cs);
 	}
 	fz_catch(ctx)
@@ -1974,7 +1973,7 @@ void pdf_update_free_text_annot_appearance(pdf_document *doc, pdf_annot *annot)
 		fz_free_device(dev);
 		fz_drop_display_list(ctx, dlist);
 		font_info_fin(ctx, &font_rec);
-		fz_free_text(ctx, text);
+		fz_drop_text(ctx, text);
 		fz_drop_colorspace(ctx, cs);
 	}
 	fz_catch(ctx)
@@ -2166,7 +2165,7 @@ void pdf_set_signature_appearance(pdf_document *doc, pdf_annot *annot, char *nam
 		rect.x1 = (rect.x0 + rect.x1)/2.0f;
 		text = fit_text(ctx, &font_rec, name, &rect);
 		fz_fill_text(dev, text, page_ctm, cs, font_rec.da_rec.col, 1.0f);
-		fz_free_text(ctx, text);
+		fz_drop_text(ctx, text);
 		text = NULL;
 
 		/* Display the distinguished name in the right-hand half */
@@ -2197,8 +2196,8 @@ void pdf_set_signature_appearance(pdf_document *doc, pdf_annot *annot, char *nam
 		fz_free_device(dev);
 		fz_drop_display_list(ctx, dlist);
 		font_info_fin(ctx, &font_rec);
-		fz_free_path(ctx, path);
-		fz_free_text(ctx, text);
+		fz_drop_path(ctx, path);
+		fz_drop_text(ctx, text);
 		fz_drop_colorspace(ctx, cs);
 		fz_drop_buffer(ctx, fzbuf);
 	}
