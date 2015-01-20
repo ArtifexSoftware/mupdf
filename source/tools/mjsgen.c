@@ -278,7 +278,7 @@ int main(int argc, char **argv)
 
 		processpages(ctx, doc);
 
-		fz_close_document(doc);
+		fz_drop_document(doc);
 	}
 	fz_catch(ctx)
 	{

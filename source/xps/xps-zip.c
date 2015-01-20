@@ -254,6 +254,7 @@ xps_rebind(xps_document *doc, fz_context *ctx)
 static void
 xps_init_document(xps_document *doc)
 {
+	doc->super.refs = 1;
 	doc->super.close = (fz_document_close_fn *)xps_close_document;
 	doc->super.load_outline = (fz_document_load_outline_fn *)xps_load_outline;
 	doc->super.count_pages = (fz_document_count_pages_fn *)xps_count_pages;

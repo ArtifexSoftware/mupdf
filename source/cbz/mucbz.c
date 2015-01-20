@@ -263,6 +263,7 @@ cbz_rebind(cbz_document *doc, fz_context *ctx)
 static void
 cbz_init_document(cbz_document *doc)
 {
+	doc->super.refs = 1;
 	doc->super.close = (fz_document_close_fn *)cbz_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)cbz_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)cbz_load_page;

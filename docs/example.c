@@ -93,7 +93,7 @@ render(char *filename, int pagenumber, int zoom, int rotation)
 
 	fz_drop_pixmap(ctx, pix);
 	fz_free_page(doc, page);
-	fz_close_document(doc);
+	fz_drop_document(doc);
 	fz_free_context(ctx);
 }
 

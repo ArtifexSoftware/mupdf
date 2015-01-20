@@ -150,6 +150,7 @@ image_rebind(image_document *doc, fz_context *ctx)
 static void
 image_init_document(image_document *doc)
 {
+	doc->super.refs = 1;
 	doc->super.close = (fz_document_close_fn *)image_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)image_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)image_load_page;

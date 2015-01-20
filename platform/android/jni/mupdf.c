@@ -330,7 +330,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 	fz_catch(ctx)
 	{
 		LOGE("Failed: %s", ctx->error->message);
-		fz_close_document(glo->doc);
+		fz_drop_document(glo->doc);
 		glo->doc = NULL;
 		fz_free_context(ctx);
 		glo->ctx = NULL;
@@ -484,7 +484,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz, jstring jmagic)
 	fz_catch(ctx)
 	{
 		LOGE("Failed: %s", ctx->error->message);
-		fz_close_document(glo->doc);
+		fz_drop_document(glo->doc);
 		glo->doc = NULL;
 		fz_free_context(ctx);
 		glo->ctx = NULL;
@@ -1718,7 +1718,7 @@ static void close_doc(globals *glo)
 
 	alerts_fin(glo);
 
-	fz_close_document(glo->doc);
+	fz_drop_document(glo->doc);
 	glo->doc = NULL;
 }
 

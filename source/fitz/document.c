@@ -142,10 +142,17 @@ fz_open_document(fz_context *ctx, const char *filename)
 	return NULL;
 }
 
-void
-fz_close_document(fz_document *doc)
+fz_document *
+fz_keep_document(fz_document *doc)
 {
-	if (doc && doc->close)
+	++doc->refs;
+	return doc;
+}
+
+void
+fz_drop_document(fz_document *doc)
+{
+	if (doc && --doc->refs == 0 && doc->close)
 		doc->close(doc);
 }
 

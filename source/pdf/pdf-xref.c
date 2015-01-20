@@ -2268,6 +2268,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 {
 	pdf_document *doc = fz_malloc_struct(ctx, pdf_document);
 
+	doc->super.refs = 1;
 	doc->super.close = (fz_document_close_fn *)pdf_close_document;
 	doc->super.needs_password = (fz_document_needs_password_fn *)pdf_needs_password;
 	doc->super.authenticate_password = (fz_document_authenticate_password_fn *)pdf_authenticate_password;

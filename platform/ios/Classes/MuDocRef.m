@@ -33,7 +33,7 @@
 			if (self)
 			{
 				if (doc != NULL)
-					fz_close_document(doc);
+					fz_drop_document(doc);
 				[self release];
 				self = nil;
 			}
@@ -46,7 +46,7 @@
 {
 	__block fz_document *block_doc = doc;
 	dispatch_async(queue, ^{
-		fz_close_document(block_doc);
+		fz_drop_document(block_doc);
 	});
 	[super dealloc];
 }

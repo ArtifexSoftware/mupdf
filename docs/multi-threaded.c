@@ -272,7 +272,7 @@ int main(int argc, char **argv)
 	// Finally the document is closed and the main thread's
 	// context is freed.
 
-	fz_close_document(doc);
+	fz_drop_document(doc);
 	fz_free_context(ctx);
 
 	return 0;

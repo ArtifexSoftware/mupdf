@@ -1067,7 +1067,7 @@ int main(int argc, char **argv)
 				if (showxml || showtext == TEXT_XML)
 					fz_printf(out, "</document>\n");
 
-				fz_close_document(doc);
+				fz_drop_document(doc);
 				doc = NULL;
 			}
 			fz_catch(ctx)
@@ -1075,7 +1075,7 @@ int main(int argc, char **argv)
 				if (!ignore_errors)
 					fz_rethrow(ctx);
 
-				fz_close_document(doc);
+				fz_drop_document(doc);
 				doc = NULL;
 				fz_warn(ctx, "ignoring error in '%s'", filename);
 			}
@@ -1083,7 +1083,7 @@ int main(int argc, char **argv)
 	}
 	fz_catch(ctx)
 	{
-		fz_close_document(doc);
+		fz_drop_document(doc);
 		fprintf(stderr, "error: cannot draw '%s'\n", filename);
 		errored = 1;
 	}

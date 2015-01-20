@@ -401,7 +401,7 @@ void pdfapp_close(pdfapp_t *app)
 	fz_free_page(app->doc, app->page);
 	app->page = NULL;
 
-	fz_close_document(app->doc);
+	fz_drop_document(app->doc);
 	app->doc = NULL;
 
 #ifdef HAVE_CURL

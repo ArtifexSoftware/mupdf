@@ -42,6 +42,7 @@ typedef void (fz_document_rebind_fn)(fz_document *doc, fz_context *ctx);
 
 struct fz_document_s
 {
+	int refs;
 	fz_document_close_fn *close;
 	fz_document_needs_password_fn *needs_password;
 	fz_document_authenticate_password_fn *authenticate_password;
@@ -113,14 +114,15 @@ fz_document *fz_open_document(fz_context *ctx, const char *filename);
 fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream);
 
 /*
-	fz_close_document: Close and free an open document.
+	fz_drop_document: Release an open document.
 
 	The resource store in the context associated with fz_document
-	is emptied, and any allocations for the document are freed.
+	is emptied, and any allocations for the document are freed when
+	the last reference is dropped.
 
 	Does not throw exceptions.
 */
-void fz_close_document(fz_document *doc);
+void fz_drop_document(fz_document *doc);
 
 /*
 	fz_needs_password: Check if a document is encrypted with a
