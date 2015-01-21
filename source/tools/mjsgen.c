@@ -100,14 +100,14 @@ static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	fz_try(ctx)
 	{
-		page = fz_load_page(doc, pagenum - 1);
+		page = fz_load_page(ctx, doc, pagenum - 1);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow_message(ctx, "cannot load page %d in file '%s'", pagenum, filename);
 	}
 
-	pdf_document *inter = pdf_specifics(doc);
+	pdf_document *inter = pdf_specifics(ctx, doc);
 	pdf_widget *widget = NULL;
 
 	if (inter)
@@ -220,7 +220,7 @@ static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
 static void processpages(fz_context *ctx, fz_document *doc)
 {
 	int page, pagecount;
-	pagecount = fz_count_pages(doc);
+	pagecount = fz_count_pages(ctx, doc);
 	for (page = 1; page <= pagecount; ++page)
 		processpage(ctx, doc, page);
 }
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 	fz_context *ctx;
 	int c;
 
-	fz_var(doc);
+	fz_var(ctx, doc);
 
 	while ((c = fz_getopt(argc, argv, "p:")) != -1)
 	{
@@ -269,7 +269,7 @@ int main(int argc, char **argv)
 
 		if (fz_needs_password(doc))
 		{
-			if (!fz_authenticate_password(doc, password))
+			if (!fz_authenticate_password(ctx, doc, password))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
 			fprintf(mujstest_file, "PASSWORD %s\n", password);
 		}
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
 
 		processpages(ctx, doc);
 
-		fz_drop_document(doc);
+		fz_drop_document(ctx, doc);
 	}
 	fz_catch(ctx)
 	{

@@ -207,7 +207,7 @@ void fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b);
 
 	Does not throw exceptions.
 */
-void fz_invert_pixmap_rect(fz_pixmap *image, const fz_irect *rect);
+void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, const fz_irect *rect);
 
 /*
 	fz_gamma_pixmap: Apply gamma correction to a pixmap. All components
@@ -299,14 +299,14 @@ void fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor);
 
 fz_irect *fz_pixmap_bbox_no_ctx(fz_pixmap *src, fz_irect *bbox);
 
-void fz_decode_tile(fz_pixmap *pix, float *decode);
-void fz_decode_indexed_tile(fz_pixmap *pix, float *decode, int maxval);
-void fz_unpack_tile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
+void fz_decode_tile(fz_context *ctx, fz_pixmap *pix, float *decode);
+void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, float *decode, int maxval);
+void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
 
 /*
 	fz_md5_pixmap: Return the md5 digest for a pixmap
 */
-void fz_md5_pixmap(fz_pixmap *pixmap, unsigned char digest[16]);
+void fz_md5_pixmap(fz_context *ctx, fz_pixmap *pixmap, unsigned char digest[16]);
 
 fz_pixmap *fz_new_pixmap_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span);
 fz_pixmap *fz_new_pixmap_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span);

@@ -89,9 +89,9 @@ void fz_pcl_preset(fz_context *ctx, fz_pcl_options *opts, const char *preset);
 */
 void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, int val);
 
-void fz_output_pcl(fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl);
+void fz_output_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl);
 
-void fz_output_pcl_bitmap(fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pcl);
+void fz_output_pcl_bitmap(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pcl);
 
 void fz_write_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, fz_pcl_options *pcl);
 

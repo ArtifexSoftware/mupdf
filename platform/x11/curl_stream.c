@@ -317,7 +317,7 @@ fetcher_thread(curl_stream_state *state)
 }
 
 static int
-stream_next(fz_stream *stream, int len)
+stream_next(fz_context *ctx, fz_stream *stream, int len)
 {
 	curl_stream_state *state = (curl_stream_state *)stream->state;
 	int len_read = 0;
@@ -327,13 +327,13 @@ stream_next(fz_stream *stream, int len)
 	unsigned char *buf = state->public_buffer;
 
 	if (state->error != NULL)
-		fz_throw(stream->ctx, FZ_ERROR_GENERIC, "cannot fetch data: %s", state->error);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fetch data: %s", state->error);
 
 	if (len > sizeof(state->public_buffer))
 		len = sizeof(state->public_buffer);
 
 	if (state->content_length == 0)
-		fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (A) (offset=%d)", read_point);
+		fz_throw(ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (A) (offset=%d)", read_point);
 
 	if (state->map == NULL)
 	{
@@ -342,7 +342,7 @@ stream_next(fz_stream *stream, int len)
 		if (read_point + len > state->current_fill_point)
 		{
 			stream->rp = stream->wp;
-			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (B) (offset=%d)", read_point);
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (B) (offset=%d)", read_point);
 		}
 		memcpy(buf, state->buffer + read_point, len);
 		stream->rp = buf;
@@ -367,7 +367,7 @@ stream_next(fz_stream *stream, int len)
 			state->fill_point = block;
 			unlock(state);
 			stream->rp = stream->wp;
-			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (C) (offset=%d)", read_point);
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (C) (offset=%d)", read_point);
 		}
 		block++;
 		if (left_over > len)
@@ -388,7 +388,7 @@ stream_next(fz_stream *stream, int len)
 			state->fill_point = block;
 			unlock(state);
 			stream->rp = stream->wp;
-			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (D) (offset=%d)", read_point);
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (D) (offset=%d)", read_point);
 		}
 		block++;
 		memcpy(buf, state->buffer + read_point, BLOCK_SIZE);
@@ -407,7 +407,7 @@ stream_next(fz_stream *stream, int len)
 			state->fill_point = block;
 			unlock(state);
 			stream->rp = stream->wp;
-			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (E) (offset=%d)", read_point);
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "read of a block we don't have (E) (offset=%d)", read_point);
 		}
 		memcpy(buf, state->buffer + read_point, len);
 		len_read += len;
@@ -441,9 +441,9 @@ stream_close(fz_context *ctx, void *state_)
 	pthread_mutex_destroy(&state->mutex);
 #endif
 
-	fz_free(state->ctx, state->buffer);
-	fz_free(state->ctx, state->map);
-	fz_free(state->ctx, state);
+	fz_free(ctx, state->buffer);
+	fz_free(ctx, state->map);
+	fz_free(ctx, state);
 }
 
 static fz_stream hack_stream;
@@ -451,7 +451,7 @@ static curl_stream_state hack;
 static int hack_pos;
 
 static void
-stream_seek(fz_stream *stream, int offset, int whence)
+stream_seek(fz_context *ctx, fz_stream *stream, int offset, int whence)
 {
 	curl_stream_state *state = (curl_stream_state *)stream->state;
 
@@ -479,7 +479,7 @@ stream_seek(fz_stream *stream, int offset, int whence)
 }
 
 static int
-stream_meta(fz_stream *stream, int key, int size, void *ptr)
+stream_meta(fz_context *ctx, fz_stream *stream, int key, int size, void *ptr)
 {
 	curl_stream_state *state = (curl_stream_state *)stream->state;
 
@@ -487,7 +487,7 @@ stream_meta(fz_stream *stream, int key, int size, void *ptr)
 	{
 	case FZ_STREAM_META_LENGTH:
 		if (!state->data_arrived)
-			fz_throw(stream->ctx, FZ_ERROR_TRYLATER, "still awaiting file length");
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "still awaiting file length");
 		return state->content_length;
 	case FZ_STREAM_META_PROGRESSIVE:
 		return 1;
@@ -540,7 +540,7 @@ fz_stream *fz_stream_from_curl(fz_context *ctx, char *filename, void (*more_data
 
 #endif
 
-	stream = fz_new_stream(ctx, state, stream_next, stream_close, NULL);
+	stream = fz_new_stream(ctx, state, stream_next, stream_close);
 	stream->seek = stream_seek;
 	stream->meta = stream_meta;
 	return stream;

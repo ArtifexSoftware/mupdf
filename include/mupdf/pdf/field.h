@@ -33,23 +33,23 @@ enum
 	Ff_CommitOnSelCHange = 1 << (27-1),
 };
 
-char *pdf_get_string_or_stream(pdf_document *doc, pdf_obj *obj);
-pdf_obj *pdf_get_inheritable(pdf_document *doc, pdf_obj *obj, char *key);
-int pdf_get_field_flags(pdf_document *doc, pdf_obj *obj);
-int pdf_field_type(pdf_document *doc, pdf_obj *field);
-void pdf_set_field_type(pdf_document *doc, pdf_obj *obj, int type);
-char *pdf_field_value(pdf_document *doc, pdf_obj *field);
-int pdf_field_set_value(pdf_document *doc, pdf_obj *field, char *text);
-char *pdf_field_border_style(pdf_document *doc, pdf_obj *field);
-void pdf_field_set_border_style(pdf_document *doc, pdf_obj *field, char *text);
-void pdf_field_set_button_caption(pdf_document *doc, pdf_obj *field, char *text);
-void pdf_field_set_fill_color(pdf_document *doc, pdf_obj *field, pdf_obj *col);
-void pdf_field_set_text_color(pdf_document *doc, pdf_obj *field, pdf_obj *col);
-void pdf_signature_set_value(pdf_document *doc, pdf_obj *field, pdf_signer *signer);
-int pdf_field_display(pdf_document *doc, pdf_obj *field);
-char *pdf_field_name(pdf_document *doc, pdf_obj *field);
-void pdf_field_set_display(pdf_document *doc, pdf_obj *field, int d);
-pdf_obj *pdf_lookup_field(pdf_obj *form, char *name);
-void pdf_field_reset(pdf_document *doc, pdf_obj *field);
+char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+pdf_obj *pdf_get_inheritable(fz_context *ctx, pdf_document *doc, pdf_obj *obj, char *key);
+int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int type);
+char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *text);
+char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *text);
+void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *text);
+void pdf_field_set_fill_color(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_obj *col);
+void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_obj *col);
+void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_signer *signer);
+int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+char *pdf_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field);
+void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, int d);
+pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, char *name);
+void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 
 #endif

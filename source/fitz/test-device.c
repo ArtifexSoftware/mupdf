@@ -25,9 +25,8 @@ is_rgb_color_u8(int threshold_u8, int r, int g, int b)
 }
 
 static void
-fz_test_color(fz_device *dev, fz_colorspace *colorspace, const float *color)
+fz_test_color(fz_context *ctx, fz_device *dev, fz_colorspace *colorspace, const float *color)
 {
-	fz_context *ctx = dev->ctx;
 	struct test *t = dev->user;
 
 	if (!*t->is_color && colorspace && colorspace != fz_device_gray(ctx))
@@ -56,35 +55,35 @@ fz_test_color(fz_device *dev, fz_colorspace *colorspace, const float *color)
 }
 
 static void
-fz_test_fill_path(fz_device *dev, fz_path *path, int even_odd, const fz_matrix *ctm,
+fz_test_fill_path(fz_context *ctx, fz_device *dev, fz_path *path, int even_odd, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	if (alpha != 0.0f)
-		fz_test_color(dev, colorspace, color);
+		fz_test_color(ctx, dev, colorspace, color);
 }
 
 static void
-fz_test_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke,
+fz_test_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, fz_stroke_state *stroke,
 	const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha)
 {
 	if (alpha != 0.0f)
-		fz_test_color(dev, colorspace, color);
+		fz_test_color(ctx, dev, colorspace, color);
 }
 
 static void
-fz_test_fill_text(fz_device *dev, fz_text *text, const fz_matrix *ctm,
+fz_test_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	if (alpha != 0.0f)
-		fz_test_color(dev, colorspace, color);
+		fz_test_color(ctx, dev, colorspace, color);
 }
 
 static void
-fz_test_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke,
+fz_test_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke,
 	const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha)
 {
 	if (alpha != 0.0f)
-		fz_test_color(dev, colorspace, color);
+		fz_test_color(ctx, dev, colorspace, color);
 }
 
 struct shadearg
@@ -94,25 +93,23 @@ struct shadearg
 };
 
 static void
-prepare_vertex(void *arg0, fz_vertex *v, const float *color)
+prepare_vertex(fz_context *ctx, void *arg_, fz_vertex *v, const float *color)
 {
-	struct shadearg *arg = arg0;
+	struct shadearg *arg = arg_;
 	fz_device *dev = arg->dev;
 	fz_shade *shade = arg->shade;
 	if (!shade->use_function)
-		fz_test_color(dev, shade->colorspace, color);
+		fz_test_color(ctx, dev, shade->colorspace, color);
 }
 
 static void
-fz_test_fill_shade(fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_test_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
-	fz_context *ctx = dev->ctx;
-
 	if (shade->use_function)
 	{
 		int i;
 		for (i = 0; i < 256; i++)
-			fz_test_color(dev, shade->colorspace, shade->function[i]);
+			fz_test_color(ctx, dev, shade->colorspace, shade->function[i]);
 	}
 	else
 	{
@@ -124,9 +121,8 @@ fz_test_fill_shade(fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float 
 }
 
 static void
-fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
+fz_test_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
-	fz_context *ctx = dev->ctx;
 	struct test *t = dev->user;
 
 	fz_pixmap *pix;
@@ -145,14 +141,14 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 			int threshold_u8 = t->threshold * 255;
 			for (i = 0; i < count; i++)
 			{
-				int r = fz_read_byte(stream);
-				int g = fz_read_byte(stream);
-				int b = fz_read_byte(stream);
+				int r = fz_read_byte(ctx, stream);
+				int g = fz_read_byte(ctx, stream);
+				int b = fz_read_byte(ctx, stream);
 				if (is_rgb_color_u8(threshold_u8, r, g, b))
 				{
 					*t->is_color = 1;
 					dev->hints |= FZ_IGNORE_IMAGE;
-					fz_drop_stream(stream);
+					fz_drop_stream(ctx, stream);
 					fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
 					break;
 				}
@@ -170,9 +166,9 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 				float ds[FZ_MAX_COLORS];
 
 				for (k = 0; k < n; k++)
-					cs[k] = fz_read_byte(stream) / 255.0f;
+					cs[k] = fz_read_byte(ctx, stream) / 255.0f;
 
-				cc.convert(&cc, ds, cs);
+				cc.convert(ctx, &cc, ds, cs);
 
 				if (is_rgb_color(t->threshold, ds[0], ds[1], ds[2]))
 				{
@@ -181,9 +177,9 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 					break;
 				}
 			}
-			fz_fin_cached_color_converter(&cc);
+			fz_fin_cached_color_converter(ctx, &cc);
 		}
-		fz_drop_stream(stream);
+		fz_drop_stream(ctx, stream);
 		return;
 	}
 
@@ -226,7 +222,7 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 			if (*s++ == 0)
 				continue;
 
-			cc.convert(&cc, ds, cs);
+			cc.convert(ctx, &cc, ds, cs);
 
 			if (is_rgb_color(t->threshold, ds[0], ds[1], ds[2]))
 			{
@@ -237,26 +233,26 @@ fz_test_fill_image(fz_device *dev, fz_image *image, const fz_matrix *ctm, float 
 				break;
 			}
 		}
-		fz_fin_cached_color_converter(&cc);
+		fz_fin_cached_color_converter(ctx, &cc);
 	}
 
 	fz_drop_pixmap(ctx, pix);
 }
 
 static void
-fz_test_fill_image_mask(fz_device *dev, fz_image *image, const fz_matrix *ctm,
+fz_test_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	/* We assume that at least some of the image pixels are non-zero */
-	fz_test_color(dev, colorspace, color);
+	fz_test_color(ctx, dev, colorspace, color);
 }
 
 static void
-fz_test_free(fz_device *dev)
+fz_test_free(fz_context *ctx, fz_device *dev)
 {
 	if (dev == NULL)
 		return;
-	fz_free(dev->ctx, dev->user);
+	fz_free(ctx, dev->user);
 	dev->user = NULL;
 }
 

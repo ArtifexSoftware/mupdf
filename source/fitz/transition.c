@@ -139,7 +139,7 @@ wipe_lr(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
 	return 1;
 }
 
-int fz_generate_transition(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time, fz_transition *trans)
+int fz_generate_transition(fz_context *ctx, fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time, fz_transition *trans)
 {
 	switch (trans->type)
 	{

@@ -18,14 +18,14 @@ static void usage(void)
 
 static int isimage(pdf_obj *obj)
 {
-	pdf_obj *type = pdf_dict_gets(obj, "Subtype");
-	return pdf_is_name(type) && !strcmp(pdf_to_name(type), "Image");
+	pdf_obj *type = pdf_dict_gets(ctx, obj, "Subtype");
+	return pdf_is_name(ctx, type) && !strcmp(pdf_to_name(ctx, type), "Image");
 }
 
 static int isfontdesc(pdf_obj *obj)
 {
-	pdf_obj *type = pdf_dict_gets(obj, "Type");
-	return pdf_is_name(type) && !strcmp(pdf_to_name(type), "FontDescriptor");
+	pdf_obj *type = pdf_dict_gets(ctx, obj, "Type");
+	return pdf_is_name(ctx, type) && !strcmp(pdf_to_name(ctx, type), "FontDescriptor");
 }
 
 static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
@@ -67,11 +67,11 @@ static void saveimage(int num)
 	pdf_obj *ref;
 	char buf[32];
 
-	ref = pdf_new_indirect(doc, num, 0);
+	ref = pdf_new_indirect(ctx, doc, num, 0);
 
 	/* TODO: detect DCTD and save as jpeg */
 
-	image = pdf_load_image(doc, ref);
+	image = pdf_load_image(ctx, doc, ref);
 	pix = fz_new_pixmap_from_image(ctx, image, 0, 0);
 	fz_drop_image(ctx, image);
 
@@ -79,7 +79,7 @@ static void saveimage(int num)
 	writepixmap(ctx, pix, buf, dorgb);
 
 	fz_drop_pixmap(ctx, pix);
-	pdf_drop_obj(ref);
+	pdf_drop_obj(ctx, ref);
 }
 
 static void savefont(pdf_obj *dict, int num)
@@ -95,34 +95,34 @@ static void savefont(pdf_obj *dict, int num)
 	int n, len;
 	unsigned char *data;
 
-	obj = pdf_dict_gets(dict, "FontName");
+	obj = pdf_dict_gets(ctx, dict, "FontName");
 	if (obj)
-		fontname = pdf_to_name(obj);
+		fontname = pdf_to_name(ctx, obj);
 
-	obj = pdf_dict_gets(dict, "FontFile");
+	obj = pdf_dict_gets(ctx, dict, "FontFile");
 	if (obj)
 	{
 		stream = obj;
 		ext = "pfa";
 	}
 
-	obj = pdf_dict_gets(dict, "FontFile2");
+	obj = pdf_dict_gets(ctx, dict, "FontFile2");
 	if (obj)
 	{
 		stream = obj;
 		ext = "ttf";
 	}
 
-	obj = pdf_dict_gets(dict, "FontFile3");
+	obj = pdf_dict_gets(ctx, dict, "FontFile3");
 	if (obj)
 	{
 		stream = obj;
 
-		obj = pdf_dict_gets(obj, "Subtype");
-		if (obj && !pdf_is_name(obj))
+		obj = pdf_dict_gets(ctx, obj, "Subtype");
+		if (obj && !pdf_is_name(ctx, obj))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid font descriptor subtype");
 
-		subtype = pdf_to_name(obj);
+		subtype = pdf_to_name(ctx, obj);
 		if (!strcmp(subtype, "Type1C"))
 			ext = "cff";
 		else if (!strcmp(subtype, "CIDFontType0C"))
@@ -139,7 +139,7 @@ static void savefont(pdf_obj *dict, int num)
 		return;
 	}
 
-	buf = pdf_load_stream(doc, pdf_to_num(stream), pdf_to_gen(stream));
+	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stream), pdf_to_gen(ctx, stream));
 
 	snprintf(namebuf, sizeof(namebuf), "%s-%04d.%s", fontname, num, ext);
 	printf("extracting font %s\n", namebuf);
@@ -168,14 +168,14 @@ static void showobject(int num)
 
 	fz_try(ctx)
 	{
-		obj = pdf_load_object(doc, num, 0);
+		obj = pdf_load_object(ctx, doc, num, 0);
 
 		if (isimage(obj))
 			saveimage(num);
 		else if (isfontdesc(obj))
 			savefont(obj, num);
 
-		pdf_drop_obj(obj);
+		pdf_drop_obj(ctx, obj);
 	}
 	fz_catch(ctx)
 	{
@@ -212,13 +212,13 @@ int pdfextract_main(int argc, char **argv)
 	}
 
 	doc = pdf_open_document_no_run(ctx, infile);
-	if (pdf_needs_password(doc))
-		if (!pdf_authenticate_password(doc, password))
+	if (pdf_needs_password(ctx, doc))
+		if (!pdf_authenticate_password(ctx, doc, password))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);
 
 	if (fz_optind == argc)
 	{
-		int len = pdf_count_objects(doc);
+		int len = pdf_count_objects(ctx, doc);
 		for (o = 1; o < len; o++)
 			showobject(o);
 	}
@@ -231,7 +231,7 @@ int pdfextract_main(int argc, char **argv)
 		}
 	}
 
-	pdf_close_document(doc);
+	pdf_close_document(ctx, doc);
 	fz_flush_warnings(ctx);
 	fz_drop_context(ctx);
 	return 0;

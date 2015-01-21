@@ -81,7 +81,7 @@ skip_authority(char *path)
 #define SEP(x) ((x)=='/' || (x) == 0)
 
 static char *
-xps_clean_path(char *name)
+clean_path(char *name)
 {
 	char *p, *q, *dotdot, *start;
 	int rooted;
@@ -138,7 +138,7 @@ xps_clean_path(char *name)
 }
 
 void
-xps_resolve_url(char *output, char *base_uri, char *path, int output_size)
+xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri, char *path, int output_size)
 {
 	char *p = skip_authority(skip_scheme(path));
 
@@ -153,13 +153,11 @@ xps_resolve_url(char *output, char *base_uri, char *path, int output_size)
 			fz_strlcat(output, "/", output_size);
 		fz_strlcat(output, path, output_size);
 	}
-	xps_clean_path(output);
+	clean_path(output);
 }
 
 int
-xps_url_is_remote(char *path)
+xps_url_is_remote(fz_context *ctx, xps_document *doc, char *path)
 {
-	char *p = skip_authority(skip_scheme(path));
-
-	return p != path;
+	return path != skip_authority(skip_scheme(path));
 }

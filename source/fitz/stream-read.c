@@ -3,14 +3,14 @@
 #define MIN_BOMB (100 << 20)
 
 int
-fz_read(fz_stream *stm, unsigned char *buf, int len)
+fz_read(fz_context *ctx, fz_stream *stm, unsigned char *buf, int len)
 {
 	int count, n;
 
 	count = 0;
 	do
 	{
-		n = fz_available(stm, len);
+		n = fz_available(ctx, stm, len);
 		if (n > len)
 			n = len;
 		if (n == 0)
@@ -28,17 +28,16 @@ fz_read(fz_stream *stm, unsigned char *buf, int len)
 }
 
 fz_buffer *
-fz_read_all(fz_stream *stm, int initial)
+fz_read_all(fz_context *ctx, fz_stream *stm, int initial)
 {
-	return fz_read_best(stm, initial, NULL);
+	return fz_read_best(ctx, stm, initial, NULL);
 }
 
 fz_buffer *
-fz_read_best(fz_stream *stm, int initial, int *truncated)
+fz_read_best(fz_context *ctx, fz_stream *stm, int initial, int *truncated)
 {
 	fz_buffer *buf = NULL;
 	int n;
-	fz_context *ctx = stm->ctx;
 
 	fz_var(buf);
 
@@ -62,7 +61,7 @@ fz_read_best(fz_stream *stm, int initial, int *truncated)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "compression bomb detected");
 			}
 
-			n = fz_read(stm, buf->data + buf->len, buf->cap - buf->len);
+			n = fz_read(ctx, stm, buf->data + buf->len, buf->cap - buf->len);
 			if (n == 0)
 				break;
 
@@ -91,19 +90,19 @@ fz_read_best(fz_stream *stm, int initial, int *truncated)
 }
 
 void
-fz_read_line(fz_stream *stm, char *mem, int n)
+fz_read_line(fz_context *ctx, fz_stream *stm, char *mem, int n)
 {
 	char *s = mem;
 	int c = EOF;
 	while (n > 1)
 	{
-		c = fz_read_byte(stm);
+		c = fz_read_byte(ctx, stm);
 		if (c == EOF)
 			break;
 		if (c == '\r') {
-			c = fz_peek_byte(stm);
+			c = fz_peek_byte(ctx, stm);
 			if (c == '\n')
-				fz_read_byte(stm);
+				fz_read_byte(ctx, stm);
 			break;
 		}
 		if (c == '\n')
@@ -116,50 +115,50 @@ fz_read_line(fz_stream *stm, char *mem, int n)
 }
 
 int
-fz_tell(fz_stream *stm)
+fz_tell(fz_context *ctx, fz_stream *stm)
 {
 	return stm->pos - (stm->wp - stm->rp);
 }
 
 void
-fz_seek(fz_stream *stm, int offset, int whence)
+fz_seek(fz_context *ctx, fz_stream *stm, int offset, int whence)
 {
 	stm->avail = 0; /* Reset bit reading */
 	if (stm->seek)
 	{
 		if (whence == 1)
 		{
-			offset = fz_tell(stm) + offset;
+			offset = fz_tell(ctx, stm) + offset;
 			whence = 0;
 		}
-		stm->seek(stm, offset, whence);
+		stm->seek(ctx, stm, offset, whence);
 		stm->eof = 0;
 	}
 	else if (whence != 2)
 	{
 		if (whence == 0)
-			offset -= fz_tell(stm);
+			offset -= fz_tell(ctx, stm);
 		if (offset < 0)
-			fz_warn(stm->ctx, "cannot seek backwards");
+			fz_warn(ctx, "cannot seek backwards");
 		/* dog slow, but rare enough */
 		while (offset-- > 0)
 		{
-			if (fz_read_byte(stm) == EOF)
+			if (fz_read_byte(ctx, stm) == EOF)
 			{
-				fz_warn(stm->ctx, "seek failed");
+				fz_warn(ctx, "seek failed");
 				break;
 			}
 		}
 	}
 	else
-		fz_warn(stm->ctx, "cannot seek");
+		fz_warn(ctx, "cannot seek");
 }
 
-int fz_stream_meta(fz_stream *stm, int key, int size, void *ptr)
+int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr)
 {
 	if (!stm || !stm->meta)
 		return -1;
-	return stm->meta(stm, key, size, ptr);
+	return stm->meta(ctx, stm, key, size, ptr);
 }
 
 fz_buffer *
@@ -173,11 +172,11 @@ fz_read_file(fz_context *ctx, const char *filename)
 	stm = fz_open_file(ctx, filename);
 	fz_try(ctx)
 	{
-		buf = fz_read_all(stm, 0);
+		buf = fz_read_all(ctx, stm, 0);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(stm);
+		fz_drop_stream(ctx, stm);
 	}
 	fz_catch(ctx)
 	{

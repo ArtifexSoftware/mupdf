@@ -47,7 +47,7 @@ init_get1_tables(void)
 }
 
 void
-fz_unpack_tile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale)
+fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale)
 {
 	int pad, x, y, k;
 	int w = dst->w;
@@ -172,7 +172,7 @@ fz_unpack_tile(fz_pixmap *dst, unsigned char * restrict src, int n, int depth, i
 /* Apply decode array */
 
 void
-fz_decode_indexed_tile(fz_pixmap *pix, float *decode, int maxval)
+fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, float *decode, int maxval)
 {
 	int add[FZ_MAX_COLORS];
 	int mul[FZ_MAX_COLORS];
@@ -207,7 +207,7 @@ fz_decode_indexed_tile(fz_pixmap *pix, float *decode, int maxval)
 }
 
 void
-fz_decode_tile(fz_pixmap *pix, float *decode)
+fz_decode_tile(fz_context *ctx, fz_pixmap *pix, float *decode)
 {
 	int add[FZ_MAX_COLORS];
 	int mul[FZ_MAX_COLORS];

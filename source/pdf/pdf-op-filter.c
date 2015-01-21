@@ -47,21 +47,22 @@ typedef struct pdf_filter_state_s
 
 static void insert_resource_name(pdf_csi *csi, pdf_filter_state *state, const char *key, const char *name)
 {
+	fz_context *ctx = csi->ctx;
 	pdf_obj *xobj;
 	pdf_obj *obj;
 
 	if (!state->resources || !name || name[0] == 0)
 		return;
 
-	xobj = pdf_dict_gets(csi->rdb, key);
-	obj = pdf_dict_gets(xobj, name);
+	xobj = pdf_dict_gets(ctx, csi->rdb, key);
+	obj = pdf_dict_gets(ctx, xobj, name);
 
-	xobj = pdf_dict_gets(state->resources, key);
+	xobj = pdf_dict_gets(ctx, state->resources, key);
 	if (xobj == NULL) {
-		xobj = pdf_new_dict(csi->doc, 1);
-		pdf_dict_puts_drop(state->resources, key, xobj);
+		xobj = pdf_new_dict(csi->ctx, csi->doc, 1);
+		pdf_dict_puts_drop(ctx, state->resources, key, xobj);
 	}
-	pdf_dict_putp(xobj, name, obj);
+	pdf_dict_putp(ctx, xobj, name, obj);
 }
 
 static void insert_resource(pdf_csi *csi, pdf_filter_state *state, const char *key)
@@ -408,7 +409,7 @@ pdf_filter_BDC(pdf_csi *csi, void *state_)
 {
 	pdf_filter_state *state = (pdf_filter_state *)state_;
 
-	insert_resource_name(csi, state, "Properties", pdf_to_name(csi->obj));
+	insert_resource_name(csi, state, "Properties", pdf_to_name(csi->ctx, csi->obj));
 
 	filter_flush(csi, state, 0);
 	call_op(csi, state, PDF_OP_BDC);
@@ -467,7 +468,7 @@ pdf_filter_DP(pdf_csi *csi, void *state_)
 {
 	pdf_filter_state *state = (pdf_filter_state *)state_;
 
-	insert_resource_name(csi, state, "Properties", pdf_to_name(csi->obj));
+	insert_resource_name(csi, state, "Properties", pdf_to_name(csi->ctx, csi->obj));
 
 	filter_flush(csi, state, 0);
 	call_op(csi, state, PDF_OP_DP);
@@ -1085,11 +1086,11 @@ free_processor_filter(pdf_csi *csi, void *state_)
 static void
 process_annot(pdf_csi *csi, void *state, pdf_obj *resources, pdf_annot *annot)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_xobject *xobj = annot->ap;
 
 	/* Avoid infinite recursion */
-	if (xobj == NULL || pdf_mark_obj(xobj->me))
+	if (xobj == NULL || pdf_mark_obj(ctx, xobj->me))
 		return;
 
 	fz_try(ctx)
@@ -1101,7 +1102,7 @@ process_annot(pdf_csi *csi, void *state, pdf_obj *resources, pdf_annot *annot)
 	}
 	fz_always(ctx)
 	{
-		pdf_unmark_obj(xobj->me);
+		pdf_unmark_obj(ctx, xobj->me);
 	}
 	fz_catch(ctx)
 	{
@@ -1203,7 +1204,7 @@ static const pdf_processor pdf_processor_filter =
 };
 
 pdf_process *
-pdf_process_filter(pdf_process *process, fz_context *ctx, pdf_process *underlying, pdf_obj *resources)
+pdf_init_process_filter(fz_context *ctx, pdf_process *process, pdf_process *underlying, pdf_obj *resources)
 {
 	pdf_filter_state *p = NULL;
 

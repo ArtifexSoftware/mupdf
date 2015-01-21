@@ -31,7 +31,7 @@ struct fz_image_key_s {
 };
 
 static int
-fz_make_hash_image_key(fz_store_hash *hash, void *key_)
+fz_make_hash_image_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
 
@@ -71,7 +71,7 @@ fz_drop_image_key(fz_context *ctx, void *key_)
 }
 
 static int
-fz_cmp_image_key(void *k0_, void *k1_)
+fz_cmp_image_key(fz_context *ctx, void *k0_, void *k1_)
 {
 	fz_image_key *k0 = (fz_image_key *)k0_;
 	fz_image_key *k1 = (fz_image_key *)k1_;
@@ -81,7 +81,7 @@ fz_cmp_image_key(void *k0_, void *k1_)
 
 #ifndef NDEBUG
 static void
-fz_debug_image(FILE *out, void *key_)
+fz_debug_image(fz_context *ctx, FILE *out, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
 
@@ -169,7 +169,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 
 		samples = fz_malloc_array(ctx, h, stride);
 
-		len = fz_read(stm, samples, h * stride);
+		len = fz_read(ctx, stm, samples, h * stride);
 
 		/* Pad truncated images */
 		if (len < stride * h)
@@ -188,7 +188,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 				p[i] = ~p[i];
 		}
 
-		fz_unpack_tile(tile, samples, image->n, image->bpc, stride, indexed);
+		fz_unpack_tile(ctx, tile, samples, image->n, image->bpc, stride, indexed);
 
 		fz_free(ctx, samples);
 		samples = NULL;
@@ -200,14 +200,14 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 		if (indexed)
 		{
 			fz_pixmap *conv;
-			fz_decode_indexed_tile(tile, image->decode, (1 << image->bpc) - 1);
+			fz_decode_indexed_tile(ctx, tile, image->decode, (1 << image->bpc) - 1);
 			conv = fz_expand_indexed_pixmap(ctx, tile);
 			fz_drop_pixmap(ctx, tile);
 			tile = conv;
 		}
 		else
 		{
-			fz_decode_tile(tile, image->decode);
+			fz_decode_tile(ctx, tile, image->decode);
 		}
 
 		/* pre-blended matte color */
@@ -216,7 +216,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(stm);
+		fz_drop_stream(ctx, stm);
 	}
 	fz_catch(ctx)
 	{
@@ -336,7 +336,7 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 		native_l2factor = l2factor;
 		stm = fz_open_image_decomp_stream_from_buffer(ctx, image->buffer, &native_l2factor);
 
-		indexed = fz_colorspace_is_indexed(image->colorspace);
+		indexed = fz_colorspace_is_indexed(ctx, image->colorspace);
 		tile = fz_decomp_image_from_stream(ctx, stm, image, indexed, l2factor, native_l2factor);
 
 		/* CMYK JPEGs in XPS documents have to be inverted */
@@ -403,12 +403,11 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 		image->get_pixmap = fz_image_get_pixmap;
 		image->xres = pixmap->xres;
 		image->yres = pixmap->yres;
-		image->tile = pixmap;
+		image->tile = fz_keep_pixmap(ctx, pixmap);
 		image->mask = mask;
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_pixmap(ctx, pixmap);
 		fz_drop_image(ctx, mask);
 		fz_rethrow(ctx);
 	}
@@ -445,7 +444,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 			memcpy(image->decode, decode, sizeof(float)*image->n*2);
 		else
 		{
-			float maxval = fz_colorspace_is_indexed(colorspace) ? (1 << bpc) - 1 : 1;
+			float maxval = fz_colorspace_is_indexed(ctx, colorspace) ? (1 << bpc) - 1 : 1;
 			int i;
 			for (i = 0; i < image->n; i++)
 			{

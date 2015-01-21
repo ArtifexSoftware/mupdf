@@ -76,7 +76,7 @@ fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, con
 	}
 
 	if (stroke)
-		fz_adjust_rect_for_stroke(bbox, stroke, ctm);
+		fz_adjust_rect_for_stroke(ctx, bbox, stroke, ctm);
 
 	/* Compensate for the glyph cache limited positioning precision */
 	bbox->x0 -= 1;

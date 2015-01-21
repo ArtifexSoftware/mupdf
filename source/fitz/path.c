@@ -270,14 +270,14 @@ fz_bound_path(fz_context *ctx, fz_path *path, const fz_stroke_state *stroke, con
 
 	if (stroke)
 	{
-		fz_adjust_rect_for_stroke(r, stroke, ctm);
+		fz_adjust_rect_for_stroke(ctx, r, stroke, ctm);
 	}
 
 	return r;
 }
 
 fz_rect *
-fz_adjust_rect_for_stroke(fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm)
 {
 	float expand;
 

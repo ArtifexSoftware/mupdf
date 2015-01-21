@@ -26,7 +26,7 @@
 #endif
 
 unsigned char *
-pdf_lookup_builtin_font(const char *name, unsigned int *len)
+pdf_lookup_builtin_font(fz_context *ctx, const char *name, unsigned int *len)
 {
 	if (!strcmp("Courier", name)) {
 		*len = sizeof pdf_font_NimbusMono_Regular;
@@ -89,37 +89,37 @@ pdf_lookup_builtin_font(const char *name, unsigned int *len)
 }
 
 unsigned char *
-pdf_lookup_substitute_font(int mono, int serif, int bold, int italic, unsigned int *len)
+pdf_lookup_substitute_font(fz_context *ctx, int mono, int serif, int bold, int italic, unsigned int *len)
 {
 	if (mono) {
 		if (bold) {
-			if (italic) return pdf_lookup_builtin_font("Courier-BoldOblique", len);
-			else return pdf_lookup_builtin_font("Courier-Bold", len);
+			if (italic) return pdf_lookup_builtin_font(ctx, "Courier-BoldOblique", len);
+			else return pdf_lookup_builtin_font(ctx, "Courier-Bold", len);
 		} else {
-			if (italic) return pdf_lookup_builtin_font("Courier-Oblique", len);
-			else return pdf_lookup_builtin_font("Courier", len);
+			if (italic) return pdf_lookup_builtin_font(ctx, "Courier-Oblique", len);
+			else return pdf_lookup_builtin_font(ctx, "Courier", len);
 		}
 	} else if (serif) {
 		if (bold) {
-			if (italic) return pdf_lookup_builtin_font("Times-BoldItalic", len);
-			else return pdf_lookup_builtin_font("Times-Bold", len);
+			if (italic) return pdf_lookup_builtin_font(ctx, "Times-BoldItalic", len);
+			else return pdf_lookup_builtin_font(ctx, "Times-Bold", len);
 		} else {
-			if (italic) return pdf_lookup_builtin_font("Times-Italic", len);
-			else return pdf_lookup_builtin_font("Times-Roman", len);
+			if (italic) return pdf_lookup_builtin_font(ctx, "Times-Italic", len);
+			else return pdf_lookup_builtin_font(ctx, "Times-Roman", len);
 		}
 	} else {
 		if (bold) {
-			if (italic) return pdf_lookup_builtin_font("Helvetica-BoldOblique", len);
-			else return pdf_lookup_builtin_font("Helvetica-Bold", len);
+			if (italic) return pdf_lookup_builtin_font(ctx, "Helvetica-BoldOblique", len);
+			else return pdf_lookup_builtin_font(ctx, "Helvetica-Bold", len);
 		} else {
-			if (italic) return pdf_lookup_builtin_font("Helvetica-Oblique", len);
-			else return pdf_lookup_builtin_font("Helvetica", len);
+			if (italic) return pdf_lookup_builtin_font(ctx, "Helvetica-Oblique", len);
+			else return pdf_lookup_builtin_font(ctx, "Helvetica", len);
 		}
 	}
 }
 
 unsigned char *
-pdf_lookup_substitute_cjk_font(int ros, int serif, int wmode, unsigned int *len, int *index)
+pdf_lookup_substitute_cjk_font(fz_context *ctx, int ros, int serif, int wmode, unsigned int *len, int *index)
 {
 #ifndef NOCJKFONT
 #ifndef NOCJKFULL

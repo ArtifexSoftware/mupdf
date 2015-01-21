@@ -46,7 +46,7 @@ struct fz_lzwd_s
 };
 
 static int
-next_lzwd(fz_stream *stm, int len)
+next_lzwd(fz_context *ctx, fz_stream *stm, int len)
 {
 	fz_lzwd *lzw = stm->state;
 	lzw_code *table = lzw->table;
@@ -73,9 +73,9 @@ next_lzwd(fz_stream *stm, int len)
 		if (lzw->eod)
 			return EOF;
 
-		code = fz_read_bits(lzw->chain, code_bits);
+		code = fz_read_bits(ctx, lzw->chain, code_bits);
 
-		if (fz_is_eof_bits(lzw->chain))
+		if (fz_is_eof_bits(ctx, lzw->chain))
 		{
 			lzw->eod = 1;
 			break;
@@ -89,7 +89,7 @@ next_lzwd(fz_stream *stm, int len)
 
 		if (next_code > NUM_CODES && code != LZW_CLEAR)
 		{
-			fz_warn(stm->ctx, "missing clear code in lzw decode");
+			fz_warn(ctx, "missing clear code in lzw decode");
 			code = LZW_CLEAR;
 		}
 
@@ -109,12 +109,12 @@ next_lzwd(fz_stream *stm, int len)
 		else if (next_code == NUM_CODES)
 		{
 			/* TODO: Ghostscript checks for a following LZW_CLEAR before tolerating */
-			fz_warn(stm->ctx, "tolerating a single out of range code in lzw decode");
+			fz_warn(ctx, "tolerating a single out of range code in lzw decode");
 			next_code++;
 		}
 		else if (code > next_code || next_code >= NUM_CODES)
 		{
-			fz_warn(stm->ctx, "out of range code encountered in lzw decode");
+			fz_warn(ctx, "out of range code encountered in lzw decode");
 		}
 		else
 		{
@@ -127,7 +127,7 @@ next_lzwd(fz_stream *stm, int len)
 			else if (code == next_code)
 				table[next_code].value = table[next_code].first_char;
 			else
-				fz_warn(stm->ctx, "out of range code encountered in lzw decode");
+				fz_warn(ctx, "out of range code encountered in lzw decode");
 
 			next_code ++;
 
@@ -188,23 +188,15 @@ static void
 close_lzwd(fz_context *ctx, void *state_)
 {
 	fz_lzwd *lzw = (fz_lzwd *)state_;
-	fz_sync_bits(lzw->chain);
-	fz_drop_stream(lzw->chain);
+	fz_sync_bits(ctx, lzw->chain);
+	fz_drop_stream(ctx, lzw->chain);
 	fz_free(ctx, lzw);
-}
-
-static fz_stream *
-rebind_lzwd(fz_stream *s)
-{
-	fz_lzwd *state = s->state;
-	return state->chain;
 }
 
 /* Default: early_change = 1 */
 fz_stream *
-fz_open_lzwd(fz_stream *chain, int early_change)
+fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change)
 {
-	fz_context *ctx = chain->ctx;
 	fz_lzwd *lzw = NULL;
 	int i;
 
@@ -243,9 +235,9 @@ fz_open_lzwd(fz_stream *chain, int early_change)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, lzw);
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, lzw, next_lzwd, close_lzwd, rebind_lzwd);
+	return fz_new_stream(ctx, lzw, next_lzwd, close_lzwd);
 }

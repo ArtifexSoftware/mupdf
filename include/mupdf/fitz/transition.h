@@ -49,6 +49,6 @@ struct fz_transition_s
 
 	Returns 1 if successfully generated a frame.
 */
-int fz_generate_transition(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time, fz_transition *trans);
+int fz_generate_transition(fz_context *ctx, fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time, fz_transition *trans);
 
 #endif

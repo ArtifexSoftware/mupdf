@@ -157,7 +157,6 @@ fz_paint_triangle(fz_pixmap *pix, float *v[3], int n, const fz_irect *bbox)
 
 struct paint_tri_data
 {
-	fz_context *ctx;
 	fz_shade *shade;
 	fz_pixmap *dest;
 	const fz_irect *bbox;
@@ -165,7 +164,7 @@ struct paint_tri_data
 };
 
 static void
-prepare_vertex(void *arg, fz_vertex *v, const float *input)
+prepare_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input)
 {
 	struct paint_tri_data *ptd = (struct paint_tri_data *)arg;
 	fz_shade *shade = ptd->shade;
@@ -177,14 +176,14 @@ prepare_vertex(void *arg, fz_vertex *v, const float *input)
 		output[0] = input[0] * 255;
 	else
 	{
-		ptd->cc.convert(&ptd->cc, output, input);
+		ptd->cc.convert(ctx, &ptd->cc, output, input);
 		for (i = 0; i < dest->colorspace->n; i++)
 			output[i] *= 255;
 	}
 }
 
 static void
-do_paint_tri(void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv)
+do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv)
 {
 	struct paint_tri_data *ptd = (struct paint_tri_data *)arg;
 	float *vertices[3];
@@ -219,10 +218,10 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		if (shade->use_function)
 		{
 			fz_color_converter cc;
-			fz_lookup_color_converter(&cc, ctx, dest->colorspace, shade->colorspace);
+			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace);
 			for (i = 0; i < 256; i++)
 			{
-				cc.convert(&cc, color, shade->function[i]);
+				cc.convert(ctx, &cc, color, shade->function[i]);
 				for (k = 0; k < dest->colorspace->n; k++)
 					clut[i][k] = color[k] * 255;
 				clut[i][k] = shade->function[i][shade->colorspace->n] * 255;
@@ -236,7 +235,6 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 			temp = dest;
 		}
 
-		ptd.ctx = ctx;
 		ptd.dest = temp;
 		ptd.shade = shade;
 		ptd.bbox = bbox;
@@ -264,7 +262,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 	}
 	fz_always(ctx)
 	{
-		fz_fin_cached_color_converter(&ptd.cc);
+		fz_fin_cached_color_converter(ctx, &ptd.cc);
 	}
 	fz_catch(ctx)
 	{

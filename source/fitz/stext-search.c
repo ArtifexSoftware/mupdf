@@ -14,7 +14,7 @@ static inline int iswhite(int c)
 	return c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == 0xA0 || c == 0x2028 || c == 0x2029;
 }
 
-fz_char_and_box *fz_text_char_at(fz_char_and_box *cab, fz_text_page *page, int idx)
+fz_char_and_box *fz_text_char_at(fz_context *ctx, fz_char_and_box *cab, fz_text_page *page, int idx)
 {
 	int block_num;
 	int ofs = 0;
@@ -35,7 +35,7 @@ fz_char_and_box *fz_text_char_at(fz_char_and_box *cab, fz_text_page *page, int i
 				if (idx < ofs + span->len)
 				{
 					cab->c = span->text[idx - ofs].c;
-					fz_text_char_bbox(&cab->bbox, span, idx - ofs);
+					fz_text_char_bbox(ctx, &cab->bbox, span, idx - ofs);
 					return cab;
 				}
 				ofs += span->len;
@@ -55,21 +55,21 @@ fz_char_and_box *fz_text_char_at(fz_char_and_box *cab, fz_text_page *page, int i
 	return cab;
 }
 
-static int charat(fz_text_page *page, int idx)
+static int charat(fz_context *ctx, fz_text_page *page, int idx)
 {
 	fz_char_and_box cab;
-	return fz_text_char_at(&cab, page, idx)->c;
+	return fz_text_char_at(ctx, &cab, page, idx)->c;
 }
 
-static fz_rect *bboxat(fz_text_page *page, int idx, fz_rect *bbox)
+static fz_rect *bboxat(fz_context *ctx, fz_text_page *page, int idx, fz_rect *bbox)
 {
 	fz_char_and_box cab;
 	/* FIXME: Nasty extra copy */
-	*bbox = fz_text_char_at(&cab, page, idx)->bbox;
+	*bbox = fz_text_char_at(ctx, &cab, page, idx)->bbox;
 	return bbox;
 }
 
-static int textlen(fz_text_page *page)
+static int textlen(fz_context *ctx, fz_text_page *page)
 {
 	int len = 0;
 	int block_num;
@@ -95,21 +95,21 @@ static int textlen(fz_text_page *page)
 	return len;
 }
 
-static int match(fz_text_page *page, const char *s, int n)
+static int match(fz_context *ctx, fz_text_page *page, const char *s, int n)
 {
 	int orig = n;
 	int c;
 	while (*s)
 	{
 		s += fz_chartorune(&c, (char *)s);
-		if (iswhite(c) && iswhite(charat(page, n)))
+		if (iswhite(c) && iswhite(charat(ctx, page, n)))
 		{
 			const char *s_next;
 
 			/* Skip over whitespace in the document */
 			do
 				n++;
-			while (iswhite(charat(page, n)));
+			while (iswhite(charat(ctx, page, n)));
 
 			/* Skip over multiple whitespace in the search string */
 			while (s_next = s + fz_chartorune(&c, (char *)s), iswhite(c))
@@ -117,7 +117,7 @@ static int match(fz_text_page *page, const char *s, int n)
 		}
 		else
 		{
-			if (fz_tolower(c) != fz_tolower(charat(page, n)))
+			if (fz_tolower(c) != fz_tolower(charat(ctx, page, n)))
 				return 0;
 			n++;
 		}
@@ -134,17 +134,17 @@ fz_search_text_page(fz_context *ctx, fz_text_page *text, const char *needle, fz_
 		return 0;
 
 	hit_count = 0;
-	len = textlen(text);
+	len = textlen(ctx, text);
 	for (pos = 0; pos < len; pos++)
 	{
-		n = match(text, needle, pos);
+		n = match(ctx, text, needle, pos);
 		if (n)
 		{
 			fz_rect linebox = fz_empty_rect;
 			for (i = 0; i < n; i++)
 			{
 				fz_rect charbox;
-				bboxat(text, pos + i, &charbox);
+				bboxat(ctx, text, pos + i, &charbox);
 				if (!fz_is_empty_rect(&charbox))
 				{
 					if (charbox.y0 != linebox.y0 || fz_abs(charbox.x0 - linebox.x1) > 5)
@@ -195,7 +195,7 @@ fz_highlight_selection(fz_context *ctx, fz_text_page *page, fz_rect rect, fz_rec
 			{
 				for (i = 0; i < span->len; i++)
 				{
-					fz_text_char_bbox(&charbox, span, i);
+					fz_text_char_bbox(ctx, &charbox, span, i);
 					if (charbox.x1 >= x0 && charbox.x0 <= x1 && charbox.y1 >= y0 && charbox.y0 <= y1)
 					{
 						if (charbox.y0 != linebox.y0 || fz_abs(charbox.x0 - linebox.x1) > 5)
@@ -256,7 +256,7 @@ fz_copy_selection(fz_context *ctx, fz_text_page *page, fz_rect rect)
 
 				for (i = 0; i < span->len; i++)
 				{
-					fz_text_char_bbox(&hitbox, span, i);
+					fz_text_char_bbox(ctx, &hitbox, span, i);
 					c = span->text[i].c;
 					if (c < 32)
 						c = '?';

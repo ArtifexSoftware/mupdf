@@ -80,7 +80,7 @@ void fz_closepath(fz_context*,fz_path*);
 void fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *transform);
 
 fz_rect *fz_bound_path(fz_context *ctx, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
-fz_rect *fz_adjust_rect_for_stroke(fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm);
+fz_rect *fz_adjust_rect_for_stroke(fz_context *ctx, fz_rect *r, const fz_stroke_state *stroke, const fz_matrix *ctm);
 
 extern const fz_stroke_state fz_default_stroke_state;
 

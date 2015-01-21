@@ -157,7 +157,7 @@ fz_predict_png(fz_predict *state, unsigned char *out, unsigned char *in, int len
 }
 
 static int
-next_predict(fz_stream *stm, int len)
+next_predict(fz_context *ctx, fz_stream *stm, int len)
 {
 	fz_predict *state = stm->state;
 	unsigned char *buf = state->buffer;
@@ -175,7 +175,7 @@ next_predict(fz_stream *stm, int len)
 
 	while (p < ep)
 	{
-		n = fz_read(state->chain, state->in, state->stride + ispng);
+		n = fz_read(ctx, state->chain, state->in, state->stride + ispng);
 		if (n == 0)
 			break;
 
@@ -209,25 +209,17 @@ static void
 close_predict(fz_context *ctx, void *state_)
 {
 	fz_predict *state = (fz_predict *)state_;
-	fz_drop_stream(state->chain);
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state->in);
 	fz_free(ctx, state->out);
 	fz_free(ctx, state->ref);
 	fz_free(ctx, state);
 }
 
-static fz_stream *
-rebind_predict(fz_stream *s)
-{
-	fz_predict *state = s->state;
-	return state->chain;
-}
-
 /* Default values: predictor = 1, columns = 1, colors = 1, bpc = 8 */
 fz_stream *
-fz_open_predict(fz_stream *chain, int predictor, int columns, int colors, int bpc)
+fz_open_predict(fz_context *ctx, fz_stream *chain, int predictor, int columns, int colors, int bpc)
 {
-	fz_context *ctx = chain->ctx;
 	fz_predict *state = NULL;
 
 	fz_var(state);
@@ -288,9 +280,9 @@ fz_open_predict(fz_stream *chain, int predictor, int columns, int colors, int bp
 			fz_free(ctx, state->out);
 		}
 		fz_free(ctx, state);
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, state, next_predict, close_predict, rebind_predict);
+	return fz_new_stream(ctx, state, next_predict, close_predict);
 }

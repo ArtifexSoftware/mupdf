@@ -176,7 +176,7 @@ struct fz_char_and_box_s
 	fz_rect bbox;
 };
 
-fz_char_and_box *fz_text_char_at(fz_char_and_box *cab, fz_text_page *page, int idx);
+fz_char_and_box *fz_text_char_at(fz_context *ctx, fz_char_and_box *cab, fz_text_page *page, int idx);
 
 /*
 	fz_text_char_bbox: Return the bbox of a text char. Calculated from
@@ -192,7 +192,7 @@ fz_char_and_box *fz_text_char_at(fz_char_and_box *cab, fz_text_page *page, int i
 
 	Does not throw exceptions
 */
-fz_rect *fz_text_char_bbox(fz_rect *bbox, fz_text_span *span, int idx);
+fz_rect *fz_text_char_bbox(fz_context *ctx, fz_rect *bbox, fz_text_span *span, int idx);
 
 /*
 	fz_new_text_sheet: Create an empty style sheet.

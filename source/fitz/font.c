@@ -89,7 +89,7 @@ free_resources(fz_context *ctx, fz_font *font)
 
 	if (font->t3resources)
 	{
-		font->t3freeres(font->t3doc, font->t3resources);
+		font->t3freeres(ctx, font->t3doc, font->t3resources);
 		font->t3resources = NULL;
 	}
 
@@ -1063,9 +1063,9 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 			FZ_DEVFLAG_LINEJOIN_UNDEFINED |
 			FZ_DEVFLAG_MITERLIMIT_UNDEFINED |
 			FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
-	font->t3run(font->t3doc, font->t3resources, contents, dev, &fz_identity, NULL, 0);
+	font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, &fz_identity, NULL, 0);
 	font->t3flags[gid] = dev->flags;
-	fz_drop_device(dev);
+	fz_drop_device(ctx, dev);
 }
 
 static fz_rect *
@@ -1087,11 +1087,11 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm,
 	dev = fz_new_bbox_device(ctx, bounds);
 	fz_try(ctx)
 	{
-		fz_run_display_list(list, dev, &ctm, &fz_infinite_rect, NULL);
+		fz_run_display_list(ctx, list, dev, &ctm, &fz_infinite_rect, NULL);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_device(dev);
+		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
 	{
@@ -1117,7 +1117,7 @@ fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, f
 		return;
 
 	fz_concat(&ctm, &font->t3matrix, trm);
-	fz_run_display_list(list, dev, &ctm, &fz_infinite_rect, NULL);
+	fz_run_display_list(ctx, list, dev, &ctm, &fz_infinite_rect, NULL);
 }
 
 fz_pixmap *
@@ -1168,7 +1168,7 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 	}
 	fz_always(ctx)
 	{
-		fz_drop_device(dev);
+		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
 	{
@@ -1230,7 +1230,7 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 	}
 
 	fz_concat(&ctm, &font->t3matrix, trm);
-	font->t3run(font->t3doc, font->t3resources, contents, dev, &ctm, gstate, nested_depth);
+	font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, &ctm, gstate, nested_depth);
 }
 
 #ifndef NDEBUG

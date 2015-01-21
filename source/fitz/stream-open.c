@@ -1,20 +1,7 @@
 #include "mupdf/fitz.h"
 
-void fz_rebind_stream(fz_stream *stm, fz_context *ctx)
-{
-	if (stm == NULL || stm->ctx == ctx)
-		return;
-	do {
-		stm->ctx = ctx;
-		stm = (stm->rebind == NULL ? NULL : stm->rebind(stm));
-	} while (stm != NULL);
-}
-
 fz_stream *
-fz_new_stream(fz_context *ctx, void *state,
-	fz_stream_next_fn *next,
-	fz_stream_close_fn *close,
-	fz_stream_rebind_fn *rebind)
+fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_close_fn *close)
 {
 	fz_stream *stm;
 
@@ -43,14 +30,12 @@ fz_new_stream(fz_context *ctx, void *state,
 	stm->next = next;
 	stm->close = close;
 	stm->seek = NULL;
-	stm->rebind = rebind;
-	stm->ctx = ctx;
 
 	return stm;
 }
 
 fz_stream *
-fz_keep_stream(fz_stream *stm)
+fz_keep_stream(fz_context *ctx, fz_stream *stm)
 {
 	if (stm)
 		stm->refs ++;
@@ -58,7 +43,7 @@ fz_keep_stream(fz_stream *stm)
 }
 
 void
-fz_drop_stream(fz_stream *stm)
+fz_drop_stream(fz_context *ctx, fz_stream *stm)
 {
 	if (!stm)
 		return;
@@ -66,8 +51,8 @@ fz_drop_stream(fz_stream *stm)
 	if (stm->refs == 0)
 	{
 		if (stm->close)
-			stm->close(stm->ctx, stm->state);
-		fz_free(stm->ctx, stm);
+			stm->close(ctx, stm->state);
+		fz_free(ctx, stm);
 	}
 }
 
@@ -79,14 +64,14 @@ typedef struct fz_file_stream_s
 	unsigned char buffer[4096];
 } fz_file_stream;
 
-static int next_file(fz_stream *stm, int n)
+static int next_file(fz_context *ctx, fz_stream *stm, int n)
 {
 	fz_file_stream *state = stm->state;
 
 	/* n is only a hint, that we can safely ignore */
 	n = read(state->file, state->buffer, sizeof(state->buffer));
 	if (n < 0)
-		fz_throw(stm->ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = state->buffer;
 	stm->wp = state->buffer + n;
 	stm->pos += n;
@@ -96,12 +81,12 @@ static int next_file(fz_stream *stm, int n)
 	return *stm->rp++;
 }
 
-static void seek_file(fz_stream *stm, int offset, int whence)
+static void seek_file(fz_context *ctx, fz_stream *stm, int offset, int whence)
 {
 	fz_file_stream *state = stm->state;
 	int n = lseek(state->file, offset, whence);
 	if (n < 0)
-		fz_throw(stm->ctx, FZ_ERROR_GENERIC, "cannot lseek: %s", strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot lseek: %s", strerror(errno));
 	stm->pos = n;
 	stm->rp = state->buffer;
 	stm->wp = state->buffer;
@@ -125,7 +110,7 @@ fz_open_fd(fz_context *ctx, int fd)
 
 	fz_try(ctx)
 	{
-		stm = fz_new_stream(ctx, state, next_file, close_file, NULL);
+		stm = fz_new_stream(ctx, state, next_file, close_file);
 	}
 	fz_catch(ctx)
 	{
@@ -173,12 +158,12 @@ fz_open_file_w(fz_context *ctx, const wchar_t *name)
 
 /* Memory stream */
 
-static int next_buffer(fz_stream *stm, int max)
+static int next_buffer(fz_context *ctx, fz_stream *stm, int max)
 {
 	return EOF;
 }
 
-static void seek_buffer(fz_stream *stm, int offset, int whence)
+static void seek_buffer(fz_context *ctx, fz_stream *stm, int offset, int whence)
 {
 	int pos = stm->pos - (stm->wp - stm->rp);
 	/* Convert to absolute pos */
@@ -211,7 +196,7 @@ fz_open_buffer(fz_context *ctx, fz_buffer *buf)
 	fz_stream *stm;
 
 	fz_keep_buffer(ctx, buf);
-	stm = fz_new_stream(ctx, buf, next_buffer, close_buffer, NULL);
+	stm = fz_new_stream(ctx, buf, next_buffer, close_buffer);
 	stm->seek = seek_buffer;
 
 	stm->rp = buf->data;
@@ -227,7 +212,7 @@ fz_open_memory(fz_context *ctx, unsigned char *data, int len)
 {
 	fz_stream *stm;
 
-	stm = fz_new_stream(ctx, NULL, next_buffer, close_buffer, NULL);
+	stm = fz_new_stream(ctx, NULL, next_buffer, close_buffer);
 	stm->seek = seek_buffer;
 
 	stm->rp = data;

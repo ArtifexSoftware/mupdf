@@ -361,7 +361,7 @@ fz_test_buffer_write(fz_context *ctx)
 			k = (rand() & 31)+1;
 			if (k > j)
 				k = j;
-			fz_write_buffer_bits(ctx, copy, fz_read_bits(stm, k), k);
+			fz_write_buffer_bits(ctx, copy, fz_read_bits(ctx, stm, k), k);
 			j -= k;
 		}
 		while (j);

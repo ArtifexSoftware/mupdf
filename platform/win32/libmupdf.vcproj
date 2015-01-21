@@ -337,6 +337,14 @@
 				RelativePath="..\..\source\cbz\mucbz.c"
 				>
 			</File>
+			<File
+				RelativePath="..\..\source\cbz\muimg.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\cbz\mutiff.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="xps"
@@ -723,14 +731,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="img"
-			>
-			<File
-				RelativePath="..\..\source\img\muimage.c"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="pdf"
 			>
 			<File
@@ -938,15 +938,7 @@
 			Name="!include"
 			>
 			<File
-				RelativePath="..\..\include\mupdf\cbz.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\include\mupdf\fitz.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\include\mupdf\img.h"
 				>
 			</File>
 			<File
@@ -1201,14 +1193,6 @@
 					>
 				</File>
 			</Filter>
-		</Filter>
-		<Filter
-			Name="tiff"
-			>
-			<File
-				RelativePath="..\..\source\tiff\mutiff.c"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -107,7 +107,7 @@ static void
 run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, const fz_matrix *transform);
 
 static int
-ocg_intents_include(pdf_ocg_descriptor *desc, char *name)
+ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, char *name)
 {
 	int i, len;
 
@@ -118,20 +118,20 @@ ocg_intents_include(pdf_ocg_descriptor *desc, char *name)
 	if (!desc->intent)
 		return (strcmp(name, "View") == 0);
 
-	if (pdf_is_name(desc->intent))
+	if (pdf_is_name(ctx, desc->intent))
 	{
-		char *intent = pdf_to_name(desc->intent);
+		char *intent = pdf_to_name(ctx, desc->intent);
 		if (strcmp(intent, "All") == 0)
 			return 1;
 		return (strcmp(intent, name) == 0);
 	}
-	if (!pdf_is_array(desc->intent))
+	if (!pdf_is_array(ctx, desc->intent))
 		return 0;
 
-	len = pdf_array_len(desc->intent);
+	len = pdf_array_len(ctx, desc->intent);
 	for (i=0; i < len; i++)
 	{
-		char *intent = pdf_to_name(pdf_array_get(desc->intent, i));
+		char *intent = pdf_to_name(ctx, pdf_array_get(ctx, desc->intent, i));
 		if (strcmp(intent, "All") == 0)
 			return 1;
 		if (strcmp(intent, name) == 0)
@@ -147,10 +147,10 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 	pdf_obj *obj, *obj2;
 	char *type;
 	pdf_ocg_descriptor *desc = csi->doc->ocg;
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 
 	/* Avoid infinite recursions */
-	if (pdf_obj_marked(ocg))
+	if (pdf_obj_marked(ctx, ocg))
 		return 0;
 
 	/* If no ocg descriptor, everything is visible */
@@ -158,9 +158,9 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 		return 0;
 
 	/* If we've been handed a name, look it up in the properties. */
-	if (pdf_is_name(ocg))
+	if (pdf_is_name(ctx, ocg))
 	{
-		ocg = pdf_dict_gets(pdf_dict_gets(rdb, "Properties"), pdf_to_name(ocg));
+		ocg = pdf_dict_gets(ctx, pdf_dict_gets(ctx, rdb, "Properties"), pdf_to_name(ctx, ocg));
 	}
 	/* If we haven't been given an ocg at all, then we're visible */
 	if (!ocg)
@@ -169,14 +169,14 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 	fz_strlcpy(event_state, pr->event, sizeof event_state);
 	fz_strlcat(event_state, "State", sizeof event_state);
 
-	type = pdf_to_name(pdf_dict_gets(ocg, "Type"));
+	type = pdf_to_name(ctx, pdf_dict_gets(ctx, ocg, "Type"));
 
 	if (strcmp(type, "OCG") == 0)
 	{
 		/* An Optional Content Group */
 		int default_value = 0;
-		int num = pdf_to_num(ocg);
-		int gen = pdf_to_gen(ocg);
+		int num = pdf_to_num(ctx, ocg);
+		int gen = pdf_to_gen(ctx, ocg);
 		int len = desc->len;
 		int i;
 
@@ -192,19 +192,19 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 
 		/* Check Intents; if our intent is not part of the set given
 		 * by the current config, we should ignore it. */
-		obj = pdf_dict_gets(ocg, "Intent");
-		if (pdf_is_name(obj))
+		obj = pdf_dict_gets(ctx, ocg, "Intent");
+		if (pdf_is_name(ctx, obj))
 		{
 			/* If it doesn't match, it's hidden */
-			if (ocg_intents_include(desc, pdf_to_name(obj)) == 0)
+			if (ocg_intents_include(ctx, desc, pdf_to_name(ctx, obj)) == 0)
 				return 1;
 		}
-		else if (pdf_is_array(obj))
+		else if (pdf_is_array(ctx, obj))
 		{
 			int match = 0;
-			len = pdf_array_len(obj);
+			len = pdf_array_len(ctx, obj);
 			for (i=0; i<len; i++) {
-				match |= ocg_intents_include(desc, pdf_to_name(pdf_array_get(obj, i)));
+				match |= ocg_intents_include(ctx, desc, pdf_to_name(ctx, pdf_array_get(ctx, obj, i)));
 				if (match)
 					break;
 			}
@@ -215,7 +215,7 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 		else
 		{
 			/* If it doesn't match, it's hidden */
-			if (ocg_intents_include(desc, "View") == 0)
+			if (ocg_intents_include(ctx, desc, "View") == 0)
 				return 1;
 		}
 
@@ -228,19 +228,19 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 		 * correspond to entries in the AS list in the OCG config.
 		 * Given that we don't handle Zoom or User, or Language
 		 * dicts, this is not really a problem. */
-		obj = pdf_dict_gets(ocg, "Usage");
-		if (!pdf_is_dict(obj))
+		obj = pdf_dict_gets(ctx, ocg, "Usage");
+		if (!pdf_is_dict(ctx, obj))
 			return default_value;
 		/* FIXME: Should look at Zoom (and return hidden if out of
 		 * max/min range) */
 		/* FIXME: Could provide hooks to the caller to check if
 		 * User is appropriate - if not return hidden. */
-		obj2 = pdf_dict_gets(obj, pr->event);
-		if (strcmp(pdf_to_name(pdf_dict_gets(obj2, event_state)), "OFF") == 0)
+		obj2 = pdf_dict_gets(ctx, obj, pr->event);
+		if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, obj2, event_state)), "OFF") == 0)
 		{
 			return 1;
 		}
-		if (strcmp(pdf_to_name(pdf_dict_gets(obj2, event_state)), "ON") == 0)
+		if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, obj2, event_state)), "ON") == 0)
 		{
 			return 0;
 		}
@@ -252,12 +252,12 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 		char *name;
 		int combine, on;
 
-		obj = pdf_dict_gets(ocg, "VE");
-		if (pdf_is_array(obj)) {
+		obj = pdf_dict_gets(ctx, ocg, "VE");
+		if (pdf_is_array(ctx, obj)) {
 			/* FIXME: Calculate visibility from array */
 			return 0;
 		}
-		name = pdf_to_name(pdf_dict_gets(ocg, "P"));
+		name = pdf_to_name(ctx, pdf_dict_gets(ctx, ocg, "P"));
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
 		 * Off, otherwise true means On */
 		if (strcmp(name, "AllOn") == 0)
@@ -277,19 +277,19 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 			combine = 0;
 		}
 
-		if (pdf_mark_obj(ocg))
+		if (pdf_mark_obj(ctx, ocg))
 			return 0; /* Should never happen */
 		fz_try(ctx)
 		{
-			obj = pdf_dict_gets(ocg, "OCGs");
+			obj = pdf_dict_gets(ctx, ocg, "OCGs");
 			on = combine & 1;
-			if (pdf_is_array(obj)) {
+			if (pdf_is_array(ctx, obj)) {
 				int i, len;
-				len = pdf_array_len(obj);
+				len = pdf_array_len(ctx, obj);
 				for (i = 0; i < len; i++)
 				{
 					int hidden;
-					hidden = pdf_is_hidden_ocg(pdf_array_get(obj, i), csi, pr, rdb);
+					hidden = pdf_is_hidden_ocg(pdf_array_get(ctx, obj, i), csi, pr, rdb);
 					if ((combine & 1) == 0)
 						hidden = !hidden;
 					if (combine & 2)
@@ -307,7 +307,7 @@ pdf_is_hidden_ocg(pdf_obj *ocg, pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb)
 		}
 		fz_always(ctx)
 		{
-			pdf_unmark_obj(ocg);
+			pdf_unmark_obj(ctx, ocg);
 		}
 		fz_catch(ctx)
 		{
@@ -349,7 +349,7 @@ begin_softmask(pdf_csi *csi, pdf_run_state *pr, softmask_save *save)
 	gstate->softmask = NULL;
 	gstate->ctm = gstate->softmask_ctm;
 
-	fz_begin_mask(pr->dev, &mask_bbox, gstate->luminosity,
+	fz_begin_mask(ctx, pr->dev, &mask_bbox, gstate->luminosity,
 			softmask->colorspace, gstate->softmask_bc);
 	fz_try(ctx)
 	{
@@ -364,7 +364,7 @@ begin_softmask(pdf_csi *csi, pdf_run_state *pr, softmask_save *save)
 			csi->cookie->errors++;
 	}
 
-	fz_end_mask(pr->dev);
+	fz_end_mask(ctx, pr->dev);
 
 	pr->tm = save_tm;
 	pr->tlm = save_tlm;
@@ -378,6 +378,7 @@ begin_softmask(pdf_csi *csi, pdf_run_state *pr, softmask_save *save)
 static void
 end_softmask(pdf_csi *csi, pdf_run_state *pr, softmask_save *save)
 {
+	fz_context *ctx = pr->ctx;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 
 	if (save->softmask == NULL)
@@ -385,7 +386,7 @@ end_softmask(pdf_csi *csi, pdf_run_state *pr, softmask_save *save)
 
 	gstate->softmask = save->softmask;
 	gstate->softmask_ctm = save->ctm;
-	fz_pop_clip(pr->dev);
+	fz_pop_clip(ctx, pr->dev);
 }
 
 static pdf_gstate *
@@ -394,7 +395,7 @@ pdf_begin_group(pdf_csi *csi, pdf_run_state *pr, const fz_rect *bbox, softmask_s
 	pdf_gstate *gstate = begin_softmask(csi, pr, softmask);
 
 	if (gstate->blendmode)
-		fz_begin_group(pr->dev, bbox, 1, 0, gstate->blendmode, 1);
+		fz_begin_group(pr->ctx, pr->dev, bbox, 1, 0, gstate->blendmode, 1);
 
 	return pr->gstate + pr->gtop;
 }
@@ -405,7 +406,7 @@ pdf_end_group(pdf_csi *csi, pdf_run_state *pr, softmask_save *softmask)
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 
 	if (gstate->blendmode)
-		fz_end_group(pr->dev);
+		fz_end_group(pr->ctx, pr->dev);
 
 	end_softmask(csi, pr, softmask);
 }
@@ -427,7 +428,7 @@ pdf_show_shade(pdf_csi *csi, pdf_run_state *pr, fz_shade *shd)
 
 	/* FIXME: The gstate->ctm in the next line may be wrong; maybe
 	 * it should be the parent gstates ctm? */
-	fz_fill_shade(pr->dev, shd, &gstate->ctm, gstate->fill.alpha);
+	fz_fill_shade(ctx, pr->dev, shd, &gstate->ctm, gstate->fill.alpha);
 
 	pdf_end_group(csi, pr, &softmask);
 }
@@ -549,7 +550,7 @@ pdf_grestore(pdf_run_state *pr)
 	{
 		fz_try(ctx)
 		{
-			fz_pop_clip(pr->dev);
+			fz_pop_clip(ctx, pr->dev);
 		}
 		fz_catch(ctx)
 		{
@@ -649,14 +650,14 @@ pdf_show_pattern(pdf_csi *csi, pdf_run_state *pr, pdf_pattern *pat, pdf_gstate *
 		if (0)
 #endif
 		{
-			fz_begin_tile(pr->dev, &local_area, &pat->bbox, pat->xstep, pat->ystep, &ptm);
+			fz_begin_tile(ctx, pr->dev, &local_area, &pat->bbox, pat->xstep, pat->ystep, &ptm);
 			gstate->ctm = ptm;
 			pdf_gsave(pr);
 			pdf_process_contents_object(csi, pat->resources, pat->contents);
 			pdf_grestore(pr);
 			while (oldtop < pr->gtop)
 				pdf_grestore(pr);
-			fz_end_tile(pr->dev);
+			fz_end_tile(ctx, pr->dev);
 		}
 		else
 		{
@@ -720,6 +721,7 @@ pdf_show_pattern(pdf_csi *csi, pdf_run_state *pr, pdf_pattern *pat, pdf_gstate *
 static void
 pdf_show_image(pdf_csi *csi, pdf_run_state *pr, fz_image *image)
 {
+	fz_context *ctx = pr->ctx;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	fz_matrix image_ctm;
 	fz_rect bbox;
@@ -739,8 +741,8 @@ pdf_show_image(pdf_csi *csi, pdf_run_state *pr, fz_image *image)
 	{
 		/* apply blend group even though we skip the soft mask */
 		if (gstate->blendmode)
-			fz_begin_group(pr->dev, &bbox, 0, 0, gstate->blendmode, 1);
-		fz_clip_image_mask(pr->dev, image->mask, &bbox, &image_ctm);
+			fz_begin_group(ctx, pr->dev, &bbox, 0, 0, gstate->blendmode, 1);
+		fz_clip_image_mask(ctx, pr->dev, image->mask, &bbox, &image_ctm);
 	}
 	else
 		gstate = pdf_begin_group(csi, pr, &bbox, &softmask);
@@ -753,37 +755,37 @@ pdf_show_image(pdf_csi *csi, pdf_run_state *pr, fz_image *image)
 		case PDF_MAT_NONE:
 			break;
 		case PDF_MAT_COLOR:
-			fz_fill_image_mask(pr->dev, image, &image_ctm,
+			fz_fill_image_mask(ctx, pr->dev, image, &image_ctm,
 				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 			break;
 		case PDF_MAT_PATTERN:
 			if (gstate->fill.pattern)
 			{
-				fz_clip_image_mask(pr->dev, image, &bbox, &image_ctm);
+				fz_clip_image_mask(ctx, pr->dev, image, &bbox, &image_ctm);
 				pdf_show_pattern(csi, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], &bbox, PDF_FILL);
-				fz_pop_clip(pr->dev);
+				fz_pop_clip(ctx, pr->dev);
 			}
 			break;
 		case PDF_MAT_SHADE:
 			if (gstate->fill.shade)
 			{
-				fz_clip_image_mask(pr->dev, image, &bbox, &image_ctm);
-				fz_fill_shade(pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
-				fz_pop_clip(pr->dev);
+				fz_clip_image_mask(ctx, pr->dev, image, &bbox, &image_ctm);
+				fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
+				fz_pop_clip(ctx, pr->dev);
 			}
 			break;
 		}
 	}
 	else
 	{
-		fz_fill_image(pr->dev, image, &image_ctm, gstate->fill.alpha);
+		fz_fill_image(ctx, pr->dev, image, &image_ctm, gstate->fill.alpha);
 	}
 
 	if (image->mask)
 	{
-		fz_pop_clip(pr->dev);
+		fz_pop_clip(ctx, pr->dev);
 		if (gstate->blendmode)
-			fz_end_group(pr->dev);
+			fz_end_group(ctx, pr->dev);
 	}
 	else
 		pdf_end_group(csi, pr, &softmask);
@@ -825,7 +827,7 @@ pdf_show_path(pdf_csi *csi, pdf_run_state *pr, int doclose, int dofill, int dost
 		if (pr->clip)
 		{
 			gstate->clip_depth++;
-			fz_clip_path(pr->dev, path, &bbox, pr->clip_even_odd, &gstate->ctm);
+			fz_clip_path(ctx, pr->dev, path, &bbox, pr->clip_even_odd, &gstate->ctm);
 			pr->clip = 0;
 		}
 
@@ -849,7 +851,7 @@ pdf_show_path(pdf_csi *csi, pdf_run_state *pr, int doclose, int dofill, int dost
 			else
 			{
 				knockout_group = 1;
-				fz_begin_group(pr->dev, &bbox, 0, 1, FZ_BLEND_NORMAL, 1);
+				fz_begin_group(ctx, pr->dev, &bbox, 0, 1, FZ_BLEND_NORMAL, 1);
 			}
 		}
 
@@ -860,24 +862,24 @@ pdf_show_path(pdf_csi *csi, pdf_run_state *pr, int doclose, int dofill, int dost
 			case PDF_MAT_NONE:
 				break;
 			case PDF_MAT_COLOR:
-				fz_fill_path(pr->dev, path, even_odd, &gstate->ctm,
+				fz_fill_path(ctx, pr->dev, path, even_odd, &gstate->ctm,
 					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
 				{
-					fz_clip_path(pr->dev, path, &bbox, even_odd, &gstate->ctm);
+					fz_clip_path(ctx, pr->dev, path, &bbox, even_odd, &gstate->ctm);
 					pdf_show_pattern(csi, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], &bbox, PDF_FILL);
-					fz_pop_clip(pr->dev);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->fill.shade)
 				{
-					fz_clip_path(pr->dev, path, &bbox, even_odd, &gstate->ctm);
+					fz_clip_path(ctx, pr->dev, path, &bbox, even_odd, &gstate->ctm);
 					/* The cluster and page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm. */
-					fz_fill_shade(pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
-					fz_pop_clip(pr->dev);
+					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			}
@@ -890,30 +892,30 @@ pdf_show_path(pdf_csi *csi, pdf_run_state *pr, int doclose, int dofill, int dost
 			case PDF_MAT_NONE:
 				break;
 			case PDF_MAT_COLOR:
-				fz_stroke_path(pr->dev, path, gstate->stroke_state, &gstate->ctm,
+				fz_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm,
 					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
 				{
-					fz_clip_stroke_path(pr->dev, path, &bbox, gstate->stroke_state, &gstate->ctm);
+					fz_clip_stroke_path(ctx, pr->dev, path, &bbox, gstate->stroke_state, &gstate->ctm);
 					pdf_show_pattern(csi, pr, gstate->stroke.pattern, &pr->gstate[gstate->stroke.gstate_num], &bbox, PDF_STROKE);
-					fz_pop_clip(pr->dev);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->stroke.shade)
 				{
-					fz_clip_stroke_path(pr->dev, path, &bbox, gstate->stroke_state, &gstate->ctm);
-					fz_fill_shade(pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha);
-					fz_pop_clip(pr->dev);
+					fz_clip_stroke_path(ctx, pr->dev, path, &bbox, gstate->stroke_state, &gstate->ctm);
+					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			}
 		}
 
 		if (knockout_group)
-			fz_end_group(pr->dev);
+			fz_end_group(ctx, pr->dev);
 
 		if (dofill || dostroke)
 			pdf_end_group(csi, pr, &softmask);
@@ -978,7 +980,7 @@ pdf_flush_text(pdf_csi *csi, pdf_run_state *pr)
 		gstate = pdf_begin_group(csi, pr, &tb, &softmask);
 
 		if (doinvisible)
-			fz_ignore_text(pr->dev, text, &gstate->ctm);
+			fz_ignore_text(ctx, pr->dev, text, &gstate->ctm);
 
 		if (dofill)
 		{
@@ -987,24 +989,24 @@ pdf_flush_text(pdf_csi *csi, pdf_run_state *pr)
 			case PDF_MAT_NONE:
 				break;
 			case PDF_MAT_COLOR:
-				fz_fill_text(pr->dev, text, &gstate->ctm,
+				fz_fill_text(ctx, pr->dev, text, &gstate->ctm,
 					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
 				{
-					fz_clip_text(pr->dev, text, &gstate->ctm, 0);
+					fz_clip_text(ctx, pr->dev, text, &gstate->ctm, 0);
 					pdf_show_pattern(csi, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], &tb, PDF_FILL);
-					fz_pop_clip(pr->dev);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->fill.shade)
 				{
-					fz_clip_text(pr->dev, text, &gstate->ctm, 0);
+					fz_clip_text(ctx, pr->dev, text, &gstate->ctm, 0);
 					/* Page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm */
-					fz_fill_shade(pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
-					fz_pop_clip(pr->dev);
+					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			}
@@ -1017,23 +1019,23 @@ pdf_flush_text(pdf_csi *csi, pdf_run_state *pr)
 			case PDF_MAT_NONE:
 				break;
 			case PDF_MAT_COLOR:
-				fz_stroke_text(pr->dev, text, gstate->stroke_state, &gstate->ctm,
+				fz_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm,
 					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
 				{
-					fz_clip_stroke_text(pr->dev, text, gstate->stroke_state, &gstate->ctm);
+					fz_clip_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm);
 					pdf_show_pattern(csi, pr, gstate->stroke.pattern, &pr->gstate[gstate->stroke.gstate_num], &tb, PDF_STROKE);
-					fz_pop_clip(pr->dev);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			case PDF_MAT_SHADE:
 				if (gstate->stroke.shade)
 				{
-					fz_clip_stroke_text(pr->dev, text, gstate->stroke_state, &gstate->ctm);
-					fz_fill_shade(pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha);
-					fz_pop_clip(pr->dev);
+					fz_clip_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm);
+					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha);
+					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
 			}
@@ -1043,7 +1045,7 @@ pdf_flush_text(pdf_csi *csi, pdf_run_state *pr)
 		{
 			if (pr->accumulate < 2)
 				gstate->clip_depth++;
-			fz_clip_text(pr->dev, text, &gstate->ctm, pr->accumulate);
+			fz_clip_text(ctx, pr->dev, text, &gstate->ctm, pr->accumulate);
 			pr->accumulate = 2;
 		}
 
@@ -1231,24 +1233,25 @@ pdf_show_string(pdf_csi *csi, pdf_run_state *pr, unsigned char *buf, int len)
 static void
 pdf_show_text(pdf_csi *csi, pdf_run_state *pr, pdf_obj *text)
 {
+	fz_context *ctx = csi->ctx;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	int i;
 
-	if (pdf_is_array(text))
+	if (pdf_is_array(ctx, text))
 	{
-		int n = pdf_array_len(text);
+		int n = pdf_array_len(ctx, text);
 		for (i = 0; i < n; i++)
 		{
-			pdf_obj *item = pdf_array_get(text, i);
-			if (pdf_is_string(item))
-				pdf_show_string(csi, pr, (unsigned char *)pdf_to_str_buf(item), pdf_to_str_len(item));
+			pdf_obj *item = pdf_array_get(ctx, text, i);
+			if (pdf_is_string(ctx, item))
+				pdf_show_string(csi, pr, (unsigned char *)pdf_to_str_buf(ctx, item), pdf_to_str_len(ctx, item));
 			else
-				pdf_show_space(pr, - pdf_to_real(item) * gstate->size * 0.001f);
+				pdf_show_space(pr, - pdf_to_real(ctx, item) * gstate->size * 0.001f);
 		}
 	}
-	else if (pdf_is_string(text))
+	else if (pdf_is_string(ctx, text))
 	{
-		pdf_show_string(csi, pr, (unsigned char *)pdf_to_str_buf(text), pdf_to_str_len(text));
+		pdf_show_string(csi, pr, (unsigned char *)pdf_to_str_buf(ctx, text), pdf_to_str_len(ctx, text));
 	}
 }
 
@@ -1328,7 +1331,7 @@ pdf_set_colorspace(pdf_csi *csi, pdf_run_state *pr, int what, fz_colorspace *col
 	mat->v[2] = 0;
 	mat->v[3] = 1;
 
-	if (pdf_is_tint_colorspace(colorspace))
+	if (pdf_is_tint_colorspace(ctx, colorspace))
 	{
 		int i;
 		for (i = 0; i < colorspace->n; i++)
@@ -1352,7 +1355,7 @@ pdf_set_color(pdf_csi *csi, pdf_run_state *pr, int what, float *v)
 	{
 	case PDF_MAT_PATTERN:
 	case PDF_MAT_COLOR:
-		if (fz_colorspace_is_indexed(mat->colorspace))
+		if (fz_colorspace_is_indexed(ctx, mat->colorspace))
 		{
 			mat->v[0] = v[0] / 255;
 			break;
@@ -1411,13 +1414,13 @@ pdf_set_pattern(pdf_csi *csi, pdf_run_state *pr, int what, pdf_pattern *pat, flo
 static pdf_font_desc *
 load_font_or_hail_mary(pdf_csi *csi, pdf_obj *rdb, pdf_obj *font, int depth)
 {
+	fz_context *ctx = csi->ctx;
 	pdf_document *doc = csi->doc;
-	fz_context *ctx = doc->ctx;
 	pdf_font_desc *desc;
 
 	fz_try(ctx)
 	{
-		desc = pdf_load_font(doc, rdb, font, depth);
+		desc = pdf_load_font(ctx, doc, rdb, font, depth);
 	}
 	fz_catch(ctx)
 	{
@@ -1429,7 +1432,7 @@ load_font_or_hail_mary(pdf_csi *csi, pdf_obj *rdb, pdf_obj *font, int depth)
 		csi->cookie->incomplete++;
 	}
 	if (desc == NULL)
-		desc = pdf_load_hail_mary_font(doc);
+		desc = pdf_load_hail_mary_font(ctx, doc);
 	return desc;
 }
 
@@ -1443,18 +1446,18 @@ pdf_run_extgstate(pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb, pdf_obj *extgst
 
 	gstate = pdf_flush_text(csi, pr);
 
-	n = pdf_dict_len(extgstate);
+	n = pdf_dict_len(ctx, extgstate);
 	for (i = 0; i < n; i++)
 	{
-		pdf_obj *key = pdf_dict_get_key(extgstate, i);
-		pdf_obj *val = pdf_dict_get_val(extgstate, i);
-		char *s = pdf_to_name(key);
+		pdf_obj *key = pdf_dict_get_key(ctx, extgstate, i);
+		pdf_obj *val = pdf_dict_get_val(ctx, extgstate, i);
+		char *s = pdf_to_name(ctx, key);
 
 		if (!strcmp(s, "Font"))
 		{
-			if (pdf_is_array(val) && pdf_array_len(val) == 2)
+			if (pdf_is_array(ctx, val) && pdf_array_len(ctx, val) == 2)
 			{
-				pdf_obj *font = pdf_array_get(val, 0);
+				pdf_obj *font = pdf_array_get(ctx, val, 0);
 
 				if (gstate->font)
 				{
@@ -1465,7 +1468,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb, pdf_obj *extgst
 				gstate->font = load_font_or_hail_mary(csi, rdb, font, pr->nested_depth);
 				if (!gstate->font)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find font in store");
-				gstate->size = pdf_to_real(pdf_array_get(val, 1));
+				gstate->size = pdf_to_real(ctx, pdf_array_get(ctx, val, 1));
 			}
 			else
 				fz_throw(ctx, FZ_ERROR_GENERIC, "malformed /Font dictionary");
@@ -1475,61 +1478,61 @@ pdf_run_extgstate(pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb, pdf_obj *extgst
 		{
 			pr->dev->flags &= ~(FZ_DEVFLAG_STARTCAP_UNDEFINED | FZ_DEVFLAG_DASHCAP_UNDEFINED | FZ_DEVFLAG_ENDCAP_UNDEFINED);
 			gstate->stroke_state = fz_unshare_stroke_state(ctx, gstate->stroke_state);
-			gstate->stroke_state->start_cap = pdf_to_int(val);
-			gstate->stroke_state->dash_cap = pdf_to_int(val);
-			gstate->stroke_state->end_cap = pdf_to_int(val);
+			gstate->stroke_state->start_cap = pdf_to_int(ctx, val);
+			gstate->stroke_state->dash_cap = pdf_to_int(ctx, val);
+			gstate->stroke_state->end_cap = pdf_to_int(ctx, val);
 		}
 		else if (!strcmp(s, "LW"))
 		{
 			pr->dev->flags &= ~FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
 			gstate->stroke_state = fz_unshare_stroke_state(ctx, gstate->stroke_state);
-			gstate->stroke_state->linewidth = pdf_to_real(val);
+			gstate->stroke_state->linewidth = pdf_to_real(ctx, val);
 		}
 		else if (!strcmp(s, "LJ"))
 		{
 			pr->dev->flags &= ~FZ_DEVFLAG_LINEJOIN_UNDEFINED;
 			gstate->stroke_state = fz_unshare_stroke_state(ctx, gstate->stroke_state);
-			gstate->stroke_state->linejoin = pdf_to_int(val);
+			gstate->stroke_state->linejoin = pdf_to_int(ctx, val);
 		}
 		else if (!strcmp(s, "ML"))
 		{
 			pr->dev->flags &= ~FZ_DEVFLAG_MITERLIMIT_UNDEFINED;
 			gstate->stroke_state = fz_unshare_stroke_state(ctx, gstate->stroke_state);
-			gstate->stroke_state->miterlimit = pdf_to_real(val);
+			gstate->stroke_state->miterlimit = pdf_to_real(ctx, val);
 		}
 
 		else if (!strcmp(s, "D"))
 		{
-			if (pdf_is_array(val) && pdf_array_len(val) == 2)
+			if (pdf_is_array(ctx, val) && pdf_array_len(ctx, val) == 2)
 			{
-				pdf_obj *dashes = pdf_array_get(val, 0);
-				int len = pdf_array_len(dashes);
+				pdf_obj *dashes = pdf_array_get(ctx, val, 0);
+				int len = pdf_array_len(ctx, dashes);
 				gstate->stroke_state = fz_unshare_stroke_state_with_dash_len(ctx, gstate->stroke_state, len);
 				gstate->stroke_state->dash_len = len;
 				for (k = 0; k < len; k++)
-					gstate->stroke_state->dash_list[k] = pdf_to_real(pdf_array_get(dashes, k));
-				gstate->stroke_state->dash_phase = pdf_to_real(pdf_array_get(val, 1));
+					gstate->stroke_state->dash_list[k] = pdf_to_real(ctx, pdf_array_get(ctx, dashes, k));
+				gstate->stroke_state->dash_phase = pdf_to_real(ctx, pdf_array_get(ctx, val, 1));
 			}
 			else
 				fz_throw(ctx, FZ_ERROR_GENERIC, "malformed /D");
 		}
 
 		else if (!strcmp(s, "CA"))
-			gstate->stroke.alpha = fz_clamp(pdf_to_real(val), 0, 1);
+			gstate->stroke.alpha = fz_clamp(pdf_to_real(ctx, val), 0, 1);
 
 		else if (!strcmp(s, "ca"))
-			gstate->fill.alpha = fz_clamp(pdf_to_real(val), 0, 1);
+			gstate->fill.alpha = fz_clamp(pdf_to_real(ctx, val), 0, 1);
 
 		else if (!strcmp(s, "BM"))
 		{
-			if (pdf_is_array(val))
-				val = pdf_array_get(val, 0);
-			gstate->blendmode = fz_lookup_blendmode(pdf_to_name(val));
+			if (pdf_is_array(ctx, val))
+				val = pdf_array_get(ctx, val, 0);
+			gstate->blendmode = fz_lookup_blendmode(pdf_to_name(ctx, val));
 		}
 
 		else if (!strcmp(s, "SMask"))
 		{
-			if (pdf_is_dict(val))
+			if (pdf_is_dict(ctx, val))
 			{
 				pdf_xobject *xobj;
 				pdf_obj *group, *luminosity, *bc, *tr;
@@ -1540,10 +1543,10 @@ pdf_run_extgstate(pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb, pdf_obj *extgst
 					gstate->softmask = NULL;
 				}
 
-				group = pdf_dict_gets(val, "G");
+				group = pdf_dict_gets(ctx, val, "G");
 				if (!group)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load softmask xobject (%d %d R)", pdf_to_num(val), pdf_to_gen(val));
-				xobj = pdf_load_xobject(csi->doc, group);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load softmask xobject (%d %d R)", pdf_to_num(ctx, val), pdf_to_gen(ctx, val));
+				xobj = pdf_load_xobject(ctx, csi->doc, group);
 
 				colorspace = xobj->colorspace;
 				if (!colorspace)
@@ -1556,24 +1559,24 @@ pdf_run_extgstate(pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb, pdf_obj *extgst
 				for (k = 0; k < colorspace->n; k++)
 					gstate->softmask_bc[k] = 0;
 
-				bc = pdf_dict_gets(val, "BC");
-				if (pdf_is_array(bc))
+				bc = pdf_dict_gets(ctx, val, "BC");
+				if (pdf_is_array(ctx, bc))
 				{
 					for (k = 0; k < colorspace->n; k++)
-						gstate->softmask_bc[k] = pdf_to_real(pdf_array_get(bc, k));
+						gstate->softmask_bc[k] = pdf_to_real(ctx, pdf_array_get(ctx, bc, k));
 				}
 
-				luminosity = pdf_dict_gets(val, "S");
-				if (pdf_is_name(luminosity) && !strcmp(pdf_to_name(luminosity), "Luminosity"))
+				luminosity = pdf_dict_gets(ctx, val, "S");
+				if (pdf_is_name(ctx, luminosity) && !strcmp(pdf_to_name(ctx, luminosity), "Luminosity"))
 					gstate->luminosity = 1;
 				else
 					gstate->luminosity = 0;
 
-				tr = pdf_dict_gets(val, "TR");
-				if (tr && strcmp(pdf_to_name(tr), "Identity"))
+				tr = pdf_dict_gets(ctx, val, "TR");
+				if (tr && strcmp(pdf_to_name(ctx, tr), "Identity"))
 					fz_warn(ctx, "ignoring transfer function");
 			}
-			else if (pdf_is_name(val) && !strcmp(pdf_to_name(val), "None"))
+			else if (pdf_is_name(ctx, val) && !strcmp(pdf_to_name(ctx, val), "None"))
 			{
 				if (gstate->softmask)
 				{
@@ -1585,15 +1588,15 @@ pdf_run_extgstate(pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb, pdf_obj *extgst
 
 		else if (!strcmp(s, "TR2"))
 		{
-			if (strcmp(pdf_to_name(val), "Identity") && strcmp(pdf_to_name(val), "Default"))
+			if (strcmp(pdf_to_name(ctx, val), "Identity") && strcmp(pdf_to_name(ctx, val), "Default"))
 				fz_warn(ctx, "ignoring transfer function");
 		}
 
 		else if (!strcmp(s, "TR"))
 		{
 			/* TR is ignored in the presence of TR2 */
-			pdf_obj *tr2 = pdf_dict_gets(extgstate, "TR2");
-			if (tr2 && strcmp(pdf_to_name(val), "Identity"))
+			pdf_obj *tr2 = pdf_dict_gets(ctx, extgstate, "TR2");
+			if (tr2 && strcmp(pdf_to_name(ctx, val), "Identity"))
 				fz_warn(ctx, "ignoring transfer function");
 		}
 	}
@@ -1602,7 +1605,7 @@ pdf_run_extgstate(pdf_csi *csi, pdf_run_state *pr, pdf_obj *rdb, pdf_obj *extgst
 static void
 run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, const fz_matrix *transform)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_gstate *gstate = NULL;
 	int oldtop = 0;
 	fz_matrix local_transform = *transform;
@@ -1614,7 +1617,7 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 	char errmess[256] = "";
 
 	/* Avoid infinite recursion */
-	if (xobj == NULL || pdf_mark_obj(xobj->me))
+	if (xobj == NULL || pdf_mark_obj(ctx, xobj->me))
 		return;
 
 	fz_var(cleanup_state);
@@ -1653,7 +1656,7 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 			/* Remember that we tried to call fz_begin_group. Even
 			 * if it throws an error, we must call fz_end_group. */
 			cleanup_state = 2;
-			fz_begin_group(pr->dev, &bbox,
+			fz_begin_group(ctx, pr->dev, &bbox,
 				xobj->isolated, xobj->knockout, gstate->blendmode, gstate->fill.alpha);
 
 			gstate->blendmode = 0;
@@ -1694,7 +1697,7 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 			{
 				fz_try(ctx)
 				{
-					fz_end_group(pr->dev);
+					fz_end_group(ctx, pr->dev);
 				}
 				fz_catch(ctx)
 				{
@@ -1727,7 +1730,7 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 			pdf_grestore(pr);
 		}
 
-		pdf_unmark_obj(xobj->me);
+		pdf_unmark_obj(ctx, xobj->me);
 	}
 	fz_catch(ctx)
 	{
@@ -1741,6 +1744,7 @@ run_xobject(pdf_csi *csi, void *state, pdf_obj *resources, pdf_xobject *xobj, co
 
 static void pdf_run_BDC(pdf_csi *csi, void *state)
 {
+	fz_context *ctx = csi->ctx;
 	pdf_run_state *pr = (pdf_run_state *)state;
 	pdf_obj *ocg;
 	pdf_obj *rdb = csi->rdb;
@@ -1758,9 +1762,9 @@ static void pdf_run_BDC(pdf_csi *csi, void *state)
 		return;
 	}
 
-	if (pdf_is_name(csi->obj))
+	if (pdf_is_name(ctx, csi->obj))
 	{
-		ocg = pdf_dict_gets(pdf_dict_gets(rdb, "Properties"), pdf_to_name(csi->obj));
+		ocg = pdf_dict_gets(ctx, pdf_dict_gets(ctx, rdb, "Properties"), pdf_to_name(ctx, csi->obj));
 	}
 	else
 		ocg = csi->obj;
@@ -1771,7 +1775,7 @@ static void pdf_run_BDC(pdf_csi *csi, void *state)
 		 * means visible. */
 		return;
 	}
-	if (strcmp(pdf_to_name(pdf_dict_gets(ocg, "Type")), "OCG") != 0)
+	if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, ocg, "Type")), "OCG") != 0)
 	{
 		/* Wrong type of property */
 		return;
@@ -1847,13 +1851,13 @@ static void pdf_run_cs_imp(pdf_csi *csi, pdf_run_state *pr, int what)
 			colorspace = fz_device_cmyk(ctx); /* No fz_keep_colorspace as static */
 		else
 		{
-			dict = pdf_dict_gets(rdb, "ColorSpace");
+			dict = pdf_dict_gets(ctx, rdb, "ColorSpace");
 			if (!dict)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ColorSpace dictionary");
-			obj = pdf_dict_gets(dict, csi->name);
+			obj = pdf_dict_gets(ctx, dict, csi->name);
 			if (!obj)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find colorspace resource '%s'", csi->name);
-			colorspace = pdf_load_colorspace(csi->doc, obj);
+			colorspace = pdf_load_colorspace(ctx, csi->doc, obj);
 		}
 
 		pdf_set_colorspace(csi, pr, what, colorspace);
@@ -1887,39 +1891,39 @@ static void pdf_run_DP(pdf_csi *csi, void *state)
 static void pdf_run_Do(pdf_csi *csi, void *state)
 {
 	pdf_run_state *pr = (pdf_run_state *)state;
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_obj *dict;
 	pdf_obj *obj;
 	pdf_obj *subtype;
 	pdf_obj *rdb = csi->rdb;
 
-	dict = pdf_dict_gets(rdb, "XObject");
+	dict = pdf_dict_gets(ctx, rdb, "XObject");
 	if (!dict)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find XObject dictionary when looking for: '%s'", csi->name);
 
-	obj = pdf_dict_gets(dict, csi->name);
+	obj = pdf_dict_gets(ctx, dict, csi->name);
 	if (!obj)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find xobject resource: '%s'", csi->name);
 
-	subtype = pdf_dict_gets(obj, "Subtype");
-	if (!pdf_is_name(subtype))
+	subtype = pdf_dict_gets(ctx, obj, "Subtype");
+	if (!pdf_is_name(ctx, subtype))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no XObject subtype specified");
 
-	if (pdf_is_hidden_ocg(pdf_dict_gets(obj, "OC"), csi, pr, rdb))
+	if (pdf_is_hidden_ocg(pdf_dict_gets(ctx, obj, "OC"), csi, pr, rdb))
 		return;
 
-	if (!strcmp(pdf_to_name(subtype), "Form") && pdf_dict_gets(obj, "Subtype2"))
-		subtype = pdf_dict_gets(obj, "Subtype2");
+	if (!strcmp(pdf_to_name(ctx, subtype), "Form") && pdf_dict_gets(ctx, obj, "Subtype2"))
+		subtype = pdf_dict_gets(ctx, obj, "Subtype2");
 
-	if (!strcmp(pdf_to_name(subtype), "Form"))
+	if (!strcmp(pdf_to_name(ctx, subtype), "Form"))
 	{
 		pdf_xobject *xobj;
 
-		xobj = pdf_load_xobject(csi->doc, obj);
+		xobj = pdf_load_xobject(ctx, csi->doc, obj);
 
 		/* Inherit parent resources, in case this one was empty XXX check where it's loaded */
 		if (!xobj->resources)
-			xobj->resources = pdf_keep_obj(rdb);
+			xobj->resources = pdf_keep_obj(ctx, rdb);
 
 		fz_try(ctx)
 		{
@@ -1931,15 +1935,15 @@ static void pdf_run_Do(pdf_csi *csi, void *state)
 		}
 		fz_catch(ctx)
 		{
-			fz_rethrow_message(ctx, "cannot draw xobject (%d %d R)", pdf_to_num(obj), pdf_to_gen(obj));
+			fz_rethrow_message(ctx, "cannot draw xobject (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
 		}
 	}
 
-	else if (!strcmp(pdf_to_name(subtype), "Image"))
+	else if (!strcmp(pdf_to_name(ctx, subtype), "Image"))
 	{
 		if ((pr->dev->hints & FZ_IGNORE_IMAGE) == 0)
 		{
-			fz_image *img = pdf_load_image(csi->doc, obj);
+			fz_image *img = pdf_load_image(ctx, csi->doc, obj);
 
 			fz_try(ctx)
 			{
@@ -1956,14 +1960,14 @@ static void pdf_run_Do(pdf_csi *csi, void *state)
 		}
 	}
 
-	else if (!strcmp(pdf_to_name(subtype), "PS"))
+	else if (!strcmp(pdf_to_name(ctx, subtype), "PS"))
 	{
 		fz_warn(ctx, "ignoring XObject with subtype PS");
 	}
 
 	else
 	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown XObject subtype: '%s'", pdf_to_name(subtype));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown XObject subtype: '%s'", pdf_to_name(ctx, subtype));
 	}
 }
 
@@ -1999,7 +2003,7 @@ static void pdf_run_G(pdf_csi *csi, void *state)
 	pdf_run_state *pr = (pdf_run_state *)state;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, pr, PDF_STROKE, fz_device_gray(csi->doc->ctx));
+	pdf_set_colorspace(csi, pr, PDF_STROKE, fz_device_gray(csi->ctx));
 	pdf_set_color(csi, pr, PDF_STROKE, csi->stack);
 }
 
@@ -2009,7 +2013,7 @@ static void pdf_run_J(pdf_csi *csi, void *state)
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 
 	pr->dev->flags &= ~(FZ_DEVFLAG_STARTCAP_UNDEFINED | FZ_DEVFLAG_DASHCAP_UNDEFINED | FZ_DEVFLAG_ENDCAP_UNDEFINED);
-	gstate->stroke_state = fz_unshare_stroke_state(csi->doc->ctx, gstate->stroke_state);
+	gstate->stroke_state = fz_unshare_stroke_state(csi->ctx, gstate->stroke_state);
 	gstate->stroke_state->start_cap = csi->stack[0];
 	gstate->stroke_state->dash_cap = csi->stack[0];
 	gstate->stroke_state->end_cap = csi->stack[0];
@@ -2020,7 +2024,7 @@ static void pdf_run_K(pdf_csi *csi, void *state)
 	pdf_run_state *pr = (pdf_run_state *)state;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, pr, PDF_STROKE, fz_device_cmyk(csi->doc->ctx));
+	pdf_set_colorspace(csi, pr, PDF_STROKE, fz_device_cmyk(csi->ctx));
 	pdf_set_color(csi, pr, PDF_STROKE, csi->stack);
 }
 
@@ -2030,7 +2034,7 @@ static void pdf_run_M(pdf_csi *csi, void *state)
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_MITERLIMIT_UNDEFINED;
-	gstate->stroke_state = fz_unshare_stroke_state(csi->doc->ctx, gstate->stroke_state);
+	gstate->stroke_state = fz_unshare_stroke_state(csi->ctx, gstate->stroke_state);
 	gstate->stroke_state->miterlimit = csi->stack[0];
 }
 
@@ -2050,7 +2054,7 @@ static void pdf_run_RG(pdf_csi *csi, void *state)
 	pdf_run_state *pr = (pdf_run_state *)state;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_STROKECOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, pr, PDF_STROKE, fz_device_rgb(csi->doc->ctx));
+	pdf_set_colorspace(csi, pr, PDF_STROKE, fz_device_rgb(csi->ctx));
 	pdf_set_color(csi, pr, PDF_STROKE, csi->stack);
 }
 
@@ -2084,33 +2088,33 @@ static void pdf_run_SC_imp(pdf_csi *csi, pdf_run_state *pr, int what, pdf_materi
 		break;
 
 	case PDF_MAT_PATTERN:
-		dict = pdf_dict_gets(rdb, "Pattern");
+		dict = pdf_dict_gets(ctx, rdb, "Pattern");
 		if (!dict)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Pattern dictionary");
 
-		obj = pdf_dict_gets(dict, csi->name);
+		obj = pdf_dict_gets(ctx, dict, csi->name);
 		if (!obj)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find pattern resource '%s'", csi->name);
 
-		patterntype = pdf_dict_gets(obj, "PatternType");
+		patterntype = pdf_dict_gets(ctx, obj, "PatternType");
 
-		if (pdf_to_int(patterntype) == 1)
+		if (pdf_to_int(ctx, patterntype) == 1)
 		{
 			pdf_pattern *pat;
-			pat = pdf_load_pattern(csi->doc, obj);
+			pat = pdf_load_pattern(ctx, csi->doc, obj);
 			pdf_set_pattern(csi, pr, what, pat, csi->top > 0 ? csi->stack : NULL);
 			pdf_drop_pattern(ctx, pat);
 		}
-		else if (pdf_to_int(patterntype) == 2)
+		else if (pdf_to_int(ctx, patterntype) == 2)
 		{
 			fz_shade *shd;
-			shd = pdf_load_shading(csi->doc, obj);
+			shd = pdf_load_shading(ctx, csi->doc, obj);
 			pdf_set_shade(csi, pr, what, shd);
 			fz_drop_shade(ctx, shd);
 		}
 		else
 		{
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown pattern type: %d", pdf_to_int(patterntype));
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown pattern type: %d", pdf_to_int(ctx, patterntype));
 		}
 		break;
 
@@ -2175,7 +2179,7 @@ static void pdf_run_TL(pdf_csi *csi, void *state)
 static void pdf_run_Tf(pdf_csi *csi, void *state)
 {
 	pdf_run_state *pr = (pdf_run_state *)state;
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_obj *rdb = csi->rdb;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	pdf_obj *dict;
@@ -2186,11 +2190,11 @@ static void pdf_run_Tf(pdf_csi *csi, void *state)
 		pdf_drop_font(ctx, gstate->font);
 	gstate->font = NULL;
 
-	dict = pdf_dict_gets(rdb, "Font");
+	dict = pdf_dict_gets(ctx, rdb, "Font");
 	if (!dict)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Font dictionary");
 
-	obj = pdf_dict_gets(dict, csi->name);
+	obj = pdf_dict_gets(ctx, dict, csi->name);
 	if (!obj)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find font resource: '%s'", csi->name);
 
@@ -2314,7 +2318,7 @@ static void pdf_run_c(pdf_csi *csi, void *state)
 	d = csi->stack[3];
 	e = csi->stack[4];
 	f = csi->stack[5];
-	fz_curveto(csi->doc->ctx, pr->path, a, b, c, d, e, f);
+	fz_curveto(csi->ctx, pr->path, a, b, c, d, e, f);
 }
 
 static void pdf_run_cm(pdf_csi *csi, void *state)
@@ -2336,6 +2340,7 @@ static void pdf_run_cm(pdf_csi *csi, void *state)
 
 static void pdf_run_d(pdf_csi *csi, void *state)
 {
+	fz_context *ctx = csi->ctx;
 	pdf_run_state *pr = (pdf_run_state *)state;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	pdf_obj *array;
@@ -2343,11 +2348,11 @@ static void pdf_run_d(pdf_csi *csi, void *state)
 	int len;
 
 	array = csi->obj;
-	len = pdf_array_len(array);
-	gstate->stroke_state = fz_unshare_stroke_state_with_dash_len(csi->doc->ctx, gstate->stroke_state, len);
+	len = pdf_array_len(ctx, array);
+	gstate->stroke_state = fz_unshare_stroke_state_with_dash_len(csi->ctx, gstate->stroke_state, len);
 	gstate->stroke_state->dash_len = len;
 	for (i = 0; i < len; i++)
-		gstate->stroke_state->dash_list[i] = pdf_to_real(pdf_array_get(array, i));
+		gstate->stroke_state->dash_list[i] = pdf_to_real(ctx, pdf_array_get(ctx, array, i));
 	gstate->stroke_state->dash_phase = csi->stack[0];
 }
 
@@ -2396,7 +2401,7 @@ static void pdf_run_g(pdf_csi *csi, void *state)
 	pdf_run_state *pr = (pdf_run_state *)state;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, pr, PDF_FILL, fz_device_gray(csi->doc->ctx));
+	pdf_set_colorspace(csi, pr, PDF_FILL, fz_device_gray(csi->ctx));
 	pdf_set_color(csi, pr, PDF_FILL, csi->stack);
 }
 
@@ -2405,14 +2410,14 @@ static void pdf_run_gs(pdf_csi *csi, void *state)
 	pdf_run_state *pr = (pdf_run_state *)state;
 	pdf_obj *dict;
 	pdf_obj *obj;
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_obj *rdb = csi->rdb;
 
-	dict = pdf_dict_gets(rdb, "ExtGState");
+	dict = pdf_dict_gets(ctx, rdb, "ExtGState");
 	if (!dict)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ExtGState dictionary");
 
-	obj = pdf_dict_gets(dict, csi->name);
+	obj = pdf_dict_gets(ctx, dict, csi->name);
 	if (!obj)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find extgstate resource '%s'", csi->name);
 
@@ -2423,7 +2428,7 @@ static void pdf_run_h(pdf_csi *csi, void *state)
 {
 	pdf_run_state *pr = (pdf_run_state *)state;
 
-	fz_closepath(csi->doc->ctx, pr->path);
+	fz_closepath(csi->ctx, pr->path);
 }
 
 static void pdf_run_i(pdf_csi *csi, void *state)
@@ -2436,7 +2441,7 @@ static void pdf_run_j(pdf_csi *csi, void *state)
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_LINEJOIN_UNDEFINED;
-	gstate->stroke_state = fz_unshare_stroke_state(csi->doc->ctx, gstate->stroke_state);
+	gstate->stroke_state = fz_unshare_stroke_state(csi->ctx, gstate->stroke_state);
 	gstate->stroke_state->linejoin = csi->stack[0];
 }
 
@@ -2445,7 +2450,7 @@ static void pdf_run_k(pdf_csi *csi, void *state)
 	pdf_run_state *pr = (pdf_run_state *)state;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, pr, PDF_FILL, fz_device_cmyk(csi->doc->ctx));
+	pdf_set_colorspace(csi, pr, PDF_FILL, fz_device_cmyk(csi->ctx));
 	pdf_set_color(csi, pr, PDF_FILL, csi->stack);
 }
 
@@ -2456,7 +2461,7 @@ static void pdf_run_l(pdf_csi *csi, void *state)
 
 	a = csi->stack[0];
 	b = csi->stack[1];
-	fz_lineto(csi->doc->ctx, pr->path, a, b);
+	fz_lineto(csi->ctx, pr->path, a, b);
 }
 
 static void pdf_run_m(pdf_csi *csi, void *state)
@@ -2466,7 +2471,7 @@ static void pdf_run_m(pdf_csi *csi, void *state)
 
 	a = csi->stack[0];
 	b = csi->stack[1];
-	fz_moveto(csi->doc->ctx, pr->path, a, b);
+	fz_moveto(csi->ctx, pr->path, a, b);
 }
 
 static void pdf_run_n(pdf_csi *csi, void *state)
@@ -2486,7 +2491,7 @@ static void pdf_run_q(pdf_csi *csi, void *state)
 static void pdf_run_re(pdf_csi *csi, void *state)
 {
 	pdf_run_state *pr = (pdf_run_state *)state;
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	float x, y, w, h;
 
 	x = csi->stack[0];
@@ -2506,7 +2511,7 @@ static void pdf_run_rg(pdf_csi *csi, void *state)
 	pdf_run_state *pr = (pdf_run_state *)state;
 
 	pr->dev->flags &= ~FZ_DEVFLAG_FILLCOLOR_UNDEFINED;
-	pdf_set_colorspace(csi, pr, PDF_FILL, fz_device_rgb(csi->doc->ctx));
+	pdf_set_colorspace(csi, pr, PDF_FILL, fz_device_rgb(csi->ctx));
 	pdf_set_color(csi, pr, PDF_FILL, csi->stack);
 }
 
@@ -2524,23 +2529,23 @@ static void pdf_run_s(pdf_csi *csi, void *state)
 static void pdf_run_sh(pdf_csi *csi, void *state)
 {
 	pdf_run_state *pr = (pdf_run_state *)state;
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_obj *rdb = csi->rdb;
 	pdf_obj *dict;
 	pdf_obj *obj;
 	fz_shade *shd;
 
-	dict = pdf_dict_gets(rdb, "Shading");
+	dict = pdf_dict_gets(ctx, rdb, "Shading");
 	if (!dict)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find shading dictionary");
 
-	obj = pdf_dict_gets(dict, csi->name);
+	obj = pdf_dict_gets(ctx, dict, csi->name);
 	if (!obj)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find shading resource: '%s'", csi->name);
 
 	if ((pr->dev->hints & FZ_IGNORE_SHADE) == 0)
 	{
-		shd = pdf_load_shading(csi->doc, obj);
+		shd = pdf_load_shading(ctx, csi->doc, obj);
 
 		fz_try(ctx)
 		{
@@ -2566,7 +2571,7 @@ static void pdf_run_v(pdf_csi *csi, void *state)
 	b = csi->stack[1];
 	c = csi->stack[2];
 	d = csi->stack[3];
-	fz_curvetov(csi->doc->ctx, pr->path, a, b, c, d);
+	fz_curvetov(csi->ctx, pr->path, a, b, c, d);
 }
 
 static void pdf_run_w(pdf_csi *csi, void *state)
@@ -2576,7 +2581,7 @@ static void pdf_run_w(pdf_csi *csi, void *state)
 
 	gstate = pdf_flush_text(csi, pr); /* linewidth affects stroked text rendering mode */
 	pr->dev->flags &= ~FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
-	gstate->stroke_state = fz_unshare_stroke_state(csi->doc->ctx, gstate->stroke_state);
+	gstate->stroke_state = fz_unshare_stroke_state(csi->ctx, gstate->stroke_state);
 	gstate->stroke_state->linewidth = csi->stack[0];
 }
 
@@ -2589,7 +2594,7 @@ static void pdf_run_y(pdf_csi *csi, void *state)
 	b = csi->stack[1];
 	c = csi->stack[2];
 	d = csi->stack[3];
-	fz_curvetoy(csi->doc->ctx, pr->path, a, b, c, d);
+	fz_curvetoy(csi->ctx, pr->path, a, b, c, d);
 }
 
 static void pdf_run_squote(pdf_csi *csi, void *state)
@@ -2625,7 +2630,7 @@ static void pdf_run_dquote(pdf_csi *csi, void *state)
 
 static void free_processor_normal(pdf_csi *csi, void *state)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_run_state *pr = (pdf_run_state *)state;
 
 	while (pr->gtop)
@@ -2640,7 +2645,7 @@ static void free_processor_normal(pdf_csi *csi, void *state)
 	fz_drop_stroke_state(ctx, pr->gstate[0].stroke_state);
 
 	while (pr->gstate[0].clip_depth--)
-		fz_pop_clip(pr->dev);
+		fz_pop_clip(ctx, pr->dev);
 
 	if (pr->path) fz_drop_path(ctx, pr->path);
 	if (pr->text) fz_drop_text(ctx, pr->text);
@@ -2656,10 +2661,10 @@ process_annot(pdf_csi *csi, void *state, pdf_obj *resources, pdf_annot *annot)
 	fz_context *ctx = pr->ctx;
 	int flags;
 
-	if (pdf_is_hidden_ocg(pdf_dict_gets(annot->obj, "OC"), csi, pr, resources))
+	if (pdf_is_hidden_ocg(pdf_dict_gets(ctx, annot->obj, "OC"), csi, pr, resources))
 		return;
 
-	flags = pdf_to_int(pdf_dict_gets(annot->obj, "F"));
+	flags = pdf_to_int(ctx, pdf_dict_gets(ctx, annot->obj, "F"));
 	if (!strcmp(pr->event, "Print") && !(flags & (1 << 2))) /* Print */
 		return;
 	if (!strcmp(pr->event, "View") && (flags & (1 << 5))) /* NoView */
@@ -2810,9 +2815,8 @@ const pdf_processor pdf_processor_normal =
 	process_contents
 };
 
-pdf_process *pdf_process_run(pdf_process *process, fz_device *dev, const fz_matrix *ctm, const char *event, pdf_gstate *gstate, int nested)
+pdf_process *pdf_init_process_run(fz_context *ctx, pdf_process *process, fz_device *dev, const fz_matrix *ctm, const char *event, pdf_gstate *gstate, int nested)
 {
-	fz_context *ctx = dev->ctx;
 	pdf_run_state *pr;
 
 	pr = fz_malloc_struct(ctx, pdf_run_state);

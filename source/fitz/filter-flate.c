@@ -22,7 +22,7 @@ static void zfree(void *opaque, void *ptr)
 }
 
 static int
-next_flated(fz_stream *stm, int required)
+next_flated(fz_context *ctx, fz_stream *stm, int required)
 {
 	fz_flate *state = stm->state;
 	fz_stream *chain = state->chain;
@@ -39,7 +39,7 @@ next_flated(fz_stream *stm, int required)
 
 	while (zp->avail_out > 0)
 	{
-		zp->avail_in = fz_available(chain, 1);
+		zp->avail_in = fz_available(ctx, chain, 1);
 		zp->next_in = chain->rp;
 
 		code = inflate(zp, Z_SYNC_FLUSH);
@@ -52,23 +52,23 @@ next_flated(fz_stream *stm, int required)
 		}
 		else if (code == Z_BUF_ERROR)
 		{
-			fz_warn(stm->ctx, "premature end of data in flate filter");
+			fz_warn(ctx, "premature end of data in flate filter");
 			break;
 		}
 		else if (code == Z_DATA_ERROR && zp->avail_in == 0)
 		{
-			fz_warn(stm->ctx, "ignoring zlib error: %s", zp->msg);
+			fz_warn(ctx, "ignoring zlib error: %s", zp->msg);
 			break;
 		}
 		else if (code == Z_DATA_ERROR && !strcmp(zp->msg, "incorrect data check"))
 		{
-			fz_warn(stm->ctx, "ignoring zlib error: %s", zp->msg);
+			fz_warn(ctx, "ignoring zlib error: %s", zp->msg);
 			chain->rp = chain->wp;
 			break;
 		}
 		else if (code != Z_OK)
 		{
-			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "zlib error: %s", zp->msg);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", zp->msg);
 		}
 	}
 
@@ -93,23 +93,15 @@ close_flated(fz_context *ctx, void *state_)
 	if (code != Z_OK)
 		fz_warn(ctx, "zlib error: inflateEnd: %s", state->z.msg);
 
-	fz_drop_stream(state->chain);
+	fz_drop_stream(ctx, state->chain);
 	fz_free(ctx, state);
 }
 
-static fz_stream *
-rebind_flated(fz_stream *s)
-{
-	fz_flate *state = s->state;
-	return state->chain;
-}
-
 fz_stream *
-fz_open_flated(fz_stream *chain, int window_bits)
+fz_open_flated(fz_context *ctx, fz_stream *chain, int window_bits)
 {
 	fz_flate *state = NULL;
 	int code = Z_OK;
-	fz_context *ctx = chain->ctx;
 
 	fz_var(code);
 	fz_var(state);
@@ -134,8 +126,8 @@ fz_open_flated(fz_stream *chain, int window_bits)
 		if (state && code == Z_OK)
 			inflateEnd(&state->z);
 		fz_free(ctx, state);
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
-	return fz_new_stream(ctx, state, next_flated, close_flated, rebind_flated);
+	return fz_new_stream(ctx, state, next_flated, close_flated);
 }

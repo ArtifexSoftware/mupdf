@@ -321,7 +321,6 @@ enum
 
 struct fz_faxd_s
 {
-	fz_context *ctx;
 	fz_stream *chain;
 
 	int k;
@@ -355,14 +354,14 @@ static inline void eat_bits(fz_faxd *fax, int nbits)
 }
 
 static int
-fill_bits(fz_faxd *fax)
+fill_bits(fz_context *ctx, fz_faxd *fax)
 {
 	/* The longest length of bits we'll ever need is 13. Never read more
 	 * than we need to avoid unnecessary overreading of the end of the
 	 * stream. */
 	while (fax->bidx > (32-13))
 	{
-		int c = fz_read_byte(fax->chain);
+		int c = fz_read_byte(ctx, fax->chain);
 		if (c == EOF)
 			return EOF;
 		fax->bidx -= 8;
@@ -372,7 +371,7 @@ fill_bits(fz_faxd *fax)
 }
 
 static int
-get_code(fz_faxd *fax, const cfd_node *table, int initialbits)
+get_code(fz_context *ctx, fz_faxd *fax, const cfd_node *table, int initialbits)
 {
 	unsigned int word = fax->word;
 	int tidx = word >> (32 - initialbits);
@@ -402,9 +401,9 @@ dec1d(fz_context *ctx, fz_faxd *fax)
 		fax->a = 0;
 
 	if (fax->c)
-		code = get_code(fax, cf_black_decode, cfd_black_initial_bits);
+		code = get_code(ctx, fax, cf_black_decode, cfd_black_initial_bits);
 	else
-		code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
+		code = get_code(ctx, fax, cf_white_decode, cfd_white_initial_bits);
 
 	if (code == UNCOMPRESSED)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "uncompressed data in faxd");
@@ -441,9 +440,9 @@ dec2d(fz_context *ctx, fz_faxd *fax)
 			fax->a = 0;
 
 		if (fax->c)
-			code = get_code(fax, cf_black_decode, cfd_black_initial_bits);
+			code = get_code(ctx, fax, cf_black_decode, cfd_black_initial_bits);
 		else
-			code = get_code(fax, cf_white_decode, cfd_white_initial_bits);
+			code = get_code(ctx, fax, cf_white_decode, cfd_white_initial_bits);
 
 		if (code == UNCOMPRESSED)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "uncompressed data in faxd");
@@ -471,7 +470,7 @@ dec2d(fz_context *ctx, fz_faxd *fax)
 		return;
 	}
 
-	code = get_code(fax, cf_2d_decode, cfd_2d_initial_bits);
+	code = get_code(ctx, fax, cf_2d_decode, cfd_2d_initial_bits);
 
 	switch (code)
 	{
@@ -556,9 +555,8 @@ dec2d(fz_context *ctx, fz_faxd *fax)
 }
 
 static int
-next_faxd(fz_stream *stm, int max)
+next_faxd(fz_context *ctx, fz_stream *stm, int max)
 {
-	fz_context *ctx = stm->ctx;
 	fz_faxd *fax = stm->state;
 	unsigned char *p = fax->buffer;
 	unsigned char *ep;
@@ -569,11 +567,11 @@ next_faxd(fz_stream *stm, int max)
 	ep = p + max;
 	if (fax->stage == STATE_INIT && fax->end_of_line)
 	{
-		fill_bits(fax);
+		fill_bits(ctx, fax);
 		if ((fax->word >> (32 - 12)) != 1)
 		{
 			fz_warn(ctx, "faxd stream doesn't start with EOL");
-			while (!fill_bits(fax) && (fax->word >> (32 - 12)) != 1)
+			while (!fill_bits(ctx, fax) && (fax->word >> (32 - 12)) != 1)
 				eat_bits(fax, 1);
 		}
 		if ((fax->word >> (32 - 12)) != 1)
@@ -591,7 +589,7 @@ next_faxd(fz_stream *stm, int max)
 
 loop:
 
-	if (fill_bits(fax))
+	if (fill_bits(ctx, fax))
 	{
 		if (fax->bidx > 31)
 		{
@@ -776,28 +774,20 @@ close_faxd(fz_context *ctx, void *state_)
 	/* if we read any extra bytes, try to put them back */
 	i = (32 - fax->bidx) / 8;
 	while (i--)
-		fz_unread_byte(fax->chain);
+		fz_unread_byte(ctx, fax->chain);
 
-	fz_drop_stream(fax->chain);
+	fz_drop_stream(ctx, fax->chain);
 	fz_free(ctx, fax->ref);
 	fz_free(ctx, fax->dst);
 	fz_free(ctx, fax);
 }
 
-static fz_stream *
-rebind_faxd(fz_stream *s)
-{
-	fz_faxd *state = s->state;
-	return state->chain;
-}
-
 /* Default: columns = 1728, end_of_block = 1, the rest = 0 */
 fz_stream *
-fz_open_faxd(fz_stream *chain,
+fz_open_faxd(fz_context *ctx, fz_stream *chain,
 	int k, int end_of_line, int encoded_byte_align,
 	int columns, int rows, int end_of_block, int black_is_1)
 {
-	fz_context *ctx = chain->ctx;
 	fz_faxd *fax = NULL;
 
 	fz_var(fax);
@@ -848,9 +838,9 @@ fz_open_faxd(fz_stream *chain,
 			fz_free(ctx, fax->ref);
 		}
 		fz_free(ctx, fax);
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, fax, next_faxd, close_faxd, rebind_faxd);
+	return fz_new_stream(ctx, fax, next_faxd, close_faxd);
 }

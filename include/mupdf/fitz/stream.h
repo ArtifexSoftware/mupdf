@@ -88,7 +88,7 @@ fz_stream *fz_open_buffer(fz_context *ctx, fz_buffer *buf);
 	Returns pointer to newly created stream. May throw exceptions on
 	failure to allocate.
 */
-fz_stream *fz_open_leecher(fz_stream *chain, fz_buffer *buf);
+fz_stream *fz_open_leecher(fz_context *ctx, fz_stream *chain, fz_buffer *buf);
 
 /*
 	fz_drop_stream: Close an open stream.
@@ -99,12 +99,12 @@ fz_stream *fz_open_leecher(fz_stream *chain, fz_buffer *buf);
 
 	Does not throw exceptions.
 */
-void fz_drop_stream(fz_stream *stm);
+void fz_drop_stream(fz_context *ctx, fz_stream *stm);
 
 /*
 	fz_tell: return the current reading position within a stream
 */
-int fz_tell(fz_stream *stm);
+int fz_tell(fz_context *ctx, fz_stream *stm);
 
 /*
 	fz_seek: Seek within a stream.
@@ -115,7 +115,7 @@ int fz_tell(fz_stream *stm);
 
 	whence: From where the offset is measured (see fseek).
 */
-void fz_seek(fz_stream *stm, int offset, int whence);
+void fz_seek(fz_context *ctx, fz_stream *stm, int offset, int whence);
 
 /*
 	fz_read: Read from a stream into a given data block.
@@ -128,7 +128,7 @@ void fz_seek(fz_stream *stm, int offset, int whence);
 
 	Returns the number of bytes read. May throw exceptions.
 */
-int fz_read(fz_stream *stm, unsigned char *data, int len);
+int fz_read(fz_context *ctx, fz_stream *stm, unsigned char *data, int len);
 
 /*
 	fz_read_all: Read all of a stream into a buffer.
@@ -140,7 +140,7 @@ int fz_read(fz_stream *stm, unsigned char *data, int len);
 	Returns a buffer created from reading from the stream. May throw
 	exceptions on failure to allocate.
 */
-fz_buffer *fz_read_all(fz_stream *stm, int initial);
+fz_buffer *fz_read_all(fz_context *ctx, fz_stream *stm, int initial);
 
 /*
 	fz_read_file: Read all the contents of a file into a buffer.
@@ -153,19 +153,15 @@ enum
 	FZ_STREAM_META_LENGTH = 2
 };
 
-int fz_stream_meta(fz_stream *stm, int key, int size, void *ptr);
+int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
 
-void fz_rebind_stream(fz_stream *stm, fz_context *ctx);
-
-typedef int (fz_stream_next_fn)(fz_stream *stm, int max);
+typedef int (fz_stream_next_fn)(fz_context *ctx, fz_stream *stm, int max);
 typedef void (fz_stream_close_fn)(fz_context *ctx, void *state);
-typedef void (fz_stream_seek_fn)(fz_stream *stm, int offset, int whence);
-typedef int (fz_stream_meta_fn)(fz_stream *stm, int key, int size, void *ptr);
-typedef fz_stream *(fz_stream_rebind_fn)(fz_stream *stm);
+typedef void (fz_stream_seek_fn)(fz_context *ctx, fz_stream *stm, int offset, int whence);
+typedef int (fz_stream_meta_fn)(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
 
 struct fz_stream_s
 {
-	fz_context *ctx;
 	int refs;
 	int error;
 	int eof;
@@ -178,15 +174,11 @@ struct fz_stream_s
 	fz_stream_close_fn *close;
 	fz_stream_seek_fn *seek;
 	fz_stream_meta_fn *meta;
-	fz_stream_rebind_fn *rebind;
 };
 
-fz_stream *fz_new_stream(fz_context *ctx,
-			 void *state,
-			 fz_stream_next_fn *next,
-			 fz_stream_close_fn *close,
-			 fz_stream_rebind_fn *rebind);
-fz_stream *fz_keep_stream(fz_stream *stm);
+fz_stream *fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_close_fn *close);
+
+fz_stream *fz_keep_stream(fz_context *ctx, fz_stream *stm);
 
 /*
 	fz_read_best: Attempt to read a stream into a buffer. If truncated
@@ -201,9 +193,9 @@ fz_stream *fz_keep_stream(fz_stream *stm);
 
 	Returns a buffer created from reading from the stream.
 */
-fz_buffer *fz_read_best(fz_stream *stm, int initial, int *truncated);
+fz_buffer *fz_read_best(fz_context *ctx, fz_stream *stm, int initial, int *truncated);
 
-void fz_read_line(fz_stream *stm, char *buf, int max);
+void fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, int max);
 
 /*
 	fz_available: Ask how many bytes are available immediately from
@@ -220,21 +212,21 @@ void fz_read_line(fz_stream *stm, char *buf, int max);
 	if we have hit EOF. The number of bytes returned here need have
 	no relation to max (could be larger, could be smaller).
 */
-static inline int fz_available(fz_stream *stm, int max)
+static inline int fz_available(fz_context *ctx, fz_stream *stm, int max)
 {
 	int len = stm->wp - stm->rp;
 	int c = EOF;
 
 	if (len)
 		return len;
-	fz_try(stm->ctx)
+	fz_try(ctx)
 	{
-		c = stm->next(stm, max);
+		c = stm->next(ctx, stm, max);
 	}
-	fz_catch(stm->ctx)
+	fz_catch(ctx)
 	{
-		fz_rethrow_if(stm->ctx, FZ_ERROR_TRYLATER);
-		fz_warn(stm->ctx, "read error; treating as end of file");
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;
 	}
@@ -247,20 +239,20 @@ static inline int fz_available(fz_stream *stm, int max)
 	return stm->wp - stm->rp;
 }
 
-static inline int fz_read_byte(fz_stream *stm)
+static inline int fz_read_byte(fz_context *ctx, fz_stream *stm)
 {
 	int c = EOF;
 
 	if (stm->rp != stm->wp)
 		return *stm->rp++;
-	fz_try(stm->ctx)
+	fz_try(ctx)
 	{
-		c = stm->next(stm, 1);
+		c = stm->next(ctx, stm, 1);
 	}
-	fz_catch(stm->ctx)
+	fz_catch(ctx)
 	{
-		fz_rethrow_if(stm->ctx, FZ_ERROR_TRYLATER);
-		fz_warn(stm->ctx, "read error; treating as end of file");
+		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+		fz_warn(ctx, "read error; treating as end of file");
 		stm->error = 1;
 		c = EOF;
 	}
@@ -269,36 +261,36 @@ static inline int fz_read_byte(fz_stream *stm)
 	return c;
 }
 
-static inline int fz_peek_byte(fz_stream *stm)
+static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 {
 	int c;
 
 	if (stm->rp != stm->wp)
 		return *stm->rp;
 
-	c = stm->next(stm, 1);
+	c = stm->next(ctx, stm, 1);
 	if (c != EOF)
 		stm->rp--;
 	return c;
 }
 
-static inline void fz_unread_byte(fz_stream *stm)
+static inline void fz_unread_byte(fz_context *ctx, fz_stream *stm)
 {
 	stm->rp--;
 }
 
-static inline int fz_is_eof(fz_stream *stm)
+static inline int fz_is_eof(fz_context *ctx, fz_stream *stm)
 {
 	if (stm->rp == stm->wp)
 	{
 		if (stm->eof)
 			return 1;
-		return fz_peek_byte(stm) == EOF;
+		return fz_peek_byte(ctx, stm) == EOF;
 	}
 	return 0;
 }
 
-static inline unsigned int fz_read_bits(fz_stream *stm, int n)
+static inline unsigned int fz_read_bits(fz_context *ctx, fz_stream *stm, int n)
 {
 	unsigned int x;
 
@@ -315,13 +307,13 @@ static inline unsigned int fz_read_bits(fz_stream *stm, int n)
 
 		while (n > 8)
 		{
-			x = (x << 8) | fz_read_byte(stm);
+			x = (x << 8) | fz_read_byte(ctx, stm);
 			n -= 8;
 		}
 
 		if (n > 0)
 		{
-			stm->bits = fz_read_byte(stm);
+			stm->bits = fz_read_byte(ctx, stm);
 			stm->avail = 8 - n;
 			x = (x << n) | (stm->bits >> stm->avail);
 		}
@@ -330,14 +322,14 @@ static inline unsigned int fz_read_bits(fz_stream *stm, int n)
 	return x;
 }
 
-static inline void fz_sync_bits(fz_stream *stm)
+static inline void fz_sync_bits(fz_context *ctx, fz_stream *stm)
 {
 	stm->avail = 0;
 }
 
-static inline int fz_is_eof_bits(fz_stream *stm)
+static inline int fz_is_eof_bits(fz_context *ctx, fz_stream *stm)
 {
-	return fz_is_eof(stm) && (stm->avail == 0 || stm->bits == EOF);
+	return fz_is_eof(ctx, stm) && (stm->avail == 0 || stm->bits == EOF);
 }
 
 #endif

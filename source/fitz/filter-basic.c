@@ -3,9 +3,9 @@
 /* Pretend we have a filter that just copies data forever */
 
 fz_stream *
-fz_open_copy(fz_stream *chain)
+fz_open_copy(fz_context *ctx, fz_stream *chain)
 {
-	return fz_keep_stream(chain);
+	return fz_keep_stream(ctx, chain);
 }
 
 /* Null filter copies a specified amount of data */
@@ -19,15 +19,15 @@ struct null_filter
 };
 
 static int
-next_null(fz_stream *stm, int max)
+next_null(fz_context *ctx, fz_stream *stm, int max)
 {
 	struct null_filter *state = stm->state;
 	int n;
 
 	if (state->remain == 0)
 		return EOF;
-	fz_seek(state->chain, state->offset, 0);
-	n = fz_available(state->chain, max);
+	fz_seek(ctx, state->chain, state->offset, 0);
+	n = fz_available(ctx, state->chain, max);
 	if (n > state->remain)
 		n = state->remain;
 	if (n > sizeof(state->buffer))
@@ -50,21 +50,13 @@ close_null(fz_context *ctx, void *state_)
 	struct null_filter *state = (struct null_filter *)state_;
 	fz_stream *chain = state->chain;
 	fz_free(ctx, state);
-	fz_drop_stream(chain);
-}
-
-static fz_stream *
-rebind_null(fz_stream *s)
-{
-	struct null_filter *state = s->state;
-	return state->chain;
+	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
-fz_open_null(fz_stream *chain, int len, int offset)
+fz_open_null(fz_context *ctx, fz_stream *chain, int len, int offset)
 {
 	struct null_filter *state;
-	fz_context *ctx = chain->ctx;
 
 	if (len < 0)
 		len = 0;
@@ -77,11 +69,11 @@ fz_open_null(fz_stream *chain, int len, int offset)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, state, next_null, close_null, rebind_null);
+	return fz_new_stream(ctx, state, next_null, close_null);
 }
 
 /* Concat filter concatenates several streams into one */
@@ -97,7 +89,7 @@ struct concat_filter
 };
 
 static int
-next_concat(fz_stream *stm, int max)
+next_concat(fz_context *ctx, fz_stream *stm, int max)
 {
 	struct concat_filter *state = (struct concat_filter *)stm->state;
 	int n;
@@ -107,7 +99,7 @@ next_concat(fz_stream *stm, int max)
 		/* Read the next block of underlying data. */
 		if (stm->wp == state->chain[state->current]->wp)
 			state->chain[state->current]->rp = stm->wp;
-		n = fz_available(state->chain[state->current], max);
+		n = fz_available(ctx, state->chain[state->current], max);
 		if (n)
 		{
 			stm->rp = state->chain[state->current]->rp;
@@ -123,7 +115,7 @@ next_concat(fz_stream *stm, int max)
 				break;
 			}
 			state->current++;
-			fz_drop_stream(state->chain[state->current-1]);
+			fz_drop_stream(ctx, state->chain[state->current-1]);
 			if (state->pad)
 			{
 				stm->rp = (&state->ws_buf)+1;
@@ -147,24 +139,9 @@ close_concat(fz_context *ctx, void *state_)
 
 	for (i = state->current; i < state->count; i++)
 	{
-		fz_drop_stream(state->chain[i]);
+		fz_drop_stream(ctx, state->chain[i]);
 	}
 	fz_free(ctx, state);
-}
-
-static fz_stream *
-rebind_concat(fz_stream *s)
-{
-	struct concat_filter *state = s->state;
-	int i;
-
-	if (state->current >= state->count)
-		return NULL;
-	for (i = state->current; i < state->count-1; i++)
-	{
-		fz_rebind_stream(state->chain[i], s->ctx);
-	}
-	return state->chain[i];
 }
 
 fz_stream *
@@ -179,16 +156,16 @@ fz_open_concat(fz_context *ctx, int len, int pad)
 	state->pad = pad;
 	state->ws_buf = 32;
 
-	return fz_new_stream(ctx, state, next_concat, close_concat, rebind_concat);
+	return fz_new_stream(ctx, state, next_concat, close_concat);
 }
 
 void
-fz_concat_push(fz_stream *concat, fz_stream *chain)
+fz_concat_push(fz_context *ctx, fz_stream *concat, fz_stream *chain)
 {
 	struct concat_filter *state = (struct concat_filter *)concat->state;
 
 	if (state->count == state->max)
-		fz_throw(concat->ctx, FZ_ERROR_GENERIC, "Concat filter size exceeded");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Concat filter size exceeded");
 
 	state->chain[state->count++] = chain;
 }
@@ -230,7 +207,7 @@ static inline int unhex(int a)
 }
 
 static int
-next_ahxd(fz_stream *stm, int max)
+next_ahxd(fz_context *ctx, fz_stream *stm, int max)
 {
 	fz_ahxd *state = stm->state;
 	unsigned char *p = state->buffer;
@@ -248,7 +225,7 @@ next_ahxd(fz_stream *stm, int max)
 		if (state->eod)
 			break;
 
-		c = fz_read_byte(state->chain);
+		c = fz_read_byte(ctx, state->chain);
 		if (c < 0)
 			break;
 
@@ -275,7 +252,7 @@ next_ahxd(fz_stream *stm, int max)
 		}
 		else if (!iswhite(c))
 		{
-			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "bad data in ahxd: '%c'", c);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "bad data in ahxd: '%c'", c);
 		}
 	}
 	stm->rp = state->buffer;
@@ -293,21 +270,13 @@ close_ahxd(fz_context *ctx, void *state_)
 	fz_ahxd *state = (fz_ahxd *)state_;
 	fz_stream *chain = state->chain;
 	fz_free(ctx, state);
-	fz_drop_stream(chain);
-}
-
-static fz_stream *
-rebind_ahxd(fz_stream *s)
-{
-	fz_ahxd *state = s->state;
-	return state->chain;
+	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
-fz_open_ahxd(fz_stream *chain)
+fz_open_ahxd(fz_context *ctx, fz_stream *chain)
 {
 	fz_ahxd *state;
-	fz_context *ctx = chain->ctx;
 
 	fz_try(ctx)
 	{
@@ -317,11 +286,11 @@ fz_open_ahxd(fz_stream *chain)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, state, next_ahxd, close_ahxd, rebind_ahxd);
+	return fz_new_stream(ctx, state, next_ahxd, close_ahxd);
 }
 
 /* ASCII 85 Decode */
@@ -336,7 +305,7 @@ struct fz_a85d_s
 };
 
 static int
-next_a85d(fz_stream *stm, int max)
+next_a85d(fz_context *ctx, fz_stream *stm, int max)
 {
 	fz_a85d *state = stm->state;
 	unsigned char *p = state->buffer;
@@ -354,7 +323,7 @@ next_a85d(fz_stream *stm, int max)
 	ep = p + max;
 	while (p < ep)
 	{
-		c = fz_read_byte(state->chain);
+		c = fz_read_byte(ctx, state->chain);
 		if (c < 0)
 			break;
 
@@ -389,9 +358,9 @@ next_a85d(fz_stream *stm, int max)
 
 		else if (c == '~')
 		{
-			c = fz_read_byte(state->chain);
+			c = fz_read_byte(ctx, state->chain);
 			if (c != '>')
-				fz_warn(stm->ctx, "bad eod marker in a85d");
+				fz_warn(ctx, "bad eod marker in a85d");
 
 			switch (count) {
 			case 0:
@@ -400,7 +369,7 @@ next_a85d(fz_stream *stm, int max)
 				/* Specifically illegal in the spec, but adobe
 				 * and gs both cope. See normal_87.pdf for a
 				 * case where this matters. */
-				fz_warn(stm->ctx, "partial final byte in a85d");
+				fz_warn(ctx, "partial final byte in a85d");
 				break;
 			case 2:
 				word = word * (85 * 85 * 85) + 0xffffff;
@@ -424,7 +393,7 @@ next_a85d(fz_stream *stm, int max)
 
 		else if (!iswhite(c))
 		{
-			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "bad data in a85d: '%c'", c);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "bad data in a85d: '%c'", c);
 		}
 	}
 
@@ -445,21 +414,13 @@ close_a85d(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_drop_stream(chain);
-}
-
-static fz_stream *
-rebind_a85d(fz_stream *s)
-{
-	fz_a85d *state = s->state;
-	return state->chain;
+	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
-fz_open_a85d(fz_stream *chain)
+fz_open_a85d(fz_context *ctx, fz_stream *chain)
 {
 	fz_a85d *state;
-	fz_context *ctx = chain->ctx;
 
 	fz_try(ctx)
 	{
@@ -469,11 +430,11 @@ fz_open_a85d(fz_stream *chain)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, state, next_a85d, close_a85d, rebind_a85d);
+	return fz_new_stream(ctx, state, next_a85d, close_a85d);
 }
 
 /* Run Length Decode */
@@ -488,7 +449,7 @@ struct fz_rld_s
 };
 
 static int
-next_rld(fz_stream *stm, int max)
+next_rld(fz_context *ctx, fz_stream *stm, int max)
 {
 	fz_rld *state = stm->state;
 	unsigned char *p = state->buffer;
@@ -508,7 +469,7 @@ next_rld(fz_stream *stm, int max)
 
 		if (state->n == 0)
 		{
-			state->run = fz_read_byte(state->chain);
+			state->run = fz_read_byte(ctx, state->chain);
 			if (state->run < 0)
 			{
 				state->run = 128;
@@ -519,9 +480,9 @@ next_rld(fz_stream *stm, int max)
 			if (state->run > 128)
 			{
 				state->n = 257 - state->run;
-				state->c = fz_read_byte(state->chain);
+				state->c = fz_read_byte(ctx, state->chain);
 				if (state->c < 0)
-					fz_throw(stm->ctx, FZ_ERROR_GENERIC, "premature end of data in run length decode");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in run length decode");
 			}
 		}
 
@@ -529,9 +490,9 @@ next_rld(fz_stream *stm, int max)
 		{
 			while (p < ep && state->n)
 			{
-				int c = fz_read_byte(state->chain);
+				int c = fz_read_byte(ctx, state->chain);
 				if (c < 0)
-					fz_throw(stm->ctx, FZ_ERROR_GENERIC, "premature end of data in run length decode");
+					fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in run length decode");
 				*p++ = c;
 				state->n--;
 			}
@@ -564,21 +525,13 @@ close_rld(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_drop_stream(chain);
-}
-
-static fz_stream *
-rebind_rld(fz_stream *s)
-{
-	fz_rld *state = s->state;
-	return state->chain;
+	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
-fz_open_rld(fz_stream *chain)
+fz_open_rld(fz_context *ctx, fz_stream *chain)
 {
 	fz_rld *state;
-	fz_context *ctx = chain->ctx;
 
 	fz_try(ctx)
 	{
@@ -590,11 +543,11 @@ fz_open_rld(fz_stream *chain)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, state, next_rld, close_rld, rebind_rld);
+	return fz_new_stream(ctx, state, next_rld, close_rld);
 }
 
 /* RC4 Filter */
@@ -609,10 +562,10 @@ struct fz_arc4c_s
 };
 
 static int
-next_arc4(fz_stream *stm, int max)
+next_arc4(fz_context *ctx, fz_stream *stm, int max)
 {
 	fz_arc4c *state = stm->state;
-	int n = fz_available(state->chain, max);
+	int n = fz_available(ctx, state->chain, max);
 
 	if (n == 0)
 		return EOF;
@@ -635,21 +588,13 @@ close_arc4(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_drop_stream(chain);
-}
-
-static fz_stream *
-rebind_arc4c(fz_stream *s)
-{
-	fz_arc4c *state = s->state;
-	return state->chain;
+	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
-fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen)
+fz_open_arc4(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned keylen)
 {
 	fz_arc4c *state;
-	fz_context *ctx = chain->ctx;
 
 	fz_try(ctx)
 	{
@@ -659,11 +604,11 @@ fz_open_arc4(fz_stream *chain, unsigned char *key, unsigned keylen)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, state, next_arc4, close_arc4, rebind_arc4c);
+	return fz_new_stream(ctx, state, next_arc4, close_arc4);
 }
 
 /* AES Filter */
@@ -682,7 +627,7 @@ struct fz_aesd_s
 };
 
 static int
-next_aesd(fz_stream *stm, int max)
+next_aesd(fz_context *ctx, fz_stream *stm, int max)
 {
 	fz_aesd *state = stm->state;
 	unsigned char *p = state->buffer;
@@ -694,9 +639,9 @@ next_aesd(fz_stream *stm, int max)
 
 	while (state->ivcount < 16)
 	{
-		int c = fz_read_byte(state->chain);
+		int c = fz_read_byte(ctx, state->chain);
 		if (c < 0)
-			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "premature end in aes filter");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in aes filter");
 		state->iv[state->ivcount++] = c;
 	}
 
@@ -705,22 +650,22 @@ next_aesd(fz_stream *stm, int max)
 
 	while (p < ep)
 	{
-		int n = fz_read(state->chain, state->bp, 16);
+		int n = fz_read(ctx, state->chain, state->bp, 16);
 		if (n == 0)
 			break;
 		else if (n < 16)
-			fz_throw(stm->ctx, FZ_ERROR_GENERIC, "partial block in aes filter");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "partial block in aes filter");
 
 		aes_crypt_cbc(&state->aes, AES_DECRYPT, 16, state->iv, state->bp, state->bp);
 		state->rp = state->bp;
 		state->wp = state->bp + 16;
 
 		/* strip padding at end of file */
-		if (fz_is_eof(state->chain))
+		if (fz_is_eof(ctx, state->chain))
 		{
 			int pad = state->bp[15];
 			if (pad < 1 || pad > 16)
-				fz_throw(stm->ctx, FZ_ERROR_GENERIC, "aes padding out of range: %d", pad);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "aes padding out of range: %d", pad);
 			state->wp -= pad;
 		}
 
@@ -745,21 +690,13 @@ close_aesd(fz_context *ctx, void *state_)
 	fz_stream *chain = state->chain;
 
 	fz_free(ctx, state);
-	fz_drop_stream(chain);
-}
-
-static fz_stream *
-rebind_aesd(fz_stream *s)
-{
-	fz_aesd *state = s->state;
-	return state->chain;
+	fz_drop_stream(ctx, chain);
 }
 
 fz_stream *
-fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen)
+fz_open_aesd(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned keylen)
 {
 	fz_aesd *state = NULL;
-	fz_context *ctx = chain->ctx;
 
 	fz_var(state);
 
@@ -776,9 +713,9 @@ fz_open_aesd(fz_stream *chain, unsigned char *key, unsigned keylen)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, state);
-		fz_drop_stream(chain);
+		fz_drop_stream(ctx, chain);
 		fz_rethrow(ctx);
 	}
 
-	return fz_new_stream(ctx, state, next_aesd, close_aesd, rebind_aesd);
+	return fz_new_stream(ctx, state, next_aesd, close_aesd);
 }

@@ -1,17 +1,18 @@
 #include "pdf-interpret-imp.h"
 
 static pdf_csi *
-pdf_new_csi(pdf_document *doc, fz_cookie *cookie, const pdf_process *process)
+pdf_new_csi(fz_context *ctx, pdf_document *doc, fz_cookie *cookie, const pdf_process *process)
 {
 	pdf_csi *csi = NULL;
-	fz_context *ctx = doc->ctx;
 
 	fz_var(csi);
 
 	fz_try(ctx)
 	{
 		csi = fz_malloc_struct(ctx, pdf_csi);
-		csi->doc = doc;
+		csi->ctx = ctx; /* FIXME */
+		csi->doc = doc; /* FIXME */
+
 		csi->in_text = 0;
 
 		csi->top = 0;
@@ -38,12 +39,14 @@ pdf_new_csi(pdf_document *doc, fz_cookie *cookie, const pdf_process *process)
 static void
 pdf_clear_stack(pdf_csi *csi)
 {
+	fz_context *ctx = csi->ctx;
+
 	int i;
 
-	fz_drop_image(csi->doc->ctx, csi->img);
+	fz_drop_image(ctx, csi->img);
 	csi->img = NULL;
 
-	pdf_drop_obj(csi->obj);
+	pdf_drop_obj(ctx, csi->obj);
 	csi->obj = NULL;
 
 	csi->name[0] = 0;
@@ -57,7 +60,7 @@ pdf_clear_stack(pdf_csi *csi)
 static void
 pdf_drop_csi(pdf_csi *csi)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 
 	pdf_process_op(csi, PDF_OP_END, &csi->process);
 	fz_free(ctx, csi);
@@ -70,27 +73,29 @@ pdf_drop_csi(pdf_csi *csi)
 static void
 parse_inline_image(pdf_csi *csi)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
+	pdf_document *doc = csi->doc;
+
 	pdf_obj *rdb = csi->rdb;
 	fz_stream *file = csi->file;
 	int ch, found;
 
 	fz_drop_image(ctx, csi->img);
 	csi->img = NULL;
-	pdf_drop_obj(csi->obj);
+	pdf_drop_obj(ctx, csi->obj);
 	csi->obj = NULL;
 
-	csi->obj = pdf_parse_dict(csi->doc, file, &csi->doc->lexbuf.base);
+	csi->obj = pdf_parse_dict(ctx, doc, file, &doc->lexbuf.base);
 
 	/* read whitespace after ID keyword */
-	ch = fz_read_byte(file);
+	ch = fz_read_byte(ctx, file);
 	if (ch == '\r')
-		if (fz_peek_byte(file) == '\n')
-			fz_read_byte(file);
+		if (fz_peek_byte(ctx, file) == '\n')
+			fz_read_byte(ctx, file);
 
 	fz_try(ctx)
 	{
-		csi->img = pdf_load_inline_image(csi->doc, rdb, csi->obj, file);
+		csi->img = pdf_load_inline_image(ctx, doc, rdb, csi->obj, file);
 	}
 	fz_catch(ctx)
 	{
@@ -99,17 +104,17 @@ parse_inline_image(pdf_csi *csi)
 
 	/* find EI */
 	found = 0;
-	ch = fz_read_byte(file);
+	ch = fz_read_byte(ctx, file);
 	do
 	{
 		while (ch != 'E' && ch != EOF)
-			ch = fz_read_byte(file);
+			ch = fz_read_byte(ctx, file);
 		if (ch == 'E')
 		{
-			ch = fz_read_byte(file);
+			ch = fz_read_byte(ctx, file);
 			if (ch == 'I')
 			{
-				ch = fz_peek_byte(file);
+				ch = fz_peek_byte(ctx, file);
 				if (ch == ' ' || ch <= 32 || ch == EOF || ch == '<' || ch == '/')
 				{
 					found = 1;
@@ -125,7 +130,8 @@ parse_inline_image(pdf_csi *csi)
 static int
 pdf_run_keyword(pdf_csi *csi, char *buf)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
+
 	int key;
 	PDF_OP op;
 
@@ -278,7 +284,9 @@ pdf_run_keyword(pdf_csi *csi, char *buf)
 void
 pdf_process_stream(pdf_csi *csi, pdf_lexbuf *buf)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
+	pdf_document *doc = csi->doc;
+
 	fz_stream *file = csi->file;
 	pdf_token tok = PDF_TOK_ERROR;
 	int in_text_array = 0;
@@ -313,7 +321,7 @@ pdf_process_stream(pdf_csi *csi, pdf_lexbuf *buf)
 					csi->cookie->progress++;
 				}
 
-				tok = pdf_lex(file, buf);
+				tok = pdf_lex(ctx, file, buf);
 
 				if (in_text_array)
 				{
@@ -323,27 +331,27 @@ pdf_process_stream(pdf_csi *csi, pdf_lexbuf *buf)
 						in_text_array = 0;
 						break;
 					case PDF_TOK_REAL:
-						pdf_array_push_drop(csi->obj, pdf_new_real(csi->doc, buf->f));
+						pdf_array_push_drop(ctx, csi->obj, pdf_new_real(ctx, doc, buf->f));
 						break;
 					case PDF_TOK_INT:
-						pdf_array_push_drop(csi->obj, pdf_new_int(csi->doc, buf->i));
+						pdf_array_push_drop(ctx, csi->obj, pdf_new_int(ctx, doc, buf->i));
 						break;
 					case PDF_TOK_STRING:
-						pdf_array_push_drop(csi->obj, pdf_new_string(csi->doc, buf->scratch, buf->len));
+						pdf_array_push_drop(ctx, csi->obj, pdf_new_string(ctx, doc, buf->scratch, buf->len));
 						break;
 					case PDF_TOK_EOF:
 						break;
 					case PDF_TOK_KEYWORD:
 						if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
 						{
-							int l = pdf_array_len(csi->obj);
+							int l = pdf_array_len(ctx, csi->obj);
 							if (l > 0)
 							{
-								pdf_obj *o = pdf_array_get(csi->obj, l-1);
-								if (pdf_is_number(o))
+								pdf_obj *o = pdf_array_get(ctx, csi->obj, l-1);
+								if (pdf_is_number(ctx, o))
 								{
-									csi->stack[0] = pdf_to_real(o);
-									pdf_array_delete(csi->obj, l-1);
+									csi->stack[0] = pdf_to_real(ctx, o);
+									pdf_array_delete(ctx, csi->obj, l-1);
 									if (pdf_run_keyword(csi, buf->scratch) == 0)
 										break;
 								}
@@ -364,35 +372,35 @@ pdf_process_stream(pdf_csi *csi, pdf_lexbuf *buf)
 				case PDF_TOK_OPEN_ARRAY:
 					if (csi->obj)
 					{
-						pdf_drop_obj(csi->obj);
+						pdf_drop_obj(ctx, csi->obj);
 						csi->obj = NULL;
 					}
 					if (csi->in_text)
 					{
 						in_text_array = 1;
-						csi->obj = pdf_new_array(csi->doc, 4);
+						csi->obj = pdf_new_array(ctx, doc, 4);
 					}
 					else
 					{
-						csi->obj = pdf_parse_array(csi->doc, file, buf);
+						csi->obj = pdf_parse_array(ctx, doc, file, buf);
 					}
 					break;
 
 				case PDF_TOK_OPEN_DICT:
 					if (csi->obj)
 					{
-						pdf_drop_obj(csi->obj);
+						pdf_drop_obj(ctx, csi->obj);
 						csi->obj = NULL;
 					}
-					csi->obj = pdf_parse_dict(csi->doc, file, buf);
+					csi->obj = pdf_parse_dict(ctx, doc, file, buf);
 					break;
 
 				case PDF_TOK_NAME:
 					if (csi->name[0])
 					{
-						pdf_drop_obj(csi->obj);
+						pdf_drop_obj(ctx, csi->obj);
 						csi->obj = NULL;
-						csi->obj = pdf_new_name(csi->doc, buf->scratch);
+						csi->obj = pdf_new_name(ctx, doc, buf->scratch);
 					}
 					else
 						fz_strlcpy(csi->name, buf->scratch, sizeof(csi->name));
@@ -426,10 +434,10 @@ pdf_process_stream(pdf_csi *csi, pdf_lexbuf *buf)
 					{
 						if (csi->obj)
 						{
-							pdf_drop_obj(csi->obj);
+							pdf_drop_obj(ctx, csi->obj);
 							csi->obj = NULL;
 						}
-						csi->obj = pdf_new_string(csi->doc, buf->scratch, buf->len);
+						csi->obj = pdf_new_string(ctx, doc, buf->scratch, buf->len);
 					}
 					break;
 
@@ -494,7 +502,8 @@ pdf_process_stream(pdf_csi *csi, pdf_lexbuf *buf)
 static void
 pdf_process_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
+
 	pdf_lexbuf *buf;
 	int save_in_text;
 	pdf_obj *save_obj;
@@ -521,11 +530,11 @@ pdf_process_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 	fz_always(ctx)
 	{
 		csi->in_text = save_in_text;
-		pdf_drop_obj(csi->obj);
+		pdf_drop_obj(ctx, csi->obj);
 		csi->obj = save_obj;
 		csi->rdb = save_rdb;
 		csi->file = save_file;
-		pdf_lexbuf_fin(buf);
+		pdf_lexbuf_fin(ctx, buf);
 		fz_free(ctx, buf);
 	}
 	fz_catch(ctx)
@@ -537,16 +546,15 @@ pdf_process_contents_stream(pdf_csi *csi, pdf_obj *rdb, fz_stream *file)
 }
 
 void
-pdf_process_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, const pdf_process *process, fz_cookie *cookie)
+pdf_process_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, const pdf_process *process, fz_cookie *cookie)
 {
-	fz_context *ctx = doc->ctx;
 	pdf_csi *csi;
 	int flags;
 
-	csi = pdf_new_csi(doc, cookie, process);
+	csi = pdf_new_csi(ctx, doc, cookie, process);
 	fz_try(ctx)
 	{
-		flags = pdf_to_int(pdf_dict_gets(annot->obj, "F"));
+		flags = pdf_to_int(ctx, pdf_dict_gets(ctx, annot->obj, "F"));
 
 		/* Check not invisible (bit 0) and hidden (bit 1) */
 		/* TODO: NoZoom and NoRotate */
@@ -568,20 +576,22 @@ pdf_process_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, const pdf
 void
 pdf_process_contents_object(pdf_csi *csi, pdf_obj *rdb, pdf_obj *contents)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
+	pdf_document *doc = csi->doc;
+
 	fz_stream *file = NULL;
 
 	if (contents == NULL)
 		return;
 
-	file = pdf_open_contents_stream(csi->doc, contents);
+	file = pdf_open_contents_stream(ctx, doc, contents);
 	fz_try(ctx)
 	{
 		pdf_process_contents_stream(csi, rdb, file);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(file);
+		fz_drop_stream(ctx, file);
 	}
 	fz_catch(ctx)
 	{
@@ -592,7 +602,8 @@ pdf_process_contents_object(pdf_csi *csi, pdf_obj *rdb, pdf_obj *contents)
 static void
 pdf_process_contents_buffer(pdf_csi *csi, pdf_obj *rdb, fz_buffer *contents)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
+
 	fz_stream *file = NULL;
 
 	if (contents == NULL)
@@ -605,7 +616,7 @@ pdf_process_contents_buffer(pdf_csi *csi, pdf_obj *rdb, fz_buffer *contents)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(file);
+		fz_drop_stream(ctx, file);
 	}
 	fz_catch(ctx)
 	{
@@ -614,12 +625,11 @@ pdf_process_contents_buffer(pdf_csi *csi, pdf_obj *rdb, fz_buffer *contents)
 }
 
 void
-pdf_process_stream_object(pdf_document *doc, pdf_obj *obj, const pdf_process *process, pdf_obj *res, fz_cookie *cookie)
+pdf_process_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, const pdf_process *process, pdf_obj *res, fz_cookie *cookie)
 {
-	fz_context *ctx = doc->ctx;
 	pdf_csi *csi;
 
-	csi = pdf_new_csi(doc, cookie, process);
+	csi = pdf_new_csi(ctx, doc, cookie, process);
 	fz_try(ctx)
 	{
 		csi->process.processor->process_contents(csi, csi->process.state, res, obj);
@@ -636,12 +646,11 @@ pdf_process_stream_object(pdf_document *doc, pdf_obj *obj, const pdf_process *pr
 }
 
 void
-pdf_process_glyph(pdf_document *doc, pdf_obj *resources, fz_buffer *contents, pdf_process *process)
+pdf_process_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, pdf_process *process)
 {
 	pdf_csi *csi;
-	fz_context *ctx = doc->ctx;
 
-	csi = pdf_new_csi(doc, NULL, process);
+	csi = pdf_new_csi(ctx, doc, NULL, process);
 	fz_try(ctx)
 	{
 		pdf_process_contents_buffer(csi, resources, contents);

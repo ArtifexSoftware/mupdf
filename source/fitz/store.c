@@ -114,7 +114,7 @@ evict(fz_context *ctx, fz_item *item)
 	{
 		fz_store_hash hash = { NULL };
 		hash.drop = item->val->drop;
-		if (item->type->make_hash_key(&hash, item->key))
+		if (item->type->make_hash_key(ctx, &hash, item->key))
 			fz_hash_remove(ctx, store->hash, &hash);
 	}
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -251,7 +251,7 @@ fz_store_item(fz_context *ctx, void *key, void *val_, unsigned int itemsize, fz_
 	if (type->make_hash_key)
 	{
 		hash.drop = val->drop;
-		use_hash = type->make_hash_key(&hash, key);
+		use_hash = type->make_hash_key(ctx, &hash, key);
 	}
 
 	type->keep_key(ctx, key);
@@ -363,7 +363,7 @@ fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *
 	if (type->make_hash_key)
 	{
 		hash.drop = drop;
-		use_hash = type->make_hash_key(&hash, key);
+		use_hash = type->make_hash_key(ctx, &hash, key);
 	}
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
@@ -377,7 +377,7 @@ fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *
 		/* Others we have to hunt for slowly */
 		for (item = store->head; item; item = item->next)
 		{
-			if (item->val->drop == drop && !type->cmp_key(item->key, key))
+			if (item->val->drop == drop && !type->cmp_key(ctx, item->key, key))
 				break;
 		}
 	}
@@ -411,7 +411,7 @@ fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type
 	if (type->make_hash_key)
 	{
 		hash.drop = drop;
-		use_hash = type->make_hash_key(&hash, key);
+		use_hash = type->make_hash_key(ctx, &hash, key);
 	}
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
@@ -426,7 +426,7 @@ fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type
 	{
 		/* Others we have to hunt for slowly */
 		for (item = store->head; item; item = item->next)
-			if (item->val->drop == drop && !type->cmp_key(item->key, key))
+			if (item->val->drop == drop && !type->cmp_key(ctx, item->key, key))
 				break;
 	}
 	if (item)
@@ -527,7 +527,7 @@ fz_print_store_locked(fz_context *ctx, FILE *out)
 			next->val->refs++;
 		fprintf(out, "store[*][refs=%d][size=%d] ", item->val->refs, item->size);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
-		item->type->debug(out, item->key);
+		item->type->debug(ctx, out, item->key);
 		fprintf(out, " = %p\n", item->val);
 		fflush(out);
 		fz_lock(ctx, FZ_LOCK_ALLOC);

@@ -9,7 +9,7 @@ static inline int unhex(int a)
 }
 
 fz_xml *
-xps_lookup_alternate_content(fz_xml *node)
+xps_lookup_alternate_content(fz_context *ctx, xps_document *doc, fz_xml *node)
 {
 	for (node = fz_xml_down(node); node; node = fz_xml_next(node))
 	{
@@ -29,48 +29,49 @@ xps_lookup_alternate_content(fz_xml *node)
 }
 
 void
-xps_parse_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node)
+xps_parse_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node)
 {
 	if (doc->cookie && doc->cookie->abort)
 		return;
 	/* SolidColorBrushes are handled in a special case and will never show up here */
 	if (fz_xml_is_tag(node, "ImageBrush"))
-		xps_parse_image_brush(doc, ctm, area, base_uri, dict, node);
+		xps_parse_image_brush(ctx, doc, ctm, area, base_uri, dict, node);
 	else if (fz_xml_is_tag(node, "VisualBrush"))
-		xps_parse_visual_brush(doc, ctm, area, base_uri, dict, node);
+		xps_parse_visual_brush(ctx, doc, ctm, area, base_uri, dict, node);
 	else if (fz_xml_is_tag(node, "LinearGradientBrush"))
-		xps_parse_linear_gradient_brush(doc, ctm, area, base_uri, dict, node);
+		xps_parse_linear_gradient_brush(ctx, doc, ctm, area, base_uri, dict, node);
 	else if (fz_xml_is_tag(node, "RadialGradientBrush"))
-		xps_parse_radial_gradient_brush(doc, ctm, area, base_uri, dict, node);
+		xps_parse_radial_gradient_brush(ctx, doc, ctm, area, base_uri, dict, node);
 	else
-		fz_warn(doc->ctx, "unknown brush tag: %s", fz_xml_tag(node));
+		fz_warn(ctx, "unknown brush tag: %s", fz_xml_tag(node));
 }
 
 void
-xps_parse_element(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node)
+xps_parse_element(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node)
 {
 	if (doc->cookie && doc->cookie->abort)
 		return;
 	if (fz_xml_is_tag(node, "Path"))
-		xps_parse_path(doc, ctm, base_uri, dict, node);
+		xps_parse_path(ctx, doc, ctm, base_uri, dict, node);
 	if (fz_xml_is_tag(node, "Glyphs"))
-		xps_parse_glyphs(doc, ctm, base_uri, dict, node);
+		xps_parse_glyphs(ctx, doc, ctm, base_uri, dict, node);
 	if (fz_xml_is_tag(node, "Canvas"))
-		xps_parse_canvas(doc, ctm, area, base_uri, dict, node);
+		xps_parse_canvas(ctx, doc, ctm, area, base_uri, dict, node);
 	if (fz_xml_is_tag(node, "AlternateContent"))
 	{
-		node = xps_lookup_alternate_content(node);
+		node = xps_lookup_alternate_content(ctx, doc, node);
 		if (node)
-			xps_parse_element(doc, ctm, area, base_uri, dict, node);
+			xps_parse_element(ctx, doc, ctm, area, base_uri, dict, node);
 	}
 	/* skip unknown tags (like Foo.Resources and similar) */
 }
 
 void
-xps_begin_opacity(xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
+xps_begin_opacity(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 	char *base_uri, xps_resource *dict,
 	char *opacity_att, fz_xml *opacity_mask_tag)
 {
+	fz_device *dev = doc->dev;
 	float opacity;
 
 	if (!opacity_att && !opacity_mask_tag)
@@ -90,7 +91,7 @@ xps_begin_opacity(xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 		{
 			fz_colorspace *colorspace;
 			float samples[FZ_MAX_COLORS];
-			xps_parse_color(doc, base_uri, scb_color_att, &colorspace, samples);
+			xps_parse_color(ctx, doc, base_uri, scb_color_att, &colorspace, samples);
 			opacity = opacity * samples[0];
 		}
 		opacity_mask_tag = NULL;
@@ -104,16 +105,18 @@ xps_begin_opacity(xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 
 	if (opacity_mask_tag)
 	{
-		fz_begin_mask(doc->dev, area, 0, NULL, NULL);
-		xps_parse_brush(doc, ctm, area, base_uri, dict, opacity_mask_tag);
-		fz_end_mask(doc->dev);
+		fz_begin_mask(ctx, dev, area, 0, NULL, NULL);
+		xps_parse_brush(ctx, doc, ctm, area, base_uri, dict, opacity_mask_tag);
+		fz_end_mask(ctx, dev);
 	}
 }
 
 void
-xps_end_opacity(xps_document *doc, char *base_uri, xps_resource *dict,
+xps_end_opacity(fz_context *ctx, xps_document *doc, char *base_uri, xps_resource *dict,
 	char *opacity_att, fz_xml *opacity_mask_tag)
 {
+	fz_device *dev = doc->dev;
+
 	if (!opacity_att && !opacity_mask_tag)
 		return;
 
@@ -123,12 +126,12 @@ xps_end_opacity(xps_document *doc, char *base_uri, xps_resource *dict,
 	if (opacity_mask_tag)
 	{
 		if (strcmp(fz_xml_tag(opacity_mask_tag), "SolidColorBrush"))
-			fz_pop_clip(doc->dev);
+			fz_pop_clip(ctx, dev);
 	}
 }
 
 void
-xps_parse_render_transform(xps_document *doc, char *transform, fz_matrix *matrix)
+xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *transform, fz_matrix *matrix)
 {
 	float args[6];
 	char *s = transform;
@@ -153,7 +156,7 @@ xps_parse_render_transform(xps_document *doc, char *transform, fz_matrix *matrix
 }
 
 void
-xps_parse_matrix_transform(xps_document *doc, fz_xml *root, fz_matrix *matrix)
+xps_parse_matrix_transform(fz_context *ctx, xps_document *doc, fz_xml *root, fz_matrix *matrix)
 {
 	char *transform;
 
@@ -163,12 +166,12 @@ xps_parse_matrix_transform(xps_document *doc, fz_xml *root, fz_matrix *matrix)
 	{
 		transform = fz_xml_att(root, "Matrix");
 		if (transform)
-			xps_parse_render_transform(doc, transform, matrix);
+			xps_parse_render_transform(ctx, doc, transform, matrix);
 	}
 }
 
 void
-xps_parse_rectangle(xps_document *doc, char *text, fz_rect *rect)
+xps_parse_rectangle(fz_context *ctx, xps_document *doc, char *text, fz_rect *rect)
 {
 	float args[4];
 	char *s = text;
@@ -205,10 +208,9 @@ static int count_commas(char *s)
 }
 
 void
-xps_parse_color(xps_document *doc, char *base_uri, char *string,
+xps_parse_color(fz_context *ctx, xps_document *doc, char *base_uri, char *string,
 		fz_colorspace **csp, float *samples)
 {
-	fz_context *ctx = doc->ctx;
 	char *p;
 	int i, n;
 	char buf[1024];
@@ -307,7 +309,7 @@ xps_parse_color(xps_document *doc, char *base_uri, char *string,
 }
 
 void
-xps_set_color(xps_document *doc, fz_colorspace *colorspace, float *samples)
+xps_set_color(fz_context *ctx, xps_document *doc, fz_colorspace *colorspace, float *samples)
 {
 	int i;
 	doc->colorspace = colorspace;

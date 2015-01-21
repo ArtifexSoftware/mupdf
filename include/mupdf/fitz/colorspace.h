@@ -26,7 +26,7 @@ fz_colorspace *fz_lookup_device_colorspace(fz_context *ctx, char *name);
 	fz_colorspace_is_indexed: Return true, iff a given colorspace is
 	indexed.
 */
-int fz_colorspace_is_indexed(fz_colorspace *cs);
+int fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs);
 
 /*
 	fz_device_gray: Get colorspace representing device specific gray.
@@ -100,16 +100,15 @@ typedef struct fz_color_converter_s fz_color_converter;
  */
 struct fz_color_converter_s
 {
-	void (*convert)(fz_color_converter *, float *, const float *);
-	fz_context *ctx;
+	void (*convert)(fz_context *, fz_color_converter *, float *, const float *);
 	fz_colorspace *ds;
 	fz_colorspace *ss;
 	void *opaque;
 };
 
-void fz_lookup_color_converter(fz_color_converter *cc, fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
+void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss);
 
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss);
-void fz_fin_cached_color_converter(fz_color_converter *cc);
+void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 
 #endif

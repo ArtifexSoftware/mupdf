@@ -21,7 +21,6 @@ enum
 
 struct pdf_lexbuf_s
 {
-	fz_context *ctx;
 	int size;
 	int base_size;
 	int len;
@@ -54,7 +53,7 @@ typedef struct pdf_doc_event_s pdf_doc_event;
 	pdf_doc_event_cb: the type of function via which the app receives
 	document events.
 */
-typedef void (pdf_doc_event_cb)(pdf_doc_event *event, void *data);
+typedef void (pdf_doc_event_cb)(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, void *data);
 
 /*
 	pdf_open_document: Open a PDF document.
@@ -97,16 +96,16 @@ pdf_document *pdf_open_document_no_run_with_stream(fz_context *ctx, fz_stream *f
 
 	Does not throw exceptions.
 */
-void pdf_close_document(pdf_document *doc);
+void pdf_close_document(fz_context *ctx, pdf_document *doc);
 
 /*
 	pdf_specific: down-cast an fz_document to a pdf_document.
 	Returns NULL if underlying document is not PDF
 */
-pdf_document *pdf_specifics(fz_document *doc);
+pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc);
 
-int pdf_needs_password(pdf_document *doc);
-int pdf_authenticate_password(pdf_document *doc, const char *pw);
+int pdf_needs_password(fz_context *ctx, pdf_document *doc);
+int pdf_authenticate_password(fz_context *ctx, pdf_document *doc, const char *pw);
 
 enum
 {
@@ -121,14 +120,14 @@ enum
 	PDF_DEFAULT_PERM_FLAGS = 0xfffc
 };
 
-int pdf_has_permission(pdf_document *doc, int p);
+int pdf_has_permission(fz_context *ctx, pdf_document *doc, int p);
 
 /*
 	Metadata interface.
 */
-int pdf_meta(pdf_document *doc, int key, void *ptr, int size);
+int pdf_meta(fz_context *ctx, pdf_document *doc, int key, void *ptr, int size);
 
-fz_outline *pdf_load_outline(pdf_document *doc);
+fz_outline *pdf_load_outline(fz_context *ctx, pdf_document *doc);
 
 typedef struct pdf_ocg_entry_s pdf_ocg_entry;
 
@@ -160,13 +159,13 @@ struct pdf_ocg_descriptor_s
 	a call to pdf_update_page would not reliably be able to report all changed
 	areas.
 */
-void pdf_update_page(pdf_document *doc, pdf_page *page);
+void pdf_update_page(fz_context *ctx, pdf_document *doc, pdf_page *page);
 
 /*
 	Determine whether changes have been made since the
 	document was opened or last saved.
 */
-int pdf_has_unsaved_changes(pdf_document *doc);
+int pdf_has_unsaved_changes(fz_context *ctx, pdf_document *doc);
 
 typedef struct pdf_signer_s pdf_signer;
 
@@ -189,7 +188,6 @@ struct pdf_document_s
 {
 	fz_document super;
 
-	fz_context *ctx;
 	fz_stream *file;
 
 	int version;
@@ -269,7 +267,7 @@ struct pdf_document_s
 	int dirty;
 	pdf_unsaved_sig *unsaved_sigs;
 
-	void (*update_appearance)(pdf_document *doc, pdf_annot *annot);
+	void (*update_appearance)(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 
 	pdf_doc_event_cb *event_cb;
 	void *event_cb_data;
@@ -288,17 +286,17 @@ struct pdf_document_s
 */
 pdf_document *pdf_create_document(fz_context *ctx);
 
-pdf_page *pdf_create_page(pdf_document *doc, fz_rect rect, int res, int rotate);
+pdf_page *pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect rect, int res, int rotate);
 
-void pdf_insert_page(pdf_document *doc, pdf_page *page, int at);
+void pdf_insert_page(fz_context *ctx, pdf_document *doc, pdf_page *page, int at);
 
-void pdf_delete_page(pdf_document *doc, int number);
+void pdf_delete_page(fz_context *ctx, pdf_document *doc, int number);
 
-void pdf_delete_page_range(pdf_document *doc, int start, int end);
+void pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end);
 
-fz_device *pdf_page_write(pdf_document *doc, pdf_page *page);
+fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, pdf_page *page);
 
-void pdf_finish_edit(pdf_document *doc);
+void pdf_finish_edit(fz_context *ctx, pdf_document *doc);
 
 int pdf_recognize(fz_context *doc, const char *magic);
 

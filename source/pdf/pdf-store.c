@@ -1,48 +1,48 @@
 #include "mupdf/pdf.h"
 
 static int
-pdf_make_hash_key(fz_store_hash *hash, void *key_)
+pdf_make_hash_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 {
 	pdf_obj *key = (pdf_obj *)key_;
 
-	if (!pdf_is_indirect(key))
+	if (!pdf_is_indirect(ctx, key))
 		return 0;
-	hash->u.i.i0 = pdf_to_num(key);
-	hash->u.i.i1 = pdf_to_gen(key);
-	hash->u.i.ptr = pdf_get_indirect_document(key);
+	hash->u.i.i0 = pdf_to_num(ctx, key);
+	hash->u.i.i1 = pdf_to_gen(ctx, key);
+	hash->u.i.ptr = pdf_get_indirect_document(ctx, key);
 	return 1;
 }
 
 static void *
 pdf_keep_key(fz_context *ctx, void *key)
 {
-	return (void *)pdf_keep_obj((pdf_obj *)key);
+	return (void *)pdf_keep_obj(ctx, (pdf_obj *)key);
 }
 
 static void
 pdf_drop_key(fz_context *ctx, void *key)
 {
-	pdf_drop_obj((pdf_obj *)key);
+	pdf_drop_obj(ctx, (pdf_obj *)key);
 }
 
 static int
-pdf_cmp_key(void *k0, void *k1)
+pdf_cmp_key(fz_context *ctx, void *k0, void *k1)
 {
-	return pdf_objcmp((pdf_obj *)k0, (pdf_obj *)k1);
+	return pdf_objcmp(ctx, (pdf_obj *)k0, (pdf_obj *)k1);
 }
 
 #ifndef NDEBUG
 static void
-pdf_debug_key(FILE *out, void *key_)
+pdf_debug_key(fz_context *ctx, FILE *out, void *key_)
 {
 	pdf_obj *key = (pdf_obj *)key_;
 
-	if (pdf_is_indirect(key))
+	if (pdf_is_indirect(ctx, key))
 	{
-		fprintf(out, "(%d %d R) ", pdf_to_num(key), pdf_to_gen(key));
+		fprintf(out, "(%d %d R) ", pdf_to_num(ctx, key), pdf_to_gen(ctx, key));
 	}
 	else
-		pdf_fprint_obj(out, key, 0);
+		pdf_fprint_obj(ctx, out, key, 0);
 }
 #endif
 

@@ -5,17 +5,17 @@
  */
 
 static fz_outline *
-xps_lookup_last_outline_at_level(fz_outline *node, int level, int target_level)
+xps_lookup_last_outline_at_level(fz_context *ctx, xps_document *doc, fz_outline *node, int level, int target_level)
 {
 	while (node->next)
 		node = node->next;
 	if (level == target_level || !node->down)
 		return node;
-	return xps_lookup_last_outline_at_level(node->down, level + 1, target_level);
+	return xps_lookup_last_outline_at_level(ctx, doc, node->down, level + 1, target_level);
 }
 
 static fz_outline *
-xps_parse_document_outline(xps_document *doc, fz_xml *root)
+xps_parse_document_outline(fz_context *ctx, xps_document *doc, fz_xml *root)
 {
 	fz_xml *node;
 	fz_outline *head = NULL, *entry, *tail;
@@ -30,11 +30,11 @@ xps_parse_document_outline(xps_document *doc, fz_xml *root)
 			if (!target || !description)
 				continue;
 
-			entry = fz_malloc_struct(doc->ctx, fz_outline);
-			entry->title = fz_strdup(doc->ctx, description);
+			entry = fz_malloc_struct(ctx, fz_outline);
+			entry->title = fz_strdup(ctx, description);
 			entry->dest.kind = FZ_LINK_GOTO;
 			entry->dest.ld.gotor.flags = 0;
-			entry->dest.ld.gotor.page = xps_lookup_link_target(doc, target);
+			entry->dest.ld.gotor.page = xps_lookup_link_target(ctx, doc, target);
 			entry->down = NULL;
 			entry->next = NULL;
 
@@ -46,7 +46,7 @@ xps_parse_document_outline(xps_document *doc, fz_xml *root)
 			}
 			else
 			{
-				tail = xps_lookup_last_outline_at_level(head, 1, this_level);
+				tail = xps_lookup_last_outline_at_level(ctx, doc, head, 1, this_level);
 				if (this_level > last_level)
 					tail->down = entry;
 				else
@@ -60,7 +60,7 @@ xps_parse_document_outline(xps_document *doc, fz_xml *root)
 }
 
 static fz_outline *
-xps_parse_document_structure(xps_document *doc, fz_xml *root)
+xps_parse_document_structure(fz_context *ctx, xps_document *doc, fz_xml *root)
 {
 	fz_xml *node;
 	if (fz_xml_is_tag(root, "DocumentStructure"))
@@ -70,53 +70,53 @@ xps_parse_document_structure(xps_document *doc, fz_xml *root)
 		{
 			node = fz_xml_down(node);
 			if (node && fz_xml_is_tag(node, "DocumentOutline"))
-				return xps_parse_document_outline(doc, node);
+				return xps_parse_document_outline(ctx, doc, node);
 		}
 	}
 	return NULL;
 }
 
 static fz_outline *
-xps_load_document_structure(xps_document *doc, xps_fixdoc *fixdoc)
+xps_load_document_structure(fz_context *ctx, xps_document *doc, xps_fixdoc *fixdoc)
 {
 	xps_part *part;
 	fz_xml *root;
 	fz_outline *outline;
 
-	part = xps_read_part(doc, fixdoc->outline);
-	fz_try(doc->ctx)
+	part = xps_read_part(ctx, doc, fixdoc->outline);
+	fz_try(ctx)
 	{
-		root = fz_parse_xml(doc->ctx, part->data, part->size, 0);
+		root = fz_parse_xml(ctx, part->data, part->size, 0);
 	}
-	fz_always(doc->ctx)
+	fz_always(ctx)
 	{
-		xps_drop_part(doc, part);
+		xps_drop_part(ctx, doc, part);
 	}
-	fz_catch(doc->ctx)
+	fz_catch(ctx)
 	{
-		fz_rethrow(doc->ctx);
+		fz_rethrow(ctx);
 	}
 	if (!root)
 		return NULL;
 
-	fz_try(doc->ctx)
+	fz_try(ctx)
 	{
-		outline = xps_parse_document_structure(doc, root);
+		outline = xps_parse_document_structure(ctx, doc, root);
 	}
-	fz_always(doc->ctx)
+	fz_always(ctx)
 	{
-		fz_drop_xml(doc->ctx, root);
+		fz_drop_xml(ctx, root);
 	}
-	fz_catch(doc->ctx)
+	fz_catch(ctx)
 	{
-		fz_rethrow(doc->ctx);
+		fz_rethrow(ctx);
 	}
 
 	return outline;
 }
 
 fz_outline *
-xps_load_outline(xps_document *doc)
+xps_load_outline(fz_context *ctx, xps_document *doc)
 {
 	xps_fixdoc *fixdoc;
 	fz_outline *head = NULL, *tail, *outline;
@@ -125,13 +125,13 @@ xps_load_outline(xps_document *doc)
 	{
 		if (fixdoc->outline)
 		{
-			fz_try(doc->ctx)
+			fz_try(ctx)
 			{
-				outline = xps_load_document_structure(doc, fixdoc);
+				outline = xps_load_document_structure(ctx, doc, fixdoc);
 			}
-			fz_catch(doc->ctx)
+			fz_catch(ctx)
 			{
-				fz_rethrow_if(doc->ctx, FZ_ERROR_TRYLATER);
+				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 				outline = NULL;
 			}
 			if (!outline)

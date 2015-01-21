@@ -16,8 +16,6 @@ fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *zip, const char *e
 fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *zip, const char *entry);
 void fz_drop_archive(fz_context *ctx, fz_archive *ar);
 
-void fz_rebind_archive(fz_archive *zip, fz_context *ctx);
-
 int fz_count_archive_entries(fz_context *ctx, fz_archive *zip);
 const char *fz_list_archive_entry(fz_context *ctx, fz_archive *zip, int idx);
 

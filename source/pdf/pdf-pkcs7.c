@@ -345,22 +345,20 @@ exit:
 typedef struct pdf_designated_name_openssl_s
 {
 	pdf_designated_name base;
-	fz_context *ctx;
 	char buf[8192];
 } pdf_designated_name_openssl;
 
 struct pdf_signer_s
 {
-	fz_context *ctx;
 	int refs;
 	X509 *x509;
 	EVP_PKEY *pkey;
 };
 
-void pdf_drop_designated_name(pdf_designated_name *dn)
+void pdf_drop_designated_name(fz_context *ctx, pdf_designated_name *dn)
 {
 	if (dn)
-		fz_free(((pdf_designated_name_openssl *)dn)->ctx, dn);
+		fz_free(ctx, dn);
 }
 
 
@@ -436,7 +434,6 @@ pdf_signer *pdf_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 	fz_try(ctx)
 	{
 		signer = fz_malloc_struct(ctx, pdf_signer);
-		signer->ctx = ctx;
 		signer->refs = 1;
 
 		OpenSSL_add_all_algorithms();
@@ -502,22 +499,21 @@ pdf_signer *pdf_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_signer(signer);
+		pdf_drop_signer(ctx, signer);
 		fz_rethrow(ctx);
 	}
 
 	return signer;
 }
 
-pdf_signer *pdf_keep_signer(pdf_signer *signer)
+pdf_signer *pdf_keep_signer(fz_context *ctx, pdf_signer *signer)
 {
 	if (signer)
 		signer->refs++;
-
 	return signer;
 }
 
-void pdf_drop_signer(pdf_signer *signer)
+void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
 {
 	if (signer)
 	{
@@ -525,18 +521,16 @@ void pdf_drop_signer(pdf_signer *signer)
 		{
 			X509_free(signer->x509);
 			EVP_PKEY_free(signer->pkey);
-			fz_free(signer->ctx, signer);
+			fz_free(ctx, signer);
 		}
 	}
 }
 
-pdf_designated_name *pdf_signer_designated_name(pdf_signer *signer)
+pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *signer)
 {
-	fz_context *ctx = signer->ctx;
 	pdf_designated_name_openssl *dn = fz_malloc_struct(ctx, pdf_designated_name_openssl);
 	char *p;
 
-	dn->ctx = ctx;
 	X509_NAME_oneline(X509_get_subject_name(signer->x509), dn->buf, sizeof(dn->buf));
 	p = strstr(dn->buf, "/CN=");
 	if (p) dn->base.cn = p+4;
@@ -556,9 +550,8 @@ pdf_designated_name *pdf_signer_designated_name(pdf_signer *signer)
 	return (pdf_designated_name *)dn;
 }
 
-void pdf_write_digest(pdf_document *doc, char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+void pdf_write_digest(fz_context *ctx, pdf_document *doc, char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
 {
-	fz_context *ctx = doc->ctx;
 	BIO *bdata = NULL;
 	BIO *bsegs = NULL;
 	BIO *bp7in = NULL;
@@ -568,7 +561,7 @@ void pdf_write_digest(pdf_document *doc, char *filename, pdf_obj *byte_range, in
 	FILE *f = NULL;
 
 	int (*brange)[2] = NULL;
-	int brange_len = pdf_array_len(byte_range)/2;
+	int brange_len = pdf_array_len(ctx, byte_range)/2;
 
 	fz_var(bdata);
 	fz_var(bsegs);
@@ -586,8 +579,8 @@ void pdf_write_digest(pdf_document *doc, char *filename, pdf_obj *byte_range, in
 		brange = fz_calloc(ctx, brange_len, sizeof(*brange));
 		for (i = 0; i < brange_len; i++)
 		{
-			brange[i][0] = pdf_to_int(pdf_array_get(byte_range, 2*i));
-			brange[i][1] = pdf_to_int(pdf_array_get(byte_range, 2*i+1));
+			brange[i][0] = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i));
+			brange[i][1] = pdf_to_int(ctx, pdf_array_get(ctx, byte_range, 2*i+1));
 		}
 
 		bdata = BIO_new(BIO_s_file());
@@ -671,9 +664,8 @@ void pdf_write_digest(pdf_document *doc, char *filename, pdf_obj *byte_range, in
 	}
 }
 
-int pdf_check_signature(pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
 {
-	fz_context *ctx = doc->ctx;
 	int (*byte_range)[2] = NULL;
 	int byte_range_len;
 	char *contents = NULL;
@@ -696,14 +688,14 @@ int pdf_check_signature(pdf_document *doc, pdf_widget *widget, char *file, char 
 	fz_var(res);
 	fz_try(ctx);
 	{
-		byte_range_len = pdf_signature_widget_byte_range(doc, widget, NULL);
+		byte_range_len = pdf_signature_widget_byte_range(ctx, doc, widget, NULL);
 		if (byte_range_len)
 		{
 			byte_range = fz_calloc(ctx, byte_range_len, sizeof(*byte_range));
-			pdf_signature_widget_byte_range(doc, widget, byte_range);
+			pdf_signature_widget_byte_range(ctx, doc, widget, byte_range);
 		}
 
-		contents_len = pdf_signature_widget_contents(doc, widget, &contents);
+		contents_len = pdf_signature_widget_contents(ctx, doc, widget, &contents);
 		if (byte_range && contents)
 		{
 			res = verify_sig(contents, contents_len, file, byte_range, byte_range_len, ebuf, ebufsize);
@@ -731,9 +723,8 @@ int pdf_check_signature(pdf_document *doc, pdf_widget *widget, char *file, char 
 	return res;
 }
 
-void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfile, const char *password)
+void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, const char *sigfile, const char *password)
 {
-	fz_context *ctx = doc->ctx;
 	pdf_signer *signer = pdf_read_pfx(ctx, sigfile, password);
 	pdf_designated_name *dn = NULL;
 	fz_buffer *fzbuf = NULL;
@@ -744,13 +735,13 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 		pdf_obj *wobj = ((pdf_annot *)widget)->obj;
 		fz_rect rect = fz_empty_rect;
 
-		pdf_signature_set_value(doc, wobj, signer);
+		pdf_signature_set_value(ctx, doc, wobj, signer);
 
-		pdf_to_rect(ctx, pdf_dict_gets(wobj, "Rect"), &rect);
+		pdf_to_rect(ctx, pdf_dict_gets(ctx, wobj, "Rect"), &rect);
 		/* Create an appearance stream only if the signature is intended to be visible */
 		if (!fz_is_empty_rect(&rect))
 		{
-			dn = pdf_signer_designated_name(signer);
+			dn = pdf_signer_designated_name(ctx, signer);
 			fzbuf = fz_new_buffer(ctx, 256);
 			if (!dn->cn)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Certificate has no common name");
@@ -770,13 +761,13 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 				fz_buffer_printf(ctx, fzbuf, ", c=%s", dn->c);
 
 			(void)fz_buffer_storage(ctx, fzbuf, (unsigned char **) &dn_str);
-			pdf_set_signature_appearance(doc, (pdf_annot *)widget, dn->cn, dn_str, NULL);
+			pdf_set_signature_appearance(ctx, doc, (pdf_annot *)widget, dn->cn, dn_str, NULL);
 		}
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_signer(signer);
-		pdf_drop_designated_name(dn);
+		pdf_drop_signer(ctx, signer);
+		pdf_drop_designated_name(ctx, dn);
 		fz_drop_buffer(ctx, fzbuf);
 	}
 	fz_catch(ctx)
@@ -785,37 +776,37 @@ void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfi
 	}
 }
 
-int pdf_signatures_supported(void)
+int pdf_signatures_supported(fz_context *ctx)
 {
 	return 1;
 }
 
 #else /* HAVE_OPENSSL */
 
-int pdf_check_signature(pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
+int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
 {
 	fz_strlcpy(ebuf, "This version of MuPDF was built without signature support", ebufsize);
 	return 0;
 }
 
-void pdf_sign_signature(pdf_document *doc, pdf_widget *widget, const char *sigfile, const char *password)
+void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, const char *sigfile, const char *password)
 {
 }
 
-pdf_signer *pdf_keep_signer(pdf_signer *signer)
+pdf_signer *pdf_keep_signer(fz_context *ctx, pdf_signer *signer)
 {
 	return NULL;
 }
 
-void pdf_drop_signer(pdf_signer *signer)
+void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
 {
 }
 
-void pdf_write_digest(pdf_document *doc, char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+void pdf_write_digest(fz_context *ctx, pdf_document *doc, char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
 {
 }
 
-int pdf_signatures_supported(void)
+int pdf_signatures_supported(fz_context *ctx)
 {
 	return 0;
 }

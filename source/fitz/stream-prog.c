@@ -27,7 +27,7 @@ typedef struct prog_state
 	unsigned char buffer[4096];
 } prog_state;
 
-static int next_prog(fz_stream *stm, int len)
+static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 {
 	prog_state *ps = (prog_state *)stm->state;
 	int n;
@@ -50,14 +50,14 @@ static int next_prog(fz_stream *stm, int len)
 			if (len <= 0)
 			{
 				show_progress(av, stm->pos);
-				fz_throw(stm->ctx, FZ_ERROR_TRYLATER, "Not enough data yet");
+				fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data yet");
 			}
 		}
 	}
 
 	n = (len > 0 ? read(ps->fd, buf, len) : 0);
 	if (n < 0)
-		fz_throw(stm->ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = ps->buffer + stm->pos;
 	stm->wp = ps->buffer + stm->pos + n;
 	stm->pos += n;
@@ -66,7 +66,7 @@ static int next_prog(fz_stream *stm, int len)
 	return *stm->rp++;
 }
 
-static void seek_prog(fz_stream *stm, int offset, int whence)
+static void seek_prog(fz_context *ctx, fz_stream *stm, int offset, int whence)
 {
 	prog_state *ps = (prog_state *)stm->state;
 	int n;
@@ -84,7 +84,7 @@ static void seek_prog(fz_stream *stm, int offset, int whence)
 		if (whence == SEEK_END)
 		{
 			show_progress(ps->available, ps->length);
-			fz_throw(stm->ctx, FZ_ERROR_TRYLATER, "Not enough data to seek to end yet");
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data to seek to end yet");
 		}
 	}
 	if (whence == SEEK_CUR)
@@ -94,7 +94,7 @@ static void seek_prog(fz_stream *stm, int offset, int whence)
 		if (offset > ps->available)
 		{
 			show_progress(ps->available, offset);
-			fz_throw(stm->ctx, FZ_ERROR_TRYLATER, "Not enough data to seek (relatively) to offset yet");
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data to seek (relatively) to offset yet");
 		}
 	}
 	if (whence == SEEK_SET)
@@ -102,13 +102,13 @@ static void seek_prog(fz_stream *stm, int offset, int whence)
 		if (offset > ps->available)
 		{
 			show_progress(ps->available, offset);
-			fz_throw(stm->ctx, FZ_ERROR_TRYLATER, "Not enough data to seek to offset yet");
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data to seek to offset yet");
 		}
 	}
 
 	n = lseek(ps->fd, offset, whence);
 	if (n < 0)
-		fz_throw(stm->ctx, FZ_ERROR_GENERIC, "cannot lseek: %s", strerror(errno));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot lseek: %s", strerror(errno));
 	stm->pos = n;
 	stm->wp = stm->rp;
 }
@@ -122,7 +122,7 @@ static void close_prog(fz_context *ctx, void *state)
 	fz_free(ctx, state);
 }
 
-static int meta_prog(fz_stream *stm, int key, int size, void *ptr)
+static int meta_prog(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr)
 {
 	prog_state *ps = (prog_state *)stm->state;
 	switch(key)
@@ -153,7 +153,7 @@ fz_open_fd_progressive(fz_context *ctx, int fd, int bps)
 
 	fz_try(ctx)
 	{
-		stm = fz_new_stream(ctx, state, next_prog, close_prog, NULL);
+		stm = fz_new_stream(ctx, state, next_prog, close_prog);
 	}
 	fz_catch(ctx)
 	{

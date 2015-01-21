@@ -21,31 +21,31 @@ static void usage(void)
  * Recreate page tree with our posterised pages in.
  */
 
-static void decimatepages(pdf_document *doc)
+static void decimatepages(fz_context *ctx, pdf_document *doc)
 {
 	pdf_obj *oldroot, *root, *pages, *kids, *parent;
-	int num_pages = pdf_count_pages(doc);
+	int num_pages = pdf_count_pages(ctx, doc);
 	int page, kidcount;
 
-	oldroot = pdf_dict_gets(pdf_trailer(doc), "Root");
-	pages = pdf_dict_gets(oldroot, "Pages");
+	oldroot = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
+	pages = pdf_dict_gets(ctx, oldroot, "Pages");
 
-	root = pdf_new_dict(doc, 2);
-	pdf_dict_puts(root, "Type", pdf_dict_gets(oldroot, "Type"));
-	pdf_dict_puts(root, "Pages", pdf_dict_gets(oldroot, "Pages"));
+	root = pdf_new_dict(ctx, doc, 2);
+	pdf_dict_puts(ctx, root, "Type", pdf_dict_gets(ctx, oldroot, "Type"));
+	pdf_dict_puts(ctx, root, "Pages", pdf_dict_gets(ctx, oldroot, "Pages"));
 
-	pdf_update_object(doc, pdf_to_num(oldroot), root);
+	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
-	pdf_drop_obj(root);
+	pdf_drop_obj(ctx, root);
 
 	/* Create a new kids array with our new pages in */
-	parent = pdf_new_indirect(doc, pdf_to_num(pages), pdf_to_gen(pages));
-	kids = pdf_new_array(doc, 1);
+	parent = pdf_new_indirect(ctx, doc, pdf_to_num(ctx, pages), pdf_to_gen(ctx, pages));
+	kids = pdf_new_array(ctx, doc, 1);
 
 	kidcount = 0;
 	for (page=0; page < num_pages; page++)
 	{
-		pdf_page *page_details = pdf_load_page(doc, page);
+		pdf_page *page_details = pdf_load_page(ctx, doc, page);
 		int xf = x_factor, yf = y_factor;
 		int x, y;
 		float w = page_details->mediabox.x1 - page_details->mediabox.x0;
@@ -72,12 +72,12 @@ static void decimatepages(pdf_document *doc)
 				fz_rect mb;
 				int num;
 
-				newpageobj = pdf_copy_dict(pdf_lookup_page_obj(doc, page));
-				num = pdf_create_object(doc);
-				pdf_update_object(doc, num, newpageobj);
-				newpageref = pdf_new_indirect(doc, num, 0);
+				newpageobj = pdf_copy_dict(ctx, pdf_lookup_page_obj(ctx, doc, page));
+				num = pdf_create_object(ctx, doc);
+				pdf_update_object(ctx, doc, num, newpageobj);
+				newpageref = pdf_new_indirect(ctx, doc, num, 0);
 
-				newmediabox = pdf_new_array(doc, 4);
+				newmediabox = pdf_new_array(ctx, doc, 4);
 
 				mb.x0 = page_details->mediabox.x0 + (w/xf)*x;
 				if (x == xf-1)
@@ -90,28 +90,28 @@ static void decimatepages(pdf_document *doc)
 				else
 					mb.y1 = page_details->mediabox.y0 + (h/yf)*(y+1);
 
-				pdf_array_push(newmediabox, pdf_new_real(doc, mb.x0));
-				pdf_array_push(newmediabox, pdf_new_real(doc, mb.y0));
-				pdf_array_push(newmediabox, pdf_new_real(doc, mb.x1));
-				pdf_array_push(newmediabox, pdf_new_real(doc, mb.y1));
+				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.x0));
+				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.y0));
+				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.x1));
+				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.y1));
 
-				pdf_dict_puts(newpageobj, "Parent", parent);
-				pdf_dict_puts(newpageobj, "MediaBox", newmediabox);
+				pdf_dict_puts(ctx, newpageobj, "Parent", parent);
+				pdf_dict_puts(ctx, newpageobj, "MediaBox", newmediabox);
 
 				/* Store page object in new kids array */
-				pdf_array_push(kids, newpageref);
+				pdf_array_push(ctx, kids, newpageref);
 
 				kidcount++;
 			}
 		}
 	}
 
-	pdf_drop_obj(parent);
+	pdf_drop_obj(ctx, parent);
 
 	/* Update page count and kids array */
-	pdf_dict_puts(pages, "Count", pdf_new_int(doc, kidcount));
-	pdf_dict_puts(pages, "Kids", kids);
-	pdf_drop_obj(kids);
+	pdf_dict_puts(ctx, pages, "Count", pdf_new_int(ctx, doc, kidcount));
+	pdf_dict_puts(ctx, pages, "Kids", kids);
+	pdf_drop_obj(ctx, kids);
 }
 
 int pdfposter_main(int argc, char **argv)
@@ -160,15 +160,15 @@ int pdfposter_main(int argc, char **argv)
 	}
 
 	doc = pdf_open_document_no_run(ctx, infile);
-	if (pdf_needs_password(doc))
-		if (!pdf_authenticate_password(doc, password))
+	if (pdf_needs_password(ctx, doc))
+		if (!pdf_authenticate_password(ctx, doc, password))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);
 
-	decimatepages(doc);
+	decimatepages(ctx, doc);
 
-	pdf_write_document(doc, outfile, &opts);
+	pdf_write_document(ctx, doc, outfile, &opts);
 
-	pdf_close_document(doc);
+	pdf_close_document(ctx, doc);
 	fz_drop_context(ctx);
 	return 0;
 }

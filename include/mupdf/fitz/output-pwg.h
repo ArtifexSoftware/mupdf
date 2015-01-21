@@ -78,21 +78,21 @@ void fz_write_pwg_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int
 /*
 	Output a pixmap to an output stream as a pwg raster.
 */
-void fz_output_pwg(fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
+void fz_output_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
 
 /*
 	Output the file header to a pwg stream, ready for pages to follow it.
 */
-void fz_output_pwg_file_header(fz_output *out);
+void fz_output_pwg_file_header(fz_context *ctx, fz_output *out);
 
 /*
 	Output a page to a pwg stream to follow a header, or other pages.
 */
-void fz_output_pwg_page(fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
+void fz_output_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg);
 
 /*
 	Output a bitmap page to a pwg stream to follow a header, or other pages.
 */
-void fz_output_pwg_bitmap_page(fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
+void fz_output_pwg_bitmap_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
 
 #endif

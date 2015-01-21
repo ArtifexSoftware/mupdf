@@ -27,26 +27,26 @@ struct fz_archive_s
 	struct zip_entry *table;
 };
 
-static inline int getshort(fz_stream *file)
+static inline int getshort(fz_context *ctx, fz_stream *file)
 {
-	int a = fz_read_byte(file);
-	int b = fz_read_byte(file);
+	int a = fz_read_byte(ctx, file);
+	int b = fz_read_byte(ctx, file);
 	return a | b << 8;
 }
 
-static inline int getlong(fz_stream *file)
+static inline int getlong(fz_context *ctx, fz_stream *file)
 {
-	int a = fz_read_byte(file);
-	int b = fz_read_byte(file);
-	int c = fz_read_byte(file);
-	int d = fz_read_byte(file);
+	int a = fz_read_byte(ctx, file);
+	int b = fz_read_byte(ctx, file);
+	int c = fz_read_byte(ctx, file);
+	int d = fz_read_byte(ctx, file);
 	return a | b << 8 | c << 16 | d << 24;
 }
 
-static inline int getlong64(fz_stream *file)
+static inline int getlong64(fz_context *ctx, fz_stream *file)
 {
-	int a = getlong(file);
-	int b = getlong(file);
+	int a = getlong(ctx, file);
+	int b = getlong(ctx, file);
 	return b != 0 ? -1 : a;
 }
 
@@ -106,50 +106,50 @@ static void read_zip_dir_imp(fz_context *ctx, fz_archive *zip, int start_offset)
 	int namesize, metasize, commentsize;
 	int i;
 
-	fz_seek(file, start_offset, 0);
+	fz_seek(ctx, file, start_offset, 0);
 
-	sig = getlong(file);
+	sig = getlong(ctx, file);
 	if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip end of central directory signature (0x%x)", sig);
 
-	(void) getshort(file); /* this disk */
-	(void) getshort(file); /* start disk */
-	(void) getshort(file); /* entries in this disk */
-	count = getshort(file); /* entries in central directory disk */
-	(void) getlong(file); /* size of central directory */
-	offset = getlong(file); /* offset to central directory */
+	(void) getshort(ctx, file); /* this disk */
+	(void) getshort(ctx, file); /* start disk */
+	(void) getshort(ctx, file); /* entries in this disk */
+	count = getshort(ctx, file); /* entries in central directory disk */
+	(void) getlong(ctx, file); /* size of central directory */
+	offset = getlong(ctx, file); /* offset to central directory */
 
 	/* ZIP64 */
 	if (count == 0xFFFF || offset == 0xFFFFFFFF)
 	{
 		int offset64, count64;
 
-		fz_seek(file, start_offset - 20, 0);
+		fz_seek(ctx, file, start_offset - 20, 0);
 
-		sig = getlong(file);
+		sig = getlong(ctx, file);
 		if (sig != ZIP64_END_OF_CENTRAL_DIRECTORY_LOCATOR_SIG)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip64 end of central directory locator signature (0x%x)", sig);
 
-		(void) getlong(file); /* start disk */
-		offset64 = getlong64(file); /* offset to end of central directory record */
+		(void) getlong(ctx, file); /* start disk */
+		offset64 = getlong64(ctx, file); /* offset to end of central directory record */
 		if (offset64 < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB aren't supported");
 
-		fz_seek(file, offset64, 0);
+		fz_seek(ctx, file, offset64, 0);
 
-		sig = getlong(file);
+		sig = getlong(ctx, file);
 		if (sig != ZIP64_END_OF_CENTRAL_DIRECTORY_SIG)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip64 end of central directory signature (0x%x)", sig);
 
-		(void) getlong64(file); /* size of record */
-		(void) getshort(file); /* version made by */
-		(void) getshort(file); /* version to extract */
-		(void) getlong(file); /* disk number */
-		(void) getlong(file); /* disk number start */
-		count64 = getlong64(file); /* entries in central directory disk */
-		(void) getlong64(file); /* entries in central directory */
-		(void) getlong64(file); /* size of central directory */
-		offset64 = getlong64(file); /* offset to central directory */
+		(void) getlong64(ctx, file); /* size of record */
+		(void) getshort(ctx, file); /* version made by */
+		(void) getshort(ctx, file); /* version to extract */
+		(void) getlong(ctx, file); /* disk number */
+		(void) getlong(ctx, file); /* disk number start */
+		count64 = getlong64(ctx, file); /* entries in central directory disk */
+		(void) getlong64(ctx, file); /* entries in central directory */
+		(void) getlong64(ctx, file); /* size of central directory */
+		offset64 = getlong64(ctx, file); /* offset to central directory */
 
 		if (count == 0xFFFF)
 			count = count64;
@@ -163,66 +163,66 @@ static void read_zip_dir_imp(fz_context *ctx, fz_archive *zip, int start_offset)
 	zip->table = fz_malloc_array(ctx, count, sizeof *zip->table);
 	memset(zip->table, 0, count * sizeof *zip->table);
 
-	fz_seek(file, offset, 0);
+	fz_seek(ctx, file, offset, 0);
 
 	for (i = 0; i < count; i++)
 	{
-		sig = getlong(file);
+		sig = getlong(ctx, file);
 		if (sig != ZIP_CENTRAL_DIRECTORY_SIG)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip central directory signature (0x%x)", sig);
 
-		(void) getshort(file); /* version made by */
-		(void) getshort(file); /* version to extract */
-		(void) getshort(file); /* general */
-		(void) getshort(file); /* method */
-		(void) getshort(file); /* last mod file time */
-		(void) getshort(file); /* last mod file date */
-		(void) getlong(file); /* crc-32 */
-		zip->table[i].csize = getlong(file);
-		zip->table[i].usize = getlong(file);
-		namesize = getshort(file);
-		metasize = getshort(file);
-		commentsize = getshort(file);
-		(void) getshort(file); /* disk number start */
-		(void) getshort(file); /* int file atts */
-		(void) getlong(file); /* ext file atts */
-		zip->table[i].offset = getlong(file);
+		(void) getshort(ctx, file); /* version made by */
+		(void) getshort(ctx, file); /* version to extract */
+		(void) getshort(ctx, file); /* general */
+		(void) getshort(ctx, file); /* method */
+		(void) getshort(ctx, file); /* last mod file time */
+		(void) getshort(ctx, file); /* last mod file date */
+		(void) getlong(ctx, file); /* crc-32 */
+		zip->table[i].csize = getlong(ctx, file);
+		zip->table[i].usize = getlong(ctx, file);
+		namesize = getshort(ctx, file);
+		metasize = getshort(ctx, file);
+		commentsize = getshort(ctx, file);
+		(void) getshort(ctx, file); /* disk number start */
+		(void) getshort(ctx, file); /* int file atts */
+		(void) getlong(ctx, file); /* ext file atts */
+		zip->table[i].offset = getlong(ctx, file);
 
 		zip->table[i].name = fz_malloc(ctx, namesize + 1);
-		fz_read(file, (unsigned char*)zip->table[i].name, namesize);
+		fz_read(ctx, file, (unsigned char*)zip->table[i].name, namesize);
 		zip->table[i].name[namesize] = 0;
 
 		while (metasize > 0)
 		{
-			int type = getshort(file);
-			int size = getshort(file);
+			int type = getshort(ctx, file);
+			int size = getshort(ctx, file);
 			if (type == ZIP64_EXTRA_FIELD_SIG)
 			{
 				int sizeleft = size;
 				if (zip->table[i].usize == 0xFFFFFFFF && sizeleft >= 8)
 				{
-					zip->table[i].usize = getlong64(file);
+					zip->table[i].usize = getlong64(ctx, file);
 					sizeleft -= 8;
 				}
 				if (zip->table[i].csize == 0xFFFFFFFF && sizeleft >= 8)
 				{
-					zip->table[i].csize = getlong64(file);
+					zip->table[i].csize = getlong64(ctx, file);
 					sizeleft -= 8;
 				}
 				if (zip->table[i].offset == 0xFFFFFFFF && sizeleft >= 8)
 				{
-					zip->table[i].offset = getlong64(file);
+					zip->table[i].offset = getlong64(ctx, file);
 					sizeleft -= 8;
 				}
-				fz_seek(file, sizeleft - size, 1);
+				fz_seek(ctx, file, sizeleft - size, 1);
 			}
-			fz_seek(file, size, 1);
+			fz_seek(ctx, file, size, 1);
 			metasize -= 4 + size;
 		}
 		if (zip->table[i].usize < 0 || zip->table[i].csize < 0 || zip->table[i].offset < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "zip64 files larger than 2 GB are not supported");
 
-		fz_seek(file, commentsize, 1);
+		fz_seek(ctx, file, commentsize, 1);
 	}
 
 	qsort(zip->table, count, sizeof *zip->table, case_compare_entries);
@@ -235,16 +235,16 @@ static void read_zip_dir(fz_context *ctx, fz_archive *zip)
 	int size, back, maxback;
 	int i, n;
 
-	fz_seek(file, 0, SEEK_END);
-	size = fz_tell(file);
+	fz_seek(ctx, file, 0, SEEK_END);
+	size = fz_tell(ctx, file);
 
 	maxback = fz_mini(size, 0xFFFF + sizeof buf);
 	back = fz_mini(maxback, sizeof buf);
 
 	while (back < maxback)
 	{
-		fz_seek(file, size - back, 0);
-		n = fz_read(file, buf, sizeof buf);
+		fz_seek(ctx, file, size - back, 0);
+		n = fz_read(ctx, file, buf, sizeof buf);
 		for (i = n - 4; i > 0; i--)
 		{
 			if (!memcmp(buf + i, "PK\5\6", 4))
@@ -264,27 +264,27 @@ static int read_zip_entry_header(fz_context *ctx, fz_archive *zip, struct zip_en
 	fz_stream *file = zip->file;
 	int sig, general, method, namelength, extralength;
 
-	fz_seek(file, ent->offset, 0);
+	fz_seek(ctx, file, ent->offset, 0);
 
-	sig = getlong(file);
+	sig = getlong(ctx, file);
 	if (sig != ZIP_LOCAL_FILE_SIG)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "wrong zip local file signature (0x%x)", sig);
 
-	(void) getshort(file); /* version */
-	general = getshort(file); /* general */
+	(void) getshort(ctx, file); /* version */
+	general = getshort(ctx, file); /* general */
 	if (general & ZIP_ENCRYPTED_FLAG)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "zip content is encrypted");
 
-	method = getshort(file);
-	(void) getshort(file); /* file time */
-	(void) getshort(file); /* file date */
-	(void) getlong(file); /* crc-32 */
-	(void) getlong(file); /* csize */
-	(void) getlong(file); /* usize */
-	namelength = getshort(file);
-	extralength = getshort(file);
+	method = getshort(ctx, file);
+	(void) getshort(ctx, file); /* file time */
+	(void) getshort(ctx, file); /* file date */
+	(void) getlong(ctx, file); /* crc-32 */
+	(void) getlong(ctx, file); /* csize */
+	(void) getlong(ctx, file); /* usize */
+	namelength = getshort(ctx, file);
+	extralength = getshort(ctx, file);
 
-	fz_seek(file, namelength + extralength, 1);
+	fz_seek(ctx, file, namelength + extralength, 1);
 
 	return method;
 }
@@ -294,9 +294,9 @@ static fz_stream *open_zip_entry(fz_context *ctx, fz_archive *zip, struct zip_en
 	fz_stream *file = zip->file;
 	int method = read_zip_entry_header(ctx, zip, ent);
 	if (method == 0)
-		return fz_open_null(file, ent->usize, fz_tell(file));
+		return fz_open_null(ctx, file, ent->usize, fz_tell(ctx, file));
 	if (method == 8)
-		return fz_open_flated(file, -15);
+		return fz_open_flated(ctx, file, -15);
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown zip method: %d", method);
 }
 
@@ -318,7 +318,7 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *zip, struct zip_en
 	{
 		fz_try(ctx)
 		{
-			fz_read(file, ubuf->data, ent->usize);
+			fz_read(ctx, file, ubuf->data, ent->usize);
 		}
 		fz_catch(ctx)
 		{
@@ -333,7 +333,7 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *zip, struct zip_en
 		cbuf = fz_malloc(ctx, ent->csize);
 		fz_try(ctx)
 		{
-			fz_read(file, cbuf, ent->csize);
+			fz_read(ctx, file, cbuf, ent->csize);
 
 			z.zalloc = (alloc_func) fz_malloc_array;
 			z.zfree = (free_func) fz_free;
@@ -458,19 +458,12 @@ fz_drop_archive(fz_context *ctx, fz_archive *zip)
 	if (zip)
 	{
 		fz_free(ctx, zip->directory);
-		fz_drop_stream(zip->file);
+		fz_drop_stream(ctx, zip->file);
 		for (i = 0; i < zip->count; ++i)
 			fz_free(ctx, zip->table[i].name);
 		fz_free(ctx, zip->table);
 		fz_free(ctx, zip);
 	}
-}
-
-void
-fz_rebind_archive(fz_archive *zip, fz_context *ctx)
-{
-	if (zip->file)
-		fz_rebind_stream(zip->file, ctx);
 }
 
 fz_archive *
@@ -487,7 +480,7 @@ fz_open_archive_with_stream(fz_context *ctx, fz_stream *file)
 	fz_archive *zip;
 
 	zip = fz_malloc_struct(ctx, fz_archive);
-	zip->file = fz_keep_stream(file);
+	zip->file = fz_keep_stream(ctx, file);
 	zip->count = 0;
 	zip->table = NULL;
 
@@ -517,7 +510,7 @@ fz_open_archive(fz_context *ctx, const char *filename)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stream(file);
+		fz_drop_stream(ctx, file);
 	}
 	fz_catch(ctx)
 	{

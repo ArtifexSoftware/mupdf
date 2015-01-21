@@ -98,7 +98,7 @@ main(int argc, char **argv)
 
 		fi = fz_open_file(ctx, argv[i]);
 		cmap = pdf_load_cmap(ctx, fi);
-		fz_drop_stream(fi);
+		fz_drop_stream(ctx, fi);
 
 		fprintf(fo, "\n/* %s */\n\n", cmap->cmap_name);
 

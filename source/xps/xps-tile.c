@@ -15,58 +15,61 @@ struct closure
 	xps_resource *dict;
 	fz_xml *root;
 	void *user;
-	void (*func)(xps_document*, const fz_matrix *, const fz_rect *, char*, xps_resource*, fz_xml*, void*);
+	void (*func)(fz_context *ctx, xps_document*, const fz_matrix *, const fz_rect *, char*, xps_resource*, fz_xml*, void*);
 };
 
 static void
-xps_paint_tiling_brush_clipped(xps_document *doc, const fz_matrix *ctm, const fz_rect *viewbox, struct closure *c)
+xps_paint_tiling_brush_clipped(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *viewbox, struct closure *c)
 {
-	fz_path *path = fz_new_path(doc->ctx);
-	fz_moveto(doc->ctx, path, viewbox->x0, viewbox->y0);
-	fz_lineto(doc->ctx, path, viewbox->x0, viewbox->y1);
-	fz_lineto(doc->ctx, path, viewbox->x1, viewbox->y1);
-	fz_lineto(doc->ctx, path, viewbox->x1, viewbox->y0);
-	fz_closepath(doc->ctx, path);
-	fz_clip_path(doc->dev, path, NULL, 0, ctm);
-	fz_drop_path(doc->ctx, path);
-	c->func(doc, ctm, viewbox, c->base_uri, c->dict, c->root, c->user);
-	fz_pop_clip(doc->dev);
+	fz_device *dev = doc->dev;
+
+	fz_path *path = fz_new_path(ctx);
+	fz_moveto(ctx, path, viewbox->x0, viewbox->y0);
+	fz_lineto(ctx, path, viewbox->x0, viewbox->y1);
+	fz_lineto(ctx, path, viewbox->x1, viewbox->y1);
+	fz_lineto(ctx, path, viewbox->x1, viewbox->y0);
+	fz_closepath(ctx, path);
+	fz_clip_path(ctx, dev, path, NULL, 0, ctm);
+	fz_drop_path(ctx, path);
+	c->func(ctx, doc, ctm, viewbox, c->base_uri, c->dict, c->root, c->user);
+	fz_pop_clip(ctx, dev);
 }
 
 static void
-xps_paint_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *viewbox, int tile_mode, struct closure *c)
+xps_paint_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *viewbox, int tile_mode, struct closure *c)
 {
 	fz_matrix ttm;
 
-	xps_paint_tiling_brush_clipped(doc, ctm, viewbox, c);
+	xps_paint_tiling_brush_clipped(ctx, doc, ctm, viewbox, c);
 
 	if (tile_mode == TILE_FLIP_X || tile_mode == TILE_FLIP_X_Y)
 	{
 		ttm = *ctm;
 		fz_pre_scale(fz_pre_translate(&ttm, viewbox->x1 * 2, 0), -1, 1);
-		xps_paint_tiling_brush_clipped(doc, &ttm, viewbox, c);
+		xps_paint_tiling_brush_clipped(ctx, doc, &ttm, viewbox, c);
 	}
 
 	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
 	{
 		ttm = *ctm;
 		fz_pre_scale(fz_pre_translate(&ttm, 0, viewbox->y1 * 2), 1, -1);
-		xps_paint_tiling_brush_clipped(doc, &ttm, viewbox, c);
+		xps_paint_tiling_brush_clipped(ctx, doc, &ttm, viewbox, c);
 	}
 
 	if (tile_mode == TILE_FLIP_X_Y)
 	{
 		ttm = *ctm;
 		fz_pre_scale(fz_pre_translate(&ttm, viewbox->x1 * 2, viewbox->y1 * 2), -1, -1);
-		xps_paint_tiling_brush_clipped(doc, &ttm, viewbox, c);
+		xps_paint_tiling_brush_clipped(ctx, doc, &ttm, viewbox, c);
 	}
 }
 
 void
-xps_parse_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
+xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 	char *base_uri, xps_resource *dict, fz_xml *root,
-	void (*func)(xps_document*, const fz_matrix*, const fz_rect*, char*, xps_resource*, fz_xml*, void*), void *user)
+	void (*func)(fz_context *ctx, xps_document*, const fz_matrix*, const fz_rect*, char*, xps_resource*, fz_xml*, void*), void *user)
 {
+	fz_device *dev = doc->dev;
 	fz_xml *node;
 	struct closure c;
 
@@ -105,27 +108,27 @@ xps_parse_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *a
 			transform_tag = fz_xml_down(node);
 	}
 
-	xps_resolve_resource_reference(doc, dict, &transform_att, &transform_tag, NULL);
+	xps_resolve_resource_reference(ctx, doc, dict, &transform_att, &transform_tag, NULL);
 
 	transform = fz_identity;
 	if (transform_att)
-		xps_parse_render_transform(doc, transform_att, &transform);
+		xps_parse_render_transform(ctx, doc, transform_att, &transform);
 	if (transform_tag)
-		xps_parse_matrix_transform(doc, transform_tag, &transform);
+		xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
 	fz_concat(&transform, &transform, ctm);
 
 	viewbox = fz_unit_rect;
 	if (viewbox_att)
-		xps_parse_rectangle(doc, viewbox_att, &viewbox);
+		xps_parse_rectangle(ctx, doc, viewbox_att, &viewbox);
 
 	viewport = fz_unit_rect;
 	if (viewport_att)
-		xps_parse_rectangle(doc, viewport_att, &viewport);
+		xps_parse_rectangle(ctx, doc, viewport_att, &viewport);
 
 	if (fabsf(viewport.x1 - viewport.x0) < 0.01f || fabsf(viewport.y1 - viewport.y0) < 0.01f)
-		fz_warn(doc->ctx, "not drawing tile for viewport size %.4f x %.4f", viewport.x1 - viewport.x0, viewport.y1 - viewport.y0);
+		fz_warn(ctx, "not drawing tile for viewport size %.4f x %.4f", viewport.x1 - viewport.x0, viewport.y1 - viewport.y0);
 	else if (fabsf(viewbox.x1 - viewbox.x0) < 0.01f || fabsf(viewbox.y1 - viewbox.y0) < 0.01f)
-		fz_warn(doc->ctx, "not drawing tile for viewbox size %.4f x %.4f", viewbox.x1 - viewbox.x0, viewbox.y1 - viewbox.y0);
+		fz_warn(ctx, "not drawing tile for viewbox size %.4f x %.4f", viewbox.x1 - viewbox.x0, viewbox.y1 - viewbox.y0);
 
 	/* some sanity checks on the viewport/viewbox size */
 	if (fabsf(viewport.x1 - viewport.x0) < 0.01f) return;
@@ -159,7 +162,7 @@ xps_parse_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *a
 	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
 		ystep *= 2;
 
-	xps_begin_opacity(doc, &transform, area, base_uri, dict, opacity_att, NULL);
+	xps_begin_opacity(ctx, doc, &transform, area, base_uri, dict, opacity_att, NULL);
 
 	fz_pre_translate(&transform, viewport.x0, viewport.y0);
 	fz_pre_scale(&transform, xscale, yscale);
@@ -185,9 +188,9 @@ xps_parse_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *a
 			fz_rect bigview = viewbox;
 			bigview.x1 = bigview.x0 + xstep;
 			bigview.y1 = bigview.y0 + ystep;
-			fz_begin_tile(doc->dev, &local_area, &bigview, xstep, ystep, &transform);
-			xps_paint_tiling_brush(doc, &transform, &viewbox, tile_mode, &c);
-			fz_end_tile(doc->dev);
+			fz_begin_tile(ctx, dev, &local_area, &bigview, xstep, ystep, &transform);
+			xps_paint_tiling_brush(ctx, doc, &transform, &viewbox, tile_mode, &c);
+			fz_end_tile(ctx, dev);
 		}
 		else
 		{
@@ -198,28 +201,28 @@ xps_parse_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *a
 				{
 					fz_matrix ttm = transform;
 					fz_pre_translate(&ttm, xstep * x, ystep * y);
-					xps_paint_tiling_brush(doc, &ttm, &viewbox, tile_mode, &c);
+					xps_paint_tiling_brush(ctx, doc, &ttm, &viewbox, tile_mode, &c);
 				}
 			}
 		}
 	}
 	else
 	{
-		xps_paint_tiling_brush(doc, &transform, &viewbox, tile_mode, &c);
+		xps_paint_tiling_brush(ctx, doc, &transform, &viewbox, tile_mode, &c);
 	}
 
-	xps_end_opacity(doc, base_uri, dict, opacity_att, NULL);
+	xps_end_opacity(ctx, doc, base_uri, dict, opacity_att, NULL);
 }
 
 static void
-xps_paint_visual_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
+xps_paint_visual_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 	char *base_uri, xps_resource *dict, fz_xml *root, void *visual_tag)
 {
-	xps_parse_element(doc, ctm, area, base_uri, dict, (fz_xml *)visual_tag);
+	xps_parse_element(ctx, doc, ctm, area, base_uri, dict, (fz_xml *)visual_tag);
 }
 
 void
-xps_parse_visual_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
+xps_parse_visual_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 	char *base_uri, xps_resource *dict, fz_xml *root)
 {
 	fz_xml *node;
@@ -237,18 +240,19 @@ xps_parse_visual_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *a
 	}
 
 	visual_uri = base_uri;
-	xps_resolve_resource_reference(doc, dict, &visual_att, &visual_tag, &visual_uri);
+	xps_resolve_resource_reference(ctx, doc, dict, &visual_att, &visual_tag, &visual_uri);
 
 	if (visual_tag)
 	{
-		xps_parse_tiling_brush(doc, ctm, area,
+		xps_parse_tiling_brush(ctx, doc, ctm, area,
 			visual_uri, dict, root, xps_paint_visual_brush, visual_tag);
 	}
 }
 
 void
-xps_parse_canvas(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *root)
+xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *root)
 {
+	fz_device *dev = doc->dev;
 	xps_resource *new_dict = NULL;
 	fz_xml *node;
 	char *opacity_mask_uri;
@@ -277,11 +281,11 @@ xps_parse_canvas(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, c
 		{
 			if (new_dict)
 			{
-				fz_warn(doc->ctx, "ignoring follow-up resource dictionaries");
+				fz_warn(ctx, "ignoring follow-up resource dictionaries");
 			}
 			else
 			{
-				new_dict = xps_parse_resource_dictionary(doc, base_uri, fz_xml_down(node));
+				new_dict = xps_parse_resource_dictionary(ctx, doc, base_uri, fz_xml_down(node));
 				if (new_dict)
 				{
 					new_dict->parent = dict;
@@ -299,41 +303,41 @@ xps_parse_canvas(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, c
 	}
 
 	opacity_mask_uri = base_uri;
-	xps_resolve_resource_reference(doc, dict, &transform_att, &transform_tag, NULL);
-	xps_resolve_resource_reference(doc, dict, &clip_att, &clip_tag, NULL);
-	xps_resolve_resource_reference(doc, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
+	xps_resolve_resource_reference(ctx, doc, dict, &transform_att, &transform_tag, NULL);
+	xps_resolve_resource_reference(ctx, doc, dict, &clip_att, &clip_tag, NULL);
+	xps_resolve_resource_reference(ctx, doc, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
 
 	transform = fz_identity;
 	if (transform_att)
-		xps_parse_render_transform(doc, transform_att, &transform);
+		xps_parse_render_transform(ctx, doc, transform_att, &transform);
 	if (transform_tag)
-		xps_parse_matrix_transform(doc, transform_tag, &transform);
+		xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
 	fz_concat(&transform, &transform, ctm);
 
 	if (navigate_uri_att)
-		xps_add_link(doc, area, base_uri, navigate_uri_att);
+		xps_add_link(ctx, doc, area, base_uri, navigate_uri_att);
 
 	if (clip_att || clip_tag)
-		xps_clip(doc, &transform, dict, clip_att, clip_tag);
+		xps_clip(ctx, doc, &transform, dict, clip_att, clip_tag);
 
-	xps_begin_opacity(doc, &transform, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_begin_opacity(ctx, doc, &transform, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
-		xps_parse_element(doc, &transform, area, base_uri, dict, node);
+		xps_parse_element(ctx, doc, &transform, area, base_uri, dict, node);
 	}
 
-	xps_end_opacity(doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_end_opacity(ctx, doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	if (clip_att || clip_tag)
-		fz_pop_clip(doc->dev);
+		fz_pop_clip(ctx, dev);
 
 	if (new_dict)
-		xps_drop_resource_dictionary(doc, new_dict);
+		xps_drop_resource_dictionary(ctx, doc, new_dict);
 }
 
 void
-xps_parse_fixed_page(xps_document *doc, const fz_matrix *ctm, xps_page *page)
+xps_parse_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_page *page)
 {
 	fz_xml *node;
 	xps_resource *dict;
@@ -342,7 +346,7 @@ xps_parse_fixed_page(xps_document *doc, const fz_matrix *ctm, xps_page *page)
 	char *s;
 	fz_matrix scm;
 
-	fz_strlcpy(base_uri, page->name, sizeof base_uri);
+	fz_strlcpy(base_uri, page->fix->name, sizeof base_uri);
 	s = strrchr(base_uri, '/');
 	if (s)
 		s[1] = 0;
@@ -356,35 +360,36 @@ xps_parse_fixed_page(xps_document *doc, const fz_matrix *ctm, xps_page *page)
 		return;
 
 	area = fz_unit_rect;
-	fz_transform_rect(&area, fz_scale(&scm, page->width, page->height));
+	fz_transform_rect(&area, fz_scale(&scm, page->fix->width, page->fix->height));
 
 	for (node = fz_xml_down(page->root); node; node = fz_xml_next(node))
 	{
 		if (fz_xml_is_tag(node, "FixedPage.Resources") && fz_xml_down(node))
 		{
 			if (dict)
-				fz_warn(doc->ctx, "ignoring follow-up resource dictionaries");
+				fz_warn(ctx, "ignoring follow-up resource dictionaries");
 			else
-				dict = xps_parse_resource_dictionary(doc, base_uri, fz_xml_down(node));
+				dict = xps_parse_resource_dictionary(ctx, doc, base_uri, fz_xml_down(node));
 		}
-		xps_parse_element(doc, ctm, &area, base_uri, dict, node);
+		xps_parse_element(ctx, doc, ctm, &area, base_uri, dict, node);
 	}
 
 	if (dict)
-		xps_drop_resource_dictionary(doc, dict);
+		xps_drop_resource_dictionary(ctx, doc, dict);
 }
 
 void
-xps_run_page(xps_document *doc, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+xps_run_page(fz_context *ctx, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
+	xps_document *doc = page->doc;
 	fz_matrix page_ctm = *ctm;
 
 	fz_pre_scale(&page_ctm, 72.0f / 96.0f, 72.0f / 96.0f);
 
 	doc->cookie = cookie;
 	doc->dev = dev;
-	xps_parse_fixed_page(doc, &page_ctm, page);
+	xps_parse_fixed_page(ctx, doc, &page_ctm, page);
 	doc->cookie = NULL;
 	doc->dev = NULL;
-	page->links_resolved = 1;
+	page->fix->links_resolved = 1;
 }

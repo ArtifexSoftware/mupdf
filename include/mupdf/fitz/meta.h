@@ -30,7 +30,7 @@
 	always means "unknown operation for this document". In general
 	FZ_META_OK should be used to indicate successful operation.
 */
-int fz_meta(fz_document *doc, int key, void *ptr, int size);
+int fz_meta(fz_context *ctx, fz_document *doc, int key, void *ptr, int size);
 
 enum
 {

@@ -1,7 +1,7 @@
 #include "mupdf/xps.h"
 
 static fz_xml *
-xps_lookup_resource(xps_document *doc, xps_resource *dict, char *name, char **urip)
+xps_lookup_resource(fz_context *ctx, xps_document *doc, xps_resource *dict, char *name, char **urip)
 {
 	xps_resource *head, *node;
 	for (head = dict; head; head = head->parent)
@@ -20,7 +20,7 @@ xps_lookup_resource(xps_document *doc, xps_resource *dict, char *name, char **ur
 }
 
 static fz_xml *
-xps_parse_resource_reference(xps_document *doc, xps_resource *dict, char *att, char **urip)
+xps_parse_resource_reference(fz_context *ctx, xps_document *doc, xps_resource *dict, char *att, char **urip)
 {
 	char name[1024];
 	char *s;
@@ -33,16 +33,16 @@ xps_parse_resource_reference(xps_document *doc, xps_resource *dict, char *att, c
 	if (s)
 		*s = 0;
 
-	return xps_lookup_resource(doc, dict, name, urip);
+	return xps_lookup_resource(ctx, doc, dict, name, urip);
 }
 
 void
-xps_resolve_resource_reference(xps_document *doc, xps_resource *dict,
+xps_resolve_resource_reference(fz_context *ctx, xps_document *doc, xps_resource *dict,
 		char **attp, fz_xml **tagp, char **urip)
 {
 	if (*attp)
 	{
-		fz_xml *rsrc = xps_parse_resource_reference(doc, dict, *attp, urip);
+		fz_xml *rsrc = xps_parse_resource_reference(ctx, doc, dict, *attp, urip);
 		if (rsrc)
 		{
 			*attp = NULL;
@@ -52,7 +52,7 @@ xps_resolve_resource_reference(xps_document *doc, xps_resource *dict,
 }
 
 static xps_resource *
-xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *source_att)
+xps_parse_remote_resource_dictionary(fz_context *ctx, xps_document *doc, char *base_uri, char *source_att)
 {
 	char part_name[1024];
 	char part_uri[1024];
@@ -60,18 +60,17 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 	xps_part *part;
 	fz_xml *xml;
 	char *s;
-	fz_context *ctx = doc->ctx;
 
 	/* External resource dictionaries MUST NOT reference other resource dictionaries */
-	xps_resolve_url(part_name, base_uri, source_att, sizeof part_name);
-	part = xps_read_part(doc, part_name);
+	xps_resolve_url(ctx, doc, part_name, base_uri, source_att, sizeof part_name);
+	part = xps_read_part(ctx, doc, part_name);
 	fz_try(ctx)
 	{
-		xml = fz_parse_xml(doc->ctx, part->data, part->size, 0);
+		xml = fz_parse_xml(ctx, part->data, part->size, 0);
 	}
 	fz_always(ctx)
 	{
-		xps_drop_part(doc, part);
+		xps_drop_part(ctx, doc, part);
 	}
 	fz_catch(ctx)
 	{
@@ -84,8 +83,8 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 
 	if (strcmp(fz_xml_tag(xml), "ResourceDictionary"))
 	{
-		fz_drop_xml(doc->ctx, xml);
-		fz_throw(doc->ctx, FZ_ERROR_GENERIC, "expected ResourceDictionary element");
+		fz_drop_xml(ctx, xml);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected ResourceDictionary element");
 	}
 
 	fz_strlcpy(part_uri, part_name, sizeof part_uri);
@@ -93,7 +92,7 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 	if (s)
 		s[1] = 0;
 
-	dict = xps_parse_resource_dictionary(doc, part_uri, xml);
+	dict = xps_parse_resource_dictionary(ctx, doc, part_uri, xml);
 	if (dict)
 		dict->base_xml = xml; /* pass on ownership */
 
@@ -101,7 +100,7 @@ xps_parse_remote_resource_dictionary(xps_document *doc, char *base_uri, char *so
 }
 
 xps_resource *
-xps_parse_resource_dictionary(xps_document *doc, char *base_uri, fz_xml *root)
+xps_parse_resource_dictionary(fz_context *ctx, xps_document *doc, char *base_uri, fz_xml *root)
 {
 	xps_resource *head;
 	xps_resource *entry;
@@ -111,7 +110,7 @@ xps_parse_resource_dictionary(xps_document *doc, char *base_uri, fz_xml *root)
 
 	source = fz_xml_att(root, "Source");
 	if (source)
-		return xps_parse_remote_resource_dictionary(doc, base_uri, source);
+		return xps_parse_remote_resource_dictionary(ctx, doc, base_uri, source);
 
 	head = NULL;
 
@@ -120,7 +119,7 @@ xps_parse_resource_dictionary(xps_document *doc, char *base_uri, fz_xml *root)
 		key = fz_xml_att(node, "x:Key");
 		if (key)
 		{
-			entry = fz_malloc_struct(doc->ctx, xps_resource);
+			entry = fz_malloc_struct(ctx, xps_resource);
 			entry->name = key;
 			entry->base_uri = NULL;
 			entry->base_xml = NULL;
@@ -132,29 +131,29 @@ xps_parse_resource_dictionary(xps_document *doc, char *base_uri, fz_xml *root)
 	}
 
 	if (head)
-		head->base_uri = fz_strdup(doc->ctx, base_uri);
+		head->base_uri = fz_strdup(ctx, base_uri);
 
 	return head;
 }
 
 void
-xps_drop_resource_dictionary(xps_document *doc, xps_resource *dict)
+xps_drop_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *dict)
 {
 	xps_resource *next;
 	while (dict)
 	{
 		next = dict->next;
 		if (dict->base_xml)
-			fz_drop_xml(doc->ctx, dict->base_xml);
+			fz_drop_xml(ctx, dict->base_xml);
 		if (dict->base_uri)
-			fz_free(doc->ctx, dict->base_uri);
-		fz_free(doc->ctx, dict);
+			fz_free(ctx, dict->base_uri);
+		fz_free(ctx, dict);
 		dict = next;
 	}
 }
 
 void
-xps_print_resource_dictionary(xps_resource *dict)
+xps_print_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *dict)
 {
 	while (dict)
 	{
@@ -164,7 +163,7 @@ xps_print_resource_dictionary(xps_resource *dict)
 		if (dict->parent)
 		{
 			printf("PARENT = {\n");
-			xps_print_resource_dictionary(dict->parent);
+			xps_print_resource_dictionary(ctx, doc, dict->parent);
 			printf("}\n");
 		}
 		dict = dict->next;

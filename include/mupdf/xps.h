@@ -40,16 +40,12 @@ xps_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
 	Does not throw exceptions.
 */
-void xps_close_document(xps_document *doc);
+void xps_close_document(fz_context *ctx, xps_document *doc);
 
-int xps_count_pages(xps_document *doc);
-xps_page *xps_load_page(xps_document *doc, int number);
-fz_rect *xps_bound_page(xps_document *doc, xps_page *page, fz_rect *rect);
-void xps_run_page(xps_document *doc, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
-fz_link *xps_load_links(xps_document *doc, xps_page *page);
-void xps_drop_page(xps_document *doc, xps_page *page);
-
-fz_outline *xps_load_outline(xps_document *doc);
+int xps_count_pages(fz_context *ctx, xps_document *doc);
+xps_page *xps_load_page(fz_context *ctx, xps_document *doc, int number);
+fz_outline *xps_load_outline(fz_context *ctx, xps_document *doc);
+void xps_run_page(fz_context *ctx, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 
 /* xps-internal.h */
 
@@ -58,9 +54,9 @@ fz_outline *xps_load_outline(xps_document *doc);
  */
 
 int xps_strcasecmp(char *a, char *b);
-void xps_resolve_url(char *output, char *base_uri, char *path, int output_size);
-int xps_url_is_remote(char *path);
-char *xps_parse_point(char *s_in, float *x, float *y);
+void xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri, char *path, int output_size);
+int xps_url_is_remote(fz_context *ctx, xps_document *doc, char *path);
+char *xps_parse_point(fz_context *ctx, xps_document *doc, char *s_in, float *x, float *y);
 
 /*
  * Container parts.
@@ -75,15 +71,16 @@ struct xps_part_s
 	unsigned char *data;
 };
 
-int xps_has_part(xps_document *doc, char *partname);
-xps_part *xps_read_part(xps_document *doc, char *partname);
-void xps_drop_part(xps_document *doc, xps_part *part);
+int xps_has_part(fz_context *ctx, xps_document *doc, char *partname);
+xps_part *xps_read_part(fz_context *ctx, xps_document *doc, char *partname);
+void xps_drop_part(fz_context *ctx, xps_document *doc, xps_part *part);
 
 /*
  * Document structure.
  */
 
 typedef struct xps_fixdoc_s xps_fixdoc;
+typedef struct xps_fixpage_s xps_fixpage;
 typedef struct xps_target_s xps_target;
 
 struct xps_fixdoc_s
@@ -93,16 +90,23 @@ struct xps_fixdoc_s
 	xps_fixdoc *next;
 };
 
-struct xps_page_s
+struct xps_fixpage_s
 {
 	char *name;
 	int number;
 	int width;
 	int height;
-	fz_xml *root;
 	int links_resolved;
 	fz_link *links;
-	xps_page *next;
+	xps_fixpage *next;
+};
+
+struct xps_page_s
+{
+	fz_page super;
+	xps_document *doc;
+	xps_fixpage *fix;
+	fz_xml *root;
 };
 
 struct xps_target_s
@@ -112,12 +116,12 @@ struct xps_target_s
 	xps_target *next;
 };
 
-void xps_read_page_list(xps_document *doc);
-void xps_print_page_list(xps_document *doc);
-void xps_drop_page_list(xps_document *doc);
+void xps_read_page_list(fz_context *ctx, xps_document *doc);
+void xps_print_page_list(fz_context *ctx, xps_document *doc);
+void xps_drop_page_list(fz_context *ctx, xps_document *doc);
 
-int xps_lookup_link_target(xps_document *doc, char *target_uri);
-void xps_add_link(xps_document *doc, const fz_rect *area, char *base_uri, char *target_uri);
+int xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri);
+void xps_add_link(fz_context *ctx, xps_document *doc, const fz_rect *area, char *base_uri, char *target_uri);
 
 /*
  * Images, fonts, and colorspaces.
@@ -144,12 +148,12 @@ void xps_identify_font_encoding(fz_font *font, int idx, int *pid, int *eid);
 void xps_select_font_encoding(fz_font *font, int idx);
 int xps_encode_font_char(fz_font *font, int key);
 
-void xps_measure_font_glyph(xps_document *doc, fz_font *font, int gid, xps_glyph_metrics *mtx);
+void xps_measure_font_glyph(fz_context *ctx, xps_document *doc, fz_font *font, int gid, xps_glyph_metrics *mtx);
 
-void xps_print_path(xps_document *doc);
+void xps_print_path(fz_context *ctx, xps_document *doc);
 
-void xps_parse_color(xps_document *doc, char *base_uri, char *hexstring, fz_colorspace **csp, float *samples);
-void xps_set_color(xps_document *doc, fz_colorspace *colorspace, float *samples);
+void xps_parse_color(fz_context *ctx, xps_document *doc, char *base_uri, char *hexstring, fz_colorspace **csp, float *samples);
+void xps_set_color(fz_context *ctx, xps_document *doc, fz_colorspace *colorspace, float *samples);
 
 /*
  * Resource dictionaries.
@@ -167,41 +171,41 @@ struct xps_resource_s
 	xps_resource *parent; /* up to the previous dict in the stack */
 };
 
-xps_resource * xps_parse_resource_dictionary(xps_document *doc, char *base_uri, fz_xml *root);
-void xps_drop_resource_dictionary(xps_document *doc, xps_resource *dict);
-void xps_resolve_resource_reference(xps_document *doc, xps_resource *dict, char **attp, fz_xml **tagp, char **urip);
+xps_resource * xps_parse_resource_dictionary(fz_context *ctx, xps_document *doc, char *base_uri, fz_xml *root);
+void xps_drop_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *dict);
+void xps_resolve_resource_reference(fz_context *ctx, xps_document *doc, xps_resource *dict, char **attp, fz_xml **tagp, char **urip);
 
-void xps_print_resource_dictionary(xps_resource *dict);
+void xps_print_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *dict);
 
 /*
  * Fixed page/graphics parsing.
  */
 
-void xps_parse_fixed_page(xps_document *doc, const fz_matrix *ctm, xps_page *page);
-void xps_parse_canvas(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_path(xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_glyphs(xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_solid_color_brush(xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_image_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_visual_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_linear_gradient_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_radial_gradient_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_page *page);
+void xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_solid_color_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_image_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_visual_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_linear_gradient_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_radial_gradient_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
 
-void xps_parse_tiling_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *root, void(*func)(xps_document*, const fz_matrix *, const fz_rect *, char*, xps_resource*, fz_xml*, void*), void *user);
+void xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *root, void(*func)(fz_context *ctx, xps_document*, const fz_matrix *, const fz_rect *, char*, xps_resource*, fz_xml*, void*), void *user);
 
-void xps_parse_matrix_transform(xps_document *doc, fz_xml *root, fz_matrix *matrix);
-void xps_parse_render_transform(xps_document *doc, char *text, fz_matrix *matrix);
-void xps_parse_rectangle(xps_document *doc, char *text, fz_rect *rect);
+void xps_parse_matrix_transform(fz_context *ctx, xps_document *doc, fz_xml *root, fz_matrix *matrix);
+void xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *text, fz_matrix *matrix);
+void xps_parse_rectangle(fz_context *ctx, xps_document *doc, char *text, fz_rect *rect);
 
-void xps_begin_opacity(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, char *opacity_att, fz_xml *opacity_mask_tag);
-void xps_end_opacity(xps_document *doc, char *base_uri, xps_resource *dict, char *opacity_att, fz_xml *opacity_mask_tag);
+void xps_begin_opacity(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, char *opacity_att, fz_xml *opacity_mask_tag);
+void xps_end_opacity(fz_context *ctx, xps_document *doc, char *base_uri, xps_resource *dict, char *opacity_att, fz_xml *opacity_mask_tag);
 
-void xps_parse_brush(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
-void xps_parse_element(xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
+void xps_parse_element(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *node);
 
-void xps_clip(xps_document *doc, const fz_matrix *ctm, xps_resource *dict, char *clip_att, fz_xml *clip_tag);
+void xps_clip(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, xps_resource *dict, char *clip_att, fz_xml *clip_tag);
 
-fz_xml *xps_lookup_alternate_content(fz_xml *node);
+fz_xml *xps_lookup_alternate_content(fz_context *ctx, xps_document *doc, fz_xml *node);
 
 /*
  * The interpreter context.
@@ -220,14 +224,13 @@ struct xps_entry_s
 struct xps_document_s
 {
 	fz_document super;
-	fz_context *ctx;
 	fz_archive *zip;
 
 	char *start_part; /* fixed document sequence */
 	xps_fixdoc *first_fixdoc; /* first fixed document */
 	xps_fixdoc *last_fixdoc; /* last fixed document */
-	xps_page *first_page; /* first page of document */
-	xps_page *last_page; /* last page of document */
+	xps_fixpage *first_page; /* first page of document */
+	xps_fixpage *last_page; /* last page of document */
 	int page_count;
 
 	xps_target *target; /* link targets */
@@ -248,11 +251,11 @@ struct xps_document_s
 	float alpha;
 
 	/* Current device */
-	fz_cookie *cookie;
 	fz_device *dev;
+	fz_cookie *cookie;
 
 	/* Current page we are loading */
-	xps_page *current_page;
+	xps_fixpage *current_page;
 };
 
 #endif

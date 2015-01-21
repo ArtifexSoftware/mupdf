@@ -18,7 +18,7 @@ pdf_parse_cmap_name(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf
 {
 	pdf_token tok;
 
-	tok = pdf_lex(file, buf);
+	tok = pdf_lex(ctx, file, buf);
 
 	if (tok == PDF_TOK_NAME)
 		fz_strlcpy(cmap->cmap_name, buf->scratch, sizeof(cmap->cmap_name));
@@ -31,7 +31,7 @@ pdf_parse_wmode(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf *bu
 {
 	pdf_token tok;
 
-	tok = pdf_lex(file, buf);
+	tok = pdf_lex(ctx, file, buf);
 
 	if (tok == PDF_TOK_INT)
 		pdf_set_cmap_wmode(ctx, cmap, buf->i);
@@ -47,7 +47,7 @@ pdf_parse_codespace_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 
 		if (tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "endcodespacerange"))
 			return;
@@ -55,7 +55,7 @@ pdf_parse_codespace_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_
 		else if (tok == PDF_TOK_STRING)
 		{
 			lo = pdf_code_from_string(buf->scratch, buf->len);
-			tok = pdf_lex(file, buf);
+			tok = pdf_lex(ctx, file, buf);
 			if (tok == PDF_TOK_STRING)
 			{
 				hi = pdf_code_from_string(buf->scratch, buf->len);
@@ -78,7 +78,7 @@ pdf_parse_cid_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 
 		if (tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "endcidrange"))
 			return;
@@ -88,13 +88,13 @@ pdf_parse_cid_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf
 
 		lo = pdf_code_from_string(buf->scratch, buf->len);
 
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 		if (tok != PDF_TOK_STRING)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string");
 
 		hi = pdf_code_from_string(buf->scratch, buf->len);
 
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 		if (tok != PDF_TOK_INT)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "expected integer");
 
@@ -112,7 +112,7 @@ pdf_parse_cid_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 
 		if (tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "endcidchar"))
 			return;
@@ -122,7 +122,7 @@ pdf_parse_cid_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 
 		src = pdf_code_from_string(buf->scratch, buf->len);
 
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 		if (tok != PDF_TOK_INT)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "expected integer");
 
@@ -141,7 +141,7 @@ pdf_parse_bf_range_array(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_l
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 
 		if (tok == PDF_TOK_CLOSE_ARRAY)
 			return;
@@ -171,7 +171,7 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 
 		if (tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "endbfrange"))
 			return;
@@ -181,7 +181,7 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 
 		lo = pdf_code_from_string(buf->scratch, buf->len);
 
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 		if (tok != PDF_TOK_STRING)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string");
 
@@ -192,7 +192,7 @@ pdf_parse_bf_range(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf 
 			return;
 		}
 
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 
 		if (tok == PDF_TOK_STRING)
 		{
@@ -244,7 +244,7 @@ pdf_parse_bf_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf *
 
 	while (1)
 	{
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 
 		if (tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "endbfchar"))
 			return;
@@ -254,7 +254,7 @@ pdf_parse_bf_char(fz_context *ctx, pdf_cmap *cmap, fz_stream *file, pdf_lexbuf *
 
 		src = pdf_code_from_string(buf->scratch, buf->len);
 
-		tok = pdf_lex(file, buf);
+		tok = pdf_lex(ctx, file, buf);
 		/* Note: does not handle /dstName */
 		if (tok != PDF_TOK_STRING)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "expected string");
@@ -286,7 +286,7 @@ pdf_load_cmap(fz_context *ctx, fz_stream *file)
 	{
 		while (1)
 		{
-			tok = pdf_lex(file, &buf);
+			tok = pdf_lex(ctx, file, &buf);
 
 			if (tok == PDF_TOK_EOF)
 				break;
@@ -332,7 +332,7 @@ pdf_load_cmap(fz_context *ctx, fz_stream *file)
 	}
 	fz_always(ctx)
 	{
-		pdf_lexbuf_fin(&buf);
+		pdf_lexbuf_fin(ctx, &buf);
 	}
 	fz_catch(ctx)
 	{

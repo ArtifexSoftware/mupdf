@@ -106,6 +106,7 @@ typedef struct pdf_process_s
 
 struct pdf_csi_s
 {
+	fz_context *ctx;
 	pdf_document *doc;
 
 	/* Current resource dict and file. These are in here to reduce param
@@ -142,14 +143,14 @@ void pdf_process_contents_object(pdf_csi *csi, pdf_obj *rdb, pdf_obj *contents);
 void pdf_process_stream(pdf_csi *csi, pdf_lexbuf *buf);
 
 /* Functions to set up pdf_process structures */
-pdf_process *pdf_process_run(pdf_process *process, fz_device *dev, const fz_matrix *ctm, const char *event, pdf_gstate *gstate, int nested);
-pdf_process *pdf_process_buffer(pdf_process *process, fz_context *ctx, fz_buffer *buffer);
-pdf_process *pdf_process_filter(pdf_process *process, fz_context *ctx, pdf_process *underlying, pdf_obj *resources);
+pdf_process *pdf_init_process_run(fz_context *ctx, pdf_process *process, fz_device *dev, const fz_matrix *ctm, const char *event, pdf_gstate *gstate, int nested);
+pdf_process *pdf_init_process_buffer(fz_context *ctx, pdf_process *process, fz_buffer *buffer);
+pdf_process *pdf_init_process_filter(fz_context *ctx, pdf_process *process, pdf_process *underlying, pdf_obj *resources);
 
 /* Functions to actually use the pdf_process structures to process
  * annotations, glyphs and general stream objects */
-void pdf_process_annot(pdf_document *doc, pdf_page *page, pdf_annot *annot, const pdf_process *process, fz_cookie *cookie);
-void pdf_process_glyph(pdf_document *doc, pdf_obj *resources, fz_buffer *contents, pdf_process *process);
-void pdf_process_stream_object(pdf_document *doc, pdf_obj *obj, const pdf_process *process, pdf_obj *res, fz_cookie *cookie);
+void pdf_process_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, const pdf_process *process, fz_cookie *cookie);
+void pdf_process_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, pdf_process *process);
+void pdf_process_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, const pdf_process *process, pdf_obj *res, fz_cookie *cookie);
 
 #endif

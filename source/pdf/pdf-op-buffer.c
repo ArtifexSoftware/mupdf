@@ -9,18 +9,18 @@ typedef struct pdf_buffer_state_s
 pdf_buffer_state;
 
 static void
-put_hexstring(pdf_csi *csi, fz_output *out)
+put_hexstring(fz_context *ctx, fz_output *out, pdf_csi *csi)
 {
 	int i;
 
-	fz_printf(out, "<");
+	fz_printf(ctx, out, "<");
 	for (i = 0; i < csi->string_len; i++)
-		fz_printf(out, "%02x", csi->string[i]);
-	fz_printf(out, ">");
+		fz_printf(ctx, out, "%02x", csi->string[i]);
+	fz_printf(ctx, out, ">");
 }
 
 static void
-put_string(pdf_csi *csi, fz_output *out)
+put_string(fz_context *ctx, fz_output *out, pdf_csi *csi)
 {
 	int i;
 
@@ -28,40 +28,40 @@ put_string(pdf_csi *csi, fz_output *out)
 		if (csi->string[i] < 32 || csi->string[i] >= 127)
 			break;
 	if (i < csi->string_len)
-		put_hexstring(csi, out);
+		put_hexstring(ctx, out, csi);
 	else
 	{
-		fz_printf(out, "(");
+		fz_printf(ctx, out, "(");
 		for (i = 0; i < csi->string_len; i++)
 		{
 			char c = csi->string[i];
 			switch (c)
 			{
 			case '(':
-				fz_printf(out, "\\(");
+				fz_printf(ctx, out, "\\(");
 				break;
 			case ')':
-				fz_printf(out, "\\)");
+				fz_printf(ctx, out, "\\)");
 				break;
 			case '\\':
-				fz_printf(out, "\\\\");
+				fz_printf(ctx, out, "\\\\");
 				break;
 			default:
-				fz_printf(out, "%c", csi->string[i]);
+				fz_printf(ctx, out, "%c", csi->string[i]);
 				break;
 			}
 		}
-		fz_printf(out, ")");
+		fz_printf(ctx, out, ")");
 	}
 }
 
 static void
-put_string_or_obj(pdf_csi *csi, fz_output *out)
+put_string_or_obj(fz_context *ctx, fz_output *out, pdf_csi *csi)
 {
 	if (csi->string_len)
-		put_string(csi, out);
+		put_string(ctx, out, csi);
 	else
-		pdf_output_obj(out, csi->obj, 1);
+		pdf_output_obj(ctx, out, csi->obj, 1);
 }
 
 static void
@@ -69,9 +69,9 @@ pdf_buffer_dquote(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f ", csi->stack[0], csi->stack[1]);
-	put_string_or_obj(csi, state->out);
-	fz_printf(state->out, " \"\n");
+	fz_printf(state->ctx, state->out, "%f %f ", csi->stack[0], csi->stack[1]);
+	put_string_or_obj(state->ctx, state->out, csi);
+	fz_printf(state->ctx, state->out, " \"\n");
 }
 
 static void
@@ -79,8 +79,8 @@ pdf_buffer_squote(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	put_string_or_obj(csi, state->out);
-	fz_printf(state->out, " \'\n");
+	put_string_or_obj(state->ctx, state->out, csi);
+	fz_printf(state->ctx, state->out, " \'\n");
 }
 
 static void
@@ -88,7 +88,7 @@ pdf_buffer_B(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "B\n");
+	fz_printf(state->ctx, state->out, "B\n");
 }
 
 static void
@@ -96,7 +96,7 @@ pdf_buffer_Bstar(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "B*\n");
+	fz_printf(state->ctx, state->out, "B*\n");
 }
 
 static void
@@ -104,9 +104,9 @@ pdf_buffer_BDC(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s ", csi->name);
-	pdf_output_obj(state->out, csi->obj, 1);
-	fz_printf(state->out, " BDC\n");
+	fz_printf(state->ctx, state->out, "/%s ", csi->name);
+	pdf_output_obj(state->ctx, state->out, csi->obj, 1);
+	fz_printf(state->ctx, state->out, " BDC\n");
 }
 
 static void
@@ -120,7 +120,7 @@ pdf_buffer_BI(pdf_csi *csi, void *state_)
 	const char *match;
 	const char *match2;
 	pdf_obj *filter;
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 
 	if (csi->img == NULL)
 		return;
@@ -163,44 +163,44 @@ pdf_buffer_BI(pdf_csi *csi, void *state_)
 		return;
 	}
 
-	filter = pdf_dict_gets(csi->obj, "Filter");
+	filter = pdf_dict_gets(ctx, csi->obj, "Filter");
 	if (filter == NULL)
-		filter = pdf_dict_gets(csi->obj, "F");
+		filter = pdf_dict_gets(ctx, csi->obj, "F");
 	if (match == NULL)
 	{
 		/* Remove any filter entry (e.g. Ascii85Decode) */
 		if (filter)
 		{
-			pdf_dict_dels(csi->obj, "Filter");
-			pdf_dict_dels(csi->obj, "F");
+			pdf_dict_dels(ctx, csi->obj, "Filter");
+			pdf_dict_dels(ctx, csi->obj, "F");
 		}
-		pdf_dict_dels(csi->obj, "DecodeParms");
-		pdf_dict_dels(csi->obj, "DP");
+		pdf_dict_dels(ctx, csi->obj, "DecodeParms");
+		pdf_dict_dels(ctx, csi->obj, "DP");
 	}
-	else if (pdf_is_array(filter))
+	else if (pdf_is_array(ctx, filter))
 	{
-		int l = pdf_array_len(filter);
-		pdf_obj *o = (l == 0 ? NULL : pdf_array_get(filter, l-1));
-		const char *fil = pdf_to_name(o);
+		int l = pdf_array_len(ctx, filter);
+		pdf_obj *o = (l == 0 ? NULL : pdf_array_get(ctx, filter, l-1));
+		const char *fil = pdf_to_name(ctx, o);
 
 		if (l == 0 || (strcmp(fil, match) && strcmp(fil, match2)))
 		{
 			fz_warn(ctx, "Unexpected Filter configuration in inline image");
 			return;
 		}
-		pdf_dict_puts(csi->obj, "F", o);
+		pdf_dict_puts(ctx, csi->obj, "F", o);
 
-		o = pdf_dict_gets(csi->obj, "DecodeParms");
+		o = pdf_dict_gets(ctx, csi->obj, "DecodeParms");
 		if (o == NULL)
-			o = pdf_dict_gets(csi->obj, "DP");
+			o = pdf_dict_gets(ctx, csi->obj, "DP");
 		if (o)
 		{
-			o = pdf_array_get(o, l-1);
+			o = pdf_array_get(ctx, o, l-1);
 			if (o)
-				pdf_dict_puts(csi->obj, "DP", o);
+				pdf_dict_puts(ctx, csi->obj, "DP", o);
 			else
-				pdf_dict_dels(csi->obj, "DP");
-			pdf_dict_dels(csi->obj, "DecodeParms");
+				pdf_dict_dels(ctx, csi->obj, "DP");
+			pdf_dict_dels(ctx, csi->obj, "DecodeParms");
 		}
 	}
 	else
@@ -208,25 +208,25 @@ pdf_buffer_BI(pdf_csi *csi, void *state_)
 		/* It's a singleton. It must be correct */
 	}
 
-	fz_printf(state->out, "BI\n");
+	fz_printf(state->ctx, state->out, "BI\n");
 
-	len = pdf_dict_len(csi->obj);
+	len = pdf_dict_len(ctx, csi->obj);
 	for (i = 0; i < len; i++)
 	{
-		pdf_output_obj(state->out, pdf_dict_get_key(csi->obj, i), 1);
-		pdf_output_obj(state->out, pdf_dict_get_val(csi->obj, i), 1);
+		pdf_output_obj(state->ctx, state->out, pdf_dict_get_key(ctx, csi->obj, i), 1);
+		pdf_output_obj(state->ctx, state->out, pdf_dict_get_val(ctx, csi->obj, i), 1);
 	}
-	fz_printf(state->out, "ID\n");
+	fz_printf(state->ctx, state->out, "ID\n");
 
 	buffer = csi->img->buffer->buffer;
 	len = buffer->len;
 	data = buffer->data;
 	for (i = 0; i < len; i++)
 	{
-		fz_printf(state->out, "%c", data[i]);
+		fz_printf(state->ctx, state->out, "%c", data[i]);
 	}
 
-	fz_printf(state->out, "\nEI\n");
+	fz_printf(state->ctx, state->out, "\nEI\n");
 }
 
 static void
@@ -234,7 +234,7 @@ pdf_buffer_BMC(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s BMC\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s BMC\n", csi->name);
 }
 
 static void
@@ -242,7 +242,7 @@ pdf_buffer_BT(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "BT\n");
+	fz_printf(state->ctx, state->out, "BT\n");
 }
 
 static void
@@ -250,7 +250,7 @@ pdf_buffer_BX(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "BX\n");
+	fz_printf(state->ctx, state->out, "BX\n");
 }
 
 static void
@@ -258,7 +258,7 @@ pdf_buffer_CS(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s CS\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s CS\n", csi->name);
 }
 
 static void
@@ -266,9 +266,9 @@ pdf_buffer_DP(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s ", csi->name);
-	pdf_output_obj(state->out, csi->obj, 1);
-	fz_printf(state->out, " DP\n");
+	fz_printf(state->ctx, state->out, "/%s ", csi->name);
+	pdf_output_obj(state->ctx, state->out, csi->obj, 1);
+	fz_printf(state->ctx, state->out, " DP\n");
 }
 
 static void
@@ -276,7 +276,7 @@ pdf_buffer_EMC(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "EMC\n");
+	fz_printf(state->ctx, state->out, "EMC\n");
 }
 
 static void
@@ -284,7 +284,7 @@ pdf_buffer_ET(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "ET\n");
+	fz_printf(state->ctx, state->out, "ET\n");
 }
 
 static void
@@ -292,7 +292,7 @@ pdf_buffer_EX(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "EX\n");
+	fz_printf(state->ctx, state->out, "EX\n");
 }
 
 static void
@@ -300,7 +300,7 @@ pdf_buffer_F(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "F\n");
+	fz_printf(state->ctx, state->out, "F\n");
 }
 
 static void
@@ -308,7 +308,7 @@ pdf_buffer_G(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f G\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f G\n", csi->stack[0]);
 }
 
 static void
@@ -316,7 +316,7 @@ pdf_buffer_J(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%d J\n", (int)csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%d J\n", (int)csi->stack[0]);
 }
 
 static void
@@ -324,7 +324,7 @@ pdf_buffer_K(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f K\n", csi->stack[0],
+	fz_printf(state->ctx, state->out, "%f %f %f %f K\n", csi->stack[0],
 		csi->stack[1], csi->stack[2], csi->stack[3]);
 }
 
@@ -333,7 +333,7 @@ pdf_buffer_M(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f M\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f M\n", csi->stack[0]);
 }
 
 static void
@@ -341,7 +341,7 @@ pdf_buffer_MP(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s MP\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s MP\n", csi->name);
 }
 
 static void
@@ -349,7 +349,7 @@ pdf_buffer_Q(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "Q\n");
+	fz_printf(state->ctx, state->out, "Q\n");
 }
 
 static void
@@ -357,7 +357,7 @@ pdf_buffer_RG(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f RG\n", csi->stack[0], csi->stack[1], csi->stack[2]);
+	fz_printf(state->ctx, state->out, "%f %f %f RG\n", csi->stack[0], csi->stack[1], csi->stack[2]);
 }
 
 static void
@@ -365,7 +365,7 @@ pdf_buffer_S(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "S\n");
+	fz_printf(state->ctx, state->out, "S\n");
 }
 
 static void
@@ -375,8 +375,8 @@ pdf_buffer_SC(pdf_csi *csi, void *state_)
 	int i;
 
 	for (i = 0; i < csi->top; i++)
-		fz_printf(state->out, "%f ", csi->stack[i]);
-	fz_printf(state->out, "SC\n");
+		fz_printf(state->ctx, state->out, "%f ", csi->stack[i]);
+	fz_printf(state->ctx, state->out, "SC\n");
 }
 
 static void
@@ -386,10 +386,10 @@ pdf_buffer_SCN(pdf_csi *csi, void *state_)
 	int i;
 
 	for (i = 0; i < csi->top; i++)
-		fz_printf(state->out, "%f ", csi->stack[i]);
+		fz_printf(state->ctx, state->out, "%f ", csi->stack[i]);
 	if (csi->name[0])
-		fz_printf(state->out, "/%s ", csi->name);
-	fz_printf(state->out, "SCN\n");
+		fz_printf(state->ctx, state->out, "/%s ", csi->name);
+	fz_printf(state->ctx, state->out, "SCN\n");
 }
 
 static void
@@ -397,7 +397,7 @@ pdf_buffer_Tstar(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "T*\n");
+	fz_printf(state->ctx, state->out, "T*\n");
 }
 
 static void
@@ -405,7 +405,7 @@ pdf_buffer_TD(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f TD\n", csi->stack[0], csi->stack[1]);
+	fz_printf(state->ctx, state->out, "%f %f TD\n", csi->stack[0], csi->stack[1]);
 }
 
 static void
@@ -413,8 +413,8 @@ pdf_buffer_TJ(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	pdf_output_obj(state->out, csi->obj, 1);
-	fz_printf(state->out, " TJ\n");
+	pdf_output_obj(state->ctx, state->out, csi->obj, 1);
+	fz_printf(state->ctx, state->out, " TJ\n");
 }
 
 static void
@@ -422,7 +422,7 @@ pdf_buffer_TL(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f TL\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f TL\n", csi->stack[0]);
 }
 
 static void
@@ -430,7 +430,7 @@ pdf_buffer_Tc(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f Tc\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f Tc\n", csi->stack[0]);
 }
 
 static void
@@ -438,7 +438,7 @@ pdf_buffer_Td(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f Td\n", csi->stack[0], csi->stack[1]);
+	fz_printf(state->ctx, state->out, "%f %f Td\n", csi->stack[0], csi->stack[1]);
 }
 
 static void
@@ -446,8 +446,8 @@ pdf_buffer_Tj(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	put_string_or_obj(csi, state->out);
-	fz_printf(state->out, " Tj\n");
+	put_string_or_obj(state->ctx, state->out, csi);
+	fz_printf(state->ctx, state->out, " Tj\n");
 }
 
 static void
@@ -455,7 +455,7 @@ pdf_buffer_Tm(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f %f %f Tm\n",
+	fz_printf(state->ctx, state->out, "%f %f %f %f %f %f Tm\n",
 		csi->stack[0], csi->stack[1], csi->stack[2],
 		csi->stack[3], csi->stack[4], csi->stack[5]);
 }
@@ -465,7 +465,7 @@ pdf_buffer_Tr(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f Tr\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f Tr\n", csi->stack[0]);
 }
 
 static void
@@ -473,7 +473,7 @@ pdf_buffer_Ts(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f Ts\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f Ts\n", csi->stack[0]);
 }
 
 static void
@@ -481,7 +481,7 @@ pdf_buffer_Tw(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f Tw\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f Tw\n", csi->stack[0]);
 }
 
 static void
@@ -489,7 +489,7 @@ pdf_buffer_Tz(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f Tz\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f Tz\n", csi->stack[0]);
 }
 
 static void
@@ -497,7 +497,7 @@ pdf_buffer_W(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "W\n");
+	fz_printf(state->ctx, state->out, "W\n");
 }
 
 static void
@@ -505,7 +505,7 @@ pdf_buffer_Wstar(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "W*\n");
+	fz_printf(state->ctx, state->out, "W*\n");
 }
 
 static void
@@ -513,7 +513,7 @@ pdf_buffer_b(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "b\n");
+	fz_printf(state->ctx, state->out, "b\n");
 }
 
 static void
@@ -521,7 +521,7 @@ pdf_buffer_bstar(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "b*\n");
+	fz_printf(state->ctx, state->out, "b*\n");
 }
 
 static void
@@ -529,7 +529,7 @@ pdf_buffer_c(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f %f %f c\n",
+	fz_printf(state->ctx, state->out, "%f %f %f %f %f %f c\n",
 		csi->stack[0], csi->stack[1], csi->stack[2],
 		csi->stack[3], csi->stack[4], csi->stack[5]);
 }
@@ -539,7 +539,7 @@ pdf_buffer_cm(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f %f %f cm\n",
+	fz_printf(state->ctx, state->out, "%f %f %f %f %f %f cm\n",
 		csi->stack[0], csi->stack[1], csi->stack[2],
 		csi->stack[3], csi->stack[4], csi->stack[5]);
 }
@@ -549,7 +549,7 @@ pdf_buffer_cs(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s cs\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s cs\n", csi->name);
 }
 
 static void
@@ -557,8 +557,8 @@ pdf_buffer_d(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	pdf_output_obj(state->out, csi->obj, 1);
-	fz_printf(state->out, " %f d\n", csi->stack[0]);
+	pdf_output_obj(state->ctx, state->out, csi->obj, 1);
+	fz_printf(state->ctx, state->out, " %f d\n", csi->stack[0]);
 }
 
 static void
@@ -566,7 +566,7 @@ pdf_buffer_d0(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f d0\n", csi->stack[0], csi->stack[1]);
+	fz_printf(state->ctx, state->out, "%f %f d0\n", csi->stack[0], csi->stack[1]);
 }
 
 static void
@@ -574,7 +574,7 @@ pdf_buffer_d1(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f %f %f d1\n",
+	fz_printf(state->ctx, state->out, "%f %f %f %f %f %f d1\n",
 		csi->stack[0], csi->stack[1], csi->stack[2],
 		csi->stack[3], csi->stack[4], csi->stack[5]);
 }
@@ -584,7 +584,7 @@ pdf_buffer_f(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "f\n");
+	fz_printf(state->ctx, state->out, "f\n");
 }
 
 static void
@@ -592,7 +592,7 @@ pdf_buffer_fstar(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "f*\n");
+	fz_printf(state->ctx, state->out, "f*\n");
 }
 
 static void
@@ -600,7 +600,7 @@ pdf_buffer_g(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f g\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f g\n", csi->stack[0]);
 }
 
 static void
@@ -608,7 +608,7 @@ pdf_buffer_h(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "h\n");
+	fz_printf(state->ctx, state->out, "h\n");
 }
 
 static void
@@ -616,7 +616,7 @@ pdf_buffer_i(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f i\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f i\n", csi->stack[0]);
 }
 
 static void
@@ -624,7 +624,7 @@ pdf_buffer_j(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%d j\n", (int)csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%d j\n", (int)csi->stack[0]);
 }
 
 static void
@@ -632,7 +632,7 @@ pdf_buffer_k(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f k\n", csi->stack[0],
+	fz_printf(state->ctx, state->out, "%f %f %f %f k\n", csi->stack[0],
 		csi->stack[1], csi->stack[2], csi->stack[3]);
 }
 
@@ -641,7 +641,7 @@ pdf_buffer_l(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f l\n", csi->stack[0], csi->stack[1]);
+	fz_printf(state->ctx, state->out, "%f %f l\n", csi->stack[0], csi->stack[1]);
 }
 
 static void
@@ -649,7 +649,7 @@ pdf_buffer_m(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f m\n", csi->stack[0], csi->stack[1]);
+	fz_printf(state->ctx, state->out, "%f %f m\n", csi->stack[0], csi->stack[1]);
 }
 
 static void
@@ -657,7 +657,7 @@ pdf_buffer_n(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "n\n");
+	fz_printf(state->ctx, state->out, "n\n");
 }
 
 static void
@@ -665,7 +665,7 @@ pdf_buffer_q(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "q\n");
+	fz_printf(state->ctx, state->out, "q\n");
 }
 
 static void
@@ -673,7 +673,7 @@ pdf_buffer_re(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f re\n", csi->stack[0],
+	fz_printf(state->ctx, state->out, "%f %f %f %f re\n", csi->stack[0],
 		csi->stack[1], csi->stack[2], csi->stack[3]);
 }
 
@@ -682,7 +682,7 @@ pdf_buffer_rg(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f rg\n",
+	fz_printf(state->ctx, state->out, "%f %f %f rg\n",
 		csi->stack[0], csi->stack[1], csi->stack[2]);
 }
 
@@ -691,7 +691,7 @@ pdf_buffer_ri(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s ri\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s ri\n", csi->name);
 }
 
 static void
@@ -699,7 +699,7 @@ pdf_buffer_s(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "s\n");
+	fz_printf(state->ctx, state->out, "s\n");
 }
 
 static void
@@ -709,8 +709,8 @@ pdf_buffer_sc(pdf_csi *csi, void *state_)
 	int i;
 
 	for (i = 0; i < csi->top; i++)
-		fz_printf(state->out, "%f ", csi->stack[i]);
-	fz_printf(state->out, "sc\n");
+		fz_printf(state->ctx, state->out, "%f ", csi->stack[i]);
+	fz_printf(state->ctx, state->out, "sc\n");
 }
 
 static void
@@ -720,10 +720,10 @@ pdf_buffer_scn(pdf_csi *csi, void *state_)
 	int i;
 
 	for (i = 0; i < csi->top; i++)
-		fz_printf(state->out, "%f ", csi->stack[i]);
+		fz_printf(state->ctx, state->out, "%f ", csi->stack[i]);
 	if (csi->name[0])
-		fz_printf(state->out, "/%s ", csi->name);
-	fz_printf(state->out, "scn\n");
+		fz_printf(state->ctx, state->out, "/%s ", csi->name);
+	fz_printf(state->ctx, state->out, "scn\n");
 }
 
 static void
@@ -731,7 +731,7 @@ pdf_buffer_v(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f v\n", csi->stack[0],
+	fz_printf(state->ctx, state->out, "%f %f %f %f v\n", csi->stack[0],
 		csi->stack[1], csi->stack[2], csi->stack[3]);
 }
 
@@ -740,7 +740,7 @@ pdf_buffer_w(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f w\n", csi->stack[0]);
+	fz_printf(state->ctx, state->out, "%f w\n", csi->stack[0]);
 }
 
 static void
@@ -748,7 +748,7 @@ pdf_buffer_y(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "%f %f %f %f y\n", csi->stack[0],
+	fz_printf(state->ctx, state->out, "%f %f %f %f y\n", csi->stack[0],
 		csi->stack[1], csi->stack[2], csi->stack[3]);
 }
 
@@ -757,7 +757,7 @@ pdf_buffer_Do(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s Do\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s Do\n", csi->name);
 }
 
 static void
@@ -765,7 +765,7 @@ pdf_buffer_Tf(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s %f Tf\n", csi->name, csi->stack[0]);
+	fz_printf(state->ctx, state->out, "/%s %f Tf\n", csi->name, csi->stack[0]);
 }
 
 static void
@@ -773,7 +773,7 @@ pdf_buffer_gs(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s gs\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s gs\n", csi->name);
 }
 
 static void
@@ -781,27 +781,26 @@ pdf_buffer_sh(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
 
-	fz_printf(state->out, "/%s sh\n", csi->name);
+	fz_printf(state->ctx, state->out, "/%s sh\n", csi->name);
 }
 
 static void
 free_processor_buffer(pdf_csi *csi, void *state_)
 {
 	pdf_buffer_state *state = (pdf_buffer_state *)state_;
-	fz_context *ctx = state->ctx;
 
-	fz_drop_output(state->out);
-	fz_free(ctx, state);
+	fz_drop_output(state->ctx, state->out);
+	fz_free(state->ctx, state);
 }
 
 static void
 process_annot(pdf_csi *csi, void *state, pdf_obj *resources, pdf_annot *annot)
 {
-	fz_context *ctx = csi->doc->ctx;
+	fz_context *ctx = csi->ctx;
 	pdf_xobject *xobj = annot->ap;
 
 	/* Avoid infinite recursion */
-	if (xobj == NULL || pdf_mark_obj(xobj->me))
+	if (xobj == NULL || pdf_mark_obj(ctx, xobj->me))
 		return;
 
 	fz_try(ctx)
@@ -813,7 +812,7 @@ process_annot(pdf_csi *csi, void *state, pdf_obj *resources, pdf_annot *annot)
 	}
 	fz_always(ctx)
 	{
-		pdf_unmark_obj(xobj->me);
+		pdf_unmark_obj(ctx, xobj->me);
 	}
 	fz_catch(ctx)
 	{
@@ -914,7 +913,7 @@ static const pdf_processor pdf_processor_buffer =
 	process_contents
 };
 
-pdf_process *pdf_process_buffer(pdf_process *process, fz_context *ctx, fz_buffer *buffer)
+pdf_process *pdf_init_process_buffer(fz_context *ctx, pdf_process *process, fz_buffer *buffer)
 {
 	fz_output *out = fz_new_output_with_buffer(ctx, buffer);
 	pdf_buffer_state *p = NULL;
@@ -930,7 +929,7 @@ pdf_process *pdf_process_buffer(pdf_process *process, fz_context *ctx, fz_buffer
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_output(out);
+		fz_drop_output(ctx, out);
 		fz_rethrow(ctx);
 	}
 

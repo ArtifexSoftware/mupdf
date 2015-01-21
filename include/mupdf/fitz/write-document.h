@@ -53,6 +53,6 @@ enum
 
 	May throw exceptions.
 */
-void fz_write_document(fz_document *doc, char *filename, fz_write_options *opts);
+void fz_write_document(fz_context *ctx, fz_document *doc, char *filename, fz_write_options *opts);
 
 #endif

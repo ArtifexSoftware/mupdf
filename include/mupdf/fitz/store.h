@@ -88,12 +88,12 @@ typedef struct fz_store_type_s fz_store_type;
 
 struct fz_store_type_s
 {
-	int (*make_hash_key)(fz_store_hash *, void *);
+	int (*make_hash_key)(fz_context *ctx, fz_store_hash *, void *);
 	void *(*keep_key)(fz_context *,void *);
 	void (*drop_key)(fz_context *,void *);
-	int (*cmp_key)(void *, void *);
+	int (*cmp_key)(fz_context *ctx, void *, void *);
 #ifndef NDEBUG
-	void (*debug)(FILE *, void *);
+	void (*debug)(fz_context *ctx, FILE *, void *);
 #endif
 };
 
