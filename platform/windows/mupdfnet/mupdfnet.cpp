@@ -287,6 +287,14 @@ SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListText(void *ctx, int page_num,
 	return text_ptr;
 }
 
+SYMBOL_DECLSPEC void __stdcall mReleaseLists(void *ctx, void *dlist, 
+	void *annot_dlist)
+{
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
+	mu_ctx->ReleaseDisplayLists(dlist, annot_dlist);
+	return;
+}
+
 SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,
 	void *annot_dlist, int page_width, int page_height, byte *bmp_data, int bmp_width,
 	int bmp_height, double scale, bool flipy)

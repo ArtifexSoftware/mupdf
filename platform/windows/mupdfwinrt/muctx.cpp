@@ -531,6 +531,21 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 	return dlist;
 }
 
+void muctx::ReleaseDisplayLists(void *opdlist, void *opannotlist)
+{
+	fz_display_list *dlist = (fz_display_list*) opdlist;
+	fz_display_list *annotlist = (fz_display_list*) opannotlist;
+
+	if (dlist != NULL)
+	{
+		fz_drop_display_list(mu_ctx, dlist);
+	}
+	if (annotlist != NULL)
+	{
+		fz_drop_display_list(mu_ctx, annotlist);
+	}
+}
+
 /* A special version which will create the display list AND get the information
    that we need for various text selection tasks */
 fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, int *height,

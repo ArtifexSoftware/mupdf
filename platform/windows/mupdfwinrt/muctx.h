@@ -101,6 +101,7 @@ public:
 	fz_display_list * CreateDisplayListText(int page_num, int *width,
 		int *height, fz_text_page **text, int *length);
 	fz_display_list * CreateAnnotationList(int page_num);
+	void ReleaseDisplayLists(void *dlist, void *annotlist);
 	int MeasurePage(int page_num, point_t *size);
 	point_t MeasurePage(fz_page *page);
 	unsigned int GetLinks(int page_num, sh_vector_link links_vec);

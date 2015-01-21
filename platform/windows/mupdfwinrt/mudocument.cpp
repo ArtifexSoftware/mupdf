@@ -217,6 +217,8 @@ int mudocument::RenderPageBitmapSync(int page_num, int bmp_width, int bmp_height
 										&(bmp_data[0]), bmp_width, bmp_height,
 										scale, flipy, tile, { top_left.X, top_left.Y }, 
 										{ bottom_right.X, bottom_right.Y });
+		/* Done with lists */
+		mu_object.ReleaseDisplayLists(dlist, annotlist);
 	} 
 	else 
 	{
@@ -290,7 +292,9 @@ Windows::Foundation::IAsyncOperation<InMemoryRandomAccessStream^>^
 										  &(bmp_data[0]), bmp_width, bmp_height,
 										  scale, true, false, { 0.0, 0.0 }, 
 										  { (float) bmp_width, (float) bmp_height });
-		} 
+			/* Done with lists */
+			mu_object.ReleaseDisplayLists(dlist, annotlist);
+		}
 		else 
 		{ 
 			/* Rendering in immediate mode.  Keep lock in place */

@@ -159,6 +159,11 @@ namespace gsview
 		private static extern IntPtr mCreateDisplayListText64(IntPtr ctx, int page_num,
 				ref int page_width, ref int page_height, ref IntPtr text, ref int length);
 
+		[DllImport("mupdfnet64.dll", EntryPoint = "mReleaseLists", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mReleaseLists64(IntPtr ctx, IntPtr dlist,
+			IntPtr annot_dlist);
+
 		[DllImport("mupdfnet64.dll", EntryPoint = "mRenderPageMT", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern int mRenderPageMT64(IntPtr ctx, IntPtr dlist,
@@ -307,6 +312,11 @@ namespace gsview
 			CallingConvention = CallingConvention.StdCall)]
 		private static extern IntPtr mCreateDisplayListText32(IntPtr ctx, int page_num,
 				ref int page_width, ref int page_height, ref IntPtr text, ref int length);
+
+		[DllImport("mupdfnet32.dll", EntryPoint = "mReleaseLists", CharSet = CharSet.Auto,
+			CallingConvention = CallingConvention.StdCall)]
+		private static extern void mReleaseLists32(IntPtr ctx, IntPtr dlist,
+			IntPtr annot_dlist);
 
 		[DllImport("mupdfnet32.dll", EntryPoint = "mRenderPageMT", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
@@ -803,6 +813,33 @@ namespace gsview
 				return IntPtr.Zero;
 			}
 			return output;
+		}
+
+		private void tc_mReleaseLists(IntPtr ctx, IntPtr dlist, IntPtr annot_dlist)
+		{
+			int output;
+			try
+			{
+				if (is64bit)
+					mReleaseLists64(ctx, dlist, annot_dlist);
+				else
+					mReleaseLists32(ctx, dlist, annot_dlist);
+			}
+			catch (DllNotFoundException)
+			{
+				/* DLL not found */
+				String err = "DllNotFoundException: MuPDF DLL not found 16";
+				mupdfDLLProblemMain(this, err);
+				return;
+			}
+			catch (BadImageFormatException)
+			{
+				/* Using 32 bit with 64 or vice versa */
+				String err = "BadImageFormatException: Incorrect MuPDF DLL";
+				mupdfDLLProblemMain(this, err);
+				return;
+			}
+			return;
 		}
 
 		private int tc_mRenderPageMT(IntPtr ctx, IntPtr dlist, IntPtr annot_dlist,
@@ -1417,6 +1454,8 @@ namespace gsview
 				}
 				code = tc_mRenderPageMT(mu_object, dlist, annot_dlist, page_width, 
 					page_height, bmp_data, bmp_width, bmp_height, scale, flipy);
+				/* We are done with the display lists */
+				tc_mReleaseLists(mu_object, dlist, annot_dlist);
 			} 
 			else
  			{

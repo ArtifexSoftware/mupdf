@@ -48,7 +48,10 @@ void Cache::Add(int value, int width_in, int height_in, fz_display_list *dlist,
 
 		tail = prev_entry;
 
-		/* Decrement the caches rc of this list */
+		/* Decrement the caches rc of this list. It is gone from cache but
+		   may still be in use by other threads, when threads are done they 
+		   should decrement and it should be freed at that time. See 
+		   ReleaseDisplayLists in muctx class */
 		fz_drop_display_list(mu_ctx, curr_entry->dlist);
 		delete curr_entry;
 		size--;
@@ -75,6 +78,8 @@ void Cache::Add(int value, int width_in, int height_in, fz_display_list *dlist,
 		head = new_entry;
 	}
 	size++;
+	/* Everytime we add an entry, we are also using it. Increment rc. See above */
+	fz_keep_display_list(mu_ctx, dlist);
 }
 
 fz_display_list* Cache::Use(int value, int *width_out, int *height_out, fz_context *mu_ctx)
@@ -109,6 +114,9 @@ fz_display_list* Cache::Use(int value, int *width_out, int *height_out, fz_conte
 		}
 		*width_out = curr_entry->width;
 		*height_out = curr_entry->height;
+		/* We must increment our reference to this one to ensure it is not 
+		   freed when removed from the cache. See above comments */
+		fz_keep_display_list(mu_ctx, curr_entry->dlist);
 		return curr_entry->dlist;
 	}
 	else

@@ -50,6 +50,8 @@ EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListText(void *ctx, int p
 	int *page_width, int *page_height, void **textptr, int *length);
 EXTERN_C SYMBOL_DECLSPEC void* __stdcall mCreateDisplayListAnnot(void *ctx, 
 	int page_num);
+EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseLists(void *ctx, void *dlist,
+	void *annot_dlist);
 
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mRenderPageMT(void *ctx, void *dlist,
 	void *annot_dlist, int page_width, int page_height, byte *bmp_data, int bmp_width,
