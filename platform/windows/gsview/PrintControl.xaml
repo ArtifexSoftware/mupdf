@@ -90,7 +90,6 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <GroupBox Grid.Column="0" Grid.Row="0" Header="Print Range" Height="150" Width="250" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,15,0,0">
                 <Grid Background="WhiteSmoke"  Visibility="Visible" >
@@ -139,14 +138,6 @@
                     <CheckBox x:Name="xaml_autofit" Grid.Column="0" Grid.Row="2" Content="Auto-Fit" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="AutoFit_Checked" Unchecked="AutoFit_Unchecked" Grid.ColumnSpan="2"/>
                 </Grid>
             </GroupBox>
-            <Grid Background="WhiteSmoke" Grid.Column="0" Grid.Row="2" Visibility="Visible" Margin="0, 50, 0, 0" HorizontalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Grid.Row="0" Content="OK" FontSize="12" FontFamily="Segoe UI" HorizontalAlignment="Center" VerticalAlignment="Center" Width="74" Click="ClickOK" Margin="20,0,0,0"/>
-                <Button Grid.Column="1" Grid.Row="0" Content="Cancel" FontSize="12" FontFamily="Segoe UI" HorizontalAlignment="Center" VerticalAlignment="Center" Width="74" Click="ClickCancel" Margin="40,0,0,0"/>
-            </Grid>
         </Grid>
 
 
@@ -155,6 +146,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="40" />
                     <RowDefinition Height="40" />
                     <RowDefinition Height="40" />
                     <RowDefinition Height="40" />
@@ -240,6 +232,14 @@
                     </Grid.ColumnDefinitions>
                     <RadioButton Grid.Column="0" Grid.Row="0" Name="xaml_inches" VerticalAlignment="Center" GroupName="units" Checked="Inches" Margin="5,0,0,0">inches</RadioButton>
                     <RadioButton Grid.Column="1" Grid.Row="0" Name="xaml_cm" VerticalAlignment="Center" GroupName="units" Checked="Centimeters" Margin="5,0,0,0">cm</RadioButton>
+                </Grid>
+                <Grid Background="WhiteSmoke" Grid.Column="1" Grid.Row="5" Visibility="Visible" Margin="0, 0, 0, 0" HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Grid.Row="0" Content="OK" FontSize="12" FontFamily="Segoe UI" HorizontalAlignment="Center" VerticalAlignment="Center" Width="74" Click="ClickOK" Margin="20,0,0,0"/>
+                    <Button Grid.Column="1" Grid.Row="0" Content="Cancel" FontSize="12" FontFamily="Segoe UI" HorizontalAlignment="Center" VerticalAlignment="Center" Width="74" Click="ClickCancel" Margin="40,0,0,0"/>
                 </Grid>
             </Grid>
         </GroupBox>
