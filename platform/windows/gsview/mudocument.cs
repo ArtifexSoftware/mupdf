@@ -1375,7 +1375,15 @@ namespace gsview
 									textchars.Height = height;
 									textchars.Scale = 1.0;
 									textchars.Color = linecolor;
-									textchars.character = System.Convert.ToChar(character).ToString();
+									try
+									{
+										textchars.character = System.Convert.ToChar(character).ToString();
+									}
+									catch (OverflowException)
+									{
+										textchars.character = " "; /* Something went wrong here.  Use blank space */
+										Console.WriteLine("{0} is outside the range of the Char data type.", character);
+									}
 									blocks[kk].TextLines[jj].TextCharacters.Add(textchars);
 								}
 							}
