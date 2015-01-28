@@ -452,13 +452,13 @@ SYMBOL_DECLSPEC int __stdcall mExtractPages(PCWSTR infile, PCWSTR outfile,
 	fz_optind = 1;
 	result = pdfclean_main(argc, argv);
 	
-	delete(num);
+	delete[] num;
 	delete(infilechar);
 	delete(outfilechar);
 	if (has_password)
 		delete(passchar);
 	if (num_pages > 0)
-		delete(pagenums);
+		delete[] pagenums;
 	delete(argv);
 	return result;
 }

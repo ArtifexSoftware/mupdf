@@ -30,7 +30,7 @@ SYMBOL_DECLSPEC int __stdcall ShowPropertiesDialog(void *hptr, void *printername
 
 	if (!OpenPrinter(output, &hPrinter, NULL))
 	{
-		free(output);
+		delete[] output;
 		return FAIL;
 	}
 
@@ -39,7 +39,7 @@ SYMBOL_DECLSPEC int __stdcall ShowPropertiesDialog(void *hptr, void *printername
 	pDevMode = (LPDEVMODE)malloc(dwNeeded);
 	if (pDevMode == NULL)
 	{
-		free(output);
+		delete[] output;
 		ClosePrinter(hPrinter);
 		return FAIL;
 	}
@@ -53,7 +53,7 @@ SYMBOL_DECLSPEC int __stdcall ShowPropertiesDialog(void *hptr, void *printername
 	dwRet = DocumentProperties(hWnd, hPrinter, output, pDevMode, NULL, fMode);
 	if (dwRet != IDOK)
 	{
-		free(output);
+		delete[] output;
 		ClosePrinter(hPrinter);
 		free(pDevMode);
 		return FAIL;
@@ -67,7 +67,7 @@ SYMBOL_DECLSPEC int __stdcall ShowPropertiesDialog(void *hptr, void *printername
 
 	/* Clean up */
 	free(pDevMode);
-	free(output);
+	delete[] output;
 	ClosePrinter(hPrinter);
 	return 0;
 }
