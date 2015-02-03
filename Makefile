@@ -198,7 +198,7 @@ $(GEN)/gen_font_cjk.h : $(FONT_CJK_SRC)
 $(GEN)/gen_font_cjk_full.h : $(FONT_CJK_FULL_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_CJK_FULL_SRC)
 
-FONT_GEN := $(GEN)/gen_font_base14.h $(GEN)/gen_font_droid.h $(GEN)/gen_font_cjk.h $(GEN)/gen_font_cjk_full.h
+FONT_GEN := $(GEN)/gen_font_base14.h $(GEN)/gen_font_cjk.h $(GEN)/gen_font_cjk_full.h
 
 JAVASCRIPT_SRC := source/pdf/js/pdf-util.js
 JAVASCRIPT_GEN := $(GEN)/gen_js_util.h
