@@ -21,6 +21,9 @@ using System.Printing;
 using System.Windows.Markup;
 using System.Runtime.InteropServices;
 using Microsoft.Win32; /* For registry */
+using System.Reflection;
+using System.Diagnostics;
+
 
 public enum AA_t
 {
@@ -597,12 +600,23 @@ namespace gsview
 			return result;
 		}
 
+		private String GetVersion()
+		{
+			Assembly assembly = Assembly.GetExecutingAssembly();
+			FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+			String vers = fileVersionInfo.ProductVersion;
+			String[] parts = vers.Split('.');
+			String simple_vers = parts[0] + '.' + parts[1];
+			return simple_vers;
+		}
+
 		/* Initialize from registry */
 		private void InitFromRegistry()
 		{
 			RegistryKey key = Registry.CurrentUser.CreateSubKey("Software");
 			RegistryKey keyA = key.CreateSubKey("Artifex Software");
-			RegistryKey keygs = keyA.CreateSubKey("GSview 6.0");
+			String vers = GetVersion();
+			RegistryKey keygs = keyA.CreateSubKey("gsview " + vers);
 			String filepath = null;
 			Int32 page;
 			AA_t aa = AA_t.HIGH;
@@ -640,7 +654,8 @@ namespace gsview
 
 			RegistryKey key = Registry.CurrentUser.CreateSubKey("Software");
 			RegistryKey keyA = key.CreateSubKey("Artifex Software");
-			RegistryKey keygs = keyA.CreateSubKey("GSview 6.0");
+			String vers = GetVersion();
+			RegistryKey keygs = keyA.CreateSubKey("gsview " + vers);
 
 			if (m_origfile != null && (m_document_type == DocumentTypes.PS ||
 				m_document_type == DocumentTypes.EPS))
