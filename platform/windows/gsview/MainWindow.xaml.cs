@@ -743,10 +743,11 @@ namespace gsview
 				m_password.Close();
 
 			if (m_printcontrol != null && m_printcontrol.IsActive)
-			{
 				m_printcontrol.Close();
-				m_printcontrol = null;
-			}
+
+			/* Release the print control regardless of it being opened. 
+			   We don't want previous documents pages in the preview */
+			m_printcontrol = null;
 
 			if (m_infowindow != null && m_infowindow.IsActive)
 				m_infowindow.Close();
