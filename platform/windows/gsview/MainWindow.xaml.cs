@@ -318,6 +318,7 @@ namespace gsview
 		String m_origfile;
 		private gsprint m_ghostprint = null;
 		bool m_isXPS;
+		bool m_isImage;
 		gsOutput m_gsoutput;
 		Convert m_convertwin;
 		PageExtractSave m_extractwin;
@@ -514,7 +515,7 @@ namespace gsview
 			xaml_extractselection.IsEnabled = false;
 			xaml_conversions.IsEnabled = false;
 			xaml_gsmessage.IsEnabled = false;
-			xaml_print.IsEnabled = false;
+			xaml_print_menu.IsEnabled = false;
 			xaml_view.IsEnabled = false;
 			xaml_edit.IsEnabled = false;
 		}
@@ -579,6 +580,7 @@ namespace gsview
 			m_links_on = false;
 			m_doczoom = 1.0;
 			m_isXPS = false;
+			m_isImage = false;
 			//xaml_CancelThumb.IsEnabled = true;
 			m_currpage = 0;
 			m_ignorescrollchange = false;
@@ -833,6 +835,9 @@ namespace gsview
 			/* Set if this is already xps for printing */
 			if (extension.ToUpper() == ".XPS" || extension.ToUpper() == ".OXPS")
 				m_isXPS = true;
+			if (extension.ToUpper() == ".CBZ" || extension.ToUpper() == ".PNG" ||
+				extension.ToUpper() == ".JPG")
+				m_isImage = true;
 			OpenFile2(FileName);
 		}
 
@@ -1019,11 +1024,25 @@ namespace gsview
 			xaml_extractselection.IsEnabled = true;
 			xaml_conversions.IsEnabled = true;
 			xaml_gsmessage.IsEnabled = true;
-			xaml_print.IsEnabled = true;
+			xaml_print_menu.IsEnabled = true;
 			xaml_view.IsEnabled = true;
 			xaml_edit.IsEnabled = true;
-			if (m_isXPS)
+			if (m_isXPS || m_isImage)
 				DisabletoPDF();
+			if (m_isImage)
+			{
+				xaml_Print.IsEnabled = false;
+				xaml_print_menu.IsEnabled = false;
+				xaml_Print.Opacity = 0.5;
+				xaml_print_menu.Opacity = 0.5;
+			}
+			else
+			{
+				xaml_Print.IsEnabled = true;
+				xaml_print_menu.IsEnabled = true;
+				xaml_Print.Opacity = 1.0;
+				xaml_print_menu.Opacity = 1.0;
+			}
 			xaml_OpenProgressGrid.Visibility = System.Windows.Visibility.Collapsed;
 			xaml_VerticalScroll.Visibility = System.Windows.Visibility.Visible;
 			xaml_VerticalScroll.Value = 0;
@@ -1995,7 +2014,7 @@ namespace gsview
 
 		private void ExtractPages(object sender, RoutedEventArgs e)
 		{
-			if (!m_init_done || m_isXPS)
+			if (!m_init_done || m_isXPS || m_isImage)
 				return;
 
 			if (m_extractwin == null || !m_extractwin.IsActive)
@@ -5014,7 +5033,6 @@ namespace gsview
 
 		private void PrintDiagPrint(object PrintDiag)
 		{
-
 			/* If file is already xps then gs need not do this */
 			if (!m_isXPS)
 			{

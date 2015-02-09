@@ -192,7 +192,7 @@
                 <MenuItem Header="Page Conversions..." Click="ConvertClick" x:Name="xaml_conversions">
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="Print..." Command="Print" InputGestureText="Ctrl+P" x:Name="xaml_print">
+                <MenuItem Header="Print..." Command="Print" InputGestureText="Ctrl+P" x:Name="xaml_print_menu">
                     <MenuItem.Icon>
                         <Image Source="Resources/printer.ico" />
                     </MenuItem.Icon>
