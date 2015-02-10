@@ -15,7 +15,7 @@ fz_free_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 fz_colorspace *
 fz_new_colorspace(fz_context *ctx, char *name, int n)
 {
-	fz_colorspace *cs = fz_malloc(ctx, sizeof(fz_colorspace));
+	fz_colorspace *cs = Memento_label(fz_malloc(ctx, sizeof(fz_colorspace)), "fz_colorspace");
 	FZ_INIT_STORABLE(cs, 1, fz_free_colorspace_imp);
 	cs->size = sizeof(fz_colorspace);
 	fz_strlcpy(cs->name, name, sizeof cs->name);

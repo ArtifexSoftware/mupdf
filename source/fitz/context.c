@@ -90,14 +90,14 @@ new_context_phase1(fz_alloc_context *alloc, fz_locks_context *locks)
 
 	ctx->glyph_cache = NULL;
 
-	ctx->error = fz_malloc_no_throw(ctx, sizeof(fz_error_context));
+	ctx->error = Memento_label(fz_malloc_no_throw(ctx, sizeof(fz_error_context)), "fz_error_context");
 	if (!ctx->error)
 		goto cleanup;
 	ctx->error->top = -1;
 	ctx->error->errcode = FZ_ERROR_NONE;
 	ctx->error->message[0] = 0;
 
-	ctx->warn = fz_malloc_no_throw(ctx, sizeof(fz_warn_context));
+	ctx->warn = Memento_label(fz_malloc_no_throw(ctx, sizeof(fz_warn_context)), "fz_warn_context");
 	if (!ctx->warn)
 		goto cleanup;
 	ctx->warn->message[0] = 0;

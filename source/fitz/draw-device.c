@@ -107,7 +107,7 @@ static void fz_grow_stack(fz_draw_device *dev)
 
 	if (dev->stack == &dev->init_stack[0])
 	{
-		stack = fz_malloc(dev->ctx, sizeof(*stack) * max);
+		stack = Memento_label(fz_malloc(dev->ctx, sizeof(*stack) * max), "draw device stack");
 		memcpy(stack, dev->stack, sizeof(*stack) * dev->stack_cap);
 	}
 	else
