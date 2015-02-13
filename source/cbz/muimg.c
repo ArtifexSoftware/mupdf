@@ -145,8 +145,6 @@ img_open_document(fz_context *ctx, const char *filename)
 	img_document *doc;
 
 	stm = fz_open_file(ctx, filename);
-	if (!stm)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fz_try(ctx)
 		doc = img_open_document_with_stream(ctx, stm);

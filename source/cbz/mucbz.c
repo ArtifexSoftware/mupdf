@@ -230,8 +230,6 @@ cbz_open_document(fz_context *ctx, const char *filename)
 	cbz_document *doc;
 
 	file = fz_open_file(ctx, filename);
-	if (!file)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fz_try(ctx)
 		doc = cbz_open_document_with_stream(ctx, file);

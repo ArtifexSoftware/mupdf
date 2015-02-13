@@ -182,21 +182,14 @@ xps_open_document(fz_context *ctx, const char *filename)
 	}
 
 	file = fz_open_file(ctx, filename);
-	if (!file)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fz_try(ctx)
-	{
 		doc = xps_open_document_with_stream(ctx, file);
-	}
 	fz_always(ctx)
-	{
 		fz_drop_stream(ctx, file);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow_message(ctx, "cannot load document '%s'", filename);
-	}
+
 	return doc;
 }
 

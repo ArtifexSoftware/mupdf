@@ -504,18 +504,13 @@ fz_open_archive(fz_context *ctx, const char *filename)
 	fz_archive *zip;
 
 	file = fz_open_file(ctx, filename);
+
 	fz_try(ctx)
-	{
 		zip = fz_open_archive_with_stream(ctx, file);
-	}
 	fz_always(ctx)
-	{
 		fz_drop_stream(ctx, file);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 
 	return zip;
 }

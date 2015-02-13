@@ -14,7 +14,6 @@ struct tiff_page_s
 struct tiff_document_s
 {
 	fz_document super;
-	fz_stream *file;
 	fz_buffer *buffer;
 	int page_count;
 };
@@ -118,7 +117,6 @@ static void
 tiff_close_document(fz_context *ctx, tiff_document *doc)
 {
 	fz_drop_buffer(ctx, doc->buffer);
-	fz_drop_stream(ctx, doc->file);
 	fz_free(ctx, doc);
 }
 
@@ -126,8 +124,6 @@ static tiff_document *
 tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	tiff_document *doc;
-	unsigned char *buf;
-	int len;
 
 	doc = fz_new_document(ctx, sizeof *doc);
 
@@ -136,16 +132,10 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.load_page = (fz_document_load_page_fn *)tiff_load_page;
 	doc->super.meta = (fz_document_meta_fn *)tiff_meta;
 
-	doc->file = fz_keep_stream(ctx, file);
-	doc->page_count = 0;
-
 	fz_try(ctx)
 	{
-		doc->buffer = fz_read_all(ctx, doc->file, 1024);
-		len = doc->buffer->len;
-		buf = doc->buffer->data;
-
-		doc->page_count = fz_load_tiff_subimage_count(ctx, buf, len);
+		doc->buffer = fz_read_all(ctx, file, 1024);
+		doc->page_count = fz_load_tiff_subimage_count(ctx, doc->buffer->data, doc->buffer->len);
 	}
 	fz_catch(ctx)
 	{
@@ -163,21 +153,13 @@ tiff_open_document(fz_context *ctx, const char *filename)
 	tiff_document *doc;
 
 	file = fz_open_file(ctx, filename);
-	if (!file)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fz_try(ctx)
-	{
 		doc = tiff_open_document_with_stream(ctx, file);
-	}
 	fz_always(ctx)
-	{
 		fz_drop_stream(ctx, file);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 
 	return doc;
 }
