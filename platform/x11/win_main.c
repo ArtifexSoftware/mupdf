@@ -443,6 +443,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	char buf[256];
 	wchar_t bufx[256];
+	fz_context *ctx = gapp.ctx;
 	fz_document *doc = gapp.doc;
 
 	switch(message)
@@ -451,7 +452,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		SetDlgItemTextW(hwnd, 0x10, wbuf);
 
-		if (fz_meta(doc, FZ_META_FORMAT_INFO, buf, 256) < 0)
+		if (fz_meta(ctx, doc, FZ_META_FORMAT_INFO, buf, 256) < 0)
 		{
 			SetDlgItemTextA(hwnd, 0x11, "Unknown");
 			SetDlgItemTextA(hwnd, 0x12, "None");
@@ -461,7 +462,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		SetDlgItemTextA(hwnd, 0x11, buf);
 
-		if (fz_meta(doc, FZ_META_CRYPT_INFO, buf, 256) == 0)
+		if (fz_meta(ctx, doc, FZ_META_CRYPT_INFO, buf, 256) == 0)
 		{
 			SetDlgItemTextA(hwnd, 0x12, buf);
 		}
@@ -470,13 +471,13 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetDlgItemTextA(hwnd, 0x12, "None");
 		}
 		buf[0] = 0;
-		if (fz_meta(doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_PRINT) == 0)
+		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_PRINT) == 0)
 			strcat(buf, "print, ");
-		if (fz_meta(doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_CHANGE) == 0)
+		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_CHANGE) == 0)
 			strcat(buf, "modify, ");
-		if (fz_meta(doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_COPY) == 0)
+		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_COPY) == 0)
 			strcat(buf, "copy, ");
-		if (fz_meta(doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_NOTES) == 0)
+		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_NOTES) == 0)
 			strcat(buf, "annotate, ");
 		if (strlen(buf) > 2)
 			buf[strlen(buf)-2] = 0;
@@ -487,7 +488,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 #define SETUTF8(ID, STRING) \
 		{ \
 			*(char **)buf = STRING; \
-			if (fz_meta(doc, FZ_META_INFO, buf, 256) <= 0) \
+			if (fz_meta(ctx, doc, FZ_META_INFO, buf, 256) <= 0) \
 				buf[0] = 0; \
 			MultiByteToWideChar(CP_UTF8, 0, buf, -1, bufx, nelem(bufx)); \
 			SetDlgItemTextW(hwnd, ID, bufx); \
