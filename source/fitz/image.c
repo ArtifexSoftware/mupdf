@@ -34,7 +34,6 @@ static int
 fz_make_hash_image_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
-
 	hash->u.pi.ptr = key->image;
 	hash->u.pi.i = key->l2factor;
 	return 1;
@@ -44,26 +43,14 @@ static void *
 fz_keep_image_key(fz_context *ctx, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
-
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	key->refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-
-	return (void *)key;
+	return fz_keep_imp(ctx, key, &key->refs);
 }
 
 static void
 fz_drop_image_key(fz_context *ctx, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
-	int drop;
-
-	if (key == NULL)
-		return;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	drop = --key->refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (drop == 0)
+	if (fz_drop_imp(ctx, key, &key->refs))
 	{
 		fz_drop_image(ctx, key->image);
 		fz_free(ctx, key);
@@ -75,7 +62,6 @@ fz_cmp_image_key(fz_context *ctx, void *k0_, void *k1_)
 {
 	fz_image_key *k0 = (fz_image_key *)k0_;
 	fz_image_key *k1 = (fz_image_key *)k1_;
-
 	return k0->image == k1->image && k0->l2factor == k1->l2factor;
 }
 

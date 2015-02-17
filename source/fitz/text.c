@@ -20,16 +20,13 @@ fz_new_text(fz_context *ctx, fz_font *font, const fz_matrix *trm, int wmode)
 fz_text *
 fz_keep_text(fz_context *ctx, fz_text *text)
 {
-	++text->refs;
-	return text;
+	return fz_keep_imp(ctx, text, &text->refs);
 }
 
 void
 fz_drop_text(fz_context *ctx, fz_text *text)
 {
-	if (text == NULL)
-		return;
-	if (--text->refs == 0)
+	if (fz_drop_imp(ctx, text, &text->refs))
 	{
 		fz_drop_font(ctx, text->font);
 		fz_free(ctx, text->items);

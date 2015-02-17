@@ -1691,27 +1691,15 @@ static void *
 fz_keep_tile_key(fz_context *ctx, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
-
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	key->refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-
-	return (void *)key;
+	return fz_keep_imp(ctx, key, &key->refs);
 }
 
 static void
 fz_drop_tile_key(fz_context *ctx, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
-	int drop;
-
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	drop = --key->refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (drop == 0)
-	{
+	if (fz_drop_imp(ctx, key, &key->refs))
 		fz_free(ctx, key);
-	}
 }
 
 static int
@@ -1719,7 +1707,6 @@ fz_cmp_tile_key(fz_context *ctx, void *k0_, void *k1_)
 {
 	tile_key *k0 = (tile_key *)k0_;
 	tile_key *k1 = (tile_key *)k1_;
-
 	return k0->id == k1->id && k0->ctm[0] == k1->ctm[0] && k0->ctm[1] == k1->ctm[1] && k0->ctm[2] == k1->ctm[2] && k0->ctm[3] == k1->ctm[3];
 }
 
@@ -1728,7 +1715,6 @@ static void
 fz_debug_tile(fz_context *ctx, FILE *out, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
-
 	fprintf(out, "(tile id=%x, ctm=%g %g %g %g) ", key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
 }
 #endif
@@ -1747,10 +1733,7 @@ static fz_store_type fz_tile_store_type =
 static void
 fz_drop_tile_record_imp(fz_context *ctx, fz_storable *storable)
 {
-	tile_record *tr = (tile_record *)(void *)storable;
-
-	if (tr == NULL)
-		return;
+	tile_record *tr = (tile_record *)storable;
 	fz_drop_pixmap(ctx, tr->dest);
 	fz_drop_pixmap(ctx, tr->shape);
 	fz_free(ctx, tr);

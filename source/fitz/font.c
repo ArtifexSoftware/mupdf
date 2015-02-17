@@ -74,12 +74,7 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 fz_font *
 fz_keep_font(fz_context *ctx, fz_font *font)
 {
-	if (!font)
-		return NULL;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	font->refs ++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	return font;
+	return fz_keep_imp(ctx, font, &font->refs);
 }
 
 static void
@@ -119,12 +114,9 @@ void
 fz_drop_font(fz_context *ctx, fz_font *font)
 {
 	int fterr;
-	int i, drop;
+	int i;
 
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	drop = (font && --font->refs == 0);
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (!drop)
+	if (!fz_drop_imp(ctx, font, &font->refs))
 		return;
 
 	free_resources(ctx, font);
@@ -214,23 +206,16 @@ void fz_new_font_context(fz_context *ctx)
 fz_font_context *
 fz_keep_font_context(fz_context *ctx)
 {
-	if (!ctx || !ctx->font)
+	if (!ctx)
 		return NULL;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	ctx->font->ctx_refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	return ctx->font;
+	return fz_keep_imp(ctx, ctx->font, &ctx->font->ctx_refs);
 }
 
 void fz_drop_font_context(fz_context *ctx)
 {
-	int drop;
-	if (!ctx || !ctx->font)
+	if (!ctx)
 		return;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	drop = --ctx->font->ctx_refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (drop == 0)
+	if (fz_drop_imp(ctx, ctx->font, &ctx->font->ctx_refs))
 		fz_free(ctx, ctx->font);
 }
 

@@ -9,16 +9,10 @@ struct fz_id_context_s
 static void
 fz_drop_id_context(fz_context *ctx)
 {
-	int refs;
-	fz_id_context *id = ctx->id;
-
-	if (id == NULL)
+	if (!ctx)
 		return;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	refs = --id->refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (refs == 0)
-		fz_free(ctx, id);
+	if (fz_drop_imp(ctx, ctx->id, &ctx->id->refs))
+		fz_free(ctx, ctx->id);
 }
 
 static void
@@ -32,14 +26,9 @@ fz_new_id_context(fz_context *ctx)
 static fz_id_context *
 fz_keep_id_context(fz_context *ctx)
 {
-	fz_id_context *id = ctx->id;
-
-	if (id == NULL)
+	if (!ctx)
 		return NULL;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	++id->refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	return id;
+	return fz_keep_imp(ctx, ctx->id, &ctx->id->refs);
 }
 
 void
@@ -208,12 +197,9 @@ fz_gen_id(fz_context *ctx)
 {
 	int id;
 	fz_lock(ctx, FZ_LOCK_ALLOC);
-	/* We'll never wrap around in normal use, but if we *do*, then avoid
-	 * 0. */
+	/* We'll never wrap around in normal use, but if we do, then avoid 0. */
 	do
-	{
 		id = ++ctx->id->id;
-	}
 	while (id == 0);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 	return id;

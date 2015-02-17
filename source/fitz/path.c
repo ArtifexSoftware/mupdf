@@ -20,16 +20,13 @@ fz_new_path(fz_context *ctx)
 fz_path *
 fz_keep_path(fz_context *ctx, fz_path *path)
 {
-	++path->refs;
-	return path;
+	return fz_keep_imp(ctx, path, &path->refs);
 }
 
 void
 fz_drop_path(fz_context *ctx, fz_path *path)
 {
-	if (path == NULL)
-		return;
-	if (--path->refs == 0)
+	if (fz_drop_imp(ctx, path, &path->refs))
 	{
 		fz_free(ctx, path->cmds);
 		fz_free(ctx, path->coords);
@@ -366,25 +363,13 @@ fz_keep_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 	if (stroke->refs == -2)
 		return fz_clone_stroke_state(ctx, stroke);
 
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	if (stroke->refs > 0)
-		stroke->refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	return stroke;
+	return fz_keep_imp(ctx, stroke, &stroke->refs);
 }
 
 void
 fz_drop_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 {
-	int drop;
-
-	if (!stroke)
-		return;
-
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	drop = (stroke->refs > 0 ? --stroke->refs == 0 : 0);
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (drop)
+	if (fz_drop_imp(ctx, stroke, &stroke->refs))
 		fz_free(ctx, stroke);
 }
 
@@ -448,10 +433,12 @@ fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, 
 		len = 0;
 	if (single && shlen >= len)
 		return shared;
+
 	unsize = sizeof(*unshared) + sizeof(unshared->dash_list[0]) * len;
 	unshared = Memento_label(fz_malloc(ctx, unsize), "fz_stroke_state");
 	memcpy(unshared, shared, (shsize > unsize ? unsize : shsize));
 	unshared->refs = 1;
+
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	drop = (shared->refs > 0 ? --shared->refs == 0 : 0);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);

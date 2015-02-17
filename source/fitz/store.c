@@ -56,38 +56,20 @@ fz_new_store_context(fz_context *ctx, unsigned int max)
 void *
 fz_keep_storable(fz_context *ctx, fz_storable *s)
 {
-	if (s == NULL)
-		return NULL;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	if (s->refs > 0)
-		s->refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	return s;
+	return fz_keep_imp(ctx, s, &s->refs);
 }
 
 void
 fz_drop_storable(fz_context *ctx, fz_storable *s)
 {
-	int do_free = 0;
-
-	if (s == NULL)
-		return;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	if (s->refs < 0)
-	{
-		/* It's a static object. Dropping does nothing. */
-	}
-	else if (--s->refs == 0)
-	{
-		/* If we are dropping the last reference to an object, then
-		 * it cannot possibly be in the store (as the store always
-		 * keeps a ref to everything in it, and doesn't drop via
-		 * this method. So we can simply drop the storable object
-		 * itself without any operations on the fz_store. */
-		do_free = 1;
-	}
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (do_free)
+	/*
+		If we are dropping the last reference to an object, then
+		it cannot possibly be in the store (as the store always
+		keeps a ref to everything in it, and doesn't drop via
+		this method. So we can simply drop the storable object
+		itself without any operations on the fz_store.
+	 */
+	if (fz_drop_imp(ctx, s, &s->refs))
 		s->drop(ctx, s);
 }
 

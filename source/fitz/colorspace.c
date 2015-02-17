@@ -198,23 +198,16 @@ void fz_new_colorspace_context(fz_context *ctx)
 fz_colorspace_context *
 fz_keep_colorspace_context(fz_context *ctx)
 {
-	if (!ctx || !ctx->colorspace)
+	if (!ctx)
 		return NULL;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	ctx->colorspace->ctx_refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	return ctx->colorspace;
+	return fz_keep_imp(ctx, ctx->colorspace, &ctx->colorspace->ctx_refs);
 }
 
 void fz_drop_colorspace_context(fz_context *ctx)
 {
-	int drop;
-	if (!ctx || !ctx->colorspace)
+	if (!ctx)
 		return;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	drop = --ctx->colorspace->ctx_refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (drop == 0)
+	if (fz_drop_imp(ctx, ctx->colorspace, &ctx->colorspace->ctx_refs))
 		fz_free(ctx, ctx->colorspace);
 }
 
