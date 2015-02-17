@@ -303,7 +303,7 @@ fz_trace_end_tile(fz_context *ctx, fz_device *dev)
 
 fz_device *fz_new_trace_device(fz_context *ctx)
 {
-	fz_device *dev = fz_new_device(ctx, NULL);
+	fz_device *dev = fz_new_device(ctx, sizeof *dev);
 
 	dev->begin_page = fz_trace_begin_page;
 	dev->end_page = fz_trace_end_page;

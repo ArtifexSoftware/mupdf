@@ -25,6 +25,7 @@ typedef struct span_soup_s span_soup;
 
 struct fz_text_device_s
 {
+	fz_device super;
 	fz_text_sheet *sheet;
 	fz_text_page *page;
 	span_soup *spans;
@@ -788,7 +789,7 @@ static void
 fz_text_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 	fz_text_style *style;
 	style = fz_lookup_text_style(ctx, tdev->sheet, text, ctm, colorspace, color, alpha, NULL);
 	fz_text_extract(ctx, tdev, text, ctm, style);
@@ -798,7 +799,7 @@ static void
 fz_text_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 	fz_text_style *style;
 	style = fz_lookup_text_style(ctx, tdev->sheet, text, ctm, colorspace, color, alpha, stroke);
 	fz_text_extract(ctx, tdev, text, ctm, style);
@@ -807,7 +808,7 @@ fz_text_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_st
 static void
 fz_text_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 	fz_text_style *style;
 	style = fz_lookup_text_style(ctx, tdev->sheet, text, ctm, NULL, NULL, 0, NULL);
 	fz_text_extract(ctx, tdev, text, ctm, style);
@@ -816,7 +817,7 @@ fz_text_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matri
 static void
 fz_text_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 	fz_text_style *style;
 	style = fz_lookup_text_style(ctx, tdev->sheet, text, ctm, NULL, NULL, 0, stroke);
 	fz_text_extract(ctx, tdev, text, ctm, style);
@@ -825,7 +826,7 @@ fz_text_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stro
 static void
 fz_text_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 	fz_text_style *style;
 	style = fz_lookup_text_style(ctx, tdev->sheet, text, ctm, NULL, NULL, 0, NULL);
 	fz_text_extract(ctx, tdev, text, ctm, style);
@@ -835,7 +836,7 @@ static void
 fz_text_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm,
 		fz_colorspace *cspace, float *color, float alpha)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 	fz_text_page *page = tdev->page;
 	fz_image_block *block;
 
@@ -956,7 +957,7 @@ fz_bidi_reorder_text_page(fz_context *ctx, fz_text_page *page)
 static void
 fz_text_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, const fz_matrix *ctm)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 
 	if (tdev->page->len)
 	{
@@ -973,7 +974,7 @@ fz_text_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, con
 static void
 fz_text_end_page(fz_context *ctx, fz_device *dev)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 
 	add_span_to_soup(ctx, tdev->spans, tdev->cur_span);
 	tdev->cur_span = NULL;
@@ -989,37 +990,35 @@ fz_text_end_page(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_text_drop_user(fz_context *ctx, fz_device *dev)
+fz_text_drop_imp(fz_context *ctx, fz_device *dev)
 {
-	fz_text_device *tdev = dev->user;
+	fz_text_device *tdev = (fz_text_device*)dev;
 	free_span_soup(ctx, tdev->spans);
-	fz_free(ctx, tdev);
 }
 
 fz_device *
 fz_new_text_device(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 {
-	fz_device *dev;
+	fz_text_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	fz_text_device *tdev = fz_malloc_struct(ctx, fz_text_device);
-	tdev->sheet = sheet;
-	tdev->page = page;
-	tdev->spans = NULL;
-	tdev->cur_span = NULL;
-	tdev->lastchar = ' ';
+	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
 
-	dev = fz_new_device(ctx, tdev);
-	dev->hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
-	dev->begin_page = fz_text_begin_page;
-	dev->end_page = fz_text_end_page;
-	dev->drop_user = fz_text_drop_user;
-	dev->fill_text = fz_text_fill_text;
-	dev->stroke_text = fz_text_stroke_text;
-	dev->clip_text = fz_text_clip_text;
-	dev->clip_stroke_text = fz_text_clip_stroke_text;
-	dev->ignore_text = fz_text_ignore_text;
-	dev->fill_image = fz_text_fill_image;
-	dev->fill_image_mask = fz_text_fill_image_mask;
+	dev->super.drop_imp = fz_text_drop_imp;
+	dev->super.begin_page = fz_text_begin_page;
+	dev->super.end_page = fz_text_end_page;
+	dev->super.fill_text = fz_text_fill_text;
+	dev->super.stroke_text = fz_text_stroke_text;
+	dev->super.clip_text = fz_text_clip_text;
+	dev->super.clip_stroke_text = fz_text_clip_stroke_text;
+	dev->super.ignore_text = fz_text_ignore_text;
+	dev->super.fill_image = fz_text_fill_image;
+	dev->super.fill_image_mask = fz_text_fill_image_mask;
 
-	return dev;
+	dev->sheet = sheet;
+	dev->page = page;
+	dev->spans = NULL;
+	dev->cur_span = NULL;
+	dev->lastchar = ' ';
+
+	return (fz_device*)dev;
 }

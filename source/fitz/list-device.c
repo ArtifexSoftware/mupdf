@@ -2,6 +2,12 @@
 
 typedef struct fz_display_node_s fz_display_node;
 
+typedef struct fz_list_device_s
+{
+	fz_device super;
+	fz_display_list *list;
+} fz_list_device;
+
 #define STACK_SIZE 96
 
 typedef enum fz_display_command_e
@@ -101,8 +107,11 @@ fz_new_display_node(fz_context *ctx, fz_display_command cmd, const fz_matrix *ct
 }
 
 static void
-fz_append_display_node(fz_display_list *list, fz_display_node *node)
+fz_append_display_node(fz_context *ctx, fz_device *dev_, fz_display_node *node)
 {
+	fz_list_device *dev = (fz_list_device*)dev_;
+	fz_display_list *list = dev->list;
+
 	switch (node->cmd)
 	{
 	case FZ_CMD_CLIP_PATH:
@@ -234,14 +243,14 @@ fz_list_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, con
 	fz_display_node *node = fz_new_display_node(ctx, FZ_CMD_BEGIN_PAGE, ctm, NULL, NULL, 0);
 	node->rect = *mediabox;
 	fz_transform_rect(&node->rect, ctm);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
 fz_list_end_page(fz_context *ctx, fz_device *dev)
 {
 	fz_display_node *node = fz_new_display_node(ctx, FZ_CMD_END_PAGE, &fz_identity, NULL, NULL, 0);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -261,7 +270,7 @@ fz_list_fill_path(fz_context *ctx, fz_device *dev, fz_path *path, int even_odd, 
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -281,7 +290,7 @@ fz_list_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, fz_stroke_st
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -302,7 +311,7 @@ fz_list_clip_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect 
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -323,7 +332,7 @@ fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const f
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -342,7 +351,7 @@ fz_list_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matri
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -363,7 +372,7 @@ fz_list_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_st
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -385,7 +394,7 @@ fz_list_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matri
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -404,7 +413,7 @@ fz_list_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stro
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -422,7 +431,7 @@ fz_list_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_mat
 		fz_free_display_node(ctx, node);
 		fz_rethrow(ctx);
 	}
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -430,7 +439,7 @@ fz_list_pop_clip(fz_context *ctx, fz_device *dev)
 {
 	fz_display_node *node;
 	node = fz_new_display_node(ctx, FZ_CMD_POP_CLIP, &fz_identity, NULL, NULL, 0);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -440,7 +449,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 	node = fz_new_display_node(ctx, FZ_CMD_FILL_SHADE, ctm, NULL, NULL, alpha);
 	fz_bound_shade(ctx, shade, ctm, &node->rect);
 	node->item.shade = fz_keep_shade(ctx, shade);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -451,7 +460,7 @@ fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 	node->rect = fz_unit_rect;
 	fz_transform_rect(&node->rect, ctm);
 	node->item.image = fz_keep_image(ctx, image);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -463,7 +472,7 @@ fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	node->rect = fz_unit_rect;
 	fz_transform_rect(&node->rect, ctm);
 	node->item.image = fz_keep_image(ctx, image);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -476,7 +485,7 @@ fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	if (rect)
 		fz_intersect_rect(&node->rect, rect);
 	node->item.image = fz_keep_image(ctx, image);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -486,7 +495,7 @@ fz_list_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int lum
 	node = fz_new_display_node(ctx, FZ_CMD_BEGIN_MASK, &fz_identity, colorspace, color, 0);
 	node->rect = *rect;
 	node->flag = luminosity;
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -494,7 +503,7 @@ fz_list_end_mask(fz_context *ctx, fz_device *dev)
 {
 	fz_display_node *node;
 	node = fz_new_display_node(ctx, FZ_CMD_END_MASK, &fz_identity, NULL, NULL, 0);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -506,7 +515,7 @@ fz_list_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, int is
 	node->item.blendmode = blendmode;
 	node->flag |= isolated ? ISOLATED : 0;
 	node->flag |= knockout ? KNOCKOUT : 0;
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static void
@@ -514,7 +523,7 @@ fz_list_end_group(fz_context *ctx, fz_device *dev)
 {
 	fz_display_node *node;
 	node = fz_new_display_node(ctx, FZ_CMD_END_GROUP, &fz_identity, NULL, NULL, 0);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 static int
@@ -530,7 +539,7 @@ fz_list_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const f
 	node->color[3] = view->y0;
 	node->color[4] = view->x1;
 	node->color[5] = view->y1;
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 	return 0;
 }
 
@@ -539,44 +548,46 @@ fz_list_end_tile(fz_context *ctx, fz_device *dev)
 {
 	fz_display_node *node;
 	node = fz_new_display_node(ctx, FZ_CMD_END_TILE, &fz_identity, NULL, NULL, 0);
-	fz_append_display_node(dev->user, node);
+	fz_append_display_node(ctx, dev, node);
 }
 
 fz_device *
 fz_new_list_device(fz_context *ctx, fz_display_list *list)
 {
-	fz_device *dev = fz_new_device(ctx, list);
+	fz_list_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->begin_page = fz_list_begin_page;
-	dev->end_page = fz_list_end_page;
+	dev->super.begin_page = fz_list_begin_page;
+	dev->super.end_page = fz_list_end_page;
 
-	dev->fill_path = fz_list_fill_path;
-	dev->stroke_path = fz_list_stroke_path;
-	dev->clip_path = fz_list_clip_path;
-	dev->clip_stroke_path = fz_list_clip_stroke_path;
+	dev->super.fill_path = fz_list_fill_path;
+	dev->super.stroke_path = fz_list_stroke_path;
+	dev->super.clip_path = fz_list_clip_path;
+	dev->super.clip_stroke_path = fz_list_clip_stroke_path;
 
-	dev->fill_text = fz_list_fill_text;
-	dev->stroke_text = fz_list_stroke_text;
-	dev->clip_text = fz_list_clip_text;
-	dev->clip_stroke_text = fz_list_clip_stroke_text;
-	dev->ignore_text = fz_list_ignore_text;
+	dev->super.fill_text = fz_list_fill_text;
+	dev->super.stroke_text = fz_list_stroke_text;
+	dev->super.clip_text = fz_list_clip_text;
+	dev->super.clip_stroke_text = fz_list_clip_stroke_text;
+	dev->super.ignore_text = fz_list_ignore_text;
 
-	dev->fill_shade = fz_list_fill_shade;
-	dev->fill_image = fz_list_fill_image;
-	dev->fill_image_mask = fz_list_fill_image_mask;
-	dev->clip_image_mask = fz_list_clip_image_mask;
+	dev->super.fill_shade = fz_list_fill_shade;
+	dev->super.fill_image = fz_list_fill_image;
+	dev->super.fill_image_mask = fz_list_fill_image_mask;
+	dev->super.clip_image_mask = fz_list_clip_image_mask;
 
-	dev->pop_clip = fz_list_pop_clip;
+	dev->super.pop_clip = fz_list_pop_clip;
 
-	dev->begin_mask = fz_list_begin_mask;
-	dev->end_mask = fz_list_end_mask;
-	dev->begin_group = fz_list_begin_group;
-	dev->end_group = fz_list_end_group;
+	dev->super.begin_mask = fz_list_begin_mask;
+	dev->super.end_mask = fz_list_end_mask;
+	dev->super.begin_group = fz_list_begin_group;
+	dev->super.end_group = fz_list_end_group;
 
-	dev->begin_tile = fz_list_begin_tile;
-	dev->end_tile = fz_list_end_tile;
+	dev->super.begin_tile = fz_list_begin_tile;
+	dev->super.end_tile = fz_list_end_tile;
 
-	return dev;
+	dev->list = list;
+
+	return (fz_device*)dev;
 }
 
 static void

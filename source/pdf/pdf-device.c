@@ -72,6 +72,8 @@ struct group_entry_s
 
 struct pdf_device_s
 {
+	fz_device super;
+
 	pdf_document *doc;
 	pdf_obj *contents;
 	pdf_obj *resources;
@@ -855,7 +857,7 @@ static void
 pdf_dev_fill_path(fz_context *ctx, fz_device *dev, fz_path *path, int even_odd, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs = CURRENT_GSTATE(pdev);
 
 	pdf_dev_end_text(ctx, pdev);
@@ -870,7 +872,7 @@ static void
 pdf_dev_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, fz_stroke_state *stroke, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs = CURRENT_GSTATE(pdev);
 
 	pdf_dev_end_text(ctx, pdev);
@@ -885,7 +887,7 @@ pdf_dev_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, fz_stroke_st
 static void
 pdf_dev_clip_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs;
 
 	pdf_dev_end_text(ctx, pdev);
@@ -899,7 +901,7 @@ pdf_dev_clip_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect 
 static void
 pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect *rect, fz_stroke_state *stroke, const fz_matrix *ctm)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs;
 
 	pdf_dev_end_text(ctx, pdev);
@@ -918,7 +920,7 @@ static void
 pdf_dev_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	fz_matrix trm = text->trm;
 	float size = fz_matrix_expansion(&trm);
 
@@ -936,7 +938,7 @@ static void
 pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	fz_matrix trm = text->trm;
 	float size = fz_matrix_expansion(&trm);
 
@@ -953,7 +955,7 @@ pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_st
 static void
 pdf_dev_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	fz_matrix trm = text->trm;
 	float size = fz_matrix_expansion(&trm);
 
@@ -968,7 +970,7 @@ pdf_dev_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matri
 static void
 pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	fz_matrix trm = text->trm;
 	float size = fz_matrix_expansion(&trm);
 
@@ -983,7 +985,7 @@ pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stro
 static void
 pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	fz_matrix trm = text->trm;
 	float size = fz_matrix_expansion(&trm);
 
@@ -998,7 +1000,7 @@ pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_mat
 static void
 pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	int num;
 	gstate *gs = CURRENT_GSTATE(pdev);
 	fz_matrix local_ctm = *ctm;
@@ -1016,7 +1018,7 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 static void
 pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
@@ -1026,7 +1028,7 @@ static void
 pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 fz_colorspace *colorspace, float *color, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs = CURRENT_GSTATE(pdev);
 	int num;
 	fz_matrix local_ctm = *ctm;
@@ -1046,7 +1048,7 @@ fz_colorspace *colorspace, float *color, float alpha)
 static void
 pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
@@ -1056,7 +1058,7 @@ pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 static void
 pdf_dev_pop_clip(fz_context *ctx, fz_device *dev)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
@@ -1066,7 +1068,7 @@ pdf_dev_pop_clip(fz_context *ctx, fz_device *dev)
 static void
 pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int luminosity, fz_colorspace *colorspace, float *color)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
 	gstate *gs;
 	pdf_obj *smask = NULL;
@@ -1130,7 +1132,7 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 static void
 pdf_dev_end_mask(fz_context *ctx, fz_device *dev)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
 	gstate *gs = CURRENT_GSTATE(pdev);
 	fz_buffer *buf = fz_keep_buffer(ctx, gs->buf);
@@ -1151,7 +1153,7 @@ pdf_dev_end_mask(fz_context *ctx, fz_device *dev)
 static void
 pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int isolated, int knockout, int blendmode, float alpha)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
 	int num;
 	pdf_obj *form_ref;
@@ -1189,7 +1191,7 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int is
 static void
 pdf_dev_end_group(fz_context *ctx, fz_device *dev)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
 	gstate *gs = CURRENT_GSTATE(pdev);
 	fz_buffer *buf = fz_keep_buffer(ctx, gs->buf);
@@ -1206,7 +1208,7 @@ pdf_dev_end_group(fz_context *ctx, fz_device *dev)
 static int
 pdf_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
@@ -1216,16 +1218,16 @@ pdf_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const f
 static void
 pdf_dev_end_tile(fz_context *ctx, fz_device *dev)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 
 	/* FIXME */
 	pdf_dev_end_text(ctx, pdev);
 }
 
 static void
-pdf_dev_drop_user(fz_context *ctx, fz_device *dev)
+pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 {
-	pdf_device *pdev = dev->user;
+	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
 	gstate *gs = CURRENT_GSTATE(pdev);
 	int i;
@@ -1258,72 +1260,68 @@ pdf_dev_drop_user(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->images);
 	fz_free(ctx, pdev->alphas);
 	fz_free(ctx, pdev->gstates);
-	fz_free(ctx, pdev);
 }
 
 fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm)
 {
-	pdf_device *pdev = fz_malloc_struct(ctx, pdf_device);
-	fz_device *dev;
+	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
+
+	dev->super.drop_imp = pdf_dev_drop_imp;
+
+	dev->super.fill_path = pdf_dev_fill_path;
+	dev->super.stroke_path = pdf_dev_stroke_path;
+	dev->super.clip_path = pdf_dev_clip_path;
+	dev->super.clip_stroke_path = pdf_dev_clip_stroke_path;
+
+	dev->super.fill_text = pdf_dev_fill_text;
+	dev->super.stroke_text = pdf_dev_stroke_text;
+	dev->super.clip_text = pdf_dev_clip_text;
+	dev->super.clip_stroke_text = pdf_dev_clip_stroke_text;
+	dev->super.ignore_text = pdf_dev_ignore_text;
+
+	dev->super.fill_shade = pdf_dev_fill_shade;
+	dev->super.fill_image = pdf_dev_fill_image;
+	dev->super.fill_image_mask = pdf_dev_fill_image_mask;
+	dev->super.clip_image_mask = pdf_dev_clip_image_mask;
+
+	dev->super.pop_clip = pdf_dev_pop_clip;
+
+	dev->super.begin_mask = pdf_dev_begin_mask;
+	dev->super.end_mask = pdf_dev_end_mask;
+	dev->super.begin_group = pdf_dev_begin_group;
+	dev->super.end_group = pdf_dev_end_group;
+
+	dev->super.begin_tile = pdf_dev_begin_tile;
+	dev->super.end_tile = pdf_dev_end_tile;
 
 	fz_try(ctx)
 	{
-		pdev->doc = doc;
-		pdev->contents = pdf_keep_obj(ctx, contents);
-		pdev->resources = pdf_keep_obj(ctx, resources);
-		pdev->gstates = fz_malloc_struct(ctx, gstate);
-		pdev->gstates[0].buf = fz_new_buffer(ctx, 256);
-		pdev->gstates[0].ctm = *ctm;
-		pdev->gstates[0].colorspace[0] = fz_device_gray(ctx);
-		pdev->gstates[0].colorspace[1] = fz_device_gray(ctx);
-		pdev->gstates[0].color[0][0] = 1;
-		pdev->gstates[0].color[1][0] = 1;
-		pdev->gstates[0].alpha[0] = 1.0;
-		pdev->gstates[0].alpha[1] = 1.0;
-		pdev->gstates[0].font = -1;
-		pdev->gstates[0].horizontal_scaling = 100;
-		pdev->num_gstates = 1;
-		pdev->max_gstates = 1;
-
-		dev = fz_new_device(ctx, pdev);
+		dev->doc = doc;
+		dev->contents = pdf_keep_obj(ctx, contents);
+		dev->resources = pdf_keep_obj(ctx, resources);
+		dev->gstates = fz_malloc_struct(ctx, gstate);
+		dev->gstates[0].buf = fz_new_buffer(ctx, 256);
+		dev->gstates[0].ctm = *ctm;
+		dev->gstates[0].colorspace[0] = fz_device_gray(ctx);
+		dev->gstates[0].colorspace[1] = fz_device_gray(ctx);
+		dev->gstates[0].color[0][0] = 1;
+		dev->gstates[0].color[1][0] = 1;
+		dev->gstates[0].alpha[0] = 1.0;
+		dev->gstates[0].alpha[1] = 1.0;
+		dev->gstates[0].font = -1;
+		dev->gstates[0].horizontal_scaling = 100;
+		dev->num_gstates = 1;
+		dev->max_gstates = 1;
 	}
 	fz_catch(ctx)
 	{
-		if (pdev->gstates)
-			fz_drop_buffer(ctx, pdev->gstates[0].buf);
-		fz_free(ctx, pdev);
+		if (dev->gstates)
+			fz_drop_buffer(ctx, dev->gstates[0].buf);
+		fz_free(ctx, dev);
 		fz_rethrow(ctx);
 	}
 
-	dev->drop_user = pdf_dev_drop_user;
-
-	dev->fill_path = pdf_dev_fill_path;
-	dev->stroke_path = pdf_dev_stroke_path;
-	dev->clip_path = pdf_dev_clip_path;
-	dev->clip_stroke_path = pdf_dev_clip_stroke_path;
-
-	dev->fill_text = pdf_dev_fill_text;
-	dev->stroke_text = pdf_dev_stroke_text;
-	dev->clip_text = pdf_dev_clip_text;
-	dev->clip_stroke_text = pdf_dev_clip_stroke_text;
-	dev->ignore_text = pdf_dev_ignore_text;
-
-	dev->fill_shade = pdf_dev_fill_shade;
-	dev->fill_image = pdf_dev_fill_image;
-	dev->fill_image_mask = pdf_dev_fill_image_mask;
-	dev->clip_image_mask = pdf_dev_clip_image_mask;
-
-	dev->pop_clip = pdf_dev_pop_clip;
-
-	dev->begin_mask = pdf_dev_begin_mask;
-	dev->end_mask = pdf_dev_end_mask;
-	dev->begin_group = pdf_dev_begin_group;
-	dev->end_group = pdf_dev_end_group;
-
-	dev->begin_tile = pdf_dev_begin_tile;
-	dev->end_tile = pdf_dev_end_tile;
-
-	return dev;
+	return (fz_device*)dev;
 }
 
 fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, pdf_page *page)

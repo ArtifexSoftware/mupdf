@@ -99,8 +99,7 @@ struct fz_device_s
 	int hints;
 	int flags;
 
-	void *user;
-	void (*drop_user)(fz_context *, fz_device *);
+	void (*drop_imp)(fz_context *, fz_device *);
 
 	void (*begin_page)(fz_context *, fz_device *, const fz_rect *rect, const fz_matrix *ctm);
 	void (*end_page)(fz_context *, fz_device *);
@@ -164,7 +163,7 @@ void fz_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const f
 int fz_begin_tile_id(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
 void fz_end_tile(fz_context *ctx, fz_device *dev);
 
-fz_device *fz_new_device(fz_context *ctx, void *user);
+void *fz_new_device(fz_context *ctx, int size);
 
 /*
 	fz_drop_device: Free a devices of any type and its resources.

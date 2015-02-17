@@ -1,14 +1,9 @@
 #include "mupdf/fitz.h"
 
-fz_device *
-fz_new_device(fz_context *ctx, void *user)
+void *
+fz_new_device(fz_context *ctx, int size)
 {
-	fz_device *dev = fz_malloc_struct(ctx, fz_device);
-	dev->hints = 0;
-	dev->flags = 0;
-	dev->user = user;
-	dev->error_depth = 0;
-	return dev;
+	return Memento_label(fz_calloc(ctx, 1, size), "fz_device");
 }
 
 void
@@ -16,8 +11,8 @@ fz_drop_device(fz_context *ctx, fz_device *dev)
 {
 	if (dev == NULL)
 		return;
-	if (dev->drop_user)
-		dev->drop_user(ctx, dev);
+	if (dev->drop_imp)
+		dev->drop_imp(ctx, dev);
 	fz_free(ctx, dev->container);
 	fz_free(ctx, dev);
 }

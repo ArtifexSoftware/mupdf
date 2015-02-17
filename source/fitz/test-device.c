@@ -1,10 +1,11 @@
 #include <mupdf/fitz.h>
 
-struct test
+typedef struct fz_test_device_s
 {
+	fz_device super;
 	int *is_color;
 	float threshold;
-};
+} fz_test_device;
 
 static int
 is_rgb_color(float threshold, float r, float g, float b)
@@ -27,7 +28,7 @@ is_rgb_color_u8(int threshold_u8, int r, int g, int b)
 static void
 fz_test_color(fz_context *ctx, fz_device *dev, fz_colorspace *colorspace, const float *color)
 {
-	struct test *t = dev->user;
+	fz_test_device *t = (fz_test_device*)dev;
 
 	if (!*t->is_color && colorspace && colorspace != fz_device_gray(ctx))
 	{
@@ -123,7 +124,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 static void
 fz_test_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
-	struct test *t = dev->user;
+	fz_test_device *t = (fz_test_device*)dev;
 
 	fz_pixmap *pix;
 	unsigned int count, i, k;
@@ -247,45 +248,23 @@ fz_test_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_test_color(ctx, dev, colorspace, color);
 }
 
-static void
-fz_test_free(fz_context *ctx, fz_device *dev)
-{
-	if (dev == NULL)
-		return;
-	fz_free(ctx, dev->user);
-	dev->user = NULL;
-}
-
 fz_device *
 fz_new_test_device(fz_context *ctx, int *is_color, float threshold)
 {
-	struct test *t;
-	fz_device *dev;
+	fz_test_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	t = fz_malloc_struct(ctx, struct test);
-	t->is_color = is_color;
-	t->threshold = threshold;
+	dev->super.fill_path = fz_test_fill_path;
+	dev->super.stroke_path = fz_test_stroke_path;
+	dev->super.fill_text = fz_test_fill_text;
+	dev->super.stroke_text = fz_test_stroke_text;
+	dev->super.fill_shade = fz_test_fill_shade;
+	dev->super.fill_image = fz_test_fill_image;
+	dev->super.fill_image_mask = fz_test_fill_image_mask;
 
-	fz_try(ctx)
-	{
-		dev = fz_new_device(ctx, t);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, t);
-		fz_rethrow(ctx);
-	}
+	dev->is_color = is_color;
+	dev->threshold = threshold;
 
-	dev->fill_path = fz_test_fill_path;
-	dev->stroke_path = fz_test_stroke_path;
-	dev->fill_text = fz_test_fill_text;
-	dev->stroke_text = fz_test_stroke_text;
-	dev->fill_shade = fz_test_fill_shade;
-	dev->fill_image = fz_test_fill_image;
-	dev->fill_image_mask = fz_test_fill_image_mask;
-	dev->drop_user = fz_test_free;
+	*dev->is_color = 0;
 
-	*t->is_color = 0;
-
-	return dev;
+	return (fz_device*)dev;
 }
