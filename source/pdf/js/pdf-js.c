@@ -338,6 +338,7 @@ static pdf_jsimp_obj *field_getValue(void *jsctx, void *obj)
 		return NULL;
 
 	fval = pdf_field_value(js->ctx, js->doc, field);
+	/* TODO: free fval! */
 	return pdf_jsimp_from_string(js->imp, fval?fval:"");
 }
 

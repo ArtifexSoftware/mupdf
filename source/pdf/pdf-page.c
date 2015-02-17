@@ -440,7 +440,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 		pageref = pdf_lookup_page_obj(ctx, doc, number);
 	pageobj = pdf_resolve_indirect(ctx, pageref);
 
-	page = fz_malloc_struct(ctx, pdf_page);
+	page = fz_new_page(ctx, sizeof *page);
 	page->doc = (pdf_document*) fz_keep_document(ctx, &doc->super);
 
 	page->super.drop_page_imp = (fz_page_drop_page_imp_fn *)pdf_drop_page_imp;

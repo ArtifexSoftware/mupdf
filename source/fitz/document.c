@@ -342,7 +342,7 @@ fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *tra
 void *
 fz_new_page(fz_context *ctx, int size)
 {
-	fz_page *page = fz_calloc(ctx, 1, size);
+	fz_page *page = Memento_label(fz_calloc(ctx, 1, size), "fz_page");
 	page->refs = 1;
 	return page;
 }
@@ -360,7 +360,10 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 {
 	if (page) {
 		if (--page->refs == 0 && page->drop_page_imp)
+		{
 			page->drop_page_imp(ctx, page);
+			fz_free(ctx, page);
+		}
 	}
 }
 
