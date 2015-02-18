@@ -1046,8 +1046,6 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 {
 	svg_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev = fz_new_device(ctx, sizeof *dev);
-
 	dev->super.drop_imp = svg_dev_drop_imp;
 
 	dev->super.fill_path = svg_dev_fill_path;
