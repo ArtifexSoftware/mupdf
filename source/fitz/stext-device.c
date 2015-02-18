@@ -265,6 +265,9 @@ strain_soup(fz_context *ctx, fz_text_device *tdev)
 	fz_text_span *last_span = NULL;
 	int span_num;
 
+	if (soup == NULL)
+		return;
+
 	/* Really dumb implementation to match what we had before */
 	for (span_num=0; span_num < soup->len; span_num++)
 	{
