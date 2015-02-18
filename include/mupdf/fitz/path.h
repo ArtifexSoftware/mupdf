@@ -68,6 +68,7 @@ struct fz_stroke_state_s
 fz_path *fz_new_path(fz_context *ctx);
 fz_path *fz_keep_path(fz_context *ctx, fz_path *path);
 void fz_drop_path(fz_context *ctx, fz_path *path);
+void fz_trim_path(fz_context *ctx, fz_path *path);
 
 fz_point fz_currentpoint(fz_context *ctx, fz_path *path);
 void fz_moveto(fz_context*, fz_path*, float x, float y);

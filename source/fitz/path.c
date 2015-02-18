@@ -20,6 +20,8 @@ fz_new_path(fz_context *ctx)
 fz_path *
 fz_keep_path(fz_context *ctx, fz_path *path)
 {
+	if (path->refs == 1)
+		fz_trim_path(ctx, path);
 	return fz_keep_imp(ctx, path, &path->refs);
 }
 
@@ -301,6 +303,20 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 	int i;
 	for (i = 0; i < path->coord_len; i += 2)
 		fz_transform_point((fz_point *)&path->coords[i], ctm);
+}
+
+void fz_trim_path(fz_context *ctx, fz_path *path)
+{
+	if (path->cmd_cap > path->cmd_len)
+	{
+		path->cmds = fz_resize_array(ctx, path->cmds, path->cmd_len, sizeof(unsigned char));
+		path->cmd_cap = path->cmd_len;
+	}
+	if (path->coord_cap > path->coord_len)
+	{
+		path->coords = fz_resize_array(ctx, path->coords, path->coord_len, sizeof(float));
+		path->coord_cap = path->coord_len;
+	}
 }
 
 #ifndef NDEBUG
