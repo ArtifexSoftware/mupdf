@@ -274,6 +274,8 @@ png_read_ihdr(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown filter method");
 	if (info->interlace != 0 && info->interlace != 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "interlace method not supported");
+	if (info->height > UINT_MAX / info->width / info->n / (info->depth / 8 + 1))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
 }
 
 static void
@@ -572,7 +574,18 @@ fz_load_png(fz_context *ctx, unsigned char *p, int total)
 	fz_unpack_tile(ctx, image, png.samples, png.n, png.depth, stride, png.indexed);
 
 	if (png.indexed)
-		image = png_expand_palette(ctx, &png, image);
+	{
+		fz_try(ctx)
+		{
+			image = png_expand_palette(ctx, &png, image);
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, png.samples);
+			fz_drop_pixmap(ctx, image);
+			fz_rethrow(ctx);
+		}
+	}
 	else if (png.transparency)
 		png_mask_transparency(&png, image);
 

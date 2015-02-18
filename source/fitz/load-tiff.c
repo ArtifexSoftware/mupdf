@@ -295,6 +295,9 @@ fz_expand_tiff_colormap(fz_context *ctx, struct tiff *tiff)
 	if (tiff->colormaplen < (unsigned)maxval * 3)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "insufficient colormap data");
 
+	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
+
 	stride = tiff->imagewidth * (tiff->samplesperpixel + 2);
 
 	samples = fz_malloc(ctx, stride * tiff->imagelength);
@@ -360,6 +363,9 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 
 	if (tiff->planar != 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image data is not in chunky format");
+
+	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2) / (tiff->bitspersample / 8 + 1))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
 
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
