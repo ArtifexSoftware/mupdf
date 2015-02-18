@@ -148,7 +148,6 @@ cbz_drop_page_imp(fz_context *ctx, cbz_page *page)
 	if (!page)
 		return;
 	fz_drop_image(ctx, page->image);
-	fz_free(ctx, page);
 }
 
 static cbz_page *

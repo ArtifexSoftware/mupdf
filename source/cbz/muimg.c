@@ -33,7 +33,7 @@ img_count_pages(fz_context *ctx, img_document *doc)
 static fz_rect *
 img_bound_page(fz_context *ctx, img_page *page, fz_rect *bbox)
 {
-	fz_image *image = (fz_image *)page;
+	fz_image *image = page->image;
 	int xres, yres;
 	fz_image_get_sanitised_res(image, &xres, &yres);
 	bbox->x0 = bbox->y0 = 0;
@@ -46,7 +46,7 @@ static void
 img_run_page(fz_context *ctx, img_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	fz_matrix local_ctm = *ctm;
-	fz_image *image = (fz_image *)page;
+	fz_image *image = page->image;
 	int xres, yres;
 	float w, h;
 	fz_image_get_sanitised_res(image, &xres, &yres);
@@ -127,13 +127,11 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *stm)
 	}
 	fz_always(ctx)
 	{
+		fz_drop_image(ctx, image);
 		fz_drop_buffer(ctx, buffer);
-		fz_drop_stream(ctx, stm);
 	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 
 	return doc;
 }
