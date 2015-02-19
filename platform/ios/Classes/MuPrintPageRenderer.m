@@ -30,7 +30,7 @@ const int MaxStripPixels = 1024*1024;
 	dispatch_sync(queue, ^{
 		fz_try(ctx)
 		{
-			npages = fz_count_pages(docRef->doc);
+			npages = fz_count_pages(ctx, docRef->doc);
 		}
 		fz_catch(ctx);
 	});
@@ -44,7 +44,7 @@ static fz_page *getPage(fz_document *doc, int pageIndex)
 	dispatch_sync(queue, ^{
 		fz_try(ctx)
 		{
-			page = fz_load_page(doc, pageIndex);
+			page = fz_load_page(ctx, doc, pageIndex);
 		}
 		fz_catch(ctx)
 		{
@@ -63,7 +63,7 @@ static CGSize getPageSize(fz_document *doc, fz_page *page)
 		fz_try(ctx)
 		{
 			fz_rect bounds;
-			fz_bound_page(doc, page, &bounds);
+			fz_bound_page(ctx, page, &bounds);
 			size.width = bounds.x1 - bounds.x0;
 			size.height = bounds.y1 - bounds.y0;
 		}
@@ -97,7 +97,7 @@ static fz_pixmap *createPixMap(CGSize size)
 static void freePage(fz_document *doc, fz_page *page)
 {
 	dispatch_sync(queue, ^{
-		fz_free_page(doc, page);
+		fz_drop_page(ctx, page);
 	});
 }
 
@@ -110,11 +110,11 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 		{
 			dev = fz_new_draw_device(ctx, pix);
 			fz_clear_pixmap_with_value(ctx, pix, 0xFF);
-			fz_run_page(doc, page, dev, ctm, NULL);
+			fz_run_page(ctx, page, dev, ctm, NULL);
 		}
 		fz_always(ctx)
 		{
-			fz_drop_device(dev);
+			fz_drop_device(ctx, dev);
 		}
 		fz_catch(ctx)
 		{

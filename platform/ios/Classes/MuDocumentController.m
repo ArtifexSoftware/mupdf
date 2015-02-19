@@ -105,7 +105,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 			if (!err)
 			{
-				fz_write_document(doc, tmp, &opts);
+				fz_write_document(ctx, doc, tmp, &opts);
 				written = 1;
 			}
 		}
@@ -174,7 +174,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 	dispatch_sync(queue, ^{});
 
-	fz_outline *root = fz_load_outline(doc);
+	fz_outline *root = fz_load_outline(ctx, doc);
 	if (root) {
 		NSMutableArray *titles = [[NSMutableArray alloc] init];
 		NSMutableArray *pages = [[NSMutableArray alloc] init];
@@ -227,7 +227,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	[[NSUserDefaults standardUserDefaults] setObject: key forKey: @"OpenDocumentKey"];
 
 	current = [[NSUserDefaults standardUserDefaults] integerForKey: key];
-	if (current < 0 || current >= fz_count_pages(doc))
+	if (current < 0 || current >= fz_count_pages(ctx, doc))
 		current = 0;
 
 	UIView *view = [[UIView alloc] initWithFrame: CGRectZero];
@@ -271,7 +271,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 	slider = [[UISlider alloc] initWithFrame: CGRectZero];
 	[slider setMinimumValue: 0];
-	[slider setMaximumValue: fz_count_pages(doc) - 1];
+	[slider setMaximumValue: fz_count_pages(ctx, doc) - 1];
 	[slider addTarget: self action: @selector(onSlide:) forControlEvents: UIControlEventValueChanged];
 
 	if ([[[UIDevice currentDevice] systemVersion] floatValue] < 7.0)
@@ -361,7 +361,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
 		[[[self navigationController] toolbar] addSubview:slider];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(doc)]];
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(ctx, doc)]];
 
 	[[self navigationController] setToolbarHidden: NO animated: animated];
 }
@@ -375,7 +375,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	height = size.height;
 
 	[canvas setContentInset: UIEdgeInsetsZero];
-	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * width, height)];
+	[canvas setContentSize: CGSizeMake(fz_count_pages(ctx, doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
 	[sliderWrapper setWidth: SLIDER_W];
@@ -391,7 +391,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
 
 	// use max_width so we don't clamp the content offset too early during animation
-	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * max_width, height)];
+	[canvas setContentSize: CGSizeMake(fz_count_pages(ctx, doc) * max_width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 
 	for (UIView<MuPageView> *view in [canvas subviews]) {
@@ -582,8 +582,8 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) onShare: (id)sender
 {
-	pdf_document *idoc = pdf_specifics(doc);
-	if (idoc && pdf_has_unsaved_changes(idoc))
+	pdf_document *idoc = pdf_specifics(ctx, doc);
+	if (idoc && pdf_has_unsaved_changes(ctx, idoc))
 	{
 		UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:AlertTitle message:ShareAlertMessage delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Save and Share", nil];
 		[alertView show];
@@ -744,8 +744,8 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) onBack: (id)sender
 {
-	pdf_document *idoc = pdf_specifics(doc);
-	if (idoc && pdf_has_unsaved_changes(idoc))
+	pdf_document *idoc = pdf_specifics(ctx, doc);
+	if (idoc && pdf_has_unsaved_changes(ctx, idoc))
 	{
 		UIAlertView *saveAlert = [[UIAlertView alloc]
 			initWithTitle:AlertTitle message:CloseAlertMessage delegate:self
@@ -827,7 +827,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	cancelSearch = NO;
 
 	dispatch_async(queue, ^{
-		for (int i = start; i >= 0 && i < fz_count_pages(doc); i += dir) {
+		for (int i = start; i >= 0 && i < fz_count_pages(ctx, doc); i += dir) {
 			int n = search_page(doc, i, needle, NULL);
 			if (n) {
 				dispatch_async(dispatch_get_main_queue(), ^{
@@ -898,7 +898,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 {
 	int number = [slider value];
 	if ([slider isTracking])
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(doc)]];
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(ctx, doc)]];
 	else
 		[self gotoPage: number animated: NO];
 }
@@ -1032,7 +1032,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 	[[NSUserDefaults standardUserDefaults] setInteger: current forKey: key];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(doc)]];
+	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(ctx, doc)]];
 	[slider setValue: current];
 
 	// swap the distant page views out
@@ -1059,7 +1059,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) createPageView: (int)number
 {
-	if (number < 0 || number >= fz_count_pages(doc))
+	if (number < 0 || number >= fz_count_pages(ctx, doc))
 		return;
 	int found = 0;
 	for (UIView<MuPageView> *view in [canvas subviews])
@@ -1082,8 +1082,8 @@ static void saveDoc(char *current_path, fz_document *doc)
 {
 	if (number < 0)
 		number = 0;
-	if (number >= fz_count_pages(doc))
-		number = fz_count_pages(doc) - 1;
+	if (number >= fz_count_pages(ctx, doc))
+		number = fz_count_pages(ctx, doc) - 1;
 	if (current == number)
 		return;
 	if (animated) {
@@ -1106,7 +1106,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 		[canvas setContentOffset: CGPointMake(number * width, 0)];
 		[slider setValue: number];
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(doc)]];
+		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(ctx, doc)]];
 
 		[UIView commitAnimations];
 	} else {
@@ -1156,7 +1156,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	// We need to set these here, because during the animation we may use a wider
 	// size (the maximum of the landscape/portrait widths), to avoid clipping during
 	// the rotation.
-	[canvas setContentSize: CGSizeMake(fz_count_pages(doc) * width, height)];
+	[canvas setContentSize: CGSizeMake(fz_count_pages(ctx, doc) * width, height)];
 	[canvas setContentOffset: CGPointMake(current * width, 0)];
 }
 

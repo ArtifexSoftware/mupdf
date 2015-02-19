@@ -21,18 +21,18 @@ static UIImage *newImageWithPixmap(fz_pixmap *pix, CGDataProviderRef cgdata)
 
 static NSArray *enumerateWidgetRects(fz_document *doc, fz_page *page)
 {
-	pdf_document *idoc = pdf_specifics(doc);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 	pdf_widget *widget;
 	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
 
 	if (!idoc)
 		return nil;
 
-	for (widget = pdf_first_widget(idoc, (pdf_page *)page); widget; widget = pdf_next_widget(widget))
+	for (widget = pdf_first_widget(ctx, idoc, (pdf_page *)page); widget; widget = pdf_next_widget(ctx, widget))
 	{
 		fz_rect rect;
 
-		pdf_bound_widget(widget, &rect);
+		pdf_bound_widget(ctx, widget, &rect);
 		[arr addObject:[NSValue valueWithCGRect:CGRectMake(
 			rect.x0,
 			rect.y0,
@@ -48,8 +48,8 @@ static NSArray *enumerateAnnotations(fz_document *doc, fz_page *page)
 	fz_annot *annot;
 	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
 
-	for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
-		[arr addObject:[MuAnnotation annotFromAnnot:annot forDoc:doc]];
+	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
+		[arr addObject:[MuAnnotation annotFromAnnot:annot forPage:page]];
 
 	return [arr retain];
 }
@@ -77,8 +77,8 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
-		fz_run_page(doc, page, dev, &fz_identity, NULL);
-		fz_drop_device(dev);
+		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_drop_device(ctx, dev);
 		dev = NULL;
 
 		for (b = 0; b < text->len; b++)
@@ -111,7 +111,7 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 						fz_rect bbox;
 						CGRect rect;
 
-						fz_text_char_bbox(&bbox, span, c);
+						fz_text_char_bbox(ctx, &bbox, span, c);
 						rect = CGRectMake(bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
 
 						if (ch->c != ' ')
@@ -140,7 +140,7 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 	{
 		fz_drop_text_page(ctx, text);
 		fz_drop_text_sheet(ctx, sheet);
-		fz_drop_device(dev);
+		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
 	{
@@ -159,7 +159,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 	float line_height;
 	float line_thickness;
 
-	idoc = pdf_specifics(doc);
+	idoc = pdf_specifics(ctx, doc);
 	if (!idoc)
 		return;
 
@@ -218,9 +218,9 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 			quadpts[i*4+3].y = top;
 		}
 
-		annot = pdf_create_annot(idoc, (pdf_page *)page, type);
-		pdf_set_markup_annot_quadpoints(idoc, annot, quadpts, rects.count*4);
-		pdf_set_markup_appearance(idoc, annot, color, alpha, line_thickness, line_height);
+		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, type);
+		pdf_set_markup_annot_quadpoints(ctx, idoc, annot, quadpts, rects.count*4);
+		pdf_set_markup_appearance(ctx, idoc, annot, color, alpha, line_thickness, line_height);
 	}
 	fz_always(ctx)
 	{
@@ -240,7 +240,7 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 	int total;
 	float color[3] = {1.0, 0.0, 0.0};
 
-	idoc = pdf_specifics(doc);
+	idoc = pdf_specifics(ctx, doc);
 	if (!idoc)
 		return;
 
@@ -280,8 +280,8 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 			}
 		}
 
-		annot = pdf_create_annot(idoc, (pdf_page *)page, FZ_ANNOT_INK);
-		pdf_set_ink_annot_list(idoc, annot, pts, counts, n, color, INK_THICKNESS);
+		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, FZ_ANNOT_INK);
+		pdf_set_ink_annot_list(ctx, idoc, annot, pts, counts, n, color, INK_THICKNESS);
 	}
 	fz_always(ctx)
 	{
@@ -296,19 +296,19 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 
 static void deleteAnnotation(fz_document *doc, fz_page *page, int index)
 {
-	pdf_document *idoc = pdf_specifics(doc);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 	if (!idoc)
 		return;
 
 	fz_try(ctx)
 	{
 		int i;
-		fz_annot *annot = fz_first_annot(doc, page);
+		fz_annot *annot = fz_first_annot(ctx, page);
 		for (i = 0; i < index && annot; i++)
-			annot = fz_next_annot(doc, annot);
+			annot = fz_next_annot(ctx, page, annot);
 
 		if (annot)
-			pdf_delete_annot(idoc, (pdf_page *)page, (pdf_annot *)annot);
+			pdf_delete_annot(ctx, idoc, (pdf_page *)page, (pdf_annot *)annot);
 	}
 	fz_catch(ctx)
 	{
@@ -324,13 +324,13 @@ static int setFocussedWidgetText(fz_document *doc, fz_page *page, const char *te
 
 	fz_try(ctx)
 	{
-		pdf_document *idoc = pdf_specifics(doc);
+		pdf_document *idoc = pdf_specifics(ctx, doc);
 		if (idoc)
 		{
-			pdf_widget *focus = pdf_focused_widget(idoc);
+			pdf_widget *focus = pdf_focused_widget(ctx, idoc);
 			if (focus)
 			{
-				accepted = pdf_text_widget_set_text(idoc, focus, (char *)text);
+				accepted = pdf_text_widget_set_text(ctx, idoc, focus, (char *)text);
 			}
 		}
 	}
@@ -350,13 +350,13 @@ static int setFocussedWidgetChoice(fz_document *doc, fz_page *page, const char *
 
 	fz_try(ctx)
 	{
-		pdf_document *idoc = pdf_specifics(doc);
+		pdf_document *idoc = pdf_specifics(ctx, doc);
 		if (idoc)
 		{
-			pdf_widget *focus = pdf_focused_widget(idoc);
+			pdf_widget *focus = pdf_focused_widget(ctx, idoc);
 			if (focus)
 			{
-				pdf_choice_widget_set_value(idoc, focus, 1, (char **)&text);
+				pdf_choice_widget_set_value(ctx, idoc, focus, 1, (char **)&text);
 				accepted = 1;
 			}
 		}
@@ -379,11 +379,11 @@ static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
 	{
 		list = fz_new_display_list(ctx);
 		dev = fz_new_list_device(ctx, list);
-		fz_run_page_contents(doc, page, dev, &fz_identity, NULL);
+		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_device(dev);
+		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
 	{
@@ -402,18 +402,18 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 	fz_try(ctx)
 	{
 		fz_annot *annot;
-		pdf_document *idoc = pdf_specifics(doc);
+		pdf_document *idoc = pdf_specifics(ctx, doc);
 
 		if (idoc)
-			pdf_update_page(idoc, (pdf_page *)page);
+			pdf_update_page(ctx, idoc, (pdf_page *)page);
 		list = fz_new_display_list(ctx);
 		dev = fz_new_list_device(ctx, list);
-		for (annot = fz_first_annot(doc, page); annot; annot = fz_next_annot(doc, annot))
-			fz_run_annot(doc, page, annot, dev, &fz_identity, NULL);
+		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
+			fz_run_annot(ctx, page, annot, dev, &fz_identity, NULL);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_device(dev);
+		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
 	{
@@ -456,12 +456,12 @@ static fz_pixmap *renderPixmap(fz_document *doc, fz_display_list *page_list, fz_
 		fz_clear_pixmap_with_value(ctx, pix, 255);
 
 		dev = fz_new_draw_device(ctx, pix);
-		fz_run_display_list(page_list, dev, &ctm, &rect, NULL);
-		fz_run_display_list(annot_list, dev, &ctm, &rect, NULL);
+		fz_run_display_list(ctx, page_list, dev, &ctm, &rect, NULL);
+		fz_run_display_list(ctx, annot_list, dev, &ctm, &rect, NULL);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_device(dev);
+		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
 	{
@@ -497,18 +497,18 @@ static rect_list *updatePage(fz_document *doc, fz_page *page)
 	fz_var(list);
 	fz_try(ctx)
 	{
-		pdf_document *idoc = pdf_specifics(doc);
+		pdf_document *idoc = pdf_specifics(ctx, doc);
 
 		if (idoc)
 		{
 			fz_annot *annot;
 
-			pdf_update_page(idoc, (pdf_page *)page);
-			while ((annot = (fz_annot *)pdf_poll_changed_annot(idoc, (pdf_page *)page)) != NULL)
+			pdf_update_page(ctx, idoc, (pdf_page *)page);
+			while ((annot = (fz_annot *)pdf_poll_changed_annot(ctx, idoc, (pdf_page *)page)) != NULL)
 			{
 				rect_list *node = fz_malloc_struct(ctx, rect_list);
 
-				fz_bound_annot(doc, annot, &node->rect);
+				fz_bound_annot(ctx, page, annot, &node->rect);
 				node->next = list;
 				list = node;
 			}
@@ -561,9 +561,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			{
 				fz_clear_pixmap_rect_with_value(ctx, pixmap, 255, &abox);
 				dev = fz_new_draw_device_with_bbox(ctx, pixmap, &abox);
-				fz_run_display_list(page_list, dev, &ctm, &arect, NULL);
-				fz_run_display_list(annot_list, dev, &ctm, &arect, NULL);
-				fz_drop_device(dev);
+				fz_run_display_list(ctx, page_list, dev, &ctm, &arect, NULL);
+				fz_run_display_list(ctx, annot_list, dev, &ctm, &arect, NULL);
+				fz_drop_device(ctx, dev);
 				dev = NULL;
 			}
 			rlist = rlist->next;
@@ -571,7 +571,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	}
 	fz_always(ctx)
 	{
-		fz_drop_device(dev);
+		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
 	{
@@ -618,8 +618,8 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	fz_try(ctx)
 	{
 		fz_rect bounds;
-		page = fz_load_page(doc, number);
-		fz_bound_page(doc, page, &bounds);
+		page = fz_load_page(ctx, doc, number);
+		fz_bound_page(ctx, page, &bounds);
 		pageSize.width = bounds.x1 - bounds.x0;
 		pageSize.height = bounds.y1 - bounds.y0;
 	}
@@ -687,7 +687,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		__block fz_display_list *block_page_list = page_list;
 		__block fz_display_list *block_annot_list = annot_list;
 		__block fz_page *block_page = page;
-		__block fz_document *block_doc = docRef->doc;
+//		__block fz_document *block_doc = docRef->doc;
 		__block CGDataProviderRef block_tileData = tileData;
 		__block CGDataProviderRef block_imageData = imageData;
 		dispatch_async(queue, ^{
@@ -696,7 +696,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			if (block_annot_list)
 				fz_drop_display_list(ctx, block_annot_list);
 			if (block_page)
-				fz_free_page(block_doc, block_page);
+				fz_drop_page(ctx, block_page);
 			block_page = nil;
 			CGDataProviderRelease(block_tileData);
 			CGDataProviderRelease(block_imageData);
@@ -725,7 +725,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	if (!linkView) {
 		dispatch_async(queue, ^{
 			[self ensurePageLoaded];
-			fz_link *links = fz_load_links(doc, page);
+			fz_link *links = fz_load_links(ctx, page);
 			dispatch_async(dispatch_get_main_queue(), ^{
 				linkView = [[MuHitView alloc] initWithLinks: links forDocument: doc];
 				dispatch_async(queue, ^{
@@ -904,7 +904,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 - (void) loadAnnotations
 {
-	if (number < 0 || number >= fz_count_pages(doc))
+	if (number < 0 || number >= fz_count_pages(ctx, doc))
 		return;
 
 	NSArray *annots = enumerateAnnotations(doc, page);
@@ -916,7 +916,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 - (void) loadPage
 {
-	if (number < 0 || number >= fz_count_pages(doc))
+	if (number < 0 || number >= fz_count_pages(ctx, doc))
 		return;
 	dispatch_async(queue, ^{
 		if (!cancel) {
@@ -1261,7 +1261,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 
 - (int) passTapToPage:(CGPoint)pt
 {
-	pdf_document *idoc = pdf_specifics(doc);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 	pdf_ui_event event;
 	int changed = 0;
 	pdf_widget *focus;
@@ -1279,18 +1279,18 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		event.event.pointer.pt.x = pt.x;
 		event.event.pointer.pt.y = pt.y;
 		event.event.pointer.ptype = PDF_POINTER_DOWN;
-		changed = pdf_pass_event(idoc, (pdf_page *)page, &event);
+		changed = pdf_pass_event(ctx, idoc, (pdf_page *)page, &event);
 		event.event.pointer.ptype = PDF_POINTER_UP;
-		changed |= pdf_pass_event(idoc, (pdf_page *)page, &event);
+		changed |= pdf_pass_event(ctx, idoc, (pdf_page *)page, &event);
 
-		focus = pdf_focused_widget(idoc);
+		focus = pdf_focused_widget(ctx, idoc);
 		if (focus)
 		{
-			switch (pdf_widget_get_type(focus))
+			switch (pdf_widget_get_type(ctx, focus))
 			{
 				case PDF_WIDGET_TYPE_TEXT:
 				{
-					text = pdf_text_widget_text(idoc, focus);
+					text = pdf_text_widget_text(ctx, idoc, focus);
 					NSString *stext = [[NSString stringWithUTF8String:text?text:""] retain];
 					dispatch_async(dispatch_get_main_queue(), ^{
 						[self invokeTextDialog:stext];
@@ -1302,9 +1302,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 				case PDF_WIDGET_TYPE_LISTBOX:
 				case PDF_WIDGET_TYPE_COMBOBOX:
 				{
-					int nopts = pdf_choice_widget_options(idoc, focus, NULL);
+					int nopts = pdf_choice_widget_options(ctx, idoc, focus, NULL);
 					opts = fz_malloc(ctx, nopts * sizeof(*opts));
-					(void)pdf_choice_widget_options(idoc, focus, opts);
+					(void)pdf_choice_widget_options(ctx, idoc, focus, opts);
 					NSMutableArray *arr = [[NSMutableArray arrayWithCapacity:nopts] retain];
 					for (int i = 0; i < nopts; i++)
 					{

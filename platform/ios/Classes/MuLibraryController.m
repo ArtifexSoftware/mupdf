@@ -212,7 +212,7 @@ static NSString *moveOutOfInbox(NSString *docpath)
 		return;
 	}
 
-	if (fz_needs_password(doc->doc))
+	if (fz_needs_password(ctx, doc->doc))
 		[self askForPassword: @"'%@' needs a password:"];
 	else
 		[self onPasswordOkay];
@@ -236,7 +236,7 @@ static NSString *moveOutOfInbox(NSString *docpath)
 	char *password = (char*) [[[alertView textFieldAtIndex: 0] text] UTF8String];
 	[alertView dismissWithClickedButtonIndex: buttonIndex animated: TRUE];
 	if (buttonIndex == 1) {
-		if (fz_authenticate_password(doc->doc, password))
+		if (fz_authenticate_password(ctx, doc->doc, password))
 			[self onPasswordOkay];
 		else
 			[self askForPassword: @"Wrong password for '%@'. Try again:"];

@@ -25,32 +25,32 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 		sheet = fz_new_text_sheet(ctx);
 		text = fz_new_text_page(ctx);
 		dev = fz_new_text_device(ctx, sheet, text);
-		page = fz_load_page(doc, pageNum);
-		fz_run_page(doc, page, dev, &ctm, NULL);
-		fz_drop_device(dev);
+		page = fz_load_page(ctx, doc, pageNum);
+		fz_run_page(ctx, page, dev, &ctm, NULL);
+		fz_drop_device(ctx, dev);
 		dev = NULL;
 
 		fz_analyze_text(ctx, sheet, text);
 
 		buf = fz_new_buffer(ctx, 256);
 		out = fz_new_output_with_buffer(ctx, buf);
-		fz_printf(out, "<html>\n");
-		fz_printf(out, "<style>\n");
-		fz_printf(out, "body{margin:0;}\n");
-		fz_printf(out, "div.page{background-color:white;}\n");
-		fz_printf(out, "div.block{margin:0pt;padding:0pt;}\n");
-		fz_printf(out, "div.metaline{display:table;width:100%%}\n");
-		fz_printf(out, "div.line{display:table-row;}\n");
-		fz_printf(out, "div.cell{display:table-cell;padding-left:0.25em;padding-right:0.25em}\n");
-		//fz_printf(out, "p{margin:0;padding:0;}\n");
-		fz_printf(out, "</style>\n");
-		fz_printf(out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
+		fz_printf(ctx, out, "<html>\n");
+		fz_printf(ctx, out, "<style>\n");
+		fz_printf(ctx, out, "body{margin:0;}\n");
+		fz_printf(ctx, out, "div.page{background-color:white;}\n");
+		fz_printf(ctx, out, "div.block{margin:0pt;padding:0pt;}\n");
+		fz_printf(ctx, out, "div.metaline{display:table;width:100%%}\n");
+		fz_printf(ctx, out, "div.line{display:table-row;}\n");
+		fz_printf(ctx, out, "div.cell{display:table-cell;padding-left:0.25em;padding-right:0.25em}\n");
+		//fz_printf(ctx, out, "p{margin:0;padding:0;}\n");
+		fz_printf(ctx, out, "</style>\n");
+		fz_printf(ctx, out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
 		fz_print_text_page_html(ctx, out, text);
-		fz_printf(out, "</div></body>\n");
-		fz_printf(out, "<style>\n");
+		fz_printf(ctx, out, "</div></body>\n");
+		fz_printf(ctx, out, "<style>\n");
 		fz_print_text_sheet(ctx, out, sheet);
-		fz_printf(out, "</style>\n</html>\n");
-		fz_close_output(out);
+		fz_printf(ctx, out, "</style>\n</html>\n");
+
 		out = NULL;
 
 		str = [[[NSString alloc] initWithBytes:buf->data length:buf->len encoding:NSUTF8StringEncoding] autorelease];
@@ -59,10 +59,10 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 	{
 		fz_drop_text_page(ctx, text);
 		fz_drop_text_sheet(ctx, sheet);
-		fz_drop_device(dev);
-		fz_close_output(out);
+		fz_drop_device(ctx, dev);
+		fz_drop_output(ctx, out);
 		fz_drop_buffer(ctx, buf);
-		fz_free_page(doc, page);
+		fz_drop_page(ctx, page);
 	}
 	fz_catch(ctx)
 	{

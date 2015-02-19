@@ -23,9 +23,9 @@
 			}
 			else
 			{
-				pdf_document *idoc = pdf_specifics(doc);
-				if (idoc) pdf_enable_js(idoc);
-				interactive = (idoc != NULL) && (pdf_crypt_version(idoc) == 0);
+				pdf_document *idoc = pdf_specifics(ctx, doc);
+				if (idoc) pdf_enable_js(ctx, idoc);
+				interactive = (idoc != NULL) && (pdf_crypt_version(ctx, idoc) == 0);
 			}
 		}
 		fz_catch(ctx)
@@ -33,7 +33,7 @@
 			if (self)
 			{
 				if (doc != NULL)
-					fz_drop_document(doc);
+					fz_drop_document(ctx, doc);
 				[self release];
 				self = nil;
 			}
@@ -46,7 +46,7 @@
 {
 	__block fz_document *block_doc = doc;
 	dispatch_async(queue, ^{
-		fz_drop_document(block_doc);
+		fz_drop_document(ctx, block_doc);
 	});
 	[super dealloc];
 }

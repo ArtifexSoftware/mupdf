@@ -19,19 +19,19 @@ static fz_rect hit_bbox[500];
 
 int search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 {
-	fz_page *page = fz_load_page(doc, number);
+	fz_page *page = fz_load_page(ctx, doc, number);
 
 	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
 	fz_text_page *text = fz_new_text_page(ctx);
 	fz_device *dev = fz_new_text_device(ctx, sheet, text);
-	fz_run_page(doc, page, dev, &fz_identity, cookie);
-	fz_drop_device(dev);
+	fz_run_page(ctx, page, dev, &fz_identity, cookie);
+	fz_drop_device(ctx, dev);
 
 	hit_count = fz_search_text_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));
 
 	fz_drop_text_page(ctx, text);
 	fz_drop_text_sheet(ctx, sheet);
-	fz_free_page(doc, page);
+	fz_drop_page(ctx, page);
 
 	return hit_count;
 }
