@@ -1112,12 +1112,8 @@ pdf_show_char(pdf_csi *csi, pdf_run_state *pr, int cid)
 
 	fz_concat(&trm, &tsm, &pr->tm);
 
-	fz_bound_glyph(ctx, fontdesc->font, gid, &trm, &bbox);
 	/* Compensate for the glyph cache limited positioning precision */
-	bbox.x0 -= 1;
-	bbox.y0 -= 1;
-	bbox.x1 += 1;
-	bbox.y1 += 1;
+	fz_expand_rect(fz_bound_glyph(ctx, fontdesc->font, gid, &trm, &bbox), 1);
 
 	/* If we are a type3 font within a type 3 font, or are otherwise
 	 * uncachable, then render direct. */
