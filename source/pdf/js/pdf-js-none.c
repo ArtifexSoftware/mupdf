@@ -1,14 +1,14 @@
 #include "mupdf/pdf.h"
 
-void pdf_enable_js(pdf_document *doc)
+void pdf_enable_js(fz_context *ctx, pdf_document *doc)
 {
 }
 
-void pdf_disable_js(pdf_document *doc)
+void pdf_disable_js(fz_context *ctx, pdf_document *doc)
 {
 }
 
-int pdf_js_supported(pdf_document *doc)
+int pdf_js_supported(fz_context *ctx, pdf_document *doc)
 {
 	return 0;
 }
