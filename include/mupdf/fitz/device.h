@@ -40,6 +40,7 @@ enum
 	/* Arguably we should have a bit for the dash pattern itself being
 	 * undefined, but that causes problems; do we assume that it should
 	 * always be set to non-dashing at the start of every glyph? */
+	FZ_DEVFLAG_BBOX_DEFINED = 2048,
 };
 
 enum
@@ -129,6 +130,8 @@ struct fz_device_s
 
 	int (*begin_tile)(fz_context *, fz_device *, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
 	void (*end_tile)(fz_context *, fz_device *);
+
+	fz_rect d1_rect;
 
 	int error_depth;
 	char errmess[256];

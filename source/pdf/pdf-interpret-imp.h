@@ -129,6 +129,8 @@ struct pdf_csi_s
 	int xbalance;
 	int in_text;
 
+	fz_rect d1_rect;
+
 	/* cookie support */
 	fz_cookie *cookie;
 };

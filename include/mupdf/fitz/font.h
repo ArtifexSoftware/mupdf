@@ -44,7 +44,7 @@ struct fz_font_s
 	fz_buffer **t3procs; /* has 256 entries if used */
 	struct fz_display_list_s **t3lists; /* has 256 entries if used */
 	float *t3widths; /* has 256 entries if used */
-	char *t3flags; /* has 256 entries if used */
+	unsigned short *t3flags; /* has 256 entries if used */
 	void *t3doc; /* a pdf_document for the callback */
 	void (*t3run)(fz_context *ctx, void *doc, void *resources, fz_buffer *contents, struct fz_device_s *dev, const fz_matrix *ctm, void *gstate, int nestedDepth);
 	void (*t3freeres)(fz_context *ctx, void *doc, void *resources);

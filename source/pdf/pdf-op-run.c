@@ -2367,7 +2367,7 @@ static void pdf_run_d1(pdf_csi *csi, void *state)
 
 	if (pr->nested_depth > 1)
 		return;
-	pr->dev->flags |= FZ_DEVFLAG_MASK;
+	pr->dev->flags |= FZ_DEVFLAG_MASK | FZ_DEVFLAG_BBOX_DEFINED;
 	pr->dev->flags &= ~(FZ_DEVFLAG_FILLCOLOR_UNDEFINED |
 				FZ_DEVFLAG_STROKECOLOR_UNDEFINED |
 				FZ_DEVFLAG_STARTCAP_UNDEFINED |
@@ -2376,6 +2376,11 @@ static void pdf_run_d1(pdf_csi *csi, void *state)
 				FZ_DEVFLAG_LINEJOIN_UNDEFINED |
 				FZ_DEVFLAG_MITERLIMIT_UNDEFINED |
 				FZ_DEVFLAG_LINEWIDTH_UNDEFINED);
+
+	pr->dev->d1_rect.x0 = fz_min(csi->stack[2], csi->stack[4]);
+	pr->dev->d1_rect.y0 = fz_min(csi->stack[3], csi->stack[5]);
+	pr->dev->d1_rect.x1 = fz_max(csi->stack[2], csi->stack[4]);
+	pr->dev->d1_rect.y1 = fz_max(csi->stack[3], csi->stack[5]);
 }
 
 static void pdf_run_f(pdf_csi *csi, void *state)
