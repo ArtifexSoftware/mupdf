@@ -402,9 +402,11 @@ fz_append_display_node(
 	if (color)
 	{
 
-		int i, n = colorspace->n;
+		int i, n;
 		const float *wc = &writer->color[0];
 
+		assert(colorspace != NULL);
+		n = colorspace->n;
 		i = 0;
 		/* Only check colors if the colorspace is unchanged. If the
 		 * colorspace *has* changed and the colors are implicit then
@@ -602,7 +604,7 @@ fz_append_display_node(
 		if (node.ctm & CTM_CHANGE_EF)
 		{
 			writer->ctm.e = *out_ctm++ = ctm->e;
-			writer->ctm.f = *out_ctm++ = ctm->f;
+			writer->ctm.f = *out_ctm = ctm->f;
 		}
 	}
 	if (stroke_off)
@@ -1381,9 +1383,6 @@ skip_to_end_tile(fz_display_node *node, fz_display_node *node_end, int *progress
 	fz_display_node *next;
 	int depth = 1;
 
-	/* Skip through until we find the matching end_tile. Note that
-	 * (somewhat nastily) we return the PREVIOUS node to this to help
-	 * the calling routine. */
 	do
 	{
 		next = node + node->size;
@@ -1395,7 +1394,7 @@ skip_to_end_tile(fz_display_node *node, fz_display_node *node_end, int *progress
 		{
 			depth--;
 			if (depth == 0)
-				return node;
+				return next;
 		}
 		(*progress)++;
 		node = next;
@@ -1558,7 +1557,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			if (n.ctm & CTM_CHANGE_EF)
 			{
 				ctm.e = *packed_ctm++;
-				ctm.f = *packed_ctm++;
+				ctm.f = *packed_ctm;
 				node += SIZE_IN_NODES(2*sizeof(float));
 			}
 		}
@@ -1699,7 +1698,7 @@ visible:
 				tile_rect = data->view;
 				cached = fz_begin_tile_id(ctx, dev, &rect, &tile_rect, data->xstep, data->ystep, &trans_ctm, n.flags);
 				if (cached)
-					node = skip_to_end_tile(node, node_end, &progress);
+					next_node = skip_to_end_tile(node, node_end, &progress);
 				break;
 			}
 			case FZ_CMD_END_TILE:
