@@ -316,10 +316,20 @@ const fz_irect fz_unit_bbox = { 0, 0, 1, 1 };
 fz_irect *
 fz_irect_from_rect(fz_irect *restrict b, const fz_rect *restrict r)
 {
-	b->x0 = fz_clamp(floorf(r->x0), MIN_SAFE_INT, MAX_SAFE_INT);
-	b->y0 = fz_clamp(floorf(r->y0), MIN_SAFE_INT, MAX_SAFE_INT);
-	b->x1 = fz_clamp(ceilf(r->x1), MIN_SAFE_INT, MAX_SAFE_INT);
-	b->y1 = fz_clamp(ceilf(r->y1), MIN_SAFE_INT, MAX_SAFE_INT);
+	if (fz_is_empty_rect(r))
+	{
+		b->x0 = 0;
+		b->y0 = 0;
+		b->x1 = 0;
+		b->y1 = 0;
+	}
+	else
+	{
+		b->x0 = fz_clamp(floorf(r->x0), MIN_SAFE_INT, MAX_SAFE_INT);
+		b->y0 = fz_clamp(floorf(r->y0), MIN_SAFE_INT, MAX_SAFE_INT);
+		b->x1 = fz_clamp(ceilf(r->x1), MIN_SAFE_INT, MAX_SAFE_INT);
+		b->y1 = fz_clamp(ceilf(r->y1), MIN_SAFE_INT, MAX_SAFE_INT);
+	}
 	return b;
 }
 
