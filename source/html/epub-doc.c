@@ -253,7 +253,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	fz_drop_xml(ctx, content_opf);
 }
 
-static epub_document *
+static fz_document *
 epub_init(fz_context *ctx, fz_archive *zip)
 {
 	epub_document *doc;
@@ -278,16 +278,16 @@ epub_init(fz_context *ctx, fz_archive *zip)
 		fz_rethrow(ctx);
 	}
 
-	return doc;
+	return (fz_document*)doc;
 }
 
-static epub_document *
+static fz_document *
 epub_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	return epub_init(ctx, fz_open_archive_with_stream(ctx, file));
 }
 
-static epub_document *
+static fz_document *
 epub_open_document(fz_context *ctx, const char *filename)
 {
 	if (strstr(filename, "META-INF/container.xml") || strstr(filename, "META-INF\\container.xml"))
@@ -320,7 +320,7 @@ epub_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler epub_document_handler =
 {
-	(fz_document_recognize_fn *)&epub_recognize,
-	(fz_document_open_fn *)&epub_open_document,
-	(fz_document_open_with_stream_fn *)&epub_open_document_with_stream
+	&epub_recognize,
+	&epub_open_document,
+	&epub_open_document_with_stream
 };

@@ -453,7 +453,7 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 		root = node;
 	}
 
-	if (strcmp(fz_xml_tag(root), "FixedPage"))
+	if (!fz_xml_is_tag(root, "FixedPage"))
 	{
 		fz_drop_xml(ctx, root);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "expected FixedPage element");

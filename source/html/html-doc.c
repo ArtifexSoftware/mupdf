@@ -89,20 +89,20 @@ htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 	return (fz_page*)page;
 }
 
-static html_document *
+static fz_document *
 htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	html_document *doc;
 	fz_buffer *buf;
 
 	doc = fz_malloc_struct(ctx, html_document);
-	doc->zip = fz_open_directory(ctx, ".");
-	doc->set = fz_new_html_font_set(ctx);
-
 	doc->super.close = htdoc_close_document;
 	doc->super.layout = htdoc_layout;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
+
+	doc->zip = fz_open_directory(ctx, ".");
+	doc->set = fz_new_html_font_set(ctx);
 
 	buf = fz_read_all(ctx, file, 0);
 	fz_write_buffer_byte(ctx, buf, 0);
@@ -111,10 +111,10 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	htdoc_layout(ctx, (fz_document*)doc, DEFW, DEFH, DEFEM);
 
-	return doc;
+	return (fz_document*)doc;
 }
 
-static html_document *
+static fz_document *
 htdoc_open_document(fz_context *ctx, const char *filename)
 {
 	char dirname[2048];
@@ -124,13 +124,13 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	fz_dirname(dirname, filename, sizeof dirname);
 
 	doc = fz_malloc_struct(ctx, html_document);
-	doc->zip = fz_open_directory(ctx, dirname);
-	doc->set = fz_new_html_font_set(ctx);
-
 	doc->super.close = htdoc_close_document;
 	doc->super.layout = htdoc_layout;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
+
+	doc->zip = fz_open_directory(ctx, dirname);
+	doc->set = fz_new_html_font_set(ctx);
 
 	buf = fz_read_file(ctx, filename);
 	fz_write_buffer_byte(ctx, buf, 0);
@@ -139,7 +139,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 
 	htdoc_layout(ctx, (fz_document*)doc, DEFW, DEFH, DEFEM);
 
-	return doc;
+	return (fz_document*)doc;
 }
 
 static int
@@ -160,7 +160,7 @@ htdoc_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler html_document_handler =
 {
-	(fz_document_recognize_fn *)&htdoc_recognize,
-	(fz_document_open_fn *)&htdoc_open_document,
-	(fz_document_open_with_stream_fn *)&htdoc_open_document_with_stream
+	&htdoc_recognize,
+	&htdoc_open_document,
+	&htdoc_open_document_with_stream
 };
