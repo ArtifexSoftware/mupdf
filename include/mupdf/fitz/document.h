@@ -86,6 +86,8 @@ extern fz_document_handler xps_document_handler;
 extern fz_document_handler cbz_document_handler;
 extern fz_document_handler img_document_handler;
 extern fz_document_handler tiff_document_handler;
+extern fz_document_handler html_document_handler;
+extern fz_document_handler epub_document_handler;
 
 void fz_register_document_handler(fz_context *ctx, const fz_document_handler *handler);
 
