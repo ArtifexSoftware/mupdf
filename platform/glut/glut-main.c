@@ -32,6 +32,29 @@ static void ui_end(void)
 	}
 }
 
+static void open_browser(const char *uri)
+{
+#ifdef _WIN32
+	ShellExecuteA(hwndframe, "open", uri, 0, 0, SW_SHOWNORMAL);
+#else
+	const char *browser = getenv("BROWSER");
+	if (!browser)
+	{
+#ifdef __APPLE__
+		browser = "open";
+#else
+		browser = "xdg-open";
+#endif
+	}
+	if (fork() == 0)
+	{
+		execlp(browser, browser, uri, (char*)0);
+		fprintf(stderr, "cannot exec '%s'\n", browser);
+		exit(0);
+	}
+#endif
+}
+
 const char *ogl_error_string(GLenum code)
 {
 #define CASE(E) case E: return #E; break
@@ -125,9 +148,10 @@ static int zoom_out(int oldres)
 static fz_context *ctx = NULL;
 static fz_document *doc = NULL;
 static fz_outline *outline = NULL;
+static fz_link *links = NULL;
 
 static unsigned int page_tex = 0;
-static int page_w, page_h;
+static int page_x, page_y, page_w, page_h;
 
 void render_page(int pagenumber, float zoom, float rotate)
 {
@@ -146,12 +170,18 @@ void render_page(int pagenumber, float zoom, float rotate)
 	fz_transform_rect(&bounds, &ctm);
 	fz_round_rect(&ibounds, &bounds);
 
+	fz_drop_link(ctx, links);
+	links = NULL;
+	links = fz_load_links(ctx, page);
+
 	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &ibounds);
 	fz_clear_pixmap_with_value(ctx, pix, 0xff);
 	dev = fz_new_draw_device(ctx, pix);
 	fz_run_page(ctx, page, dev, &ctm, NULL);
 	fz_drop_device(ctx, dev);
 
+	page_x = pix->x;
+	page_y = pix->y;
 	page_w = pix->w;
 	page_h = pix->h;
 
@@ -173,6 +203,7 @@ static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
 
 static int showoutline = 0;
+static int showlinks = 0;
 
 static void draw_string(float x, float y, const char *s)
 {
@@ -307,6 +338,65 @@ static void draw_outline(fz_outline *node, int w)
 	glDisable(GL_SCISSOR_TEST);
 }
 
+static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rotate)
+{
+	fz_matrix ctm;
+	fz_rect r;
+	float x, y;
+
+	x = ui.x;
+	y = ui.y;
+
+	xofs -= page_x;
+	yofs -= page_y;
+
+	fz_scale(&ctm, zoom / 72, zoom / 72);
+	fz_pre_rotate(&ctm, -rotate);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	while (link)
+	{
+		r = link->rect;
+		fz_transform_rect(&r, &ctm);
+
+		if (x >= xofs + r.x0 && x < xofs + r.x1 && y >= yofs + r.y0 && y < yofs + r.y1)
+		{
+			ui.hot = link;
+			if (!ui.active && ui.down)
+				ui.active = link;
+		}
+
+		if (ui.hot == link || showlinks)
+		{
+			if (ui.active == link && ui.hot == link)
+				glColor4f(0, 0, 1, 0.4);
+			else if (ui.hot == link)
+				glColor4f(0, 0, 1, 0.2);
+			else
+				glColor4f(0, 0, 1, 0.1);
+			glRectf(xofs + r.x0, yofs + r.y0, xofs + r.x1, yofs + r.y1);
+		}
+
+		if (ui.active == link && !ui.down)
+		{
+			if (ui.hot == link)
+			{
+				if (link->dest.kind == FZ_LINK_GOTO)
+					currentpage = link->dest.ld.gotor.page;
+				else if (link->dest.kind == FZ_LINK_URI)
+					open_browser(link->dest.ld.uri.uri);
+			}
+			glutPostRedisplay();
+		}
+
+		link = link->next;
+	}
+
+	glDisable(GL_BLEND);
+}
+
 static void toggle_fullscreen(void)
 {
 	static int oldw = 100, oldh = 100, oldx = 0, oldy = 0;
@@ -410,6 +500,7 @@ static void display(void)
 	r.y1 = y + page_h;
 
 	draw_image(page_tex, &r);
+	draw_links(links, x, y, currentzoom, currentrotate);
 
 	if (showoutline)
 	{
@@ -447,7 +538,8 @@ static void keyboard(unsigned char key, int x, int y)
 	case '-': currentzoom = zoom_out(currentzoom); break;
 	case '[': currentrotate += 90; break;
 	case ']': currentrotate -= 90; break;
-	case 'l': showoutline = !showoutline; break;
+	case 'o': showoutline = !showoutline; break;
+	case 'l': showlinks = !showlinks; break;
 	}
 
 	if (key >= '0' && key <= '9')
@@ -512,9 +604,10 @@ int main(int argc, char **argv)
 	glutSpecialFunc(special);
 	glutMouseFunc(mouse);
 	glutMotionFunc(motion);
-	//glutPassiveMotionFunc(motion);
+	glutPassiveMotionFunc(motion);
 	glutMainLoop();
 
+	fz_drop_link(ctx, links);
 	fz_drop_document(ctx, doc);
 	fz_drop_context(ctx);
 
