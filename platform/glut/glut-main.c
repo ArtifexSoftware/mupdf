@@ -203,6 +203,23 @@ static float oldrotate = 0, currentrotate = 0;
 static int showoutline = 0;
 static int showlinks = 0;
 
+static int history_count = 0;
+static int history[256];
+static int marks[10];
+
+static void push_history(void)
+{
+	if (history_count + 1 >= nelem(history))
+	{
+		memmove(history, history + 1, sizeof *history * (nelem(history) - 1));
+		history[history_count] = currentpage;
+	}
+	else
+	{
+		history[history_count++] = currentpage;
+	}
+}
+
 static void draw_string(float x, float y, const char *s)
 {
 	int c;
@@ -287,6 +304,7 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 				if (!ui.active && ui.down)
 				{
 					ui.active = node;
+					push_history();
 					currentpage = p;
 					glutPostRedisplay(); /* we changed the current page, so force a redraw */
 				}
@@ -383,9 +401,14 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 			if (ui.hot == link)
 			{
 				if (link->dest.kind == FZ_LINK_GOTO)
+				{
+					push_history();
 					currentpage = link->dest.ld.gotor.page;
+				}
 				else if (link->dest.kind == FZ_LINK_URI)
+				{
 					open_browser(link->dest.ld.uri.uri);
+				}
 			}
 			glutPostRedisplay();
 		}
@@ -622,6 +645,21 @@ static void keyboard(unsigned char key, int x, int y)
 
 	switch (key)
 	{
+	case 'm':
+		if (number == 0)
+			push_history();
+		else if (number > 0 && number < nelem(marks))
+			marks[number] = currentpage;
+		break;
+	case 't':
+		if (number == 0 && history_count > 0)
+			currentpage = history[--history_count];
+		else if (number > 0 && number < nelem(marks))
+		{
+			push_history();
+			currentpage = marks[number];
+		}
+		break;
 	case 'f': toggle_fullscreen(); break;
 	case 'W': auto_zoom_w(); break;
 	case 'H': auto_zoom_h(); break;
@@ -633,8 +671,8 @@ static void keyboard(unsigned char key, int x, int y)
 	case '.': currentpage += fz_maxi(number, 1); break;
 	case 'b': number = fz_maxi(number, 1); while (number--) smart_move_backward(); break;
 	case ' ': number = fz_maxi(number, 1); while (number--) smart_move_forward(); break;
-	case 'g': currentpage = number - 1; break;
-	case 'G': currentpage = fz_count_pages(ctx, doc) - 1; break;
+	case 'g': push_history(); currentpage = number - 1; break;
+	case 'G': push_history(); currentpage = fz_count_pages(ctx, doc) - 1; break;
 	case '+': currentzoom = zoom_in(currentzoom); break;
 	case '-': currentzoom = zoom_out(currentzoom); break;
 	case '[': currentrotate += 90; break;
