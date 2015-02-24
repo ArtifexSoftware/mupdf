@@ -1581,7 +1581,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 		}
 		else
 		{
-			fz_rect irect = rect;
+			fz_rect irect = trans_rect;
 			fz_intersect_rect(&irect, scissor);
 			empty = fz_is_empty_rect(&irect);
 		}
