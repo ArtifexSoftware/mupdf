@@ -466,3 +466,8 @@ ifeq "$(HAVE_X11)" "yes"
 X11_CFLAGS := $(SYS_X11_CFLAGS)
 X11_LIBS := $(SYS_X11_LIBS)
 endif
+
+ifeq "$(HAVE_GLUT)" "yes"
+GLUT_CFLAGS := $(SYS_GLUT_CFLAGS)
+GLUT_LIBS := $(SYS_GLUT_LIBS)
+endif
