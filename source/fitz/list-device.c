@@ -1377,33 +1377,6 @@ fz_drop_display_list(fz_context *ctx, fz_display_list *list)
 	fz_drop_storable(ctx, &list->storable);
 }
 
-static fz_display_node *
-skip_to_end_tile(fz_display_node *node, fz_display_node *node_end, int *progress)
-{
-	fz_display_node *next;
-	int depth = 1;
-
-	do
-	{
-		next = node + node->size;
-		if (next == node_end)
-			break;
-		if (next->cmd == FZ_CMD_BEGIN_TILE)
-			depth++;
-		else if (next->cmd == FZ_CMD_END_TILE)
-		{
-			depth--;
-			if (depth == 0)
-				return next;
-		}
-		(*progress)++;
-		node = next;
-	}
-	while (1);
-
-	return NULL;
-}
-
 void
 fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, const fz_matrix *top_ctm, const fz_rect *scissor, fz_cookie *cookie)
 {
@@ -1426,6 +1399,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 	/* Transformed versions of graphic state entries */
 	fz_rect trans_rect;
 	fz_matrix trans_ctm;
+	int tile_skip_depth = 0;
 
 	fz_var(colorspace);
 
@@ -1568,6 +1542,16 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			node += SIZE_IN_NODES(sizeof(fz_stroke_state *));
 		}
 
+		if (tile_skip_depth > 0)
+		{
+			if (n.cmd == FZ_CMD_BEGIN_TILE)
+				tile_skip_depth++;
+			else if (n.cmd == FZ_CMD_END_TILE)
+				tile_skip_depth--;
+			if (tile_skip_depth > 0)
+				continue;
+		}
+
 		trans_rect = rect;
 		fz_transform_rect(&trans_rect, top_ctm);
 
@@ -1698,7 +1682,7 @@ visible:
 				tile_rect = data->view;
 				cached = fz_begin_tile_id(ctx, dev, &rect, &tile_rect, data->xstep, data->ystep, &trans_ctm, n.flags);
 				if (cached)
-					next_node = skip_to_end_tile(node, node_end, &progress);
+					tile_skip_depth = 1;
 				break;
 			}
 			case FZ_CMD_END_TILE:
