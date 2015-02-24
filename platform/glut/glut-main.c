@@ -205,6 +205,8 @@ static int showlinks = 0;
 
 static int history_count = 0;
 static int history[256];
+static int future_count = 0;
+static int future[256];
 static int marks[10];
 
 static void push_history(void)
@@ -218,6 +220,50 @@ static void push_history(void)
 	{
 		history[history_count++] = currentpage;
 	}
+}
+
+static void push_future(void)
+{
+	if (future_count + 1 >= nelem(future))
+	{
+		memmove(future, future + 1, sizeof *future * (nelem(future) - 1));
+		future[future_count] = currentpage;
+	}
+	else
+	{
+		future[future_count++] = currentpage;
+	}
+}
+
+static void clear_future(void)
+{
+	future_count = 0;
+}
+
+static void jump_to_page(int newpage)
+{
+	newpage = fz_clampi(newpage, 0, fz_count_pages(ctx, doc) - 1);
+	clear_future();
+	push_history();
+	currentpage = newpage;
+	push_history();
+}
+
+static void pop_history(void)
+{
+	int here = currentpage;
+	push_future();
+	while (history_count > 0 && currentpage == here)
+		currentpage = history[--history_count];
+}
+
+static void pop_future(void)
+{
+	int here = currentpage;
+	push_history();
+	while (future_count > 0 && currentpage == here)
+		currentpage = future[--future_count];
+	push_history();
 }
 
 static void draw_string(float x, float y, const char *s)
@@ -304,8 +350,7 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 				if (!ui.active && ui.down)
 				{
 					ui.active = node;
-					push_history();
-					currentpage = p;
+					jump_to_page(p);
 					glutPostRedisplay(); /* we changed the current page, so force a redraw */
 				}
 			}
@@ -401,14 +446,9 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 			if (ui.hot == link)
 			{
 				if (link->dest.kind == FZ_LINK_GOTO)
-				{
-					push_history();
-					currentpage = link->dest.ld.gotor.page;
-				}
+					jump_to_page(link->dest.ld.gotor.page);
 				else if (link->dest.kind == FZ_LINK_URI)
-				{
 					open_browser(link->dest.ld.uri.uri);
-				}
 			}
 			glutPostRedisplay();
 		}
@@ -652,12 +692,21 @@ static void keyboard(unsigned char key, int x, int y)
 			marks[number] = currentpage;
 		break;
 	case 't':
-		if (number == 0 && history_count > 0)
-			currentpage = history[--history_count];
+		if (number == 0)
+		{
+			if (history_count > 0)
+				pop_history();
+		}
 		else if (number > 0 && number < nelem(marks))
 		{
-			push_history();
-			currentpage = marks[number];
+			jump_to_page(marks[number]);
+		}
+		break;
+	case 'T':
+		if (number == 0)
+		{
+			if (future_count > 0)
+				pop_future();
 		}
 		break;
 	case 'f': toggle_fullscreen(); break;
@@ -671,8 +720,8 @@ static void keyboard(unsigned char key, int x, int y)
 	case '.': currentpage += fz_maxi(number, 1); break;
 	case 'b': number = fz_maxi(number, 1); while (number--) smart_move_backward(); break;
 	case ' ': number = fz_maxi(number, 1); while (number--) smart_move_forward(); break;
-	case 'g': push_history(); currentpage = number - 1; break;
-	case 'G': push_history(); currentpage = fz_count_pages(ctx, doc) - 1; break;
+	case 'g': jump_to_page(number - 1); break;
+	case 'G': jump_to_page(fz_count_pages(ctx, doc) - 1); break;
 	case '+': currentzoom = zoom_in(currentzoom); break;
 	case '-': currentzoom = zoom_out(currentzoom); break;
 	case '[': currentrotate += 90; break;
