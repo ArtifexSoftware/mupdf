@@ -942,7 +942,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\include\mupdf\html.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\include\mupdf\memento.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\mupdf\pdf-tools.h"
 				>
 			</File>
 			<File
@@ -1193,6 +1201,34 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="html"
+			>
+			<File
+				RelativePath="..\..\source\html\css-apply.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\html\css-parse.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\html\epub-doc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\html\html-doc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\html\html-font.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\html\html-layout.c"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

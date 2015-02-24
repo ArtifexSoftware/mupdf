@@ -833,7 +833,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 		if (tag && !strcmp(tag, "link"))
 		{
 			char *rel = fz_xml_att(node, "rel");
-			if (rel && !strcasecmp(rel, "stylesheet"))
+			if (rel && !fz_strcasecmp(rel, "stylesheet"))
 			{
 				char *type = fz_xml_att(node, "type");
 				if ((type && !strcmp(type, "text/css")) || !type)

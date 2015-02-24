@@ -568,14 +568,14 @@ number_from_value(fz_css_value *value, float initial, int initial_unit)
 		return make_number(initial, initial_unit);
 
 	if (value->type == CSS_PERCENT)
-		return make_number(strtof(value->data, NULL), N_PERCENT);
+		return make_number((float)fz_strtod(value->data, NULL), N_PERCENT);
 
 	if (value->type == CSS_NUMBER)
-		return make_number(strtof(value->data, NULL), N_NUMBER);
+		return make_number((float)fz_strtod(value->data, NULL), N_NUMBER);
 
 	if (value->type == CSS_LENGTH)
 	{
-		float x = strtof(value->data, &p);
+		float x = (float)fz_strtod(value->data, &p);
 
 		if (p[0] == 'e' && p[1] == 'm')
 			return make_number(x, N_SCALE);
@@ -812,13 +812,13 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	value = value_from_property(match, "font-size");
 	if (value)
 	{
-		if (!strcmp(value->data, "xx-large")) style->font_size = make_number(1.73, N_SCALE);
-		else if (!strcmp(value->data, "x-large")) style->font_size = make_number(1.44, N_SCALE);
-		else if (!strcmp(value->data, "large")) style->font_size = make_number(1.2, N_SCALE);
-		else if (!strcmp(value->data, "medium")) style->font_size = make_number(1, N_SCALE);
-		else if (!strcmp(value->data, "small")) style->font_size = make_number(0.83, N_SCALE);
-		else if (!strcmp(value->data, "x-small")) style->font_size = make_number(0.69, N_SCALE);
-		else if (!strcmp(value->data, "xx-small")) style->font_size = make_number(0.69, N_SCALE);
+		if (!strcmp(value->data, "xx-large")) style->font_size = make_number(1.73f, N_SCALE);
+		else if (!strcmp(value->data, "x-large")) style->font_size = make_number(1.44f, N_SCALE);
+		else if (!strcmp(value->data, "large")) style->font_size = make_number(1.2f, N_SCALE);
+		else if (!strcmp(value->data, "medium")) style->font_size = make_number(1.0f, N_SCALE);
+		else if (!strcmp(value->data, "small")) style->font_size = make_number(0.83f, N_SCALE);
+		else if (!strcmp(value->data, "x-small")) style->font_size = make_number(0.69f, N_SCALE);
+		else if (!strcmp(value->data, "xx-small")) style->font_size = make_number(0.69f, N_SCALE);
 		else if (!strcmp(value->data, "larger")) style->font_size = make_number(1.2f, N_SCALE);
 		else if (!strcmp(value->data, "smaller")) style->font_size = make_number(1/1.2f, N_SCALE);
 		else style->font_size = number_from_value(value, 12, N_NUMBER);
@@ -839,7 +839,7 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 			style->border_style = BS_SOLID;
 	}
 
-	style->line_height = number_from_property(match, "line-height", 1.2, N_SCALE);
+	style->line_height = number_from_property(match, "line-height", 1.2f, N_SCALE);
 
 	style->text_indent = number_from_property(match, "text-indent", 0, N_NUMBER);
 
