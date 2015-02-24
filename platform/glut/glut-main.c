@@ -8,6 +8,30 @@
 #include <GL/freeglut.h>
 #endif
 
+struct ui
+{
+	int x, y, down;
+	void *hot, *active;
+} ui;
+
+static void ui_begin(void)
+{
+	ui.hot = NULL;
+}
+
+static void ui_end(void)
+{
+	if (!ui.down)
+	{
+		ui.active = NULL;
+	}
+	else
+	{
+		if (!ui.active)
+			ui.active = ui.hot;
+	}
+}
+
 const char *ogl_error_string(GLenum code)
 {
 #define CASE(E) case E: return #E; break
@@ -100,6 +124,7 @@ static int zoom_out(int oldres)
 
 static fz_context *ctx = NULL;
 static fz_document *doc = NULL;
+static fz_outline *outline = NULL;
 
 static unsigned int page_tex = 0;
 static int page_w, page_h;
@@ -146,6 +171,142 @@ static int screen_w = 1, screen_h = 1;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
+
+static int showoutline = 0;
+
+static void draw_string(float x, float y, const char *s)
+{
+	int c;
+	glRasterPos2f(x + 0.375f, y + 0.375f + 11);
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, c);
+	}
+}
+
+static float measure_string(const char *s)
+{
+	int w, c;
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+		w += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, c);
+	}
+	return w;
+}
+
+static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
+{
+	int h = y1 - y0;
+	int t, b;
+
+	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
+	{
+		ui.hot = value;
+		if (!ui.active && ui.down)
+			ui.active = value;
+	}
+
+	if (ui.active == value)
+	{
+		*value = fz_clampi((ui.y - y0) * max / h, 0, max);
+	}
+
+	t = *value * h / max;
+	b = t + page * h / max;
+	if (b - t < 2)
+	{
+		t = t - 1;
+		b = t + 2;
+	}
+
+	glColor4f(0.6, 0.6, 0.6, 1);
+	glRectf(x0, y0, x1, y1);
+	glColor4f(0.8, 0.8, 0.8, 1);
+	glRectf(x0, t, x1, b);
+}
+
+static int measure_outline_height(fz_outline *node)
+{
+	int h = 0;
+	while (node)
+	{
+		h += 15;
+		if (node->down)
+			h += measure_outline_height(node->down);
+		node = node->next;
+	}
+	return h;
+}
+
+static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, int y)
+{
+	int h = 0;
+	int p = currentpage;
+	int n = end;
+
+	while (node)
+	{
+		if (node->dest.kind == FZ_LINK_GOTO)
+		{
+			p = node->dest.ld.gotor.page;
+
+			if (ui.x >= x0 && ui.x < x1 && ui.y >= y + h && ui.y < y + h + 15)
+			{
+				ui.hot = node;
+				if (!ui.active && ui.down)
+				{
+					ui.active = node;
+					currentpage = p;
+					glutPostRedisplay(); /* we changed the current page, so force a redraw */
+				}
+			}
+
+			n = end;
+			if (node->next && node->next->dest.kind == FZ_LINK_GOTO)
+			{
+				n = node->next->dest.ld.gotor.page;
+			}
+			if (currentpage == p || (currentpage > p && currentpage < n))
+			{
+				glColor4f(0.9, 0.9, 0.9, 1);
+				glRectf(x0, y + h, x1, y + h + 15);
+			}
+		}
+
+		glColor4f(0, 0, 0, 1);
+		draw_string(x, y + h, node->title);
+		h += 15;
+		if (node->down)
+			h += draw_outline_imp(node->down, n, x0, x1, x + 15, y + h);
+
+		node = node->next;
+	}
+	return h;
+}
+
+static void draw_outline(fz_outline *node)
+{
+	static int w = 300;
+	static int y = 0;
+	int h;
+
+	h = measure_outline_height(outline);
+
+	ui_scrollbar(w, 0, w+15, screen_h, &y, screen_h, h);
+
+	glColor4f(1, 1, 1, 1);
+	glRectf(0, 0, w, screen_h);
+
+	glScissor(0, 0, w, screen_h);
+	glEnable(GL_SCISSOR_TEST);
+
+	draw_outline_imp(outline, fz_count_pages(ctx, doc), 0, w, 10, -y);
+
+	glScissor(0, 0, screen_w, screen_h);
+	glDisable(GL_SCISSOR_TEST);
+}
 
 static void toggle_fullscreen(void)
 {
@@ -211,6 +372,16 @@ static void display(void)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
+	ui_begin();
+
+	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
+	{
+		render_page(currentpage, currentzoom, currentrotate);
+		oldpage = currentpage;
+		oldzoom = currentzoom;
+		oldrotate = currentrotate;
+	}
+
 	x = (screen_w - page_w) / 2;
 	y = (screen_h - page_h) / 2;
 
@@ -220,6 +391,16 @@ static void display(void)
 	r.y1 = y + page_h;
 
 	draw_image(page_tex, &r);
+
+	if (showoutline)
+	{
+		if (!outline)
+			outline = fz_load_outline(ctx, doc);
+		if (outline)
+			draw_outline(outline);
+	}
+
+	ui_end();
 
 	glutSwapBuffers();
 
@@ -250,6 +431,7 @@ static void keyboard(unsigned char key, int x, int y)
 	case '-': currentzoom = zoom_out(currentzoom); break;
 	case '[': currentrotate += 90; break;
 	case ']': currentrotate -= 90; break;
+	case 'l': showoutline = !showoutline; break;
 	}
 
 	if (key >= '0' && key <= '9')
@@ -262,14 +444,7 @@ static void keyboard(unsigned char key, int x, int y)
 	while (currentrotate < 0) currentrotate += 360;
 	while (currentrotate >= 360) currentrotate -= 360;
 
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
-	{
-		render_page(currentpage, currentzoom, currentrotate);
-		oldpage = currentpage;
-		oldzoom = currentzoom;
-		oldrotate = currentrotate;
-		glutPostRedisplay();
-	}
+	glutPostRedisplay();
 }
 
 static void special(int key, int x, int y)
@@ -277,6 +452,22 @@ static void special(int key, int x, int y)
 	int mod = glutGetModifiers();
 	if (key == GLUT_KEY_F4 && mod == GLUT_ACTIVE_ALT)
 		exit(0);
+}
+
+static void mouse(int button, int state, int x, int y)
+{
+	if (button == GLUT_LEFT_BUTTON)
+		ui.down = state == GLUT_DOWN;
+	ui.x = x;
+	ui.y = y;
+	glutPostRedisplay();
+}
+
+static void motion(int x, int y)
+{
+	ui.x = x;
+	ui.y = y;
+	glutPostRedisplay();
 }
 
 int main(int argc, char **argv)
@@ -303,8 +494,9 @@ int main(int argc, char **argv)
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
 	glutSpecialFunc(special);
-	//glutMouseFunc(mouse);
-	//glutMotionFunc(motion);
+	glutMouseFunc(mouse);
+	glutMotionFunc(motion);
+	//glutPassiveMotionFunc(motion);
 	glutMainLoop();
 
 	fz_drop_document(ctx, doc);
