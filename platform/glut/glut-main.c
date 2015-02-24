@@ -143,9 +143,13 @@ static fz_document *doc = NULL;
 static fz_outline *outline = NULL;
 static fz_link *links = NULL;
 
+static int number = 0;
+
 static unsigned int page_tex = 0;
 static int page_x, page_y, page_w, page_h;
-static int offset_x = 0, offset_y = 0;
+static int scroll_x = 0, scroll_y = 0;
+static int canvas_x = 0, canvas_w = 100;
+static int canvas_y = 0, canvas_h = 100;
 
 void render_page(int pagenumber, float zoom, float rotate)
 {
@@ -434,6 +438,57 @@ static void auto_zoom(void)
 		auto_zoom_h();
 }
 
+static void smart_move_backward(void)
+{
+	if (scroll_y <= 0)
+	{
+		if (scroll_x <= 0)
+		{
+			if (currentpage - 1 >= 0)
+			{
+				scroll_x = page_w;
+				scroll_y = page_h;
+				currentpage -= 1;
+			}
+		}
+		else
+		{
+			scroll_y = page_h;
+			scroll_x -= canvas_w * 9 / 10;
+		}
+	}
+	else
+	{
+		scroll_y -= canvas_h * 9 / 10;
+	}
+}
+
+static void smart_move_forward(void)
+{
+	if (scroll_y + canvas_h >= page_h)
+	{
+		if (scroll_x + canvas_w >= page_w)
+		{
+			if (currentpage + 1 < fz_count_pages(ctx, doc))
+			{
+				scroll_x = 0;
+				scroll_y = 0;
+				currentpage += 1;
+			}
+		}
+		else
+		{
+			scroll_y = 0;
+			scroll_x += canvas_w * 9 / 10;
+		}
+	}
+	else
+	{
+		scroll_y += canvas_h * 9 / 10;
+	}
+}
+
+
 static void reshape(int w, int h)
 {
 	screen_w = w;
@@ -444,11 +499,9 @@ static void display(void)
 {
 	fz_rect r;
 	float x, y;
-	int canvas_x, canvas_w;
-	int canvas_y, canvas_h;
 
-	static int save_offset_x = 0;
-	static int save_offset_y = 0;
+	static int save_scroll_x = 0;
+	static int save_scroll_y = 0;
 	static int save_ui_x = 0;
 	static int save_ui_y = 0;
 
@@ -497,8 +550,8 @@ static void display(void)
 
 	if (ui.active == doc)
 	{
-		offset_x = save_offset_x + ui.x - save_ui_x;
-		offset_y = save_offset_y + ui.y - save_ui_y;
+		scroll_x = save_scroll_x + save_ui_x - ui.x;
+		scroll_y = save_scroll_y + save_ui_y - ui.y;
 	}
 
 	if (ui.x >= canvas_x && ui.x < canvas_x + canvas_w && ui.y >= canvas_y && ui.y < canvas_y + canvas_h)
@@ -507,8 +560,8 @@ static void display(void)
 		if (!ui.active && ui.middle)
 		{
 			ui.active = doc;
-			save_offset_x = offset_x;
-			save_offset_y = offset_y;
+			save_scroll_x = scroll_x;
+			save_scroll_y = scroll_y;
 			save_ui_x = ui.x;
 			save_ui_y = ui.y;
 		}
@@ -516,28 +569,30 @@ static void display(void)
 
 	if (page_w <= canvas_w)
 	{
+		scroll_x = 0;
 		x = canvas_x + (canvas_w - page_w) / 2;
 	}
 	else
 	{
-		if (offset_x > 0)
-			offset_x = 0;
-		if (offset_x + page_w < canvas_w)
-			offset_x = canvas_w - page_w;
-		x = canvas_x + offset_x;
+		if (scroll_x < 0)
+			scroll_x = 0;
+		if (scroll_x + canvas_w > page_w)
+			scroll_x = page_w - canvas_w;
+		x = canvas_x - scroll_x;
 	}
 
 	if (page_h <= canvas_h)
 	{
+		scroll_y = 0;
 		y = canvas_y + (canvas_h - page_h) / 2;
 	}
 	else
 	{
-		if (offset_y > 0)
-			offset_y = 0;
-		if (offset_y + page_h < canvas_h)
-			offset_y = canvas_h - page_h;
-		y = canvas_y + offset_y;
+		if (scroll_y < 0)
+			scroll_y = 0;
+		if (scroll_y + canvas_h > page_h)
+			scroll_y = page_h - canvas_h;
+		y = canvas_y - scroll_y;
 	}
 
 	r.x0 = x;
@@ -562,8 +617,6 @@ static void display(void)
 
 static void keyboard(unsigned char key, int x, int y)
 {
-	static int number = 0;
-
 	if (key == 27 || key == 'q')
 		exit(0);
 
@@ -576,8 +629,10 @@ static void keyboard(unsigned char key, int x, int y)
 	case 'z': currentzoom = number > 0 ? number : DEFRES; break;
 	case '<': currentpage -= 10 * fz_maxi(number, 1); break;
 	case '>': currentpage += 10 * fz_maxi(number, 1); break;
-	case ',': case 'b': currentpage -= fz_maxi(number, 1); break;
-	case '.': case ' ': currentpage += fz_maxi(number, 1); break;
+	case ',': currentpage -= fz_maxi(number, 1); break;
+	case '.': currentpage += fz_maxi(number, 1); break;
+	case 'b': number = fz_maxi(number, 1); while (number--) smart_move_backward(); break;
+	case ' ': number = fz_maxi(number, 1); while (number--) smart_move_forward(); break;
 	case 'g': currentpage = number - 1; break;
 	case 'G': currentpage = fz_count_pages(ctx, doc) - 1; break;
 	case '+': currentzoom = zoom_in(currentzoom); break;
@@ -610,11 +665,15 @@ static void special(int key, int x, int y)
 
 	switch (key)
 	{
-	case GLUT_KEY_UP: offset_y += 10; break;
-	case GLUT_KEY_DOWN: offset_y -= 10; break;
-	case GLUT_KEY_LEFT: offset_x += 10; break;
-	case GLUT_KEY_RIGHT: offset_x -= 10; break;
+	case GLUT_KEY_UP: scroll_y -= 10; break;
+	case GLUT_KEY_DOWN: scroll_y += 10; break;
+	case GLUT_KEY_LEFT: scroll_x -= 10; break;
+	case GLUT_KEY_RIGHT: scroll_x += 10; break;
+	case GLUT_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); break;
+	case GLUT_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); break;
 	}
+
+	number = 0;
 
 	glutPostRedisplay();
 }
