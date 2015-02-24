@@ -286,9 +286,8 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 	return h;
 }
 
-static void draw_outline(fz_outline *node)
+static void draw_outline(fz_outline *node, int w)
 {
-	static int w = 300;
 	static int y = 0;
 	int h;
 
@@ -360,6 +359,7 @@ static void display(void)
 {
 	fz_rect r;
 	float x, y;
+	int canvas_x, canvas_w;
 
 	glViewport(0, 0, screen_w, screen_h);
 	glClearColor(0.3, 0.3, 0.4, 1.0);
@@ -374,6 +374,14 @@ static void display(void)
 
 	ui_begin();
 
+	if (showoutline)
+	{
+		if (!outline)
+			outline = fz_load_outline(ctx, doc);
+		if (!outline)
+			showoutline = 0;
+	}
+
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
 	{
 		render_page(currentpage, currentzoom, currentrotate);
@@ -382,7 +390,18 @@ static void display(void)
 		oldrotate = currentrotate;
 	}
 
-	x = (screen_w - page_w) / 2;
+	if (showoutline)
+	{
+		canvas_x = 300;
+		canvas_w = screen_w - canvas_x;
+	}
+	else
+	{
+		canvas_x = 0;
+		canvas_w = screen_w;
+	}
+
+	x = canvas_x + (canvas_w - page_w) / 2;
 	y = (screen_h - page_h) / 2;
 
 	r.x0 = x;
@@ -394,10 +413,7 @@ static void display(void)
 
 	if (showoutline)
 	{
-		if (!outline)
-			outline = fz_load_outline(ctx, doc);
-		if (outline)
-			draw_outline(outline);
+		draw_outline(outline, canvas_x);
 	}
 
 	ui_end();
