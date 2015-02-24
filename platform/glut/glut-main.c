@@ -378,25 +378,43 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 	return h;
 }
 
-static void draw_outline(fz_outline *node, int w)
+static void draw_outline(fz_outline *node, int outline_w)
 {
-	static int y = 0;
-	int h;
+	static char *id = "outline";
+	static int scroll_y = 0;
+	static int save_scroll_y = 0;
+	static int save_ui_y = 0;
 
-	w -= 15;
-	h = measure_outline_height(outline);
+	int outline_h;
+	int total_h;
 
-	ui_scrollbar(w, 0, w+15, screen_h, &y, screen_h, h);
+	outline_w -= 15;
+	outline_h = screen_h;
+	total_h = measure_outline_height(outline);
 
-	glColor4f(1, 1, 1, 1);
-	glRectf(0, 0, w, screen_h);
+	if (ui.x >= 0 && ui.x < outline_w && ui.y >= 0 && ui.y < outline_h)
+	{
+		if (!ui.active && ui.middle)
+		{
+			ui.active = id;
+			save_ui_y = ui.y;
+			save_scroll_y = scroll_y;
+		}
+	}
 
-	glScissor(0, 0, w, screen_h);
+	if (ui.active == id)
+		scroll_y = save_scroll_y + (save_ui_y - ui.y) * 5;
+
+	ui_scrollbar(outline_w, 0, outline_w+15, outline_h, &scroll_y, outline_h, total_h);
+
+	glScissor(0, 0, outline_w, outline_h);
 	glEnable(GL_SCISSOR_TEST);
 
-	draw_outline_imp(outline, fz_count_pages(ctx, doc), 0, w, 10, -y);
+	glColor4f(1, 1, 1, 1);
+	glRectf(0, 0, outline_w, outline_h);
 
-	glScissor(0, 0, screen_w, screen_h);
+	draw_outline_imp(outline, fz_count_pages(ctx, doc), 0, outline_w, 10, -scroll_y);
+
 	glDisable(GL_SCISSOR_TEST);
 }
 
@@ -611,12 +629,6 @@ static void display(void)
 	canvas_y = 0;
 	canvas_h = screen_h;
 
-	if (ui.active == doc)
-	{
-		scroll_x = save_scroll_x + save_ui_x - ui.x;
-		scroll_y = save_scroll_y + save_ui_y - ui.y;
-	}
-
 	if (ui.x >= canvas_x && ui.x < canvas_x + canvas_w && ui.y >= canvas_y && ui.y < canvas_y + canvas_h)
 	{
 		ui.hot = doc;
@@ -628,6 +640,12 @@ static void display(void)
 			save_ui_x = ui.x;
 			save_ui_y = ui.y;
 		}
+	}
+
+	if (ui.active == doc)
+	{
+		scroll_x = save_scroll_x + save_ui_x - ui.x;
+		scroll_y = save_scroll_y + save_ui_y - ui.y;
 	}
 
 	if (page_w <= canvas_w)
@@ -761,6 +779,8 @@ static void special(int key, int x, int y)
 	}
 
 	number = 0;
+
+	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
 
 	glutPostRedisplay();
 }
