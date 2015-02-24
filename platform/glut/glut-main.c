@@ -138,6 +138,8 @@ static int zoom_out(int oldres)
 #define MAXRES (zoom_list[nelem(zoom_list)-1])
 #define DEFRES 96
 
+static const char *filename = "";
+static const char *title = "MuPDF/GL";
 static fz_context *ctx = NULL;
 static fz_document *doc = NULL;
 static fz_outline *outline = NULL;
@@ -150,6 +152,33 @@ static int page_x, page_y, page_w, page_h;
 static int scroll_x = 0, scroll_y = 0;
 static int canvas_x = 0, canvas_w = 100;
 static int canvas_y = 0, canvas_h = 100;
+
+static int screen_w = 1, screen_h = 1;
+
+static int oldpage = 0, currentpage = 0;
+static float oldzoom = DEFRES, currentzoom = DEFRES;
+static float oldrotate = 0, currentrotate = 0;
+
+static int showoutline = 0;
+static int showlinks = 0;
+
+static int history_count = 0;
+static int history[256];
+static int future_count = 0;
+static int future[256];
+static int marks[10];
+
+static void update_title(void)
+{
+	static char buf[256];
+	int n = strlen(title);
+	if (n > 50)
+		sprintf(buf, "...%s - %d / %d", title + n - 50, currentpage + 1, fz_count_pages(ctx, doc));
+	else
+		sprintf(buf, "%s - %d / %d", title, currentpage + 1, fz_count_pages(ctx, doc));
+	glutSetWindowTitle(buf);
+	glutSetIconTitle(buf);
+}
 
 void render_page(int pagenumber, float zoom, float rotate)
 {
@@ -193,21 +222,6 @@ void render_page(int pagenumber, float zoom, float rotate)
 	fz_drop_pixmap(ctx, pix);
 	fz_drop_page(ctx, page);
 }
-
-static int screen_w = 1, screen_h = 1;
-
-static int oldpage = 0, currentpage = 0;
-static float oldzoom = DEFRES, currentzoom = DEFRES;
-static float oldrotate = 0, currentrotate = 0;
-
-static int showoutline = 0;
-static int showlinks = 0;
-
-static int history_count = 0;
-static int history[256];
-static int future_count = 0;
-static int future[256];
-static int marks[10];
 
 static void push_history(void)
 {
@@ -642,6 +656,7 @@ static void display(void)
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
 	{
 		render_page(currentpage, currentzoom, currentrotate);
+		update_title();
 		oldpage = currentpage;
 		oldzoom = currentzoom;
 		oldrotate = currentrotate;
@@ -848,9 +863,18 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	filename = argv[1];
+	title = strrchr(filename, '/');
+	if (!title)
+		title = strrchr(filename, '\\');
+	if (title)
+		++title;
+	else
+		title = filename;
+
 	memset(&ui, 0, sizeof ui);
 
-	glutCreateWindow("MuPDF/GL");
+	glutCreateWindow(filename);
 
 	ctx = fz_new_context(NULL, NULL, 0);
 	fz_register_document_handlers(ctx);
@@ -858,6 +882,7 @@ int main(int argc, char **argv)
 	doc = fz_open_document(ctx, argv[1]);
 
 	render_page(currentpage, currentzoom, currentrotate);
+	update_title();
 
 	glutReshapeFunc(reshape);
 	glutDisplayFunc(display);
