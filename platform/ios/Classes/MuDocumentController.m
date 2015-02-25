@@ -226,7 +226,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 {
 	[[NSUserDefaults standardUserDefaults] setObject: key forKey: @"OpenDocumentKey"];
 
-	current = [[NSUserDefaults standardUserDefaults] integerForKey: key];
+	current = (int)[[NSUserDefaults standardUserDefaults] integerForKey: key];
 	if (current < 0 || current >= fz_count_pages(ctx, doc))
 		current = 0;
 

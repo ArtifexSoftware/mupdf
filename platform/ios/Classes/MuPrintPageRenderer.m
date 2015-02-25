@@ -37,14 +37,14 @@ const int MaxStripPixels = 1024*1024;
 	return npages;
 }
 
-static fz_page *getPage(fz_document *doc, int pageIndex)
+static fz_page *getPage(fz_document *doc, NSInteger pageIndex)
 {
 	__block fz_page *page = NULL;
 
 	dispatch_sync(queue, ^{
 		fz_try(ctx)
 		{
-			page = fz_load_page(ctx, doc, pageIndex);
+			page = fz_load_page(ctx, doc, (int)pageIndex);
 		}
 		fz_catch(ctx)
 		{

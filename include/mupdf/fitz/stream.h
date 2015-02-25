@@ -212,9 +212,9 @@ void fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, int max);
 	if we have hit EOF. The number of bytes returned here need have
 	no relation to max (could be larger, could be smaller).
 */
-static inline int fz_available(fz_context *ctx, fz_stream *stm, int max)
+static inline size_t fz_available(fz_context *ctx, fz_stream *stm, int max)
 {
-	int len = stm->wp - stm->rp;
+	size_t len = stm->wp - stm->rp;
 	int c = EOF;
 
 	if (len)

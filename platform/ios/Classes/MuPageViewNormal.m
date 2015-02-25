@@ -200,7 +200,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 		int i;
 		pdf_annot *annot;
 
-		quadpts = fz_malloc_array(ctx, rects.count * 4, sizeof(fz_point));
+		quadpts = fz_malloc_array(ctx, (int)rects.count * 4, sizeof(fz_point));
 		for (i = 0; i < rects.count; i++)
 		{
 			CGRect rect = [[rects objectAtIndex:i] CGRectValue];
@@ -219,7 +219,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 		}
 
 		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, type);
-		pdf_set_markup_annot_quadpoints(ctx, idoc, annot, quadpts, rects.count*4);
+		pdf_set_markup_annot_quadpoints(ctx, idoc, annot, quadpts, (int)rects.count*4);
 		pdf_set_markup_appearance(ctx, idoc, annot, color, alpha, line_thickness, line_height);
 	}
 	fz_always(ctx)
@@ -251,7 +251,7 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 		int i, j, k, n;
 		pdf_annot *annot;
 
-		n = curves.count;
+		n = (int)curves.count;
 
 		counts = fz_malloc_array(ctx, n, sizeof(int));
 		total = 0;
@@ -259,8 +259,8 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 		for (i = 0; i < n; i++)
 		{
 			NSArray *curve = [curves objectAtIndex:i];
-			counts[i] = curve.count;
-			total += curve.count;
+			counts[i] = (int)curve.count;
+			total += (int)curve.count;
 		}
 
 		pts = fz_malloc_array(ctx, total, sizeof(fz_point));
