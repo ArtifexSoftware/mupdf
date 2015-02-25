@@ -982,6 +982,7 @@ pdfinfo_info(fz_context *ctx, fz_output *out, char *filename, char *password, in
 	globals glo = { 0 };
 
 	glo.out = out;
+	glo.ctx = ctx;
 
 	state = NO_FILE_OPENED;
 	while (argidx < argc)
