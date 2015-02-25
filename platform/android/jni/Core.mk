@@ -51,14 +51,10 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/pdf/*.c) \
 	$(wildcard $(MY_ROOT)/source/xps/*.c) \
 	$(wildcard $(MY_ROOT)/source/cbz/*.c) \
-	$(wildcard $(MY_ROOT)/source/img/*.c) \
-	$(wildcard $(MY_ROOT)/source/tiff/*.c)
+	$(wildcard $(MY_ROOT)/source/html/*.c)
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/source/pdf/js/pdf-js.c \
 	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.c
-ifdef MEMENTO
-LOCAL_SRC_FILES += $(MY_ROOT)/source/fitz/memento.c
-endif
 
 LOCAL_LDLIBS    := -lm -llog -ljnigraphics
 

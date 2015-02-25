@@ -137,7 +137,7 @@ static void drop_page_cache(globals *glo, page_cache *pc)
 	pc->page_list = NULL;
 	fz_drop_display_list(ctx, pc->annot_list);
 	pc->annot_list = NULL;
-	fz_free_page(ctx, pc->page);
+	fz_drop_page(ctx, pc->page);
 	pc->page = NULL;
 	drop_changed_rects(ctx, &pc->changed_rects);
 	drop_changed_rects(ctx, &pc->hq_changed_rects);
