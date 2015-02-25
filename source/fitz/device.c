@@ -446,7 +446,7 @@ fz_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rec
 int
 fz_begin_tile_id(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id)
 {
-	int ret;
+	int ret = 0;
 
 	if (dev->error_depth)
 	{
@@ -458,6 +458,8 @@ fz_begin_tile_id(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_
 		xstep = -xstep;
 	if (ystep < 0)
 		ystep = -ystep;
+
+	fz_var(ret);
 
 	fz_try(ctx)
 	{
