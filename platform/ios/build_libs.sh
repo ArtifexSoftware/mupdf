@@ -14,7 +14,7 @@ fi
 export OS=ios
 export build=$(echo $CONFIGURATION | tr A-Z a-z)
 
-FLAGS=""
+FLAGS="-Wno-unused-function"
 for A in $ARCHS
 do
 	FLAGS="$FLAGS -arch $A"
