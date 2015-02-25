@@ -1,18 +1,17 @@
 #import <UIKit/UIKit.h>
+#import "MuAppDelegate.h"
 
 int main(int argc, char *argv[])
 {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	int retVal;
+	@autoreleasepool {
+		@try {
+			return UIApplicationMain(argc, argv, nil, NSStringFromClass([MuAppDelegate class]));
+		}
+		@catch (NSException* exception) {
+			NSLog(@"Uncaught exception %@", exception);
+			NSLog(@"Stack trace: %@", [exception callStackSymbols]);
+		}
 
-	@try {
-		retVal = UIApplicationMain(argc, argv, nil, @"MuAppDelegate");
+		return 0;
 	}
-	@catch (NSException* exception) {
-		NSLog(@"Uncaught exception %@", exception);
-		NSLog(@"Stack trace: %@", [exception callStackSymbols]);
-	}
-
-	[pool release];
-	return retVal;
 }

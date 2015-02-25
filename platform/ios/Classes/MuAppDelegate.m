@@ -7,6 +7,9 @@
 #import <Crashlytics/Crashlytics.h>
 #endif
 
+@interface MuAppDelegate () <UINavigationControllerDelegate>
+@end
+
 @implementation MuAppDelegate
 {
 	UIWindow *window;
