@@ -125,7 +125,7 @@ fz_open_fd(fz_context *ctx, int fd)
 fz_stream *
 fz_open_file(fz_context *ctx, const char *name)
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	char *s = (char*)name;
 	wchar_t *wname, *d;
 	int c, fd;
@@ -145,7 +145,7 @@ fz_open_file(fz_context *ctx, const char *name)
 	return fz_open_fd(ctx, fd);
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 fz_stream *
 fz_open_file_w(fz_context *ctx, const wchar_t *name)
 {

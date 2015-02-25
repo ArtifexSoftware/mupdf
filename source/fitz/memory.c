@@ -269,7 +269,7 @@ int fz_lock_taken[FZ_LOCK_DEBUG_CONTEXT_MAX][FZ_LOCK_MAX] = { { 0 } };
  * when threads are involved. */
 static int ms_clock(void)
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	return (int)GetTickCount();
 #else
 	struct timeval tp;

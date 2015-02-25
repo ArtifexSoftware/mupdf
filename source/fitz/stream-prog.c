@@ -1,7 +1,7 @@
 #include "mupdf/fitz/stream.h"
 #include "mupdf/fitz/string.h"
 
-#if defined(_WIN32) && !defined(NDEBUG)
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(NDEBUG)
 #include "windows.h"
 
 static void
@@ -169,7 +169,7 @@ fz_open_fd_progressive(fz_context *ctx, int fd, int bps)
 fz_stream *
 fz_open_file_progressive(fz_context *ctx, const char *name, int bps)
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	char *s = (char*)name;
 	wchar_t *wname, *d;
 	int c, fd;

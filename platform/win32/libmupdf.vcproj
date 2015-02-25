@@ -10,6 +10,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -77,6 +80,69 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ProjectName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
+			ConfigurationType="4"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\include;..\..\ucdn;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\mujs"
+				PreprocessorDefinitions="DEBUG=1;USE_OUTPUT_DEBUG_STRING"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
@@ -100,6 +166,70 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\include;..\..\ucdn;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\mujs"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ProjectName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
+			ConfigurationType="4"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Generate CMap and Font source files"
+				CommandLine="generate.bat"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -202,9 +332,72 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Memento|x64"
+			OutputDirectory="$(PlatformName)\$(ProjectName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
+			ConfigurationType="4"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\include;..\..\ucdn;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\mujs"
+				PreprocessorDefinitions="MEMENTO=1;DEBUG=1;USE_OUTPUT_DEBUG_STRING"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="DebugOpenssl|Win32"
 			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="2"
 			>
@@ -264,9 +457,72 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="DebugOpenssl|x64"
+			OutputDirectory="$(PlatformName)\$(ProjectName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
+			ConfigurationType="4"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\include;..\..\ucdn;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\openssl\include;..\..\thirdparty\mujs"
+				PreprocessorDefinitions="DEBUG=1;HAVE_OPENSSL;USE_OUTPUT_DEBUG_STRING"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="ReleaseOpenssl|Win32"
 			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
@@ -287,6 +543,70 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\include;..\..\ucdn;..\..\generated;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\mujs"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseOpenssl|x64"
+			OutputDirectory="$(PlatformName)\$(ProjectName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
+			ConfigurationType="4"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Generate CMap and Font source files"
+				CommandLine="generate.bat"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"

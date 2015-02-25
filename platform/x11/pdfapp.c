@@ -117,7 +117,7 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->ctx = ctx;
 	app->transition.duration = 0.25;
 	app->transition.type = FZ_TRANSITION_FADE;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	app->colorspace = fz_device_bgr(ctx);
 #else
 	app->colorspace = fz_device_rgb(ctx);
@@ -1740,7 +1740,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 
 						if (need_newline)
 						{
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 							if (p < ucslen - 1)
 								ucsbuf[p++] = '\r';
 #endif

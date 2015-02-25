@@ -17,7 +17,7 @@
 #define BLOCK_SHIFT 20
 #define BLOCK_SIZE (1<<BLOCK_SHIFT)
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #else
 #include "pthread.h"
@@ -49,7 +49,7 @@ struct curl_stream_state_s
 
 	unsigned char public_buffer[4096];
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	void *thread;
 	DWORD thread_id;
 	HANDLE mutex;
@@ -61,7 +61,7 @@ struct curl_stream_state_s
 
 static void fetcher_thread(curl_stream_state *state);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 static void
 lock(curl_stream_state *state)
 {
@@ -113,7 +113,7 @@ static size_t header_arrived(void *ptr, size_t size, size_t nmemb, void *state_)
 	if (strncmp(ptr, "Content-Range:", 14) == 0)
 	{
 		char *p = (char *)ptr;
-		int len = nmemb * size;
+		int len = (int)(nmemb * size);
 		int start, end, total;
 		while (len && !isdigit(*p))
 			p++, len--;
@@ -208,7 +208,7 @@ static size_t data_arrived(void *ptr, size_t size, size_t nmemb, void *state_)
 	}
 	if (state->content_length < 0)
 	{
-		int newsize = state->current_fill_point + size;
+		int newsize = (int)(state->current_fill_point + size);
 		if (newsize > state->buffer_max)
 		{
 			/* Expand the buffer */
@@ -228,7 +228,7 @@ static size_t data_arrived(void *ptr, size_t size, size_t nmemb, void *state_)
 	DEBUG_MESSAGE((state->ctx, "data arrived: offset=%d len=%d", state->current_fill_point, (int) size));
 	old_start = state->current_fill_point;
 	memcpy(state->buffer + state->current_fill_point, ptr, size);
-	state->current_fill_point += size;
+	state->current_fill_point += (int)size;
 	if (state->current_fill_point == state->content_length ||
 		(((state->current_fill_point ^ old_start) & ~(BLOCK_SIZE-1)) != 0))
 	{
@@ -432,7 +432,7 @@ stream_close(fz_context *ctx, void *state_)
 	state->kill_thread = 1;
 	unlock(state);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	WaitForSingleObject(state->thread, INFINITE);
 	CloseHandle(state->thread);
 	CloseHandle(state->mutex);
@@ -523,7 +523,7 @@ fz_stream *fz_stream_from_curl(fz_context *ctx, char *filename, void (*more_data
 
 	curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, header_arrived);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	state->mutex = CreateMutex(NULL, FALSE, NULL);
 	if (state->mutex == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "mutex creation failed");

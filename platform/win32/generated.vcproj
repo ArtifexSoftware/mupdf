@@ -4,11 +4,15 @@
 	Version="8.00"
 	Name="generated"
 	ProjectGUID="{A5053AA7-02E5-4903-B596-04F17AEB1526}"
+	RootNamespace="generated"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -27,6 +31,26 @@
 				CleanCommandLine="del /q ..\..\generated"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;USE_OUTPUT_DEBUG_STRING"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="generate.bat"
+				ReBuildCommandLine="del /q ..\..\generated &amp;&amp; generate.bat"
+				CleanCommandLine="del /q ..\..\generated"
+				Output=""
+				PreprocessorDefinitions="WIN64;_DEBUG;USE_OUTPUT_DEBUG_STRING"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -55,9 +79,49 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="generate.bat"
+				ReBuildCommandLine="del /q ..\..\generated &amp;&amp; generate.bat"
+				CleanCommandLine="del /q ..\..\generated"
+				Output="generated\cmap_cns.h"
+				PreprocessorDefinitions="WIN32;NDEBUG"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
 			Name="Memento|Win32"
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="generate.bat"
+				ReBuildCommandLine="del /q ..\..\generated &amp;&amp; generate.bat"
+				CleanCommandLine="del /q ..\..\generated"
+				Output="generated\cmap_cns.h"
+				PreprocessorDefinitions="WIN32;_DEBUG;USE_OUTPUT_DEBUG_STRING"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Memento|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="0"
 			>
 			<Tool
