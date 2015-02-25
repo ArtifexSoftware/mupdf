@@ -146,6 +146,24 @@ RANLIB_CMD = xcrun ranlib $@
 CROSSCOMPILE=yes
 endif
 
+ifeq "$(OS)" "tizen-arm"
+TIZEN_TOOLS=$(TIZEN_SDK)/tools/arm-linux-gnueabi-gcc-4.6/bin/arm-linux-gnueabi-
+TIZEN_FLAGS=--sysroot=$(TIZEN_SDK)/platforms/mobile-2.3/rootstraps/mobile-2.3-device.core
+CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
+AR = $(TIZEN_TOOLS)ar
+LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
+CROSSCOMPILE=yes
+endif
+
+ifeq "$(OS)" "tizen-x86"
+TIZEN_TOOLS=$(TIZEN_SDK)/tools/i386-linux-gnueabi-gcc-4.6/bin/i386-linux-gnueabi-
+TIZEN_FLAGS=--sysroot=$(TIZEN_SDK)/platforms/mobile-2.3/rootstraps/mobile-2.3-emulator.core
+CC = $(TIZEN_TOOLS)gcc $(TIZEN_FLAGS)
+AR = $(TIZEN_TOOLS)ar $(TIZEN_FLAGS)
+LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
+CROSSCOMPILE=yes
+endif
+
 # TODO: If crosscompiling, why not just call "make libs" instead of this exception?
 ifeq "$(CROSSCOMPILE)" "yes"
 HAVE_X11 ?= no
