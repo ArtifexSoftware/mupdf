@@ -862,6 +862,12 @@ fz_text_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const fz
 	block->cspace = fz_keep_colorspace(ctx, cspace);
 	if (cspace)
 		memcpy(block->colors, color, sizeof(block->colors[0])*cspace->n);
+	block->mat = *ctm;
+	block->bbox.x0 = 0;
+	block->bbox.y0 = 0;
+	block->bbox.x1 = 1;
+	block->bbox.y1 = 1;
+	fz_transform_rect(&block->bbox, ctm);
 	page->len++;
 }
 
