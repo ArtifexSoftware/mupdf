@@ -1,18 +1,21 @@
-#include "pdf-interpret-imp.h"
+#include "mupdf/pdf.h"
 
 static void
 pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_res, fz_cookie *cookie, int own_res)
 {
-	pdf_process process, process2;
-	fz_buffer *buffer;
+	pdf_processor *proc_buffer = NULL;
+	pdf_processor *proc_filter = NULL;
 	pdf_obj *res = NULL;
 	pdf_obj *ref = NULL;
+	fz_buffer *buffer;
 
 	if (!obj)
 		return;
 
 	fz_var(res);
 	fz_var(ref);
+	fz_var(proc_buffer);
+	fz_var(proc_filter);
 
 	buffer = fz_new_buffer(ctx, 1024);
 
@@ -27,10 +30,10 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 
 		res = pdf_new_dict(ctx, doc, 1);
 
-		pdf_init_process_buffer(ctx, &process2, buffer);
-		pdf_init_process_filter(ctx, &process, &process2, res);
+		proc_buffer = pdf_new_buffer_processor(ctx, buffer);
+		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, orig_res, res);
 
-		pdf_process_stream_object(ctx, doc, obj, &process, orig_res, cookie);
+		pdf_process_contents(ctx, proc_filter, doc, orig_res, obj, cookie);
 
 		pdf_update_stream(ctx, doc, obj, buffer, 0);
 
@@ -42,6 +45,8 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 	}
 	fz_always(ctx)
 	{
+		pdf_drop_processor(ctx, proc_filter);
+		pdf_drop_processor(ctx, proc_buffer);
 		fz_drop_buffer(ctx, buffer);
 		pdf_drop_obj(ctx, res);
 		pdf_drop_obj(ctx, ref);
@@ -55,15 +60,17 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 static void
 pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_res, fz_cookie *cookie)
 {
-	pdf_process process, process2;
-	fz_buffer *buffer;
-	int i, l;
+	pdf_processor *proc_buffer = NULL;
+	pdf_processor *proc_filter = NULL;
 	pdf_obj *res = NULL;
 	pdf_obj *ref = NULL;
 	pdf_obj *charprocs;
+	int i, l;
 
 	fz_var(res);
 	fz_var(ref);
+	fz_var(proc_buffer);
+	fz_var(proc_filter);
 
 	fz_try(ctx)
 	{
@@ -79,19 +86,27 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 
 		for (i = 0; i < l; i++)
 		{
-			pdf_obj *key = pdf_dict_get_key(ctx, charprocs, i);
 			pdf_obj *val = pdf_dict_get_val(ctx, charprocs, i);
+			fz_buffer *buffer = fz_new_buffer(ctx, 1024);
+			fz_try(ctx)
+			{
+				proc_buffer = pdf_new_buffer_processor(ctx, buffer);
+				proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, orig_res, res);
 
-			buffer = fz_new_buffer(ctx, 1024);
-			pdf_init_process_buffer(ctx, &process2, buffer);
-			pdf_init_process_filter(ctx, &process, &process2, res);
+				pdf_process_contents(ctx, proc_filter, doc, orig_res, val, cookie);
 
-			pdf_process_stream_object(ctx, doc, val, &process, orig_res, cookie);
-
-			pdf_update_stream(ctx, doc, val, buffer, 0);
-			pdf_dict_put(ctx, charprocs, key, val);
-			fz_drop_buffer(ctx, buffer);
-			buffer = NULL;
+				pdf_update_stream(ctx, doc, val, buffer, 0);
+			}
+			fz_always(ctx)
+			{
+				pdf_drop_processor(ctx, proc_filter);
+				pdf_drop_processor(ctx, proc_buffer);
+				fz_drop_buffer(ctx, buffer);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow(ctx);
+			}
 		}
 
 		/* ProcSet - no cleaning possible. Inherit this from the old dict. */
@@ -102,7 +117,6 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, buffer);
 		pdf_drop_obj(ctx, res);
 		pdf_drop_obj(ctx, ref);
 	}
@@ -114,28 +128,33 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 
 void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie, pdf_page_contents_process_fn *proc_fn, void *proc_arg)
 {
-	pdf_process process, process2;
-	fz_buffer *buffer = fz_new_buffer(ctx, 1024);
-	pdf_obj *contents;
+	pdf_processor *proc_buffer = NULL;
+	pdf_processor *proc_filter = NULL;
 	pdf_obj *new_obj = NULL;
 	pdf_obj *new_ref = NULL;
 	pdf_obj *res = NULL;
 	pdf_obj *ref = NULL;
 	pdf_obj *obj;
+	pdf_obj *contents;
+	fz_buffer *buffer;
 
 	fz_var(new_obj);
 	fz_var(new_ref);
 	fz_var(res);
 	fz_var(ref);
+	fz_var(proc_buffer);
+	fz_var(proc_filter);
+
+	buffer = fz_new_buffer(ctx, 1024);
 
 	fz_try(ctx)
 	{
 		res = pdf_new_dict(ctx, doc, 1);
 
-		pdf_init_process_buffer(ctx, &process2, buffer);
-		pdf_init_process_filter(ctx, &process, &process2, res);
+		proc_buffer = pdf_new_buffer_processor(ctx, buffer);
+		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, page->resources, res);
 
-		pdf_process_stream_object(ctx, doc, page->contents, &process, page->resources, cookie);
+		pdf_process_contents(ctx, proc_filter, doc, page->resources, page->contents, cookie);
 
 		contents = page->contents;
 		if (pdf_is_array(ctx, contents))
@@ -247,7 +266,6 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 			(*proc_fn)(ctx, buffer, res, proc_arg);
 
 		pdf_update_stream(ctx, doc, contents, buffer, 0);
-
 		pdf_drop_obj(ctx, page->resources);
 		ref = pdf_new_ref(ctx, doc, res);
 		page->resources = pdf_keep_obj(ctx, ref);
@@ -255,6 +273,8 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 	}
 	fz_always(ctx)
 	{
+		pdf_drop_processor(ctx, proc_filter);
+		pdf_drop_processor(ctx, proc_buffer);
 		fz_drop_buffer(ctx, buffer);
 		pdf_drop_obj(ctx, new_obj);
 		pdf_drop_obj(ctx, new_ref);

@@ -38,6 +38,7 @@ struct pdf_pattern_s
 	float ystep;
 	fz_matrix matrix;
 	fz_rect bbox;
+	pdf_document *document;
 	pdf_obj *resources;
 	pdf_obj *contents;
 };
@@ -61,6 +62,7 @@ struct pdf_xobject_s
 	int knockout;
 	int transparency;
 	fz_colorspace *colorspace;
+	pdf_document *document;
 	pdf_obj *resources;
 	pdf_obj *contents;
 	pdf_obj *me;

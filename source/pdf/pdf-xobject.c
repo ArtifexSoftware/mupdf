@@ -46,6 +46,7 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	form = fz_malloc_struct(ctx, pdf_xobject);
 	FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
+	form->document = doc;
 	form->resources = NULL;
 	form->contents = NULL;
 	form->colorspace = NULL;
@@ -181,6 +182,7 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 
 		form = fz_malloc_struct(ctx, pdf_xobject);
 		FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
+		form->document = doc;
 		form->resources = NULL;
 		form->contents = NULL;
 		form->colorspace = NULL;

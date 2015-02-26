@@ -13,6 +13,7 @@
 #include "mupdf/pdf/resource.h"
 #include "mupdf/pdf/cmap.h"
 #include "mupdf/pdf/font.h"
+#include "mupdf/pdf/interpret.h"
 
 #include "mupdf/pdf/annot.h"
 #include "mupdf/pdf/field.h"

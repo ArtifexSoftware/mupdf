@@ -620,6 +620,5 @@ pdf_open_contents_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	if (pdf_is_stream(ctx, doc, num, gen))
 		return pdf_open_image_stream(ctx, doc, num, gen, num, gen, NULL);
 
-	fz_warn(ctx, "pdf object stream missing (%d %d R)", num, gen);
-	return NULL;
+	fz_throw(ctx, FZ_ERROR_GENERIC, "pdf object stream missing (%d %d R)", num, gen);
 }

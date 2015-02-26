@@ -954,7 +954,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 			&rect,
 			NULL, /* path */
 			NULL, /* color */
-				NULL, /* colorspace */
+			NULL, /* colorspace */
 			&alpha, /* alpha */
 			ctm,
 			NULL, /* stroke */

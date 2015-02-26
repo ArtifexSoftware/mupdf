@@ -1,22 +1,26 @@
-#include "pdf-interpret-imp.h"
+#include "mupdf/pdf.h"
 
 static void
 pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
 {
 	fz_matrix local_ctm;
-	pdf_process process;
+	pdf_processor *proc;
 
 	fz_concat(&local_ctm, &page->ctm, ctm);
 
-	pdf_init_process_run(ctx, &process, dev, &local_ctm, event, NULL, 0);
-
-	pdf_process_annot(ctx, doc, page, annot, &process, cookie);
+	proc = pdf_new_run_processor(ctx, dev, &local_ctm, event, NULL, 0);
+	fz_try(ctx)
+		pdf_process_annot(ctx, proc, doc, page, annot, cookie);
+	fz_always(ctx)
+		pdf_drop_processor(ctx, proc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
 {
 	fz_matrix local_ctm;
-	pdf_process process;
+	pdf_processor *proc;
 
 	fz_concat(&local_ctm, &page->ctm, ctm);
 
@@ -26,9 +30,14 @@ static void pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc,
 		fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), 1, 0, 0, 1);
 	}
 
-	pdf_init_process_run(ctx, &process, dev, &local_ctm, event, NULL, 0);
+	proc = pdf_new_run_processor(ctx, dev, &local_ctm, event, NULL, 0);
 
-	pdf_process_stream_object(ctx, doc, page->contents, &process, page->resources, cookie);
+	fz_try(ctx)
+		pdf_process_contents(ctx, proc, doc, page->resources, page->contents, cookie);
+	fz_always(ctx)
+		pdf_drop_processor(ctx, proc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	if (page->transparency)
 		fz_end_group(ctx, dev);
@@ -147,12 +156,16 @@ pdf_run_page(fz_context *ctx, pdf_page *page, fz_device *dev, const fz_matrix *c
 void
 pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, const fz_matrix *ctm, void *gstate, int nested_depth)
 {
-	pdf_process process;
+	pdf_processor *proc;
 
 	if (nested_depth > 10)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Too many nestings of Type3 glyphs");
 
-	pdf_init_process_run(ctx, &process, dev, ctm, "View", gstate, nested_depth+1);
-
-	pdf_process_glyph(ctx, doc, resources, contents, &process);
+	proc = pdf_new_run_processor(ctx, dev, ctm, "View", gstate, nested_depth+1);
+	fz_try(ctx)
+		pdf_process_glyph(ctx, proc, doc, resources, contents);
+	fz_always(ctx)
+		pdf_drop_processor(ctx, proc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }

@@ -414,7 +414,7 @@ restart:
 			{
 				buf->color = (a << 20) | (b << 12) | (c << 4);
 			}
-			sprintf(buf->string, "%06x", buf->color); // XXX
+			sprintf(buf->string, "%06x", buf->color);
 			return CSS_COLOR;
 colorerror:
 			fz_css_error(buf, "invalid color");

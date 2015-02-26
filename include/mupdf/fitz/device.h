@@ -71,7 +71,7 @@ enum
 	FZ_BLEND_KNOCKOUT = 32
 };
 
-int fz_lookup_blendmode(char *name);
+int fz_lookup_blendmode(const char *name);
 char *fz_blendmode_name(int blendmode);
 
 typedef struct fz_device_container_stack_s fz_device_container_stack;
