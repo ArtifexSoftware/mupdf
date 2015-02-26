@@ -217,30 +217,50 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kind kind, pdf_o
 	return ld;
 }
 
-static char *
+char *
 pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec)
 {
 	pdf_obj *filename;
+	char *path = NULL;
 
 	if (pdf_is_string(ctx, file_spec))
-		return pdf_to_utf8(ctx, doc, file_spec);
+		filename = file_spec;
 
 	if (pdf_is_dict(ctx, file_spec)) {
-		filename = pdf_dict_gets(ctx, file_spec, "UF");
+#if defined(_WIN32) || defined(_WIN64)
+		filename = pdf_dict_gets(ctx, file_spec, "DOS");
+#else
+		filename = pdf_dict_gets(ctx, file_spec, "Unix");
+#endif
 		if (!filename)
-			filename = pdf_dict_gets(ctx, file_spec, "F");
-		if (!filename)
-			filename = pdf_dict_gets(ctx, file_spec, "Unix");
-		if (!filename)
-			filename = pdf_dict_gets(ctx, file_spec, "Mac");
-		if (!filename)
-			filename = pdf_dict_gets(ctx, file_spec, "DOS");
-
-		return pdf_to_utf8(ctx, doc, filename);
+			filename = pdf_dict_getsa(ctx, file_spec, "UF", "F");
 	}
 
-	fz_warn(ctx, "cannot parse file specification");
-	return NULL;
+	if (!pdf_is_string(ctx, filename))
+	{
+		fz_warn(ctx, "cannot parse file specification");
+		return NULL;
+	}
+
+	path = pdf_to_utf8(ctx, doc, filename);
+#if defined(_WIN32) || defined(_WIN64)
+	if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, file_spec, "FS")), "URL") != 0)
+	{
+		/* move the file name into the expected place and use the expected path separator */
+		char *c;
+		if (path[0] == '/' && (('A' <= path[1] && path[1] <= 'Z') || ('a' <= path[1] && path[1] <= 'z')) && path[2] == '/')
+		{
+			path[0] = path[1];
+			path[1] = ':';
+		}
+		for (c = path; *c; c++)
+		{
+			if (*c == '/')
+				*c = '\\';
+		}
+	}
+#endif
+	return path;
 }
 
 fz_link_dest

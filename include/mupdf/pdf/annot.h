@@ -71,6 +71,7 @@ struct pdf_annot_s
 };
 
 fz_link_dest pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kind kind, pdf_obj *dest);
+char *pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec);
 fz_link_dest pdf_parse_action(fz_context *ctx, pdf_document *doc, pdf_obj *action);
 pdf_obj *pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle);
 pdf_obj *pdf_lookup_name(fz_context *ctx, pdf_document *doc, char *which, pdf_obj *needle);
