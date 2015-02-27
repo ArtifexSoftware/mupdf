@@ -356,7 +356,7 @@ SYMBOL_DECLSPEC int __stdcall mGetTextLine(void *page, int block_num, int line_n
 }
 
 /* Information down to the character level */
-SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *page, int block_num, int line_num,
+SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *ctx, void *page, int block_num, int line_num,
 	int item_num, double *top_x, double *top_y, double *height, double *width)
 {
 	fz_text_block *block;
@@ -365,6 +365,7 @@ SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *page, int block_num, int l
 	fz_text_page *text = (fz_text_page*)page;
 	fz_char_and_box cab;
 	int index = item_num;
+	muctx *mu_ctx = static_cast<muctx*>(ctx);
 
 	block = text->blocks[block_num].u.text;
 	line = block->lines[line_num];
@@ -377,7 +378,8 @@ SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *page, int block_num, int l
 	}
 
 	cab.c = span->text[index].c;
-	fz_text_char_bbox(&(cab.bbox), span, index);
+	mu_ctx->GetCharBBox(&(cab.bbox), span, index);
+
 	*top_x = cab.bbox.x0;
 	*top_y = cab.bbox.y0;
 	*height = cab.bbox.y1 - *top_y;

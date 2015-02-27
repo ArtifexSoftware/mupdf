@@ -63,9 +63,9 @@ EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextBlock(void *text, int block_num,
 EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextLine(void *text, int block_num, 
 	int line_num, double *top_x, double *top_y, double *height, double *width);
 
-EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *text, int block_num, 
-	int line_num, int item_num, double *top_x, double *top_y, double *height, 
-	double *width);
+EXTERN_C SYMBOL_DECLSPEC int __stdcall mGetTextCharacter(void *ctx, void *text, 
+	int block_num, int line_num, int item_num, double *top_x, double *top_y, 
+	double *height, double *width);
 
 EXTERN_C SYMBOL_DECLSPEC void __stdcall mReleaseText(void *ctx, void *page);
 

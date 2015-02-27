@@ -14,7 +14,7 @@ static int textlen(fz_text_page *page);
 //#include <ppltasks.h>
 //using namespace concurrency;
 /* File streaming set up for WinRT */
-static int win_next_file(fz_stream *stm, int len)
+static int win_next_file(fz_context *ctx, fz_stream *stm, int len)
 {
 	void *temp = stm->state;
 	win_stream_struct *state = reinterpret_cast <win_stream_struct*> (temp);
@@ -60,7 +60,7 @@ static int win_next_file(fz_stream *stm, int len)
 	return *stm->rp++;
 }
 
-static void win_seek_file(fz_stream *stm, int offset, int whence)
+static void win_seek_file(fz_context *ctx, fz_stream *stm, int offset, int whence)
 {
 	void *temp = stm->state;
 	win_stream_struct *stream = reinterpret_cast <win_stream_struct*> (temp);
@@ -97,7 +97,7 @@ static void win_close_file(fz_context *ctx, void *state)
 status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
 {
 	win_stream.stream = readStream;
-	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_next_file, win_close_file, NULL);
+	fz_stream *mu_stream = fz_new_stream(mu_ctx, 0, win_next_file, win_close_file);
 	mu_stream->seek = win_seek_file;
 	mu_stream->state = reinterpret_cast <void*> (&win_stream);
 
@@ -108,7 +108,7 @@ status_t muctx::InitializeStream(IRandomAccessStream^ readStream, char *ext)
 	}
 	fz_always(mu_ctx)
 	{
-		fz_close(mu_stream);
+		fz_drop_stream(mu_ctx, mu_stream);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -146,11 +146,11 @@ static void unlock_mutex(void *user, int lock)
 
 void muctx::CleanUp(void)
 {
-	fz_free_outline(mu_ctx, mu_outline);
-	fz_close_document(mu_doc);
+	fz_drop_outline(mu_ctx, mu_outline);
+	fz_drop_document(mu_ctx, mu_doc);
 	page_cache->Empty(mu_ctx);
 	annot_cache->Empty(mu_ctx);
-	fz_free_context(mu_ctx);
+	fz_drop_context(mu_ctx);
 
 	delete page_cache;
 	delete annot_cache;
@@ -204,11 +204,11 @@ muctx::muctx(void)
 /* Destructor */
 muctx::~muctx(void)
 {
-	fz_free_outline(mu_ctx, mu_outline);
-	fz_close_document(mu_doc);
+	fz_drop_outline(mu_ctx, mu_outline);
+	fz_drop_document(mu_ctx, mu_doc);
 	page_cache->Empty(mu_ctx);
 	annot_cache->Empty(mu_ctx);
-	fz_free_context(mu_ctx);
+	fz_drop_context(mu_ctx);
 
 	mu_ctx = NULL;
 	mu_doc = NULL;
@@ -222,10 +222,10 @@ muctx::~muctx(void)
 /* Return the documents page count */
 int muctx::GetPageCount()
 {
-	if (this->mu_doc == NULL)
+	if (mu_doc == NULL)
 		return -1;
 	else
-		return this->mu_doc->count_pages(this->mu_doc);
+		return this->mu_doc->count_pages(mu_ctx, mu_doc);
 }
 
 /* Get page size */
@@ -237,14 +237,14 @@ int muctx::MeasurePage(int page_num, point_t *size)
 
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
-		bounds = fz_bound_page(mu_doc, page, &rect);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
+		bounds = fz_bound_page(mu_ctx, page, &rect);
 		size->X = bounds->x1 - bounds->x0;
 		size->Y = bounds->y1 - bounds->y0;
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_page(mu_doc, page);
+		fz_drop_page(mu_ctx, page);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -260,7 +260,7 @@ point_t muctx::MeasurePage(fz_page *page)
 	fz_rect rect;
 	fz_rect *bounds;
 
-	bounds = fz_bound_page(mu_doc, page, &rect);
+	bounds = fz_bound_page(mu_ctx, page, &rect);
 	pageSize.X = bounds->x1 - bounds->x0;
 	pageSize.Y = bounds->y1 - bounds->y0;
 
@@ -309,7 +309,7 @@ int muctx::GetContents(sh_vector_content contents_vec)
 	fz_var(root);
 	fz_try(mu_ctx)
 	{
-		root = fz_load_outline(mu_doc);
+		root = fz_load_outline(mu_ctx, mu_doc);
 		if (root != NULL)
 		{
 			has_content = 1;
@@ -318,7 +318,7 @@ int muctx::GetContents(sh_vector_content contents_vec)
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_outline(mu_ctx, root);
+		fz_drop_outline(mu_ctx, root);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -341,12 +341,12 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	fz_var(dev);
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
 		sheet = fz_new_text_sheet(mu_ctx);
 		text = fz_new_text_page(mu_ctx);
 		dev = fz_new_text_device(mu_ctx, sheet, text);
-		fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
-		fz_free_device(dev);  /* Why does this need to be done here?  Seems odd */
+		fz_run_page(mu_ctx, page, dev, &fz_identity, NULL);
+		fz_drop_device(mu_ctx, dev);  /* Why does this need to be done here?  Seems odd */
 		dev = NULL;
 		hit_count = fz_search_text_page(mu_ctx, text, needle, mu_hit_bbox, nelem(mu_hit_bbox));
 
@@ -362,10 +362,10 @@ int muctx::GetTextSearch(int page_num, char* needle, sh_vector_text texts_vec)
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_page(mu_doc, page);
-		fz_free_device(dev);
-		fz_free_text_sheet(mu_ctx, sheet);
-		fz_free_text_page(mu_ctx, text);
+		fz_drop_page(mu_ctx, page);
+		fz_drop_device(mu_ctx, dev);
+		fz_drop_text_sheet(mu_ctx, sheet);
+		fz_drop_text_page(mu_ctx, text);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -386,8 +386,8 @@ unsigned int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	fz_var(links);
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
-		links = fz_load_links(mu_doc, page);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
+		links = fz_load_links(mu_ctx, page);
 
 		fz_link *curr_link = links;
 		if (curr_link != NULL)
@@ -433,7 +433,7 @@ unsigned int muctx::GetLinks(int page_num, sh_vector_link links_vec)
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_page(mu_doc, page);
+		fz_drop_page(mu_ctx, page);
 		fz_drop_link(mu_ctx, links);
 	}
 	fz_catch(mu_ctx)
@@ -462,23 +462,23 @@ fz_display_list * muctx::CreateAnnotationList(int page_num)
 	fz_try(mu_ctx)
 	{
 		fz_annot *annot;
-		page = fz_load_page(mu_doc, page_num);
-		annot = fz_first_annot(mu_doc, page);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
+		annot = fz_first_annot(mu_ctx, page);
 		if (annot != NULL)
 		{
 			/* Create display list */
 			dlist = fz_new_display_list(mu_ctx);
 			dev = fz_new_list_device(mu_ctx, dlist);
 
-			for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
-				fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
+			for (annot = fz_first_annot(mu_ctx, page); annot; annot = fz_next_annot(mu_ctx, page, annot))
+				fz_run_annot(mu_ctx, page, annot, dev, &fz_identity, NULL);
 			annot_cache->Add(page_num, 0, 0, dlist, mu_ctx);
 		}
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_device(dev);
-		fz_free_page(mu_doc, page);
+		fz_drop_device(mu_ctx, dev);
+		fz_drop_page(mu_ctx, page);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -506,12 +506,12 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
 
 		/* Create a new list */
 		dlist = fz_new_display_list(mu_ctx);
 		dev = fz_new_list_device(mu_ctx, dlist);
-		fz_run_page_contents(mu_doc, page, dev, &fz_identity, NULL);
+		fz_run_page_contents(mu_ctx, page, dev, &fz_identity, NULL);
 		page_size = MeasurePage(page);
 		*width = page_size.X;
 		*height = page_size.Y;
@@ -520,8 +520,8 @@ fz_display_list * muctx::CreateDisplayList(int page_num, int *width, int *height
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_device(dev);
-		fz_free_page(mu_doc, page);
+		fz_drop_device(mu_ctx, dev);
+		fz_drop_page(mu_ctx, page);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -575,7 +575,7 @@ fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, int *he
 
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
+		page = fz_load_page(mu_ctx,mu_doc, page_num);
 		sheet = fz_new_text_sheet(mu_ctx);
 		text = fz_new_text_page(mu_ctx);
 
@@ -585,14 +585,14 @@ fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, int *he
 
 		/* Deal with text device */
 		textdev = fz_new_text_device(mu_ctx, sheet, text);
-		fz_run_page(mu_doc, page, textdev, &fz_identity, NULL);
+		fz_run_page(mu_ctx, page, textdev, &fz_identity, NULL);
 
 		*length = text->len;
-		fz_free_device(textdev);
+		fz_drop_device(mu_ctx, textdev);
 		textdev = NULL;
 		*text_out = text;
 
-		fz_run_page_contents(mu_doc, page, dev, &fz_identity, NULL);
+		fz_run_page_contents(mu_ctx, page, dev, &fz_identity, NULL);
 		page_size = MeasurePage(page);
 		*width = page_size.X;
 		*height = page_size.Y;
@@ -601,9 +601,9 @@ fz_display_list * muctx::CreateDisplayListText(int page_num, int *width, int *he
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_device(dev);
-		fz_free_page(mu_doc, page);
-		fz_free_text_sheet(mu_ctx, sheet);
+		fz_drop_device(mu_ctx, dev);
+		fz_drop_page(mu_ctx, page);
+		fz_drop_text_sheet(mu_ctx, sheet);
 
 	}
 	fz_catch(mu_ctx)
@@ -654,22 +654,22 @@ status_t muctx::RenderPageMT(void *dlist, void *a_dlist, int page_width, int pag
 										bmp_width, bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(ctx_clone, pix, 255);
 		dev = fz_new_draw_device(ctx_clone, pix);
-		fz_run_display_list(display_list, dev, pctm, NULL, NULL);
+		fz_run_display_list(ctx_clone, display_list, dev, pctm, NULL, NULL);
 		if (annot_displaylist != NULL)
-			fz_run_display_list(annot_displaylist, dev, pctm, NULL, NULL);
+			fz_run_display_list(ctx_clone, annot_displaylist, dev, pctm, NULL, NULL);
 
 	}
 	fz_always(ctx_clone)
 	{
-		fz_free_device(dev);
+		fz_drop_device(ctx_clone, dev);
 		fz_drop_pixmap(ctx_clone, pix);
 	}
 	fz_catch(ctx_clone)
 	{
-		fz_free_context(ctx_clone);
+		fz_drop_context(ctx_clone);
 		return E_FAILURE;
 	}
-	fz_free_context(ctx_clone);
+	fz_drop_context(ctx_clone);
 	return S_ISOK;
 }
 
@@ -689,7 +689,7 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
 		page_size = MeasurePage(page);
 		pctm = fz_scale(pctm, scale, scale);
 		/* Flip on Y */
@@ -702,17 +702,17 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 										bmp_height, bmp_data);
 		fz_clear_pixmap_with_value(mu_ctx, pix, 255);
 		dev = fz_new_draw_device(mu_ctx, pix);
-		fz_run_page_contents(mu_doc, page, dev, pctm, NULL);
+		fz_run_page_contents(mu_ctx, page, dev, pctm, NULL);
 
 		fz_annot *annot;
-		for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
-			fz_run_annot(mu_doc, page, annot, dev, pctm, NULL);
+		for (annot = fz_first_annot(mu_ctx, page); annot; annot = fz_next_annot(mu_ctx, page, annot))
+			fz_run_annot(mu_ctx, page, annot, dev, pctm, NULL);
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_device(dev);
+		fz_drop_device(mu_ctx, dev);
 		fz_drop_pixmap(mu_ctx, pix);
-		fz_free_page(mu_doc, page);
+		fz_drop_page(mu_ctx, page);
 	}
 	fz_catch(mu_ctx)
 	{
@@ -723,12 +723,12 @@ status_t muctx::RenderPage(int page_num, unsigned char *bmp_data, int bmp_width,
 
 bool muctx::RequiresPassword(void)
 {
-	return fz_needs_password(mu_doc) != 0;
+	return fz_needs_password(mu_ctx, mu_doc) != 0;
 }
 
 bool muctx::ApplyPassword(char* password)
 {
-	return fz_authenticate_password(mu_doc, password) != 0;
+	return fz_authenticate_password(mu_ctx, mu_doc, password) != 0;
 }
 
 std::string muctx::GetText(int page_num, int type)
@@ -748,12 +748,12 @@ std::string muctx::GetText(int page_num, int type)
 	fz_var(buf);
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
 		sheet = fz_new_text_sheet(mu_ctx);
 		text = fz_new_text_page(mu_ctx);
 		dev = fz_new_text_device(mu_ctx, sheet, text);
-		fz_run_page(mu_doc, page, dev, &fz_identity, NULL);
-		fz_free_device(dev);
+		fz_run_page(mu_ctx, page, dev, &fz_identity, NULL);
+		fz_drop_device(mu_ctx, dev);
 		dev = NULL;
 		fz_analyze_text(mu_ctx, sheet, text);
 		buf = fz_new_buffer(mu_ctx, 256);
@@ -774,10 +774,10 @@ std::string muctx::GetText(int page_num, int type)
 	}
 	fz_always(mu_ctx)
 	{
-		fz_free_device(dev);
-		fz_free_page(mu_doc, page);
-		fz_free_text_sheet(mu_ctx, sheet);
-		fz_free_text_page(mu_ctx, text);
+		fz_drop_device(mu_ctx, dev);
+		fz_drop_page(mu_ctx, page);
+		fz_drop_text_sheet(mu_ctx, sheet);
+		fz_drop_text_page(mu_ctx, text);
 		fz_drop_buffer(mu_ctx, buf);
 	}
 	fz_catch(mu_ctx)
@@ -790,7 +790,7 @@ std::string muctx::GetText(int page_num, int type)
 void muctx::ReleaseText(void *text)
 {
 	fz_text_page *text_page = (fz_text_page*) text;
-	fz_free_text_page(mu_ctx, text_page);
+	fz_drop_text_page(mu_ctx, text_page);
 }
 
 /* To do: banding */
@@ -819,8 +819,8 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 
 	fz_try(mu_ctx)
 	{
-		page = fz_load_page(mu_doc, page_num);
-		fz_bound_page(mu_doc, page, &bounds);
+		page = fz_load_page(mu_ctx, mu_doc, page_num);
+		fz_bound_page(mu_ctx, page, &bounds);
 		zoom = resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
 		tbounds = bounds;
@@ -836,20 +836,20 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 			file = fopen(filename, "wb");
 			if (file == NULL)
 				fz_throw(mu_ctx, FZ_ERROR_GENERIC, "cannot open file '%s'", filename);
-			out = fz_new_output_with_file(mu_ctx, file);
+			out = fz_new_output_with_file(mu_ctx, file, 0);
 
 			dev = fz_new_svg_device(mu_ctx, out, tbounds.x1 - tbounds.x0, tbounds.y1 - tbounds.y0);
 			if (dlist != NULL)
-				fz_run_display_list(dlist, dev, &ctm, &tbounds, NULL);
+				fz_run_display_list(mu_ctx, dlist, dev, &ctm, &tbounds, NULL);
 			else
-				fz_run_page(mu_doc, page, dev, &ctm, NULL);
+				fz_run_page(mu_ctx, page, dev, &ctm, NULL);
 			if (annot_dlist != NULL)
-				fz_run_display_list(annot_dlist, dev, &ctm, &tbounds, NULL);
+				fz_run_display_list(mu_ctx, annot_dlist, dev, &ctm, &tbounds, NULL);
 			else
 			{
 				fz_annot *annot;
-				for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
-					fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
+				for (annot = fz_first_annot(mu_ctx, page); annot; annot = fz_next_annot(mu_ctx, page, annot))
+					fz_run_annot(mu_ctx, page, annot, dev, &fz_identity, NULL);
 			}
 		}
 		else
@@ -859,16 +859,16 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 			fz_clear_pixmap_with_value(mu_ctx, pix, 255);
 			dev = fz_new_draw_device(mu_ctx, pix);
 			if (dlist != NULL)
-				fz_run_display_list(dlist, dev, &ctm, &tbounds, NULL);
+				fz_run_display_list(mu_ctx, dlist, dev, &ctm, &tbounds, NULL);
 			else
-				fz_run_page(mu_doc, page, dev, &ctm, NULL);
+				fz_run_page(mu_ctx, page, dev, &ctm, NULL);
 			if (annot_dlist != NULL)
-				fz_run_display_list(annot_dlist, dev, &ctm, &tbounds, NULL);
+				fz_run_display_list(mu_ctx, annot_dlist, dev, &ctm, &tbounds, NULL);
 			else
 			{
 				fz_annot *annot;
-				for (annot = fz_first_annot(mu_doc, page); annot; annot = fz_next_annot(mu_doc, annot))
-					fz_run_annot(mu_doc, page, annot, dev, &fz_identity, NULL);
+				for (annot = fz_first_annot(mu_ctx, page); annot; annot = fz_next_annot(mu_ctx, page, annot))
+					fz_run_annot(mu_ctx, page, annot, dev, &fz_identity, NULL);
 			}
 			switch (type)
 			{
@@ -890,11 +890,11 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 	{
 		if (pix != NULL)
 			fz_drop_pixmap(mu_ctx, pix);
-		fz_free_device(dev);
-		fz_free_page(mu_doc, page);
+		fz_drop_device(mu_ctx, dev);
+		fz_drop_page(mu_ctx, page);
 		if (out != NULL)
 		{
-			fz_close_output(out);
+			fz_drop_output(mu_ctx, out);
 			fclose(file);
 		}
 	}
@@ -903,4 +903,9 @@ status_t muctx::SavePage(char *filename, int page_num, int resolution, int type,
 		return E_FAILURE;
 	}
 	return S_ISOK;
+}
+
+void muctx::GetCharBBox(fz_rect *rect, fz_text_span *span, int index)
+{
+	fz_text_char_bbox(mu_ctx, rect, span, index);
 }

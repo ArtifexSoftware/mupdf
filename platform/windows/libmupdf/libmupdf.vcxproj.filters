@@ -16,14 +16,8 @@
     <Filter Include="fitz">
       <UniqueIdentifier>{71d27c79-d67f-4b0e-8a5c-ad2355c905b1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="img">
-      <UniqueIdentifier>{7f13938e-5486-404e-8c72-1cb35d92d68b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="pdf">
       <UniqueIdentifier>{766fb080-9cd3-4755-a074-a20a7f1748b8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="tiff">
-      <UniqueIdentifier>{e464f8d3-dcda-4cbe-bae2-48bdc6f0afd7}</UniqueIdentifier>
     </Filter>
     <Filter Include="tools">
       <UniqueIdentifier>{92cc8877-4351-49e6-8a73-9696779675ed}</UniqueIdentifier>
@@ -31,15 +25,12 @@
     <Filter Include="xps">
       <UniqueIdentifier>{6350172f-767f-4cdd-8c14-3a9e5af8d4c4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="html">
+      <UniqueIdentifier>{cb023422-71c6-4ca1-beb1-28a9e92764fc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\mupdf\cbz.h">
-      <Filter>!include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\mupdf\fitz.h">
-      <Filter>!include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\mupdf\img.h">
       <Filter>!include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\mupdf\memento.h">
@@ -171,9 +162,6 @@
     <ClInclude Include="..\..\..\include\mupdf\fitz\xml.h">
       <Filter>!include\fitz</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\source\fitz\jmemcust.h">
-      <Filter>!include\fitz</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\mupdf\pdf\annot.h">
       <Filter>!include\pdf</Filter>
     </ClInclude>
@@ -239,6 +227,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\source\pdf\pdf-interpret-imp.h">
       <Filter>pdf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\mupdf\html.h">
+      <Filter>!include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\mupdf\fitz\unzip.h">
+      <Filter>!include\fitz</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -467,9 +461,6 @@
     <ClCompile Include="..\..\..\source\fitz\jmemcust.c">
       <Filter>fitz</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\source\img\muimage.c">
-      <Filter>img</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\source\pdf\pdf-annot.c">
       <Filter>pdf</Filter>
     </ClCompile>
@@ -596,9 +587,6 @@
     <ClCompile Include="..\..\..\source\pdf\pdf-xref.c">
       <Filter>pdf</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\source\tiff\mutiff.c">
-      <Filter>tiff</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\source\tools\pdfclean.c">
       <Filter>tools</Filter>
     </ClCompile>
@@ -643,6 +631,42 @@
     </ClCompile>
     <ClCompile Include="..\..\..\source\fitz\strtod.c">
       <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\pdf\pdf-annot-edit.c">
+      <Filter>pdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\html\css-apply.c">
+      <Filter>html</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\html\css-parse.c">
+      <Filter>html</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\html\epub-doc.c">
+      <Filter>html</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\html\html-doc.c">
+      <Filter>html</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\html\html-font.c">
+      <Filter>html</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\html\html-layout.c">
+      <Filter>html</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\fitz\stream-prog.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\fitz\test-device.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\fitz\tree.c">
+      <Filter>fitz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\cbz\mutiff.c">
+      <Filter>cbz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\cbz\muimg.c">
+      <Filter>cbz</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -217,8 +217,8 @@ namespace gsview
 
 		[DllImport("mupdfnet64.dll", EntryPoint = "mGetTextCharacter", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		private static extern int mGetTextCharacter64(IntPtr textpage, int block_num, 
-			int line_num, int item_num, ref double top_x,
+		private static extern int mGetTextCharacter64(IntPtr ctx, IntPtr textpage, 
+			int block_num, int line_num, int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width);
 
 		[DllImport("mupdfnet64.dll", EntryPoint = "mExtractPages", CharSet = CharSet.Auto,
@@ -371,8 +371,8 @@ namespace gsview
 
 		[DllImport("mupdfnet32.dll", EntryPoint = "mGetTextCharacter", CharSet = CharSet.Auto,
 			CallingConvention = CallingConvention.StdCall)]
-		private static extern int mGetTextCharacter32(IntPtr textpage, int block_num,
-			int line_num, int item_num, ref double top_x,
+		private static extern int mGetTextCharacter32(IntPtr ctx, IntPtr textpage, 
+			int block_num, int line_num, int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width);
 
 		[DllImport("mupdfnet32.dll", EntryPoint = "mExtractPages", CharSet = CharSet.Auto,
@@ -1127,7 +1127,7 @@ namespace gsview
 			return output;
 		}
 
-		private int tc_mGetTextCharacter(IntPtr textpage, int block_num,
+		private int tc_mGetTextCharacter(IntPtr ctx, IntPtr textpage, int block_num,
 			int line_num, int item_num, ref double top_x,
 			ref double top_y, ref double height, ref double width)
 		{
@@ -1135,10 +1135,10 @@ namespace gsview
 			try
 			{
 				if (is64bit)
-					output = mGetTextCharacter64(textpage, block_num, line_num,
+					output = mGetTextCharacter64(ctx, textpage, block_num, line_num,
 						item_num, ref top_x, ref top_y, ref height, ref width);
 				else
-					output = mGetTextCharacter32(textpage, block_num, line_num,
+					output = mGetTextCharacter32(ctx, textpage, block_num, line_num,
 						item_num, ref top_x, ref top_y, ref height, ref width);
 			}
 			catch (DllNotFoundException)
@@ -1404,7 +1404,8 @@ namespace gsview
 								for (int mm = 0; mm < num_chars; mm++)
 								{
 									var textchars = new TextCharacter();
-									int character = tc_mGetTextCharacter(text, kk, jj, mm, ref top_x,
+									int character = tc_mGetTextCharacter(mu_object, 
+										text, kk, jj, mm, ref top_x,
 										ref top_y, ref height, ref width);
 									textchars.X = top_x;
 									textchars.Y = top_y;

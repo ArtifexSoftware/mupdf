@@ -114,6 +114,7 @@ public:
 	bool ApplyPassword(char* password);
 	status_t SavePage(char *filename, int pagenum, int resolution, int type,
 		bool append);
+	void GetCharBBox(fz_rect *rect, fz_text_span *span, int index);
 
 #ifdef _WINRT_DLL
 	status_t InitializeStream(IRandomAccessStream^ readStream, char *ext);

@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\mupdf\cbz.h" />
     <ClInclude Include="..\..\..\include\mupdf\fitz.h" />
     <ClInclude Include="..\..\..\include\mupdf\fitz\annotation.h" />
     <ClInclude Include="..\..\..\include\mupdf\fitz\bitmap.h" />
@@ -58,9 +57,10 @@
     <ClInclude Include="..\..\..\include\mupdf\fitz\system.h" />
     <ClInclude Include="..\..\..\include\mupdf\fitz\text.h" />
     <ClInclude Include="..\..\..\include\mupdf\fitz\transition.h" />
+    <ClInclude Include="..\..\..\include\mupdf\fitz\unzip.h" />
     <ClInclude Include="..\..\..\include\mupdf\fitz\write-document.h" />
     <ClInclude Include="..\..\..\include\mupdf\fitz\xml.h" />
-    <ClInclude Include="..\..\..\include\mupdf\img.h" />
+    <ClInclude Include="..\..\..\include\mupdf\html.h" />
     <ClInclude Include="..\..\..\include\mupdf\memento.h" />
     <ClInclude Include="..\..\..\include\mupdf\pdf-tools.h" />
     <ClInclude Include="..\..\..\include\mupdf\pdf.h" />
@@ -82,7 +82,6 @@
     <ClInclude Include="..\..\..\include\mupdf\pdf\xref.h" />
     <ClInclude Include="..\..\..\include\mupdf\xps.h" />
     <ClInclude Include="..\..\..\source\fitz\draw-imp.h" />
-    <ClInclude Include="..\..\..\source\fitz\jmemcust.h" />
     <ClInclude Include="..\..\..\source\fitz\ucdn.h" />
     <ClInclude Include="..\..\..\source\fitz\unicodedata_db.h" />
     <ClInclude Include="..\..\..\source\pdf\pdf-encodings.h" />
@@ -91,6 +90,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\source\cbz\mucbz.c" />
+    <ClCompile Include="..\..\..\source\cbz\muimg.c" />
+    <ClCompile Include="..\..\..\source\cbz\mutiff.c" />
     <ClCompile Include="..\..\..\source\fitz\bbox-device.c" />
     <ClCompile Include="..\..\..\source\fitz\bitmap.c" />
     <ClCompile Include="..\..\..\source\fitz\buffer.c" />
@@ -157,18 +158,27 @@
     <ClCompile Include="..\..\..\source\fitz\stext-search.c" />
     <ClCompile Include="..\..\..\source\fitz\store.c" />
     <ClCompile Include="..\..\..\source\fitz\stream-open.c" />
+    <ClCompile Include="..\..\..\source\fitz\stream-prog.c" />
     <ClCompile Include="..\..\..\source\fitz\stream-read.c" />
     <ClCompile Include="..\..\..\source\fitz\string.c" />
     <ClCompile Include="..\..\..\source\fitz\strtod.c" />
     <ClCompile Include="..\..\..\source\fitz\svg-device.c" />
+    <ClCompile Include="..\..\..\source\fitz\test-device.c" />
     <ClCompile Include="..\..\..\source\fitz\text.c" />
     <ClCompile Include="..\..\..\source\fitz\time.c" />
     <ClCompile Include="..\..\..\source\fitz\trace-device.c" />
     <ClCompile Include="..\..\..\source\fitz\transition.c" />
+    <ClCompile Include="..\..\..\source\fitz\tree.c" />
     <ClCompile Include="..\..\..\source\fitz\ucdn.c" />
     <ClCompile Include="..\..\..\source\fitz\unzip.c" />
     <ClCompile Include="..\..\..\source\fitz\xml.c" />
-    <ClCompile Include="..\..\..\source\img\muimage.c" />
+    <ClCompile Include="..\..\..\source\html\css-apply.c" />
+    <ClCompile Include="..\..\..\source\html\css-parse.c" />
+    <ClCompile Include="..\..\..\source\html\epub-doc.c" />
+    <ClCompile Include="..\..\..\source\html\html-doc.c" />
+    <ClCompile Include="..\..\..\source\html\html-font.c" />
+    <ClCompile Include="..\..\..\source\html\html-layout.c" />
+    <ClCompile Include="..\..\..\source\pdf\pdf-annot-edit.c" />
     <ClCompile Include="..\..\..\source\pdf\pdf-annot.c" />
     <ClCompile Include="..\..\..\source\pdf\pdf-appearance.c" />
     <ClCompile Include="..\..\..\source\pdf\pdf-clean.c" />
@@ -211,7 +221,6 @@
     <ClCompile Include="..\..\..\source\pdf\pdf-xobject.c" />
     <ClCompile Include="..\..\..\source\pdf\pdf-xref-aux.c" />
     <ClCompile Include="..\..\..\source\pdf\pdf-xref.c" />
-    <ClCompile Include="..\..\..\source\tiff\mutiff.c" />
     <ClCompile Include="..\..\..\source\tools\pdfclean.c" />
     <ClCompile Include="..\..\..\source\xps\xps-common.c" />
     <ClCompile Include="..\..\..\source\xps\xps-doc.c" />
