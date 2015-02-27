@@ -504,13 +504,22 @@ objects_dump(fz_context *ctx, pdf_document *doc, pdf_write_options *opts)
  * Garbage collect objects not reachable from the trailer.
  */
 
-static pdf_obj *sweepref(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, pdf_obj *obj)
+/* Mark a reference. If it's been marked already, return NULL (as no further
+ * processing is required). If it's not, return the resolved object so
+ * that we can continue our recursive marking. If it's a duff reference
+ * return the fact so that we can remove the reference at source.
+ */
+static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, pdf_obj *obj, int *duff)
 {
 	int num = pdf_to_num(ctx, obj);
 	int gen = pdf_to_gen(ctx, obj);
 
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
+	{
+		*duff = 1;
 		return NULL;
+	}
+	*duff = 0;
 	if (opts->use_list[num])
 		return NULL;
 
@@ -536,29 +545,47 @@ static pdf_obj *sweepref(fz_context *ctx, pdf_document *doc, pdf_write_options *
 		/* Leave broken */
 	}
 
-	return pdf_resolve_indirect(ctx, obj);
+	obj = pdf_resolve_indirect(ctx, obj);
+	if (obj == NULL || pdf_is_null(ctx, obj))
+	{
+		*duff = 1;
+		opts->use_list[num] = 0;
+	}
+
+	return obj;
 }
 
-static void sweepobj(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, pdf_obj *obj)
+/* Recursively mark an object. If any references found are duff, then
+ * replace them with nulls. */
+static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, pdf_obj *obj)
 {
 	int i;
 
 	if (pdf_is_indirect(ctx, obj))
-		obj = sweepref(ctx, doc, opts, obj);
+	{
+		int duff;
+		obj = markref(ctx, doc, opts, obj, &duff);
+		if (duff)
+			return 1;
+	}
 
 	if (pdf_is_dict(ctx, obj))
 	{
 		int n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
-			sweepobj(ctx, doc, opts, pdf_dict_get_val(ctx, obj, i));
+			if (markobj(ctx, doc, opts, pdf_dict_get_val(ctx, obj, i)))
+				pdf_dict_put_val_drop(ctx, obj, i, pdf_new_null(ctx, doc));
 	}
 
 	else if (pdf_is_array(ctx, obj))
 	{
 		int n = pdf_array_len(ctx, obj);
 		for (i = 0; i < n; i++)
-			sweepobj(ctx, doc, opts, pdf_array_get(ctx, obj, i));
+			if (markobj(ctx, doc, opts, pdf_array_get(ctx, obj, i)))
+				pdf_array_put_drop(ctx, obj, i, pdf_new_null(ctx, doc));
 	}
+
+	return 0;
 }
 
 /*
@@ -2626,8 +2653,8 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 		}
 
 		/* Sweep & mark objects from the trailer */
-		if (opts.do_garbage >= 1)
-			sweepobj(ctx, doc, &opts, pdf_trailer(ctx, doc));
+		if (opts.do_garbage >= 1 || opts.do_linear)
+			(void)markobj(ctx, doc, &opts, pdf_trailer(ctx, doc));
 		else
 			for (num = 0; num < xref_len; num++)
 				opts.use_list[num] = 1;
@@ -2645,14 +2672,12 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 			renumberobjs(ctx, doc, &opts);
 
 		/* Truncate the xref after compacting and renumbering */
-		if (opts.do_garbage >= 2 && !opts.do_incremental)
+		if ((opts.do_garbage >= 2 || opts.do_linear) && !opts.do_incremental)
 			while (xref_len > 0 && !opts.use_list[xref_len-1])
 				xref_len--;
 
 		if (opts.do_linear)
-		{
 			linearize(ctx, doc, &opts);
-		}
 
 		writeobjects(ctx, doc, &opts, 0);
 

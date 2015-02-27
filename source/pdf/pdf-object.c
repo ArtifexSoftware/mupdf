@@ -566,6 +566,13 @@ pdf_array_put(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 }
 
 void
+pdf_array_put_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
+{
+	pdf_array_put(ctx, obj, i, item);
+	pdf_drop_obj(ctx, item);
+}
+
+void
 pdf_array_push(fz_context *ctx, pdf_obj *obj, pdf_obj *item)
 {
 	RESOLVE(obj);
@@ -878,6 +885,25 @@ pdf_dict_get_val(fz_context *ctx, pdf_obj *obj, int i)
 	if (i < 0 || i >= obj->u.d.len)
 		return NULL;
 	return obj->u.d.items[i].v;
+}
+
+void
+pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *new_obj)
+{
+	RESOLVE(obj);
+	if (!obj || obj->kind != PDF_DICT)
+	{
+		pdf_drop_obj(ctx, new_obj);
+		return;
+	}
+	if (i < 0 || i >= obj->u.d.len)
+	{
+		/* FIXME: Should probably extend the dict here */
+		pdf_drop_obj(ctx, new_obj);
+		return;
+	}
+	pdf_drop_obj(ctx, obj->u.d.items[i].v);
+	obj->u.d.items[i].v = new_obj;
 }
 
 static int
