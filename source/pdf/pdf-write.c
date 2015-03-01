@@ -2719,6 +2719,11 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 			opts.file_len = ftell(opts.out);
 
 			make_hint_stream(ctx, doc, &opts);
+			if (opts.do_ascii)
+			{
+				opts.hintstream_len *= 2;
+				opts.hintstream_len += 1 + ((opts.hintstream_len+63)>>6);
+			}
 			opts.file_len += opts.hintstream_len;
 			opts.main_xref_offset += opts.hintstream_len;
 			update_linearization_params(ctx, doc, &opts);
