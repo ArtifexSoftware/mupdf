@@ -24,12 +24,14 @@ platform/win32/Profile
 platform/win32/Release
 platform/win32/ReleaseOpenssl
 platform/win32/Memento
+platform/win32/x64
 thirdparty/v8-3.9
 thirdparty/openssl
 platform/android/obj
 platform/android/bin
 platform/android/libs
 platform/android/gen
+platform/android/jni/andprof
 platform/android/local.properties
 platform/android/.classpath
 platform/android/.project
