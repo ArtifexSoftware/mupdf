@@ -27,42 +27,62 @@ fz_trace_color(fz_colorspace *colorspace, float *color, float alpha)
 }
 
 static void
-fz_trace_path(fz_path *path, int indent)
+trace_moveto(fz_context *ctx, void *arg, float x, float y)
 {
-	float x, y;
-	int i = 0, k = 0, n;
-	while (i < path->cmd_len)
-	{
-		for (n = 0; n < indent; n++)
-			putchar(' ');
-		switch (path->cmds[i++])
-		{
-		case FZ_MOVETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			printf("<moveto x=\"%g\" y=\"%g\"/>\n", x, y);
-			break;
-		case FZ_LINETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			printf("<lineto x=\"%g\" y=\"%g\"/>\n", x, y);
-			break;
-		case FZ_CURVETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			printf("<curveto x1=\"%g\" y1=\"%g\"", x, y);
-			x = path->coords[k++];
-			y = path->coords[k++];
-			printf(" x2=\"%g\" y2=\"%g\"", x, y);
-			x = path->coords[k++];
-			y = path->coords[k++];
-			printf(" x3=\"%g\" y3=\"%g\"/>\n", x, y);
-			break;
-		case FZ_CLOSE_PATH:
-			printf("<closepath/>\n");
-			break;
-		}
-	}
+	int indent = (int)(intptr_t)arg;
+	int n;
+
+	for (n = 0; n < indent; n++)
+		putchar(' ');
+	printf("<moveto x=\"%g\" y=\"%g\"/>\n", x, y);
+}
+
+static void
+trace_lineto(fz_context *ctx, void *arg, float x, float y)
+{
+	int indent = (int)(intptr_t)arg;
+	int n;
+
+	for (n = 0; n < indent; n++)
+		putchar(' ');
+	printf("<lineto x=\"%g\" y=\"%g\"/>\n", x, y);
+}
+
+static void
+trace_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
+{
+	int indent = (int)(intptr_t)arg;
+	int n;
+
+	for (n = 0; n < indent; n++)
+		putchar(' ');
+	printf("<curveto x1=\"%g\" y1=\"%g\" x2=\"%g\" y2=\"%g\" x3=\"%g\" y3=\"%g\"/>\n", x1, y1, x2, y2, x3, y3);
+}
+
+static void
+trace_close(fz_context *ctx, void *arg)
+{
+	int indent = (int)(intptr_t)arg;
+	int n;
+
+	for (n = 0; n < indent; n++)
+		putchar(' ');
+	printf("<closepath/>\n");
+}
+
+
+static const fz_path_processor trace_path_proc =
+{
+	trace_moveto,
+	trace_lineto,
+	trace_curveto,
+	trace_close
+};
+
+static void
+fz_trace_path(fz_context *ctx, fz_path *path, int indent)
+{
+	fz_process_path(ctx, &trace_path_proc, (void *)(intptr_t)indent, path);
 }
 
 static void
@@ -91,7 +111,7 @@ fz_trace_fill_path(fz_context *ctx, fz_device *dev, fz_path *path, int even_odd,
 	fz_trace_color(colorspace, color, alpha);
 	fz_trace_matrix(ctm);
 	printf(">\n");
-	fz_trace_path(path, 0);
+	fz_trace_path(ctx, path, 0);
 	printf("</fill_path>\n");
 }
 
@@ -119,7 +139,7 @@ fz_trace_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, fz_stroke_s
 	fz_trace_matrix(ctm);
 	printf(">\n");
 
-	fz_trace_path(path, 0);
+	fz_trace_path(ctx, path, 0);
 
 	printf("</stroke_path>\n");
 }
@@ -137,7 +157,7 @@ fz_trace_clip_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect
 		printf(" contentbbox=\"%g %g %g %g\">\n", rect->x0, rect->y0, rect->x1, rect->y1);
 	else
 		printf(">\n");
-	fz_trace_path(path, 0);
+	fz_trace_path(ctx, path, 0);
 	printf("</clip_path>\n");
 }
 
@@ -147,7 +167,7 @@ fz_trace_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const 
 	printf("<clip_stroke_path");
 	fz_trace_matrix(ctm);
 	printf(">\n");
-	fz_trace_path(path, 0);
+	fz_trace_path(ctx, path, 0);
 	printf("</clip_stroke_path>\n");
 }
 

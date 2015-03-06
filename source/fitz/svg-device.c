@@ -88,43 +88,51 @@ end_def(fz_context *ctx, svg_device *sdev)
 /* Helper functions */
 
 static void
+svg_path_moveto(fz_context *ctx, void *arg, float x, float y)
+{
+	fz_output *out = (fz_output *)arg;
+
+	fz_printf(ctx, out, "M %g %g ", x, y);
+}
+
+static void
+svg_path_lineto(fz_context *ctx, void *arg, float x, float y)
+{
+	fz_output *out = (fz_output *)arg;
+
+	fz_printf(ctx, out, "L %g %g ", x, y);
+}
+
+static void
+svg_path_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
+{
+	fz_output *out = (fz_output *)arg;
+
+	fz_printf(ctx, out, "C %g %g %g %g %g %g ", x1, y1, x2, y2, x3, y3);
+}
+
+static void
+svg_path_close(fz_context *ctx, void *arg)
+{
+	fz_output *out = (fz_output *)arg;
+
+	fz_printf(ctx, out, "Z ");
+}
+
+static const fz_path_processor svg_path_proc =
+{
+	svg_path_moveto,
+	svg_path_lineto,
+	svg_path_curveto,
+	svg_path_close
+};
+
+static void
 svg_dev_path(fz_context *ctx, svg_device *sdev, fz_path *path)
 {
-	fz_output *out = sdev->out;
-	float x, y;
-	int i, k;
-	fz_printf(ctx, out, " d=\"");
-	for (i = 0, k = 0; i < path->cmd_len; i++)
-	{
-		switch (path->cmds[i])
-		{
-		case FZ_MOVETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_printf(ctx, out, "M %g %g ", x, y);
-			break;
-		case FZ_LINETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_printf(ctx, out, "L %g %g ", x, y);
-			break;
-		case FZ_CURVETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_printf(ctx, out, "C %g %g ", x, y);
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_printf(ctx, out, "%g %g ", x, y);
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_printf(ctx, out, "%g %g ", x, y);
-			break;
-		case FZ_CLOSE_PATH:
-			fz_printf(ctx, out, "Z ");
-			break;
-		}
-	}
-	fz_printf(ctx, out, "\"");
+	fz_printf(ctx, sdev->out, " d=\"");
+	fz_process_path(ctx, &svg_path_proc, sdev->out, path);
+	fz_printf(ctx, sdev->out, "\"");
 }
 
 static void

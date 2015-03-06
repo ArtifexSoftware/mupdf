@@ -397,15 +397,11 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 
 		case 'Q':
 			if (i + 3 >= n) break;
-			pt = fz_currentpoint(ctx, path);
 			x1 = fz_atof(args[i+0]);
 			y1 = fz_atof(args[i+1]);
 			x2 = fz_atof(args[i+2]);
 			y2 = fz_atof(args[i+3]);
-			fz_curveto(ctx, path,
-				(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-				(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-				x2, y2);
+			fz_quadto(ctx, path, x1, y1, x2, y2);
 			i += 4;
 			break;
 		case 'q':
@@ -415,10 +411,7 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 			y1 = fz_atof(args[i+1]) + pt.y;
 			x2 = fz_atof(args[i+2]) + pt.x;
 			y2 = fz_atof(args[i+3]) + pt.y;
-			fz_curveto(ctx, path,
-				(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-				(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-				x2, y2);
+			fz_quadto(ctx, path, x1, y1, x2, y2);
 			i += 4;
 			break;
 

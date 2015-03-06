@@ -360,42 +360,58 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, fz_stroke_state *stroke_
 	gs->stroke_state = fz_keep_stroke_state(ctx, stroke_state);
 }
 
+typedef struct
+{
+	fz_context *ctx;
+	fz_buffer *buf;
+} pdf_dev_path_arg;
+
+static void
+pdf_dev_path_moveto(fz_context *ctx, void *arg, float x, float y)
+{
+	fz_buffer *buf = (fz_buffer *)arg;
+
+	fz_buffer_printf(ctx, buf, "%f %f m\n", x, y);
+}
+
+static void
+pdf_dev_path_lineto(fz_context *ctx, void *arg, float x, float y)
+{
+	fz_buffer *buf = (fz_buffer *)arg;
+
+	fz_buffer_printf(ctx, buf, "%f %f l\n", x, y);
+}
+
+static void
+pdf_dev_path_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
+{
+	fz_buffer *buf = (fz_buffer *)arg;
+
+	fz_buffer_printf(ctx, buf, "%f %f %f %f %f %f c\n", x1, y1, x2, y2, x3, y3);
+}
+
+static void
+pdf_dev_path_close(fz_context *ctx, void *arg)
+{
+	fz_buffer *buf = (fz_buffer *)arg;
+
+	fz_buffer_printf(ctx, buf, "h\n");
+}
+
+static const fz_path_processor pdf_dev_path_proc =
+{
+	pdf_dev_path_moveto,
+	pdf_dev_path_lineto,
+	pdf_dev_path_curveto,
+	pdf_dev_path_close
+};
+
 static void
 pdf_dev_path(fz_context *ctx, pdf_device *pdev, fz_path *path)
 {
 	gstate *gs = CURRENT_GSTATE(pdev);
-	float x, y;
-	int i = 0, k = 0;
-	while (i < path->cmd_len)
-	{
-		switch (path->cmds[i++])
-		{
-		case FZ_MOVETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_buffer_printf(ctx, gs->buf, "%f %f m\n", x, y);
-			break;
-		case FZ_LINETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_buffer_printf(ctx, gs->buf, "%f %f l\n", x, y);
-			break;
-		case FZ_CURVETO:
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_buffer_printf(ctx, gs->buf, "%f %f ", x, y);
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_buffer_printf(ctx, gs->buf, "%f %f ", x, y);
-			x = path->coords[k++];
-			y = path->coords[k++];
-			fz_buffer_printf(ctx, gs->buf, "%f %f c\n", x, y);
-			break;
-		case FZ_CLOSE_PATH:
-			fz_buffer_printf(ctx, gs->buf, "h\n");
-			break;
-		}
-	}
+
+	fz_process_path(ctx, &pdf_dev_path_proc, (void *)gs->buf, path);
 }
 
 static void

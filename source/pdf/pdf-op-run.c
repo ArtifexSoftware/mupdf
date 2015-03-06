@@ -1516,11 +1516,7 @@ static void pdf_run_h(fz_context *ctx, pdf_processor *proc)
 static void pdf_run_re(fz_context *ctx, pdf_processor *proc, float x, float y, float w, float h)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	fz_moveto(ctx, pr->path, x, y);
-	fz_lineto(ctx, pr->path, x + w, y);
-	fz_lineto(ctx, pr->path, x + w, y + h);
-	fz_lineto(ctx, pr->path, x, y + h);
-	fz_closepath(ctx, pr->path);
+	fz_rectto(ctx, pr->path, x, y, x+w, y+h);
 }
 
 /* path painting */

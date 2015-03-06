@@ -892,18 +892,11 @@ static int conic_to(const FT_Vector *c, const FT_Vector *p, void *cc_)
 	fz_context *ctx = cc->ctx;
 	fz_path *path = cc->path;
 	fz_point ct, pt;
-	fz_point s, c1, c2;
 
 	fz_transform_point_xy(&ct, &cc->trm, c->x, c->y);
 	fz_transform_point_xy(&pt, &cc->trm, p->x, p->y);
 
-	s = fz_currentpoint(ctx, path);
-	c1.x = (s.x + ct.x * 2) / 3;
-	c1.y = (s.y + ct.y * 2) / 3;
-	c2.x = (pt.x + ct.x * 2) / 3;
-	c2.y = (pt.y + ct.y * 2) / 3;
-
-	fz_curveto(ctx, path, c1.x, c1.y, c2.x, c2.y, pt.x, pt.y);
+	fz_quadto(ctx, path, ct.x, ct.y, pt.x, pt.y);
 	return 0;
 }
 
