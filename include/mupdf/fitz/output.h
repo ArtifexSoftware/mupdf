@@ -84,6 +84,7 @@ fz_write_byte(fz_context *ctx, fz_output *out, int x)
 	format specifiers as for fz_vsnprintf.
 */
 int fz_vfprintf(fz_context *ctx, FILE *file, const char *fmt, va_list ap);
+int fz_fprintf(fz_context *ctx, FILE *file, const char *fmt, ...);
 
 /*
 	fz_vsnprintf: Our customised vsnprintf routine. Takes %c, %d, %o, %s, %x, as usual.

@@ -254,6 +254,17 @@ fz_vfprintf(fz_context *ctx, FILE *file, const char *fmt, va_list old_args)
 }
 
 int
+fz_fprintf(fz_context *ctx, FILE *file, const char *fmt, ...)
+{
+	int n;
+	va_list ap;
+	va_start(ap, fmt);
+	n = fz_vfprintf(ctx, file, fmt, ap);
+	va_end(ap);
+	return n;
+}
+
+int
 fz_snprintf(char *buffer, int space, const char *fmt, ...)
 {
 	int n;
