@@ -2051,8 +2051,7 @@ static void insert_signature_appearance_layers(fz_context *ctx, pdf_document *do
 		pdf_dict_putp(ctx, main_ap, "Resources/XObject/FRM", frm);
 		fzbuf = fz_new_buffer(ctx, 8);
 		fz_buffer_printf(ctx, fzbuf, "/FRM Do");
-		pdf_update_stream(ctx, doc, pdf_to_num(ctx, main_ap), fzbuf);
-		pdf_dict_puts_drop(ctx, main_ap, "Length", pdf_new_int(ctx, doc, fzbuf->len));
+		pdf_update_stream(ctx, doc, main_ap, fzbuf, 0);
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
 
@@ -2060,15 +2059,13 @@ static void insert_signature_appearance_layers(fz_context *ctx, pdf_document *do
 		pdf_dict_putp(ctx, frm, "Resources/XObject/n2", ap);
 		fzbuf = fz_new_buffer(ctx, 8);
 		fz_buffer_printf(ctx, fzbuf, "q 1 0 0 1 0 0 cm /n0 Do Q q 1 0 0 1 0 0 cm /n2 Do Q");
-		pdf_update_stream(ctx, doc, pdf_to_num(ctx, frm), fzbuf);
-		pdf_dict_puts_drop(ctx, frm, "Length", pdf_new_int(ctx, doc, fzbuf->len));
+		pdf_update_stream(ctx, doc, frm, fzbuf, 0);
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
 
 		fzbuf = fz_new_buffer(ctx, 8);
 		fz_buffer_printf(ctx, fzbuf, "%% DSBlank");
-		pdf_update_stream(ctx, doc, pdf_to_num(ctx, n0), fzbuf);
-		pdf_dict_puts_drop(ctx, n0, "Length", pdf_new_int(ctx, doc, fzbuf->len));
+		pdf_update_stream(ctx, doc, n0, fzbuf, 0);
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
 

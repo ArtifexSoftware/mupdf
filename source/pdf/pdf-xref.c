@@ -2126,8 +2126,9 @@ pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *newobj)
 }
 
 void
-pdf_update_stream(fz_context *ctx, pdf_document *doc, int num, fz_buffer *newbuf)
+pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *ref, fz_buffer *newbuf, int compressed)
 {
+	int num = pdf_to_num(ctx, ref);
 	pdf_xref_entry *x;
 
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
@@ -2140,6 +2141,13 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, int num, fz_buffer *newbuf
 
 	fz_drop_buffer(ctx, x->stm_buf);
 	x->stm_buf = fz_keep_buffer(ctx, newbuf);
+
+	pdf_dict_puts_drop(ctx, ref, "Length", pdf_new_int(ctx, doc, newbuf->len));
+	if (!compressed)
+	{
+		pdf_dict_dels(ctx, ref, "Filter");
+		pdf_dict_dels(ctx, ref, "DecodeParms");
+	}
 }
 
 int

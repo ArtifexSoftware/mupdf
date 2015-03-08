@@ -288,8 +288,7 @@ send_image(fz_context *ctx, pdf_device *pdev, fz_image *image, int mask, int sma
 		}
 
 		imref = pdf_new_ref(ctx, doc, imobj);
-		pdf_update_stream(ctx, doc, pdf_to_num(ctx, imref), buffer);
-		pdf_dict_puts_drop(ctx, imobj, "Length", pdf_new_int(ctx, doc, buffer->len));
+		pdf_update_stream(ctx, doc, imref, buffer, 1);
 
 		{
 			char text[32];
@@ -1143,8 +1142,7 @@ pdf_dev_end_mask(fz_context *ctx, fz_device *dev)
 	/* Here we do part of the pop, but not all of it. */
 	pdf_dev_end_text(ctx, pdev);
 	fz_buffer_printf(ctx, buf, "Q\n");
-	pdf_dict_puts_drop(ctx, form_ref, "Length", pdf_new_int(ctx, doc, buf->len));
-	pdf_update_stream(ctx, doc, pdf_to_num(ctx, form_ref), buf);
+	pdf_update_stream(ctx, doc, form_ref, buf, 0);
 	fz_drop_buffer(ctx, buf);
 	gs->buf = fz_keep_buffer(ctx, gs[-1].buf);
 	gs->on_pop_arg = NULL;
@@ -1201,8 +1199,7 @@ pdf_dev_end_group(fz_context *ctx, fz_device *dev)
 
 	pdf_dev_end_text(ctx, pdev);
 	form_ref = (pdf_obj *)pdf_dev_pop(ctx, pdev);
-	pdf_dict_puts_drop(ctx, form_ref, "Length", pdf_new_int(ctx, doc, gs->buf->len));
-	pdf_update_stream(ctx, doc, pdf_to_num(ctx, form_ref), buf);
+	pdf_update_stream(ctx, doc, form_ref, buf, 0);
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, form_ref);
 }
@@ -1231,13 +1228,9 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
-	gstate *gs = CURRENT_GSTATE(pdev);
 	int i;
 
 	pdf_dev_end_text(ctx, pdev);
-
-	if (pdev->contents)
-		pdf_dict_puts_drop(ctx, pdev->contents, "Length", pdf_new_int(ctx, doc, gs->buf->len));
 
 	for (i = pdev->num_gstates-1; i >= 0; i--)
 	{
@@ -1256,7 +1249,7 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 
 	if (pdev->contents)
 	{
-		pdf_update_stream(ctx, doc, pdf_to_num(ctx, pdev->contents), pdev->gstates[0].buf);
+		pdf_update_stream(ctx, doc, pdev->contents, pdev->gstates[0].buf, 0);
 		pdf_drop_obj(ctx, pdev->contents);
 	}
 

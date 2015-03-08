@@ -2010,8 +2010,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_option
 			writexrefstreamsubsect(ctx, doc, opts, index, fzbuf, from, to);
 		}
 
-		pdf_update_stream(ctx, doc, num, fzbuf);
-		pdf_dict_puts_drop(ctx, dict, "Length", pdf_new_int(ctx, doc, fz_buffer_storage(ctx, fzbuf, NULL)));
+		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
 		writeobject(ctx, doc, opts, num, 0, 0);
 		fprintf(opts->out, "startxref\n%d\n%%%%EOF\n", startxref);
@@ -2409,7 +2408,7 @@ make_hint_stream(fz_context *ctx, pdf_document *doc, pdf_write_options *opts)
 	fz_try(ctx)
 	{
 		make_page_offset_hints(ctx, doc, opts, buf);
-		pdf_update_stream(ctx, doc, pdf_xref_len(ctx, doc)-1, buf);
+		pdf_update_stream(ctx, doc, pdf_load_object(ctx, doc, pdf_xref_len(ctx, doc)-1, 0), buf, 0); // XXX
 		opts->hintstream_len = buf->len;
 		fz_drop_buffer(ctx, buf);
 	}

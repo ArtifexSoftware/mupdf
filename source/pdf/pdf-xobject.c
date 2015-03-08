@@ -228,8 +228,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 
 void pdf_update_xobject_contents(fz_context *ctx, pdf_document *doc, pdf_xobject *form, fz_buffer *buffer)
 {
-	pdf_dict_dels(ctx, form->contents, "Filter");
-	pdf_dict_puts_drop(ctx, form->contents, "Length", pdf_new_int(ctx, doc, buffer->len));
-	pdf_update_stream(ctx, doc, pdf_to_num(ctx, form->contents), buffer);
+	pdf_update_stream(ctx, doc, form->contents, buffer, 0);
 	form->iteration ++;
 }

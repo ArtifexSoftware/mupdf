@@ -19,12 +19,11 @@ void pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *obj
 /*
 	pdf_update_stream: Replace stream contents for object in xref table with the passed in buffer.
 
-	The buffer contents must match the /Filter setting.
-	If storing uncompressed data, make sure to delete the /Filter key from
-	the stream dictionary. If storing deflated data, make sure to set the
-	/Filter value to /FlateDecode.
+	The buffer contents must match the /Filter setting if 'compressed' is true.
+	If 'compressed' is false, the /Filter and /DecodeParms entries are deleted.
+	The /Length entry is updated.
 */
-void pdf_update_stream(fz_context *ctx, pdf_document *doc, int num, fz_buffer *buf);
+void pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *ref, fz_buffer *buf, int compressed);
 
 /*
  * xref and object / stream api
