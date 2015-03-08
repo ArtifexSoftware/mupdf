@@ -76,13 +76,13 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, cons
 	cleaned page contents/resources gathered as part of
 	pdf_clean_page_contents.
 
-	arg: An opaque arg specific to the particular function.
-
 	buffer: A buffer holding the page contents.
 
 	res: A pdf_obj holding the page resources.
+
+	arg: An opaque arg specific to the particular function.
 */
-typedef void (pdf_page_contents_process_fn)(void *arg, fz_buffer *buffer, pdf_obj *res);
+typedef void (pdf_page_contents_process_fn)(fz_context *ctx, fz_buffer *buffer, pdf_obj *res, void *arg);
 
 /*
 	pdf_clean_page_contents: Clean a loaded pages rendering operations,

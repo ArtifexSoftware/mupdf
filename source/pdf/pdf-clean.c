@@ -244,7 +244,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		/* Properties - no cleaning possible. */
 
 		if (proc_fn)
-			(*proc_fn)(proc_arg, buffer, res);
+			(*proc_fn)(ctx, buffer, res, proc_arg);
 
 		pdf_update_stream(ctx, doc, contents, buffer, 0);
 
