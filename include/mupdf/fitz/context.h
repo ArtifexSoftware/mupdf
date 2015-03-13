@@ -470,8 +470,38 @@ fz_keep_imp(fz_context *ctx, void *p, int *refs)
 	return p;
 }
 
+static inline void *
+fz_keep_imp8(fz_context *ctx, void *p, int8_t *refs)
+{
+	if (p)
+	{
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+			++*refs;
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+	}
+	return p;
+}
+
 static inline int
 fz_drop_imp(fz_context *ctx, void *p, int *refs)
+{
+	if (p)
+	{
+		int drop;
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+			drop = --*refs == 0;
+		else
+			drop = 0;
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+		return drop;
+	}
+	return 0;
+}
+
+static inline int
+fz_drop_imp8(fz_context *ctx, void *p, int8_t *refs)
 {
 	if (p)
 	{

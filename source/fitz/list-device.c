@@ -71,7 +71,7 @@ typedef enum fz_display_command_e
  *	flags:	Flags (node specific meanings)
  *
  * Nodes are packed in the order:
- * header, rect, path, colorspace, color, alpha, ctm, stroke_state, private data.
+ * header, rect, colorspace, color, alpha, ctm, stroke_state, path, private data.
  */
 struct fz_display_node_s
 {
@@ -105,7 +105,9 @@ enum {
 	CTM_UNCHANGED = 0,
 	CTM_CHANGE_AD = 1,
 	CTM_CHANGE_BC = 2,
-	CTM_CHANGE_EF = 4
+	CTM_CHANGE_EF = 4,
+
+	MAX_NODE_SIZE = (1<<9)-sizeof(fz_display_node)
 };
 
 struct fz_display_list_s
@@ -176,6 +178,7 @@ fz_append_display_node(
 	fz_path *my_path = NULL;
 	fz_stroke_state *my_stroke = NULL;
 	fz_rect local_rect;
+	int path_size = 0;
 
 	switch (cmd)
 	{
@@ -242,7 +245,7 @@ fz_append_display_node(
 		}
 		/* fallthrough */
 	default:
-		if (writer->top > 0 && writer->tiled == 0 && writer->top <= STACK_SIZE)
+		if (writer->top > 0 && writer->tiled == 0 && writer->top <= STACK_SIZE && rect)
 			fz_union_rect(&writer->stack[writer->top-1].rect, rect);
 		break;
 	}
@@ -257,12 +260,6 @@ fz_append_display_node(
 		node.rect = 1;
 		rect_off = size;
 		size += SIZE_IN_NODES(sizeof(fz_rect));
-	}
-	if (path && (writer->path == NULL || path != writer->path))
-	{
-		node.path = 1;
-		path_off = size;
-		size += SIZE_IN_NODES(sizeof(fz_path *));
 	}
 	if (color && !colorspace)
 	{
@@ -456,6 +453,15 @@ fz_append_display_node(
 		size += SIZE_IN_NODES(sizeof(fz_stroke_state *));
 		node.stroke = 1;
 	}
+	if (path && (writer->path == NULL || path != writer->path))
+	{
+		int max = SIZE_IN_NODES(MAX_NODE_SIZE) - size - SIZE_IN_NODES(private_data_len);
+		path_size = SIZE_IN_NODES(fz_pack_path(ctx, NULL, max, path));
+		node.path = 1;
+		path_off = size;
+
+		size += path_size;
+	}
 	if (private_data != NULL)
 	{
 		private_off = size;
@@ -480,12 +486,24 @@ fz_append_display_node(
 			if (writer->stack[i].update != NULL)
 				writer->stack[i].update = (fz_rect *)(((char *)writer->stack[i].update) + diff);
 		}
+		if (writer->path)
+			writer->path = (fz_path *)(((char *)writer->path) + diff);
 	}
+
+	/* Write the node to the list */
+	node.size = size;
+	node.flags = flags;
+	assert(size < (1<<9));
+	node_ptr = &list->list[list->len];
+	*node_ptr = node;
 
 	/* Path is the most frequent one, so try to avoid the try/catch in
 	 * this case */
 	if (path_off)
-		my_path = fz_keep_path(ctx, path);
+	{
+		my_path = (void *)(&node_ptr[path_off]);
+		(void)fz_pack_path(ctx, (void *)my_path, path_size * sizeof(fz_display_node), path);
+	}
 
 	if (stroke_off)
 	{
@@ -500,12 +518,6 @@ fz_append_display_node(
 		}
 	}
 
-	/* Write the node to the list */
-	node.size = size;
-	node.flags = flags;
-	assert(size < (1<<9));
-	node_ptr = &list->list[list->len];
-	*node_ptr = node;
 	if (rect_off)
 	{
 		fz_rect *out_rect = (fz_rect *)(void *)(&node_ptr[rect_off]);
@@ -516,8 +528,6 @@ fz_append_display_node(
 	}
 	if (path_off)
 	{
-		fz_path **out_path = (fz_path **)(void *)(&node_ptr[path_off]);
-		*out_path = my_path;
 		fz_drop_path(ctx, writer->path);
 		writer->path = fz_keep_path(ctx, my_path); /* Can never fail */
 	}
@@ -1282,11 +1292,6 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 		{
 			node += SIZE_IN_NODES(sizeof(fz_rect));
 		}
-		if (n.path)
-		{
-			fz_drop_path(ctx, *(fz_path **)node);
-			node += SIZE_IN_NODES(sizeof(fz_path *));
-		}
 		switch (n.cs)
 		{
 		default:
@@ -1328,6 +1333,12 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 		{
 			fz_drop_stroke_state(ctx, *(fz_stroke_state **)node);
 			node += SIZE_IN_NODES(sizeof(fz_stroke_state *));
+		}
+		if (n.path)
+		{
+			int path_size = fz_packed_path_size((fz_path *)node);
+			fz_drop_path(ctx, (fz_path *)node);
+			node += SIZE_IN_NODES(path_size);
 		}
 		switch(n.cmd)
 		{
@@ -1435,12 +1446,6 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			rect = *(fz_rect *)node;
 			node += SIZE_IN_NODES(sizeof(fz_rect));
 		}
-		if (n.path)
-		{
-			fz_drop_path(ctx, path);
-			path = fz_keep_path(ctx, *(fz_path **)node);
-			node += SIZE_IN_NODES(sizeof(fz_path *));
-		}
 		if (n.cs)
 		{
 			int i;
@@ -1540,6 +1545,12 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			fz_drop_stroke_state(ctx, stroke);
 			stroke = fz_keep_stroke_state(ctx, *(fz_stroke_state **)node);
 			node += SIZE_IN_NODES(sizeof(fz_stroke_state *));
+		}
+		if (n.path)
+		{
+			fz_drop_path(ctx, path);
+			path = fz_keep_path(ctx, (fz_path *)node);
+			node += SIZE_IN_NODES(fz_packed_path_size(path));
 		}
 
 		if (tile_skip_depth > 0)

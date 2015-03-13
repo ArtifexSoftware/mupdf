@@ -38,13 +38,29 @@ typedef enum fz_path_command_e
 
 struct fz_path_s
 {
-	int refs;
+	int8_t refs;
+	uint8_t packed;
 	int cmd_len, cmd_cap;
 	unsigned char *cmds;
 	int coord_len, coord_cap;
 	float *coords;
 	fz_point current;
 	fz_point begin;
+};
+
+typedef struct fz_packed_path_s
+{
+	int8_t refs;
+	uint8_t packed;
+	uint8_t coord_len;
+	uint8_t cmd_len;
+} fz_packed_path;
+
+enum
+{
+	FZ_PATH_UNPACKED = 0,
+	FZ_PATH_PACKED_FLAT = 1,
+	FZ_PATH_PACKED_OPEN = 2
 };
 
 #define LAST_CMD(path) ((path)->cmd_len > 0 ? (path)->cmds[(path)->cmd_len-1] : 0)
@@ -56,6 +72,7 @@ fz_new_path(fz_context *ctx)
 
 	path = fz_malloc_struct(ctx, fz_path);
 	path->refs = 1;
+	path->packed = FZ_PATH_UNPACKED;
 	path->current.x = 0;
 	path->current.y = 0;
 	path->begin.x = 0;
@@ -67,19 +84,112 @@ fz_new_path(fz_context *ctx)
 fz_path *
 fz_keep_path(fz_context *ctx, fz_path *path)
 {
-	if (path->refs == 1)
+	if (path == NULL)
+		return NULL;
+	if (path->refs == 1 && path->packed == FZ_PATH_UNPACKED)
 		fz_trim_path(ctx, path);
-	return fz_keep_imp(ctx, path, &path->refs);
+	return fz_keep_imp8(ctx, path, &path->refs);
 }
 
 void
 fz_drop_path(fz_context *ctx, fz_path *path)
 {
-	if (fz_drop_imp(ctx, path, &path->refs))
+	if (fz_drop_imp8(ctx, path, &path->refs))
 	{
-		fz_free(ctx, path->cmds);
-		fz_free(ctx, path->coords);
-		fz_free(ctx, path);
+		if (path->packed != FZ_PATH_PACKED_FLAT)
+		{
+			fz_free(ctx, path->cmds);
+			fz_free(ctx, path->coords);
+		}
+		if (path->packed == FZ_PATH_UNPACKED)
+			fz_free(ctx, path);
+	}
+}
+
+int fz_packed_path_size(const fz_path *path)
+{
+	switch (path->packed)
+	{
+	case FZ_PATH_UNPACKED:
+		if (path->cmd_len > 255 || path->coord_len > 255)
+			return sizeof(fz_path);
+		return sizeof(fz_packed_path) + sizeof(float) * path->coord_len + sizeof(uint8_t) * path->cmd_len;
+	case FZ_PATH_PACKED_OPEN:
+		return sizeof(fz_path);
+	case FZ_PATH_PACKED_FLAT:
+	{
+		fz_packed_path *pack = (fz_packed_path *)path;
+		return sizeof(fz_packed_path) + sizeof(float) * pack->coord_len + sizeof(uint8_t) * pack->cmd_len;
+	}
+	default:
+		assert("This never happens" == NULL);
+		return 0;
+	}
+}
+
+int
+fz_pack_path(fz_context *ctx, uint8_t *pack_, int max, const fz_path *path)
+{
+	uint8_t *ptr;
+	int size;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't repack a packed path");
+
+	size = sizeof(fz_packed_path) + sizeof(float) * path->coord_len + sizeof(uint8_t) * path->cmd_len;
+
+	/* If the path can't be packed flat, then pack it open */
+	if (path->cmd_len > 255 || path->coord_len > 255 || size > max)
+	{
+		fz_path *pack = (fz_path *)pack_;
+
+		if (sizeof(fz_path) > max)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Can't pack a path that small!");
+
+		if (pack != NULL)
+		{
+			pack->refs = 1;
+			pack->packed = FZ_PATH_PACKED_OPEN;
+			pack->current.x = 0;
+			pack->current.y = 0;
+			pack->begin.x = 0;
+			pack->begin.y = 0;
+			pack->coord_cap = path->coord_len;
+			pack->coord_len = path->coord_len;
+			pack->cmd_cap = path->cmd_len;
+			pack->cmd_len = path->cmd_len;
+			pack->coords = fz_malloc_array(ctx, path->coord_len, sizeof(float) * path->coord_len);
+			fz_try(ctx)
+			{
+				pack->cmds = fz_malloc_array(ctx, path->cmd_len, sizeof(uint8_t) * path->cmd_len);
+			}
+			fz_catch(ctx)
+			{
+				fz_free(ctx, pack->coords);
+				fz_rethrow(ctx);
+			}
+			memcpy(pack->coords, path->coords, sizeof(float) * path->coord_len);
+			memcpy(pack->cmds, path->cmds, sizeof(uint8_t) * path->cmd_len);
+		}
+		return sizeof(fz_path);
+	}
+	else
+	{
+		fz_packed_path *pack = (fz_packed_path *)pack_;
+
+		if (pack != NULL)
+		{
+			pack->refs = 1;
+			pack->packed = FZ_PATH_PACKED_FLAT;
+			pack->cmd_len = path->cmd_len;
+			pack->coord_len = path->coord_len;
+			ptr = (uint8_t *)&pack[1];
+			memcpy(ptr, path->coords, sizeof(float) * path->coord_len);
+			ptr += sizeof(float) * path->coord_len;
+			memcpy(ptr, path->cmds, sizeof(uint8_t) * path->cmd_len);
+		}
+
+		return size;
 	}
 }
 
@@ -143,6 +253,9 @@ fz_currentpoint(fz_context *ctx, fz_path *path)
 void
 fz_moveto(fz_context *ctx, fz_path *path, float x, float y)
 {
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
+
 	if (path->cmd_len > 0 && LAST_CMD(path) == FZ_MOVETO)
 	{
 		/* Collapse moveto followed by moveto. */
@@ -163,8 +276,13 @@ fz_moveto(fz_context *ctx, fz_path *path, float x, float y)
 void
 fz_lineto(fz_context *ctx, fz_path *path, float x, float y)
 {
-	float x0 = path->current.x;
-	float y0 = path->current.y;
+	float x0, y0;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
+
+	x0 = path->current.x;
+	y0 = path->current.y;
 
 	if (path->cmd_len == 0)
 	{
@@ -208,8 +326,13 @@ fz_curveto(fz_context *ctx, fz_path *path,
 	float x2, float y2,
 	float x3, float y3)
 {
-	float x0 = path->current.x;
-	float y0 = path->current.y;
+	float x0, y0;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
+
+	x0 = path->current.x;
+	y0 = path->current.y;
 
 	if (path->cmd_len == 0)
 	{
@@ -260,8 +383,13 @@ fz_quadto(fz_context *ctx, fz_path *path,
 	float x1, float y1,
 	float x2, float y2)
 {
-	float x0 = path->current.x;
-	float y0 = path->current.y;
+	float x0, y0;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
+
+	x0 = path->current.x;
+	y0 = path->current.y;
 
 	if (path->cmd_len == 0)
 	{
@@ -287,8 +415,13 @@ fz_quadto(fz_context *ctx, fz_path *path,
 void
 fz_curvetov(fz_context *ctx, fz_path *path, float x2, float y2, float x3, float y3)
 {
-	float x0 = path->current.x;
-	float y0 = path->current.y;
+	float x0, y0;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
+
+	x0 = path->current.x;
+	y0 = path->current.y;
 
 	if (path->cmd_len == 0)
 	{
@@ -319,8 +452,13 @@ fz_curvetov(fz_context *ctx, fz_path *path, float x2, float y2, float x3, float 
 void
 fz_curvetoy(fz_context *ctx, fz_path *path, float x1, float y1, float x3, float y3)
 {
-	float x0 = path->current.x;
-	float y0 = path->current.y;
+	float x0, y0;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
+
+	x0 = path->current.x;
+	y0 = path->current.y;
 
 	if (path->cmd_len == 0)
 	{
@@ -347,6 +485,9 @@ void
 fz_closepath(fz_context *ctx, fz_path *path)
 {
 	uint8_t rep;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
 
 	if (path->cmd_len == 0)
 	{
@@ -410,6 +551,9 @@ fz_closepath(fz_context *ctx, fz_path *path)
 void
 fz_rectto(fz_context *ctx, fz_path *path, float x1, float y1, float x2, float y2)
 {
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot modify a packed path");
+
 	if (path->cmd_len > 0 && LAST_CMD(path) == FZ_MOVETO)
 	{
 		/* Collapse moveto followed by rectto. */
@@ -435,27 +579,47 @@ static inline fz_rect *bound_expand(fz_rect *r, const fz_point *p)
 
 void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, const fz_path *path)
 {
-	int i, k;
+	int i, k, cmd_len;
 	float x, y, sx, sy;
+	uint8_t *cmds = path->cmds;
+	float *coords = path->coords;
 
-	if (path->cmd_len == 0)
+	switch (path->packed)
+	{
+	case FZ_PATH_UNPACKED:
+	case FZ_PATH_PACKED_OPEN:
+		cmd_len = path->cmd_len;
+		coords = path->coords;
+		cmds = path->cmds;
+		break;
+	case FZ_PATH_PACKED_FLAT:
+		cmd_len = ((fz_packed_path *)path)->cmd_len;
+		coords = (float *)&((fz_packed_path *)path)[1];
+		cmds = (uint8_t *)&coords[((fz_packed_path *)path)->coord_len];
+		break;
+	default:
+		assert("This never happens" == NULL);
+		return;
+	}
+
+	if (cmd_len == 0)
 		return;
 
-	for (k=0, i = 0; i < path->cmd_len; i++)
+	for (k=0, i = 0; i < cmd_len; i++)
 	{
-		uint8_t cmd = path->cmds[i];
+		uint8_t cmd = cmds[i];
 
 		switch (cmd)
 		{
 		case FZ_CURVETO:
 		case FZ_CURVETOCLOSE:
 			proc->curveto(ctx, arg,
-					path->coords[k],
-					path->coords[k+1],
-					path->coords[k+2],
-					path->coords[k+3],
-					x = path->coords[k+4],
-					y = path->coords[k+5]);
+					coords[k],
+					coords[k+1],
+					coords[k+2],
+					coords[k+3],
+					x = coords[k+4],
+					y = coords[k+5]);
 			k += 6;
 			if (cmd == FZ_CURVETOCLOSE)
 			{
@@ -469,21 +633,21 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 		case FZ_CURVETOVCLOSE:
 			if (proc->curvetov)
 				proc->curvetov(ctx, arg,
-						path->coords[k],
-						path->coords[k+1],
-						x = path->coords[k+2],
-						y = path->coords[k+3]);
+						coords[k],
+						coords[k+1],
+						x = coords[k+2],
+						y = coords[k+3]);
 			else
 			{
 				proc->curveto(ctx, arg,
 						x,
 						y,
-						path->coords[k],
-						path->coords[k+1],
-						path->coords[k+2],
-						path->coords[k+3]);
-				x = path->coords[k+2];
-				y = path->coords[k+3];
+						coords[k],
+						coords[k+1],
+						coords[k+2],
+						coords[k+3]);
+				x = coords[k+2];
+				y = coords[k+3];
 			}
 			k += 4;
 			if (cmd == FZ_CURVETOVCLOSE)
@@ -498,18 +662,18 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 		case FZ_CURVETOYCLOSE:
 			if (proc->curvetoy)
 				proc->curvetoy(ctx, arg,
-						path->coords[k],
-						path->coords[k+1],
-						x = path->coords[k+2],
-						y = path->coords[k+3]);
+						coords[k],
+						coords[k+1],
+						x = coords[k+2],
+						y = coords[k+3]);
 			else
 				proc->curveto(ctx, arg,
-						path->coords[k],
-						path->coords[k+1],
-						path->coords[k+2],
-						path->coords[k+3],
-						x = path->coords[k+2],
-						y = path->coords[k+3]);
+						coords[k],
+						coords[k+1],
+						coords[k+2],
+						coords[k+3],
+						x = coords[k+2],
+						y = coords[k+3]);
 			k += 4;
 			if (cmd == FZ_CURVETOYCLOSE)
 			{
@@ -523,18 +687,18 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 		case FZ_QUADTOCLOSE:
 			if (proc->quadto)
 				proc->quadto(ctx, arg,
-					path->coords[k],
-					path->coords[k+1],
-					x = path->coords[k+2],
-					y = path->coords[k+3]);
+					coords[k],
+					coords[k+1],
+					x = coords[k+2],
+					y = coords[k+3]);
 			else
 			{
-				float c2x = path->coords[k] * 2;
-				float c2y = path->coords[k+1] * 2;
+				float c2x = coords[k] * 2;
+				float c2y = coords[k+1] * 2;
 				float c1x = (x + c2x) / 3;
 				float c1y = (y + c2y) / 3;
-				x = path->coords[k+2];
-				y = path->coords[k+3];
+				x = coords[k+2];
+				y = coords[k+3];
 				c2x = (c2x + x) / 3;
 				c2y = (c2y + y) / 3;
 
@@ -558,8 +722,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 		case FZ_MOVETO:
 		case FZ_MOVETOCLOSE:
 			proc->moveto(ctx, arg,
-				x = path->coords[k],
-				y = path->coords[k+1]);
+				x = coords[k],
+				y = coords[k+1]);
 			k += 2;
 			sx = x;
 			sy = y;
@@ -574,8 +738,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 		case FZ_LINETO:
 		case FZ_LINETOCLOSE:
 			proc->lineto(ctx, arg,
-				x = path->coords[k],
-				y = path->coords[k+1]);
+				x = coords[k],
+				y = coords[k+1]);
 			k += 2;
 			if (cmd == FZ_LINETOCLOSE)
 			{
@@ -588,7 +752,7 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 		case FZ_HORIZTO:
 		case FZ_HORIZTOCLOSE:
 			proc->lineto(ctx, arg,
-				x = path->coords[k],
+				x = coords[k],
 				y);
 			k += 1;
 			if (cmd == FZ_HORIZTOCLOSE)
@@ -603,7 +767,7 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 		case FZ_VERTTOCLOSE:
 			proc->lineto(ctx, arg,
 				x,
-				y = path->coords[k]);
+				y = coords[k]);
 			k += 1;
 			if (cmd == FZ_VERTTOCLOSE)
 			{
@@ -630,25 +794,25 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			if (proc->rectto)
 			{
 				proc->rectto(ctx, arg,
-						x = path->coords[k],
-						y = path->coords[k+1],
-						path->coords[k+2],
-						path->coords[k+3]);
+						x = coords[k],
+						y = coords[k+1],
+						coords[k+2],
+						coords[k+3]);
 			}
 			else
 			{
 				proc->moveto(ctx, arg,
-					x = path->coords[k],
-					y = path->coords[k+1]);
+					x = coords[k],
+					y = coords[k+1]);
 				proc->lineto(ctx, arg,
-					path->coords[k+2],
-					path->coords[k+1]);
+					coords[k+2],
+					coords[k+1]);
 				proc->lineto(ctx, arg,
-					path->coords[k+2],
-					path->coords[k+3]);
+					coords[k+2],
+					coords[k+3]);
 				proc->lineto(ctx, arg,
-					path->coords[k],
-					path->coords[k+3]);
+					coords[k],
+					coords[k+3]);
 				if (proc->close)
 					proc->close(ctx, arg);
 			}
@@ -791,6 +955,9 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 {
 	int i, k, n;
 	fz_point p, p1, p2, p3, q, s;
+
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot transform a packed path");
 
 	if (ctm->b == 0 && ctm->c == 0)
 	{
@@ -1158,6 +1325,8 @@ fz_transform_path(fz_context *ctx, fz_path *path, const fz_matrix *ctm)
 
 void fz_trim_path(fz_context *ctx, fz_path *path)
 {
+	if (path->packed)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't trim a packed path");
 	if (path->cmd_cap > path->cmd_len)
 	{
 		path->cmds = fz_resize_array(ctx, path->cmds, path->cmd_len, sizeof(unsigned char));
