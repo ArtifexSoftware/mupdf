@@ -118,9 +118,9 @@ static int output_format;
 static int append = 0;
 static int out_cs = CS_UNSET;
 static int bandheight = 0;
-static int memtrace_current = 0;
-static int memtrace_peak = 0;
-static int memtrace_total = 0;
+static size_t memtrace_current = 0;
+static size_t memtrace_peak = 0;
+static size_t memtrace_total = 0;
 static int showmemory = 0;
 static int showfeatures = 0;
 static fz_text_sheet *sheet = NULL;
@@ -772,16 +772,24 @@ parse_colorspace(const char *name)
 	exit(1);
 }
 
+typedef struct
+{
+	size_t size;
+#if defined(_M_IA64) || defined(_M_AMD64)
+	size_t align;
+#endif
+} trace_header;
+
 static void *
 trace_malloc(void *arg, unsigned int size)
 {
-	int *p;
+	trace_header *p;
 	if (size == 0)
 		return NULL;
-	p = malloc(size + sizeof(unsigned int));
+	p = malloc(size + sizeof(trace_header));
 	if (p == NULL)
 		return NULL;
-	p[0] = size;
+	p[0].size = size;
 	memtrace_current += size;
 	memtrace_total += size;
 	if (memtrace_current > memtrace_peak)
@@ -792,19 +800,19 @@ trace_malloc(void *arg, unsigned int size)
 static void
 trace_free(void *arg, void *p_)
 {
-	int *p = (int *)p_;
+	trace_header *p = (trace_header *)p_;
 
 	if (p == NULL)
 		return;
-	memtrace_current -= p[-1];
+	memtrace_current -= p[-1].size;
 	free(&p[-1]);
 }
 
 static void *
 trace_realloc(void *arg, void *p_, unsigned int size)
 {
-	int *p = (int *)p_;
-	unsigned int oldsize;
+	trace_header *p = (trace_header *)p_;
+	size_t oldsize;
 
 	if (size == 0)
 	{
@@ -813,8 +821,8 @@ trace_realloc(void *arg, void *p_, unsigned int size)
 	}
 	if (p == NULL)
 		return trace_malloc(arg, size);
-	oldsize = p[-1];
-	p = realloc(&p[-1], size + sizeof(unsigned int));
+	oldsize = p[-1].size;
+	p = realloc(&p[-1], size + sizeof(trace_header));
 	if (p == NULL)
 		return NULL;
 	memtrace_current += size - oldsize;
@@ -822,7 +830,7 @@ trace_realloc(void *arg, void *p_, unsigned int size)
 		memtrace_total += size - oldsize;
 	if (memtrace_current > memtrace_peak)
 		memtrace_peak = memtrace_current;
-	p[0] = size;
+	p[0].size = size;
 	return &p[1];
 }
 
@@ -1135,9 +1143,14 @@ int main(int argc, char **argv)
 
 	if (showmemory)
 	{
-		printf("Total memory use = %d bytes\n", memtrace_total);
-		printf("Peak memory use = %d bytes\n", memtrace_peak);
-		printf("Current memory use = %d bytes\n", memtrace_current);
+#ifdef _WIN64
+#define FMT "%Iu"
+#else
+#define FMT "%zu"
+#endif
+		printf("Total memory use = " FMT " bytes\n", memtrace_total);
+		printf("Peak memory use = " FMT " bytes\n", memtrace_peak);
+		printf("Current memory use = " FMT " bytes\n", memtrace_current);
 	}
 
 	return (errored != 0);
