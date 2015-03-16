@@ -1,6 +1,6 @@
 /* custom ftoption.h which selects the minimum features needed by mupdf */
 
-#include <freetype/config/ftoption.h>
+#include <config/ftoption.h>
 #undef FT_CONFIG_OPTION_USE_LZW
 #undef FT_CONFIG_OPTION_USE_ZLIB
 #undef FT_CONFIG_OPTION_MAC_FONTS
