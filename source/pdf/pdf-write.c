@@ -1788,9 +1788,9 @@ static void writexrefsubsect(pdf_write_options *opts, int from, int to)
 	for (num = from; num < to; num++)
 	{
 		if (opts->use_list[num])
-			fprintf(opts->out, "%010d %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
+			fprintf(opts->out, "%010Zd %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
 		else
-			fprintf(opts->out, "%010d %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
+			fprintf(opts->out, "%010Zd %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
 	}
 }
 
@@ -2011,7 +2011,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_option
 		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
 		writeobject(ctx, doc, opts, num, 0, 0);
-		fprintf(opts->out, "startxref\n%d\n%%%%EOF\n", startxref);
+		fprintf(opts->out, "startxref\n%Zd\n%%%%EOF\n", startxref);
 	}
 	fz_always(ctx)
 	{
