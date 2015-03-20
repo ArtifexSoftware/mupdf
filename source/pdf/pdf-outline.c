@@ -26,25 +26,25 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			*prev = node;
 			prev = &node->next;
 
-			obj = pdf_dict_gets(ctx, dict, "Title");
+			obj = pdf_dict_get(ctx, dict, PDF_NAME_Title);
 			if (obj)
 				node->title = pdf_to_utf8(ctx, doc, obj);
 
-			if ((obj = pdf_dict_gets(ctx, dict, "Dest")) != NULL)
+			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME_Dest)) != NULL)
 				node->dest = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, obj);
-			else if ((obj = pdf_dict_gets(ctx, dict, "A")) != NULL)
+			else if ((obj = pdf_dict_get(ctx, dict, PDF_NAME_A)) != NULL)
 				node->dest = pdf_parse_action(ctx, doc, obj);
 
-			obj = pdf_dict_gets(ctx, dict, "First");
+			obj = pdf_dict_get(ctx, dict, PDF_NAME_First);
 			if (obj)
 				node->down = pdf_load_outline_imp(ctx, doc, obj);
 
-			dict = pdf_dict_gets(ctx, dict, "Next");
+			dict = pdf_dict_get(ctx, dict, PDF_NAME_Next);
 		}
 	}
 	fz_always(ctx)
 	{
-		for (dict = odict; dict && pdf_obj_marked(ctx, dict); dict = pdf_dict_gets(ctx, dict, "Next"))
+		for (dict = odict; dict && pdf_obj_marked(ctx, dict); dict = pdf_dict_get(ctx, dict, PDF_NAME_Next))
 			pdf_unmark_obj(ctx, dict);
 	}
 	fz_catch(ctx)
@@ -61,9 +61,9 @@ pdf_load_outline(fz_context *ctx, pdf_document *doc)
 {
 	pdf_obj *root, *obj, *first;
 
-	root = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
-	obj = pdf_dict_gets(ctx, root, "Outlines");
-	first = pdf_dict_gets(ctx, obj, "First");
+	root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+	obj = pdf_dict_get(ctx, root, PDF_NAME_Outlines);
+	first = pdf_dict_get(ctx, obj, PDF_NAME_First);
 	if (first)
 		return pdf_load_outline_imp(ctx, doc, first);
 

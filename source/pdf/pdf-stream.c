@@ -26,10 +26,10 @@ pdf_stream_has_crypt(fz_context *ctx, pdf_obj *stm)
 	pdf_obj *obj;
 	int i;
 
-	filters = pdf_dict_getsa(ctx, stm, "Filter", "F");
+	filters = pdf_dict_geta(ctx, stm, PDF_NAME_Filter, PDF_NAME_F);
 	if (filters)
 	{
-		if (!strcmp(pdf_to_name(ctx, filters), "Crypt"))
+		if (pdf_name_eq(ctx, filters, PDF_NAME_Crypt))
 			return 1;
 		if (pdf_is_array(ctx, filters))
 		{
@@ -37,7 +37,7 @@ pdf_stream_has_crypt(fz_context *ctx, pdf_obj *stm)
 			for (i = 0; i < n; i++)
 			{
 				obj = pdf_array_get(ctx, filters, i);
-				if (!strcmp(pdf_to_name(ctx, obj), "Crypt"))
+				if (pdf_name_eq(ctx, obj, PDF_NAME_Crypt))
 					return 1;
 			}
 		}
@@ -82,31 +82,29 @@ pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 static fz_stream *
 build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, pdf_obj *p, int num, int gen, fz_compression_params *params)
 {
-	char *s = pdf_to_name(ctx, f);
-
-	int predictor = pdf_to_int(ctx, pdf_dict_gets(ctx, p, "Predictor"));
-	pdf_obj *columns_obj = pdf_dict_gets(ctx, p, "Columns");
+	int predictor = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME_Predictor));
+	pdf_obj *columns_obj = pdf_dict_get(ctx, p, PDF_NAME_Columns);
 	int columns = pdf_to_int(ctx, columns_obj);
-	int colors = pdf_to_int(ctx, pdf_dict_gets(ctx, p, "Colors"));
-	int bpc = pdf_to_int(ctx, pdf_dict_gets(ctx, p, "BitsPerComponent"));
+	int colors = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME_Colors));
+	int bpc = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME_BitsPerComponent));
 
 	if (params)
 		params->type = FZ_IMAGE_RAW;
 
-	if (!strcmp(s, "ASCIIHexDecode") || !strcmp(s, "AHx"))
+	if (pdf_name_eq(ctx, f, PDF_NAME_ASCIIHexDecode) || pdf_name_eq(ctx, f, PDF_NAME_AHx))
 		return fz_open_ahxd(ctx, chain);
 
-	else if (!strcmp(s, "ASCII85Decode") || !strcmp(s, "A85"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_ASCII85Decode) || pdf_name_eq(ctx, f, PDF_NAME_A85))
 		return fz_open_a85d(ctx, chain);
 
-	else if (!strcmp(s, "CCITTFaxDecode") || !strcmp(s, "CCF"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_CCITTFaxDecode) || pdf_name_eq(ctx, f, PDF_NAME_CCF))
 	{
-		pdf_obj *k = pdf_dict_gets(ctx, p, "K");
-		pdf_obj *eol = pdf_dict_gets(ctx, p, "EndOfLine");
-		pdf_obj *eba = pdf_dict_gets(ctx, p, "EncodedByteAlign");
-		pdf_obj *rows = pdf_dict_gets(ctx, p, "Rows");
-		pdf_obj *eob = pdf_dict_gets(ctx, p, "EndOfBlock");
-		pdf_obj *bi1 = pdf_dict_gets(ctx, p, "BlackIs1");
+		pdf_obj *k = pdf_dict_get(ctx, p, PDF_NAME_K);
+		pdf_obj *eol = pdf_dict_get(ctx, p, PDF_NAME_EndOfLine);
+		pdf_obj *eba = pdf_dict_get(ctx, p, PDF_NAME_EncodedByteAlign);
+		pdf_obj *rows = pdf_dict_get(ctx, p, PDF_NAME_Rows);
+		pdf_obj *eob = pdf_dict_get(ctx, p, PDF_NAME_EndOfBlock);
+		pdf_obj *bi1 = pdf_dict_get(ctx, p, PDF_NAME_BlackIs1);
 		if (params)
 		{
 			/* We will shortstop here */
@@ -130,9 +128,9 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 				bi1 ? pdf_to_bool(ctx, bi1) : 0);
 	}
 
-	else if (!strcmp(s, "DCTDecode") || !strcmp(s, "DCT"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_DCTDecode) || pdf_name_eq(ctx, f, PDF_NAME_DCT))
 	{
-		pdf_obj *ct = pdf_dict_gets(ctx, p, "ColorTransform");
+		pdf_obj *ct = pdf_dict_get(ctx, p, PDF_NAME_ColorTransform);
 		if (params)
 		{
 			/* We will shortstop here */
@@ -143,7 +141,7 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 		return fz_open_dctd(ctx, chain, ct ? pdf_to_int(ctx, ct) : -1, 0, NULL);
 	}
 
-	else if (!strcmp(s, "RunLengthDecode") || !strcmp(s, "RL"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_RunLengthDecode) || pdf_name_eq(ctx, f, PDF_NAME_RL))
 	{
 		if (params)
 		{
@@ -153,7 +151,7 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 		}
 		return fz_open_rld(ctx, chain);
 	}
-	else if (!strcmp(s, "FlateDecode") || !strcmp(s, "Fl"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_FlateDecode) || pdf_name_eq(ctx, f, PDF_NAME_Fl))
 	{
 		if (params)
 		{
@@ -171,9 +169,9 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 		return chain;
 	}
 
-	else if (!strcmp(s, "LZWDecode") || !strcmp(s, "LZW"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_LZWDecode) || pdf_name_eq(ctx, f, PDF_NAME_LZW))
 	{
-		pdf_obj *ec = pdf_dict_gets(ctx, p, "EarlyChange");
+		pdf_obj *ec = pdf_dict_get(ctx, p, PDF_NAME_EarlyChange);
 		if (params)
 		{
 			/* We will shortstop here */
@@ -191,20 +189,20 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 		return chain;
 	}
 
-	else if (!strcmp(s, "JBIG2Decode"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_JBIG2Decode))
 	{
 		fz_jbig2_globals *globals = NULL;
-		pdf_obj *obj = pdf_dict_gets(ctx, p, "JBIG2Globals");
+		pdf_obj *obj = pdf_dict_get(ctx, p, PDF_NAME_JBIG2Globals);
 		if (pdf_is_indirect(ctx, obj))
 			globals = pdf_load_jbig2_globals(ctx, doc, obj);
 		/* fz_open_jbig2d takes possession of globals */
 		return fz_open_jbig2d(ctx, chain, globals);
 	}
 
-	else if (!strcmp(s, "JPXDecode"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_JPXDecode))
 		return chain; /* JPX decoding is special cased in the image loading code */
 
-	else if (!strcmp(s, "Crypt"))
+	else if (pdf_name_eq(ctx, f, PDF_NAME_Crypt))
 	{
 		pdf_obj *name;
 
@@ -214,14 +212,14 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 			return chain;
 		}
 
-		name = pdf_dict_gets(ctx, p, "Name");
+		name = pdf_dict_get(ctx, p, PDF_NAME_Name);
 		if (pdf_is_name(ctx, name))
-			return pdf_open_crypt_with_filter(ctx, chain, doc->crypt, pdf_to_name(ctx, name), num, gen);
+			return pdf_open_crypt_with_filter(ctx, chain, doc->crypt, name, num, gen);
 
 		return chain;
 	}
 
-	fz_warn(ctx, "unknown filter name (%s)", s);
+	fz_warn(ctx, "unknown filter name (%s)", pdf_to_name(ctx, f));
 	return chain;
 }
 
@@ -284,7 +282,7 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_ob
 	/* don't close chain when we close this filter */
 	fz_keep_stream(ctx, chain);
 
-	len = pdf_to_int(ctx, pdf_dict_gets(ctx, stmobj, "Length"));
+	len = pdf_to_int(ctx, pdf_dict_get(ctx, stmobj, PDF_NAME_Length));
 	chain = fz_open_null(ctx, chain, len, offset);
 
 	hascrypt = pdf_stream_has_crypt(ctx, stmobj);
@@ -304,8 +302,8 @@ pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *chain, pdf_obj *s
 	pdf_obj *filters;
 	pdf_obj *params;
 
-	filters = pdf_dict_getsa(ctx, stmobj, "Filter", "F");
-	params = pdf_dict_getsa(ctx, stmobj, "DecodeParms", "DP");
+	filters = pdf_dict_geta(ctx, stmobj, PDF_NAME_Filter, PDF_NAME_F);
+	params = pdf_dict_geta(ctx, stmobj, PDF_NAME_DecodeParms, PDF_NAME_DP);
 
 	chain = pdf_open_raw_filter(ctx, chain, doc, stmobj, num, num, gen, offset);
 
@@ -345,8 +343,8 @@ pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int 
 	pdf_obj *filters;
 	pdf_obj *params;
 
-	filters = pdf_dict_getsa(ctx, stmobj, "Filter", "F");
-	params = pdf_dict_getsa(ctx, stmobj, "DecodeParms", "DP");
+	filters = pdf_dict_geta(ctx, stmobj, PDF_NAME_Filter, PDF_NAME_F);
+	params = pdf_dict_geta(ctx, stmobj, PDF_NAME_DecodeParms, PDF_NAME_DP);
 
 	/* don't close chain when we close this filter */
 	fz_keep_stream(ctx, chain);
@@ -470,7 +468,7 @@ pdf_load_raw_renumbered_stream(fz_context *ctx, pdf_document *doc, int num, int 
 
 	dict = pdf_load_object(ctx, doc, num, gen);
 
-	len = pdf_to_int(ctx, pdf_dict_gets(ctx, dict, "Length"));
+	len = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_Length));
 
 	pdf_drop_obj(ctx, dict);
 
@@ -517,8 +515,8 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int 
 
 	dict = pdf_load_object(ctx, doc, num, gen);
 
-	len = pdf_to_int(ctx, pdf_dict_gets(ctx, dict, "Length"));
-	obj = pdf_dict_gets(ctx, dict, "Filter");
+	len = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_Length));
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Filter);
 	len = pdf_guess_filter_length(len, pdf_to_name(ctx, obj));
 	n = pdf_array_len(ctx, obj);
 	for (i = 0; i < n; i++)

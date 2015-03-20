@@ -1321,6 +1321,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\pdf\name-table.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\pdf\object.h"
 					>
 				</File>

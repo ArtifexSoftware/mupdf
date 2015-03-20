@@ -23,7 +23,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 	{
 		if (own_res)
 		{
-			pdf_obj *r = pdf_dict_gets(ctx, obj, "Resources");
+			pdf_obj *r = pdf_dict_get(ctx, obj, PDF_NAME_Resources);
 			if (r)
 				orig_res = r;
 		}
@@ -40,7 +40,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 		if (own_res)
 		{
 			ref = pdf_new_ref(ctx, doc, res);
-			pdf_dict_puts(ctx, obj, "Resources", ref);
+			pdf_dict_put(ctx, obj, PDF_NAME_Resources, ref);
 		}
 	}
 	fz_always(ctx)
@@ -74,14 +74,14 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 
 	fz_try(ctx)
 	{
-		res = pdf_dict_gets(ctx, obj, "Resources");
+		res = pdf_dict_get(ctx, obj, PDF_NAME_Resources);
 		if (res)
 			orig_res = res;
 		res = NULL;
 
 		res = pdf_new_dict(ctx, doc, 1);
 
-		charprocs = pdf_dict_gets(ctx, obj, "CharProcs");
+		charprocs = pdf_dict_get(ctx, obj, PDF_NAME_CharProcs);
 		l = pdf_dict_len(ctx, charprocs);
 
 		for (i = 0; i < l; i++)
@@ -110,10 +110,10 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 		}
 
 		/* ProcSet - no cleaning possible. Inherit this from the old dict. */
-		pdf_dict_puts(ctx, res, "ProcSet", pdf_dict_gets(ctx, orig_res, "ProcSet"));
+		pdf_dict_put(ctx, res, PDF_NAME_ProcSet, pdf_dict_get(ctx, orig_res, PDF_NAME_ProcSet));
 
 		ref = pdf_new_ref(ctx, doc, res);
-		pdf_dict_puts(ctx, obj, "Resources", ref);
+		pdf_dict_put(ctx, obj, PDF_NAME_Resources, ref);
 	}
 	fz_always(ctx)
 	{
@@ -166,8 +166,8 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		}
 		else
 		{
-			pdf_dict_dels(ctx, contents, "Filter");
-			pdf_dict_dels(ctx, contents, "DecodeParms");
+			pdf_dict_del(ctx, contents, PDF_NAME_Filter);
+			pdf_dict_del(ctx, contents, PDF_NAME_DecodeParms);
 		}
 
 		/* Now deal with resources. The spec allows for Type3 fonts and form
@@ -176,7 +176,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		 * conceivably cause changes in rendering, but we don't care. */
 
 		/* ExtGState */
-		obj = pdf_dict_gets(ctx, res, "ExtGState");
+		obj = pdf_dict_get(ctx, res, PDF_NAME_ExtGState);
 		if (obj)
 		{
 			int i, l;
@@ -184,11 +184,11 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 			l = pdf_dict_len(ctx, obj);
 			for (i = 0; i < l; i++)
 			{
-				pdf_obj *o = pdf_dict_gets(ctx, pdf_dict_get_val(ctx, obj, i), "SMask");
+				pdf_obj *o = pdf_dict_get(ctx, pdf_dict_get_val(ctx, obj, i), PDF_NAME_SMask);
 
 				if (!o)
 					continue;
-				o = pdf_dict_gets(ctx, o, "G");
+				o = pdf_dict_get(ctx, o, PDF_NAME_G);
 				if (!o)
 					continue;
 
@@ -200,7 +200,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		/* ColorSpace - no cleaning possible */
 
 		/* Pattern */
-		obj = pdf_dict_gets(ctx, res, "Pattern");
+		obj = pdf_dict_get(ctx, res, PDF_NAME_Pattern);
 		if (obj)
 		{
 			int i, l;
@@ -212,7 +212,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 
 				if (!pat)
 					continue;
-				if (pdf_to_int(ctx, pdf_dict_gets(ctx, pat, "PatternType")) == 1)
+				if (pdf_to_int(ctx, pdf_dict_get(ctx, pat, PDF_NAME_PatternType)) == 1)
 					pdf_clean_stream_object(ctx, doc, pat, page->resources, cookie, 0);
 			}
 		}
@@ -220,7 +220,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		/* Shading - no cleaning possible */
 
 		/* XObject */
-		obj = pdf_dict_gets(ctx, res, "XObject");
+		obj = pdf_dict_get(ctx, res, PDF_NAME_XObject);
 		if (obj)
 		{
 			int i, l;
@@ -230,7 +230,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 			{
 				pdf_obj *xobj = pdf_dict_get_val(ctx, obj, i);
 
-				if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, xobj, "Subtype")), "Form"))
+				if (!pdf_name_eq(ctx, PDF_NAME_Form, pdf_dict_get(ctx, xobj, PDF_NAME_Subtype)))
 					continue;
 
 				pdf_clean_stream_object(ctx, doc, xobj, page->resources, cookie, 1);
@@ -238,7 +238,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		}
 
 		/* Font */
-		obj = pdf_dict_gets(ctx, res, "Font");
+		obj = pdf_dict_get(ctx, res, PDF_NAME_Font);
 		if (obj)
 		{
 			int i, l;
@@ -248,7 +248,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 			{
 				pdf_obj *o = pdf_dict_get_val(ctx, obj, i);
 
-				if (!strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, o, "Subtype")), "Type3"))
+				if (pdf_name_eq(ctx, PDF_NAME_Type3, pdf_dict_get(ctx, o, PDF_NAME_Subtype)))
 				{
 					pdf_clean_type3(ctx, doc, o, page->resources, cookie);
 				}
@@ -256,9 +256,9 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		}
 
 		/* ProcSet - no cleaning possible. Inherit this from the old dict. */
-		obj = pdf_dict_gets(ctx, page->resources, "ProcSet");
+		obj = pdf_dict_get(ctx, page->resources, PDF_NAME_ProcSet);
 		if (obj)
-			pdf_dict_puts(ctx, res, "ProcSet", obj);
+			pdf_dict_put(ctx, res, PDF_NAME_ProcSet, obj);
 
 		/* Properties - no cleaning possible. */
 
@@ -269,7 +269,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		pdf_drop_obj(ctx, page->resources);
 		ref = pdf_new_ref(ctx, doc, res);
 		page->resources = pdf_keep_obj(ctx, ref);
-		pdf_dict_puts(ctx, page->me, "Resources", ref);
+		pdf_dict_put(ctx, page->me, PDF_NAME_Resources, ref);
 	}
 	fz_always(ctx)
 	{

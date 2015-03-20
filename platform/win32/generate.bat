@@ -4,6 +4,13 @@ if not exist scripts/fontdump.c cd ../..
 if not exist scripts/fontdump.c goto usage
 if not exist generated mkdir generated
 
+cl /nologo -Iinclude scripts/namedump.c
+
+if not exist namedump.exe goto usage
+
+if not exist include/mupdf/pdf/name-table.h namedump.exe resources/pdf/names.txt include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
+if not exist source/pdf/pdf-name-table.h namedump.exe resources/pdf/names.txt include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
+
 cl /nologo -Iinclude scripts/fontdump.c setargv.obj
 cl /nologo -Iinclude scripts/cmapdump.c setargv.obj
 cl /nologo -Iinclude scripts/cquote.c setargv.obj

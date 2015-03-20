@@ -919,7 +919,7 @@ load_sample_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj
 
 	func->u.sa.samples = NULL;
 
-	obj = pdf_dict_gets(ctx, dict, "Size");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Size);
 	if (pdf_array_len(ctx, obj) < func->base.m)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too few sample function dimension sizes");
 	if (pdf_array_len(ctx, obj) > func->base.m)
@@ -934,7 +934,7 @@ load_sample_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj
 		}
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "BitsPerSample");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_BitsPerSample);
 	func->u.sa.bps = bps = pdf_to_int(ctx, obj);
 
 	for (i = 0; i < func->base.m; i++)
@@ -942,7 +942,7 @@ load_sample_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj
 		func->u.sa.encode[i][0] = 0;
 		func->u.sa.encode[i][1] = func->u.sa.size[i] - 1;
 	}
-	obj = pdf_dict_gets(ctx, dict, "Encode");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Encode);
 	if (pdf_is_array(ctx, obj))
 	{
 		int ranges = fz_mini(func->base.m, pdf_array_len(ctx, obj) / 2);
@@ -962,7 +962,7 @@ load_sample_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj
 		func->u.sa.decode[i][1] = func->range[i][1];
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "Decode");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Decode);
 	if (pdf_is_array(ctx, obj))
 	{
 		int ranges = fz_mini(func->base.n, pdf_array_len(ctx, obj) / 2);
@@ -1141,7 +1141,7 @@ load_exponential_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pd
 		fz_warn(ctx, "exponential functions have at most one input");
 	func->base.m = 1;
 
-	obj = pdf_dict_gets(ctx, dict, "N");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_N);
 	func->u.e.n = pdf_to_real(ctx, obj);
 
 	/* See exponential functions (PDF 1.7 section 3.9.2) */
@@ -1167,7 +1167,7 @@ load_exponential_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pd
 		func->u.e.c1[i] = 1;
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "C0");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_C0);
 	if (pdf_is_array(ctx, obj))
 	{
 		int ranges = fz_mini(func->base.n, pdf_array_len(ctx, obj));
@@ -1178,7 +1178,7 @@ load_exponential_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pd
 			func->u.e.c0[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "C1");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_C1);
 	if (pdf_is_array(ctx, obj))
 	{
 		int ranges = fz_mini(func->base.n, pdf_array_len(ctx, obj));
@@ -1232,7 +1232,7 @@ load_stitching_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_
 		fz_warn(ctx, "stitching functions have at most one input");
 	func->base.m = 1;
 
-	obj = pdf_dict_gets(ctx, dict, "Functions");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Functions);
 	if (!pdf_is_array(ctx, obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "stitching function has no input functions");
 
@@ -1269,7 +1269,7 @@ load_stitching_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_
 		fz_rethrow(ctx);
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "Bounds");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Bounds);
 	if (!pdf_is_array(ctx, obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "stitching function has no bounds");
 	{
@@ -1297,7 +1297,7 @@ load_stitching_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_
 		func->u.st.encode[i * 2 + 1] = 0;
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "Encode");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Encode);
 	if (pdf_is_array(ctx, obj))
 	{
 		int ranges = fz_mini(k, pdf_array_len(ctx, obj) / 2);
@@ -1645,11 +1645,11 @@ pdf_load_function(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int in, int
 	func->base.debug = pdf_debug_function;
 #endif
 
-	obj = pdf_dict_gets(ctx, dict, "FunctionType");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_FunctionType);
 	func->type = pdf_to_int(ctx, obj);
 
 	/* required for all */
-	obj = pdf_dict_gets(ctx, dict, "Domain");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Domain);
 	func->base.m = fz_clampi(pdf_array_len(ctx, obj) / 2, 1, FZ_FN_MAXM);
 	for (i = 0; i < func->base.m; i++)
 	{
@@ -1658,7 +1658,7 @@ pdf_load_function(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int in, int
 	}
 
 	/* required for type0 and type4, optional otherwise */
-	obj = pdf_dict_gets(ctx, dict, "Range");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Range);
 	if (pdf_is_array(ctx, obj))
 	{
 		func->has_range = 1;

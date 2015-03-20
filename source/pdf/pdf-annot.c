@@ -24,7 +24,7 @@ resolve_dest_rec(fz_context *ctx, pdf_document *doc, pdf_obj *dest, fz_link_kind
 
 	else if (pdf_is_dict(ctx, dest))
 	{
-		dest = pdf_dict_gets(ctx, dest, "D");
+		dest = pdf_dict_get(ctx, dest, PDF_NAME_D);
 		return resolve_dest_rec(ctx, doc, dest, kind, depth+1);
 	}
 
@@ -101,27 +101,27 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kind kind, pdf_o
 	if (!pdf_is_name(ctx, obj))
 		return ld;
 
-	if (!strcmp("XYZ", pdf_to_name(ctx, obj)))
+	if (pdf_name_eq(ctx, PDF_NAME_XYZ, obj))
 	{
 		l_from_2 = t_from_3 = z_from_4 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_r_is_zoom;
 	}
-	else if ((!strcmp("Fit", pdf_to_name(ctx, obj))) || (!strcmp("FitB", pdf_to_name(ctx, obj))))
+	else if ((pdf_name_eq(ctx, PDF_NAME_Fit, obj)) || (pdf_name_eq(ctx, PDF_NAME_FitB, obj)))
 	{
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
-	else if ((!strcmp("FitH", pdf_to_name(ctx, obj))) || (!strcmp("FitBH", pdf_to_name(ctx, obj))))
+	else if ((pdf_name_eq(ctx, PDF_NAME_FitH, obj)) || (pdf_name_eq(ctx, PDF_NAME_FitBH, obj)))
 	{
 		t_from_2 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
 	}
-	else if ((!strcmp("FitV", pdf_to_name(ctx, obj))) || (!strcmp("FitBV", pdf_to_name(ctx, obj))))
+	else if ((pdf_name_eq(ctx, PDF_NAME_FitV, obj)) || (pdf_name_eq(ctx, PDF_NAME_FitBV, obj)))
 	{
 		l_from_2 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_fit_v;
 	}
-	else if (!strcmp("FitR", pdf_to_name(ctx, obj)))
+	else if (pdf_name_eq(ctx, PDF_NAME_FitR, obj))
 	{
 		l_from_2 = b_from_3 = r_from_4 = t_from_5 = 1;
 		ld.ld.gotor.flags |= fz_link_flag_fit_h;
@@ -228,12 +228,12 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec)
 
 	if (pdf_is_dict(ctx, file_spec)) {
 #if defined(_WIN32) || defined(_WIN64)
-		filename = pdf_dict_gets(ctx, file_spec, "DOS");
+		filename = pdf_dict_get(ctx, file_spec, PDF_NAME_DOS);
 #else
-		filename = pdf_dict_gets(ctx, file_spec, "Unix");
+		filename = pdf_dict_get(ctx, file_spec, PDF_NAME_Unix);
 #endif
 		if (!filename)
-			filename = pdf_dict_getsa(ctx, file_spec, "UF", "F");
+			filename = pdf_dict_geta(ctx, file_spec, PDF_NAME_UF, PDF_NAME_F);
 	}
 
 	if (!pdf_is_string(ctx, filename))
@@ -274,38 +274,38 @@ pdf_parse_action(fz_context *ctx, pdf_document *doc, pdf_obj *action)
 	if (!action)
 		return ld;
 
-	obj = pdf_dict_gets(ctx, action, "S");
-	if (!strcmp(pdf_to_name(ctx, obj), "GoTo"))
+	obj = pdf_dict_get(ctx, action, PDF_NAME_S);
+	if (pdf_name_eq(ctx, PDF_NAME_GoTo, obj))
 	{
-		dest = pdf_dict_gets(ctx, action, "D");
+		dest = pdf_dict_get(ctx, action, PDF_NAME_D);
 		ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, dest);
 	}
-	else if (!strcmp(pdf_to_name(ctx, obj), "URI"))
+	else if (pdf_name_eq(ctx, PDF_NAME_URI, obj))
 	{
 		ld.kind = FZ_LINK_URI;
-		ld.ld.uri.is_map = pdf_to_bool(ctx, pdf_dict_gets(ctx, action, "IsMap"));
-		ld.ld.uri.uri = pdf_to_utf8(ctx, doc, pdf_dict_gets(ctx, action, "URI"));
+		ld.ld.uri.is_map = pdf_to_bool(ctx, pdf_dict_get(ctx, action, PDF_NAME_IsMap));
+		ld.ld.uri.uri = pdf_to_utf8(ctx, doc, pdf_dict_get(ctx, action, PDF_NAME_URI));
 	}
-	else if (!strcmp(pdf_to_name(ctx, obj), "Launch"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Launch, obj))
 	{
 		ld.kind = FZ_LINK_LAUNCH;
-		file_spec = pdf_dict_gets(ctx, action, "F");
+		file_spec = pdf_dict_get(ctx, action, PDF_NAME_F);
 		ld.ld.launch.file_spec = pdf_parse_file_spec(ctx, doc, file_spec);
-		ld.ld.launch.new_window = pdf_to_int(ctx, pdf_dict_gets(ctx, action, "NewWindow"));
-		ld.ld.launch.is_uri = !strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, file_spec, "FS")), "URL");
+		ld.ld.launch.new_window = pdf_to_int(ctx, pdf_dict_get(ctx, action, PDF_NAME_NewWindow));
+		ld.ld.launch.is_uri = pdf_name_eq(ctx, PDF_NAME_URL, pdf_dict_get(ctx, file_spec, PDF_NAME_FS));
 	}
-	else if (!strcmp(pdf_to_name(ctx, obj), "Named"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Named, obj))
 	{
 		ld.kind = FZ_LINK_NAMED;
-		ld.ld.named.named = fz_strdup(ctx, pdf_to_name(ctx, pdf_dict_gets(ctx, action, "N")));
+		ld.ld.named.named = fz_strdup(ctx, pdf_to_name(ctx, pdf_dict_get(ctx, action, PDF_NAME_N)));
 	}
-	else if (!strcmp(pdf_to_name(ctx, obj), "GoToR"))
+	else if (pdf_name_eq(ctx, PDF_NAME_GoToR, obj))
 	{
-		dest = pdf_dict_gets(ctx, action, "D");
-		file_spec = pdf_dict_gets(ctx, action, "F");
+		dest = pdf_dict_get(ctx, action, PDF_NAME_D);
+		file_spec = pdf_dict_get(ctx, action, PDF_NAME_F);
 		ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTOR, dest);
 		ld.ld.gotor.file_spec = pdf_parse_file_spec(ctx, doc, file_spec);
-		ld.ld.gotor.new_window = pdf_to_int(ctx, pdf_dict_gets(ctx, action, "NewWindow"));
+		ld.ld.gotor.new_window = pdf_to_int(ctx, pdf_dict_get(ctx, action, PDF_NAME_NewWindow));
 	}
 	return ld;
 }
@@ -318,7 +318,7 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix
 	fz_rect bbox;
 	fz_link_dest ld;
 
-	obj = pdf_dict_gets(ctx, dict, "Rect");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Rect);
 	if (obj)
 		pdf_to_rect(ctx, obj, &bbox);
 	else
@@ -326,15 +326,15 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix
 
 	fz_transform_rect(&bbox, page_ctm);
 
-	obj = pdf_dict_gets(ctx, dict, "Dest");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Dest);
 	if (obj)
 		ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, obj);
 	else
 	{
-		action = pdf_dict_gets(ctx, dict, "A");
+		action = pdf_dict_get(ctx, dict, PDF_NAME_A);
 		/* fall back to additional action button's down/up action */
 		if (!action)
-			action = pdf_dict_getsa(ctx, pdf_dict_gets(ctx, dict, "AA"), "U", "D");
+			action = pdf_dict_geta(ctx, pdf_dict_get(ctx, dict, PDF_NAME_AA), PDF_NAME_U, PDF_NAME_D);
 
 		ld = pdf_parse_action(ctx, doc, action);
 	}
@@ -423,56 +423,56 @@ pdf_transform_annot(fz_context *ctx, pdf_annot *annot)
 
 fz_annot_type pdf_annot_obj_type(fz_context *ctx, pdf_obj *obj)
 {
-	char *subtype = pdf_to_name(ctx, pdf_dict_gets(ctx, obj, "Subtype"));
-	if (!strcmp(subtype, "Text"))
+	pdf_obj *subtype = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
+	if (pdf_name_eq(ctx, PDF_NAME_Text, subtype))
 		return FZ_ANNOT_TEXT;
-	else if (!strcmp(subtype, "Link"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Link, subtype))
 		return FZ_ANNOT_LINK;
-	else if (!strcmp(subtype, "FreeText"))
+	else if (pdf_name_eq(ctx, PDF_NAME_FreeText, subtype))
 		return FZ_ANNOT_FREETEXT;
-	else if (!strcmp(subtype, "Line"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Line, subtype))
 		return FZ_ANNOT_LINE;
-	else if (!strcmp(subtype, "Square"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Square, subtype))
 		return FZ_ANNOT_SQUARE;
-	else if (!strcmp(subtype, "Circle"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Circle, subtype))
 		return FZ_ANNOT_CIRCLE;
-	else if (!strcmp(subtype, "Polygon"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Polygon, subtype))
 		return FZ_ANNOT_POLYGON;
-	else if (!strcmp(subtype, "PolyLine"))
+	else if (pdf_name_eq(ctx, PDF_NAME_PolyLine, subtype))
 		return FZ_ANNOT_POLYLINE;
-	else if (!strcmp(subtype, "Highlight"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Highlight, subtype))
 		return FZ_ANNOT_HIGHLIGHT;
-	else if (!strcmp(subtype, "Underline"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Underline, subtype))
 		return FZ_ANNOT_UNDERLINE;
-	else if (!strcmp(subtype, "Squiggly"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Squiggly, subtype))
 		return FZ_ANNOT_SQUIGGLY;
-	else if (!strcmp(subtype, "StrikeOut"))
+	else if (pdf_name_eq(ctx, PDF_NAME_StrikeOut, subtype))
 		return FZ_ANNOT_STRIKEOUT;
-	else if (!strcmp(subtype, "Stamp"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Stamp, subtype))
 		return FZ_ANNOT_STAMP;
-	else if (!strcmp(subtype, "Caret"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Caret, subtype))
 		return FZ_ANNOT_CARET;
-	else if (!strcmp(subtype, "Ink"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Ink, subtype))
 		return FZ_ANNOT_INK;
-	else if (!strcmp(subtype, "Popup"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Popup, subtype))
 		return FZ_ANNOT_POPUP;
-	else if (!strcmp(subtype, "FileAttachment"))
+	else if (pdf_name_eq(ctx, PDF_NAME_FileAttachment, subtype))
 		return FZ_ANNOT_FILEATTACHMENT;
-	else if (!strcmp(subtype, "Sound"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Sound, subtype))
 		return FZ_ANNOT_SOUND;
-	else if (!strcmp(subtype, "Movie"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Movie, subtype))
 		return FZ_ANNOT_MOVIE;
-	else if (!strcmp(subtype, "Widget"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Widget, subtype))
 		return FZ_ANNOT_WIDGET;
-	else if (!strcmp(subtype, "Screen"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Screen, subtype))
 		return FZ_ANNOT_SCREEN;
-	else if (!strcmp(subtype, "PrinterMark"))
+	else if (pdf_name_eq(ctx, PDF_NAME_PrinterMark, subtype))
 		return FZ_ANNOT_PRINTERMARK;
-	else if (!strcmp(subtype, "TrapNet"))
+	else if (pdf_name_eq(ctx, PDF_NAME_TrapNet, subtype))
 		return FZ_ANNOT_TRAPNET;
-	else if (!strcmp(subtype, "Watermark"))
+	else if (pdf_name_eq(ctx, PDF_NAME_Watermark, subtype))
 		return FZ_ANNOT_WATERMARK;
-	else if (!strcmp(subtype, "3D"))
+	else if (pdf_name_eq(ctx, PDF_NAME_3D, subtype))
 		return FZ_ANNOT_3D;
 	else
 		return -1;
@@ -538,9 +538,9 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 				doc->update_appearance(ctx, doc, annot);
 
 			obj = annot->obj;
-			rect = pdf_dict_gets(ctx, obj, "Rect");
-			ap = pdf_dict_gets(ctx, obj, "AP");
-			as = pdf_dict_gets(ctx, obj, "AS");
+			rect = pdf_dict_get(ctx, obj, PDF_NAME_Rect);
+			ap = pdf_dict_get(ctx, obj, PDF_NAME_AP);
+			as = pdf_dict_get(ctx, obj, PDF_NAME_AS);
 
 			/* We only collect annotations with an appearance
 			 * stream into this list, so remove any that don't
@@ -553,11 +553,11 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 				&& hp->gen == pdf_to_gen(ctx, obj)
 				&& (hp->state & HOTSPOT_POINTER_DOWN))
 			{
-				n = pdf_dict_gets(ctx, ap, "D"); /* down state */
+				n = pdf_dict_get(ctx, ap, PDF_NAME_D); /* down state */
 			}
 
 			if (n == NULL)
-				n = pdf_dict_gets(ctx, ap, "N"); /* normal state */
+				n = pdf_dict_get(ctx, ap, PDF_NAME_N); /* normal state */
 
 			/* lookup current state in sub-dictionary */
 			if (!pdf_is_stream(ctx, doc, pdf_to_num(ctx, n), pdf_to_gen(ctx, n)))

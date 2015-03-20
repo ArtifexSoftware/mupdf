@@ -58,10 +58,10 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-		obj = pdf_dict_gets(ctx, dict, "BBox");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_BBox);
 		pdf_to_rect(ctx, obj, &form->bbox);
 
-		obj = pdf_dict_gets(ctx, dict, "Matrix");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_Matrix);
 		if (obj)
 			pdf_to_matrix(ctx, obj, &form->matrix);
 		else
@@ -71,19 +71,19 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		form->knockout = 0;
 		form->transparency = 0;
 
-		obj = pdf_dict_gets(ctx, dict, "Group");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_Group);
 		if (obj)
 		{
 			pdf_obj *attrs = obj;
 
-			form->isolated = pdf_to_bool(ctx, pdf_dict_gets(ctx, attrs, "I"));
-			form->knockout = pdf_to_bool(ctx, pdf_dict_gets(ctx, attrs, "K"));
+			form->isolated = pdf_to_bool(ctx, pdf_dict_get(ctx, attrs, PDF_NAME_I));
+			form->knockout = pdf_to_bool(ctx, pdf_dict_get(ctx, attrs, PDF_NAME_K));
 
-			obj = pdf_dict_gets(ctx, attrs, "S");
-			if (pdf_is_name(ctx, obj) && !strcmp(pdf_to_name(ctx, obj), "Transparency"))
+			obj = pdf_dict_get(ctx, attrs, PDF_NAME_S);
+			if (pdf_name_eq(ctx, obj, PDF_NAME_Transparency))
 				form->transparency = 1;
 
-			obj = pdf_dict_gets(ctx, attrs, "CS");
+			obj = pdf_dict_get(ctx, attrs, PDF_NAME_CS);
 			if (obj)
 			{
 				fz_try(ctx)
@@ -97,7 +97,7 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			}
 		}
 
-		form->resources = pdf_dict_gets(ctx, dict, "Resources");
+		form->resources = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
 		if (form->resources)
 			pdf_keep_obj(ctx, form->resources);
 
@@ -136,49 +136,37 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		dict = pdf_new_dict(ctx, doc, 0);
 
 		obj = pdf_new_rect(ctx, doc, bbox);
-		pdf_dict_puts(ctx, dict, "BBox", obj);
+		pdf_dict_put(ctx, dict, PDF_NAME_BBox, obj);
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
 		obj = pdf_new_int(ctx, doc, 1);
-		pdf_dict_puts(ctx, dict, "FormType", obj);
+		pdf_dict_put(ctx, dict, PDF_NAME_FormType, obj);
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
 		obj = pdf_new_int(ctx, doc, 0);
-		pdf_dict_puts(ctx, dict, "Length", obj);
+		pdf_dict_put(ctx, dict, PDF_NAME_Length, obj);
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
 		obj = pdf_new_matrix(ctx, doc, mat);
-		pdf_dict_puts(ctx, dict, "Matrix", obj);
+		pdf_dict_put(ctx, dict, PDF_NAME_Matrix, obj);
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
 		res = pdf_new_dict(ctx, doc, 0);
 		procset = pdf_new_array(ctx, doc, 2);
-		obj = pdf_new_name(ctx, doc, "PDF");
-		pdf_array_push(ctx, procset, obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
-		obj = pdf_new_name(ctx, doc, "Text");
-		pdf_array_push(ctx, procset, obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
-		pdf_dict_puts(ctx, res, "ProcSet", procset);
+		pdf_array_push(ctx, procset, PDF_NAME_PDF);
+		pdf_array_push(ctx, procset, PDF_NAME_Text);
+		pdf_dict_put(ctx, res, PDF_NAME_ProcSet, procset);
 		pdf_drop_obj(ctx, procset);
 		procset = NULL;
-		pdf_dict_puts(ctx, dict, "Resources", res);
+		pdf_dict_put(ctx, dict, PDF_NAME_Resources, res);
 
-		obj = pdf_new_name(ctx, doc, "Form");
-		pdf_dict_puts(ctx, dict, "Subtype", obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
+		pdf_dict_put(ctx, dict, PDF_NAME_Subtype, PDF_NAME_Form);
 
-		obj = pdf_new_name(ctx, doc, "XObject");
-		pdf_dict_puts(ctx, dict, "Type", obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
+		pdf_dict_put(ctx, dict, PDF_NAME_Type, PDF_NAME_XObject);
 
 		form = fz_malloc_struct(ctx, pdf_xobject);
 		FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);

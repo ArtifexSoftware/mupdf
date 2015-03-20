@@ -8,8 +8,8 @@ load_icc_based(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	int n;
 	pdf_obj *obj;
 
-	n = pdf_to_int(ctx, pdf_dict_gets(ctx, dict, "N"));
-	obj = pdf_dict_gets(ctx, dict, "Alternate");
+	n = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_N));
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
 
 	if (obj)
 	{
@@ -251,20 +251,19 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 	if (pdf_is_name(ctx, obj))
 	{
-		const char *str = pdf_to_name(ctx, obj);
-		if (!strcmp(str, "Pattern"))
+		if (pdf_name_eq(ctx, obj, PDF_NAME_Pattern))
 			return fz_device_gray(ctx);
-		else if (!strcmp(str, "G"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_G))
 			return fz_device_gray(ctx);
-		else if (!strcmp(str, "RGB"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_RGB))
 			return fz_device_rgb(ctx);
-		else if (!strcmp(str, "CMYK"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_CMYK))
 			return fz_device_cmyk(ctx);
-		else if (!strcmp(str, "DeviceGray"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_DeviceGray))
 			return fz_device_gray(ctx);
-		else if (!strcmp(str, "DeviceRGB"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_DeviceRGB))
 			return fz_device_rgb(ctx);
-		else if (!strcmp(str, "DeviceCMYK"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_DeviceCMYK))
 			return fz_device_cmyk(ctx);
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown colorspace: %s", pdf_to_name(ctx, obj));
@@ -273,30 +272,29 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	else if (pdf_is_array(ctx, obj))
 	{
 		pdf_obj *name = pdf_array_get(ctx, obj, 0);
-		const char *str = pdf_to_name(ctx, name);
 
 		if (pdf_is_name(ctx, name))
 		{
 			/* load base colorspace instead */
-			if (!strcmp(str, "G"))
+			if (pdf_name_eq(ctx, name, PDF_NAME_G))
 				return fz_device_gray(ctx);
-			else if (!strcmp(str, "RGB"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_RGB))
 				return fz_device_rgb(ctx);
-			else if (!strcmp(str, "CMYK"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_CMYK))
 				return fz_device_cmyk(ctx);
-			else if (!strcmp(str, "DeviceGray"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceGray))
 				return fz_device_gray(ctx);
-			else if (!strcmp(str, "DeviceRGB"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceRGB))
 				return fz_device_rgb(ctx);
-			else if (!strcmp(str, "DeviceCMYK"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceCMYK))
 				return fz_device_cmyk(ctx);
-			else if (!strcmp(str, "CalGray"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
 				return fz_device_gray(ctx);
-			else if (!strcmp(str, "CalRGB"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
 				return fz_device_rgb(ctx);
-			else if (!strcmp(str, "CalCMYK"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_CalCMYK))
 				return fz_device_cmyk(ctx);
-			else if (!strcmp(str, "Lab"))
+			else if (pdf_name_eq(ctx, name, PDF_NAME_Lab))
 				return fz_device_lab;
 			else
 			{
@@ -304,20 +302,20 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 				fz_try(ctx)
 				{
 					pdf_mark_obj(ctx, obj);
-					if (!strcmp(str, "ICCBased"))
+					if (pdf_name_eq(ctx, name, PDF_NAME_ICCBased))
 						cs = load_icc_based(ctx, doc, pdf_array_get(ctx, obj, 1));
 
-					else if (!strcmp(str, "Indexed"))
+					else if (pdf_name_eq(ctx, name, PDF_NAME_Indexed))
 						cs = load_indexed(ctx, doc, obj);
-					else if (!strcmp(str, "I"))
+					else if (pdf_name_eq(ctx, name, PDF_NAME_I))
 						cs = load_indexed(ctx, doc, obj);
 
-					else if (!strcmp(str, "Separation"))
+					else if (pdf_name_eq(ctx, name, PDF_NAME_Separation))
 						cs = load_separation(ctx, doc, obj);
 
-					else if (!strcmp(str, "DeviceN"))
+					else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceN))
 						cs = load_separation(ctx, doc, obj);
-					else if (!strcmp(str, "Pattern"))
+					else if (pdf_name_eq(ctx, name, PDF_NAME_Pattern))
 					{
 						pdf_obj *pobj;
 
@@ -331,7 +329,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 						cs = pdf_load_colorspace(ctx, doc, pobj);
 					}
 					else
-						fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: unknown colorspace %s", str);
+						fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: unknown colorspace %s", pdf_to_name(ctx, name));
 				}
 				fz_always(ctx)
 				{

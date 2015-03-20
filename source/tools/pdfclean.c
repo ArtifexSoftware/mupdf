@@ -59,7 +59,7 @@ static void retainpage(fz_context *ctx, pdf_document *doc, pdf_obj *parent, pdf_
 	pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, page-1);
 	pdf_obj *pageobj = pdf_resolve_indirect(ctx, pageref);
 
-	pdf_dict_puts(ctx, pageobj, "Parent", parent);
+	pdf_dict_put(ctx, pageobj, PDF_NAME_Parent, parent);
 
 	/* Store page object in new kids array */
 	pdf_array_push(ctx, kids, pageref);
@@ -76,13 +76,13 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 
 	/* Keep only pages/type and (reduced) dest entries to avoid
 	 * references to unretained pages */
-	oldroot = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
-	pages = pdf_dict_gets(ctx, oldroot, "Pages");
-	olddests = pdf_load_name_tree(ctx, doc, "Dests");
+	oldroot = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+	pages = pdf_dict_get(ctx, oldroot, PDF_NAME_Pages);
+	olddests = pdf_load_name_tree(ctx, doc, PDF_NAME_Dests);
 
 	root = pdf_new_dict(ctx, doc, 2);
-	pdf_dict_puts(ctx, root, "Type", pdf_dict_gets(ctx, oldroot, "Type"));
-	pdf_dict_puts(ctx, root, "Pages", pdf_dict_gets(ctx, oldroot, "Pages"));
+	pdf_dict_put(ctx, root, PDF_NAME_Type, pdf_dict_get(ctx, oldroot, PDF_NAME_Type));
+	pdf_dict_put(ctx, root, PDF_NAME_Pages, pdf_dict_get(ctx, oldroot, PDF_NAME_Pages));
 
 	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
@@ -138,9 +138,9 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 
 	/* Update page count and kids array */
 	countobj = pdf_new_int(ctx, doc, pdf_array_len(ctx, kids));
-	pdf_dict_puts(ctx, pages, "Count", countobj);
+	pdf_dict_put(ctx, pages, PDF_NAME_Count, countobj);
 	pdf_drop_obj(ctx, countobj);
-	pdf_dict_puts(ctx, pages, "Kids", kids);
+	pdf_dict_put(ctx, pages, PDF_NAME_Kids, kids);
 	pdf_drop_obj(ctx, kids);
 
 	/* Also preserve the (partial) Dests name tree */
@@ -156,10 +156,10 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 		{
 			pdf_obj *key = pdf_dict_get_key(ctx, olddests, i);
 			pdf_obj *val = pdf_dict_get_val(ctx, olddests, i);
-			pdf_obj *dest = pdf_dict_gets(ctx, val, "D");
+			pdf_obj *dest = pdf_dict_get(ctx, val, PDF_NAME_D);
 
 			dest = pdf_array_get(ctx, dest ? dest : val, 0);
-			if (pdf_array_contains(ctx, pdf_dict_gets(ctx, pages, "Kids"), dest))
+			if (pdf_array_contains(ctx, pdf_dict_get(ctx, pages, PDF_NAME_Kids), dest))
 			{
 				pdf_obj *key_str = pdf_new_string(ctx, doc, pdf_to_name(ctx, key), strlen(pdf_to_name(ctx, key)));
 				pdf_array_push(ctx, names_list, key_str);
@@ -168,10 +168,10 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 			}
 		}
 
-		root = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
-		pdf_dict_puts(ctx, dests, "Names", names_list);
-		pdf_dict_puts(ctx, names, "Dests", dests);
-		pdf_dict_puts(ctx, root, "Names", names);
+		root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+		pdf_dict_put(ctx, dests, PDF_NAME_Names, names_list);
+		pdf_dict_put(ctx, names, PDF_NAME_Dests, dests);
+		pdf_dict_put(ctx, root, PDF_NAME_Names, names);
 
 		pdf_drop_obj(ctx, names);
 		pdf_drop_obj(ctx, dests);
@@ -190,7 +190,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 		pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
 		pdf_obj *pageobj = pdf_resolve_indirect(ctx, pageref);
 
-		pdf_obj *annots = pdf_dict_gets(ctx, pageobj, "Annots");
+		pdf_obj *annots = pdf_dict_get(ctx, pageobj, PDF_NAME_Annots);
 
 		int len = pdf_array_len(ctx, annots);
 		int j;
@@ -200,14 +200,14 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 			pdf_obj *o = pdf_array_get(ctx, annots, j);
 			pdf_obj *p;
 
-			if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, o, "Subtype")), "Link"))
+			if (!pdf_name_eq(ctx, pdf_dict_get(ctx, o, PDF_NAME_Subtype), PDF_NAME_Link))
 				continue;
 
-			p = pdf_dict_gets(ctx, o, "A");
-			if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, p, "S")), "GoTo"))
+			p = pdf_dict_get(ctx, o, PDF_NAME_A);
+			if (!pdf_name_eq(ctx, pdf_dict_get(ctx, p, PDF_NAME_S), PDF_NAME_GoTo))
 				continue;
 
-			if (string_in_names_list(ctx, pdf_dict_gets(ctx, p, "D"), names_list))
+			if (string_in_names_list(ctx, pdf_dict_get(ctx, p, PDF_NAME_D), names_list))
 				continue;
 
 			/* FIXME: Should probably look at Next too */

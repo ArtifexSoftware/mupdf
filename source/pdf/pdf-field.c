@@ -1,18 +1,18 @@
 #include "mupdf/pdf.h"
 
-pdf_obj *pdf_get_inheritable(fz_context *ctx, pdf_document *doc, pdf_obj *obj, char *key)
+pdf_obj *pdf_get_inheritable(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *key)
 {
 	pdf_obj *fobj = NULL;
 
 	while (!fobj && obj)
 	{
-		fobj = pdf_dict_gets(ctx, obj, key);
+		fobj = pdf_dict_get(ctx, obj, key);
 
 		if (!fobj)
-			obj = pdf_dict_gets(ctx, obj, "Parent");
+			obj = pdf_dict_get(ctx, obj, PDF_NAME_Parent);
 	}
 
-	return fobj ? fobj : pdf_dict_gets(ctx, pdf_dict_gets(ctx, pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root"), "AcroForm"), key);
+	return fobj ? fobj : pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root), PDF_NAME_AcroForm), key);
 }
 
 char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
@@ -59,25 +59,25 @@ char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 char *pdf_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	return pdf_get_string_or_stream(ctx, doc, pdf_get_inheritable(ctx, doc, field, "V"));
+	return pdf_get_string_or_stream(ctx, doc, pdf_get_inheritable(ctx, doc, field, PDF_NAME_V));
 }
 
 int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	return pdf_to_int(ctx, pdf_get_inheritable(ctx, doc, obj, "Ff"));
+	return pdf_to_int(ctx, pdf_get_inheritable(ctx, doc, obj, PDF_NAME_Ff));
 }
 
-static char *get_field_type_name(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+static pdf_obj *get_field_type_name(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	return pdf_to_name(ctx, pdf_get_inheritable(ctx, doc, obj, "FT"));
+	return pdf_get_inheritable(ctx, doc, obj, PDF_NAME_FT);
 }
 
 int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	char *type = get_field_type_name(ctx, doc, obj);
+	pdf_obj *type = get_field_type_name(ctx, doc, obj);
 	int flags = pdf_get_field_flags(ctx, doc, obj);
 
-	if (!strcmp(type, "Btn"))
+	if (pdf_name_eq(ctx, type, PDF_NAME_Btn))
 	{
 		if (flags & Ff_Pushbutton)
 			return PDF_WIDGET_TYPE_PUSHBUTTON;
@@ -86,16 +86,16 @@ int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		else
 			return PDF_WIDGET_TYPE_CHECKBOX;
 	}
-	else if (!strcmp(type, "Tx"))
+	else if (pdf_name_eq(ctx, type, PDF_NAME_Tx))
 		return PDF_WIDGET_TYPE_TEXT;
-	else if (!strcmp(type, "Ch"))
+	else if (pdf_name_eq(ctx, type, PDF_NAME_Ch))
 	{
 		if (flags & Ff_Combo)
 			return PDF_WIDGET_TYPE_COMBOBOX;
 		else
 			return PDF_WIDGET_TYPE_LISTBOX;
 	}
-	else if (!strcmp(type, "Sig"))
+	else if (pdf_name_eq(ctx, type, PDF_NAME_Sig))
 		return PDF_WIDGET_TYPE_SIGNATURE;
 	else
 		return PDF_WIDGET_TYPE_NOT_WIDGET;
@@ -105,47 +105,47 @@ void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int ty
 {
 	int setbits = 0;
 	int clearbits = 0;
-	char *typename = NULL;
+	pdf_obj *typename = NULL;
 
 	switch(type)
 	{
 	case PDF_WIDGET_TYPE_PUSHBUTTON:
-		typename = "Btn";
+		typename = PDF_NAME_Btn;
 		setbits = Ff_Pushbutton;
 		break;
 	case PDF_WIDGET_TYPE_CHECKBOX:
-		typename = "Btn";
+		typename = PDF_NAME_Btn;
 		clearbits = Ff_Pushbutton;
 		setbits = Ff_Radio;
 		break;
 	case PDF_WIDGET_TYPE_RADIOBUTTON:
-		typename = "Btn";
+		typename = PDF_NAME_Btn;
 		clearbits = (Ff_Pushbutton|Ff_Radio);
 		break;
 	case PDF_WIDGET_TYPE_TEXT:
-		typename = "Tx";
+		typename = PDF_NAME_Tx;
 		break;
 	case PDF_WIDGET_TYPE_LISTBOX:
-		typename = "Ch";
+		typename = PDF_NAME_Ch;
 		clearbits = Ff_Combo;
 		break;
 	case PDF_WIDGET_TYPE_COMBOBOX:
-		typename = "Ch";
+		typename = PDF_NAME_Ch;
 		setbits = Ff_Combo;
 		break;
 	case PDF_WIDGET_TYPE_SIGNATURE:
-		typename = "Sig";
+		typename = PDF_NAME_Sig;
 		break;
 	}
 
 	if (typename)
-		pdf_dict_puts_drop(ctx, obj, "FT", pdf_new_name(ctx, doc, typename));
+		pdf_dict_put_drop(ctx, obj, PDF_NAME_FT, typename);
 
 	if (setbits != 0 || clearbits != 0)
 	{
-		int bits = pdf_to_int(ctx, pdf_dict_gets(ctx, obj, "Ff"));
+		int bits = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Ff));
 		bits &= ~clearbits;
 		bits |= setbits;
-		pdf_dict_puts_drop(ctx, obj, "Ff", pdf_new_int(ctx, doc, bits));
+		pdf_dict_put_drop(ctx, obj, PDF_NAME_Ff, pdf_new_int(ctx, doc, bits));
 	}
 }

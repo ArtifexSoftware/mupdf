@@ -43,7 +43,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 	fz_try(ctx)
 	{
-		obj = pdf_dict_gets(ctx, dict, "Name");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_Name);
 		if (pdf_is_name(ctx, obj))
 			fz_strlcpy(buf, pdf_to_name(ctx, obj), sizeof buf);
 		else
@@ -51,10 +51,10 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		fontdesc = pdf_new_font_desc(ctx);
 
-		obj = pdf_dict_gets(ctx, dict, "FontMatrix");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_FontMatrix);
 		pdf_to_matrix(ctx, obj, &matrix);
 
-		obj = pdf_dict_gets(ctx, dict, "FontBBox");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_FontBBox);
 		fz_transform_rect(pdf_to_rect(ctx, obj, &bbox), &matrix);
 
 		fontdesc->font = fz_new_type3_font(ctx, buf, &matrix);
@@ -67,7 +67,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		for (i = 0; i < 256; i++)
 			estrings[i] = NULL;
 
-		encoding = pdf_dict_gets(ctx, dict, "Encoding");
+		encoding = pdf_dict_get(ctx, dict, PDF_NAME_Encoding);
 		if (!encoding)
 		{
 			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing Encoding");
@@ -80,11 +80,11 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		{
 			pdf_obj *base, *diff, *item;
 
-			base = pdf_dict_gets(ctx, encoding, "BaseEncoding");
+			base = pdf_dict_get(ctx, encoding, PDF_NAME_BaseEncoding);
 			if (pdf_is_name(ctx, base))
 				pdf_load_encoding(estrings, pdf_to_name(ctx, base));
 
-			diff = pdf_dict_gets(ctx, encoding, "Differences");
+			diff = pdf_dict_get(ctx, encoding, PDF_NAME_Differences);
 			if (pdf_is_array(ctx, diff))
 			{
 				n = pdf_array_len(ctx, diff);
@@ -103,19 +103,19 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		fontdesc->encoding = pdf_new_identity_cmap(ctx, 0, 1);
 		fontdesc->size += pdf_cmap_size(ctx, fontdesc->encoding);
 
-		pdf_load_to_unicode(ctx, doc, fontdesc, estrings, NULL, pdf_dict_gets(ctx, dict, "ToUnicode"));
+		pdf_load_to_unicode(ctx, doc, fontdesc, estrings, NULL, pdf_dict_get(ctx, dict, PDF_NAME_ToUnicode));
 
 		/* Widths */
 
 		pdf_set_default_hmtx(ctx, fontdesc, 0);
 
-		first = pdf_to_int(ctx, pdf_dict_gets(ctx, dict, "FirstChar"));
-		last = pdf_to_int(ctx, pdf_dict_gets(ctx, dict, "LastChar"));
+		first = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_FirstChar));
+		last = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_LastChar));
 
 		if (first < 0 || last > 255 || first > last)
 			first = last = 0;
 
-		widths = pdf_dict_gets(ctx, dict, "Widths");
+		widths = pdf_dict_get(ctx, dict, PDF_NAME_Widths);
 		if (!widths)
 		{
 			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing Widths");
@@ -134,7 +134,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		/* Resources -- inherit page resources if the font doesn't have its own */
 
 		fontdesc->font->t3freeres = pdf_t3_free_resources;
-		fontdesc->font->t3resources = pdf_dict_gets(ctx, dict, "Resources");
+		fontdesc->font->t3resources = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
 		if (!fontdesc->font->t3resources)
 			fontdesc->font->t3resources = rdb;
 		if (fontdesc->font->t3resources)
@@ -147,7 +147,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		/* CharProcs */
 
-		charprocs = pdf_dict_gets(ctx, dict, "CharProcs");
+		charprocs = pdf_dict_get(ctx, dict, PDF_NAME_CharProcs);
 		if (!charprocs)
 		{
 			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing CharProcs");

@@ -83,7 +83,7 @@ CBZ_SRC := $(wildcard source/cbz/*.c)
 HTML_SRC := $(wildcard source/html/*.c)
 
 FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
-PDF_SRC_HDR := $(wildcard source/pdf/*.h)
+PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h
 XPS_SRC_HDR := $(wildcard source/xps/*.h)
 HTML_SRC_HDR := $(wildcard source/html/*.h)
 
@@ -163,6 +163,7 @@ $(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
 
 CMAPDUMP := $(OUT)/cmapdump
 FONTDUMP := $(OUT)/fontdump
+NAMEDUMP := $(OUT)/namedump
 CQUOTE := $(OUT)/cquote
 BIN2HEX := $(OUT)/bin2hex
 
@@ -195,6 +196,11 @@ $(GEN)/gen_font_cjk_full.h : $(FONT_CJK_FULL_SRC)
 
 FONT_GEN := $(GEN)/gen_font_base14.h $(GEN)/gen_font_cjk.h $(GEN)/gen_font_cjk_full.h
 
+include/mupdf/pdf.h : include/mupdf/pdf/name-table.h
+NAME_GEN := include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
+$(NAME_GEN) : $(NAMEDUMP) resources/pdf/names.txt
+	$(QUIET_GEN) $(NAMEDUMP) resources/pdf/names.txt $(NAME_GEN)
+
 JAVASCRIPT_SRC := source/pdf/js/pdf-util.js
 JAVASCRIPT_GEN := $(GEN)/gen_js_util.h
 $(JAVASCRIPT_GEN) : $(JAVASCRIPT_SRC)
@@ -208,23 +214,25 @@ $(ADOBECA_GEN) : $(ADOBECA_SRC)
 ifneq "$(CROSSCOMPILE)" "yes"
 $(CMAP_GEN) : $(CMAPDUMP) | $(GEN)
 $(FONT_GEN) : $(FONTDUMP) | $(GEN)
+$(NAME_GEN) : $(NAMEDUMP) | $(GEN)
 $(JAVASCRIPT_GEN) : $(CQUOTE) | $(GEN)
 $(ADOBECA_GEN) : $(BIN2HEX) | $(GEN)
 endif
 
-generate: $(CMAP_GEN) $(FONT_GEN) $(JAVASCRIPT_GEN) $(ADOBECA_GEN)
+generate: $(CMAP_GEN) $(FONT_GEN) $(JAVASCRIPT_GEN) $(ADOBECA_GEN) $(NAME_GEN)
 
 $(OUT)/pdf/pdf-cmap-table.o : $(CMAP_GEN)
 $(OUT)/pdf/pdf-fontfile.o : $(FONT_GEN)
 $(OUT)/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
 $(OUT)/pdf/js/pdf-js.o : $(JAVASCRIPT_GEN)
-$(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/pdf/pdf-cmap.c source/pdf/pdf-cmap-parse.c
+$(OUT)/pdf/pdf-object.o : source/pdf/pdf-name-table.h
+$(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/pdf/pdf-cmap.c source/pdf/pdf-cmap-parse.c source/pdf/pdf-name-table.h
 
 # --- Tools and Apps ---
 
 MUDRAW := $(addprefix $(OUT)/, mudraw)
 MUDRAW_OBJ := $(addprefix $(OUT)/tools/, mudraw.o)
-$(MUDRAW_OBJ) : $(FITZ_HDR)
+$(MUDRAW_OBJ) : $(FITZ_HDR) $(PDF_HDR)
 $(MUDRAW) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUDRAW) : $(MUDRAW_OBJ)
 	$(LINK_CMD)
@@ -242,8 +250,10 @@ $(MJSGEN) : $(addprefix $(OUT)/tools/, mjsgen.o)
 	$(LINK_CMD)
 
 MUJSTEST := $(OUT)/mujstest
+MUJSTEST_OBJ := $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
+$(MUJSTEST_OBJ) : $(FITZ_HDR) $(PDF_HDR)
 $(MUJSTEST) : $(MUPDF_LIB) $(THIRD_LIBS)
-$(MUJSTEST) : $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
+$(MUJSTEST) : $(MUJSTEST_OBJ)
 	$(LINK_CMD)
 
 ifeq "$(HAVE_X11)" "yes"
@@ -338,6 +348,6 @@ all: libs apps
 clean:
 	rm -rf $(OUT)
 nuke:
-	rm -rf build/* $(GEN)
+	rm -rf build/* $(GEN) $(NAME_GEN)
 
 .PHONY: all clean nuke install third libs apps generate

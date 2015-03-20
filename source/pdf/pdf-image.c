@@ -55,13 +55,13 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			break; /* Out of fz_try */
 		}
 
-		w = pdf_to_int(ctx, pdf_dict_getsa(ctx, dict, "Width", "W"));
-		h = pdf_to_int(ctx, pdf_dict_getsa(ctx, dict, "Height", "H"));
-		bpc = pdf_to_int(ctx, pdf_dict_getsa(ctx, dict, "BitsPerComponent", "BPC"));
+		w = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Width, PDF_NAME_W));
+		h = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Height, PDF_NAME_H));
+		bpc = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_BitsPerComponent, PDF_NAME_BPC));
 		if (bpc == 0)
 			bpc = 8;
-		imagemask = pdf_to_bool(ctx, pdf_dict_getsa(ctx, dict, "ImageMask", "IM"));
-		interpolate = pdf_to_bool(ctx, pdf_dict_getsa(ctx, dict, "Interpolate", "I"));
+		imagemask = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_ImageMask, PDF_NAME_IM));
+		interpolate = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Interpolate, PDF_NAME_I));
 
 		indexed = 0;
 		usecolorkey = 0;
@@ -82,13 +82,13 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 		if (h > (1 << 16))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "image is too high");
 
-		obj = pdf_dict_getsa(ctx, dict, "ColorSpace", "CS");
+		obj = pdf_dict_geta(ctx, dict, PDF_NAME_ColorSpace, PDF_NAME_CS);
 		if (obj && !imagemask && !forcemask)
 		{
 			/* colorspace resource lookup is only done for inline images */
 			if (pdf_is_name(ctx, obj))
 			{
-				res = pdf_dict_get(ctx, pdf_dict_gets(ctx, rdb, "ColorSpace"), obj);
+				res = pdf_dict_get(ctx, pdf_dict_get(ctx, rdb, PDF_NAME_ColorSpace), obj);
 				if (res)
 					obj = res;
 			}
@@ -103,7 +103,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			n = 1;
 		}
 
-		obj = pdf_dict_getsa(ctx, dict, "Decode", "D");
+		obj = pdf_dict_geta(ctx, dict, PDF_NAME_Decode, PDF_NAME_D);
 		if (obj)
 		{
 			for (i = 0; i < n * 2; i++)
@@ -116,7 +116,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 				decode[i] = i & 1 ? maxval : 0;
 		}
 
-		obj = pdf_dict_getsa(ctx, dict, "SMask", "Mask");
+		obj = pdf_dict_geta(ctx, dict, PDF_NAME_SMask, PDF_NAME_Mask);
 		if (pdf_is_dict(ctx, obj))
 		{
 			/* Not allowed for inline images or soft masks */
@@ -127,7 +127,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			else
 			{
 				mask = pdf_load_image_imp(ctx, doc, rdb, obj, NULL, 1);
-				obj = pdf_dict_gets(ctx, obj, "Matte");
+				obj = pdf_dict_get(ctx, obj, PDF_NAME_Matte);
 				if (pdf_is_array(ctx, obj))
 				{
 					usecolorkey = 1;
@@ -191,12 +191,12 @@ pdf_is_jpx_image(fz_context *ctx, pdf_obj *dict)
 	pdf_obj *filter;
 	int i, n;
 
-	filter = pdf_dict_gets(ctx, dict, "Filter");
-	if (!strcmp(pdf_to_name(ctx, filter), "JPXDecode"))
+	filter = pdf_dict_get(ctx, dict, PDF_NAME_Filter);
+	if (pdf_name_eq(ctx, filter, PDF_NAME_JPXDecode))
 		return 1;
 	n = pdf_array_len(ctx, filter);
 	for (i = 0; i < n; i++)
-		if (!strcmp(pdf_to_name(ctx, pdf_array_get(ctx, filter, i)), "JPXDecode"))
+		if (pdf_name_eq(ctx, pdf_array_get(ctx, filter, i), PDF_NAME_JPXDecode))
 			return 1;
 	return 0;
 }
@@ -222,7 +222,7 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 	/* FIXME: We can't handle decode arrays for indexed images currently */
 	fz_try(ctx)
 	{
-		obj = pdf_dict_gets(ctx, dict, "ColorSpace");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_ColorSpace);
 		if (obj)
 		{
 			colorspace = pdf_load_colorspace(ctx, doc, obj);
@@ -231,7 +231,7 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 
 		pix = fz_load_jpx(ctx, buf->data, buf->len, colorspace, indexed);
 
-		obj = pdf_dict_getsa(ctx, dict, "SMask", "Mask");
+		obj = pdf_dict_geta(ctx, dict, PDF_NAME_SMask, PDF_NAME_Mask);
 		if (pdf_is_dict(ctx, obj))
 		{
 			if (forcemask)
@@ -240,7 +240,7 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 				mask = pdf_load_image_imp(ctx, doc, NULL, obj, NULL, 1);
 		}
 
-		obj = pdf_dict_getsa(ctx, dict, "Decode", "D");
+		obj = pdf_dict_geta(ctx, dict, PDF_NAME_Decode, PDF_NAME_D);
 		if (obj && !indexed)
 		{
 			float decode[FZ_MAX_COLORS * 2];

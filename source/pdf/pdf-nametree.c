@@ -3,8 +3,8 @@
 static pdf_obj *
 pdf_lookup_name_imp(fz_context *ctx, pdf_obj *node, pdf_obj *needle)
 {
-	pdf_obj *kids = pdf_dict_gets(ctx, node, "Kids");
-	pdf_obj *names = pdf_dict_gets(ctx, node, "Names");
+	pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME_Kids);
+	pdf_obj *names = pdf_dict_get(ctx, node, PDF_NAME_Names);
 
 	if (pdf_is_array(ctx, kids))
 	{
@@ -15,7 +15,7 @@ pdf_lookup_name_imp(fz_context *ctx, pdf_obj *node, pdf_obj *needle)
 		{
 			int m = (l + r) >> 1;
 			pdf_obj *kid = pdf_array_get(ctx, kids, m);
-			pdf_obj *limits = pdf_dict_gets(ctx, kid, "Limits");
+			pdf_obj *limits = pdf_dict_get(ctx, kid, PDF_NAME_Limits);
 			pdf_obj *first = pdf_array_get(ctx, limits, 0);
 			pdf_obj *last = pdf_array_get(ctx, limits, 1);
 
@@ -70,20 +70,20 @@ pdf_lookup_name_imp(fz_context *ctx, pdf_obj *node, pdf_obj *needle)
 }
 
 pdf_obj *
-pdf_lookup_name(fz_context *ctx, pdf_document *doc, char *which, pdf_obj *needle)
+pdf_lookup_name(fz_context *ctx, pdf_document *doc, pdf_obj *which, pdf_obj *needle)
 {
-	pdf_obj *root = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
-	pdf_obj *names = pdf_dict_gets(ctx, root, "Names");
-	pdf_obj *tree = pdf_dict_gets(ctx, names, which);
+	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+	pdf_obj *names = pdf_dict_get(ctx, root, PDF_NAME_Names);
+	pdf_obj *tree = pdf_dict_get(ctx, names, which);
 	return pdf_lookup_name_imp(ctx, tree, needle);
 }
 
 pdf_obj *
 pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle)
 {
-	pdf_obj *root = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
-	pdf_obj *dests = pdf_dict_gets(ctx, root, "Dests");
-	pdf_obj *names = pdf_dict_gets(ctx, root, "Names");
+	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+	pdf_obj *dests = pdf_dict_get(ctx, root, PDF_NAME_Dests);
+	pdf_obj *names = pdf_dict_get(ctx, root, PDF_NAME_Names);
 	pdf_obj *dest = NULL;
 
 	/* PDF 1.1 has destinations in a dictionary */
@@ -98,7 +98,7 @@ pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle)
 	/* PDF 1.2 has destinations in a name tree */
 	if (names && !dest)
 	{
-		pdf_obj *tree = pdf_dict_gets(ctx, names, "Dests");
+		pdf_obj *tree = pdf_dict_get(ctx, names, PDF_NAME_Dests);
 		return pdf_lookup_name_imp(ctx, tree, needle);
 	}
 
@@ -108,8 +108,8 @@ pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle)
 static void
 pdf_load_name_tree_imp(fz_context *ctx, pdf_obj *dict, pdf_document *doc, pdf_obj *node)
 {
-	pdf_obj *kids = pdf_dict_gets(ctx, node, "Kids");
-	pdf_obj *names = pdf_dict_gets(ctx, node, "Names");
+	pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME_Kids);
+	pdf_obj *names = pdf_dict_get(ctx, node, PDF_NAME_Names);
 	int i;
 
 	UNUSED(ctx);
@@ -144,11 +144,11 @@ pdf_load_name_tree_imp(fz_context *ctx, pdf_obj *dict, pdf_document *doc, pdf_ob
 }
 
 pdf_obj *
-pdf_load_name_tree(fz_context *ctx, pdf_document *doc, char *which)
+pdf_load_name_tree(fz_context *ctx, pdf_document *doc, pdf_obj *which)
 {
-	pdf_obj *root = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
-	pdf_obj *names = pdf_dict_gets(ctx, root, "Names");
-	pdf_obj *tree = pdf_dict_gets(ctx, names, which);
+	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+	pdf_obj *names = pdf_dict_get(ctx, root, PDF_NAME_Names);
+	pdf_obj *tree = pdf_dict_get(ctx, names, which);
 	if (pdf_is_dict(ctx, tree))
 	{
 		pdf_obj *dict = pdf_new_dict(ctx, doc, 100);

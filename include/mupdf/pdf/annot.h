@@ -74,8 +74,8 @@ fz_link_dest pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kin
 char *pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec);
 fz_link_dest pdf_parse_action(fz_context *ctx, pdf_document *doc, pdf_obj *action);
 pdf_obj *pdf_lookup_dest(fz_context *ctx, pdf_document *doc, pdf_obj *needle);
-pdf_obj *pdf_lookup_name(fz_context *ctx, pdf_document *doc, char *which, pdf_obj *needle);
-pdf_obj *pdf_load_name_tree(fz_context *ctx, pdf_document *doc, char *which);
+pdf_obj *pdf_lookup_name(fz_context *ctx, pdf_document *doc, pdf_obj *which, pdf_obj *needle);
+pdf_obj *pdf_load_name_tree(fz_context *ctx, pdf_document *doc, pdf_obj *which);
 
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, const fz_matrix *page_ctm);
 

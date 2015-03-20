@@ -49,10 +49,10 @@ pdf_load_embedded_cmap(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj)
 		fz_drop_stream(ctx, file);
 		file = NULL;
 
-		wmode = pdf_dict_gets(ctx, stmobj, "WMode");
+		wmode = pdf_dict_get(ctx, stmobj, PDF_NAME_WMode);
 		if (pdf_is_int(ctx, wmode))
 			pdf_set_cmap_wmode(ctx, cmap, pdf_to_int(ctx, wmode));
-		obj = pdf_dict_gets(ctx, stmobj, "UseCMap");
+		obj = pdf_dict_get(ctx, stmobj, PDF_NAME_UseCMap);
 		if (pdf_is_name(ctx, obj))
 		{
 			usecmap = pdf_load_system_cmap(ctx, pdf_to_name(ctx, obj));

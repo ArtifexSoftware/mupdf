@@ -54,17 +54,17 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int *stmofsp
 
 		if (encrypt && id)
 		{
-			obj = pdf_dict_gets(ctx, dict, "Type");
-			if (pdf_is_name(ctx, obj) && !strcmp(pdf_to_name(ctx, obj), "XRef"))
+			obj = pdf_dict_get(ctx, dict, PDF_NAME_Type);
+			if (pdf_name_eq(ctx, obj, PDF_NAME_XRef))
 			{
-				obj = pdf_dict_gets(ctx, dict, "Encrypt");
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
 				if (obj)
 				{
 					pdf_drop_obj(ctx, *encrypt);
 					*encrypt = pdf_keep_obj(ctx, obj);
 				}
 
-				obj = pdf_dict_gets(ctx, dict, "ID");
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
 				if (obj)
 				{
 					pdf_drop_obj(ctx, *id);
@@ -73,14 +73,14 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int *stmofsp
 			}
 		}
 
-		obj = pdf_dict_gets(ctx, dict, "Length");
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_Length);
 		if (!pdf_is_indirect(ctx, obj) && pdf_is_int(ctx, obj))
 			stm_len = pdf_to_int(ctx, obj);
 
 		if (doc->file_reading_linearly && page)
 		{
-			obj = pdf_dict_gets(ctx, dict, "Type");
-			if (!strcmp(pdf_to_name(ctx, obj), "Page"))
+			obj = pdf_dict_get(ctx, dict, PDF_NAME_Type);
+			if (pdf_name_eq(ctx, obj, PDF_NAME_Page))
 			{
 				pdf_drop_obj(ctx, *page);
 				*page = pdf_keep_obj(ctx, dict);
@@ -182,7 +182,7 @@ pdf_repair_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen)
 	{
 		obj = pdf_load_object(ctx, doc, num, gen);
 
-		count = pdf_to_int(ctx, pdf_dict_gets(ctx, obj, "N"));
+		count = pdf_to_int(ctx, pdf_dict_get(ctx, obj, PDF_NAME_N));
 
 		pdf_drop_obj(ctx, obj);
 
@@ -403,28 +403,28 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 					continue;
 				}
 
-				obj = pdf_dict_gets(ctx, dict, "Encrypt");
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
 				if (obj)
 				{
 					pdf_drop_obj(ctx, encrypt);
 					encrypt = pdf_keep_obj(ctx, obj);
 				}
 
-				obj = pdf_dict_gets(ctx, dict, "ID");
-				if (obj && (!id || !encrypt || pdf_dict_gets(ctx, dict, "Encrypt")))
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
+				if (obj && (!id || !encrypt || pdf_dict_get(ctx, dict, PDF_NAME_Encrypt)))
 				{
 					pdf_drop_obj(ctx, id);
 					id = pdf_keep_obj(ctx, obj);
 				}
 
-				obj = pdf_dict_gets(ctx, dict, "Root");
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_Root);
 				if (obj)
 				{
 					pdf_drop_obj(ctx, root);
 					root = pdf_keep_obj(ctx, obj);
 				}
 
-				obj = pdf_dict_gets(ctx, dict, "Info");
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_Info);
 				if (obj)
 				{
 					pdf_drop_obj(ctx, info);
@@ -472,7 +472,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				dict = pdf_load_object(ctx, doc, list[i].num, list[i].gen);
 
 				length = pdf_new_int(ctx, doc, list[i].stm_len);
-				pdf_dict_puts(ctx, dict, "Length", length);
+				pdf_dict_put(ctx, dict, PDF_NAME_Length, length);
 				pdf_drop_obj(ctx, length);
 
 				pdf_drop_obj(ctx, dict);
@@ -507,19 +507,19 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		obj = NULL;
 
 		obj = pdf_new_int(ctx, doc, maxnum + 1);
-		pdf_dict_puts(ctx, pdf_trailer(ctx, doc), "Size", obj);
+		pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Size, obj);
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
 		if (root)
 		{
-			pdf_dict_puts(ctx, pdf_trailer(ctx, doc), "Root", root);
+			pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, root);
 			pdf_drop_obj(ctx, root);
 			root = NULL;
 		}
 		if (info)
 		{
-			pdf_dict_puts(ctx, pdf_trailer(ctx, doc), "Info", info);
+			pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info, info);
 			pdf_drop_obj(ctx, info);
 			info = NULL;
 		}
@@ -534,7 +534,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				encrypt = obj;
 				obj = NULL;
 			}
-			pdf_dict_puts(ctx, pdf_trailer(ctx, doc), "Encrypt", encrypt);
+			pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt, encrypt);
 			pdf_drop_obj(ctx, encrypt);
 			encrypt = NULL;
 		}
@@ -549,7 +549,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				id = obj;
 				obj = NULL;
 			}
-			pdf_dict_puts(ctx, pdf_trailer(ctx, doc), "ID", id);
+			pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_ID, id);
 			pdf_drop_obj(ctx, id);
 			id = NULL;
 		}
@@ -584,7 +584,7 @@ pdf_repair_obj_stms(fz_context *ctx, pdf_document *doc)
 			dict = pdf_load_object(ctx, doc, i, 0);
 			fz_try(ctx)
 			{
-				if (!strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, dict, "Type")), "ObjStm"))
+				if (pdf_name_eq(ctx, pdf_dict_get(ctx, dict, PDF_NAME_Type), PDF_NAME_ObjStm))
 					pdf_repair_obj_stm(ctx, doc, i, 0);
 			}
 			fz_catch(ctx)

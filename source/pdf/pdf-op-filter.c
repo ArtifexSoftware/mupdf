@@ -51,22 +51,22 @@ typedef struct pdf_filter_processor_s
 } pdf_filter_processor;
 
 static void
-copy_resource(fz_context *ctx, pdf_filter_processor *p, const char *key, const char *name)
+copy_resource(fz_context *ctx, pdf_filter_processor *p, pdf_obj *key, const char *name)
 {
 	pdf_obj *res, *obj;
 
 	if (!name || name[0] == 0)
 		return;
 
-	res = pdf_dict_gets(ctx, p->old_rdb, key);
+	res = pdf_dict_get(ctx, p->old_rdb, key);
 	obj = pdf_dict_gets(ctx, res, name);
 	if (obj)
 	{
-		res = pdf_dict_gets(ctx, p->new_rdb, key);
+		res = pdf_dict_get(ctx, p->new_rdb, key);
 		if (!res)
 		{
 			res = pdf_new_dict(ctx, p->doc, 1);
-			pdf_dict_puts_drop(ctx, p->new_rdb, key, res);
+			pdf_dict_put_drop(ctx, p->new_rdb, key, res);
 		}
 		pdf_dict_putp(ctx, res, name, obj);
 	}
@@ -402,7 +402,7 @@ pdf_filter_gs_begin(fz_context *ctx, pdf_processor *proc, const char *name, pdf_
 	filter_flush(ctx, p, FLUSH_ALL);
 	if (p->chain->op_gs_begin)
 		p->chain->op_gs_begin(ctx, p->chain, name, extgstate);
-	copy_resource(ctx, p, "ExtGState", name);
+	copy_resource(ctx, p, PDF_NAME_ExtGState, name);
 }
 
 static void
@@ -725,7 +725,7 @@ pdf_filter_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_font_d
 	filter_flush(ctx, p, 0);
 	if (p->chain->op_Tf)
 		p->chain->op_Tf(ctx, p->chain, name, font, size);
-	copy_resource(ctx, p, "Font", name);
+	copy_resource(ctx, p, PDF_NAME_Font, name);
 }
 
 static void
@@ -851,7 +851,7 @@ pdf_filter_CS(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorsp
 	filter_gstate *gstate = gstate_to_update(ctx, p);
 	fz_strlcpy(gstate->CS.name, name, sizeof gstate->CS.name);
 	gstate->CS.cs = cs;
-	copy_resource(ctx, p, "ColorSpace", name);
+	copy_resource(ctx, p, PDF_NAME_ColorSpace, name);
 }
 
 static void
@@ -861,7 +861,7 @@ pdf_filter_cs(fz_context *ctx, pdf_processor *proc, const char *name, fz_colorsp
 	filter_gstate *gstate = gstate_to_update(ctx, p);
 	fz_strlcpy(gstate->cs.name, name, sizeof gstate->cs.name);
 	gstate->cs.cs = cs;
-	copy_resource(ctx, p, "ColorSpace", name);
+	copy_resource(ctx, p, PDF_NAME_ColorSpace, name);
 }
 
 static void
@@ -876,7 +876,7 @@ pdf_filter_SC_pattern(fz_context *ctx, pdf_processor *proc, const char *name, pd
 	gstate->SC.n = n;
 	for (i = 0; i < n; ++i)
 		gstate->SC.c[i] = color[i];
-	copy_resource(ctx, p, "Pattern", name);
+	copy_resource(ctx, p, PDF_NAME_Pattern, name);
 }
 
 static void
@@ -891,7 +891,7 @@ pdf_filter_sc_pattern(fz_context *ctx, pdf_processor *proc, const char *name, pd
 	gstate->sc.n = n;
 	for (i = 0; i < n; ++i)
 		gstate->sc.c[i] = color[i];
-	copy_resource(ctx, p, "Pattern", name);
+	copy_resource(ctx, p, PDF_NAME_Pattern, name);
 }
 
 static void
@@ -903,7 +903,7 @@ pdf_filter_SC_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_s
 	gstate->SC.pat = NULL;
 	gstate->SC.shd = shade;
 	gstate->SC.n = 0;
-	copy_resource(ctx, p, "Pattern", name);
+	copy_resource(ctx, p, PDF_NAME_Pattern, name);
 }
 
 static void
@@ -915,7 +915,7 @@ pdf_filter_sc_shade(fz_context *ctx, pdf_processor *proc, const char *name, fz_s
 	gstate->sc.pat = NULL;
 	gstate->sc.shd = shade;
 	gstate->sc.n = 0;
-	copy_resource(ctx, p, "Pattern", name);
+	copy_resource(ctx, p, PDF_NAME_Pattern, name);
 }
 
 static void
@@ -1012,7 +1012,7 @@ pdf_filter_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *
 	filter_flush(ctx, p, FLUSH_ALL);
 	if (p->chain->op_sh)
 		p->chain->op_sh(ctx, p->chain, name, shade);
-	copy_resource(ctx, p, "Shading", name);
+	copy_resource(ctx, p, PDF_NAME_Shading, name);
 }
 
 static void
@@ -1022,7 +1022,7 @@ pdf_filter_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_i
 	filter_flush(ctx, p, FLUSH_ALL);
 	if (p->chain->op_Do_image)
 		p->chain->op_Do_image(ctx, p->chain, name, image);
-	copy_resource(ctx, p, "XObject", name);
+	copy_resource(ctx, p, PDF_NAME_XObject, name);
 }
 
 static void
@@ -1032,7 +1032,7 @@ pdf_filter_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_x
 	filter_flush(ctx, p, FLUSH_ALL);
 	if (p->chain->op_Do_form)
 		p->chain->op_Do_form(ctx, p->chain, name, xobj, page_resources);
-	copy_resource(ctx, p, "XObject", name);
+	copy_resource(ctx, p, PDF_NAME_XObject, name);
 }
 
 /* marked content */

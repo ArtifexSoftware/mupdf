@@ -104,8 +104,7 @@ static int
 pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const char *event, pdf_obj *ocg)
 {
 	char event_state[16];
-	pdf_obj *obj, *obj2;
-	char *type;
+	pdf_obj *obj, *obj2, *type;
 
 	/* Avoid infinite recursions */
 	if (pdf_obj_marked(ctx, ocg))
@@ -122,7 +121,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 	/* If we've been handed a name, look it up in the properties. */
 	if (pdf_is_name(ctx, ocg))
 	{
-		ocg = pdf_dict_gets(ctx, pdf_dict_gets(ctx, rdb, "Properties"), pdf_to_name(ctx, ocg));
+		ocg = pdf_dict_get(ctx, pdf_dict_get(ctx, rdb, PDF_NAME_Properties), ocg);
 	}
 	/* If we haven't been given an ocg at all, then we're visible */
 	if (!ocg)
@@ -131,9 +130,9 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 	fz_strlcpy(event_state, event, sizeof event_state);
 	fz_strlcat(event_state, "State", sizeof event_state);
 
-	type = pdf_to_name(ctx, pdf_dict_gets(ctx, ocg, "Type"));
+	type = pdf_dict_get(ctx, ocg, PDF_NAME_Type);
 
-	if (strcmp(type, "OCG") == 0)
+	if (pdf_name_eq(ctx, type, PDF_NAME_OCG))
 	{
 		/* An Optional Content Group */
 		int default_value = 0;
@@ -141,6 +140,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 		int gen = pdf_to_gen(ctx, ocg);
 		int len = desc->len;
 		int i;
+		pdf_obj *es;
 
 		/* by default an OCG is visible, unless it's explicitly hidden */
 		for (i = 0; i < len; i++)
@@ -154,7 +154,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 
 		/* Check Intents; if our intent is not part of the set given
 		 * by the current config, we should ignore it. */
-		obj = pdf_dict_gets(ctx, ocg, "Intent");
+		obj = pdf_dict_get(ctx, ocg, PDF_NAME_Intent);
 		if (pdf_is_name(ctx, obj))
 		{
 			/* If it doesn't match, it's hidden */
@@ -190,7 +190,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 		 * correspond to entries in the AS list in the OCG config.
 		 * Given that we don't handle Zoom or User, or Language
 		 * dicts, this is not really a problem. */
-		obj = pdf_dict_gets(ctx, ocg, "Usage");
+		obj = pdf_dict_get(ctx, ocg, PDF_NAME_Usage);
 		if (!pdf_is_dict(ctx, obj))
 			return default_value;
 		/* FIXME: Should look at Zoom (and return hidden if out of
@@ -198,39 +198,40 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 		/* FIXME: Could provide hooks to the caller to check if
 		 * User is appropriate - if not return hidden. */
 		obj2 = pdf_dict_gets(ctx, obj, event);
-		if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, obj2, event_state)), "OFF") == 0)
+		es = pdf_dict_gets(ctx, obj2, event_state);
+		if (pdf_name_eq(ctx, es, PDF_NAME_OFF))
 		{
 			return 1;
 		}
-		if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, obj2, event_state)), "ON") == 0)
+		if (pdf_name_eq(ctx, es, PDF_NAME_ON))
 		{
 			return 0;
 		}
 		return default_value;
 	}
-	else if (strcmp(type, "OCMD") == 0)
+	else if (pdf_name_eq(ctx, type, PDF_NAME_OCMD))
 	{
 		/* An Optional Content Membership Dictionary */
-		char *name;
+		pdf_obj *name;
 		int combine, on;
 
-		obj = pdf_dict_gets(ctx, ocg, "VE");
+		obj = pdf_dict_get(ctx, ocg, PDF_NAME_VE);
 		if (pdf_is_array(ctx, obj)) {
 			/* FIXME: Calculate visibility from array */
 			return 0;
 		}
-		name = pdf_to_name(ctx, pdf_dict_gets(ctx, ocg, "P"));
+		name = pdf_dict_get(ctx, ocg, PDF_NAME_P);
 		/* Set combine; Bit 0 set => AND, Bit 1 set => true means
 		 * Off, otherwise true means On */
-		if (strcmp(name, "AllOn") == 0)
+		if (pdf_name_eq(ctx, name, PDF_NAME_AllOn))
 		{
 			combine = 1;
 		}
-		else if (strcmp(name, "AnyOff") == 0)
+		else if (pdf_name_eq(ctx, name, PDF_NAME_AnyOff))
 		{
 			combine = 2;
 		}
-		else if (strcmp(name, "AllOff") == 0)
+		else if (pdf_name_eq(ctx, name, PDF_NAME_AllOff))
 		{
 			combine = 3;
 		}
@@ -243,7 +244,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 			return 0; /* Should never happen */
 		fz_try(ctx)
 		{
-			obj = pdf_dict_gets(ctx, ocg, "OCGs");
+			obj = pdf_dict_get(ctx, ocg, PDF_NAME_OCGs);
 			on = combine & 1;
 			if (pdf_is_array(ctx, obj)) {
 				int i, len;
@@ -343,23 +344,23 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 {
 	pdf_obj *obj;
 
-	obj = pdf_dict_gets(ctx, dict, "LW");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_LW);
 	if (pdf_is_number(ctx, obj) && proc->op_w)
 		proc->op_w(ctx, proc, pdf_to_real(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "LC");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_LC);
 	if (pdf_is_int(ctx, obj) && proc->op_J)
 		proc->op_J(ctx, proc, pdf_to_int(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "LJ");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_LJ);
 	if (pdf_is_int(ctx, obj) && proc->op_j)
 		proc->op_j(ctx, proc, pdf_to_int(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "ML");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_ML);
 	if (pdf_is_number(ctx, obj) && proc->op_M)
 		proc->op_M(ctx, proc, pdf_to_real(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "D");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_D);
 	if (pdf_is_array(ctx, obj) && proc->op_d)
 	{
 		pdf_obj *dash_array = pdf_array_get(ctx, obj, 0);
@@ -367,15 +368,15 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 		proc->op_d(ctx, proc, dash_array, pdf_to_real(ctx, dash_phase));
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "RI");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_RI);
 	if (pdf_is_name(ctx, obj) && proc->op_ri)
 		proc->op_ri(ctx, proc, pdf_to_name(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "FL");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_FL);
 	if (pdf_is_number(ctx, obj) && proc->op_i)
 		proc->op_i(ctx, proc, pdf_to_real(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "Font");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Font);
 	if (pdf_is_array(ctx, obj) && proc->op_Tf)
 	{
 		pdf_obj *font_ref = pdf_array_get(ctx, obj, 0);
@@ -391,35 +392,35 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 
 	/* transfer functions */
 
-	obj = pdf_dict_gets(ctx, dict, "TR2");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_TR2);
 	if (pdf_is_name(ctx, obj))
-		if (strcmp(pdf_to_name(ctx, obj), "Identity") && strcmp(pdf_to_name(ctx, obj), "Default"))
+		if (!pdf_name_eq(ctx, obj, PDF_NAME_Identity) && !pdf_name_eq(ctx, obj, PDF_NAME_Default))
 			fz_warn(ctx, "ignoring transfer function");
 	if (!obj) /* TR is ignored in the presence of TR2 */
 	{
-		pdf_obj *tr = pdf_dict_gets(ctx, dict, "TR");
+		pdf_obj *tr = pdf_dict_get(ctx, dict, PDF_NAME_TR);
 		if (pdf_is_name(ctx, tr))
-			if (strcmp(pdf_to_name(ctx, tr), "Identity"))
+			if (!pdf_name_eq(ctx, tr, PDF_NAME_Identity))
 				fz_warn(ctx, "ignoring transfer function");
 	}
 
 	/* transparency state */
 
-	obj = pdf_dict_gets(ctx, dict, "CA");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_CA);
 	if (pdf_is_number(ctx, obj) && proc->op_gs_CA)
 		proc->op_gs_CA(ctx, proc, pdf_to_real(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "ca");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_ca);
 	if (pdf_is_number(ctx, obj) && proc->op_gs_ca)
 		proc->op_gs_ca(ctx, proc, pdf_to_real(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "BM");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_BM);
 	if (pdf_is_array(ctx, obj))
 		obj = pdf_array_get(ctx, obj, 0);
 	if (pdf_is_name(ctx, obj) && proc->op_gs_BM)
 		proc->op_gs_BM(ctx, proc, pdf_to_name(ctx, obj));
 
-	obj = pdf_dict_gets(ctx, dict, "SMask");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_SMask);
 	if (proc->op_gs_SMask)
 	{
 		if (pdf_is_dict(ctx, obj))
@@ -432,7 +433,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 
 			fz_var(xobj);
 
-			group = pdf_dict_gets(ctx, obj, "G");
+			group = pdf_dict_get(ctx, obj, PDF_NAME_G);
 			if (!group)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load softmask xobject (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
 			xobj = pdf_load_xobject(ctx, csi->doc, group);
@@ -446,21 +447,21 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 				for (k = 0; k < colorspace->n; k++)
 					softmask_bc[k] = 0;
 
-				bc = pdf_dict_gets(ctx, obj, "BC");
+				bc = pdf_dict_get(ctx, obj, PDF_NAME_BC);
 				if (pdf_is_array(ctx, bc))
 				{
 					for (k = 0; k < colorspace->n; k++)
 						softmask_bc[k] = pdf_to_real(ctx, pdf_array_get(ctx, bc, k));
 				}
 
-				s = pdf_dict_gets(ctx, obj, "S");
-				if (pdf_is_name(ctx, s) && !strcmp(pdf_to_name(ctx, s), "Luminosity"))
+				s = pdf_dict_get(ctx, obj, PDF_NAME_S);
+				if (pdf_name_eq(ctx, s, PDF_NAME_Luminosity))
 					luminosity = 1;
 				else
 					luminosity = 0;
 
-				tr = pdf_dict_gets(ctx, obj, "TR");
-				if (tr && strcmp(pdf_to_name(ctx, tr), "Identity"))
+				tr = pdf_dict_get(ctx, obj, PDF_NAME_TR);
+				if (tr && !pdf_name_eq(ctx, tr, PDF_NAME_Identity))
 					fz_warn(ctx, "ignoring transfer function");
 
 				proc->op_gs_SMask(ctx, proc, xobj, csi->rdb, softmask_bc, luminosity);
@@ -474,7 +475,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 				fz_rethrow(ctx);
 			}
 		}
-		else if (pdf_is_name(ctx, obj) && !strcmp(pdf_to_name(ctx, obj), "None"))
+		else if (pdf_is_name(ctx, obj) && pdf_name_eq(ctx, obj, PDF_NAME_None))
 		{
 			proc->op_gs_SMask(ctx, proc, NULL, NULL, NULL, 0);
 		}
@@ -486,22 +487,26 @@ pdf_process_Do(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 {
 	pdf_obj *xres, *xobj, *subtype;
 
-	xres = pdf_dict_gets(ctx, csi->rdb, "XObject");
+	xres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_XObject);
 	if (!xres)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find XObject dictionary");
 	xobj = pdf_dict_gets(ctx, xres, csi->name);
 	if (!xobj)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find XObject resource '%s'", csi->name);
-	subtype = pdf_dict_gets(ctx, xobj, "Subtype");
-	if (!strcmp(pdf_to_name(ctx, subtype), "Form") && pdf_dict_gets(ctx, xobj, "Subtype2"))
-		subtype = pdf_dict_gets(ctx, xobj, "Subtype2");
+	subtype = pdf_dict_get(ctx, xobj, PDF_NAME_Subtype);
+	if (pdf_name_eq(ctx, subtype, PDF_NAME_Form))
+	{
+		pdf_obj *st = pdf_dict_get(ctx, xobj, PDF_NAME_Subtype2);
+		if (st)
+			subtype = st;
+	}
 	if (!pdf_is_name(ctx, subtype))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no XObject subtype specified");
 
-	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->event, pdf_dict_gets(ctx, xobj, "OC")))
+	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->event, pdf_dict_get(ctx, xobj, PDF_NAME_OC)))
 		return;
 
-	if (!strcmp(pdf_to_name(ctx, subtype), "Form"))
+	if (pdf_name_eq(ctx, subtype, PDF_NAME_Form))
 	{
 		if (proc->op_Do_form)
 		{
@@ -516,7 +521,7 @@ pdf_process_Do(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 		}
 	}
 
-	else if (!strcmp(pdf_to_name(ctx, subtype), "Image"))
+	else if (pdf_name_eq(ctx, subtype, PDF_NAME_Image))
 	{
 		if (proc->op_Do_image)
 		{
@@ -562,7 +567,7 @@ pdf_process_CS(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 		else
 		{
 			pdf_obj *csres, *csobj;
-			csres = pdf_dict_gets(ctx, csi->rdb, "ColorSpace");
+			csres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_ColorSpace);
 			if (!csres)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ColorSpace dictionary");
 			csobj = pdf_dict_gets(ctx, csres, csi->name);
@@ -592,14 +597,14 @@ pdf_process_SC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 	{
 		pdf_obj *patres, *patobj, *type;
 
-		patres = pdf_dict_gets(ctx, csi->rdb, "Pattern");
+		patres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_Pattern);
 		if (!patres)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Pattern dictionary");
 		patobj = pdf_dict_gets(ctx, patres, csi->name);
 		if (!patobj)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Pattern resource '%s'", csi->name);
 
-		type = pdf_dict_gets(ctx, patobj, "PatternType");
+		type = pdf_dict_get(ctx, patobj, PDF_NAME_PatternType);
 
 		if (pdf_to_int(ctx, type) == 1)
 		{
@@ -661,7 +666,7 @@ static pdf_obj *
 resolve_properties(fz_context *ctx, pdf_csi *csi, pdf_obj *obj)
 {
 	if (pdf_is_name(ctx, obj))
-		return pdf_dict_gets(ctx, pdf_dict_gets(ctx, csi->rdb, "Properties"), pdf_to_name(ctx, obj));
+		return pdf_dict_get(ctx, pdf_dict_get(ctx, csi->rdb, PDF_NAME_Properties), obj);
 	else
 		return obj;
 }
@@ -688,7 +693,7 @@ pdf_process_BDC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, const char *
 		return;
 
 	/* Wrong type of property */
-	if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, properties, "Type")), "OCG"))
+	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, properties, PDF_NAME_Type), PDF_NAME_OCG))
 		return;
 
 	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->event, properties))
@@ -785,7 +790,7 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 	case B('g','s'):
 		{
 			pdf_obj *gsres, *gsobj;
-			gsres = pdf_dict_gets(ctx, csi->rdb, "ExtGState");
+			gsres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_ExtGState);
 			if (!gsres)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ExtGState dictionary");
 			gsobj = pdf_dict_gets(ctx, gsres, csi->name);
@@ -846,7 +851,7 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 		{
 			pdf_obj *fontres, *fontobj;
 			pdf_font_desc *font;
-			fontres = pdf_dict_gets(ctx, csi->rdb, "Font");
+			fontres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_Font);
 			if (!fontres)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Font dictionary");
 			fontobj = pdf_dict_gets(ctx, fontres, csi->name);
@@ -938,7 +943,7 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 		{
 			pdf_obj *shaderes, *shadeobj;
 			fz_shade *shade;
-			shaderes = pdf_dict_gets(ctx, csi->rdb, "Shading");
+			shaderes = pdf_dict_get(ctx, csi->rdb, PDF_NAME_Shading);
 			if (!shaderes)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Shading dictionary");
 			shadeobj = pdf_dict_gets(ctx, shaderes, csi->name);
@@ -1222,7 +1227,7 @@ pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 void
 pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_cookie *cookie)
 {
-	int flags = pdf_to_int(ctx, pdf_dict_gets(ctx, annot->obj, "F"));
+	int flags = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
 
 	if (flags & (F_Invisible | F_Hidden))
 		return;
@@ -1238,7 +1243,7 @@ pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_p
 	/* TODO: NoZoom and NoRotate */
 
 	/* XXX what resources, if any, to use for this check? */
-	if (pdf_is_hidden_ocg(ctx, doc->ocg, NULL, proc->event, pdf_dict_gets(ctx, annot->obj, "OC")))
+	if (pdf_is_hidden_ocg(ctx, doc->ocg, NULL, proc->event, pdf_dict_get(ctx, annot->obj, PDF_NAME_OC)))
 		return;
 
 	if (proc->op_q && proc->op_cm && proc->op_Do_form && proc->op_Q)

@@ -11,7 +11,7 @@ void pdf_drop_crypt(fz_context *ctx, pdf_crypt *crypt);
 void pdf_crypt_obj(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, int num, int gen);
 void pdf_crypt_buffer(fz_context *ctx, pdf_crypt *crypt, fz_buffer *buf, int num, int gen);
 fz_stream *pdf_open_crypt(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, int num, int gen);
-fz_stream *pdf_open_crypt_with_filter(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, char *name, int num, int gen);
+fz_stream *pdf_open_crypt_with_filter(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, pdf_obj *name, int num, int gen);
 
 int pdf_crypt_version(fz_context *ctx, pdf_document *doc);
 int pdf_crypt_revision(fz_context *ctx, pdf_document *doc);

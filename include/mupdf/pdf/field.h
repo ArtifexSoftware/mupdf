@@ -34,7 +34,7 @@ enum
 };
 
 char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
-pdf_obj *pdf_get_inheritable(fz_context *ctx, pdf_document *doc, pdf_obj *obj, char *key);
+pdf_obj *pdf_get_inheritable(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *key);
 int pdf_get_field_flags(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 int pdf_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *field);
 void pdf_set_field_type(fz_context *ctx, pdf_document *doc, pdf_obj *obj, int type);

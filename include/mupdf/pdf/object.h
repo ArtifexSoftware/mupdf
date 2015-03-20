@@ -42,8 +42,18 @@ int pdf_is_array(fz_context *ctx, pdf_obj *obj);
 int pdf_is_dict(fz_context *ctx, pdf_obj *obj);
 int pdf_is_indirect(fz_context *ctx, pdf_obj *obj);
 int pdf_is_stream(fz_context *ctx, pdf_document *doc, int num, int gen);
-
+pdf_obj *pdf_resolve_obj(fz_context *ctx, pdf_obj *a);
 int pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b);
+int pdf_objcmp_resolve(fz_context *ctx, pdf_obj *a, pdf_obj *b);
+
+static inline int pdf_name_eq(fz_context *ctx, pdf_obj *a, pdf_obj *b)
+{
+	if (a == b)
+		return 1;
+	if (a < PDF_OBJ_NAME__LIMIT && b < PDF_OBJ_NAME__LIMIT)
+		return 0;
+	return !pdf_objcmp_resolve(ctx, a, b);
+}
 
 /* obj marking and unmarking functions - to avoid infinite recursions. */
 int pdf_obj_marked(fz_context *ctx, pdf_obj *obj);
@@ -88,14 +98,19 @@ pdf_obj *pdf_dict_get_key(fz_context *ctx, pdf_obj *dict, int idx);
 pdf_obj *pdf_dict_get_val(fz_context *ctx, pdf_obj *dict, int idx);
 void pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *new_obj);
 pdf_obj *pdf_dict_get(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
+pdf_obj *pdf_dict_getp(fz_context *ctx, pdf_obj *dict, const char *path);
+pdf_obj *pdf_dict_getl(fz_context *ctx, pdf_obj *dict, ...);
+pdf_obj *pdf_dict_geta(fz_context *ctx, pdf_obj *dict, pdf_obj *key, pdf_obj *abbrev);
 pdf_obj *pdf_dict_gets(fz_context *ctx, pdf_obj *dict, const char *key);
-pdf_obj *pdf_dict_getp(fz_context *ctx, pdf_obj *dict, const char *key);
 pdf_obj *pdf_dict_getsa(fz_context *ctx, pdf_obj *dict, const char *key, const char *abbrev);
 void pdf_dict_put(fz_context *ctx, pdf_obj *dict, pdf_obj *key, pdf_obj *val);
+void pdf_dict_put_drop(fz_context *ctx, pdf_obj *dict, pdf_obj *key, pdf_obj *val);
 void pdf_dict_puts(fz_context *ctx, pdf_obj *dict, const char *key, pdf_obj *val);
 void pdf_dict_puts_drop(fz_context *ctx, pdf_obj *dict, const char *key, pdf_obj *val);
-void pdf_dict_putp(fz_context *ctx, pdf_obj *dict, const char *key, pdf_obj *val);
-void pdf_dict_putp_drop(fz_context *ctx, pdf_obj *dict, const char *key, pdf_obj *val);
+void pdf_dict_putp(fz_context *ctx, pdf_obj *dict, const char *path, pdf_obj *val);
+void pdf_dict_putp_drop(fz_context *ctx, pdf_obj *dict, const char *path, pdf_obj *val);
+void pdf_dict_putl(fz_context *ctx, pdf_obj *dict, pdf_obj *val, ...);
+void pdf_dict_putl_drop(fz_context *ctx, pdf_obj *dict, pdf_obj *val, ...);
 void pdf_dict_del(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 void pdf_dict_dels(fz_context *ctx, pdf_obj *dict, const char *key);
 void pdf_sort_dict(fz_context *ctx, pdf_obj *dict);

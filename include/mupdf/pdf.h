@@ -3,6 +3,7 @@
 
 #include "mupdf/fitz.h"
 
+#include "mupdf/pdf/name-table.h"
 #include "mupdf/pdf/object.h"
 #include "mupdf/pdf/document.h"
 #include "mupdf/pdf/parse.h"

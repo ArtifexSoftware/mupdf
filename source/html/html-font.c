@@ -1,5 +1,6 @@
 #include "mupdf/html.h"
-#include "mupdf/pdf.h" /* for pdf_lookup_builtin_font */
+
+unsigned char *pdf_lookup_builtin_font(fz_context *ctx, const char *name, unsigned int *len);
 
 static const char *font_names[16] =
 {
