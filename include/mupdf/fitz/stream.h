@@ -20,7 +20,7 @@ typedef struct fz_stream_s fz_stream;
 	fz_open_file: Open the named file and wrap it in a stream.
 
 	filename: Path to a file. On non-Windows machines the filename should
-	be exactly as it would be passed to open(2). On Windows machines, the
+	be exactly as it would be passed to fopen(2). On Windows machines, the
 	path should be UTF-8 encoded so that non-ASCII characters can be
 	represented. Other platforms do the encoding as standard anyway (and
 	in most cases, particularly for MacOS and Linux, the encoding they
@@ -28,7 +28,7 @@ typedef struct fz_stream_s fz_stream;
 */
 fz_stream *fz_open_file(fz_context *ctx, const char *filename);
 
-fz_stream *fz_open_fd_progressive(fz_context *ctx, int fd, int bps);
+fz_stream *fz_open_file_ptr_progressive(fz_context *ctx, FILE *file, int bps);
 fz_stream *fz_open_file_progressive(fz_context *ctx, const char *filename, int bps);
 
 /*
@@ -37,20 +37,20 @@ fz_stream *fz_open_file_progressive(fz_context *ctx, const char *filename, int b
 	This function is only available when compiling for Win32.
 
 	filename: Wide character path to the file as it would be given
-	to _wopen().
+	to _wfopen().
 */
 fz_stream *fz_open_file_w(fz_context *ctx, const wchar_t *filename);
 
 /*
-	fz_open_fd: Wrap an open file descriptor in a stream.
+	fz_open_file: Wrap an open file descriptor in a stream.
 
 	file: An open file descriptor supporting bidirectional
 	seeking. The stream will take ownership of the file
 	descriptor, so it may not be modified or closed after the call
-	to fz_open_fd. When the stream is closed it will also close
+	to fz_open_file_ptr. When the stream is closed it will also close
 	the file descriptor.
 */
-fz_stream *fz_open_fd(fz_context *ctx, int file);
+fz_stream *fz_open_file_ptr(fz_context *ctx, FILE *file);
 
 /*
 	fz_open_memory: Open a block of memory as a stream.

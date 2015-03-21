@@ -60,7 +60,7 @@ fz_drop_stream(fz_context *ctx, fz_stream *stm)
 
 typedef struct fz_file_stream_s
 {
-	int file;
+	FILE *file;
 	unsigned char buffer[4096];
 } fz_file_stream;
 
@@ -69,7 +69,7 @@ static int next_file(fz_context *ctx, fz_stream *stm, int n)
 	fz_file_stream *state = stm->state;
 
 	/* n is only a hint, that we can safely ignore */
-	n = read(state->file, state->buffer, sizeof(state->buffer));
+	n = fread(state->buffer, 1, sizeof(state->buffer), state->file);
 	if (n < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = state->buffer;
@@ -84,10 +84,10 @@ static int next_file(fz_context *ctx, fz_stream *stm, int n)
 static void seek_file(fz_context *ctx, fz_stream *stm, int offset, int whence)
 {
 	fz_file_stream *state = stm->state;
-	int n = lseek(state->file, offset, whence);
+	int n = fseek(state->file, offset, whence);
 	if (n < 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot lseek: %s", strerror(errno));
-	stm->pos = n;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek: %s", strerror(errno));
+	stm->pos = ftell(state->file);
 	stm->rp = state->buffer;
 	stm->wp = state->buffer;
 }
@@ -95,18 +95,18 @@ static void seek_file(fz_context *ctx, fz_stream *stm, int offset, int whence)
 static void close_file(fz_context *ctx, void *state_)
 {
 	fz_file_stream *state = state_;
-	int n = close(state->file);
+	int n = fclose(state->file);
 	if (n < 0)
 		fz_warn(ctx, "close error: %s", strerror(errno));
 	fz_free(ctx, state);
 }
 
 fz_stream *
-fz_open_fd(fz_context *ctx, int fd)
+fz_open_file_ptr(fz_context *ctx, FILE *file)
 {
 	fz_stream *stm;
 	fz_file_stream *state = fz_malloc_struct(ctx, fz_file_stream);
-	state->file = fd;
+	state->file = file;
 
 	fz_try(ctx)
 	{
@@ -125,34 +125,35 @@ fz_open_fd(fz_context *ctx, int fd)
 fz_stream *
 fz_open_file(fz_context *ctx, const char *name)
 {
+	FILE *f;
 #if defined(_WIN32) || defined(_WIN64)
 	char *s = (char*)name;
 	wchar_t *wname, *d;
-	int c, fd;
+	int c;
 	d = wname = fz_malloc(ctx, (strlen(name)+1) * sizeof(wchar_t));
 	while (*s) {
 		s += fz_chartorune(&c, s);
 		*d++ = c;
 	}
 	*d = 0;
-	fd = _wopen(wname, O_BINARY | O_RDONLY, 0);
+	f = _wfopen(wname, L"rb");
 	fz_free(ctx, wname);
 #else
-	int fd = open(name, O_BINARY | O_RDONLY, 0);
+	f = fopen(name, "rb");
 #endif
-	if (fd == -1)
+	if (f == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open %s", name);
-	return fz_open_fd(ctx, fd);
+	return fz_open_file_ptr(ctx, f);
 }
 
 #if defined(_WIN32) || defined(_WIN64)
 fz_stream *
 fz_open_file_w(fz_context *ctx, const wchar_t *name)
 {
-	int fd = _wopen(name, O_BINARY | O_RDONLY, 0);
-	if (fd == -1)
+	FILE *f = _wfopen(name, L"rb");
+	if (f == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file %ls", name);
-	return fz_open_fd(ctx, fd);
+	return fz_open_file_ptr(ctx, f);
 }
 #endif
 

@@ -19,7 +19,7 @@ show_progress(int av, int pos)
 
 typedef struct prog_state
 {
-	int fd;
+	FILE *file;
 	int length;
 	int available;
 	int bps;
@@ -55,7 +55,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 		}
 	}
 
-	n = (len > 0 ? read(ps->fd, buf, len) : 0);
+	n = (len > 0 ? fread(buf, 1, (unsigned int)len, ps->file) : 0);
 	if (n < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = ps->buffer + stm->pos;
@@ -69,7 +69,6 @@ static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 static void seek_prog(fz_context *ctx, fz_stream *stm, int offset, int whence)
 {
 	prog_state *ps = (prog_state *)stm->state;
-	int n;
 
 	/* Simulate more data having arrived */
 	if (ps->available < ps->length)
@@ -106,19 +105,16 @@ static void seek_prog(fz_context *ctx, fz_stream *stm, int offset, int whence)
 		}
 	}
 
-	n = lseek(ps->fd, offset, whence);
-	if (n < 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot lseek: %s", strerror(errno));
-	stm->pos = n;
+	if (fseek(ps->file, offset, whence) != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek: %s", strerror(errno));
+	stm->pos = offset;
 	stm->wp = stm->rp;
 }
 
 static void close_prog(fz_context *ctx, void *state)
 {
 	prog_state *ps = (prog_state *)state;
-	int n = close(ps->fd);
-	if (n < 0)
-		fz_warn(ctx, "close error: %s", strerror(errno));
+	fclose(ps->file);
 	fz_free(ctx, state);
 }
 
@@ -137,19 +133,20 @@ static int meta_prog(fz_context *ctx, fz_stream *stm, int key, int size, void *p
 }
 
 fz_stream *
-fz_open_fd_progressive(fz_context *ctx, int fd, int bps)
+fz_open_file_ptr_progressive(fz_context *ctx, FILE *file, int bps)
 {
 	fz_stream *stm;
 	prog_state *state;
 
 	state = fz_malloc_struct(ctx, prog_state);
-	state->fd = fd;
+	state->file = file;
 	state->bps = bps;
 	state->start_time = clock();
 	state->available = 0;
 
-	state->length = lseek(state->fd, 0, SEEK_END);
-	lseek(state->fd, 0, SEEK_SET);
+	fseek(state->file, 0, SEEK_END);
+	state->length = ftell(state->file);
+	fseek(state->file, 0, SEEK_SET);
 
 	fz_try(ctx)
 	{
@@ -169,22 +166,23 @@ fz_open_fd_progressive(fz_context *ctx, int fd, int bps)
 fz_stream *
 fz_open_file_progressive(fz_context *ctx, const char *name, int bps)
 {
+	FILE *f;
 #if defined(_WIN32) || defined(_WIN64)
 	char *s = (char*)name;
 	wchar_t *wname, *d;
-	int c, fd;
+	int c;
 	d = wname = fz_malloc(ctx, (strlen(name)+1) * sizeof(wchar_t));
 	while (*s) {
 		s += fz_chartorune(&c, s);
 		*d++ = c;
 	}
 	*d = 0;
-	fd = _wopen(wname, O_BINARY | O_RDONLY, 0);
+	f = _wfopen(wname, L"rb");
 	fz_free(ctx, wname);
 #else
-	int fd = open(name, O_BINARY | O_RDONLY, 0);
+	f = fopen(name, "rb");
 #endif
-	if (fd == -1)
+	if (f == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open %s", name);
-	return fz_open_fd_progressive(ctx, fd, bps);
+	return fz_open_file_ptr_progressive(ctx, f, bps);
 }
