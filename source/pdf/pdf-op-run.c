@@ -2115,6 +2115,7 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 		if (gstate)
 		{
 			pdf_copy_gstate(ctx, &proc->gstate[0], gstate);
+			proc->gstate[0].clip_depth = 0;
 			proc->gstate[0].ctm = *ctm;
 		}
 		proc->gtop = 0;
