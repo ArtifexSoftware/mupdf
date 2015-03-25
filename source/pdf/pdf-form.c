@@ -417,7 +417,7 @@ static void set_check(fz_context *ctx, pdf_document *doc, pdf_obj *chk, pdf_obj 
 	else
 		val = PDF_NAME_Off;
 
-	pdf_dict_put_drop(ctx, chk, PDF_NAME_AS, val);
+	pdf_dict_put(ctx, chk, PDF_NAME_AS, val);
 }
 
 /* Set the values of all fields in a group defined by a node
