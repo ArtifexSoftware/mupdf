@@ -2591,6 +2591,9 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 
 	if (fz_opts->do_incremental)
 	{
+		/* If no changes, nothing to write */
+		if (!doc->xref_altered)
+			return;
 		opts.out = fopen(filename, "ab");
 		if (opts.out)
 		{
