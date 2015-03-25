@@ -164,6 +164,12 @@ LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
 CROSSCOMPILE=yes
 endif
 
+ifeq "$(OS)" "MINGW"
+WIN32_LIBS=-lcomdlg32 -lgdi32
+HAVE_WIN32=yes
+LDFLAGS += -Wl,-subsystem,windows
+endif
+
 # TODO: If crosscompiling, why not just call "make libs" instead of this exception?
 ifeq "$(CROSSCOMPILE)" "yes"
 HAVE_X11 ?= no
