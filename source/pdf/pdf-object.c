@@ -1172,19 +1172,14 @@ pdf_dict_get(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 {
 	int i;
 
-	if (key >= PDF_OBJ__LIMIT)
-	{
-		if (key->kind != PDF_NAME)
-			return NULL;
-
-		return pdf_dict_gets(ctx, obj, pdf_to_name(ctx, key));
-	}
-
 	RESOLVE(obj);
 	if (obj < PDF_OBJ__LIMIT || obj->kind != PDF_DICT)
 		return NULL;
 
-	i = pdf_dict_find(ctx, obj, key, NULL);
+	if (key < PDF_OBJ__LIMIT)
+		i = pdf_dict_find(ctx, obj, key, NULL);
+	else
+		i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key), NULL);
 	if (i >= 0)
 		return DICT(obj)->items[i].v;
 	return NULL;
@@ -1217,7 +1212,6 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 	if (obj >= PDF_OBJ__LIMIT)
 	{
 		int location;
-		char *s;
 		int i;
 
 		if (obj->kind != PDF_DICT)
@@ -1232,19 +1226,20 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 			fz_warn(ctx, "assert: key is not a name (%s)", pdf_objkindstr(obj));
 			return;
 		}
-		else
-			s = pdf_to_name(ctx, key);
 
 		if (!val)
 		{
-			fz_warn(ctx, "assert: val does not exist for key (%s)", s);
+			fz_warn(ctx, "assert: val does not exist for key (%s)", pdf_to_name(ctx, key));
 			return;
 		}
 
 		if (DICT(obj)->len > 100 && !(obj->flags & PDF_FLAGS_SORTED))
 			pdf_sort_dict(ctx, obj);
 
-		i = pdf_dict_finds(ctx, obj, s, &location);
+		if (key < PDF_OBJ__LIMIT)
+			i = pdf_dict_find(ctx, obj, key, &location);
+		else
+			i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key), &location);
 		if (i >= 0 && i < DICT(obj)->len)
 		{
 			if (DICT(obj)->items[i].v != val)
