@@ -1589,11 +1589,11 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_options *op
 		pdf_drop_obj(ctx, newlen);
 	}
 
-	fprintf(opts->out, "%d %d obj\n", num, gen);
+	fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
 	pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
-	fprintf(opts->out, "stream\n");
+	fputs("stream\n", opts->out);
 	fwrite(buf->data, 1, buf->len, opts->out);
-	fprintf(opts->out, "endstream\nendobj\n\n");
+	fputs("endstream\nendobj\n\n", opts->out);
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
@@ -1629,11 +1629,11 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_options *
 	pdf_dict_put(ctx, obj, PDF_NAME_Length, newlen);
 	pdf_drop_obj(ctx, newlen);
 
-	fprintf(opts->out, "%d %d obj\n", num, gen);
+	fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
 	pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
-	fprintf(opts->out, "stream\n");
+	fputs("stream\n", opts->out);
 	fwrite(buf->data, 1, buf->len, opts->out);
-	fprintf(opts->out, "endstream\nendobj\n\n");
+	fputs("endstream\nendobj\n\n", opts->out);
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
@@ -1682,7 +1682,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_options *o
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		if (opts->continue_on_error)
 		{
-			fprintf(opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
+			fz_fprintf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 			if (opts->errors)
 				(*opts->errors)++;
 			fz_warn(ctx, "%s", fz_caught_message(ctx));
@@ -1713,15 +1713,15 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_options *o
 	entry = pdf_get_xref_entry(ctx, doc, num);
 	if (!pdf_is_stream(ctx, doc, num, gen))
 	{
-		fprintf(opts->out, "%d %d obj\n", num, gen);
+		fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
-		fprintf(opts->out, "endobj\n\n");
+		fputs("endobj\n\n", opts->out);
 	}
 	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
 	{
-		fprintf(opts->out, "%d %d obj\n", num, gen);
+		fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
-		fprintf(opts->out, "stream\nendstream\nendobj\n\n");
+		fputs("stream\nendstream\nendobj\n\n", opts->out);
 	}
 	else
 	{
@@ -1764,7 +1764,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_options *o
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			if (opts->continue_on_error)
 			{
-				fprintf(opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
+				fz_fprintf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 				if (opts->errors)
 					(*opts->errors)++;
 				fz_warn(ctx, "%s", fz_caught_message(ctx));
@@ -1780,17 +1780,17 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_options *o
 	pdf_drop_obj(ctx, obj);
 }
 
-static void writexrefsubsect(pdf_write_options *opts, int from, int to)
+static void writexrefsubsect(fz_context *ctx, pdf_write_options *opts, int from, int to)
 {
 	int num;
 
-	fprintf(opts->out, "%d %d\n", from, to - from);
+	fz_fprintf(ctx, opts->out, "%d %d\n", from, to - from);
 	for (num = from; num < to; num++)
 	{
 		if (opts->use_list[num])
-			fprintf(opts->out, "%010Zd %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_fprintf(ctx, opts->out, "%010Zd %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
 		else
-			fprintf(opts->out, "%010Zd %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_fprintf(ctx, opts->out, "%010Zd %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
 	}
 }
 
@@ -1800,7 +1800,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_options *opt
 	pdf_obj *obj;
 	pdf_obj *nobj = NULL;
 
-	fprintf(opts->out, "xref\n");
+	fputs("xref\n", opts->out);
 	opts->first_xref_entry_offset = ftell(opts->out);
 
 	if (opts->do_incremental)
@@ -1818,17 +1818,17 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_options *opt
 				subto++;
 
 			if (subfrom < subto)
-				writexrefsubsect(opts, subfrom, subto);
+				writexrefsubsect(ctx, opts, subfrom, subto);
 
 			subfrom = subto;
 		}
 	}
 	else
 	{
-		writexrefsubsect(opts, from, to);
+		writexrefsubsect(ctx, opts, from, to);
 	}
 
-	fprintf(opts->out, "\n");
+	fputs("\n", opts->out);
 
 	fz_var(trailer);
 	fz_var(nobj);
@@ -1883,13 +1883,13 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_options *opt
 		fz_rethrow(ctx);
 	}
 
-	fprintf(opts->out, "trailer\n");
+	fputs("trailer\n", opts->out);
 	pdf_fprint_obj(ctx, opts->out, trailer, opts->do_expand == 0);
-	fprintf(opts->out, "\n");
+	fputs("\n", opts->out);
 
 	pdf_drop_obj(ctx, trailer);
 
-	fprintf(opts->out, "startxref\n%d\n%%%%EOF\n", startxref);
+	fz_fprintf(ctx, opts->out, "startxref\n%d\n%%%%EOF\n", startxref);
 
 	doc->has_xref_streams = 0;
 }
@@ -2011,7 +2011,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_option
 		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
 		writeobject(ctx, doc, opts, num, 0, 0);
-		fprintf(opts->out, "startxref\n%Zd\n%%%%EOF\n", startxref);
+		fz_fprintf(ctx, opts->out, "startxref\n%Zd\n%%%%EOF\n", startxref);
 	}
 	fz_always(ctx)
 	{
@@ -2081,7 +2081,7 @@ writeobjects(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, int pa
 	if (!opts->do_incremental)
 	{
 		fprintf(opts->out, "%%PDF-%d.%d\n", doc->version / 10, doc->version % 10);
-		fprintf(opts->out, "%%\316\274\341\277\246\n\n");
+		fputs("%%\316\274\341\277\246\n\n", opts->out);
 	}
 
 	dowriteobject(ctx, doc, opts, opts->start, pass);
@@ -2595,7 +2595,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 		if (opts.out)
 		{
 			fseek(opts.out, 0, SEEK_END);
-			fprintf(opts.out, "\n");
+			fputs("\n", opts.out);
 		}
 	}
 	else
