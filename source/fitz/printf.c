@@ -176,7 +176,7 @@ fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args)
 			if (c == '0' && fmt[0] && fmt[1]) {
 				z = *fmt++ - '0';
 				c = *fmt++;
-				if (c >= '0' && 'c' <= '9' && fmt[0])
+				while (c >= '0' && c <= '9' && fmt[0])
 				{
 					z = z*10 + c - '0';
 					c = *fmt++;
@@ -199,6 +199,8 @@ fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args)
 			case 'Z':
 				if (sizeof(fz_off_t) >= 8)
 					length = 64;
+				else
+					length = 32;
 				break;
 			}
 			if (length != 0)
