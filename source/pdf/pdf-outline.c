@@ -41,7 +41,7 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			{
 				node->down = pdf_load_outline_imp(ctx, doc, obj);
 
-				obj = pdf_dict_gets(ctx, dict, PDF_NAME_Count);
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_Count);
 				if (pdf_to_int(ctx, obj) > 0)
 					node->is_open = 1;
 			}
