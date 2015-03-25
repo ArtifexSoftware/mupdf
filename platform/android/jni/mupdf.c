@@ -2339,7 +2339,7 @@ JNI_FN(MuPDFCore_getFocusedWidgetSignatureState)(JNIEnv * env, jobject thiz)
 	if (!pdf_signatures_supported())
 		return Signature_NoSupport;
 
-	return pdf_dict_gets(ctx, ((pdf_annot *)focus)->obj, "V") ? Signature_Signed : Signature_Unsigned;
+	return pdf_dict_get(ctx, ((pdf_annot *)focus)->obj, PDF_NAME_V) ? Signature_Signed : Signature_Unsigned;
 }
 
 JNIEXPORT jstring JNICALL
