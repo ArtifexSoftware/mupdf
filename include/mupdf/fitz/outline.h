@@ -34,6 +34,7 @@ struct fz_outline_s
 	fz_link_dest dest;
 	fz_outline *next;
 	fz_outline *down;
+	int is_open;
 };
 
 /*

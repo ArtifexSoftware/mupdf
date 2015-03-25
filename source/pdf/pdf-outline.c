@@ -23,6 +23,7 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			node->dest.kind = FZ_LINK_NONE;
 			node->down = NULL;
 			node->next = NULL;
+			node->is_open = 0;
 			*prev = node;
 			prev = &node->next;
 
@@ -37,7 +38,13 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 			obj = pdf_dict_get(ctx, dict, PDF_NAME_First);
 			if (obj)
+			{
 				node->down = pdf_load_outline_imp(ctx, doc, obj);
+
+				obj = pdf_dict_gets(ctx, dict, PDF_NAME_Count);
+				if (pdf_to_int(ctx, obj) > 0)
+					node->is_open = 1;
+			}
 
 			dict = pdf_dict_get(ctx, dict, PDF_NAME_Next);
 		}
