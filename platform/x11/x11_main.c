@@ -717,6 +717,7 @@ void winreloadfile(pdfapp_t *app)
 void winopenuri(pdfapp_t *app, char *buf)
 {
 	char *browser = getenv("BROWSER");
+	pid_t pid;
 	if (!browser)
 	{
 #ifdef __APPLE__
@@ -725,12 +726,22 @@ void winopenuri(pdfapp_t *app, char *buf)
 		browser = "xdg-open";
 #endif
 	}
-	if (fork() == 0)
+	/* Fork once to start a child process that we wait on. This
+	 * child process forks again and immediately exits. The
+	 * grandchild process continues in the background. The purpose
+	 * of this strange two-step is to avoid zombie processes. See
+	 * bug 695701 for an explanation. */
+	pid = fork();
+	if (pid == 0)
 	{
-		execlp(browser, browser, buf, (char*)0);
-		fprintf(stderr, "cannot exec '%s'\n", browser);
+		if (fork() == 0)
+		{
+			execlp(browser, browser, buf, (char*)0);
+			fprintf(stderr, "cannot exec '%s'\n", browser);
+		}
 		exit(0);
 	}
+	waitpid(pid, NULL, 0);
 }
 
 static void onkey(int c)
