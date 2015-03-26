@@ -317,7 +317,11 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 				if (buffer != null) {
 					core = openBuffer(buffer, intent.getType());
 				} else {
-					core = openFile(Uri.decode(uri.getEncodedPath()));
+					String path = Uri.decode(uri.getEncodedPath());
+					if (path == null) {
+						path = uri.toString();
+					}
+					core = openFile(path);
 				}
 				SearchTaskResult.set(null);
 			}
