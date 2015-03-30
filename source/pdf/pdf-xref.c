@@ -2126,11 +2126,15 @@ pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *newobj)
 }
 
 void
-pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *ref, fz_buffer *newbuf, int compressed)
+pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *newbuf, int compressed)
 {
-	int num = pdf_to_num(ctx, ref);
+	int num;
 	pdf_xref_entry *x;
 
+	if (pdf_is_indirect(ctx, obj))
+		num = pdf_to_num(ctx, obj);
+	else
+		num = pdf_obj_parent_num(ctx, obj);
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
 	{
 		fz_warn(ctx, "object out of range (%d 0 R); xref size %d", num, pdf_xref_len(ctx, doc));
@@ -2142,11 +2146,11 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *ref, fz_buffer *n
 	fz_drop_buffer(ctx, x->stm_buf);
 	x->stm_buf = fz_keep_buffer(ctx, newbuf);
 
-	pdf_dict_puts_drop(ctx, ref, "Length", pdf_new_int(ctx, doc, newbuf->len));
+	pdf_dict_puts_drop(ctx, obj, "Length", pdf_new_int(ctx, doc, newbuf->len));
 	if (!compressed)
 	{
-		pdf_dict_dels(ctx, ref, "Filter");
-		pdf_dict_dels(ctx, ref, "DecodeParms");
+		pdf_dict_dels(ctx, obj, "Filter");
+		pdf_dict_dels(ctx, obj, "DecodeParms");
 	}
 }
 
