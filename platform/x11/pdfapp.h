@@ -145,7 +145,7 @@ int pdfapp_preclose(pdfapp_t *app);
 char *pdfapp_version(pdfapp_t *app);
 char *pdfapp_usage(pdfapp_t *app);
 
-void pdfapp_onkey(pdfapp_t *app, int c);
+void pdfapp_onkey(pdfapp_t *app, int c, int modifiers);
 void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state);
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen);
 void pdfapp_onresize(pdfapp_t *app, int w, int h);

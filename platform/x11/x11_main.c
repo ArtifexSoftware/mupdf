@@ -749,7 +749,7 @@ void winopenuri(pdfapp_t *app, char *buf)
 	waitpid(pid, NULL, 0);
 }
 
-static void onkey(int c)
+static void onkey(int c, int modifiers)
 {
 	advance_scheduled = 0;
 
@@ -772,7 +772,7 @@ static void onkey(int c)
 		return;
 	}
 
-	pdfapp_onkey(&gapp, c);
+	pdfapp_onkey(&gapp, c, modifiers);
 
 	if (gapp.issearching)
 	{
@@ -958,7 +958,7 @@ int main(int argc, char **argv)
 				if (xevt.xkey.state & ControlMask && keysym == XK_c)
 					docopy(&gapp, XA_CLIPBOARD);
 				else if (len)
-					onkey(buf[0]);
+					onkey(buf[0], xevt.xkey.state);
 
 				onmouse(oldx, oldy, 0, 0, 0);
 
@@ -1054,7 +1054,7 @@ int main(int argc, char **argv)
 			if (tmo_advance_delay.tv_sec <= 0)
 			{
 				/* Too late already */
-				onkey(' ');
+				onkey(' ', 0);
 				onmouse(oldx, oldy, 0, 0, 0);
 				advance_scheduled = 0;
 			}
@@ -1086,7 +1086,7 @@ int main(int argc, char **argv)
 		{
 			if (timeout == &tmo_advance_delay)
 			{
-				onkey(' ');
+				onkey(' ', 0);
 				onmouse(oldx, oldy, 0, 0, 0);
 				advance_scheduled = 0;
 			}

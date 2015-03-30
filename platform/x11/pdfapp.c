@@ -1016,7 +1016,7 @@ void pdfapp_autozoom(pdfapp_t *app)
 		pdfapp_autozoom_vertical(app);
 }
 
-void pdfapp_onkey(pdfapp_t *app, int c)
+void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 {
 	int oldpage = app->pageno;
 	enum panning panto = PAN_TO_TOP;
@@ -1048,7 +1048,7 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 						pdfapp_showpage(app, 1, 1, 0, 0, 1);
 					}
 
-					pdfapp_onkey(app, 'n');
+					pdfapp_onkey(app, 'n', 0);
 				}
 				else
 					winrepaint(app);
@@ -1293,10 +1293,20 @@ void pdfapp_onkey(pdfapp_t *app, int c)
 
 	case ' ':
 		panto = DONT_PAN;
-		if (app->numberlen > 0)
-			app->pageno += atoi(app->number);
+		if (modifiers & 1)
+		{
+			if (app->numberlen > 0)
+				app->pageno -= atoi(app->number);
+			else
+				app->pageno--;
+		}
 		else
-			app->pageno++;
+		{
+			if (app->numberlen > 0)
+				app->pageno += atoi(app->number);
+			else
+				app->pageno++;
+		}
 		break;
 
 	case '<':

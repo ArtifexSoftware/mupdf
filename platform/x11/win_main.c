@@ -910,7 +910,7 @@ static void killtimer(pdfapp_t *app)
 	timer_pending = 0;
 }
 
-void handlekey(int c)
+void handlekey(int c, int modifier)
 {
 	if (timer_pending)
 		killtimer(&gapp);
@@ -940,12 +940,15 @@ void handlekey(int c)
 		}
 	}
 
-	pdfapp_onkey(&gapp, c);
+	pdfapp_onkey(&gapp, c, modifier);
 	winrepaint(&gapp);
 }
 
 void handlemouse(int x, int y, int btn, int state)
 {
+	int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
+	modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
+
 	if (state != 0 && timer_pending)
 		killtimer(&gapp);
 
@@ -960,7 +963,7 @@ void handlemouse(int x, int y, int btn, int state)
 	if (state == -1)
 		ReleaseCapture();
 
-	pdfapp_onmouse(&gapp, x, y, btn, 0, state);
+	pdfapp_onmouse(&gapp, x, y, btn, modifier, state);
 }
 
 LRESULT CALLBACK
@@ -1097,9 +1100,9 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEWHEEL:
 		if ((signed short)HIWORD(wParam) > 0)
-			handlekey(LOWORD(wParam) & MK_SHIFT ? '+' : 'k');
+			handlekey(LOWORD(wParam) & MK_SHIFT ? '+' : 'k', 0);
 		else
-			handlekey(LOWORD(wParam) & MK_SHIFT ? '-' : 'j');
+			handlekey(LOWORD(wParam) & MK_SHIFT ? '-' : 'j', 0);
 		return 0;
 
 	/* Timer */
@@ -1107,7 +1110,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (wParam == OUR_TIMER_ID && timer_pending && gapp.presentation_mode)
 		{
 			timer_pending = 0;
-			handlekey(VK_RIGHT + 256);
+			handlekey(VK_RIGHT + 256, 0);
 			handlemouse(oldx, oldy, 0, 0); /* update cursor */
 			return 0;
 		}
@@ -1127,7 +1130,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case VK_DOWN:
 		case VK_NEXT:
 		case VK_ESCAPE:
-			handlekey(wParam + 256);
+			handlekey(wParam + 256, 0);
 			handlemouse(oldx, oldy, 0, 0);	/* update cursor */
 			return 0;
 		}
@@ -1137,7 +1140,9 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CHAR:
 		if (wParam < 256)
 		{
-			handlekey(wParam);
+			int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
+			modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
+			handlekey(wParam, modifier);
 			handlemouse(oldx, oldy, 0, 0);	/* update cursor */
 		}
 		return 0;
