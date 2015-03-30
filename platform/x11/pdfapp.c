@@ -1607,6 +1607,19 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			int ystep = isx ? 20 * dir : 0;
 			pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
 		}
+		if (app->presentation_mode)
+		{
+			if (btn == 1 && app->pageno < app->pagecount)
+			{
+				app->pageno++;
+				pdfapp_showpage(app, 1, 1, 1, 0, 0);
+			}
+			if (btn == 3 && app->pageno > 1)
+			{
+				app->pageno--;
+				pdfapp_showpage(app, 1, 1, 1, 0, 0);
+			}
+		}
 	}
 
 	else if (state == -1)
