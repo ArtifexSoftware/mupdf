@@ -69,6 +69,7 @@ static Atom XA_TARGETS;
 static Atom XA_TIMESTAMP;
 static Atom XA_UTF8_STRING;
 static Atom WM_DELETE_WINDOW;
+static Atom NET_WM_NAME;
 static Atom NET_WM_STATE;
 static Atom NET_WM_STATE_FULLSCREEN;
 static Atom WM_RELOAD_PAGE;
@@ -208,6 +209,7 @@ static void winopen(void)
 	XA_TIMESTAMP = XInternAtom(xdpy, "TIMESTAMP", False);
 	XA_UTF8_STRING = XInternAtom(xdpy, "UTF8_STRING", False);
 	WM_DELETE_WINDOW = XInternAtom(xdpy, "WM_DELETE_WINDOW", False);
+	NET_WM_NAME = XInternAtom(xdpy, "_NET_WM_NAME", False);
 	NET_WM_STATE = XInternAtom(xdpy, "_NET_WM_STATE", False);
 	NET_WM_STATE_FULLSCREEN = XInternAtom(xdpy, "_NET_WM_STATE_FULLSCREEN", False);
 	WM_RELOAD_PAGE = XInternAtom(xdpy, "_WM_RELOAD_PAGE", False);
@@ -374,6 +376,8 @@ void wintitle(pdfapp_t *app, char *s)
 #else
 	XmbSetWMProperties(xdpy, xwin, s, s, NULL, 0, NULL, NULL, NULL);
 #endif
+	XChangeProperty(xdpy, xwin, NET_WM_NAME, XA_UTF8_STRING, 8,
+			PropModeReplace, (unsigned char *)s, strlen(s));
 }
 
 void winhelp(pdfapp_t *app)
