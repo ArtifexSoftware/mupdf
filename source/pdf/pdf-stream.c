@@ -76,11 +76,8 @@ pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	return globals;
 }
 
-/*
- * Create a filter given a name and param dictionary.
- */
-static fz_stream *
-build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, pdf_obj *p, int num, int gen, fz_compression_params *params)
+static void
+build_compression_params(fz_context *ctx, pdf_obj *f, pdf_obj *p, fz_compression_params *params)
 {
 	int predictor = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME_Predictor));
 	pdf_obj *columns_obj = pdf_dict_get(ctx, p, PDF_NAME_Columns);
@@ -88,16 +85,9 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 	int colors = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME_Colors));
 	int bpc = pdf_to_int(ctx, pdf_dict_get(ctx, p, PDF_NAME_BitsPerComponent));
 
-	if (params)
-		params->type = FZ_IMAGE_RAW;
+	params->type = FZ_IMAGE_RAW;
 
-	if (pdf_name_eq(ctx, f, PDF_NAME_ASCIIHexDecode) || pdf_name_eq(ctx, f, PDF_NAME_AHx))
-		return fz_open_ahxd(ctx, chain);
-
-	else if (pdf_name_eq(ctx, f, PDF_NAME_ASCII85Decode) || pdf_name_eq(ctx, f, PDF_NAME_A85))
-		return fz_open_a85d(ctx, chain);
-
-	else if (pdf_name_eq(ctx, f, PDF_NAME_CCITTFaxDecode) || pdf_name_eq(ctx, f, PDF_NAME_CCF))
+	if (pdf_name_eq(ctx, f, PDF_NAME_CCITTFaxDecode) || pdf_name_eq(ctx, f, PDF_NAME_CCF))
 	{
 		pdf_obj *k = pdf_dict_get(ctx, p, PDF_NAME_K);
 		pdf_obj *eol = pdf_dict_get(ctx, p, PDF_NAME_EndOfLine);
@@ -105,89 +95,75 @@ build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, p
 		pdf_obj *rows = pdf_dict_get(ctx, p, PDF_NAME_Rows);
 		pdf_obj *eob = pdf_dict_get(ctx, p, PDF_NAME_EndOfBlock);
 		pdf_obj *bi1 = pdf_dict_get(ctx, p, PDF_NAME_BlackIs1);
-		if (params)
-		{
-			/* We will shortstop here */
-			params->type = FZ_IMAGE_FAX;
-			params->u.fax.k = (k ? pdf_to_int(ctx, k) : 0);
-			params->u.fax.end_of_line = (eol ? pdf_to_bool(ctx, eol) : 0);
-			params->u.fax.encoded_byte_align = (eba ? pdf_to_bool(ctx, eba) : 0);
-			params->u.fax.columns = (columns_obj ? columns : 1728);
-			params->u.fax.rows = (rows ? pdf_to_int(ctx, rows) : 0);
-			params->u.fax.end_of_block = (eob ? pdf_to_bool(ctx, eob) : 1);
-			params->u.fax.black_is_1 = (bi1 ? pdf_to_bool(ctx, bi1) : 0);
-			return chain;
-		}
-		return fz_open_faxd(ctx, chain,
-				k ? pdf_to_int(ctx, k) : 0,
-				eol ? pdf_to_bool(ctx, eol) : 0,
-				eba ? pdf_to_bool(ctx, eba) : 0,
-				columns_obj ? columns : 1728,
-				rows ? pdf_to_int(ctx, rows) : 0,
-				eob ? pdf_to_bool(ctx, eob) : 1,
-				bi1 ? pdf_to_bool(ctx, bi1) : 0);
-	}
 
+		params->type = FZ_IMAGE_FAX;
+		params->u.fax.k = (k ? pdf_to_int(ctx, k) : 0);
+		params->u.fax.end_of_line = (eol ? pdf_to_bool(ctx, eol) : 0);
+		params->u.fax.encoded_byte_align = (eba ? pdf_to_bool(ctx, eba) : 0);
+		params->u.fax.columns = (columns_obj ? columns : 1728);
+		params->u.fax.rows = (rows ? pdf_to_int(ctx, rows) : 0);
+		params->u.fax.end_of_block = (eob ? pdf_to_bool(ctx, eob) : 1);
+		params->u.fax.black_is_1 = (bi1 ? pdf_to_bool(ctx, bi1) : 0);
+	}
 	else if (pdf_name_eq(ctx, f, PDF_NAME_DCTDecode) || pdf_name_eq(ctx, f, PDF_NAME_DCT))
 	{
 		pdf_obj *ct = pdf_dict_get(ctx, p, PDF_NAME_ColorTransform);
-		if (params)
-		{
-			/* We will shortstop here */
-			params->type = FZ_IMAGE_JPEG;
-			params->u.jpeg.color_transform = (ct ? pdf_to_int(ctx, ct) : -1);
-			return chain;
-		}
-		return fz_open_dctd(ctx, chain, ct ? pdf_to_int(ctx, ct) : -1, 0, NULL);
-	}
 
+		params->type = FZ_IMAGE_JPEG;
+		params->u.jpeg.color_transform = (ct ? pdf_to_int(ctx, ct) : -1);
+	}
 	else if (pdf_name_eq(ctx, f, PDF_NAME_RunLengthDecode) || pdf_name_eq(ctx, f, PDF_NAME_RL))
 	{
-		if (params)
-		{
-			/* We will shortstop here */
-			params->type = FZ_IMAGE_RLD;
-			return chain;
-		}
-		return fz_open_rld(ctx, chain);
+		params->type = FZ_IMAGE_RLD;
 	}
 	else if (pdf_name_eq(ctx, f, PDF_NAME_FlateDecode) || pdf_name_eq(ctx, f, PDF_NAME_Fl))
 	{
-		if (params)
-		{
-			/* We will shortstop here */
-			params->type = FZ_IMAGE_FLATE;
-			params->u.flate.predictor = predictor;
-			params->u.flate.columns = columns;
-			params->u.flate.colors = colors;
-			params->u.flate.bpc = bpc;
-			return chain;
-		}
-		chain = fz_open_flated(ctx, chain, 15);
-		if (predictor > 1)
-			chain = fz_open_predict(ctx, chain, predictor, columns, colors, bpc);
-		return chain;
+		params->type = FZ_IMAGE_FLATE;
+		params->u.flate.predictor = predictor;
+		params->u.flate.columns = columns;
+		params->u.flate.colors = colors;
+		params->u.flate.bpc = bpc;
 	}
-
 	else if (pdf_name_eq(ctx, f, PDF_NAME_LZWDecode) || pdf_name_eq(ctx, f, PDF_NAME_LZW))
 	{
 		pdf_obj *ec = pdf_dict_get(ctx, p, PDF_NAME_EarlyChange);
-		if (params)
-		{
-			/* We will shortstop here */
-			params->type = FZ_IMAGE_LZW;
-			params->u.lzw.predictor = predictor;
-			params->u.lzw.columns = columns;
-			params->u.lzw.colors = colors;
-			params->u.lzw.bpc = bpc;
-			params->u.lzw.early_change = (ec ? pdf_to_int(ctx, ec) : 1);
-			return chain;
-		}
-		chain = fz_open_lzwd(ctx, chain, ec ? pdf_to_int(ctx, ec) : 1);
-		if (predictor > 1)
-			chain = fz_open_predict(ctx, chain, predictor, columns, colors, bpc);
-		return chain;
+
+		params->type = FZ_IMAGE_LZW;
+		params->u.lzw.predictor = predictor;
+		params->u.lzw.columns = columns;
+		params->u.lzw.colors = colors;
+		params->u.lzw.bpc = bpc;
+		params->u.lzw.early_change = (ec ? pdf_to_int(ctx, ec) : 1);
 	}
+}
+
+/*
+ * Create a filter given a name and param dictionary.
+ */
+static fz_stream *
+build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, pdf_obj *p, int num, int gen, fz_compression_params *params)
+{
+	fz_compression_params local_params;
+
+	if (params == NULL)
+		params = &local_params;
+
+	build_compression_params(ctx, f, p, params);
+
+	/* If we were using params we were passed in, and we successfully
+	 * recognised the image type, we can use the existing filter and
+	 * shortstop here. */
+	if (params != &local_params && params->type != FZ_IMAGE_RAW)
+		return chain;
+
+	if (params->type != FZ_IMAGE_RAW)
+		return fz_open_image_decomp_stream(ctx, chain, params, NULL);
+
+	if (pdf_name_eq(ctx, f, PDF_NAME_ASCIIHexDecode) || pdf_name_eq(ctx, f, PDF_NAME_AHx))
+		return fz_open_ahxd(ctx, chain);
+
+	else if (pdf_name_eq(ctx, f, PDF_NAME_ASCII85Decode) || pdf_name_eq(ctx, f, PDF_NAME_A85))
+		return fz_open_a85d(ctx, chain);
 
 	else if (pdf_name_eq(ctx, f, PDF_NAME_JBIG2Decode))
 	{
@@ -496,6 +472,59 @@ pdf_guess_filter_length(int len, char *filter)
 	return len;
 }
 
+/* Check if an entry has a cached stream and return whether it is directly
+ * reusable. A buffer is directly reusable only if the stream is
+ * uncompressed, or if it is compressed purely a compression method we can
+ * return details of in fz_compression_params.
+ *
+ * If the stream is reusable return 1, and set params as required, otherwise
+ * return 0. */
+static int
+can_reuse_buffer(fz_context *ctx, pdf_xref_entry *entry, fz_compression_params *params)
+{
+	pdf_obj *f;
+	pdf_obj *p;
+
+	if (!entry || !entry->obj || !entry->stm_buf)
+		return 0;
+
+	if (params)
+		params->type = FZ_IMAGE_RAW;
+
+	f = pdf_dict_geta(ctx, entry->obj, PDF_NAME_Filter, PDF_NAME_F);
+	/* If there are no filters, it's uncompressed, and we can use it */
+	if (!f)
+		return 1;
+
+	p = pdf_dict_geta(ctx, entry->obj, PDF_NAME_DecodeParms, PDF_NAME_DP);
+	if (pdf_is_array(ctx, f))
+	{
+		int len = pdf_array_len(ctx, f);
+
+		/* Empty array of filters. It's uncompressed. We can cope. */
+		if (len == 0)
+			return 1;
+		/* 1 filter is the most we can hope to cope with - if more,*/
+		if (len != 1)
+			return 0;
+		p = pdf_array_get(ctx, p, 0);
+	}
+	if (pdf_is_null(ctx, f))
+		return 1; /* Null filter is uncompressed */
+	if (!pdf_is_name(ctx, f))
+		return 0;
+
+	/* There are filters, so unless we have the option of shortstopping,
+	 * we can't use the existing buffer. */
+	if (!params)
+		return 0;
+
+	build_compression_params(ctx, f, p, params);
+
+	return (params->type == FZ_IMAGE_RAW) ? 0 : 1;
+
+}
+
 static fz_buffer *
 pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int orig_num, int orig_gen, fz_compression_params *params, int *truncated)
 {
@@ -509,7 +538,9 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int 
 	if (num > 0 && num < pdf_xref_len(ctx, doc))
 	{
 		pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, num);
-		if (entry->stm_buf)
+		/* Return ref to existing buffer, but only if uncompressed,
+		 * or shortstoppable */
+		if (can_reuse_buffer(ctx, entry, params))
 			return fz_keep_buffer(ctx, entry->stm_buf);
 	}
 
