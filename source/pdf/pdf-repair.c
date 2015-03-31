@@ -418,7 +418,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				}
 
 				obj = pdf_dict_get(ctx, dict, PDF_NAME_Root);
-				if (obj)
+				if (pdf_is_dict(ctx, obj))
 				{
 					pdf_drop_obj(ctx, root);
 					root = pdf_keep_obj(ctx, obj);
