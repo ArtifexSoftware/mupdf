@@ -1400,6 +1400,66 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	}
 }
 
+static void handlescroll(pdfapp_t *app, int modifiers, int dir)
+{
+	app->ispanning = app->iscopying = 0;
+	if (modifiers & (1<<2))
+	{
+		/* zoom in/out if ctrl is pressed */
+		if (dir < 0)
+			app->resolution = zoom_in(app->resolution);
+		else
+			app->resolution = zoom_out(app->resolution);
+		if (app->resolution > MAXRES)
+			app->resolution = MAXRES;
+		if (app->resolution < MINRES)
+			app->resolution = MINRES;
+		pdfapp_showpage(app, 0, 1, 1, 0, 0);
+	}
+	else
+	{
+		/* scroll up/down, or left/right if
+		shift is pressed */
+		int w = fz_pixmap_width(app->ctx, app->image);
+		int h = fz_pixmap_height(app->ctx, app->image);
+		int xstep = 0;
+		int ystep = 0;
+		int pagestep = 0;
+		if (modifiers & (1<<0))
+		{
+			if (dir > 0 && app->panx >= 0)
+				pagestep = -1;
+			else if (dir < 0 && app->panx <= app->winw - w)
+				pagestep = 1;
+			else
+				xstep = 20 * dir;
+		}
+		else
+		{
+			if (dir > 0 && app->pany >= 0)
+				pagestep = -1;
+			else if (dir < 0 && app->pany <= app->winh - h)
+				pagestep = 1;
+			else
+				ystep = 20 * dir;
+		}
+		if (pagestep == 0)
+			pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
+		else if (pagestep > 0 && app->pageno < app->pagecount)
+		{
+			app->pageno++;
+			app->pany = 0;
+			pdfapp_showpage(app, 1, 1, 1, 0, 0);
+		}
+		else if (pagestep < 0 && app->pageno > 1)
+		{
+			app->pageno--;
+			app->pany = INT_MIN;
+			pdfapp_showpage(app, 1, 1, 1, 0, 0);
+		}
+	}
+}
+
 void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state)
 {
 	fz_context *ctx = app->ctx;
@@ -1583,39 +1643,12 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		}
 		if (btn == 4 || btn == 5) /* scroll wheel */
 		{
-			int dir = btn == 4 ? 1 : -1;
-			app->ispanning = app->iscopying = 0;
-			if (modifiers & (1<<2))
-			{
-				/* zoom in/out if ctrl is pressed */
-				if (dir > 0)
-					app->resolution = zoom_in(app->resolution);
-				else
-					app->resolution = zoom_out(app->resolution);
-				if (app->resolution > MAXRES)
-					app->resolution = MAXRES;
-				if (app->resolution < MINRES)
-					app->resolution = MINRES;
-				pdfapp_showpage(app, 0, 1, 1, 0, 0);
-			}
-			else
-			{
-				/* scroll up/down, or left/right if
-				shift is pressed */
-				int isx = (modifiers & (1<<0));
-				int xstep = isx ? 20 * dir : 0;
-				int ystep = !isx ? 20 * dir : 0;
-				pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
-			}
+			handlescroll(app, modifiers, btn == 4 ? 1 : -1);
 		}
 		if (btn == 6 || btn == 7) /* scroll wheel (horizontal) */
 		{
 			/* scroll left/right or up/down if shift is pressed */
-			int dir = btn == 6 ? 1 : -1;
-			int isx = (modifiers & (1<<0));
-			int xstep = !isx ? 20 * dir : 0;
-			int ystep = isx ? 20 * dir : 0;
-			pdfapp_panview(app, app->panx + xstep, app->pany + ystep);
+			handlescroll(app, modifiers ^ (1<<0), btn == 6 ? 1 : -1);
 		}
 		if (app->presentation_mode)
 		{

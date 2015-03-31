@@ -910,8 +910,11 @@ static void killtimer(pdfapp_t *app)
 	timer_pending = 0;
 }
 
-void handlekey(int c, int modifier)
+void handlekey(int c)
 {
+	int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
+	modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
+
 	if (timer_pending)
 		killtimer(&gapp);
 
@@ -1100,9 +1103,11 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEWHEEL:
 		if ((signed short)HIWORD(wParam) > 0)
-			handlekey(LOWORD(wParam) & MK_SHIFT ? '+' : 'k', 0);
+			handlemouse(oldx, oldy, 4, 1);
+			//handlekey(LOWORD(wParam) & MK_SHIFT ? '+' : 'k');
 		else
-			handlekey(LOWORD(wParam) & MK_SHIFT ? '-' : 'j', 0);
+			handlemouse(oldx, oldy, 5, 1);
+			//handlekey(LOWORD(wParam) & MK_SHIFT ? '-' : 'j');
 		return 0;
 
 	/* Timer */
@@ -1110,7 +1115,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (wParam == OUR_TIMER_ID && timer_pending && gapp.presentation_mode)
 		{
 			timer_pending = 0;
-			handlekey(VK_RIGHT + 256, 0);
+			handlekey(VK_RIGHT + 256);
 			handlemouse(oldx, oldy, 0, 0); /* update cursor */
 			return 0;
 		}
@@ -1130,7 +1135,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case VK_DOWN:
 		case VK_NEXT:
 		case VK_ESCAPE:
-			handlekey(wParam + 256, 0);
+			handlekey(wParam + 256);
 			handlemouse(oldx, oldy, 0, 0);	/* update cursor */
 			return 0;
 		}
@@ -1140,9 +1145,7 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CHAR:
 		if (wParam < 256)
 		{
-			int modifier = (GetAsyncKeyState(VK_SHIFT) < 0);
-			modifier |= ((GetAsyncKeyState(VK_CONTROL) < 0)<<2);
-			handlekey(wParam, modifier);
+			handlekey(wParam);
 			handlemouse(oldx, oldy, 0, 0);	/* update cursor */
 		}
 		return 0;
