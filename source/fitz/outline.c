@@ -19,7 +19,7 @@ fz_debug_outline_xml_imp(fz_context *ctx, fz_output *out, fz_outline *outline, i
 {
 	while (outline)
 	{
-		fz_printf(ctx, out, "<outline title=\"%s\" page=\"%d\"", outline->title, outline->dest.kind == FZ_LINK_GOTO ? outline->dest.ld.gotor.page + 1 : 0);
+		fz_printf(ctx, out, "<outline title=%q page=\"%d\"", outline->title, outline->dest.kind == FZ_LINK_GOTO ? outline->dest.ld.gotor.page + 1 : 0);
 		if (outline->down)
 		{
 			fz_printf(ctx, out, ">\n");

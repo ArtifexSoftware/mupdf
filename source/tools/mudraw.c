@@ -1,5 +1,5 @@
 /*
- * mudraw -- command line tool for drawing pdf/xps/cbz documents
+ * mudraw -- command line tool for drawing and converting documents
  */
 
 #include "mupdf/fitz.h"
@@ -12,9 +12,13 @@
 #include <sys/time.h>
 #endif
 
-enum { TEXT_PLAIN = 1, TEXT_HTML = 2, TEXT_XML = 3 };
-
-enum { OUT_PNG, OUT_PPM, OUT_PNM, OUT_PAM, OUT_PGM, OUT_PBM, OUT_SVG, OUT_PWG, OUT_PCL, OUT_PDF, OUT_TGA };
+enum {
+	OUT_NONE,
+	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
+	OUT_PBM, OUT_PWG, OUT_PCL,
+	OUT_TEXT, OUT_HTML, OUT_STEXT,
+	OUT_TRACE, OUT_SVG, OUT_PDF,
+};
 
 enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA };
 
@@ -37,6 +41,13 @@ static const suffix_t suffix_table[] =
 	{ ".pcl", OUT_PCL },
 	{ ".pdf", OUT_PDF },
 	{ ".tga", OUT_TGA },
+
+	{ ".txt", OUT_TEXT },
+	{ ".text", OUT_TEXT },
+	{ ".html", OUT_HTML },
+	{ ".stext", OUT_STEXT },
+
+	{ ".trace", OUT_TRACE },
 };
 
 typedef struct
@@ -78,51 +89,51 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PAM, CS_RGB_ALPHA, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
 	{ OUT_PGM, CS_GRAY, { CS_GRAY, CS_RGB } },
 	{ OUT_PBM, CS_MONO, { CS_MONO } },
-	{ OUT_SVG, CS_RGB, { CS_RGB } },
 	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_PCL, CS_MONO, { CS_MONO } },
-	{ OUT_PDF, CS_RGB, { CS_RGB } },
 	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
+
+	{ OUT_TRACE, CS_RGB, { CS_RGB } },
+	{ OUT_SVG, CS_RGB, { CS_RGB } },
+	{ OUT_PDF, CS_RGB, { CS_RGB } },
+
+	{ OUT_TEXT, CS_RGB, { CS_RGB } },
+	{ OUT_HTML, CS_RGB, { CS_RGB } },
+	{ OUT_STEXT, CS_RGB, { CS_RGB } },
 };
-
-/*
-	A useful bit of bash script to call this to generate mjs files:
-	for f in tests_private/pdf/forms/v1.3/ *.pdf ; do g=${f%.*} ; echo $g ; ../mupdf.git/win32/debug/mudraw.exe -j $g.mjs $g.pdf ; done
-
-	Remove the space from "/ *.pdf" before running - can't leave that
-	in here, as it causes a warning about a possibly malformed comment.
-*/
 
 static char *output = NULL;
 static char *format = NULL;
+static int output_format = OUT_NONE;
+
+static float rotation = 0;
 static float resolution = 72;
 static int res_specified = 0;
-static float rotation = 0;
-
-static int showxml = 0;
-static int showtext = 0;
-static int showtime = 0;
-static int showmd5 = 0;
-static pdf_document *pdfout = NULL;
-static int showoutline = 0;
-static int uselist = 1;
-static int alphabits = 8;
-static float gamma_value = 1;
-static int invert = 0;
 static int width = 0;
 static int height = 0;
 static int fit = 0;
-static int errored = 0;
-static int ignore_errors = 0;
-static int output_format;
-static int append = 0;
-static int out_cs = CS_UNSET;
-static int bandheight = 0;
+
+static int showfeatures = 0;
+static int showtime = 0;
 static size_t memtrace_current = 0;
 static size_t memtrace_peak = 0;
 static size_t memtrace_total = 0;
 static int showmemory = 0;
-static int showfeatures = 0;
+static int showmd5 = 0;
+
+static pdf_document *pdfout = NULL;
+
+static int ignore_errors = 0;
+static int uselist = 1;
+static int alphabits = 8;
+
+static int out_cs = CS_UNSET;
+static float gamma_value = 1;
+static int invert = 0;
+static int bandheight = 0;
+
+static int errored = 0;
+static int append = 0;
 static fz_text_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static char *filename;
@@ -140,32 +151,39 @@ static struct {
 static void usage(void)
 {
 	fprintf(stderr,
-		"usage: mudraw [options] input [pages]\n"
-		"\t-o -\toutput filename (%%d for page number)\n"
-		"\t-F -\toutput format (if no -F, -o will be examined)\n"
-		"\t\tsupported formats: png, tga, pnm, pam, pwg, pcl, svg, pdf\n"
+		"mudraw version " FZ_VERSION "\n"
+		"Usage: mudraw [options] file [pages]\n"
 		"\t-p -\tpassword\n"
+		"\n"
+		"\t-o -\toutput file name (%%d for page number)\n"
+		"\t-F -\toutput format (default inferred from output file name)\n"
+		"\t\traster: png, tga, pnm, pam, pbm, pwg, pcl\n"
+		"\t\tvector: svg, pdf, trace\n"
+		"\t\ttext: txt, html, stext\n"
+		"\n"
+		"\t-s -\tshow extra information:\n"
+		"\t\tm - show memory use\n"
+		"\t\tt - show timings\n"
+		"\t\tf - show page features\n"
+		"\t\t5 - show md5 checksum of rendered image\n"
+		"\n"
+		"\t-R -\trotate clockwise (default: 0 degrees)\n"
 		"\t-r -\tresolution in dpi (default: 72)\n"
 		"\t-w -\twidth (in pixels) (maximum width if -r is specified)\n"
 		"\t-h -\theight (in pixels) (maximum height if -r is specified)\n"
-		"\t-f -\tfit width and/or height exactly (ignore aspect)\n"
-		"\t-c -\tcolorspace {mono,gray,grayalpha,rgb,rgba,cmyk,cmykalpha}\n"
-		"\t-b -\tnumber of bits of antialiasing (0 to 8)\n"
-		"\t-B -\tmaximum bandheight (pgm, ppm, pam output only)\n"
-		"\t-g\trender in grayscale (equivalent to: -c gray)\n"
-		"\t-m\tshow timing information\n"
-		"\t-M\tshow memory use summary\n"
-		"\t-t\tshow text (-tt for xml, -ttt for more verbose xml)\n"
-		"\t-x\tshow display list\n"
-		"\t-d\tdisable use of display list\n"
-		"\t-5\tshow md5 checksums\n"
-		"\t-R -\trotate clockwise by given number of degrees\n"
-		"\t-G -\tgamma correct output\n"
-		"\t-I\tinvert output\n"
-		"\t-l\tprint outline\n"
-		"\t-T\ttest for features (grayscale or color)\n"
-		"\t-i\tignore errors and continue with the next file\n"
-		"\tpages\tcomma separated list of ranges\n");
+		"\t-f -\tfit width and/or height exactly; ignore original aspect ratio\n"
+		"\t-B -\tmaximum bandheight (pgm, ppm, pam, png output only)\n"
+		"\n"
+		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha)\n"
+		"\t-G -\tapply gamma correction\n"
+		"\t-I\tinvert colors\n"
+		"\n"
+		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
+		"\t-D\tdisable use of display list\n"
+		"\t-i\tignore errors\n"
+		"\n"
+		"\tpages\tcomma separated list of page ranges\n"
+		);
 	exit(1);
 }
 
@@ -206,18 +224,15 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_var(dev);
 
 	if (showtime)
-	{
 		start = gettime();
-	}
 
 	fz_try(ctx)
-	{
 		page = fz_load_page(ctx, doc, pagenum - 1);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow_message(ctx, "cannot load page %d in file '%s'", pagenum, filename);
-	}
+
+	if (showmd5 || showtime || showfeatures)
+		printf("page %s %d", filename, pagenum);
 
 	if (uselist)
 	{
@@ -239,79 +254,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_rethrow_message(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
 		}
 	}
-
-	if (showxml)
-	{
-		fz_try(ctx)
-		{
-			dev = fz_new_trace_device(ctx);
-			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
-			else
-				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
-		}
-		fz_always(ctx)
-		{
-			fz_drop_device(ctx, dev);
-			dev = NULL;
-		}
-		fz_catch(ctx)
-		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_page(ctx, page);
-			fz_rethrow(ctx);
-		}
-	}
-
-	if (showtext)
-	{
-		fz_text_page *text = NULL;
-
-		fz_var(text);
-
-		fz_try(ctx)
-		{
-			text = fz_new_text_page(ctx);
-			dev = fz_new_text_device(ctx, sheet, text);
-			if (showtext == TEXT_HTML)
-				fz_disable_device_hints(ctx, dev, FZ_IGNORE_IMAGE);
-			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
-			else
-				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
-			fz_drop_device(ctx, dev);
-			dev = NULL;
-			if (showtext == TEXT_XML)
-			{
-				fz_print_text_page_xml(ctx, out, text);
-			}
-			else if (showtext == TEXT_HTML)
-			{
-				fz_analyze_text(ctx, sheet, text);
-				fz_print_text_page_html(ctx, out, text);
-			}
-			else if (showtext == TEXT_PLAIN)
-			{
-				fz_print_text_page(ctx, out, text);
-				fz_printf(ctx, out, "\f\n");
-			}
-		}
-		fz_always(ctx)
-		{
-			fz_drop_device(ctx, dev);
-			dev = NULL;
-			fz_drop_text_page(ctx, text);
-		}
-		fz_catch(ctx)
-		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_page(ctx, page);
-			fz_rethrow(ctx);
-		}
-	}
-
-	if (showmd5 || showtime || showfeatures)
-		printf("page %s %d", filename, pagenum);
 
 	if (showfeatures)
 	{
@@ -336,7 +278,78 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		printf(" %s", iscolor ? "color" : "grayscale");
 	}
 
-	if (pdfout)
+
+	if (output_format == OUT_TRACE)
+	{
+		fz_try(ctx)
+		{
+			dev = fz_new_trace_device(ctx);
+			if (list)
+				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
+			else
+				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_device(ctx, dev);
+			dev = NULL;
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_display_list(ctx, list);
+			fz_drop_page(ctx, page);
+			fz_rethrow(ctx);
+		}
+	}
+
+	else if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT)
+	{
+		fz_text_page *text = NULL;
+
+		fz_var(text);
+
+		fz_try(ctx)
+		{
+			text = fz_new_text_page(ctx);
+			dev = fz_new_text_device(ctx, sheet, text);
+			if (output_format == OUT_HTML)
+				fz_disable_device_hints(ctx, dev, FZ_IGNORE_IMAGE);
+			if (list)
+				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
+			else
+				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+			fz_drop_device(ctx, dev);
+			dev = NULL;
+			if (output_format == OUT_STEXT)
+			{
+				fz_print_text_page_xml(ctx, out, text);
+			}
+			else if (output_format == OUT_HTML)
+			{
+				fz_analyze_text(ctx, sheet, text);
+				fz_print_text_page_html(ctx, out, text);
+			}
+			else if (output_format == OUT_TEXT)
+			{
+				fz_print_text_page(ctx, out, text);
+				fz_printf(ctx, out, "\f\n");
+			}
+		}
+		fz_always(ctx)
+		{
+			fz_drop_device(ctx, dev);
+			dev = NULL;
+			fz_drop_text_page(ctx, text);
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_display_list(ctx, list);
+			fz_drop_page(ctx, page);
+			fz_rethrow(ctx);
+		}
+	}
+
+	else if (output_format == OUT_PDF)
 	{
 		fz_matrix ctm;
 		fz_rect bounds, tbounds;
@@ -374,7 +387,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_drop_page(ctx, &newpage->super);
 	}
 
-	if (output && output_format == OUT_SVG)
+	else if (output_format == OUT_SVG)
 	{
 		float zoom;
 		fz_matrix ctm;
@@ -427,7 +440,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 	}
 
-	if ((output && output_format != OUT_SVG && !pdfout)|| showmd5 || showtime)
+	else
 	{
 		float zoom;
 		fz_matrix ctm;
@@ -733,31 +746,6 @@ static void drawrange(fz_context *ctx, fz_document *doc, char *range)
 	}
 }
 
-static void drawoutline(fz_context *ctx, fz_document *doc)
-{
-	fz_outline *outline = fz_load_outline(ctx, doc);
-	fz_output *out = NULL;
-
-	fz_var(out);
-	fz_try(ctx)
-	{
-		out = fz_new_output_with_file(ctx, stdout, 0);
-		if (showoutline > 1)
-			fz_print_outline_xml(ctx, out, outline);
-		else
-			fz_print_outline(ctx, out, outline);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_output(ctx, out);
-		fz_drop_outline(ctx, outline);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
 static int
 parse_colorspace(const char *name)
 {
@@ -844,45 +832,43 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "lo:F:p:r:R:b:c:dgmTtx5G:Iw:h:fiMB:")) != -1)
+	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:Di")) != -1)
 	{
 		switch (c)
 		{
+		default: usage(); break;
+
+		case 'p': password = fz_optarg; break;
+
 		case 'o': output = fz_optarg; break;
 		case 'F': format = fz_optarg; break;
-		case 'p': password = fz_optarg; break;
-		case 'r': resolution = atof(fz_optarg); res_specified = 1; break;
+
 		case 'R': rotation = atof(fz_optarg); break;
-		case 'b': alphabits = atoi(fz_optarg); break;
-		case 'B': bandheight = atoi(fz_optarg); break;
-		case 'l': showoutline++; break;
-		case 'm': showtime++; break;
-		case 'M': showmemory++; break;
-		case 't': showtext++; break;
-		case 'x': showxml++; break;
-		case '5': showmd5++; break;
-		case 'T': showfeatures++; break;
-		case 'g': out_cs = CS_GRAY; break;
-		case 'd': uselist = 0; break;
-		case 'c': out_cs = parse_colorspace(fz_optarg); break;
-		case 'G': gamma_value = atof(fz_optarg); break;
+		case 'r': resolution = atof(fz_optarg); res_specified = 1; break;
 		case 'w': width = atof(fz_optarg); break;
 		case 'h': height = atof(fz_optarg); break;
 		case 'f': fit = 1; break;
+		case 'B': bandheight = atoi(fz_optarg); break;
+
+		case 'c': out_cs = parse_colorspace(fz_optarg); break;
+		case 'G': gamma_value = atof(fz_optarg); break;
 		case 'I': invert++; break;
+
+		case 's':
+			if (strchr(fz_optarg, 't')) ++showtime;
+			if (strchr(fz_optarg, 'm')) ++showmemory;
+			if (strchr(fz_optarg, 'f')) ++showfeatures;
+			if (strchr(fz_optarg, '5')) ++showmd5;
+			break;
+
+		case 'A': alphabits = atoi(fz_optarg); break;
+		case 'D': uselist = 0; break;
 		case 'i': ignore_errors = 1; break;
-		default: usage(); break;
 		}
 	}
 
 	if (fz_optind == argc)
 		usage();
-
-	if (!showtext && !showxml && !showtime && !showmd5 && !showoutline && !showfeatures && !output)
-	{
-		printf("nothing to do\n");
-		exit(0);
-	}
 
 	ctx = fz_new_context((showmemory == 0 ? NULL : &alloc_ctx), NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -1009,16 +995,16 @@ int main(int argc, char **argv)
 	timing.minfilename = "";
 	timing.maxfilename = "";
 
-	if (showxml || showtext)
+	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT || output_format == OUT_TRACE)
 		out = fz_new_output_with_file(ctx, stdout, 0);
 
-	if (showxml || showtext == TEXT_XML)
+	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 		fz_printf(ctx, out, "<?xml version=\"1.0\"?>\n");
 
-	if (showtext)
+	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT)
 		sheet = fz_new_text_sheet(ctx);
 
-	if (showtext == TEXT_HTML)
+	if (output_format == OUT_HTML)
 	{
 		fz_printf(ctx, out, "<style>\n");
 		fz_printf(ctx, out, "body{background-color:gray;margin:12pt;}\n");
@@ -1058,21 +1044,15 @@ int main(int argc, char **argv)
 						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
 				}
 
-				if (showxml || showtext == TEXT_XML)
+				if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 					fz_printf(ctx, out, "<document name=\"%s\">\n", filename);
 
-				if (showoutline)
-					drawoutline(ctx, doc);
+				if (fz_optind == argc || !isrange(argv[fz_optind]))
+					drawrange(ctx, doc, "1-");
+				if (fz_optind < argc && isrange(argv[fz_optind]))
+					drawrange(ctx, doc, argv[fz_optind++]);
 
-				if (showtext || showxml || showtime || showmd5 || showfeatures || output)
-				{
-					if (fz_optind == argc || !isrange(argv[fz_optind]))
-						drawrange(ctx, doc, "1-");
-					if (fz_optind < argc && isrange(argv[fz_optind]))
-						drawrange(ctx, doc, argv[fz_optind++]);
-				}
-
-				if (showxml || showtext == TEXT_XML)
+				if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 					fz_printf(ctx, out, "</document>\n");
 
 				fz_drop_document(ctx, doc);
@@ -1104,7 +1084,7 @@ int main(int argc, char **argv)
 		pdf_close_document(ctx, pdfout);
 	}
 
-	if (showtext == TEXT_HTML)
+	if (output_format == OUT_HTML)
 	{
 		fz_printf(ctx, out, "</body>\n");
 		fz_printf(ctx, out, "<style>\n");
@@ -1112,14 +1092,9 @@ int main(int argc, char **argv)
 		fz_printf(ctx, out, "</style>\n");
 	}
 
-	if (showtext)
-		fz_drop_text_sheet(ctx, sheet);
-
-	if (showxml || showtext)
-	{
-		fz_drop_output(ctx, out);
-		out = NULL;
-	}
+	fz_drop_text_sheet(ctx, sheet);
+	fz_drop_output(ctx, out);
+	out = NULL;
 
 	if (showtime && timing.count > 0)
 	{
