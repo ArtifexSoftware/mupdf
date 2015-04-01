@@ -9,6 +9,7 @@ typedef struct fz_gel_s fz_gel;
 
 fz_gel *fz_new_gel(fz_context *ctx);
 void fz_insert_gel(fz_context *ctx, fz_gel *gel, float x0, float y0, float x1, float y1);
+void fz_insert_gel_rect(fz_context *ctx, fz_gel *gel, float x0, float y0, float x1, float y1);
 void fz_reset_gel(fz_context *ctx, fz_gel *gel, const fz_irect *clip);
 void fz_sort_gel(fz_context *ctx, fz_gel *gel);
 fz_irect *fz_bound_gel(fz_context *ctx, const fz_gel *gel, fz_irect *bbox);

@@ -168,13 +168,50 @@ flatten_close(fz_context *ctx, void *arg_)
 	arg->c.y = arg->b.y;
 }
 
+static void
+flatten_rectto(fz_context *ctx, void *arg_, float x0, float y0, float x1, float y1)
+{
+	flatten_arg *arg = (flatten_arg *)arg_;
+	const fz_matrix *ctm = arg->ctm;
+
+	flatten_moveto(ctx, arg_, x0, y0);
+	/* In the case where we have an axis aligned rectangle, do some
+	 * horrid antidropout stuff. */
+	if (ctm->b == 0 && ctm->c == 0)
+	{
+		float tx0 = ctm->a * x0 + ctm->e;
+		float ty0 = ctm->d * y0 + ctm->f;
+		float tx1 = ctm->a * x1 + ctm->e;
+		float ty1 = ctm->d * y1 + ctm->f;
+		fz_insert_gel_rect(ctx, arg->gel, tx0, ty0, tx1, ty1);
+	}
+	else if (ctm->a == 0 && ctm->d == 0)
+	{
+		float tx0 = ctm->c * y0 + ctm->e;
+		float ty0 = ctm->b * x0 + ctm->f;
+		float tx1 = ctm->c * y1 + ctm->e;
+		float ty1 = ctm->b * x1 + ctm->f;
+		fz_insert_gel_rect(ctx, arg->gel, tx0, ty1, tx1, ty0);
+	}
+	else
+	{
+		flatten_lineto(ctx, arg_, x1, y0);
+		flatten_lineto(ctx, arg_, x1, y1);
+		flatten_lineto(ctx, arg_, x0, y1);
+		flatten_close(ctx, arg_);
+	}
+}
+
 static const fz_path_processor flatten_proc =
 {
 	flatten_moveto,
 	flatten_lineto,
 	flatten_curveto,
 	flatten_close,
-	flatten_quadto
+	flatten_quadto,
+	NULL,
+	NULL,
+	flatten_rectto
 };
 
 void

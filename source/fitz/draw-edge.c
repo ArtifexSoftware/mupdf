@@ -425,6 +425,51 @@ fz_insert_gel(fz_context *ctx, fz_gel *gel, float fx0, float fy0, float fx1, flo
 	fz_insert_gel_raw(ctx, gel, x0, y0, x1, y1);
 }
 
+void
+fz_insert_gel_rect(fz_context *ctx, fz_gel *gel, float fx0, float fy0, float fx1, float fy1)
+{
+	int x0, y0, x1, y1;
+	fz_aa_context *ctxaa = ctx->aa;
+
+	if (fx0 <= fx1)
+	{
+		fx0 = floorf(fx0 * fz_aa_hscale);
+		fx1 = ceilf(fx1 * fz_aa_hscale);
+	}
+	else
+	{
+		fx0 = ceilf(fx0 * fz_aa_hscale);
+		fx1 = floorf(fx1 * fz_aa_hscale);
+	}
+	if (fy0 <= fy1)
+	{
+		fy0 = floorf(fy0 * fz_aa_vscale);
+		fy1 = ceilf(fy1 * fz_aa_vscale);
+	}
+	else
+	{
+		fy0 = ceilf(fy0 * fz_aa_vscale);
+		fy1 = floorf(fy1 * fz_aa_vscale);
+	}
+
+	fx0 = fz_clamp(fx0, gel->clip.x0, gel->clip.x1);
+	fx1 = fz_clamp(fx1, gel->clip.x0, gel->clip.x1);
+	fy0 = fz_clamp(fy0, gel->clip.y0, gel->clip.y1);
+	fy1 = fz_clamp(fy1, gel->clip.y0, gel->clip.y1);
+
+	/* Call fz_clamp so that clamping is done in the float domain, THEN
+	 * cast down to an int. Calling fz_clampi causes problems due to the
+	 * implicit cast down from float to int of the first argument
+	 * over/underflowing and flipping sign at extreme values. */
+	x0 = (int)fz_clamp(fx0, BBOX_MIN * fz_aa_hscale, BBOX_MAX * fz_aa_hscale);
+	y0 = (int)fz_clamp(fy0, BBOX_MIN * fz_aa_vscale, BBOX_MAX * fz_aa_vscale);
+	x1 = (int)fz_clamp(fx1, BBOX_MIN * fz_aa_hscale, BBOX_MAX * fz_aa_hscale);
+	y1 = (int)fz_clamp(fy1, BBOX_MIN * fz_aa_vscale, BBOX_MAX * fz_aa_vscale);
+
+	fz_insert_gel_raw(ctx, gel, x1, y0, x1, y1);
+	fz_insert_gel_raw(ctx, gel, x0, y1, x0, y0);
+}
+
 static int
 cmpedge(const void *va, const void *vb)
 {
