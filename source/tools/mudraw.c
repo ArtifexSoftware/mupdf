@@ -212,6 +212,22 @@ static int isrange(char *s)
 	return 1;
 }
 
+static int has_percent_d(char *s)
+{
+	/* find '%[0-9]*d' */
+	while (*s)
+	{
+		if (*s++ == '%')
+		{
+			while (*s >= '0' && *s <= '9')
+				++s;
+			if (*s == 'd')
+				return 1;
+		}
+	}
+	return 0;
+}
+
 static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 {
 	fz_page *page;
@@ -590,7 +606,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 						fz_output_png_band(ctx, output_file, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha, poc);
 					else if (output_format == OUT_PWG)
 					{
-						if (strstr(output, "%d") != NULL)
+						if (has_percent_d(output))
 							append = 0;
 						if (out_cs == CS_MONO)
 						{
@@ -608,7 +624,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 						fz_pcl_preset(ctx, &options, "ljet4");
 
-						if (strstr(output, "%d") != NULL)
+						if (has_percent_d(output))
 							append = 0;
 						if (out_cs == CS_MONO)
 						{
