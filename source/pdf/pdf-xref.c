@@ -1931,7 +1931,7 @@ object_updated:
 		{
 			pdf_drop_obj(ctx, x->obj);
 			x->obj = NULL;
-			try_repair = 1;
+			try_repair = (doc->repair_attempted == 0);
 		}
 
 		if (try_repair)

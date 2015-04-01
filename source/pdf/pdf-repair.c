@@ -240,7 +240,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 	pdf_obj *encrypt = NULL;
 	pdf_obj *id = NULL;
-	pdf_obj *root = NULL;
+	pdf_obj **roots = NULL;
 	pdf_obj *info = NULL;
 
 	struct entry *list = NULL;
@@ -256,10 +256,14 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 	int next;
 	int i, n, c;
 	pdf_lexbuf *buf = &doc->lexbuf.base;
+	int num_roots = 0;
+	int max_roots = 0;
 
 	fz_var(encrypt);
 	fz_var(id);
-	fz_var(root);
+	fz_var(roots);
+	fz_var(num_roots);
+	fz_var(max_roots);
 	fz_var(info);
 	fz_var(list);
 	fz_var(obj);
@@ -351,7 +355,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 					/* If we haven't seen a root yet, there is nothing
 					 * we can do, but give up. Otherwise, we'll make
 					 * do. */
-					if (!root)
+					if (!roots)
 						fz_rethrow(ctx);
 					fz_warn(ctx, "cannot parse object (%d %d R) - ignoring rest of file", num, gen);
 					break;
@@ -418,10 +422,17 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				}
 
 				obj = pdf_dict_get(ctx, dict, PDF_NAME_Root);
-				if (pdf_is_dict(ctx, obj))
+				if (obj)
 				{
-					pdf_drop_obj(ctx, root);
-					root = pdf_keep_obj(ctx, obj);
+					if (num_roots == max_roots)
+					{
+						int new_max_roots = max_roots * 2;
+						if (new_max_roots == 0)
+							new_max_roots = 4;
+						roots = fz_resize_array(ctx, roots, new_max_roots, sizeof(*roots));
+						max_roots = new_max_roots;
+					}
+					roots[num_roots++] = pdf_keep_obj(ctx, obj);
 				}
 
 				obj = pdf_dict_get(ctx, dict, PDF_NAME_Info);
@@ -511,11 +522,18 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		pdf_drop_obj(ctx, obj);
 		obj = NULL;
 
-		if (root)
+		if (roots)
 		{
-			pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, root);
-			pdf_drop_obj(ctx, root);
-			root = NULL;
+			int i;
+			for (i = num_roots-1; i > 0; i--)
+			{
+				if (pdf_is_dict(ctx, roots[i]))
+					break;
+			}
+			if (i >= 0)
+			{
+				pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, roots[i]);
+			}
 		}
 		if (info)
 		{
@@ -556,11 +574,18 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 		fz_free(ctx, list);
 	}
+	fz_always(ctx)
+	{
+		int i;
+
+		for (i = 0; i < num_roots; i++)
+			pdf_drop_obj(ctx, roots[i]);
+		fz_free(ctx, roots);
+	}
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, encrypt);
 		pdf_drop_obj(ctx, id);
-		pdf_drop_obj(ctx, root);
 		pdf_drop_obj(ctx, obj);
 		pdf_drop_obj(ctx, info);
 		fz_free(ctx, list);
