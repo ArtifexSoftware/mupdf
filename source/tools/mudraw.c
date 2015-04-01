@@ -182,7 +182,7 @@ static void usage(void)
 		"\t-D\tdisable use of display list\n"
 		"\t-i\tignore errors\n"
 		"\n"
-		"\tpages\tcomma separated list of page ranges\n"
+		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
 	exit(1);
 }

@@ -31,7 +31,8 @@ static void usage(void)
 		"\t-i\ttoggle decompression of image streams\n"
 		"\t-f\ttoggle decompression of font streams\n"
 		"\t-a\tascii hex encode binary streams\n"
-		"\tpages\tcomma separated list of ranges\n");
+		"\tpages\tcomma separated list of page numbers and ranges\n"
+		);
 	exit(1);
 }
 

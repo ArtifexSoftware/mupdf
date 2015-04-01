@@ -33,6 +33,7 @@ Use the specified password if the file is encrypted.
 .B \-o output
 The output format is inferred from the output file name.
 Embed %d in the name to indicate the page number (for example: "page%d.png").
+Printf modifiers are supported, for example "%03d".
 If no output is specified, the output will go to stdout.
 .TP
 .B \-F format
@@ -86,7 +87,7 @@ the amount of memory used.
 Ignore errors.
 .TP
 .B pages
-Comma separated list of ranges and individual page numbers (for example: 1,5,10-15).
+Comma separated list of page numbers and ranges (for example: 1,5,10-15).
 If no pages are specified, then all pages will be rendered.
 
 .SH SEE ALSO

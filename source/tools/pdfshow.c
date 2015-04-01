@@ -15,10 +15,10 @@ static int showcolumn;
 static void usage(void)
 {
 	fprintf(stderr, "usage: mutool show [options] file.pdf [grep] [xref] [trailer] [pages] [outline] [object numbers]\n");
+	fprintf(stderr, "\t-p -\tpassword\n");
+	fprintf(stderr, "\t-o -\toutput file\n");
 	fprintf(stderr, "\t-b\tprint streams as binary data\n");
 	fprintf(stderr, "\t-e\tprint encoded streams (don't decode)\n");
-	fprintf(stderr, "\t-p\tpassword\n");
-	fprintf(stderr, "\t-o\toutput file\n");
 	exit(1);
 }
 
@@ -224,9 +224,9 @@ int pdfshow_main(int argc, char **argv)
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
+		case 'o': output = fz_optarg; break;
 		case 'b': showbinary = 1; break;
 		case 'e': showdecode = 0; break;
-		case 'o': output = fz_optarg; break;
 		default: usage(); break;
 		}
 	}

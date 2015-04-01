@@ -33,6 +33,9 @@ Garbage collect objects that have no references from other objects.
 Give the option twice to renumber all objects and compact the cross reference table.
 Give it three times to merge and reuse duplicate objects.
 .TP
+.B \-s
+Rewrite content streams.
+.TP
 .B \-d
 Decompress streams. This will make the output file larger, but provides
 easy access for reading and editing the contents with a text editor.
@@ -42,7 +45,7 @@ Linearize output. Create a "Web Optimized" output file.
 .TP
 .B \-i
 Toggle decompression of image streams. Use in conjunction with -d to leave
-image- compressed.
+images compressed.
 .TP
 .B \-f
 Toggle decompression of font streams. Use in conjunction with -d to leave
@@ -54,7 +57,7 @@ ensure that although the images and/or fonts are compressed, the resulting
 file can still be viewed and edited with a text editor.
 .TP
 .B pages
-Comma separated list of page ranges to include.
+Comma separated list of page numbers and ranges to include.
 
 .SH EXTRACT
 mutool extract [options] file.pdf [object numbers]
@@ -70,7 +73,35 @@ Use the specified password if the file is encrypted.
 Convert images to RGB when extracting them.
 
 .SH INFO
-TODO
+mutool info [options] file.pdf [pages]
+.PP
+The info command lists the resources used on each page in a PDF file.
+The default is to list all resource types, but if one
+or more flags are given, only the flagged types will be shown.
+.TP
+.B \-p password
+Use the specified password if the file is encrypted.
+.TP
+.B -F
+List fonts.
+.TP
+.B -I
+List images.
+.TP
+.B -M
+List page dimensions.
+.TP
+.B -S
+List shadings.
+.TP
+.B -P
+List patterns.
+.TP
+.B -X
+List form and postscript XObjects.
+.TP
+.B pages
+Comma separated list of page numbers and ranges to include.
 
 .SH POSTER
 mutool poster [options] input.pdf [output.pdf]
@@ -96,14 +127,17 @@ The show command will print the specified objects and streams to stdout.
 Streams are decoded and non-printable characters are represented
 with a period by default.
 .TP
+.B \-p password
+Use the specified password if the file is encrypted.
+.TP
+.B \-o file
+Write output to file instead of stdout.
+.TP
 .B \-b
 Print streams as binary data and omit the object header.
 .TP
 .B \-e
 Print streams in their original encoded (or compressed) form.
-.TP
-.B \-p password
-Use the specified password if the file is encrypted.
 .PP
 Specify objects by number, or use one of the following special names:
 .TP

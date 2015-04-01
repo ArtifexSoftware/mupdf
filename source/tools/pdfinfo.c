@@ -152,14 +152,16 @@ static void
 infousage(void)
 {
 	fprintf(stderr,
-		"usage: mutool info [options] [file.pdf ... ]\n"
-		"\t-d -\tpassword for decryption\n"
-		"\t-f\tlist fonts\n"
-		"\t-i\tlist images\n"
-		"\t-m\tlist dimensions\n"
-		"\t-p\tlist patterns\n"
-		"\t-s\tlist shadings\n"
-		"\t-x\tlist form and postscript xobjects\n");
+		"usage: mutool info [options] file.pdf [pages]\n"
+		"\t-p -\tpassword for decryption\n"
+		"\t-F\tlist fonts\n"
+		"\t-I\tlist images\n"
+		"\t-M\tlist dimensions\n"
+		"\t-P\tlist patterns\n"
+		"\t-S\tlist shadings\n"
+		"\t-X\tlist form and postscript xobjects\n"
+		"\tpages\tcomma separated list of page numbers and ranges\n"
+		);
 	exit(1);
 }
 
@@ -1032,17 +1034,17 @@ int pdfinfo_main(int argc, char **argv)
 	int ret;
 	fz_context *ctx;
 
-	while ((c = fz_getopt(argc, argv, "mfispxd:")) != -1)
+	while ((c = fz_getopt(argc, argv, "FISPXMp:")) != -1)
 	{
 		switch (c)
 		{
-		case 'm': if (show == ALL) show = DIMENSIONS; else show |= DIMENSIONS; break;
-		case 'f': if (show == ALL) show = FONTS; else show |= FONTS; break;
-		case 'i': if (show == ALL) show = IMAGES; else show |= IMAGES; break;
-		case 's': if (show == ALL) show = SHADINGS; else show |= SHADINGS; break;
-		case 'p': if (show == ALL) show = PATTERNS; else show |= PATTERNS; break;
-		case 'x': if (show == ALL) show = XOBJS; else show |= XOBJS; break;
-		case 'd': password = fz_optarg; break;
+		case 'F': if (show == ALL) show = FONTS; else show |= FONTS; break;
+		case 'I': if (show == ALL) show = IMAGES; else show |= IMAGES; break;
+		case 'S': if (show == ALL) show = SHADINGS; else show |= SHADINGS; break;
+		case 'P': if (show == ALL) show = PATTERNS; else show |= PATTERNS; break;
+		case 'X': if (show == ALL) show = XOBJS; else show |= XOBJS; break;
+		case 'M': if (show == ALL) show = DIMENSIONS; else show |= DIMENSIONS; break;
+		case 'p': password = fz_optarg; break;
 		default:
 			infousage();
 			break;
