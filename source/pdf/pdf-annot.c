@@ -220,7 +220,7 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kind kind, pdf_o
 char *
 pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec)
 {
-	pdf_obj *filename;
+	pdf_obj *filename=NULL;
 	char *path = NULL;
 
 	if (pdf_is_string(ctx, file_spec))
