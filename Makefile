@@ -276,20 +276,11 @@ endif
 
 ifeq "$(HAVE_WIN32)" "yes"
 MUVIEW_WIN32 := $(OUT)/mupdf
-MUVIEW_WIN32_OBJ := $(addprefix $(OUT)/platform/win32/, win_main.o pdfapp.o)
+MUVIEW_WIN32_OBJ := $(addprefix $(OUT)/platform/x11/, win_main.o pdfapp.o)
 $(MUVIEW_WIN32_OBJ) : $(FITZ_HDR) $(PDF_HDR)
 $(MUVIEW_WIN32) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUVIEW_WIN32) : $(MUVIEW_WIN32_OBJ)
 	$(LINK_CMD) $(WIN32_LIBS)
-
-ifeq "$(HAVE_CURL)" "yes"
-MUVIEW_WIN32_CURL := $(OUT)/mupdf-win32-curl
-MUVIEW_WIN32_CURL_OBJ := $(addprefix $(OUT)/platform/win32/curl/, win_main.o pdfapp.o curl_stream.o)
-$(MUVIEW_WIN32_CURL_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUVIEW_WIN32_CURL) : $(MUPDF_LIB) $(THIRD_LIBS) $(CURL_LIB)
-$(MUVIEW_WIN32_CURL) : $(MUVIEW_WIN32_CURL_OBJ)
-	$(LINK_CMD) $(WIN32_LIBS) $(CURL_LIBS) $(SYS_CURL_DEPS)
-endif
 endif
 
 MUVIEW := $(MUVIEW_X11) $(MUVIEW_WIN32)
