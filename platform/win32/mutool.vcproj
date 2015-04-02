@@ -477,6 +477,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\source\tools\pdfpages.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\source\tools\pdfposter.c"
 			>
 		</File>

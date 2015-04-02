@@ -1,4 +1,4 @@
-.TH "MUTOOL" "1" "March 31, 2015"
+.TH "MUTOOL" "1" "April 2, 2015"
 .\" Please adjust this date whenever revising the manpage.
 .\" no hyphenation
 .nh
@@ -99,6 +99,18 @@ List patterns.
 .TP
 .B -X
 List form and postscript XObjects.
+.TP
+.B pages
+Comma separated list of page numbers and ranges to include.
+
+.SH PAGES
+mutool pages [options] input.pdf [pages ...]
+.PP
+The pages command dumps information about the size and orientation
+of pages within the document.
+.TP
+.B \-p password
+Use the specified password if the file is encrypted.
 .TP
 .B pages
 Comma separated list of page numbers and ranges to include.

@@ -238,7 +238,7 @@ $(MUDRAW) : $(MUDRAW_OBJ)
 	$(LINK_CMD)
 
 MUTOOL := $(addprefix $(OUT)/, mutool)
-MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o pdfclean.o pdfextract.o pdfinfo.o pdfposter.o pdfshow.o)
+MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o pdfclean.o pdfextract.o pdfinfo.o pdfposter.o pdfshow.o pdfpages.o)
 $(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
 $(MUTOOL) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUTOOL) : $(MUTOOL_OBJ)
