@@ -87,14 +87,9 @@ typedef struct globals_s
 	int psobjs;
 } globals;
 
-static void closexref(fz_context *ctx, globals *glo)
+static void clearinfo(fz_context *ctx, globals *glo)
 {
 	int i;
-	if (glo->doc)
-	{
-		pdf_close_document(ctx, glo->doc);
-		glo->doc = NULL;
-	}
 
 	if (glo->dim)
 	{
@@ -146,6 +141,17 @@ static void closexref(fz_context *ctx, globals *glo)
 		glo->psobj = NULL;
 		glo->psobjs = 0;
 	}
+}
+
+static void closexref(fz_context *ctx, globals *glo)
+{
+	if (glo->doc)
+	{
+		pdf_close_document(ctx, glo->doc);
+		glo->doc = NULL;
+	}
+
+	clearinfo(ctx, glo);
 }
 
 static void
@@ -954,6 +960,7 @@ showinfo(fz_context *ctx, globals *glo, char *filename, int show, char *pagelist
 				fz_printf(ctx, out, "Page %d:\n", page);
 				printinfo(ctx, glo, filename, show, page);
 				fz_printf(ctx, out, "\n");
+				clearinfo(ctx, glo);
 			}
 		}
 
