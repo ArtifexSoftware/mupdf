@@ -313,5 +313,5 @@ int pdfclean_main(int argc, char **argv)
 	}
 	fz_drop_context(ctx);
 
-	return errors == 0;
+	return errors != 0;
 }
