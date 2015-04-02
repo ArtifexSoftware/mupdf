@@ -1066,6 +1066,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-clean-file.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-clean.c"
 				>
 			</File>
@@ -1290,6 +1294,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\pdf\appearance.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\pdf\clean.h"
 					>
 				</File>
 				<File

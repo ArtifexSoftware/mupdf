@@ -25,4 +25,6 @@
 
 #include "mupdf/pdf/output-pdf.h"
 
+#include "mupdf/pdf/clean.h"
+
 #endif
