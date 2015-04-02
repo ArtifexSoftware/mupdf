@@ -154,6 +154,9 @@ $(OUT)/%.o : scripts/%.c | $(OUT)
 $(OUT)/platform/x11/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS)
 
+$(OUT)/platform/x11/%.o: platform/x11/%.rc | $(OUT)
+	windres $< $@
+
 $(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL
 
@@ -276,7 +279,7 @@ endif
 
 ifeq "$(HAVE_WIN32)" "yes"
 MUVIEW_WIN32 := $(OUT)/mupdf
-MUVIEW_WIN32_OBJ := $(addprefix $(OUT)/platform/x11/, win_main.o pdfapp.o)
+MUVIEW_WIN32_OBJ := $(addprefix $(OUT)/platform/x11/, win_main.o pdfapp.o win_res.o)
 $(MUVIEW_WIN32_OBJ) : $(FITZ_HDR) $(PDF_HDR)
 $(MUVIEW_WIN32) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUVIEW_WIN32) : $(MUVIEW_WIN32_OBJ)
