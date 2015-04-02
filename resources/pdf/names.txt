@@ -245,6 +245,7 @@ ON
 ObjStm
 Of
 Off
+OpenType
 Opt
 Ordering
 Outlines
@@ -277,6 +278,7 @@ RI
 RL
 Range
 Rect
+Ref
 Registry
 ResetForm
 Resources
@@ -313,6 +315,7 @@ T
 TR
 TR2
 Text
+TilingType
 Title
 ToUnicode
 Trans

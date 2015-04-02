@@ -27,12 +27,12 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	int num_pages = pdf_count_pages(ctx, doc);
 	int page, kidcount;
 
-	oldroot = pdf_dict_gets(ctx, pdf_trailer(ctx, doc), "Root");
-	pages = pdf_dict_gets(ctx, oldroot, "Pages");
+	oldroot = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+	pages = pdf_dict_get(ctx, oldroot, PDF_NAME_Pages);
 
 	root = pdf_new_dict(ctx, doc, 2);
-	pdf_dict_puts(ctx, root, "Type", pdf_dict_gets(ctx, oldroot, "Type"));
-	pdf_dict_puts(ctx, root, "Pages", pdf_dict_gets(ctx, oldroot, "Pages"));
+	pdf_dict_put(ctx, root, PDF_NAME_Type, pdf_dict_get(ctx, oldroot, PDF_NAME_Type));
+	pdf_dict_put(ctx, root, PDF_NAME_Pages, pdf_dict_get(ctx, oldroot, PDF_NAME_Pages));
 
 	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
@@ -95,8 +95,8 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.x1));
 				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.y1));
 
-				pdf_dict_puts(ctx, newpageobj, "Parent", parent);
-				pdf_dict_puts(ctx, newpageobj, "MediaBox", newmediabox);
+				pdf_dict_put(ctx, newpageobj, PDF_NAME_Parent, parent);
+				pdf_dict_put(ctx, newpageobj, PDF_NAME_MediaBox, newmediabox);
 
 				/* Store page object in new kids array */
 				pdf_array_push(ctx, kids, newpageref);
@@ -109,8 +109,8 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	pdf_drop_obj(ctx, parent);
 
 	/* Update page count and kids array */
-	pdf_dict_puts(ctx, pages, "Count", pdf_new_int(ctx, doc, kidcount));
-	pdf_dict_puts(ctx, pages, "Kids", kids);
+	pdf_dict_put(ctx, pages, PDF_NAME_Count, pdf_new_int(ctx, doc, kidcount));
+	pdf_dict_put(ctx, pages, PDF_NAME_Kids, kids);
 	pdf_drop_obj(ctx, kids);
 }
 

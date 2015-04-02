@@ -18,14 +18,14 @@ static void usage(void)
 
 static int isimage(pdf_obj *obj)
 {
-	pdf_obj *type = pdf_dict_gets(ctx, obj, "Subtype");
-	return pdf_is_name(ctx, type) && !strcmp(pdf_to_name(ctx, type), "Image");
+	pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
+	return pdf_name_eq(ctx, type, PDF_NAME_Image);
 }
 
 static int isfontdesc(pdf_obj *obj)
 {
-	pdf_obj *type = pdf_dict_gets(ctx, obj, "Type");
-	return pdf_is_name(ctx, type) && !strcmp(pdf_to_name(ctx, type), "FontDescriptor");
+	pdf_obj *type = pdf_dict_get(ctx, obj, PDF_NAME_Type);
+	return pdf_name_eq(ctx, type, PDF_NAME_FontDescriptor);
 }
 
 static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
@@ -85,7 +85,6 @@ static void saveimage(int num)
 static void savefont(pdf_obj *dict, int num)
 {
 	char namebuf[1024];
-	char *subtype;
 	fz_buffer *buf;
 	pdf_obj *stream = NULL;
 	pdf_obj *obj;
@@ -95,42 +94,41 @@ static void savefont(pdf_obj *dict, int num)
 	int n, len;
 	unsigned char *data;
 
-	obj = pdf_dict_gets(ctx, dict, "FontName");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontName);
 	if (obj)
 		fontname = pdf_to_name(ctx, obj);
 
-	obj = pdf_dict_gets(ctx, dict, "FontFile");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontFile);
 	if (obj)
 	{
 		stream = obj;
 		ext = "pfa";
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "FontFile2");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontFile2);
 	if (obj)
 	{
 		stream = obj;
 		ext = "ttf";
 	}
 
-	obj = pdf_dict_gets(ctx, dict, "FontFile3");
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontFile3);
 	if (obj)
 	{
 		stream = obj;
 
-		obj = pdf_dict_gets(ctx, obj, "Subtype");
+		obj = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
 		if (obj && !pdf_is_name(ctx, obj))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid font descriptor subtype");
 
-		subtype = pdf_to_name(ctx, obj);
-		if (!strcmp(subtype, "Type1C"))
+		if (pdf_name_eq(ctx, obj, PDF_NAME_Type1C))
 			ext = "cff";
-		else if (!strcmp(subtype, "CIDFontType0C"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_CIDFontType0C))
 			ext = "cid";
-		else if (!strcmp(subtype, "OpenType"))
+		else if (pdf_name_eq(ctx, obj, PDF_NAME_OpenType))
 			ext = "otf";
 		else
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unhandled font type '%s'", subtype);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unhandled font type '%s'", pdf_to_name(ctx, obj));
 	}
 
 	if (!stream)
