@@ -539,7 +539,6 @@ public class ReaderView
 			}
 		}
 
-		requestLayout();
 		return true;
 	}
 
