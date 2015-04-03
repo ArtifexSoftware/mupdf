@@ -1,6 +1,7 @@
 ABOUT
 
-MuPDF is a lightweight PDF, XPS and CBZ viewer and parser/rendering library.
+MuPDF is a lightweight PDF, XPS, EPUB and CBZ viewer and parser/rendering
+library.
 
 The renderer in MuPDF is tailored for high quality anti-aliased graphics. It
 renders text with metrics and spacing accurate to within fractions of a pixel
@@ -9,7 +10,7 @@ for the highest fidelity in reproducing the look of a printed page on screen.
 MuPDF is also small, fast, and yet complete. We support PDF 1.7 with
 transparency, encryption, hyperlinks, annotations, search and many other bells
 and whistles. MuPDF can also read XPS documents (OpenXPS / ECMA-388),
-and CBZ (Comic Book archive) files.
+EPUB and CBZ (Comic Book archive) files.
 
 MuPDF is written to be both modular and portable; the example applications
 are merely thin layers on top of the functionality offered by the library,
@@ -26,7 +27,7 @@ are in development and partially supported by the Android application.
 
 LICENSE
 
-MuPDF is Copyright 2006-2014 Artifex Software, Inc.
+MuPDF is Copyright 2006-2015 Artifex Software, Inc.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free
@@ -40,7 +41,8 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU Affero General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 
-For commercial licensing please contact sales@artifex.com.
+For commercial licensing, including our "Indie Dev" friendly options,
+please contact sales@artifex.com.
 
 COMPILING
 

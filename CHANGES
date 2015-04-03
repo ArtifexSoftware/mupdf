@@ -1,3 +1,37 @@
+List of changes in MuPDF 1.7
+
+* Headline changes:
+	* New 'Indie dev' licensing options - contact sales@artifex.com for more details.
+	* New HTML layout engine, and (DRM-free) EPUB viewer.
+	* Reduced memory usage - displaylists and internal PDF representation take much less memory, reducing total memory use on some files by over 60%.
+
+* Important API changes:
+	* Bound contexts have been removed; we now pass fz_contexts explicitly.
+	* Reference counting of paths and text structures.
+
+* Features:
+	* Add mutool pages option.
+	* Tweaked rendering to prevent feature dropout in common cases.
+	* Viewer tweaks
+		* Better mouse wheel handling
+		* Shift-space support
+		* Mouse button control of presentation mode
+
+* Internal changes:
+	* Removal of bound contexts; fz_contexts now passed explicitly everywhere.
+	* PDF filter revamp - simpler interface.
+	* Devices use derived structures rather than user pointer.
+	* Sparse PDF xrefs held in more compact form.
+	* New gsview viewer split out to its own repository.
+
+* Bug fixes
+	* Improved handling of broken files.
+	* Fix BBoxes of Type 3 fonts.
+	* Updated fonts (including greek and cyrillic).
+	* Various memory leaks and crashes.
+	* And many more.
+
+
 List of changes in MuPDF 1.6
 
 * Features:
