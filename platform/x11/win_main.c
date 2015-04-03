@@ -650,8 +650,10 @@ void winopen()
 static void
 do_close(pdfapp_t *app)
 {
+	fz_context *ctx = app->ctx;
 	pdfapp_close(app);
 	free(dibinf);
+	fz_drop_context(ctx);
 }
 
 void winclose(pdfapp_t *app)
@@ -879,12 +881,6 @@ void windocopy(pdfapp_t *app)
 	CloseClipboard();
 
 	justcopied = 1;	/* keep inversion around for a while... */
-}
-
-void winreloadfile(pdfapp_t *app)
-{
-	pdfapp_close(app);
-	pdfapp_open(app, filename, 1);
 }
 
 void winreloadpage(pdfapp_t *app)
@@ -1229,7 +1225,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	}
 
 	do_close(&gapp);
-	fz_drop_context(ctx);
 
 	return 0;
 }

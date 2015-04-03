@@ -133,6 +133,17 @@ void pdfapp_invert(pdfapp_t *app, const fz_rect *rect)
 	fz_invert_pixmap_rect(app->ctx, app->image, fz_round_rect(&b, rect));
 }
 
+void pdfapp_reloadfile(pdfapp_t *app)
+{
+	fz_context *ctx = app->ctx;
+	char *filename = app->docpath;
+
+	app->docpath = NULL;
+	pdfapp_close(app);
+	pdfapp_open(app, filename, 1);
+	fz_free(ctx, filename);
+}
+
 static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, void *data)
 {
 	pdfapp_t *app = (pdfapp_t *)data;
@@ -208,6 +219,75 @@ pdfapp_more_data(void *app_, int complete)
 }
 #endif
 
+static int make_fake_doc(pdfapp_t *app)
+{
+	fz_context *ctx = app->ctx;
+	fz_matrix ctm = { 1, 0, 0, 1, 0, 0 };
+	fz_rect bounds;
+	pdf_page *newpage = NULL;
+	pdf_document *pdf = NULL;
+	fz_device *dev = NULL;
+	fz_path *path = NULL;
+	fz_stroke_state stroke = fz_default_stroke_state;
+	float red[3] = { 1, 0, 0 };
+	int i;
+
+	fz_var(pdf);
+	fz_var(dev);
+	fz_var(newpage);
+
+	fz_try(ctx)
+	{
+		pdf = pdf_create_document(ctx);
+		app->doc = &pdf->super;
+		bounds.x0 = 0;
+		bounds.y0 = 0;
+		bounds.x1 = app->winw;
+		bounds.y1 = app->winh;
+
+		newpage = pdf_create_page(ctx, pdf, bounds, 72, 0);
+
+		dev = pdf_page_write(ctx, pdf, newpage);
+
+		/* Now the page content */
+		fz_begin_page(ctx, dev, &bounds, &ctm);
+
+		path = fz_new_path(ctx);
+		fz_moveto(ctx, path, 0, 0);
+		fz_lineto(ctx, path, bounds.x1, bounds.y1);
+		fz_moveto(ctx, path, 0, bounds.y1);
+		fz_lineto(ctx, path, bounds.x1, 0);
+
+		stroke.linewidth = fz_min(bounds.x1, bounds.y1)/4;
+
+		fz_stroke_path(ctx, dev, path, &stroke, &ctm, fz_device_rgb(ctx), red, 1);
+
+		fz_end_page(ctx, dev);
+
+		fz_drop_device(ctx, dev);
+		dev = NULL;
+
+		/* Create enough copies of our blank(ish) page so that the
+		 * page number is preserved if and when a subsequent load
+		 * works. */
+		for (i = 0; i < app->pagecount; i++)
+			pdf_insert_page(ctx, pdf, newpage, INT_MAX);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_path(ctx, path);
+		pdf_drop_page(ctx, newpage);
+		fz_drop_device(ctx, dev);
+		dev = NULL;
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return 0;
+}
+
 void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 {
 	fz_context *ctx = app->ctx;
@@ -215,8 +295,6 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 
 	fz_try(ctx)
 	{
-		pdf_document *idoc;
-
 		fz_register_document_handlers(ctx);
 
 #ifdef HAVE_CURL
@@ -270,6 +348,16 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 				break;
 			}
 		}
+	}
+	fz_catch(ctx)
+	{
+		if (!reload || make_fake_doc(app))
+			pdfapp_error(app, "cannot open document");
+	}
+
+	fz_try(ctx)
+	{
+		pdf_document *idoc;
 
 		idoc = pdf_specifics(app->ctx, app->doc);
 
@@ -1332,7 +1420,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 	case 'r':
 		panto = DONT_PAN;
 		oldpage = -1;
-		winreloadfile(app);
+		pdfapp_reloadfile(app);
 		break;
 
 	/*

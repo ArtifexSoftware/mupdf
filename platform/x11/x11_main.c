@@ -713,12 +713,6 @@ void winreloadpage(pdfapp_t *app)
 	XCloseDisplay(dpy);
 }
 
-void winreloadfile(pdfapp_t *app)
-{
-	pdfapp_close(app);
-	pdfapp_open(app, filename, 1);
-}
-
 void winopenuri(pdfapp_t *app, char *buf)
 {
 	char *browser = getenv("BROWSER");
@@ -1078,7 +1072,7 @@ int main(int argc, char **argv)
 		{
 			if (reloading)
 			{
-				winreloadfile(&gapp);
+				pdfapp_reloadfile(&gapp);
 				reloading = 0;
 			}
 		}
