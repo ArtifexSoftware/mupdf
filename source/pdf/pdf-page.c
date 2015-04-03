@@ -425,27 +425,11 @@ void pdf_drop_page(fz_context *ctx, pdf_page *page)
 	fz_drop_page(ctx, &page->super);
 }
 
-pdf_page *
-pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
+static pdf_page *
+pdf_new_page(fz_context *ctx, pdf_document *doc)
 {
-	pdf_page *page;
-	pdf_annot *annot;
-	pdf_obj *pageobj, *pageref, *obj;
-	fz_rect mediabox, cropbox, realbox;
-	float userunit;
-	fz_matrix mat;
+	pdf_page *page = fz_new_page(ctx, sizeof(*page));
 
-	if (doc->file_reading_linearly)
-	{
-		pageref = pdf_progressive_advance(ctx, doc, number);
-		if (pageref == NULL)
-			fz_throw(ctx, FZ_ERROR_TRYLATER, "page %d not available yet", number);
-	}
-	else
-		pageref = pdf_lookup_page_obj(ctx, doc, number);
-	pageobj = pdf_resolve_indirect(ctx, pageref);
-
-	page = fz_new_page(ctx, sizeof *page);
 	page->doc = (pdf_document*) fz_keep_document(ctx, &doc->super);
 
 	page->super.drop_page_imp = (fz_page_drop_page_imp_fn *)pdf_drop_page_imp;
@@ -466,8 +450,34 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	page->annot_tailp = &page->annots;
 	page->deleted_annots = NULL;
 	page->tmp_annots = NULL;
-	page->me = pdf_keep_obj(ctx, pageobj);
 	page->incomplete = 0;
+	page->me = NULL;
+
+	return page;
+}
+
+pdf_page *
+pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
+{
+	pdf_page *page;
+	pdf_annot *annot;
+	pdf_obj *pageobj, *pageref, *obj;
+	fz_rect mediabox, cropbox, realbox;
+	float userunit;
+	fz_matrix mat;
+
+	if (doc->file_reading_linearly)
+	{
+		pageref = pdf_progressive_advance(ctx, doc, number);
+		if (pageref == NULL)
+			fz_throw(ctx, FZ_ERROR_TRYLATER, "page %d not available yet", number);
+	}
+	else
+		pageref = pdf_lookup_page_obj(ctx, doc, number);
+	pageobj = pdf_resolve_indirect(ctx, pageref);
+
+	page = pdf_new_page(ctx, doc);
+	page->me = pdf_keep_obj(ctx, pageobj);
 
 	obj = pdf_dict_get(ctx, pageobj, PDF_NAME_UserUnit);
 	if (pdf_is_real(ctx, obj))
@@ -680,15 +690,10 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int res, i
 	fz_matrix ctm, tmp;
 	fz_rect realbox;
 
-	page = fz_malloc_struct(ctx, pdf_page);
+	page = pdf_new_page(ctx, doc);
 
 	fz_try(ctx)
 	{
-		page->resources = NULL;
-		page->contents = NULL;
-		page->transparency = 0;
-		page->links = NULL;
-		page->annots = NULL;
 		page->me = pageobj = pdf_new_dict(ctx, doc, 4);
 
 		pdf_dict_put_drop(ctx, pageobj, PDF_NAME_Type, PDF_NAME_Page);
