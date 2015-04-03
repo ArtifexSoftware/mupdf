@@ -1350,6 +1350,8 @@ fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, pdf_page *page)
 {
 	pdf_obj *resources = pdf_dict_get(ctx, page->me, PDF_NAME_Resources);
 	fz_matrix ctm;
+	pdf_obj *obj;
+
 	fz_pre_translate(fz_scale(&ctm, 1, -1), 0, page->mediabox.y0-page->mediabox.y1);
 
 	if (resources == NULL)
@@ -1358,22 +1360,23 @@ fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		pdf_dict_put_drop(ctx, page->me, PDF_NAME_Resources, resources);
 	}
 
-	if (page->contents == NULL)
+	/* We always make a new object for page->contents here, in case
+	 * the existing one is an array, or is shared. */
+	obj = pdf_new_dict(ctx, doc, 0);
+	fz_try(ctx)
 	{
-		pdf_obj *obj = pdf_new_dict(ctx, doc, 0);
-		fz_try(ctx)
-		{
-			page->contents = pdf_new_ref(ctx, doc, obj);
-			pdf_dict_put(ctx, page->me, PDF_NAME_Contents, page->contents);
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_obj(ctx, obj);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
+		pdf_obj *new_contents = pdf_new_ref(ctx, doc, obj);
+		pdf_dict_put(ctx, page->me, PDF_NAME_Contents, new_contents);
+		pdf_drop_obj(ctx, page->contents);
+		page->contents = new_contents;
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, obj);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
 	}
 
 	return pdf_new_pdf_device(ctx, doc, page->contents, resources, &ctm, NULL);

@@ -420,6 +420,11 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 	fz_drop_document(ctx, &page->doc->super);
 }
 
+void pdf_drop_page(fz_context *ctx, pdf_page *page)
+{
+	fz_drop_page(ctx, &page->super);
+}
+
 pdf_page *
 pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 {

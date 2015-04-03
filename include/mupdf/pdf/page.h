@@ -17,6 +17,8 @@ pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
 */
 pdf_page *pdf_load_page(fz_context *ctx, pdf_document *doc, int number);
 
+void pdf_drop_page(fz_context *ctx, pdf_page *page);
+
 fz_link *pdf_load_links(fz_context *ctx, pdf_page *page);
 
 /*
