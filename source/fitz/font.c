@@ -410,7 +410,7 @@ static fz_matrix *
 fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm)
 {
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
-	if (font->ft_substitute && font->width_table && gid < font->width_count)
+	if (font->ft_substitute && font->width_table && gid < font->width_count /* && font->wmode == 0 */)
 	{
 		FT_Error fterr;
 		int subw;
@@ -1298,12 +1298,17 @@ static float
 fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 {
 	FT_Fixed adv;
-	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
+	int mask;
 
 	if (font->ft_substitute && font->width_table && gid < font->width_count)
 		return font->width_table[gid];
 
+	mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
+	/* if (font->wmode)
+		mask |= FT_LOAD_VERTICAL_LAYOUT; */
+	fz_lock(ctx, FZ_LOCK_FREETYPE);
 	FT_Get_Advance(font->ft_face, gid, mask, &adv);
+	fz_unlock(ctx, FZ_LOCK_FREETYPE);
 	return (float) adv / ((FT_Face)font->ft_face)->units_per_EM;
 }
 

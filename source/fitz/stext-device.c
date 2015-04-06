@@ -744,26 +744,7 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 		fz_concat(&trm, &tm, ctm);
 
 		/* Calculate bounding box and new pen position based on font metrics */
-		if (font->ft_face)
-		{
-			FT_Fixed ftadv = 0;
-			int mask = FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
-
-			/* TODO: freetype returns broken vertical metrics */
-			/* if (text->wmode) mask |= FT_LOAD_VERTICAL_LAYOUT; */
-
-			fz_lock(ctx, FZ_LOCK_FREETYPE);
-			err = FT_Set_Char_Size(font->ft_face, 64, 64, 72, 72);
-			if (err)
-				fz_warn(ctx, "freetype set character size: %s", ft_error_string(err));
-			FT_Get_Advance(font->ft_face, text->items[i].gid, mask, &ftadv);
-			adv = ftadv / 65536.0f;
-			fz_unlock(ctx, FZ_LOCK_FREETYPE);
-		}
-		else
-		{
-			adv = font->t3widths[text->items[i].gid];
-		}
+		adv = fz_advance_glyph(ctx, font, text->items[i].gid);
 
 		/* Check for one glyph to many char mapping */
 		for (j = i + 1; j < text->len; j++)
