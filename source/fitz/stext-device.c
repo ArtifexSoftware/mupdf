@@ -572,7 +572,7 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 {
 	int can_append = 1;
 	int add_space = 0;
-	fz_point dir, ndir, p, q;
+	fz_point dir, ndir, p, q, r, match;
 	float size;
 	fz_point delta;
 	float spacing = 0;
@@ -586,7 +586,7 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 	else
 	{
 		dir.x = 0;
-		dir.y = 1;
+		dir.y = -1;
 	}
 	fz_transform_vector(&dir, trm);
 	ndir = dir;
@@ -594,6 +594,35 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 	/* dir = direction vector for motion. ndir = normalised(dir) */
 
 	size = fz_matrix_expansion(trm);
+
+	/* We need to identify where glyphs 'start' (p) and 'stop' (q).
+	 * Each glyph holds it's 'start' position, and the next glyph in the
+	 * span (or span->max if there is no next glyph) holds it's 'end'
+	 * position.
+	 *
+	 * For both horizontal and vertical motion, trm->{e,f} gives the
+	 * bottom left corner of the glyph.
+	/* In horizontal mode:
+	 *   + p is bottom left.
+	 *   + q is the bottom right
+	 * In vertical mode:
+	 *   + p is top left (where it advanced from)
+	 *   + q is bottom left
+	 */
+	if (wmode == 0)
+	{
+		p.x = trm->e;
+		p.y = trm->f;
+		q.x = trm->e + adv * dir.x;
+		q.y = trm->f + adv * dir.y;
+	}
+	else 
+	{
+		p.x = trm->e - adv * dir.x;
+		p.y = trm->f - adv * dir.y;
+		q.x = trm->e;
+		q.y = trm->f;
+	}
 
 	if (dev->cur_span == NULL ||
 		trm->a != dev->cur_span->transform.a || trm->b != dev->cur_span->transform.b ||
@@ -611,8 +640,8 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 	{
 		/* Calculate how far we've moved since the end of the current
 		 * span. */
-		delta.x = trm->e - dev->cur_span->max.x;
-		delta.y = trm->f - dev->cur_span->max.y;
+		delta.x = p.x - dev->cur_span->max.x;
+		delta.y = p.y - dev->cur_span->max.y;
 
 		/* The transform has not changed, so we know we're in the same
 		 * direction. Calculate 2 distances; how far off the previous
@@ -656,8 +685,6 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 	printf("%c%c append=%d space=%d size=%g spacing=%g base_offset=%g\n", dev->lastchar, c, can_append, add_space, size, spacing, base_offset);
 #endif
 
-	p.x = trm->e;
-	p.y = trm->f;
 	if (can_append == 0)
 	{
 		/* Start a new span */
@@ -668,14 +695,11 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 	}
 	if (add_space)
 	{
-		q.x = - 0.2f;
-		q.y = 0;
-		fz_transform_point(&q, trm);
-		add_char_to_span(ctx, dev->cur_span, ' ', &p, &q, style);
+		r.x = - 0.2f;
+		r.y = 0;
+		fz_transform_point(&r, trm);
+		add_char_to_span(ctx, dev->cur_span, ' ', &p, &r, style);
 	}
-	/* Advance the matrix */
-	q.x = trm->e += adv * dir.x;
-	q.y = trm->f += adv * dir.y;
 	add_char_to_span(ctx, dev->cur_span, c, &p, &q, style);
 }
 
