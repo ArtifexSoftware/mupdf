@@ -64,11 +64,21 @@ fz_text_char_bbox(fz_context *ctx, fz_rect *bbox, fz_text_span *span, int i)
 		max = &span->max;
 	else
 		max = &span->text[i+1].p;
-	a.x = 0;
-	a.y = span->ascender_max;
+	if (span->wmode == 0)
+	{
+		a.x = 0;
+		a.y = span->ascender_max;
+		d.x = 0;
+		d.y = span->descender_min;
+	}
+	else
+	{
+		a.x = span->ascender_max;
+		a.y = 0;
+		d.x = span->descender_min;
+		d.y = 0;
+	}
 	fz_transform_vector(&a, &span->transform);
-	d.x = 0;
-	d.y = span->descender_min;
 	fz_transform_vector(&d, &span->transform);
 	bbox->x0 = bbox->x1 = ch->p.x + a.x;
 	bbox->y0 = bbox->y1 = ch->p.y + a.y;
@@ -92,11 +102,21 @@ add_bbox_to_span(fz_text_span *span)
 
 	if (!span)
 		return;
-	a.x = 0;
-	a.y = span->ascender_max;
+	if (span->wmode == 0)
+	{
+		a.x = 0;
+		a.y = span->ascender_max;
+		d.x = 0;
+		d.y = span->descender_min;
+	}
+	else
+	{
+		a.x = span->ascender_max;
+		a.y = 0;
+		d.x = span->descender_min;
+		d.y = 0;
+	}
 	fz_transform_vector(&a, &span->transform);
-	d.x = 0;
-	d.y = span->descender_min;
 	fz_transform_vector(&d, &span->transform);
 	bbox->x0 = bbox->x1 = span->min.x + a.x;
 	bbox->y0 = bbox->y1 = span->min.y + a.y;
@@ -577,12 +597,13 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 
 	if (dev->cur_span == NULL ||
 		trm->a != dev->cur_span->transform.a || trm->b != dev->cur_span->transform.b ||
-		trm->c != dev->cur_span->transform.c || trm->d != dev->cur_span->transform.d)
+		trm->c != dev->cur_span->transform.c || trm->d != dev->cur_span->transform.d ||
+		dev->cur_span->wmode != wmode)
 	{
-		/* If the matrix has changed (or if we don't have a span at
-		 * all), then we can't append. */
+		/* If the matrix has changed, or the wmode is different (or
+		 * if we don't have a span at all), then we can't append. */
 #ifdef DEBUG_SPANS
-		printf("Transform changed\n");
+		printf("Transform/WMode changed\n");
 #endif
 		can_append = 0;
 	}
@@ -714,20 +735,28 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 	if (text->len == 0)
 		return;
 
-	if (font->ft_face)
+	if (style->wmode == 0)
 	{
-		fz_lock(ctx, FZ_LOCK_FREETYPE);
-		err = FT_Set_Char_Size(font->ft_face, 64, 64, 72, 72);
-		if (err)
-			fz_warn(ctx, "freetype set character size: %s", ft_error_string(err));
-		ascender = (float)face->ascender / face->units_per_EM;
-		descender = (float)face->descender / face->units_per_EM;
-		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		if (font->ft_face)
+		{
+			fz_lock(ctx, FZ_LOCK_FREETYPE);
+			err = FT_Set_Char_Size(font->ft_face, 64, 64, 72, 72);
+			if (err)
+				fz_warn(ctx, "freetype set character size: %s", ft_error_string(err));
+			ascender = (float)face->ascender / face->units_per_EM;
+			descender = (float)face->descender / face->units_per_EM;
+			fz_unlock(ctx, FZ_LOCK_FREETYPE);
+		}
+		else if (font->t3procs && !fz_is_empty_rect(&font->bbox))
+		{
+			ascender = font->bbox.y1;
+			descender = font->bbox.y0;
+		}
 	}
-	else if (font->t3procs && !fz_is_empty_rect(&font->bbox))
+	else
 	{
-		ascender = font->bbox.y1;
-		descender = font->bbox.y0;
+		ascender = font->bbox.x1;
+		descender = font->bbox.x0;
 	}
 	style->ascender = ascender;
 	style->descender = descender;

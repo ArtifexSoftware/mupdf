@@ -49,6 +49,9 @@ struct fz_text_style_s
 	float size;
 	int wmode;
 	int script;
+	/* Ascender and Descender only have the conventional sense in
+	 * horizontal mode; in vertical mode they are rotated too - they are
+	 * the maximum and minimum bounds respectively. */
 	float ascender;
 	float descender;
 	/* etc... */
@@ -141,6 +144,9 @@ struct fz_text_span_s
 	fz_point max; /* Device space */
 	int wmode; /* 0 for horizontal, 1 for vertical */
 	fz_matrix transform; /* e and f are always 0 here */
+	/* Ascender_max and Descender_min only have the conventional sense in
+	 * horizontal mode; in vertical mode they are rotated too - they are
+	 * the maximum and minimum bounds respectively. */
 	float ascender_max; /* Document space */
 	float descender_min; /* Document space */
 	fz_rect bbox; /* Device space */
