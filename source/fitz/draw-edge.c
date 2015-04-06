@@ -167,6 +167,24 @@ struct fz_gel_s
 	fz_edge **active;
 };
 
+#ifdef DUMP_GELS
+static void
+fz_dump_gel(fz_gel *gel)
+{
+	int i;
+
+	printf("%d edges\n", gel->len);
+	for (i = 0; i < gel->len; i++)
+	{
+		fz_edge *e = &gel->edges[i];
+		if (e->ydir > 0)
+			printf("%d %d -> %d %d\n", e->x, e->y, e->x + e->h * e->xmove + e->xdir * e->h * e->adj_up / e->adj_down, e->y + e->h);
+		else
+			printf("%d %d -> %d %d\n", e->x + e->h * e->xmove + e->xdir * e->h * e->adj_up / e->adj_down, e->y + e->h, e->x, e->y);
+	}
+}
+#endif
+
 fz_gel *
 fz_new_gel(fz_context *ctx)
 {
@@ -491,6 +509,9 @@ fz_sort_gel(fz_context *ctx, fz_gel *gel)
 	if (n > 10000)
 	{
 		qsort(a, n, sizeof *a, cmpedge);
+#ifdef DUMP_GELS
+		fz_dump_gel(gel);
+#endif
 		return;
 	}
 
@@ -520,6 +541,10 @@ fz_sort_gel(fz_context *ctx, fz_gel *gel)
 		}
 		h /= 3;
 	}
+
+#ifdef DUMP_GELS
+	fz_dump_gel(gel);
+#endif
 }
 
 int
