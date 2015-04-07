@@ -14,7 +14,7 @@ static int showcolumn;
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: mutool show [options] file.pdf [grep] [xref] [trailer] [pages] [outline] [object numbers]\n");
+	fprintf(stderr, "usage: mutool show [options] file.pdf [grep] [xref] [trailer] [pagetree] [outline] [object numbers]\n");
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-o -\toutput file\n");
 	fprintf(stderr, "\t-b\tprint streams as binary data\n");
