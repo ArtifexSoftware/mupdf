@@ -572,7 +572,7 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 {
 	int can_append = 1;
 	int add_space = 0;
-	fz_point dir, ndir, p, q, r, match;
+	fz_point dir, ndir, p, q, r;
 	float size;
 	fz_point delta;
 	float spacing = 0;
@@ -602,7 +602,8 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 	 *
 	 * For both horizontal and vertical motion, trm->{e,f} gives the
 	 * bottom left corner of the glyph.
-	/* In horizontal mode:
+	 *
+	 * In horizontal mode:
 	 *   + p is bottom left.
 	 *   + q is the bottom right
 	 * In vertical mode:
@@ -616,7 +617,7 @@ fz_add_text_char_imp(fz_context *ctx, fz_text_device *dev, fz_text_style *style,
 		q.x = trm->e + adv * dir.x;
 		q.y = trm->f + adv * dir.y;
 	}
-	else 
+	else
 	{
 		p.x = trm->e - adv * dir.x;
 		p.y = trm->f - adv * dir.y;
