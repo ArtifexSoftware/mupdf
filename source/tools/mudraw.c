@@ -113,6 +113,10 @@ static int width = 0;
 static int height = 0;
 static int fit = 0;
 
+static float layout_w = 450;
+static float layout_h = 600;
+static float layout_em = 12;
+
 static int showfeatures = 0;
 static int showtime = 0;
 static size_t memtrace_current = 0;
@@ -173,6 +177,10 @@ static void usage(void)
 		"\t-h -\theight (in pixels) (maximum height if -r is specified)\n"
 		"\t-f -\tfit width and/or height exactly; ignore original aspect ratio\n"
 		"\t-B -\tmaximum bandheight (pgm, ppm, pam, png output only)\n"
+		"\n"
+		"\t-W -\tpage width for EPUB layout\n"
+		"\t-H -\tpage height for EPUB layout\n"
+		"\t-S -\tfont size for EPUB layout\n"
 		"\n"
 		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha)\n"
 		"\t-G -\tapply gamma correction\n"
@@ -848,7 +856,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:Di")) != -1)
+	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:")) != -1)
 	{
 		switch (c)
 		{
@@ -869,6 +877,10 @@ int main(int argc, char **argv)
 		case 'c': out_cs = parse_colorspace(fz_optarg); break;
 		case 'G': gamma_value = atof(fz_optarg); break;
 		case 'I': invert++; break;
+
+		case 'W': layout_w = atof(fz_optarg); break;
+		case 'H': layout_h = atof(fz_optarg); break;
+		case 'S': layout_em = atof(fz_optarg); break;
 
 		case 's':
 			if (strchr(fz_optarg, 't')) ++showtime;
@@ -1059,6 +1071,8 @@ int main(int argc, char **argv)
 					if (!fz_authenticate_password(ctx, doc, password))
 						fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
 				}
+
+				fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 
 				if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 					fz_printf(ctx, out, "<document name=\"%s\">\n", filename);

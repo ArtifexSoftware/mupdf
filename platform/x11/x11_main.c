@@ -798,10 +798,13 @@ static void signal_handler(int signal)
 static void usage(void)
 {
 	fprintf(stderr, "usage: mupdf [options] file.pdf [page]\n");
-	fprintf(stderr, "\t-b -\tset anti-aliasing quality in bits (0=off, 8=best)\n");
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
+	fprintf(stderr, "\t-A -\tset anti-aliasing quality in bits (0=off, 8=best)\n");
 	fprintf(stderr, "\t-C -\tRRGGBB (tint color in hexadecimal syntax)\n");
+	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
+	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
+	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
 	exit(1);
 }
 
@@ -822,8 +825,6 @@ int main(int argc, char **argv)
 	struct timeval now;
 	struct timeval *timeout;
 	struct timeval tmo_advance_delay;
-	int tint = 0;
-	int tint_r, tint_g, tint_b;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -832,20 +833,25 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = fz_getopt(argc, argv, "p:r:b:C:")) != -1)
+	pdfapp_init(ctx, &gapp);
+
+	while ((c = fz_getopt(argc, argv, "p:r:A:C:W:H:S:")) != -1)
 	{
 		switch (c)
 		{
 		case 'C':
 			c = strtol(fz_optarg, NULL, 16);
-			tint = 1;
-			tint_r = (c >> 16) & 255;
-			tint_g = (c >> 8) & 255;
-			tint_b = (c) & 255;
+			gapp.tint = 1;
+			gapp.tint_r = (c >> 16) & 255;
+			gapp.tint_g = (c >> 8) & 255;
+			gapp.tint_b = (c) & 255;
 			break;
 		case 'p': password = fz_optarg; break;
 		case 'r': resolution = atoi(fz_optarg); break;
-		case 'b': fz_set_aa_level(ctx, atoi(fz_optarg)); break;
+		case 'A': fz_set_aa_level(ctx, atoi(fz_optarg)); break;
+		case 'W': gapp.layout_w = fz_atof(fz_optarg); break;
+		case 'H': gapp.layout_h = fz_atof(fz_optarg); break;
+		case 'S': gapp.layout_em = fz_atof(fz_optarg); break;
 		default: usage();
 		}
 	}
@@ -857,15 +863,6 @@ int main(int argc, char **argv)
 
 	if (argc - fz_optind == 1)
 		pageno = atoi(argv[fz_optind++]);
-
-	pdfapp_init(ctx, &gapp);
-	if (tint)
-	{
-		gapp.tint = tint;
-		gapp.tint_r = tint_r;
-		gapp.tint_g = tint_g;
-		gapp.tint_b = tint_b;
-	}
 
 	winopen();
 

@@ -115,6 +115,11 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->scrh = 480;
 	app->resolution = 72;
 	app->ctx = ctx;
+
+	app->layout_w = 450;
+	app->layout_h = 600;
+	app->layout_em = 12;
+
 	app->transition.duration = 0.25;
 	app->transition.type = FZ_TRANSITION_FADE;
 #if defined(_WIN32) || defined(_WIN64)
@@ -388,6 +393,8 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 		if (strrchr(app->doctitle, '/'))
 			app->doctitle = strrchr(app->doctitle, '/') + 1;
 		app->doctitle = fz_strdup(ctx, app->doctitle);
+
+		fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 
 		while (1)
 		{

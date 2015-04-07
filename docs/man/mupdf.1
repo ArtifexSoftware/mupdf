@@ -1,4 +1,4 @@
-.TH MUPDF 1 "July 25, 2013"
+.TH MUPDF 1 "April 7, 2015"
 .\" Please adjust this date whenever revising the manpage.
 
 .SH NAME
@@ -26,13 +26,22 @@ The password is tried both as user and owner password.
 Changes the initial zoom level, specified as the resolution in dpi.
 The default value is 72.
 .TP
-.B \-b bits
+.B \-A bits
 Changes the anti-aliasing quality, specified as a number of bits between 0
 (off) and 8 (best). The default value is 8.
 .TP
 .B \-C RRGGBB
 Sets the full-page tint using hexadecimal color syntax. The default value
 is FFFAF0.
+.TP
+.B \-W width
+Page width in points for EPUB layout.
+.TP
+.B \-H height
+Page height in points for EPUB layout.
+.TP
+.B \-S size
+Font size in points for EPUB layout.
 
 .SH MOUSE BEHAVIOR
 

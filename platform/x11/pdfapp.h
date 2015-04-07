@@ -54,6 +54,10 @@ struct pdfapp_s
 	fz_outline *outline;
 	int outline_deferred;
 
+	float layout_w;
+	float layout_h;
+	float layout_em;
+
 	int pagecount;
 
 	/* current view params */
