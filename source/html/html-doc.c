@@ -1,5 +1,7 @@
 #include "mupdf/html.h"
 
+enum { T, R, B, L };
+
 typedef struct html_document_s html_document;
 typedef struct html_page_s html_page;
 
@@ -9,6 +11,7 @@ struct html_document_s
 	fz_archive *zip;
 	fz_html_font_set *set;
 	float page_w, page_h, em;
+	float page_margin[4];
 	fz_html *box;
 };
 
@@ -41,10 +44,14 @@ static void
 htdoc_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 {
 	html_document *doc = (html_document*)doc_;
-	doc->page_w = w;
-	doc->page_h = h;
+	doc->page_margin[T] = em;
+	doc->page_margin[B] = em;
+	doc->page_margin[L] = 0;
+	doc->page_margin[R] = 0;
+	doc->page_w = w - doc->page_margin[L] - doc->page_margin[R];
+	doc->page_h = h - doc->page_margin[T] - doc->page_margin[B];
 	doc->em = em;
-	fz_layout_html(ctx, doc->box, w, h, em);
+	fz_layout_html(ctx, doc->box, doc->page_w, doc->page_h, doc->em);
 }
 
 static void
@@ -57,9 +64,10 @@ htdoc_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
-	bbox->x0 = bbox->y0 = 0;
-	bbox->x1 = doc->page_w;
-	bbox->y1 = doc->page_h;
+	bbox->x0 = 0;
+	bbox->y0 = 0;
+	bbox->x1 = doc->page_w + doc->page_margin[L] + doc->page_margin[R];
+	bbox->y1 = doc->page_h + doc->page_margin[T] + doc->page_margin[B];
 	return bbox;
 }
 
@@ -68,8 +76,12 @@ htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix 
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
+	fz_matrix local_ctm = *ctm;
 	int n = page->number;
-	fz_draw_html(ctx, doc->box, n * doc->page_h, (n+1) * doc->page_h, dev, ctm);
+
+	fz_pre_translate(&local_ctm, doc->page_margin[L], doc->page_margin[T]);
+
+	fz_draw_html(ctx, doc->box, n * doc->page_h, (n+1) * doc->page_h, dev, &local_ctm);
 }
 
 static fz_page *

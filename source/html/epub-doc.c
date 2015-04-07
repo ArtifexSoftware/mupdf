@@ -1,5 +1,7 @@
 #include "mupdf/html.h"
 
+enum { T, R, B, L };
+
 typedef struct epub_document_s epub_document;
 typedef struct epub_chapter_s epub_chapter;
 typedef struct epub_page_s epub_page;
@@ -10,6 +12,7 @@ struct epub_document_s
 	fz_archive *zip;
 	fz_html_font_set *set;
 	float page_w, page_h, em;
+	float page_margin[4];
 	int count;
 	epub_chapter *spine;
 };
@@ -34,13 +37,18 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
 
-	doc->page_w = w;
-	doc->page_h = h;
+	doc->page_margin[T] = em;
+	doc->page_margin[B] = em;
+	doc->page_margin[L] = 0;
+	doc->page_margin[R] = 0;
+
+	doc->page_w = w - doc->page_margin[L] - doc->page_margin[R];
+	doc->page_h = h - doc->page_margin[T] - doc->page_margin[B];
 	doc->em = em;
 
 	printf("epub: laying out chapters.\n");
 	for (ch = doc->spine; ch; ch = ch->next)
-		fz_layout_html(ctx, ch->box, w, h, em);
+		fz_layout_html(ctx, ch->box, doc->page_w, doc->page_h, doc->em);
 	printf("epub: done.\n");
 }
 
@@ -67,8 +75,8 @@ epub_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 	epub_document *doc = page->doc;
 	bbox->x0 = 0;
 	bbox->y0 = 0;
-	bbox->x1 = doc->page_w;
-	bbox->y1 = doc->page_h;
+	bbox->x1 = doc->page_w + doc->page_margin[L] + doc->page_margin[R];
+	bbox->y1 = doc->page_h + doc->page_margin[T] + doc->page_margin[B];
 	return bbox;
 }
 
@@ -78,7 +86,10 @@ epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 	epub_page *page = (epub_page*)page_;
 	epub_document *doc = page->doc;
 	epub_chapter *ch;
+	fz_matrix local_ctm = *ctm;
 	int n = page->number;
+
+	fz_pre_translate(&local_ctm, doc->page_margin[L], doc->page_margin[T]);
 
 	int count = 0;
 	for (ch = doc->spine; ch; ch = ch->next)
@@ -86,7 +97,7 @@ epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 		int cn = ceilf(ch->box->h / doc->page_h);
 		if (n < count + cn)
 		{
-			fz_draw_html(ctx, ch->box, (n-count) * doc->page_h, (n-count+1) * doc->page_h, dev, ctm);
+			fz_draw_html(ctx, ch->box, (n-count) * doc->page_h, (n-count+1) * doc->page_h, dev, &local_ctm);
 			break;
 		}
 		count += cn;
