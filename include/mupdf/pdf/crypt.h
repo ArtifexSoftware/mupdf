@@ -35,7 +35,6 @@ pdf_designated_name;
 
 void pdf_drop_designated_name(fz_context *ctx, pdf_designated_name *dn);
 
-
 pdf_signer *pdf_read_pfx(fz_context *ctx, const char *sigfile, const char *password);
 pdf_signer *pdf_keep_signer(fz_context *ctx, pdf_signer *signer);
 void pdf_drop_signer(fz_context *ctx, pdf_signer *signer);

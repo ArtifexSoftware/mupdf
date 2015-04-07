@@ -302,7 +302,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		printf(" %s", iscolor ? "color" : "grayscale");
 	}
 
-
 	if (output_format == OUT_TRACE)
 	{
 		fz_try(ctx)

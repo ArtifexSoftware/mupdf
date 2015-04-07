@@ -545,7 +545,6 @@ JNI_FN(MuPDFCore_isUnencryptedPDFInternal)(JNIEnv * env, jobject thiz)
 	return (cryptVer == 0) ? JNI_TRUE : JNI_FALSE;
 }
 
-
 JNIEXPORT void JNICALL
 JNI_FN(MuPDFCore_gotoPageInternal)(JNIEnv *env, jobject thiz, int page)
 {

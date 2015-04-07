@@ -504,7 +504,6 @@ fz_sort_gel(fz_context *ctx, fz_gel *gel)
 	int h, i, k;
 	fz_edge t;
 
-
 	/* quick sort for long lists */
 	if (n > 10000)
 	{

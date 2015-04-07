@@ -4,7 +4,6 @@
 -(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock {}
 @end
 
-
 @implementation MuTapResultInternalLink
 {
 	int pageNumber;
@@ -28,7 +27,6 @@
 }
 
 @end
-
 
 @implementation MuTapResultExternalLink
 {
@@ -59,7 +57,6 @@
 }
 
 @end
-
 
 @implementation MuTapResultRemoteLink
 {
@@ -95,7 +92,6 @@
 
 @end
 
-
 @implementation MuTapResultWidget
 
 -(void) switchCaseInternal:(void (^)(MuTapResultInternalLink *))internalLinkBlock caseExternal:(void (^)(MuTapResultExternalLink *))externalLinkBlock caseRemote:(void (^)(MuTapResultRemoteLink *))remoteLinkBlock caseWidget:(void (^)(MuTapResultWidget *))widgetBlock caseAnnotation:(void (^)(MuTapResultAnnotation *))annotationBlock
@@ -104,7 +100,6 @@
 }
 
 @end
-
 
 @implementation MuTapResultAnnotation
 {

@@ -70,7 +70,6 @@ trace_close(fz_context *ctx, void *arg)
 	printf("<closepath/>\n");
 }
 
-
 static const fz_path_processor trace_path_proc =
 {
 	trace_moveto,

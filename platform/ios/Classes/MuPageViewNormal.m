@@ -578,7 +578,6 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	}
 }
 
-
 @implementation MuPageViewNormal
 {
 	MuDocRef *docRef;

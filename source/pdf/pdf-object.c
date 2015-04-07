@@ -95,7 +95,6 @@ typedef struct pdf_obj_ref_s
 #define ARRAY(obj) ((pdf_obj_array *)(obj))
 #define REF(obj) ((pdf_obj_ref *)(obj))
 
-
 pdf_obj *
 pdf_new_null(fz_context *ctx, pdf_document *doc)
 {
@@ -1031,7 +1030,6 @@ pdf_dict_finds(fz_context *ctx, pdf_obj *obj, const char *key, int *location)
 			if (strcmp(pdf_to_name(ctx, DICT(obj)->items[i].k), key) == 0)
 				return i;
 
-
 		if (location)
 			*location = DICT(obj)->len;
 	}
@@ -1166,7 +1164,6 @@ pdf_dict_getl(fz_context *ctx, pdf_obj *obj, ...)
 	return obj;
 }
 
-
 pdf_obj *
 pdf_dict_get(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 {
@@ -1286,7 +1283,7 @@ pdf_dict_puts(fz_context *ctx, pdf_obj *obj, const char *key, pdf_obj *val)
 {
 	pdf_document *doc;
 	pdf_obj *keyobj;
-	
+
 	RESOLVE(obj);
 	if (obj < PDF_OBJ__LIMIT || obj->kind != PDF_DICT)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a dictionary (%s)", pdf_objkindstr(obj));

@@ -69,7 +69,6 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, cons
 		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
-
 void pdf_run_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	pdf_document *doc = page->doc;

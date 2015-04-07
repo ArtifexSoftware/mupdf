@@ -653,4 +653,3 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 
 	return success;
 }
-

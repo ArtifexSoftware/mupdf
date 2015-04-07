@@ -361,7 +361,6 @@ void pdf_drop_designated_name(fz_context *ctx, pdf_designated_name *dn)
 		fz_free(ctx, dn);
 }
 
-
 static void add_from_bags(X509 **pX509, EVP_PKEY **pPkey, STACK_OF(PKCS12_SAFEBAG) *bags, const char *pw);
 
 static void add_from_bag(X509 **pX509, EVP_PKEY **pPkey, PKCS12_SAFEBAG *bag, const char *pw)

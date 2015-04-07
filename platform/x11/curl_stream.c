@@ -96,7 +96,6 @@ unlock(curl_stream_state *state)
 	pthread_mutex_unlock(&state->mutex);
 }
 
-
 static void *
 pthread_thread(void *arg)
 {

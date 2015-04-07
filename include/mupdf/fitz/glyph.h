@@ -65,8 +65,8 @@ fz_glyph *fz_new_glyph_from_8bpp_data(fz_context *ctx, int x, int y, int w, int 
 
 	Returns a pointer to the new glyph. Throws exception on failure to
 	allocate.
-*/fz_glyph *fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span);
-
+*/
+fz_glyph *fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span);
 
 /*
 	fz_keep_glyph: Take a reference to a glyph.

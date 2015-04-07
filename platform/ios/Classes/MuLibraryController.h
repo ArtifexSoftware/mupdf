@@ -15,4 +15,3 @@
 - (void) onPasswordCancel;
 - (void) reload;
 @end
-

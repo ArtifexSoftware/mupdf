@@ -1640,7 +1640,6 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 			rect.y1 += width;
 		}
 
-
 		fz_transform_rect(&rect, page_ctm);
 		pdf_set_annot_appearance(ctx, doc, annot, &rect, strike_list);
 	}

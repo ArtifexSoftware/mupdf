@@ -99,7 +99,6 @@ static void stack_change(fz_context *ctx, fz_draw_device *dev, char *s)
 #define STACK_CONVERT(A) do {} while (0)
 #endif
 
-
 static void fz_grow_stack(fz_context *ctx, fz_draw_device *dev)
 {
 	int max = dev->stack_cap * 2;
@@ -510,7 +509,6 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, fz_path *path, const 
 		emergency_pop_stack(ctx, dev, state);
 	}
 }
-
 
 static void
 draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_glyph *glyph,

@@ -183,7 +183,6 @@ struct pdf_unsaved_sig_s
 	pdf_unsaved_sig *next;
 };
 
-
 struct pdf_document_s
 {
 	fz_document super;
