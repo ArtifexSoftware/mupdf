@@ -67,6 +67,7 @@ struct fz_document_s
 	fz_document_load_page_fn *load_page;
 	fz_document_meta_fn *meta;
 	fz_document_write_fn *write;
+	int did_layout;
 };
 
 typedef fz_document *(fz_document_open_fn)(fz_context *ctx, const char *filename);

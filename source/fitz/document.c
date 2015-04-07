@@ -5,6 +5,10 @@ enum
 	FZ_DOCUMENT_HANDLER_MAX = 10
 };
 
+#define DEFW (450)
+#define DEFH (600)
+#define DEFEM (12)
+
 struct fz_document_handler_context_s
 {
 	int refs;
@@ -164,6 +168,16 @@ fz_drop_document(fz_context *ctx, fz_document *doc)
 		doc->close(ctx, doc);
 }
 
+static void
+fz_ensure_layout(fz_context *ctx, fz_document *doc)
+{
+	if (doc && doc->layout && !doc->did_layout)
+	{
+		doc->layout(ctx, doc, DEFW, DEFH, DEFEM);
+		doc->did_layout = 1;
+	}
+}
+
 int
 fz_needs_password(fz_context *ctx, fz_document *doc)
 {
@@ -192,12 +206,16 @@ void
 fz_layout_document(fz_context *ctx, fz_document *doc, float w, float h, float em)
 {
 	if (doc && doc->layout)
+	{
 		doc->layout(ctx, doc, w, h, em);
+		doc->did_layout = 1;
+	}
 }
 
 int
 fz_count_pages(fz_context *ctx, fz_document *doc)
 {
+	fz_ensure_layout(ctx, doc);
 	if (doc && doc->count_pages)
 		return doc->count_pages(ctx, doc);
 	return 0;
@@ -221,6 +239,7 @@ fz_write_document(fz_context *ctx, fz_document *doc, char *filename, fz_write_op
 fz_page *
 fz_load_page(fz_context *ctx, fz_document *doc, int number)
 {
+	fz_ensure_layout(ctx, doc);
 	if (doc && doc->load_page)
 		return doc->load_page(ctx, doc, number);
 	return NULL;

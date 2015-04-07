@@ -1,9 +1,5 @@
 #include "mupdf/html.h"
 
-#define DEFW (450)
-#define DEFH (600)
-#define DEFEM (12)
-
 typedef struct epub_document_s epub_document;
 typedef struct epub_chapter_s epub_chapter;
 typedef struct epub_page_s epub_page;
@@ -270,7 +266,6 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	fz_try(ctx)
 	{
 		epub_parse_header(ctx, doc);
-		epub_layout(ctx, (fz_document*)doc, DEFW, DEFH, DEFEM);
 	}
 	fz_catch(ctx)
 	{

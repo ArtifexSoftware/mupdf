@@ -1,9 +1,5 @@
 #include "mupdf/html.h"
 
-#define DEFW (450)
-#define DEFH (600)
-#define DEFEM (12)
-
 typedef struct html_document_s html_document;
 typedef struct html_page_s html_page;
 
@@ -109,8 +105,6 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, NULL);
 	fz_drop_buffer(ctx, buf);
 
-	htdoc_layout(ctx, (fz_document*)doc, DEFW, DEFH, DEFEM);
-
 	return (fz_document*)doc;
 }
 
@@ -136,8 +130,6 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	fz_write_buffer_byte(ctx, buf, 0);
 	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, NULL);
 	fz_drop_buffer(ctx, buf);
-
-	htdoc_layout(ctx, (fz_document*)doc, DEFW, DEFH, DEFEM);
 
 	return (fz_document*)doc;
 }
