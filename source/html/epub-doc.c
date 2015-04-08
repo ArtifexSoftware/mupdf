@@ -88,10 +88,10 @@ epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 	epub_chapter *ch;
 	fz_matrix local_ctm = *ctm;
 	int n = page->number;
+	int count = 0;
 
 	fz_pre_translate(&local_ctm, doc->page_margin[L], doc->page_margin[T]);
 
-	int count = 0;
 	for (ch = doc->spine; ch; ch = ch->next)
 	{
 		int cn = ceilf(ch->box->h / doc->page_h);
