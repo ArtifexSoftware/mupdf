@@ -1234,10 +1234,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-xref-aux.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\pdf\pdf-xref.c"
 				>
 			</File>
@@ -1398,10 +1394,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\display-list.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\source\fitz\document-no-run.c"
 					>
 				</File>
 				<File

@@ -1007,7 +1007,7 @@ pdfinfo_info(fz_context *ctx, fz_output *out, char *filename, char *password, in
 
 			filename = argv[argidx];
 			fz_printf(ctx, out, "%s:\n", filename);
-			glo.doc = pdf_open_document_no_run(glo.ctx, filename);
+			glo.doc = pdf_open_document(glo.ctx, filename);
 			if (pdf_needs_password(ctx, glo.doc))
 				if (!pdf_authenticate_password(ctx, glo.doc, password))
 					fz_throw(glo.ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);

@@ -209,7 +209,7 @@ int pdfextract_main(int argc, char **argv)
 		exit(1);
 	}
 
-	doc = pdf_open_document_no_run(ctx, infile);
+	doc = pdf_open_document(ctx, infile);
 	if (pdf_needs_password(ctx, doc))
 		if (!pdf_authenticate_password(ctx, doc, password))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);

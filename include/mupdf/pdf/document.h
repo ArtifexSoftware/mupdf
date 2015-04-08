@@ -85,9 +85,6 @@ pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 */
 pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
-pdf_document *pdf_open_document_no_run(fz_context *ctx, const char *filename);
-pdf_document *pdf_open_document_no_run_with_stream(fz_context *ctx, fz_stream *file);
-
 /*
 	pdf_close_document: Closes and frees an opened PDF document.
 

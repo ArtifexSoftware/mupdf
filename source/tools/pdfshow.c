@@ -257,7 +257,7 @@ int pdfshow_main(int argc, char **argv)
 	fz_var(doc);
 	fz_try(ctx)
 	{
-		doc = pdf_open_document_no_run(ctx, filename);
+		doc = pdf_open_document(ctx, filename);
 		if (pdf_needs_password(ctx, doc))
 			if (!pdf_authenticate_password(ctx, doc, password))
 				fz_warn(ctx, "cannot authenticate password: %s", filename);

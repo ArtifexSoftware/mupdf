@@ -198,7 +198,7 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 
 	fz_try(ctx)
 	{
-		glo.doc = pdf_open_document_no_run(ctx, infile);
+		glo.doc = pdf_open_document(ctx, infile);
 		if (pdf_needs_password(ctx, glo.doc))
 			if (!pdf_authenticate_password(ctx, glo.doc, password))
 				fz_throw(glo.ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);

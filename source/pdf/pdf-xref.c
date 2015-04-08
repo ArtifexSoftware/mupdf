@@ -2261,6 +2261,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.load_page = (fz_document_load_page_fn *)pdf_load_page;
 	doc->super.meta = (fz_document_meta_fn *)pdf_meta;
 	doc->super.write = (fz_document_write_fn *)pdf_write_document;
+	doc->update_appearance = pdf_update_appearance;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
 	doc->file = fz_keep_stream(ctx, file);
@@ -2269,7 +2270,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 }
 
 pdf_document *
-pdf_open_document_no_run_with_stream(fz_context *ctx, fz_stream *file)
+pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	pdf_document *doc = pdf_new_document(ctx, file);
 	fz_try(ctx)
@@ -2285,7 +2286,7 @@ pdf_open_document_no_run_with_stream(fz_context *ctx, fz_stream *file)
 }
 
 pdf_document *
-pdf_open_document_no_run(fz_context *ctx, const char *filename)
+pdf_open_document(fz_context *ctx, const char *filename)
 {
 	fz_stream *file = NULL;
 	pdf_document *doc = NULL;
@@ -2708,11 +2709,11 @@ pdf_recognize(fz_context *doc, const char *magic)
 	return 1;
 }
 
-fz_document_handler pdf_no_run_document_handler =
+fz_document_handler pdf_document_handler =
 {
 	(fz_document_recognize_fn *)&pdf_recognize,
-	(fz_document_open_fn *)&pdf_open_document_no_run,
-	(fz_document_open_with_stream_fn *)&pdf_open_document_no_run_with_stream
+	(fz_document_open_fn *)&pdf_open_document,
+	(fz_document_open_with_stream_fn *)&pdf_open_document_with_stream
 };
 
 void pdf_mark_xref(fz_context *ctx, pdf_document *doc)

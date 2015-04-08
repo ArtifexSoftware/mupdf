@@ -182,7 +182,7 @@ pdfpages_pages(fz_context *ctx, fz_output *out, char *filename, char *password, 
 
 			filename = argv[argidx];
 			fz_printf(ctx, out, "%s:\n", filename);
-			doc = pdf_open_document_no_run(ctx, filename);
+			doc = pdf_open_document(ctx, filename);
 			if (pdf_needs_password(ctx, doc))
 				if (!pdf_authenticate_password(ctx, doc, password))
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
