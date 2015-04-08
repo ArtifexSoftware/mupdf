@@ -17,9 +17,19 @@
 void
 render(char *filename, int pagenumber, int zoom, int rotation)
 {
+	fz_context *ctx;
+	fz_document *doc;
+	int pagecount;
+	fz_page *page;
+	fz_matrix transform;
+	fz_rect bounds;
+	fz_irect bbox;
+	fz_pixmap *pix;
+	fz_device *dev;
+
 	// Create a context to hold the exception stack and various caches.
 
-	fz_context *ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
 
 	// Register the default file types.
 
@@ -27,29 +37,27 @@ render(char *filename, int pagenumber, int zoom, int rotation)
 
 	// Open the PDF, XPS or CBZ document.
 
-	fz_document *doc = fz_open_document(ctx, filename);
+	doc = fz_open_document(ctx, filename);
 
 	// Retrieve the number of pages (not used in this example).
 
-	int pagecount = fz_count_pages(doc);
+	pagecount = fz_count_pages(ctx, doc);
 
 	// Load the page we want. Page numbering starts from zero.
 
-	fz_page *page = fz_load_page(doc, pagenumber - 1);
+	page = fz_load_page(ctx, doc, pagenumber - 1);
 
 	// Calculate a transform to use when rendering. This transform
 	// contains the scale and rotation. Convert zoom percentage to a
 	// scaling factor. Without scaling the resolution is 72 dpi.
 
-	fz_matrix transform;
 	fz_rotate(&transform, rotation);
 	fz_pre_scale(&transform, zoom / 100.0f, zoom / 100.0f);
 
 	// Take the page bounds and transform them by the same matrix that
 	// we will use to render the page.
 
-	fz_rect bounds;
-	fz_bound_page(doc, page, &bounds);
+	fz_bound_page(ctx, page, &bounds);
 	fz_transform_rect(&bounds, &transform);
 
 	// Create a blank pixmap to hold the result of rendering. The
@@ -58,9 +66,8 @@ render(char *filename, int pagenumber, int zoom, int rotation)
 	// space has the origin at the top left corner and the x axis
 	// extends to the right and the y axis extends down.
 
-	fz_irect bbox;
 	fz_round_rect(&bbox, &bounds);
-	fz_pixmap *pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
 	fz_clear_pixmap_with_value(ctx, pix, 0xff);
 
 	// A page consists of a series of objects (text, line art, images,
@@ -81,9 +88,9 @@ render(char *filename, int pagenumber, int zoom, int rotation)
 	// Create a draw device with the pixmap as its target.
 	// Run the page with the transform.
 
-	fz_device *dev = fz_new_draw_device(ctx, pix);
-	fz_run_page(doc, page, dev, &transform, NULL);
-	fz_free_device(dev);
+	dev = fz_new_draw_device(ctx, pix);
+	fz_run_page(ctx, page, dev, &transform, NULL);
+	fz_drop_device(ctx, dev);
 
 	// Save the pixmap to a file.
 
@@ -92,9 +99,9 @@ render(char *filename, int pagenumber, int zoom, int rotation)
 	// Clean up.
 
 	fz_drop_pixmap(ctx, pix);
-	fz_free_page(doc, page);
-	fz_drop_document(doc);
-	fz_free_context(ctx);
+	fz_drop_page(ctx, page);
+	fz_drop_document(ctx, doc);
+	fz_drop_context(ctx);
 }
 
 int main(int argc, char **argv)
@@ -105,5 +112,6 @@ int main(int argc, char **argv)
 	int rotation = argc > 4 ? atoi(argv[4]) : 0;
 
 	render(filename, pagenumber, zoom, rotation);
+
 	return 0;
 }

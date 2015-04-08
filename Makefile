@@ -289,8 +289,16 @@ endif
 MUVIEW := $(MUVIEW_X11) $(MUVIEW_WIN32)
 MUVIEW_CURL := $(MUVIEW_X11_CURL) $(MUVIEW_WIN32_CURL)
 
-
 INSTALL_APPS := $(MUDRAW) $(MUTOOL) $(MUVIEW) $(MUJSTEST) $(MUVIEW_CURL)
+
+# --- Examples ---
+
+examples: $(OUT)/example $(OUT)/multi-threaded
+
+$(OUT)/example: docs/example.c $(MUPDF_LIB) $(THIRD_LIBS)
+	$(LINK_CMD) $(CFLAGS)
+$(OUT)/multi-threaded: docs/multi-threaded.c $(MUPDF_LIB) $(THIRD_LIBS)
+	$(LINK_CMD) $(CFLAGS) -lpthread
 
 # --- Update version string header ---
 
