@@ -371,4 +371,9 @@ clean:
 nuke:
 	rm -rf build/* $(GEN) $(NAME_GEN)
 
+release:
+	$(MAKE) build=release
+debug:
+	$(MAKE) build=debug
+
 .PHONY: all clean nuke install third libs apps generate
