@@ -855,7 +855,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:")) != -1)
+	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:v")) != -1)
 	{
 		switch (c)
 		{
@@ -891,6 +891,8 @@ int main(int argc, char **argv)
 		case 'A': alphabits = atoi(fz_optarg); break;
 		case 'D': uselist = 0; break;
 		case 'i': ignore_errors = 1; break;
+
+		case 'v': fprintf(stderr, "mudraw version %s\n", FZ_VERSION); return 1;
 		}
 	}
 

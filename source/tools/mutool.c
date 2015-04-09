@@ -72,6 +72,11 @@ int main(int argc, char **argv)
 		for (i = 0; i < nelem(tools); i++)
 			if (!strcmp(tools[i].name, argv[1]))
 				return tools[i].func(argc - 1, argv + 1);
+		if (!strcmp(argv[1], "-v"))
+		{
+			fprintf(stderr, "mutool version %s\n", FZ_VERSION);
+			return 0;
+		}
 	}
 
 	/* Print usage */
