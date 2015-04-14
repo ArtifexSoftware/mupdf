@@ -576,6 +576,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 {
 	NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filePath]];
 	UIActivityViewController *cont = [[UIActivityViewController alloc] initWithActivityItems:[NSArray arrayWithObject:url] applicationActivities:nil];
+	cont.popoverPresentationController.barButtonItem = shareButton;
 	[self presentViewController:cont animated:YES completion:nil];
 	[cont release];
 }
