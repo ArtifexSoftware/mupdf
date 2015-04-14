@@ -848,7 +848,10 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 
 						buf = fz_read_archive_entry(ctx, zip, path);
 						fz_write_buffer_byte(ctx, buf, 0);
-						css = fz_parse_css(ctx, css, (char*)buf->data, path);
+						fz_try(ctx)
+							css = fz_parse_css(ctx, css, (char*)buf->data, path);
+						fz_catch(ctx)
+							fz_warn(ctx, "ignoring stylesheet %s", path);
 						fz_drop_buffer(ctx, buf);
 					}
 				}
@@ -857,7 +860,10 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 		if (tag && !strcmp(tag, "style"))
 		{
 			char *s = concat_text(ctx, node);
-			css = fz_parse_css(ctx, css, s, "<style>");
+			fz_try(ctx)
+				css = fz_parse_css(ctx, css, s, "<style>");
+			fz_catch(ctx)
+				fz_warn(ctx, "ignoring inline stylesheet");
 			fz_free(ctx, s);
 		}
 		if (fz_xml_down(node))

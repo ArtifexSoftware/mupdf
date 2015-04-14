@@ -15,7 +15,7 @@ struct lexbuf
 
 FZ_NORETURN static void fz_css_error(struct lexbuf *buf, const char *msg)
 {
-	fz_throw(buf->ctx, FZ_ERROR_GENERIC, "css syntax error: %s (%s:%d)", msg, buf->file, buf->line);
+	fz_throw(buf->ctx, FZ_ERROR_SYNTAX, "css syntax error: %s (%s:%d)", msg, buf->file, buf->line);
 }
 
 static fz_css_rule *fz_new_css_rule(fz_context *ctx, fz_css_selector *selector, fz_css_property *declaration)
@@ -821,13 +821,29 @@ static fz_css_selector *parse_selector_list(struct lexbuf *buf)
 
 static fz_css_rule *parse_rule(struct lexbuf *buf)
 {
-	fz_css_selector *s;
-	fz_css_property *p;
+	fz_css_selector *s = NULL;
+	fz_css_property *p = NULL;
 
-	s = parse_selector_list(buf);
-	expect(buf, '{');
-	p = parse_declaration_list(buf);
-	expect(buf, '}');
+	fz_try(buf->ctx)
+	{
+		s = parse_selector_list(buf);
+		expect(buf, '{');
+		p = parse_declaration_list(buf);
+		expect(buf, '}');
+	}
+	fz_catch(buf->ctx)
+	{
+		if (fz_caught(buf->ctx) != FZ_ERROR_SYNTAX)
+			fz_rethrow(buf->ctx);
+		while (buf->lookahead != EOF)
+		{
+			if (accept(buf, '}'))
+				break;
+			next(buf);
+		}
+		return NULL;
+	}
+
 	return fz_new_css_rule(buf->ctx, s, p);
 }
 
@@ -882,8 +898,12 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 		}
 		else
 		{
-			rule = *nextp = parse_rule(buf);
-			nextp = &rule->next;
+			fz_css_rule *x = parse_rule(buf);
+			if (x)
+			{
+				rule = *nextp = x;
+				nextp = &rule->next;
+			}
 		}
 	}
 
