@@ -100,16 +100,11 @@ tiff_count_pages(fz_context *ctx, tiff_document *doc)
 }
 
 static int
-tiff_meta(fz_context *ctx, tiff_document *doc, int key, void *ptr, int size)
+tiff_lookup_metadata(fz_context *ctx, tiff_document *doc, const char *key, char *buf, int size)
 {
-	switch (key)
-	{
-	case FZ_META_FORMAT_INFO:
-		sprintf((char *)ptr, "TIFF");
-		return FZ_META_OK;
-	default:
-		return FZ_META_UNKNOWN_KEY;
-	}
+	if (!strcmp(key, "format"))
+		return fz_strlcpy(buf, "TIFF", size);
+	return -1;
 }
 
 static void
@@ -129,7 +124,7 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.close = (fz_document_close_fn *)tiff_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)tiff_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)tiff_load_page;
-	doc->super.meta = (fz_document_meta_fn *)tiff_meta;
+	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)tiff_lookup_metadata;
 
 	fz_try(ctx)
 	{

@@ -187,16 +187,11 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 }
 
 static int
-cbz_meta(fz_context *ctx, cbz_document *doc, int key, void *ptr, int size)
+cbz_lookup_metadata(fz_context *ctx, cbz_document *doc, const char *key, char *buf, int size)
 {
-	switch (key)
-	{
-	case FZ_META_FORMAT_INFO:
-		sprintf((char *)ptr, "CBZ");
-		return FZ_META_OK;
-	default:
-		return FZ_META_UNKNOWN_KEY;
-	}
+	if (!strcmp(key, "format"))
+		return fz_strlcpy(buf, "CBZ", size);
+	return -1;
 }
 
 static cbz_document *
@@ -207,7 +202,7 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.close = (fz_document_close_fn *)cbz_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)cbz_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)cbz_load_page;
-	doc->super.meta = (fz_document_meta_fn *)cbz_meta;
+	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)cbz_lookup_metadata;
 
 	fz_try(ctx)
 	{

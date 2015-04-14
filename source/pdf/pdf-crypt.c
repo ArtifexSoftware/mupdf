@@ -9,6 +9,19 @@ enum
 	PDF_CRYPT_UNKNOWN,
 };
 
+enum
+{
+	PDF_PERM_PRINT = 1 << 2,
+	PDF_PERM_CHANGE = 1 << 3,
+	PDF_PERM_COPY = 1 << 4,
+	PDF_PERM_NOTES = 1 << 5,
+	PDF_PERM_FILL_FORM = 1 << 8,
+	PDF_PERM_ACCESSIBILITY = 1 << 9,
+	PDF_PERM_ASSEMBLE = 1 << 10,
+	PDF_PERM_HIGH_RES_PRINT = 1 << 11,
+	PDF_DEFAULT_PERM_FLAGS = 0xfffc
+};
+
 typedef struct pdf_crypt_filter_s pdf_crypt_filter;
 
 struct pdf_crypt_filter_s
@@ -765,11 +778,18 @@ pdf_needs_password(fz_context *ctx, pdf_document *doc)
 }
 
 int
-pdf_has_permission(fz_context *ctx, pdf_document *doc, int p)
+pdf_has_permission(fz_context *ctx, pdf_document *doc, fz_permission p)
 {
 	if (!doc->crypt)
 		return 1;
-	return doc->crypt->p & p;
+	switch (p)
+	{
+	case FZ_PERMISSION_PRINT: return doc->crypt->p & PDF_PERM_PRINT;
+	case FZ_PERMISSION_COPY: return doc->crypt->p & PDF_PERM_COPY;
+	case FZ_PERMISSION_EDIT: return doc->crypt->p & PDF_PERM_CHANGE;
+	case FZ_PERMISSION_ANNOTATE: return doc->crypt->p & PDF_PERM_NOTES;
+	}
+	return 1;
 }
 
 unsigned char *

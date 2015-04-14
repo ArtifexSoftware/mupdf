@@ -46,7 +46,6 @@
 #include "mupdf/fitz/outline.h"
 #include "mupdf/fitz/document.h"
 #include "mupdf/fitz/annotation.h"
-#include "mupdf/fitz/meta.h"
 
 #include "mupdf/fitz/write-document.h"
 

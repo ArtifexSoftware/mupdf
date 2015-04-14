@@ -524,7 +524,7 @@ JNI_FN(MuPDFCore_fileFormatInternal)(JNIEnv * env, jobject thiz)
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 
-	fz_meta(ctx, glo->doc, FZ_META_FORMAT_INFO, info, sizeof(info));
+	fz_lookup_metadata(ctx, glo->doc, FZ_META_FORMAT, info, sizeof(info));
 
 	return (*env)->NewStringUTF(env, info);
 }

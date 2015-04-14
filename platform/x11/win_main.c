@@ -452,7 +452,11 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		SetDlgItemTextW(hwnd, 0x10, wbuf);
 
-		if (fz_meta(ctx, doc, FZ_META_FORMAT_INFO, buf, 256) < 0)
+		if (fz_lookup_metadata(ctx, doc, FZ_META_FORMAT, buf, sizeof buf) >= 0)
+		{
+			SetDlgItemTextA(hwnd, 0x11, buf);
+		}
+		else
 		{
 			SetDlgItemTextA(hwnd, 0x11, "Unknown");
 			SetDlgItemTextA(hwnd, 0x12, "None");
@@ -460,9 +464,7 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return TRUE;
 		}
 
-		SetDlgItemTextA(hwnd, 0x11, buf);
-
-		if (fz_meta(ctx, doc, FZ_META_CRYPT_INFO, buf, 256) == 0)
+		if (fz_lookup_metadata(ctx, doc, FZ_META_ENCRYPTION, buf, sizeof buf) >= 0)
 		{
 			SetDlgItemTextA(hwnd, 0x12, buf);
 		}
@@ -470,26 +472,25 @@ dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			SetDlgItemTextA(hwnd, 0x12, "None");
 		}
+
 		buf[0] = 0;
-		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_PRINT) == 0)
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_PRINT))
 			strcat(buf, "print, ");
-		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_CHANGE) == 0)
-			strcat(buf, "modify, ");
-		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_COPY) == 0)
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_COPY))
 			strcat(buf, "copy, ");
-		if (fz_meta(ctx, doc, FZ_META_HAS_PERMISSION, NULL, FZ_PERMISSION_NOTES) == 0)
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_EDIT))
+			strcat(buf, "edit, ");
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_ANNOTATE))
 			strcat(buf, "annotate, ");
 		if (strlen(buf) > 2)
 			buf[strlen(buf)-2] = 0;
 		else
-			strcpy(buf, "None");
+			strcpy(buf, "none");
 		SetDlgItemTextA(hwnd, 0x13, buf);
 
 #define SETUTF8(ID, STRING) \
+		if (fz_lookup_metadata(ctx, doc, "info:" STRING, buf, sizeof buf) >= 0) \
 		{ \
-			*(char **)buf = STRING; \
-			if (fz_meta(ctx, doc, FZ_META_INFO, buf, 256) <= 0) \
-				buf[0] = 0; \
 			MultiByteToWideChar(CP_UTF8, 0, buf, -1, bufx, nelem(bufx)); \
 			SetDlgItemTextW(hwnd, ID, bufx); \
 		}

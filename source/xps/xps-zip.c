@@ -221,16 +221,11 @@ xps_close_document(fz_context *ctx, xps_document *doc)
 }
 
 static int
-xps_meta(fz_context *ctx, xps_document *doc, int key, void *ptr, int size)
+xps_lookup_metadata(fz_context *ctx, xps_document *doc, const char *key, char *buf, int size)
 {
-	switch (key)
-	{
-	case FZ_META_FORMAT_INFO:
-		sprintf((char *)ptr, "XPS");
-		return FZ_META_OK;
-	default:
-		return FZ_META_UNKNOWN_KEY;
-	}
+	if (!strcmp(key, "format"))
+		return fz_strlcpy(buf, "XPS", size);
+	return -1;
 }
 
 static void
@@ -241,5 +236,5 @@ xps_init_document(fz_context *ctx, xps_document *doc)
 	doc->super.load_outline = (fz_document_load_outline_fn *)xps_load_outline;
 	doc->super.count_pages = (fz_document_count_pages_fn *)xps_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)xps_load_page;
-	doc->super.meta = (fz_document_meta_fn *)xps_meta;
+	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)xps_lookup_metadata;
 }

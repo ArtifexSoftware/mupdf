@@ -16,6 +16,7 @@ typedef struct fz_document_s fz_document;
 typedef struct fz_document_handler_s fz_document_handler;
 typedef struct fz_page_s fz_page;
 typedef struct fz_annot_s fz_annot;
+typedef enum fz_permission_e fz_permission;
 
 // TODO: move out of this interface (it's pdf specific)
 typedef struct fz_write_options_s fz_write_options;
@@ -23,11 +24,12 @@ typedef struct fz_write_options_s fz_write_options;
 typedef void (fz_document_close_fn)(fz_context *ctx, fz_document *doc);
 typedef int (fz_document_needs_password_fn)(fz_context *ctx, fz_document *doc);
 typedef int (fz_document_authenticate_password_fn)(fz_context *ctx, fz_document *doc, const char *password);
+typedef int (fz_document_has_permission_fn)(fz_context *ctx, fz_document *doc, fz_permission permission);
 typedef fz_outline *(fz_document_load_outline_fn)(fz_context *ctx, fz_document *doc);
 typedef void (fz_document_layout_fn)(fz_context *ctx, fz_document *doc, float w, float h, float em);
 typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc);
 typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int number);
-typedef int (fz_document_meta_fn)(fz_context *ctx, fz_document *doc, int key, void *ptr, int size);
+typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
 typedef void (fz_document_write_fn)(fz_context *ctx, fz_document *doc, char *filename, fz_write_options *opts);
 
 typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
@@ -61,11 +63,12 @@ struct fz_document_s
 	fz_document_close_fn *close;
 	fz_document_needs_password_fn *needs_password;
 	fz_document_authenticate_password_fn *authenticate_password;
+	fz_document_has_permission_fn *has_permission;
 	fz_document_load_outline_fn *load_outline;
 	fz_document_layout_fn *layout;
 	fz_document_count_pages_fn *count_pages;
 	fz_document_load_page_fn *load_page;
-	fz_document_meta_fn *meta;
+	fz_document_lookup_metadata_fn *lookup_metadata;
 	fz_document_write_fn *write;
 	int did_layout;
 };
@@ -299,5 +302,54 @@ void fz_drop_page(fz_context *ctx, fz_page *page);
 	Does not throw exceptions.
 */
 fz_transition *fz_page_presentation(fz_context *ctx, fz_page *page, float *duration);
+
+/*
+	fz_has_permission: Check permission flags on document.
+*/
+int fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p);
+
+enum fz_permission_e
+{
+	FZ_PERMISSION_PRINT = 'p',
+	FZ_PERMISSION_COPY = 'c',
+	FZ_PERMISSION_EDIT = 'e',
+	FZ_PERMISSION_ANNOTATE = 'n',
+};
+
+/*
+	fz_lookup_metadata: Retrieve document meta data strings.
+
+	doc: The document to query.
+
+	key: Which meta data key to retrieve...
+
+	Basic information:
+		'format'	-- Document format and version.
+		'encryption'	-- Description of the encryption used.
+
+	From the document information dictionary:
+		'info:Title'
+		'info:Author'
+		'info:Subject'
+		'info:Keywords'
+		'info:Creator'
+		'info:Producer'
+		'info:CreationDate'
+		'info:ModDate'
+
+	buf: The buffer to hold the results (a nul-terminated UTF-8 string).
+
+	size: Size of 'buf'.
+
+	Returns the size of the output string (may be larger than 'size' if
+	the output was truncated), or -1 if the key is not recognized or found.
+*/
+int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
+
+#define FZ_META_FORMAT "format"
+#define FZ_META_ENCRYPTION "encryption"
+
+#define FZ_META_INFO_AUTHOR "info:Author"
+#define FZ_META_INFO_TITLE "info:Title"
 
 #endif

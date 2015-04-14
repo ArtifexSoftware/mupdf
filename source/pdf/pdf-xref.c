@@ -2155,77 +2155,44 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *n
 }
 
 int
-pdf_meta(fz_context *ctx, pdf_document *doc, int key, void *ptr, int size)
+pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *buf, int size)
 {
-	switch (key)
+	if (!strcmp(key, "format"))
+		return fz_snprintf(buf, size, "PDF %d.%d", doc->version/10, doc->version % 10);
+
+	if (!strcmp(key, "encryption"))
 	{
-	/*
-		ptr: Pointer to block (uninitialised on entry)
-		size: Size of block (at least 64 bytes)
-		Returns: Document format as a brief text string.
-	*/
-	case FZ_META_FORMAT_INFO:
-		sprintf((char *)ptr, "PDF %d.%d", doc->version/10, doc->version % 10);
-		return FZ_META_OK;
-	case FZ_META_CRYPT_INFO:
 		if (doc->crypt)
-			sprintf((char *)ptr, "Standard V%d R%d %d-bit %s",
-				pdf_crypt_version(ctx, doc),
-				pdf_crypt_revision(ctx, doc),
-				pdf_crypt_length(ctx, doc),
-				pdf_crypt_method(ctx, doc));
+			return fz_snprintf(buf, size, "Standard V%d R%d %d-bit %s",
+					pdf_crypt_version(ctx, doc),
+					pdf_crypt_revision(ctx, doc),
+					pdf_crypt_length(ctx, doc),
+					pdf_crypt_method(ctx, doc));
 		else
-			sprintf((char *)ptr, "None");
-		return FZ_META_OK;
-	case FZ_META_HAS_PERMISSION:
+			return fz_strlcpy(buf, "None", size);
+	}
+
+	if (strstr(key, "info:") == key)
 	{
-		int i;
-		switch (size)
-		{
-		case FZ_PERMISSION_PRINT:
-			i = PDF_PERM_PRINT;
-			break;
-		case FZ_PERMISSION_CHANGE:
-			i = PDF_PERM_CHANGE;
-			break;
-		case FZ_PERMISSION_COPY:
-			i = PDF_PERM_COPY;
-			break;
-		case FZ_PERMISSION_NOTES:
-			i = PDF_PERM_NOTES;
-			break;
-		default:
-			return 0;
-		}
-		return pdf_has_permission(ctx, doc, i);
-	}
-	case FZ_META_INFO:
-	{
-		pdf_obj *info = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info);
+		pdf_obj *info;
+		char *s;
+		int n;
+
+		info = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info);
 		if (!info)
-		{
-			if (ptr)
-				*(char *)ptr = 0;
-			return 0;
-		}
-		info = pdf_dict_gets(ctx, info, *(char **)ptr);
+			return -1;
+
+		info = pdf_dict_gets(ctx, info, key + 5);
 		if (!info)
-		{
-			if (ptr)
-				*(char *)ptr = 0;
-			return 0;
-		}
-		if (info && ptr && size)
-		{
-			char *utf8 = pdf_to_utf8(ctx, doc, info);
-			fz_strlcpy(ptr, utf8, size);
-			fz_free(ctx, utf8);
-		}
-		return 1;
+			return -1;
+
+		s = pdf_to_utf8(ctx, doc, info);
+		n = fz_strlcpy(buf, s, size);
+		fz_free(ctx, s);
+		return n;
 	}
-	default:
-		return FZ_META_UNKNOWN_KEY;
-	}
+
+	return -1;
 }
 
 fz_transition *
@@ -2256,10 +2223,11 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.close = (fz_document_close_fn *)pdf_close_document;
 	doc->super.needs_password = (fz_document_needs_password_fn *)pdf_needs_password;
 	doc->super.authenticate_password = (fz_document_authenticate_password_fn *)pdf_authenticate_password;
+	doc->super.has_permission = (fz_document_has_permission_fn *)pdf_has_permission;
 	doc->super.load_outline = (fz_document_load_outline_fn *)pdf_load_outline;
 	doc->super.count_pages = (fz_document_count_pages_fn *)pdf_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)pdf_load_page;
-	doc->super.meta = (fz_document_meta_fn *)pdf_meta;
+	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)pdf_lookup_metadata;
 	doc->super.write = (fz_document_write_fn *)pdf_write_document;
 	doc->update_appearance = pdf_update_appearance;
 

@@ -82,16 +82,11 @@ img_load_page(fz_context *ctx, img_document *doc, int number)
 }
 
 static int
-img_meta(fz_context *ctx, img_document *doc, int key, void *ptr, int size)
+img_lookup_metadata(fz_context *ctx, img_document *doc, const char *key, char *buf, int size)
 {
-	switch(key)
-	{
-	case FZ_META_FORMAT_INFO:
-		sprintf((char *)ptr, "IMAGE");
-		return FZ_META_OK;
-	default:
-		return FZ_META_UNKNOWN_KEY;
-	}
+	if (!strcmp(key, "format"))
+		return fz_strlcpy(buf, "Image", size);
+	return -1;
 }
 
 static img_document *
@@ -102,7 +97,7 @@ img_new_document(fz_context *ctx, fz_image *image)
 	doc->super.close = (fz_document_close_fn *)img_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)img_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)img_load_page;
-	doc->super.meta = (fz_document_meta_fn *)img_meta;
+	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)img_lookup_metadata;
 
 	doc->image = fz_keep_image(ctx, image);
 

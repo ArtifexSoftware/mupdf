@@ -104,25 +104,8 @@ pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc);
 int pdf_needs_password(fz_context *ctx, pdf_document *doc);
 int pdf_authenticate_password(fz_context *ctx, pdf_document *doc, const char *pw);
 
-enum
-{
-	PDF_PERM_PRINT = 1 << 2,
-	PDF_PERM_CHANGE = 1 << 3,
-	PDF_PERM_COPY = 1 << 4,
-	PDF_PERM_NOTES = 1 << 5,
-	PDF_PERM_FILL_FORM = 1 << 8,
-	PDF_PERM_ACCESSIBILITY = 1 << 9,
-	PDF_PERM_ASSEMBLE = 1 << 10,
-	PDF_PERM_HIGH_RES_PRINT = 1 << 11,
-	PDF_DEFAULT_PERM_FLAGS = 0xfffc
-};
-
-int pdf_has_permission(fz_context *ctx, pdf_document *doc, int p);
-
-/*
-	Metadata interface.
-*/
-int pdf_meta(fz_context *ctx, pdf_document *doc, int key, void *ptr, int size);
+int pdf_has_permission(fz_context *ctx, pdf_document *doc, fz_permission p);
+int pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *ptr, int size);
 
 fz_outline *pdf_load_outline(fz_context *ctx, pdf_document *doc);
 

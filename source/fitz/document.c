@@ -194,6 +194,14 @@ fz_authenticate_password(fz_context *ctx, fz_document *doc, const char *password
 	return 1;
 }
 
+int
+fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p)
+{
+	if (doc && doc->has_permission)
+		return doc->has_permission(ctx, doc, p);
+	return 1;
+}
+
 fz_outline *
 fz_load_outline(fz_context *ctx, fz_document *doc)
 {
@@ -222,11 +230,13 @@ fz_count_pages(fz_context *ctx, fz_document *doc)
 }
 
 int
-fz_meta(fz_context *ctx, fz_document *doc, int key, void *ptr, int size)
+fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size)
 {
-	if (doc && doc->meta)
-		return doc->meta(ctx, doc, key, ptr, size);
-	return FZ_META_UNKNOWN_KEY;
+	if (buf && size > 0)
+		buf[0] = 0;
+	if (doc && doc->lookup_metadata)
+		return doc->lookup_metadata(ctx, doc, key, buf, size);
+	return -1;
 }
 
 void
