@@ -640,7 +640,9 @@ JNI_FN(MuPDFCore_javascriptSupported)(JNIEnv *env, jobject thiz)
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	pdf_document *idoc = pdf_specifics(ctx, glo->doc);
-	return pdf_js_supported(ctx, idoc);
+	if (idoc)
+		return pdf_js_supported(ctx, idoc);
+	return 0;
 }
 
 static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *idoc)
@@ -847,6 +849,7 @@ static char *widget_type_string(int t)
 	default: return "non-widget";
 	}
 }
+
 JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, int page,
 		int pageW, int pageH, int patchX, int patchY, int patchW, int patchH, jlong cookiePtr)

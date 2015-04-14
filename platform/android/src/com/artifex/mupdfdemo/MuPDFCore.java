@@ -128,11 +128,10 @@ public class MuPDFCore
 		wasOpenedFromBuffer = true;
 	}
 
-	public  int countPages()
+	public int countPages()
 	{
 		if (numPages < 0)
 			numPages = countPagesSynchronized();
-
 		return numPages;
 	}
 
