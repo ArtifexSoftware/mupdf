@@ -199,6 +199,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	fz_xml *package, *manifest, *spine, *itemref;
 	char base_uri[2048];
 	const char *full_path;
+	const char *version;
 	char ncx[2048], s[2048];
 	epub_chapter *head, *tail;
 
@@ -228,6 +229,10 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	fz_drop_buffer(ctx, buf);
 
 	package = fz_xml_find(content_opf, "package");
+	version = fz_xml_att(package, "version");
+	if (!version || strcmp(version, "2.0"))
+		fz_warn(ctx, "unknown epub version: %s", version ? version : "<none>");
+
 	manifest = fz_xml_find_down(package, "manifest");
 	spine = fz_xml_find_down(package, "spine");
 
