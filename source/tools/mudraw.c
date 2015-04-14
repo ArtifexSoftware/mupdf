@@ -1149,8 +1149,10 @@ int main(int argc, char **argv)
 
 	if (showmemory)
 	{
-#ifdef _WIN64
+#if defined(_WIN64)
 #define FMT "%Iu"
+#elif defined(_WIN32)
+#define FMT "%u"
 #else
 #define FMT "%zu"
 #endif
