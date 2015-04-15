@@ -493,7 +493,7 @@ static fz_html_flow *find_next_word(fz_html_flow *node, float *w)
 	return node;
 }
 
-static float find_accumulated_margins(fz_context *ctx, fz_html *box, float *w, float *h)
+static void find_accumulated_margins(fz_context *ctx, fz_html *box, float *w, float *h)
 {
 	while (box)
 	{
