@@ -675,7 +675,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 	{
 		if (node->type == FLOW_IMAGE)
 		{
-			if (node->y > page_bot || node->y + node->h < page_top)
+			if (node->y >= page_bot || node->y + node->h <= page_top)
 				continue;
 		}
 		else
