@@ -493,6 +493,19 @@ static fz_html_flow *find_next_word(fz_html_flow *node, float *w)
 	return node;
 }
 
+static float find_accumulated_margins(fz_context *ctx, fz_html *box, float *w, float *h)
+{
+	while (box)
+	{
+		/* TODO: take into account collapsed margins */
+		*h += box->margin[T] + box->padding[T] + box->border[T];
+		*h += box->margin[B] + box->padding[B] + box->border[B];
+		*w += box->margin[L] + box->padding[L] + box->border[L];
+		*w += box->margin[R] + box->padding[R] + box->border[R];
+		box = box->up;
+	}
+}
+
 static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h)
 {
 	fz_html_flow *node, *line_start, *word_start, *word_end, *line_end;
@@ -517,10 +530,18 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 		return;
 
 	for (node = box->flow_head; node; node = node->next)
+	{
 		if (node->type == FLOW_IMAGE)
-			measure_image(ctx, node, top->w, page_h);
+		{
+			float w = 0, h = 0;
+			find_accumulated_margins(ctx, box, &w, &h);
+			measure_image(ctx, node, top->w - w, page_h - h);
+		}
 		else
+		{
 			measure_word(ctx, node, em);
+		}
+	}
 
 	line_start = find_next_word(box->flow_head, &glue_w);
 	line_end = NULL;
