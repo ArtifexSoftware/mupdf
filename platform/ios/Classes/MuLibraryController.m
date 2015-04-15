@@ -26,7 +26,7 @@ static void showAlert(NSString *msg, NSString *filename)
 - (void) viewWillAppear: (BOOL)animated
 {
 	[super viewWillAppear:animated];
-	[self setTitle: @"PDF, XPS and CBZ Documents"];
+	[self setTitle: @"PDF, XPS, CBZ and EPUB Documents"];
 	[self reload];
 	printf("library viewWillAppear (starting reload timer)\n");
 	timer = [NSTimer timerWithTimeInterval: 3
