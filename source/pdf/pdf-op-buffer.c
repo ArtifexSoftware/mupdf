@@ -6,6 +6,7 @@ struct pdf_output_processor_s
 {
 	pdf_processor super;
 	fz_output *out;
+	int ahxencode;
 	int extgstate;
 };
 
@@ -543,6 +544,7 @@ static void
 pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
+	int ahx = ((pdf_output_processor*)proc)->ahxencode;
 	fz_compressed_buffer *cbuf;
 	fz_buffer *buf;
 	int i;
@@ -588,15 +590,14 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 		break;
 
 	case FZ_IMAGE_JPEG:
-		fz_printf(ctx, out, "/F/DCT\n");
+		fz_printf(ctx, out, ahx ? "/F[/AHx/DCT]\n" : "/F/DCT\n");
 		if (cbuf->params.u.jpeg.color_transform != -1)
 			fz_printf(ctx, out, "/DP<</ColorTransform %d>>\n",
 				cbuf->params.u.jpeg.color_transform);
 		break;
 
 	case FZ_IMAGE_FAX:
-		fz_printf(ctx, out, "/F/CCF\n");
-		fz_printf(ctx, out, "/DP<<\n");
+		fz_printf(ctx, out, ahx ? "/F[/AHx/CCF]\n/DP[null<<\n" : "/F/CCF\n/DP<<\n");
 		fz_printf(ctx, out, "/K %d\n", cbuf->params.u.fax.k);
 		if (cbuf->params.u.fax.columns != 1728)
 			fz_printf(ctx, out, "/Columns %d\n", cbuf->params.u.fax.columns);
@@ -613,21 +614,23 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 		if (cbuf->params.u.fax.damaged_rows_before_error > 0)
 			fz_printf(ctx, out, "/DamagedRowsBeforeError %d\n",
 				cbuf->params.u.fax.damaged_rows_before_error);
-		fz_printf(ctx, out, ">>\n");
+		fz_printf(ctx, out, ahx ? ">>]\n" : ">>\n");
 		break;
 
 	case FZ_IMAGE_RAW:
+		if (ahx)
+			fz_printf(ctx, out, "/F/AHx\n");
 		break;
 
 	case FZ_IMAGE_RLD:
-		fz_printf(ctx, out, "/F/RL\n");
+		fz_printf(ctx, out, ahx ? "/F[/AHx/RL]\n" : "/F/RL\n");
 		break;
 
 	case FZ_IMAGE_FLATE:
-		fz_printf(ctx, out, "/F/Fl\n");
+		fz_printf(ctx, out, ahx ? "/F[/AHx/Fl]\n" : "/F/Fl\n");
 		if (cbuf->params.u.flate.predictor > 1)
 		{
-			fz_printf(ctx, out, "/DP<<\n");
+			fz_printf(ctx, out, ahx ? "/DP[null<<\n" : "/DP<<\n");
 			fz_printf(ctx, out, "/Predictor %d\n", cbuf->params.u.flate.predictor);
 			if (cbuf->params.u.flate.columns != 1)
 				fz_printf(ctx, out, "/Columns %d\n", cbuf->params.u.flate.columns);
@@ -635,15 +638,15 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 				fz_printf(ctx, out, "/Colors %d\n", cbuf->params.u.flate.colors);
 			if (cbuf->params.u.flate.bpc != 8)
 				fz_printf(ctx, out, "/BitsPerComponent %d\n", cbuf->params.u.flate.bpc);
-			fz_printf(ctx, out, ">>\n");
+			fz_printf(ctx, out, ahx ? ">>]\n" : ">>\n");
 		}
 		break;
 
 	case FZ_IMAGE_LZW:
-		fz_printf(ctx, out, "/F/LZW\n");
+		fz_printf(ctx, out, ahx ? "/F[/AHx/LZW]\n" : "/F/LZW\n");
 		if (cbuf->params.u.lzw.predictor > 1)
 		{
-			fz_printf(ctx, out, "/DP<<\n");
+			fz_printf(ctx, out, ahx ? "/DP[<<null\n" : "/DP<<\n");
 			fz_printf(ctx, out, "/Predictor %d\n", cbuf->params.u.lzw.predictor);
 			if (cbuf->params.u.lzw.columns != 1)
 				fz_printf(ctx, out, "/Columns %d\n", cbuf->params.u.lzw.columns);
@@ -653,13 +656,28 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 				fz_printf(ctx, out, "/BitsPerComponent %d\n", cbuf->params.u.lzw.bpc);
 			if (cbuf->params.u.lzw.early_change != 1)
 				fz_printf(ctx, out, "/EarlyChange %d\n", cbuf->params.u.lzw.early_change);
-			fz_printf(ctx, out, ">>\n");
+			fz_printf(ctx, out, ahx ? ">>]\n" : ">>\n");
 		}
 		break;
 	}
 
 	fz_printf(ctx, out, "ID\n");
-	fz_write(ctx, out, buf->data, buf->len);
+	if (ahx)
+	{
+		for (i = 0; i < buf->len; ++i)
+		{
+			int c = buf->data[i];
+			fz_putc(ctx, out, "0123456789abcdef"[(c >> 4) & 0xf]);
+			fz_putc(ctx, out, "0123456789abcdef"[c & 0xf]);
+			if ((i & 31) == 31)
+				fz_putc(ctx, out, '\n');
+		}
+		fz_putc(ctx, out, '>');
+	}
+	else
+	{
+		fz_write(ctx, out, buf->data, buf->len);
+	}
 	fz_printf(ctx, out, "\nEI\n");
 }
 
@@ -749,7 +767,7 @@ pdf_drop_imp_output_processor(fz_context *ctx, pdf_processor *proc)
 }
 
 static pdf_processor *
-pdf_new_output_processor(fz_context *ctx, fz_output *out)
+pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
 {
 	pdf_output_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -867,18 +885,19 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out)
 	}
 
 	proc->out = out;
+	proc->ahxencode = ahxencode;
 
 	return (pdf_processor*)proc;
 }
 
 pdf_processor *
-pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer)
+pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode)
 {
 	pdf_processor *proc;
 	fz_output *out = fz_new_output_with_buffer(ctx, buffer);
 	fz_try(ctx)
 	{
-		proc = pdf_new_output_processor(ctx, out);
+		proc = pdf_new_output_processor(ctx, out, ahxencode);
 	}
 	fz_catch(ctx)
 	{

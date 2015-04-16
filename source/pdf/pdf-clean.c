@@ -1,7 +1,7 @@
 #include "mupdf/pdf.h"
 
 static void
-pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_res, fz_cookie *cookie, int own_res)
+pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_res, fz_cookie *cookie, int own_res, int ascii)
 {
 	pdf_processor *proc_buffer = NULL;
 	pdf_processor *proc_filter = NULL;
@@ -30,7 +30,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 
 		res = pdf_new_dict(ctx, doc, 1);
 
-		proc_buffer = pdf_new_buffer_processor(ctx, buffer);
+		proc_buffer = pdf_new_buffer_processor(ctx, buffer, ascii);
 		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, orig_res, res);
 
 		pdf_process_contents(ctx, proc_filter, doc, orig_res, obj, cookie);
@@ -58,7 +58,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 }
 
 static void
-pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_res, fz_cookie *cookie)
+pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_res, fz_cookie *cookie, int ascii)
 {
 	pdf_processor *proc_buffer = NULL;
 	pdf_processor *proc_filter = NULL;
@@ -90,7 +90,7 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 			fz_buffer *buffer = fz_new_buffer(ctx, 1024);
 			fz_try(ctx)
 			{
-				proc_buffer = pdf_new_buffer_processor(ctx, buffer);
+				proc_buffer = pdf_new_buffer_processor(ctx, buffer, ascii);
 				proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, orig_res, res);
 
 				pdf_process_contents(ctx, proc_filter, doc, orig_res, val, cookie);
@@ -126,7 +126,7 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 	}
 }
 
-void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie, pdf_page_contents_process_fn *proc_fn, void *proc_arg)
+void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie, pdf_page_contents_process_fn *proc_fn, void *proc_arg, int ascii)
 {
 	pdf_processor *proc_buffer = NULL;
 	pdf_processor *proc_filter = NULL;
@@ -151,7 +151,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 	{
 		res = pdf_new_dict(ctx, doc, 1);
 
-		proc_buffer = pdf_new_buffer_processor(ctx, buffer);
+		proc_buffer = pdf_new_buffer_processor(ctx, buffer, ascii);
 		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, page->resources, res);
 
 		pdf_process_contents(ctx, proc_filter, doc, page->resources, page->contents, cookie);
@@ -193,7 +193,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 					continue;
 
 				/* Transparency group XObject */
-				pdf_clean_stream_object(ctx, doc, o, page->resources, cookie, 1);
+				pdf_clean_stream_object(ctx, doc, o, page->resources, cookie, 1, ascii);
 			}
 		}
 
@@ -213,7 +213,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 				if (!pat)
 					continue;
 				if (pdf_to_int(ctx, pdf_dict_get(ctx, pat, PDF_NAME_PatternType)) == 1)
-					pdf_clean_stream_object(ctx, doc, pat, page->resources, cookie, 0);
+					pdf_clean_stream_object(ctx, doc, pat, page->resources, cookie, 0, ascii);
 			}
 		}
 
@@ -233,7 +233,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 				if (!pdf_name_eq(ctx, PDF_NAME_Form, pdf_dict_get(ctx, xobj, PDF_NAME_Subtype)))
 					continue;
 
-				pdf_clean_stream_object(ctx, doc, xobj, page->resources, cookie, 1);
+				pdf_clean_stream_object(ctx, doc, xobj, page->resources, cookie, 1, ascii);
 			}
 		}
 
@@ -250,7 +250,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 
 				if (pdf_name_eq(ctx, PDF_NAME_Type3, pdf_dict_get(ctx, o, PDF_NAME_Subtype)))
 				{
-					pdf_clean_type3(ctx, doc, o, page->resources, cookie);
+					pdf_clean_type3(ctx, doc, o, page->resources, cookie, ascii);
 				}
 			}
 		}

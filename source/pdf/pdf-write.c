@@ -2548,7 +2548,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_op
 	}
 }
 
-static void sanitise(fz_context *ctx, pdf_document *doc)
+static void sanitize(fz_context *ctx, pdf_document *doc, int ascii)
 {
 	int n = pdf_count_pages(ctx, doc);
 	int i;
@@ -2556,9 +2556,7 @@ static void sanitise(fz_context *ctx, pdf_document *doc)
 	for (i = 0; i < n; i++)
 	{
 		pdf_page *page = pdf_load_page(ctx, doc, i);
-
-		pdf_clean_page_contents(ctx, doc, page, NULL, NULL, NULL);
-
+		pdf_clean_page_contents(ctx, doc, page, NULL, NULL, NULL, ascii);
 		fz_drop_page(ctx, &page->super);
 	}
 }
@@ -2580,9 +2578,9 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 
 	doc->freeze_updates = 1;
 
-	/* Sanitise the operator streams */
+	/* Sanitize the operator streams */
 	if (fz_opts->do_clean)
-		sanitise(ctx, doc);
+		sanitize(ctx, doc, fz_opts->do_ascii);
 
 	pdf_finish_edit(ctx, doc);
 	presize_unsaved_signature_byteranges(ctx, doc);

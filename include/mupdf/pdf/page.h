@@ -107,13 +107,11 @@ typedef void (pdf_page_contents_process_fn)(fz_context *ctx, fz_buffer *buffer, 
 
 	page: A page loaded by pdf_load_page.
 
-	dev: Device used for rendering, obtained from fz_new_*_device.
-
 	cookie: A pointer to an optional fz_cookie structure that can be used
 	to track progress, collect errors etc.
 */
 void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie,
-	pdf_page_contents_process_fn *proc, void *proc_arg);
+	pdf_page_contents_process_fn *proc, void *proc_arg, int ascii);
 
 /*
 	Presentation interface.

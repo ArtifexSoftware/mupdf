@@ -154,7 +154,7 @@ struct pdf_csi_s
 
 /* Functions to set up pdf_process structures */
 pdf_processor *pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, const char *event, pdf_gstate *gstate, int nested);
-pdf_processor *pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer);
+pdf_processor *pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode);
 pdf_processor *pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_document *doc, pdf_obj *old_res, pdf_obj *new_res);
 
 /* Functions to actually process annotations, glyphs and general stream objects */
