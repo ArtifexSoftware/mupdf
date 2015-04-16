@@ -16,7 +16,15 @@ typedef struct fz_document_s fz_document;
 typedef struct fz_document_handler_s fz_document_handler;
 typedef struct fz_page_s fz_page;
 typedef struct fz_annot_s fz_annot;
-typedef enum fz_permission_e fz_permission;
+
+typedef enum
+{
+	FZ_PERMISSION_PRINT = 'p',
+	FZ_PERMISSION_COPY = 'c',
+	FZ_PERMISSION_EDIT = 'e',
+	FZ_PERMISSION_ANNOTATE = 'n',
+}
+fz_permission;
 
 // TODO: move out of this interface (it's pdf specific)
 typedef struct fz_write_options_s fz_write_options;
@@ -307,14 +315,6 @@ fz_transition *fz_page_presentation(fz_context *ctx, fz_page *page, float *durat
 	fz_has_permission: Check permission flags on document.
 */
 int fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p);
-
-enum fz_permission_e
-{
-	FZ_PERMISSION_PRINT = 'p',
-	FZ_PERMISSION_COPY = 'c',
-	FZ_PERMISSION_EDIT = 'e',
-	FZ_PERMISSION_ANNOTATE = 'n',
-};
 
 /*
 	fz_lookup_metadata: Retrieve document meta data strings.
