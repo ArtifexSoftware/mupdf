@@ -1,5 +1,7 @@
 #include "mupdf/pdf.h"
 
+#include <zlib.h>
+
 /* #define DEBUG_LINEARIZATION */
 /* #define DEBUG_HEAP_SORT */
 /* #define DEBUG_WRITING */
@@ -47,8 +49,10 @@ struct pdf_write_options_s
 {
 	FILE *out;
 	int do_incremental;
+	int do_tight;
 	int do_ascii;
 	int do_expand;
+	int do_deflate;
 	int do_garbage;
 	int do_linear;
 	int do_clean;
@@ -1565,6 +1569,24 @@ static void addhexfilter(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	pdf_drop_obj(ctx, newdp);
 }
 
+static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, int n)
+{
+	fz_buffer *buf;
+	uLongf csize;
+	int t;
+
+	buf = fz_new_buffer(ctx, compressBound(n));
+	csize = buf->cap;
+	t = compress(buf->data, &csize, p, n);
+	if (t != Z_OK)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot deflate buffer");
+	}
+	buf->len = csize;
+	return buf;
+}
+
 static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, pdf_obj *obj_orig, int num, int gen)
 {
 	fz_buffer *buf, *tmp;
@@ -1576,6 +1598,16 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_options *op
 	buf = pdf_load_raw_renumbered_stream(ctx, doc, num, gen, orig_num, orig_gen);
 
 	obj = pdf_copy_dict(ctx, obj_orig);
+
+	if (opts->do_deflate && !pdf_dict_get(ctx, obj, PDF_NAME_Filter))
+	{
+		pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
+
+		tmp = deflatebuf(ctx, buf->data, buf->len);
+		fz_drop_buffer(ctx, buf);
+		buf = tmp;
+	}
+
 	if (opts->do_ascii && isbinarystream(buf))
 	{
 		tmp = hexbuf(ctx, buf->data, buf->len);
@@ -1590,7 +1622,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_options *op
 	}
 
 	fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
-	pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
+	pdf_fprint_obj(ctx, opts->out, obj, opts->do_tight);
 	fputs("stream\n", opts->out);
 	fwrite(buf->data, 1, buf->len, opts->out);
 	fputs("endstream\nendobj\n\n", opts->out);
@@ -1616,6 +1648,15 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_options *
 	pdf_dict_del(ctx, obj, PDF_NAME_Filter);
 	pdf_dict_del(ctx, obj, PDF_NAME_DecodeParms);
 
+	if (opts->do_deflate && !pdf_dict_get(ctx, obj, PDF_NAME_Filter))
+	{
+		pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
+
+		tmp = deflatebuf(ctx, buf->data, buf->len);
+		fz_drop_buffer(ctx, buf);
+		buf = tmp;
+	}
+
 	if (opts->do_ascii && isbinarystream(buf))
 	{
 		tmp = hexbuf(ctx, buf->data, buf->len);
@@ -1630,7 +1671,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_options *
 	pdf_drop_obj(ctx, newlen);
 
 	fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
-	pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
+	pdf_fprint_obj(ctx, opts->out, obj, opts->do_tight);
 	fputs("stream\n", opts->out);
 	fwrite(buf->data, 1, buf->len, opts->out);
 	fputs("endstream\nendobj\n\n", opts->out);
@@ -1714,13 +1755,13 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_options *o
 	if (!pdf_is_stream(ctx, doc, num, gen))
 	{
 		fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
+		pdf_fprint_obj(ctx, opts->out, obj, opts->do_tight);
 		fputs("endobj\n\n", opts->out);
 	}
 	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
 	{
 		fz_fprintf(ctx, opts->out, "%d %d obj\n", num, gen);
-		pdf_fprint_obj(ctx, opts->out, obj, opts->do_expand == 0);
+		pdf_fprint_obj(ctx, opts->out, obj, opts->do_tight);
 		fputs("stream\nendstream\nendobj\n\n", opts->out);
 	}
 	else
@@ -1884,7 +1925,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_options *opt
 	}
 
 	fputs("trailer\n", opts->out);
-	pdf_fprint_obj(ctx, opts->out, trailer, opts->do_expand == 0);
+	pdf_fprint_obj(ctx, opts->out, trailer, opts->do_tight);
 	fputs("\n", opts->out);
 
 	pdf_drop_obj(ctx, trailer);
@@ -2610,9 +2651,11 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 	fz_try(ctx)
 	{
 		opts.do_incremental = fz_opts->do_incremental;
+		opts.do_tight = (fz_opts->do_expand == 0) || fz_opts->do_deflate;
 		opts.do_expand = fz_opts->do_expand;
 		opts.do_garbage = fz_opts->do_garbage;
 		opts.do_ascii = fz_opts->do_ascii;
+		opts.do_deflate = fz_opts->do_deflate;
 		opts.do_linear = fz_opts->do_linear;
 		opts.do_clean = fz_opts->do_clean;
 		opts.start = 0;

@@ -25,6 +25,7 @@ static void usage(void)
 		"\t-i\ttoggle decompression of image streams\n"
 		"\t-f\ttoggle decompression of font streams\n"
 		"\t-a\tascii hex encode binary streams\n"
+		"\t-z\tdeflate uncompressed streams\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
 	exit(1);
@@ -44,12 +45,13 @@ int pdfclean_main(int argc, char **argv)
 	opts.do_garbage = 0;
 	opts.do_expand = 0;
 	opts.do_ascii = 0;
+	opts.do_deflate = 0;
 	opts.do_linear = 0;
 	opts.continue_on_error = 1;
 	opts.errors = &errors;
 	opts.do_clean = 0;
 
-	while ((c = fz_getopt(argc, argv, "adfgilp:s")) != -1)
+	while ((c = fz_getopt(argc, argv, "adfgilp:sz")) != -1)
 	{
 		switch (c)
 		{
@@ -60,6 +62,7 @@ int pdfclean_main(int argc, char **argv)
 		case 'i': opts.do_expand ^= fz_expand_images; break;
 		case 'l': opts.do_linear ++; break;
 		case 'a': opts.do_ascii ++; break;
+		case 'z': opts.do_deflate ++; break;
 		case 's': opts.do_clean ++; break;
 		default: usage(); break;
 		}

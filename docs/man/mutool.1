@@ -56,6 +56,11 @@ ASCII Hex encode binary streams. Use in conjuction with -d and -i or -f to
 ensure that although the images and/or fonts are compressed, the resulting
 file can still be viewed and edited with a text editor.
 .TP
+.B \-z
+Deflate uncompressed streams.
+If combined with -d, any decompressed streams will be recompressed.
+If combined with -a, the streams will also be hex encoded after compression.
+.TP
 .B pages
 Comma separated list of page numbers and ranges to include.
 
