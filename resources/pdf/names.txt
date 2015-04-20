@@ -48,7 +48,6 @@ C0
 C1
 CA
 CCF
-CCITTFaxDecod
 CCITTFaxDecode
 CF
 CFM
@@ -84,7 +83,6 @@ D
 DA
 DC
 DCT
-DCTDecod
 DCTDecode
 DOS
 DP
@@ -143,7 +141,6 @@ FitR
 FitV
 Fl
 Flags
-FlateDecod
 FlateDecode
 Fly
 Font
@@ -199,7 +196,6 @@ LJ
 LW
 LZ
 LZW
-LZWDecod
 LZWDecode
 Lab
 LastChar
@@ -285,7 +281,6 @@ Resources
 Root
 Rotate
 Rows
-RunLengthDecod
 RunLengthDecode
 S
 SMask
