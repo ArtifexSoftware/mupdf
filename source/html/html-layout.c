@@ -271,7 +271,7 @@ static void insert_inline_box(fz_context *ctx, fz_html *box, fz_html *top)
 }
 
 static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri,
-	fz_xml *node, fz_html *top, fz_css_rule *rule, fz_css_match *up_match)
+	fz_xml *node, fz_html *top, fz_css_rule *rule, fz_css_match *up_match, int list_counter)
 {
 	fz_css_match match;
 	fz_html *box;
@@ -321,6 +321,7 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 				else if (display == DIS_LIST_ITEM)
 				{
 					top = insert_block_box(ctx, box, top);
+					box->list_item = ++list_counter;
 				}
 				else if (display == DIS_INLINE)
 				{
@@ -333,7 +334,12 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 				}
 
 				if (fz_xml_down(node))
-					generate_boxes(ctx, set, zip, base_uri, fz_xml_down(node), box, rule, &match);
+				{
+					int child_counter = list_counter;
+					if (!strcmp(tag, "ul") || !strcmp(tag, "ol"))
+						child_counter = 0;
+					generate_boxes(ctx, set, zip, base_uri, fz_xml_down(node), box, rule, &match, child_counter);
+				}
 
 				// TODO: remove empty flow boxes
 			}
@@ -602,7 +608,7 @@ static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, 
 	float *border = box->border;
 	float *padding = box->padding;
 
-	em = fz_from_css_number(box->style.font_size, em, em);
+	em = box->em = fz_from_css_number(box->style.font_size, em, em);
 
 	margin[0] = fz_from_css_number(box->style.margin[0], em, top->w);
 	margin[1] = fz_from_css_number(box->style.margin[1], em, top->w);
@@ -754,6 +760,59 @@ static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, flo
 	fz_drop_path(ctx, path);
 }
 
+static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, int n)
+{
+	fz_text *text;
+	fz_matrix trm;
+	float x, y, w, baseline;
+	float color[3];
+	const char *s, *p;
+	char buf[40];
+	int c, g;
+
+	fz_scale(&trm, box->em, -box->em);
+	text = fz_new_text(ctx, box->style.font, &trm, 0);
+	baseline = box->em * 0.8 + (box->h - box->em) / 2;
+
+	switch (box->style.list_style_type)
+	{
+	default:
+	case LST_DISC: p = "\342\227\217  "; break; /* U+25CF BLACK CIRCLE */
+	case LST_CIRCLE: p = "\342\227\213  "; break; /* U+25CB WHITE CIRCLE */
+	case LST_SQUARE: p = "\342\226\240  "; break; /* U+25A0 BLACK SQUARE */
+	case LST_DECIMAL: p = buf; fz_snprintf(buf, sizeof buf, "%d. ", n); break;
+	case LST_NONE: p = ""; break;
+	}
+
+	s = p;
+	w = 0;
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+		g = fz_encode_character(ctx, box->style.font, c);
+		w += fz_advance_glyph(ctx, box->style.font, g) * box->em;
+	}
+
+	s = p;
+	x = box->x - box->padding[L] - box->border[L] - box->margin[L] - w;
+	y = box->y + baseline;
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+		g = fz_encode_character(ctx, box->style.font, c);
+		fz_add_text(ctx, text, g, c, x, y);
+		x += fz_advance_glyph(ctx, box->style.font, g) * box->em;
+	}
+
+	color[0] = box->style.color.r / 255.0f;
+	color[1] = box->style.color.g / 255.0f;
+	color[2] = box->style.color.b / 255.0f;
+
+	fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+
+	fz_drop_text(ctx, text);
+}
+
 static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
 	float x0, y0, x1, y1;
@@ -796,6 +855,11 @@ static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float 
 			draw_rect(ctx, dev, ctm, color, x0 - border[L], y0 - border[T], x0, y1 + border[B]);
 		if (border[R] > 0)
 			draw_rect(ctx, dev, ctm, color, x1, y0 - border[T], x1 + border[R], y1 + border[B]);
+	}
+
+	if (box->list_item)
+	{
+		draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
 	}
 
 	for (box = box->down; box; box = box->next)
@@ -927,7 +991,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	match.up = NULL;
 	match.count = 0;
 
-	generate_boxes(ctx, set, zip, base_uri, xml, box, css, &match);
+	generate_boxes(ctx, set, zip, base_uri, xml, box, css, &match, 0);
 
 	fz_drop_css(ctx, css);
 	fz_drop_xml(ctx, xml);

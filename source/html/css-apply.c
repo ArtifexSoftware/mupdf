@@ -64,6 +64,29 @@ static const char *color_kw[] = {
 	"yellow",
 };
 
+static const char *list_style_type_kw[] = {
+	"armenian",
+	"circle",
+	"decimal",
+	"decimal-leading-zero",
+	"disc",
+	"georgian",
+	"lower-alpha",
+	"lower-greek",
+	"lower-latin",
+	"lower-roman",
+	"none",
+	"square",
+	"upper-alpha",
+	"upper-latin",
+	"upper-roman",
+};
+
+static const char *list_style_position_kw[] = {
+	"inside",
+	"outside",
+};
+
 static int
 keyword_in_list(const char *name, const char **list, int n)
 {
@@ -418,6 +441,26 @@ add_shorthand_border(fz_css_match *match, fz_css_value *value, int spec)
 }
 
 static void
+add_shorthand_list_style(fz_css_match *match, fz_css_value *value, int spec)
+{
+	while (value)
+	{
+		if (value->type == CSS_KEYWORD)
+		{
+			if (keyword_in_list(value->data, list_style_type_kw, nelem(list_style_type_kw)))
+			{
+				add_property(match, "list-style-type", value, spec);
+			}
+			else if (keyword_in_list(value->data, list_style_position_kw, nelem(list_style_position_kw)))
+			{
+				add_property(match, "list-style-position", value, spec);
+			}
+		}
+		value = value->next;
+	}
+}
+
+static void
 add_property(fz_css_match *match, const char *name, fz_css_value *value, int spec)
 {
 	int i;
@@ -440,6 +483,11 @@ add_property(fz_css_match *match, const char *name, fz_css_value *value, int spe
 	if (!strcmp(name, "border"))
 	{
 		add_shorthand_border(match, value, spec);
+		return;
+	}
+	if (!strcmp(name, "list-style"))
+	{
+		add_shorthand_list_style(match, value, spec);
 		return;
 	}
 
@@ -751,10 +799,10 @@ white_space_from_property(fz_css_match *match)
 	if (value)
 	{
 		if (!strcmp(value->data, "normal")) return WS_NORMAL;
-		if (!strcmp(value->data, "pre")) return WS_PRE;
-		if (!strcmp(value->data, "nowrap")) return WS_NOWRAP;
-		if (!strcmp(value->data, "pre-wrap")) return WS_PRE_WRAP;
-		if (!strcmp(value->data, "pre-line")) return WS_PRE_LINE;
+		else if (!strcmp(value->data, "pre")) return WS_PRE;
+		else if (!strcmp(value->data, "nowrap")) return WS_NOWRAP;
+		else if (!strcmp(value->data, "pre-wrap")) return WS_PRE_WRAP;
+		else if (!strcmp(value->data, "pre-line")) return WS_PRE_LINE;
 	}
 	return WS_NORMAL;
 }
@@ -766,6 +814,7 @@ fz_default_css_style(fz_context *ctx, fz_css_style *style)
 	style->text_align = TA_LEFT;
 	style->vertical_align = VA_BASELINE;
 	style->white_space = WS_NORMAL;
+	style->list_style_type = LST_DISC;
 	style->font_size = make_number(1, N_SCALE);
 }
 
@@ -784,29 +833,20 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	value = value_from_property(match, "text-align");
 	if (value)
 	{
-		if (!strcmp(value->data, "left"))
-			style->text_align = TA_LEFT;
-		if (!strcmp(value->data, "right"))
-			style->text_align = TA_RIGHT;
-		if (!strcmp(value->data, "center"))
-			style->text_align = TA_CENTER;
-		if (!strcmp(value->data, "justify"))
-			style->text_align = TA_JUSTIFY;
+		if (!strcmp(value->data, "left")) style->text_align = TA_LEFT;
+		else if (!strcmp(value->data, "right")) style->text_align = TA_RIGHT;
+		else if (!strcmp(value->data, "center")) style->text_align = TA_CENTER;
+		else if (!strcmp(value->data, "justify")) style->text_align = TA_JUSTIFY;
 	}
 
 	value = value_from_property(match, "vertical-align");
 	if (value)
 	{
-		if (!strcmp(value->data, "baseline"))
-			style->vertical_align = VA_BASELINE;
-		if (!strcmp(value->data, "sub"))
-			style->vertical_align = VA_SUB;
-		if (!strcmp(value->data, "super"))
-			style->vertical_align = VA_SUPER;
-		if (!strcmp(value->data, "top"))
-			style->vertical_align = VA_TOP;
-		if (!strcmp(value->data, "bottom"))
-			style->vertical_align = VA_BOTTOM;
+		if (!strcmp(value->data, "baseline")) style->vertical_align = VA_BASELINE;
+		else if (!strcmp(value->data, "sub")) style->vertical_align = VA_SUB;
+		else if (!strcmp(value->data, "super")) style->vertical_align = VA_SUPER;
+		else if (!strcmp(value->data, "top")) style->vertical_align = VA_TOP;
+		else if (!strcmp(value->data, "bottom")) style->vertical_align = VA_BOTTOM;
 	}
 
 	value = value_from_property(match, "font-size");
@@ -831,12 +871,19 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	value = value_from_property(match, "border-style");
 	if (value)
 	{
-		if (!strcmp(value->data, "none"))
-			style->border_style = BS_NONE;
-		if (!strcmp(value->data, "hidden"))
-			style->border_style = BS_NONE;
-		if (!strcmp(value->data, "solid"))
-			style->border_style = BS_SOLID;
+		if (!strcmp(value->data, "none")) style->border_style = BS_NONE;
+		else if (!strcmp(value->data, "hidden")) style->border_style = BS_NONE;
+		else if (!strcmp(value->data, "solid")) style->border_style = BS_SOLID;
+	}
+
+	value = value_from_property(match, "list-style-type");
+	if (value)
+	{
+		if (!strcmp(value->data, "none")) style->list_style_type = LST_NONE;
+		else if (!strcmp(value->data, "disc")) style->list_style_type = LST_DISC;
+		else if (!strcmp(value->data, "circle")) style->list_style_type = LST_CIRCLE;
+		else if (!strcmp(value->data, "square")) style->list_style_type = LST_SQUARE;
+		else if (!strcmp(value->data, "decimal")) style->list_style_type = LST_DECIMAL;
 	}
 
 	style->line_height = number_from_property(match, "line-height", 1.2f, N_SCALE);

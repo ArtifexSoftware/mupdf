@@ -93,6 +93,7 @@ enum { WS_NORMAL, WS_PRE, WS_NOWRAP, WS_PRE_WRAP, WS_PRE_LINE };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
 enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM };
 enum { BS_NONE, BS_SOLID };
+enum { LST_DISC, LST_CIRCLE, LST_SQUARE, LST_DECIMAL, LST_NONE };
 
 enum { N_NUMBER='p', N_SCALE='m', N_PERCENT='%' };
 
@@ -118,6 +119,7 @@ struct fz_css_style_s
 	int text_align;
 	int vertical_align;
 	int border_style;
+	int list_style_type;
 	fz_css_number line_height;
 	fz_css_color background_color;
 	fz_css_color border_color;
@@ -140,9 +142,11 @@ struct fz_html_s
 	float padding[4];
 	float margin[4];
 	float border[4];
+	float em;
 	fz_html *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
 	fz_css_style style;
+	int list_item;
 	int is_first_flow; /* for text-indent */
 };
 
