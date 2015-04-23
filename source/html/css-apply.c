@@ -78,6 +78,7 @@ static const char *list_style_type_kw[] = {
 	"none",
 	"square",
 	"upper-alpha",
+	"upper-greek",
 	"upper-latin",
 	"upper-roman",
 };
@@ -884,6 +885,17 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else if (!strcmp(value->data, "circle")) style->list_style_type = LST_CIRCLE;
 		else if (!strcmp(value->data, "square")) style->list_style_type = LST_SQUARE;
 		else if (!strcmp(value->data, "decimal")) style->list_style_type = LST_DECIMAL;
+		else if (!strcmp(value->data, "decimal-leading-zero")) style->list_style_type = LST_DECIMAL_ZERO;
+		else if (!strcmp(value->data, "lower-roman")) style->list_style_type = LST_LC_ROMAN;
+		else if (!strcmp(value->data, "upper-roman")) style->list_style_type = LST_UC_ROMAN;
+		else if (!strcmp(value->data, "lower-greek")) style->list_style_type = LST_LC_GREEK;
+		else if (!strcmp(value->data, "upper-greek")) style->list_style_type = LST_UC_GREEK;
+		else if (!strcmp(value->data, "lower-latin")) style->list_style_type = LST_LC_LATIN;
+		else if (!strcmp(value->data, "upper-latin")) style->list_style_type = LST_UC_LATIN;
+		else if (!strcmp(value->data, "lower-alpha")) style->list_style_type = LST_LC_ALPHA;
+		else if (!strcmp(value->data, "upper-alpha")) style->list_style_type = LST_UC_ALPHA;
+		else if (!strcmp(value->data, "armenian")) style->list_style_type = LST_ARMENIAN;
+		else if (!strcmp(value->data, "georgian")) style->list_style_type = LST_GEORGIAN;
 	}
 
 	style->line_height = number_from_property(match, "line-height", 1.2f, N_SCALE);

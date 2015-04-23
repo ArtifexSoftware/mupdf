@@ -760,13 +760,91 @@ static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, flo
 	fz_drop_path(ctx, path);
 }
 
+static const char *roman_uc[3][10] = {
+	{ "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" },
+	{ "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC" },
+	{ "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM" },
+};
+
+static const char *roman_lc[3][10] = {
+	{ "", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix" },
+	{ "", "x", "xx", "xxx", "xl", "l", "lx", "lxx", "lxxx", "xc" },
+	{ "", "c", "cc", "ccc", "cd", "d", "dc", "dcc", "dccc", "cm" },
+};
+
+static void format_roman_number(fz_context *ctx, char *buf, int size, int n, const char *sym[3][10], const char *sym_m)
+{
+	int I = n % 10;
+	int X = (n / 10) % 10;
+	int C = (n / 100) % 100;
+	int M = (n / 1000);
+
+	fz_strlcpy(buf, "", size);
+	while (M--)
+		fz_strlcat(buf, sym_m, size);
+	fz_strlcat(buf, sym[2][C], size);
+	fz_strlcat(buf, sym[1][X], size);
+	fz_strlcat(buf, sym[0][I], size);
+	fz_strlcat(buf, ". ", size);
+}
+
+static void format_alpha_number(fz_context *ctx, char *buf, int size, int n, int alpha, int omega)
+{
+	int base = omega - alpha + 1;
+	int tmp[40];
+	int i, c;
+
+	if (alpha > 256) /* to skip final-s for greek */
+		--base;
+
+	/* Bijective base-26 (base-24 for greek) numeration */
+	i = 0;
+	while (n > 0)
+	{
+		--n;
+		c = n % base + alpha;
+		if (alpha > 256 && c > alpha + 16) /* skip final-s for greek */
+			++c;
+		tmp[i++] = c;
+		n /= base;
+	}
+
+	while (i > 0)
+		buf += fz_runetochar(buf, tmp[--i]);
+	*buf++ = '.';
+	*buf++ = ' ';
+	*buf = 0;
+}
+
+static void format_list_number(fz_context *ctx, int type, int x, char *buf, int size)
+{
+	switch (type)
+	{
+	case LST_NONE: fz_strlcpy(buf, "", size); break;
+	case LST_DISC: fz_strlcpy(buf, "\342\227\217  ", size); break; /* U+25CF BLACK CIRCLE */
+	case LST_CIRCLE: fz_strlcpy(buf, "\342\227\213  ", size); break; /* U+25CB WHITE CIRCLE */
+	case LST_SQUARE: fz_strlcpy(buf, "\342\226\240  ", size); break; /* U+25A0 BLACK SQUARE */
+	default:
+	case LST_DECIMAL: fz_snprintf(buf, size, "%d. ", x); break;
+	case LST_DECIMAL_ZERO: fz_snprintf(buf, size, "%02d. ", x); break;
+	case LST_LC_ROMAN: format_roman_number(ctx, buf, size, x, roman_lc, "m"); break;
+	case LST_UC_ROMAN: format_roman_number(ctx, buf, size, x, roman_uc, "M"); break;
+	case LST_LC_ALPHA: format_alpha_number(ctx, buf, size, x, 'a', 'z'); break;
+	case LST_UC_ALPHA: format_alpha_number(ctx, buf, size, x, 'A', 'Z'); break;
+	case LST_LC_LATIN: format_alpha_number(ctx, buf, size, x, 'a', 'z'); break;
+	case LST_UC_LATIN: format_alpha_number(ctx, buf, size, x, 'A', 'Z'); break;
+	case LST_LC_GREEK: format_alpha_number(ctx, buf, size, x, 0x03B1, 0x03C9); break;
+	case LST_UC_GREEK: format_alpha_number(ctx, buf, size, x, 0x0391, 0x03A9); break;
+	}
+}
+
 static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, int n)
 {
 	fz_text *text;
 	fz_matrix trm;
 	float x, y, w, baseline;
 	float color[3];
-	const char *s, *p;
+	const char *s;
 	char buf[40];
 	int c, g;
 
@@ -774,17 +852,12 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	text = fz_new_text(ctx, box->style.font, &trm, 0);
 	baseline = box->em * 0.8 + (box->h - box->em) / 2;
 
-	switch (box->style.list_style_type)
-	{
-	default:
-	case LST_DISC: p = "\342\227\217  "; break; /* U+25CF BLACK CIRCLE */
-	case LST_CIRCLE: p = "\342\227\213  "; break; /* U+25CB WHITE CIRCLE */
-	case LST_SQUARE: p = "\342\226\240  "; break; /* U+25A0 BLACK SQUARE */
-	case LST_DECIMAL: p = buf; fz_snprintf(buf, sizeof buf, "%d. ", n); break;
-	case LST_NONE: p = ""; break;
-	}
+	if (box->y + baseline > page_bot || box->y + baseline < page_top)
+		return;
 
-	s = p;
+	format_list_number(ctx, box->style.list_style_type, n, buf, sizeof buf);
+
+	s = buf;
 	w = 0;
 	while (*s)
 	{
@@ -793,7 +866,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 		w += fz_advance_glyph(ctx, box->style.font, g) * box->em;
 	}
 
-	s = p;
+	s = buf;
 	x = box->x - box->padding[L] - box->border[L] - box->margin[L] - w;
 	y = box->y + baseline;
 	while (*s)
