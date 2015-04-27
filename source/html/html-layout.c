@@ -348,9 +348,13 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 		{
 			if (top->type != BOX_INLINE)
 			{
+				/* Create anonymous inline box, with the same style as the top block box. */
 				box = new_box(ctx);
 				insert_inline_box(ctx, box, top);
 				box->style = top->style;
+				/* Make sure not to recursively multiply font sizes. */
+				box->style.font_size.value = 1;
+				box->style.font_size.unit = N_SCALE;
 				generate_text(ctx, box, fz_xml_text(node));
 			}
 			else
