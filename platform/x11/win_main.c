@@ -53,9 +53,9 @@ static char filename[PATH_MAX];
 void install_app(char *argv0)
 {
 	char buf[512];
-	HKEY software, classes, mupdf, dotpdf, dotxps;
+	HKEY software, classes, mupdf, dotpdf, dotxps, dotepub;
 	HKEY shell, open, command, supported_types;
-	HKEY pdf_progids, xps_progids;
+	HKEY pdf_progids, xps_progids, epub_progids;
 
 	OPEN_KEY(HKEY_CURRENT_USER, "Software", software);
 	OPEN_KEY(software, "Classes", classes);
@@ -63,6 +63,8 @@ void install_app(char *argv0)
 	OPEN_KEY(dotpdf, "OpenWithProgids", pdf_progids);
 	OPEN_KEY(classes, ".xps", dotxps);
 	OPEN_KEY(dotxps, "OpenWithProgids", xps_progids);
+	OPEN_KEY(classes, ".epub", dotepub);
+	OPEN_KEY(dotepub, "OpenWithProgids", epub_progids);
 	OPEN_KEY(classes, "MuPDF", mupdf);
 	OPEN_KEY(mupdf, "SupportedTypes", supported_types);
 	OPEN_KEY(mupdf, "shell", shell);
@@ -75,9 +77,12 @@ void install_app(char *argv0)
 	SET_KEY(command, "", buf);
 	SET_KEY(supported_types, ".pdf", "");
 	SET_KEY(supported_types, ".xps", "");
+	SET_KEY(supported_types, ".epub", "");
 	SET_KEY(pdf_progids, "MuPDF", "");
 	SET_KEY(xps_progids, "MuPDF", "");
+	SET_KEY(epub_progids, "MuPDF", "");
 
+	RegCloseKey(dotepub);
 	RegCloseKey(dotxps);
 	RegCloseKey(dotpdf);
 	RegCloseKey(mupdf);
@@ -182,7 +187,7 @@ int winfilename(wchar_t *buf, int len)
 	ofn.nMaxFile = len;
 	ofn.lpstrInitialDir = NULL;
 	ofn.lpstrTitle = L"MuPDF: Open PDF file";
-	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.zip;*.png;*.jpg;*.tif)\0*.zip;*.cbz;*.xps;*.pdf;*.jpe;*.jpg;*.jpeg;*.jfif;*.tif;*.tiff\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0Image Files (*.png;*.jpe;*.tif)\0*.png;*.jpg;*.jpe;*.jpeg;*.jfif;*.tif;*.tiff\0All Files\0*\0\0";
+	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.epub;*.zip;*.png;*.jpeg;*.tiff)\0*.zip;*.cbz;*.xps;*.epub;*.pdf;*.jpe;*.jpg;*.jpeg;*.jfif;*.tif;*.tiff\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0EPUB Files (*.epub)\0*.epub\0Image Files (*.png;*.jpeg;*.tiff)\0*.png;*.jpg;*.jpe;*.jpeg;*.jfif;*.tif;*.tiff\0All Files\0*\0\0";
 	ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
 	return GetOpenFileNameW(&ofn);
 }
@@ -200,7 +205,7 @@ int wingetsavepath(pdfapp_t *app, char *buf, int len)
 	ofn.nMaxFile = PATH_MAX;
 	ofn.lpstrInitialDir = NULL;
 	ofn.lpstrTitle = L"MuPDF: Save PDF file";
-	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.zip;*.png;*.jpg;*.tif)\0*.zip;*.cbz;*.xps;*.pdf;*.jpe;*.jpg;*.jpeg;*.jfif;*.tif;*.tiff\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0Image Files (*.png;*.jpe;*.tif)\0*.png;*.jpg;*.jpe;*.jpeg;*.jfif;*.tif;*.tiff\0All Files\0*\0\0";
+	ofn.lpstrFilter = L"PDF Documents (*.pdf)\0*.pdf\0All Files\0*\0\0";
 	ofn.Flags = OFN_HIDEREADONLY;
 	if (GetSaveFileName(&ofn))
 	{
