@@ -32,6 +32,7 @@ static const char *default_css =
 "center{text-align:center}"
 "svg{display:none}"
 "a{color:blue}"
+"tr{display:block}" /* ugly hack! */
 ;
 
 static int iswhite(int c)
