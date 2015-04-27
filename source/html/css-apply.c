@@ -404,38 +404,61 @@ add_shorthand_border_width(fz_css_match *match, fz_css_value *value, int spec)
 }
 
 static void
-add_shorthand_border(fz_css_match *match, fz_css_value *value, int spec)
+add_shorthand_border_color(fz_css_match *match, fz_css_value *value, int spec)
+{
+	add_shorthand_trbl(match, value, spec,
+		"border-color-top", "border-color-right", "border-color-bottom", "border-color-left");
+}
+
+static void
+add_shorthand_border_style(fz_css_match *match, fz_css_value *value, int spec)
+{
+	add_shorthand_trbl(match, value, spec,
+		"border-style-top", "border-style-right", "border-style-bottom", "border-style-left");
+}
+
+static void
+add_shorthand_border(fz_css_match *match, fz_css_value *value, int spec, int T, int R, int B, int L)
 {
 	while (value)
 	{
 		if (value->type == CSS_COLOR)
 		{
-			add_property(match, "border-color", value, spec);
+			if (T) add_property(match, "border-color-top", value, spec);
+			if (R) add_property(match, "border-color-right", value, spec);
+			if (B) add_property(match, "border-color-bottom", value, spec);
+			if (L) add_property(match, "border-color-left", value, spec);
 		}
 		else if (value->type == CSS_KEYWORD)
 		{
 			if (keyword_in_list(value->data, border_width_kw, nelem(border_width_kw)))
 			{
-				add_property(match, "border-width-top", value, spec);
-				add_property(match, "border-width-right", value, spec);
-				add_property(match, "border-width-bottom", value, spec);
-				add_property(match, "border-width-left", value, spec);
+				if (T) add_property(match, "border-width-top", value, spec);
+				if (R) add_property(match, "border-width-right", value, spec);
+				if (B) add_property(match, "border-width-bottom", value, spec);
+				if (L) add_property(match, "border-width-left", value, spec);
 			}
 			else if (keyword_in_list(value->data, border_style_kw, nelem(border_style_kw)))
 			{
-				add_property(match, "border-style", value, spec);
+				if (T) add_property(match, "border-style-top", value, spec);
+				if (R) add_property(match, "border-style-right", value, spec);
+				if (B) add_property(match, "border-style-bottom", value, spec);
+				if (L) add_property(match, "border-style-left", value, spec);
 			}
 			else if (keyword_in_list(value->data, color_kw, nelem(color_kw)))
 			{
-				add_property(match, "border-color", value, spec);
+				if (T) add_property(match, "border-color-top", value, spec);
+				if (R) add_property(match, "border-color-right", value, spec);
+				if (B) add_property(match, "border-color-bottom", value, spec);
+				if (L) add_property(match, "border-color-left", value, spec);
 			}
 		}
 		else
 		{
-			add_property(match, "border-width-top", value, spec);
-			add_property(match, "border-width-right", value, spec);
-			add_property(match, "border-width-bottom", value, spec);
-			add_property(match, "border-width-left", value, spec);
+			if (T) add_property(match, "border-width-top", value, spec);
+			if (R) add_property(match, "border-width-right", value, spec);
+			if (B) add_property(match, "border-width-bottom", value, spec);
+			if (L) add_property(match, "border-width-left", value, spec);
 		}
 		value = value->next;
 	}
@@ -481,9 +504,39 @@ add_property(fz_css_match *match, const char *name, fz_css_value *value, int spe
 		add_shorthand_border_width(match, value, spec);
 		return;
 	}
+	if (!strcmp(name, "border-color"))
+	{
+		add_shorthand_border_color(match, value, spec);
+		return;
+	}
+	if (!strcmp(name, "border-style"))
+	{
+		add_shorthand_border_style(match, value, spec);
+		return;
+	}
 	if (!strcmp(name, "border"))
 	{
-		add_shorthand_border(match, value, spec);
+		add_shorthand_border(match, value, spec, 1, 1, 1, 1);
+		return;
+	}
+	if (!strcmp(name, "border-top"))
+	{
+		add_shorthand_border(match, value, spec, 1, 0, 0, 0);
+		return;
+	}
+	if (!strcmp(name, "border-right"))
+	{
+		add_shorthand_border(match, value, spec, 0, 1, 0, 0);
+		return;
+	}
+	if (!strcmp(name, "border-bottom"))
+	{
+		add_shorthand_border(match, value, spec, 0, 0, 1, 0);
+		return;
+	}
+	if (!strcmp(name, "border-left"))
+	{
+		add_shorthand_border(match, value, spec, 0, 0, 0, 1);
 		return;
 	}
 	if (!strcmp(name, "list-style"))
@@ -672,6 +725,19 @@ border_width_from_property(fz_css_match *match, const char *property)
 		return number_from_value(value, 0, N_NUMBER);
 	}
 	return make_number(2, N_NUMBER); /* initial: 'medium' */
+}
+
+static int
+border_style_from_property(fz_css_match *match, const char *property)
+{
+	fz_css_value *value = value_from_property(match, property);
+	if (value)
+	{
+		if (!strcmp(value->data, "none")) return BS_NONE;
+		else if (!strcmp(value->data, "hidden")) return BS_NONE;
+		else if (!strcmp(value->data, "solid")) return BS_SOLID;
+	}
+	return BS_NONE;
 }
 
 float
@@ -869,14 +935,6 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		style->font_size = make_number(1, N_SCALE);
 	}
 
-	value = value_from_property(match, "border-style");
-	if (value)
-	{
-		if (!strcmp(value->data, "none")) style->border_style = BS_NONE;
-		else if (!strcmp(value->data, "hidden")) style->border_style = BS_NONE;
-		else if (!strcmp(value->data, "solid")) style->border_style = BS_SOLID;
-	}
-
 	value = value_from_property(match, "list-style-type");
 	if (value)
 	{
@@ -912,14 +970,23 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	style->padding[2] = number_from_property(match, "padding-bottom", 0, N_NUMBER);
 	style->padding[3] = number_from_property(match, "padding-left", 0, N_NUMBER);
 
+	style->color = color_from_property(match, "color", black);
+	style->background_color = color_from_property(match, "background-color", transparent);
+
+	style->border_style[0] = border_style_from_property(match, "border-style-top");
+	style->border_style[1] = border_style_from_property(match, "border-style-right");
+	style->border_style[2] = border_style_from_property(match, "border-style-bottom");
+	style->border_style[3] = border_style_from_property(match, "border-style-left");
+
+	style->border_color[0] = color_from_property(match, "border-color-top", transparent);
+	style->border_color[1] = color_from_property(match, "border-color-right", transparent);
+	style->border_color[2] = color_from_property(match, "border-color-bottom", transparent);
+	style->border_color[3] = color_from_property(match, "border-color-left", transparent);
+
 	style->border_width[0] = border_width_from_property(match, "border-width-top");
 	style->border_width[1] = border_width_from_property(match, "border-width-right");
 	style->border_width[2] = border_width_from_property(match, "border-width-bottom");
 	style->border_width[3] = border_width_from_property(match, "border-width-left");
-
-	style->color = color_from_property(match, "color", black);
-	style->background_color = color_from_property(match, "background-color", transparent);
-	style->border_color = color_from_property(match, "border-color", style->color);
 
 	{
 		const char *font_family = string_from_property(match, "font-family", "serif");

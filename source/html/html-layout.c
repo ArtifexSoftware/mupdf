@@ -749,19 +749,28 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 	}
 }
 
-static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, float *rgba, float x0, float y0, float x1, float y1)
+static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_css_color color, float x0, float y0, float x1, float y1)
 {
-	fz_path *path = fz_new_path(ctx);
+	if (color.a > 0)
+	{
+		float rgb[3];
 
-	fz_moveto(ctx, path, x0, y0);
-	fz_lineto(ctx, path, x1, y0);
-	fz_lineto(ctx, path, x1, y1);
-	fz_lineto(ctx, path, x0, y1);
-	fz_closepath(ctx, path);
+		fz_path *path = fz_new_path(ctx);
 
-	fz_fill_path(ctx, dev, path, 0, ctm, fz_device_rgb(ctx), rgba, rgba[3]);
+		fz_moveto(ctx, path, x0, y0);
+		fz_lineto(ctx, path, x1, y0);
+		fz_lineto(ctx, path, x1, y1);
+		fz_lineto(ctx, path, x0, y1);
+		fz_closepath(ctx, path);
 
-	fz_drop_path(ctx, path);
+		rgb[0] = color.r / 255.0f;
+		rgb[1] = color.g / 255.0f;
+		rgb[2] = color.b / 255.0f;
+
+		fz_fill_path(ctx, dev, path, 0, ctm, fz_device_rgb(ctx), rgb, color.a / 255.0f);
+
+		fz_drop_path(ctx, path);
+	}
 }
 
 static const char *roman_uc[3][10] = {
@@ -893,10 +902,6 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
 {
 	float x0, y0, x1, y1;
-	float color[4];
-
-	// TODO: background fill
-	// TODO: border stroke
 
 	float *border = box->border;
 	float *padding = box->padding;
@@ -909,30 +914,16 @@ static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float 
 	if (y0 > page_bot || y1 < page_top)
 		return;
 
-	if (box->style.background_color.a > 0)
-	{
-		color[0] = box->style.background_color.r / 255.0f;
-		color[1] = box->style.background_color.g / 255.0f;
-		color[2] = box->style.background_color.b / 255.0f;
-		color[3] = box->style.background_color.a / 255.0f;
-		draw_rect(ctx, dev, ctm, color, x0, y0, x1, y1);
-	}
+	draw_rect(ctx, dev, ctm, box->style.background_color, x0, y0, x1, y1);
 
-	if (box->style.border_color.a > 0)
-	{
-		color[0] = box->style.border_color.r / 255.0f;
-		color[1] = box->style.border_color.g / 255.0f;
-		color[2] = box->style.border_color.b / 255.0f;
-		color[3] = box->style.border_color.a / 255.0f;
-		if (border[T] > 0)
-			draw_rect(ctx, dev, ctm, color, x0 - border[L], y0 - border[T], x1 + border[R], y0);
-		if (border[B] > 0)
-			draw_rect(ctx, dev, ctm, color, x0 - border[L], y1, x1 + border[R], y1 + border[B]);
-		if (border[L] > 0)
-			draw_rect(ctx, dev, ctm, color, x0 - border[L], y0 - border[T], x0, y1 + border[B]);
-		if (border[R] > 0)
-			draw_rect(ctx, dev, ctm, color, x1, y0 - border[T], x1 + border[R], y1 + border[B]);
-	}
+	if (border[T] > 0)
+		draw_rect(ctx, dev, ctm, box->style.border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
+	if (border[B] > 0)
+		draw_rect(ctx, dev, ctm, box->style.border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
+	if (border[L] > 0)
+		draw_rect(ctx, dev, ctm, box->style.border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
+	if (border[R] > 0)
+		draw_rect(ctx, dev, ctm, box->style.border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
 
 	if (box->list_item)
 	{
