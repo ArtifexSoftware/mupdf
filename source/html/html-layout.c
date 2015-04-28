@@ -609,31 +609,27 @@ static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, 
 	float box_collapse_margin;
 	int prev_br;
 
+	fz_css_style *style = &box->style;
 	float *margin = box->margin;
 	float *border = box->border;
 	float *padding = box->padding;
 
-	em = box->em = fz_from_css_number(box->style.font_size, em, em);
+	em = box->em = fz_from_css_number(style->font_size, em, em);
 
-	margin[0] = fz_from_css_number(box->style.margin[0], em, top->w);
-	margin[1] = fz_from_css_number(box->style.margin[1], em, top->w);
-	margin[2] = fz_from_css_number(box->style.margin[2], em, top->w);
-	margin[3] = fz_from_css_number(box->style.margin[3], em, top->w);
+	margin[0] = fz_from_css_number(style->margin[0], em, top->w);
+	margin[1] = fz_from_css_number(style->margin[1], em, top->w);
+	margin[2] = fz_from_css_number(style->margin[2], em, top->w);
+	margin[3] = fz_from_css_number(style->margin[3], em, top->w);
 
-	padding[0] = fz_from_css_number(box->style.padding[0], em, top->w);
-	padding[1] = fz_from_css_number(box->style.padding[1], em, top->w);
-	padding[2] = fz_from_css_number(box->style.padding[2], em, top->w);
-	padding[3] = fz_from_css_number(box->style.padding[3], em, top->w);
+	padding[0] = fz_from_css_number(style->padding[0], em, top->w);
+	padding[1] = fz_from_css_number(style->padding[1], em, top->w);
+	padding[2] = fz_from_css_number(style->padding[2], em, top->w);
+	padding[3] = fz_from_css_number(style->padding[3], em, top->w);
 
-	if (box->style.border_style)
-	{
-		border[0] = fz_from_css_number(box->style.border_width[0], em, top->w);
-		border[1] = fz_from_css_number(box->style.border_width[1], em, top->w);
-		border[2] = fz_from_css_number(box->style.border_width[2], em, top->w);
-		border[3] = fz_from_css_number(box->style.border_width[3], em, top->w);
-	}
-	else
-		border[0] = border[1] = border[2] = border[3] = 0;
+	border[0] = style->border_style[0] ? fz_from_css_number(style->border_width[0], em, top->w) : 0;
+	border[1] = style->border_style[1] ? fz_from_css_number(style->border_width[1], em, top->w) : 0;
+	border[2] = style->border_style[2] ? fz_from_css_number(style->border_width[2], em, top->w) : 0;
+	border[3] = style->border_style[3] ? fz_from_css_number(style->border_width[3], em, top->w) : 0;
 
 	if (padding[T] == 0 && border[T] == 0)
 		box_collapse_margin = margin[T];
@@ -667,7 +663,7 @@ static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, 
 		{
 			/* TODO: interaction with page breaks */
 			if (prev_br)
-				box->h += fz_from_css_number_scale(box->style.line_height, em, em, em);
+				box->h += fz_from_css_number_scale(style->line_height, em, em, em);
 			prev_br = 1;
 		}
 		else if (child->type == BOX_FLOW)
