@@ -422,7 +422,7 @@ add_shorthand_border(fz_css_match *match, fz_css_value *value, int spec, int T, 
 {
 	while (value)
 	{
-		if (value->type == CSS_COLOR)
+		if (value->type == CSS_HASH)
 		{
 			if (T) add_property(match, "border-color-top", value, spec);
 			if (R) add_property(match, "border-color-right", value, spec);
@@ -766,10 +766,10 @@ static fz_css_color
 make_color(int r, int g, int b, int a)
 {
 	fz_css_color c;
-	c.r = r;
-	c.g = g;
-	c.b = b;
-	c.a = a;
+	c.r = r < 0 ? 0 : r > 255 ? 255 : r;
+	c.g = g < 0 ? 0 : g > 255 ? 255 : g;
+	c.b = b < 0 ? 0 : b > 255 ? 255 : b;
+	c.a = a < 0 ? 0 : a > 255 ? 255 : a;
 	return c;
 }
 
@@ -785,11 +785,26 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 {
 	if (!value)
 		return initial;
-	if (value->type == CSS_COLOR)
+	if (value->type == CSS_HASH)
 	{
-		int r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
-		int g = tohex(value->data[2]) * 16 + tohex(value->data[3]);
-		int b = tohex(value->data[4]) * 16 + tohex(value->data[5]);
+		int r, g, b, n;
+		n = strlen(value->data);
+		if (n == 3)
+		{
+			r = tohex(value->data[0]) * 16 + tohex(value->data[0]);
+			g = tohex(value->data[1]) * 16 + tohex(value->data[1]);
+			b = tohex(value->data[2]) * 16 + tohex(value->data[2]);
+		}
+		else if (n == 6)
+		{
+			r = tohex(value->data[0]) * 16 + tohex(value->data[1]);
+			g = tohex(value->data[2]) * 16 + tohex(value->data[3]);
+			b = tohex(value->data[4]) * 16 + tohex(value->data[5]);
+		}
+		else
+		{
+			r = g = b = 0;
+		}
 		return make_color(r, g, b, 255);
 	}
 	if (value->type == CSS_KEYWORD)
@@ -978,10 +993,10 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	style->border_style[2] = border_style_from_property(match, "border-style-bottom");
 	style->border_style[3] = border_style_from_property(match, "border-style-left");
 
-	style->border_color[0] = color_from_property(match, "border-color-top", transparent);
-	style->border_color[1] = color_from_property(match, "border-color-right", transparent);
-	style->border_color[2] = color_from_property(match, "border-color-bottom", transparent);
-	style->border_color[3] = color_from_property(match, "border-color-left", transparent);
+	style->border_color[0] = color_from_property(match, "border-color-top", style->color);
+	style->border_color[1] = color_from_property(match, "border-color-right", style->color);
+	style->border_color[2] = color_from_property(match, "border-color-bottom", style->color);
+	style->border_color[3] = color_from_property(match, "border-color-left", style->color);
 
 	style->border_width[0] = border_width_from_property(match, "border-width-top");
 	style->border_width[1] = border_width_from_property(match, "border-width-right");

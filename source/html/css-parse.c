@@ -8,7 +8,6 @@ struct lexbuf
 	int line;
 	int lookahead;
 	int c;
-	int color;
 	int string_len;
 	char string[1024];
 };
@@ -149,7 +148,6 @@ static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s, con
 	buf->line = 1;
 	css_lex_next(buf);
 
-	buf->color = 0;
 	buf->string_len = 0;
 }
 
@@ -191,36 +189,6 @@ static void css_lex_expect(struct lexbuf *buf, int t)
 {
 	if (!css_lex_accept(buf, t))
 		fz_css_error(buf, "unexpected character");
-}
-
-static int ishex(int c, int *v)
-{
-	if (c >= '0' && c <= '9')
-	{
-		*v = c - '0';
-		return 1;
-	}
-	if (c >= 'A' && c <= 'F')
-	{
-		*v = c - 'A' + 0xA;
-		return 1;
-	}
-	if (c >= 'a' && c <= 'f')
-	{
-		*v = c - 'a' + 0xA;
-		return 1;
-	}
-	return 0;
-}
-
-static int css_lex_accept_hex(struct lexbuf *buf, int *v)
-{
-	if (ishex(buf->c, v))
-	{
-		css_lex_next(buf);
-		return 1;
-	}
-	return 0;
 }
 
 static int css_lex_number(struct lexbuf *buf)
@@ -274,6 +242,17 @@ static int css_lex_keyword(struct lexbuf *buf)
 	}
 	css_push_char(buf, 0);
 	return CSS_KEYWORD;
+}
+
+static int css_lex_hash(struct lexbuf *buf)
+{
+	while (isnmchar(buf->c))
+	{
+		css_push_char(buf, buf->c);
+		css_lex_next(buf);
+	}
+	css_push_char(buf, 0);
+	return CSS_HASH;
 }
 
 static int css_lex_string(struct lexbuf *buf, int q)
@@ -431,26 +410,7 @@ restart:
 		}
 
 		if (css_lex_accept(buf, '#'))
-		{
-			int a, b, c, d, e, f;
-			if (!css_lex_accept_hex(buf, &a)) goto colorerror;
-			if (!css_lex_accept_hex(buf, &b)) goto colorerror;
-			if (!css_lex_accept_hex(buf, &c)) goto colorerror;
-			if (css_lex_accept_hex(buf, &d))
-			{
-				if (!css_lex_accept_hex(buf, &e)) goto colorerror;
-				if (!css_lex_accept_hex(buf, &f)) goto colorerror;
-				buf->color = (a << 20) | (b << 16) | (c << 12) | (d << 8) | (e << 4) | f;
-			}
-			else
-			{
-				buf->color = (a << 20) | (b << 12) | (c << 4);
-			}
-			sprintf(buf->string, "%06x", buf->color);
-			return CSS_COLOR;
-colorerror:
-			fz_css_error(buf, "invalid color");
-		}
+			return css_lex_hash(buf);
 
 		if (css_lex_accept(buf, '"'))
 			return css_lex_string(buf, '"');
@@ -532,7 +492,7 @@ static void expect(struct lexbuf *buf, int t)
 
 static int iscond(int t)
 {
-	return t == ':' || t == '.' || t == '#' || t == '[';
+	return t == ':' || t == '.' || t == '[' || t == CSS_HASH;
 }
 
 static fz_css_value *parse_value_list(struct lexbuf *buf);
@@ -558,11 +518,11 @@ static fz_css_value *parse_value(struct lexbuf *buf)
 
 	switch (buf->lookahead)
 	{
+	case CSS_HASH:
 	case CSS_NUMBER:
 	case CSS_LENGTH:
 	case CSS_PERCENT:
 	case CSS_STRING:
-	case CSS_COLOR:
 	case CSS_URI:
 		v = fz_new_css_value(buf->ctx, buf->lookahead, buf->string);
 		next(buf);
@@ -672,15 +632,6 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 		return c;
 	}
 
-	if (accept(buf, '#'))
-	{
-		if (buf->lookahead != CSS_KEYWORD)
-			fz_css_error(buf, "expected keyword after '#'");
-		c = fz_new_css_condition(buf->ctx, '#', "id", buf->string);
-		next(buf);
-		return c;
-	}
-
 	if (accept(buf, '['))
 	{
 		if (buf->lookahead != CSS_KEYWORD)
@@ -709,6 +660,13 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 
 		expect(buf, ']');
 
+		return c;
+	}
+
+	if (buf->lookahead == CSS_HASH)
+	{
+		c = fz_new_css_condition(buf->ctx, '#', "id", buf->string);
+		next(buf);
 		return c;
 	}
 

@@ -26,11 +26,11 @@ struct fz_html_font_set_s
 enum
 {
 	CSS_KEYWORD = 256,
+	CSS_HASH,
 	CSS_STRING,
 	CSS_NUMBER,
 	CSS_LENGTH,
 	CSS_PERCENT,
-	CSS_COLOR,
 	CSS_URI,
 };
 
