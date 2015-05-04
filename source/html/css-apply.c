@@ -785,6 +785,7 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 {
 	if (!value)
 		return initial;
+
 	if (value->type == CSS_HASH)
 	{
 		int r, g, b, n;
@@ -807,6 +808,20 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 		}
 		return make_color(r, g, b, 255);
 	}
+
+	if (value->type == '(' && !strcmp(value->data, "rgb"))
+	{
+		fz_css_value *vr, *vg, *vb;
+		int r, g, b;
+		vr = value->args;
+		vg = vr && vr->next ? vr->next->next : NULL; /* skip the ',' nodes */
+		vb = vg && vg->next ? vg->next->next : NULL; /* skip the ',' nodes */
+		r = fz_from_css_number(number_from_value(vr, 0, N_NUMBER), 255, 255);
+		g = fz_from_css_number(number_from_value(vg, 0, N_NUMBER), 255, 255);
+		b = fz_from_css_number(number_from_value(vb, 0, N_NUMBER), 255, 255);
+		return make_color(r, g, b, 255);
+	}
+
 	if (value->type == CSS_KEYWORD)
 	{
 		if (!strcmp(value->data, "transparent"))
