@@ -678,6 +678,10 @@ static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, 
 		}
 	}
 
+	/* reserve space for the list mark */
+	if (box->list_item && box->h == 0)
+		box->h += fz_from_css_number_scale(style->line_height, em, em, em);
+
 	if (padding[B] == 0 && border[B] == 0)
 	{
 		if (margin[B] > 0)
@@ -848,11 +852,24 @@ static void format_list_number(fz_context *ctx, int type, int x, char *buf, int 
 	}
 }
 
+static fz_html_flow *find_list_mark_anchor(fz_context *ctx, fz_html *box)
+{
+	/* find first flow node in <li> tag */
+	while (box)
+	{
+		if (box->type == BOX_FLOW)
+			return box->flow_head;
+		box = box->down;
+	}
+	return NULL;
+}
+
 static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, int n)
 {
 	fz_text *text;
 	fz_matrix trm;
-	float x, y, w, baseline;
+	fz_html_flow *line;
+	float x, y, w;
 	float color[3];
 	const char *s;
 	char buf[40];
@@ -860,9 +877,23 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 
 	fz_scale(&trm, box->em, -box->em);
 	text = fz_new_text(ctx, box->style.font, &trm, 0);
-	baseline = box->em * 0.8 + (box->h - box->em) / 2;
 
-	if (box->y + baseline > page_bot || box->y + baseline < page_top)
+	line = find_list_mark_anchor(ctx, box);
+	if (line)
+	{
+		y = line->y;
+	}
+	else
+	{
+		float h = fz_from_css_number_scale(box->style.line_height, box->em, box->em, box->em);
+		float a = box->em * 0.8;
+		float d = box->em * 0.2;
+		if (a + d > h)
+			h = a + d;
+		y = box->y + a + (h - a - d) / 2;
+	}
+
+	if (y > page_bot || y < page_top)
 		return;
 
 	format_list_number(ctx, box->style.list_style_type, n, buf, sizeof buf);
@@ -878,7 +909,6 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 
 	s = buf;
 	x = box->x - box->padding[L] - box->border[L] - box->margin[L] - w;
-	y = box->y + baseline;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
