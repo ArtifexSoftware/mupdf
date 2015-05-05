@@ -84,6 +84,44 @@ fz_dirname(char *dir, const char *path, int n)
 	dir[i+1] = 0;
 }
 
+static int ishex(int a)
+{
+	return (a >= 'A' && a <= 'F') ||
+		(a >= 'a' && a <= 'f') ||
+		(a >= '0' && a <= '9');
+}
+
+static int tohex(int c)
+{
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return c - 'a' + 0xA;
+	if (c >= 'A' && c <= 'F') return c - 'A' + 0xA;
+	return 0;
+}
+
+char *
+fz_urldecode(char *url)
+{
+	char *s = url;
+	char *p = url;
+	while (*s)
+	{
+		int c = (unsigned char) *s++;
+		if (c == '%' && ishex(s[0]) && ishex(s[1]))
+		{
+			int a = tohex(*s++);
+			int b = tohex(*s++);
+			*p++ = a << 4 | b;
+		}
+		else
+		{
+			*p++ = c;
+		}
+	}
+	*p = 0;
+	return url;
+}
+
 #define SEP(x) ((x)=='/' || (x) == 0)
 
 char *
@@ -139,6 +177,7 @@ fz_cleanname(char *name)
 	*q = '\0';
 	return name;
 }
+
 enum
 {
 	UTFmax = 4, /* maximum bytes per rune */

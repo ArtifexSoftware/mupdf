@@ -164,7 +164,7 @@ path_from_idref(char *path, fz_xml *manifest, const char *base_uri, const char *
 	fz_strlcpy(path, base_uri, n);
 	fz_strlcat(path, "/", n);
 	fz_strlcat(path, rel_path, n);
-	return fz_cleanname(path);
+	return fz_cleanname(fz_urldecode(path));
 }
 
 static epub_chapter *

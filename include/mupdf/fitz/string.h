@@ -58,6 +58,11 @@ int fz_strlcat(char *dst, const char *src, int n);
 void fz_dirname(char *dir, const char *path, int dirsize);
 
 /*
+	fz_urldecode: decode url escapes.
+*/
+char *fz_urldecode(char *url);
+
+/*
 	fz_cleanname: rewrite path to the shortest string that names the same path.
 
 	Eliminates multiple and trailing slashes, interprets "." and "..".

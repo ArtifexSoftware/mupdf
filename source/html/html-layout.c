@@ -129,6 +129,7 @@ static void generate_image(fz_context *ctx, fz_archive *zip, const char *base_ur
 	fz_strlcpy(path, base_uri, sizeof path);
 	fz_strlcat(path, "/", sizeof path);
 	fz_strlcat(path, src, sizeof path);
+	fz_urldecode(path);
 	fz_cleanname(path);
 
 	fz_try(ctx)
@@ -1024,6 +1025,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 						fz_strlcpy(path, base_uri, sizeof path);
 						fz_strlcat(path, "/", sizeof path);
 						fz_strlcat(path, href, sizeof path);
+						fz_urldecode(path);
 						fz_cleanname(path);
 
 						buf = fz_read_archive_entry(ctx, zip, path);
