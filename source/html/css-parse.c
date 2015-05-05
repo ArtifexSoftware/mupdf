@@ -3,7 +3,7 @@
 struct lexbuf
 {
 	fz_context *ctx;
-	const char *s;
+	const unsigned char *s;
 	const char *file;
 	int line;
 	int lookahead;
@@ -142,7 +142,7 @@ static void css_lex_next(struct lexbuf *buf)
 static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s, const char *file)
 {
 	buf->ctx = ctx;
-	buf->s = s;
+	buf->s = (const unsigned char *)s;
 	buf->c = 0;
 	buf->file = file;
 	buf->line = 1;
