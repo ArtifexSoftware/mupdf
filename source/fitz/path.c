@@ -158,10 +158,10 @@ fz_pack_path(fz_context *ctx, uint8_t *pack_, int max, const fz_path *path)
 			pack->coord_len = path->coord_len;
 			pack->cmd_cap = path->cmd_len;
 			pack->cmd_len = path->cmd_len;
-			pack->coords = fz_malloc_array(ctx, path->coord_len, sizeof(float) * path->coord_len);
+			pack->coords = fz_malloc_array(ctx, path->coord_len, sizeof(float));
 			fz_try(ctx)
 			{
-				pack->cmds = fz_malloc_array(ctx, path->cmd_len, sizeof(uint8_t) * path->cmd_len);
+				pack->cmds = fz_malloc_array(ctx, path->cmd_len, sizeof(uint8_t));
 			}
 			fz_catch(ctx)
 			{
