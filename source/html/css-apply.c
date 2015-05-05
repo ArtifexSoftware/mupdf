@@ -603,16 +603,23 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *nod
 	s = fz_xml_att(node, "style");
 	if (s)
 	{
-		head = tail = prop = fz_parse_css_properties(ctx, s);
-		while (prop)
+		fz_try(ctx)
 		{
-			add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
-			tail = prop;
-			prop = prop->next;
+			head = tail = prop = fz_parse_css_properties(ctx, s);
+			while (prop)
+			{
+				add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
+				tail = prop;
+				prop = prop->next;
+			}
+			if (tail)
+				tail->next = css->garbage;
+			css->garbage = head;
 		}
-		if (tail)
-			tail->next = css->garbage;
-		css->garbage = head;
+		fz_catch(ctx)
+		{
+			fz_warn(ctx, "ignoring style attribute");
+		}
 	}
 }
 
