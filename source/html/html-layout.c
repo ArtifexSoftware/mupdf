@@ -316,7 +316,7 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 				box = new_box(ctx);
 				fz_apply_css_style(ctx, set, &box->style, &match);
 
-				if (display == DIS_BLOCK)
+				if (display == DIS_BLOCK || display == DIS_INLINE_BLOCK)
 				{
 					top = insert_block_box(ctx, box, top);
 				}
