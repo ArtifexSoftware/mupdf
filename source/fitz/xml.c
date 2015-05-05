@@ -448,6 +448,7 @@ parse_element:
 parse_comment:
 	if (*p == '[') goto parse_cdata;
 	if (*p == 'D' && !memcmp(p, "DOCTYPE", 7)) goto parse_declaration;
+	if (*p == 'E' && !memcmp(p, "ENTITY", 6)) goto parse_declaration;
 	if (*p++ != '-') return "syntax error in comment (<! not followed by --)";
 	if (*p++ != '-') return "syntax error in comment (<!- not followed by -)";
 	while (*p) {
