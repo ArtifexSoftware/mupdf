@@ -908,7 +908,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	}
 
 	s = buf;
-	x = box->x - box->padding[L] - box->border[L] - box->margin[L] - w;
+	x = box->x - w;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
