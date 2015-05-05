@@ -1008,6 +1008,8 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 	fz_buffer *buf;
 	char path[2048];
 
+	fz_var(buf);
+
 	for (node = root; node; node = fz_xml_next(node))
 	{
 		const char *tag = fz_xml_tag(node);
@@ -1028,13 +1030,17 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 						fz_urldecode(path);
 						fz_cleanname(path);
 
-						buf = fz_read_archive_entry(ctx, zip, path);
-						fz_write_buffer_byte(ctx, buf, 0);
+						buf = NULL;
 						fz_try(ctx)
+						{
+							buf = fz_read_archive_entry(ctx, zip, path);
+							fz_write_buffer_byte(ctx, buf, 0);
 							css = fz_parse_css(ctx, css, (char*)buf->data, path);
+						}
+						fz_always(ctx)
+							fz_drop_buffer(ctx, buf);
 						fz_catch(ctx)
 							fz_warn(ctx, "ignoring stylesheet %s", path);
-						fz_drop_buffer(ctx, buf);
 					}
 				}
 			}
