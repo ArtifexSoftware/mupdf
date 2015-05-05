@@ -377,6 +377,14 @@ restart:
 				css_lex_expect(buf, '>');
 				continue; /* ignore CDC */
 			}
+			if (css_lex_accept(buf, '.'))
+			{
+				css_push_char(buf, '-');
+				css_push_char(buf, '.');
+				if (buf->c >= '0' && buf->c <= '9')
+					return css_lex_number(buf);
+				return css_lex_keyword(buf);
+			}
 			if (buf->c >= '0' && buf->c <= '9')
 			{
 				css_push_char(buf, '-');
@@ -385,8 +393,6 @@ restart:
 			if (isnmstart(buf->c))
 			{
 				css_push_char(buf, '-');
-				css_push_char(buf, buf->c);
-				css_lex_next(buf);
 				return css_lex_keyword(buf);
 			}
 			return '-';
