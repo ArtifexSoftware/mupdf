@@ -1146,26 +1146,3 @@ print_rules(fz_css_rule *rule)
 		rule = rule->next;
 	}
 }
-
-void
-print_style(fz_css_style *style)
-{
-	printf("style {\n");
-	printf("\tfont-size = %g%c;\n", style->font_size.value, style->font_size.unit);
-	printf("\tfont = %s;\n", style->font->name);
-	printf("\tline-height = %g%c;\n", style->line_height.value, style->line_height.unit);
-	printf("\ttext-indent = %g%c;\n", style->text_indent.value, style->text_indent.unit);
-	printf("\ttext-align = %d;\n", style->text_align);
-	printf("\tvertical-align = %d;\n", style->vertical_align);
-	printf("\tmargin = %g%c %g%c %g%c %g%c;\n",
-		style->margin[0].value, style->margin[0].unit,
-		style->margin[1].value, style->margin[1].unit,
-		style->margin[2].value, style->margin[2].unit,
-		style->margin[3].value, style->margin[3].unit);
-	printf("\tpadding = %g%c %g%c %g%c %g%c;\n",
-		style->padding[0].value, style->padding[0].unit,
-		style->padding[1].value, style->padding[1].unit,
-		style->padding[2].value, style->padding[2].unit,
-		style->padding[3].value, style->padding[3].unit);
-	printf("}\n");
-}

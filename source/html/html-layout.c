@@ -1060,6 +1060,102 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 	return css;
 }
 
+static void indent(int n)
+{
+	while (n-- > 0)
+		putchar('\t');
+}
+
+void
+fz_print_css_style(fz_context *ctx, fz_css_style *style, int boxtype, int n)
+{
+	indent(n); printf("font_size %g%c\n", style->font_size.value, style->font_size.unit);
+	indent(n); printf("font %s\n", style->font ? style->font->name : "NULL");
+	indent(n); printf("width = %g%c;\n", style->width.value, style->width.unit);
+	indent(n); printf("height = %g%c;\n", style->height.value, style->height.unit);
+	if (boxtype == BOX_BLOCK)
+	{
+		indent(n); printf("margin %g%c ", style->margin[0].value, style->margin[0].unit);
+		printf("%g%c ", style->margin[1].value, style->margin[1].unit);
+		printf("%g%c ", style->margin[2].value, style->margin[2].unit);
+		printf("%g%c\n", style->margin[3].value, style->margin[3].unit);
+		indent(n); printf("padding %g%c ", style->padding[0].value, style->padding[0].unit);
+		printf("%g%c ", style->padding[1].value, style->padding[1].unit);
+		printf("%g%c ", style->padding[2].value, style->padding[2].unit);
+		printf("%g%c\n", style->padding[3].value, style->padding[3].unit);
+		indent(n); printf("border_width %g%c ", style->border_width[0].value, style->border_width[0].unit);
+		printf("%g%c ", style->border_width[1].value, style->border_width[1].unit);
+		printf("%g%c ", style->border_width[2].value, style->border_width[2].unit);
+		printf("%g%c\n", style->border_width[3].value, style->border_width[3].unit);
+		indent(n); printf("border_style %d %d %d %d\n",
+				style->border_style[0], style->border_style[1],
+				style->border_style[2], style->border_style[3]);
+		indent(n); printf("text_indent %g%c\n", style->text_indent.value, style->text_indent.unit);
+		indent(n); printf("white_space %d\n", style->white_space);
+		indent(n); printf("text_align %d\n", style->text_align);
+		indent(n); printf("list_style_type %d\n", style->list_style_type);
+	}
+	indent(n); printf("line_height %g%c\n", style->line_height.value, style->line_height.unit);
+	indent(n); printf("vertical_align %d\n", style->vertical_align);
+}
+
+void
+fz_print_html_flow(fz_context *ctx, fz_html_flow *flow)
+{
+	while (flow)
+	{
+		switch (flow->type)
+		{
+		case FLOW_WORD: printf("%s", flow->text); break;
+		case FLOW_GLUE: printf(" "); break;
+		case FLOW_IMAGE: printf("[image]"); break;
+		}
+		flow = flow->next;
+	}
+}
+
+void
+fz_print_html(fz_context *ctx, fz_html *box, int pstyle, int level)
+{
+	while (box)
+	{
+		indent(level);
+		switch (box->type)
+		{
+		case BOX_BLOCK: printf("block"); break;
+		case BOX_BREAK: printf("break"); break;
+		case BOX_FLOW: printf("flow"); break;
+		case BOX_INLINE: printf("inline"); break;
+		}
+
+		if (box->down || box->flow_head)
+			printf(" {\n");
+		else
+			printf("\n");
+
+		if (pstyle && !box->flow_head)
+			fz_print_css_style(ctx, &box->style, box->type, level+1);
+
+		fz_print_html(ctx, box->down, pstyle, level+1);
+
+		if (box->flow_head)
+		{
+			indent(level+1);
+			printf("\"");
+			fz_print_html_flow(ctx, box->flow_head);
+			printf("\"\n");
+		}
+
+		if (box->down || box->flow_head)
+		{
+			indent(level);
+			printf("}\n");
+		}
+
+		box = box->next;
+	}
+}
+
 void
 fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 {
