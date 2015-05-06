@@ -12,6 +12,9 @@ struct lexbuf
 	char string[1024];
 };
 
+static fz_css_value *parse_expr(struct lexbuf *buf);
+static fz_css_selector *parse_selector(struct lexbuf *buf);
+
 FZ_NORETURN static void fz_css_error(struct lexbuf *buf, const char *msg)
 {
 	fz_throw(buf->ctx, FZ_ERROR_SYNTAX, "css syntax error: %s (%s:%d)", msg, buf->file, buf->line);
@@ -57,6 +60,16 @@ static fz_css_property *fz_new_css_property(fz_context *ctx, const char *name, f
 	prop->spec = spec;
 	prop->next = NULL;
 	return prop;
+}
+
+static fz_css_value *fz_new_css_value_x(fz_context *ctx, int type)
+{
+	fz_css_value *val = fz_malloc_struct(ctx, fz_css_value);
+	val->type = type;
+	val->data = NULL;
+	val->args = NULL;
+	val->next = NULL;
+	return val;
 }
 
 static fz_css_value *fz_new_css_value(fz_context *ctx, int type, const char *data)
@@ -330,148 +343,132 @@ static int css_lex(struct lexbuf *buf)
 
 	buf->string_len = 0;
 
-	while (buf->c)
-	{
 restart:
+	if (buf->c == 0)
+		return EOF;
+
+	if (iswhite(buf->c))
+	{
 		while (iswhite(buf->c))
 			css_lex_next(buf);
+		return ' ';
+	}
 
-		if (buf->c == 0)
-			break;
-
-		if (css_lex_accept(buf, '/'))
+	if (css_lex_accept(buf, '/'))
+	{
+		if (css_lex_accept(buf, '*'))
 		{
-			if (css_lex_accept(buf, '*'))
+			while (buf->c)
 			{
-				while (buf->c)
+				if (css_lex_accept(buf, '*'))
 				{
-					if (css_lex_accept(buf, '*'))
-					{
-						while (buf->c == '*')
-							css_lex_next(buf);
-						if (css_lex_accept(buf, '/'))
-							goto restart;
-					}
-					css_lex_next(buf);
+					while (buf->c == '*')
+						css_lex_next(buf);
+					if (css_lex_accept(buf, '/'))
+						goto restart;
 				}
-				fz_css_error(buf, "unterminated comment");
+				css_lex_next(buf);
 			}
-			return '/';
+			fz_css_error(buf, "unterminated comment");
 		}
+		return '/';
+	}
 
-		if (css_lex_accept(buf, '<'))
+	if (css_lex_accept(buf, '<'))
+	{
+		if (css_lex_accept(buf, '!'))
 		{
-			if (css_lex_accept(buf, '!'))
-			{
-				css_lex_expect(buf, '-');
-				css_lex_expect(buf, '-');
-				continue; /* ignore CDO */
-			}
-			return '<';
+			css_lex_expect(buf, '-');
+			css_lex_expect(buf, '-');
+			goto restart; /* ignore CDO */
 		}
+		return '<';
+	}
 
+	if (css_lex_accept(buf, '-'))
+	{
 		if (css_lex_accept(buf, '-'))
 		{
-			if (css_lex_accept(buf, '-'))
-			{
-				css_lex_expect(buf, '>');
-				continue; /* ignore CDC */
-			}
-			if (css_lex_accept(buf, '.'))
-			{
-				css_push_char(buf, '-');
-				css_push_char(buf, '.');
-				if (buf->c >= '0' && buf->c <= '9')
-					return css_lex_number(buf);
-				return css_lex_keyword(buf);
-			}
-			if (buf->c >= '0' && buf->c <= '9')
-			{
-				css_push_char(buf, '-');
-				return css_lex_number(buf);
-			}
-			if (isnmstart(buf->c))
-			{
-				css_push_char(buf, '-');
-				return css_lex_keyword(buf);
-			}
-			return '-';
+			css_lex_expect(buf, '>');
+			goto restart; /* ignore CDC */
 		}
-
-		if (css_lex_accept(buf, '+'))
+		if (isnmstart(buf->c))
 		{
-			if (buf->c >= '0' && buf->c <= '9')
-				return css_lex_number(buf);
-			return '+';
+			css_push_char(buf, '-');
+			return css_lex_keyword(buf);
 		}
+		return '-';
+	}
 
-		if (css_lex_accept(buf, '.'))
-		{
-			if (buf->c >= '0' && buf->c <= '9')
-			{
-				css_push_char(buf, '.');
-				return css_lex_number(buf);
-			}
-			return '.';
-		}
-
-		if (css_lex_accept(buf, '#'))
-			return css_lex_hash(buf);
-
-		if (css_lex_accept(buf, '"'))
-			return css_lex_string(buf, '"');
-		if (css_lex_accept(buf, '\''))
-			return css_lex_string(buf, '\'');
-
+	if (css_lex_accept(buf, '.'))
+	{
 		if (buf->c >= '0' && buf->c <= '9')
-			return css_lex_number(buf);
-
-		if (css_lex_accept(buf, 'u'))
 		{
-			if (css_lex_accept(buf, 'r'))
+			css_push_char(buf, '.');
+			return css_lex_number(buf);
+		}
+		return '.';
+	}
+
+	if (css_lex_accept(buf, '#'))
+	{
+		if (isnmchar(buf->c))
+			return css_lex_hash(buf);
+		return '#';
+	}
+
+	if (css_lex_accept(buf, '"'))
+		return css_lex_string(buf, '"');
+	if (css_lex_accept(buf, '\''))
+		return css_lex_string(buf, '\'');
+
+	if (buf->c >= '0' && buf->c <= '9')
+		return css_lex_number(buf);
+
+	if (css_lex_accept(buf, 'u'))
+	{
+		if (css_lex_accept(buf, 'r'))
+		{
+			if (css_lex_accept(buf, 'l'))
 			{
-				if (css_lex_accept(buf, 'l'))
+				if (css_lex_accept(buf, '('))
 				{
-					if (css_lex_accept(buf, '('))
-					{
-						while (iswhite(buf->c))
-							css_lex_next(buf);
-						if (css_lex_accept(buf, '"'))
-							css_lex_string(buf, '"');
-						else if (css_lex_accept(buf, '\''))
-							css_lex_string(buf, '\'');
-						else
-							css_lex_uri(buf);
-						while (iswhite(buf->c))
-							css_lex_next(buf);
-						css_lex_expect(buf, ')');
-						return CSS_URI;
-					}
-					css_push_char(buf, 'u');
-					css_push_char(buf, 'r');
-					css_push_char(buf, 'l');
-					return css_lex_keyword(buf);
+					while (iswhite(buf->c))
+						css_lex_next(buf);
+					if (css_lex_accept(buf, '"'))
+						css_lex_string(buf, '"');
+					else if (css_lex_accept(buf, '\''))
+						css_lex_string(buf, '\'');
+					else
+						css_lex_uri(buf);
+					while (iswhite(buf->c))
+						css_lex_next(buf);
+					css_lex_expect(buf, ')');
+					return CSS_URI;
 				}
 				css_push_char(buf, 'u');
 				css_push_char(buf, 'r');
+				css_push_char(buf, 'l');
 				return css_lex_keyword(buf);
 			}
 			css_push_char(buf, 'u');
+			css_push_char(buf, 'r');
 			return css_lex_keyword(buf);
 		}
-
-		if (isnmstart(buf->c))
-		{
-			css_push_char(buf, buf->c);
-			css_lex_next(buf);
-			return css_lex_keyword(buf);
-		}
-
-		t = buf->c;
-		css_lex_next(buf);
-		return t;
+		css_push_char(buf, 'u');
+		return css_lex_keyword(buf);
 	}
-	return EOF;
+
+	if (isnmstart(buf->c))
+	{
+		css_push_char(buf, buf->c);
+		css_lex_next(buf);
+		return css_lex_keyword(buf);
+	}
+
+	t = buf->c;
+	css_lex_next(buf);
+	return t;
 }
 
 static void next(struct lexbuf *buf)
@@ -496,66 +493,99 @@ static void expect(struct lexbuf *buf, int t)
 	fz_css_error(buf, "unexpected token");
 }
 
+static void white(struct lexbuf *buf)
+{
+	accept(buf, ' ');
+}
+
 static int iscond(int t)
 {
 	return t == ':' || t == '.' || t == '[' || t == CSS_HASH;
 }
 
-static fz_css_value *parse_value_list(struct lexbuf *buf);
-
-static fz_css_value *parse_value(struct lexbuf *buf)
+static fz_css_value *parse_term(struct lexbuf *buf)
 {
 	fz_css_value *v;
+
+	if (buf->c == '+' || buf->c == '-')
+	{
+		float sign = buf->c == '-' ? -1 : 1;
+		next(buf);
+		if (buf->lookahead != CSS_NUMBER || buf->lookahead != CSS_LENGTH || buf->lookahead != CSS_PERCENT)
+			fz_css_error(buf, "expected number");
+		if (sign < 0)
+		{
+			v = fz_new_css_value_x(buf->ctx, buf->lookahead);
+			v->data = fz_malloc(buf->ctx, strlen(buf->string) + 2);
+			v->data[0] = '-';
+			strcpy(v->data + 1, buf->string);
+		}
+		else
+		{
+			v = fz_new_css_value(buf->ctx, buf->lookahead, buf->string);
+		}
+		next(buf);
+		white(buf);
+		return v;
+	}
 
 	if (buf->lookahead == CSS_KEYWORD)
 	{
 		v = fz_new_css_value(buf->ctx, CSS_KEYWORD, buf->string);
 		next(buf);
-
 		if (accept(buf, '('))
 		{
+			white(buf);
 			v->type = '(';
-			v->args = parse_value_list(buf);
+			v->args = parse_expr(buf);
 			expect(buf, ')');
 		}
-
+		white(buf);
 		return v;
 	}
 
 	switch (buf->lookahead)
 	{
 	case CSS_HASH:
+	case CSS_STRING:
+	case CSS_URI:
 	case CSS_NUMBER:
 	case CSS_LENGTH:
 	case CSS_PERCENT:
-	case CSS_STRING:
-	case CSS_URI:
 		v = fz_new_css_value(buf->ctx, buf->lookahead, buf->string);
 		next(buf);
+		white(buf);
 		return v;
 	}
-
-	if (accept(buf, ','))
-		return fz_new_css_value(buf->ctx, ',', ",");
-	if (accept(buf, '/'))
-		return fz_new_css_value(buf->ctx, '/', "/");
 
 	fz_css_error(buf, "expected value");
 }
 
-static fz_css_value *parse_value_list(struct lexbuf *buf)
+static fz_css_value *parse_expr(struct lexbuf *buf)
 {
 	fz_css_value *head, *tail;
 
-	head = tail = NULL;
+	head = tail = parse_term(buf);
 
 	while (buf->lookahead != '}' && buf->lookahead != ';' && buf->lookahead != '!' &&
 			buf->lookahead != ')' && buf->lookahead != EOF)
 	{
-		if (!head)
-			head = tail = parse_value(buf);
+		if (accept(buf, ','))
+		{
+			white(buf);
+			tail = tail->next = fz_new_css_value(buf->ctx, ',', ",");
+			tail = tail->next = parse_term(buf);
+		}
+		else if (accept(buf, '/'))
+		{
+			white(buf);
+			tail = tail->next = fz_new_css_value(buf->ctx, '/', "/");
+			tail = tail->next = parse_term(buf);
+		}
 		else
-			tail = tail->next = parse_value(buf);
+		{
+			tail = tail->next = parse_term(buf);
+		}
 	}
 
 	return head;
@@ -571,12 +601,16 @@ static fz_css_property *parse_declaration(struct lexbuf *buf)
 	next(buf);
 
 	expect(buf, ':');
+	white(buf);
 
-	p->value = parse_value_list(buf);
+	p->value = parse_expr(buf);
 
 	/* !important */
 	if (accept(buf, '!'))
+	{
 		expect(buf, CSS_KEYWORD);
+		white(buf);
+	}
 
 	return p;
 }
@@ -585,6 +619,8 @@ static fz_css_property *parse_declaration_list(struct lexbuf *buf)
 {
 	fz_css_property *head, *tail;
 
+	white(buf);
+
 	if (buf->lookahead == '}' || buf->lookahead == EOF)
 		return NULL;
 
@@ -592,6 +628,8 @@ static fz_css_property *parse_declaration_list(struct lexbuf *buf)
 
 	while (accept(buf, ';'))
 	{
+		white(buf);
+
 		if (buf->lookahead != '}' && buf->lookahead != ';' && buf->lookahead != EOF)
 		{
 			tail = tail->next = parse_declaration(buf);
@@ -609,6 +647,7 @@ static char *parse_attrib_value(struct lexbuf *buf)
 	{
 		s = fz_strdup(buf->ctx, buf->string);
 		next(buf);
+		white(buf);
 		return s;
 	}
 
@@ -626,6 +665,13 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 			fz_css_error(buf, "expected keyword after ':'");
 		c = fz_new_css_condition(buf->ctx, ':', "pseudo", buf->string);
 		next(buf);
+		if (accept(buf, '('))
+		{
+			white(buf);
+			if (accept(buf, CSS_KEYWORD))
+				white(buf);
+			expect(buf, ')');
+		}
 		return c;
 	}
 
@@ -640,11 +686,14 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 
 	if (accept(buf, '['))
 	{
+		white(buf);
+
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_css_error(buf, "expected keyword after '['");
-
 		c = fz_new_css_condition(buf->ctx, '[', buf->string, NULL);
 		next(buf);
+
+		white(buf);
 
 		if (accept(buf, '='))
 		{
@@ -720,31 +769,23 @@ static fz_css_selector *parse_simple_selector(struct lexbuf *buf)
 	fz_css_error(buf, "expected selector");
 }
 
-static fz_css_selector *parse_adjacent_selector(struct lexbuf *buf)
+static fz_css_selector *parse_combinator(struct lexbuf *buf, fz_css_selector *a)
 {
-	fz_css_selector *s, *a, *b;
-
-	a = parse_simple_selector(buf);
+	fz_css_selector *s, *b;
 	if (accept(buf, '+'))
 	{
-		b = parse_adjacent_selector(buf);
+		white(buf);
+		b = parse_selector(buf);
 		s = fz_new_css_selector(buf->ctx, NULL);
 		s->combine = '+';
 		s->left = a;
 		s->right = b;
 		return s;
 	}
-	return a;
-}
-
-static fz_css_selector *parse_child_selector(struct lexbuf *buf)
-{
-	fz_css_selector *s, *a, *b;
-
-	a = parse_adjacent_selector(buf);
 	if (accept(buf, '>'))
 	{
-		b = parse_child_selector(buf);
+		white(buf);
+		b = parse_selector(buf);
 		s = fz_new_css_selector(buf->ctx, NULL);
 		s->combine = '>';
 		s->left = a;
@@ -754,36 +795,45 @@ static fz_css_selector *parse_child_selector(struct lexbuf *buf)
 	return a;
 }
 
-static fz_css_selector *parse_descendant_selector(struct lexbuf *buf)
+static fz_css_selector *parse_selector(struct lexbuf *buf)
 {
 	fz_css_selector *s, *a, *b;
 
-	a = parse_child_selector(buf);
-	if (buf->lookahead != ',' && buf->lookahead != '{' && buf->lookahead != EOF)
+	a = parse_simple_selector(buf);
+	if (accept(buf, ' '))
 	{
-		b = parse_descendant_selector(buf);
-		s = fz_new_css_selector(buf->ctx, NULL);
-		s->combine = ' ';
-		s->left = a;
-		s->right = b;
-		return s;
+		s = parse_combinator(buf, a);
+		if (s == a && buf->lookahead != ',' && buf->lookahead != '{' && buf->lookahead != EOF)
+		{
+			b = parse_selector(buf);
+			s = fz_new_css_selector(buf->ctx, NULL);
+			s->combine = ' ';
+			s->left = a;
+			s->right = b;
+			return s;
+		}
 	}
-	return a;
+	else
+	{
+		s = parse_combinator(buf, a);
+	}
+	return s;
 }
 
 static fz_css_selector *parse_selector_list(struct lexbuf *buf)
 {
 	fz_css_selector *head, *tail;
 
-	head = tail = parse_descendant_selector(buf);
+	head = tail = parse_selector(buf);
 	while (accept(buf, ','))
 	{
-		tail = tail->next = parse_descendant_selector(buf);
+		white(buf);
+		tail = tail->next = parse_selector(buf);
 	}
 	return head;
 }
 
-static fz_css_rule *parse_rule(struct lexbuf *buf)
+static fz_css_rule *parse_ruleset(struct lexbuf *buf)
 {
 	fz_css_selector *s = NULL;
 	fz_css_property *p = NULL;
@@ -794,6 +844,7 @@ static fz_css_rule *parse_rule(struct lexbuf *buf)
 		expect(buf, '{');
 		p = parse_declaration_list(buf);
 		expect(buf, '}');
+		white(buf);
 	}
 	fz_catch(buf->ctx)
 	{
@@ -802,7 +853,10 @@ static fz_css_rule *parse_rule(struct lexbuf *buf)
 		while (buf->lookahead != EOF)
 		{
 			if (accept(buf, '}'))
+			{
+				white(buf);
 				break;
+			}
 			next(buf);
 		}
 		return NULL;
@@ -854,6 +908,8 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 		nextp = &tail;
 	}
 
+	white(buf);
+
 	while (buf->lookahead != EOF)
 	{
 		if (accept(buf, '@'))
@@ -862,13 +918,14 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 		}
 		else
 		{
-			fz_css_rule *x = parse_rule(buf);
+			fz_css_rule *x = parse_ruleset(buf);
 			if (x)
 			{
 				rule = *nextp = x;
 				nextp = &rule->next;
 			}
 		}
+		white(buf);
 	}
 
 	return chain ? chain : tail;
