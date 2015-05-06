@@ -369,15 +369,15 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 	}
 }
 
-static void measure_image(fz_context *ctx, fz_html_flow *node, float w, float h)
+static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, float max_h)
 {
 	float xs = 1, ys = 1, s = 1;
 	node->x = 0;
 	node->y = 0;
-	if (node->image->w > w)
-		xs = w / node->image->w;
-	if (node->image->h > h)
-		ys = h / node->image->h;
+	if (node->image->w > max_w)
+		xs = max_w / node->image->w;
+	if (node->image->h > max_h)
+		ys = max_h / node->image->h;
 	s = fz_min(xs, ys);
 	node->w = node->image->w * s;
 	node->h = node->image->h * s;

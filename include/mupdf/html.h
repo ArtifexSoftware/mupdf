@@ -105,7 +105,7 @@ enum {
 	LST_ARMENIAN, LST_GEORGIAN,
 };
 
-enum { N_NUMBER='p', N_SCALE='m', N_PERCENT='%' };
+enum { N_NUMBER='p', N_SCALE='m', N_PERCENT='%', N_AUTO='a' };
 
 struct fz_css_number_s
 {
@@ -121,6 +121,7 @@ struct fz_css_color_s
 struct fz_css_style_s
 {
 	fz_css_number font_size;
+	fz_css_number width, height;
 	fz_css_number margin[4];
 	fz_css_number padding[4];
 	fz_css_number border_width[4];

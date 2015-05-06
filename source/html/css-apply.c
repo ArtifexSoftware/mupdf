@@ -708,6 +708,12 @@ number_from_value(fz_css_value *value, float initial, int initial_unit)
 		return make_number(x, N_NUMBER);
 	}
 
+	if (value->type == CSS_KEYWORD)
+	{
+		if (!strcmp(value->data, "auto"))
+			return make_number(0, N_AUTO);
+	}
+
 	return make_number(initial, initial_unit);
 }
 
@@ -755,6 +761,7 @@ fz_from_css_number(fz_css_number number, float em, float width)
 	case N_NUMBER: return number.value;
 	case N_SCALE: return number.value * em;
 	case N_PERCENT: return number.value * 0.01 * width;
+	case N_AUTO: return width;
 	}
 }
 
@@ -766,6 +773,7 @@ fz_from_css_number_scale(fz_css_number number, float scale, float em, float widt
 	case N_NUMBER: return number.value * scale;
 	case N_SCALE: return number.value * em;
 	case N_PERCENT: return number.value * 0.01 * width;
+	case N_AUTO: return width;
 	}
 }
 
@@ -922,6 +930,8 @@ fz_default_css_style(fz_context *ctx, fz_css_style *style)
 	style->white_space = WS_NORMAL;
 	style->list_style_type = LST_DISC;
 	style->font_size = make_number(1, N_SCALE);
+	style->width = make_number(0, N_AUTO);
+	style->height = make_number(0, N_AUTO);
 }
 
 void
@@ -998,6 +1008,9 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	style->line_height = number_from_property(match, "line-height", 1.2f, N_SCALE);
 
 	style->text_indent = number_from_property(match, "text-indent", 0, N_NUMBER);
+
+	style->width = number_from_property(match, "width", 0, N_AUTO);
+	style->height = number_from_property(match, "height", 0, N_AUTO);
 
 	style->margin[0] = number_from_property(match, "margin-top", 0, N_NUMBER);
 	style->margin[1] = number_from_property(match, "margin-right", 0, N_NUMBER);
