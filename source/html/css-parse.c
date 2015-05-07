@@ -508,11 +508,11 @@ static fz_css_value *parse_term(struct lexbuf *buf)
 {
 	fz_css_value *v;
 
-	if (buf->c == '+' || buf->c == '-')
+	if (buf->lookahead == '+' || buf->lookahead == '-')
 	{
-		float sign = buf->c == '-' ? -1 : 1;
+		float sign = buf->lookahead == '-' ? -1 : 1;
 		next(buf);
-		if (buf->lookahead != CSS_NUMBER || buf->lookahead != CSS_LENGTH || buf->lookahead != CSS_PERCENT)
+		if (buf->lookahead != CSS_NUMBER && buf->lookahead != CSS_LENGTH && buf->lookahead != CSS_PERCENT)
 			fz_css_error(buf, "expected number");
 		if (sign < 0)
 		{
