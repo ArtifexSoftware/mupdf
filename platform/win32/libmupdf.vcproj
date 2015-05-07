@@ -1469,6 +1469,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\fitz\output-tga.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\fitz\output.h"
 					>
 				</File>
@@ -1513,7 +1517,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\fitz\tree.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\fitz\unzip.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\version.h"
 					>
 				</File>
 				<File
