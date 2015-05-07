@@ -495,7 +495,8 @@ static void expect(struct lexbuf *buf, int t)
 
 static void white(struct lexbuf *buf)
 {
-	accept(buf, ' ');
+	while (buf->lookahead == ' ')
+		next(buf);
 }
 
 static int iscond(int t)
@@ -873,7 +874,10 @@ static void parse_at_rule(struct lexbuf *buf)
 	while (buf->lookahead != EOF)
 	{
 		if (accept(buf, ';'))
+		{
+			white(buf);
 			return;
+		}
 		if (accept(buf, '{'))
 		{
 			int depth = 1;
@@ -886,6 +890,7 @@ static void parse_at_rule(struct lexbuf *buf)
 				else
 					next(buf);
 			}
+			white(buf);
 			return;
 		}
 		next(buf);
