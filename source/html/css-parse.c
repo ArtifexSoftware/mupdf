@@ -601,6 +601,7 @@ static fz_css_property *parse_declaration(struct lexbuf *buf)
 	p = fz_new_css_property(buf->ctx, buf->string, NULL, 0);
 	next(buf);
 
+	white(buf);
 	expect(buf, ':');
 	white(buf);
 
