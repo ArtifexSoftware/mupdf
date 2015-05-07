@@ -1,3 +1,14 @@
+List of changes in MuPDF 1.7a
+
+* Bugfixes
+	* Fixed bug that allocated too much memory when packing paths.
+	* Fixed EPUB font scaling bug.
+	* Fixed EPUB file type handling in viewers.
+	* Improved tolerance for broken and unsupported CSS.
+
+* Features
+	* Added mudraw -z option to compress output streams.
+
 List of changes in MuPDF 1.7
 
 * Headline changes:
