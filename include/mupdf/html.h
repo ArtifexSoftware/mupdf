@@ -165,6 +165,7 @@ enum
 {
 	FLOW_WORD,
 	FLOW_GLUE,
+	FLOW_BREAK,
 	FLOW_IMAGE,
 };
 
@@ -173,7 +174,8 @@ struct fz_html_flow_s
 	int type;
 	float x, y, w, h, em;
 	fz_css_style *style;
-	char *text, *broken_text;
+	char *text;
+	int expand;
 	fz_image *image;
 	fz_html_flow *next;
 };

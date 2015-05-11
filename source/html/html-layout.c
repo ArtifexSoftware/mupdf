@@ -64,17 +64,17 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_html *top, fz_css_style *style
 	return flow;
 }
 
-static void add_flow_space(fz_context *ctx, fz_html *top, fz_css_style *style)
+static void add_flow_glue(fz_context *ctx, fz_html *top, fz_css_style *style, const char *text, int expand)
 {
-	fz_html_flow *flow;
+	fz_html_flow *flow = add_flow(ctx, top, style, FLOW_GLUE);
+	flow->text = (char*)text;
+	flow->expand = expand;
+}
 
-	/* delete space at the beginning of the line */
-	if (!top->flow_head)
-		return;
-
-	flow = add_flow(ctx, top, style, FLOW_GLUE);
-	flow->text = " ";
-	flow->broken_text = "";
+static void add_flow_break(fz_context *ctx, fz_html *top, fz_css_style *style)
+{
+	fz_html_flow *flow = add_flow(ctx, top, style, FLOW_BREAK);
+	flow->text = "";
 }
 
 static void add_flow_word(fz_context *ctx, fz_html *top, fz_css_style *style, const char *a, const char *b)
@@ -87,26 +87,78 @@ static void add_flow_word(fz_context *ctx, fz_html *top, fz_css_style *style, co
 
 static void add_flow_image(fz_context *ctx, fz_html *top, fz_css_style *style, fz_image *img)
 {
-	fz_html_flow *flow = add_flow(ctx, top, style, FLOW_IMAGE);
+	fz_html_flow *flow;
+	add_flow_glue(ctx, top, style, "", 0);
+	flow = add_flow(ctx, top, style, FLOW_IMAGE);
 	flow->image = fz_keep_image(ctx, img);
+	add_flow_glue(ctx, top, style, "", 0);
 }
 
 static void generate_text(fz_context *ctx, fz_html *box, const char *text)
 {
-	fz_html *flow = box;
+	fz_html *flow;
+
+	int collapse; /* collapse sequences of white space */
+	int bsp; /* allow breaks at white space */
+	int bnl; /* force breaks at newline characters */
+
+	flow = box;
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
 
+	switch (box->style.white_space)
+	{
+	default:
+	case WS_NORMAL:
+		collapse = 1;
+		bsp = 1;
+		bnl = 0;
+		break;
+	case WS_PRE:
+		collapse = 0;
+		bsp = 0;
+		bnl = 1;
+		break;
+	case WS_NOWRAP:
+		collapse = 1;
+		bsp = 0;
+		bnl = 0;
+		break;
+	case WS_PRE_WRAP:
+		collapse = 0;
+		bsp = 1;
+		bnl = 1;
+		break;
+	case WS_PRE_LINE:
+		collapse = 1;
+		bsp = 1;
+		bnl = 1;
+		break;
+	}
+
 	while (*text)
 	{
-		if (iswhite(*text))
+		if (bnl && (*text == '\n' || *text == '\r'))
 		{
-			++text;
-			while (iswhite(*text))
-				++text;
-			add_flow_space(ctx, flow, &box->style);
+			if (text[0] == '\r' && text[1] == '\n')
+				text += 2;
+			else
+				text += 1;
+			add_flow_break(ctx, flow, &box->style);
 		}
-		if (*text)
+		else if (iswhite(*text))
+		{
+			const char *mark = text++;
+			if (collapse)
+				while (iswhite(*text))
+					++text;
+			/* TODO: tabs */
+			if (bsp)
+				add_flow_glue(ctx, flow, &box->style, " ", 1);
+			else
+				add_flow_word(ctx, flow, &box->style, mark, text);
+		}
+		else
 		{
 			const char *mark = text++;
 			while (*text && !iswhite(*text))
@@ -294,9 +346,19 @@ static void generate_boxes(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 
 			if (!strcmp(tag, "br"))
 			{
-				box = new_box(ctx);
-				fz_apply_css_style(ctx, set, &box->style, &match);
-				top = insert_break_box(ctx, box, top);
+				if (top->type == BOX_INLINE)
+				{
+					fz_html *flow = top;
+					while (flow->type != BOX_FLOW)
+						flow = flow->up;
+					add_flow_break(ctx, flow, &top->style);
+				}
+				else
+				{
+					box = new_box(ctx);
+					fz_apply_css_style(ctx, set, &box->style, &match);
+					top = insert_break_box(ctx, box, top);
+				}
 			}
 
 			else if (!strcmp(tag, "img"))
@@ -406,11 +468,12 @@ static void measure_word(fz_context *ctx, fz_html_flow *node, float em)
 	node->em = em;
 }
 
-static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline)
+static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline, float *line_w)
 {
-	float max_a = 0, max_d = 0, h = 0;
+	float max_a = 0, max_d = 0, h = node->h;
 	while (node != end)
 	{
+		*line_w += node->w;
 		if (node->type == FLOW_IMAGE)
 		{
 			if (node->h > max_a)
@@ -444,7 +507,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	{
 		fz_html_flow *it;
 		for (it = node; it != end; it = it->next)
-			if (it->type == FLOW_GLUE)
+			if (it->type == FLOW_GLUE && it->expand)
 				++n;
 		justify = slop / n;
 	}
@@ -474,35 +537,10 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		else
 			node->y = y + baseline + va;
 		x += node->w;
-		if (node->type == FLOW_GLUE)
+		if (node->type == FLOW_GLUE && node->expand)
 			x += justify;
 		node = node->next;
 	}
-}
-
-static fz_html_flow *find_next_glue(fz_html_flow *node, float *w)
-{
-	while (node && node->type == FLOW_GLUE)
-	{
-		*w += node->w;
-		node = node->next;
-	}
-	while (node && node->type != FLOW_GLUE)
-	{
-		*w += node->w;
-		node = node->next;
-	}
-	return node;
-}
-
-static fz_html_flow *find_next_word(fz_html_flow *node, float *w)
-{
-	while (node && node->type == FLOW_GLUE)
-	{
-		*w += node->w;
-		node = node->next;
-	}
-	return node;
 }
 
 static void find_accumulated_margins(fz_context *ctx, fz_html *box, float *w, float *h)
@@ -518,16 +556,25 @@ static void find_accumulated_margins(fz_context *ctx, fz_html *box, float *w, fl
 	}
 }
 
+static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w, int align, float indent, fz_html_flow *a, fz_html_flow *b)
+{
+	float avail, line_h, line_w, baseline;
+	line_w = indent;
+	avail = page_h - fmodf(box->y + box->h, page_h);
+	line_h = measure_line(a, b, &baseline, &line_w);
+	if (line_h > avail)
+		box->h += avail;
+	layout_line(ctx, indent, page_w, line_w, align, a, b, box, baseline);
+	box->h += line_h;
+}
+
 static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h)
 {
-	fz_html_flow *node, *line_start, *word_start, *word_end, *line_end;
-	float glue_w;
-	float word_w;
+	fz_html_flow *node, *line, *mark;
 	float line_w;
 	float indent;
-	float avail, line_h;
-	float baseline;
 	int align;
+	int line_align;
 
 	em = fz_from_css_number(box->style.font_size, em, em);
 	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
@@ -555,52 +602,63 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 		}
 	}
 
-	line_start = find_next_word(box->flow_head, &glue_w);
-	line_end = NULL;
+	/* start by skipping whitespace (and newline) at the beginning of tags */
+	node = box->flow_head;
+	if (node->type == FLOW_BREAK)
+		node = node->next;
+	while (node && node->type == FLOW_GLUE)
+		node = node->next;
 
+	mark = NULL;
+	line = node;
 	line_w = indent;
-	word_w = 0;
-	word_start = line_start;
-	while (word_start)
+
+	while (node)
 	{
-		word_end = find_next_glue(word_start, &word_w);
-		if (line_w + word_w <= top->w)
+		switch (node->type)
 		{
-			line_w += word_w;
-			glue_w = 0;
-			line_end = word_end;
-			word_start = find_next_word(word_end, &glue_w);
-			word_w = glue_w;
-		}
-		else
-		{
-			avail = page_h - fmodf(box->y + box->h, page_h);
-			line_h = measure_line(line_start, line_end, &baseline);
-			if (line_h > avail)
-				box->h += avail;
-			layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box, baseline);
-			box->h += line_h;
-			word_start = find_next_word(line_end, &glue_w);
-			line_start = word_start;
-			line_end = NULL;
+		case FLOW_WORD:
+			break;
+		case FLOW_IMAGE:
+			/* TODO: break before/after image */
+			mark = node;
+			break;
+		case FLOW_GLUE:
+			mark = node;
+			break;
+		case FLOW_BREAK:
+			line_align = align == TA_JUSTIFY ? TA_LEFT : align;
+			flush_line(ctx, box, page_h, top->w, line_align, indent, line, node);
 			indent = 0;
+			line = node->next;
 			line_w = 0;
-			word_w = 0;
+			mark = NULL;
+			break;
+		}
+
+		if (mark && line_w + node->w > top->w)
+		{
+			flush_line(ctx, box, page_h, top->w, align, indent, line, mark);
+			indent = 0;
+			node = mark;
+			while (node && node->type == FLOW_GLUE)
+				node = node->next;
+			line = node;
+			line_w = 0;
+			mark = NULL;
+		}
+
+		if (node)
+		{
+			line_w += node->w;
+			node = node->next;
 		}
 	}
 
-	/* don't justify the last line of a paragraph */
-	if (align == TA_JUSTIFY)
-		align = TA_LEFT;
-
-	if (line_start)
+	if (line)
 	{
-		avail = page_h - fmodf(box->y + box->h, page_h);
-		line_h = measure_line(line_start, line_end, &baseline);
-		if (line_h > avail)
-			box->h += avail;
-		layout_line(ctx, indent, top->w, line_w, align, line_start, line_end, box, baseline);
-		box->h += line_h;
+		line_align = align == TA_JUSTIFY ? TA_LEFT : align;
+		flush_line(ctx, box, page_h, top->w, line_align, indent, line, NULL);
 	}
 }
 
@@ -1108,6 +1166,7 @@ fz_print_html_flow(fz_context *ctx, fz_html_flow *flow)
 		{
 		case FLOW_WORD: printf("%s", flow->text); break;
 		case FLOW_GLUE: printf(" "); break;
+		case FLOW_BREAK: printf("\\n"); break;
 		case FLOW_IMAGE: printf("[image]"); break;
 		}
 		flow = flow->next;
