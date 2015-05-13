@@ -3,6 +3,7 @@
 enum { T, R, B, L };
 
 static const char *default_css =
+"@page{margin:1em 0}"
 "html,address,blockquote,body,dd,div,dl,dt,h1,h2,h3,h4,h5,h6,ol,p,ul,center,hr,pre{display:block}"
 "span{display:inline}"
 "li{display:list-item}"
@@ -1262,6 +1263,8 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 
 	match.up = NULL;
 	match.count = 0;
+	fz_match_css_at_page(ctx, &match, css);
+	fz_apply_css_style(ctx, set, &box->style, &match);
 
 	generate_boxes(ctx, set, zip, base_uri, xml, box, css, &match, 0);
 

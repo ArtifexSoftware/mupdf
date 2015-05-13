@@ -37,10 +37,13 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
 
-	doc->page_margin[T] = em;
-	doc->page_margin[B] = em;
-	doc->page_margin[L] = 0;
-	doc->page_margin[R] = 0;
+	if (doc->spine && doc->spine->box)
+	{
+		doc->page_margin[T] = fz_from_css_number(doc->spine->box->style.margin[T], em, em);
+		doc->page_margin[B] = fz_from_css_number(doc->spine->box->style.margin[B], em, em);
+		doc->page_margin[L] = fz_from_css_number(doc->spine->box->style.margin[L], em, em);
+		doc->page_margin[R] = fz_from_css_number(doc->spine->box->style.margin[R], em, em);
+	}
 
 	doc->page_w = w - doc->page_margin[L] - doc->page_margin[R];
 	doc->page_h = h - doc->page_margin[T] - doc->page_margin[B];

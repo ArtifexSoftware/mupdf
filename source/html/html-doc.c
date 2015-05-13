@@ -44,13 +44,19 @@ static void
 htdoc_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 {
 	html_document *doc = (html_document*)doc_;
-	doc->page_margin[T] = em;
-	doc->page_margin[B] = em;
-	doc->page_margin[L] = 0;
-	doc->page_margin[R] = 0;
+
+	if (doc->box)
+	{
+		doc->page_margin[T] = fz_from_css_number(doc->box->style.margin[T], em, em);
+		doc->page_margin[B] = fz_from_css_number(doc->box->style.margin[B], em, em);
+		doc->page_margin[L] = fz_from_css_number(doc->box->style.margin[L], em, em);
+		doc->page_margin[R] = fz_from_css_number(doc->box->style.margin[R], em, em);
+	}
+
 	doc->page_w = w - doc->page_margin[L] - doc->page_margin[R];
 	doc->page_h = h - doc->page_margin[T] - doc->page_margin[B];
 	doc->em = em;
+
 	fz_layout_html(ctx, doc->box, doc->page_w, doc->page_h, doc->em);
 }
 

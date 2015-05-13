@@ -185,6 +185,7 @@ fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source);
 void fz_drop_css(fz_context *ctx, fz_css_rule *rule);
 
 void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node);
+void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_rule *css);
 
 int fz_get_css_match_display(fz_css_match *node);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);

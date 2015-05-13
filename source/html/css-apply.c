@@ -623,6 +623,29 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *nod
 	}
 }
 
+void
+fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_rule *css)
+{
+	fz_css_rule *rule;
+	fz_css_selector *sel;
+	fz_css_property *prop;
+
+	for (rule = css; rule; rule = rule->next)
+	{
+		sel = rule->selector;
+		while (sel)
+		{
+			if (sel->name && !strcmp(sel->name, "@page"))
+			{
+				for (prop = rule->declaration; prop; prop = prop->next)
+					add_property(match, prop->name, prop->value, selector_specificity(sel));
+				break;
+			}
+			sel = sel->next;
+		}
+	}
+}
+
 static fz_css_value *
 value_from_raw_property(fz_css_match *match, const char *name)
 {
