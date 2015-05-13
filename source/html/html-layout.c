@@ -665,6 +665,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, float vertical)
 {
 	fz_html *child;
+	int first;
 
 	fz_css_style *style = &box->style;
 	float *margin = box->margin;
@@ -704,11 +705,20 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 	box->y = top->y + top->h + margin[T] + border[T] + padding[T];
 	box->h = 0;
 
+	first = 1;
 	for (child = box->down; child; child = child->next)
 	{
 		if (child->type == BOX_BLOCK)
 		{
 			vertical = layout_block(ctx, child, box, em, page_h, vertical);
+			if (first)
+			{
+				/* move collapsed parent/child top margins to parent */
+				margin[T] += child->margin[T];
+				box->y += child->margin[T];
+				child->margin[T] = 0;
+				first = 0;
+			}
 			box->h += child->h +
 				child->padding[T] + child->padding[B] +
 				child->border[T] + child->border[B] +
@@ -718,6 +728,7 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 		{
 			box->h += fz_from_css_number_scale(style->line_height, em, em, em);
 			vertical = 0;
+			first = 0;
 		}
 		else if (child->type == BOX_FLOW)
 		{
@@ -726,6 +737,7 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 			{
 				box->h += child->h;
 				vertical = 0;
+				first = 0;
 			}
 		}
 	}
