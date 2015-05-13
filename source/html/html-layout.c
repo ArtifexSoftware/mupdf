@@ -662,11 +662,9 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	}
 }
 
-static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, float top_collapse_margin, float page_h)
+static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, float vertical)
 {
 	fz_html *child;
-	float box_collapse_margin;
-	int prev_br;
 
 	fz_css_style *style = &box->style;
 	float *margin = box->margin;
@@ -690,40 +688,36 @@ static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, 
 	border[2] = style->border_style[2] ? fz_from_css_number(style->border_width[2], em, top->w) : 0;
 	border[3] = style->border_style[3] ? fz_from_css_number(style->border_width[3], em, top->w) : 0;
 
-	if (padding[T] == 0 && border[T] == 0)
-		box_collapse_margin = margin[T];
-	else
-		box_collapse_margin = 0;
+	box->x = top->x + margin[L] + border[L] + padding[L];
+	box->w = top->w - (margin[L] + margin[R] + border[L] + border[R] + padding[L] + padding[R]);
 
-	if (margin[T] > top_collapse_margin)
-		margin[T] -= top_collapse_margin;
+	if (margin[T] > vertical)
+		margin[T] -= vertical;
 	else
 		margin[T] = 0;
 
-	box->x = top->x + margin[L] + border[L] + padding[L];
+	if (padding[T] == 0 && border[T] == 0)
+		vertical += margin[T];
+	else
+		vertical = 0;
+
 	box->y = top->y + top->h + margin[T] + border[T] + padding[T];
-	box->w = top->w - (margin[L] + margin[R] + border[L] + border[R] + padding[L] + padding[R]);
 	box->h = 0;
 
-	prev_br = 0;
 	for (child = box->down; child; child = child->next)
 	{
 		if (child->type == BOX_BLOCK)
 		{
-			layout_block(ctx, child, box, em, box_collapse_margin, page_h);
+			vertical = layout_block(ctx, child, box, em, page_h, vertical);
 			box->h += child->h +
 				child->padding[T] + child->padding[B] +
 				child->border[T] + child->border[B] +
 				child->margin[T] + child->margin[B];
-			box_collapse_margin = child->margin[B];
-			prev_br = 0;
 		}
 		else if (child->type == BOX_BREAK)
 		{
-			/* TODO: interaction with page breaks */
-			if (prev_br)
-				box->h += fz_from_css_number_scale(style->line_height, em, em, em);
-			prev_br = 1;
+			box->h += fz_from_css_number_scale(style->line_height, em, em, em);
+			vertical = 0;
 		}
 		else if (child->type == BOX_FLOW)
 		{
@@ -731,25 +725,33 @@ static void layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, 
 			if (child->h > 0)
 			{
 				box->h += child->h;
-				box_collapse_margin = 0;
-				prev_br = 0;
+				vertical = 0;
 			}
 		}
 	}
 
 	/* reserve space for the list mark */
 	if (box->list_item && box->h == 0)
-		box->h += fz_from_css_number_scale(style->line_height, em, em, em);
-
-	if (padding[B] == 0 && border[B] == 0)
 	{
-		if (margin[B] > 0)
-		{
-			box->h -= box_collapse_margin;
-			if (margin[B] < box_collapse_margin)
-				margin[B] = box_collapse_margin;
-		}
+		box->h += fz_from_css_number_scale(style->line_height, em, em, em);
+		vertical = 0;
 	}
+
+	if (box->h == 0)
+	{
+		if (margin[B] > vertical)
+			margin[B] -= vertical;
+		else
+			margin[B] = 0;
+	}
+	else
+	{
+		box->h -= vertical;
+		vertical = fz_max(margin[B], vertical);
+		margin[B] = vertical;
+	}
+
+	return vertical;
 }
 
 static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
@@ -1224,7 +1226,7 @@ fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 	page_box.w = w;
 	page_box.h = 0;
 
-	layout_block(ctx, box, &page_box, em, 0, h);
+	layout_block(ctx, box, &page_box, em, h, 0);
 }
 
 fz_html *
