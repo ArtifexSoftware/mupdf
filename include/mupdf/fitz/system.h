@@ -98,8 +98,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif
 #define hypotf _hypotf
 
-#define fopen fz_fopen_utf8
-
 FILE *fz_fopen_utf8(const char *name, const char *mode);
 
 #define fopen fz_fopen_utf8
