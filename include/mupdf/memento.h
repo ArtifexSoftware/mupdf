@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2013 Artifex Software, Inc.
+/* Copyright (C) 2009-2015 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -13,7 +13,7 @@
 
 /* Memento: A library to aid debugging of memory leaks/heap corruption.
  *
- * Usage:
+ * Usage (with C):
  *    First, build your project with MEMENTO defined, and include this
  *    header file wherever you use malloc, realloc or free.
  *    This header file will use macros to point malloc, realloc and free to
@@ -130,6 +130,29 @@
  *      then more useful features can be used; firstly memory squeezing will
  *      work, and secondly, Memento will have a "finer grained" paranoia
  *      available to it.
+ *
+ * Usage with C++:
+ *
+ *    Memento has some experimental code in it to trap new/delete (and
+ *    new[]/delete[] if required) calls.
+ *
+ *    In order for this to work, either:
+ *
+ *    1) Build memento.c with the c++ compiler.
+ *
+ *    or
+ *
+ *    2) Build memento.c as normal with the C compiler, then from any
+ *       one of your .cpp files, do:
+ *
+ *       #define MEMENTO_CPP_EXTRAS_ONLY
+ *       #include "memento.c"
+ *
+ *       In the case where MEMENTO is not defined, this will not do anything.
+ *
+ *    Both Windows and GCC provide separate new[] and delete[] operators
+ *    for arrays. Apparently some systems do not. If this is the case for
+ *    your system, define MEMENTO_CPP_NO_ARRAY_CONSTRUCTORS.
  */
 
 #ifndef MEMENTO_H
