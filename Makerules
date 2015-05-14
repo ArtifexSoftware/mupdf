@@ -25,6 +25,10 @@ else
 $(error unknown build setting: '$(build)')
 endif
 
+ifeq "$(largefile)" "yes"
+CFLAGS += -DFZ_LARGEFILE
+endif
+
 # Windows (MINGW) build doesn't use system libraries.
 ifeq "$(OS)" "MINGW"
 
