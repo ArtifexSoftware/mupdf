@@ -57,7 +57,7 @@ struct pdf_write_options_s
 	int do_linear;
 	int do_clean;
 	int *use_list;
-	int *ofs_list;
+	fz_off_t *ofs_list;
 	int *gen_list;
 	int *renumber_map;
 	int continue_on_error;
@@ -66,10 +66,10 @@ struct pdf_write_options_s
 	int *rev_renumber_map;
 	int *rev_gen_list;
 	int start;
-	int first_xref_offset;
-	int main_xref_offset;
-	int first_xref_entry_offset;
-	int file_len;
+	fz_off_t first_xref_offset;
+	fz_off_t main_xref_offset;
+	fz_off_t first_xref_entry_offset;
+	fz_off_t file_len;
 	int hints_shared_offset;
 	int hintstream_len;
 	pdf_obj *linear_l;
@@ -1435,7 +1435,7 @@ linearize(fz_context *ctx, pdf_document *doc, pdf_write_options *opts)
 static void
 update_linearization_params(fz_context *ctx, pdf_document *doc, pdf_write_options *opts)
 {
-	int offset;
+	fz_off_t offset;
 	pdf_set_int(ctx, opts->linear_l, opts->file_len);
 	/* Primary hint stream offset (of object, not stream!) */
 	pdf_set_int(ctx, opts->linear_h0, opts->ofs_list[pdf_xref_len(ctx, doc)-1]);
@@ -1842,7 +1842,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_options *opt
 	pdf_obj *nobj = NULL;
 
 	fputs("xref\n", opts->out);
-	opts->first_xref_entry_offset = ftell(opts->out);
+	opts->first_xref_entry_offset = fz_ftell(opts->out);
 
 	if (opts->do_incremental)
 	{
@@ -1970,7 +1970,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_option
 		dict = pdf_new_dict(ctx, doc, 6);
 		pdf_update_object(ctx, doc, num, dict);
 
-		opts->first_xref_entry_offset = ftell(opts->out);
+		opts->first_xref_entry_offset = fz_ftell(opts->out);
 
 		to++;
 
@@ -2067,9 +2067,9 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_option
 }
 
 static void
-padto(FILE *file, int target)
+padto(FILE *file, fz_off_t target)
 {
-	int pos = ftell(file);
+	fz_off_t pos = fz_ftell(file);
 
 	assert(pos <= target);
 	while (pos < target)
@@ -2105,7 +2105,7 @@ dowriteobject(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, int n
 	{
 		if (pass > 0)
 			padto(opts->out, opts->ofs_list[num]);
-		opts->ofs_list[num] = ftell(opts->out);
+		opts->ofs_list[num] = fz_ftell(opts->out);
 		if (!opts->do_incremental || pdf_xref_is_incremental(ctx, doc, num))
 			writeobject(ctx, doc, opts, num, opts->gen_list[num], 1);
 	}
@@ -2131,7 +2131,7 @@ writeobjects(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, int pa
 	{
 		/* Write first xref */
 		if (pass == 0)
-			opts->first_xref_offset = ftell(opts->out);
+			opts->first_xref_offset = fz_ftell(opts->out);
 		else
 			padto(opts->out, opts->first_xref_offset);
 		writexref(ctx, doc, opts, opts->start, pdf_xref_len(ctx, doc), 1, opts->main_xref_offset, 0);
@@ -2141,7 +2141,7 @@ writeobjects(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, int pa
 		dowriteobject(ctx, doc, opts, num, pass);
 	if (opts->do_linear && pass == 1)
 	{
-		int offset = (opts->start == 1 ? opts->main_xref_offset : opts->ofs_list[1] + opts->hintstream_len);
+		fz_off_t offset = (opts->start == 1 ? opts->main_xref_offset : opts->ofs_list[1] + opts->hintstream_len);
 		padto(opts->out, offset);
 	}
 	for (num = 1; num < opts->start; num++)
@@ -2513,19 +2513,19 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_op
 	{
 		pdf_obj *byte_range;
 
-		f = fopen(filename, "rb+");
+		f = fz_fopen(filename, "rb+");
 		if (!f)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open %s to complete signatures", filename);
 
-		fseek(f, 0, SEEK_END);
-		flen = ftell(f);
+		fz_fseek(f, 0, SEEK_END);
+		flen = fz_ftell(f);
 
 		/* Locate the byte ranges and contents in the saved file */
 		for (usig = doc->unsaved_sigs; usig; usig = usig->next)
 		{
 			char *bstr, *cstr, *fstr;
 			int pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME_V, PDF_NAME_ByteRange, NULL));
-			fseek(f, opts->ofs_list[pnum], SEEK_SET);
+			fz_fseek(f, opts->ofs_list[pnum], SEEK_SET);
 			(void)fread(buf, 1, sizeof(buf), f);
 			buf[sizeof(buf)-1] = 0;
 
@@ -2568,7 +2568,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_op
 		/* Write the byte range to the file */
 		for (usig = doc->unsaved_sigs; usig; usig = usig->next)
 		{
-			fseek(f, usig->byte_range_start, SEEK_SET);
+			fz_fseek(f, usig->byte_range_start, SEEK_SET);
 			fwrite(buf, 1, usig->byte_range_end - usig->byte_range_start, f);
 		}
 
@@ -2633,16 +2633,16 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 		/* If no changes, nothing to write */
 		if (!doc->xref_altered)
 			return;
-		opts.out = fopen(filename, "ab");
+		opts.out = fz_fopen(filename, "ab");
 		if (opts.out)
 		{
-			fseek(opts.out, 0, SEEK_END);
+			fz_fseek(opts.out, 0, SEEK_END);
 			fputs("\n", opts.out);
 		}
 	}
 	else
 	{
-		opts.out = fopen(filename, "wb");
+		opts.out = fz_fopen(filename, "wb");
 	}
 
 	if (!opts.out)
@@ -2755,9 +2755,9 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 
 		if (opts.do_linear)
 		{
-			opts.main_xref_offset = ftell(opts.out);
+			opts.main_xref_offset = fz_ftell(opts.out);
 			writexref(ctx, doc, &opts, 0, opts.start, 0, 0, opts.first_xref_offset);
-			opts.file_len = ftell(opts.out);
+			opts.file_len = fz_ftell(opts.out);
 
 			make_hint_stream(ctx, doc, &opts);
 			if (opts.do_ascii)
@@ -2768,7 +2768,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 			opts.file_len += opts.hintstream_len;
 			opts.main_xref_offset += opts.hintstream_len;
 			update_linearization_params(ctx, doc, &opts);
-			fseek(opts.out, 0, 0);
+			fz_fseek(opts.out, 0, 0);
 			writeobjects(ctx, doc, &opts, 1);
 
 			padto(opts.out, opts.main_xref_offset);
@@ -2776,7 +2776,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 		}
 		else
 		{
-			opts.first_xref_offset = ftell(opts.out);
+			opts.first_xref_offset = fz_ftell(opts.out);
 			if (opts.do_incremental && doc->has_xref_streams)
 				writexrefstream(ctx, doc, &opts, 0, xref_len, 1, 0, opts.first_xref_offset);
 			else

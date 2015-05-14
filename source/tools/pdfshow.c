@@ -239,7 +239,7 @@ int pdfshow_main(int argc, char **argv)
 	out = stdout;
 	if (output)
 	{
-		out = fopen(output, "wb");
+		out = fz_fopen(output, "wb");
 		if (!out)
 		{
 			fprintf(stderr, "cannot open output file: '%s'\n", output);

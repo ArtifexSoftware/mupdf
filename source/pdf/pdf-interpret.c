@@ -1029,7 +1029,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 						pdf_array_push_drop(ctx, csi->obj, pdf_new_real(ctx, doc, buf->f));
 						break;
 					case PDF_TOK_INT:
-						pdf_array_push_drop(ctx, csi->obj, pdf_new_int(ctx, doc, buf->i));
+						pdf_array_push_drop(ctx, csi->obj, pdf_new_int_offset(ctx, doc, buf->i));
 						break;
 					case PDF_TOK_STRING:
 						pdf_array_push_drop(ctx, csi->obj, pdf_new_string(ctx, doc, buf->scratch, buf->len));

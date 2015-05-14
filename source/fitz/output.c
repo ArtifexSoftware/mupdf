@@ -45,7 +45,7 @@ fz_new_output_to_filename(fz_context *ctx, const char *filename)
 {
 	fz_output *out = NULL;
 
-	FILE *file = fopen(filename, "wb");
+	FILE *file = fz_fopen(filename, "wb");
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 

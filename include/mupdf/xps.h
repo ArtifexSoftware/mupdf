@@ -216,7 +216,7 @@ typedef struct xps_entry_s xps_entry;
 struct xps_entry_s
 {
 	char *name;
-	int offset;
+	fz_off_t offset;
 	int csize;
 	int usize;
 };

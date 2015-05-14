@@ -386,7 +386,7 @@ fz_has_archive_entry(fz_context *ctx, fz_archive *zip, const char *name)
 		fz_strlcpy(path, zip->directory, sizeof path);
 		fz_strlcat(path, "/", sizeof path);
 		fz_strlcat(path, name, sizeof path);
-		file = fopen(path, "rb");
+		file = fz_fopen(path, "rb");
 		if (file)
 			fclose(file);
 		return file != NULL;

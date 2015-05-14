@@ -81,13 +81,13 @@ static int next_file(fz_context *ctx, fz_stream *stm, int n)
 	return *stm->rp++;
 }
 
-static void seek_file(fz_context *ctx, fz_stream *stm, int offset, int whence)
+static void seek_file(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence)
 {
 	fz_file_stream *state = stm->state;
-	int n = fseek(state->file, offset, whence);
+	fz_off_t n = fz_fseek(state->file, offset, whence);
 	if (n < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek: %s", strerror(errno));
-	stm->pos = ftell(state->file);
+	stm->pos = fz_ftell(state->file);
 	stm->rp = state->buffer;
 	stm->wp = state->buffer;
 }
@@ -139,7 +139,7 @@ fz_open_file(fz_context *ctx, const char *name)
 	f = _wfopen(wname, L"rb");
 	fz_free(ctx, wname);
 #else
-	f = fopen(name, "rb");
+	f = fz_fopen(name, "rb");
 #endif
 	if (f == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open %s", name);
@@ -164,9 +164,9 @@ static int next_buffer(fz_context *ctx, fz_stream *stm, int max)
 	return EOF;
 }
 
-static void seek_buffer(fz_context *ctx, fz_stream *stm, int offset, int whence)
+static void seek_buffer(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence)
 {
-	int pos = stm->pos - (stm->wp - stm->rp);
+	fz_off_t pos = stm->pos - (stm->wp - stm->rp);
 	/* Convert to absolute pos */
 	if (whence == 1)
 	{
@@ -181,7 +181,7 @@ static void seek_buffer(fz_context *ctx, fz_stream *stm, int offset, int whence)
 		offset = 0;
 	if (offset > stm->pos)
 		offset = stm->pos;
-	stm->rp += offset - pos;
+	stm->rp += (int)(offset - pos);
 }
 
 static void close_buffer(fz_context *ctx, void *state_)

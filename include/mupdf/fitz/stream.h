@@ -104,7 +104,7 @@ void fz_drop_stream(fz_context *ctx, fz_stream *stm);
 /*
 	fz_tell: return the current reading position within a stream
 */
-int fz_tell(fz_context *ctx, fz_stream *stm);
+fz_off_t fz_tell(fz_context *ctx, fz_stream *stm);
 
 /*
 	fz_seek: Seek within a stream.
@@ -115,7 +115,7 @@ int fz_tell(fz_context *ctx, fz_stream *stm);
 
 	whence: From where the offset is measured (see fseek).
 */
-void fz_seek(fz_context *ctx, fz_stream *stm, int offset, int whence);
+void fz_seek(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence);
 
 /*
 	fz_read: Read from a stream into a given data block.
@@ -157,7 +157,7 @@ int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr
 
 typedef int (fz_stream_next_fn)(fz_context *ctx, fz_stream *stm, int max);
 typedef void (fz_stream_close_fn)(fz_context *ctx, void *state);
-typedef void (fz_stream_seek_fn)(fz_context *ctx, fz_stream *stm, int offset, int whence);
+typedef void (fz_stream_seek_fn)(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence);
 typedef int (fz_stream_meta_fn)(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
 
 struct fz_stream_s
@@ -165,7 +165,7 @@ struct fz_stream_s
 	int refs;
 	int error;
 	int eof;
-	int pos;
+	fz_off_t pos;
 	int avail;
 	int bits;
 	unsigned char *rp, *wp;

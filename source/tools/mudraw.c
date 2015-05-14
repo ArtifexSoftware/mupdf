@@ -424,7 +424,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		else
 		{
 			sprintf(buf, output, pagenum);
-			file = fopen(buf, "wb");
+			file = fz_fopen(buf, "wb");
 			if (file == NULL)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", buf, strerror(errno));
 		}

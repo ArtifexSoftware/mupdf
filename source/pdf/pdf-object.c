@@ -42,7 +42,7 @@ typedef struct pdf_obj_num_s
 	pdf_obj super;
 	union
 	{
-		int i;
+		fz_off_t i;
 		float f;
 	} u;
 } pdf_obj_num;
@@ -112,6 +112,18 @@ pdf_new_int(fz_context *ctx, pdf_document *doc, int i)
 {
 	pdf_obj_num *obj;
 	obj = Memento_label(fz_malloc(ctx, sizeof(pdf_obj_num)), "pdf_obj(int)");
+	obj->super.refs = 1;
+	obj->super.kind = PDF_INT;
+	obj->super.flags = 0;
+	obj->u.i = i;
+	return &obj->super;
+}
+
+pdf_obj *
+pdf_new_int_offset(fz_context *ctx, pdf_document *doc, fz_off_t i)
+{
+	pdf_obj_num *obj;
+	obj = Memento_label(fz_malloc(ctx, sizeof(pdf_obj_num)), "pdf_obj(offset)");
 	obj->super.refs = 1;
 	obj->super.kind = PDF_INT;
 	obj->super.flags = 0;
@@ -268,9 +280,21 @@ int pdf_to_int(fz_context *ctx, pdf_obj *obj)
 	if (obj < PDF_OBJ__LIMIT)
 		return 0;
 	if (obj->kind == PDF_INT)
-		return NUM(obj)->u.i;
+		return (int)NUM(obj)->u.i;
 	if (obj->kind == PDF_REAL)
 		return (int)(NUM(obj)->u.f + 0.5f); /* No roundf in MSVC */
+	return 0;
+}
+
+fz_off_t pdf_to_offset(fz_context *ctx, pdf_obj *obj)
+{
+	RESOLVE(obj);
+	if (obj < PDF_OBJ__LIMIT)
+		return 0;
+	if (obj->kind == PDF_INT)
+		return NUM(obj)->u.i;
+	if (obj->kind == PDF_REAL)
+		return (fz_off_t)(NUM(obj)->u.f + 0.5f); /* No roundf in MSVC */
 	return 0;
 }
 

@@ -229,7 +229,7 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 {
 	pdf_obj *ary = NULL;
 	pdf_obj *obj = NULL;
-	int a = 0, b = 0, n = 0;
+	fz_off_t a = 0, b = 0, n = 0;
 	pdf_token tok;
 	pdf_obj *op = NULL;
 
@@ -247,14 +247,14 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 			{
 				if (n > 0)
 				{
-					obj = pdf_new_int(ctx, doc, a);
+					obj = pdf_new_int_offset(ctx, doc, a);
 					pdf_array_push(ctx, ary, obj);
 					pdf_drop_obj(ctx, obj);
 					obj = NULL;
 				}
 				if (n > 1)
 				{
-					obj = pdf_new_int(ctx, doc, b);
+					obj = pdf_new_int_offset(ctx, doc, b);
 					pdf_array_push(ctx, ary, obj);
 					pdf_drop_obj(ctx, obj);
 					obj = NULL;
@@ -264,7 +264,7 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 
 			if (tok == PDF_TOK_INT && n == 2)
 			{
-				obj = pdf_new_int(ctx, doc, a);
+				obj = pdf_new_int_offset(ctx, doc, a);
 				pdf_array_push(ctx, ary, obj);
 				pdf_drop_obj(ctx, obj);
 				obj = NULL;
@@ -370,7 +370,7 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 	pdf_obj *key = NULL;
 	pdf_obj *val = NULL;
 	pdf_token tok;
-	int a, b;
+	fz_off_t a, b;
 
 	dict = pdf_new_dict(ctx, doc, 8);
 
@@ -421,7 +421,7 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 				if (tok == PDF_TOK_CLOSE_DICT || tok == PDF_TOK_NAME ||
 					(tok == PDF_TOK_KEYWORD && !strcmp(buf->scratch, "ID")))
 				{
-					val = pdf_new_int(ctx, doc, a);
+					val = pdf_new_int_offset(ctx, doc, a);
 					pdf_dict_put(ctx, dict, key, val);
 					pdf_drop_obj(ctx, val);
 					val = NULL;
@@ -481,7 +481,7 @@ pdf_parse_stm_obj(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbu
 	case PDF_TOK_TRUE: return pdf_new_bool(ctx, doc, 1); break;
 	case PDF_TOK_FALSE: return pdf_new_bool(ctx, doc, 0); break;
 	case PDF_TOK_NULL: return pdf_new_null(ctx, doc); break;
-	case PDF_TOK_INT: return pdf_new_int(ctx, doc, buf->i); break;
+	case PDF_TOK_INT: return pdf_new_int_offset(ctx, doc, buf->i); break;
 	default: fz_throw(ctx, FZ_ERROR_GENERIC, "unknown token in object stream");
 	}
 }
@@ -489,12 +489,13 @@ pdf_parse_stm_obj(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbu
 pdf_obj *
 pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 	fz_stream *file, pdf_lexbuf *buf,
-	int *onum, int *ogen, int *ostmofs, int *try_repair)
+	int *onum, int *ogen, fz_off_t *ostmofs, int *try_repair)
 {
 	pdf_obj *obj = NULL;
-	int num = 0, gen = 0, stm_ofs;
+	int num = 0, gen = 0;
+	fz_off_t stm_ofs;
 	pdf_token tok;
-	int a, b;
+	fz_off_t a, b;
 
 	fz_var(obj);
 
@@ -549,7 +550,7 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 
 		if (tok == PDF_TOK_STREAM || tok == PDF_TOK_ENDOBJ)
 		{
-			obj = pdf_new_int(ctx, doc, a);
+			obj = pdf_new_int_offset(ctx, doc, a);
 			goto skip;
 		}
 		if (tok == PDF_TOK_INT)

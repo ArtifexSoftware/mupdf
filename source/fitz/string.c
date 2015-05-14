@@ -376,3 +376,10 @@ int fz_atoi(const char *s)
 		return 0;
 	return atoi(s);
 }
+
+fz_off_t fz_atoo(const char *s)
+{
+	if (s == NULL)
+		return 0;
+	return fz_atoo_imp(s);
+}

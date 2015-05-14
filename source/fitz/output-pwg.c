@@ -263,7 +263,7 @@ fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, con
 	FILE *fp;
 	fz_output *out = NULL;
 
-	fp = fopen(filename, append ? "ab" : "wb");
+	fp = fz_fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
@@ -294,7 +294,7 @@ fz_write_pwg_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int appe
 	FILE *fp;
 	fz_output *out = NULL;
 
-	fp = fopen(filename, append ? "ab" : "wb");
+	fp = fz_fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));

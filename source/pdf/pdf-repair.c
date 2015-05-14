@@ -15,7 +15,7 @@ struct entry
 };
 
 int
-pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, int *tmpofs)
+pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, fz_off_t *tmpofs)
 {
 	fz_stream *file = doc->file;
 	pdf_token tok;
@@ -250,8 +250,8 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 	int num = 0;
 	int gen = 0;
-	int tmpofs, numofs = 0, genofs = 0;
-	int stm_len, stm_ofs;
+	fz_off_t tmpofs, stm_ofs, numofs = 0, genofs = 0;
+	int stm_len;
 	pdf_token tok;
 	int next;
 	int i, n, c;
@@ -626,6 +626,6 @@ pdf_repair_obj_stms(fz_context *ctx, pdf_document *doc)
 		pdf_xref_entry *entry = pdf_get_populating_xref_entry(ctx, doc, i);
 
 		if (entry->type == 'o' && pdf_get_populating_xref_entry(ctx, doc, entry->ofs)->type != 'n')
-			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to non-object-stream: %d (%d 0 R)", entry->ofs, i);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to non-object-stream: %d (%d 0 R)", (int)entry->ofs, i);
 	}
 }

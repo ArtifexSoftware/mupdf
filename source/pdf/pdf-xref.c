@@ -267,7 +267,7 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 	/* Didn't find the entry in any section. Return the entry from
 	 * the final section. */
 	doc->xref_index[i] = 0;
-	if (i < xref->num_objects)
+	if (xref == NULL || i < xref->num_objects)
 	{
 		xref = &doc->xref_sections[0];
 		for (sub = xref->subsec; sub != NULL; sub = sub->next)
@@ -478,14 +478,14 @@ static void
 pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 {
 	unsigned char buf[1024];
-	int t, n;
-	int i;
+	int i, n;
+	fz_off_t t;
 
 	fz_seek(ctx, doc->file, 0, SEEK_END);
 
 	doc->file_size = fz_tell(ctx, doc->file);
 
-	t = fz_maxi(0, doc->file_size - (int)sizeof buf);
+	t = fz_maxo(0, doc->file_size - (fz_off_t)sizeof buf);
 	fz_seek(ctx, doc->file, t, SEEK_SET);
 
 	n = fz_read(ctx, doc->file, buf, sizeof buf);
@@ -522,7 +522,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 	pdf_token tok;
 	int c;
 	int size;
-	int ofs;
+	fz_off_t ofs;
 	pdf_obj *trailer = NULL;
 
 	fz_var(trailer);
@@ -601,7 +601,7 @@ pdf_new_ref(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 }
 
 static pdf_xref_entry *
-pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int ofs, int len)
+pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, fz_off_t ofs, int len)
 {
 	pdf_xref *xref = &doc->xref_sections[doc->num_xref_sections-1];
 	pdf_xref_subsec *sub;
@@ -663,11 +663,12 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 {
 	fz_stream *file = doc->file;
 
-	int ofs, len;
+	fz_off_t ofs;
+	int len;
 	char *s;
 	int n;
 	pdf_token tok;
-	int i;
+	fz_off_t i;
 	int c;
 	pdf_obj *trailer;
 	int xref_len = pdf_xref_size_from_old_trailer(ctx, doc, buf);
@@ -685,7 +686,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		fz_read_line(ctx, file, buf->scratch, buf->size);
 		s = buf->scratch;
-		ofs = fz_atoi(fz_strsep(&s, " "));
+		ofs = fz_atoo(fz_strsep(&s, " "));
 		len = fz_atoi(fz_strsep(&s, " "));
 
 		/* broken pdfs where the section is not on a separate line */
@@ -696,7 +697,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 		}
 
 		if (ofs < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "out of range object num in xref: %d", ofs);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "out of range object num in xref: %d", (int)ofs);
 
 		/* broken pdfs where size in trailer undershoots entries in xref sections */
 		if (ofs + len > xref_len)
@@ -720,11 +721,11 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 				while (*s != '\0' && iswhite(*s))
 					s++;
 
-				entry->ofs = atoi(s);
-				entry->gen = atoi(s + 11);
+				entry->ofs = fz_atoo(s);
+				entry->gen = fz_atoi(s + 11);
 				entry->type = s[17];
 				if (s[17] != 'f' && s[17] != 'n' && s[17] != 'o')
-					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: %#x (%d %d R)", s[17], i, entry->gen);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: %#x (%d %d R)", s[17], (int)i, entry->gen);
 			}
 		}
 	}
@@ -749,7 +750,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 }
 
 static void
-pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, int i0, int i1, int w0, int w1, int w2)
+pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, fz_off_t i0, int i1, int w0, int w1, int w2)
 {
 	pdf_xref_entry *table;
 	int i, n;
@@ -764,7 +765,7 @@ pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, in
 	{
 		pdf_xref_entry *entry = &table[i-i0];
 		int a = 0;
-		int b = 0;
+		fz_off_t b = 0;
 		int c = 0;
 
 		if (fz_is_eof(ctx, stm))
@@ -797,7 +798,8 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	pdf_obj *trailer = NULL;
 	pdf_obj *index = NULL;
 	pdf_obj *obj = NULL;
-	int num, gen, ofs, stm_ofs;
+	int num, gen;
+	fz_off_t ofs, stm_ofs;
 	int size, w0, w1, w2;
 	int t;
 
@@ -883,7 +885,7 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 }
 
 static pdf_obj *
-pdf_read_xref(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf)
+pdf_read_xref(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf)
 {
 	pdf_obj *trailer;
 	int c;
@@ -905,7 +907,7 @@ pdf_read_xref(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read xref (ofs=%d)", ofs);
+		fz_rethrow_message(ctx, "cannot read xref (ofs=%d)", (int)ofs);
 	}
 	return trailer;
 }
@@ -916,15 +918,15 @@ struct ofs_list_s
 {
 	int max;
 	int len;
-	int *list;
+	fz_off_t *list;
 };
 
-static int
-read_xref_section(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf, ofs_list *offsets)
+static fz_off_t
+read_xref_section(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf, ofs_list *offsets)
 {
 	pdf_obj *trailer = NULL;
-	int xrefstmofs = 0;
-	int prevofs = 0;
+	fz_off_t xrefstmofs = 0;
+	fz_off_t prevofs = 0;
 
 	fz_var(trailer);
 
@@ -939,12 +941,12 @@ read_xref_section(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf, 
 		}
 		if (i < offsets->len)
 		{
-			fz_warn(ctx, "ignoring xref recursion with offset %d", ofs);
+			fz_warn(ctx, "ignoring xref recursion with offset %d", (int)ofs);
 			break;
 		}
 		if (offsets->len == offsets->max)
 		{
-			offsets->list = fz_resize_array(ctx, offsets->list, offsets->max*2, sizeof(int));
+			offsets->list = fz_resize_array(ctx, offsets->list, offsets->max*2, sizeof(*offsets->list));
 			offsets->max *= 2;
 		}
 		offsets->list[offsets->len++] = ofs;
@@ -955,7 +957,7 @@ read_xref_section(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf, 
 
 		/* FIXME: do we overwrite free entries properly? */
 		/* FIXME: Does this work properly with progression? */
-		xrefstmofs = pdf_to_int(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_XRefStm));
+		xrefstmofs = pdf_to_offset(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_XRefStm));
 		if (xrefstmofs)
 		{
 			if (xrefstmofs < 0)
@@ -969,7 +971,8 @@ read_xref_section(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf, 
 			pdf_drop_obj(ctx, pdf_read_xref(ctx, doc, xrefstmofs, buf));
 		}
 
-		prevofs = pdf_to_int(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_Prev));
+		/* FIXME: pdf_to_offset? */
+		prevofs = pdf_to_offset(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_Prev));
 		if (prevofs < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "negative xref stream offset for previous xref stream");
 	}
@@ -979,20 +982,20 @@ read_xref_section(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf, 
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read xref at offset %d", ofs);
+		fz_rethrow_message(ctx, "cannot read xref at offset %d", (int)ofs);
 	}
 
 	return prevofs;
 }
 
 static void
-pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int ofs, pdf_lexbuf *buf, int read_previous)
+pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf, int read_previous)
 {
 	ofs_list list;
 
 	list.len = 0;
 	list.max = 10;
-	list.list = fz_malloc_array(ctx, 10, sizeof(int));
+	list.list = fz_malloc_array(ctx, 10, sizeof(*list.list));
 	fz_try(ctx)
 	{
 		while(ofs)
@@ -1084,11 +1087,11 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 			if (entry->ofs == 0)
 				entry->type = 'f';
 			else if (entry->ofs <= 0 || entry->ofs >= doc->file_size)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "object offset out of range: %d (%d 0 R)", entry->ofs, i);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "object offset out of range: %d (%d 0 R)", (int)entry->ofs, i);
 		}
 		if (entry->type == 'o')
 			if (entry->ofs <= 0 || entry->ofs >= xref_len || pdf_get_xref_entry(ctx, doc, entry->ofs)->type != 'n')
-				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", entry->ofs, i);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)entry->ofs, i);
 	}
 }
 
@@ -1098,7 +1101,8 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 	pdf_obj *dict = NULL;
 	pdf_obj *hint = NULL;
 	pdf_obj *o;
-	int num, gen, stmofs, lin, len;
+	int num, gen, lin, len;
+	fz_off_t stmofs;
 
 	fz_var(dict);
 	fz_var(hint);
@@ -1535,10 +1539,10 @@ pdf_print_xref(fz_context *ctx, pdf_document *doc)
 	{
 		pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
 		printf("%05d: %010d %05d %c (stm_ofs=%d; stm_buf=%p)\n", i,
-			entry->ofs,
+			(int)entry->ofs,
 			entry->gen,
 			entry->type ? entry->type : '-',
-			entry->stm_ofs,
+			(int)entry->stm_ofs,
 			entry->stm_buf);
 	}
 }
@@ -1553,10 +1557,10 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbu
 	fz_stream *stm = NULL;
 	pdf_obj *objstm = NULL;
 	int *numbuf = NULL;
-	int *ofsbuf = NULL;
+	fz_off_t *ofsbuf = NULL;
 
 	pdf_obj *obj;
-	int first;
+	fz_off_t first;
 	int count;
 	int i;
 	pdf_token tok;
@@ -1579,8 +1583,8 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbu
 		if (first < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "first object in object stream resides outside stream");
 
-		numbuf = fz_calloc(ctx, count, sizeof(int));
-		ofsbuf = fz_calloc(ctx, count, sizeof(int));
+		numbuf = fz_calloc(ctx, count, sizeof(*numbuf));
+		ofsbuf = fz_calloc(ctx, count, sizeof(*ofsbuf));
 
 		stm = pdf_open_stream(ctx, doc, num, gen);
 		for (i = 0; i < count; i++)
@@ -1659,13 +1663,13 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbu
  * object loading
  */
 static int
-pdf_obj_read(fz_context *ctx, pdf_document *doc, int *offset, int *nump, pdf_obj **page)
+pdf_obj_read(fz_context *ctx, pdf_document *doc, fz_off_t *offset, int *nump, pdf_obj **page)
 {
 	pdf_lexbuf *buf = &doc->lexbuf.base;
-	int num, numofs, gen, genofs, stmofs, tmpofs, tok;
+	int num, gen, tok;
+	fz_off_t numofs, genofs, stmofs, tmpofs, newtmpofs;
 	int xref_len;
 	pdf_xref_entry *entry;
-	int newtmpofs;
 
 	numofs = *offset;
 	fz_seek(ctx, doc->file, numofs, SEEK_SET);
@@ -1824,7 +1828,7 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 	 * there. */
 	int expected = num;
 	int curr_pos;
-	int start, offset;
+	fz_off_t start, offset;
 
 	while (doc->hint_obj_offsets[expected] == 0 && expected > 0)
 		expected--;
@@ -2500,7 +2504,7 @@ static void
 pdf_load_hint_object(fz_context *ctx, pdf_document *doc)
 {
 	pdf_lexbuf *buf = &doc->lexbuf.base;
-	int curr_pos;
+	fz_off_t curr_pos;
 
 	curr_pos = fz_tell(ctx, doc->file);
 	fz_seek(ctx, doc->file, doc->hint_object_offset, SEEK_SET);
@@ -2509,7 +2513,8 @@ pdf_load_hint_object(fz_context *ctx, pdf_document *doc)
 		while (1)
 		{
 			pdf_obj *page = NULL;
-			int tmpofs, num, gen, tok;
+			fz_off_t tmpofs;
+			int num, gen, tok;
 
 			tok = pdf_lex(ctx, doc->file, buf);
 			if (tok != PDF_TOK_INT)

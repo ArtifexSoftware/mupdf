@@ -24,7 +24,7 @@ struct pdf_lexbuf_s
 	int size;
 	int base_size;
 	int len;
-	int i;
+	fz_off_t i;
 	float f;
 	char *scratch;
 	char buffer[PDF_LEXBUF_SMALL];
@@ -170,8 +170,8 @@ struct pdf_document_s
 	fz_stream *file;
 
 	int version;
-	int startxref;
-	int file_size;
+	fz_off_t startxref;
+	fz_off_t file_size;
 	pdf_crypt *crypt;
 	pdf_ocg_descriptor *ocg;
 	pdf_hotspot hotspot;
@@ -190,14 +190,14 @@ struct pdf_document_s
 
 	/* State indicating which file parsing method we are using */
 	int file_reading_linearly;
-	int file_length;
+	fz_off_t file_length;
 
 	pdf_obj *linear_obj; /* Linearized object (if used) */
 	pdf_obj **linear_page_refs; /* Page objects for linear loading */
 	int linear_page1_obj_num;
 
 	/* The state for the pdf_progressive_advance parser */
-	int linear_pos;
+	fz_off_t linear_pos;
 	int linear_page_num;
 
 	int hint_object_offset;
@@ -221,17 +221,17 @@ struct pdf_document_s
 	struct
 	{
 		int number; /* Page object number */
-		int offset; /* Offset of page object */
-		int index; /* Index into shared hint_shared_ref */
+		fz_off_t offset; /* Offset of page object */
+		fz_off_t index; /* Index into shared hint_shared_ref */
 	} *hint_page;
 	int *hint_shared_ref;
 	struct
 	{
 		int number; /* Object number of first object */
-		int offset; /* Offset of first object */
+		fz_off_t offset; /* Offset of first object */
 	} *hint_shared;
 	int hint_obj_offsets_max;
-	int *hint_obj_offsets;
+	fz_off_t *hint_obj_offsets;
 
 	int resources_localised;
 

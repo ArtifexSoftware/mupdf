@@ -450,7 +450,7 @@ static curl_stream_state hack;
 static int hack_pos;
 
 static void
-stream_seek(fz_context *ctx, fz_stream *stream, int offset, int whence)
+stream_seek(fz_context *ctx, fz_stream *stream, fz_off_t offset, int whence)
 {
 	curl_stream_state *state = (curl_stream_state *)stream->state;
 

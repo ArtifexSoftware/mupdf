@@ -638,11 +638,11 @@ void pdf_write_digest(fz_context *ctx, pdf_document *doc, char *filename, pdf_ob
 		if (p7_len*2 + 2 > digest_length)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Insufficient space for digest");
 
-		f = fopen(filename, "rb+");
+		f = fz_fopen(filename, "rb+");
 		if (f == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to write digest");
 
-		fseek(f, digest_offset+1, SEEK_SET);
+		fz_fseek(f, digest_offset+1, SEEK_SET);
 
 		for (i = 0; i < p7_len; i++)
 			fprintf(f, "%02x", p7_ptr[i]);

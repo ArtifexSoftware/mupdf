@@ -10,7 +10,7 @@
 typedef struct fz_jbig2_globals_s fz_jbig2_globals;
 
 fz_stream *fz_open_copy(fz_context *ctx, fz_stream *chain);
-fz_stream *fz_open_null(fz_context *ctx, fz_stream *chain, int len, int offset);
+fz_stream *fz_open_null(fz_context *ctx, fz_stream *chain, int len, fz_off_t offset);
 fz_stream *fz_open_concat(fz_context *ctx, int max, int pad);
 void fz_concat_push(fz_context *ctx, fz_stream *concat, fz_stream *chain); /* Ownership of chain is passed in */
 fz_stream *fz_open_arc4(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned keylen);

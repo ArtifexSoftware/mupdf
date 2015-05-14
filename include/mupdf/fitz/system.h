@@ -1,6 +1,15 @@
 #ifndef MUPDF_FITZ_SYSTEM_H
 #define MUPDF_FITZ_SYSTEM_H
 
+/* The very first decision we need to make is, are we using the 64bit
+ * file pointers code. This must happen before the stdio.h include. */
+#ifdef FZ_LARGEFILE
+/* Set _LARGEFILE64_SOURCE so that we know fopen64 et al will be declared. */
+#ifndef _LARGEFILE64_SOURCE
+#define _LARGEFILE64_SOURCE
+#endif
+#endif
+
 /*
 	Include the standard libc headers.
 */
@@ -100,7 +109,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 FILE *fz_fopen_utf8(const char *name, const char *mode);
 
-#define fopen fz_fopen_utf8
+#define fz_fopen fz_fopen_utf8
 
 char *fz_utf8_from_wchar(const wchar_t *s);
 wchar_t *fz_wchar_from_utf8(const char *s);
@@ -108,6 +117,10 @@ wchar_t *fz_wchar_from_utf8(const char *s);
 FILE *fz_fopen_utf8(const char *name, const char *mode);
 char **fz_argv_from_wargv(int argc, wchar_t **wargv);
 void fz_free_argv(int argc, char **argv);
+
+#define fseeko64 _fseeki64
+#define ftello64 _ftelli64
+#define atoll _atoi64
 
 #else /* Unix or close enough */
 
@@ -121,6 +134,25 @@ void fz_free_argv(int argc, char **argv);
 #define va_copy_end(a) va_end(a)
 
 #endif
+
+#ifdef FZ_LARGEFILE
+#ifndef fz_fopen
+#define fz_fopen fopen64
+#endif
+typedef int64_t fz_off_t;
+#define fz_fseek fseeko64
+#define fz_ftell ftello64
+#define fz_atoo_imp atoll
+#else
+#ifndef fz_fopen
+#define fz_fopen fopen
+#endif
+#define fz_fseek fseek
+#define fz_ftell ftell
+typedef int fz_off_t;
+#define fz_atoo_imp atoi
+#endif
+
 
 #ifdef __ANDROID__
 #include <android/log.h>

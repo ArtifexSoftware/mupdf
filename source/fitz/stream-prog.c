@@ -20,8 +20,8 @@ show_progress(int av, int pos)
 typedef struct prog_state
 {
 	FILE *file;
-	int length;
-	int available;
+	fz_off_t length;
+	fz_off_t available;
 	int bps;
 	clock_t start_time;
 	unsigned char buffer[4096];
@@ -39,7 +39,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 	/* Simulate more data having arrived */
 	if (ps->available < ps->length)
 	{
-		int av = (int)((float)(clock() - ps->start_time) * ps->bps / (CLOCKS_PER_SEC*8));
+		fz_off_t av = (fz_off_t)((double)(clock() - ps->start_time) * ps->bps / (CLOCKS_PER_SEC*8));
 		if (av > ps->length)
 			av = ps->length;
 		ps->available = av;
@@ -66,7 +66,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 	return *stm->rp++;
 }
 
-static void seek_prog(fz_context *ctx, fz_stream *stm, int offset, int whence)
+static void seek_prog(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence)
 {
 	prog_state *ps = (prog_state *)stm->state;
 
@@ -105,7 +105,7 @@ static void seek_prog(fz_context *ctx, fz_stream *stm, int offset, int whence)
 		}
 	}
 
-	if (fseek(ps->file, offset, whence) != 0)
+	if (fz_fseek(ps->file, offset, whence) != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek: %s", strerror(errno));
 	stm->pos = offset;
 	stm->wp = stm->rp;
@@ -144,9 +144,9 @@ fz_open_file_ptr_progressive(fz_context *ctx, FILE *file, int bps)
 	state->start_time = clock();
 	state->available = 0;
 
-	fseek(state->file, 0, SEEK_END);
-	state->length = ftell(state->file);
-	fseek(state->file, 0, SEEK_SET);
+	fz_fseek(state->file, 0, SEEK_END);
+	state->length = fz_ftell(state->file);
+	fz_fseek(state->file, 0, SEEK_SET);
 
 	fz_try(ctx)
 	{
@@ -180,7 +180,7 @@ fz_open_file_progressive(fz_context *ctx, const char *name, int bps)
 	f = _wfopen(wname, L"rb");
 	fz_free(ctx, wname);
 #else
-	f = fopen(name, "rb");
+	f = fz_fopen(name, "rb");
 #endif
 	if (f == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open %s", name);

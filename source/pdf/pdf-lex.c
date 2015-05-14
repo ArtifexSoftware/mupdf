@@ -67,7 +67,7 @@ static int
 lex_number(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf, int c)
 {
 	int neg = 0;
-	int i = 0;
+	fz_off_t i = 0;
 	int n;
 	int d;
 	float v;

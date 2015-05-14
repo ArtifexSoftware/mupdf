@@ -1,10 +1,13 @@
 /* cmapdump.c -- parse a CMap file and dump it as a c-struct */
 
-#include <stdio.h>
-#include <string.h>
-
 /* We never want to build memento versions of the cmapdump util */
 #undef MEMENTO
+
+/* We never want large file access here */
+#undef FZ_LARGEFILE
+
+#include <stdio.h>
+#include <string.h>
 
 #include "mupdf/pdf.h"
 

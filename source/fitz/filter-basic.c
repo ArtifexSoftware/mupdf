@@ -14,7 +14,7 @@ struct null_filter
 {
 	fz_stream *chain;
 	int remain;
-	int offset;
+	fz_off_t offset;
 	unsigned char buffer[4096];
 };
 
@@ -54,7 +54,7 @@ close_null(fz_context *ctx, void *state_)
 }
 
 fz_stream *
-fz_open_null(fz_context *ctx, fz_stream *chain, int len, int offset)
+fz_open_null(fz_context *ctx, fz_stream *chain, int len, fz_off_t offset)
 {
 	struct null_filter *state;
 

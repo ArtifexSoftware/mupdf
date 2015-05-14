@@ -56,7 +56,7 @@ fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
 	unsigned char *p;
 	int h, bytestride;
 
-	fp = fopen(filename, "wb");
+	fp = fz_fopen(filename, "wb");
 	if (!fp)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 

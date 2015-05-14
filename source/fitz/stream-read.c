@@ -114,21 +114,21 @@ fz_read_line(fz_context *ctx, fz_stream *stm, char *mem, int n)
 		*s = '\0';
 }
 
-int
+fz_off_t
 fz_tell(fz_context *ctx, fz_stream *stm)
 {
 	return stm->pos - (stm->wp - stm->rp);
 }
 
 void
-fz_seek(fz_context *ctx, fz_stream *stm, int offset, int whence)
+fz_seek(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence)
 {
 	stm->avail = 0; /* Reset bit reading */
 	if (stm->seek)
 	{
 		if (whence == 1)
 		{
-			offset = fz_tell(ctx, stm) + offset;
+			offset += fz_tell(ctx, stm);
 			whence = 0;
 		}
 		stm->seek(ctx, stm, offset, whence);

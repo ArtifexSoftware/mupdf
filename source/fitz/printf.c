@@ -1,9 +1,5 @@
 #include "mupdf/fitz.h"
 
-/* This definition will be made elsewhere soon, but putting it here
- * temporarily means the commits can be sensibly ordered. */
-typedef int fz_off_t;
-
 static const char *fz_hex_digits = "0123456789abcdef";
 
 struct fmtbuf

@@ -795,7 +795,7 @@ fz_write_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, fz_
 	FILE *fp;
 	fz_output *out = NULL;
 
-	fp = fopen(filename, append ? "ab" : "wb");
+	fp = fz_fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
@@ -824,7 +824,7 @@ fz_write_pcl_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int appe
 	FILE *fp;
 	fz_output *out = NULL;
 
-	fp = fopen(filename, append ? "ab" : "wb");
+	fp = fz_fopen(filename, append ? "ab" : "wb");
 	if (!fp)
 	{
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));

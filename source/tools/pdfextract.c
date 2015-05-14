@@ -142,7 +142,7 @@ static void savefont(pdf_obj *dict, int num)
 	snprintf(namebuf, sizeof(namebuf), "%s-%04d.%s", fontname, num, ext);
 	printf("extracting font %s\n", namebuf);
 
-	f = fopen(namebuf, "wb");
+	f = fz_fopen(namebuf, "wb");
 	if (!f)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create font file");
 
