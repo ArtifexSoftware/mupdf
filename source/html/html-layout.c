@@ -99,43 +99,13 @@ static void generate_text(fz_context *ctx, fz_html *box, const char *text)
 {
 	fz_html *flow;
 
-	int collapse; /* collapse sequences of white space */
-	int bsp; /* allow breaks at white space */
-	int bnl; /* force breaks at newline characters */
+	int collapse = box->style.white_space & WS_COLLAPSE;
+	int bsp = box->style.white_space & WS_ALLOW_BREAK_SPACE;
+	int bnl = box->style.white_space & WS_FORCE_BREAK_NEWLINE;
 
 	flow = box;
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
-
-	switch (box->style.white_space)
-	{
-	default:
-	case WS_NORMAL:
-		collapse = 1;
-		bsp = 1;
-		bnl = 0;
-		break;
-	case WS_PRE:
-		collapse = 0;
-		bsp = 0;
-		bnl = 1;
-		break;
-	case WS_NOWRAP:
-		collapse = 1;
-		bsp = 0;
-		bnl = 0;
-		break;
-	case WS_PRE_WRAP:
-		collapse = 0;
-		bsp = 1;
-		bnl = 1;
-		break;
-	case WS_PRE_LINE:
-		collapse = 1;
-		bsp = 1;
-		bnl = 1;
-		break;
-	}
 
 	while (*text)
 	{
