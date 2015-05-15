@@ -4,7 +4,6 @@ static const char *inherit_list[] = {
 	"color",
 	"direction",
 	"font-family",
-	"font-size",
 	"font-style",
 	"font-variant",
 	"font-weight",
@@ -665,7 +664,8 @@ value_from_property(fz_css_match *match, const char *name)
 	if (match->up)
 	{
 		if (value && !strcmp(value->data, "inherit"))
-			return value_from_property(match->up, name);
+			if (strcmp(name, "font-size") != 0) /* never inherit 'font-size' textually */
+				return value_from_property(match->up, name);
 		if (!value && keyword_in_list(name, inherit_list, nelem(inherit_list)))
 			return value_from_property(match->up, name);
 	}
