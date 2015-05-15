@@ -1016,19 +1016,20 @@ pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *new_obj)
 	DICT(obj)->items[i].v = new_obj;
 }
 
+/* Returns 0 <= i < len for key found. Returns -1-len < i <= -1 for key
+ * not found, but with insertion point -1-i. */
 static int
-pdf_dict_finds(fz_context *ctx, pdf_obj *obj, const char *key, int *location)
+pdf_dict_finds(fz_context *ctx, pdf_obj *obj, const char *key)
 {
-	if ((obj->flags & PDF_FLAGS_SORTED) && DICT(obj)->len > 0)
+	int len = DICT(obj)->len;
+	if ((obj->flags & PDF_FLAGS_SORTED) && len > 0)
 	{
 		int l = 0;
-		int r = DICT(obj)->len - 1;
+		int r = len - 1;
 
 		if (strcmp(pdf_to_name(ctx, DICT(obj)->items[r].k), key) < 0)
 		{
-			if (location)
-				*location = r + 1;
-			return -1;
+			return -1 - (r+1);
 		}
 
 		while (l <= r)
@@ -1041,40 +1042,34 @@ pdf_dict_finds(fz_context *ctx, pdf_obj *obj, const char *key, int *location)
 				l = m + 1;
 			else
 				return m;
-
-			if (location)
-				*location = l;
 		}
+		return -1 - l;
 	}
 
 	else
 	{
 		int i;
-		for (i = 0; i < DICT(obj)->len; i++)
+		for (i = 0; i < len; i++)
 			if (strcmp(pdf_to_name(ctx, DICT(obj)->items[i].k), key) == 0)
 				return i;
 
-		if (location)
-			*location = DICT(obj)->len;
+		return -1 - len;
 	}
-
-	return -1;
 }
 
 static int
-pdf_dict_find(fz_context *ctx, pdf_obj *obj, pdf_obj *key, int *location)
+pdf_dict_find(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 {
-	if ((obj->flags & PDF_FLAGS_SORTED) && DICT(obj)->len > 0)
+	int len = DICT(obj)->len;
+	if ((obj->flags & PDF_FLAGS_SORTED) && len > 0)
 	{
 		int l = 0;
-		int r = DICT(obj)->len - 1;
+		int r = len - 1;
 		pdf_obj *k = DICT(obj)->items[r].k;
 
 		if (k == key || (k >= PDF_OBJ__LIMIT && strcmp(NAME(k)->n, PDF_NAMES[(intptr_t)key]) < 0))
 		{
-			if (location)
-				*location = r + 1;
-			return -1;
+			return -1 - (r+1);
 		}
 
 		while (l <= r)
@@ -1090,15 +1085,13 @@ pdf_dict_find(fz_context *ctx, pdf_obj *obj, pdf_obj *key, int *location)
 				l = m + 1;
 			else
 				return m;
-
-			if (location)
-				*location = l;
 		}
+		return -1 - l;
 	}
 	else
 	{
 		int i;
-		for (i = 0; i < DICT(obj)->len; i++)
+		for (i = 0; i < len; i++)
 		{
 			pdf_obj *k = DICT(obj)->items[i].k;
 			if (k < PDF_OBJ__LIMIT)
@@ -1113,11 +1106,8 @@ pdf_dict_find(fz_context *ctx, pdf_obj *obj, pdf_obj *key, int *location)
 			}
 		}
 
-		if (location)
-			*location = DICT(obj)->len;
+		return -1 - len;
 	}
-
-	return -1;
 }
 
 pdf_obj *
@@ -1129,7 +1119,7 @@ pdf_dict_gets(fz_context *ctx, pdf_obj *obj, const char *key)
 	if (obj < PDF_OBJ__LIMIT || obj->kind != PDF_DICT)
 		return NULL;
 
-	i = pdf_dict_finds(ctx, obj, key, NULL);
+	i = pdf_dict_finds(ctx, obj, key);
 	if (i >= 0)
 		return DICT(obj)->items[i].v;
 
@@ -1198,9 +1188,9 @@ pdf_dict_get(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 		return NULL;
 
 	if (key < PDF_OBJ__LIMIT)
-		i = pdf_dict_find(ctx, obj, key, NULL);
+		i = pdf_dict_find(ctx, obj, key);
 	else
-		i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key), NULL);
+		i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key));
 	if (i >= 0)
 		return DICT(obj)->items[i].v;
 	return NULL;
@@ -1232,7 +1222,6 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 	RESOLVE(obj);
 	if (obj >= PDF_OBJ__LIMIT)
 	{
-		int location;
 		int i;
 
 		if (obj->kind != PDF_DICT)
@@ -1258,9 +1247,9 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 			pdf_sort_dict(ctx, obj);
 
 		if (key < PDF_OBJ__LIMIT)
-			i = pdf_dict_find(ctx, obj, key, &location);
+			i = pdf_dict_find(ctx, obj, key);
 		else
-			i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key), &location);
+			i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key));
 		if (i >= 0 && i < DICT(obj)->len)
 		{
 			if (DICT(obj)->items[i].v != val)
@@ -1275,7 +1264,7 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 			if (DICT(obj)->len + 1 > DICT(obj)->cap)
 				pdf_dict_grow(ctx, obj);
 
-			i = location;
+			i = -1-i;
 			if ((obj->flags & PDF_FLAGS_SORTED) && DICT(obj)->len > 0)
 				memmove(&DICT(obj)->items[i + 1],
 						&DICT(obj)->items[i],
@@ -1509,7 +1498,7 @@ pdf_dict_dels(fz_context *ctx, pdf_obj *obj, const char *key)
 			fz_warn(ctx, "assert: not a dict (%s)", pdf_objkindstr(obj));
 		else
 		{
-			int i = pdf_dict_finds(ctx, obj, key, NULL);
+			int i = pdf_dict_finds(ctx, obj, key);
 			if (i >= 0)
 			{
 				pdf_drop_obj(ctx, DICT(obj)->items[i].k);
