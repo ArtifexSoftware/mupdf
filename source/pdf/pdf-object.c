@@ -1083,7 +1083,7 @@ pdf_dict_find(fz_context *ctx, pdf_obj *obj, pdf_obj *key, int *location)
 			int c;
 
 			k = DICT(obj)->items[m].k;
-			c = (k < PDF_OBJ__LIMIT ? key-k : -strcmp(NAME(k)->n, PDF_NAMES[(intptr_t)key]));
+			c = (k < PDF_OBJ__LIMIT ? (char *)key-(char *)k : -strcmp(NAME(k)->n, PDF_NAMES[(intptr_t)key]));
 			if (c < 0)
 				r = m - 1;
 			else if (c > 0)
