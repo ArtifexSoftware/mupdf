@@ -189,15 +189,15 @@ count_selector_names(fz_css_selector *sel)
 	return n;
 }
 
-#define INLINE_SPECIFICITY 1000
+#define INLINE_SPECIFICITY 10000
 
 static int
-selector_specificity(fz_css_selector *sel)
+selector_specificity(fz_css_selector *sel, int important)
 {
 	int b = count_selector_ids(sel);
 	int c = count_selector_atts(sel);
 	int d = count_selector_names(sel);
-	return b * 100 + c * 10 + d;
+	return important * 1000 + b * 100 + c * 10 + d;
 }
 
 /*
@@ -592,7 +592,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *nod
 			if (match_selector(sel, node))
 			{
 				for (prop = rule->declaration; prop; prop = prop->next)
-					add_property(match, prop->name, prop->value, selector_specificity(sel));
+					add_property(match, prop->name, prop->value, selector_specificity(sel, prop->important));
 				break;
 			}
 			sel = sel->next;
@@ -637,7 +637,7 @@ fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_rule *css)
 			if (sel->name && !strcmp(sel->name, "@page"))
 			{
 				for (prop = rule->declaration; prop; prop = prop->next)
-					add_property(match, prop->name, prop->value, selector_specificity(sel));
+					add_property(match, prop->name, prop->value, selector_specificity(sel, prop->important));
 				break;
 			}
 			sel = sel->next;
@@ -1098,7 +1098,9 @@ print_property(fz_css_property *prop)
 {
 	printf("\t%s: ", prop->name);
 	print_value(prop->value);
-	printf(" !%d;\n", prop->spec);
+	if (prop->important)
+		printf(" !important");
+	printf(";\n");
 }
 
 void
@@ -1147,7 +1149,7 @@ print_rule(fz_css_rule *rule)
 	for (sel = rule->selector; sel; sel = sel->next)
 	{
 		print_selector(sel);
-		printf(" !%d", selector_specificity(sel));
+		printf(" /* %d */", selector_specificity(sel, 0));
 		if (sel->next)
 			printf(", ");
 	}

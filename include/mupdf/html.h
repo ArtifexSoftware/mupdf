@@ -64,7 +64,8 @@ struct fz_css_property_s
 {
 	char *name;
 	fz_css_value *value;
-	int spec;
+	short spec;
+	short important;
 	fz_css_property *next;
 };
 

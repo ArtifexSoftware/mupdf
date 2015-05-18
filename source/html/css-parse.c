@@ -58,6 +58,7 @@ static fz_css_property *fz_new_css_property(fz_context *ctx, const char *name, f
 	prop->name = fz_strdup(ctx, name);
 	prop->value = value;
 	prop->spec = spec;
+	prop->important = 0;
 	prop->next = NULL;
 	return prop;
 }
@@ -610,7 +611,11 @@ static fz_css_property *parse_declaration(struct lexbuf *buf)
 	/* !important */
 	if (accept(buf, '!'))
 	{
-		expect(buf, CSS_KEYWORD);
+		white(buf);
+		if (buf->lookahead != CSS_KEYWORD || strcmp(buf->string, "important"))
+			fz_css_error(buf, "expected keyword 'important' after '!'");
+		p->important = 1;
+		next(buf);
 		white(buf);
 	}
 
