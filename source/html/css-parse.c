@@ -776,55 +776,42 @@ static fz_css_selector *parse_simple_selector(struct lexbuf *buf)
 	fz_css_error(buf, "expected selector");
 }
 
-static fz_css_selector *parse_combinator(struct lexbuf *buf, fz_css_selector *a)
+static fz_css_selector *parse_combinator(struct lexbuf *buf, int c, fz_css_selector *a)
 {
-	fz_css_selector *s, *b;
-	if (accept(buf, '+'))
-	{
-		white(buf);
-		b = parse_selector(buf);
-		s = fz_new_css_selector(buf->ctx, NULL);
-		s->combine = '+';
-		s->left = a;
-		s->right = b;
-		return s;
-	}
-	if (accept(buf, '>'))
-	{
-		white(buf);
-		b = parse_selector(buf);
-		s = fz_new_css_selector(buf->ctx, NULL);
-		s->combine = '>';
-		s->left = a;
-		s->right = b;
-		return s;
-	}
-	return a;
+	fz_css_selector *sel, *b;
+	white(buf);
+	b = parse_simple_selector(buf);
+	sel = fz_new_css_selector(buf->ctx, NULL);
+	sel->combine = c;
+	sel->left = a;
+	sel->right = b;
+	return sel;
 }
 
 static fz_css_selector *parse_selector(struct lexbuf *buf)
 {
-	fz_css_selector *s, *a, *b;
-
-	a = parse_simple_selector(buf);
-	if (accept(buf, ' '))
+	fz_css_selector *sel = parse_simple_selector(buf);
+	for (;;)
 	{
-		s = parse_combinator(buf, a);
-		if (s == a && buf->lookahead != ',' && buf->lookahead != '{' && buf->lookahead != EOF)
+		if (accept(buf, ' '))
 		{
-			b = parse_selector(buf);
-			s = fz_new_css_selector(buf->ctx, NULL);
-			s->combine = ' ';
-			s->left = a;
-			s->right = b;
-			return s;
+			if (accept(buf, '+'))
+				sel = parse_combinator(buf, '+', sel);
+			else if (accept(buf, '>'))
+				sel = parse_combinator(buf, '>', sel);
+			else if (buf->lookahead != ',' && buf->lookahead != '{' && buf->lookahead != EOF)
+				sel = parse_combinator(buf, ' ', sel);
+			else
+				break;
 		}
+		else if (accept(buf, '+'))
+			sel = parse_combinator(buf, '+', sel);
+		else if (accept(buf, '>'))
+			sel = parse_combinator(buf, '>', sel);
+		else
+			break;
 	}
-	else
-	{
-		s = parse_combinator(buf, a);
-	}
-	return s;
+	return sel;
 }
 
 static fz_css_selector *parse_selector_list(struct lexbuf *buf)
