@@ -253,29 +253,37 @@ fz_lookup_device_colorspace(fz_context *ctx, char *name)
 void
 fz_set_device_gray(fz_context *ctx, fz_colorspace *cs)
 {
+	fz_lock(ctx, FZ_LOCK_ALLOC);
 	fz_drop_colorspace(ctx, ctx->colorspace->gray);
 	ctx->colorspace->gray = fz_keep_colorspace(ctx, cs);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
 void
 fz_set_device_rgb(fz_context *ctx, fz_colorspace *cs)
 {
+	fz_lock(ctx, FZ_LOCK_ALLOC);
 	fz_drop_colorspace(ctx, ctx->colorspace->rgb);
 	ctx->colorspace->rgb = fz_keep_colorspace(ctx, cs);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
 void
 fz_set_device_bgr(fz_context *ctx, fz_colorspace *cs)
 {
+	fz_lock(ctx, FZ_LOCK_ALLOC);
 	fz_drop_colorspace(ctx, ctx->colorspace->bgr);
 	ctx->colorspace->bgr = fz_keep_colorspace(ctx, cs);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
 void
 fz_set_device_cmyk(fz_context *ctx, fz_colorspace *cs)
 {
+	fz_lock(ctx, FZ_LOCK_ALLOC);
 	fz_drop_colorspace(ctx, ctx->colorspace->cmyk);
 	ctx->colorspace->cmyk = fz_keep_colorspace(ctx, cs);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
 int
