@@ -195,7 +195,7 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 	fz_write_buffer_byte(ctx, buf, 0);
 
 	ch = fz_malloc_struct(ctx, epub_chapter);
-	ch->box = fz_parse_html(ctx, doc->set, zip, base_uri, buf, NULL);
+	ch->box = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx));
 	ch->next = NULL;
 
 	fz_drop_buffer(ctx, buf);

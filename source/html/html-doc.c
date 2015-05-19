@@ -120,7 +120,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	buf = fz_read_all(ctx, file, 0);
 	fz_write_buffer_byte(ctx, buf, 0);
-	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, NULL);
+	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
 	fz_drop_buffer(ctx, buf);
 
 	return (fz_document*)doc;
@@ -146,7 +146,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 
 	buf = fz_read_file(ctx, filename);
 	fz_write_buffer_byte(ctx, buf, 0);
-	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, NULL);
+	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
 	fz_drop_buffer(ctx, buf);
 
 	return (fz_document*)doc;

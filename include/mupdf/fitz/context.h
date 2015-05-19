@@ -15,6 +15,7 @@ typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_colorspace_context_s fz_colorspace_context;
 typedef struct fz_aa_context_s fz_aa_context;
+typedef struct fz_style_context_s fz_style_context;
 typedef struct fz_locks_context_s fz_locks_context;
 typedef struct fz_store_s fz_store;
 typedef struct fz_glyph_cache_s fz_glyph_cache;
@@ -108,6 +109,7 @@ struct fz_context_s
 	fz_font_context *font;
 	fz_colorspace_context *colorspace;
 	fz_aa_context *aa;
+	fz_style_context *style;
 	fz_store *store;
 	fz_glyph_cache *glyph_cache;
 	fz_document_handler_context *handler;
@@ -200,6 +202,16 @@ int fz_aa_level(fz_context *ctx);
 	to within the 0 to 8 range).
 */
 void fz_set_aa_level(fz_context *ctx, int bits);
+
+/*
+	fz_user_css: Get the user stylesheet source text.
+*/
+const char *fz_user_css(fz_context *ctx);
+
+/*
+	fz_set_user_css: Set the user stylesheet source text for use with HTML and EPUB.
+*/
+void fz_set_user_css(fz_context *ctx, const char *text);
 
 /*
 	Locking functions

@@ -1241,9 +1241,9 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 
 	css = fz_parse_css(ctx, NULL, default_css, "<default>");
-	if (user_css)
-		css = fz_parse_css(ctx, NULL, user_css, "<user>");
 	css = html_load_css(ctx, zip, base_uri, css, xml);
+	if (user_css)
+		css = fz_parse_css(ctx, css, user_css, "<user>");
 
 	// print_rules(css);
 

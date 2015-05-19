@@ -31,6 +31,52 @@ fz_keep_id_context(fz_context *ctx)
 	return fz_keep_imp(ctx, ctx->id, &ctx->id->refs);
 }
 
+struct fz_style_context_s
+{
+	int refs;
+	char *user_css;
+};
+
+static void fz_new_style_context(fz_context *ctx)
+{
+	if (ctx)
+	{
+		ctx->style = fz_malloc_struct(ctx, fz_style_context);
+		ctx->style->user_css = NULL;
+	}
+}
+
+static fz_style_context *fz_keep_style_context(fz_context *ctx)
+{
+	if (!ctx)
+		return NULL;
+	return fz_keep_imp(ctx, ctx->style, &ctx->style->refs);
+}
+
+static void fz_drop_style_context(fz_context *ctx)
+{
+	if (!ctx)
+		return;
+	if (fz_drop_imp(ctx, ctx->style, &ctx->style->refs))
+	{
+		fz_free(ctx, ctx->style->user_css);
+		fz_free(ctx, ctx->style);
+	}
+}
+
+void fz_set_user_css(fz_context *ctx, const char *user_css)
+{
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	fz_free(ctx, ctx->style->user_css);
+	ctx->style->user_css = fz_strdup(ctx, user_css);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+}
+
+const char *fz_user_css(fz_context *ctx)
+{
+	return ctx->style->user_css;
+}
+
 void
 fz_drop_context(fz_context *ctx)
 {
@@ -42,6 +88,7 @@ fz_drop_context(fz_context *ctx)
 	fz_drop_glyph_cache_context(ctx);
 	fz_drop_store_context(ctx);
 	fz_drop_aa_context(ctx);
+	fz_drop_style_context(ctx);
 	fz_drop_colorspace_context(ctx);
 	fz_drop_font_context(ctx);
 	fz_drop_id_context(ctx);
@@ -96,6 +143,7 @@ new_context_phase1(fz_alloc_context *alloc, fz_locks_context *locks)
 	fz_try(ctx)
 	{
 		fz_new_aa_context(ctx);
+		fz_new_style_context(ctx);
 	}
 	fz_catch(ctx)
 	{
@@ -184,6 +232,8 @@ fz_clone_context_internal(fz_context *ctx)
 	new_ctx->colorspace = fz_keep_colorspace_context(new_ctx);
 	new_ctx->font = ctx->font;
 	new_ctx->font = fz_keep_font_context(new_ctx);
+	new_ctx->style = ctx->style;
+	new_ctx->style = fz_keep_style_context(new_ctx);
 	new_ctx->id = ctx->id;
 	new_ctx->id = fz_keep_id_context(new_ctx);
 	new_ctx->handler = ctx->handler;

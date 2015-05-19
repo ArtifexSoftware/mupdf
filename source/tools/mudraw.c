@@ -116,6 +116,7 @@ static int fit = 0;
 static float layout_w = 450;
 static float layout_h = 600;
 static float layout_em = 12;
+static char *layout_css = NULL;
 
 static int showfeatures = 0;
 static int showtime = 0;
@@ -181,6 +182,7 @@ static void usage(void)
 		"\t-W -\tpage width for EPUB layout\n"
 		"\t-H -\tpage height for EPUB layout\n"
 		"\t-S -\tfont size for EPUB layout\n"
+		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
 		"\n"
 		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha)\n"
 		"\t-G -\tapply gamma correction\n"
@@ -855,7 +857,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:v")) != -1)
+	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:U:v")) != -1)
 	{
 		switch (c)
 		{
@@ -880,6 +882,7 @@ int main(int argc, char **argv)
 		case 'W': layout_w = atof(fz_optarg); break;
 		case 'H': layout_h = atof(fz_optarg); break;
 		case 'S': layout_em = atof(fz_optarg); break;
+		case 'U': layout_css = fz_optarg; break;
 
 		case 's':
 			if (strchr(fz_optarg, 't')) ++showtime;
@@ -907,6 +910,14 @@ int main(int argc, char **argv)
 	}
 
 	fz_set_aa_level(ctx, alphabits);
+
+	if (layout_css)
+	{
+		fz_buffer *buf = fz_read_file(ctx, layout_css);
+		fz_write_buffer_byte(ctx, buf, 0);
+		fz_set_user_css(ctx, (char*)buf->data);
+		fz_drop_buffer(ctx, buf);
+	}
 
 	/* Determine output type */
 	if (bandheight < 0)
