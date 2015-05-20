@@ -85,6 +85,8 @@ char *pdfapp_usage(pdfapp_t *app)
 		"W\t\t-- zoom to fit window width\n"
 		"H\t\t-- zoom to fit window height\n"
 		"Z\t\t-- zoom to fit page\n"
+		"[\t\t-- decrease font size (EPUB only)\n"
+		"]\t\t-- increase font size (EPUB only)\n"
 		"w\t\t-- shrinkwrap\n"
 		"f\t\t-- fullscreen\n"
 		"r\t\t-- reload file\n"
@@ -1189,6 +1191,29 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 
 	case 'q':
 		winclose(app);
+		break;
+
+	case '[':
+		if (app->layout_em > 8)
+		{
+			float percent = (float)app->pageno / app->pagecount;
+			app->layout_em -= 2;
+			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
+			app->pagecount = fz_count_pages(app->ctx, app->doc);
+			app->pageno = app->pagecount * percent + 0.1;
+			pdfapp_showpage(app, 1, 1, 1, 0, 0);
+		}
+		break;
+	case ']':
+		if (app->layout_em < 36)
+		{
+			float percent = (float)app->pageno / app->pagecount;
+			app->layout_em += 2;
+			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
+			app->pagecount = fz_count_pages(app->ctx, app->doc);
+			app->pageno = app->pagecount * percent + 0.1;
+			pdfapp_showpage(app, 1, 1, 1, 0, 0);
+		}
 		break;
 
 	/*
