@@ -245,6 +245,9 @@ standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int *l
 	case FZ_IMAGE_PNG:
 		tile = fz_load_png(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
+	case FZ_IMAGE_GIF:
+		tile = fz_load_gif(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
+		break;
 	case FZ_IMAGE_TIFF:
 		tile = fz_load_tiff(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
@@ -532,6 +535,11 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		{
 			bc->params.type = FZ_IMAGE_TIFF;
 			fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		}
+		else if (memcmp(buf, "GIF", 3) == 0)
+		{
+			bc->params.type = FZ_IMAGE_GIF;
+			fz_load_gif_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
