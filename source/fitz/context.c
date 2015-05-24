@@ -42,6 +42,7 @@ static void fz_new_style_context(fz_context *ctx)
 	if (ctx)
 	{
 		ctx->style = fz_malloc_struct(ctx, fz_style_context);
+		ctx->style->refs = 1;
 		ctx->style->user_css = NULL;
 	}
 }
