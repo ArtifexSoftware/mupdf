@@ -32,6 +32,7 @@ struct fz_lzwd_s
 
 	int early_change;
 
+	int reverse_bits;
 	int min_bits;			/* minimum num bits/code */
 	int code_bits;			/* num bits/code */
 	int code;			/* current code */
@@ -74,7 +75,10 @@ next_lzwd(fz_context *ctx, fz_stream *stm, int len)
 		if (lzw->eod)
 			return EOF;
 
-		code = fz_read_bits(ctx, lzw->chain, code_bits);
+		if (lzw->reverse_bits)
+			code = fz_read_rbits(ctx, lzw->chain, code_bits);
+		else
+			code = fz_read_bits(ctx, lzw->chain, code_bits);
 
 		if (fz_is_eof_bits(ctx, lzw->chain))
 		{
@@ -196,7 +200,7 @@ close_lzwd(fz_context *ctx, void *state_)
 
 /* Default: early_change = 1 */
 fz_stream *
-fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits)
+fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits, int reverse_bits)
 {
 	fz_lzwd *lzw = NULL;
 	int i;
@@ -215,6 +219,7 @@ fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits)
 		lzw->chain = chain;
 		lzw->eod = 0;
 		lzw->early_change = early_change;
+		lzw->reverse_bits = reverse_bits;
 		lzw->min_bits = min_bits;
 		lzw->code_bits = lzw->min_bits;
 		lzw->code = -1;

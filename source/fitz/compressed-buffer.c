@@ -54,7 +54,7 @@ fz_open_image_decomp_stream(fz_context *ctx, fz_stream *chain, fz_compression_pa
 			chain = fz_open_predict(ctx, chain, params->u.flate.predictor, params->u.flate.columns, params->u.flate.colors, params->u.flate.bpc);
 		return chain;
 	case FZ_IMAGE_LZW:
-		chain = fz_open_lzwd(ctx, chain, params->u.lzw.early_change, 9);
+		chain = fz_open_lzwd(ctx, chain, params->u.lzw.early_change, 9, 0);
 		if (params->u.lzw.predictor > 1)
 			chain = fz_open_predict(ctx, chain, params->u.lzw.predictor, params->u.lzw.columns, params->u.lzw.colors, params->u.lzw.bpc);
 		return chain;

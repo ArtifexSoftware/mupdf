@@ -157,7 +157,7 @@ fz_decode_tiff_packbits(fz_context *ctx, struct tiff *tiff, fz_stream *chain, un
 static void
 fz_decode_tiff_lzw(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
 {
-	fz_stream *stm = fz_open_lzwd(ctx, chain, 1, 9);
+	fz_stream *stm = fz_open_lzwd(ctx, chain, 1, 9, 0);
 	fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
 }
