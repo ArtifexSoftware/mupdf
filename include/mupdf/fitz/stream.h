@@ -340,6 +340,46 @@ static inline unsigned int fz_read_bits(fz_context *ctx, fz_stream *stm, int n)
 	return x;
 }
 
+static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
+{
+	unsigned int x;
+
+	if (n <= stm->avail)
+	{
+		x = stm->bits & ((1 << n) - 1);
+		stm->avail -= n;
+		stm->bits = stm->bits >> n;
+
+	}
+	else
+	{
+		unsigned int used = 0;
+
+		x = stm->bits & ((1 << stm->avail) - 1);
+		n -= stm->avail;
+		used = stm->avail;
+		stm->avail = 0;
+
+		while (n > 8)
+		{
+
+			x = (fz_read_byte(ctx, stm) << used) | x;
+			n -= 8;
+			used += 8;
+		}
+
+		if (n > 0)
+		{
+			stm->bits = fz_read_byte(ctx, stm);
+			x = ((stm->bits & ((1 << n) - 1)) << used) | x;
+			stm->avail = 8 - n;
+			stm->bits = stm->bits >> n;
+		}
+	}
+
+	return x;
+}
+
 static inline void fz_sync_bits(fz_context *ctx, fz_stream *stm)
 {
 	stm->avail = 0;
