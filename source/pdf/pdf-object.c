@@ -1524,7 +1524,7 @@ pdf_dict_del(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 	if (key < PDF_OBJ__LIMIT)
 		pdf_dict_dels(ctx, obj, PDF_NAMES[(intptr_t)key]);
 	else if (key->kind == PDF_NAME)
-		pdf_dict_dels(ctx, obj, NAME(obj)->n);
+		pdf_dict_dels(ctx, obj, NAME(key)->n);
 	/* else Can't warn */
 }
 
