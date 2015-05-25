@@ -461,6 +461,10 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\..\source\tools\mudraw.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\source\tools\mutool.c"
 			>
 		</File>
