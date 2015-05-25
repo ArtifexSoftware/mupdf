@@ -8,6 +8,7 @@
 #define main main_utf8
 #endif
 
+int mudraw_main(int argc, char *argv[]);
 int pdfclean_main(int argc, char *argv[]);
 int pdfextract_main(int argc, char *argv[]);
 int pdfinfo_main(int argc, char *argv[]);
@@ -20,6 +21,7 @@ static struct {
 	char *name;
 	char *desc;
 } tools[] = {
+	{ mudraw_main, "draw", "convert document" },
 	{ pdfclean_main, "clean", "rewrite pdf file" },
 	{ pdfextract_main, "extract", "extract font and image resources" },
 	{ pdfinfo_main, "info", "show information about pdf resources" },
@@ -61,6 +63,10 @@ int main(int argc, char **argv)
 			strcpy(buf, "mupdf");
 			strcat(buf, tools[i].name);
 			if (namematch(end, start, buf) || namematch(end, start, buf+2))
+				return tools[i].func(argc, argv);
+			strcpy(buf, "mu");
+			strcat(buf, tools[i].name);
+			if (namematch(end, start, buf))
 				return tools[i].func(argc, argv);
 		}
 	}

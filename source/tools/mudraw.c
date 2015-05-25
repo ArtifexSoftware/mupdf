@@ -7,7 +7,6 @@
 
 #ifdef _MSC_VER
 #include <winsock2.h>
-#define main main_utf8
 #else
 #include <sys/time.h>
 #endif
@@ -847,7 +846,7 @@ trace_realloc(void *arg, void *p_, unsigned int size)
 	return &p[1];
 }
 
-int main(int argc, char **argv)
+int mudraw_main(int argc, char **argv)
 {
 	char *password = "";
 	fz_document *doc = NULL;
@@ -1174,13 +1173,3 @@ int main(int argc, char **argv)
 
 	return (errored != 0);
 }
-
-#ifdef _MSC_VER
-int wmain(int argc, wchar_t *wargv[])
-{
-	char **argv = fz_argv_from_wargv(argc, wargv);
-	int ret = main(argc, argv);
-	fz_free_argv(argc, argv);
-	return ret;
-}
-#endif

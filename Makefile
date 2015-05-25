@@ -233,15 +233,8 @@ $(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/pdf/pdf-cmap.c source/pdf/pd
 
 # --- Tools and Apps ---
 
-MUDRAW := $(addprefix $(OUT)/, mudraw)
-MUDRAW_OBJ := $(addprefix $(OUT)/tools/, mudraw.o)
-$(MUDRAW_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUDRAW) : $(MUPDF_LIB) $(THIRD_LIBS)
-$(MUDRAW) : $(MUDRAW_OBJ)
-	$(LINK_CMD)
-
 MUTOOL := $(addprefix $(OUT)/, mutool)
-MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o pdfclean.o pdfextract.o pdfinfo.o pdfposter.o pdfshow.o pdfpages.o)
+MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o mudraw.o pdfclean.o pdfextract.o pdfinfo.o pdfposter.o pdfshow.o pdfpages.o)
 $(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
 $(MUTOOL) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUTOOL) : $(MUTOOL_OBJ)
@@ -289,7 +282,7 @@ endif
 MUVIEW := $(MUVIEW_X11) $(MUVIEW_WIN32)
 MUVIEW_CURL := $(MUVIEW_X11_CURL) $(MUVIEW_WIN32_CURL)
 
-INSTALL_APPS := $(MUDRAW) $(MUTOOL) $(MUVIEW) $(MUJSTEST) $(MUVIEW_CURL)
+INSTALL_APPS := $(MUTOOL) $(MUVIEW) $(MUJSTEST) $(MUVIEW_CURL)
 
 # --- Examples ---
 
