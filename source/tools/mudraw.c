@@ -846,7 +846,11 @@ trace_realloc(void *arg, void *p_, unsigned int size)
 	return &p[1];
 }
 
+#ifdef MUDRAW_STANDALONE
+int main(int argc, char **argv)
+#else
 int mudraw_main(int argc, char **argv)
+#endif
 {
 	char *password = "";
 	fz_document *doc = NULL;
