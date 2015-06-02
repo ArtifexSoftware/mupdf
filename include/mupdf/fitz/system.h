@@ -143,6 +143,7 @@ typedef int64_t fz_off_t;
 #define fz_fseek fseeko64
 #define fz_ftell ftello64
 #define fz_atoo_imp atoll
+#define FZ_OFF_MAX 0x7fffffffffffffffLL
 #else
 #ifndef fz_fopen
 #define fz_fopen fopen
@@ -150,6 +151,7 @@ typedef int64_t fz_off_t;
 #define fz_fseek fseek
 #define fz_ftell ftell
 typedef int fz_off_t;
+#define FZ_OFF_MAX INT_MAX
 #define fz_atoo_imp atoi
 #endif
 

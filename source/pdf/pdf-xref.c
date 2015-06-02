@@ -516,9 +516,9 @@ pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 static int
 pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 {
-	int len;
+	fz_off_t len;
 	char *s;
-	int t;
+	fz_off_t t;
 	pdf_token tok;
 	int c;
 	int size;
@@ -545,7 +545,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		fz_strsep(&s, " "); /* ignore ofs */
 		if (!s)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid range marker in xref");
-		len = fz_atoi(fz_strsep(&s, " "));
+		len = fz_atoo(fz_strsep(&s, " "));
 		if (len < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref range marker must be positive");
 
@@ -556,7 +556,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		t = fz_tell(ctx, doc->file);
 		if (t < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot tell in file");
-		if (len > (INT_MAX - t) / 20)
+		if (len > (FZ_OFF_MAX - t) / 20)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref has too many entries");
 
 		fz_seek(ctx, doc->file, t + 20 * len, SEEK_SET);
