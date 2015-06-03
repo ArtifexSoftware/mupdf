@@ -1169,6 +1169,28 @@ viewproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
+typedef BOOL (SetProcessDPIAwareFn)(void);
+
+static int
+get_system_dpi(void)
+{
+	HMODULE hUser32 = LoadLibrary(TEXT("user32.dll"));
+	SetProcessDPIAwareFn *ptr;
+	int hdpi, vdpi;
+	HDC desktopDC;
+
+	ptr = (SetProcessDPIAwareFn *)GetProcAddress(hUser32, "SetProcessDPIAware");
+	if (ptr != NULL)
+		ptr();
+	FreeLibrary(hUser32);
+
+	desktopDC = GetDC(NULL);
+	hdpi = GetDeviceCaps(desktopDC, LOGPIXELSX);
+	vdpi = GetDeviceCaps(desktopDC, LOGPIXELSY);
+	/* hdpi,vdpi = 100 means 96dpi. */
+	return ((hdpi + vdpi) * 96.0 + 0.5) / 200;
+}
+
 int WINAPI
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -1180,6 +1202,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	fz_context *ctx;
 	int arg;
 	int bps = 0;
+	int displayRes = get_system_dpi();
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -1188,6 +1211,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		exit(1);
 	}
 	pdfapp_init(ctx, &gapp);
+	pdfapp_setresolution(&gapp, displayRes);
 
 	GetModuleFileNameA(NULL, argv0, sizeof argv0);
 	install_app(argv0);

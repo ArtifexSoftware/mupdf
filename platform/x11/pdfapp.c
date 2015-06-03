@@ -134,6 +134,11 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->tint_b = 240;
 }
 
+void pdfapp_setresolution(pdfapp_t *app, int res)
+{
+	app->resolution = res;
+}
+
 void pdfapp_invert(pdfapp_t *app, const fz_rect *rect)
 {
 	fz_irect b;

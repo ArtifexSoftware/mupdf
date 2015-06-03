@@ -141,6 +141,7 @@ struct pdfapp_s
 };
 
 void pdfapp_init(fz_context *ctx, pdfapp_t *app);
+void pdfapp_setresolution(pdfapp_t *app, int res);
 void pdfapp_open(pdfapp_t *app, char *filename, int reload);
 void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps);
 void pdfapp_close(pdfapp_t *app);
