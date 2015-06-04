@@ -428,6 +428,8 @@ void pdf_replace_xref(fz_context *ctx, pdf_document *doc, pdf_xref_entry *entrie
 	fz_var(xref);
 	fz_try(ctx)
 	{
+		fz_free(ctx, doc->xref_index);
+		doc->xref_index = NULL; /* In case the calloc fails */
 		doc->xref_index = fz_calloc(ctx, n, sizeof(int));
 		xref = fz_malloc_struct(ctx, pdf_xref);
 		sub = fz_malloc_struct(ctx, pdf_xref_subsec);
