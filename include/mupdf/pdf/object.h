@@ -150,5 +150,6 @@ fz_matrix *pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *mat);
 pdf_document *pdf_get_indirect_document(fz_context *ctx, pdf_obj *obj);
 void pdf_set_str_len(fz_context *ctx, pdf_obj *obj, int newlen);
 void pdf_set_int(fz_context *ctx, pdf_obj *obj, int i);
+void pdf_set_int_offset(fz_context *ctx, pdf_obj *obj, fz_off_t i);
 
 #endif

@@ -345,6 +345,13 @@ void pdf_set_int(fz_context *ctx, pdf_obj *obj, int i)
 	NUM(obj)->u.i = i;
 }
 
+void pdf_set_int_offset(fz_context *ctx, pdf_obj *obj, fz_off_t i)
+{
+	if (obj < PDF_OBJ__LIMIT || obj->kind != PDF_INT)
+		return;
+	NUM(obj)->u.i = i;
+}
+
 /* for use by pdf_crypt_obj_imp to decrypt AES string in place */
 void pdf_set_str_len(fz_context *ctx, pdf_obj *obj, int newlen)
 {
