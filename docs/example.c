@@ -9,6 +9,9 @@
 //	build/debug/libmujs.a \
 //	build/debug/libz.a -lm
 //
+// (If this fails with errors about missing BIO_ and X509_ references
+// try again with "-lcrypto" added to the end of that command).
+//
 // build/debug/example /path/to/document.pdf 1 200 25
 
 // Include the MuPDF header file.

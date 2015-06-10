@@ -20,6 +20,9 @@
 //	build/debug/libmujs.a \
 //	build/debug/libz.a -lpthread -lm
 //
+// (If this fails with errors about missing BIO_ and X509_ references
+// try again with "-lcrypto" added to the end of that command).
+//
 // build/debug/example-mt /path/to/document.pdf
 //
 // Caution! As all pages are rendered simultaneously, please choose a
