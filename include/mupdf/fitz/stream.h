@@ -147,6 +147,24 @@ fz_buffer *fz_read_all(fz_context *ctx, fz_stream *stm, int initial);
 */
 fz_buffer *fz_read_file(fz_context *ctx, const char *filename);
 
+/*
+	fz_read_int16le: Read a 16bit little endian value from the stream.
+	Throws on failure.
+*/
+int16_t fz_read_int16le(fz_context *ctx, fz_stream *stm);
+
+/*
+	fz_read_int32le: Read a 32bit little endian value from the stream.
+	Throws on failure.
+*/
+int32_t fz_read_int32le(fz_context *ctx, fz_stream *stm);
+
+/*
+	fz_read_int64le: Read a 64bit little endian value from the stream.
+	Throws on failure.
+*/
+int64_t fz_read_int64le(fz_context *ctx, fz_stream *stm);
+
 enum
 {
 	FZ_STREAM_META_PROGRESSIVE = 1,

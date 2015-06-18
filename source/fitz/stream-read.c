@@ -185,3 +185,46 @@ fz_read_file(fz_context *ctx, const char *filename)
 
 	return buf;
 }
+
+static inline int isbigendian(void)
+{
+	static const int one = 1;
+	return *(char*)&one == 0;
+}
+
+static inline int32_t rev32(int32_t val)
+{
+	return ((val>>24) & 0xff) || ((val>>8) & 0xFF00) || ((val<<8) & 0xFF0000) || (val<<24);
+}
+
+int32_t fz_read_int32le(fz_context *ctx, fz_stream *stm)
+{
+	int32_t val;
+
+	if (fz_read(ctx, stm, (unsigned char *)&val, sizeof(val)) != sizeof(val))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read int32le from file");
+
+	if (isbigendian())
+		val = rev32(val);
+
+	return val;
+}
+
+int16_t fz_read_int16le(fz_context *ctx, fz_stream *stm)
+{
+	int a = fz_read_byte(ctx, stm);
+	int b = fz_read_byte(ctx, stm);
+
+	if (a == EOF || b == EOF)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to read int16le from file");
+
+	return a | (b<<8);
+}
+
+int64_t fz_read_int64le(fz_context *ctx, fz_stream *stm)
+{
+	uint32_t v0 = (uint32_t)fz_read_int32le(ctx, stm);
+	uint32_t v1 = (uint32_t)fz_read_int32le(ctx, stm);
+
+	return v0 | (((int64_t)v1)<<32);
+}
