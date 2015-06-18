@@ -51,6 +51,10 @@ typedef fz_annot *(fz_page_next_annot_fn)(fz_context *ctx, fz_page *page, fz_ann
 typedef fz_rect *(fz_page_bound_annot_fn)(fz_context *ctx, fz_page *page, fz_annot *annot, fz_rect *rect);
 typedef void (fz_page_run_annot_fn)(fz_context *ctx, fz_page *page, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 
+typedef void (fz_page_control_separation_fn)(fz_context *ctx, fz_page *page, int separation, int disable);
+typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
+typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
+
 struct fz_page_s
 {
 	int refs;
@@ -63,6 +67,9 @@ struct fz_page_s
 	fz_page_bound_annot_fn *bound_annot;
 	fz_page_run_annot_fn *run_annot;
 	fz_page_page_presentation_fn *page_presentation;
+	fz_page_control_separation_fn *control_separation;
+	fz_page_count_separations_fn *count_separations;
+	fz_page_get_separation_fn *get_separation;
 };
 
 struct fz_document_s
