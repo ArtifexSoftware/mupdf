@@ -962,6 +962,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\separation.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\shade.c"
 				>
 			</File>
@@ -1490,6 +1494,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\pixmap.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\separation.h"
 					>
 				</File>
 				<File
