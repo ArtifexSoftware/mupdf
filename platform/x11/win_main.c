@@ -39,6 +39,7 @@ static pdfapp_t gapp;
 
 static wchar_t wbuf[PATH_MAX];
 static char filename[PATH_MAX];
+static char layout_css_buf[PATH_MAX];
 
 /*
  * Create registry keys to associate MuPDF with PDF and XPS files.
@@ -1191,6 +1192,19 @@ get_system_dpi(void)
 	return ((hdpi + vdpi) * 96.0 + 0.5) / 200;
 }
 
+static void usage(void)
+{
+	fprintf(stderr, "usage: mupdf [options] file.pdf [page]\n");
+	fprintf(stderr, "\t-p -\tpassword\n");
+	fprintf(stderr, "\t-r -\tresolution\n");
+	fprintf(stderr, "\t-A -\tset anti-aliasing quality in bits (0=off, 8=best)\n");
+	fprintf(stderr, "\t-C -\tRRGGBB (tint color in hexadecimal syntax)\n");
+	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
+	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
+	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
+	exit(1);
+}
+
 int WINAPI
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -1200,9 +1214,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	MSG msg;
 	int code;
 	fz_context *ctx;
-	int arg;
 	int bps = 0;
 	int displayRes = get_system_dpi();
+	int c;
+	wchar_t *password = NULL;
+	wchar_t *layout_css = NULL;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -1211,6 +1227,30 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		exit(1);
 	}
 	pdfapp_init(ctx, &gapp);
+
+	while ((c = fz_getoptw(argc, argv, L"p:r:A:C:W:H:S:U:b:")) != -1)
+	{
+		switch (c)
+		{
+		case 'C':
+			c = wcstol(fz_optargw, NULL, 16);
+			gapp.tint = 1;
+			gapp.tint_r = (c >> 16) & 255;
+			gapp.tint_g = (c >> 8) & 255;
+			gapp.tint_b = (c) & 255;
+			break;
+		case 'p': password = fz_optargw; break;
+		case 'r': displayRes = _wtoi(fz_optargw); break;
+		case 'A': fz_set_aa_level(ctx, _wtoi(fz_optargw)); break;
+		case 'W': gapp.layout_w = _wtoi(fz_optargw); break;
+		case 'H': gapp.layout_h = _wtoi(fz_optargw); break;
+		case 'S': gapp.layout_em = _wtoi(fz_optargw); break;
+		case 'b': bps = (fz_optargw && *fz_optargw) ? _wtoi(fz_optargw) : 4096; break;
+		case 'U': layout_css = fz_optargw; break;
+		default: usage();
+		}
+	}
+
 	pdfapp_setresolution(&gapp, displayRes);
 
 	GetModuleFileNameA(NULL, argv0, sizeof argv0);
@@ -1218,24 +1258,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 
 	winopen();
 
-	arg = 1;
-	while (arg < argc)
+	if (fz_optindw < argc)
 	{
-		if (!wcscmp(argv[arg], L"-p"))
-		{
-			if (arg+1 < argc)
-				bps = _wtoi(argv[++arg]);
-			else
-				bps = 4096;
-		}
-		else
-			break;
-		arg++;
-	}
-
-	if (arg < argc)
-	{
-		wcscpy(wbuf, argv[arg]);
+		wcscpy(wbuf, argv[fz_optindw]);
 	}
 	else
 	{
@@ -1246,6 +1271,14 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
 	if (code == 0)
 		winerror(&gapp, "cannot convert filename to utf-8");
+
+	if (layout_css)
+	{
+		code = WideCharToMultiByte(CP_UTF8, 0, layout_css, -1, layout_css_buf, sizeof layout_css_buf, NULL, NULL);
+		if (code == 0)
+			winerror(&gapp, "cannot convert layout_css filename to utf-8");
+		gapp.layout_css = layout_css_buf;
+	}
 
 	if (bps)
 		pdfapp_open_progressive(&gapp, filename, 0, bps);
