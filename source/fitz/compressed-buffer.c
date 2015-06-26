@@ -24,11 +24,11 @@ fz_open_image_decomp_stream_from_buffer(fz_context *ctx, fz_compressed_buffer *b
 fz_stream *
 fz_open_image_decomp_stream(fz_context *ctx, fz_stream *chain, fz_compression_params *params, int *l2factor)
 {
+	int our_l2factor = 0;
+
 	switch (params->type)
 	{
 	case FZ_IMAGE_FAX:
-		if (l2factor)
-			*l2factor = 0;
 		return fz_open_faxd(ctx, chain,
 				params->u.fax.k,
 				params->u.fax.end_of_line,
@@ -38,30 +38,27 @@ fz_open_image_decomp_stream(fz_context *ctx, fz_stream *chain, fz_compression_pa
 				params->u.fax.end_of_block,
 				params->u.fax.black_is_1);
 	case FZ_IMAGE_JPEG:
-		if (l2factor && *l2factor > 3)
-			*l2factor = 3;
-		return fz_open_dctd(ctx, chain, params->u.jpeg.color_transform, l2factor ? *l2factor : 0, NULL);
-	case FZ_IMAGE_RLD:
 		if (l2factor)
-			*l2factor = 0;
+		{
+			our_l2factor = *l2factor;
+			if (our_l2factor > 3)
+				our_l2factor = 3;
+			*l2factor -= our_l2factor;
+		}
+		return fz_open_dctd(ctx, chain, params->u.jpeg.color_transform, our_l2factor, NULL);
+	case FZ_IMAGE_RLD:
 		return fz_open_rld(ctx, chain);
 	case FZ_IMAGE_FLATE:
-		if (l2factor)
-			*l2factor = 0;
 		chain = fz_open_flated(ctx, chain, 15);
 		if (params->u.flate.predictor > 1)
 			chain = fz_open_predict(ctx, chain, params->u.flate.predictor, params->u.flate.columns, params->u.flate.colors, params->u.flate.bpc);
 		return chain;
 	case FZ_IMAGE_LZW:
-		if (l2factor)
-			*l2factor = 0;
 		chain = fz_open_lzwd(ctx, chain, params->u.lzw.early_change);
 		if (params->u.lzw.predictor > 1)
 			chain = fz_open_predict(ctx, chain, params->u.lzw.predictor, params->u.lzw.columns, params->u.lzw.colors, params->u.lzw.bpc);
 		return chain;
 	default:
-		if (l2factor)
-			*l2factor = 0;
 		break;
 	}
 

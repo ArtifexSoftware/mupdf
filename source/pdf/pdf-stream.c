@@ -349,7 +349,7 @@ pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
 		stm = fz_open_leecher(ctx, stm, bc->buffer);
 		stm = fz_open_image_decomp_stream(ctx, stm, &bc->params, &dummy_l2factor);
 
-		image->tile = fz_decomp_image_from_stream(ctx, stm, image, indexed, 0, 0);
+		image->tile = fz_decomp_image_from_stream(ctx, stm, image, indexed, 0);
 	}
 	fz_catch(ctx)
 	{

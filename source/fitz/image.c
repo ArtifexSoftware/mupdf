@@ -134,14 +134,14 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 }
 
 fz_pixmap *
-fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int indexed, int l2factor, int native_l2factor)
+fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int indexed, int l2factor)
 {
 	fz_pixmap *tile = NULL;
 	int stride, len, i;
 	unsigned char *samples = NULL;
-	int f = 1<<native_l2factor;
-	int w = (image->w + f-1) >> native_l2factor;
-	int h = (image->h + f-1) >> native_l2factor;
+	int f = 1<<l2factor;
+	int w = (image->w + f-1) >> l2factor;
+	int h = (image->h + f-1) >> l2factor;
 
 	fz_var(tile);
 	fz_var(samples);
@@ -213,14 +213,6 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, in
 		fz_rethrow(ctx);
 	}
 
-	/* Now apply any extra subsampling required */
-	if (l2factor - native_l2factor > 0)
-	{
-		if (l2factor - native_l2factor > 8)
-			l2factor = native_l2factor + 8;
-		fz_subsample_pixmap(ctx, tile, l2factor - native_l2factor);
-	}
-
 	return tile;
 }
 
@@ -239,12 +231,11 @@ fz_drop_image_imp(fz_context *ctx, fz_storable *image_)
 }
 
 static fz_pixmap *
-standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int l2factor)
+standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int *l2factor)
 {
-	fz_stream *stm;
 	int native_l2factor;
+	fz_stream *stm;
 	int indexed;
-	fz_image_key *keyp;
 	fz_pixmap *tile;
 
 	/* We need to make a new one. */
@@ -280,11 +271,13 @@ standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int l2
 		/* fall through */
 
 	default:
-		native_l2factor = l2factor;
-		stm = fz_open_image_decomp_stream_from_buffer(ctx, image->buffer, &native_l2factor);
+		native_l2factor = l2factor ? *l2factor : 0;
+		stm = fz_open_image_decomp_stream_from_buffer(ctx, image->buffer, l2factor);
+		if (l2factor)
+			native_l2factor -= *l2factor;
 
 		indexed = fz_colorspace_is_indexed(ctx, image->colorspace);
-		tile = fz_decomp_image_from_stream(ctx, stm, image, indexed, l2factor, native_l2factor);
+		tile = fz_decomp_image_from_stream(ctx, stm, image, indexed, native_l2factor);
 
 		/* CMYK JPEGs in XPS documents have to be inverted */
 		if (image->invert_cmyk_jpeg &&
@@ -298,35 +291,6 @@ standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int l2
 		break;
 	}
 
-	/* Now we try to cache the pixmap. Any failure here will just result
-	 * in us not caching. */
-	fz_var(keyp);
-	fz_try(ctx)
-	{
-		fz_pixmap *existing_tile;
-
-		keyp = fz_malloc_struct(ctx, fz_image_key);
-		keyp->refs = 1;
-		keyp->image = fz_keep_image(ctx, image);
-		keyp->l2factor = l2factor;
-		existing_tile = fz_store_item(ctx, keyp, tile, fz_pixmap_size(ctx, tile), &fz_image_store_type);
-		if (existing_tile)
-		{
-			/* We already have a tile. This must have been produced by a
-			 * racing thread. We'll throw away ours and use that one. */
-			fz_drop_pixmap(ctx, tile);
-			tile = existing_tile;
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_drop_image_key(ctx, keyp);
-	}
-	fz_catch(ctx)
-	{
-		/* Do nothing */
-	}
-
 	return tile;
 }
 
@@ -334,8 +298,9 @@ fz_pixmap *
 fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 {
 	fz_pixmap *tile;
-	int l2factor;
+	int l2factor, l2factor_remaining;
 	fz_image_key key;
+	fz_image_key *keyp;
 
 	/* Check for 'simple' images which are just pixmaps */
 	if (image->buffer == NULL)
@@ -374,7 +339,48 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 	}
 	while (key.l2factor >= 0);
 
-	return image->get_pixmap(ctx, image, w, h, l2factor);
+	/* We'll have to decode the image; request the correct amount of
+	 * downscaling. */
+	l2factor_remaining = l2factor;
+	tile = image->get_pixmap(ctx, image, w, h, &l2factor_remaining);
+
+	/* l2factor_remaining is updated to the amount of subscaling left to do */
+	assert(l2factor_remaining >= 0 && l2factor_remaining < 8);
+	if (l2factor_remaining)
+	{
+		fz_subsample_pixmap(ctx, tile, l2factor_remaining);
+	}
+
+	/* Now we try to cache the pixmap. Any failure here will just result
+	 * in us not caching. */
+	fz_var(keyp);
+	fz_try(ctx)
+	{
+		fz_pixmap *existing_tile;
+
+		keyp = fz_malloc_struct(ctx, fz_image_key);
+		keyp->refs = 1;
+		keyp->image = fz_keep_image(ctx, image);
+		keyp->l2factor = l2factor;
+		existing_tile = fz_store_item(ctx, keyp, tile, fz_pixmap_size(ctx, tile), &fz_image_store_type);
+		if (existing_tile)
+		{
+			/* We already have a tile. This must have been produced by a
+			 * racing thread. We'll throw away ours and use that one. */
+			fz_drop_pixmap(ctx, tile);
+			tile = existing_tile;
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_image_key(ctx, keyp);
+	}
+	fz_catch(ctx)
+	{
+		/* Do nothing */
+	}
+
+	return tile;
 }
 
 fz_image *
