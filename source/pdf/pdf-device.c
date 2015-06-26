@@ -146,7 +146,7 @@ send_image(fz_context *ctx, pdf_device *pdev, fz_image *image, int mask, int sma
 			int n;
 			/* Currently, set to maintain resolution; should we consider
 			 * subsampling here according to desired output res? */
-			pixmap = image->get_pixmap(ctx, image, image->w, image->h);
+			pixmap = fz_image_get_pixmap(ctx, image, image->w, image->h);
 			colorspace = pixmap->colorspace; /* May be different to image->colorspace! */
 			n = (pixmap->n == 1 ? 1 : pixmap->n-1);
 			size = image->w * image->h * n;

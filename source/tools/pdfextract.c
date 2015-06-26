@@ -72,7 +72,7 @@ static void saveimage(int num)
 	/* TODO: detect DCTD and save as jpeg */
 
 	image = pdf_load_image(ctx, doc, ref);
-	pix = fz_new_pixmap_from_image(ctx, image, 0, 0);
+	pix = fz_image_get_pixmap(ctx, image, 0, 0);
 	fz_drop_image(ctx, image);
 
 	snprintf(buf, sizeof(buf), "img-%04d", num);

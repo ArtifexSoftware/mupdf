@@ -67,17 +67,20 @@ struct fz_image_s
 	int w, h, n, bpc;
 	fz_image *mask;
 	fz_colorspace *colorspace;
-	fz_pixmap *(*get_pixmap)(fz_context *, fz_image *, int w, int h);
-	fz_compressed_buffer *buffer;
+	fz_pixmap *(*get_pixmap)(fz_context *, fz_image *, int w, int h, int l2factor);
 	int colorkey[FZ_MAX_COLORS * 2];
 	float decode[FZ_MAX_COLORS * 2];
 	int imagemask;
 	int interpolate;
 	int usecolorkey;
-	fz_pixmap *tile; /* Private to the implementation */
 	int xres; /* As given in the image, not necessarily as rendered */
 	int yres; /* As given in the image, not necessarily as rendered */
 	int invert_cmyk_jpeg;
+
+	/* Only 'standard' images use these currently. Maybe they should be
+	 * moved out into a derived image class. */
+	fz_compressed_buffer *buffer;
+	fz_pixmap *tile;
 };
 
 fz_pixmap *fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *cs, int indexed);

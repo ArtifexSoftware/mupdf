@@ -7,7 +7,7 @@ fz_new_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
 {
 	if (image == NULL)
 		return NULL;
-	return image->get_pixmap(ctx, image, w, h);
+	return fz_image_get_pixmap(ctx, image, w, h);
 }
 
 fz_image *
@@ -108,7 +108,7 @@ fz_mask_color_key(fz_pixmap *pix, int n, int *colorkey)
 static void
 fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 {
-	fz_pixmap *mask = image->mask->get_pixmap(ctx, image->mask, tile->w, tile->h);
+	fz_pixmap *mask = fz_image_get_pixmap(ctx, image->mask, tile->w, tile->h);
 	unsigned char *s = mask->samples, *end = s + mask->w * mask->h;
 	unsigned char *d = tile->samples;
 	int k;
@@ -238,53 +238,14 @@ fz_drop_image_imp(fz_context *ctx, fz_storable *image_)
 	fz_free(ctx, image);
 }
 
-fz_pixmap *
-fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
+static fz_pixmap *
+standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int l2factor)
 {
-	fz_pixmap *tile;
 	fz_stream *stm;
-	int l2factor;
-	fz_image_key key;
 	int native_l2factor;
 	int indexed;
 	fz_image_key *keyp;
-
-	/* Check for 'simple' images which are just pixmaps */
-	if (image->buffer == NULL)
-	{
-		tile = image->tile;
-		if (!tile)
-			return NULL;
-		return fz_keep_pixmap(ctx, tile); /* That's all we can give you! */
-	}
-
-	/* Ensure our expectations for tile size are reasonable */
-	if (w < 0 || w > image->w)
-		w = image->w;
-	if (h < 0 || h > image->h)
-		h = image->h;
-
-	/* What is our ideal factor? We search for the largest factor where
-	 * we can subdivide and stay larger than the required size. We add
-	 * a fudge factor of +2 here to allow for the possibility of
-	 * expansion due to grid fitting. */
-	if (w == 0 || h == 0)
-		l2factor = 0;
-	else
-		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 8; l2factor++);
-
-	/* Can we find any suitable tiles in the cache? */
-	key.refs = 1;
-	key.image = image;
-	key.l2factor = l2factor;
-	do
-	{
-		tile = fz_find_item(ctx, fz_drop_pixmap_imp, &key, &fz_image_store_type);
-		if (tile)
-			return tile;
-		key.l2factor--;
-	}
-	while (key.l2factor >= 0);
+	fz_pixmap *tile;
 
 	/* We need to make a new one. */
 	/* First check for ones that we can't decode using streams */
@@ -369,6 +330,53 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 	return tile;
 }
 
+fz_pixmap *
+fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
+{
+	fz_pixmap *tile;
+	int l2factor;
+	fz_image_key key;
+
+	/* Check for 'simple' images which are just pixmaps */
+	if (image->buffer == NULL)
+	{
+		tile = image->tile;
+		if (!tile)
+			return NULL;
+		return fz_keep_pixmap(ctx, tile); /* That's all we can give you! */
+	}
+
+	/* Ensure our expectations for tile size are reasonable */
+	if (w < 0 || w > image->w)
+		w = image->w;
+	if (h < 0 || h > image->h)
+		h = image->h;
+
+	/* What is our ideal factor? We search for the largest factor where
+	 * we can subdivide and stay larger than the required size. We add
+	 * a fudge factor of +2 here to allow for the possibility of
+	 * expansion due to grid fitting. */
+	if (w == 0 || h == 0)
+		l2factor = 0;
+	else
+		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 8; l2factor++);
+
+	/* Can we find any suitable tiles in the cache? */
+	key.refs = 1;
+	key.image = image;
+	key.l2factor = l2factor;
+	do
+	{
+		tile = fz_find_item(ctx, fz_drop_pixmap_imp, &key, &fz_image_store_type);
+		if (tile)
+			return tile;
+		key.l2factor--;
+	}
+	while (key.l2factor >= 0);
+
+	return image->get_pixmap(ctx, image, w, h, l2factor);
+}
+
 fz_image *
 fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 {
@@ -386,7 +394,7 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 		image->colorspace = fz_keep_colorspace(ctx, pixmap->colorspace);
 		image->bpc = 8;
 		image->buffer = NULL;
-		image->get_pixmap = fz_image_get_pixmap;
+		image->get_pixmap = NULL;
 		image->xres = pixmap->xres;
 		image->yres = pixmap->yres;
 		image->tile = fz_keep_pixmap(ctx, pixmap);
@@ -413,7 +421,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 	{
 		image = fz_malloc_struct(ctx, fz_image);
 		FZ_INIT_STORABLE(image, 1, fz_drop_image_imp);
-		image->get_pixmap = fz_image_get_pixmap;
+		image->get_pixmap = standard_image_get_pixmap;
 		image->w = w;
 		image->h = h;
 		image->xres = xres;

@@ -184,7 +184,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 		return;
 	}
 
-	pix = fz_new_pixmap_from_image(ctx, image, 0, 0);
+	pix = fz_image_get_pixmap(ctx, image, 0, 0);
 	if (pix == NULL) /* Should never happen really, but... */
 		return;
 
