@@ -1010,6 +1010,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\tempfile.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\test-device.c"
 				>
 			</File>

@@ -101,4 +101,10 @@ int fz_fprintf(fz_context *ctx, FILE *file, const char *fmt, ...);
 int fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args);
 int fz_snprintf(char *buffer, int space, const char *fmt, ...);
 
+/*
+	fz_tempfilename: Get a temporary filename based upon 'base'.
+	This must be freed.
+*/
+char *fz_tempfilename(fz_context *ctx, const char *base);
+
 #endif
