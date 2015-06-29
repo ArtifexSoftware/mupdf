@@ -71,6 +71,18 @@ static inline int fz_write_int32be(fz_context *ctx, fz_output *out, int x)
 	return fz_write(ctx, out, data, 4);
 }
 
+static inline int fz_write_int32le(fz_context *ctx, fz_output *out, int x)
+{
+	char data[4];
+
+	data[0] = x;
+	data[1] = x>>8;
+	data[2] = x>>16;
+	data[3] = x>>24;
+
+	return fz_write(ctx, out, data, 4);
+}
+
 static inline void
 fz_write_byte(fz_context *ctx, fz_output *out, int x)
 {

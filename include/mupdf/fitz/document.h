@@ -360,4 +360,18 @@ int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char 
 #define FZ_META_INFO_AUTHOR "info:Author"
 #define FZ_META_INFO_TITLE "info:Title"
 
+/*
+	fz_write_gproof_file: Given a currently open document, create a
+	gproof skeleton file from that document.
+
+	doc_filename: The name of the currently opened document file.
+
+	doc: The currently opened document.
+
+	filename: The filename of the desired gproof file.
+
+	res: The resolution at which proofing should be done.
+*/
+void fz_write_gproof_file(fz_context *ctx, const char *doc_filename, fz_document *doc, const char *filename, int res);
+
 #endif

@@ -1,0 +1,61 @@
+#include "mupdf/fitz.h"
+
+void
+fz_write_gproof_file(fz_context *ctx, const char *pdf_file, fz_document *doc, const char *filename, int res)
+{
+	int i;
+	int num_pages = fz_count_pages(ctx, doc);
+	fz_output *out;
+	fz_page *page = NULL;
+
+	fz_var(page);
+	
+	if (num_pages <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot write a 0 page GProof skeleton file");
+
+	out = fz_new_output_to_filename(ctx, filename);
+
+	fz_try(ctx)
+	{
+		/* File Signature: GPRO */
+		fz_write_int32le(ctx, out, 0x4f525047);
+
+		/* Version = 1 */
+		fz_write_byte(ctx, out, 1);
+		fz_write_byte(ctx, out, 0);
+
+		/* Resolution */
+		fz_write_int32le(ctx, out, res);
+
+		/* Num Pages */
+		fz_write_int32le(ctx, out, num_pages);
+
+		for (i = 0; i < num_pages; i++)
+		{
+			fz_rect rect;
+			int w, h;
+
+			page = fz_load_page(ctx, doc, i);
+			fz_bound_page(ctx, page, &rect);
+			fz_drop_page(ctx, page);
+			page = NULL;
+
+			w = (int)((rect.x1 - rect.x0) * res / 72.0 + 0.5);
+			h = (int)((rect.y1 - rect.y0) * res / 72.0 + 0.5);
+			fz_write_int32le(ctx, out, w);
+			fz_write_int32le(ctx, out, h);
+		}
+
+		/* Filename */
+		fz_write(ctx, out, pdf_file, strlen(pdf_file)+1);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_page(ctx, page);
+		fz_drop_output(ctx, out);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}

@@ -215,7 +215,7 @@ static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32
 	g += (CONST16(0.2119) * x)>>16;
 	b += (CONST16(0.2235) * x)>>16;
 #else
-	k = 63356 - k;
+	k = 65536 - k;
 	r = k - c;
 	g = k - m;
 	b = k - y;
@@ -275,7 +275,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h, int *l2factor)
 
 	fz_try(ctx)
 	{
-		/* First off, figure out of we are doing RGB or separations
+		/* First off, figure out if we are doing RGB or separations
 		 * decoding. */
 		num_seps = 3 + fz_count_separations(ctx, image->separations);
 		if (fz_separations_all_enabled(ctx, image->separations))

@@ -1589,6 +1589,10 @@
 				RelativePath="..\..\source\gprf\gprf-doc.c"
 				>
 			</File>
+			<File
+				RelativePath="..\..\source\gprf\gprf-skeleton.c"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
