@@ -95,6 +95,8 @@ xps_parse_remote_resource_dictionary(fz_context *ctx, xps_document *doc, char *b
 	dict = xps_parse_resource_dictionary(ctx, doc, part_uri, xml);
 	if (dict)
 		dict->base_xml = xml; /* pass on ownership */
+	else
+		fz_drop_xml(ctx, xml);
 
 	return dict;
 }
