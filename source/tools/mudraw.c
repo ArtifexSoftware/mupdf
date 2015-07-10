@@ -17,6 +17,7 @@ enum {
 	OUT_PBM, OUT_PWG, OUT_PCL,
 	OUT_TEXT, OUT_HTML, OUT_STEXT,
 	OUT_TRACE, OUT_SVG, OUT_PDF,
+	OUT_GPROOF
 };
 
 enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA };
@@ -47,6 +48,7 @@ static const suffix_t suffix_table[] =
 	{ ".stext", OUT_STEXT },
 
 	{ ".trace", OUT_TRACE },
+	{ ".gproof", OUT_GPROOF },
 };
 
 typedef struct
@@ -95,6 +97,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
 	{ OUT_SVG, CS_RGB, { CS_RGB } },
 	{ OUT_PDF, CS_RGB, { CS_RGB } },
+	{ OUT_GPROOF, CS_RGB, { CS_RGB } },
 
 	{ OUT_TEXT, CS_RGB, { CS_RGB } },
 	{ OUT_HTML, CS_RGB, { CS_RGB } },
@@ -1091,11 +1094,17 @@ int mudraw_main(int argc, char **argv)
 
 				if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 					fz_printf(ctx, out, "<document name=\"%s\">\n", filename);
-
-				if (fz_optind == argc || !isrange(argv[fz_optind]))
-					drawrange(ctx, doc, "1-");
-				if (fz_optind < argc && isrange(argv[fz_optind]))
-					drawrange(ctx, doc, argv[fz_optind++]);
+				if (output_format == OUT_GPROOF)
+				{
+					fz_write_gproof_file(ctx, filename, doc, output, resolution);
+				}
+				else
+				{
+					if (fz_optind == argc || !isrange(argv[fz_optind]))
+						drawrange(ctx, doc, "1-");
+					if (fz_optind < argc && isrange(argv[fz_optind]))
+						drawrange(ctx, doc, argv[fz_optind++]);
+				}
 
 				if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 					fz_printf(ctx, out, "</document>\n");
