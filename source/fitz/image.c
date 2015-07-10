@@ -302,14 +302,15 @@ fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
 	fz_image_key key;
 	fz_image_key *keyp;
 
-	/* Check for 'simple' images which are just pixmaps */
-	if (image->buffer == NULL)
-	{
-		tile = image->tile;
-		if (!tile)
-			return NULL;
-		return fz_keep_pixmap(ctx, tile); /* That's all we can give you! */
-	}
+	/* 'Simple' images created direct from pixmaps will have no buffer
+	 * of compressed data. We cannot do any better than just returning
+	 * a pointer to the original 'tile'.
+	 *
+	 * Note, that we can get image->tile != NULL for jpeg 2000 images
+	 * with masks applied, so we need both parts of the following test.
+	 */
+	if (image->buffer == NULL && image->tile != NULL)
+		return fz_keep_pixmap(ctx, image->tile); /* That's all we can give you! */
 
 	/* Ensure our expectations for tile size are reasonable */
 	if (w < 0 || w > image->w)
