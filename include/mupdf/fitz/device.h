@@ -41,6 +41,7 @@ enum
 	 * undefined, but that causes problems; do we assume that it should
 	 * always be set to non-dashing at the start of every glyph? */
 	FZ_DEVFLAG_BBOX_DEFINED = 2048,
+	FZ_DEVFLAG_GRIDFIT_AS_TILED = 4096,
 };
 
 enum
@@ -131,6 +132,8 @@ struct fz_device_s
 	int (*begin_tile)(fz_context *, fz_device *, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
 	void (*end_tile)(fz_context *, fz_device *);
 
+	void (*render_flags)(fz_context *, fz_device *, int set, int clear);
+
 	fz_rect d1_rect;
 
 	int error_depth;
@@ -165,6 +168,7 @@ void fz_end_group(fz_context *ctx, fz_device *dev);
 void fz_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm);
 int fz_begin_tile_id(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
 void fz_end_tile(fz_context *ctx, fz_device *dev);
+void fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear);
 
 void *fz_new_device(fz_context *ctx, int size);
 

@@ -28,7 +28,8 @@ typedef enum fz_display_command_e
 	FZ_CMD_BEGIN_GROUP,
 	FZ_CMD_END_GROUP,
 	FZ_CMD_BEGIN_TILE,
-	FZ_CMD_END_TILE
+	FZ_CMD_END_TILE,
+	FZ_CMD_RENDER_FLAGS
 } fz_display_command;
 
 /* The display list is a list of nodes.
@@ -1212,6 +1213,37 @@ fz_list_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
+fz_list_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
+{
+	int flags;
+
+	/* Pack the options down */
+	if (set == FZ_DEVFLAG_GRIDFIT_AS_TILED && clear == 0)
+		flags = 1;
+	else if (set == 0 && clear == FZ_DEVFLAG_GRIDFIT_AS_TILED)
+		flags = 0;
+	else
+	{
+		assert("Unsupported flags combination" == NULL);
+		return;
+	}
+	fz_append_display_node(
+		ctx,
+		dev,
+		FZ_CMD_RENDER_FLAGS,
+		flags, /* flags */
+		NULL,
+		NULL, /* path */
+		NULL, /* color */
+		NULL, /* colorspace */
+		NULL, /* alpha */
+		NULL, /* ctm */
+		NULL, /* stroke */
+		NULL, /* private_data */
+		0); /* private_data_len */
+}
+
+static void
 drop_writer(fz_context *ctx, fz_device *dev)
 {
 	fz_list_device *writer = (fz_list_device *)dev;
@@ -1256,6 +1288,8 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 
 	dev->super.begin_tile = fz_list_begin_tile;
 	dev->super.end_tile = fz_list_end_tile;
+
+	dev->super.render_flags = fz_list_render_flags;
 
 	dev->super.drop_imp = drop_writer;
 
@@ -1570,7 +1604,8 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 
 		if (tiled ||
 			n.cmd == FZ_CMD_BEGIN_TILE || n.cmd == FZ_CMD_END_TILE ||
-			n.cmd == FZ_CMD_BEGIN_PAGE || n.cmd == FZ_CMD_END_PAGE)
+			n.cmd == FZ_CMD_BEGIN_PAGE || n.cmd == FZ_CMD_END_PAGE ||
+			n.cmd == FZ_CMD_RENDER_FLAGS)
 		{
 			empty = 0;
 		}
@@ -1699,6 +1734,12 @@ visible:
 			case FZ_CMD_END_TILE:
 				tiled--;
 				fz_end_tile(ctx, dev);
+				break;
+			case FZ_CMD_RENDER_FLAGS:
+				if (n.flags == 0)
+					fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);
+				else if (n.flags == 1)
+					fz_render_flags(ctx, dev, FZ_DEVFLAG_GRIDFIT_AS_TILED, 0);
 				break;
 			}
 		}

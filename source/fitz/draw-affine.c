@@ -807,12 +807,31 @@ fz_paint_affine_color_near(byte *dp, byte *sp, int sw, int sh, int u, int v, int
  */
 #define MY_EPSILON 0.001
 
+/* We have 2 possible ways of gridfitting images. The first way, considered
+ * 'safe' in all cases, is to expand an image out to fill a box that entirely
+ * covers all the pixels touched by the current image. This is our 'standard'
+ * mechanism.
+ * The alternative, used when we know images are tiled across a page, is to
+ * round the edge of each image to the closest integer pixel boundary. This
+ * would not be safe in the general case, but gives less distortion across
+ * neighbouring images when tiling is used. We use this for .gproof files.
+ */
 void
-fz_gridfit_matrix(fz_matrix *m)
+fz_gridfit_matrix(int as_tiled, fz_matrix *m)
 {
 	if (fabsf(m->b) < FLT_EPSILON && fabsf(m->c) < FLT_EPSILON)
 	{
-		if (m->a > 0)
+		if (as_tiled)
+		{
+			float f;
+			/* Nearest boundary for left */
+			f = (float)(int)(m->e + 0.5);
+			m->a += m->e - f; /* Adjust width for change */
+			m->e = f;
+			/* Nearest boundary for right (width really) */
+			m->a = (float)(int)(m->a + 0.5);
+		}
+		else if (m->a > 0)
 		{
 			float f;
 			/* Adjust left hand side onto pixel boundary */
@@ -842,7 +861,17 @@ fz_gridfit_matrix(fz_matrix *m)
 				f -= 1.0; /* Ensure it moves left */
 			m->a = f;
 		}
-		if (m->d > 0)
+		if (as_tiled)
+		{
+			float f;
+			/* Nearest boundary for top */
+			f = (float)(int)(m->f + 0.5);
+			m->d += m->f - f; /* Adjust width for change */
+			m->f = f;
+			/* Nearest boundary for bottom (height really) */
+			m->d = (float)(int)(m->d + 0.5);
+		}
+		else if (m->d > 0)
 		{
 			float f;
 			/* Adjust top onto pixel boundary */
@@ -875,7 +904,17 @@ fz_gridfit_matrix(fz_matrix *m)
 	}
 	else if (fabsf(m->a) < FLT_EPSILON && fabsf(m->d) < FLT_EPSILON)
 	{
-		if (m->b > 0)
+		if (as_tiled)
+		{
+			float f;
+			/* Nearest boundary for left */
+			f = (float)(int)(m->e + 0.5);
+			m->b += m->e - f; /* Adjust width for change */
+			m->e = f;
+			/* Nearest boundary for right (width really) */
+			m->b = (float)(int)(m->b + 0.5);
+		}
+		else if (m->b > 0)
 		{
 			float f;
 			/* Adjust left hand side onto pixel boundary */
@@ -905,7 +944,17 @@ fz_gridfit_matrix(fz_matrix *m)
 				f -= 1.0; /* Ensure it moves left */
 			m->b = f;
 		}
-		if (m->c > 0)
+		if (as_tiled)
+		{
+			float f;
+			/* Nearest boundary for left */
+			f = (float)(int)(m->f + 0.5);
+			m->c += m->f - f; /* Adjust width for change */
+			m->f = f;
+			/* Nearest boundary for right (width really) */
+			m->c = (float)(int)(m->c + 0.5);
+		}
+		else if (m->c > 0)
 		{
 			float f;
 			/* Adjust top onto pixel boundary */
@@ -941,7 +990,7 @@ fz_gridfit_matrix(fz_matrix *m)
 /* Draw an image with an affine transform on destination */
 
 static void
-fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, byte *color, int alpha, int lerp_allowed)
+fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, byte *color, int alpha, int lerp_allowed, int as_tiled)
 {
 	byte *dp, *sp, *hp;
 	int u, v, fa, fb, fc, fd;
@@ -955,7 +1004,7 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 	int is_rectilinear;
 
 	/* grid fit the image */
-	fz_gridfit_matrix(&local_ctm);
+	fz_gridfit_matrix(as_tiled, &local_ctm);
 
 	/* turn on interpolation for upscaled and non-rectilinear transforms */
 	dolerp = 0;
@@ -1084,15 +1133,15 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 }
 
 void
-fz_paint_image_with_color(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, byte *color, int lerp_allowed)
+fz_paint_image_with_color(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, byte *color, int lerp_allowed, int as_tiled)
 {
 	assert(img->n == 1);
-	fz_paint_image_imp(dst, scissor, shape, img, ctm, color, 255, lerp_allowed);
+	fz_paint_image_imp(dst, scissor, shape, img, ctm, color, 255, lerp_allowed, as_tiled);
 }
 
 void
-fz_paint_image(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, int alpha, int lerp_allowed)
+fz_paint_image(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, int alpha, int lerp_allowed, int as_tiled)
 {
 	assert(dst->n == img->n || (dst->n == 4 && img->n == 2));
-	fz_paint_image_imp(dst, scissor, shape, img, ctm, NULL, alpha, lerp_allowed);
+	fz_paint_image_imp(dst, scissor, shape, img, ctm, NULL, alpha, lerp_allowed, as_tiled);
 }

@@ -488,3 +488,10 @@ fz_end_tile(fz_context *ctx, fz_device *dev)
 	if (dev->end_tile)
 		dev->end_tile(ctx, dev);
 }
+
+void
+fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
+{
+	if (dev->render_flags)
+		dev->render_flags(ctx, dev, set, clear);
+}

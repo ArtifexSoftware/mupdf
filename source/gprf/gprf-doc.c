@@ -596,6 +596,7 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 	page_rect.y0 = 0;
 	page_rect.x1 = 72.0 * page->width / doc->res;
 	page_rect.y1 = 72.0 * page->height / doc->res;
+	fz_render_flags(ctx, dev, FZ_DEVFLAG_GRIDFIT_AS_TILED, 0);
 	fz_begin_page(ctx, dev, &page_rect, ctm);
 
 	i = 0;
@@ -618,6 +619,7 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 		}
 	}
 	fz_end_page(ctx, dev);
+	fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);
 }
 
 

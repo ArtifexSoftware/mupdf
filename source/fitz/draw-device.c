@@ -610,7 +610,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matr
 				fz_matrix mat;
 				mat.a = pixmap->w; mat.b = mat.c = 0; mat.d = pixmap->h;
 				mat.e = x + pixmap->x; mat.f = y + pixmap->y;
-				fz_paint_image(state->dest, &state->scissor, state->shape, pixmap, &mat, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES));
+				fz_paint_image(state->dest, &state->scissor, state->shape, pixmap, &mat, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
 			}
 			fz_drop_glyph(ctx, glyph);
 		}
@@ -1040,7 +1040,9 @@ fz_transform_pixmap(fz_context *ctx, fz_draw_device *dev, fz_pixmap *image, fz_m
 		/* Unrotated or X-flip or Y-flip or XY-flip */
 		fz_matrix m = *ctm;
 		if (gridfit)
-			fz_gridfit_matrix(&m);
+		{
+			fz_gridfit_matrix(dev->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, &m);
+		}
 		scaled = fz_scale_pixmap_cached(ctx, image, m.e, m.f, m.a, m.d, clip, dev->cache_x, dev->cache_y);
 		if (!scaled)
 			return NULL;
@@ -1057,7 +1059,7 @@ fz_transform_pixmap(fz_context *ctx, fz_draw_device *dev, fz_pixmap *image, fz_m
 		fz_matrix m = *ctm;
 		fz_irect rclip;
 		if (gridfit)
-			fz_gridfit_matrix(&m);
+			fz_gridfit_matrix(dev->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, &m);
 		if (clip)
 		{
 			rclip.x0 = clip->y0;
@@ -1174,7 +1176,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			}
 		}
 
-		fz_paint_image(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES));
+		fz_paint_image(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
 
 		if (state->blendmode & FZ_BLEND_KNOCKOUT)
 			fz_knockout_end(ctx, dev);
@@ -1245,7 +1247,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 			colorbv[i] = colorfv[i] * 255;
 		colorbv[i] = alpha * 255;
 
-		fz_paint_image_with_color(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, colorbv, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES));
+		fz_paint_image_with_color(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, colorbv, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
 
 		if (scaled)
 			fz_drop_pixmap(ctx, scaled);
@@ -1351,7 +1353,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 			if (scaled)
 				pixmap = scaled;
 		}
-		fz_paint_image(mask, &bbox, state->shape, pixmap, &local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES));
+		fz_paint_image(mask, &bbox, state->shape, pixmap, &local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
 	}
 	fz_always(ctx)
 	{
@@ -2040,6 +2042,14 @@ fz_draw_drop_imp(fz_context *ctx, fz_device *devp)
 	fz_drop_gel(ctx, gel);
 }
 
+static void
+fz_draw_render_flags(fz_context *ctx, fz_device *devp, int set, int clear)
+{
+	fz_draw_device *dev = (fz_draw_device*)devp;
+
+	dev->flags = (dev->flags | set ) & ~clear;
+}
+
 fz_device *
 fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 {
@@ -2072,6 +2082,8 @@ fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 
 	dev->super.begin_tile = fz_draw_begin_tile;
 	dev->super.end_tile = fz_draw_end_tile;
+
+	dev->super.render_flags = fz_draw_render_flags;
 
 	dev->flags = 0;
 	dev->top = 0;

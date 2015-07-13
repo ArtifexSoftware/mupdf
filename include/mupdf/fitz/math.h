@@ -607,7 +607,7 @@ fz_rect *fz_transform_rect(fz_rect *restrict rect, const fz_matrix *restrict tra
 */
 void fz_normalize_vector(fz_point *p);
 
-void fz_gridfit_matrix(fz_matrix *m);
+void fz_gridfit_matrix(int as_tiled, fz_matrix *m);
 
 float fz_matrix_max_expansion(const fz_matrix *m);
 
