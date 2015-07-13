@@ -760,6 +760,9 @@ fz_text_extract(fz_context *ctx, fz_text_device *dev, fz_text *text, const fz_ma
 	if (text->len == 0)
 		return;
 
+	if (dev->spans == NULL)
+		dev->spans = new_span_soup(ctx);
+
 	if (style->wmode == 0)
 	{
 		if (font->ft_face)
@@ -1011,8 +1014,6 @@ fz_text_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, con
 
 	tdev->page->mediabox = *mediabox;
 	fz_transform_rect(&tdev->page->mediabox, ctm);
-
-	tdev->spans = new_span_soup(ctx);
 }
 
 static void
