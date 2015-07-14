@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.content.Intent;
 
 public class MuPDFCore
 {
@@ -77,6 +78,8 @@ public class MuPDFCore
 	private native long createCookie();
 	private native void destroyCookie(long cookie);
 	private native void abortCookie(long cookie);
+	private native String startProofInternal();
+	private native void endProofInternal(String filename);
 
 	public native boolean javascriptSupported();
 
@@ -345,5 +348,13 @@ public class MuPDFCore
 
 	public synchronized void save() {
 		saveInternal();
+	}
+
+	public synchronized String startProof() {
+		return startProofInternal();
+	}
+
+	public synchronized void endProof(String filename) {
+		endProofInternal(filename);
 	}
 }

@@ -50,6 +50,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private final int    OUTLINE_REQUEST=0;
 	private final int    PRINT_REQUEST=1;
 	private final int    FILEPICK_REQUEST=2;
+	private final int    PROOF_REQUEST=3;
 	private MuPDFCore    core;
 	private String       mFileName;
 	private MuPDFReaderView mDocView;
@@ -83,6 +84,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private AsyncTask<Void,Void,MuPDFAlert> mAlertTask;
 	private AlertDialog mAlertDialog;
 	private FilePicker mFilePicker;
+	private String       mProofFile;
 
 	public void createAlertWaiter() {
 		mAlertsActive = true;
@@ -621,6 +623,12 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		case FILEPICK_REQUEST:
 			if (mFilePicker != null && resultCode == RESULT_OK)
 				mFilePicker.onPick(data.getData());
+		case PROOF_REQUEST:
+			if (mProofFile != null)
+			{
+				core.endProof(mProofFile);
+				mProofFile = null;
+			}
 		}
 		super.onActivityResult(requestCode, resultCode, data);
 	}
@@ -897,6 +905,15 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 
 	public void OnPrintButtonClick(View v) {
 		printDoc();
+	}
+
+	public void OnProofButtonClick(View v) {
+		mProofFile = core.startProof();
+		Uri uri = Uri.parse("file://"+mProofFile);
+		Intent intent = new Intent(this,MuPDFActivity.class);
+		intent.setAction(Intent.ACTION_VIEW);
+		intent.setData(uri);
+		startActivityForResult(intent, PROOF_REQUEST);
 	}
 
 	public void OnCopyTextButtonClick(View v) {

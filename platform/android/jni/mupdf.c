@@ -36,6 +36,7 @@
 #define LINE_THICKNESS (0.07f)
 #define INK_THICKNESS (4.0f)
 #define SMALL_FLOAT (0.00001)
+#define PROOF_RESOLUTION (300)
 
 enum
 {
@@ -2674,4 +2675,95 @@ JNI_FN(MuPDFCore_abortCookie)(JNIEnv * env, jobject thiz, jlong cookiePtr)
 	fz_cookie *cookie = (fz_cookie *) (intptr_t) cookiePtr;
 	if (cookie != NULL)
 		cookie->abort = 1;
+}
+
+static char *tmp_gproof_path(char *path)
+{
+	FILE *f;
+	int i;
+	char *buf = malloc(strlen(path) + 20 + 1);
+	if (!buf)
+		return NULL;
+
+	for (i = 0; i < 10000; i++)
+	{
+		sprintf(buf, "%s.%d.gproof", path, i);
+
+		LOGE("Trying for %s\n", buf);
+		f = fopen(buf, "r");
+		if (f != NULL)
+		{
+			fclose(f);
+			continue;
+		}
+
+		f = fopen(buf, "w");
+		if (f != NULL)
+		{
+			fclose(f);
+			break;
+		}
+	}
+	if (i == 10000)
+	{
+		LOGE("Failed to find temp gproof name");
+		free(buf);
+		return NULL;
+	}
+
+	LOGE("Rewritten to %s\n", buf);
+	return buf;
+}
+
+JNIEXPORT jstring JNICALL
+JNI_FN(MuPDFCore_startProofInternal)(JNIEnv * env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	char *tmp;
+	jstring ret;
+
+	if (!glo->doc || !glo->current_path)
+		return NULL;
+
+	tmp = tmp_gproof_path(glo->current_path);
+	if (!tmp)
+		return NULL;
+
+	fz_try(ctx)
+	{
+		fz_write_gproof_file(ctx, glo->current_path, glo->doc, tmp, PROOF_RESOLUTION);
+
+		LOGE("Creating %s\n", tmp);
+		ret = (*env)->NewStringUTF(env, tmp);
+	}
+	fz_always(ctx)
+	{
+		free(tmp);
+	}
+	fz_catch(ctx)
+	{
+		ret = NULL;
+	}
+	return ret;
+}
+
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_endProofInternal)(JNIEnv * env, jobject thiz, jstring jfilename)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	const char *tmp;
+
+	if (!glo->doc || !glo->current_path || jfilename == NULL)
+		return;
+
+	tmp = (*env)->GetStringUTFChars(env, jfilename, NULL);
+	if (tmp)
+	{
+		LOGE("Deleting %s\n", tmp);
+
+		unlink(tmp);
+		(*env)->ReleaseStringUTFChars(env, jfilename, tmp);
+	}
 }

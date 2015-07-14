@@ -259,6 +259,17 @@
 				android:src="@drawable/ic_cancel" />
 
 			<ImageButton
+				android:id="@+id/proofButton"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_centerVertical="true"
+				android:layout_toLeftOf="@+id/printButton"
+				android:contentDescription="@string/proof"
+				android:background="@drawable/button"
+				android:onClick="OnProofButtonClick"
+				android:src="@drawable/ic_proof" />
+
+			<ImageButton
 				android:id="@+id/printButton"
 				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"

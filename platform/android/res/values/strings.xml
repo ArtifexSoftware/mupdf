@@ -25,6 +25,7 @@
 	<string name="edit_annotations">Edit annotations</string>
 	<string name="ink">Ink</string>
 	<string name="save">Save</string>
+	<string name="proof">Proof</string>
 	<string name="print">Print</string>
 	<string name="dismiss">Dismiss</string>
 	<string name="parent_directory">[Up one level]</string>
