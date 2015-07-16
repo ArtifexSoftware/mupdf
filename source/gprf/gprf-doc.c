@@ -4,6 +4,11 @@ typedef struct gprf_document_s gprf_document;
 typedef struct gprf_chapter_s gprf_chapter;
 typedef struct gprf_page_s gprf_page;
 
+/* Choose whether to call gs via an exe or via an API */
+#ifdef __ANDROID__
+#define USE_GS_API
+#endif
+
 enum
 {
 	GPRF_TILESIZE = 256
@@ -446,13 +451,40 @@ generate_page(fz_context *ctx, gprf_page *page)
 	sprintf(nameroot, "gprf_%d_", page->number);
 	filename = fz_tempfilename(ctx, nameroot, doc->pdf_filename);
 
-	/* Invoke gs to convert to a temp file. */
-	sprintf(gs_command, "gswin32c.exe -sDEVICE=gproof -r%d -o \"%s\" -dFirstPage=%d -dLastPage=%d %s",
-		doc->res, filename, page->number+1, page->number+1, doc->pdf_filename);
-
 	fz_try(ctx)
 	{
+#ifdef USE_GS_API
+		void **instance;
+		int code;
+		char *argv[] = { "gs", "-sDEVICE=gproof", NULL, "-o", NULL, NULL, NULL, NULL };
+		char arg_res[32];
+		char arg_fp[32];
+		char arg_lp[32];
+
+		sprintf(arg_res, "-r%d", doc->res);
+		argv[2] = arg_res;
+		argv[4] = filename;
+		sprintf(arg_fp, "-dFirstPage=%d", page->number+1);
+		argv[5] = arg_fp;
+		sprintf(arg_lp, "-dLastPage=%d", page->number+1);
+		argv[6] = arg_lp;
+		argv[7] = doc->pdf_filename;
+
+		code = gsapi_new_instance(&instance, ctx);
+		if (code < 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "GS startup failed: %d", code);
+
+		code = gsapi_init_with_args(instance, sizeof(argv)/sizeof(*argv), argv);
+
+		gsapi_delete_instance(instance);
+		if (code < 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "GS run failed: %d", code);
+#else
+		/* Invoke gs to convert to a temp file. */
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gproof -r%d -o \"%s\" -dFirstPage=%d -dLastPage=%d %s",
+			doc->res, filename, page->number+1, page->number+1, doc->pdf_filename);
 		fz_system(ctx, gs_command);
+#endif
 
 		page->file = fz_new_gprf_file(ctx, filename);
 	}
