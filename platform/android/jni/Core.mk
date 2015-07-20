@@ -51,7 +51,8 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/pdf/*.c) \
 	$(wildcard $(MY_ROOT)/source/xps/*.c) \
 	$(wildcard $(MY_ROOT)/source/cbz/*.c) \
-	$(wildcard $(MY_ROOT)/source/html/*.c)
+	$(wildcard $(MY_ROOT)/source/html/*.c) \
+	$(wildcard $(MY_ROOT)/source/gprf/*.c)
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/source/pdf/js/pdf-js.c \
 	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.c

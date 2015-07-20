@@ -1582,6 +1582,14 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="gprf"
+			>
+			<File
+				RelativePath="..\..\source\gprf\gprf-doc.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
