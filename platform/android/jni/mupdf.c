@@ -2718,6 +2718,7 @@ static char *tmp_gproof_path(char *path)
 JNIEXPORT jstring JNICALL
 JNI_FN(MuPDFCore_startProofInternal)(JNIEnv * env, jobject thiz)
 {
+#ifdef SUPPORT_GPROOF
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	char *tmp;
@@ -2746,11 +2747,15 @@ JNI_FN(MuPDFCore_startProofInternal)(JNIEnv * env, jobject thiz)
 		ret = NULL;
 	}
 	return ret;
+#else
+	return NULL;
+#endif
 }
 
 JNIEXPORT void JNICALL
 JNI_FN(MuPDFCore_endProofInternal)(JNIEnv * env, jobject thiz, jstring jfilename)
 {
+#ifdef SUPPORT_GPROOF
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	const char *tmp;
@@ -2766,4 +2771,15 @@ JNI_FN(MuPDFCore_endProofInternal)(JNIEnv * env, jobject thiz, jstring jfilename
 		unlink(tmp);
 		(*env)->ReleaseStringUTFChars(env, jfilename, tmp);
 	}
+#endif
+}
+
+JNIEXPORT jboolean JNICALL
+JNI_FN(MuPDFCore_gprfSupportedInternal)(JNIEnv * env)
+{
+#ifdef SUPPORT_GPROOF
+	return JNI_TRUE;
+#else
+	return JNI_FALSE;
+#endif
 }

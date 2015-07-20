@@ -11,8 +11,19 @@ import android.content.Intent;
 public class MuPDFCore
 {
 	/* load our native library */
+	private static boolean gs_so_available = false;
 	static {
 		System.loadLibrary("mupdf");
+		if (gprfSupportedInternal())
+		{
+			try {
+				System.loadLibrary("gs");
+				gs_so_available = true;
+			}
+			catch (UnsatisfiedLinkError e) {
+				gs_so_available = false;
+			}
+		}
 	}
 
 	/* Readable members */
@@ -26,6 +37,7 @@ public class MuPDFCore
 	private final boolean wasOpenedFromBuffer;
 
 	/* The native functions */
+	private static native boolean gprfSupportedInternal();
 	private native long openFile(String filename);
 	private native long openBuffer(String magic);
 	private native String fileFormatInternal();
@@ -356,5 +368,11 @@ public class MuPDFCore
 
 	public synchronized void endProof(String filename) {
 		endProofInternal(filename);
+	}
+
+	public static boolean gprfSupported() {
+		if (gs_so_available == false)
+			return false;
+		return gprfSupportedInternal();
 	}
 }

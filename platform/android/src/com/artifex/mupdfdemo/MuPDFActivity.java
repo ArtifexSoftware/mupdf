@@ -76,6 +76,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private ImageButton  mSearchFwd;
 	private EditText     mSearchText;
 	private SearchTask   mSearchTask;
+	private ImageButton  mProofButton;
 	private AlertDialog.Builder mAlertBuilder;
 	private boolean    mLinkHighlight = false;
 	private final Handler mHandler = new Handler();
@@ -887,10 +888,14 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		mSearchText = (EditText)mButtonsView.findViewById(R.id.searchText);
 		mLinkButton = (ImageButton)mButtonsView.findViewById(R.id.linkButton);
 		mMoreButton = (ImageButton)mButtonsView.findViewById(R.id.moreButton);
+		mProofButton = (ImageButton)mButtonsView.findViewById(R.id.proofButton);
 		mTopBarSwitcher.setVisibility(View.INVISIBLE);
 		mPageNumberView.setVisibility(View.INVISIBLE);
 		mInfoView.setVisibility(View.INVISIBLE);
 		mPageSlider.setVisibility(View.INVISIBLE);
+		if (!core.gprfSupported()) {
+			mProofButton.setVisibility(View.INVISIBLE);
+		}
 	}
 
 	public void OnMoreButtonClick(View v) {

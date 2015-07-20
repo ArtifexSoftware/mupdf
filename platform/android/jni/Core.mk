@@ -1,5 +1,12 @@
 LOCAL_PATH := $(call my-dir)
 
+ifdef SUPPORT_GPROOF
+include $(CLEAR_VARS)
+LOCAL_MODULE    := gsso
+LOCAL_SRC_FILES := libgs.so
+include $(PREBUILT_SHARED_LIBRARY)
+endif
+
 include $(CLEAR_VARS)
 
 MY_ROOT := ../..
@@ -9,6 +16,9 @@ LOCAL_CFLAGS += -DARCH_ARM -DARCH_THUMB -DARCH_ARM_CAN_LOAD_UNALIGNED
 ifdef NDK_PROFILER
 LOCAL_CFLAGS += -pg -DNDK_PROFILER
 endif
+endif
+ifdef SUPPORT_GPROOF
+LOCAL_CFLAGS += -DSUPPORT_GPROOF
 endif
 LOCAL_CFLAGS += -DAA_BITS=8
 ifdef MEMENTO
@@ -51,12 +61,15 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/pdf/*.c) \
 	$(wildcard $(MY_ROOT)/source/xps/*.c) \
 	$(wildcard $(MY_ROOT)/source/cbz/*.c) \
-	$(wildcard $(MY_ROOT)/source/html/*.c) \
-	$(wildcard $(MY_ROOT)/source/gprf/*.c)
+	$(wildcard $(MY_ROOT)/source/gprf/*.c) \
+	$(wildcard $(MY_ROOT)/source/html/*.c)
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/source/pdf/js/pdf-js.c \
 	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.c
 
+ifdef SUPPORT_GPROOF
+LOCAL_SHARED_LIBRARIES := gsso
+endif
 LOCAL_LDLIBS    := -lm -llog -ljnigraphics
 
 LOCAL_SRC_FILES := $(addprefix ../, $(LOCAL_SRC_FILES))
