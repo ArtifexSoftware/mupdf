@@ -23,9 +23,6 @@
 #define LOGT(...) __android_log_print(ANDROID_LOG_INFO,"alert",__VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
-/* Set to 1 to enable debug log traces. */
-#define DEBUG 0
-
 /* Enable to log rendering times (render each frame 100 times and time) */
 #undef TIME_DISPLAY_LIST
 
@@ -291,6 +288,15 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 		return 0;
 	glo->resolution = 160;
 	glo->alerts_initialised = 0;
+
+#ifdef DEBUG
+	/* Try and send stdout/stderr to file in debug builds. This
+	 * path may not work on all platforms, but it works on the
+	 * LG G3, and it's no worse than not redirecting it anywhere
+	 * on anything else. */
+	freopen("/storage/emulated/0/Download/stdout.txt", "a", stdout);
+	freopen("/storage/emulated/0/Download/stderr.txt", "a", stderr);
+#endif
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
 	if (filename == NULL)
