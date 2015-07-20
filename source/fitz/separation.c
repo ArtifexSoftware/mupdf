@@ -49,7 +49,11 @@ void fz_drop_separations(fz_context *ctx, fz_separations *sep)
 		sep->refs--;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 	if (i == 1)
+	{
+		for (i = 0; i < sep->num_separations; i++)
+			fz_free(ctx, sep->name[i]);
 		fz_free(ctx, sep);
+	}
 }
 
 void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint32_t cmyk, char *name)
