@@ -922,7 +922,7 @@ static fz_html_flow *find_list_mark_anchor(fz_context *ctx, fz_html *box)
 		if (box->type == BOX_FLOW)
 		{
 			fz_html_flow *flow = box->flow_head;
-			if (flow->type == FLOW_BREAK)
+			if (flow && flow->type == FLOW_BREAK)
 				flow = flow->next;
 			while (flow && flow->type == FLOW_GLUE)
 				flow = flow->next;
