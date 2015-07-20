@@ -2789,3 +2789,47 @@ JNI_FN(MuPDFCore_gprfSupportedInternal)(JNIEnv * env)
 	return JNI_FALSE;
 #endif
 }
+
+JNIEXPORT int JNICALL
+JNI_FN(MuPDFCore_getNumSepsOnPageInternal)(JNIEnv *env, jobject thiz)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+
+	return fz_count_separations_on_page(ctx, glo->pages[glo->current].page);
+}
+
+JNIEXPORT void JNICALL
+JNI_FN(MuPDFCore_controlSepOnPageInternal)(JNIEnv *env, jobject thiz, int sep, jboolean disable)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+
+	fz_control_separation_on_page(ctx, glo->pages[glo->current].page, sep, disable);
+}
+
+JNIEXPORT jobject JNICALL
+JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int sep)
+{
+	globals *glo = get_globals(env, thiz);
+	fz_context *ctx = glo->ctx;
+	const char *name;
+	unsigned int rgb;
+	unsigned int cmyk;
+	jobject jname;
+	jclass sepClass;
+	jmethodID ctor;
+
+	name = fz_get_separation_on_page(ctx, glo->pages[glo->current].page, sep, &rgb, &cmyk);
+	jname = name ? (*env)->NewStringUTF(env, name) : NULL;
+
+	sepClass = (*env)->FindClass(env, PACKAGENAME "/Separation");
+	if (sepClass == NULL)
+		return NULL;
+
+	ctor = (*env)->GetMethodID(env, sepClass, "<init>", "(Ljava/lang/String;II)V");
+	if (ctor == NULL)
+		return NULL;
+
+	return (*env)->NewObject(env, sepClass, ctor, jname, rgb, cmyk);
+}

@@ -361,6 +361,27 @@ int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char 
 #define FZ_META_INFO_TITLE "info:Title"
 
 /*
+	Get the number of separations on a page (including CMYK). This will
+	be 0, unless the format specifically supports separations (such as
+	gproof files).
+*/
+int fz_count_separations_on_page(fz_context *ctx, fz_page *page);
+
+/*
+	Enable/Disable a given separation on a given page. This will only
+	affect future renderings of pages from a format that supports
+	separations (such as gproof files).
+*/
+void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int disable);
+
+/*
+	Get the name and equivalent RGBA, CMYK colors of a given separation
+	on a given page. This will only work for formats that support
+	gproof files.
+*/
+const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk);
+
+/*
 	fz_write_gproof_file: Given a currently open document, create a
 	gproof skeleton file from that document.
 

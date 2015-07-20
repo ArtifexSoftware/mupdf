@@ -408,3 +408,31 @@ fz_page_presentation(fz_context *ctx, fz_page *page, float *duration)
 		return page->page_presentation(ctx, page, duration);
 	return NULL;
 }
+
+int fz_count_separations_on_page(fz_context *ctx, fz_page *page)
+{
+	if (ctx == NULL || page == NULL || page->count_separations == NULL)
+		return 0;
+
+	return page->count_separations(ctx, page);
+}
+
+void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int disable)
+{
+	if (ctx == NULL || page == NULL || page->control_separation == NULL)
+		return;
+
+	page->control_separation(ctx, page, sep, disable);
+}
+
+const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk)
+{
+	if (ctx == NULL || page == NULL || page->get_separation == NULL)
+	{
+		*rgba = 0;
+		*cmyk = 0;
+		return NULL;
+	}
+
+	return page->get_separation(ctx, page, sep, rgba, cmyk);
+}
