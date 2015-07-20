@@ -9,5 +9,7 @@ void fz_register_document_handlers(fz_context *ctx)
 	fz_register_document_handler(ctx, &tiff_document_handler);
 	fz_register_document_handler(ctx, &html_document_handler);
 	fz_register_document_handler(ctx, &epub_document_handler);
+#ifdef SUPPORT_GPROOF
 	fz_register_document_handler(ctx, &gprf_document_handler);
+#endif
 }
