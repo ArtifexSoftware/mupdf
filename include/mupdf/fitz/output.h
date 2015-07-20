@@ -103,8 +103,13 @@ int fz_snprintf(char *buffer, int space, const char *fmt, ...);
 
 /*
 	fz_tempfilename: Get a temporary filename based upon 'base'.
-	This must be freed.
+
+	'hint' is the path of a file (normally the existing document file)
+	supplied to give the function an idea of what directory to use. This
+	may or may not be used depending on the implementations whim.
+
+	The returned path must be freed.
 */
-char *fz_tempfilename(fz_context *ctx, const char *base);
+char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint);
 
 #endif
