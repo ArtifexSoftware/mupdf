@@ -40,7 +40,7 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *st
 		/* Send NULL xref so we don't try to resolve references */
 		fz_try(ctx)
 		{
-			dict = pdf_parse_dict(ctx, doc, file, buf);
+			dict = pdf_parse_dict(ctx, NULL, file, buf);
 		}
 		fz_catch(ctx)
 		{
@@ -49,7 +49,7 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *st
 			if (file->eof)
 				fz_rethrow_message(ctx, "broken object at EOF ignored");
 			/* Silently swallow the error */
-			dict = pdf_new_dict(ctx, doc, 2);
+			dict = pdf_new_dict(ctx, NULL, 2);
 		}
 
 		if (encrypt && id)
