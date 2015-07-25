@@ -19,10 +19,8 @@ fz_eval_function(fz_context *ctx, fz_function *func, const float *in, int inlen,
 	if (outlen < func->n)
 	{
 		func->evaluate(ctx, func, in, fakeout);
-		for (i = 0; i < func->n; ++i)
+		for (i = 0; i < outlen; ++i)
 			out[i] = fakeout[i];
-		for (; i < outlen; ++i)
-			out[i] = 0;
 	}
 	else
 	{
