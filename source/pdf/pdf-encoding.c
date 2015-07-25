@@ -30,6 +30,7 @@ pdf_lookup_agl(char *name)
 	char *p;
 	int l = 0;
 	int r = nelem(agl_name_list) - 1;
+	int code = 0;
 
 	fz_strlcpy(buf, name, sizeof buf);
 
@@ -51,14 +52,15 @@ pdf_lookup_agl(char *name)
 			return agl_code_list[m];
 	}
 
-	if (strstr(buf, "uni") == buf)
-		return strtol(buf + 3, NULL, 16);
-	else if (strstr(buf, "u") == buf)
-		return strtol(buf + 1, NULL, 16);
-	else if (strstr(buf, "a") == buf && strlen(buf) >= 3)
-		return strtol(buf + 1, NULL, 10);
 
-	return 0;
+	if (strstr(buf, "uni") == buf)
+		code = strtol(buf + 3, NULL, 16);
+	else if (strstr(buf, "u") == buf)
+		code = strtol(buf + 1, NULL, 16);
+	else if (strstr(buf, "a") == buf && strlen(buf) >= 3)
+		code = strtol(buf + 1, NULL, 10);
+
+	return (code >= 0 && code <= 0x10ffff) ? code : 0;
 }
 
 static const char *empty_dup_list[] = { 0 };
