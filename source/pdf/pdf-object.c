@@ -412,7 +412,8 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 	{
 		if (b < PDF_OBJ_NAME__LIMIT)
 			return a != b;
-
+		if (b < PDF_OBJ__LIMIT)
+			return 1;
 		if (b->kind != PDF_NAME)
 			return 1;
 		return strcmp(NAME(b)->n, PDF_NAMES[(intptr_t)a]);
@@ -420,6 +421,8 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 
 	if (b < PDF_OBJ_NAME__LIMIT)
 	{
+		if (a < PDF_OBJ__LIMIT)
+			return 1;
 		if (a->kind != PDF_NAME)
 			return 1;
 		return strcmp(NAME(a)->n, PDF_NAMES[(intptr_t)b]);
