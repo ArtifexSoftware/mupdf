@@ -1302,7 +1302,7 @@ void
 fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
 {
 	struct sctx s;
-	float phase_len, max_expand;
+	float max_expand;
 	int i;
 	fz_matrix inv;
 
@@ -1318,19 +1318,20 @@ fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, fz_path *path, const fz_strok
 	s.dot = 0;
 
 	s.dash_list = stroke->dash_list;
-	s.dash_phase = stroke->dash_phase;
 	s.dash_len = stroke->dash_len;
+
+	s.dash_total = 0;
+	for (i = 0; i < s.dash_len; i++)
+		s.dash_total += s.dash_list[i];
+	if (s.dash_len > 0 && s.dash_total == 0)
+		return;
+
+	s.dash_phase = stroke->dash_phase;
+	s.cap = stroke->start_cap;
 	s.toggle = 0;
 	s.offset = 0;
 	s.phase = 0;
 
-	s.cap = stroke->start_cap;
-
-	phase_len = 0;
-	for (i = 0; i < stroke->dash_len; i++)
-		phase_len += stroke->dash_list[i];
-	if (stroke->dash_len > 0 && phase_len == 0)
-		return;
 	fz_gel_scissor(ctx, gel, &s.rect);
 	if (fz_try_invert_matrix(&inv, ctm))
 		return;
@@ -1341,12 +1342,11 @@ fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, fz_path *path, const fz_strok
 	s.rect.y1 += linewidth;
 
 	max_expand = fz_matrix_max_expansion(ctm);
-	if (phase_len < 0.01f || phase_len * max_expand < 0.5f)
+	if (s.dash_total < 0.01f || s.dash_total * max_expand < 0.5f)
 	{
 		fz_flatten_stroke_path(ctx, gel, path, stroke, ctm, flatness, linewidth);
 		return;
 	}
-	s.dash_total = phase_len;
 
 	s.cur.x = s.cur.y = 0;
 	fz_process_path(ctx, &dash_proc, &s, path);
