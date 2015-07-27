@@ -1326,7 +1326,7 @@ fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, fz_path *path, const fz_strok
 	if (s.dash_len > 0 && s.dash_total == 0)
 		return;
 
-	s.dash_phase = stroke->dash_phase;
+	s.dash_phase = fmodf(stroke->dash_phase, s.dash_total);
 	s.cap = stroke->start_cap;
 	s.toggle = 0;
 	s.offset = 0;
