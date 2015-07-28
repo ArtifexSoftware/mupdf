@@ -1936,6 +1936,10 @@ object_updated:
 		if (!try_repair && rnum != num)
 		{
 			pdf_drop_obj(ctx, x->obj);
+			x->type = 'f';
+			x->ofs = -1;
+			x->gen = 0;
+			x->stm_ofs = 0;
 			x->obj = NULL;
 			try_repair = (doc->repair_attempted == 0);
 		}
