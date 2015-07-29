@@ -1,4 +1,3 @@
-#include <assert.h>
 #include "mupdf/fitz.h"
 
 // Thoughts for further optimisations:

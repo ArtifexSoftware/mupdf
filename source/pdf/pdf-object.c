@@ -2,8 +2,6 @@
 
 #include "pdf-name-table.h"
 
-#include <stdarg.h>
-
 typedef enum pdf_objkind_e
 {
 	PDF_INT = 'i',

@@ -1,8 +1,6 @@
 #include "pdfapp.h"
 #include "curl_stream.h"
 
-#include <ctype.h> /* for tolower() */
-
 #define BEYOND_THRESHHOLD 40
 #ifndef PATH_MAX
 #define PATH_MAX (1024)
