@@ -21,35 +21,6 @@ intermediate results rather than ints.
  */
 #define SINGLE_PIXEL_SPECIALS
 
-#ifdef DEBUG_SCALING
-#ifdef WIN32
-#include <windows.h>
-static void debug_print(const char *fmt, ...)
-{
-	va_list args;
-	char text[256];
-	va_start(args, fmt);
-	vsprintf(text, fmt, args);
-	va_end(args);
-	OutputDebugStringA(text);
-	printf(text);
-}
-#else
-static void debug_print(const char *fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-	va_end(args);
-}
-#endif
-#endif
-#ifdef DEBUG_SCALING
-#define DBUG(A) debug_print A
-#else
-#define DBUG(A) do {} while(0==1)
-#endif
-
 /*
 Consider a row of source samples, src, of width src_w, positioned at x,
 scaled to width dst_w.
@@ -319,8 +290,6 @@ add_weight(fz_weights *weights, int j, int i, fz_scale_filter *filter,
 			return;
 	}
 
-	DBUG(("add_weight[%d][%d] = %d(%g) dist=%g\n",j,i,weight,f,dist));
-
 	/* Move j from patch_l...patch_l+patch_w range to 0..patch_w range */
 	j -= weights->patch_l;
 	if (weights->new_line)
@@ -446,7 +415,6 @@ check_weights(fz_weights *weights, int j, int w, float x, float wf)
 	 * adjust it. */
 	else if ((j == w-1) && ((float)w-wf < 0.0001F) && (sum != 256))
 		weights->index[maxidx-1] += 256-sum;
-	DBUG(("total weight %d = %d\n", j, sum));
 }
 
 static fz_weights *
@@ -494,7 +462,6 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 		G = src_w / dst_w;
 	}
 	window = filter->width / F;
-	DBUG(("make_weights src_w=%d x=%g dst_w=%g patch_l=%d patch_r=%d F=%g window=%g\n", src_w, x, dst_w, patch_l, patch_r, F, window));
 	weights	= new_weights(ctx, filter, src_w, dst_w, patch_r-patch_l, n, flip, patch_l);
 	if (!weights)
 		return NULL;
@@ -505,7 +472,6 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 		int l, r;
 		l = ceilf(centre - window);
 		r = floorf(centre + window);
-		DBUG(("%d: centre=%g l=%d r=%d\n", j, centre, l, r));
 		init_weights(weights, j);
 		for (; l <= r; l++)
 		{
@@ -1228,8 +1194,6 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 	fz_var(contrib_cols);
 	fz_var(contrib_rows);
 
-	DBUG(("Scale: (%d,%d) to (%g,%g) at (%g,%g)\n",src->w,src->h,w,h,x,y));
-
 	/* Avoid extreme scales where overflows become problematic. */
 	if (w > (1<<24) || h > (1<<24) || w < -(1<<24) || h < -(1<<24))
 		return NULL;
@@ -1320,8 +1284,6 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 		dst_h_int = (int)ceilf(y + h);
 	}
 
-	DBUG(("Result image: (%d,%d) at (%d,%d) (subpix=%g,%g)\n", dst_w_int, dst_h_int, dst_x_int, dst_y_int, x, y));
-
 	/* Step 0: Calculate the patch */
 	patch.x0 = 0;
 	patch.y0 = 0;
@@ -1329,7 +1291,6 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 	patch.y1 = dst_h_int;
 	if (clip)
 	{
-		DBUG(("Clip: (%d,%d) -> (%d,%d)\n", clip->x0, clip->y0, clip->x1, clip->y1));
 		if (flip_x)
 		{
 			if (dst_x_int + dst_w_int > clip->x1)
@@ -1372,7 +1333,6 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 			}
 		}
 	}
-	DBUG(("Patch: (%g,%g) -> (%g,%g)\n", patch.x0, patch.y0, patch.x1, patch.y1));
 	if (patch.x0 >= patch.x1 || patch.y0 >= patch.y1)
 		return NULL;
 
@@ -1478,12 +1438,10 @@ fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float 
 			{
 				/* Scale another row */
 				assert(max_row < src->h);
-				DBUG(("scaling row %d to temp\n", max_row));
 				(*row_scale)(&temp[temp_span*(max_row % temp_rows)], &src->samples[(flip_y ? (src->h-1-max_row): max_row)*src->w*src->n], contrib_cols);
 				max_row++;
 			}
 
-			DBUG(("scaling row %d from temp\n", row));
 			scale_row_from_temp(&output->samples[row*output->w*output->n], temp, contrib_rows, temp_span, row);
 		}
 		fz_free(ctx, temp);

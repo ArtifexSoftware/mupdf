@@ -1,20 +1,6 @@
 #include "mupdf/fitz/stream.h"
 #include "mupdf/fitz/string.h"
 
-#if (defined(_WIN32) || defined(_WIN64)) && !defined(NDEBUG)
-#include "windows.h"
-
-static void
-show_progress(int av, int pos)
-{
-	char text[80];
-	sprintf(text, "Have %d, Want %d\n", av, pos);
-	OutputDebugStringA(text);
-}
-#else
-#define show_progress(A,B) do {} while (0)
-#endif
-
 /* File stream - progressive reading to simulate http download */
 
 typedef struct prog_state
@@ -48,10 +34,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 		{
 			len = av - stm->pos;
 			if (len <= 0)
-			{
-				show_progress(av, stm->pos);
 				fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data yet");
-			}
 		}
 	}
 
@@ -81,28 +64,19 @@ static void seek_prog(fz_context *ctx, fz_stream *stm, fz_off_t offset, int when
 	if (ps->available < ps->length)
 	{
 		if (whence == SEEK_END)
-		{
-			show_progress(ps->available, ps->length);
 			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data to seek to end yet");
-		}
 	}
 	if (whence == SEEK_CUR)
 	{
 		whence = SEEK_SET;
 		offset += stm->pos;
 		if (offset > ps->available)
-		{
-			show_progress(ps->available, offset);
 			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data to seek (relatively) to offset yet");
-		}
 	}
 	if (whence == SEEK_SET)
 	{
 		if (offset > ps->available)
-		{
-			show_progress(ps->available, offset);
 			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data to seek to offset yet");
-		}
 	}
 
 	if (fz_fseek(ps->file, offset, whence) != 0)
