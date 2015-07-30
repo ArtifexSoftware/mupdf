@@ -3,6 +3,11 @@ package com.artifex.mupdfdemo;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -552,6 +557,7 @@ public class ReaderView
 			}
 		}
 
+		requestLayout();
 		return true;
 	}
 
@@ -565,9 +571,39 @@ public class ReaderView
 	}
 
 	@Override
-	protected void onLayout(boolean changed, int left, int top, int right,
-			int bottom) {
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
 		super.onLayout(changed, left, top, right, bottom);
+
+		try {
+			onLayout2(changed, left, top, right, bottom);
+		}
+		catch (java.lang.OutOfMemoryError e) {
+			System.out.println("Out of memory during layout");
+
+			//  we might get an out of memory error.
+			//  so let's display an alert.
+			//  TODO: a better message, in resources.
+
+			if (!memAlert) {
+				memAlert = true;
+				AlertDialog alertDialog = MuPDFActivity.getAlertBuilder().create();
+				alertDialog.setMessage("Out of memory during layout");
+				alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							dialog.dismiss();
+							memAlert = false;
+						}
+					});
+				alertDialog.show();
+			}
+		}
+	}
+
+	private boolean memAlert = false;
+
+	private void onLayout2(boolean changed, int left, int top, int right,
+			int bottom) {
 
 		// "Edit mode" means when the View is being displayed in the Android GUI editor. (this class
 		// is instantiated in the IDE, so we need to be a bit careful what we do).
@@ -752,6 +788,14 @@ public class ReaderView
 
 	@Override
 	public void setAdapter(Adapter adapter) {
+
+		//  release previous adapter's bitmaps
+		if (null!=mAdapter && adapter!=mAdapter) {
+			if (adapter instanceof MuPDFPageAdapter){
+				((MuPDFPageAdapter) adapter).releaseBitmaps();
+			}
+		}
+
 		mAdapter = adapter;
 
 		requestLayout();

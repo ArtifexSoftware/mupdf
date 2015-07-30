@@ -34,6 +34,14 @@ public class MuPDFPageAdapter extends BaseAdapter {
 		return 0;
 	}
 
+	public void releaseBitmaps()
+	{
+		//  recycle and release the shared bitmap.
+		if (mSharedHqBm!=null)
+			mSharedHqBm.recycle();
+		mSharedHqBm = null;
+	}
+
 	public View getView(final int position, View convertView, ViewGroup parent) {
 		final MuPDFPageView pageView;
 		if (convertView == null) {

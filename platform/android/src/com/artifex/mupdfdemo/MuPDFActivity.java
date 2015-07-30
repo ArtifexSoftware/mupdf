@@ -87,6 +87,9 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private FilePicker mFilePicker;
 	private String       mProofFile;
 
+	static private AlertDialog.Builder gAlertBuilder;
+	static public AlertDialog.Builder getAlertBuilder() {return gAlertBuilder;}
+
 	public void createAlertWaiter() {
 		mAlertsActive = true;
 		// All mupdf library calls are performed on asynchronous tasks to avoid stalling
@@ -223,6 +226,12 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			System.out.println(e);
 			return null;
 		}
+		catch (java.lang.OutOfMemoryError e)
+		{
+			//  out of memory is not an Exception, so we catch it separately.
+			System.out.println(e);
+			return null;
+		}
 		return core;
 	}
 
@@ -245,11 +254,12 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 
 	/** Called when the activity is first created. */
 	@Override
-	public void onCreate(Bundle savedInstanceState)
+	public void onCreate(final Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 
 		mAlertBuilder = new AlertDialog.Builder(this);
+		gAlertBuilder = mAlertBuilder;  //  keep a static copy of this that other classes can use
 
 		if (core == null) {
 			core = (MuPDFCore)getLastNonConfigurationInstance();

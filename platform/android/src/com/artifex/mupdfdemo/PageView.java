@@ -200,7 +200,15 @@ public abstract class PageView extends ViewGroup {
 
 	public void releaseBitmaps() {
 		reinit();
+
+		//  recycle bitmaps before releasing them.
+
+		if (mEntireBm!=null)
+			mEntireBm.recycle();
 		mEntireBm = null;
+
+		if (mPatchBm!=null)
+			mPatchBm.recycle();
 		mPatchBm = null;
 	}
 
