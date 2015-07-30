@@ -906,6 +906,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\load-gif.c"
+				>
+			</File>			
+			<File
 				RelativePath="..\..\source\fitz\load-jpeg.c"
 				>
 			</File>
