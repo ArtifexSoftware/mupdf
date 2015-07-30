@@ -992,7 +992,6 @@ load_sample_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj
 		/* read samples */
 		for (i = 0; i < samplecount; i++)
 		{
-			unsigned int x;
 			float s;
 
 			if (fz_is_eof_bits(ctx, stream))
@@ -1005,26 +1004,10 @@ load_sample_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj
 			case 4: s = fz_read_bits(ctx, stream, 4) / 15.0f; break;
 			case 8: s = fz_read_byte(ctx, stream) / 255.0f; break;
 			case 12: s = fz_read_bits(ctx, stream, 12) / 4095.0f; break;
-			case 16:
-				x = fz_read_byte(ctx, stream) << 8;
-				x |= fz_read_byte(ctx, stream);
-				s = x / 65535.0f;
-				break;
-			case 24:
-				x = fz_read_byte(ctx, stream) << 16;
-				x |= fz_read_byte(ctx, stream) << 8;
-				x |= fz_read_byte(ctx, stream);
-				s = x / 16777215.0f;
-				break;
-			case 32:
-				x = fz_read_byte(ctx, stream) << 24;
-				x |= fz_read_byte(ctx, stream) << 16;
-				x |= fz_read_byte(ctx, stream) << 8;
-				x |= fz_read_byte(ctx, stream);
-				s = x / 4294967295.0f;
-				break;
-			default:
-				fz_throw(ctx, FZ_ERROR_GENERIC, "sample stream bit depth %d unsupported", bps);
+			case 16: s = fz_read_uint16(ctx, stream) / 65535.0f; break;
+			case 24: s = fz_read_uint24(ctx, stream) / 16777215.0f; break;
+			case 32: s = fz_read_uint32(ctx, stream) / 4294967295.0f; break;
+			default: fz_throw(ctx, FZ_ERROR_GENERIC, "sample stream bit depth %d unsupported", bps);
 			}
 
 			func->u.sa.samples[i] = s;
