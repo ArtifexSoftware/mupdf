@@ -148,22 +148,30 @@ fz_buffer *fz_read_all(fz_context *ctx, fz_stream *stm, int initial);
 fz_buffer *fz_read_file(fz_context *ctx, const char *filename);
 
 /*
-	fz_read_int16le: Read a 16bit little endian value from the stream.
-	Throws on failure.
-*/
-int16_t fz_read_int16le(fz_context *ctx, fz_stream *stm);
+	fz_read_[u]int(16|24|32|64)(_le)?
 
-/*
-	fz_read_int32le: Read a 32bit little endian value from the stream.
-	Throws on failure.
-*/
-int32_t fz_read_int32le(fz_context *ctx, fz_stream *stm);
+	Read a 16/32/64 bit signed/unsigned integer from stream,
+	in big or little-endian byte orders.
 
-/*
-	fz_read_int64le: Read a 64bit little endian value from the stream.
-	Throws on failure.
+	Throws an exception if EOF is encountered.
 */
-int64_t fz_read_int64le(fz_context *ctx, fz_stream *stm);
+uint16_t fz_read_uint16(fz_context *ctx, fz_stream *stm);
+uint32_t fz_read_uint24(fz_context *ctx, fz_stream *stm);
+uint32_t fz_read_uint32(fz_context *ctx, fz_stream *stm);
+uint64_t fz_read_uint64(fz_context *ctx, fz_stream *stm);
+
+uint16_t fz_read_uint16_le(fz_context *ctx, fz_stream *stm);
+uint32_t fz_read_uint24_le(fz_context *ctx, fz_stream *stm);
+uint32_t fz_read_uint32_le(fz_context *ctx, fz_stream *stm);
+uint64_t fz_read_uint64_le(fz_context *ctx, fz_stream *stm);
+
+int16_t fz_read_int16(fz_context *ctx, fz_stream *stm);
+int32_t fz_read_int32(fz_context *ctx, fz_stream *stm);
+int64_t fz_read_int64(fz_context *ctx, fz_stream *stm);
+
+int16_t fz_read_int16_le(fz_context *ctx, fz_stream *stm);
+int32_t fz_read_int32_le(fz_context *ctx, fz_stream *stm);
+int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm);
 
 enum
 {

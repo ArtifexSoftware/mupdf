@@ -515,38 +515,38 @@ read_tiles(fz_context *ctx, gprf_page *page)
 
 	fz_try(ctx)
 	{
-		val = fz_read_int32le(ctx, file);
+		val = fz_read_int32_le(ctx, file);
 		if (val != 0x46505347)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected signature in GSPF file");
 
-		val = fz_read_int16le(ctx, file);
+		val = fz_read_int16_le(ctx, file);
 		if (val != 1)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected version in GSPF file");
 
-		val = fz_read_int16le(ctx, file);
+		val = fz_read_int16_le(ctx, file);
 		if (val != 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected compression in GSPF file");
 
-		val = fz_read_int32le(ctx, file);
+		val = fz_read_int32_le(ctx, file);
 		if (val != page->width)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected width in GSPF file");
 
-		val = fz_read_int32le(ctx, file);
+		val = fz_read_int32_le(ctx, file);
 		if (val != page->height)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected height in GSPF file");
 
-		val = fz_read_int16le(ctx, file);
+		val = fz_read_int16_le(ctx, file);
 		if (val != 8)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected bpc in GSPF file");
 
-		num_seps = fz_read_int16le(ctx, file);
+		num_seps = fz_read_int16_le(ctx, file);
 		if (num_seps < 0 || num_seps > FZ_MAX_SEPARATIONS)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected number of separations in GSPF file");
 
-		offset = fz_read_int64le(ctx, file); /* Ignore the ICC for now */
+		offset = fz_read_int64_le(ctx, file); /* Ignore the ICC for now */
 
 		/* Read the table offset */
-		offset = fz_read_int64le(ctx, file);
+		offset = fz_read_int64_le(ctx, file);
 
 		/* Skip to the separations */
 		fz_seek(ctx, file, 64, SEEK_SET);
@@ -554,8 +554,8 @@ read_tiles(fz_context *ctx, gprf_page *page)
 		for (i = 0; i < num_seps; i++)
 		{
 			char blatter[4096];
-			int32_t rgba = fz_read_int32le(ctx, file);
-			int32_t cmyk = fz_read_int32le(ctx, file);
+			int32_t rgba = fz_read_int32_le(ctx, file);
+			int32_t cmyk = fz_read_int32_le(ctx, file);
 			fz_read_line(ctx, file, blatter, sizeof(blatter));
 			fz_add_separation(ctx, page->separations, rgba, cmyk, blatter);
 		}
@@ -567,7 +567,7 @@ read_tiles(fz_context *ctx, gprf_page *page)
 		page->tiles = fz_calloc(ctx, num_tiles, sizeof(fz_image *));
 
 		i = 0;
-		off = fz_read_int64le(ctx, file);
+		off = fz_read_int64_le(ctx, file);
 		for (y = 0; y < page->tile_height; y++)
 		{
 			for (x = 0; x < page->tile_width; x++)
@@ -578,7 +578,7 @@ read_tiles(fz_context *ctx, gprf_page *page)
 				for (j = 0; j < num_seps+3; j++)
 				{
 					offsets[j] = (fz_off_t)off;
-					off = fz_read_int64le(ctx, file);
+					off = fz_read_int64_le(ctx, file);
 				}
 
 				page->tiles[i] = fz_new_gprf_image(ctx, page, i, offsets, (fz_off_t)off);
@@ -712,25 +712,25 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 		int i;
 		char buf[4096];
 
-		val = fz_read_int32le(ctx, file);
+		val = fz_read_int32_le(ctx, file);
 		if (val != 0x4f525047)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid file signature in gproof file");
 		val  = fz_read_byte(ctx, file);
 		val |= fz_read_byte(ctx, file)<<8;
 		if (val != 1)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid version in gproof file");
-		doc->res = fz_read_int32le(ctx, file);
+		doc->res = fz_read_int32_le(ctx, file);
 		if (doc->res < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid resolution in gproof file");
-		doc->num_pages = fz_read_int32le(ctx, file);
+		doc->num_pages = fz_read_int32_le(ctx, file);
 		if (doc->num_pages < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid resolution in gproof file");
 		doc->page_dims = fz_calloc(ctx, doc->num_pages, sizeof(*doc->page_dims));
 
 		for (i = 0; i < doc->num_pages; i++)
 		{
-			doc->page_dims[i].w = fz_read_int32le(ctx, file);
-			doc->page_dims[i].h = fz_read_int32le(ctx, file);
+			doc->page_dims[i].w = fz_read_int32_le(ctx, file);
+			doc->page_dims[i].h = fz_read_int32_le(ctx, file);
 		}
 		fz_read_line(ctx, file, buf, sizeof(buf));
 		doc->pdf_filename = fz_strdup(ctx, buf);
