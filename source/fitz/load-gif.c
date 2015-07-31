@@ -12,12 +12,12 @@ struct info
 	unsigned int image_interlaced;
 
 	int has_gct;
-	unsigned int gct_entries;
+	int gct_entries;
 	unsigned char *gct;
 	unsigned int gct_background;
 
 	int has_lct;
-	unsigned int lct_entries;
+	int lct_entries;
 	unsigned char *lct;
 
 	int has_transparency;
@@ -209,7 +209,7 @@ gif_read_line(fz_context *ctx, struct info *info, const unsigned char *ct, unsig
 	unsigned int index = (info->image_top + y) * info->width + info->image_left;
 	unsigned char *dp = &info->samples[index * 3];
 	unsigned char *mp = &info->mask[index];
-	int x, k;
+	unsigned int x, k;
 
 	for (x = 0; x < info->image_width; x++, sp++, mp++, dp += 3)
 		if (!info->has_transparency || *sp != info->transparent)
@@ -526,7 +526,7 @@ gif_mask_transparency(fz_context *ctx, fz_pixmap *image, struct info *info)
 {
 	unsigned char *mp = info->mask;
 	unsigned char *dp = image->samples;
-	int x, y;
+	unsigned int x, y;
 
 	for (y = 0; y < info->height; y++)
 		for (x = 0; x < info->width; x++, mp++, dp += image->n)
