@@ -367,7 +367,7 @@ png_read_phys(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 }
 
 static void
-png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned int total)
+png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned int total, int only_metadata)
 {
 	unsigned int passw[7], passh[7], passofs[8];
 	unsigned int code, size;
@@ -401,31 +401,33 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 	total -= size + 12;
 
 	/* Prepare output buffer */
-
-	if (!info->interlace)
+	if (!only_metadata)
 	{
-		info->size = info->height * (1 + (info->width * info->n * info->depth + 7) / 8);
-	}
-	else
-	{
-		png_deinterlace_passes(ctx, info, passw, passh, passofs);
-		info->size = passofs[7];
-	}
+		if (!info->interlace)
+		{
+			info->size = info->height * (1 + (info->width * info->n * info->depth + 7) / 8);
+		}
+		else
+		{
+			png_deinterlace_passes(ctx, info, passw, passh, passofs);
+			info->size = passofs[7];
+		}
 
-	info->samples = fz_malloc(ctx, info->size);
+		info->samples = fz_malloc(ctx, info->size);
 
-	stm.zalloc = zalloc;
-	stm.zfree = zfree;
-	stm.opaque = ctx;
+		stm.zalloc = zalloc;
+		stm.zfree = zfree;
+		stm.opaque = ctx;
 
-	stm.next_out = info->samples;
-	stm.avail_out = info->size;
+		stm.next_out = info->samples;
+		stm.avail_out = info->size;
 
-	code = inflateInit(&stm);
-	if (code != Z_OK)
-	{
-		fz_free(ctx, info->samples);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
+		code = inflateInit(&stm);
+		if (code != Z_OK)
+		{
+			fz_free(ctx, info->samples);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
+		}
 	}
 
 	fz_try(ctx)
@@ -438,13 +440,13 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 			if (total < 12 || size > total - 12)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in png image");
 
-			if (!memcmp(p + 4, "PLTE", 4))
+			if (!memcmp(p + 4, "PLTE", 4) && !only_metadata)
 				png_read_plte(ctx, info, p + 8, size);
-			if (!memcmp(p + 4, "tRNS", 4))
+			if (!memcmp(p + 4, "tRNS", 4) && !only_metadata)
 				png_read_trns(ctx, info, p + 8, size);
 			if (!memcmp(p + 4, "pHYs", 4))
 				png_read_phys(ctx, info, p + 8, size);
-			if (!memcmp(p + 4, "IDAT", 4))
+			if (!memcmp(p + 4, "IDAT", 4) && !only_metadata)
 				png_read_idat(ctx, info, p + 8, size, &stm);
 			if (!memcmp(p + 4, "IEND", 4))
 				break;
@@ -452,7 +454,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 			p += size + 12;
 			total -= size + 12;
 		}
-		if (stm.avail_out != 0)
+		if (stm.avail_out != 0 && !only_metadata)
 		{
 			memset(stm.next_out, 0xff, stm.avail_out);
 			fz_warn(ctx, "missing pixel data in png image; possibly truncated");
@@ -462,30 +464,36 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 	}
 	fz_catch(ctx)
 	{
-		inflateEnd(&stm);
-		fz_free(ctx, info->samples);
+		if (!only_metadata)
+		{
+			inflateEnd(&stm);
+			fz_free(ctx, info->samples);
+		}
 		fz_rethrow(ctx);
 	}
 
-	code = inflateEnd(&stm);
-	if (code != Z_OK)
+	if (!only_metadata)
 	{
-		fz_free(ctx, info->samples);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
-	}
+		code = inflateEnd(&stm);
+		if (code != Z_OK)
+		{
+			fz_free(ctx, info->samples);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "zlib error: %s", stm.msg);
+		}
 
-	/* Apply prediction filter and deinterlacing */
-	fz_try(ctx)
-	{
-		if (!info->interlace)
-			png_predict(info->samples, info->width, info->height, info->n, info->depth);
-		else
-			png_deinterlace(ctx, info, passw, passh, passofs);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, info->samples);
-		fz_rethrow(ctx);
+		/* Apply prediction filter and deinterlacing */
+		fz_try(ctx)
+		{
+			if (!info->interlace)
+				png_predict(info->samples, info->width, info->height, info->n, info->depth);
+			else
+				png_deinterlace(ctx, info, passw, passh, passofs);
+		}
+		fz_catch(ctx)
+		{
+			fz_free(ctx, info->samples);
+			fz_rethrow(ctx);
+		}
 	}
 }
 
@@ -549,7 +557,7 @@ fz_load_png(fz_context *ctx, unsigned char *p, int total)
 	struct info png;
 	int stride;
 
-	png_read_image(ctx, &png, p, total);
+	png_read_image(ctx, &png, p, total, 0);
 
 	if (png.n == 3 || png.n == 4)
 		colorspace = fz_device_rgb(ctx);
@@ -602,7 +610,7 @@ fz_load_png_info(fz_context *ctx, unsigned char *p, int total, int *wp, int *hp,
 {
 	struct info png;
 
-	png_read_image(ctx, &png, p, total);
+	png_read_image(ctx, &png, p, total, 1);
 
 	if (png.n == 3 || png.n == 4)
 		*cspacep = fz_device_rgb(ctx);
