@@ -249,7 +249,7 @@ void fz_convert_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src);
 
 	n: The number of color components in the image. Always
 	includes a separate alpha channel. For mask images n=1, for greyscale
-	(plus alpha) images n=2, for rgb (plus alpha) images n=3.
+	(plus alpha) images n=2, for rgb (plus alpha) images n=4.
 
 	interpolate: A boolean flag set to non-zero if the image
 	will be drawn using linear interpolation, or set to zero if
