@@ -16,7 +16,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "ucdn.h"
+
+#include "mupdf/fitz/ucdn.h"
 
 typedef struct {
 	unsigned char category;
