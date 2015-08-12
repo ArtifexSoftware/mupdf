@@ -345,7 +345,7 @@ static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
 	glColor4f(1, 1, 1, 1);
 	glRectf(x0, y0, x1, y1);
 	glColor4f(0, 0, 0, 1);
-	draw_string(x0 + 2, y0, text);
+	draw_string(x0 + 2, y0 + 2, text);
 }
 
 static void draw_string_part(float x, float y, const int *s, const int *e)
@@ -406,7 +406,7 @@ static void ui_input_draw(int x0, int y0, int x1, int y1, struct input *input)
 	glRectf(px, y0 + 2, qx+1, y1 - 2);
 
 	glColor4f(0, 0, 0, 1);
-	draw_string_part(x0 + 2, y0, input->text, input->end);
+	draw_string_part(x0 + 2, y0 + 2, input->text, input->end);
 }
 
 static void ui_input_delete_selection(struct input *input)
@@ -1061,14 +1061,14 @@ static void display(void)
 
 	if (showsearch)
 	{
-		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, 15, &search_input);
+		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, 15+4, &search_input);
 	}
 
 	if (search_active)
 	{
 		char buf[256];
 		sprintf(buf, "searching page %d / %d", search_page + 1, fz_count_pages(ctx, doc));
-		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, 15, buf);
+		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, 15+4, buf);
 	}
 
 	ui_end();
