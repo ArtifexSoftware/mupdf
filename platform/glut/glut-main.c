@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+// TODO: event queue and handle key/mouse based on 'active' inside display()
+
 #ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
@@ -7,6 +9,12 @@
 #include <GL/gl.h>
 #include <GL/freeglut.h>
 #endif
+
+struct input
+{
+	int text[512];
+	int *end, *p, *q;
+};
 
 struct ui
 {
@@ -162,12 +170,20 @@ static float oldrotate = 0, currentrotate = 0;
 static int isfullscreen = 0;
 static int showoutline = 0;
 static int showlinks = 0;
+static int showsearch = 0;
 
 static int history_count = 0;
 static int history[256];
 static int future_count = 0;
 static int future[256];
 static int marks[10];
+
+static struct input search_input = { { 0 }, 0 };
+static char *search_needle = 0;
+static int search_dir = 1;
+static int search_page = -1;
+static int search_hit_count = 0;
+static fz_rect search_hit_bbox[500];
 
 static void update_title(void)
 {
@@ -281,6 +297,23 @@ static void pop_future(void)
 	push_history();
 }
 
+void do_search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
+{
+	fz_page *page = fz_load_page(ctx, doc, number);
+
+	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
+	fz_text_page *text = fz_new_text_page(ctx);
+	fz_device *dev = fz_new_text_device(ctx, sheet, text);
+	fz_run_page(ctx, page, dev, &fz_identity, cookie);
+	fz_drop_device(ctx, dev);
+
+	search_hit_count = fz_search_text_page(ctx, text, needle, search_hit_bbox, nelem(search_hit_bbox));
+
+	fz_drop_text_page(ctx, text);
+	fz_drop_text_sheet(ctx, sheet);
+	fz_drop_page(ctx, page);
+}
+
 static void draw_string(float x, float y, const char *s)
 {
 	int c;
@@ -292,15 +325,227 @@ static void draw_string(float x, float y, const char *s)
 	}
 }
 
+#if 0
 static float measure_string(const char *s)
 {
-	int w, c;
+	int w = 0, c;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
 		w += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, c);
 	}
 	return w;
+}
+#endif
+
+static void draw_string_part(float x, float y, const int *s, const int *e)
+{
+	glRasterPos2f(x + 0.375f, y + 0.375f + 11);
+	while (s < e)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *s++);
+}
+
+static float measure_string_part(const int *s, const int *e)
+{
+	int w = 0;
+	while (s < e)
+		w += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, *s++);
+	return w;
+}
+
+static inline int isalnum(int c)
+{
+	int cat = ucdn_get_general_category(c);
+	if (cat >= UCDN_GENERAL_CATEGORY_LL && cat <= UCDN_GENERAL_CATEGORY_LU)
+		return 1;
+	if (cat >= UCDN_GENERAL_CATEGORY_ND && cat <= UCDN_GENERAL_CATEGORY_NO)
+		return 1;
+	return 0;
+}
+
+static int *skip_word_left(int *p, int *start)
+{
+	while (p > start && !isalnum(p[-1])) --p;
+	while (p > start && isalnum(p[-1])) --p;
+	return p;
+}
+
+static int *skip_word_right(int *p, int *end)
+{
+	while (p < end && !isalnum(p[0])) ++p;
+	while (p < end && isalnum(p[0])) ++p;
+	return p;
+}
+
+static void ui_input_draw(int x0, int y0, int x1, int y1, struct input *input)
+{
+	float px, qx, ex;
+	int *p, *q;
+
+	glColor4f(1, 1, 1, 1);
+	glRectf(x0, y0, x1, y1);
+
+	p = input->p < input->q ? input->p : input->q;
+	q = input->p > input->q ? input->p : input->q;
+
+	px = x0 + 2 + measure_string_part(input->text, p);
+	qx = px + measure_string_part(p, q);
+	ex = qx + measure_string_part(q, input->end);
+
+	glColor4f(0.6, 0.6, 1.0, 1);
+	glRectf(px, y0 + 2, qx+1, y1 - 2);
+
+	glColor4f(0, 0, 0, 1);
+	draw_string_part(x0 + 2, y0, input->text, input->end);
+}
+
+static void ui_input_delete_selection(struct input *input)
+{
+	int *p = input->p < input->q ? input->p : input->q;
+	int *q = input->p > input->q ? input->p : input->q;
+	memmove(p, q, (input->end - q) * sizeof (*p));
+	input->end -= q - p;
+	input->p = input->q = p;
+}
+
+static int ui_input_keyboard(int key, struct input *input)
+{
+	int cat;
+
+	switch (key)
+	{
+	default:
+		cat = ucdn_get_general_category(key);
+		if (key == ' ' || (cat >= UCDN_GENERAL_CATEGORY_LL && cat < UCDN_GENERAL_CATEGORY_ZL))
+		{
+			if (input->p != input->q)
+				ui_input_delete_selection(input);
+			memmove(input->p + 1, input->p, (input->end - input->p) * sizeof (*input->p));
+			++(input->end);
+			*(input->p++) = key;
+			input->q = input->p;
+		}
+		break;
+	case 27:
+		return -1;
+	case '\r':
+		return 1;
+	case '\b':
+		if (input->p != input->q)
+			ui_input_delete_selection(input);
+		else if (input->p > input->text && input->end > input->text)
+		{
+			memmove(input->p - 1, input->p, (input->end - input->p) * sizeof (*input->p));
+			input->q = --(input->p);
+			--(input->end);
+		}
+		break;
+	case 127:
+		if (input->p != input->q)
+			ui_input_delete_selection(input);
+		else if (input->p < input->end)
+		{
+			memmove(input->p, input->p + 1, (input->end - input->p - 1) * sizeof (*input->p));
+			input->q = input->p;
+			--(input->end);
+		}
+		break;
+	case 'A' - 64:
+		input->p = input->q = input->text;
+		break;
+	case 'E' - 64:
+		input->p = input->q = input->end;
+		break;
+	case 'W' - 64:
+		if (input->p != input->q)
+			ui_input_delete_selection(input);
+		else
+		{
+			input->p = skip_word_left(input->p, input->text);
+			ui_input_delete_selection(input);
+		}
+		break;
+	case 'U' - 64:
+		input->p = input->q = input->end = input->text;
+		break;
+	}
+
+	return 0;
+}
+
+static int ui_input_special(int key, int mod, struct input *input)
+{
+	if (mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+	{
+		switch (key)
+		{
+		case GLUT_KEY_LEFT: input->q = skip_word_left(input->q, input->text); break;
+		case GLUT_KEY_RIGHT: input->q = skip_word_right(input->q, input->end); break;
+		case GLUT_KEY_UP: case GLUT_KEY_HOME: input->q = input->text; break;
+		case GLUT_KEY_DOWN: case GLUT_KEY_END: input->q = input->end; break;
+		}
+	}
+	else if (mod == GLUT_ACTIVE_CTRL)
+	{
+		switch (key)
+		{
+		case GLUT_KEY_LEFT:
+			if (input->p != input->q)
+				input->p = input->q = input->p < input->q ? input->p : input->q;
+			else
+				input->p = input->q = skip_word_left(input->q, input->text);
+			break;
+		case GLUT_KEY_RIGHT:
+			if (input->p != input->q)
+				input->p = input->q = input->p > input->q ? input->p : input->q;
+			else
+				input->p = input->q = skip_word_right(input->q, input->end);
+			break;
+		case GLUT_KEY_HOME:
+		case GLUT_KEY_UP:
+			input->p = input->q = input->text;
+			break;
+		case GLUT_KEY_END:
+		case GLUT_KEY_DOWN:
+			input->p = input->q = input->end;
+			break;
+		}
+	}
+	else if (mod == GLUT_ACTIVE_SHIFT)
+	{
+		switch (key)
+		{
+		case GLUT_KEY_LEFT: if (input->q > input->text) input->q = --(input->q); break;
+		case GLUT_KEY_RIGHT: if (input->q < input->end) input->q = ++(input->q); break;
+		case GLUT_KEY_HOME: input->q = input->text; break;
+		case GLUT_KEY_END: input->q = input->end; break;
+		}
+	}
+	else if (mod == 0)
+	{
+		switch (key)
+		{
+		case GLUT_KEY_LEFT:
+			if (input->p != input->q)
+				input->p = input->q = input->p < input->q ? input->p : input->q;
+			else if (input->q > input->text)
+				input->p = input->q = --(input->q);
+			break;
+		case GLUT_KEY_RIGHT:
+			if (input->p != input->q)
+				input->p = input->q = input->p > input->q ? input->p : input->q;
+			else if (input->q < input->end)
+				input->p = input->q = ++(input->q);
+			break;
+		case GLUT_KEY_HOME:
+			input->p = input->q = input->text;
+			break;
+		case GLUT_KEY_END:
+			input->p = input->q = input->end;
+			break;
+		}
+	}
+	return 0;
 }
 
 static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
@@ -524,6 +769,34 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 	glDisable(GL_BLEND);
 }
 
+static void draw_search_hits(int xofs, int yofs, float zoom, float rotate)
+{
+	fz_matrix ctm;
+	fz_rect r;
+	int i;
+
+	xofs -= page_x;
+	yofs -= page_y;
+
+	fz_scale(&ctm, zoom / 72, zoom / 72);
+	fz_pre_rotate(&ctm, -rotate);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	for (i = 0; i < search_hit_count; ++i)
+	{
+		r = search_hit_bbox[i];
+
+		fz_transform_rect(&r, &ctm);
+
+		glColor4f(1, 0, 0, 0.4);
+		glRectf(xofs + r.x0, yofs + r.y0, xofs + r.x1, yofs + r.y1);
+	}
+
+	glDisable(GL_BLEND);
+}
+
 static void toggle_fullscreen(void)
 {
 	static int oldw = 100, oldh = 100, oldx = 0, oldy = 0;
@@ -740,9 +1013,17 @@ static void display(void)
 	draw_image(page_tex, &r);
 	draw_links(links, x, y, currentzoom, currentrotate);
 
+	if (search_page == currentpage && search_hit_count > 0)
+		draw_search_hits(x, y, currentzoom, currentrotate);
+
 	if (showoutline)
 	{
 		draw_outline(outline, canvas_x);
+	}
+
+	if (showsearch)
+	{
+		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, 15, &search_input);
 	}
 
 	ui_end();
@@ -752,13 +1033,69 @@ static void display(void)
 	ogl_assert(ctx, "swap buffers");
 }
 
+char *
+fz_utf8_from_rune_string(fz_context *ctx, const int *s)
+{
+	const int *src = s;
+	char *d;
+	char *dst;
+	int len = 1;
+
+	while (*src)
+	{
+		len += fz_runelen(*src++);
+	}
+
+	d = fz_malloc(ctx, len);
+	if (d != NULL)
+	{
+		dst = d;
+		src = s;
+		while (*src)
+		{
+			dst += fz_runetochar(dst, *src++);
+		}
+		*dst = 0;
+	}
+	return d;
+}
+
 static void keyboard(unsigned char key, int x, int y)
 {
-	if (key == 27 || key == 'q')
-		exit(0);
+	int i, start;
+
+	if (showsearch)
+	{
+		int state = ui_input_keyboard(key, &search_input);
+		if (state == -1)
+		{
+			showsearch = 0;
+		}
+		else if (state == 1)
+		{
+			showsearch = 0;
+			search_page = -1;
+			if (search_needle)
+			{
+				fz_free(ctx, search_needle);
+				search_needle = NULL;
+			}
+			if (search_input.end > search_input.text)
+			{
+				*(search_input.end) = 0;
+				search_needle = fz_utf8_from_rune_string(ctx, search_input.text);
+				goto dosearch;
+			}
+		}
+		glutPostRedisplay();
+		return;
+	}
 
 	switch (key)
 	{
+	case 'q':
+		exit(0);
+		break;
 	case 'm':
 		if (number == 0)
 			push_history();
@@ -783,6 +1120,26 @@ static void keyboard(unsigned char key, int x, int y)
 				pop_future();
 		}
 		break;
+	case 'N': case 'n': dosearch:
+		if (!search_needle)
+			break;
+		if (search_page == currentpage)
+			start = currentpage + (key == 'N' ? -search_dir : search_dir);
+		else
+			start = currentpage;
+		for (i = start; i >= 0 && i < fz_count_pages(ctx, doc); i += (key == 'N' ? -search_dir : search_dir))
+		{
+			printf("searching page %d\n", i);
+			do_search_page(doc, i, search_needle, NULL);
+			if (search_hit_count)
+			{
+				printf("found match '%s' at page %d\n", search_needle, i);
+				jump_to_page(i);
+				search_page = currentpage;
+				break;
+			}
+		}
+		break;
 	case 'f': toggle_fullscreen(); break;
 	case 'w': shrinkwrap(); break;
 	case 'W': auto_zoom_w(); break;
@@ -803,6 +1160,8 @@ static void keyboard(unsigned char key, int x, int y)
 	case ']': currentrotate -= 90; break;
 	case 'o': showoutline = !showoutline; break;
 	case 'l': showlinks = !showlinks; break;
+	case '/': search_dir = 1; showsearch = 1; break;
+	case '?': search_dir = -1; showsearch = 1; break;
 	}
 
 	if (key >= '0' && key <= '9')
@@ -815,6 +1174,9 @@ static void keyboard(unsigned char key, int x, int y)
 	while (currentrotate < 0) currentrotate += 360;
 	while (currentrotate >= 360) currentrotate -= 360;
 
+	if (currentpage != search_page)
+		search_page = -1;
+
 	glutPostRedisplay();
 }
 
@@ -824,6 +1186,21 @@ static void special(int key, int x, int y)
 
 	if (key == GLUT_KEY_F4 && mod == GLUT_ACTIVE_ALT)
 		exit(0);
+
+	if (showsearch)
+	{
+		int state = ui_input_special(key, mod, &search_input);
+		if (state == -1)
+		{
+			showsearch = 0;
+		}
+		else if (state == 1)
+		{
+			showsearch = 1;
+		}
+		glutPostRedisplay();
+		return;
+	}
 
 	switch (key)
 	{
@@ -883,6 +1260,10 @@ int main(int argc, char **argv)
 		title = filename;
 
 	memset(&ui, 0, sizeof ui);
+
+	search_input.p = search_input.text;
+	search_input.q = search_input.p;
+	search_input.end = search_input.p;
 
 	glutCreateWindow(filename);
 
