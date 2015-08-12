@@ -178,10 +178,12 @@ static int future_count = 0;
 static int future[256];
 static int marks[10];
 
+static int search_active = 0;
 static struct input search_input = { { 0 }, 0 };
 static char *search_needle = 0;
 static int search_dir = 1;
 static int search_page = -1;
+static int search_hit_page = -1;
 static int search_hit_count = 0;
 static fz_rect search_hit_bbox[500];
 
@@ -338,6 +340,14 @@ static float measure_string(const char *s)
 }
 #endif
 
+static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
+{
+	glColor4f(1, 1, 1, 1);
+	glRectf(x0, y0, x1, y1);
+	glColor4f(0, 0, 0, 1);
+	draw_string(x0 + 2, y0, text);
+}
+
 static void draw_string_part(float x, float y, const int *s, const int *e)
 {
 	glRasterPos2f(x + 0.375f, y + 0.375f + 11);
@@ -473,7 +483,7 @@ static int ui_input_keyboard(int key, struct input *input)
 	return 0;
 }
 
-static int ui_input_special(int key, int mod, struct input *input)
+static void ui_input_special(int key, int mod, struct input *input)
 {
 	if (mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
 	{
@@ -545,7 +555,6 @@ static int ui_input_special(int key, int mod, struct input *input)
 			break;
 		}
 	}
-	return 0;
 }
 
 static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
@@ -927,6 +936,35 @@ static void display(void)
 
 	ui_begin();
 
+	if (search_active)
+	{
+		int start_time = glutGet(GLUT_ELAPSED_TIME);
+		while (glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
+		{
+			do_search_page(doc, search_page, search_needle, NULL);
+			if (search_hit_count)
+			{
+				search_active = 0;
+				search_hit_page = search_page;
+				jump_to_page(search_hit_page);
+				break;
+			}
+			else
+			{
+				search_page += search_dir;
+				if (search_page < 0 || search_page == fz_count_pages(ctx, doc))
+				{
+					search_active = 0;
+					break;
+				}
+			}
+		}
+
+		/* keep searching later */
+		if (search_active)
+			glutPostRedisplay();
+	}
+
 	if (showoutline)
 	{
 		if (!outline)
@@ -1013,7 +1051,7 @@ static void display(void)
 	draw_image(page_tex, &r);
 	draw_links(links, x, y, currentzoom, currentrotate);
 
-	if (search_page == currentpage && search_hit_count > 0)
+	if (search_hit_page == currentpage && search_hit_count > 0)
 		draw_search_hits(x, y, currentzoom, currentrotate);
 
 	if (showoutline)
@@ -1024,6 +1062,13 @@ static void display(void)
 	if (showsearch)
 	{
 		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, 15, &search_input);
+	}
+
+	if (search_active)
+	{
+		char buf[256];
+		sprintf(buf, "searching page %d / %d", search_page + 1, fz_count_pages(ctx, doc));
+		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, 15, buf);
 	}
 
 	ui_end();
@@ -1062,15 +1107,19 @@ fz_utf8_from_rune_string(fz_context *ctx, const int *s)
 
 static void keyboard(unsigned char key, int x, int y)
 {
-	int i, start;
+	if (search_active)
+	{
+		if (key == 27)
+			search_active = 0;
+		glutPostRedisplay();
+		return;
+	}
 
 	if (showsearch)
 	{
 		int state = ui_input_keyboard(key, &search_input);
 		if (state == -1)
-		{
 			showsearch = 0;
-		}
 		else if (state == 1)
 		{
 			showsearch = 0;
@@ -1084,7 +1133,8 @@ static void keyboard(unsigned char key, int x, int y)
 			{
 				*(search_input.end) = 0;
 				search_needle = fz_utf8_from_rune_string(ctx, search_input.text);
-				goto dosearch;
+				search_active = 1;
+				search_page = currentpage;
 			}
 		}
 		glutPostRedisplay();
@@ -1120,25 +1170,25 @@ static void keyboard(unsigned char key, int x, int y)
 				pop_future();
 		}
 		break;
-	case 'N': case 'n': dosearch:
-		if (!search_needle)
-			break;
-		if (search_page == currentpage)
-			start = currentpage + (key == 'N' ? -search_dir : search_dir);
+	case 'N':
+		search_dir = -1;
+		if (search_hit_page == currentpage)
+			search_page = currentpage + search_dir;
 		else
-			start = currentpage;
-		for (i = start; i >= 0 && i < fz_count_pages(ctx, doc); i += (key == 'N' ? -search_dir : search_dir))
-		{
-			printf("searching page %d\n", i);
-			do_search_page(doc, i, search_needle, NULL);
-			if (search_hit_count)
-			{
-				printf("found match '%s' at page %d\n", search_needle, i);
-				jump_to_page(i);
-				search_page = currentpage;
-				break;
-			}
-		}
+			search_page = currentpage;
+		search_hit_page = -1;
+		if (search_needle)
+			search_active = 1;
+		break;
+	case 'n':
+		search_dir = 1;
+		if (search_hit_page == currentpage)
+			search_page = currentpage + search_dir;
+		else
+			search_page = currentpage;
+		search_hit_page = -1;
+		if (search_needle)
+			search_active = 1;
 		break;
 	case 'f': toggle_fullscreen(); break;
 	case 'w': shrinkwrap(); break;
@@ -1160,8 +1210,8 @@ static void keyboard(unsigned char key, int x, int y)
 	case ']': currentrotate -= 90; break;
 	case 'o': showoutline = !showoutline; break;
 	case 'l': showlinks = !showlinks; break;
-	case '/': search_dir = 1; showsearch = 1; break;
-	case '?': search_dir = -1; showsearch = 1; break;
+	case '/': search_dir = 1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
+	case '?': search_dir = -1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
 	}
 
 	if (key >= '0' && key <= '9')
@@ -1174,8 +1224,8 @@ static void keyboard(unsigned char key, int x, int y)
 	while (currentrotate < 0) currentrotate += 360;
 	while (currentrotate >= 360) currentrotate -= 360;
 
-	if (currentpage != search_page)
-		search_page = -1;
+	if (search_hit_page != currentpage)
+		search_hit_page = -1; /* clear highlights when navigating */
 
 	glutPostRedisplay();
 }
@@ -1189,15 +1239,7 @@ static void special(int key, int x, int y)
 
 	if (showsearch)
 	{
-		int state = ui_input_special(key, mod, &search_input);
-		if (state == -1)
-		{
-			showsearch = 0;
-		}
-		else if (state == 1)
-		{
-			showsearch = 1;
-		}
+		ui_input_special(key, mod, &search_input);
 		glutPostRedisplay();
 		return;
 	}
@@ -1215,6 +1257,9 @@ static void special(int key, int x, int y)
 	number = 0;
 
 	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
+
+	if (search_hit_page != currentpage)
+		search_hit_page = -1; /* clear highlights when navigating */
 
 	glutPostRedisplay();
 }
