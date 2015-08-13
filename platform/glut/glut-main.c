@@ -363,6 +363,19 @@ static float measure_string_part(const int *s, const int *e)
 	return w;
 }
 
+static int *find_string_location(int *s, int *e, float w, float x)
+{
+	while (s < e)
+	{
+		int cw = glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, *s);
+		if (w + (cw / 2) >= x)
+			return s;
+		w += cw;
+		++s;
+	}
+	return e;
+}
+
 static inline int isalnum(int c)
 {
 	int cat = ucdn_get_general_category(c);
@@ -391,6 +404,19 @@ static void ui_input_draw(int x0, int y0, int x1, int y1, struct input *input)
 {
 	float px, qx, ex;
 	int *p, *q;
+
+	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
+	{
+		ui.hot = input;
+		if (!ui.active && ui.down)
+		{
+			ui.active = input;
+			input->p = find_string_location(input->text, input->end, x0 + 2, ui.x);
+		}
+	}
+
+	if (ui.active == input)
+		input->q = find_string_location(input->text, input->end, x0 + 2, ui.x);
 
 	glColor4f(1, 1, 1, 1);
 	glRectf(x0, y0, x1, y1);
