@@ -12,7 +12,7 @@
 
 struct input
 {
-	int text[512];
+	int text[256];
 	int *end, *p, *q;
 };
 
@@ -299,7 +299,7 @@ static void pop_future(void)
 	push_history();
 }
 
-void do_search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
+void do_search_page(int number, char *needle, fz_cookie *cookie)
 {
 	fz_page *page = fz_load_page(ctx, doc, number);
 
@@ -456,9 +456,12 @@ static int ui_input_keyboard(int key, struct input *input)
 		{
 			if (input->p != input->q)
 				ui_input_delete_selection(input);
-			memmove(input->p + 1, input->p, (input->end - input->p) * sizeof (*input->p));
-			++(input->end);
-			*(input->p++) = key;
+			if (input->end < input->text + nelem(input->text))
+			{
+				memmove(input->p + 1, input->p, (input->end - input->p) * sizeof (*input->p));
+				++(input->end);
+				*(input->p++) = key;
+			}
 			input->q = input->p;
 		}
 		break;
@@ -967,7 +970,7 @@ static void display(void)
 		int start_time = glutGet(GLUT_ELAPSED_TIME);
 		while (glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
 		{
-			do_search_page(doc, search_page, search_needle, NULL);
+			do_search_page(search_page, search_needle, NULL);
 			if (search_hit_count)
 			{
 				search_active = 0;
@@ -1104,28 +1107,24 @@ static void display(void)
 	ogl_assert(ctx, "swap buffers");
 }
 
-char *
-fz_utf8_from_rune_string(fz_context *ctx, const int *s)
+static char *
+utf8_from_rune_string(fz_context *ctx, const int *s, const int *e)
 {
 	const int *src = s;
 	char *d;
 	char *dst;
 	int len = 1;
 
-	while (*src)
-	{
+	while (src < e)
 		len += fz_runelen(*src++);
-	}
 
 	d = fz_malloc(ctx, len);
 	if (d != NULL)
 	{
 		dst = d;
 		src = s;
-		while (*src)
-		{
+		while (src < e)
 			dst += fz_runetochar(dst, *src++);
-		}
 		*dst = 0;
 	}
 	return d;
@@ -1157,10 +1156,10 @@ static void keyboard(unsigned char key, int x, int y)
 			}
 			if (search_input.end > search_input.text)
 			{
-				*(search_input.end) = 0;
-				search_needle = fz_utf8_from_rune_string(ctx, search_input.text);
+				search_needle = utf8_from_rune_string(ctx, search_input.text, search_input.end);
 				search_active = 1;
 				search_page = currentpage;
+				printf("search '%s'\n", search_needle);
 			}
 		}
 		glutPostRedisplay();
