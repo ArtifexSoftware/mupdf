@@ -316,6 +316,80 @@ void do_search_page(int number, char *needle, fz_cookie *cookie)
 	fz_drop_page(ctx, page);
 }
 
+static void do_copy_region(fz_rect *sel, int xofs, int yofs, float zoom, float rotate)
+{
+	fz_rect hitbox;
+	fz_matrix ctm;
+	int c, i, p, need_newline;
+	int block_num;
+
+	int x0 = sel->x0 - xofs;
+	int y0 = sel->y0 - yofs;
+	int x1 = sel->x1 - xofs;
+	int y1 = sel->y1 - yofs;
+
+	fz_page *page = fz_load_page(ctx, doc, currentpage);
+	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
+	fz_text_page *text = fz_new_text_page(ctx);
+	fz_device *dev = fz_new_text_device(ctx, sheet, text);
+	fz_run_page(ctx, page, dev, &fz_identity, NULL);
+	fz_drop_device(ctx, dev);
+
+	fz_scale(&ctm, zoom / 72, zoom / 72);
+	fz_pre_rotate(&ctm, -rotate);
+
+	p = 0;
+	need_newline = 0;
+
+	for (block_num = 0; block_num < text->len; block_num++)
+	{
+		fz_text_line *line;
+		fz_text_block *block;
+		fz_text_span *span;
+
+		if (text->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+			continue;
+		block = text->blocks[block_num].u.text;
+
+		for (line = block->lines; line < block->lines + block->len; line++)
+		{
+			int saw_text = 0;
+			for (span = line->first_span; span; span = span->next)
+			{
+				for (i = 0; i < span->len; i++)
+				{
+					fz_text_char_bbox(ctx, &hitbox, span, i);
+					fz_transform_rect(&hitbox, &ctm);
+					c = span->text[i].c;
+					if (c < 32)
+						c = '?';
+					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
+					{
+						saw_text = 1;
+						if (need_newline)
+						{
+#if defined(_WIN32) || defined(_WIN64)
+							putchar('\r');
+#endif
+							putchar('\n');
+							need_newline = 0;
+						}
+						putchar(c);
+					}
+				}
+			}
+
+			if (saw_text)
+				need_newline = 1;
+		}
+	}
+
+	fz_drop_text_page(ctx, text);
+	fz_drop_text_sheet(ctx, sheet);
+	fz_drop_page(ctx, page);
+}
+
+
 static void draw_string(float x, float y, const char *s)
 {
 	int c;
@@ -807,6 +881,44 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 	glDisable(GL_BLEND);
 }
 
+static void draw_page_selection(int x0, int y0, int x1, int y1, float zoom, float rotate)
+{
+	static fz_rect sel;
+
+	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
+	{
+		ui.hot = &sel;
+		if (!ui.active && ui.right)
+		{
+			ui.active = &sel;
+			sel.x0 = sel.x1 = ui.x;
+			sel.y0 = sel.y1 = ui.y;
+		}
+	}
+
+	if (ui.active == &sel)
+	{
+		sel.x1 = ui.x;
+		sel.y1 = ui.y;
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); /* invert destination color */
+
+		glColor4f(1, 1, 1, 1);
+		glRectf(sel.x0, sel.y0, sel.x1 + 1, sel.y1 + 1);
+
+		glDisable(GL_BLEND);
+	}
+
+	if (ui.active == &sel && !ui.right)
+	{
+		printf("--- copy to clipboard ---\n");
+		do_copy_region(&sel, x0, y0, zoom, rotate);
+		printf("\n---\n");
+		glutPostRedisplay();
+	}
+}
+
 static void draw_search_hits(int xofs, int yofs, float zoom, float rotate)
 {
 	fz_matrix ctm;
@@ -1079,6 +1191,7 @@ static void display(void)
 
 	draw_image(page_tex, &r);
 	draw_links(links, x, y, currentzoom, currentrotate);
+	draw_page_selection(x, y, x+page_w, y+page_h, currentzoom, currentrotate);
 
 	if (search_hit_page == currentpage && search_hit_count > 0)
 		draw_search_hits(x, y, currentzoom, currentrotate);
