@@ -353,15 +353,15 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h, int *l2factor)
 			}
 			else
 			{
-				int c, m, y, k;
-
-				c = m = y = k = 0;
 				for (n = 0; n < len; n++)
 				{
+					int c, m, y, k;
+
+					c = m = y = k = 0;
 					for (i = 3; i < num_seps; i++)
 					{
 						int v;
-						if (read_sep[n] != 1)
+						if (read_sep[i] != 1)
 							continue;
 						v = data[i * decode_chunk_size + n];
 						c += v * equiv[i][0];
@@ -369,8 +369,8 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h, int *l2factor)
 						y += v * equiv[i][2];
 						k += v * equiv[i][3];
 					}
+					out = cmyk_to_rgba(out, c, m, y, k);
 				}
-				out = cmyk_to_rgba(out, c, m, y, k);
 			}
 		}
 	}
