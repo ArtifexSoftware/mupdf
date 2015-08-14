@@ -291,3 +291,20 @@ int64_t fz_read_int64(fz_context *ctx, fz_stream *stm) { return (int64_t)fz_read
 int16_t fz_read_int16_le(fz_context *ctx, fz_stream *stm) { return (int16_t)fz_read_uint16_le(ctx, stm); }
 int32_t fz_read_int32_le(fz_context *ctx, fz_stream *stm) { return (int32_t)fz_read_uint32_le(ctx, stm); }
 int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm) { return (int64_t)fz_read_uint64_le(ctx, stm); }
+
+void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len)
+{
+	int c;
+	do
+	{
+		if (len <= 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Buffer overrun reading null terminated string");
+
+		c = fz_read_byte(ctx, stm);
+		if (c == EOF)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "EOF reading null terminated string");
+		*buffer++ = c;
+		len--;
+	}
+	while (c != 0);
+}

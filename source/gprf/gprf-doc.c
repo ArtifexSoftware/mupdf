@@ -556,7 +556,7 @@ read_tiles(fz_context *ctx, gprf_page *page)
 			char blatter[4096];
 			int32_t rgba = fz_read_int32_le(ctx, file);
 			int32_t cmyk = fz_read_int32_le(ctx, file);
-			fz_read_line(ctx, file, blatter, sizeof(blatter));
+			fz_read_string(ctx, file, blatter, sizeof(blatter));
 			fz_add_separation(ctx, page->separations, rgba, cmyk, blatter);
 		}
 

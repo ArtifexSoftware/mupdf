@@ -173,6 +173,16 @@ int16_t fz_read_int16_le(fz_context *ctx, fz_stream *stm);
 int32_t fz_read_int32_le(fz_context *ctx, fz_stream *stm);
 int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm);
 
+/*
+	fz_read_string: Read a null terminated string from the stream into
+	the a buffer of a given length. The buffer will be null terminated.
+	Throws on failure (including the failure to fit the entire string
+	including the terminator into the buffer).
+*/
+void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len);
+
+
+
 enum
 {
 	FZ_STREAM_META_PROGRESSIVE = 1,
