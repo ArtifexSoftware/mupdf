@@ -4,6 +4,11 @@ typedef struct gprf_document_s gprf_document;
 typedef struct gprf_chapter_s gprf_chapter;
 typedef struct gprf_page_s gprf_page;
 
+/* Quality trumps speed for this file */
+#ifndef SLOWCMYK
+#define SLOWCMYK
+#endif
+
 /* Choose whether to call gs via an exe or via an API */
 #ifdef __ANDROID__
 #define USE_GS_API
@@ -153,78 +158,109 @@ static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32
 	uint32_t r, g, b;
 #ifdef SLOWCMYK /* FP version originally from poppler */
 	uint32_t x;
-	uint32_t cm = (c * m)>>16;
-	uint32_t c1m = m - cm;
-	uint32_t cm1 = c - cm;
-	uint32_t c1m1 = 65536 - m - cm1;
-	uint32_t c1m1y = (c1m1 * y)>>16;
-	uint32_t c1m1y1 = c1m1 - c1m1y;
-	uint32_t c1my = (c1m * y)>>16;
-	uint32_t c1my1 = c1m - c1my;
-	uint32_t cm1y = (cm1 * y)>>16;
-	uint32_t cm1y1 = cm1 - cm1y;
-	uint32_t cmy = (cm * y)>>16;
-	uint32_t cmy1 = cm - cmy;
+	uint32_t cm, c1m, cm1, c1m1;
+	uint32_t c1m1y, c1m1y1, c1my, c1my1, cm1y, cm1y1, cmy, cmy1;
+
+	/* We use some tricks here:
+	 *    x + (x>>15)
+	 * converts x from 0..65535 to 0..65536
+	 *    (A * B)>>16
+	 * multiplies A (0..65535) and B (0..65536) to give a 0...65535 result.
+	 * (This relies on A and B being unsigned).
+	 *
+	 * We also rely on the fact that if:
+	 *    C = (A * B)>> 16
+	 * for A (0..65535) and B (0..65536) then A - C is also in (0..65535)
+	 * as C cannot possibly be any larger than A.
+	 */
+	cm = (c * (m + (m>>15)))>>16;
+	c1m = m - cm;
+	cm1 = c - cm;
+	c1m1 = 65535 - m - cm1; /* Need to clamp for underflow here */
+	if ((int)c1m1 < 0)
+		c1m1 = 0;
+	y += (y>>15);
+	c1m1y = (c1m1 * y)>>16;
+	c1m1y1 = c1m1 - c1m1y;
+	c1my = (c1m * y)>>16;
+	c1my1 = c1m - c1my;
+	cm1y = (cm1 * y)>>16;
+	cm1y1 = cm1 - cm1y;
+	cmy = (cm * y)>>16;
+	cmy1 = cm - cmy;
 
 #define CONST16(x) ((int)(x * 65536.0 + 0.5))
 
+	k += (k>>15); /* Move k to be 0..65536 */
+
 	/* this is a matrix multiplication, unrolled for performance */
-	x = (c1m1y1 * k)>>16;		/* 0 0 0 1 */
+	x = (c1m1y1 * k)>>16;	/* 0 0 0 1 */
 	r = g = b = c1m1y1 - x;	/* 0 0 0 0 */
 	r += (CONST16(0.1373) * x)>>16;
 	g += (CONST16(0.1216) * x)>>16;
 	b += (CONST16(0.1255) * x)>>16;
 
-	x = c1m1y * k;		/* 0 0 1 1 */
+	x = (c1m1y * k)>>16;	/* 0 0 1 1 */
 	r += (CONST16(0.1098) * x)>>16;
 	g += (CONST16(0.1020) * x)>>16;
 	x = c1m1y - x;		/* 0 0 1 0 */
 	r += x;
 	g += (CONST16(0.9490) * x)>>16;
 
-	x = c1my1 * k;		/* 0 1 0 1 */
+	x = (c1my1 * k)>>16;	/* 0 1 0 1 */
 	r += (CONST16(0.1412) * x)>>16;
 	x = c1my1 - x;		/* 0 1 0 0 */
 	r += (CONST16(0.9255) * x)>>16;
 	b += (CONST16(0.5490) * x)>>16;
 
-	x = c1my * k;		/* 0 1 1 1 */
+	x = (c1my * k)>>16;	/* 0 1 1 1 */
 	r += (CONST16(0.1333) * x)>>16;
 	x = c1my - x;		/* 0 1 1 0 */
 	r += (CONST16(0.9294) * x)>>16;
 	g += (CONST16(0.1098) * x)>>16;
 	b += (CONST16(0.1412) * x)>>16;
 
-	x = cm1y1 * k;		/* 1 0 0 1 */
+	x = (cm1y1 * k)>>16;	/* 1 0 0 1 */
 	g += (CONST16(0.0588) * x)>>16;
 	b += (CONST16(0.1412) * x)>>16;
 	x = cm1y1 - x;		/* 1 0 0 0 */
 	g += (CONST16(0.6784) * x)>>16;
 	b += (CONST16(0.9373) * x)>>16;
 
-	x = cm1y * k;		/* 1 0 1 1 */
+	x = (cm1y * k)>>16;	/* 1 0 1 1 */
 	g += (CONST16(0.0745) * x)>>16;
 	x = cm1y - x;		/* 1 0 1 0 */
 	g += (CONST16(0.6510) * x)>>16;
 	b += (CONST16(0.3137) * x)>>16;
 
-	x = cmy1 * k;		/* 1 1 0 1 */
+	x = (cmy1 * k)>>16;	/* 1 1 0 1 */
 	b += (CONST16(0.0078) * x)>>16;
 	x = cmy1 - x;		/* 1 1 0 0 */
 	r += (CONST16(0.1804) * x)>>16;
 	g += (CONST16(0.1922) * x)>>16;
 	b += (CONST16(0.5725) * x)>>16;
 
-	x = cmy * (1-k);	/* 1 1 1 0 */
+	x = (cmy * (65536-k))>>16;	/* 1 1 1 0 */
 	r += (CONST16(0.2118) * x)>>16;
 	g += (CONST16(0.2119) * x)>>16;
 	b += (CONST16(0.2235) * x)>>16;
+	/* I have convinced myself that r, g, b cannot have underflowed at
+	 * thus point. I have not convinced myself that they won't have
+	 * overflowed though. */
+	r >>= 8;
+	if (r > 255)
+		r = 255;
+	g >>= 8;
+	if (g > 255)
+		g = 255;
+	if (b > 255)
+		b = 255;
 #else
 	k = 65536 - k;
 	r = k - c;
 	g = k - m;
 	b = k - y;
-#endif
+
 	r >>= 8;
 	if ((int)r < 0)
 		r = 0;
@@ -240,6 +276,7 @@ static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32
 		b = 0;
 	else if (b > 255)
 		b = 255;
+#endif
 
 	*out++ = r;
 	*out++ = g;
@@ -364,6 +401,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h, int *l2factor)
 						if (read_sep[i] != 1)
 							continue;
 						v = data[i * decode_chunk_size + n];
+						v += (v>>7);
 						c += v * equiv[i][0];
 						m += v * equiv[i][1];
 						y += v * equiv[i][2];
