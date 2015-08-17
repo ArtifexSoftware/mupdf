@@ -1209,8 +1209,7 @@ int WINAPI
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	int argc;
-	LPWSTR *wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
-	char **argv;
+	LPWSTR *argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 	char argv0[256];
 	MSG msg;
 	int code;
@@ -1218,9 +1217,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	int bps = 0;
 	int displayRes = get_system_dpi();
 	int c;
-	int i;
-	char *password = NULL;
-	char *layout_css = NULL;
+	wchar_t *password = NULL;
+	wchar_t *layout_css = NULL;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -1228,33 +1226,27 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
-
-	/* Convert wchar_t argv to utf-8 */
-	argv = fz_malloc_array(ctx, argc, sizeof (char*));
-	for (i = 0; i < argc; ++i)
-		argv[i] = fz_utf8_from_wchar(wargv[i]);
-
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getopt(argc, argv, L"p:r:A:C:W:H:S:U:b:")) != -1)
+	while ((c = fz_getoptw(argc, argv, L"p:r:A:C:W:H:S:U:b:")) != -1)
 	{
 		switch (c)
 		{
 		case 'C':
-			c = strtol(fz_optarg, NULL, 16);
+			c = wcstol(fz_optargw, NULL, 16);
 			gapp.tint = 1;
 			gapp.tint_r = (c >> 16) & 255;
 			gapp.tint_g = (c >> 8) & 255;
 			gapp.tint_b = (c) & 255;
 			break;
-		case 'p': password = fz_optarg; break;
-		case 'r': displayRes = atoi(fz_optarg); break;
-		case 'A': fz_set_aa_level(ctx, atoi(fz_optarg)); break;
-		case 'W': gapp.layout_w = fz_atof(fz_optarg); break;
-		case 'H': gapp.layout_h = fz_atof(fz_optarg); break;
-		case 'S': gapp.layout_em = fz_atof(fz_optarg); break;
-		case 'b': bps = (fz_optarg && *fz_optarg) ? atoi(fz_optarg) : 4096; break;
-		case 'U': layout_css = fz_optarg; break;
+		case 'p': password = fz_optargw; break;
+		case 'r': displayRes = _wtoi(fz_optargw); break;
+		case 'A': fz_set_aa_level(ctx, _wtoi(fz_optargw)); break;
+		case 'W': gapp.layout_w = _wtoi(fz_optargw); break;
+		case 'H': gapp.layout_h = _wtoi(fz_optargw); break;
+		case 'S': gapp.layout_em = _wtoi(fz_optargw); break;
+		case 'b': bps = (fz_optargw && *fz_optargw) ? _wtoi(fz_optargw) : 4096; break;
+		case 'U': layout_css = fz_optargw; break;
 		default: usage();
 		}
 	}
@@ -1298,10 +1290,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-
-	for (i = 0; i < argc; ++i)
-		free(argv[i]);
-	free(argv);
 
 	do_close(&gapp);
 
