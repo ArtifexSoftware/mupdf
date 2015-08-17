@@ -253,6 +253,7 @@ static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32
 	g >>= 8;
 	if (g > 255)
 		g = 255;
+	b >>= 8;
 	if (b > 255)
 		b = 255;
 #else
