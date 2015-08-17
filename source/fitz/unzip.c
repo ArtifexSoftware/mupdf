@@ -2,6 +2,10 @@
 
 #include <zlib.h>
 
+#if !defined (INT32_MAX)
+#define INT32_MAX 2147483647L
+#endif
+
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
 #define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
