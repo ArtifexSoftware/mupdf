@@ -495,7 +495,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 #ifdef USE_GS_API
 		void *instance;
 		int code;
-		char *argv[] = { "gs", "-sDEVICE=gproof", NULL, "-o", NULL, NULL, NULL, NULL };
+		char *argv[] = { "gs", "-sDEVICE=gproof", NULL, "-o", NULL, NULL, NULL, NULL, NULL };
 		char arg_res[32];
 		char arg_fp[32];
 		char arg_lp[32];
@@ -507,7 +507,8 @@ generate_page(fz_context *ctx, gprf_page *page)
 		argv[5] = arg_fp;
 		sprintf(arg_lp, "-dLastPage=%d", page->number+1);
 		argv[6] = arg_lp;
-		argv[7] = doc->pdf_filename;
+		argv[7] = "-I%rom%Resource/Init/";
+		argv[8] = doc->pdf_filename;
 
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
