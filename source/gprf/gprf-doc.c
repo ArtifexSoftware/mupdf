@@ -492,7 +492,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 	fz_try(ctx)
 	{
 #ifdef USE_GS_API
-		void **instance;
+		void *instance;
 		int code;
 		char *argv[] = { "gs", "-sDEVICE=gproof", NULL, "-o", NULL, NULL, NULL, NULL };
 		char arg_res[32];
@@ -793,7 +793,7 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 			doc->page_dims[i].w = fz_read_int32_le(ctx, file);
 			doc->page_dims[i].h = fz_read_int32_le(ctx, file);
 		}
-		fz_read_line(ctx, file, buf, sizeof(buf));
+		fz_read_string(ctx, file, buf, sizeof(buf));
 		doc->pdf_filename = fz_strdup(ctx, buf);
 	}
 	fz_catch(ctx)
