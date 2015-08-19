@@ -1,4 +1,17 @@
+#ifdef SUPPORT_GPROOF
+/* Choose whether to call gs via an exe or via an API */
+#if defined(__ANDROID__) || defined(GSVIEW_WIN)
+#define USE_GS_API
+#endif
+/* GSVIEW on Windows does not support stdout stderr */
+#ifdef GSVIEW_WIN
+#define GS_API_NULL_STDIO
+#endif
+
 #include "mupdf/fitz.h"
+#ifdef USE_GS_API
+#include "iapi.h"
+#endif
 
 typedef struct gprf_document_s gprf_document;
 typedef struct gprf_chapter_s gprf_chapter;
@@ -7,11 +20,6 @@ typedef struct gprf_page_s gprf_page;
 /* Quality trumps speed for this file */
 #ifndef SLOWCMYK
 #define SLOWCMYK
-#endif
-
-/* Choose whether to call gs via an exe or via an API */
-#ifdef __ANDROID__
-#define USE_GS_API
 #endif
 
 enum
@@ -479,6 +487,20 @@ fz_system(fz_context *ctx, const char *cmd)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "child process reported error %d", ret);
 }
 
+#ifdef GS_API_NULL_STDIO
+static int GSDLLCALL
+gsdll_stdout(void *instance, const char *str, int len)
+{
+	return len;
+}
+
+static int GSDLLCALL
+gsdll_stderr(void *instance, const char *str, int len)
+{
+	return len;
+}
+#endif
+
 static void
 generate_page(fz_context *ctx, gprf_page *page)
 {
@@ -513,7 +535,9 @@ generate_page(fz_context *ctx, gprf_page *page)
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS startup failed: %d", code);
-
+#ifdef GS_API_NULL_STDIO
+		gsapi_set_stdio(instance, NULL, gsdll_stdout, gsdll_stderr);
+#endif
 		code = gsapi_init_with_args(instance, sizeof(argv)/sizeof(*argv), argv);
 
 		gsapi_delete_instance(instance);
@@ -846,3 +870,4 @@ fz_document_handler gprf_document_handler =
 	&gprf_open_document,
 	&gprf_open_document_with_stream
 };
+#endif
