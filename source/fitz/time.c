@@ -1,10 +1,11 @@
-#ifdef _MSC_VER
+#ifdef _WIN32
 
 #include "mupdf/fitz.h"
 
 #include <time.h>
 #include <windows.h>
 
+#ifdef _MSC_VER
 #ifndef _WINRT
 
 #define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
@@ -33,6 +34,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 }
 
 #endif /* !_WINRT */
+#endif /* _MSC_VER */
 
 char *
 fz_utf8_from_wchar(const wchar_t *s)
@@ -138,4 +140,4 @@ fz_free_argv(int argc, char **argv)
 	free(argv);
 }
 
-#endif /* _MSC_VER */
+#endif /* _WIN32 */

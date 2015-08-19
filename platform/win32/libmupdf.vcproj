@@ -870,10 +870,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\getoptw.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\fitz\glyph.c"
 				>
 			</File>
@@ -908,7 +904,7 @@
 			<File
 				RelativePath="..\..\source\fitz\load-gif.c"
 				>
-			</File>			
+			</File>
 			<File
 				RelativePath="..\..\source\fitz\load-jpeg.c"
 				>

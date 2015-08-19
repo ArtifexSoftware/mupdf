@@ -35,11 +35,12 @@ static int justcopied = 0;
 
 static pdfapp_t gapp;
 
+#ifndef PATH_MAX
 #define PATH_MAX (1024)
+#endif
 
 static wchar_t wbuf[PATH_MAX];
 static char filename[PATH_MAX];
-static char layout_css_buf[PATH_MAX];
 
 /*
  * Create registry keys to associate MuPDF with PDF and XPS files.
@@ -1209,7 +1210,8 @@ int WINAPI
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	int argc;
-	LPWSTR *argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+	LPWSTR *wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
+	char **argv;
 	char argv0[256];
 	MSG msg;
 	int code;
@@ -1217,8 +1219,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	int bps = 0;
 	int displayRes = get_system_dpi();
 	int c;
-	wchar_t *password = NULL;
-	wchar_t *layout_css = NULL;
+	char *password = NULL;
+	char *layout_css = NULL;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -1228,25 +1230,27 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	}
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getoptw(argc, argv, L"p:r:A:C:W:H:S:U:b:")) != -1)
+	argv = fz_argv_from_wargv(argc, wargv);
+
+	while ((c = fz_getopt(argc, argv, "p:r:A:C:W:H:S:U:b:")) != -1)
 	{
 		switch (c)
 		{
 		case 'C':
-			c = wcstol(fz_optargw, NULL, 16);
+			c = strtol(fz_optarg, NULL, 16);
 			gapp.tint = 1;
 			gapp.tint_r = (c >> 16) & 255;
 			gapp.tint_g = (c >> 8) & 255;
 			gapp.tint_b = (c) & 255;
 			break;
-		case 'p': password = fz_optargw; break;
-		case 'r': displayRes = _wtoi(fz_optargw); break;
-		case 'A': fz_set_aa_level(ctx, _wtoi(fz_optargw)); break;
-		case 'W': gapp.layout_w = _wtoi(fz_optargw); break;
-		case 'H': gapp.layout_h = _wtoi(fz_optargw); break;
-		case 'S': gapp.layout_em = _wtoi(fz_optargw); break;
-		case 'b': bps = (fz_optargw && *fz_optargw) ? _wtoi(fz_optargw) : 4096; break;
-		case 'U': layout_css = fz_optargw; break;
+		case 'p': password = fz_optarg; break;
+		case 'r': displayRes = fz_atoi(fz_optarg); break;
+		case 'A': fz_set_aa_level(ctx, fz_atoi(fz_optarg)); break;
+		case 'W': gapp.layout_w = fz_atoi(fz_optarg); break;
+		case 'H': gapp.layout_h = fz_atoi(fz_optarg); break;
+		case 'S': gapp.layout_em = fz_atoi(fz_optarg); break;
+		case 'b': bps = (fz_optarg && *fz_optarg) ? fz_atoi(fz_optarg) : 4096; break;
+		case 'U': layout_css = fz_optarg; break;
 		default: usage();
 		}
 	}
@@ -1258,26 +1262,17 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 
 	winopen();
 
-	if (fz_optindw < argc)
+	if (fz_optind < argc)
 	{
-		wcscpy(wbuf, argv[fz_optindw]);
+		strcpy(filename, argv[fz_optind]);
 	}
 	else
 	{
 		if (!winfilename(wbuf, nelem(wbuf)))
 			exit(0);
-	}
-
-	code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
-	if (code == 0)
-		winerror(&gapp, "cannot convert filename to utf-8");
-
-	if (layout_css)
-	{
-		code = WideCharToMultiByte(CP_UTF8, 0, layout_css, -1, layout_css_buf, sizeof layout_css_buf, NULL, NULL);
+		code = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, filename, sizeof filename, NULL, NULL);
 		if (code == 0)
-			winerror(&gapp, "cannot convert layout_css filename to utf-8");
-		gapp.layout_css = layout_css_buf;
+			winerror(&gapp, "cannot convert filename to utf-8");
 	}
 
 	if (bps)
@@ -1290,6 +1285,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	fz_free_argv(argc, argv);
 
 	do_close(&gapp);
 
