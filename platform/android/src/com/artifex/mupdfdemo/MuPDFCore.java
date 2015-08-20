@@ -92,9 +92,9 @@ public class MuPDFCore
 	private native void abortCookie(long cookie);
 	private native String startProofInternal();
 	private native void endProofInternal(String filename);
-	private native int getNumSepsOnPageInternal();
-	private native int controlSepOnPageInternal(int sep, boolean disable);
-	private native Separation getSepInternal(int sep);
+	private native int getNumSepsOnPageInternal(int page);
+	private native int controlSepOnPageInternal(int page, int sep, boolean disable);
+	private native Separation getSepInternal(int page, int sep);
 
 	public native boolean javascriptSupported();
 
@@ -379,15 +379,20 @@ public class MuPDFCore
 		return gprfSupportedInternal();
 	}
 
-	public synchronized int getNumSepsOnPage() {
-		return getNumSepsOnPageInternal();
+	public static boolean isProofing()
+	{
+		return mIsProofing;
 	}
 
-	public synchronized int controlSepOnPage(int sep, boolean disable) {
-		return controlSepOnPageInternal(sep, disable);
+	public synchronized int getNumSepsOnPage(int page) {
+		return getNumSepsOnPageInternal(page);
 	}
 
-	public synchronized Separation getSep(int sep) {
-		return getSepInternal(sep);
+	public synchronized int controlSepOnPage(int page, int sep, boolean disable) {
+		return controlSepOnPageInternal(page, sep, disable);
+	}
+
+	public synchronized Separation getSep(int page, int sep) {
+		return getSepInternal(page, sep);
 	}
 }

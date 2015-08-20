@@ -2791,25 +2791,45 @@ JNI_FN(MuPDFCore_gprfSupportedInternal)(JNIEnv * env)
 }
 
 JNIEXPORT int JNICALL
-JNI_FN(MuPDFCore_getNumSepsOnPageInternal)(JNIEnv *env, jobject thiz)
+JNI_FN(MuPDFCore_getNumSepsOnPageInternal)(JNIEnv *env, jobject thiz, int page)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
+	int i;
 
-	return fz_count_separations_on_page(ctx, glo->pages[glo->current].page);
+	for (i = 0; i < NUM_CACHE; i++)
+	{
+		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
+		  break;
+	}
+	if (i == NUM_CACHE)
+		return 0;
+
+	LOGE("Counting seps on page %d", page);
+
+	return fz_count_separations_on_page(ctx, glo->pages[i].page);
 }
 
 JNIEXPORT void JNICALL
-JNI_FN(MuPDFCore_controlSepOnPageInternal)(JNIEnv *env, jobject thiz, int sep, jboolean disable)
+JNI_FN(MuPDFCore_controlSepOnPageInternal)(JNIEnv *env, jobject thiz, int page, int sep, jboolean disable)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
+	int i;
 
-	fz_control_separation_on_page(ctx, glo->pages[glo->current].page, sep, disable);
+	for (i = 0; i < NUM_CACHE; i++)
+	{
+		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
+		  break;
+	}
+	if (i == NUM_CACHE)
+		return;
+
+	fz_control_separation_on_page(ctx, glo->pages[i].page, sep, disable);
 }
 
 JNIEXPORT jobject JNICALL
-JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int sep)
+JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int page, int sep)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
@@ -2819,8 +2839,17 @@ JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int sep)
 	jobject jname;
 	jclass sepClass;
 	jmethodID ctor;
+	int i;
 
-	name = fz_get_separation_on_page(ctx, glo->pages[glo->current].page, sep, &rgb, &cmyk);
+	for (i = 0; i < NUM_CACHE; i++)
+	{
+		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
+		  break;
+	}
+	if (i == NUM_CACHE)
+		return NULL;
+
+	name = fz_get_separation_on_page(ctx, glo->pages[i].page, sep, &rgb, &cmyk);
 	jname = name ? (*env)->NewStringUTF(env, name) : NULL;
 
 	sepClass = (*env)->FindClass(env, PACKAGENAME "/Separation");
