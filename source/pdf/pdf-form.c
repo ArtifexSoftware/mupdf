@@ -1477,6 +1477,10 @@ void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field,
 	unsaved_sig = fz_malloc_struct(ctx, pdf_unsaved_sig);
 	unsaved_sig->field = pdf_keep_obj(ctx, field);
 	unsaved_sig->signer = pdf_keep_signer(ctx, signer);
-	unsaved_sig->next = doc->unsaved_sigs;
-	doc->unsaved_sigs = unsaved_sig;
+	unsaved_sig->next = NULL;
+	if (doc->unsaved_sigs_end == NULL)
+		doc->unsaved_sigs_end = &doc->unsaved_sigs;
+
+	*doc->unsaved_sigs_end = unsaved_sig;
+	doc->unsaved_sigs_end = &unsaved_sig->next;
 }

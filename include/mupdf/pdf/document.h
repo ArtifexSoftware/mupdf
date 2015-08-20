@@ -245,6 +245,7 @@ struct pdf_document_s
 	int recalculating;
 	int dirty;
 	pdf_unsaved_sig *unsaved_sigs;
+	pdf_unsaved_sig **unsaved_sigs_end;
 
 	void (*update_appearance)(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 
