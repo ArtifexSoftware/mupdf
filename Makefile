@@ -71,7 +71,7 @@ ALL_DIR += $(OUT)/gprf
 ALL_DIR += $(OUT)/tools
 ALL_DIR += $(OUT)/platform/x11
 ALL_DIR += $(OUT)/platform/x11/curl
-ALL_DIR += $(OUT)/platform/glut
+ALL_DIR += $(OUT)/platform/gl
 
 FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
 PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
@@ -166,8 +166,8 @@ $(OUT)/platform/x11/%.o: platform/x11/%.rc | $(OUT)
 $(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL
 
-$(OUT)/platform/glut/%.o : platform/glut/%.c | $(ALL_DIR)
-	$(CC_CMD) $(GLUT_CFLAGS)
+$(OUT)/platform/gl/%.o : platform/gl/%.c | $(ALL_DIR)
+	$(CC_CMD) $(GLFW_CFLAGS)
 
 .PRECIOUS : $(OUT)/%.o # Keep intermediates from chained rules
 
@@ -269,11 +269,13 @@ $(MUVIEW_X11) : $(MUPDF_LIB) $(THIRD_LIBS)
 $(MUVIEW_X11) : $(MUVIEW_X11_OBJ)
 	$(LINK_CMD) $(X11_LIBS)
 
-ifeq "$(HAVE_GLUT)" "yes"
-MUVIEW_GLUT := $(OUT)/mupdf-glut
-$(MUVIEW_GLUT) : $(MUPDF_LIB) $(MUPDF_JS_NONE_LIB) $(THIRD_LIBS)
-$(MUVIEW_GLUT) : $(addprefix $(OUT)/platform/glut/, glut-main.o)
-	$(LINK_CMD) $(GLUT_LIBS)
+ifeq "$(HAVE_GLFW)" "yes"
+MUVIEW_GLFW := $(OUT)/mupdf-gl
+MUVIEW_GLFW_OBJ := $(addprefix $(OUT)/platform/gl/, gl-font.o gl-main.o)
+$(MUVIEW_GLFW_OBJ) : $(FITZ_HDR) $(PDF_HDR)
+$(MUVIEW_GLFW) : $(MUPDF_LIB) $(THIRD_LIBS) $(GLFW_LIB)
+$(MUVIEW_GLFW) : $(MUVIEW_GLFW_OBJ)
+	$(LINK_CMD) $(GLFW_LIBS)
 endif
 
 ifeq "$(HAVE_CURL)" "yes"
@@ -295,7 +297,7 @@ $(MUVIEW_WIN32) : $(MUVIEW_WIN32_OBJ)
 	$(LINK_CMD) $(WIN32_LIBS)
 endif
 
-MUVIEW := $(MUVIEW_X11) $(MUVIEW_WIN32) $(MUVIEW_GLUT)
+MUVIEW := $(MUVIEW_X11) $(MUVIEW_WIN32) $(MUVIEW_GLFW)
 MUVIEW_CURL := $(MUVIEW_X11_CURL) $(MUVIEW_WIN32_CURL)
 
 INSTALL_APPS := $(MUTOOL) $(MUVIEW) $(MUJSTEST) $(MUVIEW_CURL)
@@ -335,7 +337,7 @@ incdir ?= $(prefix)/include
 mandir ?= $(prefix)/share/man
 docdir ?= $(prefix)/share/doc/mupdf
 
-third: $(THIRD_LIBS) $(CURL_LIB)
+third: $(THIRD_LIBS) $(CURL_LIB) $(GLFW_LIB)
 libs: $(INSTALL_LIBS)
 apps: $(INSTALL_APPS)
 

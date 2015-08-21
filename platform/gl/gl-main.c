@@ -1,14 +1,30 @@
 #include "mupdf/fitz.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#ifdef _MSC_VER
+#define main main_utf8
+#endif
+
+#include <GLFW/glfw3.h>
+
 // TODO: event queue and handle key/mouse based on 'active' inside display()
 
-#ifdef __APPLE__
-#include <OpenGL/OpenGL.h>
-#include <GLUT/glut.h>
-#else
-#include <GL/gl.h>
-#include <GL/freeglut.h>
-#endif
+void ui_init_fonts(fz_context *ctx, float pixelsize);
+void ui_finish_fonts(fz_context *ctx);
+float ui_measure_character(fz_context *ctx, int ucs);
+void ui_begin_text(fz_context *ctx);
+float ui_draw_character(fz_context *ctx, int ucs, float x, float y);
+void ui_end_text(fz_context *ctx);
+float ui_draw_string(fz_context *ctx, float x, float y, const char *str);
+float ui_measure_string(fz_context *ctx, char *str);
+
+static GLFWwindow *window;
+static int fontsize = 15;
+static int baseline = 14;
+static int lineheight = 18;
 
 struct input
 {
@@ -36,7 +52,7 @@ static void ui_end(void)
 static void open_browser(const char *uri)
 {
 #ifdef _WIN32
-	ShellExecuteA(hwndframe, "open", uri, 0, 0, SW_SHOWNORMAL);
+	ShellExecuteA(NULL, "open", uri, 0, 0, SW_SHOWNORMAL);
 #else
 	const char *browser = getenv("BROWSER");
 	if (!browser)
@@ -66,22 +82,9 @@ const char *ogl_error_string(GLenum code)
 	CASE(GL_INVALID_ENUM);
 	CASE(GL_INVALID_VALUE);
 	CASE(GL_INVALID_OPERATION);
-	CASE(GL_INVALID_FRAMEBUFFER_OPERATION);
 	CASE(GL_OUT_OF_MEMORY);
 	CASE(GL_STACK_UNDERFLOW);
 	CASE(GL_STACK_OVERFLOW);
-
-	/* glCheckFramebufferStatus */
-	CASE(GL_FRAMEBUFFER_COMPLETE);
-	CASE(GL_FRAMEBUFFER_UNDEFINED);
-	CASE(GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT);
-	CASE(GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT);
-	CASE(GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER);
-	CASE(GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER);
-	CASE(GL_FRAMEBUFFER_UNSUPPORTED);
-	CASE(GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE);
-	CASE(GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS);
-
 	default: return "(unknown)";
 	}
 #undef CASE
@@ -195,8 +198,7 @@ static void update_title(void)
 		sprintf(buf, "...%s - %d / %d", title + n - 50, currentpage + 1, fz_count_pages(ctx, doc));
 	else
 		sprintf(buf, "%s - %d / %d", title, currentpage + 1, fz_count_pages(ctx, doc));
-	glutSetWindowTitle(buf);
-	glutSetIconTitle(buf);
+	glfwSetWindowTitle(window, buf);
 }
 
 void render_page(int pagenumber, float zoom, float rotate)
@@ -320,8 +322,9 @@ static void do_copy_region(fz_rect *sel, int xofs, int yofs, float zoom, float r
 {
 	fz_rect hitbox;
 	fz_matrix ctm;
-	int c, i, p, need_newline;
+	int c, i, need_newline;
 	int block_num;
+	fz_buffer *buf;
 
 	int x0 = sel->x0 - xofs;
 	int y0 = sel->y0 - yofs;
@@ -338,8 +341,9 @@ static void do_copy_region(fz_rect *sel, int xofs, int yofs, float zoom, float r
 	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
 
-	p = 0;
 	need_newline = 0;
+
+	buf = fz_new_buffer(ctx, 256);
 
 	for (block_num = 0; block_num < text->len; block_num++)
 	{
@@ -369,12 +373,12 @@ static void do_copy_region(fz_rect *sel, int xofs, int yofs, float zoom, float r
 						if (need_newline)
 						{
 #if defined(_WIN32) || defined(_WIN64)
-							putchar('\r');
+							fz_write_buffer_rune(ctx, buf, '\r');
 #endif
-							putchar('\n');
+							fz_write_buffer_rune(ctx, buf, '\n');
 							need_newline = 0;
 						}
-						putchar(c);
+						fz_write_buffer_rune(ctx, buf, c);
 					}
 				}
 			}
@@ -384,56 +388,38 @@ static void do_copy_region(fz_rect *sel, int xofs, int yofs, float zoom, float r
 		}
 	}
 
+	fz_write_buffer_byte(ctx, buf, 0);
+
+	glfwSetClipboardString(window, (char*)buf->data);
+
+	fz_drop_buffer(ctx, buf);
+
 	fz_drop_text_page(ctx, text);
 	fz_drop_text_sheet(ctx, sheet);
 	fz_drop_page(ctx, page);
 }
-
-
-static void draw_string(float x, float y, const char *s)
-{
-	int c;
-	glRasterPos2f(x + 0.375f, y + 0.375f + 11);
-	while (*s)
-	{
-		s += fz_chartorune(&c, s);
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, c);
-	}
-}
-
-#if 0
-static float measure_string(const char *s)
-{
-	int w = 0, c;
-	while (*s)
-	{
-		s += fz_chartorune(&c, s);
-		w += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, c);
-	}
-	return w;
-}
-#endif
 
 static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
 {
 	glColor4f(1, 1, 1, 1);
 	glRectf(x0, y0, x1, y1);
 	glColor4f(0, 0, 0, 1);
-	draw_string(x0 + 2, y0 + 2, text);
+	ui_draw_string(ctx, x0 + 2, y0 + 2 + baseline, text);
 }
 
-static void draw_string_part(float x, float y, const int *s, const int *e)
+static void ui_draw_string_part(float x, float y, const int *s, const int *e)
 {
-	glRasterPos2f(x + 0.375f, y + 0.375f + 11);
+	ui_begin_text(ctx);
 	while (s < e)
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *s++);
+		x += ui_draw_character(ctx, *s++, x, y + baseline);
+	ui_end_text(ctx);
 }
 
 static float measure_string_part(const int *s, const int *e)
 {
-	int w = 0;
+	float w = 0;
 	while (s < e)
-		w += glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, *s++);
+		w += ui_measure_character(ctx, *s++);
 	return w;
 }
 
@@ -441,7 +427,7 @@ static int *find_string_location(int *s, int *e, float w, float x)
 {
 	while (s < e)
 	{
-		int cw = glutBitmapWidth(GLUT_BITMAP_HELVETICA_12, *s);
+		float cw = ui_measure_character(ctx, *s);
 		if (w + (cw / 2) >= x)
 			return s;
 		w += cw;
@@ -450,7 +436,7 @@ static int *find_string_location(int *s, int *e, float w, float x)
 	return e;
 }
 
-static inline int isalnum(int c)
+static inline int myisalnum(int c)
 {
 	int cat = ucdn_get_general_category(c);
 	if (cat >= UCDN_GENERAL_CATEGORY_LL && cat <= UCDN_GENERAL_CATEGORY_LU)
@@ -462,15 +448,15 @@ static inline int isalnum(int c)
 
 static int *skip_word_left(int *p, int *start)
 {
-	while (p > start && !isalnum(p[-1])) --p;
-	while (p > start && isalnum(p[-1])) --p;
+	while (p > start && !myisalnum(p[-1])) --p;
+	while (p > start && myisalnum(p[-1])) --p;
 	return p;
 }
 
 static int *skip_word_right(int *p, int *end)
 {
-	while (p < end && !isalnum(p[0])) ++p;
-	while (p < end && isalnum(p[0])) ++p;
+	while (p < end && !myisalnum(p[0])) ++p;
+	while (p < end && myisalnum(p[0])) ++p;
 	return p;
 }
 
@@ -506,7 +492,7 @@ static void ui_input_draw(int x0, int y0, int x1, int y1, struct input *input)
 	glRectf(px, y0 + 2, qx+1, y1 - 2);
 
 	glColor4f(0, 0, 0, 1);
-	draw_string_part(x0 + 2, y0 + 2, input->text, input->end);
+	ui_draw_string_part(x0 + 2, y0 + 2, input->text, input->end);
 }
 
 static void ui_input_delete_selection(struct input *input)
@@ -588,72 +574,72 @@ static int ui_input_keyboard(int key, struct input *input)
 
 static void ui_input_special(int key, int mod, struct input *input)
 {
-	if (mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
+	if (mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 	{
 		switch (key)
 		{
-		case GLUT_KEY_LEFT: input->q = skip_word_left(input->q, input->text); break;
-		case GLUT_KEY_RIGHT: input->q = skip_word_right(input->q, input->end); break;
-		case GLUT_KEY_UP: case GLUT_KEY_HOME: input->q = input->text; break;
-		case GLUT_KEY_DOWN: case GLUT_KEY_END: input->q = input->end; break;
+		case GLFW_KEY_LEFT: input->q = skip_word_left(input->q, input->text); break;
+		case GLFW_KEY_RIGHT: input->q = skip_word_right(input->q, input->end); break;
+		case GLFW_KEY_UP: case GLFW_KEY_HOME: input->q = input->text; break;
+		case GLFW_KEY_DOWN: case GLFW_KEY_END: input->q = input->end; break;
 		}
 	}
-	else if (mod == GLUT_ACTIVE_CTRL)
+	else if (mod == GLFW_MOD_CONTROL)
 	{
 		switch (key)
 		{
-		case GLUT_KEY_LEFT:
+		case GLFW_KEY_LEFT:
 			if (input->p != input->q)
 				input->p = input->q = input->p < input->q ? input->p : input->q;
 			else
 				input->p = input->q = skip_word_left(input->q, input->text);
 			break;
-		case GLUT_KEY_RIGHT:
+		case GLFW_KEY_RIGHT:
 			if (input->p != input->q)
 				input->p = input->q = input->p > input->q ? input->p : input->q;
 			else
 				input->p = input->q = skip_word_right(input->q, input->end);
 			break;
-		case GLUT_KEY_HOME:
-		case GLUT_KEY_UP:
+		case GLFW_KEY_HOME:
+		case GLFW_KEY_UP:
 			input->p = input->q = input->text;
 			break;
-		case GLUT_KEY_END:
-		case GLUT_KEY_DOWN:
+		case GLFW_KEY_END:
+		case GLFW_KEY_DOWN:
 			input->p = input->q = input->end;
 			break;
 		}
 	}
-	else if (mod == GLUT_ACTIVE_SHIFT)
+	else if (mod == GLFW_MOD_SHIFT)
 	{
 		switch (key)
 		{
-		case GLUT_KEY_LEFT: if (input->q > input->text) input->q = --(input->q); break;
-		case GLUT_KEY_RIGHT: if (input->q < input->end) input->q = ++(input->q); break;
-		case GLUT_KEY_HOME: input->q = input->text; break;
-		case GLUT_KEY_END: input->q = input->end; break;
+		case GLFW_KEY_LEFT: if (input->q > input->text) input->q = --(input->q); break;
+		case GLFW_KEY_RIGHT: if (input->q < input->end) input->q = ++(input->q); break;
+		case GLFW_KEY_HOME: input->q = input->text; break;
+		case GLFW_KEY_END: input->q = input->end; break;
 		}
 	}
 	else if (mod == 0)
 	{
 		switch (key)
 		{
-		case GLUT_KEY_LEFT:
+		case GLFW_KEY_LEFT:
 			if (input->p != input->q)
 				input->p = input->q = input->p < input->q ? input->p : input->q;
 			else if (input->q > input->text)
 				input->p = input->q = --(input->q);
 			break;
-		case GLUT_KEY_RIGHT:
+		case GLFW_KEY_RIGHT:
 			if (input->p != input->q)
 				input->p = input->q = input->p > input->q ? input->p : input->q;
 			else if (input->q < input->end)
 				input->p = input->q = ++(input->q);
 			break;
-		case GLUT_KEY_HOME:
+		case GLFW_KEY_HOME:
 			input->p = input->q = input->text;
 			break;
-		case GLUT_KEY_END:
+		case GLFW_KEY_END:
 			input->p = input->q = input->end;
 			break;
 		}
@@ -728,7 +714,7 @@ static int measure_outline_height(fz_outline *node)
 	int h = 0;
 	while (node)
 	{
-		h += 15;
+		h += lineheight;
 		if (node->down)
 			h += measure_outline_height(node->down);
 		node = node->next;
@@ -748,14 +734,14 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 		{
 			p = node->dest.ld.gotor.page;
 
-			if (ui.x >= x0 && ui.x < x1 && ui.y >= y + h && ui.y < y + h + 15)
+			if (ui.x >= x0 && ui.x < x1 && ui.y >= y + h && ui.y < y + h + lineheight)
 			{
 				ui.hot = node;
 				if (!ui.active && ui.down)
 				{
 					ui.active = node;
 					jump_to_page(p);
-					glutPostRedisplay(); /* we changed the current page, so force a redraw */
+					// glfwPostEmptyEvent(); /* we changed the current page, so force a redraw */
 				}
 			}
 
@@ -767,15 +753,15 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 			if (currentpage == p || (currentpage > p && currentpage < n))
 			{
 				glColor4f(0.9, 0.9, 0.9, 1);
-				glRectf(x0, y + h, x1, y + h + 15);
+				glRectf(x0, y + h, x1, y + h + lineheight);
 			}
 		}
 
 		glColor4f(0, 0, 0, 1);
-		draw_string(x, y + h, node->title);
-		h += 15;
+		ui_draw_string(ctx, x, y + h + baseline, node->title);
+		h += lineheight;
 		if (node->down)
-			h += draw_outline_imp(node->down, n, x0, x1, x + 15, y + h);
+			h += draw_outline_imp(node->down, n, x0, x1, x + lineheight, y + h);
 
 		node = node->next;
 	}
@@ -872,7 +858,7 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 				else if (link->dest.kind == FZ_LINK_URI)
 					open_browser(link->dest.ld.uri.uri);
 			}
-			glutPostRedisplay();
+			// glfwPostEmptyEvent();
 		}
 
 		link = link->next;
@@ -912,10 +898,8 @@ static void draw_page_selection(int x0, int y0, int x1, int y1, float zoom, floa
 
 	if (ui.active == &sel && !ui.right)
 	{
-		printf("--- copy to clipboard ---\n");
 		do_copy_region(&sel, x0, y0, zoom, rotate);
-		printf("\n---\n");
-		glutPostRedisplay();
+		// glfwPostEmptyEvent();
 	}
 }
 
@@ -949,6 +933,7 @@ static void draw_search_hits(int xofs, int yofs, float zoom, float rotate)
 
 static void toggle_fullscreen(void)
 {
+#if 0
 	static int oldw = 100, oldh = 100, oldx = 0, oldy = 0;
 
 	if (!isfullscreen)
@@ -966,6 +951,7 @@ static void toggle_fullscreen(void)
 		glutReshapeWindow(oldw, oldh);
 		isfullscreen = 0;
 	}
+#endif
 }
 
 static void shrinkwrap(void)
@@ -974,7 +960,7 @@ static void shrinkwrap(void)
 	int h = page_h + canvas_y;
 	if (isfullscreen)
 		toggle_fullscreen();
-	glutReshapeWindow(w, h);
+	glfwSetWindowSize(window, w, h);
 }
 
 static void auto_zoom_w(void)
@@ -1047,14 +1033,13 @@ static void smart_move_forward(void)
 	}
 }
 
-
-static void reshape(int w, int h)
+static void on_reshape(GLFWwindow *window, int w, int h)
 {
 	screen_w = w;
 	screen_h = h;
 }
 
-static void display(void)
+static void on_display(GLFWwindow *window)
 {
 	fz_rect r;
 	float x, y;
@@ -1079,8 +1064,8 @@ static void display(void)
 
 	if (search_active)
 	{
-		int start_time = glutGet(GLUT_ELAPSED_TIME);
-		while (glutGet(GLUT_ELAPSED_TIME) < start_time + 200)
+		float start_time = glfwGetTime();
+		while (glfwGetTime() < start_time + 0.2)
 		{
 			do_search_page(search_page, search_needle, NULL);
 			if (search_hit_count)
@@ -1103,7 +1088,7 @@ static void display(void)
 
 		/* keep searching later */
 		if (search_active)
-			glutPostRedisplay();
+			glfwPostEmptyEvent();
 	}
 
 	if (showoutline)
@@ -1203,19 +1188,19 @@ static void display(void)
 
 	if (showsearch)
 	{
-		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, 15+4, &search_input);
+		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, lineheight+4, &search_input);
 	}
 
 	if (search_active)
 	{
 		char buf[256];
 		sprintf(buf, "searching page %d / %d", search_page + 1, fz_count_pages(ctx, doc));
-		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, 15+4, buf);
+		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, lineheight+4, buf);
 	}
 
 	ui_end();
 
-	glutSwapBuffers();
+	glfwSwapBuffers(window);
 
 	ogl_assert(ctx, "swap buffers");
 }
@@ -1243,13 +1228,13 @@ utf8_from_rune_string(fz_context *ctx, const int *s, const int *e)
 	return d;
 }
 
-static void keyboard(unsigned char key, int x, int y)
+static void on_keyboard(GLFWwindow *window, unsigned int key)
 {
 	if (search_active)
 	{
 		if (key == 27)
 			search_active = 0;
-		glutPostRedisplay();
+//		glfwPostEmptyEvent();
 		return;
 	}
 
@@ -1275,7 +1260,7 @@ static void keyboard(unsigned char key, int x, int y)
 				printf("search '%s'\n", search_needle);
 			}
 		}
-		glutPostRedisplay();
+		// glfwPostEmptyEvent();
 		return;
 	}
 
@@ -1365,31 +1350,40 @@ static void keyboard(unsigned char key, int x, int y)
 	if (search_hit_page != currentpage)
 		search_hit_page = -1; /* clear highlights when navigating */
 
-	glutPostRedisplay();
+	// glfwPostEmptyEvent();
 }
 
-static void special(int key, int x, int y)
+static void on_special(GLFWwindow *window, int key, int scan, int action, int mod)
 {
-	int mod = glutGetModifiers();
+	if (action != GLFW_PRESS)
+		return;
 
-	if (key == GLUT_KEY_F4 && mod == GLUT_ACTIVE_ALT)
+	if (key == GLFW_KEY_F4 && mod == GLFW_MOD_ALT)
 		exit(0);
+
+	switch (key)
+	{
+	case GLFW_KEY_ESCAPE: on_keyboard(window, 27); return;
+	case GLFW_KEY_ENTER: on_keyboard(window, '\r'); return;
+	case GLFW_KEY_BACKSPACE: on_keyboard(window, '\b'); return;
+	case GLFW_KEY_DELETE: on_keyboard(window, 127); return;
+	}
 
 	if (showsearch)
 	{
 		ui_input_special(key, mod, &search_input);
-		glutPostRedisplay();
+		// glfwPostEmptyEvent();
 		return;
 	}
 
 	switch (key)
 	{
-	case GLUT_KEY_UP: scroll_y -= 10; break;
-	case GLUT_KEY_DOWN: scroll_y += 10; break;
-	case GLUT_KEY_LEFT: scroll_x -= 10; break;
-	case GLUT_KEY_RIGHT: scroll_x += 10; break;
-	case GLUT_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); break;
-	case GLUT_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); break;
+	case GLFW_KEY_UP: scroll_y -= 10; break;
+	case GLFW_KEY_DOWN: scroll_y += 10; break;
+	case GLFW_KEY_LEFT: scroll_x -= 10; break;
+	case GLFW_KEY_RIGHT: scroll_x += 10; break;
+	case GLFW_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); break;
+	case GLFW_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); break;
 	}
 
 	number = 0;
@@ -1398,38 +1392,33 @@ static void special(int key, int x, int y)
 
 	if (search_hit_page != currentpage)
 		search_hit_page = -1; /* clear highlights when navigating */
-
-	glutPostRedisplay();
 }
 
-static void mouse(int button, int state, int x, int y)
+static void on_mouse_button(GLFWwindow *window, int button, int action, int mod)
 {
 	switch (button)
 	{
-	case GLUT_LEFT_BUTTON: ui.down = (state == GLUT_DOWN); break;
-	case GLUT_MIDDLE_BUTTON: ui.middle = (state == GLUT_DOWN); break;
-	case GLUT_RIGHT_BUTTON: ui.right = (state == GLUT_DOWN); break;
+	case GLFW_MOUSE_BUTTON_LEFT: ui.down = (action == GLFW_PRESS); break;
+	case GLFW_MOUSE_BUTTON_MIDDLE: ui.middle = (action == GLFW_PRESS); break;
+	case GLFW_MOUSE_BUTTON_RIGHT: ui.right = (action == GLFW_PRESS); break;
 	}
-	ui.x = x;
-	ui.y = y;
-	glutPostRedisplay();
 }
 
-static void motion(int x, int y)
+static void on_mouse_motion(GLFWwindow *window, double x, double y)
 {
 	ui.x = x;
 	ui.y = y;
-	glutPostRedisplay();
+}
+
+static void on_error(int error, const char *msg)
+{
+	fprintf(stderr, "gl error %d: %s\n", error, msg);
 }
 
 int main(int argc, char **argv)
 {
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-	glutInitWindowSize(800, 1000);
-
 	if (argc < 2) {
-		fprintf(stderr, "usage: mupdf-glut input.pdf\n");
+		fprintf(stderr, "usage: mupdf-gl input.pdf\n");
 		exit(1);
 	}
 
@@ -1448,7 +1437,20 @@ int main(int argc, char **argv)
 	search_input.q = search_input.p;
 	search_input.end = search_input.p;
 
-	glutCreateWindow(filename);
+	if (!glfwInit()) {
+		fprintf(stderr, "cannot initialize glfw\n");
+		exit(1);
+	}
+
+	glfwSetErrorCallback(on_error);
+
+	window = glfwCreateWindow(800, 1000, filename, NULL, NULL);
+	if (!window) {
+		fprintf(stderr, "cannot create glfw window\n");
+		exit(1);
+	}
+
+	glfwMakeContextCurrent(window);
 
 	ctx = fz_new_context(NULL, NULL, 0);
 	fz_register_document_handlers(ctx);
@@ -1459,14 +1461,23 @@ int main(int argc, char **argv)
 	update_title();
 	shrinkwrap();
 
-	glutReshapeFunc(reshape);
-	glutDisplayFunc(display);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(special);
-	glutMouseFunc(mouse);
-	glutMotionFunc(motion);
-	glutPassiveMotionFunc(motion);
-	glutMainLoop();
+	ui_init_fonts(ctx, fontsize);
+
+	glfwSetCursorPosCallback(window, on_mouse_motion);
+	glfwSetMouseButtonCallback(window, on_mouse_button);
+	glfwSetFramebufferSizeCallback(window, on_reshape);
+	glfwSetCharCallback(window, on_keyboard);
+	glfwSetKeyCallback(window, on_special);
+
+	glfwGetFramebufferSize(window, &screen_w, &screen_h);
+
+	while (!glfwWindowShouldClose(window))
+	{
+		glfwWaitEvents();
+		on_display(window);
+	}
+
+	ui_finish_fonts(ctx);
 
 	fz_drop_link(ctx, links);
 	fz_drop_document(ctx, doc);
@@ -1474,3 +1485,13 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+#ifdef _MSC_VER
+int wmain(int argc, wchar_t *wargv[])
+{
+	char **argv = fz_argv_from_wargv(argc, wargv);
+	int ret = main(argc, argv);
+	fz_free_argv(argc, argv);
+	return ret;
+}
+#endif

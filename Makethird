@@ -14,6 +14,7 @@ OPENJPEG_DIR := thirdparty/openjpeg/libopenjpeg
 OPENSSL_DIR := thirdparty/openssl
 ZLIB_DIR := thirdparty/zlib
 CURL_DIR := thirdparty/curl
+GLFW_DIR := thirdparty/glfw
 
 # --- V8 ---
 #
@@ -458,6 +459,60 @@ HAVE_CURL := yes
 else ifeq "$(HAVE_CURL)" "yes"
 CURL_CFLAGS := $(SYS_CURL_CFLAGS)
 CURL_LIBS := $(SYS_CURL_LIBS)
+endif
+
+# --- GLFW ---
+
+ifneq "$(wildcard $(GLFW_DIR)/README.md)" ""
+
+GLFW_LIB := $(OUT)/libglfw.a
+GLFW_OUT := $(OUT)/glfw
+GLFW_SRC := \
+	context.c \
+	glx_context.c \
+	init.c \
+	input.c \
+	linux_joystick.c \
+	monitor.c \
+	posix_time.c \
+	posix_tls.c \
+	window.c \
+	x11_init.c \
+	x11_monitor.c \
+	x11_window.c \
+	xkb_unicode.c \
+
+GLFW_SRC_UNUSED := \
+	egl_context.c \
+	mach_time.c \
+	mir_init.c \
+	mir_monitor.c \
+	mir_window.c \
+	win32_init.c \
+	win32_monitor.c \
+	win32_time.c \
+	win32_tls.c \
+	win32_window.c \
+	winmm_joystick.c \
+	wgl_context.c \
+	wl_init.c \
+	wl_monitor.c \
+	wl_window.c \
+
+$(GLFW_LIB): $(addprefix $(GLFW_OUT)/, $(GLFW_SRC:%.c=%.o))
+$(GLFW_OUT):
+	$(MKDIR_CMD)
+$(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.c | $(GLFW_OUT)
+	$(CC_CMD) -D_GLFW_X11 -D_GLFW_GLX -D_GLFW_USE_OPENGL -D_GLFW_HAS_GLXGETPROCADDRESS
+
+GLFW_CFLAGS := -I$(GLFW_DIR)/include
+GLFW_LIBS := -lGL -lX11 -lXcursor -lXrandr -lXinerama -lpthread
+
+HAVE_GLFW := yes
+
+else ifeq "$(HAVE_GLFW)" "yes"
+GLFW_CFLAGS := $(SYS_GLFW_CFLAGS)
+GLFW_LIBS := $(SYS_GLFW_LIBS)
 endif
 
 # --- X11 ---
