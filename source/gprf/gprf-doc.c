@@ -9,7 +9,7 @@
 #endif
 
 #include "mupdf/fitz.h"
-#ifdef USE_GS_API
+#if defined(USE_GS_API) && !defined(__ANDROID__)
 #include "iapi.h"
 #endif
 

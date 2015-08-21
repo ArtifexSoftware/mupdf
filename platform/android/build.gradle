@@ -68,7 +68,7 @@ if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 /*  This task builds the native part  */
 task buildNative(type: Exec,description: 'Compile JNI source via NDK') {
     println('executing buildNative')
-    commandLine ndkBuildPath, '-C', file('.').absolutePath
+    commandLine ndkBuildPath, '-C', file('.').absolutePath, ' SUPPORT_GPROOF=1'
     //'NDK_PROJECT_PATH=build','APP_BUILD_SCRIPT=src/main/jni/Android.mk'//force using appropriate Makefile
 }
 

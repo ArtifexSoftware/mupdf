@@ -1,10 +1,5 @@
 package com.artifex.mupdfdemo;
 
-import java.io.InputStream;
-import java.util.concurrent.Executor;
-
-import com.artifex.mupdfdemo.ReaderView.ViewMapper;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -15,6 +10,9 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.Rect;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RectShape;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,6 +21,8 @@ import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
@@ -30,10 +30,16 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ViewAnimator;
+
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.concurrent.Executor;
 
 class ThreadPerTaskExecutor implements Executor {
 	public void execute(Runnable r) {
@@ -77,6 +83,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private EditText     mSearchText;
 	private SearchTask   mSearchTask;
 	private ImageButton  mProofButton;
+	private ImageButton  mSepsButton;
 	private AlertDialog.Builder mAlertBuilder;
 	private boolean    mLinkHighlight = false;
 	private final Handler mHandler = new Handler();
@@ -85,7 +92,8 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private AsyncTask<Void,Void,MuPDFAlert> mAlertTask;
 	private AlertDialog mAlertDialog;
 	private FilePicker mFilePicker;
-	private String       mProofFile;
+	private String     mProofFile;
+	private boolean mSepEnabled[][];
 
 	static private AlertDialog.Builder gAlertBuilder;
 	static public AlertDialog.Builder getAlertBuilder() {return gAlertBuilder;}
@@ -214,7 +222,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		mFileName = new String(lastSlashPos == -1
 					? path
 					: path.substring(lastSlashPos+1));
-		System.out.println("Trying to open "+path);
+		System.out.println("Trying to open " + path);
 		try
 		{
 			core = new MuPDFCore(this, path);
@@ -252,6 +260,13 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		return core;
 	}
 
+	//  determine whether the current activity is a proofing activity.
+	public boolean isProofing()
+	{
+		String format = core.fileFormat();
+		return (format.equals("GPROOF"));
+	}
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(final Bundle savedInstanceState)
@@ -271,6 +286,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		if (core == null) {
 			Intent intent = getIntent();
 			byte buffer[] = null;
+
 			if (Intent.ACTION_VIEW.equals(intent.getAction())) {
 				Uri uri = intent.getData();
 				System.out.println("URI to open is: " + uri);
@@ -369,6 +385,32 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		}
 
 		createUI(savedInstanceState);
+
+		//  hide the proof button if this file can't be proofed
+		if (!core.canProof()) {
+			mProofButton.setVisibility(View.INVISIBLE);
+		}
+
+		if (isProofing()) {
+
+			//  start the activity with a new array
+			mSepEnabled = null;
+
+			//  show the separations button
+			mSepsButton.setVisibility(View.VISIBLE);
+
+			//  hide some other buttons
+			mLinkButton.setVisibility(View.INVISIBLE);
+			mReflowButton.setVisibility(View.INVISIBLE);
+			mOutlineButton.setVisibility(View.INVISIBLE);
+			mSearchButton.setVisibility(View.INVISIBLE);
+			mMoreButton.setVisibility(View.INVISIBLE);
+		}
+		else {
+			//  hide the separations button
+			mSepsButton.setVisibility(View.INVISIBLE);
+		}
+
 	}
 
 	public void requestPassword(final Bundle savedInstanceState) {
@@ -381,14 +423,14 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		alert.setView(mPasswordView);
 		alert.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.okay),
 				new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int which) {
-				if (core.authenticatePassword(mPasswordView.getText().toString())) {
-					createUI(savedInstanceState);
-				} else {
-					requestPassword(savedInstanceState);
-				}
-			}
-		});
+					public void onClick(DialogInterface dialog, int which) {
+						if (core.authenticatePassword(mPasswordView.getText().toString())) {
+							createUI(savedInstanceState);
+						} else {
+							requestPassword(savedInstanceState);
+						}
+					}
+				});
 		alert.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.cancel),
 				new DialogInterface.OnClickListener() {
 
@@ -410,6 +452,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			protected void onMoveToChild(int i) {
 				if (core == null)
 					return;
+
 				mPageNumberView.setText(String.format("%d / %d", i + 1,
 						core.countPages()));
 				mPageSlider.setMax((core.countPages() - 1) * mPageSliderRes);
@@ -618,6 +661,13 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		layout.addView(mDocView);
 		layout.addView(mButtonsView);
 		setContentView(layout);
+
+		if (isProofing()) {
+			//  go to the current page
+			int currentPage = getIntent().getIntExtra("startingPage", 0);
+			mDocView.setDisplayedViewIndex(currentPage);
+		}
+
 	}
 
 	@Override
@@ -635,12 +685,19 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			if (mFilePicker != null && resultCode == RESULT_OK)
 				mFilePicker.onPick(data.getData());
 		case PROOF_REQUEST:
+			//  we're returning from a proofing activity
+
 			if (mProofFile != null)
 			{
 				core.endProof(mProofFile);
 				mProofFile = null;
 			}
+
+			//  return the top bar to default
+			mTopBarMode = TopBarMode.Main;
+			mTopBarSwitcher.setDisplayedChild(mTopBarMode.ordinal());
 		}
+
 		super.onActivityResult(requestCode, resultCode, data);
 	}
 
@@ -732,7 +789,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 
 	private void setButtonEnabled(ImageButton button, boolean enabled) {
 		button.setEnabled(enabled);
-		button.setColorFilter(enabled ? Color.argb(255, 255, 255, 255):Color.argb(255, 128, 128, 128));
+		button.setColorFilter(enabled ? Color.argb(255, 255, 255, 255) : Color.argb(255, 128, 128, 128));
 	}
 
 	private void setLinkHighlight(boolean highlight) {
@@ -752,7 +809,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 			int index = mDocView.getDisplayedViewIndex();
 			updatePageNumView(index);
 			mPageSlider.setMax((core.countPages()-1)*mPageSliderRes);
-			mPageSlider.setProgress(index*mPageSliderRes);
+			mPageSlider.setProgress(index * mPageSliderRes);
 			if (mTopBarMode == TopBarMode.Search) {
 				mSearchText.requestFocus();
 				showKeyboard();
@@ -840,7 +897,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 	private void updatePageNumView(int index) {
 		if (core == null)
 			return;
-		mPageNumberView.setText(String.format("%d / %d", index+1, core.countPages()));
+		mPageNumberView.setText(String.format("%d / %d", index + 1, core.countPages()));
 	}
 
 	private void printDoc() {
@@ -899,13 +956,16 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		mLinkButton = (ImageButton)mButtonsView.findViewById(R.id.linkButton);
 		mMoreButton = (ImageButton)mButtonsView.findViewById(R.id.moreButton);
 		mProofButton = (ImageButton)mButtonsView.findViewById(R.id.proofButton);
+		mSepsButton = (ImageButton)mButtonsView.findViewById(R.id.sepsButton);
 		mTopBarSwitcher.setVisibility(View.INVISIBLE);
 		mPageNumberView.setVisibility(View.INVISIBLE);
 		mInfoView.setVisibility(View.INVISIBLE);
+
 		mPageSlider.setVisibility(View.INVISIBLE);
 		if (!core.gprfSupported()) {
 			mProofButton.setVisibility(View.INVISIBLE);
 		}
+		mSepsButton.setVisibility(View.INVISIBLE);
 	}
 
 	public void OnMoreButtonClick(View v) {
@@ -922,13 +982,202 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		printDoc();
 	}
 
-	public void OnProofButtonClick(View v) {
-		mProofFile = core.startProof();
+	//  start a proof activity with the given resolution.
+	public void proofWithResolution (int resolution)
+	{
+		mProofFile = core.startProof(resolution);
 		Uri uri = Uri.parse("file://"+mProofFile);
-		Intent intent = new Intent(this,MuPDFActivity.class);
+		Intent intent = new Intent(this, MuPDFActivity.class);
 		intent.setAction(Intent.ACTION_VIEW);
 		intent.setData(uri);
+		// add the current page so it can be found when the activity is running
+		intent.putExtra("startingPage", mDocView.getDisplayedViewIndex());
 		startActivityForResult(intent, PROOF_REQUEST);
+	}
+
+	public void OnProofButtonClick(final View v)
+	{
+		//  set up the menu or resolutions.
+		final PopupMenu popup = new PopupMenu(this, v);
+		popup.getMenu().add(0, 1,    0, "Select a resolution:");
+		popup.getMenu().add(0, 72,   0, "72");
+		popup.getMenu().add(0, 96,   0, "96");
+		popup.getMenu().add(0, 150,  0, "150");
+		popup.getMenu().add(0, 300,  0, "300");
+		popup.getMenu().add(0, 600,  0, "600");
+		popup.getMenu().add(0, 1200, 0, "1200");
+		popup.getMenu().add(0, 2400, 0, "2400");
+
+		//  prevent the first item from being dismissed.
+		//  is there not a better way to do this?  It requires minimum API 14
+		MenuItem item = popup.getMenu().getItem(0);
+		item.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
+		item.setActionView(new View(v.getContext()));
+		item.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+			@Override
+			public boolean onMenuItemActionExpand(MenuItem item) {
+				return false;
+			}
+
+			@Override
+			public boolean onMenuItemActionCollapse(MenuItem item) {
+				return false;
+			}
+		});
+
+		popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				int id = item.getItemId();
+				if (id != 1) {
+					//  it's a resolution.  The id is also the resolution value
+					proofWithResolution(id);
+					return true;
+				}
+				return false;
+			}
+		});
+
+		popup.show();
+	}
+
+	public void OnSepsButtonClick(final View v)
+	{
+		if (isProofing()) {
+
+			//  get the current page
+			final int currentPage = mDocView.getDisplayedViewIndex();
+
+			//  buid a popup menu based on the given separations
+			final PopupMenu menu = new PopupMenu(this, v);
+
+			//  This makes the popup menu display icons, which by default it does not do.
+			//  I worry that this relies on the internals of PopupMenu, which could change.
+			try {
+				Field[] fields = menu.getClass().getDeclaredFields();
+				for (Field field : fields) {
+					if ("mPopup".equals(field.getName())) {
+						field.setAccessible(true);
+						Object menuPopupHelper = field.get(menu);
+						Class<?> classPopupHelper = Class.forName(menuPopupHelper
+								.getClass().getName());
+						Method setForceIcons = classPopupHelper.getMethod(
+								"setForceShowIcon", boolean.class);
+						setForceIcons.invoke(menuPopupHelper, true);
+						break;
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			//  get the maximum number of seps on any page.
+			//  We use this to dimension an array further down
+			int maxSeps = 0;
+			int numPages = core.countPages();
+			for (int page=0; page<numPages; page++) {
+				int numSeps = core.getNumSepsOnPage(page);
+				if (numSeps>maxSeps)
+					maxSeps = numSeps;
+			}
+
+			//  if this is the first time, create the "enabled" array
+			if (mSepEnabled==null) {
+				mSepEnabled = new boolean[numPages][maxSeps];
+				for (int page=0; page<numPages; page++) {
+					for (int i = 0; i < maxSeps; i++)
+						mSepEnabled[page][i] = true;
+				}
+			}
+
+			//  count the seps on this page
+			int numSeps = core.getNumSepsOnPage(currentPage);
+
+			//  for each sep,
+			for (int i = 0; i < numSeps; i++) {
+
+//				//  Robin use this to skip separations
+//				if (i==12)
+//					break;
+
+				//  get the name
+				Separation sep = core.getSep(currentPage,i);
+				String name = sep.name;
+
+				//  make a checkable menu item with that name
+				//  and the separation index as the id
+				MenuItem item = menu.getMenu().add(0, i, 0, name+"    ");
+				item.setCheckable(true);
+
+				//  set an icon that's the right color
+				int iconSize = 48;
+				int alpha = (sep.rgba >> 24) & 0xFF;
+				int red   = (sep.rgba >> 16) & 0xFF;
+				int green = (sep.rgba >> 8 ) & 0xFF;
+				int blue  = (sep.rgba >> 0 ) & 0xFF;
+				int color = (alpha << 24) | (red << 16) | (green << 8) | (blue << 0);
+
+				ShapeDrawable swatch = new ShapeDrawable (new RectShape());
+				swatch.setIntrinsicHeight(iconSize);
+				swatch.setIntrinsicWidth(iconSize);
+				swatch.setBounds(new Rect(0, 0, iconSize, iconSize));
+				swatch.getPaint().setColor(color);
+				item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+				item.setIcon(swatch);
+
+				//  check it (or not)
+				item.setChecked(mSepEnabled[currentPage][i]);
+
+				//  establishing a menu item listener
+				item.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+					@Override
+					public boolean onMenuItemClick(MenuItem item) {
+						//  someone tapped a menu item.  get the ID
+						int sep = item.getItemId();
+
+						//  toggle the sep
+						mSepEnabled[currentPage][sep] = !mSepEnabled[currentPage][sep];
+						item.setChecked(mSepEnabled[currentPage][sep]);
+						core.controlSepOnPage(currentPage, sep, !mSepEnabled[currentPage][sep]);
+
+						//  prevent the menu from being dismissed by these items
+						item.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
+						item.setActionView(new View(v.getContext()));
+						item.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+							@Override
+							public boolean onMenuItemActionExpand(MenuItem item) {
+								return false;
+							}
+
+							@Override
+							public boolean onMenuItemActionCollapse(MenuItem item) {
+								return false;
+							}
+						});
+						return false;
+					}
+				});
+
+				//  tell core to enable or disable each sep as appropriate
+				//  but don't refresh the page yet.
+				core.controlSepOnPage(currentPage, i, !mSepEnabled[currentPage][i]);
+			}
+
+			//  add one for done
+			MenuItem itemDone = menu.getMenu().add(0, 0, 0, "Done");
+			itemDone.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+				@Override
+				public boolean onMenuItemClick(MenuItem item) {
+					//  refresh the view
+					mDocView.refresh(false);
+					return true;
+				}
+			});
+
+			//  show the menu
+			menu.show();
+		}
+
 	}
 
 	public void OnCopyTextButtonClick(View v) {
@@ -1164,4 +1413,5 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		intent.setAction(ChoosePDFActivity.PICK_KEY_FILE);
 		startActivityForResult(intent, FILEPICK_REQUEST);
 	}
+
 }

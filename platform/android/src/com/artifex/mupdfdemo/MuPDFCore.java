@@ -1,12 +1,10 @@
 package com.artifex.mupdfdemo;
-import java.util.ArrayList;
-
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.content.Intent;
+
+import java.util.ArrayList;
 
 public class MuPDFCore
 {
@@ -90,7 +88,8 @@ public class MuPDFCore
 	private native long createCookie();
 	private native void destroyCookie(long cookie);
 	private native void abortCookie(long cookie);
-	private native String startProofInternal();
+
+	private native String startProofInternal(int resolution);
 	private native void endProofInternal(String filename);
 	private native int getNumSepsOnPageInternal(int page);
 	private native int controlSepOnPageInternal(int page, int sep, boolean disable);
@@ -365,8 +364,8 @@ public class MuPDFCore
 		saveInternal();
 	}
 
-	public synchronized String startProof() {
-		return startProofInternal();
+	public synchronized String startProof(int resolution) {
+		return startProofInternal(resolution);
 	}
 
 	public synchronized void endProof(String filename) {
@@ -379,9 +378,12 @@ public class MuPDFCore
 		return gprfSupportedInternal();
 	}
 
-	public static boolean isProofing()
+	public boolean canProof()
 	{
-		return mIsProofing;
+		String format = fileFormat();
+		if (format.contains("PDF"))
+			return true;
+		return false;
 	}
 
 	public synchronized int getNumSepsOnPage(int page) {
