@@ -2834,7 +2834,8 @@ JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int page, int sep)
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	const char *name;
-	unsigned int rgb;
+	char rgba[4];
+	unsigned int bgra;
 	unsigned int cmyk;
 	jobject jname;
 	jclass sepClass;
@@ -2849,7 +2850,9 @@ JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int page, int sep)
 	if (i == NUM_CACHE)
 		return NULL;
 
-	name = fz_get_separation_on_page(ctx, glo->pages[i].page, sep, &rgb, &cmyk);
+	/* MuPDF returns RGBA as bytes. Android wants a packed BGRA int. */
+	name = fz_get_separation_on_page(ctx, glo->pages[i].page, sep, &rgba[0], &cmyk);
+	bgra = (rgba[0] << 16) | (rgba[1]<<8) | rgba[2] | (rgba[3]<<24);
 	jname = name ? (*env)->NewStringUTF(env, name) : NULL;
 
 	sepClass = (*env)->FindClass(env, PACKAGENAME "/Separation");
@@ -2860,5 +2863,5 @@ JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int page, int sep)
 	if (ctor == NULL)
 		return NULL;
 
-	return (*env)->NewObject(env, sepClass, ctor, jname, rgb, cmyk);
+	return (*env)->NewObject(env, sepClass, ctor, jname, bgra, cmyk);
 }
