@@ -1382,11 +1382,9 @@ static void on_special(GLFWwindow *window, int key, int scan, int action, int mo
 	case GLFW_KEY_DOWN: scroll_y += 10; break;
 	case GLFW_KEY_LEFT: scroll_x -= 10; break;
 	case GLFW_KEY_RIGHT: scroll_x += 10; break;
-	case GLFW_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); break;
-	case GLFW_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); break;
+	case GLFW_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); number = 0; break;
+	case GLFW_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); number = 0; break;
 	}
-
-	number = 0;
 
 	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
 
