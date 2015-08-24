@@ -14,6 +14,7 @@ MUJS_DIR := thirdparty/mujs
 OPENJPEG_DIR := thirdparty/openjpeg/src/lib/openjp2
 ZLIB_DIR := thirdparty/zlib
 LURATECH_DIR := thirdparty/luratech
+JPEGXR_DIR := thirdparty/jpegxr
 
 CURL_DIR := thirdparty/curl
 GLFW_DIR := thirdparty/glfw
@@ -460,6 +461,40 @@ JPEG_CFLAGS := -Iscripts/jpeg -I$(JPEG_DIR)
 else
 JPEG_CFLAGS := $(SYS_JPEG_CFLAGS) -DSHARE_JPEG
 JPEG_LIBS := $(SYS_JPEG_LIBS)
+endif
+
+# --- jpegxr ---
+
+ifneq "$(wildcard $(JPEGXR_DIR)/T835E.pdf)" ""
+
+JPEGXR_OUT := $(OUT)/jpegxr
+JPEGXR_SRC := \
+	algo.c \
+	api.c \
+	flags.c \
+	init.c \
+	io.c \
+	cr_parse.c \
+	jpegxr_pixelformat.c \
+	r_parse.c \
+	r_strip.c \
+	r_tile_spatial.c \
+	r_tile_frequency.c \
+	x_strip.c
+
+JPEGXR_OBJ := $(addprefix $(JPEGXR_OUT)/, $(JPEGXR_SRC:%.c=%.o))
+
+$(JPEGXR_OUT):
+	$(MKDIR_CMD)
+
+$(JPEGXR_OUT)/%.o: $(JPEGXR_DIR)/Software/%.c | $(JPEGXR_OUT)
+	$(CC_CMD) $(JPEGXR_CFLAGS)
+
+JPEGXR_CFLAGS := \
+	-I$(JPEGXR_DIR) \
+	-I$(JPEGXR_DIR)/Software \
+	-DHAVE_JPEGXR
+
 endif
 
 # --- ZLIB ---

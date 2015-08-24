@@ -791,7 +791,6 @@ fz_decode_tiff_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, si
 	 */
 
 	/* get byte order marker */
-	tiff->order = TII;
 	tiff->order = readshort(tiff);
 	if (tiff->order != TII && tiff->order != TMM)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a TIFF file, wrong magic marker");

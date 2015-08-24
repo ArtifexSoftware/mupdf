@@ -35,4 +35,8 @@ Luratech JP2			JPEG 2000	commercial		http://www.luratech.com/
 Luratech JBIG2			JBIG2		commercial		http://www.luratech.com/
 				decoding
 
+JPEG-XR		1.8		JPEG-XR		special			https://www.itu.int/rec/T-REC-T.835/
+reference	(with patches)	decoding
+
+
 NOTE: jbig2dec and mujs are included in "thirdparty" but are copyright Artifex Software Inc.
