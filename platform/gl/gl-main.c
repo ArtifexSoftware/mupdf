@@ -1259,7 +1259,6 @@ static void on_keyboard(GLFWwindow *window, unsigned int key)
 				search_needle = utf8_from_rune_string(ctx, search_input.text, search_input.end);
 				search_active = 1;
 				search_page = currentpage;
-				printf("search '%s'\n", search_needle);
 			}
 		}
 		ui_should_display = 1;
