@@ -200,7 +200,7 @@ static fz_rect search_hit_bbox[500];
 static void update_title(void)
 {
 	static char buf[256];
-	int n = strlen(title);
+	size_t n = strlen(title);
 	if (n > 50)
 		sprintf(buf, "...%s - %d / %d", title + n - 50, currentpage + 1, fz_count_pages(ctx, doc));
 	else
@@ -495,7 +495,7 @@ static void ui_input_draw(int x0, int y0, int x1, int y1, struct input *input)
 	qx = px + measure_string_part(p, q);
 	ex = qx + measure_string_part(q, input->end);
 
-	glColor4f(0.6, 0.6, 1.0, 1);
+	glColor4f(0.6f, 0.6f, 1.0f, 1.0f);
 	glRectf(px, y0 + 2, qx+1, y1 - 2);
 
 	glColor4f(0, 0, 0, 1);
@@ -667,7 +667,7 @@ static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, i
 
 	if (max <= 0)
 	{
-		glColor4f(0.6, 0.6, 0.6, 1);
+		glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
 		glRectf(x0, y0, x1, y1);
 		return;
 	}
@@ -710,9 +710,9 @@ static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, i
 
 	top = (float) *value * avail_h / max;
 
-	glColor4f(0.6, 0.6, 0.6, 1);
+	glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
 	glRectf(x0, y0, x1, y1);
-	glColor4f(0.8, 0.8, 0.8, 1);
+	glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
 	glRectf(x0, top, x1, top + thumb_h);
 }
 
@@ -759,7 +759,7 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 			}
 			if (currentpage == p || (currentpage > p && currentpage < n))
 			{
-				glColor4f(0.9, 0.9, 0.9, 1);
+				glColor4f(0.9f, 0.9f, 0.9f, 1.0f);
 				glRectf(x0, y + h, x1, y + h + lineheight);
 			}
 		}
@@ -848,11 +848,11 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 		if (ui.hot == link || showlinks)
 		{
 			if (ui.active == link && ui.hot == link)
-				glColor4f(0, 0, 1, 0.4);
+				glColor4f(0, 0, 1, 0.4f);
 			else if (ui.hot == link)
-				glColor4f(0, 0, 1, 0.2);
+				glColor4f(0, 0, 1, 0.2f);
 			else
-				glColor4f(0, 0, 1, 0.1);
+				glColor4f(0, 0, 1, 0.1f);
 			glRectf(xofs + r.x0, yofs + r.y0, xofs + r.x1, yofs + r.y1);
 		}
 
@@ -931,7 +931,7 @@ static void draw_search_hits(int xofs, int yofs, float zoom, float rotate)
 
 		fz_transform_rect(&r, &ctm);
 
-		glColor4f(1, 0, 0, 0.4);
+		glColor4f(1, 0, 0, 0.4f);
 		glRectf(xofs + r.x0, yofs + r.y0, xofs + r.x1, yofs + r.y1);
 	}
 
@@ -1058,7 +1058,7 @@ static void on_display(GLFWwindow *window)
 	static int save_ui_y = 0;
 
 	glViewport(0, 0, screen_w, screen_h);
-	glClearColor(0.3, 0.3, 0.3, 1.0);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
