@@ -1211,22 +1211,18 @@ static char *
 utf8_from_rune_string(fz_context *ctx, const int *s, const int *e)
 {
 	const int *src = s;
-	char *d;
-	char *dst;
+	char *d, *dst;
 	int len = 1;
 
 	while (src < e)
 		len += fz_runelen(*src++);
 
-	d = fz_malloc(ctx, len);
-	if (d != NULL)
-	{
-		dst = d;
-		src = s;
-		while (src < e)
-			dst += fz_runetochar(dst, *src++);
-		*dst = 0;
-	}
+	dst = d = fz_malloc(ctx, len);
+	src = s;
+	while (src < e)
+		dst += fz_runetochar(dst, *src++);
+	*dst = 0;
+
 	return d;
 }
 
