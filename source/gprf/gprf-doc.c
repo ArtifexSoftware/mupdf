@@ -783,6 +783,15 @@ gprf_close_document(fz_context *ctx, fz_document *doc_)
 	fz_free(ctx, doc);
 }
 
+static int
+gprf_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size)
+{
+	if (!strcmp(key, "format"))
+		return fz_snprintf(buf, size, "GPROOF");
+
+	return -1;
+}
+
 static fz_document *
 gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
@@ -792,6 +801,7 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.close = gprf_close_document;
 	doc->super.count_pages = gprf_count_pages;
 	doc->super.load_page = gprf_load_page;
+	doc->super.lookup_metadata = gprf_lookup_metadata;
 
 	fz_try(ctx)
 	{
