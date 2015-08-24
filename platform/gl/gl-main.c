@@ -655,8 +655,8 @@ static void ui_input_special(int key, int mod, struct input *input)
 
 static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
 {
-	static float save_top = 0;
-	static int save_ui_y = 0;
+	static float saved_top = 0;
+	static int saved_ui_y = 0;
 	float top;
 
 	int total_h = y1 - y0;
@@ -692,15 +692,15 @@ static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, i
 			{
 				ui.hot = value;
 				ui.active = value;
-				save_top = top;
-				save_ui_y = ui.y;
+				saved_top = top;
+				saved_ui_y = ui.y;
 			}
 		}
 	}
 
 	if (ui.active == value)
 	{
-		*value = (save_top + ui.y - save_ui_y) * max / avail_h;
+		*value = (saved_top + ui.y - saved_ui_y) * max / avail_h;
 	}
 
 	if (*value < 0)
@@ -778,9 +778,9 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 static void draw_outline(fz_outline *node, int outline_w)
 {
 	static char *id = "outline";
-	static int scroll_y = 0;
-	static int save_scroll_y = 0;
-	static int save_ui_y = 0;
+	static int outline_scroll_y = 0;
+	static int saved_outline_scroll_y = 0;
+	static int saved_ui_y = 0;
 
 	int outline_h;
 	int total_h;
@@ -794,15 +794,15 @@ static void draw_outline(fz_outline *node, int outline_w)
 		if (!ui.active && ui.middle)
 		{
 			ui.active = id;
-			save_ui_y = ui.y;
-			save_scroll_y = scroll_y;
+			saved_ui_y = ui.y;
+			saved_outline_scroll_y = outline_scroll_y;
 		}
 	}
 
 	if (ui.active == id)
-		scroll_y = save_scroll_y + (save_ui_y - ui.y) * 5;
+		outline_scroll_y = saved_outline_scroll_y + (saved_ui_y - ui.y) * 5;
 
-	ui_scrollbar(outline_w, 0, outline_w+15, outline_h, &scroll_y, outline_h, total_h);
+	ui_scrollbar(outline_w, 0, outline_w+15, outline_h, &outline_scroll_y, outline_h, total_h);
 
 	glScissor(0, 0, outline_w, outline_h);
 	glEnable(GL_SCISSOR_TEST);
@@ -810,7 +810,7 @@ static void draw_outline(fz_outline *node, int outline_w)
 	glColor4f(1, 1, 1, 1);
 	glRectf(0, 0, outline_w, outline_h);
 
-	draw_outline_imp(outline, fz_count_pages(ctx, doc), 0, outline_w, 10, -scroll_y);
+	draw_outline_imp(outline, fz_count_pages(ctx, doc), 0, outline_w, 10, -outline_scroll_y);
 
 	glDisable(GL_SCISSOR_TEST);
 }
@@ -1052,10 +1052,10 @@ static void on_display(GLFWwindow *window)
 	fz_rect r;
 	float x, y;
 
-	static int save_scroll_x = 0;
-	static int save_scroll_y = 0;
-	static int save_ui_x = 0;
-	static int save_ui_y = 0;
+	static int saved_scroll_x = 0;
+	static int saved_scroll_y = 0;
+	static int saved_ui_x = 0;
+	static int saved_ui_y = 0;
 
 	glViewport(0, 0, screen_w, screen_h);
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -1136,17 +1136,17 @@ static void on_display(GLFWwindow *window)
 		if (!ui.active && ui.middle)
 		{
 			ui.active = doc;
-			save_scroll_x = scroll_x;
-			save_scroll_y = scroll_y;
-			save_ui_x = ui.x;
-			save_ui_y = ui.y;
+			saved_scroll_x = scroll_x;
+			saved_scroll_y = scroll_y;
+			saved_ui_x = ui.x;
+			saved_ui_y = ui.y;
 		}
 	}
 
 	if (ui.active == doc)
 	{
-		scroll_x = save_scroll_x + save_ui_x - ui.x;
-		scroll_y = save_scroll_y + save_ui_y - ui.y;
+		scroll_x = saved_scroll_x + saved_ui_x - ui.x;
+		scroll_y = saved_scroll_y + saved_ui_y - ui.y;
 	}
 
 	if (page_w <= canvas_w)
@@ -1156,10 +1156,7 @@ static void on_display(GLFWwindow *window)
 	}
 	else
 	{
-		if (scroll_x < 0)
-			scroll_x = 0;
-		if (scroll_x + canvas_w > page_w)
-			scroll_x = page_w - canvas_w;
+		scroll_x = fz_clamp(scroll_x, 0, page_w - canvas_w);
 		x = canvas_x - scroll_x;
 	}
 
@@ -1170,10 +1167,7 @@ static void on_display(GLFWwindow *window)
 	}
 	else
 	{
-		if (scroll_y < 0)
-			scroll_y = 0;
-		if (scroll_y + canvas_h > page_h)
-			scroll_y = page_h - canvas_h;
+		scroll_y = fz_clamp(scroll_y, 0, page_h - canvas_h);
 		y = canvas_y - scroll_y;
 	}
 
