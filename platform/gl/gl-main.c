@@ -21,6 +21,13 @@ void ui_end_text(fz_context *ctx);
 float ui_draw_string(fz_context *ctx, float x, float y, const char *str);
 float ui_measure_string(fz_context *ctx, char *str);
 
+static int ui_should_display = 0;
+static void ui_post_redisplay(void)
+{
+	ui_should_display = 1;
+	glfwPostEmptyEvent();
+}
+
 static GLFWwindow *window;
 static int fontsize = 15;
 static int baseline = 14;
@@ -741,7 +748,7 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 				{
 					ui.active = node;
 					jump_to_page(p);
-					// glfwPostEmptyEvent(); /* we changed the current page, so force a redraw */
+					ui_post_redisplay(); /* we changed the current page, so force a redraw */
 				}
 			}
 
@@ -858,7 +865,7 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 				else if (link->dest.kind == FZ_LINK_URI)
 					open_browser(link->dest.ld.uri.uri);
 			}
-			// glfwPostEmptyEvent();
+			ui_post_redisplay();
 		}
 
 		link = link->next;
@@ -899,7 +906,7 @@ static void draw_page_selection(int x0, int y0, int x1, int y1, float zoom, floa
 	if (ui.active == &sel && !ui.right)
 	{
 		do_copy_region(&sel, x0, y0, zoom, rotate);
-		// glfwPostEmptyEvent();
+		ui_post_redisplay();
 	}
 }
 
@@ -1035,6 +1042,7 @@ static void smart_move_forward(void)
 
 static void on_reshape(GLFWwindow *window, int w, int h)
 {
+	ui_should_display = 1;
 	screen_w = w;
 	screen_h = h;
 }
@@ -1088,7 +1096,7 @@ static void on_display(GLFWwindow *window)
 
 		/* keep searching later */
 		if (search_active)
-			glfwPostEmptyEvent();
+			ui_post_redisplay();
 	}
 
 	if (showoutline)
@@ -1234,7 +1242,7 @@ static void on_keyboard(GLFWwindow *window, unsigned int key)
 	{
 		if (key == 27)
 			search_active = 0;
-//		glfwPostEmptyEvent();
+		ui_should_display = 1;
 		return;
 	}
 
@@ -1260,7 +1268,7 @@ static void on_keyboard(GLFWwindow *window, unsigned int key)
 				printf("search '%s'\n", search_needle);
 			}
 		}
-		// glfwPostEmptyEvent();
+		ui_should_display = 1;
 		return;
 	}
 
@@ -1350,7 +1358,7 @@ static void on_keyboard(GLFWwindow *window, unsigned int key)
 	if (search_hit_page != currentpage)
 		search_hit_page = -1; /* clear highlights when navigating */
 
-	// glfwPostEmptyEvent();
+	ui_should_display = 1;
 }
 
 static void on_special(GLFWwindow *window, int key, int scan, int action, int mod)
@@ -1372,7 +1380,7 @@ static void on_special(GLFWwindow *window, int key, int scan, int action, int mo
 	if (showsearch)
 	{
 		ui_input_special(key, mod, &search_input);
-		// glfwPostEmptyEvent();
+		ui_should_display = 1;
 		return;
 	}
 
@@ -1390,6 +1398,8 @@ static void on_special(GLFWwindow *window, int key, int scan, int action, int mo
 
 	if (search_hit_page != currentpage)
 		search_hit_page = -1; /* clear highlights when navigating */
+
+	ui_should_display = 1;
 }
 
 static void on_mouse_button(GLFWwindow *window, int button, int action, int mod)
@@ -1400,12 +1410,14 @@ static void on_mouse_button(GLFWwindow *window, int button, int action, int mod)
 	case GLFW_MOUSE_BUTTON_MIDDLE: ui.middle = (action == GLFW_PRESS); break;
 	case GLFW_MOUSE_BUTTON_RIGHT: ui.right = (action == GLFW_PRESS); break;
 	}
+	ui_should_display = 1;
 }
 
 static void on_mouse_motion(GLFWwindow *window, double x, double y)
 {
 	ui.x = x;
 	ui.y = y;
+	ui_should_display = 1;
 }
 
 static void on_error(int error, const char *msg)
@@ -1469,10 +1481,16 @@ int main(int argc, char **argv)
 
 	glfwGetFramebufferSize(window, &screen_w, &screen_h);
 
+	ui_should_display = 1;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwWaitEvents();
-		on_display(window);
+		if (ui_should_display)
+		{
+			ui_should_display = 0;
+			on_display(window);
+		}
 	}
 
 	ui_finish_fonts(ctx);
