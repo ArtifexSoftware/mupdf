@@ -17,6 +17,10 @@
 #ifndef UCDN_H
 #define UCDN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define UCDN_EAST_ASIAN_F 0
 #define UCDN_EAST_ASIAN_H 1
 #define UCDN_EAST_ASIAN_W 2
@@ -127,6 +131,35 @@
 #define UCDN_SCRIPT_SORA_SOMPENG 100
 #define UCDN_SCRIPT_TAKRI 101
 #define UCDN_SCRIPT_UNKNOWN 102
+#define UCDN_SCRIPT_BASSA_VAH 103
+#define UCDN_SCRIPT_CAUCASIAN_ALBANIAN 104
+#define UCDN_SCRIPT_DUPLOYAN 105
+#define UCDN_SCRIPT_ELBASAN 106
+#define UCDN_SCRIPT_GRANTHA 107
+#define UCDN_SCRIPT_KHOJKI 108
+#define UCDN_SCRIPT_KHUDAWADI 109
+#define UCDN_SCRIPT_LINEAR_A 110
+#define UCDN_SCRIPT_MAHAJANI 111
+#define UCDN_SCRIPT_MANICHAEAN 112
+#define UCDN_SCRIPT_MENDE_KIKAKUI 113
+#define UCDN_SCRIPT_MODI 114
+#define UCDN_SCRIPT_MRO 115
+#define UCDN_SCRIPT_NABATAEAN 116
+#define UCDN_SCRIPT_OLD_NORTH_ARABIAN 117
+#define UCDN_SCRIPT_OLD_PERMIC 118
+#define UCDN_SCRIPT_PAHAWH_HMONG 119
+#define UCDN_SCRIPT_PALMYRENE 120
+#define UCDN_SCRIPT_PAU_CIN_HAU 121
+#define UCDN_SCRIPT_PSALTER_PAHLAVI 122
+#define UCDN_SCRIPT_SIDDHAM 123
+#define UCDN_SCRIPT_TIRHUTA 124
+#define UCDN_SCRIPT_WARANG_CITI 125
+#define UCDN_SCRIPT_AHOM 126
+#define UCDN_SCRIPT_ANATOLIAN_HIEROGLYPHS 127
+#define UCDN_SCRIPT_HATRAN 128
+#define UCDN_SCRIPT_MULTANI 129
+#define UCDN_SCRIPT_OLD_HUNGARIAN 130
+#define UCDN_SCRIPT_SIGNWRITING 131
 
 #define UCDN_GENERAL_CATEGORY_CC 0
 #define UCDN_GENERAL_CATEGORY_CF 1
@@ -178,6 +211,10 @@
 #define UCDN_BIDI_CLASS_S 16
 #define UCDN_BIDI_CLASS_WS 17
 #define UCDN_BIDI_CLASS_ON 18
+#define UCDN_BIDI_CLASS_LRI 19
+#define UCDN_BIDI_CLASS_RLI 20
+#define UCDN_BIDI_CLASS_FSI 21
+#define UCDN_BIDI_CLASS_PDI 22
 
 /**
  * Return version of the Unicode database.
@@ -192,7 +229,7 @@ const char *ucdn_get_unicode_version(void);
  * @param code Unicode codepoint
  * @return combining class value, as defined in UAX#44
  */
-int ucdn_get_combining_class(unsigned int code);
+int ucdn_get_combining_class(uint32_t code);
 
 /**
  * Get east-asian width of a codepoint.
@@ -200,7 +237,7 @@ int ucdn_get_combining_class(unsigned int code);
  * @param code Unicode codepoint
  * @return value according to UCDN_EAST_ASIAN_* and as defined in UAX#11.
  */
-int ucdn_get_east_asian_width(unsigned int code);
+int ucdn_get_east_asian_width(uint32_t code);
 
 /**
  * Get general category of a codepoint.
@@ -209,7 +246,7 @@ int ucdn_get_east_asian_width(unsigned int code);
  * @return value according to UCDN_GENERAL_CATEGORY_* and as defined in
  * UAX#44.
  */
-int ucdn_get_general_category(unsigned int code);
+int ucdn_get_general_category(uint32_t code);
 
 /**
  * Get bidirectional class of a codepoint.
@@ -217,7 +254,7 @@ int ucdn_get_general_category(unsigned int code);
  * @param code Unicode codepoint
  * @return value according to UCDN_BIDI_CLASS_* and as defined in UAX#44.
  */
-int ucdn_get_bidi_class(unsigned int code);
+int ucdn_get_bidi_class(uint32_t code);
 
 /**
  * Get script of a codepoint.
@@ -225,7 +262,7 @@ int ucdn_get_bidi_class(unsigned int code);
  * @param code Unicode codepoint
  * @return value according to UCDN_SCRIPT_* and as defined in UAX#24.
  */
-int ucdn_get_script(unsigned int code);
+int ucdn_get_script(uint32_t code);
 
 /**
  * Check if codepoint can be mirrored.
@@ -233,7 +270,7 @@ int ucdn_get_script(unsigned int code);
  * @param code Unicode codepoint
  * @return 1 if mirrored character exists, otherwise 0
  */
-int ucdn_get_mirrored(unsigned int code);
+int ucdn_get_mirrored(uint32_t code);
 
 /**
  * Mirror a codepoint.
@@ -242,7 +279,7 @@ int ucdn_get_mirrored(unsigned int code);
  * @return mirrored codepoint or the original codepoint if no
  * mirrored character exists
  */
-unsigned int ucdn_mirror(unsigned int code);
+uint32_t ucdn_mirror(uint32_t code);
 
 /**
  * Pairwise canonical decomposition of a codepoint. This includes
@@ -257,7 +294,7 @@ unsigned int ucdn_mirror(unsigned int code);
  * @param b filled with second codepoint of decomposition, or 0
  * @return success
  */
-int ucdn_decompose(unsigned int code, unsigned int *a, unsigned int *b);
+int ucdn_decompose(uint32_t code, uint32_t *a, uint32_t *b);
 
 /**
  * Compatibility decomposition of a codepoint.
@@ -267,7 +304,7 @@ int ucdn_decompose(unsigned int code, unsigned int *a, unsigned int *b);
  * characters
  * @return length of decomposition or 0 in case none exists
  */
-int ucdn_compat_decompose(unsigned int code, unsigned int *decomposed);
+int ucdn_compat_decompose(uint32_t code, uint32_t *decomposed);
 
 /**
  * Pairwise canonical composition of two codepoints. This includes
@@ -283,6 +320,10 @@ int ucdn_compat_decompose(unsigned int code, unsigned int *decomposed);
  * @param b second codepoint
  * @return success
  */
-int ucdn_compose(unsigned int *code, unsigned int a, unsigned int b);
+int ucdn_compose(uint32_t *code, uint32_t a, uint32_t b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
