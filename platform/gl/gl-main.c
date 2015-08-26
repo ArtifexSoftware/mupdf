@@ -1,25 +1,17 @@
-#include "mupdf/fitz.h"
-
 #ifdef _WIN32
 #include <windows.h>
-#endif
-
 #ifdef _MSC_VER
 #define main main_utf8
 #endif
+#endif
 
-#include <GLFW/glfw3.h>
+#include "gl-app.h"
+
+struct ui ui;
+
+static GLFWwindow *window;
 
 // TODO: event queue and handle key/mouse based on 'active' inside display()
-
-void ui_init_fonts(fz_context *ctx, float pixelsize);
-void ui_finish_fonts(fz_context *ctx);
-float ui_measure_character(fz_context *ctx, int ucs);
-void ui_begin_text(fz_context *ctx);
-float ui_draw_character(fz_context *ctx, int ucs, float x, float y);
-void ui_end_text(fz_context *ctx);
-float ui_draw_string(fz_context *ctx, float x, float y, const char *str);
-float ui_measure_string(fz_context *ctx, char *str);
 
 static int ui_should_display = 0;
 static void ui_post_redisplay(void)
@@ -28,22 +20,11 @@ static void ui_post_redisplay(void)
 	glfwPostEmptyEvent();
 }
 
-static GLFWwindow *window;
-static int fontsize = 15;
-static int baseline = 14;
-static int lineheight = 18;
-
 struct input
 {
 	int text[256];
 	int *end, *p, *q;
 };
-
-struct ui
-{
-	int x, y, down, middle, right;
-	void *hot, *active;
-} ui;
 
 static void ui_begin(void)
 {
@@ -411,14 +392,14 @@ static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
 	glColor4f(1, 1, 1, 1);
 	glRectf(x0, y0, x1, y1);
 	glColor4f(0, 0, 0, 1);
-	ui_draw_string(ctx, x0 + 2, y0 + 2 + baseline, text);
+	ui_draw_string(ctx, x0 + 2, y0 + 2 + ui.baseline, text);
 }
 
 static void ui_draw_string_part(float x, float y, const int *s, const int *e)
 {
 	ui_begin_text(ctx);
 	while (s < e)
-		x += ui_draw_character(ctx, *s++, x, y + baseline);
+		x += ui_draw_character(ctx, *s++, x, y + ui.baseline);
 	ui_end_text(ctx);
 }
 
@@ -721,7 +702,7 @@ static int measure_outline_height(fz_outline *node)
 	int h = 0;
 	while (node)
 	{
-		h += lineheight;
+		h += ui.lineheight;
 		if (node->down)
 			h += measure_outline_height(node->down);
 		node = node->next;
@@ -741,7 +722,7 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 		{
 			p = node->dest.ld.gotor.page;
 
-			if (ui.x >= x0 && ui.x < x1 && ui.y >= y + h && ui.y < y + h + lineheight)
+			if (ui.x >= x0 && ui.x < x1 && ui.y >= y + h && ui.y < y + h + ui.lineheight)
 			{
 				ui.hot = node;
 				if (!ui.active && ui.down)
@@ -760,15 +741,15 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 			if (currentpage == p || (currentpage > p && currentpage < n))
 			{
 				glColor4f(0.9f, 0.9f, 0.9f, 1.0f);
-				glRectf(x0, y + h, x1, y + h + lineheight);
+				glRectf(x0, y + h, x1, y + h + ui.lineheight);
 			}
 		}
 
 		glColor4f(0, 0, 0, 1);
-		ui_draw_string(ctx, x, y + h + baseline, node->title);
-		h += lineheight;
+		ui_draw_string(ctx, x, y + h + ui.baseline, node->title);
+		h += ui.lineheight;
 		if (node->down)
-			h += draw_outline_imp(node->down, n, x0, x1, x + lineheight, y + h);
+			h += draw_outline_imp(node->down, n, x0, x1, x + ui.lineheight, y + h);
 
 		node = node->next;
 	}
@@ -1190,14 +1171,14 @@ static void on_display(GLFWwindow *window)
 
 	if (showsearch)
 	{
-		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, lineheight+4, &search_input);
+		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, ui.lineheight+4, &search_input);
 	}
 
 	if (search_active)
 	{
 		char buf[256];
 		sprintf(buf, "searching page %d / %d", search_page + 1, fz_count_pages(ctx, doc));
-		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, lineheight+4, buf);
+		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, ui.lineheight+4, buf);
 	}
 
 	ui_end();
@@ -1454,13 +1435,17 @@ int main(int argc, char **argv)
 	ctx = fz_new_context(NULL, NULL, 0);
 	fz_register_document_handlers(ctx);
 
+	ui.fontsize = 15;
+	ui.baseline = 14;
+	ui.lineheight = 18;
+
+	ui_init_fonts(ctx, ui.fontsize);
+
 	doc = fz_open_document(ctx, argv[1]);
 
 	render_page(currentpage, currentzoom, currentrotate);
 	update_title();
 	shrinkwrap();
-
-	ui_init_fonts(ctx, fontsize);
 
 	glfwSetCursorPosCallback(window, on_mouse_motion);
 	glfwSetMouseButtonCallback(window, on_mouse_button);
