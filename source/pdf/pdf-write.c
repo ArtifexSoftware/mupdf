@@ -2604,6 +2604,68 @@ static void sanitize(fz_context *ctx, pdf_document *doc, int ascii)
 	}
 }
 
+/* Initialise the pdf_write_options, used dynamically during the write, from the static
+ * fz_write_options, passed into pdf_write_document */
+static void initialise_write_options(fz_context *ctx, pdf_document *doc, const fz_write_options *fz_opts, pdf_write_options *opts)
+{
+	int num;
+	int xref_len = pdf_xref_len(ctx, doc);
+
+	opts->do_incremental = fz_opts->do_incremental;
+	opts->do_tight = (fz_opts->do_expand == 0) || fz_opts->do_deflate;
+	opts->do_expand = fz_opts->do_expand;
+	opts->do_garbage = fz_opts->do_garbage;
+	opts->do_ascii = fz_opts->do_ascii;
+	opts->do_deflate = fz_opts->do_deflate;
+	opts->do_linear = fz_opts->do_linear;
+	opts->do_clean = fz_opts->do_clean;
+	opts->start = 0;
+	opts->main_xref_offset = INT_MIN;
+	/* We deliberately make these arrays long enough to cope with
+	* 1 to n access rather than 0..n-1, and add space for 2 new
+	* extra entries that may be required for linearization. */
+	opts->use_list = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
+	opts->ofs_list = fz_malloc_array(ctx, xref_len + 3, sizeof(fz_off_t));
+	opts->gen_list = fz_calloc(ctx, xref_len + 3, sizeof(int));
+	opts->renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
+	opts->rev_renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
+	opts->rev_gen_list = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
+	opts->continue_on_error = fz_opts->continue_on_error;
+	opts->errors = fz_opts->errors;
+
+	for (num = 0; num < xref_len; num++)
+	{
+		opts->use_list[num] = 0;
+		opts->ofs_list[num] = 0;
+		opts->renumber_map[num] = num;
+		opts->rev_renumber_map[num] = num;
+		opts->rev_gen_list[num] = pdf_get_xref_entry(ctx, doc, num)->gen;
+	}
+}
+
+/* Free the resources held by the dynamic write options */
+static void finalise_write_options(fz_context *ctx, pdf_write_options *opts)
+{
+	fz_free(ctx, opts->use_list);
+	fz_free(ctx, opts->ofs_list);
+	fz_free(ctx, opts->gen_list);
+	fz_free(ctx, opts->renumber_map);
+	fz_free(ctx, opts->rev_renumber_map);
+	fz_free(ctx, opts->rev_gen_list);
+	pdf_drop_obj(ctx, opts->linear_l);
+	pdf_drop_obj(ctx, opts->linear_h0);
+	pdf_drop_obj(ctx, opts->linear_h1);
+	pdf_drop_obj(ctx, opts->linear_o);
+	pdf_drop_obj(ctx, opts->linear_e);
+	pdf_drop_obj(ctx, opts->linear_n);
+	pdf_drop_obj(ctx, opts->linear_t);
+	pdf_drop_obj(ctx, opts->hints_s);
+	pdf_drop_obj(ctx, opts->hints_length);
+	page_objects_list_destroy(ctx, opts->page_object_lists);
+	if (opts->out)
+		fclose(opts->out);
+}
+
 void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_write_options *fz_opts)
 {
 	fz_write_options opts_defaults = { 0 };
@@ -2652,36 +2714,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 
 	fz_try(ctx)
 	{
-		opts.do_incremental = fz_opts->do_incremental;
-		opts.do_tight = (fz_opts->do_expand == 0) || fz_opts->do_deflate;
-		opts.do_expand = fz_opts->do_expand;
-		opts.do_garbage = fz_opts->do_garbage;
-		opts.do_ascii = fz_opts->do_ascii;
-		opts.do_deflate = fz_opts->do_deflate;
-		opts.do_linear = fz_opts->do_linear;
-		opts.do_clean = fz_opts->do_clean;
-		opts.start = 0;
-		opts.main_xref_offset = INT_MIN;
-		/* We deliberately make these arrays long enough to cope with
-		 * 1 to n access rather than 0..n-1, and add space for 2 new
-		 * extra entries that may be required for linearization. */
-		opts.use_list = fz_malloc_array(ctx, pdf_xref_len(ctx, doc) + 3, sizeof(int));
-		opts.ofs_list = fz_malloc_array(ctx, pdf_xref_len(ctx, doc) + 3, sizeof(fz_off_t));
-		opts.gen_list = fz_calloc(ctx, pdf_xref_len(ctx, doc) + 3, sizeof(int));
-		opts.renumber_map = fz_malloc_array(ctx, pdf_xref_len(ctx, doc) + 3, sizeof(int));
-		opts.rev_renumber_map = fz_malloc_array(ctx, pdf_xref_len(ctx, doc) + 3, sizeof(int));
-		opts.rev_gen_list = fz_malloc_array(ctx, pdf_xref_len(ctx, doc) + 3, sizeof(int));
-		opts.continue_on_error = fz_opts->continue_on_error;
-		opts.errors = fz_opts->errors;
-
-		for (num = 0; num < xref_len; num++)
-		{
-			opts.use_list[num] = 0;
-			opts.ofs_list[num] = 0;
-			opts.renumber_map[num] = num;
-			opts.rev_renumber_map[num] = num;
-			opts.rev_gen_list[num] = pdf_get_xref_entry(ctx, doc, num)->gen;
-		}
+		initialise_write_options(ctx, doc, fz_opts, &opts);
 
 		if (opts.do_incremental && opts.do_garbage)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with garbage collection");
@@ -2797,24 +2830,8 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_w
 		page_objects_dump(&opts);
 		objects_dump(ctx, doc, &opts);
 #endif
-		fz_free(ctx, opts.use_list);
-		fz_free(ctx, opts.ofs_list);
-		fz_free(ctx, opts.gen_list);
-		fz_free(ctx, opts.renumber_map);
-		fz_free(ctx, opts.rev_renumber_map);
-		fz_free(ctx, opts.rev_gen_list);
-		pdf_drop_obj(ctx, opts.linear_l);
-		pdf_drop_obj(ctx, opts.linear_h0);
-		pdf_drop_obj(ctx, opts.linear_h1);
-		pdf_drop_obj(ctx, opts.linear_o);
-		pdf_drop_obj(ctx, opts.linear_e);
-		pdf_drop_obj(ctx, opts.linear_n);
-		pdf_drop_obj(ctx, opts.linear_t);
-		pdf_drop_obj(ctx, opts.hints_s);
-		pdf_drop_obj(ctx, opts.hints_length);
-		page_objects_list_destroy(ctx, opts.page_object_lists);
-		if (opts.out)
-			fclose(opts.out);
+		finalise_write_options(ctx, &opts);
+
 		doc->freeze_updates = 0;
 	}
 	fz_catch(ctx)
