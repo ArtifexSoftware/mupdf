@@ -22,6 +22,7 @@ static inline int iswhite(int ch)
 
 static void pdf_drop_xref_sections(fz_context *ctx, pdf_document *doc)
 {
+	pdf_unsaved_sig *usig;
 	int x, e;
 
 	for (x = 0; x < doc->num_xref_sections; x++)
@@ -49,11 +50,20 @@ static void pdf_drop_xref_sections(fz_context *ctx, pdf_document *doc)
 
 		pdf_drop_obj(ctx, xref->pre_repair_trailer);
 		pdf_drop_obj(ctx, xref->trailer);
+
+		while ((usig = xref->unsaved_sigs) != NULL)
+		{
+			xref->unsaved_sigs = usig->next;
+			pdf_drop_obj(ctx, usig->field);
+			pdf_drop_signer(ctx, usig->signer);
+			fz_free(ctx, usig);
+		}
 	}
 
 	fz_free(ctx, doc->xref_sections);
 	doc->xref_sections = NULL;
 	doc->num_xref_sections = 0;
+	doc->num_incremental_sections = 0;
 }
 
 static void
@@ -75,7 +85,7 @@ extend_xref_index(fz_context *ctx, pdf_document *doc, int newlen)
 static void pdf_resize_xref(fz_context *ctx, pdf_document *doc, int newlen)
 {
 	int i;
-	pdf_xref *xref = &doc->xref_sections[0];
+	pdf_xref *xref = &doc->xref_sections[doc->xref_base];
 	pdf_xref_subsec *sub;
 
 	assert(xref != NULL);
@@ -110,6 +120,8 @@ static void pdf_populate_next_xref_level(fz_context *ctx, pdf_document *doc)
 	xref->num_objects = 0;
 	xref->trailer = NULL;
 	xref->pre_repair_trailer = NULL;
+	xref->unsaved_sigs = NULL;
+	xref->unsaved_sigs_end = NULL;
 }
 
 pdf_obj *pdf_trailer(fz_context *ctx, pdf_document *doc)
@@ -240,6 +252,11 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 	else
 		j = 0;
 
+	/* We may be accessing an earlier version of the document using xref_base
+	 * and j may be an index into a later xref section */
+	if (doc->xref_base > j)
+		j = doc->xref_base;
+
 	/* Find the first xref section where the entry is defined. */
 	for (; j < doc->num_xref_sections; j++)
 	{
@@ -257,7 +274,10 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 				entry = &sub->table[i - sub->start];
 				if (entry->type)
 				{
-					doc->xref_index[i] = j;
+					/* Don't update xref_index if xref_base may have
+					 * influenced the value of j */
+					if (doc->xref_base == 0)
+						doc->xref_index[i] = j;
 					return entry;
 				}
 			}
@@ -269,7 +289,7 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 	doc->xref_index[i] = 0;
 	if (xref == NULL || i < xref->num_objects)
 	{
-		xref = &doc->xref_sections[0];
+		xref = &doc->xref_sections[doc->xref_base];
 		for (sub = xref->subsec; sub != NULL; sub = sub->next)
 		{
 			if (i >= sub->start && i < sub->start + sub->len)
@@ -294,8 +314,11 @@ pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 */
 static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 {
-
-	if (!doc->xref_altered)
+	/* If there are as yet no incremental sections, or if the most recent
+	 * one has been used to sign a signature field, then we need a new one.
+	 * After a signing, any further document changes require a new increment */
+	if ((doc->num_incremental_sections == 0 || doc->xref_sections[0].unsaved_sigs != NULL)
+		&& !doc->disallow_new_increments)
 	{
 		pdf_xref *xref = &doc->xref_sections[0];
 		pdf_xref *pxref;
@@ -317,12 +340,14 @@ static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 			xref->subsec = sub;
 			xref->trailer = trailer;
 			xref->pre_repair_trailer = NULL;
+			xref->unsaved_sigs = NULL;
+			xref->unsaved_sigs_end = NULL;
 			sub->next = NULL;
 			sub->len = xref->num_objects;
 			sub->start = 0;
 			sub->table = new_table;
 			doc->num_xref_sections++;
-			doc->xref_altered = 1;
+			doc->num_incremental_sections++;
 		}
 		fz_catch(ctx)
 		{
@@ -348,7 +373,7 @@ static pdf_xref_entry *pdf_get_incremental_xref_entry(fz_context *ctx, pdf_docum
 	/* Make a new final xref section if we haven't already */
 	ensure_incremental_xref(ctx, doc);
 
-	xref = &doc->xref_sections[0];
+	xref = &doc->xref_sections[doc->xref_base];
 	if (i >= xref->num_objects)
 		pdf_resize_xref(ctx, doc, i + 1);
 
@@ -361,12 +386,49 @@ static pdf_xref_entry *pdf_get_incremental_xref_entry(fz_context *ctx, pdf_docum
 
 int pdf_xref_is_incremental(fz_context *ctx, pdf_document *doc, int num)
 {
-	pdf_xref *xref = &doc->xref_sections[0];
+	pdf_xref *xref = &doc->xref_sections[doc->xref_base];
 	pdf_xref_subsec *sub = xref->subsec;
 
 	assert(sub != NULL && sub->next == NULL && sub->len == xref->num_objects && sub->start == 0);
 
-	return doc->xref_altered && num < xref->num_objects && sub->table[num].type;
+	return num < xref->num_objects && sub->table[num].type;
+}
+
+void pdf_xref_store_unsaved_signature(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_signer *signer)
+{
+	pdf_xref *xref = &doc->xref_sections[0];
+	pdf_unsaved_sig *unsaved_sig;
+
+	/* Record details within the document structure so that contents
+	 * and byte_range can be updated with their correct values at
+	 * saving time */
+	unsaved_sig = fz_malloc_struct(ctx, pdf_unsaved_sig);
+	unsaved_sig->field = pdf_keep_obj(ctx, field);
+	unsaved_sig->signer = pdf_keep_signer(ctx, signer);
+	unsaved_sig->next = NULL;
+	if (xref->unsaved_sigs_end == NULL)
+		xref->unsaved_sigs_end = &xref->unsaved_sigs;
+
+	*xref->unsaved_sigs_end = unsaved_sig;
+	xref->unsaved_sigs_end = &unsaved_sig->next;
+}
+
+int pdf_xref_obj_is_unsaved_signature(pdf_document *doc, pdf_obj *obj)
+{
+	int i;
+	for (i = 0; i < doc->num_incremental_sections; i++)
+	{
+		pdf_xref *xref = &doc->xref_sections[i];
+		pdf_unsaved_sig *usig;
+
+		for (usig = xref->unsaved_sigs; usig; usig = usig->next)
+		{
+			if (usig->field == obj)
+				return 1;
+		}
+	}
+
+	return 0;
 }
 
 /* Ensure that the current populating xref has a single subsection
@@ -415,7 +477,18 @@ void pdf_xref_ensure_incremental_object(fz_context *ctx, pdf_document *doc, int 
 	old_entry = &sub->table[num - sub->start];
 	new_entry = pdf_get_incremental_xref_entry(ctx, doc, num);
 	*new_entry = *old_entry;
-	old_entry->obj = NULL;
+	if (i < doc->num_incremental_sections)
+	{
+		/* old entry is incremental and may have changes.
+		 * Better keep a copy. We must override the old entry with
+		 * the copy because the caller may be holding a reference to
+		 * the original and expect it to end up in the new entry */
+		old_entry->obj = pdf_deep_copy_obj(ctx, old_entry->obj);
+	}
+	else
+	{
+		old_entry->obj = NULL;
+	}
 	old_entry->stm_buf = NULL;
 }
 
@@ -447,6 +520,9 @@ void pdf_replace_xref(fz_context *ctx, pdf_document *doc, pdf_xref_entry *entrie
 
 		doc->xref_sections = xref;
 		doc->num_xref_sections = 1;
+		doc->num_incremental_sections = 0;
+		doc->xref_base = 0;
+		doc->disallow_new_increments = 0;
 		doc->max_xref_len = n;
 
 		memset(doc->xref_index, 0, sizeof(int)*doc->max_xref_len);
@@ -1469,7 +1545,6 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 void
 pdf_close_document(fz_context *ctx, pdf_document *doc)
 {
-	pdf_unsaved_sig *usig;
 	int i;
 
 	if (!doc)
@@ -1506,14 +1581,6 @@ pdf_close_document(fz_context *ctx, pdf_document *doc)
 	fz_free(ctx, doc->hint_shared_ref);
 	fz_free(ctx, doc->hint_shared);
 	fz_free(ctx, doc->hint_obj_offsets);
-
-	while ((usig = doc->unsaved_sigs) != NULL)
-	{
-		doc->unsaved_sigs = usig->next;
-		pdf_drop_obj(ctx, usig->field);
-		pdf_drop_signer(ctx, usig->signer);
-		fz_free(ctx, usig);
-	}
 
 	for (i=0; i < doc->num_type3_fonts; i++)
 	{
@@ -2644,8 +2711,10 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		doc->file_size = 0;
 		doc->startxref = 0;
 		doc->num_xref_sections = 0;
+		doc->num_incremental_sections = 0;
+		doc->xref_base = 0;
+		doc->disallow_new_increments = 0;
 		pdf_get_populating_xref_entry(ctx, doc, 0);
-		doc->xref_altered = 1;
 		trailer = pdf_new_dict(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, 3));
 		o = root = pdf_new_dict(ctx, doc, 2);

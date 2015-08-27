@@ -178,9 +178,11 @@ struct pdf_document_s
 
 	int max_xref_len;
 	int num_xref_sections;
+	int num_incremental_sections;
+	int xref_base;
+	int disallow_new_increments;
 	pdf_xref *xref_sections;
 	int *xref_index;
-	int xref_altered;
 	int freeze_updates;
 	int has_xref_streams;
 
@@ -244,8 +246,6 @@ struct pdf_document_s
 	void (*drop_js)(pdf_js *js);
 	int recalculating;
 	int dirty;
-	pdf_unsaved_sig *unsaved_sigs;
-	pdf_unsaved_sig **unsaved_sigs_end;
 
 	void (*update_appearance)(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 
