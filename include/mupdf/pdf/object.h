@@ -25,6 +25,7 @@ pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, const fz_rect *rect);
 pdf_obj *pdf_new_matrix(fz_context *ctx, pdf_document *doc, const fz_matrix *mtx);
 pdf_obj *pdf_copy_array(fz_context *ctx, pdf_obj *array);
 pdf_obj *pdf_copy_dict(fz_context *ctx, pdf_obj *dict);
+pdf_obj *pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj);
 
 pdf_obj *pdf_new_obj_from_str(fz_context *ctx, pdf_document *doc, const char *src);
 

@@ -1549,6 +1549,51 @@ pdf_sort_dict(fz_context *ctx, pdf_obj *obj)
 	}
 }
 
+pdf_obj *
+pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj)
+{
+	if (obj < PDF_OBJ__LIMIT)
+	{
+		return pdf_keep_obj(ctx, obj);
+	}
+	if (obj->kind == PDF_DICT)
+	{
+		pdf_document *doc = DICT(obj)->doc;
+		int n = pdf_dict_len(ctx, obj);
+		pdf_obj *dict = pdf_new_dict(ctx, doc, n);
+		int i;
+
+		for (i = 0; i < n; i++)
+		{
+			pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_dict_get_val(ctx, obj, i));
+			pdf_dict_put(ctx, dict, pdf_dict_get_key(ctx, obj, i), obj_copy);
+			pdf_drop_obj(ctx, obj_copy);
+		}
+
+		return dict;
+	}
+	else if (obj->kind == PDF_ARRAY)
+	{
+		pdf_document *doc = ARRAY(obj)->doc;
+		int n = pdf_array_len(ctx, obj);
+		pdf_obj *arr = pdf_new_array(ctx, doc, n);
+		int i;
+
+		for (i = 0; i < n; i++)
+		{
+			pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_array_get(ctx, obj, i));
+			pdf_array_push(ctx, arr, obj_copy);
+			pdf_drop_obj(ctx, obj_copy);
+		}
+
+		return arr;
+	}
+	else
+	{
+		return pdf_keep_obj(ctx, obj);
+	}
+}
+
 int
 pdf_obj_marked(fz_context *ctx, pdf_obj *obj)
 {
