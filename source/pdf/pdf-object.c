@@ -602,7 +602,7 @@ pdf_array_get(fz_context *ctx, pdf_obj *obj, int i)
 	return ARRAY(obj)->items[i];
 }
 
-static void object_altered(fz_context *ctx, pdf_obj *obj, pdf_obj *val)
+static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj *val)
 {
 	pdf_document *doc;
 	int parent;
@@ -649,6 +649,8 @@ pdf_array_put(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 	RESOLVE(obj);
 	if (obj >= PDF_OBJ__LIMIT)
 	{
+		prepare_object_for_alteration(ctx, obj, item);
+
 		if (obj->kind != PDF_ARRAY)
 			fz_warn(ctx, "assert: not an array (%s)", pdf_objkindstr(obj));
 		else if (i < 0)
@@ -660,8 +662,6 @@ pdf_array_put(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 			pdf_drop_obj(ctx, ARRAY(obj)->items[i]);
 			ARRAY(obj)->items[i] = pdf_keep_obj(ctx, item);
 		}
-
-		object_altered(ctx, obj, item);
 	}
 	return; /* Can't warn :( */
 }
@@ -679,6 +679,8 @@ pdf_array_push(fz_context *ctx, pdf_obj *obj, pdf_obj *item)
 	RESOLVE(obj);
 	if (obj >= PDF_OBJ__LIMIT)
 	{
+		prepare_object_for_alteration(ctx, obj, item);
+
 		if (obj->kind != PDF_ARRAY)
 			fz_warn(ctx, "assert: not an array (%s)", pdf_objkindstr(obj));
 		else
@@ -688,8 +690,6 @@ pdf_array_push(fz_context *ctx, pdf_obj *obj, pdf_obj *item)
 			ARRAY(obj)->items[ARRAY(obj)->len] = pdf_keep_obj(ctx, item);
 			ARRAY(obj)->len++;
 		}
-
-		object_altered(ctx, obj, item);
 	}
 	return; /* Can't warn :( */
 }
@@ -715,6 +715,8 @@ pdf_array_insert(fz_context *ctx, pdf_obj *obj, pdf_obj *item, int i)
 	RESOLVE(obj);
 	if (obj >= PDF_OBJ__LIMIT)
 	{
+		prepare_object_for_alteration(ctx, obj, item);
+
 		if (obj->kind != PDF_ARRAY)
 			fz_warn(ctx, "assert: not an array (%s)", pdf_objkindstr(obj));
 		else
@@ -727,8 +729,6 @@ pdf_array_insert(fz_context *ctx, pdf_obj *obj, pdf_obj *item, int i)
 			ARRAY(obj)->items[i] = pdf_keep_obj(ctx, item);
 			ARRAY(obj)->len++;
 		}
-
-		object_altered(ctx, obj, item);
 	}
 	return; /* Can't warn :( */
 }
@@ -1251,6 +1251,8 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 			return;
 		}
 
+		prepare_object_for_alteration(ctx, obj, val);
+
 		if (DICT(obj)->len > 100 && !(obj->flags & PDF_FLAGS_SORTED))
 			pdf_sort_dict(ctx, obj);
 
@@ -1282,8 +1284,6 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 			DICT(obj)->items[i].v = pdf_keep_obj(ctx, val);
 			DICT(obj)->len ++;
 		}
-
-		object_altered(ctx, obj, val);
 	}
 	return; /* Can't warn :( */
 }
@@ -1502,6 +1502,8 @@ pdf_dict_dels(fz_context *ctx, pdf_obj *obj, const char *key)
 	RESOLVE(obj);
 	if (obj >= PDF_OBJ__LIMIT)
 	{
+		prepare_object_for_alteration(ctx, obj, NULL);
+
 		if (obj->kind != PDF_DICT)
 			fz_warn(ctx, "assert: not a dict (%s)", pdf_objkindstr(obj));
 		else
@@ -1516,8 +1518,6 @@ pdf_dict_dels(fz_context *ctx, pdf_obj *obj, const char *key)
 				DICT(obj)->len --;
 			}
 		}
-
-		object_altered(ctx, obj, NULL);
 	}
 	return; /* Can't warn :( */
 }
