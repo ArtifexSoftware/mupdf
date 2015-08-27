@@ -2105,9 +2105,11 @@ dowriteobject(fz_context *ctx, pdf_document *doc, pdf_write_options *opts, int n
 	{
 		if (pass > 0)
 			padto(opts->out, opts->ofs_list[num]);
-		opts->ofs_list[num] = fz_ftell(opts->out);
 		if (!opts->do_incremental || pdf_xref_is_incremental(ctx, doc, num))
+		{
+			opts->ofs_list[num] = fz_ftell(opts->out);
 			writeobject(ctx, doc, opts, num, opts->gen_list[num], 1);
+		}
 	}
 	else
 		opts->use_list[num] = 0;
