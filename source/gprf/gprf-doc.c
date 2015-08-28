@@ -517,7 +517,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 #ifdef USE_GS_API
 		void *instance;
 		int code;
-		char *argv[] = { "gs", "-sDEVICE=gproof", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL};
+		char *argv[] = { "gs", "-sDEVICE=gprf", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL};
 		char arg_res[32];
 		char arg_fp[32];
 		char arg_lp[32];
@@ -546,7 +546,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS run failed: %d", code);
 #else
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gproof -r%d -o \"%s\" -dFirstPage=%d -dLastPage=%d %s",
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" -sPostRenderProfile=srgb.icc -I\%rom\%Resource/Init/ -dFirstPage=%d -dLastPage=%d %s",
 			doc->res, filename, page->number+1, page->number+1, doc->pdf_filename);
 		fz_system(ctx, gs_command);
 #endif
