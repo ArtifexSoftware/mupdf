@@ -11,6 +11,10 @@ struct ui ui;
 
 static GLFWwindow *window;
 
+/* OpenGL capabilities */
+static int has_ARB_texture_non_power_of_two = 1;
+static GLint max_texture_size = 8192;
+
 // TODO: event queue and handle key/mouse based on 'active' inside display()
 
 static int ui_should_display = 0;
@@ -86,7 +90,7 @@ void ogl_assert(fz_context *ctx, const char *msg)
 	}
 }
 
-void draw_image(int tex, fz_rect *r)
+void draw_image(int tex, float x0, float y0, float x1, float y1, float s0, float t0, float s1, float t1)
 {
 	glBindTexture(GL_TEXTURE_2D, tex);
 
@@ -94,20 +98,20 @@ void draw_image(int tex, fz_rect *r)
 	glBegin(GL_TRIANGLE_STRIP);
 	{
 		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(0, 1);
-		glVertex2f(r->x0, r->y1);
+		glTexCoord2f(s0, t1);
+		glVertex2f(x0, y1);
 
 		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(0, 0);
-		glVertex2f(r->x0, r->y0);
+		glTexCoord2f(s0, t0);
+		glVertex2f(x0, y0);
 
 		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(1, 1);
-		glVertex2f(r->x1, r->y1);
+		glTexCoord2f(s1, t1);
+		glVertex2f(x1, y1);
 
 		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(1, 0);
-		glVertex2f(r->x1, r->y0);
+		glTexCoord2f(s1, t0);
+		glVertex2f(x1, y0);
 	}
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
@@ -147,7 +151,7 @@ static fz_link *links = NULL;
 static int number = 0;
 
 static unsigned int page_tex = 0;
-static int page_x, page_y, page_w, page_h;
+static int page_x, page_y, page_w, page_h, page_w2, page_h2;
 static int scroll_x = 0, scroll_y = 0;
 static int canvas_x = 0, canvas_w = 100;
 static int canvas_y = 0, canvas_h = 100;
@@ -177,6 +181,17 @@ static int search_page = -1;
 static int search_hit_page = -1;
 static int search_hit_count = 0;
 static fz_rect search_hit_bbox[500];
+
+static unsigned int next_power_of_two(unsigned int n)
+{
+	--n;
+	n |= n >> 1;
+	n |= n >> 2;
+	n |= n >> 4;
+	n |= n >> 8;
+	n |= n >> 16;
+	return ++n;
+}
 
 static void update_title(void)
 {
@@ -218,15 +233,30 @@ void render_page(int pagenumber, float zoom, float rotate)
 
 	page_x = pix->x;
 	page_y = pix->y;
-	page_w = pix->w;
-	page_h = pix->h;
+	page_w = page_w2 = pix->w;
+	page_h = page_h2 = pix->h;
 
 	if (!page_tex)
 		glGenTextures(1, &page_tex);
 	glBindTexture(GL_TEXTURE_2D, page_tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, page_w, page_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
+
+	if (has_ARB_texture_non_power_of_two)
+	{
+		if (page_w > max_texture_size || page_h > max_texture_size)
+			fz_warn(ctx, "page size (%d x %d) exceeds OpenGL implementation limit (%d)", page_w, page_h, max_texture_size);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, page_w, page_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
+	}
+	else
+	{
+		page_w2 = next_power_of_two(page_w);
+		page_h2 = next_power_of_two(page_h);
+		if (page_w2 > max_texture_size || page_h2 > max_texture_size)
+			fz_warn(ctx, "page size (%d x %d) exceeds OpenGL implementation limit (%d)", page_w2, page_h2, max_texture_size);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, page_w2, page_h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, page_w, page_h, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
+	}
 
 	fz_drop_pixmap(ctx, pix);
 	fz_drop_page(ctx, page);
@@ -1030,7 +1060,6 @@ static void on_reshape(GLFWwindow *window, int w, int h)
 
 static void on_display(GLFWwindow *window)
 {
-	fz_rect r;
 	float x, y;
 
 	static int saved_scroll_x = 0;
@@ -1152,12 +1181,10 @@ static void on_display(GLFWwindow *window)
 		y = canvas_y - scroll_y;
 	}
 
-	r.x0 = x;
-	r.y0 = y;
-	r.x1 = x + page_w;
-	r.y1 = y + page_h;
+	draw_image(page_tex,
+		x, y, x + page_w, y + page_h,
+		0, 0, (float)page_w / page_w2, (float)page_h / page_h2);
 
-	draw_image(page_tex, &r);
 	draw_links(links, x, y, currentzoom, currentrotate);
 	draw_page_selection(x, y, x+page_w, y+page_h, currentzoom, currentrotate);
 
@@ -1434,6 +1461,12 @@ int main(int argc, char **argv)
 
 	ctx = fz_new_context(NULL, NULL, 0);
 	fz_register_document_handlers(ctx);
+
+	has_ARB_texture_non_power_of_two = glfwExtensionSupported("GL_ARB_texture_non_power_of_two");
+	if (!has_ARB_texture_non_power_of_two)
+		fz_warn(ctx, "OpenGL implementation does not support non-power of two texture sizes");
+
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 
 	ui.fontsize = 15;
 	ui.baseline = 14;
