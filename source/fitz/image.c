@@ -923,12 +923,17 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 			bc->params.type = FZ_IMAGE_PNG;
 			fz_load_png_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
-		else if (memcmp(buf, "II", 2) == 0 && buf[2] == 0xBC)
+		else if (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 0xBC)
 		{
 			bc->params.type = FZ_IMAGE_JXR;
 			fz_load_jxr_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
-		else if (memcmp(buf, "MM", 2) == 0 || memcmp(buf, "II", 2) == 0)
+		else if (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 42 && buf[3] == 0)
+		{
+			bc->params.type = FZ_IMAGE_TIFF;
+			fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		}
+		else if (buf[0] == 'M' && buf[1] == 'M' && buf[2] == 0 && buf[3] == 42)
 		{
 			bc->params.type = FZ_IMAGE_TIFF;
 			fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
