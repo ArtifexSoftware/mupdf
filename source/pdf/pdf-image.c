@@ -159,15 +159,16 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			int gen = pdf_to_gen(ctx, dict);
 			buffer = pdf_load_compressed_stream(ctx, doc, num, gen);
 			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, usecolorkey ? colorkey : NULL, buffer, mask);
+			image->invert_cmyk_jpeg = 0;
 		}
 		else
 		{
 			/* Inline stream */
 			stride = (w * n * bpc + 7) / 8;
 			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, usecolorkey ? colorkey : NULL, NULL, mask);
+			image->invert_cmyk_jpeg = 0;
 			pdf_load_compressed_inline_image(ctx, doc, dict, stride * h, cstm, indexed, image);
 		}
-
 	}
 	fz_catch(ctx)
 	{

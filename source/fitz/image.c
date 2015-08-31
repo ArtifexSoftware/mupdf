@@ -402,6 +402,7 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 		image->h = pixmap->h;
 		image->n = pixmap->n;
 		image->colorspace = fz_keep_colorspace(ctx, pixmap->colorspace);
+		image->invert_cmyk_jpeg = 1;
 		image->bpc = 8;
 		image->buffer = NULL;
 		image->get_pixmap = NULL;
@@ -439,6 +440,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 		image->bpc = bpc;
 		image->n = (colorspace ? colorspace->n : 1);
 		image->colorspace = colorspace;
+		image->invert_cmyk_jpeg = 1;
 		image->interpolate = interpolate;
 		image->imagemask = imagemask;
 		image->usecolorkey = (colorkey != NULL);
