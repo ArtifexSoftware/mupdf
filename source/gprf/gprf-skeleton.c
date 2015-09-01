@@ -1,7 +1,8 @@
 #include "mupdf/fitz.h"
 
 void
-fz_write_gproof_file(fz_context *ctx, const char *pdf_file, fz_document *doc, const char *filename, int res)
+fz_write_gproof_file(fz_context *ctx, const char *pdf_file, fz_document *doc, const char *filename, int res,
+				const char *print_profile, const char *display_profile)
 {
 	int i;
 	int num_pages = fz_count_pages(ctx, doc);
@@ -46,8 +47,11 @@ fz_write_gproof_file(fz_context *ctx, const char *pdf_file, fz_document *doc, co
 			fz_write_int32le(ctx, out, h);
 		}
 
-		/* Filename */
+		/* Filenames */
 		fz_write(ctx, out, pdf_file, strlen(pdf_file)+1);
+		fz_write(ctx, out, print_profile, strlen(print_profile) + 1);
+		fz_write(ctx, out, display_profile, strlen(display_profile) + 1);
+
 	}
 	fz_always(ctx)
 	{

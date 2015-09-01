@@ -31,6 +31,8 @@ struct gprf_document_s
 {
 	fz_document super;
 	char *pdf_filename;
+	char *print_profile;
+	char *display_profile;
 	int res;
 	int num_pages;
 	struct {
@@ -508,16 +510,46 @@ generate_page(fz_context *ctx, gprf_page *page)
 	char nameroot[32];
 	char *filename;
 	char gs_command[1024];
+	char *disp_profile = NULL;
+	char *print_profile = NULL;
+	int len;
 
 	sprintf(nameroot, "gprf_%d_", page->number);
 	filename = fz_tempfilename(ctx, nameroot, doc->pdf_filename);
+
+	/* Set up the icc profiles */
+	if (strlen(doc->display_profile) == 0)
+	{
+		len = sizeof("-sPostRenderProfile=srgb.icc");
+		disp_profile = (char*)fz_malloc(ctx, len + 1);
+		sprintf(disp_profile, "-sPostRenderProfile=srgb.icc");
+	}
+	else
+	{
+		len = sizeof("-sPostRenderProfile=\"\""); /* with quotes */
+		disp_profile = (char*)fz_malloc(ctx, len + strlen(doc->display_profile) + 1);
+		sprintf(disp_profile, "-sPostRenderProfile=\"%s\"", doc->display_profile);
+	}
+
+	if (strlen(doc->print_profile) == 0)
+	{
+		len = sizeof("-sOutputICCProfile=default_cmyk.icc");
+		print_profile = (char*)fz_malloc(ctx, len + 1);
+		sprintf(print_profile, "-sOutputICCProfile=default_cmyk.icc");
+	}
+	else
+	{
+		len = sizeof("-sOutputICCProfile=\"\""); /* with quotes */
+		print_profile = (char*)fz_malloc(ctx, len + strlen(doc->print_profile) + 1);
+		sprintf(print_profile, "-sOutputICCProfile=\"%s\"", doc->print_profile);
+	}
 
 	fz_try(ctx)
 	{
 #ifdef USE_GS_API
 		void *instance;
 		int code;
-		char *argv[] = { "gs", "-sDEVICE=gprf", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL};
+		char *argv[] = { "gs", "-sDEVICE=gprf", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 		char arg_res[32];
 		char arg_fp[32];
 		char arg_lp[32];
@@ -529,9 +561,10 @@ generate_page(fz_context *ctx, gprf_page *page)
 		argv[5] = arg_fp;
 		sprintf(arg_lp, "-dLastPage=%d", page->number+1);
 		argv[6] = arg_lp;
-		argv[7] = "-sPostRenderProfile=srgb.icc";
-		argv[8] = "-I%rom%Resource/Init/";
-		argv[9] = doc->pdf_filename;
+		argv[7] = disp_profile;
+		argv[8] = print_profile;
+		argv[9] = "-I%rom%Resource/Init/";
+		argv[10] = doc->pdf_filename;
 
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
@@ -546,12 +579,17 @@ generate_page(fz_context *ctx, gprf_page *page)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS run failed: %d", code);
 #else
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" -sPostRenderProfile=srgb.icc -I\%rom\%Resource/Init/ -dFirstPage=%d -dLastPage=%d %s",
-			doc->res, filename, page->number+1, page->number+1, doc->pdf_filename);
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I\%rom\%Resource/Init/ -dFirstPage=%d -dLastPage=%d %s",
+			doc->res, filename, disp_profile, print_profile, page->number+1, page->number+1, doc->pdf_filename);
 		fz_system(ctx, gs_command);
 #endif
 
 		page->file = fz_new_gprf_file(ctx, filename);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, print_profile);
+		fz_free(ctx, disp_profile);
 	}
 	fz_catch(ctx)
 	{
@@ -780,6 +818,8 @@ gprf_close_document(fz_context *ctx, fz_document *doc_)
 		return;
 	fz_free(ctx, doc->page_dims);
 	fz_free(ctx, doc->pdf_filename);
+	fz_free(ctx, doc->print_profile);
+	fz_free(ctx, doc->display_profile);
 
 	fz_free(ctx, doc);
 }
@@ -832,6 +872,10 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 		}
 		fz_read_string(ctx, file, buf, sizeof(buf));
 		doc->pdf_filename = fz_strdup(ctx, buf);
+		fz_read_string(ctx, file, buf, sizeof(buf));
+		doc->print_profile = fz_strdup(ctx, buf);
+		fz_read_string(ctx, file, buf, sizeof(buf));
+		doc->display_profile = fz_strdup(ctx, buf);
 	}
 	fz_catch(ctx)
 	{
