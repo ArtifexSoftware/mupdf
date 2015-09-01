@@ -3,7 +3,10 @@
 
 struct ui
 {
-	int x, y, down, middle, right;
+	int x, y;
+	int down, middle, right;
+	int key, special, mod;
+
 	void *hot, *active;
 
 	int fontsize;

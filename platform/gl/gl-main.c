@@ -15,23 +15,17 @@ static GLFWwindow *window;
 static int has_ARB_texture_non_power_of_two = 1;
 static GLint max_texture_size = 8192;
 
-// TODO: event queue and handle key/mouse based on 'active' inside display()
-
-static int ui_should_display = 0;
-static void ui_post_redisplay(void)
-{
-	ui_should_display = 1;
-	glfwPostEmptyEvent();
-}
-
 struct input
 {
 	int text[256];
 	int *end, *p, *q;
 };
 
+static int ui_needs_redisplay = 0;
+
 static void ui_begin(void)
 {
+	ui_needs_redisplay = 0;
 	ui.hot = NULL;
 }
 
@@ -39,6 +33,8 @@ static void ui_end(void)
 {
 	if (!ui.down && !ui.middle && !ui.right)
 		ui.active = NULL;
+	if (ui_needs_redisplay)
+		glfwPostEmptyEvent();
 }
 
 static void open_browser(const char *uri)
@@ -319,6 +315,25 @@ static void pop_future(void)
 	push_history();
 }
 
+static char *
+utf8_from_rune_string(fz_context *ctx, const int *s, const int *e)
+{
+	const int *src = s;
+	char *d, *dst;
+	int len = 1;
+
+	while (src < e)
+		len += fz_runelen(*src++);
+
+	dst = d = fz_malloc(ctx, len);
+	src = s;
+	while (src < e)
+		dst += fz_runetochar(dst, *src++);
+	*dst = 0;
+
+	return d;
+}
+
 void do_search_page(int number, char *needle, fz_cookie *cookie)
 {
 	fz_page *page = fz_load_page(ctx, doc, number);
@@ -522,14 +537,35 @@ static void ui_input_delete_selection(struct input *input)
 	input->p = input->q = p;
 }
 
-static int ui_input_keyboard(int key, struct input *input)
+static int ui_input_keyboard(int key, int mod, struct input *input)
 {
-	int cat;
-
-	switch (key)
+	if (mod & GLFW_MOD_CONTROL)
 	{
-	default:
-		cat = ucdn_get_general_category(key);
+		switch (key)
+		{
+		case 'A' - 64:
+			input->p = input->q = input->text;
+			break;
+		case 'E' - 64:
+			input->p = input->q = input->end;
+			break;
+		case 'W' - 64:
+			if (input->p != input->q)
+				ui_input_delete_selection(input);
+			else
+			{
+				input->p = skip_word_left(input->p, input->text);
+				ui_input_delete_selection(input);
+			}
+			break;
+		case 'U' - 64:
+			input->p = input->q = input->end = input->text;
+			break;
+		}
+	}
+	else
+	{
+		int cat = ucdn_get_general_category(key);
 		if (key == ' ' || (cat >= UCDN_GENERAL_CATEGORY_LL && cat < UCDN_GENERAL_CATEGORY_ZL))
 		{
 			if (input->p != input->q)
@@ -542,59 +578,16 @@ static int ui_input_keyboard(int key, struct input *input)
 			}
 			input->q = input->p;
 		}
-		break;
-	case 27:
-		return -1;
-	case '\r':
-		return 1;
-	case '\b':
-		if (input->p != input->q)
-			ui_input_delete_selection(input);
-		else if (input->p > input->text && input->end > input->text)
-		{
-			memmove(input->p - 1, input->p, (input->end - input->p) * sizeof (*input->p));
-			input->q = --(input->p);
-			--(input->end);
-		}
-		break;
-	case 127:
-		if (input->p != input->q)
-			ui_input_delete_selection(input);
-		else if (input->p < input->end)
-		{
-			memmove(input->p, input->p + 1, (input->end - input->p - 1) * sizeof (*input->p));
-			input->q = input->p;
-			--(input->end);
-		}
-		break;
-	case 'A' - 64:
-		input->p = input->q = input->text;
-		break;
-	case 'E' - 64:
-		input->p = input->q = input->end;
-		break;
-	case 'W' - 64:
-		if (input->p != input->q)
-			ui_input_delete_selection(input);
-		else
-		{
-			input->p = skip_word_left(input->p, input->text);
-			ui_input_delete_selection(input);
-		}
-		break;
-	case 'U' - 64:
-		input->p = input->q = input->end = input->text;
-		break;
 	}
 
 	return 0;
 }
 
-static void ui_input_special(int key, int mod, struct input *input)
+static int ui_input_special(int special, int mod, struct input *input)
 {
 	if (mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 	{
-		switch (key)
+		switch (special)
 		{
 		case GLFW_KEY_LEFT: input->q = skip_word_left(input->q, input->text); break;
 		case GLFW_KEY_RIGHT: input->q = skip_word_right(input->q, input->end); break;
@@ -604,7 +597,7 @@ static void ui_input_special(int key, int mod, struct input *input)
 	}
 	else if (mod == GLFW_MOD_CONTROL)
 	{
-		switch (key)
+		switch (special)
 		{
 		case GLFW_KEY_LEFT:
 			if (input->p != input->q)
@@ -630,7 +623,7 @@ static void ui_input_special(int key, int mod, struct input *input)
 	}
 	else if (mod == GLFW_MOD_SHIFT)
 	{
-		switch (key)
+		switch (special)
 		{
 		case GLFW_KEY_LEFT: if (input->q > input->text) input->q = --(input->q); break;
 		case GLFW_KEY_RIGHT: if (input->q < input->end) input->q = ++(input->q); break;
@@ -640,7 +633,7 @@ static void ui_input_special(int key, int mod, struct input *input)
 	}
 	else if (mod == 0)
 	{
-		switch (key)
+		switch (special)
 		{
 		case GLFW_KEY_LEFT:
 			if (input->p != input->q)
@@ -660,8 +653,33 @@ static void ui_input_special(int key, int mod, struct input *input)
 		case GLFW_KEY_END:
 			input->p = input->q = input->end;
 			break;
+		case GLFW_KEY_DELETE:
+			if (input->p != input->q)
+				ui_input_delete_selection(input);
+			else if (input->p < input->end)
+			{
+				memmove(input->p, input->p + 1, (input->end - input->p - 1) * sizeof (*input->p));
+				input->q = input->p;
+				--(input->end);
+			}
+			break;
+		case GLFW_KEY_BACKSPACE:
+			if (input->p != input->q)
+				ui_input_delete_selection(input);
+			else if (input->p > input->text && input->end > input->text)
+			{
+				memmove(input->p - 1, input->p, (input->end - input->p) * sizeof (*input->p));
+				input->q = --(input->p);
+				--(input->end);
+			}
+			break;
+		case GLFW_KEY_ESCAPE:
+			return -1;
+		case GLFW_KEY_ENTER:
+			return 1;
 		}
 	}
+	return 0;
 }
 
 static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
@@ -759,7 +777,7 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 				{
 					ui.active = node;
 					jump_to_page(p);
-					ui_post_redisplay(); /* we changed the current page, so force a redraw */
+					ui_needs_redisplay = 1; /* we changed the current page, so force a redraw */
 				}
 			}
 
@@ -876,7 +894,7 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 				else if (link->dest.kind == FZ_LINK_URI)
 					open_browser(link->dest.ld.uri.uri);
 			}
-			ui_post_redisplay();
+			ui_needs_redisplay = 1;
 		}
 
 		link = link->next;
@@ -917,7 +935,7 @@ static void draw_page_selection(int x0, int y0, int x1, int y1, float zoom, floa
 	if (ui.active == &sel && !ui.right)
 	{
 		do_copy_region(&sel, x0, y0, zoom, rotate);
-		ui_post_redisplay();
+		ui_needs_redisplay = 1;
 	}
 }
 
@@ -1051,14 +1069,151 @@ static void smart_move_forward(void)
 	}
 }
 
-static void on_reshape(GLFWwindow *window, int w, int h)
+static void run_main_loop_keyboard(void)
 {
-	ui_should_display = 1;
-	screen_w = w;
-	screen_h = h;
+	if (ui.key || ui.special)
+	{
+		if (ui.special == GLFW_KEY_F4 && ui.mod == GLFW_MOD_ALT)
+			exit(0);
+
+		if (search_active)
+		{
+			if (ui.key == 27)
+				search_active = 0;
+			ui_needs_redisplay = 1;
+			return;
+		}
+
+		if (showsearch)
+		{
+			int state;
+			if (ui.key)
+				state = ui_input_keyboard(ui.key, ui.mod, &search_input);
+			else
+				state = ui_input_special(ui.special, ui.mod, &search_input);
+			if (state == -1)
+				showsearch = 0;
+			else if (state == 1)
+			{
+				showsearch = 0;
+				search_page = -1;
+				if (search_needle)
+				{
+					fz_free(ctx, search_needle);
+					search_needle = NULL;
+				}
+				if (search_input.end > search_input.text)
+				{
+					search_needle = utf8_from_rune_string(ctx, search_input.text, search_input.end);
+					search_active = 1;
+					search_page = currentpage;
+				}
+			}
+			ui_needs_redisplay = 1;
+			return;
+		}
+
+		switch (ui.key)
+		{
+		case 'q':
+			exit(0);
+			break;
+		case 'm':
+			if (number == 0)
+				push_history();
+			else if (number > 0 && number < nelem(marks))
+				marks[number] = currentpage;
+			break;
+		case 't':
+			if (number == 0)
+			{
+				if (history_count > 0)
+					pop_history();
+			}
+			else if (number > 0 && number < nelem(marks))
+			{
+				jump_to_page(marks[number]);
+			}
+			break;
+		case 'T':
+			if (number == 0)
+			{
+				if (future_count > 0)
+					pop_future();
+			}
+			break;
+		case 'N':
+			search_dir = -1;
+			if (search_hit_page == currentpage)
+				search_page = currentpage + search_dir;
+			else
+				search_page = currentpage;
+			search_hit_page = -1;
+			if (search_needle)
+				search_active = 1;
+			break;
+		case 'n':
+			search_dir = 1;
+			if (search_hit_page == currentpage)
+				search_page = currentpage + search_dir;
+			else
+				search_page = currentpage;
+			search_hit_page = -1;
+			if (search_needle)
+				search_active = 1;
+			break;
+		case 'f': toggle_fullscreen(); break;
+		case 'w': shrinkwrap(); break;
+		case 'W': auto_zoom_w(); break;
+		case 'H': auto_zoom_h(); break;
+		case 'Z': auto_zoom(); break;
+		case 'z': currentzoom = number > 0 ? number : DEFRES; break;
+		case '<': currentpage -= 10 * fz_maxi(number, 1); break;
+		case '>': currentpage += 10 * fz_maxi(number, 1); break;
+		case ',': currentpage -= fz_maxi(number, 1); break;
+		case '.': currentpage += fz_maxi(number, 1); break;
+		case 'b': number = fz_maxi(number, 1); while (number--) smart_move_backward(); break;
+		case ' ': number = fz_maxi(number, 1); while (number--) smart_move_forward(); break;
+		case 'g': jump_to_page(number - 1); break;
+		case 'G': jump_to_page(fz_count_pages(ctx, doc) - 1); break;
+		case '+': currentzoom = zoom_in(currentzoom); break;
+		case '-': currentzoom = zoom_out(currentzoom); break;
+		case '[': currentrotate += 90; break;
+		case ']': currentrotate -= 90; break;
+		case 'o': showoutline = !showoutline; break;
+		case 'l': showlinks = !showlinks; break;
+		case '/': search_dir = 1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
+		case '?': search_dir = -1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
+		}
+
+		switch (ui.special)
+		{
+		case GLFW_KEY_UP: scroll_y -= 10; break;
+		case GLFW_KEY_DOWN: scroll_y += 10; break;
+		case GLFW_KEY_LEFT: scroll_x -= 10; break;
+		case GLFW_KEY_RIGHT: scroll_x += 10; break;
+		case GLFW_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); number = 0; break;
+		case GLFW_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); number = 0; break;
+		}
+
+		if (ui.key >= '0' && ui.key <= '9')
+			number = number * 10 + ui.key - '0';
+		else
+			number = 0;
+
+		currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
+		currentzoom = fz_clamp(currentzoom, MINRES, MAXRES);
+		while (currentrotate < 0) currentrotate += 360;
+		while (currentrotate >= 360) currentrotate -= 360;
+
+		if (search_hit_page != currentpage)
+			search_hit_page = -1; /* clear highlights when navigating */
+
+		ui_needs_redisplay = 1;
+	}
 }
 
-static void on_display(GLFWwindow *window)
+static void run_main_loop(void)
 {
 	float x, y;
 
@@ -1079,6 +1234,8 @@ static void on_display(GLFWwindow *window)
 	glLoadIdentity();
 
 	ui_begin();
+
+	run_main_loop_keyboard();
 
 	if (search_active)
 	{
@@ -1106,7 +1263,7 @@ static void on_display(GLFWwindow *window)
 
 		/* keep searching later */
 		if (search_active)
-			ui_post_redisplay();
+			ui_needs_redisplay = 1;
 	}
 
 	if (showoutline)
@@ -1215,188 +1372,52 @@ static void on_display(GLFWwindow *window)
 	ogl_assert(ctx, "swap buffers");
 }
 
-static char *
-utf8_from_rune_string(fz_context *ctx, const int *s, const int *e)
+static void on_char(GLFWwindow *window, unsigned int key, int mod)
 {
-	const int *src = s;
-	char *d, *dst;
-	int len = 1;
-
-	while (src < e)
-		len += fz_runelen(*src++);
-
-	dst = d = fz_malloc(ctx, len);
-	src = s;
-	while (src < e)
-		dst += fz_runetochar(dst, *src++);
-	*dst = 0;
-
-	return d;
+	ui.key = key;
+	ui.mod = mod;
+	run_main_loop();
+	ui.key = ui.mod = 0;
 }
 
-static void on_keyboard(GLFWwindow *window, unsigned int key)
+static void on_key(GLFWwindow *window, int special, int scan, int action, int mod)
 {
-	if (search_active)
+	if (action == GLFW_PRESS || action == GLFW_REPEAT)
 	{
-		if (key == 27)
-			search_active = 0;
-		ui_should_display = 1;
-		return;
-	}
-
-	if (showsearch)
-	{
-		int state = ui_input_keyboard(key, &search_input);
-		if (state == -1)
-			showsearch = 0;
-		else if (state == 1)
+		switch (special)
 		{
-			showsearch = 0;
-			search_page = -1;
-			if (search_needle)
-			{
-				fz_free(ctx, search_needle);
-				search_needle = NULL;
-			}
-			if (search_input.end > search_input.text)
-			{
-				search_needle = utf8_from_rune_string(ctx, search_input.text, search_input.end);
-				search_active = 1;
-				search_page = currentpage;
-			}
+		case GLFW_KEY_ESCAPE:
+		case GLFW_KEY_ENTER:
+		case GLFW_KEY_TAB:
+		case GLFW_KEY_BACKSPACE:
+		case GLFW_KEY_INSERT:
+		case GLFW_KEY_DELETE:
+		case GLFW_KEY_RIGHT:
+		case GLFW_KEY_LEFT:
+		case GLFW_KEY_DOWN:
+		case GLFW_KEY_UP:
+		case GLFW_KEY_PAGE_UP:
+		case GLFW_KEY_PAGE_DOWN:
+		case GLFW_KEY_HOME:
+		case GLFW_KEY_END:
+		case GLFW_KEY_F1:
+		case GLFW_KEY_F2:
+		case GLFW_KEY_F3:
+		case GLFW_KEY_F5:
+		case GLFW_KEY_F6:
+		case GLFW_KEY_F7:
+		case GLFW_KEY_F8:
+		case GLFW_KEY_F9:
+		case GLFW_KEY_F10:
+		case GLFW_KEY_F11:
+		case GLFW_KEY_F12:
+			ui.special = special;
+			ui.mod = mod;
+			run_main_loop();
+			ui.special = ui.mod = 0;
+			break;
 		}
-		ui_should_display = 1;
-		return;
 	}
-
-	switch (key)
-	{
-	case 'q':
-		exit(0);
-		break;
-	case 'm':
-		if (number == 0)
-			push_history();
-		else if (number > 0 && number < nelem(marks))
-			marks[number] = currentpage;
-		break;
-	case 't':
-		if (number == 0)
-		{
-			if (history_count > 0)
-				pop_history();
-		}
-		else if (number > 0 && number < nelem(marks))
-		{
-			jump_to_page(marks[number]);
-		}
-		break;
-	case 'T':
-		if (number == 0)
-		{
-			if (future_count > 0)
-				pop_future();
-		}
-		break;
-	case 'N':
-		search_dir = -1;
-		if (search_hit_page == currentpage)
-			search_page = currentpage + search_dir;
-		else
-			search_page = currentpage;
-		search_hit_page = -1;
-		if (search_needle)
-			search_active = 1;
-		break;
-	case 'n':
-		search_dir = 1;
-		if (search_hit_page == currentpage)
-			search_page = currentpage + search_dir;
-		else
-			search_page = currentpage;
-		search_hit_page = -1;
-		if (search_needle)
-			search_active = 1;
-		break;
-	case 'f': toggle_fullscreen(); break;
-	case 'w': shrinkwrap(); break;
-	case 'W': auto_zoom_w(); break;
-	case 'H': auto_zoom_h(); break;
-	case 'Z': auto_zoom(); break;
-	case 'z': currentzoom = number > 0 ? number : DEFRES; break;
-	case '<': currentpage -= 10 * fz_maxi(number, 1); break;
-	case '>': currentpage += 10 * fz_maxi(number, 1); break;
-	case ',': currentpage -= fz_maxi(number, 1); break;
-	case '.': currentpage += fz_maxi(number, 1); break;
-	case 'b': number = fz_maxi(number, 1); while (number--) smart_move_backward(); break;
-	case ' ': number = fz_maxi(number, 1); while (number--) smart_move_forward(); break;
-	case 'g': jump_to_page(number - 1); break;
-	case 'G': jump_to_page(fz_count_pages(ctx, doc) - 1); break;
-	case '+': currentzoom = zoom_in(currentzoom); break;
-	case '-': currentzoom = zoom_out(currentzoom); break;
-	case '[': currentrotate += 90; break;
-	case ']': currentrotate -= 90; break;
-	case 'o': showoutline = !showoutline; break;
-	case 'l': showlinks = !showlinks; break;
-	case '/': search_dir = 1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
-	case '?': search_dir = -1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
-	}
-
-	if (key >= '0' && key <= '9')
-		number = number * 10 + key - '0';
-	else
-		number = 0;
-
-	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
-	currentzoom = fz_clamp(currentzoom, MINRES, MAXRES);
-	while (currentrotate < 0) currentrotate += 360;
-	while (currentrotate >= 360) currentrotate -= 360;
-
-	if (search_hit_page != currentpage)
-		search_hit_page = -1; /* clear highlights when navigating */
-
-	ui_should_display = 1;
-}
-
-static void on_special(GLFWwindow *window, int key, int scan, int action, int mod)
-{
-	if (action != GLFW_PRESS)
-		return;
-
-	if (key == GLFW_KEY_F4 && mod == GLFW_MOD_ALT)
-		exit(0);
-
-	switch (key)
-	{
-	case GLFW_KEY_ESCAPE: on_keyboard(window, 27); return;
-	case GLFW_KEY_ENTER: on_keyboard(window, '\r'); return;
-	case GLFW_KEY_BACKSPACE: on_keyboard(window, '\b'); return;
-	case GLFW_KEY_DELETE: on_keyboard(window, 127); return;
-	}
-
-	if (showsearch)
-	{
-		ui_input_special(key, mod, &search_input);
-		ui_should_display = 1;
-		return;
-	}
-
-	switch (key)
-	{
-	case GLFW_KEY_UP: scroll_y -= 10; break;
-	case GLFW_KEY_DOWN: scroll_y += 10; break;
-	case GLFW_KEY_LEFT: scroll_x -= 10; break;
-	case GLFW_KEY_RIGHT: scroll_x += 10; break;
-	case GLFW_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); number = 0; break;
-	case GLFW_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); number = 0; break;
-	}
-
-	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
-
-	if (search_hit_page != currentpage)
-		search_hit_page = -1; /* clear highlights when navigating */
-
-	ui_should_display = 1;
 }
 
 static void on_mouse_button(GLFWwindow *window, int button, int action, int mod)
@@ -1407,14 +1428,27 @@ static void on_mouse_button(GLFWwindow *window, int button, int action, int mod)
 	case GLFW_MOUSE_BUTTON_MIDDLE: ui.middle = (action == GLFW_PRESS); break;
 	case GLFW_MOUSE_BUTTON_RIGHT: ui.right = (action == GLFW_PRESS); break;
 	}
-	ui_should_display = 1;
+
+	run_main_loop();
 }
 
 static void on_mouse_motion(GLFWwindow *window, double x, double y)
 {
 	ui.x = x;
 	ui.y = y;
-	ui_should_display = 1;
+	ui_needs_redisplay = 1;
+}
+
+static void on_reshape(GLFWwindow *window, int w, int h)
+{
+	screen_w = w;
+	screen_h = h;
+	ui_needs_redisplay = 1;
+}
+
+static void on_display(GLFWwindow *window)
+{
+	ui_needs_redisplay = 1;
 }
 
 static void on_error(int error, const char *msg)
@@ -1483,21 +1517,19 @@ int main(int argc, char **argv)
 	glfwSetCursorPosCallback(window, on_mouse_motion);
 	glfwSetMouseButtonCallback(window, on_mouse_button);
 	glfwSetFramebufferSizeCallback(window, on_reshape);
-	glfwSetCharCallback(window, on_keyboard);
-	glfwSetKeyCallback(window, on_special);
+	glfwSetCharModsCallback(window, on_char);
+	glfwSetKeyCallback(window, on_key);
+	glfwSetWindowRefreshCallback(window, on_display);
 
 	glfwGetFramebufferSize(window, &screen_w, &screen_h);
 
-	ui_should_display = 1;
+	ui_needs_redisplay = 1;
 
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwWaitEvents();
-		if (ui_should_display)
-		{
-			ui_should_display = 0;
-			on_display(window);
-		}
+		if (ui_needs_redisplay)
+			run_main_loop();
 	}
 
 	ui_finish_fonts(ctx);
