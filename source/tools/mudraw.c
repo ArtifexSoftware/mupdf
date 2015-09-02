@@ -1096,7 +1096,7 @@ int mudraw_main(int argc, char **argv)
 					fz_printf(ctx, out, "<document name=\"%s\">\n", filename);
 				if (output_format == OUT_GPROOF)
 				{
-					fz_write_gproof_file(ctx, filename, doc, output, resolution);
+					fz_write_gproof_file(ctx, filename, doc, output, resolution, "", "");
 				}
 				else
 				{
