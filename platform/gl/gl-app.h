@@ -3,11 +3,51 @@
 
 extern fz_context *ctx;
 
+enum
+{
+	/* regular control characters */
+	KEY_ESCAPE = 27,
+	KEY_ENTER = '\r',
+	KEY_TAB = '\t',
+	KEY_BACKSPACE = '\b',
+
+	KEY_CTL_A = 'A' - 64,
+	KEY_CTL_B, KEY_CTL_C, KEY_CTL_D, KEY_CTL_E, KEY_CTL_F,
+	KEY_CTL_G, KEY_CTL_H, KEY_CTL_I, KEY_CTL_J, KEY_CTL_K, KEY_CTL_L,
+	KEY_CTL_M, KEY_CTL_N, KEY_CTL_O, KEY_CTL_P, KEY_CTL_Q, KEY_CTL_R,
+	KEY_CTL_S, KEY_CTL_T, KEY_CTL_U, KEY_CTL_V, KEY_CTL_W, KEY_CTL_X,
+	KEY_CTL_Y, KEY_CTL_Z,
+
+	/* reuse control characters > 127 for special keys */
+	KEY_INSERT = 127,
+	KEY_DELETE,
+	KEY_PAGE_UP,
+	KEY_PAGE_DOWN,
+	KEY_HOME,
+	KEY_END,
+	KEY_LEFT,
+	KEY_UP,
+	KEY_RIGHT,
+	KEY_DOWN,
+	KEY_F1,
+	KEY_F2,
+	KEY_F3,
+	KEY_F4,
+	KEY_F5,
+	KEY_F6,
+	KEY_F7,
+	KEY_F8,
+	KEY_F9,
+	KEY_F10,
+	KEY_F11,
+	KEY_F12,
+};
+
 struct ui
 {
 	int x, y;
 	int down, middle, right;
-	int key, special, mod;
+	int key, mod;
 
 	void *hot, *active, *focus;
 

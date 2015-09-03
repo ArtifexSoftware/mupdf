@@ -823,10 +823,10 @@ static void smart_move_forward(void)
 
 static void do_app(void)
 {
-	if (ui.special == GLFW_KEY_F4 && ui.mod == GLFW_MOD_ALT)
+	if (ui.key == KEY_F4 && ui.mod == GLFW_MOD_ALT)
 		exit(0);
 
-	if (!ui.focus && (ui.key || ui.special))
+	if (!ui.focus && ui.key)
 	{
 		switch (ui.key)
 		{
@@ -899,16 +899,12 @@ static void do_app(void)
 		case 'l': showlinks = !showlinks; break;
 		case '/': search_dir = 1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
 		case '?': search_dir = -1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
-		}
-
-		switch (ui.special)
-		{
-		case GLFW_KEY_UP: scroll_y -= 10; break;
-		case GLFW_KEY_DOWN: scroll_y += 10; break;
-		case GLFW_KEY_LEFT: scroll_x -= 10; break;
-		case GLFW_KEY_RIGHT: scroll_x += 10; break;
-		case GLFW_KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); number = 0; break;
-		case GLFW_KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); number = 0; break;
+		case KEY_UP: scroll_y -= 10; break;
+		case KEY_DOWN: scroll_y += 10; break;
+		case KEY_LEFT: scroll_x -= 10; break;
+		case KEY_RIGHT: scroll_x += 10; break;
+		case KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); number = 0; break;
+		case KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); number = 0; break;
 		}
 
 		if (ui.key >= '0' && ui.key <= '9')
@@ -926,7 +922,7 @@ static void do_app(void)
 
 		ui_needs_update = 1;
 
-		ui.key = ui.special = 0; /* we ate the key event, so zap it */
+		ui.key = 0; /* we ate the key event, so zap it */
 	}
 }
 
@@ -1021,11 +1017,11 @@ static void run_main_loop(void)
 	{
 		float start_time = glfwGetTime();
 
-		if (ui.key == '\e')
+		if (ui.key == KEY_ESCAPE)
 			search_active = 0;
 
 		/* ignore events during search */
-		ui.key = ui.special = ui.mod = 0;
+		ui.key = ui.mod = 0;
 		ui.down = ui.middle = ui.right = 0;
 
 		while (glfwGetTime() < start_time + 0.2)
@@ -1126,41 +1122,57 @@ static void on_char(GLFWwindow *window, unsigned int key, int mod)
 	ui.key = key;
 	ui.mod = mod;
 	run_main_loop();
-	ui.key = ui.special = ui.mod = 0;
+	ui.key = ui.mod = 0;
 }
 
 static void on_key(GLFWwindow *window, int special, int scan, int action, int mod)
 {
 	if (action == GLFW_PRESS || action == GLFW_REPEAT)
 	{
+		ui.key = 0;
 		switch (special)
 		{
-		case GLFW_KEY_INSERT:
-		case GLFW_KEY_DELETE:
-		case GLFW_KEY_RIGHT:
-		case GLFW_KEY_LEFT:
-		case GLFW_KEY_DOWN:
-		case GLFW_KEY_UP:
-		case GLFW_KEY_PAGE_UP:
-		case GLFW_KEY_PAGE_DOWN:
-		case GLFW_KEY_HOME:
-		case GLFW_KEY_END:
-		case GLFW_KEY_F1:
-		case GLFW_KEY_F2:
-		case GLFW_KEY_F3:
-		case GLFW_KEY_F5:
-		case GLFW_KEY_F6:
-		case GLFW_KEY_F7:
-		case GLFW_KEY_F8:
-		case GLFW_KEY_F9:
-		case GLFW_KEY_F10:
-		case GLFW_KEY_F11:
-		case GLFW_KEY_F12:
-			ui.special = special;
+#ifndef GLFW_MUPDF_FIXES
+		/* regular control characters: ^A, ^B, etc. */
+		default:
+			if (special >= 'A' && special <= 'Z' && mod == GLFW_MOD_CONTROL)
+				ui.key = KEY_CTL_A + special - 'A';
+			break;
+
+		/* regular control characters: escape, enter, backspace, tab */
+		case GLFW_KEY_ESCAPE: ui.key = KEY_ESCAPE; break;
+		case GLFW_KEY_ENTER: ui.key = KEY_ENTER; break;
+		case GLFW_KEY_BACKSPACE: ui.key = KEY_BACKSPACE; break;
+		case GLFW_KEY_TAB: ui.key = KEY_TAB; break;
+#endif
+		case GLFW_KEY_INSERT: ui.key = KEY_INSERT; break;
+		case GLFW_KEY_DELETE: ui.key = KEY_DELETE; break;
+		case GLFW_KEY_RIGHT: ui.key = KEY_RIGHT; break;
+		case GLFW_KEY_LEFT: ui.key = KEY_LEFT; break;
+		case GLFW_KEY_DOWN: ui.key = KEY_DOWN; break;
+		case GLFW_KEY_UP: ui.key = KEY_UP; break;
+		case GLFW_KEY_PAGE_UP: ui.key = KEY_PAGE_UP; break;
+		case GLFW_KEY_PAGE_DOWN: ui.key = KEY_PAGE_DOWN; break;
+		case GLFW_KEY_HOME: ui.key = KEY_HOME; break;
+		case GLFW_KEY_END: ui.key = KEY_END; break;
+		case GLFW_KEY_F1: ui.key = KEY_F1; break;
+		case GLFW_KEY_F2: ui.key = KEY_F2; break;
+		case GLFW_KEY_F3: ui.key = KEY_F3; break;
+		case GLFW_KEY_F4: ui.key = KEY_F4; break;
+		case GLFW_KEY_F5: ui.key = KEY_F5; break;
+		case GLFW_KEY_F6: ui.key = KEY_F6; break;
+		case GLFW_KEY_F7: ui.key = KEY_F7; break;
+		case GLFW_KEY_F8: ui.key = KEY_F8; break;
+		case GLFW_KEY_F9: ui.key = KEY_F9; break;
+		case GLFW_KEY_F10: ui.key = KEY_F10; break;
+		case GLFW_KEY_F11: ui.key = KEY_F11; break;
+		case GLFW_KEY_F12: ui.key = KEY_F12; break;
+		}
+		if (ui.key)
+		{
 			ui.mod = mod;
 			run_main_loop();
-			ui.key = ui.special = ui.mod = 0;
-			break;
+			ui.key = ui.mod = 0;
 		}
 	}
 }

@@ -1,7 +1,5 @@
 #include "gl-app.h"
 
-#define CONTROL(c) (c - 64)
-
 static void draw_string_part(float x, float y, const int *s, const int *e)
 {
 	ui_begin_text(ctx);
@@ -66,9 +64,9 @@ static void ui_input_delete_selection(struct input *input)
 
 static int ui_input_key(struct input *input)
 {
-	switch (ui.special)
+	switch (ui.key)
 	{
-	case GLFW_KEY_LEFT:
+	case KEY_LEFT:
 		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 		{
 			input->q = skip_word_left(input->q, input->text);
@@ -93,7 +91,7 @@ static int ui_input_key(struct input *input)
 				input->p = input->q = --(input->q);
 		}
 		break;
-	case GLFW_KEY_RIGHT:
+	case KEY_RIGHT:
 		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 		{
 			input->q = skip_word_right(input->q, input->end);
@@ -118,8 +116,8 @@ static int ui_input_key(struct input *input)
 				input->p = input->q = ++(input->q);
 		}
 		break;
-	case GLFW_KEY_UP:
-	case GLFW_KEY_HOME:
+	case KEY_UP:
+	case KEY_HOME:
 		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 		{
 			input->q = input->text;
@@ -137,8 +135,8 @@ static int ui_input_key(struct input *input)
 			input->p = input->q = input->text;
 		}
 		break;
-	case GLFW_KEY_DOWN:
-	case GLFW_KEY_END:
+	case KEY_DOWN:
+	case KEY_END:
 		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 		{
 			input->q = input->end;
@@ -156,7 +154,7 @@ static int ui_input_key(struct input *input)
 			input->p = input->q = input->end;
 		}
 		break;
-	case GLFW_KEY_DELETE:
+	case KEY_DELETE:
 		if (input->p != input->q)
 			ui_input_delete_selection(input);
 		else if (input->p < input->end)
@@ -166,32 +164,11 @@ static int ui_input_key(struct input *input)
 			--(input->end);
 		}
 		break;
-	}
-	switch (ui.key)
-	{
-	case '\e':
+	case KEY_ESCAPE:
 		return -1;
-	case '\r':
+	case KEY_ENTER:
 		return 1;
-	case CONTROL('A'):
-		input->p = input->q = input->text;
-		break;
-	case CONTROL('E'):
-		input->p = input->q = input->end;
-		break;
-	case CONTROL('W'):
-		if (input->p != input->q)
-		ui_input_delete_selection(input);
-		else
-		{
-			input->p = skip_word_left(input->p, input->text);
-			ui_input_delete_selection(input);
-		}
-		break;
-	case CONTROL('U'):
-		input->p = input->q = input->end = input->text;
-		break;
-	case '\b':
+	case KEY_BACKSPACE:
 		if (input->p != input->q)
 			ui_input_delete_selection(input);
 		else if (input->p > input->text && input->end > input->text)
@@ -200,6 +177,24 @@ static int ui_input_key(struct input *input)
 			input->q = --(input->p);
 			--(input->end);
 		}
+		break;
+	case KEY_CTL_A:
+		input->p = input->q = input->text;
+		break;
+	case KEY_CTL_E:
+		input->p = input->q = input->end;
+		break;
+	case KEY_CTL_W:
+		if (input->p != input->q)
+		ui_input_delete_selection(input);
+		else
+		{
+			input->p = skip_word_left(input->p, input->text);
+			ui_input_delete_selection(input);
+		}
+		break;
+	case KEY_CTL_U:
+		input->p = input->q = input->end = input->text;
 		break;
 	default:
 		if (ui.key >= 32)
