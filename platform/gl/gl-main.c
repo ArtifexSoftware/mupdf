@@ -863,9 +863,12 @@ static void do_app(void)
 				search_page = currentpage + search_dir;
 			else
 				search_page = currentpage;
-			search_hit_page = -1;
-			if (search_needle)
-				search_active = 1;
+			if (search_page >= 0 && search_page < fz_count_pages(ctx, doc))
+			{
+				search_hit_page = -1;
+				if (search_needle)
+					search_active = 1;
+			}
 			break;
 		case 'n':
 			search_dir = 1;
@@ -873,9 +876,12 @@ static void do_app(void)
 				search_page = currentpage + search_dir;
 			else
 				search_page = currentpage;
-			search_hit_page = -1;
-			if (search_needle)
-				search_active = 1;
+			if (search_page >= 0 && search_page < fz_count_pages(ctx, doc))
+			{
+				search_hit_page = -1;
+				if (search_needle)
+					search_active = 1;
+			}
 			break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
