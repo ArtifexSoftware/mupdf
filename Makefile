@@ -271,7 +271,7 @@ $(MUVIEW_X11) : $(MUVIEW_X11_OBJ)
 
 ifeq "$(HAVE_GLFW)" "yes"
 MUVIEW_GLFW := $(OUT)/mupdf-gl
-MUVIEW_GLFW_OBJ := $(addprefix $(OUT)/platform/gl/, gl-font.o gl-main.o)
+MUVIEW_GLFW_OBJ := $(addprefix $(OUT)/platform/gl/, gl-font.o gl-input.o gl-main.o)
 $(MUVIEW_GLFW_OBJ) : $(FITZ_HDR) $(PDF_HDR) platform/gl/gl-app.h
 $(MUVIEW_GLFW) : $(MUPDF_LIB) $(THIRD_LIBS) $(GLFW_LIB)
 $(MUVIEW_GLFW) : $(MUVIEW_GLFW_OBJ)

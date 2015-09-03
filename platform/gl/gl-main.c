@@ -8,6 +8,7 @@
 #include "gl-app.h"
 
 struct ui ui;
+fz_context *ctx = NULL;
 
 static GLFWwindow *window;
 
@@ -15,17 +16,11 @@ static GLFWwindow *window;
 static int has_ARB_texture_non_power_of_two = 1;
 static GLint max_texture_size = 8192;
 
-struct input
-{
-	int text[256];
-	int *end, *p, *q;
-};
-
-static int ui_needs_redisplay = 0;
+static int ui_needs_update = 0;
 
 static void ui_begin(void)
 {
-	ui_needs_redisplay = 0;
+	ui_needs_update = 0;
 	ui.hot = NULL;
 }
 
@@ -33,7 +28,7 @@ static void ui_end(void)
 {
 	if (!ui.down && !ui.middle && !ui.right)
 		ui.active = NULL;
-	if (ui_needs_redisplay)
+	if (ui_needs_update)
 		glfwPostEmptyEvent();
 }
 
@@ -139,7 +134,6 @@ static int zoom_out(int oldres)
 
 static const char *filename = "";
 static const char *title = "MuPDF/GL";
-static fz_context *ctx = NULL;
 static fz_document *doc = NULL;
 static fz_outline *outline = NULL;
 static fz_link *links = NULL;
@@ -440,248 +434,6 @@ static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
 	ui_draw_string(ctx, x0 + 2, y0 + 2 + ui.baseline, text);
 }
 
-static void ui_draw_string_part(float x, float y, const int *s, const int *e)
-{
-	ui_begin_text(ctx);
-	while (s < e)
-		x += ui_draw_character(ctx, *s++, x, y + ui.baseline);
-	ui_end_text(ctx);
-}
-
-static float measure_string_part(const int *s, const int *e)
-{
-	float w = 0;
-	while (s < e)
-		w += ui_measure_character(ctx, *s++);
-	return w;
-}
-
-static int *find_string_location(int *s, int *e, float w, float x)
-{
-	while (s < e)
-	{
-		float cw = ui_measure_character(ctx, *s);
-		if (w + (cw / 2) >= x)
-			return s;
-		w += cw;
-		++s;
-	}
-	return e;
-}
-
-static inline int myisalnum(int c)
-{
-	int cat = ucdn_get_general_category(c);
-	if (cat >= UCDN_GENERAL_CATEGORY_LL && cat <= UCDN_GENERAL_CATEGORY_LU)
-		return 1;
-	if (cat >= UCDN_GENERAL_CATEGORY_ND && cat <= UCDN_GENERAL_CATEGORY_NO)
-		return 1;
-	return 0;
-}
-
-static int *skip_word_left(int *p, int *start)
-{
-	while (p > start && !myisalnum(p[-1])) --p;
-	while (p > start && myisalnum(p[-1])) --p;
-	return p;
-}
-
-static int *skip_word_right(int *p, int *end)
-{
-	while (p < end && !myisalnum(p[0])) ++p;
-	while (p < end && myisalnum(p[0])) ++p;
-	return p;
-}
-
-static void ui_input_draw(int x0, int y0, int x1, int y1, struct input *input)
-{
-	float px, qx, ex;
-	int *p, *q;
-
-	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
-	{
-		ui.hot = input;
-		if (!ui.active && ui.down)
-		{
-			ui.active = input;
-			input->p = find_string_location(input->text, input->end, x0 + 2, ui.x);
-		}
-	}
-
-	if (ui.active == input)
-		input->q = find_string_location(input->text, input->end, x0 + 2, ui.x);
-
-	glColor4f(1, 1, 1, 1);
-	glRectf(x0, y0, x1, y1);
-
-	p = input->p < input->q ? input->p : input->q;
-	q = input->p > input->q ? input->p : input->q;
-
-	px = x0 + 2 + measure_string_part(input->text, p);
-	qx = px + measure_string_part(p, q);
-	ex = qx + measure_string_part(q, input->end);
-
-	glColor4f(0.6f, 0.6f, 1.0f, 1.0f);
-	glRectf(px, y0 + 2, qx+1, y1 - 2);
-
-	glColor4f(0, 0, 0, 1);
-	ui_draw_string_part(x0 + 2, y0 + 2, input->text, input->end);
-}
-
-static void ui_input_delete_selection(struct input *input)
-{
-	int *p = input->p < input->q ? input->p : input->q;
-	int *q = input->p > input->q ? input->p : input->q;
-	memmove(p, q, (input->end - q) * sizeof (*p));
-	input->end -= q - p;
-	input->p = input->q = p;
-}
-
-static int ui_input_keyboard(int key, int mod, struct input *input)
-{
-	if (mod & GLFW_MOD_CONTROL)
-	{
-		switch (key)
-		{
-		case 'A' - 64:
-			input->p = input->q = input->text;
-			break;
-		case 'E' - 64:
-			input->p = input->q = input->end;
-			break;
-		case 'W' - 64:
-			if (input->p != input->q)
-				ui_input_delete_selection(input);
-			else
-			{
-				input->p = skip_word_left(input->p, input->text);
-				ui_input_delete_selection(input);
-			}
-			break;
-		case 'U' - 64:
-			input->p = input->q = input->end = input->text;
-			break;
-		}
-	}
-	else
-	{
-		int cat = ucdn_get_general_category(key);
-		if (key == ' ' || (cat >= UCDN_GENERAL_CATEGORY_LL && cat < UCDN_GENERAL_CATEGORY_ZL))
-		{
-			if (input->p != input->q)
-				ui_input_delete_selection(input);
-			if (input->end < input->text + nelem(input->text))
-			{
-				memmove(input->p + 1, input->p, (input->end - input->p) * sizeof (*input->p));
-				++(input->end);
-				*(input->p++) = key;
-			}
-			input->q = input->p;
-		}
-	}
-
-	return 0;
-}
-
-static int ui_input_special(int special, int mod, struct input *input)
-{
-	if (mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
-	{
-		switch (special)
-		{
-		case GLFW_KEY_LEFT: input->q = skip_word_left(input->q, input->text); break;
-		case GLFW_KEY_RIGHT: input->q = skip_word_right(input->q, input->end); break;
-		case GLFW_KEY_UP: case GLFW_KEY_HOME: input->q = input->text; break;
-		case GLFW_KEY_DOWN: case GLFW_KEY_END: input->q = input->end; break;
-		}
-	}
-	else if (mod == GLFW_MOD_CONTROL)
-	{
-		switch (special)
-		{
-		case GLFW_KEY_LEFT:
-			if (input->p != input->q)
-				input->p = input->q = input->p < input->q ? input->p : input->q;
-			else
-				input->p = input->q = skip_word_left(input->q, input->text);
-			break;
-		case GLFW_KEY_RIGHT:
-			if (input->p != input->q)
-				input->p = input->q = input->p > input->q ? input->p : input->q;
-			else
-				input->p = input->q = skip_word_right(input->q, input->end);
-			break;
-		case GLFW_KEY_HOME:
-		case GLFW_KEY_UP:
-			input->p = input->q = input->text;
-			break;
-		case GLFW_KEY_END:
-		case GLFW_KEY_DOWN:
-			input->p = input->q = input->end;
-			break;
-		}
-	}
-	else if (mod == GLFW_MOD_SHIFT)
-	{
-		switch (special)
-		{
-		case GLFW_KEY_LEFT: if (input->q > input->text) input->q = --(input->q); break;
-		case GLFW_KEY_RIGHT: if (input->q < input->end) input->q = ++(input->q); break;
-		case GLFW_KEY_HOME: input->q = input->text; break;
-		case GLFW_KEY_END: input->q = input->end; break;
-		}
-	}
-	else if (mod == 0)
-	{
-		switch (special)
-		{
-		case GLFW_KEY_LEFT:
-			if (input->p != input->q)
-				input->p = input->q = input->p < input->q ? input->p : input->q;
-			else if (input->q > input->text)
-				input->p = input->q = --(input->q);
-			break;
-		case GLFW_KEY_RIGHT:
-			if (input->p != input->q)
-				input->p = input->q = input->p > input->q ? input->p : input->q;
-			else if (input->q < input->end)
-				input->p = input->q = ++(input->q);
-			break;
-		case GLFW_KEY_HOME:
-			input->p = input->q = input->text;
-			break;
-		case GLFW_KEY_END:
-			input->p = input->q = input->end;
-			break;
-		case GLFW_KEY_DELETE:
-			if (input->p != input->q)
-				ui_input_delete_selection(input);
-			else if (input->p < input->end)
-			{
-				memmove(input->p, input->p + 1, (input->end - input->p - 1) * sizeof (*input->p));
-				input->q = input->p;
-				--(input->end);
-			}
-			break;
-		case GLFW_KEY_BACKSPACE:
-			if (input->p != input->q)
-				ui_input_delete_selection(input);
-			else if (input->p > input->text && input->end > input->text)
-			{
-				memmove(input->p - 1, input->p, (input->end - input->p) * sizeof (*input->p));
-				input->q = --(input->p);
-				--(input->end);
-			}
-			break;
-		case GLFW_KEY_ESCAPE:
-			return -1;
-		case GLFW_KEY_ENTER:
-			return 1;
-		}
-	}
-	return 0;
-}
-
 static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
 {
 	static float saved_top = 0;
@@ -758,7 +510,7 @@ static int measure_outline_height(fz_outline *node)
 	return h;
 }
 
-static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, int y)
+static int do_outline_imp(fz_outline *node, int end, int x0, int x1, int x, int y)
 {
 	int h = 0;
 	int p = currentpage;
@@ -777,7 +529,7 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 				{
 					ui.active = node;
 					jump_to_page(p);
-					ui_needs_redisplay = 1; /* we changed the current page, so force a redraw */
+					ui_needs_update = 1; /* we changed the current page, so force a redraw */
 				}
 			}
 
@@ -797,14 +549,14 @@ static int draw_outline_imp(fz_outline *node, int end, int x0, int x1, int x, in
 		ui_draw_string(ctx, x, y + h + ui.baseline, node->title);
 		h += ui.lineheight;
 		if (node->down)
-			h += draw_outline_imp(node->down, n, x0, x1, x + ui.lineheight, y + h);
+			h += do_outline_imp(node->down, n, x0, x1, x + ui.lineheight, y + h);
 
 		node = node->next;
 	}
 	return h;
 }
 
-static void draw_outline(fz_outline *node, int outline_w)
+static void do_outline(fz_outline *node, int outline_w)
 {
 	static char *id = "outline";
 	static int outline_scroll_y = 0;
@@ -839,12 +591,12 @@ static void draw_outline(fz_outline *node, int outline_w)
 	glColor4f(1, 1, 1, 1);
 	glRectf(0, 0, outline_w, outline_h);
 
-	draw_outline_imp(outline, fz_count_pages(ctx, doc), 0, outline_w, 10, -outline_scroll_y);
+	do_outline_imp(outline, fz_count_pages(ctx, doc), 0, outline_w, 10, -outline_scroll_y);
 
 	glDisable(GL_SCISSOR_TEST);
 }
 
-static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rotate)
+static void do_links(fz_link *link, int xofs, int yofs, float zoom, float rotate)
 {
 	fz_matrix ctm;
 	fz_rect r;
@@ -894,7 +646,7 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 				else if (link->dest.kind == FZ_LINK_URI)
 					open_browser(link->dest.ld.uri.uri);
 			}
-			ui_needs_redisplay = 1;
+			ui_needs_update = 1;
 		}
 
 		link = link->next;
@@ -903,7 +655,7 @@ static void draw_links(fz_link *link, int xofs, int yofs, float zoom, float rota
 	glDisable(GL_BLEND);
 }
 
-static void draw_page_selection(int x0, int y0, int x1, int y1, float zoom, float rotate)
+static void do_page_selection(int x0, int y0, int x1, int y1, float zoom, float rotate)
 {
 	static fz_rect sel;
 
@@ -935,11 +687,11 @@ static void draw_page_selection(int x0, int y0, int x1, int y1, float zoom, floa
 	if (ui.active == &sel && !ui.right)
 	{
 		do_copy_region(&sel, x0, y0, zoom, rotate);
-		ui_needs_redisplay = 1;
+		ui_needs_update = 1;
 	}
 }
 
-static void draw_search_hits(int xofs, int yofs, float zoom, float rotate)
+static void do_search_hits(int xofs, int yofs, float zoom, float rotate)
 {
 	fz_matrix ctm;
 	fz_rect r;
@@ -1069,50 +821,13 @@ static void smart_move_forward(void)
 	}
 }
 
-static void run_main_loop_keyboard(void)
+static void do_app(void)
 {
-	if (ui.key || ui.special)
+	if (ui.special == GLFW_KEY_F4 && ui.mod == GLFW_MOD_ALT)
+		exit(0);
+
+	if (!ui.focus && (ui.key || ui.special))
 	{
-		if (ui.special == GLFW_KEY_F4 && ui.mod == GLFW_MOD_ALT)
-			exit(0);
-
-		if (search_active)
-		{
-			if (ui.key == 27)
-				search_active = 0;
-			ui_needs_redisplay = 1;
-			return;
-		}
-
-		if (showsearch)
-		{
-			int state;
-			if (ui.key)
-				state = ui_input_keyboard(ui.key, ui.mod, &search_input);
-			else
-				state = ui_input_special(ui.special, ui.mod, &search_input);
-			if (state == -1)
-				showsearch = 0;
-			else if (state == 1)
-			{
-				showsearch = 0;
-				search_page = -1;
-				if (search_needle)
-				{
-					fz_free(ctx, search_needle);
-					search_needle = NULL;
-				}
-				if (search_input.end > search_input.text)
-				{
-					search_needle = utf8_from_rune_string(ctx, search_input.text, search_input.end);
-					search_active = 1;
-					search_page = currentpage;
-				}
-			}
-			ui_needs_redisplay = 1;
-			return;
-		}
-
 		switch (ui.key)
 		{
 		case 'q':
@@ -1209,70 +924,20 @@ static void run_main_loop_keyboard(void)
 		if (search_hit_page != currentpage)
 			search_hit_page = -1; /* clear highlights when navigating */
 
-		ui_needs_redisplay = 1;
+		ui_needs_update = 1;
+
+		ui.key = ui.special = 0; /* we ate the key event, so zap it */
 	}
 }
 
-static void run_main_loop(void)
+static void do_canvas(void)
 {
-	float x, y;
-
 	static int saved_scroll_x = 0;
 	static int saved_scroll_y = 0;
 	static int saved_ui_x = 0;
 	static int saved_ui_y = 0;
 
-	glViewport(0, 0, screen_w, screen_h);
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0, screen_w, screen_h, 0, -1, 1);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	ui_begin();
-
-	run_main_loop_keyboard();
-
-	if (search_active)
-	{
-		float start_time = glfwGetTime();
-		while (glfwGetTime() < start_time + 0.2)
-		{
-			do_search_page(search_page, search_needle, NULL);
-			if (search_hit_count)
-			{
-				search_active = 0;
-				search_hit_page = search_page;
-				jump_to_page(search_hit_page);
-				break;
-			}
-			else
-			{
-				search_page += search_dir;
-				if (search_page < 0 || search_page == fz_count_pages(ctx, doc))
-				{
-					search_active = 0;
-					break;
-				}
-			}
-		}
-
-		/* keep searching later */
-		if (search_active)
-			ui_needs_redisplay = 1;
-	}
-
-	if (showoutline)
-	{
-		if (!outline)
-			outline = fz_load_outline(ctx, doc);
-		if (!outline)
-			showoutline = 0;
-	}
+	float x, y;
 
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
 	{
@@ -1282,20 +947,6 @@ static void run_main_loop(void)
 		oldzoom = currentzoom;
 		oldrotate = currentrotate;
 	}
-
-	if (showoutline)
-	{
-		canvas_x = 300;
-		canvas_w = screen_w - canvas_x;
-	}
-	else
-	{
-		canvas_x = 0;
-		canvas_w = screen_w;
-	}
-
-	canvas_y = 0;
-	canvas_h = screen_h;
 
 	if (ui.x >= canvas_x && ui.x < canvas_x + canvas_w && ui.y >= canvas_y && ui.y < canvas_y + canvas_h)
 	{
@@ -1342,26 +993,124 @@ static void run_main_loop(void)
 		x, y, x + page_w, y + page_h,
 		0, 0, (float)page_w / page_w2, (float)page_h / page_h2);
 
-	draw_links(links, x, y, currentzoom, currentrotate);
-	draw_page_selection(x, y, x+page_w, y+page_h, currentzoom, currentrotate);
+	if (!search_active)
+	{
+		do_links(links, x, y, currentzoom, currentrotate);
+		do_page_selection(x, y, x+page_w, y+page_h, currentzoom, currentrotate);
+		if (search_hit_page == currentpage && search_hit_count > 0)
+			do_search_hits(x, y, currentzoom, currentrotate);
+	}
+}
 
-	if (search_hit_page == currentpage && search_hit_count > 0)
-		draw_search_hits(x, y, currentzoom, currentrotate);
+static void run_main_loop(void)
+{
+	glViewport(0, 0, screen_w, screen_h);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, screen_w, screen_h, 0, -1, 1);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	ui_begin();
+
+	if (search_active)
+	{
+		float start_time = glfwGetTime();
+
+		if (ui.key == '\e')
+			search_active = 0;
+
+		/* ignore events during search */
+		ui.key = ui.special = ui.mod = 0;
+		ui.down = ui.middle = ui.right = 0;
+
+		while (glfwGetTime() < start_time + 0.2)
+		{
+			do_search_page(search_page, search_needle, NULL);
+			if (search_hit_count)
+			{
+				search_active = 0;
+				search_hit_page = search_page;
+				jump_to_page(search_hit_page);
+				break;
+			}
+			else
+			{
+				search_page += search_dir;
+				if (search_page < 0 || search_page == fz_count_pages(ctx, doc))
+				{
+					search_active = 0;
+					break;
+				}
+			}
+		}
+
+		/* keep searching later */
+		if (search_active)
+			ui_needs_update = 1;
+	}
+
+	do_app();
+
+	canvas_x = 0;
+	canvas_y = 0;
+	canvas_w = screen_w;
+	canvas_h = screen_h;
 
 	if (showoutline)
 	{
-		draw_outline(outline, canvas_x);
+		if (!outline)
+			outline = fz_load_outline(ctx, doc);
+		if (!outline)
+			showoutline = 0;
+		else
+		{
+			canvas_x = 300;
+			canvas_w = screen_w - canvas_x;
+		}
 	}
+
+	do_canvas();
+
+	if (showoutline)
+		do_outline(outline, canvas_x);
 
 	if (showsearch)
 	{
-		ui_input_draw(canvas_x, 0, canvas_x + canvas_w, ui.lineheight+4, &search_input);
+		int state = ui_input(canvas_x, 0, canvas_x + canvas_w, ui.lineheight+4, &search_input);
+		if (state == -1)
+		{
+			ui.focus = NULL;
+			showsearch = 0;
+		}
+		else if (state == 1)
+		{
+			ui.focus = NULL;
+			showsearch = 0;
+			search_page = -1;
+			if (search_needle)
+			{
+				fz_free(ctx, search_needle);
+				search_needle = NULL;
+			}
+			if (search_input.end > search_input.text)
+			{
+				search_needle = utf8_from_rune_string(ctx, search_input.text, search_input.end);
+				search_active = 1;
+				search_page = currentpage;
+			}
+		}
+		ui_needs_update = 1;
 	}
 
 	if (search_active)
 	{
 		char buf[256];
-		sprintf(buf, "searching page %d / %d", search_page + 1, fz_count_pages(ctx, doc));
+		sprintf(buf, "Searching page %d of %d.", search_page + 1, fz_count_pages(ctx, doc));
 		ui_label_draw(canvas_x, 0, canvas_x + canvas_w, ui.lineheight+4, buf);
 	}
 
@@ -1377,7 +1126,7 @@ static void on_char(GLFWwindow *window, unsigned int key, int mod)
 	ui.key = key;
 	ui.mod = mod;
 	run_main_loop();
-	ui.key = ui.mod = 0;
+	ui.key = ui.special = ui.mod = 0;
 }
 
 static void on_key(GLFWwindow *window, int special, int scan, int action, int mod)
@@ -1386,10 +1135,6 @@ static void on_key(GLFWwindow *window, int special, int scan, int action, int mo
 	{
 		switch (special)
 		{
-		case GLFW_KEY_ESCAPE:
-		case GLFW_KEY_ENTER:
-		case GLFW_KEY_TAB:
-		case GLFW_KEY_BACKSPACE:
 		case GLFW_KEY_INSERT:
 		case GLFW_KEY_DELETE:
 		case GLFW_KEY_RIGHT:
@@ -1414,7 +1159,7 @@ static void on_key(GLFWwindow *window, int special, int scan, int action, int mo
 			ui.special = special;
 			ui.mod = mod;
 			run_main_loop();
-			ui.special = ui.mod = 0;
+			ui.key = ui.special = ui.mod = 0;
 			break;
 		}
 	}
@@ -1436,19 +1181,19 @@ static void on_mouse_motion(GLFWwindow *window, double x, double y)
 {
 	ui.x = x;
 	ui.y = y;
-	ui_needs_redisplay = 1;
+	ui_needs_update = 1;
 }
 
 static void on_reshape(GLFWwindow *window, int w, int h)
 {
 	screen_w = w;
 	screen_h = h;
-	ui_needs_redisplay = 1;
+	ui_needs_update = 1;
 }
 
 static void on_display(GLFWwindow *window)
 {
-	ui_needs_redisplay = 1;
+	ui_needs_update = 1;
 }
 
 static void on_error(int error, const char *msg)
@@ -1523,12 +1268,12 @@ int main(int argc, char **argv)
 
 	glfwGetFramebufferSize(window, &screen_w, &screen_h);
 
-	ui_needs_redisplay = 1;
+	ui_needs_update = 1;
 
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwWaitEvents();
-		if (ui_needs_redisplay)
+		if (ui_needs_update)
 			run_main_loop();
 	}
 

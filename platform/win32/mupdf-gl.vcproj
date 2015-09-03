@@ -182,6 +182,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\gl\gl-input.c"
+			>
+		</File>
+		<File
 			RelativePath="..\gl\gl-main.c"
 			>
 		</File>
