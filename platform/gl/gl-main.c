@@ -309,25 +309,6 @@ static void pop_future(void)
 	push_history();
 }
 
-static char *
-utf8_from_rune_string(fz_context *ctx, const int *s, const int *e)
-{
-	const int *src = s;
-	char *d, *dst;
-	int len = 1;
-
-	while (src < e)
-		len += fz_runelen(*src++);
-
-	dst = d = fz_malloc(ctx, len);
-	src = s;
-	while (src < e)
-		dst += fz_runetochar(dst, *src++);
-	*dst = 0;
-
-	return d;
-}
-
 void do_search_page(int number, char *needle, fz_cookie *cookie)
 {
 	fz_page *page = fz_load_page(ctx, doc, number);
@@ -1101,7 +1082,7 @@ static void run_main_loop(void)
 			}
 			if (search_input.end > search_input.text)
 			{
-				search_needle = utf8_from_rune_string(ctx, search_input.text, search_input.end);
+				search_needle = fz_strdup(ctx, search_input.text);
 				search_active = 1;
 				search_page = currentpage;
 			}

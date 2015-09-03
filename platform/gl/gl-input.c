@@ -1,37 +1,49 @@
 #include "gl-app.h"
 
-static void draw_string_part(float x, float y, const int *s, const int *e)
+static void draw_string_part(float x, float y, const char *s, const char *e)
 {
+	int c;
 	ui_begin_text(ctx);
 	while (s < e)
-		x += ui_draw_character(ctx, *s++, x, y + ui.baseline);
+	{
+		s += fz_chartorune(&c, s);
+		x += ui_draw_character(ctx, c, x, y + ui.baseline);
+	}
 	ui_end_text(ctx);
 }
 
-static float measure_string_part(const int *s, const int *e)
+static float measure_string_part(const char *s, const char *e)
 {
+	int c;
 	float w = 0;
 	while (s < e)
-		w += ui_measure_character(ctx, *s++);
+	{
+		s += fz_chartorune(&c, s);
+		w += ui_measure_character(ctx, c);
+	}
 	return w;
 }
 
-static int *find_string_location(int *s, int *e, float w, float x)
+static char *find_string_location(char *s, char *e, float w, float x)
 {
+	int c;
 	while (s < e)
 	{
-		float cw = ui_measure_character(ctx, *s);
+		int n = fz_chartorune(&c, s);
+		float cw = ui_measure_character(ctx, c);
 		if (w + (cw / 2) >= x)
 			return s;
 		w += cw;
-		++s;
+		s += n;
 	}
 	return e;
 }
 
-static inline int myisalnum(int c)
+static inline int myisalnum(char *s)
 {
-	int cat = ucdn_get_general_category(c);
+	int cat, c;
+	fz_chartorune(&c, s);
+	cat = ucdn_get_general_category(c);
 	if (cat >= UCDN_GENERAL_CATEGORY_LL && cat <= UCDN_GENERAL_CATEGORY_LU)
 		return 1;
 	if (cat >= UCDN_GENERAL_CATEGORY_ND && cat <= UCDN_GENERAL_CATEGORY_NO)
@@ -39,25 +51,41 @@ static inline int myisalnum(int c)
 	return 0;
 }
 
-static int *skip_word_left(int *p, int *start)
+static char *prev_char(char *p)
 {
-	while (p > start && !myisalnum(p[-1])) --p;
-	while (p > start && myisalnum(p[-1])) --p;
+	--p;
+	while ((*p & 0xC0) == 0x80) /* skip middle and final multibytes */
+		--p;
 	return p;
 }
 
-static int *skip_word_right(int *p, int *end)
+static char *next_char(char *p)
 {
-	while (p < end && !myisalnum(p[0])) ++p;
-	while (p < end && myisalnum(p[0])) ++p;
+	++p;
+	while ((*p & 0xC0) == 0x80) /* skip middle and final multibytes */
+		++p;
+	return p;
+}
+
+static char *prev_word(char *p, char *start)
+{
+	while (p > start && !myisalnum(prev_char(p))) p = prev_char(p);
+	while (p > start && myisalnum(prev_char(p))) p = prev_char(p);
+	return p;
+}
+
+static char *next_word(char *p, char *end)
+{
+	while (p < end && !myisalnum(p)) p = next_char(p);
+	while (p < end && myisalnum(p)) p = next_char(p);
 	return p;
 }
 
 static void ui_input_delete_selection(struct input *input)
 {
-	int *p = input->p < input->q ? input->p : input->q;
-	int *q = input->p > input->q ? input->p : input->q;
-	memmove(p, q, (input->end - q) * sizeof (*p));
+	char *p = input->p < input->q ? input->p : input->q;
+	char *q = input->p > input->q ? input->p : input->q;
+	memmove(p, q, input->end - q);
 	input->end -= q - p;
 	input->p = input->q = p;
 }
@@ -69,51 +97,51 @@ static int ui_input_key(struct input *input)
 	case KEY_LEFT:
 		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 		{
-			input->q = skip_word_left(input->q, input->text);
+			input->q = prev_word(input->q, input->text);
 		}
 		else if (ui.mod == GLFW_MOD_CONTROL)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p < input->q ? input->p : input->q;
 			else
-				input->p = input->q = skip_word_left(input->q, input->text);
+				input->p = input->q = prev_word(input->q, input->text);
 		}
 		else if (ui.mod == GLFW_MOD_SHIFT)
 		{
 			if (input->q > input->text)
-				input->q = --(input->q);
+				input->q = prev_char(input->q);
 		}
 		else if (ui.mod == 0)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p < input->q ? input->p : input->q;
 			else if (input->q > input->text)
-				input->p = input->q = --(input->q);
+				input->p = input->q = prev_char(input->q);
 		}
 		break;
 	case KEY_RIGHT:
 		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
 		{
-			input->q = skip_word_right(input->q, input->end);
+			input->q = next_word(input->q, input->end);
 		}
 		else if (ui.mod == GLFW_MOD_CONTROL)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p > input->q ? input->p : input->q;
 			else
-				input->p = input->q = skip_word_right(input->q, input->end);
+				input->p = input->q = next_word(input->q, input->end);
 		}
 		else if (ui.mod == GLFW_MOD_SHIFT)
 		{
 			if (input->q < input->end)
-				input->q = ++(input->q);
+				input->q = next_char(input->q);
 		}
 		else if (ui.mod == 0)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p > input->q ? input->p : input->q;
 			else if (input->q < input->end)
-				input->p = input->q = ++(input->q);
+				input->p = input->q = next_char(input->q);
 		}
 		break;
 	case KEY_UP:
@@ -159,9 +187,11 @@ static int ui_input_key(struct input *input)
 			ui_input_delete_selection(input);
 		else if (input->p < input->end)
 		{
-			memmove(input->p, input->p + 1, (input->end - input->p - 1) * sizeof (*input->p));
+			char *np = next_char(input->p);
+			memmove(input->p, np, input->end - np);
+			input->end -= np - input->p;
+			*input->end = 0;
 			input->q = input->p;
-			--(input->end);
 		}
 		break;
 	case KEY_ESCAPE:
@@ -171,11 +201,13 @@ static int ui_input_key(struct input *input)
 	case KEY_BACKSPACE:
 		if (input->p != input->q)
 			ui_input_delete_selection(input);
-		else if (input->p > input->text && input->end > input->text)
+		else if (input->p > input->text)
 		{
-			memmove(input->p - 1, input->p, (input->end - input->p) * sizeof (*input->p));
-			input->q = --(input->p);
-			--(input->end);
+			char *pp = prev_char(input->p);
+			memmove(pp, input->p, input->end - input->p);
+			input->end -= input->p - pp;
+			*input->end = 0;
+			input->q = input->p = pp;
 		}
 		break;
 	case KEY_CTL_A:
@@ -186,10 +218,10 @@ static int ui_input_key(struct input *input)
 		break;
 	case KEY_CTL_W:
 		if (input->p != input->q)
-		ui_input_delete_selection(input);
+			ui_input_delete_selection(input);
 		else
 		{
-			input->p = skip_word_left(input->p, input->text);
+			input->p = prev_word(input->p, input->text);
 			ui_input_delete_selection(input);
 		}
 		break;
@@ -204,11 +236,15 @@ static int ui_input_key(struct input *input)
 			{
 				if (input->p != input->q)
 					ui_input_delete_selection(input);
-				if (input->end < input->text + nelem(input->text))
+				if (input->end < input->text + nelem(input->text) - 1)
 				{
-					memmove(input->p + 1, input->p, (input->end - input->p) * sizeof (*input->p));
-					++(input->end);
-					*(input->p++) = ui.key;
+					char buf[8];
+					int n = fz_runetochar(buf, ui.key);
+					memmove(input->p + n, input->p, input->end - input->p);
+					memmove(input->p, buf, n);
+					input->p += n;
+					input->end += n;
+					*input->end = 0;
 				}
 				input->q = input->p;
 			}
@@ -221,7 +257,7 @@ static int ui_input_key(struct input *input)
 int ui_input(int x0, int y0, int x1, int y1, struct input *input)
 {
 	float px, qx, ex;
-	int *p, *q;
+	char *p, *q;
 	int state;
 
 	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)

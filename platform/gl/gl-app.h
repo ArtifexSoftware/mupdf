@@ -69,8 +69,8 @@ float ui_measure_string(fz_context *ctx, char *str);
 
 struct input
 {
-	int text[256];
-	int *end, *p, *q;
+	char text[256];
+	char *end, *p, *q;
 };
 
 int ui_input(int x0, int y0, int x1, int y1, struct input *input);
