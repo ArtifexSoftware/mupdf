@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 extern fz_context *ctx;
+extern GLFWwindow *window;
 
 enum
 {

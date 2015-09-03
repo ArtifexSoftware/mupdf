@@ -90,6 +90,21 @@ static void ui_input_delete_selection(struct input *input)
 	input->p = input->q = p;
 }
 
+static void ui_input_paste(struct input *input, const char *buf, int n)
+{
+	if (input->p != input->q)
+		ui_input_delete_selection(input);
+	if (input->end + n + 1 < input->text + sizeof(input->text))
+	{
+		memmove(input->p + n, input->p, input->end - input->p);
+		memmove(input->p, buf, n);
+		input->p += n;
+		input->end += n;
+		*input->end = 0;
+	}
+	input->q = input->p;
+}
+
 static int ui_input_key(struct input *input)
 {
 	switch (ui.key)
@@ -228,25 +243,36 @@ static int ui_input_key(struct input *input)
 	case KEY_CTL_U:
 		input->p = input->q = input->end = input->text;
 		break;
+	case KEY_CTL_C:
+	case KEY_CTL_X:
+		if (input->p != input->q)
+		{
+			char buf[sizeof input->text];
+			char *p = input->p < input->q ? input->p : input->q;
+			char *q = input->p > input->q ? input->p : input->q;
+			memmove(buf, p, q - p);
+			buf[q-p] = 0;
+			glfwSetClipboardString(window, buf);
+			if (ui.key == KEY_CTL_X)
+				ui_input_delete_selection(input);
+		}
+		break;
+	case KEY_CTL_V:
+		{
+			const char *buf = glfwGetClipboardString(window);
+			if (buf)
+				ui_input_paste(input, buf, strlen(buf));
+		}
+		break;
 	default:
 		if (ui.key >= 32)
 		{
 			int cat = ucdn_get_general_category(ui.key);
 			if (ui.key == ' ' || (cat >= UCDN_GENERAL_CATEGORY_LL && cat < UCDN_GENERAL_CATEGORY_ZL))
 			{
-				if (input->p != input->q)
-					ui_input_delete_selection(input);
-				if (input->end < input->text + nelem(input->text) - 1)
-				{
-					char buf[8];
-					int n = fz_runetochar(buf, ui.key);
-					memmove(input->p + n, input->p, input->end - input->p);
-					memmove(input->p, buf, n);
-					input->p += n;
-					input->end += n;
-					*input->end = 0;
-				}
-				input->q = input->p;
+				char buf[8];
+				int n = fz_runetochar(buf, ui.key);
+				ui_input_paste(input, buf, n);
 			}
 		}
 		break;

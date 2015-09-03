@@ -9,8 +9,7 @@
 
 struct ui ui;
 fz_context *ctx = NULL;
-
-static GLFWwindow *window;
+GLFWwindow *window = NULL;
 
 /* OpenGL capabilities */
 static int has_ARB_texture_non_power_of_two = 1;
