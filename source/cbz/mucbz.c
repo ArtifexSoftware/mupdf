@@ -6,8 +6,8 @@ typedef struct cbz_document_s cbz_document;
 typedef struct cbz_page_s cbz_page;
 
 static const char *cbz_ext_list[] = {
-	".jpg", ".jpeg", ".png", ".gif",
-	".JPG", ".JPEG", ".PNG", ".GIF",
+	".jpg", ".jpeg", ".png", ".gif", ".bmp",
+	".JPG", ".JPEG", ".PNG", ".GIF", ".BMP",
 	NULL
 };
 
