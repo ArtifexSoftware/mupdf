@@ -1,10 +1,3 @@
-#ifdef _WIN32
-#include <windows.h>
-#ifdef _MSC_VER
-#define main main_utf8
-#endif
-#endif
-
 #include "gl-app.h"
 
 struct ui ui;
@@ -131,7 +124,6 @@ static int zoom_out(int oldres)
 #define MAXRES (zoom_list[nelem(zoom_list)-1])
 #define DEFRES 96
 
-static const char *filename = "";
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
 static fz_outline *outline = NULL;
@@ -379,7 +371,7 @@ static void do_copy_region(fz_rect *sel, int xofs, int yofs, float zoom, float r
 						saw_text = 1;
 						if (need_newline)
 						{
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
 							fz_write_buffer_rune(ctx, buf, '\r');
 #endif
 							fz_write_buffer_rune(ctx, buf, '\n');
@@ -1199,14 +1191,31 @@ static void on_error(int error, const char *msg)
 	fprintf(stderr, "gl error %d: %s\n", error, msg);
 }
 
+
+#ifdef _MSC_VER
+int main_utf8(int argc, char **argv)
+#else
 int main(int argc, char **argv)
+#endif
 {
-	if (argc < 2) {
+	char filename[2048];
+
+	if (argc < 2)
+	{
+#ifdef _WIN32
+		win_install();
+		if (!win_open_file(filename, sizeof filename));
+			exit(0);
+#else
 		fprintf(stderr, "usage: mupdf-gl input.pdf\n");
 		exit(1);
+#endif
+	}
+	else
+	{
+		fz_strlcpy(filename, argv[1], sizeof filename);
 	}
 
-	filename = argv[1];
 	title = strrchr(filename, '/');
 	if (!title)
 		title = strrchr(filename, '\\');
@@ -1251,7 +1260,7 @@ int main(int argc, char **argv)
 
 	ui_init_fonts(ctx, ui.fontsize);
 
-	doc = fz_open_document(ctx, argv[1]);
+	doc = fz_open_document(ctx, filename);
 
 	render_page(currentpage, currentzoom, currentrotate);
 	update_title();
@@ -1288,7 +1297,7 @@ int main(int argc, char **argv)
 int wmain(int argc, wchar_t *wargv[])
 {
 	char **argv = fz_argv_from_wargv(argc, wargv);
-	int ret = main(argc, argv);
+	int ret = main_utf8(argc, argv);
 	fz_free_argv(argc, argv);
 	return ret;
 }

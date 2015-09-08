@@ -1,3 +1,9 @@
+#ifdef _WIN32
+#include <windows.h>
+void win_install(void);
+int win_open_file(char *buf, int len);
+#endif
+
 #include "mupdf/fitz.h"
 #include <GLFW/glfw3.h>
 

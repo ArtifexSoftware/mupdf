@@ -189,6 +189,14 @@
 			RelativePath="..\gl\gl-main.c"
 			>
 		</File>
+		<File
+			RelativePath="..\gl\gl-win32.c"
+			>
+		</File>
+		<File
+			RelativePath="..\gl\gl-winres.rc"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
