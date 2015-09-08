@@ -30,6 +30,7 @@ enum
 struct gprf_document_s
 {
 	fz_document super;
+	char *gprf_filename;
 	char *pdf_filename;
 	char *print_profile;
 	char *display_profile;
@@ -514,8 +515,9 @@ generate_page(fz_context *ctx, gprf_page *page)
 	char *print_profile = NULL;
 	int len;
 
+	/* put the page file in the same directory as the gproof file */
 	sprintf(nameroot, "gprf_%d_", page->number);
-	filename = fz_tempfilename(ctx, nameroot, doc->pdf_filename);
+	filename = fz_tempfilename(ctx, nameroot, doc->gprf_filename);
 
 	/* Set up the icc profiles */
 	if (strlen(doc->display_profile) == 0)
@@ -818,6 +820,7 @@ gprf_close_document(fz_context *ctx, fz_document *doc_)
 		return;
 	fz_free(ctx, doc->page_dims);
 	fz_free(ctx, doc->pdf_filename);
+	fz_free(ctx, doc->gprf_filename);
 	fz_free(ctx, doc->print_profile);
 	fz_free(ctx, doc->display_profile);
 
@@ -891,10 +894,13 @@ gprf_open_document(fz_context *ctx, const char *filename)
 {
 	fz_stream *file = fz_open_file(ctx, filename);
 	fz_document *doc;
+	gprf_document *gdoc;
 
 	fz_try(ctx)
 	{
 		doc = gprf_open_document_with_stream(ctx, file);
+		gdoc = (gprf_document *)doc;
+		gdoc->gprf_filename = fz_strdup(ctx,filename);
 	}
 	fz_always(ctx)
 	{
