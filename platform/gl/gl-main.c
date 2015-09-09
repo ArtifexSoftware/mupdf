@@ -73,28 +73,21 @@ void ogl_assert(fz_context *ctx, const char *msg)
 	}
 }
 
-void draw_image(int tex, float x0, float y0, float x1, float y1, float s0, float t0, float s1, float t1)
+void ui_draw_image(struct texture *tex, float x, float y)
 {
-	glBindTexture(GL_TEXTURE_2D, tex);
-
+	glBindTexture(GL_TEXTURE_2D, tex->id);
 	glEnable(GL_TEXTURE_2D);
 	glBegin(GL_TRIANGLE_STRIP);
 	{
 		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(s0, t1);
-		glVertex2f(x0, y1);
-
-		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(s0, t0);
-		glVertex2f(x0, y0);
-
-		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(s1, t1);
-		glVertex2f(x1, y1);
-
-		glColor4f(1, 1, 1, 1);
-		glTexCoord2f(s1, t0);
-		glVertex2f(x1, y0);
+		glTexCoord2f(0, tex->t);
+		glVertex2f(x + tex->x, y + tex->y + tex->h);
+		glTexCoord2f(0, 0);
+		glVertex2f(x + tex->x, y + tex->y);
+		glTexCoord2f(tex->s, tex->t);
+		glVertex2f(x + tex->x + tex->w, y + tex->y + tex->h);
+		glTexCoord2f(tex->s, 0);
+		glVertex2f(x + tex->x + tex->w, y + tex->y);
 	}
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
@@ -131,8 +124,7 @@ static fz_link *links = NULL;
 
 static int number = 0;
 
-static unsigned int page_tex = 0;
-static int page_x, page_y, page_w, page_h, page_w2, page_h2;
+static struct texture page_tex = { 0 };
 static int scroll_x = 0, scroll_y = 0;
 static int canvas_x = 0, canvas_w = 100;
 static int canvas_y = 0, canvas_h = 100;
@@ -185,6 +177,40 @@ static void update_title(void)
 	glfwSetWindowTitle(window, buf);
 }
 
+void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
+{
+	if (!tex->id)
+		glGenTextures(1, &tex->id);
+	glBindTexture(GL_TEXTURE_2D, tex->id);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	tex->x = pix->x;
+	tex->y = pix->y;
+	tex->w = pix->w;
+	tex->h = pix->h;
+
+	if (has_ARB_texture_non_power_of_two)
+	{
+		if (tex->w > max_texture_size || tex->h > max_texture_size)
+			fz_warn(ctx, "texture size (%d x %d) exceeds implementation limit (%d)", tex->w, tex->h, max_texture_size);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->w, tex->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
+		tex->s = 1;
+		tex->t = 1;
+	}
+	else
+	{
+		int w2 = next_power_of_two(tex->w);
+		int h2 = next_power_of_two(tex->h);
+		if (w2 > max_texture_size || h2 > max_texture_size)
+			fz_warn(ctx, "texture size (%d x %d) exceeds implementation limit (%d)", w2, h2, max_texture_size);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->w, tex->h, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
+		tex->s = (float)tex->w / w2;
+		tex->t = (float)tex->h / h2;
+	}
+}
+
 void render_page(int pagenumber, float zoom, float rotate)
 {
 	fz_page *page;
@@ -212,32 +238,7 @@ void render_page(int pagenumber, float zoom, float rotate)
 	fz_run_page(ctx, page, dev, &ctm, NULL);
 	fz_drop_device(ctx, dev);
 
-	page_x = pix->x;
-	page_y = pix->y;
-	page_w = page_w2 = pix->w;
-	page_h = page_h2 = pix->h;
-
-	if (!page_tex)
-		glGenTextures(1, &page_tex);
-	glBindTexture(GL_TEXTURE_2D, page_tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	if (has_ARB_texture_non_power_of_two)
-	{
-		if (page_w > max_texture_size || page_h > max_texture_size)
-			fz_warn(ctx, "page size (%d x %d) exceeds OpenGL implementation limit (%d)", page_w, page_h, max_texture_size);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, page_w, page_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
-	}
-	else
-	{
-		page_w2 = next_power_of_two(page_w);
-		page_h2 = next_power_of_two(page_h);
-		if (page_w2 > max_texture_size || page_h2 > max_texture_size)
-			fz_warn(ctx, "page size (%d x %d) exceeds OpenGL implementation limit (%d)", page_w2, page_h2, max_texture_size);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, page_w2, page_h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, page_w, page_h, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
-	}
+	texture_from_pixmap(&page_tex, pix);
 
 	fz_drop_pixmap(ctx, pix);
 	fz_drop_page(ctx, page);
@@ -577,8 +578,8 @@ static void do_links(fz_link *link, int xofs, int yofs, float zoom, float rotate
 	x = ui.x;
 	y = ui.y;
 
-	xofs -= page_x;
-	yofs -= page_y;
+	xofs -= page_tex.x;
+	yofs -= page_tex.y;
 
 	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
@@ -669,8 +670,8 @@ static void do_search_hits(int xofs, int yofs, float zoom, float rotate)
 	fz_rect r;
 	int i;
 
-	xofs -= page_x;
-	yofs -= page_y;
+	xofs -= page_tex.x;
+	yofs -= page_tex.y;
 
 	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
@@ -716,8 +717,8 @@ static void toggle_fullscreen(void)
 
 static void shrinkwrap(void)
 {
-	int w = page_w + canvas_x;
-	int h = page_h + canvas_y;
+	int w = page_tex.w + canvas_x;
+	int h = page_tex.h + canvas_y;
 	if (isfullscreen)
 		toggle_fullscreen();
 	glfwSetWindowSize(window, w, h);
@@ -725,17 +726,17 @@ static void shrinkwrap(void)
 
 static void auto_zoom_w(void)
 {
-	currentzoom = fz_clamp(currentzoom * canvas_w / (float)page_w, MINRES, MAXRES);
+	currentzoom = fz_clamp(currentzoom * canvas_w / (float)page_tex.w, MINRES, MAXRES);
 }
 
 static void auto_zoom_h(void)
 {
-	currentzoom = fz_clamp(currentzoom * canvas_h / (float)page_h, MINRES, MAXRES);
+	currentzoom = fz_clamp(currentzoom * canvas_h / (float)page_tex.h, MINRES, MAXRES);
 }
 
 static void auto_zoom(void)
 {
-	float page_a = (float) page_w / page_h;
+	float page_a = (float) page_tex.w / page_tex.h;
 	float screen_a = (float) canvas_w / canvas_h;
 	if (page_a > screen_a)
 		auto_zoom_w();
@@ -751,14 +752,14 @@ static void smart_move_backward(void)
 		{
 			if (currentpage - 1 >= 0)
 			{
-				scroll_x = page_w;
-				scroll_y = page_h;
+				scroll_x = page_tex.w;
+				scroll_y = page_tex.h;
 				currentpage -= 1;
 			}
 		}
 		else
 		{
-			scroll_y = page_h;
+			scroll_y = page_tex.h;
 			scroll_x -= canvas_w * 9 / 10;
 		}
 	}
@@ -770,9 +771,9 @@ static void smart_move_backward(void)
 
 static void smart_move_forward(void)
 {
-	if (scroll_y + canvas_h >= page_h)
+	if (scroll_y + canvas_h >= page_tex.h)
 	{
-		if (scroll_x + canvas_w >= page_w)
+		if (scroll_x + canvas_w >= page_tex.w)
 		{
 			if (currentpage + 1 < fz_count_pages(ctx, doc))
 			{
@@ -941,36 +942,34 @@ static void do_canvas(void)
 		scroll_y = saved_scroll_y + saved_ui_y - ui.y;
 	}
 
-	if (page_w <= canvas_w)
+	if (page_tex.w <= canvas_w)
 	{
 		scroll_x = 0;
-		x = canvas_x + (canvas_w - page_w) / 2;
+		x = canvas_x + (canvas_w - page_tex.w) / 2;
 	}
 	else
 	{
-		scroll_x = fz_clamp(scroll_x, 0, page_w - canvas_w);
+		scroll_x = fz_clamp(scroll_x, 0, page_tex.w - canvas_w);
 		x = canvas_x - scroll_x;
 	}
 
-	if (page_h <= canvas_h)
+	if (page_tex.h <= canvas_h)
 	{
 		scroll_y = 0;
-		y = canvas_y + (canvas_h - page_h) / 2;
+		y = canvas_y + (canvas_h - page_tex.h) / 2;
 	}
 	else
 	{
-		scroll_y = fz_clamp(scroll_y, 0, page_h - canvas_h);
+		scroll_y = fz_clamp(scroll_y, 0, page_tex.h - canvas_h);
 		y = canvas_y - scroll_y;
 	}
 
-	draw_image(page_tex,
-		x, y, x + page_w, y + page_h,
-		0, 0, (float)page_w / page_w2, (float)page_h / page_h2);
+	ui_draw_image(&page_tex, x, y);
 
 	if (!search_active)
 	{
 		do_links(links, x, y, currentzoom, currentrotate);
-		do_page_selection(x, y, x+page_w, y+page_h, currentzoom, currentrotate);
+		do_page_selection(x, y, x+page_tex.w, y+page_tex.h, currentzoom, currentrotate);
 		if (search_hit_page == currentpage && search_hit_count > 0)
 			do_search_hits(x, y, currentzoom, currentrotate);
 	}

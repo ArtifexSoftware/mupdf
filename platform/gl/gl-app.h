@@ -74,6 +74,15 @@ void ui_end_text(fz_context *ctx);
 float ui_draw_string(fz_context *ctx, float x, float y, const char *str);
 float ui_measure_string(fz_context *ctx, char *str);
 
+struct texture
+{
+	GLuint id;
+	int x, y, w, h;
+	float s, t;
+};
+
+void ui_draw_image(struct texture *tex, float x, float y);
+
 struct input
 {
 	char text[256];
