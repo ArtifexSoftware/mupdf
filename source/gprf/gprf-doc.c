@@ -769,8 +769,15 @@ static int gprf_count_separations(fz_context *ctx, fz_page *page_)
 static void gprf_control_separation(fz_context *ctx, fz_page *page_, int sep, int disable)
 {
 	gprf_page *page = (gprf_page *)page_;
-
+	
 	fz_control_separation(ctx, page->separations, sep, disable);
+}
+
+static int gprf_separation_disabled(fz_context *ctx, fz_page *page_, int sep)
+{
+	gprf_page *page = (gprf_page *)page_;
+	
+	return fz_separation_disabled(ctx, page->separations, sep);
 }
 
 static const char *gprf_get_separation(fz_context *ctx, fz_page *page_, int sep, uint32_t *rgba, uint32_t*cmyk)
@@ -793,6 +800,7 @@ gprf_load_page(fz_context *ctx, fz_document *doc_, int number)
 		page->super.drop_page_imp = gprf_drop_page_imp;
 		page->super.count_separations = gprf_count_separations;
 		page->super.control_separation = gprf_control_separation;
+		page->super.separation_disabled = gprf_separation_disabled;
 		page->super.get_separation = gprf_get_separation;
 		page->doc = (gprf_document *)fz_keep_document(ctx, &doc->super);
 		page->number = number;

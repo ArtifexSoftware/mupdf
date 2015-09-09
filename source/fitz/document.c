@@ -425,6 +425,14 @@ void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int 
 	page->control_separation(ctx, page, sep, disable);
 }
 
+int fz_separation_disabled_on_page (fz_context *ctx, fz_page *page, int sep)
+{
+	if (ctx == NULL || page == NULL || page->separation_disabled == NULL)
+		return 0;
+	
+	return page->separation_disabled(ctx, page, sep);
+}
+
 const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk)
 {
 	if (ctx == NULL || page == NULL || page->get_separation == NULL)

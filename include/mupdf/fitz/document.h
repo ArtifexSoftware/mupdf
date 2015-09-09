@@ -52,6 +52,7 @@ typedef fz_rect *(fz_page_bound_annot_fn)(fz_context *ctx, fz_page *page, fz_ann
 typedef void (fz_page_run_annot_fn)(fz_context *ctx, fz_page *page, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 
 typedef void (fz_page_control_separation_fn)(fz_context *ctx, fz_page *page, int separation, int disable);
+typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int separation);
 typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
 typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
 
@@ -68,6 +69,7 @@ struct fz_page_s
 	fz_page_run_annot_fn *run_annot;
 	fz_page_page_presentation_fn *page_presentation;
 	fz_page_control_separation_fn *control_separation;
+	fz_page_separation_disabled_fn *separation_disabled;
 	fz_page_count_separations_fn *count_separations;
 	fz_page_get_separation_fn *get_separation;
 };
@@ -380,6 +382,12 @@ int fz_count_separations_on_page(fz_context *ctx, fz_page *page);
 	separations (such as gproof files).
 */
 void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int disable);
+
+/*
+	Returns whether a given separation on a given page is disabled. This will only
+	work from a format that supports separations (such as gproof files).
+ */
+int fz_separation_disabled_on_page (fz_context *ctx, fz_page *, int sep);
 
 /*
 	Get the name and equivalent RGBA, CMYK colors of a given separation
