@@ -115,6 +115,7 @@ struct fz_display_list_s
 {
 	fz_storable storable;
 	fz_display_node *list;
+	fz_rect mediabox;
 	int max;
 	int len;
 };
@@ -637,9 +638,14 @@ fz_append_display_node(
 static void
 fz_list_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, const fz_matrix *ctm)
 {
+	fz_list_device *writer = (fz_list_device *)dev;
+	fz_display_list *list = writer->list;
 	fz_rect rect = *mediabox;
 
 	fz_transform_rect(&rect, ctm);
+
+	fz_union_rect(&list->mediabox, &rect);
+
 	fz_append_display_node(
 		ctx,
 		dev,
@@ -1405,6 +1411,7 @@ fz_new_display_list(fz_context *ctx)
 	fz_display_list *list = fz_malloc_struct(ctx, fz_display_list);
 	FZ_INIT_STORABLE(list, 1, fz_drop_display_list_imp);
 	list->list = NULL;
+	list->mediabox = fz_empty_rect;
 	list->max = 0;
 	list->len = 0;
 	return list;
@@ -1420,6 +1427,13 @@ void
 fz_drop_display_list(fz_context *ctx, fz_display_list *list)
 {
 	fz_drop_storable(ctx, &list->storable);
+}
+
+fz_rect *
+fz_bound_display_list(fz_context *ctx, fz_display_list *list, fz_rect *bounds)
+{
+	*bounds = list->mediabox;
+	return bounds;
 }
 
 void

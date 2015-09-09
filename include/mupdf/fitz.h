@@ -51,6 +51,8 @@
 
 #include "mupdf/fitz/write-document.h"
 
+#include "mupdf/fitz/util.h"
+
 /* Output formats */
 #include "mupdf/fitz/output-pnm.h"
 #include "mupdf/fitz/output-png.h"

@@ -88,4 +88,9 @@ fz_display_list *fz_keep_display_list(fz_context *ctx, fz_display_list *list);
 */
 void fz_drop_display_list(fz_context *ctx, fz_display_list *list);
 
+/*
+	fz_bound_display_list: Return the bounding box of the pages recorded in a display list.
+*/
+fz_rect *fz_bound_display_list(fz_context *ctx, fz_display_list *list, fz_rect *bounds);
+
 #endif
