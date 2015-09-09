@@ -215,32 +215,21 @@ void render_page(int pagenumber, float zoom, float rotate)
 {
 	fz_page *page;
 	fz_matrix ctm;
-	fz_rect bounds;
-	fz_irect ibounds;
 	fz_pixmap *pix;
-	fz_device *dev;
 
 	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
 
 	page = fz_load_page(ctx, doc, pagenumber);
-	fz_bound_page(ctx, page, &bounds);
-	fz_transform_rect(&bounds, &ctm);
-	fz_round_rect(&ibounds, &bounds);
 
 	fz_drop_link(ctx, links);
 	links = NULL;
 	links = fz_load_links(ctx, page);
 
-	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &ibounds);
-	fz_clear_pixmap_with_value(ctx, pix, 0xff);
-	dev = fz_new_draw_device(ctx, pix);
-	fz_run_page(ctx, page, dev, &ctm, NULL);
-	fz_drop_device(ctx, dev);
-
+	pix = fz_new_pixmap_from_page(ctx, page, &ctm, fz_device_rgb(ctx));
 	texture_from_pixmap(&page_tex, pix);
-
 	fz_drop_pixmap(ctx, pix);
+
 	fz_drop_page(ctx, page);
 }
 
@@ -301,102 +290,32 @@ static void pop_future(void)
 	push_history();
 }
 
-void do_search_page(int number, char *needle, fz_cookie *cookie)
+static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs, float zoom, float rotate)
 {
-	fz_page *page = fz_load_page(ctx, doc, number);
-
-	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
-	fz_text_page *text = fz_new_text_page(ctx);
-	fz_device *dev = fz_new_text_device(ctx, sheet, text);
-	fz_run_page(ctx, page, dev, &fz_identity, cookie);
-	fz_drop_device(ctx, dev);
-
-	search_hit_count = fz_search_text_page(ctx, text, needle, search_hit_bbox, nelem(search_hit_bbox));
-
-	fz_drop_text_page(ctx, text);
-	fz_drop_text_sheet(ctx, sheet);
-	fz_drop_page(ctx, page);
-}
-
-static void do_copy_region(fz_rect *sel, int xofs, int yofs, float zoom, float rotate)
-{
-	fz_rect hitbox;
-	fz_matrix ctm;
-	int c, i, need_newline;
-	int block_num;
+	fz_matrix ctm, invctm;
 	fz_buffer *buf;
+	fz_rect page_sel;
 
-	int x0 = sel->x0 - xofs;
-	int y0 = sel->y0 - yofs;
-	int x1 = sel->x1 - xofs;
-	int y1 = sel->y1 - yofs;
+#ifdef _WIN32
+	int newline = '\r';
+#else
+	int newline = '\n';
+#endif
 
-	fz_page *page = fz_load_page(ctx, doc, currentpage);
-	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
-	fz_text_page *text = fz_new_text_page(ctx);
-	fz_device *dev = fz_new_text_device(ctx, sheet, text);
-	fz_run_page(ctx, page, dev, &fz_identity, NULL);
-	fz_drop_device(ctx, dev);
+	page_sel.x0 = screen_sel->x0 - xofs;
+	page_sel.y0 = screen_sel->y0 - yofs;
+	page_sel.x1 = screen_sel->x1 - xofs;
+	page_sel.y1 = screen_sel->y1 - yofs;
 
 	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
+	fz_invert_matrix(&invctm, &ctm);
+	fz_transform_rect(&page_sel, &invctm);
 
-	need_newline = 0;
-
-	buf = fz_new_buffer(ctx, 256);
-
-	for (block_num = 0; block_num < text->len; block_num++)
-	{
-		fz_text_line *line;
-		fz_text_block *block;
-		fz_text_span *span;
-
-		if (text->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
-			continue;
-		block = text->blocks[block_num].u.text;
-
-		for (line = block->lines; line < block->lines + block->len; line++)
-		{
-			int saw_text = 0;
-			for (span = line->first_span; span; span = span->next)
-			{
-				for (i = 0; i < span->len; i++)
-				{
-					fz_text_char_bbox(ctx, &hitbox, span, i);
-					fz_transform_rect(&hitbox, &ctm);
-					c = span->text[i].c;
-					if (c < 32)
-						c = '?';
-					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
-					{
-						saw_text = 1;
-						if (need_newline)
-						{
-#ifdef _WIN32
-							fz_write_buffer_rune(ctx, buf, '\r');
-#endif
-							fz_write_buffer_rune(ctx, buf, '\n');
-							need_newline = 0;
-						}
-						fz_write_buffer_rune(ctx, buf, c);
-					}
-				}
-			}
-
-			if (saw_text)
-				need_newline = 1;
-		}
-	}
-
-	fz_write_buffer_byte(ctx, buf, 0);
-
+	buf = fz_new_buffer_from_page_number(ctx, doc, currentpage, &page_sel, newline);
+	fz_write_buffer_rune(ctx, buf, 0);
 	glfwSetClipboardString(window, (char*)buf->data);
-
 	fz_drop_buffer(ctx, buf);
-
-	fz_drop_text_page(ctx, text);
-	fz_drop_text_sheet(ctx, sheet);
-	fz_drop_page(ctx, page);
 }
 
 static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
@@ -1003,7 +922,8 @@ static void run_main_loop(void)
 
 		while (glfwGetTime() < start_time + 0.2)
 		{
-			do_search_page(search_page, search_needle, NULL);
+			search_hit_count = fz_search_page_number(ctx, doc, search_page, search_needle,
+					search_hit_bbox, nelem(search_hit_bbox));
 			if (search_hit_count)
 			{
 				search_active = 0;
