@@ -300,6 +300,13 @@ void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, const 
 void fz_run_annot(fz_context *ctx, fz_page *page, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 
 /*
+	fz_keep_page: Keep a reference to a loaded page.
+
+	Does not throw exceptions.
+*/
+fz_page *fz_keep_page(fz_context *ctx, fz_page *page);
+
+/*
 	fz_drop_page: Free a loaded page.
 
 	Does not throw exceptions.
