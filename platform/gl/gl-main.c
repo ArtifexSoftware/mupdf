@@ -140,6 +140,7 @@ static int screen_w = 1, screen_h = 1;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
+static fz_matrix page_ctm, page_inv_ctm;
 
 static int isfullscreen = 0;
 static int showoutline = 0;
@@ -217,30 +218,30 @@ void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
 	}
 }
 
-void render_page(int pagenumber, float zoom, float rotate)
+void render_page(void)
 {
 	fz_page *page;
 	fz_annot *annot;
-	fz_matrix ctm;
 	fz_pixmap *pix;
 
-	fz_scale(&ctm, zoom / 72, zoom / 72);
-	fz_pre_rotate(&ctm, -rotate);
+	fz_scale(&page_ctm, currentzoom / 72, currentzoom / 72);
+	fz_pre_rotate(&page_ctm, -currentrotate);
+	fz_invert_matrix(&page_inv_ctm, &page_ctm);
 
-	page = fz_load_page(ctx, doc, pagenumber);
+	page = fz_load_page(ctx, doc, currentpage);
 
 	fz_drop_link(ctx, links);
 	links = NULL;
 	links = fz_load_links(ctx, page);
 
-	pix = fz_new_pixmap_from_page_contents(ctx, page, &ctm, fz_device_rgb(ctx));
+	pix = fz_new_pixmap_from_page_contents(ctx, page, &page_ctm, fz_device_rgb(ctx));
 	texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
 
 	annot_count = 0;
 	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
 	{
-		pix = fz_new_pixmap_from_annot(ctx, page, annot, &ctm, fz_device_rgb(ctx));
+		pix = fz_new_pixmap_from_annot(ctx, page, annot, &page_ctm, fz_device_rgb(ctx));
 		texture_from_pixmap(&annot_tex[annot_count++], pix);
 		fz_drop_pixmap(ctx, pix);
 	}
@@ -305,9 +306,8 @@ static void pop_future(void)
 	push_history();
 }
 
-static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs, float zoom, float rotate)
+static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs)
 {
-	fz_matrix ctm, invctm;
 	fz_buffer *buf;
 	fz_rect page_sel;
 
@@ -317,15 +317,15 @@ static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs, float zoom, 
 	int newline = '\n';
 #endif
 
+	xofs -= page_tex.x;
+	yofs -= page_tex.y;
+
 	page_sel.x0 = screen_sel->x0 - xofs;
 	page_sel.y0 = screen_sel->y0 - yofs;
 	page_sel.x1 = screen_sel->x1 - xofs;
 	page_sel.y1 = screen_sel->y1 - yofs;
 
-	fz_scale(&ctm, zoom / 72, zoom / 72);
-	fz_pre_rotate(&ctm, -rotate);
-	fz_invert_matrix(&invctm, &ctm);
-	fz_transform_rect(&page_sel, &invctm);
+	fz_transform_rect(&page_sel, &page_inv_ctm);
 
 	buf = fz_new_buffer_from_page_number(ctx, doc, currentpage, &page_sel, newline);
 	fz_write_buffer_rune(ctx, buf, 0);
@@ -503,9 +503,8 @@ static void do_outline(fz_outline *node, int outline_w)
 	glDisable(GL_SCISSOR_TEST);
 }
 
-static void do_links(fz_link *link, int xofs, int yofs, float zoom, float rotate)
+static void do_links(fz_link *link, int xofs, int yofs)
 {
-	fz_matrix ctm;
 	fz_rect r;
 	float x, y;
 
@@ -515,16 +514,13 @@ static void do_links(fz_link *link, int xofs, int yofs, float zoom, float rotate
 	xofs -= page_tex.x;
 	yofs -= page_tex.y;
 
-	fz_scale(&ctm, zoom / 72, zoom / 72);
-	fz_pre_rotate(&ctm, -rotate);
-
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
 	while (link)
 	{
 		r = link->rect;
-		fz_transform_rect(&r, &ctm);
+		fz_transform_rect(&r, &page_ctm);
 
 		if (x >= xofs + r.x0 && x < xofs + r.x1 && y >= yofs + r.y0 && y < yofs + r.y1)
 		{
@@ -562,7 +558,7 @@ static void do_links(fz_link *link, int xofs, int yofs, float zoom, float rotate
 	glDisable(GL_BLEND);
 }
 
-static void do_page_selection(int x0, int y0, int x1, int y1, float zoom, float rotate)
+static void do_page_selection(int x0, int y0, int x1, int y1)
 {
 	static fz_rect sel;
 
@@ -593,22 +589,18 @@ static void do_page_selection(int x0, int y0, int x1, int y1, float zoom, float 
 
 	if (ui.active == &sel && !ui.right)
 	{
-		do_copy_region(&sel, x0, y0, zoom, rotate);
+		do_copy_region(&sel, x0, y0);
 		ui_needs_update = 1;
 	}
 }
 
-static void do_search_hits(int xofs, int yofs, float zoom, float rotate)
+static void do_search_hits(int xofs, int yofs)
 {
-	fz_matrix ctm;
 	fz_rect r;
 	int i;
 
 	xofs -= page_tex.x;
 	yofs -= page_tex.y;
-
-	fz_scale(&ctm, zoom / 72, zoom / 72);
-	fz_pre_rotate(&ctm, -rotate);
 
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
@@ -617,7 +609,7 @@ static void do_search_hits(int xofs, int yofs, float zoom, float rotate)
 	{
 		r = search_hit_bbox[i];
 
-		fz_transform_rect(&r, &ctm);
+		fz_transform_rect(&r, &page_ctm);
 
 		glColor4f(1, 0, 0, 0.4f);
 		glRectf(xofs + r.x0, yofs + r.y0, xofs + r.x1, yofs + r.y1);
@@ -851,7 +843,7 @@ static void do_canvas(void)
 
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
 	{
-		render_page(currentpage, currentzoom, currentrotate);
+		render_page();
 		update_title();
 		oldpage = currentpage;
 		oldzoom = currentzoom;
@@ -899,16 +891,16 @@ static void do_canvas(void)
 		y = canvas_y - scroll_y;
 	}
 
-	ui_draw_image(&page_tex, x, y);
+	ui_draw_image(&page_tex, x - page_tex.x, y - page_tex.y);
 	for (i = 0; i < annot_count; ++i)
-		ui_draw_image(&annot_tex[i], x, y);
+		ui_draw_image(&annot_tex[i], x - page_tex.x, y - page_tex.y);
 
 	if (!search_active)
 	{
-		do_links(links, x, y, currentzoom, currentrotate);
-		do_page_selection(x, y, x+page_tex.w, y+page_tex.h, currentzoom, currentrotate);
+		do_links(links, x, y);
+		do_page_selection(x, y, x+page_tex.w, y+page_tex.h);
 		if (search_hit_page == currentpage && search_hit_count > 0)
-			do_search_hits(x, y, currentzoom, currentrotate);
+			do_search_hits(x, y);
 	}
 }
 
@@ -1199,7 +1191,7 @@ int main(int argc, char **argv)
 
 	doc = fz_open_document(ctx, filename);
 
-	render_page(currentpage, currentzoom, currentrotate);
+	render_page();
 	update_title();
 	shrinkwrap();
 
