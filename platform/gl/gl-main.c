@@ -75,6 +75,8 @@ void ogl_assert(fz_context *ctx, const char *msg)
 
 void ui_draw_image(struct texture *tex, float x, float y)
 {
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D, tex->id);
 	glEnable(GL_TEXTURE_2D);
 	glBegin(GL_TRIANGLE_STRIP);
@@ -91,6 +93,7 @@ void ui_draw_image(struct texture *tex, float x, float y)
 	}
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
 }
 
 static const int zoom_list[] = { 18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288 };
@@ -128,6 +131,9 @@ static struct texture page_tex = { 0 };
 static int scroll_x = 0, scroll_y = 0;
 static int canvas_x = 0, canvas_w = 100;
 static int canvas_y = 0, canvas_h = 100;
+
+static struct texture annot_tex[256];
+static int annot_count = 0;
 
 static int screen_w = 1, screen_h = 1;
 
@@ -194,7 +200,7 @@ void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
 	{
 		if (tex->w > max_texture_size || tex->h > max_texture_size)
 			fz_warn(ctx, "texture size (%d x %d) exceeds implementation limit (%d)", tex->w, tex->h, max_texture_size);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, tex->w, tex->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex->w, tex->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
 		tex->s = 1;
 		tex->t = 1;
 	}
@@ -204,7 +210,7 @@ void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
 		int h2 = next_power_of_two(tex->h);
 		if (w2 > max_texture_size || h2 > max_texture_size)
 			fz_warn(ctx, "texture size (%d x %d) exceeds implementation limit (%d)", w2, h2, max_texture_size);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->w, tex->h, GL_RGBA, GL_UNSIGNED_BYTE, pix->samples);
 		tex->s = (float)tex->w / w2;
 		tex->t = (float)tex->h / h2;
@@ -214,6 +220,7 @@ void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
 void render_page(int pagenumber, float zoom, float rotate)
 {
 	fz_page *page;
+	fz_annot *annot;
 	fz_matrix ctm;
 	fz_pixmap *pix;
 
@@ -226,9 +233,17 @@ void render_page(int pagenumber, float zoom, float rotate)
 	links = NULL;
 	links = fz_load_links(ctx, page);
 
-	pix = fz_new_pixmap_from_page(ctx, page, &ctm, fz_device_rgb(ctx));
+	pix = fz_new_pixmap_from_page_contents(ctx, page, &ctm, fz_device_rgb(ctx));
 	texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
+
+	annot_count = 0;
+	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
+	{
+		pix = fz_new_pixmap_from_annot(ctx, page, annot, &ctm, fz_device_rgb(ctx));
+		texture_from_pixmap(&annot_tex[annot_count++], pix);
+		fz_drop_pixmap(ctx, pix);
+	}
 
 	fz_drop_page(ctx, page);
 }
@@ -503,8 +518,8 @@ static void do_links(fz_link *link, int xofs, int yofs, float zoom, float rotate
 	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
 
-	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
 
 	while (link)
 	{
@@ -567,8 +582,8 @@ static void do_page_selection(int x0, int y0, int x1, int y1, float zoom, float 
 		sel.x1 = ui.x;
 		sel.y1 = ui.y;
 
-		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); /* invert destination color */
+		glEnable(GL_BLEND);
 
 		glColor4f(1, 1, 1, 1);
 		glRectf(sel.x0, sel.y0, sel.x1 + 1, sel.y1 + 1);
@@ -595,8 +610,8 @@ static void do_search_hits(int xofs, int yofs, float zoom, float rotate)
 	fz_scale(&ctm, zoom / 72, zoom / 72);
 	fz_pre_rotate(&ctm, -rotate);
 
-	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
 
 	for (i = 0; i < search_hit_count; ++i)
 	{
@@ -832,6 +847,7 @@ static void do_canvas(void)
 	static int saved_ui_y = 0;
 
 	float x, y;
+	int i;
 
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
 	{
@@ -884,6 +900,8 @@ static void do_canvas(void)
 	}
 
 	ui_draw_image(&page_tex, x, y);
+	for (i = 0; i < annot_count; ++i)
+		ui_draw_image(&annot_tex[i], x, y);
 
 	if (!search_active)
 	{
