@@ -286,13 +286,6 @@ xps_draw_one_linear_gradient(fz_context *ctx, xps_document *doc, const fz_matrix
  * reach a reasonable limit for infinite cases.
  */
 
-static inline float point_inside_circle(float px, float py, float x, float y, float r)
-{
-	float dx = px - x;
-	float dy = py - y;
-	return dx * dx + dy * dy <= r * r;
-}
-
 static void
 xps_draw_radial_gradient(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 	struct stop *stops, int count,

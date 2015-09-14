@@ -31,11 +31,6 @@ struct fz_archive_s
 	struct zip_entry *table;
 };
 
-static inline int zip_isdigit(int c)
-{
-	return c >= '0' && c <= '9';
-}
-
 static inline int zip_toupper(int c)
 {
 	if (c >= 'a' && c <= 'z')

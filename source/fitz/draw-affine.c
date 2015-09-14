@@ -3,11 +3,6 @@
 
 typedef unsigned char byte;
 
-static inline float roundup(float x)
-{
-	return (x < 0) ? floorf(x) : ceilf(x);
-}
-
 static inline int lerp(int a, int b, int t)
 {
 	return a + (((b - a) * t) >> 16);
