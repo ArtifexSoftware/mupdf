@@ -188,9 +188,9 @@ fz_read_file(fz_context *ctx, const char *filename)
 
 uint16_t fz_read_uint16(fz_context *ctx, fz_stream *stm)
 {
-	uint16_t a = fz_read_byte(ctx, stm);
-	uint16_t b = fz_read_byte(ctx, stm);
-	uint16_t x = (a<<8) | (b);
+	uint32_t a = fz_read_byte(ctx, stm);
+	uint32_t b = fz_read_byte(ctx, stm);
+	uint32_t x = (a<<8) | (b);
 	if (a == EOF || b == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int16");
 	return x;
@@ -237,9 +237,9 @@ uint64_t fz_read_uint64(fz_context *ctx, fz_stream *stm)
 
 uint16_t fz_read_uint16_le(fz_context *ctx, fz_stream *stm)
 {
-	uint16_t a = fz_read_byte(ctx, stm);
-	uint16_t b = fz_read_byte(ctx, stm);
-	uint16_t x = (a) | (b<<8);
+	uint32_t a = fz_read_byte(ctx, stm);
+	uint32_t b = fz_read_byte(ctx, stm);
+	uint32_t x = (a) | (b<<8);
 	if (a == EOF || b == EOF)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of file in int16");
 	return x;
