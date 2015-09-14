@@ -122,6 +122,7 @@ static int zoom_out(int oldres)
 
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
+static fz_page *page = NULL;
 static fz_outline *outline = NULL;
 static fz_link *links = NULL;
 
@@ -220,13 +221,14 @@ void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
 
 void render_page(void)
 {
-	fz_page *page;
 	fz_annot *annot;
 	fz_pixmap *pix;
 
 	fz_scale(&page_ctm, currentzoom / 72, currentzoom / 72);
 	fz_pre_rotate(&page_ctm, -currentrotate);
 	fz_invert_matrix(&page_inv_ctm, &page_ctm);
+
+	fz_drop_page(ctx, page);
 
 	page = fz_load_page(ctx, doc, currentpage);
 
@@ -246,7 +248,6 @@ void render_page(void)
 		fz_drop_pixmap(ctx, pix);
 	}
 
-	fz_drop_page(ctx, page);
 }
 
 static void push_history(void)
@@ -311,12 +312,6 @@ static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs)
 	fz_buffer *buf;
 	fz_rect page_sel;
 
-#ifdef _WIN32
-	int newline = '\r';
-#else
-	int newline = '\n';
-#endif
-
 	xofs -= page_tex.x;
 	yofs -= page_tex.y;
 
@@ -327,7 +322,11 @@ static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs)
 
 	fz_transform_rect(&page_sel, &page_inv_ctm);
 
-	buf = fz_new_buffer_from_page_number(ctx, doc, currentpage, &page_sel, newline);
+#ifdef _WIN32
+	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 1);
+#else
+	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 0);
+#endif
 	fz_write_buffer_rune(ctx, buf, 0);
 	glfwSetClipboardString(window, (char*)buf->data);
 	fz_drop_buffer(ctx, buf);
@@ -341,17 +340,17 @@ static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
 	ui_draw_string(ctx, x0 + 2, y0 + 2 + ui.baseline, text);
 }
 
-static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, int max)
+static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_size, int max)
 {
 	static float saved_top = 0;
 	static int saved_ui_y = 0;
 	float top;
 
 	int total_h = y1 - y0;
-	int thumb_h = fz_maxi(x1 - x0, total_h * page / max);
+	int thumb_h = fz_maxi(x1 - x0, total_h * page_size / max);
 	int avail_h = total_h - thumb_h;
 
-	max -= page;
+	max -= page_size;
 
 	if (max <= 0)
 	{
@@ -369,12 +368,12 @@ static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page, i
 			if (ui.y < top)
 			{
 				ui.active = "pgdn";
-				*value -= page;
+				*value -= page_size;
 			}
 			else if (ui.y >= top + thumb_h)
 			{
 				ui.active = "pgup";
-				*value += page;
+				*value += page_size;
 			}
 			else
 			{
@@ -1216,6 +1215,7 @@ int main(int argc, char **argv)
 	ui_finish_fonts(ctx);
 
 	fz_drop_link(ctx, links);
+	fz_drop_page(ctx, page);
 	fz_drop_document(ctx, doc);
 	fz_drop_context(ctx);
 
