@@ -1,5 +1,7 @@
 #include "gl-app.h"
 
+#include "mupdf/pdf.h" /* for pdf specifics and forms */
+
 struct ui ui;
 fz_context *ctx = NULL;
 GLFWwindow *window = NULL;
@@ -123,6 +125,7 @@ static int zoom_out(int oldres)
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
 static fz_page *page = NULL;
+static pdf_document *pdf = NULL;
 static fz_outline *outline = NULL;
 static fz_link *links = NULL;
 
@@ -617,6 +620,51 @@ static void do_search_hits(int xofs, int yofs)
 	glDisable(GL_BLEND);
 }
 
+static void do_forms(float xofs, float yofs)
+{
+	pdf_ui_event event;
+	fz_point p;
+	int i;
+
+	for (i = 0; i < annot_count; ++i)
+		ui_draw_image(&annot_tex[i], xofs - page_tex.x, yofs - page_tex.y);
+
+	if (!pdf || search_active)
+		return;
+
+	p.x = xofs - page_tex.x + ui.x;
+	p.y = xofs - page_tex.x + ui.y;
+	fz_transform_point(&p, &page_inv_ctm);
+
+	if (ui.down && !ui.active)
+	{
+		event.etype = PDF_EVENT_TYPE_POINTER;
+		event.event.pointer.pt = p;
+		event.event.pointer.ptype = PDF_POINTER_DOWN;
+		if (pdf_pass_event(ctx, pdf, (pdf_page*)page, &event))
+		{
+			if (pdf->focus)
+				ui.active = do_forms;
+			pdf_update_page(ctx, pdf, (pdf_page*)page);
+			render_page();
+			ui_needs_update = 1;
+		}
+	}
+	else if (ui.active == do_forms && !ui.down)
+	{
+		ui.active = NULL;
+		event.etype = PDF_EVENT_TYPE_POINTER;
+		event.event.pointer.pt = p;
+		event.event.pointer.ptype = PDF_POINTER_UP;
+		if (pdf_pass_event(ctx, pdf, (pdf_page*)page, &event))
+		{
+			pdf_update_page(ctx, pdf, (pdf_page*)page);
+			render_page();
+			ui_needs_update = 1;
+		}
+	}
+}
+
 static void toggle_fullscreen(void)
 {
 #if 0
@@ -838,7 +886,6 @@ static void do_canvas(void)
 	static int saved_ui_y = 0;
 
 	float x, y;
-	int i;
 
 	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
 	{
@@ -891,8 +938,8 @@ static void do_canvas(void)
 	}
 
 	ui_draw_image(&page_tex, x - page_tex.x, y - page_tex.y);
-	for (i = 0; i < annot_count; ++i)
-		ui_draw_image(&annot_tex[i], x - page_tex.x, y - page_tex.y);
+
+	do_forms(x, y);
 
 	if (!search_active)
 	{
@@ -1189,6 +1236,9 @@ int main(int argc, char **argv)
 	ui_init_fonts(ctx, ui.fontsize);
 
 	doc = fz_open_document(ctx, filename);
+	pdf = pdf_specifics(ctx, doc);
+	if (pdf)
+		pdf_enable_js(ctx, pdf);
 
 	render_page();
 	update_title();
