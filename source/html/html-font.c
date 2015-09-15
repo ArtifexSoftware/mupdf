@@ -1,6 +1,7 @@
 #include "mupdf/html.h"
 
 unsigned char *pdf_lookup_builtin_font(fz_context *ctx, const char *name, unsigned int *len);
+unsigned char *pdf_lookup_substitute_cjk_font(fz_context *ctx, int ros, int serif, int wmode, unsigned int *len, int *index);
 
 static const char *font_names[16] =
 {
@@ -34,6 +35,23 @@ fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	return set->fonts[idx];
 }
 
+fz_font *
+fz_load_html_fallback_font(fz_context *ctx, fz_html_font_set *set)
+{
+	if (!set->fallback)
+	{
+		unsigned char *data;
+		unsigned int size;
+		int index;
+
+		data = pdf_lookup_substitute_cjk_font(ctx, FZ_ADOBE_GB_1, 0, 0, &size, &index);
+		if (!data)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load fallback font");
+		set->fallback = fz_new_font_from_memory(ctx, "fallback", data, size, index, 0);
+	}
+	return set->fallback;
+}
+
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx)
 {
 	return fz_malloc_struct(ctx, fz_html_font_set);
@@ -44,5 +62,6 @@ void fz_drop_html_font_set(fz_context *ctx, fz_html_font_set *set)
 	int i;
 	for (i = 0; i < nelem(set->fonts); ++i)
 		fz_drop_font(ctx, set->fonts[i]);
+	fz_drop_font(ctx, set->fallback);
 	fz_free(ctx, set);
 }

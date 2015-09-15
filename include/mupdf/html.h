@@ -21,6 +21,7 @@ typedef struct fz_css_color_s fz_css_color;
 struct fz_html_font_set_s
 {
 	fz_font *fonts[16];
+	fz_font *fallback;
 };
 
 enum
@@ -146,7 +147,7 @@ struct fz_css_style_s
 	fz_css_color background_color;
 	fz_css_color border_color[4];
 	fz_css_color color;
-	fz_font *font;
+	fz_font *font, *fallback;
 };
 
 enum
@@ -208,6 +209,7 @@ float fz_from_css_number_scale(fz_css_number number, float scale, float em, floa
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
 fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	const char *family, const char *variant, const char *style, const char *weight);
+fz_font *fz_load_html_fallback_font(fz_context *ctx, fz_html_font_set *set);
 void fz_drop_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 
 fz_html *fz_parse_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css);

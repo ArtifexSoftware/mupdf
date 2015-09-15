@@ -451,7 +451,15 @@ static void measure_word(fz_context *ctx, fz_html_flow *node, float em)
 	{
 		s += fz_chartorune(&c, s);
 		g = fz_encode_character(ctx, node->style->font, c);
-		w += fz_advance_glyph(ctx, node->style->font, g) * em;
+		if (g)
+		{
+			w += fz_advance_glyph(ctx, node->style->font, g) * em;
+		}
+		else
+		{
+			g = fz_encode_character(ctx, node->style->fallback, c);
+			w += fz_advance_glyph(ctx, node->style->fallback, g) * em;
+		}
 	}
 	node->w = w;
 	node->em = em;
@@ -759,6 +767,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 {
 	fz_html_flow *node;
 	fz_text *text;
+	fz_text *falltext;
 	fz_matrix trm;
 	const char *s;
 	float color[3];
@@ -781,7 +790,13 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 		if (node->type == FLOW_WORD)
 		{
 			fz_scale(&trm, node->em, -node->em);
-			text = fz_new_text(ctx, node->style->font, &trm, 0);
+
+			color[0] = node->style->color.r / 255.0f;
+			color[1] = node->style->color.g / 255.0f;
+			color[2] = node->style->color.b / 255.0f;
+
+			text = NULL;
+			falltext = NULL;
 
 			x = node->x;
 			y = node->y;
@@ -790,17 +805,36 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			{
 				s += fz_chartorune(&c, s);
 				g = fz_encode_character(ctx, node->style->font, c);
-				fz_add_text(ctx, text, g, c, x, y);
-				x += fz_advance_glyph(ctx, node->style->font, g) * node->em;
+				if (g)
+				{
+					if (!text)
+						text = fz_new_text(ctx, node->style->font, &trm, 0);
+					fz_add_text(ctx, text, g, c, x, y);
+					x += fz_advance_glyph(ctx, node->style->font, g) * node->em;
+				}
+				else
+				{
+					g = fz_encode_character(ctx, node->style->fallback, c);
+					if (g)
+					{
+						if (!falltext)
+							falltext = fz_new_text(ctx, node->style->fallback, &trm, 0);
+						fz_add_text(ctx, falltext, g, c, x, y);
+					}
+					x += fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
+				}
 			}
 
-			color[0] = node->style->color.r / 255.0f;
-			color[1] = node->style->color.g / 255.0f;
-			color[2] = node->style->color.b / 255.0f;
-
-			fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
-
-			fz_drop_text(ctx, text);
+			if (text)
+			{
+				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+				fz_drop_text(ctx, text);
+			}
+			if (falltext)
+			{
+				fz_fill_text(ctx, dev, falltext, ctm, fz_device_rgb(ctx), color, 1);
+				fz_drop_text(ctx, falltext);
+			}
 		}
 		else if (node->type == FLOW_IMAGE)
 		{

@@ -1069,6 +1069,7 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		const char *font_style = string_from_property(match, "font-style", "normal");
 		const char *font_weight = string_from_property(match, "font-weight", "normal");
 		style->font = fz_load_html_font(ctx, set, font_family, font_variant, font_style, font_weight);
+		style->fallback = fz_load_html_fallback_font(ctx, set);
 	}
 }
 
