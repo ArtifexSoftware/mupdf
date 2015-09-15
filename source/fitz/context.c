@@ -67,10 +67,8 @@ static void fz_drop_style_context(fz_context *ctx)
 
 void fz_set_user_css(fz_context *ctx, const char *user_css)
 {
-	fz_lock(ctx, FZ_LOCK_ALLOC);
 	fz_free(ctx, ctx->style->user_css);
 	ctx->style->user_css = fz_strdup(ctx, user_css);
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
 const char *fz_user_css(fz_context *ctx)
