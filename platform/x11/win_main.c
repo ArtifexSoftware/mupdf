@@ -1203,6 +1203,7 @@ static void usage(void)
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
+	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
 	exit(1);
 }
 
