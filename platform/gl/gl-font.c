@@ -23,7 +23,7 @@
 #define PADDING 1		/* set to 0 to save some space but disallow arbitrary transforms */
 
 #define MAXGLYPHS 4093	/* prime number for hash table goodness */
-#define CACHESIZE 256
+#define CACHESIZE 1024
 #define XPRECISION 4
 #define YPRECISION 1
 

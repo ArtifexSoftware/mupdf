@@ -475,7 +475,7 @@ static void do_outline(fz_outline *node, int outline_w)
 	int outline_h;
 	int total_h;
 
-	outline_w -= 15;
+	outline_w -= ui.lineheight;
 	outline_h = screen_h;
 	total_h = measure_outline_height(outline);
 
@@ -492,7 +492,7 @@ static void do_outline(fz_outline *node, int outline_w)
 	if (ui.active == id)
 		outline_scroll_y = saved_outline_scroll_y + (saved_ui_y - ui.y) * 5;
 
-	ui_scrollbar(outline_w, 0, outline_w+15, outline_h, &outline_scroll_y, outline_h, total_h);
+	ui_scrollbar(outline_w, 0, outline_w+ui.lineheight, outline_h, &outline_scroll_y, outline_h, total_h);
 
 	glScissor(0, 0, outline_w, outline_h);
 	glEnable(GL_SCISSOR_TEST);
@@ -1018,7 +1018,7 @@ static void run_main_loop(void)
 			showoutline = 0;
 		else
 		{
-			canvas_x = 300;
+			canvas_x = ui.lineheight * 16;
 			canvas_w = screen_w - canvas_x;
 		}
 	}
