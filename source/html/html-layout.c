@@ -852,7 +852,7 @@ static void format_roman_number(fz_context *ctx, char *buf, int size, int n, con
 {
 	int I = n % 10;
 	int X = (n / 10) % 10;
-	int C = (n / 100) % 100;
+	int C = (n / 100) % 10;
 	int M = (n / 1000);
 
 	fz_strlcpy(buf, "", size);
