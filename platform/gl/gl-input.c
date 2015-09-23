@@ -290,7 +290,10 @@ int ui_input(int x0, int y0, int x1, int y1, struct input *input)
 	{
 		ui.hot = input;
 		if (!ui.active && ui.down)
+		{
+			input->p = find_string_location(input->text, input->end, x0 + 2, ui.x);
 			ui.active = input;
+		}
 	}
 
 	if (ui.active == input)
