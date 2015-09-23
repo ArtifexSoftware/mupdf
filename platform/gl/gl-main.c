@@ -481,6 +481,7 @@ static void do_outline(fz_outline *node, int outline_w)
 
 	if (ui.x >= 0 && ui.x < outline_w && ui.y >= 0 && ui.y < outline_h)
 	{
+		ui.hot = id;
 		if (!ui.active && ui.middle)
 		{
 			ui.active = id;
@@ -491,6 +492,9 @@ static void do_outline(fz_outline *node, int outline_w)
 
 	if (ui.active == id)
 		outline_scroll_y = saved_outline_scroll_y + (saved_ui_y - ui.y) * 5;
+
+	if (ui.hot == id)
+		outline_scroll_y -= ui.scroll_y * ui.lineheight * 3;
 
 	ui_scrollbar(outline_w, 0, outline_w+ui.lineheight, outline_h, &outline_scroll_y, outline_h, total_h);
 
@@ -909,6 +913,12 @@ static void do_canvas(void)
 		}
 	}
 
+	if (ui.hot == doc)
+	{
+		scroll_x -= ui.scroll_x * ui.lineheight * 3;
+		scroll_y -= ui.scroll_y * ui.lineheight * 3;
+	}
+
 	if (ui.active == doc)
 	{
 		scroll_x = saved_scroll_x + saved_ui_x - ui.x;
@@ -1149,6 +1159,14 @@ static void on_mouse_motion(GLFWwindow *window, double x, double y)
 	ui_needs_update = 1;
 }
 
+static void on_scroll(GLFWwindow *window, double x, double y)
+{
+	ui.scroll_x = x;
+	ui.scroll_y = y;
+	run_main_loop();
+	ui.scroll_x = ui.scroll_y = 0;
+}
+
 static void on_reshape(GLFWwindow *window, int w, int h)
 {
 	screen_w = w;
@@ -1244,9 +1262,10 @@ int main(int argc, char **argv)
 	update_title();
 	shrinkwrap();
 
+	glfwSetFramebufferSizeCallback(window, on_reshape);
 	glfwSetCursorPosCallback(window, on_mouse_motion);
 	glfwSetMouseButtonCallback(window, on_mouse_button);
-	glfwSetFramebufferSizeCallback(window, on_reshape);
+	glfwSetScrollCallback(window, on_scroll);
 	glfwSetCharModsCallback(window, on_char);
 	glfwSetKeyCallback(window, on_key);
 	glfwSetWindowRefreshCallback(window, on_display);

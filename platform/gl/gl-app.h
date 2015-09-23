@@ -54,6 +54,7 @@ struct ui
 {
 	int x, y;
 	int down, middle, right;
+	int scroll_x, scroll_y;
 	int key, mod;
 
 	void *hot, *active, *focus;
