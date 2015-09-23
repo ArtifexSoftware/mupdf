@@ -701,6 +701,20 @@ static void shrinkwrap(void)
 	glfwSetWindowSize(window, w, h);
 }
 
+static void toggle_outline(void)
+{
+	if (outline)
+	{
+		showoutline = !showoutline;
+		if (showoutline)
+			canvas_x = ui.lineheight * 16;
+		else
+			canvas_x = 0;
+		if (canvas_w == page_tex.w && canvas_h == page_tex.h)
+			shrinkwrap();
+	}
+}
+
 static void auto_zoom_w(void)
 {
 	currentzoom = fz_clamp(currentzoom * canvas_w / (float)page_tex.w, MINRES, MAXRES);
@@ -835,6 +849,7 @@ static void do_app(void)
 			break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
+		case 'o': toggle_outline(); break;
 		case 'W': auto_zoom_w(); break;
 		case 'H': auto_zoom_h(); break;
 		case 'Z': auto_zoom(); break;
@@ -851,7 +866,6 @@ static void do_app(void)
 		case '-': currentzoom = zoom_out(currentzoom); break;
 		case '[': currentrotate += 90; break;
 		case ']': currentrotate -= 90; break;
-		case 'o': showoutline = !showoutline; break;
 		case 'l': showlinks = !showlinks; break;
 		case '/': search_dir = 1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
 		case '?': search_dir = -1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
@@ -1015,23 +1029,8 @@ static void run_main_loop(void)
 
 	do_app();
 
-	canvas_x = 0;
-	canvas_y = 0;
-	canvas_w = screen_w;
-	canvas_h = screen_h;
-
-	if (showoutline)
-	{
-		if (!outline)
-			outline = fz_load_outline(ctx, doc);
-		if (!outline)
-			showoutline = 0;
-		else
-		{
-			canvas_x = ui.lineheight * 16;
-			canvas_w = screen_w - canvas_x;
-		}
-	}
+	canvas_w = screen_w - canvas_x;
+	canvas_h = screen_h - canvas_y;
 
 	do_canvas();
 
@@ -1254,6 +1253,7 @@ int main(int argc, char **argv)
 	ui_init_fonts(ctx, ui.fontsize);
 
 	doc = fz_open_document(ctx, filename);
+	outline = fz_load_outline(ctx, doc);
 	pdf = pdf_specifics(ctx, doc);
 	if (pdf)
 		pdf_enable_js(ctx, pdf);
