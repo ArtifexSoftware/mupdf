@@ -150,6 +150,7 @@ static int isfullscreen = 0;
 static int showoutline = 0;
 static int showlinks = 0;
 static int showsearch = 0;
+static int showinfo = 0;
 
 static int history_count = 0;
 static int history[256];
@@ -790,6 +791,9 @@ static void do_app(void)
 	if (ui.key == KEY_F4 && ui.mod == GLFW_MOD_ALT)
 		exit(0);
 
+	if (ui.down || ui.middle || ui.right || ui.key)
+		showinfo = 0;
+
 	if (!ui.focus && ui.key)
 	{
 		switch (ui.key)
@@ -867,6 +871,7 @@ static void do_app(void)
 		case '[': currentrotate += 90; break;
 		case ']': currentrotate -= 90; break;
 		case 'l': showlinks = !showlinks; break;
+		case 'i': showinfo = !showinfo; break;
 		case '/': search_dir = 1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
 		case '?': search_dir = -1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
 		case KEY_UP: scroll_y -= 10; break;
@@ -893,6 +898,64 @@ static void do_app(void)
 		ui_needs_update = 1;
 
 		ui.key = 0; /* we ate the key event, so zap it */
+	}
+}
+
+static int do_info_line(int x, int y, char *label, char *text)
+{
+	char buf[512];
+	snprintf(buf, sizeof buf, "%s: %s", label, text);
+	ui_draw_string(ctx, x, y, buf);
+	return y + ui.lineheight;
+}
+
+static void do_info(void)
+{
+	char buf[256];
+
+	int x = canvas_x + 4 * ui.lineheight;
+	int y = canvas_y + 4 * ui.lineheight;
+	int w = canvas_w - 8 * ui.lineheight;
+	int h = 7 * ui.lineheight;
+
+	glBegin(GL_TRIANGLE_STRIP);
+	{
+		glColor4f(0.9f, 0.9f, 0.9f, 1.0f);
+		glVertex2f(x, y);
+		glVertex2f(x, y + h);
+		glVertex2f(x + w, y);
+		glVertex2f(x + w, y + h);
+	}
+	glEnd();
+
+	x += ui.lineheight;
+	y += ui.lineheight + ui.baseline;
+
+	glColor4f(0, 0, 0, 1);
+	if (fz_lookup_metadata(ctx, doc, FZ_META_INFO_TITLE, buf, sizeof buf) > 0)
+		y = do_info_line(x, y, "Title", buf);
+	if (fz_lookup_metadata(ctx, doc, FZ_META_INFO_AUTHOR, buf, sizeof buf) > 0)
+		y = do_info_line(x, y, "Author", buf);
+	if (fz_lookup_metadata(ctx, doc, FZ_META_FORMAT, buf, sizeof buf) > 0)
+		y = do_info_line(x, y, "Format", buf);
+	if (fz_lookup_metadata(ctx, doc, FZ_META_ENCRYPTION, buf, sizeof buf) > 0)
+		y = do_info_line(x, y, "Encryption", buf);
+	if (pdf_specifics(ctx, doc))
+	{
+		buf[0] = 0;
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_PRINT))
+			fz_strlcat(buf, "print, ", sizeof buf);
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_COPY))
+			fz_strlcat(buf, "copy, ", sizeof buf);
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_EDIT))
+			fz_strlcat(buf, "edit, ", sizeof buf);
+		if (fz_has_permission(ctx, doc, FZ_PERMISSION_ANNOTATE))
+			fz_strlcat(buf, "annotate, ", sizeof buf);
+		if (strlen(buf) > 2)
+			buf[strlen(buf)-2] = 0;
+		else
+			fz_strlcat(buf, "none", sizeof buf);
+		y = do_info_line(x, y, "Permissions", buf);
 	}
 }
 
@@ -1033,6 +1096,9 @@ static void run_main_loop(void)
 	canvas_h = screen_h - canvas_y;
 
 	do_canvas();
+
+	if (showinfo)
+		do_info();
 
 	if (showoutline)
 		do_outline(outline, canvas_x);
