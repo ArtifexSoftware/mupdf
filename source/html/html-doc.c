@@ -103,6 +103,14 @@ htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 	return (fz_page*)page;
 }
 
+int
+htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+{
+	if (!strcmp(key, "format"))
+		return fz_strlcpy(buf, "XHTML", size);
+	return -1;
+}
+
 static fz_document *
 htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
@@ -140,6 +148,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	doc->super.layout = htdoc_layout;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
+	doc->super.lookup_metadata = htdoc_lookup_metadata;
 
 	doc->zip = fz_open_directory(ctx, dirname);
 	doc->set = fz_new_html_font_set(ctx);

@@ -284,6 +284,14 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	fz_drop_xml(ctx, content_opf);
 }
 
+int
+epub_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
+{
+	if (!strcmp(key, "format"))
+		return fz_strlcpy(buf, "EPUB", size);
+	return -1;
+}
+
 static fz_document *
 epub_init(fz_context *ctx, fz_archive *zip)
 {
@@ -297,6 +305,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	doc->super.layout = epub_layout;
 	doc->super.count_pages = epub_count_pages;
 	doc->super.load_page = epub_load_page;
+	doc->super.lookup_metadata = epub_lookup_metadata;
 
 	fz_try(ctx)
 	{
