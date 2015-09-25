@@ -49,9 +49,18 @@ void fz_var_imp(void *);
 	attention to the man behind the curtain.
 */
 
+/*
+	OK, so you looked behind the curtain, and you're wondering why we use
+	an inline function for fz_trying, rather than doing a bare assignment
+	and test. See bug 696115. Various versions of gcc (depressingly,
+	modern ones) cause problems under optimisation whereby the value
+	returned from setjmp is not written correctly. This causes the rest
+	of the try/catch to behave incorrectly. The use of a function call
+	here suffices to solve it.
+*/
 #define fz_try(ctx) \
 	if (fz_push_try(ctx->error) && \
-		((ctx->error->stack[ctx->error->top].code = fz_setjmp(ctx->error->stack[ctx->error->top].buffer)) == 0))\
+		fz_trying(ctx->error, fz_setjmp(ctx->error->stack[ctx->error->top].buffer)))\
 	{ do {
 
 #define fz_always(ctx) \
@@ -68,6 +77,11 @@ void fz_var_imp(void *);
 	if (ctx->error->stack[ctx->error->top--].code > 1)
 
 int fz_push_try(fz_error_context *ex);
+static inline int fz_trying(fz_error_context *error, int value)
+{
+	error->stack[error->top].code = value;
+	return value == 0;
+}
 FZ_NORETURN void fz_throw(fz_context *, int errcode, const char *, ...) __printflike(3, 4);
 FZ_NORETURN void fz_rethrow(fz_context *);
 FZ_NORETURN void fz_rethrow_message(fz_context *, const char *, ...)  __printflike(2, 3);
