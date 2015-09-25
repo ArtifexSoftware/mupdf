@@ -860,6 +860,7 @@ int mudraw_main(int argc, char **argv)
 	int c;
 	fz_context *ctx;
 	fz_alloc_context alloc_ctx = { NULL, trace_malloc, trace_realloc, trace_free };
+	FILE *my_output = NULL;
 
 	fz_var(doc);
 
@@ -1042,7 +1043,20 @@ int mudraw_main(int argc, char **argv)
 	timing.maxfilename = "";
 
 	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT || output_format == OUT_TRACE)
-		out = fz_new_output_with_file(ctx, stdout, 0);
+	{
+		if (output && output[0] != '-' && *output != 0)
+		{
+			my_output = fopen(output, "w");
+			if (my_output == NULL)
+			{
+				fprintf(stderr, "Failed to open file '%s' for output\n", output);
+				exit(1);
+			}
+		}
+		else
+			my_output = stdout;
+		out = fz_new_output_with_file(ctx, my_output, 0);
+	}
 
 	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 		fz_printf(ctx, out, "<?xml version=\"1.0\"?>\n");
@@ -1149,6 +1163,9 @@ int mudraw_main(int argc, char **argv)
 	fz_drop_text_sheet(ctx, sheet);
 	fz_drop_output(ctx, out);
 	out = NULL;
+
+	if (my_output != NULL && my_output != stdout)
+		fclose(my_output);
 
 	if (showtime && timing.count > 0)
 	{
