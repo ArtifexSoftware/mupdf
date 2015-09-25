@@ -1,5 +1,3 @@
-#include "pdfapp.h"
-
 #ifndef UNICODE
 #define UNICODE
 #endif
@@ -10,6 +8,9 @@
 #include <windows.h>
 #include <commdlg.h>
 #include <shellapi.h>
+
+/* Include pdfapp.h *AFTER* the UNICODE defines */
+#include "pdfapp.h"
 
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL 0x020A
