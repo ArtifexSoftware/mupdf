@@ -458,6 +458,9 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 		}
 
+		if (listlen == 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "no objects found");
+
 		/* make xref reasonable */
 
 		/*
