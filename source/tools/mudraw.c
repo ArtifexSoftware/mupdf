@@ -863,7 +863,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "po:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:U:v")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:U:v")) != -1)
 	{
 		switch (c)
 		{
