@@ -86,7 +86,8 @@ static void throw(fz_error_context *ex)
 {
 	if (ex->top >= 0)
 	{
-		fz_longjmp(ex->stack[ex->top].buffer, ex->stack[ex->top].code + 2);
+		ex->stack[ex->top].code += 2;
+		fz_longjmp(ex->stack[ex->top].buffer, ex->stack[ex->top].code);
 	}
 	else
 	{
@@ -101,23 +102,25 @@ static void throw(fz_error_context *ex)
 	}
 }
 
-int fz_push_try(fz_error_context *ex)
+void fz_push_try(fz_error_context *ex)
 {
-	assert(ex);
 	ex->top++;
 	/* Normal case, get out of here quick */
 	if (ex->top < nelem(ex->stack)-1)
-		return 1; /* We exit here, and the setjmp sets the code to 0 */
+	{
+		ex->stack[ex->top].code = 0;
+		return;
+	}
 	/* We reserve the top slot on the exception stack purely to cope with
 	 * the case when we overflow. If we DO hit this, then we 'throw'
-	 * immediately - returning 0 stops the setjmp happening and takes us
-	 * direct to the always/catch clauses. */
-	assert(ex->top == nelem(ex->stack)-1);
+	 * immediately. */
+	assert(ex->top == nelem(ex->stack));
+	ex->top--;
+	ex->errcode = FZ_ERROR_GENERIC;
 	strcpy(ex->message, "exception stack overflow!");
-	ex->stack[ex->top].code = 2;
 	fprintf(stderr, "error: %s\n", ex->message);
 	LOGE("error: %s\n", ex->message);
-	return 0;
+	throw(ex);
 }
 
 int fz_caught(fz_context *ctx)
