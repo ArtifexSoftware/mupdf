@@ -331,8 +331,8 @@ fz_new_buffer_from_text_page(fz_context *ctx, fz_text_page *text, const fz_rect 
 
 	if (fz_is_infinite_rect(sel))
 	{
-		x0 = y0 = INT_MIN;
-		x1 = y1 = INT_MAX;
+		x0 = y0 = -FLT_MAX;
+		x1 = y1 = FLT_MAX;
 	}
 	else
 	{
@@ -362,8 +362,9 @@ fz_new_buffer_from_text_page(fz_context *ctx, fz_text_page *text, const fz_rect 
 				{
 					for (i = 0; i < span->len; i++)
 					{
+						int c;
 						fz_text_char_bbox(ctx, &hitbox, span, i);
-						int c = span->text[i].c;
+						c = span->text[i].c;
 						if (c < 32)
 							c = '?';
 						if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
