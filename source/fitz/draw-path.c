@@ -594,6 +594,8 @@ fz_add_line_dot(fz_context *ctx, sctx *s, float ax, float ay)
 	float oy = ay;
 	int i;
 
+	if (n < 3)
+		n = 3;
 	for (i = 1; i < n; i++)
 	{
 		float theta = (float)M_PI * 2 * i / n;
