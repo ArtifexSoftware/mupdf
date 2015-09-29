@@ -13,6 +13,7 @@ struct epub_document_s
 	fz_html_font_set *set;
 	int count;
 	epub_chapter *spine;
+	char *dc_title, *dc_creator;
 };
 
 struct epub_chapter_s
@@ -146,6 +147,8 @@ epub_close_document(fz_context *ctx, fz_document *doc_)
 	}
 	fz_drop_archive(ctx, doc->zip);
 	fz_drop_html_font_set(ctx, doc->set);
+	fz_free(ctx, doc->dc_title);
+	fz_free(ctx, doc->dc_creator);
 	fz_free(ctx, doc);
 }
 
@@ -203,6 +206,15 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 	return ch;
 }
 
+static char *
+find_metadata(fz_context *ctx, fz_xml *metadata, char *key)
+{
+	char *text = fz_xml_text(fz_xml_down(fz_xml_find_down(metadata, key)));
+	if (text)
+		return fz_strdup(ctx, text);
+	return NULL;
+}
+
 static void
 epub_parse_header(fz_context *ctx, epub_document *doc)
 {
@@ -210,7 +222,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	fz_buffer *buf;
 	fz_xml *container_xml, *content_opf;
 	fz_xml *container, *rootfiles, *rootfile;
-	fz_xml *package, *manifest, *spine, *itemref;
+	fz_xml *package, *manifest, *spine, *itemref, *metadata;
 	char base_uri[2048];
 	const char *full_path;
 	const char *version;
@@ -252,6 +264,13 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	if (!version || strcmp(version, "2.0"))
 		fz_warn(ctx, "unknown epub version: %s", version ? version : "<none>");
 
+	metadata = fz_xml_find_down(package, "metadata");
+	if (metadata)
+	{
+		doc->dc_title = find_metadata(ctx, metadata, "title");
+		doc->dc_creator = find_metadata(ctx, metadata, "creator");
+	}
+
 	manifest = fz_xml_find_down(package, "manifest");
 	spine = fz_xml_find_down(package, "spine");
 
@@ -287,8 +306,13 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 int
 epub_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
-	if (!strcmp(key, "format"))
+	epub_document *doc = (epub_document*)doc_;
+	if (!strcmp(key, FZ_META_FORMAT))
 		return fz_strlcpy(buf, "EPUB", size);
+	if (!strcmp(key, FZ_META_INFO_TITLE) && doc->dc_title)
+		return fz_strlcpy(buf, doc->dc_title, size);
+	if (!strcmp(key, FZ_META_INFO_AUTHOR) && doc->dc_creator)
+		return fz_strlcpy(buf, doc->dc_creator, size);
 	return -1;
 }
 
