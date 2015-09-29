@@ -1251,6 +1251,17 @@ static void on_error(int error, const char *msg)
 	fprintf(stderr, "gl error %d: %s\n", error, msg);
 }
 
+static void usage(void)
+{
+	fprintf(stderr, "usage: mupdf [options] document [page]\n");
+	fprintf(stderr, "\t-p -\tpassword\n");
+	fprintf(stderr, "\t-r -\tresolution\n");
+	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
+	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
+	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
+	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
+	exit(1);
+}
 
 #ifdef _MSC_VER
 int main_utf8(int argc, char **argv)
@@ -1259,21 +1270,40 @@ int main(int argc, char **argv)
 #endif
 {
 	char filename[2048];
+	char *password = "";
+	float layout_w = 450;
+	float layout_h = 600;
+	float layout_em = 12;
+	char *layout_css = NULL;
+	int c;
 
-	if (argc < 2)
+	while ((c = fz_getopt(argc, argv, "p:r:W:H:S:U:")) != -1)
+	{
+		switch (c)
+		{
+		default: usage(); break;
+		case 'p': password = fz_optarg; break;
+		case 'r': currentzoom = fz_atof(fz_optarg); break;
+		case 'W': layout_w = fz_atof(fz_optarg); break;
+		case 'H': layout_h = fz_atof(fz_optarg); break;
+		case 'S': layout_em = fz_atof(fz_optarg); break;
+		case 'U': layout_css = fz_optarg; break;
+		}
+	}
+
+	if (fz_optind < argc)
+	{
+		fz_strlcpy(filename, argv[fz_optind], sizeof filename);
+	}
+	else
 	{
 #ifdef _WIN32
 		win_install();
 		if (!win_open_file(filename, sizeof filename));
 			exit(0);
 #else
-		fprintf(stderr, "usage: mupdf-gl input.pdf\n");
-		exit(1);
+		usage();
 #endif
-	}
-	else
-	{
-		fz_strlcpy(filename, argv[1], sizeof filename);
 	}
 
 	title = strrchr(filename, '/');
@@ -1308,6 +1338,14 @@ int main(int argc, char **argv)
 	ctx = fz_new_context(NULL, NULL, 0);
 	fz_register_document_handlers(ctx);
 
+	if (layout_css)
+	{
+		fz_buffer *buf = fz_read_file(ctx, layout_css);
+		fz_write_buffer_byte(ctx, buf, 0);
+		fz_set_user_css(ctx, (char*)buf->data);
+		fz_drop_buffer(ctx, buf);
+	}
+
 	has_ARB_texture_non_power_of_two = glfwExtensionSupported("GL_ARB_texture_non_power_of_two");
 	if (!has_ARB_texture_non_power_of_two)
 		fz_warn(ctx, "OpenGL implementation does not support non-power of two texture sizes");
@@ -1321,10 +1359,21 @@ int main(int argc, char **argv)
 	ui_init_fonts(ctx, ui.fontsize);
 
 	doc = fz_open_document(ctx, filename);
+	if (fz_needs_password(ctx, doc))
+	{
+		if (!fz_authenticate_password(ctx, doc, password))
+		{
+			fprintf(stderr, "Invalid password.\n");
+			exit(1);
+		}
+	}
+
 	outline = fz_load_outline(ctx, doc);
 	pdf = pdf_specifics(ctx, doc);
 	if (pdf)
 		pdf_enable_js(ctx, pdf);
+
+	fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 
 	render_page();
 	update_title();
