@@ -104,12 +104,12 @@ void ui_init_fonts(fz_context *ctx, float pixelsize)
 	data = pdf_lookup_builtin_font(ctx, "Times-Roman", &size);
 	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_helvetica);
 	if (code)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load helvetica");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load ui font");
 
 	data = pdf_lookup_substitute_cjk_font(ctx, 0, 0, 0, &size, &index);
 	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_droidsansfallback);
 	if (code)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load droid sans fallback");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load ui fallback font");
 
 	FT_Select_Charmap(g_helvetica, ft_encoding_unicode);
 	FT_Select_Charmap(g_droidsansfallback, ft_encoding_unicode);

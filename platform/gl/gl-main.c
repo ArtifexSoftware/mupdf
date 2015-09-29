@@ -1234,6 +1234,7 @@ static void on_scroll(GLFWwindow *window, double x, double y)
 
 static void on_reshape(GLFWwindow *window, int w, int h)
 {
+	showinfo = 0;
 	screen_w = w;
 	screen_h = h;
 	ui_needs_update = 1;
