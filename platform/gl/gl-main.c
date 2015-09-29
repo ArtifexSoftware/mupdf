@@ -358,6 +358,7 @@ static void ui_scrollbar(int x0, int y0, int x1, int y1, int *value, int page_si
 
 	if (max <= 0)
 	{
+		*value = 0;
 		glColor4f(0.6f, 0.6f, 0.6f, 1.0f);
 		glRectf(x0, y0, x1, y1);
 		return;
