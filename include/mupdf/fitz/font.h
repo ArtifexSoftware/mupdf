@@ -58,7 +58,8 @@ struct fz_font_s
 
 	/* substitute metrics */
 	int width_count;
-	int *width_table; /* in 1000 units */
+	short width_default; /* in 1000 units */
+	short *width_table; /* in 1000 units */
 };
 
 /* common CJK font collections */

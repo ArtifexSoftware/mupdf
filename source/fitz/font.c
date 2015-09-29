@@ -410,7 +410,7 @@ static fz_matrix *
 fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm)
 {
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
-	if (font->ft_substitute && font->width_table && gid < font->width_count /* && font->wmode == 0 */)
+	if (font->ft_substitute && font->width_table /* && font->wmode == 0 */)
 	{
 		FT_Error fterr;
 		int subw;
@@ -430,7 +430,10 @@ fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm
 
 		realw = ((FT_Face)font->ft_face)->glyph->metrics.horiAdvance;
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
-		subw = font->width_table[gid];
+		if (gid < font->width_count)
+			subw = font->width_table[gid];
+		else
+			subw = font->width_default;
 		if (realw)
 			scale = (float) subw / realw;
 		else
@@ -1300,8 +1303,12 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	FT_Fixed adv;
 	int mask;
 
-	if (font->ft_substitute && font->width_table && gid < font->width_count)
-		return font->width_table[gid];
+	if (font->width_table)
+	{
+		if (gid < font->width_count)
+			return font->width_table[gid] / 1000.0f;
+		return font->width_default / 1000.0f;
+	}
 
 	mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
 	/* if (font->wmode)

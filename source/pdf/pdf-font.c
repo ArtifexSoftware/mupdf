@@ -1187,12 +1187,16 @@ pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
 			if (gid > n)
 				n = gid;
 		}
-	};
+	}
 
 	font->width_count = n + 1;
 	font->width_table = fz_malloc_array(ctx, font->width_count, sizeof(int));
 	memset(font->width_table, 0, font->width_count * sizeof(int));
 	fontdesc->size += font->width_count * sizeof(int);
+
+	font->width_default = fontdesc->dhmtx.w;
+	for (i = 0; i < font->width_count; i++)
+		font->width_table[i] = -1;
 
 	for (i = 0; i < fontdesc->hmtx_len; i++)
 	{
@@ -1204,6 +1208,10 @@ pdf_make_width_table(fz_context *ctx, pdf_font_desc *fontdesc)
 				font->width_table[gid] = fz_maxi(fontdesc->hmtx[i].w, font->width_table[gid]);
 		}
 	}
+
+	for (i = 0; i < font->width_count; i++)
+		if (font->width_table[i] == -1)
+			font->width_table[i] = font->width_default;
 }
 
 pdf_font_desc *
@@ -1254,9 +1262,8 @@ pdf_load_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, i
 		fontdesc = pdf_load_simple_font(ctx, doc, dict);
 	}
 
-	/* Save the widths to stretch non-CJK substitute fonts */
-	if (fontdesc->font->ft_substitute && !fontdesc->to_ttf_cmap)
-		pdf_make_width_table(ctx, fontdesc);
+	/* Create glyph width table for stretching substitute fonts and text extraction. */
+	pdf_make_width_table(ctx, fontdesc);
 
 	pdf_store_item(ctx, dict, fontdesc, fontdesc->size);
 
