@@ -2804,7 +2804,7 @@ JNI_FN(MuPDFCore_getNumSepsOnPageInternal)(JNIEnv *env, jobject thiz, int page)
 	for (i = 0; i < NUM_CACHE; i++)
 	{
 		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
-		  break;
+			break;
 	}
 	if (i == NUM_CACHE)
 		return 0;
@@ -2824,7 +2824,7 @@ JNI_FN(MuPDFCore_controlSepOnPageInternal)(JNIEnv *env, jobject thiz, int page, 
 	for (i = 0; i < NUM_CACHE; i++)
 	{
 		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
-		  break;
+			break;
 	}
 	if (i == NUM_CACHE)
 		return;
@@ -2849,7 +2849,7 @@ JNI_FN(MuPDFCore_getSepInternal)(JNIEnv *env, jobject thiz, int page, int sep)
 	for (i = 0; i < NUM_CACHE; i++)
 	{
 		if (glo->pages[i].page != NULL && glo->pages[i].number == page)
-		  break;
+			break;
 	}
 	if (i == NUM_CACHE)
 		return NULL;
