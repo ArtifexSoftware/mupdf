@@ -113,6 +113,45 @@ static void add_flow_image(fz_context *ctx, fz_html *top, fz_css_style *style, f
 	add_flow_glue(ctx, top, style, "", 0);
 }
 
+static int iscjk(int c)
+{
+	if (c >= 0x3200 && c <= 0x9FFF) return 1; /* CJK Blocks */
+	if (c >= 0xFF00 && c <= 0xFFEF) return 1; /* Halfwidth and Fullwidth Forms */
+	return 0;
+}
+
+static int not_at_bol(int cat, int c)
+{
+	if (cat == UCDN_GENERAL_CATEGORY_PF) return 1;
+	if (cat == UCDN_GENERAL_CATEGORY_PE) return 1;
+	if (c == ')' || c == 0xFF09) return 1;
+	if (c == ']' || c == 0xFF3D) return 1;
+	if (c == '}' || c == 0xFF5D) return 1;
+	if (c == '>' || c == 0xFF1E) return 1;
+	if (c == ',' || c == 0xFF0C) return 1;
+	if (c == '.' || c == 0xFF0E) return 1;
+	if (c == ':' || c == 0xFF1A) return 1;
+	if (c == ';' || c == 0xFF1B) return 1;
+	if (c == '?' || c == 0xFF1F) return 1;
+	if (c == '!' || c == 0xFF01) return 1;
+	if (c == '%' || c == 0xFF05) return 1;
+	return 0;
+}
+
+static int not_at_eol(int cat, int c)
+{
+	if (cat == UCDN_GENERAL_CATEGORY_PI) return 1;
+	if (cat == UCDN_GENERAL_CATEGORY_PS) return 1;
+	if (c == '(' || c == 0xFF08) return 1;
+	if (c == '[' || c == 0xFF3B) return 1;
+	if (c == '{' || c == 0xFF5B) return 1;
+	if (c == '<' || c == 0xFF1C) return 1;
+	if (c == '$' || c == 0xFF04) return 1;
+	if (c >= 0xFFE0 || c == 0xFFE1) return 1; /* cent, pound */
+	if (c == 0xFFE5 || c == 0xFFE6) return 1; /* yen, won */
+	return 0;
+}
+
 static void generate_text(fz_context *ctx, fz_html *box, const char *text)
 {
 	fz_html *flow;
@@ -149,10 +188,29 @@ static void generate_text(fz_context *ctx, fz_html *box, const char *text)
 		}
 		else
 		{
-			const char *mark = text++;
+			const char *mark = text;
+			int c, addglue = 0;
 			while (*text && !iswhite(*text))
-				++text;
-			add_flow_word(ctx, flow, &box->style, mark, text);
+			{
+				/* TODO: Unicode Line Breaking Algorithm (UAX #14) */
+				text += fz_chartorune(&c, text);
+				if (iscjk(c))
+				{
+					int cat = ucdn_get_general_category(c);
+					if (addglue && !not_at_bol(cat, c))
+						add_flow_glue(ctx, flow, &box->style, "", 0);
+					add_flow_word(ctx, flow, &box->style, mark, text);
+					if (!not_at_eol(cat, c))
+						addglue = 1;
+					mark = text;
+				}
+				else
+				{
+					addglue = 0;
+				}
+			}
+			if (mark != text)
+				add_flow_word(ctx, flow, &box->style, mark, text);
 		}
 	}
 }
