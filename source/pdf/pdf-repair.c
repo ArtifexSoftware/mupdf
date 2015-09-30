@@ -14,8 +14,21 @@ struct entry
 	int stm_len;
 };
 
+static void add_root(fz_context *ctx, pdf_obj *obj, pdf_obj ***roots, int *num_roots, int *max_roots)
+{
+	if (*num_roots == *max_roots)
+	{
+		int new_max_roots = *max_roots * 2;
+		if (new_max_roots == 0)
+			new_max_roots = 4;
+		*roots = fz_resize_array(ctx, *roots, new_max_roots, sizeof(**roots));
+		*max_roots = new_max_roots;
+	}
+	(*roots)[(*num_roots)++] = pdf_keep_obj(ctx, obj);
+}
+
 int
-pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, fz_off_t *tmpofs)
+pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, fz_off_t *tmpofs, pdf_obj **root)
 {
 	fz_stream *file = doc->file;
 	pdf_token tok;
@@ -37,10 +50,9 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *st
 	{
 		pdf_obj *dict, *obj;
 
-		/* Send NULL xref so we don't try to resolve references */
 		fz_try(ctx)
 		{
-			dict = pdf_parse_dict(ctx, NULL, file, buf);
+			dict = pdf_parse_dict(ctx, doc, file, buf);
 		}
 		fz_catch(ctx)
 		{
@@ -52,24 +64,39 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *st
 			dict = pdf_new_dict(ctx, NULL, 2);
 		}
 
-		if (encrypt && id)
+		/* We must be careful not to try to resolve any indirections
+		 * here. We have just read dict, so we know it to be a non
+		 * indirected dictionary. Before we look at any values that
+		 * we get back from looking up in it, we need to check they
+		 * aren't indirected. */
+
+		if (encrypt || id || root)
 		{
 			obj = pdf_dict_get(ctx, dict, PDF_NAME_Type);
-			if (pdf_name_eq(ctx, obj, PDF_NAME_XRef))
+			if (!pdf_is_indirect(ctx, obj) && pdf_name_eq(ctx, obj, PDF_NAME_XRef))
 			{
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
-				if (obj)
+				if (encrypt)
 				{
-					pdf_drop_obj(ctx, *encrypt);
-					*encrypt = pdf_keep_obj(ctx, obj);
+					obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
+					if (obj)
+					{
+						pdf_drop_obj(ctx, *encrypt);
+						*encrypt = pdf_keep_obj(ctx, obj);
+					}
 				}
 
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
-				if (obj)
+				if (id)
 				{
-					pdf_drop_obj(ctx, *id);
-					*id = pdf_keep_obj(ctx, obj);
+					obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
+					if (obj)
+					{
+						pdf_drop_obj(ctx, *id);
+						*id = pdf_keep_obj(ctx, obj);
+					}
 				}
+
+				if (root)
+					*root = pdf_keep_obj(ctx, pdf_dict_get(ctx, dict, PDF_NAME_Root));
 			}
 		}
 
@@ -80,7 +107,7 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *st
 		if (doc->file_reading_linearly && page)
 		{
 			obj = pdf_dict_get(ctx, dict, PDF_NAME_Type);
-			if (pdf_name_eq(ctx, obj, PDF_NAME_Page))
+			if (!pdf_is_indirect(ctx, obj) && pdf_name_eq(ctx, obj, PDF_NAME_Page))
 			{
 				pdf_drop_obj(ctx, *page);
 				*page = pdf_keep_obj(ctx, dict);
@@ -343,11 +370,19 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 			else if (tok == PDF_TOK_OBJ)
 			{
+				pdf_obj *root = NULL;
+
 				fz_try(ctx)
 				{
 					stm_len = 0;
 					stm_ofs = 0;
-					tok = pdf_repair_obj(ctx, doc, buf, &stm_ofs, &stm_len, &encrypt, &id, NULL, &tmpofs);
+					tok = pdf_repair_obj(ctx, doc, buf, &stm_ofs, &stm_len, &encrypt, &id, NULL, &tmpofs, &root);
+					if (root)
+						add_root(ctx, root, &roots, &num_roots, &max_roots);
+				}
+				fz_always(ctx)
+				{
+					pdf_drop_obj(ctx, root);
 				}
 				fz_catch(ctx)
 				{
@@ -423,17 +458,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 				obj = pdf_dict_get(ctx, dict, PDF_NAME_Root);
 				if (obj)
-				{
-					if (num_roots == max_roots)
-					{
-						int new_max_roots = max_roots * 2;
-						if (new_max_roots == 0)
-							new_max_roots = 4;
-						roots = fz_resize_array(ctx, roots, new_max_roots, sizeof(*roots));
-						max_roots = new_max_roots;
-					}
-					roots[num_roots++] = pdf_keep_obj(ctx, obj);
-				}
+					add_root(ctx, obj, &roots, &num_roots, &max_roots);
 
 				obj = pdf_dict_get(ctx, dict, PDF_NAME_Info);
 				if (obj)
@@ -470,6 +495,18 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		/* Ensure that the first xref table is a 'solid' one from
 		 * 0 to maxnum. */
 		pdf_ensure_solid_xref(ctx, doc, maxnum);
+
+		for (i = 1; i < maxnum; i++)
+		{
+			entry = pdf_get_populating_xref_entry(ctx, doc, i);
+			if (entry->obj != NULL)
+				continue;
+			entry->type = 'f';
+			entry->ofs = 0;
+			entry->gen = 0;
+
+			entry->stm_ofs = 0;
+		}
 
 		for (i = 0; i < listlen; i++)
 		{
