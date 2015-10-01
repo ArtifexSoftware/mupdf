@@ -138,6 +138,26 @@ AR = x86_64-w64-mingw32-ar
 CROSSCOMPILE=yes
 endif
 
+ifeq "$(OS)" "pnacl-cross"
+VALID_TOOLCHAINS := pnacl
+TARGET = mupdf
+include $(NACL_SDK_ROOT)/tools/common.mk
+CC = $(PNACL_CC)
+CXX = $(PNACL_CXX)
+LD = $(PNACL_LD)
+AR = $(PNACL_LIB)
+CFLAGS += -D__NACL__
+CROSSCOMPILE=yes
+
+# Don't install libjpeg, libz, or libfreetype, since these are already
+# provided by naclports and the versions compiled here cause problems
+# with nacl.
+install-nacl-libs: $(OUT)/libmupdf.a $(OUT)/libmujs.a $(OUT)/libjbig2dec.a $(OUT)/libopenjpeg.a
+	install -d $(LIBDIR)/$(TOOLCHAIN)/$(CONFIG)/
+	install $(OUT)/libmupdf.a $(OUT)/libmujs.a $(OUT)/libjbig2dec.a $(OUT)/libopenjpeg.a $(LIBDIR)/$(TOOLCHAIN)/$(CONFIG)/
+endif
+
+
 # Most variables when building for iOS are set up in ios/build_libs.sh,
 # which is called from the Xcode project as a "Run Script" build step.
 # The following section works for both device and simulator builds.

@@ -37,3 +37,5 @@ platform/android/.classpath
 platform/android/.project
 platform/android/.settings
 docs/browse
+include/mupdf/pdf/name-table.h
+source/pdf/pdf-name-table.h
