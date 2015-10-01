@@ -95,8 +95,13 @@ lex_number(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf, int c)
 		case '.':
 			goto loop_after_dot;
 		case RANGE_0_9:
+			/* We deliberately ignore overflow here. We tried
+			 * code that returned INT_MIN/MAX as appropriate,
+			 * but this causes loss of data (see Bug695950.pdf
+			 * for an example). Tests show that Acrobat handles
+			 * overflows in exactly the same way we do (i.e.
+			 * 123450000000000000000678 is read as 678). */
 			i = 10*i + c - '0';
-			/* FIXME: Need overflow check here; do we care? */
 			break;
 		default:
 			fz_unread_byte(ctx, f);

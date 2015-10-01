@@ -577,7 +577,11 @@ pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 				i ++;
 			doc->startxref = 0;
 			while (i < n && buf[i] >= '0' && buf[i] <= '9')
+			{
+				if (doc->startxref >= FZ_OFF_MAX/10)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "startxref too large");
 				doc->startxref = doc->startxref * 10 + (buf[i++] - '0');
+			}
 			if (doc->startxref != 0)
 				return;
 			break;
