@@ -13,11 +13,13 @@ struct epub_document_s
 	fz_html_font_set *set;
 	int count;
 	epub_chapter *spine;
+	fz_outline *outline;
 	char *dc_title, *dc_creator;
 };
 
 struct epub_chapter_s
 {
+	char *path;
 	int start;
 	float page_w, page_h, em;
 	float page_margin[4];
@@ -33,14 +35,39 @@ struct epub_page_s
 };
 
 static void
+epub_update_link_dests(fz_context *ctx, epub_document *doc, fz_outline *node)
+{
+	epub_chapter *ch;
+
+	while (node)
+	{
+		if (node->dest.kind == FZ_LINK_GOTO)
+		{
+			for (ch = doc->spine; ch; ch = ch->next)
+			{
+				if (!strcmp(ch->path, node->dest.ld.gotor.dest))
+				{
+					node->dest.ld.gotor.page = ch->start;
+					break;
+				}
+			}
+		}
+		epub_update_link_dests(ctx, doc, node->down);
+		node = node->next;
+	}
+}
+
+static void
 epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 {
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
+	int count = 0;
 
 	printf("epub: laying out chapters.\n");
 	for (ch = doc->spine; ch; ch = ch->next)
 	{
+		ch->start = count;
 		ch->em = em;
 		ch->page_margin[T] = fz_from_css_number(ch->box->style.margin[T], em, em);
 		ch->page_margin[B] = fz_from_css_number(ch->box->style.margin[B], em, em);
@@ -49,7 +76,11 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 		ch->page_w = w - ch->page_margin[L] - ch->page_margin[R];
 		ch->page_h = h - ch->page_margin[T] - ch->page_margin[B];
 		fz_layout_html(ctx, ch->box, ch->page_w, ch->page_h, ch->em);
+		count += ceilf(ch->box->h / ch->page_h);
 	}
+
+	epub_update_link_dests(ctx, doc, doc->outline);
+
 	printf("epub: done.\n");
 }
 
@@ -142,6 +173,7 @@ epub_close_document(fz_context *ctx, fz_document *doc_)
 	{
 		next = ch->next;
 		fz_drop_html(ctx, ch->box);
+		fz_free(ctx, ch->path);
 		fz_free(ctx, ch);
 		ch = next;
 	}
@@ -198,12 +230,75 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 	fz_write_buffer_byte(ctx, buf, 0);
 
 	ch = fz_malloc_struct(ctx, epub_chapter);
+	ch->path = fz_strdup(ctx, path);
 	ch->box = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx));
 	ch->next = NULL;
 
 	fz_drop_buffer(ctx, buf);
 
 	return ch;
+}
+
+static fz_outline *
+epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base_uri)
+{
+	fz_outline *outline, *head, *tail;
+	char path[2048], *s;
+
+	head = NULL;
+
+	node = fz_xml_find_down(node, "navPoint");
+	while (node)
+	{
+		char *text = fz_xml_text(fz_xml_down(fz_xml_find_down(fz_xml_find_down(node, "navLabel"), "text")));
+		char *content = fz_xml_att(fz_xml_find_down(node, "content"), "src");
+		if (text && content)
+		{
+			fz_strlcpy(path, base_uri, sizeof path);
+			fz_strlcat(path, "/", sizeof path);
+			fz_strlcat(path, content, sizeof path);
+			fz_urldecode(path);
+			fz_cleanname(path);
+			s = strchr(path, '#');
+			if (s)
+				*s = 0;
+
+			outline = fz_new_outline(ctx);
+			outline->title = fz_strdup(ctx, text);
+			outline->dest.kind = FZ_LINK_GOTO;
+			outline->dest.ld.gotor.dest = fz_strdup(ctx, path);
+			outline->dest.ld.gotor.page = 0; /* computed in epub_layout */
+			outline->down = epub_parse_ncx_imp(ctx, doc, node, base_uri);
+
+			if (!head)
+				head = tail = outline;
+			else
+				tail = tail->next = outline;
+		}
+		node = fz_xml_find_next(node, "navPoint");
+	}
+
+	return head;
+}
+
+static void
+epub_parse_ncx(fz_context *ctx, epub_document *doc, const char *path)
+{
+	fz_archive *zip = doc->zip;
+	fz_buffer *buf;
+	fz_xml *ncx;
+	char base_uri[2048];
+
+	fz_dirname(base_uri, path, sizeof base_uri);
+
+	buf = fz_read_archive_entry(ctx, zip, path);
+	fz_write_buffer_byte(ctx, buf, 0);
+	ncx = fz_parse_xml(ctx, buf->data, buf->len, 0);
+	fz_drop_buffer(ctx, buf);
+
+	doc->outline = epub_parse_ncx_imp(ctx, doc, fz_xml_find_down(ncx, "navMap"), base_uri);
+
+	fz_drop_xml(ctx, ncx);
 }
 
 static char *
@@ -276,8 +371,8 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 
 	if (path_from_idref(ncx, manifest, base_uri, fz_xml_att(spine, "toc"), sizeof ncx))
 	{
-		/* TODO: parse NCX to create fz_outline */
 		printf("epub: found outline: %s\n", ncx);
+		epub_parse_ncx(ctx, doc, ncx);
 	}
 
 	head = tail = NULL;
@@ -303,7 +398,14 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	fz_drop_xml(ctx, content_opf);
 }
 
-int
+static fz_outline *
+epub_load_outline(fz_context *ctx, fz_document *doc_)
+{
+	epub_document *doc = (epub_document*)doc_;
+	return fz_keep_outline(ctx, doc->outline);
+}
+
+static int
 epub_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
 	epub_document *doc = (epub_document*)doc_;
@@ -327,6 +429,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 
 	doc->super.close = epub_close_document;
 	doc->super.layout = epub_layout;
+	doc->super.load_outline = epub_load_outline;
 	doc->super.count_pages = epub_count_pages;
 	doc->super.load_page = epub_load_page;
 	doc->super.lookup_metadata = epub_lookup_metadata;
