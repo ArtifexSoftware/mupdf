@@ -137,6 +137,7 @@ xps_add_link(fz_context *ctx, xps_document *doc, const fz_rect *area, char *base
 			dest.ld.gotor.page = target->page;
 			dest.ld.gotor.file_spec = NULL;
 			dest.ld.gotor.new_window = 0;
+			dest.ld.gotor.dest = NULL;
 		}
 
 		link = fz_new_link(ctx, area, dest);
