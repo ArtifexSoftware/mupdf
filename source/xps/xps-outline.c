@@ -30,7 +30,7 @@ xps_parse_document_outline(fz_context *ctx, xps_document *doc, fz_xml *root)
 			if (!target || !description)
 				continue;
 
-			entry = fz_malloc_struct(ctx, fz_outline);
+			entry = fz_new_outline(ctx);
 			entry->title = fz_strdup(ctx, description);
 			entry->dest.kind = FZ_LINK_GOTO;
 			entry->dest.ld.gotor.flags = 0;

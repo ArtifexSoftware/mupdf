@@ -1,9 +1,23 @@
 #include "mupdf/fitz.h"
 
+fz_outline *
+fz_new_outline(fz_context *ctx)
+{
+	fz_outline *outline = fz_malloc_struct(ctx, fz_outline);
+	outline->refs = 1;
+	return outline;
+}
+
+fz_outline *
+fz_keep_outline(fz_context *ctx, fz_outline *outline)
+{
+	return fz_keep_imp(ctx, outline, &outline->refs);
+}
+
 void
 fz_drop_outline(fz_context *ctx, fz_outline *outline)
 {
-	while (outline)
+	while (fz_drop_imp(ctx, outline, &outline->refs))
 	{
 		fz_outline *next = outline->next;
 		fz_drop_outline(ctx, outline->down);

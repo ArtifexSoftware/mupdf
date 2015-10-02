@@ -18,12 +18,7 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		{
 			if (pdf_mark_obj(ctx, dict))
 				break;
-			node = fz_malloc_struct(ctx, fz_outline);
-			node->title = NULL;
-			node->dest.kind = FZ_LINK_NONE;
-			node->down = NULL;
-			node->next = NULL;
-			node->is_open = 0;
+			node = fz_new_outline(ctx);
 			*prev = node;
 			prev = &node->next;
 

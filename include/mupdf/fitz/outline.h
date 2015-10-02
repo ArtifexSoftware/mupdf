@@ -30,6 +30,7 @@ typedef struct fz_outline_s fz_outline;
 
 struct fz_outline_s
 {
+	int refs;
 	char *title;
 	fz_link_dest dest;
 	fz_outline *next;
@@ -37,31 +38,14 @@ struct fz_outline_s
 	int is_open;
 };
 
-/*
-	fz_print_outline_xml: Dump the given outlines as (pseudo) XML.
-
-	out: The file handle to output to.
-
-	outline: The outlines to output.
-*/
+/* fz_print_outline_xml: Print an outline to 'out' as XML. */
 void fz_print_outline_xml(fz_context *ctx, fz_output *out, fz_outline *outline);
 
-/*
-	fz_print_outline: Dump the given outlines to as text.
-
-	out: The file handle to output to.
-
-	outline: The outlines to output.
-*/
+/* fz_print_outline: Print an outline to 'out' is plain text. */
 void fz_print_outline(fz_context *ctx, fz_output *out, fz_outline *outline);
 
-/*
-	fz_drop_outline: Free hierarchical outline.
-
-	Free an outline obtained from fz_load_outline.
-
-	Does not throw exceptions.
-*/
+fz_outline *fz_new_outline(fz_context *ctx);
+fz_outline *fz_keep_outline(fz_context *ctx, fz_outline *outline);
 void fz_drop_outline(fz_context *ctx, fz_outline *outline);
 
 #endif
