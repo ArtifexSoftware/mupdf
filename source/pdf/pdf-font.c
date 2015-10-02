@@ -218,6 +218,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontnam
 	}
 
 	fontdesc->font->ft_substitute = 1;
+	fontdesc->font->ft_stretch = 1;
 }
 
 static void
@@ -239,6 +240,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fon
 	}
 
 	fontdesc->font->ft_substitute = 1;
+	fontdesc->font->ft_stretch = 0;
 }
 
 static void

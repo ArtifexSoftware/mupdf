@@ -410,7 +410,7 @@ static fz_matrix *
 fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm)
 {
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
-	if (font->ft_substitute && font->width_table /* && font->wmode == 0 */)
+	if (font->ft_stretch && font->width_table /* && font->wmode == 0 */)
 	{
 		FT_Error fterr;
 		int subw;
