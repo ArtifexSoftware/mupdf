@@ -716,11 +716,7 @@ xps_parse_path_geometry(fz_context *ctx, xps_document *doc, xps_resource *dict, 
 			*fill_rule = 0;
 	}
 
-	transform = fz_identity;
-	if (transform_att)
-		xps_parse_render_transform(ctx, doc, transform_att, &transform);
-	if (transform_tag)
-		xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
+	xps_parse_transform(ctx, doc, transform_att, transform_tag, &transform, &fz_identity);
 
 	if (figures_att)
 		path = xps_parse_abbreviated_geometry(ctx, doc, figures_att, fill_rule);
@@ -817,7 +813,6 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 	char *navigate_uri_att;
 
 	fz_stroke_state *stroke = NULL;
-	fz_matrix transform;
 	float samples[FZ_MAX_COLORS];
 	fz_colorspace *colorspace;
 	fz_path *path = NULL;
@@ -967,12 +962,7 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 		}
 	}
 
-	transform = fz_identity;
-	if (transform_att)
-		xps_parse_render_transform(ctx, doc, transform_att, &transform);
-	if (transform_tag)
-		xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
-	fz_concat(&local_ctm, &transform, ctm);
+	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
 
 	if (clip_att || clip_tag)
 		xps_clip(ctx, doc, &local_ctm, dict, clip_att, clip_tag);

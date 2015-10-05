@@ -130,7 +130,7 @@ xps_end_opacity(fz_context *ctx, xps_document *doc, char *base_uri, xps_resource
 	}
 }
 
-void
+static void
 xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *transform, fz_matrix *matrix)
 {
 	float args[6];
@@ -155,7 +155,7 @@ xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *transform, 
 	matrix->e = args[4]; matrix->f = args[5];
 }
 
-void
+static void
 xps_parse_matrix_transform(fz_context *ctx, xps_document *doc, fz_xml *root, fz_matrix *matrix)
 {
 	char *transform;
@@ -168,6 +168,17 @@ xps_parse_matrix_transform(fz_context *ctx, xps_document *doc, fz_xml *root, fz_
 		if (transform)
 			xps_parse_render_transform(ctx, doc, transform, matrix);
 	}
+}
+
+void
+xps_parse_transform(fz_context *ctx, xps_document *doc, char *att, fz_xml *tag, fz_matrix *transform, const fz_matrix *ctm)
+{
+	*transform = fz_identity;
+	if (att)
+		xps_parse_render_transform(ctx, doc, att, transform);
+	if (tag)
+		xps_parse_matrix_transform(ctx, doc, tag, transform);
+	fz_concat(transform, transform, ctm);
 }
 
 void

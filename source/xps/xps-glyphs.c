@@ -423,7 +423,7 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	fz_text *text;
 	fz_rect area;
 
-	fz_matrix local_ctm = *ctm;
+	fz_matrix local_ctm;
 
 	/*
 	 * Extract attributes and extended attributes.
@@ -563,15 +563,7 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	 * Set up graphics state.
 	 */
 
-	if (transform_att || transform_tag)
-	{
-		fz_matrix transform;
-		if (transform_att)
-			xps_parse_render_transform(ctx, doc, transform_att, &transform);
-		if (transform_tag)
-			xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
-		fz_concat(&local_ctm, &transform, &local_ctm);
-	}
+	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
 
 	if (clip_att || clip_tag)
 		xps_clip(ctx, doc, &local_ctm, dict, clip_att, clip_tag);

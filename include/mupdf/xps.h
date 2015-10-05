@@ -193,8 +193,7 @@ void xps_parse_radial_gradient_brush(fz_context *ctx, xps_document *doc, const f
 
 void xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, fz_xml *root, void(*func)(fz_context *ctx, xps_document*, const fz_matrix *, const fz_rect *, char*, xps_resource*, fz_xml*, void*), void *user);
 
-void xps_parse_matrix_transform(fz_context *ctx, xps_document *doc, fz_xml *root, fz_matrix *matrix);
-void xps_parse_render_transform(fz_context *ctx, xps_document *doc, char *text, fz_matrix *matrix);
+void xps_parse_transform(fz_context *ctx, xps_document *doc, char *att, fz_xml *tag, fz_matrix *new_ctm, const fz_matrix *ctm);
 void xps_parse_rectangle(fz_context *ctx, xps_document *doc, char *text, fz_rect *rect);
 
 void xps_begin_opacity(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area, char *base_uri, xps_resource *dict, char *opacity_att, fz_xml *opacity_mask_tag);

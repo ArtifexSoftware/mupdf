@@ -449,7 +449,7 @@ xps_parse_gradient_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ct
 
 	struct stop stop_list[MAX_STOPS];
 	int stop_count;
-	fz_matrix transform;
+	fz_matrix local_ctm;
 	int spread_method;
 
 	opacity_att = fz_xml_att(root, "Opacity");
@@ -481,12 +481,7 @@ xps_parse_gradient_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ct
 			spread_method = SPREAD_REPEAT;
 	}
 
-	transform = fz_identity;
-	if (transform_att)
-		xps_parse_render_transform(ctx, doc, transform_att, &transform);
-	if (transform_tag)
-		xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
-	fz_concat(&transform, &transform, ctm);
+	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
 
 	if (!stop_tag) {
 		fz_warn(ctx, "missing gradient stops tag");
@@ -500,9 +495,9 @@ xps_parse_gradient_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ct
 		return;
 	}
 
-	xps_begin_opacity(ctx, doc, &transform, area, base_uri, dict, opacity_att, NULL);
+	xps_begin_opacity(ctx, doc, &local_ctm, area, base_uri, dict, opacity_att, NULL);
 
-	draw(ctx, doc, &transform, area, stop_list, stop_count, root, spread_method);
+	draw(ctx, doc, &local_ctm, area, stop_list, stop_count, root, spread_method);
 
 	xps_end_opacity(ctx, doc, base_uri, dict, opacity_att, NULL);
 }

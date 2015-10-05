@@ -81,7 +81,7 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 	fz_xml *transform_tag = NULL;
 
-	fz_matrix transform;
+	fz_matrix local_ctm;
 	fz_rect viewbox;
 	fz_rect viewport;
 	float xstep, ystep;
@@ -110,12 +110,7 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 	xps_resolve_resource_reference(ctx, doc, dict, &transform_att, &transform_tag, NULL);
 
-	transform = fz_identity;
-	if (transform_att)
-		xps_parse_render_transform(ctx, doc, transform_att, &transform);
-	if (transform_tag)
-		xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
-	fz_concat(&transform, &transform, ctm);
+	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
 
 	viewbox = fz_unit_rect;
 	if (viewbox_att)
@@ -162,18 +157,18 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	if (tile_mode == TILE_FLIP_Y || tile_mode == TILE_FLIP_X_Y)
 		ystep *= 2;
 
-	xps_begin_opacity(ctx, doc, &transform, area, base_uri, dict, opacity_att, NULL);
+	xps_begin_opacity(ctx, doc, &local_ctm, area, base_uri, dict, opacity_att, NULL);
 
-	fz_pre_translate(&transform, viewport.x0, viewport.y0);
-	fz_pre_scale(&transform, xscale, yscale);
-	fz_pre_translate(&transform, -viewbox.x0, -viewbox.y0);
+	fz_pre_translate(&local_ctm, viewport.x0, viewport.y0);
+	fz_pre_scale(&local_ctm, xscale, yscale);
+	fz_pre_translate(&local_ctm, -viewbox.x0, -viewbox.y0);
 
 	if (tile_mode != TILE_NONE)
 	{
 		int x0, y0, x1, y1;
 		fz_matrix invctm;
 		fz_rect local_area = *area;
-		fz_transform_rect(&local_area, fz_invert_matrix(&invctm, &transform));
+		fz_transform_rect(&local_area, fz_invert_matrix(&invctm, &local_ctm));
 		x0 = floorf(local_area.x0 / xstep);
 		y0 = floorf(local_area.y0 / ystep);
 		x1 = ceilf(local_area.x1 / xstep);
@@ -188,8 +183,8 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			fz_rect bigview = viewbox;
 			bigview.x1 = bigview.x0 + xstep;
 			bigview.y1 = bigview.y0 + ystep;
-			fz_begin_tile(ctx, dev, &local_area, &bigview, xstep, ystep, &transform);
-			xps_paint_tiling_brush(ctx, doc, &transform, &viewbox, tile_mode, &c);
+			fz_begin_tile(ctx, dev, &local_area, &bigview, xstep, ystep, &local_ctm);
+			xps_paint_tiling_brush(ctx, doc, &local_ctm, &viewbox, tile_mode, &c);
 			fz_end_tile(ctx, dev);
 		}
 		else
@@ -199,7 +194,7 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			{
 				for (x = x0; x < x1; x++)
 				{
-					fz_matrix ttm = transform;
+					fz_matrix ttm = local_ctm;
 					fz_pre_translate(&ttm, xstep * x, ystep * y);
 					xps_paint_tiling_brush(ctx, doc, &ttm, &viewbox, tile_mode, &c);
 				}
@@ -208,7 +203,7 @@ xps_parse_tiling_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	}
 	else
 	{
-		xps_paint_tiling_brush(ctx, doc, &transform, &viewbox, tile_mode, &c);
+		xps_paint_tiling_brush(ctx, doc, &local_ctm, &viewbox, tile_mode, &c);
 	}
 
 	xps_end_opacity(ctx, doc, base_uri, dict, opacity_att, NULL);
@@ -267,7 +262,7 @@ xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const
 	fz_xml *clip_tag = NULL;
 	fz_xml *opacity_mask_tag = NULL;
 
-	fz_matrix transform;
+	fz_matrix local_ctm;
 
 	transform_att = fz_xml_att(root, "RenderTransform");
 	clip_att = fz_xml_att(root, "Clip");
@@ -307,25 +302,18 @@ xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const
 	xps_resolve_resource_reference(ctx, doc, dict, &clip_att, &clip_tag, NULL);
 	xps_resolve_resource_reference(ctx, doc, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
 
-	transform = fz_identity;
-	if (transform_att)
-		xps_parse_render_transform(ctx, doc, transform_att, &transform);
-	if (transform_tag)
-		xps_parse_matrix_transform(ctx, doc, transform_tag, &transform);
-	fz_concat(&transform, &transform, ctm);
+	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
 
 	if (navigate_uri_att)
 		xps_add_link(ctx, doc, area, base_uri, navigate_uri_att);
 
 	if (clip_att || clip_tag)
-		xps_clip(ctx, doc, &transform, dict, clip_att, clip_tag);
+		xps_clip(ctx, doc, &local_ctm, dict, clip_att, clip_tag);
 
-	xps_begin_opacity(ctx, doc, &transform, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+	xps_begin_opacity(ctx, doc, &local_ctm, area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
-	{
-		xps_parse_element(ctx, doc, &transform, area, base_uri, dict, node);
-	}
+		xps_parse_element(ctx, doc, &local_ctm, area, base_uri, dict, node);
 
 	xps_end_opacity(ctx, doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 
