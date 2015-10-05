@@ -214,7 +214,7 @@ xps_draw_arc(fz_context *ctx, xps_document *doc, fz_path *path,
  * build up a path.
  */
 
-static fz_path *
+fz_path *
 xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, int *fill_rule)
 {
 	fz_path *path;

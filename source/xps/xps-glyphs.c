@@ -69,7 +69,7 @@ xps_measure_font_glyph(fz_context *ctx, xps_document *doc, fz_font *font, int gi
 }
 
 static fz_font *
-xps_lookup_font(fz_context *ctx, xps_document *doc, char *name)
+xps_lookup_font_imp(fz_context *ctx, xps_document *doc, char *name)
 {
 	xps_font_cache *cache;
 	for (cache = doc->font_table; cache; cache = cache->next)
@@ -168,6 +168,90 @@ xps_select_best_font_encoding(fz_context *ctx, xps_document *doc, fz_font *font)
 	fz_warn(ctx, "cannot find a suitable cmap");
 }
 
+fz_font *
+xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_uri, char *style_att)
+{
+	char partname[1024];
+	char fakename[1024];
+	char *subfont;
+	int subfontid = 0;
+	xps_part *part;
+	fz_font *font;
+
+	xps_resolve_url(ctx, doc, partname, base_uri, font_uri, sizeof partname);
+	subfont = strrchr(partname, '#');
+	if (subfont)
+	{
+		subfontid = atoi(subfont + 1);
+		*subfont = 0;
+	}
+
+	/* Make a new part name for font with style simulation applied */
+	fz_strlcpy(fakename, partname, sizeof fakename);
+	if (style_att)
+	{
+		if (!strcmp(style_att, "BoldSimulation"))
+			fz_strlcat(fakename, "#Bold", sizeof fakename);
+		else if (!strcmp(style_att, "ItalicSimulation"))
+			fz_strlcat(fakename, "#Italic", sizeof fakename);
+		else if (!strcmp(style_att, "BoldItalicSimulation"))
+			fz_strlcat(fakename, "#BoldItalic", sizeof fakename);
+	}
+
+	font = xps_lookup_font_imp(ctx, doc, fakename);
+	if (!font)
+	{
+		fz_buffer *buf = NULL;
+		fz_var(buf);
+
+		fz_try(ctx)
+		{
+			part = xps_read_part(ctx, doc, partname);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_warn(ctx, "cannot find font resource part '%s'", partname);
+			return NULL;
+		}
+
+		/* deobfuscate if necessary */
+		if (strstr(part->name, ".odttf"))
+			xps_deobfuscate_font_resource(ctx, doc, part);
+		if (strstr(part->name, ".ODTTF"))
+			xps_deobfuscate_font_resource(ctx, doc, part);
+
+		fz_try(ctx)
+		{
+			buf = fz_new_buffer_from_data(ctx, part->data, part->size);
+			/* part->data is now owned by buf */
+			part->data = NULL;
+			font = fz_new_font_from_buffer(ctx, NULL, buf, subfontid, 1);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_buffer(ctx, buf);
+			xps_drop_part(ctx, doc, part);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			fz_warn(ctx, "cannot load font resource '%s'", partname);
+			return NULL;
+		}
+
+		if (style_att)
+		{
+			font->ft_bold = !!strstr(style_att, "Bold");
+			font->ft_italic = !!strstr(style_att, "Italic");
+		}
+
+		xps_select_best_font_encoding(ctx, doc, font);
+		xps_insert_font(ctx, doc, fakename, font);
+	}
+	return font;
+}
+
 /*
  * Parse and draw an XPS <Glyphs> element.
  *
@@ -255,7 +339,7 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
  * Parse unicode and indices strings and encode glyphs.
  * Calculate metrics for positioning.
  */
-static fz_text *
+fz_text *
 xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	fz_font *font, float size, float originx, float originy,
 	int is_sideways, int bidi_level,
@@ -408,15 +492,9 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 	char *fill_opacity_att = NULL;
 
-	xps_part *part;
 	fz_font *font;
 
-	char partname[1024];
-	char fakename[1024];
-	char *subfont;
-
 	float font_size = 10;
-	int subfontid = 0;
 	int is_sideways = 0;
 	int bidi_level = 0;
 
@@ -484,80 +562,12 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 		bidi_level = atoi(bidi_level_att);
 
 	/*
-	 * Find and load the font resource
+	 * Find and load the font resource.
 	 */
 
-	xps_resolve_url(ctx, doc, partname, base_uri, font_uri_att, sizeof partname);
-	subfont = strrchr(partname, '#');
-	if (subfont)
-	{
-		subfontid = atoi(subfont + 1);
-		*subfont = 0;
-	}
-
-	/* Make a new part name for font with style simulation applied */
-	fz_strlcpy(fakename, partname, sizeof fakename);
-	if (style_att)
-	{
-		if (!strcmp(style_att, "BoldSimulation"))
-			fz_strlcat(fakename, "#Bold", sizeof fakename);
-		else if (!strcmp(style_att, "ItalicSimulation"))
-			fz_strlcat(fakename, "#Italic", sizeof fakename);
-		else if (!strcmp(style_att, "BoldItalicSimulation"))
-			fz_strlcat(fakename, "#BoldItalic", sizeof fakename);
-	}
-
-	font = xps_lookup_font(ctx, doc, fakename);
+	font = xps_lookup_font(ctx, doc, base_uri, font_uri_att, style_att);
 	if (!font)
-	{
-		fz_buffer *buf = NULL;
-		fz_var(buf);
-
-		fz_try(ctx)
-		{
-			part = xps_read_part(ctx, doc, partname);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-			fz_warn(ctx, "cannot find font resource part '%s'", partname);
-			return;
-		}
-
-		/* deobfuscate if necessary */
-		if (strstr(part->name, ".odttf"))
-			xps_deobfuscate_font_resource(ctx, doc, part);
-		if (strstr(part->name, ".ODTTF"))
-			xps_deobfuscate_font_resource(ctx, doc, part);
-
-		fz_try(ctx)
-		{
-			buf = fz_new_buffer_from_data(ctx, part->data, part->size);
-			/* part->data is now owned by buf */
-			part->data = NULL;
-			font = fz_new_font_from_buffer(ctx, NULL, buf, subfontid, 1);
-		}
-		fz_always(ctx)
-		{
-			fz_drop_buffer(ctx, buf);
-			xps_drop_part(ctx, doc, part);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-			fz_warn(ctx, "cannot load font resource '%s'", partname);
-			return;
-		}
-
-		if (style_att)
-		{
-			font->ft_bold = !!strstr(style_att, "Bold");
-			font->ft_italic = !!strstr(style_att, "Italic");
-		}
-
-		xps_select_best_font_encoding(ctx, doc, font);
-		xps_insert_font(ctx, doc, fakename, font);
-	}
+		return; /* bail if we can't find the font */
 
 	/*
 	 * Set up graphics state.
