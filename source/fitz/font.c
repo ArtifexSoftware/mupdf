@@ -412,34 +412,22 @@ fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
 	if (font->ft_stretch && font->width_table /* && font->wmode == 0 */)
 	{
-		FT_Error fterr;
-		int subw;
-		int realw;
-		float scale;
+		FT_Fixed adv;
+		float subw;
+		float realw;
 
 		fz_lock(ctx, FZ_LOCK_FREETYPE);
-		/* TODO: use FT_Get_Advance */
-		fterr = FT_Set_Char_Size(font->ft_face, 1000, 1000, 72, 72);
-		if (fterr)
-			fz_warn(ctx, "freetype setting character size: %s", ft_error_string(fterr));
-
-		fterr = FT_Load_Glyph(font->ft_face, gid,
-			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
-		if (fterr)
-			fz_warn(ctx, "freetype failed to load glyph: %s", ft_error_string(fterr));
-
-		realw = ((FT_Face)font->ft_face)->glyph->metrics.horiAdvance;
+		FT_Get_Advance(font->ft_face, gid, FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM, &adv);
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
+
+		realw = (float)adv * 1000 / ((FT_Face)font->ft_face)->units_per_EM;
 		if (gid < font->width_count)
 			subw = font->width_table[gid];
 		else
 			subw = font->width_default;
-		if (realw)
-			scale = (float) subw / realw;
-		else
-			scale = 1;
 
-		fz_pre_scale(trm, scale, 1);
+		if (realw > 0)
+			fz_pre_scale(trm, subw / realw, 1);
 	}
 
 	return trm;
