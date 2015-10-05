@@ -426,7 +426,8 @@ fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm
 		else
 			subw = font->width_default;
 
-		if (realw > 0)
+		/* Sanity check scaling in case of broken metrics. */
+		if (realw > 0 && subw > 0)
 			fz_pre_scale(trm, subw / realw, 1);
 	}
 
