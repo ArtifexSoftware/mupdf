@@ -77,6 +77,7 @@ FREETYPE_SRC := \
 	ftbbox.c \
 	ftbitmap.c \
 	ftdebug.c \
+	ftfntfmt.c \
 	ftgasp.c \
 	ftglyph.c \
 	ftinit.c \
@@ -84,7 +85,6 @@ FREETYPE_SRC := \
 	ftsynth.c \
 	ftsystem.c \
 	fttype1.c \
-	ftxf86.c \
 	cff.c \
 	psaux.c \
 	pshinter.c \

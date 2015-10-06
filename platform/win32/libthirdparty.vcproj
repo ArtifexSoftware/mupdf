@@ -915,6 +915,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\thirdparty\freetype\src\base\ftfntfmt.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\thirdparty\freetype\src\base\ftgasp.c"
 					>
 				</File>
@@ -940,10 +944,6 @@
 				</File>
 				<File
 					RelativePath="..\..\thirdparty\freetype\src\base\fttype1.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\thirdparty\freetype\src\base\ftxf86.c"
 					>
 				</File>
 			</Filter>
