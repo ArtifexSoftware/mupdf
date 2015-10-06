@@ -82,78 +82,6 @@ xps_add_fixed_document(fz_context *ctx, xps_document *doc, char *name)
 	}
 }
 
-void
-xps_add_link(fz_context *ctx, xps_document *doc, const fz_rect *area, char *base_uri, char *target_uri)
-{
-	int len;
-	char *buffer = NULL;
-	char *uri;
-	xps_target *target;
-	fz_link_dest dest;
-	fz_link *link;
-
-	fz_var(buffer);
-
-	if (doc->current_page == NULL || doc->current_page->links_resolved)
-		return;
-
-	fz_try(ctx)
-	{
-		len = 2 + (base_uri ? strlen(base_uri) : 0) +
-			(target_uri ? strlen(target_uri) : 0);
-		buffer = fz_malloc(ctx, len);
-		xps_resolve_url(ctx, doc, buffer, base_uri, target_uri, len);
-		if (xps_url_is_remote(ctx, doc, buffer))
-		{
-			dest.kind = FZ_LINK_URI;
-			dest.ld.uri.is_map = 0;
-			dest.ld.uri.uri = buffer;
-			buffer = NULL;
-		}
-		else
-		{
-			uri = buffer;
-
-			/* FIXME: This won't work for remote docs */
-			/* Skip until we find the fragment marker */
-			while (*uri && *uri != '#')
-				uri++;
-			if (*uri == '#')
-				uri++;
-
-			for (target = doc->target; target; target = target->next)
-				if (!strcmp(target->name, uri))
-					break;
-
-			if (target == NULL)
-				break;
-
-			dest.kind = FZ_LINK_GOTO;
-			dest.ld.gotor.flags = 0;
-			dest.ld.gotor.lt.x = 0;
-			dest.ld.gotor.lt.y = 0;
-			dest.ld.gotor.rb.x = 0;
-			dest.ld.gotor.rb.y = 0;
-			dest.ld.gotor.page = target->page;
-			dest.ld.gotor.file_spec = NULL;
-			dest.ld.gotor.new_window = 0;
-			dest.ld.gotor.dest = NULL;
-		}
-
-		link = fz_new_link(ctx, area, dest);
-		link->next = doc->current_page->links;
-		doc->current_page->links = link;
-	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, buffer);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-}
-
 static void
 xps_add_fixed_page(fz_context *ctx, xps_document *doc, char *name, int width, int height)
 {
@@ -169,8 +97,6 @@ xps_add_fixed_page(fz_context *ctx, xps_document *doc, char *name, int width, in
 	page->number = doc->page_count++;
 	page->width = width;
 	page->height = height;
-	page->links = NULL;
-	page->links_resolved = 0;
 	page->next = NULL;
 
 	if (!doc->first_page)
@@ -228,7 +154,6 @@ xps_drop_fixed_pages(fz_context *ctx, xps_document *doc)
 	while (page)
 	{
 		xps_fixpage *next = page->next;
-		fz_drop_link(ctx, page->links);
 		fz_free(ctx, page->name);
 		fz_free(ctx, page);
 		page = next;
@@ -480,14 +405,6 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 	return root;
 }
 
-fz_link *
-xps_load_links(fz_context *ctx, xps_page *page)
-{
-	if (!page->fix->links_resolved)
-		fz_warn(ctx, "xps_load_links before page has been executed!");
-	return fz_keep_link(ctx, page->fix->links);
-}
-
 fz_rect *
 xps_bound_page(fz_context *ctx, xps_page *page, fz_rect *bounds)
 {
@@ -520,8 +437,6 @@ xps_load_page(fz_context *ctx, xps_document *doc, int number)
 	{
 		if (n == number)
 		{
-			doc->current_page = fix;
-
 			root = xps_load_fixed_page(ctx, doc, fix);
 			fz_try(ctx)
 			{

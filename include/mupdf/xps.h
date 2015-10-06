@@ -46,6 +46,7 @@ int xps_count_pages(fz_context *ctx, xps_document *doc);
 xps_page *xps_load_page(fz_context *ctx, xps_document *doc, int number);
 fz_outline *xps_load_outline(fz_context *ctx, xps_document *doc);
 void xps_run_page(fz_context *ctx, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
+fz_link *xps_load_links(fz_context *ctx, xps_page *page);
 
 /* xps-internal.h */
 
@@ -96,8 +97,6 @@ struct xps_fixpage_s
 	int number;
 	int width;
 	int height;
-	int links_resolved;
-	fz_link *links;
 	xps_fixpage *next;
 };
 
@@ -121,7 +120,6 @@ void xps_print_page_list(fz_context *ctx, xps_document *doc);
 void xps_drop_page_list(fz_context *ctx, xps_document *doc);
 
 int xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri);
-void xps_add_link(fz_context *ctx, xps_document *doc, const fz_rect *area, char *base_uri, char *target_uri);
 
 /*
  * Images, fonts, and colorspaces.
@@ -259,9 +257,6 @@ struct xps_document_s
 	/* Current device */
 	fz_device *dev;
 	fz_cookie *cookie;
-
-	/* Current page we are loading */
-	xps_fixpage *current_page;
 };
 
 #endif

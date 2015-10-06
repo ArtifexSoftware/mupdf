@@ -256,7 +256,6 @@ xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const
 	char *clip_att;
 	char *opacity_att;
 	char *opacity_mask_att;
-	char *navigate_uri_att;
 
 	fz_xml *transform_tag = NULL;
 	fz_xml *clip_tag = NULL;
@@ -268,7 +267,6 @@ xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const
 	clip_att = fz_xml_att(root, "Clip");
 	opacity_att = fz_xml_att(root, "Opacity");
 	opacity_mask_att = fz_xml_att(root, "OpacityMask");
-	navigate_uri_att = fz_xml_att(root, "FixedPage.NavigateUri");
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
@@ -303,9 +301,6 @@ xps_parse_canvas(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const
 	xps_resolve_resource_reference(ctx, doc, dict, &opacity_mask_att, &opacity_mask_tag, &opacity_mask_uri);
 
 	xps_parse_transform(ctx, doc, transform_att, transform_tag, &local_ctm, ctm);
-
-	if (navigate_uri_att)
-		xps_add_link(ctx, doc, area, base_uri, navigate_uri_att);
 
 	if (clip_att || clip_tag)
 		xps_clip(ctx, doc, &local_ctm, dict, clip_att, clip_tag);
@@ -379,5 +374,4 @@ xps_run_page(fz_context *ctx, xps_page *page, fz_device *dev, const fz_matrix *c
 	xps_parse_fixed_page(ctx, doc, &page_ctm, page);
 	doc->cookie = NULL;
 	doc->dev = NULL;
-	page->fix->links_resolved = 1;
 }

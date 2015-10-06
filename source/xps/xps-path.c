@@ -810,7 +810,6 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 	char *stroke_line_join_att;
 	char *stroke_miter_limit_att;
 	char *stroke_thickness_att;
-	char *navigate_uri_att;
 
 	fz_stroke_state *stroke = NULL;
 	float samples[FZ_MAX_COLORS];
@@ -842,7 +841,6 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 	stroke_line_join_att = fz_xml_att(root, "StrokeLineJoin");
 	stroke_miter_limit_att = fz_xml_att(root, "StrokeMiterLimit");
 	stroke_thickness_att = fz_xml_att(root, "StrokeThickness");
-	navigate_uri_att = fz_xml_att(root, "FixedPage.NavigateUri");
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
@@ -990,9 +988,6 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 	}
 	else
 		fz_bound_path(ctx, path, NULL, &local_ctm, &area);
-
-	if (navigate_uri_att)
-		xps_add_link(ctx, doc, &area, base_uri, navigate_uri_att);
 
 	xps_begin_opacity(ctx, doc, &local_ctm, &area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 

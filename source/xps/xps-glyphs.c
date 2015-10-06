@@ -483,7 +483,6 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	char *clip_att;
 	char *opacity_att;
 	char *opacity_mask_att;
-	char *navigate_uri_att;
 
 	fz_xml *transform_tag = NULL;
 	fz_xml *clip_tag = NULL;
@@ -521,7 +520,6 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	clip_att = fz_xml_att(root, "Clip");
 	opacity_att = fz_xml_att(root, "Opacity");
 	opacity_mask_att = fz_xml_att(root, "OpacityMask");
-	navigate_uri_att = fz_xml_att(root, "FixedPage.NavigateUri");
 
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{
@@ -585,9 +583,6 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			is_sideways, bidi_level, indices_att, unicode_att);
 
 	fz_bound_text(ctx, text, NULL, &local_ctm, &area);
-
-	if (navigate_uri_att)
-		xps_add_link(ctx, doc, &area, base_uri, navigate_uri_att);
 
 	xps_begin_opacity(ctx, doc, &local_ctm, &area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 

@@ -691,6 +691,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\xps\xps-link.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\xps\xps-outline.c"
 				>
 			</File>
