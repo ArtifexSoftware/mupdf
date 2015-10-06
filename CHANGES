@@ -1,3 +1,24 @@
+List of changes in MuPDF 1.8
+
+* Headline changes:
+	* New OpenGL-based barebones desktop viewer.
+	* New URW fonts with greek and cyrillic.
+	* 64-bit file support.
+	* Ghostscript proofing mode (source only; not in shipped binaries).
+
+* EPUB improvements:
+	* User style sheets.
+	* GIF images (also for CBZ).
+	* Table of contents.
+	* CJK text.
+	* Page margins.
+	* Many bug fixes.
+
+* Bug fixes:
+	* Updated FreeType to version 2.6.1.
+	* Various font substitution bug fixes.
+	* Fix setjmp/longjmp behaviour which could cause optimizing compilers to misbehave.
+
 List of changes in MuPDF 1.7a
 
 * Bugfixes
