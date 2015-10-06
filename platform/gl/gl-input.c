@@ -51,10 +51,10 @@ static inline int myisalnum(char *s)
 	return 0;
 }
 
-static char *prev_char(char *p)
+static char *prev_char(char *p, char *start)
 {
 	--p;
-	while ((*p & 0xC0) == 0x80) /* skip middle and final multibytes */
+	while ((*p & 0xC0) == 0x80 && p > start) /* skip middle and final multibytes */
 		--p;
 	return p;
 }
@@ -69,8 +69,8 @@ static char *next_char(char *p)
 
 static char *prev_word(char *p, char *start)
 {
-	while (p > start && !myisalnum(prev_char(p))) p = prev_char(p);
-	while (p > start && myisalnum(prev_char(p))) p = prev_char(p);
+	while (p > start && !myisalnum(prev_char(p, start))) p = prev_char(p, start);
+	while (p > start && myisalnum(prev_char(p, start))) p = prev_char(p, start);
 	return p;
 }
 
@@ -124,14 +124,14 @@ static int ui_input_key(struct input *input)
 		else if (ui.mod == GLFW_MOD_SHIFT)
 		{
 			if (input->q > input->text)
-				input->q = prev_char(input->q);
+				input->q = prev_char(input->q, input->text);
 		}
 		else if (ui.mod == 0)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p < input->q ? input->p : input->q;
 			else if (input->q > input->text)
-				input->p = input->q = prev_char(input->q);
+				input->p = input->q = prev_char(input->q, input->text);
 		}
 		break;
 	case KEY_RIGHT:
@@ -218,7 +218,7 @@ static int ui_input_key(struct input *input)
 			ui_input_delete_selection(input);
 		else if (input->p > input->text)
 		{
-			char *pp = prev_char(input->p);
+			char *pp = prev_char(input->p, input->text);
 			memmove(pp, input->p, input->end - input->p);
 			input->end -= input->p - pp;
 			*input->end = 0;
