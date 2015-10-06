@@ -1299,7 +1299,7 @@ int main(int argc, char **argv)
 	{
 #ifdef _WIN32
 		win_install();
-		if (!win_open_file(filename, sizeof filename));
+		if (!win_open_file(filename, sizeof filename))
 			exit(0);
 #else
 		usage();
