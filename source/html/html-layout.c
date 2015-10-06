@@ -865,9 +865,12 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				g = fz_encode_character(ctx, node->style->font, c);
 				if (g)
 				{
-					if (!text)
-						text = fz_new_text(ctx, node->style->font, &trm, 0);
-					fz_add_text(ctx, text, g, c, x, y);
+					if (node->style->visibility == V_VISIBLE)
+					{
+						if (!text)
+							text = fz_new_text(ctx, node->style->font, &trm, 0);
+						fz_add_text(ctx, text, g, c, x, y);
+					}
 					x += fz_advance_glyph(ctx, node->style->font, g) * node->em;
 				}
 				else
@@ -875,9 +878,12 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					g = fz_encode_character(ctx, node->style->fallback, c);
 					if (g)
 					{
-						if (!falltext)
-							falltext = fz_new_text(ctx, node->style->fallback, &trm, 0);
-						fz_add_text(ctx, falltext, g, c, x, y);
+						if (node->style->visibility == V_VISIBLE)
+						{
+							if (!falltext)
+								falltext = fz_new_text(ctx, node->style->fallback, &trm, 0);
+							fz_add_text(ctx, falltext, g, c, x, y);
+						}
 					}
 					x += fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
 				}
@@ -896,10 +902,13 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 		}
 		else if (node->type == FLOW_IMAGE)
 		{
-			fz_matrix local_ctm = *ctm;
-			fz_pre_translate(&local_ctm, node->x, node->y);
-			fz_pre_scale(&local_ctm, node->w, node->h);
-			fz_fill_image(ctx, dev, node->image, &local_ctm, 1);
+			if (node->style->visibility == V_VISIBLE)
+			{
+				fz_matrix local_ctm = *ctm;
+				fz_pre_translate(&local_ctm, node->x, node->y);
+				fz_pre_scale(&local_ctm, node->w, node->h);
+				fz_fill_image(ctx, dev, node->image, &local_ctm, 1);
+			}
 		}
 	}
 }
@@ -1102,20 +1111,21 @@ static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float 
 	if (y0 > page_bot || y1 < page_top)
 		return;
 
-	draw_rect(ctx, dev, ctm, box->style.background_color, x0, y0, x1, y1);
-
-	if (border[T] > 0)
-		draw_rect(ctx, dev, ctm, box->style.border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
-	if (border[B] > 0)
-		draw_rect(ctx, dev, ctm, box->style.border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
-	if (border[L] > 0)
-		draw_rect(ctx, dev, ctm, box->style.border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
-	if (border[R] > 0)
-		draw_rect(ctx, dev, ctm, box->style.border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
-
-	if (box->list_item)
+	if (box->style.visibility == V_VISIBLE)
 	{
-		draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
+		draw_rect(ctx, dev, ctm, box->style.background_color, x0, y0, x1, y1);
+
+		if (border[T] > 0)
+			draw_rect(ctx, dev, ctm, box->style.border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
+		if (border[B] > 0)
+			draw_rect(ctx, dev, ctm, box->style.border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
+		if (border[L] > 0)
+			draw_rect(ctx, dev, ctm, box->style.border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
+		if (border[R] > 0)
+			draw_rect(ctx, dev, ctm, box->style.border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
+
+		if (box->list_item)
+			draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
 	}
 
 	for (box = box->down; box; box = box->next)

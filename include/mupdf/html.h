@@ -94,6 +94,7 @@ enum { POS_STATIC, POS_RELATIVE, POS_ABSOLUTE, POS_FIXED };
 enum { TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY };
 enum { VA_BASELINE, VA_SUB, VA_SUPER, VA_TOP, VA_BOTTOM };
 enum { BS_NONE, BS_SOLID };
+enum { V_VISIBLE, V_HIDDEN, V_COLLAPSE };
 
 enum {
 	WS_COLLAPSE = 1,
@@ -138,6 +139,7 @@ struct fz_css_style_s
 	fz_css_number padding[4];
 	fz_css_number border_width[4];
 	fz_css_number text_indent;
+	char visibility;
 	char white_space;
 	char text_align;
 	char vertical_align;

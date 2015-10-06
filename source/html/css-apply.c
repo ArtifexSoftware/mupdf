@@ -944,10 +944,24 @@ white_space_from_property(fz_css_match *match)
 	return WS_NORMAL;
 }
 
+static int
+visibility_from_property(fz_css_match *match)
+{
+	fz_css_value *value = value_from_property(match, "visibility");
+	if (value)
+	{
+		if (!strcmp(value->data, "visible")) return V_VISIBLE;
+		else if (!strcmp(value->data, "hidden")) return V_HIDDEN;
+		else if (!strcmp(value->data, "collapse")) return V_COLLAPSE;
+	}
+	return V_VISIBLE;
+}
+
 void
 fz_default_css_style(fz_context *ctx, fz_css_style *style)
 {
 	memset(style, 0, sizeof *style);
+	style->visibility = V_VISIBLE;
 	style->text_align = TA_LEFT;
 	style->vertical_align = VA_BASELINE;
 	style->white_space = WS_NORMAL;
@@ -967,6 +981,7 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 
 	fz_default_css_style(ctx, style);
 
+	style->visibility = visibility_from_property(match);
 	style->white_space = white_space_from_property(match);
 
 	value = value_from_property(match, "text-align");
