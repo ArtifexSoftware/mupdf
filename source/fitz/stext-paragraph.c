@@ -15,7 +15,7 @@ typedef struct line_height_s
 {
 	float height;
 	int count;
-	fz_text_style *style;
+	fz_stext_style *style;
 } line_height;
 
 typedef struct line_heights_s
@@ -44,7 +44,7 @@ free_line_heights(line_heights *lh)
 }
 
 static void
-insert_line_height(line_heights *lh, fz_text_style *style, float height)
+insert_line_height(line_heights *lh, fz_stext_style *style, float height)
 {
 	int i;
 
@@ -88,13 +88,13 @@ cull_line_heights(line_heights *lh)
 	printf("Before culling:\n");
 	for (i = 0; i < lh->len; i++)
 	{
-		fz_text_style *style = lh->lh[i].style;
+		fz_stext_style *style = lh->lh[i].style;
 		printf("style=%x height=%g count=%d\n", style, lh->lh[i].height, lh->lh[i].count);
 	}
 #endif
 	for (i = 0; i < lh->len; i++)
 	{
-		fz_text_style *style = lh->lh[i].style;
+		fz_stext_style *style = lh->lh[i].style;
 		int count = lh->lh[i].count;
 		int max = i;
 
@@ -127,14 +127,14 @@ cull_line_heights(line_heights *lh)
 	printf("After culling:\n");
 	for (i = 0; i < lh->len; i++)
 	{
-		fz_text_style *style = lh->lh[i].style;
+		fz_stext_style *style = lh->lh[i].style;
 		printf("style=%x height=%g count=%d\n", style, lh->lh[i].height, lh->lh[i].count);
 	}
 #endif
 }
 
 static float
-line_height_for_style(line_heights *lh, fz_text_style *style)
+line_height_for_style(line_heights *lh, fz_stext_style *style)
 {
 	int i;
 
@@ -147,10 +147,10 @@ line_height_for_style(line_heights *lh, fz_text_style *style)
 }
 
 static void
-split_block(fz_context *ctx, fz_text_page *page, int block_num, int linenum)
+split_block(fz_context *ctx, fz_stext_page *page, int block_num, int linenum)
 {
 	int split_len;
-	fz_text_block *block, *block2;
+	fz_stext_block *block, *block2;
 
 	if (page->len == page->cap)
 	{
@@ -162,7 +162,7 @@ split_block(fz_context *ctx, fz_text_page *page, int block_num, int linenum)
 	memmove(page->blocks+block_num+1, page->blocks+block_num, (page->len - block_num)*sizeof(*page->blocks));
 	page->len++;
 
-	block2 = fz_malloc_struct(ctx, fz_text_block);
+	block2 = fz_malloc_struct(ctx, fz_stext_block);
 	block = page->blocks[block_num].u.text;
 
 	page->blocks[block_num+1].type = FZ_PAGE_BLOCK_TEXT;
@@ -172,11 +172,11 @@ split_block(fz_context *ctx, fz_text_page *page, int block_num, int linenum)
 	block2->cap = 0;
 	block2->len = 0;
 	block2->lines = NULL;
-	block2->lines = fz_malloc_array(ctx, split_len, sizeof(fz_text_line));
+	block2->lines = fz_malloc_array(ctx, split_len, sizeof(fz_stext_line));
 	block2->cap = block2->len;
 	block2->len = split_len;
 	block->len = linenum;
-	memcpy(block2->lines, block->lines + linenum, split_len * sizeof(fz_text_line));
+	memcpy(block2->lines, block->lines + linenum, split_len * sizeof(fz_stext_line));
 	block2->lines[0].distance = 0;
 }
 
@@ -252,10 +252,10 @@ is_roman(int c)
 #endif
 
 static int
-is_list_entry(fz_text_line *line, fz_text_span *span, int *char_num_ptr)
+is_list_entry(fz_stext_line *line, fz_stext_span *span, int *char_num_ptr)
 {
 	int char_num;
-	fz_text_char *chr;
+	fz_stext_char *chr;
 
 	/* First, skip over any whitespace */
 	for (char_num = 0; char_num < span->len; char_num++)
@@ -288,7 +288,7 @@ is_list_entry(fz_text_line *line, fz_text_span *span, int *char_num_ptr)
 		int met_char = is_latin_char(chr->c);
 		for (cn = char_num+1; cn < span->len; cn++)
 		{
-			fz_text_char *chr2 = &span->text[cn];
+			fz_stext_char *chr2 = &span->text[cn];
 
 			if (is_latin_char(chr2->c) && !met_char)
 			{
@@ -315,7 +315,7 @@ is_list_entry(fz_text_line *line, fz_text_span *span, int *char_num_ptr)
 		int cn = char_num;
 		for (cn = char_num+1; cn < span->len; cn++)
 		{
-			fz_text_char *chr2 = &span->text[cn];
+			fz_stext_char *chr2 = &span->text[cn];
 
 			if (!is_roman(chr2->c) && !is_unicode_wspace(chr2->c))
 				break;
@@ -622,7 +622,7 @@ static void region_mask_merge(region_mask *rm1, const region_mask *rm2, int newl
 	rm1->len = newlen;
 }
 
-static region_mask *region_masks_match(const region_masks *rms, const region_mask *rm, fz_text_line *line, region_mask *prev_match)
+static region_mask *region_masks_match(const region_masks *rms, const region_mask *rm, fz_stext_line *line, region_mask *prev_match)
 {
 	int i;
 	float best_score = 9999999;
@@ -969,7 +969,7 @@ is_unicode_hyphenatable(int c)
 }
 
 static void
-dehyphenate(fz_text_span *s1, fz_text_span *s2)
+dehyphenate(fz_stext_span *s1, fz_stext_span *s2)
 {
 	int i;
 
@@ -992,14 +992,14 @@ dehyphenate(fz_text_span *s1, fz_text_span *s2)
 
 #ifdef DEBUG_ALIGN
 static void
-dump_span(fz_text_span *span)
+dump_span(fz_stext_span *span)
 {
 }
 
 static void
-dump_line(fz_text_line *line)
+dump_line(fz_stext_line *line)
 {
-	fz_text_span *span;
+	fz_stext_span *span;
 
 	if (!line)
 		return;
@@ -1017,10 +1017,10 @@ dump_line(fz_text_line *line)
 #endif
 
 void
-fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
+fz_analyze_text(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page)
 {
-	fz_text_line *line;
-	fz_text_span *span;
+	fz_stext_line *line;
+	fz_stext_span *span;
 	line_heights *lh;
 	region_masks *rms;
 	int block_num;
@@ -1034,7 +1034,7 @@ fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 	lh = new_line_heights(ctx);
 	for (block_num = 0; block_num < page->len; block_num++)
 	{
-		fz_text_block *block;
+		fz_stext_block *block;
 
 		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 			continue;
@@ -1045,7 +1045,7 @@ fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 			/* For every style in the line, add lineheight to the
 			 * record for that style. FIXME: This is a nasty n^2
 			 * algorithm at the moment. */
-			fz_text_style *style = NULL;
+			fz_stext_style *style = NULL;
 
 			if (line->distance == 0)
 				continue;
@@ -1059,7 +1059,7 @@ fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 
 				for (; char_num < span->len; char_num++)
 				{
-					fz_text_char *chr = &span->text[char_num];
+					fz_stext_char *chr = &span->text[char_num];
 
 					/* Ignore any whitespace chars */
 					if (is_unicode_wspace(chr->c))
@@ -1069,13 +1069,13 @@ fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 					{
 						/* Have we had this style before? */
 						int match = 0;
-						fz_text_span *span2;
+						fz_stext_span *span2;
 						for (span2 = line->first_span; span2 != span; span2 = span2->next)
 						{
 							int char_num2;
 							for (char_num2 = 0; char_num2 < span2->len; char_num2++)
 							{
-								fz_text_char *chr2 = &span2->text[char_num2];
+								fz_stext_char *chr2 = &span2->text[char_num2];
 								if (chr2->style == chr->style)
 								{
 									match = 1;
@@ -1085,11 +1085,11 @@ fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page)
 						}
 						if (char_num > 0 && match == 0)
 						{
-							fz_text_span *span2 = span;
+							fz_stext_span *span2 = span;
 							int char_num2;
 							for (char_num2 = 0; char_num2 < char_num; char_num2++)
 							{
-								fz_text_char *chr2 = &span2->text[char_num2];
+								fz_stext_char *chr2 = &span2->text[char_num2];
 								if (chr2->style == chr->style)
 								{
 									match = 1;
@@ -1116,7 +1116,7 @@ list_entry:
 	for (block_num = 0; block_num < page->len; block_num++)
 	{
 		int line_num;
-		fz_text_block *block;
+		fz_stext_block *block;
 
 		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 			continue;
@@ -1128,7 +1128,7 @@ list_entry:
 			 * is correct for that style. FIXME: We check each style
 			 * more than once, currently. */
 			int ok = 0; /* -1 = early exit, split now. 0 = split. 1 = don't split. */
-			fz_text_style *style = NULL;
+			fz_stext_style *style = NULL;
 			line = &block->lines[line_num];
 
 			if (line->distance == 0)
@@ -1147,7 +1147,7 @@ list_entry:
 				/* Now we do the rest of the line */
 				for (; char_num < span->len; char_num++)
 				{
-					fz_text_char *chr = &span->text[char_num];
+					fz_stext_char *chr = &span->text[char_num];
 
 					/* Ignore any whitespace chars */
 					if (is_unicode_wspace(chr->c))
@@ -1193,7 +1193,7 @@ force_paragraph:
 	 * normalised baseline vectors. */
 	for (block_num = 0; block_num < page->len; block_num++)
 	{
-		fz_text_block *block;
+		fz_stext_block *block;
 
 		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 			continue;
@@ -1278,7 +1278,7 @@ force_paragraph:
 	region_mask *prev_match = NULL;
 	for (block_num = 0; block_num < page->len; block_num++)
 	{
-		fz_text_block *block;
+		fz_stext_block *block;
 
 		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 			continue;
@@ -1329,7 +1329,7 @@ force_paragraph:
 			{
 				fz_point *region_min = &span->min;
 				fz_point *region_max = &span->max;
-				fz_text_span *sn;
+				fz_stext_span *sn;
 				int col, align;
 				float colw, left;
 
@@ -1374,7 +1374,7 @@ force_paragraph:
 		int line_num;
 		int prev_line_num;
 
-		fz_text_block *block;
+		fz_stext_block *block;
 
 		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 			continue;
@@ -1383,7 +1383,7 @@ force_paragraph:
 		/* First merge lines. This may leave empty lines behind. */
 		for (prev_line_num = 0, line_num = 1; line_num < block->len; line_num++)
 		{
-			fz_text_line *prev_line;
+			fz_stext_line *prev_line;
 			line = &block->lines[line_num];
 			if (!line->first_span)
 				continue;
@@ -1412,9 +1412,9 @@ force_paragraph:
 
 				/* Merge line into prev_line */
 				{
-					fz_text_span **prev_line_span = &prev_line->first_span;
+					fz_stext_span **prev_line_span = &prev_line->first_span;
 					int try_dehyphen = -1;
-					fz_text_span *prev_span = NULL;
+					fz_stext_span *prev_span = NULL;
 					span = line->first_span;
 					while (span && *prev_line_span)
 					{
@@ -1433,7 +1433,7 @@ force_paragraph:
 						else
 						{
 							/* We want to copy span into prev_line. */
-							fz_text_span *next = (*prev_line_span)->next;
+							fz_stext_span *next = (*prev_line_span)->next;
 
 							if (prev_line_span == &prev_line->first_span)
 								prev_line->first_span = span;
@@ -1474,7 +1474,7 @@ force_paragraph:
 		/* Now try to spot indents */
 		for (line_num = 0; line_num < block->len; line_num++)
 		{
-			fz_text_span *span_num, *sn;
+			fz_stext_span *span_num, *sn;
 			int col, count;
 			line = &block->lines[line_num];
 

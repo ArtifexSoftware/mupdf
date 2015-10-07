@@ -34,18 +34,18 @@ fz_pixmap *fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, cons
 fz_pixmap *fz_new_pixmap_from_annot(fz_context *ctx, fz_page *page, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs);
 
 /*
-	fz_new_text_page_from_page: Extract structured text from a page. The sheet must not be NULL.
+	fz_new_stext_page_from_page: Extract structured text from a page. The sheet must not be NULL.
 */
-fz_text_page *fz_new_text_page_from_page(fz_context *ctx, fz_page *page, fz_text_sheet *sheet);
-fz_text_page *fz_new_text_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_text_sheet *sheet);
-fz_text_page *fz_new_text_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_text_sheet *sheet);
+fz_stext_page *fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *sheet);
+fz_stext_page *fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_stext_sheet *sheet);
+fz_stext_page *fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_stext_sheet *sheet);
 
 /*
-	fz_new_buffer_from_text_page: Convert structured text into plain text, cropped by the selection rectangle.
+	fz_new_buffer_from_stext_page: Convert structured text into plain text, cropped by the selection rectangle.
 	Use fz_inifinite_rect to extract all the text on the page. If 'crlf' is true, lines are separated by '\r\n',
 	otherwise '\n'.
 */
-fz_buffer *fz_new_buffer_from_text_page(fz_context *ctx, fz_text_page *text, const fz_rect *sel, int crlf);
+fz_buffer *fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text, const fz_rect *sel, int crlf);
 fz_buffer *fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int crlf);
 fz_buffer *fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_rect *sel, int crlf);
 fz_buffer *fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_rect *sel, int crlf);

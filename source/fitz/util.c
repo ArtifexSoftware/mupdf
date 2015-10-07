@@ -193,16 +193,16 @@ fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, co
 	return pix;
 }
 
-fz_text_page *
-fz_new_text_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_text_sheet *sheet)
+fz_stext_page *
+fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_stext_sheet *sheet)
 {
-	fz_text_page *text;
+	fz_stext_page *text;
 	fz_device *dev;
 
-	text = fz_new_text_page(ctx);
+	text = fz_new_stext_page(ctx);
 	fz_try(ctx)
 	{
-		dev = fz_new_text_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_display_list(ctx, list, dev, &fz_identity, NULL, NULL);
 	}
 	fz_always(ctx)
@@ -211,23 +211,23 @@ fz_new_text_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_te
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_text_page(ctx, text);
+		fz_drop_stext_page(ctx, text);
 		fz_rethrow(ctx);
 	}
 
 	return text;
 }
 
-fz_text_page *
-fz_new_text_page_from_page(fz_context *ctx, fz_page *page, fz_text_sheet *sheet)
+fz_stext_page *
+fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *sheet)
 {
-	fz_text_page *text;
+	fz_stext_page *text;
 	fz_device *dev;
 
-	text = fz_new_text_page(ctx);
+	text = fz_new_stext_page(ctx);
 	fz_try(ctx)
 	{
-		dev = fz_new_text_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, page, dev, &fz_identity, NULL);
 	}
 	fz_always(ctx)
@@ -236,22 +236,22 @@ fz_new_text_page_from_page(fz_context *ctx, fz_page *page, fz_text_sheet *sheet)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_text_page(ctx, text);
+		fz_drop_stext_page(ctx, text);
 		fz_rethrow(ctx);
 	}
 
 	return text;
 }
 
-fz_text_page *
-fz_new_text_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_text_sheet *sheet)
+fz_stext_page *
+fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_stext_sheet *sheet)
 {
 	fz_page *page;
-	fz_text_page *text;
+	fz_stext_page *text;
 
 	page = fz_load_page(ctx, doc, number);
 	fz_try(ctx)
-		text = fz_new_text_page_from_page(ctx, page, sheet);
+		text = fz_new_stext_page_from_page(ctx, page, sheet);
 	fz_always(ctx)
 		fz_drop_page(ctx, page);
 	fz_catch(ctx)
@@ -262,42 +262,42 @@ fz_new_text_page_from_page_number(fz_context *ctx, fz_document *doc, int number,
 int
 fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_rect *hit_bbox, int hit_max)
 {
-	fz_text_sheet *sheet;
-	fz_text_page *text;
+	fz_stext_sheet *sheet;
+	fz_stext_page *text;
 	int count;
 
-	sheet = fz_new_text_sheet(ctx);
+	sheet = fz_new_stext_sheet(ctx);
 	fz_try(ctx)
 	{
-		text = fz_new_text_page_from_display_list(ctx, list, sheet);
-		count = fz_search_text_page(ctx, text, needle, hit_bbox, hit_max);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet);
+		count = fz_search_stext_page(ctx, text, needle, hit_bbox, hit_max);
 	}
 	fz_always(ctx)
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_sheet(ctx, sheet);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-	fz_drop_text_page(ctx, text);
+	fz_drop_stext_page(ctx, text);
 	return count;
 }
 
 int
 fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_rect *hit_bbox, int hit_max)
 {
-	fz_text_sheet *sheet;
-	fz_text_page *text;
+	fz_stext_sheet *sheet;
+	fz_stext_page *text;
 	int count;
 
-	sheet = fz_new_text_sheet(ctx);
+	sheet = fz_new_stext_sheet(ctx);
 	fz_try(ctx)
 	{
-		text = fz_new_text_page_from_page(ctx, page, sheet);
-		count = fz_search_text_page(ctx, text, needle, hit_bbox, hit_max);
+		text = fz_new_stext_page_from_page(ctx, page, sheet);
+		count = fz_search_stext_page(ctx, text, needle, hit_bbox, hit_max);
 	}
 	fz_always(ctx)
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_sheet(ctx, sheet);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-	fz_drop_text_page(ctx, text);
+	fz_drop_stext_page(ctx, text);
 	return count;
 }
 
@@ -318,7 +318,7 @@ fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char 
 }
 
 fz_buffer *
-fz_new_buffer_from_text_page(fz_context *ctx, fz_text_page *text, const fz_rect *sel, int crlf)
+fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text, const fz_rect *sel, int crlf)
 {
 	fz_buffer *buf;
 	fz_rect hitbox;
@@ -347,9 +347,9 @@ fz_new_buffer_from_text_page(fz_context *ctx, fz_text_page *text, const fz_rect 
 	{
 		for (block_num = 0; block_num < text->len; block_num++)
 		{
-			fz_text_line *line;
-			fz_text_block *block;
-			fz_text_span *span;
+			fz_stext_line *line;
+			fz_stext_block *block;
+			fz_stext_span *span;
 
 			if (text->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 				continue;
@@ -363,7 +363,7 @@ fz_new_buffer_from_text_page(fz_context *ctx, fz_text_page *text, const fz_rect 
 					for (i = 0; i < span->len; i++)
 					{
 						int c;
-						fz_text_char_bbox(ctx, &hitbox, span, i);
+						fz_stext_char_bbox(ctx, &hitbox, span, i);
 						c = span->text[i].c;
 						if (c < 32)
 							c = '?';
@@ -399,42 +399,42 @@ fz_new_buffer_from_text_page(fz_context *ctx, fz_text_page *text, const fz_rect 
 fz_buffer *
 fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_rect *sel, int crlf)
 {
-	fz_text_sheet *sheet;
-	fz_text_page *text;
+	fz_stext_sheet *sheet;
+	fz_stext_page *text;
 	fz_buffer *buf;
 
-	sheet = fz_new_text_sheet(ctx);
+	sheet = fz_new_stext_sheet(ctx);
 	fz_try(ctx)
 	{
-		text = fz_new_text_page_from_display_list(ctx, list, sheet);
-		buf = fz_new_buffer_from_text_page(ctx, text, sel, crlf);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet);
+		buf = fz_new_buffer_from_stext_page(ctx, text, sel, crlf);
 	}
 	fz_always(ctx)
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_sheet(ctx, sheet);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-	fz_drop_text_page(ctx, text);
+	fz_drop_stext_page(ctx, text);
 	return buf;
 }
 
 fz_buffer *
 fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int crlf)
 {
-	fz_text_sheet *sheet;
-	fz_text_page *text;
+	fz_stext_sheet *sheet;
+	fz_stext_page *text;
 	fz_buffer *buf;
 
-	sheet = fz_new_text_sheet(ctx);
+	sheet = fz_new_stext_sheet(ctx);
 	fz_try(ctx)
 	{
-		text = fz_new_text_page_from_page(ctx, page, sheet);
-		buf = fz_new_buffer_from_text_page(ctx, text, sel, crlf);
+		text = fz_new_stext_page_from_page(ctx, page, sheet);
+		buf = fz_new_buffer_from_stext_page(ctx, text, sel, crlf);
 	}
 	fz_always(ctx)
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_sheet(ctx, sheet);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-	fz_drop_text_page(ctx, text);
+	fz_drop_stext_page(ctx, text);
 	return buf;
 }
 

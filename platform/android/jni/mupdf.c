@@ -1042,36 +1042,36 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 }
 
 static int
-charat(fz_context *ctx, fz_text_page *page, int idx)
+charat(fz_context *ctx, fz_stext_page *page, int idx)
 {
 	fz_char_and_box cab;
-	return fz_text_char_at(ctx, &cab, page, idx)->c;
+	return fz_stext_char_at(ctx, &cab, page, idx)->c;
 }
 
 static fz_rect
-bboxcharat(fz_context *ctx, fz_text_page *page, int idx)
+bboxcharat(fz_context *ctx, fz_stext_page *page, int idx)
 {
 	fz_char_and_box cab;
-	return fz_text_char_at(ctx, &cab, page, idx)->bbox;
+	return fz_stext_char_at(ctx, &cab, page, idx)->bbox;
 }
 
 static int
-textlen(fz_text_page *page)
+textlen(fz_stext_page *page)
 {
 	int len = 0;
 	int block_num;
 
 	for (block_num = 0; block_num < page->len; block_num++)
 	{
-		fz_text_block *block;
-		fz_text_line *line;
+		fz_stext_block *block;
+		fz_stext_line *line;
 
 		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 			continue;
 		block = page->blocks[block_num].u.text;
 		for (line = block->lines; line < block->lines + block->len; line++)
 		{
-			fz_text_span *span;
+			fz_stext_span *span;
 
 			for (span = line->first_span; span; span = span->next)
 			{
@@ -1209,8 +1209,8 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 	jmethodID ctor;
 	jobjectArray arr;
 	jobject rect;
-	fz_text_sheet *sheet = NULL;
-	fz_text_page *text = NULL;
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text = NULL;
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
@@ -1242,19 +1242,19 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 
 		zoom = glo->resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
-		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx);
-		dev = fz_new_text_device(ctx, sheet, text);
+		sheet = fz_new_stext_sheet(ctx);
+		text = fz_new_stext_page(ctx);
+		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
-		hit_count = fz_search_text_page(ctx, text, str, glo->hit_bbox, MAX_SEARCH_HITS);
+		hit_count = fz_search_stext_page(ctx, text, str, glo->hit_bbox, MAX_SEARCH_HITS);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_text_page(ctx, text);
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_page(ctx, text);
+		fz_drop_stext_sheet(ctx, sheet);
 		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
@@ -1301,8 +1301,8 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 	jclass textBlockClass;
 	jmethodID ctor;
 	jobjectArray barr = NULL;
-	fz_text_sheet *sheet = NULL;
-	fz_text_page *text = NULL;
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text = NULL;
 	fz_device *dev = NULL;
 	float zoom;
 	fz_matrix ctm;
@@ -1332,9 +1332,9 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 
 		zoom = glo->resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
-		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx);
-		dev = fz_new_text_device(ctx, sheet, text);
+		sheet = fz_new_stext_sheet(ctx);
+		text = fz_new_stext_page(ctx);
+		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
@@ -1344,7 +1344,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 
 		for (b = 0; b < text->len; b++)
 		{
-			fz_text_block *block;
+			fz_stext_block *block;
 			jobjectArray *larr;
 
 			if (text->blocks[b].type != FZ_PAGE_BLOCK_TEXT)
@@ -1355,9 +1355,9 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 
 			for (l = 0; l < block->len; l++)
 			{
-				fz_text_line *line = &block->lines[l];
+				fz_stext_line *line = &block->lines[l];
 				jobjectArray *sarr;
-				fz_text_span *span;
+				fz_stext_span *span;
 				int len = 0;
 
 				for (span = line->first_span; span; span = span->next)
@@ -1373,9 +1373,9 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 
 					for (c = 0; c < span->len; c++)
 					{
-						fz_text_char *ch = &span->text[c];
+						fz_stext_char *ch = &span->text[c];
 						fz_rect bbox;
-						fz_text_char_bbox(ctx, &bbox, span, c);
+						fz_stext_char_bbox(ctx, &bbox, span, c);
 						jobject cobj = (*env)->NewObject(env, textCharClass, ctor, bbox.x0, bbox.y0, bbox.x1, bbox.y1, ch->c);
 						if (cobj == NULL) fz_throw(ctx, FZ_ERROR_GENERIC, "NewObjectfailed");
 
@@ -1397,8 +1397,8 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_text_page(ctx, text);
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_page(ctx, text);
+		fz_drop_stext_sheet(ctx, sheet);
 		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)
@@ -1417,8 +1417,8 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 JNIEXPORT jbyteArray JNICALL
 JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 {
-	fz_text_sheet *sheet = NULL;
-	fz_text_page *text = NULL;
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text = NULL;
 	fz_device *dev = NULL;
 	fz_matrix ctm;
 	globals *glo = get_globals(env, thiz);
@@ -1440,9 +1440,9 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		int b, l, s, c;
 
 		ctm = fz_identity;
-		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx);
-		dev = fz_new_text_device(ctx, sheet, text);
+		sheet = fz_new_stext_sheet(ctx);
+		text = fz_new_stext_page(ctx);
+		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
@@ -1462,10 +1462,10 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		//fz_printf(ctx, out, "p{margin:0;padding:0;}\n");
 		fz_printf(ctx, out, "</style>\n");
 		fz_printf(ctx, out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
-		fz_print_text_page_html(ctx, out, text);
+		fz_print_stext_page_html(ctx, out, text);
 		fz_printf(ctx, out, "</div></body>\n");
 		fz_printf(ctx, out, "<style>\n");
-		fz_print_text_sheet(ctx, out, sheet);
+		fz_print_stext_sheet(ctx, out, sheet);
 		fz_printf(ctx, out, "</style>\n</html>\n");
 		fz_drop_output(ctx, out);
 		out = NULL;
@@ -1478,8 +1478,8 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_text_page(ctx, text);
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_page(ctx, text);
+		fz_drop_stext_sheet(ctx, sheet);
 		fz_drop_device(ctx, dev);
 		fz_drop_output(ctx, out);
 		fz_drop_buffer(ctx, buf);

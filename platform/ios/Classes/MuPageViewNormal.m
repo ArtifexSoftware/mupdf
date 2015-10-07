@@ -56,8 +56,8 @@ static NSArray *enumerateAnnotations(fz_document *doc, fz_page *page)
 
 static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 {
-	fz_text_sheet *sheet = NULL;
-	fz_text_page *text = NULL;
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text = NULL;
 	fz_device *dev = NULL;
 	NSMutableArray *lns = [NSMutableArray array];
 	NSMutableArray *wds;
@@ -74,16 +74,16 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 	{
 		int b, l, c;
 
-		sheet = fz_new_text_sheet(ctx);
-		text = fz_new_text_page(ctx);
-		dev = fz_new_text_device(ctx, sheet, text);
+		sheet = fz_new_stext_sheet(ctx);
+		text = fz_new_stext_page(ctx);
+		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, page, dev, &fz_identity, NULL);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
 		for (b = 0; b < text->len; b++)
 		{
-			fz_text_block *block;
+			fz_stext_block *block;
 
 			if (text->blocks[b].type != FZ_PAGE_BLOCK_TEXT)
 				continue;
@@ -92,8 +92,8 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 
 			for (l = 0; l < block->len; l++)
 			{
-				fz_text_line *line = &block->lines[l];
-				fz_text_span *span;
+				fz_stext_line *line = &block->lines[l];
+				fz_stext_span *span;
 
 				wds = [NSMutableArray array];
 				if (!wds)
@@ -107,11 +107,11 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 				{
 					for (c = 0; c < span->len; c++)
 					{
-						fz_text_char *ch = &span->text[c];
+						fz_stext_char *ch = &span->text[c];
 						fz_rect bbox;
 						CGRect rect;
 
-						fz_text_char_bbox(ctx, &bbox, span, c);
+						fz_stext_char_bbox(ctx, &bbox, span, c);
 						rect = CGRectMake(bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
 
 						if (ch->c != ' ')
@@ -138,8 +138,8 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 	}
 	fz_always(ctx);
 	{
-		fz_drop_text_page(ctx, text);
-		fz_drop_text_sheet(ctx, sheet);
+		fz_drop_stext_page(ctx, text);
+		fz_drop_stext_sheet(ctx, sheet);
 		fz_drop_device(ctx, dev);
 	}
 	fz_catch(ctx)

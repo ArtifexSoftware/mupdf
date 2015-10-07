@@ -479,10 +479,10 @@ void pdfapp_close(pdfapp_t *app)
 	fz_drop_display_list(app->ctx, app->annotations_list);
 	app->annotations_list = NULL;
 
-	fz_drop_text_page(app->ctx, app->page_text);
+	fz_drop_stext_page(app->ctx, app->page_text);
 	app->page_text = NULL;
 
-	fz_drop_text_sheet(app->ctx, app->page_sheet);
+	fz_drop_stext_sheet(app->ctx, app->page_sheet);
 	app->page_sheet = NULL;
 
 	fz_drop_link(app->ctx, app->page_links);
@@ -660,8 +660,8 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 
 	fz_drop_display_list(app->ctx, app->page_list);
 	fz_drop_display_list(app->ctx, app->annotations_list);
-	fz_drop_text_page(app->ctx, app->page_text);
-	fz_drop_text_sheet(app->ctx, app->page_sheet);
+	fz_drop_stext_page(app->ctx, app->page_text);
+	fz_drop_stext_sheet(app->ctx, app->page_sheet);
 	fz_drop_link(app->ctx, app->page_links);
 	fz_drop_page(app->ctx, app->page);
 
@@ -879,12 +879,12 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		app->hit_count = 0;
 
 		/* Extract text */
-		app->page_sheet = fz_new_text_sheet(app->ctx);
-		app->page_text = fz_new_text_page(app->ctx);
+		app->page_sheet = fz_new_stext_sheet(app->ctx);
+		app->page_text = fz_new_stext_page(app->ctx);
 
 		if (app->page_list || app->annotations_list)
 		{
-			tdev = fz_new_text_device(app->ctx, app->page_sheet, app->page_text);
+			tdev = fz_new_stext_device(app->ctx, app->page_sheet, app->page_text);
 			pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
 			fz_drop_device(app->ctx, tdev);
 		}
@@ -1060,7 +1060,7 @@ static void pdfapp_search_in_direction(pdfapp_t *app, enum panning *panto, int d
 			pdfapp_showpage(app, 1, 0, 0, 0, 1);
 		}
 
-		app->hit_count = fz_search_text_page(app->ctx, app->page_text, app->search, app->hit_bbox, nelem(app->hit_bbox));
+		app->hit_count = fz_search_stext_page(app->ctx, app->page_text, app->search, app->hit_bbox, nelem(app->hit_bbox));
 		if (app->hit_count > 0)
 		{
 			*panto = dir == 1 ? PAN_TO_TOP : PAN_TO_BOTTOM;
@@ -1884,7 +1884,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
 	fz_rect hitbox;
 	fz_matrix ctm;
-	fz_text_page *page = app->page_text;
+	fz_stext_page *page = app->page_text;
 	int c, i, p, need_newline;
 	int block_num;
 
@@ -1900,9 +1900,9 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 
 	for (block_num = 0; block_num < page->len; block_num++)
 	{
-		fz_text_line *line;
-		fz_text_block *block;
-		fz_text_span *span;
+		fz_stext_line *line;
+		fz_stext_block *block;
+		fz_stext_span *span;
 
 		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
 			continue;
@@ -1916,7 +1916,7 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 			{
 				for (i = 0; i < span->len; i++)
 				{
-					fz_text_char_bbox(app->ctx, &hitbox, span, i);
+					fz_stext_char_bbox(app->ctx, &hitbox, span, i);
 					fz_transform_rect(&hitbox, &ctm);
 					c = span->text[i].c;
 					if (c < 32)

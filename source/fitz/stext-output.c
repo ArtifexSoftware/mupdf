@@ -29,7 +29,7 @@ static int font_is_italic(fz_font *font)
 }
 
 static void
-fz_print_style_begin(fz_context *ctx, fz_output *out, fz_text_style *style)
+fz_print_style_begin(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
 	int script = style->script;
 	fz_printf(ctx, out, "<span class=\"s%d\">", style->id);
@@ -40,7 +40,7 @@ fz_print_style_begin(fz_context *ctx, fz_output *out, fz_text_style *style)
 }
 
 static void
-fz_print_style_end(fz_context *ctx, fz_output *out, fz_text_style *style)
+fz_print_style_end(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
 	int script = style->script;
 	while (script-- > 0)
@@ -51,7 +51,7 @@ fz_print_style_end(fz_context *ctx, fz_output *out, fz_text_style *style)
 }
 
 static void
-fz_print_style(fz_context *ctx, fz_output *out, fz_text_style *style)
+fz_print_style(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
 	char *s = strchr(style->font->name, '+');
 	s = s ? s + 1 : style->font->name;
@@ -65,9 +65,9 @@ fz_print_style(fz_context *ctx, fz_output *out, fz_text_style *style)
 }
 
 void
-fz_print_text_sheet(fz_context *ctx, fz_output *out, fz_text_sheet *sheet)
+fz_print_stext_sheet(fz_context *ctx, fz_output *out, fz_stext_sheet *sheet)
 {
-	fz_text_style *style;
+	fz_stext_style *style;
 	for (style = sheet->style; style; style = style->next)
 		fz_print_style(ctx, out, style);
 }
@@ -111,12 +111,12 @@ send_data_base64(fz_context *ctx, fz_output *out, fz_buffer *buffer)
 }
 
 void
-fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
+fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
 	int block_n, line_n, ch_n;
-	fz_text_style *style = NULL;
-	fz_text_line *line;
-	fz_text_span *span;
+	fz_stext_style *style = NULL;
+	fz_stext_line *line;
+	fz_stext_span *span;
 	void *last_region = NULL;
 
 	fz_printf(ctx, out, "<div class=\"page\">\n");
@@ -127,7 +127,7 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
 		{
-			fz_text_block * block = page->blocks[block_n].u.text;
+			fz_stext_block * block = page->blocks[block_n].u.text;
 			fz_printf(ctx, out, "<div class=\"block\"><p>\n");
 			for (line_n = 0; line_n < block->len; line_n++)
 			{
@@ -169,7 +169,7 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 						/* Now output the span to contain this entire column */
 						fz_printf(ctx, out, "<div class=\"cell\" style=\"");
 						{
-							fz_text_span *sn;
+							fz_stext_span *sn;
 							for (sn = span->next; sn; sn = sn->next)
 							{
 								if (sn->column != lastcol)
@@ -197,7 +197,7 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 						fz_printf(ctx, out, "<sup>");
 					for (ch_n = 0; ch_n < span->len; ch_n++)
 					{
-						fz_text_char *ch = &span->text[ch_n];
+						fz_stext_char *ch = &span->text[ch_n];
 						if (style != ch->style)
 						{
 							if (style)
@@ -275,7 +275,7 @@ fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page)
 }
 
 void
-fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
+fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
 	int block_n;
 
@@ -289,24 +289,24 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
 		{
-			fz_text_block *block = page->blocks[block_n].u.text;
-			fz_text_line *line;
+			fz_stext_block *block = page->blocks[block_n].u.text;
+			fz_stext_line *line;
 			char *s;
 
 			fz_printf(ctx, out, "<block bbox=\"%g %g %g %g\">\n",
 				block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
 			for (line = block->lines; line < block->lines + block->len; line++)
 			{
-				fz_text_span *span;
+				fz_stext_span *span;
 				fz_printf(ctx, out, "<line bbox=\"%g %g %g %g\">\n",
 					line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1);
 				for (span = line->first_span; span; span = span->next)
 				{
-					fz_text_style *style = NULL;
+					fz_stext_style *style = NULL;
 					int char_num;
 					for (char_num = 0; char_num < span->len; char_num++)
 					{
-						fz_text_char *ch = &span->text[char_num];
+						fz_stext_char *ch = &span->text[char_num];
 						if (ch->style != style)
 						{
 							if (style)
@@ -322,7 +322,7 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 						}
 						{
 							fz_rect rect;
-							fz_text_char_bbox(ctx, &rect, span, char_num);
+							fz_stext_char_bbox(ctx, &rect, span, char_num);
 							fz_printf(ctx, out, "<char bbox=\"%g %g %g %g\" x=\"%g\" y=\"%g\" c=\"",
 								rect.x0, rect.y0, rect.x1, rect.y1, ch->p.x, ch->p.y);
 						}
@@ -360,7 +360,7 @@ fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page)
 }
 
 void
-fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page)
+fz_print_stext_page(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
 	int block_n;
 
@@ -370,15 +370,15 @@ fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page)
 		{
 		case FZ_PAGE_BLOCK_TEXT:
 		{
-			fz_text_block *block = page->blocks[block_n].u.text;
-			fz_text_line *line;
-			fz_text_char *ch;
+			fz_stext_block *block = page->blocks[block_n].u.text;
+			fz_stext_line *line;
+			fz_stext_char *ch;
 			char utf[10];
 			int i, n;
 
 			for (line = block->lines; line < block->lines + block->len; line++)
 			{
-				fz_text_span *span;
+				fz_stext_span *span;
 				for (span = line->first_span; span; span = span->next)
 				{
 					for (ch = span->text; ch < span->text + span->len; ch++)

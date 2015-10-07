@@ -141,7 +141,7 @@ static int bandheight = 0;
 
 static int errored = 0;
 static int append = 0;
-static fz_text_sheet *sheet = NULL;
+static fz_stext_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static char *filename;
 static int files = 0;
@@ -331,14 +331,14 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	else if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT)
 	{
-		fz_text_page *text = NULL;
+		fz_stext_page *text = NULL;
 
 		fz_var(text);
 
 		fz_try(ctx)
 		{
-			text = fz_new_text_page(ctx);
-			dev = fz_new_text_device(ctx, sheet, text);
+			text = fz_new_stext_page(ctx);
+			dev = fz_new_stext_device(ctx, sheet, text);
 			if (output_format == OUT_HTML)
 				fz_disable_device_hints(ctx, dev, FZ_IGNORE_IMAGE);
 			if (list)
@@ -349,16 +349,16 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			dev = NULL;
 			if (output_format == OUT_STEXT)
 			{
-				fz_print_text_page_xml(ctx, out, text);
+				fz_print_stext_page_xml(ctx, out, text);
 			}
 			else if (output_format == OUT_HTML)
 			{
 				fz_analyze_text(ctx, sheet, text);
-				fz_print_text_page_html(ctx, out, text);
+				fz_print_stext_page_html(ctx, out, text);
 			}
 			else if (output_format == OUT_TEXT)
 			{
-				fz_print_text_page(ctx, out, text);
+				fz_print_stext_page(ctx, out, text);
 				fz_printf(ctx, out, "\f\n");
 			}
 		}
@@ -366,7 +366,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		{
 			fz_drop_device(ctx, dev);
 			dev = NULL;
-			fz_drop_text_page(ctx, text);
+			fz_drop_stext_page(ctx, text);
 		}
 		fz_catch(ctx)
 		{
@@ -1046,7 +1046,7 @@ int mudraw_main(int argc, char **argv)
 		fz_printf(ctx, out, "<?xml version=\"1.0\"?>\n");
 
 	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT)
-		sheet = fz_new_text_sheet(ctx);
+		sheet = fz_new_stext_sheet(ctx);
 
 	if (output_format == OUT_HTML)
 	{
@@ -1140,11 +1140,11 @@ int mudraw_main(int argc, char **argv)
 	{
 		fz_printf(ctx, out, "</body>\n");
 		fz_printf(ctx, out, "<style>\n");
-		fz_print_text_sheet(ctx, out, sheet);
+		fz_print_stext_sheet(ctx, out, sheet);
 		fz_printf(ctx, out, "</style>\n");
 	}
 
-	fz_drop_text_sheet(ctx, sheet);
+	fz_drop_stext_sheet(ctx, sheet);
 	fz_drop_output(ctx, out);
 	out = NULL;
 

@@ -86,8 +86,8 @@ struct pdfapp_s
 	fz_rect page_bbox;
 	fz_display_list *page_list;
 	fz_display_list *annotations_list;
-	fz_text_page *page_text;
-	fz_text_sheet *page_sheet;
+	fz_stext_page *page_text;
+	fz_stext_sheet *page_sheet;
 	fz_link *page_links;
 	int errored;
 	int incomplete;

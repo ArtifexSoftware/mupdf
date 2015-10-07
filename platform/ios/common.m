@@ -21,16 +21,16 @@ int search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 {
 	fz_page *page = fz_load_page(ctx, doc, number);
 
-	fz_text_sheet *sheet = fz_new_text_sheet(ctx);
-	fz_text_page *text = fz_new_text_page(ctx);
-	fz_device *dev = fz_new_text_device(ctx, sheet, text);
+	fz_stext_sheet *sheet = fz_new_stext_sheet(ctx);
+	fz_stext_page *text = fz_new_stext_page(ctx);
+	fz_device *dev = fz_new_stext_device(ctx, sheet, text);
 	fz_run_page(ctx, page, dev, &fz_identity, cookie);
 	fz_drop_device(ctx, dev);
 
-	hit_count = fz_search_text_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));
+	hit_count = fz_search_stext_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));
 
-	fz_drop_text_page(ctx, text);
-	fz_drop_text_sheet(ctx, sheet);
+	fz_drop_stext_page(ctx, text);
+	fz_drop_stext_sheet(ctx, sheet);
 	fz_drop_page(ctx, page);
 
 	return hit_count;

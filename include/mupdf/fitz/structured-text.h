@@ -16,34 +16,34 @@
 	(In development - Subject to change in future versions)
 */
 
-typedef struct fz_text_style_s fz_text_style;
-typedef struct fz_text_char_s fz_text_char;
-typedef struct fz_text_span_s fz_text_span;
-typedef struct fz_text_line_s fz_text_line;
-typedef struct fz_text_block_s fz_text_block;
+typedef struct fz_stext_style_s fz_stext_style;
+typedef struct fz_stext_char_s fz_stext_char;
+typedef struct fz_stext_span_s fz_stext_span;
+typedef struct fz_stext_line_s fz_stext_line;
+typedef struct fz_stext_block_s fz_stext_block;
 typedef struct fz_image_block_s fz_image_block;
 typedef struct fz_page_block_s fz_page_block;
 
-typedef struct fz_text_sheet_s fz_text_sheet;
-typedef struct fz_text_page_s fz_text_page;
+typedef struct fz_stext_sheet_s fz_stext_sheet;
+typedef struct fz_stext_page_s fz_stext_page;
 
 /*
-	fz_text_sheet: A text sheet contains a list of distinct text styles
+	fz_stext_sheet: A text sheet contains a list of distinct text styles
 	used on a page (or a series of pages).
 */
-struct fz_text_sheet_s
+struct fz_stext_sheet_s
 {
 	int maxid;
-	fz_text_style *style;
+	fz_stext_style *style;
 };
 
 /*
-	fz_text_style: A text style contains details of a distinct text style
+	fz_stext_style: A text style contains details of a distinct text style
 	used on a page.
 */
-struct fz_text_style_s
+struct fz_stext_style_s
 {
-	fz_text_style *next;
+	fz_stext_style *next;
 	int id;
 	fz_font *font;
 	float size;
@@ -58,15 +58,15 @@ struct fz_text_style_s
 };
 
 /*
-	fz_text_page: A text page is a list of page blocks, together with
+	fz_stext_page: A text page is a list of page blocks, together with
 	an overall bounding box.
 */
-struct fz_text_page_s
+struct fz_stext_page_s
 {
 	fz_rect mediabox;
 	int len, cap;
 	fz_page_block *blocks;
-	fz_text_page *next;
+	fz_stext_page *next;
 };
 
 /*
@@ -77,7 +77,7 @@ struct fz_page_block_s
 	int type;
 	union
 	{
-		fz_text_block *text;
+		fz_stext_block *text;
 		fz_image_block *image;
 	} u;
 };
@@ -89,15 +89,15 @@ enum
 };
 
 /*
-	fz_text_block: A text block is a list of lines of text. In typical
+	fz_stext_block: A text block is a list of lines of text. In typical
 	cases this may correspond to a paragraph or a column of text. A
 	collection of blocks makes up a page.
 */
-struct fz_text_block_s
+struct fz_stext_block_s
 {
 	fz_rect bbox;
 	int len, cap;
-	fz_text_line *lines;
+	fz_stext_line *lines;
 };
 
 /*
@@ -115,13 +115,13 @@ struct fz_image_block_s
 };
 
 /*
-	fz_text_line: A text line is a list of text spans, with the same
+	fz_stext_line: A text line is a list of text spans, with the same
 	baseline. In typical cases this should correspond (as expected) to
 	complete lines of text. A collection of lines makes up a block.
 */
-struct fz_text_line_s
+struct fz_stext_line_s
 {
-	fz_text_span *first_span, *last_span;
+	fz_stext_span *first_span, *last_span;
 
 	/* Cached information */
 	float distance; /* Perpendicular distance from previous line */
@@ -130,16 +130,16 @@ struct fz_text_line_s
 };
 
 /*
-	fz_text_span: A text span is a list of characters that share a common
+	fz_stext_span: A text span is a list of characters that share a common
 	baseline/transformation. In typical cases a single span may be enough
 	to represent a complete line. In cases where the text has big gaps in
 	it (perhaps as it crosses columns or tables), a line may be represented
 	by multiple spans.
 */
-struct fz_text_span_s
+struct fz_stext_span_s
 {
 	int len, cap;
-	fz_text_char *text;
+	fz_stext_char *text;
 	fz_point min; /* Device space */
 	fz_point max; /* Device space */
 	int wmode; /* 0 for horizontal, 1 for vertical */
@@ -159,19 +159,19 @@ struct fz_text_span_s
 	int align; /* 0 = left, 1 = centre, 2 = right */
 	float indent; /* The indent position for this column. */
 
-	fz_text_span *next;
+	fz_stext_span *next;
 };
 
 /*
-	fz_text_char: A text char is a unicode character, the style in which
+	fz_stext_char: A text char is a unicode character, the style in which
 	is appears, and the point at which it is positioned. Transform
 	(and hence bbox) information is given by the enclosing span.
 */
-struct fz_text_char_s
+struct fz_stext_char_s
 {
 	fz_point p; /* Device space */
 	int c;
-	fz_text_style *style;
+	fz_stext_style *style;
 };
 
 typedef struct fz_char_and_box_s fz_char_and_box;
@@ -182,10 +182,10 @@ struct fz_char_and_box_s
 	fz_rect bbox;
 };
 
-fz_char_and_box *fz_text_char_at(fz_context *ctx, fz_char_and_box *cab, fz_text_page *page, int idx);
+fz_char_and_box *fz_stext_char_at(fz_context *ctx, fz_char_and_box *cab, fz_stext_page *page, int idx);
 
 /*
-	fz_text_char_bbox: Return the bbox of a text char. Calculated from
+	fz_stext_char_bbox: Return the bbox of a text char. Calculated from
 	the supplied enclosing span.
 
 	bbox: A place to store the bbox
@@ -198,74 +198,74 @@ fz_char_and_box *fz_text_char_at(fz_context *ctx, fz_char_and_box *cab, fz_text_
 
 	Does not throw exceptions
 */
-fz_rect *fz_text_char_bbox(fz_context *ctx, fz_rect *bbox, fz_text_span *span, int idx);
+fz_rect *fz_stext_char_bbox(fz_context *ctx, fz_rect *bbox, fz_stext_span *span, int idx);
 
 /*
-	fz_new_text_sheet: Create an empty style sheet.
+	fz_new_stext_sheet: Create an empty style sheet.
 
 	The style sheet is filled out by the text device, creating
 	one style for each unique font, color, size combination that
 	is used.
 */
-fz_text_sheet *fz_new_text_sheet(fz_context *ctx);
-void fz_drop_text_sheet(fz_context *ctx, fz_text_sheet *sheet);
+fz_stext_sheet *fz_new_stext_sheet(fz_context *ctx);
+void fz_drop_stext_sheet(fz_context *ctx, fz_stext_sheet *sheet);
 
 /*
-	fz_new_text_page: Create an empty text page.
+	fz_new_stext_page: Create an empty text page.
 
 	The text page is filled out by the text device to contain the blocks,
 	lines and spans of text on the page.
 */
-fz_text_page *fz_new_text_page(fz_context *ctx);
-void fz_drop_text_page(fz_context *ctx, fz_text_page *page);
+fz_stext_page *fz_new_stext_page(fz_context *ctx);
+void fz_drop_stext_page(fz_context *ctx, fz_stext_page *page);
 
-void fz_analyze_text(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
+void fz_analyze_text(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page);
 
 /*
-	fz_print_text_sheet: Output a text sheet to a file as CSS.
+	fz_print_stext_sheet: Output a text sheet to a file as CSS.
 */
-void fz_print_text_sheet(fz_context *ctx, fz_output *out, fz_text_sheet *sheet);
+void fz_print_stext_sheet(fz_context *ctx, fz_output *out, fz_stext_sheet *sheet);
 
 /*
-	fz_print_text_page_html: Output a page to a file in HTML format.
+	fz_print_stext_page_html: Output a page to a file in HTML format.
 */
-void fz_print_text_page_html(fz_context *ctx, fz_output *out, fz_text_page *page);
+void fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page);
 
 /*
-	fz_print_text_page_xml: Output a page to a file in XML format.
+	fz_print_stext_page_xml: Output a page to a file in XML format.
 */
-void fz_print_text_page_xml(fz_context *ctx, fz_output *out, fz_text_page *page);
+void fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page);
 
 /*
-	fz_print_text_page: Output a page to a file in UTF-8 format.
+	fz_print_stext_page: Output a page to a file in UTF-8 format.
 */
-void fz_print_text_page(fz_context *ctx, fz_output *out, fz_text_page *page);
+void fz_print_stext_page(fz_context *ctx, fz_output *out, fz_stext_page *page);
 
 /*
-	fz_search_text_page: Search for occurrence of 'needle' in text page.
+	fz_search_stext_page: Search for occurrence of 'needle' in text page.
 
 	Return the number of hits and store hit bboxes in the passed in array.
 
 	NOTE: This is an experimental interface and subject to change without notice.
 */
-int fz_search_text_page(fz_context *ctx, fz_text_page *text, const char *needle, fz_rect *hit_bbox, int hit_max);
+int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, fz_rect *hit_bbox, int hit_max);
 
 /*
 	fz_highlight_selection: Return a list of rectangles to highlight given a selection rectangle.
 
 	NOTE: This is an experimental interface and subject to change without notice.
 */
-int fz_highlight_selection(fz_context *ctx, fz_text_page *page, fz_rect rect, fz_rect *hit_bbox, int hit_max);
+int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect, fz_rect *hit_bbox, int hit_max);
 
 /*
 	fz_copy_selection: Return a newly allocated UTF-8 string with the text for a given selection rectangle.
 
 	NOTE: This is an experimental interface and subject to change without notice.
 */
-char *fz_copy_selection(fz_context *ctx, fz_text_page *page, fz_rect rect);
+char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect);
 
 /*
-	fz_new_text_device: Create a device to extract the text on a page.
+	fz_new_stext_device: Create a device to extract the text on a page.
 
 	Gather and sort the text on a page into spans of uniform style,
 	arranged into lines and blocks by reading order. The reading order
@@ -281,6 +281,6 @@ char *fz_copy_selection(fz_context *ctx, fz_text_page *page, fz_rect rect);
 	containing data already (for example when merging multiple pages, or
 	watermarking).
 */
-fz_device *fz_new_text_device(fz_context *ctx, fz_text_sheet *sheet, fz_text_page *page);
+fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page);
 
 #endif
