@@ -825,11 +825,9 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 {
 	fz_html_flow *node;
 	fz_text *text;
-	fz_text *falltext;
 	fz_matrix trm;
 	const char *s;
 	float color[3];
-	float x, y;
 	int c, g;
 
 	for (node = box->flow_head; node; node = node->next)
@@ -853,11 +851,11 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			color[1] = node->style->color.g / 255.0f;
 			color[2] = node->style->color.b / 255.0f;
 
-			text = NULL;
-			falltext = NULL;
+			/* TODO: reuse text object if color is unchanged */
+			text = fz_new_text(ctx);
 
-			x = node->x;
-			y = node->y;
+			trm.e = node->x;
+			trm.f = node->y;
 			s = node->text;
 			while (*s)
 			{
@@ -866,12 +864,8 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				if (g)
 				{
 					if (node->style->visibility == V_VISIBLE)
-					{
-						if (!text)
-							text = fz_new_text(ctx, node->style->font, &trm, 0);
-						fz_add_text(ctx, text, g, c, x, y);
-					}
-					x += fz_advance_glyph(ctx, node->style->font, g) * node->em;
+						fz_add_text(ctx, text, node->style->font, 0, &trm, g, c);
+					trm.e += fz_advance_glyph(ctx, node->style->font, g) * node->em;
 				}
 				else
 				{
@@ -879,13 +873,16 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					if (g)
 					{
 						if (node->style->visibility == V_VISIBLE)
-						{
-							if (!falltext)
-								falltext = fz_new_text(ctx, node->style->fallback, &trm, 0);
-							fz_add_text(ctx, falltext, g, c, x, y);
-						}
+							fz_add_text(ctx, text, node->style->fallback, 0, &trm, g, c);
+						trm.e += fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
 					}
-					x += fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
+					else
+					{
+						g = fz_encode_character(ctx, node->style->font, 0x25CF); /* bullet */
+						if (node->style->visibility == V_VISIBLE)
+							fz_add_text(ctx, text, node->style->font, 0, &trm, g, c);
+						trm.e += fz_advance_glyph(ctx, node->style->font, g) * node->em;
+					}
 				}
 			}
 
@@ -893,11 +890,6 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			{
 				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
 				fz_drop_text(ctx, text);
-			}
-			if (falltext)
-			{
-				fz_fill_text(ctx, dev, falltext, ctm, fz_device_rgb(ctx), color, 1);
-				fz_drop_text(ctx, falltext);
 			}
 		}
 		else if (node->type == FLOW_IMAGE)
@@ -1039,14 +1031,15 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	fz_text *text;
 	fz_matrix trm;
 	fz_html_flow *line;
-	float x, y, w;
+	float y, w;
 	float color[3];
 	const char *s;
 	char buf[40];
 	int c, g;
 
 	fz_scale(&trm, box->em, -box->em);
-	text = fz_new_text(ctx, box->style.font, &trm, 0);
+
+	text = fz_new_text(ctx);
 
 	line = find_list_mark_anchor(ctx, box);
 	if (line)
@@ -1078,13 +1071,14 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	}
 
 	s = buf;
-	x = box->x - w;
+	trm.e = box->x - w;
+	trm.f = y;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
 		g = fz_encode_character(ctx, box->style.font, c);
-		fz_add_text(ctx, text, g, c, x, y);
-		x += fz_advance_glyph(ctx, box->style.font, g) * box->em;
+		fz_add_text(ctx, text, box->style.font, 0, &trm, g, c);
+		trm.e += fz_advance_glyph(ctx, box->style.font, g) * box->em;
 	}
 
 	color[0] = box->style.color.r / 255.0f;

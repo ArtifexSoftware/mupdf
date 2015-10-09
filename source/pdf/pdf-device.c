@@ -667,7 +667,7 @@ pdf_dev_pop(fz_context *ctx, pdf_device *pdev)
 }
 
 static void
-pdf_dev_text(fz_context *ctx, pdf_device *pdev, fz_text *text, float size)
+pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span, float size)
 {
 	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
 	int i;
@@ -686,9 +686,9 @@ pdf_dev_text(fz_context *ctx, pdf_device *pdev, fz_text *text, float size)
 	fz_invert_matrix(&inverse, &trunc_trm);
 
 	i = 0;
-	while (i < text->len)
+	while (i < span->len)
 	{
-		fz_text_item *it = &text->items[i];
+		fz_text_item *it = &span->items[i];
 		fz_point delta;
 		float x;
 		int j;
@@ -704,17 +704,17 @@ pdf_dev_text(fz_context *ctx, pdf_device *pdev, fz_text *text, float size)
 		}
 
 		j = i+1;
-		if (text->font->ft_face)
+		if (span->font->ft_face)
 		{
 			/* Find prefix of text for which the advance of each character accounts
 			 * for the position offset */
 			x = it->x;
-			while (j < text->len)
+			while (j < span->len)
 			{
 				FT_Fixed adv;
-				FT_Get_Advance(text->font->ft_face, text->items[j-1].gid, mask, &adv);
-				x += (float)adv * size /((FT_Face)text->font->ft_face)->units_per_EM;
-				if (fabs(x - text->items[j].x) > ALLOWED_TEXT_POS_ERROR || fabs(it->y - text->items[j].y) > ALLOWED_TEXT_POS_ERROR)
+				FT_Get_Advance(span->font->ft_face, span->items[j-1].gid, mask, &adv);
+				x += (float)adv * size /((FT_Face)span->font->ft_face)->units_per_EM;
+				if (fabs(x - span->items[j].x) > ALLOWED_TEXT_POS_ERROR || fabs(it->y - span->items[j].y) > ALLOWED_TEXT_POS_ERROR)
 					break;
 				j++;
 			}
@@ -725,7 +725,7 @@ pdf_dev_text(fz_context *ctx, pdf_device *pdev, fz_text *text, float size)
 		{
 			/* FIXME: should use it->gid, rather than it->ucs, and convert
 			* to the correct encoding */
-			fz_buffer_printf(ctx, gs->buf, "%02x", text->items[i].ucs);
+			fz_buffer_printf(ctx, gs->buf, "%02x", span->items[i].ucs);
 		}
 		fz_buffer_printf(ctx, gs->buf, "> Tj\n");
 	}
@@ -935,83 +935,105 @@ pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const f
 
 static void
 pdf_dev_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+		fz_colorspace *colorspace, float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	fz_matrix trm = text->trm;
-	float size = fz_matrix_expansion(&trm);
+	fz_text_span *span;
 
-	fz_pre_scale(&trm, 1/size, 1/size);
+	for (span = text->head; span; span = span->next)
+	{
+		fz_matrix trm = span->trm;
+		float size = fz_matrix_expansion(&trm);
 
-	pdf_dev_begin_text(ctx, pdev, &trm, 0);
-	pdf_dev_font(ctx, pdev, text->font, size);
-	pdf_dev_ctm(ctx, pdev, ctm);
-	pdf_dev_alpha(ctx, pdev, alpha, 0);
-	pdf_dev_color(ctx, pdev, colorspace, color, 0);
-	pdf_dev_text(ctx, pdev, text, size);
+		fz_pre_scale(&trm, 1/size, 1/size);
+
+		pdf_dev_begin_text(ctx, pdev, &trm, 0);
+		pdf_dev_font(ctx, pdev, span->font, size);
+		pdf_dev_ctm(ctx, pdev, ctm);
+		pdf_dev_alpha(ctx, pdev, alpha, 0);
+		pdf_dev_color(ctx, pdev, colorspace, color, 0);
+		pdf_dev_text_span(ctx, pdev, span, size);
+	}
 }
 
 static void
 pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+		fz_colorspace *colorspace, float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	fz_matrix trm = text->trm;
-	float size = fz_matrix_expansion(&trm);
+	fz_text_span *span;
 
-	fz_pre_scale(&trm, 1/size, 1/size);
+	for (span = text->head; span; span = span->next)
+	{
+		fz_matrix trm = span->trm;
+		float size = fz_matrix_expansion(&trm);
 
-	pdf_dev_begin_text(ctx, pdev, &text->trm, 1);
-	pdf_dev_font(ctx, pdev, text->font, 1);
-	pdf_dev_ctm(ctx, pdev, ctm);
-	pdf_dev_alpha(ctx, pdev, alpha, 1);
-	pdf_dev_color(ctx, pdev, colorspace, color, 1);
-	pdf_dev_text(ctx, pdev, text, size);
+		fz_pre_scale(&trm, 1/size, 1/size);
+
+		pdf_dev_begin_text(ctx, pdev, &span->trm, 1);
+		pdf_dev_font(ctx, pdev, span->font, 1);
+		pdf_dev_ctm(ctx, pdev, ctm);
+		pdf_dev_alpha(ctx, pdev, alpha, 1);
+		pdf_dev_color(ctx, pdev, colorspace, color, 1);
+		pdf_dev_text_span(ctx, pdev, span, size);
+	}
 }
 
 static void
 pdf_dev_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	fz_matrix trm = text->trm;
-	float size = fz_matrix_expansion(&trm);
+	fz_text_span *span;
+	for (span = text->head; span; span = span->next)
+	{
+		fz_matrix trm = span->trm;
+		float size = fz_matrix_expansion(&trm);
 
-	fz_pre_scale(&trm, 1/size, 1/size);
+		fz_pre_scale(&trm, 1/size, 1/size);
 
-	pdf_dev_begin_text(ctx, pdev, &text->trm, 0);
-	pdf_dev_ctm(ctx, pdev, ctm);
-	pdf_dev_font(ctx, pdev, text->font, 7);
-	pdf_dev_text(ctx, pdev, text, size);
+		pdf_dev_begin_text(ctx, pdev, &span->trm, 0);
+		pdf_dev_ctm(ctx, pdev, ctm);
+		pdf_dev_font(ctx, pdev, span->font, 7);
+		pdf_dev_text_span(ctx, pdev, span, size);
+	}
 }
 
 static void
 pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	fz_matrix trm = text->trm;
-	float size = fz_matrix_expansion(&trm);
+	fz_text_span *span;
+	for (span = text->head; span; span = span->next)
+	{
+		fz_matrix trm = span->trm;
+		float size = fz_matrix_expansion(&trm);
 
-	fz_pre_scale(&trm, 1/size, 1/size);
+		fz_pre_scale(&trm, 1/size, 1/size);
 
-	pdf_dev_begin_text(ctx, pdev, &text->trm, 0);
-	pdf_dev_font(ctx, pdev, text->font, 5);
-	pdf_dev_ctm(ctx, pdev, ctm);
-	pdf_dev_text(ctx, pdev, text, size);
+		pdf_dev_begin_text(ctx, pdev, &span->trm, 0);
+		pdf_dev_font(ctx, pdev, span->font, 5);
+		pdf_dev_ctm(ctx, pdev, ctm);
+		pdf_dev_text_span(ctx, pdev, span, size);
+	}
 }
 
 static void
 pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	fz_matrix trm = text->trm;
-	float size = fz_matrix_expansion(&trm);
+	fz_text_span *span;
+	for (span = text->head; span; span = span->next)
+	{
+		fz_matrix trm = span->trm;
+		float size = fz_matrix_expansion(&trm);
 
-	fz_pre_scale(&trm, 1/size, 1/size);
+		fz_pre_scale(&trm, 1/size, 1/size);
 
-	pdf_dev_begin_text(ctx, pdev, &text->trm, 0);
-	pdf_dev_ctm(ctx, pdev, ctm);
-	pdf_dev_font(ctx, pdev, text->font, 3);
-	pdf_dev_text(ctx, pdev, text, size);
+		pdf_dev_begin_text(ctx, pdev, &span->trm, 0);
+		pdf_dev_ctm(ctx, pdev, ctm);
+		pdf_dev_font(ctx, pdev, span->font, 3);
+		pdf_dev_text_span(ctx, pdev, span, size);
+	}
 }
 
 static void

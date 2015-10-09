@@ -19,6 +19,7 @@
  */
 
 typedef struct fz_text_s fz_text;
+typedef struct fz_text_span_s fz_text_span;
 typedef struct fz_text_item_s fz_text_item;
 
 struct fz_text_item_s
@@ -28,21 +29,27 @@ struct fz_text_item_s
 	int ucs; /* -1 for one ucs to many gid mappings */
 };
 
-struct fz_text_s
+struct fz_text_span_s
 {
-	int refs;
 	fz_font *font;
 	fz_matrix trm;
 	int wmode;
 	int len, cap;
 	fz_text_item *items;
+	fz_text_span *next;
 };
 
-fz_text *fz_new_text(fz_context *ctx, fz_font *face, const fz_matrix *trm, int wmode);
+struct fz_text_s
+{
+	int refs;
+	fz_text_span *head, *tail;
+};
+
+fz_text *fz_new_text(fz_context *ctx);
 fz_text *fz_keep_text(fz_context *ctx, fz_text *text);
 void fz_drop_text(fz_context *ctx, fz_text *text);
 
-void fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y);
+void fz_add_text(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_matrix *trm, int gid, int ucs);
 fz_rect *fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
 
 #endif

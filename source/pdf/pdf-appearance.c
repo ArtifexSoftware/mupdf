@@ -1898,36 +1898,37 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	}
 }
 
-static void add_text(fz_context *ctx, font_info *font_rec, fz_text *text, char *str, int str_len, float x, float y)
+static void add_text(fz_context *ctx, font_info *font_rec, fz_text *text, char *str, int str_len, const fz_matrix *tm_)
 {
 	fz_font *font = font_rec->font->font;
-	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
+	fz_matrix tm = *tm_;
+	int ucs, gid, n;
 
-	while (str_len--)
+	while (str_len > 0)
 	{
-		FT_Fixed adv;
-
-		/* FIXME: convert str from utf8 to WinAnsi */
-		int gid = FT_Get_Char_Index(font->ft_face, *str);
-		fz_add_text(ctx, text, gid, *str++, x, y);
-
-		FT_Get_Advance(font->ft_face, gid, mask, &adv);
-		x += ((float)adv) * font_rec->da_rec.font_size / ((FT_Face)font->ft_face)->units_per_EM;
+		n = fz_chartorune(&ucs, str);
+		str += n;
+		str_len -= n;
+		gid = fz_encode_character(ctx, font, ucs);
+		fz_add_text(ctx, text, font, 0, &tm, gid, ucs);
+		tm.e += fz_advance_glyph(ctx, font, gid) * font_rec->da_rec.font_size;
 	}
 }
 
 static fz_text *layout_text(fz_context *ctx, font_info *font_rec, char *str, float x, float y)
 {
-	fz_matrix tm;
-	fz_font *font = font_rec->font->font;
 	fz_text *text;
+	fz_matrix tm;
 
 	fz_scale(&tm, font_rec->da_rec.font_size, font_rec->da_rec.font_size);
-	text = fz_new_text(ctx, font, &tm, 0);
+	tm.e = x;
+	tm.f = y;
+
+	text = fz_new_text(ctx);
 
 	fz_try(ctx)
 	{
-		add_text(ctx, font_rec, text, str, strlen(str), x, y);
+		add_text(ctx, font_rec, text, str, strlen(str), &tm);
 	}
 	fz_catch(ctx)
 	{
@@ -1944,6 +1945,7 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 	float height = bounds->y1 - bounds->y0;
 	fz_matrix tm;
 	fz_text *text = NULL;
+	fz_text_span *span;
 	text_splitter splitter;
 	float ascender;
 
@@ -1961,14 +1963,15 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 			/* Try a layout pass */
 			int line = 0;
 			float font_size;
-			float x = 0.0;
-			float y = 0.0;
 
 			fz_drop_text(ctx, text);
 			text = NULL;
 			font_size = font_rec->da_rec.font_size;
 			fz_scale(&tm, font_size, font_size);
-			text = fz_new_text(ctx, font_rec->font->font, &tm, 0);
+			tm.e = 0;
+			tm.f = 0;
+
+			text = fz_new_text(ctx);
 
 			text_splitter_start_pass(&splitter);
 
@@ -1989,9 +1992,9 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 						int wordlen = splitter.text_end-splitter.text_start;
 
 						text_splitter_move(&splitter, -line, &dx, &dy);
-						x += dx;
-						y += dy;
-						add_text(ctx, font_rec, text, word, wordlen, x, y);
+						tm.e += dx;
+						tm.f += dy;
+						add_text(ctx, font_rec, text, word, wordlen, &tm);
 					}
 				}
 
@@ -2004,12 +2007,15 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 
 		/* Post process text with the scale determined by the splitter
 		 * and with the required offst */
-		fz_pre_scale(&text->trm, splitter.scale, splitter.scale);
-		ascender = font_rec->font->ascent * font_rec->da_rec.font_size * splitter.scale / 1000.0f;
-		for (i = 0; i < text->len; i++)
+		for (span = text->head; span; span = span->next)
 		{
-			text->items[i].x = text->items[i].x * splitter.scale + bounds->x0;
-			text->items[i].y = text->items[i].y * splitter.scale + bounds->y1 - ascender;
+			fz_pre_scale(&span->trm, splitter.scale, splitter.scale);
+			ascender = font_rec->font->ascent * font_rec->da_rec.font_size * splitter.scale / 1000.0f;
+			for (i = 0; i < span->len; i++)
+			{
+				span->items[i].x = span->items[i].x * splitter.scale + bounds->x0;
+				span->items[i].y = span->items[i].y * splitter.scale + bounds->y1 - ascender;
+			}
 		}
 	}
 	fz_catch(ctx)

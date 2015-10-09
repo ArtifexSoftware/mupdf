@@ -14,13 +14,6 @@ fz_trace_matrix(fz_context *ctx, fz_output *out, const fz_matrix *ctm)
 }
 
 static void
-fz_trace_trm(fz_context *ctx, fz_output *out, const fz_matrix *trm)
-{
-	fz_printf(ctx, out, " trm=\"%g %g %g %g\"",
-		trm->a, trm->b, trm->c, trm->d);
-}
-
-static void
 fz_trace_color(fz_context *ctx, fz_output *out, fz_colorspace *colorspace, float *color, float alpha)
 {
 	int i;
@@ -30,6 +23,38 @@ fz_trace_color(fz_context *ctx, fz_output *out, fz_colorspace *colorspace, float
 	fz_printf(ctx, out, "\"");
 	if (alpha < 1)
 		fz_printf(ctx, out, " alpha=\"%g\"", alpha);
+}
+
+static int
+isxmlmeta(int c)
+{
+	return c < 32 || c >= 128 || c == '&' || c == '<' || c == '>' || c == '\'' || c == '"';
+}
+
+static void
+fz_trace_text_span(fz_context *ctx, fz_output *out, fz_text_span *span)
+{
+	int i;
+	fz_printf(ctx, out, "<span font=\"%s\" wmode=\"%d\"", span->font->name, span->wmode);
+	fz_printf(ctx, out, " trm=\"%g %g %g %g\">\n", span->trm.a, span->trm.b, span->trm.c, span->trm.d);
+	for (i = 0; i < span->len; i++)
+	{
+		if (!isxmlmeta(span->items[i].ucs))
+			fz_printf(ctx, out, "<g ucs=\"%c\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
+					span->items[i].ucs, span->items[i].gid, span->items[i].x, span->items[i].y);
+		else
+			fz_printf(ctx, out, "<g ucs=\"U+%04X\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
+					span->items[i].ucs, span->items[i].gid, span->items[i].x, span->items[i].y);
+	}
+	fz_printf(ctx, out, "</span>\n");
+}
+
+static void
+fz_trace_text(fz_context *ctx, fz_output *out, fz_text *text)
+{
+	fz_text_span *span;
+	for (span = text->head; span; span = span->next)
+		fz_trace_text_span(ctx, out, span);
 }
 
 static void
@@ -166,36 +191,14 @@ fz_trace_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const 
 	fz_printf(ctx, out, "</clip_stroke_path>\n");
 }
 
-static int
-isxmlmeta(int c)
-{
-	return c < 32 || c >= 128 || c == '&' || c == '<' || c == '>' || c == '\'' || c == '"';
-}
-
-static void
-fz_trace_text(fz_context *ctx, fz_output *out, fz_text *text)
-{
-	int i;
-	for (i = 0; i < text->len; i++)
-	{
-		if (!isxmlmeta(text->items[i].ucs))
-			fz_printf(ctx, out, "<g ucs=\"%c\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
-				text->items[i].ucs, text->items[i].gid, text->items[i].x, text->items[i].y);
-		else
-			fz_printf(ctx, out, "<g ucs=\"U+%04X\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
-				text->items[i].ucs, text->items[i].gid, text->items[i].x, text->items[i].y);
-	}
-}
-
 static void
 fz_trace_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_printf(ctx, out, "<fill_text font=\"%s\" wmode=\"%d\"", text->font->name, text->wmode);
+	fz_printf(ctx, out, "<fill_text");
 	fz_trace_color(ctx, out, colorspace, color, alpha);
 	fz_trace_matrix(ctx, out, ctm);
-	fz_trace_trm(ctx, out, &text->trm);
 	fz_printf(ctx, out, ">\n");
 	fz_trace_text(ctx, out, text);
 	fz_printf(ctx, out, "</fill_text>\n");
@@ -206,10 +209,9 @@ fz_trace_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_s
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_printf(ctx, out, "<stroke_text font=\"%s\" wmode=\"%d\"", text->font->name, text->wmode);
+	fz_printf(ctx, out, "<stroke_text");
 	fz_trace_color(ctx, out, colorspace, color, alpha);
 	fz_trace_matrix(ctx, out, ctm);
-	fz_trace_trm(ctx, out, &text->trm);
 	fz_printf(ctx, out, ">\n");
 	fz_trace_text(ctx, out, text);
 	fz_printf(ctx, out, "</stroke_text>\n");
@@ -219,10 +221,8 @@ static void
 fz_trace_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_printf(ctx, out, "<clip_text font=\"%s\" wmode=\"%d\"", text->font->name, text->wmode);
-	fz_printf(ctx, out, " accumulate=\"%d\"", accumulate);
+	fz_printf(ctx, out, "<clip_text");
 	fz_trace_matrix(ctx, out, ctm);
-	fz_trace_trm(ctx, out, &text->trm);
 	fz_printf(ctx, out, ">\n");
 	fz_trace_text(ctx, out, text);
 	fz_printf(ctx, out, "</clip_text>\n");
@@ -232,9 +232,8 @@ static void
 fz_trace_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_printf(ctx, out, "<clip_stroke_text font=\"%s\" wmode=\"%d\"", text->font->name, text->wmode);
+	fz_printf(ctx, out, "<clip_stroke_text");
 	fz_trace_matrix(ctx, out, ctm);
-	fz_trace_trm(ctx, out, &text->trm);
 	fz_printf(ctx, out, ">\n");
 	fz_trace_text(ctx, out, text);
 	fz_printf(ctx, out, "</clip_stroke_text>\n");
@@ -244,9 +243,8 @@ static void
 fz_trace_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_printf(ctx, out, "<ignore_text font=\"%s\" wmode=\"%d\"", text->font->name, text->wmode);
+	fz_printf(ctx, out, "<ignore_text");
 	fz_trace_matrix(ctx, out, ctm);
-	fz_trace_trm(ctx, out, &text->trm);
 	fz_printf(ctx, out, ">\n");
 	fz_trace_text(ctx, out, text);
 	fz_printf(ctx, out, "</ignore_text>\n");

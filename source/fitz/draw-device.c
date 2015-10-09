@@ -562,15 +562,13 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matr
 	fz_colorspace *colorspace, float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
-
+	fz_draw_state *state = &dev->stack[dev->top];
+	fz_colorspace *model = state->dest->colorspace;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	unsigned char shapebv;
 	float colorfv[FZ_MAX_COLORS];
-	fz_matrix tm, trm;
-	fz_glyph *glyph;
-	int i, gid;
-	fz_draw_state *state = &dev->stack[dev->top];
-	fz_colorspace *model = state->dest->colorspace;
+	fz_text_span *span;
+	int i;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
@@ -581,50 +579,57 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matr
 	colorbv[i] = alpha * 255;
 	shapebv = 255;
 
-	tm = text->trm;
-
-	for (i = 0; i < text->len; i++)
+	for (span = text->head; span; span = span->next)
 	{
-		gid = text->items[i].gid;
-		if (gid < 0)
-			continue;
+		fz_matrix tm, trm;
+		fz_glyph *glyph;
+		int gid;
 
-		tm.e = text->items[i].x;
-		tm.f = text->items[i].y;
-		fz_concat(&trm, &tm, ctm);
+		tm = span->trm;
 
-		glyph = fz_render_glyph(ctx, text->font, gid, &trm, model, &state->scissor);
-		if (glyph)
+		for (i = 0; i < span->len; i++)
 		{
-			fz_pixmap *pixmap = glyph->pixmap;
-			int x = floorf(trm.e);
-			int y = floorf(trm.f);
-			if (pixmap == NULL || pixmap->n == 1)
+			gid = span->items[i].gid;
+			if (gid < 0)
+				continue;
+
+			tm.e = span->items[i].x;
+			tm.f = span->items[i].y;
+			fz_concat(&trm, &tm, ctm);
+
+			glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor);
+			if (glyph)
 			{
-				draw_glyph(colorbv, state->dest, glyph, x, y, &state->scissor);
-				if (state->shape)
-					draw_glyph(&shapebv, state->shape, glyph, x, y, &state->scissor);
+				fz_pixmap *pixmap = glyph->pixmap;
+				int x = floorf(trm.e);
+				int y = floorf(trm.f);
+				if (pixmap == NULL || pixmap->n == 1)
+				{
+					draw_glyph(colorbv, state->dest, glyph, x, y, &state->scissor);
+					if (state->shape)
+						draw_glyph(&shapebv, state->shape, glyph, x, y, &state->scissor);
+				}
+				else
+				{
+					fz_matrix mat;
+					mat.a = pixmap->w; mat.b = mat.c = 0; mat.d = pixmap->h;
+					mat.e = x + pixmap->x; mat.f = y + pixmap->y;
+					fz_paint_image(state->dest, &state->scissor, state->shape, pixmap, &mat, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
+				}
+				fz_drop_glyph(ctx, glyph);
 			}
 			else
 			{
-				fz_matrix mat;
-				mat.a = pixmap->w; mat.b = mat.c = 0; mat.d = pixmap->h;
-				mat.e = x + pixmap->x; mat.f = y + pixmap->y;
-				fz_paint_image(state->dest, &state->scissor, state->shape, pixmap, &mat, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
-			}
-			fz_drop_glyph(ctx, glyph);
-		}
-		else
-		{
-			fz_path *path = fz_outline_glyph(ctx, text->font, gid, &tm);
-			if (path)
-			{
-				fz_draw_fill_path(ctx, devp, path, 0, ctm, colorspace, color, alpha);
-				fz_drop_path(ctx, path);
-			}
-			else
-			{
-				fz_warn(ctx, "cannot render glyph");
+				fz_path *path = fz_outline_glyph(ctx, span->font, gid, &tm);
+				if (path)
+				{
+					fz_draw_fill_path(ctx, devp, path, 0, ctm, colorspace, color, alpha);
+					fz_drop_path(ctx, path);
+				}
+				else
+				{
+					fz_warn(ctx, "cannot render glyph");
+				}
 			}
 		}
 	}
@@ -639,14 +644,12 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, fz_text *text, fz_stroke_s
 	float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
-
-	unsigned char colorbv[FZ_MAX_COLORS + 1];
-	float colorfv[FZ_MAX_COLORS];
-	fz_matrix tm, trm;
-	fz_glyph *glyph;
-	int i, gid;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
+	unsigned char colorbv[FZ_MAX_COLORS + 1];
+	float colorfv[FZ_MAX_COLORS];
+	fz_text_span *span;
+	int i;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
@@ -656,39 +659,46 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, fz_text *text, fz_stroke_s
 		colorbv[i] = colorfv[i] * 255;
 	colorbv[i] = alpha * 255;
 
-	tm = text->trm;
-
-	for (i = 0; i < text->len; i++)
+	for (span = text->head; span; span = span->next)
 	{
-		gid = text->items[i].gid;
-		if (gid < 0)
-			continue;
+		fz_matrix tm, trm;
+		fz_glyph *glyph;
+		int gid;
 
-		tm.e = text->items[i].x;
-		tm.f = text->items[i].y;
-		fz_concat(&trm, &tm, ctm);
+		tm = span->trm;
 
-		glyph = fz_render_stroked_glyph(ctx, text->font, gid, &trm, ctm, stroke, &state->scissor);
-		if (glyph)
+		for (i = 0; i < span->len; i++)
 		{
-			int x = (int)trm.e;
-			int y = (int)trm.f;
-			draw_glyph(colorbv, state->dest, glyph, x, y, &state->scissor);
-			if (state->shape)
-				draw_glyph(colorbv, state->shape, glyph, x, y, &state->scissor);
-			fz_drop_glyph(ctx, glyph);
-		}
-		else
-		{
-			fz_path *path = fz_outline_glyph(ctx, text->font, gid, &tm);
-			if (path)
+			gid = span->items[i].gid;
+			if (gid < 0)
+				continue;
+
+			tm.e = span->items[i].x;
+			tm.f = span->items[i].y;
+			fz_concat(&trm, &tm, ctm);
+
+			glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, ctm, stroke, &state->scissor);
+			if (glyph)
 			{
-				fz_draw_stroke_path(ctx, devp, path, stroke, ctm, colorspace, color, alpha);
-				fz_drop_path(ctx, path);
+				int x = (int)trm.e;
+				int y = (int)trm.f;
+				draw_glyph(colorbv, state->dest, glyph, x, y, &state->scissor);
+				if (state->shape)
+					draw_glyph(colorbv, state->shape, glyph, x, y, &state->scissor);
+				fz_drop_glyph(ctx, glyph);
 			}
 			else
 			{
-				fz_warn(ctx, "cannot render glyph");
+				fz_path *path = fz_outline_glyph(ctx, span->font, gid, &tm);
+				if (path)
+				{
+					fz_draw_stroke_path(ctx, devp, path, stroke, ctm, colorspace, color, alpha);
+					fz_drop_path(ctx, path);
+				}
+				else
+				{
+					fz_warn(ctx, "cannot render glyph");
+				}
 			}
 		}
 	}
@@ -708,6 +718,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matr
 	int i, gid;
 	fz_draw_state *state;
 	fz_colorspace *model;
+	fz_text_span *span;
 
 	/* If accumulate == 0 then this text object is guaranteed complete */
 	/* If accumulate == 1 then this text object is the first (or only) in a sequence */
@@ -765,57 +776,60 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matr
 
 		if (!fz_is_empty_irect(&bbox) && mask)
 		{
-			tm = text->trm;
-
-			for (i = 0; i < text->len; i++)
+			for (span = text->head; span; span = span->next)
 			{
-				gid = text->items[i].gid;
-				if (gid < 0)
-					continue;
+				tm = span->trm;
 
-				tm.e = text->items[i].x;
-				tm.f = text->items[i].y;
-				fz_concat(&trm, &tm, ctm);
+				for (i = 0; i < span->len; i++)
+				{
+					gid = span->items[i].gid;
+					if (gid < 0)
+						continue;
 
-				glyph = fz_render_glyph(ctx, text->font, gid, &trm, model, &state->scissor);
-				if (glyph)
-				{
-					int x = (int)trm.e;
-					int y = (int)trm.f;
-					draw_glyph(NULL, mask, glyph, x, y, &bbox);
-					if (state[1].shape)
-						draw_glyph(NULL, state[1].shape, glyph, x, y, &bbox);
-					fz_drop_glyph(ctx, glyph);
-				}
-				else
-				{
-					fz_path *path = fz_outline_glyph(ctx, text->font, gid, &tm);
-					if (path)
+					tm.e = span->items[i].x;
+					tm.f = span->items[i].y;
+					fz_concat(&trm, &tm, ctm);
+
+					glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor);
+					if (glyph)
 					{
-						fz_pixmap *old_dest;
-						float white = 1;
-
-						old_dest = state[1].dest;
-						state[1].dest = state[1].mask;
-						state[1].mask = NULL;
-						fz_try(ctx)
-						{
-							fz_draw_fill_path(ctx, devp, path, 0, ctm, fz_device_gray(ctx), &white, 1);
-						}
-						fz_always(ctx)
-						{
-							state[1].mask = state[1].dest;
-							state[1].dest = old_dest;
-							fz_drop_path(ctx, path);
-						}
-						fz_catch(ctx)
-						{
-							fz_rethrow(ctx);
-						}
+						int x = (int)trm.e;
+						int y = (int)trm.f;
+						draw_glyph(NULL, mask, glyph, x, y, &bbox);
+						if (state[1].shape)
+							draw_glyph(NULL, state[1].shape, glyph, x, y, &bbox);
+						fz_drop_glyph(ctx, glyph);
 					}
 					else
 					{
-						fz_warn(ctx, "cannot render glyph for clipping");
+						fz_path *path = fz_outline_glyph(ctx, span->font, gid, &tm);
+						if (path)
+						{
+							fz_pixmap *old_dest;
+							float white = 1;
+
+							old_dest = state[1].dest;
+							state[1].dest = state[1].mask;
+							state[1].mask = NULL;
+							fz_try(ctx)
+							{
+								fz_draw_fill_path(ctx, devp, path, 0, ctm, fz_device_gray(ctx), &white, 1);
+							}
+							fz_always(ctx)
+							{
+								state[1].mask = state[1].dest;
+								state[1].dest = old_dest;
+								fz_drop_path(ctx, path);
+							}
+							fz_catch(ctx)
+							{
+								fz_rethrow(ctx);
+							}
+						}
+						else
+						{
+							fz_warn(ctx, "cannot render glyph for clipping");
+						}
 					}
 				}
 			}
@@ -840,6 +854,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, fz_text *text, fz_str
 	int i, gid;
 	fz_draw_state *state = push_stack(ctx, dev);
 	fz_colorspace *model = state->dest->colorspace;
+	fz_text_span *span;
 	fz_rect rect;
 
 	STACK_PUSHED("clip stroke text");
@@ -869,58 +884,61 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, fz_text *text, fz_str
 
 		if (!fz_is_empty_irect(&bbox))
 		{
-			tm = text->trm;
-
-			for (i = 0; i < text->len; i++)
+			for (span = text->head; span; span = span->next)
 			{
-				gid = text->items[i].gid;
-				if (gid < 0)
-					continue;
+				tm = span->trm;
 
-				tm.e = text->items[i].x;
-				tm.f = text->items[i].y;
-				fz_concat(&trm, &tm, ctm);
+				for (i = 0; i < span->len; i++)
+				{
+					gid = span->items[i].gid;
+					if (gid < 0)
+						continue;
 
-				glyph = fz_render_stroked_glyph(ctx, text->font, gid, &trm, ctm, stroke, &state->scissor);
-				if (glyph)
-				{
-					int x = (int)trm.e;
-					int y = (int)trm.f;
-					draw_glyph(NULL, mask, glyph, x, y, &bbox);
-					if (shape)
-						draw_glyph(NULL, shape, glyph, x, y, &bbox);
-					fz_drop_glyph(ctx, glyph);
-				}
-				else
-				{
-					fz_path *path = fz_outline_glyph(ctx, text->font, gid, &tm);
-					if (path)
+					tm.e = span->items[i].x;
+					tm.f = span->items[i].y;
+					fz_concat(&trm, &tm, ctm);
+
+					glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, ctm, stroke, &state->scissor);
+					if (glyph)
 					{
-						fz_pixmap *old_dest;
-						float white = 1;
-
-						state = &dev->stack[dev->top];
-						old_dest = state[0].dest;
-						state[0].dest = state[0].mask;
-						state[0].mask = NULL;
-						fz_try(ctx)
-						{
-							fz_draw_stroke_path(ctx, devp, path, stroke, ctm, fz_device_gray(ctx), &white, 1);
-						}
-						fz_always(ctx)
-						{
-							state[0].mask = state[0].dest;
-							state[0].dest = old_dest;
-							fz_drop_path(ctx, path);
-						}
-						fz_catch(ctx)
-						{
-							fz_rethrow(ctx);
-						}
+						int x = (int)trm.e;
+						int y = (int)trm.f;
+						draw_glyph(NULL, mask, glyph, x, y, &bbox);
+						if (shape)
+							draw_glyph(NULL, shape, glyph, x, y, &bbox);
+						fz_drop_glyph(ctx, glyph);
 					}
 					else
 					{
-						fz_warn(ctx, "cannot render glyph for stroked clipping");
+						fz_path *path = fz_outline_glyph(ctx, span->font, gid, &tm);
+						if (path)
+						{
+							fz_pixmap *old_dest;
+							float white = 1;
+
+							state = &dev->stack[dev->top];
+							old_dest = state[0].dest;
+							state[0].dest = state[0].mask;
+							state[0].mask = NULL;
+							fz_try(ctx)
+							{
+								fz_draw_stroke_path(ctx, devp, path, stroke, ctm, fz_device_gray(ctx), &white, 1);
+							}
+							fz_always(ctx)
+							{
+								state[0].mask = state[0].dest;
+								state[0].dest = old_dest;
+								fz_drop_path(ctx, path);
+							}
+							fz_catch(ctx)
+							{
+								fz_rethrow(ctx);
+							}
+						}
+						else
+						{
+							fz_warn(ctx, "cannot render glyph for stroked clipping");
+						}
 					}
 				}
 			}

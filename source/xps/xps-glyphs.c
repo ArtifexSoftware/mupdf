@@ -348,7 +348,6 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	xps_glyph_metrics mtx;
 	fz_text *text;
 	fz_matrix tm;
-	float e, f;
 	float x = originx;
 	float y = originy;
 	char *us = unicode;
@@ -372,7 +371,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	else
 		fz_scale(&tm, size, -size);
 
-	text = fz_new_text(ctx, font, &tm, is_sideways);
+	text = fz_new_text(ctx);
 
 	while ((us && un > 0) || (is && *is))
 	{
@@ -440,16 +439,16 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 			if (is_sideways)
 			{
-				e = x + u_offset + (mtx.vorg * size);
-				f = y - v_offset + (mtx.hadv * 0.5f * size);
+				tm.e = x + u_offset + (mtx.vorg * size);
+				tm.f = y - v_offset + (mtx.hadv * 0.5f * size);
 			}
 			else
 			{
-				e = x + u_offset;
-				f = y - v_offset;
+				tm.e = x + u_offset;
+				tm.f = y - v_offset;
 			}
 
-			fz_add_text(ctx, text, glyph_index, char_code, e, f);
+			fz_add_text(ctx, text, font, is_sideways, &tm, glyph_index, char_code);
 
 			x += advance * 0.01f * size;
 		}

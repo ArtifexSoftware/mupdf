@@ -1,19 +1,10 @@
 #include "mupdf/fitz.h"
 
 fz_text *
-fz_new_text(fz_context *ctx, fz_font *font, const fz_matrix *trm, int wmode)
+fz_new_text(fz_context *ctx)
 {
-	fz_text *text;
-
-	text = fz_malloc_struct(ctx, fz_text);
+	fz_text *text = fz_malloc_struct(ctx, fz_text);
 	text->refs = 1;
-	text->font = fz_keep_font(ctx, font);
-	text->trm = *trm;
-	text->wmode = wmode;
-	text->len = 0;
-	text->cap = 0;
-	text->items = NULL;
-
 	return text;
 }
 
@@ -28,84 +19,122 @@ fz_drop_text(fz_context *ctx, fz_text *text)
 {
 	if (fz_drop_imp(ctx, text, &text->refs))
 	{
-		fz_drop_font(ctx, text->font);
-		fz_free(ctx, text->items);
+		fz_text_span *span = text->head;
+		while (span)
+		{
+			fz_text_span *next = span->next;
+			fz_drop_font(ctx, span->font);
+			fz_free(ctx, span->items);
+			fz_free(ctx, span);
+			span = next;
+		}
 		fz_free(ctx, text);
 	}
+}
+
+static fz_text_span *
+fz_new_text_span(fz_context *ctx, fz_font *font, int wmode, const fz_matrix *trm)
+{
+	fz_text_span *span = fz_malloc_struct(ctx, fz_text_span);
+	span->font = fz_keep_font(ctx, font);
+	span->wmode = wmode;
+	span->trm = *trm;
+	span->trm.e = 0;
+	span->trm.f = 0;
+	return span;
+}
+
+static fz_text_span *
+fz_add_text_span(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_matrix *trm)
+{
+	if (!text->tail)
+	{
+		text->head = text->tail = fz_new_text_span(ctx, font, wmode, trm);
+	}
+	else if (text->tail->font != font ||
+		text->tail->wmode != wmode ||
+		text->tail->trm.a != trm->a ||
+		text->tail->trm.b != trm->b ||
+		text->tail->trm.c != trm->c ||
+		text->tail->trm.d != trm->d)
+	{
+		text->tail = text->tail->next = fz_new_text_span(ctx, font, wmode, trm);
+	}
+	return text->tail;
+}
+
+static void
+fz_grow_text_span(fz_context *ctx, fz_text_span *span, int n)
+{
+	int new_cap = span->cap;
+	if (span->len + n < new_cap)
+		return;
+	while (span->len + n > new_cap)
+		new_cap = new_cap + 36;
+	span->items = fz_resize_array(ctx, span->items, new_cap, sizeof(fz_text_item));
+	span->cap = new_cap;
+}
+
+void
+fz_add_text(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_matrix *trm, int gid, int ucs)
+{
+	fz_text_span *span;
+
+	if (text->refs != 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot modify shared text objects");
+
+	span = fz_add_text_span(ctx, text, font, wmode, trm);
+
+	fz_grow_text_span(ctx, span, 1);
+
+	span->items[span->len].ucs = ucs;
+	span->items[span->len].gid = gid;
+	span->items[span->len].x = trm->e;
+	span->items[span->len].y = trm->f;
+	span->len++;
 }
 
 fz_rect *
 fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *bbox)
 {
+	fz_text_span *span;
 	fz_matrix tm, trm;
 	fz_rect gbox;
 	int i;
 
-	if (text->len == 0)
+	*bbox = fz_empty_rect;
+
+	for (span = text->head; span; span = span->next)
 	{
-		*bbox = fz_empty_rect;
-		return bbox;
-	}
-
-	// TODO: stroke state
-
-	tm = text->trm;
-
-	tm.e = text->items[0].x;
-	tm.f = text->items[0].y;
-	fz_concat(&trm, &tm, ctm);
-	fz_bound_glyph(ctx, text->font, text->items[0].gid, &trm, bbox);
-
-	for (i = 1; i < text->len; i++)
-	{
-		if (text->items[i].gid >= 0)
+		if (span->len > 0)
 		{
-			tm.e = text->items[i].x;
-			tm.f = text->items[i].y;
-			fz_concat(&trm, &tm, ctm);
-			fz_bound_glyph(ctx, text->font, text->items[i].gid, &trm, &gbox);
+			tm = span->trm;
+			for (i = 0; i < span->len; i++)
+			{
+				if (span->items[i].gid >= 0)
+				{
+					tm.e = span->items[i].x;
+					tm.f = span->items[i].y;
+					fz_concat(&trm, &tm, ctm);
+					fz_bound_glyph(ctx, span->font, span->items[i].gid, &trm, &gbox);
+					fz_union_rect(bbox, &gbox);
+				}
+			}
 
-			bbox->x0 = fz_min(bbox->x0, gbox.x0);
-			bbox->y0 = fz_min(bbox->y0, gbox.y0);
-			bbox->x1 = fz_max(bbox->x1, gbox.x1);
-			bbox->y1 = fz_max(bbox->y1, gbox.y1);
 		}
 	}
 
-	if (stroke)
-		fz_adjust_rect_for_stroke(ctx, bbox, stroke, ctm);
+	if (!fz_is_empty_rect(bbox))
+	{
+		if (stroke)
+			fz_adjust_rect_for_stroke(ctx, bbox, stroke, ctm);
 
-	/* Compensate for the glyph cache limited positioning precision */
-	bbox->x0 -= 1;
-	bbox->y0 -= 1;
-	bbox->x1 += 1;
-	bbox->y1 += 1;
+		/* Compensate for the glyph cache limited positioning precision */
+		bbox->x0 -= 1;
+		bbox->y0 -= 1;
+		bbox->x1 += 1;
+		bbox->y1 += 1;
+	}
 
 	return bbox;
-}
-
-static void
-fz_grow_text(fz_context *ctx, fz_text *text, int n)
-{
-	int new_cap = text->cap;
-	if (text->len + n < new_cap)
-		return;
-	while (text->len + n > new_cap)
-		new_cap = new_cap + 36;
-	text->items = fz_resize_array(ctx, text->items, new_cap, sizeof(fz_text_item));
-	text->cap = new_cap;
-}
-
-void
-fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y)
-{
-	if (text->refs != 1)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot modify shared text objects");
-
-	fz_grow_text(ctx, text, 1);
-	text->items[text->len].ucs = ucs;
-	text->items[text->len].gid = gid;
-	text->items[text->len].x = x;
-	text->items[text->len].y = y;
-	text->len++;
 }
