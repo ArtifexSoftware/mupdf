@@ -1945,6 +1945,12 @@ static void pdf_run_EX(fz_context *ctx, pdf_processor *proc)
 {
 }
 
+static void pdf_run_END(fz_context *ctx, pdf_processor *proc)
+{
+	pdf_run_processor *pr = (pdf_run_processor *)proc;
+	pdf_flush_text(ctx, pr);
+}
+
 static void
 pdf_run_drop_imp(fz_context *ctx, pdf_processor *proc)
 {
@@ -2088,6 +2094,8 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 		/* compatibility */
 		proc->super.op_BX = pdf_run_BX;
 		proc->super.op_EX = pdf_run_EX;
+
+		proc->super.op_END = pdf_run_END;
 	}
 
 	proc->dev = dev;
