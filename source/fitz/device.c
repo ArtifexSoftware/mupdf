@@ -67,38 +67,6 @@ push_clip_stack(fz_context *ctx, fz_device *dev, const fz_rect *rect, int flags)
 }
 
 static void
-push_clip_stack_accumulate(fz_context *ctx, fz_device *dev, const fz_rect *rect, int accumulate)
-{
-	if (accumulate <= 1)
-	{
-		dev->scissor_accumulator = *rect;
-		if (dev->container_len == dev->container_cap)
-		{
-			int newmax = dev->container_cap * 2;
-			if (newmax == 0)
-				newmax = 4;
-			dev->container = fz_resize_array(ctx, dev->container, newmax, sizeof(*dev->container));
-			dev->container_cap = newmax;
-		}
-		if (dev->container_len > 0)
-			dev->container[dev->container_len].scissor = dev->container[dev->container_len-1].scissor;
-		else
-			dev->container[dev->container_len].scissor = fz_infinite_rect;
-		fz_intersect_rect(&dev->container[dev->container_len].scissor, rect);
-		dev->container[dev->container_len].flags = fz_device_container_stack_is_clip_text;
-		dev->container[dev->container_len].user = 0;
-		dev->container_len++;
-	}
-	else
-	{
-		if (dev->container_len <= 0)
-			return;
-		fz_union_rect(&dev->scissor_accumulator, rect);
-		fz_intersect_rect(&dev->container[dev->container_len-1].scissor, &dev->scissor_accumulator);
-	}
-}
-
-static void
 pop_clip_stack(fz_context *ctx, fz_device *dev)
 {
 	if (dev->container_len > 0)
@@ -212,12 +180,11 @@ fz_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *
 }
 
 void
-fz_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
+fz_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	if (dev->error_depth)
 	{
-		if (accumulate == 0 || accumulate == 1)
-			dev->error_depth++;
+		dev->error_depth++;
 		return;
 	}
 
@@ -227,15 +194,13 @@ fz_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ct
 		{
 			fz_rect bbox;
 			fz_bound_text(ctx, text, NULL, ctm, &bbox);
-			push_clip_stack_accumulate(ctx, dev, &bbox, accumulate);
+			push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_text);
 		}
 		if (dev->clip_text)
-			dev->clip_text(ctx, dev, text, ctm, accumulate);
+			dev->clip_text(ctx, dev, text, ctm);
 	}
 	fz_catch(ctx)
 	{
-		if (accumulate == 2)
-			fz_rethrow(ctx);
 		dev->error_depth = 1;
 		strcpy(dev->errmess, fz_caught_message(ctx));
 		/* Error swallowed */

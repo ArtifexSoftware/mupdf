@@ -194,12 +194,8 @@ fz_append_display_node(
 		}
 		writer->top++;
 		break;
-	case FZ_CMD_CLIP_TEXT:
-		/* don't reset the clip rect for accumulated text */
-		if (flags == 2)
-			break;
-		/* fallthrough */
 	case FZ_CMD_END_MASK:
+	case FZ_CMD_CLIP_TEXT:
 	case FZ_CMD_CLIP_STROKE_TEXT:
 		if (writer->top < STACK_SIZE)
 		{
@@ -840,22 +836,19 @@ fz_list_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_st
 }
 
 static void
-fz_list_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
+fz_list_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
 
 	fz_try(ctx)
 	{
-		if (accumulate)
-			rect = fz_infinite_rect;
-		else
-			fz_bound_text(ctx, text, NULL, ctm, &rect);
+		fz_bound_text(ctx, text, NULL, ctm, &rect);
 		fz_append_display_node(
 			ctx,
 			dev,
 			FZ_CMD_CLIP_TEXT,
-			accumulate, /* flags */
+			0, /* flags */
 			&rect,
 			NULL, /* path */
 			NULL, /* color */
@@ -1636,16 +1629,12 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			{
 			case FZ_CMD_CLIP_PATH:
 			case FZ_CMD_CLIP_STROKE_PATH:
+			case FZ_CMD_CLIP_TEXT:
 			case FZ_CMD_CLIP_STROKE_TEXT:
 			case FZ_CMD_CLIP_IMAGE_MASK:
 			case FZ_CMD_BEGIN_MASK:
 			case FZ_CMD_BEGIN_GROUP:
 				clipped++;
-				continue;
-			case FZ_CMD_CLIP_TEXT:
-				/* Accumulated text has no extra pops */
-				if (n.flags != 2)
-					clipped++;
 				continue;
 			case FZ_CMD_POP_CLIP:
 			case FZ_CMD_END_GROUP:
@@ -1694,7 +1683,7 @@ visible:
 				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, color, alpha);
 				break;
 			case FZ_CMD_CLIP_TEXT:
-				fz_clip_text(ctx, dev, *(fz_text **)node, &trans_ctm, n.flags);
+				fz_clip_text(ctx, dev, *(fz_text **)node, &trans_ctm);
 				break;
 			case FZ_CMD_CLIP_STROKE_TEXT:
 				fz_clip_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm);

@@ -85,7 +85,6 @@ struct pdf_run_processor_s
 	fz_matrix tlm;
 	fz_matrix tm;
 	int text_mode;
-	int accumulate;
 
 	/* graphics state */
 	pdf_gstate *gstate;
@@ -794,7 +793,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
 				{
-					fz_clip_text(ctx, pr->dev, text, &gstate->ctm, 0);
+					fz_clip_text(ctx, pr->dev, text, &gstate->ctm);
 					pdf_show_pattern(ctx, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], &tb, PDF_FILL);
 					fz_pop_clip(ctx, pr->dev);
 				}
@@ -802,7 +801,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 			case PDF_MAT_SHADE:
 				if (gstate->fill.shade)
 				{
-					fz_clip_text(ctx, pr->dev, text, &gstate->ctm, 0);
+					fz_clip_text(ctx, pr->dev, text, &gstate->ctm);
 					/* Page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm */
 					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
 					fz_pop_clip(ctx, pr->dev);
@@ -848,10 +847,8 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 
 		if (doclip)
 		{
-			if (pr->accumulate < 2)
-				gstate->clip_depth++;
-			fz_clip_text(ctx, pr->dev, text, &gstate->ctm, pr->accumulate);
-			pr->accumulate = 2;
+			gstate->clip_depth++;
+			fz_clip_text(ctx, pr->dev, text, &gstate->ctm);
 		}
 	}
 	fz_always(ctx)
@@ -1626,7 +1623,6 @@ static void pdf_run_ET(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_flush_text(ctx, pr);
-	pr->accumulate = 1;
 }
 
 /* text state */
@@ -2126,7 +2122,6 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 	proc->tlm = fz_identity;
 	proc->tm = fz_identity;
 	proc->text_mode = 0;
-	proc->accumulate = 1;
 
 	fz_try(ctx)
 	{

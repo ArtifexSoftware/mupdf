@@ -603,7 +603,7 @@ svg_dev_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_st
 }
 
 static void
-svg_dev_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
+svg_dev_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;

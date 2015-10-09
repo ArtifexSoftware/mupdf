@@ -113,7 +113,7 @@ struct fz_device_s
 
 	void (*fill_text)(fz_context *, fz_device *, fz_text *, const fz_matrix *, fz_colorspace *, float *color, float alpha);
 	void (*stroke_text)(fz_context *, fz_device *, fz_text *, fz_stroke_state *, const fz_matrix *, fz_colorspace *, float *color, float alpha);
-	void (*clip_text)(fz_context *, fz_device *, fz_text *, const fz_matrix *, int accumulate);
+	void (*clip_text)(fz_context *, fz_device *, fz_text *, const fz_matrix *);
 	void (*clip_stroke_text)(fz_context *, fz_device *, fz_text *, fz_stroke_state *, const fz_matrix *);
 	void (*ignore_text)(fz_context *, fz_device *, fz_text *, const fz_matrix *);
 
@@ -142,7 +142,6 @@ struct fz_device_s
 	int container_len;
 	int container_cap;
 	fz_device_container_stack *container;
-	fz_rect scissor_accumulator;
 };
 
 void fz_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *rect, const fz_matrix *ctm);
@@ -153,7 +152,7 @@ void fz_clip_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect 
 void fz_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect *rect, fz_stroke_state *stroke, const fz_matrix *ctm);
 void fz_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha);
 void fz_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha);
-void fz_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate);
+void fz_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm);
 void fz_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm);
 void fz_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm);
 void fz_pop_clip(fz_context *ctx, fz_device *dev);

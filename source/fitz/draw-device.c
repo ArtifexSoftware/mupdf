@@ -708,7 +708,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, fz_text *text, fz_stroke_s
 }
 
 static void
-fz_draw_clip_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matrix *ctm, int accumulate)
+fz_draw_clip_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matrix *ctm)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_irect bbox;
@@ -719,60 +719,38 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matr
 	fz_draw_state *state;
 	fz_colorspace *model;
 	fz_text_span *span;
-
-	/* If accumulate == 0 then this text object is guaranteed complete */
-	/* If accumulate == 1 then this text object is the first (or only) in a sequence */
-	/* If accumulate == 2 then this text object is a continuation */
+	fz_rect rect;
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip text");
 	model = state->dest->colorspace;
 
-	if (accumulate == 0)
-	{
-		/* make the mask the exact size needed */
-		fz_rect rect;
-
-		fz_irect_from_rect(&bbox, fz_bound_text(ctx, text, NULL, ctm, &rect));
-		fz_intersect_irect(&bbox, &state->scissor);
-	}
-	else
-	{
-		/* be conservative about the size of the mask needed */
-		bbox = state->scissor;
-	}
+	/* make the mask the exact size needed */
+	fz_irect_from_rect(&bbox, fz_bound_text(ctx, text, NULL, ctm, &rect));
+	fz_intersect_irect(&bbox, &state->scissor);
 
 	fz_try(ctx)
 	{
-		if (accumulate == 0 || accumulate == 1)
+		mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox);
+		fz_clear_pixmap(ctx, mask);
+		dest = fz_new_pixmap_with_bbox(ctx, model, &bbox);
+		fz_clear_pixmap(ctx, dest);
+		if (state->shape)
 		{
-			mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox);
-			fz_clear_pixmap(ctx, mask);
-			dest = fz_new_pixmap_with_bbox(ctx, model, &bbox);
-			fz_clear_pixmap(ctx, dest);
-			if (state->shape)
-			{
-				shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox);
-				fz_clear_pixmap(ctx, shape);
-			}
-			else
-				shape = NULL;
-
-			state[1].blendmode |= FZ_BLEND_ISOLATED;
-			state[1].scissor = bbox;
-			state[1].dest = dest;
-			state[1].mask = mask;
-			state[1].shape = shape;
-#ifdef DUMP_GROUP_BLENDS
-			dump_spaces(dev->top-1, "Clip (text) begin\n");
-#endif
+			shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox);
+			fz_clear_pixmap(ctx, shape);
 		}
 		else
-		{
-			mask = state->mask;
-			dev->top--;
-			STACK_POPPED("clip text");
-		}
+			shape = NULL;
+
+		state[1].blendmode |= FZ_BLEND_ISOLATED;
+		state[1].scissor = bbox;
+		state[1].dest = dest;
+		state[1].mask = mask;
+		state[1].shape = shape;
+#ifdef DUMP_GROUP_BLENDS
+		dump_spaces(dev->top-1, "Clip (text) begin\n");
+#endif
 
 		if (!fz_is_empty_irect(&bbox) && mask)
 		{
@@ -837,8 +815,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, fz_text *text, const fz_matr
 	}
 	fz_catch(ctx)
 	{
-		if (accumulate == 0 || accumulate == 1)
-			emergency_pop_stack(ctx, dev, state);
+		emergency_pop_stack(ctx, dev, state);
 		fz_rethrow(ctx);
 	}
 }

@@ -218,7 +218,7 @@ fz_trace_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_s
 }
 
 static void
-fz_trace_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
+fz_trace_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_printf(ctx, out, "<clip_text");

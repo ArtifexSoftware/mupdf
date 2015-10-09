@@ -102,13 +102,10 @@ fz_bbox_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const f
 }
 
 static void
-fz_bbox_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
+fz_bbox_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
-	fz_rect r = fz_infinite_rect;
-	if (accumulate)
-		fz_bbox_add_rect(ctx, dev, &r, accumulate != 2);
-	else
-		fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, NULL, ctm, &r), 1);
+	fz_rect r;
+	fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, NULL, ctm, &r), 1);
 }
 
 static void

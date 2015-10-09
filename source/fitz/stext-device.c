@@ -854,7 +854,7 @@ fz_stext_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_s
 }
 
 static void
-fz_stext_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm, int accumulate)
+fz_stext_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
