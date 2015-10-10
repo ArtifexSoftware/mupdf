@@ -1625,7 +1625,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_options *op
 	pdf_fprint_obj(ctx, opts->out, obj, opts->do_tight);
 	fputs("stream\n", opts->out);
 	fwrite(buf->data, 1, buf->len, opts->out);
-	fputs("endstream\nendobj\n\n", opts->out);
+	fputs("\nendstream\nendobj\n\n", opts->out);
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
@@ -1674,7 +1674,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_options *
 	pdf_fprint_obj(ctx, opts->out, obj, opts->do_tight);
 	fputs("stream\n", opts->out);
 	fwrite(buf->data, 1, buf->len, opts->out);
-	fputs("endstream\nendobj\n\n", opts->out);
+	fputs("\nendstream\nendobj\n\n", opts->out);
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
@@ -2020,9 +2020,11 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_option
 		index = pdf_new_array(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, dict, PDF_NAME_Index, index);
 
+		/* opts->gen_list[num] is already initialized by fz_calloc.  */
+		opts->use_list[num] = 1;
 		opts->ofs_list[num] = opts->first_xref_entry_offset;
 
-		fzbuf = fz_new_buffer(ctx, 4*(to-from));
+		fzbuf = fz_new_buffer(ctx, (1 + 4 + 1) * (to-from));
 
 		if (opts->do_incremental)
 		{
