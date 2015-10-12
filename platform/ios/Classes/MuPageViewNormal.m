@@ -1301,9 +1301,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 				case PDF_WIDGET_TYPE_LISTBOX:
 				case PDF_WIDGET_TYPE_COMBOBOX:
 				{
-					int nopts = pdf_choice_widget_options(ctx, idoc, focus, NULL);
+					int nopts = pdf_choice_widget_options(ctx, idoc, focus, 0, NULL);
 					opts = fz_malloc(ctx, nopts * sizeof(*opts));
-					(void)pdf_choice_widget_options(ctx, idoc, focus, opts);
+					(void)pdf_choice_widget_options(ctx, idoc, focus, 0, opts);
 					NSMutableArray *arr = [[NSMutableArray arrayWithCapacity:nopts] retain];
 					for (int i = 0; i < nopts; i++)
 					{

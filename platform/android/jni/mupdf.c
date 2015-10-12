@@ -2151,9 +2151,9 @@ JNI_FN(MuPDFCore_getFocusedWidgetChoiceOptions)(JNIEnv * env, jobject thiz)
 	fz_var(opts);
 	fz_try(ctx)
 	{
-		nopts = pdf_choice_widget_options(ctx, idoc, focus, NULL);
+		nopts = pdf_choice_widget_options(ctx, idoc, focus, 0, NULL);
 		opts = fz_malloc(ctx, nopts * sizeof(*opts));
-		(void)pdf_choice_widget_options(ctx, idoc, focus, opts);
+		(void)pdf_choice_widget_options(ctx, idoc, focus, 0, opts);
 	}
 	fz_catch(ctx)
 	{

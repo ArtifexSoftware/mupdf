@@ -9,6 +9,9 @@
 #define UNDERLINE_HEIGHT (0.075f)
 #define LINE_THICKNESS (0.07f)
 #define SMALL_FLOAT (0.00001)
+#define LIST_SEL_COLOR_R (0.6)
+#define LIST_SEL_COLOR_G (0.75)
+#define LIST_SEL_COLOR_B (0.85)
 
 enum
 {
@@ -256,6 +259,38 @@ static void fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, i
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 3)));
 		break;
 	}
+}
+
+static void fzbuf_print_rect_fill(fz_context *ctx, fz_buffer *fzbuf, const fz_rect *clip,
+	float col[4], int col_size, const fz_matrix *tm, const fz_rect *rect)
+{
+	if (clip)
+	{
+		fz_buffer_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
+		fz_buffer_printf(ctx, fzbuf, fmt_W);
+	}
+	if (col_size > 0)
+	{
+		switch (col_size)
+		{
+		case 1:
+			fz_buffer_printf(ctx, fzbuf, "%f g\n", col[0]);
+			break;
+		case 3:
+			fz_buffer_printf(ctx, fzbuf, "%f %f %f rg\n", col[0], col[1], col[2]);
+			break;
+		case 4:
+			fz_buffer_printf(ctx, fzbuf, "%f %f %f %f k\n", col[0], col[1], col[2], col[3]);
+			break;
+		default:
+			break;
+		}
+	}
+	if (tm)
+		fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
+
+	fz_buffer_printf(ctx, fzbuf, fmt_re, rect->x0, rect->y0, rect->x1 - rect->x0, rect->y1 - rect->y0);
+	fz_buffer_printf(ctx, fzbuf, fmt_f);
 }
 
 static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, const fz_rect *clip, pdf_obj *col, font_info *font_rec, const fz_matrix *tm, char *text)
@@ -521,7 +556,7 @@ static void text_splitter_retry(text_splitter *splitter)
 	}
 }
 
-static void fzbuf_print_text_start(fz_context *ctx, fz_buffer *fzbuf, const fz_rect *clip, pdf_obj *col, font_info *font, const fz_matrix *tm)
+static void fzbuf_print_text_start1(fz_context *ctx, fz_buffer *fzbuf, const fz_rect *clip, pdf_obj *col)
 {
 	fz_buffer_printf(ctx, fzbuf, fmt_Tx_BMC);
 	fz_buffer_printf(ctx, fzbuf, fmt_q);
@@ -540,7 +575,10 @@ static void fzbuf_print_text_start(fz_context *ctx, fz_buffer *fzbuf, const fz_r
 			fz_buffer_printf(ctx, fzbuf, fmt_n);
 		}
 	}
+}
 
+static void fzbuf_print_text_start2(fz_context *ctx, fz_buffer *fzbuf, font_info *font, const fz_matrix *tm)
+{
 	fz_buffer_printf(ctx, fzbuf, fmt_BT);
 
 	pdf_fzbuf_print_da(ctx, fzbuf, &font->da_rec);
@@ -662,7 +700,8 @@ static fz_buffer *create_text_appearance(fz_context *ctx, pdf_document *doc, con
 			tm.e = rect.x0;
 			tm.f = rect.y1 - (1.0+ascent-descent)*fontsize*splitter.scale/2.0;
 
-			fzbuf_print_text_start(ctx, fzbuf, &rect, info->col, &info->font_rec, &tm);
+			fzbuf_print_text_start1(ctx, fzbuf, &rect, info->col);
+			fzbuf_print_text_start2(ctx, fzbuf, &info->font_rec, &tm);
 
 			fz_buffer_cat(ctx, fzbuf, fztmp);
 
@@ -679,7 +718,8 @@ static fz_buffer *create_text_appearance(fz_context *ctx, pdf_document *doc, con
 
 			fzbuf = fz_new_buffer(ctx, 0);
 
-			fzbuf_print_text_start(ctx, fzbuf, &rect, info->col, &info->font_rec, &tm);
+			fzbuf_print_text_start1(ctx, fzbuf, &rect, info->col);
+			fzbuf_print_text_start2(ctx, fzbuf, &info->font_rec, &tm);
 
 			for (i = 0; i < n; i++)
 				fzbuf_print_text_word(ctx, fzbuf, i == 0 ? init_skip : comb_width, 0.0, text+i, 1);
@@ -1124,6 +1164,208 @@ void pdf_update_text_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj
 	fz_always(ctx)
 	{
 		fz_free(ctx, text);
+		pdf_drop_xobject(ctx, form);
+		fz_drop_buffer(ctx, fzbuf);
+		font_info_fin(ctx, &info.font_rec);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "update_text_appearance failed");
+	}
+}
+
+void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+{
+	text_widget_info info;
+	pdf_xobject *form = NULL;
+	fz_buffer *fzbuf = NULL;
+	fz_matrix tm;
+	fz_rect clip_rect;
+	fz_rect fill_rect;
+	int has_tm;
+	pdf_obj *valarr;
+	pdf_obj *optarr;
+	char *text;
+	int n, m, i, j;
+	char **opts = NULL;
+	char **vals = NULL;
+	int *sel_indices = NULL;
+	char **pos;
+	char *val_sel;
+	int index = -1;
+	float height, width;
+	float ascent, descent, lineheight;
+	int variable;
+	int fontsize;
+	float items_height;
+	fz_rect bbox;
+	int num_sel = 0;
+	int found_count;
+	int val_opt_ok = 1;
+	float color[4];
+
+	memset(&info, 0, sizeof(info));
+
+	fz_var(info);
+	fz_var(form);
+	fz_var(fzbuf);
+	fz_var(opts);
+	fz_var(vals);
+	fz_var(sel_indices);
+	fz_try(ctx)
+	{
+		optarr = pdf_dict_get(ctx, obj, PDF_NAME_Opt);
+		n = pdf_array_len(ctx, optarr);
+		opts = (char **)fz_malloc(ctx, n * sizeof(*opts));
+		vals = (char **)fz_malloc(ctx, n * sizeof(*vals));
+		sel_indices = (int*)fz_malloc(ctx, n * sizeof(int));
+		for (i = 0; i < n; i++)
+		{
+			m = pdf_array_len(ctx, pdf_array_get(ctx, optarr, i));
+			if (m == 2)
+			{
+				vals[i] = pdf_to_str_buf(ctx, pdf_array_get(ctx, pdf_array_get(ctx, optarr, i), 0));
+				opts[i] = pdf_to_str_buf(ctx, pdf_array_get(ctx, pdf_array_get(ctx, optarr, i), 1));
+			}
+			else
+			{
+				opts[i] = pdf_to_str_buf(ctx, pdf_array_get(ctx, optarr, i));
+				val_opt_ok = 0;
+			}
+		}
+
+		/* If ANY of the entries are not an array then just use the opts not
+		   the vals. */
+		if (val_opt_ok)
+			pos = vals;
+		else
+			pos = opts;
+
+		get_text_widget_info(ctx, doc, obj, &info);
+		form = load_or_create_form(ctx, doc, obj, &clip_rect);
+		has_tm = get_matrix(ctx, doc, form, info.q, &tm);
+
+		/* See which ones are selected */
+		valarr = pdf_get_inheritable(ctx, doc, obj, PDF_NAME_V);
+		if (pdf_is_array(ctx, valarr))
+		{
+			num_sel = pdf_array_len(ctx, valarr);
+			/* Multiple selected */
+			found_count = 0;
+			for (i = 0; i < num_sel; i++)
+			{
+				text = pdf_to_str_buf(ctx, pdf_array_get(ctx, valarr, i));
+				/* See if we can find it. */
+				index = -1;
+				for (j = 0; j < n; j++)
+				{
+					if (!strcmp(text, pos[j]))
+					{
+						index = j;
+						break;
+					}
+				}
+				if (index > -1)
+				{
+					sel_indices[found_count] = index;
+					found_count += 1;
+				}
+			}
+			num_sel = found_count;
+		}
+		else
+		{
+			/* One or none selected */
+			text = pdf_to_str_buf(ctx, valarr);
+			num_sel = 0;
+			if (text)
+			{
+				index = -1;
+				for (i = 0; i < n; i++)
+				{
+					if (!strcmp(text, pos[i]))
+					{
+						index = i;
+						break;
+					}
+				}
+				if (index > -1)
+				{
+					num_sel = 1;
+					sel_indices[0] = index;
+				}
+			}
+		}
+
+		if (clip_rect.x1 - clip_rect.x0 > 3.0 && clip_rect.y1 - clip_rect.y0 > 3.0)
+		{
+			clip_rect.x0 += 1.0;
+			clip_rect.x1 -= 1.0;
+			clip_rect.y0 += 1.0;
+			clip_rect.y1 -= 1.0;
+		}
+		height = clip_rect.y1 - clip_rect.y0;
+		width = clip_rect.x1 - clip_rect.x0;
+		variable = (info.font_rec.da_rec.font_size == 0);
+		fontsize = variable
+			? (info.multiline ? 14.0 : height / info.font_rec.lineheight)
+			: info.font_rec.da_rec.font_size;
+
+		/* Get the ascent, descent across the items list. */
+		ascent = 0;
+		descent = 0;
+		info.font_rec.da_rec.font_size = 1;
+		for (i = 0; i < n; i++)
+		{
+			measure_text(ctx, doc, &(info.font_rec), &fz_identity, opts[i], &bbox);
+			descent = fz_min(-bbox.y0, descent);
+			ascent = fz_max(bbox.y1, ascent);
+		}
+		info.font_rec.da_rec.font_size = fontsize;
+		lineheight = ascent - descent;
+
+		/* Check if all items will fit.  If not, then place the "selected" item
+		   at the top of our widget rect. */
+		items_height = n * fontsize * lineheight;
+		if (items_height <= height || !num_sel)
+			fz_translate(&tm, clip_rect.x0, clip_rect.y1 - lineheight * fontsize);
+		else
+			fz_translate(&tm, clip_rect.x0, clip_rect.y1 + (sel_indices[0] - 1) * lineheight * fontsize);
+
+		fzbuf = fz_new_buffer(ctx, 0);
+		/* Start the marked content */
+		fzbuf_print_text_start1(ctx, fzbuf, &clip_rect, NULL);
+		/* Add the selection rects */
+		if (num_sel > 0)
+		{
+			color[0] = LIST_SEL_COLOR_R;
+			color[1] = LIST_SEL_COLOR_G;
+			color[2] = LIST_SEL_COLOR_B;
+			fill_rect.x0 = 0.0;
+			fill_rect.x1 = width;
+			for (i = 0; i < num_sel; i++)
+			{
+				fill_rect.y0 = height - fontsize * lineheight * (sel_indices[i] + 1);
+				fill_rect.y1 = fill_rect.y0 + lineheight * fontsize;
+				fzbuf_print_rect_fill(ctx, fzbuf, NULL, color, 3, NULL, &fill_rect);
+			}
+		}
+		/* Continue with text related details */
+		fzbuf_print_text_start2(ctx, fzbuf, &info.font_rec, &tm);
+		/* And now finish with the text content */
+		for (i = 0; i < n; i++)
+		{
+			fzbuf_print_text_word(ctx, fzbuf, 0.0, i == 0 ? 0 : -fontsize *
+				lineheight, opts[i], strlen(opts[i]));
+		}
+		fzbuf_print_text_end(ctx, fzbuf);
+		update_marked_content(ctx, doc, form, fzbuf);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, opts);
+		fz_free(ctx, vals);
+		fz_free(ctx, sel_indices);
 		pdf_drop_xobject(ctx, form);
 		fz_drop_buffer(ctx, fzbuf);
 		font_info_fin(ctx, &info.font_rec);
@@ -2234,9 +2476,9 @@ void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 				pdf_update_pushbutton_appearance(ctx, doc, obj);
 				break;
 			case PDF_WIDGET_TYPE_LISTBOX:
+				pdf_update_listbox_appearance(ctx, doc, obj);
+				break;
 			case PDF_WIDGET_TYPE_COMBOBOX:
-				/* Treating listbox and combobox identically for now,
-				 * and the behaviour is most appropriate for a combobox */
 				pdf_update_combobox_appearance(ctx, doc, obj);
 				break;
 			}

@@ -1665,9 +1665,9 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 						fz_try(ctx)
 						{
-							nopts = pdf_choice_widget_options(ctx, idoc, widget, NULL);
+							nopts = pdf_choice_widget_options(ctx, idoc, widget, 0, NULL);
 							opts = fz_malloc(ctx, nopts * sizeof(*opts));
-							(void)pdf_choice_widget_options(ctx, idoc, widget, opts);
+							(void)pdf_choice_widget_options(ctx, idoc, widget, 0, opts);
 
 							nvals = pdf_choice_widget_value(ctx, idoc, widget, NULL);
 							vals = fz_malloc(ctx, MAX(nvals,nopts) * sizeof(*vals));
