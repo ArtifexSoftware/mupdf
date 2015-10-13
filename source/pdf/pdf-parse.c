@@ -26,6 +26,25 @@ pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *m)
 	return m;
 }
 
+static int
+rune_from_utf16be(int *out, unsigned char *s, unsigned char *end)
+{
+	if (s + 2 <= end)
+	{
+		int a = s[0] << 8 | s[1];
+		if (a >= 0xD800 && a <= 0xDFFF && s + 4 <= end)
+		{
+			int b = s[2] << 8 | s[3];
+			*out = ((a - 0xD800) << 10) + (b - 0xDC00) + 0x10000;
+			return 4;
+		}
+		*out = a;
+		return 2;
+	}
+	*out = 0xFFFD;
+	return 1;
+}
+
 /* Convert Unicode/PdfDocEncoding string into utf-8 */
 char *
 pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
@@ -56,38 +75,59 @@ pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 			srclen = 0;
 		}
 
+		/* UTF-16BE */
 		if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
 		{
-			for (i = 2; i + 1 < srclen; i += 2)
+			i = 2;
+			while (i + 2 <= srclen)
 			{
-				ucs = srcptr[i] << 8 | srcptr[i+1];
-				dstlen += fz_runelen(ucs);
+				/* skip language escape codes */
+				if (i + 6 <= srclen &&
+					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
+					srcptr[i+4] == 0 && srcptr[i+5] == 27)
+				{
+					i += 6;
+				}
+				else if (i + 8 <= srclen &&
+					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
+					srcptr[i+6] == 0 && srcptr[i+7] == 27)
+				{
+					i += 8;
+				}
+				else
+				{
+					i += rune_from_utf16be(&ucs, srcptr + i, srcptr + srclen);
+					dstlen += fz_runelen(ucs);
+				}
 			}
 
 			dstptr = dst = fz_malloc(ctx, dstlen + 1);
 
-			for (i = 2; i + 1 < srclen; i += 2)
+			i = 2;
+			while (i + 2 <= srclen)
 			{
-				ucs = srcptr[i] << 8 | srcptr[i+1];
-				dstptr += fz_runetochar(dstptr, ucs);
+				/* skip language escape codes */
+				if (i + 6 <= srclen &&
+					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
+					srcptr[i+4] == 0 && srcptr[i+5] == 27)
+				{
+					i += 6;
+				}
+				else if (i + 8 <= srclen &&
+					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
+					srcptr[i+6] == 0 && srcptr[i+7] == 27)
+				{
+					i += 8;
+				}
+				else
+				{
+					i += rune_from_utf16be(&ucs, srcptr + i, srcptr + srclen);
+					dstptr += fz_runetochar(dstptr, ucs);
+				}
 			}
 		}
-		else if (srclen >= 2 && srcptr[0] == 255 && srcptr[1] == 254)
-		{
-			for (i = 2; i + 1 < srclen; i += 2)
-			{
-				ucs = srcptr[i] | srcptr[i+1] << 8;
-				dstlen += fz_runelen(ucs);
-			}
 
-			dstptr = dst = fz_malloc(ctx, dstlen + 1);
-
-			for (i = 2; i + 1 < srclen; i += 2)
-			{
-				ucs = srcptr[i] | srcptr[i+1] << 8;
-				dstptr += fz_runetochar(dstptr, ucs);
-			}
-		}
+		/* PDFDocEncoding */
 		else
 		{
 			for (i = 0; i < srclen; i++)
