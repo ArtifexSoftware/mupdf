@@ -166,12 +166,7 @@ typedef int fz_off_t;
 #define LOGE(...) do {} while(0)
 #endif
 
-/*
-	Variadic macros, inline and restrict keywords
-
-	inline is standard in C++, so don't touch the definition in this case.
-	For some compilers we can enable it within C too.
-*/
+/* inline is standard in C++. For some compilers we can enable it within C too. */
 
 #ifndef __cplusplus
 #if __STDC_VERSION__ == 199901L /* C99 */
@@ -184,10 +179,7 @@ typedef int fz_off_t;
 #endif
 #endif
 
-/*
-	restrict is standard in C99, but not in all C++ compilers. Enable
-	where possible, disable if in doubt.
- */
+/* restrict is standard in C99, but not in all C++ compilers. */
 #if __STDC_VERSION__ == 199901L /* C99 */
 #elif _MSC_VER >= 1500 /* MSVC 9 or newer */
 #define restrict __restrict
@@ -208,10 +200,14 @@ typedef int fz_off_t;
 #endif
 #endif
 
-/*
-	GCC can do type checking of printf strings
-*/
+/* Flag unused parameters, for use with 'static inline' functions in headers. */
+#if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
+#define FZ_UNUSED __attribute__((__unused__))
+#else
+#define FZ_UNUSED
+#endif
 
+/* GCC can do type checking of printf strings */
 #ifndef __printflike
 #if __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 7
 #define __printflike(fmtarg, firstvararg) \

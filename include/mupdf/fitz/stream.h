@@ -310,7 +310,7 @@ static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 	return c;
 }
 
-static inline void fz_unread_byte(fz_context *ctx, fz_stream *stm)
+static inline void fz_unread_byte(fz_context *ctx FZ_UNUSED, fz_stream *stm)
 {
 	stm->rp--;
 }
@@ -398,7 +398,7 @@ static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
 	return x;
 }
 
-static inline void fz_sync_bits(fz_context *ctx, fz_stream *stm)
+static inline void fz_sync_bits(fz_context *ctx FZ_UNUSED, fz_stream *stm)
 {
 	stm->avail = 0;
 }
