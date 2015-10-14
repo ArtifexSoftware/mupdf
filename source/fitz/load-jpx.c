@@ -224,6 +224,8 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 					v = v + (1 << (depth - 1));
 				if (depth > 8)
 					v = v >> (depth - 8);
+				else if (depth < 8)
+					v = v << (8 - depth);
 				*p++ = v;
 			}
 			if (!a)
