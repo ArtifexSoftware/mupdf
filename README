@@ -55,6 +55,10 @@ You will also need the X11 headers and libraries if you're building on Linux.
 These can typically be found in the xorg-dev package. Alternatively, if you
 only want the command line tools, you can build with HAVE_X11=no.
 
+The new OpenGL-based viewer also needs OpenGL headers and libraries. If you're
+building on Linux, install the mesa-common-dev and libgl1-mesa-dev packages.
+If you don't want to build the OpenGL viewer, build with HAVE_GLFW=no.
+
 DOWNLOAD
 
 The latest development source is available directly from the git repository:
