@@ -754,7 +754,8 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 		if (text->len == 0)
 			break;
 
-		gstate = pdf_begin_group(ctx, pr, &tb, &softmask);
+		if (dofill || dostroke)
+			gstate = pdf_begin_group(ctx, pr, &tb, &softmask);
 
 		if (doinvisible)
 			fz_ignore_text(ctx, pr->dev, text, &gstate->ctm);
@@ -818,6 +819,9 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 			}
 		}
 
+		if (dofill || dostroke)
+			pdf_end_group(ctx, pr, &softmask);
+
 		if (doclip)
 		{
 			if (pr->accumulate < 2)
@@ -825,8 +829,6 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 			fz_clip_text(ctx, pr->dev, text, &gstate->ctm, pr->accumulate);
 			pr->accumulate = 2;
 		}
-
-		pdf_end_group(ctx, pr, &softmask);
 	}
 	fz_always(ctx)
 	{
