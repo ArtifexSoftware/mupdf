@@ -1409,8 +1409,10 @@ int main(int argc, char **argv)
 }
 
 #ifdef _MSC_VER
-int wmain(int argc, wchar_t *wargv[])
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	int argc;
+	LPWSTR *wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
 	char **argv = fz_argv_from_wargv(argc, wargv);
 	int ret = main_utf8(argc, argv);
 	fz_free_argv(argc, argv);
