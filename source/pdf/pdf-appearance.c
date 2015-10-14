@@ -1191,7 +1191,6 @@ void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *
 	char **vals = NULL;
 	int *sel_indices = NULL;
 	char **pos;
-	char *val_sel;
 	int index = -1;
 	float height, width;
 	float ascent, descent, lineheight;
