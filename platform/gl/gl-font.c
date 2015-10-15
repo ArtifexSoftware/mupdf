@@ -58,8 +58,8 @@ static int g_cache_row_y = 0;
 static int g_cache_row_x = 0;
 static int g_cache_row_h = 0;
 
-static FT_Face g_helvetica = NULL;
-static FT_Face g_droidsansfallback = NULL;
+static FT_Face g_font = NULL;
+static FT_Face g_fallback_font = NULL;
 
 static void clear_font_cache(void)
 {
@@ -102,27 +102,27 @@ void ui_init_fonts(fz_context *ctx, float pixelsize)
 	clear_font_cache();
 
 	data = pdf_lookup_builtin_font(ctx, "Times-Roman", &size);
-	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_helvetica);
+	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_font);
 	if (code)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load ui font");
 
 	data = pdf_lookup_substitute_cjk_font(ctx, 0, 0, 0, &size, &index);
-	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_droidsansfallback);
+	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_fallback_font);
 	if (code)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load ui fallback font");
 
-	FT_Select_Charmap(g_helvetica, ft_encoding_unicode);
-	FT_Select_Charmap(g_droidsansfallback, ft_encoding_unicode);
+	FT_Select_Charmap(g_font, ft_encoding_unicode);
+	FT_Select_Charmap(g_fallback_font, ft_encoding_unicode);
 
-	FT_Set_Char_Size(g_helvetica, fontsize, fontsize, 72, 72);
-	FT_Set_Char_Size(g_droidsansfallback, fontsize, fontsize, 72, 72);
+	FT_Set_Char_Size(g_font, fontsize, fontsize, 72, 72);
+	FT_Set_Char_Size(g_fallback_font, fontsize, fontsize, 72, 72);
 }
 
 void ui_finish_fonts(fz_context *ctx)
 {
 	clear_font_cache();
-	FT_Done_Face(g_helvetica);
-	FT_Done_Face(g_droidsansfallback);
+	FT_Done_Face(g_font);
+	FT_Done_Face(g_fallback_font);
 }
 
 static unsigned int hashfunc(struct key *key)
@@ -283,11 +283,11 @@ float ui_measure_character(fz_context *ctx, int ucs)
 	FT_Face face;
 	int gid;
 
-	face = g_helvetica;
+	face = g_font;
 	gid = FT_Get_Char_Index(face, ucs);
 	if (gid <= 0)
 	{
-		face = g_droidsansfallback;
+		face = g_fallback_font;
 		gid = FT_Get_Char_Index(face, ucs);
 	}
 
@@ -300,11 +300,11 @@ float ui_draw_character(fz_context *ctx, int ucs, float x, float y)
 	FT_Face face;
 	int gid;
 
-	face = g_helvetica;
+	face = g_font;
 	gid = FT_Get_Char_Index(face, ucs);
 	if (gid <= 0)
 	{
-		face = g_droidsansfallback;
+		face = g_fallback_font;
 		gid = FT_Get_Char_Index(face, ucs);
 	}
 
