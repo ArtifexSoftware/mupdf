@@ -688,6 +688,66 @@ ximage_convert_bgr233(PARAMS)
 	}
 }
 
+static void
+ximage_convert_generic(PARAMS)
+{
+	unsigned long rm, gm, bm, rs, gs, bs, rx, bx, gx;
+	unsigned long pixel;
+	unsigned long r, g, b;
+	int x, y;
+
+	rm = info.visual.red_mask;
+	gm = info.visual.green_mask;
+	bm = info.visual.blue_mask;
+
+	rs = ffs(rm) - 1;
+	gs = ffs(gm) - 1;
+	bs = ffs(bm) - 1;
+
+	rx = ffs(~(rm >> rs)) - 1;
+	gx = ffs(~(gm >> gs)) - 1;
+	bx = ffs(~(bm >> bs)) - 1;
+
+	for (y = 0; y < h; y++) {
+		for (x = 0; x < w; x++) {
+			r = src[4*x + 0];
+			g = src[4*x + 1];
+			b = src[4*x + 2];
+
+			/* adjust precision */
+			if (rx < 8) r >>= (8 - rx); else if (rx > 8) r <<= (rx - 8);
+			if (gx < 8) g >>= (8 - gx); else if (gx > 8) g <<= (gx - 8);
+			if (bx < 8) b >>= (8 - bx); else if (bx > 8) b <<= (bx - 8);
+
+			pixel = (r << rs) | (g << gs) | (b << bs);
+
+			if (ImageByteOrder(info.display) == MSBFirst) {
+				if (info.bitsperpixel > 16) {
+					dst[4*x + 0] = (pixel >> 24) & 0xFF;
+					dst[4*x + 1] = (pixel >> 16) & 0xFF;
+					dst[4*x + 2] = (pixel >> 8) & 0xFF;
+					dst[4*x + 3] = (pixel) & 0xFF;
+				} else if (info.bitsperpixel > 8) {
+					dst[2*x + 0] = (pixel >> 8) & 0xFF;
+					dst[2*x + 1] = (pixel) & 0xFF;
+				}
+			} else {
+				if (info.bitsperpixel > 16) {
+					dst[4*x + 0] = (pixel) & 0xFF;
+					dst[4*x + 1] = (pixel >> 8) & 0xFF;
+					dst[4*x + 2] = (pixel >> 16) & 0xFF;
+					dst[4*x + 3] = (pixel >> 24) & 0xFF;
+				} else if (info.bitsperpixel > 8) {
+					dst[2*x + 0] = (pixel) & 0xFF;
+					dst[2*x + 1] = (pixel >> 8) & 0xFF;
+				}
+			}
+		}
+		src += srcstride;
+		dst += dststride;
+	}
+}
+
 ximage_convert_func_t ximage_convert_funcs[] = {
 	ximage_convert_argb8888,
 	ximage_convert_bgra8888,
@@ -700,4 +760,5 @@ ximage_convert_func_t ximage_convert_funcs[] = {
 	ximage_convert_rgb555,
 	ximage_convert_rgb555_br,
 	ximage_convert_bgr233,
+	ximage_convert_generic
 };
