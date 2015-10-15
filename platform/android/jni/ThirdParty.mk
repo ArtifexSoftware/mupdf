@@ -113,6 +113,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftbase.c \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftbbox.c \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftbitmap.c \
+	$(MY_ROOT)/thirdparty/freetype/src/base/ftfntfmt.c \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftgasp.c \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftglyph.c \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftinit.c \
@@ -120,7 +121,6 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftsynth.c \
 	$(MY_ROOT)/thirdparty/freetype/src/base/ftsystem.c \
 	$(MY_ROOT)/thirdparty/freetype/src/base/fttype1.c \
-	$(MY_ROOT)/thirdparty/freetype/src/base/ftxf86.c \
 	$(MY_ROOT)/thirdparty/freetype/src/cff/cff.c \
 	$(MY_ROOT)/thirdparty/freetype/src/cid/type1cid.c \
 	$(MY_ROOT)/thirdparty/freetype/src/psaux/psaux.c \
