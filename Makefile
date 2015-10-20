@@ -337,7 +337,8 @@ incdir ?= $(prefix)/include
 mandir ?= $(prefix)/share/man
 docdir ?= $(prefix)/share/doc/mupdf
 
-third: $(THIRD_LIBS) $(CURL_LIB) $(GLFW_LIB)
+third: $(THIRD_LIBS)
+extra: $(CURL_LIB) $(GLFW_LIB)
 libs: $(INSTALL_LIBS)
 apps: $(INSTALL_APPS)
 
