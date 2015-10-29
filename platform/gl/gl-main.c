@@ -139,7 +139,8 @@ static int canvas_y = 0, canvas_h = 100;
 static struct texture annot_tex[256];
 static int annot_count = 0;
 
-static int screen_w = 1, screen_h = 1;
+static int screen_w = 1280, screen_h = 720;
+static int window_w = 1, window_h = 1;
 
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
@@ -478,7 +479,7 @@ static void do_outline(fz_outline *node, int outline_w)
 	int total_h;
 
 	outline_w -= ui.lineheight;
-	outline_h = screen_h;
+	outline_h = window_h;
 	total_h = measure_outline_height(outline);
 
 	if (ui.x >= 0 && ui.x < outline_w && ui.y >= 0 && ui.y < outline_h)
@@ -696,8 +697,8 @@ static void toggle_fullscreen(void)
 
 static void shrinkwrap(void)
 {
-	int w = page_tex.w + canvas_x;
-	int h = page_tex.h + canvas_y;
+	int w = fz_mini(page_tex.w + canvas_x, screen_w - 20);
+	int h = fz_mini(page_tex.h + canvas_y, screen_h - 40);
 	if (isfullscreen)
 		toggle_fullscreen();
 	glfwSetWindowSize(window, w, h);
@@ -1040,13 +1041,13 @@ static void do_canvas(void)
 
 static void run_main_loop(void)
 {
-	glViewport(0, 0, screen_w, screen_h);
+	glViewport(0, 0, window_w, window_h);
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, screen_w, screen_h, 0, -1, 1);
+	glOrtho(0, window_w, window_h, 0, -1, 1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -1093,8 +1094,8 @@ static void run_main_loop(void)
 
 	do_app();
 
-	canvas_w = screen_w - canvas_x;
-	canvas_h = screen_h - canvas_y;
+	canvas_w = window_w - canvas_x;
+	canvas_h = window_h - canvas_y;
 
 	do_canvas();
 
@@ -1236,8 +1237,8 @@ static void on_scroll(GLFWwindow *window, double x, double y)
 static void on_reshape(GLFWwindow *window, int w, int h)
 {
 	showinfo = 0;
-	screen_w = w;
-	screen_h = h;
+	window_w = w;
+	window_h = h;
 	ui_needs_update = 1;
 }
 
@@ -1269,6 +1270,7 @@ int main_utf8(int argc, char **argv)
 int main(int argc, char **argv)
 #endif
 {
+	const GLFWvidmode *video_mode;
 	char filename[2048];
 	char *password = "";
 	float layout_w = 450;
@@ -1324,6 +1326,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "cannot initialize glfw\n");
 		exit(1);
 	}
+
+	video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	screen_w = video_mode->width;
+	screen_h = video_mode->height;
 
 	glfwSetErrorCallback(on_error);
 
@@ -1387,7 +1393,7 @@ int main(int argc, char **argv)
 	glfwSetKeyCallback(window, on_key);
 	glfwSetWindowRefreshCallback(window, on_display);
 
-	glfwGetFramebufferSize(window, &screen_w, &screen_h);
+	glfwGetFramebufferSize(window, &window_w, &window_h);
 
 	ui_needs_update = 1;
 
