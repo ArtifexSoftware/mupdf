@@ -63,6 +63,7 @@ struct pdf_font_desc_s
 	float cap_height;
 	float x_height;
 	float missing_width;
+	float stem_v;
 
 	/* Encoding (CMap) */
 	pdf_cmap *encoding;
@@ -120,5 +121,10 @@ fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned cha
 float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, int len, float room, int *count);
 
 void pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, const fz_matrix *ctm, void *gstate, int nestedDepth);
+
+pdf_res* pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer);
+pdf_res* pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_font *font);
+
+int pdf_font_writing_supported(fz_font *font);
 
 #endif

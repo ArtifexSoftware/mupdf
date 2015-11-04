@@ -23,7 +23,7 @@ static int pdf_field_dirties_document(fz_context *ctx, pdf_document *doc, pdf_ob
 	return 1;
 }
 
-/* Find the point in a field hierarchy where all descendents
+/* Find the point in a field hierarchy where all descendants
  * share the same name */
 static pdf_obj *find_head_of_field_group(fz_context *ctx, pdf_obj *obj)
 {

@@ -12,6 +12,7 @@ typedef struct pdf_annot_s pdf_annot;
 typedef struct pdf_widget_s pdf_widget;
 typedef struct pdf_hotspot_s pdf_hotspot;
 typedef struct pdf_js_s pdf_js;
+typedef struct pdf_resource_tables_s pdf_resource_tables;
 
 enum
 {
@@ -255,6 +256,8 @@ struct pdf_document_s
 	int num_type3_fonts;
 	int max_type3_fonts;
 	fz_font **type3_fonts;
+	
+	pdf_resource_tables *resources;
 };
 
 /*
@@ -266,7 +269,7 @@ struct pdf_document_s
 */
 pdf_document *pdf_create_document(fz_context *ctx);
 
-pdf_page *pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect rect, int res, int rotate);
+pdf_page *pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect rect, fz_buffer *buffer, int rotate);
 
 void pdf_insert_page(fz_context *ctx, pdf_document *doc, pdf_page *page, int at);
 

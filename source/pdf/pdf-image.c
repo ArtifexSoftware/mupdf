@@ -289,3 +289,178 @@ pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	pdf_store_item(ctx, dict, image, fz_image_size(ctx, image));
 	return image;
 }
+
+pdf_res*
+pdf_add_image_res(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
+{
+	fz_pixmap *pixmap = NULL;
+	pdf_obj *imobj = NULL;
+	pdf_obj *imref = NULL;
+	pdf_res *imres = NULL;
+	fz_compressed_buffer *cbuffer = NULL;
+	fz_compression_params *cp = NULL;
+	fz_buffer *buffer = NULL;
+	fz_colorspace *colorspace = image->colorspace;
+	unsigned char digest[16];
+
+	/* If we can maintain compression, do so */
+	cbuffer = image->buffer;
+
+	fz_var(pixmap);
+	fz_var(buffer);
+	fz_var(imobj);
+	fz_var(imref);
+	fz_var(imres);
+
+	fz_try(ctx)
+	{
+		/* Before we add this image as a resource check if the same image
+		 * already exists in our resources for this doc.  If yes, then
+		 * hand back that reference */
+		imres = pdf_resource_table_search(ctx, doc, doc->resources->image,
+			(void*)image, (void*) &(digest[0]));
+		if (imres == NULL)
+		{
+			if (cbuffer != NULL && cbuffer->params.type != FZ_IMAGE_PNG && cbuffer->params.type != FZ_IMAGE_TIFF)
+			{
+				buffer = fz_keep_buffer(ctx, cbuffer->buffer);
+				cp = &cbuffer->params;
+			}
+			else
+			{
+				unsigned int size;
+				int n;
+
+				/* Currently, set to maintain resolution; should we consider
+				 * subsampling here according to desired output res? */
+				pixmap = fz_get_pixmap_from_image(ctx, image, image->w, image->h);
+				colorspace = pixmap->colorspace; /* May be different to image->colorspace! */
+				n = (pixmap->n == 1 ? 1 : pixmap->n - 1);
+				size = image->w * image->h * n;
+				buffer = fz_new_buffer(ctx, size);
+				buffer->len = size;
+				if (pixmap->n == 1)
+				{
+					memcpy(buffer->data, pixmap->samples, size);
+				}
+				else
+				{
+					/* Need to remove the alpha plane */
+					unsigned char *d = buffer->data;
+					unsigned char *s = pixmap->samples;
+					int mod = n;
+					while (size--)
+					{
+						*d++ = *s++;
+						mod--;
+						if (mod == 0)
+							s++, mod = n;
+					}
+				}
+			}
+
+			imobj = pdf_new_dict(ctx, doc, 3);
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Width, pdf_new_int(ctx, doc, image->w));
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Height, pdf_new_int(ctx, doc, image->h));
+			if (mask)
+			{
+			}
+			else if (!colorspace || colorspace->n == 1)
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
+			else if (colorspace->n == 3)
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
+			else if (colorspace->n == 4)
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
+			if (!mask)
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
+			switch (cp ? cp->type : FZ_IMAGE_UNKNOWN)
+			{
+			case FZ_IMAGE_UNKNOWN: /* Unknown also means raw */
+			default:
+				break;
+			case FZ_IMAGE_JPEG:
+				if (cp->u.jpeg.color_transform != -1)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorTransform, pdf_new_int(ctx, doc, cp->u.jpeg.color_transform));
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_DCTDecode);
+				break;
+			case FZ_IMAGE_JPX:
+				if (cp->u.jpx.smask_in_data)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_SMaskInData, pdf_new_int(ctx, doc, cp->u.jpx.smask_in_data));
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_JPXDecode);
+				break;
+			case FZ_IMAGE_FAX:
+				if (cp->u.fax.columns)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.fax.columns));
+				if (cp->u.fax.rows)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Rows, pdf_new_int(ctx, doc, cp->u.fax.rows));
+				if (cp->u.fax.k)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_K, pdf_new_int(ctx, doc, cp->u.fax.k));
+				if (cp->u.fax.end_of_line)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EndOfLine, pdf_new_int(ctx, doc, cp->u.fax.end_of_line));
+				if (cp->u.fax.encoded_byte_align)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EncodedByteAlign, pdf_new_int(ctx, doc, cp->u.fax.encoded_byte_align));
+				if (cp->u.fax.end_of_block)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EndOfBlock, pdf_new_int(ctx, doc, cp->u.fax.end_of_block));
+				if (cp->u.fax.black_is_1)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_BlackIs1, pdf_new_int(ctx, doc, cp->u.fax.black_is_1));
+				if (cp->u.fax.damaged_rows_before_error)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_DamagedRowsBeforeError, pdf_new_int(ctx, doc, cp->u.fax.damaged_rows_before_error));
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_CCITTFaxDecode);
+				break;
+			case FZ_IMAGE_JBIG2:
+				/* FIXME - jbig2globals */
+				cp->type = FZ_IMAGE_UNKNOWN;
+				break;
+			case FZ_IMAGE_FLATE:
+				if (cp->u.flate.columns)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.flate.columns));
+				if (cp->u.flate.colors)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.flate.colors));
+				if (cp->u.flate.predictor)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.flate.predictor));
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
+				break;
+			case FZ_IMAGE_LZW:
+				if (cp->u.lzw.columns)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.lzw.columns));
+				if (cp->u.lzw.colors)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.lzw.colors));
+				if (cp->u.lzw.predictor)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.lzw.predictor));
+				if (cp->u.lzw.early_change)
+					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EarlyChange, pdf_new_int(ctx, doc, cp->u.lzw.early_change));
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_LZWDecode);
+				break;
+			case FZ_IMAGE_RLD:
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_RunLengthDecode);
+				break;
+			}
+			if (mask)
+			{
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ImageMask, pdf_new_bool(ctx, doc, 1));
+			}
+			if (image->mask)
+				pdf_add_image_res(ctx, doc, image->mask, 0);
+			imref = pdf_new_ref(ctx, doc, imobj);
+			pdf_update_stream(ctx, doc, imref, buffer, 1);
+
+			/* Add ref to our image resource hash table. */
+			imres = pdf_resource_table_put(ctx, doc->resources->image, digest, imref);
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buffer);
+		pdf_drop_obj(ctx, imobj);
+		fz_drop_pixmap(ctx, pixmap);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, imref);
+		fz_rethrow(ctx);
+	}
+	return imres;
+}

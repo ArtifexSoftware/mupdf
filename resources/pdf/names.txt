@@ -300,12 +300,14 @@ Squiggly
 Stamp
 Standard
 StdCF
+StemV
 StmF
 StrF
 StrikeOut
 SubFilter
 Subtype
 Subtype2
+Supplement
 T
 TR
 TR2

@@ -697,15 +697,17 @@ pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end)
 }
 
 pdf_page *
-pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int res, int rotate)
+pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, fz_buffer *buffer, int rotate)
 {
 	pdf_page *page = NULL;
-	pdf_obj *pageobj;
+	pdf_obj *pageobj, *obj;
 	float userunit = 1;
 	fz_matrix ctm, tmp;
 	fz_rect realbox;
 
 	page = pdf_new_page(ctx, doc);
+	obj = NULL;
+	fz_var(obj);
 
 	fz_try(ctx)
 	{
@@ -724,7 +726,7 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int res, i
 			page->rotate = 360 - ((-page->rotate) % 360);
 		if (page->rotate >= 360)
 			page->rotate = page->rotate % 360;
-		page->rotate = 90*((page->rotate + 45)/90);
+		page->rotate = 90 * ((page->rotate + 45) / 90);
 		if (page->rotate > 360)
 			page->rotate = 0;
 		pdf_dict_put_drop(ctx, pageobj, PDF_NAME_Rotate, pdf_new_int(ctx, doc, page->rotate));
@@ -735,12 +737,21 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int res, i
 		fz_pre_scale(fz_translate(&tmp, -realbox.x0, -realbox.y0), userunit, userunit);
 		fz_concat(&ctm, &ctm, &tmp);
 		page->ctm = ctm;
-		/* Do not create a Contents, as an empty Contents dict is not
-		 * valid. See Bug 694712 */
+
+		if (buffer != NULL)
+		{
+			obj = pdf_new_dict(ctx, doc, 4);
+			page->contents = pdf_new_ref(ctx, doc, obj);
+			pdf_update_stream(ctx, doc, page->contents, buffer, 0);
+			pdf_drop_obj(ctx, obj);
+			obj = NULL;
+			pdf_dict_puts(ctx, pageobj, "Contents", page->contents);
+		}
 	}
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, page->me);
+		pdf_drop_obj(ctx, obj);
 		fz_free(ctx, page);
 		fz_rethrow_message(ctx, "Failed to create page");
 	}

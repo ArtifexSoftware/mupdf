@@ -36,14 +36,15 @@ struct gstate_s
 	fz_matrix tm;
 };
 
-typedef struct image_entry_s image_entry;
-
-struct image_entry_s
-{
-	char digest[16];
-	int id;
-	pdf_obj *ref;
-};
+/* The image digest information, object reference, as well as indirect reference
+ * ID are all stored in doc->resources->image, and so they are maintained
+ * through the life of the document not just this page level device. As we
+ * encounter images on a page, we will add to the hash table if they are not
+ * already present.  When we have an image on a particular page, the resource
+ * dict will be updated with the proper indirect reference across the document.
+ * We do need to maintain some information as to what image resources we have
+ * already specified for this page which is the purpose of image_indices
+ */
 
 typedef struct alpha_entry_s alpha_entry;
 
@@ -91,12 +92,17 @@ struct pdf_device_s
 
 	int num_imgs;
 	int max_imgs;
-	image_entry *images;
+	int *image_indices;
+
+	int num_cid_fonts;
+	int max_cid_fonts;
+	int *font_indices;
 
 	int num_alphas;
 	int max_alphas;
 	alpha_entry *alphas;
 
+	/* Base font information */
 	int num_fonts;
 	int max_fonts;
 	font_entry *fonts;
@@ -109,208 +115,6 @@ struct pdf_device_s
 #define CURRENT_GSTATE(pdev) (&(pdev)->gstates[(pdev)->num_gstates-1])
 
 /* Helper functions */
-
-static int
-send_image(fz_context *ctx, pdf_device *pdev, fz_image *image, int mask, int smask)
-{
-	fz_pixmap *pixmap = NULL;
-	pdf_obj *imobj = NULL;
-	pdf_obj *imref = NULL;
-	fz_compressed_buffer *cbuffer = NULL;
-	fz_compression_params *cp = NULL;
-	fz_buffer *buffer = NULL;
-	int i, num;
-	fz_md5 state;
-	unsigned char digest[16];
-	fz_colorspace *colorspace = image->colorspace;
-	pdf_document *doc = pdev->doc;
-
-	/* If we can maintain compression, do so */
-	cbuffer = image->buffer;
-
-	fz_var(pixmap);
-	fz_var(buffer);
-	fz_var(imobj);
-	fz_var(imref);
-
-	fz_try(ctx)
-	{
-		if (cbuffer != NULL && cbuffer->params.type != FZ_IMAGE_PNG && cbuffer->params.type != FZ_IMAGE_TIFF)
-		{
-			buffer = fz_keep_buffer(ctx, cbuffer->buffer);
-			cp = &cbuffer->params;
-		}
-		else
-		{
-			unsigned int size;
-			int n;
-			/* Currently, set to maintain resolution; should we consider
-			 * subsampling here according to desired output res? */
-			pixmap = fz_get_pixmap_from_image(ctx, image, image->w, image->h);
-			colorspace = pixmap->colorspace; /* May be different to image->colorspace! */
-			n = (pixmap->n == 1 ? 1 : pixmap->n-1);
-			size = image->w * image->h * n;
-			buffer = fz_new_buffer(ctx, size);
-			buffer->len = size;
-			if (pixmap->n == 1)
-			{
-				memcpy(buffer->data, pixmap->samples, size);
-			}
-			else
-			{
-				/* Need to remove the alpha plane */
-				unsigned char *d = buffer->data;
-				unsigned char *s = pixmap->samples;
-				int mod = n;
-				while (size--)
-				{
-					*d++ = *s++;
-					mod--;
-					if (mod == 0)
-						s++, mod = n;
-				}
-			}
-		}
-
-		fz_md5_init(&state);
-		fz_md5_update(&state, buffer->data, buffer->len);
-		fz_md5_final(&state, digest);
-		for(i=0; i < pdev->num_imgs; i++)
-		{
-			if (!memcmp(&digest, pdev->images[i].digest, sizeof(digest)))
-			{
-				num = i;
-				break;
-			}
-		}
-
-		if (i < pdev->num_imgs)
-			break;
-
-		if (pdev->num_imgs == pdev->max_imgs)
-		{
-			int newmax = pdev->max_imgs * 2;
-			if (newmax == 0)
-				newmax = 4;
-			pdev->images = fz_resize_array(ctx, pdev->images, newmax, sizeof(*pdev->images));
-			pdev->max_imgs = newmax;
-		}
-		num = pdev->num_imgs++;
-		memcpy(pdev->images[num].digest,digest,16);
-		pdev->images[num].ref = NULL; /* Will be filled in later */
-
-		imobj = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Width, pdf_new_int(ctx, doc, image->w));
-		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Height, pdf_new_int(ctx, doc, image->h));
-		if (mask)
-		{}
-		else if (!colorspace || colorspace->n == 1)
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
-		else if (colorspace->n == 3)
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
-		else if (colorspace->n == 4)
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
-		if (!mask)
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
-		switch (cp ? cp->type : FZ_IMAGE_UNKNOWN)
-		{
-		case FZ_IMAGE_UNKNOWN: /* Unknown also means raw */
-		default:
-			break;
-		case FZ_IMAGE_JPEG:
-			if (cp->u.jpeg.color_transform != -1)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorTransform, pdf_new_int(ctx, doc, cp->u.jpeg.color_transform));
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_DCTDecode);
-			break;
-		case FZ_IMAGE_JPX:
-			if (cp->u.jpx.smask_in_data)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_SMaskInData, pdf_new_int(ctx, doc, cp->u.jpx.smask_in_data));
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_JPXDecode);
-			break;
-		case FZ_IMAGE_FAX:
-			if (cp->u.fax.columns)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.fax.columns));
-			if (cp->u.fax.rows)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Rows, pdf_new_int(ctx, doc, cp->u.fax.rows));
-			if (cp->u.fax.k)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_K, pdf_new_int(ctx, doc, cp->u.fax.k));
-			if (cp->u.fax.end_of_line)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_EndOfLine, pdf_new_int(ctx, doc, cp->u.fax.end_of_line));
-			if (cp->u.fax.encoded_byte_align)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_EncodedByteAlign, pdf_new_int(ctx, doc, cp->u.fax.encoded_byte_align));
-			if (cp->u.fax.end_of_block)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_EndOfBlock, pdf_new_int(ctx, doc, cp->u.fax.end_of_block));
-			if (cp->u.fax.black_is_1)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BlackIs1, pdf_new_int(ctx, doc, cp->u.fax.black_is_1));
-			if (cp->u.fax.damaged_rows_before_error)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_DamagedRowsBeforeError, pdf_new_int(ctx, doc, cp->u.fax.damaged_rows_before_error));
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_CCITTFaxDecode);
-			break;
-		case FZ_IMAGE_JBIG2:
-			/* FIXME - jbig2globals */
-			cp->type = FZ_IMAGE_UNKNOWN;
-			break;
-		case FZ_IMAGE_FLATE:
-			if (cp->u.flate.columns)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.flate.columns));
-			if (cp->u.flate.colors)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.flate.colors));
-			if (cp->u.flate.predictor)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.flate.predictor));
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
-			break;
-		case FZ_IMAGE_LZW:
-			if (cp->u.lzw.columns)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.lzw.columns));
-			if (cp->u.lzw.colors)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.lzw.colors));
-			if (cp->u.lzw.predictor)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.lzw.predictor));
-			if (cp->u.lzw.early_change)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_EarlyChange, pdf_new_int(ctx, doc, cp->u.lzw.early_change));
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_LZWDecode);
-			break;
-		case FZ_IMAGE_RLD:
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_RunLengthDecode);
-			break;
-		}
-		if (mask)
-		{
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_ImageMask, pdf_new_bool(ctx, doc, 1));
-		}
-		if (image->mask)
-		{
-			int smasknum = send_image(ctx, pdev, image->mask, 0, 1);
-			pdf_dict_put(ctx, imobj, PDF_NAME_SMask, pdev->images[smasknum].ref);
-		}
-
-		imref = pdf_new_ref(ctx, doc, imobj);
-		pdf_update_stream(ctx, doc, imref, buffer, 1);
-
-		{
-			char text[32];
-			snprintf(text, sizeof(text), "XObject/Img%d", num);
-			pdf_dict_putp(ctx, pdev->resources, text, imref);
-		}
-		pdev->images[num].ref = imref;
-	}
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, buffer);
-		pdf_drop_obj(ctx, imobj);
-		fz_drop_pixmap(ctx, pixmap);
-	}
-	fz_catch(ctx)
-	{
-		pdf_drop_obj(ctx, imref);
-		fz_rethrow(ctx);
-	}
-	return num;
-}
-
 static void
 pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *stroke_state)
 {
@@ -550,66 +354,116 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 }
 
 static void
+pdf_dev_add_font_res(fz_context *ctx, fz_device *dev, pdf_res *fres)
+{
+	char text[32];
+	pdf_device *pdev = (pdf_device*)dev;
+	int k;
+	int num;
+
+	/* Check if we already had this one */
+	for (k = 0; k < pdev->num_cid_fonts; k++)
+	{
+		if (pdev->font_indices[k] == fres->num)
+			return;
+	}
+
+	/* Not there so add to resources */
+	snprintf(text, sizeof(text), "Font/F%d", fres->num);
+	pdf_dict_putp(ctx, pdev->resources, text, fres->obj);
+
+	/* And add index to our list for this page */
+	if (pdev->num_cid_fonts == pdev->max_cid_fonts)
+	{
+		int newmax = pdev->max_cid_fonts * 2;
+		if (newmax == 0)
+			newmax = 4;
+		pdev->font_indices = fz_resize_array(ctx, pdev->image_indices, newmax, sizeof(*pdev->font_indices));
+		pdev->max_cid_fonts = newmax;
+	}
+	num = pdev->num_cid_fonts++;
+	pdev->font_indices[num] = fres->num;
+}
+
+static void
 pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 {
 	int i;
 	pdf_document *doc = pdev->doc;
 	gstate *gs = CURRENT_GSTATE(pdev);
+	pdf_res *fres;
 
 	/* If the font is unchanged, nothing to do */
 	if (gs->font >= 0 && pdev->fonts[gs->font].font == font)
 		return;
 
-	if (font->ft_buffer != NULL || font->ft_substitute)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device supports only base 14 fonts currently");
+	if (font->ft_substitute)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support substitute metrics");
 
-	/* Have we sent such a font before? */
-	for (i = 0; i < pdev->num_fonts; i++)
-		if (pdev->fonts[i].font == font)
-			break;
+	if (font->ft_buffer != NULL && !pdf_font_writing_supported(font))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support font types found in this file");
 
-	if (i == pdev->num_fonts)
+	if (font->ft_buffer != NULL)
 	{
-		pdf_obj *o;
-		pdf_obj *ref = NULL;
+		/* This will add it to the xref if needed */
+		fres = pdf_add_cid_font_res(ctx, doc, font->ft_buffer, font);
+		fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", fres->num, size);
 
-		fz_var(ref);
-
-		/* No. Need to make a new one */
-		if (pdev->num_fonts == pdev->max_fonts)
-		{
-			int newmax = pdev->max_fonts * 2;
-			if (newmax == 0)
-				newmax = 4;
-			pdev->fonts = fz_resize_array(ctx, pdev->fonts, newmax, sizeof(*pdev->fonts));
-			pdev->max_fonts = newmax;
-		}
-		pdev->fonts[i].font = fz_keep_font(ctx, font);
-
-		o = pdf_new_dict(ctx, doc, 3);
-		fz_try(ctx)
-		{
-			char text[32];
-			pdf_dict_put_drop(ctx, o, PDF_NAME_Type, PDF_NAME_Font);
-			pdf_dict_put_drop(ctx, o, PDF_NAME_Subtype, PDF_NAME_Type1);
-			pdf_dict_put_drop(ctx, o, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font->name));
-			pdf_dict_put_drop(ctx, o, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
-			ref = pdf_new_ref(ctx, doc, o);
-			snprintf(text, sizeof(text), "Font/F%d", i);
-			pdf_dict_putp(ctx, pdev->resources, text, ref);
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_obj(ctx, o);
-			pdf_drop_obj(ctx, ref);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
-		pdev->num_fonts++;
+		/* Possibly add to page resources */
+		pdf_dev_add_font_res(ctx, (fz_device*) pdev, fres);
+		pdf_drop_obj(ctx, fres->obj);
 	}
-	fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", i, size);
+	else
+	{
+		/* Have the device handle the base fonts */
+		/* Have we sent such a font before? */
+		for (i = 0; i < pdev->num_fonts; i++)
+			if (pdev->fonts[i].font == font)
+				break;
+
+		if (i == pdev->num_fonts)
+		{
+			pdf_obj *o;
+			pdf_obj *ref = NULL;
+
+			fz_var(ref);
+
+			/* No. Need to make a new one */
+			if (pdev->num_fonts == pdev->max_fonts)
+			{
+				int newmax = pdev->max_fonts * 2;
+				if (newmax == 0)
+					newmax = 4;
+				pdev->fonts = fz_resize_array(ctx, pdev->fonts, newmax, sizeof(*pdev->fonts));
+				pdev->max_fonts = newmax;
+			}
+			pdev->fonts[i].font = fz_keep_font(ctx, font);
+
+			o = pdf_new_dict(ctx, doc, 3);
+			fz_try(ctx)
+			{
+				char text[32];
+				pdf_dict_put_drop(ctx, o, PDF_NAME_Type, PDF_NAME_Font);
+				pdf_dict_put_drop(ctx, o, PDF_NAME_Subtype, PDF_NAME_Type1);
+				pdf_dict_put_drop(ctx, o, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font->name));
+				pdf_dict_put_drop(ctx, o, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
+				ref = pdf_new_ref(ctx, doc, o);
+				snprintf(text, sizeof(text), "Font/Fb%d", i);
+				pdf_dict_putp(ctx, pdev->resources, text, ref);
+			}
+			fz_always(ctx)
+			{
+				pdf_drop_obj(ctx, o);
+				pdf_drop_obj(ctx, ref);
+			}
+			fz_catch(ctx)
+			{
+				fz_rethrow(ctx);
+			}
+			pdev->num_fonts++;
+		}
+		fz_buffer_printf(ctx, gs->buf, "/Fb%d %f Tf\n", i, size);
+	}
 }
 
 static void
@@ -721,11 +575,21 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span, float s
 		}
 
 		fz_buffer_printf(ctx, gs->buf, "<");
-		for (/* i from its current value */; i < j; i++)
+		if (span->font->ft_buffer == NULL)
 		{
-			/* FIXME: should use it->gid, rather than it->ucs, and convert
-			* to the correct encoding */
-			fz_buffer_printf(ctx, gs->buf, "%02x", span->items[i].ucs);
+			/* A standard 14 type font */
+			for (/* i from its current value */; i < j; i++)
+			{
+				fz_buffer_printf(ctx, gs->buf, "%02x", span->items[i].ucs);
+			}
+		}
+		else
+		{
+			/* Non-standard font. Saved as Type0 Identity-H */
+			for (/* i from its current value */; i < j; i++)
+			{
+				fz_buffer_printf(ctx, gs->buf, "%04x", span->items[i].gid);
+			}
 		}
 		fz_buffer_printf(ctx, gs->buf, "> Tj\n");
 	}
@@ -1040,21 +904,63 @@ pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
+pdf_dev_add_image_res(fz_context *ctx, fz_device *dev, pdf_res *im_res)
+{
+	char text[32];
+	pdf_device *pdev = (pdf_device*)dev;
+	int k;
+	int num;
+
+	/* Check if we already had this one */
+	for (k = 0; k < pdev->num_imgs; k++)
+	{
+		if (pdev->image_indices[k] == im_res->num)
+			return;
+	}
+
+	/* Not there so add to resources */
+	snprintf(text, sizeof(text), "XObject/Img%d", im_res->num);
+	pdf_dict_putp(ctx, pdev->resources, text, im_res->obj);
+
+	/* And add index to our list for this page */
+	if (pdev->num_imgs == pdev->max_imgs)
+	{
+		int newmax = pdev->max_imgs * 2;
+		if (newmax == 0)
+			newmax = 4;
+		pdev->image_indices = fz_resize_array(ctx, pdev->image_indices, newmax, sizeof(*pdev->image_indices));
+		pdev->max_imgs = newmax;
+	}
+	num = pdev->num_imgs++;
+	pdev->image_indices[num] = im_res->num;
+}
+
+static void
 pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	int num;
+	pdf_res *im_res;
 	gstate *gs = CURRENT_GSTATE(pdev);
 	fz_matrix local_ctm = *ctm;
 
 	pdf_dev_end_text(ctx, pdev);
-	num = send_image(ctx, pdev, image, 0, 0);
+	im_res = pdf_add_image_res(ctx, pdev->doc, image, 0);
+	if (im_res == NULL)
+	{
+		fz_warn(ctx, "pdf_add_image_res: problem adding image resource");
+		return;
+	}
 	pdf_dev_alpha(ctx, pdev, alpha, 0);
+
 	/* PDF images are upside down, so fiddle the ctm */
 	fz_pre_scale(&local_ctm, 1, -1);
 	fz_pre_translate(&local_ctm, 0, -1);
 	pdf_dev_ctm(ctx, pdev, &local_ctm);
-	fz_buffer_printf(ctx, gs->buf, "/Img%d Do\n", num);
+	fz_buffer_printf(ctx, gs->buf, "/Img%d Do\n", im_res->num);
+
+	/* Possibly add to page resources */
+	pdf_dev_add_image_res(ctx, dev, im_res);
+	pdf_drop_obj(ctx, im_res->obj);
 }
 
 static void
@@ -1071,20 +977,26 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 		fz_colorspace *colorspace, const float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
+	pdf_res* im_res = NULL;
 	gstate *gs = CURRENT_GSTATE(pdev);
-	int num;
 	fz_matrix local_ctm = *ctm;
 
 	pdf_dev_end_text(ctx, pdev);
-	num = send_image(ctx, pdev, image, 1, 0);
+	im_res = pdf_add_image_res(ctx, pdev->doc, image, 1);
+	if (im_res == NULL)
+	{
+		fz_warn(ctx, "pdf_add_image_res: problem adding image resource");
+		return;
+	}
 	fz_buffer_printf(ctx, gs->buf, "q\n");
 	pdf_dev_alpha(ctx, pdev, alpha, 0);
 	pdf_dev_color(ctx, pdev, colorspace, color, 0);
+
 	/* PDF images are upside down, so fiddle the ctm */
 	fz_pre_scale(&local_ctm, 1, -1);
 	fz_pre_translate(&local_ctm, 0, -1);
 	pdf_dev_ctm(ctx, pdev, &local_ctm);
-	fz_buffer_printf(ctx, gs->buf, "/Img%d Do Q\n", num);
+	fz_buffer_printf(ctx, gs->buf, "/Img%d Do Q\n", im_res->num);
 }
 
 static void
@@ -1283,11 +1195,6 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 		fz_drop_font(ctx, pdev->fonts[i].font);
 	}
 
-	for (i = pdev->num_imgs-1; i >= 0; i--)
-	{
-		pdf_drop_obj(ctx, pdev->images[i].ref);
-	}
-
 	for (i = pdev->num_groups - 1; i >= 0; i--)
 	{
 		pdf_drop_obj(ctx, pdev->groups[i].ref);
@@ -1306,9 +1213,10 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 
 	pdf_drop_obj(ctx, pdev->resources);
 
+	fz_free(ctx, pdev->font_indices);
+	fz_free(ctx, pdev->image_indices);
 	fz_free(ctx, pdev->groups);
 	fz_free(ctx, pdev->fonts);
-	fz_free(ctx, pdev->images);
 	fz_free(ctx, pdev->alphas);
 	fz_free(ctx, pdev->gstates);
 }

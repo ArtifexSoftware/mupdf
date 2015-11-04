@@ -474,6 +474,10 @@
 			RelativePath="..\..\source\tools\pdfclean.c"
 			>
 		</File>
+    <File
+			RelativePath="..\..\source\tools\pdfcreate.c"
+			>
+		</File>
 		<File
 			RelativePath="..\..\source\tools\pdfextract.c"
 			>

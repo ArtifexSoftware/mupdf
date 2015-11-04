@@ -9,6 +9,46 @@ void *pdf_find_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key);
 void pdf_remove_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key);
 
 /*
+ * Structures used for managing resource locations and avoiding multiple
+ * occurrences when resources are added to the document. The search for existing
+ * resources will be performed when we are first trying to add an item. Object
+ * refs are stored in an fz_hash_table structure using a hash of the md5 sum of 
+ * the data, enabling rapid lookup.
+ */
+typedef struct pdf_res_s pdf_res;
+
+struct pdf_res_s
+{
+	int num;
+	pdf_obj *obj;
+};
+
+typedef struct pdf_res_table_s pdf_res_table;
+typedef void* (pdf_res_search_fn)(fz_context *ctx, pdf_document *doc, pdf_res_table *list,
+	void *item, void *val);
+
+struct pdf_res_table_s
+{
+	int count;
+	fz_hash_table *hash;
+	pdf_res_search_fn *search;
+};
+
+struct pdf_resource_tables_s
+{
+	pdf_res_table *image;
+	pdf_res_table *font;
+	pdf_res_table *color;
+	pdf_res_table *pattern;
+	pdf_res_table *shading;
+};
+
+void* pdf_resource_table_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, void *md5);
+void pdf_resource_table_init(fz_context *ctx, pdf_document *doc);
+void pdf_resource_table_free(fz_context *ctx, pdf_document *doc);
+void* pdf_resource_table_put(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj *obj);
+
+/*
  * Functions, Colorspaces, Shadings and Images
  */
 
@@ -23,6 +63,8 @@ fz_image *pdf_load_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *rdb
 int pdf_is_jpx_image(fz_context *ctx, pdf_obj *dict);
 
 fz_image *pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+
+pdf_res* pdf_add_image_res(fz_context *ctx, pdf_document *doc, fz_image *image, int mask);
 
 /*
  * Pattern
