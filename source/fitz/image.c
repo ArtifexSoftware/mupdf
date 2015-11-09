@@ -65,15 +65,12 @@ fz_cmp_image_key(fz_context *ctx, void *k0_, void *k1_)
 	return k0->image == k1->image && k0->l2factor == k1->l2factor;
 }
 
-#ifndef NDEBUG
 static void
-fz_debug_image(fz_context *ctx, FILE *out, void *key_)
+fz_print_image(fz_context *ctx, fz_output *out, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
-
-	fprintf(out, "(image %d x %d sf=%d) ", key->image->w, key->image->h, key->l2factor);
+	fz_printf(ctx, out, "(image %d x %d sf=%d) ", key->image->w, key->image->h, key->l2factor);
 }
-#endif
 
 static fz_store_type fz_image_store_type =
 {
@@ -81,9 +78,7 @@ static fz_store_type fz_image_store_type =
 	fz_keep_image_key,
 	fz_drop_image_key,
 	fz_cmp_image_key,
-#ifndef NDEBUG
-	fz_debug_image
-#endif
+	fz_print_image
 };
 
 static void

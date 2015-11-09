@@ -109,31 +109,3 @@ fz_add_text(fz_context *ctx, fz_text *text, int gid, int ucs, float x, float y)
 	text->items[text->len].y = y;
 	text->len++;
 }
-
-static int
-isxmlmeta(int c)
-{
-	return c < 32 || c >= 128 || c == '&' || c == '<' || c == '>' || c == '\'' || c == '"';
-}
-
-static void
-do_print_text(FILE *out, fz_text *text, int indent)
-{
-	int i, n;
-	for (i = 0; i < text->len; i++)
-	{
-		for (n = 0; n < indent; n++)
-			fputc(' ', out);
-		if (!isxmlmeta(text->items[i].ucs))
-			fprintf(out, "<g ucs=\"%c\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
-				text->items[i].ucs, text->items[i].gid, text->items[i].x, text->items[i].y);
-		else
-			fprintf(out, "<g ucs=\"U+%04X\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
-				text->items[i].ucs, text->items[i].gid, text->items[i].x, text->items[i].y);
-	}
-}
-
-void fz_print_text(fz_context *ctx, FILE *out, fz_text *text)
-{
-	do_print_text(out, text, 0);
-}

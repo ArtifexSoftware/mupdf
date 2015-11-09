@@ -92,8 +92,6 @@ fz_stroke_state *fz_unshare_stroke_state(fz_context *ctx, fz_stroke_state *share
 fz_stroke_state *fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, int len);
 fz_stroke_state *fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
 
-#ifndef NDEBUG
-void fz_print_path(fz_context *ctx, FILE *out, fz_path *, int indent);
-#endif
+void fz_print_path(fz_context *ctx, fz_output *out, fz_path *, int indent);
 
 #endif

@@ -576,9 +576,16 @@ fz_output_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int ban
 }
 
 void
+fz_output_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
+{
+	fz_output_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n);
+	fz_output_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
+}
+
+void
 fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 {
-	fz_output *out = fz_new_output_to_filename(ctx, filename);
+	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_output_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n);
 	fz_output_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
 	fz_drop_output(ctx, out);
@@ -638,9 +645,16 @@ fz_output_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int ban
 }
 
 void
+fz_output_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha)
+{
+	fz_output_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
+	fz_output_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
+}
+
+void
 fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 {
-	fz_output *out = fz_new_output_to_filename(ctx, filename);
+	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_output_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
 	fz_output_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
 	fz_drop_output(ctx, out);
@@ -675,7 +689,7 @@ static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *
 void
 fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 {
-	fz_output *out = fz_new_output_to_filename(ctx, filename);
+	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_png_output_context *poc = NULL;
 
 	fz_var(poc);
@@ -979,7 +993,7 @@ fz_write_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savea
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as tga");
 	}
 
-	out = fz_new_output_to_filename(ctx, filename);
+	out = fz_new_output_with_path(ctx, filename, 0);
 
 	memset(head, 0, sizeof(head));
 	head[2] = n == 4 ? 10 : 11;

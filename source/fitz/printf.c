@@ -322,47 +322,6 @@ fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args)
 }
 
 int
-fz_vfprintf(fz_context *ctx, FILE *file, const char *fmt, va_list old_args)
-{
-	char buffer[256];
-	int l;
-	va_list args;
-	char *b = buffer;
-
-	/* First try using our fixed size buffer */
-	va_copy(args, old_args);
-	l = fz_vsnprintf(buffer, sizeof buffer, fmt, args);
-	va_copy_end(args);
-
-	/* If that failed, allocate the right size buffer dynamically */
-	if (l >= sizeof buffer)
-	{
-		b = fz_malloc(ctx, l + 1);
-		va_copy(args, old_args);
-		fz_vsnprintf(b, l + 1, fmt, args);
-		va_copy_end(args);
-	}
-
-	l = fwrite(b, 1, l, file);
-
-	if (b != buffer)
-		fz_free(ctx, b);
-
-	return l;
-}
-
-int
-fz_fprintf(fz_context *ctx, FILE *file, const char *fmt, ...)
-{
-	int n;
-	va_list ap;
-	va_start(ap, fmt);
-	n = fz_vfprintf(ctx, file, fmt, ap);
-	va_end(ap);
-	return n;
-}
-
-int
 fz_snprintf(char *buffer, int space, const char *fmt, ...)
 {
 	int n;

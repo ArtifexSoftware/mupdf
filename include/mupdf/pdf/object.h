@@ -131,13 +131,7 @@ int pdf_obj_refs(fz_context *ctx, pdf_obj *ref);
 int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj);
 
 int pdf_sprint_obj(fz_context *ctx, char *s, int n, pdf_obj *obj, int tight);
-int pdf_fprint_obj(fz_context *ctx, FILE *fp, pdf_obj *obj, int tight);
-int pdf_output_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight);
-
-#ifndef NDEBUG
-void pdf_print_obj(fz_context *ctx, pdf_obj *obj);
-void pdf_print_ref(fz_context *ctx, pdf_obj *obj);
-#endif
+int pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight);
 
 char *pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src);
 unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_document *doc, pdf_obj *src);

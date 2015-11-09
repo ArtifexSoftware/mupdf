@@ -484,52 +484,46 @@ fz_drop_store_context(fz_context *ctx)
 	ctx->store = NULL;
 }
 
-#ifndef NDEBUG
 static void
-print_item(FILE *out, void *item_)
+print_item(fz_context *ctx, fz_output *out, void *item_)
 {
 	fz_item *item = (fz_item *)item_;
-	fprintf(out, " val=%p item=%p\n", item->val, item);
-	fflush(out);
+	fz_printf(ctx, out, " val=%p item=%p\n", item->val, item);
 }
 
 void
-fz_print_store_locked(fz_context *ctx, FILE *out)
+fz_print_store_locked(fz_context *ctx, fz_output *out)
 {
 	fz_item *item, *next;
 	fz_store *store = ctx->store;
 
-	fprintf(out, "-- resource store contents --\n");
-	fflush(out);
+	fz_printf(ctx, out, "-- resource store contents --\n");
 
 	for (item = store->head; item; item = next)
 	{
 		next = item->next;
 		if (next)
 			next->val->refs++;
-		fprintf(out, "store[*][refs=%d][size=%d] ", item->val->refs, item->size);
+		fz_printf(ctx, out, "store[*][refs=%d][size=%d] ", item->val->refs, item->size);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
-		item->type->debug(ctx, out, item->key);
-		fprintf(out, " = %p\n", item->val);
-		fflush(out);
+		item->type->print(ctx, out, item->key);
+		fz_printf(ctx, out, " = %p\n", item->val);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (next)
 			next->val->refs--;
 	}
-	fprintf(out, "-- resource store hash contents --\n");
+	fz_printf(ctx, out, "-- resource store hash contents --\n");
 	fz_print_hash_details(ctx, out, store->hash, print_item);
-	fprintf(out, "-- end --\n");
-	fflush(out);
+	fz_printf(ctx, out, "-- end --\n");
 }
 
 void
-fz_print_store(fz_context *ctx, FILE *out)
+fz_print_store(fz_context *ctx, fz_output *out)
 {
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	fz_print_store_locked(ctx, out);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
-#endif
 
 /* This is now an n^2 algorithm - not ideal, but it'll only be bad if we are
  * actually managing to scavenge lots of blocks back. */

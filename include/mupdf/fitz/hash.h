@@ -3,6 +3,7 @@
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
+#include "mupdf/fitz/output.h"
 
 /*
  * Generic hash-table with fixed-length keys.
@@ -24,9 +25,7 @@ int fz_hash_len(fz_context *ctx, fz_hash_table *table);
 void *fz_hash_get_key(fz_context *ctx, fz_hash_table *table, int idx);
 void *fz_hash_get_val(fz_context *ctx, fz_hash_table *table, int idx);
 
-#ifndef NDEBUG
-void fz_print_hash(fz_context *ctx, FILE *out, fz_hash_table *table);
-void fz_print_hash_details(fz_context *ctx, FILE *out, fz_hash_table *table, void (*details)(FILE *, void *));
-#endif
+void fz_print_hash(fz_context *ctx, fz_output *out, fz_hash_table *table);
+void fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, void (*details)(fz_context*, fz_output*, void*));
 
 #endif

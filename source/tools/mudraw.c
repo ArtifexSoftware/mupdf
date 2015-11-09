@@ -310,7 +310,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		fz_try(ctx)
 		{
-			dev = fz_new_trace_device(ctx);
+			dev = fz_new_trace_device(ctx, out);
 			if (list)
 				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
 			else
@@ -420,20 +420,15 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_matrix ctm;
 		fz_rect bounds, tbounds;
 		char buf[512];
-		FILE *file;
 		fz_output *out;
 
 		if (!strcmp(output, "-"))
-			file = stdout;
+			out = fz_new_output_with_file_ptr(ctx, stdout, 0);
 		else
 		{
 			sprintf(buf, output, pagenum);
-			file = fz_fopen(buf, "wb");
-			if (file == NULL)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", buf, strerror(errno));
+			out = fz_new_output_with_path(ctx, buf, 0);
 		}
-
-		out = fz_new_output_with_file(ctx, file, 0);
 
 		fz_bound_page(ctx, page, &bounds);
 		zoom = resolution / 72;
@@ -456,8 +451,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			fz_drop_output(ctx, out);
-			if (file != stdout)
-				fclose(file);
 		}
 		fz_catch(ctx)
 		{
@@ -567,11 +560,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			if (output)
 			{
 				if (!strcmp(output, "-"))
-					output_file = fz_new_output_with_file(ctx, stdout, 0);
+					output_file = fz_new_output_with_file_ptr(ctx, stdout, 0);
 				else
 				{
 					sprintf(filename_buf, output, pagenum);
-					output_file = fz_new_output_to_filename(ctx, filename_buf);
+					output_file = fz_new_output_with_path(ctx, filename_buf, 0);
 				}
 
 				if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
@@ -860,7 +853,6 @@ int mudraw_main(int argc, char **argv)
 	int c;
 	fz_context *ctx;
 	fz_alloc_context alloc_ctx = { NULL, trace_malloc, trace_realloc, trace_free };
-	FILE *my_output = NULL;
 
 	fz_var(doc);
 
@@ -1045,17 +1037,9 @@ int mudraw_main(int argc, char **argv)
 	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT || output_format == OUT_TRACE)
 	{
 		if (output && output[0] != '-' && *output != 0)
-		{
-			my_output = fopen(output, "w");
-			if (my_output == NULL)
-			{
-				fprintf(stderr, "Failed to open file '%s' for output\n", output);
-				exit(1);
-			}
-		}
+			out = fz_new_output_with_path(ctx, output, 0);
 		else
-			my_output = stdout;
-		out = fz_new_output_with_file(ctx, my_output, 0);
+			out = fz_new_output_with_file_ptr(ctx, stdout, 0);
 	}
 
 	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
@@ -1163,9 +1147,6 @@ int mudraw_main(int argc, char **argv)
 	fz_drop_text_sheet(ctx, sheet);
 	fz_drop_output(ctx, out);
 	out = NULL;
-
-	if (my_output != NULL && my_output != stdout)
-		fclose(my_output);
 
 	if (showtime && timing.count > 0)
 	{

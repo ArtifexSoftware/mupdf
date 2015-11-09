@@ -1016,28 +1016,27 @@ pdf_open_crypt_with_filter(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, 
 	return chain;
 }
 
-#ifndef NDEBUG
-void pdf_print_crypt(fz_context *ctx, pdf_crypt *crypt)
+void
+pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt)
 {
 	int i;
 
-	printf("crypt {\n");
+	fz_printf(ctx, out, "crypt {\n");
 
-	printf("\tv=%d length=%d\n", crypt->v, crypt->length);
-	printf("\tstmf method=%d length=%d\n", crypt->stmf.method, crypt->stmf.length);
-	printf("\tstrf method=%d length=%d\n", crypt->strf.method, crypt->strf.length);
-	printf("\tr=%d\n", crypt->r);
+	fz_printf(ctx, out, "\tv=%d length=%d\n", crypt->v, crypt->length);
+	fz_printf(ctx, out, "\tstmf method=%d length=%d\n", crypt->stmf.method, crypt->stmf.length);
+	fz_printf(ctx, out, "\tstrf method=%d length=%d\n", crypt->strf.method, crypt->strf.length);
+	fz_printf(ctx, out, "\tr=%d\n", crypt->r);
 
-	printf("\to=<");
+	fz_printf(ctx, out, "\to=<");
 	for (i = 0; i < 32; i++)
-		printf("%02X", crypt->o[i]);
-	printf(">\n");
+		fz_printf(ctx, out, "%02X", crypt->o[i]);
+	fz_printf(ctx, out, ">\n");
 
-	printf("\tu=<");
+	fz_printf(ctx, out, "\tu=<");
 	for (i = 0; i < 32; i++)
-		printf("%02X", crypt->u[i]);
-	printf(">\n");
+		fz_printf(ctx, out, "%02X", crypt->u[i]);
+	fz_printf(ctx, out, ">\n");
 
-	printf("}\n");
+	fz_printf(ctx, out, "}\n");
 }
-#endif

@@ -89,9 +89,9 @@ static void savefont(pdf_obj *dict, int num)
 	pdf_obj *stream = NULL;
 	pdf_obj *obj;
 	char *ext = "";
-	FILE *f;
+	fz_output *out;
 	char *fontname = "font";
-	int n, len;
+	int len;
 	unsigned char *data;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontName);
@@ -138,23 +138,23 @@ static void savefont(pdf_obj *dict, int num)
 	}
 
 	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stream), pdf_to_gen(ctx, stream));
-
-	snprintf(namebuf, sizeof(namebuf), "%s-%04d.%s", fontname, num, ext);
-	printf("extracting font %s\n", namebuf);
-
-	f = fz_fopen(namebuf, "wb");
-	if (!f)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create font file");
-
 	len = fz_buffer_storage(ctx, buf, &data);
-	n = fwrite(data, 1, len, f);
-	if (n < len)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot write font file");
-
-	if (fclose(f) < 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot close font file");
-
-	fz_drop_buffer(ctx, buf);
+	fz_try(ctx)
+	{
+		snprintf(namebuf, sizeof(namebuf), "%s-%04d.%s", fontname, num, ext);
+		printf("extracting font %s\n", namebuf);
+		out = fz_new_output_with_path(ctx, namebuf, 0);
+		fz_try(ctx)
+			fz_write(ctx, out, data, len);
+		fz_always(ctx)
+			fz_drop_output(ctx, out);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void showobject(int num)

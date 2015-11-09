@@ -1,5 +1,14 @@
 #include "mupdf/fitz.h"
 
+int
+fz_file_exists(fz_context *ctx, const char *path)
+{
+	FILE *file = fz_fopen(path, "rb");
+	if (file)
+		fclose(file);
+	return !!file;
+}
+
 fz_stream *
 fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_close_fn *close)
 {

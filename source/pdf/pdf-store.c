@@ -31,20 +31,16 @@ pdf_cmp_key(fz_context *ctx, void *k0, void *k1)
 	return pdf_objcmp(ctx, (pdf_obj *)k0, (pdf_obj *)k1);
 }
 
-#ifndef NDEBUG
 static void
-pdf_debug_key(fz_context *ctx, FILE *out, void *key_)
+pdf_print_key(fz_context *ctx, fz_output *out, void *key_)
 {
 	pdf_obj *key = (pdf_obj *)key_;
 
 	if (pdf_is_indirect(ctx, key))
-	{
-		fprintf(out, "(%d %d R) ", pdf_to_num(ctx, key), pdf_to_gen(ctx, key));
-	}
+		fz_printf(ctx, out, "(%d %d R) ", pdf_to_num(ctx, key), pdf_to_gen(ctx, key));
 	else
-		pdf_fprint_obj(ctx, out, key, 0);
+		pdf_print_obj(ctx, out, key, 0);
 }
-#endif
 
 static fz_store_type pdf_obj_store_type =
 {
@@ -52,9 +48,7 @@ static fz_store_type pdf_obj_store_type =
 	pdf_keep_key,
 	pdf_drop_key,
 	pdf_cmp_key,
-#ifndef NDEBUG
-	pdf_debug_key
-#endif
+	pdf_print_key
 };
 
 void

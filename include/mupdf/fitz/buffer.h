@@ -110,28 +110,19 @@ void fz_trim_buffer(fz_context *ctx, fz_buffer *buf);
 */
 void fz_buffer_cat(fz_context *ctx, fz_buffer *buf, fz_buffer *extra);
 
-void fz_write_buffer(fz_context *ctx, fz_buffer *buf, const void *data, int len);
-
-void fz_write_buffer_byte(fz_context *ctx, fz_buffer *buf, int val);
-
-void fz_write_buffer_rune(fz_context *ctx, fz_buffer *buf, int val);
-
-void fz_write_buffer_bits(fz_context *ctx, fz_buffer *buf, int val, int bits);
-
-void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf);
-
 /*
-	fz_buffer_printf: print formatted to a buffer. The buffer will grow
-	as required.
+	fz_write_buffer*: write to a buffer.
+	fz_buffer_printf: print formatted to a buffer.
+	fz_buffer_cat_pdf_string: Print a string using PDF syntax and escapes.
+	The buffer will grow as required.
 */
+void fz_write_buffer(fz_context *ctx, fz_buffer *buf, const void *data, int len);
+void fz_write_buffer_byte(fz_context *ctx, fz_buffer *buf, int val);
+void fz_write_buffer_rune(fz_context *ctx, fz_buffer *buf, int val);
+void fz_write_buffer_bits(fz_context *ctx, fz_buffer *buf, int val, int bits);
+void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf);
 int fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...);
 int fz_buffer_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list args);
-
-/*
-	fz_buffer_printf: print a string formatted as a pdf string to a buffer.
-	The buffer will grow.
-*/
-void
-fz_buffer_cat_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
+void fz_buffer_cat_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
 
 #endif

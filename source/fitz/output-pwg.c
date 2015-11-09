@@ -260,61 +260,31 @@ fz_output_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz
 void
 fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg)
 {
-	FILE *fp;
-	fz_output *out = NULL;
-
-	fp = fz_fopen(filename, append ? "ab" : "wb");
-	if (!fp)
-	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
-	}
-
-	fz_var(out);
-
+	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
 	{
-		out = fz_new_output_with_file(ctx, fp, 1);
 		if (!append)
 			fz_output_pwg_file_header(ctx, out);
 		fz_output_pwg_page(ctx, out, pixmap, pwg);
 	}
 	fz_always(ctx)
-	{
 		fz_drop_output(ctx, out);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 }
 
 void
 fz_write_pwg_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg)
 {
-	FILE *fp;
-	fz_output *out = NULL;
-
-	fp = fz_fopen(filename, append ? "ab" : "wb");
-	if (!fp)
-	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
-	}
-
-	fz_var(out);
-
+	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
 	{
-		out = fz_new_output_with_file(ctx, fp, 1);
 		if (!append)
 			fz_output_pwg_file_header(ctx, out);
 		fz_output_pwg_bitmap_page(ctx, out, bitmap, pwg);
 	}
 	fz_always(ctx)
-	{
 		fz_drop_output(ctx, out);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 }

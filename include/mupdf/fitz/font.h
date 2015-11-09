@@ -97,8 +97,6 @@ void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc);
 float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph);
 int fz_encode_character(fz_context *ctx, fz_font *font, int unicode);
 
-#ifndef NDEBUG
-void fz_print_font(fz_context *ctx, FILE *out, fz_font *font);
-#endif
+void fz_print_font(fz_context *ctx, fz_output *out, fz_font *font);
 
 #endif

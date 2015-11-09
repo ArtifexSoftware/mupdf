@@ -6,6 +6,11 @@
 #include "mupdf/fitz/buffer.h"
 
 /*
+	fz_file_exists: Return true if the named file exists and is readable.
+*/
+int fz_file_exists(fz_context *ctx, const char *path);
+
+/*
 	fz_stream is a buffered reader capable of seeking in both
 	directions.
 

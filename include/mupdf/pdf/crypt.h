@@ -19,9 +19,7 @@ char *pdf_crypt_method(fz_context *ctx, pdf_document *doc);
 int pdf_crypt_length(fz_context *ctx, pdf_document *doc);
 unsigned char *pdf_crypt_key(fz_context *ctx, pdf_document *doc);
 
-#ifndef NDEBUG
-void pdf_print_crypt(fz_context *ctx, pdf_crypt *crypt);
-#endif
+void pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt);
 
 typedef struct pdf_designated_name_s
 {

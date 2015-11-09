@@ -1086,45 +1086,43 @@ fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_rect *
 	return fz_transform_rect(s, &local_ctm);
 }
 
-#ifndef NDEBUG
 void
-fz_print_shade(fz_context *ctx, FILE *out, fz_shade *shade)
+fz_print_shade(fz_context *ctx, fz_output *out, fz_shade *shade)
 {
 	int i;
 
-	fprintf(out, "shading {\n");
+	fz_printf(ctx, out, "shading {\n");
 
 	switch (shade->type)
 	{
-	case FZ_FUNCTION_BASED: fprintf(out, "\ttype function_based\n"); break;
-	case FZ_LINEAR: fprintf(out, "\ttype linear\n"); break;
-	case FZ_RADIAL: fprintf(out, "\ttype radial\n"); break;
-	default: /* MESH */ fprintf(out, "\ttype mesh\n"); break;
+	case FZ_FUNCTION_BASED: fz_printf(ctx, out, "\ttype function_based\n"); break;
+	case FZ_LINEAR: fz_printf(ctx, out, "\ttype linear\n"); break;
+	case FZ_RADIAL: fz_printf(ctx, out, "\ttype radial\n"); break;
+	default: /* MESH */ fz_printf(ctx, out, "\ttype mesh\n"); break;
 	}
 
-	fprintf(out, "\tbbox [%g %g %g %g]\n",
+	fz_printf(ctx, out, "\tbbox [%g %g %g %g]\n",
 		shade->bbox.x0, shade->bbox.y0,
 		shade->bbox.x1, shade->bbox.y1);
 
-	fprintf(out, "\tcolorspace %s\n", shade->colorspace->name);
+	fz_printf(ctx, out, "\tcolorspace %s\n", shade->colorspace->name);
 
-	fprintf(out, "\tmatrix [%g %g %g %g %g %g]\n",
+	fz_printf(ctx, out, "\tmatrix [%g %g %g %g %g %g]\n",
 			shade->matrix.a, shade->matrix.b, shade->matrix.c,
 			shade->matrix.d, shade->matrix.e, shade->matrix.f);
 
 	if (shade->use_background)
 	{
-		fprintf(out, "\tbackground [");
+		fz_printf(ctx, out, "\tbackground [");
 		for (i = 0; i < shade->colorspace->n; i++)
-			fprintf(out, "%s%g", i == 0 ? "" : " ", shade->background[i]);
-		fprintf(out, "]\n");
+			fz_printf(ctx, out, "%s%g", i == 0 ? "" : " ", shade->background[i]);
+		fz_printf(ctx, out, "]\n");
 	}
 
 	if (shade->use_function)
 	{
-		fprintf(out, "\tfunction\n");
+		fz_printf(ctx, out, "\tfunction\n");
 	}
 
-	fprintf(out, "}\n");
+	fz_printf(ctx, out, "}\n");
 }
-#endif

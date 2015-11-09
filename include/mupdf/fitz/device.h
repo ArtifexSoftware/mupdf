@@ -274,10 +274,9 @@ struct fz_cookie_s
 };
 
 /*
-	fz_new_trace_device: Create a device to print a debug trace of
-	all device calls.
+	fz_new_trace_device: Create a device to print a debug trace of all device calls.
 */
-fz_device *fz_new_trace_device(fz_context *ctx);
+fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out);
 
 /*
 	fz_new_bbox_device: Create a device to compute the bounding

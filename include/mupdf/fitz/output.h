@@ -4,6 +4,7 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/buffer.h"
+#include "mupdf/fitz/string.h"
 
 /*
 	Generic output streams - generalise between outputting to a file,
@@ -12,52 +13,47 @@
 typedef struct fz_output_s fz_output;
 
 /*
-	fz_new_output_with_file: Open an output stream onto a FILE *.
-
-	The stream does NOT take ownership of the FILE *.
+	fz_new_output_with_file: Open an output stream that writes to a FILE *.
+	fz_new_output_with_path: Open an output stream that writes to a file.
+	fz_new_output_with_buffer: Open an output stream that writes into a buffer.
 */
-fz_output *fz_new_output_with_file(fz_context *, FILE *, int close);
-
-/*
-	fz_new_output_to_filename: Open an output stream to a filename.
-*/
-fz_output *fz_new_output_to_filename(fz_context *, const char *filename);
-
-/*
-	fz_new_output_with_buffer: Open an output stream onto a buffer.
-
-	The stream does NOT take ownership of the buffer.
-*/
+fz_output *fz_new_output_with_file_ptr(fz_context *, FILE *, int close);
+fz_output *fz_new_output_with_path(fz_context *, const char *filename, int append);
 fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
 
 /*
-	fz_printf: fprintf equivalent for output streams.
-*/
-int fz_printf(fz_context *, fz_output *, const char *, ...);
-
-/*
-	fz_puts: fputs equivalent for output streams.
-*/
-int fz_puts(fz_context *, fz_output *, const char *);
-
-/*
 	fz_write: fwrite equivalent for output streams.
+	fz_printf: fprintf equivalent for output streams. See fz_snprintf.
+	fz_vprintf: vfprintf equivalent for output streams. See fz_vsnprintf.
+	fz_puts: fputs equivalent for output streams.
+	fz_putc: fputc equivalent for output streams.
+	fz_putrune: fputrune equivalent for output streams.
 */
+void fz_printf(fz_context *ctx, fz_output *out, const char *fmt, ...);
+void fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list ap);
 int fz_write(fz_context *, fz_output *out, const void *data, int len);
+#define fz_puts(C,O,S) fz_write(C, O, (S), strlen(S))
+#define fz_putc(C,O,B) fz_write_byte(C, O, B)
+#define fz_putrune(C,O,R) fz_write_rune(C, O, R)
 
 /*
-	fz_putc: putc equivalent for output streams.
+	fz_seek_output: Seek to the specified file position. Throw an error on unseekable outputs.
+	fz_tell_output: Return the current file position. Throw an error on unseekable outputs.
 */
-void fz_putc(fz_context *, fz_output *out, char c);
+void fz_seek_output(fz_context *ctx, fz_output *out, fz_off_t off, int whence);
+fz_off_t fz_tell_output(fz_context *ctx, fz_output *out);
 
 /*
-	fz_drop_output: Close a previously opened fz_output stream.
-
-	Note: whether or not this closes the underlying output method is
-	method dependent. FILE * streams created by fz_new_output_with_file
-	are NOT closed.
+	fz_drop_output: Close and free an output stream.
 */
 void fz_drop_output(fz_context *, fz_output *);
+
+/*
+	fz_write_int32be: Write a big-endian 32-bit binary integer.
+	fz_write_int32le: Write a little-endian 32-bit binary integer.
+	fz_write_byte: Write a single byte.
+	fz_write_rune: Write a UTF-8 encoded unicode character.
+*/
 
 static inline int fz_write_int32be(fz_context *ctx, fz_output *out, int x)
 {
@@ -83,20 +79,19 @@ static inline int fz_write_int32le(fz_context *ctx, fz_output *out, int x)
 	return fz_write(ctx, out, data, 4);
 }
 
-static inline void
-fz_write_byte(fz_context *ctx, fz_output *out, int x)
+static inline void fz_write_byte(fz_context *ctx, fz_output *out, int x)
 {
 	char data = x;
 
 	fz_write(ctx, out, &data, 1);
 }
 
-/*
-	fz_vfprintf: Our customised vfprintf routine. Same supported
-	format specifiers as for fz_vsnprintf.
-*/
-int fz_vfprintf(fz_context *ctx, FILE *file, const char *fmt, va_list ap);
-int fz_fprintf(fz_context *ctx, FILE *file, const char *fmt, ...);
+static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
+{
+	char data[10];
+
+	fz_write(ctx, out, data, fz_runetochar(data, rune));
+}
 
 /*
 	fz_vsnprintf: Our customised vsnprintf routine. Takes %c, %d, %o, %s, %u, %x, as usual.

@@ -364,14 +364,10 @@ fz_has_archive_entry(fz_context *ctx, fz_archive *zip, const char *name)
 	if (zip->directory)
 	{
 		char path[2048];
-		FILE *file;
 		fz_strlcpy(path, zip->directory, sizeof path);
 		fz_strlcat(path, "/", sizeof path);
 		fz_strlcat(path, name, sizeof path);
-		file = fz_fopen(path, "rb");
-		if (file)
-			fclose(file);
-		return file != NULL;
+		return fz_file_exists(ctx, path);
 	}
 	else
 	{

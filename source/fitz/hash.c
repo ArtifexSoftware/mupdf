@@ -324,34 +324,32 @@ fz_hash_remove_fast(fz_context *ctx, fz_hash_table *table, const void *key, unsi
 		do_removal(ctx, table, key, pos);
 }
 
-#ifndef NDEBUG
 void
-fz_print_hash(fz_context *ctx, FILE *out, fz_hash_table *table)
+fz_print_hash(fz_context *ctx, fz_output *out, fz_hash_table *table)
 {
 	fz_print_hash_details(ctx, out, table, NULL);
 }
 
 void
-fz_print_hash_details(fz_context *ctx, FILE *out, fz_hash_table *table, void (*details)(FILE *,void*))
+fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, void (*details)(fz_context*,fz_output*,void*))
 {
 	int i, k;
 
-	fprintf(out, "cache load %d / %d\n", table->load, table->size);
+	fz_printf(ctx, out, "cache load %d / %d\n", table->load, table->size);
 
 	for (i = 0; i < table->size; i++)
 	{
 		if (!table->ents[i].val)
-			fprintf(out, "table % 4d: empty\n", i);
+			fz_printf(ctx, out, "table % 4d: empty\n", i);
 		else
 		{
-			fprintf(out, "table % 4d: key=", i);
+			fz_printf(ctx, out, "table % 4d: key=", i);
 			for (k = 0; k < MAX_KEY_LEN; k++)
-				fprintf(out, "%02x", ((char*)table->ents[i].key)[k]);
+				fz_printf(ctx, out, "%02x", ((char*)table->ents[i].key)[k]);
 			if (details)
-				details(out, table->ents[i].val);
+				details(ctx, out, table->ents[i].val);
 			else
-				fprintf(out, " val=$%p\n", table->ents[i].val);
+				fz_printf(ctx, out, " val=$%p\n", table->ents[i].val);
 		}
 	}
 }
-#endif

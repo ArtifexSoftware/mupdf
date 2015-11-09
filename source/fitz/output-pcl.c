@@ -792,57 +792,23 @@ fz_output_pcl_bitmap(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, f
 void
 fz_write_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, fz_pcl_options *pcl)
 {
-	FILE *fp;
-	fz_output *out = NULL;
-
-	fp = fz_fopen(filename, append ? "ab" : "wb");
-	if (!fp)
-	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
-	}
-
-	fz_var(out);
-
+	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
-	{
-		out = fz_new_output_with_file(ctx, fp, 1);
 		fz_output_pcl(ctx, out, pixmap, pcl);
-	}
 	fz_always(ctx)
-	{
 		fz_drop_output(ctx, out);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 }
 
 void
 fz_write_pcl_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, fz_pcl_options *pcl)
 {
-	FILE *fp;
-	fz_output *out = NULL;
-
-	fp = fz_fopen(filename, append ? "ab" : "wb");
-	if (!fp)
-	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
-	}
-
-	fz_var(out);
-
+	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
-	{
-		out = fz_new_output_with_file(ctx, fp, 1);
 		fz_output_pcl_bitmap(ctx, out, bitmap, pcl);
-	}
 	fz_always(ctx)
-	{
 		fz_drop_output(ctx, out);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 }

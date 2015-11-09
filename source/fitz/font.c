@@ -1218,33 +1218,31 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 	font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, &ctm, gstate, nested_depth);
 }
 
-#ifndef NDEBUG
 void
-fz_print_font(fz_context *ctx, FILE *out, fz_font *font)
+fz_print_font(fz_context *ctx, fz_output *out, fz_font *font)
 {
-	fprintf(out, "font '%s' {\n", font->name);
+	fz_printf(ctx, out, "font '%s' {\n", font->name);
 
 	if (font->ft_face)
 	{
-		fprintf(out, "\tfreetype face %p\n", font->ft_face);
+		fz_printf(ctx, out, "\tfreetype face %p\n", font->ft_face);
 		if (font->ft_substitute)
-			fprintf(out, "\tsubstitute font\n");
+			fz_printf(ctx, out, "\tsubstitute font\n");
 	}
 
 	if (font->t3procs)
 	{
-		fprintf(out, "\ttype3 matrix [%g %g %g %g]\n",
+		fz_printf(ctx, out, "\ttype3 matrix [%g %g %g %g]\n",
 			font->t3matrix.a, font->t3matrix.b,
 			font->t3matrix.c, font->t3matrix.d);
 
-		fprintf(out, "\ttype3 bbox [%g %g %g %g]\n",
+		fz_printf(ctx, out, "\ttype3 bbox [%g %g %g %g]\n",
 			font->bbox.x0, font->bbox.y0,
 			font->bbox.x1, font->bbox.y1);
 	}
 
-	fprintf(out, "}\n");
+	fz_printf(ctx, out, "}\n");
 }
-#endif
 
 fz_rect *
 fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_rect *rect)

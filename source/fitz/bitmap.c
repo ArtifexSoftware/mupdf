@@ -45,36 +45,37 @@ fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit)
 	memset(bit->samples, 0, bit->stride * bit->h);
 }
 
-/*
- * Write bitmap to PBM file
- */
-
 void
-fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
+fz_output_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 {
-	FILE *fp;
 	unsigned char *p;
 	int h, bytestride;
 
-	fp = fz_fopen(filename, "wb");
-	if (!fp)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
+	if (bitmap->n != 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too many color components in bitmap");
 
-	assert(bitmap->n == 1);
-
-	fprintf(fp, "P4\n%d %d\n", bitmap->w, bitmap->h);
+	fz_printf(ctx, out, "P4\n%d %d\n", bitmap->w, bitmap->h);
 
 	p = bitmap->samples;
-
 	h = bitmap->h;
 	bytestride = (bitmap->w + 7) >> 3;
 	while (h--)
 	{
-		fwrite(p, 1, bytestride, fp);
+		fz_write(ctx, out, p, bytestride);
 		p += bitmap->stride;
 	}
+}
 
-	fclose(fp);
+void
+fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
+{
+	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
+	fz_try(ctx)
+		fz_output_pbm(ctx, out, bitmap);
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 fz_colorspace *fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)

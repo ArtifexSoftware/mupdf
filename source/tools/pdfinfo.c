@@ -184,14 +184,14 @@ showglobalinfo(fz_context *ctx, globals *glo)
 	if (obj)
 	{
 		fz_printf(ctx, out, "Info object (%d %d R):\n", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
-		pdf_output_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
+		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
 	}
 
 	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt);
 	if (obj)
 	{
 		fz_printf(ctx, out, "\nEncryption object (%d %d R):\n", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
-		pdf_output_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
+		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
 	}
 
 	fz_printf(ctx, out, "\nPages: %d\n\n", glo->pagecount);
@@ -1073,7 +1073,7 @@ int pdfinfo_main(int argc, char **argv)
 	ret = 0;
 	fz_try(ctx)
 	{
-		out = fz_new_output_with_file(ctx, stdout, 0);
+		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
 		pdfinfo_info(ctx, out, filename, password, show, &argv[fz_optind], argc-fz_optind);
 	}
 	fz_catch(ctx)

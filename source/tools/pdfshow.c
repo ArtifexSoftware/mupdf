@@ -4,10 +4,9 @@
 
 #include "mupdf/pdf.h"
 
-static FILE *out = NULL;
-
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;
+static fz_output *out = NULL;
 static int showbinary = 0;
 static int showdecode = 1;
 static int showcolumn;
@@ -26,9 +25,9 @@ static void showtrailer(void)
 {
 	if (!doc)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-	fprintf(out, "trailer\n");
-	pdf_fprint_obj(ctx, out, pdf_trailer(ctx, doc), 0);
-	fprintf(out, "\n");
+	fz_printf(ctx, out, "trailer\n");
+	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 0);
+	fz_printf(ctx, out, "\n");
 }
 
 static void showencrypt(void)
@@ -40,9 +39,9 @@ static void showencrypt(void)
 	encrypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt);
 	if (!encrypt)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "document not encrypted");
-	fprintf(out, "encryption dictionary\n");
-	pdf_fprint_obj(ctx, out, pdf_resolve_indirect(ctx, encrypt), 0);
-	fprintf(out, "\n");
+	fz_printf(ctx, out, "encryption dictionary\n");
+	pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, encrypt), 0);
+	fz_printf(ctx, out, "\n");
 }
 
 static void showxref(void)
@@ -50,7 +49,7 @@ static void showxref(void)
 	if (!doc)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 	pdf_print_xref(ctx, doc);
-	fprintf(out, "\n");
+	fz_printf(ctx, out, "\n");
 }
 
 static void showpagetree(void)
@@ -66,9 +65,9 @@ static void showpagetree(void)
 	for (i = 0; i < count; i++)
 	{
 		ref = pdf_lookup_page_obj(ctx, doc, i);
-		fprintf(out, "page %d = %d %d R\n", i + 1, pdf_to_num(ctx, ref), pdf_to_gen(ctx, ref));
+		fz_printf(ctx, out, "page %d = %d %d R\n", i + 1, pdf_to_num(ctx, ref), pdf_to_gen(ctx, ref));
 	}
-	fprintf(out, "\n");
+	fz_printf(ctx, out, "\n");
 }
 
 static void showsafe(unsigned char *buf, int n)
@@ -113,7 +112,7 @@ static void showstream(int num, int gen)
 		if (n == 0)
 			break;
 		if (showbinary)
-			fwrite(buf, 1, n, out);
+			fz_write(ctx, out, buf, n);
 		else
 			showsafe(buf, n);
 	}
@@ -138,19 +137,19 @@ static void showobject(int num, int gen)
 		}
 		else
 		{
-			fprintf(out, "%d %d obj\n", num, gen);
-			pdf_fprint_obj(ctx, out, obj, 0);
-			fprintf(out, "stream\n");
+			fz_printf(ctx, out, "%d %d obj\n", num, gen);
+			pdf_print_obj(ctx, out, obj, 0);
+			fz_printf(ctx, out, "stream\n");
 			showstream(num, gen);
-			fprintf(out, "endstream\n");
-			fprintf(out, "endobj\n\n");
+			fz_printf(ctx, out, "endstream\n");
+			fz_printf(ctx, out, "endobj\n\n");
 		}
 	}
 	else
 	{
-		fprintf(out, "%d %d obj\n", num, gen);
-		pdf_fprint_obj(ctx, out, obj, 0);
-		fprintf(out, "endobj\n\n");
+		fz_printf(ctx, out, "%d %d obj\n", num, gen);
+		pdf_print_obj(ctx, out, obj, 0);
+		fz_printf(ctx, out, "endobj\n\n");
 	}
 
 	pdf_drop_obj(ctx, obj);
@@ -179,15 +178,15 @@ static void showgrep(char *filename)
 
 			pdf_sort_dict(ctx, obj);
 
-			fprintf(out, "%s:%d: ", filename, i);
-			pdf_fprint_obj(ctx, out, obj, 1);
+			fz_printf(ctx, out, "%s:%d: ", filename, i);
+			pdf_print_obj(ctx, out, obj, 1);
 
 			pdf_drop_obj(ctx, obj);
 		}
 	}
 
-	fprintf(out, "%s:trailer: ", filename);
-	pdf_fprint_obj(ctx, out, pdf_trailer(ctx, doc), 1);
+	fz_printf(ctx, out, "%s:trailer: ", filename);
+	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 1);
 }
 
 static void showoutline(void)
@@ -198,7 +197,7 @@ static void showoutline(void)
 	fz_var(out);
 	fz_try(ctx)
 	{
-		out = fz_new_output_with_file(ctx, stdout, 0);
+		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
 		fz_print_outline(ctx, out, outline);
 	}
 	fz_always(ctx)
@@ -219,6 +218,13 @@ int pdfshow_main(int argc, char **argv)
 	char *output = NULL;
 	int c;
 
+	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
+	if (!ctx)
+	{
+		fprintf(stderr, "cannot initialise context\n");
+		exit(1);
+	}
+
 	while ((c = fz_getopt(argc, argv, "p:o:be")) != -1)
 	{
 		switch (c)
@@ -236,23 +242,10 @@ int pdfshow_main(int argc, char **argv)
 
 	filename = argv[fz_optind++];
 
-	out = stdout;
 	if (output)
-	{
-		out = fz_fopen(output, "wb");
-		if (!out)
-		{
-			fprintf(stderr, "cannot open output file: '%s'\n", output);
-			exit(1);
-		}
-	}
-
-	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
-	if (!ctx)
-	{
-		fprintf(stderr, "cannot initialise context\n");
-		exit(1);
-	}
+		out = fz_new_output_with_path(ctx, output, 0);
+	else
+		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
 
 	fz_var(doc);
 	fz_try(ctx)
@@ -284,9 +277,7 @@ int pdfshow_main(int argc, char **argv)
 	{
 	}
 
-	if (out != stdout)
-		fclose(out);
-
+	fz_drop_output(ctx, out);
 	pdf_close_document(ctx, doc);
 	fz_drop_context(ctx);
 	return 0;

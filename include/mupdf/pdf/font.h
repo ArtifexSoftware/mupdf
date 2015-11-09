@@ -116,9 +116,7 @@ pdf_font_desc *pdf_new_font_desc(fz_context *ctx);
 pdf_font_desc *pdf_keep_font(fz_context *ctx, pdf_font_desc *fontdesc);
 void pdf_drop_font(fz_context *ctx, pdf_font_desc *font);
 
-#ifndef NDEBUG
-void pdf_print_font(fz_context *ctx, pdf_font_desc *fontdesc);
-#endif
+void pdf_print_font(fz_context *ctx, fz_output *out, pdf_font_desc *fontdesc);
 
 fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len, fz_rect *rect);
 float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, int len, float room, int *count);

@@ -50,7 +50,7 @@ pdf_out_d(fz_context *ctx, pdf_processor *proc, pdf_obj *array, float phase)
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	if (!((pdf_output_processor*)proc)->extgstate)
 	{
-		pdf_output_obj(ctx, out, array, 1);
+		pdf_print_obj(ctx, out, array, 1);
 		fz_printf(ctx, out, " %f d\n", phase);
 	}
 }
@@ -381,7 +381,7 @@ static void
 pdf_out_TJ(fz_context *ctx, pdf_processor *proc, pdf_obj *array)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
-	pdf_output_obj(ctx, out, array, 1);
+	pdf_print_obj(ctx, out, array, 1);
 	fz_printf(ctx, out, " TJ\n");
 }
 
@@ -716,7 +716,7 @@ pdf_out_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *prope
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	fz_printf(ctx, out, "/%s ", tag);
-	pdf_output_obj(ctx, out, properties, 1);
+	pdf_print_obj(ctx, out, properties, 1);
 	fz_printf(ctx, out, " DP\n");
 }
 
@@ -732,7 +732,7 @@ pdf_out_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *prop
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	fz_printf(ctx, out, "/%s ", tag);
-	pdf_output_obj(ctx, out, properties, 1);
+	pdf_print_obj(ctx, out, properties, 1);
 	fz_printf(ctx, out, " BDC\n");
 }
 
