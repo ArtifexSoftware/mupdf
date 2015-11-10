@@ -2,6 +2,26 @@
 
 #include "mupdf/pdf.h" /* for pdf specifics and forms */
 
+enum
+{
+	/* Screen furniture: aggregate size of unusable space from title bars, task bars, window borders, etc */
+	SCREEN_FURNITURE_W = 20,
+	SCREEN_FURNITURE_H = 40,
+
+	/* Default EPUB/HTML layout dimensions */
+	DEFAULT_LAYOUT_W = 450,
+	DEFAULT_LAYOUT_H = 600,
+	DEFAULT_LAYOUT_EM = 12,
+
+	/* Default UI sizes */
+	DEFAULT_UI_FONTSIZE = 15,
+	DEFAULT_UI_BASELINE = 14,
+	DEFAULT_UI_LINEHEIGHT = 18,
+};
+
+#define DEFAULT_WINDOW_W (612 * currentzoom / 72)
+#define DEFAULT_WINDOW_H (792 * currentzoom / 72)
+
 struct ui ui;
 fz_context *ctx = NULL;
 GLFWwindow *window = NULL;
@@ -697,8 +717,8 @@ static void toggle_fullscreen(void)
 
 static void shrinkwrap(void)
 {
-	int w = fz_mini(page_tex.w + canvas_x, screen_w - 20);
-	int h = fz_mini(page_tex.h + canvas_y, screen_h - 40);
+	int w = fz_mini(page_tex.w + canvas_x, screen_w - SCREEN_FURNITURE_W);
+	int h = fz_mini(page_tex.h + canvas_y, screen_h - SCREEN_FURNITURE_H);
 	if (isfullscreen)
 		toggle_fullscreen();
 	glfwSetWindowSize(window, w, h);
@@ -1273,9 +1293,9 @@ int main(int argc, char **argv)
 	const GLFWvidmode *video_mode;
 	char filename[2048];
 	char *password = "";
-	float layout_w = 450;
-	float layout_h = 600;
-	float layout_em = 12;
+	float layout_w = DEFAULT_LAYOUT_W;
+	float layout_h = DEFAULT_LAYOUT_H;
+	float layout_em = DEFAULT_LAYOUT_EM;
 	char *layout_css = NULL;
 	int c;
 
@@ -1333,7 +1353,7 @@ int main(int argc, char **argv)
 
 	glfwSetErrorCallback(on_error);
 
-	window = glfwCreateWindow(800, 1000, filename, NULL, NULL);
+	window = glfwCreateWindow(DEFAULT_WINDOW_W, DEFAULT_WINDOW_H, filename, NULL, NULL);
 	if (!window) {
 		fprintf(stderr, "cannot create glfw window\n");
 		exit(1);
@@ -1358,9 +1378,9 @@ int main(int argc, char **argv)
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
 
-	ui.fontsize = 15;
-	ui.baseline = 14;
-	ui.lineheight = 18;
+	ui.fontsize = DEFAULT_UI_FONTSIZE;
+	ui.baseline = DEFAULT_UI_BASELINE;
+	ui.lineheight = DEFAULT_UI_LINEHEIGHT;
 
 	ui_init_fonts(ctx, ui.fontsize);
 
