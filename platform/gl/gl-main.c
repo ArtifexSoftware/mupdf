@@ -882,8 +882,8 @@ static void do_app(void)
 		case 'z': currentzoom = number > 0 ? number : DEFRES; break;
 		case '<': currentpage -= 10 * fz_maxi(number, 1); break;
 		case '>': currentpage += 10 * fz_maxi(number, 1); break;
-		case ',': currentpage -= fz_maxi(number, 1); break;
-		case '.': currentpage += fz_maxi(number, 1); break;
+		case ',': case KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); break;
+		case '.': case KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); break;
 		case 'b': number = fz_maxi(number, 1); while (number--) smart_move_backward(); break;
 		case ' ': number = fz_maxi(number, 1); while (number--) smart_move_forward(); break;
 		case 'g': jump_to_page(number - 1); break;
@@ -900,8 +900,6 @@ static void do_app(void)
 		case KEY_DOWN: scroll_y += 10; break;
 		case KEY_LEFT: scroll_x -= 10; break;
 		case KEY_RIGHT: scroll_x += 10; break;
-		case KEY_PAGE_UP: currentpage -= fz_maxi(number, 1); number = 0; break;
-		case KEY_PAGE_DOWN: currentpage += fz_maxi(number, 1); number = 0; break;
 		}
 
 		if (ui.key >= '0' && ui.key <= '9')
