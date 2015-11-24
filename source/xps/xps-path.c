@@ -439,11 +439,9 @@ xps_parse_abbreviated_geometry(fz_context *ctx, xps_document *doc, char *geom, i
 			break;
 
 		default:
-			/* eek */
 			fz_warn(ctx, "ignoring invalid command '%c'", cmd);
-			/* Skip any trailing numbers to avoid an infinite loop */
-			while (i < n && (args[i][0] == '+' || args[i][0] == '.' || args[i][0] == '-' || (args[i][0] >= '0' && args[i][0] <= '9')))
-				i ++;
+			if (old == cmd) /* avoid infinite loop */
+				i++;
 			break;
 		}
 
