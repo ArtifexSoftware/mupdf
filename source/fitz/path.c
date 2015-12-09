@@ -1520,3 +1520,127 @@ fz_unshare_stroke_state(fz_context *ctx, fz_stroke_state *shared)
 {
 	return fz_unshare_stroke_state_with_dash_len(ctx, shared, shared->dash_len);
 }
+
+static void *
+clone_block(fz_context *ctx, void *block, size_t len)
+{
+	void *target;
+
+	if (len == 0 || block == NULL)
+		return NULL;
+
+	target = fz_malloc(ctx, len);
+	memcpy(target, block, len);
+	return target;
+}
+
+fz_path *
+fz_clone_path(fz_context *ctx, fz_path *path)
+{
+	fz_path *new_path;
+
+	assert(ctx != NULL);
+
+	if (ctx == NULL || path == NULL)
+		return NULL;
+
+	new_path = fz_malloc_struct(ctx, fz_path);
+	new_path->refs = 1;
+	new_path->packed = FZ_PATH_UNPACKED;
+	fz_try(ctx)
+	{
+		switch(path->packed)
+		{
+		case FZ_PATH_UNPACKED:
+		case FZ_PATH_PACKED_OPEN:
+			new_path->cmd_len = path->cmd_len;
+			new_path->cmd_cap = path->cmd_cap;
+			new_path->cmds = clone_block(ctx, path->cmds, path->cmd_cap);
+			new_path->coord_len = path->coord_len;
+			new_path->coord_cap = path->coord_cap;
+			new_path->coords = clone_block(ctx, path->coords, sizeof(float)*path->coord_cap);
+			new_path->current = path->current;
+			new_path->begin = path->begin;
+			break;
+		case FZ_PATH_PACKED_FLAT:
+			{
+				uint8_t *data;
+				float *xy;
+				int i;
+				fz_packed_path *ppath = (fz_packed_path *)path;
+
+				new_path->cmd_len = ppath->cmd_len;
+				new_path->cmd_cap = ppath->cmd_len;
+				new_path->coord_len = ppath->coord_len;
+				new_path->coord_cap = ppath->coord_len;
+				data = (uint8_t *)&ppath[1];
+				new_path->coords = clone_block(ctx, data, sizeof(float)*path->coord_cap);
+				data += sizeof(float) * path->coord_cap;
+				new_path->cmds = clone_block(ctx, data, path->cmd_cap);
+				xy = new_path->coords;
+				for (i = 0; i < new_path->cmd_len; i++)
+				{
+					switch (new_path->cmds[i])
+					{
+					case FZ_MOVETOCLOSE:
+					case FZ_MOVETO:
+						new_path->current.x = *xy++;
+						new_path->current.y = *xy++;
+						new_path->begin.x = new_path->current.x;
+						new_path->begin.y = new_path->current.y;
+						break;
+					case FZ_CURVETO:
+						xy += 2;
+						/* fallthrough */
+					case FZ_CURVETOV:
+					case FZ_CURVETOY:
+					case FZ_QUADTO:
+						/* fallthrough */
+						xy += 2;
+					case FZ_LINETO:
+						new_path->current.x = *xy++;
+						new_path->current.y = *xy++;
+						break;
+					case FZ_DEGENLINETO:
+						break;
+					case FZ_HORIZTO:
+						new_path->current.x = *xy++;
+						break;
+					case FZ_VERTTO:
+						new_path->current.y = *xy++;
+						break;
+					case FZ_RECTTO:
+						xy += 2;
+						break;
+					case FZ_CURVETOCLOSE:
+						xy += 2;
+						/* fallthrough */
+					case FZ_CURVETOVCLOSE:
+					case FZ_CURVETOYCLOSE:
+					case FZ_QUADTOCLOSE:
+					case FZ_LINETOCLOSE:
+						xy++;
+						/* fallthrough */
+					case FZ_HORIZTOCLOSE:
+					case FZ_VERTTOCLOSE:
+						xy++;
+						/* fallthrough */
+					case FZ_DEGENLINETOCLOSE:
+						new_path->current.x = new_path->begin.x;
+						new_path->current.y = new_path->begin.y;
+						break;
+					}
+				}
+			}
+		default:
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Unknown packing method found in path");
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, new_path->cmds);
+		fz_free(ctx, new_path);
+		fz_rethrow(ctx);
+	}
+	return new_path;
+}
