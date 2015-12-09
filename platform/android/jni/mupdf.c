@@ -112,6 +112,19 @@ struct globals_s
 static jfieldID global_fid;
 static jfieldID buffer_fid;
 
+// Do our best to avoid casting warnings.
+#define CAST(type, var) (type)pointer_cast(var)
+
+static inline void *pointer_cast(jlong l)
+{
+	return (void *)(intptr_t)l;
+}
+
+static inline jlong jlong_cast(void *p)
+{
+	return (jlong)(intptr_t)p;
+}
+
 static void drop_changed_rects(fz_context *ctx, rect_node **nodePtr)
 {
 	rect_node *node = *nodePtr;
@@ -252,7 +265,7 @@ static void alerts_fin(globals *glo)
 // Should only be called from the single background AsyncTask thread
 static globals *get_globals(JNIEnv *env, jobject thiz)
 {
-	globals *glo = (globals *)(intptr_t)((*env)->GetLongField(env, thiz, global_fid));
+	globals *glo = CAST(globals *, (*env)->GetLongField(env, thiz, global_fid));
 	if (glo != NULL)
 	{
 		glo->env = env;
@@ -349,7 +362,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 
 	(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 
-	return (jlong)(intptr_t)glo;
+	return jlong_cast(glo);
 }
 
 typedef struct buffer_state_s
@@ -503,7 +516,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz, jstring jmagic)
 
 	(*env)->ReleaseStringUTFChars(env, jmagic, magic);
 
-	return (jlong)(intptr_t)glo;
+	return jlong_cast(glo);
 }
 
 JNIEXPORT int JNICALL
