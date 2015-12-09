@@ -138,3 +138,54 @@ fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, con
 
 	return bbox;
 }
+
+fz_text *
+fz_clone_text(fz_context *ctx, fz_text *text)
+{
+	fz_text *new_text;
+	fz_text_span *span;
+	fz_text_span **tail;
+
+	new_text = fz_malloc_struct(ctx, fz_text);
+	new_text->refs = 1;
+	span = text->head;
+	tail = &new_text->head;
+
+	fz_var(span);
+
+	fz_try(ctx)
+	{
+		while (span != NULL)
+		{
+			fz_text_span *new_span = fz_malloc_struct(ctx, fz_text_span);
+			*tail = new_span;
+			tail = &new_span->next;
+			new_text->tail = new_span;
+			new_span->font = fz_keep_font(ctx, span->font);
+			new_span->trm = span->trm;
+			new_span->wmode = span->wmode;
+			new_span->len = span->len;
+			new_span->cap = span->len;
+			new_span->items = fz_malloc(ctx, span->len * sizeof(*span->items));
+			memcpy(new_span->items, span->items, span->len * sizeof(*span->items));
+			span = span->next;
+
+		}
+	}
+	fz_catch(ctx)
+	{
+		span = new_text->head;
+		while (span != NULL)
+		{
+			fz_text_span *next = span->next;
+			fz_drop_font(ctx, span->font);
+			fz_free(ctx, span->items);
+			fz_free(ctx, span);
+			span = next;
+		}
+		fz_free(ctx, new_text);
+		fz_rethrow(ctx);
+	}
+
+	return new_text;
+}

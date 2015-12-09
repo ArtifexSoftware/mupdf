@@ -52,4 +52,6 @@ void fz_drop_text(fz_context *ctx, fz_text *text);
 void fz_add_text(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_matrix *trm, int gid, int ucs);
 fz_rect *fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
 
+fz_text *fz_clone_text(fz_context *ctx, fz_text *text);
+
 #endif
