@@ -224,6 +224,7 @@ is_unicode_bullet(int c)
 		c == '*');
 }
 
+#ifdef SPOT_LINE_NUMBERS
 static inline int
 is_number(int c)
 {
@@ -248,6 +249,7 @@ is_roman(int c)
 		c == 'c' || c == 'C' ||
 		c == 'm' || c == 'M');
 }
+#endif
 
 static int
 is_list_entry(fz_text_line *line, fz_text_span *span, int *char_num_ptr)
