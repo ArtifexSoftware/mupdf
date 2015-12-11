@@ -26,6 +26,8 @@ MUJS_SRC := one.c
 
 MUJS_OBJ := $(addprefix $(MUJS_OUT)/, $(MUJS_SRC:%.c=%.o))
 
+$(MUJS_OUT)/one.o: $(wildcard $(MUJS_DIR)/js*.c $(MUJS_DIR)/utf*.c $(MUJS_DIR)/regex.c $(MUJS_DIR)/*.h)
+
 $(MUJS_OUT):
 	$(MKDIR_CMD)
 $(MUJS_OUT)/%.o: $(MUJS_DIR)/%.c | $(MUJS_OUT)
