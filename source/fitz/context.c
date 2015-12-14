@@ -112,7 +112,7 @@ fz_drop_context(fz_context *ctx)
  * that aren't shared between contexts.
  */
 static fz_context *
-new_context_phase1(fz_alloc_context *alloc, fz_locks_context *locks)
+new_context_phase1(const fz_alloc_context *alloc, const fz_locks_context *locks)
 {
 	fz_context *ctx;
 
@@ -159,7 +159,7 @@ cleanup:
 }
 
 fz_context *
-fz_new_context_imp(fz_alloc_context *alloc, fz_locks_context *locks, unsigned int max_store, const char *version)
+fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, unsigned int max_store, const char *version)
 {
 	fz_context *ctx;
 

@@ -102,8 +102,8 @@ void fz_flush_warnings(fz_context *ctx);
 struct fz_context_s
 {
 	void *user;
-	fz_alloc_context *alloc;
-	fz_locks_context *locks;
+	const fz_alloc_context *alloc;
+	const fz_locks_context *locks;
 	fz_id_context *id;
 	fz_error_context *error;
 	fz_warn_context *warn;
@@ -158,7 +158,7 @@ enum {
 
 	Does not throw exceptions, but may return NULL.
 */
-fz_context *fz_new_context_imp(fz_alloc_context *alloc, fz_locks_context *locks, unsigned int max_store, const char *version);
+fz_context *fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, unsigned int max_store, const char *version);
 
 #define fz_new_context(alloc, locks, max_store) fz_new_context_imp(alloc, locks, max_store, FZ_VERSION)
 
