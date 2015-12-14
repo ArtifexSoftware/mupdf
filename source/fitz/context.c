@@ -120,6 +120,7 @@ new_context_phase1(fz_alloc_context *alloc, fz_locks_context *locks)
 	if (!ctx)
 		return NULL;
 	memset(ctx, 0, sizeof *ctx);
+	ctx->user = NULL;
 	ctx->alloc = alloc;
 	ctx->locks = locks;
 
@@ -223,6 +224,7 @@ fz_clone_context_internal(fz_context *ctx)
 	fz_copy_aa_context(new_ctx, ctx);
 
 	/* Keep thread lock checking happy by copying pointers first and locking under new context */
+	new_ctx->user = ctx->user;
 	new_ctx->store = ctx->store;
 	new_ctx->store = fz_keep_store_context(new_ctx);
 	new_ctx->glyph_cache = ctx->glyph_cache;
@@ -252,4 +254,18 @@ fz_gen_id(fz_context *ctx)
 	while (id == 0);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 	return id;
+}
+
+void fz_set_user_context(fz_context *ctx, void *user)
+{
+	if (ctx != NULL)
+		ctx->user = user;
+}
+
+void *fz_user_context(fz_context *ctx)
+{
+	if (ctx == NULL)
+		return NULL;
+
+	return ctx->user;
 }
