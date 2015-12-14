@@ -13,8 +13,12 @@ static int
 file_write(fz_context *ctx, void *opaque, const void *buffer, int count)
 {
 	FILE *file = opaque;
-	size_t n = fwrite(buffer, 1, count, file);
-	if (n < count && ferror(file))
+	size_t n;
+
+	if (count < 0)
+		return 0;
+	n = fwrite(buffer, 1, count, file);
+	if (n < (size_t)count && ferror(file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
 	return n;
 }
