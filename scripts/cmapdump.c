@@ -21,6 +21,9 @@
 #include "../source/fitz/strtod.c"
 #include "../source/fitz/ftoa.c"
 #include "../source/fitz/printf.c"
+#ifdef _WIN32
+#include "../source/fitz/time.c"
+#endif
 
 #include "../source/pdf/pdf-lex.c"
 #include "../source/pdf/pdf-cmap.c"
