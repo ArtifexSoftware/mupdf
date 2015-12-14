@@ -20,6 +20,17 @@ do
 	FLAGS="$FLAGS -arch $A"
 done
 
+#  add bitcode for Xcode 7 and up
+XCODE_VER=`xcodebuild -version | head -1`
+ARRAY=(${XCODE_VER// / })
+XCODE_VER_NUM=${ARRAY[1]}
+ARRAY=(${XCODE_VER_NUM//./ })
+MAJOR=${ARRAY[0]}
+if [ "$MAJOR" -ge "7" ]
+then
+	FLAGS="$FLAGS -fembed-bitcode"
+fi
+
 OUT=build/$build-$OS-$(echo $ARCHS | tr ' ' '-')
 
 echo Compiling libraries for $ARCHS.
