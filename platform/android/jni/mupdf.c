@@ -2597,7 +2597,7 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 	if (glo->doc && glo->current_path)
 	{
 		char *tmp;
-		fz_write_options opts;
+		fz_save_options opts;
 		opts.do_incremental = 1;
 		opts.do_ascii = 0;
 		opts.do_expand = 0;
@@ -2631,7 +2631,7 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 
 				if (!err)
 				{
-					fz_write_document(ctx, glo->doc, tmp, &opts);
+					fz_save_document(ctx, glo->doc, tmp, &opts);
 					written = 1;
 				}
 			}
@@ -2756,7 +2756,7 @@ JNI_FN(MuPDFCore_startProofInternal)(JNIEnv * env, jobject thiz, int inResolutio
 
 	fz_try(ctx)
 	{
-		fz_write_gproof_file(ctx, glo->current_path, glo->doc, tmp, theResolution, "", "");
+		fz_save_gproof(ctx, glo->current_path, glo->doc, tmp, theResolution, "", "");
 
 		LOGE("Creating %s\n", tmp);
 		ret = (*env)->NewStringUTF(env, tmp);

@@ -93,8 +93,8 @@ void fz_output_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_
 
 void fz_output_pcl_bitmap(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pcl);
 
-void fz_write_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, fz_pcl_options *pcl);
+void fz_save_pixmap_as_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, fz_pcl_options *pcl);
 
-void fz_write_pcl_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, fz_pcl_options *pcl);
+void fz_save_bitmap_as_pcl(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, fz_pcl_options *pcl);
 
 #endif

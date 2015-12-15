@@ -52,7 +52,7 @@ struct fz_pwg_options_s
 };
 
 /*
-	fz_write_pwg: Save a pixmap as a pwg
+	fz_save_pixmap_as_pwg: Save a pixmap as a pwg
 
 	filename: The filename to save as (including extension).
 
@@ -61,10 +61,10 @@ struct fz_pwg_options_s
 	pwg: NULL, or a pointer to an options structure (initialised to zero
 	before being filled in, for future expansion).
 */
-void fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg);
+void fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg);
 
 /*
-	fz_write_pwg_bitmap: Save a bitmap as a pwg
+	fz_save_bitmap_as_pwg: Save a bitmap as a pwg
 
 	filename: The filename to save as (including extension).
 
@@ -73,7 +73,7 @@ void fz_write_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append
 	pwg: NULL, or a pointer to an options structure (initialised to zero
 	before being filled in, for future expansion).
 */
-void fz_write_pwg_bitmap(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg);
+void fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg);
 
 /*
 	Output a pixmap to an output stream as a pwg raster.

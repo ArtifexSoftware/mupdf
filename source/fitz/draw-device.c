@@ -63,7 +63,7 @@ static void fz_dump_blend(fz_context *ctx, fz_pixmap *pix, const char *s)
 		printf("%s%02d", s, group_dump_count);
 	group_dump_count++;
 
-	fz_write_png(ctx, pix, name, (pix->n > 1));
+	fz_save_pixmap_as_png(ctx, pix, name, (pix->n > 1));
 }
 
 static void dump_spaces(int x, const char *s)

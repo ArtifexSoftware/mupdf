@@ -551,7 +551,7 @@ static int pdfapp_save(pdfapp_t *app)
 
 	if (wingetsavepath(app, buf, PATH_MAX))
 	{
-		fz_write_options opts;
+		fz_save_options opts;
 
 		opts.do_incremental = 1;
 		opts.do_ascii = 0;
@@ -562,7 +562,7 @@ static int pdfapp_save(pdfapp_t *app)
 		if (strcmp(buf, app->docpath) != 0)
 		{
 			wincopyfile(app->docpath, buf);
-			fz_write_document(app->ctx, app->doc, buf, &opts);
+			fz_save_document(app->ctx, app->doc, buf, &opts);
 			return 1;
 		}
 
@@ -573,7 +573,7 @@ static int pdfapp_save(pdfapp_t *app)
 			fz_try(app->ctx)
 			{
 				wincopyfile(app->docpath, buf);
-				fz_write_document(app->ctx, app->doc, buf, &opts);
+				fz_save_document(app->ctx, app->doc, buf, &opts);
 				written = 1;
 			}
 			fz_catch(app->ctx)

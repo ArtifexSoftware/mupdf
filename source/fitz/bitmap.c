@@ -67,7 +67,7 @@ fz_output_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 }
 
 void
-fz_write_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
+fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)

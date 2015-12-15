@@ -263,7 +263,7 @@ int main(int argc, char **argv)
 
 		// Write the rendered image to a PNG file
 
-		fz_write_png(ctx, data->pix, filename, 0);
+		fz_save_pixmap_as_png(ctx, data->pix, filename, 0);
 
 		// Free the thread's pixmap and display list since
 		// they were allocated by the main thread above.

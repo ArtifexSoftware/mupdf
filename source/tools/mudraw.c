@@ -615,11 +615,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 						if (out_cs == CS_MONO)
 						{
 							fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
-							fz_write_pwg_bitmap(ctx, bit, filename_buf, append, NULL);
+							fz_save_bitmap_as_pwg(ctx, bit, filename_buf, append, NULL);
 							fz_drop_bitmap(ctx, bit);
 						}
 						else
-							fz_write_pwg(ctx, pix, filename_buf, append, NULL);
+							fz_save_pixmap_as_pwg(ctx, pix, filename_buf, append, NULL);
 						append = 1;
 					}
 					else if (output_format == OUT_PCL)
@@ -633,21 +633,21 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 						if (out_cs == CS_MONO)
 						{
 							fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
-							fz_write_pcl_bitmap(ctx, bit, filename_buf, append, &options);
+							fz_save_bitmap_as_pcl(ctx, bit, filename_buf, append, &options);
 							fz_drop_bitmap(ctx, bit);
 						}
 						else
-							fz_write_pcl(ctx, pix, filename_buf, append, &options);
+							fz_save_pixmap_as_pcl(ctx, pix, filename_buf, append, &options);
 						append = 1;
 					}
 					else if (output_format == OUT_PBM) {
 						fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
-						fz_write_pbm(ctx, bit, filename_buf);
+						fz_save_bitmap_as_pbm(ctx, bit, filename_buf);
 						fz_drop_bitmap(ctx, bit);
 					}
 					else if (output_format == OUT_TGA)
 					{
-						fz_write_tga(ctx, pix, filename_buf, savealpha);
+						fz_save_pixmap_as_tga(ctx, pix, filename_buf, savealpha);
 					}
 				}
 				ctm.f -= drawheight;
@@ -1094,7 +1094,7 @@ int mudraw_main(int argc, char **argv)
 					fz_printf(ctx, out, "<document name=\"%s\">\n", filename);
 				if (output_format == OUT_GPROOF)
 				{
-					fz_write_gproof_file(ctx, filename, doc, output, resolution, "", "");
+					fz_save_gproof(ctx, filename, doc, output, resolution, "", "");
 				}
 				else
 				{
@@ -1130,9 +1130,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (pdfout)
 	{
-		fz_write_options opts = { 0 };
+		fz_save_options opts = { 0 };
 
-		pdf_write_document(ctx, pdfout, output, &opts);
+		pdf_save_document(ctx, pdfout, output, &opts);
 		pdf_close_document(ctx, pdfout);
 	}
 

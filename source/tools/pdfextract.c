@@ -48,13 +48,13 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
 	{
 		snprintf(buf, sizeof(buf), "%s.png", file);
 		printf("extracting image %s\n", buf);
-		fz_write_png(ctx, pix, buf, 0);
+		fz_save_pixmap_as_png(ctx, pix, buf, 0);
 	}
 	else
 	{
 		snprintf(buf, sizeof(buf), "%s.pam", file);
 		printf("extracting image %s\n", buf);
-		fz_write_pam(ctx, pix, buf, 0);
+		fz_save_pixmap_as_pam(ctx, pix, buf, 0);
 	}
 
 	fz_drop_pixmap(ctx, converted);

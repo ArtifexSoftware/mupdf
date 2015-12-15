@@ -6,11 +6,11 @@
 #include "mupdf/fitz/document.h"
 
 /*
-	In calls to fz_write, the following options structure can be used
+	In calls to fz_save_document, the following options structure can be used
 	to control aspects of the writing process. This structure may grow
 	in future, and should be zero-filled to allow forwards compatiblity.
 */
-struct fz_write_options_s
+struct fz_save_options_s
 {
 	int do_incremental; /* Write just the changed objects */
 	int do_ascii; /* If non-zero then attempt (where possible) to make
@@ -29,7 +29,7 @@ struct fz_write_options_s
 };
 
 /*	An enumeration of bitflags to use in the above 'do_expand' field of
-	fz_write_options.
+	fz_save_options.
 */
 enum
 {
@@ -39,7 +39,7 @@ enum
 };
 
 /*
-	fz_write: Write a document out.
+	fz_save_document: Write a document out to a file.
 
 	(In development - Subject to change in future versions)
 
@@ -54,6 +54,6 @@ enum
 
 	May throw exceptions.
 */
-void fz_write_document(fz_context *ctx, fz_document *doc, char *filename, fz_write_options *opts);
+void fz_save_document(fz_context *ctx, fz_document *doc, char *filename, fz_save_options *opts);
 
 #endif

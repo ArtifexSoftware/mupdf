@@ -11,11 +11,11 @@
 #include "mupdf/fitz/image.h"
 
 /*
-	fz_write_png: Save a pixmap as a png
+	fz_save_pixmap_as_png: Save a pixmap as a png
 
 	filename: The filename to save as (including extension).
 */
-void fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
+void fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savealpha);
 
 /*
 	Output a pixmap to an output stream as a png.

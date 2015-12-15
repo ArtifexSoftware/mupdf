@@ -27,7 +27,7 @@ typedef enum
 fz_permission;
 
 // TODO: move out of this interface (it's pdf specific)
-typedef struct fz_write_options_s fz_write_options;
+typedef struct fz_save_options_s fz_save_options;
 
 typedef void (fz_document_close_fn)(fz_context *ctx, fz_document *doc);
 typedef int (fz_document_needs_password_fn)(fz_context *ctx, fz_document *doc);
@@ -38,7 +38,7 @@ typedef void (fz_document_layout_fn)(fz_context *ctx, fz_document *doc, float w,
 typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc);
 typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int number);
 typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
-typedef void (fz_document_write_fn)(fz_context *ctx, fz_document *doc, char *filename, fz_write_options *opts);
+typedef void (fz_document_save_fn)(fz_context *ctx, fz_document *doc, char *filename, fz_save_options *opts);
 
 typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
 typedef fz_rect *(fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_rect *);
@@ -86,7 +86,7 @@ struct fz_document_s
 	fz_document_count_pages_fn *count_pages;
 	fz_document_load_page_fn *load_page;
 	fz_document_lookup_metadata_fn *lookup_metadata;
-	fz_document_write_fn *write;
+	fz_document_save_fn *save;
 	int did_layout;
 };
 
@@ -397,7 +397,7 @@ int fz_separation_disabled_on_page (fz_context *ctx, fz_page *, int sep);
 const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk);
 
 /*
-	fz_write_gproof_file: Given a currently open document, create a
+	fz_save_gproof: Given a currently open document, create a
 	gproof skeleton file from that document.
 
 	doc_filename: The name of the currently opened document file.
@@ -412,7 +412,7 @@ const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, u
 
 	display_profile: The filename of the ICC profile for our display device
 */
-void fz_write_gproof_file(fz_context *ctx, const char *doc_filename, fz_document *doc, const char *filename, int res,
+void fz_save_gproof(fz_context *ctx, const char *doc_filename, fz_document *doc, const char *filename, int res,
 	const char *print_profile, const char *display_profile);
 
 #endif

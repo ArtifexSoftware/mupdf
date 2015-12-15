@@ -583,7 +583,7 @@ fz_output_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 }
 
 void
-fz_write_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
+fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_output_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n);
@@ -652,7 +652,7 @@ fz_output_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha)
 }
 
 void
-fz_write_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
+fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_output_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
@@ -687,7 +687,7 @@ static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *
 }
 
 void
-fz_write_png(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
+fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savealpha)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_png_output_context *poc = NULL;
@@ -978,7 +978,7 @@ static inline void tga_put_pixel(fz_context *ctx, fz_output *out, unsigned char 
 }
 
 void
-fz_write_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savealpha)
+fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savealpha)
 {
 	fz_output *out;
 	unsigned char head[18];

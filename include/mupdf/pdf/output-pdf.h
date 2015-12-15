@@ -13,9 +13,9 @@
 fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm, fz_buffer *buf);
 
 /*
-	pdf_write_document: Write out the document to a file with all changes finalised.
+	pdf_save_document: Write out the document to a file with all changes finalised.
 */
-void pdf_write_document(fz_context *ctx, pdf_document *doc, char *filename, fz_write_options *opts);
+void pdf_save_document(fz_context *ctx, pdf_document *doc, char *filename, fz_save_options *opts);
 
 void pdf_localise_page_resources(fz_context *ctx, pdf_document *doc);
 

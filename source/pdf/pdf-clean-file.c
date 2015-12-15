@@ -190,7 +190,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	}
 }
 
-void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, fz_write_options *opts, char *argv[], int argc)
+void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password, fz_save_options *opts, char *argv[], int argc)
 {
 	globals glo = { 0 };
 
@@ -207,7 +207,7 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 		if (argc)
 			retainpages(ctx, &glo, argc, argv);
 
-		pdf_write_document(ctx, glo.doc, outfile, opts);
+		pdf_save_document(ctx, glo.doc, outfile, opts);
 	}
 	fz_always(ctx)
 	{

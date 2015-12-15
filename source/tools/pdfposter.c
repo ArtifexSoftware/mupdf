@@ -157,7 +157,7 @@ int pdfposter_main(int argc, char **argv)
 	char *outfile = "out.pdf";
 	char *password = "";
 	int c;
-	fz_write_options opts = { 0 };
+	fz_save_options opts = { 0 };
 	pdf_document *doc;
 	fz_context *ctx;
 
@@ -203,7 +203,7 @@ int pdfposter_main(int argc, char **argv)
 
 	decimatepages(ctx, doc);
 
-	pdf_write_document(ctx, doc, outfile, &opts);
+	pdf_save_document(ctx, doc, outfile, &opts);
 
 	pdf_close_document(ctx, doc);
 	fz_drop_context(ctx);

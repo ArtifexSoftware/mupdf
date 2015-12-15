@@ -372,9 +372,9 @@ main(int argc, char *argv[])
 
 					sprintf(text, output, ++shotcount);
 					if (strstr(text, ".pgm") || strstr(text, ".ppm") || strstr(text, ".pnm"))
-						fz_write_pnm(ctx, gapp.image, text);
+						fz_save_pixmap_as_pnm(ctx, gapp.image, text);
 					else
-						fz_write_png(ctx, gapp.image, text, 0);
+						fz_save_pixmap_as_png(ctx, gapp.image, text, 0);
 				}
 				else if (match(&line, "RESIZE"))
 				{

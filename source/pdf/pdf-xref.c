@@ -2336,7 +2336,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.count_pages = (fz_document_count_pages_fn *)pdf_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)pdf_load_page;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)pdf_lookup_metadata;
-	doc->super.write = (fz_document_write_fn *)pdf_write_document;
+	doc->super.save = (fz_document_save_fn *)pdf_save_document;
 	doc->update_appearance = pdf_update_appearance;
 
 	pdf_lexbuf_init(ctx, &doc->lexbuf.base, PDF_LEXBUF_LARGE);
