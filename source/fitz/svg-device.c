@@ -744,7 +744,7 @@ svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_new_png_from_image(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image, image->w, image->h);
 			fz_printf(ctx, out, "image/png;base64,");
 			send_data_base64(ctx, out, buf);
 			fz_drop_buffer(ctx, buf);
@@ -781,7 +781,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 	fz_try(ctx)
 	{
 		fz_paint_shade(ctx, shade, ctm, pix, &bbox);
-		buf = fz_new_png_from_pixmap(ctx, pix);
+		buf = fz_new_buffer_from_pixmap_as_png(ctx, pix);
 		if (alpha != 1.0f)
 			fz_printf(ctx, out, "<g opacity=\"%g\">", alpha);
 		fz_printf(ctx, out, "<image x=\"%dpx\" y=\"%dpx\" width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:image/png;base64,", pix->x, pix->y, pix->w, pix->h);
@@ -831,7 +831,7 @@ fz_colorspace *colorspace, float *color, float alpha)
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_new_png_from_image(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image, image->w, image->h);
 			fz_printf(ctx, out, "image/png;base64,");
 			send_data_base64(ctx, out, buf);
 			fz_drop_buffer(ctx, buf);
@@ -875,7 +875,7 @@ svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_new_png_from_image(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image, image->w, image->h);
 			fz_printf(ctx, out, "image/png;base64,");
 			send_data_base64(ctx, out, buf);
 			fz_drop_buffer(ctx, buf);

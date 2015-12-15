@@ -397,7 +397,7 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 }
 
 void
-fz_output_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl)
+fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl)
 {
 	//unsigned char *sp;
 	//int y, x, sn, dn, ss;
@@ -590,7 +590,7 @@ void wind(void)
 {}
 
 void
-fz_output_pcl_bitmap(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pcl)
+fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pcl)
 {
 	unsigned char *data, *out_data;
 	int y, ss, rmask, line_size;
@@ -794,7 +794,7 @@ fz_save_pixmap_as_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int ap
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
-		fz_output_pcl(ctx, out, pixmap, pcl);
+		fz_write_pixmap_as_pcl(ctx, out, pixmap, pcl);
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)
@@ -806,7 +806,7 @@ fz_save_bitmap_as_pcl(fz_context *ctx, fz_bitmap *bitmap, char *filename, int ap
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
-		fz_output_pcl_bitmap(ctx, out, bitmap, pcl);
+		fz_write_bitmap_as_pcl(ctx, out, bitmap, pcl);
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)

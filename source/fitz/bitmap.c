@@ -46,7 +46,7 @@ fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit)
 }
 
 void
-fz_output_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
+fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 {
 	unsigned char *p;
 	int h, bytestride;
@@ -71,7 +71,7 @@ fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
-		fz_output_pbm(ctx, out, bitmap);
+		fz_write_bitmap_as_pbm(ctx, out, bitmap);
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)

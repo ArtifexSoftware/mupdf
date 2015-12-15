@@ -526,7 +526,7 @@ fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma)
  */
 
 void
-fz_output_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n)
+fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n)
 {
 	if (n != 1 && n != 2 && n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
@@ -540,7 +540,7 @@ fz_output_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n)
 }
 
 void
-fz_output_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *p)
+fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *p)
 {
 	int len;
 	int start = band * bandheight;
@@ -576,18 +576,18 @@ fz_output_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int ban
 }
 
 void
-fz_output_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
+fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
-	fz_output_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n);
-	fz_output_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
+	fz_write_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n);
+	fz_write_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
 }
 
 void
 fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
-	fz_output_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n);
-	fz_output_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
+	fz_write_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n);
+	fz_write_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples);
 	fz_drop_output(ctx, out);
 }
 
@@ -596,7 +596,7 @@ fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
  */
 
 void
-fz_output_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int savealpha)
+fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int savealpha)
 {
 	int sn = n;
 	int dn = n;
@@ -618,7 +618,7 @@ fz_output_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int s
 }
 
 void
-fz_output_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha)
+fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha)
 {
 	int y, x, k;
 	int start = band * bandheight;
@@ -645,18 +645,18 @@ fz_output_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int ban
 }
 
 void
-fz_output_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha)
+fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha)
 {
-	fz_output_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
-	fz_output_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
+	fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
+	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
 }
 
 void
 fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
-	fz_output_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
-	fz_output_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
+	fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
+	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
 	fz_drop_output(ctx, out);
 }
 
@@ -696,12 +696,12 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 
 	fz_try(ctx)
 	{
-		poc = fz_output_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
-		fz_output_png_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
+		poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
+		fz_write_png_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
 	}
 	fz_always(ctx)
 	{
-		fz_output_png_trailer(ctx, out, poc);
+		fz_write_png_trailer(ctx, out, poc);
 		fz_drop_output(ctx, out);
 	}
 	fz_catch(ctx)
@@ -711,22 +711,22 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 }
 
 void
-fz_output_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, int savealpha)
+fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, int savealpha)
 {
 	fz_png_output_context *poc;
 
 	if (!out)
 		return;
 
-	poc = fz_output_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
+	poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
 
 	fz_try(ctx)
 	{
-		fz_output_png_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
+		fz_write_png_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
 	}
 	fz_always(ctx)
 	{
-		fz_output_png_trailer(ctx, out, poc);
+		fz_write_png_trailer(ctx, out, poc);
 	}
 	fz_catch(ctx)
 	{
@@ -743,7 +743,7 @@ struct fz_png_output_context_s
 };
 
 fz_png_output_context *
-fz_output_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int savealpha)
+fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int savealpha)
 {
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	unsigned char head[13];
@@ -785,7 +785,7 @@ fz_output_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int s
 }
 
 void
-fz_output_png_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha, fz_png_output_context *poc)
+fz_write_png_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha, fz_png_output_context *poc)
 {
 	unsigned char *dp;
 	int y, x, k, sn, dn, err, finalband;
@@ -877,7 +877,7 @@ fz_output_png_band(fz_context *ctx, fz_output *out, int w, int h, int n, int ban
 }
 
 void
-fz_output_png_trailer(fz_context *ctx, fz_output *out, fz_png_output_context *poc)
+fz_write_png_trailer(fz_context *ctx, fz_output *out, fz_png_output_context *poc)
 {
 	unsigned char block[1];
 	int err;
@@ -925,7 +925,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 		}
 		buf = fz_new_buffer(ctx, 1024);
 		out = fz_new_output_with_buffer(ctx, buf);
-		fz_output_png(ctx, out, pix, 1);
+		fz_write_pixmap_as_png(ctx, out, pix, 1);
 	}
 	fz_always(ctx)
 	{
@@ -941,15 +941,13 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 }
 
 fz_buffer *
-fz_new_png_from_image(fz_context *ctx, fz_image *image, int w, int h)
+fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, int w, int h)
 {
-	fz_pixmap *pix = fz_image_get_pixmap(ctx, image, image->w, image->h);
-
-	return png_from_pixmap(ctx, pix, 1);
+	return png_from_pixmap(ctx, fz_image_get_pixmap(ctx, image, image->w, image->h), 1);
 }
 
 fz_buffer *
-fz_new_png_from_pixmap(fz_context *ctx, fz_pixmap *pix)
+fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pix)
 {
 	return png_from_pixmap(ctx, pix, 0);
 }

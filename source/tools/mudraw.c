@@ -568,11 +568,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				}
 
 				if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
-					fz_output_pnm_header(ctx, output_file, pix->w, totalheight, pix->n);
+					fz_write_pnm_header(ctx, output_file, pix->w, totalheight, pix->n);
 				else if (output_format == OUT_PAM)
-					fz_output_pam_header(ctx, output_file, pix->w, totalheight, pix->n, savealpha);
+					fz_write_pam_header(ctx, output_file, pix->w, totalheight, pix->n, savealpha);
 				else if (output_format == OUT_PNG)
-					poc = fz_output_png_header(ctx, output_file, pix->w, totalheight, pix->n, savealpha);
+					poc = fz_write_png_header(ctx, output_file, pix->w, totalheight, pix->n, savealpha);
 			}
 
 			for (band = 0; band < bands; band++)
@@ -603,11 +603,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				if (output)
 				{
 					if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
-						fz_output_pnm_band(ctx, output_file, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
+						fz_write_pnm_band(ctx, output_file, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
 					else if (output_format == OUT_PAM)
-						fz_output_pam_band(ctx, output_file, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha);
+						fz_write_pam_band(ctx, output_file, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha);
 					else if (output_format == OUT_PNG)
-						fz_output_png_band(ctx, output_file, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha, poc);
+						fz_write_png_band(ctx, output_file, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha, poc);
 					else if (output_format == OUT_PWG)
 					{
 						if (has_percent_d(output))
@@ -669,7 +669,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			if (output)
 			{
 				if (output_format == OUT_PNG)
-					fz_output_png_trailer(ctx, output_file, poc);
+					fz_write_png_trailer(ctx, output_file, poc);
 			}
 
 			fz_drop_device(ctx, dev);

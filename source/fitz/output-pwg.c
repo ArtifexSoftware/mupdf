@@ -1,7 +1,7 @@
 #include "mupdf/fitz.h"
 
 void
-fz_output_pwg_file_header(fz_context *ctx, fz_output *out)
+fz_write_pwg_header(fz_context *ctx, fz_output *out)
 {
 	static const unsigned char pwgsig[4] = { 'R', 'a', 'S', '2' };
 
@@ -10,7 +10,8 @@ fz_output_pwg_file_header(fz_context *ctx, fz_output *out)
 }
 
 static void
-output_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg, int xres, int yres, int w, int h, int bpp)
+fz_write_pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
+		int xres, int yres, int w, int h, int bpp)
 {
 	static const char zero[64] = { 0 };
 	int i;
@@ -87,7 +88,7 @@ output_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg, int xr
 }
 
 void
-fz_output_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
+fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
 {
 	unsigned char *sp;
 	int y, x, sn, dn, ss;
@@ -103,7 +104,7 @@ fz_output_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, con
 	if (dn > 1)
 		dn--;
 
-	output_header(ctx, out, pwg, pixmap->xres, pixmap->yres, pixmap->w, pixmap->h, dn*8);
+	fz_write_pwg_page_header(ctx, out, pwg, pixmap->xres, pixmap->yres, pixmap->w, pixmap->h, dn*8);
 
 	/* Now output the actual bitmap, using a packbits like compression */
 	sp = pixmap->samples;
@@ -174,7 +175,7 @@ fz_output_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, con
 }
 
 void
-fz_output_pwg_bitmap_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg)
+fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg)
 {
 	unsigned char *sp;
 	int y, x, ss;
@@ -183,7 +184,7 @@ fz_output_pwg_bitmap_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitm
 	if (!out || !bitmap)
 		return;
 
-	output_header(ctx, out, pwg, bitmap->xres, bitmap->yres, bitmap->w, bitmap->h, 1);
+	fz_write_pwg_page_header(ctx, out, pwg, bitmap->xres, bitmap->yres, bitmap->w, bitmap->h, 1);
 
 	/* Now output the actual bitmap, using a packbits like compression */
 	sp = bitmap->samples;
@@ -251,10 +252,17 @@ fz_output_pwg_bitmap_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitm
 }
 
 void
-fz_output_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
+fz_write_pixmap_as_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
 {
-	fz_output_pwg_file_header(ctx, out);
-	fz_output_pwg_page(ctx, out, pixmap, pwg);
+	fz_write_pwg_header(ctx, out);
+	fz_write_pixmap_as_pwg_page(ctx, out, pixmap, pwg);
+}
+
+void
+fz_write_bitmap_as_pwg(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg)
+{
+	fz_write_pwg_header(ctx, out);
+	fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
 }
 
 void
@@ -264,8 +272,8 @@ fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int ap
 	fz_try(ctx)
 	{
 		if (!append)
-			fz_output_pwg_file_header(ctx, out);
-		fz_output_pwg_page(ctx, out, pixmap, pwg);
+			fz_write_pwg_header(ctx, out);
+		fz_write_pixmap_as_pwg_page(ctx, out, pixmap, pwg);
 	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
@@ -280,8 +288,8 @@ fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int ap
 	fz_try(ctx)
 	{
 		if (!append)
-			fz_output_pwg_file_header(ctx, out);
-		fz_output_pwg_bitmap_page(ctx, out, bitmap, pwg);
+			fz_write_pwg_header(ctx, out);
+		fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
 	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
