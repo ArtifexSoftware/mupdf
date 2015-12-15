@@ -587,7 +587,7 @@ void pdf_print_token(fz_context *ctx, fz_buffer *fzbuf, int tok, pdf_lexbuf *buf
 		if (buf->len >= buf->size)
 			pdf_lexbuf_grow(ctx, buf);
 		buf->scratch[buf->len] = 0;
-		fz_buffer_cat_pdf_string(ctx, fzbuf, buf->scratch);
+		fz_buffer_print_pdf_string(ctx, fzbuf, buf->scratch);
 		break;
 	case PDF_TOK_OPEN_DICT:
 		fz_buffer_printf(ctx, fzbuf, "<<");

@@ -319,7 +319,7 @@ static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, const fz_rect *c
 	if (tm)
 		fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
 
-	fz_buffer_cat_pdf_string(ctx, fzbuf, text);
+	fz_buffer_print_pdf_string(ctx, fzbuf, text);
 	fz_buffer_printf(ctx, fzbuf, fmt_Tj);
 	fz_buffer_printf(ctx, fzbuf, fmt_ET);
 	fz_buffer_printf(ctx, fzbuf, fmt_Q);
@@ -703,7 +703,7 @@ static fz_buffer *create_text_appearance(fz_context *ctx, pdf_document *doc, con
 			fzbuf_print_text_start1(ctx, fzbuf, &rect, info->col);
 			fzbuf_print_text_start2(ctx, fzbuf, &info->font_rec, &tm);
 
-			fz_buffer_cat(ctx, fzbuf, fztmp);
+			fz_append_buffer(ctx, fzbuf, fztmp);
 
 			fzbuf_print_text_end(ctx, fzbuf);
 		}

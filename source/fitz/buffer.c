@@ -107,7 +107,7 @@ fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
 }
 
 void
-fz_buffer_cat(fz_context *ctx, fz_buffer *buf, fz_buffer *extra)
+fz_append_buffer(fz_context *ctx, fz_buffer *buf, fz_buffer *extra)
 {
 	if (buf->cap - buf->len < extra->len)
 	{
@@ -255,7 +255,7 @@ fz_buffer_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list o
 }
 
 void
-fz_buffer_cat_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text)
+fz_buffer_print_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text)
 {
 	int len = 2;
 	const char *s = text;

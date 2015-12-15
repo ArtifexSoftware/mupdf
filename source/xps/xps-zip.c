@@ -69,7 +69,7 @@ xps_read_part(fz_context *ctx, xps_document *doc, char *partname)
 			if (fz_has_archive_entry(ctx, zip, path))
 			{
 				tmp = fz_read_archive_entry(ctx, zip, path);
-				fz_buffer_cat(ctx, buf, tmp);
+				fz_append_buffer(ctx, buf, tmp);
 				fz_drop_buffer(ctx, tmp);
 			}
 			else
@@ -78,7 +78,7 @@ xps_read_part(fz_context *ctx, xps_document *doc, char *partname)
 				if (fz_has_archive_entry(ctx, zip, path))
 				{
 					tmp = fz_read_archive_entry(ctx, zip, path);
-					fz_buffer_cat(ctx, buf, tmp);
+					fz_append_buffer(ctx, buf, tmp);
 					fz_drop_buffer(ctx, tmp);
 					seen_last = 1;
 				}
