@@ -41,7 +41,7 @@ void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 typedef struct fz_halftone_s fz_halftone;
 
 /*
-	fz_halftone_pixmap: Make a bitmap from a pixmap and a halftone.
+	fz_new_bitmap_from_pixmap: Make a bitmap from a pixmap and a halftone.
 
 	pix: The pixmap to generate from. Currently must be a single color
 	component + alpha (where the alpha is assumed to be solid).
@@ -51,7 +51,7 @@ typedef struct fz_halftone_s fz_halftone;
 	Returns the resultant bitmap. Throws exceptions in the case of
 	failure to allocate.
 */
-fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
+fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 
 struct fz_bitmap_s
 {

@@ -614,7 +614,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 							append = 0;
 						if (out_cs == CS_MONO)
 						{
-							fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
+							fz_bitmap *bit = fz_new_bitmap_from_pixmap(ctx, pix, NULL);
 							fz_save_bitmap_as_pwg(ctx, bit, filename_buf, append, NULL);
 							fz_drop_bitmap(ctx, bit);
 						}
@@ -632,7 +632,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 							append = 0;
 						if (out_cs == CS_MONO)
 						{
-							fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
+							fz_bitmap *bit = fz_new_bitmap_from_pixmap(ctx, pix, NULL);
 							fz_save_bitmap_as_pcl(ctx, bit, filename_buf, append, &options);
 							fz_drop_bitmap(ctx, bit);
 						}
@@ -641,7 +641,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 						append = 1;
 					}
 					else if (output_format == OUT_PBM) {
-						fz_bitmap *bit = fz_halftone_pixmap(ctx, pix, NULL);
+						fz_bitmap *bit = fz_new_bitmap_from_pixmap(ctx, pix, NULL);
 						fz_save_bitmap_as_pbm(ctx, bit, filename_buf);
 						fz_drop_bitmap(ctx, bit);
 					}

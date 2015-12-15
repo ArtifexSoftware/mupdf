@@ -161,7 +161,7 @@ static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsign
 		*out = h;
 }
 
-fz_bitmap *fz_halftone_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
+fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
 {
 	fz_bitmap *out;
 	unsigned char *ht_line, *o, *p;
