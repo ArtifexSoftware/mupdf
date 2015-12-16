@@ -281,6 +281,10 @@ ZLIB_SRC := \
 	trees.c \
 	uncompr.c \
 	zutil.c \
+	gzlib.c \
+	gzwrite.c \
+	gzclose.c \
+	gzread.c \
 
 $(ZLIB_LIB): $(addprefix $(ZLIB_OUT)/, $(ZLIB_SRC:%.c=%.o))
 $(ZLIB_OUT):
