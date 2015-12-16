@@ -56,6 +56,7 @@
 		DADF824D1905242800855662 /* ic_share.png in Resources */ = {isa = PBXBuildFile; fileRef = DADF824C1905241900855662 /* ic_share.png */; };
 		DAFF997B187C12430081C756 /* MuChoiceFieldController.m in Sources */ = {isa = PBXBuildFile; fileRef = DAFF9979187C12430081C756 /* MuChoiceFieldController.m */; };
 		DAFF997C187C12430081C756 /* MuChoiceFieldController.xib in Resources */ = {isa = PBXBuildFile; fileRef = DAFF997A187C12430081C756 /* MuChoiceFieldController.xib */; };
+		E845CC6E1C20C09B00474C19 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = E845CC6D1C20C09B00474C19 /* Default-568h@2x.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -141,6 +142,7 @@
 		DAFF9978187C12430081C756 /* MuChoiceFieldController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MuChoiceFieldController.h; path = Classes/MuChoiceFieldController.h; sourceTree = "<group>"; };
 		DAFF9979187C12430081C756 /* MuChoiceFieldController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MuChoiceFieldController.m; path = Classes/MuChoiceFieldController.m; sourceTree = "<group>"; };
 		DAFF997A187C12430081C756 /* MuChoiceFieldController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = MuChoiceFieldController.xib; path = Classes/MuChoiceFieldController.xib; sourceTree = "<group>"; };
+		E845CC6D1C20C09B00474C19 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Default-568h@2x.png"; path = "MuPDF/Images.xcassets/LaunchImage.launchimage/Default-568h@2x.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -164,6 +166,7 @@
 		968E1E341779A54F0050CEA3 = {
 			isa = PBXGroup;
 			children = (
+				E845CC6D1C20C09B00474C19 /* Default-568h@2x.png */,
 				DA1C68C317E8969C0061F586 /* common.m */,
 				DA1C68C217E8968C0061F586 /* common.h */,
 				96C8ED001779A88E00A30AF4 /* main.m */,
@@ -350,6 +353,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E845CC6E1C20C09B00474C19 /* Default-568h@2x.png in Resources */,
 				DA7AAA3B18E4683600A577E3 /* ic_annotation.png in Resources */,
 				DA7AAA3C18E4683600A577E3 /* ic_print.png in Resources */,
 				DA4C0623187B1EA200755D0D /* MuTextFieldController.xib in Resources */,
