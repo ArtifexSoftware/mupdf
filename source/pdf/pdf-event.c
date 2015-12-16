@@ -44,12 +44,12 @@ void pdf_event_issue_print(fz_context *ctx, pdf_document *doc)
 typedef struct
 {
 	pdf_doc_event base;
-	char *item;
+	const char *item;
 } pdf_exec_menu_item_event_internal;
 
-char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *event)
+const char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *event)
 {
-	char *item = NULL;
+	const char *item = NULL;
 
 	if (event->type == PDF_DOCUMENT_EVENT_EXEC_MENU_ITEM)
 		item = ((pdf_exec_menu_item_event_internal *)event)->item;
@@ -57,7 +57,7 @@ char *pdf_access_exec_menu_item_event(fz_context *ctx, pdf_doc_event *event)
 	return item;
 }
 
-void pdf_event_issue_exec_menu_item(fz_context *ctx, pdf_document *doc, char *item)
+void pdf_event_issue_exec_menu_item(fz_context *ctx, pdf_document *doc, const char *item)
 {
 	if (doc->event_cb)
 	{
@@ -95,7 +95,7 @@ pdf_launch_url_event *pdf_access_launch_url_event(fz_context *ctx, pdf_doc_event
 	return launch_url;
 }
 
-void pdf_event_issue_launch_url(fz_context *ctx, pdf_document *doc, char *url, int new_frame)
+void pdf_event_issue_launch_url(fz_context *ctx, pdf_document *doc, const char *url, int new_frame)
 {
 	if (doc->event_cb)
 	{

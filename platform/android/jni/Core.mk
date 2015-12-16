@@ -65,7 +65,6 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/html/*.c)
 LOCAL_SRC_FILES += \
 	$(MY_ROOT)/source/pdf/js/pdf-js.c \
-	$(MY_ROOT)/source/pdf/js/pdf-jsimp-mu.c
 
 ifdef SUPPORT_GPROOF
 LOCAL_SHARED_LIBRARIES := gsso

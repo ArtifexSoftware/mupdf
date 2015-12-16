@@ -102,20 +102,9 @@ GPRF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(GPRF_SRC))))
 
 ifeq "$(HAVE_MUJS)" "yes"
 PDF_OBJ += $(OUT)/pdf/js/pdf-js.o
-PDF_OBJ += $(OUT)/pdf/js/pdf-jsimp-mu.o
 THIRD_LIBS += $(MUJS_LIB)
 LIBS += $(MUJS_LIBS)
 CFLAGS += $(MUJS_CFLAGS)
-else ifeq "$(HAVE_JSCORE)" "yes"
-PDF_OBJ += $(OUT)/pdf/js/pdf-js.o
-PDF_OBJ += $(OUT)/pdf/js/pdf-jsimp-jscore.o
-LIBS += $(JSCORE_LIBS)
-CFLAGS += $(JSCORE_CFLAGS)
-else ifeq "$(HAVE_V8)" "yes"
-PDF_OBJ += $(OUT)/pdf/js/pdf-js.o
-PDF_OBJ += $(OUT)/pdf/js/pdf-jsimp-cpp.o $(OUT)/pdf/js/pdf-jsimp-v8.o
-LIBS += $(V8_LIBS)
-CFLAGS += $(V8_CFLAGS)
 else
 PDF_OBJ += $(OUT)/pdf/js/pdf-js-none.o
 endif

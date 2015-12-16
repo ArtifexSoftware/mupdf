@@ -49,7 +49,7 @@ static void pdf_field_mark_dirty(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 	}
 }
 
-static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj, char *text)
+static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj, const char *text)
 {
 	pdf_obj *sobj = NULL;
 	pdf_obj *grp;
@@ -819,7 +819,7 @@ int pdf_widget_get_type(fz_context *ctx, pdf_widget *widget)
 	return annot->widget_type;
 }
 
-static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *text)
+static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
 	pdf_obj *v = pdf_dict_getp(ctx, field, "AA/V");
 
@@ -828,7 +828,7 @@ static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 		pdf_js_event e;
 
 		e.target = field;
-		e.value = text;
+		e.value = fz_strdup(ctx, text);
 		pdf_js_setup_event(doc->js, &e);
 		execute_action(ctx, doc, field, v);
 
@@ -845,7 +845,7 @@ static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 	return 1;
 }
 
-static void update_checkbox_selector(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *val)
+static void update_checkbox_selector(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *val)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
 
@@ -882,14 +882,14 @@ static void update_checkbox_selector(fz_context *ctx, pdf_document *doc, pdf_obj
 	}
 }
 
-static int set_checkbox_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *val)
+static int set_checkbox_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *val)
 {
 	update_checkbox_selector(ctx, doc, field, val);
 	update_field_value(ctx, doc, field, val);
 	return 1;
 }
 
-int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *text)
+int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
 	int res = 0;
 
@@ -932,7 +932,7 @@ char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	return "Solid";
 }
 
-void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *text)
+void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
 	pdf_obj *val = NULL;
 
@@ -964,7 +964,7 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 	}
 }
 
-void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, char *text)
+void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
 	pdf_obj *val = pdf_new_string(ctx, doc, text, strlen(text));
 

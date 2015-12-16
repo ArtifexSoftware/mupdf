@@ -243,7 +243,7 @@ struct pdf_document_s
 	pdf_obj *focus_obj;
 
 	pdf_js *js;
-	void (*drop_js)(pdf_js *js);
+
 	int recalculating;
 	int dirty;
 

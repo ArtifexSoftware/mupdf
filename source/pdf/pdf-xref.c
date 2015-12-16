@@ -1587,7 +1587,7 @@ pdf_close_document(fz_context *ctx, pdf_document *doc)
 	fz_purge_glyph_cache(ctx);
 
 	if (doc->js)
-		doc->drop_js(doc->js);
+		pdf_drop_js(ctx, doc->js);
 
 	pdf_drop_xref_sections(ctx, doc);
 	fz_free(ctx, doc->xref_index);

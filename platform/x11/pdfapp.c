@@ -173,7 +173,7 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, v
 
 	case PDF_DOCUMENT_EVENT_EXEC_MENU_ITEM:
 		{
-			char *item = pdf_access_exec_menu_item_event(ctx, event);
+			const char *item = pdf_access_exec_menu_item_event(ctx, event);
 
 			if (!strcmp(item, "Print"))
 				winprint(app);

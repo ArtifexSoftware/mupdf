@@ -1266,10 +1266,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\source\pdf\js\pdf-jsimp-mu.c"
-					>
-				</File>
-				<File
 					RelativePath="..\..\source\pdf\js\pdf-util.js"
 					>
 				</File>
