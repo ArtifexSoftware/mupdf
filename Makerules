@@ -53,8 +53,14 @@ else ifeq "$(OS)" "MACOS"
 
 HAVE_X11 ?= yes
 
+# Mac OS X deprecated openssl, so the default is to not include it.
+HAVE_OPENSSL ?= no
+SYS_OPENSSL_CFLAGS =
+SYS_OPENSSL_LIBS =
+ifeq "$(HAVE_OPENSSL)" "yes"
 SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL
 SYS_OPENSSL_LIBS = -lcrypto
+endif
 
 SYS_CURL_DEPS = -lpthread
 
