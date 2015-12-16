@@ -4,6 +4,7 @@
 #import "MuAppDelegate.h"
 
 #ifdef CRASHLYTICS_ENABLE
+#import <Fabric/Fabric.h>
 #import <Crashlytics/Crashlytics.h>
 #endif
 
@@ -29,7 +30,7 @@
 
 #ifdef CRASHLYTICS_ENABLE
 	NSLog(@"Starting Crashlytics");
-	[Crashlytics startWithAPIKey:CRASHLYTICS_API_KEY];
+	[Fabric with:@[[Crashlytics class]]];
 #endif
 
 	screenScale = [[UIScreen mainScreen] scale];
