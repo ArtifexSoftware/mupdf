@@ -290,7 +290,7 @@ $(ZLIB_LIB): $(addprefix $(ZLIB_OUT)/, $(ZLIB_SRC:%.c=%.o))
 $(ZLIB_OUT):
 	$(MKDIR_CMD)
 $(ZLIB_OUT)/%.o: $(ZLIB_DIR)/%.c | $(ZLIB_OUT)
-	$(CC_CMD) -Dverbose=-1
+	$(CC_CMD) -Dverbose=-1 -DHAVE_UNISTD_H -DHAVE_STDARG_H
 
 ZLIB_CFLAGS := -I$(ZLIB_DIR)
 else
