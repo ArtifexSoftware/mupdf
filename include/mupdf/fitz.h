@@ -49,8 +49,6 @@
 #include "mupdf/fitz/document.h"
 #include "mupdf/fitz/annotation.h"
 
-#include "mupdf/fitz/write-document.h"
-
 #include "mupdf/fitz/util.h"
 
 /* Output formats */

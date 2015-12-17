@@ -239,13 +239,6 @@ fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf
 	return -1;
 }
 
-void
-fz_save_document(fz_context *ctx, fz_document *doc, char *filename, fz_save_options *opts)
-{
-	if (doc && doc->save)
-		doc->save(ctx, doc, filename, opts);
-}
-
 fz_page *
 fz_load_page(fz_context *ctx, fz_document *doc, int number)
 {

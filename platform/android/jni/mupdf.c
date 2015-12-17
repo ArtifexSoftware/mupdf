@@ -2593,11 +2593,12 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
+	pdf_document *idoc = pdf_specifics(ctx, glo->doc);
 
-	if (glo->doc && glo->current_path)
+	if (idoc && glo->current_path)
 	{
 		char *tmp;
-		fz_save_options opts;
+		pdf_write_options opts;
 		opts.do_incremental = 1;
 		opts.do_ascii = 0;
 		opts.do_expand = 0;
@@ -2631,7 +2632,7 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 
 				if (!err)
 				{
-					fz_save_document(ctx, glo->doc, tmp, &opts);
+					pdf_save_document(ctx, idoc, tmp, &opts);
 					written = 1;
 				}
 			}

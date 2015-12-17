@@ -1558,10 +1558,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\fitz\write-document.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\mupdf\fitz\xml.h"
 					>
 				</File>

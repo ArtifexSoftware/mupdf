@@ -1130,9 +1130,7 @@ int mudraw_main(int argc, char **argv)
 
 	if (pdfout)
 	{
-		fz_save_options opts = { 0 };
-
-		pdf_save_document(ctx, pdfout, output, &opts);
+		pdf_save_document(ctx, pdfout, output, NULL);
 		pdf_close_document(ctx, pdfout);
 	}
 

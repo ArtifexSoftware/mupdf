@@ -70,12 +70,16 @@ static char *tmp_path(char *path)
 static void saveDoc(char *current_path, fz_document *doc)
 {
 	char *tmp;
-	fz_write_options opts;
+	pdf_document *idoc = pdf_specifics(ctx, doc);
+	pdf_write_options opts;
 	opts.do_incremental = 1;
 	opts.do_ascii = 0;
 	opts.do_expand = 0;
 	opts.do_garbage = 0;
 	opts.do_linear = 0;
+
+	if (!idoc)
+		return;
 
 	tmp = tmp_path(current_path);
 	if (tmp)
@@ -105,7 +109,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 			if (!err)
 			{
-				fz_write_document(ctx, doc, tmp, &opts);
+				pdf_write_document(ctx, idoc, tmp, &opts);
 				written = 1;
 			}
 		}

@@ -280,4 +280,42 @@ void pdf_finish_edit(fz_context *ctx, pdf_document *doc);
 
 int pdf_recognize(fz_context *doc, const char *magic);
 
+typedef struct pdf_write_options_s pdf_write_options;
+
+/* An enumeration of bitflags to use in the 'do_expand' field of the options struct. */
+enum
+{
+	PDF_EXPAND_IMAGES = 1,
+	PDF_EXPAND_FONTS = 2,
+	PDF_EXPAND_ALL = -1
+};
+
+/*
+	In calls to fz_save_document, the following options structure can be used
+	to control aspects of the writing process. This structure may grow
+	in future, and should be zero-filled to allow forwards compatiblity.
+*/
+struct pdf_write_options_s
+{
+	int do_incremental; /* Write just the changed objects */
+	int do_ascii; /* If non-zero then attempt (where possible) to make
+				the output ascii. */
+	int do_deflate; /* If non-zero then attempt to compress streams. */
+	int do_expand; /* Bitflags; each non zero bit indicates an aspect
+				of the file that should be 'expanded' on
+				writing. */
+	int do_garbage; /* If non-zero then attempt (where possible) to
+				garbage collect the file before writing. */
+	int do_linear; /* If non-zero then write linearised. */
+	int do_clean; /* If non-zero then clean contents */
+	int continue_on_error; /* If non-zero, errors are (optionally)
+					counted and writing continues. */
+	int *errors; /* Pointer to a place to store a count of errors */
+};
+
+/*
+	pdf_save_document: Write out the document to a file with all changes finalised.
+*/
+void pdf_save_document(fz_context *ctx, pdf_document *doc, char *filename, pdf_write_options *opts);
+
 #endif

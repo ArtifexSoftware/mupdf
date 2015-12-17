@@ -37,7 +37,7 @@ int pdfclean_main(int argc, char **argv)
 	char *outfile = "out.pdf";
 	char *password = "";
 	int c;
-	fz_save_options opts;
+	pdf_write_options opts;
 	int errors = 0;
 	fz_context *ctx;
 
@@ -57,9 +57,9 @@ int pdfclean_main(int argc, char **argv)
 		{
 		case 'p': password = fz_optarg; break;
 		case 'g': opts.do_garbage ++; break;
-		case 'd': opts.do_expand ^= fz_expand_all; break;
-		case 'f': opts.do_expand ^= fz_expand_fonts; break;
-		case 'i': opts.do_expand ^= fz_expand_images; break;
+		case 'd': opts.do_expand ^= PDF_EXPAND_ALL; break;
+		case 'f': opts.do_expand ^= PDF_EXPAND_FONTS; break;
+		case 'i': opts.do_expand ^= PDF_EXPAND_IMAGES; break;
 		case 'l': opts.do_linear ++; break;
 		case 'a': opts.do_ascii ++; break;
 		case 'z': opts.do_deflate ++; break;
