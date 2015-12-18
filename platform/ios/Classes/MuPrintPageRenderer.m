@@ -32,7 +32,9 @@ const int MaxStripPixels = 1024*1024;
 		{
 			npages = fz_count_pages(ctx, docRef->doc);
 		}
-		fz_catch(ctx);
+		fz_catch(ctx)
+		{
+		}
 	});
 	return npages;
 }
