@@ -2,14 +2,6 @@
 
 #define SANE_DPI 72.0f
 
-fz_pixmap *
-fz_new_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
-{
-	if (image == NULL)
-		return NULL;
-	return fz_image_get_pixmap(ctx, image, w, h);
-}
-
 fz_image *
 fz_keep_image(fz_context *ctx, fz_image *image)
 {
@@ -103,7 +95,7 @@ fz_mask_color_key(fz_pixmap *pix, int n, int *colorkey)
 static void
 fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 {
-	fz_pixmap *mask = fz_image_get_pixmap(ctx, image->mask, tile->w, tile->h);
+	fz_pixmap *mask = fz_get_pixmap_from_image(ctx, image->mask, tile->w, tile->h);
 	unsigned char *s = mask->samples, *end = s + mask->w * mask->h;
 	unsigned char *d = tile->samples;
 	int k;
@@ -293,12 +285,15 @@ standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int *l
 }
 
 fz_pixmap *
-fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h)
+fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
 {
 	fz_pixmap *tile;
 	int l2factor, l2factor_remaining;
 	fz_image_key key;
 	fz_image_key *keyp;
+
+	if (!image)
+		return NULL;
 
 	/* 'Simple' images created direct from pixmaps will have no buffer
 	 * of compressed data. We cannot do any better than just returning

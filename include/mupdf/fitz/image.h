@@ -20,7 +20,7 @@
 typedef struct fz_image_s fz_image;
 
 /*
-	fz_new_pixmap_from_image: Called to get a handle to a pixmap from an image.
+	fz_get_pixmap_from_image: Called to get a handle to a pixmap from an image.
 
 	image: The image to retrieve a pixmap from.
 
@@ -34,7 +34,7 @@ typedef struct fz_image_s fz_image;
 
 	Returns a non NULL pixmap pointer. May throw exceptions.
 */
-fz_pixmap *fz_new_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h);
+fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h);
 
 /*
 	fz_drop_image: Drop a reference to an image.
@@ -56,7 +56,7 @@ fz_image *fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *co
 fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask);
 fz_image *fz_new_image_from_data(fz_context *ctx, unsigned char *data, int len);
 fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
-fz_pixmap *fz_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h);
+fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h);
 void fz_drop_image_imp(fz_context *ctx, fz_storable *image);
 fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int indexed, int l2factor);
 fz_pixmap *fz_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);
