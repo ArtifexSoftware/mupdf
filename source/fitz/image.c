@@ -551,7 +551,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 }
 
 void
-fz_image_get_sanitised_res(fz_image *image, int *xres, int *yres)
+fz_image_resolution(fz_image *image, int *xres, int *yres)
 {
 	*xres = image->xres;
 	*yres = image->yres;

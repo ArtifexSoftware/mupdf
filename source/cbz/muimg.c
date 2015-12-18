@@ -35,7 +35,7 @@ img_bound_page(fz_context *ctx, img_page *page, fz_rect *bbox)
 {
 	fz_image *image = page->image;
 	int xres, yres;
-	fz_image_get_sanitised_res(image, &xres, &yres);
+	fz_image_resolution(image, &xres, &yres);
 	bbox->x0 = bbox->y0 = 0;
 	bbox->x1 = image->w * DPI / xres;
 	bbox->y1 = image->h * DPI / yres;
@@ -49,7 +49,7 @@ img_run_page(fz_context *ctx, img_page *page, fz_device *dev, const fz_matrix *c
 	fz_image *image = page->image;
 	int xres, yres;
 	float w, h;
-	fz_image_get_sanitised_res(image, &xres, &yres);
+	fz_image_resolution(image, &xres, &yres);
 	w = image->w * DPI / xres;
 	h = image->h * DPI / yres;
 	fz_pre_scale(&local_ctm, w, h);
