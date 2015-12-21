@@ -310,8 +310,11 @@ int ui_input(int x0, int y0, int x1, int y1, struct input *input)
 	else
 		state = 0;
 
-	glColor4f(1, 1, 1, 1);
+	glColor4f(0, 0, 0, 1);
 	glRectf(x0, y0, x1, y1);
+
+	glColor4f(1, 1, 1, 1);
+	glRectf(x0+1, y0+1, x1-1, y1-1);
 
 	p = input->p < input->q ? input->p : input->q;
 	q = input->p > input->q ? input->p : input->q;
