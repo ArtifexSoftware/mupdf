@@ -33,16 +33,11 @@ endif
 ifeq "$(OS)" "MINGW"
 
 HAVE_X11 ?= no
-HAVE_GLUT ?= yes
-
-SYS_GLUT_CFLAGS = -DFREEGLUT_STATIC -Ithirdparty/freeglut/include
-SYS_GLUT_LIBS = -Lthirdparty/freeglut/lib -lfreeglut_static -lopengl32 -lgdi32 -lwinmm
 
 # Mac OS X doesn't have pkg-config so we hard code paths.
 else ifeq "$(OS)" "MACOS"
 
 HAVE_X11 ?= yes
-HAVE_GLUT ?= yes
 
 SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL
 SYS_OPENSSL_LIBS = -lcrypto
@@ -51,8 +46,6 @@ SYS_CURL_DEPS = -lpthread
 
 SYS_X11_CFLAGS = -I/usr/X11R6/include
 SYS_X11_LIBS = -L/usr/X11R6/lib -lX11 -lXext
-SYS_GLUT_CFLAGS = -Wno-deprecated-declarations
-SYS_GLUT_LIBS = -framework GLUT -framework OpenGL
 
 SYS_FREETYPE_CFLAGS = -I/usr/X11R6/include/freetype2
 SYS_FREETYPE_LIBS = -lfreetype
@@ -70,7 +63,6 @@ RANLIB_CMD = xcrun ranlib $@
 else ifeq "$(OS)" "Linux"
 
 HAVE_X11 ?= yes
-HAVE_GLUT ?= yes
 
 ifeq "$(shell pkg-config --exists libcrypto && echo yes)" "yes"
 SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL $(shell pkg-config --cflags libcrypto)
@@ -86,9 +78,6 @@ SYS_CURL_DEPS = -lpthread -lrt
 
 SYS_X11_CFLAGS = $(shell pkg-config --cflags x11 xext)
 SYS_X11_LIBS = $(shell pkg-config --libs x11 xext)
-
-SYS_GLUT_CFLAGS =
-SYS_GLUT_LIBS = -lglut -lGL
 
 SYS_FREETYPE_CFLAGS = $(shell pkg-config --cflags freetype2)
 SYS_FREETYPE_LIBS = $(shell pkg-config --libs freetype2)
@@ -210,5 +199,5 @@ endif
 # TODO: If crosscompiling, why not just call "make libs" instead of this exception?
 ifeq "$(CROSSCOMPILE)" "yes"
 HAVE_X11 ?= no
-HAVE_GLUT ?= no
+HAVE_GLFW ?= no
 endif
