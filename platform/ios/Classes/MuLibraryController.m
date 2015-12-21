@@ -2,6 +2,10 @@
 #import "MuDocumentController.h"
 #import "MuLibraryController.h"
 
+#ifdef CRASHLYTICS_TESTCRASH
+#import <Crashlytics/Crashlytics.h>
+#endif
+
 static void showAlert(NSString *msg, NSString *filename)
 {
 	UIAlertView *alert = [[UIAlertView alloc]
@@ -62,6 +66,11 @@ static void showAlert(NSString *msg, NSString *filename)
 			[outfiles addObject:file];
 		}
 	}
+
+#ifdef CRASHLYTICS_TESTCRASH
+	//  for testing Crashlytics only.  Add an item that will crash the program.
+	[outfiles addObject:@"tap to crash"];
+#endif
 
 	files = outfiles;
 
@@ -189,6 +198,15 @@ static NSString *moveOutOfInbox(NSString *docpath)
 
 - (void) openDocument: (NSString*)nsfilename
 {
+#ifdef CRASHLYTICS_TESTCRASH
+	//  for testing Crashlytics only.  Crash the program if requested.
+	if([nsfilename isEqualToString:@"tap to crash"])
+	{
+		[[Crashlytics sharedInstance] crash];
+		return;
+	}
+#endif
+
 	nsfilename = moveOutOfInbox(nsfilename);
 	NSString *nspath = [[NSArray arrayWithObjects:NSHomeDirectory(), @"Documents", nsfilename, nil]
 							componentsJoinedByString:@"/"];
