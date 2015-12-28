@@ -112,14 +112,14 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 }
 
 fz_pixmap *
-fz_new_pixmap_from_annot(fz_context *ctx, fz_page *page, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs)
+fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs)
 {
 	fz_rect rect;
 	fz_irect irect;
 	fz_pixmap *pix;
 	fz_device *dev;
 
-	fz_bound_annot(ctx, page, annot, &rect);
+	fz_bound_annot(ctx, annot, &rect);
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
@@ -129,7 +129,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_page *page, fz_annot *annot, const 
 	fz_try(ctx)
 	{
 		dev = fz_new_draw_device(ctx, pix);
-		fz_run_annot(ctx, page, annot, dev, ctm, NULL);
+		fz_run_annot(ctx, annot, dev, ctm, NULL);
 	}
 	fz_always(ctx)
 	{

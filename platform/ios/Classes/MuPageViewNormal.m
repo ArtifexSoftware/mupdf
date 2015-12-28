@@ -48,8 +48,8 @@ static NSArray *enumerateAnnotations(fz_document *doc, fz_page *page)
 	fz_annot *annot;
 	NSMutableArray *arr = [NSMutableArray arrayWithCapacity:10];
 
-	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
-		[arr addObject:[MuAnnotation annotFromAnnot:annot forPage:page]];
+	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
+		[arr addObject:[MuAnnotation annotFromAnnot:annot]];
 
 	return [arr retain];
 }
@@ -305,7 +305,7 @@ static void deleteAnnotation(fz_document *doc, fz_page *page, int index)
 		int i;
 		fz_annot *annot = fz_first_annot(ctx, page);
 		for (i = 0; i < index && annot; i++)
-			annot = fz_next_annot(ctx, page, annot);
+			annot = fz_next_annot(ctx, annot);
 
 		if (annot)
 			pdf_delete_annot(ctx, idoc, (pdf_page *)page, (pdf_annot *)annot);
@@ -408,8 +408,8 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 			pdf_update_page(ctx, idoc, (pdf_page *)page);
 		list = fz_new_display_list(ctx);
 		dev = fz_new_list_device(ctx, list);
-		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
-			fz_run_annot(ctx, page, annot, dev, &fz_identity, NULL);
+		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
+			fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -508,7 +508,7 @@ static rect_list *updatePage(fz_document *doc, fz_page *page)
 			{
 				rect_list *node = fz_malloc_struct(ctx, rect_list);
 
-				fz_bound_annot(ctx, page, annot, &node->rect);
+				fz_bound_annot(ctx, annot, &node->rect);
 				node->next = list;
 				list = node;
 			}

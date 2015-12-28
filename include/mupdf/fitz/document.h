@@ -43,14 +43,23 @@ typedef void (fz_page_drop_page_imp_fn)(fz_context *ctx, fz_page *page);
 typedef fz_transition *(fz_page_page_presentation_fn)(fz_context *ctx, fz_page *page, float *duration);
 
 typedef fz_annot *(fz_page_first_annot_fn)(fz_context *ctx, fz_page *page);
-typedef fz_annot *(fz_page_next_annot_fn)(fz_context *ctx, fz_page *page, fz_annot *annot);
-typedef fz_rect *(fz_page_bound_annot_fn)(fz_context *ctx, fz_page *page, fz_annot *annot, fz_rect *rect);
-typedef void (fz_page_run_annot_fn)(fz_context *ctx, fz_page *page, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 
 typedef void (fz_page_control_separation_fn)(fz_context *ctx, fz_page *page, int separation, int disable);
 typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int separation);
 typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
 typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
+
+typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
+typedef fz_rect *(fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot, fz_rect *rect);
+typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+
+struct fz_annot_s
+{
+	int refs;
+	fz_annot_bound_fn *bound_annot;
+	fz_annot_run_fn *run_annot;
+	fz_annot_next_fn *next_annot;
+};
 
 struct fz_page_s
 {
@@ -60,9 +69,6 @@ struct fz_page_s
 	fz_page_run_page_contents_fn *run_page_contents;
 	fz_page_load_links_fn *load_links;
 	fz_page_first_annot_fn *first_annot;
-	fz_page_next_annot_fn *next_annot;
-	fz_page_bound_annot_fn *bound_annot;
-	fz_page_run_annot_fn *run_annot;
 	fz_page_page_presentation_fn *page_presentation;
 	fz_page_control_separation_fn *control_separation;
 	fz_page_separation_disabled_fn *separation_disabled;
@@ -294,7 +300,7 @@ void fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, const 
 	fields inside cookie are continually updated while the page is
 	rendering.
 */
-void fz_run_annot(fz_context *ctx, fz_page *page, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+void fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 
 /*
 	fz_keep_page: Keep a reference to a loaded page.
@@ -309,6 +315,11 @@ fz_page *fz_keep_page(fz_context *ctx, fz_page *page);
 	Does not throw exceptions.
 */
 void fz_drop_page(fz_context *ctx, fz_page *page);
+
+/*
+	fz_new_annot: Create and initialize an annotation struct.
+*/
+void *fz_new_annot(fz_context *ctx, int size);
 
 /*
 	fz_page_presentation: Get the presentation details for a given page.

@@ -275,18 +275,18 @@ fz_first_annot(fz_context *ctx, fz_page *page)
 }
 
 fz_annot *
-fz_next_annot(fz_context *ctx, fz_page *page, fz_annot *annot)
+fz_next_annot(fz_context *ctx, fz_annot *annot)
 {
-	if (page && page->next_annot && annot)
-		return page->next_annot(ctx, page, annot);
+	if (annot && annot->next_annot)
+		return annot->next_annot(ctx, annot);
 	return NULL;
 }
 
 fz_rect *
-fz_bound_annot(fz_context *ctx, fz_page *page, fz_annot *annot, fz_rect *rect)
+fz_bound_annot(fz_context *ctx, fz_annot *annot, fz_rect *rect)
 {
-	if (page && page->bound_annot && annot && rect)
-		return page->bound_annot(ctx, page, annot, rect);
+	if (annot && annot->bound_annot && rect)
+		return annot->bound_annot(ctx, annot, rect);
 	if (rect)
 		*rect = fz_empty_rect;
 	return rect;
@@ -310,13 +310,13 @@ fz_run_page_contents(fz_context *ctx, fz_page *page, fz_device *dev, const fz_ma
 }
 
 void
-fz_run_annot(fz_context *ctx, fz_page *page, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie)
+fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie)
 {
-	if (page && page->run_annot && page && annot)
+	if (annot && annot->run_annot)
 	{
 		fz_try(ctx)
 		{
-			page->run_annot(ctx, page, annot, dev, transform, cookie);
+			annot->run_annot(ctx, annot, dev, transform, cookie);
 		}
 		fz_catch(ctx)
 		{
@@ -340,12 +340,12 @@ fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *tra
 	if (cookie && cookie->progress_max != -1)
 	{
 		int count = 1;
-		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
+		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
 			count++;
 		cookie->progress_max += count;
 	}
 
-	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
+	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
 	{
 		/* Check the cookie for aborting */
 		if (cookie)
@@ -355,10 +355,18 @@ fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *tra
 			cookie->progress++;
 		}
 
-		fz_run_annot(ctx, page, annot, dev, transform, cookie);
+		fz_run_annot(ctx, annot, dev, transform, cookie);
 	}
 
 	fz_end_page(ctx, dev);
+}
+
+void *
+fz_new_annot(fz_context *ctx, int size)
+{
+	fz_page *page = Memento_label(fz_calloc(ctx, 1, size), "fz_annot");
+	page->refs = 1;
+	return page;
 }
 
 void *

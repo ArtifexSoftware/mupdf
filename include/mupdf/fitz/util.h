@@ -31,7 +31,7 @@ fz_pixmap *fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, cons
 	fz_new_pixmap_from_annot: Render an annotation to a transparent pixmap,
 	suitable for blending on top of the opaque pixmap returned by fz_new_pixmap_from_page_contents.
 */
-fz_pixmap *fz_new_pixmap_from_annot(fz_context *ctx, fz_page *page, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs);
+fz_pixmap *fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs);
 
 /*
 	fz_new_stext_page_from_page: Extract structured text from a page. The sheet must not be NULL.

@@ -503,9 +503,14 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 		for (i = 0; i < len; i++)
 		{
 			obj = pdf_array_get(ctx, annots, i);
-			annot = fz_malloc_struct(ctx, pdf_annot);
-			annot->obj = pdf_keep_obj(ctx, obj);
+
+			annot = fz_new_annot(ctx, sizeof(pdf_annot));
+			annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
+			annot->super.run_annot = (fz_annot_run_fn*)pdf_run_annot;
+			annot->super.next_annot = (fz_annot_next_fn*)pdf_next_annot;
+
 			annot->page = page;
+			annot->obj = pdf_keep_obj(ctx, obj);
 			annot->next = NULL;
 
 			*itr = annot;
@@ -613,13 +618,13 @@ pdf_first_annot(fz_context *ctx, pdf_page *page)
 }
 
 pdf_annot *
-pdf_next_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
+pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 {
 	return annot ? annot->next : NULL;
 }
 
 fz_rect *
-pdf_bound_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot, fz_rect *rect)
+pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect)
 {
 	if (rect == NULL)
 		return NULL;

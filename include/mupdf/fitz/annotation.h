@@ -52,13 +52,13 @@ fz_annot *fz_first_annot(fz_context *ctx, fz_page *page);
 
 	Does not throw exceptions.
 */
-fz_annot *fz_next_annot(fz_context *ctx, fz_page *page, fz_annot *annot);
+fz_annot *fz_next_annot(fz_context *ctx, fz_annot *annot);
 
 /*
 	fz_bound_annot: Return the bounding rectangle of the annotation.
 
 	Does not throw exceptions.
 */
-fz_rect *fz_bound_annot(fz_context *ctx, fz_page *page, fz_annot *annot, fz_rect *rect);
+fz_rect *fz_bound_annot(fz_context *ctx, fz_annot *annot, fz_rect *rect);
 
 #endif

@@ -711,8 +711,8 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 		mdev = NULL;
 		app->annotations_list = fz_new_display_list(app->ctx);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
-		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, app->page, annot))
-			fz_run_annot(app->ctx, app->page, annot, mdev, &fz_identity, &cookie);
+		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
+			fz_run_annot(app->ctx, annot, mdev, &fz_identity, &cookie);
 		if (cookie.incomplete)
 		{
 			app->incomplete = 1;
@@ -771,8 +771,8 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 		/* Create display list */
 		app->annotations_list = fz_new_display_list(app->ctx);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
-		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, app->page, annot))
-			fz_run_annot(app->ctx, app->page, annot, mdev, &fz_identity, &cookie);
+		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
+			fz_run_annot(app->ctx, annot, mdev, &fz_identity, &cookie);
 		if (cookie.incomplete)
 		{
 			app->incomplete = 1;
@@ -824,7 +824,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 	{
 		fz_rect bounds;
 		fz_irect ibounds;
-		fz_transform_rect(fz_bound_annot(app->ctx, app->page, annot, &bounds), &ctm);
+		fz_transform_rect(fz_bound_annot(app->ctx, annot, &bounds), &ctm);
 		fz_rect_from_irect(&bounds, fz_round_rect(&ibounds, &bounds));
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
 		idev = fz_new_draw_device_with_bbox(app->ctx, app->image, &ibounds);
@@ -1743,10 +1743,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	else
 	{
 		fz_annot *annot;
-		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, app->page, annot))
+		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
 		{
 			fz_rect rect;
-			fz_bound_annot(app->ctx, app->page, annot, &rect);
+			fz_bound_annot(app->ctx, annot, &rect);
 			if (x >= rect.x0 && x < rect.x1)
 				if (y >= rect.y0 && y < rect.y1)
 					break;

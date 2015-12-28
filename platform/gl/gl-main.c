@@ -266,9 +266,9 @@ void render_page(void)
 	fz_drop_pixmap(ctx, pix);
 
 	annot_count = 0;
-	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, page, annot))
+	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
 	{
-		pix = fz_new_pixmap_from_annot(ctx, page, annot, &page_ctm, fz_device_rgb(ctx));
+		pix = fz_new_pixmap_from_annot(ctx, annot, &page_ctm, fz_device_rgb(ctx));
 		texture_from_pixmap(&annot_tex[annot_count++], pix);
 		fz_drop_pixmap(ctx, pix);
 	}

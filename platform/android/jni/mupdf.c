@@ -675,12 +675,12 @@ static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *ido
 	{
 		/* FIXME: We bound the annot twice here */
 		rect_node *node = fz_malloc_struct(glo->ctx, rect_node);
-		fz_bound_annot(ctx, pc->page, annot, &node->rect);
+		fz_bound_annot(ctx, annot, &node->rect);
 		node->next = pc->changed_rects;
 		pc->changed_rects = node;
 
 		node = fz_malloc_struct(glo->ctx, rect_node);
-		fz_bound_annot(ctx, pc->page, annot, &node->rect);
+		fz_bound_annot(ctx, annot, &node->rect);
 		node->next = pc->hq_changed_rects;
 		pc->hq_changed_rects = node;
 	}
@@ -771,8 +771,8 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			fz_annot *annot;
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
-			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, pc->page, annot))
-				fz_run_annot(ctx, pc->page, annot, dev, &fz_identity, cookie);
+			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
+				fz_run_annot(ctx, annot, dev, &fz_identity, cookie);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
@@ -969,8 +969,8 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		if (pc->annot_list == NULL) {
 			pc->annot_list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, pc->annot_list);
-			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, pc->page, annot))
-				fz_run_annot(ctx, pc->page, annot, dev, &fz_identity, cookie);
+			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
+				fz_run_annot(ctx, annot, dev, &fz_identity, cookie);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
@@ -1722,7 +1722,7 @@ JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot
 	{
 		annot = fz_first_annot(ctx, pc->page);
 		for (i = 0; i < annot_index && annot; i++)
-			annot = fz_next_annot(ctx, pc->page, annot);
+			annot = fz_next_annot(ctx, annot);
 
 		if (annot)
 		{
@@ -1991,18 +1991,18 @@ JNI_FN(MuPDFCore_getAnnotationsInternal)(JNIEnv * env, jobject thiz, int pageNum
 	fz_scale(&ctm, zoom, zoom);
 
 	count = 0;
-	for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, pc->page, annot))
+	for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
 		count ++;
 
 	arr = (*env)->NewObjectArray(env, count, annotClass, NULL);
 	if (arr == NULL) return NULL;
 
 	count = 0;
-	for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, pc->page, annot))
+	for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
 	{
 		fz_rect rect;
 		fz_annot_type type = pdf_annot_type(ctx, (pdf_annot *)annot);
-		fz_bound_annot(ctx, pc->page, annot, &rect);
+		fz_bound_annot(ctx, annot, &rect);
 		fz_transform_rect(&rect, &ctm);
 
 		jannot = (*env)->NewObject(env, annotClass, ctor,
