@@ -49,7 +49,7 @@ rune_from_utf16be(int *out, unsigned char *s, unsigned char *end)
 char *
 pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 {
-	fz_buffer *strmbuf = NULL;
+	fz_buffer *stmbuf = NULL;
 	unsigned char *srcptr;
 	char *dstptr, *dst;
 	int srclen;
@@ -57,7 +57,7 @@ pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 	int ucs;
 	int i;
 
-	fz_var(strmbuf);
+	fz_var(stmbuf);
 	fz_try(ctx)
 	{
 		if (pdf_is_string(ctx, src))
@@ -67,8 +67,8 @@ pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 		}
 		else if (pdf_is_stream(ctx, doc, pdf_to_num(ctx, src), pdf_to_gen(ctx, src)))
 		{
-			strmbuf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, src), pdf_to_gen(ctx, src));
-			srclen = fz_buffer_storage(ctx, strmbuf, (unsigned char **)&srcptr);
+			stmbuf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, src), pdf_to_gen(ctx, src));
+			srclen = fz_buffer_storage(ctx, stmbuf, (unsigned char **)&srcptr);
 		}
 		else
 		{
@@ -144,7 +144,7 @@ pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, strmbuf);
+		fz_drop_buffer(ctx, stmbuf);
 	}
 	fz_catch(ctx)
 	{

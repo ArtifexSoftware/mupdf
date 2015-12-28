@@ -19,10 +19,10 @@ char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
 	int len = 0;
 	char *buf = NULL;
-	fz_buffer *strmbuf = NULL;
+	fz_buffer *stmbuf = NULL;
 	char *text = NULL;
 
-	fz_var(strmbuf);
+	fz_var(stmbuf);
 	fz_var(text);
 	fz_try(ctx)
 	{
@@ -33,8 +33,8 @@ char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		}
 		else if (pdf_is_stream(ctx, doc, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj)))
 		{
-			strmbuf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
-			len = fz_buffer_storage(ctx, strmbuf, (unsigned char **)&buf);
+			stmbuf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+			len = fz_buffer_storage(ctx, stmbuf, (unsigned char **)&buf);
 		}
 
 		if (buf)
@@ -46,7 +46,7 @@ char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, strmbuf);
+		fz_drop_buffer(ctx, stmbuf);
 	}
 	fz_catch(ctx)
 	{
