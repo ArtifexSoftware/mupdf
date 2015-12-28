@@ -52,7 +52,6 @@ pdf_lookup_agl(char *name)
 			return agl_code_list[m];
 	}
 
-
 	if (strstr(buf, "uni") == buf)
 		code = strtol(buf + 3, NULL, 16);
 	else if (strstr(buf, "u") == buf)

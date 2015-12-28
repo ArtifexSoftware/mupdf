@@ -186,8 +186,6 @@ int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm);
 */
 void fz_read_string(fz_context *ctx, fz_stream *stm, char *buffer, int len);
 
-
-
 enum
 {
 	FZ_STREAM_META_PROGRESSIVE = 1,

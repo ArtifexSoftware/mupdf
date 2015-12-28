@@ -207,7 +207,6 @@ void fz_set_user_context(fz_context *ctx, void *user);
 */
 void *fz_user_context(fz_context *ctx);
 
-
 /*
 	fz_aa_level: Get the number of bits of antialiasing we are
 	using. Between 0 and 8.

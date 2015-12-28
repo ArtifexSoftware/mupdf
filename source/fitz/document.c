@@ -388,7 +388,8 @@ fz_keep_page(fz_context *ctx, fz_page *page)
 void
 fz_drop_page(fz_context *ctx, fz_page *page)
 {
-	if (page) {
+	if (page)
+	{
 		if (--page->refs == 0 && page->drop_page_imp)
 		{
 			page->drop_page_imp(ctx, page);
@@ -430,7 +431,6 @@ int fz_separation_disabled_on_page (fz_context *ctx, fz_page *page, int sep)
 {
 	if (ctx == NULL || page == NULL || page->separation_disabled == NULL)
 		return 0;
-	
 	return page->separation_disabled(ctx, page, sep);
 }
 
@@ -442,6 +442,5 @@ const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, u
 		*cmyk = 0;
 		return NULL;
 	}
-
 	return page->get_separation(ctx, page, sep, rgba, cmyk);
 }

@@ -155,7 +155,6 @@ typedef int fz_off_t;
 #define fz_atoo_imp atoi
 #endif
 
-
 #ifdef __ANDROID__
 #include <android/log.h>
 #define LOG_TAG "libmupdf"

@@ -769,14 +769,14 @@ static int gprf_count_separations(fz_context *ctx, fz_page *page_)
 static void gprf_control_separation(fz_context *ctx, fz_page *page_, int sep, int disable)
 {
 	gprf_page *page = (gprf_page *)page_;
-	
+
 	fz_control_separation(ctx, page->separations, sep, disable);
 }
 
 static int gprf_separation_disabled(fz_context *ctx, fz_page *page_, int sep)
 {
 	gprf_page *page = (gprf_page *)page_;
-	
+
 	return fz_separation_disabled(ctx, page->separations, sep);
 }
 

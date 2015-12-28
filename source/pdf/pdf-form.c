@@ -1288,7 +1288,7 @@ int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw
 
 	optarr = pdf_dict_get(ctx, annot->obj, PDF_NAME_Opt);
 	n = pdf_array_len(ctx, optarr);
-	
+
 	if (opts)
 	{
 		for (i = 0; i < n; i++)
