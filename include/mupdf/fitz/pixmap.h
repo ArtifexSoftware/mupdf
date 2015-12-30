@@ -30,6 +30,9 @@ int fz_pixmap_width(fz_context *ctx, fz_pixmap *pix);
 */
 int fz_pixmap_height(fz_context *ctx, fz_pixmap *pix);
 
+int fz_pixmap_x(fz_context *ctx, fz_pixmap *pix);
+int fz_pixmap_y(fz_context *ctx, fz_pixmap *pix);
+
 /*
 	fz_new_pixmap: Create a new pixmap, with it's origin at (0,0)
 
@@ -142,6 +145,11 @@ int fz_pixmap_components(fz_context *ctx, fz_pixmap *pix);
 	Returns the pointer. Does not throw exceptions.
 */
 unsigned char *fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_pixmap_stride: Return the number of bytes in a row in the pixmap.
+*/
+int fz_pixmap_stride(fz_context *ctx, fz_pixmap *pix);
 
 void fz_pixmap_set_resolution(fz_pixmap *pix, int res);
 

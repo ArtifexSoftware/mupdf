@@ -78,27 +78,6 @@ fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
 		fz_rethrow(ctx);
 }
 
-fz_colorspace *fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)
-{
-	if (!pix)
-		return NULL;
-	return pix->colorspace;
-}
-
-int fz_pixmap_components(fz_context *ctx, fz_pixmap *pix)
-{
-	if (!pix)
-		return 0;
-	return pix->n;
-}
-
-unsigned char *fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix)
-{
-	if (!pix)
-		return NULL;
-	return pix->samples;
-}
-
 void fz_bitmap_details(fz_bitmap *bit, int *w, int *h, int *n, int *stride)
 {
 	if (!bit)

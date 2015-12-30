@@ -121,6 +121,26 @@ fz_pixmap_bbox_no_ctx(fz_pixmap *pix, fz_irect *bbox)
 	return bbox;
 }
 
+fz_colorspace *
+fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix)
+{
+	if (!pix)
+		return NULL;
+	return pix->colorspace;
+}
+
+int
+fz_pixmap_x(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->x;
+}
+
+int
+fz_pixmap_y(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->y;
+}
+
 int
 fz_pixmap_width(fz_context *ctx, fz_pixmap *pix)
 {
@@ -131,6 +151,26 @@ int
 fz_pixmap_height(fz_context *ctx, fz_pixmap *pix)
 {
 	return pix->h;
+}
+
+int
+fz_pixmap_components(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->n;
+}
+
+int
+fz_pixmap_stride(fz_context *ctx, fz_pixmap *pix)
+{
+	return pix->w * pix->n;
+}
+
+unsigned char *
+fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix)
+{
+	if (!pix)
+		return NULL;
+	return pix->samples;
 }
 
 void
