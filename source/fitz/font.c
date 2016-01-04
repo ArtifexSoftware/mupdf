@@ -6,6 +6,7 @@
 #include FT_STROKER_H
 
 #define MAX_BBOX_TABLE_SIZE 4096
+#define MAX_ADVANCE_TABLE_SIZE 4096
 
 /* 20 degrees */
 #define SHEAR 0.36397f
@@ -52,7 +53,7 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->use_glyph_bbox = use_glyph_bbox;
 	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
 	{
-		font->bbox_count = glyph_count;
+		font->glyph_count = glyph_count;
 		font->bbox_table = fz_malloc_array(ctx, glyph_count, sizeof(fz_rect));
 		for (i = 0; i < glyph_count; i++)
 			font->bbox_table[i] = fz_infinite_rect;
@@ -61,7 +62,7 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	{
 		if (use_glyph_bbox)
 			fz_warn(ctx, "not building glyph bbox table for font '%s' with %d glyphs", font->name, glyph_count);
-		font->bbox_count = 0;
+		font->glyph_count = 0;
 		font->bbox_table = NULL;
 	}
 
@@ -1046,7 +1047,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 	if (dev->flags & FZ_DEVFLAG_BBOX_DEFINED)
 	{
 		assert(font->bbox_table != NULL);
-		assert(font->bbox_count > gid);
+		assert(font->glyph_count > gid);
 		font->bbox_table[gid] = dev->d1_rect;
 		fz_transform_rect(&font->bbox_table[gid], &font->t3matrix);
 	}
@@ -1247,7 +1248,7 @@ fz_print_font(fz_context *ctx, fz_output *out, fz_font *font)
 fz_rect *
 fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_rect *rect)
 {
-	if (font->bbox_table && gid < font->bbox_count)
+	if (font->bbox_table && gid < font->glyph_count)
 	{
 		if (fz_is_infinite_rect(&font->bbox_table[gid]))
 		{
@@ -1279,7 +1280,7 @@ fz_outline_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm)
 
 int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid)
 {
-	if (!font->t3procs || !font->t3flags || gid < 0 || gid >= font->bbox_count)
+	if (!font->t3procs || !font->t3flags || gid < 0 || gid >= font->glyph_count)
 		return 1;
 	return (font->t3flags[gid] & FZ_DEVFLAG_UNCACHEABLE) == 0;
 }
@@ -1289,13 +1290,6 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 {
 	FT_Fixed adv;
 	int mask;
-
-	if (font->width_table)
-	{
-		if (gid < font->width_count)
-			return font->width_table[gid] / 1000.0f;
-		return font->width_default / 1000.0f;
-	}
 
 	mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
 	/* if (font->wmode)
@@ -1318,7 +1312,29 @@ float
 fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
 {
 	if (font->ft_face)
+	{
+		if (font->width_table)
+		{
+			if (gid < font->width_count)
+				return font->width_table[gid] / 1000.0f;
+			return font->width_default / 1000.0f;
+		}
+
+		if (gid >= 0 && gid < font->glyph_count && font->glyph_count < MAX_ADVANCE_TABLE_SIZE)
+		{
+			if (!font->advance_table)
+			{
+				int i;
+				font->advance_table = fz_malloc_array(ctx, font->glyph_count, sizeof(float));
+				for (i = 0; i < font->glyph_count; ++i)
+					font->advance_table[i] = -1;
+			}
+			if (font->advance_table[gid] == -1)
+				font->advance_table[gid] = fz_advance_ft_glyph(ctx, font, gid);
+			return font->advance_table[gid];
+		}
 		return fz_advance_ft_glyph(ctx, font, gid);
+	}
 	if (font->t3procs)
 		return fz_advance_t3_glyph(ctx, font, gid);
 	return 0;

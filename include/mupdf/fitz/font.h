@@ -52,10 +52,14 @@ struct fz_font_s
 
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */
 
+	int glyph_count;
+
 	/* per glyph bounding box cache */
 	int use_glyph_bbox;
-	int bbox_count;
 	fz_rect *bbox_table;
+
+	/* cached glyph metrics */
+	float *advance_table;
 
 	/* substitute metrics */
 	int width_count;
