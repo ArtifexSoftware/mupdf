@@ -691,6 +691,45 @@ make_number(float v, int u)
 	return n;
 }
 
+/* Fast but inaccurate strtof. */
+static float
+fz_css_strtof(char *s, char **endptr)
+{
+	float sign = 1;
+	float v = 0;
+	float n = 0;
+	float d = 1;
+
+	if (*s == '-')
+	{
+		sign = -1;
+		++s;
+	}
+
+	while (*s >= '0' && *s <= '9')
+	{
+		v = v * 10 + (*s - '0');
+		++s;
+	}
+
+	if (*s == '.')
+	{
+		++s;
+		while (*s >= '0' && *s <= '9')
+		{
+			n = n * 10 + (*s - '0');
+			d = d * 10;
+			++s;
+		}
+		v += n / d;
+	}
+
+	if (endptr)
+		*endptr = s;
+
+	return sign * v;
+}
+
 static fz_css_number
 number_from_value(fz_css_value *value, float initial, int initial_unit)
 {
@@ -700,14 +739,14 @@ number_from_value(fz_css_value *value, float initial, int initial_unit)
 		return make_number(initial, initial_unit);
 
 	if (value->type == CSS_PERCENT)
-		return make_number((float)fz_strtod(value->data, NULL), N_PERCENT);
+		return make_number(fz_css_strtof(value->data, NULL), N_PERCENT);
 
 	if (value->type == CSS_NUMBER)
-		return make_number((float)fz_strtod(value->data, NULL), N_NUMBER);
+		return make_number(fz_css_strtof(value->data, NULL), N_NUMBER);
 
 	if (value->type == CSS_LENGTH)
 	{
-		float x = (float)fz_strtod(value->data, &p);
+		float x = fz_css_strtof(value->data, &p);
 
 		if (p[0] == 'e' && p[1] == 'm')
 			return make_number(x, N_SCALE);
