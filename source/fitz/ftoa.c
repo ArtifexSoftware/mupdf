@@ -17,38 +17,6 @@
 	http://florian.loitsch.com/publications/bench.tar.gz?attredirects=0
 */
 
-static int grisu2(float v, char* buffer, int* K);
-
-/*
- * compute decimal integer m, exp such that:
- *	f = m*10^exp
- *	m is as short as possible without losing exactness
- * assumes special cases (NaN, +Inf, -Inf) have been handled.
- */
-void
-fz_ftoa(float f, char *s, int *exp, int *neg, int *ns)
-{
-	/* Handle zero. */
-	if (f == 0)
-	{
-		/* f is either +0 or -0. */
-		*neg = 0;
-		*exp = 0;
-		*ns = 1;
-		s[0] = '0';
-		s[1] = 0;
-		return;
-	}
-
-	if (f > 0)
-		*neg = 0;
-	else
-		*neg = 1;
-
-	*ns = grisu2(f, s, exp);
-	return;
-}
-
 /*
 	Copyright (c) 2009 Florian Loitsch
 
@@ -303,8 +271,8 @@ digit_gen_mix_grisu2(diy_fp_t D_upper, diy_fp_t delta, char* buffer, int* K)
 	return len;
 }
 
-static int
-grisu2(float v, char* buffer, int* K)
+int
+fz_grisu(float v, char* buffer, int* K)
 {
 	diy_fp_t w_lower, w_upper, D_upper, D_lower, c_mk, delta;
 	int length, mk, alpha = -DIY_SIGNIFICAND_SIZE + 4;

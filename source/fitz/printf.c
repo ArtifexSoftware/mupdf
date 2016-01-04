@@ -23,16 +23,22 @@ static void fmtputc(struct fmtbuf *out, int c)
 static void fmtfloat(struct fmtbuf *out, float f)
 {
 	char digits[40], *s = digits;
-	int exp, neg, ndigits, point;
+	int exp, ndigits, point;
 
 	if (isnan(f)) f = 0;
 	if (isinf(f)) f = f < 0 ? -FLT_MAX : FLT_MAX;
 
-	fz_ftoa(f, digits, &exp, &neg, &ndigits);
-	point = exp + ndigits;
-
-	if (neg)
+	if (signbit(f))
 		fmtputc(out, '-');
+
+	if (f == 0)
+	{
+		fmtputc(out, '0');
+		return;
+	}
+
+	ndigits = fz_grisu(f, digits, &exp);
+	point = exp + ndigits;
 
 	if (point <= 0)
 	{
