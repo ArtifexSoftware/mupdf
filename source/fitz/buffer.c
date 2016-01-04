@@ -236,9 +236,9 @@ fz_buffer_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list o
 	len = fz_vsnprintf((char *)buffer->data + buffer->len, slack, fmt, args);
 	va_copy_end(args);
 
-	/* len = number of chars written, not including the terminating
-	 * NULL, so len+1 > slack means "truncated". */
-	if (len+1 > slack)
+	/* len is the number of characters in the formatted string (not including
+	 * the terminating zero), so if (len > slack) the string was truncated. */
+	if (len > slack)
 	{
 		/* Grow the buffer and retry */
 		fz_ensure_buffer(ctx, buffer, buffer->len + len);

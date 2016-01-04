@@ -162,11 +162,11 @@ fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list old_args)
 	va_copy_end(args);
 
 	/* If that failed, allocate a big enough buffer */
-	if (len >= sizeof buffer)
+	if (len > sizeof buffer)
 	{
-		p = fz_malloc(ctx, len + 1);
+		p = fz_malloc(ctx, len);
 		va_copy(args, old_args);
-		fz_vsnprintf(p, len + 1, fmt, args);
+		fz_vsnprintf(p, len, fmt, args);
 		va_copy_end(args);
 	}
 
