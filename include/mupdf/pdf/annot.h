@@ -83,7 +83,7 @@ fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, 
 void pdf_transform_annot(fz_context *ctx, pdf_annot *annot);
 void pdf_load_annots(fz_context *ctx, pdf_document *, pdf_page *page, pdf_obj *annots);
 void pdf_update_annot(fz_context *ctx, pdf_document *, pdf_annot *annot);
-void pdf_drop_annot(fz_context *ctx, pdf_annot *link);
+void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 
 /*
 	pdf_create_annot: create a new annotation of the specified type on the

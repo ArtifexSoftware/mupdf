@@ -36,9 +36,12 @@ typedef enum
 } fz_annot_type;
 
 /*
-	fz_get_annot_type: return the type of an annotation
+	fz_new_annot: Create and initialize an annotation struct.
 */
-fz_annot_type fz_get_annot_type(fz_context *ctx, fz_annot *annot);
+void *fz_new_annot(fz_context *ctx, int size);
+
+fz_annot *fz_keep_annot(fz_context *ctx, fz_annot *annot);
+void fz_drop_annot(fz_context *ctx, fz_annot *annot);
 
 /*
 	fz_first_annot: Return a pointer to the first annotation on a page.

@@ -369,6 +369,27 @@ fz_new_annot(fz_context *ctx, int size)
 	return page;
 }
 
+fz_annot *
+fz_keep_annot(fz_context *ctx, fz_annot *annot)
+{
+	if (annot)
+		++annot->refs;
+	return annot;
+}
+
+void
+fz_drop_annot(fz_context *ctx, fz_annot *annot)
+{
+	if (annot)
+	{
+		if (--annot->refs == 0 && annot->drop_annot_imp)
+		{
+			annot->drop_annot_imp(ctx, annot);
+			fz_free(ctx, annot);
+		}
+	}
+}
+
 void *
 fz_new_page(fz_context *ctx, int size)
 {

@@ -680,7 +680,7 @@ void pdf_update_page(fz_context *ctx, pdf_document *doc, pdf_page *page)
 	*/
 	if (page->tmp_annots)
 	{
-		pdf_drop_annot(ctx, page->tmp_annots);
+		pdf_drop_annots(ctx, page->tmp_annots);
 		page->tmp_annots = NULL;
 	}
 
