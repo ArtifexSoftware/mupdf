@@ -15,13 +15,8 @@
 //
 // gcc -g -o build/debug/example-mt -Iinclude docs/multi-threaded.c \
 //	build/debug/libmupdf.a \
-//	build/debug/libfreetype.a build/debug/libjbig2dec.a \
-//	build/debug/libjpeg.a build/debug/libopenjpeg.a \
-//	build/debug/libmujs.a \
-//	build/debug/libz.a -lpthread -lm
-//
-// (If this fails with errors about missing BIO_ and X509_ references
-// try again with "-lcrypto" added to the end of that command).
+//	build/debug/libmupdfthird.a \
+//	-lpthread -lcrypto -lm
 //
 // build/debug/example-mt /path/to/document.pdf
 //

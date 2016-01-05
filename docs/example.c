@@ -4,13 +4,9 @@
 	Build the mupdf library using make, then either run 'make examples' or
 	compile the example manually:
 
-	gcc -Iinclude -o example.exe docs/example.c build/debug/libmupdf.a \
-		build/debug/libfreetype.a \
-		build/debug/libjbig2dec.a \
-		build/debug/libjpeg.a \
-		build/debug/libmujs.a \
-		build/debug/libopenjpeg.a \
-		build/debug/libz.a \
+	gcc -Iinclude -o example.exe docs/example.c \
+		build/debug/libmupdf.a \
+		build/debug/libmupdfthird.a
 		-lcrypto \
 		-lm
 

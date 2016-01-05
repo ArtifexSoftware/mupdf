@@ -10,13 +10,8 @@
 		7C6152E819DDD6A90095ECAC /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7C6152E719DDD6A90095ECAC /* Images.xcassets */; };
 		7C6152EA19DDF05B0095ECAC /* Launch Screen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7C6152E919DDF05B0095ECAC /* Launch Screen.xib */; };
 		96C8ED011779A88E00A30AF4 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 96C8ED001779A88E00A30AF4 /* main.m */; };
-		96C8ED181779A9AE00A30AF4 /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED111779A9AE00A30AF4 /* libfreetype.a */; };
-		96C8ED191779A9AE00A30AF4 /* libjbig2dec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED121779A9AE00A30AF4 /* libjbig2dec.a */; };
-		96C8ED1A1779A9AF00A30AF4 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED131779A9AE00A30AF4 /* libjpeg.a */; };
-		96C8ED1B1779A9AF00A30AF4 /* libmujs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED141779A9AE00A30AF4 /* libmujs.a */; };
+		96C8ED1B1779A9AF00A30AF4 /* libmupdfthird.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED141779A9AE00A30AF4 /* libmupdfthird.a */; };
 		96C8ED1C1779A9AF00A30AF4 /* libmupdf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED151779A9AE00A30AF4 /* libmupdf.a */; };
-		96C8ED1D1779A9AF00A30AF4 /* libopenjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED161779A9AE00A30AF4 /* libopenjpeg.a */; };
-		96C8ED1E1779A9AF00A30AF4 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96C8ED171779A9AE00A30AF4 /* libz.a */; };
 		96E1CDF31779A60700FCF717 /* x_alt_blue.png in Resources */ = {isa = PBXBuildFile; fileRef = 96E1CDEC1779A60700FCF717 /* x_alt_blue.png */; };
 		96E1CDF41779A60700FCF717 /* x_alt_blue@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 96E1CDED1779A60700FCF717 /* x_alt_blue@2x.png */; };
 		DA0354EB18FFF48400EE31BA /* MuPrintPageRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = DA0354EA18FFF48400EE31BA /* MuPrintPageRenderer.m */; };
@@ -75,13 +70,8 @@
 		968E1E3D1779A54F0050CEA3 /* MuPDF.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MuPDF.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		968E1E481779A54F0050CEA3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		96C8ED001779A88E00A30AF4 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		96C8ED111779A9AE00A30AF4 /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreetype.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		96C8ED121779A9AE00A30AF4 /* libjbig2dec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjbig2dec.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		96C8ED131779A9AE00A30AF4 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		96C8ED141779A9AE00A30AF4 /* libmujs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmujs.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		96C8ED141779A9AE00A30AF4 /* libmupdfthird.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmupdfthird.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96C8ED151779A9AE00A30AF4 /* libmupdf.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libmupdf.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		96C8ED161779A9AE00A30AF4 /* libopenjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopenjpeg.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		96C8ED171779A9AE00A30AF4 /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libz.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		96E1CDEC1779A60700FCF717 /* x_alt_blue.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = x_alt_blue.png; sourceTree = "<group>"; };
 		96E1CDED1779A60700FCF717 /* x_alt_blue@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "x_alt_blue@2x.png"; sourceTree = "<group>"; };
 		DA012CA218803D1C00E47712 /* MuUpdater.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MuUpdater.h; path = Classes/MuUpdater.h; sourceTree = "<group>"; };
@@ -151,12 +141,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				96C8ED1C1779A9AF00A30AF4 /* libmupdf.a in Frameworks */,
-				96C8ED1B1779A9AF00A30AF4 /* libmujs.a in Frameworks */,
-				96C8ED181779A9AE00A30AF4 /* libfreetype.a in Frameworks */,
-				96C8ED191779A9AE00A30AF4 /* libjbig2dec.a in Frameworks */,
-				96C8ED1A1779A9AF00A30AF4 /* libjpeg.a in Frameworks */,
-				96C8ED1D1779A9AF00A30AF4 /* libopenjpeg.a in Frameworks */,
-				96C8ED1E1779A9AF00A30AF4 /* libz.a in Frameworks */,
+				96C8ED1B1779A9AF00A30AF4 /* libmupdfthird.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -183,12 +168,7 @@
 			children = (
 				968E1E3D1779A54F0050CEA3 /* MuPDF.app */,
 				96C8ED151779A9AE00A30AF4 /* libmupdf.a */,
-				96C8ED141779A9AE00A30AF4 /* libmujs.a */,
-				96C8ED111779A9AE00A30AF4 /* libfreetype.a */,
-				96C8ED121779A9AE00A30AF4 /* libjbig2dec.a */,
-				96C8ED131779A9AE00A30AF4 /* libjpeg.a */,
-				96C8ED161779A9AE00A30AF4 /* libopenjpeg.a */,
-				96C8ED171779A9AE00A30AF4 /* libz.a */,
+				96C8ED141779A9AE00A30AF4 /* libmupdfthird.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -392,12 +372,7 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/libmupdf.a",
-				"$(DERIVED_FILE_DIR)/libmujs.a",
-				"$(DERIVED_FILE_DIR)/libfreetype.a",
-				"$(DERIVED_FILE_DIR)/libjbig2dec.a",
-				"$(DERIVED_FILE_DIR)/libjpeg.a",
-				"$(DERIVED_FILE_DIR)/libopenjpeg.a",
-				"$(DERIVED_FILE_DIR)/libz.a",
+				"$(DERIVED_FILE_DIR)/libmupdfthird.a",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
