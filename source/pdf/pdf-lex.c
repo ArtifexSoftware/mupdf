@@ -71,6 +71,7 @@ lex_number(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf, int c)
 	int n;
 	int d;
 	float v;
+	float fd;
 
 	/* Initially we might have +, -, . or a digit */
 	switch (c)
@@ -142,19 +143,21 @@ loop_after_dot:
 	}
 
 underflow:
-	/* Ignore any digits after here, because they are too small */
+	fd = 1 / (float)d;
+	v = (float)i + ((float)n * fd);
 	while (1)
 	{
 		c = fz_read_byte(ctx, f);
 		switch (c)
 		{
 		case RANGE_0_9:
+			fd /= 10;
+			v += (c - '0') * fd;
 			break;
 		default:
 			fz_unread_byte(ctx, f);
 			/* Fallthrough */
 		case EOF:
-			v = (float)i + ((float)n / (float)d);
 			if (neg)
 				v = -v;
 			buf->f = v;
