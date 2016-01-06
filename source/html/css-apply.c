@@ -217,15 +217,18 @@ static int
 match_class_condition(fz_xml *node, const char *p)
 {
 	const char *s = fz_xml_att(node, "class");
-	char buf[1024];
+	const char *ss;
+	int n;
 	if (s) {
-		strcpy(buf, s);
-		s = strtok(buf, " ");
-		while (s) {
-			if (!strcmp(s, p))
-				return 1;
-			s = strtok(NULL, " ");
-		}
+		/* Try matching whole property first. */
+		if (!strcmp(s, p))
+			return 1;
+
+		/* Look for matching words. */
+		n = strlen(p);
+		ss = strstr(s, p);
+		if (ss && (ss[n] == ' ' || ss[n] == 0) && (ss == s || ss[-1] == ' '))
+			return 1;
 	}
 	return 0;
 }
