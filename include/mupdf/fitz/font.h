@@ -61,6 +61,9 @@ struct fz_font_s
 	/* cached glyph metrics */
 	float *advance_table;
 
+	/* cached unicode encoding lookup */
+	int *unicode_table;
+
 	/* substitute metrics */
 	int width_count;
 	short width_default; /* in 1000 units */

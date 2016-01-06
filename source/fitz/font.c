@@ -7,6 +7,7 @@
 
 #define MAX_BBOX_TABLE_SIZE 4096
 #define MAX_ADVANCE_TABLE_SIZE 4096
+#define MAX_UNICODE_TABLE_SIZE 2304 /* covers latin, greek, cyrillic, hebrew and arabic */
 
 /* 20 degrees */
 #define SHEAR 0.36397f
@@ -68,6 +69,8 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 
 	font->width_count = 0;
 	font->width_table = NULL;
+
+	font->unicode_table = NULL;
 
 	return font;
 }
@@ -148,6 +151,8 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	fz_free(ctx, font->ft_filepath);
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
+	fz_free(ctx, font->advance_table);
+	fz_free(ctx, font->unicode_table);
 	fz_free(ctx, font);
 }
 
@@ -1343,6 +1348,19 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
 static int
 fz_encode_ft_character(fz_context *ctx, fz_font *font, int ucs)
 {
+	if (ucs >= 0 && ucs < MAX_UNICODE_TABLE_SIZE)
+	{
+		if (!font->unicode_table)
+		{
+			int i;
+			font->unicode_table = fz_malloc_array(ctx, MAX_UNICODE_TABLE_SIZE, sizeof(int));
+			for (i = 0; i < MAX_UNICODE_TABLE_SIZE; ++i)
+				font->unicode_table[i] = -2;
+		}
+		if (font->unicode_table[ucs] == -2)
+			font->unicode_table[ucs] = FT_Get_Char_Index(font->ft_face, ucs);
+		return font->unicode_table[ucs];
+	}
 	return FT_Get_Char_Index(font->ft_face, ucs);
 }
 
