@@ -76,6 +76,18 @@
 #if _MSC_VER < 1800
 #define va_copy(a, oa) do { a=oa; } while (0)
 #define va_copy_end(a) do {} while(0)
+
+static __inline int signbit(double x)
+{
+	union
+	{
+		double d;
+		__int64 i;
+	} u;
+	u.d = x;
+	return (int)(u.i>>63);
+}
+
 #else
 #define va_copy_end(a) va_end(a)
 #endif
