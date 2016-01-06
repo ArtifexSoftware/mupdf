@@ -819,7 +819,7 @@ function AFSimple_Calculate(op, list)
 
 	for (i = 0; i < list.length; i++)
 	{
-		var field = getField(list[i]);
+		var field = MuPDF_Doc.getField(list[i]);
 		var value = Number(field.value);
 
 		switch (op)

@@ -541,6 +541,9 @@ static void declare_dom(pdf_js *js)
 		addmethod(J, "Doc.mailDoc", doc_mailDoc, 6);
 	}
 	js_setregistry(J, "Doc");
+
+	js_getregistry(J, "Doc");
+	js_setglobal(J, "MuPDF_Doc"); /* for pdf-util.js use */
 }
 
 static void preload_helpers(pdf_js *js)
@@ -676,11 +679,19 @@ void pdf_js_execute(pdf_js *js, char *source)
 {
 	if (js)
 	{
-		puts(source);
 		if (js_ploadstring(js->imp, "[pdf]", source))
+		{
+			fz_warn(js->ctx, "%s", js_tostring(js->imp, -1));
+			js_pop(js->imp, 1);
 			return;
+		}
 		js_getregistry(js->imp, "Doc"); /* set 'this' to the Doc object */
-		js_pcall(js->imp, 0);
+		if (js_pcall(js->imp, 0))
+		{
+			fz_warn(js->ctx, "%s", js_tostring(js->imp, -1));
+			js_pop(js->imp, 1);
+			return;
+		}
 		js_pop(js->imp, 1);
 	}
 }
