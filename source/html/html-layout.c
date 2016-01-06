@@ -59,6 +59,9 @@ static int iswhite(int c)
 	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
+/* TODO: pool allocator for flow nodes */
+/* TODO: store text by pointing to a giant buffer */
+
 static void fz_drop_html_flow(fz_context *ctx, fz_html_flow *flow)
 {
 	while (flow)

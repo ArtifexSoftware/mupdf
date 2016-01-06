@@ -8,6 +8,7 @@ typedef struct fz_html_s fz_html;
 typedef struct fz_html_flow_s fz_html_flow;
 
 typedef struct fz_css_rule_s fz_css_rule;
+typedef struct fz_css_match_prop_s fz_css_match_prop;
 typedef struct fz_css_match_s fz_css_match;
 typedef struct fz_css_style_s fz_css_style;
 
@@ -78,15 +79,18 @@ struct fz_css_value_s
 	fz_css_value *next;
 };
 
+struct fz_css_match_prop_s
+{
+	const char *name; /* not owned */
+	fz_css_value *value; /* not owned */
+	int spec;
+};
+
 struct fz_css_match_s
 {
 	fz_css_match *up;
 	int count;
-	struct {
-		const char *name; /* not owned */
-		fz_css_value *value; /* not owned */
-		int spec;
-	} prop[64];
+	fz_css_match_prop prop[64];
 };
 
 enum { DIS_NONE, DIS_BLOCK, DIS_INLINE, DIS_LIST_ITEM, DIS_INLINE_BLOCK };

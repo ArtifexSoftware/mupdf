@@ -579,6 +579,27 @@ add_property(fz_css_match *match, const char *name, fz_css_value *value, int spe
 	++match->count;
 }
 
+static void
+sort_properties(fz_css_match *match)
+{
+	int count = match->count;
+	fz_css_match_prop *prop = match->prop;
+	int i, k;
+
+	/* Insertion sort. */
+	for (i = 1; i < count; ++i)
+	{
+		k = i;
+		while (k > 0 && strcmp(prop[k-1].name, prop[k].name) > 0)
+		{
+			fz_css_match_prop save = prop[k-1];
+			prop[k-1] = prop[k];
+			prop[k] = save;
+			--k;
+		}
+	}
+}
+
 void
 fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *node)
 {
@@ -623,6 +644,8 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *nod
 			fz_warn(ctx, "ignoring style attribute");
 		}
 	}
+
+	sort_properties(match); /* speed up subsequent value_from_raw_property lookups */
 }
 
 void
@@ -646,15 +669,27 @@ fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_rule *css)
 			sel = sel->next;
 		}
 	}
+
+	sort_properties(match); /* speed up subsequent value_from_raw_property lookups */
 }
 
 static fz_css_value *
 value_from_raw_property(fz_css_match *match, const char *name)
 {
-	int i;
-	for (i = 0; i < match->count; ++i)
-		if (!strcmp(match->prop[i].name, name))
-			return match->prop[i].value;
+	fz_css_match_prop *prop = match->prop;
+	int l = 0;
+	int r = match->count - 1;
+	while (l <= r)
+	{
+		int m = (l + r) >> 1;
+		int c = strcmp(name, prop[m].name);
+		if (c < 0)
+			r = m - 1;
+		else if (c > 0)
+			l = m + 1;
+		else
+			return prop[m].value;
+	}
 	return NULL;
 }
 
