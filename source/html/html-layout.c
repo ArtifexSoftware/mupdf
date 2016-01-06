@@ -1171,16 +1171,17 @@ static char *concat_text(fz_context *ctx, fz_xml *root)
 static fz_css_rule *
 html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rule *css, fz_xml *root)
 {
-	fz_xml *node;
+	fz_xml *html, *head, *node;
 	fz_buffer *buf;
 	char path[2048];
 
 	fz_var(buf);
 
-	for (node = root; node; node = fz_xml_next(node))
+	html = fz_xml_find(root, "html");
+	head = fz_xml_find_down(html, "head");
+	for (node = fz_xml_down(head); node; node = fz_xml_next(node))
 	{
-		const char *tag = fz_xml_tag(node);
-		if (tag && !strcmp(tag, "link"))
+		if (fz_xml_is_tag(node, "link"))
 		{
 			char *rel = fz_xml_att(node, "rel");
 			if (rel && !fz_strcasecmp(rel, "stylesheet"))
@@ -1212,7 +1213,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 				}
 			}
 		}
-		if (tag && !strcmp(tag, "style"))
+		else if (fz_xml_is_tag(node, "style"))
 		{
 			char *s = concat_text(ctx, node);
 			fz_try(ctx)
@@ -1221,8 +1222,6 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 				fz_warn(ctx, "ignoring inline stylesheet");
 			fz_free(ctx, s);
 		}
-		if (fz_xml_down(node))
-			css = html_load_css(ctx, zip, base_uri, css, fz_xml_down(node));
 	}
 	return css;
 }
