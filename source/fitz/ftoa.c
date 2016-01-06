@@ -83,7 +83,7 @@ multiply(diy_fp_t x, diy_fp_t y)
 	c = y.f >> half; d = y.f & mask;
 	ac = a * c; bc = b * c; ad = a * d; bd = b * d;
 	tmp = (bd >> half) + (ad & mask) + (bc & mask);
-	tmp += 1U << (half - 1); /* Round.  */
+	tmp += ((uint64_t)1U) << (half - 1); /* Round.  */
 	r.f = ac + (ad >> half) + (bc >> half) + (tmp >> half);
 	r.e = x.e + y.e + half * 2;
 	return r;

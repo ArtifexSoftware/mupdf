@@ -1337,9 +1337,9 @@ void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *
 		/* Add the selection rects */
 		if (num_sel > 0)
 		{
-			color[0] = LIST_SEL_COLOR_R;
-			color[1] = LIST_SEL_COLOR_G;
-			color[2] = LIST_SEL_COLOR_B;
+			color[0] = (float)LIST_SEL_COLOR_R;
+			color[1] = (float)LIST_SEL_COLOR_G;
+			color[2] = (float)LIST_SEL_COLOR_B;
 			fill_rect.x0 = 0.0;
 			fill_rect.x1 = width;
 			for (i = 0; i < num_sel; i++)

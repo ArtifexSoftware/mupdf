@@ -261,7 +261,7 @@ static int ui_input_key(struct input *input)
 		{
 			const char *buf = glfwGetClipboardString(window);
 			if (buf)
-				ui_input_paste(input, buf, strlen(buf));
+				ui_input_paste(input, buf, (int)strlen(buf));
 		}
 		break;
 	default:
