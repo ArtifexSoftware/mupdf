@@ -200,6 +200,24 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 	return total;
 }
 
+int
+pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name)
+{
+	pdf_obj *needle, *dest;
+	fz_link_dest ld;
+
+	needle = pdf_new_string(ctx, doc, name, strlen(name));
+	fz_try(ctx)
+		dest = pdf_lookup_dest(ctx, doc, needle);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, needle);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, dest);
+	return ld.ld.gotor.page;
+}
+
 static pdf_obj *
 pdf_lookup_inherited_page_item(fz_context *ctx, pdf_document *doc, pdf_obj *node, pdf_obj *key)
 {

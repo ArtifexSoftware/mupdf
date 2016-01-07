@@ -6,6 +6,14 @@ int pdf_count_pages(fz_context *ctx, pdf_document *doc);
 pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
 
 /*
+	pdf_lookup_anchor: Find the page number of a named destination.
+
+	For use with looking up the destination page of a fragment
+	identifier in hyperlinks: foo.pdf#bar.
+*/
+int pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name);
+
+/*
 	pdf_load_page: Load a page and its resources.
 
 	Locates the page in the PDF document and loads the page and its
