@@ -117,7 +117,8 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	html_document *doc;
 	fz_buffer *buf;
 
-	doc = fz_malloc_struct(ctx, html_document);
+	doc = fz_new_document(ctx, sizeof *doc);
+
 	doc->super.close = htdoc_close_document;
 	doc->super.layout = htdoc_layout;
 	doc->super.count_pages = htdoc_count_pages;

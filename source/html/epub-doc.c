@@ -179,6 +179,7 @@ epub_close_document(fz_context *ctx, fz_document *doc_)
 	}
 	fz_drop_archive(ctx, doc->zip);
 	fz_drop_html_font_set(ctx, doc->set);
+	fz_drop_outline(ctx, doc->outline);
 	fz_free(ctx, doc->dc_title);
 	fz_free(ctx, doc->dc_creator);
 	fz_free(ctx, doc);
@@ -423,7 +424,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 {
 	epub_document *doc;
 
-	doc = fz_malloc_struct(ctx, epub_document);
+	doc = fz_new_document(ctx, sizeof *doc);
 	doc->zip = zip;
 	doc->set = fz_new_html_font_set(ctx);
 

@@ -217,8 +217,8 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 
 static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, const char *base_uri, fz_html *box, const char *src)
 {
-	fz_image *img;
-	fz_buffer *buf;
+	fz_image *img = NULL;
+	fz_buffer *buf = NULL;
 	char path[2048];
 
 	fz_html *flow = box;
@@ -231,13 +231,19 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, cons
 	fz_urldecode(path);
 	fz_cleanname(path);
 
+	fz_var(buf);
+	fz_var(img);
+
 	fz_try(ctx)
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
 		img = fz_new_image_from_buffer(ctx, buf);
-		fz_drop_buffer(ctx, buf);
-
 		add_flow_image(ctx, pool, flow, &box->style, img);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_drop_image(ctx, img);
 	}
 	fz_catch(ctx)
 	{
