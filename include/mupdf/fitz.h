@@ -9,9 +9,10 @@
 #include "mupdf/fitz/getopt.h"
 #include "mupdf/fitz/hash.h"
 #include "mupdf/fitz/math.h"
+#include "mupdf/fitz/pool.h"
 #include "mupdf/fitz/string.h"
-#include "mupdf/fitz/ucdn.h"
 #include "mupdf/fitz/tree.h"
+#include "mupdf/fitz/ucdn.h"
 #include "mupdf/fitz/xml.h"
 
 /* I/O */
