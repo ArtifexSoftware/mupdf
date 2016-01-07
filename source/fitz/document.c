@@ -364,9 +364,9 @@ fz_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *tra
 void *
 fz_new_annot(fz_context *ctx, int size)
 {
-	fz_page *page = Memento_label(fz_calloc(ctx, 1, size), "fz_annot");
-	page->refs = 1;
-	return page;
+	fz_annot *annot = Memento_label(fz_calloc(ctx, 1, size), "fz_annot");
+	annot->refs = 1;
+	return annot;
 }
 
 fz_annot *
@@ -380,13 +380,11 @@ fz_keep_annot(fz_context *ctx, fz_annot *annot)
 void
 fz_drop_annot(fz_context *ctx, fz_annot *annot)
 {
-	if (annot)
+	if (annot && --annot->refs == 0)
 	{
-		if (--annot->refs == 0 && annot->drop_annot_imp)
-		{
+		if (annot->drop_annot_imp)
 			annot->drop_annot_imp(ctx, annot);
-			fz_free(ctx, annot);
-		}
+		fz_free(ctx, annot);
 	}
 }
 

@@ -383,7 +383,7 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, const 
 	return head;
 }
 
-void
+static void
 pdf_drop_annot_imp(fz_context *ctx, pdf_annot *annot)
 {
 	if (annot->ap)
@@ -508,6 +508,7 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 			obj = pdf_array_get(ctx, annots, i);
 
 			annot = fz_new_annot(ctx, sizeof(pdf_annot));
+			annot->super.drop_annot_imp = (fz_annot_drop_imp_fn*)pdf_drop_annot_imp;
 			annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
 			annot->super.run_annot = (fz_annot_run_fn*)pdf_run_annot;
 			annot->super.next_annot = (fz_annot_next_fn*)pdf_next_annot;
