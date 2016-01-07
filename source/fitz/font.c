@@ -6,8 +6,8 @@
 #include FT_STROKER_H
 
 #define MAX_BBOX_TABLE_SIZE 4096
-#define MAX_ADVANCE_TABLE_SIZE 4096
-#define MAX_UNICODE_TABLE_SIZE 2304 /* covers latin, greek, cyrillic, hebrew and arabic */
+#define MAX_ADVANCE_CACHE 4096
+#define MAX_ENCODING_CACHE 2304 /* covers latin, greek, cyrillic, hebrew and arabic */
 
 /* 20 degrees */
 #define SHEAR 0.36397f
@@ -69,8 +69,6 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 
 	font->width_count = 0;
 	font->width_table = NULL;
-
-	font->unicode_table = NULL;
 
 	return font;
 }
@@ -151,8 +149,8 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	fz_free(ctx, font->ft_filepath);
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
-	fz_free(ctx, font->advance_table);
-	fz_free(ctx, font->unicode_table);
+	fz_free(ctx, font->advance_cache);
+	fz_free(ctx, font->encoding_cache);
 	fz_free(ctx, font);
 }
 
@@ -1296,6 +1294,14 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	FT_Fixed adv;
 	int mask;
 
+	/* Substitute font widths. */
+	if (font->width_table)
+	{
+		if (gid < font->width_count)
+			return font->width_table[gid] / 1000.0f;
+		return font->width_default / 1000.0f;
+	}
+
 	mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
 	/* if (font->wmode)
 		mask |= FT_LOAD_VERTICAL_LAYOUT; */
@@ -1318,26 +1324,18 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
 {
 	if (font->ft_face)
 	{
-		if (font->width_table)
+		if (gid >= 0 && gid < font->glyph_count && gid < MAX_ADVANCE_CACHE)
 		{
-			if (gid < font->width_count)
-				return font->width_table[gid] / 1000.0f;
-			return font->width_default / 1000.0f;
-		}
-
-		if (gid >= 0 && gid < font->glyph_count && font->glyph_count < MAX_ADVANCE_TABLE_SIZE)
-		{
-			if (!font->advance_table)
+			if (!font->advance_cache)
 			{
 				int i;
-				font->advance_table = fz_malloc_array(ctx, font->glyph_count, sizeof(float));
+				font->advance_cache = fz_malloc_array(ctx, font->glyph_count, sizeof(float));
 				for (i = 0; i < font->glyph_count; ++i)
-					font->advance_table[i] = -1;
+					font->advance_cache[i] = fz_advance_ft_glyph(ctx, font, i);
 			}
-			if (font->advance_table[gid] == -1)
-				font->advance_table[gid] = fz_advance_ft_glyph(ctx, font, gid);
-			return font->advance_table[gid];
+			return font->advance_cache[gid];
 		}
+
 		return fz_advance_ft_glyph(ctx, font, gid);
 	}
 	if (font->t3procs)
@@ -1345,29 +1343,23 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
 	return 0;
 }
 
-static int
-fz_encode_ft_character(fz_context *ctx, fz_font *font, int ucs)
-{
-	if (ucs >= 0 && ucs < MAX_UNICODE_TABLE_SIZE)
-	{
-		if (!font->unicode_table)
-		{
-			int i;
-			font->unicode_table = fz_malloc_array(ctx, MAX_UNICODE_TABLE_SIZE, sizeof(int));
-			for (i = 0; i < MAX_UNICODE_TABLE_SIZE; ++i)
-				font->unicode_table[i] = -2;
-		}
-		if (font->unicode_table[ucs] == -2)
-			font->unicode_table[ucs] = FT_Get_Char_Index(font->ft_face, ucs);
-		return font->unicode_table[ucs];
-	}
-	return FT_Get_Char_Index(font->ft_face, ucs);
-}
-
 int
 fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 {
 	if (font->ft_face)
-		return fz_encode_ft_character(ctx, font, ucs);
+	{
+		if (ucs >= 0 && ucs < MAX_ENCODING_CACHE)
+		{
+			if (!font->encoding_cache)
+			{
+				int i;
+				font->encoding_cache = fz_malloc_array(ctx, MAX_ENCODING_CACHE, sizeof(uint16_t));
+				for (i = 0; i < MAX_ENCODING_CACHE; ++i)
+					font->encoding_cache[i] = FT_Get_Char_Index(font->ft_face, i);
+			}
+			return font->encoding_cache[ucs];
+		}
+		return FT_Get_Char_Index(font->ft_face, ucs);
+	}
 	return ucs;
 }

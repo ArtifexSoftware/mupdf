@@ -58,16 +58,16 @@ struct fz_font_s
 	int use_glyph_bbox;
 	fz_rect *bbox_table;
 
-	/* cached glyph metrics */
-	float *advance_table;
-
-	/* cached unicode encoding lookup */
-	int *unicode_table;
-
 	/* substitute metrics */
 	int width_count;
 	short width_default; /* in 1000 units */
 	short *width_table; /* in 1000 units */
+
+	/* cached glyph metrics */
+	float *advance_cache;
+
+	/* cached encoding lookup */
+	uint16_t *encoding_cache;
 };
 
 /* common CJK font collections */
