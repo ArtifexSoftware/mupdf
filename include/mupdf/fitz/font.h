@@ -67,7 +67,7 @@ struct fz_font_s
 	float *advance_cache;
 
 	/* cached encoding lookup */
-	uint16_t *encoding_cache;
+	uint16_t *encoding_cache[256];
 };
 
 /* common CJK font collections */

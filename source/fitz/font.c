@@ -7,7 +7,6 @@
 
 #define MAX_BBOX_TABLE_SIZE 4096
 #define MAX_ADVANCE_CACHE 4096
-#define MAX_ENCODING_CACHE 2304 /* covers latin, greek, cyrillic, hebrew and arabic */
 
 /* 20 degrees */
 #define SHEAR 0.36397f
@@ -145,12 +144,14 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 		fz_drop_freetype(ctx);
 	}
 
+	for (i = 0; i < 256; ++i)
+		fz_free(ctx, font->encoding_cache[i]);
+
 	fz_drop_buffer(ctx, font->ft_buffer);
 	fz_free(ctx, font->ft_filepath);
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
-	fz_free(ctx, font->encoding_cache);
 	fz_free(ctx, font);
 }
 
@@ -1348,16 +1349,18 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 {
 	if (font->ft_face)
 	{
-		if (ucs >= 0 && ucs < MAX_ENCODING_CACHE)
+		if (ucs >= 0 && ucs < 0x10000)
 		{
-			if (!font->encoding_cache)
+			int pg = ucs >> 8;
+			int ix = ucs & 0xFF;
+			if (!font->encoding_cache[pg])
 			{
 				int i;
-				font->encoding_cache = fz_malloc_array(ctx, MAX_ENCODING_CACHE, sizeof(uint16_t));
-				for (i = 0; i < MAX_ENCODING_CACHE; ++i)
-					font->encoding_cache[i] = FT_Get_Char_Index(font->ft_face, i);
+				font->encoding_cache[pg] = fz_malloc_array(ctx, 256, sizeof(uint16_t));
+				for (i = 0; i < 256; ++i)
+					font->encoding_cache[pg][i] = FT_Get_Char_Index(font->ft_face, (pg << 8) + i);
 			}
-			return font->encoding_cache[ucs];
+			return font->encoding_cache[pg][ix];
 		}
 		return FT_Get_Char_Index(font->ft_face, ucs);
 	}
