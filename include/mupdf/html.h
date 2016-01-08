@@ -177,6 +177,7 @@ struct fz_html_s
 	fz_css_style style;
 	int list_item;
 	int is_first_flow; /* for text-indent */
+	fz_pool *pool; /* pool allocator for this html tree (only set for root block) */
 };
 
 enum
