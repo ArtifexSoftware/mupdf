@@ -808,10 +808,15 @@ static void smart_move_forward(void)
 	}
 }
 
+static void quit(void)
+{
+	glfwSetWindowShouldClose(window, 1);
+}
+
 static void do_app(void)
 {
 	if (ui.key == KEY_F4 && ui.mod == GLFW_MOD_ALT)
-		exit(0);
+		quit();
 
 	if (ui.down || ui.middle || ui.right || ui.key)
 		showinfo = 0;
@@ -821,7 +826,7 @@ static void do_app(void)
 		switch (ui.key)
 		{
 		case 'q':
-			exit(0);
+			quit();
 			break;
 		case 'm':
 			if (number == 0)
@@ -1426,8 +1431,11 @@ int main(int argc, char **argv)
 
 	fz_drop_link(ctx, links);
 	fz_drop_page(ctx, page);
+	fz_drop_outline(ctx, outline);
 	fz_drop_document(ctx, doc);
 	fz_drop_context(ctx);
+
+	glfwTerminate();
 
 	return 0;
 }
