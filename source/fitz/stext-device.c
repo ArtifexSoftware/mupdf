@@ -438,7 +438,7 @@ fz_lookup_stext_style_imp(fz_context *ctx, fz_stext_sheet *sheet,
 
 static fz_stext_style *
 fz_lookup_stext_style(fz_context *ctx, fz_stext_sheet *sheet, fz_text_span *span, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha, fz_stroke_state *stroke)
+	const fz_colorspace *colorspace, const float *color, float alpha, const fz_stroke_state *stroke)
 {
 	float size = 1.0f;
 	fz_font *font = span ? span->font : NULL;
@@ -826,8 +826,8 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 }
 
 static void
-fz_stext_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
+	const fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -840,8 +840,8 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matr
 }
 
 static void
-fz_stext_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
+	const fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -854,7 +854,7 @@ fz_stext_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_s
 }
 
 static void
-fz_stext_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
+fz_stext_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -867,7 +867,7 @@ fz_stext_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matr
 }
 
 static void
-fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -880,7 +880,7 @@ fz_stext_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_str
 }
 
 static void
-fz_stext_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
+fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -893,8 +893,8 @@ fz_stext_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_ma
 }
 
 static void
-fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm,
-		fz_colorspace *cspace, float *color, float alpha)
+fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *img, const fz_matrix *ctm,
+		const fz_colorspace *cspace, const float *color, float alpha)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_page *page = tdev->page;
@@ -929,7 +929,7 @@ fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const f
 }
 
 static void
-fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, float alpha)
+fz_stext_fill_image(fz_context *ctx, fz_device *dev, const fz_image *img, const fz_matrix *ctm, float alpha)
 {
 	fz_stext_fill_image_mask(ctx, dev, img, ctm, NULL, NULL, alpha);
 }

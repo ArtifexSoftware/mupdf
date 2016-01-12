@@ -54,14 +54,22 @@ fz_new_store_context(fz_context *ctx, unsigned int max)
 }
 
 void *
-fz_keep_storable(fz_context *ctx, fz_storable *s)
+fz_keep_storable(fz_context *ctx, const fz_storable *sc)
 {
+	/* Explicitly drop const to allow us to use const
+	 * sanely throughout the code. */
+	fz_storable *s = (fz_storable *)sc;
+
 	return fz_keep_imp(ctx, s, &s->refs);
 }
 
 void
-fz_drop_storable(fz_context *ctx, fz_storable *s)
+fz_drop_storable(fz_context *ctx, const fz_storable *sc)
 {
+	/* Explicitly drop const to allow us to use const
+	 * sanely throughout the code. */
+	fz_storable *s = (fz_storable *)sc;
+
 	/*
 		If we are dropping the last reference to an object, then
 		it cannot possibly be in the store (as the store always

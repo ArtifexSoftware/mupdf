@@ -72,12 +72,12 @@ struct fz_shade_s
 	fz_compressed_buffer *buffer;
 };
 
-fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
-void fz_drop_shade(fz_context *ctx, fz_shade *shade);
+fz_shade *fz_keep_shade(fz_context *ctx, const fz_shade *shade);
+void fz_drop_shade(fz_context *ctx, const fz_shade *shade);
 void fz_drop_shade_imp(fz_context *ctx, fz_storable *shade);
 
-fz_rect *fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_rect *r);
-void fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_irect *bbox);
+fz_rect *fz_bound_shade(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_rect *r);
+void fz_paint_shade(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_irect *bbox);
 
 /*
  *	Handy routine for processing mesh based shades
@@ -93,7 +93,7 @@ struct fz_vertex_s
 typedef void (fz_mesh_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, const float *c);
 typedef void (fz_mesh_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv);
 
-void fz_process_mesh(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
+void fz_process_mesh(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm,
 			fz_mesh_prepare_fn *prepare, fz_mesh_process_fn *process, void *process_arg);
 
 void fz_print_shade(fz_context *ctx, fz_output *out, fz_shade *shade);

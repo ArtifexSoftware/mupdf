@@ -301,14 +301,14 @@ typedef struct fz_scale_cache_s fz_scale_cache;
 
 fz_scale_cache *fz_new_scale_cache(fz_context *ctx);
 void fz_drop_scale_cache(fz_context *ctx, fz_scale_cache *cache);
-fz_pixmap *fz_scale_pixmap_cached(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, const fz_irect *clip, fz_scale_cache *cache_x, fz_scale_cache *cache_y);
+fz_pixmap *fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, float w, float h, const fz_irect *clip, fz_scale_cache *cache_x, fz_scale_cache *cache_y);
 
 void fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor);
 
 fz_irect *fz_pixmap_bbox_no_ctx(fz_pixmap *src, fz_irect *bbox);
 
-void fz_decode_tile(fz_context *ctx, fz_pixmap *pix, float *decode);
-void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, float *decode, int maxval);
+void fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode);
+void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int maxval);
 void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
 
 /*

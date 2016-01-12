@@ -215,7 +215,7 @@ static const fz_path_processor flatten_proc =
 };
 
 void
-fz_flatten_fill_path(fz_context *ctx, fz_gel *gel, fz_path *path, const fz_matrix *ctm, float flatness)
+fz_flatten_fill_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_matrix *ctm, float flatness)
 {
 	flatten_arg arg;
 
@@ -842,7 +842,7 @@ static const fz_path_processor stroke_proc =
 };
 
 void
-fz_flatten_stroke_path(fz_context *ctx, fz_gel *gel, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
+fz_flatten_stroke_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
 {
 	struct sctx s;
 
@@ -1301,7 +1301,7 @@ static const fz_path_processor dash_proc =
 };
 
 void
-fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
+fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
 {
 	struct sctx s;
 	float max_expand;

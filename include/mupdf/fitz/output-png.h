@@ -29,7 +29,7 @@ void fz_write_png_trailer(fz_context *ctx, fz_output *out, fz_png_output_context
 /*
 	Create a new buffer containing the image/pixmap in PNG format.
 */
-fz_buffer *fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, int w, int h);
+fz_buffer *fz_new_buffer_from_image_as_png(fz_context *ctx, const fz_image *image, int w, int h);
 fz_buffer *fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap);
 
 #endif

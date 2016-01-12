@@ -28,27 +28,31 @@ fz_new_colorspace(fz_context *ctx, char *name, int n)
 }
 
 fz_colorspace *
-fz_keep_colorspace(fz_context *ctx, fz_colorspace *cs)
+fz_keep_colorspace(fz_context *ctx, const fz_colorspace *csc)
 {
+	fz_colorspace *cs = (fz_colorspace *)csc; /* Explicit cast away of const */
+
 	return (fz_colorspace *)fz_keep_storable(ctx, &cs->storable);
 }
 
 void
-fz_drop_colorspace(fz_context *ctx, fz_colorspace *cs)
+fz_drop_colorspace(fz_context *ctx, const fz_colorspace *csc)
 {
+	fz_colorspace *cs = (fz_colorspace *)csc; /* Explicit cast away of const */
+
 	fz_drop_storable(ctx, &cs->storable);
 }
 
 /* Device colorspace definitions */
 
-static void gray_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *gray, float *rgb)
+static void gray_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *gray, float *rgb)
 {
 	rgb[0] = gray[0];
 	rgb[1] = gray[0];
 	rgb[2] = gray[0];
 }
 
-static void rgb_to_gray(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *gray)
+static void rgb_to_gray(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *gray)
 {
 	float r = rgb[0];
 	float g = rgb[1];
@@ -56,28 +60,28 @@ static void rgb_to_gray(fz_context *ctx, fz_colorspace *cs, const float *rgb, fl
 	gray[0] = r * 0.3f + g * 0.59f + b * 0.11f;
 }
 
-static void rgb_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *xyz)
+static void rgb_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *xyz)
 {
 	xyz[0] = rgb[0];
 	xyz[1] = rgb[1];
 	xyz[2] = rgb[2];
 }
 
-static void bgr_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *bgr, float *rgb)
+static void bgr_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *bgr, float *rgb)
 {
 	rgb[0] = bgr[2];
 	rgb[1] = bgr[1];
 	rgb[2] = bgr[0];
 }
 
-static void rgb_to_bgr(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *bgr)
+static void rgb_to_bgr(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *bgr)
 {
 	bgr[0] = rgb[2];
 	bgr[1] = rgb[1];
 	bgr[2] = rgb[0];
 }
 
-static void cmyk_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *cmyk, float *rgb)
+static void cmyk_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *cmyk, float *rgb)
 {
 #ifdef SLOWCMYK /* from poppler */
 	float c = cmyk[0], m = cmyk[1], y = cmyk[2], k = cmyk[3];
@@ -156,7 +160,7 @@ static void cmyk_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *cmyk, f
 #endif
 }
 
-static void rgb_to_cmyk(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *cmyk)
+static void rgb_to_cmyk(fz_context *ctx, const fz_colorspace *cs, const float *rgb, float *cmyk)
 {
 	float c, m, y, k;
 	c = 1 - rgb[0];
@@ -1005,8 +1009,8 @@ std_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 {
 	float rgb[3];
 	int i;
-	fz_colorspace *srcs = cc->ss;
-	fz_colorspace *dsts = cc->ds;
+	const fz_colorspace *srcs = cc->ss;
+	const fz_colorspace *dsts = cc->ds;
 
 	if (srcs != dsts)
 	{
@@ -1123,7 +1127,7 @@ cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 #endif
 }
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss)
+void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_colorspace *ds, const fz_colorspace *ss)
 {
 	cc->ds = ds;
 	cc->ss = ss;
@@ -1178,7 +1182,7 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 }
 
 void
-fz_convert_color(fz_context *ctx, fz_colorspace *ds, float *dv, fz_colorspace *ss, const float *sv)
+fz_convert_color(fz_context *ctx, const fz_colorspace *ds, float *dv, const fz_colorspace *ss, const float *sv)
 {
 	fz_color_converter cc;
 	fz_lookup_color_converter(ctx, &cc, ds, ss);
@@ -1195,7 +1199,7 @@ struct indexed
 };
 
 static void
-indexed_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rgb)
+indexed_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *color, float *rgb)
 {
 	struct indexed *idx = cs->data;
 	float alt[FZ_MAX_COLORS];
@@ -1208,7 +1212,7 @@ indexed_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rg
 }
 
 static void
-free_indexed(fz_context *ctx, fz_colorspace *cs)
+free_indexed(fz_context *ctx, const fz_colorspace *cs)
 {
 	struct indexed *idx = cs->data;
 	if (idx->base)
@@ -1318,7 +1322,7 @@ static void fz_cached_color_convert(fz_context *ctx, fz_color_converter *cc_, fl
 	}
 }
 
-void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss)
+void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_colorspace *ds, const fz_colorspace *ss)
 {
 	int n = ss->n;
 	fz_cached_color_converter *cached = fz_malloc_struct(ctx, fz_cached_color_converter);

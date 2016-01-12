@@ -39,8 +39,8 @@ struct fz_storable_s {
 	S->drop = (DROP); \
 	} while (0)
 
-void *fz_keep_storable(fz_context *, fz_storable *);
-void fz_drop_storable(fz_context *, fz_storable *);
+void *fz_keep_storable(fz_context *, const fz_storable *);
+void fz_drop_storable(fz_context *, const fz_storable *);
 
 /*
 	The store can be seen as a dictionary that maps keys to fz_storable
@@ -73,7 +73,7 @@ struct fz_store_hash_s
 		} i;
 		struct
 		{
-			void *ptr;
+			const void *ptr;
 			int i;
 		} pi;
 		struct

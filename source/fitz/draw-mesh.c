@@ -157,7 +157,7 @@ fz_paint_triangle(fz_pixmap *pix, float *v[3], int n, const fz_irect *bbox)
 
 struct paint_tri_data
 {
-	fz_shade *shade;
+	const fz_shade *shade;
 	fz_pixmap *dest;
 	const fz_irect *bbox;
 	fz_color_converter cc;
@@ -167,7 +167,7 @@ static void
 prepare_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input)
 {
 	struct paint_tri_data *ptd = (struct paint_tri_data *)arg;
-	fz_shade *shade = ptd->shade;
+	const fz_shade *shade = ptd->shade;
 	fz_pixmap *dest = ptd->dest;
 	float *output = v->c;
 	int i;
@@ -198,7 +198,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_irect *bbox)
+fz_paint_shade(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_irect *bbox)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;

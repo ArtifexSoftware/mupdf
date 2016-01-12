@@ -907,7 +907,7 @@ static const fz_path_processor bound_path_proc =
 };
 
 fz_rect *
-fz_bound_path(fz_context *ctx, fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r)
+fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r)
 {
 	bound_path_arg arg;
 
@@ -1422,8 +1422,10 @@ const fz_stroke_state fz_default_stroke_state = {
 };
 
 fz_stroke_state *
-fz_keep_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
+fz_keep_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 {
+	fz_stroke_state *stroke = (fz_stroke_state *)strokec; /* Explicit cast away of const */
+
 	if (!stroke)
 		return NULL;
 
@@ -1435,8 +1437,10 @@ fz_keep_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 }
 
 void
-fz_drop_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
+fz_drop_stroke_state(fz_context *ctx, const fz_stroke_state *strokec)
 {
+	fz_stroke_state *stroke = (fz_stroke_state *)strokec; /* Explicit cast away of const */
+
 	if (fz_drop_imp(ctx, stroke, &stroke->refs))
 		fz_free(ctx, stroke);
 }

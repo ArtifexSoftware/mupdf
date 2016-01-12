@@ -9,14 +9,18 @@ fz_new_text(fz_context *ctx)
 }
 
 fz_text *
-fz_keep_text(fz_context *ctx, fz_text *text)
+fz_keep_text(fz_context *ctx, const fz_text *textc)
 {
+	fz_text *text = (fz_text *)textc; /* Explicit cast away of const */
+
 	return fz_keep_imp(ctx, text, &text->refs);
 }
 
 void
-fz_drop_text(fz_context *ctx, fz_text *text)
+fz_drop_text(fz_context *ctx, const fz_text *textc)
 {
+	fz_text *text = (fz_text *)textc; /* Explicit cast away of const */
+
 	if (fz_drop_imp(ctx, text, &text->refs))
 	{
 		fz_text_span *span = text->head;
@@ -95,7 +99,7 @@ fz_add_text(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_m
 }
 
 fz_rect *
-fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *bbox)
+fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *bbox)
 {
 	fz_text_span *span;
 	fz_matrix tm, trm;
@@ -140,7 +144,7 @@ fz_bound_text(fz_context *ctx, fz_text *text, const fz_stroke_state *stroke, con
 }
 
 fz_text *
-fz_clone_text(fz_context *ctx, fz_text *text)
+fz_clone_text(fz_context *ctx, const fz_text *text)
 {
 	fz_text *new_text;
 	fz_text_span *span;

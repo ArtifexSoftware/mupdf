@@ -154,12 +154,12 @@ fz_append_display_node(
 	fz_display_command cmd,
 	int flags,
 	const fz_rect *rect,
-	fz_path *path,
-	float *color,
-	fz_colorspace *colorspace,
-	float *alpha,
+	const fz_path *path,
+	const float *color,
+	const fz_colorspace *colorspace,
+	const float *alpha,
 	const fz_matrix *ctm,
-	fz_stroke_state *stroke,
+	const fz_stroke_state *stroke,
 	void *private_data,
 	int private_data_len)
 {
@@ -678,8 +678,8 @@ fz_list_end_page(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_list_fill_path(fz_context *ctx, fz_device *dev, fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
+	const fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect rect;
 
@@ -701,8 +701,8 @@ fz_list_fill_path(fz_context *ctx, fz_device *dev, fz_path *path, int even_odd, 
 }
 
 static void
-fz_list_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, float *color, float alpha)
+fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke,
+	const fz_matrix *ctm, const fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect rect;
 
@@ -724,7 +724,7 @@ fz_list_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, fz_stroke_st
 }
 
 static void
-fz_list_clip_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+fz_list_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
 {
 	fz_rect rect2;
 
@@ -748,7 +748,7 @@ fz_list_clip_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect 
 }
 
 static void
-fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const fz_rect *rect, fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, const fz_stroke_state *stroke, const fz_matrix *ctm)
 {
 	fz_rect rect2;
 
@@ -772,8 +772,8 @@ fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, fz_path *path, const f
 }
 
 static void
-fz_list_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+fz_list_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
+	const fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -804,8 +804,8 @@ fz_list_fill_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matri
 }
 
 static void
-fz_list_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+fz_list_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
+	const fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -836,7 +836,7 @@ fz_list_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_st
 }
 
 static void
-fz_list_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
+fz_list_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -867,7 +867,7 @@ fz_list_clip_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matri
 }
 
 static void
-fz_list_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_list_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -898,7 +898,7 @@ fz_list_clip_stroke_text(fz_context *ctx, fz_device *dev, fz_text *text, fz_stro
 }
 
 static void
-fz_list_ignore_text(fz_context *ctx, fz_device *dev, fz_text *text, const fz_matrix *ctm)
+fz_list_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -948,7 +948,7 @@ fz_list_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_list_fill_shade(fz_context *ctx, fz_device *dev, const fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	fz_shade *shade2 = fz_keep_shade(ctx, shade);
 	fz_rect rect;
@@ -979,7 +979,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
+fz_list_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect = fz_unit_rect;
@@ -1010,8 +1010,8 @@ fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 }
 
 static void
-fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
-	fz_colorspace *colorspace, float *color, float alpha)
+fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
+	const fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect = fz_unit_rect;
@@ -1042,7 +1042,7 @@ fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 }
 
 static void
-fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect2 = fz_unit_rect;
@@ -1075,7 +1075,7 @@ fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 }
 
 static void
-fz_list_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, fz_colorspace *colorspace, float *color)
+fz_list_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, const fz_colorspace *colorspace, const float *color)
 {
 	fz_append_display_node(
 		ctx,

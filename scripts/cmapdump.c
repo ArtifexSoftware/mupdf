@@ -228,12 +228,14 @@ void fz_copy_aa_context(fz_context *dst, fz_context *src)
 {
 }
 
-void *fz_keep_storable(fz_context *ctx, fz_storable *s)
+void *fz_keep_storable(fz_context *ctx, const fz_storable *sc)
 {
+	fz_storable *s = (fz_storable *)sc;
+
 	return s;
 }
 
-void fz_drop_storable(fz_context *ctx, fz_storable *s)
+void fz_drop_storable(fz_context *ctx, const fz_storable *s)
 {
 }
 

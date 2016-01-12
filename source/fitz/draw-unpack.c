@@ -172,7 +172,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 /* Apply decode array */
 
 void
-fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, float *decode, int maxval)
+fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int maxval)
 {
 	int add[FZ_MAX_COLORS];
 	int mul[FZ_MAX_COLORS];
@@ -207,7 +207,7 @@ fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, float *decode, int maxva
 }
 
 void
-fz_decode_tile(fz_context *ctx, fz_pixmap *pix, float *decode)
+fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode)
 {
 	int add[FZ_MAX_COLORS];
 	int mul[FZ_MAX_COLORS];

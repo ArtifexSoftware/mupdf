@@ -73,8 +73,10 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 }
 
 fz_font *
-fz_keep_font(fz_context *ctx, fz_font *font)
+fz_keep_font(fz_context *ctx, const fz_font *fontc)
 {
+	fz_font *font = (fz_font *)fontc; /* Explicit cast away of const */
+
 	return fz_keep_imp(ctx, font, &font->refs);
 }
 
@@ -112,10 +114,12 @@ void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc)
 }
 
 void
-fz_drop_font(fz_context *ctx, fz_font *font)
+fz_drop_font(fz_context *ctx, const fz_font *fontc)
 {
 	int fterr;
 	int i;
+	/* Explicitly drop const */
+	fz_font *font = (fz_font *)fontc;
 
 	if (!fz_drop_imp(ctx, font, &font->refs))
 		return;
@@ -412,7 +416,7 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 }
 
 static fz_matrix *
-fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm)
+fz_adjust_ft_glyph_width(fz_context *ctx, const fz_font *font, int gid, fz_matrix *trm)
 {
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
 	if (font->ft_stretch && font->width_table /* && font->wmode == 0 */)
@@ -459,7 +463,7 @@ pixmap_from_ft_bitmap(fz_context *ctx, int left, int top, FT_Bitmap *bitmap)
 
 /* Takes the freetype lock, and returns with it held */
 static FT_GlyphSlot
-do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, int aa)
+do_ft_render_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, int aa)
 {
 	FT_Face face = font->ft_face;
 	FT_Matrix m;
@@ -558,7 +562,7 @@ retry_unhinted:
 }
 
 fz_pixmap *
-fz_render_ft_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, int aa)
+fz_render_ft_glyph_pixmap(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, int aa)
 {
 	FT_GlyphSlot slot = do_ft_render_glyph(ctx, font, gid, trm, aa);
 	fz_pixmap *pixmap;
@@ -587,7 +591,7 @@ fz_render_ft_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 
 /* The glyph cache lock is always taken when this is called. */
 fz_glyph *
-fz_render_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, int aa)
+fz_render_ft_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, int aa)
 {
 	FT_GlyphSlot slot = do_ft_render_glyph(ctx, font, gid, trm, aa);
 	fz_glyph *glyph;
@@ -616,7 +620,7 @@ fz_render_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm
 
 /* Takes the freetype lock, and returns with it held */
 static FT_Glyph
-do_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, fz_stroke_state *state)
+do_render_ft_stroked_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *state)
 {
 	FT_Face face = font->ft_face;
 	float expansion = fz_matrix_expansion(ctm);
@@ -712,7 +716,7 @@ do_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 }
 
 fz_pixmap *
-fz_render_ft_stroked_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, fz_stroke_state *state)
+fz_render_ft_stroked_glyph_pixmap(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *state)
 {
 	FT_Glyph glyph = do_render_ft_stroked_glyph(ctx, font, gid, trm, ctm, state);
 	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
@@ -742,7 +746,7 @@ fz_render_ft_stroked_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const
 }
 
 fz_glyph *
-fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, fz_stroke_state *state)
+fz_render_ft_stroked_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *state)
 {
 	FT_Glyph glyph = do_render_ft_stroked_glyph(ctx, font, gid, trm, ctm, state);
 	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
@@ -772,7 +776,7 @@ fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 }
 
 static fz_rect *
-fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
+fz_bound_ft_glyph(fz_context *ctx, const fz_font *font, int gid, fz_rect *bounds)
 {
 	FT_Face face = font->ft_face;
 	FT_Error fterr;
@@ -917,7 +921,7 @@ static const FT_Outline_Funcs outline_funcs = {
 };
 
 fz_path *
-fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm)
+fz_outline_ft_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm)
 {
 	struct closure cc;
 	FT_Face face = font->ft_face;
@@ -1023,7 +1027,7 @@ fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix)
 }
 
 void
-fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
+fz_prepare_t3_glyph(fz_context *ctx, const fz_font *font, int gid, int nested_depth)
 {
 	fz_buffer *contents;
 	fz_device *dev;
@@ -1059,7 +1063,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 }
 
 static fz_rect *
-fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
+fz_bound_t3_glyph(fz_context *ctx, const fz_font *font, int gid, fz_rect *bounds)
 {
 	fz_display_list *list;
 	fz_device *dev;
@@ -1097,7 +1101,7 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
 }
 
 void
-fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_device *dev)
+fz_run_t3_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, fz_device *dev)
 {
 	fz_display_list *list;
 	fz_matrix ctm;
@@ -1111,7 +1115,7 @@ fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, f
 }
 
 fz_pixmap *
-fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_colorspace *model, const fz_irect *scissor)
+fz_render_t3_glyph_pixmap(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, fz_colorspace *model, const fz_irect *scissor)
 {
 	fz_display_list *list;
 	fz_rect bounds;
@@ -1187,14 +1191,14 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 }
 
 fz_glyph *
-fz_render_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_colorspace *model, const fz_irect *scissor)
+fz_render_t3_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, fz_colorspace *model, const fz_irect *scissor)
 {
 	fz_pixmap *pixmap = fz_render_t3_glyph_pixmap(ctx, font, gid, trm, model, scissor);
 	return fz_new_glyph_from_pixmap(ctx, pixmap);
 }
 
 void
-fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gid, const fz_matrix *trm, void *gstate, int nested_depth)
+fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, const fz_font *font, int gid, const fz_matrix *trm, void *gstate, int nested_depth)
 {
 	fz_matrix ctm;
 	void *contents;
@@ -1224,7 +1228,7 @@ fz_render_t3_glyph_direct(fz_context *ctx, fz_device *dev, fz_font *font, int gi
 }
 
 void
-fz_print_font(fz_context *ctx, fz_output *out, fz_font *font)
+fz_print_font(fz_context *ctx, fz_output *out, const fz_font *font)
 {
 	fz_printf(ctx, out, "font '%s' {\n", font->name);
 
@@ -1250,7 +1254,7 @@ fz_print_font(fz_context *ctx, fz_output *out, fz_font *font)
 }
 
 fz_rect *
-fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz_rect *rect)
+fz_bound_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *trm, fz_rect *rect)
 {
 	if (font->bbox_table && gid < font->glyph_count)
 	{
@@ -1275,14 +1279,14 @@ fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz
 }
 
 fz_path *
-fz_outline_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *ctm)
+fz_outline_glyph(fz_context *ctx, const fz_font *font, int gid, const fz_matrix *ctm)
 {
 	if (!font->ft_face)
 		return NULL;
 	return fz_outline_ft_glyph(ctx, font, gid, ctm);
 }
 
-int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid)
+int fz_glyph_cacheable(fz_context *ctx, const fz_font *font, int gid)
 {
 	if (!font->t3procs || !font->t3flags || gid < 0 || gid >= font->glyph_count)
 		return 1;
@@ -1290,7 +1294,7 @@ int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid)
 }
 
 static float
-fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
+fz_advance_ft_glyph(fz_context *ctx, const fz_font *font, int gid)
 {
 	FT_Fixed adv;
 	int mask;
@@ -1313,7 +1317,7 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 }
 
 static float
-fz_advance_t3_glyph(fz_context *ctx, fz_font *font, int gid)
+fz_advance_t3_glyph(fz_context *ctx, const fz_font *font, int gid)
 {
 	if (gid < 0 || gid > 255)
 		return 0;
@@ -1321,8 +1325,12 @@ fz_advance_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 }
 
 float
-fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
+fz_advance_glyph(fz_context *ctx, const fz_font *fontc, int gid)
 {
+	/* Explicitly cast away the const, enable us to change a cache
+	 * held within the font. */
+	fz_font *font = (fz_font *)fontc;
+
 	if (font->ft_face)
 	{
 		if (gid >= 0 && gid < font->glyph_count && gid < MAX_ADVANCE_CACHE)
@@ -1345,8 +1353,12 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
 }
 
 int
-fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
+fz_encode_character(fz_context *ctx, const fz_font *fontc, int ucs)
 {
+	/* Explicitly cast away the const, enable us to change a cache
+	 * held within the font. */
+	fz_font *font = (fz_font *)fontc;
+
 	if (font->ft_face)
 	{
 		if (ucs >= 0 && ucs < 0x10000)
