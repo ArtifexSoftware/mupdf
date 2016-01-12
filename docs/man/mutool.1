@@ -1,4 +1,4 @@
-.TH "MUTOOL" "1" "May 25, 2015"
+.TH "MUTOOL" "1" "January 12, 2016"
 .\" Please adjust this date whenever revising the manpage.
 .\" no hyphenation
 .nh
@@ -12,7 +12,7 @@ mutool \- all purpose tool for dealing with PDF files
 mutool <sub-command> [options]
 
 .SH DESCRIPTION
-mutool is a tool based on MuPDF for dealing with PDF files in various manners.
+mutool is a tool based on MuPDF for dealing with document files in various manners.
 There are several sub commands available, as described below.
 
 .SH DRAW
@@ -32,13 +32,14 @@ The supported output text formats are: plain text, html, and structured text (as
 Use the specified password if the file is encrypted.
 .TP
 .B \-o output
-The output format is inferred from the output file name.
+The output format is inferred from the output filename.
 Embed %d in the name to indicate the page number (for example: "page%d.png").
 Printf modifiers are supported, for example "%03d".
 If no output is specified, the output will go to stdout.
 .TP
 .B \-F format
-Enforce a specific output format. Use this when outputting to stdout.
+Enforce a specific output format. Only necessary when outputting to stdout
+since normally the output filename is used to infer the output format.
 .TP
 .B \-R angle
 Rotate clockwise by given number of degrees.
@@ -57,6 +58,12 @@ render with a maximum height).
 .TP
 .B \-f
 Fit exactly; ignore the aspect ratio when matching specified width/heights.
+.TP
+.B \-B bandheight
+Render in banded mode with each band no taller than the given height. This uses
+less memory during rendering. Only compatible with pam, pgm, ppm, pnm and png
+output formats. Banded rendering and md5 checksumming may not be used at the
+same time.
 .TP
 .B \-W width
 Page width in points for EPUB layout.
@@ -85,10 +92,15 @@ Invert colors.
 .TP
 .B \-s [mft5]
 Show various bits of information:
-memory use,
-features,
-timings, and/or
-md5 checksum.
+.B m
+for glyph cache and total memory usage,
+.B f
+for page features such as whether the page is grayscale or color,
+.B t
+for per page rendering times as well statistics, and
+.B 5
+for md5 checksums of rendered images that can be used to check if rendering has
+changed.
 .TP
 .B \-A bits
 Specify how many bits of anti-aliasing to use. The default is 8.
@@ -96,6 +108,7 @@ Specify how many bits of anti-aliasing to use. The default is 8.
 .B \-D
 Disable use of display lists. May cause slowdowns, but should reduce
 the amount of memory used.
+.TP
 .B \-i
 Ignore errors.
 .TP
@@ -225,6 +238,7 @@ Split the page into this many horizontal pieces.
 Split the page into this many vertical pieces.
 .PP
 The output will have x times y number of pages for each input page.
+
 .SH SHOW
 mutool show [options] file.pdf [object numbers ...]
 .PP
@@ -252,6 +266,9 @@ Print the cross reference table.
 .B 'trailer' or 't'
 Print the trailer dictionary.
 .TP
+.B 'encrypt' or 'e'
+Print the encryption dictionary.
+.TP
 .B 'pagetree' or 'p'
 List the object numbers for every page.
 .TP
@@ -265,4 +282,4 @@ Print the outline (table of contents).
 .BR mupdf (1),
 
 .SH AUTHOR
-MuPDF is Copyright 2006-2015 Artifex Software, Inc.
+MuPDF is Copyright 2006-2016 Artifex Software, Inc.
