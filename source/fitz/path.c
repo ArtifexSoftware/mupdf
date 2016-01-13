@@ -81,8 +81,10 @@ fz_new_path(fz_context *ctx)
 }
 
 fz_path *
-fz_keep_path(fz_context *ctx, fz_path *path)
+fz_keep_path(fz_context *ctx, const fz_path *pathc)
 {
+	fz_path *path = (fz_path *)pathc; /* Explicit cast away of const */
+
 	if (path == NULL)
 		return NULL;
 	if (path->refs == 1 && path->packed == FZ_PATH_UNPACKED)
@@ -91,8 +93,10 @@ fz_keep_path(fz_context *ctx, fz_path *path)
 }
 
 void
-fz_drop_path(fz_context *ctx, fz_path *path)
+fz_drop_path(fz_context *ctx, const fz_path *pathc)
 {
+	fz_path *path = (fz_path *)pathc; /* Explicit cast away of const */
+
 	if (fz_drop_imp8(ctx, path, &path->refs))
 	{
 		if (path->packed != FZ_PATH_PACKED_FLAT)
