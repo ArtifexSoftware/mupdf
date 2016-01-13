@@ -963,6 +963,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\pool.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\printf.c"
 				>
 			</File>
@@ -1499,6 +1503,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\pixmap.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\pool.h"
 					>
 				</File>
 				<File
