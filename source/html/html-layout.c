@@ -77,6 +77,9 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 {
 	fz_html_flow *flow = fz_pool_alloc(ctx, pool, sizeof *flow);
 	flow->type = type;
+	flow->expand = 0;
+	flow->char_r2l = 0;
+	flow->block_r2l = 0;
 	flow->style = style;
 	*top->flow_tail = flow;
 	top->flow_tail = &flow->next;
@@ -87,7 +90,7 @@ static void add_flow_glue(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_s
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_GLUE);
 	flow->text = (char*)text;
-	flow->expand = expand;
+	flow->expand = !!expand;
 }
 
 static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)

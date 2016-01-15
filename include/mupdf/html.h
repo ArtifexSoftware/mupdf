@@ -182,19 +182,19 @@ struct fz_html_s
 
 enum
 {
-	FLOW_WORD,
-	FLOW_GLUE,
-	FLOW_BREAK,
-	FLOW_IMAGE,
+	FLOW_WORD = 0,
+	FLOW_GLUE = 1,
+	FLOW_BREAK = 2,
+	FLOW_IMAGE = 3
 };
 
 struct fz_html_flow_s
 {
-	int type;
+	unsigned int type : 2;
+	unsigned int expand : 1;
 	float x, y, w, h, em;
 	fz_css_style *style;
 	char *text;
-	int expand;
 	fz_image *image;
 	fz_html_flow *next;
 };
