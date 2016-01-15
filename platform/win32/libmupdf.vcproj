@@ -727,6 +727,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\bidi-std.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\fitz\bidi.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\bitmap.c"
 				>
 			</File>
@@ -1383,6 +1391,10 @@
 				>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\annotation.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\bidi.h"
 					>
 				</File>
 				<File

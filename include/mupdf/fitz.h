@@ -60,4 +60,6 @@
 #include "mupdf/fitz/output-svg.h"
 #include "mupdf/fitz/output-tga.h"
 
+#include "mupdf/fitz/bidi.h"
+
 #endif
