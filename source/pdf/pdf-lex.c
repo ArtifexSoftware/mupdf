@@ -63,106 +63,119 @@ lex_comment(fz_context *ctx, fz_stream *f)
 	} while ((c != '\012') && (c != '\015') && (c != EOF));
 }
 
+/* Fast but inaccurate strtof, with Adobe overflow handling. */
+static float fast_atof(char *s)
+{
+	int neg = 0;
+	int i = 0;
+
+	while (*s == '-')
+	{
+		neg = 1;
+		++s;
+	}
+	while (*s == '+')
+	{
+		++s;
+	}
+
+	while (*s >= '0' && *s <= '9')
+	{
+		/* We deliberately ignore overflow here.
+		 * Tests show that Acrobat handles * overflows in exactly the same way we do:
+		 * 123450000000000000000678 is read as 678.
+		 */
+		i = i * 10 + (*s - '0');
+		++s;
+	}
+
+	if (*s == '.')
+	{
+		float v = i;
+		float n = 0;
+		float d = 1;
+		++s;
+		while (*s >= '0' && *s <= '9')
+		{
+			n = 10 * n + (*s - '0');
+			d = 10 * d;
+			++s;
+		}
+		v += n / d;
+		return neg ? -v : v;
+	}
+	else
+	{
+		return neg ? -i : i;
+	}
+}
+
+/* Fast but inaccurate atoi. */
+static int fast_atoi(char *s)
+{
+	int neg = 0;
+	int i = 0;
+
+	while (*s == '-')
+	{
+		neg = 1;
+		++s;
+	}
+	while (*s == '+')
+	{
+		++s;
+	}
+
+	while (*s >= '0' && *s <= '9')
+	{
+		/* We deliberately ignore overflow here. */
+		i = i * 10 + (*s - '0');
+		++s;
+	}
+
+	return neg ? -i : i;
+}
+
 static int
 lex_number(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf, int c)
 {
-	int neg = 0;
-	fz_off_t i = 0;
-	int n;
-	int d;
-	float v;
-	float fd;
+	char *s = buf->scratch;
+	char *e = buf->scratch + buf->size - 1; /* leave space for zero terminator */
+	int isreal = (c == '.');
 
-	/* Initially we might have +, -, . or a digit */
-	switch (c)
-	{
-	case '.':
-		goto loop_after_dot;
-	case '-':
-		neg = 1;
-		break;
-	case '+':
-		break;
-	default: /* Must be a digit */
-		i = c - '0';
-		break;
-	}
+	*s++ = c;
 
-	while (1)
+	while (s < e)
 	{
-		c = fz_read_byte(ctx, f);
+		int c = fz_read_byte(ctx, f);
 		switch (c)
 		{
+		case IS_WHITE:
+		case IS_DELIM:
+			fz_unread_byte(ctx, f);
+			goto end;
+		case EOF:
+			goto end;
 		case '.':
-			goto loop_after_dot;
-		case RANGE_0_9:
-			/* We deliberately ignore overflow here. We tried
-			 * code that returned INT_MIN/MAX as appropriate,
-			 * but this causes loss of data (see Bug695950.pdf
-			 * for an example). Tests show that Acrobat handles
-			 * overflows in exactly the same way we do (i.e.
-			 * 123450000000000000000678 is read as 678). */
-			i = 10*i + c - '0';
-			break;
+			isreal = 1;
+			/* Fall through */
 		default:
-			fz_unread_byte(ctx, f);
-			/* Fallthrough */
-		case EOF:
-			if (neg)
-				i = -i;
-			buf->i = i;
-			return PDF_TOK_INT;
+			*s++ = c;
+			break;
 		}
 	}
 
-	/* In here, we've seen a dot, so can accept just digits */
-loop_after_dot:
-	n = 0;
-	d = 1;
-	while (1)
+end:
+	*s = '\0';
+	if (isreal)
 	{
-		c = fz_read_byte(ctx, f);
-		switch (c)
-		{
-		case RANGE_0_9:
-			if (d >= INT_MAX/10)
-				goto underflow;
-			n = n*10 + (c - '0');
-			d *= 10;
-			break;
-		default:
-			fz_unread_byte(ctx, f);
-			/* Fallthrough */
-		case EOF:
-			v = (float)i + ((float)n / (float)d);
-			if (neg)
-				v = -v;
-			buf->f = v;
-			return PDF_TOK_REAL;
-		}
+		buf->f = fast_atof(buf->scratch);
+		return PDF_TOK_REAL;
 	}
-
-underflow:
-	fd = 1 / (float)d;
-	v = (float)i + ((float)n * fd);
-	while (1)
+	else
 	{
-		c = fz_read_byte(ctx, f);
-		switch (c)
-		{
-		case RANGE_0_9:
-			fd /= 10;
-			v += (c - '0') * fd;
-			break;
-		default:
-			fz_unread_byte(ctx, f);
-			/* Fallthrough */
-		case EOF:
-			if (neg)
-				v = -v;
-			buf->f = v;
-			return PDF_TOK_REAL;
-		}
+		buf->i = fast_atoi(buf->scratch);
+		return PDF_TOK_INT;
 	}
 }
 
