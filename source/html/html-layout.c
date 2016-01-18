@@ -80,6 +80,7 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 	flow->expand = 0;
 	flow->char_r2l = 0;
 	flow->block_r2l = 0;
+	flow->mirror = 0;
 	flow->style = style;
 	*top->flow_tail = flow;
 	top->flow_tail = &flow->next;
@@ -938,6 +939,10 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				while (*t)
 				{
 					t += fz_chartorune(&c, t);
+					if (node->mirror)
+					{
+						c = Bidi_mirrorChar(c);
+					}
 					g = fz_encode_character(ctx, node->style->font, c);
 					if (g)
 					{
@@ -962,6 +967,10 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				while (*s)
 				{
 					s += fz_chartorune(&c, s);
+					if (node->mirror)
+					{
+						c = Bidi_mirrorChar(c);
+					}
 					g = fz_encode_character(ctx, node->style->font, c);
 					if (g)
 					{
@@ -1537,6 +1546,8 @@ static void newFragCb(const uint16_t *fragment,
 		/* This flow box is entirely contained within this fragment. */
 		data->flow->block_r2l = rightToLeft;
 		data->flow->char_r2l = charDirR2L;
+		if (mirror != 0)
+			data->flow->mirror = 1;
 		data->flow = data->flow->next;
 		fragmentOffset += len;
 		fragmentLen -= len;

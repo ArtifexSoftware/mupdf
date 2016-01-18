@@ -213,6 +213,7 @@ struct fz_html_flow_s
 	unsigned int expand : 1;
 	unsigned int char_r2l : 1;
 	unsigned int block_r2l : 1;
+	unsigned int mirror : 1;
 	float x, y, w, h, em;
 	fz_css_style *style;
 	union {
