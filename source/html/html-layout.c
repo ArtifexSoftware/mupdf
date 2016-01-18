@@ -116,6 +116,33 @@ static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_
 	add_flow_glue(ctx, pool, top, style, "", 0);
 }
 
+static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
+{
+	fz_html_flow *new_flow;
+	char *text;
+	size_t len;
+
+	if (offset == 0)
+		return flow;
+	new_flow = fz_pool_alloc(ctx, pool, sizeof *flow);
+	*new_flow = *flow;
+	new_flow->next = flow->next;
+	flow->next = new_flow;
+
+	text = flow->text;
+	while (*text && offset)
+	{
+		int rune;
+		text += fz_chartorune(&rune, text);
+		offset--;
+	}
+	len = strlen(text);
+	new_flow->text = fz_pool_alloc(ctx, pool, len+1);
+	strcpy(new_flow->text, text);
+	*text = 0;
+	return new_flow;
+}
+
 static int iscjk(int c)
 {
 	if (c >= 0x3200 && c <= 0x9FFF) return 1; /* CJK Blocks */
@@ -1347,6 +1374,172 @@ fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 	layout_block(ctx, box, &page_box, em, h, 0);
 }
 
+typedef struct
+{
+	uint16_t *buffer;
+	size_t max;
+	size_t len;
+} uni_buf;
+
+typedef struct
+{
+	fz_context *ctx;
+	fz_pool *pool;
+	fz_html_flow *flow;
+	uni_buf *buffer;
+} bidi_data;
+
+static size_t utf8len(const char *text)
+{
+	size_t len = 0;
+
+	while (*text)
+	{
+		int rune;
+		text += fz_chartorune(&rune, text);
+		len++;
+	}
+	return len;
+}
+
+static void newFragCb(const uint16_t *fragment,
+			size_t fragmentLen,
+			int rightToLeft,
+			uint16_t mirror,
+			void *arg)
+{
+	bidi_data *data = (bidi_data *)arg;
+	size_t fragmentOffset = fragment - data->buffer->buffer;
+	int charDirR2L = rightToLeft;
+
+	if((fragmentOffset != 0) &&
+	   Bidi_isEuropeanNumber(fragment, fragmentLen))
+	{
+		/* fragment contains digits only */
+		charDirR2L = 0;
+	}
+
+	/* We are guaranteed that fragmentOffset will be at the beginning
+	 * of flow. */
+	while (fragmentLen > 0)
+	{
+		size_t len;
+
+		if (data->flow->type == FLOW_GLUE)
+		{
+			len = 1;
+		}
+		else
+		{
+			/* Must be text */
+			len = utf8len(data->flow->text);
+			if (len > fragmentLen)
+			{
+				/* We need to split this flow box */
+				(void)split_flow(data->ctx, data->pool, data->flow, fragmentLen);
+				len = utf8len(data->flow->text);
+			}
+		}
+
+		/* This flow box is entirely contained within this fragment. */
+		data->flow->block_r2l = rightToLeft;
+		data->flow->char_r2l = charDirR2L;
+		data->flow = data->flow->next;
+		fragmentOffset += len;
+		fragmentLen -= len;
+	}
+}
+
+static void
+detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_html_flow *flow)
+{
+	fz_html_flow *end = flow;
+	const char *text;
+	bidi_data data;
+	Bidi_Direction baseDir = -1;
+
+	/* Stage 1: Gather the text from the flow up into a single buffer */
+	buffer->len = 0;
+	while (end)
+	{
+		size_t len;
+		int broken = 0;
+
+		switch (end->type)
+		{
+		case FLOW_WORD:
+			len = utf8len(end->text);
+			text = end->text;
+			break;
+		case FLOW_GLUE:
+			len = 1;
+			text = " ";
+			break;
+		case FLOW_BREAK:
+		case FLOW_IMAGE:
+			broken = 1;
+			break;
+		}
+
+		if (broken)
+			break;
+
+		/* Make sure the buffer is large enough */
+		if (buffer->len + len > buffer->max)
+		{
+			size_t newmax = buffer->max * 2;
+			if (newmax == 0)
+				newmax = 128; /* Sensible small default */
+			buffer->buffer = fz_resize_array(ctx, buffer->buffer, newmax, sizeof(uint16_t));
+			buffer->max = newmax;
+		}
+
+		/* Expand the utf8 text into Unicode and store it in the buffer */
+		while (*text)
+		{
+			int rune;
+			text += fz_chartorune(&rune, text);
+			buffer->buffer[buffer->len++] = (uint16_t)rune;
+		}
+
+		end = end->next;
+	}
+
+	/* Detect directionality for the buffer */
+	data.ctx = ctx;
+	data.pool = pool;
+	data.flow = flow;
+	data.buffer = buffer;
+	Bidi_fragmentText(ctx,
+			buffer->buffer,
+			buffer->len,
+			&baseDir,
+			newFragCb, &data,
+			0 /* Flags */);
+}
+
+static void
+detect_box_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_html *box)
+{
+	while (box)
+	{
+		if (box->flow_head)
+		{
+			detect_flow_directionality(ctx, pool, buffer, box->flow_head);
+		}
+		detect_box_directionality(ctx, pool, buffer, box->down);
+		box = box->next;
+	}
+}
+
+static void
+detect_directionality(fz_context *ctx, fz_pool *pool, fz_html *box)
+{
+	uni_buf buffer = { NULL };
+
+	detect_box_directionality(ctx, pool, &buffer, box);
+}
+
 fz_html *
 fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
@@ -1379,6 +1572,8 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 
 	fz_drop_css(ctx, css);
 	fz_drop_xml(ctx, xml);
+
+	detect_directionality(ctx, pool, box);
 
 	return box;
 }

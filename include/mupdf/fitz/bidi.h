@@ -199,6 +199,61 @@ Bidi_Direction Bidi_processLine(fz_context *ctx,
                                 int                        *more);
 
 
+int Bidi_isEuropeanNumber(const uint16_t *str, unsigned int len);
+
+/**
+ * returns a character's mirrored equivalent
+ *
+ * @param     u     Unicode character to process
+ */
+uint16_t Bidi_mirrorChar(const uint16_t u);
+
+
+
+/**
+ * Prototype for callback function supplied to Bidi_fragmentText.
+ *
+ * @param     fragment      first character in fragment
+ * @param     fragmentLen   number of characters in fragment
+ * @param     rightToLeft   true if fragment is right-to-left
+ * @param     mirror        The mirror code of the fragment if it exists
+ * @param     arg           data from caller of Bidi_fragmentText
+ */
+typedef void (Bidi_Fragment_Callback)(const uint16_t *fragment,
+					size_t fragmentLen,
+					int rightToLeft,
+					uint16_t mirror,
+					void *arg);
+
+
+
+/**
+ * Partitions the given Unicode sequence into one or more unidirectional
+ * fragments and invokes the given callback function for each fragment.
+ *
+ * For example, if directionality of text is:
+ *               0123456789
+ *               rrlllrrrrr,
+ * we'll invoke callback with:
+ *               &text[0], length == 2, rightToLeft ==  true
+ *               &text[2], length == 3, rightToLeft == false
+ *               &text[5], length == 5, rightToLeft ==  true.
+ *
+ * @param[in] text      start of Unicode sequence
+ * @param[in] textlen   number of Unicodes to analyse
+ * @param[in] baseDir   direction of paragraph (specify Bidi_Neutral
+ *                      to force auto-detection)
+ * @param[in] callback  function to be called for each fragment
+ * @param[in] arg       data to be passed to the callback function
+ * @param[in] bidiFlag  flag to be passed to the callback function
+ */
+void Bidi_fragmentText(fz_context *ctx,
+			const uint16_t *text,
+			size_t textlen,
+			Bidi_Direction *baseDir,
+			Bidi_Fragment_Callback callback,
+			void *arg,
+			int bidiFlag);
 
 #endif /* BIDI_BIDI_H */
 

@@ -188,10 +188,31 @@ enum
 	FLOW_IMAGE = 3
 };
 
+/* We have to recognise the distinction between render direction
+ * and layout direction. For most strings render direction and
+ * logical direction are the same.
+ *
+ * Char direction determines whether a string 'ABC' appears as
+ * ABC or CBA.
+ *
+ * Block direction determines how fragments are attached together.
+ * 'ABC' and 'DEF' with r2l char and block directions will
+ * appear as 'FEDCBA'. With l2r char and block it will appear
+ * as 'ABCDEF'.
+ *
+ * The reason for the distinction is that we can have logical
+ * strings like 'ABC0123DEF', where 'ABC' and 'DEF' are in r2l
+ * scripts. The bidirectional code breaks this down into 3 fragments
+ * 'ABC' '0123' 'DEF', where all three are r2l, but digits need to
+ * be rendered left to right. i.e. the desired result is:
+ * FED0123CBA, rather than FED3210CBA.
+ */
 struct fz_html_flow_s
 {
 	unsigned int type : 2;
 	unsigned int expand : 1;
+	unsigned int char_r2l : 1;
+	unsigned int block_r2l : 1;
 	float x, y, w, h, em;
 	fz_css_style *style;
 	char *text;

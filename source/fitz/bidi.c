@@ -35,7 +35,6 @@
 
 #include "mupdf/fitz.h"
 #include "bidi-impl.h" /* standard bidi code interface */
-#include "bidi-internal.h"
 
 /*
  * Macros...
@@ -548,7 +547,6 @@ Bidi_CharType Bidi_classFromChN(uint16_t ch)
 }
 
 
-static
 int Bidi_isEuropeanNumber(const uint16_t *str, unsigned int len)
 {
 	const uint16_t *end = str + len;
@@ -650,32 +648,6 @@ uint16_t Bidi_mirrorChar(const uint16_t u)
 	return UNICODE_EOS;
 }
 
-#ifdef BIDI_LINE_AT_A_TIME
-/** Subsitutes characters with their mirrored equivalents, e.g. swaps
-  * '(' with ')'. Implements rule L4 of the uint16_t Bidirectional
-  * algorithm. Mirrored characters are found using a binary search through
-  * the lookup table bidiOptMirrorList.
-  */
-static
-void Bidi_mirror(uint16_t *text,
-		const Bidi_Level *poslevel,
-		int len)
-{
-	int i;
-	uint16_t out;
-
-	for (i = 0; i < len; i ++)
-	{
-		if (ODD(poslevel[i]) == 0)
-			continue;
-		out = Bidi_mirrorChar((const uint16_t)text[i]);
-		if(out != UNICODE_EOS)
-			text[i] = out;
-	}
-}
-#endif
-
-
 /** Searches a RTL fragment for a mirror character
  * When it finds one it creates a separate fragment for the
  * character and the surrounding fragments. It passes the mirrored
@@ -766,11 +738,15 @@ void Bidi_classifyCharacters(const uint16_t *text,
 				 );
 		}
 		fprintf(stderr, "\nTypes:  ");
+#endif
 		for (i = 0; i < len; i++)
 		{
 			types[i] = Bidi_classFromChN(text[i]);
+#ifdef DEBUG_BIDI_VERBOSE
 			fprintf(stderr, "%c", charFromTypes[(int)types[i]]);
+#endif
 		}
+#ifdef DEBUG_BIDI_VERBOSE
 		fprintf(stderr, "\n");
 #endif
 	}
@@ -1117,193 +1093,3 @@ void Bidi_fragmentText(fz_context *ctx,
 		fz_rethrow(ctx);
 	}
 }
-
-
-
-static void newFragCb(const uint16_t *fragment,
-			size_t fragmentLen,
-			int rightToLeft,
-			uint16_t mirror,
-			void *arg)
-{
-	size_t fragOffset;
-	int isRtlNumber = FALSE;
-	Bidi_ProcessLine_fragData *fragData = arg;
-
-	assert(fragData != NULL);
-
-	fragOffset = fragment - fragData->entireText;
-
-	if((fragOffset != 0) &&
-	   Bidi_isEuropeanNumber(fragment,fragmentLen))
-	{
-		/* fragment contains digits only */
-		isRtlNumber = TRUE;
-	}
-	fragData->callersCallback(fragOffset,
-				fragmentLen,
-				rightToLeft,
-				mirror,
-				fragData->callersData,
-				isRtlNumber);
-}
-
-
-
-/* Currently this creates a text representation of all the objects
- * on a line, then passes it to Bidi_fragmentText.  In future, we
- * should create the levels array directly from the objects supplied.
- */
-Bidi_Direction Bidi_processLine(fz_context *ctx,
-				Bidi_PL_NextObj_Callback nextObjCb,
-				Bidi_PL_Fragment_Callback fragmentCb,
-				void *callerData,
-				int bidiFlag,
-				int *more)
-{
-	uint16_t *entireText = NULL;
-	size_t entireLength = 0;
-	size_t lengthIncrement = 100;
-	size_t freeSpace = 0;
-	const uint16_t *objText = NULL;
-	size_t objLength = 0;
-	Bidi_Direction explicitDirection = Bidi_Neutral;
-
-	fz_var(entireText);
-
-	fz_try(ctx)
-	{
-		do
-		{
-			/* Call the client-supplied function to get the next object. */
-			nextObjCb(callerData, &objText, &objLength, more, &explicitDirection);
-			if (objText == NULL || objLength == 0)
-			{
-				/* End of sequence, or caller is giving us rubbish. */
-				break;
-			}
-
-			if (freeSpace < objLength)
-			{
-				/* We need a bigger buffer. */
-				uint16_t *newBuffer = NULL;
-				size_t increment = (objLength < lengthIncrement) ?
-							lengthIncrement : objLength;
-				/* Accommodate the string terminator that ustrncat will write */
-				if (entireText == NULL)
-				{
-					/* First Time. Add extra byte */
-					entireLength += increment + 1;
-				}
-				else
-				{
-					entireLength += increment;
-				}
-				newBuffer = fz_resize_array(ctx, entireText, entireLength, sizeof(uint16_t));
-				if (entireText == NULL)
-				{
-					/* First time.  Pretend buffer holds an empty string. */
-					newBuffer[0] = UNICODE_EOS;
-				}
-				entireText = newBuffer;
-				freeSpace += increment;
-			}
-			ustrncat (entireText, objText, objLength);
-
-			freeSpace -= objLength;
-		}
-		while (objText != NULL);
-
-		if (entireText != NULL)
-		{
-			size_t  i;
-			size_t  length = entireLength - 1 - freeSpace;
-			Bidi_ProcessLine_fragData fragData;
-			/* replace TAB character with SPACE for html Documents */
-			if((bidiFlag & Bidi_replaceTab) != 0)
-			{
-				for (i = 0; i < length; i++)
-				{
-					if (entireText[i]=='\t')
-					{
-						entireText[i] = ' ';
-					}
-				}
-			}
-
-			fragData.entireText	  = entireText;
-			fragData.callersCallback = fragmentCb;
-			fragData.callersData	 = callerData;
-			Bidi_fragmentText(ctx,
-					entireText,
-					length, &explicitDirection,
-					newFragCb, &fragData,
-					bidiFlag);
-		}
-	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, entireText);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return explicitDirection;
-}
-
-
-#ifdef BIDI_LINE_AT_A_TIME
-/* This changes the given text by reordering and possibly mirroring
- * characters.  Suitable only for a single line of text.
- */
-void Bidi_processText(fz_context *ctx,
-			uint16_t *text,
-			Bidi_Direction baseDirection,
-			Bidi_Direction outputDirection,
-			int len)
-{
-	Bidi_Level *levels;
-
-	if (text == NULL || len == 0)
-	{
-		return;
-	}
-
-	levels = createLevels(ctx, text, (size_t)len, &baseDirection, TRUE, 0);
-
-	assert (levels != NULL);
-
-	/* resolve mirrored characters, e.g. swap '(' with ')' */
-	Bidi_mirror(text, levels, len);
-
-	(void)Bidi_reorder(baseDirection, text, levels, len);
-
-	/* reverse the string */
-	if (outputDirection == Bidi_RightToLeft)
-		ustrnreverse(text, len);
-
-#ifdef DEBUG_BIDI_VERBOSE
-	fprintf(stderr, "Done:   ");
-	{
-		int i;
-		for (i = 0; i < len; i++)
-		{
-			/* So that we can actually sort of read the debug string, any
-			 * non-ascii characters are replaced with a 1-digit hash
-			 * value from 0-9, making non-english characters appear
-			 * as numbers
-			 */
-			fprintf(stderr, "%c", (text[i] <= 127 && text[i ]>= 32)?
-								 text[i]
-								:(char)((text[i] % 9) + 48)
-				  );
-		}
-		fprintf(stderr, "\n\n");
-	}
-#endif
-
-	fz_free(ctx, levels);
-}
-#endif
