@@ -599,6 +599,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	float justify = 0;
 	float va;
 	int n = 0;
+	fz_html_flow *start, *mid;
 
 	if (align == TA_JUSTIFY)
 	{
@@ -613,8 +614,41 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	else if (align == TA_CENTER)
 		x += slop / 2;
 
+	/* The line data as supplied is start...end. */
+	/* We have the invariants that 1) start...mid are always laid out
+	 * correctly and 2) mid..node are the most recent set of right to left
+	 * blocks. */
+	start = node;
+	mid = node;
 	while (node != end)
 	{
+		float w = node->w + (node->type == FLOW_GLUE && node->expand ? justify : 0);
+		if (node->block_r2l)
+		{
+			float old_x = x;
+			if (mid != node)
+			{
+				/* We have met a r2l block, and have just had at least
+				 * one other r2l block. Move all the r2l blocks that
+				 * we've just had further right, and position this one
+				 * on the left. */
+				fz_html_flow *temp = mid;
+				while (temp != node)
+				{
+					old_x = temp->x;
+					temp->x += w;
+					temp = temp->next;
+				}
+			}
+			node->x = old_x;
+		}
+		else
+		{
+			node->x = x;
+			mid = node->next;
+		}
+		x += w;
+
 		switch (node->style->vertical_align)
 		{
 		default:
@@ -628,14 +662,11 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			va = node->em * -0.3f;
 			break;
 		}
-		node->x = x;
 		if (node->type == FLOW_IMAGE)
 			node->y = y + baseline - node->h;
 		else
 			node->y = y + baseline + va;
-		x += node->w;
-		if (node->type == FLOW_GLUE && node->expand)
-			x += justify;
+
 		node = node->next;
 	}
 }
