@@ -930,31 +930,93 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			trm.e = node->x;
 			trm.f = node->y;
 			s = node->text;
-			while (*s)
+			if (node->char_r2l)
 			{
-				s += fz_chartorune(&c, s);
-				g = fz_encode_character(ctx, node->style->font, c);
-				if (g)
+				float w = 0;
+				const char *t = s;
+
+				while (*t)
 				{
-					if (node->style->visibility == V_VISIBLE)
-						fz_add_text(ctx, text, node->style->font, 0, &trm, g, c);
-					trm.e += fz_advance_glyph(ctx, node->style->font, g) * node->em;
-				}
-				else
-				{
-					g = fz_encode_character(ctx, node->style->fallback, c);
+					t += fz_chartorune(&c, t);
+					g = fz_encode_character(ctx, node->style->font, c);
 					if (g)
 					{
-						if (node->style->visibility == V_VISIBLE)
-							fz_add_text(ctx, text, node->style->fallback, 0, &trm, g, c);
-						trm.e += fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
+						w += fz_advance_glyph(ctx, node->style->font, g) * node->em;
 					}
 					else
 					{
-						g = fz_encode_character(ctx, node->style->font, 0x25CF); /* bullet */
+						g = fz_encode_character(ctx, node->style->fallback, c);
+						if (g)
+						{
+							w += fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
+						}
+						else
+						{
+							g = fz_encode_character(ctx, node->style->font, 0x25CF); /* bullet */
+							w += fz_advance_glyph(ctx, node->style->font, g) * node->em;
+						}
+					}
+				}
+
+				trm.e += w;
+				while (*s)
+				{
+					s += fz_chartorune(&c, s);
+					g = fz_encode_character(ctx, node->style->font, c);
+					if (g)
+					{
+						trm.e -= fz_advance_glyph(ctx, node->style->font, g) * node->em;
+						if (node->style->visibility == V_VISIBLE)
+							fz_add_text(ctx, text, node->style->font, 0, &trm, g, c);
+					}
+					else
+					{
+						g = fz_encode_character(ctx, node->style->fallback, c);
+						if (g)
+						{
+							trm.e -= fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
+							if (node->style->visibility == V_VISIBLE)
+								fz_add_text(ctx, text, node->style->fallback, 0, &trm, g, c);
+						}
+						else
+						{
+							trm.e -= fz_advance_glyph(ctx, node->style->font, g) * node->em;
+							g = fz_encode_character(ctx, node->style->font, 0x25CF); /* bullet */
+							if (node->style->visibility == V_VISIBLE)
+								fz_add_text(ctx, text, node->style->font, 0, &trm, g, c);
+						}
+					}
+				}
+				trm.e += w;
+			}
+			else
+			{
+				while (*s)
+				{
+					s += fz_chartorune(&c, s);
+					g = fz_encode_character(ctx, node->style->font, c);
+					if (g)
+					{
 						if (node->style->visibility == V_VISIBLE)
 							fz_add_text(ctx, text, node->style->font, 0, &trm, g, c);
 						trm.e += fz_advance_glyph(ctx, node->style->font, g) * node->em;
+					}
+					else
+					{
+						g = fz_encode_character(ctx, node->style->fallback, c);
+						if (g)
+						{
+							if (node->style->visibility == V_VISIBLE)
+								fz_add_text(ctx, text, node->style->fallback, 0, &trm, g, c);
+							trm.e += fz_advance_glyph(ctx, node->style->fallback, g) * node->em;
+						}
+						else
+						{
+							g = fz_encode_character(ctx, node->style->font, 0x25CF); /* bullet */
+							if (node->style->visibility == V_VISIBLE)
+								fz_add_text(ctx, text, node->style->font, 0, &trm, g, c);
+							trm.e += fz_advance_glyph(ctx, node->style->font, g) * node->em;
+						}
 					}
 				}
 			}
