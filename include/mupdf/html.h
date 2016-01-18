@@ -215,8 +215,10 @@ struct fz_html_flow_s
 	unsigned int block_r2l : 1;
 	float x, y, w, h, em;
 	fz_css_style *style;
-	char *text;
-	fz_image *image;
+	union {
+		char *text;
+		fz_image *image;
+	} content;
 	fz_html_flow *next;
 };
 

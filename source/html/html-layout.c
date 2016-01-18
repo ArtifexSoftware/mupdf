@@ -68,7 +68,7 @@ static void fz_drop_html_flow(fz_context *ctx, fz_html_flow *flow)
 	{
 		fz_html_flow *next = flow->next;
 		if (flow->type == FLOW_IMAGE)
-			fz_drop_image(ctx, flow->image);
+			fz_drop_image(ctx, flow->content.image);
 		flow = next;
 	}
 }
@@ -89,22 +89,22 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 static void add_flow_glue(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, const char *text, int expand)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_GLUE);
-	flow->text = (char*)text;
+	flow->content.text = (char*)text;
 	flow->expand = !!expand;
 }
 
 static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_BREAK);
-	flow->text = "";
+	flow->content.text = "";
 }
 
 static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, const char *a, const char *b)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_WORD);
-	flow->text = fz_pool_alloc(ctx, pool, b - a + 1);
-	memcpy(flow->text, a, b - a);
-	flow->text[b - a] = 0;
+	flow->content.text = fz_pool_alloc(ctx, pool, b - a + 1);
+	memcpy(flow->content.text, a, b - a);
+	flow->content.text[b - a] = 0;
 }
 
 static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, fz_image *img)
@@ -112,7 +112,7 @@ static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_
 	fz_html_flow *flow;
 	add_flow_glue(ctx, pool, top, style, "", 0);
 	flow = add_flow(ctx, pool, top, style, FLOW_IMAGE);
-	flow->image = fz_keep_image(ctx, img);
+	flow->content.image = fz_keep_image(ctx, img);
 	add_flow_glue(ctx, pool, top, style, "", 0);
 }
 
@@ -129,7 +129,7 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 	new_flow->next = flow->next;
 	flow->next = new_flow;
 
-	text = flow->text;
+	text = flow->content.text;
 	while (*text && offset)
 	{
 		int rune;
@@ -137,8 +137,8 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 		offset--;
 	}
 	len = strlen(text);
-	new_flow->text = fz_pool_alloc(ctx, pool, len+1);
-	strcpy(new_flow->text, text);
+	new_flow->content.text = fz_pool_alloc(ctx, pool, len+1);
+	strcpy(new_flow->content.text, text);
 	*text = 0;
 	return new_flow;
 }
@@ -525,13 +525,13 @@ static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, floa
 	float xs = 1, ys = 1, s = 1;
 	node->x = 0;
 	node->y = 0;
-	if (node->image->w > max_w)
-		xs = max_w / node->image->w;
-	if (node->image->h > max_h)
-		ys = max_h / node->image->h;
+	if (node->content.image->w > max_w)
+		xs = max_w / node->content.image->w;
+	if (node->content.image->h > max_h)
+		ys = max_h / node->content.image->h;
 	s = fz_min(xs, ys);
-	node->w = node->image->w * s;
-	node->h = node->image->h * s;
+	node->w = node->content.image->w * s;
+	node->h = node->content.image->h * s;
 }
 
 static void measure_word(fz_context *ctx, fz_html_flow *node, float em)
@@ -546,7 +546,7 @@ static void measure_word(fz_context *ctx, fz_html_flow *node, float em)
 	node->h = fz_from_css_number_scale(node->style->line_height, em, em, em);
 
 	w = 0;
-	s = node->text;
+	s = node->content.text;
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
@@ -929,7 +929,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 
 			trm.e = node->x;
 			trm.f = node->y;
-			s = node->text;
+			s = node->content.text;
 			if (node->char_r2l)
 			{
 				float w = 0;
@@ -1034,7 +1034,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				fz_matrix local_ctm = *ctm;
 				fz_pre_translate(&local_ctm, node->x, node->y);
 				fz_pre_scale(&local_ctm, node->w, node->h);
-				fz_fill_image(ctx, dev, node->image, &local_ctm, 1);
+				fz_fill_image(ctx, dev, node->content.image, &local_ctm, 1);
 			}
 		}
 	}
@@ -1404,7 +1404,7 @@ fz_print_html_flow(fz_context *ctx, fz_html_flow *flow)
 	{
 		switch (flow->type)
 		{
-		case FLOW_WORD: printf("%s", flow->text); break;
+		case FLOW_WORD: printf("%s", flow->content.text); break;
 		case FLOW_GLUE: printf(" "); break;
 		case FLOW_BREAK: printf("\\n"); break;
 		case FLOW_IMAGE: printf("[image]"); break;
@@ -1525,12 +1525,12 @@ static void newFragCb(const uint16_t *fragment,
 		else
 		{
 			/* Must be text */
-			len = utf8len(data->flow->text);
+			len = utf8len(data->flow->content.text);
 			if (len > fragmentLen)
 			{
 				/* We need to split this flow box */
 				(void)split_flow(data->ctx, data->pool, data->flow, fragmentLen);
-				len = utf8len(data->flow->text);
+				len = utf8len(data->flow->content.text);
 			}
 		}
 
@@ -1561,8 +1561,8 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_h
 		switch (end->type)
 		{
 		case FLOW_WORD:
-			len = utf8len(end->text);
-			text = end->text;
+			len = utf8len(end->content.text);
+			text = end->content.text;
 			break;
 		case FLOW_GLUE:
 			len = 1;
