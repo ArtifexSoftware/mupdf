@@ -100,7 +100,7 @@ fz_drop_context(fz_context *ctx)
 
 	if (ctx->error)
 	{
-		assert(ctx->error->top == -1);
+		assert(ctx->error->top == ctx->error->stack - 1);
 		fz_free(ctx, ctx->error);
 	}
 
@@ -129,7 +129,7 @@ new_context_phase1(const fz_alloc_context *alloc, const fz_locks_context *locks)
 	ctx->error = Memento_label(fz_malloc_no_throw(ctx, sizeof(fz_error_context)), "fz_error_context");
 	if (!ctx->error)
 		goto cleanup;
-	ctx->error->top = -1;
+	ctx->error->top = ctx->error->stack - 1;
 	ctx->error->errcode = FZ_ERROR_NONE;
 	ctx->error->message[0] = 0;
 

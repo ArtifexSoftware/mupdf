@@ -82,10 +82,10 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
 
 FZ_NORETURN static void throw(fz_context *ctx)
 {
-	if (ctx->error->top >= 0)
+	if (ctx->error->top >= ctx->error->stack)
 	{
-		ctx->error->stack[ctx->error->top].code += 2;
-		fz_longjmp(ctx->error->stack[ctx->error->top].buffer, ctx->error->stack[ctx->error->top].code);
+		ctx->error->top->code += 2;
+		fz_longjmp(ctx->error->top->buffer, 1);
 	}
 	else
 	{
@@ -100,15 +100,16 @@ FZ_NORETURN static void throw(fz_context *ctx)
 	}
 }
 
-void fz_push_try(fz_context *ctx)
+fz_error_stack_slot *fz_push_try(fz_context *ctx)
 {
 	/* If we would overflow the exception stack, throw an exception instead
 	 * of entering the try block. */
-	if (ctx->error->top + 1 >= nelem(ctx->error->stack))
+	if (ctx->error->top + 1 >= ctx->error->stack + nelem(ctx->error->stack))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "exception stack overflow!");
 
 	ctx->error->top++;
-	ctx->error->stack[ctx->error->top].code = 0;
+	ctx->error->top->code = 0;
+	return ctx->error->top;
 }
 
 int fz_caught(fz_context *ctx)

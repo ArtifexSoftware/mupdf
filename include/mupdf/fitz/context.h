@@ -10,6 +10,7 @@
 
 typedef struct fz_alloc_context_s fz_alloc_context;
 typedef struct fz_error_context_s fz_error_context;
+typedef struct fz_error_stack_slot_s fz_error_stack_slot;
 typedef struct fz_id_context_s fz_id_context;
 typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
@@ -30,13 +31,16 @@ struct fz_alloc_context_s
 	void (*free)(void *, void *);
 };
 
+struct fz_error_stack_slot_s
+{
+	int code;
+	fz_jmp_buf buffer;
+};
+
 struct fz_error_context_s
 {
-	int top;
-	struct {
-		int code;
-		fz_jmp_buf buffer;
-	} stack[256];
+	fz_error_stack_slot *top;
+	fz_error_stack_slot stack[256];
 	int errcode;
 	char message[256];
 };
@@ -50,24 +54,24 @@ void fz_var_imp(void *);
 */
 
 #define fz_try(ctx) \
-	{{{ fz_push_try(ctx); \
-	if (fz_setjmp(ctx->error->stack[ctx->error->top].buffer) == 0)\
+	{{{ \
+	if (fz_setjmp(fz_push_try(ctx)->buffer) == 0)\
 	{ do {
 
 #define fz_always(ctx) \
 		} while (0); \
 	} \
-	if (ctx->error->stack[ctx->error->top].code < 3) \
+	if (ctx->error->top->code < 3) \
 	{ \
-		ctx->error->stack[ctx->error->top].code++; \
+		ctx->error->top->code++; \
 		do { \
 
 #define fz_catch(ctx) \
 		} while(0); \
 	} }}} \
-	if (ctx->error->stack[ctx->error->top--].code > 1)
+	if ((ctx->error->top--)->code > 1)
 
-void fz_push_try(fz_context *ctx);
+fz_error_stack_slot *fz_push_try(fz_context *ctx);
 FZ_NORETURN void fz_throw(fz_context *ctx, int errcode, const char *, ...) __printflike(3, 4);
 FZ_NORETURN void fz_rethrow(fz_context *ctx);
 FZ_NORETURN void fz_rethrow_message(fz_context *ctx, const char *fmt, ...)  __printflike(2, 3);
