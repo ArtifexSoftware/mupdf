@@ -935,7 +935,7 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, const fz_image *img, const 
 }
 
 static int
-fz_bidi_direction(int bidiclass, int curdir)
+direction_from_bidi_class(int bidiclass, int curdir)
 {
 	switch (bidiclass)
 	{
@@ -994,7 +994,7 @@ fz_bidi_reorder_span(fz_stext_span *span)
 	curdir = 1;
 	for (b = 0; b < span->len; b++)
 	{
-		dir = fz_bidi_direction(ucdn_get_bidi_class(span->text[b].c), curdir);
+		dir = direction_from_bidi_class(ucdn_get_bidi_class(span->text[b].c), curdir);
 		if (dir != curdir)
 		{
 			fz_bidi_reorder_run(span, a, b, curdir);

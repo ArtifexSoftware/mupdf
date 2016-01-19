@@ -941,7 +941,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					t += fz_chartorune(&c, t);
 					if (node->mirror)
 					{
-						c = Bidi_mirrorChar(c);
+						c = ucdn_mirror(c);
 					}
 					g = fz_encode_character(ctx, node->style->font, c);
 					if (g)
@@ -969,7 +969,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					s += fz_chartorune(&c, s);
 					if (node->mirror)
 					{
-						c = Bidi_mirrorChar(c);
+						c = ucdn_mirror(c);
 					}
 					g = fz_encode_character(ctx, node->style->font, c);
 					if (g)
@@ -1478,8 +1478,8 @@ fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 
 typedef struct
 {
-	uint16_t *buffer;
-	size_t max;
+	uint32_t *data;
+	size_t cap;
 	size_t len;
 } uni_buf;
 
@@ -1504,26 +1504,25 @@ static size_t utf8len(const char *text)
 	return len;
 }
 
-static void newFragCb(const uint16_t *fragment,
-			size_t fragmentLen,
-			int rightToLeft,
-			uint16_t mirror,
+static void newFragCb(const uint32_t *fragment,
+			size_t fragment_len,
+			int block_r2l,
+			int char_r2l,
+			uint32_t mirror,
 			void *arg)
 {
 	bidi_data *data = (bidi_data *)arg;
-	size_t fragmentOffset = fragment - data->buffer->buffer;
-	int charDirR2L = rightToLeft;
+	size_t fragment_offset = fragment - data->buffer->data;
 
-	if((fragmentOffset != 0) &&
-	   Bidi_isEuropeanNumber(fragment, fragmentLen))
-	{
-		/* fragment contains digits only */
-		charDirR2L = 0;
-	}
+	/* The Picsel code used to (effectively) do:
+	 * if (fragment_offset == 0) char_r2l = block_r2l;
+	 * but that makes no sense to me. All that could do is stop
+	 * a european number being treated as l2r because it was the
+	 * first thing on a line. */
 
 	/* We are guaranteed that fragmentOffset will be at the beginning
 	 * of flow. */
-	while (fragmentLen > 0)
+	while (fragment_len > 0)
 	{
 		size_t len;
 
@@ -1535,22 +1534,22 @@ static void newFragCb(const uint16_t *fragment,
 		{
 			/* Must be text */
 			len = utf8len(data->flow->content.text);
-			if (len > fragmentLen)
+			if (len > fragment_len)
 			{
 				/* We need to split this flow box */
-				(void)split_flow(data->ctx, data->pool, data->flow, fragmentLen);
+				(void)split_flow(data->ctx, data->pool, data->flow, fragment_len);
 				len = utf8len(data->flow->content.text);
 			}
 		}
 
 		/* This flow box is entirely contained within this fragment. */
-		data->flow->block_r2l = rightToLeft;
-		data->flow->char_r2l = charDirR2L;
+		data->flow->block_r2l = block_r2l;
+		data->flow->char_r2l = char_r2l;
 		if (mirror != 0)
 			data->flow->mirror = 1;
 		data->flow = data->flow->next;
-		fragmentOffset += len;
-		fragmentLen -= len;
+		fragment_offset += len;
+		fragment_len -= len;
 	}
 }
 
@@ -1560,7 +1559,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_h
 	fz_html_flow *end = flow;
 	const char *text;
 	bidi_data data;
-	Bidi_Direction baseDir = -1;
+	fz_bidi_direction baseDir = -1;
 
 	/* Stage 1: Gather the text from the flow up into a single buffer */
 	buffer->len = 0;
@@ -1589,13 +1588,13 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_h
 			break;
 
 		/* Make sure the buffer is large enough */
-		if (buffer->len + len > buffer->max)
+		if (buffer->len + len > buffer->cap)
 		{
-			size_t newmax = buffer->max * 2;
-			if (newmax == 0)
-				newmax = 128; /* Sensible small default */
-			buffer->buffer = fz_resize_array(ctx, buffer->buffer, newmax, sizeof(uint16_t));
-			buffer->max = newmax;
+			size_t newcap = buffer->cap * 2;
+			if (newcap == 0)
+				newcap = 128; /* Sensible small default */
+			buffer->data = fz_resize_array(ctx, buffer->data, newcap, sizeof(uint32_t));
+			buffer->cap = newcap;
 		}
 
 		/* Expand the utf8 text into Unicode and store it in the buffer */
@@ -1603,7 +1602,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_h
 		{
 			int rune;
 			text += fz_chartorune(&rune, text);
-			buffer->buffer[buffer->len++] = (uint16_t)rune;
+			buffer->data[buffer->len++] = rune;
 		}
 
 		end = end->next;
@@ -1614,12 +1613,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_h
 	data.pool = pool;
 	data.flow = flow;
 	data.buffer = buffer;
-	Bidi_fragmentText(ctx,
-			buffer->buffer,
-			buffer->len,
-			&baseDir,
-			newFragCb, &data,
-			0 /* Flags */);
+	fz_bidi_fragment_text(ctx, buffer->data, buffer->len, &baseDir, &newFragCb, &data, 0 /* Flags */);
 }
 
 static void

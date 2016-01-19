@@ -1,7 +1,5 @@
-// File: Bidi.h
-//
-/*    For use with Bidi Reference Implementation
-    For more information see the associated file bidi.cpp
+/*  For use with Bidi Reference Implementation
+    For more information see the associated file bidi-std.c
 
     Credits:
     -------
@@ -22,16 +20,52 @@
     OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
     WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
     ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE SOFTWARE.
-
-     The files bidi.rc, and resource.h are distributed together with this file and are included 
-     in the above definition of software.
 */
-// Copyright (C) 1999-2009, ASMUS, Inc.     All Rights Reserved
 
 #include "mupdf/fitz.h"
 
-void Bidi_resolveNeutrals(int baselevel, int *pcls, const int *plevel, int cch);
-void Bidi_resolveImplicit(const int * pcls, int * plevel, int cch);
-void Bidi_resolveWeak(fz_context *ctx, int baselevel, int *pcls, int *plevel, int cch);
-void Bidi_resolveWhitespace(int baselevel, const int *pcls, int *plevel, int cch);
-int Bidi_resolveExplicit(int level, int dir, int * pcls, int * plevel, int cch, int nNest);
+/* Bidirectional Character Types
+ * as defined by the Unicode Bidirectional Algorithm Table 3-7.
+ * The list of bidirectional character types here is not grouped the
+ * same way as the table 3-7, since the numeric values for the types
+ * are chosen to keep the state and action tables compact.
+ */
+enum
+{
+	/* input types */
+			/* ON MUST be zero, code relies on ON = N = 0 */
+	BDI_ON = 0,	/* Other Neutral  */
+	BDI_L,		/* Left-to-right Letter */
+	BDI_R,		/* Right-to-left Letter */
+	BDI_AN,		/* Arabic Number */
+	BDI_EN,		/* European Number */
+	BDI_AL,		/* Arabic Letter (Right-to-left) */
+	BDI_NSM,	/* Non-spacing Mark */
+	BDI_CS,		/* Common Separator */
+	BDI_ES,		/* European Separator */
+	BDI_ET,		/* European Terminator (post/prefix e.g. $ and %) */
+
+	/* resolved types */
+	BDI_BN,		/* Boundary neutral (type of RLE etc after explicit levels)*/
+
+	/* input types, */
+	BDI_S,		/* Segment Separator (TAB)	used only in L1 */
+	BDI_WS,		/* White space			used only in L1 */
+	BDI_B,		/* Paragraph Separator (aka as PS) */
+
+	/* types for explicit controls */
+	BDI_RLO,	/* these are used only in X1-X9 */
+	BDI_RLE,
+	BDI_LRO,
+	BDI_LRE,
+	BDI_PDF,
+
+	/* resolved types, also resolved directions */
+	BDI_N = BDI_ON	/* alias, where ON, WS and S are treated the same */
+};
+
+void fz_bidi_resolve_neutrals(fz_bidi_level baselevel, fz_bidi_chartype *pcls, const fz_bidi_level *plevel, int cch);
+void fz_bidi_resolve_implicit(const fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch);
+void fz_bidi_resolve_weak(fz_context *ctx, fz_bidi_level baselevel, fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch);
+void fz_bidi_resolve_whitespace(fz_bidi_level baselevel, const fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch);
+int fz_bidi_resolve_explicit(fz_bidi_level level, fz_bidi_chartype dir, fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch, fz_bidi_level nNest);
