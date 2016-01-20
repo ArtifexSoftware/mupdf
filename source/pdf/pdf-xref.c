@@ -717,7 +717,7 @@ pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, fz_off_t ofs, int l
 
 	/* Different cases here. Case 1) We might be asking for a
 	 * subsection (or a subset of a subsection) that we already
-	 * have -  Just return it. Case 2) We might be asking for a
+	 * have - Just return it. Case 2) We might be asking for a
 	 * completely new subsection - Create it and return it.
 	 * Case 3) We might have an overlapping one - Create a 'solid'
 	 * subsection and return that. */
@@ -2759,7 +2759,7 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Count, pdf_new_int(ctx, doc, 0));
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, pdf_new_array(ctx, doc, 1));
-		/* Set the trailer of the final xref section.  */
+		/* Set the trailer of the final xref section. */
 		doc->xref_sections[0].trailer = trailer;
 	}
 	fz_catch(ctx)

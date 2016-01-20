@@ -1233,8 +1233,7 @@ void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *
 			}
 		}
 
-		/* If ANY of the entries are not an array then just use the opts not
-		   the vals. */
+		/* If ANY of the entries are not an array then just use the opts not the vals. */
 		if (val_opt_ok)
 			pos = vals;
 		else
@@ -1323,8 +1322,7 @@ void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *
 		info.font_rec.da_rec.font_size = fontsize;
 		lineheight = ascent - descent;
 
-		/* Check if all items will fit.  If not, then place the "selected" item
-		   at the top of our widget rect. */
+		/* Check if all items will fit. If not, then place the "selected" item at the top of our widget rect. */
 		items_height = n * fontsize * lineheight;
 		if (items_height <= height || !num_sel)
 			fz_translate(&tm, clip_rect.x0, clip_rect.y1 - lineheight * fontsize);

@@ -2022,7 +2022,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 		index = pdf_new_array(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, dict, PDF_NAME_Index, index);
 
-		/* opts->gen_list[num] is already initialized by fz_calloc.  */
+		/* opts->gen_list[num] is already initialized by fz_calloc. */
 		opts->use_list[num] = 1;
 		opts->ofs_list[num] = opts->first_xref_entry_offset;
 

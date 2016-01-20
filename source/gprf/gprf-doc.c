@@ -173,14 +173,14 @@ static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32
 	uint32_t c1m1y, c1m1y1, c1my, c1my1, cm1y, cm1y1, cmy, cmy1;
 
 	/* We use some tricks here:
-	 *    x + (x>>15)
+	 *	x + (x >> 15)
 	 * converts x from 0..65535 to 0..65536
-	 *    (A * B)>>16
+	 *	(A * B) >> 16
 	 * multiplies A (0..65535) and B (0..65536) to give a 0...65535 result.
 	 * (This relies on A and B being unsigned).
 	 *
 	 * We also rely on the fact that if:
-	 *    C = (A * B)>> 16
+	 *	C = (A * B) >> 16
 	 * for A (0..65535) and B (0..65536) then A - C is also in (0..65535)
 	 * as C cannot possibly be any larger than A.
 	 */
@@ -864,7 +864,7 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 		val = fz_read_int32_le(ctx, file);
 		if (val != 0x4f525047)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid file signature in gproof file");
-		val  = fz_read_byte(ctx, file);
+		val = fz_read_byte(ctx, file);
 		val |= fz_read_byte(ctx, file)<<8;
 		if (val != 1)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid version in gproof file");

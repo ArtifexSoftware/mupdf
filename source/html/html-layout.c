@@ -1286,7 +1286,7 @@ fz_draw_html(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_d
 
 static char *concat_text(fz_context *ctx, fz_xml *root)
 {
-	fz_xml  *node;
+	fz_xml *node;
 	int i = 0, n = 1;
 	char *s;
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))

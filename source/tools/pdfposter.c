@@ -22,7 +22,7 @@ intersect_box(fz_context *ctx, pdf_document *doc, pdf_obj *page, pdf_obj *box_na
 {
 	pdf_obj *box = pdf_dict_get(ctx, page, box_name);
 	pdf_obj *newbox;
-	fz_rect  old_rect;
+	fz_rect old_rect;
 
 	if (box == NULL)
 		return;

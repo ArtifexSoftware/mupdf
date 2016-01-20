@@ -83,7 +83,7 @@ multiply(diy_fp_t x, diy_fp_t y)
 	c = y.f >> half; d = y.f & mask;
 	ac = a * c; bc = b * c; ad = a * d; bd = b * d;
 	tmp = (bd >> half) + (ad & mask) + (bc & mask);
-	tmp += ((uint64_t)1U) << (half - 1); /* Round.  */
+	tmp += ((uint64_t)1U) << (half - 1); /* Round. */
 	r.f = ac + (ad >> half) + (bc >> half) + (tmp >> half);
 	r.e = x.e + y.e + half * 2;
 	return r;
@@ -96,7 +96,7 @@ multiply(diy_fp_t x, diy_fp_t y)
 #define SP_SIGNIFICAND_MASK 0x7fffff
 #define SP_HIDDEN_BIT 0x800000 /* 2^23 */
 
-/* Does not normalize the result.  */
+/* Does not normalize the result. */
 static diy_fp_t
 float2diy_fp(float d)
 {
@@ -122,13 +122,13 @@ static diy_fp_t
 normalize_boundary(diy_fp_t in)
 {
 	diy_fp_t res = in;
-	/* The original number could have been a denormal.  */
+	/* The original number could have been a denormal. */
 	while (! (res.f & (SP_HIDDEN_BIT << 1)))
 	{
 		res.f <<= 1;
 		res.e--;
 	}
-	/* Do the final shifts in one go.  */
+	/* Do the final shifts in one go. */
 	res.f <<= (DIY_SIGNIFICAND_SIZE - SP_SIGNIFICAND_SIZE - 2);
 	res.e = res.e - (DIY_SIGNIFICAND_SIZE - SP_SIGNIFICAND_SIZE - 2);
 	return res;
@@ -141,7 +141,7 @@ normalized_boundaries(float f, diy_fp_t* lower_ptr, diy_fp_t* upper_ptr)
 	diy_fp_t upper, lower;
 	int significand_is_zero = v.f == SP_HIDDEN_BIT;
 
-	upper.f  = (v.f << 1) + 1; upper.e  = v.e - 1;
+	upper.f = (v.f << 1) + 1; upper.e = v.e - 1;
 	upper = normalize_boundary(upper);
 	if (significand_is_zero)
 	{
@@ -156,8 +156,7 @@ normalized_boundaries(float f, diy_fp_t* lower_ptr, diy_fp_t* upper_ptr)
 	lower.f <<= lower.e - upper.e;
 	lower.e = upper.e;
 
-	/* Adjust to double boundaries, so that we can also read the numbers
-	   with '(float) strtod'.  */
+	/* Adjust to double boundaries, so that we can also read the numbers with '(float) strtod'. */
 	upper.f -= 1 << 10;
 	lower.f += 1 << 10;
 
@@ -171,14 +170,13 @@ k_comp(int n)
 	/* Avoid ceil and floating point multiplication for better
 	 * performace and portability. Instead use the approximation
 	 * log10(2) ~ 1233/(2^12). Tests show that this gives the correct
-	 * result for all values of n in the range -500..500.  */
+	 * result for all values of n in the range -500..500. */
 	int tmp = n + DIY_SIGNIFICAND_SIZE - 1;
 	int k = (tmp * 1233) / (1 << 12);
 	return tmp > 0 ? k + 1 : k;
 }
 
-/* Cached powers of ten from 10**-37..10**46.
-   Produced using GNU MPFR's mpfr_pow_si.  */
+/* Cached powers of ten from 10**-37..10**46. Produced using GNU MPFR's mpfr_pow_si. */
 
 /* Significands. */
 static uint64_t powers_ten[84] = {

@@ -1294,8 +1294,7 @@ int pdf_choice_widget_options(fz_context *ctx, pdf_document *doc, pdf_widget *tw
 		for (i = 0; i < n; i++)
 		{
 			m = pdf_array_len(ctx, pdf_array_get(ctx, optarr, i));
-			/* If it is a two element array, the second item is the one that we want
-			   if we want the listing value */
+			/* If it is a two element array, the second item is the one that we want if we want the listing value. */
 			if (m == 2)
 				if (exportval)
 					opts[i] = pdf_to_str_buf(ctx, pdf_array_get(ctx, pdf_array_get(ctx, optarr, i), 0));

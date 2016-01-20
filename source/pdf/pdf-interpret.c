@@ -1175,7 +1175,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 			}
 			else
 			{
-				 cookie->errors++;
+				cookie->errors++;
 			}
 			if (!ignoring_errors)
 			{
