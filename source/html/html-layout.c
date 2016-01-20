@@ -297,6 +297,7 @@ static void init_box(fz_context *ctx, fz_html *box)
 
 	box->flow_head = NULL;
 	box->flow_tail = &box->flow_head;
+	box->flow_dir = BIDI_NEUTRAL;
 
 	fz_default_css_style(ctx, &box->style);
 }
@@ -708,6 +709,14 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	em = fz_from_css_number(box->style.font_size, em, em);
 	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
 	align = top->style.text_align;
+
+	if (box->flow_dir == BIDI_RIGHT_TO_LEFT)
+	{
+		if (align == TA_LEFT)
+			align = TA_RIGHT;
+		else if (align == TA_RIGHT)
+			align = TA_LEFT;
+	}
 
 	box->x = top->x;
 	box->y = top->y + top->h;
@@ -1554,12 +1563,11 @@ static void newFragCb(const uint32_t *fragment,
 }
 
 static void
-detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_html_flow *flow)
+detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_bidi_direction *baseDir, fz_html_flow *flow)
 {
 	fz_html_flow *end = flow;
 	const char *text;
 	bidi_data data;
-	fz_bidi_direction baseDir = -1;
 
 	/* Stage 1: Gather the text from the flow up into a single buffer */
 	buffer->len = 0;
@@ -1613,7 +1621,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_h
 	data.pool = pool;
 	data.flow = flow;
 	data.buffer = buffer;
-	fz_bidi_fragment_text(ctx, buffer->data, buffer->len, &baseDir, &newFragCb, &data, 0 /* Flags */);
+	fz_bidi_fragment_text(ctx, buffer->data, buffer->len, baseDir, &newFragCb, &data, 0 /* Flags */);
 }
 
 static void
@@ -1622,9 +1630,7 @@ detect_box_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_ht
 	while (box)
 	{
 		if (box->flow_head)
-		{
-			detect_flow_directionality(ctx, pool, buffer, box->flow_head);
-		}
+			detect_flow_directionality(ctx, pool, buffer, &box->flow_dir, box->flow_head);
 		detect_box_directionality(ctx, pool, buffer, box->down);
 		box = box->next;
 	}

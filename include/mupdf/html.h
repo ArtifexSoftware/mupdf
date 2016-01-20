@@ -174,6 +174,7 @@ struct fz_html_s
 	float em;
 	fz_html *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
+	fz_bidi_direction flow_dir;
 	fz_css_style style;
 	int list_item;
 	int is_first_flow; /* for text-indent */
