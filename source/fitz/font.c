@@ -120,14 +120,14 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	if (!fz_drop_imp(ctx, font, &font->refs))
 		return;
 
-	free_resources(ctx, font);
+	fz_drop_font(ctx, font->fallback);
+
 	if (font->t3lists)
 	{
+		free_resources(ctx, font);
 		for (i = 0; i < 256; i++)
-		{
 			if (font->t3lists[i])
 				fz_drop_display_list(ctx, font->t3lists[i]);
-		}
 		fz_free(ctx, font->t3procs);
 		fz_free(ctx, font->t3lists);
 		fz_free(ctx, font->t3widths);
@@ -1365,4 +1365,34 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 		return FT_Get_Char_Index(font->ft_face, ucs);
 	}
 	return ucs;
+}
+
+int
+fz_encode_character_with_fallback(fz_context *ctx, fz_font *first_font, int ucs, fz_font **out_font)
+{
+	fz_font *font;
+
+	for (font = first_font; font; font = font->fallback)
+	{
+		int gid = fz_encode_character(ctx, font, ucs);
+		if (gid > 0)
+		{
+			*out_font = font;
+			return gid;
+		}
+	}
+
+	ucs = 0x25CF; /* bullet */
+	for (font = first_font; font; font = font->fallback)
+	{
+		int gid = fz_encode_character(ctx, font, ucs);
+		if (gid > 0)
+		{
+			*out_font = font;
+			return gid;
+		}
+	}
+
+	*out_font = first_font;
+	return 0;
 }

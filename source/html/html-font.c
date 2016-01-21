@@ -12,6 +12,23 @@ static const char *font_names[16] =
 };
 
 fz_font *
+fz_load_html_fallback_font(fz_context *ctx, fz_html_font_set *set)
+{
+	if (!set->fallback)
+	{
+		unsigned char *data;
+		unsigned int size;
+		int index;
+
+		data = pdf_lookup_substitute_cjk_font(ctx, FZ_ADOBE_GB_1, 0, 0, &size, &index);
+		if (!data)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load fallback font");
+		set->fallback = fz_new_font_from_memory(ctx, "fallback", data, size, index, 0);
+	}
+	return set->fallback;
+}
+
+fz_font *
 fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 	const char *family, const char *variant, const char *style, const char *weight)
 {
@@ -30,26 +47,10 @@ fz_load_html_font(fz_context *ctx, fz_html_font_set *set,
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load html font: %s", font_names[idx]);
 		set->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);
+		set->fonts[idx]->fallback = fz_load_html_fallback_font(ctx, set);
 	}
 
 	return set->fonts[idx];
-}
-
-fz_font *
-fz_load_html_fallback_font(fz_context *ctx, fz_html_font_set *set)
-{
-	if (!set->fallback)
-	{
-		unsigned char *data;
-		unsigned int size;
-		int index;
-
-		data = pdf_lookup_substitute_cjk_font(ctx, FZ_ADOBE_GB_1, 0, 0, &size, &index);
-		if (!data)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load fallback font");
-		set->fallback = fz_new_font_from_memory(ctx, "fallback", data, size, index, 0);
-	}
-	return set->fallback;
 }
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx)

@@ -153,7 +153,7 @@ struct fz_css_style_s
 	fz_css_color background_color;
 	fz_css_color border_color[4];
 	fz_css_color color;
-	fz_font *font, *fallback;
+	fz_font *font;
 };
 
 enum

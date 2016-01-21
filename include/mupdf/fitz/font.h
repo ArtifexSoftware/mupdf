@@ -68,6 +68,9 @@ struct fz_font_s
 
 	/* cached encoding lookup */
 	uint16_t *encoding_cache[256];
+
+	/* fallback font chain */
+	fz_font *fallback;
 };
 
 /* common CJK font collections */
@@ -103,6 +106,7 @@ void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc);
 
 float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph);
 int fz_encode_character(fz_context *ctx, fz_font *font, int unicode);
+int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicode, fz_font **out_font);
 
 void fz_print_font(fz_context *ctx, fz_output *out, fz_font *font);
 
