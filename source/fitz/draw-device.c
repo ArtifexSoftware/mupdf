@@ -266,7 +266,7 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 
 static void
 fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_gel *gel = dev->gel;
@@ -320,7 +320,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 
 static void
 fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_gel *gel = dev->gel;
@@ -559,7 +559,7 @@ draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_glyph *glyph,
 
 static void
 fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_draw_state *state = &dev->stack[dev->top];
@@ -640,7 +640,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 
 static void
 fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, const fz_colorspace *colorspace,
+	const fz_matrix *ctm, fz_colorspace *colorspace,
 	const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
@@ -1190,7 +1190,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, const fz_image *image, cons
 
 static void
 fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, const fz_image *image, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
@@ -1419,7 +1419,7 @@ fz_draw_pop_clip(fz_context *ctx, fz_device *devp)
 }
 
 static void
-fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int luminosity, const fz_colorspace *colorspace, const float *colorfv)
+fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int luminosity, fz_colorspace *colorspace, const float *colorfv)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_pixmap *dest;

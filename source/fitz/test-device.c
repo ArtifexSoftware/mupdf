@@ -26,7 +26,7 @@ is_rgb_color_u8(int threshold_u8, int r, int g, int b)
 }
 
 static void
-fz_test_color(fz_context *ctx, fz_device *dev, const fz_colorspace *colorspace, const float *color)
+fz_test_color(fz_context *ctx, fz_device *dev, fz_colorspace *colorspace, const float *color)
 {
 	fz_test_device *t = (fz_test_device*)dev;
 
@@ -57,7 +57,7 @@ fz_test_color(fz_context *ctx, fz_device *dev, const fz_colorspace *colorspace, 
 
 static void
 fz_test_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (alpha != 0.0f)
 		fz_test_color(ctx, dev, colorspace, color);
@@ -65,7 +65,7 @@ fz_test_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 static void
 fz_test_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, const fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (alpha != 0.0f)
 		fz_test_color(ctx, dev, colorspace, color);
@@ -73,7 +73,7 @@ fz_test_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 static void
 fz_test_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (alpha != 0.0f)
 		fz_test_color(ctx, dev, colorspace, color);
@@ -81,7 +81,7 @@ fz_test_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 
 static void
 fz_test_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, const fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (alpha != 0.0f)
 		fz_test_color(ctx, dev, colorspace, color);
@@ -242,7 +242,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const
 
 static void
 fz_test_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	/* We assume that at least some of the image pixels are non-zero */
 	fz_test_color(ctx, dev, colorspace, color);

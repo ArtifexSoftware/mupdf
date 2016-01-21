@@ -75,7 +75,7 @@ pop_clip_stack(fz_context *ctx, fz_device *dev)
 
 void
 fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
@@ -85,7 +85,7 @@ fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd,
 
 void
 fz_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
@@ -161,7 +161,7 @@ fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 void
 fz_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
@@ -171,7 +171,7 @@ fz_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matr
 
 void
 fz_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
@@ -280,7 +280,7 @@ fz_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_m
 
 void
 fz_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
@@ -313,7 +313,7 @@ fz_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const
 }
 
 void
-fz_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *area, int luminosity, const fz_colorspace *colorspace, const float *bc)
+fz_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *area, int luminosity, fz_colorspace *colorspace, const float *bc)
 {
 	if (dev->error_depth)
 	{

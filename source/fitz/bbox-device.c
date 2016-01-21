@@ -35,7 +35,7 @@ fz_bbox_add_rect(fz_context *ctx, fz_device *dev, const fz_rect *rect, int clip)
 
 static void
 fz_bbox_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_path(ctx, path, NULL, ctm, &r), 0);
@@ -43,7 +43,7 @@ fz_bbox_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 static void
 fz_bbox_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, const fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_path(ctx, path, stroke, ctm, &r), 0);
@@ -51,7 +51,7 @@ fz_bbox_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 static void
 fz_bbox_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, NULL, ctm, &r), 0);
@@ -59,7 +59,7 @@ fz_bbox_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 
 static void
 fz_bbox_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, const fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, stroke, ctm, &r), 0);
@@ -81,7 +81,7 @@ fz_bbox_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const
 
 static void
 fz_bbox_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
-	const fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_rect r = fz_unit_rect;
 	fz_bbox_add_rect(ctx, dev, fz_transform_rect(&r, ctm), 0);
@@ -133,7 +133,7 @@ fz_bbox_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_bbox_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, const fz_colorspace *colorspace, const float *color)
+fz_bbox_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, fz_colorspace *colorspace, const float *color)
 {
 	fz_bbox_device *bdev = (fz_bbox_device*)dev;
 	fz_bbox_add_rect(ctx, dev, rect, 1);
