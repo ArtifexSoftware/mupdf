@@ -11,7 +11,7 @@ typedef struct fz_glyph_key_s fz_glyph_key;
 
 struct fz_glyph_key_s
 {
-	const fz_font *font;
+	fz_font *font;
 	int a, b;
 	int c, d;
 	unsigned short gid;
@@ -173,7 +173,7 @@ fz_subpixel_adjust(fz_context *ctx, fz_matrix *ctm, fz_matrix *subpix_ctm, unsig
 }
 
 fz_glyph *
-fz_render_stroked_glyph(fz_context *ctx, const fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *stroke, const fz_irect *scissor)
+fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *stroke, const fz_irect *scissor)
 {
 	if (font->ft_face)
 	{
@@ -189,7 +189,7 @@ fz_render_stroked_glyph(fz_context *ctx, const fz_font *font, int gid, fz_matrix
 }
 
 fz_pixmap *
-fz_render_stroked_glyph_pixmap(fz_context *ctx, const fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *stroke, const fz_irect *scissor)
+fz_render_stroked_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *stroke, const fz_irect *scissor)
 {
 	if (font->ft_face)
 	{
@@ -241,7 +241,7 @@ move_to_front(fz_glyph_cache *cache, fz_glyph_cache_entry *entry)
 }
 
 fz_glyph *
-fz_render_glyph(fz_context *ctx, const fz_font *font, int gid, fz_matrix *ctm, fz_colorspace *model, const fz_irect *scissor)
+fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colorspace *model, const fz_irect *scissor)
 {
 	fz_glyph_cache *cache;
 	fz_glyph_key key;
@@ -407,7 +407,7 @@ unlock_and_return_val:
 }
 
 fz_pixmap *
-fz_render_glyph_pixmap(fz_context *ctx, const fz_font *font, int gid, fz_matrix *ctm, fz_colorspace *model, const fz_irect *scissor)
+fz_render_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colorspace *model, const fz_irect *scissor)
 {
 	fz_pixmap *val;
 	unsigned char qe, qf;

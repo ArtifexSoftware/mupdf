@@ -550,7 +550,7 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 }
 
 static void
-pdf_dev_font(fz_context *ctx, pdf_device *pdev, const fz_font *font, float size)
+pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 {
 	int i;
 	pdf_document *doc = pdev->doc;
