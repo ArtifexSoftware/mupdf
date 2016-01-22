@@ -7,6 +7,7 @@
 # out the thirdparty libraries from git.
 
 FREETYPE_DIR := thirdparty/freetype
+HARFBUZZ_DIR := thirdparty/harfbuzz
 JBIG2DEC_DIR := thirdparty/jbig2dec
 JPEG_DIR := thirdparty/jpeg
 MUJS_DIR := thirdparty/mujs
@@ -100,6 +101,68 @@ FREETYPE_CFLAGS := -Iscripts/freetype -I$(FREETYPE_DIR)/include
 else
 FREETYPE_CFLAGS := $(SYS_FREETYPE_CFLAGS)
 FREETYPE_LIBS := $(SYS_FREETYPE_LIBS)
+endif
+
+# --- HarfBuzz ---
+
+ifneq "$(wildcard $(HARFBUZZ_DIR)/README)" ""
+
+HARFBUZZ_OUT := $(OUT)/harfbuzz
+HARFBUZZ_SRC := \
+	hb-blob.cc \
+	hb-buffer.cc \
+	hb-buffer-serialize.cc \
+	hb-common.cc \
+	hb-face.cc \
+	hb-fallback-shape.cc \
+	hb-font.cc \
+	hb-ft.cc \
+	hb-ot-font.cc \
+	hb-ot-layout.cc \
+	hb-ot-map.cc \
+	hb-ot-shape-complex-arabic.cc \
+	hb-ot-shape-complex-default.cc \
+	hb-ot-shape-complex-hangul.cc \
+	hb-ot-shape-complex-hebrew.cc \
+	hb-ot-shape-complex-indic-table.cc \
+	hb-ot-shape-complex-indic.cc \
+	hb-ot-shape-complex-myanmar.cc \
+	hb-ot-shape-complex-thai.cc \
+	hb-ot-shape-complex-tibetan.cc \
+	hb-ot-shape-complex-use-table.cc \
+	hb-ot-shape-complex-use.cc \
+	hb-ot-shape-fallback.cc \
+	hb-ot-shape-normalize.cc \
+	hb-ot-shape.cc \
+	hb-ot-tag.cc \
+	hb-set.cc \
+	hb-shape-plan.cc \
+	hb-shape.cc \
+	hb-shaper.cc \
+	hb-ucdn.cc \
+	hb-unicode.cc \
+	hb-warning.cc
+
+#	hb-coretext.cc
+#	hb-directwrite.cc
+#	hb-glib.cc
+#	hb-gobject-structs.cc
+#	hb-graphite2.cc
+#	hb-icu.cc
+#	hb-uniscribe.cc
+
+HARFBUZZ_OBJ := $(addprefix $(HARFBUZZ_OUT)/, $(HARFBUZZ_SRC:%.cc=%.o))
+
+$(HARFBUZZ_OUT):
+	$(MKDIR_CMD)
+$(HARFBUZZ_OUT)/%.o: $(HARFBUZZ_DIR)/src/%.cc | $(HARFBUZZ_OUT)
+	$(CC_CMD) -DHAVE_OT -DHAVE_UCDN -DHB_NO_MT $(FREETYPE_CFLAGS) \
+		  -fno-rtti -fno-exceptions -fvisibility-inlines-hidden --std=c++0x
+
+HARFBUZZ_CFLAGS := -I$(HARFBUZZ_DIR)/src
+else
+HARFBUZZ_CFLAGS := $(SYS_HARFBUZZ_CFLAGS)
+HARFBUZZ_LIBS := $(SYS_HARFBUZZ_LIBS)
 endif
 
 # --- JBIG2DEC ---

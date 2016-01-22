@@ -7,6 +7,9 @@
 [submodule "thirdparty/freetype"]
 	path = thirdparty/freetype
 	url = git://git.ghostscript.com/thirdparty/freetype.git
+[submodule "thirdparty/harfbuzz"]
+	path = thirdparty/harfbuzz
+	url = git://git.ghostscript.com/thirdparty/harfbuzz.git
 [submodule "thirdparty/jpeg"]
 	path = thirdparty/jpeg
 	url = git://git.ghostscript.com/thirdparty/jpeg.git

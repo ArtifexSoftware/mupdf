@@ -42,8 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;DEBUG=1;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;DEBUG=1;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -167,8 +167,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
@@ -290,8 +290,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype"
-				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;MEMENTO=1;DEBUG=1;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;"
+				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\jpeg;..\..\scripts\openjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\jpeg;..\..\thirdparty\openjpeg\libopenjpeg;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;MEMENTO=1;DEBUG=1;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -1315,6 +1315,194 @@
 				RelativePath="..\..\thirdparty\mujs\one.c"
 				>
 			</File>
+		</Filter>
+		<Filter
+			Name="harfbuzz"
+			>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-blob.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-buffer-serialize.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-buffer.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-common.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-face.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-fallback-shape.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-font.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ft.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-layout.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-map.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-arabic.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-default.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-hangul.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-hebrew.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-indic-table.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-indic.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-myanmar.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-thai.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-tibetan.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-use-table.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-complex-use.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-fallback.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape-normalize.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-shape.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ot-tag.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-set.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-shape-plan.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-shape.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-shaper.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-ucdn.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-unicode.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\harfbuzz\src\hb-warning.cc"
+				>
+			</File>
+			<Filter
+				Name="include"
+				>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-blob.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-buffer.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-common.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-deprecated.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-face.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-font.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-ft.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-set.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-shape-plan.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-shape.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-unicode.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb-version.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\thirdparty\harfbuzz\src\hb.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
