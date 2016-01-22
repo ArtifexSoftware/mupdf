@@ -1576,7 +1576,12 @@ detect_directionality(fz_context *ctx, fz_pool *pool, fz_html *box)
 {
 	uni_buf buffer = { NULL };
 
-	detect_box_directionality(ctx, pool, &buffer, box);
+	fz_try(ctx)
+		detect_box_directionality(ctx, pool, &buffer, box);
+	fz_always(ctx)
+		fz_free(ctx, buffer.data);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 fz_html *
