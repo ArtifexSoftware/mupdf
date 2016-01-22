@@ -21,9 +21,8 @@ fz_load_html_fallback_font(fz_context *ctx, fz_html_font_set *set)
 		int index;
 
 		data = pdf_lookup_substitute_cjk_font(ctx, FZ_ADOBE_GB_1, 0, 0, &size, &index);
-		if (!data)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load fallback font");
-		set->fallback = fz_new_font_from_memory(ctx, "fallback", data, size, index, 0);
+		if (data)
+			set->fallback = fz_new_font_from_memory(ctx, "fallback", data, size, index, 0);
 	}
 	return set->fallback;
 }
