@@ -120,8 +120,6 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	if (!fz_drop_imp(ctx, font, &font->refs))
 		return;
 
-	fz_drop_font(ctx, font->fallback);
-
 	if (font->t3lists)
 	{
 		free_resources(ctx, font);

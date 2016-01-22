@@ -879,6 +879,21 @@ static fz_css_rule *parse_at_page(struct lexbuf *buf)
 	return fz_new_css_rule(buf->ctx, s, p);
 }
 
+static fz_css_rule *parse_at_font_face(struct lexbuf *buf)
+{
+	fz_css_selector *s = NULL;
+	fz_css_property *p = NULL;
+
+	white(buf);
+	expect(buf, '{');
+	p = parse_declaration_list(buf);
+	expect(buf, '}');
+	white(buf);
+
+	s = fz_new_css_selector(buf->ctx, "@font-face");
+	return fz_new_css_rule(buf->ctx, s, p);
+}
+
 static void parse_at_rule(struct lexbuf *buf)
 {
 	expect(buf, CSS_KEYWORD);
@@ -936,6 +951,12 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 			{
 				next(buf);
 				rule = *nextp = parse_at_page(buf);
+				nextp = &rule->next;
+			}
+			else if (buf->lookahead == CSS_KEYWORD && !strcmp(buf->string, "font-face"))
+			{
+				next(buf);
+				rule = *nextp = parse_at_font_face(buf);
 				nextp = &rule->next;
 			}
 			else

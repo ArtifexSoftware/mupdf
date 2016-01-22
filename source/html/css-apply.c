@@ -106,6 +106,18 @@ keyword_in_list(const char *name, const char **list, int n)
 	return 0;
 }
 
+static int
+is_bold_from_font_weight(const char *weight)
+{
+	return !strcmp(weight, "bold") || !strcmp(weight, "bolder") || atoi(weight) > 400;
+}
+
+static int
+is_italic_from_font_style(const char *style)
+{
+	return !strcmp(style, "italic") || !strcmp(style, "oblique");
+}
+
 /*
  * Compute specificity
  */
@@ -673,6 +685,93 @@ fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_rule *css)
 	sort_properties(match); /* speed up subsequent value_from_raw_property lookups */
 }
 
+void
+fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_property *declaration)
+{
+	fz_html_font_face *custom;
+	fz_css_property *prop;
+	fz_font *font = NULL;
+	fz_buffer *buf = NULL;
+	int is_bold, is_italic;
+	char path[2048];
+
+	const char *family = "serif";
+	const char *weight = "normal";
+	const char *style = "normal";
+	const char *src = NULL;
+
+	for (prop = declaration; prop; prop = prop->next)
+	{
+		if (!strcmp(prop->name, "font-family")) family = prop->value->data;
+		if (!strcmp(prop->name, "font-weight")) weight = prop->value->data;
+		if (!strcmp(prop->name, "font-style")) style = prop->value->data;
+		if (!strcmp(prop->name, "src")) src = prop->value->data;
+	}
+
+	if (!src)
+		return;
+
+	is_bold = is_bold_from_font_weight(weight);
+	is_italic = is_italic_from_font_style(style);
+
+	fz_strlcpy(path, base_uri, sizeof path);
+	fz_strlcat(path, "/", sizeof path);
+	fz_strlcat(path, src, sizeof path);
+	fz_urldecode(path);
+	fz_cleanname(path);
+
+	for (custom = set->custom; custom; custom = custom->next)
+		if (!strcmp(custom->src, path) && !strcmp(custom->family, family) &&
+				custom->is_bold == is_bold &&
+				custom->is_italic == is_italic)
+			return; /* already loaded */
+
+	printf("epub: @font-face: family='%s' b=%d i=%d src=%s\n", family, is_bold, is_italic, src);
+
+	fz_var(buf);
+	fz_var(font);
+
+	fz_try(ctx)
+	{
+		if (fz_has_archive_entry(ctx, zip, path))
+			buf = fz_read_archive_entry(ctx, zip, path);
+		else
+			buf = fz_read_file(ctx, src);
+		font = fz_new_font_from_buffer(ctx, src, buf, 0, 0);
+		fz_add_html_font_face(ctx, set, family, is_bold, is_italic, path, font);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_drop_font(ctx, font);
+	}
+	fz_catch(ctx)
+	{
+		fz_warn(ctx, "cannot load font-face: %s", src);
+	}
+}
+
+void
+fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_rule *css)
+{
+	fz_css_rule *rule;
+	fz_css_selector *sel;
+
+	for (rule = css; rule; rule = rule->next)
+	{
+		sel = rule->selector;
+		while (sel)
+		{
+			if (sel->name && !strcmp(sel->name, "@font-face"))
+			{
+				fz_add_css_font_face(ctx, set, zip, base_uri, rule->declaration);
+				break;
+			}
+			sel = sel->next;
+		}
+	}
+}
+
 static fz_css_value *
 value_from_raw_property(fz_css_match *match, const char *name)
 {
@@ -1156,11 +1255,23 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	style->border_width[3] = border_width_from_property(match, "border-left-width");
 
 	{
-		const char *font_family = string_from_property(match, "font-family", "serif");
-		const char *font_variant = string_from_property(match, "font-variant", "normal");
-		const char *font_style = string_from_property(match, "font-style", "normal");
 		const char *font_weight = string_from_property(match, "font-weight", "normal");
-		style->font = fz_load_html_font(ctx, set, font_family, font_variant, font_style, font_weight);
+		const char *font_style = string_from_property(match, "font-style", "normal");
+		int is_bold = is_bold_from_font_weight(font_weight);
+		int is_italic = is_italic_from_font_style(font_style);
+		value = value_from_property(match, "font-family");
+		while (value)
+		{
+			if (strcmp(value->data, ",") != 0)
+			{
+				style->font = fz_load_html_font(ctx, set, value->data, is_bold, is_italic);
+				if (style->font)
+					break;
+			}
+			value = value->next;
+		}
+		if (!style->font)
+			style->font = fz_load_html_font(ctx, set, "serif", 0, 0);
 	}
 }
 

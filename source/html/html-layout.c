@@ -1602,6 +1602,8 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 
 	// print_rules(css);
 
+	fz_add_css_font_faces(ctx, set, zip, base_uri, css); /* load @font-face fonts into font set */
+
 	pool = fz_new_pool(ctx);
 
 	box = new_box(ctx, pool);
