@@ -1277,6 +1277,14 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 			winerror(&gapp, "cannot convert filename to utf-8");
 	}
 
+	if (layout_css)
+	{
+		fz_buffer *buf = fz_read_file(ctx, layout_css);
+		fz_write_buffer_byte(ctx, buf, 0);
+		fz_set_user_css(ctx, (char*)buf->data);
+		fz_drop_buffer(ctx, buf);
+	}
+
 	if (bps)
 		pdfapp_open_progressive(&gapp, filename, 0, bps);
 	else
