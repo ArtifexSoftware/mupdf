@@ -48,10 +48,12 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	fprintf(fo, "#ifdef DEBUG\n");
 	fprintf(fo, "#ifndef __STRICT_ANSI__\n");
 	fprintf(fo, "#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)\n");
-	fprintf(fo, "#if !defined(__clang__) && !defined(__ICC)\n");
+	fprintf(fo, "#if !defined(__ICC)\n");
 	fprintf(fo, "#define HAVE_INCBIN\n");
+	fprintf(fo, "#endif\n");
 	fprintf(fo, "#endif\n");
 	fprintf(fo, "#endif\n");
 	fprintf(fo, "#endif\n");
