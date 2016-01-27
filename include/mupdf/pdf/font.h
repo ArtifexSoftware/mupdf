@@ -103,9 +103,7 @@ void pdf_load_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *font
 
 int pdf_font_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid);
 
-unsigned char *pdf_lookup_builtin_font(fz_context *ctx, const char *name, unsigned int *len);
 unsigned char *pdf_lookup_substitute_font(fz_context *ctx, int mono, int serif, int bold, int italic, unsigned int *len);
-unsigned char *pdf_lookup_substitute_cjk_font(fz_context *ctx, int ros, int serif, int wmode, unsigned int *len, int *index);
 
 pdf_font_desc *pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *obj);
 void pdf_load_type3_glyphs(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, int nestedDepth);

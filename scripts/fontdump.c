@@ -94,16 +94,16 @@ main(int argc, char **argv)
 		fseek(fi, 0, SEEK_SET);
 
 		if (getenv("verbose"))
-			printf("\t{\"%s\",pdf_font_%s,%d},\n", origname, fontname, len);
+			printf("\t{\"%s\",fz_font_%s,%d},\n", origname, fontname, len);
 
 		fprintf(fo, "\n#ifdef HAVE_INCBIN\n");
-		fprintf(fo, "extern const unsigned char pdf_font_%s[%d];\n", fontname, len);
-		fprintf(fo, "asm(\".globl pdf_font_%s\");\n", fontname);
+		fprintf(fo, "extern const unsigned char fz_font_%s[%d];\n", fontname, len);
+		fprintf(fo, "asm(\".globl fz_font_%s\");\n", fontname);
 		fprintf(fo, "asm(\".balign 8\");\n");
-		fprintf(fo, "asm(\"pdf_font_%s:\");\n", fontname);
+		fprintf(fo, "asm(\"fz_font_%s:\");\n", fontname);
 		fprintf(fo, "asm(\".incbin \\\"%s\\\"\");\n", argv[i]);
 		fprintf(fo, "#else\n");
-		fprintf(fo, "static const unsigned char pdf_font_%s[%d] = {\n", fontname, len);
+		fprintf(fo, "static const unsigned char fz_font_%s[%d] = {\n", fontname, len);
 		hexdump(fo, fi);
 		fprintf(fo, "};\n");
 		fprintf(fo, "#endif\n");

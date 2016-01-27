@@ -14,8 +14,6 @@
 
 #include "gl-app.h"
 
-#include "mupdf/pdf.h" /* for builtin fonts */
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H
@@ -101,12 +99,12 @@ void ui_init_fonts(fz_context *ctx, float pixelsize)
 
 	clear_font_cache();
 
-	data = pdf_lookup_builtin_font(ctx, "Times-Roman", &size);
+	data = fz_lookup_base14_font(ctx, "Times-Roman", &size);
 	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_font);
 	if (code)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load ui font");
 
-	data = pdf_lookup_substitute_cjk_font(ctx, 0, 0, 0, &size, &index);
+	data = fz_lookup_cjk_font(ctx, 0, 0, 0, &size, &index);
 	code = FT_New_Memory_Face(g_freetype_lib, data, size, 0, &g_fallback_font);
 	if (code)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load ui fallback font");

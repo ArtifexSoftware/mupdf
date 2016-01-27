@@ -37,6 +37,36 @@ static const char *base_font_names[][10] =
 	{ "ZapfDingbats", NULL }
 };
 
+unsigned char *
+pdf_lookup_substitute_font(fz_context *ctx, int mono, int serif, int bold, int italic, unsigned int *len)
+{
+	if (mono) {
+		if (bold) {
+			if (italic) return fz_lookup_base14_font(ctx, "Courier-BoldOblique", len);
+			else return fz_lookup_base14_font(ctx, "Courier-Bold", len);
+		} else {
+			if (italic) return fz_lookup_base14_font(ctx, "Courier-Oblique", len);
+			else return fz_lookup_base14_font(ctx, "Courier", len);
+		}
+	} else if (serif) {
+		if (bold) {
+			if (italic) return fz_lookup_base14_font(ctx, "Times-BoldItalic", len);
+			else return fz_lookup_base14_font(ctx, "Times-Bold", len);
+		} else {
+			if (italic) return fz_lookup_base14_font(ctx, "Times-Italic", len);
+			else return fz_lookup_base14_font(ctx, "Times-Roman", len);
+		}
+	} else {
+		if (bold) {
+			if (italic) return fz_lookup_base14_font(ctx, "Helvetica-BoldOblique", len);
+			else return fz_lookup_base14_font(ctx, "Helvetica-Bold", len);
+		} else {
+			if (italic) return fz_lookup_base14_font(ctx, "Helvetica-Oblique", len);
+			else return fz_lookup_base14_font(ctx, "Helvetica", len);
+		}
+	}
+}
+
 static int is_dynalab(char *name)
 {
 	if (strstr(name, "HuaTian"))
@@ -184,7 +214,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, 
 		unsigned char *data;
 		unsigned int len;
 
-		data = pdf_lookup_builtin_font(ctx, clean_name, &len);
+		data = fz_lookup_base14_font(ctx, clean_name, &len);
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font: '%s'", fontname);
 
@@ -231,7 +261,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fon
 		unsigned int len;
 		int index;
 
-		data = pdf_lookup_substitute_cjk_font(ctx, ros, serif, fontdesc->wmode, &len, &index);
+		data = fz_lookup_cjk_font(ctx, ros, serif, fontdesc->wmode, &len, &index);
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin CJK font");
 

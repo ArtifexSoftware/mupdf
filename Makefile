@@ -169,6 +169,7 @@ CMAP_JAPAN_SRC := $(wildcard resources/cmaps/japan/*)
 CMAP_KOREA_SRC := $(wildcard resources/cmaps/korea/*)
 
 FONT_BASE14_SRC := $(wildcard resources/fonts/urw/*.cff)
+FONT_NOTO_SRC := $(wildcard resources/fonts/noto/*.ttf)
 FONT_CJK_SRC := resources/fonts/droid/DroidSansFallback.ttc
 FONT_CJK_FULL_SRC := resources/fonts/droid/DroidSansFallbackFull.ttc
 
@@ -185,12 +186,14 @@ CMAP_GEN := $(addprefix $(GEN)/, gen_cmap_cns.h gen_cmap_gb.h gen_cmap_japan.h g
 
 $(GEN)/gen_font_base14.h : $(FONT_BASE14_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_BASE14_SRC)
+$(GEN)/gen_font_noto.h : $(FONT_NOTO_SRC)
+	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_NOTO_SRC)
 $(GEN)/gen_font_cjk.h : $(FONT_CJK_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_CJK_SRC)
 $(GEN)/gen_font_cjk_full.h : $(FONT_CJK_FULL_SRC)
 	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_CJK_FULL_SRC)
 
-FONT_GEN := $(GEN)/gen_font_base14.h $(GEN)/gen_font_cjk.h $(GEN)/gen_font_cjk_full.h
+FONT_GEN := $(GEN)/gen_font_base14.h $(GEN)/gen_font_noto.h $(GEN)/gen_font_cjk.h $(GEN)/gen_font_cjk_full.h
 
 include/mupdf/pdf.h : include/mupdf/pdf/name-table.h
 NAME_GEN := include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
@@ -217,8 +220,8 @@ endif
 
 generate: $(CMAP_GEN) $(FONT_GEN) $(JAVASCRIPT_GEN) $(ADOBECA_GEN) $(NAME_GEN)
 
+$(OUT)/fitz/noto.o : $(FONT_GEN)
 $(OUT)/pdf/pdf-cmap-table.o : $(CMAP_GEN)
-$(OUT)/pdf/pdf-fontfile.o : $(FONT_GEN)
 $(OUT)/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
 $(OUT)/pdf/js/pdf-js.o : $(JAVASCRIPT_GEN)
 $(OUT)/pdf/pdf-object.o : source/pdf/pdf-name-table.h

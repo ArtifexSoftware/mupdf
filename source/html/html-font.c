@@ -1,8 +1,5 @@
 #include "mupdf/html.h"
 
-unsigned char *pdf_lookup_builtin_font(fz_context *ctx, const char *name, unsigned int *len);
-unsigned char *pdf_lookup_substitute_cjk_font(fz_context *ctx, int ros, int serif, int wmode, unsigned int *len, int *index);
-
 static const char *font_names[16] =
 {
 	"Times-Roman", "Times-Italic", "Times-Bold", "Times-BoldItalic",
@@ -14,16 +11,35 @@ static const char *font_names[16] =
 static fz_font *
 fz_load_html_fallback_font(fz_context *ctx, fz_html_font_set *set)
 {
+	fz_font *font;
+
+	/* TODO: Use set->fallback[script] instead of font->fallback chain */
 	if (!set->fallback)
 	{
 		unsigned char *data;
 		unsigned int size;
-		int index;
+		int script;
 
-		data = pdf_lookup_substitute_cjk_font(ctx, FZ_ADOBE_GB_1, 0, 0, &size, &index);
+		data = fz_lookup_noto_symbol_font(ctx, &size);
 		if (data)
-			set->fallback = fz_new_font_from_memory(ctx, "fallback", data, size, index, 0);
+		{
+			font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+			font->fallback = set->fallback;
+			set->fallback = font;
+		}
+
+		for (script = UCDN_SCRIPT_LATIN; script < UCDN_SCRIPT_SIGNWRITING; ++script)
+		{
+			data = fz_lookup_noto_font(ctx, script, 1, &size);
+			if (data)
+			{
+				font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+				font->fallback = set->fallback;
+				set->fallback = font;
+			}
+		}
 	}
+
 	return set->fallback;
 }
 
@@ -38,7 +54,7 @@ fz_load_html_builtin_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 		unsigned char *data;
 		unsigned int size;
 
-		data = pdf_lookup_builtin_font(ctx, font_names[idx], &size);
+		data = fz_lookup_base14_font(ctx, font_names[idx], &size);
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load html font: %s", font_names[idx]);
 		set->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);

@@ -947,6 +947,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\noto.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\outline.c"
 				>
 			</File>
@@ -1152,10 +1156,6 @@
 			</File>
 			<File
 				RelativePath="..\..\source\pdf\pdf-font.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\source\pdf\pdf-fontfile.c"
 				>
 			</File>
 			<File
