@@ -68,9 +68,6 @@ struct fz_font_s
 
 	/* cached encoding lookup */
 	uint16_t *encoding_cache[256];
-
-	/* fallback font chain */
-	fz_font *fallback;
 };
 
 /* common CJK font collections */
@@ -93,6 +90,10 @@ unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int serif, unsig
 unsigned char *fz_lookup_noto_symbol_font(fz_context *ctx, unsigned int *len);
 unsigned char *fz_lookup_noto_emoji_font(fz_context *ctx, unsigned int *len);
 
+fz_font *fz_load_fallback_font(fz_context *ctx, int script, int serif, int bold, int italic);
+fz_font *fz_load_fallback_symbol_font(fz_context *ctx);
+fz_font *fz_load_fallback_emoji_font(fz_context *ctx);
+
 fz_font *fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix);
 
 fz_font *fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, int len, int index, int use_glyph_bbox);
@@ -112,7 +113,7 @@ void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc);
 
 float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph);
 int fz_encode_character(fz_context *ctx, fz_font *font, int unicode);
-int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicode, fz_font **out_font);
+int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicode, int script, fz_font **out_font);
 
 void fz_print_font(fz_context *ctx, fz_output *out, fz_font *font);
 

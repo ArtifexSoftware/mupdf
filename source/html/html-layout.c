@@ -553,7 +553,7 @@ static void measure_word(fz_context *ctx, fz_html_flow *node, float em)
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		g = fz_encode_character_with_fallback(ctx, node->style->font, c, &font);
+		g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
 		w += fz_advance_glyph(ctx, font, g) * em;
 	}
 	node->w = w;
@@ -931,6 +931,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			/* TODO: reuse text object if color is unchanged */
 			text = fz_new_text(ctx);
 
+
 			trm.e = node->x;
 			trm.f = node->y;
 			s = node->content.text;
@@ -944,7 +945,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					t += fz_chartorune(&c, t);
 					if (node->mirror)
 						c = ucdn_mirror(c);
-					g = fz_encode_character_with_fallback(ctx, node->style->font, c, &font);
+					g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
 					w += fz_advance_glyph(ctx, font, g) * node->em;
 				}
 
@@ -954,7 +955,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					s += fz_chartorune(&c, s);
 					if (node->mirror)
 						c = ucdn_mirror(c);
-					g = fz_encode_character_with_fallback(ctx, node->style->font, c, &font);
+					g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
 					trm.e -= fz_advance_glyph(ctx, font, g) * node->em;
 					if (node->style->visibility == V_VISIBLE)
 						fz_add_text(ctx, text, font, 0, &trm, g, c);
@@ -966,7 +967,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				while (*s)
 				{
 					s += fz_chartorune(&c, s);
-					g = fz_encode_character_with_fallback(ctx, node->style->font, c, &font);
+					g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
 					if (node->style->visibility == V_VISIBLE)
 						fz_add_text(ctx, text, font, 0, &trm, g, c);
 					trm.e += fz_advance_glyph(ctx, font, g) * node->em;
@@ -1154,8 +1155,8 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		g = fz_encode_character_with_fallback(ctx, box->style.font, c, &font);
-		w += fz_advance_glyph(ctx, box->style.font, g) * box->em;
+		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
+		w += fz_advance_glyph(ctx, font, g) * box->em;
 	}
 
 	s = buf;
@@ -1164,9 +1165,9 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		g = fz_encode_character(ctx, box->style.font, c);
-		fz_add_text(ctx, text, box->style.font, 0, &trm, g, c);
-		trm.e += fz_advance_glyph(ctx, box->style.font, g) * box->em;
+		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
+		fz_add_text(ctx, text, font, 0, &trm, g, c);
+		trm.e += fz_advance_glyph(ctx, font, g) * box->em;
 	}
 
 	color[0] = box->style.color.r / 255.0f;

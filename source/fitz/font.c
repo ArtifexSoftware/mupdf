@@ -178,12 +178,18 @@ fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float x
  * Freetype hooks
  */
 
-struct fz_font_context_s {
+struct fz_font_context_s
+{
 	int ctx_refs;
 	FT_Library ftlib;
 	int ftlib_refs;
 	fz_load_system_font_func load_font;
 	fz_load_system_cjk_font_func load_cjk_font;
+
+	/* Cached fallback fonts */
+	struct { fz_font *serif, *sans; } fallback[256];
+	fz_font *symbol;
+	fz_font *emoji;
 };
 
 #undef __FTERRORS_H__
@@ -216,8 +222,19 @@ fz_keep_font_context(fz_context *ctx)
 
 void fz_drop_font_context(fz_context *ctx)
 {
+	int i;
+
 	if (!ctx)
 		return;
+
+	for (i = 0; i < nelem(ctx->font->fallback); ++i)
+	{
+		fz_drop_font(ctx, ctx->font->fallback[i].serif);
+		fz_drop_font(ctx, ctx->font->fallback[i].sans);
+	}
+	fz_drop_font(ctx, ctx->font->symbol);
+	fz_drop_font(ctx, ctx->font->emoji);
+
 	if (fz_drop_imp(ctx, ctx->font, &ctx->font->ctx_refs))
 		fz_free(ctx, ctx->font);
 }
@@ -264,6 +281,66 @@ fz_font *fz_load_system_cjk_font(fz_context *ctx, const char *name, int ros, int
 	}
 
 	return font;
+}
+
+fz_font *fz_load_fallback_font(fz_context *ctx, int script, int serif, int bold, int italic)
+{
+	unsigned char *data;
+	unsigned int size;
+
+	if (script < 0 || script > nelem(ctx->font->fallback))
+		return NULL;
+
+	/* TODO: bold and italic */
+
+	if (serif)
+	{
+		if (ctx->font->fallback[script].serif)
+			return ctx->font->fallback[script].serif;
+		data = fz_lookup_noto_font(ctx, script, 1, &size);
+		if (data)
+		{
+			ctx->font->fallback[script].serif = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+			return ctx->font->fallback[script].serif;
+		}
+	}
+
+	if (ctx->font->fallback[script].sans)
+		return ctx->font->fallback[script].sans;
+	data = fz_lookup_noto_font(ctx, script, 0, &size);
+	if (data)
+	{
+		ctx->font->fallback[script].sans = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+		return ctx->font->fallback[script].sans;
+	}
+
+	return NULL;
+}
+
+fz_font *fz_load_fallback_symbol_font(fz_context *ctx)
+{
+	unsigned char *data;
+	unsigned int size;
+	if (!ctx->font->symbol)
+	{
+		data = fz_lookup_noto_symbol_font(ctx, &size);
+		if (data)
+			ctx->font->symbol = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+	}
+	return ctx->font->symbol;
+}
+
+fz_font *fz_load_fallback_emoji_font(fz_context *ctx)
+{
+	unsigned char *data;
+	unsigned int size;
+	if (!ctx->font->emoji)
+	{
+		data = fz_lookup_noto_emoji_font(ctx, &size);
+		if (data)
+			ctx->font->emoji = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+	}
+	return ctx->font->emoji;
 }
 
 static const struct ft_error ft_errors[] =
@@ -1366,31 +1443,45 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 }
 
 int
-fz_encode_character_with_fallback(fz_context *ctx, fz_font *first_font, int ucs, fz_font **out_font)
+fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unicode, int script, fz_font **out_font)
 {
 	fz_font *font;
+	int gid;
 
-	for (font = first_font; font; font = font->fallback)
+	gid = fz_encode_character(ctx, user_font, unicode);
+	if (gid > 0)
+		return *out_font = user_font, gid;
+
+	if (script == 0)
+		script = ucdn_get_script(unicode);
+
+	font = fz_load_fallback_font(ctx, script, 0, 0, 0);
+	if (font)
 	{
-		int gid = fz_encode_character(ctx, font, ucs);
+		gid = fz_encode_character(ctx, font, unicode);
 		if (gid > 0)
-		{
-			*out_font = font;
-			return gid;
-		}
+			return *out_font = font, gid;
 	}
 
-	ucs = 0x25CF; /* bullet */
-	for (font = first_font; font; font = font->fallback)
+	font = fz_load_fallback_symbol_font(ctx);
+	if (font)
 	{
-		int gid = fz_encode_character(ctx, font, ucs);
+		gid = fz_encode_character(ctx, font, unicode);
 		if (gid > 0)
-		{
-			*out_font = font;
-			return gid;
-		}
+			return *out_font = font, gid;
 	}
 
-	*out_font = first_font;
-	return 0;
+	font = fz_load_fallback_emoji_font(ctx);
+	if (font)
+	{
+		gid = fz_encode_character(ctx, font, unicode);
+		if (gid > 0)
+			return *out_font = font, gid;
+	}
+
+	/* bullet */
+	if (unicode != 0x25CF)
+		return fz_encode_character_with_fallback(ctx, user_font, 0x25CF, UCDN_SCRIPT_LATIN, out_font);
+
+	return *out_font = user_font, 0;
 }

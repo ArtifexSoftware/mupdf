@@ -8,41 +8,6 @@ static const char *font_names[16] =
 	"Courier", "Courier-Oblique", "Courier-Bold", "Courier-BoldOblique",
 };
 
-static fz_font *
-fz_load_html_fallback_font(fz_context *ctx, fz_html_font_set *set)
-{
-	fz_font *font;
-
-	/* TODO: Use set->fallback[script] instead of font->fallback chain */
-	if (!set->fallback)
-	{
-		unsigned char *data;
-		unsigned int size;
-		int script;
-
-		data = fz_lookup_noto_symbol_font(ctx, &size);
-		if (data)
-		{
-			font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
-			font->fallback = set->fallback;
-			set->fallback = font;
-		}
-
-		for (script = UCDN_SCRIPT_LATIN; script < UCDN_SCRIPT_SIGNWRITING; ++script)
-		{
-			data = fz_lookup_noto_font(ctx, script, 1, &size);
-			if (data)
-			{
-				font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
-				font->fallback = set->fallback;
-				set->fallback = font;
-			}
-		}
-	}
-
-	return set->fallback;
-}
-
 fz_font *
 fz_load_html_builtin_font(fz_context *ctx, fz_html_font_set *set, const char *family, int is_bold, int is_italic)
 {
@@ -58,7 +23,6 @@ fz_load_html_builtin_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load html font: %s", font_names[idx]);
 		set->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);
-		set->fonts[idx]->fallback = fz_load_html_fallback_font(ctx, set);
 	}
 	return set->fonts[idx];
 }
@@ -101,8 +65,6 @@ fz_add_html_font_face(fz_context *ctx, fz_html_font_set *set,
 	custom->is_italic = is_italic;
 	custom->next = set->custom;
 	set->custom = custom;
-
-	font->fallback = fz_load_html_builtin_font(ctx, set, family, is_bold, is_italic);
 }
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx)
@@ -128,7 +90,6 @@ void fz_drop_html_font_set(fz_context *ctx, fz_html_font_set *set)
 
 	for (i = 0; i < nelem(set->fonts); ++i)
 		fz_drop_font(ctx, set->fonts[i]);
-	fz_drop_font(ctx, set->fallback);
 
 	fz_free(ctx, set);
 }

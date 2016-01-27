@@ -33,7 +33,6 @@ struct fz_html_font_face_s
 struct fz_html_font_set_s
 {
 	fz_font *fonts[16];
-	fz_font *fallback;
 	fz_html_font_face *custom;
 };
 
