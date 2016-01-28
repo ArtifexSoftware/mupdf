@@ -891,6 +891,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\harfbuzz.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\hash.c"
 				>
 			</File>

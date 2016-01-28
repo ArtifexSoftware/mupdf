@@ -117,4 +117,7 @@ int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicod
 
 void fz_print_font(fz_context *ctx, fz_output *out, fz_font *font);
 
+void hb_lock(fz_context *ctx);
+void hb_unlock(fz_context *ctx);
+
 #endif
