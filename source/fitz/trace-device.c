@@ -43,7 +43,7 @@ fz_trace_text_span(fz_context *ctx, fz_output *out, fz_text_span *span)
 			fz_printf(ctx, out, "<g ucs=\"%c\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
 					span->items[i].ucs, span->items[i].gid, span->items[i].x, span->items[i].y);
 		else
-			fz_printf(ctx, out, "<g ucs=\"U+%04X\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
+			fz_printf(ctx, out, "<g ucs=\"U+%04x\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
 					span->items[i].ucs, span->items[i].gid, span->items[i].x, span->items[i].y);
 	}
 	fz_printf(ctx, out, "</span>\n");
