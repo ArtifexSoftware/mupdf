@@ -5,6 +5,8 @@ include $(CLEAR_VARS)
 MY_ROOT := ../..
 
 LOCAL_C_INCLUDES := \
+	../../include/ \
+	../../thirdparty/harfbuzz/src \
 	../../thirdparty/jbig2dec \
 	../../thirdparty/openjpeg/libopenjpeg \
 	../../thirdparty/jpeg \
@@ -13,13 +15,16 @@ LOCAL_C_INCLUDES := \
 	../../thirdparty/freetype/include \
 	../../scripts/freetype \
 	../../scripts/jpeg \
-	../../scripts/openjpeg \
+	../../scripts/openjpeg
 
 LOCAL_CFLAGS := \
 	-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -DHAVE_STDINT_H \
 	-DOPJ_HAVE_STDINT_H \
 	'-DFT_CONFIG_MODULES_H="slimftmodules.h"' \
-	'-DFT_CONFIG_OPTIONS_H="slimftoptions.h"'
+	'-DFT_CONFIG_OPTIONS_H="slimftoptions.h"' \
+	-Dhb_malloc_impl=hb_malloc -Dhb_calloc_impl=hb_calloc \
+	-Dhb_realloc_impl=hb_realloc -Dhb_free_impl=hb_free \
+	-DHAVE_OT -DHAVE_UCDN -DHB_NO_MT
 ifdef NDK_PROFILER
 LOCAL_CFLAGS += -pg -DNDK_PROFILER -O2
 endif
@@ -27,9 +32,44 @@ ifdef MEMENTO
 LOCAL_CFLAGS += -DMEMENTO -DMEMENTO_LEAKONLY
 endif
 
+LOCAL_CPP_EXTENSION := .cc
+
 LOCAL_MODULE := mupdfthirdparty
 LOCAL_SRC_FILES := \
 	$(MY_ROOT)/thirdparty/mujs/one.c \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-blob.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-buffer.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-buffer-serialize.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-common.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-face.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-fallback-shape.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-font.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ft.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-font.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-layout.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-map.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-arabic.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-default.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-hangul.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-hebrew.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-indic-table.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-indic.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-myanmar.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-thai.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-tibetan.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-use-table.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-complex-use.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-fallback.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape-normalize.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-shape.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ot-tag.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-set.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-shape-plan.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-shape.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-shaper.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-ucdn.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-unicode.cc \
+	$(MY_ROOT)/thirdparty/harfbuzz/src/hb-warning.cc \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2.c \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2_arith.c \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2_arith_iaid.c \

@@ -31,6 +31,7 @@ LOCAL_CFLAGS += -DHAVE_OPENSSL
 endif
 
 LOCAL_C_INCLUDES := \
+	../../thirdparty/harfbuzz/src \
 	../../thirdparty/jbig2dec \
 	../../thirdparty/openjpeg/libopenjpeg \
 	../../thirdparty/jpeg \
