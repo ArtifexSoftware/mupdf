@@ -205,76 +205,83 @@ is_european_number(const uint32_t *str, unsigned int len)
 	return TRUE;
 }
 
+/* Split fragments into single scripts (or punctation + single script) */
 static void
-do_callback(const uint32_t *fragment,
+split_at_script(const uint32_t *fragment,
 		size_t fragment_len,
 		int block_r2l,
-		uint32_t mirror,
+		int char_r2l,
 		void *arg,
 		fz_bidi_fragment_callback *callback)
 {
-	char char_r2l = block_r2l;
+	int script = UCDN_SCRIPT_COMMON;
+	size_t script_start, i;
 
-	char_r2l = block_r2l && !is_european_number(fragment, fragment_len);
-
-	(*callback)(fragment, fragment_len, block_r2l, char_r2l, mirror, arg);
-}
-
-/* Searches a RTL fragment for a mirror character
- * When it finds one it creates a separate fragment for the
- * character and the surrounding fragments. It passes the mirrored
- * character back through the callback.
- */
-static void
-create_fragment_mirrors(const uint32_t *text,
-		int len,
-		fz_bidi_fragment_callback *callback,
-		void *arg)
-{
-	int i;
-	int lastPtr;
-	uint32_t mirror;
-
-	assert(text != NULL);
-	assert(len > 0);
-	lastPtr = 0;
-	for (i = 0; i < len; i ++)
+	script_start = 0;
+	for (i = 0; i < fragment_len; i++)
 	{
-		mirror = ucdn_mirror(text[i]);
-		if (mirror != UNICODE_EOS)
+		int s = ucdn_get_script(fragment[i]);
+		if (s == UCDN_SCRIPT_COMMON || s == UCDN_SCRIPT_INHERITED)
 		{
-			/* create preceding fragment */
-			if (i > lastPtr)
-			{
-				do_callback(&text[lastPtr],
-						i - lastPtr,
-						TRUE,
-						UNICODE_EOS,
-						arg,
-						callback);
-				DBUGVF(("create mirror fragment for %x\n",(int)text[i]));
-			}
-			/* create mirror fragment */
-			do_callback(&text[i],
-					1,
-					TRUE,
-					mirror,
-					arg,
-					callback);
-			lastPtr = i + 1;
+			/* Punctuation etc. This is fine. */
+		}
+		else if (s == script)
+		{
+			/* Same script. Still fine. */
+		}
+		else if (script == UCDN_SCRIPT_COMMON || script == UCDN_SCRIPT_INHERITED)
+		{
+			/* First non punctuation thing. Set the script. */
+			script = s;
+		}
+		else
+		{
+			/* Change of script. Break the fragment. */
+			(*callback)(&fragment[script_start], i - script_start, block_r2l, char_r2l, script, arg);
+			script_start = i+1;
+			script = s;
 		}
 	}
-
-	if (lastPtr < len)
+	if (script_start != fragment_len)
 	{
-		/* create end fragment */
-		do_callback(&text[lastPtr],
-				len - lastPtr,
-				TRUE,
-				UNICODE_EOS,
+		(*callback)(&fragment[script_start], fragment_len - script_start, block_r2l, char_r2l, script, arg);
+	}
+}
+
+static void
+detect_numbers(const uint32_t *fragment,
+		size_t fragment_len,
+		size_t start,
+		size_t end,
+		const fz_bidi_level *levels,
+		void *arg,
+		fz_bidi_fragment_callback *callback)
+{
+	int block_r2l = ODD(levels[start]);
+	int char_r2l = block_r2l;
+
+	/* Check to see if we've got a number. Numbers should
+	 * never be block_r2l, so we can avoid the test. */
+	if (block_r2l || !is_european_number(&fragment[start], end-start))
+	{
+		/* No number, just split as normal */
+		split_at_script(&fragment[start],
+				end-start,
+				block_r2l,
+				char_r2l,
 				arg,
 				callback);
+		return;
 	}
+
+	/* We have a number. We have to check to see whether this
+	 * should be handled as a block_r2l thing. */
+	if (start != 0)
+		block_r2l = ODD(levels[start-1]);
+	if (block_r2l && end != fragment_len)
+		block_r2l = ODD(levels[end]);
+
+	split_at_script(&fragment[start], end-start, block_r2l, char_r2l, arg, callback);
 }
 
 /* Determines the character classes for all following
@@ -607,45 +614,25 @@ void fz_bidi_fragment_text(fz_context *ctx,
 				 * Create a text object for it, then start
 				 * a new fragment.
 				 */
-				if (ODD(levels[startOfFragment]) != 0)
-				{
-					/* if RTL check for mirrors and create sub-frags */
-					create_fragment_mirrors(&text[startOfFragment],
-							i - startOfFragment,
-							callback,
-							arg);
-				}
-				else
-				{
-					do_callback(&text[startOfFragment],
-							i - startOfFragment,
-							ODD(levels[startOfFragment]),
-							UNICODE_EOS,
-							arg,
-							callback);
-				}
+				detect_numbers(text,
+						textlen,
+						startOfFragment,
+						i,
+						levels,
+						arg,
+						callback);
 				startOfFragment = i;
 			}
 		}
 		/* Now i == textlen. Deal with the final (or maybe only) fragment. */
-		if (ODD(levels[startOfFragment]) != 0)
-		{
-			/* if RTL check for mirrors and create sub-frags */
-			create_fragment_mirrors(&text[startOfFragment],
-					i - startOfFragment,
-					callback,
-					arg);
-		}
-		else
-		{
-			/* otherwise create 1 fragment */
-			do_callback(&text[startOfFragment],
-					i - startOfFragment,
-					ODD(levels[startOfFragment]),
-					UNICODE_EOS,
-					arg,
-					callback);
-		}
+		/* otherwise create 1 fragment */
+		detect_numbers(text,
+				textlen,
+				startOfFragment,
+				i,
+				levels,
+				arg,
+				callback);
 	}
 	fz_always(ctx)
 	{

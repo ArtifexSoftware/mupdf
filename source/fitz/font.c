@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 
 #include <ft2build.h>
+#include "hb.h"
+#include "hb-ft.h"
+
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H
 #include FT_STROKER_H
@@ -150,6 +153,7 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
+	hb_font_destroy(font->shaper);
 	fz_free(ctx, font);
 }
 

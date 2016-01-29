@@ -221,11 +221,27 @@ enum
  */
 struct fz_html_flow_s
 {
+	/* What type of node */
 	unsigned int type : 2;
+
+	/* Whether this should expand during justification */
 	unsigned int expand : 1;
+
+	/* Whether the chars should be laid out r2l or l2r */
 	unsigned int char_r2l : 1;
+
+	/* Whether this block should stack with its neighbours r2l or l2r */
 	unsigned int block_r2l : 1;
-	unsigned int mirror : 1;
+
+	/* Whether the markup specifies a given direction. */
+	unsigned int markup_r2l : 2;
+
+	/* Whether the markup specifies a given language. */
+	unsigned int markup_lang : 8;
+
+	/* The script detected by the bidi code. */
+	unsigned int script : 8;
+
 	float x, y, w, h, em;
 	fz_css_style *style;
 	union {

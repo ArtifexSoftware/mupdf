@@ -10,8 +10,6 @@
  * Processes Unicode text by arranging the characters into an order suitable
  * for display. E.g. Hebrew text will be arranged from right-to-left and
  * any English within the text will remain in the left-to-right order.
- * Characters such as parenthesis will be substituted for their mirrored
- * equivalents if they are part of text which must be reversed.
  *
  * This is an implementation of the Unicode Bidirectional Algorithm which
  * can be found here: http://www.unicode.org/reports/tr9/ and is based
@@ -55,14 +53,15 @@ enum
  *				as right-to-left
  * @param	char_r2l	true if characters within block should be laid out
  *				as right-to-left
- * @param	mirror		The mirror code of the fragment if it exists
+ * @param       script          the script in use for this fragment (other than common
+ *                              or inherited)
  * @param	arg		data from caller of Bidi_fragmentText
  */
 typedef void (fz_bidi_fragment_callback)(const uint32_t *fragment,
 					size_t fragmentLen,
 					int block_r2l,
 					int char_r2l,
-					uint32_t mirror,
+					int script,
 					void *arg);
 
 /**

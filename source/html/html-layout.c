@@ -1,5 +1,11 @@
 #include "mupdf/html.h"
 
+#include "hb.h"
+#include "hb-ft.h"
+#include <ft2build.h>
+
+#undef DEBUG_HARFBUZZ
+
 enum { T, R, B, L };
 
 static const char *default_css =
@@ -78,9 +84,9 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 	fz_html_flow *flow = fz_pool_alloc(ctx, pool, sizeof *flow);
 	flow->type = type;
 	flow->expand = 0;
-	flow->char_r2l = 0;
-	flow->block_r2l = 0;
-	flow->mirror = 0;
+	flow->char_r2l = BIDI_LEFT_TO_RIGHT;
+	flow->block_r2l = BIDI_RIGHT_TO_LEFT;
+	flow->markup_r2l = BIDI_NEUTRAL;
 	flow->style = style;
 	*top->flow_tail = flow;
 	top->flow_tail = &flow->next;
@@ -536,27 +542,102 @@ static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, floa
 	node->h = node->content.image->h * s;
 }
 
-static void measure_word(fz_context *ctx, fz_html_flow *node, float em)
+static void measure_word(fz_context *ctx, fz_html_flow *node, float em, hb_buffer_t *hb_buf)
 {
-	fz_font *font;
-	const char *s;
-	int c, g;
-	float w;
+	fz_font *font, *next_font;
+	hb_glyph_position_t *glyph_pos;
+	unsigned int glyph_count, i;
+	int max_x, x;
+	const char *s, *start, *end;
+	FT_Face face;
+	int fterr;
+	int scale;
 
 	em = fz_from_css_number(node->style->font_size, em, em);
 	node->x = 0;
 	node->y = 0;
+	node->w = 0;
 	node->h = fz_from_css_number_scale(node->style->line_height, em, em, em);
 
-	w = 0;
-	s = node->content.text;
-	while (*s)
+	start = end = s = node->content.text;
+	font = NULL;
+	while (*start)
 	{
-		s += fz_chartorune(&c, s);
-		g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
-		w += fz_advance_glyph(ctx, font, g) * em;
+		/* Run through the string, encoding chars until we find one
+		 * that requires a different fallback font. */
+		while (*s)
+		{
+			int c;
+
+			s += fz_chartorune(&c, s);
+			(void)fz_encode_character_with_fallback(ctx, node->style->font, c, node->script, &next_font);
+			if (next_font != font)
+			{
+				if (font != NULL)
+					break;
+				font = next_font;
+			}
+			end = s;
+		}
+
+		fz_try(ctx)
+		{
+			hb_lock(ctx);
+
+			/* So, shape from start to end in font */
+			face = font->ft_face;
+			scale = face->units_per_EM;
+			fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
+			if (fterr)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
+
+			if (font->shaper == NULL)
+				font->shaper = (void *)hb_ft_font_create(face, NULL);
+
+			hb_buffer_clear_contents(hb_buf);
+			hb_buffer_set_direction(hb_buf, node->char_r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+			/* We don't know script or language, so leave them blank */
+			/* hb_buffer_set_script(hb_buf, HB_SCRIPT_LATIN); */
+			/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
+
+			/* First put the text content into a harfbuzz buffer
+			 * labelled with the position within the word. */
+			hb_buffer_add_utf8(hb_buf, start, end - start, 0, -1);
+			hb_buffer_guess_segment_properties(hb_buf);
+
+			/* Now shape that buffer */
+			hb_shape(font->shaper, hb_buf, NULL, 0);
+
+			glyph_pos = hb_buffer_get_glyph_positions(hb_buf, &glyph_count);
+		}
+		fz_always(ctx)
+		{
+			hb_unlock(ctx);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+
+		max_x = 0;
+		x = 0;
+		for (i = 0; i < glyph_count; i++)
+		{
+			int lx;
+
+			x += glyph_pos[i].x_advance;
+			lx = x + glyph_pos[i].x_offset;
+			if (lx > max_x)
+				max_x = lx;
+		}
+
+		start = end;
+		end = s;
+		font = next_font;
+
+		node->w += max_x * em / scale;
 	}
-	node->w = w;
+
 	node->em = em;
 }
 
@@ -586,7 +667,7 @@ static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline
 	return h;
 }
 
-static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, fz_html_flow *node, fz_html_flow *end, fz_html *box, float baseline)
+static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, fz_html_flow *start, fz_html_flow *end, fz_html *box, float baseline)
 {
 	float x = box->x + indent;
 	float y = box->y + box->h;
@@ -594,7 +675,8 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	float justify = 0;
 	float va;
 	int n = 0;
-	fz_html_flow *start, *mid;
+	fz_html_flow *node = start;
+	fz_html_flow *mid;
 
 	if (align == TA_JUSTIFY)
 	{
@@ -613,8 +695,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	/* We have the invariants that 1) start...mid are always laid out
 	 * correctly and 2) mid..node are the most recent set of right to left
 	 * blocks. */
-	start = node;
-	mid = node;
+	mid = start;
 	while (node != end)
 	{
 		float w = node->w + (node->type == FLOW_GLUE && node->expand ? justify : 0);
@@ -691,7 +772,7 @@ static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w
 	box->h += line_h;
 }
 
-static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h)
+static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, hb_buffer_t *hb_buf)
 {
 	fz_html_flow *node, *line, *mark;
 	float line_w;
@@ -729,7 +810,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 		}
 		else
 		{
-			measure_word(ctx, node, em);
+			measure_word(ctx, node, em, hb_buf);
 		}
 	}
 
@@ -793,7 +874,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	}
 }
 
-static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, float vertical)
+static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, float vertical, hb_buffer_t *hb_buf)
 {
 	fz_html *child;
 	int first;
@@ -841,7 +922,7 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 	{
 		if (child->type == BOX_BLOCK)
 		{
-			vertical = layout_block(ctx, child, box, em, page_h, vertical);
+			vertical = layout_block(ctx, child, box, em, page_h, vertical, hb_buf);
 			if (first)
 			{
 				/* move collapsed parent/child top margins to parent */
@@ -863,7 +944,7 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 		}
 		else if (child->type == BOX_FLOW)
 		{
-			layout_flow(ctx, child, box, em, page_h);
+			layout_flow(ctx, child, box, em, page_h, hb_buf);
 			if (child->h > 0)
 			{
 				box->h += child->h;
@@ -897,15 +978,23 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 	return vertical;
 }
 
-static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
+static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, hb_buffer_t *hb_buf)
 {
-	fz_font *font;
+	fz_font *font, *next_font;
 	fz_html_flow *node;
 	fz_text *text;
 	fz_matrix trm;
 	const char *s;
+	const char *t;
+	const char *start;
+	const char *end;
 	float color[3];
-	int c, g;
+	int c, scale, fterr;
+	float node_scale;
+	FT_Face face;
+	float w, lx, ly;
+
+	/* FIXME: HB_DIRECTION_TTB? */
 
 	for (node = box->flow_head; node; node = node->next)
 	{
@@ -922,6 +1011,15 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 
 		if (node->type == FLOW_WORD)
 		{
+			int idx;
+			unsigned int gp, glyph_count;
+			hb_glyph_info_t *glyph_info;
+			hb_glyph_position_t *glyph_pos;
+			float x, y;
+
+			if (node->content.text == NULL)
+				continue;
+
 			fz_scale(&trm, node->em, -node->em);
 
 			color[0] = node->style->color.r / 255.0f;
@@ -931,54 +1029,189 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			/* TODO: reuse text object if color is unchanged */
 			text = fz_new_text(ctx);
 
-
-			trm.e = node->x;
-			trm.f = node->y;
-			s = node->content.text;
-			if (node->char_r2l)
+			x = node->x;
+			y = node->y;
+			w = node->w;
+			start = end = s = node->content.text;
+			font = NULL;
+			while (*start)
 			{
-				float w = 0;
-				const char *t = s;
+				/* Run through the string, encoding chars until we find one
+				 * that requires a different fallback font. */
+				while (*s)
+				{
+					int c;
 
-				while (*t)
+					s += fz_chartorune(&c, s);
+					(void)fz_encode_character_with_fallback(ctx, node->style->font, c, node->script, &next_font);
+					if (next_font != font)
+					{
+						if (font != NULL)
+							break;
+						font = next_font;
+					}
+					end = s;
+				}
+
+				fz_try(ctx)
+				{
+					hb_lock(ctx);
+
+					/* So, shape from start to end in font */
+					face = font->ft_face;
+					scale = face->units_per_EM;
+					fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
+					if (fterr)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
+
+					if (font->shaper == NULL)
+						font->shaper = (void *)hb_ft_font_create(face, NULL);
+
+					hb_buffer_clear_contents(hb_buf);
+					hb_buffer_set_direction(hb_buf, node->char_r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+					/* We don't know script or language, so leave them blank */
+					/* hb_buffer_set_script(hb_buf, HB_SCRIPT_LATIN); */
+					/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
+
+					/* First put the text content into a harfbuzz buffer
+					 * labelled with the position within the word. */
+					hb_buffer_add_utf8(hb_buf, start, end - start, 0, -1);
+					hb_buffer_guess_segment_properties(hb_buf);
+
+					face = font->ft_face;
+					scale = face->units_per_EM;
+					fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
+					if (fterr)
+						fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
+
+					/* Now shape that buffer */
+					hb_shape(font->shaper, hb_buf, NULL, 0);
+
+					glyph_info = hb_buffer_get_glyph_infos(hb_buf, &glyph_count);
+					glyph_pos = hb_buffer_get_glyph_positions(hb_buf, &glyph_count);
+				}
+				fz_always(ctx)
+				{
+					hb_unlock(ctx);
+				}
+				fz_catch(ctx)
+				{
+					fz_rethrow(ctx);
+				}
+
+#ifdef DEBUG_HARFBUZZ
+				printf("fragment: ");
+				t = start;
+				while (t != end)
 				{
 					t += fz_chartorune(&c, t);
-					if (node->mirror)
-						c = ucdn_mirror(c);
-					g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
-					w += fz_advance_glyph(ctx, font, g) * node->em;
+					if (c >= 127)
+						printf("<%x>", c);
+					else
+						printf("%c", c);
+				}
+				printf("\n");
+#endif /* DEBUG_HARFBUZZ */
+
+				/* Now offset the glyph_info with the correct positions.
+				 * Harfbuzz always gives us the shaped glyphs for plotting in l2r
+				 * order. We however still want to send glyphs r2l rather than l2r
+				 * for r2l blocks so that text extraction works. So, regardless
+				 * of ordering we resolve the positions here. The nasty thing is
+				 * that we right the resolved positions back into the Harfbuzz
+				 * buffer with a change of type. */
+				node_scale = node->em / scale;
+
+				lx = 0;
+				ly = 0;
+				for (gp = 0; gp < glyph_count; gp++)
+				{
+					hb_glyph_position_t *p = &glyph_pos[gp];
+#ifdef DEBUG_HARFBUZZ
+					hb_glyph_info_t *g = &glyph_info[gp];
+
+					printf("glyph: %x(%d) @ %d %d + %d %d",
+						g->codepoint, g->cluster, p->x_offset, p->y_offset,
+						p->x_advance, p->y_advance);
+#endif /* DEBUG_HARFBUZZ */
+					*(float *)(&p->x_offset) = x + (lx + p->x_offset) * node_scale;
+					*(float *)(&p->y_offset) = y + (ly + p->y_offset) * node_scale;
+#ifdef DEBUG_HARFBUZZ
+					printf(" => %g %g\n", *(float *)(&p->x_offset), *(float *)(&p->y_offset));
+#endif /* DEBUG_HARFBUZZ */
+					lx += p->x_advance;
+					ly += p->y_advance;
 				}
 
-				trm.e += w;
-				while (*s)
+				if (node->char_r2l)
 				{
-					s += fz_chartorune(&c, s);
-					if (node->mirror)
-						c = ucdn_mirror(c);
-					g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
-					trm.e -= fz_advance_glyph(ctx, font, g) * node->em;
-					if (node->style->visibility == V_VISIBLE)
-						fz_add_text(ctx, text, font, 0, &trm, g, c);
+					w -= lx * node_scale;
+					for (gp = 0; gp < glyph_count; gp++)
+					{
+						hb_glyph_position_t *p = &glyph_pos[gp];
+						*(float *)(&p->x_offset) += w;
+					}
 				}
-				trm.e += w;
-			}
-			else
-			{
-				while (*s)
+				else
 				{
-					s += fz_chartorune(&c, s);
-					g = fz_encode_character_with_fallback(ctx, node->style->font, c, 0, &font);
-					if (node->style->visibility == V_VISIBLE)
-						fz_add_text(ctx, text, font, 0, &trm, g, c);
-					trm.e += fz_advance_glyph(ctx, font, g) * node->em;
+					x += node_scale * lx;
+					y += node_scale * ly;
 				}
-			}
 
-			if (text)
-			{
-				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
-				fz_drop_text(ctx, text);
+				/* Now read the data back out again, and turn it into
+				 * glyph/ucs pairs to go to fz_text */
+				idx = 0;
+				t = start;
+				if (node->style->visibility == V_VISIBLE)
+				{
+					while (*t)
+					{
+						int l = fz_chartorune(&c, t);
+						t += l;
+
+						for (gp = 0; gp < glyph_count; gp++)
+						{
+							hb_glyph_info_t *g = &glyph_info[gp];
+							hb_glyph_position_t *p = &glyph_pos[gp];
+							if (g->cluster != idx)
+								continue;
+							trm.e = *(float *)&p->x_offset;
+							trm.f = *(float *)&p->y_offset;
+							fz_add_text(ctx, text, font, 0, &trm, g->codepoint, c);
+							break;
+						}
+						if (gp == glyph_count)
+						{
+							/* We failed to find a glyph for this codepoint, presumably
+							 * because we've been shaped away into another. We can't afford
+							 * to just drop the codepoint as this will upset text extraction.
+							 */
+							fz_add_text(ctx, text, font, 0, &trm, -1, c);
+						}
+						else
+						{
+							/* We've send the codepoint and glyph. Make sure there aren't
+							 * more glyphs to come from the same codepoint. */
+							for (gp++ ;gp < glyph_count; gp++)
+							{
+								hb_glyph_info_t *g = &glyph_info[gp];
+								hb_glyph_position_t *p = &glyph_pos[gp];
+								if (g->cluster != idx)
+									continue;
+								trm.e = *(float *)&p->x_offset;
+								trm.f = *(float *)&p->y_offset;
+								fz_add_text(ctx, text, font, 0, &trm, g->codepoint, -1);
+							}
+						}
+						idx += l;
+					}
+				}
+				start = end;
+				end = s;
+				font = next_font;
 			}
+			fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+			fz_drop_text(ctx, text);
 		}
 		else if (node->type == FLOW_IMAGE)
 		{
@@ -1179,7 +1412,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	fz_drop_text(ctx, text);
 }
 
-static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm)
+static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, hb_buffer_t *hb_buf)
 {
 	float x0, y0, x1, y1;
 
@@ -1215,8 +1448,8 @@ static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float 
 	{
 		switch (box->type)
 		{
-		case BOX_BLOCK: draw_block_box(ctx, box, page_top, page_bot, dev, ctm); break;
-		case BOX_FLOW: draw_flow_box(ctx, box, page_top, page_bot, dev, ctm); break;
+		case BOX_BLOCK: draw_block_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf); break;
+		case BOX_FLOW: draw_flow_box(ctx, box, page_top, page_bot, dev, ctm, hb_buf); break;
 		}
 	}
 }
@@ -1225,8 +1458,33 @@ void
 fz_draw_html(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *inctm)
 {
 	fz_matrix ctm = *inctm;
-	fz_pre_translate(&ctm, 0, -page_top);
-	draw_block_box(ctx, box, page_top, page_bot, dev, &ctm);
+	hb_buffer_t *hb_buf = NULL;
+	int unlocked = 0;
+
+	fz_var(hb_buf);
+	fz_var(unlocked);
+
+	hb_lock(ctx);
+
+	fz_try(ctx)
+	{
+		hb_buf = hb_buffer_create();
+		hb_unlock(ctx);
+		unlocked = 1;
+		fz_pre_translate(&ctm, 0, -page_top);
+		draw_block_box(ctx, box, page_top, page_bot, dev, &ctm, hb_buf);
+	}
+	fz_always(ctx)
+	{
+		if (unlocked)
+			hb_lock(ctx);
+		hb_buffer_destroy(hb_buf);
+		hb_unlock(ctx);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 static char *concat_text(fz_context *ctx, fz_xml *root)
@@ -1413,12 +1671,36 @@ void
 fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 {
 	fz_html page_box;
+	hb_buffer_t *hb_buf = NULL;
+	int unlocked = 0;
 
-	init_box(ctx, &page_box);
-	page_box.w = w;
-	page_box.h = 0;
+	fz_var(hb_buf);
+	fz_var(unlocked);
 
-	layout_block(ctx, box, &page_box, em, h, 0);
+	hb_lock(ctx);
+
+	fz_try(ctx)
+	{
+		hb_buf = hb_buffer_create();
+		unlocked = 1;
+		hb_unlock(ctx);
+		init_box(ctx, &page_box);
+		page_box.w = w;
+		page_box.h = 0;
+
+		layout_block(ctx, box, &page_box, em, h, 0, hb_buf);
+	}
+	fz_always(ctx)
+	{
+		if (unlocked)
+			hb_lock(ctx);
+		hb_buffer_destroy(hb_buf);
+		hb_unlock(ctx);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
 }
 
 typedef struct
@@ -1453,7 +1735,7 @@ static void newFragCb(const uint32_t *fragment,
 			size_t fragment_len,
 			int block_r2l,
 			int char_r2l,
-			uint32_t mirror,
+			int script,
 			void *arg)
 {
 	bidi_data *data = (bidi_data *)arg;
@@ -1490,12 +1772,17 @@ static void newFragCb(const uint32_t *fragment,
 		/* This flow box is entirely contained within this fragment. */
 		data->flow->block_r2l = block_r2l;
 		data->flow->char_r2l = char_r2l;
-		if (mirror != 0)
-			data->flow->mirror = 1;
+		data->flow->script = script;
 		data->flow = data->flow->next;
 		fragment_offset += len;
 		fragment_len -= len;
 	}
+}
+
+static int
+dirn_matches(int dirn, int dirn2)
+{
+	return (dirn == BIDI_NEUTRAL || dirn2 == BIDI_NEUTRAL || dirn == dirn2);
 }
 
 static void
@@ -1504,60 +1791,75 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 	fz_html_flow *end = flow;
 	const char *text;
 	bidi_data data;
+	fz_bidi_direction dirn;
 
-	/* Stage 1: Gather the text from the flow up into a single buffer */
-	buffer->len = 0;
 	while (end)
 	{
-		size_t len;
-		int broken = 0;
+		dirn = BIDI_NEUTRAL;
 
-		switch (end->type)
+		/* Gather the text from the flow up into a single buffer (at
+		 * least, as much of it as has the same direction markup). */
+		buffer->len = 0;
+		while (end && dirn_matches(dirn, end->markup_r2l))
 		{
-		case FLOW_WORD:
-			len = utf8len(end->content.text);
-			text = end->content.text;
-			break;
-		case FLOW_GLUE:
-			len = 1;
-			text = " ";
-			break;
-		case FLOW_BREAK:
-		case FLOW_IMAGE:
-			broken = 1;
-			break;
+			size_t len;
+			int broken = 0;
+
+			dirn = end->markup_r2l;
+
+			switch (end->type)
+			{
+			case FLOW_WORD:
+				len = utf8len(end->content.text);
+				text = end->content.text;
+				break;
+			case FLOW_GLUE:
+				len = 1;
+				text = " ";
+				break;
+			case FLOW_BREAK:
+			case FLOW_IMAGE:
+				broken = 1;
+				break;
+			}
+
+			if (broken)
+				break;
+
+			/* Make sure the buffer is large enough */
+			if (buffer->len + len > buffer->cap)
+			{
+				size_t newcap = buffer->cap * 2;
+				if (newcap == 0)
+					newcap = 128; /* Sensible small default */
+				buffer->data = fz_resize_array(ctx, buffer->data, newcap, sizeof(uint32_t));
+				buffer->cap = newcap;
+			}
+
+			/* Expand the utf8 text into Unicode and store it in the buffer */
+			while (*text)
+			{
+				int rune;
+				text += fz_chartorune(&rune, text);
+				buffer->data[buffer->len++] = rune;
+			}
+
+			end = end->next;
 		}
 
-		if (broken)
-			break;
+		/* Detect directionality for the buffer */
+		data.ctx = ctx;
+		data.pool = pool;
+		data.flow = flow;
+		data.buffer = buffer;
+		fz_bidi_fragment_text(ctx, buffer->data, buffer->len, &dirn, &newFragCb, &data, 0 /* Flags */);
 
-		/* Make sure the buffer is large enough */
-		if (buffer->len + len > buffer->cap)
+		/* Set the default flow of the box to be the first non NEUTRAL thing we find */
+		if (*baseDir == BIDI_NEUTRAL)
 		{
-			size_t newcap = buffer->cap * 2;
-			if (newcap == 0)
-				newcap = 128; /* Sensible small default */
-			buffer->data = fz_resize_array(ctx, buffer->data, newcap, sizeof(uint32_t));
-			buffer->cap = newcap;
+			*baseDir = dirn;
 		}
-
-		/* Expand the utf8 text into Unicode and store it in the buffer */
-		while (*text)
-		{
-			int rune;
-			text += fz_chartorune(&rune, text);
-			buffer->data[buffer->len++] = rune;
-		}
-
-		end = end->next;
 	}
-
-	/* Detect directionality for the buffer */
-	data.ctx = ctx;
-	data.pool = pool;
-	data.flow = flow;
-	data.buffer = buffer;
-	fz_bidi_fragment_text(ctx, buffer->data, buffer->len, baseDir, &newFragCb, &data, 0 /* Flags */);
 }
 
 static void

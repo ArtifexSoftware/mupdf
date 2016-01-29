@@ -68,6 +68,9 @@ struct fz_font_s
 
 	/* cached encoding lookup */
 	uint16_t *encoding_cache[256];
+
+	/* Shaping information */
+	void *shaper;
 };
 
 /* common CJK font collections */
