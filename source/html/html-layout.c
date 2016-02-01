@@ -667,7 +667,7 @@ static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline
 	return h;
 }
 
-static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, fz_html_flow *start, fz_html_flow *end, fz_html *box, float baseline)
+static void layout_line(fz_context *ctx, float indent, float page_w, float line_w, int align, fz_html_flow *start, fz_html_flow *end, fz_html *box, float baseline, float line_h)
 {
 	float x = box->x + indent;
 	float y = box->y + box->h;
@@ -737,7 +737,14 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		case VA_SUPER:
 			va = node->em * -0.3f;
 			break;
+		case VA_TEXT_TOP:
+			va = -baseline + node->h;
+			break;
+		case VA_TEXT_BOTTOM:
+			va = -baseline + line_h;
+			break;
 		}
+
 		if (node->type == FLOW_IMAGE)
 			node->y = y + baseline - node->h;
 		else
@@ -768,7 +775,7 @@ static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w
 	line_h = measure_line(a, b, &baseline, &line_w);
 	if (line_h > avail)
 		box->h += avail;
-	layout_line(ctx, indent, page_w, line_w, align, a, b, box, baseline);
+	layout_line(ctx, indent, page_w, line_w, align, a, b, box, baseline, line_h);
 	box->h += line_h;
 }
 

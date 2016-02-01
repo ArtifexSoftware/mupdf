@@ -1177,6 +1177,8 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else if (!strcmp(value->data, "super")) style->vertical_align = VA_SUPER;
 		else if (!strcmp(value->data, "top")) style->vertical_align = VA_TOP;
 		else if (!strcmp(value->data, "bottom")) style->vertical_align = VA_BOTTOM;
+		else if (!strcmp(value->data, "text-top")) style->vertical_align = VA_TEXT_TOP;
+		else if (!strcmp(value->data, "text-bottom")) style->vertical_align = VA_TEXT_BOTTOM;
 	}
 
 	value = value_from_property(match, "font-size");
