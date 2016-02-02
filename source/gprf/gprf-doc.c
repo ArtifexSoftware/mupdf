@@ -10,6 +10,11 @@
 
 #include "mupdf/fitz.h"
 #if defined(USE_GS_API) && !defined(__ANDROID__)
+#ifdef _MSC_VER
+#define GSDLLEXPORT
+#define GSDLLAPI __stdcall
+#define GSDLLCALL
+#endif
 #include "iapi.h"
 #endif
 
