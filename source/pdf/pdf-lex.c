@@ -63,8 +63,8 @@ lex_comment(fz_context *ctx, fz_stream *f)
 	} while ((c != '\012') && (c != '\015') && (c != EOF));
 }
 
-/* Fast but inaccurate strtof, with Adobe overflow handling. */
-static float fast_atof(char *s)
+/* Fast(ish) but inaccurate strtof, with Adobe overflow handling. */
+static float acrobat_compatible_atof(char *s)
 {
 	int neg = 0;
 	int i = 0;
@@ -141,7 +141,8 @@ lex_number(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf, int c)
 {
 	char *s = buf->scratch;
 	char *e = buf->scratch + buf->size - 1; /* leave space for zero terminator */
-	int isreal = (c == '.');
+	char *isreal = (c == '.' ? s : NULL);
+	int neg = (c == '-');
 
 	*s++ = c;
 
@@ -156,8 +157,12 @@ lex_number(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf, int c)
 			goto end;
 		case EOF:
 			goto end;
+		case '-':
+			neg++;
+			*s++ = c;
+			break;
 		case '.':
-			isreal = 1;
+			isreal = s;
 			/* Fall through */
 		default:
 			*s++ = c;
@@ -169,7 +174,15 @@ end:
 	*s = '\0';
 	if (isreal)
 	{
-		buf->f = fast_atof(buf->scratch);
+		/* We'd like to use the fastest possible atof
+		 * routine, but we'd rather match acrobats
+		 * handling of broken numbers. As such, we
+		 * spot common broken cases and call an
+		 * acrobat compatible routine where required. */
+		if (neg > 1 || isreal - buf->scratch >= 10)
+			buf->f = acrobat_compatible_atof(buf->scratch);
+		else
+			buf->f = fz_atof(buf->scratch);
 		return PDF_TOK_REAL;
 	}
 	else
