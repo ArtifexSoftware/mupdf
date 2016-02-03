@@ -1035,6 +1035,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\strtof.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\svg-device.c"
 				>
 			</File>

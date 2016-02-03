@@ -103,10 +103,21 @@ int fz_runetochar(char *str, int rune);
 int fz_runelen(int rune);
 
 /*
-	fz_strtod: Locale-independent implementation of strtod().
+	fz_strtod/fz_strtof: Locale-independent decimal to binary
+	conversion. On overflow return (-)INFINITY and set errno to ERANGE. On
+	underflow return 0 and set errno to ERANGE. Special inputs (case
+	insensitive): "NAN", "INF" or "INFINITY".
 */
 double fz_strtod(const char *s, char **es);
+float fz_strtof(const char *s, char **es);
 
+/*
+	fz_strtof_no_exp: Like fz_strtof, but does not recognize exponent
+	format. So fz_strtof_no_exp("1.5e20", &tail) will return 1.5 and tail
+	will point to "e20".
+*/
+
+float fz_strtof_no_exp(const char *string, char **tailptr);
 /*
 	fz_grisu: Compute decimal integer m, exp such that:
 		f = m * 10^exp

@@ -42,16 +42,14 @@
 	OTHER DEALINGS IN THE SOFTWARE.
 */
 
-typedef union
-{
-	float d;
-	uint32_t n;
-} converter_t;
-
 static uint32_t
 float_to_uint32(float d)
 {
-	converter_t tmp;
+	union
+	{
+		float d;
+		uint32_t n;
+	} tmp;
 	tmp.d = d;
 	return tmp.n;
 }

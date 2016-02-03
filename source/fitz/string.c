@@ -354,20 +354,15 @@ fz_runelen(int c)
 
 float fz_atof(const char *s)
 {
-	double d;
+	float result;
 
-	/* The errno voodoo here checks for us reading numbers that are too
-	 * big to fit into a double. The checks for FLT_MAX ensure that we
-	 * don't read a number that's OK as a double and then become invalid
-	 * as we convert to a float. */
 	errno = 0;
-	d = fz_strtod(s, NULL);
-	if (errno == ERANGE || isnan(d)) {
-		/* Return 1.0, as it's a small known value that won't cause a divide by 0. */
-		return 1.0;
-	}
-	d = fz_clampd(d, -FLT_MAX, FLT_MAX);
-	return (float)d;
+	result = fz_strtof(s, NULL);
+	if ((errno == ERANGE && result == 0) || isnan(result))
+		/* Return 1.0 on  underflow, as it's a small known value that won't cause a divide by 0.  */
+		return 1;
+	result = fz_clamp(result, -FLT_MAX, FLT_MAX);
+	return result;
 }
 
 int fz_atoi(const char *s)

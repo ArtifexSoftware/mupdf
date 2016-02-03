@@ -19,6 +19,7 @@
 #include "../source/fitz/stream-open.c"
 #include "../source/fitz/stream-read.c"
 #include "../source/fitz/strtod.c"
+#include "../source/fitz/strtof.c"
 #include "../source/fitz/ftoa.c"
 #include "../source/fitz/printf.c"
 #ifdef _WIN32
