@@ -122,7 +122,7 @@ float fz_strtof_no_exp(const char *string, char **tailptr);
 	fz_grisu: Compute decimal integer m, exp such that:
 		f = m * 10^exp
 		m is as short as possible without losing exactness
-	Assumes special cases (NaN, +Inf, -Inf) have been handled.
+	Assumes special cases (0, NaN, +Inf, -Inf) have been handled.
 */
 int fz_grisu(float f, char *s, int *exp);
 
