@@ -79,6 +79,8 @@ SYS_CURL_DEPS = -lpthread -lrt
 SYS_X11_CFLAGS = $(shell pkg-config --cflags x11 xext)
 SYS_X11_LIBS = $(shell pkg-config --libs x11 xext)
 
+SYS_HARFBUZZ_CFLAGS = $(shell pkg-config --cflags harfbuzz)
+SYS_HARFBUZZ_LIBS = $(shell pkg-config --libs harfbuzz)
 SYS_FREETYPE_CFLAGS = $(shell pkg-config --cflags freetype2)
 SYS_FREETYPE_LIBS = $(shell pkg-config --libs freetype2)
 SYS_OPENJPEG_CFLAGS = $(shell pkg-config --cflags libopenjp2)
