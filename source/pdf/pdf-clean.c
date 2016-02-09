@@ -162,7 +162,8 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 			/* create a new object to replace the array */
 			new_obj = pdf_new_dict(ctx, doc, 1);
 			new_ref = pdf_new_ref(ctx, doc, new_obj);
-			page->contents = contents = new_ref;
+			pdf_drop_obj(ctx, page->contents);
+			page->contents = contents = pdf_keep_obj(ctx, new_ref);
 		}
 		else
 		{
