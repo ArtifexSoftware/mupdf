@@ -152,6 +152,7 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 
 static int iscjk(int c)
 {
+	if (c >= 0x3000 && c <= 0x303F) return 1; /* CJK Symbols and Punctuation */
 	if (c >= 0x3200 && c <= 0x9FFF) return 1; /* CJK Blocks */
 	if (c >= 0xFF00 && c <= 0xFFEF) return 1; /* Halfwidth and Fullwidth Forms */
 	return 0;
@@ -165,8 +166,8 @@ static int not_at_bol(int cat, int c)
 	if (c == ']' || c == 0xFF3D) return 1;
 	if (c == '}' || c == 0xFF5D) return 1;
 	if (c == '>' || c == 0xFF1E) return 1;
-	if (c == ',' || c == 0xFF0C) return 1;
-	if (c == '.' || c == 0xFF0E) return 1;
+	if (c == ',' || c == 0xFF0C || c == 0x3001) return 1;
+	if (c == '.' || c == 0xFF0E || c == 0x3002) return 1;
 	if (c == ':' || c == 0xFF1A) return 1;
 	if (c == ';' || c == 0xFF1B) return 1;
 	if (c == '?' || c == 0xFF1F) return 1;
