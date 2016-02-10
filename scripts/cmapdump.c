@@ -179,6 +179,8 @@ main(int argc, char **argv)
 
 		if (getenv("verbose"))
 			printf("\t{\"%s\",&cmap_%s},\n", cmap->cmap_name, name);
+
+		pdf_drop_cmap(ctx, cmap);
 	}
 
 	if (fclose(fo))
@@ -232,12 +234,14 @@ void fz_copy_aa_context(fz_context *dst, fz_context *src)
 void *fz_keep_storable(fz_context *ctx, const fz_storable *sc)
 {
 	fz_storable *s = (fz_storable *)sc;
-
-	return s;
+	return fz_keep_imp(ctx, s, &s->refs);
 }
 
-void fz_drop_storable(fz_context *ctx, const fz_storable *s)
+void fz_drop_storable(fz_context *ctx, const fz_storable *sc)
 {
+	fz_storable *s = (fz_storable *)sc;
+	if (fz_drop_imp(ctx, s, &s->refs))
+		s->drop(ctx, s);
 }
 
 void fz_new_store_context(fz_context *ctx, unsigned int max)
