@@ -543,16 +543,114 @@ static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, floa
 	node->h = node->content.image->h * s;
 }
 
-static void measure_word(fz_context *ctx, fz_html_flow *node, float em, hb_buffer_t *hb_buf)
+typedef struct string_walker
 {
-	fz_font *font, *next_font;
+	fz_context *ctx;
+	hb_buffer_t *hb_buf;
+	int r2l;
+	const char *start;
+	const char *end;
+	const char *s;
+	fz_font *base_font;
+	int script;
+	fz_font *font;
+	fz_font *next_font;
 	hb_glyph_position_t *glyph_pos;
-	unsigned int glyph_count, i;
-	int max_x, x;
-	const char *s, *start, *end;
+	unsigned int glyph_count;
+	int scale;
+} string_walker;
+
+static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int r2l, fz_font *font, int script, const char *text)
+{
+	walker->ctx = ctx;
+	walker->hb_buf = hb_buf;
+	walker->r2l = r2l;
+	walker->start = text;
+	walker->end = text;
+	walker->s = text;
+	walker->base_font = font;
+	walker->script = script;
+	walker->font = NULL;
+	walker->next_font = NULL;
+}
+
+static int walk_string(string_walker *walker)
+{
+	fz_context *ctx = walker->ctx;
 	FT_Face face;
 	int fterr;
-	int scale;
+
+	walker->start = walker->end;
+	walker->end = walker->s;
+	walker->font = walker->next_font;
+
+	if (*walker->start == 0)
+		return 0;
+
+	/* Run through the string, encoding chars until we find one
+	 * that requires a different fallback font. */
+	while (*walker->s)
+	{
+		int c;
+
+		walker->s += fz_chartorune(&c, walker->s);
+		(void)fz_encode_character_with_fallback(ctx, walker->base_font, c, walker->script, &walker->next_font);
+		if (walker->next_font != walker->font)
+		{
+			if (walker->font != NULL)
+				break;
+			walker->font = walker->next_font;
+		}
+		walker->end = walker->s;
+	}
+
+	fz_try(ctx)
+	{
+		hb_lock(ctx);
+
+		/* So, shape from start to end in font */
+		face = walker->font->ft_face;
+		walker->scale = face->units_per_EM;
+		fterr = FT_Set_Char_Size(face, walker->scale, walker->scale, 72, 72);
+		if (fterr)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
+
+		if (walker->font->shaper == NULL)
+			walker->font->shaper = (void *)hb_ft_font_create(face, NULL);
+
+		hb_buffer_clear_contents(walker->hb_buf);
+		hb_buffer_set_direction(walker->hb_buf, walker->r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+		/* We don't know script or language, so leave them blank */
+		/* hb_buffer_set_script(hb_buf, HB_SCRIPT_LATIN); */
+		/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
+
+		/* First put the text content into a harfbuzz buffer
+		 * labelled with the position within the word. */
+		hb_buffer_add_utf8(walker->hb_buf, walker->start, walker->end - walker->start, 0, -1);
+		hb_buffer_guess_segment_properties(walker->hb_buf);
+
+		/* Now shape that buffer */
+		hb_shape(walker->font->shaper, walker->hb_buf, NULL, 0);
+
+		walker->glyph_pos = hb_buffer_get_glyph_positions(walker->hb_buf, &walker->glyph_count);
+	}
+	fz_always(ctx)
+	{
+		hb_unlock(ctx);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	return 1;
+}
+
+static void measure_word(fz_context *ctx, fz_html_flow *node, float em, hb_buffer_t *hb_buf)
+{
+	unsigned int i;
+	int max_x, x;
+	string_walker walker;
 
 	em = fz_from_css_number(node->style->font_size, em, em);
 	node->x = 0;
@@ -560,83 +658,22 @@ static void measure_word(fz_context *ctx, fz_html_flow *node, float em, hb_buffe
 	node->w = 0;
 	node->h = fz_from_css_number_scale(node->style->line_height, em, em, em);
 
-	start = end = s = node->content.text;
-	font = NULL;
-	while (*start)
+	init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, node->content.text);
+	while (walk_string(&walker))
 	{
-		/* Run through the string, encoding chars until we find one
-		 * that requires a different fallback font. */
-		while (*s)
-		{
-			int c;
-
-			s += fz_chartorune(&c, s);
-			(void)fz_encode_character_with_fallback(ctx, node->style->font, c, node->script, &next_font);
-			if (next_font != font)
-			{
-				if (font != NULL)
-					break;
-				font = next_font;
-			}
-			end = s;
-		}
-
-		fz_try(ctx)
-		{
-			hb_lock(ctx);
-
-			/* So, shape from start to end in font */
-			face = font->ft_face;
-			scale = face->units_per_EM;
-			fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
-			if (fterr)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
-
-			if (font->shaper == NULL)
-				font->shaper = (void *)hb_ft_font_create(face, NULL);
-
-			hb_buffer_clear_contents(hb_buf);
-			hb_buffer_set_direction(hb_buf, node->char_r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
-			/* We don't know script or language, so leave them blank */
-			/* hb_buffer_set_script(hb_buf, HB_SCRIPT_LATIN); */
-			/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
-
-			/* First put the text content into a harfbuzz buffer
-			 * labelled with the position within the word. */
-			hb_buffer_add_utf8(hb_buf, start, end - start, 0, -1);
-			hb_buffer_guess_segment_properties(hb_buf);
-
-			/* Now shape that buffer */
-			hb_shape(font->shaper, hb_buf, NULL, 0);
-
-			glyph_pos = hb_buffer_get_glyph_positions(hb_buf, &glyph_count);
-		}
-		fz_always(ctx)
-		{
-			hb_unlock(ctx);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
-
 		max_x = 0;
 		x = 0;
-		for (i = 0; i < glyph_count; i++)
+		for (i = 0; i < walker.glyph_count; i++)
 		{
 			int lx;
 
-			x += glyph_pos[i].x_advance;
-			lx = x + glyph_pos[i].x_offset;
+			x += walker.glyph_pos[i].x_advance;
+			lx = x + walker.glyph_pos[i].x_offset;
 			if (lx > max_x)
 				max_x = lx;
 		}
 
-		start = end;
-		end = s;
-		font = next_font;
-
-		node->w += max_x * em / scale;
+		node->w += max_x * em / walker.scale;
 	}
 
 	node->em = em;
@@ -988,18 +1025,12 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 
 static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, hb_buffer_t *hb_buf)
 {
-	fz_font *font, *next_font;
 	fz_html_flow *node;
 	fz_text *text;
 	fz_matrix trm;
-	const char *s;
-	const char *t;
-	const char *start;
-	const char *end;
 	float color[3];
-	int c, scale, fterr;
+	int c;
 	float node_scale;
-	FT_Face face;
 	float w, lx, ly;
 
 	/* FIXME: HB_DIRECTION_TTB? */
@@ -1020,10 +1051,10 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 		if (node->type == FLOW_WORD)
 		{
 			int idx;
-			unsigned int gp, glyph_count;
+			unsigned int gp;
 			hb_glyph_info_t *glyph_info;
-			hb_glyph_position_t *glyph_pos;
 			float x, y;
+			string_walker walker;
 
 			if (node->content.text == NULL)
 				continue;
@@ -1040,77 +1071,16 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			x = node->x;
 			y = node->y;
 			w = node->w;
-			start = end = s = node->content.text;
-			font = NULL;
-			while (*start)
+			init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, node->content.text);
+			while (walk_string(&walker))
 			{
-				/* Run through the string, encoding chars until we find one
-				 * that requires a different fallback font. */
-				while (*s)
-				{
-					int c;
-
-					s += fz_chartorune(&c, s);
-					(void)fz_encode_character_with_fallback(ctx, node->style->font, c, node->script, &next_font);
-					if (next_font != font)
-					{
-						if (font != NULL)
-							break;
-						font = next_font;
-					}
-					end = s;
-				}
-
-				fz_try(ctx)
-				{
-					hb_lock(ctx);
-
-					/* So, shape from start to end in font */
-					face = font->ft_face;
-					scale = face->units_per_EM;
-					fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
-					if (fterr)
-						fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
-
-					if (font->shaper == NULL)
-						font->shaper = (void *)hb_ft_font_create(face, NULL);
-
-					hb_buffer_clear_contents(hb_buf);
-					hb_buffer_set_direction(hb_buf, node->char_r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
-					/* We don't know script or language, so leave them blank */
-					/* hb_buffer_set_script(hb_buf, HB_SCRIPT_LATIN); */
-					/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
-
-					/* First put the text content into a harfbuzz buffer
-					 * labelled with the position within the word. */
-					hb_buffer_add_utf8(hb_buf, start, end - start, 0, -1);
-					hb_buffer_guess_segment_properties(hb_buf);
-
-					face = font->ft_face;
-					scale = face->units_per_EM;
-					fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
-					if (fterr)
-						fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
-
-					/* Now shape that buffer */
-					hb_shape(font->shaper, hb_buf, NULL, 0);
-
-					glyph_info = hb_buffer_get_glyph_infos(hb_buf, &glyph_count);
-					glyph_pos = hb_buffer_get_glyph_positions(hb_buf, &glyph_count);
-				}
-				fz_always(ctx)
-				{
-					hb_unlock(ctx);
-				}
-				fz_catch(ctx)
-				{
-					fz_rethrow(ctx);
-				}
-
+				const char *t;
 #ifdef DEBUG_HARFBUZZ
+				int c;
+
 				printf("fragment: ");
-				t = start;
-				while (t != end)
+				t = walker.start;
+				while (t != walker.end)
 				{
 					t += fz_chartorune(&c, t);
 					if (c >= 127)
@@ -1120,6 +1090,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				}
 				printf("\n");
 #endif /* DEBUG_HARFBUZZ */
+				glyph_info = hb_buffer_get_glyph_infos(hb_buf, &walker.glyph_count);
 
 				/* Now offset the glyph_info with the correct positions.
 				 * Harfbuzz always gives us the shaped glyphs for plotting in l2r
@@ -1128,15 +1099,15 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				 * of ordering we resolve the positions here. The nasty thing is
 				 * that we right the resolved positions back into the Harfbuzz
 				 * buffer with a change of type. */
-				node_scale = node->em / scale;
+				node_scale = node->em / walker.scale;
 
 				lx = 0;
 				ly = 0;
-				for (gp = 0; gp < glyph_count; gp++)
+				for (gp = 0; gp < walker.glyph_count; gp++)
 				{
-					hb_glyph_position_t *p = &glyph_pos[gp];
+					hb_glyph_position_t *p = &walker.glyph_pos[gp];
 #ifdef DEBUG_HARFBUZZ
-					hb_glyph_info_t *g = &glyph_info[gp];
+					hb_glyph_info_t *g = &walker.glyph_info[gp];
 
 					printf("glyph: %x(%d) @ %d %d + %d %d",
 						g->codepoint, g->cluster, p->x_offset, p->y_offset,
@@ -1154,9 +1125,9 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				if (node->char_r2l)
 				{
 					w -= lx * node_scale;
-					for (gp = 0; gp < glyph_count; gp++)
+					for (gp = 0; gp < walker.glyph_count; gp++)
 					{
-						hb_glyph_position_t *p = &glyph_pos[gp];
+						hb_glyph_position_t *p = &walker.glyph_pos[gp];
 						*(float *)(&p->x_offset) += w;
 					}
 				}
@@ -1169,7 +1140,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				/* Now read the data back out again, and turn it into
 				 * glyph/ucs pairs to go to fz_text */
 				idx = 0;
-				t = start;
+				t = walker.start;
 				if (node->style->visibility == V_VISIBLE)
 				{
 					while (*t)
@@ -1177,46 +1148,43 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 						int l = fz_chartorune(&c, t);
 						t += l;
 
-						for (gp = 0; gp < glyph_count; gp++)
+						for (gp = 0; gp < walker.glyph_count; gp++)
 						{
 							hb_glyph_info_t *g = &glyph_info[gp];
-							hb_glyph_position_t *p = &glyph_pos[gp];
+							hb_glyph_position_t *p = &walker.glyph_pos[gp];
 							if (g->cluster != idx)
 								continue;
 							trm.e = *(float *)&p->x_offset;
 							trm.f = *(float *)&p->y_offset;
-							fz_add_text(ctx, text, font, 0, &trm, g->codepoint, c);
+							fz_add_text(ctx, text, walker.font, 0, &trm, g->codepoint, c);
 							break;
 						}
-						if (gp == glyph_count)
+						if (gp == walker.glyph_count)
 						{
 							/* We failed to find a glyph for this codepoint, presumably
 							 * because we've been shaped away into another. We can't afford
 							 * to just drop the codepoint as this will upset text extraction.
 							 */
-							fz_add_text(ctx, text, font, 0, &trm, -1, c);
+							fz_add_text(ctx, text, walker.font, 0, &trm, -1, c);
 						}
 						else
 						{
 							/* We've send the codepoint and glyph. Make sure there aren't
 							 * more glyphs to come from the same codepoint. */
-							for (gp++ ;gp < glyph_count; gp++)
+							for (gp++ ;gp < walker.glyph_count; gp++)
 							{
 								hb_glyph_info_t *g = &glyph_info[gp];
-								hb_glyph_position_t *p = &glyph_pos[gp];
+								hb_glyph_position_t *p = &walker.glyph_pos[gp];
 								if (g->cluster != idx)
 									continue;
 								trm.e = *(float *)&p->x_offset;
 								trm.f = *(float *)&p->y_offset;
-								fz_add_text(ctx, text, font, 0, &trm, g->codepoint, -1);
+								fz_add_text(ctx, text, walker.font, 0, &trm, g->codepoint, -1);
 							}
 						}
 						idx += l;
 					}
 				}
-				start = end;
-				end = s;
-				font = next_font;
 			}
 			fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
 			fz_drop_text(ctx, text);
