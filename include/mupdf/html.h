@@ -195,9 +195,10 @@ struct fz_html_s
 enum
 {
 	FLOW_WORD = 0,
-	FLOW_GLUE = 1,
+	FLOW_SPACE = 1,
 	FLOW_BREAK = 2,
-	FLOW_IMAGE = 3
+	FLOW_IMAGE = 3,
+	FLOW_SBREAK = 4
 };
 
 /* We have to recognise the distinction between render direction
@@ -222,7 +223,7 @@ enum
 struct fz_html_flow_s
 {
 	/* What type of node */
-	unsigned int type : 2;
+	unsigned int type : 3;
 
 	/* Whether this should expand during justification */
 	unsigned int expand : 1;
@@ -241,6 +242,9 @@ struct fz_html_flow_s
 
 	/* The script detected by the bidi code. */
 	unsigned int script : 8;
+
+	/* Whether this node breaks the line, determines character to render */
+	unsigned int breaks_line : 1;
 
 	float x, y, w, h, em;
 	fz_css_style *style;

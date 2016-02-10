@@ -87,23 +87,27 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 	flow->char_r2l = BIDI_LEFT_TO_RIGHT;
 	flow->block_r2l = BIDI_LEFT_TO_RIGHT;
 	flow->markup_r2l = BIDI_NEUTRAL;
+	flow->breaks_line = 0;
 	flow->style = style;
 	*top->flow_tail = flow;
 	top->flow_tail = &flow->next;
 	return flow;
 }
 
-static void add_flow_glue(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, const char *text, int expand)
+static void add_flow_space(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, int expand)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_GLUE);
-	flow->content.text = (char*)text;
+	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_SPACE);
 	flow->expand = !!expand;
 }
 
 static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_BREAK);
-	flow->content.text = "";
+	(void)add_flow(ctx, pool, top, style, FLOW_BREAK);
+}
+
+static void add_flow_sbreak(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
+{
+	(void)add_flow(ctx, pool, top, style, FLOW_SBREAK);
 }
 
 static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, const char *a, const char *b)
@@ -116,11 +120,8 @@ static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_s
 
 static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, fz_image *img)
 {
-	fz_html_flow *flow;
-	add_flow_glue(ctx, pool, top, style, "", 0);
-	flow = add_flow(ctx, pool, top, style, FLOW_IMAGE);
+	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_IMAGE);
 	flow->content.image = fz_keep_image(ctx, img);
-	add_flow_glue(ctx, pool, top, style, "", 0);
 }
 
 static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
@@ -220,14 +221,14 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 					++text;
 			/* TODO: tabs */
 			if (bsp)
-				add_flow_glue(ctx, pool, flow, &box->style, " ", 1);
+				add_flow_space(ctx, pool, flow, &box->style, 1);
 			else
 				add_flow_word(ctx, pool, flow, &box->style, mark, text);
 		}
 		else
 		{
 			const char *mark = text;
-			int c, addglue = 0;
+			int c, addsbreak = 0;
 			while (*text && !iswhite(*text))
 			{
 				/* TODO: Unicode Line Breaking Algorithm (UAX #14) */
@@ -235,16 +236,16 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 				if (iscjk(c))
 				{
 					int cat = ucdn_get_general_category(c);
-					if (addglue && !not_at_bol(cat, c))
-						add_flow_glue(ctx, pool, flow, &box->style, "", 0);
+					if (addsbreak && !not_at_bol(cat, c))
+						add_flow_sbreak(ctx, pool, flow, &box->style);
 					add_flow_word(ctx, pool, flow, &box->style, mark, text);
 					if (!not_at_eol(cat, c))
-						addglue = 1;
+						addsbreak = 1;
 					mark = text;
 				}
 				else
 				{
-					addglue = 0;
+					addsbreak = 0;
 				}
 			}
 			if (mark != text)
@@ -276,7 +277,9 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, cons
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
 		img = fz_new_image_from_buffer(ctx, buf);
+		add_flow_sbreak(ctx, pool, flow, &box->style);
 		add_flow_image(ctx, pool, flow, &box->style, img);
+		add_flow_sbreak(ctx, pool, flow, &box->style);
 	}
 	fz_always(ctx)
 	{
@@ -646,11 +649,22 @@ static int walk_string(string_walker *walker)
 	return 1;
 }
 
-static void measure_word(fz_context *ctx, fz_html_flow *node, float em, hb_buffer_t *hb_buf)
+static char *get_node_text(fz_context *ctx, fz_html_flow *node)
+{
+	if (node->type == FLOW_WORD)
+		return node->content.text;
+	else if (node->type == FLOW_SPACE)
+		return " ";
+	else
+		return "";
+}
+
+static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buffer_t *hb_buf)
 {
 	unsigned int i;
 	int max_x, x;
 	string_walker walker;
+	char *s;
 
 	em = fz_from_css_number(node->style->font_size, em, em);
 	node->x = 0;
@@ -658,7 +672,8 @@ static void measure_word(fz_context *ctx, fz_html_flow *node, float em, hb_buffe
 	node->w = 0;
 	node->h = fz_from_css_number_scale(node->style->line_height, em, em, em);
 
-	init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, node->content.text);
+	s = get_node_text(ctx, node);
+	init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, s);
 	while (walk_string(&walker))
 	{
 		max_x = 0;
@@ -720,7 +735,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	{
 		fz_html_flow *it;
 		for (it = node; it != end; it = it->next)
-			if (it->type == FLOW_GLUE && it->expand)
+			if (it->type == FLOW_SPACE && it->expand)
 				++n;
 		justify = slop / n;
 	}
@@ -736,7 +751,13 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	mid = start;
 	while (node != end)
 	{
-		float w = node->w + (node->type == FLOW_GLUE && node->expand ? justify : 0);
+		float w = node->w;
+
+		if (node->type == FLOW_SPACE && node->breaks_line)
+			w = 0;
+		else if (node->type == FLOW_SPACE && !node->breaks_line)
+			w += node->expand ? justify : 0;
+
 		if (node->block_r2l)
 		{
 			float old_x = x;
@@ -855,15 +876,15 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 		}
 		else
 		{
-			measure_word(ctx, node, em, hb_buf);
+			measure_string(ctx, node, em, hb_buf);
 		}
 	}
 
-	/* start by skipping whitespace (and newline) at the beginning of tags */
+	/* start by skipping whitespace and (soft) breaks at the beginning of tags */
 	node = box->flow_head;
 	if (node->type == FLOW_BREAK)
 		node = node->next;
-	while (node && node->type == FLOW_GLUE)
+	while (node && (node->type == FLOW_SPACE || node->type == FLOW_SBREAK))
 		node = node->next;
 
 	mark = NULL;
@@ -880,10 +901,12 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 			/* TODO: break before/after image */
 			mark = node;
 			break;
-		case FLOW_GLUE:
+		case FLOW_SPACE:
+		case FLOW_SBREAK:
 			mark = node;
 			break;
 		case FLOW_BREAK:
+			node->breaks_line = 1;
 			line_align = align == TA_JUSTIFY ? TA_LEFT : align;
 			flush_line(ctx, box, page_h, top->w, line_align, indent, line, node);
 			indent = 0;
@@ -895,10 +918,11 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 
 		if (mark && line_w + node->w > top->w)
 		{
+			mark->breaks_line = 1;
 			flush_line(ctx, box, page_h, top->w, align, indent, line, mark);
 			indent = 0;
 			node = mark;
-			while (node && node->type == FLOW_GLUE)
+			while (node && node->type == FLOW_SPACE)
 				node = node->next;
 			line = node;
 			line_w = 0;
@@ -1048,15 +1072,18 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				continue;
 		}
 
-		if (node->type == FLOW_WORD)
+		if (node->type == FLOW_WORD || node->type == FLOW_SPACE)
 		{
 			int idx;
 			unsigned int gp;
 			hb_glyph_info_t *glyph_info;
 			float x, y;
 			string_walker walker;
+			char *s;
 
 			if (node->content.text == NULL)
+				continue;
+			else if (node->type == FLOW_SPACE && !node->breaks_line)
 				continue;
 
 			fz_scale(&trm, node->em, -node->em);
@@ -1071,7 +1098,9 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			x = node->x;
 			y = node->y;
 			w = node->w;
-			init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, node->content.text);
+
+			s = get_node_text(ctx, node);
+			init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, s);
 			while (walk_string(&walker))
 			{
 				const char *t;
@@ -1314,7 +1343,7 @@ static fz_html_flow *find_list_mark_anchor(fz_context *ctx, fz_html *box)
 			fz_html_flow *flow = box->flow_head;
 			if (flow && flow->type == FLOW_BREAK)
 				flow = flow->next;
-			while (flow && flow->type == FLOW_GLUE)
+			while (flow && (flow->type == FLOW_SPACE || flow->type == FLOW_SBREAK))
 				flow = flow->next;
 			return flow;
 		}
@@ -1586,14 +1615,15 @@ fz_print_css_style(fz_context *ctx, fz_css_style *style, int boxtype, int n)
 }
 
 void
-fz_print_html_flow(fz_context *ctx, fz_html_flow *flow)
+fz_print_html_flow(fz_context *ctx, fz_html_flow *flow, fz_html_flow *end)
 {
-	while (flow)
+	while (flow != end)
 	{
 		switch (flow->type)
 		{
 		case FLOW_WORD: printf("%s", flow->content.text); break;
-		case FLOW_GLUE: printf(" "); break;
+		case FLOW_SPACE: if (!flow->breaks_line) printf(" "); break;
+		case FLOW_SBREAK: if (!flow->breaks_line) printf("\\n"); break;
 		case FLOW_BREAK: printf("\\n"); break;
 		case FLOW_IMAGE: printf("[image]"); break;
 		}
@@ -1629,7 +1659,7 @@ fz_print_html(fz_context *ctx, fz_html *box, int pstyle, int level)
 		{
 			indent(level+1);
 			printf("\"");
-			fz_print_html_flow(ctx, box->flow_head);
+			fz_print_html_flow(ctx, box->flow_head, NULL);
 			printf("\"\n");
 		}
 
@@ -1729,9 +1759,13 @@ static void newFragCb(const uint32_t *fragment,
 	{
 		size_t len;
 
-		if (data->flow->type == FLOW_GLUE)
+		if (data->flow->type == FLOW_SPACE)
 		{
 			len = 1;
+		}
+		else if (data->flow->type == FLOW_BREAK || data->flow->type == FLOW_SBREAK)
+		{
+			len = 0;
 		}
 		else
 		{
@@ -1789,10 +1823,11 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 				len = utf8len(end->content.text);
 				text = end->content.text;
 				break;
-			case FLOW_GLUE:
+			case FLOW_SPACE:
 				len = 1;
 				text = " ";
 				break;
+			case FLOW_SBREAK:
 			case FLOW_BREAK:
 			case FLOW_IMAGE:
 				broken = 1;
