@@ -7,6 +7,7 @@
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H
 #include FT_STROKER_H
+#include FT_TRUETYPE_TABLES_H
 
 #define MAX_BBOX_TABLE_SIZE 4096
 #define MAX_ADVANCE_CACHE 4096
@@ -32,9 +33,9 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 
 	font->ft_face = NULL;
 	font->ft_substitute = 0;
-	font->ft_bold = 0;
-	font->ft_italic = 0;
-	font->ft_hint = 0;
+	font->fake_bold = 0;
+	font->fake_italic = 0;
+	font->force_hinting = 0;
 
 	font->ft_buffer = NULL;
 	font->ft_filepath = NULL;
@@ -454,6 +455,7 @@ fz_font *
 fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, int len, int index, int use_glyph_bbox)
 {
 	FT_Face face;
+	TT_OS2 *os2;
 	fz_font *font;
 	int fterr;
 
@@ -478,6 +480,15 @@ fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, 
 		(float) face->bbox.yMin / face->units_per_EM,
 		(float) face->bbox.xMax / face->units_per_EM,
 		(float) face->bbox.yMax / face->units_per_EM);
+
+	font->is_mono = !!(face->face_flags & FT_FACE_FLAG_FIXED_WIDTH);
+	font->is_serif = 1;
+	font->is_bold = !!(face->style_flags & FT_STYLE_FLAG_BOLD);
+	font->is_italic = !!(face->style_flags & FT_STYLE_FLAG_ITALIC);
+
+	os2 = FT_Get_Sfnt_Table(face, FT_SFNT_OS2);
+	if (os2)
+		font->is_serif = !(os2->sFamilyClass & 2048); /* Class 8 is sans-serif */
 
 	return font;
 }
@@ -550,7 +561,7 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->ft_italic)
+	if (font->fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	/*
@@ -595,7 +606,7 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm
 			goto retry_unhinted;
 		}
 	}
-	else if (font->ft_hint)
+	else if (font->force_hinting)
 	{
 		/*
 		Enable hinting, but keep the huge char size so that
@@ -621,7 +632,7 @@ retry_unhinted:
 		}
 	}
 
-	if (font->ft_bold)
+	if (font->fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * 64);
 		FT_Outline_Translate(&face->glyph->outline, -strength * 32, -strength * 32);
@@ -710,7 +721,7 @@ do_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->ft_italic)
+	if (font->fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	m.xx = local_trm.a * 64; /* should be 65536 */
@@ -870,7 +881,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->ft_italic)
+	if (font->fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	m.xx = local_trm.a * 65536;
@@ -880,7 +891,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
 	v.x = local_trm.e * 65536;
 	v.y = local_trm.f * 65536;
 
-	if (font->ft_hint)
+	if (font->force_hinting)
 	{
 		ft_flags = FT_LOAD_NO_BITMAP;
 	}
@@ -908,7 +919,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
 		return bounds;
 	}
 
-	if (font->ft_bold)
+	if (font->fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * scale);
 		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5 * scale, -strength * 0.5 * scale);
@@ -1010,12 +1021,12 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->ft_italic)
+	if (font->fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
 
-	if (font->ft_hint)
+	if (font->force_hinting)
 	{
 		ft_flags = FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
 		fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
@@ -1035,7 +1046,7 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 		return NULL;
 	}
 
-	if (font->ft_bold)
+	if (font->fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * scale);
 		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5 * scale, -strength * 0.5 * scale);
@@ -1459,7 +1470,7 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	if (script == 0)
 		script = ucdn_get_script(unicode);
 
-	font = fz_load_fallback_font(ctx, script, 0, 0, 0);
+	font = fz_load_fallback_font(ctx, script, user_font->is_serif, user_font->is_bold, user_font->is_italic);
 	if (font)
 	{
 		gid = fz_encode_character(ctx, font, unicode);

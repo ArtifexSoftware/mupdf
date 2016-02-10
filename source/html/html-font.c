@@ -23,6 +23,7 @@ fz_load_html_builtin_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load html font: %s", font_names[idx]);
 		set->fonts[idx] = fz_new_font_from_memory(ctx, font_names[idx], data, size, 0, 1);
+		set->fonts[idx]->is_serif = !is_sans;
 	}
 	return set->fonts[idx];
 }

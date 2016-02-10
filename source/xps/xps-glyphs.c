@@ -242,8 +242,10 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 
 		if (style_att)
 		{
-			font->ft_bold = !!strstr(style_att, "Bold");
-			font->ft_italic = !!strstr(style_att, "Italic");
+			font->fake_bold = !!strstr(style_att, "Bold");
+			font->is_bold = font->fake_bold;
+			font->fake_italic = !!strstr(style_att, "Italic");
+			font->is_italic = font->fake_italic;
 		}
 
 		xps_select_best_font_encoding(ctx, doc, font);
@@ -421,7 +423,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			else
 				advance = mtx.hadv * 100;
 
-			if (font->ft_bold)
+			if (font->fake_bold)
 				advance *= 1.02f;
 
 			if (is && *is)

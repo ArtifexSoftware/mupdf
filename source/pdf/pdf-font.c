@@ -129,16 +129,6 @@ static int ft_kind(FT_Face face)
 	return UNKNOWN;
 }
 
-static int ft_is_bold(FT_Face face)
-{
-	return face->style_flags & FT_STYLE_FLAG_BOLD;
-}
-
-static int ft_is_italic(FT_Face face)
-{
-	return face->style_flags & FT_STYLE_FLAG_ITALIC;
-}
-
 static int ft_char_index(FT_Face face, int cid)
 {
 	int gid = FT_Get_Char_Index(face, cid);
@@ -219,6 +209,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, 
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font: '%s'", fontname);
 
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
+		fontdesc->font->is_serif = !!strstr(clean_name, "Times");
 	}
 
 	if (!strcmp(clean_name, "Symbol") || !strcmp(clean_name, "ZapfDingbats"))
@@ -243,8 +234,13 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontnam
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find substitute font");
 
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
-		fontdesc->font->ft_bold = bold && !ft_is_bold(fontdesc->font->ft_face);
-		fontdesc->font->ft_italic = italic && !ft_is_italic(fontdesc->font->ft_face);
+		fontdesc->font->fake_bold = bold && !fontdesc->font->is_bold;
+		fontdesc->font->fake_italic = italic && !fontdesc->font->is_italic;
+
+		fontdesc->font->is_mono = mono;
+		fontdesc->font->is_serif = serif;
+		fontdesc->font->is_bold = bold;
+		fontdesc->font->is_italic = italic;
 	}
 
 	fontdesc->font->ft_substitute = 1;
@@ -1189,7 +1185,7 @@ pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *font
 	if (ft_kind(face) == TRUETYPE)
 	{
 		if (FT_IS_TRICKY(face) || is_dynalab(fontdesc->font->name))
-			fontdesc->font->ft_hint = 1;
+			fontdesc->font->force_hinting = 1;
 
 		if (fontdesc->ascent == 0.0f)
 			fontdesc->ascent = 1000.0f * face->ascender / face->units_per_EM;

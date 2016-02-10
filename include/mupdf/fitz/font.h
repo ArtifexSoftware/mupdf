@@ -29,12 +29,18 @@ struct fz_font_s
 	int refs;
 	char name[32];
 
+	char is_mono;
+	char is_serif;
+	char is_bold;
+	char is_italic;
+
 	void *ft_face; /* has an FT_Face if used */
 	int ft_substitute; /* ... substitute metrics */
 	int ft_stretch; /* ... and stretch to match PDF metrics */
-	int ft_bold; /* ... synthesize bold */
-	int ft_italic; /* ... synthesize italic */
-	int ft_hint; /* ... force hinting for DynaLab fonts */
+
+	int fake_bold; /* ... synthesize bold */
+	int fake_italic; /* ... synthesize italic */
+	int force_hinting; /* ... force hinting for DynaLab fonts */
 
 	/* origin of font data */
 	fz_buffer *ft_buffer;
