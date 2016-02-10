@@ -1831,6 +1831,8 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 				break;
 			}
 
+			end = end->next;
+
 			if (broken)
 				break;
 
@@ -1851,8 +1853,6 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 				text += fz_chartorune(&rune, text);
 				buffer->data[buffer->len++] = rune;
 			}
-
-			end = end->next;
 		}
 
 		/* Detect directionality for the buffer */
