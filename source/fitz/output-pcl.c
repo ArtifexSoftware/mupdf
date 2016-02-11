@@ -399,8 +399,8 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 void
 fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl)
 {
-	//unsigned char *sp;
-	//int y, x, sn, dn, ss;
+	unsigned char *sp;
+	int y, x, sn, dn, ss;
 
 	if (!out || !pixmap)
 		return;
@@ -410,7 +410,6 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 
 	pcl_header(ctx, out, pcl, 1, pixmap->xres);
 
-#if 0
 	sn = pixmap->n;
 	dn = pixmap->n;
 	if (dn == 2 || dn == 4)
@@ -432,7 +431,7 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 			if (memcmp(sp, sp + yrep * ss, ss) != 0)
 				break;
 		}
-		fz_write_byte(out, yrep-1);
+		fz_write_byte(ctx, out, yrep-1);
 
 		/* Encode the line */
 		x = 0;
@@ -460,14 +459,14 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 					if (memcmp(sp, sp + xrep*sn, sn) != 0)
 						break;
 				}
-				fz_write_byte(out, xrep-1);
+				fz_write_byte(ctx, out, xrep-1);
 				fz_write(ctx, out, sp, dn);
 				sp += sn*xrep;
 				x += xrep;
 			}
 			else
 			{
-				fz_write_byte(out, 257-d);
+				fz_write_byte(ctx, out, 257-d);
 				x += d;
 				while (d > 0)
 				{
@@ -482,13 +481,12 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 		sp += ss*(yrep-1);
 		y += yrep;
 	}
-#endif
 }
 
 /*
  * Mode 2 Row compression routine for the HP DeskJet & LaserJet IIp.
  * Compresses data from row up to end_row, storing the result
- * starting at compressed. Returns the number of bytes stored.
+ * starting at out. Returns the number of bytes stored.
  * Runs of K<=127 literal bytes are encoded as K-1 followed by
  * the bytes; runs of 2<=K<=127 identical bytes are encoded as
  * 257-K followed by the byte.
@@ -657,7 +655,7 @@ fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap,
 				if (pcl->features & PCL_ANY_SPACING)
 				{
 					if (num_blank_lines > 0)
-						fz_printf(ctx, out, "\033*p+%dY", num_blank_lines * bitmap->yres);
+						fz_printf(ctx, out, "\033*p+%dY", num_blank_lines);
 					/* Start raster graphics. */
 					fz_puts(ctx, out, "\033*r1A");
 				}
