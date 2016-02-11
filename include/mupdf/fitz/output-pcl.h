@@ -28,6 +28,7 @@ struct fz_pcl_options_s
 	int manual_feed;
 	int media_position_set;
 	int media_position;
+	int orientation;
 
 	/* Updated as we move through the job */
 	int page_count;

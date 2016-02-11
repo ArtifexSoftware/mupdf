@@ -33,6 +33,8 @@
 #define PCL_CAN_PRINT_COPIES		256	/* <esc>&l<copies>X supported */
 #define HACK__IS_A_LJET4PJL		512
 #define HACK__IS_A_OCE9050		1024
+#define PCL_HAS_ORIENTATION             2048
+#define PCL_CAN_SET_CUSTOM_PAPER_SIZE   4096
 
 /* Shorthands for the most common spacing/compression combinations. */
 #define PCL_MODE0 PCL3_SPACING
@@ -143,6 +145,51 @@ static const fz_pcl_options fz_pcl_options_oce9050 =
 	(PCL_MODE3NS | PCL_CAN_SET_PAPER_SIZE | HACK__IS_A_OCE9050),
 	"\033*b0M",
 	"\033*b0M"
+};
+
+enum {
+	eLetterPaper = 0,
+	eLegalPaper,
+	eA4Paper,
+	eExecPaper,
+	eLedgerPaper,
+	eA3Paper,
+	eCOM10Envelope,
+	eMonarchEnvelope,
+	eC5Envelope,
+	eDLEnvelope,
+	eJB4Paper,
+	eJB5Paper,
+	eB5Envelope,
+	eB5Paper,                   /* 2.1 */
+	eJPostcard,
+	eJDoublePostcard,
+	eA5Paper,
+	eA6Paper,                   /* 2.0 */
+	eJB6Paper,                  /* 2.0 */
+	eJIS8K,                     /* 2.1 */
+	eJIS16K,                    /* 2.1 */
+	eJISExec,                   /* 2.1 */
+	eDefaultPaperSize = 96,     /* 2.1 */
+	eCustomPaperSize = 101,
+	eB6JIS = 201,               /* non-standard, Ricoh printers */
+	eC6Envelope = 202,          /* non-standard, Ricoh printers */
+	e8Kai  = 203,               /* non-standard, Ricoh printers */
+	e16Kai = 204,               /* non-standard, Ricoh printers */
+	e12x18 = 205,               /* non-standard, Ricoh printers */
+	e13x19_2 = 212,             /* non-standard, Ricoh printers */
+	e13x19 = 213,               /* non-standard, Ricoh printers */
+	e12_6x19_2 = 214,           /* non-standard, Ricoh printers */
+	e12_6x18_5 = 215,           /* non-standard, Ricoh printers */
+	e13x18  = 216,              /* non-standard, Ricoh printers */
+	eSRA3 = 217,                /* non-standard, Ricoh printers */
+	eSRA4 = 218,                /* non-standard, Ricoh printers */
+	e226x310 = 219,             /* non-standard, Ricoh printers */
+	e310x432 = 220,             /* non-standard, Ricoh printers */
+	eEngQuatro = 221,           /* non-standard, Ricoh printers */
+	e11x14 = 222,               /* non-standard, Ricoh printers */
+	e11x15 = 223,               /* non-standard, Ricoh printers */
+	e10x14 = 224,               /* non-standard, Ricoh printers */
 };
 
 static void copy_opts(fz_pcl_options *dst, const fz_pcl_options *src)
@@ -302,7 +349,7 @@ make_init(fz_pcl_options *pcl, char *buf, unsigned long len, const char *str, in
 }
 
 static void
-pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies, int xres)
+pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies, int xres, int yres, int w, int h)
 {
 	char odd_page_init[80];
 	char even_page_init[80];
@@ -315,10 +362,25 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 		if (pcl->features & HACK__IS_A_LJET4PJL)
 			fz_puts(ctx, out, "\033%-12345X@PJL\r\n@PJL ENTER LANGUAGE = PCL\r\n");
 		fz_puts(ctx, out, "\033E"); /* reset printer */
+		/* If the printer supports it, set orientation */
+		if (pcl->features & PCL_HAS_ORIENTATION)
+		{
+			fz_printf(ctx, out, "\033&l%dO", pcl->orientation);
+		}
 		/* If the printer supports it, set the paper size */
 		/* based on the actual requested size. */
 		if (pcl->features & PCL_CAN_SET_PAPER_SIZE)
+		{
 			fz_printf(ctx, out, "\033&l%dA", pcl->paper_size);
+			if ((pcl->features & PCL_CAN_SET_CUSTOM_PAPER_SIZE) != 0 && pcl->paper_size == eCustomPaperSize)
+			{
+				int decipointw = (w * 720 + (xres>>1)) / xres;
+				int decipointh = (h * 720 + (yres>>1)) / yres;
+
+				fz_printf(ctx, out, "\033&f%dI", decipointw);
+				fz_printf(ctx, out, "\033&f%dJ", decipointh);
+			}
+		}
 		/* If printer can duplex, set duplex mode appropriately. */
 		if (pcl->features & PCL_HAS_DUPLEX)
 		{
@@ -396,6 +458,133 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 	pcl->page_count++;
 }
 
+typedef struct pcl_papersize_s
+{
+	int code;
+	const char *text;
+	int width;
+	int height;
+} pcl_papersize;
+
+static const pcl_papersize papersizes[] =
+{
+	{ eLetterPaper,      "letter",       2550, 3300},
+	{ eLegalPaper,       "legal",        2550, 4200},
+	{ eA4Paper,          "a4",           2480, 3507},
+	{ eExecPaper,        "executive",    2175, 3150},
+	{ eLedgerPaper,      "ledger",       3300, 5100},
+	{ eA3Paper,          "a3",           3507, 4960},
+	{ eCOM10Envelope,    "com10",        1237, 2850},
+	{ eMonarchEnvelope,  "monarch",      1162, 2250},
+	{ eC5Envelope,       "c5",           1913, 2704},
+	{ eDLEnvelope,       "dl",           1299, 2598},
+	{ eJB4Paper,         "jisb4",        3035, 4299},
+	{ eJB4Paper,         "jis b4",       3035, 4299},
+	{ eJB5Paper,         "jisb5",        2150, 3035},
+	{ eJB5Paper,         "jis b5",       2150, 3035},
+	{ eB5Envelope,       "b5",           2078, 2952},
+	{ eB5Paper,          "b5paper",      2150, 3035},
+	{ eJPostcard,        "jpost",        1181, 1748},
+	{ eJDoublePostcard,  "jpostd",       2362, 1748},
+	{ eA5Paper,          "a5",           1748, 2480},
+	{ eA6Paper,          "a6",           1240, 1748},
+	{ eJB6Paper,         "jisb6",        1512, 2150},
+	{ eJIS8K,            "jis8K",        3154, 4606},
+	{ eJIS16K,           "jis16K",       2303, 3154},
+	{ eJISExec,          "jisexec",      2551, 3898},
+	{ eB6JIS,            "B6 (JIS)",     1512, 2150},
+	{ eC6Envelope,       "C6",           1345, 1912},
+	{ e8Kai,             "8Kai",         3154, 4608},
+	{ e16Kai,            "16Kai",        2304, 3154},
+	{ e12x18,            "12x18",        3600, 5400},
+	{ e13x19_2,          "13x19.2",      3900, 5758},
+	{ e13x19,            "13x19",        3900, 5700},
+	{ e12_6x19_2,        "12.6x19.2",    3779, 5758},
+	{ e12_6x18_5,        "12.6x18.5",    3779, 5550},
+	{ e13x18,            "13x18",        3900, 5400},
+	{ eSRA3,             "SRA3",         3779, 5316},
+	{ eSRA4,             "SRA4",         2658, 3779},
+	{ e226x310,          "226x310",      2670, 3662},
+	{ e310x432,          "310x432",      3662, 5104},
+	{ eEngQuatro,        "EngQuatro",    2400, 3000},
+	{ e11x14,            "11x14",        3300, 4200},
+	{ e11x15,            "11x15",        3300, 4500},
+	{ e10x14,            "10x14",        3000, 4200}
+};
+
+#define num_elems(X) (sizeof(X)/sizeof(*X))
+
+static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yres)
+{
+	int size;
+	int rotated = 0;
+
+	/* If we've been given a paper size, live with it */
+	if (pcl->paper_size != 0)
+		return;
+
+	w = w * 300 / xres;
+	h = h * 300 / xres;
+
+	/* Look for an exact match */
+	for (size = 0; size < num_elems(papersizes); size++)
+	{
+		if (w == papersizes[size].width && h == papersizes[size].height)
+			break;
+		if ((pcl->features & PCL_HAS_ORIENTATION) && w == papersizes[size].height && h == papersizes[size].width)
+		{
+			rotated = 1;
+			break;
+		}
+	}
+
+	/* If we didn't find an exact match, find the smallest one that's
+	 * larger. Consider orientation if our printer supports it. */
+	if (size == num_elems(papersizes))
+	{
+		if ((pcl->features & PCL_CAN_SET_CUSTOM_PAPER_SIZE) != 0)
+		{
+			/* Send it as a custom size */
+			size = eCustomPaperSize;
+		}
+		else
+		{
+			/* Send the next larger one (minimise waste) */
+			int i;
+			int best_waste = INT_MAX;
+			for (i = 0; i < num_elems(papersizes); i++)
+			{
+				int waste = papersizes[i].width * papersizes[i].height - w * h;
+				if (waste > best_waste)
+					continue;
+				if (w <= papersizes[i].width && h <= papersizes[i].height)
+				{
+					best_waste = waste;
+					rotated = 0;
+					size = i;
+					break;
+				}
+				if ((pcl->features & PCL_HAS_ORIENTATION) && w <= papersizes[i].height && h <= papersizes[i].width)
+				{
+					best_waste = waste;
+					rotated = 1;
+					size = i;
+					break;
+				}
+			}
+		}
+	}
+
+	/* Now, size = The best size we have (or num_elems(papersizes)) if it's too big */
+
+	if (size < num_elems(papersizes))
+		pcl->paper_size = papersizes[size].code;
+	else
+		pcl->paper_size = eCustomPaperSize; /* Custom */
+
+	pcl->orientation = rotated;
+}
+
 void
 fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl)
 {
@@ -408,7 +597,9 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pcl");
 
-	pcl_header(ctx, out, pcl, 1, pixmap->xres);
+	guess_paper_size(pcl, pixmap->w, pixmap->h, pixmap->xres, pixmap->yres);
+
+	pcl_header(ctx, out, pcl, 1, pixmap->xres, pixmap->yres, pixmap->w, pixmap->h);
 
 	sn = pixmap->n;
 	dn = pixmap->n;
@@ -604,13 +795,15 @@ fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap,
 	if (!out || !bitmap)
 		return;
 
+	guess_paper_size(pcl, bitmap->w, bitmap->h, bitmap->xres, bitmap->yres);
+
 	if (pcl->features & HACK__IS_A_OCE9050)
 	{
 		/* Enter HPGL/2 mode, begin plot, Initialise (start plot), Enter PCL mode */
 		fz_puts(ctx, out, "\033%1BBPIN;\033%1A");
 	}
 
-	pcl_header(ctx, out, pcl, 1, bitmap->xres);
+	pcl_header(ctx, out, pcl, 1, bitmap->xres, bitmap->yres, bitmap->w, bitmap->h);
 
 	fz_var(prev_row);
 	fz_var(out_row_mode_2);
