@@ -582,6 +582,7 @@ fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n)
 void
 fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *p)
 {
+	char buffer[2*3*4*5*6]; /* Buffer must be a multiple of 2 and 3 at least. */
 	int len;
 	int start = band * bandheight;
 	int end = start + bandheight;
@@ -592,26 +593,56 @@ fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band
 
 	len = w * end;
 
-	switch (n)
+	/* Tests show that writing single bytes out at a time
+	 * is appallingly slow. We get a huge improvement
+	 * by collating stuff into buffers first. */
+
+	while (len)
 	{
-	case 1:
-		fz_write(ctx, out, p, len);
-		break;
-	case 2:
-		while (len--)
+		int num_written = len;
+
+		switch (n)
 		{
-			fz_putc(ctx, out, p[0]);
-			p += 2;
-		}
-		break;
-	case 4:
-		while (len--)
+		case 1:
+			/* No collation required */
+			fz_write(ctx, out, p, num_written);
+			break;
+		case 2:
 		{
-			fz_putc(ctx, out, p[0]);
-			fz_putc(ctx, out, p[1]);
-			fz_putc(ctx, out, p[2]);
-			p += 4;
+			char *o = buffer;
+			int count;
+
+			if (num_written > sizeof(buffer))
+				num_written = sizeof(buffer);
+
+			for (count = num_written; count; count--)
+			{
+				*o++ = *p;
+				p += 2;
+			}
+			fz_write(ctx, out, buffer, num_written);
+			break;
 		}
+		case 4:
+		{
+			char *o = buffer;
+			int count;
+
+			if (num_written > sizeof(buffer)/3)
+				num_written = sizeof(buffer)/3;
+
+			for (count = num_written; count; count--)
+			{
+				*o++ = p[0];
+				*o++ = p[1];
+				*o++ = p[2];
+				p += 4;
+			}
+			fz_write(ctx, out, buffer, num_written * 3);
+			break;
+		}
+		}
+		len -= num_written;
 	}
 }
 
