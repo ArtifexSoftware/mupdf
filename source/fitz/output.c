@@ -1,40 +1,25 @@
 #include "mupdf/fitz.h"
 
-struct fz_output_s
-{
-	void *opaque;
-	int (*write)(fz_context *, void *opaque, const void *, int n);
-	void (*seek)(fz_context *, void *opaque, fz_off_t off, int whence);
-	fz_off_t (*tell)(fz_context *, void *opaque);
-	void (*close)(fz_context *, void *opaque);
-};
-
-static int
+static void
 file_write(fz_context *ctx, void *opaque, const void *buffer, int count)
 {
 	FILE *file = opaque;
 	size_t n;
 
 	if (count < 0)
-		return 0;
+		return;
 
 	if (count == 1)
 	{
 		int x = putc(((unsigned char*)buffer)[0], file);
-		if (x == EOF)
-		{
-			if (ferror(file))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
-			else
-				return 0;
-		}
-		return 1;
+		if (x == EOF && ferror(file))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
+		return;
 	}
 
 	n = fwrite(buffer, 1, count, file);
 	if (n < (size_t)count && ferror(file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
-	return n;
 }
 
 static void
@@ -98,12 +83,11 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	return out;
 }
 
-static int
+static void
 buffer_write(fz_context *ctx, void *opaque, const void *data, int len)
 {
 	fz_buffer *buffer = opaque;
 	fz_write_buffer(ctx, buffer, data, len);
-	return len;
 }
 
 static void
@@ -201,11 +185,4 @@ fz_printf(fz_context *ctx, fz_output *out, const char *fmt, ...)
 	va_start(args, fmt);
 	fz_vprintf(ctx, out, fmt, args);
 	va_end(args);
-}
-
-int
-fz_write(fz_context *ctx, fz_output *out, const void *data, int len)
-{
-	if (!out) return 0;
-	return out->write(ctx, out->opaque, data, len);
 }

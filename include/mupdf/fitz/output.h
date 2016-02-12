@@ -12,6 +12,15 @@
 */
 typedef struct fz_output_s fz_output;
 
+struct fz_output_s
+{
+	void *opaque;
+	void (*write)(fz_context *, void *opaque, const void *, int n);
+	void (*seek)(fz_context *, void *opaque, fz_off_t off, int whence);
+	fz_off_t (*tell)(fz_context *, void *opaque);
+	void (*close)(fz_context *, void *opaque);
+};
+
 /*
 	fz_new_output_with_file: Open an output stream that writes to a FILE *.
 	fz_new_output_with_path: Open an output stream that writes to a file.
@@ -31,7 +40,6 @@ fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
 */
 void fz_printf(fz_context *ctx, fz_output *out, const char *fmt, ...);
 void fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list ap);
-int fz_write(fz_context *, fz_output *out, const void *data, int len);
 #define fz_puts(C,O,S) fz_write(C, O, (S), strlen(S))
 #define fz_putc(C,O,B) fz_write_byte(C, O, B)
 #define fz_putrune(C,O,R) fz_write_rune(C, O, R)
@@ -49,13 +57,22 @@ fz_off_t fz_tell_output(fz_context *ctx, fz_output *out);
 void fz_drop_output(fz_context *, fz_output *);
 
 /*
+	fz_write: Write data to output.
+*/
+
+static inline void fz_write(fz_context *ctx, fz_output *out, const void *data, int size)
+{
+	out->write(ctx, out->opaque, data, size);
+}
+
+/*
 	fz_write_int32be: Write a big-endian 32-bit binary integer.
 	fz_write_int32le: Write a little-endian 32-bit binary integer.
 	fz_write_byte: Write a single byte.
 	fz_write_rune: Write a UTF-8 encoded unicode character.
 */
 
-static inline int fz_write_int32be(fz_context *ctx, fz_output *out, int x)
+static inline void fz_write_int32be(fz_context *ctx, fz_output *out, int x)
 {
 	char data[4];
 
@@ -64,10 +81,10 @@ static inline int fz_write_int32be(fz_context *ctx, fz_output *out, int x)
 	data[2] = x>>8;
 	data[3] = x;
 
-	return fz_write(ctx, out, data, 4);
+	fz_write(ctx, out, data, 4);
 }
 
-static inline int fz_write_int32le(fz_context *ctx, fz_output *out, int x)
+static inline void fz_write_int32le(fz_context *ctx, fz_output *out, int x)
 {
 	char data[4];
 
@@ -76,20 +93,17 @@ static inline int fz_write_int32le(fz_context *ctx, fz_output *out, int x)
 	data[2] = x>>16;
 	data[3] = x>>24;
 
-	return fz_write(ctx, out, data, 4);
+	fz_write(ctx, out, data, 4);
 }
 
-static inline void fz_write_byte(fz_context *ctx, fz_output *out, int x)
+static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
 {
-	char data = x;
-
-	fz_write(ctx, out, &data, 1);
+	fz_write(ctx, out, &x, 1);
 }
 
 static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 {
 	char data[10];
-
 	fz_write(ctx, out, data, fz_runetochar(data, rune));
 }
 
