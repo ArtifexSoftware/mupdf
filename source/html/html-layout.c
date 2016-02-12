@@ -694,12 +694,11 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buf
 	node->em = em;
 }
 
-static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline, float *line_w)
+static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline)
 {
 	float max_a = 0, max_d = 0, h = node->h;
 	while (node != end)
 	{
-		*line_w += node->w;
 		if (node->type == FLOW_IMAGE)
 		{
 			if (node->h > max_a)
@@ -735,7 +734,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	{
 		fz_html_flow *it;
 		for (it = node; it != end; it = it->next)
-			if (it->type == FLOW_SPACE && it->expand)
+			if (it->type == FLOW_SPACE && it->expand && !it->breaks_line)
 				++n;
 		justify = slop / n;
 	}
@@ -808,7 +807,6 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			node->y = y + baseline - node->h;
 		else
 			node->y = y + baseline + va;
-
 		node = node->next;
 	}
 }
@@ -826,12 +824,11 @@ static void find_accumulated_margins(fz_context *ctx, fz_html *box, float *w, fl
 	}
 }
 
-static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w, int align, float indent, fz_html_flow *a, fz_html_flow *b)
+static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w, float line_w, int align, float indent, fz_html_flow *a, fz_html_flow *b)
 {
-	float avail, line_h, line_w, baseline;
-	line_w = indent;
+	float avail, line_h, baseline;
 	avail = page_h - fmodf(box->y + box->h, page_h);
-	line_h = measure_line(a, b, &baseline, &line_w);
+	line_h = measure_line(a, b, &baseline);
 	if (line_h > avail)
 		box->h += avail;
 	layout_line(ctx, indent, page_w, line_w, align, a, b, box, baseline, line_h);
@@ -840,11 +837,9 @@ static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w
 
 static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, hb_buffer_t *hb_buf)
 {
-	fz_html_flow *node, *line, *mark;
-	float line_w;
-	float indent;
-	int align;
-	int line_align;
+	fz_html_flow *node, *line, *candidate;
+	float line_w, candidate_w, indent, break_w, nonbreak_w;
+	int line_align, align;
 
 	em = fz_from_css_number(box->style.font_size, em, em);
 	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
@@ -887,7 +882,8 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	while (node && (node->type == FLOW_SPACE || node->type == FLOW_SBREAK))
 		node = node->next;
 
-	mark = NULL;
+	candidate = NULL;
+	candidate_w = 0;
 	line = node;
 	line_w = indent;
 
@@ -895,51 +891,64 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	{
 		switch (node->type)
 		{
+		default:
 		case FLOW_WORD:
-			break;
 		case FLOW_IMAGE:
-			/* TODO: break before/after image */
-			mark = node;
+			nonbreak_w = break_w = node->w;
 			break;
-		case FLOW_SPACE:
+
 		case FLOW_SBREAK:
-			mark = node;
+		case FLOW_SPACE:
+			nonbreak_w = break_w = 0;
+
+			/* Determine broken and unbroken widths of this node. */
+			if (node->type == FLOW_SPACE)
+				nonbreak_w = node->w;
+
+			/* If the broken node fits, remember it. */
+			/* Also remember it if we have no other candidate and need to break in desperation. */
+			if (line_w + break_w <= box->w || !candidate) {
+				candidate = node;
+				candidate_w = line_w + break_w;
+			}
 			break;
+
 		case FLOW_BREAK:
-			node->breaks_line = 1;
-			line_align = align == TA_JUSTIFY ? TA_LEFT : align;
-			flush_line(ctx, box, page_h, top->w, line_align, indent, line, node);
-			indent = 0;
-			line = node->next;
-			line_w = 0;
-			mark = NULL;
+			nonbreak_w = break_w = 0;
+			candidate = node;
+			candidate_w = line_w;
 			break;
 		}
 
-		if (mark && line_w + node->w > top->w)
+		/* The current node either does not fit or we saw a hard break. */
+		/* Break the line if we have a candidate break point. */
+		if (node->type == FLOW_BREAK || (line_w + nonbreak_w > box->w && candidate))
 		{
-			mark->breaks_line = 1;
-			flush_line(ctx, box, page_h, top->w, align, indent, line, mark);
-			indent = 0;
-			node = mark;
-			while (node && node->type == FLOW_SPACE)
-				node = node->next;
-			line = node;
-			line_w = 0;
-			mark = NULL;
-		}
+			candidate->breaks_line = 1;
+			if (candidate->type == FLOW_BREAK)
+				line_align = (align == TA_JUSTIFY) ? TA_LEFT : align;
+			else
+				line_align = align;
+			flush_line(ctx, box, page_h, box->w, candidate_w, line_align, indent, line, candidate->next);
 
-		if (node)
+			line = candidate->next;
+			node = candidate->next;
+			candidate = NULL;
+			candidate_w = 0;
+			indent = 0;
+			line_w = 0;
+		}
+		else
 		{
-			line_w += node->w;
+			line_w += nonbreak_w;
 			node = node->next;
 		}
 	}
 
 	if (line)
 	{
-		line_align = align == TA_JUSTIFY ? TA_LEFT : align;
-		flush_line(ctx, box, page_h, top->w, line_align, indent, line, NULL);
+		line_align = (align == TA_JUSTIFY) ? TA_LEFT : align;
+		flush_line(ctx, box, page_h, box->w, line_w, line_align, indent, line, NULL);
 	}
 }
 
@@ -1081,9 +1090,9 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			string_walker walker;
 			char *s;
 
-			if (node->content.text == NULL)
+			if (node->type == FLOW_WORD && node->content.text == NULL)
 				continue;
-			else if (node->type == FLOW_SPACE && !node->breaks_line)
+			if (node->type == FLOW_SPACE && node->breaks_line)
 				continue;
 
 			fz_scale(&trm, node->em, -node->em);
@@ -1828,6 +1837,9 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 				text = " ";
 				break;
 			case FLOW_SBREAK:
+				len = 0;
+				text = "";
+				break;
 			case FLOW_BREAK:
 			case FLOW_IMAGE:
 				broken = 1;
