@@ -17,6 +17,20 @@ file_write(fz_context *ctx, void *opaque, const void *buffer, int count)
 
 	if (count < 0)
 		return 0;
+
+	if (count == 1)
+	{
+		int x = putc(((unsigned char*)buffer)[0], file);
+		if (x == EOF)
+		{
+			if (ferror(file))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
+			else
+				return 0;
+		}
+		return 1;
+	}
+
 	n = fwrite(buffer, 1, count, file);
 	if (n < (size_t)count && ferror(file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
@@ -88,7 +102,7 @@ static int
 buffer_write(fz_context *ctx, void *opaque, const void *data, int len)
 {
 	fz_buffer *buffer = opaque;
-	fz_write_buffer(ctx, buffer, (unsigned char *)data, len);
+	fz_write_buffer(ctx, buffer, data, len);
 	return len;
 }
 
