@@ -198,7 +198,8 @@ enum
 	FLOW_SPACE = 1,
 	FLOW_BREAK = 2,
 	FLOW_IMAGE = 3,
-	FLOW_SBREAK = 4
+	FLOW_SBREAK = 4,
+	FLOW_SHYPHEN = 5
 };
 
 /* We have to recognise the distinction between render direction

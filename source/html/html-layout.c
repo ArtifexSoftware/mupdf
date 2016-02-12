@@ -110,6 +110,11 @@ static void add_flow_sbreak(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css
 	(void)add_flow(ctx, pool, top, style, FLOW_SBREAK);
 }
 
+static void add_flow_shyphen(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
+{
+	(void)add_flow(ctx, pool, top, style, FLOW_SHYPHEN);
+}
+
 static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, const char *a, const char *b)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_WORD);
@@ -227,13 +232,21 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 		}
 		else
 		{
-			const char *mark = text;
+			const char *prev, *mark = text;
 			int c, addsbreak = 0;
 			while (*text && !iswhite(*text))
 			{
 				/* TODO: Unicode Line Breaking Algorithm (UAX #14) */
+				prev = text;
 				text += fz_chartorune(&c, text);
-				if (iscjk(c))
+				if (c == 0xAD) /* soft hyphen */
+				{
+					if (mark != prev)
+						add_flow_word(ctx, pool, flow, &box->style, mark, prev);
+					add_flow_shyphen(ctx, pool, flow, &box->style);
+					mark = text;
+				}
+				else if (iscjk(c))
 				{
 					int cat = ucdn_get_general_category(c);
 					if (addsbreak && !not_at_bol(cat, c))
@@ -655,6 +668,8 @@ static char *get_node_text(fz_context *ctx, fz_html_flow *node)
 		return node->content.text;
 	else if (node->type == FLOW_SPACE)
 		return " ";
+	else if (node->type == FLOW_SHYPHEN)
+		return "-";
 	else
 		return "";
 }
@@ -756,6 +771,10 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			w = 0;
 		else if (node->type == FLOW_SPACE && !node->breaks_line)
 			w += node->expand ? justify : 0;
+		else if (node->type == FLOW_SHYPHEN && !node->breaks_line)
+			w = 0;
+		else if (node->type == FLOW_SHYPHEN && node->breaks_line)
+			w = node->w;
 
 		if (node->block_r2l)
 		{
@@ -897,6 +916,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 			nonbreak_w = break_w = node->w;
 			break;
 
+		case FLOW_SHYPHEN:
 		case FLOW_SBREAK:
 		case FLOW_SPACE:
 			nonbreak_w = break_w = 0;
@@ -904,6 +924,8 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 			/* Determine broken and unbroken widths of this node. */
 			if (node->type == FLOW_SPACE)
 				nonbreak_w = node->w;
+			else if (node->type == FLOW_SHYPHEN)
+				break_w = node->w;
 
 			/* If the broken node fits, remember it. */
 			/* Also remember it if we have no other candidate and need to break in desperation. */
@@ -1081,7 +1103,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				continue;
 		}
 
-		if (node->type == FLOW_WORD || node->type == FLOW_SPACE)
+		if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
 		{
 			int idx;
 			unsigned int gp;
@@ -1093,6 +1115,8 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			if (node->type == FLOW_WORD && node->content.text == NULL)
 				continue;
 			if (node->type == FLOW_SPACE && node->breaks_line)
+				continue;
+			if (node->type == FLOW_SHYPHEN && !node->breaks_line)
 				continue;
 
 			fz_scale(&trm, node->em, -node->em);
@@ -1771,8 +1795,9 @@ static void newFragCb(const uint32_t *fragment,
 		if (data->flow->type == FLOW_SPACE)
 		{
 			len = 1;
+
 		}
-		else if (data->flow->type == FLOW_BREAK || data->flow->type == FLOW_SBREAK)
+		else if (data->flow->type == FLOW_BREAK || data->flow->type == FLOW_SBREAK || data->flow->type == FLOW_SHYPHEN)
 		{
 			len = 0;
 		}
@@ -1836,6 +1861,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 				len = 1;
 				text = " ";
 				break;
+			case FLOW_SHYPHEN:
 			case FLOW_SBREAK:
 				len = 0;
 				text = "";
