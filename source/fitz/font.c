@@ -717,6 +717,7 @@ do_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 	FT_Stroker stroker;
 	FT_Glyph glyph;
 	FT_Stroker_LineJoin line_join;
+	FT_Stroker_LineCap line_cap;
 	fz_matrix local_trm = *trm;
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
@@ -755,22 +756,19 @@ do_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 		return NULL;
 	}
 
-#if FREETYPE_MAJOR * 10000 + FREETYPE_MINOR * 100 + FREETYPE_PATCH > 20405
-	/* New freetype */
 	line_join =
 		state->linejoin == FZ_LINEJOIN_MITER ? FT_STROKER_LINEJOIN_MITER_FIXED :
 		state->linejoin == FZ_LINEJOIN_ROUND ? FT_STROKER_LINEJOIN_ROUND :
 		state->linejoin == FZ_LINEJOIN_BEVEL ? FT_STROKER_LINEJOIN_BEVEL :
 		FT_STROKER_LINEJOIN_MITER_VARIABLE;
-#else
-	/* Old freetype */
-	line_join =
-		state->linejoin == FZ_LINEJOIN_MITER ? FT_STROKER_LINEJOIN_MITER :
-		state->linejoin == FZ_LINEJOIN_ROUND ? FT_STROKER_LINEJOIN_ROUND :
-		state->linejoin == FZ_LINEJOIN_BEVEL ? FT_STROKER_LINEJOIN_BEVEL :
-		FT_STROKER_LINEJOIN_MITER;
-#endif
-	FT_Stroker_Set(stroker, linewidth, (FT_Stroker_LineCap)state->start_cap, line_join, state->miterlimit * 65536);
+	line_cap =
+		state->start_cap == FZ_LINECAP_BUTT ? FT_STROKER_LINECAP_BUTT :
+		state->start_cap == FZ_LINECAP_ROUND ? FT_STROKER_LINECAP_ROUND :
+		state->start_cap == FZ_LINECAP_SQUARE ? FT_STROKER_LINECAP_SQUARE :
+		state->start_cap == FZ_LINECAP_TRIANGLE ? FT_STROKER_LINECAP_BUTT :
+		FT_STROKER_LINECAP_BUTT;
+
+	FT_Stroker_Set(stroker, linewidth, line_cap, line_join, state->miterlimit * 65536);
 
 	fterr = FT_Get_Glyph(face->glyph, &glyph);
 	if (fterr)
