@@ -8,7 +8,7 @@
 
 void fz_var_imp(void *var)
 {
-	UNUSED(var); /* Do nothing */
+	/* Do nothing */
 }
 
 void fz_flush_warnings(fz_context *ctx)

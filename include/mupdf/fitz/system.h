@@ -249,11 +249,6 @@ typedef int fz_off_t;
 #endif
 #endif
 
-/*
-	Shut the compiler up about unused variables
-*/
-#define UNUSED(x) do { x = x; } while (0)
-
 /* ARM assembly specific defines */
 
 #ifdef ARCH_ARM

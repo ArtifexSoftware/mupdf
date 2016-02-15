@@ -112,8 +112,6 @@ pdf_load_name_tree_imp(fz_context *ctx, pdf_obj *dict, pdf_document *doc, pdf_ob
 	pdf_obj *names = pdf_dict_get(ctx, node, PDF_NAME_Names);
 	int i;
 
-	UNUSED(ctx);
-
 	if (kids && !pdf_mark_obj(ctx, node))
 	{
 		int len = pdf_array_len(ctx, kids);

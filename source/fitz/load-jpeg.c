@@ -27,7 +27,6 @@ static void
 fz_jpg_mem_free(j_common_ptr cinfo, void *object, size_t size)
 {
 	fz_context *ctx = JZ_CTX_FROM_CINFO(cinfo);
-	UNUSED(size);
 	fz_free(ctx, object);
 }
 
