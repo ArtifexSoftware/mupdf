@@ -1,15 +1,14 @@
 #include "mupdf/pdf.h"
 
 #ifndef NOCJK
+
 #include "gen_cmap_cns.h"
 #include "gen_cmap_gb.h"
 #include "gen_cmap_japan.h"
 #include "gen_cmap_korea.h"
-#endif
 
 static const struct { char *name; pdf_cmap *cmap; } cmap_table[] =
 {
-#ifndef NOCJK
 	{"78-EUC-H",&cmap_78_EUC_H},
 	{"78-EUC-V",&cmap_78_EUC_V},
 	{"78-H",&cmap_78_H},
@@ -185,7 +184,6 @@ static const struct { char *name; pdf_cmap *cmap; } cmap_table[] =
 	{"UniKS-X",&cmap_UniKS_X},
 	{"V",&cmap_V},
 	{"WP-Symbol",&cmap_WP_Symbol},
-#endif
 };
 
 pdf_cmap *
@@ -206,3 +204,13 @@ pdf_load_builtin_cmap(fz_context *ctx, char *cmap_name)
 	}
 	return NULL;
 }
+
+#else
+
+pdf_cmap *
+pdf_load_builtin_cmap(fz_context *ctx, char *cmap_name)
+{
+	return NULL;
+}
+
+#endif
