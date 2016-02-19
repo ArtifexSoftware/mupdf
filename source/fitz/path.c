@@ -580,7 +580,7 @@ static inline fz_rect *bound_expand(fz_rect *r, const fz_point *p)
 	return r;
 }
 
-void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, const fz_path *path)
+void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *proc, void *arg)
 {
 	int i, k, cmd_len;
 	float x, y, sx, sy;
@@ -626,8 +626,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			k += 6;
 			if (cmd == FZ_CURVETOCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -655,8 +655,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			k += 4;
 			if (cmd == FZ_CURVETOVCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -680,8 +680,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			k += 4;
 			if (cmd == FZ_CURVETOYCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -716,8 +716,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			k += 4;
 			if (cmd == FZ_QUADTOCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -732,8 +732,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			sy = y;
 			if (cmd == FZ_MOVETOCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -746,8 +746,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			k += 2;
 			if (cmd == FZ_LINETOCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -760,8 +760,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			k += 1;
 			if (cmd == FZ_HORIZTOCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -774,8 +774,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 			k += 1;
 			if (cmd == FZ_VERTTOCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -787,8 +787,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 				y);
 			if (cmd == FZ_DEGENLINETOCLOSE)
 			{
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 				x = sx;
 				y = sy;
 			}
@@ -816,8 +816,8 @@ void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, 
 				proc->lineto(ctx, arg,
 					coords[k],
 					coords[k+3]);
-				if (proc->close)
-					proc->close(ctx, arg);
+				if (proc->closepath)
+					proc->closepath(ctx, arg);
 			}
 			sx = x;
 			sy = y;
@@ -902,7 +902,7 @@ bound_curveto(fz_context *ctx, void *arg_, float x1, float y1, float x2, float y
 	}
 }
 
-static const fz_path_processor bound_path_proc =
+static const fz_path_walker bound_path_walker =
 {
 	bound_moveto,
 	bound_lineto,
@@ -920,7 +920,7 @@ fz_bound_path(fz_context *ctx, const fz_path *path, const fz_stroke_state *strok
 	arg.trailing_move = 0;
 	arg.first = 1;
 
-	fz_process_path(ctx, &bound_path_proc, &arg, path);
+	fz_walk_path(ctx, path, &bound_path_walker, &arg);
 
 	if (!arg.first && stroke)
 	{

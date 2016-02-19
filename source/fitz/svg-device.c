@@ -119,7 +119,7 @@ svg_path_close(fz_context *ctx, void *arg)
 	fz_printf(ctx, out, "Z ");
 }
 
-static const fz_path_processor svg_path_proc =
+static const fz_path_walker svg_path_walker =
 {
 	svg_path_moveto,
 	svg_path_lineto,
@@ -131,7 +131,7 @@ static void
 svg_dev_path(fz_context *ctx, svg_device *sdev, const fz_path *path)
 {
 	fz_printf(ctx, sdev->out, " d=\"");
-	fz_process_path(ctx, &svg_path_proc, sdev->out, path);
+	fz_walk_path(ctx, path, &svg_path_walker, sdev->out);
 	fz_printf(ctx, sdev->out, "\"");
 }
 

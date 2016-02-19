@@ -85,7 +85,7 @@ trace_close(fz_context *ctx, void *arg)
 	fz_printf(ctx, out, "<closepath/>\n");
 }
 
-static const fz_path_processor trace_path_proc =
+static const fz_path_walker trace_path_walker =
 {
 	trace_moveto,
 	trace_lineto,
@@ -96,7 +96,7 @@ static const fz_path_processor trace_path_proc =
 static void
 fz_trace_path(fz_context *ctx, fz_output *out, const fz_path *path)
 {
-	fz_process_path(ctx, &trace_path_proc, out, path);
+	fz_walk_path(ctx, path, &trace_path_walker, out);
 }
 
 static void

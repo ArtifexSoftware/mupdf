@@ -202,7 +202,7 @@ flatten_rectto(fz_context *ctx, void *arg_, float x0, float y0, float x1, float 
 	}
 }
 
-static const fz_path_processor flatten_proc =
+static const fz_path_walker flatten_proc =
 {
 	flatten_moveto,
 	flatten_lineto,
@@ -224,7 +224,7 @@ fz_flatten_fill_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz
 	arg.flatness = flatness;
 	arg.b.x = arg.b.y = arg.c.x = arg.c.y = 0;
 
-	fz_process_path(ctx, &flatten_proc, &arg, path);
+	fz_walk_path(ctx, path, &flatten_proc, &arg);
 	if (arg.c.x != arg.b.x || arg.c.y != arg.b.y)
 		line(ctx, gel, ctm, arg.c.x, arg.c.y, arg.b.x, arg.b.y);
 }
@@ -832,7 +832,7 @@ stroke_close(fz_context *ctx, void *s_)
 	fz_stroke_closepath(ctx, s);
 }
 
-static const fz_path_processor stroke_proc =
+static const fz_path_walker stroke_proc =
 {
 	stroke_moveto,
 	stroke_lineto,
@@ -869,7 +869,7 @@ fz_flatten_stroke_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const 
 	s.cur.x = s.cur.y = 0;
 	s.stroke = stroke;
 
-	fz_process_path(ctx, &stroke_proc, &s, path);
+	fz_walk_path(ctx, path, &stroke_proc, &s);
 	fz_stroke_flush(ctx, &s, stroke->start_cap, stroke->end_cap);
 }
 
@@ -1291,7 +1291,7 @@ dash_close(fz_context *ctx, void *s_)
 	s->cur.y = s->dash_beg.y;
 }
 
-static const fz_path_processor dash_proc =
+static const fz_path_walker dash_proc =
 {
 	dash_moveto,
 	dash_lineto,
@@ -1351,6 +1351,6 @@ fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz
 	}
 
 	s.cur.x = s.cur.y = 0;
-	fz_process_path(ctx, &dash_proc, &s, path);
+	fz_walk_path(ctx, path, &dash_proc, &s);
 	fz_stroke_flush(ctx, &s, s.cap, stroke->end_cap);
 }

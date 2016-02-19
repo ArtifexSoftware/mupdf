@@ -398,7 +398,7 @@ pdf_dev_path_close(fz_context *ctx, void *arg)
 	fz_buffer_printf(ctx, buf, "h\n");
 }
 
-static const fz_path_processor pdf_dev_path_proc =
+static const fz_path_walker pdf_dev_path_proc =
 {
 	pdf_dev_path_moveto,
 	pdf_dev_path_lineto,
@@ -411,7 +411,7 @@ pdf_dev_path(fz_context *ctx, pdf_device *pdev, const fz_path *path)
 {
 	gstate *gs = CURRENT_GSTATE(pdev);
 
-	fz_process_path(ctx, &pdf_dev_path_proc, (void *)gs->buf, path);
+	fz_walk_path(ctx, path, &pdf_dev_path_proc, (void *)gs->buf);
 }
 
 static void

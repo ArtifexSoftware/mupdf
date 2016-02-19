@@ -50,15 +50,15 @@ typedef struct
 	void (*moveto)(fz_context *ctx, void *arg, float x, float y);
 	void (*lineto)(fz_context *ctx, void *arg, float x, float y);
 	void (*curveto)(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3);
-	void (*close)(fz_context *ctx, void *arg);
+	void (*closepath)(fz_context *ctx, void *arg);
 	/* Optional ones */
 	void (*quadto)(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2);
 	void (*curvetov)(fz_context *ctx, void *arg, float x2, float y2, float x3, float y3);
 	void (*curvetoy)(fz_context *ctx, void *arg, float x1, float y1, float x3, float y3);
 	void (*rectto)(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2);
-} fz_path_processor;
+} fz_path_walker;
 
-void fz_process_path(fz_context *ctx, const fz_path_processor *proc, void *arg, const fz_path *path);
+void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *walker, void *arg);
 
 fz_path *fz_new_path(fz_context *ctx);
 fz_path *fz_keep_path(fz_context *ctx, const fz_path *path);
