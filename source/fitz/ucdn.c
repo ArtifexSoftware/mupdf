@@ -24,6 +24,7 @@ typedef struct {
 	unsigned char east_asian_width;
 	unsigned char normalization_check;
 	unsigned char script;
+	unsigned char linebreak_class;
 } UCDRecord;
 
 typedef struct {
@@ -195,6 +196,41 @@ int ucdn_get_mirrored(uint32_t code)
 int ucdn_get_script(uint32_t code)
 {
 	return get_ucd_record(code)->script;
+}
+
+int ucdn_get_linebreak_class(uint32_t code)
+{
+	return get_ucd_record(code)->linebreak_class;
+}
+
+int ucdn_get_resolved_linebreak_class(uint32_t code)
+{
+	const UCDRecord *record = get_ucd_record(code);
+
+	switch (record->linebreak_class)
+	{
+		case UCDN_LINEBREAK_CLASS_AI:
+		case UCDN_LINEBREAK_CLASS_SG:
+		case UCDN_LINEBREAK_CLASS_XX:
+			return UCDN_LINEBREAK_CLASS_AL;
+
+		case UCDN_LINEBREAK_CLASS_SA:
+			if (record->category == UCDN_GENERAL_CATEGORY_MC ||
+					record->category == UCDN_GENERAL_CATEGORY_MN)
+				return UCDN_LINEBREAK_CLASS_CM;
+			return UCDN_LINEBREAK_CLASS_AL;
+
+		case UCDN_LINEBREAK_CLASS_CJ:
+			return UCDN_LINEBREAK_CLASS_NS;
+
+		case UCDN_LINEBREAK_CLASS_CB:
+			return UCDN_LINEBREAK_CLASS_B2;
+
+		case UCDN_LINEBREAK_CLASS_NL:
+			return UCDN_LINEBREAK_CLASS_BK;
+	}
+
+	return record->linebreak_class;
 }
 
 uint32_t ucdn_mirror(uint32_t code)

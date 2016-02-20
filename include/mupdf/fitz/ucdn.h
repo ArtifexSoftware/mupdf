@@ -161,6 +161,47 @@ extern "C" {
 #define UCDN_SCRIPT_OLD_HUNGARIAN 130
 #define UCDN_SCRIPT_SIGNWRITING 131
 
+#define UCDN_LINEBREAK_CLASS_OP 0
+#define UCDN_LINEBREAK_CLASS_CL 1
+#define UCDN_LINEBREAK_CLASS_CP 2
+#define UCDN_LINEBREAK_CLASS_QU 3
+#define UCDN_LINEBREAK_CLASS_GL 4
+#define UCDN_LINEBREAK_CLASS_NS 5
+#define UCDN_LINEBREAK_CLASS_EX 6
+#define UCDN_LINEBREAK_CLASS_SY 7
+#define UCDN_LINEBREAK_CLASS_IS 8
+#define UCDN_LINEBREAK_CLASS_PR 9
+#define UCDN_LINEBREAK_CLASS_PO 10
+#define UCDN_LINEBREAK_CLASS_NU 11
+#define UCDN_LINEBREAK_CLASS_AL 12
+#define UCDN_LINEBREAK_CLASS_HL 13
+#define UCDN_LINEBREAK_CLASS_ID 14
+#define UCDN_LINEBREAK_CLASS_IN 15
+#define UCDN_LINEBREAK_CLASS_HY 16
+#define UCDN_LINEBREAK_CLASS_BA 17
+#define UCDN_LINEBREAK_CLASS_BB 18
+#define UCDN_LINEBREAK_CLASS_B2 19
+#define UCDN_LINEBREAK_CLASS_ZW 20
+#define UCDN_LINEBREAK_CLASS_CM 21
+#define UCDN_LINEBREAK_CLASS_WJ 22
+#define UCDN_LINEBREAK_CLASS_H2 23
+#define UCDN_LINEBREAK_CLASS_H3 24
+#define UCDN_LINEBREAK_CLASS_JL 25
+#define UCDN_LINEBREAK_CLASS_JV 26
+#define UCDN_LINEBREAK_CLASS_JT 27
+#define UCDN_LINEBREAK_CLASS_RI 28
+#define UCDN_LINEBREAK_CLASS_AI 29
+#define UCDN_LINEBREAK_CLASS_BK 30
+#define UCDN_LINEBREAK_CLASS_CB 31
+#define UCDN_LINEBREAK_CLASS_CJ 32
+#define UCDN_LINEBREAK_CLASS_CR 33
+#define UCDN_LINEBREAK_CLASS_LF 34
+#define UCDN_LINEBREAK_CLASS_NL 35
+#define UCDN_LINEBREAK_CLASS_SA 36
+#define UCDN_LINEBREAK_CLASS_SG 37
+#define UCDN_LINEBREAK_CLASS_SP 38
+#define UCDN_LINEBREAK_CLASS_XX 39
+
 #define UCDN_GENERAL_CATEGORY_CC 0
 #define UCDN_GENERAL_CATEGORY_CF 1
 #define UCDN_GENERAL_CATEGORY_CN 2
@@ -263,6 +304,27 @@ int ucdn_get_bidi_class(uint32_t code);
  * @return value according to UCDN_SCRIPT_* and as defined in UAX#24.
  */
 int ucdn_get_script(uint32_t code);
+
+/**
+ * Get unresolved linebreak class of a codepoint. This does not take
+ * rule LB1 of UAX#14 into account. See ucdn_get_resolved_linebreak_class()
+ * for resolved linebreak classes.
+ *
+ * @param code Unicode codepoint
+ * @return value according to UCDN_LINEBREAK_* and as defined in UAX#14.
+ */
+int ucdn_get_linebreak_class(uint32_t code);
+
+/**
+ * Get resolved linebreak class of a codepoint. This resolves characters
+ * in the AI, SG, XX, SA and CJ classes according to rule LB1 of UAX#14.
+ * In addition the CB class is resolved as the equivalent B2 class and
+ * the NL class is resolved as the equivalent BK class.
+ *
+ * @param code Unicode codepoint
+ * @return value according to UCDN_LINEBREAK_* and as defined in UAX#14.
+ */
+int ucdn_get_resolved_linebreak_class(uint32_t code);
 
 /**
  * Check if codepoint can be mirrored.
