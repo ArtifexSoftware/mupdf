@@ -1,52 +1,93 @@
 import com.artifex.mupdf.fitz.*;
+
 import java.awt.Frame;
 import java.awt.Label;
+import java.awt.Button;
+import java.awt.Panel;
 import java.awt.BorderLayout;
-import java.awt.event.*;
+import java.awt.FlowLayout;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.ActionEvent;
 
-public class Viewer extends Frame implements WindowListener
+public class Viewer extends Frame implements WindowListener, ActionListener
 {
 	protected Document doc;
+	protected Panel toolbar;
 	protected PageCanvas pageCanvas;
 	protected Label pageLabel;
-	protected int count;
+	protected Button firstButton, prevButton, nextButton, lastButton;
+	protected int pageCount;
+	protected int pageNumber;
 
 	public Viewer(Document doc_) {
 		super("MuPDF");
 
 		this.doc = doc_;
-		this.count = doc.countPages();
+
+		pageCount = doc.countPages();
+		pageNumber = 0;
 
 		setSize(600, 900);
+		setTitle("MuPDF: " + doc.getMetaData(Document.META_INFO_TITLE));
 
-		pageCanvas = new PageCanvas(doc.loadPage(1144));
-		pageLabel = new Label("page " + 1);
+		toolbar = new Panel();
+		toolbar.setLayout(new FlowLayout(FlowLayout.LEFT));
+		firstButton = new Button("|<");
+		firstButton.addActionListener(this);
+		prevButton = new Button("<");
+		prevButton.addActionListener(this);
+		nextButton = new Button(">");
+		nextButton.addActionListener(this);
+		lastButton = new Button(">|");
+		lastButton.addActionListener(this);
+		pageLabel = new Label();
 
-		add(pageLabel, BorderLayout.NORTH);
-		add(pageCanvas, BorderLayout.CENTER);
+		toolbar.add(firstButton);
+		toolbar.add(prevButton);
+		toolbar.add(nextButton);
+		toolbar.add(lastButton);
+		toolbar.add(pageLabel);
+
+		add(toolbar, BorderLayout.NORTH);
 
 		addWindowListener(this);
 
-		{
-			Page page = doc.loadPage(0);
-			Device dev = new Device() {
-				public void beginPage(Rect r, Matrix m) {
-					System.out.println("beginPage " + r + m);
-				}
-				public void fillText(Text text, Matrix ctm, ColorSpace cs, float color[], float alpha) {
-					System.out.println("fillText " + text);
-					text.walk(new TextWalker() {
-						public void showGlyph(Font f, boolean v, Matrix m, int g, int c) {
-							System.out.println(f + " " + m + " " + g + " " + (char)c);
-						}
-					});
-				}
-			};
-			page.run(dev, new Matrix(), null);
-		}
+		stuff();
 	}
 
-	// WindowListener
+	public void stuff() {
+		pageLabel.setText("Page " + (pageNumber + 1) + " / " + pageCount);
+		if (pageCanvas != null)
+			remove(pageCanvas);
+		pageCanvas = new PageCanvas(doc.loadPage(pageNumber));
+		add(pageCanvas, BorderLayout.CENTER);
+		validate();
+	}
+
+	public void actionPerformed(ActionEvent event) {
+		Object source = event.getSource();
+		int oldPageNumber = pageNumber;
+
+		if (source == firstButton)
+			pageNumber = 0;
+		if (source == lastButton)
+			pageNumber = pageCount - 1;
+		if (source == prevButton) {
+			pageNumber = pageNumber - 1;
+			if (pageNumber < 0)
+				pageNumber = 0;
+		}
+		if (source == nextButton) {
+			pageNumber = pageNumber + 1;
+			if (pageNumber >= pageCount)
+				pageNumber = pageCount - 1;
+		}
+
+		if (pageNumber != oldPageNumber)
+			stuff();
+	}
 
 	public void windowClosing(WindowEvent event) {
 		System.exit(0);
