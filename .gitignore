@@ -6,6 +6,10 @@ build
 DerivedData
 generated
 cscope.*
+*.class
+*.jar
+*.o
+*.so
 *.epub
 *.pdf
 *.pnm

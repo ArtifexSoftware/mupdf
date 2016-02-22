@@ -356,6 +356,9 @@ tarball:
 
 # --- Clean and Default ---
 
+java:
+	$(MAKE) -C platform/java
+
 tags: $(shell find include source platform -name '*.[ch]')
 	ctags $^
 

@@ -9,6 +9,7 @@ Make*			tabs
 *.[chm]			tabs
 *.java			tabs
 *.xml			tabs
+build.xml		spaces
 memento.*		spaces
 *.vcxproj*		spaces
 jmem*			spaces

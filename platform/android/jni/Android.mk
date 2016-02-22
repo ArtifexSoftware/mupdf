@@ -16,10 +16,12 @@ LOCAL_C_INCLUDES := \
 	jni/andprof \
 	$(MUPDF_ROOT)/include \
 	$(MUPDF_ROOT)/source/fitz \
-	$(MUPDF_ROOT)/source/pdf
-LOCAL_CFLAGS :=
-LOCAL_MODULE    := mupdf
-LOCAL_SRC_FILES := mupdf.c mupdf_native.c
+	$(MUPDF_ROOT)/source/pdf \
+	$(MUPDF_ROOT)/platform/java
+LOCAL_CFLAGS := -DHAVE_ANDROID
+LOCAL_MODULE    := mupdf_java
+LOCAL_SRC_FILES := mupdf.c \
+	$(MUPDF_ROOT)/java/mupdf_native.c
 LOCAL_STATIC_LIBRARIES := mupdfcore mupdfthirdparty
 ifdef NDK_PROFILER
 LOCAL_CFLAGS += -pg -DNDK_PROFILER
