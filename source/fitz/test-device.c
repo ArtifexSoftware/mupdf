@@ -122,7 +122,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-fz_test_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha)
+fz_test_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	fz_test_device *t = (fz_test_device*)dev;
 
@@ -241,7 +241,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const
 }
 
 static void
-fz_test_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
+fz_test_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	/* We assume that at least some of the image pixels are non-zero */

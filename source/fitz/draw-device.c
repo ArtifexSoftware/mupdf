@@ -1083,7 +1083,7 @@ fz_transform_pixmap(fz_context *ctx, fz_draw_device *dev, const fz_pixmap *image
 }
 
 static void
-fz_draw_fill_image(fz_context *ctx, fz_device *devp, const fz_image *image, const fz_matrix *ctm, float alpha)
+fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_pixmap *converted = NULL;
@@ -1189,7 +1189,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, const fz_image *image, cons
 }
 
 static void
-fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, const fz_image *image, const fz_matrix *ctm,
+fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
@@ -1261,7 +1261,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, const fz_image *image,
 }
 
 static void
-fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_irect bbox;

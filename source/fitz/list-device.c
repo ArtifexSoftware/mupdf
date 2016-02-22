@@ -979,7 +979,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-fz_list_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha)
+fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect = fz_unit_rect;
@@ -1010,7 +1010,7 @@ fz_list_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const
 }
 
 static void
-fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
+fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
@@ -1042,7 +1042,7 @@ fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, 
 }
 
 static void
-fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect2 = fz_unit_rect;

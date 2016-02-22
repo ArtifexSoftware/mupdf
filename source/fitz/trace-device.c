@@ -251,7 +251,7 @@ fz_trace_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const
 }
 
 static void
-fz_trace_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha)
+fz_trace_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_printf(ctx, out, "<fill_image alpha=\"%g\"", alpha);
@@ -270,7 +270,7 @@ fz_trace_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_m
 }
 
 static void
-fz_trace_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
+fz_trace_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
@@ -282,7 +282,7 @@ fz_trace_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image,
 }
 
 static void
-fz_trace_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_trace_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_printf(ctx, out, "<clip_image_mask");

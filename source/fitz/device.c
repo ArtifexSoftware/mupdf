@@ -270,7 +270,7 @@ fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix 
 }
 
 void
-fz_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha)
+fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	if (dev->error_depth)
 		return;
@@ -279,7 +279,7 @@ fz_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_m
 }
 
 void
-fz_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
+fz_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (dev->error_depth)
@@ -289,7 +289,7 @@ fz_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const
 }
 
 void
-fz_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
 	if (dev->error_depth)
 	{

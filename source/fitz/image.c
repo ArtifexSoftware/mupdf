@@ -3,13 +3,13 @@
 #define SANE_DPI 72.0f
 
 fz_image *
-fz_keep_image(fz_context *ctx, const fz_image *image)
+fz_keep_image(fz_context *ctx, fz_image *image)
 {
-	return (fz_image *)fz_keep_storable(ctx, &image->storable);
+	return fz_keep_storable(ctx, &image->storable);
 }
 
 void
-fz_drop_image(fz_context *ctx, const fz_image *image)
+fz_drop_image(fz_context *ctx, fz_image *image)
 {
 	fz_drop_storable(ctx, &image->storable);
 }
@@ -18,7 +18,7 @@ typedef struct fz_image_key_s fz_image_key;
 
 struct fz_image_key_s {
 	int refs;
-	const fz_image *image;
+	fz_image *image;
 	int l2factor;
 };
 
@@ -93,7 +93,7 @@ fz_mask_color_key(fz_pixmap *pix, int n, const int *colorkey)
 }
 
 static void
-fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, const fz_image *image)
+fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 {
 	fz_pixmap *mask = fz_get_pixmap_from_image(ctx, image->mask, tile->w, tile->h);
 	unsigned char *s = mask->samples, *end = s + mask->w * mask->h;
@@ -121,7 +121,7 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, const fz_image *image)
 }
 
 fz_pixmap *
-fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, const fz_image *image, int indexed, int l2factor)
+fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int indexed, int l2factor)
 {
 	fz_pixmap *tile = NULL;
 	int stride, len, i;
@@ -218,7 +218,7 @@ fz_drop_image_imp(fz_context *ctx, fz_storable *image_)
 }
 
 static fz_pixmap *
-standard_image_get_pixmap(fz_context *ctx, const fz_image *image, int w, int h, int *l2factor)
+standard_image_get_pixmap(fz_context *ctx, fz_image *image, int w, int h, int *l2factor)
 {
 	int native_l2factor;
 	fz_stream *stm;
@@ -285,7 +285,7 @@ standard_image_get_pixmap(fz_context *ctx, const fz_image *image, int w, int h, 
 }
 
 fz_pixmap *
-fz_get_pixmap_from_image(fz_context *ctx, const fz_image *image, int w, int h)
+fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
 {
 	fz_pixmap *tile;
 	int l2factor, l2factor_remaining;

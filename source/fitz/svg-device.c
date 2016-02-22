@@ -714,7 +714,7 @@ send_data_base64(fz_context *ctx, fz_output *out, fz_buffer *buffer)
 }
 
 static void
-svg_dev_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha)
+svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -801,7 +801,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
+svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	svg_device *sdev = (svg_device*)dev;
@@ -846,7 +846,7 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, 
 }
 
 static void
-svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;

@@ -111,7 +111,7 @@ struct pdf_device_s
 /* Helper functions */
 
 static int
-send_image(fz_context *ctx, pdf_device *pdev, const fz_image *image, int mask, int smask)
+send_image(fz_context *ctx, pdf_device *pdev, fz_image *image, int mask, int smask)
 {
 	fz_pixmap *pixmap = NULL;
 	pdf_obj *imobj = NULL;
@@ -1037,7 +1037,7 @@ pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-pdf_dev_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha)
+pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	int num;
@@ -1064,7 +1064,7 @@ pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm,
+pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
 		fz_colorspace *colorspace, const float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
@@ -1085,7 +1085,7 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, 
 }
 
 static void
-pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 
