@@ -117,7 +117,7 @@ struct fz_device_s
 	void (*clip_stroke_text)(fz_context *, fz_device *, const fz_text *, const fz_stroke_state *, const fz_matrix *);
 	void (*ignore_text)(fz_context *, fz_device *, const fz_text *, const fz_matrix *);
 
-	void (*fill_shade)(fz_context *, fz_device *, const fz_shade *shd, const fz_matrix *ctm, float alpha);
+	void (*fill_shade)(fz_context *, fz_device *, fz_shade *shd, const fz_matrix *ctm, float alpha);
 	void (*fill_image)(fz_context *, fz_device *, const fz_image *img, const fz_matrix *ctm, float alpha);
 	void (*fill_image_mask)(fz_context *, fz_device *, const fz_image *img, const fz_matrix *ctm, fz_colorspace *, const float *color, float alpha);
 	void (*clip_image_mask)(fz_context *, fz_device *, const fz_image *img, const fz_rect *rect, const fz_matrix *ctm);
@@ -156,7 +156,7 @@ void fz_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 void fz_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm);
 void fz_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm);
 void fz_pop_clip(fz_context *ctx, fz_device *dev);
-void fz_fill_shade(fz_context *ctx, fz_device *dev, const fz_shade *shade, const fz_matrix *ctm, float alpha);
+void fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha);
 void fz_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, float alpha);
 void fz_fill_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha);
 void fz_clip_image_mask(fz_context *ctx, fz_device *dev, const fz_image *image, const fz_rect *rect, const fz_matrix *ctm);

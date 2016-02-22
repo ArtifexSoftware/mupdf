@@ -261,7 +261,7 @@ fz_trace_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, cons
 }
 
 static void
-fz_trace_fill_shade(fz_context *ctx, fz_device *dev, const fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_trace_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_printf(ctx, out, "<fill_shade alpha=\"%g\"", alpha);

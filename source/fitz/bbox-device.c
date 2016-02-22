@@ -66,7 +66,7 @@ fz_bbox_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-fz_bbox_fill_shade(fz_context *ctx, fz_device *dev, const fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_bbox_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_shade(ctx, shade, ctm, &r), 0);

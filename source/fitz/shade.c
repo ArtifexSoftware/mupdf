@@ -3,7 +3,7 @@
 typedef struct fz_mesh_processor_s fz_mesh_processor;
 
 struct fz_mesh_processor_s {
-	const fz_shade *shade;
+	fz_shade *shade;
 	fz_mesh_prepare_fn *prepare;
 	fz_mesh_process_fn *process;
 	void *process_arg;
@@ -70,7 +70,7 @@ fz_prepare_vertex(fz_context *ctx, fz_mesh_processor *painter, fz_vertex *v, con
 }
 
 static void
-fz_process_mesh_type1(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type1(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	float *p = shade->u.f.fn_vals;
 	int xdivs = shade->u.f.xdivs;
@@ -127,7 +127,7 @@ fz_point_on_circle(fz_point p, float r, float theta)
 }
 
 static void
-fz_process_mesh_type2(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type2(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_point p0, p1, dir;
 	fz_vertex v0, v1, v2, v3;
@@ -240,7 +240,7 @@ fz_paint_annulus(fz_context *ctx, const fz_matrix *ctm,
 }
 
 static void
-fz_process_mesh_type3(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type3(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_point p0, p1;
 	float r0, r1;
@@ -302,7 +302,7 @@ static inline float read_sample(fz_context *ctx, fz_stream *stream, int bits, fl
 }
 
 static void
-fz_process_mesh_type4(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type4(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	fz_vertex v[4];
@@ -381,7 +381,7 @@ fz_process_mesh_type4(fz_context *ctx, const fz_shade *shade, const fz_matrix *c
 }
 
 static void
-fz_process_mesh_type5(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type5(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	fz_vertex *buf = NULL;
@@ -696,7 +696,7 @@ make_tensor_patch(tensor_patch *p, int type, fz_point *pt)
 #define SUBDIV 3 /* how many levels to subdivide patches */
 
 static void
-fz_process_mesh_type6(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type6(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	float color_storage[2][4][FZ_MAX_COLORS];
@@ -809,7 +809,7 @@ fz_process_mesh_type6(fz_context *ctx, const fz_shade *shade, const fz_matrix *c
 }
 
 static void
-fz_process_mesh_type7(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
+fz_process_mesh_type7(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_mesh_processor *painter)
 {
 	fz_stream *stream = fz_open_compressed_buffer(ctx, shade->buffer);
 	int bpflag = shade->u.m.bpflag;
@@ -922,7 +922,7 @@ fz_process_mesh_type7(fz_context *ctx, const fz_shade *shade, const fz_matrix *c
 }
 
 void
-fz_process_mesh(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm,
+fz_process_mesh(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
 		fz_mesh_prepare_fn *prepare, fz_mesh_process_fn *process, void *process_arg)
 {
 	fz_mesh_processor painter;
@@ -952,7 +952,7 @@ fz_process_mesh(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm,
 }
 
 static fz_rect *
-fz_bound_mesh_type1(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
+fz_bound_mesh_type1(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
 {
 	bbox->x0 = shade->u.f.domain[0][0];
 	bbox->y0 = shade->u.f.domain[0][1];
@@ -962,7 +962,7 @@ fz_bound_mesh_type1(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
 }
 
 static fz_rect *
-fz_bound_mesh_type2(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
+fz_bound_mesh_type2(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
 {
 	/* FIXME: If axis aligned and not extended, the bbox may only be
 	 * infinite in one direction */
@@ -971,7 +971,7 @@ fz_bound_mesh_type2(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
 }
 
 static fz_rect *
-fz_bound_mesh_type3(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
+fz_bound_mesh_type3(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
 {
 	fz_point p0, p1;
 	float r0, r1;
@@ -1016,7 +1016,7 @@ fz_bound_mesh_type3(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
 }
 
 static fz_rect *
-fz_bound_mesh_type4567(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
+fz_bound_mesh_type4567(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
 {
 	bbox->x0 = shade->u.m.x0;
 	bbox->y0 = shade->u.m.y0;
@@ -1026,7 +1026,7 @@ fz_bound_mesh_type4567(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
 }
 
 static fz_rect *
-fz_bound_mesh(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
+fz_bound_mesh(fz_context *ctx, fz_shade *shade, fz_rect *bbox)
 {
 	if (shade->type == FZ_FUNCTION_BASED)
 		fz_bound_mesh_type1(ctx, shade, bbox);
@@ -1046,11 +1046,9 @@ fz_bound_mesh(fz_context *ctx, const fz_shade *shade, fz_rect *bbox)
 }
 
 fz_shade *
-fz_keep_shade(fz_context *ctx, const fz_shade *shadec)
+fz_keep_shade(fz_context *ctx, fz_shade *shade)
 {
-	fz_shade *shade = (fz_shade *)shadec;
-
-	return (fz_shade *)fz_keep_storable(ctx, &shade->storable);
+	return fz_keep_storable(ctx, &shade->storable);
 }
 
 void
@@ -1067,15 +1065,13 @@ fz_drop_shade_imp(fz_context *ctx, fz_storable *shade_)
 }
 
 void
-fz_drop_shade(fz_context *ctx, const fz_shade *shadec)
+fz_drop_shade(fz_context *ctx, fz_shade *shade)
 {
-	fz_shade *shade = (fz_shade *)shadec;
-
 	fz_drop_storable(ctx, &shade->storable);
 }
 
 fz_rect *
-fz_bound_shade(fz_context *ctx, const fz_shade *shade, const fz_matrix *ctm, fz_rect *s)
+fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_rect *s)
 {
 	fz_matrix local_ctm;
 	fz_rect rect;

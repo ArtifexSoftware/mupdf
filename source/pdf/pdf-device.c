@@ -1055,7 +1055,7 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const
 }
 
 static void
-pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, const fz_shade *shade, const fz_matrix *ctm, float alpha)
+pdf_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 

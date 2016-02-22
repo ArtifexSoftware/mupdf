@@ -90,7 +90,7 @@ fz_test_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 struct shadearg
 {
 	fz_device *dev;
-	const fz_shade *shade;
+	fz_shade *shade;
 };
 
 static void
@@ -98,13 +98,13 @@ prepare_vertex(fz_context *ctx, void *arg_, fz_vertex *v, const float *color)
 {
 	struct shadearg *arg = arg_;
 	fz_device *dev = arg->dev;
-	const fz_shade *shade = arg->shade;
+	fz_shade *shade = arg->shade;
 	if (!shade->use_function)
 		fz_test_color(ctx, dev, shade->colorspace, color);
 }
 
 static void
-fz_test_fill_shade(fz_context *ctx, fz_device *dev, const fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_test_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	if (shade->use_function)
 	{

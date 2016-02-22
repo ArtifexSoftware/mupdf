@@ -756,7 +756,7 @@ svg_dev_fill_image(fz_context *ctx, fz_device *dev, const fz_image *image, const
 }
 
 static void
-svg_dev_fill_shade(fz_context *ctx, fz_device *dev, const fz_shade *shade, const fz_matrix *ctm, float alpha)
+svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;

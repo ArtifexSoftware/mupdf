@@ -933,7 +933,7 @@ fz_draw_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-fz_draw_fill_shade(fz_context *ctx, fz_device *devp, const fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_rect bounds;
