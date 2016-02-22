@@ -1792,7 +1792,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	{
 		fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
-		fz_puts(ctx, opts->out, "endobj\n\n");
+		fz_puts(ctx, opts->out, "\nendobj\n\n");
 	}
 	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
 	{
