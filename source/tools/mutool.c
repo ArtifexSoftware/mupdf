@@ -9,6 +9,7 @@
 #endif
 
 int mudraw_main(int argc, char *argv[]);
+int murun_main(int argc, char *argv[]);
 int pdfclean_main(int argc, char *argv[]);
 int pdfextract_main(int argc, char *argv[]);
 int pdfinfo_main(int argc, char *argv[]);
@@ -23,6 +24,7 @@ static struct {
 	char *desc;
 } tools[] = {
 	{ mudraw_main, "draw", "convert document" },
+	{ murun_main, "run", "run javascript" },
 	{ pdfclean_main, "clean", "rewrite pdf file" },
 	{ pdfextract_main, "extract", "extract font and image resources" },
 	{ pdfinfo_main, "info", "show information about pdf resources" },
