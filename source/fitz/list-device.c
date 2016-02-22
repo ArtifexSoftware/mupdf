@@ -1413,7 +1413,7 @@ fz_new_display_list(fz_context *ctx)
 fz_display_list *
 fz_keep_display_list(fz_context *ctx, fz_display_list *list)
 {
-	return (fz_display_list *)fz_keep_storable(ctx, &list->storable);
+	return fz_keep_storable(ctx, &list->storable);
 }
 
 void

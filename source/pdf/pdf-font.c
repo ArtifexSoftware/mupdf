@@ -354,7 +354,7 @@ pdf_load_embedded_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
 pdf_font_desc *
 pdf_keep_font(fz_context *ctx, pdf_font_desc *fontdesc)
 {
-	return (pdf_font_desc *)fz_keep_storable(ctx, &fontdesc->storable);
+	return fz_keep_storable(ctx, &fontdesc->storable);
 }
 
 void

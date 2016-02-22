@@ -33,7 +33,7 @@ fz_eval_function(fz_context *ctx, fz_function *func, const float *in, int inlen,
 fz_function *
 fz_keep_function(fz_context *ctx, fz_function *func)
 {
-	return (fz_function *)fz_keep_storable(ctx, &func->storable);
+	return fz_keep_storable(ctx, &func->storable);
 }
 
 void

@@ -3,7 +3,7 @@
 pdf_pattern *
 pdf_keep_pattern(fz_context *ctx, pdf_pattern *pat)
 {
-	return (pdf_pattern *)fz_keep_storable(ctx, &pat->storable);
+	return fz_keep_storable(ctx, &pat->storable);
 }
 
 void

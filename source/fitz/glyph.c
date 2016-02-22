@@ -5,7 +5,7 @@
 fz_glyph *
 fz_keep_glyph(fz_context *ctx, fz_glyph *glyph)
 {
-	return (fz_glyph *)fz_keep_storable(ctx, &glyph->storable);
+	return fz_keep_storable(ctx, &glyph->storable);
 }
 
 void

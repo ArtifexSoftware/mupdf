@@ -28,7 +28,7 @@ pdf_new_cmap(fz_context *ctx)
 pdf_cmap *
 pdf_keep_cmap(fz_context *ctx, pdf_cmap *cmap)
 {
-	return (pdf_cmap *)fz_keep_storable(ctx, &cmap->storable);
+	return fz_keep_storable(ctx, &cmap->storable);
 }
 
 /* Could be a macro for speed */

@@ -3,7 +3,7 @@
 fz_pixmap *
 fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
-	return (fz_pixmap *)fz_keep_storable(ctx, &pix->storable);
+	return fz_keep_storable(ctx, &pix->storable);
 }
 
 void

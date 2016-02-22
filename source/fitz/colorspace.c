@@ -30,7 +30,7 @@ fz_new_colorspace(fz_context *ctx, char *name, int n)
 fz_colorspace *
 fz_keep_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	return (fz_colorspace *)fz_keep_storable(ctx, &cs->storable);
+	return fz_keep_storable(ctx, &cs->storable);
 }
 
 void

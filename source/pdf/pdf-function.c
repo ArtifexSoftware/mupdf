@@ -1613,9 +1613,7 @@ pdf_load_function(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int in, int
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Recursion in function definition");
 
 	if ((func = pdf_find_item(ctx, pdf_drop_function_imp, dict)) != NULL)
-	{
 		return (fz_function *)func;
-	}
 
 	func = fz_malloc_struct(ctx, pdf_function);
 	FZ_INIT_STORABLE(&func->base, 1, pdf_drop_function_imp);

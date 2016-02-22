@@ -283,13 +283,9 @@ pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	fz_image *image;
 
 	if ((image = pdf_find_item(ctx, fz_drop_image_imp, dict)) != NULL)
-	{
-		return (fz_image *)image;
-	}
+		return image;
 
 	image = pdf_load_image_imp(ctx, doc, NULL, dict, NULL, 0);
-
 	pdf_store_item(ctx, dict, image, fz_image_size(ctx, image));
-
-	return (fz_image *)image;
+	return image;
 }
