@@ -2,26 +2,18 @@ package com.artifex.mupdf.fitz;
 
 public class Link
 {
-	// Private data
-	private long nativeLink = 0;
-
-	// Construction
-	private Link(long l)
-	{
-		nativeLink = l;
-	}
-
-	// Operation
-	public native Link getNext();
-
-	//FIXME: Accessors
-
-	// Destruction
-	public void destroy()
-	{
-		finalize();
-		nativeLink = 0;
-	}
+	private long pointer;
 
 	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
+	}
+
+	private Link(long p) {
+		pointer = p;
+	}
+
+	public native Link getNext();
 }

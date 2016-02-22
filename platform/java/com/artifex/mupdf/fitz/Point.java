@@ -5,20 +5,21 @@ public class Point
 	public float x;
 	public float y;
 
-	public Point(float x, float y)
-	{
+	public Point(float x, float y) {
 		this.x = x;
 		this.y = y;
 	}
 
-	public Point(Point p)
-	{
+	public Point(Point p) {
 		this.x = p.x;
 		this.y = p.y;
 	}
 
-	public Point transform(Matrix tm)
-	{
+	public String toString() {
+		return "[" + x + " " + y + "]";
+	}
+
+	public Point transform(Matrix tm) {
 		float old_x = this.x;
 
 		this.x = old_x * tm.a + y * tm.c + tm.e;

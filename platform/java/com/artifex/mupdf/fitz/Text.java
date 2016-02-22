@@ -1,46 +1,34 @@
 package com.artifex.mupdf.fitz;
 
-public class Text
+public class Text implements TextWalker
 {
-	// Private data
-	private long nativeText = 0;
-	private boolean isConst = false;
-
-	// Cloning
-	public Text(Text old)
-	{
-		nativeText = cloneNative(old);
-	}
-
-	private native long cloneNative(Text old);
-
-	//public Text(Font font, Matrix trm, int wmode)
-	//{
-	//	nativeText = newNative(font, trm, wmode);
-	//}
-
-	// Private method used for creating Text entries for a
-	// device implemented in java. These entries should be
-	// immutable.
-	private Text(long ptr)
-	{
-		nativeText = ptr;
-		isConst = true;
-	}
-
-	// Operation
-	public native Rect bound(StrokeState stroke, Matrix ctm);
-
-	//public native void add(int gid, int ucs, float x, float y);
-
-	// FIXME: Write accessors
-
-	// Destruction
-	public void destroy()
-	{
-		finalize();
-		nativeText = 0;
-	}
+	private long pointer;
 
 	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
+	}
+
+	private native long newNative();
+	private native long cloneNative(Text old);
+
+	private Text(long p) {
+		pointer = p;
+	}
+
+	public Text(Text old) {
+		pointer = cloneNative(old);
+	}
+
+	public Text() {
+		pointer = newNative();
+	}
+
+	public native void showGlyph(Font font, boolean vertical, Matrix trm, int glyph, int unicode);
+
+	public native Rect getBounds(StrokeState stroke, Matrix ctm);
+
+	public native void walk(TextWalker walker);
 }

@@ -8,11 +8,19 @@ package com.artifex.mupdf.fitz;
 // function.
 public class Context
 {
-	// Load our native library
-	static
-	{
-		System.loadLibrary("mupdf");
+	private static boolean inited = false;
+	private static native int initNative();
+
+	public static void init() {
+		if (!inited) {
+			inited = true;
+			System.loadLibrary("mupdf_java");
+			if (initNative() < 0)
+				throw new RuntimeException("cannot initialize mupdf library");
+		}
 	}
+
+	static { init(); }
 
 	// FIXME: We should support the store size being changed dynamically.
 	// This requires changes within the MuPDF core.

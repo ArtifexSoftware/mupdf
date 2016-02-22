@@ -2,31 +2,24 @@ package com.artifex.mupdf.fitz;
 
 public class DisplayList
 {
-	// Private data
-	protected long nativeDisplayList;
+	protected long pointer;
 
-	// Constructions
-	public DisplayList()
-	{
-		nativeDisplayList = newNative();
+	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
 	}
 
 	private native long newNative();
 
-	// Operation
+	public DisplayList() {
+		pointer = newNative();
+	}
+
 	public native void run(Device device, Matrix ctm, Rect scissor, Cookie cookie);
 
-	public void run(Device device, Matrix ctm, Cookie cookie)
-	{
+	public void run(Device device, Matrix ctm, Cookie cookie) {
 		run(device, ctm, null, cookie);
 	}
-
-	// Destruction
-	public void destroy()
-	{
-		finalize();
-		nativeDisplayList = 0;
-	}
-
-	protected native void finalize();
 }

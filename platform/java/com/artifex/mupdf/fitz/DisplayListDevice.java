@@ -1,14 +1,10 @@
 package com.artifex.mupdf.fitz;
 
-import android.graphics.Bitmap;
-
-public final class DisplayListDevice extends CDevice
+public final class DisplayListDevice extends NativeDevice
 {
-	// Construction
-	public DisplayListDevice(DisplayList list)
-	{
-		nativeDevice = newNative(list);
-	}
+	private static native long newNative(DisplayList list);
 
-	private native long newNative(DisplayList list);
+	public DisplayListDevice(DisplayList list) {
+		super(newNative(list));
+	}
 }

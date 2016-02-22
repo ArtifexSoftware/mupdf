@@ -1,60 +1,44 @@
 package com.artifex.mupdf.fitz;
 
-import java.lang.ref.WeakReference;
-
 public class Document
 {
-	// Private data
-	private long nativeDocument = 0;
-
-	// Construction
-	public Document(String filename) throws Exception
-	{
-		nativeDocument = newNative(filename);
-		if (nativeDocument == 0)
-			throw(new Exception("Failed to load Document"));
+	static {
+		Context.init();
 	}
-	private native final long newNative(String filename);
 
-	// FIXME: Should support opening java streams and from byte buffers etc.
-	// Streams would need to be seekable.
-	public Document(byte buffer[], String magic) throws Exception
-	{
-		nativeDocument = 0;//newFromBufferNative(buffer, magic);
-		if (nativeDocument == 0)
-			throw(new Exception("Failed to load Document"));
+	public static final String META_FORMAT = "format";
+	public static final String META_ENCRYPTION = "encryption";
+	public static final String META_INFO_AUTHOR = "info:Author";
+	public static final String META_INFO_TITLE = "info:Title";
+
+	protected long pointer;
+
+	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
 	}
-	//private native final long newFromBufferNative(byte buffer[], String magic);
 
-	//public Document(SeekableStream stream, String magic) throws Exception
-	//{
-	//	nativeDocument = newFromStreamNative(stream, magic);
-	//	if (nativeDocument == 0)
-	//		throw(new Exception("Failed to load Document"));
-	//}
-	//private native final long newFromBufferNative(SeekableStream stream, String magic);
+	private native long newNativeWithPath(String filename);
+	private native long newNativeWithBuffer(byte buffer[], String magic);
+	// private native long newNativeWithRandomAccessFile(RandomAccessFile file, String magic);
 
-	// Operation
+	public Document(String filename) {
+		pointer = newNativeWithPath(filename);
+	}
+
+	public Document(byte buffer[], String magic) {
+		pointer = newNativeWithBuffer(buffer, magic);
+	}
+
 	public native boolean needsPassword();
-
 	public native boolean authenticatePassword(String password);
 
 	public native int countPages();
-
-	public native Page getPage(int n);
-
-	public native String getFileFormat();
+	public native Page loadPage(int number);
+	public native Outline loadOutline();
+	public native String getMetaData(String key);
 
 	public native boolean isUnencryptedPDF();
-
-	public native Outline getOutline();
-
-	// Destruction
-	public void destroy()
-	{
-		finalize();
-		nativeDocument = 0;
-	}
-
-	protected native void finalize();
 }

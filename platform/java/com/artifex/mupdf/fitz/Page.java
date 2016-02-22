@@ -2,36 +2,37 @@ package com.artifex.mupdf.fitz;
 
 public class Page
 {
-	// Private data
-	private long nativePage = 0;
+	private long pointer;
 	private Annotation nativeAnnots[];
 
-	// Construction
-	private Page(long page)
-	{
-		nativePage = page;
+	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
 		nativeAnnots = null;
 	}
 
-	// Operation
-	public native Rect bound();
+	private Page(long p) {
+		pointer = p;
+		nativeAnnots = null;
+	}
+
+	public native Rect getBounds();
+
+	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace);
+
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
 	public native void runPageContents(Device dev, Matrix ctm, Cookie cookie);
 	public native Annotation[] getAnnotations();
+
+	public void run(Device dev, Matrix ctm) {
+		run(dev, ctm, null);
+	}
 
 	// FIXME: Later
 	public native Link[] getLinks();
 
 	// FIXME: Later. Much later.
 	//fz_transition *fz_page_presentation(fz_document *doc, fz_page *page, float *duration);
-
-	// Destruction
-	public void destroy()
-	{
-		finalize();
-		nativePage = 0;
-		nativeAnnots = null;
-	}
-
-	protected native void finalize();
 }

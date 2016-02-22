@@ -2,21 +2,22 @@ package com.artifex.mupdf.fitz;
 
 public class Font
 {
-	// Private data
-	private long nativeFont;
-
-	// Construction
-	private Font(long font)
-	{
-		nativeFont = font;
-	}
-
-	// Destruction
-	public void destroy()
-	{
-		finalize();
-		nativeFont = 0;
-	}
+	private long pointer;
 
 	protected native void finalize();
+
+	public void destroy() {
+		finalize();
+		pointer = 0;
+	}
+
+	private Font(long p) {
+		pointer = p;
+	}
+
+	public native String getName();
+
+	public String toString() {
+		return "Font(" + getName() + ")";
+	}
 }
