@@ -1273,7 +1273,7 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 			value = value->next;
 		}
 		if (!style->font)
-			style->font = fz_load_html_font(ctx, set, "serif", 0, 0);
+			style->font = fz_load_html_font(ctx, set, "serif", is_bold, is_italic);
 	}
 }
 
