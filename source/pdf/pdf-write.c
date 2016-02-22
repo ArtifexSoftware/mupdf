@@ -561,35 +561,69 @@ static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	return obj;
 }
 
+#ifdef DEBUG_MARK_AND_SWEEP
+static int depth = 0;
+
+static
+void indent()
+{
+	while (depth > 0)
+	{
+		int d  = depth;
+		if (d > 16)
+			d = 16;
+		printf("%s", &"                "[16-d]);
+		depth -= d;
+	}
+}
+#define DEBUGGING_MARKING(A) do { A; } while (0)
+#else
+#define DEBUGGING_MARKING(A) do { } while (0)
+#endif
+
 /* Recursively mark an object. If any references found are duff, then
  * replace them with nulls. */
 static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj)
 {
 	int i;
 
+	DEBUGGING_MARKING(depth++);
+
 	if (pdf_is_indirect(ctx, obj))
 	{
 		int duff;
+		DEBUGGING_MARKING(indent(); printf("Marking object %d\n", pdf_to_num(ctx, obj)));
 		obj = markref(ctx, doc, opts, obj, &duff);
 		if (duff)
+		{
+			DEBUGGING_MARKING(depth--);
 			return 1;
+		}
 	}
 
 	if (pdf_is_dict(ctx, obj))
 	{
 		int n = pdf_dict_len(ctx, obj);
 		for (i = 0; i < n; i++)
+		{
+			DEBUGGING_MARKING(indent(); printf("DICT[%d/%d] = %s\n", i, n, pdf_to_name(ctx, pdf_dict_get_key(ctx, obj, i))));
 			if (markobj(ctx, doc, opts, pdf_dict_get_val(ctx, obj, i)))
 				pdf_dict_put_val_drop(ctx, obj, i, pdf_new_null(ctx, doc));
+		}
 	}
 
 	else if (pdf_is_array(ctx, obj))
 	{
 		int n = pdf_array_len(ctx, obj);
 		for (i = 0; i < n; i++)
+		{
+			DEBUGGING_MARKING(indent(); printf("ARRAY[%d/%d]\n", i, n));
 			if (markobj(ctx, doc, opts, pdf_array_get(ctx, obj, i)))
 				pdf_array_put_drop(ctx, obj, i, pdf_new_null(ctx, doc));
+		}
 	}
+
+	DEBUGGING_MARKING(depth--);
 
 	return 0;
 }
