@@ -1908,7 +1908,7 @@ static void add_text(fz_context *ctx, font_info *font_rec, fz_text *text, char *
 		str += n;
 		str_len -= n;
 		gid = fz_encode_character(ctx, font, ucs);
-		fz_add_text(ctx, text, font, 0, &tm, gid, ucs);
+		fz_show_glyph(ctx, text, font, 0, &tm, gid, ucs);
 		tm.e += fz_advance_glyph(ctx, font, gid) * font_rec->da_rec.font_size;
 	}
 }

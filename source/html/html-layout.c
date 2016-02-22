@@ -1156,7 +1156,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 								continue;
 							trm.e = *(float *)&p->x_offset;
 							trm.f = *(float *)&p->y_offset;
-							fz_add_text(ctx, text, walker.font, 0, &trm, g->codepoint, c);
+							fz_show_glyph(ctx, text, walker.font, 0, &trm, g->codepoint, c);
 							break;
 						}
 						if (gp == walker.glyph_count)
@@ -1165,7 +1165,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 							 * because we've been shaped away into another. We can't afford
 							 * to just drop the codepoint as this will upset text extraction.
 							 */
-							fz_add_text(ctx, text, walker.font, 0, &trm, -1, c);
+							fz_show_glyph(ctx, text, walker.font, 0, &trm, -1, c);
 						}
 						else
 						{
@@ -1179,7 +1179,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 									continue;
 								trm.e = *(float *)&p->x_offset;
 								trm.f = *(float *)&p->y_offset;
-								fz_add_text(ctx, text, walker.font, 0, &trm, g->codepoint, -1);
+								fz_show_glyph(ctx, text, walker.font, 0, &trm, g->codepoint, -1);
 							}
 						}
 						idx += l;
@@ -1375,7 +1375,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	{
 		s += fz_chartorune(&c, s);
 		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
-		fz_add_text(ctx, text, font, 0, &trm, g, c);
+		fz_show_glyph(ctx, text, font, 0, &trm, g, c);
 		trm.e += fz_advance_glyph(ctx, font, g) * box->em;
 	}
 

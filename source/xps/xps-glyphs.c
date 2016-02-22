@@ -450,7 +450,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 				tm.f = y - v_offset;
 			}
 
-			fz_add_text(ctx, text, font, is_sideways, &tm, glyph_index, char_code);
+			fz_show_glyph(ctx, text, font, is_sideways, &tm, glyph_index, char_code);
 
 			x += advance * 0.01f * size;
 		}

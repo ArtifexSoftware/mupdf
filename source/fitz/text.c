@@ -80,7 +80,7 @@ fz_grow_text_span(fz_context *ctx, fz_text_span *span, int n)
 }
 
 void
-fz_add_text(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_matrix *trm, int gid, int ucs)
+fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_matrix *trm, int gid, int ucs)
 {
 	fz_text_span *span;
 
