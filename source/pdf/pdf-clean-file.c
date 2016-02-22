@@ -36,6 +36,24 @@ static void retainpage(fz_context *ctx, pdf_document *doc, pdf_obj *parent, pdf_
 	pdf_array_push(ctx, kids, pageref);
 }
 
+static int dest_is_valid_page(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+{
+	int i;
+	int num = pdf_to_num(ctx, obj);
+	int pagecount = pdf_count_pages(ctx, doc);
+
+	if (num == 0)
+		return 0;
+	for (i = 0; i < pagecount; i++)
+	{
+		pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
+
+		if (pdf_to_num(ctx, pageref) == num)
+			return 1;
+	}
+	return 0;
+}
+
 static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 {
 	pdf_obj *oldroot, *root, *pages, *kids, *countobj, *parent, *olddests;
@@ -170,22 +188,28 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 		{
 			pdf_obj *o = pdf_array_get(ctx, annots, j);
 			pdf_obj *p;
+			int remove = 0;
 
 			if (!pdf_name_eq(ctx, pdf_dict_get(ctx, o, PDF_NAME_Subtype), PDF_NAME_Link))
 				continue;
 
 			p = pdf_dict_get(ctx, o, PDF_NAME_A);
-			if (!pdf_name_eq(ctx, pdf_dict_get(ctx, p, PDF_NAME_S), PDF_NAME_GoTo))
-				continue;
+			if (pdf_name_eq(ctx, pdf_dict_get(ctx, p, PDF_NAME_S), PDF_NAME_GoTo) &&
+				!string_in_names_list(ctx, pdf_dict_get(ctx, p, PDF_NAME_D), names_list))
+				remove = 1;
 
-			if (string_in_names_list(ctx, pdf_dict_get(ctx, p, PDF_NAME_D), names_list))
-				continue;
+			p = pdf_dict_get(ctx, 0, PDF_NAME_Dest);
+			if (!dest_is_valid_page(ctx, doc, pdf_array_get(ctx, p, 0)))
+				remove = 1;
 
 			/* FIXME: Should probably look at Next too */
 
-			/* Remove this annotation */
-			pdf_array_delete(ctx, annots, j);
-			j--;
+			if (remove)
+			{
+				/* Remove this annotation */
+				pdf_array_delete(ctx, annots, j);
+				j--;
+			}
 		}
 	}
 }
