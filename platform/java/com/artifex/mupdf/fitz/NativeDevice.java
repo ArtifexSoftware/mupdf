@@ -17,13 +17,13 @@ public class NativeDevice extends Device
 		super(p);
 	}
 
-	public native final void beginPage(Rect rect, Matrix ctm);
+	public native final void beginPage(Rect area, Matrix ctm);
 	public native final void endPage();
 
 	public native final void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha);
 	public native final void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha);
-	public native final void clipPath(Path path, Rect rect, boolean evenOdd, Matrix ctm);
-	public native final void clipStrokePath(Path path, Rect rect, StrokeState stroke, Matrix ctm);
+	public native final void clipPath(Path path, boolean evenOdd, Matrix ctm);
+	public native final void clipStrokePath(Path path, StrokeState stroke, Matrix ctm);
 
 	public native final void fillText(Text text, Matrix ctm, ColorSpace cs, float color[], float alpha);
 	public native final void strokeText(Text text, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha);
@@ -34,7 +34,7 @@ public class NativeDevice extends Device
 	public native final void fillShade(Shade shade, Matrix ctm, float alpha);
 	public native final void fillImage(Image img, Matrix ctm, float alpha);
 	public native final void fillImageMask(Image img, Matrix ctm, ColorSpace cs, float color[], float alpha);
-	public native final void clipImageMask(Image img, Rect rect, Matrix ctm);
+	public native final void clipImageMask(Image img, Matrix ctm);
 
 	public native final void popClip();
 

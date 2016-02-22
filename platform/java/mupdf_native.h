@@ -825,18 +825,18 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_strokePath
 /*
  * Class:     com_artifex_mupdf_fitz_NativeDevice
  * Method:    clipPath
- * Signature: (Lcom/artifex/mupdf/fitz/Path;Lcom/artifex/mupdf/fitz/Rect;ZLcom/artifex/mupdf/fitz/Matrix;)V
+ * Signature: (Lcom/artifex/mupdf/fitz/Path;ZLcom/artifex/mupdf/fitz/Matrix;)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_clipPath
-  (JNIEnv *, jobject, jobject, jobject, jboolean, jobject);
+  (JNIEnv *, jobject, jobject, jboolean, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_NativeDevice
  * Method:    clipStrokePath
- * Signature: (Lcom/artifex/mupdf/fitz/Path;Lcom/artifex/mupdf/fitz/Rect;Lcom/artifex/mupdf/fitz/StrokeState;Lcom/artifex/mupdf/fitz/Matrix;)V
+ * Signature: (Lcom/artifex/mupdf/fitz/Path;Lcom/artifex/mupdf/fitz/StrokeState;Lcom/artifex/mupdf/fitz/Matrix;)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_clipStrokePath
-  (JNIEnv *, jobject, jobject, jobject, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_NativeDevice
@@ -905,10 +905,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_fillImageMask
 /*
  * Class:     com_artifex_mupdf_fitz_NativeDevice
  * Method:    clipImageMask
- * Signature: (Lcom/artifex/mupdf/fitz/Image;Lcom/artifex/mupdf/fitz/Rect;Lcom/artifex/mupdf/fitz/Matrix;)V
+ * Signature: (Lcom/artifex/mupdf/fitz/Image;Lcom/artifex/mupdf/fitz/Matrix;)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_clipImageMask
-  (JNIEnv *, jobject, jobject, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_NativeDevice

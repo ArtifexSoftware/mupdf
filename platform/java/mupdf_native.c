@@ -300,8 +300,8 @@ static int find_fids(JNIEnv *env)
 	mid_Device_endPage = get_method(&err, env, "endPage", "()V");
 	mid_Device_fillPath = get_method(&err, env, "fillPath", "(L"PKG"Path;ZL"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
 	mid_Device_strokePath = get_method(&err, env, "strokePath", "(L"PKG"Path;L"PKG"StrokeState;L"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
-	mid_Device_clipPath = get_method(&err, env, "clipPath", "(L"PKG"Path;L"PKG"Rect;ZL"PKG"Matrix;)V");
-	mid_Device_clipStrokePath = get_method(&err, env, "clipStrokePath", "(L"PKG"Path;L"PKG"Rect;L"PKG"StrokeState;L"PKG"Matrix;)V");
+	mid_Device_clipPath = get_method(&err, env, "clipPath", "(L"PKG"Path;ZL"PKG"Matrix;)V");
+	mid_Device_clipStrokePath = get_method(&err, env, "clipStrokePath", "(L"PKG"Path;L"PKG"StrokeState;L"PKG"Matrix;)V");
 	mid_Device_fillText = get_method(&err, env, "fillText", "(L"PKG"Text;L"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
 	mid_Device_strokeText = get_method(&err, env, "strokeText", "(L"PKG"Text;L"PKG"StrokeState;L"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
 	mid_Device_clipText = get_method(&err, env, "clipText", "(L"PKG"Text;L"PKG"Matrix;)V");
@@ -310,7 +310,7 @@ static int find_fids(JNIEnv *env)
 	mid_Device_fillShade = get_method(&err, env, "fillShade", "(L"PKG"Shade;L"PKG"Matrix;F)V");
 	mid_Device_fillImage = get_method(&err, env, "fillImage", "(L"PKG"Image;L"PKG"Matrix;F)V");
 	mid_Device_fillImageMask = get_method(&err, env, "fillImageMask", "(L"PKG"Image;L"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
-	mid_Device_clipImageMask = get_method(&err, env, "clipImageMask", "(L"PKG"Image;L"PKG"Rect;L"PKG"Matrix;)V");
+	mid_Device_clipImageMask = get_method(&err, env, "clipImageMask", "(L"PKG"Image;L"PKG"Matrix;)V");
 	mid_Device_popClip = get_method(&err, env, "popClip", "()V");
 	mid_Device_beginMask = get_method(&err, env, "beginMask", "(L"PKG"Rect;ZL"PKG"ColorSpace;[F)V");
 	mid_Device_endMask = get_method(&err, env, "endMask", "()V");
@@ -1073,30 +1073,28 @@ fz_java_device_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path,
 }
 
 static void
-fz_java_device_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+fz_java_device_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
 	jobject jpath = to_Path(ctx, env, path);
-	jobject jrect = to_Rect(ctx, env, rect);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 
-	(*env)->CallVoidMethod(env, jdev->self, mid_Device_clipPath, jpath, jrect, (jboolean)even_odd, jctm);
+	(*env)->CallVoidMethod(env, jdev->self, mid_Device_clipPath, jpath, (jboolean)even_odd, jctm);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 }
 
 static void
-fz_java_device_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, const fz_stroke_state *state, const fz_matrix *ctm)
+fz_java_device_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *state, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
 	jobject jpath = to_Path(ctx, env, path);
-	jobject jrect = to_Rect(ctx, env, rect);
 	jobject jstate = to_StrokeState(ctx, env, state);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 
-	(*env)->CallVoidMethod(env, jdev->self, mid_Device_clipStrokePath, jpath, jrect, jstate, jctm);
+	(*env)->CallVoidMethod(env, jdev->self, mid_Device_clipStrokePath, jpath, jstate, jctm);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 }
@@ -1133,7 +1131,7 @@ fz_java_device_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text,
 }
 
 static void
-fz_java_device_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
+fz_java_device_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
@@ -1146,7 +1144,7 @@ fz_java_device_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 }
 
 static void
-fz_java_device_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *state, const fz_matrix *ctm)
+fz_java_device_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *state, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
@@ -1214,15 +1212,14 @@ fz_java_device_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, c
 }
 
 static void
-fz_java_device_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const fz_rect *rect, const fz_matrix *ctm)
+fz_java_device_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
 	jobject jimg = to_Image(ctx, env, img);
-	jobject jrect = to_Rect(ctx, env, rect);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 
-	(*env)->CallVoidMethod(env, jdev->self, mid_Device_clipImageMask, jimg, jrect, jctm);
+	(*env)->CallVoidMethod(env, jdev->self, mid_Device_clipImageMask, jimg, jctm);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 }
@@ -1569,12 +1566,11 @@ FUN(NativeDevice_strokePath)(JNIEnv *env, jobject self, jobject jpath, jobject j
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_clipPath)(JNIEnv *env, jobject self, jobject jpath, jobject jrect, jboolean even_odd, jobject jctm)
+FUN(NativeDevice_clipPath)(JNIEnv *env, jobject self, jobject jpath, jboolean even_odd, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self, ctx);
 	fz_path *path = from_Path(env, jpath);
-	fz_rect rect = from_Rect(env, jrect);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
@@ -1583,7 +1579,7 @@ FUN(NativeDevice_clipPath)(JNIEnv *env, jobject self, jobject jpath, jobject jre
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_clip_path(ctx, dev, path, &rect, even_odd, &ctm);
+		fz_clip_path(ctx, dev, path, even_odd, &ctm, NULL);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1591,12 +1587,11 @@ FUN(NativeDevice_clipPath)(JNIEnv *env, jobject self, jobject jpath, jobject jre
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_clipStrokePath)(JNIEnv *env, jobject self, jobject jpath, jobject jrect, jobject jstroke, jobject jctm)
+FUN(NativeDevice_clipStrokePath)(JNIEnv *env, jobject self, jobject jpath, jobject jstroke, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self, ctx);
 	fz_path *path = from_Path(env, jpath);
-	fz_rect rect = from_Rect(env, jrect);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	NativeDeviceInfo *info;
@@ -1606,7 +1601,7 @@ FUN(NativeDevice_clipStrokePath)(JNIEnv *env, jobject self, jobject jpath, jobje
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_clip_stroke_path(ctx, dev, path, &rect, stroke, &ctm);
+		fz_clip_stroke_path(ctx, dev, path, stroke, &ctm, NULL);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1678,7 +1673,7 @@ FUN(NativeDevice_clipText)(JNIEnv *env, jobject self, jobject jtext, jobject jct
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_clip_text(ctx, dev, text, &ctm);
+		fz_clip_text(ctx, dev, text, &ctm, NULL);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1700,7 +1695,7 @@ FUN(NativeDevice_clipStrokeText)(JNIEnv *env, jobject self, jobject jtext, jobje
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_clip_stroke_text(ctx, dev, text, stroke, &ctm);
+		fz_clip_stroke_text(ctx, dev, text, stroke, &ctm, NULL);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1796,12 +1791,11 @@ FUN(NativeDevice_fillImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_clipImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject jrect, jobject jctm)
+FUN(NativeDevice_clipImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
 	fz_device *dev = from_Device(env, self, ctx);
 	fz_image *image = from_Image(env, jimg);
-	fz_rect rect = from_Rect(env, jrect);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
@@ -1810,7 +1804,7 @@ FUN(NativeDevice_clipImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_clip_image_mask(ctx, dev, image, &rect, &ctm);
+		fz_clip_image_mask(ctx, dev, image, &ctm, NULL);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)

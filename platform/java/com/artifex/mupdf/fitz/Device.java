@@ -38,12 +38,12 @@ public class Device
 	 * };
 	 */
 
-	public void beginPage(Rect rect, Matrix ctm) {}
+	public void beginPage(Rect area, Matrix ctm) {}
 	public void endPage() {}
 	public void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
 	public void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
-	public void clipPath(Path path, Rect rect, boolean evenOdd, Matrix ctm) {}
-	public void clipStrokePath(Path path, Rect rect, StrokeState stroke, Matrix ctm) {}
+	public void clipPath(Path path, boolean evenOdd, Matrix ctm) {}
+	public void clipStrokePath(Path path, StrokeState stroke, Matrix ctm) {}
 	public void fillText(Text text, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
 	public void strokeText(Text text, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
 	public void clipText(Text text, Matrix ctm) {}
@@ -52,11 +52,11 @@ public class Device
 	public void fillShade(Shade shade, Matrix ctm, float alpha) {}
 	public void fillImage(Image img, Matrix ctm, float alpha) {}
 	public void fillImageMask(Image img, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
-	public void clipImageMask(Image img, Rect rect, Matrix ctm) {}
+	public void clipImageMask(Image img, Matrix ctm) {}
 	public void popClip() {}
-	public void beginMask(Rect rect, boolean luminosity, ColorSpace cs, float bc[]) {}
+	public void beginMask(Rect area, boolean luminosity, ColorSpace cs, float bc[]) {}
 	public void endMask() {}
-	public void beginGroup(Rect rect, boolean isolated, boolean knockout, int blendmode, float alpha) {}
+	public void beginGroup(Rect area, boolean isolated, boolean knockout, int blendmode, float alpha) {}
 	public void endGroup() {}
 	public int beginTile(Rect area, Rect view, float xstep, float ystep, Matrix ctm, int id) { return 0; }
 	public void endTile() {}
