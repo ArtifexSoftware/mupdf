@@ -26,5 +26,5 @@ public class Cookie
 		finalize();
 		nativeCookie = 0;
 	}
-	
+
 }

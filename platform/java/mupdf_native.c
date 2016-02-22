@@ -537,7 +537,7 @@ static inline jobject Path_from_fz_path(fz_context *ctx, JNIEnv *env, fz_path *p
 {
 	jobject jobj;
 	fz_path *new_path;
-	
+
 	if (ctx == NULL)
 		return NULL;
 
@@ -617,7 +617,7 @@ static inline jobject Text_from_fz_text(fz_context *ctx, JNIEnv *env, fz_text *t
 {
 	jobject jobj;
 	fz_text *new_text;
-	
+
 	if (ctx == NULL)
 		return NULL;
 
