@@ -65,6 +65,18 @@ static int iswhite(int c)
 	return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
+static int is_all_white(const char *s)
+{
+	while (*s)
+	{
+		if (!iswhite(*s))
+			return 0;
+		++s;
+	}
+	return 1;
+}
+
+
 /* TODO: pool allocator for flow nodes */
 /* TODO: store text by pointing to a giant buffer */
 
@@ -94,10 +106,10 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 	return flow;
 }
 
-static void add_flow_space(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, int expand)
+static void add_flow_space(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_SPACE);
-	flow->expand = !!expand;
+	flow->expand = 1;
 }
 
 static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
@@ -196,13 +208,32 @@ static int not_at_eol(int cat, int c)
 	return 0;
 }
 
-static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const char *text)
+static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_css_style *style, int *emit_white, int *at_bol)
+{
+	static const char *space = " ";
+	int bsp = style->white_space & WS_ALLOW_BREAK_SPACE;
+	if (*emit_white)
+	{
+		if (!*at_bol)
+		{
+			if (bsp)
+				add_flow_space(ctx, pool, flow, style);
+			else
+				add_flow_word(ctx, pool, flow, style, space, space+1);
+		}
+		*emit_white = 0;
+	}
+}
+
+static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const char *text, int *emit_white, int *at_bol)
 {
 	fz_html *flow;
 
 	int collapse = box->style.white_space & WS_COLLAPSE;
 	int bsp = box->style.white_space & WS_ALLOW_BREAK_SPACE;
 	int bnl = box->style.white_space & WS_FORCE_BREAK_NEWLINE;
+
+	static const char *space = " ";
 
 	flow = box;
 	while (flow->type != BOX_FLOW)
@@ -217,23 +248,37 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 			else
 				text += 1;
 			add_flow_break(ctx, pool, flow, &box->style);
+			*at_bol = 1;
 		}
 		else if (iswhite(*text))
 		{
-			const char *mark = text++;
 			if (collapse)
-				while (iswhite(*text))
-					++text;
-			/* TODO: tabs */
-			if (bsp)
-				add_flow_space(ctx, pool, flow, &box->style, 1);
+			{
+				if (bnl)
+					while (*text == ' ' || *text == '\t')
+						++text;
+				else
+					while (iswhite(*text))
+						++text;
+				*emit_white = 1;
+			}
 			else
-				add_flow_word(ctx, pool, flow, &box->style, mark, text);
+			{
+				// TODO: tabs
+				if (bsp)
+					add_flow_space(ctx, pool, flow, &box->style);
+				else
+					add_flow_word(ctx, pool, flow, &box->style, space, space+1);
+				++text;
+			}
 		}
 		else
 		{
 			const char *prev, *mark = text;
 			int c, addsbreak = 0;
+
+			flush_space(ctx, pool, flow, &box->style, emit_white, at_bol);
+
 			while (*text && !iswhite(*text))
 			{
 				/* TODO: Unicode Line Breaking Algorithm (UAX #14) */
@@ -263,11 +308,13 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 			}
 			if (mark != text)
 				add_flow_word(ctx, pool, flow, &box->style, mark, text);
+
+			*at_bol = 0;
 		}
 	}
 }
 
-static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, const char *base_uri, fz_html *box, const char *src)
+static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, const char *base_uri, fz_html *box, const char *src, int *emit_white, int *at_bol)
 {
 	fz_image *img = NULL;
 	fz_buffer *buf = NULL;
@@ -285,6 +332,8 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, cons
 
 	fz_var(buf);
 	fz_var(img);
+
+	flush_space(ctx, pool, flow, &box->style, emit_white, at_bol);
 
 	fz_try(ctx)
 	{
@@ -305,6 +354,8 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, cons
 		fz_warn(ctx, "html: cannot add image src='%s'", src);
 		add_flow_word(ctx, pool, flow, &box->style, alt, alt + 7);
 	}
+
+	*at_bol = 0;
 }
 
 static void init_box(fz_context *ctx, fz_html *box)
@@ -411,7 +462,7 @@ static fz_html *insert_break_box(fz_context *ctx, fz_html *box, fz_html *top)
 	return top;
 }
 
-static void insert_inline_box(fz_context *ctx, fz_pool *pool, fz_html *box, fz_html *top)
+static void insert_inline_box(fz_context *ctx, fz_pool *pool, fz_html *box, fz_html *top, int *at_bol)
 {
 	if (top->type == BOX_BLOCK)
 	{
@@ -425,6 +476,7 @@ static void insert_inline_box(fz_context *ctx, fz_pool *pool, fz_html *box, fz_h
 			flow->is_first_flow = !top->last;
 			insert_box(ctx, flow, BOX_FLOW, top);
 			insert_box(ctx, box, BOX_INLINE, flow);
+			*at_bol = 1;
 		}
 	}
 	else if (top->type == BOX_FLOW)
@@ -439,7 +491,8 @@ static void insert_inline_box(fz_context *ctx, fz_pool *pool, fz_html *box, fz_h
 
 static void generate_boxes(fz_context *ctx, fz_pool *pool,
 	fz_html_font_set *set, fz_archive *zip, const char *base_uri,
-	fz_xml *node, fz_html *top, fz_css_rule *rule, fz_css_match *up_match, int list_counter)
+	fz_xml *node, fz_html *top, fz_css_rule *rule, fz_css_match *up_match, int list_counter,
+	int *emit_white, int *at_bol)
 {
 	fz_css_match match;
 	fz_html *box;
@@ -473,6 +526,7 @@ static void generate_boxes(fz_context *ctx, fz_pool *pool,
 					fz_apply_css_style(ctx, set, &box->style, &match);
 					top = insert_break_box(ctx, box, top);
 				}
+				*at_bol = 1;
 			}
 
 			else if (!strcmp(tag, "img"))
@@ -482,8 +536,8 @@ static void generate_boxes(fz_context *ctx, fz_pool *pool,
 				{
 					box = new_box(ctx, pool);
 					fz_apply_css_style(ctx, set, &box->style, &match);
-					insert_inline_box(ctx, pool, box, top);
-					generate_image(ctx, pool, zip, base_uri, box, src);
+					insert_inline_box(ctx, pool, box, top, at_bol);
+					generate_image(ctx, pool, zip, base_uri, box, src, emit_white, at_bol);
 				}
 			}
 
@@ -503,7 +557,7 @@ static void generate_boxes(fz_context *ctx, fz_pool *pool,
 				}
 				else if (display == DIS_INLINE)
 				{
-					insert_inline_box(ctx, pool, box, top);
+					insert_inline_box(ctx, pool, box, top, at_bol);
 				}
 				else
 				{
@@ -516,28 +570,35 @@ static void generate_boxes(fz_context *ctx, fz_pool *pool,
 					int child_counter = list_counter;
 					if (!strcmp(tag, "ul") || !strcmp(tag, "ol"))
 						child_counter = 0;
-					generate_boxes(ctx, pool, set, zip, base_uri, fz_xml_down(node), box, rule, &match, child_counter);
+					generate_boxes(ctx, pool, set, zip, base_uri, fz_xml_down(node), box, rule, &match, child_counter, emit_white, at_bol);
 				}
-
-				// TODO: remove empty flow boxes
 			}
 		}
 		else
 		{
-			if (top->type != BOX_INLINE)
+			const char *text = fz_xml_text(node);
+			int collapse = top->style.white_space & WS_COLLAPSE;
+			if (collapse && is_all_white(text))
 			{
-				/* Create anonymous inline box, with the same style as the top block box. */
-				box = new_box(ctx, pool);
-				insert_inline_box(ctx, pool, box, top);
-				box->style = top->style;
-				/* Make sure not to recursively multiply font sizes. */
-				box->style.font_size.value = 1;
-				box->style.font_size.unit = N_SCALE;
-				generate_text(ctx, pool, box, fz_xml_text(node));
+				*emit_white = 1;
 			}
 			else
 			{
-				generate_text(ctx, pool, top, fz_xml_text(node));
+				if (top->type != BOX_INLINE)
+				{
+					/* Create anonymous inline box, with the same style as the top block box. */
+					box = new_box(ctx, pool);
+					insert_inline_box(ctx, pool, box, top, at_bol);
+					box->style = top->style;
+					/* Make sure not to recursively multiply font sizes. */
+					box->style.font_size.value = 1;
+					box->style.font_size.unit = N_SCALE;
+					generate_text(ctx, pool, box, text, emit_white, at_bol);
+				}
+				else
+				{
+					generate_text(ctx, pool, top, text, emit_white, at_bol);
+				}
 			}
 		}
 
@@ -894,12 +955,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 		}
 	}
 
-	/* start by skipping whitespace and (soft) breaks at the beginning of tags */
 	node = box->flow_head;
-	if (node->type == FLOW_BREAK)
-		node = node->next;
-	while (node && (node->type == FLOW_SPACE || node->type == FLOW_SBREAK))
-		node = node->next;
 
 	candidate = NULL;
 	candidate_w = 0;
@@ -1372,14 +1428,7 @@ static fz_html_flow *find_list_mark_anchor(fz_context *ctx, fz_html *box)
 	while (box)
 	{
 		if (box->type == BOX_FLOW)
-		{
-			fz_html_flow *flow = box->flow_head;
-			if (flow && flow->type == FLOW_BREAK)
-				flow = flow->next;
-			while (flow && (flow->type == FLOW_SPACE || flow->type == FLOW_SBREAK))
-				flow = flow->next;
-			return flow;
-		}
+			return box->flow_head;
 		box = box->down;
 	}
 	return NULL;
@@ -1655,10 +1704,10 @@ fz_print_html_flow(fz_context *ctx, fz_html_flow *flow, fz_html_flow *end)
 		switch (flow->type)
 		{
 		case FLOW_WORD: printf("%s", flow->content.text); break;
-		case FLOW_SPACE: if (!flow->breaks_line) printf(" "); break;
-		case FLOW_SBREAK: if (!flow->breaks_line) printf("\\n"); break;
-		case FLOW_BREAK: printf("\\n"); break;
-		case FLOW_IMAGE: printf("[image]"); break;
+		case FLOW_SPACE: printf("_"); break;
+		case FLOW_SBREAK: printf("%%"); break;
+		case FLOW_BREAK: printf("!"); break;
+		case FLOW_IMAGE: printf("<img>"); break;
 		}
 		flow = flow->next;
 	}
@@ -1677,6 +1726,9 @@ fz_print_html(fz_context *ctx, fz_html *box, int pstyle, int level)
 		case BOX_FLOW: printf("flow"); break;
 		case BOX_INLINE: printf("inline"); break;
 		}
+
+		if (box->list_item)
+			printf(" list=%d", box->list_item);
 
 		if (box->down || box->flow_head)
 			printf(" {\n");
@@ -1944,6 +1996,8 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	fz_css_rule *css;
 	fz_css_match match;
 	fz_html *box;
+	int emit_white = 0;
+	int at_bol = 1;
 
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 
@@ -1966,7 +2020,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	fz_match_css_at_page(ctx, &match, css);
 	fz_apply_css_style(ctx, set, &box->style, &match);
 
-	generate_boxes(ctx, pool, set, zip, base_uri, xml, box, css, &match, 0);
+	generate_boxes(ctx, pool, set, zip, base_uri, xml, box, css, &match, 0, &emit_white, &at_bol);
 
 	fz_drop_css(ctx, css);
 	fz_drop_xml(ctx, xml);
