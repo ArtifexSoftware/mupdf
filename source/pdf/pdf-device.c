@@ -851,9 +851,12 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 		pdf_dict_put_drop(ctx, form, PDF_NAME_BBox, pdf_new_rect(ctx, doc, bbox));
 		*form_ref = pdf_new_ref(ctx, doc, form);
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, form);
+	}
+	fz_catch(ctx)
+	{
 		fz_rethrow(ctx);
 	}
 
@@ -1285,6 +1288,11 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 		pdf_drop_obj(ctx, pdev->images[i].ref);
 	}
 
+	for (i = pdev->num_groups - 1; i >= 0; i--)
+	{
+		pdf_drop_obj(ctx, pdev->groups[i].ref);
+	}
+
 	if (pdev->contents)
 	{
 		pdf_update_stream(ctx, doc, pdev->contents, pdev->gstates[0].buf, 0);
@@ -1298,6 +1306,8 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 
 	pdf_drop_obj(ctx, pdev->resources);
 
+	fz_free(ctx, pdev->groups);
+	fz_free(ctx, pdev->fonts);
 	fz_free(ctx, pdev->images);
 	fz_free(ctx, pdev->alphas);
 	fz_free(ctx, pdev->gstates);
