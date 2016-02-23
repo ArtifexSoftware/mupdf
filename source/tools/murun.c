@@ -290,8 +290,9 @@ static void ffi_pusharray(js_State *J, const float *v, int n)
 	}
 }
 
-static void ffi_pushcolorspace(js_State *J, fz_context *ctx, fz_colorspace *colorspace)
+static void ffi_pushcolorspace(js_State *J, fz_colorspace *colorspace)
 {
+	fz_context *ctx = js_getcontext(J);
 	if (colorspace == fz_device_rgb(ctx))
 		js_getregistry(J, "DeviceRGB");
 	else if (colorspace == fz_device_bgr(ctx))
@@ -306,10 +307,10 @@ static void ffi_pushcolorspace(js_State *J, fz_context *ctx, fz_colorspace *colo
 	}
 }
 
-static void ffi_pushcolor(js_State *J, fz_context *ctx, fz_colorspace *colorspace, const float *color, float alpha)
+static void ffi_pushcolor(js_State *J, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	if (colorspace) {
-		ffi_pushcolorspace(J, ctx, colorspace);
+		ffi_pushcolorspace(J, colorspace);
 		ffi_pusharray(J, color, colorspace->n);
 	} else {
 		js_pushnull(J);
@@ -439,32 +440,37 @@ static fz_stroke_state ffi_tostroke(js_State *J, int idx)
 	return stroke;
 }
 
-static void ffi_pushtext(js_State *J, fz_context *ctx, const fz_text *text)
+static void ffi_pushtext(js_State *J, const fz_text *text)
 {
+	fz_context *ctx = js_getcontext(J);
 	js_getregistry(J, "fz_text");
 	js_newuserdata(J, "fz_text", fz_keep_text(ctx, text), ffi_gc_fz_text);
 }
 
-static void ffi_pushpath(js_State *J, fz_context *ctx, const fz_path *path)
+static void ffi_pushpath(js_State *J, const fz_path *path)
 {
+	fz_context *ctx = js_getcontext(J);
 	js_getregistry(J, "fz_path");
 	js_newuserdata(J, "fz_path", fz_keep_path(ctx, path), ffi_gc_fz_path);
 }
 
-static void ffi_pushfont(js_State *J, fz_context *ctx, fz_font *font)
+static void ffi_pushfont(js_State *J, fz_font *font)
 {
+	fz_context *ctx = js_getcontext(J);
 	js_getregistry(J, "fz_font");
 	js_newuserdata(J, "fz_font", fz_keep_font(ctx, font), ffi_gc_fz_font);
 }
 
-static void ffi_pushshade(js_State *J, fz_context *ctx, fz_shade *shade)
+static void ffi_pushshade(js_State *J, fz_shade *shade)
 {
+	fz_context *ctx = js_getcontext(J);
 	js_getregistry(J, "fz_shade");
 	js_newuserdata(J, "fz_shade", fz_keep_shade(ctx, shade), ffi_gc_fz_shade);
 }
 
-static void ffi_pushimage(js_State *J, fz_context *ctx, fz_image *image)
+static void ffi_pushimage(js_State *J, fz_image *image)
 {
+	fz_context *ctx = js_getcontext(J);
 	js_getregistry(J, "fz_image");
 	js_newuserdata(J, "fz_image", fz_keep_image(ctx, image), ffi_gc_fz_image);
 }
@@ -510,10 +516,10 @@ js_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "fillPath")) {
 		js_copy(J, -2);
-		ffi_pushpath(J, ctx, path);
+		ffi_pushpath(J, path);
 		js_pushboolean(J, even_odd);
 		ffi_pushmatrix(J, *ctm);
-		ffi_pushcolor(J, ctx, colorspace, color, alpha);
+		ffi_pushcolor(J, colorspace, color, alpha);
 		if (js_pcall(J, 6))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
 		js_pop(J, 1);
@@ -527,7 +533,7 @@ js_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "clipPath")) {
 		js_copy(J, -2);
-		ffi_pushpath(J, ctx, path);
+		ffi_pushpath(J, path);
 		js_pushboolean(J, even_odd);
 		ffi_pushmatrix(J, *ctm);
 		if (js_pcall(J, 3))
@@ -544,10 +550,10 @@ js_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path,
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "strokePath")) {
 		js_copy(J, -2);
-		ffi_pushpath(J, ctx, path);
+		ffi_pushpath(J, path);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
-		ffi_pushcolor(J, ctx, colorspace, color, alpha);
+		ffi_pushcolor(J, colorspace, color, alpha);
 		if (js_pcall(J, 6))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
 		js_pop(J, 1);
@@ -561,7 +567,7 @@ js_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, co
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "clipStrokePath")) {
 		js_copy(J, -2);
-		ffi_pushpath(J, ctx, path);
+		ffi_pushpath(J, path);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
 		if (js_pcall(J, 3))
@@ -577,9 +583,9 @@ js_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "fillText")) {
 		js_copy(J, -2);
-		ffi_pushtext(J, ctx, text);
+		ffi_pushtext(J, text);
 		ffi_pushmatrix(J, *ctm);
-		ffi_pushcolor(J, ctx, colorspace, color, alpha);
+		ffi_pushcolor(J, colorspace, color, alpha);
 		if (js_pcall(J, 5))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
 		js_pop(J, 1);
@@ -593,10 +599,10 @@ js_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const f
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "strokeText")) {
 		js_copy(J, -2);
-		ffi_pushtext(J, ctx, text);
+		ffi_pushtext(J, text);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
-		ffi_pushcolor(J, ctx, colorspace, color, alpha);
+		ffi_pushcolor(J, colorspace, color, alpha);
 		if (js_pcall(J, 6))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
 		js_pop(J, 1);
@@ -609,7 +615,7 @@ js_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "clipText")) {
 		js_copy(J, -2);
-		ffi_pushtext(J, ctx, text);
+		ffi_pushtext(J, text);
 		ffi_pushmatrix(J, *ctm);
 		if (js_pcall(J, 2))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
@@ -624,7 +630,7 @@ js_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, co
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "clipStrokeText")) {
 		js_copy(J, -2);
-		ffi_pushtext(J, ctx, text);
+		ffi_pushtext(J, text);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
 		if (js_pcall(J, 3))
@@ -639,7 +645,7 @@ js_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const f
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "ignoreText")) {
 		js_copy(J, -2);
-		ffi_pushtext(J, ctx, text);
+		ffi_pushtext(J, text);
 		ffi_pushmatrix(J, *ctm);
 		if (js_pcall(J, 2))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
@@ -653,7 +659,7 @@ js_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_mat
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "fillShade")) {
 		js_copy(J, -2);
-		ffi_pushshade(J, ctx, shade);
+		ffi_pushshade(J, shade);
 		ffi_pushmatrix(J, *ctm);
 		js_pushnumber(J, alpha);
 		if (js_pcall(J, 3))
@@ -668,7 +674,7 @@ js_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_mat
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "fillImage")) {
 		js_copy(J, -2);
-		ffi_pushimage(J, ctx, image);
+		ffi_pushimage(J, image);
 		ffi_pushmatrix(J, *ctm);
 		js_pushnumber(J, alpha);
 		if (js_pcall(J, 3))
@@ -684,9 +690,9 @@ js_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const f
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "fillImageMask")) {
 		js_copy(J, -2);
-		ffi_pushimage(J, ctx, image);
+		ffi_pushimage(J, image);
 		ffi_pushmatrix(J, *ctm);
-		ffi_pushcolor(J, ctx, colorspace, color, alpha);
+		ffi_pushcolor(J, colorspace, color, alpha);
 		if (js_pcall(J, 5))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
 		js_pop(J, 1);
@@ -699,7 +705,7 @@ js_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const f
 	js_State *J = ((js_device*)dev)->J;
 	if (js_hasproperty(J, -1, "clipImageMask")) {
 		js_copy(J, -2);
-		ffi_pushimage(J, ctx, image);
+		ffi_pushimage(J, image);
 		ffi_pushmatrix(J, *ctm);
 		if (js_pcall(J, 2))
 			fz_warn(ctx, "%s", js_tostring(J, -1));
@@ -729,7 +735,7 @@ js_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lumi
 		ffi_pushrect(J, *bbox);
 		js_pushboolean(J, luminosity);
 		if (colorspace) {
-			ffi_pushcolorspace(J, ctx, colorspace);
+			ffi_pushcolorspace(J, colorspace);
 			ffi_pusharray(J, color, colorspace->n);
 		} else {
 			js_pushnull(J);
@@ -1257,6 +1263,18 @@ static void ffi_Page_run(js_State *J)
 	}
 }
 
+static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	js_pushnumber(J, colorspace->n);
+}
+
+static void ffi_ColorSpace_toString(js_State *J)
+{
+	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
+	js_pushstring(J, colorspace->name);
+}
+
 static void ffi_new_Pixmap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -1318,25 +1336,127 @@ static void ffi_Pixmap_clear(js_State *J)
 	}
 }
 
-static void ffi_ColorSpace_toString(js_State *J)
+static void ffi_Pixmap_getWidth(js_State *J)
 {
-	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
-	js_pushstring(J, colorspace->name);
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->w);
+}
+
+static void ffi_Pixmap_getHeight(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->h);
+}
+
+static void ffi_Pixmap_getNumberOfComponents(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->n);
+}
+
+static void ffi_Pixmap_getStride(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->w * pixmap->n);
+}
+
+static void ffi_Pixmap_getSample(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	int x = js_tointeger(J, 1);
+	int y = js_tointeger(J, 2);
+	int k = js_tointeger(J, 3);
+	if (x < 0 || x >= pixmap->w) js_rangeerror(J, "X out of range");
+	if (y < 0 || y >= pixmap->h) js_rangeerror(J, "Y out of range");
+	if (k < 0 || k >= pixmap->n) js_rangeerror(J, "N out of range");
+	js_pushnumber(J, pixmap->samples[(x + y * pixmap->w) * pixmap->n + k]);
+}
+
+static void ffi_Pixmap_getXResolution(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->xres);
+}
+
+static void ffi_Pixmap_getYResolution(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->yres);
+}
+
+static void ffi_Pixmap_getColorSpace(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	ffi_pushcolorspace(J, pixmap->colorspace);
 }
 
 static void ffi_new_Image(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	const char *name = js_tostring(J, 1);
 	fz_image *image = NULL;
 
+	if (js_isuserdata(J, 1, "fz_pixmap")) {
+		fz_pixmap *pixmap = js_touserdata(J, 1, "fz_pixmap");
+		fz_try(ctx)
+			image = fz_new_image_from_pixmap(ctx, pixmap, NULL);
+		fz_catch(ctx)
+			rethrow(J);
+	} else {
+		const char *name = js_tostring(J, 1);
+		fz_try(ctx)
+			image = fz_new_image_from_file(ctx, name);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+
+	ffi_pushimage(J, image);
+}
+
+static void ffi_Image_getWidth(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	js_pushnumber(J, image->w);
+}
+
+static void ffi_Image_getHeight(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	js_pushnumber(J, image->h);
+}
+
+static void ffi_Image_getXResolution(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	js_pushnumber(J, image->xres);
+}
+
+static void ffi_Image_getYResolution(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	js_pushnumber(J, image->yres);
+}
+
+static void ffi_Image_getColorSpace(js_State *J)
+{
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	ffi_pushcolorspace(J, image->colorspace);
+}
+
+static void ffi_Image_toPixmap(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_image *image = js_touserdata(J, 0, "fz_image");
+	int w = js_isnumber(J, 1) ? js_tonumber(J, 1) : image->w;
+	int h = js_isnumber(J, 2) ? js_tonumber(J, 2) : image->h;
+	fz_pixmap *pixmap = NULL;
+
 	fz_try(ctx)
-		image = fz_new_image_from_file(ctx, name);
+		pixmap = fz_get_pixmap_from_image(ctx, image, w, h);
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_getregistry(J, "fz_image");
-	js_newuserdata(J, "fz_image", image, ffi_gc_fz_image);
+	js_getregistry(J, "fz_pixmap");
+	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
 static void ffi_new_Font(js_State *J)
@@ -1360,6 +1480,12 @@ static void ffi_new_Font(js_State *J)
 
 	js_getregistry(J, "fz_font");
 	js_newuserdata(J, "fz_font", font, ffi_gc_fz_font);
+}
+
+static void ffi_Font_getName(js_State *J)
+{
+	fz_font *font = js_touserdata(J, 0, "fz_font");
+	js_pushstring(J, font->name);
 }
 
 static void ffi_Font_encodeCharacter(js_State *J)
@@ -1406,7 +1532,6 @@ static void ffi_new_Text(js_State *J)
 
 static void ffi_Text_walk(js_State *J)
 {
-	fz_context *ctx = js_getcontext(J);
 	fz_text *text = js_touserdata(J, 0, "fz_text");
 	fz_text_span *span;
 	fz_matrix trm;
@@ -1414,7 +1539,7 @@ static void ffi_Text_walk(js_State *J)
 
 	js_getproperty(J, 1, "showGlyph");
 	for (span = text->head; span; span = span->next) {
-		ffi_pushfont(J, ctx, span->font);
+		ffi_pushfont(J, span->font);
 		trm = span->trm;
 		for (i = 0; i < span->len; ++i) {
 			trm.e = span->items[i].x;
@@ -1736,6 +1861,7 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "ColorSpace.getNumberOfComponents", ffi_ColorSpace_getNumberOfComponents, 0);
 		jsB_propfun(J, "ColorSpace.toString", ffi_ColorSpace_toString, 0);
 	}
 	js_setregistry(J, "fz_colorspace");
@@ -1764,11 +1890,18 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "Image.getWidth", ffi_Image_getWidth, 0);
+		jsB_propfun(J, "Image.getHeight", ffi_Image_getHeight, 0);
+		jsB_propfun(J, "Image.getColorSpace", ffi_Image_getColorSpace, 0);
+		jsB_propfun(J, "Image.getXResolution", ffi_Image_getXResolution, 0);
+		jsB_propfun(J, "Image.getYResolution", ffi_Image_getYResolution, 0);
+		jsB_propfun(J, "Image.toPixmap", ffi_Image_toPixmap, 2);
 	}
 	js_setregistry(J, "fz_image");
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "Font.getName", ffi_Font_getName, 0);
 		jsB_propfun(J, "Font.encodeCharacter", ffi_Font_encodeCharacter, 1);
 		jsB_propfun(J, "Font.advanceGlyph", ffi_Font_advanceGlyph, 2);
 	}
@@ -1797,9 +1930,16 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "Pixmap.bound", ffi_Pixmap_bound, 0);
 		jsB_propfun(J, "Pixmap.clear", ffi_Pixmap_clear, 1);
-		// Pixmap.resolution()
-		// Pixmap.colorspace()
-		// Pixmap.components()
+
+		jsB_propfun(J, "Pixmap.getWidth", ffi_Pixmap_getWidth, 0);
+		jsB_propfun(J, "Pixmap.getHeight", ffi_Pixmap_getHeight, 0);
+		jsB_propfun(J, "Pixmap.getNumberOfComponents", ffi_Pixmap_getNumberOfComponents, 0);
+		jsB_propfun(J, "Pixmap.getStride", ffi_Pixmap_getStride, 0);
+		jsB_propfun(J, "Pixmap.getColorSpace", ffi_Pixmap_getColorSpace, 0);
+		jsB_propfun(J, "Pixmap.getXResolution", ffi_Pixmap_getXResolution, 0);
+		jsB_propfun(J, "Pixmap.getYResolution", ffi_Pixmap_getYResolution, 0);
+		jsB_propfun(J, "Pixmap.getSample", ffi_Pixmap_getSample, 3);
+
 		// Pixmap.samples()
 		// Pixmap.invert
 		// Pixmap.tint
