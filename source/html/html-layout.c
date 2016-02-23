@@ -85,7 +85,7 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 	flow->type = type;
 	flow->expand = 0;
 	flow->char_r2l = BIDI_LEFT_TO_RIGHT;
-	flow->block_r2l = BIDI_RIGHT_TO_LEFT;
+	flow->block_r2l = BIDI_LEFT_TO_RIGHT;
 	flow->markup_r2l = BIDI_NEUTRAL;
 	flow->style = style;
 	*top->flow_tail = flow;
