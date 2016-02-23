@@ -545,6 +545,23 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	return fz_new_image(ctx, w, h, 8, cspace, xres, yres, 0, 0, NULL, NULL, bc, NULL);
 }
 
+fz_image *
+fz_new_image_from_file(fz_context *ctx, const char *path)
+{
+	fz_buffer *buffer;
+	fz_image *image;
+
+	buffer = fz_read_file(ctx, path);
+	fz_try(ctx)
+		image = fz_new_image_from_buffer(ctx, buffer);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buffer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return image;
+}
+
 void
 fz_image_resolution(fz_image *image, int *xres, int *yres)
 {
