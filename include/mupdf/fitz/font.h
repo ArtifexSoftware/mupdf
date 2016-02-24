@@ -65,8 +65,6 @@ struct fz_font_s
 	int width_count;
 	short width_default; /* in 1000 units */
 	short *width_table; /* in 1000 units */
-	int first_width;
-	int last_width;
 
 	/* cached glyph metrics */
 	float *advance_cache;

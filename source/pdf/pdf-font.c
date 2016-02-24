@@ -1432,49 +1432,6 @@ pdf_fontdesc_init(fz_context *ctx, pdf_font_desc *fontdesc)
 	fontdesc->flags = PDF_FD_NONSYMBOLIC; /* ToDo: FixMe. Set non-symbolic always for now */
 }
 
-static void ft_width_for_simple_table(fz_context *ctx, pdf_font_desc *fontdesc,
-	int *firstcode)
-{
-	FT_ULong charcode;
-	FT_UInt gindex;
-	int size;
-	int fterr;
-
-	*firstcode = 0;
-	fterr = FT_Select_Charmap(fontdesc->font->ft_face, ft_encoding_unicode);
-	if (fterr)
-	{
-		fz_warn(ctx, "freetype select char map: %s", ft_error_string(fterr));
-		return;
-	}
-	fterr = FT_Set_Char_Size(fontdesc->font->ft_face, 1000, 1000, 72, 72);
-	if (fterr)
-	{
-		fz_warn(ctx, "freetype set char size: %s", ft_error_string(fterr));
-		return;
-	}
-	charcode = FT_Get_First_Char(fontdesc->font->ft_face, &gindex);
-	*firstcode = charcode;
-	fontdesc->font->first_width = charcode;
-	while (gindex != 0)
-	{
-		fterr = FT_Load_Char(fontdesc->font->ft_face, charcode,
-			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
-		if (fterr)
-		{
-			fz_warn(ctx, "freetype load char (charcode %ld): %s", charcode, ft_error_string(fterr));
-			return;
-		}
-		size = ((FT_Face)fontdesc->font->ft_face)->glyph->metrics.horiAdvance;
-		if (charcode < 256)
-		{
-			fontdesc->font->width_table[charcode] = size;
-			fontdesc->font->last_width = charcode;
-		}
-		charcode = FT_Get_Next_Char(fontdesc->font->ft_face, charcode, &gindex);
-	}
-}
-
 static pdf_obj*
 pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
 {
@@ -1563,20 +1520,41 @@ pdf_add_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 }
 
 static pdf_obj*
-pdf_add_simple_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc)
+pdf_add_simple_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc,
+	int *first_width, int *last_width)
 {
+	int width_table[256];
 	pdf_obj *ref = NULL;
 	pdf_obj *arr = NULL;
-	int k;
+	int i;
 
 	fz_var(arr);
 	fz_var(ref);
 
+	*first_width = 0;
+	*last_width = 0;
+
+	for (i = 0; i < 256; ++i)
+	{
+		int glyph = fz_encode_character(ctx, fontdesc->font, i);
+		if (glyph > 0)
+		{
+			if (!*first_width)
+				*first_width = i;
+			*last_width = i;
+			width_table[i] = fz_advance_glyph(ctx, fontdesc->font, glyph, 0) * 1000;
+		}
+		else
+		{
+			width_table[i] = 0;
+		}
+	}
+
 	fz_try(ctx)
 	{
 		arr = pdf_new_array(ctx, doc, 256);
-		for (k = fontdesc->font->first_width; k < fontdesc->font->last_width; k++)
-			pdf_array_push_drop(ctx, arr, pdf_new_int(ctx, doc, fontdesc->font->width_table[k]));
+		for (i = *first_width; i < *last_width; i++)
+			pdf_array_push_drop(ctx, arr, pdf_new_int(ctx, doc, width_table[i]));
 		ref = pdf_new_ref(ctx, doc, arr);
 	}
 	fz_always(ctx)
@@ -2226,9 +2204,9 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 	FT_Face face;
 	FT_Error fterr;
 	const char *ps_name;
-	int firstcode;
 	int has_lock = 0;
 	unsigned char digest[16];
+	int first_width, last_width;
 
 	fz_var(fobj);
 	fz_var(fref);
@@ -2252,10 +2230,6 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 		{
 			/* Set up desc, width, and font file */
 			fobj = pdf_new_dict(ctx, doc, 3);
-			// XXX bad idea
-			font->width_count = 256;
-			font->width_table = fz_calloc(ctx, font->width_count, sizeof(int));
-			// XXX
 			fontdesc = pdf_new_font_desc(ctx);
 			fontdesc->font = font;
 			face = font->ft_face;
@@ -2264,7 +2238,6 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 			fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
 			if (fterr)
 				fz_warn(ctx, "pdf_add_simple_font_res: %s", ft_error_string(fterr));
-			ft_width_for_simple_table(ctx, fontdesc, &firstcode);
 			pdf_fontdesc_init(ctx, fontdesc);
 			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 			has_lock = 0;
@@ -2272,14 +2245,14 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 			/* refs */
 			fstr_ref = pdf_add_font_file(ctx, doc, font->buffer);
 			fdes_ref = pdf_add_font_descriptor(ctx, doc, fontdesc, fstr_ref);
-			fwidth_ref = pdf_add_simple_font_widths(ctx, doc, fontdesc);
+			fwidth_ref = pdf_add_simple_font_widths(ctx, doc, fontdesc, &first_width, &last_width);
 
 			/* And now the font */
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, fontdesc->font->name));
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_FirstChar, pdf_new_int(ctx, doc, fontdesc->font->first_width));
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_LastChar, pdf_new_int(ctx, doc, fontdesc->font->last_width));
+			pdf_dict_put_drop(ctx, fobj, PDF_NAME_FirstChar, pdf_new_int(ctx, doc, first_width));
+			pdf_dict_put_drop(ctx, fobj, PDF_NAME_LastChar, pdf_new_int(ctx, doc, last_width));
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Widths, fwidth_ref);
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_FontDescriptor, fdes_ref);
 			if ((ps_name = FT_Get_Postscript_Name(face)) != NULL)
