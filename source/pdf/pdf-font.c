@@ -1631,7 +1631,6 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 	int prev_size;
 	int first_code;
 	int new_first_code;
-	int fterr;
 	int state = FW_START;
 	int new_state = FW_START;
 	int publish = 0;
@@ -1644,27 +1643,9 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 
 	if (source_font->width_table == NULL)
 	{
-		fterr = FT_Select_Charmap(fontdesc->font->ft_face, ft_encoding_unicode);
-		if (fterr)
-		{
-			fz_warn(ctx, "freetype select char map: %s", ft_error_string(fterr));
-			return NULL;
-		}
-		fterr = FT_Set_Char_Size(fontdesc->font->ft_face, 1000, 1000, 72, 72);
-		if (fterr)
-		{
-			fz_warn(ctx, "freetype set char size: %s", ft_error_string(fterr));
-			return NULL;
-		}
-
 		/* Prime the pump. */
 		prev_code = FT_Get_First_Char(fontdesc->font->ft_face, &gindex);
-		if (gindex == 0)
-		{
-			fz_warn(ctx, "freetype FT_Get_First_Char fail: %s", ft_error_string(fterr));
-			return NULL;
-		}
-		prev_size = ((FT_Face)fontdesc->font->ft_face)->glyph->metrics.horiAdvance;
+		prev_size = fz_advance_glyph(ctx, fontdesc->font, gindex, 0) * 1000;
 		first_code = prev_code;
 	}
 	else
@@ -1687,7 +1668,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 			if (source_font->width_table == NULL)
 			{
 				curr_code = FT_Get_Next_Char(fontdesc->font->ft_face, prev_code, &gindex);
-				curr_size = ((FT_Face)fontdesc->font->ft_face)->glyph->metrics.horiAdvance;
+				curr_size = fz_advance_glyph(ctx, fontdesc->font, gindex, 0) * 1000;
 			}
 			else
 			{
