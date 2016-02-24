@@ -234,7 +234,14 @@ fz_stream *fz_keep_stream(fz_context *ctx, fz_stream *stm);
 */
 fz_buffer *fz_read_best(fz_context *ctx, fz_stream *stm, int initial, int *truncated);
 
-void fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, int max);
+/*
+	fz_read_line: Read a line from stream into the buffer until either a
+	terminating newline or EOF, which it replaces with a null byte ('\0').
+
+	Returns buf on success, and NULL when end of file occurs while no characters
+	have been read.
+*/
+char *fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, int max);
 
 /*
 	fz_available: Ask how many bytes are available immediately from

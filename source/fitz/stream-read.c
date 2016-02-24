@@ -89,7 +89,7 @@ fz_read_best(fz_context *ctx, fz_stream *stm, int initial, int *truncated)
 	return buf;
 }
 
-void
+char *
 fz_read_line(fz_context *ctx, fz_stream *stm, char *mem, int n)
 {
 	char *s = mem;
@@ -112,6 +112,7 @@ fz_read_line(fz_context *ctx, fz_stream *stm, char *mem, int n)
 	}
 	if (n)
 		*s = '\0';
+	return (s == mem && c == EOF) ? NULL : mem;
 }
 
 fz_off_t
