@@ -697,7 +697,7 @@ pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end)
 }
 
 pdf_page *
-pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, fz_buffer *buffer, int rotate)
+pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate, fz_buffer *contents)
 {
 	pdf_page *page = NULL;
 	pdf_obj *pageobj, *obj;
@@ -738,11 +738,11 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, fz_buffer 
 		fz_concat(&ctm, &ctm, &tmp);
 		page->ctm = ctm;
 
-		if (buffer != NULL)
+		if (contents != NULL)
 		{
 			obj = pdf_new_dict(ctx, doc, 4);
 			page->contents = pdf_new_ref(ctx, doc, obj);
-			pdf_update_stream(ctx, doc, page->contents, buffer, 0);
+			pdf_update_stream(ctx, doc, page->contents, contents, 0);
 			pdf_drop_obj(ctx, obj);
 			obj = NULL;
 			pdf_dict_puts(ctx, pageobj, "Contents", page->contents);

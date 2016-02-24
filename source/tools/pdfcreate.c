@@ -403,7 +403,7 @@ static int create_pdf(fz_context *ctx, char *output, resources fonts[], int num_
 				length = get_page_contents(ctx, k, &content, buffer);
 				fz_buf = fz_new_buffer_from_data(ctx, buffer, length);
 				buffer = NULL;
-				newpage = pdf_create_page(ctx, pdf, bounds, fz_buf, 0);
+				newpage = pdf_create_page(ctx, pdf, bounds, 0, fz_buf);
 				/* Create the dicts for the page resources */
 				font_dict = create_page_res_dict(ctx, pdf, content.ref_font_resources[k],
 					"Font", content.num_page_font_res[k]);
@@ -424,7 +424,7 @@ static int create_pdf(fz_context *ctx, char *output, resources fonts[], int num_
 			}
 			else
 			{
-				newpage = pdf_create_page(ctx, pdf, bounds, NULL, 0);
+				newpage = pdf_create_page(ctx, pdf, bounds, 0, NULL);
 			}
 			pdf_insert_page(ctx, pdf, newpage, INT_MAX);
 			pdf_drop_page(ctx, newpage);
