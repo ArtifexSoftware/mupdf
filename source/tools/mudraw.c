@@ -387,7 +387,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		tbounds = bounds;
 		fz_transform_rect(&tbounds, &ctm);
 
-		newpage = pdf_create_page(ctx, pdfout, bounds, 0, NULL);
+		newpage = pdf_create_page(ctx, pdfout, &bounds, 0, NULL, NULL);
 
 		fz_try(ctx)
 		{

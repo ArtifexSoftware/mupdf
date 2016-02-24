@@ -269,7 +269,7 @@ struct pdf_document_s
 */
 pdf_document *pdf_create_document(fz_context *ctx);
 
-pdf_page *pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect rect, int rotate, fz_buffer *contents);
+pdf_page *pdf_create_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate, fz_buffer *contents, pdf_obj *resources);
 
 void pdf_insert_page(fz_context *ctx, pdf_document *doc, pdf_page *page, int at);
 

@@ -697,7 +697,8 @@ pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end)
 }
 
 pdf_page *
-pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate, fz_buffer *contents)
+pdf_create_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate,
+		fz_buffer *contents, pdf_obj *resources)
 {
 	pdf_page *page = NULL;
 	pdf_obj *pageobj, *obj;
@@ -715,10 +716,10 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate
 
 		pdf_dict_put_drop(ctx, pageobj, PDF_NAME_Type, PDF_NAME_Page);
 
-		page->mediabox.x0 = fz_min(mediabox.x0, mediabox.x1) * userunit;
-		page->mediabox.y0 = fz_min(mediabox.y0, mediabox.y1) * userunit;
-		page->mediabox.x1 = fz_max(mediabox.x0, mediabox.x1) * userunit;
-		page->mediabox.y1 = fz_max(mediabox.y0, mediabox.y1) * userunit;
+		page->mediabox.x0 = fz_min(mediabox->x0, mediabox->x1) * userunit;
+		page->mediabox.y0 = fz_min(mediabox->y0, mediabox->y1) * userunit;
+		page->mediabox.x1 = fz_max(mediabox->x0, mediabox->x1) * userunit;
+		page->mediabox.y1 = fz_max(mediabox->y0, mediabox->y1) * userunit;
 		pdf_dict_put_drop(ctx, pageobj, PDF_NAME_MediaBox, pdf_new_rect(ctx, doc, &page->mediabox));
 
 		/* Snap page->rotate to 0, 90, 180 or 270 */
@@ -745,7 +746,19 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, fz_rect mediabox, int rotate
 			pdf_update_stream(ctx, doc, page->contents, contents, 0);
 			pdf_drop_obj(ctx, obj);
 			obj = NULL;
-			pdf_dict_puts(ctx, pageobj, "Contents", page->contents);
+			pdf_dict_put(ctx, pageobj, PDF_NAME_Contents, page->contents);
+		}
+
+		if (resources != NULL)
+		{
+			if (pdf_is_indirect(ctx, resources))
+				pdf_dict_put(ctx, pageobj, PDF_NAME_Resources, resources);
+			else
+			{
+				pdf_obj *ref = pdf_new_ref(ctx, doc, resources);
+				pdf_dict_put(ctx, pageobj, PDF_NAME_Resources, ref);
+				pdf_drop_obj(ctx, ref);
+			}
 		}
 	}
 	fz_catch(ctx)

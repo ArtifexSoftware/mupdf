@@ -255,7 +255,7 @@ static int make_fake_doc(pdfapp_t *app)
 		bounds.x1 = app->winw;
 		bounds.y1 = app->winh;
 
-		newpage = pdf_create_page(ctx, pdf, bounds, 0, NULL);
+		newpage = pdf_create_page(ctx, pdf, &bounds, 0, NULL, NULL);
 
 		dev = pdf_page_write(ctx, pdf, newpage);
 
