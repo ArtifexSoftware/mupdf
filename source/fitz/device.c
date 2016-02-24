@@ -180,7 +180,7 @@ fz_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_st
 }
 
 void
-fz_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
+fz_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	if (dev->error_depth)
 	{
@@ -192,12 +192,17 @@ fz_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matr
 	{
 		if (dev->hints & FZ_MAINTAIN_CONTAINER_STACK)
 		{
-			fz_rect bbox;
-			fz_bound_text(ctx, text, NULL, ctm, &bbox);
-			push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_text);
+			if (scissor == NULL)
+			{
+				fz_rect bbox;
+				fz_bound_text(ctx, text, NULL, ctm, &bbox);
+				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_text);
+			}
+			else
+				push_clip_stack(ctx, dev, scissor, fz_device_container_stack_is_clip_text);
 		}
 		if (dev->clip_text)
-			dev->clip_text(ctx, dev, text, ctm);
+			dev->clip_text(ctx, dev, text, ctm, scissor);
 	}
 	fz_catch(ctx)
 	{
@@ -208,7 +213,7 @@ fz_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matr
 }
 
 void
-fz_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	if (dev->error_depth)
 	{
@@ -220,12 +225,17 @@ fz_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 	{
 		if (dev->hints & FZ_MAINTAIN_CONTAINER_STACK)
 		{
-			fz_rect bbox;
-			fz_bound_text(ctx, text, stroke, ctm, &bbox);
-			push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_stroke_text);
+			if (scissor == NULL)
+			{
+				fz_rect bbox;
+				fz_bound_text(ctx, text, stroke, ctm, &bbox);
+				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_stroke_text);
+			}
+			else
+				push_clip_stack(ctx, dev, scissor, fz_device_container_stack_is_clip_stroke_text);
 		}
 		if (dev->clip_stroke_text)
-			dev->clip_stroke_text(ctx, dev, text, stroke, ctm);
+			dev->clip_stroke_text(ctx, dev, text, stroke, ctm, scissor);
 	}
 	fz_catch(ctx)
 	{

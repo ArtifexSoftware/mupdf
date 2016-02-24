@@ -708,7 +708,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 }
 
 static void
-fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_matrix *ctm)
+fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_irect bbox;
@@ -728,6 +728,11 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	/* make the mask the exact size needed */
 	fz_irect_from_rect(&bbox, fz_bound_text(ctx, text, NULL, ctm, &rect));
 	fz_intersect_irect(&bbox, &state->scissor);
+	if (scissor)
+	{
+		fz_irect bbox2;
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
+	}
 
 	fz_try(ctx)
 	{
@@ -821,7 +826,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 }
 
 static void
-fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_irect bbox;
@@ -838,6 +843,11 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 	/* make the mask the exact size needed */
 	fz_irect_from_rect(&bbox, fz_bound_text(ctx, text, stroke, ctm, &rect));
 	fz_intersect_irect(&bbox, &state->scissor);
+	if (scissor)
+	{
+		fz_irect bbox2;
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
+	}
 
 	fz_try(ctx)
 	{

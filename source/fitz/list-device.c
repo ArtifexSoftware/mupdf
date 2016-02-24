@@ -186,6 +186,8 @@ fz_append_display_node(
 	{
 	case FZ_CMD_CLIP_PATH:
 	case FZ_CMD_CLIP_STROKE_PATH:
+	case FZ_CMD_CLIP_TEXT:
+	case FZ_CMD_CLIP_STROKE_TEXT:
 	case FZ_CMD_CLIP_IMAGE_MASK:
 		if (writer->top < STACK_SIZE)
 		{
@@ -195,8 +197,6 @@ fz_append_display_node(
 		writer->top++;
 		break;
 	case FZ_CMD_END_MASK:
-	case FZ_CMD_CLIP_TEXT:
-	case FZ_CMD_CLIP_STROKE_TEXT:
 		if (writer->top < STACK_SIZE)
 		{
 			writer->stack[writer->top].update = NULL;
@@ -836,7 +836,7 @@ fz_list_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-fz_list_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
+fz_list_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -844,6 +844,8 @@ fz_list_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 	fz_try(ctx)
 	{
 		fz_bound_text(ctx, text, NULL, ctm, &rect);
+		if (scissor)
+			fz_intersect_rect(&rect, scissor);
 		fz_append_display_node(
 			ctx,
 			dev,
@@ -867,7 +869,7 @@ fz_list_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 }
 
 static void
-fz_list_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_list_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -875,6 +877,8 @@ fz_list_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	fz_try(ctx)
 	{
 		fz_bound_text(ctx, text, stroke, ctm, &rect);
+		if (scissor)
+			fz_intersect_rect(&rect, scissor);
 		fz_append_display_node(
 			ctx,
 			dev,
@@ -1683,10 +1687,10 @@ visible:
 				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, color, alpha);
 				break;
 			case FZ_CMD_CLIP_TEXT:
-				fz_clip_text(ctx, dev, *(fz_text **)node, &trans_ctm);
+				fz_clip_text(ctx, dev, *(fz_text **)node, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_CLIP_STROKE_TEXT:
-				fz_clip_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm);
+				fz_clip_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_IGNORE_TEXT:
 				fz_ignore_text(ctx, dev, *(fz_text **)node, &trans_ctm);
