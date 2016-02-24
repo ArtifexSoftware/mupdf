@@ -724,13 +724,13 @@ fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 }
 
 static void
-fz_list_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+fz_list_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_rect rect2;
 
 	fz_bound_path(ctx, path, NULL, ctm, &rect2);
-	if (rect)
-		fz_intersect_rect(&rect2, rect);
+	if (scissor)
+		fz_intersect_rect(&rect2, scissor);
 	fz_append_display_node(
 		ctx,
 		dev,
@@ -748,13 +748,13 @@ fz_list_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz
 }
 
 static void
-fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_rect rect2;
 
 	fz_bound_path(ctx, path, stroke, ctm, &rect2);
-	if (rect)
-		fz_intersect_rect(&rect2, rect);
+	if (scissor)
+		fz_intersect_rect(&rect2, scissor);
 	fz_append_display_node(
 		ctx,
 		dev,
@@ -1042,14 +1042,14 @@ fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 }
 
 static void
-fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect2 = fz_unit_rect;
 
 	fz_transform_rect(&rect2, ctm);
-	if (rect)
-		fz_intersect_rect(&rect2, rect);
+	if (scissor)
+		fz_intersect_rect(&rect2, scissor);
 	fz_try(ctx)
 	{
 		fz_append_display_node(
@@ -1671,10 +1671,10 @@ visible:
 				fz_stroke_path(ctx, dev, path, stroke, &trans_ctm, colorspace, color, alpha);
 				break;
 			case FZ_CMD_CLIP_PATH:
-				fz_clip_path(ctx, dev, path, &trans_rect, n.flags, &trans_ctm);
+				fz_clip_path(ctx, dev, path, n.flags, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_CLIP_STROKE_PATH:
-				fz_clip_stroke_path(ctx, dev, path, &trans_rect, stroke, &trans_ctm);
+				fz_clip_stroke_path(ctx, dev, path, stroke, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_FILL_TEXT:
 				fz_fill_text(ctx, dev, *(fz_text **)node, &trans_ctm, colorspace, color, alpha);
@@ -1705,7 +1705,7 @@ visible:
 				break;
 			case FZ_CMD_CLIP_IMAGE_MASK:
 				if ((dev->hints & FZ_IGNORE_IMAGE) == 0)
-					fz_clip_image_mask(ctx, dev, *(fz_image **)node, &trans_rect, &trans_ctm);
+					fz_clip_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_POP_CLIP:
 				fz_pop_clip(ctx, dev);

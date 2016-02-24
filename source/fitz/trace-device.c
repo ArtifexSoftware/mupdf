@@ -163,7 +163,7 @@ fz_trace_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const
 }
 
 static void
-fz_trace_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+fz_trace_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_printf(ctx, out, "<clip_path");
@@ -172,16 +172,13 @@ fz_trace_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const f
 	else
 		fz_printf(ctx, out, " winding=\"nonzero\"");
 	fz_trace_matrix(ctx, out, ctm);
-	if (rect)
-		fz_printf(ctx, out, " contentbbox=\"%g %g %g %g\">\n", rect->x0, rect->y0, rect->x1, rect->y1);
-	else
-		fz_printf(ctx, out, ">\n");
+	fz_printf(ctx, out, ">\n");
 	fz_trace_path(ctx, out, path);
 	fz_printf(ctx, out, "</clip_path>\n");
 }
 
 static void
-fz_trace_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_trace_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_printf(ctx, out, "<clip_stroke_path");
@@ -282,7 +279,7 @@ fz_trace_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const
 }
 
 static void
-fz_trace_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_trace_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_printf(ctx, out, "<clip_image_mask");

@@ -29,7 +29,7 @@ xps_paint_tiling_brush_clipped(fz_context *ctx, xps_document *doc, const fz_matr
 	fz_lineto(ctx, path, viewbox->x1, viewbox->y1);
 	fz_lineto(ctx, path, viewbox->x1, viewbox->y0);
 	fz_closepath(ctx, path);
-	fz_clip_path(ctx, dev, path, NULL, 0, ctm);
+	fz_clip_path(ctx, dev, path, 0, ctm, NULL);
 	fz_drop_path(ctx, path);
 	c->func(ctx, doc, ctm, viewbox, c->base_uri, c->dict, c->root, c->user);
 	fz_pop_clip(ctx, dev);

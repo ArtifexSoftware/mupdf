@@ -382,7 +382,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 }
 
 static void
-fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_gel *gel = dev->gel;
@@ -405,10 +405,10 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, const f
 	model = state->dest->colorspace;
 
 	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
-	if (rect)
+	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, rect));
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
 	}
 
 	if (fz_is_empty_irect(&bbox) || fz_is_rect_gel(ctx, gel))
@@ -448,7 +448,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, const f
 }
 
 static void
-fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_rect *rect, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_gel *gel = dev->gel;
@@ -477,10 +477,10 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	model = state->dest->colorspace;
 
 	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
-	if (rect)
+	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, rect));
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
 	}
 
 	fz_try(ctx)
@@ -1261,7 +1261,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 }
 
 static void
-fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_irect bbox;
@@ -1305,10 +1305,10 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	urect = fz_unit_rect;
 	fz_irect_from_rect(&bbox, fz_transform_rect(&urect, &local_ctm));
 	fz_intersect_irect(&bbox, &state->scissor);
-	if (rect)
+	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, rect));
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
 	}
 
 	dx = sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b);

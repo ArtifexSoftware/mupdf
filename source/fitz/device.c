@@ -94,7 +94,7 @@ fz_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_st
 }
 
 void
-fz_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+fz_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	if (dev->error_depth)
 	{
@@ -106,17 +106,17 @@ fz_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect
 	{
 		if (dev->hints & FZ_MAINTAIN_CONTAINER_STACK)
 		{
-			if (rect == NULL)
+			if (scissor == NULL)
 			{
 				fz_rect bbox;
 				fz_bound_path(ctx, path, NULL, ctm, &bbox);
 				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_path);
 			}
 			else
-				push_clip_stack(ctx, dev, rect, fz_device_container_stack_is_clip_path);
+				push_clip_stack(ctx, dev, scissor, fz_device_container_stack_is_clip_path);
 		}
 		if (dev->clip_path)
-			dev->clip_path(ctx, dev, path, rect, even_odd, ctm);
+			dev->clip_path(ctx, dev, path, even_odd, ctm, scissor);
 	}
 	fz_catch(ctx)
 	{
@@ -127,7 +127,7 @@ fz_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect
 }
 
 void
-fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, const fz_stroke_state *stroke, const fz_matrix *ctm)
+fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	if (dev->error_depth)
 	{
@@ -139,17 +139,17 @@ fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 	{
 		if (dev->hints & FZ_MAINTAIN_CONTAINER_STACK)
 		{
-			if (rect == NULL)
+			if (scissor == NULL)
 			{
 				fz_rect bbox;
 				fz_bound_path(ctx, path, stroke, ctm, &bbox);
 				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_stroke_path);
 			}
 			else
-				push_clip_stack(ctx, dev, rect, fz_device_container_stack_is_clip_stroke_path);
+				push_clip_stack(ctx, dev, scissor, fz_device_container_stack_is_clip_stroke_path);
 		}
 		if (dev->clip_stroke_path)
-			dev->clip_stroke_path(ctx, dev, path, rect, stroke, ctm);
+			dev->clip_stroke_path(ctx, dev, path, stroke, ctm, scissor);
 	}
 	fz_catch(ctx)
 	{
@@ -289,7 +289,7 @@ fz_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 }
 
 void
-fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	if (dev->error_depth)
 	{
@@ -300,9 +300,18 @@ fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_re
 	fz_try(ctx)
 	{
 		if (dev->hints & FZ_MAINTAIN_CONTAINER_STACK)
-			push_clip_stack(ctx, dev, rect, fz_device_container_stack_is_clip_image_mask);
+		{
+			if (scissor == NULL)
+			{
+				fz_rect bbox = fz_unit_rect;
+				fz_transform_rect(&bbox, ctm);
+				push_clip_stack(ctx, dev, &bbox, fz_device_container_stack_is_clip_image_mask);
+			}
+			else
+				push_clip_stack(ctx, dev, scissor, fz_device_container_stack_is_clip_image_mask);
+		}
 		if (dev->clip_image_mask)
-			dev->clip_image_mask(ctx, dev, image, rect, ctm);
+			dev->clip_image_mask(ctx, dev, image, ctm, scissor);
 	}
 	fz_catch(ctx)
 	{

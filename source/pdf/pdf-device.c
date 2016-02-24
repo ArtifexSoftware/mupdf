@@ -905,7 +905,7 @@ pdf_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 }
 
 static void
-pdf_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+pdf_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs;
@@ -919,7 +919,7 @@ pdf_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz
 }
 
 static void
-pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, const fz_stroke_state *stroke, const fz_matrix *ctm)
+pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs;
@@ -1088,7 +1088,7 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 }
 
 static void
-pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+pdf_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 

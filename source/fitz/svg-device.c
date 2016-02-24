@@ -517,7 +517,7 @@ svg_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 }
 
 static void
-svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, int even_odd, const fz_matrix *ctm)
+svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;
@@ -537,7 +537,7 @@ svg_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz
 }
 
 static void
-svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_rect *rect, const fz_stroke_state *stroke, const fz_matrix *ctm)
+svg_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 
@@ -846,7 +846,7 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 }
 
 static void
-svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_rect *rect, const fz_matrix *ctm)
+svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out;

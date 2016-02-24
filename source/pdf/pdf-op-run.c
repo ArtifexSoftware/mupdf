@@ -520,7 +520,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 		/* apply blend group even though we skip the soft mask */
 		if (gstate->blendmode)
 			fz_begin_group(ctx, pr->dev, &bbox, 0, 0, gstate->blendmode, 1);
-		fz_clip_image_mask(ctx, pr->dev, image->mask, &bbox, &image_ctm);
+		fz_clip_image_mask(ctx, pr->dev, image->mask, &image_ctm, &bbox);
 	}
 	else
 		gstate = pdf_begin_group(ctx, pr, &bbox, &softmask);
@@ -539,7 +539,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 		case PDF_MAT_PATTERN:
 			if (gstate->fill.pattern)
 			{
-				fz_clip_image_mask(ctx, pr->dev, image, &bbox, &image_ctm);
+				fz_clip_image_mask(ctx, pr->dev, image, &image_ctm, &bbox);
 				pdf_show_pattern(ctx, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], &bbox, PDF_FILL);
 				fz_pop_clip(ctx, pr->dev);
 			}
@@ -547,7 +547,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 		case PDF_MAT_SHADE:
 			if (gstate->fill.shade)
 			{
-				fz_clip_image_mask(ctx, pr->dev, image, &bbox, &image_ctm);
+				fz_clip_image_mask(ctx, pr->dev, image, &image_ctm, &bbox);
 				fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
 				fz_pop_clip(ctx, pr->dev);
 			}
@@ -604,7 +604,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 		if (pr->clip)
 		{
 			gstate->clip_depth++;
-			fz_clip_path(ctx, pr->dev, path, &bbox, pr->clip_even_odd, &gstate->ctm);
+			fz_clip_path(ctx, pr->dev, path, pr->clip_even_odd, &gstate->ctm, &bbox);
 			pr->clip = 0;
 		}
 
@@ -645,7 +645,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
 				{
-					fz_clip_path(ctx, pr->dev, path, &bbox, even_odd, &gstate->ctm);
+					fz_clip_path(ctx, pr->dev, path, even_odd, &gstate->ctm, &bbox);
 					pdf_show_pattern(ctx, pr, gstate->fill.pattern, &pr->gstate[gstate->fill.gstate_num], &bbox, PDF_FILL);
 					fz_pop_clip(ctx, pr->dev);
 				}
@@ -653,7 +653,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 			case PDF_MAT_SHADE:
 				if (gstate->fill.shade)
 				{
-					fz_clip_path(ctx, pr->dev, path, &bbox, even_odd, &gstate->ctm);
+					fz_clip_path(ctx, pr->dev, path, even_odd, &gstate->ctm, &bbox);
 					/* The cluster and page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm. */
 					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
 					fz_pop_clip(ctx, pr->dev);
@@ -675,7 +675,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
 				{
-					fz_clip_stroke_path(ctx, pr->dev, path, &bbox, gstate->stroke_state, &gstate->ctm);
+					fz_clip_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm, &bbox);
 					pdf_show_pattern(ctx, pr, gstate->stroke.pattern, &pr->gstate[gstate->stroke.gstate_num], &bbox, PDF_STROKE);
 					fz_pop_clip(ctx, pr->dev);
 				}
@@ -683,7 +683,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 			case PDF_MAT_SHADE:
 				if (gstate->stroke.shade)
 				{
-					fz_clip_stroke_path(ctx, pr->dev, path, &bbox, gstate->stroke_state, &gstate->ctm);
+					fz_clip_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm, &bbox);
 					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha);
 					fz_pop_clip(ctx, pr->dev);
 				}
