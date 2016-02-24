@@ -291,7 +291,7 @@ pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 }
 
 pdf_obj *
-pdf_add_image_res(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
+pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 {
 	fz_pixmap *pixmap = NULL;
 	pdf_obj *imobj = NULL;
@@ -440,7 +440,7 @@ pdf_add_image_res(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ImageMask, pdf_new_bool(ctx, doc, 1));
 			}
 			if (image->mask)
-				pdf_add_image_res(ctx, doc, image->mask, 0);
+				pdf_add_image(ctx, doc, image->mask, 0);
 			imref = pdf_new_ref(ctx, doc, imobj);
 			pdf_update_stream(ctx, doc, imref, buffer, 1);
 

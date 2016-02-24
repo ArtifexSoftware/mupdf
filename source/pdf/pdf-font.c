@@ -2036,7 +2036,7 @@ pdf_add_cid_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
  * We can possibly get width information that may have been embedded in
  * the PDF /W array (or W2 if vertical text) */
 pdf_obj *
-pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
+pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;
@@ -2116,7 +2116,7 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 
 /* Creates simple font */
 pdf_obj *
-pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
+pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;

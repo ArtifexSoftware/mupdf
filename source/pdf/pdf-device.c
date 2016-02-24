@@ -406,7 +406,7 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 	if (font->buffer != NULL)
 	{
 		/* This will add it to the xref if needed */
-		fres = pdf_add_cid_font_res(ctx, doc, font);
+		fres = pdf_add_cid_font(ctx, doc, font);
 		fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", pdf_to_num(ctx, fres), size);
 
 		/* Possibly add to page resources */
@@ -944,10 +944,10 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 	fz_matrix local_ctm = *ctm;
 
 	pdf_dev_end_text(ctx, pdev);
-	im_res = pdf_add_image_res(ctx, pdev->doc, image, 0);
+	im_res = pdf_add_image(ctx, pdev->doc, image, 0);
 	if (im_res == NULL)
 	{
-		fz_warn(ctx, "pdf_add_image_res: problem adding image resource");
+		fz_warn(ctx, "pdf_add_image: problem adding image resource");
 		return;
 	}
 	pdf_dev_alpha(ctx, pdev, alpha, 0);
@@ -982,10 +982,10 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_matrix local_ctm = *ctm;
 
 	pdf_dev_end_text(ctx, pdev);
-	im_res = pdf_add_image_res(ctx, pdev->doc, image, 1);
+	im_res = pdf_add_image(ctx, pdev->doc, image, 1);
 	if (im_res == NULL)
 	{
-		fz_warn(ctx, "pdf_add_image_res: problem adding image resource");
+		fz_warn(ctx, "pdf_add_image: problem adding image resource");
 		return;
 	}
 	fz_buffer_printf(ctx, gs->buf, "q\n");

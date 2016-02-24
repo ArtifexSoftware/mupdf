@@ -38,7 +38,7 @@ static void add_font_res(pdf_obj *fonts, char *name, char *path)
 	else
 		font = fz_new_font_from_file(ctx, NULL, path, 0, 0);
 
-	res = pdf_add_simple_font_res(ctx, doc, font);
+	res = pdf_add_simple_font(ctx, doc, font);
 	pdf_dict_puts(ctx, fonts, name, res);
 	pdf_drop_obj(ctx, res);
 
@@ -52,7 +52,7 @@ static void add_image_res(pdf_obj *images, char *name, char *path)
 
 	image = fz_new_image_from_file(ctx, path);
 
-	res = pdf_add_image_res(ctx, doc, image, 0);
+	res = pdf_add_image(ctx, doc, image, 0);
 	pdf_dict_puts(ctx, images, name, res);
 	pdf_drop_obj(ctx, res);
 
