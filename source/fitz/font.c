@@ -37,9 +37,6 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->fake_italic = 0;
 	font->force_hinting = 0;
 
-	font->ft_buffer = NULL;
-	font->ft_filepath = NULL;
-
 	font->t3matrix = fz_identity;
 	font->t3resources = NULL;
 	font->t3procs = NULL;
@@ -149,8 +146,7 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	for (i = 0; i < 256; ++i)
 		fz_free(ctx, font->encoding_cache[i]);
 
-	fz_drop_buffer(ctx, font->ft_buffer);
-	fz_free(ctx, font->ft_filepath);
+	fz_drop_buffer(ctx, font->buffer);
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
@@ -419,40 +415,7 @@ fz_drop_freetype(fz_context *ctx)
 }
 
 fz_font *
-fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int index, int use_glyph_bbox)
-{
-	FT_Face face;
-	fz_font *font;
-	int fterr;
-
-	fz_keep_freetype(ctx);
-
-	fz_lock(ctx, FZ_LOCK_FREETYPE);
-	fterr = FT_New_Face(ctx->font->ftlib, path, index, &face);
-	fz_unlock(ctx, FZ_LOCK_FREETYPE);
-	if (fterr)
-	{
-		fz_drop_freetype(ctx);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "freetype: cannot load font: %s", ft_error_string(fterr));
-	}
-
-	if (!name)
-		name = face->family_name;
-
-	font = fz_new_font(ctx, name, use_glyph_bbox, face->num_glyphs);
-	font->ft_face = face;
-	fz_set_font_bbox(ctx, font,
-		(float) face->bbox.xMin / face->units_per_EM,
-		(float) face->bbox.yMin / face->units_per_EM,
-		(float) face->bbox.xMax / face->units_per_EM,
-		(float) face->bbox.yMax / face->units_per_EM);
-	font->ft_filepath = fz_strdup(ctx, path);
-
-	return font;
-}
-
-fz_font *
-fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, int len, int index, int use_glyph_bbox)
+fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, int index, int use_glyph_bbox)
 {
 	FT_Face face;
 	TT_OS2 *os2;
@@ -462,7 +425,7 @@ fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, 
 	fz_keep_freetype(ctx);
 
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
-	fterr = FT_New_Memory_Face(ctx->font->ftlib, data, len, index, &face);
+	fterr = FT_New_Memory_Face(ctx->font->ftlib, buffer->data, buffer->len, index, &face);
 	fz_unlock(ctx, FZ_LOCK_FREETYPE);
 	if (fterr)
 	{
@@ -490,14 +453,36 @@ fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, 
 	if (os2)
 		font->is_serif = !(os2->sFamilyClass & 2048); /* Class 8 is sans-serif */
 
+	font->buffer = fz_keep_buffer(ctx, buffer);
+
 	return font;
 }
 
 fz_font *
-fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, int index, int use_glyph_bbox)
+fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, int len, int index, int use_glyph_bbox)
 {
-	fz_font *font = fz_new_font_from_memory(ctx, name, buffer->data, buffer->len, index, use_glyph_bbox);
-	font->ft_buffer = fz_keep_buffer(ctx, buffer); /* remember buffer so we can drop it when we free the font */
+	fz_buffer *buffer = fz_new_buffer_from_shared_data(ctx, data, len);
+	fz_font *font;
+	fz_try(ctx)
+		font = fz_new_font_from_buffer(ctx, name, buffer, index, use_glyph_bbox);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buffer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return font;
+}
+
+fz_font *
+fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int index, int use_glyph_bbox)
+{
+	fz_buffer *buffer = fz_read_file(ctx, path);
+	fz_font *font;
+	fz_try(ctx)
+		font = fz_new_font_from_buffer(ctx, name, buffer, index, use_glyph_bbox);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buffer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 	return font;
 }
 

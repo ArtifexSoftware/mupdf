@@ -28,6 +28,7 @@ struct fz_font_s
 {
 	int refs;
 	char name[32];
+	fz_buffer *buffer;
 
 	char is_mono;
 	char is_serif;
@@ -41,10 +42,6 @@ struct fz_font_s
 	int fake_bold; /* ... synthesize bold */
 	int fake_italic; /* ... synthesize italic */
 	int force_hinting; /* ... force hinting for DynaLab fonts */
-
-	/* origin of font data */
-	fz_buffer *ft_buffer;
-	char *ft_filepath; /* kept for downstream consumers (such as SumatraPDF) */
 
 	fz_matrix t3matrix;
 	void *t3resources;

@@ -44,6 +44,7 @@ struct fz_buffer_s
 	unsigned char *data;
 	int cap, len;
 	int unused_bits;
+	int shared;
 };
 
 /*
@@ -70,6 +71,11 @@ fz_buffer *fz_new_buffer(fz_context *ctx, int capacity);
 	failure.
 */
 fz_buffer *fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, int size);
+
+/*
+	fz_new_buffer_from_shared_data: Like fz_new_buffer, but does not take ownership.
+*/
+fz_buffer *fz_new_buffer_from_shared_data(fz_context *ctx, unsigned char *data, int size);
 
 /*
 	fz_resize_buffer: Ensure that a buffer has a given capacity,

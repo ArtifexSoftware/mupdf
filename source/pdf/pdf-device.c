@@ -400,13 +400,13 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 	if (font->ft_substitute)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support substitute metrics");
 
-	if (font->ft_buffer != NULL && !pdf_font_writing_supported(font))
+	if (font->buffer != NULL && !pdf_font_writing_supported(font))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support font types found in this file");
 
-	if (font->ft_buffer != NULL)
+	if (font->buffer != NULL)
 	{
 		/* This will add it to the xref if needed */
-		fres = pdf_add_cid_font_res(ctx, doc, font->ft_buffer, font);
+		fres = pdf_add_cid_font_res(ctx, doc, font);
 		fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", pdf_to_num(ctx, fres), size);
 
 		/* Possibly add to page resources */
@@ -575,9 +575,9 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span, float s
 		}
 
 		fz_buffer_printf(ctx, gs->buf, "<");
-		if (span->font->ft_buffer == NULL)
+		if (span->font->buffer == NULL)
 		{
-			/* A standard 14 type font */
+			/* A type3 font */
 			for (/* i from its current value */; i < j; i++)
 			{
 				fz_buffer_printf(ctx, gs->buf, "%02x", span->items[i].ucs);
@@ -585,7 +585,7 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span, float s
 		}
 		else
 		{
-			/* Non-standard font. Saved as Type0 Identity-H */
+			/* Saved as Type0 Identity-H */
 			for (/* i from its current value */; i < j; i++)
 			{
 				fz_buffer_printf(ctx, gs->buf, "%04x", span->items[i].gid);

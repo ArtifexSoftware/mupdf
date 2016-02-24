@@ -371,9 +371,12 @@ static int create_pdf(fz_context *ctx, char *output, resources fonts[], int num_
 				pch = strchr(content.fonts[k].name, ':');
 				if (pch != NULL)
 				{
+					fz_font *font;
 					im_font_buff = fz_read_file(ctx, &(pch[1]));
-					font_res = pdf_add_simple_font_res(ctx, pdf, im_font_buff);
+					font = fz_new_font_from_buffer(ctx, NULL, im_font_buff, 0, 0);
+					font_res = pdf_add_simple_font_res(ctx, pdf, font);
 					fz_drop_buffer(ctx, im_font_buff);
+					fz_drop_font(ctx, font);
 					im_font_buff = NULL;
 
 					/* Look through our font page resources and update the indirect

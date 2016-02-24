@@ -41,6 +41,22 @@ fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, int size)
 }
 
 fz_buffer *
+fz_new_buffer_from_shared_data(fz_context *ctx, unsigned char *data, int size)
+{
+	fz_buffer *b;
+
+	b = fz_malloc_struct(ctx, fz_buffer);
+	b->refs = 1;
+	b->data = data;
+	b->cap = size;
+	b->len = size;
+	b->unused_bits = 0;
+	b->shared = 1;
+
+	return b;
+}
+
+fz_buffer *
 fz_keep_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	if (buf)
@@ -55,7 +71,8 @@ fz_drop_buffer(fz_context *ctx, fz_buffer *buf)
 		return;
 	if (--buf->refs == 0)
 	{
-		fz_free(ctx, buf->data);
+		if (!buf->shared)
+			fz_free(ctx, buf->data);
 		fz_free(ctx, buf);
 	}
 }
@@ -63,6 +80,8 @@ fz_drop_buffer(fz_context *ctx, fz_buffer *buf)
 void
 fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size)
 {
+	if (buf->shared)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot resize a buffer with shared storage");
 	buf->data = fz_resize_array(ctx, buf->data, size, 1);
 	buf->cap = size;
 	if (buf->len > buf->cap)

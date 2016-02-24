@@ -1367,7 +1367,7 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, 
 	return x;
 }
 
-/* Populate font description.  According to spec, required for Latin fonts are
+/* Populate font description. According to spec, required for Latin fonts are
  * FontName, Flags, FontBBox, ItalicAngle, Ascent, Descent, CapHeight (Latin),
  * StemV */
 static void
@@ -1390,7 +1390,7 @@ pdf_fontdesc_init(fz_context *ctx, pdf_font_desc *fontdesc)
 	fontdesc->italic_angle = 0; /* 0 for now */
 
 	/* Get the cap height and stem thickness from capital O. Obviously an
-	.* issue if this is not a latin font */
+	 * issue if this is not a latin font */
 	fterr = FT_Load_Char(fontdesc->font->ft_face, 'O',
 		FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM);
 	if (fterr)
@@ -1429,7 +1429,7 @@ pdf_fontdesc_init(fz_context *ctx, pdf_font_desc *fontdesc)
 	}
 	count -= 1;
 	fontdesc->stem_v = width * (float)count / (float)face->glyph->bitmap.width;
-	fontdesc->flags = PDF_FD_NONSYMBOLIC;  /* ToDo: FixMe. Set non-symbolic always for now */
+	fontdesc->flags = PDF_FD_NONSYMBOLIC; /* ToDo: FixMe. Set non-symbolic always for now */
 }
 
 static void ft_width_for_simple_table(fz_context *ctx, pdf_font_desc *fontdesc,
@@ -1634,7 +1634,7 @@ pdf_add_cid_font_widths_entry(fz_context *ctx, pdf_document *doc, pdf_obj *fwobj
 		switch (state)
 		{
 		case FW_SAME:
-			/* Add three entries.  First cid, last cid and width */
+			/* Add three entries. First cid, last cid and width */
 			pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, first_code));
 			pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
 			pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_size));
@@ -1668,7 +1668,7 @@ pdf_add_cid_font_widths_entry(fz_context *ctx, pdf_document *doc, pdf_obj *fwobj
 	}
 }
 
-/* ToDo:  Ignore the default sized characters */
+/* ToDo: Ignore the default sized characters */
 static pdf_obj*
 pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, fz_font *source_font)
 {
@@ -1803,7 +1803,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 			}
 			else
 			{
-				/* Non conscecutive code.  Restart */
+				/* Non conscecutive code. Restart */
 				if (state == FW_RUN)
 				{
 					pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
@@ -1838,7 +1838,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 
 /* Descendant font construction used for CID font creation from ttf or Adobe type1 */
 static pdf_obj*
-pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, pdf_font_desc *fontdesc, fz_font *source_font)
+pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;
@@ -1848,7 +1848,8 @@ pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, p
 	pdf_obj *fw = NULL;
 
 	const char *ps_name;
-	FT_Face face = fontdesc->font->ft_face;
+	fz_font *font = fontdesc->font;
+	FT_Face face = font->ft_face;
 
 	fz_var(fobj);
 	fz_var(fref);
@@ -1859,23 +1860,23 @@ pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, p
 	fz_try(ctx)
 	{
 		/* refs */
-		fstr_ref = pdf_add_font_file(ctx, doc, buffer);
+		fstr_ref = pdf_add_font_file(ctx, doc, fontdesc->font->buffer);
 		fdes_ref = pdf_add_font_descriptor(ctx, doc, fontdesc, fstr_ref);
 		fsys_ref = pdf_add_cid_system_info(ctx, doc);
 
 		/* We may have a cid font already with width info in source font and no
 		 * cmap in the ft face */
-		fw = pdf_add_cid_font_widths(ctx, doc, fontdesc, source_font);
+		fw = pdf_add_cid_font_widths(ctx, doc, fontdesc, font);
 
 		/* And now the font */
 		fobj = pdf_new_dict(ctx, doc, 3);
 		pdf_dict_put_drop(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
-		pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, fontdesc->font->name));
+		pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font->name));
 		pdf_dict_put_drop(ctx, fobj, PDF_NAME_FontDescriptor, fdes_ref);
 		if (fw != NULL)
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_W, fw);
-		if (source_font != NULL && source_font->width_table != NULL)
-			pdf_dict_put_drop(ctx, fobj, PDF_NAME_DW, pdf_new_int(ctx, doc, source_font->width_default));
+		if (font->width_table != NULL)
+			pdf_dict_put_drop(ctx, fobj, PDF_NAME_DW, pdf_new_int(ctx, doc, font->width_default));
 		if ((ps_name = FT_Get_Postscript_Name(face)) != NULL)
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_string(ctx, doc, ps_name, strlen(ps_name)));
 		switch (ft_kind(face))
@@ -2119,11 +2120,10 @@ pdf_add_cid_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
 
 /* Creates CID font with Identity-H CMap and a ToUnicode CMap that is created by
  * using the TTF cmap table "backwards" to go from the GID to a Unicode value.
- * If this is coming from a source file, we have source_font so that we can
- * possibly get any width information that may have been embedded in the PDF
- * W name tag (or W2 if vertical text) */
+ * We can possibly get width information that may have been embedded in
+ * the PDF /W array (or W2 if vertical text) */
 pdf_obj *
-pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_font *source_font)
+pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;
@@ -2131,11 +2131,11 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 	pdf_obj *obj_tounicode_ref = NULL;
 	pdf_obj *obj_array = NULL;
 	pdf_font_desc *fontdesc = NULL;
-	fz_font *font = NULL;
 	FT_Face face;
 	FT_Error fterr;
 	int has_lock = 0;
 	unsigned char digest[16];
+	fz_buffer *buffer;
 
 	fz_var(fobj);
 	fz_var(fref);
@@ -2146,16 +2146,20 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 	fz_var(obj_array);
 	fz_var(has_lock);
 
+	if (font->t3procs)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create font resource for Type3 font");
+
+	buffer = font->buffer;
+
 	fz_try(ctx)
 	{
 		/* Before we add this font as a resource check if the same font
-		 * already exists in our resources for this doc.  If yes, then
+		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
+		fref = pdf_find_resource(ctx, doc, doc->resources->font, font->buffer, digest);
 		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
-			font = fz_new_font_from_memory(ctx, NULL, buffer->data, buffer->len, 0, 1);
 			fontdesc = pdf_new_font_desc(ctx);
 			fontdesc->font = font;
 			face = font->ft_face;
@@ -2169,7 +2173,7 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 			has_lock = 0;
 
 			/* Get the descendant font and the tounicode references */
-			obj_desc_ref = pdf_add_descendant_font(ctx, doc, buffer, fontdesc, source_font);
+			obj_desc_ref = pdf_add_descendant_font(ctx, doc, fontdesc);
 			obj_tounicode_ref = pdf_add_cid_to_unicode(ctx, doc, fontdesc);
 
 			/* And now the font */
@@ -2211,7 +2215,7 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 
 /* Creates simple font */
 pdf_obj *
-pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
+pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;
@@ -2219,7 +2223,6 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 	pdf_obj *fdes_ref = NULL;
 	pdf_obj *fwidth_ref = NULL;
 	pdf_font_desc *fontdesc;
-	fz_font *font;
 	FT_Face face;
 	FT_Error fterr;
 	const char *ps_name;
@@ -2236,19 +2239,23 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 	fz_var(font);
 	fz_var(has_lock);
 
+	if (font->t3procs)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create font resource for Type3 font");
+
 	fz_try(ctx)
 	{
 		/* Before we add this font as a resource check if the same font
-		* already exists in our resources for this doc.  If yes, then
+		* already exists in our resources for this doc. If yes, then
 		* hand back that reference */
-		fref = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
+		fref = pdf_find_resource(ctx, doc, doc->resources->font, font->buffer, digest);
 		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
 			fobj = pdf_new_dict(ctx, doc, 3);
-			font = fz_new_font_from_memory(ctx, NULL, buffer->data, buffer->len, 0, 1);
+			// XXX bad idea
 			font->width_count = 256;
 			font->width_table = fz_calloc(ctx, font->width_count, sizeof(int));
+			// XXX
 			fontdesc = pdf_new_font_desc(ctx);
 			fontdesc->font = font;
 			face = font->ft_face;
@@ -2263,7 +2270,7 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 			has_lock = 0;
 
 			/* refs */
-			fstr_ref = pdf_add_font_file(ctx, doc, buffer);
+			fstr_ref = pdf_add_font_file(ctx, doc, font->buffer);
 			fdes_ref = pdf_add_font_descriptor(ctx, doc, fontdesc, fstr_ref);
 			fwidth_ref = pdf_add_simple_font_widths(ctx, doc, fontdesc);
 
