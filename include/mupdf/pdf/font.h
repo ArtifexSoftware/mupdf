@@ -63,7 +63,6 @@ struct pdf_font_desc_s
 	float cap_height;
 	float x_height;
 	float missing_width;
-	float stem_v;
 
 	/* Encoding (CMap) */
 	pdf_cmap *encoding;

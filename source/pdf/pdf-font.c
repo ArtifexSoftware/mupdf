@@ -396,10 +396,10 @@ pdf_new_font_desc(fz_context *ctx)
 
 	fontdesc->flags = 0;
 	fontdesc->italic_angle = 0;
-	fontdesc->ascent = 0;
-	fontdesc->descent = 0;
-	fontdesc->cap_height = 0;
-	fontdesc->x_height = 0;
+	fontdesc->ascent = 800;
+	fontdesc->descent = -200;
+	fontdesc->cap_height = 800;
+	fontdesc->x_height = 500;
 	fontdesc->missing_width = 0;
 
 	fontdesc->encoding = NULL;
@@ -1367,71 +1367,6 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, 
 	return x;
 }
 
-/* Populate font description. According to spec, required for Latin fonts are
- * FontName, Flags, FontBBox, ItalicAngle, Ascent, Descent, CapHeight (Latin),
- * StemV */
-static void
-pdf_fontdesc_init(fz_context *ctx, pdf_font_desc *fontdesc)
-{
-	FT_Face face;
-	int fterr;
-	int row_pos;
-	unsigned char *ptr;
-	unsigned int k;
-	int count = 0;
-	int width;
-
-	if (fontdesc->font == NULL || fontdesc->font->ft_face == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create font description");
-
-	face = fontdesc->font->ft_face;
-	fontdesc->ascent = face->ascender * 1000.0f / face->units_per_EM;
-	fontdesc->descent = face->descender * 1000.0f / face->units_per_EM;
-	fontdesc->italic_angle = 0; /* 0 for now */
-
-	/* Get the cap height and stem thickness from capital O. Obviously an
-	 * issue if this is not a latin font */
-	fterr = FT_Load_Char(fontdesc->font->ft_face, 'O',
-		FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM);
-	if (fterr)
-	{
-		fz_warn(ctx, "freetype load char O: %s", ft_error_string(fterr));
-		return;
-	}
-	fontdesc->cap_height = face->glyph->metrics.height;
-	width = face->glyph->metrics.width;
-
-	fterr = FT_Set_Char_Size(fontdesc->font->ft_face, 1000, 1000, 300, 300);
-	if (fterr)
-	{
-		fz_warn(ctx, "freetype set char size: %s", ft_error_string(fterr));
-		return;
-	}
-	fterr = FT_Load_Char(fontdesc->font->ft_face, 'O', 0);
-	if (fterr)
-	{
-		fz_warn(ctx, "freetype load char O: %s", ft_error_string(fterr));
-		return;
-	}
-	fterr = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
-	if (fterr)
-	{
-		fz_warn(ctx, "freetype render glyph O: %s", ft_error_string(fterr));
-		return;
-	}
-	row_pos = floor(face->glyph->bitmap.rows / 2.0 + 0.5);
-	ptr = face->glyph->bitmap.buffer + row_pos * face->glyph->bitmap.pitch;
-	for (k = 0; k < face->glyph->bitmap.width; k++)
-	{
-		count += 1;
-		if (ptr[k] == 0)
-			break;
-	}
-	count -= 1;
-	fontdesc->stem_v = width * (float)count / (float)face->glyph->bitmap.width;
-	fontdesc->flags = PDF_FD_NONSYMBOLIC; /* ToDo: FixMe. Set non-symbolic always for now */
-}
-
 static pdf_obj*
 pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
 {
@@ -1489,7 +1424,7 @@ pdf_add_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_Ascent, pdf_new_real(ctx, doc, fontdesc->ascent));
 		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_Descent, pdf_new_real(ctx, doc, fontdesc->descent));
 		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_CapHeight, pdf_new_real(ctx, doc, fontdesc->cap_height));
-		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_StemV, pdf_new_real(ctx, doc, fontdesc->stem_v));
+		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_StemV, pdf_new_real(ctx, doc, 80));
 		pdf_dict_put_drop(ctx, fdobj, PDF_NAME_Flags, pdf_new_real(ctx, doc, fontdesc->flags));
 
 		switch (ft_kind(face))
@@ -2110,10 +2045,8 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 	pdf_obj *obj_array = NULL;
 	pdf_font_desc *fontdesc = NULL;
 	FT_Face face;
-	FT_Error fterr;
 	int has_lock = 0;
 	unsigned char digest[16];
-	fz_buffer *buffer;
 
 	fz_var(fobj);
 	fz_var(fref);
@@ -2124,11 +2057,6 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 	fz_var(obj_array);
 	fz_var(has_lock);
 
-	if (font->t3procs)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create font resource for Type3 font");
-
-	buffer = font->buffer;
-
 	fz_try(ctx)
 	{
 		/* Before we add this font as a resource check if the same font
@@ -2138,24 +2066,19 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
+			face = font->ft_face;
 			fontdesc = pdf_new_font_desc(ctx);
 			fontdesc->font = font;
-			face = font->ft_face;
-			fz_lock(ctx, FZ_LOCK_FREETYPE);
-			has_lock = 1;
-			fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
-			if (fterr)
-				fz_warn(ctx, "pdf_add_cid_font_res (FT_Set_Char_Size): %s", ft_error_string(fterr));
-			pdf_fontdesc_init(ctx, fontdesc);
-			fz_unlock(ctx, FZ_LOCK_FREETYPE);
-			has_lock = 0;
+			fontdesc->flags = PDF_FD_NONSYMBOLIC; /* ToDo: FixMe. Set non-symbolic always for now */
+			fontdesc->ascent = face->ascender * 1000.0f / face->units_per_EM;
+			fontdesc->descent = face->descender * 1000.0f / face->units_per_EM;
 
 			/* Get the descendant font and the tounicode references */
 			obj_desc_ref = pdf_add_descendant_font(ctx, doc, fontdesc);
 			obj_tounicode_ref = pdf_add_cid_to_unicode(ctx, doc, fontdesc);
 
 			/* And now the font */
-			fobj = pdf_new_dict(ctx, doc, 3);
+			fobj = pdf_new_dict(ctx, doc, 10);
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Subtype, PDF_NAME_Type0);
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, fontdesc->font->name));
@@ -2202,7 +2125,6 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 	pdf_obj *fwidth_ref = NULL;
 	pdf_font_desc *fontdesc;
 	FT_Face face;
-	FT_Error fterr;
 	const char *ps_name;
 	int has_lock = 0;
 	unsigned char digest[16];
@@ -2217,9 +2139,6 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 	fz_var(font);
 	fz_var(has_lock);
 
-	if (font->t3procs)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create font resource for Type3 font");
-
 	fz_try(ctx)
 	{
 		/* Before we add this font as a resource check if the same font
@@ -2229,18 +2148,12 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
-			fobj = pdf_new_dict(ctx, doc, 3);
+			face = font->ft_face;
 			fontdesc = pdf_new_font_desc(ctx);
 			fontdesc->font = font;
-			face = font->ft_face;
-			fz_lock(ctx, FZ_LOCK_FREETYPE);
-			has_lock = 1;
-			fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
-			if (fterr)
-				fz_warn(ctx, "pdf_add_simple_font_res: %s", ft_error_string(fterr));
-			pdf_fontdesc_init(ctx, fontdesc);
-			fz_unlock(ctx, FZ_LOCK_FREETYPE);
-			has_lock = 0;
+			fontdesc->flags = PDF_FD_NONSYMBOLIC; /* ToDo: FixMe. Set non-symbolic always for now */
+			fontdesc->ascent = face->ascender * 1000.0f / face->units_per_EM;
+			fontdesc->descent = face->descender * 1000.0f / face->units_per_EM;
 
 			/* refs */
 			fstr_ref = pdf_add_font_file(ctx, doc, font->buffer);
@@ -2248,6 +2161,7 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_font *font)
 			fwidth_ref = pdf_add_simple_font_widths(ctx, doc, fontdesc, &first_width, &last_width);
 
 			/* And now the font */
+			fobj = pdf_new_dict(ctx, doc, 10);
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, fontdesc->font->name));
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
