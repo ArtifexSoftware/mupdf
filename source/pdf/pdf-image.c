@@ -317,7 +317,7 @@ pdf_add_image_res(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 		/* Before we add this image as a resource check if the same image
 		 * already exists in our resources for this doc.  If yes, then
 		 * hand back that reference */
-		imres = pdf_resource_table_search(ctx, doc, doc->resources->image,
+		imres = pdf_find_resource(ctx, doc, doc->resources->image,
 			(void*)image, (void*) &(digest[0]));
 		if (imres == NULL)
 		{
@@ -448,7 +448,7 @@ pdf_add_image_res(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 			pdf_update_stream(ctx, doc, imref, buffer, 1);
 
 			/* Add ref to our image resource hash table. */
-			imres = pdf_resource_table_put(ctx, doc->resources->image, digest, imref);
+			imres = pdf_insert_resource(ctx, doc->resources->image, digest, imref);
 		}
 	}
 	fz_always(ctx)

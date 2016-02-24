@@ -12,7 +12,7 @@ void pdf_remove_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key);
  * Structures used for managing resource locations and avoiding multiple
  * occurrences when resources are added to the document. The search for existing
  * resources will be performed when we are first trying to add an item. Object
- * refs are stored in an fz_hash_table structure using a hash of the md5 sum of 
+ * refs are stored in an fz_hash_table structure using a hash of the md5 sum of
  * the data, enabling rapid lookup.
  */
 typedef struct pdf_res_s pdf_res;
@@ -24,8 +24,8 @@ struct pdf_res_s
 };
 
 typedef struct pdf_res_table_s pdf_res_table;
-typedef void* (pdf_res_search_fn)(fz_context *ctx, pdf_document *doc, pdf_res_table *list,
-	void *item, void *val);
+typedef pdf_res *(pdf_res_search_fn)(fz_context *ctx, pdf_document *doc, pdf_res_table *list,
+	void *item, unsigned char md5[16]);
 
 struct pdf_res_table_s
 {
@@ -43,10 +43,10 @@ struct pdf_resource_tables_s
 	pdf_res_table *shading;
 };
 
-void* pdf_resource_table_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, void *md5);
-void pdf_resource_table_init(fz_context *ctx, pdf_document *doc);
-void pdf_resource_table_free(fz_context *ctx, pdf_document *doc);
-void* pdf_resource_table_put(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj *obj);
+pdf_res *pdf_find_resource(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char md5[16]);
+void pdf_init_resource_tables(fz_context *ctx, pdf_document *doc);
+void pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc);
+pdf_res *pdf_insert_resource(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj *obj);
 
 /*
  * Functions, Colorspaces, Shadings and Images

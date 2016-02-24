@@ -13,10 +13,9 @@ res_table_free(fz_context *ctx, pdf_res_table *table)
 		n = fz_hash_len(ctx, table->hash);
 		for (i = 0; i < n; i++)
 		{
-			void *v = fz_hash_get_val(ctx, table->hash, i);
-			if (v)
+			res = fz_hash_get_val(ctx, table->hash, i);
+			if (res)
 			{
-				res = (pdf_res*)v;
 				pdf_drop_obj(ctx, res->obj);
 				fz_free(ctx, res);
 			}
@@ -109,13 +108,13 @@ res_image_init(fz_context *ctx, pdf_document *doc, pdf_res_table *table)
 				image = NULL;
 
 				/* Don't allow overwrites. Number the resources for pdfwrite */
-				if (fz_hash_find(ctx, table->hash, (void *)digest) == NULL)
+				if (fz_hash_find(ctx, table->hash, digest) == NULL)
 				{
 					res = fz_malloc(ctx, sizeof(pdf_res));
 					res->num = num;
 					res->obj = obj;
 					num = num + 1;
-					fz_hash_insert(ctx, table->hash, (void *)digest, obj);
+					fz_hash_insert(ctx, table->hash, digest, obj);
 				}
 			}
 			else
@@ -138,13 +137,10 @@ res_image_init(fz_context *ctx, pdf_document *doc, pdf_res_table *table)
 	}
 }
 
-static void*
-res_image_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item,
-	void *md5)
+static pdf_res *
+res_image_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char *digest)
 {
-	unsigned char digest[16];
-
-	fz_image *image = (fz_image*)item;
+	fz_image *image = item;
 	fz_hash_table *hash = table->hash;
 	pdf_res *res;
 
@@ -154,15 +150,10 @@ res_image_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void 
 
 	/* Create md5 and see if we have the item in our table */
 	res_image_get_md5(ctx, image, digest);
-	res = fz_hash_find(ctx, hash, (void*)digest);
-
-	/* Return the digest value so that we can avoid having to recompute it when
-	 * we come back to add the new resource reference */
-	if (res == NULL)
-		memcpy(md5, digest, 16);
-	else
+	res = fz_hash_find(ctx, hash, digest);
+	if (res)
 		pdf_keep_obj(ctx, res->obj);
-	return (void*) res;
+	return res;
 }
 
 /* Font specific methods */
@@ -187,12 +178,10 @@ res_font_get_md5(fz_context *ctx, fz_buffer *buffer, unsigned char *digest)
 	fz_md5_final(&state, digest);
 }
 
-static void*
-res_font_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item,
-	void *md5)
+static pdf_res *
+res_font_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char digest[16])
 {
-	unsigned char digest[16];
-	fz_buffer *buffer = (fz_buffer*)item;
+	fz_buffer *buffer = item;
 	fz_hash_table *hash = table->hash;
 	pdf_res *res;
 
@@ -202,27 +191,21 @@ res_font_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *
 
 	/* Create md5 and see if we have the item in our table */
 	res_font_get_md5(ctx, buffer, digest);
-	res = fz_hash_find(ctx, hash, (void*)digest);
-
-	/* Return the digest value so that we can avoid having to recompute it when
-	 * we come back to add the new resource reference */
-	if (res == NULL)
-		memcpy(md5, digest, 16);
-	else
+	res = fz_hash_find(ctx, hash, digest);
+	if (res)
 		pdf_keep_obj(ctx, res->obj);
-	return (void*)res;
+	return res;
 }
 
 /* Accessible methods */
-void*
-pdf_resource_table_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table,
-	void *item, void *md5)
+pdf_res *
+pdf_find_resource(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char md5[16])
 {
 	return table->search(ctx, doc, table, item, md5);
 }
 
-void*
-pdf_resource_table_put(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj *obj)
+pdf_res *
+pdf_insert_resource(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj *obj)
 {
 	void *result;
 	pdf_res *res = NULL;
@@ -256,7 +239,7 @@ pdf_resource_table_put(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj
 }
 
 void
-pdf_resource_table_free(fz_context *ctx, pdf_document *doc)
+pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc)
 {
 	if (doc->resources == NULL)
 		return;
@@ -270,9 +253,8 @@ pdf_resource_table_free(fz_context *ctx, pdf_document *doc)
 }
 
 void
-pdf_resource_table_init(fz_context *ctx, pdf_document *doc)
+pdf_init_resource_tables(fz_context *ctx, pdf_document *doc)
 {
-	fz_var(doc);
 	fz_try(ctx)
 	{
 		doc->resources = fz_calloc(ctx, 1, sizeof(pdf_resource_tables));
@@ -283,13 +265,7 @@ pdf_resource_table_init(fz_context *ctx, pdf_document *doc)
 	}
 	fz_catch(ctx)
 	{
-		if (doc->resources != NULL)
-		{
-			fz_free(ctx, doc->resources->color);
-			fz_free(ctx, doc->resources->font);
-			fz_free(ctx, doc->resources);
-			doc->resources = NULL;
-		}
-		fz_rethrow_message(ctx, "resources failed to allocate");
+		pdf_drop_resource_tables(ctx, doc);
+		fz_rethrow_message(ctx, "cannot allocate resource tables");
 	}
 }

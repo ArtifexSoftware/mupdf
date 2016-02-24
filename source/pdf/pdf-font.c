@@ -1476,7 +1476,7 @@ static void ft_width_for_simple_table(fz_context *ctx, pdf_font_desc *fontdesc,
 }
 
 static pdf_obj*
-pdf_font_stream_ref(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
+pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
 {
 	pdf_obj *obj = NULL;
 	pdf_obj *ref = NULL;
@@ -1504,7 +1504,7 @@ pdf_font_stream_ref(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
 }
 
 static pdf_obj*
-pdf_font_desc_ref(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *fileref)
+pdf_add_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *fileref)
 {
 	pdf_obj *ref = NULL;
 	pdf_obj *fdobj = NULL;
@@ -1563,7 +1563,7 @@ pdf_font_desc_ref(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, p
 }
 
 static pdf_obj*
-pdf_font_widths_ref(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc)
+pdf_add_simple_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc)
 {
 	pdf_obj *ref = NULL;
 	pdf_obj *arr = NULL;
@@ -1623,7 +1623,7 @@ pdf_add_cid_system_info(fz_context *ctx, pdf_document *doc)
 enum { FW_START, FW_SAME, FW_RUN };
 
 static void
-pdf_publish_cid_widths(fz_context *ctx, pdf_document *doc, pdf_obj *fwobj, pdf_obj *run_obj, int state, int first_code, int prev_code, int prev_size)
+pdf_add_cid_font_widths_entry(fz_context *ctx, pdf_document *doc, pdf_obj *fwobj, pdf_obj *run_obj, int state, int first_code, int prev_code, int prev_size)
 {
 	pdf_obj *temp_array = NULL;
 
@@ -1670,7 +1670,7 @@ pdf_publish_cid_widths(fz_context *ctx, pdf_document *doc, pdf_obj *fwobj, pdf_o
 
 /* ToDo:  Ignore the default sized characters */
 static pdf_obj*
-pdf_create_cid_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, fz_font *source_font)
+pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, fz_font *source_font)
 {
 	pdf_obj *fwobj = NULL;
 	pdf_obj *run_obj = NULL;
@@ -1814,7 +1814,7 @@ pdf_create_cid_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdes
 
 			if (publish)
 			{
-				pdf_publish_cid_widths(ctx, doc, fwobj, run_obj, state, first_code, prev_code, prev_size);
+				pdf_add_cid_font_widths_entry(ctx, doc, fwobj, run_obj, state, first_code, prev_code, prev_size);
 				state = new_state;
 				publish = 0;
 				first_code = new_first_code;
@@ -1824,7 +1824,7 @@ pdf_create_cid_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdes
 
 			/* See if we need to flush */
 			if (gindex == 0)
-				pdf_publish_cid_widths(ctx, doc, fwobj, run_obj, state, first_code, prev_code, prev_size);
+				pdf_add_cid_font_widths_entry(ctx, doc, fwobj, run_obj, state, first_code, prev_code, prev_size);
 		}
 	}
 	fz_catch(ctx)
@@ -1859,13 +1859,13 @@ pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, p
 	fz_try(ctx)
 	{
 		/* refs */
-		fstr_ref = pdf_font_stream_ref(ctx, doc, buffer);
-		fdes_ref = pdf_font_desc_ref(ctx, doc, fontdesc, fstr_ref);
+		fstr_ref = pdf_add_font_file(ctx, doc, buffer);
+		fdes_ref = pdf_add_font_descriptor(ctx, doc, fontdesc, fstr_ref);
 		fsys_ref = pdf_add_cid_system_info(ctx, doc);
 
 		/* We may have a cid font already with width info in source font and no
 		 * cmap in the ft face */
-		fw = pdf_create_cid_widths(ctx, doc, fontdesc, source_font);
+		fw = pdf_add_cid_font_widths(ctx, doc, fontdesc, source_font);
 
 		/* And now the font */
 		fobj = pdf_new_dict(ctx, doc, 3);
@@ -2153,8 +2153,7 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc.  If yes, then
 		 * hand back that reference */
-		fres = pdf_resource_table_search(ctx, doc, doc->resources->font,
-			(void*)buffer, (void*)&(digest[0]));
+		fres = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
 		if (fres == NULL)
 		{
 			/* Set up desc, width, and font file */
@@ -2189,7 +2188,7 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 			fref = pdf_new_ref(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
-			fres = pdf_resource_table_put(ctx, doc->resources->font, digest, fref);
+			fres = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
 		}
 	}
 	fz_always(ctx)
@@ -2247,8 +2246,7 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 		/* Before we add this font as a resource check if the same font
 		* already exists in our resources for this doc.  If yes, then
 		* hand back that reference */
-		fres = pdf_resource_table_search(ctx, doc, doc->resources->font,
-			(void*)buffer, (void*)&(digest[0]));
+		fres = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
 		if (fres == NULL)
 		{
 			/* Set up desc, width, and font file */
@@ -2270,9 +2268,9 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 			has_lock = 0;
 
 			/* refs */
-			fstr_ref = pdf_font_stream_ref(ctx, doc, buffer);
-			fdes_ref = pdf_font_desc_ref(ctx, doc, fontdesc, fstr_ref);
-			fwidth_ref = pdf_font_widths_ref(ctx, doc, fontdesc);
+			fstr_ref = pdf_add_font_file(ctx, doc, buffer);
+			fdes_ref = pdf_add_font_descriptor(ctx, doc, fontdesc, fstr_ref);
+			fwidth_ref = pdf_add_simple_font_widths(ctx, doc, fontdesc);
 
 			/* And now the font */
 			pdf_dict_put_drop(ctx, fobj, PDF_NAME_Type, PDF_NAME_Font);
@@ -2299,7 +2297,7 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 			fref = pdf_new_ref(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
-			fres = pdf_resource_table_put(ctx, doc->resources->font, digest, fref);
+			fres = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
 		}
 	}
 	fz_always(ctx)
