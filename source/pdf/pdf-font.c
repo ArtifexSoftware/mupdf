@@ -1,5 +1,4 @@
 #include "mupdf/pdf.h"
-#include <zlib.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -1476,61 +1475,28 @@ static void ft_width_for_simple_table(fz_context *ctx, pdf_font_desc *fontdesc,
 	}
 }
 
-/* This needs to go away and we need to denote when the buffer is or is not
-* deflated */
-static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, int n)
-{
-	fz_buffer *buf;
-	uLongf csize;
-	int t;
-
-	buf = fz_new_buffer(ctx, compressBound(n));
-	csize = buf->cap;
-	t = compress(buf->data, &csize, p, n);
-	if (t != Z_OK)
-	{
-		fz_drop_buffer(ctx, buf);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot deflate buffer");
-	}
-	buf->len = csize;
-	return buf;
-}
-
 static pdf_obj*
 pdf_font_stream_ref(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
 {
 	pdf_obj *obj = NULL;
-	pdf_obj *newlen = NULL;
-	pdf_obj *currlen = NULL;
 	pdf_obj *ref = NULL;
-	fz_buffer *d_buf = NULL;
 
 	fz_var(obj);
-	fz_var(newlen);
-	fz_var(currlen);
 	fz_var(ref);
 
 	fz_try(ctx)
 	{
 		obj = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
-		currlen = pdf_new_int(ctx, doc, buf->len);
-		d_buf = deflatebuf(ctx, buf->data, buf->len);
-		newlen = pdf_new_int(ctx, doc, d_buf->len);
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length, newlen);
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length1, currlen);
+		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length1, pdf_new_int(ctx, doc, buf->len));
 		ref = pdf_new_ref(ctx, doc, obj);
-		pdf_update_stream(ctx, doc, ref, d_buf, 1);
+		pdf_update_stream(ctx, doc, ref, buf, 0);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_buffer(ctx, d_buf);
 		pdf_drop_obj(ctx, obj);
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_obj(ctx, newlen);
-		pdf_drop_obj(ctx, currlen);
 		pdf_drop_obj(ctx, ref);
 		fz_rethrow(ctx);
 	}
