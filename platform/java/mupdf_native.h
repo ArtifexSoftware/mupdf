@@ -572,11 +572,35 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Font_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    newNative
+ * Signature: (Ljava/lang/String;I)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Font_newNative
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
  * Method:    getName
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Font_getName
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    encodeCharacter
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Font_encodeCharacter
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Font
+ * Method:    advanceGlyph
+ * Signature: (II)F
+ */
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_Font_advanceGlyph
+  (JNIEnv *, jobject, jint, jint);
 
 #ifdef __cplusplus
 }
@@ -599,6 +623,22 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Image_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    newNativeFromPixmap
+ * Signature: (Lcom/artifex/mupdf/fitz/Pixmap;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Image_newNativeFromPixmap
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    newNativeFromFile
+ * Signature: (Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Image_newNativeFromFile
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
  * Method:    getWidth
  * Signature: ()I
  */
@@ -615,22 +655,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getHeight
 
 /*
  * Class:     com_artifex_mupdf_fitz_Image
- * Method:    getNumberOfComponents
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getNumberOfComponents
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Image
- * Method:    getBitsPerComponent
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getBitsPerComponent
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Image
  * Method:    getXResolution
  * Signature: ()I
  */
@@ -643,6 +667,22 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getXResolution
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getYResolution
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    getNumberOfComponents
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getNumberOfComponents
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    getBitsPerComponent
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Image_getBitsPerComponent
   (JNIEnv *, jobject);
 
 /*
@@ -668,6 +708,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Image_getInterpolate
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Image_getMask
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Image
+ * Method:    toPixmap
+ * Signature: (II)Lcom/artifex/mupdf/fitz/Pixmap;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Image_toPixmap
+  (JNIEnv *, jobject, jint, jint);
 
 #ifdef __cplusplus
 }
@@ -1506,10 +1554,18 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Text_cloneNative
 /*
  * Class:     com_artifex_mupdf_fitz_Text
  * Method:    showGlyph
- * Signature: (Lcom/artifex/mupdf/fitz/Font;ZLcom/artifex/mupdf/fitz/Matrix;II)V
+ * Signature: (Lcom/artifex/mupdf/fitz/Font;Lcom/artifex/mupdf/fitz/Matrix;III)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Text_showGlyph
-  (JNIEnv *, jobject, jobject, jboolean, jobject, jint, jint);
+  (JNIEnv *, jobject, jobject, jobject, jint, jint, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Text
+ * Method:    showString
+ * Signature: (Lcom/artifex/mupdf/fitz/Font;Lcom/artifex/mupdf/fitz/Matrix;Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Text_showString
+  (JNIEnv *, jobject, jobject, jobject, jstring, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Text

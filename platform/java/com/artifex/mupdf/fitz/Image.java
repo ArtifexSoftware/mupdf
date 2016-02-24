@@ -11,20 +11,35 @@ public class Image
 		pointer = 0;
 	}
 
+	private native long newNativeFromPixmap(Pixmap pixmap);
+	private native long newNativeFromFile(String filename);
+
 	private Image(long p) {
 		pointer = p;
 	}
 
+	public Image(Pixmap pixmap) {
+		pointer = newNativeFromPixmap(pixmap);
+	}
+
+	public Image(String filename) {
+		pointer = newNativeFromFile(filename);
+	}
+
 	public native int getWidth();
 	public native int getHeight();
-	public native int getNumberOfComponents();
-	public native int getBitsPerComponent();
 	public native int getXResolution();
 	public native int getYResolution();
+
+	public native int getNumberOfComponents();
+	public native int getBitsPerComponent();
 	public native boolean getImageMask();
 	public native boolean getInterpolate();
 	public native Image getMask();
 
-	// FIXME: Get data back?
-	// FIXME: Create images from data or java streams?
+	public native Pixmap toPixmap(int w, int h);
+
+	public Pixmap toPixmap() {
+		return toPixmap(getWidth(), getHeight());
+	}
 }

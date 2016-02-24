@@ -395,7 +395,7 @@ static int find_fids(JNIEnv *env)
 	mid_Text_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_TextWalker = get_class(&err, env, PKG"TextWalker");
-	mid_TextWalker_showGlyph = get_method(&err, env, "showGlyph", "(L"PKG"Font;ZL"PKG"Matrix;II)V");
+	mid_TextWalker_showGlyph = get_method(&err, env, "showGlyph", "(L"PKG"Font;L"PKG"Matrix;III)V");
 
 	cls_TryLaterException = get_class(&err, env, PKG"TryLaterException");
 
@@ -1374,8 +1374,10 @@ JNIEXPORT jlong JNICALL
 FUN(Device_newNative)(JNIEnv *env, jclass self)
 {
 	fz_context *ctx = get_context(env);
-
 	fz_device *dev = NULL;
+
+	if (ctx == NULL)
+		return 0;
 
 	fz_try(ctx)
 		dev = fz_new_java_device(ctx, env, self);
@@ -2244,15 +2246,84 @@ FUN(Font_finalize)(JNIEnv *env, jobject self)
 	fz_drop_font(ctx, font);
 }
 
+JNIEXPORT jlong JNICALL
+FUN(Font_newNative)(JNIEnv *env, jobject self, jstring jname, jint index)
+{
+	fz_context *ctx = get_context(env);
+	const char *name = NULL;
+	fz_font *font = NULL;
+
+	if (ctx == NULL || jname == NULL)
+		return 0;
+
+	name = (*env)->GetStringUTFChars(env, jname, NULL);
+	if (name == NULL)
+		return 0;
+
+	fz_try(ctx)
+	{
+		unsigned char *data;
+		unsigned int size;
+		data = fz_lookup_base14_font(ctx, name, &size);
+		if (data)
+			font = fz_new_font_from_memory(ctx, name, data, size, index, 0);
+		else
+			font = fz_new_font_from_file(ctx, name, name, index, 0);
+	}
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jname, name);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return jlong_cast(font);
+}
+
 JNIEXPORT jstring JNICALL
 FUN(Font_getName)(JNIEnv *env, jobject self)
 {
+	fz_context *ctx = get_context(env);
 	fz_font *font = from_Font(env, self);
 
-	if (font == NULL)
+	if (ctx == NULL || font == NULL)
 		return NULL;
 
 	return (*env)->NewStringUTF(env, font->name);
+}
+
+JNIEXPORT jint JNICALL
+FUN(Font_encodeCharacter)(JNIEnv *env, jobject self, jint unicode)
+{
+	fz_context *ctx = get_context(env);
+	fz_font *font = from_Font(env, self);
+	jint glyph = 0;
+
+	if (ctx == NULL || font == NULL)
+		return 0;
+
+	fz_try(ctx)
+		glyph = fz_encode_character(ctx, font, unicode);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return glyph;
+}
+
+JNIEXPORT jfloat JNICALL
+FUN(Font_advanceGlyph)(JNIEnv *env, jobject self, jint glyph, jint wmode)
+{
+	fz_context *ctx = get_context(env);
+	fz_font *font = from_Font(env, self);
+	float advance = 0;
+
+	if (ctx == NULL || font == NULL)
+		return 0;
+
+	fz_try(ctx)
+		advance = fz_advance_glyph(ctx, font, glyph, wmode);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return advance;
 }
 
 /* Pixmap Interface */
@@ -2956,7 +3027,7 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 }
 
 JNIEXPORT void JNICALL
-FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jboolean wmode, jobject matrix_, jint glyph, jint unicode)
+FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jint glyph, jint unicode, jint wmode)
 {
 	fz_context *ctx = get_context(env);
 	fz_text *text = from_Text(env, self);
@@ -2967,9 +3038,36 @@ FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jboolean wmode, jo
 		return;
 
 	fz_try(ctx)
-		fz_show_glyph(ctx, text, font, wmode, &trm, glyph, unicode);
+		fz_show_glyph(ctx, text, font, &trm, glyph, unicode, wmode);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(Text_showString)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jstring string_, jint wmode)
+{
+	fz_context *ctx = get_context(env);
+	fz_text *text = from_Text(env, self);
+	fz_font *font = from_Font(env, font_);
+	fz_matrix trm = from_Matrix(env, matrix_);
+	const char *string;
+
+	if (ctx == NULL || text == NULL)
+		return;
+
+	string = (*env)->GetStringUTFChars(env, string_, NULL);
+	if (string == NULL)
+		return;
+
+	fz_try(ctx)
+		fz_show_string(ctx, text, font, &trm, string, wmode);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, string_, string);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	(*env)->SetFloatField(env, matrix_, fid_Matrix_e, trm.e);
+	(*env)->SetFloatField(env, matrix_, fid_Matrix_f, trm.f);
 }
 
 JNIEXPORT void JNICALL
@@ -3012,9 +3110,10 @@ FUN(Text_walk)(JNIEnv *env, jobject self, jobject walker)
 			(*env)->SetFloatField(env, jtrm, fid_Matrix_f, span->items[i].y);
 
 			(*env)->CallVoidMethod(env, walker, mid_TextWalker_showGlyph,
-					jfont, (jboolean)span->wmode, jtrm,
+					jfont, jtrm,
 					(jint)span->items[i].gid,
-					(jint)span->items[i].ucs);
+					(jint)span->items[i].ucs,
+					(jint)span->wmode);
 
 			if ((*env)->ExceptionCheck(env))
 				return;
@@ -3034,6 +3133,48 @@ FUN(Image_finalize)(JNIEnv *env, jobject self)
 		return;
 
 	fz_drop_image(ctx, image);
+}
+
+JNIEXPORT jlong JNICALL
+FUN(Image_newNativeFromPixmap)(JNIEnv *env, jobject self, jobject pixmap_)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, pixmap_);
+	fz_image *image = NULL;
+
+	if (ctx == NULL)
+		return 0;
+
+	fz_try(ctx)
+		image = fz_new_image_from_pixmap(ctx, pixmap, NULL);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return jlong_cast(image);
+}
+
+JNIEXPORT jlong JNICALL
+FUN(Image_newNativeFromFile)(JNIEnv *env, jobject self, jstring jfilename)
+{
+	fz_context *ctx = get_context(env);
+	const char *filename = NULL;
+	fz_image *image = NULL;
+
+	if (ctx == NULL || jfilename == NULL)
+		return 0;
+
+	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+	if (filename == NULL)
+		return 0;
+
+	fz_try(ctx)
+		image = fz_new_image_from_file(ctx, filename);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return jlong_cast(image);
 }
 
 JNIEXPORT jint JNICALL
@@ -3108,6 +3249,21 @@ FUN(Image_getMask)(JNIEnv *env, jobject self)
 		jni_rethrow(env, ctx);
 
 	return jmask;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Image_toPixmap)(JNIEnv *env, jobject self, jint w, jint h)
+{
+	fz_context *ctx = get_context(env);
+	fz_image *img = from_Image(env, self);
+	fz_pixmap *pixmap = NULL;
+
+	fz_try(ctx)
+		pixmap = fz_get_pixmap_from_image(ctx, img, w, h);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_Pixmap_safe(ctx, env, pixmap);
 }
 
 /* Outline interface */
