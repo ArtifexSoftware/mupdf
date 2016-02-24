@@ -76,7 +76,6 @@ static int is_all_white(const char *s)
 	return 1;
 }
 
-
 /* TODO: pool allocator for flow nodes */
 /* TODO: store text by pointing to a giant buffer */
 

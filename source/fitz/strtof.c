@@ -7,21 +7,21 @@
 #define NAN (INFINITY-INFINITY)
 #endif
 
-/* 
+/*
    We use "Algorithm D" from "Contributions to a Proposed Standard for Binary
-   Floating-Point Arithmetic" by Jerome Coonen (1984). 
+   Floating-Point Arithmetic" by Jerome Coonen (1984).
 
-   The implementation uses a self-made floating point type, 'strtof_fp_t', with 
+   The implementation uses a self-made floating point type, 'strtof_fp_t', with
    a 32-bit significand. The steps of the algorithm are
-   
+
    INPUT: Up to 9 decimal digits d1 , ... d9 and an exponent dexp.
    OUTPUT: A float corresponding to the number d1 ... d9 * 10^dexp.
-   
+
    1) Convert the integer d1 ... d9 to an strtof_fp_t x.
    2) Lookup the strtof_fp_t  power = 10 ^ |dexp|.
    3) If dexp is positive set x = x * power, else set x = x / power. Use rounding mode 'round to odd'.
    4) Round x to a float using rounding mode 'to even'.
-   
+
    Step 1) is always lossless as the strtof_fp_t's significand can hold a 9-digit integer.
    In the case |dexp| <= 13 the cached power is exact and the algoritm returns
    the exactly rounded result (with rounding mode 'to even').
@@ -46,7 +46,7 @@ strtof_multiply(strtof_fp_t x, strtof_fp_t y)
 	strtof_fp_t res;
 
 	assert(x.f & y.f & 0x80000000);
-  
+
 	res.e = x.e + y.e + 32;
 	tmp = (uint64_t) x.f * y.f;
 	/* Normalize.  */
@@ -55,7 +55,7 @@ strtof_multiply(strtof_fp_t x, strtof_fp_t y)
 		tmp <<= 1;
 		--res.e;
 	}
-  
+
 	res.f = tmp >> 32;
 
 	/* Set the last bit of the significand to 1 if the result is
@@ -71,7 +71,7 @@ divide(strtof_fp_t x, strtof_fp_t y)
 	uint64_t product, quotient;
 	uint32_t remainder;
 	strtof_fp_t res;
-  
+
 	res.e = x.e - y.e - 32;
 	product = (uint64_t) x.f << 32;
 	quotient = product / y.f;
@@ -89,8 +89,6 @@ divide(strtof_fp_t x, strtof_fp_t y)
 		res.f |= 1;
 	return res;
 }
-
-
 
 /* From 10^0 to 10^54. Generated with GNU MPFR.  */
 static const uint32_t strtof_powers_ten[55] = {
@@ -160,13 +158,12 @@ uint32_to_diy (uint32_t x)
 {
 	strtof_fp_t result = {x, 0};
 	unsigned shift = leading_zeros(x);
-  
+
 	result.f <<= shift;
 	result.e -= shift;
 	return result;
 }
 
-  
 #define SP_SIGNIFICAND_SIZE 23
 #define SP_EXPONENT_BIAS (127 + SP_SIGNIFICAND_SIZE)
 #define SP_MIN_EXPONENT (-SP_EXPONENT_BIAS)
@@ -189,7 +186,7 @@ diy_to_float(strtof_fp_t x, int negative)
 	} tmp;
 
 	assert(x.f & 0x80000000);
-  
+
 	/* We have 2^32 - 2^7 = 0xffffff80.  */
 	if (x.e > 96 || (x.e == 96 && x.f >= 0xffffff80))
 	{
@@ -227,7 +224,7 @@ diy_to_float(strtof_fp_t x, int negative)
 		int shift = -149 - x.e; 	/* 9 <= shift <= 31.  */
 
 		result = x.f >> shift;
-      
+
 		if (x.f & (1U << (shift - 1)))
 			/* Round-bit is set.  */
 		{
@@ -255,7 +252,7 @@ diy_to_float(strtof_fp_t x, int negative)
 
 	if (negative)
 		result |= 0x80000000;
-  
+
 	tmp.n = result;
 	return tmp.f;
 }
@@ -264,7 +261,7 @@ static float
 scale_integer_to_float(uint32_t M, int N, int negative)
 {
 	strtof_fp_t result, x, power;
-  
+
 	if (M == 0)
 		return negative ? -0.f : 0.f;
 	if (N > 38)
@@ -304,12 +301,12 @@ scale_integer_to_float(uint32_t M, int N, int negative)
 		power = strtof_cached_power(-N);
 		result = divide(x, power);
 	}
-  
+
 	return diy_to_float(result, negative);
 }
 
 /* Return non-zero if *s starts with string (must be uppercase), ignoring case,
-   and increment *s by its length.   */ 
+   and increment *s by its length.   */
 static int
 starts_with(const char **s, const char *string)
 {
@@ -342,7 +339,7 @@ strtof_internal(const char *string, char **tailptr, int exp_format)
 	int decimal_digits = 0;
 	int negative = 0;
 	const char *number_start = 0;
-  
+
 	/* Skip leading whitespace (isspace in "C" locale).  */
 	s = string;
 	while (*s == ' ' || *s == '\f' || *s == '\n' || *s == '\r' || *s ==  '\t'
@@ -419,7 +416,7 @@ strtof_internal(const char *string, char **tailptr, int exp_format)
 			return 0.f;
 		}
 	}
-  
+
 	/* Parse exponent. */
 	if (exp_format && (*s == 'e' || *s == 'E'))
 	{
@@ -427,7 +424,7 @@ strtof_internal(const char *string, char **tailptr, int exp_format)
 		int exp = 0;
 		const char *int_start;
 		const char *exp_start = s;
-      
+
 		++s;
 		if (*s == '+')
 			++s;
