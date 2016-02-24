@@ -800,7 +800,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 		fz_concat(&trm, &tm, ctm);
 
 		/* Calculate bounding box and new pen position based on font metrics */
-		adv = fz_advance_glyph(ctx, font, span->items[i].gid);
+		adv = fz_advance_glyph(ctx, font, span->items[i].gid, style->wmode);
 
 		/* Check for one glyph to many char mapping */
 		for (j = i + 1; j < span->len; j++)

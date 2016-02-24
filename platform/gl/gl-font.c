@@ -239,14 +239,14 @@ static float ui_draw_glyph(fz_font *font, int gid, float x, float y)
 	glTexCoord2f(s1, t1); glVertex2f(xc + glyph->w, yc);
 	glTexCoord2f(s0, t1); glVertex2f(xc, yc);
 
-	return fz_advance_glyph(ctx, font, gid) * g_font_size;
+	return fz_advance_glyph(ctx, font, gid, 0) * g_font_size;
 }
 
 float ui_measure_character(fz_context *ctx, int ucs)
 {
 	fz_font *font;
 	int gid = fz_encode_character_with_fallback(ctx, g_font, ucs, 0, &font);
-	return fz_advance_glyph(ctx, font, gid) * g_font_size;
+	return fz_advance_glyph(ctx, font, gid, 0) * g_font_size;
 }
 
 float ui_draw_character(fz_context *ctx, int ucs, float x, float y)

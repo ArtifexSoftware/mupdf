@@ -120,7 +120,7 @@ void fz_run_t3_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *t
 
 void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc);
 
-float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph);
+float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph, int wmode);
 int fz_encode_character(fz_context *ctx, fz_font *font, int unicode);
 int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicode, int script, fz_font **out_font);
 

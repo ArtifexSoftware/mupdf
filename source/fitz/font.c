@@ -1378,7 +1378,7 @@ int fz_glyph_cacheable(fz_context *ctx, fz_font *font, int gid)
 }
 
 static float
-fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
+fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 {
 	FT_Fixed adv;
 	int mask;
@@ -1392,8 +1392,8 @@ fz_advance_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	}
 
 	mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM;
-	/* if (font->wmode)
-		mask |= FT_LOAD_VERTICAL_LAYOUT; */
+	if (wmode)
+		mask |= FT_LOAD_VERTICAL_LAYOUT;
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
 	FT_Get_Advance(font->ft_face, gid, mask, &adv);
 	fz_unlock(ctx, FZ_LOCK_FREETYPE);
@@ -1409,10 +1409,12 @@ fz_advance_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 }
 
 float
-fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
+fz_advance_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 {
 	if (font->ft_face)
 	{
+		if (wmode)
+			return fz_advance_ft_glyph(ctx, font, gid, 1);
 		if (gid >= 0 && gid < font->glyph_count && gid < MAX_ADVANCE_CACHE)
 		{
 			if (!font->advance_cache)
@@ -1420,12 +1422,12 @@ fz_advance_glyph(fz_context *ctx, fz_font *font, int gid)
 				int i;
 				font->advance_cache = fz_malloc_array(ctx, font->glyph_count, sizeof(float));
 				for (i = 0; i < font->glyph_count; ++i)
-					font->advance_cache[i] = fz_advance_ft_glyph(ctx, font, i);
+					font->advance_cache[i] = fz_advance_ft_glyph(ctx, font, i, 0);
 			}
 			return font->advance_cache[gid];
 		}
 
-		return fz_advance_ft_glyph(ctx, font, gid);
+		return fz_advance_ft_glyph(ctx, font, gid, 0);
 	}
 	if (font->t3procs)
 		return fz_advance_t3_glyph(ctx, font, gid);

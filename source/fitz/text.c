@@ -80,7 +80,7 @@ fz_grow_text_span(fz_context *ctx, fz_text_span *span, int n)
 }
 
 void
-fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz_matrix *trm, int gid, int ucs)
+fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int gid, int ucs, int wmode)
 {
 	fz_text_span *span;
 
@@ -96,6 +96,26 @@ fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, int wmode, const fz
 	span->items[span->len].x = trm->e;
 	span->items[span->len].y = trm->f;
 	span->len++;
+}
+
+void
+fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix *trm, const char *s, int wmode)
+{
+	fz_font *font;
+	int gid, ucs;
+	float adv;
+
+	while (*s)
+	{
+		s += fz_chartorune(&ucs, s);
+		gid = fz_encode_character_with_fallback(ctx, user_font, ucs, 0, &font);
+		fz_show_glyph(ctx, text, font, trm, gid, ucs, wmode);
+		adv = fz_advance_glyph(ctx, font, gid, wmode);
+		if (wmode == 0)
+			fz_pre_translate(trm, adv, 0);
+		else
+			fz_pre_translate(trm, 0, -adv);
+	}
 }
 
 fz_rect *
