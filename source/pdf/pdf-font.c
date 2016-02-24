@@ -2122,12 +2122,11 @@ pdf_add_cid_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
  * If this is coming from a source file, we have source_font so that we can
  * possibly get any width information that may have been embedded in the PDF
  * W name tag (or W2 if vertical text) */
-pdf_res*
+pdf_obj *
 pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_font *source_font)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;
-	pdf_res *fres = NULL;
 	pdf_obj *obj_desc_ref = NULL;
 	pdf_obj *obj_tounicode_ref = NULL;
 	pdf_obj *obj_array = NULL;
@@ -2140,7 +2139,6 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 
 	fz_var(fobj);
 	fz_var(fref);
-	fz_var(fres);
 	fz_var(obj_desc_ref);
 	fz_var(obj_tounicode_ref);
 	fz_var(fontdesc);
@@ -2153,8 +2151,8 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc.  If yes, then
 		 * hand back that reference */
-		fres = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
-		if (fres == NULL)
+		fref = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
+		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
 			font = fz_new_font_from_memory(ctx, NULL, buffer->data, buffer->len, 0, 1);
@@ -2188,12 +2186,11 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 			fref = pdf_new_ref(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
-			fres = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
+			fref = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
 		}
 	}
 	fz_always(ctx)
 	{
-		fz_drop_font(ctx, font);
 		if (fontdesc != NULL)
 			fontdesc->font = NULL;
 		pdf_drop_font(ctx, fontdesc);
@@ -2209,16 +2206,15 @@ pdf_add_cid_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer, fz_f
 		pdf_drop_obj(ctx, fref);
 		fz_rethrow(ctx);
 	}
-	return fres;
+	return fref;
 }
 
 /* Creates simple font */
-pdf_res*
+pdf_obj *
 pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 {
 	pdf_obj *fobj = NULL;
 	pdf_obj *fref = NULL;
-	pdf_res *fres = NULL;
 	pdf_obj *fstr_ref = NULL;
 	pdf_obj *fdes_ref = NULL;
 	pdf_obj *fwidth_ref = NULL;
@@ -2233,7 +2229,6 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 
 	fz_var(fobj);
 	fz_var(fref);
-	fz_var(fres);
 	fz_var(fstr_ref);
 	fz_var(fdes_ref);
 	fz_var(fwidth_ref);
@@ -2246,8 +2241,8 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 		/* Before we add this font as a resource check if the same font
 		* already exists in our resources for this doc.  If yes, then
 		* hand back that reference */
-		fres = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
-		if (fres == NULL)
+		fref = pdf_find_resource(ctx, doc, doc->resources->font, buffer, digest);
+		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
 			fobj = pdf_new_dict(ctx, doc, 3);
@@ -2297,12 +2292,11 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 			fref = pdf_new_ref(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
-			fres = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
+			fref = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
 		}
 	}
 	fz_always(ctx)
 	{
-		fz_drop_font(ctx, font);
 		if (fontdesc != NULL)
 			fontdesc->font = NULL;
 		pdf_drop_font(ctx, fontdesc);
@@ -2318,7 +2312,7 @@ pdf_add_simple_font_res(fz_context *ctx, pdf_document *doc, fz_buffer *buffer)
 		pdf_drop_obj(ctx, fref);
 		fz_rethrow(ctx);
 	}
-	return fres;
+	return fref;
 }
 
 int

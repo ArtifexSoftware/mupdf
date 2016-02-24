@@ -4,7 +4,7 @@ static void
 res_table_free(fz_context *ctx, pdf_res_table *table)
 {
 	int i, n;
-	pdf_res *res;
+	pdf_obj *res;
 
 	if (table == NULL)
 		return;
@@ -15,10 +15,7 @@ res_table_free(fz_context *ctx, pdf_res_table *table)
 		{
 			res = fz_hash_get_val(ctx, table->hash, i);
 			if (res)
-			{
-				pdf_drop_obj(ctx, res->obj);
-				fz_free(ctx, res);
-			}
+				pdf_drop_obj(ctx, res);
 		}
 		fz_drop_hash(ctx, table->hash);
 	}
@@ -83,10 +80,9 @@ res_image_init(fz_context *ctx, pdf_document *doc, pdf_res_table *table)
 	int len, k;
 	pdf_obj *obj;
 	pdf_obj *type;
-	pdf_res *res = NULL;
+	pdf_obj *res = NULL;
 	fz_image *image = NULL;
 	unsigned char digest[16];
-	int num = 0;
 
 	fz_var(obj);
 	fz_var(image);
@@ -107,15 +103,9 @@ res_image_init(fz_context *ctx, pdf_document *doc, pdf_res_table *table)
 				fz_drop_image(ctx, image);
 				image = NULL;
 
-				/* Don't allow overwrites. Number the resources for pdfwrite */
+				/* Don't allow overwrites. */
 				if (fz_hash_find(ctx, table->hash, digest) == NULL)
-				{
-					res = fz_malloc(ctx, sizeof(pdf_res));
-					res->num = num;
-					res->obj = obj;
-					num = num + 1;
 					fz_hash_insert(ctx, table->hash, digest, obj);
-				}
 			}
 			else
 			{
@@ -126,23 +116,22 @@ res_image_init(fz_context *ctx, pdf_document *doc, pdf_res_table *table)
 	}
 	fz_always(ctx)
 	{
-		table->count = num;
 		fz_drop_image(ctx, image);
 		pdf_drop_obj(ctx, obj);
 	}
 	fz_catch(ctx)
 	{
 		res_table_free(ctx, table);
-		fz_rethrow_message(ctx, "image resources table failed to initialize");
+		fz_rethrow_message(ctx, "cannot initialize image resource table");
 	}
 }
 
-static pdf_res *
+static pdf_obj *
 res_image_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char *digest)
 {
 	fz_image *image = item;
 	fz_hash_table *hash = table->hash;
-	pdf_res *res;
+	pdf_obj *res;
 
 	if (hash == NULL)
 		res_image_init(ctx, doc, doc->resources->image);
@@ -152,7 +141,7 @@ res_image_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void 
 	res_image_get_md5(ctx, image, digest);
 	res = fz_hash_find(ctx, hash, digest);
 	if (res)
-		pdf_keep_obj(ctx, res->obj);
+		pdf_keep_obj(ctx, res);
 	return res;
 }
 
@@ -178,12 +167,12 @@ res_font_get_md5(fz_context *ctx, fz_buffer *buffer, unsigned char *digest)
 	fz_md5_final(&state, digest);
 }
 
-static pdf_res *
+static pdf_obj *
 res_font_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char digest[16])
 {
 	fz_buffer *buffer = item;
 	fz_hash_table *hash = table->hash;
-	pdf_res *res;
+	pdf_obj *res;
 
 	if (hash == NULL)
 		res_font_init(ctx, doc, doc->resources->font);
@@ -193,49 +182,35 @@ res_font_search(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *
 	res_font_get_md5(ctx, buffer, digest);
 	res = fz_hash_find(ctx, hash, digest);
 	if (res)
-		pdf_keep_obj(ctx, res->obj);
+		pdf_keep_obj(ctx, res);
 	return res;
 }
 
 /* Accessible methods */
-pdf_res *
+pdf_obj *
 pdf_find_resource(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char md5[16])
 {
 	return table->search(ctx, doc, table, item, md5);
 }
 
-pdf_res *
+pdf_obj *
 pdf_insert_resource(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj *obj)
 {
-	void *result;
-	pdf_res *res = NULL;
-
-	fz_var(res);
+	pdf_obj *res;
 
 	fz_try(ctx)
 	{
-		res = fz_malloc(ctx, sizeof(pdf_res));
-		res->num = table->count + 1;
-		res->obj = obj;
-		result = fz_hash_insert(ctx, table->hash, key, (void*)res);
-		if (result != NULL)
-		{
-			fz_free(ctx, res);
-			fz_warn(ctx, "warning: hash already present");
-		}
+		res = fz_hash_insert(ctx, table->hash, key, obj);
+		if (res != NULL)
+			fz_warn(ctx, "warning: resource already present");
 		else
-		{
-			table->count = table->count + 1;
-			pdf_keep_obj(ctx, obj);
-			result = res;
-		}
+			res = pdf_keep_obj(ctx, obj);
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, res);
 		fz_rethrow(ctx);
 	}
-	return result;
+	return res;
 }
 
 void

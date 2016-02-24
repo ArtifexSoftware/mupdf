@@ -310,8 +310,8 @@ static int create_pdf(fz_context *ctx, char *output, resources fonts[], int num_
 	fz_image *image = NULL;
 	pdf_obj *font_dict = NULL;
 	pdf_obj *im_dict = NULL;
-	pdf_res *im_res = NULL;
-	pdf_res *font_res = NULL;
+	pdf_obj *im_res = NULL;
+	pdf_obj *font_res = NULL;
 	pdf_write_options opts = { 0 };
 	doc_content content = { 0 };
 	int k;
@@ -356,11 +356,9 @@ static int create_pdf(fz_context *ctx, char *output, resources fonts[], int num_
 					image = NULL;
 
 					/* Look through our image page resources and update the
-					 * indirect reference number. Here we don't use the numbers
-					 * set by the doc resource holder (i.e im_res->num) since we
-					 * are using our own content specified for pdfcreate */
+					 * indirect reference number. */
 					update_res(ctx, content.num_pages, content.num_page_im_res,
-						content.ref_im_resources, content.images[k].name, im_res->obj);
+						content.ref_im_resources, content.images[k].name, im_res);
 				}
 				else
 					fz_throw(ctx, FZ_ERROR_GENERIC, "Image indirect name too long");
@@ -381,7 +379,7 @@ static int create_pdf(fz_context *ctx, char *output, resources fonts[], int num_
 					/* Look through our font page resources and update the indirect
 					 * reference number */
 					update_res(ctx, content.num_pages, content.num_page_font_res,
-						content.ref_font_resources, content.fonts[k].name, font_res->obj);
+						content.ref_font_resources, content.fonts[k].name, font_res);
 				}
 				else
 					fz_throw(ctx, FZ_ERROR_GENERIC, "Font indirect name too long");
