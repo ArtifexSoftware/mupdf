@@ -96,7 +96,7 @@ struct pdf_device_s
 
 	int num_cid_fonts;
 	int max_cid_fonts;
-	int *font_indices;
+	fz_font **cid_fonts;
 
 	int num_alphas;
 	int max_alphas;
@@ -336,7 +336,7 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 			char text[32];
 			pdf_dict_put_drop(ctx, o, (stroke ? PDF_NAME_CA : PDF_NAME_ca), pdf_new_real(ctx, doc, alpha));
 			ref = pdf_new_ref(ctx, doc, o);
-			snprintf(text, sizeof(text), "ExtGState/Alp%d", i);
+			fz_snprintf(text, sizeof(text), "ExtGState/Alp%d", i);
 			pdf_dict_putp(ctx, pdev->resources, text, ref);
 		}
 		fz_always(ctx)
@@ -353,23 +353,26 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 	fz_buffer_printf(ctx, gs->buf, "/Alp%d gs\n", i);
 }
 
-static void
-pdf_dev_add_font_res(fz_context *ctx, fz_device *dev, pdf_obj *fres)
+static int
+pdf_dev_add_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 {
+	pdf_obj *fres;
 	char text[32];
-	pdf_device *pdev = (pdf_device*)dev;
 	int k;
 	int num;
 
 	/* Check if we already had this one */
 	for (k = 0; k < pdev->num_cid_fonts; k++)
 	{
-		if (pdev->font_indices[k] == pdf_to_num(ctx, fres))
-			return;
+		if (pdev->cid_fonts[k] == font)
+			return k;
 	}
 
+	/* This will add it to the xref if needed */
+	fres = pdf_add_cid_font(ctx, pdev->doc, font);
+
 	/* Not there so add to resources */
-	snprintf(text, sizeof(text), "Font/F%d", pdf_to_num(ctx, fres));
+	fz_snprintf(text, sizeof(text), "Font/F%d", pdev->num_cid_fonts);
 	pdf_dict_putp(ctx, pdev->resources, text, fres);
 
 	/* And add index to our list for this page */
@@ -378,11 +381,12 @@ pdf_dev_add_font_res(fz_context *ctx, fz_device *dev, pdf_obj *fres)
 		int newmax = pdev->max_cid_fonts * 2;
 		if (newmax == 0)
 			newmax = 4;
-		pdev->font_indices = fz_resize_array(ctx, pdev->font_indices, newmax, sizeof(*pdev->font_indices));
+		pdev->cid_fonts = fz_resize_array(ctx, pdev->cid_fonts, newmax, sizeof(*pdev->cid_fonts));
 		pdev->max_cid_fonts = newmax;
 	}
 	num = pdev->num_cid_fonts++;
-	pdev->font_indices[num] = pdf_to_num(ctx, fres);
+	pdev->cid_fonts[num] = font;
+	return num;
 }
 
 static void
@@ -391,7 +395,7 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 	int i;
 	pdf_document *doc = pdev->doc;
 	gstate *gs = CURRENT_GSTATE(pdev);
-	pdf_obj *fres;
+	int num;
 
 	/* If the font is unchanged, nothing to do */
 	if (gs->font >= 0 && pdev->fonts[gs->font].font == font)
@@ -405,13 +409,9 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 
 	if (font->buffer != NULL)
 	{
-		/* This will add it to the xref if needed */
-		fres = pdf_add_cid_font(ctx, doc, font);
-		fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", pdf_to_num(ctx, fres), size);
-
 		/* Possibly add to page resources */
-		pdf_dev_add_font_res(ctx, (fz_device*) pdev, fres);
-		pdf_drop_obj(ctx, fres);
+		num = pdf_dev_add_font_res(ctx, pdev, font);
+		fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", num, size);
 	}
 	else
 	{
@@ -728,7 +728,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 	{
 		char text[32];
 		num = pdev->num_forms++;
-		snprintf(text, sizeof(text), "XObject/Fm%d", num);
+		fz_snprintf(text, sizeof(text), "XObject/Fm%d", num);
 		pdf_dict_putp(ctx, pdev->resources, text, *form_ref);
 	}
 
@@ -919,7 +919,7 @@ pdf_dev_add_image_res(fz_context *ctx, fz_device *dev, pdf_obj *im_res)
 	}
 
 	/* Not there so add to resources */
-	snprintf(text, sizeof(text), "XObject/Img%d", pdf_to_num(ctx, im_res));
+	fz_snprintf(text, sizeof(text), "XObject/Img%d", pdf_to_num(ctx, im_res));
 	pdf_dict_putp(ctx, pdev->resources, text, im_res);
 
 	/* And add index to our list for this page */
@@ -1060,7 +1060,7 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 
 		{
 			char text[32];
-			snprintf(text, sizeof(text), "ExtGState/SM%d", pdev->num_smasks++);
+			fz_snprintf(text, sizeof(text), "ExtGState/SM%d", pdev->num_smasks++);
 			pdf_dict_putp(ctx, pdev->resources, text, egs_ref);
 			pdf_drop_obj(ctx, egs_ref);
 		}
@@ -1120,7 +1120,7 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int is
 	{
 		char text[32];
 		pdf_obj *obj;
-		snprintf(text, sizeof(text), "ExtGState/BlendMode%d", blendmode);
+		fz_snprintf(text, sizeof(text), "ExtGState/BlendMode%d", blendmode);
 		obj = pdf_dict_getp(ctx, pdev->resources, text);
 		if (obj == NULL)
 		{
@@ -1213,7 +1213,7 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 
 	pdf_drop_obj(ctx, pdev->resources);
 
-	fz_free(ctx, pdev->font_indices);
+	fz_free(ctx, pdev->cid_fonts);
 	fz_free(ctx, pdev->image_indices);
 	fz_free(ctx, pdev->groups);
 	fz_free(ctx, pdev->fonts);
