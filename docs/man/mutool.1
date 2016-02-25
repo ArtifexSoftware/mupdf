@@ -209,6 +209,37 @@ List form and postscript XObjects.
 .B pages
 Comma separated list of page numbers and ranges to include.
 
+.SH CREATE
+mutool create [-o output.pdf] [options] page1.txt [page2.txt ...]
+.PP
+The create command creates a new PDF file with the contents created
+from one or more input files containing graphics commands.
+.TP
+.B \-o output
+If no output file is specified, it will write the created PDF to "out.pdf"
+in the current directory.
+.TP
+.B \-a
+ASCII Hex encode binary streams.
+.TP
+.B \-z
+Deflate uncompressed streams.
+.TP
+.B page.txt
+A page is created for each input file, with the contents of the file copied
+into the content stream. Special comments in the input files are parsed to
+define the page dimensions and font and image resources:
+.PP
+%%MediaBox 0 0 500 800
+.br
+%%Rotate 90
+.br
+%%Font Tm Times-Roman
+.br
+%%Font Fn0 path/to/font/file.ttf
+.br
+%%Image Im0 path/to/image.png
+
 .SH PAGES
 mutool pages [options] input.pdf [pages ...]
 .PP
