@@ -1737,7 +1737,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 		pdf_drop_obj(ctx, run_obj);
 		fz_rethrow(ctx);
 	}
-	return fwobj;
+	return pdf_new_ref(ctx, doc, fwobj);
 }
 
 /* Descendant font construction used for CID font creation from ttf or Adobe type1 */
