@@ -33,7 +33,7 @@ static void add_font_res(pdf_obj *resources, char *name, char *path)
 
 	data = fz_lookup_base14_font(ctx, path, &size);
 	if (data)
-		font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+		font = fz_new_font_from_memory(ctx, path, data, size, 0, 0);
 	else
 		font = fz_new_font_from_file(ctx, NULL, path, 0, 0);
 
