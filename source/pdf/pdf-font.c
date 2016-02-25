@@ -1742,208 +1742,176 @@ pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 	return fref;
 }
 
+static int next_range(int *table, int size, int k)
+{
+	int n;
+	for (n = 1; k + n < size; ++n)
+	{
+		if ((k & 0xFF00) != ((k+n) & 0xFF00)) /* high byte changes */
+			break;
+		if (table[k] + n != table[k+n])
+			break;
+	}
+	return n;
+}
+
 /* Create the ToUnicode CMap. */
 static pdf_obj*
-pdf_add_tounicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc)
+pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 {
-	fz_buffer *fzbuf = NULL;
+	FT_Face face = font->ft_face;
 	pdf_obj *fref = NULL;
 	pdf_obj *fobj = NULL;
-	FT_Face face = fontdesc->font->ft_face;
-	FT_UInt glyph_index;
-	char hex_glyph[7];
-	char hex_unicode[7];
-	char listinfo[19];
-	char entry[22];
-	unsigned short *table, *seq;
-	int k;
-	int has_lock = 0;
-	int count;
-	int temp_count;
-	int pos;
+	fz_buffer *buf;
 
-	fz_var(has_lock);
-	fz_var(fzbuf);
+	int *table;
+	int num_seq = 0;
+	int num_chr = 0;
+	int n, k;
+
 	fz_var(fref);
 	fz_var(fobj);
 
-	fz_try(ctx)
+	/* Populate reverse cmap table */
 	{
-		fzbuf = fz_new_buffer(ctx, 0);
+		FT_ULong ucs;
+		FT_UInt gid;
 
-		/* Boiler plate */
-		fz_write_buffer(ctx, fzbuf, "/CIDInit /ProcSet findresource begin\n", strlen("/CIDInit /ProcSet findresource begin\n"));
-		fz_write_buffer(ctx, fzbuf, "12 dict begin\n", strlen("12 dict begin\n"));
-		fz_write_buffer(ctx, fzbuf, "begincmap\n", strlen("begincmap\n"));
-		fz_write_buffer(ctx, fzbuf, "/CIDSystemInfo\n", strlen("/CIDSystemInfo\n"));
-		fz_write_buffer(ctx, fzbuf, "<</Registry(Adobe)\n", strlen("<</Registry(Adobe)\n"));
-		fz_write_buffer(ctx, fzbuf, "/Ordering(UCS) /Supplement 0>> def\n", strlen("/Ordering(UCS) /Supplement 0>> def\n"));
-		fz_write_buffer(ctx, fzbuf, "/CMapName /Adobe-Identity-UCS def\n", strlen("/CMapName /Adobe-Identity-UCS def\n"));
-		fz_write_buffer(ctx, fzbuf, "/CMapType 2 def\n", strlen("/CMapType 2 def\n"));
-		fz_write_buffer(ctx, fzbuf, "1 begincodespacerange\n", strlen("1 begincodespacerange\n"));
-		fz_write_buffer(ctx, fzbuf, "<0000> <FFFF>\n", strlen("<0000> <FFFF>\n"));
-		fz_write_buffer(ctx, fzbuf, "endcodespacerange\n", strlen("endcodespacerange\n"));
-
-		/* Sort via populating */
-		table = fz_calloc(ctx, 65536, sizeof(unsigned short));
-		count = 0;
+		table = fz_calloc(ctx, face->num_glyphs, sizeof *table);
 		fz_lock(ctx, FZ_LOCK_FREETYPE);
-		has_lock = 1;
-		for (k = 0; k < 65536; k++)
+		ucs = FT_Get_First_Char(face, &gid);
+		while (gid > 0)
 		{
-			glyph_index = FT_Get_Char_Index(face, k);
-			if (glyph_index > 0 && glyph_index < 65536)
-			{
-				if (table[glyph_index] == 0)
-				{
-					count++;
-					table[glyph_index] = k;
-				}
-			}
+			if (gid < face->num_glyphs)
+				table[gid] = ucs;
+			ucs = FT_Get_Next_Char(face, ucs, &gid);
 		}
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
-		has_lock = 0;
+	}
 
-		/* Now output non-zero entries. */
+	for (k = 0; k < face->num_glyphs; k += n)
+	{
+		n = next_range(table, face->num_glyphs, k);
+		if (n > 1)
+			++num_seq;
+		else if (table[k] > 0)
+			++num_chr;
+	}
+
+	/* No mappings available... */
+	if (num_seq + num_chr == 0)
+	{
+		fz_warn(ctx, "cannot create ToUnicode mapping for %s", font->name);
+		return NULL;
+	}
+
+	buf = fz_new_buffer(ctx, 0);
+	fz_try(ctx)
+	{
+		/* Header boiler plate */
+		fz_buffer_printf(ctx, buf, "/CIDInit /ProcSet findresource begin\n");
+		fz_buffer_printf(ctx, buf, "12 dict begin\n");
+		fz_buffer_printf(ctx, buf, "begincmap\n");
+		fz_buffer_printf(ctx, buf, "/CIDSystemInfo <</Registry(Adobe)/Ordering(UCS)/Supplement 0>> def\n");
+		fz_buffer_printf(ctx, buf, "/CMapName /Adobe-Identity-UCS def\n");
+		fz_buffer_printf(ctx, buf, "/CMapType 2 def\n");
+		fz_buffer_printf(ctx, buf, "1 begincodespacerange\n");
+		fz_buffer_printf(ctx, buf, "<0000> <FFFF>\n");
+		fz_buffer_printf(ctx, buf, "endcodespacerange\n");
+
 		/* Note to have a valid CMap, the number of entries in table set can
 		 * not exceed 100, so we have to break into multipe tables. Also, note
 		 * that to reduce the file size we should be looking for sequential
 		 * ranges. Per Adobe technical note #5411, we can't have a range
 		 * cross a boundary where the high order byte changes */
+
 		/* First the ranges */
+		if (num_seq > 0)
 		{
-			seq = fz_calloc(ctx, 65536, sizeof(unsigned short));
-			int num_seq = 0;
-			int k_start = -1;
-			int k_end = -1;
-			int match = 0;
-			char hex_start[7];
-			char hex_end[7];
-			char hex_value_start[7];
-			int j;
-
-			k = 0;
-
-			/* First find the ranges */
-			while (1)
+			int count = 0;
+			if (num_seq > 100)
 			{
-				if (k == 65535)
-					break;
-				if (table[k] + 1 == table[k + 1])
-					match = 1;
-				else
-					match = 0;
-
-				/* End any sequences across upper byte boundary changes */
-				if ((k & 0xff00) != ((k + 1) & 0xff00))
-					match = 0;
-
-				/* Start of a sequence */
-				if (k_start == -1 && match)
-				{
-					k_start = k;
-					k_end = k + 1;
-				}
-
-				/* In a sequence */
-				if (k_start != -1 && match)
-				{
-					k_end = k + 1;
-				}
-
-				/* Done with a sequence */
-				if (k_start != -1 && !match)
-				{
-					seq[num_seq * 2] = k_start;
-					seq[num_seq * 2 + 1] = k_end;
-					num_seq = num_seq + 1;
-					k_start = -1;
-				}
-				k = k + 1;
+				fz_buffer_printf(ctx, buf, "100 beginbfrange\n");
+				num_seq -= 100;
 			}
-
-			/* Now output the ranges, with the 100 max limit enforced */
-			if (num_seq > 0)
-			{
-				pos = 0;
-				while (num_seq > 0)
-				{
-					if (num_seq > 100)
-						temp_count = 100;
-					else
-						temp_count = num_seq;
-					num_seq = num_seq - temp_count;
-					sprintf(&listinfo[0], "%d beginbfrange\n", temp_count);
-					fz_write_buffer(ctx, fzbuf, listinfo, strlen(listinfo));
-					k = 0;
-					while (k < temp_count)
-					{
-						k = k + 1;
-						k_start = seq[pos * 2];
-						k_end = seq[pos * 2 + 1];
-						sprintf(&hex_start[0], "%04x", k_start);
-						sprintf(&hex_end[0], "%04x", k_end);
-						sprintf(&hex_value_start[0], "%04x", table[k_start]);
-						sprintf(&entry[0], "<%s> <%s> <%s>\n", hex_start, hex_end, hex_value_start);
-						fz_write_buffer(ctx, fzbuf, entry, strlen(entry));
-
-						/* Clear out these values from the table so they are not
-						 * used in the single entry */
-						count = count - (k_end - k_start + 1);
-						for (j = k_start; j < k_end + 1; j++)
-							table[j] = 0;
-						pos = pos + 1;
-					}
-					fz_write_buffer(ctx, fzbuf, "endbfrange\n", strlen("endbfrange\n"));
-				}
-			}
-		}
-
-		/* The rest of the values need to be output as individuals */
-		pos = 0;
-		while (count > 0)
-		{
-			if (count > 100)
-				temp_count = 100;
 			else
-				temp_count = count;
-			count = count - temp_count;
-			sprintf(&listinfo[0], "%d beginbfchar\n", temp_count);
-			fz_write_buffer(ctx, fzbuf, listinfo, strlen(listinfo));
-			k = 0;
-			while (k < temp_count)
+				fz_buffer_printf(ctx, buf, "%d beginbfrange\n", num_seq);
+			for (k = 0; k < face->num_glyphs; k += n)
 			{
-				if (table[pos] > 0)
+				n = next_range(table, face->num_glyphs, k);
+				if (n > 1)
 				{
-					k = k + 1;
-					sprintf(&hex_glyph[0], "%04x", pos);
-					sprintf(&hex_unicode[0], "%04x", table[pos]);
-					sprintf(&entry[0], "<%s> <%s>\n", hex_glyph, hex_unicode);
-					fz_write_buffer(ctx, fzbuf, entry, strlen(entry));
+					if (count == 100)
+					{
+						fz_buffer_printf(ctx, buf, "endbfrange\n");
+						if (num_seq > 100)
+						{
+							fz_buffer_printf(ctx, buf, "100 beginbfrange\n");
+							num_seq -= 100;
+						}
+						else
+							fz_buffer_printf(ctx, buf, "%d beginbfrange\n", num_seq);
+						count = 0;
+					}
+					fz_buffer_printf(ctx, buf, "<%04x> <%04x> <%04x>\n", k, k+n-1, table[k]);
+					++count;
 				}
-				pos = pos + 1;
 			}
-			fz_write_buffer(ctx, fzbuf, "endbfchar\n", strlen("endbfchar\n"));
+			fz_buffer_printf(ctx, buf, "endbfrange\n");
 		}
-		fz_write_buffer(ctx, fzbuf, "endcmap\n", strlen("endcmap\n"));
-		fz_write_buffer(ctx, fzbuf, "CMapName currentdict /CMap defineresource pop\n", strlen("CMapName currentdict /CMap defineresource pop\n"));
-		fz_write_buffer(ctx, fzbuf, "end\nend\n", strlen("end\nend\n"));
+
+		/* Then the singles */
+		if (num_chr > 0)
+		{
+			int count = 0;
+			if (num_chr > 100)
+			{
+				fz_buffer_printf(ctx, buf, "100 beginbfchar\n");
+				num_chr -= 100;
+			}
+			else
+				fz_buffer_printf(ctx, buf, "%d beginbfchar\n", num_chr);
+			for (k = 0; k < face->num_glyphs; k += n)
+			{
+				n = next_range(table, face->num_glyphs, k);
+				if (n == 1 && table[k] > 0)
+				{
+					if (count == 100)
+					{
+						fz_buffer_printf(ctx, buf, "endbfchar\n");
+						if (num_chr > 100)
+						{
+							fz_buffer_printf(ctx, buf, "100 beginbfchar\n");
+							num_chr -= 100;
+						}
+						else
+							fz_buffer_printf(ctx, buf, "%d beginbfchar\n", num_chr);
+						count = 0;
+					}
+					fz_buffer_printf(ctx, buf, "<%04x> <%04x>\n", k, table[k]);
+					++count;
+				}
+			}
+			fz_buffer_printf(ctx, buf, "endbfchar\n");
+		}
+
+		/* Trailer boiler plate */
+		fz_buffer_printf(ctx, buf, "endcmap\n");
+		fz_buffer_printf(ctx, buf, "CMapName currentdict /CMap defineresource pop\n");
+		fz_buffer_printf(ctx, buf, "end\nend\n");
 
 		fobj = pdf_new_dict(ctx, doc, 3);
 		fref = pdf_new_ref(ctx, doc, fobj);
-		pdf_update_stream(ctx, doc, fref, fzbuf, 0);
+		pdf_update_stream(ctx, doc, fref, buf, 0);
 	}
 	fz_always(ctx)
 	{
 		fz_free(ctx, table);
-		fz_free(ctx, seq);
-		fz_drop_buffer(ctx, fzbuf);
+		fz_drop_buffer(ctx, buf);
 		pdf_drop_obj(ctx, fobj);
 	}
 	fz_catch(ctx)
 	{
-		if (has_lock)
-			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 		pdf_drop_obj(ctx, fref);
 		fz_rethrow(ctx);
 	}
@@ -1991,7 +1959,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 
 			/* Get the descendant font and the tounicode references */
 			obj_desc_ref = pdf_add_descendant_font(ctx, doc, fontdesc);
-			obj_tounicode_ref = pdf_add_tounicode(ctx, doc, fontdesc);
+			obj_tounicode_ref = pdf_add_to_unicode(ctx, doc, font);
 
 			/* And now the font */
 			fobj = pdf_new_dict(ctx, doc, 10);
@@ -2003,7 +1971,8 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			obj_array = pdf_new_array(ctx, doc, 3);
 			pdf_array_insert(ctx, obj_array, obj_desc_ref, 0);
 			pdf_dict_put(ctx, fobj, PDF_NAME_DescendantFonts, obj_array);
-			pdf_dict_put(ctx, fobj, PDF_NAME_ToUnicode, obj_tounicode_ref);
+			if (obj_tounicode_ref)
+				pdf_dict_put(ctx, fobj, PDF_NAME_ToUnicode, obj_tounicode_ref);
 			fref = pdf_new_ref(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
