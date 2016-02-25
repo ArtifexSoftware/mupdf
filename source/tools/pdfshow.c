@@ -139,7 +139,7 @@ static void showobject(int num, int gen)
 		{
 			fz_printf(ctx, out, "%d %d obj\n", num, gen);
 			pdf_print_obj(ctx, out, obj, 0);
-			fz_printf(ctx, out, "stream\n");
+			fz_printf(ctx, out, "\nstream\n");
 			showstream(num, gen);
 			fz_printf(ctx, out, "endstream\n");
 			fz_printf(ctx, out, "endobj\n\n");
@@ -149,7 +149,7 @@ static void showobject(int num, int gen)
 	{
 		fz_printf(ctx, out, "%d %d obj\n", num, gen);
 		pdf_print_obj(ctx, out, obj, 0);
-		fz_printf(ctx, out, "endobj\n\n");
+		fz_printf(ctx, out, "\nendobj\n\n");
 	}
 
 	pdf_drop_obj(ctx, obj);
