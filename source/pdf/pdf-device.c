@@ -378,7 +378,7 @@ pdf_dev_add_font_res(fz_context *ctx, fz_device *dev, pdf_res *fres)
 		int newmax = pdev->max_cid_fonts * 2;
 		if (newmax == 0)
 			newmax = 4;
-		pdev->font_indices = fz_resize_array(ctx, pdev->image_indices, newmax, sizeof(*pdev->font_indices));
+		pdev->font_indices = fz_resize_array(ctx, pdev->font_indices, newmax, sizeof(*pdev->font_indices));
 		pdev->max_cid_fonts = newmax;
 	}
 	num = pdev->num_cid_fonts++;

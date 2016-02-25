@@ -1130,6 +1130,8 @@ int mudraw_main(int argc, char **argv)
 
 	if (pdfout)
 	{
+		if (!output)
+			output = "out.pdf";
 		pdf_save_document(ctx, pdfout, output, NULL);
 		pdf_close_document(ctx, pdfout);
 	}
