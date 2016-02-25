@@ -56,7 +56,7 @@ int pdf_is_jpx_image(fz_context *ctx, pdf_obj *dict);
 
 fz_image *pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 
-pdf_obj* pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask);
+pdf_obj *pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask);
 
 /*
  * Pattern
