@@ -1951,15 +1951,19 @@ static void fmt_array(fz_context *ctx, struct fmt *fmt, pdf_obj *obj)
 		fmt_putc(ctx, fmt, ']');
 	}
 	else {
-		fmt_puts(ctx, fmt, "[ ");
+		fmt_putc(ctx, fmt, '[');
+		fmt->indent ++;
 		for (i = 0; i < n; i++) {
 			if (fmt->col > 60) {
 				fmt_putc(ctx, fmt, '\n');
 				fmt_indent(ctx, fmt);
+			} else {
+				fmt_putc(ctx, fmt, ' ');
 			}
 			fmt_obj(ctx, fmt, pdf_array_get(ctx, obj, i));
-			fmt_putc(ctx, fmt, ' ');
 		}
+		fmt->indent --;
+		fmt_putc(ctx, fmt, ' ');
 		fmt_putc(ctx, fmt, ']');
 		fmt_sep(ctx, fmt);
 	}
