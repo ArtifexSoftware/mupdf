@@ -1551,56 +1551,15 @@ pdf_add_cid_system_info(fz_context *ctx, pdf_document *doc)
 /* Different states of starting, same width as last, or consecutive glyph */
 enum { FW_START, FW_SAME, FW_RUN };
 
-static void
-pdf_add_cid_font_widths_entry(fz_context *ctx, pdf_document *doc, pdf_obj *fwobj, pdf_obj *run_obj, int state, int first_code, int prev_code, int prev_size)
-{
-	pdf_obj *temp_array;
-
-	switch (state)
-	{
-	case FW_SAME:
-		/* Add three entries. First cid, last cid and width */
-		pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, first_code));
-		pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
-		pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_size));
-		break;
-	case FW_RUN:
-		if (pdf_array_len(ctx, run_obj) > 0)
-		{
-			pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, first_code));
-			pdf_array_push_drop(ctx, fwobj, run_obj);
-		}
-		else
-		{
-			pdf_drop_obj(ctx, run_obj);
-		}
-		break;
-	case FW_START:
-		/* Lone wolf. Not part of a consecutive run */
-		pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
-		temp_array = pdf_new_array(ctx, doc, 1);
-		fz_try(ctx)
-		{
-			pdf_array_push_drop(ctx, temp_array, pdf_new_int(ctx, doc, prev_size));
-			pdf_array_push(ctx, fwobj, temp_array);
-		}
-		fz_always(ctx)
-			pdf_drop_obj(ctx, temp_array);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
-		break;
-	}
-}
-
 /* ToDo: Ignore the default sized characters */
 static pdf_obj*
-pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, fz_font *source_font)
+pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, fz_font *font)
 {
+	FT_Face face = font->ft_face;
 	pdf_obj *run_obj = NULL;
 	pdf_obj *fwobj;
-	FT_ULong curr_code;
-	FT_ULong prev_code;
-	FT_UInt gindex;
+	int curr_code;
+	int prev_code;
 	int curr_size;
 	int prev_size;
 	int first_code;
@@ -1609,126 +1568,100 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 	int new_state = FW_START;
 	int publish = 0;
 
-	if (fontdesc->font == NULL || fontdesc->font->ft_face == NULL || fontdesc->wmode)
-	{
-		fz_warn(ctx, "cannot compute cid widths description");
-		return NULL;
-	}
-
-	if (source_font->width_table == NULL)
-	{
-		/* Prime the pump. */
-		prev_code = FT_Get_First_Char(fontdesc->font->ft_face, &gindex);
-		prev_size = fz_advance_glyph(ctx, fontdesc->font, gindex, 0) * 1000;
-		first_code = prev_code;
-	}
-	else
-	{
-		/* Prime the pump. */
-		prev_code = 0;
-		prev_size = source_font->width_table[0];
-		first_code = prev_code;
-		gindex = 1;
-	}
-
 	fz_var(run_obj);
 
 	fwobj = pdf_new_array(ctx, doc, 10);
 	fz_try(ctx)
 	{
-		while (gindex != 0)
+		prev_code = 0;
+		prev_size = fz_advance_glyph(ctx, font, 0, 0) * 1000;
+		first_code = prev_code;
+
+		while (prev_code < face->num_glyphs)
 		{
-			if (source_font->width_table == NULL)
+			curr_code = prev_code + 1;
+			curr_size = fz_advance_glyph(ctx, font, curr_code, 0) * 1000;
+
+			switch (state)
 			{
-				curr_code = FT_Get_Next_Char(fontdesc->font->ft_face, prev_code, &gindex);
-				curr_size = fz_advance_glyph(ctx, fontdesc->font, gindex, 0) * 1000;
-			}
-			else
-			{
-				curr_code = prev_code + 1;
-				if (curr_code == source_font->width_count)
+			case FW_SAME:
+				if (curr_size != prev_size)
 				{
-					gindex = 0;
-					curr_size = -1;
+					/* End of same widths for consecutive ids. Current will
+					 * be pushed as prev. below during next iteration */
+					publish = 1;
+					run_obj = pdf_new_array(ctx, doc, 10);
+					new_state = FW_RUN;
+					/* And the new first code is our current code */
+					new_first_code = curr_code;
+				}
+				break;
+			case FW_RUN:
+				if (curr_size == prev_size)
+				{
+					/* Same width, so start a new same entry starting with
+					 * the previous code. i.e. the prev size is not put
+					 * in the run */
+					publish = 1;
+					new_state = FW_SAME;
+					new_first_code = prev_code;
 				}
 				else
-					curr_size = source_font->width_table[curr_code];
+				{
+					/* Add prev size to run_obj */
+					pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
+				}
+				break;
+			case FW_START:
+				/* Starting fresh. Determine our state */
+				if (curr_size == prev_size)
+				{
+					state = FW_SAME;
+				}
+				else
+				{
+					run_obj = pdf_new_array(ctx, doc, 10);
+					pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
+					state = FW_RUN;
+				}
+				new_first_code = prev_code;
+				break;
 			}
 
-			/* Check if we need to publish or keep collecting */
-			if (prev_code == curr_code - 1)
+			if (publish || curr_code == face->num_glyphs)
 			{
-				/* A concecutive code. */
 				switch (state)
 				{
 				case FW_SAME:
-					if (curr_size != prev_size)
-					{
-						/* End of same widths for consecutive ids. Current will
-						 * be pushed as prev. below during next iteration */
-						publish = 1;
-						run_obj = pdf_new_array(ctx, doc, 10);
-						new_state = FW_RUN;
-						/* And the new first code is our current code */
-						new_first_code = curr_code;
-					}
+					/* Add three entries. First cid, last cid and width */
+					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, first_code));
+					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
+					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_size));
 					break;
 				case FW_RUN:
-					if (curr_size == prev_size)
+					if (pdf_array_len(ctx, run_obj) > 0)
 					{
-						/* Same width, so start a new same entry starting with
-						 * the previous code. i.e. the prev size is not put
-						 * in the run */
-						publish = 1;
-						new_state = FW_SAME;
-						new_first_code = prev_code;
+						pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, first_code));
+						pdf_array_push(ctx, fwobj, run_obj);
 					}
-					else
-					{
-						/* Add prev size to run_obj */
-						pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
-					}
+					pdf_drop_obj(ctx, run_obj);
+					run_obj = NULL;
 					break;
 				case FW_START:
-					/* Starting fresh. Determine our state */
-					if (curr_size == prev_size)
-					{
-						state = FW_SAME;
-					}
-					else
-					{
-						run_obj = pdf_new_array(ctx, doc, 10);
-						pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
-						state = FW_RUN;
-					}
-					new_first_code = prev_code;
+					/* Lone wolf. Not part of a consecutive run */
+					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
+					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_code));
+					pdf_array_push_drop(ctx, fwobj, pdf_new_int(ctx, doc, prev_size));
 					break;
 				}
-			}
-			else
-			{
-				/* Non conscecutive code. Restart */
-				if (state == FW_RUN)
-				{
-					pdf_array_push_drop(ctx, run_obj, pdf_new_int(ctx, doc, prev_size));
-				}
-				new_state = FW_START;
-				publish = 1;
+
+				state = new_state;
+				first_code = new_first_code;
+				publish = 0;
 			}
 
-			if (publish)
-			{
-				pdf_add_cid_font_widths_entry(ctx, doc, fwobj, run_obj, state, first_code, prev_code, prev_size);
-				state = new_state;
-				publish = 0;
-				first_code = new_first_code;
-			}
 			prev_size = curr_size;
 			prev_code = curr_code;
-
-			/* See if we need to flush */
-			if (gindex == 0)
-				pdf_add_cid_font_widths_entry(ctx, doc, fwobj, run_obj, state, first_code, prev_code, prev_size);
 		}
 	}
 	fz_catch(ctx)
