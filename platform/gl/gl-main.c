@@ -1275,9 +1275,10 @@ static void on_error(int error, const char *msg)
 	fprintf(stderr, "gl error %d: %s\n", error, msg);
 }
 
-static void usage(void)
+static void usage(const char *argv0)
 {
-	fprintf(stderr, "usage: mupdf [options] document [page]\n");
+	fprintf(stderr, "mupdf-gl version %s\n", FZ_VERSION);
+	fprintf(stderr, "usage: %s [options] document [page]\n", argv0);
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
@@ -1306,7 +1307,7 @@ int main(int argc, char **argv)
 	{
 		switch (c)
 		{
-		default: usage(); break;
+		default: usage(argv[0]); break;
 		case 'p': password = fz_optarg; break;
 		case 'r': currentzoom = fz_atof(fz_optarg); break;
 		case 'W': layout_w = fz_atof(fz_optarg); break;
@@ -1327,7 +1328,7 @@ int main(int argc, char **argv)
 		if (!win_open_file(filename, sizeof filename))
 			exit(0);
 #else
-		usage();
+		usage(argv[0]);
 #endif
 	}
 
