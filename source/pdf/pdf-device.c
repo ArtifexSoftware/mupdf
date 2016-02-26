@@ -54,13 +54,6 @@ struct alpha_entry_s
 	int stroke;
 };
 
-typedef struct font_entry_s font_entry;
-
-struct font_entry_s
-{
-	fz_font *font;
-};
-
 typedef struct group_entry_s group_entry;
 
 struct group_entry_s
@@ -101,11 +94,6 @@ struct pdf_device_s
 	int num_alphas;
 	int max_alphas;
 	alpha_entry *alphas;
-
-	/* Base font information */
-	int num_fonts;
-	int max_fonts;
-	font_entry *fonts;
 
 	int num_groups;
 	int max_groups;
@@ -363,10 +351,8 @@ pdf_dev_add_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 
 	/* Check if we already had this one */
 	for (k = 0; k < pdev->num_cid_fonts; k++)
-	{
 		if (pdev->cid_fonts[k] == font)
 			return k;
-	}
 
 	/* This will add it to the xref if needed */
 	fres = pdf_add_cid_font(ctx, pdev->doc, font);
@@ -385,85 +371,29 @@ pdf_dev_add_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 		pdev->max_cid_fonts = newmax;
 	}
 	num = pdev->num_cid_fonts++;
-	pdev->cid_fonts[num] = font;
+	pdev->cid_fonts[num] = fz_keep_font(ctx, font);
 	return num;
 }
 
 static void
 pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 {
-	int i;
-	pdf_document *doc = pdev->doc;
 	gstate *gs = CURRENT_GSTATE(pdev);
-	int num;
 
 	/* If the font is unchanged, nothing to do */
-	if (gs->font >= 0 && pdev->fonts[gs->font].font == font)
+	if (gs->font >= 0 && pdev->cid_fonts[gs->font] == font)
 		return;
 
+	if (font->t3procs)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support type 3 fonts");
 	if (font->ft_substitute)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support substitute metrics");
-
-	if (font->buffer != NULL && !pdf_font_writing_supported(font))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support substitute fnots");
+	if (!pdf_font_writing_supported(font))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support font types found in this file");
 
-	if (font->buffer != NULL)
-	{
-		/* Possibly add to page resources */
-		num = pdf_dev_add_font_res(ctx, pdev, font);
-		fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", num, size);
-	}
-	else
-	{
-		/* Have the device handle the base fonts */
-		/* Have we sent such a font before? */
-		for (i = 0; i < pdev->num_fonts; i++)
-			if (pdev->fonts[i].font == font)
-				break;
+	gs->font = pdf_dev_add_font_res(ctx, pdev, font);
 
-		if (i == pdev->num_fonts)
-		{
-			pdf_obj *o;
-			pdf_obj *ref = NULL;
-
-			fz_var(ref);
-
-			/* No. Need to make a new one */
-			if (pdev->num_fonts == pdev->max_fonts)
-			{
-				int newmax = pdev->max_fonts * 2;
-				if (newmax == 0)
-					newmax = 4;
-				pdev->fonts = fz_resize_array(ctx, pdev->fonts, newmax, sizeof(*pdev->fonts));
-				pdev->max_fonts = newmax;
-			}
-			pdev->fonts[i].font = fz_keep_font(ctx, font);
-
-			o = pdf_new_dict(ctx, doc, 3);
-			fz_try(ctx)
-			{
-				char text[32];
-				pdf_dict_put_drop(ctx, o, PDF_NAME_Type, PDF_NAME_Font);
-				pdf_dict_put_drop(ctx, o, PDF_NAME_Subtype, PDF_NAME_Type1);
-				pdf_dict_put_drop(ctx, o, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font->name));
-				pdf_dict_put_drop(ctx, o, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
-				ref = pdf_new_ref(ctx, doc, o);
-				snprintf(text, sizeof(text), "Font/Fb%d", i);
-				pdf_dict_putp(ctx, pdev->resources, text, ref);
-			}
-			fz_always(ctx)
-			{
-				pdf_drop_obj(ctx, o);
-				pdf_drop_obj(ctx, ref);
-			}
-			fz_catch(ctx)
-			{
-				fz_rethrow(ctx);
-			}
-			pdev->num_fonts++;
-		}
-		fz_buffer_printf(ctx, gs->buf, "/Fb%d %f Tf\n", i, size);
-	}
+	fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", gs->font, size);
 }
 
 static void
@@ -1190,9 +1120,9 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 		fz_drop_stroke_state(ctx, pdev->gstates[i].stroke_state);
 	}
 
-	for (i = pdev->num_fonts-1; i >= 0; i--)
+	for (i = pdev->num_cid_fonts-1; i >= 0; i--)
 	{
-		fz_drop_font(ctx, pdev->fonts[i].font);
+		fz_drop_font(ctx, pdev->cid_fonts[i]);
 	}
 
 	for (i = pdev->num_groups - 1; i >= 0; i--)
@@ -1216,7 +1146,6 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->cid_fonts);
 	fz_free(ctx, pdev->image_indices);
 	fz_free(ctx, pdev->groups);
-	fz_free(ctx, pdev->fonts);
 	fz_free(ctx, pdev->alphas);
 	fz_free(ctx, pdev->gstates);
 }
