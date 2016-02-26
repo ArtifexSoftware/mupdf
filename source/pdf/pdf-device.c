@@ -376,7 +376,7 @@ pdf_dev_add_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 }
 
 static void
-pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
+pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font)
 {
 	gstate *gs = CURRENT_GSTATE(pdev);
 
@@ -393,18 +393,7 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font, float size)
 
 	gs->font = pdf_dev_add_font_res(ctx, pdev, font);
 
-	fz_buffer_printf(ctx, gs->buf, "/F%d %f Tf\n", gs->font, size);
-}
-
-static void
-pdf_dev_tm(fz_context *ctx, pdf_device *pdev, const fz_matrix *tm)
-{
-	gstate *gs = CURRENT_GSTATE(pdev);
-
-	if (memcmp(&gs->tm, tm, sizeof(*tm)) == 0)
-		return;
-	fz_buffer_printf(ctx, gs->buf, "%f %f %f %f %f %f Tm\n", tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
-	gs->tm = *tm;
+	fz_buffer_printf(ctx, gs->buf, "/F%d 1 Tf\n", gs->font);
 }
 
 static void
@@ -451,80 +440,47 @@ pdf_dev_pop(fz_context *ctx, pdf_device *pdev)
 }
 
 static void
-pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span, float size)
+pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 {
-	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
-	int i;
-	fz_matrix trm;
-	fz_matrix inverse;
 	gstate *gs = CURRENT_GSTATE(pdev);
-	fz_matrix trunc_trm;
+	fz_matrix tm;
+	float dx, dy, adv;
+	int i;
 
-	trm = gs->tm;
-	trunc_trm.a = trm.a;
-	trunc_trm.b = trm.b;
-	trunc_trm.c = trm.c;
-	trunc_trm.d = trm.d;
-	trunc_trm.e = 0;
-	trunc_trm.f = 0;
-	fz_invert_matrix(&inverse, &trunc_trm);
+	if (span->len == 0)
+		return;
 
-	i = 0;
-	while (i < span->len)
+	tm = span->trm;
+	tm.e = span->items[0].x;
+	tm.f = span->items[0].y;
+
+	fz_buffer_printf(ctx, gs->buf, "%f %f %f %f %f %f Tm\n", tm.a, tm.b, tm.c, tm.d, tm.e, tm.f);
+
+	for (i = 0; i < span->len; ++i)
 	{
 		fz_text_item *it = &span->items[i];
-		fz_point delta;
-		float x;
-		int j;
+		if (it->gid < 0)
+			continue;
 
-		delta.x = it->x - trm.e;
-		delta.y = it->y - trm.f;
-		fz_transform_point(&delta, &inverse);
-		if (delta.x != 0 || delta.y != 0)
-		{
-			fz_buffer_printf(ctx, gs->buf, "%f %f Td ", delta.x, delta.y);
-			trm.e = it->x;
-			trm.f = it->y;
-		}
+		dx = it->x - tm.e;
+		dy = it->y - tm.f;
+		tm.e = it->x;
+		tm.f = it->y;
 
-		j = i+1;
-		if (span->font->ft_face)
-		{
-			/* Find prefix of text for which the advance of each character accounts
-			 * for the position offset */
-			x = it->x;
-			while (j < span->len)
-			{
-				FT_Fixed adv;
-				FT_Get_Advance(span->font->ft_face, span->items[j-1].gid, mask, &adv);
-				x += (float)adv * size /((FT_Face)span->font->ft_face)->units_per_EM;
-				if (fabs(x - span->items[j].x) > ALLOWED_TEXT_POS_ERROR || fabs(it->y - span->items[j].y) > ALLOWED_TEXT_POS_ERROR)
-					break;
-				j++;
-			}
-		}
+		if (fabsf(dx) > 0 || fabsf(dy) > 0)
+			fz_buffer_printf(ctx, gs->buf, "%f %f %f %f %f %f Tm\n", tm.a, tm.b, tm.c, tm.d, tm.e, tm.f);
 
-		fz_buffer_printf(ctx, gs->buf, "<");
-		if (span->font->buffer == NULL)
-		{
-			/* A type3 font */
-			for (/* i from its current value */; i < j; i++)
-			{
-				fz_buffer_printf(ctx, gs->buf, "%02x", span->items[i].ucs);
-			}
-		}
+		if (span->font->t3procs)
+			fz_buffer_printf(ctx, gs->buf, "<%02x> Tj\n", it->gid);
 		else
-		{
-			/* Saved as Type0 Identity-H */
-			for (/* i from its current value */; i < j; i++)
-			{
-				fz_buffer_printf(ctx, gs->buf, "%04x", span->items[i].gid);
-			}
-		}
-		fz_buffer_printf(ctx, gs->buf, "> Tj\n");
+			fz_buffer_printf(ctx, gs->buf, "<%04x> Tj\n", it->gid);
+
+		adv = fz_advance_glyph(ctx, span->font, it->gid, span->wmode);
+		if (span->wmode == 0)
+			fz_pre_translate(&tm, adv, 0);
+		else
+			fz_pre_translate(&tm, 0, adv);
 	}
-	gs->tm.e = trm.e;
-	gs->tm.f = trm.f;
 }
 
 static void
@@ -554,7 +510,6 @@ pdf_dev_begin_text(fz_context *ctx, pdf_device *pdev, const fz_matrix *tm, int t
 		gs->tm.f = 0;
 		pdev->in_text = 1;
 	}
-	pdf_dev_tm(ctx, pdev, tm);
 }
 
 static void
@@ -740,16 +695,12 @@ pdf_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 	for (span = text->head; span; span = span->next)
 	{
 		fz_matrix trm = span->trm;
-		float size = fz_matrix_expansion(&trm);
-
-		fz_pre_scale(&trm, 1/size, 1/size);
-
 		pdf_dev_begin_text(ctx, pdev, &trm, 0);
-		pdf_dev_font(ctx, pdev, span->font, size);
+		pdf_dev_font(ctx, pdev, span->font);
 		pdf_dev_ctm(ctx, pdev, ctm);
 		pdf_dev_alpha(ctx, pdev, alpha, 0);
 		pdf_dev_color(ctx, pdev, colorspace, color, 0);
-		pdf_dev_text_span(ctx, pdev, span, size);
+		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
 
@@ -762,17 +713,12 @@ pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 
 	for (span = text->head; span; span = span->next)
 	{
-		fz_matrix trm = span->trm;
-		float size = fz_matrix_expansion(&trm);
-
-		fz_pre_scale(&trm, 1/size, 1/size);
-
 		pdf_dev_begin_text(ctx, pdev, &span->trm, 1);
-		pdf_dev_font(ctx, pdev, span->font, 1);
+		pdf_dev_font(ctx, pdev, span->font);
 		pdf_dev_ctm(ctx, pdev, ctm);
 		pdf_dev_alpha(ctx, pdev, alpha, 1);
 		pdf_dev_color(ctx, pdev, colorspace, color, 1);
-		pdf_dev_text_span(ctx, pdev, span, size);
+		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
 
@@ -783,15 +729,10 @@ pdf_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 	fz_text_span *span;
 	for (span = text->head; span; span = span->next)
 	{
-		fz_matrix trm = span->trm;
-		float size = fz_matrix_expansion(&trm);
-
-		fz_pre_scale(&trm, 1/size, 1/size);
-
 		pdf_dev_begin_text(ctx, pdev, &span->trm, 0);
 		pdf_dev_ctm(ctx, pdev, ctm);
-		pdf_dev_font(ctx, pdev, span->font, 7);
-		pdf_dev_text_span(ctx, pdev, span, size);
+		pdf_dev_font(ctx, pdev, span->font);
+		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
 
@@ -802,15 +743,10 @@ pdf_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	fz_text_span *span;
 	for (span = text->head; span; span = span->next)
 	{
-		fz_matrix trm = span->trm;
-		float size = fz_matrix_expansion(&trm);
-
-		fz_pre_scale(&trm, 1/size, 1/size);
-
 		pdf_dev_begin_text(ctx, pdev, &span->trm, 0);
-		pdf_dev_font(ctx, pdev, span->font, 5);
+		pdf_dev_font(ctx, pdev, span->font);
 		pdf_dev_ctm(ctx, pdev, ctm);
-		pdf_dev_text_span(ctx, pdev, span, size);
+		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
 
@@ -821,15 +757,10 @@ pdf_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 	fz_text_span *span;
 	for (span = text->head; span; span = span->next)
 	{
-		fz_matrix trm = span->trm;
-		float size = fz_matrix_expansion(&trm);
-
-		fz_pre_scale(&trm, 1/size, 1/size);
-
 		pdf_dev_begin_text(ctx, pdev, &span->trm, 0);
 		pdf_dev_ctm(ctx, pdev, ctm);
-		pdf_dev_font(ctx, pdev, span->font, 3);
-		pdf_dev_text_span(ctx, pdev, span, size);
+		pdf_dev_font(ctx, pdev, span->font);
+		pdf_dev_text_span(ctx, pdev, span);
 	}
 }
 
