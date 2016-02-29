@@ -25,52 +25,14 @@ res_table_free(fz_context *ctx, pdf_res_table *table)
 static void
 res_image_get_md5(fz_context *ctx, fz_image *image, unsigned char *digest)
 {
-	fz_pixmap *pixmap = NULL;
-	int n, size;
-	fz_buffer *buffer = NULL;
+	fz_pixmap *pixmap;
 	fz_md5 state;
 
-	fz_var(pixmap);
-	fz_var(buffer);
-
-	fz_try(ctx)
-	{
-		pixmap = fz_get_pixmap_from_image(ctx, image, 0, 0);
-		n = (pixmap->n == 1 ? 1 : pixmap->n - 1);
-		size = image->w * image->h * n;
-		buffer = fz_new_buffer(ctx, size);
-		buffer->len = size;
-		if (pixmap->n == 1)
-		{
-			memcpy(buffer->data, pixmap->samples, size);
-		}
-		else
-		{
-			/* Need to remove the alpha plane */
-			unsigned char *d = buffer->data;
-			unsigned char *s = pixmap->samples;
-			int mod = n;
-			while (size--)
-			{
-				*d++ = *s++;
-				mod--;
-				if (mod == 0)
-					s++, mod = n;
-			}
-		}
-		fz_md5_init(&state);
-		fz_md5_update(&state, buffer->data, buffer->len);
-		fz_md5_final(&state, digest);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_pixmap(ctx, pixmap);
-		fz_drop_buffer(ctx, buffer);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow_message(ctx, "image md5 calculation failed");
-	}
+	pixmap = fz_get_pixmap_from_image(ctx, image, 0, 0);
+	fz_md5_init(&state);
+	fz_md5_update(&state, pixmap->samples, pixmap->w * pixmap->h * pixmap->n);
+	fz_md5_final(&state, digest);
+	fz_drop_pixmap(ctx, pixmap);
 }
 
 /* Image specific methods */
