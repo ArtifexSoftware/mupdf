@@ -1,3 +1,20 @@
+List of changes in MuPDF 1.9
+
+* Headline changes:
+	* New command line tools: create and run.
+	* New low-level Java interface for desktop and android.
+	* OpenType enabled EPUB text layout with BiDi.
+	* Noto fallback fonts for EPUB layout.
+
+* mutool create
+	Create new PDF files from scratch.
+	Read an annotated content stream in a text file and write a PDF file,
+	automatically embedding font and image resources.
+
+* mutool run
+	Run javascript scripts with MuPDF bindings.
+	The interface is similar to the new Java interface.
+
 List of changes in MuPDF 1.8
 
 * Headline changes:
