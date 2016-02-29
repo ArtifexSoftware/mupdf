@@ -198,6 +198,7 @@ LZ
 LZW
 LZWDecode
 Lab
+Last
 LastChar
 Launch
 Length
