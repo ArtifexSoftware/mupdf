@@ -23,14 +23,13 @@ static void usage(void)
 
 static fz_context *ctx = NULL;
 static pdf_document *doc = NULL;
-static pdf_write_options opts = { 0 };
 
-static void add_font_res(pdf_obj *fonts, char *name, char *path)
+static void add_font_res(pdf_obj *resources, char *name, char *path)
 {
 	unsigned char *data;
 	unsigned int size;
 	fz_font *font;
-	pdf_obj *res;
+	pdf_obj *subres, *ref;
 
 	data = fz_lookup_base14_font(ctx, path, &size);
 	if (data)
@@ -38,23 +37,37 @@ static void add_font_res(pdf_obj *fonts, char *name, char *path)
 	else
 		font = fz_new_font_from_file(ctx, NULL, path, 0, 0);
 
-	res = pdf_add_simple_font(ctx, doc, font);
-	pdf_dict_puts(ctx, fonts, name, res);
-	pdf_drop_obj(ctx, res);
+	subres = pdf_dict_get(ctx, resources, PDF_NAME_Font);
+	if (!subres)
+	{
+		subres = pdf_new_dict(ctx, doc, 10);
+		pdf_dict_put_drop(ctx, resources, PDF_NAME_Font, subres);
+	}
+
+	ref = pdf_add_simple_font(ctx, doc, font);
+	pdf_dict_puts(ctx, subres, name, ref);
+	pdf_drop_obj(ctx, ref);
 
 	fz_drop_font(ctx, font);
 }
 
-static void add_image_res(pdf_obj *images, char *name, char *path)
+static void add_image_res(pdf_obj *resources, char *name, char *path)
 {
 	fz_image *image;
-	pdf_obj *res;
+	pdf_obj *subres, *ref;
 
 	image = fz_new_image_from_file(ctx, path);
 
-	res = pdf_add_image(ctx, doc, image, 0);
-	pdf_dict_puts(ctx, images, name, res);
-	pdf_drop_obj(ctx, res);
+	subres = pdf_dict_get(ctx, resources, PDF_NAME_XObject);
+	if (!subres)
+	{
+		subres = pdf_new_dict(ctx, doc, 10);
+		pdf_dict_put_drop(ctx, resources, PDF_NAME_XObject, subres);
+	}
+
+	ref = pdf_add_image(ctx, doc, image, 0);
+	pdf_dict_puts(ctx, subres, name, ref);
+	pdf_drop_obj(ctx, ref);
 
 	fz_drop_image(ctx, image);
 }
@@ -78,16 +91,9 @@ static void create_page(char *input)
 
 	fz_buffer *contents;
 	pdf_obj *resources;
-	pdf_obj *fonts;
-	pdf_obj *images;
 	pdf_page *page;
 
 	resources = pdf_new_dict(ctx, doc, 2);
-	fonts = pdf_new_dict(ctx, doc, 10);
-	images = pdf_new_dict(ctx, doc, 10);
-	pdf_dict_put(ctx, resources, PDF_NAME_Font, fonts);
-	pdf_dict_put(ctx, resources, PDF_NAME_XObject, images);
-
 	contents = fz_new_buffer(ctx, 1024);
 
 	stm = fz_open_file(ctx, input);
@@ -99,24 +105,25 @@ static void create_page(char *input)
 			s = fz_strsep(&p, " ");
 			if (!strcmp(s, "%%MediaBox"))
 			{
-				s = fz_strsep(&p, " "); mediabox.x0 = fz_atoi(s);
-				s = fz_strsep(&p, " "); mediabox.y0 = fz_atoi(s);
-				s = fz_strsep(&p, " "); mediabox.x1 = fz_atoi(s);
-				s = fz_strsep(&p, " "); mediabox.y1 = fz_atoi(s);
+				mediabox.x0 = fz_atoi(fz_strsep(&p, " "));
+				mediabox.x0 = fz_atoi(fz_strsep(&p, " "));
+				mediabox.y0 = fz_atoi(fz_strsep(&p, " "));
+				mediabox.x1 = fz_atoi(fz_strsep(&p, " "));
+				mediabox.y1 = fz_atoi(fz_strsep(&p, " "));
 			}
 			else if (!strcmp(s, "%%Rotate"))
 			{
-				s = fz_strsep(&p, " "); rotate = fz_atoi(s);
+				rotate = fz_atoi(fz_strsep(&p, " "));
 			}
 			else if (!strcmp(s, "%%Font"))
 			{
 				s = fz_strsep(&p, " ");
-				add_font_res(fonts, s, p);
+				add_font_res(resources, s, p);
 			}
 			else if (!strcmp(s, "%%Image"))
 			{
 				s = fz_strsep(&p, " ");
-				add_image_res(images, s, p);
+				add_image_res(resources, s, p);
 			}
 		}
 		else
@@ -133,12 +140,11 @@ static void create_page(char *input)
 
 	fz_drop_buffer(ctx, contents);
 	pdf_drop_obj(ctx, resources);
-	pdf_drop_obj(ctx, fonts);
-	pdf_drop_obj(ctx, images);
 }
 
 int pdfcreate_main(int argc, char **argv)
 {
+	pdf_write_options opts = { 0 };
 	char *output = "out.pdf";
 	int i, c;
 
