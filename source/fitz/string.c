@@ -352,6 +352,24 @@ fz_runelen(int c)
 	return fz_runetochar(str, c);
 }
 
+int
+fz_utflen(const char *s)
+{
+	int c, n, rune;
+	n = 0;
+	for(;;) {
+		c = *(const unsigned char*)s;
+		if(c < Runeself) {
+			if(c == 0)
+				return n;
+			s++;
+		} else
+			s += fz_chartorune(&rune, s);
+		n++;
+	}
+	return 0;
+}
+
 float fz_atof(const char *s)
 {
 	float result;

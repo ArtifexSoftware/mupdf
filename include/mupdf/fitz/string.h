@@ -103,6 +103,16 @@ int fz_runetochar(char *str, int rune);
 int fz_runelen(int rune);
 
 /*
+	fz_utflen: Count how many runes the UTF-8 encoded string
+	consists of.
+
+	s: The UTF-8 encoded, NUL-terminated text string.
+
+	Returns the number of runes in the string.
+*/
+int fz_utflen(const char *s);
+
+/*
 	fz_strtod/fz_strtof: Locale-independent decimal to binary
 	conversion. On overflow return (-)INFINITY and set errno to ERANGE. On
 	underflow return 0 and set errno to ERANGE. Special inputs (case

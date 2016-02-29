@@ -1808,19 +1808,6 @@ typedef struct
 	uni_buf *buffer;
 } bidi_data;
 
-static size_t utf8len(const char *text)
-{
-	size_t len = 0;
-
-	while (*text)
-	{
-		int rune;
-		text += fz_chartorune(&rune, text);
-		len++;
-	}
-	return len;
-}
-
 static void newFragCb(const uint32_t *fragment,
 			size_t fragment_len,
 			int block_r2l,
@@ -1855,12 +1842,12 @@ static void newFragCb(const uint32_t *fragment,
 		else
 		{
 			/* Must be text */
-			len = utf8len(data->flow->content.text);
+			len = fz_utflen(data->flow->content.text);
 			if (len > fragment_len)
 			{
 				/* We need to split this flow box */
 				(void)split_flow(data->ctx, data->pool, data->flow, fragment_len);
-				len = utf8len(data->flow->content.text);
+				len = fz_utflen(data->flow->content.text);
 			}
 		}
 
@@ -1905,7 +1892,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 			switch (end->type)
 			{
 			case FLOW_WORD:
-				len = utf8len(end->content.text);
+				len = fz_utflen(end->content.text);
 				text = end->content.text;
 				break;
 			case FLOW_SPACE:
