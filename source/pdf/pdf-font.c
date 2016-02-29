@@ -766,13 +766,8 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 		{
 			fz_lock(ctx, FZ_LOCK_FREETYPE);
 			has_lock = 1;
-			fterr = FT_Set_Char_Size(face, 1000, 1000, 72, 72);
-			if (fterr)
-				fz_warn(ctx, "freetype set character size: %s", ft_error_string(fterr));
 			for (i = 0; i < 256; i++)
-			{
 				pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(ctx, fontdesc, i));
-			}
 			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 			has_lock = 0;
 		}
