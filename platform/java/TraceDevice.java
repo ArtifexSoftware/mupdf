@@ -31,7 +31,7 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 		System.out.println("closepath");
 	}
 
-	public void showGlyph(Font font, Matrix trm, int glyph, int unicode, int wmode) {
+	public void showGlyph(Font font, Matrix trm, int glyph, int unicode, boolean wmode) {
 		System.out.println("glyph '" + (char)unicode + "' " + glyph + "\t" + font + " " +  trm);
 	}
 

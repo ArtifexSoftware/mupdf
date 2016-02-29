@@ -26,17 +26,17 @@ public class Text implements TextWalker
 		pointer = newNative();
 	}
 
-	public native void showGlyph(Font font, Matrix trm, int glyph, int unicode, int wmode);
-	public native void showString(Font font, Matrix trm, String string, int wmode);
+	public native void showGlyph(Font font, Matrix trm, int glyph, int unicode, boolean wmode);
+	public native void showString(Font font, Matrix trm, String string, boolean wmode);
 
 	public native Rect getBounds(StrokeState stroke, Matrix ctm);
 
 	public void showGlyph(Font font, Matrix trm, int glyph, int unicode) {
-		showGlyph(font, trm, glyph, unicode, 0);
+		showGlyph(font, trm, glyph, unicode, false);
 	}
 
 	public void showString(Font font, Matrix trm, String string) {
-		showString(font, trm, string, 0);
+		showString(font, trm, string, false);
 	}
 
 	public native void walk(TextWalker walker);

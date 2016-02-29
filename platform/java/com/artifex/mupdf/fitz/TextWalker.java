@@ -2,5 +2,5 @@ package com.artifex.mupdf.fitz;
 
 public interface TextWalker
 {
-	public void showGlyph(Font font, Matrix trm, int glyph, int unicode, int wmode);
+	public void showGlyph(Font font, Matrix trm, int glyph, int unicode, boolean wmode);
 }

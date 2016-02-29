@@ -28,10 +28,10 @@ public class Font
 	public native String getName();
 
 	public native int encodeCharacter(int unicode);
-	public native float advanceGlyph(int glyph, int wmode);
+	public native float advanceGlyph(int glyph, boolean wmode);
 
 	public float advanceGlyph(int glyph) {
-		return advanceGlyph(glyph, 0);
+		return advanceGlyph(glyph, false);
 	}
 
 	public String toString() {

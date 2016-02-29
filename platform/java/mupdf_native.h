@@ -597,10 +597,10 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Font_encodeCharacter
 /*
  * Class:     com_artifex_mupdf_fitz_Font
  * Method:    advanceGlyph
- * Signature: (II)F
+ * Signature: (IZ)F
  */
 JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_Font_advanceGlyph
-  (JNIEnv *, jobject, jint, jint);
+  (JNIEnv *, jobject, jint, jboolean);
 
 #ifdef __cplusplus
 }
@@ -1554,18 +1554,18 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Text_cloneNative
 /*
  * Class:     com_artifex_mupdf_fitz_Text
  * Method:    showGlyph
- * Signature: (Lcom/artifex/mupdf/fitz/Font;Lcom/artifex/mupdf/fitz/Matrix;III)V
+ * Signature: (Lcom/artifex/mupdf/fitz/Font;Lcom/artifex/mupdf/fitz/Matrix;IIZ)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Text_showGlyph
-  (JNIEnv *, jobject, jobject, jobject, jint, jint, jint);
+  (JNIEnv *, jobject, jobject, jobject, jint, jint, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Text
  * Method:    showString
- * Signature: (Lcom/artifex/mupdf/fitz/Font;Lcom/artifex/mupdf/fitz/Matrix;Ljava/lang/String;I)V
+ * Signature: (Lcom/artifex/mupdf/fitz/Font;Lcom/artifex/mupdf/fitz/Matrix;Ljava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Text_showString
-  (JNIEnv *, jobject, jobject, jobject, jstring, jint);
+  (JNIEnv *, jobject, jobject, jobject, jstring, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Text

@@ -2309,7 +2309,7 @@ FUN(Font_encodeCharacter)(JNIEnv *env, jobject self, jint unicode)
 }
 
 JNIEXPORT jfloat JNICALL
-FUN(Font_advanceGlyph)(JNIEnv *env, jobject self, jint glyph, jint wmode)
+FUN(Font_advanceGlyph)(JNIEnv *env, jobject self, jint glyph, jboolean wmode)
 {
 	fz_context *ctx = get_context(env);
 	fz_font *font = from_Font(env, self);
@@ -3027,7 +3027,7 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 }
 
 JNIEXPORT void JNICALL
-FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jint glyph, jint unicode, jint wmode)
+FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jint glyph, jint unicode, jboolean wmode)
 {
 	fz_context *ctx = get_context(env);
 	fz_text *text = from_Text(env, self);
@@ -3044,7 +3044,7 @@ FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, j
 }
 
 JNIEXPORT void JNICALL
-FUN(Text_showString)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jstring string_, jint wmode)
+FUN(Text_showString)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jstring string_, jboolean wmode)
 {
 	fz_context *ctx = get_context(env);
 	fz_text *text = from_Text(env, self);
