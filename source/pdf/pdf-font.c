@@ -517,8 +517,6 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 				fontdesc->to_unicode = pdf_load_system_cmap(ctx, "Adobe-GB1-UCS2");
 				fontdesc->to_ttf_cmap = pdf_load_system_cmap(ctx, "Adobe-GB1-UCS2");
 
-				face = fontdesc->font->ft_face;
-				/* kind = ft_kind(face); */
 				goto skip_encoding;
 			}
 		}
@@ -779,12 +777,8 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 		}
 		else
 		{
-			fz_lock(ctx, FZ_LOCK_FREETYPE);
-			has_lock = 1;
 			for (i = 0; i < 256; i++)
 				pdf_add_hmtx(ctx, fontdesc, i, i, ft_width(ctx, fontdesc, i));
-			fz_unlock(ctx, FZ_LOCK_FREETYPE);
-			has_lock = 0;
 		}
 
 		pdf_end_hmtx(ctx, fontdesc);
