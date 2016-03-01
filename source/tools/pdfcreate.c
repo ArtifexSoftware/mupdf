@@ -106,7 +106,6 @@ static void create_page(char *input)
 			if (!strcmp(s, "%%MediaBox"))
 			{
 				mediabox.x0 = fz_atoi(fz_strsep(&p, " "));
-				mediabox.x0 = fz_atoi(fz_strsep(&p, " "));
 				mediabox.y0 = fz_atoi(fz_strsep(&p, " "));
 				mediabox.x1 = fz_atoi(fz_strsep(&p, " "));
 				mediabox.y1 = fz_atoi(fz_strsep(&p, " "));
