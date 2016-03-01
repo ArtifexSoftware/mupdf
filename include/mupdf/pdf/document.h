@@ -319,6 +319,6 @@ struct pdf_write_options_s
 /*
 	pdf_save_document: Write out the document to a file with all changes finalised.
 */
-void pdf_save_document(fz_context *ctx, pdf_document *doc, char *filename, pdf_write_options *opts);
+void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *opts);
 
 #endif

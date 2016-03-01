@@ -549,7 +549,7 @@ pdf_designated_name *pdf_signer_designated_name(fz_context *ctx, pdf_signer *sig
 	return (pdf_designated_name *)dn;
 }
 
-void pdf_write_digest(fz_context *ctx, pdf_document *doc, char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+void pdf_write_digest(fz_context *ctx, pdf_document *doc, const char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
 {
 	BIO *bdata = NULL;
 	BIO *bsegs = NULL;
@@ -797,7 +797,7 @@ void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
 {
 }
 
-void pdf_write_digest(fz_context *ctx, pdf_document *doc, char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
+void pdf_write_digest(fz_context *ctx, pdf_document *doc, const char *filename, pdf_obj *byte_range, int digest_offset, int digest_length, pdf_signer *signer)
 {
 }
 

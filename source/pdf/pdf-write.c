@@ -2551,7 +2551,7 @@ static void presize_unsaved_signature_byteranges(fz_context *ctx, pdf_document *
 	}
 }
 
-static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, char *filename)
+static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, const char *filename)
 {
 	pdf_unsaved_sig *usig;
 	char buf[5120];
@@ -2716,7 +2716,7 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	fz_drop_output(ctx, opts->out);
 }
 
-void pdf_save_document(fz_context *ctx, pdf_document *doc, char *filename, pdf_write_options *in_opts)
+void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *in_opts)
 {
 	pdf_write_options opts_defaults = { 0 };
 	pdf_write_state opts = { 0 };
