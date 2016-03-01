@@ -621,7 +621,7 @@ static int ffi_pdf_obj_has(js_State *J, void *obj, const char *key)
 			rethrow(J);
 	}
 	if (val) {
-		ffi_pushobj(J, val);
+		ffi_pushobj(J, pdf_keep_obj(ctx, val));
 		return 1;
 	}
 	return 0;
@@ -680,10 +680,9 @@ static int ffi_pdf_obj_delete(js_State *J, void *obj, const char *key)
 
 static void ffi_pushobj(js_State *J, pdf_obj *obj)
 {
-	fz_context *ctx = js_getcontext(J);
 	if (obj) {
 		js_getregistry(J, "pdf_obj");
-		js_newuserdatax(J, "pdf_obj", pdf_keep_obj(ctx, obj),
+		js_newuserdatax(J, "pdf_obj", obj,
 				ffi_pdf_obj_has, ffi_pdf_obj_put, ffi_pdf_obj_delete,
 				ffi_gc_pdf_obj);
 	} else {
@@ -2160,7 +2159,7 @@ static void ffi_PDFDocument_getTrailer(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	ffi_pushobj(J, trailer);
+	ffi_pushobj(J, pdf_keep_obj(ctx, trailer));
 }
 
 static void ffi_PDFDocument_addObject(js_State *J)
@@ -2171,7 +2170,7 @@ static void ffi_PDFDocument_addObject(js_State *J)
 	pdf_obj *ind;
 
 	fz_try(ctx)
-		ind = pdf_add_object(ctx, pdf, obj);
+		ind = pdf_add_object_drop(ctx, pdf, obj);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2350,12 +2349,12 @@ static void ffi_PDFObject_resolve(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	pdf_obj *res;
+	pdf_obj *ind;
 	fz_try(ctx)
-		res = pdf_resolve_indirect(ctx, obj);
+		ind = pdf_resolve_indirect(ctx, obj);
 	fz_catch(ctx)
 		rethrow(J);
-	ffi_pushobj(J, res);
+	ffi_pushobj(J, pdf_keep_obj(ctx, ind));
 }
 
 static void ffi_PDFObject_toString(js_State *J)
