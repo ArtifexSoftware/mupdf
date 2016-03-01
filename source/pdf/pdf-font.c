@@ -2,6 +2,7 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_ADVANCES_H
 #include FT_FONT_FORMATS_H
 #include FT_TRUETYPE_TABLES_H
 
@@ -181,17 +182,18 @@ pdf_font_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 
 static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
+	int mask = FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
 	int gid = ft_cid_to_gid(fontdesc, cid);
 	int fterr;
+	FT_Fixed adv;
 
-	fterr = FT_Load_Glyph(fontdesc->font->ft_face, gid,
-			FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM);
+	fterr = FT_Get_Advance(fontdesc->font->ft_face, gid, mask, &adv);
 	if (fterr)
 	{
-		fz_warn(ctx, "freetype load glyph (gid %d): %s", gid, ft_error_string(fterr));
+		fz_warn(ctx, "freetype advance glyph (gid %d): %s", gid, ft_error_string(fterr));
 		return 0;
 	}
-	return ((FT_Face)fontdesc->font->ft_face)->glyph->advance.x;
+	return adv * 1000 / ((FT_Face)fontdesc->font->ft_face)->units_per_EM;
 }
 
 static int lookup_mre_code(char *name)
