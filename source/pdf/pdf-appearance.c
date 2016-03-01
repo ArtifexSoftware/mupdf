@@ -1582,6 +1582,9 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 	fz_device *dev = NULL;
 	pdf_xobject *xobj = NULL;
 
+	pdf_obj *resources;
+	fz_buffer *contents;
+
 	fz_invert_matrix(&ctm, page_ctm);
 
 	fz_var(dev);
@@ -1612,9 +1615,16 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 			pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_Matrix, pdf_new_matrix(ctx, doc, &mat));
 		}
 
-		dev = pdf_new_pdf_device(ctx, doc, ap_obj, pdf_dict_get(ctx, ap_obj, PDF_NAME_Resources), &mat, NULL);
+		resources = pdf_dict_get(ctx, ap_obj, PDF_NAME_Resources);
+
+		contents = fz_new_buffer(ctx, 0);
+
+		dev = pdf_new_pdf_device(ctx, doc, &trect, contents, resources);
 		fz_run_display_list(ctx, disp_list, dev, &ctm, &fz_infinite_rect, NULL);
 		fz_drop_device(ctx, dev);
+
+		pdf_update_stream(ctx, doc, ap_obj, contents, 0);
+		fz_drop_buffer(ctx, contents);
 
 		/* Mark the appearance as changed - required for partial update */
 		xobj = pdf_load_xobject(ctx, doc, ap_obj);

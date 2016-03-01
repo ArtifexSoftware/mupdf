@@ -70,7 +70,7 @@ struct pdf_device_s
 	fz_device super;
 
 	pdf_document *doc;
-	pdf_obj *contents;
+	fz_rect *mediabox;
 	pdf_obj *resources;
 	fz_buffer *buffer;
 
@@ -1038,41 +1038,38 @@ pdf_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
+pdf_dev_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, const fz_matrix *ctm)
+{
+	pdf_device *pdev = (pdf_device*)dev;
+	gstate *gs = CURRENT_GSTATE(pdev);
+	pdev->mediabox->x0 = 0;
+	pdev->mediabox->y0 = 0;
+	pdev->mediabox->x1 = mediabox->x1 - mediabox->x0;
+	pdev->mediabox->y1 = mediabox->y1 - mediabox->y0;
+	fz_buffer_printf(ctx, gs->buf, "1 0 0 -1 %f %f cm\n", 0 - mediabox->x0, mediabox->y1);
+}
+
+static void
+pdf_dev_end_page(fz_context *ctx, fz_device *dev)
+{
+}
+
+static void
 pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 {
 	pdf_device *pdev = (pdf_device*)dev;
-	pdf_document *doc = pdev->doc;
 	int i;
 
 	pdf_dev_end_text(ctx, pdev);
 
 	for (i = pdev->num_gstates-1; i >= 0; i--)
-	{
 		fz_drop_stroke_state(ctx, pdev->gstates[i].stroke_state);
-	}
 
 	for (i = pdev->num_cid_fonts-1; i >= 0; i--)
-	{
 		fz_drop_font(ctx, pdev->cid_fonts[i]);
-	}
 
 	for (i = pdev->num_groups - 1; i >= 0; i--)
-	{
 		pdf_drop_obj(ctx, pdev->groups[i].ref);
-	}
-
-	if (pdev->contents)
-	{
-		pdf_update_stream(ctx, doc, pdev->contents, pdev->gstates[0].buf, 0);
-		pdf_drop_obj(ctx, pdev->contents);
-	}
-
-	if (pdev->buffer != pdev->gstates[0].buf)
-	{
-		fz_drop_buffer(ctx, pdev->gstates[0].buf);
-	}
-
-	pdf_drop_obj(ctx, pdev->resources);
 
 	fz_free(ctx, pdev->cid_fonts);
 	fz_free(ctx, pdev->image_indices);
@@ -1081,11 +1078,14 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->gstates);
 }
 
-fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *contents, pdf_obj *resources, const fz_matrix *ctm, fz_buffer *buf)
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_rect *mediabox, fz_buffer *buf, pdf_obj *resources)
 {
 	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
 
 	dev->super.drop_imp = pdf_dev_drop_imp;
+
+	dev->super.begin_page = pdf_dev_begin_page;
+	dev->super.end_page = pdf_dev_end_page;
 
 	dev->super.fill_path = pdf_dev_fill_path;
 	dev->super.stroke_path = pdf_dev_stroke_path;
@@ -1119,11 +1119,11 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *conte
 		if (!buf)
 			buf = fz_new_buffer(ctx, 256);
 		dev->doc = doc;
-		dev->contents = pdf_keep_obj(ctx, contents);
+		dev->mediabox = mediabox;
 		dev->resources = pdf_keep_obj(ctx, resources);
 		dev->gstates = fz_malloc_struct(ctx, gstate);
 		dev->gstates[0].buf = buf;
-		dev->gstates[0].ctm = *ctm;
+		dev->gstates[0].ctm = fz_identity; // XXX
 		dev->gstates[0].colorspace[0] = fz_device_gray(ctx);
 		dev->gstates[0].colorspace[1] = fz_device_gray(ctx);
 		dev->gstates[0].color[0][0] = 1;
@@ -1146,38 +1146,10 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, pdf_obj *conte
 	return (fz_device*)dev;
 }
 
-fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, pdf_page *page)
+fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc,
+	fz_rect *pmediabox, fz_buffer **pcontents, pdf_obj **presources)
 {
-	pdf_obj *resources = pdf_dict_get(ctx, page->me, PDF_NAME_Resources);
-	fz_matrix ctm;
-	pdf_obj *obj;
-
-	fz_pre_translate(fz_scale(&ctm, 1, -1), 0, page->mediabox.y0-page->mediabox.y1);
-
-	if (resources == NULL)
-	{
-		resources = pdf_new_dict(ctx, doc, 0);
-		pdf_dict_put_drop(ctx, page->me, PDF_NAME_Resources, resources);
-	}
-
-	/* We always make a new object for page->contents here, in case
-	 * the existing one is an array, or is shared. */
-	obj = pdf_new_dict(ctx, doc, 0);
-	fz_try(ctx)
-	{
-		pdf_obj *new_contents = pdf_add_object(ctx, doc, obj);
-		pdf_dict_put(ctx, page->me, PDF_NAME_Contents, new_contents);
-		pdf_drop_obj(ctx, page->contents);
-		page->contents = new_contents;
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(ctx, obj);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return pdf_new_pdf_device(ctx, doc, page->contents, resources, &ctm, NULL);
+	*presources = pdf_new_dict(ctx, doc, 0);
+	*pcontents = fz_new_buffer(ctx, 0);
+	return pdf_new_pdf_device(ctx, doc, pmediabox, *pcontents, *presources);
 }

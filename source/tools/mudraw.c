@@ -378,29 +378,29 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	else if (output_format == OUT_PDF)
 	{
-		fz_matrix ctm;
-		fz_rect bounds, tbounds;
-		pdf_page *newpage;
+		fz_buffer *contents;
+		pdf_obj *resources;
+		fz_rect mediabox;
 
-		fz_bound_page(ctx, page, &bounds);
-		fz_rotate(&ctm, rotation);
-		tbounds = bounds;
-		fz_transform_rect(&tbounds, &ctm);
-
-		newpage = pdf_create_page(ctx, pdfout, &bounds, 0, NULL, NULL);
-
+		dev = pdf_page_write(ctx, pdfout, &mediabox, &contents, &resources);
 		fz_try(ctx)
 		{
-			dev = pdf_page_write(ctx, pdfout, newpage);
+			pdf_obj *page_obj;
+
 			if (list)
-				fz_run_display_list(ctx, list, dev, &ctm, &tbounds, &cookie);
+				fz_run_display_list(ctx, list, dev, &fz_identity, NULL, &cookie);
 			else
-				fz_run_page(ctx, page, dev, &ctm, &cookie);
-			fz_drop_device(ctx, dev);
-			dev = NULL;
+				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+
+			fz_bound_page(ctx, page, &mediabox);
+			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, contents, resources);
+			pdf_insert_page(ctx, pdfout, -1, page_obj);
+			pdf_drop_obj(ctx, page_obj);
 		}
 		fz_always(ctx)
 		{
+			pdf_drop_obj(ctx, resources);
+			fz_drop_buffer(ctx, contents);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 		}
@@ -410,8 +410,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
-		pdf_insert_page(ctx, pdfout, newpage, INT_MAX);
-		fz_drop_page(ctx, &newpage->super);
 	}
 
 	else if (output_format == OUT_SVG)

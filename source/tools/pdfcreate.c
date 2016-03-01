@@ -91,7 +91,7 @@ static void create_page(char *input)
 
 	fz_buffer *contents;
 	pdf_obj *resources;
-	pdf_page *page;
+	pdf_obj *page;
 
 	resources = pdf_new_dict(ctx, doc, 2);
 	contents = fz_new_buffer(ctx, 1024);
@@ -133,9 +133,9 @@ static void create_page(char *input)
 	}
 	fz_drop_stream(ctx, stm);
 
-	page = pdf_create_page(ctx, doc, &mediabox, rotate, contents, resources);
-	pdf_insert_page(ctx, doc, page, INT_MAX);
-	pdf_drop_page(ctx, page);
+	page = pdf_add_page(ctx, doc, &mediabox, rotate, contents, resources);
+	pdf_insert_page(ctx, doc, -1, page);
+	pdf_drop_obj(ctx, page);
 
 	fz_drop_buffer(ctx, contents);
 	pdf_drop_obj(ctx, resources);

@@ -232,69 +232,41 @@ pdfapp_more_data(void *app_, int complete)
 static int make_fake_doc(pdfapp_t *app)
 {
 	fz_context *ctx = app->ctx;
-	fz_matrix ctm = { 1, 0, 0, 1, 0, 0 };
-	fz_rect bounds;
-	pdf_page *newpage = NULL;
 	pdf_document *pdf = NULL;
-	fz_device *dev = NULL;
-	fz_path *path = NULL;
-	fz_stroke_state stroke = fz_default_stroke_state;
-	float red[3] = { 1, 0, 0 };
-	int i;
-
-	fz_var(pdf);
-	fz_var(dev);
-	fz_var(newpage);
+	fz_buffer *contents = NULL;
 
 	fz_try(ctx)
 	{
+		fz_rect mediabox = { 0, 0, app->winw, app->winh };
+		pdf_obj *page_obj;
+		int i;
+
+		contents = fz_new_buffer(ctx, 100);
 		pdf = pdf_create_document(ctx);
-		app->doc = &pdf->super;
-		bounds.x0 = 0;
-		bounds.y0 = 0;
-		bounds.x1 = app->winw;
-		bounds.y1 = app->winh;
 
-		newpage = pdf_create_page(ctx, pdf, &bounds, 0, NULL, NULL);
+		app->doc = (fz_document*)pdf;
 
-		dev = pdf_page_write(ctx, pdf, newpage);
-
-		/* Now the page content */
-		fz_begin_page(ctx, dev, &bounds, &ctm);
-
-		path = fz_new_path(ctx);
-		fz_moveto(ctx, path, 0, 0);
-		fz_lineto(ctx, path, bounds.x1, bounds.y1);
-		fz_moveto(ctx, path, 0, bounds.y1);
-		fz_lineto(ctx, path, bounds.x1, 0);
-
-		stroke.linewidth = fz_min(bounds.x1, bounds.y1)/4;
-
-		fz_stroke_path(ctx, dev, path, &stroke, &ctm, fz_device_rgb(ctx), red, 1);
-
-		fz_end_page(ctx, dev);
-
-		fz_drop_device(ctx, dev);
-		dev = NULL;
+		fz_buffer_printf(ctx, contents, "1 0 0 rg %f w 0 0 m %f %f l 0 %f m %f 0 l\n",
+			fz_min(mediabox.x1, mediabox.y1) / 4,
+			mediabox.x1, mediabox.y1,
+			mediabox.y1, mediabox.x1);
 
 		/* Create enough copies of our blank(ish) page so that the
 		 * page number is preserved if and when a subsequent load
 		 * works. */
+		page_obj = pdf_add_page(ctx, pdf, &mediabox, 0, contents, NULL);
 		for (i = 0; i < app->pagecount; i++)
-			pdf_insert_page(ctx, pdf, newpage, INT_MAX);
+			pdf_insert_page(ctx, pdf, -1, page_obj);
+		pdf_drop_obj(ctx, page_obj);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_path(ctx, path);
-		pdf_drop_page(ctx, newpage);
-		fz_drop_device(ctx, dev);
-		dev = NULL;
+		fz_drop_buffer(ctx, contents);
 	}
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
 	}
-
 	return 0;
 }
 
