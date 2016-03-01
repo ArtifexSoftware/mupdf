@@ -1412,7 +1412,7 @@ pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_font *font)
 				pdf_dict_put_drop(ctx, obj, PDF_NAME_Subtype, PDF_NAME_Type1C);
 			break;
 		}
-		ref = pdf_new_ref(ctx, doc, obj);
+		ref = pdf_add_object(ctx, doc, obj);
 		pdf_update_stream(ctx, doc, ref, buf, 0);
 	}
 	fz_always(ctx)
@@ -1471,7 +1471,7 @@ pdf_add_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 			}
 		}
 
-		ref = pdf_new_ref(ctx, doc, fdobj);
+		ref = pdf_add_object(ctx, doc, fdobj);
 	}
 	fz_always(ctx)
 	{
@@ -1523,7 +1523,7 @@ pdf_add_simple_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fo
 		fz_rethrow(ctx);
 	}
 
-	return pdf_new_ref(ctx, doc, arr);
+	return pdf_add_object_drop(ctx, doc, arr);
 }
 
 static pdf_obj*
@@ -1666,7 +1666,7 @@ pdf_add_cid_font_widths(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 		pdf_drop_obj(ctx, run_obj);
 		fz_rethrow(ctx);
 	}
-	return pdf_new_ref(ctx, doc, fwobj);
+	return pdf_add_object_drop(ctx, doc, fwobj);
 }
 
 /* Descendant font construction used for CID font creation from ttf or Adobe type1 */
@@ -1720,7 +1720,7 @@ pdf_add_descendant_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontd
 		if (fw != NULL)
 			pdf_dict_put(ctx, fobj, PDF_NAME_W, fw);
 
-		fref = pdf_new_ref(ctx, doc, fobj);
+		fref = pdf_add_object(ctx, doc, fobj);
 	}
 	fz_always(ctx)
 	{
@@ -1897,7 +1897,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 		fz_buffer_printf(ctx, buf, "end\nend\n");
 
 		fobj = pdf_new_dict(ctx, doc, 3);
-		fref = pdf_new_ref(ctx, doc, fobj);
+		fref = pdf_add_object(ctx, doc, fobj);
 		pdf_update_stream(ctx, doc, fref, buf, 0);
 	}
 	fz_always(ctx)
@@ -1969,7 +1969,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			pdf_dict_put(ctx, fobj, PDF_NAME_DescendantFonts, obj_array);
 			if (obj_tounicode_ref)
 				pdf_dict_put(ctx, fobj, PDF_NAME_ToUnicode, obj_tounicode_ref);
-			fref = pdf_new_ref(ctx, doc, fobj);
+			fref = pdf_add_object(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
 			fref = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
@@ -2054,7 +2054,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 				pdf_dict_put(ctx, fobj, PDF_NAME_FontDescriptor, fdes_ref);
 			}
 
-			fref = pdf_new_ref(ctx, doc, fobj);
+			fref = pdf_add_object(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
 			fref = pdf_insert_resource(ctx, doc->resources->font, digest, fref);

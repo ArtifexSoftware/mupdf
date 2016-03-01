@@ -441,7 +441,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 			}
 			if (image->mask)
 				pdf_add_image(ctx, doc, image->mask, 0);
-			imref = pdf_new_ref(ctx, doc, imobj);
+			imref = pdf_add_object(ctx, doc, imobj);
 			pdf_update_stream(ctx, doc, imref, buffer, 1);
 
 			/* Add ref to our image resource hash table. */

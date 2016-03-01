@@ -323,7 +323,7 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 		{
 			char text[32];
 			pdf_dict_put_drop(ctx, o, (stroke ? PDF_NAME_CA : PDF_NAME_ca), pdf_new_real(ctx, doc, alpha));
-			ref = pdf_new_ref(ctx, doc, o);
+			ref = pdf_add_object(ctx, doc, o);
 			fz_snprintf(text, sizeof(text), "ExtGState/Alp%d", i);
 			pdf_dict_putp(ctx, pdev->resources, text, ref);
 		}
@@ -577,7 +577,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceCMYK);
 			else
 				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceRGB);
-			group_ref = pdev->groups[num].ref = pdf_new_ref(ctx, doc, group);
+			group_ref = pdev->groups[num].ref = pdf_add_object(ctx, doc, group);
 		}
 		fz_always(ctx)
 		{
@@ -598,7 +598,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 		pdf_dict_put(ctx, form, PDF_NAME_Group, group_ref);
 		pdf_dict_put_drop(ctx, form, PDF_NAME_FormType, pdf_new_int(ctx, doc, 1));
 		pdf_dict_put_drop(ctx, form, PDF_NAME_BBox, pdf_new_rect(ctx, doc, bbox));
-		*form_ref = pdf_new_ref(ctx, doc, form);
+		*form_ref = pdf_add_object(ctx, doc, form);
 	}
 	fz_always(ctx)
 	{
@@ -916,8 +916,8 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 
 		egs = pdf_new_dict(ctx, doc, 5);
 		pdf_dict_put_drop(ctx, egs, PDF_NAME_Type, PDF_NAME_ExtGState);
-		pdf_dict_put_drop(ctx, egs, PDF_NAME_SMask, pdf_new_ref(ctx, doc, smask));
-		egs_ref = pdf_new_ref(ctx, doc, egs);
+		pdf_dict_put_drop(ctx, egs, PDF_NAME_SMask, pdf_add_object(ctx, doc, smask));
+		egs_ref = pdf_add_object(ctx, doc, egs);
 
 		{
 			char text[32];
@@ -1165,7 +1165,7 @@ fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, pdf_page *page)
 	obj = pdf_new_dict(ctx, doc, 0);
 	fz_try(ctx)
 	{
-		pdf_obj *new_contents = pdf_new_ref(ctx, doc, obj);
+		pdf_obj *new_contents = pdf_add_object(ctx, doc, obj);
 		pdf_dict_put(ctx, page->me, PDF_NAME_Contents, new_contents);
 		pdf_drop_obj(ctx, page->contents);
 		page->contents = new_contents;

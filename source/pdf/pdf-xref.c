@@ -700,14 +700,6 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 	return size;
 }
 
-pdf_obj *
-pdf_new_ref(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
-{
-	int num = pdf_create_object(ctx, doc);
-	pdf_update_object(ctx, doc, num, obj);
-	return pdf_new_indirect(ctx, doc, num, 0);
-}
-
 static pdf_xref_entry *
 pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, fz_off_t ofs, int len)
 {
@@ -2731,6 +2723,41 @@ pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc)
 	return (pdf_document *)((doc && doc->close == (fz_document_close_fn *)pdf_close_document) ? doc : NULL);
 }
 
+pdf_obj *
+pdf_add_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+{
+	int num;
+	if (pdf_is_indirect(ctx, obj))
+		return pdf_keep_obj(ctx, obj);
+	num = pdf_create_object(ctx, doc);
+	pdf_update_object(ctx, doc, num, obj);
+	return pdf_new_indirect(ctx, doc, num, 0);
+}
+
+pdf_obj *
+pdf_add_object_drop(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+{
+	pdf_obj *ind;
+	fz_try(ctx)
+		ind = pdf_add_object(ctx, doc, obj);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, obj);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return ind;
+}
+
+pdf_obj *
+pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
+{
+	pdf_obj *ind = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 4));
+	fz_try(ctx)
+		pdf_update_stream(ctx, doc, ind, buf, 0);
+	fz_catch(ctx)
+		pdf_drop_obj(ctx, ind);
+	return ind;
+}
+
 pdf_document *pdf_create_document(fz_context *ctx)
 {
 	pdf_document *doc;
@@ -2757,12 +2784,12 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		trailer = pdf_new_dict(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, 3));
 		o = root = pdf_new_dict(ctx, doc, 2);
-		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Root, pdf_new_ref(ctx, doc, o));
+		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Root, pdf_add_object(ctx, doc, o));
 		pdf_drop_obj(ctx, o);
 		o = NULL;
 		pdf_dict_put_drop(ctx, root, PDF_NAME_Type, PDF_NAME_Catalog);
 		o = pages = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pdf_new_ref(ctx, doc, o));
+		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pdf_add_object(ctx, doc, o));
 		pdf_drop_obj(ctx, o);
 		o = NULL;
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);

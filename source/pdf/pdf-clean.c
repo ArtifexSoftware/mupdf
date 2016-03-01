@@ -39,7 +39,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 
 		if (own_res)
 		{
-			ref = pdf_new_ref(ctx, doc, res);
+			ref = pdf_add_object(ctx, doc, res);
 			pdf_dict_put(ctx, obj, PDF_NAME_Resources, ref);
 		}
 	}
@@ -112,7 +112,7 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 		/* ProcSet - no cleaning possible. Inherit this from the old dict. */
 		pdf_dict_put(ctx, res, PDF_NAME_ProcSet, pdf_dict_get(ctx, orig_res, PDF_NAME_ProcSet));
 
-		ref = pdf_new_ref(ctx, doc, res);
+		ref = pdf_add_object(ctx, doc, res);
 		pdf_dict_put(ctx, obj, PDF_NAME_Resources, ref);
 	}
 	fz_always(ctx)
@@ -161,7 +161,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		{
 			/* create a new object to replace the array */
 			new_obj = pdf_new_dict(ctx, doc, 1);
-			new_ref = pdf_new_ref(ctx, doc, new_obj);
+			new_ref = pdf_add_object(ctx, doc, new_obj);
 			pdf_drop_obj(ctx, page->contents);
 			page->contents = contents = pdf_keep_obj(ctx, new_ref);
 		}
@@ -268,7 +268,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 
 		pdf_update_stream(ctx, doc, contents, buffer, 0);
 		pdf_drop_obj(ctx, page->resources);
-		ref = pdf_new_ref(ctx, doc, res);
+		ref = pdf_add_object(ctx, doc, res);
 		page->resources = pdf_keep_obj(ctx, ref);
 		pdf_dict_put(ctx, page->me, PDF_NAME_Resources, ref);
 	}

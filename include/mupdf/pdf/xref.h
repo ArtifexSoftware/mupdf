@@ -25,6 +25,10 @@ void pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *obj
 */
 void pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *ref, fz_buffer *buf, int compressed);
 
+pdf_obj *pdf_add_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+pdf_obj *pdf_add_object_drop(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
+pdf_obj *pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf);
+
 /*
  * xref and object / stream api
  */
@@ -102,7 +106,6 @@ int pdf_xref_obj_is_unsaved_signature(pdf_document *doc, pdf_obj *obj);
 
 void pdf_repair_xref(fz_context *ctx, pdf_document *doc);
 void pdf_repair_obj_stms(fz_context *ctx, pdf_document *doc);
-pdf_obj *pdf_new_ref(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 void pdf_ensure_solid_xref(fz_context *ctx, pdf_document *doc, int num);
 void pdf_mark_xref(fz_context *ctx, pdf_document *doc);
 void pdf_clear_xref(fz_context *ctx, pdf_document *doc);

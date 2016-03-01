@@ -628,7 +628,7 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, pdf_page *page, int at)
 	pdf_obj *page_ref;
 	int i;
 
-	page_ref = pdf_new_ref(ctx, doc, page->me);
+	page_ref = pdf_add_object(ctx, doc, page->me);
 
 	fz_try(ctx)
 	{
@@ -742,7 +742,7 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int
 		if (contents != NULL)
 		{
 			obj = pdf_new_dict(ctx, doc, 4);
-			page->contents = pdf_new_ref(ctx, doc, obj);
+			page->contents = pdf_add_object(ctx, doc, obj);
 			pdf_update_stream(ctx, doc, page->contents, contents, 0);
 			pdf_drop_obj(ctx, obj);
 			obj = NULL;
@@ -755,7 +755,7 @@ pdf_create_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int
 				pdf_dict_put(ctx, pageobj, PDF_NAME_Resources, resources);
 			else
 			{
-				pdf_obj *ref = pdf_new_ref(ctx, doc, resources);
+				pdf_obj *ref = pdf_add_object(ctx, doc, resources);
 				pdf_dict_put(ctx, pageobj, PDF_NAME_Resources, ref);
 				pdf_drop_obj(ctx, ref);
 			}

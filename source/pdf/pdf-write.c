@@ -1149,7 +1149,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	{
 		/* Linearization params */
 		params_obj = pdf_new_dict(ctx, doc, 10);
-		params_ref = pdf_new_ref(ctx, doc, params_obj);
+		params_ref = pdf_add_object(ctx, doc, params_obj);
 		params_num = pdf_to_num(ctx, params_ref);
 
 		opts->use_list[params_num] = USE_PARAMS;
@@ -1178,7 +1178,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 		/* Primary hint stream */
 		hint_obj = pdf_new_dict(ctx, doc, 10);
-		hint_ref = pdf_new_ref(ctx, doc, hint_obj);
+		hint_ref = pdf_add_object(ctx, doc, hint_obj);
 		hint_num = pdf_to_num(ctx, hint_ref);
 
 		opts->use_list[hint_num] = USE_HINTS;
@@ -2947,7 +2947,7 @@ make_page_tree_node(fz_context *ctx, pdf_document *doc, int l, int r, pdf_obj *p
 		if (!root)
 			pdf_dict_put(ctx, me, PDF_NAME_Parent, parent_ref);
 		a = pdf_new_array(ctx, doc, KIDS_PER_LEVEL);
-		me_ref = pdf_new_ref(ctx, doc, me);
+		me_ref = pdf_add_object(ctx, doc, me);
 
 		for (spaces = KIDS_PER_LEVEL; l < r; spaces--)
 		{

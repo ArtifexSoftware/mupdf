@@ -421,7 +421,7 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *an
 		find_free_font_name(ctx, form_fonts, nbuf, sizeof(nbuf));
 
 		font = pdf_new_dict(ctx, doc, 5);
-		ref = pdf_new_ref(ctx, doc, font);
+		ref = pdf_add_object(ctx, doc, font);
 		pdf_dict_puts_drop(ctx, form_fonts, nbuf, ref);
 
 		pdf_dict_put_drop(ctx, font, PDF_NAME_Type, PDF_NAME_Font);
