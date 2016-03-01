@@ -564,7 +564,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				else
 				{
 					sprintf(filename_buf, output, pagenum);
-					output_file = fz_new_output_with_path(ctx, filename_buf, 0);
+					if (output_format != OUT_PWG && output_format != OUT_PCL)
+						output_file = fz_new_output_with_path(ctx, filename_buf, 0);
 				}
 
 				if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
