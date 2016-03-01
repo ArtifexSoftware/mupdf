@@ -161,6 +161,12 @@ static const char *require_js =
 
 /* destructors */
 
+static void ffi_gc_fz_buffer(js_State *J, void *buf)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_buffer(ctx, buf);
+}
+
 static void ffi_gc_fz_document(js_State *J, void *doc)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -683,6 +689,64 @@ static void ffi_pushobj(js_State *J, pdf_obj *obj)
 	} else {
 		js_pushnull(J);
 	}
+}
+
+static int ffi_buffer_has(js_State *J, void *buf_, const char *key)
+{
+	fz_buffer *buf = buf_;
+	int idx;
+	if (is_number(key, &idx)) {
+		if (idx < 0 || idx >= buf->len)
+			js_rangeerror(J, "index out of bounds");
+		js_pushnumber(J, buf->data[idx]);
+		return 1;
+	}
+	if (!strcmp(key, "length")) {
+		js_pushnumber(J, buf->len);
+		return 1;
+	}
+	return 0;
+}
+
+static int ffi_buffer_put(js_State *J, void *buf_, const char *key)
+{
+	fz_buffer *buf = buf_;
+	int idx;
+	if (is_number(key, &idx)) {
+		if (idx < 0 || idx >= buf->len)
+			js_rangeerror(J, "index out of bounds");
+		buf->data[idx] = js_tonumber(J, -1);
+		return 1;
+	}
+	if (!strcmp(key, "length"))
+		js_typeerror(J, "buffer length is read-only");
+	return 0;
+}
+
+static fz_buffer *ffi_tobuffer(js_State *J, int idx)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf;
+
+	if (js_isuserdata(J, 1, "fz_buffer"))
+		buf = fz_keep_buffer(ctx, js_touserdata(J, 1, "fz_buffer"));
+	else {
+		const char *str = js_tostring(J, 1);
+		fz_try(ctx)
+			buf = fz_new_buffer_from_shared_data(ctx, (unsigned char*)str, strlen(str));
+		fz_catch(ctx)
+			rethrow(J);
+	}
+
+	return buf;
+}
+
+static void ffi_pushbuffer(js_State *J, fz_buffer *buf)
+{
+	js_getregistry(J, "fz_buffer");
+	js_newuserdatax(J, "fz_buffer", buf,
+			ffi_buffer_has, ffi_buffer_put, NULL,
+			ffi_gc_fz_buffer);
 }
 
 /* device calling into js from c */
@@ -1351,6 +1415,80 @@ static void ffi_Device_endTile(js_State *J)
 }
 
 /* mupdf module */
+
+static void ffi_readFile(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	const char *filename = js_tostring(J, 1);
+	fz_buffer *buf;
+	fz_try(ctx)
+		buf = fz_read_file(ctx, filename);
+	fz_catch(ctx)
+		rethrow(J);
+	return ffi_pushbuffer(J, buf);
+}
+
+static void ffi_new_Buffer(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	int n = js_tonumber(J, 1);
+	fz_buffer *buf;
+	fz_try(ctx)
+		buf = fz_new_buffer(ctx, n);
+	fz_catch(ctx)
+		rethrow(J);
+	return ffi_pushbuffer(J, buf);
+}
+
+static void ffi_Buffer_writeByte(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	unsigned char val = js_tonumber(J, 1);
+	fz_try(ctx)
+		fz_write_buffer_byte(ctx, buf, val);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Buffer_writeRune(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	int val = js_tonumber(J, 1);
+	fz_try(ctx)
+		fz_write_buffer_rune(ctx, buf, val);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Buffer_write(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	int i, n = js_gettop(J);
+
+	for (i = 1; i < n; ++i) {
+		const char *s = js_tostring(J, i);
+		fz_try(ctx) {
+			if (i > 1)
+				fz_write_buffer_byte(ctx, buf, ' ');
+			fz_write_buffer(ctx, buf, s, strlen(s));
+		} fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_Buffer_writeLine(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	ffi_Buffer_write(J);
+	fz_try(ctx)
+		fz_write_buffer_byte(ctx, buf, '\n');
+	fz_catch(ctx)
+		rethrow(J);
+}
 
 static void ffi_new_Document(js_State *J)
 {
@@ -2044,16 +2182,11 @@ static void ffi_PDFDocument_addStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	const char *str = js_tostring(J, 1);
-	fz_buffer *buf = NULL;
+	fz_buffer *buf = ffi_tobuffer(J, 1);
 	pdf_obj *ind;
 
-	fz_var(buf);
-
-	fz_try(ctx) {
-		buf = fz_new_buffer_from_shared_data(ctx, (unsigned char*)str, strlen(str));
+	fz_try(ctx)
 		ind = pdf_add_stream(ctx, pdf, buf);
-	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
@@ -2308,6 +2441,15 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "Buffer.writeByte", ffi_Buffer_writeByte, 1);
+		jsB_propfun(J, "Buffer.writeRune", ffi_Buffer_writeRune, 1);
+		jsB_propfun(J, "Buffer.writeLine", ffi_Buffer_writeLine, 1);
+		jsB_propfun(J, "Buffer.write", ffi_Buffer_write, 1);
+	}
+	js_setregistry(J, "fz_buffer");
+
+	js_newobject(J);
+	{
 		jsB_propfun(J, "Document.countPages", ffi_Document_countPages, 0);
 		jsB_propfun(J, "Document.loadPage", ffi_Document_loadPage, 1);
 		// Document.layout
@@ -2495,6 +2637,7 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propcon(J, "pdf_document", "PDFDocument", ffi_new_PDFDocument, 1);
 
+		jsB_propcon(J, "fz_buffer", "Buffer", ffi_new_Buffer, 1);
 		jsB_propcon(J, "fz_document", "Document", ffi_new_Document, 1);
 		jsB_propcon(J, "fz_pixmap", "Pixmap", ffi_new_Pixmap, 2);
 		jsB_propcon(J, "fz_image", "Image", ffi_new_Image, 1);
@@ -2502,6 +2645,8 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);
 		jsB_propcon(J, "fz_path", "Path", ffi_new_Path, 0);
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 1);
+
+		jsB_propfun(J, "readFile", ffi_readFile, 1);
 
 		js_getregistry(J, "DeviceGray");
 		js_defproperty(J, -2, "DeviceGray", JS_DONTENUM | JS_READONLY | JS_DONTCONF);
