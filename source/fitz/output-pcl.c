@@ -562,14 +562,12 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 					best_waste = waste;
 					rotated = 0;
 					size = i;
-					break;
 				}
 				if ((pcl->features & PCL_HAS_ORIENTATION) && w <= papersizes[i].height && h <= papersizes[i].width)
 				{
 					best_waste = waste;
 					rotated = 1;
 					size = i;
-					break;
 				}
 			}
 		}
