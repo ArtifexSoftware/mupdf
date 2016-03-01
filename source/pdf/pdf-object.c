@@ -388,6 +388,19 @@ pdf_document *pdf_get_indirect_document(fz_context *ctx, pdf_obj *obj)
 	return REF(obj)->doc;
 }
 
+pdf_document *pdf_get_bound_document(fz_context *ctx, pdf_obj *obj)
+{
+	if (obj < PDF_OBJ__LIMIT)
+		return NULL;
+	if (obj->kind == PDF_INDIRECT)
+		return REF(obj)->doc;
+	if (obj->kind == PDF_ARRAY)
+		return ARRAY(obj)->doc;
+	if (obj->kind == PDF_DICT)
+		return DICT(obj)->doc;
+	return NULL;
+}
+
 int pdf_objcmp_resolve(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 {
 	RESOLVE(a);
