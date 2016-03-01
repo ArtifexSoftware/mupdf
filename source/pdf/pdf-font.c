@@ -182,10 +182,10 @@ pdf_font_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 
 static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 {
-	int mask = FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
+	int mask = FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
 	int gid = ft_cid_to_gid(fontdesc, cid);
-	int fterr;
 	FT_Fixed adv;
+	int fterr;
 
 	fterr = FT_Get_Advance(fontdesc->font->ft_face, gid, mask, &adv);
 	if (fterr)
