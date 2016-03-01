@@ -1573,7 +1573,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx) { }
 }
 
-void
+static void
 pdf_close_document(fz_context *ctx, pdf_document *doc)
 {
 	int i;
@@ -1629,6 +1629,12 @@ pdf_close_document(fz_context *ctx, pdf_document *doc)
 	pdf_drop_resource_tables(ctx, doc);
 
 	fz_free(ctx, doc);
+}
+
+void
+pdf_drop_document(fz_context *ctx, pdf_document *doc)
+{
+	fz_drop_document(ctx, &doc->super);
 }
 
 void

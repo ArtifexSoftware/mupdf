@@ -178,7 +178,7 @@ int pdfcreate_main(int argc, char **argv)
 
 	pdf_save_document(ctx, doc, output, &opts);
 
-	pdf_close_document(ctx, doc);
+	pdf_drop_document(ctx, doc);
 
 	fz_flush_warnings(ctx);
 	fz_drop_context(ctx);

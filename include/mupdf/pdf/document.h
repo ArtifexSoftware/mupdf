@@ -87,14 +87,14 @@ pdf_document *pdf_open_document(fz_context *ctx, const char *filename);
 pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
 /*
-	pdf_close_document: Closes and frees an opened PDF document.
+	pdf_drop_document: Closes and frees an opened PDF document.
 
 	The resource store in the context associated with pdf_document
 	is emptied.
 
 	Does not throw exceptions.
 */
-void pdf_close_document(fz_context *ctx, pdf_document *doc);
+void pdf_drop_document(fz_context *ctx, pdf_document *doc);
 
 /*
 	pdf_specific: down-cast an fz_document to a pdf_document.

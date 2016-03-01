@@ -355,7 +355,7 @@ void pdf_clean_file(fz_context *ctx, char *infile, char *outfile, char *password
 	}
 	fz_always(ctx)
 	{
-		pdf_close_document(ctx, glo.doc);
+		pdf_drop_document(ctx, glo.doc);
 	}
 	fz_catch(ctx)
 	{

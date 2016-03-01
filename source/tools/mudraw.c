@@ -1134,7 +1134,7 @@ int mudraw_main(int argc, char **argv)
 		if (!output)
 			output = "out.pdf";
 		pdf_save_document(ctx, pdfout, output, NULL);
-		pdf_close_document(ctx, pdfout);
+		pdf_drop_document(ctx, pdfout);
 	}
 
 	if (output_format == OUT_HTML)

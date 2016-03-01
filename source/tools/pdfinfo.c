@@ -147,7 +147,7 @@ static void closexref(fz_context *ctx, globals *glo)
 {
 	if (glo->doc)
 	{
-		pdf_close_document(ctx, glo->doc);
+		pdf_drop_document(ctx, glo->doc);
 		glo->doc = NULL;
 	}
 

@@ -278,7 +278,7 @@ int pdfshow_main(int argc, char **argv)
 	}
 
 	fz_drop_output(ctx, out);
-	pdf_close_document(ctx, doc);
+	pdf_drop_document(ctx, doc);
 	fz_drop_context(ctx);
 	return 0;
 }
