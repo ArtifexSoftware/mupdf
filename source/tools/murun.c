@@ -727,10 +727,10 @@ static fz_buffer *ffi_tobuffer(js_State *J, int idx)
 	fz_context *ctx = js_getcontext(J);
 	fz_buffer *buf;
 
-	if (js_isuserdata(J, 1, "fz_buffer"))
-		buf = fz_keep_buffer(ctx, js_touserdata(J, 1, "fz_buffer"));
+	if (js_isuserdata(J, idx, "fz_buffer"))
+		buf = fz_keep_buffer(ctx, js_touserdata(J, idx, "fz_buffer"));
 	else {
-		const char *str = js_tostring(J, 1);
+		const char *str = js_tostring(J, idx);
 		fz_try(ctx)
 			buf = fz_new_buffer_from_shared_data(ctx, (unsigned char*)str, strlen(str));
 		fz_catch(ctx)
@@ -2194,6 +2194,105 @@ static void ffi_PDFDocument_addStream(js_State *J)
 	ffi_pushobj(J, ind);
 }
 
+static void ffi_PDFDocument_addImage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_image *image = js_touserdata(J, 1, "fz_image");
+	pdf_obj *ind;
+
+	fz_try(ctx)
+		ind = pdf_add_image(ctx, pdf, image, 0);
+	fz_always(ctx)
+		fz_drop_image(ctx, image);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushobj(J, ind);
+}
+
+static void ffi_PDFDocument_addSimpleFont(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_font *font = js_touserdata(J, 1, "fz_font");
+	pdf_obj *ind;
+
+	fz_try(ctx)
+		ind = pdf_add_simple_font(ctx, pdf, font);
+	fz_always(ctx)
+		fz_drop_font(ctx, font);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushobj(J, ind);
+}
+
+static void ffi_PDFDocument_addFont(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_font *font = js_touserdata(J, 1, "fz_font");
+	pdf_obj *ind;
+
+	fz_try(ctx)
+		ind = pdf_add_cid_font(ctx, pdf, font);
+	fz_always(ctx)
+		fz_drop_font(ctx, font);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushobj(J, ind);
+}
+
+static void ffi_PDFDocument_addPage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	fz_rect mediabox = ffi_torect(J, 1);
+	int rotate = js_tonumber(J, 2);
+	fz_buffer *contents = ffi_tobuffer(J, 3); /* FIXME: leak if ffi_toobj throws */
+	pdf_obj *resources = ffi_toobj(J, pdf, 4);
+	pdf_obj *ind;
+
+	fz_try(ctx)
+		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, contents, resources);
+	fz_always(ctx) {
+		fz_drop_buffer(ctx, contents);
+		pdf_drop_obj(ctx, resources);
+	} fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushobj(J, ind);
+}
+
+static void ffi_PDFDocument_insertPage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int at = js_tonumber(J, 1);
+	pdf_obj *obj = ffi_toobj(J, pdf, 2);
+
+	fz_try(ctx)
+		pdf_insert_page(ctx, pdf, at, obj);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFDocument_deletePage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int at = js_tonumber(J, 1);
+
+	fz_try(ctx)
+		pdf_delete_page(ctx, pdf, at);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_save(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2607,6 +2706,12 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
 		jsB_propfun(J, "PDFDocument.addObject", ffi_PDFDocument_addObject, 1);
 		jsB_propfun(J, "PDFDocument.addStream", ffi_PDFDocument_addStream, 1);
+		jsB_propfun(J, "PDFDocument.addSimpleFont", ffi_PDFDocument_addSimpleFont, 1);
+		jsB_propfun(J, "PDFDocument.addFont", ffi_PDFDocument_addFont, 1);
+		jsB_propfun(J, "PDFDocument.addImage", ffi_PDFDocument_addImage, 1);
+		jsB_propfun(J, "PDFDocument.addPage", ffi_PDFDocument_addPage, 4);
+		jsB_propfun(J, "PDFDocument.insertPage", ffi_PDFDocument_insertPage, 2);
+		jsB_propfun(J, "PDFDocument.deletePage", ffi_PDFDocument_deletePage, 1);
 		jsB_propfun(J, "PDFDocument.save", ffi_PDFDocument_save, 2);
 
 		jsB_propfun(J, "PDFDocument.newNull", ffi_PDFDocument_newNull, 0);
