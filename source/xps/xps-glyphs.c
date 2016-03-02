@@ -408,6 +408,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			float u_offset = 0;
 			float v_offset = 0;
 			float advance;
+			int dir;
 
 			if (is && *is)
 				is = xps_parse_glyph_index(is, &glyph_index);
@@ -450,7 +451,8 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 				tm.f = y - v_offset;
 			}
 
-			fz_show_glyph(ctx, text, font, &tm, glyph_index, char_code, is_sideways);
+			dir = bidi_level & 1 ? FZ_DIR_R2L : FZ_DIR_L2R;
+			fz_show_glyph(ctx, text, font, &tm, glyph_index, char_code, is_sideways, bidi_level, dir, fz_lang_unset);
 
 			x += advance * 0.01f * size;
 		}

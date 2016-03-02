@@ -1935,7 +1935,7 @@ static void ffi_Text_showGlyph(js_State *J)
 	int wmode = js_isdefined(J, 5) ? js_toboolean(J, 5) : 0;
 
 	fz_try(ctx)
-		fz_show_glyph(ctx, text, font, &trm, glyph, unicode, wmode);
+		fz_show_glyph(ctx, text, font, &trm, glyph, unicode, wmode, 0, FZ_DIR_UNSET, fz_lang_unset);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -1950,7 +1950,7 @@ static void ffi_Text_showString(js_State *J)
 	int wmode = js_isdefined(J, 4) ? js_toboolean(J, 4) : 0;
 
 	fz_try(ctx)
-		fz_show_string(ctx, text, font, &trm, s, wmode);
+		fz_show_string(ctx, text, font, &trm, s, wmode, 0, FZ_DIR_UNSET, fz_lang_unset);
 	fz_catch(ctx)
 		rethrow(J);
 

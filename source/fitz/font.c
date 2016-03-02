@@ -1442,6 +1442,8 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 	return ucs;
 }
 
+/* FIXME: This should take language too eventually, to allow for fonts where we can select different
+ * languages using opentype features. */
 int
 fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unicode, int script, fz_font **out_font)
 {

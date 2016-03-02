@@ -106,9 +106,8 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 	fz_html_flow *flow = fz_pool_alloc(ctx, pool, sizeof *flow);
 	flow->type = type;
 	flow->expand = 0;
-	flow->char_r2l = BIDI_LEFT_TO_RIGHT;
-	flow->block_r2l = BIDI_LEFT_TO_RIGHT;
-	flow->markup_r2l = BIDI_NEUTRAL;
+	flow->bidi_level = 0;
+	flow->markup_dir = FZ_DIR_UNSET;
 	flow->breaks_line = 0;
 	flow->style = style;
 	*top->flow_tail = flow;
@@ -381,7 +380,7 @@ static void init_box(fz_context *ctx, fz_html *box)
 
 	box->flow_head = NULL;
 	box->flow_tail = &box->flow_head;
-	box->flow_dir = BIDI_NEUTRAL;
+	box->flow_dir = FZ_DIR_UNSET;
 
 	fz_default_css_style(ctx, &box->style);
 }
@@ -757,7 +756,7 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buf
 	node->h = fz_from_css_number_scale(node->style->line_height, em, em, em);
 
 	s = get_node_text(ctx, node);
-	init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, s);
+	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->style->font, node->script, s);
 	while (walk_string(&walker))
 	{
 		max_x = 0;
@@ -810,31 +809,86 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	float slop = page_w - line_w;
 	float justify = 0;
 	float va;
-	int n = 0;
-	fz_html_flow *node = start;
-	fz_html_flow *mid;
+	int n, i;
+	fz_html_flow *node;
+	fz_html_flow **reorder;
+	unsigned int min_level, max_level;
+
+	/* Count the number of nodes on the line */
+	for(i = 0, n = 0, node = start; node != end; node = node->next)
+	{
+		n++;
+		if (node->type == FLOW_SPACE && node->expand && !node->breaks_line)
+			i++;
+	}
 
 	if (align == TA_JUSTIFY)
 	{
-		fz_html_flow *it;
-		for (it = node; it != end; it = it->next)
-			if (it->type == FLOW_SPACE && it->expand && !it->breaks_line)
-				++n;
-		justify = slop / n;
+		justify = slop / i;
 	}
 	else if (align == TA_RIGHT)
 		x += slop;
 	else if (align == TA_CENTER)
 		x += slop / 2;
 
-	/* The line data as supplied is start...end. */
-	/* We have the invariants that 1) start...mid are always laid out
-	 * correctly and 2) mid..node are the most recent set of right to left
-	 * blocks. */
-	mid = start;
-	while (node != end)
+	/* We need a block to hold the node pointers while we reorder */
+	reorder = fz_malloc_array(ctx, n, sizeof(*reorder));
+	min_level = start->bidi_level;
+	max_level = start->bidi_level;
+	for(i = 0, node = start; node != end; i++, node = node->next)
 	{
-		float w = node->w;
+		reorder[i] = node;
+		if (node->bidi_level < min_level)
+			min_level = node->bidi_level;
+		if (node->bidi_level > max_level)
+			max_level = node->bidi_level;
+	}
+
+	/* Do we need to do any reordering? */
+	if (min_level != max_level || (min_level & 1))
+	{
+		/* The lowest level we swap is always a r2l one */
+		min_level |= 1;
+		/* Each time around the loop we swap runs of fragments that have
+		 * levels >= max_level (and decrement max_level). */
+		do
+		{
+			int start = 0;
+			int end;
+			do
+			{
+				/* Skip until we find a level that's >= max_level */
+				while (start < n && reorder[start]->bidi_level < max_level)
+					start++;
+				/* If start >= n-1 then no more runs. */
+				if (start >= n-1)
+					break;
+				/* Find the end of the match */
+				i = start+1;
+				while (i < n && reorder[i]->bidi_level >= max_level)
+					i++;
+				/* Reverse from start to i-1 */
+				end = i-1;
+				while (start < end)
+				{
+					fz_html_flow *t = reorder[start];
+					reorder[start++] = reorder[end];
+					reorder[end--] = t;
+				}
+				start = i+1;
+			}
+			while (start < n);
+			max_level--;
+		}
+		while (max_level >= min_level);
+	}
+
+	for (i = 0; i < n; i++)
+	{
+		float w;
+
+		node = reorder[i];
+		w = node->w;
 
 		if (node->type == FLOW_SPACE && node->breaks_line)
 			w = 0;
@@ -845,30 +899,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		else if (node->type == FLOW_SHYPHEN && node->breaks_line)
 			w = node->w;
 
-		if (node->block_r2l)
-		{
-			float old_x = x;
-			if (mid != node)
-			{
-				/* We have met a r2l block, and have just had at least
-				 * one other r2l block. Move all the r2l blocks that
-				 * we've just had further right, and position this one
-				 * on the left. */
-				fz_html_flow *temp = mid;
-				while (temp != node)
-				{
-					old_x = temp->x;
-					temp->x += w;
-					temp = temp->next;
-				}
-			}
-			node->x = old_x;
-		}
-		else
-		{
-			node->x = x;
-			mid = node->next;
-		}
+		node->x = x;
 		x += w;
 
 		switch (node->style->vertical_align)
@@ -895,8 +926,9 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			node->y = y + baseline - node->h;
 		else
 			node->y = y + baseline + va;
-		node = node->next;
 	}
+
+	fz_free(ctx, reorder);
 }
 
 static void find_accumulated_margins(fz_context *ctx, fz_html *box, float *w, float *h)
@@ -933,7 +965,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
 	align = top->style.text_align;
 
-	if (box->flow_dir == BIDI_RIGHT_TO_LEFT)
+	if (box->flow_dir == FZ_DIR_R2L)
 	{
 		if (align == TA_LEFT)
 			align = TA_RIGHT;
@@ -1197,7 +1229,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			w = node->w;
 
 			s = get_node_text(ctx, node);
-			init_string_walker(ctx, &walker, hb_buf, node->char_r2l, node->style->font, node->script, s);
+			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->style->font, node->script, s);
 			while (walk_string(&walker))
 			{
 				const char *t;
@@ -1248,7 +1280,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					ly += p->y_advance;
 				}
 
-				if (node->char_r2l)
+				if (node->bidi_level & 1)
 				{
 					w -= lx * node_scale;
 					for (gp = 0; gp < walker.glyph_count; gp++)
@@ -1282,7 +1314,9 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 								continue;
 							trm.e = *(float *)&p->x_offset;
 							trm.f = *(float *)&p->y_offset;
-							fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, c, 0);
+							fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, c, 0,
+								node->bidi_level, node->markup_dir,
+								node->markup_lang);
 							break;
 						}
 						if (gp == walker.glyph_count)
@@ -1291,7 +1325,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 							 * because we've been shaped away into another. We can't afford
 							 * to just drop the codepoint as this will upset text extraction.
 							 */
-							fz_show_glyph(ctx, text, walker.font, &trm, -1, c, 0);
+							fz_show_glyph(ctx, text, walker.font, &trm, -1, c, 0, node->bidi_level, node->markup_dir, node->markup_lang);
 						}
 						else
 						{
@@ -1305,7 +1339,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 									continue;
 								trm.e = *(float *)&p->x_offset;
 								trm.f = *(float *)&p->y_offset;
-								fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, -1, 0);
+								fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, -1, 0, node->bidi_level, node->markup_dir, node->markup_lang);
 							}
 						}
 						idx += l;
@@ -1494,7 +1528,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	{
 		s += fz_chartorune(&c, s);
 		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
-		fz_show_glyph(ctx, text, font, &trm, g, c, 0);
+		fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_DIR_UNSET, fz_lang_unset);
 		trm.e += fz_advance_glyph(ctx, font, g, 0) * box->em;
 	}
 
@@ -1817,21 +1851,14 @@ typedef struct
 	uni_buf *buffer;
 } bidi_data;
 
-static void newFragCb(const uint32_t *fragment,
+static void fragment_cb(const uint32_t *fragment,
 			size_t fragment_len,
-			int block_r2l,
-			int char_r2l,
+			int bidi_level,
 			int script,
 			void *arg)
 {
 	bidi_data *data = (bidi_data *)arg;
 	size_t fragment_offset = fragment - data->buffer->data;
-
-	/* The Picsel code used to (effectively) do:
-	 * if (fragment_offset == 0) char_r2l = block_r2l;
-	 * but that makes no sense to me. All that could do is stop
-	 * a european number being treated as l2r because it was the
-	 * first thing on a line. */
 
 	/* We are guaranteed that fragmentOffset will be at the beginning
 	 * of flow. */
@@ -1861,8 +1888,7 @@ static void newFragCb(const uint32_t *fragment,
 		}
 
 		/* This flow box is entirely contained within this fragment. */
-		data->flow->block_r2l = block_r2l;
-		data->flow->char_r2l = char_r2l;
+		data->flow->bidi_level = bidi_level;
 		data->flow->script = script;
 		data->flow = data->flow->next;
 		fragment_offset += len;
@@ -1870,33 +1896,30 @@ static void newFragCb(const uint32_t *fragment,
 	}
 }
 
-static int
-dirn_matches(int dirn, int dirn2)
-{
-	return (dirn == BIDI_NEUTRAL || dirn2 == BIDI_NEUTRAL || dirn == dirn2);
-}
-
 static void
-detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_bidi_direction *baseDir, fz_html_flow *flow)
+detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, int baseDir, fz_html_flow *flow)
 {
 	fz_html_flow *end = flow;
 	const char *text;
 	bidi_data data;
-	fz_bidi_direction dirn;
+	fz_bidi_direction bidi_dir = BIDI_NEUTRAL;
+
+	if (baseDir == FZ_DIR_L2R)
+		bidi_dir = BIDI_LEFT_TO_RIGHT;
+	else if (baseDir == FZ_DIR_R2L)
+		bidi_dir = BIDI_RIGHT_TO_LEFT;
 
 	while (end)
 	{
-		dirn = BIDI_NEUTRAL;
+		int level = end->bidi_level;
 
 		/* Gather the text from the flow up into a single buffer (at
 		 * least, as much of it as has the same direction markup). */
 		buffer->len = 0;
-		while (end && dirn_matches(dirn, end->markup_r2l))
+		while (end && (level & 1) == (end->bidi_level & 1))
 		{
 			size_t len;
 			int broken = 0;
-
-			dirn = end->markup_r2l;
 
 			switch (end->type)
 			{
@@ -1948,13 +1971,7 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 		data.pool = pool;
 		data.flow = flow;
 		data.buffer = buffer;
-		fz_bidi_fragment_text(ctx, buffer->data, buffer->len, &dirn, &newFragCb, &data, 0 /* Flags */);
-
-		/* Set the default flow of the box to be the first non NEUTRAL thing we find */
-		if (*baseDir == BIDI_NEUTRAL)
-		{
-			*baseDir = dirn;
-		}
+		fz_bidi_fragment_text(ctx, buffer->data, buffer->len, &bidi_dir, &fragment_cb, &data, 0 /* Flags */);
 	}
 }
 
@@ -1964,7 +1981,7 @@ detect_box_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_ht
 	while (box)
 	{
 		if (box->flow_head)
-			detect_flow_directionality(ctx, pool, buffer, &box->flow_dir, box->flow_head);
+			detect_flow_directionality(ctx, pool, buffer, box->flow_dir, box->flow_head);
 		detect_box_directionality(ctx, pool, buffer, box->down);
 		box = box->next;
 	}

@@ -49,18 +49,16 @@ enum
  *
  * @param	fragment	first character in fragment
  * @param	fragmentLen	number of characters in fragment
- * @param	block_r2l	true if block should concatenate with other blocks
- *				as right-to-left
- * @param	char_r2l	true if characters within block should be laid out
- *				as right-to-left
+ * @param	bidiLevel	The bidirectional level for this text. The bottom bit
+ *				will be set iff block should concatenate with other
+ *				blocks as right-to-left
  * @param       script          the script in use for this fragment (other than common
  *                              or inherited)
  * @param	arg		data from caller of Bidi_fragmentText
  */
 typedef void (fz_bidi_fragment_callback)(const uint32_t *fragment,
 					size_t fragmentLen,
-					int block_r2l,
-					int char_r2l,
+					int bidiLevel,
 					int script,
 					void *arg);
 
@@ -72,9 +70,9 @@ typedef void (fz_bidi_fragment_callback)(const uint32_t *fragment,
  *			0123456789
  *			rrlllrrrrr,
  * we'll invoke callback with:
- *			&text[0], length == 2, rightToLeft ==  true
- *			&text[2], length == 3, rightToLeft == false
- *			&text[5], length == 5, rightToLeft ==  true.
+ *			&text[0], length == 2
+ *			&text[2], length == 3
+ *			&text[5], length == 5
  *
  * @param[in] text	start of Unicode sequence
  * @param[in] textlen   number of Unicodes to analyse

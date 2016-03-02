@@ -170,47 +170,11 @@ static fz_bidi_chartype class_from_ch_n(uint32_t ch)
 	return from_ch_ws;
 }
 
-static int
-is_european_number(const uint32_t *str, unsigned int len)
-{
-	const uint32_t *end = str + len;
-
-	for ( ; str != end; str++)
-	{
-		const uint32_t u = *str;
-		if ((u >= UNICODE_RTL_START && u < UNICODE_ARABIC_INDIC_DIGIT_ZERO) ||
-			(u > UNICODE_ARABIC_INDIC_DIGIT_NINE && u < UNICODE_EXTENDED_ARABIC_INDIC_DIGIT_ZERO) ||
-			(u > UNICODE_EXTENDED_ARABIC_INDIC_DIGIT_NINE && u <= UNICODE_RTL_END))
-		{
-			/* This is just a normal RTL character or accent */
-			return FALSE;
-		}
-		else if (!((u >= UNICODE_DIGIT_ZERO && u <= UNICODE_DIGIT_NINE) ||
-			(u == UNICODE_SUPERSCRIPT_TWO) ||
-			(u == UNICODE_SUPERSCRIPT_THREE) ||
-			(u == UNICODE_SUPERSCRIPT_ONE) ||
-			(u >= UNICODE_ARABIC_INDIC_DIGIT_ZERO && u <= UNICODE_ARABIC_INDIC_DIGIT_NINE) ||
-			(u >= UNICODE_EXTENDED_ARABIC_INDIC_DIGIT_ZERO && u <= UNICODE_EXTENDED_ARABIC_INDIC_DIGIT_NINE) ||
-			(u == UNICODE_SUPERSCRIPT_ZERO) ||
-			(u >= UNICODE_SUPERSCRIPT_FOUR && u <= UNICODE_SUPERSCRIPT_NINE) ||
-			(u >= UNICODE_SUBSCRIPT_ZERO && u <= UNICODE_SUBSCRIPT_NINE) ||
-			(u >= UNICODE_CIRCLED_DIGIT_ONE && u <= UNICODE_NUMBER_TWENTY_FULL_STOP) ||
-			(u == UNICODE_CIRCLED_DIGIT_ZERO) ||
-			(u >= UNICODE_FULLWIDTH_DIGIT_ZERO && u <= UNICODE_FULLWIDTH_DIGIT_NINE) ||
-			(u == UNICODE_ZERO_WIDTH_NON_JOINER)))
-		{
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-
 /* Split fragments into single scripts (or punctation + single script) */
 static void
 split_at_script(const uint32_t *fragment,
 		size_t fragment_len,
-		int block_r2l,
-		int char_r2l,
+		int level,
 		void *arg,
 		fz_bidi_fragment_callback *callback)
 {
@@ -237,51 +201,15 @@ split_at_script(const uint32_t *fragment,
 		else
 		{
 			/* Change of script. Break the fragment. */
-			(*callback)(&fragment[script_start], i - script_start, block_r2l, char_r2l, script, arg);
+			(*callback)(&fragment[script_start], i - script_start, level, script, arg);
 			script_start = i+1;
 			script = s;
 		}
 	}
 	if (script_start != fragment_len)
 	{
-		(*callback)(&fragment[script_start], fragment_len - script_start, block_r2l, char_r2l, script, arg);
+		(*callback)(&fragment[script_start], fragment_len - script_start, level, script, arg);
 	}
-}
-
-static void
-detect_numbers(const uint32_t *fragment,
-		size_t fragment_len,
-		size_t start,
-		size_t end,
-		const fz_bidi_level *levels,
-		void *arg,
-		fz_bidi_fragment_callback *callback)
-{
-	int block_r2l = ODD(levels[start]);
-	int char_r2l = block_r2l;
-
-	/* Check to see if we've got a number. Numbers should
-	 * never be block_r2l, so we can avoid the test. */
-	if (block_r2l || !is_european_number(&fragment[start], end-start))
-	{
-		/* No number, just split as normal */
-		split_at_script(&fragment[start],
-				end-start,
-				block_r2l,
-				char_r2l,
-				arg,
-				callback);
-		return;
-	}
-
-	/* We have a number. We have to check to see whether this
-	 * should be handled as a block_r2l thing. */
-	if (start != 0)
-		block_r2l = ODD(levels[start-1]);
-	if (block_r2l && end != fragment_len)
-		block_r2l = ODD(levels[end]);
-
-	split_at_script(&fragment[start], end-start, block_r2l, char_r2l, arg, callback);
 }
 
 /* Determines the character classes for all following
@@ -614,11 +542,9 @@ void fz_bidi_fragment_text(fz_context *ctx,
 				 * Create a text object for it, then start
 				 * a new fragment.
 				 */
-				detect_numbers(text,
-						textlen,
-						startOfFragment,
-						i,
-						levels,
+				split_at_script(&text[startOfFragment],
+						i - startOfFragment,
+						levels[startOfFragment],
 						arg,
 						callback);
 				startOfFragment = i;
@@ -626,11 +552,9 @@ void fz_bidi_fragment_text(fz_context *ctx,
 		}
 		/* Now i == textlen. Deal with the final (or maybe only) fragment. */
 		/* otherwise create 1 fragment */
-		detect_numbers(text,
-				textlen,
-				startOfFragment,
-				i,
-				levels,
+		split_at_script(&text[startOfFragment],
+				i - startOfFragment,
+				levels[startOfFragment],
 				arg,
 				callback);
 	}

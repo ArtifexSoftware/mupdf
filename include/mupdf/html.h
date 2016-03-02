@@ -185,7 +185,7 @@ struct fz_html_s
 	float em;
 	fz_html *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
-	fz_bidi_direction flow_dir;
+	int flow_dir;
 	fz_css_style style;
 	int list_item;
 	int is_first_flow; /* for text-indent */
@@ -202,25 +202,6 @@ enum
 	FLOW_SHYPHEN = 5
 };
 
-/* We have to recognise the distinction between render direction
- * and layout direction. For most strings render direction and
- * logical direction are the same.
- *
- * Char direction determines whether a string 'ABC' appears as
- * ABC or CBA.
- *
- * Block direction determines how fragments are attached together.
- * 'ABC' and 'DEF' with r2l char and block directions will
- * appear as 'FEDCBA'. With l2r char and block it will appear
- * as 'ABCDEF'.
- *
- * The reason for the distinction is that we can have logical
- * strings like 'ABC0123DEF', where 'ABC' and 'DEF' are in r2l
- * scripts. The bidirectional code breaks this down into 3 fragments
- * 'ABC' '0123' 'DEF', where all three are r2l, but digits need to
- * be rendered left to right. i.e. the desired result is:
- * FED0123CBA, rather than FED3210CBA.
- */
 struct fz_html_flow_s
 {
 	/* What type of node */
@@ -229,14 +210,11 @@ struct fz_html_flow_s
 	/* Whether this should expand during justification */
 	unsigned int expand : 1;
 
-	/* Whether the chars should be laid out r2l or l2r */
-	unsigned int char_r2l : 1;
+	/* Direction setting for text - UAX#9 says 125 is the max */
+	unsigned int bidi_level : 7;
 
-	/* Whether this block should stack with its neighbours r2l or l2r */
-	unsigned int block_r2l : 1;
-
-	/* Whether the markup specifies a given direction. */
-	unsigned int markup_r2l : 2;
+	/* Direction for text set in original document */
+	unsigned int markup_dir : 2;
 
 	/* Whether the markup specifies a given language. */
 	unsigned int markup_lang : 8;
