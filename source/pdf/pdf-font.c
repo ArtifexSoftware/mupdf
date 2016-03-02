@@ -1778,7 +1778,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 		ucs = FT_Get_First_Char(face, &gid);
 		while (gid > 0)
 		{
-			if (gid < face->num_glyphs)
+			if (gid < (FT_ULong)face->num_glyphs && face->num_glyphs > 0)
 				table[gid] = ucs;
 			ucs = FT_Get_Next_Char(face, ucs, &gid);
 		}
