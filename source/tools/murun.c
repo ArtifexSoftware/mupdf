@@ -2173,6 +2173,20 @@ static void ffi_PDFDocument_getTrailer(js_State *J)
 	ffi_pushobj(J, pdf_keep_obj(ctx, trailer));
 }
 
+static void ffi_PDFDocument_countObjects(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int count;
+
+	fz_try(ctx)
+		count = pdf_xref_len(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushnumber(J, count);
+}
+
 static void ffi_PDFDocument_addObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2538,11 +2552,59 @@ static void ffi_PDFObject_valueOf(js_State *J)
 		js_copy(J, 0);
 }
 
+static void ffi_PDFObject_isArray(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_array(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_isDictionary(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_dict(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_isIndirect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_indirect(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_toIndirect(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int num;
+	fz_try(ctx)
+		num = pdf_to_num(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, num);
+}
+
 static void ffi_PDFObject_isStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b = 0;
+	int b;
 	fz_try(ctx)
 		b = pdf_is_stream(ctx, obj);
 	fz_catch(ctx)
@@ -2872,6 +2934,7 @@ int murun_main(int argc, char **argv)
 	js_newobject(J);
 	{
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
+		jsB_propfun(J, "PDFDocument.countObjects", ffi_PDFDocument_countObjects, 0);
 		jsB_propfun(J, "PDFDocument.addObject", ffi_PDFDocument_addObject, 1);
 		jsB_propfun(J, "PDFDocument.addStream", ffi_PDFDocument_addStream, 1);
 		jsB_propfun(J, "PDFDocument.addSimpleFont", ffi_PDFDocument_addSimpleFont, 1);
@@ -2904,6 +2967,10 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.resolve", ffi_PDFObject_resolve, 0);
 		jsB_propfun(J, "PDFObject.toString", ffi_PDFObject_toString, 1);
 		jsB_propfun(J, "PDFObject.valueOf", ffi_PDFObject_valueOf, 0);
+		jsB_propfun(J, "PDFObject.isArray", ffi_PDFObject_isArray, 0);
+		jsB_propfun(J, "PDFObject.isDictionary", ffi_PDFObject_isDictionary, 0);
+		jsB_propfun(J, "PDFObject.isIndirect", ffi_PDFObject_isIndirect, 0);
+		jsB_propfun(J, "PDFObject.toIndirect", ffi_PDFObject_toIndirect, 0);
 		jsB_propfun(J, "PDFObject.isStream", ffi_PDFObject_isStream, 0);
 		jsB_propfun(J, "PDFObject.readStream", ffi_PDFObject_readStream, 0);
 		jsB_propfun(J, "PDFObject.readRawStream", ffi_PDFObject_readRawStream, 0);
