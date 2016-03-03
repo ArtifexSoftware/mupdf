@@ -133,4 +133,9 @@ int fz_snprintf(char *buffer, int space, const char *fmt, ...);
 */
 char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint);
 
+/*
+	fz_save_buffer: Save contents of a buffer to file.
+*/
+void fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename);
+
 #endif

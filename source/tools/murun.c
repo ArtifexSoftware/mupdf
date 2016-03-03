@@ -1489,6 +1489,17 @@ static void ffi_Buffer_writeLine(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Buffer_save(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	const char *filename = js_tostring(J, 1);
+	fz_try(ctx)
+		fz_save_buffer(ctx, buf, filename);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_new_Document(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2670,6 +2681,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Buffer.writeRune", ffi_Buffer_writeRune, 1);
 		jsB_propfun(J, "Buffer.writeLine", ffi_Buffer_writeLine, 1);
 		jsB_propfun(J, "Buffer.write", ffi_Buffer_write, 1);
+		jsB_propfun(J, "Buffer.save", ffi_Buffer_save, 1);
 	}
 	js_setregistry(J, "fz_buffer");
 

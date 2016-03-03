@@ -186,3 +186,15 @@ fz_printf(fz_context *ctx, fz_output *out, const char *fmt, ...)
 	fz_vprintf(ctx, out, fmt, args);
 	va_end(args);
 }
+
+void
+fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename)
+{
+	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
+	fz_try(ctx)
+		fz_write(ctx, out, buf->data, buf->len);
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
