@@ -2236,8 +2236,6 @@ static void ffi_PDFDocument_addImage(js_State *J)
 
 	fz_try(ctx)
 		ind = pdf_add_image(ctx, pdf, image, 0);
-	fz_always(ctx)
-		fz_drop_image(ctx, image);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2253,8 +2251,6 @@ static void ffi_PDFDocument_addSimpleFont(js_State *J)
 
 	fz_try(ctx)
 		ind = pdf_add_simple_font(ctx, pdf, font);
-	fz_always(ctx)
-		fz_drop_font(ctx, font);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2270,8 +2266,6 @@ static void ffi_PDFDocument_addFont(js_State *J)
 
 	fz_try(ctx)
 		ind = pdf_add_cid_font(ctx, pdf, font);
-	fz_always(ctx)
-		fz_drop_font(ctx, font);
 	fz_catch(ctx)
 		rethrow(J);
 
