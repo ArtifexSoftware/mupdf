@@ -4,7 +4,7 @@
  * Check if an object is a stream or not.
  */
 int
-pdf_is_stream(fz_context *ctx, pdf_document *doc, int num, int gen)
+pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num, int gen)
 {
 	pdf_xref_entry *entry;
 
@@ -14,6 +14,13 @@ pdf_is_stream(fz_context *ctx, pdf_document *doc, int num, int gen)
 	entry = pdf_cache_object(ctx, doc, num, gen);
 
 	return entry->stm_ofs != 0 || entry->stm_buf;
+}
+
+int
+pdf_is_stream(fz_context *ctx, pdf_obj *obj)
+{
+	return pdf_obj_num_is_stream(ctx, pdf_get_indirect_document(ctx, obj),
+			pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
 }
 
 /*
@@ -646,7 +653,7 @@ pdf_open_contents_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 	num = pdf_to_num(ctx, obj);
 	gen = pdf_to_gen(ctx, obj);
-	if (pdf_is_stream(ctx, doc, num, gen))
+	if (pdf_is_stream(ctx, obj))
 		return pdf_open_image_stream(ctx, doc, num, gen, num, gen, NULL);
 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "pdf object stream missing (%d %d R)", num, gen);

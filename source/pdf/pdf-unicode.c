@@ -61,7 +61,7 @@ pdf_load_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *font,
 {
 	unsigned int cpt;
 
-	if (pdf_is_stream(ctx, doc, pdf_to_num(ctx, cmapstm), pdf_to_gen(ctx, cmapstm)))
+	if (pdf_is_stream(ctx, cmapstm))
 	{
 		pdf_cmap *ucs_from_cpt = pdf_load_embedded_cmap(ctx, doc, cmapstm);
 		font->to_unicode = pdf_remap_cmap(ctx, font->encoding, ucs_from_cpt);

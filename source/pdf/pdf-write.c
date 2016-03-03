@@ -534,7 +534,7 @@ static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	/* Bake in /Length in stream objects */
 	fz_try(ctx)
 	{
-		if (pdf_is_stream(ctx, doc, num, gen))
+		if (pdf_obj_num_is_stream(ctx, doc, num, gen))
 		{
 			pdf_obj *len = pdf_dict_get(ctx, obj, PDF_NAME_Length);
 			if (pdf_is_indirect(ctx, len))
@@ -656,8 +656,8 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 			 */
 			fz_try(ctx)
 			{
-				streama = pdf_is_stream(ctx, doc, num, 0);
-				streamb = pdf_is_stream(ctx, doc, other, 0);
+				streama = pdf_obj_num_is_stream(ctx, doc, num, 0);
+				streamb = pdf_obj_num_is_stream(ctx, doc, other, 0);
 				differ = streama || streamb;
 				if (streama && streamb && opts->do_garbage >= 4)
 					differ = 0;
@@ -1792,7 +1792,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	}
 
 	entry = pdf_get_xref_entry(ctx, doc, num);
-	if (!pdf_is_stream(ctx, doc, num, gen))
+	if (!pdf_obj_num_is_stream(ctx, doc, num, gen))
 	{
 		fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_print_obj(ctx, opts->out, obj, opts->do_tight);

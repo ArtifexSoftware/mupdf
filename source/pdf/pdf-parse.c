@@ -65,7 +65,7 @@ pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 			srcptr = (unsigned char *) pdf_to_str_buf(ctx, src);
 			srclen = pdf_to_str_len(ctx, src);
 		}
-		else if (pdf_is_stream(ctx, doc, pdf_to_num(ctx, src), pdf_to_gen(ctx, src)))
+		else if (pdf_is_stream(ctx, src))
 		{
 			stmbuf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, src), pdf_to_gen(ctx, src));
 			srclen = fz_buffer_storage(ctx, stmbuf, (unsigned char **)&srcptr);

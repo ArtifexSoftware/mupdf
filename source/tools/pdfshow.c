@@ -129,7 +129,7 @@ static void showobject(int num, int gen)
 
 	obj = pdf_load_object(ctx, doc, num, gen);
 
-	if (pdf_is_stream(ctx, doc, num, gen))
+	if (pdf_is_stream(ctx, obj))
 	{
 		if (showbinary)
 		{

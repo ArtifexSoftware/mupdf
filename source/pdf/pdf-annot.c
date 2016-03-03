@@ -569,7 +569,7 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 				n = pdf_dict_get(ctx, ap, PDF_NAME_N); /* normal state */
 
 			/* lookup current state in sub-dictionary */
-			if (!pdf_is_stream(ctx, doc, pdf_to_num(ctx, n), pdf_to_gen(ctx, n)))
+			if (!pdf_is_stream(ctx, n))
 				n = pdf_dict_get(ctx, n, as);
 
 			pdf_to_rect(ctx, rect, &annot->rect);
@@ -579,7 +579,7 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 			annot->annot_type = pdf_annot_obj_type(ctx, obj);
 			annot->widget_type = annot->annot_type == FZ_ANNOT_WIDGET ? pdf_field_type(ctx, doc, obj) : PDF_WIDGET_TYPE_NOT_WIDGET;
 
-			if (pdf_is_stream(ctx, doc, pdf_to_num(ctx, n), pdf_to_gen(ctx, n)))
+			if (pdf_is_stream(ctx, n))
 			{
 				annot->ap = pdf_load_xobject(ctx, doc, n);
 				pdf_transform_annot(ctx, annot);

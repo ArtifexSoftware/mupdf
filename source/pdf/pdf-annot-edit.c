@@ -65,13 +65,13 @@ pdf_update_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 			n = pdf_dict_get(ctx, ap, PDF_NAME_N); /* normal state */
 
 		/* lookup current state in sub-dictionary */
-		if (!pdf_is_stream(ctx, doc, pdf_to_num(ctx, n), pdf_to_gen(ctx, n)))
+		if (!pdf_is_stream(ctx, n))
 			n = pdf_dict_get(ctx, n, as);
 
 		pdf_drop_xobject(ctx, annot->ap);
 		annot->ap = NULL;
 
-		if (pdf_is_stream(ctx, doc, pdf_to_num(ctx, n), pdf_to_gen(ctx, n)))
+		if (pdf_is_stream(ctx, n))
 		{
 			fz_try(ctx)
 			{

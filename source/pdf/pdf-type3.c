@@ -158,7 +158,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 			if (estrings[i])
 			{
 				obj = pdf_dict_gets(ctx, charprocs, estrings[i]);
-				if (pdf_is_stream(ctx, doc, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj)))
+				if (pdf_is_stream(ctx, obj))
 				{
 					fontdesc->font->t3procs[i] = pdf_load_stream(ctx, doc, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
 					fontdesc->size += fontdesc->font->t3procs[i]->cap;

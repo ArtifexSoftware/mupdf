@@ -1597,7 +1597,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 
 		/* See if there is a current normal appearance */
 		ap_obj = pdf_dict_getl(ctx, obj, PDF_NAME_AP, PDF_NAME_N, NULL);
-		if (!pdf_is_stream(ctx, doc, pdf_to_num(ctx, ap_obj), pdf_to_gen(ctx, ap_obj)))
+		if (!pdf_is_stream(ctx, ap_obj))
 			ap_obj = NULL;
 
 		if (ap_obj == NULL)
