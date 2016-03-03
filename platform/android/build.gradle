@@ -36,6 +36,7 @@ android {
             }
             java {
                 srcDir 'src'
+                exclude 'com/artifex/mupdf/fitz/AndroidDrawDevice.java'
             }
             res {
                 srcDir 'res'
