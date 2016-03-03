@@ -395,7 +395,7 @@ static int find_fids(JNIEnv *env)
 	mid_Text_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_TextWalker = get_class(&err, env, PKG"TextWalker");
-	mid_TextWalker_showGlyph = get_method(&err, env, "showGlyph", "(L"PKG"Font;L"PKG"Matrix;III)V");
+	mid_TextWalker_showGlyph = get_method(&err, env, "showGlyph", "(L"PKG"Font;L"PKG"Matrix;IIZ)V");
 
 	cls_TryLaterException = get_class(&err, env, PKG"TryLaterException");
 
