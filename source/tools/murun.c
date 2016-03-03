@@ -233,6 +233,12 @@ static void ffi_gc_fz_image(js_State *J, void *image)
 	fz_drop_image(ctx, image);
 }
 
+static void ffi_gc_fz_display_list(js_State *J, void *list)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_display_list(ctx, list);
+}
+
 static void ffi_gc_fz_device(js_State *J, void *device)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -1581,6 +1587,21 @@ static void ffi_Page_toPixmap(js_State *J)
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
+static void ffi_Page_toDisplayList(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = js_touserdata(J, 0, "fz_page");
+	fz_display_list *list;
+
+	fz_try(ctx)
+		list = fz_new_display_list_from_page(ctx, page);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_display_list");
+	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
+}
+
 static void ffi_Page_search(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2122,6 +2143,78 @@ static void ffi_Path_rect(js_State *J)
 		fz_rectto(ctx, path, x1, y1, x2, y2);
 	fz_catch(ctx)
 		rethrow(J);
+}
+
+static void ffi_new_DisplayList(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list;
+
+	fz_try(ctx)
+		list = fz_new_display_list(ctx);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_display_list");
+	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
+}
+
+static void ffi_DisplayList_run(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	fz_device *device = NULL;
+	fz_matrix ctm = ffi_tomatrix(J, 2);
+
+	if (js_isuserdata(J, 1, "fz_device")) {
+		device = js_touserdata(J, 1, "fz_device");
+		fz_try(ctx)
+			fz_run_display_list(ctx, list, device, &ctm, NULL, NULL);
+		fz_catch(ctx)
+			rethrow(J);
+	} else {
+		device = new_js_device(ctx, J);
+		js_copy(J, 1);
+		fz_try(ctx)
+			fz_run_display_list(ctx, list, device, &ctm, NULL, NULL);
+		fz_always(ctx)
+			fz_drop_device(ctx, device);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_DisplayList_toPixmap(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	fz_matrix ctm = ffi_tomatrix(J, 1);
+	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
+	int solid = js_isdefined(J, 3) ? js_toboolean(J, 3) : 1;
+	fz_pixmap *pixmap;
+
+	fz_try(ctx)
+		pixmap = fz_new_pixmap_from_display_list(ctx, list, &ctm, colorspace, solid);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_pixmap");
+	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+}
+
+static void ffi_new_DisplayListDevice(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	fz_device *device;
+
+	fz_try(ctx)
+		device = fz_new_list_device(ctx, list);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_device");
+	js_newuserdata(J, "fz_device", device, ffi_gc_fz_device);
 }
 
 static void ffi_new_DrawDevice(js_State *J)
@@ -2802,6 +2895,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.bound", ffi_Page_bound, 0);
 		jsB_propfun(J, "Page.run", ffi_Page_run, 2);
 		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 1);
+		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
 	}
 	js_setregistry(J, "fz_page");
@@ -2907,6 +3001,13 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "DisplayList.run", ffi_DisplayList_run, 2);
+		jsB_propfun(J, "DisplayList.toPixmap", ffi_DisplayList_toPixmap, 3);
+	}
+	js_setregistry(J, "fz_display_list");
+
+	js_newobject(J);
+	{
 		jsB_propfun(J, "Pixmap.bound", ffi_Pixmap_bound, 0);
 		jsB_propfun(J, "Pixmap.clear", ffi_Pixmap_clear, 1);
 
@@ -2995,7 +3096,9 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_font", "Font", ffi_new_Font, 2);
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);
 		jsB_propcon(J, "fz_path", "Path", ffi_new_Path, 0);
+		jsB_propcon(J, "fz_display_list", "DisplayList", ffi_new_DisplayList, 0);
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 1);
+		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 
 		jsB_propfun(J, "readFile", ffi_readFile, 1);
 
