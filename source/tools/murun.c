@@ -1424,7 +1424,7 @@ static void ffi_readFile(js_State *J)
 		buf = fz_read_file(ctx, filename);
 	fz_catch(ctx)
 		rethrow(J);
-	return ffi_pushbuffer(J, buf);
+	ffi_pushbuffer(J, buf);
 }
 
 static void ffi_new_Buffer(js_State *J)
@@ -1436,7 +1436,7 @@ static void ffi_new_Buffer(js_State *J)
 		buf = fz_new_buffer(ctx, n);
 	fz_catch(ctx)
 		rethrow(J);
-	return ffi_pushbuffer(J, buf);
+	ffi_pushbuffer(J, buf);
 }
 
 static void ffi_Buffer_writeByte(js_State *J)
