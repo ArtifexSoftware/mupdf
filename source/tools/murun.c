@@ -2498,6 +2498,52 @@ static void ffi_PDFObject_valueOf(js_State *J)
 		js_copy(J, 0);
 }
 
+static void ffi_PDFObject_isStream(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b = 0;
+	fz_try(ctx)
+		b = pdf_is_stream(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_readStream(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	pdf_document *pdf;
+	fz_buffer *buf;
+
+	fz_try(ctx) {
+		if (!pdf_is_stream(ctx, obj))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "not a stream");
+		pdf = pdf_get_indirect_document(ctx, obj);
+		buf = pdf_load_stream(ctx, pdf, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+	} fz_catch(ctx)
+		rethrow(J);
+	ffi_pushbuffer(J, buf);
+}
+
+static void ffi_PDFObject_readRawStream(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	pdf_document *pdf;
+	fz_buffer *buf;
+
+	fz_try(ctx) {
+		if (!pdf_is_stream(ctx, obj))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "not a stream");
+		pdf = pdf_get_indirect_document(ctx, obj);
+		buf = pdf_load_raw_stream(ctx, pdf, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+	} fz_catch(ctx)
+		rethrow(J);
+	ffi_pushbuffer(J, buf);
+}
+
 static void ffi_PDFObject_forEach(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2789,6 +2835,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.resolve", ffi_PDFObject_resolve, 0);
 		jsB_propfun(J, "PDFObject.toString", ffi_PDFObject_toString, 1);
 		jsB_propfun(J, "PDFObject.valueOf", ffi_PDFObject_valueOf, 0);
+		jsB_propfun(J, "PDFObject.isStream", ffi_PDFObject_isStream, 0);
+		jsB_propfun(J, "PDFObject.readStream", ffi_PDFObject_readStream, 0);
+		jsB_propfun(J, "PDFObject.readRawStream", ffi_PDFObject_readRawStream, 0);
 		jsB_propfun(J, "PDFObject.forEach", ffi_PDFObject_forEach, 1);
 	}
 	js_setregistry(J, "pdf_obj");
