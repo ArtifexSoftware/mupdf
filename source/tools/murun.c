@@ -23,12 +23,6 @@ static void *alloc(void *actx, void *ptr, unsigned int n)
 	return fz_malloc_array(ctx, n, 1);
 }
 
-static void jsB_propenum(js_State *J, const char *name, int value)
-{
-	js_pushnumber(J, value);
-	js_defproperty(J, -2, name, JS_DONTENUM | JS_READONLY | JS_DONTCONF);
-}
-
 static void jsB_propfun(js_State *J, const char *name, js_CFunction cfun, int n)
 {
 	const char *realname = strchr(name, '.');
@@ -1551,6 +1545,63 @@ static void ffi_Document_loadPage(js_State *J)
 	js_newuserdata(J, "fz_page", page, ffi_gc_fz_page);
 }
 
+static void ffi_Document_needsPassword(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = js_touserdata(J, 0, "fz_document");
+	int b;
+
+	fz_try(ctx)
+		b = fz_needs_password(ctx, doc);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, b);
+}
+
+static void ffi_Document_authenticatePassword(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = js_touserdata(J, 0, "fz_document");
+	const char *password = js_tostring(J, 1);
+	int b;
+
+	fz_try(ctx)
+		b = fz_authenticate_password(ctx, doc, password);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, b);
+}
+static void ffi_Document_getMetaData(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = js_touserdata(J, 0, "fz_document");
+	const char *key = js_tostring(J, 1);
+	char info[256];
+
+	fz_try(ctx)
+		fz_lookup_metadata(ctx, doc, key, info, sizeof info);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, info);
+}
+
+static void ffi_Document_layout(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = js_touserdata(J, 0, "fz_document");
+	float w = js_tonumber(J, 1);
+	float h = js_tonumber(J, 2);
+	float em = js_tonumber(J, 3);
+
+	fz_try(ctx)
+		fz_layout_document(ctx, doc, w, h, em);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_Document_toPDF(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2873,20 +2924,14 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "Document.toPDF", ffi_Document_toPDF, 0);
+		jsB_propfun(J, "Document.needsPassword", ffi_Document_needsPassword, 0);
+		jsB_propfun(J, "Document.authenticatePassword", ffi_Document_authenticatePassword, 1);
+		//jsB_propfun(J, "Document.hasPermission", ffi_Document_hasPermission, 1);
+		jsB_propfun(J, "Document.getMetaData", ffi_Document_getMetaData, 1);
+		jsB_propfun(J, "Document.layout", ffi_Document_layout, 3);
 		jsB_propfun(J, "Document.countPages", ffi_Document_countPages, 0);
 		jsB_propfun(J, "Document.loadPage", ffi_Document_loadPage, 1);
-		// Document.layout
-		// Document.needsPassword
-		// Document.authenticatePassword
-		// Document.lookupMetadata
-
-		jsB_propfun(J, "Document.toPDF", ffi_Document_toPDF, 0);
-
-		// Document.hasPermission
-		jsB_propenum(J, "PERMISSION_PRINT", FZ_PERMISSION_PRINT);
-		jsB_propenum(J, "PERMISSION_COPY", FZ_PERMISSION_COPY);
-		jsB_propenum(J, "PERMISSION_EDIT", FZ_PERMISSION_EDIT);
-		jsB_propenum(J, "PERMISSION_ANNOTATE", FZ_PERMISSION_ANNOTATE);
 	}
 	js_setregistry(J, "fz_document");
 
