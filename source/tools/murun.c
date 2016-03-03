@@ -1558,7 +1558,7 @@ static void ffi_Document_toPDF(js_State *J)
 
 	if (pdf) {
 		js_getregistry(J, "pdf_document");
-		js_newuserdata(J, "pdf_document", pdf, ffi_gc_pdf_document);
+		js_newuserdata(J, "pdf_document", fz_keep_document(ctx, (fz_document*)pdf), ffi_gc_pdf_document);
 	} else {
 		js_pushnull(J);
 	}
@@ -2157,6 +2157,14 @@ static void ffi_new_PDFDocument(js_State *J)
 
 	js_getregistry(J, "pdf_document");
 	js_newuserdata(J, "pdf_document", pdf, ffi_gc_pdf_document);
+}
+
+static void ffi_PDFDocument_toDocument(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	js_getregistry(J, "fz_document");
+	js_newuserdata(J, "fz_document", fz_keep_document(ctx, (fz_document*)pdf), ffi_gc_fz_document);
 }
 
 static void ffi_PDFDocument_getTrailer(js_State *J)
@@ -2933,6 +2941,8 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "PDFDocument.toDocument", ffi_PDFDocument_toDocument, 0);
+
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
 		jsB_propfun(J, "PDFDocument.countObjects", ffi_PDFDocument_countObjects, 0);
 		jsB_propfun(J, "PDFDocument.addObject", ffi_PDFDocument_addObject, 1);
