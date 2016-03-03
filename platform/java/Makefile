@@ -25,13 +25,15 @@ mupdf_native.h : $(LIBRARY_JAVA_OBJECTS)
 
 mupdf_native.o : mupdf_native.c mupdf_native.h
 	$(CC) -g -fPIC -Wall -Wextra -Wno-unused-parameter \
+		-I /usr/lib/jvm/java-7-openjdk-i386/include \
+		-I /usr/lib/jvm/java-7-openjdk-i386/include/linux \
 		-I /usr/lib/jvm/java-7-openjdk-amd64/include \
 		-I /usr/lib/jvm/java-7-openjdk-amd64/include/linux \
 		-I ../../include \
 		-o $@ -c $<
 
 libmupdf_java.so : mupdf_native.o $(MUPDF_CORE)
-	$(CC) -shared -o $@ $^ -lcrypto
+	$(CC) -shared -o $@ $^
 
 $(VIEWER_JAVA_OBJECTS) : $(VIEWER_JAVA_SOURCES)
 	javac $^
