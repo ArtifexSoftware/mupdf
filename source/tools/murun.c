@@ -2304,6 +2304,35 @@ static void ffi_PDFDocument_deletePage(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFDocument_countPages(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int count;
+
+	fz_try(ctx)
+		count = pdf_count_pages(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushnumber(J, count);
+}
+
+static void ffi_PDFDocument_findPage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int at = js_tonumber(J, 1);
+	pdf_obj *obj;
+
+	fz_try(ctx)
+		obj = pdf_lookup_page_obj(ctx, pdf, at);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushobj(J, pdf_keep_obj(ctx, obj));
+}
+
 static void ffi_PDFDocument_save(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2851,6 +2880,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.addPage", ffi_PDFDocument_addPage, 4);
 		jsB_propfun(J, "PDFDocument.insertPage", ffi_PDFDocument_insertPage, 2);
 		jsB_propfun(J, "PDFDocument.deletePage", ffi_PDFDocument_deletePage, 1);
+		jsB_propfun(J, "PDFDocument.countPages", ffi_PDFDocument_countPages, 0);
+		jsB_propfun(J, "PDFDocument.findPage", ffi_PDFDocument_findPage, 1);
 		jsB_propfun(J, "PDFDocument.save", ffi_PDFDocument_save, 2);
 
 		jsB_propfun(J, "PDFDocument.newNull", ffi_PDFDocument_newNull, 0);
