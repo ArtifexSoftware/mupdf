@@ -1,6 +1,6 @@
 # GNU Makefile
 
-build ?= debug
+build ?= release
 
 OUT := build/$(build)
 GEN := generated
