@@ -260,7 +260,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_rethrow_message(ctx, "cannot load page %d in file '%s'", pagenum, filename);
 
 	if (showmd5 || showtime || showfeatures)
-		printf("page %s %d", filename, pagenum);
+		fprintf(stderr, "page %s %d", filename, pagenum);
 
 	if (uselist)
 	{
@@ -303,7 +303,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		{
 			fz_rethrow(ctx);
 		}
-		printf(" %s", iscolor ? "color" : "grayscale");
+		fprintf(stderr, " %s", iscolor ? "color" : "grayscale");
 	}
 
 	if (output_format == OUT_TRACE)
@@ -658,9 +658,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				int i;
 
 				fz_md5_pixmap(ctx, pix, digest);
-				printf(" ");
+				fprintf(stderr, " ");
 				for (i = 0; i < 16; i++)
-					printf("%02x", digest[i]);
+					fprintf(stderr, "%02x", digest[i]);
 			}
 		}
 		fz_always(ctx)
@@ -710,11 +710,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		timing.total += diff;
 		timing.count ++;
 
-		printf(" %dms", diff);
+		fprintf(stderr, " %dms", diff);
 	}
 
 	if (showmd5 || showtime || showfeatures)
-		printf("\n");
+		fprintf(stderr, "\n");
 
 	if (showmemory)
 	{
@@ -1151,17 +1151,17 @@ int mudraw_main(int argc, char **argv)
 	{
 		if (files == 1)
 		{
-			printf("total %dms / %d pages for an average of %dms\n",
+			fprintf(stderr, "total %dms / %d pages for an average of %dms\n",
 				timing.total, timing.count, timing.total / timing.count);
-			printf("fastest page %d: %dms\n", timing.minpage, timing.min);
-			printf("slowest page %d: %dms\n", timing.maxpage, timing.max);
+			fprintf(stderr, "fastest page %d: %dms\n", timing.minpage, timing.min);
+			fprintf(stderr, "slowest page %d: %dms\n", timing.maxpage, timing.max);
 		}
 		else
 		{
-			printf("total %dms / %d pages for an average of %dms in %d files\n",
+			fprintf(stderr, "total %dms / %d pages for an average of %dms in %d files\n",
 				timing.total, timing.count, timing.total / timing.count, files);
-			printf("fastest page %d: %dms (%s)\n", timing.minpage, timing.min, timing.minfilename);
-			printf("slowest page %d: %dms (%s)\n", timing.maxpage, timing.max, timing.maxfilename);
+			fprintf(stderr, "fastest page %d: %dms (%s)\n", timing.minpage, timing.min, timing.minfilename);
+			fprintf(stderr, "slowest page %d: %dms (%s)\n", timing.maxpage, timing.max, timing.maxfilename);
 		}
 	}
 
@@ -1176,9 +1176,9 @@ int mudraw_main(int argc, char **argv)
 #else
 #define FMT "%zu"
 #endif
-		printf("Total memory use = " FMT " bytes\n", memtrace_total);
-		printf("Peak memory use = " FMT " bytes\n", memtrace_peak);
-		printf("Current memory use = " FMT " bytes\n", memtrace_current);
+		fprintf(stderr, "Total memory use = " FMT " bytes\n", memtrace_total);
+		fprintf(stderr, "Peak memory use = " FMT " bytes\n", memtrace_peak);
+		fprintf(stderr, "Current memory use = " FMT " bytes\n", memtrace_current);
 	}
 
 	return (errored != 0);
