@@ -317,9 +317,186 @@ enum
 #if defined(MEMENTO_STACKTRACE_METHOD) && MEMENTO_STACKTRACE_METHOD == 1
 extern size_t backtrace(void **, int);
 extern void backtrace_symbols_fd(void **, size_t, int);
+extern char **backtrace_symbols(void **, size_t);
+
+/* Libbacktrace gubbins */
+#ifdef HAVE_LIBDL
+#include <dlfcn.h>
+#endif
+
+typedef void (*backtrace_error_callback) (void *data, const char *msg, int errnum);
+
+typedef struct backtrace_state *(*backtrace_create_state_type)(
+    const char *filename, int threaded,
+    backtrace_error_callback error_callback, void *data);
+
+typedef int (*backtrace_full_callback) (void *data, uintptr_t pc,
+                                        const char *filename, int lineno,
+                                        const char *function);
+
+typedef int (*backtrace_pcinfo_type)(struct backtrace_state *state,
+                                     uintptr_t pc,
+                                     backtrace_full_callback callback,
+                                     backtrace_error_callback error_callback,
+                                     void *data);
+
+typedef void (*backtrace_syminfo_callback) (void *data, uintptr_t pc,
+                                            const char *symname,
+                                            uintptr_t symval,
+                                            uintptr_t symsize);
+
+typedef int (*backtrace_syminfo_type)(struct backtrace_state *state,
+                                      uintptr_t addr,
+                                      backtrace_syminfo_callback callback,
+                                      backtrace_error_callback error_callback,
+                                      void *data);
+
+static backtrace_syminfo_type backtrace_syminfo;
+static backtrace_create_state_type backtrace_create_state;
+static backtrace_pcinfo_type backtrace_pcinfo;
+static struct backtrace_state *my_backtrace_state;
+static void *libbt;
+static void (*print_stack_value)(void *address);
+static char backtrace_exe[4096];
+static void *current_addr;
+
+#ifdef HAVE_LIBDL
+static void error2_cb(void *data, const char *msg, int errnum)
+{
+}
+
+static void syminfo_cb(void *data, uintptr_t pc, const char *symname, uintptr_t symval, uintptr_t symsize)
+{
+    if (sizeof(void *) == 4)
+        fprintf(stderr, "    0x%08lx %s\n", pc, symname?symname:"?");
+    else
+        fprintf(stderr, "    0x%016lx %s\n", pc, symname?symname:"?");
+}
+
+static void error_cb(void *data, const char *msg, int errnum)
+{
+    backtrace_syminfo(my_backtrace_state,
+                     (uintptr_t)current_addr,
+                     syminfo_cb,
+                     error2_cb,
+                     NULL);
+}
+
+static int full_cb(void *data, uintptr_t pc, const char *fname, int line, const char *fn)
+{
+    if (sizeof(void *) == 4)
+        fprintf(stderr, "    0x%08lx %s(%s:%d)\n", pc, fn?fn:"?", fname?fname:"?", line);
+    else
+        fprintf(stderr, "    0x%016lx %s(%s:%d)\n", pc, fn?fn:"?", fname?fname:"?", line);
+    return 0;
+}
+
+static void print_stack_libbt(void *addr)
+{
+    current_addr = addr;
+    backtrace_pcinfo(my_backtrace_state,
+                     (uintptr_t)addr,
+                     full_cb,
+                     error_cb,
+                     NULL);
+}
+
+static void print_stack_libbt_failed(void *addr)
+{
+    char **strings = backtrace_symbols(&addr, 1);
+
+    if (strings == NULL || strings[0] == NULL)
+    {
+        if (sizeof(void *) == 4)
+            fprintf(stderr, "    [0x%08lx]\n", (uintptr_t)addr);
+        else
+            fprintf(stderr, "    [0x%016lx]\n", (uintptr_t)addr);
+    }
+    else
+    {
+        fprintf(stderr, "    %s\n", strings[0]);
+    }
+    (free)(strings);
+}
+
+static int init_libbt(void)
+{
+    libbt = dlopen("libbacktrace.so", RTLD_LAZY);
+    if (libbt == NULL)
+        libbt = dlopen("/opt/lib/libbacktrace.so", RTLD_LAZY);
+    if (libbt == NULL)
+        libbt = dlopen("/lib/libbacktrace.so", RTLD_LAZY);
+    if (libbt == NULL)
+        libbt = dlopen("/usr/lib/libbacktrace.so", RTLD_LAZY);
+    if (libbt == NULL)
+        libbt = dlopen("/usr/local/lib/libbacktrace.so", RTLD_LAZY);
+    if (libbt == NULL)
+        goto fail;
+
+    backtrace_create_state = dlsym(libbt, "backtrace_create_state");
+    backtrace_syminfo      = dlsym(libbt, "backtrace_syminfo");
+    backtrace_pcinfo       = dlsym(libbt, "backtrace_pcinfo");
+
+    if (backtrace_create_state == NULL ||
+        backtrace_syminfo == NULL ||
+        backtrace_pcinfo == NULL)
+    {
+        goto fail;
+    }
+
+    my_backtrace_state = backtrace_create_state(backtrace_exe,
+                                                1 /*BACKTRACE_SUPPORTS_THREADS*/,
+                                                error_cb,
+                                                NULL);
+    if (my_backtrace_state == NULL)
+        goto fail;
+
+    print_stack_value = print_stack_libbt;
+
+    return 1;
+
+ fail:
+    libbt = NULL;
+    backtrace_create_state = NULL;
+    backtrace_syminfo = NULL;
+    print_stack_value = print_stack_libbt_failed;
+    return 0;
+}
+#endif
+
+static void print_stack_default(void *addr)
+{
+    char **strings = backtrace_symbols(&addr, 1);
+
+    if (strings == NULL || strings[0] == NULL)
+    {
+        fprintf(stderr, "    [0x%p]\n", addr);
+    }
+#ifdef HAVE_LIBDL
+    else if (strchr(strings[0], ':') == NULL)
+    {
+        /* Probably a "path [address]" format string */
+        char *s = strchr(strings[0], ' ');
+
+	if (s != strings[0])
+	{
+            memcpy(backtrace_exe, strings[0], s - strings[0]);
+            backtrace_exe[s-strings[0]] = 0;
+	    if (init_libbt())
+                print_stack_value(addr);
+	}
+    }
+#endif
+    else
+    {
+        fprintf(stderr, "    %s\n", strings[0]);
+    }
+    free(strings);
+}
 
 static void Memento_initStacktracer(void)
 {
+    print_stack_value = print_stack_default;
 }
 
 static int Memento_getStacktrace(void **stack)
@@ -337,7 +514,12 @@ static int Memento_getStacktrace(void **stack)
 
 static void Memento_showStacktrace(void **stack, int numberOfFrames)
 {
-    backtrace_symbols_fd(stack, (size_t)numberOfFrames, 2);
+    int i;
+
+    for (i = 0; i < numberOfFrames; i++)
+    {
+        print_stack_value(stack[i]);
+    }
 }
 #elif defined(MEMENTO_STACKTRACE_METHOD) && MEMENTO_STACKTRACE_METHOD == 2
 #include <Windows.h>

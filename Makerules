@@ -5,10 +5,13 @@ OS := $(OS:MINGW%=MINGW)
 OS := $(OS:Windows_NT=MINGW)
 OS := $(OS:Darwin=MACOS)
 
+HAVE_LIBDL ?= yes
+
 CFLAGS += -Wall
 
 ifeq "$(build)" "debug"
 CFLAGS += -pipe -g -DDEBUG
+LDFLAGS += -g
 else ifeq "$(build)" "release"
 CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer
 else ifeq "$(build)" "sanitize"
@@ -24,6 +27,11 @@ else ifeq "$(build)" "native"
 CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native -mfpmath=sse
 else ifeq "$(build)" "memento"
 CFLAGS += -pipe -g -DMEMENTO -DDEBUG
+LDFLAGS += -g -d -rdynamic
+ifeq "$(HAVE_LIBDL)" "yes"
+CFLAGS += -DHAVE_LIBDL
+LDFLAGS += -ldl
+endif
 else
 $(error unknown build setting: '$(build)')
 endif
