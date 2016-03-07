@@ -1215,12 +1215,45 @@ void Memento_stats(void)
     Memento_endStats();
 }
 
+#ifdef MEMENTO_DETAILS
+static void showInfo(Memento_BlkHeader *b, void *arg)
+{
+    Memento_BlkDetails *details;
+
+    fprintf(stderr, "0x%p:(size=%d,num=%d)",
+            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
+    if (b->label)
+        fprintf(stderr, " (%s)", b->label);
+    fprintf(stderr, "\nEvents:\n");
+
+    details = b->details;
+    while (details)
+    {
+        fprintf(stderr, "  Event %d (%s)\n", details->sequence, eventType[(int)details->type]);
+        Memento_showStacktrace(details->stack, details->count);
+        details = details->next;
+    }
+}
+#endif
+
+void Memento_listBlockInfo(void)
+{
+#ifdef MEMENTO_DETAILS
+    fprintf(stderr, "Details of allocated blocks:\n");
+    Memento_appBlocks(&globals.used, showInfo, NULL);
+#endif
+}
+
 static void Memento_fin(void)
 {
     Memento_checkAllMemory();
     Memento_endStats();
     if (globals.used.head != NULL) {
         Memento_listBlocks();
+#ifdef MEMENTO_DETAILS
+        fprintf(stderr, "\n");
+        Memento_listBlockInfo();
+#endif
         Memento_breakpoint();
     }
     if (globals.segv) {
@@ -1319,27 +1352,6 @@ static int Memento_containsAddr(Memento_BlkHeader *b,
     return 0;
 }
 
-#ifdef MEMENTO_DETAILS
-static void showInfo(Memento_BlkHeader *b)
-{
-    Memento_BlkDetails *details;
-
-    fprintf(stderr, "0x%p:(size=%d,num=%d)",
-            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
-    if (b->label)
-        fprintf(stderr, " (%s)", b->label);
-    fprintf(stderr, "\nEvents:\n");
-
-    details = b->details;
-    while (details)
-    {
-      fprintf(stderr, "  Event %d (%s)\n", details->sequence, eventType[(int)details->type]);
-        Memento_showStacktrace(details->stack, details->count);
-        details = details->next;
-    }
-}
-#endif
-
 void Memento_info(void *addr)
 {
 #ifdef MEMENTO_DETAILS
@@ -1350,12 +1362,12 @@ void Memento_info(void *addr)
     data.flags = 0;
     Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
     if (data.blk != NULL)
-        showInfo(data.blk);
+        showInfo(data.blk, NULL);
     data.blk   = NULL;
     data.flags = 0;
     Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
     if (data.blk != NULL)
-        showInfo(data.blk);
+        showInfo(data.blk, NULL);
 #else
     printf("Memento not compiled with details support\n");
 #endif
