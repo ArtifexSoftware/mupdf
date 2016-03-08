@@ -69,6 +69,7 @@ struct genstate
 	fz_css_rule *css;
 	int at_bol;
 	int emit_white;
+	int last_brk_cls;
 };
 
 static int iswhite(int c)
@@ -177,46 +178,6 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 	return new_flow;
 }
 
-static int iscjk(int c)
-{
-	if (c >= 0x3000 && c <= 0x303F) return 1; /* CJK Symbols and Punctuation */
-	if (c >= 0x3200 && c <= 0x9FFF) return 1; /* CJK Blocks */
-	if (c >= 0xFF00 && c <= 0xFFEF) return 1; /* Halfwidth and Fullwidth Forms */
-	return 0;
-}
-
-static int not_at_bol(int cat, int c)
-{
-	if (cat == UCDN_GENERAL_CATEGORY_PF) return 1;
-	if (cat == UCDN_GENERAL_CATEGORY_PE) return 1;
-	if (c == ')' || c == 0xFF09) return 1;
-	if (c == ']' || c == 0xFF3D) return 1;
-	if (c == '}' || c == 0xFF5D) return 1;
-	if (c == '>' || c == 0xFF1E) return 1;
-	if (c == ',' || c == 0xFF0C || c == 0x3001) return 1;
-	if (c == '.' || c == 0xFF0E || c == 0x3002) return 1;
-	if (c == ':' || c == 0xFF1A) return 1;
-	if (c == ';' || c == 0xFF1B) return 1;
-	if (c == '?' || c == 0xFF1F) return 1;
-	if (c == '!' || c == 0xFF01) return 1;
-	if (c == '%' || c == 0xFF05) return 1;
-	return 0;
-}
-
-static int not_at_eol(int cat, int c)
-{
-	if (cat == UCDN_GENERAL_CATEGORY_PI) return 1;
-	if (cat == UCDN_GENERAL_CATEGORY_PS) return 1;
-	if (c == '(' || c == 0xFF08) return 1;
-	if (c == '[' || c == 0xFF3B) return 1;
-	if (c == '{' || c == 0xFF5B) return 1;
-	if (c == '<' || c == 0xFF1C) return 1;
-	if (c == '$' || c == 0xFF04) return 1;
-	if (c >= 0xFFE0 || c == 0xFFE1) return 1; /* cent, pound */
-	if (c == 0xFFE5 || c == 0xFFE6) return 1; /* yen, won */
-	return 0;
-}
-
 static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_css_style *style, struct genstate *g)
 {
 	static const char *space = " ";
@@ -233,6 +194,42 @@ static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_css_st
 		g->emit_white = 0;
 	}
 }
+
+/* pair-wise lookup table for UAX#14 linebreaks */
+static const char *pairbrk[29] =
+{
+/* OCCQGNESIPPNAHIIHBBBZCWHHJJJR */
+/* PLPULSXYSROULLDNYAB2WMJ23LVTI */
+  "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", /* OP open punctuation */
+  "_^^%%^^^^%%_____%%__^^^______", /* CL close punctuation */
+  "_^^%%^^^^%%%%%__%%__^^^______", /* CP close parenthesis */
+  "^^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* QU quotation */
+  "%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* GL non-breaking glue */
+  "_^^%%%^^^_______%%__^^^______", /* NS nonstarters */
+  "_^^%%%^^^______%%%__^^^______", /* EX exclamation/interrogation */
+  "_^^%%%^^^__%_%__%%__^^^______", /* SY symbols allowing break after */
+  "_^^%%%^^^__%%%__%%__^^^______", /* IS infix numeric separator */
+  "%^^%%%^^^__%%%%_%%__^^^%%%%%_", /* PR prefix numeric */
+  "%^^%%%^^^__%%%__%%__^^^______", /* PO postfix numeric */
+  "%^^%%%^^^%%%%%_%%%__^^^______", /* NU numeric */
+  "%^^%%%^^^__%%%_%%%__^^^______", /* AL ordinary alphabetic and symbol characters */
+  "%^^%%%^^^__%%%_%%%__^^^______", /* HL hebrew letter */
+  "_^^%%%^^^_%____%%%__^^^______", /* ID ideographic */
+  "_^^%%%^^^______%%%__^^^______", /* IN inseparable characters */
+  "_^^%_%^^^__%____%%__^^^______", /* HY hyphens */
+  "_^^%_%^^^_______%%__^^^______", /* BA break after */
+  "%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* BB break before */
+  "_^^%%%^^^_______%%_^^^^______", /* B2 break opportunity before and after */
+  "____________________^________", /* ZW zero width space */
+  "%^^%%%^^^__%%%_%%%__^^^______", /* CM combining mark */
+  "%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* WJ word joiner */
+  "_^^%%%^^^_%____%%%__^^^___%%_", /* H2 hangul leading/vowel syllable */
+  "_^^%%%^^^_%____%%%__^^^____%_", /* H3 hangul leading/voewl/trailing syllable */
+  "_^^%%%^^^_%____%%%__^^^%%%%__", /* JL hangul leading jamo */
+  "_^^%%%^^^_%____%%%__^^^___%%_", /* JV hangul vowel jamo */
+  "_^^%%%^^^_%____%%%__^^^____%_", /* JT hangul trailing jamo */
+  "_^^%%%^^^_______%%__^^^_____%", /* RI regional indicator */
+};
 
 static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const char *text, struct genstate *g)
 {
@@ -280,17 +277,20 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 					add_flow_word(ctx, pool, flow, &box->style, space, space+1);
 				++text;
 			}
+			g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a space */
 		}
 		else
 		{
 			const char *prev, *mark = text;
-			int c, addsbreak = 0;
+			int c;
 
 			flush_space(ctx, pool, flow, &box->style, g);
 
+			if (g->at_bol)
+				g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ;
+
 			while (*text && !iswhite(*text))
 			{
-				/* TODO: Unicode Line Breaking Algorithm (UAX #14) */
 				prev = text;
 				text += fz_chartorune(&c, text);
 				if (c == 0xAD) /* soft hyphen */
@@ -299,20 +299,30 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 						add_flow_word(ctx, pool, flow, &box->style, mark, prev);
 					add_flow_shyphen(ctx, pool, flow, &box->style);
 					mark = text;
+					g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a soft hyphen */
 				}
-				else if (iscjk(c))
+				else if (bsp) /* allow soft breaks */
 				{
-					int cat = ucdn_get_general_category(c);
-					if (addsbreak && !not_at_bol(cat, c))
-						add_flow_sbreak(ctx, pool, flow, &box->style);
-					add_flow_word(ctx, pool, flow, &box->style, mark, text);
-					if (!not_at_eol(cat, c))
-						addsbreak = 1;
-					mark = text;
-				}
-				else
-				{
-					addsbreak = 0;
+					int this_brk_cls = ucdn_get_resolved_linebreak_class(c);
+					if (this_brk_cls < UCDN_LINEBREAK_CLASS_RI)
+					{
+						int brk = pairbrk[g->last_brk_cls][this_brk_cls];
+
+						/* we handle spaces elsewhere, so ignore these classes */
+						if (brk == '@') brk = '^';
+						if (brk == '#') brk = '^';
+						if (brk == '%') brk = '^';
+
+						if (brk == '_')
+						{
+							if (mark != prev)
+								add_flow_word(ctx, pool, flow, &box->style, mark, prev);
+							add_flow_sbreak(ctx, pool, flow, &box->style);
+							mark = prev;
+						}
+
+						g->last_brk_cls = this_brk_cls;
+					}
 				}
 			}
 			if (mark != text)
@@ -1025,7 +1035,8 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 
 			/* If the broken node fits, remember it. */
 			/* Also remember it if we have no other candidate and need to break in desperation. */
-			if (line_w + break_w <= box->w || !candidate) {
+			if (line_w + break_w <= box->w || !candidate)
+			{
 				candidate = node;
 				candidate_w = line_w + break_w;
 			}
@@ -1746,9 +1757,10 @@ fz_print_html_flow(fz_context *ctx, fz_html_flow *flow, fz_html_flow *end)
 		switch (flow->type)
 		{
 		case FLOW_WORD: printf("%s", flow->content.text); break;
-		case FLOW_SPACE: printf("_"); break;
-		case FLOW_SBREAK: printf("%%"); break;
-		case FLOW_BREAK: printf("!"); break;
+		case FLOW_SPACE: printf("[ ]"); break;
+		case FLOW_SBREAK: printf("[%%]"); break;
+		case FLOW_SHYPHEN: printf("[-]"); break;
+		case FLOW_BREAK: printf("[!]"); break;
 		case FLOW_IMAGE: printf("<img>"); break;
 		}
 		flow = flow->next;
