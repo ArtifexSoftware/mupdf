@@ -454,16 +454,16 @@ static char *xml_parse_document_imp(fz_context *ctx, struct parser *parser, char
 parse_text:
 	mark = p;
 	while (*p && *p != '<') ++p;
-	if (mark < p) {
-		/* must skip linebreak immediately before an end tag */
-		if (p[1] == '/' && p[-1] == '\n') {
-			if (mark < p-1)
-				xml_emit_text(ctx, parser, mark, p-1);
-		} else {
+	if (*p == '<') {
+		/* skip trailing newline before closing tag */
+		if (p[1] == '/' && p - 1 >= mark && p[-1] == '\n')
+			xml_emit_text(ctx, parser, mark, p - 1);
+		else if (mark < p)
 			xml_emit_text(ctx, parser, mark, p);
-		}
-	}
-	if (*p == '<') { ++p; goto parse_element; }
+		++p;
+		goto parse_element;
+	} else if (mark < p)
+		xml_emit_text(ctx, parser, mark, p);
 	return NULL;
 
 parse_element:
