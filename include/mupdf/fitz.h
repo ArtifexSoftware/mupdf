@@ -1,6 +1,10 @@
 #ifndef MUDPF_FITZ_H
 #define MUDPF_FITZ_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
@@ -61,5 +65,9 @@
 #include "mupdf/fitz/output-tga.h"
 
 #include "mupdf/fitz/bidi.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -3,6 +3,10 @@
 
 #include "mupdf/fitz.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "mupdf/pdf/name-table.h"
 #include "mupdf/pdf/object.h"
 #include "mupdf/pdf/document.h"
@@ -26,5 +30,9 @@
 #include "mupdf/pdf/output-pdf.h"
 
 #include "mupdf/pdf/clean.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
