@@ -523,10 +523,10 @@ void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, const fz_irect *re
 	unsigned char *p;
 	int x, y, n;
 
-	int x0 = fz_clampi(rect->x0 - image->x, 0, image->w - 1);
-	int x1 = fz_clampi(rect->x1 - image->x, 0, image->w - 1);
-	int y0 = fz_clampi(rect->y0 - image->y, 0, image->h - 1);
-	int y1 = fz_clampi(rect->y1 - image->y, 0, image->h - 1);
+	int x0 = fz_clampi(rect->x0 - image->x, 0, image->w);
+	int x1 = fz_clampi(rect->x1 - image->x, 0, image->w);
+	int y0 = fz_clampi(rect->y0 - image->y, 0, image->h);
+	int y1 = fz_clampi(rect->y1 - image->y, 0, image->h);
 
 	for (y = y0; y < y1; y++)
 	{
