@@ -38,8 +38,6 @@ public class Device
 	 * };
 	 */
 
-	public void beginPage(Rect area, Matrix ctm) {}
-	public void endPage() {}
 	public void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
 	public void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
 	public void clipPath(Path path, boolean evenOdd, Matrix ctm) {}

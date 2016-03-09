@@ -42,14 +42,6 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 		text.walk(this);
 	}
 
-	public void beginPage(Rect r, Matrix m) {
-		System.out.println("beginPage " + r + " " + m);
-	}
-
-	public void endPage() {
-		System.out.println("endPage");
-	}
-
 	public void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha) {
 		System.out.println("fillPath " + evenOdd + " " + ctm + " " + traceColor(cs, color, alpha));
 		tracePath(path);

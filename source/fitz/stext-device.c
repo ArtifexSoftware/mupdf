@@ -1021,22 +1021,7 @@ fz_bidi_reorder_stext_page(fz_context *ctx, fz_stext_page *page)
 }
 
 static void
-fz_stext_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, const fz_matrix *ctm)
-{
-	fz_stext_device *tdev = (fz_stext_device*)dev;
-
-	if (tdev->page->len)
-	{
-		tdev->page->next = fz_new_stext_page(ctx);
-		tdev->page = tdev->page->next;
-	}
-
-	tdev->page->mediabox = *mediabox;
-	fz_transform_rect(&tdev->page->mediabox, ctm);
-}
-
-static void
-fz_stext_end_page(fz_context *ctx, fz_device *dev)
+fz_stext_drop_imp(fz_context *ctx, fz_device *dev)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 
@@ -1053,13 +1038,6 @@ fz_stext_end_page(fz_context *ctx, fz_device *dev)
 	fz_bidi_reorder_stext_page(ctx, tdev->page);
 }
 
-static void
-fz_stext_drop_imp(fz_context *ctx, fz_device *dev)
-{
-	fz_stext_device *tdev = (fz_stext_device*)dev;
-	free_span_soup(ctx, tdev->spans);
-}
-
 fz_device *
 fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page)
 {
@@ -1068,8 +1046,6 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page)
 	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
 
 	dev->super.drop_imp = fz_stext_drop_imp;
-	dev->super.begin_page = fz_stext_begin_page;
-	dev->super.end_page = fz_stext_end_page;
 	dev->super.fill_text = fz_stext_fill_text;
 	dev->super.stroke_text = fz_stext_stroke_text;
 	dev->super.clip_text = fz_stext_clip_text;

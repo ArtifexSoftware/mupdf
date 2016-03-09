@@ -247,6 +247,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_device *dev = NULL;
 	int start;
 	fz_cookie cookie = { 0 };
+	fz_rect mediabox;
 
 	fz_var(list);
 	fz_var(dev);
@@ -261,6 +262,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	if (showmd5 || showtime || showfeatures)
 		fprintf(stderr, "page %s %d", filename, pagenum);
+
+	fz_bound_page(ctx, page, &mediabox);
 
 	if (uselist)
 	{
@@ -310,11 +313,14 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		fz_try(ctx)
 		{
+			fz_printf(ctx, out, "<page mediabox=\"%g %g %g %g\">\n",
+					mediabox.x0, mediabox.y0, mediabox.x1, mediabox.y1);
 			dev = fz_new_trace_device(ctx, out);
 			if (list)
 				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+			fz_printf(ctx, out, "</page>\n");
 		}
 		fz_always(ctx)
 		{
@@ -380,7 +386,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		fz_buffer *contents;
 		pdf_obj *resources;
-		fz_rect mediabox;
 
 		dev = pdf_page_write(ctx, pdfout, &mediabox, &contents, &resources);
 		fz_try(ctx)
@@ -392,7 +397,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
 
-			fz_bound_page(ctx, page, &mediabox);
 			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, contents, resources);
 			pdf_insert_page(ctx, pdfout, -1, page_obj);
 			pdf_drop_obj(ctx, page_obj);

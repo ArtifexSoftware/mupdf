@@ -7,8 +7,6 @@ typedef struct fz_list_device_s fz_list_device;
 
 typedef enum fz_display_command_e
 {
-	FZ_CMD_BEGIN_PAGE,
-	FZ_CMD_END_PAGE,
 	FZ_CMD_FILL_PATH,
 	FZ_CMD_STROKE_PATH,
 	FZ_CMD_CLIP_PATH,
@@ -632,52 +630,6 @@ fz_append_display_node(
 }
 
 static void
-fz_list_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, const fz_matrix *ctm)
-{
-	fz_list_device *writer = (fz_list_device *)dev;
-	fz_display_list *list = writer->list;
-	fz_rect rect = *mediabox;
-
-	fz_transform_rect(&rect, ctm);
-
-	fz_union_rect(&list->mediabox, &rect);
-
-	fz_append_display_node(
-		ctx,
-		dev,
-		FZ_CMD_BEGIN_PAGE,
-		0, /* flags */
-		&rect,
-		NULL, /* path */
-		NULL, /* color */
-		NULL, /* colorspace */
-		NULL, /* alpha */
-		ctm,
-		NULL, /* stroke_state */
-		NULL, /* private_data */
-		0); /* private_data_len */
-}
-
-static void
-fz_list_end_page(fz_context *ctx, fz_device *dev)
-{
-	fz_append_display_node(
-		ctx,
-		dev,
-		FZ_CMD_END_PAGE,
-		0, /* flags */
-		NULL, /* rect */
-		NULL, /* path */
-		NULL, /* color */
-		NULL, /* colorspace */
-		NULL, /* alpha */
-		NULL, /* ctm */
-		NULL, /* stroke_state */
-		NULL, /* private_data */
-		0); /* private_data_len */
-}
-
-static void
 fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
@@ -1263,9 +1215,6 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 
 	dev = fz_new_device(ctx, sizeof(fz_list_device));
 
-	dev->super.begin_page = fz_list_begin_page;
-	dev->super.end_page = fz_list_end_page;
-
 	dev->super.fill_path = fz_list_fill_path;
 	dev->super.stroke_path = fz_list_stroke_path;
 	dev->super.clip_path = fz_list_clip_path;
@@ -1615,7 +1564,6 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 
 		if (tiled ||
 			n.cmd == FZ_CMD_BEGIN_TILE || n.cmd == FZ_CMD_END_TILE ||
-			n.cmd == FZ_CMD_BEGIN_PAGE || n.cmd == FZ_CMD_END_PAGE ||
 			n.cmd == FZ_CMD_RENDER_FLAGS)
 		{
 			empty = 0;
@@ -1662,12 +1610,6 @@ visible:
 		{
 			switch (n.cmd)
 			{
-			case FZ_CMD_BEGIN_PAGE:
-				fz_begin_page(ctx, dev, &trans_rect, &trans_ctm);
-				break;
-			case FZ_CMD_END_PAGE:
-				fz_end_page(ctx, dev);
-				break;
 			case FZ_CMD_FILL_PATH:
 				fz_fill_path(ctx, dev, path, n.flags, &trans_ctm, colorspace, color, alpha);
 				break;

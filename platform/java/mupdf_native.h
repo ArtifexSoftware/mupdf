@@ -840,22 +840,6 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_NativeDevice
- * Method:    beginPage
- * Signature: (Lcom/artifex/mupdf/fitz/Rect;Lcom/artifex/mupdf/fitz/Matrix;)V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_beginPage
-  (JNIEnv *, jobject, jobject, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_NativeDevice
- * Method:    endPage
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_endPage
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_NativeDevice
  * Method:    fillPath
  * Signature: (Lcom/artifex/mupdf/fitz/Path;ZLcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;[FF)V
  */

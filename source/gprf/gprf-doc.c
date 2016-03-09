@@ -719,7 +719,6 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 {
 	gprf_page *page = (gprf_page*)page_;
 	gprf_document *doc = page->doc;
-	fz_rect page_rect;
 	int i, y, x;
 
 	/* If we have no page, generate it. */
@@ -734,13 +733,7 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 	}
 
 	/* Send the images to the page */
-	page_rect.x0 = 0;
-	page_rect.y0 = 0;
-	page_rect.x1 = 72.0 * page->width / doc->res;
-	page_rect.y1 = 72.0 * page->height / doc->res;
 	fz_render_flags(ctx, dev, FZ_DEVFLAG_GRIDFIT_AS_TILED, 0);
-	fz_begin_page(ctx, dev, &page_rect, ctm);
-
 	i = 0;
 	for (y = 0; y < page->tile_height; y++)
 	{
@@ -760,7 +753,6 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 			fz_fill_image(ctx, dev, page->tiles[i++], &local, 1.0);
 		}
 	}
-	fz_end_page(ctx, dev);
 	fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);
 }
 

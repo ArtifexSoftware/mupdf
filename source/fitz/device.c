@@ -29,20 +29,6 @@ fz_disable_device_hints(fz_context *ctx, fz_device *dev, int hints)
 	dev->hints &= ~hints;
 }
 
-void
-fz_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *rect, const fz_matrix *ctm)
-{
-	if (dev->begin_page)
-		dev->begin_page(ctx, dev, rect, ctm);
-}
-
-void
-fz_end_page(fz_context *ctx, fz_device *dev)
-{
-	if (dev->end_page)
-		dev->end_page(ctx, dev);
-}
-
 static void
 push_clip_stack(fz_context *ctx, fz_device *dev, const fz_rect *rect, int flags)
 {

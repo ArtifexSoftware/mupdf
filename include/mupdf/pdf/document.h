@@ -274,7 +274,7 @@ void pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page);
 void pdf_delete_page(fz_context *ctx, pdf_document *doc, int number);
 void pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end);
 
-fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, fz_rect *pmediabox, fz_buffer **pcontents, pdf_obj **presources);
+fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, fz_buffer **pcontents, pdf_obj **presources);
 
 void pdf_finish_edit(fz_context *ctx, pdf_document *doc);
 

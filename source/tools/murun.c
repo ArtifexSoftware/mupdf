@@ -757,32 +757,6 @@ typedef struct js_device_s
 } js_device;
 
 static void
-js_dev_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *rect, const fz_matrix *ctm)
-{
-	js_State *J = ((js_device*)dev)->J;
-	if (js_hasproperty(J, -1, "beginPage")) {
-		js_copy(J, -2); /* copy the 'this' object */
-		ffi_pushrect(J, *rect);
-		ffi_pushmatrix(J, *ctm);
-		if (js_pcall(J, 2))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
-		js_pop(J, 1);
-	}
-}
-
-static void
-js_dev_end_page(fz_context *ctx, fz_device *dev)
-{
-	js_State *J = ((js_device*)dev)->J;
-	if (js_hasproperty(J, -1, "endPage")) {
-		js_copy(J, -2); /* copy the 'this' object */
-		if (js_pcall(J, 0))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
-		js_pop(J, 1);
-	}
-}
-
-static void
 js_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
@@ -1101,9 +1075,6 @@ static fz_device *new_js_device(fz_context *ctx, js_State *J)
 {
 	js_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.begin_page = js_dev_begin_page;
-	dev->super.end_page = js_dev_end_page;
-
 	dev->super.fill_path = js_dev_fill_path;
 	dev->super.stroke_path = js_dev_stroke_path;
 	dev->super.clip_path = js_dev_clip_path;
@@ -1135,28 +1106,6 @@ static fz_device *new_js_device(fz_context *ctx, js_State *J)
 }
 
 /* device calling into c from js */
-
-static void ffi_Device_beginPage(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_device *dev = js_touserdata(J, 0, "fz_device");
-	fz_rect rect = ffi_torect(J, 1);
-	fz_matrix ctm = ffi_tomatrix(J, 2);
-	fz_try(ctx)
-		fz_begin_page(ctx, dev, &rect, &ctm);
-	fz_catch(ctx)
-		rethrow(J);
-}
-
-static void ffi_Device_endPage(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_device *dev = js_touserdata(J, 0, "fz_device");
-	fz_try(ctx)
-		fz_end_page(ctx, dev);
-	fz_catch(ctx)
-		rethrow(J);
-}
 
 static void ffi_Device_fillPath(js_State *J)
 {
@@ -2947,9 +2896,6 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
-		jsB_propfun(J, "Device.beginPage", ffi_Device_beginPage, 2);
-		jsB_propfun(J, "Device.endPage", ffi_Device_endPage, 0);
-
 		jsB_propfun(J, "Device.fillPath", ffi_Device_fillPath, 6);
 		jsB_propfun(J, "Device.strokePath", ffi_Device_strokePath, 6);
 		jsB_propfun(J, "Device.clipPath", ffi_Device_clipPath, 3);

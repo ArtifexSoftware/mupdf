@@ -70,7 +70,6 @@ struct pdf_device_s
 	fz_device super;
 
 	pdf_document *doc;
-	fz_rect *mediabox;
 	pdf_obj *resources;
 	fz_buffer *buffer;
 
@@ -1038,23 +1037,6 @@ pdf_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-pdf_dev_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *mediabox, const fz_matrix *ctm)
-{
-	pdf_device *pdev = (pdf_device*)dev;
-	gstate *gs = CURRENT_GSTATE(pdev);
-	pdev->mediabox->x0 = 0;
-	pdev->mediabox->y0 = 0;
-	pdev->mediabox->x1 = mediabox->x1 - mediabox->x0;
-	pdev->mediabox->y1 = mediabox->y1 - mediabox->y0;
-	fz_buffer_printf(ctx, gs->buf, "1 0 0 -1 %f %f cm\n", 0 - mediabox->x0, mediabox->y1);
-}
-
-static void
-pdf_dev_end_page(fz_context *ctx, fz_device *dev)
-{
-}
-
-static void
 pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 {
 	pdf_device *pdev = (pdf_device*)dev;
@@ -1078,14 +1060,11 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->gstates);
 }
 
-fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_rect *mediabox, fz_buffer *buf, pdf_obj *resources)
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, fz_buffer *buf, pdf_obj *resources)
 {
 	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
 
 	dev->super.drop_imp = pdf_dev_drop_imp;
-
-	dev->super.begin_page = pdf_dev_begin_page;
-	dev->super.end_page = pdf_dev_end_page;
 
 	dev->super.fill_path = pdf_dev_fill_path;
 	dev->super.stroke_path = pdf_dev_stroke_path;
@@ -1119,7 +1098,6 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_rect *media
 		if (!buf)
 			buf = fz_new_buffer(ctx, 256);
 		dev->doc = doc;
-		dev->mediabox = mediabox;
 		dev->resources = pdf_keep_obj(ctx, resources);
 		dev->gstates = fz_malloc_struct(ctx, gstate);
 		dev->gstates[0].buf = buf;
@@ -1134,6 +1112,8 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_rect *media
 		dev->gstates[0].horizontal_scaling = 100;
 		dev->num_gstates = 1;
 		dev->max_gstates = 1;
+
+		fz_buffer_printf(ctx, buf, "1 0 0 -1 %f %f cm\n", 0 - mediabox->x0, mediabox->y1);
 	}
 	fz_catch(ctx)
 	{
@@ -1147,9 +1127,9 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, fz_rect *media
 }
 
 fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc,
-	fz_rect *pmediabox, fz_buffer **pcontents, pdf_obj **presources)
+	const fz_rect *mediabox, fz_buffer **pcontents, pdf_obj **presources)
 {
 	*presources = pdf_new_dict(ctx, doc, 0);
 	*pcontents = fz_new_buffer(ctx, 0);
-	return pdf_new_pdf_device(ctx, doc, pmediabox, *pcontents, *presources);
+	return pdf_new_pdf_device(ctx, doc, mediabox, *pcontents, *presources);
 }

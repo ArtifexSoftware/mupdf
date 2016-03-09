@@ -771,12 +771,10 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 
 static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix *ctm, const fz_rect *rect, fz_cookie *cookie)
 {
-	fz_begin_page(app->ctx, dev, rect, ctm);
 	if (app->page_list)
 		fz_run_display_list(app->ctx, app->page_list, dev, ctm, rect, cookie);
 	if (app->annotations_list)
 		fz_run_display_list(app->ctx, app->annotations_list, dev, ctm, rect, cookie);
-	fz_end_page(app->ctx, dev);
 }
 
 #define MAX_TITLE 256

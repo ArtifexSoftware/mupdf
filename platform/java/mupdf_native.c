@@ -107,7 +107,6 @@ static jmethodID mid_ColorSpace_fromPointer;
 static jmethodID mid_ColorSpace_init;
 static jmethodID mid_Device_beginGroup;
 static jmethodID mid_Device_beginMask;
-static jmethodID mid_Device_beginPage;
 static jmethodID mid_Device_beginTile;
 static jmethodID mid_Device_clipImageMask;
 static jmethodID mid_Device_clipPath;
@@ -116,7 +115,6 @@ static jmethodID mid_Device_clipStrokeText;
 static jmethodID mid_Device_clipText;
 static jmethodID mid_Device_endGroup;
 static jmethodID mid_Device_endMask;
-static jmethodID mid_Device_endPage;
 static jmethodID mid_Device_endTile;
 static jmethodID mid_Device_fillImage;
 static jmethodID mid_Device_fillImageMask;
@@ -296,8 +294,6 @@ static int find_fids(JNIEnv *env)
 
 	cls_Device = get_class(&err, env, PKG"Device");
 	fid_Device_pointer = get_field(&err, env, "pointer", "J");
-	mid_Device_beginPage = get_method(&err, env, "beginPage", "(L"PKG"Rect;L"PKG"Matrix;)V");
-	mid_Device_endPage = get_method(&err, env, "endPage", "()V");
 	mid_Device_fillPath = get_method(&err, env, "fillPath", "(L"PKG"Path;ZL"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
 	mid_Device_strokePath = get_method(&err, env, "strokePath", "(L"PKG"Path;L"PKG"StrokeState;L"PKG"Matrix;L"PKG"ColorSpace;[FF)V");
 	mid_Device_clipPath = get_method(&err, env, "clipPath", "(L"PKG"Path;ZL"PKG"Matrix;)V");
@@ -1018,30 +1014,6 @@ typedef struct
 fz_java_device;
 
 static void
-fz_java_device_begin_page(fz_context *ctx, fz_device *dev, const fz_rect *rect, const fz_matrix *ctm)
-{
-	fz_java_device *jdev = (fz_java_device *)dev;
-	JNIEnv *env = jdev->env;
-	jobject jrect = to_Rect(ctx, env, rect);
-	jobject jctm = to_Matrix(ctx, env, ctm);
-
-	(*env)->CallVoidMethod(env, jdev->self, mid_Device_beginPage, jrect, jctm);
-	if ((*env)->ExceptionCheck(env))
-		fz_throw_java(ctx, env);
-}
-
-static void
-fz_java_device_end_page(fz_context *ctx, fz_device *dev)
-{
-	fz_java_device *jdev = (fz_java_device *)dev;
-	JNIEnv *env = jdev->env;
-
-	(*env)->CallVoidMethod(env, jdev->self, mid_Device_endPage);
-	if ((*env)->ExceptionCheck(env))
-		fz_throw_java(ctx, env);
-}
-
-static void
 fz_java_device_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, fz_colorspace *cs, const float *color, float alpha)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
@@ -1333,9 +1305,6 @@ static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
 
 		dev->super.drop_imp = fz_java_device_drop_imp;
 
-		dev->super.begin_page = fz_java_device_begin_page;
-		dev->super.end_page = fz_java_device_end_page;
-
 		dev->super.fill_path = fz_java_device_fill_path;
 		dev->super.stroke_path = fz_java_device_stroke_path;
 		dev->super.clip_path = fz_java_device_clip_path;
@@ -1474,46 +1443,6 @@ FUN(NativeDevice_finalize)(JNIEnv *env, jobject self)
 		fz_drop_pixmap(ctx, ninfo->pixmap);
 		fz_free(ctx, ninfo);
 	}
-}
-
-JNIEXPORT void JNICALL
-FUN(NativeDevice_beginPage)(JNIEnv *env, jobject self, jobject jrect, jobject jctm)
-{
-	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
-	fz_rect rect = from_Rect(env, jrect);
-	fz_matrix ctm = from_Matrix(env, jctm);
-	NativeDeviceInfo *info;
-
-	if (ctx == NULL || dev == NULL)
-		return;
-
-	info = lockNativeDevice(env, self);
-	fz_try(ctx)
-		fz_begin_page(ctx, dev, &rect, &ctm);
-	fz_always(ctx)
-		unlockNativeDevice(env, info);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-}
-
-JNIEXPORT void JNICALL
-FUN(NativeDevice_endPage)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
-	NativeDeviceInfo *info;
-
-	if (ctx == NULL || dev == NULL)
-		return;
-
-	info = lockNativeDevice(env, self);
-	fz_try(ctx)
-		fz_end_page(ctx, dev);
-	fz_always(ctx)
-		unlockNativeDevice(env, info);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
 }
 
 JNIEXPORT void JNICALL
