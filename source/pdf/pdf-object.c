@@ -1758,6 +1758,8 @@ int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj)
 
 	switch(obj->kind)
 	{
+	case PDF_INDIRECT:
+		return REF(obj)->num;
 	case PDF_ARRAY:
 		return ARRAY(obj)->parent_num;
 	case PDF_DICT:

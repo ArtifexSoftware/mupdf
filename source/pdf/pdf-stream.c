@@ -19,8 +19,9 @@ pdf_obj_num_is_stream(fz_context *ctx, pdf_document *doc, int num, int gen)
 int
 pdf_is_stream(fz_context *ctx, pdf_obj *obj)
 {
-	return pdf_obj_num_is_stream(ctx, pdf_get_indirect_document(ctx, obj),
-			pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+	pdf_document *doc = pdf_get_bound_document(ctx, obj);
+	int num = pdf_obj_parent_num(ctx, obj);
+	return pdf_obj_num_is_stream(ctx, doc, num, 0);
 }
 
 /*
