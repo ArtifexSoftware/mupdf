@@ -220,6 +220,9 @@ void *Memento_realloc(void *, size_t s);
 void  Memento_free(void *);
 void *Memento_calloc(size_t, size_t);
 
+void Memento_info(void *addr);
+void Memento_listBLockInfo(void);
+
 #ifdef MEMENTO
 
 #ifndef COMPILING_MEMENTO_C
@@ -254,6 +257,8 @@ void *Memento_calloc(size_t, size_t);
 #define Memento_setMax(A)         0
 #define Memento_stats()           do {} while (0)
 #define Memento_label(A,B)        (A)
+#define Memento_info(A)           do {} while (0)
+#define Memento_listBlockInfo()   do {} while (0)
 
 #endif /* MEMENTO */
 

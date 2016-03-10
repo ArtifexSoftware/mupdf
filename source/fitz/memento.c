@@ -319,6 +319,8 @@ extern size_t backtrace(void **, int);
 extern void backtrace_symbols_fd(void **, size_t, int);
 extern char **backtrace_symbols(void **, size_t);
 
+#define MEMENTO_BACKTRACE_MAX 256
+
 /* Libbacktrace gubbins */
 #ifdef HAVE_LIBDL
 #include <dlfcn.h>
@@ -499,16 +501,15 @@ static void Memento_initStacktracer(void)
     print_stack_value = print_stack_default;
 }
 
-static int Memento_getStacktrace(void **stack)
+static int Memento_getStacktrace(void **stack, int *skip)
 {
-    void *local[256];
     size_t num;
 
-    num = backtrace(&local[0], 256);
+    num = backtrace(&stack[0], MEMENTO_BACKTRACE_MAX);
 
+    *skip = SkipStackBackTraceLevels;
     if (num <= SkipStackBackTraceLevels)
         return 0;
-    memcpy(stack, &local[SkipStackBackTraceLevels], sizeof(void *) * (num-SkipStackBackTraceLevels));
     return (int)(num-SkipStackBackTraceLevels);
 }
 
@@ -536,6 +537,8 @@ typedef DWORD64 DWORD_NATIVESIZED;
 #else
 typedef DWORD DWORD_NATIVESIZED;
 #endif
+
+#define MEMENTO_BACKTRACE_MAX 64
 
 typedef USHORT (__stdcall *My_CaptureStackBackTraceType)(__in ULONG, __in ULONG, __out PVOID*, __out_opt PULONG);
 
@@ -616,11 +619,13 @@ static void Memento_initStacktracer(void)
     Memento_SymInitialize(Memento_process, NULL, TRUE);
 }
 
-static int Memento_getStacktrace(void **stack)
+static int Memento_getStacktrace(void **stack, int *skip)
 {
     if (Memento_CaptureStackBackTrace == NULL)
         return 0;
 
+    *skip = 0;
+    /* Limit us to 63 levels due to windows bug */
     return Memento_CaptureStackBackTrace(SkipStackBackTraceLevels, 63-SkipStackBackTraceLevels, stack, NULL);
 }
 
@@ -648,8 +653,9 @@ static void Memento_initStacktracer(void)
 {
 }
 
-static int Memento_getStacktrace(void **stack)
+static int Memento_getStacktrace(void **stack, int *skip)
 {
+    *skip = 0;
     return 0;
 }
 
@@ -661,13 +667,15 @@ static void Memento_showStacktrace(void **stack, int numberOfFrames)
 #ifdef MEMENTO_DETAILS
 static void Memento_storeDetails(Memento_BlkHeader *head, int type)
 {
-    void *stack[64];
+    void *stack[MEMENTO_BACKTRACE_MAX];
     Memento_BlkDetails *details;
     int count;
+    int skip;
 
 #ifdef MEMENTO_STACKTRACE_METHOD
-    count = Memento_getStacktrace(stack);
+    count = Memento_getStacktrace(stack, &skip);
 #else
+    skip = 0;
     count = 0;
 #endif
 
@@ -676,7 +684,7 @@ static void Memento_storeDetails(Memento_BlkHeader *head, int type)
         return;
 
     if (count)
-        memcpy(&details->stack, stack, count * sizeof(void *));
+        memcpy(&details->stack, &stack[skip], count * sizeof(void *));
 
     details->type = type;
     details->count = count;
@@ -1216,7 +1224,7 @@ void Memento_stats(void)
 }
 
 #ifdef MEMENTO_DETAILS
-static void showInfo(Memento_BlkHeader *b, void *arg)
+static int showInfo(Memento_BlkHeader *b, void *arg)
 {
     Memento_BlkDetails *details;
 
@@ -1233,6 +1241,7 @@ static void showInfo(Memento_BlkHeader *b, void *arg)
         Memento_showStacktrace(details->stack, details->count);
         details = details->next;
     }
+    return 0;
 }
 #endif
 
@@ -2244,6 +2253,14 @@ void (Memento_stats)(void)
 void *(Memento_label)(void *ptr, const char *label)
 {
     return ptr;
+}
+
+void (Memento_info)(void *addr)
+{
+}
+
+void (Memento_listBlockInfo)(void)
+{
 }
 
 #endif
