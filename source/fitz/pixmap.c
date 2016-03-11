@@ -1332,8 +1332,11 @@ fz_subsample_pixmap_ARM(unsigned char *ptr, int w, int h, int f, int factor,
 void
 fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 {
-	int dst_w, dst_h, w, h, fwd, fwd2, fwd3, back, back2, x, y, n, xx, yy, nn, f;
+	int dst_w, dst_h, w, h, fwd, fwd2, fwd3, back, back2, n, f;
 	unsigned char *s, *d;
+#ifndef ARCH_ARM
+	int x, y, xx, yy, nn;
+#endif
 
 	if (!tile)
 		return;

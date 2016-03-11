@@ -1182,7 +1182,6 @@ void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *
 	fz_matrix tm;
 	fz_rect clip_rect;
 	fz_rect fill_rect;
-	int has_tm;
 	pdf_obj *valarr;
 	pdf_obj *optarr;
 	char *text;
@@ -1241,7 +1240,6 @@ void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *
 
 		get_text_widget_info(ctx, doc, obj, &info);
 		form = load_or_create_form(ctx, doc, obj, &clip_rect);
-		has_tm = get_matrix(ctx, doc, form, info.q, &tm);
 
 		/* See which ones are selected */
 		valarr = pdf_get_inheritable(ctx, doc, obj, PDF_NAME_V);
