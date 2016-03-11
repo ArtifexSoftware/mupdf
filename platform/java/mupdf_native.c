@@ -3038,7 +3038,7 @@ FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, j
 		return;
 
 	fz_try(ctx)
-		fz_show_glyph(ctx, text, font, &trm, glyph, unicode, wmode);
+		fz_show_glyph(ctx, text, font, &trm, glyph, unicode, wmode, 0, FZ_DIR_UNSET, FZ_LANG_UNSET);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -3060,7 +3060,7 @@ FUN(Text_showString)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, 
 		return;
 
 	fz_try(ctx)
-		fz_show_string(ctx, text, font, &trm, string, wmode);
+		fz_show_string(ctx, text, font, &trm, string, wmode, 0, FZ_DIR_UNSET, FZ_LANG_UNSET);
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, string_, string);
 	fz_catch(ctx)

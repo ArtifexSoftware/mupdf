@@ -1528,7 +1528,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	{
 		s += fz_chartorune(&c, s);
 		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
-		fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_DIR_UNSET, fz_lang_unset);
+		fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_DIR_UNSET, FZ_LANG_UNSET);
 		trm.e += fz_advance_glyph(ctx, font, g, 0) * box->em;
 	}
 

@@ -219,3 +219,58 @@ fz_clone_text(fz_context *ctx, const fz_text *text)
 
 	return new_text;
 }
+
+fz_text_language fz_text_language_from_string(const char *str)
+{
+	fz_text_language lang;
+
+	if (str == NULL)
+		return FZ_LANG_UNSET;
+
+	/* 1st char */
+	if (str[0] >= 'a' && str[0] <= 'z')
+		lang = str[0] - 'a' + 1;
+	else if (str[0] >= 'A' && str[0] <= 'Z')
+		lang = str[0] - 'A' + 1;
+	else
+		return 0;
+
+	/* 2nd char */
+	if (str[1] >= 'a' && str[1] <= 'z')
+		lang += 27*(str[1] - 'a' + 1);
+	else if (str[1] >= 'A' && str[1] <= 'Z')
+		lang += 27*(str[1] - 'A' + 1);
+	else
+		return 0; /* There are no valid 1 char language codes */
+
+	/* 3nd char */
+	if (str[2] >= 'a' && str[2] <= 'z')
+		lang += 27*27*(str[2] - 'a' + 1);
+	else if (str[2] >= 'A' && str[2] <= 'Z')
+		lang += 27*27*(str[2] - 'A' + 1);
+
+	/* We don't support iso 639-6 4 char codes, cos the standard
+	 * has been withdrawn, and no one uses them. */
+	return lang;
+}
+
+char *fz_string_from_text_language(char str[4], fz_text_language lang)
+{
+	int c;
+
+	/* str is supposed to be at least 4 chars in size */
+	if (str == NULL)
+		return NULL;
+
+	c = lang % 27;
+	lang = lang / 27;
+	str[0] = c == 0 ? 0 : c - 1 + 'a';
+	c = lang % 27;
+	lang = lang / 27;
+	str[1] = c == 0 ? 0 : c - 1 + 'a';
+	c = lang % 27;
+	str[2] = c == 0 ? 0 : c - 1 + 'a';
+	str[3] = 0;
+
+	return str;
+}

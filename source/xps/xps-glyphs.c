@@ -452,7 +452,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			}
 
 			dir = bidi_level & 1 ? FZ_DIR_R2L : FZ_DIR_L2R;
-			fz_show_glyph(ctx, text, font, &tm, glyph_index, char_code, is_sideways, bidi_level, dir, fz_lang_unset);
+			fz_show_glyph(ctx, text, font, &tm, glyph_index, char_code, is_sideways, bidi_level, dir, FZ_LANG_UNSET);
 
 			x += advance * 0.01f * size;
 		}

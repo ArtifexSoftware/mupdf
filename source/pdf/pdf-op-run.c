@@ -943,11 +943,11 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 	fz_union_rect(&pr->text_bbox, &bbox);
 
 	/* add glyph to textobject */
-	fz_show_glyph(ctx, pr->text, fontdesc->font, &trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_DIR_UNSET, fz_lang_unset);
+	fz_show_glyph(ctx, pr->text, fontdesc->font, &trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_DIR_UNSET, FZ_LANG_UNSET);
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
-		fz_show_glyph(ctx, pr->text, fontdesc->font, &trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_DIR_UNSET, fz_lang_unset);
+		fz_show_glyph(ctx, pr->text, fontdesc->font, &trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_DIR_UNSET, FZ_LANG_UNSET);
 
 	if (fontdesc->wmode == 0)
 	{
