@@ -1049,7 +1049,18 @@ static inline void tga_put_pixel(fz_context *ctx, fz_output *out, unsigned char 
 void
 fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savealpha)
 {
-	fz_output *out;
+	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
+	fz_try(ctx)
+		fz_write_pixmap_as_tga(ctx, out, pixmap, savealpha);
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha)
+{
 	unsigned char head[18];
 	int n = pixmap->n;
 	int d = savealpha || n == 1 ? n : n - 1;
@@ -1061,8 +1072,6 @@ fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 	{
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as tga");
 	}
-
-	out = fz_new_output_with_path(ctx, filename, 0);
 
 	memset(head, 0, sizeof(head));
 	head[2] = n == 4 ? 10 : 11;
@@ -1098,8 +1107,6 @@ fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 		}
 	}
 	fz_write(ctx, out, "\0\0\0\0\0\0\0\0TRUEVISION-XFILE.\0", 26);
-
-	fz_drop_output(ctx, out);
 }
 
 unsigned int
