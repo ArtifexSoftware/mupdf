@@ -30,7 +30,7 @@ CFLAGS += -pipe -g -DMEMENTO -DDEBUG
 LDFLAGS += -g -d -rdynamic
 ifeq "$(HAVE_LIBDL)" "yes"
 CFLAGS += -DHAVE_LIBDL
-LDFLAGS += -ldl
+LIBS += -ldl
 endif
 else
 $(error unknown build setting: '$(build)')
