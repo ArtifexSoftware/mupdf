@@ -15,6 +15,7 @@ extern "C" {
 #include "mupdf/pdf/crypt.h"
 
 #include "mupdf/pdf/page.h"
+#include "mupdf/pdf/graft.h"
 #include "mupdf/pdf/resource.h"
 #include "mupdf/pdf/cmap.h"
 #include "mupdf/pdf/font.h"

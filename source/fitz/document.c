@@ -157,7 +157,8 @@ fz_new_document(fz_context *ctx, int size)
 fz_document *
 fz_keep_document(fz_context *ctx, fz_document *doc)
 {
-	++doc->refs;
+	if (doc)
+		++doc->refs;
 	return doc;
 }
 

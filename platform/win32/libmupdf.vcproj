@@ -1186,6 +1186,10 @@
 				RelativePath="..\..\source\pdf\pdf-glyphlist.h"
 				>
 			</File>
+      <File
+				RelativePath="..\..\source\pdf\pdf-graft.c"
+				>
+			</File>
 			<File
 				RelativePath="..\..\source\pdf\pdf-image.c"
 				>
@@ -1371,6 +1375,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\pdf\font.h"
+					>
+				</File>
+        <File
+					RelativePath="..\..\include\mupdf\pdf\graft.h"
 					>
 				</File>
 				<File

@@ -17,6 +17,7 @@ int pdfposter_main(int argc, char *argv[]);
 int pdfshow_main(int argc, char *argv[]);
 int pdfpages_main(int argc, char *argv[]);
 int pdfcreate_main(int argc, char *argv[]);
+int pdfmerge_main(int argc, char *argv[]);
 
 static struct {
 	int (*func)(int argc, char *argv[]);
@@ -32,6 +33,7 @@ static struct {
 	{ pdfposter_main, "poster", "split large page into many tiles" },
 	{ pdfshow_main, "show", "show internal pdf objects" },
 	{ pdfcreate_main, "create", "create pdf document" },
+	{ pdfmerge_main, "merge", "merge pages from multiple pdf sources into a new pdf" },
 };
 
 static int
