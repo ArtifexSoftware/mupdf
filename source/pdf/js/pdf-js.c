@@ -10,7 +10,7 @@ struct pdf_js_s
 	js_State *imp;
 };
 
-static void rethrow(pdf_js *js)
+FZ_NORETURN static void rethrow(pdf_js *js)
 {
 	js_newerror(js->imp, fz_caught_message(js->ctx));
 	js_throw(js->imp);

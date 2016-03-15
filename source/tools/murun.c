@@ -5,7 +5,7 @@
 
 #define PS1 "> "
 
-static void rethrow(js_State *J)
+FZ_NORETURN static void rethrow(js_State *J)
 {
 	js_newerror(J, fz_caught_message(js_getcontext(J)));
 	js_throw(J);
