@@ -327,10 +327,9 @@ extern char **backtrace_symbols(void **, size_t);
 
 #define MEMENTO_BACKTRACE_MAX 256
 
-/* Libbacktrace gubbins */
+/* Libbacktrace gubbins - relies on us having libdl to load the .so */
 #ifdef HAVE_LIBDL
 #include <dlfcn.h>
-#endif
 
 typedef void (*backtrace_error_callback) (void *data, const char *msg, int errnum);
 
@@ -368,7 +367,6 @@ static void (*print_stack_value)(void *address);
 static char backtrace_exe[4096];
 static void *current_addr;
 
-#ifdef HAVE_LIBDL
 static void error2_cb(void *data, const char *msg, int errnum)
 {
 }
