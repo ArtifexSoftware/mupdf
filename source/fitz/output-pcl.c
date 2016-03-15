@@ -703,18 +703,31 @@ mode2compress(unsigned char *out, unsigned char *in, int in_len)
 		}
 		else
 		{
+			/* Now copy as many literals as possible. We only
+			 * break the run at a length of 127, at the end,
+			 * or where we have 3 repeated values. */
 			int i;
 
 			/* How many literals do we need to copy? */
-			for (run = 1; run < 127 && x+run < in_len; run++)
-				if (in[run] == in[run+1])
+			for (; run < 127 && x+run+2 < in_len; run++)
+				if (in[run] == in[run+1] && in[run] == in[run+2])
 					break;
+			/* Don't leave stragglers at the end */
+			if (x + run + 2 >= in_len)
+			{
+				run = in_len - x;
+				if (run > 127)
+					run = 127;
+			}
 			out[out_len++] = run-1;
 			for (i = 0; i < run; i++)
+			{
 				out[out_len++] = in[i];
+			}
 		}
 		in += run;
 	}
+
 	return out_len;
 }
 
