@@ -329,9 +329,12 @@ parse_inline_image(fz_context *ctx, pdf_csi *csi, fz_stream *stm)
 		if (!found)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error after inline image");
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, obj);
+	}
+	fz_catch(ctx)
+	{
 		fz_drop_image(ctx, img);
 		fz_rethrow(ctx);
 	}
