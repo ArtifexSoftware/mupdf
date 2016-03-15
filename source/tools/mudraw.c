@@ -314,11 +314,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	/* Open the output file (using stdout if it's given as '-'), being
 	 * careful to append if we're not the first page. */
+	fz_drop_output(ctx, out);
 	if (output && (output[0] != '-' || output[1] != 0) && *output != 0)
 	{
 		char text_buffer[512];
 
-		fz_drop_output(ctx, out);
 		fz_snprintf(text_buffer, sizeof(text_buffer), output, pagenum);
 		out = fz_new_output_with_path(ctx, text_buffer, append);
 		append = !has_percent_d(output);
