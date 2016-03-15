@@ -60,6 +60,8 @@ fz_keep_storable(fz_context *ctx, const fz_storable *sc)
 	 * sanely throughout the code. */
 	fz_storable *s = (fz_storable *)sc;
 
+	if (s && s->refs > 0)
+		Memento_takeRef(s);
 	return fz_keep_imp(ctx, s, &s->refs);
 }
 
@@ -77,6 +79,8 @@ fz_drop_storable(fz_context *ctx, const fz_storable *sc)
 		this method. So we can simply drop the storable object
 		itself without any operations on the fz_store.
 	 */
+	if (s && s->refs > 0)
+		Memento_dropRef(s);
 	if (fz_drop_imp(ctx, s, &s->refs))
 		s->drop(ctx, s);
 }
