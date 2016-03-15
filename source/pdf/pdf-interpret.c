@@ -1277,7 +1277,7 @@ pdf_process_glyph(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_o
 
 	fz_try(ctx)
 	{
-		fz_stream *stm = fz_open_buffer(ctx, contents);
+		stm = fz_open_buffer(ctx, contents);
 		pdf_process_stream(ctx, proc, &csi, stm);
 		pdf_process_end(ctx, proc, &csi);
 	}
