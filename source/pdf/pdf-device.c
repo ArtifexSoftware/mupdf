@@ -1053,6 +1053,8 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 	for (i = pdev->num_groups - 1; i >= 0; i--)
 		pdf_drop_obj(ctx, pdev->groups[i].ref);
 
+	fz_drop_buffer(ctx, pdev->buffer);
+	pdf_drop_obj(ctx, pdev->resources);
 	fz_free(ctx, pdev->cid_fonts);
 	fz_free(ctx, pdev->image_indices);
 	fz_free(ctx, pdev->groups);
