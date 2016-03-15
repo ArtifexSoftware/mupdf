@@ -222,6 +222,9 @@ void *Memento_calloc(size_t, size_t);
 
 void Memento_info(void *addr);
 void Memento_listBLockInfo(void);
+void *Memento_takeRef(void *blk);
+void *Memento_dropRef(void *blk);
+void *Memento_reference(void *blk);
 
 #ifdef MEMENTO
 
@@ -259,6 +262,9 @@ void Memento_listBLockInfo(void);
 #define Memento_label(A,B)        (A)
 #define Memento_info(A)           do {} while (0)
 #define Memento_listBlockInfo()   do {} while (0)
+#define Memento_takeRef(A)        (A)
+#define Memento_dropRef(A)        (A)
+#define Memento_reference(A)      (A)
 
 #endif /* MEMENTO */
 

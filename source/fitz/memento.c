@@ -182,7 +182,10 @@ enum {
     Memento_EventType_new = 4,
     Memento_EventType_delete = 5,
     Memento_EventType_newArray = 6,
-    Memento_EventType_deleteArray = 7
+    Memento_EventType_deleteArray = 7,
+    Memento_EventType_takeRef = 8,
+    Memento_EventType_dropRef = 9,
+    Memento_EventType_reference = 10
 };
 
 static const char *eventType[] =
@@ -194,7 +197,10 @@ static const char *eventType[] =
     "new",
     "delete",
     "new[]",
-    "delete[]"
+    "delete[]",
+    "takeRef",
+    "dropRef",
+    "reference"
 };
 
 /* When we list leaked blocks at the end of execution, we search for pointers
@@ -1659,6 +1665,34 @@ void *Memento_calloc(size_t n, size_t s)
     return block;
 }
 
+static void do_reference(Memento_BlkHeader *blk, int event)
+{
+#ifdef MEMENTO_DETAILS
+    Memento_storeDetails(blk, event);
+#endif /* MEMENTO_DETAILS */
+}
+
+void *Memento_takeRef(void *blk)
+{
+    if (blk)
+        do_reference(MEMBLK_FROMBLK(blk), Memento_EventType_takeRef);
+    return blk;
+}
+
+void *Memento_dropRef(void *blk)
+{
+    if (blk)
+        do_reference(MEMBLK_FROMBLK(blk), Memento_EventType_dropRef);
+    return blk;
+}
+
+void *Memento_reference(void *blk)
+{
+    if (blk)
+        do_reference(MEMBLK_FROMBLK(blk), Memento_EventType_reference);
+    return blk;
+}
+
 /* Treat blocks from the user with suspicion, and check them the slow
  * but safe way. */
 static int checkBlockUser(Memento_BlkHeader *memblk, const char *action)
@@ -2206,6 +2240,21 @@ void (Memento_breakOnFree)(void *a)
 
 void (Memento_breakOnRealloc)(void *a)
 {
+}
+
+void *(Memento_takeRef)(void *a)
+{
+    return a;
+}
+
+void *(Memento_dropRef)(void *a)
+{
+    return a;
+}
+
+void *(Memento_reference)(void *a)
+{
+    return a;
 }
 
 #undef Memento_malloc
