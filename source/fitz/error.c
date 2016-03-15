@@ -100,16 +100,47 @@ FZ_NORETURN static void throw(fz_context *ctx)
 	}
 }
 
-fz_error_stack_slot *fz_push_try(fz_context *ctx)
+/* Only called when we hit the bottom of the exception stack.
+ * Do the same as fz_throw, but don't actually throw. */
+static int fz_fake_throw(fz_context *ctx, int code, const char *fmt, ...)
+{
+	va_list args;
+	ctx->error->errcode = code;
+	va_start(args, fmt);
+	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
+	va_end(args);
+
+	if (code != FZ_ERROR_ABORT)
+	{
+		fz_flush_warnings(ctx);
+		fprintf(stderr, "error: %s\n", ctx->error->message);
+		LOGE("error: %s\n", ctx->error->message);
+#ifdef USE_OUTPUT_DEBUG_STRING
+		OutputDebugStringA("error: ");
+		OutputDebugStringA(ctx->error->message);
+		OutputDebugStringA("\n");
+#endif
+	}
+
+	/* We need to arrive in the always/catch block as if throw
+	 * had taken place. */
+	ctx->error->top++;
+	ctx->error->top->code = 2;
+	return 0;
+}
+
+int fz_push_try(fz_context *ctx)
 {
 	/* If we would overflow the exception stack, throw an exception instead
-	 * of entering the try block. */
-	if (ctx->error->top + 1 >= ctx->error->stack + nelem(ctx->error->stack))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "exception stack overflow!");
+	 * of entering the try block. We assume that we always have room for
+	 * 1 extra level on the stack here - i.e. we throw the error on us
+	 * starting to use the last level. */
+	if (ctx->error->top + 2 >= ctx->error->stack + nelem(ctx->error->stack))
+		return fz_fake_throw(ctx, FZ_ERROR_GENERIC, "exception stack overflow!");
 
 	ctx->error->top++;
 	ctx->error->top->code = 0;
-	return ctx->error->top;
+	return 1;
 }
 
 int fz_caught(fz_context *ctx)

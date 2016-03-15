@@ -55,23 +55,27 @@ void fz_var_imp(void *);
 
 #define fz_try(ctx) \
 	{{{ \
-	if (fz_setjmp(fz_push_try(ctx)->buffer) == 0)\
-	{ do {
+	if (fz_push_try(ctx)) {\
+		if (fz_setjmp((ctx)->error->top->buffer) == 0)\
+		{ do {\
 
 #define fz_always(ctx) \
-		} while (0); \
+			} while (0); \
+		} \
 	} \
 	if (ctx->error->top->code < 3) \
 	{ \
-		ctx->error->top->code++; \
-		do { \
+		{ \
+			ctx->error->top->code++; \
+			do { \
 
 #define fz_catch(ctx) \
-		} while(0); \
+			} while(0); \
+		} \
 	} }}} \
 	if ((ctx->error->top--)->code > 1)
 
-fz_error_stack_slot *fz_push_try(fz_context *ctx);
+int fz_push_try(fz_context *ctx);
 FZ_NORETURN void fz_throw(fz_context *ctx, int errcode, const char *, ...) __printflike(3, 4);
 FZ_NORETURN void fz_rethrow(fz_context *ctx);
 FZ_NORETURN void fz_rethrow_message(fz_context *ctx, const char *fmt, ...)  __printflike(2, 3);
