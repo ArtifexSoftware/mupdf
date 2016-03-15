@@ -63,8 +63,17 @@ static unsigned char mono_ht[] =
 fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps)
 {
 	fz_halftone *ht = fz_new_halftone(ctx, num_comps);
+
 	assert(num_comps == 1); /* Only support 1 component for now */
-	ht->comp[0] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, mono_ht);
+
+	fz_try(ctx)
+		ht->comp[0] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, mono_ht);
+	fz_catch(ctx)
+	{
+		fz_drop_halftone(ctx, ht);
+		fz_rethrow(ctx);
+	}
+
 	return ht;
 }
 
@@ -163,8 +172,9 @@ static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsign
 
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
 {
-	fz_bitmap *out;
-	unsigned char *ht_line, *o, *p;
+	fz_bitmap *out = NULL;
+	unsigned char *ht_line = NULL;
+	unsigned char *o, *p;
 	int w, h, x, y, n, pstride, ostride;
 	fz_halftone *ht_orig = ht;
 
@@ -173,30 +183,43 @@ fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halfton
 
 	assert(pix->n == 2); /* Mono + Alpha */
 
+	fz_var(ht_line);
+	fz_var(out);
+
 	n = pix->n-1; /* Remove alpha */
 	if (ht == NULL)
 	{
 		ht = fz_default_halftone(ctx, n);
 	}
-	ht_line = fz_malloc(ctx, pix->w * n);
-	out = fz_new_bitmap(ctx, pix->w, pix->h, n, pix->xres, pix->yres);
-	o = out->samples;
-	p = pix->samples;
-
-	h = pix->h;
-	x = pix->x;
-	y = pix->y;
-	w = pix->w;
-	ostride = out->stride;
-	pstride = pix->w * pix->n;
-	while (h--)
+	fz_try(ctx)
 	{
-		make_ht_line(ht_line, ht, x, y++, w);
-		do_threshold_1(ht_line, p, o, w);
-		o += ostride;
-		p += pstride;
+		ht_line = fz_malloc(ctx, pix->w * n);
+		out = fz_new_bitmap(ctx, pix->w, pix->h, n, pix->xres, pix->yres);
+		o = out->samples;
+		p = pix->samples;
+
+		h = pix->h;
+		x = pix->x;
+		y = pix->y;
+		w = pix->w;
+		ostride = out->stride;
+		pstride = pix->w * pix->n;
+		while (h--)
+		{
+			make_ht_line(ht_line, ht, x, y++, w);
+			do_threshold_1(ht_line, p, o, w);
+			o += ostride;
+			p += pstride;
+		}
 	}
-	if (!ht_orig)
-		fz_drop_halftone(ctx, ht);
+	fz_always(ctx)
+	{
+		if (!ht_orig)
+			fz_drop_halftone(ctx, ht);
+		fz_free(ctx, ht_line);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 	return out;
 }
