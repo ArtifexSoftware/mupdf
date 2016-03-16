@@ -198,7 +198,7 @@ pdf_keep_obj(fz_context *ctx, pdf_obj *obj)
 {
 	if (obj >= PDF_OBJ__LIMIT)
 	{
-		Memento_takeRef(obj);
+		(void)Memento_takeRef(obj);
 		obj->refs ++;
 	}
 	return obj;
@@ -1718,7 +1718,7 @@ pdf_drop_obj(fz_context *ctx, pdf_obj *obj)
 {
 	if (obj >= PDF_OBJ__LIMIT)
 	{
-		Memento_dropRef(obj);
+		(void)Memento_dropRef(obj);
 		if (--obj->refs)
 			return;
 		if (obj->kind == PDF_ARRAY)
