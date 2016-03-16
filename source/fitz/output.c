@@ -62,12 +62,45 @@ fz_new_output_with_file_ptr(fz_context *ctx, FILE *file, int close)
 	return out;
 }
 
+static void
+null_write(fz_context *ctx, void *opaque, const void *buffer, int count)
+{
+	return;
+}
+
+static void
+null_seek(fz_context *ctx, void *opaque, fz_off_t off, int whence)
+{
+}
+
+static fz_off_t
+null_tell(fz_context *ctx, void *opaque)
+{
+	return 0;
+}
+
+static fz_output *
+null_filename(fz_context *ctx)
+{
+	fz_output *out = fz_malloc_struct(ctx, fz_output);
+	out->opaque = NULL;
+	out->write = null_write;
+	out->seek = null_seek;
+	out->tell = null_tell;
+	out->close = NULL;
+	return out;
+}
+
 fz_output *
 fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 {
 	fz_output *out = NULL;
+	FILE *file;
 
-	FILE *file = fz_fopen(filename, append ? "ab" : "wb");
+	if (!strcmp(filename, "/dev/null") || !fz_strcasecmp(filename, "nul:"))
+		return null_filename(ctx);
+
+	file = fz_fopen(filename, append ? "ab" : "wb");
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
