@@ -32,4 +32,8 @@ void fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename);
 
 void fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
 
+void fz_write_pbm_header(fz_context *ctx, fz_output *out, int w, int h);
+
+void fz_write_pbm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
+
 #endif

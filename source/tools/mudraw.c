@@ -631,6 +631,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_write_pam_header(ctx, out, pix->w, totalheight, pix->n, savealpha);
 				else if (output_format == OUT_PNG)
 					poc = fz_write_png_header(ctx, out, pix->w, totalheight, pix->n, savealpha);
+				else if (output_format == OUT_PBM)
+					fz_write_pbm_header(ctx, out, pix->w, totalheight);
 			}
 
 			for (band = 0; band < bands; band++)
@@ -684,8 +686,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 							fz_write_pixmap_as_pcl(ctx, out, pix, &options);
 					}
 					else if (output_format == OUT_PBM) {
-						fz_bitmap *bit = fz_new_bitmap_from_pixmap(ctx, pix, NULL);
-						fz_write_bitmap_as_pbm(ctx, out, bit);
+						fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
+						fz_write_pbm_band(ctx, out, bit);
 						fz_drop_bitmap(ctx, bit);
 					}
 					else if (output_format == OUT_TGA)
@@ -1009,9 +1011,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (bandheight)
 	{
-		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG)
+		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM)
 		{
-			fprintf(stderr, "Banded operation only possible with PAM, PGM, PPM, PNM and PNG outputs\n");
+			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PPM, PNM and PNG outputs\n");
 			exit(1);
 		}
 		if (showmd5)

@@ -172,6 +172,11 @@ static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsign
 
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
 {
+	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0, 0);
+}
+
+fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band, int bandheight)
+{
 	fz_bitmap *out = NULL;
 	unsigned char *ht_line = NULL;
 	unsigned char *o, *p;
@@ -186,6 +191,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halfton
 	fz_var(ht_line);
 	fz_var(out);
 
+	band *= bandheight;
 	n = pix->n-1; /* Remove alpha */
 	if (ht == NULL)
 	{
@@ -200,7 +206,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halfton
 
 		h = pix->h;
 		x = pix->x;
-		y = pix->y;
+		y = pix->y + band;
 		w = pix->w;
 		ostride = out->stride;
 		pstride = pix->w * pix->n;

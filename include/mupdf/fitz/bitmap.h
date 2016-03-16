@@ -53,6 +53,8 @@ typedef struct fz_halftone_s fz_halftone;
 */
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 
+fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band, int bandheight);
+
 struct fz_bitmap_s
 {
 	int refs;

@@ -46,15 +46,27 @@ fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit)
 }
 
 void
+fz_write_pbm_header(fz_context *ctx, fz_output *out, int w, int h)
+{
+	fz_printf(ctx, out, "P4\n%d %d\n", w, h);
+}
+
+void
 fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
+{
+	fz_write_pbm_header(ctx, out, bitmap->w, bitmap->h);
+
+	fz_write_pbm_band(ctx, out, bitmap);
+}
+
+void
+fz_write_pbm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 {
 	unsigned char *p;
 	int h, bytestride;
 
 	if (bitmap->n != 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too many color components in bitmap");
-
-	fz_printf(ctx, out, "P4\n%d %d\n", bitmap->w, bitmap->h);
 
 	p = bitmap->samples;
 	h = bitmap->h;
