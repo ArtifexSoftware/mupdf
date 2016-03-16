@@ -453,8 +453,8 @@ fz_dump_glyph_cache_stats(fz_context *ctx)
 {
 	fz_glyph_cache *cache = ctx->glyph_cache;
 
-	printf("Glyph Cache Size: %d\n", cache->total);
+	fprintf(stderr, "Glyph Cache Size: %d\n", cache->total);
 #ifndef NDEBUG
-	printf("Glyph Cache Evictions: %d (%d bytes)\n", cache->num_evictions, cache->evicted);
+	fprintf(stderr, "Glyph Cache Evictions: %d (%d bytes)\n", cache->num_evictions, cache->evicted);
 #endif
 }
