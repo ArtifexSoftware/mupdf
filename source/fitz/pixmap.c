@@ -691,7 +691,7 @@ fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int sa
 void
 fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha)
 {
-	int y, x, k;
+	int y, x;
 	int start = band * bandheight;
 	int end = start + bandheight;
 	int sn = n;
@@ -708,8 +708,7 @@ fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band
 		x = w;
 		while (x--)
 		{
-			for (k = 0; k < dn; k++)
-				fz_putc(ctx, out, sp[k]);
+			fz_write(ctx, out, sp, dn);
 			sp += sn;
 		}
 	}
