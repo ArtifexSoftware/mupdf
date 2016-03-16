@@ -971,6 +971,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\paint-glyph.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\path.c"
 				>
 			</File>

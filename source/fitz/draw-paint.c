@@ -1155,6 +1155,7 @@ intermediate_run:
 	}
 }
 
+#if 0
 static inline void
 fz_paint_glyph_alpha_N(unsigned char *colorbv, int n, int span, unsigned char *dp, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
 {
@@ -1291,139 +1292,33 @@ intermediate_run:
 		dp += span;
 	}
 }
+#endif
 
-static inline void
-fz_paint_glyph_solid_N(unsigned char *colorbv, int n, int span, unsigned char *dp, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
-{
-	while (h--)
-	{
-		int skip_xx, ww, len, extend;
-		unsigned char *runp;
-		unsigned char *ddp = dp;
-		int offset = ((int *)(glyph->data))[skip_y++];
-		if (offset >= 0)
-		{
-			int eol = 0;
-			runp = &glyph->data[offset];
-			extend = 0;
-			ww = w;
-			skip_xx = skip_x;
-			while (skip_xx)
-			{
-				int v = *runp++;
-				switch (v & 3)
-				{
-				case 0: /* Extend */
-					extend = v>>2;
-					len = 0;
-					break;
-				case 1: /* Transparent */
-					len = (v>>2) + 1 + (extend<<6);
-					extend = 0;
-					if (len > skip_xx)
-					{
-						len -= skip_xx;
-						goto transparent_run;
-					}
-					break;
-				case 2: /* Solid */
-					eol = v & 4;
-					len = (v>>3) + 1 + (extend<<5);
-					extend = 0;
-					if (len > skip_xx)
-					{
-						len -= skip_xx;
-						goto solid_run;
-					}
-					break;
-				default: /* Intermediate */
-					eol = v & 4;
-					len = (v>>3) + 1 + (extend<<5);
-					extend = 0;
-					if (len > skip_xx)
-					{
-						runp += skip_xx;
-						len -= skip_xx;
-						goto intermediate_run;
-					}
-					runp += len;
-					break;
-				}
-				if (eol)
-				{
-					ww = 0;
-					break;
-				}
-				skip_xx -= len;
-			}
-			while (ww > 0)
-			{
-				int v = *runp++;
-				switch(v & 3)
-				{
-				case 0: /* Extend */
-					extend = v>>2;
-					break;
-				case 1: /* Transparent */
-					len = (v>>2) + 1 + (extend<<6);
-					extend = 0;
-transparent_run:
-					if (len > ww)
-						len = ww;
-					ww -= len;
-					ddp += len * n;
-					break;
-				case 2: /* Solid */
-					eol = v & 4;
-					len = (v>>3) + 1 + (extend<<5);
-					extend = 0;
-solid_run:
-					if (len > ww)
-						len = ww;
-					ww -= len;
-					do
-					{
-						int k = 0;
-						do
-						{
-							*ddp++ = colorbv[k++];
-						}
-						while (k != n);
-					}
-					while (--len);
-					break;
-				default: /* Intermediate */
-					eol = v & 4;
-					len = (v>>3) + 1 + (extend<<5);
-					extend = 0;
-intermediate_run:
-					if (len > ww)
-						len = ww;
-					ww -= len;
-					do
-					{
-						int k = 0;
-						int a = *runp++;
-						a = FZ_EXPAND(a);
-						do
-						{
-							*ddp = FZ_BLEND(colorbv[k++], *ddp, a);
-							ddp++;
-						}
-						while (k != n-1);
-						*ddp = FZ_BLEND(0xFF, *ddp, a);
-						ddp++;
-					}
-					while (--len);
-					break;
-				}
-				if (eol)
-					break;
-			}
-		}
-		dp += span;
-	}
-}
+#define N 2
+#include "paint-glyph.h"
+
+#define N 4
+#include "paint-glyph.h"
+
+#define N 5
+#include "paint-glyph.h"
+
+#include "paint-glyph.h"
+
+#define ALPHA
+#define N 2
+#include "paint-glyph.h"
+
+#define ALPHA
+#define N 4
+#include "paint-glyph.h"
+
+#define ALPHA
+#define N 5
+#include "paint-glyph.h"
+
+#define ALPHA
+#include "paint-glyph.h"
 
 static inline void
 fz_paint_glyph_alpha(unsigned char *colorbv, int n, int span, unsigned char *dp, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
@@ -1431,13 +1326,13 @@ fz_paint_glyph_alpha(unsigned char *colorbv, int n, int span, unsigned char *dp,
 	switch (n)
 	{
 	case 2:
-		fz_paint_glyph_alpha_N(colorbv, 2, span, dp, glyph, w, h, skip_x, skip_y);
+		fz_paint_glyph_alpha_2(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 	case 4:
-		fz_paint_glyph_alpha_N(colorbv, 4, span, dp, glyph, w, h, skip_x, skip_y);
+		fz_paint_glyph_alpha_4(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 	case 5:
-		fz_paint_glyph_alpha_N(colorbv, 5, span, dp, glyph, w, h, skip_x, skip_y);
+		fz_paint_glyph_alpha_5(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 	default:
 		fz_paint_glyph_alpha_N(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
@@ -1451,13 +1346,13 @@ fz_paint_glyph_solid(unsigned char *colorbv, int n, int span, unsigned char *dp,
 	switch (n)
 	{
 	case 2:
-		fz_paint_glyph_solid_N(colorbv, 2, span, dp, glyph, w, h, skip_x, skip_y);
+		fz_paint_glyph_solid_2(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 	case 4:
-		fz_paint_glyph_solid_N(colorbv, 4, span, dp, glyph, w, h, skip_x, skip_y);
+		fz_paint_glyph_solid_4(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 	case 5:
-		fz_paint_glyph_solid_N(colorbv, 5, span, dp, glyph, w, h, skip_x, skip_y);
+		fz_paint_glyph_solid_5(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 	default:
 		fz_paint_glyph_solid_N(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
