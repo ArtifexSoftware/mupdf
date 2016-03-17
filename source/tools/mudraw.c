@@ -14,7 +14,7 @@
 enum {
 	OUT_NONE,
 	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
-	OUT_PBM, OUT_PWG, OUT_PCL,
+	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL,
 	OUT_TEXT, OUT_HTML, OUT_STEXT,
 	OUT_TRACE, OUT_SVG, OUT_PDF,
 	OUT_GPROOF
@@ -36,6 +36,7 @@ static const suffix_t suffix_table[] =
 	{ ".pnm", OUT_PNM },
 	{ ".pam", OUT_PAM },
 	{ ".pbm", OUT_PBM },
+	{ ".pkm", OUT_PKM },
 	{ ".svg", OUT_SVG },
 	{ ".pwg", OUT_PWG },
 	{ ".pcl", OUT_PCL },
@@ -90,6 +91,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PAM, CS_RGB_ALPHA, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
 	{ OUT_PGM, CS_GRAY, { CS_GRAY, CS_RGB } },
 	{ OUT_PBM, CS_MONO, { CS_MONO } },
+	{ OUT_PKM, CS_CMYK, { CS_CMYK } },
 	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_PCL, CS_MONO, { CS_MONO } },
 	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
@@ -164,7 +166,7 @@ static void usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\traster: png, tga, pnm, pam, pbm, pwg, pcl\n"
+		"\t\traster: png, tga, pnm, pam, pbm, pkm, pwg, pcl\n"
 		"\t\tvector: svg, pdf, trace\n"
 		"\t\ttext: txt, html, stext\n"
 		"\n"
@@ -633,6 +635,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					poc = fz_write_png_header(ctx, out, pix->w, totalheight, pix->n, savealpha);
 				else if (output_format == OUT_PBM)
 					fz_write_pbm_header(ctx, out, pix->w, totalheight);
+				else if (output_format == OUT_PKM)
+					fz_write_pkm_header(ctx, out, pix->w, totalheight);
 			}
 
 			for (band = 0; band < bands; band++)
@@ -688,6 +692,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					else if (output_format == OUT_PBM) {
 						fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
 						fz_write_pbm_band(ctx, out, bit);
+						fz_drop_bitmap(ctx, bit);
+					}
+					else if (output_format == OUT_PKM) {
+						fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
+						fz_write_pkm_band(ctx, out, bit);
 						fz_drop_bitmap(ctx, bit);
 					}
 					else if (output_format == OUT_TGA)

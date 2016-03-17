@@ -64,10 +64,12 @@ fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps)
 {
 	fz_halftone *ht = fz_new_halftone(ctx, num_comps);
 
-	assert(num_comps == 1); /* Only support 1 component for now */
-
 	fz_try(ctx)
-		ht->comp[0] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, mono_ht);
+	{
+		int i;
+		for (i = 0; i < num_comps; i++)
+			ht->comp[i] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, mono_ht);
+	}
 	fz_catch(ctx)
 	{
 		fz_drop_halftone(ctx, ht);
@@ -146,6 +148,8 @@ static void make_ht_line(unsigned char *buf, fz_halftone *ht, int x, int y, int 
 }
 
 /* Inner mono thresholding code */
+typedef void (threshold_fn)(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w);
+
 static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w)
 {
 	int bit = 0x80;
@@ -170,6 +174,55 @@ static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsign
 		*out = h;
 }
 
+/*
+	Note that the tests in do_threshold_4 are inverted compared to those
+	in do_threshold_1. This is to allow for the fact that the CMYK
+	contone renderings have white = 0, whereas rgb, and greyscale have
+	white = 0xFF. Reversing these tests enables us to maintain that
+	BlackIs1 in bitmaps.
+*/
+static void do_threshold_4(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w)
+{
+	w--;
+	while (w > 0)
+	{
+		int h = 0;
+		if (pixmap[0] >= ht_line[0])
+			h |= 0x80;
+		if (pixmap[1] >= ht_line[1])
+			h |= 0x40;
+		if (pixmap[2] >= ht_line[2])
+			h |= 0x20;
+		if (pixmap[3] >= ht_line[3])
+			h |= 0x10;
+		if (pixmap[5] >= ht_line[4])
+			h |= 0x08;
+		if (pixmap[6] >= ht_line[5])
+			h |= 0x04;
+		if (pixmap[7] >= ht_line[6])
+			h |= 0x02;
+		if (pixmap[8] >= ht_line[7])
+			h |= 0x01;
+		*out++ = h;
+		pixmap += 10;
+		ht_line += 8;
+		w -= 2;
+	}
+	if (w == 0)
+	{
+		int h = 0;
+		if (pixmap[0] >= ht_line[0])
+			h |= 0x80;
+		if (pixmap[1] >= ht_line[1])
+			h |= 0x40;
+		if (pixmap[2] >= ht_line[2])
+			h |= 0x20;
+		if (pixmap[3] >= ht_line[3])
+			h |= 0x10;
+		*out = h;
+	}
+}
+
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
 {
 	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0, 0);
@@ -182,17 +235,30 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	unsigned char *o, *p;
 	int w, h, x, y, n, pstride, ostride;
 	fz_halftone *ht_orig = ht;
+	threshold_fn *thresh;
 
 	if (!pix)
 		return NULL;
-
-	assert(pix->n == 2); /* Mono + Alpha */
 
 	fz_var(ht_line);
 	fz_var(out);
 
 	band *= bandheight;
 	n = pix->n-1; /* Remove alpha */
+
+	switch(n)
+	{
+	case 1:
+		thresh = &do_threshold_1;
+		break;
+	case 4:
+		thresh = &do_threshold_4;
+		break;
+	default:
+		assert(!"Unsupported number of components");
+		return NULL;
+	}
+
 	if (ht == NULL)
 	{
 		ht = fz_default_halftone(ctx, n);
@@ -213,7 +279,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 		while (h--)
 		{
 			make_ht_line(ht_line, ht, x, y++, w);
-			do_threshold_1(ht_line, p, o, w);
+			thresh(ht_line, p, o, w);
 			o += ostride;
 			p += pstride;
 		}
