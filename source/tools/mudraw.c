@@ -14,7 +14,7 @@
 enum {
 	OUT_NONE,
 	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
-	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL,
+	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS,
 	OUT_TEXT, OUT_HTML, OUT_STEXT,
 	OUT_TRACE, OUT_SVG, OUT_PDF,
 	OUT_GPROOF
@@ -40,6 +40,7 @@ static const suffix_t suffix_table[] =
 	{ ".svg", OUT_SVG },
 	{ ".pwg", OUT_PWG },
 	{ ".pcl", OUT_PCL },
+	{ ".ps", OUT_PS },
 	{ ".pdf", OUT_PDF },
 	{ ".tga", OUT_TGA },
 
@@ -94,6 +95,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PKM, CS_CMYK, { CS_CMYK } },
 	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_PCL, CS_MONO, { CS_MONO } },
+	{ OUT_PS, CS_RGB, { CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
 
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
@@ -148,6 +150,7 @@ static fz_colorspace *colorspace;
 static char *filename;
 static int files = 0;
 fz_output *out = NULL;
+static int output_pagenum = 0;
 
 static struct {
 	int count, total;
@@ -166,7 +169,7 @@ static void usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\traster: png, tga, pnm, pam, pbm, pkm, pwg, pcl\n"
+		"\t\traster: png, tga, pnm, pam, pbm, pkm, pwg, pcl, ps\n"
 		"\t\tvector: svg, pdf, trace\n"
 		"\t\ttext: txt, html, stext\n"
 		"\n"
@@ -268,6 +271,9 @@ file_level_headers(fz_context *ctx)
 
 	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 		fz_printf(ctx, out, "<document name=\"%s\">\n", filename);
+
+	if (output_format == OUT_PS)
+		fz_write_ps_file_header(ctx, out);
 }
 
 static void
@@ -283,6 +289,9 @@ file_level_trailers(fz_context *ctx)
 		fz_print_stext_sheet(ctx, out, sheet);
 		fz_printf(ctx, out, "</style>\n");
 	}
+
+	if (output_format == OUT_PS)
+		fz_write_ps_file_trailer(ctx, out, output_pagenum);
 
 	fz_drop_stext_sheet(ctx, sheet);
 }
@@ -538,9 +547,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_pixmap *pix = NULL;
 		int w, h;
 		fz_png_output_context *poc = NULL;
+		fz_ps_output_context *psoc = NULL;
 
 		fz_var(pix);
 		fz_var(poc);
+		fz_var(psoc);
 
 		fz_bound_page(ctx, page, &bounds);
 		zoom = resolution / 72;
@@ -637,6 +648,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_write_pbm_header(ctx, out, pix->w, totalheight);
 				else if (output_format == OUT_PKM)
 					fz_write_pkm_header(ctx, out, pix->w, totalheight);
+				else if (output_format == OUT_PS)
+					psoc = fz_write_ps_header(ctx, out, pix->w, totalheight, pix->n, pix->xres, pix->yres, ++output_pagenum);
 			}
 
 			for (band = 0; band < bands; band++)
@@ -689,6 +702,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 						else
 							fz_write_pixmap_as_pcl(ctx, out, pix, &options);
 					}
+					else if (output_format == OUT_PS)
+						fz_write_ps_band(ctx, out, psoc, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
 					else if (output_format == OUT_PBM) {
 						fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
 						fz_write_pbm_band(ctx, out, bit);
@@ -723,6 +738,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			{
 				if (output_format == OUT_PNG)
 					fz_write_png_trailer(ctx, out, poc);
+				if (output_format == OUT_PS)
+					fz_write_ps_trailer(ctx, out, psoc);
 			}
 		}
 		fz_always(ctx)
