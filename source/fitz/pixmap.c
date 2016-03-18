@@ -725,9 +725,15 @@ void
 fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
-	fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
-	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
-	fz_drop_output(ctx, out);
+	fz_try(ctx)
+	{
+		fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
+		fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
+	}
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /*
