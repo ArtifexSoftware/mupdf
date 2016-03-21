@@ -109,6 +109,11 @@ static const format_cs_table_t format_cs_table[] =
 };
 
 static char *output = NULL;
+fz_output *out = NULL;
+static int output_pagenum = 0;
+static int output_append = 0;
+static int output_file_per_page = 0;
+
 static char *format = NULL;
 static int output_format = OUT_NONE;
 
@@ -144,13 +149,10 @@ static int invert = 0;
 static int bandheight = 0;
 
 static int errored = 0;
-static int append = 0;
 static fz_stext_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static char *filename;
 static int files = 0;
-fz_output *out = NULL;
-static int output_pagenum = 0;
 
 static struct {
 	int count, total;
@@ -305,7 +307,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	int start;
 	fz_cookie cookie = { 0 };
 	fz_rect mediabox;
-	int first_page = !append;
+	int first_page = !output_append;
 
 	fz_var(list);
 	fz_var(dev);
@@ -323,19 +325,15 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	fz_bound_page(ctx, page, &mediabox);
 
-	/* Open the output file (using stdout if it's given as '-'), being
-	 * careful to append if we're not the first page. */
-	fz_drop_output(ctx, out);
-	if (output && (output[0] != '-' || output[1] != 0) && *output != 0)
+	if (output_file_per_page)
 	{
 		char text_buffer[512];
 
+		fz_drop_output(ctx, out);
 		fz_snprintf(text_buffer, sizeof(text_buffer), output, pagenum);
-		out = fz_new_output_with_path(ctx, text_buffer, append);
-		append = !has_percent_d(output);
+		out = fz_new_output_with_path(ctx, text_buffer, output_append);
+		output_append = 1;
 	}
-	else
-		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
 
 	/* Output any file level (as opposed to page level) headers. */
 	if (first_page)
@@ -759,7 +757,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (list)
 		fz_drop_display_list(ctx, list);
 
-	if (!append)
+	if (!output_append)
 		file_level_trailers(ctx);
 
 	fz_drop_page(ctx, page);
@@ -1097,6 +1095,19 @@ int mudraw_main(int argc, char **argv)
 	{
 		pdfout = pdf_create_document(ctx);
 	}
+	else if (output_format == OUT_GPROOF)
+	{
+		/* GPROOF files are saved direct. Do not open "output". */
+	}
+	else if (output && (output[0] != '-' || output[1] != 0) && *output != 0)
+	{
+		if (has_percent_d(output))
+			output_file_per_page = 1;
+		else
+			out = fz_new_output_with_path(ctx, output, 0);
+	}
+	else
+		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
 
 	timing.count = 0;
 	timing.total = 0;
@@ -1168,19 +1179,25 @@ int mudraw_main(int argc, char **argv)
 		errored = 1;
 	}
 
-	if (pdfout)
+	if (output_append)
+		file_level_trailers(ctx);
+
+	if (output_format == OUT_PDF)
 	{
 		if (!output)
 			output = "out.pdf";
 		pdf_save_document(ctx, pdfout, output, NULL);
 		pdf_drop_document(ctx, pdfout);
 	}
-
-	if (append)
-		file_level_trailers(ctx);
-
-	fz_drop_output(ctx, out);
-	out = NULL;
+	else if (output_format == OUT_GPROOF)
+	{
+		/* No output file to close */
+	}
+	else
+	{
+		fz_drop_output(ctx, out);
+		out = NULL;
+	}
 
 	if (showtime && timing.count > 0)
 	{
