@@ -215,8 +215,8 @@ pdf_dev_ctm(fz_context *ctx, pdf_device *pdev, const fz_matrix *ctm)
 		return;
 	fz_invert_matrix(&inverse, &gs->ctm);
 	fz_concat(&inverse, ctm, &inverse);
-	memcpy(&gs->ctm, ctm, sizeof(*ctm));
-	fz_buffer_printf(ctx, gs->buf, "%f %f %f %f %f %f cm\n", inverse.a, inverse.b, inverse.c, inverse.d, inverse.e, inverse.f);
+	gs->ctm = *ctm;
+	fz_buffer_printf(ctx, gs->buf, "%M cm\n", &inverse);
 }
 
 static void
@@ -1062,7 +1062,7 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->gstates);
 }
 
-fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, fz_buffer *buf, pdf_obj *resources)
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matrix *topctm, const fz_rect *mediabox, fz_buffer *buf, pdf_obj *resources)
 {
 	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
 
@@ -1115,7 +1115,8 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_rect 
 		dev->num_gstates = 1;
 		dev->max_gstates = 1;
 
-		fz_buffer_printf(ctx, buf, "1 0 0 -1 %f %f cm\n", 0 - mediabox->x0, mediabox->y1);
+		if (topctm != &fz_identity)
+			fz_buffer_printf(ctx, buf, "%M cm\n", topctm);
 	}
 	fz_catch(ctx)
 	{
@@ -1131,7 +1132,8 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_rect 
 fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc,
 	const fz_rect *mediabox, fz_buffer **pcontents, pdf_obj **presources)
 {
+	fz_matrix pagectm = { 1, 0, 0, 1, -mediabox->x0, mediabox->y1 };
 	*presources = pdf_new_dict(ctx, doc, 0);
 	*pcontents = fz_new_buffer(ctx, 0);
-	return pdf_new_pdf_device(ctx, doc, mediabox, *pcontents, *presources);
+	return pdf_new_pdf_device(ctx, doc, &pagectm, mediabox, *pcontents, *presources);
 }

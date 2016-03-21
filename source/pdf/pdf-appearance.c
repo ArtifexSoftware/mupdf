@@ -1617,7 +1617,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 
 		contents = fz_new_buffer(ctx, 0);
 
-		dev = pdf_new_pdf_device(ctx, doc, &trect, contents, resources);
+		dev = pdf_new_pdf_device(ctx, doc, &fz_identity, &trect, contents, resources);
 		fz_run_display_list(ctx, disp_list, dev, &ctm, &fz_infinite_rect, NULL);
 		fz_drop_device(ctx, dev);
 
