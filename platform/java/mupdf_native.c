@@ -2941,7 +2941,7 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	fz_text *text = from_Text(env, self);
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	fz_matrix ctm = from_Matrix(env, jctm);
-	jobject jrect;
+	jobject jrect = NULL;
 	fz_rect rect;
 
 	if (ctx == NULL || text == NULL)
@@ -3249,7 +3249,7 @@ JNIEXPORT jlong JNICALL
 FUN(Annotation_advance)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_annot *annot;
+	fz_annot *annot = NULL;
 
 	if (ctx == NULL || self == NULL)
 		return 0;
@@ -3502,7 +3502,7 @@ FUN(Page_getBounds)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	jobject jrect;
+	jobject jrect = NULL;
 	fz_rect rect;
 
 	if (ctx == NULL || page == NULL)
