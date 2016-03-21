@@ -10,7 +10,10 @@ VIEWER_JAVA_SOURCES := $(sort $(wildcard *.java))
 VIEWER_JAVA_OBJECTS := $(VIEWER_JAVA_SOURCES:%.java=%.class)
 
 $(MUPDF_CORE) :
-	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC build=release libs
+	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC \
+		FREETYPE_DIR=/use/system/library \
+		ZLIB_DIR=/use/system/library \
+		build=release libs
 
 $(LIBRARY_JAVA_OBJECTS) : $(LIBRARY_JAVA_SOURCES)
 	javac $^
@@ -33,7 +36,7 @@ mupdf_native.o : mupdf_native.c mupdf_native.h
 		-o $@ -c $<
 
 libmupdf_java.so : mupdf_native.o $(MUPDF_CORE)
-	$(CC) -shared -o $@ $^
+	$(CC) -shared -o $@ $^ -lfreetype -lz
 
 $(VIEWER_JAVA_OBJECTS) : $(VIEWER_JAVA_SOURCES)
 	javac $^
@@ -48,6 +51,6 @@ clean:
 	rm -f libmupdf_java.so
 
 nuke: clean
-	$(MAKE) -C ../.. OUT=build/java clean
+	$(MAKE) -C ../.. build=release OUT=build/java clean
 
 .NOTPARALLEL : # disable -j option (it breaks since javac compiles all class files in one command)
