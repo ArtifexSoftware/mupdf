@@ -318,7 +318,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
 	if (w == 0 || h == 0)
 		l2factor = 0;
 	else
-		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 8; l2factor++);
+		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 6; l2factor++);
 
 	/* Can we find any suitable tiles in the cache? */
 	key.refs = 1;
@@ -339,7 +339,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h)
 	tile = image->get_pixmap(ctx, image, w, h, &l2factor_remaining);
 
 	/* l2factor_remaining is updated to the amount of subscaling left to do */
-	assert(l2factor_remaining >= 0 && l2factor_remaining < 8);
+	assert(l2factor_remaining >= 0 && l2factor_remaining <= 6);
 	if (l2factor_remaining)
 	{
 		fz_subsample_pixmap(ctx, tile, l2factor_remaining);
