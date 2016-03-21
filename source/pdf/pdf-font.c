@@ -3,8 +3,16 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H
+#ifdef FT_FONT_FORMATS_H
 #include FT_FONT_FORMATS_H
+#else
+#include FT_XFREE86_H
+#endif
 #include FT_TRUETYPE_TABLES_H
+
+#ifndef FT_SFNT_HEAD
+#define FT_SFNT_HEAD ft_sfnt_head
+#endif
 
 static void pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *dict, char *collection, char *basefont, int iscidfont);
 
@@ -127,7 +135,11 @@ enum { UNKNOWN, TYPE1, TRUETYPE };
 
 static int ft_kind(FT_Face face)
 {
+#ifdef FT_FONT_FORMATS_H
 	const char *kind = FT_Get_Font_Format(face);
+#else
+	const char *kind = FT_Get_X11_Font_Format(face);
+#endif
 	if (!strcmp(kind, "TrueType")) return TRUETYPE;
 	if (!strcmp(kind, "Type 1")) return TYPE1;
 	if (!strcmp(kind, "CFF")) return TYPE1;
@@ -137,7 +149,11 @@ static int ft_kind(FT_Face face)
 
 static int ft_font_file_kind(FT_Face face)
 {
+#ifdef FT_FONT_FORMATS_H
 	const char *kind = FT_Get_Font_Format(face);
+#else
+	const char *kind = FT_Get_X11_Font_Format(face);
+#endif
 	if (!strcmp(kind, "TrueType")) return 2;
 	if (!strcmp(kind, "Type 1")) return 1;
 	if (!strcmp(kind, "CFF")) return 3;

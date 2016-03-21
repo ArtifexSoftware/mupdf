@@ -12,6 +12,10 @@
 #define MAX_BBOX_TABLE_SIZE 4096
 #define MAX_ADVANCE_CACHE 4096
 
+#ifndef FT_SFNT_OS2
+#define FT_SFNT_OS2 ft_sfnt_os2
+#endif
+
 /* 20 degrees */
 #define SHEAR 0.36397f
 
