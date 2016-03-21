@@ -359,7 +359,7 @@ tarball:
 java:
 	$(MAKE) -C platform/java
 
-tags: $(shell find include source platform -name '*.[ch]')
+tags: $(shell find include source platform thirdparty -name '*.[ch]')
 	ctags $^
 
 cscope.files: $(shell find include source platform -name '*.[ch]')
