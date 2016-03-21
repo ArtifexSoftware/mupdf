@@ -587,6 +587,9 @@ fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band
 	int start = band * bandheight;
 	int end = start + bandheight;
 
+	if (!out)
+		return;
+
 	if (end > h)
 		end = h;
 	end -= start;
@@ -698,6 +701,9 @@ fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band
 	int dn = n;
 	if (!savealpha && dn > 1)
 		dn--;
+
+	if (!out)
+		return;
 
 	if (end > h)
 		end = h;

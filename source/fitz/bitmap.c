@@ -342,6 +342,9 @@ fz_write_pbm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 	if (bitmap->n != 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too many color components in bitmap");
 
+	if (!out)
+		return;
+
 	p = bitmap->samples;
 	h = bitmap->h;
 	bytestride = (bitmap->w + 7) >> 3;
@@ -360,6 +363,9 @@ fz_write_pkm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 
 	if (bitmap->n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "wrong number of color components in bitmap");
+
+	if (!out)
+		return;
 
 	p = bitmap->samples;
 	h = bitmap->h;

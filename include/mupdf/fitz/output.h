@@ -62,7 +62,8 @@ void fz_drop_output(fz_context *, fz_output *);
 
 static inline void fz_write(fz_context *ctx, fz_output *out, const void *data, int size)
 {
-	out->write(ctx, out->opaque, data, size);
+	if (out)
+		out->write(ctx, out->opaque, data, size);
 }
 
 /*
