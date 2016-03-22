@@ -862,7 +862,7 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Font resource '%s'", csi->name);
 			font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, fontobj, 0, csi->cookie);
 			fz_try(ctx)
-				proc->op_Tf(ctx, proc, csi->name, font, s[0]); break;
+				proc->op_Tf(ctx, proc, csi->name, font, s[0]);
 			fz_always(ctx)
 				pdf_drop_font(ctx, font);
 			fz_catch(ctx)

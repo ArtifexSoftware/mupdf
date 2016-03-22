@@ -56,17 +56,17 @@ void fz_var_imp(void *);
 #define fz_try(ctx) \
 	{ \
 		if (fz_push_try(ctx)) { \
-			if (fz_setjmp((ctx)->error->top->buffer) == 0) do { \
+			if (fz_setjmp((ctx)->error->top->buffer) == 0) do \
 
 #define fz_always(ctx) \
-			} while (0); \
+			while (0); \
 		} \
 		if (ctx->error->top->code < 3) { \
 			ctx->error->top->code++; \
-			do { \
+			do \
 
 #define fz_catch(ctx) \
-			} while (0); \
+			while (0); \
 		} \
 	} \
 	if ((ctx->error->top--)->code > 1)

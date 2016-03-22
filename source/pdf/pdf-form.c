@@ -949,7 +949,7 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 	else
 		return;
 
-	fz_try(ctx);
+	fz_try(ctx)
 	{
 		pdf_dict_putl(ctx, field, val, PDF_NAME_BS, PDF_NAME_S, NULL);
 		pdf_field_mark_dirty(ctx, doc, field);
@@ -968,7 +968,7 @@ void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *f
 {
 	pdf_obj *val = pdf_new_string(ctx, doc, text, strlen(text));
 
-	fz_try(ctx);
+	fz_try(ctx)
 	{
 		if (pdf_field_type(ctx, doc, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
 		{
