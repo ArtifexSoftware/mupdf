@@ -90,11 +90,11 @@ void fz_install_load_system_font_funcs(fz_context *ctx, fz_load_system_font_func
 fz_font *fz_load_system_font(fz_context *ctx, const char *name, int bold, int italic, int needs_exact_metrics);
 fz_font *fz_load_system_cjk_font(fz_context *ctx, const char *name, int ros, int serif);
 
-unsigned char *fz_lookup_base14_font(fz_context *ctx, const char *name, unsigned int *len);
-unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, unsigned int *len, int *index);
-unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int serif, unsigned int *len);
-unsigned char *fz_lookup_noto_symbol_font(fz_context *ctx, unsigned int *len);
-unsigned char *fz_lookup_noto_emoji_font(fz_context *ctx, unsigned int *len);
+const char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
+const char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *len, int *index);
+const char *fz_lookup_noto_font(fz_context *ctx, int script, int serif, int *len);
+const char *fz_lookup_noto_symbol_font(fz_context *ctx, int *len);
+const char *fz_lookup_noto_emoji_font(fz_context *ctx, int *len);
 
 fz_font *fz_load_fallback_font(fz_context *ctx, int script, int serif, int bold, int italic);
 fz_font *fz_load_fallback_symbol_font(fz_context *ctx);
@@ -102,7 +102,7 @@ fz_font *fz_load_fallback_emoji_font(fz_context *ctx);
 
 fz_font *fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix);
 
-fz_font *fz_new_font_from_memory(fz_context *ctx, const char *name, unsigned char *data, int len, int index, int use_glyph_bbox);
+fz_font *fz_new_font_from_memory(fz_context *ctx, const char *name, const char *data, int len, int index, int use_glyph_bbox);
 fz_font *fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, int index, int use_glyph_bbox);
 fz_font *fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int index, int use_glyph_bbox);
 

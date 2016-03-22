@@ -41,13 +41,13 @@ fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, int size)
 }
 
 fz_buffer *
-fz_new_buffer_from_shared_data(fz_context *ctx, unsigned char *data, int size)
+fz_new_buffer_from_shared_data(fz_context *ctx, const char *data, int size)
 {
 	fz_buffer *b;
 
 	b = fz_malloc_struct(ctx, fz_buffer);
 	b->refs = 1;
-	b->data = data;
+	b->data = (unsigned char *)data; /* cast away const */
 	b->cap = size;
 	b->len = size;
 	b->unused_bits = 0;

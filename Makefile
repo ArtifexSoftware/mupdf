@@ -69,6 +69,7 @@ ALL_DIR += $(OUT)/tools
 ALL_DIR += $(OUT)/platform/x11
 ALL_DIR += $(OUT)/platform/x11/curl
 ALL_DIR += $(OUT)/platform/gl
+ALL_DIR += $(OUT)/fonts
 
 FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
 PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
@@ -108,12 +109,38 @@ $(CBZ_OBJ) : $(FITZ_HDR)
 $(HTML_OBJ) : $(FITZ_HDR) $(HTML_HDR) $(HTML_SRC_HDR)
 $(GPRF_OBJ) : $(FITZ_HDR) $(GPRF_HDR) $(GPRF_SRC_HDR)
 
+# --- Generated embedded font files ---
+
+FONT_BIN_DROID := $(wildcard resources/fonts/droid/*.ttc)
+FONT_BIN_NOTO := $(wildcard resources/fonts/noto/*.ttf)
+FONT_BIN_URW := $(wildcard resources/fonts/urw/*.cff)
+
+FONT_GEN_DROID := $(subst resources/fonts/droid/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_DROID))))
+FONT_GEN_NOTO := $(subst resources/fonts/noto/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_NOTO))))
+FONT_GEN_URW := $(subst resources/fonts/urw/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_URW))))
+
+FONT_BIN := $(FONT_BIN_DROID) $(FONT_BIN_NOTO) $(FONT_BIN_URW)
+FONT_GEN := $(FONT_GEN_DROID) $(FONT_GEN_NOTO) $(FONT_GEN_URW)
+FONT_OBJ := $(subst $(GEN)/, $(OUT)/fonts/, $(addsuffix .o, $(basename $(FONT_GEN))))
+
+$(GEN)/%.c : resources/fonts/droid/%.ttc $(FONTDUMP)
+	$(QUIET_GEN) $(FONTDUMP) $@ $<
+$(GEN)/%.c : resources/fonts/noto/%.ttf $(FONTDUMP)
+	$(QUIET_GEN) $(FONTDUMP) $@ $<
+$(GEN)/%.c : resources/fonts/urw/%.cff $(FONTDUMP)
+	$(QUIET_GEN) $(FONTDUMP) $@ $<
+
+$(FONT_OBJ) : $(FONT_GEN)
+$(FONT_GEN_DROID) : $(FONT_BIN_DROID)
+$(FONT_GEN_NOTO) : $(FONT_BIN_NOTO)
+$(FONT_GEN_URW) : $(FONT_BIN_URW)
+
 # --- Library ---
 
 MUPDF_LIB = $(OUT)/libmupdf.a
 THIRD_LIB = $(OUT)/libmupdfthird.a
 
-MUPDF_OBJ := $(FITZ_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
+MUPDF_OBJ := $(FITZ_OBJ) $(FONT_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
 THIRD_OBJ := $(FREETYPE_OBJ) $(HARFBUZZ_OBJ) $(JBIG2DEC_OBJ) $(JPEG_OBJ) $(MUJS_OBJ) $(OPENJPEG_OBJ) $(ZLIB_OBJ)
 
 $(MUPDF_LIB) : $(MUPDF_OBJ)
@@ -143,6 +170,9 @@ $(OUT)/%.o : source/%.cpp | $(ALL_DIR)
 $(OUT)/%.o : scripts/%.c | $(OUT)
 	$(CC_CMD)
 
+$(OUT)/fonts/%.o : $(GEN)/%.c | $(ALL_DIR)
+	$(CC_CMD) -O0
+
 $(OUT)/platform/x11/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS)
 
@@ -157,7 +187,7 @@ $(OUT)/platform/gl/%.o : platform/gl/%.c | $(ALL_DIR)
 
 .PRECIOUS : $(OUT)/%.o # Keep intermediates from chained rules
 
-# --- Generated CMAP, FONT and JAVASCRIPT files ---
+# --- Generated CMap and JavaScript files ---
 
 CMAPDUMP := $(OUT)/cmapdump
 FONTDUMP := $(OUT)/fontdump
@@ -170,11 +200,6 @@ CMAP_GB_SRC := $(wildcard resources/cmaps/gb/*)
 CMAP_JAPAN_SRC := $(wildcard resources/cmaps/japan/*)
 CMAP_KOREA_SRC := $(wildcard resources/cmaps/korea/*)
 
-FONT_BASE14_SRC := $(wildcard resources/fonts/urw/*.cff)
-FONT_NOTO_SRC := $(wildcard resources/fonts/noto/*.ttf)
-FONT_CJK_SRC := resources/fonts/droid/DroidSansFallback.ttc
-FONT_CJK_FULL_SRC := resources/fonts/droid/DroidSansFallbackFull.ttc
-
 $(GEN)/gen_cmap_cns.h : $(CMAP_CNS_SRC)
 	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_CNS_SRC)
 $(GEN)/gen_cmap_gb.h : $(CMAP_GB_SRC)
@@ -185,17 +210,6 @@ $(GEN)/gen_cmap_korea.h : $(CMAP_KOREA_SRC)
 	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_KOREA_SRC)
 
 CMAP_GEN := $(addprefix $(GEN)/, gen_cmap_cns.h gen_cmap_gb.h gen_cmap_japan.h gen_cmap_korea.h)
-
-$(GEN)/gen_font_base14.h : $(FONT_BASE14_SRC)
-	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_BASE14_SRC)
-$(GEN)/gen_font_noto.h : $(FONT_NOTO_SRC)
-	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_NOTO_SRC)
-$(GEN)/gen_font_cjk.h : $(FONT_CJK_SRC)
-	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_CJK_SRC)
-$(GEN)/gen_font_cjk_full.h : $(FONT_CJK_FULL_SRC)
-	$(QUIET_GEN) $(FONTDUMP) $@ $(FONT_CJK_FULL_SRC)
-
-FONT_GEN := $(GEN)/gen_font_base14.h $(GEN)/gen_font_noto.h $(GEN)/gen_font_cjk.h $(GEN)/gen_font_cjk_full.h
 
 include/mupdf/pdf.h : include/mupdf/pdf/name-table.h
 NAME_GEN := include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
@@ -222,7 +236,6 @@ endif
 
 generate: $(CMAP_GEN) $(FONT_GEN) $(JAVASCRIPT_GEN) $(ADOBECA_GEN) $(NAME_GEN)
 
-$(OUT)/fitz/noto.o : $(FONT_GEN)
 $(OUT)/pdf/pdf-cmap-table.o : $(CMAP_GEN)
 $(OUT)/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
 $(OUT)/pdf/js/pdf-js.o : $(JAVASCRIPT_GEN)

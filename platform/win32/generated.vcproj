@@ -194,22 +194,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\generated\gen_font_base14.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_font_cjk.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_font_cjk_full.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\generated\gen_font_noto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\generated\gen_js_util.h"
 				>
 			</File>

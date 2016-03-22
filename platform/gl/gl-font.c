@@ -73,8 +73,8 @@ static void clear_font_cache(void)
 
 void ui_init_fonts(fz_context *ctx, float pixelsize)
 {
-	unsigned char *data;
-	unsigned int size;
+	const char *data;
+	int size;
 
 	glGenTextures(1, &g_cache_tex);
 	glBindTexture(GL_TEXTURE_2D, g_cache_tex);

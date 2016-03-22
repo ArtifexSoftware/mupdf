@@ -16,8 +16,8 @@ fz_load_html_builtin_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 	int idx = is_mono * 8 + is_sans * 4 + is_bold * 2 + is_italic;
 	if (!set->fonts[idx])
 	{
-		unsigned char *data;
-		unsigned int size;
+		const char *data;
+		int size;
 
 		data = fz_lookup_base14_font(ctx, font_names[idx], &size);
 		if (!data)

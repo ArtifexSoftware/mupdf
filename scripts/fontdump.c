@@ -30,10 +30,9 @@ main(int argc, char **argv)
 	FILE *fo;
 	FILE *fi;
 	char fontname[256];
-	char origname[256];
 	char *basename;
 	char *p;
-	int i, len;
+	int i, size;
 
 	if (argc < 3)
 	{
@@ -48,12 +47,10 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	fprintf(fo, "#ifdef DEBUG\n");
 	fprintf(fo, "#ifndef __STRICT_ANSI__\n");
 	fprintf(fo, "#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)\n");
 	fprintf(fo, "#if !defined(__ICC)\n");
 	fprintf(fo, "#define HAVE_INCBIN\n");
-	fprintf(fo, "#endif\n");
 	fprintf(fo, "#endif\n");
 	fprintf(fo, "#endif\n");
 	fprintf(fo, "#endif\n");
@@ -76,34 +73,29 @@ main(int argc, char **argv)
 		else
 			basename = argv[i];
 
-		strcpy(origname, basename);
-		p = strrchr(origname, '.');
-		if (p) *p = 0;
-		strcpy(fontname, origname);
-
-		p = fontname;
-		while (*p)
+		strcpy(fontname, basename);
+		for (p = fontname; *p; ++p)
 		{
 			if (*p == '/' || *p == '.' || *p == '\\' || *p == '-')
 				*p = '_';
-			p ++;
 		}
 
 		fseek(fi, 0, SEEK_END);
-		len = ftell(fi);
+		size = ftell(fi);
 		fseek(fi, 0, SEEK_SET);
 
-		if (getenv("verbose"))
-			printf("\t{\"%s\",fz_font_%s,%d},\n", origname, fontname, len);
-
 		fprintf(fo, "\n#ifdef HAVE_INCBIN\n");
-		fprintf(fo, "extern const unsigned char fz_font_%s[%d];\n", fontname, len);
-		fprintf(fo, "asm(\".globl fz_font_%s\");\n", fontname);
-		fprintf(fo, "asm(\".balign 8\");\n");
+		fprintf(fo, "const int fz_font_%s_size = %d;\n", fontname, size);
+		fprintf(fo, "asm(\".section .rodata\");\n");
+		fprintf(fo, "asm(\".global fz_font_%s\");\n", fontname);
+		fprintf(fo, "asm(\".type fz_font_%s, @object\");\n", fontname);
+		fprintf(fo, "asm(\".size fz_font_%s, %d\");\n", fontname, size);
+		fprintf(fo, "asm(\".align 64\");\n");
 		fprintf(fo, "asm(\"fz_font_%s:\");\n", fontname);
 		fprintf(fo, "asm(\".incbin \\\"%s\\\"\");\n", argv[i]);
 		fprintf(fo, "#else\n");
-		fprintf(fo, "static const unsigned char fz_font_%s[%d] = {\n", fontname, len);
+		fprintf(fo, "const int fz_font_%s_size = %d;\n", fontname, size);
+		fprintf(fo, "const char fz_font_%s[] = {\n", fontname);
 		hexdump(fo, fi);
 		fprintf(fo, "};\n");
 		fprintf(fo, "#endif\n");
