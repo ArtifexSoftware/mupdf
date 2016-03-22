@@ -13,22 +13,28 @@
 #define FUNCTION_NAME(NAME,N) FUNCTION_NAMER(NAME,N)
 
 static inline void
-FUNCTION_NAME(NAME,N)(unsigned char *colorbv,
+FUNCTION_NAME(NAME,N)(const unsigned char * restrict colorbv,
 #ifndef N
 				int n,
 #endif
-				int span, unsigned char *dp, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
+				int span, unsigned char * restrict dp, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y)
 {
 #ifdef N
 	const int n = N;
 #endif
 #ifdef ALPHA
 	int sa = FZ_EXPAND(colorbv[n-1]);
+#else
+#if defined(N) && N == 2
+	const uint16_t color = *(const uint16_t *)colorbv;
+#elif defined(N) && N == 4
+	const uint32_t color = *(const uint32_t *)colorbv;
+#endif
 #endif
 	while (h--)
 	{
 		int skip_xx, ww, len, extend;
-		unsigned char *runp;
+		const unsigned char *runp;
 		unsigned char *ddp = dp;
 		int offset = ((int *)(glyph->data))[skip_y++];
 		if (offset >= 0)
@@ -144,11 +150,10 @@ solid_run:
 #endif
 #else
 #if defined(N) && N == 2
-						ddp[0] = colorbv[0];
-						ddp[1] = colorbv[1];
+						*(uint16_t *)ddp = color;
 						ddp += 2;
 #elif defined(N) && N == 4
-						*(uint32_t *)ddp = *(uint32_t*)colorbv;
+						*(uint32_t *)ddp = color;
 						ddp += 4;
 #elif defined(N) && N == 5
 						ddp[0] = colorbv[0];
