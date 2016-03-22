@@ -148,10 +148,117 @@ static void make_ht_line(unsigned char *buf, fz_halftone *ht, int x, int y, int 
 }
 
 /* Inner mono thresholding code */
-typedef void (threshold_fn)(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w);
+typedef void (threshold_fn)(const unsigned char *ht_line, const unsigned char *pixmap, unsigned char *out, int w);
 
-#if 1
-static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w)
+#ifdef ARCH_ARM
+
+static void
+do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w)
+__attribute__((naked));
+
+static void
+do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w)
+{
+	asm volatile(
+	ENTER_ARM
+	// Store one more reg that required to keep double stack alignment
+	"stmfd	r13!,{r4-r7,r9,r14}				\n"
+	"@ r0 = ht_line						\n"
+	"@ r1 = pixmap						\n"
+	"@ r2 = out						\n"
+	"@ r3 = w						\n"
+	"subs	r3, r3, #7		@ r3 = w -= 7		\n"
+	"blt	2f			@ while (w > 0) {	\n"
+	"1:							\n"
+	"mov	r14,#0			@ r14= h = 0		\n"
+	"ldrb	r4, [r0], #1		@ r4 = ht_line[0]	\n"
+	"ldrb	r5, [r1], #2		@ r5 = pixmap[0]	\n"
+	"ldrb	r6, [r0], #1		@ r6 = ht_line[1]	\n"
+	"ldrb	r7, [r1], #2		@ r7 = pixmap[2]	\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x80		@	h |= 0x80	\n"
+	"ldrb	r4, [r0], #1		@ r4 = ht_line[2]	\n"
+	"ldrb	r5, [r1], #2		@ r5 = pixmap[4]	\n"
+	"cmp	r7, r6			@ if (r7 < r6)		\n"
+	"orrlt	r14,r14,#0x40		@	h |= 0x40	\n"
+	"ldrb	r6, [r0], #1		@ r6 = ht_line[3]	\n"
+	"ldrb	r7, [r1], #2		@ r7 = pixmap[6]	\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x20		@	h |= 0x20	\n"
+	"ldrb	r4, [r0], #1		@ r4 = ht_line[2]	\n"
+	"ldrb	r5, [r1], #2		@ r5 = pixmap[4]	\n"
+	"cmp	r7, r6			@ if (r7 < r6)		\n"
+	"orrlt	r14,r14,#0x10		@	h |= 0x10	\n"
+	"ldrb	r6, [r0], #1		@ r6 = ht_line[3]	\n"
+	"ldrb	r7, [r1], #2		@ r7 = pixmap[6]	\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x08		@	h |= 0x08	\n"
+	"ldrb	r4, [r0], #1		@ r4 = ht_line[2]	\n"
+	"ldrb	r5, [r1], #2		@ r5 = pixmap[4]	\n"
+	"cmp	r7, r6			@ if (r7 < r6)		\n"
+	"orrlt	r14,r14,#0x04		@	h |= 0x04	\n"
+	"ldrb	r6, [r0], #1		@ r6 = ht_line[3]	\n"
+	"ldrb	r7, [r1], #2		@ r7 = pixmap[6]	\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x02		@	h |= 0x02	\n"
+	"cmp	r7, r6			@ if (r7 < r6)		\n"
+	"orrlt	r14,r14,#0x01		@	h |= 0x01	\n"
+	"subs	r3, r3, #8		@ w -= 8		\n"
+	"strb	r14,[r2], #1		@ *out++ = h		\n"
+	"bgt	1b			@ }			\n"
+	"1:							\n"
+	"adds	r3, r3, #6		@ w += 6		\n"
+	"blt	3f			@ if (w < 0) {		\n"
+	"ldrb	r4, [r0], #1		@ r4 = ht_line[0]	\n"
+	"ldrb	r5, [r1], #2		@ r5 = pixmap[0]	\n"
+	"mov	r14, #0			@ r14= h = 0		\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x80		@	h |= 0x80	\n"
+	"teq	r3, #0			@			\n"
+	"ldrneb	r4, [r0], #1		@ r6 = ht_line[1]	\n"
+	"ldrneb	r5, [r1], #2		@ r7 = pixmap[2]	\n"
+	"beq	2f			@			\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x40		@	h |= 0x40	\n"
+	"teq	r3, #1			@			\n"
+	"ldrneb	r4, [r0], #1		@ r6 = ht_line[1]	\n"
+	"ldrneb	r5, [r1], #2		@ r7 = pixmap[2]	\n"
+	"beq	2f			@			\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x20		@	h |= 0x20	\n"
+	"teq	r3, #2			@			\n"
+	"ldrneb	r4, [r0], #1		@ r6 = ht_line[1]	\n"
+	"ldrneb	r5, [r1], #2		@ r7 = pixmap[2]	\n"
+	"beq	2f			@			\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x10		@	h |= 0x10	\n"
+	"teq	r3, #3			@			\n"
+	"ldrneb	r4, [r0], #1		@ r6 = ht_line[1]	\n"
+	"ldrneb	r5, [r1], #2		@ r7 = pixmap[2]	\n"
+	"beq	2f			@			\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x08		@	h |= 0x08	\n"
+	"teq	r3, #4			@			\n"
+	"ldrneb	r4, [r0], #1		@ r6 = ht_line[1]	\n"
+	"ldrneb	r5, [r1], #2		@ r7 = pixmap[2]	\n"
+	"beq	2f			@			\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x04		@	h |= 0x04	\n"
+	"teq	r3, #5			@			\n"
+	"ldrneb	r4, [r0], #1		@ r6 = ht_line[1]	\n"
+	"ldrneb	r5, [r1], #2		@ r7 = pixmap[2]	\n"
+	"beq	2f			@			\n"
+	"cmp	r5, r4			@ if (r5 < r4)		\n"
+	"orrlt	r14,r14,#0x02		@	h |= 0x02	\n"
+	"2:							\n"
+	"strb	r14,[r2]		@ *out = h		\n"
+	"3:							\n"
+	"ldmfd	r13!,{r4-r7,r9,PC}	@ pop, return to thumb	\n"
+	ENTER_THUMB
+	);
+}
+#else
+static void do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char * restrict out, int w)
 {
 	int h;
 
@@ -200,30 +307,6 @@ static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsign
 		*out++ = h;
 	}
 }
-#else
-static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w)
-{
-	int bit = 0x80;
-	int h = 0;
-
-	do
-	{
-		if (*pixmap < *ht_line++)
-			h |= bit;
-		pixmap += 2; /* Skip the alpha */
-		bit >>= 1;
-		if (bit == 0)
-		{
-			*out++ = h;
-			h = 0;
-			bit = 0x80;
-		}
-
-	}
-	while (--w);
-	if (bit != 0x80)
-		*out = h;
-}
 #endif
 
 /*
@@ -233,7 +316,7 @@ static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsign
 	white = 0xFF. Reversing these tests enables us to maintain that
 	BlackIs1 in bitmaps.
 */
-static void do_threshold_4(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w)
+static void do_threshold_4(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char * restrict out, int w)
 {
 	w--;
 	while (w > 0)
