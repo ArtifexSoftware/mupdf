@@ -41,12 +41,30 @@ namematch(const char *end, const char *start, const char *match)
 	return ((end-len >= start) && (strncmp(end-len, match, len) == 0));
 }
 
+#ifdef GPERF
+#include "gperftools/profiler.h"
+
+static int profiled_main(int argc, char **argv);
+
 int main(int argc, char **argv)
+{
+	int ret;
+	ProfilerStart("mutool.prof");
+	ret = profiled_main(argc, argv);
+	ProfilerStop();
+	return ret;
+}
+
+static int profiled_main(int argc, char **argv)
+#else
+int main(int argc, char **argv)
+#endif
 {
 	char *start, *end;
 	char buf[32];
 	int i;
 
+	
 	if (argc == 0)
 	{
 		fprintf(stderr, "No command name found!\n");

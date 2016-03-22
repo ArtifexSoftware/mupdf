@@ -32,6 +32,9 @@ ifeq "$(HAVE_LIBDL)" "yes"
 CFLAGS += -DHAVE_LIBDL
 LIBS += -ldl
 endif
+else ifeq "$(build)" "gperf"
+CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -DGPERF
+LIBS += -lprofiler
 else
 $(error unknown build setting: '$(build)')
 endif
