@@ -1,6 +1,7 @@
 #include "mupdf/fitz.h"
 
 #define SANE_DPI 72.0f
+#define INSANE_DPI 4800.0f
 
 fz_image *
 fz_keep_image(fz_context *ctx, fz_image *image)
@@ -582,7 +583,7 @@ fz_image_resolution(fz_image *image, int *xres, int *yres)
 	}
 
 	/* Scale xres and yres up until we get beleivable values */
-	if (*xres < SANE_DPI || *yres < SANE_DPI)
+	if (*xres < SANE_DPI || *yres < SANE_DPI || *xres > INSANE_DPI || *yres > INSANE_DPI)
 	{
 		if (*xres == *yres)
 		{
