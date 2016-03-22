@@ -150,6 +150,57 @@ static void make_ht_line(unsigned char *buf, fz_halftone *ht, int x, int y, int 
 /* Inner mono thresholding code */
 typedef void (threshold_fn)(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w);
 
+#if 1
+static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w)
+{
+	int h;
+
+	w -= 7;
+	while (w > 0)
+	{
+		h = 0;
+		if (pixmap[0] < ht_line[0])
+			h |= 0x80;
+		if (pixmap[2] < ht_line[1])
+			h |= 0x40;
+		if (pixmap[4] < ht_line[2])
+			h |= 0x20;
+		if (pixmap[6] < ht_line[3])
+			h |= 0x10;
+		if (pixmap[8] < ht_line[4])
+			h |= 0x08;
+		if (pixmap[10] < ht_line[5])
+			h |= 0x04;
+		if (pixmap[12] < ht_line[6])
+			h |= 0x02;
+		if (pixmap[14] < ht_line[7])
+			h |= 0x01;
+		pixmap += 16; /* Skip the alpha */
+		ht_line += 8;
+		*out++ = h;
+		w -= 8;
+	}
+	if (w > -7)
+	{
+		h = 0;
+		if (pixmap[0] < ht_line[0])
+			h |= 0x80;
+		if (w > -6 && pixmap[2] < ht_line[1])
+			h |= 0x40;
+		if (w > -5 && pixmap[4] < ht_line[2])
+			h |= 0x20;
+		if (w >	-4 && pixmap[6] < ht_line[3])
+			h |= 0x10;
+		if (w > -3 && pixmap[8] < ht_line[4])
+			h |= 0x08;
+		if (w > -2 && pixmap[10] < ht_line[5])
+			h |= 0x04;
+		if (w > -1 && pixmap[12] < ht_line[6])
+			h |= 0x02;
+		*out++ = h;
+	}
+}
+#else
 static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsigned char *out, int w)
 {
 	int bit = 0x80;
@@ -173,6 +224,7 @@ static void do_threshold_1(unsigned char *ht_line, unsigned char *pixmap, unsign
 	if (bit != 0x80)
 		*out = h;
 }
+#endif
 
 /*
 	Note that the tests in do_threshold_4 are inverted compared to those
