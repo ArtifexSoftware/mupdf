@@ -436,12 +436,12 @@ bmp_decompress_rle4(fz_context *ctx, struct info *info, unsigned char *p, unsign
 		}
 		else if (sp[0] == 0 && sp[1] == 2)
 		{ /* delta */
-			int deltax, deltay;
+			int deltax, deltay, startlow;
 			if (sp + 4 > *end)
 				break;
 			deltax = sp[2];
 			deltay = sp[3];
-			int startlow = x & 1;
+			startlow = x & 1;
 			dp += (deltax + startlow) / 2 + deltay * stride;
 			sp += 4;
 			x += deltax;
