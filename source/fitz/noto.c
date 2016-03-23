@@ -40,7 +40,7 @@
 	return *size = fz_font_ ## NAME ## _size, fz_font_ ## NAME
 
 #define BASE14(NAME, FONT) \
-	DEC_FONT(FONT); if (!strcmp(NAME, name)) RET_FONT(FONT)
+	if (!strcmp(NAME, name)) { DEC_FONT(FONT); RET_FONT(FONT); }
 
 const char *
 fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
@@ -65,13 +65,14 @@ fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 const char *
 fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *size, int *index)
 {
-	if (index) *index = wmode;
 #ifndef TOFU_CJK
 #ifndef TOFU_CJK_EXT
 	DEC_FONT(DroidSansFallbackFull_ttc);
+	if (index) *index = wmode;
 	RET_FONT(DroidSansFallbackFull_ttc);
 #else
 	DEC_FONT(DroidSansFallback_ttc);
+	if (index) *index = wmode;
 	RET_FONT(DroidSansFallback_ttc);
 #endif
 #else
