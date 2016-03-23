@@ -714,9 +714,10 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 		unsigned char *sp = ssp + y * sstride;
 		unsigned char *dp = ddp + y * dstride;
 
-		for (x = 0; x < width; x++)
+		switch (bitcount)
 		{
-			if (bitcount == 32)
+		case 32:
+			for (x = 0; x < width; x++)
 			{
 				int sample = (sp[3] << 24) | (sp[2] << 16) | (sp[1] << 8) | sp[0];
 				*dp++ = (sample & info->rmask) >> info->rshift;
@@ -725,7 +726,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = 255;
 				sp += 4;
 			}
-			else if (bitcount == 24)
+			break;
+		case 24:
+			for (x = 0; x < width; x++)
 			{
 				*dp++ = sp[2];
 				*dp++ = sp[1];
@@ -733,7 +736,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = 255;
 				sp += 3;
 			}
-			else if (bitcount == 16)
+			break;
+		case 16:
+			for (x = 0; x < width; x++)
 			{
 				int sample = (sp[1] << 8) | sp[0];
 				int r = (sample & info->rmask) >> info->rshift;
@@ -745,7 +750,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = 255;
 				sp += 2;
 			}
-			else if (bitcount == 8)
+			break;
+		case 8:
+			for (x = 0; x < width; x++)
 			{
 				*dp++ = info->palette[3 * sp[0] + 0];
 				*dp++ = info->palette[3 * sp[0] + 1];
@@ -753,7 +760,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = 255;
 				sp++;
 			}
-			else if (bitcount == 4)
+			break;
+		case 4:
+			for (x = 0; x < width; x++)
 			{
 				int idx;
 				switch (x & 1)
@@ -766,7 +775,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = info->palette[3 * idx + 2];
 				*dp++ = 255;
 			}
-			else if (bitcount == 2)
+			break;
+		case 2:
+			for (x = 0; x < width; x++)
 			{
 				int idx;
 				switch (x & 3)
@@ -781,7 +792,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = info->palette[3 * idx + 2];
 				*dp++ = 255;
 			}
-			else if (bitcount == 1)
+			break;
+		case 1:
+			for (x = 0; x < width; x++)
 			{
 				int idx;
 				switch (x & 7)
@@ -800,6 +813,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = info->palette[3 * idx + 2];
 				*dp++ = 255;
 			}
+			break;
 		}
 	}
 
