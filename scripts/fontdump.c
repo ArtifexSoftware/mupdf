@@ -88,9 +88,9 @@ main(int argc, char **argv)
 		fprintf(fo, "const int fz_font_%s_size = %d;\n", fontname, size);
 		fprintf(fo, "asm(\".section .rodata\");\n");
 		fprintf(fo, "asm(\".global fz_font_%s\");\n", fontname);
-		fprintf(fo, "asm(\".type fz_font_%s, @object\");\n", fontname);
+		fprintf(fo, "asm(\".type fz_font_%s STT_OBJECT\");\n", fontname);
 		fprintf(fo, "asm(\".size fz_font_%s, %d\");\n", fontname, size);
-		fprintf(fo, "asm(\".align 64\");\n");
+		fprintf(fo, "asm(\".balign 64\");\n");
 		fprintf(fo, "asm(\"fz_font_%s:\");\n", fontname);
 		fprintf(fo, "asm(\".incbin \\\"%s\\\"\");\n", argv[i]);
 		fprintf(fo, "#else\n");
