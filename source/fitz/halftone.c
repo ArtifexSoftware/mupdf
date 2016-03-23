@@ -82,10 +82,6 @@ fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps)
 /* Finally, code to actually perform halftoning. */
 static void make_ht_line(unsigned char *buf, fz_halftone *ht, int x, int y, int w)
 {
-	/* FIXME: There is a potential optimisation here; in the case where
-	 * the LCM of the halftone tile widths is smaller than w, we could
-	 * form just one 'LCM' run, then copy it repeatedly.
-	 */
 	int k, n;
 	n = ht->n;
 	for (k = 0; k < n; k++)
@@ -148,16 +144,16 @@ static void make_ht_line(unsigned char *buf, fz_halftone *ht, int x, int y, int 
 }
 
 /* Inner mono thresholding code */
-typedef void (threshold_fn)(const unsigned char *ht_line, const unsigned char *pixmap, unsigned char *out, int w);
+typedef void (threshold_fn)(const unsigned char *ht_line, const unsigned char *pixmap, unsigned char *out, int w, int ht_len);
 
 #ifdef ARCH_ARM
 
 static void
-do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w)
+do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w, int ht_len)
 __attribute__((naked));
 
 static void
-do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w)
+do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w, int ht_len)
 {
 	asm volatile(
 	ENTER_ARM
@@ -167,8 +163,11 @@ do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * res
 	"@ r1 = pixmap						\n"
 	"@ r2 = out						\n"
 	"@ r3 = w						\n"
+	"@ <> = ht_len						\n"
+	"ldr	r9, [r13,#6*4]		@ r9 = ht_len		\n"
 	"subs	r3, r3, #7		@ r3 = w -= 7		\n"
 	"blt	2f			@ while (w > 0) {	\n"
+	"mov	r12,r9			@ r12= l = ht_len	\n"
 	"1:							\n"
 	"mov	r14,#0			@ r14= h = 0		\n"
 	"ldrb	r4, [r0], #1		@ r4 = ht_line[0]	\n"
@@ -203,6 +202,9 @@ do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * res
 	"orrlt	r14,r14,#0x02		@	h |= 0x02	\n"
 	"cmp	r7, r6			@ if (r7 < r6)		\n"
 	"orrlt	r14,r14,#0x01		@	h |= 0x01	\n"
+	"subs	r12,r12,#8		@ r12 = l -= 8		\n"
+	"moveq	r12,r9			@ if(l==0) l = ht_len	\n"
+	"subeq	r6, r6, r12,LSL #2	@          ht_line -= l	\n"
 	"subs	r3, r3, #8		@ w -= 8		\n"
 	"strb	r14,[r2], #1		@ *out++ = h		\n"
 	"bgt	1b			@ }			\n"
@@ -258,9 +260,10 @@ do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * res
 	);
 }
 #else
-static void do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char * restrict out, int w)
+static void do_threshold_1(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char * restrict out, int w, int ht_len)
 {
 	int h;
+	int l = ht_len;
 
 	w -= 7;
 	while (w > 0)
@@ -284,6 +287,12 @@ static void do_threshold_1(const unsigned char * restrict ht_line, const unsigne
 			h |= 0x01;
 		pixmap += 16; /* Skip the alpha */
 		ht_line += 8;
+		l -= 8;
+		if (l == 0)
+		{
+			l = ht_len;
+			ht_line -= ht_len;
+		}
 		*out++ = h;
 		w -= 8;
 	}
@@ -316,8 +325,10 @@ static void do_threshold_1(const unsigned char * restrict ht_line, const unsigne
 	white = 0xFF. Reversing these tests enables us to maintain that
 	BlackIs1 in bitmaps.
 */
-static void do_threshold_4(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char * restrict out, int w)
+static void do_threshold_4(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char * restrict out, int w, int ht_len)
 {
+	int l = ht_len;
+
 	w--;
 	while (w > 0)
 	{
@@ -339,6 +350,12 @@ static void do_threshold_4(const unsigned char * restrict ht_line, const unsigne
 		if (pixmap[8] >= ht_line[7])
 			h |= 0x01;
 		*out++ = h;
+		l -= 2;
+		if (l == 0)
+		{
+			l = ht_len;
+			ht_line -= ht_len<<2;
+		}
 		pixmap += 10;
 		ht_line += 8;
 		w -= 2;
@@ -363,12 +380,28 @@ fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halfton
 	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0, 0);
 }
 
+/* TAOCP, vol 2, p337 */
+static int gcd(int u, int v)
+{
+	int r;
+
+	do
+	{
+		if (v == 0)
+			return u;
+		r = u % v;
+		u = v;
+		v = r;
+	}
+	while (1);
+}
+
 fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band, int bandheight)
 {
 	fz_bitmap *out = NULL;
 	unsigned char *ht_line = NULL;
 	unsigned char *o, *p;
-	int w, h, x, y, n, pstride, ostride;
+	int w, h, x, y, n, pstride, ostride, lcm, i;
 	fz_halftone *ht_orig = ht;
 	threshold_fn *thresh;
 
@@ -398,9 +431,24 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	{
 		ht = fz_default_halftone(ctx, n);
 	}
+
+	/* Find the minimum length for the halftone line. This
+	 * is the LCM of the halftone lengths and 8. (We need a
+	 * multiple of 8 for the unrolled threshold routines - if
+	 * we ever use SSE, we may need longer.) We use the fact
+	 * that LCM(a,b) = a * b / GCD(a,b) and use euclids
+	 * algorithm.
+	 */
+	lcm = 8;
+	for (i = 0; i < ht->n; i++)
+	{
+		w = ht->comp[i]->w;
+		lcm = lcm / gcd(lcm, w) * w;
+	}
+
 	fz_try(ctx)
 	{
-		ht_line = fz_malloc(ctx, pix->w * n);
+		ht_line = fz_malloc(ctx, lcm * n);
 		out = fz_new_bitmap(ctx, pix->w, pix->h, n, pix->xres, pix->yres);
 		o = out->samples;
 		p = pix->samples;
@@ -413,8 +461,8 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 		pstride = pix->w * pix->n;
 		while (h--)
 		{
-			make_ht_line(ht_line, ht, x, y++, w);
-			thresh(ht_line, p, o, w);
+			make_ht_line(ht_line, ht, x, y++, lcm);
+			thresh(ht_line, p, o, w, lcm);
 			o += ostride;
 			p += pstride;
 		}
