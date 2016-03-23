@@ -694,8 +694,10 @@ static void Memento_storeDetails(Memento_BlkHeader *head, int type)
     details->count = count;
     details->sequence = memento.sequence;
     details->next = NULL;
+    VALGRIND_MAKE_MEM_DEFINED(&head->details_tail, sizeof(head->details_tail));
     *head->details_tail = details;
     head->details_tail = &details->next;
+    VALGRIND_MAKE_MEM_NOACCESS(&head->details_tail, sizeof(head->details_tail));
 }
 #endif
 
