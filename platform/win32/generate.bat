@@ -45,7 +45,7 @@ if not exist generated/NimbusSanL-Bol.c fontdump.exe generated/NimbusSanL-Bol.c 
 if not exist generated/NimbusSanL-BolIta.c fontdump.exe generated/NimbusSanL-BolIta.c resources/fonts/urw/NimbusSanL-BolIta.cff
 if not exist generated/NimbusSanL-Reg.c fontdump.exe generated/NimbusSanL-Reg.c resources/fonts/urw/NimbusSanL-Reg.cff
 if not exist generated/NimbusSanL-RegIta.c fontdump.exe generated/NimbusSanL-RegIta.c resources/fonts/urw/NimbusSanL-RegIta.cff
-if not exist generated/StandardSymL.c fontdump.exe resources/fonts/urw/StandardSymL.c resources/fonts/urw/StandardSymL.cff
+if not exist generated/StandardSymL.c fontdump.exe generated/StandardSymL.c resources/fonts/urw/StandardSymL.cff
 
 if not exist generated/NotoEmoji-Regular.c fontdump.exe generated/NotoEmoji-Regular.c resources/fonts/noto/NotoEmoji-Regular.ttf
 if not exist generated/NotoKufiArabic-Regular.c fontdump.exe generated/NotoKufiArabic-Regular.c resources/fonts/noto/NotoKufiArabic-Regular.ttf
