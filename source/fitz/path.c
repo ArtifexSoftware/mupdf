@@ -584,8 +584,8 @@ void fz_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *pr
 {
 	int i, k, cmd_len;
 	float x, y, sx, sy;
-	uint8_t *cmds = path->cmds;
-	float *coords = path->coords;
+	uint8_t *cmds;
+	float *coords;
 
 	switch (path->packed)
 	{
