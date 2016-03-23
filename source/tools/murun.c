@@ -643,7 +643,10 @@ static int ffi_pdf_obj_put(js_State *J, void *obj, const char *key)
 
 	if (is_number(key, &idx)) {
 		fz_try(ctx)
-			pdf_array_put(ctx, obj, idx, val);
+			if (idx == pdf_array_len(ctx, obj))
+				pdf_array_push(ctx, obj, val);
+			else
+				pdf_array_put(ctx, obj, idx, val);
 		fz_always(ctx)
 			pdf_drop_obj(ctx, val);
 		fz_catch(ctx)
@@ -2288,6 +2291,20 @@ static void ffi_PDFDocument_countObjects(js_State *J)
 	js_pushnumber(J, count);
 }
 
+static void ffi_PDFDocument_createObject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	pdf_obj *ind;
+
+	fz_try(ctx)
+		ind = pdf_new_indirect(ctx, pdf, pdf_create_object(ctx, pdf), 0);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushobj(J, ind);
+}
+
 static void ffi_PDFDocument_addObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2724,6 +2741,17 @@ static void ffi_PDFObject_readStream(js_State *J)
 	ffi_pushbuffer(J, buf);
 }
 
+static void ffi_PDFObject_writeObject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *ref = js_touserdata(J, 0, "pdf_obj");
+	pdf_obj *obj = js_touserdata(J, 1, "pdf_obj");
+	fz_try(ctx)
+		pdf_update_object(ctx, pdf_get_bound_document(ctx, ref), pdf_to_num(ctx, ref), obj);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFObject_writeStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3031,6 +3059,7 @@ int murun_main(int argc, char **argv)
 
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
 		jsB_propfun(J, "PDFDocument.countObjects", ffi_PDFDocument_countObjects, 0);
+		jsB_propfun(J, "PDFDocument.createObject", ffi_PDFDocument_createObject, 0);
 		jsB_propfun(J, "PDFDocument.addObject", ffi_PDFDocument_addObject, 1);
 		jsB_propfun(J, "PDFDocument.addStream", ffi_PDFDocument_addStream, 1);
 		jsB_propfun(J, "PDFDocument.addSimpleFont", ffi_PDFDocument_addSimpleFont, 1);
@@ -3070,6 +3099,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.isStream", ffi_PDFObject_isStream, 0);
 		jsB_propfun(J, "PDFObject.readStream", ffi_PDFObject_readStream, 0);
 		jsB_propfun(J, "PDFObject.readRawStream", ffi_PDFObject_readRawStream, 0);
+		jsB_propfun(J, "PDFObject.writeObject", ffi_PDFObject_writeObject, 1);
 		jsB_propfun(J, "PDFObject.writeStream", ffi_PDFObject_writeStream, 1);
 		jsB_propfun(J, "PDFObject.writeRawStream", ffi_PDFObject_writeRawStream, 1);
 		jsB_propfun(J, "PDFObject.forEach", ffi_PDFObject_forEach, 1);
