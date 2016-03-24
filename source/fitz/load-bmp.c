@@ -419,7 +419,7 @@ bmp_decompress_rle4(fz_context *ctx, struct info *info, unsigned char *p, unsign
 	ep = dp + height * stride;
 	x = 0;
 
-	while (sp + 2 < *end)
+	while (sp + 2 <= *end)
 	{
 		if (sp[0] == 0 && sp[1] == 0)
 		{ /* end of line */
