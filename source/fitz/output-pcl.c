@@ -35,6 +35,7 @@
 #define HACK__IS_A_OCE9050		1024
 #define PCL_HAS_ORIENTATION             2048
 #define PCL_CAN_SET_CUSTOM_PAPER_SIZE   4096
+#define PCL_HAS_RICOH_PAPER_SIZES       8192
 
 /* Shorthands for the most common spacing/compression combinations. */
 #define PCL_MODE0 PCL3_SPACING
@@ -49,6 +50,14 @@ static const char *const from2to3 = "\033*b3M";
 static const char *const from3to2 = "\033*b2M";
 static const int penalty_from2to3 = 5; /* strlen(from2to3); */
 static const int penalty_from3to2 = 5; /* strlen(from3to2); */
+
+/* Generic */
+static const fz_pcl_options fz_pcl_options_generic =
+{
+	(PCL_MODE2 | PCL_END_GRAPHICS_DOES_RESET | PCL_CAN_SET_PAPER_SIZE | PCL_CAN_SET_CUSTOM_PAPER_SIZE),
+	"\033&k1W\033*b2M",
+	"\033&k1W\033*b2M"
+};
 
 /* H-P DeskJet */
 static const fz_pcl_options fz_pcl_options_ljet4 =
@@ -200,7 +209,9 @@ static void copy_opts(fz_pcl_options *dst, const fz_pcl_options *src)
 
 void fz_pcl_preset(fz_context *ctx, fz_pcl_options *opts, const char *preset)
 {
-	if (preset == NULL || *preset == 0 || !strcmp(preset, "ljet4"))
+	if (preset == NULL || *preset == 0 || !strcmp(preset, "generic"))
+		copy_opts(opts, &fz_pcl_options_generic);
+	else if (!strcmp(preset, "ljet4"))
 		copy_opts(opts, &fz_pcl_options_ljet4);
 	else if (!strcmp(preset, "dj500"))
 		copy_opts(opts, &fz_pcl_options_dj500);
@@ -371,8 +382,7 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 		/* based on the actual requested size. */
 		if (pcl->features & PCL_CAN_SET_PAPER_SIZE)
 		{
-			fz_printf(ctx, out, "\033&l%dA", pcl->paper_size);
-			if ((pcl->features & PCL_CAN_SET_CUSTOM_PAPER_SIZE) != 0 && pcl->paper_size == eCustomPaperSize)
+			/* It probably never hurts to define the page explicitly */
 			{
 				int decipointw = (w * 720 + (xres>>1)) / xres;
 				int decipointh = (h * 720 + (yres>>1)) / yres;
@@ -380,6 +390,7 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 				fz_printf(ctx, out, "\033&f%dI", decipointw);
 				fz_printf(ctx, out, "\033&f%dJ", decipointh);
 			}
+			fz_printf(ctx, out, "\033&l%dA", pcl->paper_size);
 		}
 		/* If printer can duplex, set duplex mode appropriately. */
 		if (pcl->features & PCL_HAS_DUPLEX)
@@ -529,6 +540,8 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 	/* Look for an exact match */
 	for (size = 0; size < num_elems(papersizes); size++)
 	{
+		if (papersizes[size].code > eCustomPaperSize && (pcl->features & PCL_HAS_RICOH_PAPER_SIZES) == 0)
+			continue;
 		if (w == papersizes[size].width && h == papersizes[size].height)
 			break;
 		if ((pcl->features & PCL_HAS_ORIENTATION) && w == papersizes[size].height && h == papersizes[size].width)
@@ -554,7 +567,10 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 			int best_waste = INT_MAX;
 			for (i = 0; i < num_elems(papersizes); i++)
 			{
-				int waste = papersizes[i].width * papersizes[i].height - w * h;
+				int waste;
+				if (papersizes[i].code > eCustomPaperSize && (pcl->features & PCL_HAS_RICOH_PAPER_SIZES) == 0)
+					continue;
+				waste = papersizes[i].width * papersizes[i].height - w * h;
 				if (waste > best_waste)
 					continue;
 				if (w <= papersizes[i].width && h <= papersizes[i].height)
