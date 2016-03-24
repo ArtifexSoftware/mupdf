@@ -179,27 +179,127 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 	memset(pix->samples, 0, (unsigned int)(pix->w * pix->h * pix->n));
 }
 
+/*
+	The slowest routine in most CMYK rendering profiles.
+	We therefore spend some effort to improve it. Rather than
+	writing bytes, we write uint32_t's.
+*/
+#ifdef ARCH_ARM
+static void
+clear_cmyk_bitmap(unsigned char *samples, int c, int value)
+__attribute__((naked));
+
+static void
+clear_cmyk_bitmap(unsigned char *samples, int c, int value)
+{
+	asm volatile(
+	ENTER_ARM
+	"stmfd	r13!,{r4-r6,r14}					\n"
+	"@ r0 = samples							\n"
+	"@ r1 = c							\n"
+	"@ r2 = value							\n"
+	"mov	r3, #255						\n"
+	"mov	r12,#0			@ r12= 0			\n"
+	"subs	r1, r1, #3						\n"
+	"ble	2f							\n"
+	"str	r12,[r13,#-20]!						\n"
+	"str	r12,[r13,#4]						\n"
+	"str	r12,[r13,#8]						\n"
+	"str	r12,[r13,#12]						\n"
+	"str	r12,[r13,#16]						\n"
+	"strb	r2, [r13,#3]						\n"
+	"strb	r3, [r13,#4]						\n"
+	"strb	r2, [r13,#8]						\n"
+	"strb	r3, [r13,#9]						\n"
+	"strb	r2, [r13,#13]						\n"
+	"strb	r3, [r13,#14]						\n"
+	"strb	r2, [r13,#18]						\n"
+	"strb	r3, [r13,#19]						\n"
+	"ldmfd	r13!,{r4,r5,r6,r12,r14}					\n"
+	"1:								\n"
+	"stmia	r0!,{r4,r5,r6,r12,r14}					\n"
+	"subs	r1, r1, #4						\n"
+	"bgt	1b							\n"
+	"2:								\n"
+	"adds	r1, r1, #3						\n"
+	"ble	4f							\n"
+	"3:								\n"
+	"strb	r12,[r0], #1						\n"
+	"strb	r12,[r0], #1						\n"
+	"strb	r12,[r0], #1						\n"
+	"strb	r2, [r0], #1						\n"
+	"strb	r3, [r0], #1						\n"
+	"subs	r1, r1, #1						\n"
+	"bgt	3b							\n"
+	"4:								\n"
+	"ldmfd	r13!,{r4-r6,PC}						\n"
+	ENTER_THUMB
+	);
+}
+#else
+static void
+clear_cmyk_bitmap(unsigned char *samples, int c, int value)
+{
+	union
+	{
+		uint8_t bytes[20];
+		uint32_t words[5];
+	} d;
+	uint32_t *s = (uint32_t *)(void *)samples;
+	uint8_t *t;
+
+	d.words[0] = 0;
+	d.words[1] = 0;
+	d.words[2] = 0;
+	d.words[3] = 0;
+	d.words[4] = 0;
+	d.bytes[3] = value;
+	d.bytes[4] = 255;
+	d.bytes[8] = value;
+	d.bytes[9] = 255;
+	d.bytes[13] = value;
+	d.bytes[14] = 255;
+	d.bytes[18] = value;
+	d.bytes[19] = 255;
+
+	c -= 3;
+	{
+		const int a0 = d.words[0];
+		const int a1 = d.words[1];
+		const int a2 = d.words[2];
+		const int a3 = d.words[3];
+		const int a4 = d.words[4];
+		while (c > 0)
+		{
+			*s++ = a0;
+			*s++ = a1;
+			*s++ = a2;
+			*s++ = a3;
+			*s++ = a4;
+			c -= 4;
+		}
+	}
+	c += 3;
+	t = (unsigned char *)s;
+	while (c > 0)
+	{
+		*t++ = 0;
+		*t++ = 0;
+		*t++ = 0;
+		*t++ = value;
+		*t++ = 255;
+		c--;
+	}
+}
+#endif
+
 void
 fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 {
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
 	if (pix->colorspace && pix->colorspace->n == 4)
 	{
-		int x, y;
-		unsigned char *s = pix->samples;
-
-		value = 255 - value;
-		for (y = 0; y < pix->h; y++)
-		{
-			for (x = 0; x < pix->w; x++)
-			{
-				*s++ = 0;
-				*s++ = 0;
-				*s++ = 0;
-				*s++ = value;
-				*s++ = 255;
-			}
-		}
+		clear_cmyk_bitmap(pix->samples, pix->w * pix->h, 255-value);
 		return;
 	}
 
