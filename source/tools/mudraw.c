@@ -94,7 +94,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PBM, CS_MONO, { CS_MONO } },
 	{ OUT_PKM, CS_CMYK, { CS_CMYK } },
 	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB, CS_CMYK } },
-	{ OUT_PCL, CS_MONO, { CS_MONO } },
+	{ OUT_PCL, CS_MONO, { CS_MONO, CS_RGB } },
 	{ OUT_PS, CS_RGB, { CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
 

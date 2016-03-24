@@ -583,93 +583,277 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 	pcl->orientation = rotated;
 }
 
+/* Copy a line, removing the alpha, returning true if it line
+ * was blank. */
+static int
+line_is_blank(unsigned char *dst, const unsigned char *sp, int w)
+{
+	int zero = 0;
+
+	while (w-- > 0)
+	{
+		zero |= (*dst++ = *sp++);
+		zero |= (*dst++ = *sp++);
+		zero |= (*dst++ = *sp++);
+		sp++;
+	}
+
+	return zero == 0;
+}
+
+static int
+delta_compression(unsigned char *curr, unsigned char *prev, unsigned char *comp, int ds, int space)
+{
+	int left = space;
+	int x = ds;
+
+	while (x > 0)
+	{
+		/* Count matching bytes */
+		int match = 0;
+		int diff = 0;
+		while (x > 0 && *curr == *prev)
+		{
+			curr++;
+			prev++;
+			match++;
+			x--;
+		}
+
+		/* Count different bytes */
+		while (x > 0 && *curr != *prev)
+		{
+			curr++;
+			prev++;
+			diff++;
+			x--;
+		}
+
+		while (diff > 0)
+		{
+			int exts;
+			int mini_diff = diff;
+			if (mini_diff > 8)
+				mini_diff = 8;
+
+			exts = (match+255-31)/255;
+			left -= 1 + mini_diff + exts;
+			if (left < 0)
+				return 0;
+			*comp++ = ((mini_diff-1)<<5) | (match < 31 ? match : 31);
+			if (exts > 0)
+			{
+				match -= 31;
+				while (--exts)
+				{
+					*comp++ = 255;
+					match -= 255;
+				}
+				*comp++ = match;
+			}
+			memcpy(comp, curr-diff, mini_diff);
+			comp += mini_diff;
+
+			match = 0;
+			diff -= mini_diff;
+		}
+	}
+	return space - left;
+}
+
 void
 fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl)
 {
 	unsigned char *sp;
-	int y, x, sn, dn, ss;
+	int y, ss, ds, valid_seed, fill;
+	unsigned char *linebuf;
+	unsigned char *prev;
+	unsigned char *curr;
+	unsigned char *comp = NULL;
 
 	if (!out || !pixmap)
 		return;
 
-	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pcl");
+	if (pixmap->n != 4)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be rgb to write as pcl");
 
 	guess_paper_size(pcl, pixmap->w, pixmap->h, pixmap->xres, pixmap->yres);
 
 	pcl_header(ctx, out, pcl, 1, pixmap->xres, pixmap->yres, pixmap->w, pixmap->h);
 
-	sn = pixmap->n;
-	dn = pixmap->n;
-	if (dn == 2 || dn == 4)
-		dn--;
+	/* Raster presentation */
+	/* Print in orientation of the logical page */
+	fz_printf(ctx, out, "\033&r0F");
 
-	/* Now output the actual bitmap, using a packbits like compression */
-	sp = pixmap->samples;
-	ss = pixmap->w * sn;
-	y = 0;
-	while (y < pixmap->h)
+	/* Set color mode */
+	fz_write(ctx, out, "\033*v6W"
+		"\000"	/* Colorspace 0 = Device RGB */
+		"\003"	/* Pixel encoding mode: 3 = Direct by Pixel*/
+		"\000"	/* Bits per index: 0 = no palette */
+		"\010"	/* Red bits */
+		"\010"	/* Green bits */
+		"\010",	/* Blue bits */
+		11
+		);
+
+	/* Raster resolution */
+	/* Supposed to be strictly 75, 100, 150, 200, 300, 600 */
+	/* FIXME: xres vs yres */
+	fz_printf(ctx, out, "\033*t%dR", pixmap->xres);
+
+	/* Raster height */
+	fz_printf(ctx, out, "\033*r%dT", pixmap->h);
+
+	/* Raster width */
+	fz_printf(ctx, out, "\033*r%dS", pixmap->w);
+
+	/* start raster graphics */
+	/* 0 = start at default left graphics margin */
+	fz_printf(ctx, out, "\033*r0A");
+
+	ds = pixmap->w * 3;
+	ss = pixmap->w * 4;
+
+	linebuf = fz_malloc(ctx, ds * 2);
+	prev = linebuf;
+	curr = linebuf + ds;
+	fill = 0;
+	memset(prev, 0, ds);
+
+	fz_var(comp);
+
+	fz_try(ctx)
 	{
-		int yrep;
+		comp = fz_malloc(ctx, 32767);
+		/* Now output the actual bitmap */
+		/* Adaptive Compression */
+		fz_printf(ctx, out, "\033*b5M");
 
-		assert(sp == pixmap->samples + y * ss);
-
-		/* Count the number of times this line is repeated */
-		for (yrep = 1; yrep < 256 && y+yrep < pixmap->h; yrep++)
+		sp = pixmap->samples;
+		y = 0;
+		valid_seed = 0;
+		while (y < pixmap->h)
 		{
-			if (memcmp(sp, sp + yrep * ss, ss) != 0)
-				break;
-		}
-		fz_write_byte(ctx, out, yrep-1);
-
-		/* Encode the line */
-		x = 0;
-		while (x < pixmap->w)
-		{
-			int d;
-
-			assert(sp == pixmap->samples + y * ss + x * sn);
-
-			/* How far do we have to look to find a repeated value? */
-			for (d = 1; d < 128 && x+d < pixmap->w; d++)
+			/* Skip over multiple blank lines */
+			int blanks;
+			do
 			{
-				if (memcmp(sp + (d-1)*sn, sp + d*sn, sn) == 0)
-					break;
-			}
-			if (d == 1)
-			{
-				int xrep;
-
-				/* We immediately have a repeat (or we've hit
-				 * the end of the line). Count the number of
-				 * times this value is repeated. */
-				for (xrep = 1; xrep < 128 && x+xrep < pixmap->w; xrep++)
+				blanks = 0;
+				while (blanks < 32767 && y < pixmap->h)
 				{
-					if (memcmp(sp, sp + xrep*sn, sn) != 0)
+					if (!line_is_blank(curr, sp, pixmap->w))
 						break;
+					blanks++;
 				}
-				fz_write_byte(ctx, out, xrep-1);
-				fz_write(ctx, out, sp, dn);
-				sp += sn*xrep;
-				x += xrep;
+
+				if (blanks)
+				{
+					if (fill + 3 >= 32767)
+					{
+						/* Can't fit into the block, so flush */
+						fz_printf(ctx, out, "\033*b%dW", fill);
+						fz_write(ctx, out, comp, fill);
+						fill = 0;
+					}
+					comp[fill++] = 4; /* Empty row */
+					comp[fill++] = blanks>>8;
+					comp[fill++] = blanks & 0xFF;
+					valid_seed = 0;
+				}
+			}
+			while (blanks == 32767);
+
+			if (y == pixmap->h)
+				break;
+
+			/* So, at least 1 more line to copy, and it's in curr */
+			if (valid_seed && fill + 5 <= 32767 && memcmp(curr, prev, ds) == 0)
+			{
+				int count = 1;
+				sp += ss;
+				y++;
+				while (count < 32767 && y < pixmap->h)
+				{
+					if (memcmp(sp-ss, sp, ss) != 0)
+						break;
+					count++;
+					sp += ss;
+					y++;
+				}
+				comp[fill++] = 5; /* Duplicate row */
+				comp[fill++] = count>>8;
+				comp[fill++] = count & 0xFF;
 			}
 			else
 			{
-				fz_write_byte(ctx, out, 257-d);
-				x += d;
-				while (d > 0)
+				unsigned char *tmp;
+				int len = 0;
+
+				if (valid_seed)
+					len = delta_compression(curr, prev, &comp[fill+3], ds, fz_mini(ds, 32767 - fill - len - 3));
+
+				if (fill + len + 3 > 32767)
 				{
-					fz_write(ctx, out, sp, dn);
-					sp += sn;
-					d--;
+					/* Can't fit this into the block, so flush and send uncompressed */
+					fz_printf(ctx, out, "\033*b%dW", fill);
+					fz_write(ctx, out, comp, fill);
+					fill = 0;
+					len = 0;
 				}
+
+				if (len)
+				{
+					/* Delta compression - Data already in the buffer. */
+					comp[fill++] = 3; /* Delta compression */
+					comp[fill++] = len>>8;
+					comp[fill++] = len & 0xFF;
+					fill += len;
+				}
+				else
+				{
+					if (fill + ds + 3 > 32767)
+					{
+						/* Can't fit a line uncompressed, so flush */
+						fz_printf(ctx, out, "\033*b%dW", fill);
+						fz_write(ctx, out, comp, fill);
+						fill = 0;
+					}
+
+					/* Unencoded */
+					/* Transfer Raster Data: ds+3 bytes, 0 = Unencoded, count high, count low */
+					comp[fill++] = 0;
+					comp[fill++] = ds>>8;
+					comp[fill++] = ds & 0xFF;
+					memcpy(&comp[fill], curr, ds);
+					fill += ds;
+					valid_seed = 1;
+				}
+
+				/* curr becomes prev */
+				tmp = prev; prev = curr; curr = tmp;
+				sp += ss;
+				y++;
 			}
 		}
 
-		/* Move to the next line */
-		sp += ss*(yrep-1);
-		y += yrep;
+		if (fill)
+		{
+			fz_printf(ctx, out, "\033*b%dW", fill);
+			fz_write(ctx, out, comp, fill);
+		}
 	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, linebuf);
+		fz_free(ctx, comp);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	/* End Raster Graphics */
+	fz_printf(ctx, out, "\033*rC");
 }
 
 /*
