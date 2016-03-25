@@ -344,7 +344,7 @@ static void
 do_threshold_4(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w, int ht_len)
 __attribute__((naked));
 
-#ifdef ARCH_ARM_CAN_LOAD_UNALIGNED
+#ifdef ARCH_UNALIGNED_OK
 static void
 do_threshold_4(const unsigned char * restrict ht_line, const unsigned char * restrict pixmap, unsigned char *restrict out, int w, int ht_len)
 {

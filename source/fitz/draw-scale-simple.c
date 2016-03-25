@@ -796,7 +796,7 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 	"ldr	r14,[r2, r4, LSL #2]!	@ r2 = contrib = index[index[row]+1]\n"
 	"				@ r14= len = *contrib	\n"
 	"blt	4f			@ while (x >= 0) {	\n"
-#ifndef ARCH_ARM_CAN_LOAD_UNALIGNED
+#ifndef ARCH_UNALIGNED_OK
 	"tst	r3, #3			@ if ((r3 & 3)		\n"
 	"tsteq	r1, #3			@	|| (r1 & 3))	\n"
 	"bne	4f			@ can't do fast code	\n"
