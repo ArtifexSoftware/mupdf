@@ -1049,9 +1049,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (bandheight)
 	{
-		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL)
+		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PS)
 		{
-			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM and PNG outputs\n");
+			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM, PCL, PS and PNG outputs\n");
 			exit(1);
 		}
 		if (showmd5)
