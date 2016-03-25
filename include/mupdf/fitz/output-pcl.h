@@ -90,12 +90,29 @@ void fz_pcl_preset(fz_context *ctx, fz_pcl_options *opts, const char *preset);
 */
 void fz_pcl_option(fz_context *ctx, fz_pcl_options *opts, const char *option, int val);
 
-void fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, fz_pcl_options *pcl);
+typedef struct fz_mono_pcl_output_context_s fz_mono_pcl_output_context;
 
-void fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, fz_pcl_options *pcl);
+fz_mono_pcl_output_context *fz_write_mono_pcl_header(fz_context *ctx, fz_output *out, int w, int h, int xres, int yres, int pagenum, const fz_pcl_options *options);
 
-void fz_save_pixmap_as_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, fz_pcl_options *pcl);
+void fz_write_mono_pcl_band(fz_context *ctx, fz_output *out, fz_mono_pcl_output_context *poc, const fz_bitmap *bitmap);
 
-void fz_save_bitmap_as_pcl(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, fz_pcl_options *pcl);
+void fz_write_mono_pcl_trailer(fz_context *ctx, fz_output *out, fz_mono_pcl_output_context *pcoc);
+
+void fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pcl_options *pcl);
+
+void fz_save_bitmap_as_pcl(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pcl_options *pcl);
+
+
+typedef struct fz_color_pcl_output_context_s fz_color_pcl_output_context;
+
+fz_color_pcl_output_context *fz_write_color_pcl_header(fz_context *ctx, fz_output *out, int w, int h, int n, int xres, int yres, int pagenum, const fz_pcl_options *options);
+
+void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_output_context *poc, int w, int h, int n, int band, int bandheight, unsigned char *samples);
+
+void fz_write_color_pcl_trailer(fz_context *ctx, fz_output *out, fz_color_pcl_output_context *pcoc);
+
+void fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pcl_options *pcl);
+
+void fz_save_pixmap_as_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pcl_options *pcl);
 
 #endif

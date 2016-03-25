@@ -879,7 +879,7 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 	fz_try(ctx)
 	{
 		poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, savealpha);
-		fz_write_png_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
+		fz_write_png_band(ctx, out, poc, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
 	}
 	fz_always(ctx)
 	{
@@ -904,7 +904,7 @@ fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 
 	fz_try(ctx)
 	{
-		fz_write_png_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha, poc);
+		fz_write_png_band(ctx, out, poc, pixmap->w, pixmap->h, pixmap->n, 0, pixmap->h, pixmap->samples, savealpha);
 	}
 	fz_always(ctx)
 	{
@@ -967,7 +967,7 @@ fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int sa
 }
 
 void
-fz_write_png_band(fz_context *ctx, fz_output *out, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha, fz_png_output_context *poc)
+fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, int w, int h, int n, int band, int bandheight, unsigned char *sp, int savealpha)
 {
 	unsigned char *dp;
 	int y, x, k, sn, dn, err, finalband;

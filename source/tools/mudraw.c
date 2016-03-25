@@ -546,10 +546,14 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		int w, h;
 		fz_png_output_context *poc = NULL;
 		fz_ps_output_context *psoc = NULL;
+		fz_mono_pcl_output_context *pmcoc = NULL;
+		fz_color_pcl_output_context *pccoc = NULL;
 
 		fz_var(pix);
 		fz_var(poc);
 		fz_var(psoc);
+		fz_var(pmcoc);
+		fz_var(pccoc);
 
 		fz_bound_page(ctx, page, &bounds);
 		zoom = resolution / 72;
@@ -648,6 +652,13 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_write_pkm_header(ctx, out, pix->w, totalheight);
 				else if (output_format == OUT_PS)
 					psoc = fz_write_ps_header(ctx, out, pix->w, totalheight, pix->n, pix->xres, pix->yres, ++output_pagenum);
+				else if (output_format == OUT_PCL)
+				{
+					if (out_cs == CS_MONO)
+						pmcoc = fz_write_mono_pcl_header(ctx, out, pix->w, totalheight, pix->xres, pix->yres, ++output_pagenum, NULL);
+					else
+						pccoc = fz_write_color_pcl_header(ctx, out, pix->w, totalheight, pix->n, pix->xres, pix->yres, ++output_pagenum, NULL);
+				}
 			}
 
 			for (band = 0; band < bands; band++)
@@ -682,23 +693,19 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					else if (output_format == OUT_PAM)
 						fz_write_pam_band(ctx, out, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha);
 					else if (output_format == OUT_PNG)
-						fz_write_png_band(ctx, out, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha, poc);
+						fz_write_png_band(ctx, out, poc, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha);
 					else if (output_format == OUT_PWG)
 						fz_write_pixmap_as_pwg(ctx, out, pix, NULL);
 					else if (output_format == OUT_PCL)
 					{
-						fz_pcl_options options;
-
-						fz_pcl_preset(ctx, &options, "generic");
-
 						if (out_cs == CS_MONO)
 						{
-							fz_bitmap *bit = fz_new_bitmap_from_pixmap(ctx, pix, NULL);
-							fz_write_bitmap_as_pcl(ctx, out, bit, &options);
+							fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
+							fz_write_mono_pcl_band(ctx, out, pmcoc, bit);
 							fz_drop_bitmap(ctx, bit);
 						}
 						else
-							fz_write_pixmap_as_pcl(ctx, out, pix, &options);
+							fz_write_color_pcl_band(ctx, out, pccoc, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
 					}
 					else if (output_format == OUT_PS)
 						fz_write_ps_band(ctx, out, psoc, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
@@ -738,6 +745,13 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_write_png_trailer(ctx, out, poc);
 				if (output_format == OUT_PS)
 					fz_write_ps_trailer(ctx, out, psoc);
+				if (output_format == OUT_PCL)
+				{
+					if (out_cs == CS_MONO)
+						fz_write_mono_pcl_trailer(ctx, out, pmcoc);
+					else
+						fz_write_color_pcl_trailer(ctx, out, pccoc);
+				}
 			}
 		}
 		fz_always(ctx)
@@ -1035,7 +1049,7 @@ int mudraw_main(int argc, char **argv)
 
 	if (bandheight)
 	{
-		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM)
+		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL)
 		{
 			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM and PNG outputs\n");
 			exit(1);
