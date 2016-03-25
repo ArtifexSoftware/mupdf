@@ -70,6 +70,7 @@ struct info
 	int rmask, gmask, bmask;
 	unsigned char palette[256 * 3];
 
+	int extramasks;
 	int palettetype;
 	unsigned char *samples;
 
@@ -157,6 +158,26 @@ bmp_read_bitmap_os2_header(fz_context *ctx, struct info *info, unsigned char *p,
 	return p + size;
 }
 
+static void maskinfo(unsigned int mask, int *shift, int *bits)
+{
+	*bits = 0;
+	*shift = 0;
+	if (mask) {
+		while ((mask & 1) == 0) {
+			*shift += 1;
+			mask >>= 1;
+		}
+		while ((mask & 1) == 1) {
+			*bits += 1;
+			mask >>= 1;
+		}
+		if (*bits > 8) {
+			*shift += *bits - 8;
+			*bits = 8;
+		}
+	}
+}
+
 static unsigned char *
 bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p, unsigned char *end)
 {
@@ -184,6 +205,9 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 		info->yres = read32(p + 28);
 		info->colors = read32(p + 32);
 
+		if (size == 40 && info->compression == 3 && (info->bitcount == 16 || info->bitcount == 32))
+			info->extramasks = 1;
+
 		if (info->bitcount == 16) {
 			info->rmask = 0x00007c00;
 			info->gmask = 0x000003e0;
@@ -199,9 +223,11 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 		if (end - p < 52)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in bitmap info header in bmp image");
 
-		info->rmask = read32(p + 40);
-		info->gmask = read32(p + 44);
-		info->bmask = read32(p + 48);
+		if (info->compression == 3) {
+			info->rmask = read32(p + 40);
+			info->gmask = read32(p + 44);
+			info->bmask = read32(p + 48);
+		}
 	}
 
 	info->palettetype = 1;
@@ -209,53 +235,17 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 	return p + size;
 }
 
-static void maskinfo(unsigned int mask, int *shift, int *bits)
-{
-	*bits = 0;
-	*shift = 0;
-	if (mask) {
-		while ((mask & 1) == 0) {
-			*shift = *shift + 1;
-			mask >>= 1;
-		}
-		while ((mask & 1) == 1) {
-			*bits = *bits + 1;
-			mask >>= 1;
-		}
-		if (*bits > 8) {
-			*shift += *bits - 8;
-			*bits = 8;
-		}
-	}
-}
-
 static unsigned char *
-bmp_read_masks(fz_context *ctx, struct info *info, unsigned char *p, unsigned char *end)
+bmp_read_extra_masks(fz_context *ctx, struct info *info, unsigned char *p, unsigned char *end)
 {
-	if (info->compression == 3)
-	{
-		if (end - p < 12)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in mask header in bmp image");
-		info->rmask = read32(p + 0);
-		info->gmask = read32(p + 4);
-		info->bmask = read32(p + 8);
-		p += 12;
-	}
-	else if (info->compression == 6)
-	{
-		if (end - p < 16)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in mask header in bmp image");
-		info->rmask = read32(p + 0);
-		info->gmask = read32(p + 4);
-		info->bmask = read32(p + 8);
-		p += 16;
-	}
+	if (end - p < 12)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in mask header in bmp image");
 
-	maskinfo(info->rmask, &info->rshift, &info->rbits);
-	maskinfo(info->gmask, &info->gshift, &info->gbits);
-	maskinfo(info->bmask, &info->bshift, &info->bbits);
+	info->rmask = read32(p + 0);
+	info->gmask = read32(p + 4);
+	info->bmask = read32(p + 8);
 
-	return p;
+	return p + 12;
 }
 
 static void
@@ -667,12 +657,17 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 	else if (size == 40 || size == 52 || size == 56 || size == 108 || size == 124)
 	{
 		p = bmp_read_bitmap_info_header(ctx, info, p, end);
-		p = bmp_read_masks(ctx, info, p, end);
+		if (info->extramasks)
+			p = bmp_read_extra_masks(ctx, info, p, end);
 	}
 	else if (size == 16 || size == 64)
 		p = bmp_read_bitmap_os2_header(ctx, info, p, end);
 	else
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid header size (%d) in bmp image", size);
+
+	maskinfo(info->rmask, &info->rshift, &info->rbits);
+	maskinfo(info->gmask, &info->gshift, &info->gbits);
+	maskinfo(info->bmask, &info->bshift, &info->bbits);
 
 	if (info->width <= 0 || info->width > SHRT_MAX || info->height <= 0 || info->height > SHRT_MAX)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "dimensions (%d x %d) out of range in bmp image",
