@@ -743,6 +743,7 @@ fz_paint_affine_near(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, i
 		case 1: fz_paint_affine_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 1, hp); break;
 		case 2: fz_paint_affine_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 2, hp); break;
 		case 4: fz_paint_affine_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 4, hp); break;
+		case 5: fz_paint_affine_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 5, hp); break;
 		default: fz_paint_affine_N_near(dp, sp, sw, sh, u, v, fa, fb, w, n, hp); break;
 		}
 	}
@@ -753,6 +754,7 @@ fz_paint_affine_near(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa, i
 		case 1: fz_paint_affine_alpha_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 1, alpha, hp); break;
 		case 2: fz_paint_affine_alpha_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 2, alpha, hp); break;
 		case 4: fz_paint_affine_alpha_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 4, alpha, hp); break;
+		case 5: fz_paint_affine_alpha_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 5, alpha, hp); break;
 		default: fz_paint_affine_alpha_N_near(dp, sp, sw, sh, u, v, fa, fb, w, n, alpha, hp); break;
 		}
 	}
@@ -778,6 +780,7 @@ fz_paint_affine_color_lerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int
 	{
 	case 2: fz_paint_affine_color_N_lerp(dp, sp, sw, sh, u, v, fa, fb, w, 2, color, hp); break;
 	case 4: fz_paint_affine_color_N_lerp(dp, sp, sw, sh, u, v, fa, fb, w, 4, color, hp); break;
+	case 5: fz_paint_affine_color_N_lerp(dp, sp, sw, sh, u, v, fa, fb, w, 5, color, hp); break;
 	default: fz_paint_affine_color_N_lerp(dp, sp, sw, sh, u, v, fa, fb, w, n, color, hp); break;
 	}
 }
@@ -789,6 +792,7 @@ fz_paint_affine_color_near(byte *dp, byte *sp, int sw, int sh, int u, int v, int
 	{
 	case 2: fz_paint_affine_color_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 2, color, hp); break;
 	case 4: fz_paint_affine_color_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 4, color, hp); break;
+	case 5: fz_paint_affine_color_N_near(dp, sp, sw, sh, u, v, fa, fb, w, 5, color, hp); break;
 	default: fz_paint_affine_color_N_near(dp, sp, sw, sh, u, v, fa, fb, w, n, color, hp); break;
 	}
 }
