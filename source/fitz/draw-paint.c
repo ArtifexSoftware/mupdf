@@ -165,6 +165,52 @@ fz_paint_solid_color_5(byte * restrict dp, int w, byte *color)
 		return;
 	if (sa == 256)
 	{
+#ifdef ARCH_UNALIGNED_OK
+		if (w > 4)
+		{
+			if (isbigendian())
+			{
+				const uint32_t a = *(uint32_t*)color;
+				const uint32_t b = 0xFF000000|(a>>8);
+				const uint32_t c = 0x00FF0000|(a>>16)|(a<<24);
+				const uint32_t d = 0x0000FF00|(a>>24)|(a<<16);
+				const uint32_t e = 0x000000FF|(a<<8);
+				w -= 3;
+				do
+				{
+					((uint32_t *)(void *)dp)[0] = a;
+					((uint32_t *)(void *)dp)[1] = b;
+					((uint32_t *)(void *)dp)[2] = c;
+					((uint32_t *)(void *)dp)[3] = d;
+					((uint32_t *)(void *)dp)[4] = e;
+					dp += 20;
+					w -= 4;
+				}
+				while (w > 0);
+			}
+			else
+			{
+				const uint32_t a = *(uint32_t*)color;
+				const uint32_t b = 0x000000FF|(a<<8);
+				const uint32_t c = 0x0000FF00|(a<<16)|(a>>24);
+				const uint32_t d = 0x00FF0000|(a<<24)|(a>>16);
+				const uint32_t e = 0xFF000000|(a>>8);
+				w -= 3;
+				do
+				{
+					((uint32_t *)(void *)dp)[0] = a;
+					((uint32_t *)(void *)dp)[1] = b;
+					((uint32_t *)(void *)dp)[2] = c;
+					((uint32_t *)(void *)dp)[3] = d;
+					((uint32_t *)(void *)dp)[4] = e;
+					dp += 20;
+					w -= 4;
+				}
+				while (w > 0);
+			}
+			w += 3;
+		}
+#endif
 		while (w--)
 		{
 			dp[0] = color[0];
