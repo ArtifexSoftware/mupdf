@@ -69,6 +69,7 @@ enum {
 	BI_BITFIELDS = 3,
 	BI_JPEG = 4,
 	BI_PNG = 5,
+	BI_ALPHABITS = 6,
 };
 
 struct info
@@ -223,6 +224,8 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 
 		if (size == 40 && info->compression == BI_BITFIELDS && (info->bitcount == 16 || info->bitcount == 32))
 			info->extramasks = 1;
+		else if (size == 40 && info->compression == BI_ALPHABITS && (info->bitcount == 16 || info->bitcount == 32))
+			info->extramasks = 1;
 
 		if (info->bitcount == 16) {
 			info->rmask = 0x00007c00;
@@ -254,14 +257,31 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 static unsigned char *
 bmp_read_extra_masks(fz_context *ctx, struct info *info, unsigned char *p, unsigned char *end)
 {
-	if (end - p < 12)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in mask header in bmp image");
+	int size = 0;
 
-	info->rmask = read32(p + 0);
-	info->gmask = read32(p + 4);
-	info->bmask = read32(p + 8);
+	if (info->compression == BI_BITFIELDS)
+	{
+		size = 12;
+		if (end - p < 12)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in mask header in bmp image");
 
-	return p + 12;
+		info->rmask = read32(p + 0);
+		info->gmask = read32(p + 4);
+		info->bmask = read32(p + 8);
+	}
+	else if (info->compression == BI_ALPHABITS)
+	{
+		size = 16;
+		if (end - p < 16)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in mask header in bmp image");
+
+		/* ignore alpha mask */
+		info->rmask = read32(p + 0);
+		info->gmask = read32(p + 4);
+		info->bmask = read32(p + 8);
+	}
+
+	return p + size;
 }
 
 static int
@@ -728,7 +748,8 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 				info->width, info->height);
 	if (info->compression != BI_RGB && info->compression != BI_RLE8 &&
 			info->compression != BI_RLE4 && info->compression != BI_BITFIELDS &&
-			info->compression != BI_JPEG && info->compression != BI_PNG)
+			info->compression != BI_JPEG && info->compression != BI_PNG &&
+			info->compression != BI_ALPHABITS)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported compression method (%d) in bmp image", info->compression);
 	if ((info->compression == BI_RGB && info->bitcount != 1 &&
 			info->bitcount != 2 && info->bitcount != 4 &&
@@ -738,7 +759,8 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 			(info->compression == BI_RLE4 && info->bitcount != 4) ||
 			(info->compression == BI_BITFIELDS && info->bitcount != 16 && info->bitcount != 32) ||
 			(info->compression == BI_JPEG && info->bitcount != 0) ||
-			(info->compression == BI_PNG && info->bitcount != 0))
+			(info->compression == BI_PNG && info->bitcount != 0) ||
+			(info->compression == BI_ALPHABITS && info->bitcount != 16 && info->bitcount != 32))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel (%d) for compression (%d) in bmp image",
 				info->bitcount, info->compression);
 	if (info->rbits > 0 && info->rbits != 4 && info->rbits != 5 && info->rbits != 8)
