@@ -692,7 +692,7 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 				info->bitcount, info->compression);
 	if (info->rbits > 0 && info->rbits != 5 && info->rbits != 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %d bit red mask in bmp image", info->rbits);
-	if (info->gbits > 0 && info->gbits != 5 && info->gbits != 6 && info->rbits != 8)
+	if (info->gbits > 0 && info->gbits != 5 && info->gbits != 6 && info->gbits != 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %d bit green mask in bmp image", info->gbits);
 	if (info->bbits > 0 && info->bbits != 5 && info->rbits != 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %d bit blue mask in bmp image", info->bbits);
