@@ -582,11 +582,12 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 	}
 
 	/* These only apply for components in 16-bit mode
+	   4-bit (15 * 546) / 32
 	   5-bit (31 * 264) / 32
 	   6-bit (63 * 130 ) / 32 */
-	rmult = info->rbits == 5 ? 264 : 130;
-	gmult = info->gbits == 5 ? 264 : 130;
-	bmult = info->bbits == 5 ? 264 : 130;
+	rmult = info->rbits == 4 ? 546 : (info->rbits == 5 ? 264 : 130);
+	gmult = info->gbits == 4 ? 546 : (info->gbits == 5 ? 264 : 130);
+	bmult = info->bbits == 4 ? 546 : (info->bbits == 5 ? 264 : 130);
 
 	for (y = 0; y < height; y++)
 	{
@@ -735,11 +736,11 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 			(info->compression == BI_BITFIELDS && info->bitcount != 16 && info->bitcount != 32))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel (%d) for compression (%d) in bmp image",
 				info->bitcount, info->compression);
-	if (info->rbits > 0 && info->rbits != 5 && info->rbits != 8)
+	if (info->rbits > 0 && info->rbits != 4 && info->rbits != 5 && info->rbits != 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %d bit red mask in bmp image", info->rbits);
-	if (info->gbits > 0 && info->gbits != 5 && info->gbits != 6 && info->gbits != 8)
+	if (info->gbits > 0 && info->gbits != 4 && info->gbits != 5 && info->gbits != 6 && info->gbits != 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %d bit green mask in bmp image", info->gbits);
-	if (info->bbits > 0 && info->bbits != 5 && info->rbits != 8)
+	if (info->bbits > 0 && info->bbits != 4 && info->bbits != 5 && info->bbits != 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %d bit blue mask in bmp image", info->bbits);
 
 	if (!only_metadata)
