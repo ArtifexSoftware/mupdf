@@ -57,6 +57,13 @@ static const unsigned char bw_palette[] = {
 	0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF,
 };
 
+enum {
+	BI_RGB = 0,
+	BI_RLE8 = 1,
+	BI_RLE4 = 2,
+	BI_BITFIELDS = 3,
+};
+
 struct info
 {
 	int filesize;
@@ -118,7 +125,7 @@ bmp_read_bitmap_core_header(fz_context *ctx, struct info *info, unsigned char *p
 
 	info->xres = 2835;
 	info->yres = 2835;
-	info->compression = 0;
+	info->compression = BI_RGB;
 	info->palettetype = 0;
 
 	return p + size;
@@ -205,7 +212,7 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 		info->yres = read32(p + 28);
 		info->colors = read32(p + 32);
 
-		if (size == 40 && info->compression == 3 && (info->bitcount == 16 || info->bitcount == 32))
+		if (size == 40 && info->compression == BI_BITFIELDS && (info->bitcount == 16 || info->bitcount == 32))
 			info->extramasks = 1;
 
 		if (info->bitcount == 16) {
@@ -223,7 +230,7 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 		if (end - p < 52)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in bitmap info header in bmp image");
 
-		if (info->compression == 3) {
+		if (info->compression == BI_BITFIELDS) {
 			info->rmask = read32(p + 40);
 			info->gmask = read32(p + 44);
 			info->bmask = read32(p + 48);
@@ -387,7 +394,7 @@ bmp_decompress_rle8(fz_context *ctx, struct info *info, unsigned char *p, unsign
 	if (dp < ep)
 		fz_warn(ctx, "premature end of bitmap data in bmp image");
 
-	info->compression = 0;
+	info->compression = BI_RGB;
 	info->bitcount = 8;
 	*end = ep;
 	return decompressed;
@@ -478,7 +485,7 @@ bmp_decompress_rle4(fz_context *ctx, struct info *info, unsigned char *p, unsign
 		}
 	}
 
-	info->compression = 0;
+	info->compression = BI_RGB;
 	info->bitcount = 4;
 	*end = ep;
 	return decompressed;
@@ -495,9 +502,9 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 	int rmult, gmult, bmult;
 	int x, y;
 
-	if (info->compression == 1)
+	if (info->compression == BI_RLE8)
 		ssp = decompressed = bmp_decompress_rle8(ctx, info, p, &end);
-	else if (info->compression == 2)
+	else if (info->compression == BI_RLE4)
 		ssp = decompressed = bmp_decompress_rle4(ctx, info, p, &end);
 	else
 		ssp = p;
@@ -677,12 +684,12 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 			info->bitcount != 16 && info->bitcount != 24 &&
 			info->bitcount != 32)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported bits per pixel (%d) in bmp image", info->bitcount);
-	if (info->compression != 0 && info->compression != 1 &&
-			info->compression != 2 && info->compression != 3)
+	if (info->compression != BI_RGB && info->compression != BI_RLE8 &&
+			info->compression != BI_RLE4 && info->compression != BI_BITFIELDS)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported compression method (%d) in bmp image", info->compression);
-	if ((info->compression == 1 && info->bitcount != 8) ||
-			(info->compression == 2 && info->bitcount != 4) ||
-			(info->compression == 3 && info->bitcount != 16 && info->bitcount != 32))
+	if ((info->compression == BI_RLE8 && info->bitcount != 8) ||
+			(info->compression == BI_RLE4 && info->bitcount != 4) ||
+			(info->compression == BI_BITFIELDS && info->bitcount != 16 && info->bitcount != 32))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel (%d) for compression (%d) in bmp image",
 				info->bitcount, info->compression);
 	if (info->rbits > 0 && info->rbits != 5 && info->rbits != 8)
