@@ -148,13 +148,15 @@ bmp_read_bitmap_os2_header(fz_context *ctx, struct info *info, unsigned char *p,
 		info->width = read32(p + 4);
 		info->height = read32(p + 8);
 		info->bitcount = read16(p + 14);
-		info->compression = read32(p + 16);
+
+		info->compression = BI_RGB;
 	}
 	if (size >= 64)
 	{
 		if (end - p < 64)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in bitmap os2 header in bmp image");
 
+		info->compression = read32(p + 16);
 		info->xres = read32(p + 24);
 		info->yres = read32(p + 28);
 		info->colors = read32(p + 32);
