@@ -63,6 +63,7 @@ static const unsigned char bw_palette[] = {
 };
 
 enum {
+	BI_RLE24 = -1,
 	BI_RGB = 0,
 	BI_RLE8 = 1,
 	BI_RLE4 = 2,
@@ -70,6 +71,7 @@ enum {
 	BI_JPEG = 4,
 	BI_PNG = 5,
 	BI_ALPHABITS = 6,
+	BI_UNSUPPORTED = 42,
 };
 
 struct info
@@ -168,6 +170,12 @@ bmp_read_bitmap_os2_header(fz_context *ctx, struct info *info, unsigned char *p,
 		info->xres = read32(p + 24);
 		info->yres = read32(p + 28);
 		info->colors = read32(p + 32);
+
+		/* 4 in this header is interpreted as 24 bit RLE encoding */
+		if (info->compression < 0)
+			info->compression = BI_UNSUPPORTED;
+		else if (info->compression == 4)
+			info->compression = BI_RLE24;
 	}
 
 	info->palettetype = 1;
@@ -385,6 +393,94 @@ bmp_read_color_table(fz_context *ctx, struct info *info, unsigned char *p, unsig
 }
 
 static unsigned char *
+bmp_decompress_rle24(fz_context *ctx, struct info *info, unsigned char *p, unsigned char **end)
+{
+	unsigned char *sp, *dp, *ep, *decompressed;
+	int width = info->width;
+	int height = info->height;
+	int stride;
+	int x, i;
+
+	stride = (width*3 + 3) / 4 * 4;
+
+	sp = p;
+	dp = decompressed = fz_calloc(ctx, height, stride);
+	ep = dp + height * stride;
+	x = 0;
+
+	while (sp + 2 <= *end)
+	{
+		if (sp[0] == 0 && sp[1] == 0)
+		{ /* end of line */
+			if (x*3 < stride)
+				dp += stride - x*3;
+			sp += 2;
+			x = 0;
+		}
+		else if (sp[0] == 0 && sp[1] == 1)
+		{ /* end of bitmap */
+			dp = ep;
+			break;
+		}
+		else if (sp[0] == 0 && sp[1] == 2)
+		{ /* delta */
+			int deltax, deltay;
+			if (sp + 4 > *end)
+				break;
+			deltax = sp[2];
+			deltay = sp[3];
+			dp += deltax*3 + deltay * stride;
+			sp += 4;
+			x += deltax;
+		}
+		else if (sp[0] == 0 && sp[1] >= 3)
+		{ /* absolute */
+			int n = sp[1] * 3;
+			int nn = (n + 1) / 2 * 2;
+			if (sp + 2 + nn > *end)
+				break;
+			if (dp + n > ep) {
+				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
+				break;
+			}
+			sp += 2;
+			for (i = 0; i < n; i++)
+				dp[i] = sp[i];
+			dp += n;
+			sp += (n + 1) / 2 * 2;
+			x += n;
+		}
+		else
+		{ /* encoded */
+			int n = sp[0] * 3;
+			if (sp + 1 + 3 > *end)
+				break;
+			if (dp + n > ep) {
+				fz_warn(ctx, "buffer overflow in bitmap data in bmp image");
+				break;
+			}
+			for (i = 0; i < n / 3; i++) {
+				dp[i * 3 + 0] = sp[1];
+				dp[i * 3 + 1] = sp[2];
+				dp[i * 3 + 2] = sp[3];
+			}
+			dp += n;
+			sp += 1 + 3;
+			x += n;
+		}
+	}
+
+	if (dp < ep)
+		fz_warn(ctx, "premature end of bitmap data in bmp image");
+
+	info->compression = BI_RGB;
+	info->bitcount = 24;
+	*end = ep;
+	return decompressed;
+}
+
+
+static unsigned char *
 bmp_decompress_rle8(fz_context *ctx, struct info *info, unsigned char *p, unsigned char **end)
 {
 	unsigned char *sp, *dp, *ep, *decompressed;
@@ -572,6 +668,8 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 		ssp = decompressed = bmp_decompress_rle8(ctx, info, p, &end);
 	else if (info->compression == BI_RLE4)
 		ssp = decompressed = bmp_decompress_rle4(ctx, info, p, &end);
+	else if (info->compression == BI_RLE24)
+		ssp = decompressed = bmp_decompress_rle24(ctx, info, p, &end);
 	else
 		ssp = p;
 
@@ -749,7 +847,7 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 	if (info->compression != BI_RGB && info->compression != BI_RLE8 &&
 			info->compression != BI_RLE4 && info->compression != BI_BITFIELDS &&
 			info->compression != BI_JPEG && info->compression != BI_PNG &&
-			info->compression != BI_ALPHABITS)
+			info->compression != BI_ALPHABITS && info->compression != BI_RLE24)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported compression method (%d) in bmp image", info->compression);
 	if ((info->compression == BI_RGB && info->bitcount != 1 &&
 			info->bitcount != 2 && info->bitcount != 4 &&
@@ -760,7 +858,8 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 			(info->compression == BI_BITFIELDS && info->bitcount != 16 && info->bitcount != 32) ||
 			(info->compression == BI_JPEG && info->bitcount != 0) ||
 			(info->compression == BI_PNG && info->bitcount != 0) ||
-			(info->compression == BI_ALPHABITS && info->bitcount != 16 && info->bitcount != 32))
+			(info->compression == BI_ALPHABITS && info->bitcount != 16 && info->bitcount != 32) ||
+			(info->compression == BI_RLE24 && info->bitcount != 24))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel (%d) for compression (%d) in bmp image",
 				info->bitcount, info->compression);
 	if (info->rbits > 0 && info->rbits != 4 && info->rbits != 5 && info->rbits != 8)
