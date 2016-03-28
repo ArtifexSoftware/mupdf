@@ -679,15 +679,14 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 	if (info->width <= 0 || info->width > SHRT_MAX || info->height <= 0 || info->height > SHRT_MAX)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "dimensions (%d x %d) out of range in bmp image",
 				info->width, info->height);
-	if (info->bitcount != 1 && info->bitcount != 2 &&
-			info->bitcount != 4 && info->bitcount != 8 &&
-			info->bitcount != 16 && info->bitcount != 24 &&
-			info->bitcount != 32)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported bits per pixel (%d) in bmp image", info->bitcount);
 	if (info->compression != BI_RGB && info->compression != BI_RLE8 &&
 			info->compression != BI_RLE4 && info->compression != BI_BITFIELDS)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported compression method (%d) in bmp image", info->compression);
-	if ((info->compression == BI_RLE8 && info->bitcount != 8) ||
+	if ((info->compression == BI_RGB && info->bitcount != 1 &&
+			info->bitcount != 2 && info->bitcount != 4 &&
+			info->bitcount != 8 && info->bitcount != 16 &&
+			info->bitcount != 24 && info->bitcount != 32) ||
+			(info->compression == BI_RLE8 && info->bitcount != 8) ||
 			(info->compression == BI_RLE4 && info->bitcount != 4) ||
 			(info->compression == BI_BITFIELDS && info->bitcount != 16 && info->bitcount != 32))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel (%d) for compression (%d) in bmp image",
