@@ -710,7 +710,11 @@ static int walk_string(string_walker *walker)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
 
 		if (walker->font->shaper == NULL)
+		{
+			Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 			walker->font->shaper = (void *)hb_ft_font_create(face, NULL);
+			Memento_stopLeaking();
+		}
 
 		hb_buffer_clear_contents(walker->hb_buf);
 		hb_buffer_set_direction(walker->hb_buf, walker->r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
@@ -721,7 +725,9 @@ static int walk_string(string_walker *walker)
 		/* First put the text content into a harfbuzz buffer
 		 * labelled with the position within the word. */
 		hb_buffer_add_utf8(walker->hb_buf, walker->start, walker->end - walker->start, 0, -1);
+		Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 		hb_buffer_guess_segment_properties(walker->hb_buf);
+		Memento_stopLeaking();
 
 		/* Now shape that buffer */
 		hb_shape(walker->font->shaper, walker->hb_buf, NULL, 0);
