@@ -1280,18 +1280,27 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				ly = 0;
 				for (gp = 0; gp < walker.glyph_count; gp++)
 				{
+					/* Need to use this slightly more awkward than
+					 * expected void * formulation to avoid gcc's
+					 * strict-aliasing type punning whining. */
 					hb_glyph_position_t *p = &walker.glyph_pos[gp];
+					void *px = &walker.glyph_pos[gp].x_offset;
+					void *py = &walker.glyph_pos[gp].y_offset;
+					hb_position_t x_off = *(hb_position_t *)px;
+					hb_position_t y_off = *(hb_position_t *)py;
+					float fx_off = x + (lx + x_off) * node_scale;
+					float fy_off = x + (lx + y_off) * node_scale;
 #ifdef DEBUG_HARFBUZZ
 					hb_glyph_info_t *g = &walker.glyph_info[gp];
 
 					printf("glyph: %x(%d) @ %d %d + %d %d",
-						g->codepoint, g->cluster, p->x_offset, p->y_offset,
+						g->codepoint, g->cluster, x_off, y_off,
 						p->x_advance, p->y_advance);
 #endif /* DEBUG_HARFBUZZ */
-					*(float *)(&p->x_offset) = x + (lx + p->x_offset) * node_scale;
-					*(float *)(&p->y_offset) = y + (ly + p->y_offset) * node_scale;
+					*(float *)px = fx_off;
+					*(float *)py = fy_off;
 #ifdef DEBUG_HARFBUZZ
-					printf(" => %g %g\n", *(float *)(&p->x_offset), *(float *)(&p->y_offset));
+					printf(" => %g %g\n", fx_off, fy_off);
 #endif /* DEBUG_HARFBUZZ */
 					lx += p->x_advance;
 					ly += p->y_advance;
@@ -1302,8 +1311,8 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					w -= lx * node_scale;
 					for (gp = 0; gp < walker.glyph_count; gp++)
 					{
-						hb_glyph_position_t *p = &walker.glyph_pos[gp];
-						*(float *)(&p->x_offset) += w;
+						void *p = &walker.glyph_pos[gp].x_offset;
+						*(float *)p += w;
 					}
 				}
 				else
@@ -1326,11 +1335,12 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 						for (gp = 0; gp < walker.glyph_count; gp++)
 						{
 							hb_glyph_info_t *g = &glyph_info[gp];
-							hb_glyph_position_t *p = &walker.glyph_pos[gp];
+							void *px = &walker.glyph_pos[gp].x_offset;
+							void *py = &walker.glyph_pos[gp].y_offset;
 							if (g->cluster != idx)
 								continue;
-							trm.e = *(float *)&p->x_offset;
-							trm.f = *(float *)&p->y_offset;
+							trm.e = *(float *)px;
+							trm.f = *(float *)py;
 							fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, c, 0,
 								node->bidi_level, node->markup_dir,
 								node->markup_lang);
@@ -1351,11 +1361,12 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 							for (gp++ ;gp < walker.glyph_count; gp++)
 							{
 								hb_glyph_info_t *g = &glyph_info[gp];
-								hb_glyph_position_t *p = &walker.glyph_pos[gp];
+								void *px = &walker.glyph_pos[gp].x_offset;
+								void *py = &walker.glyph_pos[gp].y_offset;
 								if (g->cluster != idx)
 									continue;
-								trm.e = *(float *)&p->x_offset;
-								trm.f = *(float *)&p->y_offset;
+								trm.e = *(float *)px;
+								trm.f = *(float *)py;
 								fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, -1, 0, node->bidi_level, node->markup_dir, node->markup_lang);
 							}
 						}
