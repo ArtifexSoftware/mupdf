@@ -226,6 +226,9 @@ void *Memento_takeRef(void *blk);
 void *Memento_dropRef(void *blk);
 void *Memento_reference(void *blk);
 
+void Memento_startLeaking(void);
+void Memento_stopLeaking(void);
+
 #ifdef MEMENTO
 
 #ifndef COMPILING_MEMENTO_C
@@ -265,6 +268,8 @@ void *Memento_reference(void *blk);
 #define Memento_takeRef(A)        (A)
 #define Memento_dropRef(A)        (A)
 #define Memento_reference(A)      (A)
+#define Memento_startLeaking()    do {} while (0)
+#define Memento_stopLeaking()     do {} while (0)
 
 #endif /* MEMENTO */
 

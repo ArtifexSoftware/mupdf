@@ -171,7 +171,8 @@ enum {
     Memento_Flag_HasParent = 2,
     Memento_Flag_BreakOnFree = 4,
     Memento_Flag_BreakOnRealloc = 8,
-    Memento_Flag_Freed = 16
+    Memento_Flag_Freed = 16,
+    Memento_Flag_KnownLeak = 32
 };
 
 enum {
@@ -294,6 +295,7 @@ static struct {
     int            pattern;
     int            nextPattern;
     int            patternBit;
+    int            leaking;
     size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
@@ -1013,6 +1015,8 @@ static void showBlock(Memento_BlkHeader *b, int space)
             MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, "%c(%s)", space, b->label);
+    if (b->flags & Memento_Flag_KnownLeak)
+        fprintf(stderr, "(Known Leak)");
 }
 
 static void blockDisplay(Memento_BlkHeader *b, int n)
@@ -1262,11 +1266,23 @@ void Memento_listBlockInfo(void)
 #endif
 }
 
+static int Memento_nonLeakBlocksLeaked(void)
+{
+	Memento_BlkHeader *blk = memento.used.head;
+	while (blk)
+	{
+		if ((blk->flags & Memento_Flag_KnownLeak) == 0)
+			return 1;
+		blk = blk->next;
+	}
+	return 0;
+}
+
 static void Memento_fin(void)
 {
     Memento_checkAllMemory();
     Memento_endStats();
-    if (memento.used.head != NULL) {
+    if (Memento_nonLeakBlocksLeaked()) {
         Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
         fprintf(stderr, "\n");
@@ -1682,6 +1698,10 @@ static void *do_malloc(size_t s, int eventType)
     Memento_storeDetails(memblk, Memento_EventType_malloc);
 #endif /* MEMENTO_DETAILS */
     Memento_addBlockHead(&memento.used, memblk, 0);
+
+    if (memento.leaking > 0)
+	    memblk->flags |= Memento_Flag_KnownLeak;
+
     return MEMBLK_TOBLK(memblk);
 }
 
@@ -2182,6 +2202,18 @@ size_t Memento_setMax(size_t max)
     memento.maxMemory = max;
     return max;
 }
+
+void Memento_startLeaking(void)
+{
+	memento.leaking++;
+}
+
+void Memento_stopLeaking(void)
+{
+	memento.leaking--;
+}
+
+
 #endif /* MEMENTO_CPP_EXTRAS_ONLY */
 
 #ifdef __cplusplus
@@ -2343,6 +2375,14 @@ void (Memento_info)(void *addr)
 }
 
 void (Memento_listBlockInfo)(void)
+{
+}
+
+void (Memento_startLeaking)(void)
+{
+}
+
+void (Memento_stopLeaking)(void)
 {
 }
 
