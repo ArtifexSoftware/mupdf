@@ -681,7 +681,7 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 	fz_var(byte_range);
 	fz_var(res);
-	fz_try(ctx);
+	fz_try(ctx)
 	{
 		byte_range_len = pdf_signature_widget_byte_range(ctx, doc, widget, NULL);
 		if (byte_range_len)
