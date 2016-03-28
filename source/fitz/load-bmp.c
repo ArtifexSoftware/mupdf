@@ -67,6 +67,7 @@ enum {
 	BI_RLE8 = 1,
 	BI_RLE4 = 2,
 	BI_BITFIELDS = 3,
+	BI_JPEG = 4,
 };
 
 struct info
@@ -725,7 +726,8 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 		fz_throw(ctx, FZ_ERROR_GENERIC, "dimensions (%d x %d) out of range in bmp image",
 				info->width, info->height);
 	if (info->compression != BI_RGB && info->compression != BI_RLE8 &&
-			info->compression != BI_RLE4 && info->compression != BI_BITFIELDS)
+			info->compression != BI_RLE4 && info->compression != BI_BITFIELDS &&
+			info->compression != BI_JPEG)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported compression method (%d) in bmp image", info->compression);
 	if ((info->compression == BI_RGB && info->bitcount != 1 &&
 			info->bitcount != 2 && info->bitcount != 4 &&
@@ -733,7 +735,8 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 			info->bitcount != 24 && info->bitcount != 32) ||
 			(info->compression == BI_RLE8 && info->bitcount != 8) ||
 			(info->compression == BI_RLE4 && info->bitcount != 4) ||
-			(info->compression == BI_BITFIELDS && info->bitcount != 16 && info->bitcount != 32))
+			(info->compression == BI_BITFIELDS && info->bitcount != 16 && info->bitcount != 32) ||
+			(info->compression == BI_JPEG && info->bitcount != 0))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel (%d) for compression (%d) in bmp image",
 				info->bitcount, info->compression);
 	if (info->rbits > 0 && info->rbits != 4 && info->rbits != 5 && info->rbits != 8)
@@ -743,7 +746,16 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 	if (info->bbits > 0 && info->bbits != 4 && info->bbits != 5 && info->bbits != 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported %d bit blue mask in bmp image", info->bbits);
 
-	if (!only_metadata)
+	if (only_metadata)
+		return NULL;
+
+	if (info->compression == BI_JPEG)
+	{
+		if (p - begin < info->offset)
+			p = begin + info->offset;
+		return fz_load_jpeg(ctx, p, end - p);
+	}
+	else
 	{
 		p = bmp_read_color_table(ctx, info, p, begin + info->offset);
 		if (p - begin < info->offset)

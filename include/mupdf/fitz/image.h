@@ -83,6 +83,7 @@ struct fz_image_s
 	fz_pixmap *tile;
 };
 
+fz_pixmap *fz_load_jpeg(fz_context *ctx, unsigned char *data, int size);
 fz_pixmap *fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *cs, int indexed);
 fz_pixmap *fz_load_png(fz_context *ctx, unsigned char *data, int size);
 fz_pixmap *fz_load_tiff(fz_context *ctx, unsigned char *data, int size);
