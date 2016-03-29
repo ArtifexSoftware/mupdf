@@ -90,6 +90,7 @@ void fz_install_load_system_font_funcs(fz_context *ctx, fz_load_system_font_func
 fz_font *fz_load_system_font(fz_context *ctx, const char *name, int bold, int italic, int needs_exact_metrics);
 fz_font *fz_load_system_cjk_font(fz_context *ctx, const char *name, int ros, int serif);
 
+const char *fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_italic, int *size);
 const char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
 const char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *len, int *index);
 const char *fz_lookup_noto_font(fz_context *ctx, int script, int serif, int *len);

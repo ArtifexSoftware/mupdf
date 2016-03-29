@@ -32,7 +32,7 @@ struct fz_html_font_face_s
 
 struct fz_html_font_set_s
 {
-	fz_font *fonts[16];
+	fz_font *fonts[12]; /* Times, Helvetica, Courier in R,I,B,BI */
 	fz_html_font_face *custom;
 };
 
