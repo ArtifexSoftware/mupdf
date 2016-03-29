@@ -1289,7 +1289,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 					hb_position_t x_off = *(hb_position_t *)px;
 					hb_position_t y_off = *(hb_position_t *)py;
 					float fx_off = x + (lx + x_off) * node_scale;
-					float fy_off = x + (lx - y_off) * node_scale;
+					float fy_off = y + (ly - y_off) * node_scale;
 #ifdef DEBUG_HARFBUZZ
 					hb_glyph_info_t *g = &walker.glyph_info[gp];
 
