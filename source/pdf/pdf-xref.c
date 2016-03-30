@@ -2325,9 +2325,8 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration)
 static pdf_document *
 pdf_new_document(fz_context *ctx, fz_stream *file)
 {
-	pdf_document *doc = fz_malloc_struct(ctx, pdf_document);
+	pdf_document *doc = fz_new_document(ctx, sizeof *doc);
 
-	doc->super.refs = 1;
 	doc->super.close = (fz_document_close_fn *)pdf_close_document;
 	doc->super.needs_password = (fz_document_needs_password_fn *)pdf_needs_password;
 	doc->super.authenticate_password = (fz_document_authenticate_password_fn *)pdf_authenticate_password;
