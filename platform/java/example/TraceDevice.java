@@ -1,3 +1,5 @@
+package example;
+
 import com.artifex.mupdf.fitz.*;
 
 public class TraceDevice extends Device implements PathWalker, TextWalker

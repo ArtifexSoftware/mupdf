@@ -2191,8 +2191,8 @@ FUN(Font_newNative)(JNIEnv *env, jobject self, jstring jname, jint index)
 
 	fz_try(ctx)
 	{
-		unsigned char *data;
-		unsigned int size;
+		const char *data;
+		int size;
 		data = fz_lookup_base14_font(ctx, name, &size);
 		if (data)
 			font = fz_new_font_from_memory(ctx, name, data, size, index, 0);

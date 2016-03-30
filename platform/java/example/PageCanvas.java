@@ -1,3 +1,5 @@
+package example;
+
 import com.artifex.mupdf.fitz.*;
 import java.awt.*;
 import java.awt.image.*;

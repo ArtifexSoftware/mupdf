@@ -39,24 +39,6 @@
          application and should be checked into Version Control Systems. -->
     <loadproperties srcFile="project.properties" />
 
-    <!-- This somewhat bulky and unpleasant piece of code is lifted
-        from stackoverflow, and serves to add the
-        platform/java/libmupdf.jar file to the produced .apk -->
-    <target name="-pre-compile">
-
-    <echo>ORIGINAL jars.path : ${toString:project.all.jars.path}</echo>
-    <path id="project.all.jars.path.hacked">
-        <path path="${toString:project.all.jars.path}"/>
-        <path path="../java/libmupdf.jar"/>
-    </path>
-
-    <path id="project.all.jars.path">
-        <path path="${toString:project.all.jars.path.hacked}"/>
-    </path>
-    <echo>HACKED jars.path : ${toString:project.all.jars.path}</echo>
-
-    </target>
-
     <!-- quick check on sdk.dir -->
     <fail
             message="sdk.dir is missing. Make sure to generate local.properties using 'android update project'"

@@ -1,4 +1,8 @@
+package example;
+
 import com.artifex.mupdf.fitz.*;
+
+import java.io.File;
 
 import java.awt.Frame;
 import java.awt.Label;
@@ -10,6 +14,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.ActionEvent;
+
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.JOptionPane;
 
 public class Viewer extends Frame implements WindowListener, ActionListener
 {
@@ -100,9 +108,96 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 	public void windowOpened(WindowEvent event) { }
 	public void windowClosed(WindowEvent event) { }
 
-	public static void main(String[] args) {
-		Document doc = new Document("pdfref17.pdf");
-		Viewer app = new Viewer(doc);
-		app.setVisible(true);
+	public static void main(String[] args)
+	{
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setDialogTitle("Choose a file to open");
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			public String getDescription()
+			{
+				return "Supported files (*.pdf, *,xps, *.jpg, *.jpeg, *.png, *.epub, *.cbz, *.cbr)";
+			}
+
+			public boolean accept(File f)
+			{
+				if (f.isDirectory())
+					return true;
+
+				String filename = f.getName().toLowerCase();
+				if (filename.endsWith(".pdf"))
+					return true;
+				if (filename.endsWith(".xps"))
+					return true;
+				if (filename.endsWith(".jpg"))
+					return true;
+				if (filename.endsWith(".jpeg"))
+					return true;
+				if (filename.endsWith(".png"))
+					return true;
+				if (filename.endsWith(".epub"))
+					return true;
+				if (filename.endsWith(".cbz"))
+					return true;
+				if (filename.endsWith(".cbr"))
+					return true;
+
+				return false;
+			}
+		});
+
+		while (true)
+		{
+			try
+			{
+				// get a file to open
+				int result = fileChooser.showOpenDialog(null);
+				if (result == JFileChooser.APPROVE_OPTION)
+				{
+					// user selects a file
+					File selectedFile = fileChooser.getSelectedFile();
+					if (selectedFile != null)
+					{
+						Document doc = new Document(selectedFile.getAbsolutePath());
+						if (doc != null)
+						{
+							Viewer app = new Viewer(doc);
+							if (app != null)
+							{
+								app.setVisible(true);
+								return;
+							}
+							else
+							{
+								infoBox("Cannot create Viewer for "+selectedFile.getAbsolutePath(),"Error");
+							}
+						}
+						else
+						{
+							infoBox("Cannot open "+selectedFile.getAbsolutePath(),"Error");
+						}
+					}
+					else
+					{
+						infoBox("Selected file not found.","Error");
+					}
+				}
+				else
+				{
+					infoBox("File selection cancelled.","Error");
+					return;
+				}
+
+			}
+			catch (Exception e)
+			{
+				infoBox("Exception: "+e.getMessage(),"Error");
+			}
+		}
+	}
+
+	private static void infoBox(String infoMessage, String titleBar)
+	{
+		JOptionPane.showMessageDialog(null, infoMessage, "InfoBox: " + titleBar, JOptionPane.INFORMATION_MESSAGE);
 	}
 }

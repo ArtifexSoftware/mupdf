@@ -1,4 +1,4 @@
-To build/debug android build.
+To build/debug android viewer.
 
 1) Download the android sdk, and install it. These instructions have been
 written with r14 (the latest version at time of writing) of the SDK in mind;
@@ -91,7 +91,7 @@ directory.
 See <http://ant.apache.org/>. Ensure that ANT_HOME is set to point to
 the top level directory, and that ANT_HOME/bin is on the PATH.
 
-8) Now we are ready to build mupdf for Android. Check out a copy of MuPDF
+8) Now we are ready to build mupdf viewer for Android. Check out a copy of MuPDF
 (but you've done that already, cos you're reading this, right?).
 
 9) You will also need a copy of mupdf's thirdparty libraries. If you are
@@ -112,7 +112,7 @@ compact and usable form.
 
 Unfortunately, the android SDK does not provide a compiler for the host
 machine, so we cannot run this step automatically as part of the android
-build. You will need to generate it by running a different build, such
+viewer build. You will need to generate it by running a different build, such
 as the windows or linux native builds.
 
 We do not make a snapshot of the generated directory available to
@@ -124,13 +124,13 @@ build.
 On windows (where you are using cygwin), or on linux/macos, this can be
 as simple as running 'make generate' in the top level directory.
 
-11) Change into mupdf's android directory. Copy the
-android/local.properties.sample file to be android/local.properties and
+11) Change into mupdf's android/viewer directory. Copy the
+android/viewer/local.properties.sample file to be android/viewer/local.properties and
 change the sdk path there as appropriate. This should be the only bit of
 localisation you need to do.
 
-12) Change into the android directory (note, the android directory, NOT
-the android/jni directory!), and execute (in a Cygwin window on Windows!):
+12) Change into the android/viewer directory (note, the android/viewer directory, NOT
+the android/viewer/jni directory!), and execute (in a Cygwin window on Windows!):
 
        ndk-build
 
