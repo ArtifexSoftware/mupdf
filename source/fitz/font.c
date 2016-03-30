@@ -1343,6 +1343,8 @@ fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz
 				font->bbox_table[gid] = fz_empty_rect;
 		}
 		*rect = font->bbox_table[gid];
+		if (fz_is_empty_rect(rect))
+			*rect = font->bbox;
 	}
 	else
 	{
