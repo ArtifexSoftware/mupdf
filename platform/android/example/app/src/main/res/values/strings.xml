@@ -1,0 +1,10 @@
+<resources>
+	<string name="app_name">MuPDF Example</string>
+	<string name="ok">OK</string>
+	<string name="version">1.0</string>
+	<string name="no_media_warning">Storage media not present</string>
+	<string name="no_media_hint">Sharing the storage media with a PC can make it inaccessible</string>
+	<string name="dismiss">Dismiss</string>
+	<string name="picker_title_App_Ver_Dir">%1$s %2$s: %3$s</string>
+	<string name="parent_directory">[Up one level]</string>
+</resources>

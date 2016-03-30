@@ -1,0 +1,5 @@
+# Uncomment and edit the appropriate line below.
+# Resave this file as local.properties.
+
+sdk.dir=/path/to/android/sdk
+ndk.dir=/path/to/android/ndk

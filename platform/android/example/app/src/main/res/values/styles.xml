@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppBaseTheme" parent="@android:style/Theme.NoTitleBar.Fullscreen">
+    </style>
+
+</resources>
