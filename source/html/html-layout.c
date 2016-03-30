@@ -1327,7 +1327,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				t = walker.start;
 				if (node->style->visibility == V_VISIBLE)
 				{
-					while (*t)
+					while (t != walker.end)
 					{
 						int l = fz_chartorune(&c, t);
 						t += l;
