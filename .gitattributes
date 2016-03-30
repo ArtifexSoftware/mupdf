@@ -13,3 +13,4 @@ build.xml		spaces
 memento.*		spaces
 *.vcxproj*		spaces
 jmem*			spaces
+*.gradle		spaces
