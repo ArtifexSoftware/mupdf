@@ -527,13 +527,9 @@ static int pdfapp_save(pdfapp_t *app)
 
 	if (wingetsavepath(app, buf, PATH_MAX))
 	{
-		pdf_write_options opts;
+		pdf_write_options opts = { 0 };
 
 		opts.do_incremental = 1;
-		opts.do_ascii = 0;
-		opts.do_expand = 0;
-		opts.do_garbage = 0;
-		opts.do_linear = 0;
 
 		if (strcmp(buf, app->docpath) != 0)
 		{

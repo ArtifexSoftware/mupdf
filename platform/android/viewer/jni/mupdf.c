@@ -2598,12 +2598,9 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 	if (idoc && glo->current_path)
 	{
 		char *tmp;
-		pdf_write_options opts;
+		pdf_write_options opts = { 0 };
+
 		opts.do_incremental = 1;
-		opts.do_ascii = 0;
-		opts.do_expand = 0;
-		opts.do_garbage = 0;
-		opts.do_linear = 0;
 
 		tmp = tmp_path(glo->current_path);
 		if (tmp)

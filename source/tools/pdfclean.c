@@ -41,15 +41,8 @@ int pdfclean_main(int argc, char **argv)
 	int errors = 0;
 	fz_context *ctx;
 
-	opts.do_incremental = 0;
-	opts.do_garbage = 0;
-	opts.do_expand = 0;
-	opts.do_ascii = 0;
-	opts.do_deflate = 0;
-	opts.do_linear = 0;
 	opts.continue_on_error = 1;
 	opts.errors = &errors;
-	opts.do_clean = 0;
 
 	while ((c = fz_getopt(argc, argv, "adfgilp:sz")) != -1)
 	{

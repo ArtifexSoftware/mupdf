@@ -71,12 +71,9 @@ static void saveDoc(char *current_path, fz_document *doc)
 {
 	char *tmp;
 	pdf_document *idoc = pdf_specifics(ctx, doc);
-	pdf_write_options opts;
+	pdf_write_options opts = { 0 };
+
 	opts.do_incremental = 1;
-	opts.do_ascii = 0;
-	opts.do_expand = 0;
-	opts.do_garbage = 0;
-	opts.do_linear = 0;
 
 	if (!idoc)
 		return;
