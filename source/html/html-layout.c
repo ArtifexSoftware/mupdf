@@ -198,37 +198,37 @@ static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_css_st
 /* pair-wise lookup table for UAX#14 linebreaks */
 static const char *pairbrk[29] =
 {
-/* OCCQGNESIPPNAHIIHBBBZCWHHJJJR */
-/* PLPULSXYSROULLDNYAB2WMJ23LVTI */
-  "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", /* OP open punctuation */
-  "_^^%%^^^^%%_____%%__^^^______", /* CL close punctuation */
-  "_^^%%^^^^%%%%%__%%__^^^______", /* CP close parenthesis */
-  "^^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* QU quotation */
-  "%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* GL non-breaking glue */
-  "_^^%%%^^^_______%%__^^^______", /* NS nonstarters */
-  "_^^%%%^^^______%%%__^^^______", /* EX exclamation/interrogation */
-  "_^^%%%^^^__%_%__%%__^^^______", /* SY symbols allowing break after */
-  "_^^%%%^^^__%%%__%%__^^^______", /* IS infix numeric separator */
-  "%^^%%%^^^__%%%%_%%__^^^%%%%%_", /* PR prefix numeric */
-  "%^^%%%^^^__%%%__%%__^^^______", /* PO postfix numeric */
-  "%^^%%%^^^%%%%%_%%%__^^^______", /* NU numeric */
-  "%^^%%%^^^__%%%_%%%__^^^______", /* AL ordinary alphabetic and symbol characters */
-  "%^^%%%^^^__%%%_%%%__^^^______", /* HL hebrew letter */
-  "_^^%%%^^^_%____%%%__^^^______", /* ID ideographic */
-  "_^^%%%^^^______%%%__^^^______", /* IN inseparable characters */
-  "_^^%_%^^^__%____%%__^^^______", /* HY hyphens */
-  "_^^%_%^^^_______%%__^^^______", /* BA break after */
-  "%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* BB break before */
-  "_^^%%%^^^_______%%_^^^^______", /* B2 break opportunity before and after */
-  "____________________^________", /* ZW zero width space */
-  "%^^%%%^^^__%%%_%%%__^^^______", /* CM combining mark */
-  "%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* WJ word joiner */
-  "_^^%%%^^^_%____%%%__^^^___%%_", /* H2 hangul leading/vowel syllable */
-  "_^^%%%^^^_%____%%%__^^^____%_", /* H3 hangul leading/voewl/trailing syllable */
-  "_^^%%%^^^_%____%%%__^^^%%%%__", /* JL hangul leading jamo */
-  "_^^%%%^^^_%____%%%__^^^___%%_", /* JV hangul vowel jamo */
-  "_^^%%%^^^_%____%%%__^^^____%_", /* JT hangul trailing jamo */
-  "_^^%%%^^^_______%%__^^^_____%", /* RI regional indicator */
+/*	-OCCQGNESIPPNAHIIHBBBZCWHHJJJR- */
+/*	-PLPULSXYSROULLDNYAB2WMJ23LVTI- */
+	"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", /* OP open punctuation */
+	"_^^%%^^^^%%_____%%__^^^______", /* CL close punctuation */
+	"_^^%%^^^^%%%%%__%%__^^^______", /* CP close parenthesis */
+	"^^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* QU quotation */
+	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* GL non-breaking glue */
+	"_^^%%%^^^_______%%__^^^______", /* NS nonstarters */
+	"_^^%%%^^^______%%%__^^^______", /* EX exclamation/interrogation */
+	"_^^%%%^^^__%_%__%%__^^^______", /* SY symbols allowing break after */
+	"_^^%%%^^^__%%%__%%__^^^______", /* IS infix numeric separator */
+	"%^^%%%^^^__%%%%_%%__^^^%%%%%_", /* PR prefix numeric */
+	"%^^%%%^^^__%%%__%%__^^^______", /* PO postfix numeric */
+	"%^^%%%^^^%%%%%_%%%__^^^______", /* NU numeric */
+	"%^^%%%^^^__%%%_%%%__^^^______", /* AL ordinary alphabetic and symbol characters */
+	"%^^%%%^^^__%%%_%%%__^^^______", /* HL hebrew letter */
+	"_^^%%%^^^_%____%%%__^^^______", /* ID ideographic */
+	"_^^%%%^^^______%%%__^^^______", /* IN inseparable characters */
+	"_^^%_%^^^__%____%%__^^^______", /* HY hyphens */
+	"_^^%_%^^^_______%%__^^^______", /* BA break after */
+	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* BB break before */
+	"_^^%%%^^^_______%%_^^^^______", /* B2 break opportunity before and after */
+	"____________________^________", /* ZW zero width space */
+	"%^^%%%^^^__%%%_%%%__^^^______", /* CM combining mark */
+	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* WJ word joiner */
+	"_^^%%%^^^_%____%%%__^^^___%%_", /* H2 hangul leading/vowel syllable */
+	"_^^%%%^^^_%____%%%__^^^____%_", /* H3 hangul leading/voewl/trailing syllable */
+	"_^^%%%^^^_%____%%%__^^^%%%%__", /* JL hangul leading jamo */
+	"_^^%%%^^^_%____%%%__^^^___%%_", /* JV hangul vowel jamo */
+	"_^^%%%^^^_%____%%%__^^^____%_", /* JT hangul trailing jamo */
+	"_^^%%%^^^_______%%__^^^_____%", /* RI regional indicator */
 };
 
 static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const char *text, struct genstate *g)
