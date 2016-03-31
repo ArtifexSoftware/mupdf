@@ -1132,7 +1132,7 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matri
 fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc,
 	const fz_rect *mediabox, fz_buffer **pcontents, pdf_obj **presources)
 {
-	fz_matrix pagectm = { 1, 0, 0, 1, -mediabox->x0, mediabox->y1 };
+	fz_matrix pagectm = { 1, 0, 0, -1, -mediabox->x0, mediabox->y1 };
 	*presources = pdf_new_dict(ctx, doc, 0);
 	*pcontents = fz_new_buffer(ctx, 0);
 	return pdf_new_pdf_device(ctx, doc, &pagectm, mediabox, *pcontents, *presources);
