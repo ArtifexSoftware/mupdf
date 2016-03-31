@@ -37,7 +37,7 @@ int pdfclean_main(int argc, char **argv)
 	char *outfile = "out.pdf";
 	char *password = "";
 	int c;
-	pdf_write_options opts;
+	pdf_write_options opts = { 0 };
 	int errors = 0;
 	fz_context *ctx;
 
