@@ -200,6 +200,22 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\..\generated\CharisSIL-B.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\CharisSIL-BI.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\CharisSIL-I.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\CharisSIL-R.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\generated\Dingbats.c"
 			>
 		</File>

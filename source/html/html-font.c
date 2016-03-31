@@ -5,7 +5,8 @@ fz_load_html_default_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 {
 	int is_mono = !strcmp(family, "monospace");
 	int is_sans = !strcmp(family, "sans-serif");
-	const char *real_family = is_mono ? "Courier" : is_sans ? "Helvetica" : "Times";
+	const char *real_family = is_mono ? "Courier" : is_sans ? "Helvetica" : "Charis SIL";
+	const char *backup_family = is_mono ? "Courier" : is_sans ? "Helvetica" : "Times";
 	int idx = (is_mono ? 8 : is_sans ? 4 : 0) + is_bold * 2 + is_italic;
 	if (!set->fonts[idx])
 	{
@@ -13,6 +14,8 @@ fz_load_html_default_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 		int size;
 
 		data = fz_lookup_builtin_font(ctx, real_family, is_bold, is_italic, &size);
+		if (!data)
+			data = fz_lookup_builtin_font(ctx, backup_family, is_bold, is_italic, &size);
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load html font: %s", real_family);
 		set->fonts[idx] = fz_new_font_from_memory(ctx, NULL, data, size, 0, 1);

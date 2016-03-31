@@ -47,6 +47,11 @@ if not exist generated/NimbusSanL-Reg.c fontdump.exe generated/NimbusSanL-Reg.c 
 if not exist generated/NimbusSanL-RegIta.c fontdump.exe generated/NimbusSanL-RegIta.c resources/fonts/urw/NimbusSanL-RegIta.cff
 if not exist generated/StandardSymL.c fontdump.exe generated/StandardSymL.c resources/fonts/urw/StandardSymL.cff
 
+if not exist generated/CharisSIL-R.c fontdump.exe generated/CharisSIL-R.c resources/fonts/sil/CharisSIL-R.cff
+if not exist generated/CharisSIL-I.c fontdump.exe generated/CharisSIL-I.c resources/fonts/sil/CharisSIL-I.cff
+if not exist generated/CharisSIL-B.c fontdump.exe generated/CharisSIL-B.c resources/fonts/sil/CharisSIL-B.cff
+if not exist generated/CharisSIL-BI.c fontdump.exe generated/CharisSIL-BI.c resources/fonts/sil/CharisSIL-BI.cff
+
 if not exist generated/NotoEmoji-Regular.c fontdump.exe generated/NotoEmoji-Regular.c resources/fonts/noto/NotoEmoji-Regular.ttf
 if not exist generated/NotoKufiArabic-Regular.c fontdump.exe generated/NotoKufiArabic-Regular.c resources/fonts/noto/NotoKufiArabic-Regular.ttf
 if not exist generated/NotoNaskhArabic-Regular.c fontdump.exe generated/NotoNaskhArabic-Regular.c resources/fonts/noto/NotoNaskhArabic-Regular.ttf

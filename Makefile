@@ -114,13 +114,15 @@ $(GPRF_OBJ) : $(FITZ_HDR) $(GPRF_HDR) $(GPRF_SRC_HDR)
 FONT_BIN_DROID := $(wildcard resources/fonts/droid/*.ttc)
 FONT_BIN_NOTO := $(wildcard resources/fonts/noto/*.ttf)
 FONT_BIN_URW := $(wildcard resources/fonts/urw/*.cff)
+FONT_BIN_SIL := $(wildcard resources/fonts/sil/*.cff)
 
 FONT_GEN_DROID := $(subst resources/fonts/droid/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_DROID))))
 FONT_GEN_NOTO := $(subst resources/fonts/noto/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_NOTO))))
 FONT_GEN_URW := $(subst resources/fonts/urw/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_URW))))
+FONT_GEN_SIL := $(subst resources/fonts/sil/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_SIL))))
 
-FONT_BIN := $(FONT_BIN_DROID) $(FONT_BIN_NOTO) $(FONT_BIN_URW)
-FONT_GEN := $(FONT_GEN_DROID) $(FONT_GEN_NOTO) $(FONT_GEN_URW)
+FONT_BIN := $(FONT_BIN_DROID) $(FONT_BIN_NOTO) $(FONT_BIN_URW) $(FONT_BIN_SIL)
+FONT_GEN := $(FONT_GEN_DROID) $(FONT_GEN_NOTO) $(FONT_GEN_URW) $(FONT_GEN_SIL)
 FONT_OBJ := $(subst $(GEN)/, $(OUT)/fonts/, $(addsuffix .o, $(basename $(FONT_GEN))))
 
 $(GEN)/%.c : resources/fonts/droid/%.ttc $(FONTDUMP)
@@ -128,6 +130,8 @@ $(GEN)/%.c : resources/fonts/droid/%.ttc $(FONTDUMP)
 $(GEN)/%.c : resources/fonts/noto/%.ttf $(FONTDUMP)
 	$(QUIET_GEN) $(FONTDUMP) $@ $<
 $(GEN)/%.c : resources/fonts/urw/%.cff $(FONTDUMP)
+	$(QUIET_GEN) $(FONTDUMP) $@ $<
+$(GEN)/%.c : resources/fonts/sil/%.cff $(FONTDUMP)
 	$(QUIET_GEN) $(FONTDUMP) $@ $<
 
 $(FONT_OBJ) : $(FONT_GEN)

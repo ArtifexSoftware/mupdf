@@ -4,6 +4,7 @@
 	Base 14 PDF fonts from URW.
 	Noto fonts from Google.
 	DroidSansFallback from Android for CJK.
+	Charis SIL from SIL.
 
 	Define TOFU to skip all the Noto fonts except CJK.
 
@@ -13,6 +14,7 @@
 	Define TOFU_EMOJI to skip emoji font.
 	Define TOFU_HISTORIC to skip ancient/historic scripts.
 	Define TOFU_SYMBOL to skip symbol font.
+	Define TOFU_SIL to skip the SIL fonts.
 */
 
 #ifdef NOTO_SMALL
@@ -20,6 +22,7 @@
 #define TOFU_EMOJI
 #define TOFU_HISTORIC
 #define TOFU_SYMBOL
+#define TOFU_SIL
 #endif
 
 #ifdef NOCJK
@@ -30,6 +33,7 @@
 #define TOFU_EMOJI
 #define TOFU_HISTORIC
 #define TOFU_SYMBOL
+#define TOFU_SIL
 #endif
 
 #define RETURN(NAME) \
@@ -85,6 +89,14 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 				NimbusRomNo9L_Med_cff,
 				NimbusRomNo9L_MedIta_cff)
 	}
+#ifndef TOFU_SIL
+	if (!strcmp(name, "Charis SIL")) {
+		FAMILY(CharisSIL_R_cff,
+				CharisSIL_I_cff,
+				CharisSIL_B_cff,
+				CharisSIL_BI_cff)
+	}
+#endif
 #ifndef TOFU
 	if (!strcmp(name, "Noto Serif")) {
 		RETURN(NotoSerif_Regular_ttf);
