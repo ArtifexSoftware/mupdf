@@ -143,7 +143,6 @@ new_context_phase1(const fz_alloc_context *alloc, const fz_locks_context *locks)
 	fz_try(ctx)
 	{
 		fz_new_aa_context(ctx);
-		fz_new_style_context(ctx);
 	}
 	fz_catch(ctx)
 	{
@@ -188,6 +187,7 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 		fz_new_font_context(ctx);
 		fz_new_id_context(ctx);
 		fz_new_document_handler_context(ctx);
+		fz_new_style_context(ctx);
 	}
 	fz_catch(ctx)
 	{
