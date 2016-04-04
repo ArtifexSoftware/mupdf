@@ -655,9 +655,9 @@ typedef struct string_walker
 	int scale;
 } string_walker;
 
-static int quick_ligature_mov(fz_context *ctx, string_walker *walker, int i, int n, int unicode)
+static int quick_ligature_mov(fz_context *ctx, string_walker *walker, unsigned int i, unsigned int n, int unicode)
 {
-	int k;
+	unsigned int k;
 	for (k = i + n + 1; k < walker->glyph_count; ++k)
 	{
 		walker->glyph_info[k-n] = walker->glyph_info[k];
@@ -667,7 +667,7 @@ static int quick_ligature_mov(fz_context *ctx, string_walker *walker, int i, int
 	return unicode;
 }
 
-static int quick_ligature(fz_context *ctx, string_walker *walker, int i)
+static int quick_ligature(fz_context *ctx, string_walker *walker, unsigned int i)
 {
 	if (walker->glyph_info[i].codepoint == 'f' && i + 1 < walker->glyph_count && !walker->font->is_mono)
 	{
@@ -797,7 +797,7 @@ static int walk_string(string_walker *walker)
 
 	if (quickshape)
 	{
-		int i;
+		unsigned int i;
 		for (i = 0; i < walker->glyph_count; ++i)
 		{
 			int unicode = quick_ligature(ctx, walker, i);
