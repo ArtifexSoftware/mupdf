@@ -55,10 +55,11 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->bbox.x1 = 1;
 	font->bbox.y1 = 1;
 
+	font->glyph_count = glyph_count;
+
 	font->use_glyph_bbox = use_glyph_bbox;
 	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
 	{
-		font->glyph_count = glyph_count;
 		font->bbox_table = fz_malloc_array(ctx, glyph_count, sizeof(fz_rect));
 		for (i = 0; i < glyph_count; i++)
 			font->bbox_table[i] = fz_infinite_rect;
@@ -67,7 +68,6 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	{
 		if (use_glyph_bbox)
 			fz_warn(ctx, "not building glyph bbox table for font '%s' with %d glyphs", font->name, glyph_count);
-		font->glyph_count = 0;
 		font->bbox_table = NULL;
 	}
 
