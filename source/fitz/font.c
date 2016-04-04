@@ -1401,6 +1401,23 @@ fz_advance_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 	return font->t3widths[gid];
 }
 
+void
+fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size)
+{
+	FT_Face face = font->ft_face;
+	if (face)
+	{
+		if (FT_HAS_GLYPH_NAMES(face))
+			FT_Get_Glyph_Name(face, glyph, buf, size);
+		else
+			fz_snprintf(buf, size, "%d", glyph);
+	}
+	else
+	{
+		fz_snprintf(buf, size, "%d", glyph);
+	}
+}
+
 float
 fz_advance_glyph(fz_context *ctx, fz_font *font, int gid, int wmode)
 {

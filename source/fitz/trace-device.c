@@ -39,12 +39,24 @@ fz_trace_text_span(fz_context *ctx, fz_output *out, fz_text_span *span)
 	fz_printf(ctx, out, " trm=\"%g %g %g %g\">\n", span->trm.a, span->trm.b, span->trm.c, span->trm.d);
 	for (i = 0; i < span->len; i++)
 	{
-		if (!isxmlmeta(span->items[i].ucs))
-			fz_printf(ctx, out, "<g ucs=\"%c\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
-					span->items[i].ucs, span->items[i].gid, span->items[i].x, span->items[i].y);
+		char name[32];
+
+		if (span->items[i].ucs == -1)
+			fz_printf(ctx, out, "<g unicode=\"-1\"");
+		else if (!isxmlmeta(span->items[i].ucs))
+			fz_printf(ctx, out, "<g unicode=\"%c\"", span->items[i].ucs);
 		else
-			fz_printf(ctx, out, "<g ucs=\"U+%04x\" gid=\"%d\" x=\"%g\" y=\"%g\" />\n",
-					span->items[i].ucs, span->items[i].gid, span->items[i].x, span->items[i].y);
+			fz_printf(ctx, out, "<g unicode=\"U+%04x\"", span->items[i].ucs);
+
+		if (span->items[i].gid >= 0)
+		{
+			fz_get_glyph_name(ctx, span->font, span->items[i].gid, name, sizeof name);
+			fz_printf(ctx, out, " glyph=\"%s\"", name);
+		}
+		else
+			fz_printf(ctx, out, " glyph=\"-1\"");
+
+		fz_printf(ctx, out, " x=\"%g\" y=\"%g\" />\n", span->items[i].x, span->items[i].y);
 	}
 	fz_printf(ctx, out, "</span>\n");
 }

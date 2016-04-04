@@ -121,6 +121,7 @@ void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc);
 float fz_advance_glyph(fz_context *ctx, fz_font *font, int glyph, int wmode);
 int fz_encode_character(fz_context *ctx, fz_font *font, int unicode);
 int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicode, int script, fz_font **out_font);
+void fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size);
 
 void fz_print_font(fz_context *ctx, fz_output *out, fz_font *font);
 
