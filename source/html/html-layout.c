@@ -650,6 +650,7 @@ typedef struct string_walker
 	fz_font *font;
 	fz_font *next_font;
 	hb_glyph_position_t *glyph_pos;
+	hb_glyph_info_t *glyph_info;
 	unsigned int glyph_count;
 	int scale;
 } string_walker;
@@ -707,7 +708,7 @@ static int walk_string(string_walker *walker)
 		walker->scale = face->units_per_EM;
 		fterr = FT_Set_Char_Size(face, walker->scale, walker->scale, 72, 72);
 		if (fterr)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Failure sizing font (%d)", fterr);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "freetype setting character size: %s", ft_error_string(fterr));
 
 		if (walker->font->shaper == NULL)
 		{
@@ -718,12 +719,13 @@ static int walk_string(string_walker *walker)
 
 		hb_buffer_clear_contents(walker->hb_buf);
 		hb_buffer_set_direction(walker->hb_buf, walker->r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+
 		/* We don't know script or language, so leave them blank */
 		/* hb_buffer_set_script(hb_buf, HB_SCRIPT_LATIN); */
 		/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
+		/* hb_buffer_set_cluster_level(hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS); */
 
-		/* First put the text content into a harfbuzz buffer
-		 * labelled with the position within the word. */
+		/* First put the text content into a harfbuzz buffer labelled with the position within the word. */
 		hb_buffer_add_utf8(walker->hb_buf, walker->start, walker->end - walker->start, 0, -1);
 		Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
 		hb_buffer_guess_segment_properties(walker->hb_buf);
@@ -733,6 +735,7 @@ static int walk_string(string_walker *walker)
 		hb_shape(walker->font->shaper, walker->hb_buf, NULL, 0);
 
 		walker->glyph_pos = hb_buffer_get_glyph_positions(walker->hb_buf, &walker->glyph_count);
+		walker->glyph_info = hb_buffer_get_glyph_infos(walker->hb_buf, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -746,7 +749,7 @@ static int walk_string(string_walker *walker)
 	return 1;
 }
 
-static char *get_node_text(fz_context *ctx, fz_html_flow *node)
+static const char *get_node_text(fz_context *ctx, fz_html_flow *node)
 {
 	if (node->type == FLOW_WORD)
 		return node->content.text;
@@ -761,9 +764,8 @@ static char *get_node_text(fz_context *ctx, fz_html_flow *node)
 static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buffer_t *hb_buf)
 {
 	unsigned int i;
-	int max_x, x;
 	string_walker walker;
-	char *s;
+	const char *s;
 
 	em = fz_from_css_number(node->style->font_size, em, em);
 	node->x = 0;
@@ -775,19 +777,10 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buf
 	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->style->font, node->script, s);
 	while (walk_string(&walker))
 	{
-		max_x = 0;
-		x = 0;
+		int x = 0;
 		for (i = 0; i < walker.glyph_count; i++)
-		{
-			int lx;
-
 			x += walker.glyph_pos[i].x_advance;
-			lx = x + walker.glyph_pos[i].x_offset;
-			if (lx > max_x)
-				max_x = lx;
-		}
-
-		node->w += max_x * em / walker.scale;
+		node->w += x * em / walker.scale;
 	}
 
 	node->em = em;
@@ -1197,9 +1190,6 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 	fz_text *text;
 	fz_matrix trm;
 	float color[3];
-	int c;
-	float node_scale;
-	float w, lx, ly;
 
 	/* FIXME: HB_DIRECTION_TTB? */
 
@@ -1218,12 +1208,9 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 
 		if (node->type == FLOW_WORD || node->type == FLOW_SPACE || node->type == FLOW_SHYPHEN)
 		{
-			int idx;
-			unsigned int gp;
-			hb_glyph_info_t *glyph_info;
-			float x, y;
 			string_walker walker;
-			char *s;
+			const char *s;
+			float x, y;
 
 			if (node->type == FLOW_WORD && node->content.text == NULL)
 				continue;
@@ -1231,8 +1218,8 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				continue;
 			if (node->type == FLOW_SHYPHEN && !node->breaks_line)
 				continue;
-
-			fz_scale(&trm, node->em, -node->em);
+			if (node->style->visibility != V_VISIBLE)
+				continue;
 
 			color[0] = node->style->color.r / 255.0f;
 			color[1] = node->style->color.g / 255.0f;
@@ -1241,139 +1228,77 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			/* TODO: reuse text object if color is unchanged */
 			text = fz_new_text(ctx);
 
-			x = node->x;
+			if (node->bidi_level & 1)
+				x = node->x + node->w;
+			else
+				x = node->x;
 			y = node->y;
-			w = node->w;
+
+			trm.a = node->em;
+			trm.b = 0;
+			trm.c = 0;
+			trm.d = -node->em;
+			trm.e = x;
+			trm.f = y;
 
 			s = get_node_text(ctx, node);
 			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->style->font, node->script, s);
 			while (walk_string(&walker))
 			{
-				const char *t;
-#ifdef DEBUG_HARFBUZZ
-				int c;
+				float node_scale = node->em / walker.scale;
+				unsigned int i;
+				int c, k, n;
 
-				printf("fragment: ");
-				t = walker.start;
-				while (t != walker.end)
+				/* Flatten advance and offset into offset array. */
+				int x_advance = 0;
+				int y_advance = 0;
+				for (i = 0; i < walker.glyph_count; ++i)
 				{
-					t += fz_chartorune(&c, t);
-					if (c >= 127)
-						printf("<%x>", c);
-					else
-						printf("%c", c);
-				}
-				printf("\n");
-#endif /* DEBUG_HARFBUZZ */
-				glyph_info = hb_buffer_get_glyph_infos(hb_buf, &walker.glyph_count);
-
-				/* Now offset the glyph_info with the correct positions.
-				 * Harfbuzz always gives us the shaped glyphs for plotting in l2r
-				 * order. We however still want to send glyphs r2l rather than l2r
-				 * for r2l blocks so that text extraction works. So, regardless
-				 * of ordering we resolve the positions here. The nasty thing is
-				 * that we right the resolved positions back into the Harfbuzz
-				 * buffer with a change of type. */
-				node_scale = node->em / walker.scale;
-
-				lx = 0;
-				ly = 0;
-				for (gp = 0; gp < walker.glyph_count; gp++)
-				{
-					/* Need to use this slightly more awkward than
-					 * expected void * formulation to avoid gcc's
-					 * strict-aliasing type punning whining. */
-					hb_glyph_position_t *p = &walker.glyph_pos[gp];
-					void *px = &walker.glyph_pos[gp].x_offset;
-					void *py = &walker.glyph_pos[gp].y_offset;
-					hb_position_t x_off = *(hb_position_t *)px;
-					hb_position_t y_off = *(hb_position_t *)py;
-					float fx_off = x + (lx + x_off) * node_scale;
-					float fy_off = y + (ly - y_off) * node_scale;
-#ifdef DEBUG_HARFBUZZ
-					hb_glyph_info_t *g = &walker.glyph_info[gp];
-
-					printf("glyph: %x(%d) @ %d %d + %d %d",
-						g->codepoint, g->cluster, x_off, y_off,
-						p->x_advance, p->y_advance);
-#endif /* DEBUG_HARFBUZZ */
-					*(float *)px = fx_off;
-					*(float *)py = fy_off;
-#ifdef DEBUG_HARFBUZZ
-					printf(" => %g %g\n", fx_off, fy_off);
-#endif /* DEBUG_HARFBUZZ */
-					lx += p->x_advance;
-					ly += p->y_advance;
+					walker.glyph_pos[i].x_offset += x_advance;
+					walker.glyph_pos[i].y_offset += y_advance;
+					x_advance += walker.glyph_pos[i].x_advance;
+					y_advance += walker.glyph_pos[i].y_advance;
 				}
 
 				if (node->bidi_level & 1)
+					x -= x_advance * node_scale;
+
+				/* Walk characters to find glyph clusters */
+				k = 0;
+				while (walker.start + k < walker.end)
 				{
-					w -= lx * node_scale;
-					for (gp = 0; gp < walker.glyph_count; gp++)
+					n = fz_chartorune(&c, walker.start + k);
+
+					for (i = 0; i < walker.glyph_count; ++i)
 					{
-						void *p = &walker.glyph_pos[gp].x_offset;
-						*(float *)p += w;
+						if (walker.glyph_info[i].cluster == k)
+						{
+							trm.e = x + walker.glyph_pos[i].x_offset * node_scale;
+							trm.f = y - walker.glyph_pos[i].y_offset * node_scale;
+							fz_show_glyph(ctx, text, walker.font, &trm,
+									walker.glyph_info[i].codepoint, c,
+									0, node->bidi_level, node->markup_dir, node->markup_lang);
+							c = -1; /* for subsequent glyphs in x-to-many mappings */
+						}
 					}
-				}
-				else
-				{
-					x += node_scale * lx;
-					y += node_scale * ly;
+
+					/* no glyph found (many-to-many or many-to-one mapping) */
+					if (c != -1)
+					{
+						fz_show_glyph(ctx, text, walker.font, &trm,
+								-1, c,
+								0, node->bidi_level, node->markup_dir, node->markup_lang);
+					}
+
+					k += n;
 				}
 
-				/* Now read the data back out again, and turn it into
-				 * glyph/ucs pairs to go to fz_text */
-				idx = 0;
-				t = walker.start;
-				if (node->style->visibility == V_VISIBLE)
-				{
-					while (t != walker.end)
-					{
-						int l = fz_chartorune(&c, t);
-						t += l;
+				if ((node->bidi_level & 1) == 0)
+					x += x_advance * node_scale;
 
-						for (gp = 0; gp < walker.glyph_count; gp++)
-						{
-							hb_glyph_info_t *g = &glyph_info[gp];
-							void *px = &walker.glyph_pos[gp].x_offset;
-							void *py = &walker.glyph_pos[gp].y_offset;
-							if (g->cluster != idx)
-								continue;
-							trm.e = *(float *)px;
-							trm.f = *(float *)py;
-							fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, c, 0,
-								node->bidi_level, node->markup_dir,
-								node->markup_lang);
-							break;
-						}
-						if (gp == walker.glyph_count)
-						{
-							/* We failed to find a glyph for this codepoint, presumably
-							 * because we've been shaped away into another. We can't afford
-							 * to just drop the codepoint as this will upset text extraction.
-							 */
-							fz_show_glyph(ctx, text, walker.font, &trm, -1, c, 0, node->bidi_level, node->markup_dir, node->markup_lang);
-						}
-						else
-						{
-							/* We've send the codepoint and glyph. Make sure there aren't
-							 * more glyphs to come from the same codepoint. */
-							for (gp++ ;gp < walker.glyph_count; gp++)
-							{
-								hb_glyph_info_t *g = &glyph_info[gp];
-								void *px = &walker.glyph_pos[gp].x_offset;
-								void *py = &walker.glyph_pos[gp].y_offset;
-								if (g->cluster != idx)
-									continue;
-								trm.e = *(float *)px;
-								trm.f = *(float *)py;
-								fz_show_glyph(ctx, text, walker.font, &trm, g->codepoint, -1, 0, node->bidi_level, node->markup_dir, node->markup_lang);
-							}
-						}
-						idx += l;
-					}
-				}
+				y += y_advance * node_scale;
 			}
+
 			fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
 			fz_drop_text(ctx, text);
 		}
