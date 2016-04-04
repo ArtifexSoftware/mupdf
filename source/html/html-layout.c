@@ -655,6 +655,51 @@ typedef struct string_walker
 	int scale;
 } string_walker;
 
+static int quick_ligature_mov(fz_context *ctx, string_walker *walker, int i, int n, int unicode)
+{
+	int k;
+	for (k = i + n + 1; k < walker->glyph_count; ++k)
+	{
+		walker->glyph_info[k-n] = walker->glyph_info[k];
+		walker->glyph_pos[k-n] = walker->glyph_pos[k];
+	}
+	walker->glyph_count -= n;
+	return unicode;
+}
+
+static int quick_ligature(fz_context *ctx, string_walker *walker, int i)
+{
+	if (walker->glyph_info[i].codepoint == 'f' && i + 1 < walker->glyph_count && !walker->font->is_mono)
+	{
+		if (walker->glyph_info[i+1].codepoint == 'f')
+		{
+			if (i + 2 < walker->glyph_count && walker->glyph_info[i+2].codepoint == 'i')
+			{
+				if (fz_encode_character(ctx, walker->font, 0xFB03))
+					return quick_ligature_mov(ctx, walker, i, 2, 0xFB03);
+			}
+			if (i + 2 < walker->glyph_count && walker->glyph_info[i+2].codepoint == 'l')
+			{
+				if (fz_encode_character(ctx, walker->font, 0xFB04))
+					return quick_ligature_mov(ctx, walker, i, 2, 0xFB04);
+			}
+			if (fz_encode_character(ctx, walker->font, 0xFB00))
+				return quick_ligature_mov(ctx, walker, i, 1, 0xFB00);
+		}
+		if (walker->glyph_info[i+1].codepoint == 'i')
+		{
+			if (fz_encode_character(ctx, walker->font, 0xFB01))
+				return quick_ligature_mov(ctx, walker, i, 1, 0xFB01);
+		}
+		if (walker->glyph_info[i+1].codepoint == 'l')
+		{
+			if (fz_encode_character(ctx, walker->font, 0xFB02))
+				return quick_ligature_mov(ctx, walker, i, 1, 0xFB02);
+		}
+	}
+	return walker->glyph_info[i].codepoint;
+}
+
 static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int r2l, fz_font *font, int script, const char *text)
 {
 	walker->ctx = ctx;
@@ -674,6 +719,7 @@ static int walk_string(string_walker *walker)
 	fz_context *ctx = walker->ctx;
 	FT_Face face;
 	int fterr;
+	int quickshape;
 
 	walker->start = walker->end;
 	walker->end = walker->s;
@@ -699,40 +745,43 @@ static int walk_string(string_walker *walker)
 		walker->end = walker->s;
 	}
 
+	/* Disable harfbuzz shaping if script is common or LGC and there are no opentype tables. */
+	quickshape = 0;
+	if (walker->script <= 3 && !walker->r2l && !walker->font->has_opentype)
+		quickshape = 1;
+
+	hb_lock(ctx);
 	fz_try(ctx)
 	{
-		hb_lock(ctx);
-
-		/* So, shape from start to end in font */
 		face = walker->font->ft_face;
 		walker->scale = face->units_per_EM;
 		fterr = FT_Set_Char_Size(face, walker->scale, walker->scale, 72, 72);
 		if (fterr)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "freetype setting character size: %s", ft_error_string(fterr));
 
-		if (walker->font->shaper == NULL)
-		{
-			Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
-			walker->font->shaper = (void *)hb_ft_font_create(face, NULL);
-			Memento_stopLeaking();
-		}
-
 		hb_buffer_clear_contents(walker->hb_buf);
 		hb_buffer_set_direction(walker->hb_buf, walker->r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
-
-		/* We don't know script or language, so leave them blank */
-		/* hb_buffer_set_script(hb_buf, HB_SCRIPT_LATIN); */
+		/* hb_buffer_set_script(hb_buf, hb_ucdn_script_translate(script)); */
 		/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
 		/* hb_buffer_set_cluster_level(hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS); */
 
-		/* First put the text content into a harfbuzz buffer labelled with the position within the word. */
 		hb_buffer_add_utf8(walker->hb_buf, walker->start, walker->end - walker->start, 0, -1);
-		Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
-		hb_buffer_guess_segment_properties(walker->hb_buf);
-		Memento_stopLeaking();
 
-		/* Now shape that buffer */
-		hb_shape(walker->font->shaper, walker->hb_buf, NULL, 0);
+		if (!quickshape)
+		{
+			if (walker->font->hb_font == NULL)
+			{
+				Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
+				walker->font->hb_font = hb_ft_font_create(face, NULL);
+				Memento_stopLeaking();
+			}
+
+			Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
+			hb_buffer_guess_segment_properties(walker->hb_buf);
+			Memento_stopLeaking();
+
+			hb_shape(walker->font->hb_font, walker->hb_buf, NULL, 0);
+		}
 
 		walker->glyph_pos = hb_buffer_get_glyph_positions(walker->hb_buf, &walker->glyph_count);
 		walker->glyph_info = hb_buffer_get_glyph_infos(walker->hb_buf, NULL);
@@ -744,6 +793,21 @@ static int walk_string(string_walker *walker)
 	fz_catch(ctx)
 	{
 		fz_rethrow(ctx);
+	}
+
+	if (quickshape)
+	{
+		int i;
+		for (i = 0; i < walker->glyph_count; ++i)
+		{
+			int unicode = quick_ligature(ctx, walker, i);
+			int glyph = fz_encode_character(ctx, walker->font, unicode);
+			walker->glyph_info[i].codepoint = glyph;
+			walker->glyph_pos[i].x_offset = 0;
+			walker->glyph_pos[i].y_offset = 0;
+			walker->glyph_pos[i].x_advance = fz_advance_glyph(ctx, walker->font, glyph, 0) * face->units_per_EM;
+			walker->glyph_pos[i].y_advance = 0;
+		}
 	}
 
 	return 1;

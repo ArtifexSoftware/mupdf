@@ -36,12 +36,15 @@ struct fz_font_s
 	char is_italic;
 
 	void *ft_face; /* has an FT_Face if used */
+	void *hb_font; /* hb_font for shaping */
 	int ft_substitute; /* ... substitute metrics */
 	int ft_stretch; /* ... and stretch to match PDF metrics */
+
 
 	int fake_bold; /* ... synthesize bold */
 	int fake_italic; /* ... synthesize italic */
 	int force_hinting; /* ... force hinting for DynaLab fonts */
+	int has_opentype; /* ... has opentype shaping tables */
 
 	fz_matrix t3matrix;
 	void *t3resources;
@@ -71,9 +74,6 @@ struct fz_font_s
 
 	/* cached encoding lookup */
 	uint16_t *encoding_cache[256];
-
-	/* Shaping information */
-	void *shaper;
 };
 
 /* common CJK font collections */

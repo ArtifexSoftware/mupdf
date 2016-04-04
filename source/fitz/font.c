@@ -8,6 +8,7 @@
 #include FT_ADVANCES_H
 #include FT_STROKER_H
 #include FT_TRUETYPE_TABLES_H
+#include FT_TRUETYPE_TAGS_H
 
 #define MAX_BBOX_TABLE_SIZE 4096
 #define MAX_ADVANCE_CACHE 4096
@@ -40,6 +41,7 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 	font->fake_bold = 0;
 	font->fake_italic = 0;
 	font->force_hinting = 0;
+	font->has_opentype = 0;
 
 	font->t3matrix = fz_identity;
 	font->t3resources = NULL;
@@ -155,7 +157,7 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
 	hb_lock(ctx);
-	hb_font_destroy(font->shaper);
+	hb_font_destroy(font->hb_font);
 	hb_unlock(ctx);
 	fz_free(ctx, font);
 }
@@ -427,6 +429,7 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 	TT_OS2 *os2;
 	fz_font *font;
 	int fterr;
+	FT_ULong tag, size, i, n;
 
 	fz_keep_freetype(ctx);
 
@@ -455,9 +458,20 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 	font->is_bold = !!(face->style_flags & FT_STYLE_FLAG_BOLD);
 	font->is_italic = !!(face->style_flags & FT_STYLE_FLAG_ITALIC);
 
-	os2 = FT_Get_Sfnt_Table(face, FT_SFNT_OS2);
-	if (os2)
-		font->is_serif = !(os2->sFamilyClass & 2048); /* Class 8 is sans-serif */
+	if (FT_IS_SFNT(face))
+	{
+		os2 = FT_Get_Sfnt_Table(face, FT_SFNT_OS2);
+		if (os2)
+			font->is_serif = !(os2->sFamilyClass & 2048); /* Class 8 is sans-serif */
+
+		FT_Sfnt_Table_Info(face, 0, NULL, &n);
+		for (i = 0; i < n; ++i)
+		{
+			FT_Sfnt_Table_Info(face, i, &tag, &size);
+			if (tag == TTAG_GDEF || tag == TTAG_GPOS || tag == TTAG_GSUB)
+				font->has_opentype = 1;
+		}
+	}
 
 	font->buffer = fz_keep_buffer(ctx, buffer);
 
@@ -1505,10 +1519,6 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 		if (gid > 0)
 			return *out_font = font, gid;
 	}
-
-	/* bullet */
-	if (unicode != 0x25CF)
-		return fz_encode_character_with_fallback(ctx, user_font, 0x25CF, UCDN_SCRIPT_LATIN, out_font);
 
 	return *out_font = user_font, 0;
 }
