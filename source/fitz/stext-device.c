@@ -715,31 +715,31 @@ fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, 
 	case -1: /* ignore when one unicode character maps to multiple glyphs */
 		break;
 	case 0xFB00: /* ff */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
 		break;
 	case 0xFB01: /* fi */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'i', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'i', -1, trm, 0, wmode);
 		break;
 	case 0xFB02: /* fl */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'l', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'l', -1, trm, 0, wmode);
 		break;
 	case 0xFB03: /* ffi */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'i', 0, trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'i', -1, trm, 0, wmode);
 		break;
 	case 0xFB04: /* ffl */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'l', 0, trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'l', -1, trm, 0, wmode);
 		break;
 	case 0xFB05: /* long st */
 	case 0xFB06: /* st */
-		fz_add_stext_char_imp(ctx, dev, style, 's', 0, trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 't', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 's', glyph, trm, adv, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 't', -1, trm, 0, wmode);
 		break;
 	default:
 		fz_add_stext_char_imp(ctx, dev, style, c, glyph, trm, adv, wmode);
