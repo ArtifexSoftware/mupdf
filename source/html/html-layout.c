@@ -841,11 +841,12 @@ static const char *get_node_text(fz_context *ctx, fz_html_flow *node)
 		return "";
 }
 
-static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buffer_t *hb_buf)
+static void measure_string(fz_context *ctx, fz_html_flow *node, hb_buffer_t *hb_buf)
 {
-	unsigned int i;
 	string_walker walker;
+	unsigned int i;
 	const char *s;
+	float em;
 
 	em = node->box->em;
 	node->x = 0;
@@ -1044,24 +1045,24 @@ static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w
 	box->h += line_h;
 }
 
-static void layout_flow_inline(fz_context *ctx, fz_html *box, fz_html *top, float em)
+static void layout_flow_inline(fz_context *ctx, fz_html *box, fz_html *top)
 {
 	while (box)
 	{
-		box->em = fz_from_css_number(box->style.font_size, em, em);
+		box->em = fz_from_css_number(box->style.font_size, top->em, top->em);
 		if (box->down)
-			layout_flow_inline(ctx, box->down, box, box->em);
+			layout_flow_inline(ctx, box->down, box);
 		box = box->next;
 	}
 }
 
-static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, hb_buffer_t *hb_buf)
+static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float page_h, hb_buffer_t *hb_buf)
 {
 	fz_html_flow *node, *line, *candidate;
 	float line_w, candidate_w, indent, break_w, nonbreak_w;
 	int line_align, align;
 
-	em = box->em = fz_from_css_number(box->style.font_size, em, em);
+	float em = box->em = fz_from_css_number(box->style.font_size, top->em, top->em);
 	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
 	align = top->style.text_align;
 
@@ -1082,7 +1083,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 		return;
 
 	if (box->down)
-		layout_flow_inline(ctx, box->down, box, em);
+		layout_flow_inline(ctx, box->down, box);
 
 	for (node = box->flow_head; node; node = node->next)
 	{
@@ -1094,7 +1095,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 		}
 		else
 		{
-			measure_string(ctx, node, em, hb_buf);
+			measure_string(ctx, node, hb_buf);
 		}
 	}
 
@@ -1174,7 +1175,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	}
 }
 
-static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, float vertical, hb_buffer_t *hb_buf)
+static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float page_h, float vertical, hb_buffer_t *hb_buf)
 {
 	fz_html *child;
 	int first;
@@ -1184,7 +1185,7 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 	float *border = box->border;
 	float *padding = box->padding;
 
-	em = box->em = fz_from_css_number(style->font_size, em, em);
+	float em = box->em = fz_from_css_number(style->font_size, top->em, top->em);
 
 	margin[0] = fz_from_css_number(style->margin[0], em, top->w);
 	margin[1] = fz_from_css_number(style->margin[1], em, top->w);
@@ -1222,7 +1223,7 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 	{
 		if (child->type == BOX_BLOCK)
 		{
-			vertical = layout_block(ctx, child, box, em, page_h, vertical, hb_buf);
+			vertical = layout_block(ctx, child, box, page_h, vertical, hb_buf);
 			if (first)
 			{
 				/* move collapsed parent/child top margins to parent */
@@ -1244,7 +1245,7 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float em,
 		}
 		else if (child->type == BOX_FLOW)
 		{
-			layout_flow(ctx, child, box, em, page_h, hb_buf);
+			layout_flow(ctx, child, box, page_h, hb_buf);
 			if (child->h > 0)
 			{
 				box->h += child->h;
@@ -1896,12 +1897,13 @@ fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 		unlocked = 1;
 		hb_unlock(ctx);
 
+		box->em = em;
 		box->w = w;
 		box->h = 0;
 
 		if (box->down)
 		{
-			layout_block(ctx, box->down, box, em, h, 0, hb_buf);
+			layout_block(ctx, box->down, box, h, 0, hb_buf);
 			box->h = box->down->h;
 		}
 	}
