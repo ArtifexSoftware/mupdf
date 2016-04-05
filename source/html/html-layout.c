@@ -1617,9 +1617,9 @@ static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float 
 }
 
 void
-fz_draw_html(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *inctm)
+fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *box, float page_top, float page_bot)
 {
-	fz_matrix ctm = *inctm;
+	fz_matrix local_ctm = *ctm;
 	hb_buffer_t *hb_buf = NULL;
 	int unlocked = 0;
 
@@ -1633,8 +1633,8 @@ fz_draw_html(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_d
 		hb_buf = hb_buffer_create();
 		hb_unlock(ctx);
 		unlocked = 1;
-		fz_pre_translate(&ctm, 0, -page_top);
-		draw_block_box(ctx, box, page_top, page_bot, dev, &ctm, hb_buf);
+		fz_pre_translate(&local_ctm, 0, -page_top);
+		draw_block_box(ctx, box, page_top, page_bot, dev, &local_ctm, hb_buf);
 	}
 	fz_always(ctx)
 	{

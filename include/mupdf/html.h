@@ -255,7 +255,7 @@ void fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 
 fz_html *fz_parse_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css);
 void fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em);
-void fz_draw_html(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm);
+void fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *box, float page_top, float page_bot);
 void fz_drop_html(fz_context *ctx, fz_html *box);
 
 #endif

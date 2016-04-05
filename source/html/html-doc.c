@@ -87,7 +87,7 @@ htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix 
 
 	fz_pre_translate(&local_ctm, doc->page_margin[L], doc->page_margin[T]);
 
-	fz_draw_html(ctx, doc->box, n * doc->page_h, (n+1) * doc->page_h, dev, &local_ctm);
+	fz_draw_html(ctx, dev, &local_ctm, doc->box, n * doc->page_h, (n+1) * doc->page_h);
 }
 
 static fz_page *

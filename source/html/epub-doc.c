@@ -143,7 +143,7 @@ epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 		if (n < count + cn)
 		{
 			fz_pre_translate(&local_ctm, ch->page_margin[L], ch->page_margin[T]);
-			fz_draw_html(ctx, ch->box, (n-count) * ch->page_h, (n-count+1) * ch->page_h, dev, &local_ctm);
+			fz_draw_html(ctx, dev, &local_ctm, ch->box, (n-count) * ch->page_h, (n-count+1) * ch->page_h);
 			break;
 		}
 		count += cn;
