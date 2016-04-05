@@ -52,6 +52,7 @@ HAVE_X11 ?= no
 else ifeq "$(OS)" "MACOS"
 
 HAVE_X11 ?= yes
+HAVE_PTHREADS ?= yes
 
 # Mac OS X deprecated openssl, so the default is to not include it.
 HAVE_OPENSSL ?= no
@@ -83,6 +84,7 @@ RANLIB_CMD = xcrun ranlib $@
 else ifeq "$(OS)" "Linux"
 
 HAVE_X11 ?= yes
+HAVE_PTHREADS ?= yes
 
 ifeq "$(shell pkg-config --exists libcrypto && echo yes)" "yes"
 SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL $(shell pkg-config --cflags libcrypto)
@@ -130,6 +132,7 @@ LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mfpu=neon -mcpu=cortex-a8 -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
 CROSSCOMPILE=yes
+HAVE_PTHREADS ?= yes
 endif
 
 ifeq "$(OS)" "webos-pre-cross"
@@ -222,4 +225,9 @@ endif
 ifeq "$(CROSSCOMPILE)" "yes"
 HAVE_X11 ?= no
 HAVE_GLFW ?= no
+endif
+
+ifeq "$(HAVE_PTHREADS)" "yes"
+CFLAGS += -DHAVE_PTHREADS
+LIBS += -lpthread
 endif
