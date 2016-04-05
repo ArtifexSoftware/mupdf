@@ -275,6 +275,7 @@ static int out_cs = CS_UNSET;
 static float gamma_value = 1;
 static int invert = 0;
 static int bandheight = 0;
+static int lowmemory = 0;
 
 static int errored = 0;
 static fz_stext_sheet *sheet = NULL;
@@ -333,6 +334,7 @@ static void usage(void)
 		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
 		"\t-D\tdisable use of display list\n"
 		"\t-i\tignore errors\n"
+		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
 		"\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
@@ -443,6 +445,8 @@ static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_l
 			fz_clear_pixmap_with_value(ctx, pix, 255);
 
 		dev = fz_new_draw_device(ctx, pix);
+		if (lowmemory)
+			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 		if (alphabits == 0)
 			fz_enable_device_hints(ctx, dev, FZ_DONT_INTERPOLATE_IMAGES);
 		if (list)
@@ -513,6 +517,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		{
 			list = fz_new_display_list(ctx);
 			dev = fz_new_list_device(ctx, list);
+			if (lowmemory)
+				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			fz_run_page(ctx, page, dev, &fz_identity, &cookie);
 		}
 		fz_always(ctx)
@@ -532,6 +538,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		int iscolor;
 		dev = fz_new_test_device(ctx, &iscolor, 0.02f);
+		if (lowmemory)
+			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 		fz_try(ctx)
 		{
 			if (list)
@@ -558,6 +566,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_printf(ctx, out, "<page mediabox=\"%g %g %g %g\">\n",
 					mediabox.x0, mediabox.y0, mediabox.x1, mediabox.y1);
 			dev = fz_new_trace_device(ctx, out);
+			if (lowmemory)
+				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
 				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
 			else
@@ -587,6 +597,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		{
 			text = fz_new_stext_page(ctx);
 			dev = fz_new_stext_device(ctx, sheet, text);
+			if (lowmemory)
+				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (output_format == OUT_HTML)
 				fz_disable_device_hints(ctx, dev, FZ_IGNORE_IMAGE);
 			if (list)
@@ -683,6 +695,8 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_try(ctx)
 		{
 			dev = fz_new_svg_device(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0);
+			if (lowmemory)
+				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
 				fz_run_display_list(ctx, list, dev, &ctm, &tbounds, &cookie);
 			else
@@ -1157,7 +1171,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:T:U:v")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:T:U:Lv")) != -1)
 	{
 		switch (c)
 		{
@@ -1202,6 +1216,7 @@ int mudraw_main(int argc, char **argv)
 			fprintf(stderr, "Threads not enabled in this build\n");
 			break;
 #endif
+		case 'L': lowmemory = 1; break;
 
 		case 'v': fprintf(stderr, "mudraw version %s\n", FZ_VERSION); return 1;
 		}
@@ -1224,7 +1239,7 @@ int mudraw_main(int argc, char **argv)
 		}
 	}
 
-	ctx = fz_new_context((showmemory == 0 ? NULL : &alloc_ctx), LOCKS_INIT(), FZ_STORE_DEFAULT);
+	ctx = fz_new_context((showmemory == 0 ? NULL : &alloc_ctx), LOCKS_INIT(), (lowmemory ? 1 : FZ_STORE_DEFAULT));
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");
