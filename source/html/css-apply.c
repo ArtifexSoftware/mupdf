@@ -891,20 +891,20 @@ number_from_value(fz_css_value *value, float initial, int initial_unit)
 			return make_number(x / 2, N_SCALE);
 
 		if (p[0] == 'i' && p[1] == 'n')
-			return make_number(x * 72, N_NUMBER);
+			return make_number(x * 72, N_LENGTH);
 		if (p[0] == 'c' && p[1] == 'm')
-			return make_number(x * 7200 / 254, N_NUMBER);
+			return make_number(x * 7200 / 254, N_LENGTH);
 		if (p[0] == 'm' && p[1] == 'm')
-			return make_number(x * 720 / 254, N_NUMBER);
+			return make_number(x * 720 / 254, N_LENGTH);
 		if (p[0] == 'p' && p[1] == 'c')
-			return make_number(x * 12, N_NUMBER);
+			return make_number(x * 12, N_LENGTH);
 
 		if (p[0] == 'p' && p[1] == 't')
-			return make_number(x, N_NUMBER);
+			return make_number(x, N_LENGTH);
 		if (p[0] == 'p' && p[1] == 'x')
-			return make_number(x, N_NUMBER);
+			return make_number(x, N_LENGTH);
 
-		return make_number(x, N_NUMBER);
+		return make_number(x, N_LENGTH);
 	}
 
 	if (value->type == CSS_KEYWORD)
@@ -929,14 +929,14 @@ border_width_from_property(fz_css_match *match, const char *property)
 	if (value)
 	{
 		if (!strcmp(value->data, "thin"))
-			return make_number(1, N_NUMBER);
+			return make_number(1, N_LENGTH);
 		if (!strcmp(value->data, "medium"))
-			return make_number(2, N_NUMBER);
+			return make_number(2, N_LENGTH);
 		if (!strcmp(value->data, "thick"))
-			return make_number(4, N_NUMBER);
-		return number_from_value(value, 0, N_NUMBER);
+			return make_number(4, N_LENGTH);
+		return number_from_value(value, 0, N_LENGTH);
 	}
-	return make_number(2, N_NUMBER); /* initial: 'medium' */
+	return make_number(2, N_LENGTH); /* initial: 'medium' */
 }
 
 static int
@@ -958,6 +958,7 @@ fz_from_css_number(fz_css_number number, float em, float width)
 	switch (number.unit) {
 	default:
 	case N_NUMBER: return number.value;
+	case N_LENGTH: return number.value;
 	case N_SCALE: return number.value * em;
 	case N_PERCENT: return number.value * 0.01 * width;
 	case N_AUTO: return width;
@@ -970,6 +971,7 @@ fz_from_css_number_scale(fz_css_number number, float scale, float em, float widt
 	switch (number.unit) {
 	default:
 	case N_NUMBER: return number.value * scale;
+	case N_LENGTH: return number.value;
 	case N_SCALE: return number.value * em;
 	case N_PERCENT: return number.value * 0.01 * width;
 	case N_AUTO: return width;
@@ -1193,7 +1195,7 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 		else if (!strcmp(value->data, "xx-small")) style->font_size = make_number(0.69f, N_SCALE);
 		else if (!strcmp(value->data, "larger")) style->font_size = make_number(1.2f, N_SCALE);
 		else if (!strcmp(value->data, "smaller")) style->font_size = make_number(1/1.2f, N_SCALE);
-		else style->font_size = number_from_value(value, 12, N_NUMBER);
+		else style->font_size = number_from_value(value, 12, N_LENGTH);
 	}
 	else
 	{
@@ -1223,20 +1225,20 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 
 	style->line_height = number_from_property(match, "line-height", 1.2f, N_SCALE);
 
-	style->text_indent = number_from_property(match, "text-indent", 0, N_NUMBER);
+	style->text_indent = number_from_property(match, "text-indent", 0, N_LENGTH);
 
 	style->width = number_from_property(match, "width", 0, N_AUTO);
 	style->height = number_from_property(match, "height", 0, N_AUTO);
 
-	style->margin[0] = number_from_property(match, "margin-top", 0, N_NUMBER);
-	style->margin[1] = number_from_property(match, "margin-right", 0, N_NUMBER);
-	style->margin[2] = number_from_property(match, "margin-bottom", 0, N_NUMBER);
-	style->margin[3] = number_from_property(match, "margin-left", 0, N_NUMBER);
+	style->margin[0] = number_from_property(match, "margin-top", 0, N_LENGTH);
+	style->margin[1] = number_from_property(match, "margin-right", 0, N_LENGTH);
+	style->margin[2] = number_from_property(match, "margin-bottom", 0, N_LENGTH);
+	style->margin[3] = number_from_property(match, "margin-left", 0, N_LENGTH);
 
-	style->padding[0] = number_from_property(match, "padding-top", 0, N_NUMBER);
-	style->padding[1] = number_from_property(match, "padding-right", 0, N_NUMBER);
-	style->padding[2] = number_from_property(match, "padding-bottom", 0, N_NUMBER);
-	style->padding[3] = number_from_property(match, "padding-left", 0, N_NUMBER);
+	style->padding[0] = number_from_property(match, "padding-top", 0, N_LENGTH);
+	style->padding[1] = number_from_property(match, "padding-right", 0, N_LENGTH);
+	style->padding[2] = number_from_property(match, "padding-bottom", 0, N_LENGTH);
+	style->padding[3] = number_from_property(match, "padding-left", 0, N_LENGTH);
 
 	style->color = color_from_property(match, "color", black);
 	style->background_color = color_from_property(match, "background-color", transparent);

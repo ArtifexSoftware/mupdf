@@ -133,7 +133,7 @@ enum {
 	LST_ARMENIAN, LST_GEORGIAN,
 };
 
-enum { N_NUMBER='p', N_SCALE='m', N_PERCENT='%', N_AUTO='a' };
+enum { N_NUMBER='u', N_LENGTH='p', N_SCALE='m', N_PERCENT='%', N_AUTO='a' };
 
 struct fz_css_number_s
 {
