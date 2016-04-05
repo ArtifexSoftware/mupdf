@@ -567,7 +567,7 @@ add_char_to_span(fz_context *ctx, fz_stext_span *span, int c, fz_point *p, fz_po
 }
 
 static void
-fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, int c, fz_matrix *trm, float adv, int wmode)
+fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, int c, int glyph, fz_matrix *trm, float adv, int wmode)
 {
 	int can_append = 1;
 	int add_space = 0;
@@ -576,6 +576,9 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 	fz_point delta;
 	float spacing = 0;
 	float base_offset = 0;
+
+	if (glyph < 0)
+		goto no_glyph;
 
 	if (wmode == 0)
 	{
@@ -700,45 +703,46 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 		fz_transform_point(&r, trm);
 		add_char_to_span(ctx, dev->cur_span, ' ', &p, &r, style);
 	}
+no_glyph:
 	add_char_to_span(ctx, dev->cur_span, c, &p, &q, style);
 }
 
 static void
-fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, int c, fz_matrix *trm, float adv, int wmode)
+fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, int c, int glyph, fz_matrix *trm, float adv, int wmode)
 {
 	switch (c)
 	{
 	case -1: /* ignore when one unicode character maps to multiple glyphs */
 		break;
 	case 0xFB00: /* ff */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
 		break;
 	case 0xFB01: /* fi */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'i', trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'i', 0, trm, adv/2, wmode);
 		break;
 	case 0xFB02: /* fl */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'l', trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'l', 0, trm, adv/2, wmode);
 		break;
 	case 0xFB03: /* ffi */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'i', trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'i', 0, trm, adv/3, wmode);
 		break;
 	case 0xFB04: /* ffl */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', trm, adv/3, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'l', trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'f', 0, trm, adv/3, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 'l', 0, trm, adv/3, wmode);
 		break;
 	case 0xFB05: /* long st */
 	case 0xFB06: /* st */
-		fz_add_stext_char_imp(ctx, dev, style, 's', trm, adv/2, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 't', trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 's', 0, trm, adv/2, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, 't', 0, trm, adv/2, wmode);
 		break;
 	default:
-		fz_add_stext_char_imp(ctx, dev, style, c, trm, adv, wmode);
+		fz_add_stext_char_imp(ctx, dev, style, c, glyph, trm, adv, wmode);
 		break;
 	}
 }
@@ -753,8 +757,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 	float adv;
 	float ascender = 1;
 	float descender = 0;
-	int multi;
-	int i, j, err;
+	int i, err;
 
 	if (span->len == 0)
 		return;
@@ -800,26 +803,12 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 		fz_concat(&trm, &tm, ctm);
 
 		/* Calculate bounding box and new pen position based on font metrics */
-		adv = fz_advance_glyph(ctx, font, span->items[i].gid, style->wmode);
-
-		/* Check for one glyph to many char mapping */
-		for (j = i + 1; j < span->len; j++)
-			if (span->items[j].gid >= 0)
-				break;
-		multi = j - i;
-
-		if (multi == 1)
-		{
-			fz_add_stext_char(ctx, dev, style, span->items[i].ucs, &trm, adv, span->wmode);
-		}
+		if (span->items[i].gid >= 0)
+			adv = fz_advance_glyph(ctx, font, span->items[i].gid, style->wmode);
 		else
-		{
-			for (j = 0; j < multi; j++)
-			{
-				fz_add_stext_char(ctx, dev, style, span->items[i + j].ucs, &trm, adv/multi, span->wmode);
-			}
-			i += j - 1;
-		}
+			adv = 0;
+
+		fz_add_stext_char(ctx, dev, style, span->items[i].ucs, span->items[i].gid, &trm, adv, span->wmode);
 
 		dev->lastchar = span->items[i].ucs;
 	}
