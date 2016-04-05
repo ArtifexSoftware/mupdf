@@ -9,7 +9,7 @@
 enum { T, R, B, L };
 
 static const char *default_css =
-"@page{margin:1em 0}"
+"@page{margin:2em 1em}"
 "a{color:#06C;text-decoration:underline}"
 "address{display:block;font-style:italic}"
 "b{font-weight:bold}"
@@ -1866,7 +1866,6 @@ fz_print_html(fz_context *ctx, fz_html *box, int pstyle, int level)
 void
 fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 {
-	fz_html page_box;
 	hb_buffer_t *hb_buf = NULL;
 	int unlocked = 0;
 
@@ -1880,11 +1879,15 @@ fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em)
 		hb_buf = hb_buffer_create();
 		unlocked = 1;
 		hb_unlock(ctx);
-		init_box(ctx, &page_box, DEFAULT_DIR);
-		page_box.w = w;
-		page_box.h = 0;
 
-		layout_block(ctx, box, &page_box, em, h, 0, hb_buf);
+		box->w = w;
+		box->h = 0;
+
+		if (box->down)
+		{
+			layout_block(ctx, box->down, box, em, h, 0, hb_buf);
+			box->h = box->down->h;
+		}
 	}
 	fz_always(ctx)
 	{
@@ -2090,6 +2093,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	match.count = 0;
 	fz_match_css_at_page(ctx, &match, g.css);
 	fz_apply_css_style(ctx, g.set, &box->style, &match);
+	// TODO: transfer page margins out of this hacky box
 
 	generate_boxes(ctx, xml, box, &match, 0, DEFAULT_DIR, &g);
 
