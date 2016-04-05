@@ -1270,8 +1270,14 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 	fz_text *text;
 	fz_matrix trm;
 	float color[3];
+	float prev_color[3];
 
 	/* FIXME: HB_DIRECTION_TTB? */
+
+	text = NULL;
+	prev_color[0] = 0;
+	prev_color[1] = 0;
+	prev_color[2] = 0;
 
 	for (node = box->flow_head; node; node = node->next)
 	{
@@ -1305,8 +1311,21 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			color[1] = node->style->color.g / 255.0f;
 			color[2] = node->style->color.b / 255.0f;
 
-			/* TODO: reuse text object if color is unchanged */
-			text = fz_new_text(ctx);
+			if (color[0] != prev_color[0] || color[1] != prev_color[1] || color[2] != prev_color[2])
+			{
+				if (text)
+				{
+					fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), prev_color, 1);
+					fz_drop_text(ctx, text);
+					text = NULL;
+				}
+				prev_color[0] = color[0];
+				prev_color[1] = color[1];
+				prev_color[2] = color[2];
+			}
+
+			if (!text)
+				text = fz_new_text(ctx);
 
 			if (node->bidi_level & 1)
 				x = node->x + node->w;
@@ -1378,12 +1397,15 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 
 				y += y_advance * node_scale;
 			}
-
-			fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
-			fz_drop_text(ctx, text);
 		}
 		else if (node->type == FLOW_IMAGE)
 		{
+			if (text)
+			{
+				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+				fz_drop_text(ctx, text);
+				text = NULL;
+			}
 			if (node->style->visibility == V_VISIBLE)
 			{
 				fz_matrix local_ctm = *ctm;
@@ -1392,6 +1414,13 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				fz_fill_image(ctx, dev, node->content.image, &local_ctm, 1);
 			}
 		}
+	}
+
+	if (text)
+	{
+		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+		fz_drop_text(ctx, text);
+		text = NULL;
 	}
 }
 
