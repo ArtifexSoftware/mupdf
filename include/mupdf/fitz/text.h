@@ -29,14 +29,6 @@ struct fz_text_item_s
 	int ucs; /* -1 for one ucs to many gid mappings */
 };
 
-typedef enum fz_text_direction_e
-{
-	/* There are various possible 'directions' for text */
-	FZ_DIR_UNSET = 0,	/* Unset (or Neutral). All PDF text is sent as this. */
-	FZ_DIR_R2L = 1,		/* Text is r2l */
-	FZ_DIR_L2R = 2		/* Text is l2r */
-} fz_text_direction;
-
 typedef enum fz_text_language_e
 {
 	FZ_LANG_UNSET = 0
@@ -66,8 +58,8 @@ fz_text *fz_new_text(fz_context *ctx);
 fz_text *fz_keep_text(fz_context *ctx, const fz_text *text);
 void fz_drop_text(fz_context *ctx, const fz_text *text);
 
-void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int glyph, int unicode, int wmode, int bidi_level, fz_text_direction markup_dir, fz_text_language language);
-void fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix *trm, const char *s, int wmode, int bidi_level, fz_text_direction markup_dir, fz_text_language language);
+void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int glyph, int unicode, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
+void fz_show_string(fz_context *ctx, fz_text *text, fz_font *font, fz_matrix *trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language);
 fz_rect *fz_bound_text(fz_context *ctx, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm, fz_rect *r);
 
 fz_text *fz_clone_text(fz_context *ctx, const fz_text *text);

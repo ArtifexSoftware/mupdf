@@ -108,7 +108,7 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_c
 	flow->type = type;
 	flow->expand = 0;
 	flow->bidi_level = 0;
-	flow->markup_dir = FZ_DIR_UNSET;
+	flow->markup_dir = FZ_BIDI_NEUTRAL;
 	flow->breaks_line = 0;
 	flow->style = style;
 	*top->flow_tail = flow;
@@ -390,7 +390,7 @@ static void init_box(fz_context *ctx, fz_html *box)
 
 	box->flow_head = NULL;
 	box->flow_tail = &box->flow_head;
-	box->flow_dir = FZ_DIR_UNSET;
+	box->flow_dir = FZ_BIDI_NEUTRAL;
 
 	fz_default_css_style(ctx, &box->style);
 }
@@ -641,7 +641,7 @@ typedef struct string_walker
 {
 	fz_context *ctx;
 	hb_buffer_t *hb_buf;
-	int r2l;
+	int rtl;
 	const char *start;
 	const char *end;
 	const char *s;
@@ -700,11 +700,11 @@ static int quick_ligature(fz_context *ctx, string_walker *walker, unsigned int i
 	return walker->glyph_info[i].codepoint;
 }
 
-static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int r2l, fz_font *font, int script, const char *text)
+static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int rtl, fz_font *font, int script, const char *text)
 {
 	walker->ctx = ctx;
 	walker->hb_buf = hb_buf;
-	walker->r2l = r2l;
+	walker->rtl = rtl;
 	walker->start = text;
 	walker->end = text;
 	walker->s = text;
@@ -747,7 +747,7 @@ static int walk_string(string_walker *walker)
 
 	/* Disable harfbuzz shaping if script is common or LGC and there are no opentype tables. */
 	quickshape = 0;
-	if (walker->script <= 3 && !walker->r2l && !walker->font->has_opentype)
+	if (walker->script <= 3 && !walker->rtl && !walker->font->has_opentype)
 		quickshape = 1;
 
 	hb_lock(ctx);
@@ -760,7 +760,7 @@ static int walk_string(string_walker *walker)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "freetype setting character size: %s", ft_error_string(fterr));
 
 		hb_buffer_clear_contents(walker->hb_buf);
-		hb_buffer_set_direction(walker->hb_buf, walker->r2l ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+		hb_buffer_set_direction(walker->hb_buf, walker->rtl ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
 		/* hb_buffer_set_script(hb_buf, hb_ucdn_script_translate(script)); */
 		/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
 		/* hb_buffer_set_cluster_level(hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS); */
@@ -920,7 +920,7 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 	/* Do we need to do any reordering? */
 	if (min_level != max_level || (min_level & 1))
 	{
-		/* The lowest level we swap is always a r2l one */
+		/* The lowest level we swap is always a rtl one */
 		min_level |= 1;
 		/* Each time around the loop we swap runs of fragments that have
 		 * levels >= max_level (and decrement max_level). */
@@ -1038,7 +1038,7 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
 	align = top->style.text_align;
 
-	if (box->flow_dir == FZ_DIR_R2L)
+	if (box->flow_dir == FZ_BIDI_RTL)
 	{
 		if (align == TA_LEFT)
 			align = TA_RIGHT;
@@ -1545,7 +1545,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	{
 		s += fz_chartorune(&c, s);
 		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
-		fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_DIR_UNSET, FZ_LANG_UNSET);
+		fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 		trm.e += fz_advance_glyph(ctx, font, g, 0) * box->em;
 	}
 
@@ -1915,17 +1915,11 @@ static void fragment_cb(const uint32_t *fragment,
 }
 
 static void
-detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, int baseDir, fz_html_flow *flow)
+detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_bidi_direction bidi_dir, fz_html_flow *flow)
 {
 	fz_html_flow *end = flow;
 	const char *text;
 	bidi_data data;
-	fz_bidi_direction bidi_dir = BIDI_NEUTRAL;
-
-	if (baseDir == FZ_DIR_L2R)
-		bidi_dir = BIDI_LEFT_TO_RIGHT;
-	else if (baseDir == FZ_DIR_R2L)
-		bidi_dir = BIDI_RIGHT_TO_LEFT;
 
 	while (end)
 	{

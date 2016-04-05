@@ -451,7 +451,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 				tm.f = y - v_offset;
 			}
 
-			dir = bidi_level & 1 ? FZ_DIR_R2L : FZ_DIR_L2R;
+			dir = bidi_level & 1 ? FZ_BIDI_RTL : FZ_BIDI_LTR;
 			fz_show_glyph(ctx, text, font, &tm, glyph_index, char_code, is_sideways, bidi_level, dir, FZ_LANG_UNSET);
 
 			x += advance * 0.01f * size;

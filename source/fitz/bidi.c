@@ -274,15 +274,15 @@ static fz_bidi_level base_level_from_text(fz_bidi_chartype *types, int len)
 		{
 		/* strong left */
 		case BDI_L:
-			return BIDI_LEFT_TO_RIGHT;
+			return FZ_BIDI_LTR;
 
 		/* strong right */
 		case BDI_R:
 		case BDI_AL:
-			return BIDI_RIGHT_TO_LEFT;
+			return FZ_BIDI_RTL;
 		}
 	}
-	return BIDI_LEFT_TO_RIGHT;
+	return FZ_BIDI_LTR;
 }
 
 static fz_bidi_direction direction_from_type(fz_bidi_chartype type)
@@ -291,14 +291,14 @@ static fz_bidi_direction direction_from_type(fz_bidi_chartype type)
 	{
 	case BDI_L:
 	case BDI_EN:
-		return BIDI_LEFT_TO_RIGHT;
+		return FZ_BIDI_LTR;
 
 	case BDI_R:
 	case BDI_AL:
-		return BIDI_RIGHT_TO_LEFT;
+		return FZ_BIDI_RTL;
 
 	default:
-		return BIDI_NEUTRAL;
+		return FZ_BIDI_NEUTRAL;
 	}
 }
 
@@ -320,11 +320,11 @@ classify_quoted_blocks(const uint32_t *text,
 	{
 		switch (direction_from_type(types[i]))
 		{
-		case BIDI_LEFT_TO_RIGHT:
+		case FZ_BIDI_LTR:
 			ltrFound = TRUE;
 			break;
 
-		case BIDI_RIGHT_TO_LEFT:
+		case FZ_BIDI_RTL:
 			rtlFound = TRUE;
 			break;
 
@@ -428,13 +428,13 @@ create_levels(fz_context *ctx,
 
 		classify_characters(text, types, len, flags);
 
-		if (*baseDir != BIDI_LEFT_TO_RIGHT && *baseDir != BIDI_RIGHT_TO_LEFT)
+		if (*baseDir != FZ_BIDI_LTR && *baseDir != FZ_BIDI_RTL)
 		{
 			/* Derive the base level from the text and
 			 * update *baseDir in case the caller wants to know.
 			 */
 			baseLevel = base_level_from_text(types, len);
-			*baseDir = ODD(baseLevel)==1 ? BIDI_RIGHT_TO_LEFT : BIDI_LEFT_TO_RIGHT;
+			*baseDir = ODD(baseLevel)==1 ? FZ_BIDI_RTL : FZ_BIDI_LTR;
 		}
 		else
 		{
@@ -453,7 +453,7 @@ create_levels(fz_context *ctx,
 			{
 				if (text[i]=='\t')
 				{
-					types[i] = (*baseDir == BIDI_RIGHT_TO_LEFT) ? BDI_R : BDI_L;
+					types[i] = (*baseDir == FZ_BIDI_RTL) ? BDI_R : BDI_L;
 				}
 			}
 		}

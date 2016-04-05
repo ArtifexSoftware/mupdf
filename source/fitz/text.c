@@ -37,7 +37,7 @@ fz_drop_text(fz_context *ctx, const fz_text *textc)
 }
 
 static fz_text_span *
-fz_new_text_span(fz_context *ctx, fz_font *font, int wmode, int bidi_level, fz_text_direction markup_dir, fz_text_language language, const fz_matrix *trm)
+fz_new_text_span(fz_context *ctx, fz_font *font, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language, const fz_matrix *trm)
 {
 	fz_text_span *span = fz_malloc_struct(ctx, fz_text_span);
 	span->font = fz_keep_font(ctx, font);
@@ -52,7 +52,7 @@ fz_new_text_span(fz_context *ctx, fz_font *font, int wmode, int bidi_level, fz_t
 }
 
 static fz_text_span *
-fz_add_text_span(fz_context *ctx, fz_text *text, fz_font *font, int wmode, int bidi_level, fz_text_direction markup_dir, fz_text_language language, const fz_matrix *trm)
+fz_add_text_span(fz_context *ctx, fz_text *text, fz_font *font, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language, const fz_matrix *trm)
 {
 	if (!text->tail)
 	{
@@ -86,7 +86,7 @@ fz_grow_text_span(fz_context *ctx, fz_text_span *span, int n)
 }
 
 void
-fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int gid, int ucs, int wmode, int bidi_level, fz_text_direction markup_dir, fz_text_language lang)
+fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *trm, int gid, int ucs, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language lang)
 {
 	fz_text_span *span;
 
@@ -105,7 +105,7 @@ fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matrix *tr
 }
 
 void
-fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix *trm, const char *s, int wmode, int bidi_level, fz_text_direction markup_dir, fz_text_language language)
+fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix *trm, const char *s, int wmode, int bidi_level, fz_bidi_direction markup_dir, fz_text_language language)
 {
 	fz_font *font;
 	int gid, ucs;

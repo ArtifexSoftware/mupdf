@@ -17,6 +17,7 @@ extern "C" {
 #include "mupdf/fitz/string.h"
 #include "mupdf/fitz/tree.h"
 #include "mupdf/fitz/ucdn.h"
+#include "mupdf/fitz/bidi.h"
 #include "mupdf/fitz/xml.h"
 
 /* I/O */
@@ -64,8 +65,6 @@ extern "C" {
 #include "mupdf/fitz/output-ps.h"
 #include "mupdf/fitz/output-svg.h"
 #include "mupdf/fitz/output-tga.h"
-
-#include "mupdf/fitz/bidi.h"
 
 #ifdef __cplusplus
 }

@@ -23,9 +23,9 @@
 
 typedef enum fz_bidi_direction_e
 {
-	BIDI_LEFT_TO_RIGHT = 0,
-	BIDI_RIGHT_TO_LEFT = 1,
-	BIDI_NEUTRAL = 2
+	FZ_BIDI_LTR = 0,
+	FZ_BIDI_RTL = 1,
+	FZ_BIDI_NEUTRAL = 2
 }
 fz_bidi_direction;
 
@@ -36,16 +36,8 @@ typedef enum fz_bidi_flags_e
 }
 fz_bidi_flags;
 
-typedef uint8_t fz_bidi_chartype;
-typedef int fz_bidi_level; /*   Note: Max level is 125 */
-
-enum
-{
-	BIDI_LEVEL_MAX = 125 /* Updated for 6.3.0 */
-};
-
 /**
- * Prototype for callback function supplied to Bidi_fragmentText.
+ * Prototype for callback function supplied to fz_bidi_fragment_text.
  *
  * @param	fragment	first character in fragment
  * @param	fragmentLen	number of characters in fragment
@@ -76,8 +68,7 @@ typedef void (fz_bidi_fragment_callback)(const uint32_t *fragment,
  *
  * @param[in] text	start of Unicode sequence
  * @param[in] textlen   number of Unicodes to analyse
- * @param[in] baseDir   direction of paragraph (specify BIDI_NEUTRAL
- *				to force auto-detection)
+ * @param[in] baseDir   direction of paragraph (specify FZ_BIDI_NEUTRAL to force auto-detection)
  * @param[in] callback  function to be called for each fragment
  * @param[in] arg	data to be passed to the callback function
  * @param[in] flags     flags to control operation (see fz_bidi_flags above)
@@ -90,4 +81,4 @@ void fz_bidi_fragment_text(fz_context *ctx,
 			void *arg,
 			int flags);
 
-#endif /* FITZ_BIDI_H */
+#endif

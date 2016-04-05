@@ -64,6 +64,14 @@ enum
 	BDI_N = BDI_ON	/* alias, where ON, WS and S are treated the same */
 };
 
+typedef int fz_bidi_level; /* Note: Max level is 125 */
+typedef uint8_t fz_bidi_chartype;
+
+enum
+{
+	BIDI_LEVEL_MAX = 125 /* Updated for 6.3.0 */
+};
+
 void fz_bidi_resolve_neutrals(fz_bidi_level baselevel, fz_bidi_chartype *pcls, const fz_bidi_level *plevel, int cch);
 void fz_bidi_resolve_implicit(const fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch);
 void fz_bidi_resolve_weak(fz_context *ctx, fz_bidi_level baselevel, fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch);
