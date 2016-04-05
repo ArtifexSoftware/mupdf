@@ -64,7 +64,6 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 	epub_chapter *ch;
 	int count = 0;
 
-	printf("epub: laying out chapters.\n");
 	for (ch = doc->spine; ch; ch = ch->next)
 	{
 		ch->start = count;
@@ -80,8 +79,6 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 	}
 
 	epub_update_link_dests(ctx, doc, doc->outline);
-
-	printf("epub: done.\n");
 }
 
 static int
@@ -344,8 +341,6 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	if (!full_path)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find root file in EPUB");
 
-	printf("epub: found root: %s\n", full_path);
-
 	fz_dirname(base_uri, full_path, sizeof base_uri);
 
 	/* parse OPF to find NCX and spine */
@@ -372,7 +367,6 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 
 	if (path_from_idref(ncx, manifest, base_uri, fz_xml_att(spine, "toc"), sizeof ncx))
 	{
-		printf("epub: found outline: %s\n", ncx);
 		epub_parse_ncx(ctx, doc, ncx);
 	}
 
@@ -382,7 +376,6 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	{
 		if (path_from_idref(s, manifest, base_uri, fz_xml_att(itemref, "idref"), sizeof s))
 		{
-			printf("epub: found spine %s\n", s);
 			if (!head)
 				head = tail = epub_parse_chapter(ctx, doc, s);
 			else
@@ -392,8 +385,6 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	}
 
 	doc->spine = head;
-
-	printf("epub: done.\n");
 
 	fz_drop_xml(ctx, container_xml);
 	fz_drop_xml(ctx, content_opf);
