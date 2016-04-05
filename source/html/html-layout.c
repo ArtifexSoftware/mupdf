@@ -1003,11 +1003,13 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		case VA_SUPER:
 			va = node->em * -0.3f;
 			break;
+		case VA_TOP:
 		case VA_TEXT_TOP:
-			va = -baseline + node->h;
+			va = -baseline + node->em * 0.8;
 			break;
+		case VA_BOTTOM:
 		case VA_TEXT_BOTTOM:
-			va = -baseline + line_h;
+			va = -baseline + line_h - node->em * 0.2;
 			break;
 		}
 
