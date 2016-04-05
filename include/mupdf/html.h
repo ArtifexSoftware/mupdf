@@ -185,7 +185,7 @@ struct fz_html_s
 	float em;
 	fz_html *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
-	int flow_dir;
+	fz_bidi_direction markup_dir;
 	fz_css_style style;
 	int list_item;
 	int is_first_flow; /* for text-indent */
@@ -210,20 +210,17 @@ struct fz_html_flow_s
 	/* Whether this should expand during justification */
 	unsigned int expand : 1;
 
+	/* Whether this node is currently taken as a line break */
+	unsigned int breaks_line : 1;
+
 	/* Direction setting for text - UAX#9 says 125 is the max */
 	unsigned int bidi_level : 7;
-
-	/* Direction for text set in original document */
-	unsigned int markup_dir : 2;
 
 	/* Whether the markup specifies a given language. */
 	unsigned int markup_lang : 8;
 
 	/* The script detected by the bidi code. */
 	unsigned int script : 8;
-
-	/* Whether this node breaks the line, determines character to render */
-	unsigned int breaks_line : 1;
 
 	float x, y, w, h, em;
 	fz_css_style *style;
