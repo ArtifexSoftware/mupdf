@@ -104,51 +104,51 @@ static void fz_drop_html_flow(fz_context *ctx, fz_html_flow *flow)
 	}
 }
 
-static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, int type)
+static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box, int type)
 {
 	fz_html_flow *flow = fz_pool_alloc(ctx, pool, sizeof *flow);
 	flow->type = type;
 	flow->expand = 0;
 	flow->bidi_level = 0;
 	flow->breaks_line = 0;
-	flow->style = style;
+	flow->box = inline_box;
 	*top->flow_tail = flow;
 	top->flow_tail = &flow->next;
 	return flow;
 }
 
-static void add_flow_space(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
+static void add_flow_space(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_SPACE);
+	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_SPACE);
 	flow->expand = 1;
 }
 
-static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
+static void add_flow_break(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box)
 {
-	(void)add_flow(ctx, pool, top, style, FLOW_BREAK);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_BREAK);
 }
 
-static void add_flow_sbreak(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
+static void add_flow_sbreak(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box)
 {
-	(void)add_flow(ctx, pool, top, style, FLOW_SBREAK);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_SBREAK);
 }
 
-static void add_flow_shyphen(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style)
+static void add_flow_shyphen(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box)
 {
-	(void)add_flow(ctx, pool, top, style, FLOW_SHYPHEN);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_SHYPHEN);
 }
 
-static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, const char *a, const char *b)
+static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box, const char *a, const char *b)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_WORD);
+	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_WORD);
 	flow->content.text = fz_pool_alloc(ctx, pool, b - a + 1);
 	memcpy(flow->content.text, a, b - a);
 	flow->content.text[b - a] = 0;
 }
 
-static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_css_style *style, fz_image *img)
+static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box, fz_image *img)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, style, FLOW_IMAGE);
+	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_IMAGE);
 	flow->content.image = fz_keep_image(ctx, img);
 }
 
@@ -179,18 +179,18 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 	return new_flow;
 }
 
-static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_css_style *style, struct genstate *g)
+static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_html *inline_box, struct genstate *g)
 {
 	static const char *space = " ";
-	int bsp = style->white_space & WS_ALLOW_BREAK_SPACE;
+	int bsp = inline_box->style.white_space & WS_ALLOW_BREAK_SPACE;
 	if (g->emit_white)
 	{
 		if (!g->at_bol)
 		{
 			if (bsp)
-				add_flow_space(ctx, pool, flow, style);
+				add_flow_space(ctx, pool, flow, inline_box);
 			else
-				add_flow_word(ctx, pool, flow, style, space, space+1);
+				add_flow_word(ctx, pool, flow, inline_box, space, space+1);
 		}
 		g->emit_white = 0;
 	}
@@ -254,7 +254,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 				text += 2;
 			else
 				text += 1;
-			add_flow_break(ctx, pool, flow, &box->style);
+			add_flow_break(ctx, pool, flow, box);
 			g->at_bol = 1;
 		}
 		else if (iswhite(*text))
@@ -273,9 +273,9 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 			{
 				// TODO: tabs
 				if (bsp)
-					add_flow_space(ctx, pool, flow, &box->style);
+					add_flow_space(ctx, pool, flow, box);
 				else
-					add_flow_word(ctx, pool, flow, &box->style, space, space+1);
+					add_flow_word(ctx, pool, flow, box, space, space+1);
 				++text;
 			}
 			g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a space */
@@ -285,7 +285,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 			const char *prev, *mark = text;
 			int c;
 
-			flush_space(ctx, pool, flow, &box->style, g);
+			flush_space(ctx, pool, flow, box, g);
 
 			if (g->at_bol)
 				g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ;
@@ -297,8 +297,8 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 				if (c == 0xAD) /* soft hyphen */
 				{
 					if (mark != prev)
-						add_flow_word(ctx, pool, flow, &box->style, mark, prev);
-					add_flow_shyphen(ctx, pool, flow, &box->style);
+						add_flow_word(ctx, pool, flow, box, mark, prev);
+					add_flow_shyphen(ctx, pool, flow, box);
 					mark = text;
 					g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a soft hyphen */
 				}
@@ -317,8 +317,8 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 						if (brk == '_')
 						{
 							if (mark != prev)
-								add_flow_word(ctx, pool, flow, &box->style, mark, prev);
-							add_flow_sbreak(ctx, pool, flow, &box->style);
+								add_flow_word(ctx, pool, flow, box, mark, prev);
+							add_flow_sbreak(ctx, pool, flow, box);
 							mark = prev;
 						}
 
@@ -327,7 +327,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 				}
 			}
 			if (mark != text)
-				add_flow_word(ctx, pool, flow, &box->style, mark, text);
+				add_flow_word(ctx, pool, flow, box, mark, text);
 
 			g->at_bol = 0;
 		}
@@ -353,15 +353,15 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, cons
 	fz_var(buf);
 	fz_var(img);
 
-	flush_space(ctx, pool, flow, &box->style, g);
+	flush_space(ctx, pool, flow, box, g);
 
 	fz_try(ctx)
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
 		img = fz_new_image_from_buffer(ctx, buf);
-		add_flow_sbreak(ctx, pool, flow, &box->style);
-		add_flow_image(ctx, pool, flow, &box->style, img);
-		add_flow_sbreak(ctx, pool, flow, &box->style);
+		add_flow_sbreak(ctx, pool, flow, box);
+		add_flow_image(ctx, pool, flow, box, img);
+		add_flow_sbreak(ctx, pool, flow, box);
 	}
 	fz_always(ctx)
 	{
@@ -372,7 +372,7 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, cons
 	{
 		const char *alt = "[image]";
 		fz_warn(ctx, "html: cannot add image src='%s'", src);
-		add_flow_word(ctx, pool, flow, &box->style, alt, alt + 7);
+		add_flow_word(ctx, pool, flow, box, alt, alt + 7);
 	}
 
 	g->at_bol = 0;
@@ -536,7 +536,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 					fz_html *flow = top;
 					while (flow->type != BOX_FLOW)
 						flow = flow->up;
-					add_flow_break(ctx, g->pool, flow, &top->style);
+					add_flow_break(ctx, g->pool, flow, top);
 				}
 				else
 				{
@@ -847,14 +847,14 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buf
 	string_walker walker;
 	const char *s;
 
-	em = fz_from_css_number(node->style->font_size, em, em);
+	em = node->box->em;
 	node->x = 0;
 	node->y = 0;
 	node->w = 0;
-	node->h = fz_from_css_number_scale(node->style->line_height, em, em, em);
+	node->h = fz_from_css_number_scale(node->box->style.line_height, em, em, em);
 
 	s = get_node_text(ctx, node);
-	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->style->font, node->script, s);
+	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style.font, node->script, s);
 	while (walk_string(&walker))
 	{
 		int x = 0;
@@ -862,8 +862,6 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, float em, hb_buf
 			x += walker.glyph_pos[i].x_advance;
 		node->w += x * em / walker.scale;
 	}
-
-	node->em = em;
 }
 
 static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline)
@@ -878,8 +876,8 @@ static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline
 		}
 		else
 		{
-			float a = node->em * 0.8;
-			float d = node->em * 0.2;
+			float a = node->box->em * 0.8;
+			float d = node->box->em * 0.2;
 			if (a > max_a) max_a = a;
 			if (d > max_d) max_d = d;
 		}
@@ -991,25 +989,25 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		node->x = x;
 		x += w;
 
-		switch (node->style->vertical_align)
+		switch (node->box->style.vertical_align)
 		{
 		default:
 		case VA_BASELINE:
 			va = 0;
 			break;
 		case VA_SUB:
-			va = node->em * 0.2f;
+			va = node->box->em * 0.2f;
 			break;
 		case VA_SUPER:
-			va = node->em * -0.3f;
+			va = node->box->em * -0.3f;
 			break;
 		case VA_TOP:
 		case VA_TEXT_TOP:
-			va = -baseline + node->em * 0.8;
+			va = -baseline + node->box->em * 0.8;
 			break;
 		case VA_BOTTOM:
 		case VA_TEXT_BOTTOM:
-			va = -baseline + line_h - node->em * 0.2;
+			va = -baseline + line_h - node->box->em * 0.2;
 			break;
 		}
 
@@ -1046,13 +1044,24 @@ static void flush_line(fz_context *ctx, fz_html *box, float page_h, float page_w
 	box->h += line_h;
 }
 
+static void layout_flow_inline(fz_context *ctx, fz_html *box, fz_html *top, float em)
+{
+	while (box)
+	{
+		box->em = fz_from_css_number(box->style.font_size, em, em);
+		if (box->down)
+			layout_flow_inline(ctx, box->down, box, box->em);
+		box = box->next;
+	}
+}
+
 static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, float page_h, hb_buffer_t *hb_buf)
 {
 	fz_html_flow *node, *line, *candidate;
 	float line_w, candidate_w, indent, break_w, nonbreak_w;
 	int line_align, align;
 
-	em = fz_from_css_number(box->style.font_size, em, em);
+	em = box->em = fz_from_css_number(box->style.font_size, em, em);
 	indent = box->is_first_flow ? fz_from_css_number(top->style.text_indent, em, top->w) : 0;
 	align = top->style.text_align;
 
@@ -1071,6 +1080,9 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float em, f
 
 	if (!box->flow_head)
 		return;
+
+	if (box->down)
+		layout_flow_inline(ctx, box->down, box, em);
 
 	for (node = box->flow_head; node; node = node->next)
 	{
@@ -1283,6 +1295,8 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 
 	for (node = box->flow_head; node; node = node->next)
 	{
+		fz_css_style *style = &node->box->style;
+
 		if (node->type == FLOW_IMAGE)
 		{
 			if (node->y >= page_bot || node->y + node->h <= page_top)
@@ -1306,12 +1320,12 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				continue;
 			if (node->type == FLOW_SHYPHEN && !node->breaks_line)
 				continue;
-			if (node->style->visibility != V_VISIBLE)
+			if (style->visibility != V_VISIBLE)
 				continue;
 
-			color[0] = node->style->color.r / 255.0f;
-			color[1] = node->style->color.g / 255.0f;
-			color[2] = node->style->color.b / 255.0f;
+			color[0] = style->color.r / 255.0f;
+			color[1] = style->color.g / 255.0f;
+			color[2] = style->color.b / 255.0f;
 
 			if (color[0] != prev_color[0] || color[1] != prev_color[1] || color[2] != prev_color[2])
 			{
@@ -1335,18 +1349,18 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				x = node->x;
 			y = node->y;
 
-			trm.a = node->em;
+			trm.a = node->box->em;
 			trm.b = 0;
 			trm.c = 0;
-			trm.d = -node->em;
+			trm.d = -node->box->em;
 			trm.e = x;
 			trm.f = y;
 
 			s = get_node_text(ctx, node);
-			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->style->font, node->script, s);
+			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, s);
 			while (walk_string(&walker))
 			{
-				float node_scale = node->em / walker.scale;
+				float node_scale = node->box->em / walker.scale;
 				unsigned int i;
 				int c, k, n;
 
@@ -1408,7 +1422,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 				fz_drop_text(ctx, text);
 				text = NULL;
 			}
-			if (node->style->visibility == V_VISIBLE)
+			if (style->visibility == V_VISIBLE)
 			{
 				fz_matrix local_ctm = *ctm;
 				fz_pre_translate(&local_ctm, node->x, node->y);

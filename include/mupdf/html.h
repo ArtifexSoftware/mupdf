@@ -222,8 +222,8 @@ struct fz_html_flow_s
 	/* The script detected by the bidi code. */
 	unsigned int script : 8;
 
-	float x, y, w, h, em;
-	fz_css_style *style;
+	float x, y, w, h;
+	fz_html *box; /* for style and em */
 	union {
 		char *text;
 		fz_image *image;
