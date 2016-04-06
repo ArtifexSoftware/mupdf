@@ -1,72 +1,80 @@
 To build/debug android viewer.
 
-1) Download the android sdk, and install it. These instructions have been
-written with r14 (the latest version at time of writing) of the SDK in mind;
-other versions may give problems. On windows r14 unpacked as:
+NOTE: Using Android Studio.
 
-   C:\Program Files (x86)\Android\android-sdk
+The easiest way to get the required SDK and NDK tools is to download
+and install Android Studio. While this build process does not make
+use of Android Studio directly, it does neatly package the tools you
+need into one easily maintainable installation. Our intention is to
+move further toward Android Studio integration in the future.
 
-on Macos an older version installed as:
+1) You will need the android SDK and NDK.
 
-   /Library/android-sdk-mac_x86
+The easiest way to get this is to download and install Android Studio
+(see note above). If you prefer, then you can probably use a direct
+download of the SDK/NDK instead.
 
-on Linux install it as:
+Within Android Studio, choose: 'Configure' then 'SDK Manager' then
+'Appearance and Behaviour', 'System Settings', 'Android SDK'. This
+will show you the install location.
 
-   mkdir ~/android-sdk
-   cd ~/android-sdk
-   tar ~/Downloads/android-sdk_r20.0.3-linux.tgz
+The Android Studio SDK unpacked as:
 
-Whatever directory it unpacks to, ensure that both the 'tools' and
-'platform-tools' directories inside it have been added to your PATH.
+ C:\Users\UserName\AppData\Local\Android\sdk
 
-2) Download the android ndk, and unpack it. These instructions were written
-with NDK r6b (the latest version at the time of writing) in mind, but the
-build has now been tweaked to work with r10b. Other versions may give problems.
+on Windows. On MacOS it installed in:
 
-It's important that you use the correct NDK for the target platform. If you're
-targeting a 32-bit platform (such as "ARM EABI v7a" or "Intel x86 Arm") then
-you MUST use the 32-bit target NDK. If you get UnsatisfiedLinkError when
-opening a document in MuPDF, then you've tried to use the 64-bit target NDK
-with a 32-bit target!
+   /Users/UserName/Library/Android/sdk
 
-On windows I unpacked it as:
+In the 'SDK Plaforms' tab, ensure that at least API 16 is
+downloaded. I have a selection of later APIs too (17, 19, 22),
+but these may not be required.
 
-   C:\android-ndk-r10b
+In the 'SDK Tools' tab, ensure that 'Android NDK' has been
+selected.
 
-on Macos an older version unpacked as:
+Allow the system to update to ensure that everything is downloaded
+correctly.
 
-   /Library/android-ndk-r5
+Whatever directory it unpacks to, ensure that the 'tools',
+'platform-tools' and 'ndk-bundle' directories inside it have been
+added to your PATH.
 
-on Linux as:
+If you use a direct download of the ndk, then it's important that
+you use the correct NDK for the target platform. If you're
+targeting a 32-bit platform (such as "ARM EABI v7a" or "Intel x86
+Arm") then you MUST use the 32-bit target NDK. If you get
+UnsatisfiedLinkError when opening a document in MuPDF, then you've
+tried to use the 64-bit target NDK with a 32-bit target!
 
-   mkdir ~/android-ndk
-   cd ~/android-ndk
-   tar jxvf ~/Downloads/android-ndk32-r10b-linux-x86.tar.bz2
+Similary, with a direct download, it is very important that you
+should unpack it to a directory with no spaces in the name! (Don't
+be tempted to put it in C:\Program Files etc)
 
-It is very important that you should unpack it to a directory with no
-spaces in the name! (Don't be tempted to put it in C:\Program Files etc)
+2) Previous versions of the ndk have required Cygwin to work on
+windows. If you try to use a non Android Studio version, you will
+need to install Cygwin 1.7 or greater now.
 
-Ensure that that directory is also added to your PATH.
+3) In version r5 of the ndk, when running under cygwin, there were
+bugs to do with the automatic conversion of dependencies from DOS
+format paths to cygwin format paths. The 2 fixes can be found in:
 
-3) On windows, to use the ndk, you *must* be running under cygwin. This means
-you need to install Cygwin 1.7 or greater now.
+  <http://groups.google.com/group/android-ndk/msg/b385e47e1484c2d4>
 
-[ In version r5 of the ndk, when running under cygwin, there were    ]
-[ bugs to do with the automatic conversion of dependencies from DOS  ]
-[ format paths to cygwin format paths. The 2 fixes can be found in:  ]
-[                                                                    ]
-[  <http://groups.google.com/group/android-ndk/msg/b385e47e1484c2d4> ]
-[                                                                    ]
-[ Use the latest version and there should not be a problem.          ]
+Use the version that comes with Android Studio, and there should
+not be a problem.
 
-4) If the SDK has not popped up a window already, bring up a shell, and run
-'android' (or android.bat on cygwin/windows). You should now have a window
-with a graphical gui for the sdk. From here you can install the different SDK
-components for the different flavours of android. Download them all -
-bandwidth and disk space are cheap, right? Make sure you get at least
-the API level 11 as this is the current dependency for mupdf.
+4) To test builds, you will either a real physical device, or
+an emulated device. The SDK includes an emulator with various
+different images. If you do not wish to set up an emulator,
+skip this step.
 
-5) In new versions of the GUI there is a 'Tools' menu from which you can
+From Android Studios 'Android SDK' configuration pane (see section
+1 above), there is a "Launch Standalone SDK Manager" link. In
+standalone sdk/ndk installations this can be reached by running
+'android' from the command line. This opens the SDK configuration GUI.
+
+In new versions of the GUI there is a 'Tools' menu from which you can
 select 'Manage AVDs...'. In old versions, go to the Virtual Devices entry
 on the right hand side. You need to create yourself an emulator image to
 use. Click 'New...' on the right hand side and a window will appear. Fill
@@ -82,24 +90,27 @@ in the entries as follows:
 Click 'Create AVD' (on old versions you may have to wait for a minute or
 so while it is prepared. Now you can exit the GUI.
 
-6) You will need a copy of the JDK installed. See
+5) You will need a copy of the JDK installed. See
 <http://www.oracle.com/technetwork/java/javase/downloads/>. When this
 installs, ensure that JAVA_HOME is set to point to the installation
 directory.
 
-7) You will need a copy of Apache ANT installed.
+6) You will need a copy of Apache ANT installed.
 See <http://ant.apache.org/>. Ensure that ANT_HOME is set to point to
 the top level directory, and that ANT_HOME/bin is on the PATH.
 
-8) Now we are ready to build mupdf viewer for Android. Check out a copy of MuPDF
-(but you've done that already, cos you're reading this, right?).
+7) Now we are ready to build mupdf viewer for Android. Check out a copy
+of MuPDF (but you've done that already, cos you're reading this, right?).
 
-9) You will also need a copy of mupdf's thirdparty libraries. If you are
+8) You will also need a copy of mupdf's thirdparty libraries. If you are
 using git, make sure to do a git submodule update --init from the top of
 the build tree. Older versions packaged this source code in a .zip-file
 (see the source code link on http://mupdf.com/). Unpack the contents of
 this into a 'thirdparty' directory created within the mupdf directory
 (i.e. at the same level as fitz, pdf, android etc).
+
+9) Read step 10 of these instructions carefully. This is where
+people skim reading invariably have problems because they skip it.
 
 10) Finally, you will need a copy of a 'generated' directory. This is not
 currently available to download.
@@ -121,16 +132,24 @@ have to keep multiple versions on the website. We assume that anyone
 capable of building for android is capable of doing a normal hosted
 build.
 
-On windows (where you are using cygwin), or on linux/macos, this can be
-as simple as running 'make generate' in the top level directory.
+On linux/macos, this can be as simple as running 'make generate' in the
+top level directory. On Windows it's a matter of running the visual
+studio solution, or of using msys or cygwin.
 
-11) Change into mupdf's android/viewer directory. Copy the
-android/viewer/local.properties.sample file to be android/viewer/local.properties and
-change the sdk path there as appropriate. This should be the only bit of
-localisation you need to do.
+11) Change into mupdf's platform/android/viewer directory. Copy:
 
-12) Change into the android/viewer directory (note, the android/viewer directory, NOT
-the android/viewer/jni directory!), and execute (in a Cygwin window on Windows!):
+  platform/android/viewer/local.properties.sample
+
+to be:
+
+  platform/android/viewer/local.properties
+
+and change the sdk path there as appropriate. This should be the only
+bit of localisation you need to do.
+
+12) Change into the platform/android/viewer directory (note,
+the platform/android/viewer directory, NOT the
+platform/android/viewer/jni directory!), and execute:
 
        ndk-build
 
@@ -157,15 +176,17 @@ or on windows under cygwin:
 
 This should build the java wrapper.
 
-14) Now start the emulator by executing:
+14) Now, either attach your physical device, or start the emulator
+by executing:
 
        emulator -avd FroyoEm
 
-This will take a while to full start up (be patient).
+The emulator will take a while to start up fully (be patient).
 
-15) We now need to give the demo file something to chew on, so let's copy
-a file into the SD card image of the emulator (this should only need to be
-done once). With the emulator running type:
+15) We now need to give the demo file something to chew on, so let's
+copy a file into the SD card image of the device (this should only
+need to be done once). With the device attached (or emulator
+running) type:
 
        adb push ../../MyTests/pdf_reference17.pdf /mnt/sdcard/Download/test.pdf
 
@@ -180,8 +201,8 @@ machine, and  under Windows, should start c:/ even if invoked from cygwin)
 ('ant.bat debug install' on Windows) and that will copy MuPDF into the
 emulator where you can run it from the launchpad screen.
 
-17) To see debug messages from the emulator (including stdout/stderr from
-our app), execute:
+17) To see debug messages from the device (physical or emulated)
+(including stdout/stderr from our app), execute:
 
        adb logcat
 
