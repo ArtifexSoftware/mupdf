@@ -314,7 +314,7 @@ unsigned char undelta(unsigned char delta, unsigned char *ptr, int len)
 }
 
 static fz_pixmap *
-gprf_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h, int *l2factor)
+gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h, int *l2factor)
 {
 	/* The file contains RGB + up to FZ_MAX_SEPARATIONS. Hence the
 	 * "3 + FZ_MAX_SEPARATIONS" usage in all the arrays below. */
@@ -331,6 +331,14 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, int w, int h, int *l2factor)
 	unsigned char *out = fz_pixmap_samples(ctx, pix);
 
 	fz_var(file);
+
+	if (area)
+	{
+		area->x0 = 0;
+		area->y0 = 0;
+		area->x1 = image->base.w;
+		area->y1 = image->base.h;
+	}
 
 	fz_try(ctx)
 	{

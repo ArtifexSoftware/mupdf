@@ -24,17 +24,23 @@ typedef struct fz_image_s fz_image;
 
 	image: The image to retrieve a pixmap from.
 
-	w: The desired width (in pixels). This may be completely ignored, but
-	may serve as an indication of a suitable subsample factor to use for
-	image types that support this.
+	subarea: The subarea of the image that we actually care about (or NULL
+	to indicate the whole image).
 
-	h: The desired height (in pixels). This may be completely ignored, but
-	may serve as an indication of a suitable subsample factor to use for
-	image types that support this.
+	trans: Optional, unless subarea is given. If given, then on entry this is
+	the transform that will be applied to the complete image. It should be
+	updated on exit to the transform to apply to the given subarea of the
+	image. This is used to calculate the desired width/height for subsampling.
+
+	w: If non-NULL, a pointer to an int to be updated on exit to the
+	width (in pixels) that the scaled output will cover.
+
+	h: If non-NULL, a pointer to an int to be updated on exit to the
+	height (in pixels) that the scaled output will cover.
 
 	Returns a non NULL pixmap pointer. May throw exceptions.
 */
-fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, int w, int h);
+fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *trans, int *w, int *h);
 
 /*
 	fz_drop_image: Drop a reference to an image.
@@ -58,7 +64,7 @@ fz_image *fz_new_image_from_data(fz_context *ctx, unsigned char *data, int len);
 fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
 fz_image *fz_new_image_from_file(fz_context *ctx, const char *path);
 void fz_drop_image_imp(fz_context *ctx, fz_storable *image);
-fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, int indexed, int l2factor);
+fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, fz_irect *subarea, int indexed, int l2factor);
 fz_pixmap *fz_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);
 
 struct fz_image_s
@@ -67,7 +73,7 @@ struct fz_image_s
 	int w, h, n, bpc;
 	fz_image *mask;
 	fz_colorspace *colorspace;
-	fz_pixmap *(*get_pixmap)(fz_context *, fz_image *, int w, int h, int *l2factor);
+	fz_pixmap *(*get_pixmap)(fz_context *, fz_image *, fz_irect *subarea, int w, int h, int *l2factor);
 	int colorkey[FZ_MAX_COLORS * 2];
 	float decode[FZ_MAX_COLORS * 2];
 	int imagemask;

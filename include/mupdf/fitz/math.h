@@ -294,6 +294,21 @@ fz_matrix *fz_scale(fz_matrix *m, float sx, float sy);
 fz_matrix *fz_pre_scale(fz_matrix *m, float sx, float sy);
 
 /*
+	fz_post_scale: Scale a matrix by postmultiplication.
+
+	m: Pointer to the matrix to scale
+
+	sx, sy: Scaling factors along the X- and Y-axes. A scaling
+	factor of 1.0 will not cause any scaling along the relevant
+	axis.
+
+	Returns m (updated).
+
+	Does not throw exceptions.
+*/
+fz_matrix *fz_post_scale(fz_matrix *m, float sx, float sy);
+
+/*
 	fz_shear: Create a shearing matrix.
 
 	The returned matrix is of the form [ 1 sy sx 1 0 0 ].

@@ -78,6 +78,12 @@ struct fz_store_hash_s
 		} pi;
 		struct
 		{
+			const void *ptr;
+			int i;
+			fz_irect r;
+		} pir;
+		struct
+		{
 			int id;
 			float m[4];
 		} im;

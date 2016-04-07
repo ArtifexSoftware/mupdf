@@ -330,7 +330,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 
 				/* Currently, set to maintain resolution; should we consider
 				 * subsampling here according to desired output res? */
-				pixmap = fz_get_pixmap_from_image(ctx, image, image->w, image->h);
+				pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 				colorspace = pixmap->colorspace; /* May be different to image->colorspace! */
 				n = (pixmap->n == 1 ? 1 : pixmap->n - 1);
 				size = image->w * image->h * n;

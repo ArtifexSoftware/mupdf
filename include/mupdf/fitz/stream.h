@@ -136,6 +136,17 @@ void fz_seek(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence);
 int fz_read(fz_context *ctx, fz_stream *stm, unsigned char *data, int len);
 
 /*
+	fz_skip: Read from a stream discarding data.
+
+	stm: The stream to read from.
+
+	len: The number of bytes to read.
+
+	Returns the number of bytes read. May throw exceptions.
+*/
+int fz_skip(fz_context *ctx, fz_stream *stm, int len);
+
+/*
 	fz_read_all: Read all of a stream into a buffer.
 
 	stm: The stream to read from

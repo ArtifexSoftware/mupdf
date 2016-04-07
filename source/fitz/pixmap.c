@@ -1123,9 +1123,9 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 }
 
 fz_buffer *
-fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, int w, int h)
+fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image)
 {
-	return png_from_pixmap(ctx, fz_get_pixmap_from_image(ctx, image, image->w, image->h), 1);
+	return png_from_pixmap(ctx, fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL), 1);
 }
 
 fz_buffer *

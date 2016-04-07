@@ -27,6 +27,26 @@ fz_read(fz_context *ctx, fz_stream *stm, unsigned char *buf, int len)
 	return count;
 }
 
+static unsigned char skip_buf[4096];
+
+int fz_skip(fz_context *ctx, fz_stream *stm, int len)
+{
+	int count, l, total = 0;
+
+	while (len)
+	{
+		l = len;
+		if (l > sizeof(skip_buf))
+			l = sizeof(skip_buf);
+		count = fz_read(ctx, stm, skip_buf, l);
+		total += count;
+		if (count < l)
+			break;
+		len -= count;
+	}
+	return total;
+}
+
 fz_buffer *
 fz_read_all(fz_context *ctx, fz_stream *stm, int initial)
 {

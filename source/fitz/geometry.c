@@ -59,6 +59,18 @@ fz_pre_scale(fz_matrix *mat, float sx, float sy)
 }
 
 fz_matrix *
+fz_post_scale(fz_matrix *mat, float sx, float sy)
+{
+	mat->a *= sx;
+	mat->b *= sy;
+	mat->c *= sx;
+	mat->d *= sy;
+	mat->e *= sx;
+	mat->f *= sy;
+	return mat;
+}
+
+fz_matrix *
 fz_shear(fz_matrix *mat, float h, float v)
 {
 	mat->a = 1; mat->b = v;

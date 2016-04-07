@@ -743,7 +743,7 @@ svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image);
 			fz_printf(ctx, out, "image/png;base64,");
 			send_data_base64(ctx, out, buf);
 			fz_drop_buffer(ctx, buf);
@@ -830,7 +830,7 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image);
 			fz_printf(ctx, out, "image/png;base64,");
 			send_data_base64(ctx, out, buf);
 			fz_drop_buffer(ctx, buf);
@@ -874,7 +874,7 @@ svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 		break;
 	default:
 		{
-			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image, image->w, image->h);
+			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image);
 			fz_printf(ctx, out, "image/png;base64,");
 			send_data_base64(ctx, out, buf);
 			fz_drop_buffer(ctx, buf);

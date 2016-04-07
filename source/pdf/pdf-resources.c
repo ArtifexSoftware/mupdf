@@ -28,7 +28,7 @@ res_image_get_md5(fz_context *ctx, fz_image *image, unsigned char *digest)
 	fz_pixmap *pixmap;
 	fz_md5 state;
 
-	pixmap = fz_get_pixmap_from_image(ctx, image, 0, 0);
+	pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
 	fz_md5_init(&state);
 	fz_md5_update(&state, pixmap->samples, pixmap->w * pixmap->h * pixmap->n);
 	fz_md5_final(&state, digest);

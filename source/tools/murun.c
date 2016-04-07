@@ -1881,12 +1881,10 @@ static void ffi_Image_toPixmap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_image *image = js_touserdata(J, 0, "fz_image");
-	int w = js_isnumber(J, 1) ? js_tonumber(J, 1) : image->w;
-	int h = js_isnumber(J, 2) ? js_tonumber(J, 2) : image->h;
 	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
-		pixmap = fz_get_pixmap_from_image(ctx, image, w, h);
+		pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 	fz_catch(ctx)
 		rethrow(J);
 

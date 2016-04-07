@@ -1106,6 +1106,8 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	fz_colorspace *model = state->dest->colorspace;
 	fz_irect clip;
 	fz_matrix local_ctm = *ctm;
+	fz_matrix inverse;
+	fz_irect src_area;
 
 	fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
 
@@ -1120,10 +1122,42 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	if (image->w == 0 || image->h == 0)
 		return;
 
-	dx = sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b);
-	dy = sqrtf(local_ctm.c * local_ctm.c + local_ctm.d * local_ctm.d);
+	/* ctm maps the image (expressed as the unit square) onto the
+	 * destination device. Reverse that to get a mapping from
+	 * the destination device to the source pixels. */
+	if (fz_try_invert_matrix(&inverse, &local_ctm))
+	{
+		/* Not invertible. Could just bale? Use the whole image
+		 * for now. */
+		src_area.x0 = 0;
+		src_area.x1 = image->w;
+		src_area.y0 = 0;
+		src_area.y1 = image->h;
+	}
+	else
+	{
+		float exp;
+		fz_rect rect;
+		fz_irect sane;
+		/* We want to scale from image coords, not from unit square */
+		fz_post_scale(&inverse, image->w, image->h);
+		/* Are we scaling up or down? exp < 1 means scaling down. */
+		exp = fz_matrix_max_expansion(&inverse);
+		fz_rect_from_irect(&rect, &clip);
+		fz_transform_rect(&rect, &inverse);
+		/* Allow for support requirements for scalers. */
+		fz_expand_rect(&rect, fz_max(exp, 1) * 4);
+		fz_irect_from_rect(&src_area, &rect);
+		sane.x0 = 0;
+		sane.y0 = 0;
+		sane.x1 = image->w;
+		sane.y1 = image->h;
+		fz_intersect_irect(&src_area, &sane);
+		if (fz_is_empty_irect(&src_area))
+			return;
+	}
 
-	pixmap = fz_get_pixmap_from_image(ctx, image, dx, dy);
+	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
 	orig_pixmap = pixmap;
 
 	/* convert images with more components (cmyk->rgb) before scaling */
@@ -1214,6 +1248,8 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_colorspace *model = state->dest->colorspace;
 	fz_irect clip;
 	fz_matrix local_ctm = *ctm;
+	fz_matrix inverse;
+	fz_irect src_area;
 
 	fz_pixmap_bbox(ctx, state->dest, &clip);
 	fz_intersect_irect(&clip, &state->scissor);
@@ -1221,9 +1257,42 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	if (image->w == 0 || image->h == 0)
 		return;
 
-	dx = sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b);
-	dy = sqrtf(local_ctm.c * local_ctm.c + local_ctm.d * local_ctm.d);
-	pixmap = fz_get_pixmap_from_image(ctx, image, dx, dy);
+	/* ctm maps the image (expressed as the unit square) onto the
+	 * destination device. Reverse that to get a mapping from
+	 * the destination device to the source pixels. */
+	if (fz_try_invert_matrix(&inverse, &local_ctm))
+	{
+		/* Not invertible. Could just bale? Use the whole image
+		 * for now. */
+		src_area.x0 = 0;
+		src_area.x1 = image->w;
+		src_area.y0 = 0;
+		src_area.y1 = image->h;
+	}
+	else
+	{
+		float exp;
+		fz_rect rect;
+		fz_irect sane;
+		/* We want to scale from image coords, not from unit square */
+		fz_post_scale(&inverse, image->w, image->h);
+		/* Are we scaling up or down? exp < 1 means scaling down. */
+		exp = fz_matrix_max_expansion(&inverse);
+		fz_rect_from_irect(&rect, &clip);
+		fz_transform_rect(&rect, &inverse);
+		/* Allow for support requirements for scalers. */
+		fz_expand_rect(&rect, fz_max(exp, 1) * 4);
+		fz_irect_from_rect(&src_area, &rect);
+		sane.x0 = 0;
+		sane.y0 = 0;
+		sane.x1 = image->w;
+		sane.y1 = image->h;
+		fz_intersect_irect(&src_area, &sane);
+		if (fz_is_empty_irect(&src_area))
+			return;
+	}
+
+	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
 	orig_pixmap = pixmap;
 
 	fz_try(ctx)
@@ -1321,12 +1390,9 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
 	}
 
-	dx = sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b);
-	dy = sqrtf(local_ctm.c * local_ctm.c + local_ctm.d * local_ctm.d);
-
 	fz_try(ctx)
 	{
-		pixmap = fz_get_pixmap_from_image(ctx, image, dx, dy);
+		pixmap = fz_get_pixmap_from_image(ctx, image, NULL, &local_ctm, &dx, &dy);
 		orig_pixmap = pixmap;
 
 		state[1].mask = mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox);
