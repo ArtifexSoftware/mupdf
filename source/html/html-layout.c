@@ -56,6 +56,8 @@ static const char *default_css =
 "thead{display:table-header-group}"
 "tr{display:table-row}"
 "ul{display:block;list-style-type:disc;margin:1em 0;padding:0 0 0 30pt}"
+"ul ul{list-style-type:circle}"
+"ul ul ul{list-style-type:square}"
 "var{font-style:italic}"
 "svg{display:none}"
 ;
