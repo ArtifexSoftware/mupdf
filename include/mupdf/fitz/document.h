@@ -106,6 +106,7 @@ struct fz_document_handler_s
 
 extern fz_document_handler pdf_document_handler;
 extern fz_document_handler xps_document_handler;
+extern fz_document_handler svg_document_handler;
 extern fz_document_handler cbz_document_handler;
 extern fz_document_handler img_document_handler;
 extern fz_document_handler tiff_document_handler;

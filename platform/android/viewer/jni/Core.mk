@@ -41,6 +41,7 @@ LOCAL_C_INCLUDES := \
 	$(MY_ROOT)/source/fitz \
 	$(MY_ROOT)/source/pdf \
 	$(MY_ROOT)/source/xps \
+	$(MY_ROOT)/source/svg \
 	$(MY_ROOT)/source/cbz \
 	$(MY_ROOT)/source/img \
 	$(MY_ROOT)/source/tiff \
@@ -62,6 +63,7 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/fitz/*.c) \
 	$(wildcard $(MY_ROOT)/source/pdf/*.c) \
 	$(wildcard $(MY_ROOT)/source/xps/*.c) \
+	$(wildcard $(MY_ROOT)/source/svg/*.c) \
 	$(wildcard $(MY_ROOT)/source/cbz/*.c) \
 	$(wildcard $(MY_ROOT)/source/gprf/*.c) \
 	$(wildcard $(MY_ROOT)/source/html/*.c) \

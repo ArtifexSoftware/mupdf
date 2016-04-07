@@ -60,6 +60,7 @@ RM_CMD = $(QUIET_RM) rm -f $@
 ALL_DIR := $(OUT)/fitz
 ALL_DIR += $(OUT)/pdf $(OUT)/pdf/js
 ALL_DIR += $(OUT)/xps
+ALL_DIR += $(OUT)/svg
 ALL_DIR += $(OUT)/cbz
 ALL_DIR += $(OUT)/img
 ALL_DIR += $(OUT)/tiff
@@ -74,11 +75,13 @@ ALL_DIR += $(OUT)/fonts
 FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
 PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
 XPS_HDR := include/mupdf/xps.h
+SVG_HDR := include/mupdf/svg.h
 HTML_HDR := include/mupdf/html.h
 
 FITZ_SRC := $(wildcard source/fitz/*.c)
 PDF_SRC := $(wildcard source/pdf/*.c)
 XPS_SRC := $(wildcard source/xps/*.c)
+SVG_SRC := $(wildcard source/svg/*.c)
 CBZ_SRC := $(wildcard source/cbz/*.c)
 HTML_SRC := $(wildcard source/html/*.c)
 GPRF_SRC := $(wildcard source/gprf/*.c)
@@ -86,12 +89,14 @@ GPRF_SRC := $(wildcard source/gprf/*.c)
 FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
 PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h
 XPS_SRC_HDR := $(wildcard source/xps/*.h)
+SVG_SRC_HDR := $(wildcard source/svg/*.h)
 HTML_SRC_HDR := $(wildcard source/html/*.h)
 GPRF_SRC_HDR := $(wildcard source/gprf/*.h)
 
 FITZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(FITZ_SRC))))
 PDF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(PDF_SRC))))
 XPS_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(XPS_SRC))))
+SVG_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(SVG_SRC))))
 CBZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(CBZ_SRC))))
 HTML_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(HTML_SRC))))
 GPRF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(GPRF_SRC))))
@@ -105,6 +110,7 @@ endif
 $(FITZ_OBJ) : $(FITZ_HDR) $(FITZ_SRC_HDR)
 $(PDF_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PDF_SRC_HDR)
 $(XPS_OBJ) : $(FITZ_HDR) $(XPS_HDR) $(XPS_SRC_HDR)
+$(SVG_OBJ) : $(FITZ_HDR) $(SVG_HDR) $(SVG_SRC_HDR)
 $(CBZ_OBJ) : $(FITZ_HDR)
 $(HTML_OBJ) : $(FITZ_HDR) $(HTML_HDR) $(HTML_SRC_HDR)
 $(GPRF_OBJ) : $(FITZ_HDR) $(GPRF_HDR) $(GPRF_SRC_HDR)
@@ -144,7 +150,7 @@ $(FONT_GEN_URW) : $(FONT_BIN_URW)
 MUPDF_LIB = $(OUT)/libmupdf.a
 THIRD_LIB = $(OUT)/libmupdfthird.a
 
-MUPDF_OBJ := $(FITZ_OBJ) $(FONT_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
+MUPDF_OBJ := $(FITZ_OBJ) $(FONT_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(SVG_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
 THIRD_OBJ := $(FREETYPE_OBJ) $(HARFBUZZ_OBJ) $(JBIG2DEC_OBJ) $(JPEG_OBJ) $(MUJS_OBJ) $(OPENJPEG_OBJ) $(ZLIB_OBJ)
 
 $(MUPDF_LIB) : $(MUPDF_OBJ)

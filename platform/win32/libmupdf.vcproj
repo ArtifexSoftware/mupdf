@@ -668,6 +668,26 @@
 			</File>
 		</Filter>
 		<Filter
+			Name="svg"
+			>
+			<File
+				RelativePath="..\..\source\svg\svg-color.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\svg\svg-doc.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\svg\svg-parse.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\svg\svg-run.c"
+				>
+			</File>
+		</Filter>
+		<Filter
 			Name="xps"
 			>
 			<File
