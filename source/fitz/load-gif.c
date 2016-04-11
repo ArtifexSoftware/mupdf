@@ -23,8 +23,6 @@ struct info
 	int has_transparency;
 	unsigned int transparent;
 	unsigned char *mask;
-
-	unsigned char *samples;
 };
 
 /* default color table, where the first two entries are black and white */
@@ -204,26 +202,27 @@ gif_read_lct(fz_context *ctx, struct info *info, unsigned char *p, unsigned char
 }
 
 static void
-gif_read_line(fz_context *ctx, struct info *info, const unsigned char *ct, unsigned int y, unsigned char *sp)
+gif_read_line(fz_context *ctx, struct info *info, unsigned char *dest, const unsigned char *ct, unsigned int y, unsigned char *sp)
 {
 	unsigned int index = (info->image_top + y) * info->width + info->image_left;
-	unsigned char *dp = &info->samples[index * 3];
+	unsigned char *dp = &dest[index * 4];
 	unsigned char *mp = &info->mask[index];
 	unsigned int x, k;
 
-	for (x = 0; x < info->image_width; x++, sp++, mp++, dp += 3)
+	for (x = 0; x < info->image_width; x++, sp++, mp++, dp += 4)
 		if (!info->has_transparency || *sp != info->transparent)
 		{
 			*mp = 0x02;
 			for (k = 0; k < 3; k++)
 				dp[k] = ct[*sp * 3 + k];
+			dp[3] = 255;
 		}
 		else if (*mp == 0x01)
 			*mp = 0x00;
 }
 
 static unsigned char *
-gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *p, unsigned char *end)
+gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned char *p, unsigned char *end)
 {
 	fz_stream *stm, *lzwstm = NULL;
 	unsigned int mincodesize, y;
@@ -261,17 +260,17 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *p, unsigned cha
 		if (info->image_interlaced)
 		{
 			for (y = 0; y < info->image_height; y += 8, sp += info->image_width)
-				gif_read_line(ctx, info, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct, y, sp);
 			for (y = 4; y < info->image_height; y += 8, sp += info->image_width)
-				gif_read_line(ctx, info, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct, y, sp);
 			for (y = 2; y < info->image_height; y += 4, sp += info->image_width)
-				gif_read_line(ctx, info, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct, y, sp);
 			for (y = 1; y < info->image_height; y += 2, sp += info->image_width)
-				gif_read_line(ctx, info, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct, y, sp);
 		}
 		else
 			for (y = 0; y < info->image_height; y++, sp += info->image_width)
-				gif_read_line(ctx, info, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct, y, sp);
 	}
 	fz_always(ctx)
 	{
@@ -401,8 +400,22 @@ gif_read_ae(fz_context *ctx, struct info *info, unsigned char *p, unsigned char 
 }
 
 static void
+gif_mask_transparency(fz_context *ctx, fz_pixmap *image, struct info *info)
+{
+	unsigned char *mp = info->mask;
+	unsigned char *dp = image->samples;
+	unsigned int x, y;
+
+	for (y = 0; y < info->height; y++)
+		for (x = 0; x < info->width; x++, mp++, dp += image->n)
+			if (*mp == 0x00)
+				dp[image->n - 1] = 0;
+}
+
+static fz_pixmap *
 gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, int only_metadata)
 {
+	fz_pixmap *pix;
 	unsigned char *end = p + total;
 
 	memset(info, 0x00, sizeof (*info));
@@ -414,32 +427,34 @@ gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 	p = gif_read_lsd(ctx, info, p, end);
 
 	if (only_metadata)
-		return;
+		return NULL;
 
-	info->samples = fz_malloc(ctx, info->width * info->height * 3);
-	info->mask = fz_calloc(ctx, info->width * info->height, 1);
-
-	/* Read optional global color table */
-	if (info->has_gct)
-	{
-		unsigned char *bp, *dp = info->samples;
-		unsigned int x, y, k;
-
-		p = gif_read_gct(ctx, info, p, end);
-		bp = &info->gct[info->gct_background * 3];
-
-		memset(info->mask, 0x01, info->width * info->height);
-
-		for (y = 0; y < info->height; y++)
-			for (x = 0; x < info->width; x++, dp += 3)
-				for (k = 0; k < 3; k++)
-					dp[k] = bp[k];
-	}
-
-	fz_var(info->lct);
+	pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), info->width, info->height);
 
 	fz_try(ctx)
 	{
+		info->mask = fz_calloc(ctx, info->width * info->height, 1);
+
+		/* Read optional global color table */
+		if (info->has_gct)
+		{
+			unsigned char *bp, *dp = pix->samples;
+			unsigned int x, y, k;
+
+			p = gif_read_gct(ctx, info, p, end);
+			bp = &info->gct[info->gct_background * 3];
+
+			memset(info->mask, 0x01, info->width * info->height);
+
+			for (y = 0; y < info->height; y++)
+				for (x = 0; x < info->width; x++, dp += 4)
+				{
+					for (k = 0; k < 3; k++)
+						dp[k] = bp[k];
+					dp[3] = 255;
+				}
+		}
+
 		while (1)
 		{
 			/* Read block indicator */
@@ -489,7 +504,7 @@ gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 					p = gif_read_lct(ctx, info, p, end);
 
 				/* Read table based image data */
-				p = gif_read_tbid(ctx, info, p, end);
+				p = gif_read_tbid(ctx, info, pix->samples, p, end);
 
 				/* Graphic control extension applies only to the graphic rendering block following it */
 				info->transparent = 0;
@@ -507,31 +522,23 @@ gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 			else
 				fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported block indicator %02x in gif image", p[0]);
 		}
+
+		gif_mask_transparency(ctx, pix, info);
+		fz_premultiply_pixmap(ctx, pix);
 	}
 	fz_always(ctx)
 	{
+		fz_free(ctx, info->mask);
 		fz_free(ctx, info->lct);
 		fz_free(ctx, info->gct);
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, info->mask);
-		fz_free(ctx, info->samples);
+		fz_drop_pixmap(ctx, pix);
 		fz_rethrow(ctx);
 	}
-}
 
-static void
-gif_mask_transparency(fz_context *ctx, fz_pixmap *image, struct info *info)
-{
-	unsigned char *mp = info->mask;
-	unsigned char *dp = image->samples;
-	unsigned int x, y;
-
-	for (y = 0; y < info->height; y++)
-		for (x = 0; x < info->width; x++, mp++, dp += image->n)
-			if (*mp == 0x00)
-				dp[image->n - 1] = 0;
+	return pix;
 }
 
 fz_pixmap *
@@ -540,30 +547,9 @@ fz_load_gif(fz_context *ctx, unsigned char *p, int total)
 	fz_pixmap *image;
 	struct info gif;
 
-	gif_read_image(ctx, &gif, p, total, 0);
-
-	fz_try(ctx)
-	{
-		image = fz_new_pixmap(ctx, fz_device_rgb(ctx), gif.width, gif.height);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow_message(ctx, "out of memory loading gif image");
-	}
-
+	image = gif_read_image(ctx, &gif, p, total, 0);
 	image->xres = gif.xres;
 	image->yres = gif.yres;
-
-	fz_unpack_tile(ctx, image, gif.samples, 3, 8, gif.width * 3, 0);
-
-	if (gif.mask)
-	{
-		gif_mask_transparency(ctx, image, &gif);
-		fz_premultiply_pixmap(ctx, image);
-	}
-
-	fz_free(ctx, gif.samples);
-	fz_free(ctx, gif.mask);
 
 	return image;
 }
