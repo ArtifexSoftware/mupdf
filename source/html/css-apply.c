@@ -1144,6 +1144,21 @@ visibility_from_property(fz_css_match *match)
 	return V_VISIBLE;
 }
 
+static int
+page_break_from_property(fz_css_match *match, char *prop)
+{
+	fz_css_value *value = value_from_property(match, prop);
+	if (value)
+	{
+		if (!strcmp(value->data, "auto")) return PB_AUTO;
+		else if (!strcmp(value->data, "always")) return PB_ALWAYS;
+		else if (!strcmp(value->data, "avoid")) return PB_AVOID;
+		else if (!strcmp(value->data, "left")) return PB_LEFT;
+		else if (!strcmp(value->data, "right")) return PB_RIGHT;
+	}
+	return PB_AUTO;
+}
+
 void
 fz_default_css_style(fz_context *ctx, fz_css_style *style)
 {
@@ -1170,6 +1185,8 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 
 	style->visibility = visibility_from_property(match);
 	style->white_space = white_space_from_property(match);
+	style->page_break_before = page_break_from_property(match, "page-break-before");
+	style->page_break_after = page_break_from_property(match, "page-break-after");
 
 	value = value_from_property(match, "text-align");
 	if (value)

@@ -1177,6 +1177,25 @@ static void layout_flow(fz_context *ctx, fz_html *box, fz_html *top, float page_
 	}
 }
 
+static int layout_block_page_break(fz_context *ctx, fz_html *box, float page_h, float vertical, int page_break)
+{
+	if (page_break == PB_ALWAYS || page_break == PB_LEFT || page_break == PB_RIGHT)
+	{
+		float avail = page_h - fmodf(box->y + box->h - vertical, page_h);
+		int number = (box->y + box->h + (page_h * 0.1f)) / page_h;
+		if (avail > 0 && avail < page_h)
+		{
+			box->h += avail - vertical;
+			if (page_break == PB_LEFT && (number & 1) == 0) /* right side pages are even */
+				box->h += page_h;
+			if (page_break == PB_RIGHT && (number & 1) == 1) /* left side pages are odd */
+				box->h += page_h;
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float page_h, float vertical, hb_buffer_t *hb_buf)
 {
 	fz_html *child;
@@ -1203,6 +1222,11 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float pag
 	border[1] = style->border_style[1] ? fz_from_css_number(style->border_width[1], em, top->w) : 0;
 	border[2] = style->border_style[2] ? fz_from_css_number(style->border_width[2], em, top->w) : 0;
 	border[3] = style->border_style[3] ? fz_from_css_number(style->border_width[3], em, top->w) : 0;
+
+	/* TODO: remove 'vertical' margin adjustments across automatic page breaks */
+
+	if (layout_block_page_break(ctx, top, page_h, vertical, style->page_break_before))
+		vertical = 0;
 
 	box->x = top->x + margin[L] + border[L] + padding[L];
 	box->w = top->w - (margin[L] + margin[R] + border[L] + border[R] + padding[L] + padding[R]);
@@ -1262,6 +1286,12 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float pag
 	{
 		box->h += fz_from_css_number_scale(style->line_height, em, em, em);
 		vertical = 0;
+	}
+
+	if (layout_block_page_break(ctx, box, page_h, 0, style->page_break_after))
+	{
+		vertical = 0;
+		margin[B] = 0;
 	}
 
 	if (box->h == 0)
