@@ -1735,7 +1735,11 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbu
 					pdf_drop_obj(ctx, obj);
 				}
 				else
+				{
 					entry->obj = obj;
+					fz_drop_buffer(ctx, entry->stm_buf);
+					entry->stm_buf = NULL;
+				}
 				if (numbuf[i] == target)
 					ret_entry = entry;
 			}

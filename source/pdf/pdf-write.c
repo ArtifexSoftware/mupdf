@@ -892,6 +892,8 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 				pdf_xref_entry *e = pdf_get_xref_entry(ctx, doc, num);
 				pdf_drop_obj(ctx, e->obj);
 				e->obj = NULL;
+				fz_drop_buffer(ctx, e->stm_buf);
+				e->stm_buf = NULL;
 			}
 		}
 
