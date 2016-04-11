@@ -84,15 +84,15 @@ struct info
 	int bitcount;
 	int compression;
 	int colors;
-	int rmask, gmask, bmask;
+	int rmask, gmask, bmask, amask;
 	unsigned char palette[256 * 3];
 
 	int extramasks;
 	int palettetype;
 	unsigned char *samples;
 
-	int rshift, gshift, bshift;
-	int rbits, gbits, bbits;
+	int rshift, gshift, bshift, ashift;
+	int rbits, gbits, bbits, abits;
 };
 
 #define read8(p) ((p)[0])
@@ -239,10 +239,12 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 			info->rmask = 0x00007c00;
 			info->gmask = 0x000003e0;
 			info->bmask = 0x0000001f;
+			info->amask = 0x00000000;
 		} else if (info->bitcount == 32) {
 			info->rmask = 0x00ff0000;
 			info->gmask = 0x0000ff00;
 			info->bmask = 0x000000ff;
+			info->amask = 0x00000000;
 		}
 	}
 	if (size >= 52)
@@ -254,6 +256,15 @@ bmp_read_bitmap_info_header(fz_context *ctx, struct info *info, unsigned char *p
 			info->rmask = read32(p + 40);
 			info->gmask = read32(p + 44);
 			info->bmask = read32(p + 48);
+		}
+	}
+	if (size >= 56)
+	{
+		if (end - p < 56)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in bitmap info header in bmp image");
+
+		if (info->compression == BI_BITFIELDS) {
+			info->amask = read32(p + 52);
 		}
 	}
 
@@ -661,7 +672,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 	unsigned char *ssp, *ddp;
 	int bitcount, width, height;
 	int sstride, dstride;
-	int rmult, gmult, bmult;
+	int rmult, gmult, bmult, amult;
 	int x, y;
 
 	if (info->compression == BI_RLE8)
@@ -708,6 +719,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 	rmult = info->rbits == 4 ? 546 : (info->rbits == 5 ? 264 : 130);
 	gmult = info->gbits == 4 ? 546 : (info->gbits == 5 ? 264 : 130);
 	bmult = info->bbits == 4 ? 546 : (info->bbits == 5 ? 264 : 130);
+	amult = info->abits == 4 ? 546 : (info->abits == 5 ? 264 : 130);
 
 	for (y = 0; y < height; y++)
 	{
@@ -723,7 +735,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				*dp++ = (sample & info->rmask) >> info->rshift;
 				*dp++ = (sample & info->gmask) >> info->gshift;
 				*dp++ = (sample & info->bmask) >> info->bshift;
-				*dp++ = 255;
+				*dp++ = info->abits == 0 ? 255 : (sample & info->amask) >> info->ashift;
 				sp += 4;
 			}
 			break;
@@ -744,10 +756,11 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 				int r = (sample & info->rmask) >> info->rshift;
 				int g = (sample & info->gmask) >> info->gshift;
 				int b = (sample & info->bmask) >> info->bshift;
+				int a = (sample & info->amask) >> info->ashift;
 				*dp++ = (r * rmult) >> 5;
 				*dp++ = (g * gmult) >> 5;
 				*dp++ = (b * bmult) >> 5;
-				*dp++ = 255;
+				*dp++ = info->abits == 0 ? 255 : (a * amult) >> 5;
 				sp += 2;
 			}
 			break;
@@ -818,6 +831,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 	}
 
 	fz_free(ctx, decompressed);
+	fz_premultiply_pixmap(ctx, pix);
 	return pix;
 }
 
@@ -854,6 +868,7 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 	maskinfo(info->rmask, &info->rshift, &info->rbits);
 	maskinfo(info->gmask, &info->gshift, &info->gbits);
 	maskinfo(info->bmask, &info->bshift, &info->bbits);
+	maskinfo(info->amask, &info->ashift, &info->abits);
 
 	if (info->width <= 0 || info->width > SHRT_MAX || info->height <= 0 || info->height > SHRT_MAX)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "dimensions (%d x %d) out of range in bmp image",
