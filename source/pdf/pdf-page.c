@@ -78,7 +78,7 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 				}
 				else
 				{
-					if (type ? !pdf_name_eq(ctx, type, PDF_NAME_Page) != 0 : !pdf_dict_get(ctx, kid, PDF_NAME_MediaBox))
+					if (type ? !pdf_name_eq(ctx, type, PDF_NAME_Page) : !pdf_dict_get(ctx, kid, PDF_NAME_MediaBox))
 						fz_warn(ctx, "non-page object in page tree (%s)", pdf_to_name(ctx, type));
 					if (*skip == 0)
 					{
@@ -165,7 +165,7 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 	int total = 0;
 	pdf_obj *parent, *parent2;
 
-	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, node, PDF_NAME_Type), PDF_NAME_Page) != 0)
+	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, node, PDF_NAME_Type), PDF_NAME_Page))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid page object");
 
 	parent2 = parent = pdf_dict_get(ctx, node, PDF_NAME_Parent);

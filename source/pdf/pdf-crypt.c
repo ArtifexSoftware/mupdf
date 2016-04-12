@@ -74,7 +74,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		pdf_drop_crypt(ctx, crypt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unspecified encryption handler");
 	}
-	if (!pdf_name_eq(ctx, PDF_NAME_Standard, obj) != 0)
+	if (!pdf_name_eq(ctx, PDF_NAME_Standard, obj))
 	{
 		pdf_drop_crypt(ctx, crypt);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown encryption handler: '%s'", pdf_to_name(ctx, obj));
