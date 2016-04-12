@@ -758,6 +758,7 @@ undelta_aa(fz_context *ctx, unsigned char * restrict out, int * restrict in, int
 {
 	int d = 0;
 	const int scale = fz_aa_scale;
+	(void)scale; /* Avoid warnings in some builds */
 
 	while (n--)
 	{

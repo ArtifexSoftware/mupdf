@@ -878,6 +878,7 @@ pdf_load_hail_mary_font(fz_context *ctx, pdf_document *doc)
 
 	existing = fz_store_item(ctx, &hail_mary_store_type, fontdesc, fontdesc->size, &hail_mary_store_type);
 	assert(existing == NULL);
+	(void)existing; /* Silence warning in release builds */
 
 	return fontdesc;
 }
