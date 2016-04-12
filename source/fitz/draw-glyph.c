@@ -284,7 +284,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 	key.b = subpix_ctm.b * 65536;
 	key.c = subpix_ctm.c * 65536;
 	key.d = subpix_ctm.d * 65536;
-	key.aa = fz_aa_level(ctx);
+	key.aa = fz_text_aa_level(ctx);
 
 	fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
 	hash = do_hash((unsigned char *)&key, sizeof(key)) % GLYPH_HASH_LEN;
@@ -428,7 +428,7 @@ fz_render_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, 
 	{
 		if (font->ft_face)
 		{
-			val = fz_render_ft_glyph_pixmap(ctx, font, gid, &subpix_ctm, fz_aa_level(ctx));
+			val = fz_render_ft_glyph_pixmap(ctx, font, gid, &subpix_ctm, fz_text_aa_level(ctx));
 		}
 		else if (font->t3procs)
 		{

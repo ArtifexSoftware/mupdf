@@ -213,17 +213,48 @@ void *fz_user_context(fz_context *ctx);
 
 /*
 	fz_aa_level: Get the number of bits of antialiasing we are
-	using. Between 0 and 8.
+	using (for graphics). Between 0 and 8.
 */
 int fz_aa_level(fz_context *ctx);
 
 /*
-	fz_set_aa_level: Set the number of bits of antialiasing we should use.
+	fz_set_aa_level: Set the number of bits of antialiasing we should
+	use (for both text and graphics).
 
 	bits: The number of bits of antialiasing to use (values are clamped
 	to within the 0 to 8 range).
 */
 void fz_set_aa_level(fz_context *ctx, int bits);
+
+/*
+	fz_text_aa_level: Get the number of bits of antialiasing we are
+	using for text. Between 0 and 8.
+*/
+int fz_text_aa_level(fz_context *ctx);
+
+/*
+	fz_set_text_aa_level: Set the number of bits of antialiasing we
+	should use for text.
+
+	bits: The number of bits of antialiasing to use (values are clamped
+	to within the 0 to 8 range).
+*/
+void fz_set_text_aa_level(fz_context *ctx, int bits);
+
+/*
+	fz_graphics_aa_level: Get the number of bits of antialiasing we are
+	using for graphics. Between 0 and 8.
+*/
+int fz_graphics_aa_level(fz_context *ctx);
+
+/*
+	fz_set_graphics_aa_level: Set the number of bits of antialiasing we
+	should use for graphics.
+
+	bits: The number of bits of antialiasing to use (values are clamped
+	to within the 0 to 8 range).
+*/
+void fz_set_graphics_aa_level(fz_context *ctx, int bits);
 
 /*
 	fz_user_css: Get the user stylesheet source text.

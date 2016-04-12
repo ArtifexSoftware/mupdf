@@ -22,6 +22,7 @@ struct fz_aa_context_s
 	int vscale;
 	int scale;
 	int bits;
+	int text_bits;
 };
 
 void fz_new_aa_context(fz_context *ctx)
@@ -32,11 +33,13 @@ void fz_new_aa_context(fz_context *ctx)
 	ctx->aa->vscale = 15;
 	ctx->aa->scale = 256;
 	ctx->aa->bits = 8;
+	ctx->aa->text_bits = 8;
 
 #define fz_aa_hscale (ctx->aa->hscale)
 #define fz_aa_vscale (ctx->aa->vscale)
 #define fz_aa_scale (ctx->aa->scale)
 #define fz_aa_bits (ctx->aa->bits)
+#define fz_aa_text_bits (ctx->aa->text_bits)
 #define AA_SCALE(scale, x) ((x * scale) >> 8)
 
 #endif
@@ -65,30 +68,35 @@ void fz_drop_aa_context(fz_context *ctx)
 #define fz_aa_hscale 17
 #define fz_aa_vscale 15
 #define fz_aa_bits 8
+#define fz_aa_text_bits 8
 
 #elif AA_BITS > 4
 #define AA_SCALE(s, x) ((x * 255) >> 6)
 #define fz_aa_hscale 8
 #define fz_aa_vscale 8
 #define fz_aa_bits 6
+#define fz_aa_text_bits 6
 
 #elif AA_BITS > 2
 #define AA_SCALE(s, x) (x * 17)
 #define fz_aa_hscale 5
 #define fz_aa_vscale 3
 #define fz_aa_bits 4
+#define fz_aa_text_bits 4
 
 #elif AA_BITS > 0
 #define AA_SCALE(s, x) ((x * 255) >> 2)
 #define fz_aa_hscale 2
 #define fz_aa_vscale 2
 #define fz_aa_bits 2
+#define fz_aa_text_bits 2
 
 #else
 #define AA_SCALE(s, x) (x * 255)
 #define fz_aa_hscale 1
 #define fz_aa_vscale 1
 #define fz_aa_bits 0
+#define fz_aa_text_bits 0
 
 #endif
 #endif
@@ -99,12 +107,22 @@ fz_aa_level(fz_context *ctx)
 	return fz_aa_bits;
 }
 
-void
-fz_set_aa_level(fz_context *ctx, int level)
+int
+fz_graphics_aa_level(fz_context *ctx)
 {
-#ifdef AA_BITS
-	fz_warn(ctx, "anti-aliasing was compiled with a fixed precision of %d bits", fz_aa_bits);
-#else
+	return fz_aa_bits;
+}
+
+int
+fz_text_aa_level(fz_context *ctx)
+{
+	return fz_aa_text_bits;
+}
+
+#ifndef AA_BITS
+static void
+set_gfx_level(fz_context *ctx, int level)
+{
 	if (level > 6)
 	{
 		fz_aa_hscale = 17;
@@ -136,8 +154,55 @@ fz_set_aa_level(fz_context *ctx, int level)
 		fz_aa_bits = 0;
 	}
 	fz_aa_scale = 0xFF00 / (fz_aa_hscale * fz_aa_vscale);
+}
+
+static void
+set_txt_level(fz_context *ctx, int level)
+{
+	if (level > 6)
+		fz_aa_text_bits = 8;
+	else if (level > 4)
+		fz_aa_text_bits = 6;
+	else if (level > 2)
+		fz_aa_text_bits = 4;
+	else if (level > 0)
+		fz_aa_text_bits = 2;
+	else
+		fz_aa_text_bits = 0;
+}
+#endif /* AA_BITS */
+
+void
+fz_set_aa_level(fz_context *ctx, int level)
+{
+#ifdef AA_BITS
+	fz_warn(ctx, "anti-aliasing was compiled with a fixed precision of %d bits", fz_aa_bits);
+#else
+	set_gfx_level(ctx, level);
+	set_txt_level(ctx, level);
 #endif
 }
+
+void
+fz_set_text_aa_level(fz_context *ctx, int level)
+{
+#ifdef AA_BITS
+	fz_warn(ctx, "anti-aliasing was compiled with a fixed precision of %d bits", fz_aa_bits);
+#else
+	set_txt_level(ctx, level);
+#endif
+}
+
+void
+fz_set_graphics_aa_level(fz_context *ctx, int level)
+{
+#ifdef AA_BITS
+	fz_warn(ctx, "anti-aliasing was compiled with a fixed precision of %d bits", fz_aa_bits);
+#else
+	set_gfx_level(ctx, level);
+#endif
+}
+
 
 /*
  * Global Edge List -- list of straight path segments for scan conversion

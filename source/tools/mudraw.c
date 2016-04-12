@@ -269,7 +269,8 @@ static pdf_document *pdfout = NULL;
 
 static int ignore_errors = 0;
 static int uselist = 1;
-static int alphabits = 8;
+static int alphabits_text = 8;
+static int alphabits_graphics = 8;
 
 static int out_cs = CS_UNSET;
 static float gamma_value = 1;
@@ -332,6 +333,7 @@ static void usage(void)
 		"\t-I\tinvert colors\n"
 		"\n"
 		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
+		"\t-A -/-\tnumber of bits of antialiasing (0 to 8) (graphics, text)\n"
 		"\t-D\tdisable use of display list\n"
 		"\t-i\tignore errors\n"
 		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
@@ -447,7 +449,7 @@ static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_l
 		dev = fz_new_draw_device(ctx, pix);
 		if (lowmemory)
 			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
-		if (alphabits == 0)
+		if (alphabits_graphics == 0)
 			fz_enable_device_hints(ctx, dev, FZ_DONT_INTERPOLATE_IMAGES);
 		if (list)
 			fz_run_display_list(ctx, list, dev, ctm, tbounds, cookie);
@@ -1205,7 +1207,17 @@ int mudraw_main(int argc, char **argv)
 			if (strchr(fz_optarg, '5')) ++showmd5;
 			break;
 
-		case 'A': alphabits = atoi(fz_optarg); break;
+		case 'A':
+		{
+			char *sep;
+			alphabits_graphics = atoi(fz_optarg);
+			sep = strchr(fz_optarg, '/');
+			if (sep)
+				alphabits_text = atoi(sep+1);
+			else
+				alphabits_text = alphabits_graphics;
+			break;
+		}
 		case 'D': uselist = 0; break;
 		case 'i': ignore_errors = 1; break;
 
@@ -1259,7 +1271,8 @@ int mudraw_main(int argc, char **argv)
 		}
 	}
 
-	fz_set_aa_level(ctx, alphabits);
+	fz_set_text_aa_level(ctx, alphabits_text);
+	fz_set_graphics_aa_level(ctx, alphabits_graphics);
 
 	if (layout_css)
 	{
