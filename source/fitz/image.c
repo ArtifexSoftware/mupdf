@@ -381,6 +381,33 @@ update_ctm_for_subarea(fz_matrix *ctm, const fz_irect *subarea, int w, int h)
 	fz_concat(ctm, &m, ctm);
 }
 
+void fz_default_image_decode(void *arg, int w, int h, int l2factor, fz_irect *subarea)
+{
+	(void)arg;
+
+	if ((subarea->x1-subarea->x0)*(subarea->y1-subarea->y0) >= (w*h/10)*9)
+	{
+		/* Either no subarea specified, or a subarea 90% or more of the
+		 * whole area specified. Use the whole image. */
+		subarea->x0 = 0;
+		subarea->y0 = 0;
+		subarea->x1 = w;
+		subarea->y1 = h;
+	}
+	else
+	{
+		/* Clip to the edges if they are within 1% */
+		if (subarea->x0 <= w/100)
+			subarea->x0 = 0;
+		if (subarea->y0 <= h/100)
+			subarea->y0 = 0;
+		if (subarea->x1 >= w*99/100)
+			subarea->x1 = w;
+		if (subarea->y1 >= h*99/100)
+			subarea->y1 = h;
+	}
+}
+
 fz_pixmap *
 fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subarea, fz_matrix *ctm, int *dw, int *dh)
 {
@@ -436,10 +463,8 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 6; l2factor++);
 
 	/* Now figure out if we want to decode just a subarea */
-	if (subarea == NULL || (subarea->x1-subarea->x0)*(subarea->y1-subarea->y0) >= (image->w*image->h/10)*9)
+	if (subarea == NULL)
 	{
-		/* Either no subarea specified, or a subarea 90% or more of the
-		 * whole area specified. Use the whole image. */
 		key.rect.x0 = 0;
 		key.rect.y0 = 0;
 		key.rect.x1 = image->w;
@@ -447,18 +472,11 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	}
 	else
 	{
-		/* Clip to the edges if they are within 1% */
 		key.rect = *subarea;
-		if (key.rect.x0 <= image->w/100)
-			key.rect.x0 = 0;
-		if (key.rect.y0 <= image->h/100)
-			key.rect.y0 = 0;
-		if (key.rect.x1 >= image->w*99/100)
-			key.rect.x1 = image->w;
-		if (key.rect.y1 >= image->h*99/100)
-			key.rect.y1 = image->h;
+		ctx->tuning->image_decode(ctx->tuning->image_decode_arg, image->w, image->h, l2factor, &key.rect);
 	}
 
+	/* Based on that subarea, recalculate the extents */
 	if (ctm)
 	{
 		float frac_w = (key.rect.x1 - key.rect.x0) / (float)image->w;

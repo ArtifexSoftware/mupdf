@@ -287,3 +287,12 @@ fz_document_handler_context *fz_keep_document_handler_context(fz_context *ctx)
 {
 	return NULL;
 }
+
+void fz_default_image_decode(void *arg, int w, int h, int l2factor, fz_irect *irect)
+{
+}
+
+int fz_default_image_scale(void *arg, int w, int h, int src_w, int src_h)
+{
+	return 0;
+}

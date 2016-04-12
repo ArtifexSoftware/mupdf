@@ -1092,6 +1092,13 @@ fz_transform_pixmap(fz_context *ctx, fz_draw_device *dev, const fz_pixmap *image
 	return NULL;
 }
 
+int
+fz_default_image_scale(void *arg, int dst_w, int dst_h, int src_w, int src_h)
+{
+	(void)arg;
+	return dst_w < src_w && dst_h < src_h;
+}
+
 static void
 fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *ctm, float alpha)
 {
@@ -1182,7 +1189,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			pixmap = converted;
 		}
 
-		if (dx < pixmap->w && dy < pixmap->h && !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES))
+		if (!(devp->hints & FZ_DONT_INTERPOLATE_IMAGES) && ctx->tuning->image_scale(ctx->tuning->image_scale_arg, dx, dy, pixmap->w, pixmap->h))
 		{
 			int gridfit = alpha == 1.0f && !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
 			scaled = fz_transform_pixmap(ctx, dev, pixmap, &local_ctm, state->dest->x, state->dest->y, dx, dy, gridfit, &clip);
@@ -1300,7 +1307,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		if (state->blendmode & FZ_BLEND_KNOCKOUT)
 			state = fz_knockout_begin(ctx, dev);
 
-		if (dx < pixmap->w && dy < pixmap->h)
+		if (ctx->tuning->image_scale(ctx->tuning->image_scale_arg, dx, dy, pixmap->w, pixmap->h))
 		{
 			int gridfit = alpha == 1.0f && !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
 			scaled = fz_transform_pixmap(ctx, dev, pixmap, &local_ctm, state->dest->x, state->dest->y, dx, dy, gridfit, &clip);
@@ -1409,7 +1416,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
 		state[1].scissor = bbox;
 
-		if (dx < pixmap->w && dy < pixmap->h)
+		if (ctx->tuning->image_scale(ctx->tuning->image_scale_arg, dx, dy, pixmap->w, pixmap->h))
 		{
 			int gridfit = !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
 			scaled = fz_transform_pixmap(ctx, dev, pixmap, &local_ctm, state->dest->x, state->dest->y, dx, dy, gridfit, &clip);

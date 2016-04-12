@@ -3,6 +3,7 @@
 
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/system.h"
+#include "mupdf/fitz/math.h"
 
 /*
 	Contexts
@@ -18,6 +19,7 @@ typedef struct fz_colorspace_context_s fz_colorspace_context;
 typedef struct fz_aa_context_s fz_aa_context;
 typedef struct fz_style_context_s fz_style_context;
 typedef struct fz_locks_context_s fz_locks_context;
+typedef struct fz_tuning_context_s fz_tuning_context;
 typedef struct fz_store_s fz_store;
 typedef struct fz_glyph_cache_s fz_glyph_cache;
 typedef struct fz_document_handler_context_s fz_document_handler_context;
@@ -116,6 +118,7 @@ struct fz_context_s
 	fz_style_context *style;
 	fz_store *store;
 	fz_glyph_cache *glyph_cache;
+	fz_tuning_context *tuning;
 	fz_document_handler_context *handler;
 };
 
@@ -209,6 +212,65 @@ void fz_set_user_context(fz_context *ctx, void *user);
 	Does not throw exceptions.
 */
 void *fz_user_context(fz_context *ctx);
+
+/*
+	In order to tune MuPDFs behaviour, certain functions can
+	(optionally) be provided by callers.
+*/
+
+/*
+	fz_tune_image_decode_fn: Given the width and height of an image,
+	the subsample factor, and the subarea of the image actually
+	required, the caller can decide whether to decode the whole image
+	or just a subarea.
+
+	arg: The caller supplied opaque argument.
+
+	w, h: The width/height of the complete image.
+
+	l2factor: The log2 factor for subsampling (i.e. image will be
+	decoded to (w>>l2factor, h>>l2factor)).
+
+	subarea: The actual subarea required for the current operation.
+	The tuning function is allowed to increase this in size if required.
+*/
+typedef void (fz_tune_image_decode_fn)(void *arg, int w, int h, int l2factor, fz_irect *subarea);
+
+/*
+	fz_tune_image_scale_fn: Given the source width and height of
+	image, together with the actual required width and height,
+	decide whether we should use mitchell scaling.
+
+	arg: The caller supplied opaque argument.
+
+	dst_w, dst_h: The actual width/height required on the target device.
+
+	src_w, src_h: The source width/height of the image.
+
+	Return 0 not to use the Mitchell scaler, 1 to use the Mitchell scaler. All
+	other values reserved.
+*/
+typedef int (fz_tune_image_scale_fn)(void *arg, int dst_w, int dst_h, int src_w, int src_h);
+
+/*
+	fz_tune_image_decode: Set the tuning function to use for
+	image decode.
+
+	image_decode: Function to use.
+
+	arg: Opaque argument to be passed to tuning function.
+*/
+void fz_tune_image_decode(fz_context *ctx, fz_tune_image_decode_fn *image_decode, void *arg);
+
+/*
+	fz_tune_image_scale: Set the tuning function to use for
+	image scaling.
+
+	image_scale: Function to use.
+
+	arg: Opaque argument to be passed to tuning function.
+*/
+void fz_tune_image_scale(fz_context *ctx, fz_tune_image_scale_fn *image_scale, void *arg);
 
 /*
 	fz_aa_level: Get the number of bits of antialiasing we are
@@ -481,6 +543,19 @@ void fz_copy_aa_context(fz_context *dst, fz_context *src);
 void fz_new_document_handler_context(fz_context *ctx);
 void fz_drop_document_handler_context(fz_context *ctx);
 fz_document_handler_context *fz_keep_document_handler_context(fz_context *ctx);
+
+/* Tuning context implementation details */
+struct fz_tuning_context_s
+{
+	int refs;
+	fz_tune_image_decode_fn *image_decode;
+	void *image_decode_arg;
+	fz_tune_image_scale_fn *image_scale;
+	void *image_scale_arg;
+};
+
+fz_tune_image_decode_fn fz_default_image_decode;
+fz_tune_image_scale_fn fz_default_image_scale;
 
 /* Default allocator */
 extern fz_alloc_context fz_alloc_default;
