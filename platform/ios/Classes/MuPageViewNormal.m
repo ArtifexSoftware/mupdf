@@ -70,7 +70,7 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 	fz_var(text);
 	fz_var(dev);
 
-	fz_try(ctx);
+	fz_try(ctx)
 	{
 		int b, l, c;
 
@@ -136,7 +136,7 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 			}
 		}
 	}
-	fz_always(ctx);
+	fz_always(ctx)
 	{
 		fz_drop_stext_page(ctx, text);
 		fz_drop_stext_sheet(ctx, sheet);

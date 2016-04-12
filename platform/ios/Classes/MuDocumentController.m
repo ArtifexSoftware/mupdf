@@ -106,7 +106,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 			if (!err)
 			{
-				pdf_write_document(ctx, idoc, tmp, &opts);
+				pdf_save_document(ctx, idoc, tmp, &opts);
 				written = 1;
 			}
 		}
