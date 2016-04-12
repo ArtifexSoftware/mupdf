@@ -481,6 +481,20 @@ fz_annot_type pdf_annot_obj_type(fz_context *ctx, pdf_obj *obj)
 		return -1;
 }
 
+pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page)
+{
+	pdf_annot *annot = fz_new_annot(ctx, sizeof(pdf_annot));
+
+	annot->super.drop_annot_imp = (fz_annot_drop_imp_fn*)pdf_drop_annot_imp;
+	annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
+	annot->super.run_annot = (fz_annot_run_fn*)pdf_run_annot;
+	annot->super.next_annot = (fz_annot_next_fn*)pdf_next_annot;
+
+	annot->page = page;
+
+	return annot;
+}
+
 void
 pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *annots)
 {
@@ -507,17 +521,9 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 		{
 			obj = pdf_array_get(ctx, annots, i);
 
-			annot = fz_new_annot(ctx, sizeof(pdf_annot));
-			annot->super.drop_annot_imp = (fz_annot_drop_imp_fn*)pdf_drop_annot_imp;
-			annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
-			annot->super.run_annot = (fz_annot_run_fn*)pdf_run_annot;
-			annot->super.next_annot = (fz_annot_next_fn*)pdf_next_annot;
-
-			annot->page = page;
-			annot->obj = pdf_keep_obj(ctx, obj);
-			annot->next = NULL;
-
+			annot = pdf_new_annot(ctx, page);
 			*itr = annot;
+			annot->obj = pdf_keep_obj(ctx, obj);
 			itr = &annot->next;
 		}
 	}

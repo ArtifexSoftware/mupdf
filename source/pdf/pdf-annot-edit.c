@@ -117,8 +117,7 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 		/* Make printable as default */
 		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_F, pdf_new_int(ctx, doc, F_Print));
 
-		annot = fz_malloc_struct(ctx, pdf_annot);
-		annot->page = page;
+		annot = pdf_new_annot(ctx, page);
 		annot->rect = rect;
 		annot->pagerect = rect;
 		annot->ap = NULL;

@@ -137,4 +137,9 @@ fz_annot_type pdf_annot_obj_type(fz_context *ctx, pdf_obj *obj);
 */
 pdf_annot *pdf_poll_changed_annot(fz_context *ctx, pdf_document *idoc, pdf_page *page);
 
+/*
+	pdf_new_annot: Internal function for creating a new pdf annotation.
+*/
+pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page);
+
 #endif
