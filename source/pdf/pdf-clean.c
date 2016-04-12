@@ -287,3 +287,24 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		fz_rethrow_message(ctx, "Failed while cleaning page");
 	}
 }
+
+void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie, pdf_page_contents_process_fn *proc_fn, void *proc_arg, int ascii)
+{
+	pdf_obj *ap;
+	int i, n;
+
+	ap = pdf_dict_get(ctx, annot->obj, PDF_NAME_AP);
+	if (ap == NULL)
+		return;
+
+	n = pdf_dict_len(ctx, ap);
+	for (i = 0; i < n; i++)
+	{
+		pdf_obj *v = pdf_dict_get_val(ctx, ap, i);
+
+		if (v == NULL)
+			continue;
+
+		pdf_clean_stream_object(ctx, doc, v, NULL, cookie, 1, 1);
+	}
+}

@@ -122,6 +122,33 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 	pdf_page_contents_process_fn *proc, void *proc_arg, int ascii);
 
 /*
+	pdf_clean_annot_contents: Clean a loaded annotations rendering operations,
+	with an optional post processing step.
+
+	Each appearance stream in the annotation is processed.
+
+	Firstly, this filters the PDF operators used to avoid (some cases
+	of) repetition, and leaves the page in a balanced state with an
+	unchanged top level matrix etc. At the same time, the resources
+	used by the page contents are collected.
+
+	Next, the resources themselves are cleaned (as appropriate) in the
+	same way.
+
+	Next, an optional post processing stage is called.
+
+	Finally, the updated stream of operations is reinserted into the
+	appearance stream.
+
+	annot: An annotation loaded by pdf_load_annot.
+
+	cookie: A pointer to an optional fz_cookie structure that can be used
+	to track progress, collect errors etc.
+*/
+void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie,
+	pdf_page_contents_process_fn *proc, void *proc_arg, int ascii);
+
+/*
 	Presentation interface.
 */
 fz_transition *pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration);
