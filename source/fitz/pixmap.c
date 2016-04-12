@@ -859,13 +859,13 @@ static inline void big32(unsigned char *buf, unsigned int v)
 static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *data, int size)
 {
 	unsigned int sum;
-	fz_write_int32be(ctx, out, size);
+	fz_write_int32_be(ctx, out, size);
 	fz_write(ctx, out, tag, 4);
 	fz_write(ctx, out, data, size);
 	sum = crc32(0, NULL, 0);
 	sum = crc32(sum, (unsigned char*)tag, 4);
 	sum = crc32(sum, data, size);
-	fz_write_int32be(ctx, out, sum);
+	fz_write_int32_be(ctx, out, sum);
 }
 
 void

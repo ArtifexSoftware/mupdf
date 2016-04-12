@@ -73,7 +73,7 @@ static inline void fz_write(fz_context *ctx, fz_output *out, const void *data, i
 	fz_write_rune: Write a UTF-8 encoded unicode character.
 */
 
-static inline void fz_write_int32be(fz_context *ctx, fz_output *out, int x)
+static inline void fz_write_int32_be(fz_context *ctx, fz_output *out, int x)
 {
 	char data[4];
 
@@ -85,7 +85,7 @@ static inline void fz_write_int32be(fz_context *ctx, fz_output *out, int x)
 	fz_write(ctx, out, data, 4);
 }
 
-static inline void fz_write_int32le(fz_context *ctx, fz_output *out, int x)
+static inline void fz_write_int32_le(fz_context *ctx, fz_output *out, int x)
 {
 	char data[4];
 
