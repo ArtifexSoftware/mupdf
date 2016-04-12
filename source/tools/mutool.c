@@ -8,6 +8,7 @@
 #define main main_utf8
 #endif
 
+int muconvert_main(int argc, char *argv[]);
 int mudraw_main(int argc, char *argv[]);
 int murun_main(int argc, char *argv[]);
 int pdfclean_main(int argc, char *argv[]);
@@ -24,6 +25,7 @@ static struct {
 	char *name;
 	char *desc;
 } tools[] = {
+	{ muconvert_main, "convert", "convert document" },
 	{ mudraw_main, "draw", "convert document" },
 	{ murun_main, "run", "run javascript" },
 	{ pdfclean_main, "clean", "rewrite pdf file" },
@@ -66,7 +68,6 @@ int main(int argc, char **argv)
 	char buf[32];
 	int i;
 
-	
 	if (argc == 0)
 	{
 		fprintf(stderr, "No command name found!\n");

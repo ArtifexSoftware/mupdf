@@ -97,6 +97,16 @@ static inline void fz_write_int32_le(fz_context *ctx, fz_output *out, int x)
 	fz_write(ctx, out, data, 4);
 }
 
+static inline void fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
+{
+	char data[2];
+
+	data[0] = x;
+	data[1] = x>>8;
+
+	fz_write(ctx, out, data, 2);
+}
+
 static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
 {
 	fz_write(ctx, out, &x, 1);

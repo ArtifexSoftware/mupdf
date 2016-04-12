@@ -130,6 +130,8 @@ void fz_append_buffer(fz_context *ctx, fz_buffer *buf, fz_buffer *extra);
 void fz_write_buffer(fz_context *ctx, fz_buffer *buf, const void *data, int len);
 void fz_write_buffer_byte(fz_context *ctx, fz_buffer *buf, int val);
 void fz_write_buffer_rune(fz_context *ctx, fz_buffer *buf, int val);
+void fz_write_buffer_int32_le(fz_context *ctx, fz_buffer *buf, int x);
+void fz_write_buffer_int16_le(fz_context *ctx, fz_buffer *buf, int x);
 void fz_write_buffer_bits(fz_context *ctx, fz_buffer *buf, int val, int bits);
 void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf);
 int fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...);

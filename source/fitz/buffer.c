@@ -197,6 +197,20 @@ void fz_write_buffer_rune(fz_context *ctx, fz_buffer *buf, int c)
 	buf->unused_bits = 0;
 }
 
+void fz_write_buffer_int32_le(fz_context *ctx, fz_buffer *buf, int x)
+{
+	fz_write_buffer_byte(ctx, buf, (x)&0xFF);
+	fz_write_buffer_byte(ctx, buf, (x>>8)&0xFF);
+	fz_write_buffer_byte(ctx, buf, (x>>16)&0xFF);
+	fz_write_buffer_byte(ctx, buf, (x>>24)&0xFF);
+}
+
+void fz_write_buffer_int16_le(fz_context *ctx, fz_buffer *buf, int x)
+{
+	fz_write_buffer_byte(ctx, buf, (x)&0xFF);
+	fz_write_buffer_byte(ctx, buf, (x>>8)&0xFF);
+}
+
 void fz_write_buffer_bits(fz_context *ctx, fz_buffer *buf, int val, int bits)
 {
 	int shift;

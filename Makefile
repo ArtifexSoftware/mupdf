@@ -255,7 +255,7 @@ $(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/pdf/pdf-cmap.c source/pdf/pd
 # --- Tools and Apps ---
 
 MUTOOL := $(addprefix $(OUT)/, mutool)
-MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o mudraw.o murun.o pdfclean.o pdfcreate.o pdfextract.o pdfinfo.o pdfposter.o pdfshow.o pdfpages.o pdfmerge.o)
+MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o muconvert.o mudraw.o murun.o pdfclean.o pdfcreate.o pdfextract.o pdfinfo.o pdfmerge.o pdfposter.o pdfpages.o pdfshow.o)
 $(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
 $(MUTOOL) : $(MUPDF_LIB) $(THIRD_LIB)
 $(MUTOOL) : $(MUTOOL_OBJ)

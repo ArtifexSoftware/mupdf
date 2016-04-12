@@ -19,4 +19,10 @@ void fz_drop_archive(fz_context *ctx, fz_archive *ar);
 int fz_count_archive_entries(fz_context *ctx, fz_archive *zip);
 const char *fz_list_archive_entry(fz_context *ctx, fz_archive *zip, int idx);
 
+typedef struct fz_zip_writer_s fz_zip_writer;
+
+fz_zip_writer *fz_new_zip_writer(fz_context *ctx, const char *filename);
+void fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buffer *buf, int compress);
+void fz_drop_zip_writer(fz_context *ctx, fz_zip_writer *zip);
+
 #endif
