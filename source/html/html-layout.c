@@ -108,6 +108,8 @@ struct genstate
 	fz_pool *pool;
 	fz_html_font_set *set;
 	fz_archive *zip;
+	fz_tree *images;
+	int is_fb2;
 	const char *base_uri;
 	fz_css_rule *css;
 	int at_bol;
@@ -375,15 +377,14 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 	}
 }
 
-static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, const char *base_uri, fz_html *box, const char *src, struct genstate *g)
+static fz_image *load_html_image(fz_context *ctx, fz_archive *zip, const char *base_uri, const char *src)
 {
+	char path[2048];
 	fz_image *img = NULL;
 	fz_buffer *buf = NULL;
-	char path[2048];
 
-	fz_html *flow = box;
-	while (flow->type != BOX_FLOW)
-		flow = flow->up;
+	fz_var(img);
+	fz_var(buf);
 
 	fz_strlcpy(path, base_uri, sizeof path);
 	fz_strlcat(path, "/", sizeof path);
@@ -391,29 +392,46 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_archive *zip, cons
 	fz_urldecode(path);
 	fz_cleanname(path);
 
-	fz_var(buf);
-	fz_var(img);
-
-	flush_space(ctx, pool, flow, box, g);
-
 	fz_try(ctx)
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
 		img = fz_new_image_from_buffer(ctx, buf);
-		add_flow_sbreak(ctx, pool, flow, box);
-		add_flow_image(ctx, pool, flow, box, img);
-		add_flow_sbreak(ctx, pool, flow, box);
 	}
 	fz_always(ctx)
-	{
 		fz_drop_buffer(ctx, buf);
-		fz_drop_image(ctx, img);
-	}
 	fz_catch(ctx)
+		fz_warn(ctx, "html: cannot load image src='%s'", src);
+
+	return img;
+}
+
+static void generate_image(fz_context *ctx, fz_pool *pool, fz_html *box, fz_image *img, struct genstate *g)
+{
+	fz_html *flow = box;
+	while (flow->type != BOX_FLOW)
+		flow = flow->up;
+
+	flush_space(ctx, pool, flow, box, g);
+
+	if (!img)
 	{
 		const char *alt = "[image]";
-		fz_warn(ctx, "html: cannot add image src='%s'", src);
 		add_flow_word(ctx, pool, flow, box, alt, alt + 7);
+	}
+	else
+	{
+		fz_try(ctx)
+		{
+			add_flow_sbreak(ctx, pool, flow, box);
+			add_flow_image(ctx, pool, flow, box, img);
+			add_flow_sbreak(ctx, pool, flow, box);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_image(ctx, img);
+		}
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 
 	g->at_bol = 0;
@@ -596,7 +614,34 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 					box = new_box(ctx, g->pool, markup_dir);
 					fz_apply_css_style(ctx, g->set, &box->style, &match);
 					insert_inline_box(ctx, g->pool, box, top, markup_dir, g);
-					generate_image(ctx, g->pool, g->zip, g->base_uri, box, src, g);
+					generate_image(ctx, g->pool, box, load_html_image(ctx, g->zip, g->base_uri, src), g);
+				}
+			}
+
+			else if (g->is_fb2 && !strcmp(tag, "image"))
+			{
+				const char *src = fz_xml_att(node, "l:href");
+				if (src && src[0] == '#')
+				{
+					fz_image *img = fz_tree_lookup(ctx, g->images, src+1);
+					if (display == DIS_BLOCK)
+					{
+						fz_html *imgbox;
+						box = new_box(ctx, g->pool, markup_dir);
+						fz_apply_css_style(ctx, g->set, &box->style, &match);
+						top = insert_block_box(ctx, box, top);
+						imgbox = new_box(ctx, g->pool, markup_dir);
+						fz_apply_css_style(ctx, g->set, &imgbox->style, &match);
+						insert_inline_box(ctx, g->pool, imgbox, box, markup_dir, g);
+						generate_image(ctx, g->pool, imgbox, fz_keep_image(ctx, img), g);
+					}
+					else if (display == DIS_INLINE)
+					{
+						box = new_box(ctx, g->pool, markup_dir);
+						fz_apply_css_style(ctx, g->set, &box->style, &match);
+						insert_inline_box(ctx, g->pool, box, top, markup_dir, g);
+						generate_image(ctx, g->pool, box, fz_keep_image(ctx, img), g);
+					}
 				}
 			}
 
@@ -1869,6 +1914,31 @@ fb2_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rule
 	return css;
 }
 
+static fz_tree *
+load_fb2_images(fz_context *ctx, fz_xml *root)
+{
+	fz_xml *fictionbook, *binary;
+	fz_tree *images = NULL;
+
+	fictionbook = fz_xml_find(root, "FictionBook");
+	for (binary = fz_xml_find_down(fictionbook, "binary"); binary; binary = fz_xml_find_next(binary, "binary"))
+	{
+		const char *id = fz_xml_att(binary, "id");
+		char *b64 = concat_text(ctx, binary);
+		fz_buffer *buf;
+		fz_image *img;
+
+		buf = fz_new_buffer_from_base64(ctx, b64, strlen(b64));
+		img = fz_new_image_from_buffer(ctx, buf);
+		fz_drop_buffer(ctx, buf);
+		fz_free(ctx, b64);
+
+		images = fz_tree_insert(ctx, images, id, img);
+	}
+
+	return images;
+}
+
 static void indent(int n)
 {
 	while (n-- > 0)
@@ -2188,14 +2258,17 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 
 	if (fz_xml_find(xml, "FictionBook"))
 	{
+		g.is_fb2 = 1;
 		g.css = fz_parse_css(ctx, NULL, fb2_default_css, "<default:fb2>");
 		g.css = fb2_load_css(ctx, g.zip, g.base_uri, g.css, xml);
-		// TODO: embedded image data in <binary> tags
+		g.images = load_fb2_images(ctx, xml);
 	}
 	else
 	{
+		g.is_fb2 = 0;
 		g.css = fz_parse_css(ctx, NULL, html_default_css, "<default:html>");
 		g.css = html_load_css(ctx, g.zip, g.base_uri, g.css, xml);
+		g.images = NULL;
 	}
 
 	if (user_css)
@@ -2220,6 +2293,8 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	fz_drop_xml(ctx, xml);
 
 	detect_directionality(ctx, g.pool, box);
+
+	fz_drop_tree(ctx, g.images, (void(*)(fz_context*,void*))fz_drop_image);
 
 	return box;
 }
