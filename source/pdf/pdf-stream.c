@@ -281,7 +281,7 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_ob
  * to stream length and decrypting.
  */
 static fz_stream *
-pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *chain, pdf_obj *stmobj, int num, int gen, fz_off_t offset, fz_compression_params *imparams)
+pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *chain, pdf_obj *stmobj, int num, int orig_num, int orig_gen, fz_off_t offset, fz_compression_params *imparams)
 {
 	pdf_obj *filters;
 	pdf_obj *params;
@@ -289,7 +289,7 @@ pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *chain, pdf_obj *s
 	filters = pdf_dict_geta(ctx, stmobj, PDF_NAME_Filter, PDF_NAME_F);
 	params = pdf_dict_geta(ctx, stmobj, PDF_NAME_DecodeParms, PDF_NAME_DP);
 
-	chain = pdf_open_raw_filter(ctx, chain, doc, stmobj, num, num, gen, offset);
+	chain = pdf_open_raw_filter(ctx, chain, doc, stmobj, num, orig_num, orig_gen, offset);
 
 	fz_var(chain);
 
@@ -299,13 +299,13 @@ pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *chain, pdf_obj *s
 		{
 			fz_stream *chain2 = chain;
 			chain = NULL;
-			chain = build_filter(ctx, chain2, doc, filters, params, num, gen, imparams);
+			chain = build_filter(ctx, chain2, doc, filters, params, orig_num, orig_gen, imparams);
 		}
 		else if (pdf_array_len(ctx, filters) > 0)
 		{
 			fz_stream *chain2 = chain;
 			chain = NULL;
-			chain = build_filter_chain(ctx, chain2, doc, filters, params, num, gen, imparams);
+			chain = build_filter_chain(ctx, chain2, doc, filters, params, orig_num, orig_gen, imparams);
 		}
 	}
 	fz_catch(ctx)
@@ -403,7 +403,7 @@ pdf_open_image_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int 
 	if (x->stm_ofs == 0 && x->stm_buf == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "object is not a stream");
 
-	return pdf_open_filter(ctx, doc, doc->file, x->obj, orig_num, orig_gen, x->stm_ofs, params);
+	return pdf_open_filter(ctx, doc, doc->file, x->obj, num, orig_num, orig_gen, x->stm_ofs, params);
 }
 
 /*
@@ -423,7 +423,7 @@ pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, int gen
 	if (stm_ofs == 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "object is not a stream");
 
-	return pdf_open_filter(ctx, doc, doc->file, dict, num, gen, stm_ofs, NULL);
+	return pdf_open_filter(ctx, doc, doc->file, dict, num, num, gen, stm_ofs, NULL);
 }
 
 /*
