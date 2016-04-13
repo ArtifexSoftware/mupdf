@@ -8,18 +8,17 @@ LOCAL_C_INCLUDES := \
 	$(MY_ROOT)/include/ \
 	$(MY_ROOT)/thirdparty/harfbuzz/src \
 	$(MY_ROOT)/thirdparty/jbig2dec \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2 \
 	$(MY_ROOT)/thirdparty/jpeg \
 	$(MY_ROOT)/thirdparty/mujs \
 	$(MY_ROOT)/thirdparty/zlib \
 	$(MY_ROOT)/thirdparty/freetype/include \
 	$(MY_ROOT)/scripts/freetype \
-	$(MY_ROOT)/scripts/jpeg \
-	$(MY_ROOT)/scripts/openjpeg
+	$(MY_ROOT)/scripts/jpeg
 
 LOCAL_CFLAGS := \
 	-DFT2_BUILD_LIBRARY -DDARWIN_NO_CARBON -DHAVE_STDINT_H \
-	-DOPJ_HAVE_STDINT_H \
+	-DOPJ_HAVE_STDINT_H -DOPJ_HAVE_INTTYPES_H -DUSE_JPIP \
 	'-DFT_CONFIG_MODULES_H="slimftmodules.h"' \
 	'-DFT_CONFIG_OPTIONS_H="slimftoptions.h"' \
 	-Dhb_malloc_impl=hb_malloc -Dhb_calloc_impl=hb_calloc \
@@ -85,31 +84,29 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2_segment.c \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2_symbol_dict.c \
 	$(MY_ROOT)/thirdparty/jbig2dec/jbig2_text.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/bio.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/cidx_manager.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/cio.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/dwt.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/event.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/function_list.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/image.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/invert.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/j2k.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/jp2.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/mct.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/mqc.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/openjpeg.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/opj_clock.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/phix_manager.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/pi.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/ppix_manager.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/raw.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/t1.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/t1_generate_luts.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/t2.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/tcd.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/tgt.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/thix_manager.c \
-	$(MY_ROOT)/thirdparty/openjpeg/libopenjpeg/tpix_manager.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/bio.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/cidx_manager.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/cio.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/dwt.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/event.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/function_list.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/image.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/invert.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/j2k.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/jp2.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/mct.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/mqc.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/openjpeg.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/phix_manager.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/pi.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/ppix_manager.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/raw.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/t1.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/t2.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/tcd.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/tgt.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/thix_manager.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/tpix_manager.c \
 	$(MY_ROOT)/thirdparty/jpeg/jaricom.c \
 	$(MY_ROOT)/thirdparty/jpeg/jcomapi.c \
 	$(MY_ROOT)/thirdparty/jpeg/jdapimin.c \
