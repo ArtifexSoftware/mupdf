@@ -78,6 +78,11 @@ fz_buffer *fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, int siz
 fz_buffer *fz_new_buffer_from_shared_data(fz_context *ctx, const char *data, int size);
 
 /*
+	fz_new_buffer_from_base64: Create a new buffer with data decoded from a base64 input string.
+*/
+fz_buffer *fz_new_buffer_from_base64(fz_context *ctx, const char *data, int size);
+
+/*
 	fz_resize_buffer: Ensure that a buffer has a given capacity,
 	truncating data if required.
 

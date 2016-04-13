@@ -57,6 +57,37 @@ fz_new_buffer_from_shared_data(fz_context *ctx, const char *data, int size)
 }
 
 fz_buffer *
+fz_new_buffer_from_base64(fz_context *ctx, const char *data, int size)
+{
+	fz_buffer *buf = fz_new_buffer(ctx, size);
+	const char *end = data + size;
+	const char *s = data;
+	fz_try(ctx)
+	{
+		while (s < end)
+		{
+			int c = *s++;
+			if (c >= 'A' && c <= 'Z')
+				fz_write_buffer_bits(ctx, buf, c - 'A', 6);
+			else if (c >= 'a' && c <= 'z')
+				fz_write_buffer_bits(ctx, buf, c - 'a' + 26, 6);
+			else if (c >= '0' && c <= '9')
+				fz_write_buffer_bits(ctx, buf, c - '0' + 52, 6);
+			else if (c == '+')
+				fz_write_buffer_bits(ctx, buf, 62, 6);
+			else if (c == '/')
+				fz_write_buffer_bits(ctx, buf, 63, 6);
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_rethrow(ctx);
+	}
+	return buf;
+}
+
+fz_buffer *
 fz_keep_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	if (buf)
