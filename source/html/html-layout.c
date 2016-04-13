@@ -8,7 +8,9 @@
 
 enum { T, R, B, L };
 
-static const char *default_css =
+#define DEFAULT_DIR FZ_BIDI_LTR
+
+static const char *html_default_css =
 "@page{margin:2em 1em}"
 "a{color:#06C;text-decoration:underline}"
 "address{display:block;font-style:italic}"
@@ -62,7 +64,44 @@ static const char *default_css =
 "svg{display:none}"
 ;
 
-#define DEFAULT_DIR FZ_BIDI_LTR
+static const char *fb2_default_css =
+"@page{margin:2em 2em}"
+"FictionBook{display:block;margin:0;line-height:1.2em}"
+"stylesheet,binary{display:none}"
+#ifdef FB2_FRONT_MATTER
+"description>*{display:none}"
+"description>title-info{display:block}"
+"description>title-info>*{display:none}"
+"description>title-info>annotation{display:block;page-break-before:always;page-break-after:always}"
+"description>title-info>coverpage{display:block;page-break-before:always;page-break-after:always}"
+#else
+"description{display:none}"
+#endif
+"body,section,title,subtitle,p,cite,epigraph,text-author,date,poem,stanza,v,empty-line{display:block}"
+"image{display:block}"
+"p>image{display:inline}"
+"table{display:table}"
+"tr{display:table-row}"
+"th,td{display:table-cell}"
+"a{color:#06C;text-decoration:underline}"
+"a[type=note]{font-size:small;vertical-align:super}"
+"code{white-space:pre;font-family:monospace}"
+"emphasis{font-style:italic}"
+"strikethrough{text-decoration:line-through}"
+"strong{font-weight:bold}"
+"sub{font-size:small;vertical-align:sub}"
+"sup{font-size:small;vertical-align:super}"
+"image{margin:1em 0;text-align:center}"
+"cite,poem{margin:1em 2em}"
+"subtitle,epigraph,stanza{margin:1em 0}"
+"title>p{text-align:center;font-size:x-large}"
+"subtitle{text-align:center;font-size:large}"
+"p{margin-top:1em;text-align:justify}"
+"empty-line{padding-top:1em}"
+"p+p{margin-top:0;text-indent:1.5em}"
+"empty-line+p{margin-top:0}"
+"section>title{page-break-before:always}"
+;
 
 struct genstate
 {
@@ -1810,6 +1849,26 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rul
 	return css;
 }
 
+static fz_css_rule *
+fb2_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css_rule *css, fz_xml *root)
+{
+	fz_xml *fictionbook, *stylesheet;
+
+	fictionbook = fz_xml_find(root, "FictionBook");
+	stylesheet = fz_xml_find_down(fictionbook, "stylesheet");
+	if (stylesheet)
+	{
+		char *s = concat_text(ctx, stylesheet);
+		fz_try(ctx)
+			css = fz_parse_css(ctx, css, s, "<stylesheet>");
+		fz_catch(ctx)
+			fz_warn(ctx, "ignoring inline stylesheet");
+		fz_free(ctx, s);
+	}
+
+	return css;
+}
+
 static void indent(int n)
 {
 	while (n-- > 0)
@@ -2127,8 +2186,18 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 
-	g.css = fz_parse_css(ctx, NULL, default_css, "<default>");
-	g.css = html_load_css(ctx, g.zip, g.base_uri, g.css, xml);
+	if (fz_xml_find(xml, "FictionBook"))
+	{
+		g.css = fz_parse_css(ctx, NULL, fb2_default_css, "<default:fb2>");
+		g.css = fb2_load_css(ctx, g.zip, g.base_uri, g.css, xml);
+		// TODO: embedded image data in <binary> tags
+	}
+	else
+	{
+		g.css = fz_parse_css(ctx, NULL, html_default_css, "<default:html>");
+		g.css = html_load_css(ctx, g.zip, g.base_uri, g.css, xml);
+	}
+
 	if (user_css)
 		g.css = fz_parse_css(ctx, g.css, user_css, "<user>");
 
