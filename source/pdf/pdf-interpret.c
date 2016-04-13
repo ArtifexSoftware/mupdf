@@ -675,10 +675,13 @@ resolve_properties(fz_context *ctx, pdf_csi *csi, pdf_obj *obj)
 }
 
 static void
-pdf_process_BDC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, const char *name, pdf_obj *properties)
+pdf_process_BDC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 {
+	pdf_obj *raw = csi->obj;
+	pdf_obj *cooked = resolve_properties(ctx, csi, raw);
+
 	if (proc->op_BDC)
-		proc->op_BDC(ctx, proc, name, properties);
+		proc->op_BDC(ctx, proc, csi->name, raw, cooked);
 
 	/* Already hidden, no need to look further */
 	if (proc->hidden > 0)
@@ -688,18 +691,18 @@ pdf_process_BDC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, const char *
 	}
 
 	/* We only look at OC groups here */
-	if (strcmp(name, "OC"))
+	if (strcmp(csi->name, "OC"))
 		return;
 
 	/* No Properties array, or name not found, means visible. */
-	if (!properties)
+	if (!cooked)
 		return;
 
 	/* Wrong type of property */
-	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, properties, PDF_NAME_Type), PDF_NAME_OCG))
+	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, cooked, PDF_NAME_Type), PDF_NAME_OCG))
 		return;
 
-	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->event, properties))
+	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->event, cooked))
 		++proc->hidden;
 }
 
@@ -966,9 +969,9 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 
 	/* marked content */
 	case B('M','P'): if (proc->op_MP) proc->op_MP(ctx, proc, csi->name); break;
-	case B('D','P'): if (proc->op_DP) proc->op_DP(ctx, proc, csi->name, resolve_properties(ctx, csi, csi->obj)); break;
+	case B('D','P'): if (proc->op_DP) proc->op_DP(ctx, proc, csi->name, csi->obj, resolve_properties(ctx, csi, csi->obj)); break;
 	case C('B','M','C'): pdf_process_BMC(ctx, proc, csi, csi->name); break;
-	case C('B','D','C'): pdf_process_BDC(ctx, proc, csi, csi->name, resolve_properties(ctx, csi, csi->obj)); break;
+	case C('B','D','C'): pdf_process_BDC(ctx, proc, csi); break;
 	case C('E','M','C'): pdf_process_EMC(ctx, proc, csi); break;
 
 	/* compatibility */

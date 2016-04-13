@@ -1931,7 +1931,7 @@ static void pdf_run_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
 }
 
-static void pdf_run_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties)
+static void pdf_run_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 }
 
@@ -1939,7 +1939,7 @@ static void pdf_run_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 {
 }
 
-static void pdf_run_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties)
+static void pdf_run_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 }
 

@@ -712,11 +712,11 @@ pdf_out_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
 }
 
 static void
-pdf_out_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties)
+pdf_out_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	fz_printf(ctx, out, "/%s ", tag);
-	pdf_print_obj(ctx, out, properties, 1);
+	pdf_print_obj(ctx, out, raw, 1);
 	fz_printf(ctx, out, " DP\n");
 }
 
@@ -728,11 +728,11 @@ pdf_out_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 }
 
 static void
-pdf_out_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties)
+pdf_out_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	fz_printf(ctx, out, "/%s ", tag);
-	pdf_print_obj(ctx, out, properties, 1);
+	pdf_print_obj(ctx, out, raw, 1);
 	fz_printf(ctx, out, " BDC\n");
 }
 

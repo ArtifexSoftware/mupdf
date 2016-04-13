@@ -112,9 +112,9 @@ struct pdf_processor_s
 
 	/* marked content */
 	void (*op_MP)(fz_context *ctx, pdf_processor *proc, const char *tag);
-	void (*op_DP)(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties);
+	void (*op_DP)(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked);
 	void (*op_BMC)(fz_context *ctx, pdf_processor *proc, const char *tag);
-	void (*op_BDC)(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties);
+	void (*op_BDC)(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked);
 	void (*op_EMC)(fz_context *ctx, pdf_processor *proc);
 
 	/* compatibility */

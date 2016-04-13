@@ -1047,12 +1047,12 @@ pdf_filter_MP(fz_context *ctx, pdf_processor *proc, const char *tag)
 }
 
 static void
-pdf_filter_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties)
+pdf_filter_DP(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
 	if (p->chain->op_DP)
-		p->chain->op_DP(ctx, p->chain, tag, properties);
+		p->chain->op_DP(ctx, p->chain, tag, raw, cooked);
 }
 
 static void
@@ -1065,12 +1065,12 @@ pdf_filter_BMC(fz_context *ctx, pdf_processor *proc, const char *tag)
 }
 
 static void
-pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *properties)
+pdf_filter_BDC(fz_context *ctx, pdf_processor *proc, const char *tag, pdf_obj *raw, pdf_obj *cooked)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
 	if (p->chain->op_BDC)
-		p->chain->op_BDC(ctx, p->chain, tag, properties);
+		p->chain->op_BDC(ctx, p->chain, tag, raw, cooked);
 }
 
 static void
