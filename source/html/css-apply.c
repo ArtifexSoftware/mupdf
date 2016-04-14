@@ -217,29 +217,34 @@ selector_specificity(fz_css_selector *sel, int important)
  */
 
 static int
-match_id_condition(fz_xml *node, const char *p)
+match_att_exists_condition(fz_xml *node, const char *key)
 {
-	const char *s = fz_xml_att(node, "id");
-	if (s && !strcmp(s, p))
-		return 1;
-	return 0;
+	const char *s = fz_xml_att(node, key);
+	return s != NULL;
 }
 
 static int
-match_class_condition(fz_xml *node, const char *p)
+match_att_is_condition(fz_xml *node, const char *key, const char *val)
 {
-	const char *s = fz_xml_att(node, "class");
+	const char *att = fz_xml_att(node, key);
+	return att && !strcmp(val, att);
+}
+
+static int
+match_att_has_condition(fz_xml *node, const char *att, const char *needle)
+{
+	const char *haystack = fz_xml_att(node, att);
 	const char *ss;
 	int n;
-	if (s) {
+	if (haystack) {
 		/* Try matching whole property first. */
-		if (!strcmp(s, p))
+		if (!strcmp(haystack, needle))
 			return 1;
 
 		/* Look for matching words. */
-		n = strlen(p);
-		ss = strstr(s, p);
-		if (ss && (ss[n] == ' ' || ss[n] == 0) && (ss == s || ss[-1] == ' '))
+		n = strlen(needle);
+		ss = strstr(haystack, needle);
+		if (ss && (ss[n] == ' ' || ss[n] == 0) && (ss == haystack || ss[-1] == ' '))
 			return 1;
 	}
 	return 0;
@@ -254,8 +259,12 @@ match_condition(fz_css_condition *cond, fz_xml *node)
 	switch (cond->type) {
 	default: return 0;
 	case ':': return 0; /* don't support pseudo-classes */
-	case '#': if (!match_id_condition(node, cond->val)) return 0; break;
-	case '.': if (!match_class_condition(node, cond->val)) return 0; break;
+	case '#': if (!match_att_is_condition(node, "id", cond->val)) return 0; break;
+	case '.': if (!match_att_has_condition(node, "class", cond->val)) return 0; break;
+	case '[': if (!match_att_exists_condition(node, cond->key)) return 0; break;
+	case '=': if (!match_att_is_condition(node, cond->key, cond->val)) return 0; break;
+	case '~': if (!match_att_has_condition(node, cond->key, cond->val)) return 0; break;
+	case '|': if (!match_att_is_condition(node, cond->key, cond->val)) return 0; break;
 	}
 
 	return match_condition(cond->next, node);
