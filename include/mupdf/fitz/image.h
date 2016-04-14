@@ -70,18 +70,20 @@ fz_pixmap *fz_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);
 struct fz_image_s
 {
 	fz_storable storable;
-	int w, h, n, bpc;
+	int w, h;
+	uint8_t n;
+	uint8_t bpc;
+	unsigned int imagemask:1;
+	unsigned int interpolate:1;
+	unsigned int use_colorkey:1;
+	unsigned int invert_cmyk_jpeg:1;
 	fz_image *mask;
+	int xres; /* As given in the image, not necessarily as rendered */
+	int yres; /* As given in the image, not necessarily as rendered */
 	fz_colorspace *colorspace;
 	fz_pixmap *(*get_pixmap)(fz_context *, fz_image *, fz_irect *subarea, int w, int h, int *l2factor);
 	int colorkey[FZ_MAX_COLORS * 2];
 	float decode[FZ_MAX_COLORS * 2];
-	int imagemask;
-	int interpolate;
-	int usecolorkey;
-	int xres; /* As given in the image, not necessarily as rendered */
-	int yres; /* As given in the image, not necessarily as rendered */
-	int invert_cmyk_jpeg;
 
 	/* Only 'standard' images use these currently. Maybe they should be
 	 * moved out into a derived image class. */

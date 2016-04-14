@@ -14,7 +14,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 	int interpolate;
 	int indexed;
 	fz_image *mask = NULL; /* explicit mask/soft mask image */
-	int usecolorkey = 0;
+	int use_colorkey = 0;
 	fz_colorspace *colorspace = NULL;
 	float decode[FZ_MAX_COLORS * 2];
 	int colorkey[FZ_MAX_COLORS * 2];
@@ -64,7 +64,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 		interpolate = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Interpolate, PDF_NAME_I));
 
 		indexed = 0;
-		usecolorkey = 0;
+		use_colorkey = 0;
 
 		if (imagemask)
 			bpc = 1;
@@ -130,7 +130,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 				obj = pdf_dict_get(ctx, obj, PDF_NAME_Matte);
 				if (pdf_is_array(ctx, obj))
 				{
-					usecolorkey = 1;
+					use_colorkey = 1;
 					for (i = 0; i < n; i++)
 						colorkey[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i)) * 255;
 				}
@@ -138,13 +138,13 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 		}
 		else if (pdf_is_array(ctx, obj))
 		{
-			usecolorkey = 1;
+			use_colorkey = 1;
 			for (i = 0; i < n * 2; i++)
 			{
 				if (!pdf_is_int(ctx, pdf_array_get(ctx, obj, i)))
 				{
 					fz_warn(ctx, "invalid value in color key mask");
-					usecolorkey = 0;
+					use_colorkey = 0;
 				}
 				colorkey[i] = pdf_to_int(ctx, pdf_array_get(ctx, obj, i));
 			}
@@ -158,14 +158,14 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			int num = pdf_to_num(ctx, dict);
 			int gen = pdf_to_gen(ctx, dict);
 			buffer = pdf_load_compressed_stream(ctx, doc, num, gen);
-			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, usecolorkey ? colorkey : NULL, buffer, mask);
+			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, buffer, mask);
 			image->invert_cmyk_jpeg = 0;
 		}
 		else
 		{
 			/* Inline stream */
 			stride = (w * n * bpc + 7) / 8;
-			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, usecolorkey ? colorkey : NULL, NULL, mask);
+			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, NULL, mask);
 			image->invert_cmyk_jpeg = 0;
 			pdf_load_compressed_inline_image(ctx, doc, dict, stride * h, cstm, indexed, image);
 		}

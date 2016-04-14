@@ -234,7 +234,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, fz
 		samples = NULL;
 
 		/* color keyed transparency */
-		if (image->usecolorkey && !image->mask)
+		if (image->use_colorkey && !image->mask)
 			fz_mask_color_key(tile, image->n, image->colorkey);
 
 		if (indexed)
@@ -251,7 +251,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, fz
 		}
 
 		/* pre-blended matte color */
-		if (image->usecolorkey && image->mask)
+		if (image->use_colorkey && image->mask)
 			fz_unblend_masked_tile(ctx, tile, image);
 	}
 	fz_always(ctx)
@@ -462,6 +462,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	else
 		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 6; l2factor++);
 
+
 	/* Now figure out if we want to decode just a subarea */
 	if (subarea == NULL)
 	{
@@ -628,7 +629,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 		image->invert_cmyk_jpeg = 1;
 		image->interpolate = interpolate;
 		image->imagemask = imagemask;
-		image->usecolorkey = (colorkey != NULL);
+		image->use_colorkey = (colorkey != NULL);
 		if (colorkey)
 			memcpy(image->colorkey, colorkey, sizeof(int)*image->n*2);
 		if (decode)
