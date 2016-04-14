@@ -245,16 +245,17 @@ fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
 		case FZ_PAGE_BLOCK_IMAGE:
 		{
 			fz_image_block *image = page->blocks[block_n].u.image;
+			fz_compressed_buffer *buffer = fz_compressed_image_buffer(ctx, image->image);
 			fz_printf(ctx, out, "<img width=%d height=%d src=\"data:", image->image->w, image->image->h);
-			switch (image->image->buffer == NULL ? FZ_IMAGE_JPX : image->image->buffer->params.type)
+			switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
 			{
 			case FZ_IMAGE_JPEG:
 				fz_printf(ctx, out, "image/jpeg;base64,");
-				send_data_base64(ctx, out, image->image->buffer->buffer);
+				send_data_base64(ctx, out, buffer->buffer);
 				break;
 			case FZ_IMAGE_PNG:
 				fz_printf(ctx, out, "image/png;base64,");
-				send_data_base64(ctx, out, image->image->buffer->buffer);
+				send_data_base64(ctx, out, buffer->buffer);
 				break;
 			default:
 				{

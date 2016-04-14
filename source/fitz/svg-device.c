@@ -718,6 +718,7 @@ svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
+	fz_compressed_buffer *buffer;
 
 	fz_matrix local_ctm = *ctm;
 	fz_matrix scale = { 0 };
@@ -730,16 +731,17 @@ svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 		fz_printf(ctx, out, "<g opacity=\"%g\">", alpha);
 	fz_printf(ctx, out, "<image");
 	svg_dev_ctm(ctx, sdev, &local_ctm);
+	buffer = fz_compressed_image_buffer(ctx, image);
 	fz_printf(ctx, out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
-	switch (image->buffer == NULL ? FZ_IMAGE_JPX : image->buffer->params.type)
+	switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
 	{
 	case FZ_IMAGE_JPEG:
 		fz_printf(ctx, out, "image/jpeg;base64,");
-		send_data_base64(ctx, out, image->buffer->buffer);
+		send_data_base64(ctx, out, buffer->buffer);
 		break;
 	case FZ_IMAGE_PNG:
 		fz_printf(ctx, out, "image/png;base64,");
-		send_data_base64(ctx, out, image->buffer->buffer);
+		send_data_base64(ctx, out, buffer->buffer);
 		break;
 	default:
 		{
@@ -805,6 +807,7 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	svg_device *sdev = (svg_device*)dev;
+	fz_compressed_buffer *buffer;
 
 	fz_output *out;
 	fz_matrix local_ctm = *ctm;
@@ -818,15 +821,16 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	out = start_def(ctx, sdev);
 	fz_printf(ctx, out, "<mask id=\"ma%d\"><image", mask);
 	fz_printf(ctx, out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
-	switch (image->buffer == NULL ? FZ_IMAGE_JPX : image->buffer->params.type)
+	buffer = fz_compressed_image_buffer(ctx, image);
+	switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
 	{
 	case FZ_IMAGE_JPEG:
 		fz_printf(ctx, out, "image/jpeg;base64,");
-		send_data_base64(ctx, out, image->buffer->buffer);
+		send_data_base64(ctx, out, buffer->buffer);
 		break;
 	case FZ_IMAGE_PNG:
 		fz_printf(ctx, out, "image/png;base64,");
-		send_data_base64(ctx, out, image->buffer->buffer);
+		send_data_base64(ctx, out, buffer->buffer);
 		break;
 	default:
 		{
@@ -853,6 +857,7 @@ svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_matrix local_ctm = *ctm;
 	fz_matrix scale = { 0 };
 	int mask = sdev->id++;
+	fz_compressed_buffer *buffer;
 
 	scale.a = 1.0f / image->w;
 	scale.d = 1.0f / image->h;
@@ -862,15 +867,16 @@ svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_printf(ctx, out, "<mask id=\"ma%d\"><image", mask);
 	svg_dev_ctm(ctx, sdev, &local_ctm);
 	fz_printf(ctx, out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
-	switch (image->buffer == NULL ? FZ_IMAGE_JPX : image->buffer->params.type)
+	buffer = fz_compressed_image_buffer(ctx, image);
+	switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
 	{
 	case FZ_IMAGE_JPEG:
 		fz_printf(ctx, out, "image/jpeg;base64,");
-		send_data_base64(ctx, out, image->buffer->buffer);
+		send_data_base64(ctx, out, buffer->buffer);
 		break;
 	case FZ_IMAGE_PNG:
 		fz_printf(ctx, out, "image/png;base64,");
-		send_data_base64(ctx, out, image->buffer->buffer);
+		send_data_base64(ctx, out, buffer->buffer);
 		break;
 	default:
 		{

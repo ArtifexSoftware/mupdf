@@ -18,6 +18,7 @@
 	demand.
 */
 typedef struct fz_image_s fz_image;
+typedef struct fz_compressed_image_s fz_compressed_image;
 
 /*
 	fz_get_pixmap_from_image: Called to get a handle to a pixmap from an image.
@@ -58,14 +59,20 @@ void fz_drop_image(fz_context *ctx, fz_image *image);
 */
 fz_image *fz_keep_image(fz_context *ctx, fz_image *image);
 
-fz_image *fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_compressed_buffer *buffer, fz_image *mask);
+typedef void (fz_drop_image_fn)(fz_context *ctx, fz_image *image);
+typedef fz_pixmap *(fz_image_get_pixmap_fn)(fz_context *, fz_image *, fz_irect *, int, int, int *);
+typedef size_t (fz_image_get_size_fn)(fz_context *, fz_image *);
+
+fz_image *fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_image *mask, int size, fz_image_get_pixmap_fn *get, fz_image_get_size_fn *get_size, fz_drop_image_fn *drop);
+fz_image *fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_compressed_buffer *buffer, fz_image *mask);
 fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask);
 fz_image *fz_new_image_from_data(fz_context *ctx, unsigned char *data, int len);
 fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
 fz_image *fz_new_image_from_file(fz_context *ctx, const char *path);
 void fz_drop_image_imp(fz_context *ctx, fz_storable *image);
-fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_image *image, fz_irect *subarea, int indexed, int l2factor);
+fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image *image, fz_irect *subarea, int indexed, int l2factor);
 fz_pixmap *fz_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src);
+size_t fz_image_size(fz_context *ctx, fz_image *im);
 
 struct fz_image_s
 {
@@ -77,18 +84,16 @@ struct fz_image_s
 	unsigned int interpolate:1;
 	unsigned int use_colorkey:1;
 	unsigned int invert_cmyk_jpeg:1;
+	unsigned int decoded:1;
 	fz_image *mask;
 	int xres; /* As given in the image, not necessarily as rendered */
 	int yres; /* As given in the image, not necessarily as rendered */
 	fz_colorspace *colorspace;
-	fz_pixmap *(*get_pixmap)(fz_context *, fz_image *, fz_irect *subarea, int w, int h, int *l2factor);
+	fz_drop_image_fn *drop_image;
+	fz_image_get_pixmap_fn *get_pixmap;
+	fz_image_get_size_fn *get_size;
 	int colorkey[FZ_MAX_COLORS * 2];
 	float decode[FZ_MAX_COLORS * 2];
-
-	/* Only 'standard' images use these currently. Maybe they should be
-	 * moved out into a derived image class. */
-	fz_compressed_buffer *buffer;
-	fz_pixmap *tile;
 };
 
 fz_pixmap *fz_load_jpeg(fz_context *ctx, unsigned char *data, int size);
@@ -110,5 +115,10 @@ int fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, int len);
 fz_pixmap *fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, int len, int subimage);
 
 void fz_image_resolution(fz_image *image, int *xres, int *yres);
+
+fz_pixmap *fz_compressed_image_tile(fz_context *ctx, fz_compressed_image *cimg);
+void fz_set_compressed_image_tile(fz_context *ctx, fz_compressed_image *cimg, fz_pixmap *pix);
+fz_compressed_buffer *fz_compressed_image_buffer(fz_context *ctx, fz_image *image);
+void fz_set_compressed_image_buffer(fz_context *ctx, fz_compressed_image *cimg, fz_compressed_buffer *buf);
 
 #endif

@@ -37,20 +37,22 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 
 			if (forcemask)
 			{
+				fz_compressed_image *cimg = (fz_compressed_image *)image;
 				fz_pixmap *mask_pixmap;
+				fz_pixmap *tile = fz_compressed_image_tile(ctx, cimg);
 				if (image->n != 2)
 				{
 					fz_pixmap *gray;
 					fz_irect bbox;
 					fz_warn(ctx, "soft mask should be grayscale");
-					gray = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), fz_pixmap_bbox(ctx, image->tile, &bbox));
-					fz_convert_pixmap(ctx, gray, image->tile);
-					fz_drop_pixmap(ctx, image->tile);
-					image->tile = gray;
+					gray = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), fz_pixmap_bbox(ctx, tile, &bbox));
+					fz_convert_pixmap(ctx, gray, tile);
+					fz_drop_pixmap(ctx, tile);
+					tile = gray;
 				}
-				mask_pixmap = fz_alpha_from_gray(ctx, image->tile, 1);
-				fz_drop_pixmap(ctx, image->tile);
-				image->tile = mask_pixmap;
+				mask_pixmap = fz_alpha_from_gray(ctx, tile, 1);
+				fz_drop_pixmap(ctx, tile);
+				fz_set_compressed_image_tile(ctx, cimg, mask_pixmap);
 			}
 			break; /* Out of fz_try */
 		}
@@ -158,21 +160,24 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			int num = pdf_to_num(ctx, dict);
 			int gen = pdf_to_gen(ctx, dict);
 			buffer = pdf_load_compressed_stream(ctx, doc, num, gen);
-			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, buffer, mask);
+			image = fz_new_image_from_compressed_buffer(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, buffer, mask);
 			image->invert_cmyk_jpeg = 0;
 		}
 		else
 		{
 			/* Inline stream */
 			stride = (w * n * bpc + 7) / 8;
-			image = fz_new_image(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, NULL, mask);
+			image = fz_new_image_from_compressed_buffer(ctx, w, h, bpc, colorspace, 96, 96, interpolate, imagemask, decode, use_colorkey ? colorkey : NULL, NULL, mask);
 			image->invert_cmyk_jpeg = 0;
-			pdf_load_compressed_inline_image(ctx, doc, dict, stride * h, cstm, indexed, image);
+			pdf_load_compressed_inline_image(ctx, doc, dict, stride * h, cstm, indexed, (fz_compressed_image *)image);
 		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_colorspace(ctx, colorspace);
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_colorspace(ctx, colorspace);
 		fz_drop_image(ctx, mask);
 		fz_drop_image(ctx, image);
 		fz_rethrow(ctx);
@@ -269,14 +274,6 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 	return img;
 }
 
-static int
-fz_image_size(fz_context *ctx, fz_image *im)
-{
-	if (im == NULL)
-		return 0;
-	return sizeof(*im) + fz_pixmap_size(ctx, im->tile) + (im->buffer && im->buffer->buffer ? im->buffer->buffer->cap : 0);
-}
-
 fz_image *
 pdf_load_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
@@ -303,7 +300,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	unsigned char digest[16];
 
 	/* If we can maintain compression, do so */
-	cbuffer = image->buffer;
+	cbuffer = fz_compressed_image_buffer(ctx, image);
 
 	fz_var(pixmap);
 	fz_var(buffer);

@@ -551,7 +551,7 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 
 	if (img == NULL)
 		return;
-	cbuf = img->buffer;
+	cbuf = fz_compressed_image_buffer(ctx, img);
 	if (cbuf == NULL)
 		return;
 	buf = cbuf->buffer;

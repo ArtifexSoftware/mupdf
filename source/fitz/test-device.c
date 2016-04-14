@@ -129,13 +129,15 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 	fz_pixmap *pix;
 	unsigned int count, i, k;
 	unsigned char *s;
+	fz_compressed_buffer *buffer;
 
 	if (*t->is_color || !image->colorspace || image->colorspace == fz_device_gray(ctx))
 		return;
 
-	if (image->buffer && image->bpc == 8)
+	buffer = fz_compressed_image_buffer(ctx, image);
+	if (buffer && image->bpc == 8)
 	{
-		fz_stream *stream = fz_open_compressed_buffer(ctx, image->buffer);
+		fz_stream *stream = fz_open_compressed_buffer(ctx, buffer);
 		count = (unsigned int)image->w * (unsigned int)image->h;
 		if (image->colorspace == fz_device_rgb(ctx))
 		{
