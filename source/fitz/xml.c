@@ -551,7 +551,11 @@ parse_attributes:
 	while (iswhite(*p)) ++p;
 	if (isname(*p))
 		goto parse_attribute_name;
-	if (*p == '>') { ++p; goto parse_text; }
+	if (*p == '>') {
+		++p;
+		if (*p == '\n') ++p; /* must skip linebreak immediately after an opening tag */
+		goto parse_text;
+	}
 	if (p[0] == '/' && p[1] == '>') {
 		xml_emit_close_tag(ctx, parser);
 		p += 2;
