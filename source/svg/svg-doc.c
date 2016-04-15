@@ -94,7 +94,7 @@ svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	root = fz_parse_xml(ctx, buf->data, buf->len, 0);
 	fz_drop_buffer(ctx, buf);
 
-	doc = fz_malloc_struct(ctx, svg_document);
+	doc = Memento_label(fz_new_document(ctx, sizeof(svg_document)), "svg_document");
 	doc->super.close = svg_close_document;
 	doc->super.count_pages = svg_count_pages;
 	doc->super.load_page = svg_load_page;
