@@ -1,3 +1,9 @@
+List of changes since MuPDF 1.9
+
+* Headline changes:
+	* FictionBook (FB2) e-book support.
+	* Simple SVG parser (a small subset of SVG only).
+
 List of changes in MuPDF 1.9
 
 * Headline changes:
