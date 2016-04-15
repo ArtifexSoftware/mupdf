@@ -84,15 +84,12 @@ svg_build_id_map(fz_context *ctx, svg_document *doc, fz_xml *root)
 }
 
 static fz_document *
-svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
+svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	svg_document *doc;
-	fz_buffer *buf;
 	fz_xml *root;
 
-	buf = fz_read_all(ctx, file, 0);
 	root = fz_parse_xml(ctx, buf->data, buf->len, 0);
-	fz_drop_buffer(ctx, buf);
 
 	doc = Memento_label(fz_new_document(ctx, sizeof(svg_document)), "svg_document");
 	doc->super.close = svg_close_document;
@@ -105,6 +102,23 @@ svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	svg_build_id_map(ctx, doc, root);
 
 	return (fz_document*)doc;
+}
+
+static fz_document *
+svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
+{
+	fz_buffer *buf;
+	fz_document *doc;
+
+	buf = fz_read_all(ctx, file, 0);
+	fz_try(ctx)
+		doc = svg_open_document_with_buffer(ctx, buf);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return doc;
 }
 
 static fz_document *
@@ -125,7 +139,7 @@ svg_open_document(fz_context *ctx, const char *filename)
 }
 
 static int
-svg_recognize(fz_context *doc, const char *magic)
+svg_recognize(fz_context *ctx, const char *magic)
 {
 	char *ext = strrchr(magic, '.');
 	if (ext && !fz_strcasecmp(ext, ".svg"))
@@ -133,6 +147,23 @@ svg_recognize(fz_context *doc, const char *magic)
 	if (!strcmp(magic, "svg") || !strcmp(magic, "image/svg+xml"))
 		return 100;
 	return 0;
+}
+
+fz_display_list *
+fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf)
+{
+	fz_document *doc;
+	fz_display_list *list;
+
+	doc = svg_open_document_with_buffer(ctx, buf);
+	fz_try(ctx)
+		list = fz_new_display_list_from_page_number(ctx, doc, 0);
+	fz_always(ctx)
+		fz_drop_document(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return list;
 }
 
 fz_document_handler svg_document_handler =
