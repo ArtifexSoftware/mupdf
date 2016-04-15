@@ -197,7 +197,7 @@ cbz_lookup_metadata(fz_context *ctx, cbz_document *doc, const char *key, char *b
 static cbz_document *
 cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
-	cbz_document *doc = fz_new_document(ctx, sizeof *doc);
+	cbz_document *doc = fz_new_document(ctx, cbz_document);
 
 	doc->super.close = (fz_document_close_fn *)cbz_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)cbz_count_pages;

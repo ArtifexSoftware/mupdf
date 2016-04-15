@@ -2329,7 +2329,7 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration)
 static pdf_document *
 pdf_new_document(fz_context *ctx, fz_stream *file)
 {
-	pdf_document *doc = fz_new_document(ctx, sizeof *doc);
+	pdf_document *doc = fz_new_document(ctx, pdf_document);
 
 	doc->super.close = (fz_document_close_fn *)pdf_close_document;
 	doc->super.needs_password = (fz_document_needs_password_fn *)pdf_needs_password;

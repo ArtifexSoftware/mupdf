@@ -119,7 +119,7 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	tiff_document *doc;
 
-	doc = fz_new_document(ctx, sizeof *doc);
+	doc = fz_new_document(ctx, tiff_document);
 
 	doc->super.close = (fz_document_close_fn *)tiff_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)tiff_count_pages;

@@ -147,7 +147,7 @@ fz_open_document(fz_context *ctx, const char *filename)
 }
 
 void *
-fz_new_document(fz_context *ctx, int size)
+fz_new_document_of_size(fz_context *ctx, int size)
 {
 	fz_document *doc = fz_calloc(ctx, 1, size);
 	doc->refs = 1;

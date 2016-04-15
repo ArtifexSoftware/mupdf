@@ -147,7 +147,9 @@ fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz
 /*
 	fz_new_document: Create and initialize a document struct.
 */
-void *fz_new_document(fz_context *ctx, int size);
+void *fz_new_document_of_size(fz_context *ctx, int size);
+
+#define fz_new_document(C,M) ((M*)Memento_label(fz_new_document_of_size(ctx, sizeof(M)), #M))
 
 /*
 	fz_drop_document: Release an open document.

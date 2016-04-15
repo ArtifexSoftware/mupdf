@@ -92,7 +92,7 @@ img_lookup_metadata(fz_context *ctx, img_document *doc, const char *key, char *b
 static img_document *
 img_new_document(fz_context *ctx, fz_image *image)
 {
-	img_document *doc = fz_new_document(ctx, sizeof *doc);
+	img_document *doc = fz_new_document(ctx, img_document);
 
 	doc->super.close = (fz_document_close_fn *)img_close_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)img_count_pages;

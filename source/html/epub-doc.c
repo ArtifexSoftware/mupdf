@@ -415,7 +415,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 {
 	epub_document *doc;
 
-	doc = fz_new_document(ctx, sizeof *doc);
+	doc = fz_new_document(ctx, epub_document);
 	doc->zip = zip;
 	doc->set = fz_new_html_font_set(ctx);
 

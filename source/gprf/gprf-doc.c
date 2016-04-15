@@ -846,7 +846,7 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	gprf_document *doc;
 
-	doc = Memento_label(fz_new_document(ctx, sizeof(gprf_document)), "gprf_document");
+	doc = fz_new_document(ctx, gprf_document);
 	doc->super.close = gprf_close_document;
 	doc->super.count_pages = gprf_count_pages;
 	doc->super.load_page = gprf_load_page;

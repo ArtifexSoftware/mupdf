@@ -91,7 +91,7 @@ svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 
 	root = fz_parse_xml(ctx, buf->data, buf->len, 0);
 
-	doc = Memento_label(fz_new_document(ctx, sizeof(svg_document)), "svg_document");
+	doc = fz_new_document(ctx, svg_document);
 	doc->super.close = svg_close_document;
 	doc->super.count_pages = svg_count_pages;
 	doc->super.load_page = svg_load_page;
