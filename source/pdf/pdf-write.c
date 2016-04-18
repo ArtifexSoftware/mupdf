@@ -1138,14 +1138,13 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	pdf_obj *params_ref = NULL;
 	pdf_obj *hint_obj = NULL;
 	pdf_obj *hint_ref = NULL;
-	pdf_obj *o = NULL;
+	pdf_obj *o;
 	int params_num, hint_num;
 
 	fz_var(params_obj);
 	fz_var(params_ref);
 	fz_var(hint_obj);
 	fz_var(hint_ref);
-	fz_var(o);
 
 	fz_try(ctx)
 	{
@@ -1164,11 +1163,10 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		pdf_dict_put(ctx, params_obj, PDF_NAME_L, opts->linear_l);
 		opts->linear_h0 = pdf_new_int(ctx, doc, INT_MIN);
 		o = pdf_new_array(ctx, doc, 2);
+		pdf_dict_put_drop(ctx, params_obj, PDF_NAME_H, o);
 		pdf_array_push(ctx, o, opts->linear_h0);
 		opts->linear_h1 = pdf_new_int(ctx, doc, INT_MIN);
 		pdf_array_push(ctx, o, opts->linear_h1);
-		pdf_dict_put_drop(ctx, params_obj, PDF_NAME_H, o);
-		o = NULL;
 		opts->linear_o = pdf_new_int(ctx, doc, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME_O, opts->linear_o);
 		opts->linear_e = pdf_new_int(ctx, doc, INT_MIN);
@@ -1210,7 +1208,6 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		pdf_drop_obj(ctx, params_ref);
 		pdf_drop_obj(ctx, hint_ref);
 		pdf_drop_obj(ctx, hint_obj);
-		pdf_drop_obj(ctx, o);
 	}
 	fz_catch(ctx)
 	{
@@ -1242,7 +1239,7 @@ lpr_inherit_res_contents(fz_context *ctx, pdf_obj *res, pdf_obj *dict, pdf_obj *
 		else
 			o = NULL;
 		if (o)
-			pdf_dict_put(ctx, res, text, o);
+			pdf_dict_put_drop(ctx, res, text, o);
 		return;
 	}
 
@@ -1567,44 +1564,52 @@ static fz_buffer *hexbuf(fz_context *ctx, unsigned char *p, int n)
 static void addhexfilter(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
 	pdf_obj *f, *dp, *newf, *newdp;
-	pdf_obj *nullobj;
 
-	nullobj = pdf_new_null(ctx, doc);
 	newf = newdp = NULL;
-
 	f = pdf_dict_get(ctx, dict, PDF_NAME_Filter);
 	dp = pdf_dict_get(ctx, dict, PDF_NAME_DecodeParms);
 
-	if (pdf_is_name(ctx, f))
+	fz_var(newf);
+	fz_var(newdp);
+
+	fz_try(ctx)
 	{
-		newf = pdf_new_array(ctx, doc, 2);
-		pdf_array_push(ctx, newf, PDF_NAME_ASCIIHexDecode);
-		pdf_array_push(ctx, newf, f);
-		f = newf;
-		if (pdf_is_dict(ctx, dp))
+		if (pdf_is_name(ctx, f))
 		{
-			newdp = pdf_new_array(ctx, doc, 2);
-			pdf_array_push(ctx, newdp, nullobj);
-			pdf_array_push(ctx, newdp, dp);
-			dp = newdp;
+			newf = pdf_new_array(ctx, doc, 2);
+			pdf_array_push(ctx, newf, PDF_NAME_ASCIIHexDecode);
+			pdf_array_push(ctx, newf, f);
+			f = newf;
+			if (pdf_is_dict(ctx, dp))
+			{
+				newdp = pdf_new_array(ctx, doc, 2);
+				pdf_array_push_drop(ctx, newdp, pdf_new_null(ctx, doc));
+				pdf_array_push(ctx, newdp, dp);
+				dp = newdp;
+			}
 		}
+		else if (pdf_is_array(ctx, f))
+		{
+			pdf_array_insert(ctx, f, PDF_NAME_ASCIIHexDecode, 0);
+			if (pdf_is_array(ctx, dp))
+				pdf_array_insert_drop(ctx, dp, pdf_new_null(ctx, doc), 0);
+		}
+		else
+			f = PDF_NAME_ASCIIHexDecode;
+
+		pdf_dict_put(ctx, dict, PDF_NAME_Filter, f);
+		if (dp)
+			pdf_dict_put(ctx, dict, PDF_NAME_DecodeParms, dp);
+
 	}
-	else if (pdf_is_array(ctx, f))
+	fz_always(ctx)
 	{
-		pdf_array_insert(ctx, f, PDF_NAME_ASCIIHexDecode, 0);
-		if (pdf_is_array(ctx, dp))
-			pdf_array_insert(ctx, dp, nullobj, 0);
+		pdf_drop_obj(ctx, newf);
+		pdf_drop_obj(ctx, newdp);
 	}
-	else
-		f = PDF_NAME_ASCIIHexDecode;
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
-	pdf_dict_put(ctx, dict, PDF_NAME_Filter, f);
-	if (dp)
-		pdf_dict_put(ctx, dict, PDF_NAME_DecodeParms, dp);
-
-	pdf_drop_obj(ctx, nullobj);
-	pdf_drop_obj(ctx, newf);
-	pdf_drop_obj(ctx, newdp);
 }
 
 static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, int n)

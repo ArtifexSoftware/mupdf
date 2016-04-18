@@ -281,9 +281,8 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 			if (dest_is_valid_page(ctx, dest, page_object_nums, pagecount))
 			{
 				pdf_obj *key_str = pdf_new_string(ctx, doc, pdf_to_name(ctx, key), strlen(pdf_to_name(ctx, key)));
-				pdf_array_push(ctx, names_list, key_str);
+				pdf_array_push_drop(ctx, names_list, key_str);
 				pdf_array_push(ctx, names_list, val);
-				pdf_drop_obj(ctx, key_str);
 			}
 		}
 

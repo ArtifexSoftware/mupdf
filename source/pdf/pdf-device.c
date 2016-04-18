@@ -358,7 +358,7 @@ pdf_dev_add_font_res(fz_context *ctx, pdf_device *pdev, fz_font *font)
 
 	/* Not there so add to resources */
 	fz_snprintf(text, sizeof(text), "Font/F%d", pdev->num_cid_fonts);
-	pdf_dict_putp(ctx, pdev->resources, text, fres);
+	pdf_dict_putp_drop(ctx, pdev->resources, text, fres);
 
 	/* And add index to our list for this page */
 	if (pdev->num_cid_fonts == pdev->max_cid_fonts)
@@ -909,7 +909,7 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 		pdf_dict_put(ctx, smask, PDF_NAME_G, form_ref);
 		color_obj = pdf_new_array(ctx, doc, colorspace->n);
 		for (i = 0; i < colorspace->n; i++)
-			pdf_array_push(ctx, color_obj, pdf_new_real(ctx, doc, color[i]));
+			pdf_array_push_drop(ctx, color_obj, pdf_new_real(ctx, doc, color[i]));
 		pdf_dict_put_drop(ctx, smask, PDF_NAME_BC, color_obj);
 		color_obj = NULL;
 

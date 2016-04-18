@@ -121,51 +121,31 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 	pdf_obj *idict = NULL;
 	pdf_obj *dict = NULL;
 	pdf_xobject *form = NULL;
-	pdf_obj *obj = NULL;
 	pdf_obj *res = NULL;
-	pdf_obj *procset = NULL;
+	pdf_obj *procset;
 
 	fz_var(idict);
 	fz_var(dict);
 	fz_var(form);
-	fz_var(obj);
 	fz_var(res);
-	fz_var(procset);
+
 	fz_try(ctx)
 	{
 		dict = pdf_new_dict(ctx, doc, 0);
-
-		obj = pdf_new_rect(ctx, doc, bbox);
-		pdf_dict_put(ctx, dict, PDF_NAME_BBox, obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
-
-		obj = pdf_new_int(ctx, doc, 1);
-		pdf_dict_put(ctx, dict, PDF_NAME_FormType, obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
-
-		obj = pdf_new_int(ctx, doc, 0);
-		pdf_dict_put(ctx, dict, PDF_NAME_Length, obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
-
-		obj = pdf_new_matrix(ctx, doc, mat);
-		pdf_dict_put(ctx, dict, PDF_NAME_Matrix, obj);
-		pdf_drop_obj(ctx, obj);
-		obj = NULL;
+		pdf_dict_put_drop(ctx, dict, PDF_NAME_BBox, pdf_new_rect(ctx, doc, bbox));
+		pdf_dict_put_drop(ctx, dict, PDF_NAME_FormType, pdf_new_int(ctx, doc, 1));
+		pdf_dict_put_drop(ctx, dict, PDF_NAME_Length, pdf_new_int(ctx, doc, 0));
+		pdf_dict_put_drop(ctx, dict, PDF_NAME_Matrix, pdf_new_matrix(ctx, doc, mat));
 
 		res = pdf_new_dict(ctx, doc, 0);
-		procset = pdf_new_array(ctx, doc, 2);
-		pdf_array_push(ctx, procset, PDF_NAME_PDF);
-		pdf_array_push(ctx, procset, PDF_NAME_Text);
-		pdf_dict_put(ctx, res, PDF_NAME_ProcSet, procset);
-		pdf_drop_obj(ctx, procset);
-		procset = NULL;
 		pdf_dict_put(ctx, dict, PDF_NAME_Resources, res);
 
-		pdf_dict_put(ctx, dict, PDF_NAME_Subtype, PDF_NAME_Form);
+		procset = pdf_new_array(ctx, doc, 2);
+		pdf_dict_put_drop(ctx, res, PDF_NAME_ProcSet, procset);
+		pdf_array_push(ctx, procset, PDF_NAME_PDF);
+		pdf_array_push(ctx, procset, PDF_NAME_Text);
 
+		pdf_dict_put(ctx, dict, PDF_NAME_Subtype, PDF_NAME_Form);
 		pdf_dict_put(ctx, dict, PDF_NAME_Type, PDF_NAME_XObject);
 
 		form = fz_malloc_struct(ctx, pdf_xobject);
@@ -204,13 +184,11 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_obj(ctx, procset);
 		pdf_drop_obj(ctx, res);
-		pdf_drop_obj(ctx, obj);
 		pdf_drop_obj(ctx, dict);
 		pdf_drop_obj(ctx, idict);
 		pdf_drop_xobject(ctx, form);
-		fz_rethrow_message(ctx, "failed to create xobject)");
+		fz_rethrow_message(ctx, "failed to create xobject");
 	}
 
 	return idict;
