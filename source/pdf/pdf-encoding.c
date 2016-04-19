@@ -52,11 +52,11 @@ pdf_lookup_agl(char *name)
 			return agl_code_list[m];
 	}
 
-	if (strstr(buf, "uni") == buf)
+	if (buf[0] == 'u' && buf[1] == 'n' && buf[2] == 'i')
 		code = strtol(buf + 3, NULL, 16);
-	else if (strstr(buf, "u") == buf)
+	else if (buf[0] == 'u')
 		code = strtol(buf + 1, NULL, 16);
-	else if (strstr(buf, "a") == buf && strlen(buf) >= 3)
+	else if (buf[0] == 'a' && buf[1] != 0 && buf[2] != 0)
 		code = strtol(buf + 1, NULL, 10);
 
 	return (code >= 0 && code <= 0x10ffff) ? code : 0;
