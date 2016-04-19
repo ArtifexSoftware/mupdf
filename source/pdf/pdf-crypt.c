@@ -302,27 +302,29 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 	}
 
 	dict = pdf_dict_get(ctx, crypt->cf, name);
-	if (!pdf_is_dict(ctx, dict))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse crypt filter (%d %d R)", pdf_to_num(ctx, crypt->cf), pdf_to_gen(ctx, crypt->cf));
-
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_CFM);
-	if (pdf_is_name(ctx, obj))
+	if (pdf_is_dict(ctx, dict))
 	{
-		if (pdf_name_eq(ctx, PDF_NAME_None, obj))
-			cf->method = PDF_CRYPT_NONE;
-		else if (pdf_name_eq(ctx, PDF_NAME_V2, obj))
-			cf->method = PDF_CRYPT_RC4;
-		else if (pdf_name_eq(ctx, PDF_NAME_AESV2, obj))
-			cf->method = PDF_CRYPT_AESV2;
-		else if (pdf_name_eq(ctx, PDF_NAME_AESV3, obj))
-			cf->method = PDF_CRYPT_AESV3;
-		else
-			fz_warn(ctx, "unknown encryption method: %s", pdf_to_name(ctx, obj));
-	}
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_CFM);
+		if (pdf_is_name(ctx, obj))
+		{
+			if (pdf_name_eq(ctx, PDF_NAME_None, obj))
+				cf->method = PDF_CRYPT_NONE;
+			else if (pdf_name_eq(ctx, PDF_NAME_V2, obj))
+				cf->method = PDF_CRYPT_RC4;
+			else if (pdf_name_eq(ctx, PDF_NAME_AESV2, obj))
+				cf->method = PDF_CRYPT_AESV2;
+			else if (pdf_name_eq(ctx, PDF_NAME_AESV3, obj))
+				cf->method = PDF_CRYPT_AESV3;
+			else
+				fz_warn(ctx, "unknown encryption method: %s", pdf_to_name(ctx, obj));
+		}
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Length);
-	if (pdf_is_int(ctx, obj))
-		cf->length = pdf_to_int(ctx, obj);
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_Length);
+		if (pdf_is_int(ctx, obj))
+			cf->length = pdf_to_int(ctx, obj);
+	}
+	else if (!is_identity)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse crypt filter (%d %d R)", pdf_to_num(ctx, crypt->cf), pdf_to_gen(ctx, crypt->cf));
 
 	/* the length for crypt filters is supposed to be in bytes not bits */
 	if (cf->length < 40)
