@@ -1,5 +1,87 @@
 #include "mupdf/fitz.h"
 
+struct fz_output_context_s
+{
+	int refs;
+	fz_output *out;
+	fz_output *err;
+};
+
+static void std_write(fz_context *ctx, void *opaque, const void *buffer, int count);
+
+static fz_output fz_stdout_global = {
+	&fz_stdout_global,
+	std_write,
+	NULL,
+	NULL,
+	NULL,
+};
+
+static fz_output fz_stderr_global = {
+	&fz_stderr_global,
+	std_write,
+	NULL,
+	NULL,
+	NULL,
+};
+
+void
+fz_new_output_context(fz_context *ctx)
+{
+	ctx->output = fz_malloc_struct(ctx, fz_output_context);
+	ctx->output->refs = 1;
+	ctx->output->out = &fz_stdout_global;
+	ctx->output->err = &fz_stderr_global;
+}
+
+fz_output_context *
+fz_keep_output_context(fz_context *ctx)
+{
+	if (!ctx)
+		return NULL;
+	return fz_keep_imp(ctx, ctx->output, &ctx->output->refs);
+}
+
+void
+fz_drop_output_context(fz_context *ctx)
+{
+	if (!ctx || !ctx->output)
+		return;
+
+	if (fz_drop_imp(ctx, ctx->output, &ctx->output->refs))
+	{
+		/* FIXME: should we flush here? closing the streams seems wrong */
+		fz_free(ctx, ctx->output);
+		ctx->output = NULL;
+	}
+}
+
+void
+fz_set_stdout(fz_context *ctx, fz_output *out)
+{
+	fz_drop_output(ctx, ctx->output->out);
+	ctx->output->out = out ? out : &fz_stdout_global;
+}
+
+void
+fz_set_stderr(fz_context *ctx, fz_output *err)
+{
+	fz_drop_output(ctx, ctx->output->err);
+	ctx->output->err = err ? err : &fz_stderr_global;
+}
+
+fz_output *
+fz_stdout(fz_context *ctx)
+{
+	return ctx->output->out;
+}
+
+fz_output *
+fz_stderr(fz_context *ctx)
+{
+	return ctx->output->err;
+}
+
 static void
 file_write(fz_context *ctx, void *opaque, const void *buffer, int count)
 {
@@ -20,6 +102,13 @@ file_write(fz_context *ctx, void *opaque, const void *buffer, int count)
 	n = fwrite(buffer, 1, count, file);
 	if (n < (size_t)count && ferror(file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
+}
+
+static void
+std_write(fz_context *ctx, void *opaque, const void *buffer, int count)
+{
+	FILE *f = opaque == &fz_stdout_global ? stdout : opaque == &fz_stderr_global ? stderr : NULL;
+	file_write(ctx, f, buffer, count);
 }
 
 static void
@@ -132,7 +221,8 @@ fz_drop_output(fz_context *ctx, fz_output *out)
 	if (!out) return;
 	if (out->close)
 		out->close(ctx, out->opaque);
-	fz_free(ctx, out);
+	if (out->opaque != &fz_stdout_global && out->opaque != &fz_stderr_global)
+		fz_free(ctx, out);
 }
 
 void

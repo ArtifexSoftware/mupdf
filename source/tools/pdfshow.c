@@ -197,7 +197,7 @@ static void showoutline(void)
 	fz_var(out);
 	fz_try(ctx)
 	{
-		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
+		out = fz_stdout(ctx);
 		fz_print_outline(ctx, out, outline);
 	}
 	fz_always(ctx)
@@ -245,7 +245,7 @@ int pdfshow_main(int argc, char **argv)
 	if (output)
 		out = fz_new_output_with_path(ctx, output, 0);
 	else
-		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
+		out = fz_stdout(ctx);
 
 	fz_var(doc);
 	fz_try(ctx)

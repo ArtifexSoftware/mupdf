@@ -23,6 +23,7 @@ typedef struct fz_tuning_context_s fz_tuning_context;
 typedef struct fz_store_s fz_store;
 typedef struct fz_glyph_cache_s fz_glyph_cache;
 typedef struct fz_document_handler_context_s fz_document_handler_context;
+typedef struct fz_output_context_s fz_output_context;
 typedef struct fz_context_s fz_context;
 
 struct fz_alloc_context_s
@@ -123,6 +124,7 @@ struct fz_context_s
 	fz_glyph_cache *glyph_cache;
 	fz_tuning_context *tuning;
 	fz_document_handler_context *handler;
+	fz_output_context *output;
 };
 
 /*

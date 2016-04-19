@@ -698,7 +698,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_output *out;
 
 		if (!strcmp(output, "-"))
-			out = fz_new_output_with_file_ptr(ctx, stdout, 0);
+			out = fz_stdout(ctx);
 		else
 		{
 			sprintf(buf, output, pagenum);
@@ -1606,7 +1606,7 @@ int mudraw_main(int argc, char **argv)
 			out = fz_new_output_with_path(ctx, output, 0);
 	}
 	else
-		out = fz_new_output_with_file_ptr(ctx, stdout, 0);
+		out = fz_stdout(ctx);
 
 	timing.count = 0;
 	timing.total = 0;

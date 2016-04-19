@@ -132,6 +132,7 @@ fz_drop_context(fz_context *ctx)
 	fz_drop_colorspace_context(ctx);
 	fz_drop_font_context(ctx);
 	fz_drop_id_context(ctx);
+	fz_drop_output_context(ctx);
 
 	if (ctx->warn)
 	{
@@ -222,6 +223,7 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 	/* Now initialise sections that are shared */
 	fz_try(ctx)
 	{
+		fz_new_output_context(ctx);
 		fz_new_store_context(ctx, max_store);
 		fz_new_glyph_cache_context(ctx);
 		fz_new_colorspace_context(ctx);
@@ -266,6 +268,8 @@ fz_clone_context_internal(fz_context *ctx)
 	fz_copy_aa_context(new_ctx, ctx);
 
 	/* Keep thread lock checking happy by copying pointers first and locking under new context */
+	new_ctx->output = ctx->output;
+	new_ctx->output = fz_keep_output_context(new_ctx);
 	new_ctx->user = ctx->user;
 	new_ctx->store = ctx->store;
 	new_ctx->store = fz_keep_store_context(new_ctx);

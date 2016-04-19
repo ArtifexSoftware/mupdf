@@ -31,6 +31,17 @@ fz_output *fz_new_output_with_path(fz_context *, const char *filename, int appen
 fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
 
 /*
+	fz_stdout: The standard out output stream.
+	fz_stderr: The standard error output stream.
+	fz_set_stdout: Replace default standard output stream with a new stream.
+	fz_set_stderr: Replace default standard error stream with a new stream.
+*/
+fz_output *fz_stdout(fz_context *);
+fz_output *fz_stderr(fz_context *);
+void fz_set_stdout(fz_context *ctx, fz_output *out);
+void fz_set_stderr(fz_context *ctx, fz_output *err);
+
+/*
 	fz_write: fwrite equivalent for output streams.
 	fz_printf: fprintf equivalent for output streams. See fz_snprintf.
 	fz_vprintf: vfprintf equivalent for output streams. See fz_vsnprintf.
@@ -148,5 +159,9 @@ char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint);
 	fz_save_buffer: Save contents of a buffer to file.
 */
 void fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename);
+
+void fz_new_output_context(fz_context *ctx);
+void fz_drop_output_context(fz_context *ctx);
+fz_output_context *fz_keep_output_context(fz_context *ctx);
 
 #endif
