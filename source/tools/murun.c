@@ -521,7 +521,7 @@ static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 	if (js_isstring(J, idx)) {
 		const char *s = js_tostring(J, idx);
 		fz_try(ctx)
-			if (s[0] == '(')
+			if (s[0] == '(' && s[1] != 0)
 				obj = pdf_new_string(ctx, pdf, s+1, strlen(s)-2);
 			else
 				obj = pdf_new_name(ctx, pdf, s);
