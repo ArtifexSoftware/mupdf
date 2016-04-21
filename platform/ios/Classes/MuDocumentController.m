@@ -474,16 +474,13 @@ static void saveDoc(char *current_path, fz_document *doc)
 - (void) onShowOutline: (id)sender
 {
 	//  rebuild the outline in case the layout has changed
-
-	if (!outline)
-		[outline release];
-
 	fz_outline *root = fz_load_outline(ctx, doc);
 	if (root)
 	{
 		NSMutableArray *titles = [[NSMutableArray alloc] init];
 		NSMutableArray *pages = [[NSMutableArray alloc] init];
 		flattenOutline(titles, pages, root, 0);
+		[outline release];
 		if ([titles count])
 			outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
 		[titles release];
