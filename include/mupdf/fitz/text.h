@@ -39,10 +39,10 @@ struct fz_text_span_s
 {
 	fz_font *font;
 	fz_matrix trm;
-	int wmode : 1;		/* 0 horizontal, 1 vertical */
-	int bidi_level : 7;	/* The bidirectional level of text */
-	int markup_dir : 2;	/* The direction of text as marked in the original document */
-	int language : 15;	/* The language as marked in the original document */
+	unsigned wmode : 1;		/* 0 horizontal, 1 vertical */
+	unsigned bidi_level : 7;	/* The bidirectional level of text */
+	unsigned markup_dir : 2;	/* The direction of text as marked in the original document */
+	unsigned language : 15;		/* The language as marked in the original document */
 	int len, cap;
 	fz_text_item *items;
 	fz_text_span *next;
