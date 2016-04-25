@@ -2747,9 +2747,12 @@ static void ffi_PDFObject_writeObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *ref = js_touserdata(J, 0, "pdf_obj");
-	pdf_obj *obj = js_touserdata(J, 1, "pdf_obj");
+	pdf_document *pdf = pdf_get_bound_document(ctx, ref);
+	pdf_obj *obj = ffi_toobj(J, pdf, 1);
 	fz_try(ctx)
-		pdf_update_object(ctx, pdf_get_bound_document(ctx, ref), pdf_to_num(ctx, ref), obj);
+		pdf_update_object(ctx, pdf, pdf_to_num(ctx, ref), obj);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, obj);
 	fz_catch(ctx)
 		rethrow(J);
 }
