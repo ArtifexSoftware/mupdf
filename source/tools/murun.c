@@ -2946,7 +2946,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.bound", ffi_Page_bound, 0);
 		jsB_propfun(J, "Page.run", ffi_Page_run, 2);
 		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 1);
-		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
+		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 0);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
 	}
 	js_setregistry(J, "fz_page");
@@ -3135,7 +3135,7 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "pdf_obj");
 
-	js_newobject(J);
+	js_pushglobal(J);
 	{
 		jsB_propcon(J, "pdf_document", "PDFDocument", ffi_new_PDFDocument, 1);
 
@@ -3166,13 +3166,12 @@ int murun_main(int argc, char **argv)
 
 		// Set user CSS
 	}
-	js_setglobal(J, "mupdf");
 
 	/* re-implement matrix math in javascript */
-	js_dostring(J, "mupdf.Identity = [1,0,0,1,0,0];");
-	js_dostring(J, "mupdf.Scale = function(sx,sy) { return [sx,0,0,sy,0,0]; };");
-	js_dostring(J, "mupdf.Translate = function(tx,ty) { return [1,0,0,1,tx,ty]; };");
-	js_dostring(J, "mupdf.Concat = function(a,b) { return ["
+	js_dostring(J, "var Identity = Object.freeze([1,0,0,1,0,0]);");
+	js_dostring(J, "function Scale(sx,sy) { return [sx,0,0,sy,0,0]; }");
+	js_dostring(J, "function Translate(tx,ty) { return [1,0,0,1,tx,ty]; }");
+	js_dostring(J, "function Concat(a,b) { return ["
 			"a[0] * b[0] + a[1] * b[2],"
 			"a[0] * b[1] + a[1] * b[3],"
 			"a[2] * b[0] + a[3] * b[2],"
