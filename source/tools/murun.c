@@ -417,6 +417,11 @@ static void ffi_pushstroke(js_State *J, const fz_stroke_state *stroke)
 static fz_stroke_state ffi_tostroke(js_State *J, int idx)
 {
 	fz_stroke_state stroke = fz_default_stroke_state;
+	if (js_hasproperty(J, idx, "lineCap")) {
+		stroke.start_cap = cap_from_string(js_tostring(J, -1));
+		stroke.dash_cap = stroke.start_cap;
+		stroke.end_cap = stroke.start_cap;
+	}
 	if (js_hasproperty(J, idx, "startCap")) {
 		stroke.start_cap = cap_from_string(js_tostring(J, -1));
 		js_pop(J, 1);
