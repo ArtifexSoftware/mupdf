@@ -149,7 +149,7 @@ int pdfmerge_main(int argc, char **argv)
 {
 	pdf_write_options opts = { 0 };
 	char *output = "out.pdf";
-	char *infile_src;
+	char *input;
 	int c;
 
 	while ((c = fz_getopt(argc, argv, "adlszo:")) != -1)
@@ -172,7 +172,7 @@ int pdfmerge_main(int argc, char **argv)
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
 	if (!ctx)
 	{
-		fprintf(stderr, "Cannot initialise context\n");
+		fprintf(stderr, "error: Cannot initialize MuPDF context.\n");
 		exit(1);
 	}
 
@@ -182,19 +182,18 @@ int pdfmerge_main(int argc, char **argv)
 	}
 	fz_catch(ctx)
 	{
-		fprintf(stderr, "Failed to allocate destination document file %s\n", output);
+		fprintf(stderr, "error: Cannot create destination document.\n");
 		exit(1);
 	}
 
 	/* Step through the source files */
 	while (fz_optind < argc)
 	{
+		input = argv[fz_optind++];
 		fz_try(ctx)
 		{
-			infile_src = argv[fz_optind++];
 			pdf_drop_document(ctx, doc_src);
-			doc_src = pdf_open_document(ctx, infile_src);
-
+			doc_src = pdf_open_document(ctx, input);
 			if (fz_optind == argc || !isrange(argv[fz_optind]))
 				merge_range("1-");
 			else
@@ -202,7 +201,7 @@ int pdfmerge_main(int argc, char **argv)
 		}
 		fz_catch(ctx)
 		{
-			fprintf(stderr, "Failed merging document %s\n", infile_src);
+			fprintf(stderr, "error: Cannot merge document '%s'.\n", input);
 			exit(1);
 		}
 	}
@@ -218,11 +217,11 @@ int pdfmerge_main(int argc, char **argv)
 	}
 	fz_catch(ctx)
 	{
-		fprintf(stderr, "Error encountered during file save.\n");
+		fprintf(stderr, "error: Cannot save output file: '%s'.\n", output);
 		exit(1);
 	}
+
 	fz_flush_warnings(ctx);
 	fz_drop_context(ctx);
-
 	return 0;
 }
