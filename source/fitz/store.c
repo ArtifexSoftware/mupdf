@@ -223,13 +223,6 @@ fz_store_item(fz_context *ctx, void *key, void *val_, unsigned int itemsize, fz_
 
 	fz_var(item);
 
-	if (store->max != FZ_STORE_UNLIMITED && store->max < itemsize)
-	{
-		/* Our item would take up more room than we can ever
-		 * possibly have in the store. Just give up now. */
-		return NULL;
-	}
-
 	/* If we fail for any reason, we swallow the exception and continue.
 	 * All that the above program will see is that we failed to store
 	 * the item. */
@@ -306,29 +299,21 @@ fz_store_item(fz_context *ctx, void *key, void *val_, unsigned int itemsize, fz_
 		{
 			/* ensure_space may drop, then retake the lock */
 			int saved = ensure_space(ctx, size - store->max);
+			size -= saved;
 			if (saved == 0)
 			{
 				/* Failed to free any space. */
-				/* If we are using the hash table, then we've already
-				 * inserted item - remove it. */
-				if (use_hash)
-				{
-					/* If someone else has already picked up a reference
-					 * to item, then we cannot remove it. Leave it in the
-					 * store, and we'll live with being over budget. We
-					 * know this is the case, if it's in the linked list. */
-					if (item->next != item)
-						break;
-					fz_hash_remove_fast(ctx, store->hash, &hash, pos);
-				}
-				fz_unlock(ctx, FZ_LOCK_ALLOC);
-				fz_free(ctx, item);
-				type->drop_key(ctx, key);
-				if (val->refs > 0)
-					val->refs--;
-				return NULL;
+				/* We used to 'unstore' it here, but that's wrong.
+				 * If we've already spent the memory to malloc it
+				 * then not putting it in the store just means that
+				 * a resource used multiple times will just be malloced
+				 * again. Better to put it in the store, have the
+				 * store account for it, and for it to potentially be reused.
+				 * When the caller drops the reference to it, it can then
+				 * be dropped from the store on the next attempt to store
+				 * anything else. */
+				break;
 			}
-			size -= saved;
 		}
 	}
 	store->size += itemsize;
