@@ -1951,7 +1951,9 @@ static void ffi_Text_walk(js_State *J)
 			ffi_pushmatrix(J, trm);
 			js_pushnumber(J, span->items[i].gid);
 			js_pushnumber(J, span->items[i].ucs);
-			js_call(J, 4);
+			js_pushnumber(J, span->wmode);
+			js_pushnumber(J, span->bidi_level);
+			js_call(J, 6);
 			js_pop(J, 1);
 		}
 		js_pop(J, 1); /* pop font object */
