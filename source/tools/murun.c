@@ -23,6 +23,25 @@ static void *alloc(void *actx, void *ptr, unsigned int n)
 	return fz_malloc_array(ctx, n, 1);
 }
 
+static int eval_print(js_State *J, const char *source)
+{
+	if (js_ploadstring(J, "[string]", source)) {
+		fprintf(stderr, "%s\n", js_tostring(J, -1));
+		js_pop(J, 1);
+		return 1;
+	}
+	js_pushglobal(J);
+	if (js_pcall(J, 0)) {
+		fprintf(stderr, "%s\n", js_tostring(J, -1));
+		js_pop(J, 1);
+		return 1;
+	}
+	if (js_isdefined(J, -1))
+		printf("%s\n", js_tostring(J, -1));
+	js_pop(J, 1);
+	return 0;
+}
+
 static void jsB_propfun(js_State *J, const char *name, js_CFunction cfun, int n)
 {
 	const char *realname = strchr(name, '.');
@@ -3174,7 +3193,7 @@ int murun_main(int argc, char **argv)
 		char line[256];
 		fputs(PS1, stdout);
 		while (fgets(line, sizeof line, stdin)) {
-			js_dostring(J, line);
+			eval_print(J, line);
 			fputs(PS1, stdout);
 		}
 		putchar('\n');
