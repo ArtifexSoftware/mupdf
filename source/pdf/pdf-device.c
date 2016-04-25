@@ -1062,7 +1062,7 @@ pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, pdev->gstates);
 }
 
-fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matrix *topctm, const fz_rect *mediabox, fz_buffer *buf, pdf_obj *resources)
+fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matrix *topctm, const fz_rect *mediabox, pdf_obj *resources, fz_buffer *buf)
 {
 	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
 
@@ -1130,10 +1130,10 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matri
 }
 
 fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc,
-	const fz_rect *mediabox, fz_buffer **pcontents, pdf_obj **presources)
+	const fz_rect *mediabox, pdf_obj **presources, fz_buffer **pcontents)
 {
 	fz_matrix pagectm = { 1, 0, 0, -1, -mediabox->x0, mediabox->y1 };
 	*presources = pdf_new_dict(ctx, doc, 0);
 	*pcontents = fz_new_buffer(ctx, 0);
-	return pdf_new_pdf_device(ctx, doc, &pagectm, mediabox, *pcontents, *presources);
+	return pdf_new_pdf_device(ctx, doc, &pagectm, mediabox, *presources, *pcontents);
 }

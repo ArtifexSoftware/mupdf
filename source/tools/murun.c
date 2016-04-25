@@ -2388,12 +2388,12 @@ static void ffi_PDFDocument_addPage(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_rect mediabox = ffi_torect(J, 1);
 	int rotate = js_tonumber(J, 2);
-	fz_buffer *contents = ffi_tobuffer(J, 3); /* FIXME: leak if ffi_toobj throws */
-	pdf_obj *resources = ffi_toobj(J, pdf, 4);
+	pdf_obj *resources = ffi_toobj(J, pdf, 3); /* FIXME: leak if ffi_tobuffer throws */
+	fz_buffer *contents = ffi_tobuffer(J, 4);
 	pdf_obj *ind;
 
 	fz_try(ctx)
-		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, contents, resources);
+		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
 	fz_always(ctx) {
 		fz_drop_buffer(ctx, contents);
 		pdf_drop_obj(ctx, resources);

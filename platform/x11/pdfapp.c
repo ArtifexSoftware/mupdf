@@ -254,7 +254,7 @@ static int make_fake_doc(pdfapp_t *app)
 		/* Create enough copies of our blank(ish) page so that the
 		 * page number is preserved if and when a subsequent load
 		 * works. */
-		page_obj = pdf_add_page(ctx, pdf, &mediabox, 0, contents, NULL);
+		page_obj = pdf_add_page(ctx, pdf, &mediabox, 0, NULL, contents);
 		for (i = 0; i < app->pagecount; i++)
 			pdf_insert_page(ctx, pdf, -1, page_obj);
 		pdf_drop_obj(ctx, page_obj);

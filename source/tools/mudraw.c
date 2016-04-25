@@ -641,7 +641,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_buffer *contents;
 		pdf_obj *resources;
 
-		dev = pdf_page_write(ctx, pdfout, &mediabox, &contents, &resources);
+		dev = pdf_page_write(ctx, pdfout, &mediabox, &resources, &contents);
 		fz_try(ctx)
 		{
 			pdf_obj *page_obj;
@@ -651,7 +651,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
 
-			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, contents, resources);
+			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, resources, contents);
 			pdf_insert_page(ctx, pdfout, -1, page_obj);
 			pdf_drop_obj(ctx, page_obj);
 		}

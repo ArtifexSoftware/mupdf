@@ -269,12 +269,12 @@ struct pdf_document_s
 */
 pdf_document *pdf_create_document(fz_context *ctx);
 
-pdf_obj *pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate, fz_buffer *contents, pdf_obj *resources);
+pdf_obj *pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate, pdf_obj *resources, fz_buffer *contents);
 void pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page);
 void pdf_delete_page(fz_context *ctx, pdf_document *doc, int number);
 void pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end);
 
-fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, fz_buffer **pcontents, pdf_obj **presources);
+fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, pdf_obj **presources, fz_buffer **pcontents);
 
 void pdf_finish_edit(fz_context *ctx, pdf_document *doc);
 
