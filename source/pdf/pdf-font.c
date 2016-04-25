@@ -2020,7 +2020,6 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 	pdf_font_desc *fontdesc = NULL;
 
 	FT_Face face = font->ft_face;
-	const char *ps_name;
 	unsigned char digest[16];
 	int first_char, last_char;
 
@@ -2046,15 +2045,15 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			case TYPE1: pdf_dict_put(ctx, fobj, PDF_NAME_Subtype, PDF_NAME_Type1); break;
 			case TRUETYPE: pdf_dict_put(ctx, fobj, PDF_NAME_Subtype, PDF_NAME_TrueType); break;
 			}
-			ps_name = FT_Get_Postscript_Name(face);
-			if (ps_name)
-				pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, ps_name));
-			else
-				pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, font->name));
 			pdf_dict_put(ctx, fobj, PDF_NAME_Encoding, PDF_NAME_WinAnsiEncoding);
 
 			if (!is_builtin_font(ctx, font))
 			{
+				const char *ps_name = FT_Get_Postscript_Name(face);
+				if (!ps_name)
+					ps_name = font->name;
+				pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, ps_name));
+
 				fontdesc = pdf_new_font_desc(ctx);
 				fontdesc->font = fz_keep_font(ctx, font);
 				fontdesc->flags = PDF_FD_NONSYMBOLIC; /* ToDo: FixMe. Set non-symbolic always for now */
@@ -2069,6 +2068,10 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 				pdf_dict_put_drop(ctx, fobj, PDF_NAME_LastChar, pdf_new_int(ctx, doc, last_char));
 				pdf_dict_put(ctx, fobj, PDF_NAME_Widths, fwidth_ref);
 				pdf_dict_put(ctx, fobj, PDF_NAME_FontDescriptor, fdes_ref);
+			}
+			else
+			{
+				pdf_dict_put_drop(ctx, fobj, PDF_NAME_BaseFont, pdf_new_name(ctx, doc, clean_font_name(font->name)));
 			}
 
 			fref = pdf_add_object(ctx, doc, fobj);
