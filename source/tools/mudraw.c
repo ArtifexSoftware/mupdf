@@ -1258,6 +1258,9 @@ int mudraw_main(int argc, char **argv)
 		exit(1);
 	}
 
+	fz_set_text_aa_level(ctx, alphabits_text);
+	fz_set_graphics_aa_level(ctx, alphabits_graphics);
+
 	if (num_workers > 0)
 	{
 		workers = fz_calloc(ctx, num_workers, sizeof(*workers));
@@ -1270,9 +1273,6 @@ int mudraw_main(int argc, char **argv)
 			THREAD_INIT(workers[i].thread, worker_thread, &workers[i]);
 		}
 	}
-
-	fz_set_text_aa_level(ctx, alphabits_text);
-	fz_set_graphics_aa_level(ctx, alphabits_graphics);
 
 	if (layout_css)
 	{
