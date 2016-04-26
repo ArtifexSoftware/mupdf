@@ -1011,6 +1011,13 @@ static void pdfapp_search_in_direction(pdfapp_t *app, enum panning *panto, int d
 {
 	int firstpage, page;
 
+	/* abort if no search string */
+	if (app->search[0] == 0)
+	{
+		winrepaint(app);
+		return;
+	}
+
 	wincursor(app, WAIT);
 
 	firstpage = app->pageno;
