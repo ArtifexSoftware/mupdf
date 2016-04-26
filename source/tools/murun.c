@@ -2341,6 +2341,19 @@ static void ffi_PDFDocument_createObject(js_State *J)
 	ffi_pushobj(J, ind);
 }
 
+static void ffi_PDFDocument_deleteObject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	pdf_obj *ind = js_isuserdata(J, 1, "pdf_obj") ? js_touserdata(J, 1, "pdf_obj") : NULL;
+	int num = ind ? pdf_to_num(ctx, ind) : js_tonumber(J, 1);
+
+	fz_try(ctx)
+		pdf_delete_object(ctx, pdf, num);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFDocument_addObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3101,6 +3114,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
 		jsB_propfun(J, "PDFDocument.countObjects", ffi_PDFDocument_countObjects, 0);
 		jsB_propfun(J, "PDFDocument.createObject", ffi_PDFDocument_createObject, 0);
+		jsB_propfun(J, "PDFDocument.deleteObject", ffi_PDFDocument_deleteObject, 1);
 		jsB_propfun(J, "PDFDocument.addObject", ffi_PDFDocument_addObject, 1);
 		jsB_propfun(J, "PDFDocument.addStream", ffi_PDFDocument_addStream, 1);
 		jsB_propfun(J, "PDFDocument.addSimpleFont", ffi_PDFDocument_addSimpleFont, 1);
