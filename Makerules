@@ -83,10 +83,10 @@ RANLIB_CMD = xcrun ranlib $@
 # Linux uses pkg-config for system libraries.
 else ifeq "$(OS)" "Linux"
 
-HAVE_X11 ?= yes
 HAVE_PTHREADS ?= yes
 
 ifeq "$(shell pkg-config --exists libcrypto && echo yes)" "yes"
+HAVE_OPENSSL = yes
 SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL $(shell pkg-config --cflags libcrypto)
 SYS_OPENSSL_LIBS = $(shell pkg-config --libs libcrypto)
 endif
@@ -98,15 +98,27 @@ SYS_CURL_LIBS = $(shell pkg-config --libs libcurl)
 endif
 SYS_CURL_DEPS = -lpthread -lrt
 
+ifeq "$(shell pkg-config --exists x11 xext && echo yes)" "yes"
+HAVE_X11 = yes
 SYS_X11_CFLAGS = $(shell pkg-config --cflags x11 xext)
 SYS_X11_LIBS = $(shell pkg-config --libs x11 xext)
+endif
 
+ifeq "$(shell pkg-config --exists harfbuzz && echo yes)" "yes"
 SYS_HARFBUZZ_CFLAGS = $(shell pkg-config --cflags harfbuzz)
 SYS_HARFBUZZ_LIBS = $(shell pkg-config --libs harfbuzz)
+endif
+
+ifeq "$(shell pkg-config --exists freetype2 && echo yes)" "yes"
 SYS_FREETYPE_CFLAGS = $(shell pkg-config --cflags freetype2)
 SYS_FREETYPE_LIBS = $(shell pkg-config --libs freetype2)
+endif
+
+ifeq "$(shell pkg-config --exists libopenjp2 && echo yes)" "yes"
 SYS_OPENJPEG_CFLAGS = $(shell pkg-config --cflags libopenjp2)
 SYS_OPENJPEG_LIBS = $(shell pkg-config --libs libopenjp2)
+endif
+
 SYS_JBIG2DEC_LIBS = -ljbig2dec
 SYS_JPEG_LIBS = -ljpeg
 SYS_ZLIB_LIBS = -lz
