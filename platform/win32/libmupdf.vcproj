@@ -983,6 +983,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\output-cbz.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\output-pcl.c"
 				>
 			</File>
@@ -1119,7 +1123,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\writer.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\xml.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\fitz\zip.c"
 				>
 			</File>
 		</Filter>
@@ -1206,7 +1218,7 @@
 				RelativePath="..\..\source\pdf\pdf-glyphlist.h"
 				>
 			</File>
-      <File
+			<File
 				RelativePath="..\..\source\pdf\pdf-graft.c"
 				>
 			</File>
@@ -1397,7 +1409,7 @@
 					RelativePath="..\..\include\mupdf\pdf\font.h"
 					>
 				</File>
-        <File
+				<File
 					RelativePath="..\..\include\mupdf\pdf\graft.h"
 					>
 				</File>
@@ -1631,6 +1643,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\version.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\writer.h"
 					>
 				</File>
 				<File

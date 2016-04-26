@@ -463,6 +463,10 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\..\source\tools\muconvert.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\source\tools\mudraw.c"
 			>
 		</File>
@@ -486,12 +490,12 @@
 			RelativePath="..\..\source\tools\pdfextract.c"
 			>
 		</File>
-    <File
-			RelativePath="..\..\source\tools\pdfmerge.c"
-			>
-		</File>	
 		<File
 			RelativePath="..\..\source\tools\pdfinfo.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\source\tools\pdfmerge.c"
 			>
 		</File>
 		<File

@@ -11,7 +11,7 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 		format += 1; /* skip the '.' */
 	}
 
-	if (!strcasecmp(format, "cbz"))
+	if (!fz_strcasecmp(format, "cbz"))
 		return fz_new_cbz_writer(ctx, path, options);
 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown document format: %s", format);
