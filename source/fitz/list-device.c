@@ -1243,7 +1243,7 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 
 	dev->super.render_flags = fz_list_render_flags;
 
-	dev->super.drop_imp = drop_writer;
+	dev->super.close = drop_writer;
 
 	dev->list = list;
 	dev->path = NULL;

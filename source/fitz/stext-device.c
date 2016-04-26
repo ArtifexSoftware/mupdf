@@ -1010,7 +1010,7 @@ fz_bidi_reorder_stext_page(fz_context *ctx, fz_stext_page *page)
 }
 
 static void
-fz_stext_drop_imp(fz_context *ctx, fz_device *dev)
+fz_stext_close(fz_context *ctx, fz_device *dev)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 
@@ -1034,7 +1034,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page)
 
 	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
 
-	dev->super.drop_imp = fz_stext_drop_imp;
+	dev->super.close = fz_stext_close;
 	dev->super.fill_text = fz_stext_fill_text;
 	dev->super.stroke_text = fz_stext_stroke_text;
 	dev->super.clip_text = fz_stext_clip_text;

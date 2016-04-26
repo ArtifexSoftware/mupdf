@@ -40,6 +40,6 @@ var transform = [2,0,0,2,0,0]
 	}
 	device.popClip();
 }
-//device.flush();
+device.close();
 
 pixmap.saveAsPNG("out.png");

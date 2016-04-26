@@ -17,6 +17,8 @@ public class NativeDevice extends Device
 		super(p);
 	}
 
+	public native final void close();
+
 	public native final void fillPath(Path path, boolean evenOdd, Matrix ctm, ColorSpace cs, float color[], float alpha);
 	public native final void strokePath(Path path, StrokeState stroke, Matrix ctm, ColorSpace cs, float color[], float alpha);
 	public native final void clipPath(Path path, boolean evenOdd, Matrix ctm);

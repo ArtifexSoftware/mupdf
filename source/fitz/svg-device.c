@@ -1057,7 +1057,7 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-svg_dev_drop_imp(fz_context *ctx, fz_device *dev)
+svg_dev_close(fz_context *ctx, fz_device *dev)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
@@ -1073,7 +1073,7 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 {
 	svg_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.drop_imp = svg_dev_drop_imp;
+	dev->super.close = svg_dev_close;
 
 	dev->super.fill_path = svg_dev_fill_path;
 	dev->super.stroke_path = svg_dev_stroke_path;

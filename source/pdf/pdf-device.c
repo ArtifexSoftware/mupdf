@@ -1037,7 +1037,7 @@ pdf_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-pdf_dev_drop_imp(fz_context *ctx, fz_device *dev)
+pdf_dev_close(fz_context *ctx, fz_device *dev)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	int i;
@@ -1066,7 +1066,7 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matri
 {
 	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.drop_imp = pdf_dev_drop_imp;
+	dev->super.close = pdf_dev_close;
 
 	dev->super.fill_path = pdf_dev_fill_path;
 	dev->super.stroke_path = pdf_dev_stroke_path;

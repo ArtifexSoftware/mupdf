@@ -1134,6 +1134,16 @@ static fz_device *new_js_device(fz_context *ctx, js_State *J)
 
 /* device calling into c from js */
 
+static void ffi_Device_close(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_device *dev = js_touserdata(J, 0, "fz_device");
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_Device_fillPath(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2953,6 +2963,8 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "Device.close", ffi_Device_close, 0);
+
 		jsB_propfun(J, "Device.fillPath", ffi_Device_fillPath, 6);
 		jsB_propfun(J, "Device.strokePath", ffi_Device_strokePath, 6);
 		jsB_propfun(J, "Device.clipPath", ffi_Device_clipPath, 3);

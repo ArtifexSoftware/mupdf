@@ -840,6 +840,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_NativeDevice
+ * Method:    close
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_close
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_NativeDevice
  * Method:    fillPath
  * Signature: (Lcom/artifex/mupdf/fitz/Path;ZLcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;[FF)V
  */

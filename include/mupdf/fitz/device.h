@@ -101,7 +101,7 @@ struct fz_device_s
 	int hints;
 	int flags;
 
-	void (*drop_imp)(fz_context *, fz_device *);
+	void (*close)(fz_context *, fz_device *);
 
 	void (*fill_path)(fz_context *, fz_device *, const fz_path *, int even_odd, const fz_matrix *, fz_colorspace *, const float *color, float alpha);
 	void (*stroke_path)(fz_context *, fz_device *, const fz_path *, const fz_stroke_state *, const fz_matrix *, fz_colorspace *, const float *color, float alpha);
@@ -165,6 +165,13 @@ void fz_end_tile(fz_context *ctx, fz_device *dev);
 void fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear);
 
 void *fz_new_device(fz_context *ctx, int size);
+
+/*
+	fz_close_device: Flush any pending output and free internal memory.
+	This is called implicitly on fz_drop_device, so it's only useful for
+	garbage collected language bindings.
+*/
+void fz_close_device(fz_context *ctx, fz_device *dev);
 
 /*
 	fz_drop_device: Free a devices of any type and its resources.

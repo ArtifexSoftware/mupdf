@@ -2013,7 +2013,7 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 }
 
 static void
-fz_draw_drop_imp(fz_context *ctx, fz_device *devp)
+fz_draw_close(fz_context *ctx, fz_device *devp)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_gel *gel = dev->gel;
@@ -2056,7 +2056,7 @@ fz_new_draw_device(fz_context *ctx, fz_pixmap *dest)
 {
 	fz_draw_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.drop_imp = fz_draw_drop_imp;
+	dev->super.close = fz_draw_close;
 
 	dev->super.fill_path = fz_draw_fill_path;
 	dev->super.stroke_path = fz_draw_stroke_path;

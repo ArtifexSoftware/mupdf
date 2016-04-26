@@ -1284,7 +1284,7 @@ fz_java_device_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_java_device_drop_imp(fz_context *ctx, fz_device *dev)
+fz_java_device_close(fz_context *ctx, fz_device *dev)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
@@ -1303,7 +1303,7 @@ static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
 
 		dev->self = (*env)->NewGlobalRef(env, self);
 
-		dev->super.drop_imp = fz_java_device_drop_imp;
+		dev->super.close = fz_java_device_close;
 
 		dev->super.fill_path = fz_java_device_fill_path;
 		dev->super.stroke_path = fz_java_device_stroke_path;
@@ -1443,6 +1443,25 @@ FUN(NativeDevice_finalize)(JNIEnv *env, jobject self)
 		fz_drop_pixmap(ctx, ninfo->pixmap);
 		fz_free(ctx, ninfo);
 	}
+}
+
+JNIEXPORT void JNICALL
+FUN(NativeDevice_close)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_device *dev = from_Device(env, self, ctx);
+	NativeDeviceInfo *info;
+
+	if (ctx == NULL || dev == NULL)
+		return;
+
+	info = lockNativeDevice(env, self);
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_always(ctx)
+		unlockNativeDevice(env, info);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
 }
 
 JNIEXPORT void JNICALL
