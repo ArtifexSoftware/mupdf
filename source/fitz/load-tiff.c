@@ -939,21 +939,14 @@ fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, int len)
 	unsigned subimage_count = 0;
 	struct tiff tiff = { 0 };
 
-	fz_try(ctx)
-	{
-		fz_decode_tiff_header(ctx, &tiff, buf, len);
+	fz_decode_tiff_header(ctx, &tiff, buf, len);
 
-		offset = tiff.ifd_offset;
+	offset = tiff.ifd_offset;
 
-		do {
-			subimage_count++;
-			offset = fz_next_ifd(ctx, &tiff, offset);
-		} while (offset != 0);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+	do {
+		subimage_count++;
+		offset = fz_next_ifd(ctx, &tiff, offset);
+	} while (offset != 0);
 
 	return subimage_count;
 }

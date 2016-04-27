@@ -304,16 +304,7 @@ gif_read_gce(fz_context *ctx, struct info *info, unsigned char *p, unsigned char
 static unsigned char *
 gif_read_ce(fz_context *ctx, struct info *info, unsigned char *p, unsigned char *end)
 {
-	fz_try(ctx)
-	{
-		p = gif_read_subblocks(ctx, info, p + 2, end, NULL);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return p;
+	return gif_read_subblocks(ctx, info, p + 2, end, NULL);
 }
 
 static unsigned char*
@@ -323,17 +314,7 @@ gif_read_pte(fz_context *ctx, struct info *info, unsigned char *p, unsigned char
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in plain text extension in gif image");
 	if (p[2] != 0x0c)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "out of range plain text extension block size in gif image");
-
-	fz_try(ctx)
-	{
-		p = gif_read_subblocks(ctx, info, p + 15, end, NULL);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return p;
+	return gif_read_subblocks(ctx, info, p + 15, end, NULL);
 }
 
 /*
@@ -387,16 +368,7 @@ gif_read_ae(fz_context *ctx, struct info *info, unsigned char *p, unsigned char 
 		fz_warn(ctx, "ignoring unsupported application extension '%s' in gif image", extension);
 	}
 
-	fz_try(ctx)
-	{
-		p = gif_read_subblocks(ctx, info, p + 14, end, NULL);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	return p;
+	return gif_read_subblocks(ctx, info, p + 14, end, NULL);
 }
 
 static void

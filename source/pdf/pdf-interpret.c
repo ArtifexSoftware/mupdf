@@ -1225,7 +1225,6 @@ pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_ABORT);
 		fz_rethrow(ctx);
 	}
 }
@@ -1292,7 +1291,6 @@ pdf_process_glyph(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_o
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_ABORT);
 		fz_rethrow(ctx);
 	}
 }

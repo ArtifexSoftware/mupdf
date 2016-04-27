@@ -770,7 +770,6 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	pdf_token tok;
 	fz_off_t i;
 	int c;
-	pdf_obj *trailer;
 	int xref_len = pdf_xref_size_from_old_trailer(ctx, doc, buf);
 	pdf_xref_entry *table;
 
@@ -831,23 +830,15 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 		}
 	}
 
-	fz_try(ctx)
-	{
-		tok = pdf_lex(ctx, file, buf);
-		if (tok != PDF_TOK_TRAILER)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "expected trailer marker");
+	tok = pdf_lex(ctx, file, buf);
+	if (tok != PDF_TOK_TRAILER)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected trailer marker");
 
-		tok = pdf_lex(ctx, file, buf);
-		if (tok != PDF_TOK_OPEN_DICT)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "expected trailer dictionary");
+	tok = pdf_lex(ctx, file, buf);
+	if (tok != PDF_TOK_OPEN_DICT)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "expected trailer dictionary");
 
-		trailer = pdf_parse_dict(ctx, doc, file, buf);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-	return trailer;
+	return pdf_parse_dict(ctx, doc, file, buf);
 }
 
 static void
@@ -996,20 +987,14 @@ pdf_read_xref(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf)
 	while (iswhite(fz_peek_byte(ctx, doc->file)))
 		fz_read_byte(ctx, doc->file);
 
-	fz_try(ctx)
-	{
-		c = fz_peek_byte(ctx, doc->file);
-		if (c == 'x')
-			trailer = pdf_read_old_xref(ctx, doc, buf);
-		else if (c >= '0' && c <= '9')
-			trailer = pdf_read_new_xref(ctx, doc, buf);
-		else
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize xref format");
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+	c = fz_peek_byte(ctx, doc->file);
+	if (c == 'x')
+		trailer = pdf_read_old_xref(ctx, doc, buf);
+	else if (c >= '0' && c <= '9')
+		trailer = pdf_read_new_xref(ctx, doc, buf);
+	else
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize xref format");
+
 	return trailer;
 }
 
@@ -2070,14 +2055,7 @@ object_updated:
 	{
 		if (!x->obj)
 		{
-			fz_try(ctx)
-			{
-				x = pdf_load_obj_stm(ctx, doc, x->ofs, 0, &doc->lexbuf.base, num);
-			}
-			fz_catch(ctx)
-			{
-				fz_rethrow(ctx);
-			}
+			x = pdf_load_obj_stm(ctx, doc, x->ofs, 0, &doc->lexbuf.base, num);
 			if (x == NULL)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load object stream containing object (%d %d R)", num, gen);
 			if (!x->obj)
