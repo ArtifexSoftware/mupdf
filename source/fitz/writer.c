@@ -34,5 +34,5 @@ fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox,
 void
 fz_end_page(fz_context *ctx, fz_document_writer *wri, fz_device *dev)
 {
-	return wri->end_page(ctx, wri, dev);
+	wri->end_page(ctx, wri, dev);
 }
