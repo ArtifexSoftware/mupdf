@@ -282,14 +282,6 @@ int pdf_recognize(fz_context *doc, const char *magic);
 
 typedef struct pdf_write_options_s pdf_write_options;
 
-/* An enumeration of bitflags to use in the 'do_expand' field of the options struct. */
-enum
-{
-	PDF_EXPAND_IMAGES = 1,
-	PDF_EXPAND_FONTS = 2,
-	PDF_EXPAND_ALL = -1
-};
-
 /*
 	In calls to fz_save_document, the following options structure can be used
 	to control aspects of the writing process. This structure may grow
@@ -297,21 +289,31 @@ enum
 */
 struct pdf_write_options_s
 {
-	int do_incremental; /* Write just the changed objects */
-	int do_ascii; /* If non-zero then attempt (where possible) to make
-				the output ascii. */
-	int do_deflate; /* If non-zero then attempt to compress streams. */
-	int do_expand; /* Bitflags; each non zero bit indicates an aspect
-				of the file that should be 'expanded' on
-				writing. */
-	int do_garbage; /* If non-zero then attempt (where possible) to
-				garbage collect the file before writing. */
-	int do_linear; /* If non-zero then write linearised. */
-	int do_clean; /* If non-zero then clean contents */
-	int continue_on_error; /* If non-zero, errors are (optionally)
-					counted and writing continues. */
+	int do_incremental; /* Write just the changed objects. */
+	int do_pretty; /* Pretty-print dictionaries and arrays. */
+	int do_ascii; /* ASCII hex encode binary streams. */
+	int do_compress; /* Compress streams. */
+	int do_compress_images; /* Compress (or leave compressed) image streams. */
+	int do_compress_fonts; /* Compress (or leave compressed) font streams. */
+	int do_decompress; /* Decompress streams (except when compressing images/fonts). */
+	int do_garbage; /* Garbage collect objects before saving; 1=gc, 2=re-number, 3=de-duplicate. */
+	int do_linear; /* Write linearised. */
+	int do_clean; /* Sanitize content streams. */
+	int continue_on_error; /* If set, errors are (optionally) counted and writing continues. */
 	int *errors; /* Pointer to a place to store a count of errors */
 };
+
+/*
+	Parse option string into a pdf_write_options struct.
+	Matches the command line options to 'mutool clean':
+		g: garbage collect
+		d, i, f: expand all, fonts, images
+		l: linearize
+		a: ascii hex encode
+		z: deflate
+		s: sanitize content streams
+*/
+void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);
 
 /*
 	pdf_save_document: Write out the document to a file with all changes finalised.

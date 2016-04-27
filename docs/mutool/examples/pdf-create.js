@@ -32,4 +32,4 @@ var page = pdf.addPage([0,0,300,350], 0, resources, contents)
 pdf.insertPage(-1, page)
 
 // Save the document to file.
-pdf.save("out.pdf")
+pdf.save("out.pdf", "paif")

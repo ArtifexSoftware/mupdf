@@ -19,13 +19,13 @@ static void usage(void)
 		"\t-g\tgarbage collect unused objects\n"
 		"\t-gg\tin addition to -g compact xref table\n"
 		"\t-ggg\tin addition to -gg merge duplicate objects\n"
-		"\t-s\tclean content streams\n"
-		"\t-d\tdecompress all streams\n"
 		"\t-l\tlinearize PDF\n"
-		"\t-i\ttoggle decompression of image streams\n"
-		"\t-f\ttoggle decompression of font streams\n"
 		"\t-a\tascii hex encode binary streams\n"
+		"\t-d\tdecompress streams\n"
 		"\t-z\tdeflate uncompressed streams\n"
+		"\t-f\tcompress font streams\n"
+		"\t-i\tcompress image streams\n"
+		"\t-s\tclean content streams\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
 	exit(1);
@@ -49,17 +49,21 @@ int pdfclean_main(int argc, char **argv)
 		switch (c)
 		{
 		case 'p': password = fz_optarg; break;
-		case 'g': opts.do_garbage ++; break;
-		case 'd': opts.do_expand ^= PDF_EXPAND_ALL; break;
-		case 'f': opts.do_expand ^= PDF_EXPAND_FONTS; break;
-		case 'i': opts.do_expand ^= PDF_EXPAND_IMAGES; break;
-		case 'l': opts.do_linear ++; break;
-		case 'a': opts.do_ascii ++; break;
-		case 'z': opts.do_deflate ++; break;
-		case 's': opts.do_clean ++; break;
+
+		case 'd': opts.do_decompress += 1; break;
+		case 'z': opts.do_compress += 1; break;
+		case 'f': opts.do_compress_fonts += 1; break;
+		case 'i': opts.do_compress_images += 1; break;
+		case 'a': opts.do_ascii += 1; break;
+		case 'g': opts.do_garbage += 1; break;
+		case 'l': opts.do_linear += 1; break;
+		case 's': opts.do_clean += 1; break;
 		default: usage(); break;
 		}
 	}
+
+	if ((opts.do_ascii || opts.do_decompress) && !opts.do_compress)
+		opts.do_pretty = 1;
 
 	if (argc - fz_optind < 1)
 		usage();

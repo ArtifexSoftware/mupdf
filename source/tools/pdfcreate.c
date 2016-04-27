@@ -9,13 +9,9 @@
 static void usage(void)
 {
 	fprintf(stderr,
-		"usage: mutool create [-o output.pdf] [-adlsz] page.txt [page2.txt ...]\n"
+		"usage: mutool create [-o output.pdf] [-O options] page.txt [page2.txt ...]\n"
 		"\t-o\tname of PDF file to create\n"
-		"\t-a\tascii hex encode binary streams\n"
-		"\t-d\tdecompress all streams\n"
-		"\t-l\tlinearize PDF\n"
-		"\t-s\tclean content streams\n"
-		"\t-z\tdeflate uncompressed streams\n"
+		"\t-O\tPDF write options\n"
 		"\tpage.txt file defines page size, fonts, images and contents\n"
 		);
 	exit(1);
@@ -145,18 +141,15 @@ int pdfcreate_main(int argc, char **argv)
 {
 	pdf_write_options opts = { 0 };
 	char *output = "out.pdf";
+	char *flags = "z";
 	int i, c;
 
-	while ((c = fz_getopt(argc, argv, "adlszo:")) != -1)
+	while ((c = fz_getopt(argc, argv, "o:O:")) != -1)
 	{
 		switch (c)
 		{
 		case 'o': output = fz_optarg; break;
-		case 'a': opts.do_ascii ++; break;
-		case 'd': opts.do_expand ^= PDF_EXPAND_ALL; break;
-		case 'l': opts.do_linear ++; break;
-		case 's': opts.do_clean ++; break;
-		case 'z': opts.do_deflate ++; break;
+		case 'O': flags = fz_optarg; break;
 		default: usage(); break;
 		}
 	}
@@ -170,6 +163,8 @@ int pdfcreate_main(int argc, char **argv)
 		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
+
+	pdf_parse_write_options(ctx, &opts, flags);
 
 	doc = pdf_create_document(ctx);
 

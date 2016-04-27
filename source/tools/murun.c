@@ -2513,10 +2513,13 @@ static void ffi_PDFDocument_save(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	const char *filename = js_tostring(J, 1);
+	const char *options = js_isdefined(J, 2) ? js_tostring(J, 2) : "ga";
+	pdf_write_options pwo;
 
-	fz_try(ctx)
-		pdf_save_document(ctx, pdf, filename, NULL);
-	fz_catch(ctx)
+	fz_try(ctx) {
+		pdf_parse_write_options(ctx, &pwo, options);
+		pdf_save_document(ctx, pdf, filename, &pwo);
+	} fz_catch(ctx)
 		rethrow(J);
 }
 

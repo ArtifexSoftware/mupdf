@@ -9,14 +9,11 @@
 static void usage(void)
 {
 	fprintf(stderr,
-		"usage: mutool merge [-o output.pdf] [-adlsz] input.pdf [pages] [input2.pdf] [pages2] ...\n"
+		"usage: mutool merge [-o output.pdf] [-O options] input.pdf [pages] [input2.pdf] [pages2] ...\n"
 		"\t-o\tname of PDF file to create\n"
-		"\t-a\tascii hex encode binary streams\n"
-		"\t-d\tdecompress all streams\n"
-		"\t-l\tlinearize PDF\n"
-		"\t-s\tclean content streams\n"
-		"\t-z\tdeflate uncompressed streams\n"
-		"\tinput.pdf name of first PDF file from which we are copying pages\n"
+		"\t-O\tPDF write options\n"
+		"\tinput.pdf\tname of first PDF file from which we are copying pages\n"
+		"\tpages: comma separated list of page ranges (for example: 1-5,6,10-)\n"
 		);
 	exit(1);
 }
@@ -149,19 +146,16 @@ int pdfmerge_main(int argc, char **argv)
 {
 	pdf_write_options opts = { 0 };
 	char *output = "out.pdf";
+	char *flags = "";
 	char *input;
 	int c;
 
-	while ((c = fz_getopt(argc, argv, "adlszo:")) != -1)
+	while ((c = fz_getopt(argc, argv, "o:O:")) != -1)
 	{
 		switch (c)
 		{
 		case 'o': output = fz_optarg; break;
-		case 'a': opts.do_ascii ++; break;
-		case 'd': opts.do_expand ^= PDF_EXPAND_ALL; break;
-		case 'l': opts.do_linear ++; break;
-		case 's': opts.do_clean ++; break;
-		case 'z': opts.do_deflate ++; break;
+		case 'O': flags = fz_optarg; break;
 		default: usage(); break;
 		}
 	}
@@ -175,6 +169,8 @@ int pdfmerge_main(int argc, char **argv)
 		fprintf(stderr, "error: Cannot initialize MuPDF context.\n");
 		exit(1);
 	}
+
+	pdf_parse_write_options(ctx, &opts, flags);
 
 	fz_try(ctx)
 	{

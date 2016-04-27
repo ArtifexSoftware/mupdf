@@ -53,7 +53,9 @@ struct pdf_write_state_s
 	int do_tight;
 	int do_ascii;
 	int do_expand;
-	int do_deflate;
+	int do_compress;
+	int do_compress_images;
+	int do_compress_fonts;
 	int do_garbage;
 	int do_linear;
 	int do_clean;
@@ -1630,7 +1632,7 @@ static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, int n)
 	return buf;
 }
 
-static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen)
+static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
 {
 	fz_buffer *buf, *tmp;
 	pdf_obj *newlen;
@@ -1642,7 +1644,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 	obj = pdf_copy_dict(ctx, obj_orig);
 
-	if (opts->do_deflate && !pdf_dict_get(ctx, obj, PDF_NAME_Filter))
+	if (do_deflate && !pdf_dict_get(ctx, obj, PDF_NAME_Filter))
 	{
 		pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
 
@@ -1676,7 +1678,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	pdf_drop_obj(ctx, obj);
 }
 
-static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen)
+static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj_orig, int num, int gen, int do_deflate)
 {
 	fz_buffer *buf, *tmp;
 	pdf_obj *newlen;
@@ -1693,7 +1695,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	pdf_dict_del(ctx, obj, PDF_NAME_Filter);
 	pdf_dict_del(ctx, obj, PDF_NAME_DecodeParms);
 
-	if (opts->do_deflate && !pdf_dict_get(ctx, obj, PDF_NAME_Filter))
+	if (do_deflate)
 	{
 		pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
 
@@ -1738,7 +1740,7 @@ static int is_image_filter(char *s)
 	return 0;
 }
 
-static int filter_implies_image(fz_context *ctx, pdf_document *doc, pdf_obj *o)
+static int filter_implies_image(fz_context *ctx, pdf_obj *o)
 {
 	if (!o)
 		return 0;
@@ -1752,6 +1754,39 @@ static int filter_implies_image(fz_context *ctx, pdf_document *doc, pdf_obj *o)
 			if (is_image_filter(pdf_to_name(ctx, pdf_array_get(ctx, o, i))))
 				return 1;
 	}
+	return 0;
+}
+
+static int is_image_stream(fz_context *ctx, pdf_obj *obj)
+{
+	pdf_obj *o;
+	if ((o = pdf_dict_get(ctx, obj, PDF_NAME_Type), pdf_name_eq(ctx, o, PDF_NAME_XObject)))
+		if ((o = pdf_dict_get(ctx, obj, PDF_NAME_Subtype), pdf_name_eq(ctx, o, PDF_NAME_Image)))
+			return 1;
+	if (o = pdf_dict_get(ctx, obj, PDF_NAME_Filter), filter_implies_image(ctx, o))
+		return 1;
+	if (pdf_dict_get(ctx, obj, PDF_NAME_Width) != NULL && pdf_dict_get(ctx, obj, PDF_NAME_Height) != NULL)
+		return 1;
+	return 0;
+}
+
+static int is_font_stream(fz_context *ctx, pdf_obj *obj)
+{
+	pdf_obj *o;
+	if (o = pdf_dict_get(ctx, obj, PDF_NAME_Type), pdf_name_eq(ctx, o, PDF_NAME_Font))
+		return 1;
+	if (o = pdf_dict_get(ctx, obj, PDF_NAME_Type), pdf_name_eq(ctx, o, PDF_NAME_FontDescriptor))
+		return 1;
+	if (pdf_dict_get(ctx, obj, PDF_NAME_Length1) != NULL)
+		return 1;
+	if (pdf_dict_get(ctx, obj, PDF_NAME_Length2) != NULL)
+		return 1;
+	if (pdf_dict_get(ctx, obj, PDF_NAME_Length3) != NULL)
+		return 1;
+	if (o = pdf_dict_get(ctx, obj, PDF_NAME_Subtype), pdf_name_eq(ctx, o, PDF_NAME_Type1C))
+		return 1;
+	if (o = pdf_dict_get(ctx, obj, PDF_NAME_Subtype), pdf_name_eq(ctx, o, PDF_NAME_CIDFontType0C))
+		return 1;
 	return 0;
 }
 
@@ -1813,39 +1848,18 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	}
 	else
 	{
-		int dontexpand = 0;
-		if (opts->do_expand != 0 && opts->do_expand != PDF_EXPAND_ALL)
-		{
-			pdf_obj *o;
-
-			if ((o = pdf_dict_get(ctx, obj, PDF_NAME_Type), pdf_name_eq(ctx, o, PDF_NAME_XObject)) &&
-				(o = pdf_dict_get(ctx, obj, PDF_NAME_Subtype), pdf_name_eq(ctx, o, PDF_NAME_Image)))
-				dontexpand = !(opts->do_expand & PDF_EXPAND_IMAGES);
-			if (o = pdf_dict_get(ctx, obj, PDF_NAME_Type), pdf_name_eq(ctx, o, PDF_NAME_Font))
-				dontexpand = !(opts->do_expand & PDF_EXPAND_FONTS);
-			if (o = pdf_dict_get(ctx, obj, PDF_NAME_Type), pdf_name_eq(ctx, o, PDF_NAME_FontDescriptor))
-				dontexpand = !(opts->do_expand & PDF_EXPAND_FONTS);
-			if (pdf_dict_get(ctx, obj, PDF_NAME_Length1) != NULL)
-				dontexpand = !(opts->do_expand & PDF_EXPAND_FONTS);
-			if (pdf_dict_get(ctx, obj, PDF_NAME_Length2) != NULL)
-				dontexpand = !(opts->do_expand & PDF_EXPAND_FONTS);
-			if (pdf_dict_get(ctx, obj, PDF_NAME_Length3) != NULL)
-				dontexpand = !(opts->do_expand & PDF_EXPAND_FONTS);
-			if (o = pdf_dict_get(ctx, obj, PDF_NAME_Subtype), pdf_name_eq(ctx, o, PDF_NAME_Type1C))
-				dontexpand = !(opts->do_expand & PDF_EXPAND_FONTS);
-			if (o = pdf_dict_get(ctx, obj, PDF_NAME_Subtype), pdf_name_eq(ctx, o, PDF_NAME_CIDFontType0C))
-				dontexpand = !(opts->do_expand & PDF_EXPAND_FONTS);
-			if (o = pdf_dict_get(ctx, obj, PDF_NAME_Filter), filter_implies_image(ctx, doc, o))
-				dontexpand = !(opts->do_expand & PDF_EXPAND_IMAGES);
-			if (pdf_dict_get(ctx, obj, PDF_NAME_Width) != NULL && pdf_dict_get(ctx, obj, PDF_NAME_Height) != NULL)
-				dontexpand = !(opts->do_expand & PDF_EXPAND_IMAGES);
-		}
 		fz_try(ctx)
 		{
-			if (opts->do_expand && !dontexpand && !pdf_is_jpx_image(ctx, obj))
-				expandstream(ctx, doc, opts, obj, num, gen);
+			int do_deflate = opts->do_compress;
+			int do_expand = opts->do_expand;
+			if (opts->do_compress_images && is_image_stream(ctx, obj))
+				do_deflate = 1, do_expand = 0;
+			if (opts->do_compress_fonts && is_font_stream(ctx, obj))
+				do_deflate = 1, do_expand = 0;
+			if (do_expand)
+				expandstream(ctx, doc, opts, obj, num, gen, do_deflate);
 			else
-				copystream(ctx, doc, opts, obj, num, gen);
+				copystream(ctx, doc, opts, obj, num, gen, do_deflate);
 		}
 		fz_catch(ctx)
 		{
@@ -2677,15 +2691,19 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 	int xref_len = pdf_xref_len(ctx, doc);
 
 	opts->do_incremental = in_opts->do_incremental;
-	opts->do_tight = (in_opts->do_expand == 0) || in_opts->do_deflate;
-	opts->do_expand = in_opts->do_expand;
-	opts->do_garbage = in_opts->do_garbage;
 	opts->do_ascii = in_opts->do_ascii;
-	opts->do_deflate = in_opts->do_deflate;
+	opts->do_tight = !in_opts->do_pretty;
+	opts->do_expand = in_opts->do_decompress;
+	opts->do_compress = in_opts->do_compress;
+	opts->do_compress_images = in_opts->do_compress_images;
+	opts->do_compress_fonts = in_opts->do_compress_fonts;
+
+	opts->do_garbage = in_opts->do_garbage;
 	opts->do_linear = in_opts->do_linear;
 	opts->do_clean = in_opts->do_clean;
 	opts->start = 0;
 	opts->main_xref_offset = INT_MIN;
+
 	/* We deliberately make these arrays long enough to cope with
 	* 1 to n access rather than 0..n-1, and add space for 2 new
 	* extra entries that may be required for linearization. */
@@ -2728,6 +2746,30 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	pdf_drop_obj(ctx, opts->hints_length);
 	page_objects_list_destroy(ctx, opts->page_object_lists);
 	fz_drop_output(ctx, opts->out);
+}
+
+void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args)
+{
+	int c;
+
+	memset(opts, 0, sizeof *opts);
+
+	while ((c = *args++))
+	{
+		switch (c)
+		{
+		case 'd': opts->do_decompress += 1; break;
+		case 'z': opts->do_compress += 1; break;
+		case 'f': opts->do_compress_fonts += 1; break;
+		case 'i': opts->do_compress_images += 1; break;
+		case 'p': opts->do_pretty += 1; break;
+		case 'a': opts->do_ascii += 1; break;
+		case 'g': opts->do_garbage += 1; break;
+		case 'l': opts->do_linear += 1; break;
+		case 's': opts->do_clean += 1; break;
+		default: fz_warn(ctx, "unrecognized pdf-write option: '%c'", c);
+		}
+	}
 }
 
 void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *in_opts)

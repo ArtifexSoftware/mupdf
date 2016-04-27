@@ -481,8 +481,18 @@ using low level access to the objects and streams contained in a PDF file.
 <dd>Get access to the raw PDFDocument from a Document; returns null if the document is not a PDF.
 <dt>PDFDocument#toDocument()
 <dd>Cast the PDF document to a Document.
-<dt>PDFDocument#save(fileName)
+<dt>PDFDocument#save(fileName, options)
 <dd>Write the PDF document to file.
+The write options are a string of flag characters:
+<br>l: linearize,
+<br>g: garbage collect, gg: ...and compact, ggg: ...and de-duplicate,
+<br>p: pretty-print objects,
+<br>a: ascii hex encode streams,
+<br>f: compress fonts,
+<br>i: compress images,
+<br>z: compress all streams,
+<br>d: decompress all streams (except fonts or images if 'f' or 'i'),
+<br>s: sanitize content streams.
 </dl>
 
 <h3>
@@ -631,7 +641,6 @@ There are several areas in MuPDF that still need bindings to access from JavaScr
 <ul>
 <li>Shadings
 <li>PDFDocument#graftObject()
-<li>PDFDocument#save() -- write options
 <li>PDFWriteDevice
 <li>DocumentWriter
 </ul>

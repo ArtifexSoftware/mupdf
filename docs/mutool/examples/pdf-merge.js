@@ -57,7 +57,7 @@ function pdfmerge() {
 		srcDoc = new PDFDocument(argv[i])
 		copyAllPages(dstDoc, srcDoc)
 	}
-	dstDoc.save(argv[1])
+	dstDoc.save(argv[1], "z")
 }
 
 if (argv.length < 3)
