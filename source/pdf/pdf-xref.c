@@ -692,7 +692,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot parse trailer");
+		fz_rethrow(ctx);
 	}
 
 	fz_seek(ctx, doc->file, ofs, SEEK_SET);
@@ -845,7 +845,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot parse trailer");
+		fz_rethrow(ctx);
 	}
 	return trailer;
 }
@@ -915,7 +915,7 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, trailer);
-		fz_rethrow_message(ctx, "cannot parse compressed xref stream object");
+		fz_rethrow(ctx);
 	}
 
 	fz_try(ctx)
@@ -1008,7 +1008,7 @@ pdf_read_xref(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read xref (ofs=%d)", (int)ofs);
+		fz_rethrow(ctx);
 	}
 	return trailer;
 }
@@ -1083,7 +1083,7 @@ read_xref_section(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read xref at offset %d", (int)ofs);
+		fz_rethrow(ctx);
 	}
 
 	return prevofs;
@@ -1538,7 +1538,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 	{
 		pdf_drop_obj(ctx, dict);
 		pdf_drop_obj(ctx, nobj);
-		fz_rethrow_message(ctx, "cannot open document");
+		fz_rethrow(ctx);
 	}
 
 	fz_try(ctx)
@@ -1758,7 +1758,7 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbu
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot open object stream (%d %d R)", num, gen);
+		fz_rethrow(ctx);
 	}
 	return ret_entry;
 }
@@ -2076,7 +2076,7 @@ object_updated:
 			}
 			fz_catch(ctx)
 			{
-				fz_rethrow_message(ctx, "cannot load object stream containing object (%d %d R)", num, gen);
+				fz_rethrow(ctx);
 			}
 			if (x == NULL)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load object stream containing object (%d %d R)", num, gen);
@@ -2104,19 +2104,8 @@ object_updated:
 pdf_obj *
 pdf_load_object(fz_context *ctx, pdf_document *doc, int num, int gen)
 {
-	pdf_xref_entry *entry;
-
-	fz_try(ctx)
-	{
-		entry = pdf_cache_object(ctx, doc, num, gen);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow_message(ctx, "cannot load object (%d %d R) into cache", num, gen);
-	}
-
+	pdf_xref_entry *entry = pdf_cache_object(ctx, doc, num, gen);
 	assert(entry->obj != NULL);
-
 	return pdf_keep_obj(ctx, entry->obj);
 }
 
@@ -2358,7 +2347,7 @@ pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	fz_catch(ctx)
 	{
 		pdf_close_document(ctx, doc);
-		fz_rethrow_message(ctx, "cannot load document from stream");
+		fz_rethrow(ctx);
 	}
 	return doc;
 }
@@ -2385,7 +2374,7 @@ pdf_open_document(fz_context *ctx, const char *filename)
 	fz_catch(ctx)
 	{
 		pdf_close_document(ctx, doc);
-		fz_rethrow_message(ctx, "cannot load document '%s'", filename);
+		fz_rethrow(ctx);
 	}
 	return doc;
 }
@@ -2805,7 +2794,7 @@ pdf_document *pdf_create_document(fz_context *ctx)
 	{
 		pdf_drop_obj(ctx, trailer);
 		pdf_drop_obj(ctx, o);
-		fz_rethrow_message(ctx, "Failed to create empty document");
+		fz_rethrow(ctx);
 	}
 	return doc;
 }

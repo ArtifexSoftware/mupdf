@@ -2994,7 +2994,7 @@ make_page_tree_node(fz_context *ctx, pdf_document *doc, int l, int r, pdf_obj *p
 		pdf_drop_obj(ctx, a);
 		pdf_drop_obj(ctx, o);
 		pdf_drop_obj(ctx, me);
-		fz_rethrow_message(ctx, "Failed to synthesize new page tree");
+		fz_rethrow(ctx);
 	}
 	return me_ref;
 }

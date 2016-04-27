@@ -188,7 +188,7 @@ xps_open_document(fz_context *ctx, const char *filename)
 	fz_always(ctx)
 		fz_drop_stream(ctx, file);
 	fz_catch(ctx)
-		fz_rethrow_message(ctx, "cannot load document '%s'", filename);
+		fz_rethrow(ctx);
 
 	return doc;
 }

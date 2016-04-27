@@ -573,7 +573,7 @@ fz_load_png(fz_context *ctx, unsigned char *p, int total)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, png.samples);
-		fz_rethrow_message(ctx, "out of memory loading png");
+		fz_rethrow(ctx);
 	}
 
 	image->xres = png.xres;

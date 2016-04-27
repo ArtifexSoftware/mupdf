@@ -84,7 +84,7 @@ res_image_init(fz_context *ctx, pdf_document *doc, pdf_res_table *table)
 	fz_catch(ctx)
 	{
 		res_table_free(ctx, table);
-		fz_rethrow_message(ctx, "cannot initialize image resource table");
+		fz_rethrow(ctx);
 	}
 }
 
@@ -203,6 +203,6 @@ pdf_init_resource_tables(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx)
 	{
 		pdf_drop_resource_tables(ctx, doc);
-		fz_rethrow_message(ctx, "cannot allocate resource tables");
+		fz_rethrow(ctx);
 	}
 }

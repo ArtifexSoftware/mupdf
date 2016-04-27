@@ -578,7 +578,7 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int 
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read raw stream (%d %d R)", num, gen);
+		fz_rethrow(ctx);
 	}
 
 	return buf;

@@ -869,7 +869,7 @@ load_postscript_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot parse calculator function (%d %d R)", num, gen);
+		fz_rethrow(ctx);
 	}
 
 	func->base.size += func->u.p.cap * sizeof(psobj);
@@ -1684,15 +1684,8 @@ pdf_load_function(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int in, int
 	}
 	fz_catch(ctx)
 	{
-		int type = func->type;
 		fz_drop_function(ctx, (fz_function *)func);
-		fz_rethrow_message(ctx, "cannot load %s function (%d %d R)",
-					type == SAMPLE ? "sampled" :
-					type == EXPONENTIAL ? "exponential" :
-					type == STITCHING ? "stitching" :
-					type == POSTSCRIPT ? "calculator" :
-					"unknown",
-					pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+		fz_rethrow(ctx);
 	}
 
 	return (fz_function *)func;

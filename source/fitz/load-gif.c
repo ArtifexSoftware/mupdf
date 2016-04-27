@@ -280,7 +280,7 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read compressed table based image data in gif image");
+		fz_rethrow(ctx);
 	}
 
 	return p;
@@ -310,7 +310,7 @@ gif_read_ce(fz_context *ctx, struct info *info, unsigned char *p, unsigned char 
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read comment extension text in gif image");
+		fz_rethrow(ctx);
 	}
 
 	return p;
@@ -330,7 +330,7 @@ gif_read_pte(fz_context *ctx, struct info *info, unsigned char *p, unsigned char
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read plain text extension text in gif image");
+		fz_rethrow(ctx);
 	}
 
 	return p;
@@ -393,7 +393,7 @@ gif_read_ae(fz_context *ctx, struct info *info, unsigned char *p, unsigned char 
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot read application extension data in gif image");
+		fz_rethrow(ctx);
 	}
 
 	return p;

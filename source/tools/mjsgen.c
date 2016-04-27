@@ -95,20 +95,10 @@ static void escape_string(FILE *out, int len, const char *string)
 
 static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
 {
-	fz_page *page;
-	int needshot = 0;
-
-	fz_try(ctx)
-	{
-		page = fz_load_page(ctx, doc, pagenum - 1);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow_message(ctx, "cannot load page %d in file '%s'", pagenum, filename);
-	}
-
+	fz_page *page = fz_load_page(ctx, doc, pagenum - 1);
 	pdf_document *inter = pdf_specifics(ctx, doc);
 	pdf_widget *widget = NULL;
+	int needshot = 0;
 
 	if (inter)
 		widget = pdf_first_widget(inter, (pdf_page *)page);

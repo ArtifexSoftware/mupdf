@@ -592,7 +592,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
 		{
 			fz_drop_page(ctx, &page->super);
-			fz_rethrow_message(ctx, "cannot load page %d contents (%d 0 R)", number + 1, pdf_to_num(ctx, pageref));
+			fz_rethrow(ctx);
 		}
 		page->incomplete |= PDF_PAGE_INCOMPLETE_CONTENTS;
 	}

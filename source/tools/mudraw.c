@@ -489,10 +489,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (showtime)
 		start = gettime();
 
-	fz_try(ctx)
-		page = fz_load_page(ctx, doc, pagenum - 1);
-	fz_catch(ctx)
-		fz_rethrow_message(ctx, "cannot load page %d in file '%s'", pagenum, filename);
+	page = fz_load_page(ctx, doc, pagenum - 1);
 
 	if (showmd5 || showtime || showfeatures)
 		fprintf(stderr, "page %s %d", filename, pagenum);
@@ -532,7 +529,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		{
 			fz_drop_display_list(ctx, list);
 			fz_drop_page(ctx, page);
-			fz_rethrow_message(ctx, "cannot draw page %d in file '%s'", pagenum, filename);
+			fz_rethrow(ctx);
 		}
 	}
 
@@ -1422,14 +1419,7 @@ int mudraw_main(int argc, char **argv)
 				filename = argv[fz_optind++];
 				files++;
 
-				fz_try(ctx)
-				{
-					doc = fz_open_document(ctx, filename);
-				}
-				fz_catch(ctx)
-				{
-					fz_rethrow_message(ctx, "cannot open document: %s", filename);
-				}
+				doc = fz_open_document(ctx, filename);
 
 				if (fz_needs_password(ctx, doc))
 				{

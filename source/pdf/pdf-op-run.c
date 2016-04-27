@@ -479,7 +479,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 					fz_always(ctx)
 						pdf_grestore(ctx, pr);
 					fz_catch(ctx)
-						fz_rethrow_message(ctx, "cannot render pattern tile");
+						fz_rethrow(ctx);
 				}
 			}
 		}

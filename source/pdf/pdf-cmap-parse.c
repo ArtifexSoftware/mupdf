@@ -337,7 +337,7 @@ pdf_load_cmap(fz_context *ctx, fz_stream *file)
 	fz_catch(ctx)
 	{
 		pdf_drop_cmap(ctx, cmap);
-		fz_rethrow_message(ctx, "syntaxerror in cmap");
+		fz_rethrow(ctx);
 	}
 
 	return cmap;

@@ -882,7 +882,7 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, int len, int subimage
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "out of memory loading tiff");
+		fz_rethrow(ctx);
 	}
 
 	return image;
@@ -922,7 +922,7 @@ fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, int len, int *wp
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "out of memory loading tiff");
+		fz_rethrow(ctx);
 	}
 }
 
@@ -952,7 +952,7 @@ fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, int len)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "error while counting subimages in tiff");
+		fz_rethrow(ctx);
 	}
 
 	return subimage_count;

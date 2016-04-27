@@ -209,7 +209,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	fz_catch(ctx)
 	{
 		opj_image_destroy(jpx);
-		fz_rethrow_message(ctx, "out of memory loading jpx");
+		fz_rethrow(ctx);
 	}
 
 	p = img->samples;

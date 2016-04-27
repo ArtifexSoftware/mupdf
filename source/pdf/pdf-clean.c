@@ -53,7 +53,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "Failed while cleaning xobject");
+		fz_rethrow(ctx);
 	}
 }
 
@@ -122,7 +122,7 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "Failed while cleaning xobject");
+		fz_rethrow(ctx);
 	}
 }
 
@@ -284,7 +284,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "Failed while cleaning page");
+		fz_rethrow(ctx);
 	}
 }
 

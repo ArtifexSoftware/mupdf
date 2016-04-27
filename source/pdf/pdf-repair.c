@@ -59,7 +59,7 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *st
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			/* Don't let a broken object at EOF overwrite a good one */
 			if (file->eof)
-				fz_rethrow_message(ctx, "broken object at EOF ignored");
+				fz_rethrow(ctx);
 			/* Silently swallow the error */
 			dict = pdf_new_dict(ctx, NULL, 2);
 		}
@@ -255,7 +255,7 @@ pdf_repair_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_message(ctx, "cannot load object stream object (%d %d R)", num, gen);
+		fz_rethrow(ctx);
 	}
 }
 

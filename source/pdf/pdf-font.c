@@ -354,29 +354,15 @@ pdf_load_embedded_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
 {
 	fz_buffer *buf;
 
+	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stmref), pdf_to_gen(ctx, stmref));
 	fz_try(ctx)
-	{
-		buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stmref), pdf_to_gen(ctx, stmref));
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow_message(ctx, "cannot load font stream (%d %d R)", pdf_to_num(ctx, stmref), pdf_to_gen(ctx, stmref));
-	}
-
-	fz_try(ctx)
-	{
 		fontdesc->font = fz_new_font_from_buffer(ctx, fontname, buf, 0, 1);
-	}
 	fz_always(ctx)
-	{
 		fz_drop_buffer(ctx, buf);
-	}
 	fz_catch(ctx)
-	{
-		fz_rethrow_message(ctx, "cannot load embedded font (%d %d R)", pdf_to_num(ctx, stmref), pdf_to_gen(ctx, stmref));
-	}
-	fontdesc->size += buf->len;
+		fz_rethrow(ctx);
 
+	fontdesc->size += buf->len;
 	fontdesc->is_embedded = 1;
 }
 
@@ -808,7 +794,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 		if (fontdesc && etable != fontdesc->cid_to_gid)
 			fz_free(ctx, etable);
 		pdf_drop_font(ctx, fontdesc);
-		fz_rethrow_message(ctx, "cannot load simple font (%d %d R)", pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+		fz_rethrow(ctx);
 	}
 	return fontdesc;
 }
@@ -1120,7 +1106,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 	fz_catch(ctx)
 	{
 		pdf_drop_font(ctx, fontdesc);
-		fz_rethrow_message(ctx, "cannot load cid font (%d %d R)", pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+		fz_rethrow(ctx);
 	}
 
 	return fontdesc;

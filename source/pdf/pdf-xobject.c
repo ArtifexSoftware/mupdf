@@ -107,7 +107,7 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	{
 		pdf_remove_item(ctx, pdf_drop_xobject_imp, dict);
 		pdf_drop_xobject(ctx, form);
-		fz_rethrow_message(ctx, "cannot load xobject content stream (%d %d R)", pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+		fz_rethrow(ctx);
 	}
 	form->me = pdf_keep_obj(ctx, dict);
 
@@ -188,7 +188,7 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		pdf_drop_obj(ctx, dict);
 		pdf_drop_obj(ctx, idict);
 		pdf_drop_xobject(ctx, form);
-		fz_rethrow_message(ctx, "failed to create xobject");
+		fz_rethrow(ctx);
 	}
 
 	return idict;

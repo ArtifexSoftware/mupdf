@@ -171,7 +171,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 	{
 		if (fontdesc)
 			pdf_drop_font(ctx, fontdesc);
-		fz_rethrow_message(ctx, "cannot load type3 font (%d %d R)", pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+		fz_rethrow(ctx);
 	}
 
 	doc->type3_fonts[doc->num_type3_fonts++] = fz_keep_font(ctx, fontdesc->font);

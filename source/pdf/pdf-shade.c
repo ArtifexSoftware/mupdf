@@ -419,8 +419,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 	fz_catch(ctx)
 	{
 		fz_drop_shade(ctx, shade);
-
-		fz_rethrow_message(ctx, "cannot load shading type %d (%d %d R)", type, pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+		fz_rethrow(ctx);
 	}
 	return shade;
 }

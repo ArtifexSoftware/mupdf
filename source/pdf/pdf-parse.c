@@ -398,7 +398,7 @@ end:
 	{
 		pdf_drop_obj(ctx, obj);
 		pdf_drop_obj(ctx, ary);
-		fz_rethrow_message(ctx, "cannot parse array");
+		fz_rethrow(ctx);
 	}
 	return op;
 }
@@ -497,7 +497,7 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 		pdf_drop_obj(ctx, dict);
 		pdf_drop_obj(ctx, key);
 		pdf_drop_obj(ctx, val);
-		fz_rethrow_message(ctx, "cannot parse dict");
+		fz_rethrow(ctx);
 	}
 	return dict;
 }
@@ -620,7 +620,7 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, obj);
-		fz_rethrow_message(ctx, "cannot parse indirect object (%d %d R)", num, gen);
+		fz_rethrow(ctx);
 	}
 
 skip:

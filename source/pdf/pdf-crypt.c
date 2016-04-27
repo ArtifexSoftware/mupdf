@@ -258,7 +258,7 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 		fz_catch(ctx)
 		{
 			pdf_drop_crypt(ctx, crypt);
-			fz_rethrow_message(ctx, "cannot parse string crypt filter (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+			fz_rethrow(ctx);
 		}
 
 		/* in crypt revision 4, the crypt filter determines the key length */
