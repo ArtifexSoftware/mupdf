@@ -579,7 +579,7 @@ void pdf_drop_js(fz_context *ctx, pdf_js *js)
 	}
 }
 
-static void *pdf_js_alloc(void *actx, void *ptr, unsigned int n)
+static void *pdf_js_alloc(void *actx, void *ptr, int n)
 {
 	fz_context *ctx = actx;
 	if (n == 0) {

@@ -11,7 +11,7 @@ FZ_NORETURN static void rethrow(js_State *J)
 	js_throw(J);
 }
 
-static void *alloc(void *actx, void *ptr, unsigned int n)
+static void *alloc(void *actx, void *ptr, int n)
 {
 	fz_context *ctx = actx;
 	if (n == 0) {
