@@ -225,7 +225,7 @@ load_indexed(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 		}
 		else
 		{
-			fz_rethrow(ctx);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse colorspace lookup table");
 		}
 
 		cs = fz_new_indexed_colorspace(ctx, base, high, lookup);
