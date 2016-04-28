@@ -37,9 +37,9 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 
 			if (forcemask)
 			{
-				fz_compressed_image *cimg = (fz_compressed_image *)image;
+				fz_pixmap_image *cimg = (fz_pixmap_image *)image;
 				fz_pixmap *mask_pixmap;
-				fz_pixmap *tile = fz_compressed_image_tile(ctx, cimg);
+				fz_pixmap *tile = fz_pixmap_image_tile(ctx, cimg);
 				if (image->n != 2)
 				{
 					fz_pixmap *gray;
@@ -52,7 +52,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 				}
 				mask_pixmap = fz_alpha_from_gray(ctx, tile, 1);
 				fz_drop_pixmap(ctx, tile);
-				fz_set_compressed_image_tile(ctx, cimg, mask_pixmap);
+				fz_set_pixmap_image_tile(ctx, cimg, mask_pixmap);
 			}
 			break; /* Out of fz_try */
 		}

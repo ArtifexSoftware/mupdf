@@ -19,6 +19,7 @@
 */
 typedef struct fz_image_s fz_image;
 typedef struct fz_compressed_image_s fz_compressed_image;
+typedef struct fz_pixmap_image_s fz_pixmap_image;
 
 /*
 	fz_get_pixmap_from_image: Called to get a handle to a pixmap from an image.
@@ -120,5 +121,8 @@ fz_pixmap *fz_compressed_image_tile(fz_context *ctx, fz_compressed_image *cimg);
 void fz_set_compressed_image_tile(fz_context *ctx, fz_compressed_image *cimg, fz_pixmap *pix);
 fz_compressed_buffer *fz_compressed_image_buffer(fz_context *ctx, fz_image *image);
 void fz_set_compressed_image_buffer(fz_context *ctx, fz_compressed_image *cimg, fz_compressed_buffer *buf);
+
+fz_pixmap *fz_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *cimg);
+void fz_set_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *cimg, fz_pixmap *pix);
 
 #endif

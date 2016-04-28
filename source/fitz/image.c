@@ -10,11 +10,11 @@ struct fz_compressed_image_s
 	fz_compressed_buffer *buffer;
 };
 
-typedef struct fz_pixmap_image_s
+struct fz_pixmap_image_s
 {
 	fz_image super;
 	fz_pixmap *tile;
-} fz_pixmap_image;
+};
 
 fz_image *
 fz_keep_image(fz_context *ctx, fz_image *image)
@@ -778,6 +778,19 @@ void fz_set_compressed_image_tile(fz_context *ctx, fz_compressed_image *image, f
 {
 	assert(image != NULL && image->super.get_pixmap == compressed_image_get_pixmap);
 	((fz_compressed_image *)image)->tile = pix;
+}
+
+fz_pixmap *fz_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *image)
+{
+	if (image == NULL || image->super.get_pixmap != pixmap_image_get_pixmap)
+		return NULL;
+	return ((fz_pixmap_image *)image)->tile;
+}
+
+void fz_set_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *image, fz_pixmap *pix)
+{
+	assert(image != NULL && image->super.get_pixmap == pixmap_image_get_pixmap);
+	((fz_pixmap_image *)image)->tile = pix;
 }
 
 fz_image *
