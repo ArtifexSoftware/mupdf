@@ -152,6 +152,13 @@ void *fz_new_document_of_size(fz_context *ctx, int size);
 #define fz_new_document(C,M) ((M*)Memento_label(fz_new_document_of_size(ctx, sizeof(M)), #M))
 
 /*
+	fz_keep_document: Keep a reference to an open document.
+
+	Does not throw exceptions.
+*/
+fz_document *fz_keep_document(fz_context *ctx, fz_document *doc);
+
+/*
 	fz_drop_document: Release an open document.
 
 	The resource store in the context associated with fz_document
@@ -161,8 +168,6 @@ void *fz_new_document_of_size(fz_context *ctx, int size);
 	Does not throw exceptions.
 */
 void fz_drop_document(fz_context *ctx, fz_document *doc);
-
-fz_document *fz_keep_document(fz_context *ctx, fz_document *doc);
 
 /*
 	fz_needs_password: Check if a document is encrypted with a
