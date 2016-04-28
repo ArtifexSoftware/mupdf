@@ -84,10 +84,11 @@ void fz_rethrow_if(fz_context *ctx, int errcode);
 enum
 {
 	FZ_ERROR_NONE = 0,
-	FZ_ERROR_GENERIC = 1,
-	FZ_ERROR_SYNTAX = 2,
-	FZ_ERROR_TRYLATER = 3,
-	FZ_ERROR_ABORT = 4,
+	FZ_ERROR_OOM = 1,
+	FZ_ERROR_GENERIC = 2,
+	FZ_ERROR_SYNTAX = 3,
+	FZ_ERROR_TRYLATER = 4,
+	FZ_ERROR_ABORT = 5,
 	FZ_ERROR_COUNT
 };
 
