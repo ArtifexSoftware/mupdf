@@ -1011,6 +1011,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (showmd5 || showtime || showfeatures)
 		fprintf(stderr, "\n");
 
+	if (lowmemory)
+	{
+		fz_empty_store(ctx);
+	}
+
 	if (showmemory)
 	{
 		fz_dump_glyph_cache_stats(ctx);
