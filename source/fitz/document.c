@@ -64,24 +64,6 @@ void fz_register_document_handler(fz_context *ctx, const fz_document_handler *ha
 	dc->handler[dc->count++] = handler;
 }
 
-static inline int fz_tolower(int c)
-{
-	if (c >= 'A' && c <= 'Z')
-		return c + 32;
-	return c;
-}
-
-int fz_strcasecmp(const char *a, const char *b)
-{
-	while (fz_tolower(*a) == fz_tolower(*b))
-	{
-		if (*a++ == 0)
-			return 0;
-		b++;
-	}
-	return fz_tolower(*a) - fz_tolower(*b);
-}
-
 fz_document *
 fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
 {

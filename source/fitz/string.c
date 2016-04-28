@@ -1,5 +1,25 @@
 #include "mupdf/fitz.h"
 
+static inline int
+fz_tolower(int c)
+{
+	if (c >= 'A' && c <= 'Z')
+		return c + 32;
+	return c;
+}
+
+int
+fz_strcasecmp(const char *a, const char *b)
+{
+	while (fz_tolower(*a) == fz_tolower(*b))
+	{
+		if (*a++ == 0)
+			return 0;
+		b++;
+	}
+	return fz_tolower(*a) - fz_tolower(*b);
+}
+
 char *
 fz_strsep(char **stringp, const char *delim)
 {
