@@ -1,19 +1,22 @@
 import sys, os, re
 
-HEADER="""<head>
+HEADER="""<!DOCTYPE html>
+<html>
+<head>
 <style>
-body { background-color:#fffff0; color:black; margin:16pt; }
+body { background-color:white; color:black; margin:16pt; }
 a { text-decoration:none; color:darkblue; }
 a.line { position:relative; padding-top:300px; }
 .comment { color:green; font-style:italic; }
 .comment a { color:darkgreen; }
 </style>
 </head>
-<body><pre><pre>"""
+<body>
+<pre>"""
 
 FOOTER="""</pre></body>"""
 
-prefixes = [ 'fz_', 'pdf_', 'xps_', 'cbz_', 'pdfapp_' ]
+prefixes = [ 'fz_', 'pdf_', 'xps_', 'cbz_', 'html_', 'epub_', 'svg_', 'ui_', 'pdfapp_' ]
 
 def is_public(s):
 	for prefix in prefixes:
@@ -21,19 +24,19 @@ def is_public(s):
 			return True
 	return False
 
-def load_tags():
+def load_tags(curfile):
 	tags = {}
 	for line in open("tags-xref").readlines():
 		ident, type, line, file, text = line.split(None, 4)
-		if not is_public(ident):
+		if not is_public(ident) and file != curfile:
 			continue
-		if type == 'function':
+		if type == 'function' or type == 'macro':
 			tags[ident] = '<a class="function" href="%s#%s">%s</a>' % ("/docs/browse/" + file, line, ident)
-		if type == 'typedef' or type == 'struct':
+		if type == 'typedef':
 			tags[ident] = '<a class="typedef" href="%s#%s">%s</a>' % ("/docs/browse/" + file, line, ident)
 	return tags
 
-tags = load_tags()
+tags = load_tags(sys.argv[1])
 
 def quote(s):
 	return s.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')

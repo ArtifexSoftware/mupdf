@@ -2,7 +2,7 @@
 
 rm -rf docs/browse
 
-FILES=$(find include source platform -name '*.[ch]')
+FILES=$(find include source platform -name '*.[chm]')
 
 echo running ctags to make xref
 ctags -x $FILES > tags-xref
@@ -12,7 +12,7 @@ do
 	output=docs/browse/$input.html
 	mkdir -p $(dirname $output)
 	echo $input $output
-	python scripts/tohtml.py < $input > $output
+	python scripts/tohtml.py $input < $input > $output
 done
 
 rm tags-xref
