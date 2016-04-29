@@ -189,7 +189,8 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	root = pdf_new_dict(ctx, doc, 3);
 	pdf_dict_put(ctx, root, PDF_NAME_Type, pdf_dict_get(ctx, oldroot, PDF_NAME_Type));
 	pdf_dict_put(ctx, root, PDF_NAME_Pages, pdf_dict_get(ctx, oldroot, PDF_NAME_Pages));
-	pdf_dict_put(ctx, root, PDF_NAME_Outlines, outlines);
+	if (outlines)
+		pdf_dict_put(ctx, root, PDF_NAME_Outlines, outlines);
 
 	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
