@@ -641,6 +641,11 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 	}
 	else
 	{
+		delta.x = q.x - dev->cur_span->max.x;
+		delta.y = q.y - dev->cur_span->max.y;
+		if (delta.x < FLT_EPSILON && delta.y < FLT_EPSILON && c == dev->lastchar)
+			return;
+
 		/* Calculate how far we've moved since the end of the current
 		 * span. */
 		delta.x = p.x - dev->cur_span->max.x;
