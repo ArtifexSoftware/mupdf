@@ -146,12 +146,94 @@ static const format_cs_table_t format_cs_table[] =
 
 #elif MUDRAW_THREADS == 2
 
-/* PThreads */
-#define SEMAPHORE sem_t
-#define SEMAPHORE_INIT(A) do { (void)sem_init(&A, 0, 0); } while (0)
-#define SEMAPHORE_FIN(A) do { (void)sem_destroy(&A); } while (0)
-#define SEMAPHORE_TRIGGER(A) do { (void)sem_post(&A); } while (0)
-#define SEMAPHORE_WAIT(A) do { (void)sem_wait(&A); } while (0)
+/*
+	PThreads - without working unnamed semaphores.
+
+	Neither ios nor OSX supports unnamed semaphores.
+	Named semaphores are a pain to use, so we implement
+	our own sempahores using condition variables and
+	mutexes.
+*/
+
+typedef struct
+{
+	int count;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+} my_semaphore_t;
+
+int
+my_semaphore_open(my_semaphore_t *sem)
+{
+	int scode;
+
+	sem->count = 0;
+	scode = pthread_mutex_init(&sem->mutex, NULL);
+	if (scode == 0)
+	{
+		scode = pthread_cond_init(&sem->cond, NULL);
+		if (scode)
+			pthread_mutex_destroy(&sem->mutex);
+	}
+	if (scode)
+		memset(sem, 0, sizeof(*sem));
+	return scode;
+}
+
+int
+my_semaphore_close(my_semaphore_t *sem)
+{
+	int scode, scode2;
+
+	scode = pthread_cond_destroy(&sem->cond);
+	scode2 = pthread_mutex_destroy(&sem->mutex);
+	if (scode == 0)
+		scode = scode2;
+	return scode;
+}
+
+int
+my_semaphore_wait(my_semaphore_t *sem)
+{
+	int scode, scode2;
+
+	scode = pthread_mutex_lock(&sem->mutex);
+	if (scode)
+		return scode;
+	while (sem->count == 0) {
+		scode = pthread_cond_wait(&sem->cond, &sem->mutex);
+		if (scode)
+			break;
+	}
+	if (scode == 0)
+		--sem->count;
+	scode2 = pthread_mutex_unlock(&sem->mutex);
+	if (scode == 0)
+		scode = scode2;
+	return scode;
+}
+
+int
+my_semaphore_signal(my_semaphore_t * sem)
+{
+	int scode, scode2;
+
+	scode = pthread_mutex_lock(&sem->mutex);
+	if (scode)
+		return scode;
+	if (sem->count++ == 0)
+		scode = pthread_cond_signal(&sem->cond);
+	scode2 = pthread_mutex_unlock(&sem->mutex);
+	if (scode == 0)
+		scode = scode2;
+	return scode;
+}
+
+#define SEMAPHORE my_semaphore_t
+#define SEMAPHORE_INIT(A) do { (void)my_semaphore_open(&A); } while (0)
+#define SEMAPHORE_FIN(A) do { (void)my_semaphore_close(&A); } while (0)
+#define SEMAPHORE_TRIGGER(A) do { (void)my_semaphore_signal(&A); } while (0)
+#define SEMAPHORE_WAIT(A) do { (void)my_semaphore_wait(&A); } while (0)
 #define THREAD pthread_t
 #define THREAD_INIT(A,B,C) do { (void)pthread_create(&A, NULL, B, C); } while (0)
 #define THREAD_FIN(A) do { void *res; (void)pthread_join(A, &res); } while (0)
