@@ -332,14 +332,15 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	float colorfv[FZ_MAX_COLORS];
 	fz_irect bbox;
 	int i;
+	float aa_level = 2.0f/(fz_graphics_aa_level(ctx)+2);
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
 
 	if (model == NULL)
 		model = fz_device_gray(ctx);
 
-	if (linewidth * expansion < 0.1f)
-		linewidth = 1 / expansion;
+	if (linewidth * expansion < aa_level)
+		linewidth = aa_level / expansion;
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
@@ -459,9 +460,10 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
+	float aa_level = 2.0f/(fz_graphics_aa_level(ctx)+2);
 
-	if (linewidth * expansion < 0.1f)
-		linewidth = 1 / expansion;
+	if (linewidth * expansion < aa_level)
+		linewidth = aa_level / expansion;
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
