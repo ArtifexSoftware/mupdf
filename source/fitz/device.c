@@ -3,7 +3,9 @@
 void *
 fz_new_device(fz_context *ctx, int size)
 {
-	return Memento_label(fz_calloc(ctx, 1, size), "fz_device");
+	fz_device *dev = Memento_label(fz_calloc(ctx, 1, size), "fz_device");
+	dev->refs = 1;
+	return dev;
 }
 
 void
@@ -40,15 +42,22 @@ fz_close_device(fz_context *ctx, fz_device *dev)
 	dev->end_tile = NULL;
 }
 
+fz_device *
+fz_keep_device(fz_context *ctx, fz_device *dev)
+{
+	return fz_keep_imp(ctx, dev, &dev->refs);
+}
+
 void
 fz_drop_device(fz_context *ctx, fz_device *dev)
 {
-	if (dev == NULL)
-		return;
-	if (dev->close)
-		dev->close(ctx, dev);
-	fz_free(ctx, dev->container);
-	fz_free(ctx, dev);
+	if (fz_drop_imp(ctx, dev, &dev->refs))
+	{
+		if (dev->close)
+			dev->close(ctx, dev);
+		fz_free(ctx, dev->container);
+		fz_free(ctx, dev);
+	}
 }
 
 void

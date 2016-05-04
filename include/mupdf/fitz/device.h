@@ -98,6 +98,7 @@ enum
 
 struct fz_device_s
 {
+	int refs;
 	int hints;
 	int flags;
 
@@ -177,6 +178,8 @@ void fz_close_device(fz_context *ctx, fz_device *dev);
 	fz_drop_device: Free a devices of any type and its resources.
 */
 void fz_drop_device(fz_context *ctx, fz_device *dev);
+
+fz_device *fz_keep_device(fz_context *ctx, fz_device *dev);
 
 /*
 	fz_enable_device_hints : Enable hints in a device.
