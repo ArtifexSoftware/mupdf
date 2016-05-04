@@ -2748,27 +2748,59 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	fz_drop_output(ctx, opts->out);
 }
 
+static int opteq(const char *a, const char *b)
+{
+	int n = strlen(b);
+	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
+}
+
+const char *fz_pdf_write_options_usage =
+	"PDF output options:\n"
+	"\tdecompress: decompress all streams (except when compress-fonts or compress-images)\n"
+	"\tcompress: compress all streams\n"
+	"\tcompress-fonts: compress embedded fonts\n"
+	"\tcompress-images: compress images\n"
+	"\tascii: ASCII hex encode binary streams\n"
+	"\tpretty: pretty-print objects with indentation\n"
+	"\tlinearize: optimize for web browsers\n"
+	"\tsanitize: clean up graphics commands in content streams\n"
+	"\tgarbage: garbage collect unused objects\n"
+	"\tor garbage=compact: ... and compact cross reference table\n"
+	"\tor garbage=deduplicate: ... and remove duplicate objects\n"
+	;
+
 void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args)
 {
-	int c;
+	const char *val;
 
 	memset(opts, 0, sizeof *opts);
 
-	while ((c = *args++))
+	if (fz_has_option(ctx, args, "decompress", &val))
+		opts->do_decompress = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "compress", &val))
+		opts->do_compress = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "compress-fonts", &val))
+		opts->do_compress_fonts = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "compress-images", &val))
+		opts->do_compress_images = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "ascii", &val))
+		opts->do_ascii = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "pretty", &val))
+		opts->do_pretty = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "linearize", &val))
+		opts->do_linear = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "sanitize", &val))
+		opts->do_clean = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "garbage", &val))
 	{
-		switch (c)
-		{
-		case 'd': opts->do_decompress += 1; break;
-		case 'z': opts->do_compress += 1; break;
-		case 'f': opts->do_compress_fonts += 1; break;
-		case 'i': opts->do_compress_images += 1; break;
-		case 'p': opts->do_pretty += 1; break;
-		case 'a': opts->do_ascii += 1; break;
-		case 'g': opts->do_garbage += 1; break;
-		case 'l': opts->do_linear += 1; break;
-		case 's': opts->do_clean += 1; break;
-		default: fz_warn(ctx, "unrecognized pdf-write option: '%c'", c);
-		}
+		if (opteq(val, "yes"))
+			opts->do_garbage = 1;
+		else if (opteq(val, "compact"))
+			opts->do_garbage = 2;
+		else if (opteq(val, "deduplicate"))
+			opts->do_garbage = 3;
+		else
+			opts->do_garbage = atoi(val);
 	}
 }
 

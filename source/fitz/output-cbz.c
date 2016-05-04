@@ -8,10 +8,15 @@ struct fz_cbz_writer_s
 {
 	fz_document_writer super;
 	fz_zip_writer *zip;
-	int resolution;
+	float resolution;
 	fz_pixmap *pixmap;
 	int count;
 };
+
+const char *fz_cbz_write_options_usage =
+	"CBZ output options:\n"
+	"\tresolution=N: resolution of rendered pages in pixels per inch (default 96)\n"
+	;
 
 static fz_device *
 cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox, fz_matrix *ctm)
@@ -69,8 +74,10 @@ cbz_drop_imp(fz_context *ctx, fz_document_writer *wri_)
 fz_document_writer *
 fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 {
-	fz_cbz_writer *wri = fz_malloc_struct(ctx, fz_cbz_writer);
+	const char *val;
+	fz_cbz_writer *wri;
 
+	wri = fz_malloc_struct(ctx, fz_cbz_writer);
 	wri->super.begin_page = cbz_begin_page;
 	wri->super.end_page = cbz_end_page;
 	wri->super.drop_imp = cbz_drop_imp;
@@ -83,11 +90,10 @@ fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 		fz_rethrow(ctx);
 	}
 
-	// TODO: getopt-like comma separated list of options
-	if (options)
-		wri->resolution = atoi(options);
+	if (fz_has_option(ctx, options, "resolution", &val))
+		wri->resolution = fz_atof(val);
 
-	if (wri->resolution == 0)
+	if (wri->resolution <= 0)
 		wri->resolution = 96;
 
 	return (fz_document_writer*)wri;

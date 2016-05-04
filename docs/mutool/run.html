@@ -483,16 +483,18 @@ using low level access to the objects and streams contained in a PDF file.
 <dd>Cast the PDF document to a Document.
 <dt>PDFDocument#save(fileName, options)
 <dd>Write the PDF document to file.
-The write options are a string of flag characters:
-<br>l: linearize,
-<br>g: garbage collect, gg: ...and compact, ggg: ...and de-duplicate,
-<br>p: pretty-print objects,
-<br>a: ascii hex encode streams,
-<br>f: compress fonts,
-<br>i: compress images,
-<br>z: compress all streams,
-<br>d: decompress all streams (except fonts or images if 'f' or 'i'),
-<br>s: sanitize content streams.
+The write options are a string of comma separated options:
+<br>linearize (optimize for "web"),
+<br>garbage (remove unused objects),
+<br>or garbage=compact (... and compact xref table),
+<br>or garbage=deduplicate (... and remove duplicate objects),
+<br>pretty (pretty-print objects),
+<br>ascii (ascii hex encode streams),
+<br>compress-fonts (compress embedded font data),
+<br>compress-images (compress image data),
+<br>compress (compress all streams),
+<br>decompress (decompress all streams (except fonts or images if compress-fonts/images)),
+<br>sanitize (sanitize content streams).
 </dl>
 
 <h3>

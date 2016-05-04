@@ -1,5 +1,46 @@
 #include "mupdf/fitz.h"
 
+/* Return non-null terminated pointers to key/value entries in comma separated
+ * option string. A plain key has the default value 'yes'. Use strncmp to compare
+ * key/value strings. */
+static const char *
+fz_get_option(fz_context *ctx, const char **key, const char **val, const char *opts)
+{
+	if (!opts || *opts == 0)
+		return NULL;
+
+	if (*opts == ',')
+		++opts;
+
+	*key = opts;
+	while (*opts != 0 && *opts != ',' && *opts != '=')
+		++opts;
+
+	if (*opts == '=')
+	{
+		*val = ++opts;
+		while (*opts != 0 && *opts != ',')
+			++opts;
+	}
+	else
+	{
+		*val = "yes";
+	}
+
+	return opts;
+}
+
+int
+fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **val)
+{
+	const char *straw;
+	int n = strlen(key);
+	while ((opts = fz_get_option(ctx, &straw, val, opts)))
+		if (!strncmp(straw, key, n) && (straw[n] == '=' || straw[n] == ',' || straw[n] == 0))
+			return 1;
+	return 0;
+}
+
 fz_document_writer *
 fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options)
 {

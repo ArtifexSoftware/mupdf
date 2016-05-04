@@ -37,10 +37,12 @@ static void usage(void)
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
 		"\t\tcbz, pdf\n"
-		"\t-O -\toutput format options\n"
+		"\t-O -\tcomma separated list of options for output format\n"
 		"\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
+		"\n"
 		);
+	fprintf(stderr, "%s\n", fz_cbz_write_options_usage);
 	exit(1);
 }
 
