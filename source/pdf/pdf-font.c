@@ -1801,6 +1801,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 	if (num_seq + num_chr == 0)
 	{
 		fz_warn(ctx, "cannot create ToUnicode mapping for %s", font->name);
+		fz_free(ctx, table);
 		return NULL;
 	}
 

@@ -66,7 +66,6 @@ fz_close_document_writer(fz_context *ctx, fz_document_writer *wri)
 	if (wri->close)
 		wri->close(ctx, wri);
 	wri->close = NULL;
-	fz_free(ctx, wri);
 }
 
 void
