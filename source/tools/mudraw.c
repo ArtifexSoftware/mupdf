@@ -369,11 +369,29 @@ static int num_workers = 0;
 static worker_t *workers;
 
 static struct {
+	int active;
+	int started;
+	fz_context *ctx;
+	THREAD thread;
+	SEMAPHORE start;
+	SEMAPHORE stop;
+	int pagenum;
+	char *filename;
+	fz_display_list *list;
+	fz_page *page;
+} bgprint;
+
+static struct {
 	int count, total;
 	int min, max;
 	int minpage, maxpage;
 	char *minfilename;
 	char *maxfilename;
+	int render_count, render_total;
+	int render_min, render_max;
+	int render_minpage, render_maxpage;
+	char *render_minfilename;
+	char *render_maxfilename;
 } timing;
 
 static void usage(void)
@@ -419,6 +437,7 @@ static void usage(void)
 		"\t-D\tdisable use of display list\n"
 		"\t-i\tignore errors\n"
 		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
+		"\t-P\tparallel interpretation/rendering\n"
 		"\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
@@ -555,90 +574,13 @@ static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_l
 	}
 }
 
-static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
+static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, char *filename, int bg)
 {
-	fz_page *page;
-	fz_display_list *list = NULL;
-	fz_device *dev = NULL;
-	int start;
-	fz_cookie cookie = { 0 };
 	fz_rect mediabox;
-	int first_page = !output_append;
+	fz_device *dev = NULL;
 
-	fz_var(list);
-	fz_var(dev);
-
-	if (showtime)
-		start = gettime();
-
-	page = fz_load_page(ctx, doc, pagenum - 1);
-
-	if (showmd5 || showtime || showfeatures)
-		fprintf(stderr, "page %s %d", filename, pagenum);
 
 	fz_bound_page(ctx, page, &mediabox);
-
-	if (output_file_per_page)
-	{
-		char text_buffer[512];
-
-		fz_drop_output(ctx, out);
-		fz_snprintf(text_buffer, sizeof(text_buffer), output, pagenum);
-		out = fz_new_output_with_path(ctx, text_buffer, output_append);
-		output_append = 1;
-	}
-
-	/* Output any file level (as opposed to page level) headers. */
-	if (first_page)
-		file_level_headers(ctx);
-
-	if (uselist)
-	{
-		fz_try(ctx)
-		{
-			list = fz_new_display_list(ctx);
-			dev = fz_new_list_device(ctx, list);
-			if (lowmemory)
-				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
-			fz_run_page(ctx, page, dev, &fz_identity, &cookie);
-		}
-		fz_always(ctx)
-		{
-			fz_drop_device(ctx, dev);
-			dev = NULL;
-		}
-		fz_catch(ctx)
-		{
-			fz_drop_display_list(ctx, list);
-			fz_drop_page(ctx, page);
-			fz_rethrow(ctx);
-		}
-	}
-
-	if (showfeatures)
-	{
-		int iscolor;
-		dev = fz_new_test_device(ctx, &iscolor, 0.02f);
-		if (lowmemory)
-			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
-		fz_try(ctx)
-		{
-			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, NULL);
-			else
-				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
-		}
-		fz_always(ctx)
-		{
-			fz_drop_device(ctx, dev);
-			dev = NULL;
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
-		fprintf(stderr, " %s", iscolor ? "color" : "grayscale");
-	}
 
 	if (output_format == OUT_TRACE)
 	{
@@ -650,9 +592,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
+				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, cookie);
 			else
-				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+				fz_run_page(ctx, page, dev, &fz_identity, cookie);
 			fz_printf(ctx, out, "</page>\n");
 		}
 		fz_always(ctx)
@@ -683,9 +625,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			if (output_format == OUT_HTML)
 				fz_disable_device_hints(ctx, dev, FZ_IGNORE_IMAGE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, &cookie);
+				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, cookie);
 			else
-				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+				fz_run_page(ctx, page, dev, &fz_identity, cookie);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (output_format == OUT_STEXT)
@@ -728,9 +670,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			pdf_obj *page_obj;
 
 			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, NULL, &cookie);
+				fz_run_display_list(ctx, list, dev, &fz_identity, NULL, cookie);
 			else
-				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+				fz_run_page(ctx, page, dev, &fz_identity, cookie);
 
 			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, resources, contents);
 			pdf_insert_page(ctx, pdfout, -1, page_obj);
@@ -779,9 +721,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &ctm, &tbounds, &cookie);
+				fz_run_display_list(ctx, list, dev, &ctm, &tbounds, cookie);
 			else
-				fz_run_page(ctx, page, dev, &ctm, &cookie);
+				fz_run_page(ctx, page, dev, &ctm, cookie);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 		}
@@ -798,7 +740,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			fz_rethrow(ctx);
 		}
 	}
-
 	else
 	{
 		float zoom;
@@ -811,7 +752,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_ps_output_context *psoc = NULL;
 		fz_mono_pcl_output_context *pmcoc = NULL;
 		fz_color_pcl_output_context *pccoc = NULL;
+		fz_device *dev = NULL;
 
+		fz_var(dev);
 		fz_var(pix);
 		fz_var(poc);
 		fz_var(psoc);
@@ -953,10 +896,10 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					DEBUG_THREADS(("Waiting for worker %d to complete band %d\n", w->num, band));
 					SEMAPHORE_WAIT(w->stop);
 					pix = w->pix;
-					cookie.errors += w->cookie.errors;
+					cookie->errors += w->cookie.errors;
 				}
 				else
-					drawband(ctx, savealpha, page, list, &ctm, &tbounds, &cookie, band, pix);
+					drawband(ctx, savealpha, page, list, &ctm, &tbounds, cookie, band, pix);
 
 				if (output)
 				{
@@ -1072,22 +1015,44 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		int end = gettime();
 		int diff = end - start;
 
-		if (diff < timing.min)
+		if (bg)
 		{
-			timing.min = diff;
-			timing.minpage = pagenum;
-			timing.minfilename = filename;
-		}
-		if (diff > timing.max)
-		{
-			timing.max = diff;
-			timing.maxpage = pagenum;
-			timing.maxfilename = filename;
-		}
-		timing.total += diff;
-		timing.count ++;
+			if (diff < timing.render_min)
+			{
+				timing.render_min = diff;
+				timing.render_minpage = pagenum;
+				timing.render_minfilename = filename;
+			}
+			if (diff > timing.render_max)
+			{
+				timing.render_max = diff;
+				timing.render_maxpage = pagenum;
+				timing.render_maxfilename = filename;
+			}
+			timing.render_total += diff;
+			timing.render_count ++;
 
-		fprintf(stderr, " %dms", diff);
+			fprintf(stderr, " %dms (rendering)", diff);
+		}
+		else
+		{
+			if (diff < timing.min)
+			{
+				timing.min = diff;
+				timing.minpage = pagenum;
+				timing.minfilename = filename;
+			}
+			if (diff > timing.max)
+			{
+				timing.max = diff;
+				timing.maxpage = pagenum;
+				timing.maxfilename = filename;
+			}
+			timing.total += diff;
+			timing.count ++;
+
+			fprintf(stderr, " %dms", diff);
+		}
 	}
 
 	if (showmd5 || showtime || showfeatures)
@@ -1105,8 +1070,141 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	fz_flush_warnings(ctx);
 
-	if (cookie.errors)
+	if (cookie->errors)
 		errored = 1;
+}
+
+static void bgprint_flush(void)
+{
+	if (!bgprint.active || !bgprint.started)
+		return;
+
+	SEMAPHORE_WAIT(bgprint.stop);
+	bgprint.started = 0;
+}
+
+static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
+{
+	fz_page *page;
+	fz_display_list *list = NULL;
+	fz_device *dev = NULL;
+	int start;
+	fz_cookie cookie = { 0 };
+	int first_page = !output_append;
+	int diff;
+
+	fz_var(list);
+	fz_var(dev);
+
+	start = (showtime ? gettime() : 0);
+
+	page = fz_load_page(ctx, doc, pagenum - 1);
+
+	/* Output any file level (as opposed to page level) headers. */
+	if (first_page)
+		file_level_headers(ctx);
+
+	if (uselist)
+	{
+		fz_try(ctx)
+		{
+			list = fz_new_display_list(ctx);
+			dev = fz_new_list_device(ctx, list);
+			if (lowmemory)
+				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
+			fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_device(ctx, dev);
+			dev = NULL;
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_display_list(ctx, list);
+			fz_drop_page(ctx, page);
+			fz_rethrow(ctx);
+		}
+
+		if (bgprint.active && showtime)
+		{
+			int end = gettime();
+			diff = end - start;
+
+			if (diff < timing.min)
+			{
+				timing.min = diff;
+				timing.minpage = pagenum;
+				timing.minfilename = filename;
+			}
+			if (diff > timing.max)
+			{
+				timing.max = diff;
+				timing.maxpage = pagenum;
+				timing.maxfilename = filename;
+			}
+			timing.total += diff;
+			timing.count ++;
+		}
+	}
+
+	if (showfeatures)
+	{
+		int iscolor;
+		dev = fz_new_test_device(ctx, &iscolor, 0.02f);
+		if (lowmemory)
+			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
+		fz_try(ctx)
+		{
+			if (list)
+				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, NULL);
+			else
+				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+		}
+		fz_always(ctx)
+		{
+			fz_drop_device(ctx, dev);
+			dev = NULL;
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+		fprintf(stderr, " %s", iscolor ? "color" : "grayscale");
+	}
+
+	if (output_file_per_page)
+	{
+		char text_buffer[512];
+
+		bgprint_flush();
+		fz_drop_output(ctx, out);
+		fz_snprintf(text_buffer, sizeof(text_buffer), output, pagenum);
+		out = fz_new_output_with_path(ctx, text_buffer, output_append);
+		output_append = 1;
+	}
+
+	if (bgprint.active)
+	{
+		bgprint_flush();
+		if (bgprint.active && (showmd5 || showtime || showfeatures))
+		{
+			fprintf(stderr, "page %s %d", filename, pagenum);
+			if (showtime)
+				fprintf(stderr, " %dms (interpretation)", diff);
+		}
+
+		bgprint.started = 1;
+		bgprint.page = page;
+		bgprint.list = list;
+		bgprint.filename = filename;
+		bgprint.pagenum = pagenum;
+		SEMAPHORE_TRIGGER(bgprint.start);
+	}
+	else
+	{
+		dodrawpage(ctx, page, list, pagenum, &cookie, start, filename, 0);
+	}
 }
 
 static void drawrange(fz_context *ctx, fz_document *doc, char *range)
@@ -1241,6 +1339,29 @@ static THREAD_RETURN_TYPE worker_thread(void *arg)
 	while (me->band >= 0);
 	THREAD_RETURN();
 }
+
+static THREAD_RETURN_TYPE bgprint_worker(void *arg)
+{
+	fz_cookie cookie = { 0 };
+	(void)arg;
+
+	do
+	{
+		DEBUG_THREADS(("BGPrint waiting\n"));
+		SEMAPHORE_WAIT(bgprint.start);
+		DEBUG_THREADS(("BGPrint woken for pagenum %d\n", bgprint.pagenum));
+		if (bgprint.pagenum >= 0)
+		{
+			int start = gettime();
+			memset(&cookie, 0, sizeof(cookie));
+			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, bgprint.pagenum, &cookie, start, bgprint.filename, 1);
+		}
+		DEBUG_THREADS(("BGPrint completed band %d\n", bgprint.pagenum));
+		SEMAPHORE_TRIGGER(bgprint.stop);
+	}
+	while (bgprint.pagenum >= 0);
+	THREAD_RETURN();
+}
 #endif
 
 #ifdef MUDRAW_STANDALONE
@@ -1257,7 +1378,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:T:U:Lv")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:I:s:A:DiW:H:S:T:U:LvP")) != -1)
 	{
 		switch (c)
 		{
@@ -1313,6 +1434,7 @@ int mudraw_main(int argc, char **argv)
 			break;
 #endif
 		case 'L': lowmemory = 1; break;
+		case 'P': bgprint.active = 1; break;
 
 		case 'v': fprintf(stderr, "mudraw version %s\n", FZ_VERSION); return 1;
 		}
@@ -1335,6 +1457,15 @@ int mudraw_main(int argc, char **argv)
 		}
 	}
 
+	if (bgprint.active)
+	{
+		if (uselist == 0)
+		{
+			fprintf(stderr, "cannot bgprint without using display list\n");
+			exit(1);
+		}
+	}
+
 	ctx = fz_new_context((showmemory == 0 ? NULL : &alloc_ctx), LOCKS_INIT(), (lowmemory ? 1 : FZ_STORE_DEFAULT));
 	if (!ctx)
 	{
@@ -1344,6 +1475,14 @@ int mudraw_main(int argc, char **argv)
 
 	fz_set_text_aa_level(ctx, alphabits_text);
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
+
+	if (bgprint.active)
+	{
+		bgprint.ctx = fz_clone_context(ctx);
+		SEMAPHORE_INIT(bgprint.start);
+		SEMAPHORE_INIT(bgprint.stop);
+		THREAD_INIT(bgprint.thread, bgprint_worker, NULL);
+	}
 
 	if (num_workers > 0)
 	{
@@ -1494,6 +1633,14 @@ int mudraw_main(int argc, char **argv)
 	timing.maxpage = 0;
 	timing.minfilename = "";
 	timing.maxfilename = "";
+	timing.render_count = 0;
+	timing.render_total = 0;
+	timing.render_min = 1 << 30;
+	timing.render_max = 0;
+	timing.render_minpage = 0;
+	timing.render_maxpage = 0;
+	timing.render_minfilename = "";
+	timing.render_maxfilename = "";
 
 	fz_try(ctx)
 	{
@@ -1528,6 +1675,7 @@ int mudraw_main(int argc, char **argv)
 						drawrange(ctx, doc, argv[fz_optind++]);
 				}
 
+				bgprint_flush();
 				fz_drop_document(ctx, doc);
 				doc = NULL;
 			}
@@ -1536,6 +1684,7 @@ int mudraw_main(int argc, char **argv)
 				if (!ignore_errors)
 					fz_rethrow(ctx);
 
+				bgprint_flush();
 				fz_drop_document(ctx, doc);
 				doc = NULL;
 				fz_warn(ctx, "ignoring error in '%s'", filename);
@@ -1544,6 +1693,7 @@ int mudraw_main(int argc, char **argv)
 	}
 	fz_catch(ctx)
 	{
+		bgprint_flush();
 		fz_drop_document(ctx, doc);
 		fprintf(stderr, "error: cannot draw '%s'\n", filename);
 		errored = 1;
@@ -1596,10 +1746,21 @@ int mudraw_main(int argc, char **argv)
 			SEMAPHORE_WAIT(workers[i].stop);
 			SEMAPHORE_FIN(workers[i].start);
 			SEMAPHORE_FIN(workers[i].stop);
-			fz_drop_context(workers[i].ctx);
 			THREAD_FIN(workers[i].thread);
+			fz_drop_context(workers[i].ctx);
 		}
 		fz_free(ctx, workers);
+	}
+
+	if (bgprint.active)
+	{
+		bgprint.pagenum = -1;
+		SEMAPHORE_TRIGGER(bgprint.start);
+		SEMAPHORE_WAIT(bgprint.stop);
+		SEMAPHORE_FIN(bgprint.start);
+		SEMAPHORE_FIN(bgprint.stop);
+		THREAD_FIN(bgprint.thread);
+		fz_drop_context(bgprint.ctx);
 	}
 
 	fz_drop_context(ctx);
