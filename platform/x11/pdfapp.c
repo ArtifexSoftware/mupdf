@@ -288,7 +288,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 		}
 
 #ifdef HAVE_CURL
-		if (!strncmp(filename, "http://", 7))
+		if (!strncmp(filename, "http://", 7) || !strncmp(filename, "https://", 8))
 		{
 			app->stream = fz_stream_from_curl(ctx, filename, pdfapp_more_data, app);
 			while (1)
