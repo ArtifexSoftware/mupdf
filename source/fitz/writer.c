@@ -54,15 +54,26 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 
 	if (!fz_strcasecmp(format, "cbz"))
 		return fz_new_cbz_writer(ctx, path, options);
+	if (!fz_strcasecmp(format, "pdf"))
+		return fz_new_pdf_writer(ctx, path, options);
 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown document format: %s", format);
 }
 
 void
+fz_close_document_writer(fz_context *ctx, fz_document_writer *wri)
+{
+	if (wri->close)
+		wri->close(ctx, wri);
+	wri->close = NULL;
+	fz_free(ctx, wri);
+}
+
+void
 fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 {
-	if (wri->drop_imp)
-		wri->drop_imp(ctx, wri);
+	if (wri->close)
+		wri->close(ctx, wri);
 	fz_free(ctx, wri);
 }
 

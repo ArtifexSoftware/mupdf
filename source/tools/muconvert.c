@@ -20,6 +20,7 @@ static const char *options = "";
 static fz_context *ctx;
 static fz_document *doc;
 static fz_document_writer *out;
+static int count;
 
 static void usage(void)
 {
@@ -43,12 +44,80 @@ static void usage(void)
 		"\n"
 		);
 	fprintf(stderr, "%s\n", fz_cbz_write_options_usage);
+	fprintf(stderr, "%s\n", fz_pdf_write_options_usage);
 	exit(1);
+}
+
+static int isrange(const char *s)
+{
+	while (*s)
+	{
+		if ((*s < '0' || *s > '9') && *s != 'N' && *s != '-' && *s != ',')
+			return 0;
+		s++;
+	}
+	return 1;
+}
+
+static void runpage(int number)
+{
+	fz_matrix ctm;
+	fz_rect mediabox;
+	fz_page *page;
+	fz_device *dev;
+
+	page = fz_load_page(ctx, doc, number - 1);
+	fz_bound_page(ctx, page, &mediabox);
+	dev = fz_begin_page(ctx, out, &mediabox, &ctm);
+	fz_run_page(ctx, page, dev, &ctm, NULL);
+	fz_end_page(ctx, out, dev);
+	fz_drop_page(ctx, page);
+}
+
+static void runrange(char *s)
+{
+	int start, end, i;
+	while (s[0])
+	{
+		if (s[0] == 'N')
+		{
+			start = count;
+			s += 1;
+		}
+		else
+			start = strtol(s, &s, 10);
+
+		if (s[0] == '-')
+		{
+			if (s[1] == 'N')
+			{
+				end = count;
+				s += 2;
+			}
+			else
+				end = strtol(s+1, &s, 10);
+		}
+		else
+			end = start;
+
+		start = fz_clampi(start, 1, count);
+		end = fz_clampi(end, 1, count);
+
+		if (start < end)
+			for (i = start; i <= end; ++i)
+				runpage(i);
+		else
+			for (i = start; i >= end; --i)
+				runpage(i);
+
+		if (s[0] != ',')
+			break;
+	}
 }
 
 int muconvert_main(int argc, char **argv)
 {
-	int i, k, n, c;
+	int i, c;
 
 	while ((c = fz_getopt(argc, argv, "p:A:W:H:S:U:o:F:O:")) != -1)
 	{
@@ -117,22 +186,12 @@ int muconvert_main(int argc, char **argv)
 			if (!fz_authenticate_password(ctx, doc, password))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", argv[i]);
 		fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+		count = fz_count_pages(ctx, doc);
 
-		n = fz_count_pages(ctx, doc);
-		for (k = 0; k < n; ++k)
-		{
-			fz_matrix ctm;
-			fz_rect mediabox;
-			fz_page *page;
-			fz_device *dev;
-
-			page = fz_load_page(ctx, doc, k);
-			fz_bound_page(ctx, page, &mediabox);
-			dev = fz_begin_page(ctx, out, &mediabox, &ctm);
-			fz_run_page(ctx, page, dev, &ctm, NULL);
-			fz_end_page(ctx, out, dev);
-			fz_drop_page(ctx, page);
-		}
+		if (isrange(argv[i+1]))
+			runrange(argv[++i]);
+		else
+			runrange("1-N");
 
 		fz_drop_document(ctx, doc);
 	}

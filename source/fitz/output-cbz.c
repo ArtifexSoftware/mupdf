@@ -60,7 +60,7 @@ cbz_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 }
 
 static void
-cbz_drop_imp(fz_context *ctx, fz_document_writer *wri_)
+cbz_close(fz_context *ctx, fz_document_writer *wri_)
 {
 	fz_cbz_writer *wri = (fz_cbz_writer*)wri_;
 	fz_try(ctx)
@@ -80,7 +80,7 @@ fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 	wri = fz_malloc_struct(ctx, fz_cbz_writer);
 	wri->super.begin_page = cbz_begin_page;
 	wri->super.end_page = cbz_end_page;
-	wri->super.drop_imp = cbz_drop_imp;
+	wri->super.close = cbz_close;
 
 	fz_try(ctx)
 		wri->zip = fz_new_zip_writer(ctx, path);

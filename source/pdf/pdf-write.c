@@ -3102,3 +3102,97 @@ void pdf_finish_edit(fz_context *ctx, pdf_document *doc)
 		return;
 	pdf_rebalance_page_tree(ctx, doc);
 }
+
+typedef struct pdf_writer_s pdf_writer;
+
+struct pdf_writer_s
+{
+	fz_document_writer super;
+	pdf_document *pdf;
+	pdf_write_options opts;
+	char *filename;
+
+	fz_rect mediabox;
+	pdf_obj *resources;
+	fz_buffer *contents;
+};
+
+static fz_device *
+pdf_writer_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox, fz_matrix *ctm)
+{
+	pdf_writer *wri = (pdf_writer*)wri_;
+	wri->mediabox = *mediabox;
+	*ctm = fz_identity;
+	return pdf_page_write(ctx, wri->pdf, &wri->mediabox, &wri->resources, &wri->contents);
+}
+
+static void
+pdf_writer_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
+{
+	pdf_writer *wri = (pdf_writer*)wri_;
+	pdf_obj *obj = NULL;
+
+	fz_var(obj);
+
+	fz_try(ctx)
+	{
+		fz_drop_device(ctx, dev);
+		obj = pdf_add_page(ctx, wri->pdf, &wri->mediabox, 0, wri->resources, wri->contents);
+		pdf_insert_page(ctx, wri->pdf, -1, obj);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, obj);
+		fz_drop_buffer(ctx, wri->contents);
+		wri->contents = NULL;
+		pdf_drop_obj(ctx, wri->resources);
+		wri->resources = NULL;
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static void
+pdf_writer_close(fz_context *ctx, fz_document_writer *wri_)
+{
+	pdf_writer *wri = (pdf_writer*)wri_;
+	fz_try(ctx)
+		pdf_save_document(ctx, wri->pdf, wri->filename, &wri->opts);
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, wri->contents);
+		pdf_drop_obj(ctx, wri->resources);
+		pdf_drop_document(ctx, wri->pdf);
+		fz_free(ctx, wri->filename);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+fz_document_writer *
+fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options)
+{
+	pdf_writer *wri;
+
+	wri = fz_malloc_struct(ctx, pdf_writer);
+	wri->super.begin_page = pdf_writer_begin_page;
+	wri->super.end_page = pdf_writer_end_page;
+	wri->super.close = pdf_writer_close;
+
+	fz_try(ctx)
+	{
+		wri->filename = fz_strdup(ctx, path);
+		wri->pdf = pdf_create_document(ctx);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_document(ctx, wri->pdf);
+		fz_free(ctx, wri->filename);
+		fz_free(ctx, wri);
+		fz_rethrow(ctx);
+	}
+
+	pdf_parse_write_options(ctx, &wri->opts, options);
+
+	return (fz_document_writer*)wri;
+}
