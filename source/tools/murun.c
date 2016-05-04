@@ -258,6 +258,12 @@ static void ffi_gc_fz_device(js_State *J, void *device)
 	fz_drop_device(ctx, device);
 }
 
+static void ffi_gc_fz_document_writer(js_State *J, void *wri)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_document_writer(ctx, wri);
+}
+
 /* type conversions */
 
 struct color {
@@ -287,6 +293,16 @@ static void ffi_pushmatrix(js_State *J, fz_matrix matrix)
 	js_pushnumber(J, matrix.d); js_setindex(J, -2, 3);
 	js_pushnumber(J, matrix.e); js_setindex(J, -2, 4);
 	js_pushnumber(J, matrix.f); js_setindex(J, -2, 5);
+}
+
+static void ffi_setmatrix(js_State *J, int idx, fz_matrix matrix)
+{
+	js_pushnumber(J, matrix.a); js_setindex(J, idx, 0);
+	js_pushnumber(J, matrix.b); js_setindex(J, idx, 1);
+	js_pushnumber(J, matrix.c); js_setindex(J, idx, 2);
+	js_pushnumber(J, matrix.d); js_setindex(J, idx, 3);
+	js_pushnumber(J, matrix.e); js_setindex(J, idx, 4);
+	js_pushnumber(J, matrix.f); js_setindex(J, idx, 5);
 }
 
 static fz_rect ffi_torect(js_State *J, int idx)
@@ -2269,6 +2285,64 @@ static void ffi_new_DrawDevice(js_State *J)
 	js_newuserdata(J, "fz_device", device, ffi_gc_fz_device);
 }
 
+static void ffi_new_DocumentWriter(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	const char *filename = js_tostring(J, 1);
+	const char *format = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
+	const char *options = js_iscoercible(J, 3) ? js_tostring(J, 3) : NULL;
+	fz_document_writer *wri;
+
+	fz_try(ctx)
+		wri = fz_new_document_writer(ctx, filename, format, options);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_document_writer");
+	js_newuserdata(J, "fz_document_writer", wri, ffi_gc_fz_document_writer);
+}
+
+static void ffi_DocumentWriter_beginPage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document_writer *wri = js_touserdata(J, 0, "fz_document_writer");
+	fz_rect mediabox = ffi_torect(J, 1);
+	fz_matrix ctm = fz_identity;
+	fz_device *device;
+
+	fz_try(ctx)
+		device = fz_begin_page(ctx, wri, &mediabox, &ctm);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_setmatrix(J, 2, ctm);
+
+	js_getregistry(J, "fz_device");
+	js_newuserdata(J, "fz_device", fz_keep_device(ctx, device), ffi_gc_fz_device);
+}
+
+static void ffi_DocumentWriter_endPage(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document_writer *wri = js_touserdata(J, 0, "fz_document_writer");
+	fz_device *device = js_touserdata(J, 1, "fz_device");
+	fz_try(ctx)
+		fz_end_page(ctx, wri, device);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+
+static void ffi_DocumentWriter_close(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document_writer *wri = js_touserdata(J, 0, "fz_document_writer");
+	fz_try(ctx)
+		fz_close_document_writer(ctx, wri);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 /* PDF specifics */
 
 static void ffi_new_PDFDocument(js_State *J)
@@ -3110,6 +3184,14 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
+		jsB_propfun(J, "DocumentWriter.beginPage", ffi_DocumentWriter_beginPage, 2);
+		jsB_propfun(J, "DocumentWriter.endPage", ffi_DocumentWriter_endPage, 1);
+		jsB_propfun(J, "DocumentWriter.close", ffi_DocumentWriter_close, 1);
+	}
+	js_setregistry(J, "fz_document_writer");
+
+	js_newobject(J);
+	{
 		jsB_propfun(J, "PDFDocument.toDocument", ffi_PDFDocument_toDocument, 0);
 
 		jsB_propfun(J, "PDFDocument.getTrailer", ffi_PDFDocument_getTrailer, 0);
@@ -3176,6 +3258,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_display_list", "DisplayList", ffi_new_DisplayList, 0);
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 1);
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
+		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
 
 		jsB_propfun(J, "readFile", ffi_readFile, 1);
 

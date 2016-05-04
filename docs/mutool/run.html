@@ -465,6 +465,56 @@ but may be used to decode a down-scaled pixmap.
 </dl>
 
 <h2>
+Document Writer
+</h2>
+
+<p>
+Document writer objects are used to create new documents in several formats.
+
+<dl>
+<dt>new DocumentWriter(filename, format, options)
+<dd>Create a new document writer to create a document with the specified format and output options.
+If format is null it is inferred from the filename suffix. The options argument is a comma separated list
+of flags and key-value pairs. See below for more details.
+<dt>DocumentWriter#beginPage(mediabox, transform)
+<dd>Begin rendering a new page. Returns a Device that can be used to render the page graphics.
+The transform argument must be an empty array which is set to the transform matrix to be
+used with the device functions.
+<dt>DocumentWriter#endPage(device)
+<dd>Finish the page rendering.
+The argument must be the same device object that was returned by the beginPage method.
+<dt>DocumentWriter#close()
+<dd>Finish the document and flush any pending output.
+</dl>
+
+<p>
+The current output formats supported are CBZ and PDF.
+
+<p>
+The CBZ output options are:
+<dl>
+<dt>resolution=N
+<dd>Render each page to an image at N pixels per inch.
+</dl>
+
+<p id="pdf-write-options">
+The PDF output options are:
+<dl>
+<dt>linearize<dd>optimize for web browsers.
+<dt>garbage
+<dd>remove unused objects.
+<dt>garbage=compact<dd>Remove unused objects, and compact cross reference table.
+<dt>garbage=deduplicate<dd>Remove unused objects, compact cross reference table, and remove duplicate objects.
+<dt>pretty<dd>Pretty-print objects with indentation.
+<dt>ascii<dd>ASCII hex encode binary streams.
+<dt>compress-fonts<dd>Compress embedded fonts.
+<dt>compress-images<dd>Compress images.
+<dt>compress<dd>Compress all streams.
+<dt>decompress<dd>Decompress all streams (except when compress-fonts or compress-images).
+<dt>sanitize<dd>Clean up graphics commands in content streams.
+</dl>
+
+<h2>
 PDFDocument and PDFObject
 </h2>
 
@@ -483,18 +533,7 @@ using low level access to the objects and streams contained in a PDF file.
 <dd>Cast the PDF document to a Document.
 <dt>PDFDocument#save(fileName, options)
 <dd>Write the PDF document to file.
-The write options are a string of comma separated options:
-<br>linearize (optimize for "web"),
-<br>garbage (remove unused objects),
-<br>or garbage=compact (... and compact xref table),
-<br>or garbage=deduplicate (... and remove duplicate objects),
-<br>pretty (pretty-print objects),
-<br>ascii (ascii hex encode streams),
-<br>compress-fonts (compress embedded font data),
-<br>compress-images (compress image data),
-<br>compress (compress all streams),
-<br>decompress (decompress all streams (except fonts or images if compress-fonts/images)),
-<br>sanitize (sanitize content streams).
+The write options are a string of comma separated options (see the document writer <a href="#pdf-write-options">options</a>).
 </dl>
 
 <h3>

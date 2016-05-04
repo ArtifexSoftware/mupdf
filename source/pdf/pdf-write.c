@@ -3136,12 +3136,13 @@ pdf_writer_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 
 	fz_try(ctx)
 	{
-		fz_drop_device(ctx, dev);
+		fz_close_device(ctx, dev);
 		obj = pdf_add_page(ctx, wri->pdf, &wri->mediabox, 0, wri->resources, wri->contents);
 		pdf_insert_page(ctx, wri->pdf, -1, obj);
 	}
 	fz_always(ctx)
 	{
+		fz_drop_device(ctx, dev);
 		pdf_drop_obj(ctx, obj);
 		fz_drop_buffer(ctx, wri->contents);
 		wri->contents = NULL;
