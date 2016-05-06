@@ -269,13 +269,97 @@ struct pdf_document_s
 */
 pdf_document *pdf_create_document(fz_context *ctx);
 
-pdf_obj *pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate, pdf_obj *resources, fz_buffer *contents);
-void pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page);
-void pdf_delete_page(fz_context *ctx, pdf_document *doc, int number);
-void pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end);
+/*
+	pdf_page_write: Create a device that will record the
+	graphical operations given to it into a sequence of
+	pdf operations, together with a set of resources. This
+	sequence/set pair can then be used as the basis for
+	adding a page to the document (see pdf_add_page).
+	
+	doc: The document for which these are intended.
 
+	mediabox: The bbox for the created page.
+
+	presources: Pointer to a place to put the created
+	resources dictionary.
+
+	pcontents: Pointer to a place to put the created
+	contents buffer.
+*/
 fz_device *pdf_page_write(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, pdf_obj **presources, fz_buffer **pcontents);
 
+/*
+	pdf_add_page: Create a pdf_obj within a document that
+	represents a page, from a previously created resources
+	dictionary and page content stream. This should then be
+	inserted into the document using pdf_insert_page.
+
+	After this call the page exists within the document
+	structure, but is not actually ever displayed as it is
+	not linked into the PDF page tree.
+
+	doc: The document to which to add the page.
+
+	mediabox: The mediabox for the page (should be identical
+	to that used when creating the resources/contents).
+
+	rotate: 0, 90, 180 or 270. The rotation to use for the
+	page.
+
+	resources: The resources dictionary for the new page
+	(typically created by pdf_page_write).
+
+	contents: The page contents for the new page (typically
+	create by pdf_page_write).
+*/
+pdf_obj *pdf_add_page(fz_context *ctx, pdf_document *doc, const fz_rect *mediabox, int rotate, pdf_obj *resources, fz_buffer *contents);
+
+/*
+	pdf_insert_page: Insert a page previously created by
+	pdf_add_page into the pages tree of the document.
+
+	doc: The document to insert into.
+
+	at: The page number to insert at. 0 inserts at the start.
+	negative numbers, or INT_MAX insert at the end. Otherwise
+	n inserts after page n.
+
+	page: The page to insert.
+*/
+void pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page);
+
+/*
+	pdf_delete_page: Delete a page from the page tree of
+	a document. This does not remove the page contents
+	or resources from the file.
+
+	doc: The document to operate on.
+
+	number: The page to remove (numbered from 0)
+*/
+void pdf_delete_page(fz_context *ctx, pdf_document *doc, int number);
+
+/*
+	pdf_delete_page_range: Delete a range of pages from the
+	page tree of a document. This does not remove the page
+	contents or resources from the file.
+
+	doc: The document to operate on.
+
+	start, end: The range of pages (numbered from 0)
+	(inclusive, exclusive) to remove. If end is negative or
+	greater than the number of pages in the document, it
+	will be taken to be the end of the document.
+*/
+void pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int end);
+
+/*
+	pdf_finish_edit: Called after any editing operations
+	on a document have completed, this will tidy up
+	the document. For now this is restricted to
+	rebalancing the page tree, but may be extended
+	in future.
+*/
 void pdf_finish_edit(fz_context *ctx, pdf_document *doc);
 
 int pdf_recognize(fz_context *doc, const char *magic);
