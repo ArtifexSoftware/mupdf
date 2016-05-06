@@ -164,6 +164,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 			new_ref = pdf_add_object(ctx, doc, new_obj);
 			pdf_drop_obj(ctx, page->contents);
 			page->contents = contents = pdf_keep_obj(ctx, new_ref);
+			pdf_dict_put(ctx, page->me, PDF_NAME_Contents, contents);
 		}
 		else
 		{
