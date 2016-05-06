@@ -175,6 +175,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	int argidx = 0;
 	pdf_obj *names_list = NULL;
 	pdf_obj *outlines;
+	pdf_obj *ocproperties;
 	int pagecount;
 	int i;
 	int *page_object_nums;
@@ -185,12 +186,15 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	pages = pdf_dict_get(ctx, oldroot, PDF_NAME_Pages);
 	olddests = pdf_load_name_tree(ctx, doc, PDF_NAME_Dests);
 	outlines = pdf_dict_get(ctx, oldroot, PDF_NAME_Outlines);
+	ocproperties = pdf_dict_get(ctx, oldroot, PDF_NAME_OCProperties);
 
 	root = pdf_new_dict(ctx, doc, 3);
 	pdf_dict_put(ctx, root, PDF_NAME_Type, pdf_dict_get(ctx, oldroot, PDF_NAME_Type));
 	pdf_dict_put(ctx, root, PDF_NAME_Pages, pdf_dict_get(ctx, oldroot, PDF_NAME_Pages));
 	if (outlines)
 		pdf_dict_put(ctx, root, PDF_NAME_Outlines, outlines);
+	if (ocproperties)
+		pdf_dict_put(ctx, root, PDF_NAME_OCProperties, ocproperties);
 
 	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
