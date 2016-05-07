@@ -74,8 +74,10 @@ void fz_var_imp(void *);
 	if ((ctx->error->top--)->code > 1)
 
 int fz_push_try(fz_context *ctx);
+FZ_NORETURN void fz_vthrow(fz_context *ctx, int errcode, const char *, va_list ap);
 FZ_NORETURN void fz_throw(fz_context *ctx, int errcode, const char *, ...) __printflike(3, 4);
 FZ_NORETURN void fz_rethrow(fz_context *ctx);
+void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap);
 void fz_warn(fz_context *ctx, const char *fmt, ...) __printflike(2, 3);
 const char *fz_caught_message(fz_context *ctx);
 int fz_caught(fz_context *ctx);

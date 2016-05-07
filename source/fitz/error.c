@@ -22,14 +22,11 @@ void fz_flush_warnings(fz_context *ctx)
 	ctx->warn->count = 0;
 }
 
-void fz_warn(fz_context *ctx, const char *fmt, ...)
+void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap)
 {
-	va_list ap;
 	char buf[sizeof ctx->warn->message];
 
-	va_start(ap, fmt);
 	vsnprintf(buf, sizeof buf, fmt, ap);
-	va_end(ap);
 #ifdef USE_OUTPUT_DEBUG_STRING
 	OutputDebugStringA(buf);
 	OutputDebugStringA("\n");
@@ -48,6 +45,15 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
 		ctx->warn->count = 1;
 	}
 }
+
+void fz_warn(fz_context *ctx, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	fz_vwarn(ctx, fmt, ap);
+	va_end(ap);
+}
+
 
 /* Error context */
 
@@ -155,13 +161,10 @@ const char *fz_caught_message(fz_context *ctx)
 	return ctx->error->message;
 }
 
-void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
+void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 {
-	va_list args;
 	ctx->error->errcode = code;
-	va_start(args, fmt);
-	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
-	va_end(args);
+	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, ap);
 
 	if (code != FZ_ERROR_ABORT)
 	{
@@ -176,6 +179,14 @@ void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 	}
 
 	throw(ctx);
+}
+
+void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	fz_vthrow(ctx, code, fmt, ap);
+	va_end(ap);
 }
 
 void fz_rethrow(fz_context *ctx)
