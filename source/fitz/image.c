@@ -195,7 +195,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 			int r_margin = (image->w + f - 1 - subarea->x1) >> l2factor;
 			int b_margin = (image->h + f - 1 - subarea->y1) >> l2factor;
 			int l_skip = (l_margin * image->n * image->bpc)/8;
-			int r_skip = (r_margin * image->n * image->bpc)/8;
+			int r_skip = (r_margin * image->n * image->bpc + 7)/8;
 			int t_skip = t_margin * stream_stride + l_skip;
 			int b_skip = b_margin * stream_stride + r_skip;
 			int l = fz_skip(ctx, stm, t_skip);
