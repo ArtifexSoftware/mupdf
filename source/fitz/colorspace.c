@@ -235,21 +235,6 @@ fz_device_cmyk(fz_context *ctx)
 	return ctx->colorspace->cmyk;
 }
 
-fz_colorspace *
-fz_lookup_device_colorspace(fz_context *ctx, char *name)
-{
-	if (!strcmp(name, "DeviceGray"))
-		return fz_device_gray(ctx);
-	if (!strcmp(name, "DeviceRGB"))
-		return fz_device_rgb(ctx);
-	if (!strcmp(name, "DeviceBGR"))
-		return fz_device_bgr(ctx);
-	if (!strcmp(name, "DeviceCMYK"))
-		return fz_device_cmyk(ctx);
-	assert(!"unknown device colorspace");
-	return NULL;
-}
-
 void
 fz_set_device_gray(fz_context *ctx, fz_colorspace *cs)
 {

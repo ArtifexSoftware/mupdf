@@ -17,12 +17,6 @@ enum { FZ_MAX_COLORS = 32 };
 typedef struct fz_colorspace_s fz_colorspace;
 
 /*
-	fz_lookup_device_colorspace: Find a standard colorspace based upon
-	it's name.
-*/
-fz_colorspace *fz_lookup_device_colorspace(fz_context *ctx, char *name);
-
-/*
 	fz_colorspace_is_indexed: Return true, iff a given colorspace is
 	indexed.
 */
