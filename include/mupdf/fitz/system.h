@@ -43,6 +43,16 @@
 #endif
 
 /*
+	Spot architectures where we have optimisations.
+*/
+
+#if defined(__arm__) || defined(__thumb__)
+#ifndef ARCH_ARM
+#define ARCH_ARM
+#endif
+#endif
+
+/*
 	Some differences in libc can be smoothed over
 */
 
