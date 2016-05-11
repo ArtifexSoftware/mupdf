@@ -379,19 +379,16 @@ static struct {
 	char *filename;
 	fz_display_list *list;
 	fz_page *page;
+	int interptime;
 } bgprint;
 
 static struct {
 	int count, total;
 	int min, max;
+	int mininterp, maxinterp;
 	int minpage, maxpage;
 	char *minfilename;
 	char *maxfilename;
-	int render_count, render_total;
-	int render_min, render_max;
-	int render_minpage, render_maxpage;
-	char *render_minfilename;
-	char *render_maxfilename;
 } timing;
 
 static void usage(void)
@@ -574,11 +571,10 @@ static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_l
 	}
 }
 
-static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, char *filename, int bg)
+static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *filename, int bg)
 {
 	fz_rect mediabox;
 	fz_device *dev = NULL;
-
 
 	fz_bound_page(ctx, page, &mediabox);
 
@@ -1017,22 +1013,23 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 		if (bg)
 		{
-			if (diff < timing.render_min)
+			if (diff + interptime < timing.min)
 			{
-				timing.render_min = diff;
-				timing.render_minpage = pagenum;
-				timing.render_minfilename = filename;
+				timing.min = diff + interptime;
+				timing.mininterp = interptime;
+				timing.minpage = pagenum;
+				timing.minfilename = filename;
 			}
-			if (diff > timing.render_max)
+			if (diff + interptime > timing.max)
 			{
-				timing.render_max = diff;
-				timing.render_maxpage = pagenum;
-				timing.render_maxfilename = filename;
+				timing.max = diff + interptime;
+				timing.maxinterp = interptime;
+				timing.maxpage = pagenum;
+				timing.maxfilename = filename;
 			}
-			timing.render_total += diff;
-			timing.render_count ++;
+			timing.count ++;
 
-			fprintf(stderr, " %dms (rendering)", diff);
+			fprintf(stderr, " %dms (interpretation) %dms (rendering) %dms (total)", interptime, diff, diff + interptime);
 		}
 		else
 		{
@@ -1091,7 +1088,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	int start;
 	fz_cookie cookie = { 0 };
 	int first_page = !output_append;
-	int diff;
 
 	fz_var(list);
 	fz_var(dev);
@@ -1129,22 +1125,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		if (bgprint.active && showtime)
 		{
 			int end = gettime();
-			diff = end - start;
-
-			if (diff < timing.min)
-			{
-				timing.min = diff;
-				timing.minpage = pagenum;
-				timing.minfilename = filename;
-			}
-			if (diff > timing.max)
-			{
-				timing.max = diff;
-				timing.maxpage = pagenum;
-				timing.maxfilename = filename;
-			}
-			timing.total += diff;
-			timing.count ++;
+			start = end - start;
 		}
 	}
 
@@ -1190,8 +1171,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		if (bgprint.active && (showmd5 || showtime || showfeatures))
 		{
 			fprintf(stderr, "page %s %d", filename, pagenum);
-			if (showtime)
-				fprintf(stderr, " %dms (interpretation)", diff);
 		}
 
 		bgprint.started = 1;
@@ -1199,11 +1178,12 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		bgprint.list = list;
 		bgprint.filename = filename;
 		bgprint.pagenum = pagenum;
+		bgprint.interptime = start;
 		SEMAPHORE_TRIGGER(bgprint.start);
 	}
 	else
 	{
-		dodrawpage(ctx, page, list, pagenum, &cookie, start, filename, 0);
+		dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0);
 	}
 }
 
@@ -1357,7 +1337,7 @@ static THREAD_RETURN_TYPE bgprint_worker(void *arg)
 		{
 			int start = gettime();
 			memset(&cookie, 0, sizeof(cookie));
-			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.filename, 1);
+			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1);
 		}
 		DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
 		SEMAPHORE_TRIGGER(bgprint.stop);
@@ -1632,18 +1612,14 @@ int mudraw_main(int argc, char **argv)
 	timing.total = 0;
 	timing.min = 1 << 30;
 	timing.max = 0;
+	timing.mininterp = 1 << 30;
+	timing.maxinterp = 0;
 	timing.minpage = 0;
 	timing.maxpage = 0;
 	timing.minfilename = "";
 	timing.maxfilename = "";
-	timing.render_count = 0;
-	timing.render_total = 0;
-	timing.render_min = 1 << 30;
-	timing.render_max = 0;
-	timing.render_minpage = 0;
-	timing.render_maxpage = 0;
-	timing.render_minfilename = "";
-	timing.render_maxfilename = "";
+	if (showtime && bgprint.active)
+		timing.total = gettime();
 
 	fz_try(ctx)
 	{
@@ -1724,12 +1700,25 @@ int mudraw_main(int argc, char **argv)
 
 	if (showtime && timing.count > 0)
 	{
+		if (bgprint.active)
+			timing.total = gettime() - timing.total;
+
 		if (files == 1)
 		{
 			fprintf(stderr, "total %dms / %d pages for an average of %dms\n",
 				timing.total, timing.count, timing.total / timing.count);
-			fprintf(stderr, "fastest page %d: %dms\n", timing.minpage, timing.min);
-			fprintf(stderr, "slowest page %d: %dms\n", timing.maxpage, timing.max);
+			if (bgprint.active)
+			{
+				fprintf(stderr, "fastest page %d: %dms (interpretation) %dms (rendering) %dms(total)\n",
+					timing.minpage, timing.mininterp, timing.min - timing.mininterp, timing.min);
+				fprintf(stderr, "slowest page %d: %dms (interpretation) %dms (rendering) %dms(total)\n",
+					timing.maxpage, timing.maxinterp, timing.max - timing.maxinterp, timing.max);
+			}
+			else
+			{
+				fprintf(stderr, "fastest page %d: %dms\n", timing.minpage, timing.min);
+				fprintf(stderr, "slowest page %d: %dms\n", timing.maxpage, timing.max);
+			}
 		}
 		else
 		{
