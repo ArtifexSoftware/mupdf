@@ -40,23 +40,12 @@ static void usage(void)
 		"\t\tcbz, pdf\n"
 		"\t-O -\tcomma separated list of options for output format\n"
 		"\n"
-		"\tpages\tcomma separated list of page numbers and ranges\n"
+		"\tpages\tcomma separated list of page numbers and ranges, where N is the last page\n"
 		"\n"
 		);
 	fprintf(stderr, "%s\n", fz_cbz_write_options_usage);
 	fprintf(stderr, "%s\n", fz_pdf_write_options_usage);
 	exit(1);
-}
-
-static int isrange(const char *s)
-{
-	while (*s)
-	{
-		if ((*s < '0' || *s > '9') && *s != 'N' && *s != '-' && *s != ',')
-			return 0;
-		s++;
-	}
-	return 1;
 }
 
 static void runpage(int number)
@@ -74,44 +63,18 @@ static void runpage(int number)
 	fz_drop_page(ctx, page);
 }
 
-static void runrange(char *s)
+static void runrange(const char *range)
 {
 	int start, end, i;
-	while (s[0])
+
+	while ((range = fz_parse_page_range(ctx, range, &start, &end, count)))
 	{
-		if (s[0] == 'N')
-		{
-			start = count;
-			s += 1;
-		}
-		else
-			start = strtol(s, &s, 10);
-
-		if (s[0] == '-')
-		{
-			if (s[1] == 'N')
-			{
-				end = count;
-				s += 2;
-			}
-			else
-				end = strtol(s+1, &s, 10);
-		}
-		else
-			end = start;
-
-		start = fz_clampi(start, 1, count);
-		end = fz_clampi(end, 1, count);
-
 		if (start < end)
 			for (i = start; i <= end; ++i)
 				runpage(i);
 		else
 			for (i = start; i >= end; --i)
 				runpage(i);
-
-		if (s[0] != ',')
-			break;
 	}
 }
 
@@ -188,7 +151,7 @@ int muconvert_main(int argc, char **argv)
 		fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 		count = fz_count_pages(ctx, doc);
 
-		if (isrange(argv[i+1]))
+		if (i+1 < argc && fz_is_page_range(ctx, argv[i+1]))
 			runrange(argv[++i]);
 		else
 			runrange("1-N");

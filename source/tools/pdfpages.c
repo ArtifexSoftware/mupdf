@@ -102,10 +102,9 @@ showpage(fz_context *ctx, pdf_document *doc, fz_output *out, int page)
 }
 
 static int
-showpages(fz_context *ctx, pdf_document *doc, fz_output *out, char *pagelist)
+showpages(fz_context *ctx, pdf_document *doc, fz_output *out, const char *pagelist)
 {
 	int page, spage, epage;
-	char *spec, *dash;
 	int pagecount;
 	int ret = 0;
 
@@ -113,51 +112,15 @@ showpages(fz_context *ctx, pdf_document *doc, fz_output *out, char *pagelist)
 		infousage();
 
 	pagecount = pdf_count_pages(ctx, doc);
-	spec = fz_strsep(&pagelist, ",");
-	while (spec && pagecount)
+	while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
 	{
-		dash = strchr(spec, '-');
-
-		if (dash == spec)
-			spage = epage = pagecount;
-		else
-			spage = epage = atoi(spec);
-
-		if (dash)
-		{
-			if (strlen(dash) > 1)
-				epage = atoi(dash + 1);
-			else
-				epage = pagecount;
-		}
-
 		if (spage > epage)
 			page = spage, spage = epage, epage = page;
-
-		spage = fz_clampi(spage, 1, pagecount);
-		epage = fz_clampi(epage, 1, pagecount);
-
 		for (page = spage; page <= epage; page++)
-		{
 			ret |= showpage(ctx, doc, out, page);
-		}
-
-		spec = fz_strsep(&pagelist, ",");
 	}
 
 	return ret;
-}
-
-static int arg_is_page_range(const char *arg)
-{
-	int c;
-
-	while ((c = *arg++) != 0)
-	{
-		if ((c < '0' || c > '9') && (c != '-') && (c != ','))
-			return 0;
-	}
-	return 1;
 }
 
 static int
@@ -171,11 +134,11 @@ pdfpages_pages(fz_context *ctx, fz_output *out, char *filename, char *password, 
 	state = NO_FILE_OPENED;
 	while (argidx < argc)
 	{
-		if (state == NO_FILE_OPENED || !arg_is_page_range(argv[argidx]))
+		if (state == NO_FILE_OPENED || !fz_is_page_range(ctx, argv[argidx]))
 		{
 			if (state == NO_INFO_GATHERED)
 			{
-				showpages(ctx, doc, out, "1-");
+				showpages(ctx, doc, out, "1-N");
 			}
 
 			pdf_drop_document(ctx, doc);
@@ -199,7 +162,7 @@ pdfpages_pages(fz_context *ctx, fz_output *out, char *filename, char *password, 
 	}
 
 	if (state == NO_INFO_GATHERED)
-		showpages(ctx, doc, out, "1-");
+		showpages(ctx, doc, out, "1-N");
 
 	pdf_drop_document(ctx, doc);
 

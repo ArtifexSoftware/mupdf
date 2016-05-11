@@ -206,39 +206,18 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	while (argc - argidx)
 	{
 		int page, spage, epage;
-		char *spec, *dash;
-		char *pagelist = argv[argidx];
+		const char *pagelist = argv[argidx];
 
 		pagecount = pdf_count_pages(ctx, doc);
-		spec = fz_strsep(&pagelist, ",");
-		while (spec)
+
+		while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
 		{
-			dash = strchr(spec, '-');
-
-			if (dash == spec)
-				spage = epage = pagecount;
-			else
-				spage = epage = atoi(spec);
-
-			if (dash)
-			{
-				if (strlen(dash) > 1)
-					epage = atoi(dash + 1);
-				else
-					epage = pagecount;
-			}
-
-			spage = fz_clampi(spage, 1, pagecount);
-			epage = fz_clampi(epage, 1, pagecount);
-
 			if (spage < epage)
 				for (page = spage; page <= epage; ++page)
 					retainpage(ctx, doc, parent, kids, page);
 			else
 				for (page = spage; page >= epage; --page)
 					retainpage(ctx, doc, parent, kids, page);
-
-			spec = fz_strsep(&pagelist, ",");
 		}
 
 		argidx++;

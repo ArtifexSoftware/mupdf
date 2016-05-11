@@ -416,3 +416,50 @@ fz_off_t fz_atoo(const char *s)
 		return 0;
 	return fz_atoo_imp(s);
 }
+
+int fz_is_page_range(fz_context *ctx, const char *s)
+{
+	/* TODO: check the actual syntax... */
+	while (*s)
+	{
+		if ((*s < '0' || *s > '9') && *s != 'N' && *s != '-' && *s != ',')
+			return 0;
+		s++;
+	}
+	return 1;
+}
+
+const char *fz_parse_page_range(fz_context *ctx, const char *s, int *a, int *b, int n)
+{
+	if (!s || !s[0])
+		return NULL;
+
+	if (s[0] == ',')
+		s += 1;
+
+	if (s[0] == 'N')
+	{
+		*a = n;
+		s += 1;
+	}
+	else
+		*a = strtol(s, (char**)&s, 10);
+
+	if (s[0] == '-')
+	{
+		if (s[1] == 'N')
+		{
+			*b = n;
+			s += 2;
+		}
+		else
+			*b = strtol(s+1, (char**)&s, 10);
+	}
+	else
+		*b = *a;
+
+	*a = fz_clampi(*a, 1, n);
+	*b = fz_clampi(*b, 1, n);
+
+	return s;
+}

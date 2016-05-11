@@ -13,7 +13,7 @@ static void usage(void)
 		"\t-o\tname of PDF file to create\n"
 		"\t-O\tcomma separated list of output options\n"
 		"\tinput.pdf\tname of input file from which to copy pages\n"
-		"\tpages\tcomma separated list of page ranges to copy (for example: 1-5,6,10-)\n\n"
+		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
 	fprintf(stderr, "%s\n", fz_pdf_write_options_usage);
 	exit(1);
@@ -22,19 +22,6 @@ static void usage(void)
 static fz_context *ctx = NULL;
 static pdf_document *doc_des = NULL;
 static pdf_document *doc_src = NULL;
-
-/* This isrange is a duplicate with mudraw.c Not sure how we want to organize or if
- * we are fine with the small amount of code duplication */
-static int isrange(char *s)
-{
-	while (*s)
-	{
-		if ((*s < '0' || *s > '9') && *s != '-' && *s != ',')
-			return 0;
-		s++;
-	}
-	return 1;
-}
 
 static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 {
@@ -91,46 +78,24 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 	}
 }
 
-static void merge_range(char *range)
+static void merge_range(const char *range)
 {
-	int page, spage, epage, src_pagecount, des_pagecount;
-	char *spec, *dash;
+	int start, end, i, count;
 	pdf_graft_map *graft_map;
 
-	src_pagecount = fz_count_pages(ctx, (fz_document*) doc_src);
-	des_pagecount = fz_count_pages(ctx, (fz_document*) doc_des);
-	spec = fz_strsep(&range, ",");
+	count = pdf_count_pages(ctx, doc_src);
 	graft_map = pdf_new_graft_map(ctx, doc_src);
 
 	fz_try(ctx)
 	{
-		while (spec)
+		while ((range = fz_parse_page_range(ctx, range, &start, &end, count)))
 		{
-			dash = strchr(spec, '-');
-
-			if (dash == spec)
-				spage = epage = src_pagecount;
+			if (start < end)
+				for (i = start; i <= end; ++i)
+					page_merge(i, -1, graft_map);
 			else
-				spage = epage = atoi(spec);
-
-			if (dash)
-			{
-				if (strlen(dash) > 1)
-					epage = atoi(dash + 1);
-				else
-					epage = src_pagecount;
-			}
-
-			spage = fz_clampi(spage, 1, src_pagecount);
-			epage = fz_clampi(epage, 1, src_pagecount);
-
-			if (spage < epage)
-				for (page = spage; page <= epage; page++, des_pagecount++)
-					page_merge(page, des_pagecount + 1, graft_map);
-			else
-				for (page = spage; page >= epage; page--, des_pagecount++)
-					page_merge(page, des_pagecount + 1, graft_map);
-			spec = fz_strsep(&range, ",");
+				for (i = start; i >= end; --i)
+					page_merge(i, -1, graft_map);
 		}
 	}
 	fz_always(ctx)
@@ -191,8 +156,8 @@ int pdfmerge_main(int argc, char **argv)
 		{
 			pdf_drop_document(ctx, doc_src);
 			doc_src = pdf_open_document(ctx, input);
-			if (fz_optind == argc || !isrange(argv[fz_optind]))
-				merge_range("1-");
+			if (fz_optind == argc || !fz_is_page_range(ctx, argv[fz_optind]))
+				merge_range("1-N");
 			else
 				merge_range(argv[fz_optind++]);
 		}

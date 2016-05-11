@@ -455,17 +455,6 @@ static int gettime(void)
 	return (now.tv_sec - first.tv_sec) * 1000 + (now.tv_usec - first.tv_usec) / 1000;
 }
 
-static int isrange(char *s)
-{
-	while (*s)
-	{
-		if ((*s < '0' || *s > '9') && *s != '-' && *s != ',')
-			return 0;
-		s++;
-	}
-	return 1;
-}
-
 static int has_percent_d(char *s)
 {
 	/* find '%[0-9]*d' */
@@ -1187,41 +1176,20 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	}
 }
 
-static void drawrange(fz_context *ctx, fz_document *doc, char *range)
+static void drawrange(fz_context *ctx, fz_document *doc, const char *range)
 {
 	int page, spage, epage, pagecount;
-	char *spec, *dash;
 
 	pagecount = fz_count_pages(ctx, doc);
-	spec = fz_strsep(&range, ",");
-	while (spec)
+
+	while ((range = fz_parse_page_range(ctx, range, &spage, &epage, pagecount)))
 	{
-		dash = strchr(spec, '-');
-
-		if (dash == spec)
-			spage = epage = pagecount;
-		else
-			spage = epage = atoi(spec);
-
-		if (dash)
-		{
-			if (strlen(dash) > 1)
-				epage = atoi(dash + 1);
-			else
-				epage = pagecount;
-		}
-
-		spage = fz_clampi(spage, 1, pagecount);
-		epage = fz_clampi(epage, 1, pagecount);
-
 		if (spage < epage)
 			for (page = spage; page <= epage; page++)
 				drawpage(ctx, doc, page);
 		else
 			for (page = spage; page >= epage; page--)
 				drawpage(ctx, doc, page);
-
-		spec = fz_strsep(&range, ",");
 	}
 }
 
@@ -1648,9 +1616,9 @@ int mudraw_main(int argc, char **argv)
 				}
 				else
 				{
-					if (fz_optind == argc || !isrange(argv[fz_optind]))
-						drawrange(ctx, doc, "1-");
-					if (fz_optind < argc && isrange(argv[fz_optind]))
+					if (fz_optind == argc || !fz_is_page_range(ctx, argv[fz_optind]))
+						drawrange(ctx, doc, "1-N");
+					if (fz_optind < argc && fz_is_page_range(ctx, argv[fz_optind]))
 						drawrange(ctx, doc, argv[fz_optind++]);
 				}
 

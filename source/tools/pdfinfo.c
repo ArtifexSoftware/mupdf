@@ -912,10 +912,9 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 }
 
 static void
-showinfo(fz_context *ctx, globals *glo, char *filename, int show, char *pagelist)
+showinfo(fz_context *ctx, globals *glo, char *filename, int show, const char *pagelist)
 {
 	int page, spage, epage;
-	char *spec, *dash;
 	int allpages;
 	int pagecount;
 	fz_output *out = glo->out;
@@ -923,33 +922,12 @@ showinfo(fz_context *ctx, globals *glo, char *filename, int show, char *pagelist
 	if (!glo->doc)
 		infousage();
 
-	allpages = !strcmp(pagelist, "1-");
+	allpages = !strcmp(pagelist, "1-N");
 
 	pagecount = pdf_count_pages(ctx, glo->doc);
-	spec = fz_strsep(&pagelist, ",");
-	while (spec && pagecount)
+
+	while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
 	{
-		dash = strchr(spec, '-');
-
-		if (dash == spec)
-			spage = epage = pagecount;
-		else
-			spage = epage = atoi(spec);
-
-		if (dash)
-		{
-			if (strlen(dash) > 1)
-				epage = atoi(dash + 1);
-			else
-				epage = pagecount;
-		}
-
-		if (spage > epage)
-			page = spage, spage = epage, epage = page;
-
-		spage = fz_clampi(spage, 1, pagecount);
-		epage = fz_clampi(epage, 1, pagecount);
-
 		if (allpages)
 			fz_printf(ctx, out, "Retrieving info from pages %d-%d...\n", spage, epage);
 		for (page = spage; page <= epage; page++)
@@ -963,24 +941,10 @@ showinfo(fz_context *ctx, globals *glo, char *filename, int show, char *pagelist
 				clearinfo(ctx, glo);
 			}
 		}
-
-		spec = fz_strsep(&pagelist, ",");
 	}
 
 	if (allpages)
 		printinfo(ctx, glo, filename, show, -1);
-}
-
-static int arg_is_page_range(const char *arg)
-{
-	int c;
-
-	while ((c = *arg++) != 0)
-	{
-		if ((c < '0' || c > '9') && (c != '-') && (c != ','))
-			return 0;
-	}
-	return 1;
 }
 
 static void
@@ -996,11 +960,11 @@ pdfinfo_info(fz_context *ctx, fz_output *out, char *filename, char *password, in
 	state = NO_FILE_OPENED;
 	while (argidx < argc)
 	{
-		if (state == NO_FILE_OPENED || !arg_is_page_range(argv[argidx]))
+		if (state == NO_FILE_OPENED || !fz_is_page_range(ctx, argv[argidx]))
 		{
 			if (state == NO_INFO_GATHERED)
 			{
-				showinfo(ctx, &glo, filename, show, "1-");
+				showinfo(ctx, &glo, filename, show, "1-N");
 			}
 
 			closexref(ctx, &glo);
@@ -1026,7 +990,7 @@ pdfinfo_info(fz_context *ctx, fz_output *out, char *filename, char *password, in
 	}
 
 	if (state == NO_INFO_GATHERED)
-		showinfo(ctx, &glo, filename, show, "1-");
+		showinfo(ctx, &glo, filename, show, "1-N");
 
 	closexref(ctx, &glo);
 }
