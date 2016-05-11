@@ -25,51 +25,43 @@ static pdf_document *doc_src = NULL;
 
 static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 {
-	pdf_obj *pageref = NULL;
+	pdf_obj *page_ref;
 	pdf_obj *page_dict;
-	pdf_obj *obj = NULL, *ref = NULL;
-	/* Include minimal number of objects for page.  Do not include items that
-	 * reference other pages */
-	pdf_obj *known_page_objs[] = { PDF_NAME_Contents, PDF_NAME_Resources,
-		PDF_NAME_MediaBox, PDF_NAME_CropBox, PDF_NAME_BleedBox, PDF_NAME_TrimBox,
-		PDF_NAME_ArtBox, PDF_NAME_Rotate, PDF_NAME_UserUnit};
-	int n = nelem(known_page_objs);
+	pdf_obj *obj;
+	pdf_obj *ref = NULL;
 	int i;
-	int num;
 
-	fz_var(obj);
+	/* Copy as few key/value pairs as we can. Do not include items that reference other pages. */
+	static pdf_obj * const copy_list[] = { PDF_NAME_Contents, PDF_NAME_Resources,
+		PDF_NAME_MediaBox, PDF_NAME_CropBox, PDF_NAME_BleedBox, PDF_NAME_TrimBox, PDF_NAME_ArtBox,
+		PDF_NAME_Rotate, PDF_NAME_UserUnit };
+
 	fz_var(ref);
 
 	fz_try(ctx)
 	{
-		pageref = pdf_lookup_page_obj(ctx, doc_src, page_from - 1);
+		page_ref = pdf_lookup_page_obj(ctx, doc_src, page_from - 1);
 
-		/* Make a new dictionary and copy over the items from the source object to
-		* the new dict that we want to deep copy. */
+		/* Make a new page object dictionary to hold the items we copy from the source page. */
 		page_dict = pdf_new_dict(ctx, doc_des, 4);
 
 		pdf_dict_put_drop(ctx, page_dict, PDF_NAME_Type, PDF_NAME_Page);
 
-		for (i = 0; i < n; i++)
+		for (i = 0; i < nelem(copy_list); i++)
 		{
-			obj = pdf_dict_get(ctx, pageref, known_page_objs[i]);
+			obj = pdf_dict_get(ctx, page_ref, copy_list[i]);
 			if (obj != NULL)
-				pdf_dict_put_drop(ctx, page_dict, known_page_objs[i], pdf_graft_object(ctx, doc_des, doc_src, obj, graft_map));
+				pdf_dict_put_drop(ctx, page_dict, copy_list[i], pdf_graft_object(ctx, doc_des, doc_src, obj, graft_map));
 		}
 
-		/* Add the dictionary */
-		obj = pdf_add_object_drop(ctx, doc_des, page_dict);
+		/* Add the page object to the destination document. */
+		ref = pdf_add_object_drop(ctx, doc_des, page_dict);
 
-		/* Get indirect ref */
-		num = pdf_to_num(ctx, obj);
-		ref = pdf_new_indirect(ctx, doc_des, num, 0);
-
-		/* Insert */
+		/* Insert it into the page tree. */
 		pdf_insert_page(ctx, doc_des, page_to - 1, ref);
 	}
 	fz_always(ctx)
 	{
-		pdf_drop_obj(ctx, obj);
 		pdf_drop_obj(ctx, ref);
 	}
 	fz_catch(ctx)
