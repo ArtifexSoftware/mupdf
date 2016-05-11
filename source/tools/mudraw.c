@@ -1343,23 +1343,26 @@ static THREAD_RETURN_TYPE worker_thread(void *arg)
 static THREAD_RETURN_TYPE bgprint_worker(void *arg)
 {
 	fz_cookie cookie = { 0 };
+	int pagenum;
+
 	(void)arg;
 
 	do
 	{
 		DEBUG_THREADS(("BGPrint waiting\n"));
 		SEMAPHORE_WAIT(bgprint.start);
-		DEBUG_THREADS(("BGPrint woken for pagenum %d\n", bgprint.pagenum));
-		if (bgprint.pagenum >= 0)
+		pagenum = bgprint.pagenum;
+		DEBUG_THREADS(("BGPrint woken for pagenum %d\n", pagenum));
+		if (pagenum >= 0)
 		{
 			int start = gettime();
 			memset(&cookie, 0, sizeof(cookie));
-			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, bgprint.pagenum, &cookie, start, bgprint.filename, 1);
+			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.filename, 1);
 		}
-		DEBUG_THREADS(("BGPrint completed band %d\n", bgprint.pagenum));
+		DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
 		SEMAPHORE_TRIGGER(bgprint.stop);
 	}
-	while (bgprint.pagenum >= 0);
+	while (pagenum >= 0);
 	THREAD_RETURN();
 }
 #endif
