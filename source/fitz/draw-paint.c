@@ -885,7 +885,11 @@ fz_paint_span_5(byte * restrict dp, byte * restrict sp, int w)
 			t = 256 - t;
 			if (t == 0)
 			{
-				*(int *)dp = *(int *)sp;
+				dp[0] = sp[0];
+				dp[1] = sp[1];
+				dp[2] = sp[2];
+				dp[3] = sp[3];
+				dp[4] = sp[4];
 				dp += 5; sp += 5;
 			}
 			else
