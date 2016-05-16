@@ -622,7 +622,7 @@ fz_paint_span_with_mask_5(byte * restrict dp, byte * restrict sp, byte * restric
 		}
 		else if (ma == 256)
 		{
-			masa = 255 - sp[1];
+			masa = 255 - sp[4];
 			if (masa == 0)
 			{
 				*dp++ = *sp++;
@@ -648,7 +648,7 @@ fz_paint_span_with_mask_5(byte * restrict dp, byte * restrict sp, byte * restric
 		}
 		else
 		{
-			masa = FZ_COMBINE(sp[1], ma);
+			masa = FZ_COMBINE(sp[4], ma);
 			masa = 255 - masa;
 			masa = FZ_EXPAND(masa);
 			*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
