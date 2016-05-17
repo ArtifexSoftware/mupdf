@@ -46,6 +46,7 @@ QUIET_GEN = @ echo ' ' ' ' GEN $@ ;
 QUIET_LINK = @ echo ' ' ' ' LINK $@ ;
 QUIET_MKDIR = @ echo ' ' ' ' MKDIR $@ ;
 QUIET_RM = @ echo ' ' ' ' RM $@ ;
+QUIET_TAGS = @ echo ' ' ' ' TAGS $@ ;
 endif
 
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
@@ -54,6 +55,7 @@ AR_CMD = $(QUIET_AR) $(AR) cr $@ $^
 LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
 RM_CMD = $(QUIET_RM) rm -f $@
+TAGS_CMD = $(QUIET_TAGS) ctags $^
 
 # --- File lists ---
 
@@ -377,7 +379,7 @@ java:
 	$(MAKE) -C platform/java
 
 tags: $(shell find include source platform thirdparty -name '*.[ch]' -or -name '*.cc' -or -name '*.hh')
-	ctags $^
+	$(TAGS_CMD)
 
 cscope.files: $(shell find include source platform -name '*.[ch]')
 	@ echo $^ | tr ' ' '\n' > $@
