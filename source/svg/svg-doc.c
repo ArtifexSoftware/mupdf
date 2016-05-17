@@ -150,20 +150,41 @@ svg_recognize(fz_context *ctx, const char *magic)
 }
 
 fz_display_list *
-fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf)
+fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, float *w, float *h)
 {
 	fz_document *doc;
 	fz_display_list *list;
 
 	doc = svg_open_document_with_buffer(ctx, buf);
 	fz_try(ctx)
+	{
 		list = fz_new_display_list_from_page_number(ctx, doc, 0);
+		*w = ((svg_document*)doc)->width;
+		*h = ((svg_document*)doc)->height;
+	}
 	fz_always(ctx)
 		fz_drop_document(ctx, doc);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
 	return list;
+}
+
+fz_image *
+fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf)
+{
+	fz_display_list *list;
+	fz_image *image;
+	float w, h;
+
+	list = fz_new_display_list_from_svg(ctx, buf, &w, &h);
+	fz_try(ctx)
+		image = fz_new_image_from_display_list(ctx, w, h, list);
+	fz_always(ctx)
+		fz_drop_display_list(ctx, list);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return image;
 }
 
 fz_document_handler svg_document_handler =

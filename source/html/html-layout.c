@@ -1,4 +1,5 @@
 #include "mupdf/html.h"
+#include "mupdf/svg.h"
 
 #include "hb.h"
 #include "hb-ft.h"
@@ -395,7 +396,13 @@ static fz_image *load_html_image(fz_context *ctx, fz_archive *zip, const char *b
 	fz_try(ctx)
 	{
 		buf = fz_read_archive_entry(ctx, zip, path);
-		img = fz_new_image_from_buffer(ctx, buf);
+		if (strstr(path, ".svg"))
+		{
+			fz_write_buffer_byte(ctx, buf, 0);
+			img = fz_new_image_from_svg(ctx, buf);
+		}
+		else
+			img = fz_new_image_from_buffer(ctx, buf);
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
@@ -728,15 +735,17 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, float max_h)
 {
 	float xs = 1, ys = 1, s = 1;
+	float image_w = node->content.image->w * 72 / node->content.image->xres;
+	float image_h = node->content.image->h * 72 / node->content.image->yres;
 	node->x = 0;
 	node->y = 0;
-	if (node->content.image->w > max_w)
-		xs = max_w / node->content.image->w;
-	if (node->content.image->h > max_h)
-		ys = max_h / node->content.image->h;
+	if (image_w > max_w)
+		xs = max_w / image_w;
+	if (image_h > max_h)
+		ys = max_h / image_h;
 	s = fz_min(xs, ys);
-	node->w = node->content.image->w * s;
-	node->h = node->content.image->h * s;
+	node->w = image_w * s;
+	node->h = image_h * s;
 }
 
 typedef struct string_walker
