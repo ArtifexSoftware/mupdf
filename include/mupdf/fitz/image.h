@@ -86,6 +86,7 @@ struct fz_image_s
 	unsigned int use_colorkey:1;
 	unsigned int invert_cmyk_jpeg:1;
 	unsigned int decoded:1;
+	unsigned int scalable:1;
 	fz_image *mask;
 	int xres; /* As given in the image, not necessarily as rendered */
 	int yres; /* As given in the image, not necessarily as rendered */

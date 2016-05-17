@@ -3,6 +3,8 @@
 #define SANE_DPI 72.0f
 #define INSANE_DPI 4800.0f
 
+#define SCALABLE_IMAGE_DPI 600
+
 struct fz_compressed_image_s
 {
 	fz_image super;
@@ -474,11 +476,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	if (ctm)
 	{
 		w = sqrtf(ctm->a * ctm->a + ctm->b * ctm->b);
-		if (w > image->w)
-			w = image->w;
 		h = sqrtf(ctm->c * ctm->c + ctm->d * ctm->d);
-		if (h > image->h)
-			h = image->h;
 	}
 	else
 	{
@@ -486,15 +484,29 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 		h = image->h;
 	}
 
+	if (image->scalable)
+	{
+		/* If the image is scalable, we always want to re-render and never cache. */
+		fz_irect subarea_copy = *subarea;
+		l2factor_remaining = 0;
+		if (dw) *dw = w;
+		if (dh) *dh = h;
+		return image->get_pixmap(ctx, image, &subarea_copy, image->w, image->h, &l2factor_remaining);
+	}
+
+	/* Clamp requested image size, since we never want to magnify images here. */
+	if (w > image->w)
+		w = image->w;
+	if (h > image->h)
+		h = image->h;
+
 	if (image->decoded)
 	{
 		/* If the image is already decoded, then we can't offer a subarea,
 		 * or l2factor, and we don't want to cache. */
 		l2factor_remaining = 0;
-		if (dw)
-			*dw = w;
-		if (dh)
-			*dh = h;
+		if (dw) *dw = w;
+		if (dh) *dh = h;
 		return image->get_pixmap(ctx, image, NULL, image->w, image->h, &l2factor_remaining);
 	}
 
@@ -506,7 +518,6 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 		l2factor = 0;
 	else
 		for (l2factor=0; image->w>>(l2factor+1) >= w+2 && image->h>>(l2factor+1) >= h+2 && l2factor < 6; l2factor++);
-
 
 	/* Now figure out if we want to decode just a subarea */
 	if (subarea == NULL)
@@ -722,7 +733,6 @@ compressed_image_get_size(fz_context *ctx, fz_image *image)
 
 	return sizeof(fz_pixmap_image) + fz_pixmap_size(ctx, im->tile) + (im->buffer && im->buffer->buffer ? im->buffer->buffer->cap : 0);
 }
-
 
 fz_image *
 fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h,
@@ -946,4 +956,97 @@ fz_image_resolution(fz_image *image, int *xres, int *yres)
 			*yres = SANE_DPI;
 		}
 	}
+}
+
+typedef struct fz_display_list_image_s
+{
+	fz_image super;
+	fz_matrix transform;
+	fz_display_list *list;
+} fz_display_list_image;
+
+static fz_pixmap *
+display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea, int w, int h, int *l2factor)
+{
+	fz_display_list_image *image = (fz_display_list_image *)image_;
+	fz_matrix ctm;
+	fz_device *dev;
+	fz_pixmap *pix;
+
+	if (subarea)
+	{
+		/* So, the whole image should be scaled to w * h, but we only want the
+		 * given subarea of it. */
+		int l = (subarea->x0 * w) / image->super.w;
+		int t = (subarea->y0 * h) / image->super.h;
+		int r = (subarea->x1 * w + image->super.w - 1) / image->super.w;
+		int b = (subarea->y1 * h + image->super.h - 1) / image->super.h;
+
+		pix = fz_new_pixmap(ctx, image->super.colorspace, r-l, b-t);
+		pix->x = l;
+		pix->y = t;
+	}
+	else
+	{
+		pix = fz_new_pixmap(ctx, image->super.colorspace, w, h);
+	}
+
+	/* If we render the displaylist into pix with the image matrix, we'll get a unit
+	 * square result. Therefore scale by w, h. */
+	ctm = image->transform;
+	fz_pre_scale(&ctm, w, h);
+
+	fz_clear_pixmap(ctx, pix); /* clear to transparent */
+	dev = fz_new_draw_device(ctx, pix);
+	fz_run_display_list(ctx, image->list, dev, &ctm, NULL, NULL);
+	fz_drop_device(ctx, dev);
+
+	/* Never do more subsampling, cos we've already given them the right size */
+	if (l2factor)
+		*l2factor = 0;
+
+	return pix;
+}
+
+static void drop_display_list_image(fz_context *ctx, fz_image *image_)
+{
+	fz_display_list_image *image = (fz_display_list_image *)image_;
+
+	if (image == NULL)
+		return;
+	fz_drop_display_list(ctx, image->list);
+	fz_drop_image_base(ctx, &image->super);
+}
+
+static size_t
+display_list_image_get_size(fz_context *ctx, fz_image *image_)
+{
+	fz_display_list_image *image = (fz_display_list_image *)image_;
+
+	if (image == NULL)
+		return 0;
+
+	return sizeof(fz_display_list_image) + 4096; /* FIXME */
+}
+
+fz_image *fz_new_image_from_display_list(fz_context *ctx, float w, float h, fz_display_list *list)
+{
+	fz_display_list_image *image;
+	int iw, ih;
+
+	iw = w * SCALABLE_IMAGE_DPI / 72;
+	ih = h * SCALABLE_IMAGE_DPI / 72;
+
+	image = (fz_display_list_image *)
+		fz_new_image(ctx, iw, ih, 8, fz_device_rgb(ctx),
+				SCALABLE_IMAGE_DPI, SCALABLE_IMAGE_DPI, 0, 0,
+				NULL, NULL, NULL, sizeof(fz_display_list_image),
+				display_list_image_get_pixmap,
+				display_list_image_get_size,
+				drop_display_list_image);
+	image->super.scalable = 1;
+	fz_scale(&image->transform, 1 / w, 1 / h);
+	image->list = fz_keep_display_list(ctx, list);
+
+	return &image->super;
 }

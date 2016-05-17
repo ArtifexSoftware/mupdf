@@ -93,4 +93,16 @@ void fz_drop_display_list(fz_context *ctx, fz_display_list *list);
 */
 fz_rect *fz_bound_display_list(fz_context *ctx, fz_display_list *list, fz_rect *bounds);
 
+/*
+	Create a new image from a display list.
+
+	w, h: The conceptual width/height of the image.
+
+	transform: The matrix that needs to be applied to the given
+	list to make it render to the unit square.
+
+	list: The display list.
+*/
+fz_image *fz_new_image_from_display_list(fz_context *ctx, float w, float h, fz_display_list *list);
+
 #endif
