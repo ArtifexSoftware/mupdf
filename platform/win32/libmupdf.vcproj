@@ -1410,10 +1410,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\pdf\graft.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\mupdf\pdf\javascript.h"
 					>
 				</File>

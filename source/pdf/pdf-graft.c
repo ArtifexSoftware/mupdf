@@ -1,5 +1,13 @@
 #include "mupdf/pdf.h"
 
+struct pdf_graft_map_s
+{
+	int refs;
+	int len;
+	pdf_document *src;
+	int *dst_from_src;
+};
+
 pdf_graft_map *
 pdf_new_graft_map(fz_context *ctx, pdf_document *src)
 {
@@ -9,6 +17,7 @@ pdf_new_graft_map(fz_context *ctx, pdf_document *src)
 
 	fz_try(ctx)
 	{
+		map->src = (pdf_document*) fz_keep_document(ctx, (fz_document*)src);
 		map->len = pdf_xref_len(ctx, src);
 		map->dst_from_src = fz_calloc(ctx, map->len, sizeof(int));
 	}
@@ -34,6 +43,7 @@ pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map)
 {
 	if (map && --map->refs == 0)
 	{
+		fz_drop_document(ctx, (fz_document*)map->src);
 		fz_free(ctx, map->dst_from_src);
 		fz_free(ctx, map);
 	}
@@ -50,14 +60,31 @@ pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj 
 	pdf_obj *ref = NULL;
 	fz_buffer *buffer = NULL;
 	pdf_graft_map *drop_map = NULL;
+	pdf_document *bound;
 	int new_num, src_num, len, i;
+
+	/* Primitive objects are not bound to a document, so can be re-used as is. */
+	if (!pdf_is_indirect(ctx, obj_ref) && !pdf_is_dict(ctx, obj_ref) && !pdf_is_array(ctx, obj_ref))
+		return pdf_keep_obj(ctx, obj_ref);
 
 	if (map == NULL)
 		drop_map = map = pdf_new_graft_map(ctx, src);
+	else if (src != map->src)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "graft map does not belong to the source document");
+
+	bound = pdf_get_bound_document(ctx, obj_ref);
+	if (bound && bound != src)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "grafted object does not belong to the source document");
 
 	if (pdf_is_indirect(ctx, obj_ref))
 	{
 		src_num = pdf_to_num(ctx, obj_ref);
+
+		if (src_num < 1 || src_num >= map->len)
+		{
+			pdf_drop_graft_map(ctx, drop_map);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "source object number out of range");
+		}
 
 		/* Check if we have done this one.  If yes, then drop map (if allocated)
 		 * and return our indirect ref */

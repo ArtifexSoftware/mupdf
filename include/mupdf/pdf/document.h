@@ -270,12 +270,21 @@ struct pdf_document_s
 pdf_document *pdf_create_document(fz_context *ctx);
 
 /*
+	Deep copy objects between documents.
+*/
+typedef struct pdf_graft_map_s pdf_graft_map;
+
+pdf_graft_map *pdf_new_graft_map(fz_context *ctx, pdf_document *src);
+void pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map);
+pdf_obj *pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj *obj, pdf_graft_map *map);
+
+/*
 	pdf_page_write: Create a device that will record the
 	graphical operations given to it into a sequence of
 	pdf operations, together with a set of resources. This
 	sequence/set pair can then be used as the basis for
 	adding a page to the document (see pdf_add_page).
-	
+
 	doc: The document for which these are intended.
 
 	mediabox: The bbox for the created page.

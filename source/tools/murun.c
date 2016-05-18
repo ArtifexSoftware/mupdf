@@ -198,6 +198,12 @@ static void ffi_gc_pdf_obj(js_State *J, void *obj)
 	pdf_drop_obj(ctx, obj);
 }
 
+static void ffi_gc_pdf_graft_map(js_State *J, void *map)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_drop_graft_map(ctx, map);
+}
+
 static void ffi_gc_fz_page(js_State *J, void *page)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2711,6 +2717,33 @@ static void ffi_PDFDocument_newDictionary(js_State *J)
 	ffi_pushobj(J, obj);
 }
 
+static void ffi_PDFDocument_newGraftMap(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	pdf_graft_map *map;
+	fz_try(ctx)
+		map = pdf_new_graft_map(ctx, pdf);
+	fz_catch(ctx)
+		rethrow(J);
+	js_getregistry(J, "pdf_graft_map");
+	js_newuserdata(J, "pdf_graft_map", map, ffi_gc_pdf_graft_map);
+}
+
+static void ffi_PDFDocument_graftObject(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *dst = js_touserdata(J, 0, "pdf_document");
+	pdf_document *src = js_touserdata(J, 1, "pdf_document");
+	pdf_obj *obj = js_touserdata(J, 2, "pdf_obj");
+	pdf_graft_map *map = js_iscoercible(J, 3) ? js_touserdata(J, 3, "pdf_graft_map") : NULL;
+	fz_try(ctx)
+		obj = pdf_graft_object(ctx, dst, src, obj, map);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushobj(J, obj);
+}
+
 static void ffi_PDFObject_get(js_State *J)
 {
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
@@ -3219,6 +3252,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.newIndirect", ffi_PDFDocument_newIndirect, 2);
 		jsB_propfun(J, "PDFDocument.newArray", ffi_PDFDocument_newArray, 1);
 		jsB_propfun(J, "PDFDocument.newDictionary", ffi_PDFDocument_newDictionary, 1);
+
+		jsB_propfun(J, "PDFDocument.newGraftMap", ffi_PDFDocument_newGraftMap, 0);
+		jsB_propfun(J, "PDFDocument.graftObject", ffi_PDFDocument_graftObject, 3);
 	}
 	js_setregistry(J, "pdf_document");
 
@@ -3243,6 +3279,9 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFObject.forEach", ffi_PDFObject_forEach, 1);
 	}
 	js_setregistry(J, "pdf_obj");
+
+	js_newobject(J);
+	js_setregistry(J, "pdf_graft_map");
 
 	js_pushglobal(J);
 	{

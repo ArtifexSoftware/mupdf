@@ -589,6 +589,17 @@ Do NOT mix and match objects from one document with another document!
 </dl>
 
 <p>
+The following functions can be used to copy objects from one document to another:
+
+<dl>
+<dt>PDFDocument#graftObject(sourceDocument, object, sourceGraftMap)
+<dd>Deep copy an object into the destination document. The graft map may be null, but should be used if you
+are copying several objects from the same source document using multiple calls to graftObject.
+<dt>PDFDocument#newGraftMap()
+<dd>Create a graft map for the source document, so that objects that have already been copied can be found again.
+</dl>
+
+<p>
 All functions that take PDF objects, do automatic translation between JavaScript objects
 and PDF objects using a few basic rules. Null, booleans, and numbers are translated directly.
 JavaScript strings are translated to PDF names, unless they are surrounded by parentheses:
