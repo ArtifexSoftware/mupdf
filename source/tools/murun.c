@@ -1497,6 +1497,17 @@ static void ffi_Buffer_writeLine(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Buffer_writeBuffer(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
+	fz_buffer *cat = js_touserdata(J, 1, "fz_buffer");
+	fz_try(ctx)
+		fz_append_buffer(ctx, buf, cat);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_Buffer_save(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3054,6 +3065,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Buffer.writeByte", ffi_Buffer_writeByte, 1);
 		jsB_propfun(J, "Buffer.writeRune", ffi_Buffer_writeRune, 1);
 		jsB_propfun(J, "Buffer.writeLine", ffi_Buffer_writeLine, 1);
+		jsB_propfun(J, "Buffer.writeBuffer", ffi_Buffer_writeBuffer, 1);
 		jsB_propfun(J, "Buffer.write", ffi_Buffer_write, 1);
 		jsB_propfun(J, "Buffer.save", ffi_Buffer_save, 1);
 	}
