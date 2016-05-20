@@ -478,7 +478,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 			w = image->w;
 		h = sqrtf(ctm->c * ctm->c + ctm->d * ctm->d);
 		if (h > image->h)
-			w = image->h;
+			h = image->h;
 	}
 	else
 	{
