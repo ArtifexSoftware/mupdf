@@ -1062,19 +1062,13 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 	u = (int)((local_ctm.a * x) + (local_ctm.c * y) + local_ctm.e + ((local_ctm.a + local_ctm.c) * .5f));
 	v = (int)((local_ctm.b * x) + (local_ctm.d * y) + local_ctm.f + ((local_ctm.b + local_ctm.d) * .5f));
 
-	/* RJW: The following is voodoo. No idea why it works, but it gives
-	 * the best match between scaled/unscaled/interpolated/non-interpolated
-	 * that we have found. */
-	if (dolerp) {
-		u -= 32768;
-		v -= 32768;
-		if (is_rectilinear)
-		{
-			if (u < 0)
-				u = 0;
-			if (v < 0)
-				v = 0;
-		}
+	/* If we are not linearly interpolating, then we use 'nearest'. We round u and v downwards
+	 * each time, which isn't really "nearest". Bias them by a rounding constant now to adjust
+	 * for this. */
+	if (!dolerp)
+	{
+		u += 32768;
+		v += 32768;
 	}
 
 	dp = dst->samples + (unsigned int)(((y - dst->y) * dst->w + (x - dst->x)) * dst->n);
