@@ -269,7 +269,7 @@ fz_blend_pixel(unsigned char dp[3], unsigned char bp[3], unsigned char sp[3], in
 /* Blending loops */
 
 static inline void
-fz_blend_separable(byte * restrict bp, int bal, byte * restrict sp, int sal, int n1, int w, int blendmode)
+fz_blend_separable(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n1, int w, int blendmode)
 {
 	int k;
 	while (w--)
@@ -317,7 +317,7 @@ fz_blend_separable(byte * restrict bp, int bal, byte * restrict sp, int sal, int
 }
 
 static void
-fz_blend_nonseparable(byte * restrict bp, int bal, byte * restrict sp, int sal, int w, int blendmode)
+fz_blend_nonseparable(byte * restrict bp, int bal, const byte * restrict sp, int sal, int w, int blendmode)
 {
 	while (w--)
 	{
@@ -368,7 +368,7 @@ fz_blend_nonseparable(byte * restrict bp, int bal, byte * restrict sp, int sal, 
 }
 
 static inline void
-fz_blend_separable_nonisolated(byte * restrict bp, int bal, byte * restrict sp, int sal, int n1, int w, int blendmode, byte * restrict hp, int alpha)
+fz_blend_separable_nonisolated(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n1, int w, int blendmode, const byte * restrict hp, int alpha)
 {
 	int k;
 
@@ -499,7 +499,7 @@ fz_blend_separable_nonisolated(byte * restrict bp, int bal, byte * restrict sp, 
 }
 
 static inline void
-fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, byte * restrict sp, int sal, int w, int blendmode, byte * restrict hp, int alpha)
+fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, const byte * restrict sp, int sal, int w, int blendmode, const byte * restrict hp, int alpha)
 {
 	while (w--)
 	{
@@ -579,9 +579,10 @@ fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, byte * restrict s
 }
 
 void
-fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int isolated, fz_pixmap *shape)
+fz_blend_pixmap(fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, int blendmode, int isolated, const fz_pixmap * restrict shape)
 {
-	unsigned char *sp, *dp;
+	const unsigned char *sp;
+	unsigned char *dp;
 	fz_irect bbox;
 	fz_irect bbox2;
 	int x, y, w, h, n;
@@ -590,19 +591,20 @@ fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int is
 	/* TODO: fix this hack! */
 	if (isolated && alpha < 255)
 	{
+		unsigned char *sp2; 
 		int nn;
 		h = src->h;
-		sp = src->samples;
+		sp2 = src->samples;
 		nn = src->w * src->n;
 		while (h--)
 		{
 			n = nn;
 			while (n--)
 			{
-				*sp = fz_mul255(*sp, alpha);
-				sp++;
+				*sp2 = fz_mul255(*sp2, alpha);
+				sp2++;
 			}
-			sp += src->stride - nn;
+			sp2 += src->stride - nn;
 		}
 	}
 
@@ -626,7 +628,7 @@ fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int is
 
 	if (!isolated)
 	{
-		unsigned char *hp = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (x - shape->x));
+		const unsigned char *hp = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (x - shape->x));
 
 		while (h--)
 		{

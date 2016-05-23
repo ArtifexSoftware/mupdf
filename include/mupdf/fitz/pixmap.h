@@ -18,7 +18,7 @@ typedef struct fz_pixmap_s fz_pixmap;
 /*
 	fz_pixmap_bbox: Return the bounding box for a pixmap.
 */
-fz_irect *fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_irect *bbox);
+fz_irect *fz_pixmap_bbox(fz_context *ctx, const fz_pixmap *pix, fz_irect *bbox);
 
 /*
 	fz_pixmap_width: Return the width of the pixmap in pixels.
@@ -328,7 +328,7 @@ fz_pixmap *fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x
 
 void fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor);
 
-fz_irect *fz_pixmap_bbox_no_ctx(fz_pixmap *src, fz_irect *bbox);
+fz_irect *fz_pixmap_bbox_no_ctx(const fz_pixmap *src, fz_irect *bbox);
 
 void fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode);
 void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int maxval);

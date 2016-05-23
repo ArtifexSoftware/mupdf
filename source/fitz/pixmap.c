@@ -117,7 +117,7 @@ fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, con
 }
 
 fz_irect *
-fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_irect *bbox)
+fz_pixmap_bbox(fz_context *ctx, const fz_pixmap *pix, fz_irect *bbox)
 {
 	bbox->x0 = pix->x;
 	bbox->y0 = pix->y;
@@ -127,7 +127,7 @@ fz_pixmap_bbox(fz_context *ctx, fz_pixmap *pix, fz_irect *bbox)
 }
 
 fz_irect *
-fz_pixmap_bbox_no_ctx(fz_pixmap *pix, fz_irect *bbox)
+fz_pixmap_bbox_no_ctx(const fz_pixmap *pix, fz_irect *bbox)
 {
 	bbox->x0 = pix->x;
 	bbox->y0 = pix->y;

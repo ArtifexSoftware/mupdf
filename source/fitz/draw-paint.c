@@ -76,7 +76,7 @@ typedef unsigned char byte;
 /* These are used by the non-aa scan converter */
 
 static inline void
-fz_paint_solid_color_2_da(byte * restrict dp, int w, byte *color)
+fz_paint_solid_color_2_da(byte * restrict dp, int w, const byte * restrict color)
 {
 	int sa = FZ_EXPAND(color[1]);
 	if (sa == 0)
@@ -108,7 +108,7 @@ static inline int isbigendian(void)
 }
 
 static inline void
-fz_paint_solid_color_4_da(byte * restrict dp, int w, byte *color)
+fz_paint_solid_color_4_da(byte * restrict dp, int w, const byte * restrict color)
 {
 	unsigned int rgba = *(int *)color;
 	int sa = FZ_EXPAND(color[3]);
@@ -147,7 +147,7 @@ fz_paint_solid_color_4_da(byte * restrict dp, int w, byte *color)
 }
 
 static inline void
-fz_paint_solid_color_5_da(byte * restrict dp, int w, byte *color)
+fz_paint_solid_color_5_da(byte * restrict dp, int w, const byte * restrict color)
 {
 	int sa = FZ_EXPAND(color[4]);
 	if (sa == 0)
@@ -225,7 +225,7 @@ fz_paint_solid_color_5_da(byte * restrict dp, int w, byte *color)
 }
 
 static inline void
-fz_paint_solid_color_N(byte * restrict dp, int n, int w, byte *color, int da)
+fz_paint_solid_color_N(byte * restrict dp, int n, int w, const byte * restrict color, int da)
 {
 	int k;
 	int n1 = n - da;
@@ -257,7 +257,7 @@ fz_paint_solid_color_N(byte * restrict dp, int n, int w, byte *color, int da)
 }
 
 void
-fz_paint_solid_color(byte * restrict dp, int n, int w, byte *color, int da)
+fz_paint_solid_color(byte * restrict dp, int n, int w, const byte * restrict color, int da)
 {
 	if (da)
 	{
@@ -284,7 +284,7 @@ fz_paint_solid_color(byte * restrict dp, int n, int w, byte *color, int da)
 /* Blend a non-premultiplied color in mask over destination */
 
 static inline void
-fz_paint_span_with_color_2_da(byte * restrict dp, byte * restrict mp, int w, byte *color)
+fz_paint_span_with_color_2_da(byte * restrict dp, const byte * restrict mp, int w, const byte * restrict color)
 {
 	int sa = FZ_EXPAND(color[1]);
 	int g = color[0];
@@ -331,9 +331,9 @@ fz_paint_span_with_color_2_da(byte * restrict dp, byte * restrict mp, int w, byt
 }
 
 static inline void
-fz_paint_span_with_color_4_da(byte * restrict dp, byte * restrict mp, int w, byte *color)
+fz_paint_span_with_color_4_da(byte * restrict dp, const byte * restrict mp, int w, const byte * restrict color)
 {
-	unsigned int rgba = *((unsigned int *)color);
+	unsigned int rgba = *((const unsigned int *)color);
 	unsigned int mask, rb, ga;
 	int sa = FZ_EXPAND(color[3]);
 	if (sa == 0)
@@ -395,7 +395,7 @@ fz_paint_span_with_color_4_da(byte * restrict dp, byte * restrict mp, int w, byt
 }
 
 static inline void
-fz_paint_span_with_color_5_da(byte * restrict dp, byte * restrict mp, int w, byte *color)
+fz_paint_span_with_color_5_da(byte * restrict dp, const byte * restrict mp, int w, const byte * restrict color)
 {
 	int sa = FZ_EXPAND(color[4]);
 	int c = color[0];
@@ -454,7 +454,7 @@ fz_paint_span_with_color_5_da(byte * restrict dp, byte * restrict mp, int w, byt
 }
 
 static inline void
-fz_paint_span_with_color_N(byte * restrict dp, byte * restrict mp, int n, int w, byte *color, int da)
+fz_paint_span_with_color_N(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
 {
 	int k;
 	int n1 = n - da;
@@ -503,7 +503,7 @@ fz_paint_span_with_color_N(byte * restrict dp, byte * restrict mp, int n, int w,
 }
 
 void
-fz_paint_span_with_color(byte * restrict dp, byte * restrict mp, int n, int w, byte *color, int da)
+fz_paint_span_with_color(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
 {
 	if (da)
 	{
@@ -531,7 +531,7 @@ fz_paint_span_with_color(byte * restrict dp, byte * restrict mp, int n, int w, b
 
 /* FIXME: There is potential for SWAR optimisation here */
 static inline void
-fz_paint_span_with_mask_1(byte * restrict dp, int da, byte * restrict sp, int sa, byte * restrict mp, int w)
+fz_paint_span_with_mask_1(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
 	while (w--)
 	{
@@ -598,7 +598,7 @@ fz_paint_span_with_mask_1(byte * restrict dp, int da, byte * restrict sp, int sa
 
 /* FIXME: There is potential for SWAR optimisation here */
 static inline void
-fz_paint_span_with_mask_3(byte * restrict dp, int da, byte * restrict sp, int sa, byte * restrict mp, int w)
+fz_paint_span_with_mask_3(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
 	while (w--)
 	{
@@ -690,7 +690,7 @@ fz_paint_span_with_mask_3(byte * restrict dp, int da, byte * restrict sp, int sa
 
 /* FIXME: There is potential for SWAR optimisation here */
 static inline void
-fz_paint_span_with_mask_4(byte * restrict dp, int da, byte * restrict sp, int sa, byte * restrict mp, int w)
+fz_paint_span_with_mask_4(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
 	while (w--)
 	{
@@ -779,7 +779,7 @@ fz_paint_span_with_mask_4(byte * restrict dp, int da, byte * restrict sp, int sa
 }
 
 static inline void
-fz_paint_span_with_mask_N(byte * restrict dp, int da, byte * restrict sp, int sa, byte * restrict mp, int n, int w)
+fz_paint_span_with_mask_N(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int n, int w)
 {
 	while (w--)
 	{
@@ -861,7 +861,7 @@ fz_paint_span_with_mask_N(byte * restrict dp, int da, byte * restrict sp, int sa
 }
 
 static void
-fz_paint_span_with_mask(byte * restrict dp, int da, byte * restrict sp, int sa, byte * restrict mp, int n, int w)
+fz_paint_span_with_mask(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int n, int w)
 {
 	if (da)
 	{
@@ -914,7 +914,7 @@ fz_paint_span_with_mask(byte * restrict dp, int da, byte * restrict sp, int sa, 
 /* Blend source in constant alpha over destination */
 
 static inline void
-fz_paint_span_1_with_alpha(byte * restrict dp, int da, byte * restrict sp, int sa, int w, int alpha)
+fz_paint_span_1_with_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int w, int alpha)
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
@@ -934,7 +934,7 @@ fz_paint_span_1_with_alpha(byte * restrict dp, int da, byte * restrict sp, int s
 }
 
 static inline void
-fz_paint_span_3_with_alpha(byte * restrict dp, int da, byte * restrict sp, int sa, int w, int alpha)
+fz_paint_span_3_with_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int w, int alpha)
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
@@ -958,7 +958,7 @@ fz_paint_span_3_with_alpha(byte * restrict dp, int da, byte * restrict sp, int s
 }
 
 static inline void
-fz_paint_span_4_with_alpha(byte * restrict dp, int da, byte * restrict sp, int sa, int w, int alpha)
+fz_paint_span_4_with_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int w, int alpha)
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
@@ -984,7 +984,7 @@ fz_paint_span_4_with_alpha(byte * restrict dp, int da, byte * restrict sp, int s
 }
 
 static inline void
-fz_paint_span_N_with_alpha(byte * restrict dp, int da, byte * restrict sp, int sa, int n1, int w, int alpha)
+fz_paint_span_N_with_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n1, int w, int alpha)
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
@@ -1010,7 +1010,7 @@ fz_paint_span_N_with_alpha(byte * restrict dp, int da, byte * restrict sp, int s
 /* Blend source over destination */
 
 static inline void
-fz_paint_span_1_dasa(byte * restrict dp, byte * restrict sp, int w)
+fz_paint_span_1_dasa(byte * restrict dp, const byte * restrict sp, int w)
 {
 	while (w--)
 	{
@@ -1021,7 +1021,7 @@ fz_paint_span_1_dasa(byte * restrict dp, byte * restrict sp, int w)
 }
 
 static inline void
-fz_paint_span_1(byte * restrict dp, int da, byte * restrict sp, int sa, int w)
+fz_paint_span_1(byte * restrict dp, int da, const byte * restrict sp, int sa, int w)
 {
 	while (w--)
 	{
@@ -1058,7 +1058,7 @@ fz_paint_span_1(byte * restrict dp, int da, byte * restrict sp, int sa, int w)
 }
 
 static inline void
-fz_paint_span_3(byte * restrict dp, int da, byte * restrict sp, int sa, int w)
+fz_paint_span_3(byte * restrict dp, int da, const byte * restrict sp, int sa, int w)
 {
 	while (w--)
 	{
@@ -1073,7 +1073,7 @@ fz_paint_span_3(byte * restrict dp, int da, byte * restrict sp, int sa, int w)
 			if (t == 0)
 			{
 				if (da && sa)
-					*(int *)dp = *(int *)sp;
+					*(int *)dp = *(const int *)sp;
 				else
 				{
 					dp[0] = sp[0];
@@ -1105,7 +1105,7 @@ fz_paint_span_3(byte * restrict dp, int da, byte * restrict sp, int sa, int w)
 }
 
 static inline void
-fz_paint_span_4(byte * restrict dp, int da, byte * restrict sp, int sa, int w)
+fz_paint_span_4(byte * restrict dp, int da, const byte * restrict sp, int sa, int w)
 {
 	while (w--)
 	{
@@ -1150,7 +1150,7 @@ fz_paint_span_4(byte * restrict dp, int da, byte * restrict sp, int sa, int w)
 }
 
 static inline void
-fz_paint_span_N(byte * restrict dp, int da, byte * restrict sp, int sa, int n1, int w)
+fz_paint_span_N(byte * restrict dp, int da, const byte * restrict sp, int sa, int n1, int w)
 {
 	while (w--)
 	{
@@ -1195,7 +1195,7 @@ fz_paint_span_N(byte * restrict dp, int da, byte * restrict sp, int sa, int n1, 
 }
 
 void
-fz_paint_span(byte * restrict dp, int da, byte * restrict sp, int sa, int n, int w, int alpha)
+fz_paint_span(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
 {
 	if (da)
 	{
@@ -1303,9 +1303,10 @@ fz_paint_span(byte * restrict dp, int da, byte * restrict sp, int sa, int n, int
  */
 
 void
-fz_paint_pixmap_with_bbox(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_irect bbox)
+fz_paint_pixmap_with_bbox(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha, fz_irect bbox)
 {
-	unsigned char *sp, *dp;
+	const unsigned char *sp;
+	unsigned char *dp;
 	int x, y, w, h, n, da, sa;
 	fz_irect bbox2;
 
@@ -1339,9 +1340,10 @@ fz_paint_pixmap_with_bbox(fz_pixmap *dst, fz_pixmap *src, int alpha, fz_irect bb
 }
 
 void
-fz_paint_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha)
+fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha)
 {
-	unsigned char *sp, *dp;
+	const unsigned char *sp;
+	unsigned char *dp;
 	fz_irect bbox;
 	fz_irect bbox2;
 	int x, y, w, h, n, da, sa;
@@ -1375,9 +1377,10 @@ fz_paint_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha)
 }
 
 void
-fz_paint_pixmap_with_mask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
+fz_paint_pixmap_with_mask(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_pixmap * restrict msk)
 {
-	unsigned char *sp, *dp, *mp;
+	const unsigned char *sp, *mp;
+	unsigned char *dp;
 	fz_irect bbox, bbox2;
 	int x, y, w, h, n, sa, da;
 
@@ -1415,14 +1418,14 @@ fz_paint_pixmap_with_mask(fz_pixmap *dst, fz_pixmap *src, fz_pixmap *msk)
 }
 
 static inline void
-fz_paint_glyph_mask(int span, unsigned char *dp, int da, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
+fz_paint_glyph_mask(int span, unsigned char *dp, int da, const fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
 {
 	while (h--)
 	{
 		int skip_xx, ww, len, extend;
-		unsigned char *runp;
+		const unsigned char *runp;
 		unsigned char *ddp = dp;
-		int offset = ((int *)(glyph->data))[skip_y++];
+		int offset = ((const int *)(glyph->data))[skip_y++];
 		if (offset >= 0)
 		{
 			int eol = 0;
@@ -1604,7 +1607,7 @@ intermediate_run:
 #include "paint-glyph.h"
 
 static inline void
-fz_paint_glyph_alpha(unsigned char *colorbv, int n, int span, unsigned char *dp, int da, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
+fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
 {
 	if (da)
 	{
@@ -1645,7 +1648,7 @@ fz_paint_glyph_alpha(unsigned char *colorbv, int n, int span, unsigned char *dp,
 }
 
 static inline void
-fz_paint_glyph_solid(unsigned char *colorbv, int n, int span, unsigned char *dp, int da, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
+fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y)
 {
 	if (da)
 	{
@@ -1686,7 +1689,7 @@ fz_paint_glyph_solid(unsigned char *colorbv, int n, int span, unsigned char *dp,
 }
 
 void
-fz_paint_glyph(unsigned char *colorbv, fz_pixmap *dst, unsigned char *dp, fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
+fz_paint_glyph(const unsigned char * restrict colorbv, fz_pixmap * restrict dst, unsigned char * restrict dp, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y)
 {
 	int n = dst->n - dst->alpha;
 	if (dst->colorspace)
