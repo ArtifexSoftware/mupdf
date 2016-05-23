@@ -43,7 +43,7 @@ fz_new_display_list_from_page_number(fz_context *ctx, fz_document *doc, int numb
 }
 
 fz_pixmap *
-fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz_matrix *ctm, fz_colorspace *cs, int background)
+fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect irect;
@@ -54,11 +54,11 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect);
-	if (background)
-		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
-	else
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	if (alpha)
 		fz_clear_pixmap(ctx, pix);
+	else
+		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
 	fz_try(ctx)
 	{
@@ -90,7 +90,7 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0);
 	fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
 	fz_try(ctx)
@@ -123,7 +123,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 1);
 	fz_clear_pixmap(ctx, pix);
 
 	fz_try(ctx)
@@ -156,7 +156,7 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0);
 	fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
 	fz_try(ctx)

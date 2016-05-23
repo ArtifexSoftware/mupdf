@@ -29,11 +29,10 @@ fz_irect *fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect
  * Plotting functions.
  */
 
-void fz_paint_solid_alpha(unsigned char * restrict dp, int w, int alpha);
-void fz_paint_solid_color(unsigned char * restrict dp, int n, int w, unsigned char *color);
+void fz_paint_solid_color(unsigned char * restrict dp, int n, int w, unsigned char *color, int da);
 
-void fz_paint_span(unsigned char * restrict dp, unsigned char * restrict sp, int n, int w, int alpha);
-void fz_paint_span_with_color(unsigned char * restrict dp, unsigned char * restrict mp, int n, int w, unsigned char *color);
+void fz_paint_span(unsigned char * restrict dp, int da, unsigned char * restrict sp, int sa, int n, int w, int alpha);
+void fz_paint_span_with_color(unsigned char * restrict dp, unsigned char * restrict mp, int n, int w, unsigned char *color, int da);
 
 void fz_paint_image(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, int alpha, int lerp_allowed, int gridfit_as_tiled);
 void fz_paint_image_with_color(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz_pixmap *img, const fz_matrix *ctm, unsigned char *colorbv, int lerp_allowed, int gridfit_as_tiled);

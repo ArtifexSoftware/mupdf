@@ -30,7 +30,7 @@ cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabo
 	fz_transform_rect(&bbox, ctm);
 	fz_round_rect(&ibbox, &bbox);
 
-	wri->pixmap = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &ibbox);
+	wri->pixmap = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &ibbox, 1);
 	fz_clear_pixmap_with_value(ctx, wri->pixmap, 0xFF);
 
 	return fz_new_draw_device(ctx, wri->pixmap);

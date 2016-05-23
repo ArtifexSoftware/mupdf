@@ -268,15 +268,14 @@ fz_blend_pixel(unsigned char dp[3], unsigned char bp[3], unsigned char sp[3], in
 
 /* Blending loops */
 
-void
-fz_blend_separable(byte * restrict bp, byte * restrict sp, int n, int w, int blendmode)
+static inline void
+fz_blend_separable(byte * restrict bp, int bal, byte * restrict sp, int sal, int n1, int w, int blendmode)
 {
 	int k;
-	int n1 = n - 1;
 	while (w--)
 	{
-		int sa = sp[n1];
-		int ba = bp[n1];
+		int sa = (sal ? sp[n1] : 255);
+		int ba = (bal ? bp[n1] : 255);
 		int saba = fz_mul255(sa, ba);
 
 		/* ugh, division to get non-premul components */
@@ -309,22 +308,23 @@ fz_blend_separable(byte * restrict bp, byte * restrict sp, int n, int w, int ble
 			bp[k] = fz_mul255(255 - sa, bp[k]) + fz_mul255(255 - ba, sp[k]) + fz_mul255(saba, rc);
 		}
 
-		bp[k] = ba + sa - saba;
+		if (bal)
+			bp[k] = ba + sa - saba;
 
-		sp += n;
-		bp += n;
+		sp += n1 + sal;
+		bp += n1 + bal;
 	}
 }
 
-void
-fz_blend_nonseparable(byte * restrict bp, byte * restrict sp, int w, int blendmode)
+static void
+fz_blend_nonseparable(byte * restrict bp, int bal, byte * restrict sp, int sal, int w, int blendmode)
 {
 	while (w--)
 	{
 		unsigned char rr, rg, rb;
 
-		int sa = sp[3];
-		int ba = bp[3];
+		int sa = (sal ? sp[3] : 255);
+		int ba = (bal ? bp[3] : 255);
 		int saba = fz_mul255(sa, ba);
 
 		/* ugh, division to get non-premul components */
@@ -359,18 +359,18 @@ fz_blend_nonseparable(byte * restrict bp, byte * restrict sp, int w, int blendmo
 		bp[0] = fz_mul255(255 - sa, bp[0]) + fz_mul255(255 - ba, sp[0]) + fz_mul255(saba, rr);
 		bp[1] = fz_mul255(255 - sa, bp[1]) + fz_mul255(255 - ba, sp[1]) + fz_mul255(saba, rg);
 		bp[2] = fz_mul255(255 - sa, bp[2]) + fz_mul255(255 - ba, sp[2]) + fz_mul255(saba, rb);
-		bp[3] = ba + sa - saba;
+		if (bal)
+			bp[3] = ba + sa - saba;
 
-		sp += 4;
-		bp += 4;
+		sp += 3 + sal;
+		bp += 3 + bal;
 	}
 }
 
-static void
-fz_blend_separable_nonisolated(byte * restrict bp, byte * restrict sp, int n, int w, int blendmode, byte * restrict hp, int alpha)
+static inline void
+fz_blend_separable_nonisolated(byte * restrict bp, int bal, byte * restrict sp, int sal, int n1, int w, int blendmode, byte * restrict hp, int alpha)
 {
 	int k;
-	int n1 = n - 1;
 
 	if (alpha == 255 && blendmode == 0)
 	{
@@ -384,14 +384,16 @@ fz_blend_separable_nonisolated(byte * restrict bp, byte * restrict sp, int n, in
 			/* If ha == 0 then leave everything unchanged */
 			if (ha != 0)
 			{
-				for (k = 0; k < n; k++)
+				for (k = 0; k < n1; k++)
 				{
 					bp[k] = sp[k];
 				}
+				if (bal)
+					bp[k] = (sal ? sp[k] : 255);
 			}
 
-			sp += n;
-			bp += n;
+			sp += n1 + sal;
+			bp += n1 + bal;
 		}
 		return;
 	}
@@ -403,11 +405,11 @@ fz_blend_separable_nonisolated(byte * restrict bp, byte * restrict sp, int n, in
 		while (haa != 0) /* Use while, so we can break out */
 		{
 			int sa, ba, bahaa, ra, invsa, invba, invha, invra;
-			sa = sp[n1];
+			sa = (sal ? sp[n1] : 255);
 			if (sa == 0)
 				break; /* No change! */
 			invsa = sa ? 255 * 256 / sa : 0;
-			ba = bp[n1];
+			ba = (bal ? bp[n1] : 255);
 			if (ba == 0)
 			{
 				/* Just copy pixels (allowing for change in
@@ -416,7 +418,8 @@ fz_blend_separable_nonisolated(byte * restrict bp, byte * restrict sp, int n, in
 				{
 					bp[k] = fz_mul255((sp[k] * invsa) >> 8, haa);
 				}
-				bp[n1] = haa;
+				if (bal)
+					bp[n1] = haa;
 				break;
 			}
 			bahaa = fz_mul255(ba, haa);
@@ -426,7 +429,9 @@ fz_blend_separable_nonisolated(byte * restrict bp, byte * restrict sp, int n, in
 
 			/* Calculate result_alpha - a combination of the
 			 * background alpha, and 'shape' */
-			ra = bp[n1] = ba - bahaa + haa;
+			ra = ba - bahaa + haa;
+			if (bal)
+				bp[n1] = ra;
 			if (ra == 0)
 				break;
 			/* Because we are a non-isolated group, we need to
@@ -483,18 +488,18 @@ fz_blend_separable_nonisolated(byte * restrict bp, byte * restrict sp, int n, in
 				rc = bc + fz_mul255(sa, fz_mul255(255 - ba, sc) + fz_mul255(ba, rc) - bc);
 				if (rc < 0) rc = 0;
 				if (rc > 255) rc = 255;
-				bp[k] = fz_mul255(rc, ra);
+					bp[k] = fz_mul255(rc, ra);
 			}
 			break;
 		}
 
-		sp += n;
-		bp += n;
+		sp += n1 + sal;
+		bp += n1 + bal;
 	}
 }
 
-static void
-fz_blend_nonseparable_nonisolated(byte * restrict bp, byte * restrict sp, int w, int blendmode, byte * restrict hp, int alpha)
+static inline void
+fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, byte * restrict sp, int sal, int w, int blendmode, byte * restrict hp, int alpha)
 {
 	while (w--)
 	{
@@ -502,12 +507,14 @@ fz_blend_nonseparable_nonisolated(byte * restrict bp, byte * restrict sp, int w,
 		int haa = fz_mul255(ha, alpha);
 		if (haa != 0)
 		{
-			int sa = sp[3];
-			int ba = bp[3];
+			int sa = (sal ? sp[3] : 255);
+			int ba = (bal ? bp[3] : 255);
 			int baha = fz_mul255(ba, haa);
 
 			/* Calculate result_alpha */
-			int ra = bp[3] = ba - baha + haa;
+			int ra = ba - baha + haa;
+			if (bal)
+				bp[3] = ra;
 			if (ra != 0)
 			{
 				/* Because we are a non-isolated group, we
@@ -566,8 +573,8 @@ fz_blend_nonseparable_nonisolated(byte * restrict bp, byte * restrict sp, int w,
 			}
 		}
 
-		sp += 4;
-		bp += 4;
+		sp += 3 + sal;
+		bp += 3 + bal;
 	}
 }
 
@@ -578,16 +585,24 @@ fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int is
 	fz_irect bbox;
 	fz_irect bbox2;
 	int x, y, w, h, n;
+	int da, sa;
 
 	/* TODO: fix this hack! */
 	if (isolated && alpha < 255)
 	{
+		int nn;
+		h = src->h;
 		sp = src->samples;
-		n = src->w * src->h * src->n;
-		while (n--)
+		nn = src->w * src->n;
+		while (h--)
 		{
-			*sp = fz_mul255(*sp, alpha);
-			sp++;
+			n = nn;
+			while (n--)
+			{
+				*sp = fz_mul255(*sp, alpha);
+				sp++;
+			}
+			sp += src->stride - nn;
 		}
 	}
 
@@ -601,36 +616,75 @@ fz_blend_pixmap(fz_pixmap *dst, fz_pixmap *src, int alpha, int blendmode, int is
 	h = bbox.y1 - bbox.y0;
 
 	n = src->n;
-	sp = src->samples + (unsigned int)(((y - src->y) * src->w + (x - src->x)) * n);
-	dp = dst->samples + (unsigned int)(((y - dst->y) * dst->w + (x - dst->x)) * n);
+	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	sa = src->alpha;
+	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	da = dst->alpha;
 
-	assert(src->n == dst->n);
+	n -= sa;
+	assert(n == dst->n - da);
 
 	if (!isolated)
 	{
-		unsigned char *hp = shape->samples + (unsigned int)((y - shape->y) * shape->w + (x - shape->x));
+		unsigned char *hp = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (x - shape->x));
 
 		while (h--)
 		{
-			if (n == 4 && blendmode >= FZ_BLEND_HUE)
-				fz_blend_nonseparable_nonisolated(dp, sp, w, blendmode, hp, alpha);
+			if (n == 3 && blendmode >= FZ_BLEND_HUE)
+				if (da)
+					if (sa)
+						fz_blend_nonseparable_nonisolated(dp, 1, sp, 1, w, blendmode, hp, alpha);
+					else
+						fz_blend_nonseparable_nonisolated(dp, 1, sp, 0, w, blendmode, hp, alpha);
+				else
+					if (sa)
+						fz_blend_nonseparable_nonisolated(dp, 0, sp, 1, w, blendmode, hp, alpha);
+					else
+						fz_blend_nonseparable_nonisolated(dp, 0, sp, 0, w, blendmode, hp, alpha);
 			else
-				fz_blend_separable_nonisolated(dp, sp, n, w, blendmode, hp, alpha);
-			sp += src->w * n;
-			dp += dst->w * n;
-			hp += shape->w;
+				if (da)
+					if (sa)
+						fz_blend_separable_nonisolated(dp, 1, sp, 1, n, w, blendmode, hp, alpha);
+					else
+						fz_blend_separable_nonisolated(dp, 1, sp, 0, n, w, blendmode, hp, alpha);
+				else
+					if (sa)
+						fz_blend_separable_nonisolated(dp, 0, sp, 1, n, w, blendmode, hp, alpha);
+					else
+						fz_blend_separable_nonisolated(dp, 0, sp, 0, n, w, blendmode, hp, alpha);
+			sp += src->stride;
+			dp += dst->stride;
+			hp += shape->stride;
 		}
 	}
 	else
 	{
 		while (h--)
 		{
-			if (n == 4 && blendmode >= FZ_BLEND_HUE)
-				fz_blend_nonseparable(dp, sp, w, blendmode);
+			if (n == 3 && blendmode >= FZ_BLEND_HUE)
+				if (da)
+					if (sa)
+						fz_blend_nonseparable(dp, 1, sp, 1, w, blendmode);
+					else
+						fz_blend_nonseparable(dp, 1, sp, 0, w, blendmode);
+				else
+					if (sa)
+						fz_blend_nonseparable(dp, 0, sp, 1, w, blendmode);
+					else
+						fz_blend_nonseparable(dp, 0, sp, 0, w, blendmode);
 			else
-				fz_blend_separable(dp, sp, n, w, blendmode);
-			sp += src->w * n;
-			dp += dst->w * n;
+				if (da)
+					if (sa)
+						fz_blend_separable(dp, 1, sp, 1, n, w, blendmode);
+					else
+						fz_blend_separable(dp, 1, sp, 0, n, w, blendmode);
+				else
+					if (sa)
+						fz_blend_separable(dp, 0, sp, 1, n, w, blendmode);
+					else
+						fz_blend_separable(dp, 0, sp, 0, n, w, blendmode);
+			sp += src->stride;
+			dp += dst->stride;
 		}
 	}
 }

@@ -72,7 +72,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 	for (y = 0; y < dst->h; y++)
 	{
 		unsigned char *sp = src + (unsigned int)(y * stride);
-		unsigned char *dp = dst->samples + (unsigned int)(y * dst->w * dst->n);
+		unsigned char *dp = dst->samples + (unsigned int)(y * dst->stride);
 
 		/* Specialized loops */
 
@@ -177,10 +177,12 @@ fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int
 	int add[FZ_MAX_COLORS];
 	int mul[FZ_MAX_COLORS];
 	unsigned char *p = pix->samples;
-	int len = pix->w * pix->h;
+	int stride = pix->stride - pix->w * pix->n;
+	int len;
 	int n = pix->n - 1;
 	int needed;
 	int k;
+	int h;
 
 	needed = 0;
 	for (k = 0; k < n; k++)
@@ -195,14 +197,20 @@ fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int
 	if (!needed)
 		return;
 
-	while (len--)
+	h = pix->h;
+	while (h--)
 	{
-		for (k = 0; k < n; k++)
+		len = pix->w;
+		while (len--)
 		{
-			int value = (add[k] + (((p[k] << 8) * mul[k]) >> 8)) >> 8;
-			p[k] = fz_clampi(value, 0, 255);
+			for (k = 0; k < n; k++)
+			{
+				int value = (add[k] + (((p[k] << 8) * mul[k]) >> 8)) >> 8;
+				p[k] = fz_clampi(value, 0, 255);
+			}
+			p += n + 1;
 		}
-		p += n + 1;
+		p += stride;
 	}
 }
 
@@ -212,10 +220,12 @@ fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode)
 	int add[FZ_MAX_COLORS];
 	int mul[FZ_MAX_COLORS];
 	unsigned char *p = pix->samples;
-	int len = pix->w * pix->h;
+	int stride = pix->stride - pix->w * pix->n;
+	int len;
 	int n = fz_maxi(1, pix->n - 1);
 	int needed;
 	int k;
+	int h;
 
 	needed = 0;
 	for (k = 0; k < n; k++)
@@ -230,13 +240,19 @@ fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode)
 	if (!needed)
 		return;
 
-	while (len--)
+	h = pix->h;
+	while (h--)
 	{
-		for (k = 0; k < n; k++)
+		len = pix->w;
+		while (len--)
 		{
-			int value = add[k] + fz_mul255(p[k], mul[k]);
-			p[k] = fz_clampi(value, 0, 255);
+			for (k = 0; k < n; k++)
+			{
+				int value = add[k] + fz_mul255(p[k], mul[k]);
+				p[k] = fz_clampi(value, 0, 255);
+			}
+			p += pix->n;
 		}
-		p += pix->n;
+		p += stride;
 	}
 }

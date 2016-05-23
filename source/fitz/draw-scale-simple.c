@@ -1027,21 +1027,29 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 
 #ifdef SINGLE_PIXEL_SPECIALS
 static void
-duplicate_single_pixel(unsigned char *dst, unsigned char *src, int n, int w, int h)
+duplicate_single_pixel(unsigned char *dst, unsigned char *src, int n, int w, int h, int stride)
 {
 	int i;
 
+	w *= n;
 	for (i = n; i > 0; i--)
 		*dst++ = *src++;
-	for (i = (w*h-1)*n; i > 0; i--)
+	for (i = w-n; i > 0; i--)
 	{
 		*dst = dst[-n];
 		dst++;
 	}
+	dst -= w;
+	h--;
+	while (h--)
+	{
+		memcpy(dst+stride, dst, w);
+		dst += stride;
+	}
 }
 
 static void
-scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, int src_w, int h)
+scale_single_row(unsigned char *dst, int dstride, unsigned char *src, fz_weights *weights, int src_w, int h)
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int min, len, i, j, n;
@@ -1072,7 +1080,7 @@ scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 			}
 			dst -= 2*n;
 		}
-		dst += n * (weights->count+1);
+		dst += n + dstride;
 	}
 	else
 	{
@@ -1093,18 +1101,19 @@ scale_single_row(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 				tmp[j] = 128;
 			}
 		}
+		dst += dstride - weights->count * n;
 	}
 	/* And then duplicate it h times */
 	n *= weights->count;
 	while (--h > 0)
 	{
-		memcpy(dst, dst-n, n);
-		dst += n;
+		memcpy(dst, dst-dstride, n);
+		dst += dstride;
 	}
 }
 
 static void
-scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, int src_w, int n, int w, int flip_y)
+scale_single_col(unsigned char *dst, int dstride, unsigned char *src, int sstride, fz_weights *weights, int src_w, int n, int w, int flip_y)
 {
 	int *contrib = &weights->index[weights->index[0]];
 	int min, len, i, j;
@@ -1114,18 +1123,18 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 		tmp[j] = 128;
 	if (flip_y)
 	{
-		src_w = (src_w-1)*n;
-		w = (w-1)*n;
+		src_w = (src_w-1)*sstride;
 		for (i=weights->count; i > 0; i--)
 		{
 			/* Scale the next pixel in the column */
 			min = *contrib++;
 			len = *contrib++;
-			min = src_w-min*n;
+			min = src_w-min*sstride;
 			while (len-- > 0)
 			{
 				for (j = 0; j < n; j++)
-					tmp[j] += src[src_w-min+j] * *contrib;
+					tmp[j] += src[min+j] * *contrib;
+				min -= sstride;
 				contrib++;
 			}
 			for (j = 0; j < n; j++)
@@ -1134,26 +1143,27 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 				tmp[j] = 128;
 			}
 			/* And then duplicate it across the row */
-			for (j = w; j > 0; j--)
+			for (j = (w-1)*n; j > 0; j--)
 			{
 				*dst = dst[-n];
 				dst++;
 			}
+			dst += dstride - w*n;
 		}
 	}
 	else
 	{
-		w = (w-1)*n;
 		for (i=weights->count; i > 0; i--)
 		{
 			/* Scale the next pixel in the column */
 			min = *contrib++;
 			len = *contrib++;
-			min *= n;
+			min *= sstride;
 			while (len-- > 0)
 			{
 				for (j = 0; j < n; j++)
-					tmp[j] += src[min++] * *contrib;
+					tmp[j] += src[min+j] * *contrib;
+				min += sstride;
 				contrib++;
 			}
 			for (j = 0; j < n; j++)
@@ -1162,11 +1172,12 @@ scale_single_col(unsigned char *dst, unsigned char *src, fz_weights *weights, in
 				tmp[j] = 128;
 			}
 			/* And then duplicate it across the row */
-			for (j = w; j > 0; j--)
+			for (j = (w-1)*n; j > 0; j--)
 			{
 				*dst = dst[-n];
 				dst++;
 			}
+			dst += dstride - w*n;
 		}
 	}
 }
@@ -1284,6 +1295,8 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 		dst_h_int = (int)ceilf(y + h);
 	}
 
+	fz_valgrind_pixmap(src);
+
 	/* Step 0: Calculate the patch */
 	patch.x0 = 0;
 	patch.y0 = 0;
@@ -1352,7 +1365,7 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 #endif /* SINGLE_PIXEL_SPECIALS */
 			contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, patch.y0, patch.y1, src->n, flip_y, cache_y);
 
-		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0);
+		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0, src->alpha);
 	}
 	fz_catch(ctx)
 	{
@@ -1373,18 +1386,21 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 		if (!contrib_cols)
 		{
 			/* Only 1 pixel in the entire image! */
-			duplicate_single_pixel(output->samples, src->samples, src->n, patch.x1-patch.x0, patch.y1-patch.y0);
+			duplicate_single_pixel(output->samples, src->samples, src->n, patch.x1-patch.x0, patch.y1-patch.y0, output->stride);
+			fz_valgrind_pixmap(output);
 		}
 		else
 		{
 			/* Scale the row once, then copy it. */
-			scale_single_row(output->samples, src->samples, contrib_cols, src->w, patch.y1-patch.y0);
+			scale_single_row(output->samples, output->stride, src->samples, contrib_cols, src->w, patch.y1-patch.y0);
+			fz_valgrind_pixmap(output);
 		}
 	}
 	else if (!contrib_cols)
 	{
 		/* Only 1 source pixel wide. Scale the col and duplicate. */
-		scale_single_col(output->samples, src->samples, contrib_rows, src->h, src->n, patch.x1-patch.x0, flip_y);
+		scale_single_col(output->samples, output->stride, src->samples, src->stride, contrib_rows, src->h, src->n, patch.x1-patch.x0, flip_y);
+		fz_valgrind_pixmap(output);
 	}
 	else
 #endif /* SINGLE_PIXEL_SPECIALS */
@@ -1438,13 +1454,15 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 			{
 				/* Scale another row */
 				assert(max_row < src->h);
-				(*row_scale)(&temp[temp_span*(max_row % temp_rows)], &src->samples[(flip_y ? (src->h-1-max_row): max_row)*src->w*src->n], contrib_cols);
+				(*row_scale)(&temp[temp_span*(max_row % temp_rows)], &src->samples[(flip_y ? (src->h-1-max_row): max_row)*src->stride], contrib_cols);
 				max_row++;
 			}
 
-			scale_row_from_temp(&output->samples[row*output->w*output->n], temp, contrib_rows, temp_span, row);
+			scale_row_from_temp(&output->samples[row*output->stride], temp, contrib_rows, temp_span, row);
 		}
 		fz_free(ctx, temp);
+
+		fz_valgrind_pixmap(output);
 	}
 
 cleanup:
@@ -1452,6 +1470,7 @@ cleanup:
 		fz_free(ctx, contrib_rows);
 	if (!cache_x)
 		fz_free(ctx, contrib_cols);
+
 	return output;
 }
 

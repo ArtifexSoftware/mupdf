@@ -219,7 +219,7 @@ A pixmap also has a location (x, y) in addition to its size; so that they can ea
 tiles of a page.
 
 <dl>
-<dt>new Pixmap(colorspace, bounds)
+<dt>new Pixmap(colorspace, bounds, alpha)
 <dd>Create a new pixmap. The pixel data is <b>not</b> initialized; and will contain garbage.
 <dt>Pixmap#clear(value)
 <dd>Clear the pixels to the specifed value. Pass 255 for white, or undefined for transparent.
@@ -269,8 +269,8 @@ will keep all the graphics required in memory, so will increase the amount of me
 <dd>Create an empty display list.
 <dt>DisplayList#run(device, transform)
 <dd>Play back the recorded device calls onto the device.
-<dt>DisplayList#toPixmap(transform, colorspace, solid)
-<dd>Render display list to a pixmap. If solid is true, it will render to a white background, otherwise transparent.
+<dt>DisplayList#toPixmap(transform, colorspace, alpha)
+<dd>Render display list to a pixmap. If alpha is true, it will render to a transparent background, otherwise white.
 </dl>
 
 <dl>

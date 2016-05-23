@@ -159,7 +159,7 @@ static struct glyph *lookup_glyph(fz_font *font, int gid, float *xp, float *yp)
 
 	glEnd();
 
-	pixmap = fz_render_glyph_pixmap(ctx, font, gid, &subpix_trm, NULL, NULL);
+	pixmap = fz_render_glyph_pixmap(ctx, font, gid, &subpix_trm, NULL);
 	w = pixmap->w;
 	h = pixmap->h;
 

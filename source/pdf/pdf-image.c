@@ -40,12 +40,13 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 				fz_pixmap_image *cimg = (fz_pixmap_image *)image;
 				fz_pixmap *mask_pixmap;
 				fz_pixmap *tile = fz_pixmap_image_tile(ctx, cimg);
-				if (image->n != 2)
+				if (tile->n != 1)
 				{
 					fz_pixmap *gray;
 					fz_irect bbox;
-					fz_warn(ctx, "soft mask should be grayscale");
-					gray = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), fz_pixmap_bbox(ctx, tile, &bbox));
+					if (tile->n != 2)
+						fz_warn(ctx, "soft mask should be grayscale");
+					gray = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), fz_pixmap_bbox(ctx, tile, &bbox), 0);
 					fz_convert_pixmap(ctx, gray, tile);
 					fz_drop_pixmap(ctx, tile);
 					tile = gray;
@@ -323,32 +324,44 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 			else
 			{
 				unsigned int size;
-				int n;
+				int n, h;
+				unsigned char *d, *s;
 
 				/* Currently, set to maintain resolution; should we consider
 				 * subsampling here according to desired output res? */
 				pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 				colorspace = pixmap->colorspace; /* May be different to image->colorspace! */
-				n = (pixmap->n == 1 ? 1 : pixmap->n - 1);
-				size = image->w * image->h * n;
+				n = (pixmap->n == 1 ? 1 : pixmap->n - pixmap->alpha);
+				d = buffer->data;
+				s = pixmap->samples;
+				h = image->h;
+				size = image->w * n;
 				buffer = fz_new_buffer(ctx, size);
 				buffer->len = size;
-				if (pixmap->n == 1)
+				if (pixmap->alpha == 0 || n == 1)
 				{
-					memcpy(buffer->data, pixmap->samples, size);
+					while (h--)
+					{
+						memcpy(d, s, size);
+						d += size;
+						s += pixmap->stride;
+					}
 				}
 				else
 				{
 					/* Need to remove the alpha plane */
-					unsigned char *d = buffer->data;
-					unsigned char *s = pixmap->samples;
 					int mod = n;
-					while (size--)
+					int stride = pixmap->stride - pixmap->w * pixmap->n;
+					while (h--)
 					{
-						*d++ = *s++;
-						mod--;
-						if (mod == 0)
-							s++, mod = n;
+						while (size--)
+						{
+							*d++ = *s++;
+							mod--;
+							if (mod == 0)
+								s++, mod = n;
+						}
+						s += stride;
 					}
 				}
 			}

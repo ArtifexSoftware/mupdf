@@ -1,22 +1,40 @@
 #include "mupdf/fitz.h"
 
+/*
+	FIXME: Currently transitions only work with alpha. Our app only
+	uses alpha.
+*/
+
 static int
-fade(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
+fade(fz_pixmap *tpix, const fz_pixmap *opix, const fz_pixmap *npix, int time)
 {
 	unsigned char *t, *o, *n;
 	int size;
+	int h;
+	int tstride, ostride, nstride;
 
 	if (!tpix || !opix || !npix || tpix->w != opix->w || opix->w != npix->w || tpix->h != opix->h || opix->h != npix->h || tpix->n != opix->n || opix->n != npix->n)
 		return 0;
-	size = tpix->w * tpix->h * tpix->n;
+	h = tpix->h;
+	size = tpix->w * tpix->n;
+	ostride = opix->stride - size;
+	nstride = npix->stride - size;
+	tstride = tpix->stride - size;
 	t = tpix->samples;
 	o = opix->samples;
 	n = npix->samples;
-	while (size-- > 0)
+	while (h--)
 	{
-		int op = *o++;
-		int np = *n++;
-		*t++ = ((op<<8) + ((np-op) * time) + 0x80)>>8;
+		int ww = size;
+		while (ww-- > 0)
+		{
+			int op = *o++;
+			int np = *n++;
+			*t++ = ((op<<8) + ((np-op) * time) + 0x80)>>8;
+		}
+		o += ostride;
+		n += nstride;
+		t += tstride;
 	}
 	return 1;
 }
@@ -25,22 +43,26 @@ static int
 blind_horiz(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
 {
 	unsigned char *t, *o, *n;
-	int blind_height, span, position, y;
+	int blind_height, size, position, y;
+	int tstride, ostride, nstride;
 
 	if (!tpix || !opix || !npix || tpix->w != opix->w || opix->w != npix->w || tpix->h != opix->h || opix->h != npix->h || tpix->n != opix->n || opix->n != npix->n)
 		return 0;
-	span = tpix->w * tpix->n;
+	size = tpix->w * tpix->n;
 	blind_height = (tpix->h+7) / 8;
 	position = blind_height * time / 256;
+	ostride = opix->stride;
+	nstride = npix->stride;
+	tstride = tpix->stride;
 	t = tpix->samples;
 	o = opix->samples;
 	n = npix->samples;
 	for (y = 0; y < tpix->h; y++)
 	{
-		memcpy(t, ((y % blind_height) <= position ? n : o), span);
-		t += span;
-		o += span;
-		n += span;
+		memcpy(t, ((y % blind_height) <= position ? n : o), size);
+		t += tstride;
+		o += ostride;
+		n += nstride;
 	}
 	return 1;
 }
@@ -49,15 +71,19 @@ static int
 blind_vertical(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
 {
 	unsigned char *t, *o, *n;
-	int blind_width, span, position, y;
+	int blind_width, size, position, y;
+	int tstride, ostride, nstride;
 
 	if (!tpix || !opix || !npix || tpix->w != opix->w || opix->w != npix->w || tpix->h != opix->h || opix->h != npix->h || tpix->n != opix->n || opix->n != npix->n)
 		return 0;
-	span = tpix->w * tpix->n;
+	size = tpix->w * tpix->n;
 	blind_width = (tpix->w+7) / 8;
 	position = blind_width * time / 256;
 	blind_width *= tpix->n;
 	position *= tpix->n;
+	ostride = opix->stride - size;
+	nstride = npix->stride - size;
+	tstride = tpix->stride - size;
 	t = tpix->samples;
 	o = opix->samples;
 	n = npix->samples;
@@ -65,7 +91,7 @@ blind_vertical(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
 	{
 		int w, x;
 		x = 0;
-		while ((w = span - x) > 0)
+		while ((w = size - x) > 0)
 		{
 			int p;
 			if (w > blind_width)
@@ -80,6 +106,9 @@ blind_vertical(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
 			o += w;
 			n += w;
 		}
+		o += ostride;
+		n += nstride;
+		t += tstride;
 	}
 	return 1;
 }
@@ -88,28 +117,32 @@ static int
 wipe_tb(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
 {
 	unsigned char *t, *o, *n;
-	int span, position, y;
+	int size, position, y;
+	int tstride, ostride, nstride;
 
 	if (!tpix || !opix || !npix || tpix->w != opix->w || opix->w != npix->w || tpix->h != opix->h || opix->h != npix->h || tpix->n != opix->n || opix->n != npix->n)
 		return 0;
-	span = tpix->w * tpix->n;
+	size = tpix->w * tpix->n;
 	position = tpix->h * time / 256;
+	ostride = opix->stride;
+	nstride = npix->stride;
+	tstride = tpix->stride;
 	t = tpix->samples;
 	o = opix->samples;
 	n = npix->samples;
 	for (y = 0; y < position; y++)
 	{
-		memcpy(t, n, span);
-		t += span;
-		o += span;
-		n += span;
+		memcpy(t, n, size);
+		t += tstride;
+		o += ostride;
+		n += nstride;
 	}
 	for (; y < tpix->h; y++)
 	{
-		memcpy(t, o, span);
-		t += span;
-		o += span;
-		n += span;
+		memcpy(t, o, size);
+		t += tstride;
+		o += ostride;
+		n += nstride;
 	}
 	return 1;
 }
@@ -118,23 +151,27 @@ static int
 wipe_lr(fz_pixmap *tpix, fz_pixmap *opix, fz_pixmap *npix, int time)
 {
 	unsigned char *t, *o, *n;
-	int span, position, y;
+	int size, position, y;
+	int tstride, ostride, nstride;
 
 	if (!tpix || !opix || !npix || tpix->w != opix->w || opix->w != npix->w || tpix->h != opix->h || opix->h != npix->h || tpix->n != opix->n || opix->n != npix->n)
 		return 0;
-	span = tpix->w * tpix->n;
+	size = tpix->w * tpix->n;
 	position = tpix->w * time / 256;
 	position *= tpix->n;
+	ostride = opix->stride;
+	nstride = npix->stride;
+	tstride = tpix->stride;
 	t = tpix->samples;
 	o = opix->samples + position;
 	n = npix->samples;
 	for (y = 0; y < tpix->h; y++)
 	{
 		memcpy(t, n, position);
-		memcpy(t+position, o, span-position);
-		t += span;
-		o += span;
-		n += span;
+		memcpy(t+position, o, size-position);
+		t += tstride;
+		o += ostride;
+		n += nstride;
 	}
 	return 1;
 }

@@ -697,7 +697,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 	}
 
 	fz_try(ctx)
-		pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), width, height);
+		pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), width, height, 1);
 	fz_catch(ctx)
 	{
 		fz_free(ctx, decompressed);
@@ -705,7 +705,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 	}
 
 	ddp = pix->samples;
-	dstride = width * 4;
+	dstride = pix->stride;
 	if (!info->topdown)
 	{
 		ddp = pix->samples + (height - 1) * dstride;

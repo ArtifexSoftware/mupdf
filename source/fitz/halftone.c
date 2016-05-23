@@ -68,7 +68,7 @@ fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps)
 	{
 		int i;
 		for (i = 0; i < num_comps; i++)
-			ht->comp[i] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, mono_ht);
+			ht->comp[i] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, 1, 16, mono_ht);
 	}
 	fz_catch(ctx)
 	{
@@ -285,21 +285,21 @@ static void do_threshold_1(const unsigned char * restrict ht_line, const unsigne
 		h = 0;
 		if (pixmap[0] < ht_line[0])
 			h |= 0x80;
-		if (pixmap[2] < ht_line[1])
+		if (pixmap[1] < ht_line[1])
 			h |= 0x40;
-		if (pixmap[4] < ht_line[2])
+		if (pixmap[2] < ht_line[2])
 			h |= 0x20;
-		if (pixmap[6] < ht_line[3])
+		if (pixmap[3] < ht_line[3])
 			h |= 0x10;
-		if (pixmap[8] < ht_line[4])
+		if (pixmap[4] < ht_line[4])
 			h |= 0x08;
-		if (pixmap[10] < ht_line[5])
+		if (pixmap[5] < ht_line[5])
 			h |= 0x04;
-		if (pixmap[12] < ht_line[6])
+		if (pixmap[6] < ht_line[6])
 			h |= 0x02;
-		if (pixmap[14] < ht_line[7])
+		if (pixmap[7] < ht_line[7])
 			h |= 0x01;
-		pixmap += 16; /* Skip the alpha */
+		pixmap += 8;
 		ht_line += 8;
 		l -= 8;
 		if (l == 0)
@@ -315,17 +315,17 @@ static void do_threshold_1(const unsigned char * restrict ht_line, const unsigne
 		h = 0;
 		if (pixmap[0] < ht_line[0])
 			h |= 0x80;
-		if (w > -6 && pixmap[2] < ht_line[1])
+		if (w > -6 && pixmap[1] < ht_line[1])
 			h |= 0x40;
-		if (w > -5 && pixmap[4] < ht_line[2])
+		if (w > -5 && pixmap[2] < ht_line[2])
 			h |= 0x20;
-		if (w >	-4 && pixmap[6] < ht_line[3])
+		if (w >	-4 && pixmap[3] < ht_line[3])
 			h |= 0x10;
-		if (w > -3 && pixmap[8] < ht_line[4])
+		if (w > -3 && pixmap[4] < ht_line[4])
 			h |= 0x08;
-		if (w > -2 && pixmap[10] < ht_line[5])
+		if (w > -2 && pixmap[5] < ht_line[5])
 			h |= 0x04;
-		if (w > -1 && pixmap[12] < ht_line[6])
+		if (w > -1 && pixmap[6] < ht_line[6])
 			h |= 0x02;
 		*out++ = h;
 	}
@@ -541,13 +541,13 @@ static void do_threshold_4(const unsigned char * restrict ht_line, const unsigne
 			h |= 0x20;
 		if (pixmap[3] >= ht_line[3])
 			h |= 0x10;
-		if (pixmap[5] >= ht_line[4])
+		if (pixmap[4] >= ht_line[4])
 			h |= 0x08;
-		if (pixmap[6] >= ht_line[5])
+		if (pixmap[5] >= ht_line[5])
 			h |= 0x04;
-		if (pixmap[7] >= ht_line[6])
+		if (pixmap[6] >= ht_line[6])
 			h |= 0x02;
-		if (pixmap[8] >= ht_line[7])
+		if (pixmap[7] >= ht_line[7])
 			h |= 0x01;
 		*out++ = h;
 		l -= 2;
@@ -556,7 +556,7 @@ static void do_threshold_4(const unsigned char * restrict ht_line, const unsigne
 			l = ht_len;
 			ht_line -= ht_len<<2;
 		}
-		pixmap += 10;
+		pixmap += 8;
 		ht_line += 8;
 		w -= 2;
 	}
@@ -609,11 +609,13 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	if (!pix)
 		return NULL;
 
+	assert(pix->alpha == 0);
+
 	fz_var(ht_line);
 	fz_var(out);
 
 	band *= bandheight;
-	n = pix->n-1; /* Remove alpha */
+	n = pix->n;
 
 	switch(n)
 	{
@@ -659,7 +661,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 		y = pix->y + band;
 		w = pix->w;
 		ostride = out->stride;
-		pstride = pix->w * pix->n;
+		pstride = pix->stride;
 		while (h--)
 		{
 			make_ht_line(ht_line, ht, x, y++, lcm);

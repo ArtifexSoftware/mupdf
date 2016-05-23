@@ -19,7 +19,7 @@ void fz_write_ps_file_header(fz_context *ctx, fz_output *out);
 
 fz_ps_output_context *fz_write_ps_header(fz_context *ctx, fz_output *out, int w, int h, int n, int xres, int yres, int pagenum);
 
-void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int band, int bandheight, unsigned char *samples);
+void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int stride, int band, int bandheight, unsigned char *samples);
 
 void fz_write_ps_trailer(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc);
 

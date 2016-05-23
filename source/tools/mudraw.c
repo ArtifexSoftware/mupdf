@@ -363,6 +363,7 @@ static int lowmemory = 0;
 static int errored = 0;
 static fz_stext_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
+static int alpha;
 static char *filename;
 static int files = 0;
 static int num_workers = 0;
@@ -835,7 +836,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].tbounds = tbounds;
 					memset(&workers[band].cookie, 0, sizeof(fz_cookie));
 					workers[band].list = list;
-					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds);
+					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
 					fz_pixmap_set_resolution(workers[band].pix, resolution);
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
 					SEMAPHORE_TRIGGER(workers[band].start);
@@ -845,7 +846,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 			else
 			{
-				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds);
+				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
 				fz_pixmap_set_resolution(pix, resolution);
 			}
 
@@ -857,7 +858,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				else if (output_format == OUT_PAM)
 					fz_write_pam_header(ctx, out, pix->w, totalheight, pix->n, savealpha);
 				else if (output_format == OUT_PNG)
-					poc = fz_write_png_header(ctx, out, pix->w, totalheight, pix->n, savealpha);
+					poc = fz_write_png_header(ctx, out, pix->w, totalheight, pix->n, pix->alpha, savealpha);
 				else if (output_format == OUT_PBM)
 					fz_write_pbm_header(ctx, out, pix->w, totalheight);
 				else if (output_format == OUT_PKM)
@@ -889,11 +890,11 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				if (output)
 				{
 					if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
-						fz_write_pnm_band(ctx, out, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
+						fz_write_pnm_band(ctx, out, pix->w, totalheight, pix->n, pix->stride, band, drawheight, pix->samples);
 					else if (output_format == OUT_PAM)
-						fz_write_pam_band(ctx, out, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha);
+						fz_write_pam_band(ctx, out, pix->w, totalheight, pix->n, pix->stride, band, drawheight, pix->samples, savealpha);
 					else if (output_format == OUT_PNG)
-						fz_write_png_band(ctx, out, poc, pix->w, totalheight, pix->n, band, drawheight, pix->samples, savealpha);
+						fz_write_png_band(ctx, out, poc, pix->stride, band, drawheight, pix->samples);
 					else if (output_format == OUT_PWG)
 						fz_write_pixmap_as_pwg(ctx, out, pix, NULL);
 					else if (output_format == OUT_PCL)
@@ -905,10 +906,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 							fz_drop_bitmap(ctx, bit);
 						}
 						else
-							fz_write_color_pcl_band(ctx, out, pccoc, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
+							fz_write_color_pcl_band(ctx, out, pccoc, pix->w, totalheight, pix->n, pix->stride, band, drawheight, pix->samples);
 					}
 					else if (output_format == OUT_PS)
-						fz_write_ps_band(ctx, out, psoc, pix->w, totalheight, pix->n, band, drawheight, pix->samples);
+						fz_write_ps_band(ctx, out, psoc, pix->w, totalheight, pix->n, pix->stride, band, drawheight, pix->samples);
 					else if (output_format == OUT_PBM) {
 						fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
 						fz_write_pbm_band(ctx, out, bit);
@@ -1537,20 +1538,24 @@ int mudraw_main(int argc, char **argv)
 		}
 	}
 
+	alpha = 1;
 	switch (out_cs)
 	{
 	case CS_MONO:
 	case CS_GRAY:
 	case CS_GRAY_ALPHA:
 		colorspace = fz_device_gray(ctx);
+		alpha = (out_cs == CS_GRAY_ALPHA);
 		break;
 	case CS_RGB:
 	case CS_RGB_ALPHA:
 		colorspace = fz_device_rgb(ctx);
+		alpha = (out_cs == CS_RGB_ALPHA);
 		break;
 	case CS_CMYK:
 	case CS_CMYK_ALPHA:
 		colorspace = fz_device_cmyk(ctx);
+		alpha = (out_cs == CS_CMYK_ALPHA);
 		break;
 	default:
 		fprintf(stderr, "Unknown colorspace!\n");

@@ -83,7 +83,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	unsigned char *p;
 	OPJ_CODEC_FORMAT format;
 	int a, n, w, h, depth, sgnd;
-	int x, y, k, v;
+	int x, y, k, v, stride;
 	stream_block sb;
 
 	if (size < 2)
@@ -204,7 +204,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 
 	fz_try(ctx)
 	{
-		img = fz_new_pixmap(ctx, colorspace, w, h);
+		img = fz_new_pixmap(ctx, colorspace, w, h, 1);
 	}
 	fz_catch(ctx)
 	{
@@ -213,6 +213,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	}
 
 	p = img->samples;
+	stride = img->stride - w * (n + 1);
 	for (y = 0; y < h; y++)
 	{
 		for (x = 0; x < w; x++)
@@ -231,6 +232,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 			if (!a)
 				*p++ = 255;
 		}
+		p += stride;
 	}
 
 	opj_image_destroy(jpx);
@@ -239,7 +241,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	{
 		if (n == 4)
 		{
-			fz_pixmap *tmp = fz_new_pixmap(ctx, fz_device_rgb(ctx), w, h);
+			fz_pixmap *tmp = fz_new_pixmap(ctx, fz_device_rgb(ctx), w, h, 1);
 			fz_convert_pixmap(ctx, tmp, img);
 			fz_drop_pixmap(ctx, img);
 			img = tmp;

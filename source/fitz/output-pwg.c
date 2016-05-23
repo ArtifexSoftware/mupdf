@@ -91,7 +91,7 @@ void
 fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
 {
 	unsigned char *sp;
-	int y, x, sn, dn, ss;
+	int y, x, sn, dn, ss, ss2;
 
 	if (!out || !pixmap)
 		return;
@@ -109,17 +109,18 @@ fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pi
 	/* Now output the actual bitmap, using a packbits like compression */
 	sp = pixmap->samples;
 	ss = pixmap->w * sn;
+	ss2 = pixmap->stride;
 	y = 0;
 	while (y < pixmap->h)
 	{
 		int yrep;
 
-		assert(sp == pixmap->samples + y * ss);
+		assert(sp == pixmap->samples + y * ss2);
 
 		/* Count the number of times this line is repeated */
 		for (yrep = 1; yrep < 256 && y+yrep < pixmap->h; yrep++)
 		{
-			if (memcmp(sp, sp + yrep * ss, ss) != 0)
+			if (memcmp(sp, sp + yrep * ss2, ss) != 0)
 				break;
 		}
 		fz_write_byte(ctx, out, yrep-1);
@@ -130,7 +131,7 @@ fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pi
 		{
 			int d;
 
-			assert(sp == pixmap->samples + y * ss + x * sn);
+			assert(sp == pixmap->samples + y * ss2 + x * sn);
 
 			/* How far do we have to look to find a repeated value? */
 			for (d = 1; d < 128 && x+d < pixmap->w; d++)
@@ -169,7 +170,7 @@ fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pi
 		}
 
 		/* Move to the next line */
-		sp += ss*(yrep-1);
+		sp += ss2*(yrep-1);
 		y += yrep;
 	}
 }

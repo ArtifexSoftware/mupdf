@@ -223,7 +223,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 	unsigned char *row[1], *sp, *dp;
 	fz_colorspace *colorspace;
 	unsigned int x;
-	int k;
+	int k, stride;
 	fz_pixmap *image = NULL;
 
 	fz_var(image);
@@ -266,7 +266,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "bad number of components in jpeg: %d", cinfo.num_components);
 
-		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height);
+		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height, 1);
 
 		if (extract_exif_resolution(cinfo.marker_list, &image->xres, &image->yres))
 			/* XPS prefers EXIF resolution to JFIF density */;
@@ -290,6 +290,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 
 		row[0] = fz_malloc(ctx, cinfo.output_components * cinfo.output_width);
 		dp = image->samples;
+		stride = image->stride - image->w * image->n;
 		while (cinfo.output_scanline < cinfo.output_height)
 		{
 			jpeg_read_scanlines(&cinfo, row, 1);
@@ -300,6 +301,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 					*dp++ = *sp++;
 				*dp++ = 255;
 			}
+			dp += stride;
 		}
 	}
 	fz_always(ctx)

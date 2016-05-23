@@ -836,11 +836,11 @@ static inline void
 blit_aa(fz_pixmap *dst, int x, int y, unsigned char *mp, int w, unsigned char *color)
 {
 	unsigned char *dp;
-	dp = dst->samples + (unsigned int)(( (y - dst->y) * dst->w + (x - dst->x) ) * dst->n);
+	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
 	if (color)
-		fz_paint_span_with_color(dp, mp, dst->n, w, color);
+		fz_paint_span_with_color(dp, mp, dst->n, w, color, dst->alpha);
 	else
-		fz_paint_span(dp, mp, 1, w, 255);
+		fz_paint_span(dp, dst->alpha, mp, 1, 0, w, 255);
 }
 
 static void
@@ -1031,15 +1031,16 @@ static inline void
 blit_sharp(int x0, int x1, int y, const fz_irect *clip, fz_pixmap *dst, unsigned char *color)
 {
 	unsigned char *dp;
+	int da = dst->alpha;
 	x0 = fz_clampi(x0, dst->x, dst->x + dst->w);
 	x1 = fz_clampi(x1, dst->x, dst->x + dst->w);
 	if (x0 < x1)
 	{
-		dp = dst->samples + (unsigned int)(( (y - dst->y) * dst->w + (x0 - dst->x) ) * dst->n);
+		dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x0 - dst->x) * dst->n);
 		if (color)
-			fz_paint_solid_color(dp, dst->n, x1 - x0, color);
+			fz_paint_solid_color(dp, dst->n, x1 - x0, color, da);
 		else
-			fz_paint_solid_alpha(dp, x1 - x0, 255);
+			memset(dp, 255, x1-x0);
 	}
 }
 

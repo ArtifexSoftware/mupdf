@@ -849,7 +849,7 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, int len, int subimage
 				fz_swap_tiff_byte_order(tiff.samples, tiff.imagewidth * tiff.imagelength * tiff.samplesperpixel);
 
 		/* Expand into fz_pixmap struct */
-		image = fz_new_pixmap(ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength);
+		image = fz_new_pixmap(ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength, 1);
 		image->xres = tiff.xresolution;
 		image->yres = tiff.yresolution;
 
@@ -861,7 +861,7 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, int len, int subimage
 			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 			if (image->n == 5)
 			{
-				fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), image->w, image->h);
+				fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), image->w, image->h, 1);
 				fz_convert_pixmap(ctx, rgb, image);
 				rgb->xres = image->xres;
 				rgb->yres = image->yres;

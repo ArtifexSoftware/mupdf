@@ -20,7 +20,7 @@ fz_display_list *fz_new_display_list_from_page_number(fz_context *ctx, fz_docume
 */
 fz_pixmap *fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs);
 fz_pixmap *fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_matrix *ctm, fz_colorspace *cs);
-fz_pixmap *fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz_matrix *ctm, fz_colorspace *cs, int opaque);
+fz_pixmap *fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz_matrix *ctm, fz_colorspace *cs, int alpha);
 
 /*
 	fz_new_pixmap_from_page_contents: Render the page contents without annotations to an opaque pixmap.

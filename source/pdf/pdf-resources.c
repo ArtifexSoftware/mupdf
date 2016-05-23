@@ -27,10 +27,18 @@ res_image_get_md5(fz_context *ctx, fz_image *image, unsigned char *digest)
 {
 	fz_pixmap *pixmap;
 	fz_md5 state;
+	int h;
+	unsigned char *d;
 
 	pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
 	fz_md5_init(&state);
-	fz_md5_update(&state, pixmap->samples, pixmap->w * pixmap->h * pixmap->n);
+	d = pixmap->samples;
+	h = pixmap->h;
+	while (h--)
+	{
+		fz_md5_update(&state, d, pixmap->w * pixmap->n);
+		d += pixmap->stride;
+	}
 	fz_md5_final(&state, digest);
 	fz_drop_pixmap(ctx, pixmap);
 }

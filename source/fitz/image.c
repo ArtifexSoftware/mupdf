@@ -95,18 +95,25 @@ static void
 fz_mask_color_key(fz_pixmap *pix, int n, const int *colorkey)
 {
 	unsigned char *p = pix->samples;
-	int len = pix->w * pix->h;
+	int w;
 	int k, t;
-	while (len--)
+	int h = pix->h;
+	int stride = pix->stride - pix->w * pix->n;
+	while (h--)
 	{
-		t = 1;
-		for (k = 0; k < n; k++)
-			if (p[k] < colorkey[k * 2] || p[k] > colorkey[k * 2 + 1])
-				t = 0;
-		if (t)
-			for (k = 0; k < pix->n; k++)
-				p[k] = 0;
-		p += pix->n;
+		w = pix->w;
+		while (w--)
+		{
+			t = 1;
+			for (k = 0; k < n; k++)
+				if (p[k] < colorkey[k * 2] || p[k] > colorkey[k * 2 + 1])
+					t = 0;
+			if (t)
+				for (k = 0; k < pix->n; k++)
+					p[k] = 0;
+			p += pix->n;
+		}
+		p += stride;
 	}
 }
 
@@ -114,9 +121,13 @@ static void
 fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 {
 	fz_pixmap *mask = fz_get_pixmap_from_image(ctx, image->mask, NULL, NULL, NULL, NULL);
-	unsigned char *s = mask->samples, *end = s + mask->w * mask->h;
+	unsigned char *s = mask->samples;
 	unsigned char *d = tile->samples;
+	int n = tile->n;
 	int k;
+	int sstride = mask->stride - mask->w * mask->n;
+	int dstride = tile->stride - tile->w * tile->n;
+	int h = mask->h;
 
 	if (tile->w != mask->w || tile->h != mask->h)
 	{
@@ -125,14 +136,22 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 		return;
 	}
 
-	for (; s < end; s++, d += tile->n)
+	while (h--)
 	{
-		if (*s == 0)
-			for (k = 0; k < image->n; k++)
-				d[k] = image->colorkey[k];
-		else
-			for (k = 0; k < image->n; k++)
-				d[k] = fz_clampi(image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s, 0, 255);
+		int w = mask->w;
+		while (w--)
+		{
+			if (*s == 0)
+				for (k = 0; k < image->n; k++)
+					d[k] = image->colorkey[k];
+			else
+				for (k = 0; k < image->n; k++)
+					d[k] = fz_clampi(image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s, 0, 255);
+			s++;
+			d += n;
+		}
+		s += sstride;
+		d += dstride;
 	}
 
 	fz_drop_pixmap(ctx, mask);
@@ -179,7 +198,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 
 	fz_try(ctx)
 	{
-		tile = fz_new_pixmap(ctx, image->colorspace, w, h);
+		tile = fz_new_pixmap(ctx, image->colorspace, w, h, 1);
 		tile->interpolate = image->interpolate;
 
 		stride = (w * image->n * image->bpc + 7) / 8;
@@ -982,13 +1001,13 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 		int r = (subarea->x1 * w + image->super.w - 1) / image->super.w;
 		int b = (subarea->y1 * h + image->super.h - 1) / image->super.h;
 
-		pix = fz_new_pixmap(ctx, image->super.colorspace, r-l, b-t);
+		pix = fz_new_pixmap(ctx, image->super.colorspace, r-l, b-t, 0);
 		pix->x = l;
 		pix->y = t;
 	}
 	else
 	{
-		pix = fz_new_pixmap(ctx, image->super.colorspace, w, h);
+		pix = fz_new_pixmap(ctx, image->super.colorspace, w, h, 0);
 	}
 
 	/* If we render the displaylist into pix with the image matrix, we'll get a unit

@@ -9,7 +9,7 @@ static void paint_scan(fz_pixmap *restrict pix, int y, int fx0, int fx1, int cx0
 	int c[MAXN], dc[MAXN];
 	int k, w;
 	float div, mul;
-	int x0, x1;
+	int x0, x1, pa;
 
 	/* Ensure that fx0 is left edge, and fx1 is right */
 	if (fx0 > fx1)
@@ -41,7 +41,8 @@ static void paint_scan(fz_pixmap *restrict pix, int y, int fx0, int fx1, int cx0
 		c[k] = v0[k] + dc[k] * mul;
 	}
 
-	p = pix->samples + ((x0 - pix->x) + (y - pix->y) * pix->w) * pix->n;
+	p = pix->samples + ((x0 - pix->x) * pix->n) + ((y - pix->y) * pix->stride);
+	pa = pix->alpha;
 	while (w--)
 	{
 		for (k = 0; k < n; k++)
@@ -49,7 +50,8 @@ static void paint_scan(fz_pixmap *restrict pix, int y, int fx0, int fx1, int cx0
 			*p++ = c[k]>>16;
 			c[k] += dc[k];
 		}
-		*p++ = 255;
+		if (pa)
+			*p++ = 255;
 	}
 }
 
@@ -205,7 +207,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 	fz_pixmap *conv = NULL;
 	float color[FZ_MAX_COLORS];
 	struct paint_tri_data ptd = { 0 };
-	int i, k;
+	int i, k, n;
 	fz_matrix local_ctm;
 
 	fz_var(temp);
@@ -218,16 +220,19 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		if (shade->use_function)
 		{
 			fz_color_converter cc;
+			n = dest->colorspace ? dest->colorspace->n : 0;
 			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace);
 			for (i = 0; i < 256; i++)
 			{
 				cc.convert(ctx, &cc, color, shade->function[i]);
-				for (k = 0; k < dest->colorspace->n; k++)
+				for (k = 0; k < n; k++)
 					clut[i][k] = color[k] * 255;
 				clut[i][k] = shade->function[i][shade->colorspace->n] * 255;
 			}
-			conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox);
-			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox);
+			/* We need to use alpha = 1 here, because the shade might not fill
+			 * the bbox. */
+			conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, 1);
+			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, 1);
 			fz_clear_pixmap(ctx, temp);
 		}
 		else
@@ -246,14 +251,25 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		{
 			unsigned char *s = temp->samples;
 			unsigned char *d = conv->samples;
-			int len = temp->w * temp->h;
-			while (len--)
+			int da = conv->alpha;
+			int sa = temp->alpha;
+			int hh = temp->h;
+			while (hh--)
 			{
-				int v = *s++;
-				int a = fz_mul255(*s++, clut[v][conv->n - 1]);
-				for (k = 0; k < conv->n - 1; k++)
-					*d++ = fz_mul255(clut[v][k], a);
-				*d++ = a;
+				int len = temp->w;
+				while (len--)
+				{
+					int v = *s++;
+					int a = (da ? clut[v][conv->n - 1] : 255);
+					if (sa)
+						a = fz_mul255(*s++, a);
+					for (k = 0; k < conv->n - da; k++)
+						*d++ = fz_mul255(clut[v][k], a);
+					if (da)
+						*d++ = a;
+				}
+				d += conv->stride - conv->w * conv->n;
+				s += temp->stride - temp->w * temp->n;
 			}
 			fz_paint_pixmap(dest, conv, 255);
 			fz_drop_pixmap(ctx, conv);

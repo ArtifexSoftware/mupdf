@@ -500,10 +500,12 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned in
 static fz_pixmap *
 png_expand_palette(fz_context *ctx, struct info *info, fz_pixmap *src)
 {
-	fz_pixmap *dst = fz_new_pixmap(ctx, fz_device_rgb(ctx), src->w, src->h);
+	fz_pixmap *dst = fz_new_pixmap(ctx, fz_device_rgb(ctx), src->w, src->h, 1);
 	unsigned char *sp = src->samples;
 	unsigned char *dp = dst->samples;
 	unsigned int x, y;
+	int dstride = dst->stride - dst->w * dst->n;
+	int sstride = src->stride - src->w * src->n;
 
 	dst->xres = src->xres;
 	dst->yres = src->yres;
@@ -519,6 +521,8 @@ png_expand_palette(fz_context *ctx, struct info *info, fz_pixmap *src)
 			*dp++ = info->palette[v + 3];
 			sp += 2;
 		}
+		sp += sstride;
+		dp += dstride;
 	}
 
 	fz_drop_pixmap(ctx, src);
@@ -536,7 +540,7 @@ png_mask_transparency(struct info *info, fz_pixmap *dst)
 	for (y = 0; y < info->height; y++)
 	{
 		unsigned char *sp = info->samples + (unsigned int)(y * stride);
-		unsigned char *dp = dst->samples + (unsigned int)(y * dst->w * dst->n);
+		unsigned char *dp = dst->samples + (unsigned int)(y * dst->stride);
 		for (x = 0; x < info->width; x++)
 		{
 			t = 1;
@@ -568,7 +572,7 @@ fz_load_png(fz_context *ctx, unsigned char *p, int total)
 
 	fz_try(ctx)
 	{
-		image = fz_new_pixmap(ctx, colorspace, png.width, png.height);
+		image = fz_new_pixmap(ctx, colorspace, png.width, png.height, 1);
 	}
 	fz_catch(ctx)
 	{

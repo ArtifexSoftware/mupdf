@@ -128,7 +128,7 @@ void fz_write_pixmap_as_ps(fz_context *ctx, fz_output *out, const fz_pixmap *pix
 
 	fz_try(ctx)
 	{
-		fz_write_ps_band(ctx, out, psoc, pixmap->w, pixmap->h, pixmap->n, 0, 0, pixmap->samples);
+		fz_write_ps_band(ctx, out, psoc, pixmap->w, pixmap->h, pixmap->n, pixmap->stride, 0, 0, pixmap->samples);
 	}
 	fz_always(ctx)
 	{
@@ -153,7 +153,7 @@ void fz_save_pixmap_as_ps(fz_context *ctx, fz_pixmap *pixmap, char *filename, in
 		fz_rethrow(ctx);
 }
 
-void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int band, int bandheight, unsigned char *samples)
+void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int stride, int band, int bandheight, unsigned char *samples)
 {
 	int x, y, i, err;
 	int required_input;
@@ -185,12 +185,15 @@ void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *pso
 
 	o = psoc->input;
 	for (y = 0; y < bandheight; y++)
+	{
 		for (x = 0; x < w; x++)
 		{
 			for (i = n-1; i > 0; i--)
 				*o++ = *samples++;
 			samples++;
 		}
+		samples += stride - w*n;
+	}
 
 	psoc->stream.next_in = (Bytef*)psoc->input;
 	psoc->stream.avail_in = required_input;

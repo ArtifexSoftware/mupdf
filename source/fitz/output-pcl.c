@@ -687,7 +687,7 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 
 	pcoc = fz_write_color_pcl_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->xres, pixmap->yres, 0, pcl);
 	fz_try(ctx)
-		fz_write_color_pcl_band(ctx, out, pcoc, pixmap->w, pixmap->h, pixmap->n, 0, 0, pixmap->samples);
+		fz_write_color_pcl_band(ctx, out, pcoc, pixmap->w, pixmap->h, pixmap->n, pixmap->stride, 0, 0, pixmap->samples);
 	fz_always(ctx)
 		fz_write_color_pcl_trailer(ctx, out, pcoc);
 	fz_catch(ctx)
@@ -777,7 +777,7 @@ fz_color_pcl_output_context *fz_write_color_pcl_header(fz_context *ctx, fz_outpu
 	return pcoc;
 }
 
-void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_output_context *pcoc, int w, int h, int n, int band, int bandheight, unsigned char *sp)
+void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_output_context *pcoc, int w, int h, int n, int stride, int band, int bandheight, unsigned char *sp)
 {
 	int y, ss, ds, seed_valid, fill;
 	unsigned char *prev;
@@ -839,14 +839,14 @@ void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_outpu
 		if (seed_valid && fill + 5 <= 32767 && memcmp(curr, prev, ds) == 0)
 		{
 			int count = 1;
-			sp += ss;
+			sp += stride;
 			y++;
 			while (count < 32767 && y < h)
 			{
-				if (memcmp(sp-ss, sp, ss) != 0)
+				if (memcmp(sp-stride, sp, ss) != 0)
 					break;
 				count++;
-				sp += ss;
+				sp += stride;
 				y++;
 			}
 			comp[fill++] = 5; /* Duplicate row */
@@ -900,7 +900,7 @@ void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_outpu
 
 			/* curr becomes prev */
 			tmp = prev; prev = curr; curr = tmp;
-			sp += ss;
+			sp += stride;
 			y++;
 		}
 	}

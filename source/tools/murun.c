@@ -1748,10 +1748,11 @@ static void ffi_new_Pixmap(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_colorspace *colorspace = js_touserdata(J, 1, "fz_colorspace");
 	fz_irect bounds = ffi_toirect(J, 2);
+	int alpha = js_toboolean(J, 3);
 	fz_pixmap *pixmap;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, &bounds);
+		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, &bounds, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2260,11 +2261,11 @@ static void ffi_DisplayList_toPixmap(js_State *J)
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
 	fz_matrix ctm = ffi_tomatrix(J, 1);
 	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
-	int solid = js_isdefined(J, 3) ? js_toboolean(J, 3) : 1;
+	int alpha = js_isdefined(J, 3) ? js_toboolean(J, 3) : 0;
 	fz_pixmap *pixmap;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_display_list(ctx, list, &ctm, colorspace, solid);
+		pixmap = fz_new_pixmap_from_display_list(ctx, list, &ctm, colorspace, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -3301,7 +3302,7 @@ int murun_main(int argc, char **argv)
 
 		jsB_propcon(J, "fz_buffer", "Buffer", ffi_new_Buffer, 1);
 		jsB_propcon(J, "fz_document", "Document", ffi_new_Document, 1);
-		jsB_propcon(J, "fz_pixmap", "Pixmap", ffi_new_Pixmap, 2);
+		jsB_propcon(J, "fz_pixmap", "Pixmap", ffi_new_Pixmap, 3);
 		jsB_propcon(J, "fz_image", "Image", ffi_new_Image, 1);
 		jsB_propcon(J, "fz_font", "Font", ffi_new_Font, 2);
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);
