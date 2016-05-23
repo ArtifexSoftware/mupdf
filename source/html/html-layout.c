@@ -735,8 +735,8 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, float max_h)
 {
 	float xs = 1, ys = 1, s = 1;
-	float image_w = node->content.image->w * 72 / node->content.image->xres;
-	float image_h = node->content.image->h * 72 / node->content.image->yres;
+	float image_w = node->content.image->w * 72.0f / node->content.image->xres;
+	float image_h = node->content.image->h * 72.0f / node->content.image->yres;
 	node->x = 0;
 	node->y = 0;
 	if (image_w > max_w)
