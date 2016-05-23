@@ -201,11 +201,11 @@ fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix)
 */
 #ifdef ARCH_ARM
 static void
-clear_cmyk_bitmap(unsigned char *samples, int c, int value)
+clear_cmyka_bitmap_ARM(uint32_t *samples, int c, int value)
 __attribute__((naked));
 
 static void
-clear_cmyk_bitmap(unsigned char *samples, int c, int value)
+clear_cmyka_bitmap_ARM(uint32_t *samples, int c, int value)
 {
 	asm volatile(
 	ENTER_ARM
@@ -251,7 +251,8 @@ clear_cmyk_bitmap(unsigned char *samples, int c, int value)
 	ENTER_THUMB
 	);
 }
-#else
+#endif
+
 static void
 clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, int alpha)
 {
@@ -264,6 +265,10 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 		stride -= w*5;
 		if (stride == 0)
 		{
+#ifdef ARCH_ARM
+			clear_cmyka_bitmap_ARM(s, c, alpha);
+			return;
+#else
 			/* We can do it all fast (except for maybe a few stragglers) */
 			union
 			{
@@ -306,6 +311,7 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 				}
 			}
 			c += 3;
+#endif
 		}
 		t = (unsigned char *)s;
 		w = c;
@@ -327,27 +333,45 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 	else
 	{
 		stride -= w*4;
-		if ((stride & 3)== 0)
+		if ((stride & 3) == 0)
 		{
-			/* We can do it all fast */
-			union
+			if (stride == 0)
 			{
-				uint8_t bytes[4];
-				uint32_t word;
-			} d;
-
-			d.word = 0;
-			d.bytes[3] = value;
-			w *= h;
-
+				w *= h;
+				h = 1;
+			}
+			w *= 4;
+			if (value == 0)
 			{
-				const uint32_t a0 = d.word;
-				while (w > 0)
+				while (h--)
 				{
-					*s++ = a0;
-					w--;
+					memset(s, 0, w);
+					s += (stride>>2);
 				}
-				s += (stride>>2);
+			}
+			else
+			{
+				/* We can do it all fast */
+				union
+				{
+					uint8_t bytes[4];
+					uint32_t word;
+				} d;
+
+				d.word = 0;
+				d.bytes[3] = value;
+				{
+					const uint32_t a0 = d.word;
+					while (h--)
+					{
+						int ww = w;
+						while (ww--)
+						{
+							*s++ = a0;
+						}
+						s += (stride>>2);
+					}
+				}
 			}
 		}
 		else
@@ -369,7 +393,6 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 		}
 	}
 }
-#endif
 
 void
 fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
