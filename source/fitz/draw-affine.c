@@ -17,9 +17,9 @@ static inline byte *sample_nearest(byte *s, int w, int h, int n, int u, int v)
 {
 	if (u < 0) u = 0;
 	if (v < 0) v = 0;
-	if (u >= w) u = w - 1;
-	if (v >= h) v = h - 1;
-	return s + (v * w + u) * n;
+	if (u >= (w>>16)) u = (w>>16) - 1;
+	if (v >= (h>>16)) v = (h>>16) - 1;
+	return s + (v * (w>>16) + u) * n;
 }
 
 /* Blend premultiplied source image in constant alpha over destination */
@@ -32,10 +32,10 @@ fz_paint_affine_alpha_N_lerp(byte *dp, byte *sp, int sw, int sh, int u, int v, i
 
 	while (w--)
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
-		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
+		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
+			int ui = u >> 16;
+			int vi = v >> 16;
 			int uf = u & 0xffff;
 			int vf = v & 0xffff;
 			byte *a = sample_nearest(sp, sw, sh, n, ui, vi);
@@ -69,10 +69,10 @@ fz_paint_affine_alpha_g2rgb_lerp(byte *dp, byte *sp, int sw, int sh, int u, int 
 {
 	while (w--)
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
-		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
+		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
+			int ui = u >> 16;
+			int vi = v >> 16;
 			int uf = u & 0xffff;
 			int vf = v & 0xffff;
 			byte *a = sample_nearest(sp, sw, sh, 2, ui, vi);
@@ -283,10 +283,10 @@ fz_paint_affine_N_lerp(byte *dp, byte *sp, int sw, int sh, int u, int v, int fa,
 
 	while (w--)
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
-		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
+		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
+			int ui = u >> 16;
+			int vi = v >> 16;
 			int uf = u & 0xffff;
 			int vf = v & 0xffff;
 			byte *a = sample_nearest(sp, sw, sh, n, ui, vi);
@@ -317,10 +317,10 @@ fz_paint_affine_solid_g2rgb_lerp(byte *dp, byte *sp, int sw, int sh, int u, int 
 {
 	while (w--)
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
-		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
+		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
+			int ui = u >> 16;
+			int vi = v >> 16;
 			int uf = u & 0xffff;
 			int vf = v & 0xffff;
 			byte *a = sample_nearest(sp, sw, sh, 2, ui, vi);
@@ -640,10 +640,10 @@ fz_paint_affine_color_N_lerp(byte *dp, byte *sp, int sw, int sh, int u, int v, i
 
 	while (w--)
 	{
-		int ui = u >> 16;
-		int vi = v >> 16;
-		if (ui >= 0 && ui < sw && vi >= 0 && vi < sh)
+		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
+			int ui = u >> 16;
+			int vi = v >> 16;
 			int uf = u & 0xffff;
 			int vf = v & 0xffff;
 			byte *a = sample_nearest(sp, sw, sh, 1, ui, vi);
@@ -1062,15 +1062,6 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 	u = (int)((local_ctm.a * x) + (local_ctm.c * y) + local_ctm.e + ((local_ctm.a + local_ctm.c) * .5f));
 	v = (int)((local_ctm.b * x) + (local_ctm.d * y) + local_ctm.f + ((local_ctm.b + local_ctm.d) * .5f));
 
-	/* If we are not linearly interpolating, then we use 'nearest'. We round u and v downwards
-	 * each time, which isn't really "nearest". Bias them by a rounding constant now to adjust
-	 * for this. */
-	if (!dolerp)
-	{
-		u += 32768;
-		v += 32768;
-	}
-
 	dp = dst->samples + (unsigned int)(((y - dst->y) * dst->w + (x - dst->x)) * dst->n);
 	n = dst->n;
 	sp = img->samples;
@@ -1113,6 +1104,14 @@ fz_paint_image_imp(fz_pixmap *dst, const fz_irect *scissor, fz_pixmap *shape, fz
 			else
 				paintfn = fz_paint_affine_near;
 		}
+	}
+
+	if (dolerp)
+	{
+		u -= 32768;
+		v -= 32768;
+		sw = (sw<<16) + 32768;
+		sh = (sh<<16) + 32768;
 	}
 
 	while (h--)
