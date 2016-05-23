@@ -1138,11 +1138,11 @@ pdf_set_color(fz_context *ctx, pdf_run_processor *pr, int what, float *v)
 	case PDF_MAT_COLOR:
 		if (fz_colorspace_is_indexed(ctx, mat->colorspace))
 		{
-			mat->v[0] = v[0] / 255;
+			mat->v[0] = fz_clamp(v[0], 0, 1) / 255;
 			break;
 		}
 		for (i = 0; i < mat->colorspace->n; i++)
-			mat->v[i] = v[i];
+			mat->v[i] = fz_clamp(v[i], 0, 1);
 		break;
 	default:
 		fz_warn(ctx, "color incompatible with material");
