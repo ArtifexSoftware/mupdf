@@ -541,6 +541,7 @@ fz_closepath(fz_context *ctx, fz_path *path)
 	case FZ_QUADTOCLOSE:
 		/* CLOSE following a CLOSE is a NOP */
 		return;
+	default: /* default never happens */
 	case 0:
 		/* Closing an empty path is a NOP */
 		return;
