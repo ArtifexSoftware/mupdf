@@ -1227,7 +1227,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 		{
 			fz_irect bbox;
 			fz_pixmap_bbox(ctx, pixmap, &bbox);
-			converted = fz_new_pixmap_with_bbox(ctx, model, &bbox, pixmap->alpha);
+			converted = fz_new_pixmap_with_bbox(ctx, model, &bbox, (model ? pixmap->alpha : 1));
 			fz_convert_pixmap(ctx, converted, pixmap);
 			pixmap = converted;
 		}

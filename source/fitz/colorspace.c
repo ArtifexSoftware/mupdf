@@ -1633,9 +1633,12 @@ fz_convert_pixmap(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp)
 	fz_colorspace *ss = sp->colorspace;
 	fz_colorspace *ds = dp->colorspace;
 
-	if (ds == NULL && sp->alpha)
+	if (ds == NULL)
 	{
-		fast_copy_alpha(dp, sp);
+		if (sp->alpha)
+			fast_copy_alpha(dp, sp);
+		else
+			fz_clear_pixmap_with_value(ctx, dp, 255);
 		return;
 	}
 

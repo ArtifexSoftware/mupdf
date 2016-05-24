@@ -1365,7 +1365,7 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 	/* Sometimes we can get an alpha only input to be
 	 * ploted. In this case treat it as a greyscale
 	 * input. */
-	if (img->n == sa && n > 0)
+	if (img->n == sa && color)
 		sa = 0;
 
 	if (n == 3 && img->n == 1 + sa && !color)
