@@ -69,7 +69,7 @@ pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	fz_try(ctx)
 	{
 		buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
-		globals = fz_load_jbig2_globals(ctx, buf->data, buf->len);
+		globals = fz_load_jbig2_globals(ctx, buf);
 		pdf_store_item(ctx, dict, globals, buf->len);
 	}
 	fz_always(ctx)

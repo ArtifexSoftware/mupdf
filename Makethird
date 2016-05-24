@@ -13,6 +13,7 @@ JPEG_DIR := thirdparty/jpeg
 MUJS_DIR := thirdparty/mujs
 OPENJPEG_DIR := thirdparty/openjpeg/src/lib/openjp2
 ZLIB_DIR := thirdparty/zlib
+LURATECH_DIR := thirdparty/luratech
 
 CURL_DIR := thirdparty/curl
 GLFW_DIR := thirdparty/glfw
@@ -172,6 +173,110 @@ HARFBUZZ_CFLAGS := $(SYS_HARFBUZZ_CFLAGS)
 HARFBUZZ_LIBS := $(SYS_HARFBUZZ_LIBS)
 endif
 
+# --- LURATECH ---
+
+ifneq "$(wildcard $(LURATECH_DIR)/ldf_jb2)" ""
+
+LURATECH_OUT := $(OUT)/luratech
+LURATECH_SRC := \
+	jb2_adt_cache.c \
+	jb2_adt_decoder_halftone_region.c \
+	jb2_adt_encoder_text_region.c \
+	jb2_adt_huffman_tree.c \
+	jb2_adt_symbol_instance.c \
+	jb2_adt_context_ref_encoder.c \
+	jb2_adt_context_ref_buffer.c \
+	jb2_adt_context_ref_encoder.c \
+	jb2_adt_mq_encoder.c \
+	jb2_adt_decoder_text_region.c \
+	jb2_adt_huffman_table_user_defined.c \
+	jb2_adt_mmr_tables.c \
+	jb2_adt_huffman_table_symbol.c \
+	jb2_adt_component.c \
+	jb2_adt_context_buffer.c \
+	jb2_adt_context_decoder.c \
+	jb2_adt_context_encoder.c \
+	jb2_adt_context_ref_decoder.c \
+	jb2_adt_decoder_collective_bitmap.c \
+	jb2_adt_decoder_generic_region.c \
+	jb2_adt_decoder_pattern_dict.c \
+	jb2_adt_decoder_symbol_dict.c \
+	jb2_adt_encoder_symbol_dict.c \
+	jb2_adt_external_cache.c \
+	jb2_adt_file.c \
+	jb2_adt_file_extras.c \
+	jb2_adt_handle_document.c \
+	jb2_adt_huffman_decoder.c \
+	jb2_adt_huffman_encoder.c \
+	jb2_adt_huffman_table.c \
+	jb2_adt_huffman_table_standard.c \
+	jb2_adt_location.c \
+	jb2_adt_memory.c \
+	jb2_adt_message.c \
+	jb2_adt_mmr_decoder.c \
+	jb2_adt_mq_decoder.c \
+	jb2_adt_mq_encoder.c \
+	jb2_adt_mq_state.c \
+	jb2_adt_pattern_dict.c \
+	jb2_adt_pdf_file.c \
+	jb2_adt_pdf_stream.c \
+	jb2_adt_props_decompress.c \
+	jb2_adt_read_bit_buffer.c \
+	jb2_adt_read_data.c \
+	jb2_adt_render_common.c \
+	jb2_adt_render_generic_region.c \
+	jb2_adt_render_halftone_region.c \
+	jb2_adt_render_text_region.c \
+	jb2_adt_run_array.c \
+	jb2_adt_segment_array.c \
+	jb2_adt_segment.c \
+	jb2_adt_segment_end_of_stripe.c \
+	jb2_adt_segment_generic_region.c \
+	jb2_adt_segment_halftone_region.c \
+	jb2_adt_segment_page_info.c \
+	jb2_adt_segment_pattern_dict.c \
+	jb2_adt_segment_region.c \
+	jb2_adt_segment_symbol_dict.c \
+	jb2_adt_segment_table.c \
+	jb2_adt_segment_text_region.c \
+	jb2_adt_segment_types.c \
+	jb2_adt_stack.c \
+	jb2_adt_symbol.c \
+	jb2_adt_symbol_dict.c \
+	jb2_adt_symbol_unify.c \
+	jb2_adt_write_bits.c \
+	jb2_adt_write_data.c \
+	jb2_adt_write_pdf.c \
+	jb2_common.c \
+	jb2_license_dummy.c
+
+LURATECH_OBJ := $(addprefix $(LURATECH_OUT)/, $(LURATECH_SRC:%.c=%.o))
+
+$(LURATECH_OUT):
+	$(MKDIR_CMD)
+$(LURATECH_OUT)/%.o: $(LURATECH_DIR)/ldf_jb2/source/common/%.c | $(LURATECH_OUT)
+	$(CC_CMD) \
+		-I$(LURATECH_DIR)/ldf_jb2/source/libraries \
+		-I$(LURATECH_DIR)/ldf_jb2/source/compress \
+		-I$(LURATECH_DIR)/ldf_jb2/source/common \
+		-DLINUX
+$(LURATECH_OUT)/%.o: $(LURATECH_DIR)/ldf_jb2/source/compress/%.c | $(LURATECH_OUT)
+	$(CC_CMD) \
+		-I$(LURATECH_DIR)/ldf_jb2/source/libraries \
+		-I$(LURATECH_DIR)/ldf_jb2/source/compress \
+		-I$(LURATECH_DIR)/ldf_jb2/source/common \
+		-DLINUX
+$(LURATECH_OUT)/%.o: $(LURATECH_DIR)/lwf_jp2/%.c | $(LURATECH_OUT)
+	$(CC_CMD) \
+		-I$(LURATECH_DIR)/ldf_jb2/source/libraries \
+		-I$(LURATECH_DIR)/ldf_jb2/source/compress \
+		-I$(LURATECH_DIR)/ldf_jb2/source/common \
+		-DLINUX
+
+LURATECH_CFLAGS := -I$(LURATECH_DIR)/ldf_jb2/source/libraries -DHAVE_LURATECH
+
+else # --- LURATECH ---
+
 # --- JBIG2DEC ---
 
 ifneq "$(wildcard $(JBIG2DEC_DIR)/README)" ""
@@ -192,7 +297,7 @@ JBIG2DEC_SRC := \
 	jbig2_refinement.c \
 	jbig2_segment.c \
 	jbig2_symbol_dict.c \
-	jbig2_text.c \
+	jbig2_text.c
 
 JBIG2DEC_OBJ := $(addprefix $(JBIG2DEC_OUT)/, $(JBIG2DEC_SRC:%.c=%.o))
 
@@ -206,6 +311,8 @@ else
 JBIG2DEC_CFLAGS := $(SYS_JBIG2DEC_CFLAGS)
 JBIG2DEC_LIBS := $(SYS_JBIG2DEC_LIBS)
 endif
+
+endif # --- LURATECH ---
 
 # --- JPEG library from IJG ---
 

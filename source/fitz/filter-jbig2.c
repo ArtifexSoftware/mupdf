@@ -1,5 +1,252 @@
 #include "mupdf/fitz.h"
 
+#ifdef HAVE_LURATECH
+
+#include <ldf_jb2.h>
+
+typedef struct fz_jbig2d_s fz_jbig2d;
+
+struct fz_jbig2_globals_s
+{
+	fz_storable storable;
+	fz_buffer *buf;
+};
+
+struct fz_jbig2d_s
+{
+	fz_stream *chain;
+	fz_context *ctx;
+	fz_jbig2_globals *gctx;
+	JB2_Handle_Document doc;
+	ulong width;
+	ulong height;
+	int stride;
+	fz_buffer *input;
+	unsigned char *output;
+	int idx;
+};
+
+static void
+fz_drop_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
+{
+	fz_drop_storable(ctx, &globals->storable);
+}
+
+static void
+close_jbig2d(fz_context *ctx, void *state_)
+{
+	fz_jbig2d *state = state_;
+	fz_free(ctx, state->output);
+	if (state->gctx)
+		fz_drop_jbig2_globals(ctx, state->gctx);
+	fz_drop_stream(ctx, state->chain);
+	fz_free(ctx, state);
+}
+
+static void * JB2_Callback
+jbig2_alloc(unsigned long size, void *userdata)
+{
+	fz_jbig2d *state = userdata;
+	return fz_malloc(state->ctx, size);
+}
+
+static JB2_Error JB2_Callback
+jbig2_free(void *ptr, void *userdata)
+{
+	fz_jbig2d *state = userdata;
+	fz_free(state->ctx, ptr);
+	return cJB2_Error_OK;
+}
+
+static void JB2_Callback
+jbig2_message(const char *msg, JB2_Message_Level level, void *userdata)
+{
+	fz_jbig2d *state = userdata;
+
+	if (msg != NULL && msg[0] != '\0')
+		switch (level)
+		{
+		case cJB2_Message_Information:
+#ifndef NDEBUG
+			fz_warn(state->ctx, "luratech jbig2 info: %s", msg);
+#endif
+			break;
+		case cJB2_Message_Warning:
+			fz_warn(state->ctx, "luratech jbig2 warning: %s", msg);
+			break;
+		case cJB2_Message_Error:
+			fz_warn(state->ctx, "luratech jbig2 error: %s", msg);
+			break;
+		default:
+			fz_warn(state->ctx, "luratech jbig2 message: %s", msg);
+			break;
+		}
+}
+
+
+static JB2_Size_T JB2_Callback
+jbig2_read(unsigned char *buf, JB2_Size_T offset, JB2_Size_T size, void *userdata)
+{
+	fz_jbig2d *state = userdata;
+	int available;
+
+	/* globals data */
+	if (state->gctx && offset < state->gctx->buf->len)
+	{
+		available = fz_mini(state->gctx->buf->len - offset, size);
+		memcpy(buf, state->gctx->buf->data + offset, available);
+		return available;
+	}
+
+	/* image data */
+	if (state->gctx)
+		offset -= state->gctx->buf->len;
+	if (state->input->len <= offset)
+		return 0;
+	available = fz_mini(state->input->len - offset, size);
+	memcpy(buf, state->input->data + offset, available);
+	return available;
+}
+
+static JB2_Error JB2_Callback
+jbig2_write(unsigned char *buf, unsigned long row, unsigned long width, unsigned long bpp, void *userdata)
+{
+	fz_jbig2d *state = userdata;
+	int stride = (width + 7) >> 3;
+	unsigned char *dp = state->output + row * stride;
+
+	if (row >= state->height)
+	{
+		fz_warn(state->ctx, "row %lu outside of image", row);
+		return cJB2_Error_OK;
+	}
+
+	while (stride--)
+		*(dp++) = *(buf++) ^ 0xff;
+
+	return cJB2_Error_OK;
+}
+
+static int
+next_jbig2d(fz_context *ctx, fz_stream *stm, int len)
+{
+	fz_jbig2d *state = stm->state;
+	JB2_Error err;
+	JB2_Scaling_Factor scale = {1, 1};
+	JB2_Rect rect = {0, 0, 0, 0};
+
+	if (!state->output)
+	{
+		fz_try(ctx)
+		{
+			state->input = fz_read_all(state->ctx, state->chain, 0);
+
+			err = JB2_Document_Start(&state->doc,
+					jbig2_alloc, state,
+					jbig2_free, state,
+					jbig2_read, state,
+					jbig2_message, state);
+			if (err != cJB2_Error_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open image: %d", (int) err);
+
+#if defined(JB2_LICENSE_NUM_1) && defined(JB2_LICENSE_NUM_2)
+			err = JB2_Document_Set_License(doc, JB2_LICENSE_NUM_1, JB2_LICENSE_NUM_2);
+			if (err != cJB2_Error_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot set license: %d", (int) err);
+#endif
+
+			err = JB2_Document_Set_Page(state->doc, 0);
+			if (err != cJB2_Error_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot select page: %d", (int) err);
+
+			err = JB2_Document_Get_Property(state->doc, cJB2_Prop_Page_Width, &state->width);
+			if (err != cJB2_Error_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get page width: %d", (int) err);
+			err = JB2_Document_Get_Property(state->doc, cJB2_Prop_Page_Height, &state->height);
+			if (err != cJB2_Error_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get page height: %d", (int) err);
+
+			state->stride = (state->width + 7) >> 3;
+			stm->pos = state->stride * state->height;
+			state->output = fz_malloc(state->ctx, stm->pos);
+			stm->rp = state->output;
+			stm->wp = state->output;
+
+			err = JB2_Document_Decompress_Page(state->doc, scale, rect, jbig2_write, state);
+			if (err != cJB2_Error_OK)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot decode image: %d", (int) err);
+
+			/* update wp last. rp == wp upon errors above, causing
+			subsequent EOFs in comparison below */
+			stm->wp += stm->pos;
+		}
+		fz_always(ctx)
+		{
+			fz_drop_buffer(ctx, state->input);
+			JB2_Document_End(&state->doc);
+		}
+		fz_catch(ctx)
+		{
+			fz_rethrow(ctx);
+		}
+	}
+
+	if (stm->rp == stm->wp)
+		return EOF;
+	return *stm->rp++;
+}
+
+fz_jbig2_globals *
+fz_load_jbig2_globals(fz_context *ctx, fz_buffer *buf)
+{
+	fz_jbig2_globals *globals = fz_malloc_struct(ctx, fz_jbig2_globals);
+
+	FZ_INIT_STORABLE(globals, 1, fz_drop_jbig2_globals_imp);
+	globals->buf = fz_keep_buffer(ctx, buf);
+
+	return globals;
+}
+
+void
+fz_drop_jbig2_globals_imp(fz_context *ctx, fz_storable *globals_)
+{
+	fz_jbig2_globals *globals = (fz_jbig2_globals *)globals_;
+	fz_drop_buffer(ctx, globals->buf);
+	fz_free(ctx, globals);
+}
+
+fz_stream *
+fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals)
+{
+	fz_jbig2d *state = NULL;
+
+	fz_var(state);
+
+	fz_try(ctx)
+	{
+		state = fz_malloc_struct(ctx, fz_jbig2d);
+		state->ctx = ctx;
+		state->gctx = globals;
+		state->chain = chain;
+		state->idx = 0;
+		state->output = NULL;
+		state->doc = NULL;
+		fz_warn(ctx, "opening jbig2");
+	}
+	fz_catch(ctx)
+	{
+		if (state)
+			fz_drop_jbig2_globals(ctx, state->gctx);
+		fz_free(ctx, state);
+		fz_drop_stream(ctx, chain);
+		fz_rethrow(ctx);
+	}
+
+	return fz_new_stream(ctx, state, next_jbig2d, close_jbig2d);
+}
+
+#else /* HAVE_LURATECH */
+
 #include <jbig2.h>
 
 typedef struct fz_jbig2d_s fz_jbig2d;
@@ -29,7 +276,7 @@ fz_drop_jbig2_globals(fz_context *ctx, fz_jbig2_globals *globals)
 static void
 close_jbig2d(fz_context *ctx, void *state_)
 {
-	fz_jbig2d *state = (fz_jbig2d *)state_;
+	fz_jbig2d *state = state_;
 	if (state->page)
 		jbig2_release_page(state->ctx, state->page);
 	if (state->gctx)
@@ -98,12 +345,12 @@ error_callback(void *data, const char *msg, Jbig2Severity severity, int32_t seg_
 }
 
 fz_jbig2_globals *
-fz_load_jbig2_globals(fz_context *ctx, unsigned char *data, int size)
+fz_load_jbig2_globals(fz_context *ctx, fz_buffer *buf)
 {
 	fz_jbig2_globals *globals = fz_malloc_struct(ctx, fz_jbig2_globals);
 
 	Jbig2Ctx *jctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL, error_callback, ctx);
-	jbig2_data_in(jctx, data, size);
+	jbig2_data_in(jctx, buf->data, buf->len);
 
 	FZ_INIT_STORABLE(globals, 1, fz_drop_jbig2_globals_imp);
 	globals->gctx = jbig2_make_global_ctx(jctx);
@@ -129,7 +376,6 @@ fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals)
 	fz_try(ctx)
 	{
 		state = fz_malloc_struct(ctx, fz_jbig2d);
-		state->ctx = NULL;
 		state->gctx = globals;
 		state->chain = chain;
 		state->ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, globals ? globals->gctx : NULL, error_callback, ctx);
@@ -151,3 +397,5 @@ fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *globals)
 
 	return fz_new_stream(ctx, state, next_jbig2d, close_jbig2d);
 }
+
+#endif /* HAVE_LURATECH */
