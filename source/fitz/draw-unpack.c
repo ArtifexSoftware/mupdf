@@ -222,7 +222,7 @@ fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode)
 	unsigned char *p = pix->samples;
 	int stride = pix->stride - pix->w * pix->n;
 	int len;
-	int n = fz_maxi(1, pix->n - 1);
+	int n = fz_maxi(1, pix->n - pix->alpha);
 	int needed;
 	int k;
 	int h;
