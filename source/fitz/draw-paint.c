@@ -617,7 +617,7 @@ fz_paint_span_with_mask_3(byte * restrict dp, int da, const byte * restrict sp, 
 			{
 				if (da && sa)
 				{
-					*(int*)dp = *(int *)sp;
+					*(int32_t *)dp = *(int32_t *)sp;
 					sp += 4; dp += 4;
 				}
 				else
@@ -1073,7 +1073,7 @@ fz_paint_span_3(byte * restrict dp, int da, const byte * restrict sp, int sa, in
 			if (t == 0)
 			{
 				if (da && sa)
-					*(int *)dp = *(const int *)sp;
+					*(int32_t *)dp = *(const int32_t *)sp;
 				else
 				{
 					dp[0] = sp[0];

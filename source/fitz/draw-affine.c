@@ -374,9 +374,9 @@ fz_paint_affine_N_near(byte * restrict dp, int da, const byte * restrict sp, int
 					int t = 255 - a;
 					if (t == 0)
 					{
-						if (n1+da == 4)
+						if (n1+da == 4 && n1+sa == 4)
 						{
-							*(int *)dp = *(int *)sample;
+							*(int32_t *)dp = *(int32_t *)sample;
 						}
 						else
 						{
@@ -424,9 +424,9 @@ fz_paint_affine_N_near(byte * restrict dp, int da, const byte * restrict sp, int
 					int t = 255 - a;
 					if (t == 0)
 					{
-						if (n1+da == 4)
+						if (n1+da == 4 && n1+sa == 4)
 						{
-							*(int *)dp = *(int *)sample;
+							*(int32_t *)dp = *(int32_t *)sample;
 						}
 						else
 						{
@@ -471,9 +471,9 @@ fz_paint_affine_N_near(byte * restrict dp, int da, const byte * restrict sp, int
 					int t = 255 - a;
 					if (t == 0)
 					{
-						if (n1+da == 4)
+						if (n1+da == 4 && n1+sa == 4)
 						{
-							*(int *)dp = *(int *)sample;
+							*(int32_t *)dp = *(int32_t *)sample;
 						}
 						else
 						{
