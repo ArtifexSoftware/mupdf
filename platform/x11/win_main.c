@@ -31,6 +31,7 @@ static HCURSOR arrowcurs, handcurs, waitcurs, caretcurs;
 static LRESULT CALLBACK frameproc(HWND, UINT, WPARAM, LPARAM);
 static LRESULT CALLBACK viewproc(HWND, UINT, WPARAM, LPARAM);
 static int timer_pending = 0;
+static char *password = NULL;
 
 static int justcopied = 0;
 
@@ -405,6 +406,14 @@ char *winpassword(pdfapp_t *app, char *filename)
 {
 	char buf[1024], *s;
 	int code;
+
+	if (password)
+	{
+		char *p = password;
+		password = NULL;
+		return p;
+	}
+
 	strcpy(buf, filename);
 	s = buf;
 	if (strrchr(s, '\\')) s = strrchr(s, '\\') + 1;
@@ -1221,7 +1230,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 	int bps = 0;
 	int displayRes = get_system_dpi();
 	int c;
-	char *password = NULL;
 	char *layout_css = NULL;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
