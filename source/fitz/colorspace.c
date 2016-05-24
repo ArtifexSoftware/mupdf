@@ -1930,31 +1930,32 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 }
 
 fz_pixmap *
-fz_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src)
+fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha)
 {
 	struct indexed *idx;
 	fz_pixmap *dst;
-	unsigned char *s, *d;
+	const unsigned char *s;
+	unsigned char *d;
 	int y, x, k, n, high;
 	unsigned char *lookup;
 	fz_irect bbox;
 	int s_line_inc, d_line_inc;
 
 	assert(src->colorspace->to_rgb == indexed_to_rgb);
-	assert(src->n == 2);
+	assert(src->n == 1 + alpha);
 
 	idx = src->colorspace->data;
 	high = idx->high;
 	lookup = idx->lookup;
 	n = idx->base->n;
 
-	dst = fz_new_pixmap_with_bbox(ctx, idx->base, fz_pixmap_bbox(ctx, src, &bbox), src->alpha);
+	dst = fz_new_pixmap_with_bbox(ctx, idx->base, fz_pixmap_bbox(ctx, src, &bbox), alpha);
 	s = src->samples;
 	d = dst->samples;
 	s_line_inc = src->stride - src->w * src->n;
 	d_line_inc = dst->stride - dst->w * dst->n;
 
-	if (src->alpha)
+	if (alpha)
 	{
 		for (y = 0; y < src->h; y++)
 		{
@@ -1962,9 +1963,10 @@ fz_expand_indexed_pixmap(fz_context *ctx, fz_pixmap *src)
 			{
 				int v = *s++;
 				int a = *s++;
+				int aa = a + (a>>7);
 				v = fz_mini(v, high);
 				for (k = 0; k < n; k++)
-					*d++ = fz_mul255(lookup[v * n + k], a);
+					*d++ = (aa * lookup[v * n + k] + 128)>>8;
 				*d++ = a;
 			}
 			s += s_line_inc;

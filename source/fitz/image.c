@@ -198,7 +198,10 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 
 	fz_try(ctx)
 	{
-		tile = fz_new_pixmap(ctx, image->colorspace, w, h, 1);
+		int alpha = (image->colorspace == NULL);
+		if (image->use_colorkey)
+			alpha = 1;
+		tile = fz_new_pixmap(ctx, image->colorspace, w, h, alpha);
 		tile->interpolate = image->interpolate;
 
 		stride = (w * image->n * image->bpc + 7) / 8;
@@ -276,7 +279,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 		{
 			fz_pixmap *conv;
 			fz_decode_indexed_tile(ctx, tile, image->decode, (1 << image->bpc) - 1);
-			conv = fz_expand_indexed_pixmap(ctx, tile);
+			conv = fz_expand_indexed_pixmap(ctx, tile, alpha);
 			fz_drop_pixmap(ctx, tile);
 			tile = conv;
 		}

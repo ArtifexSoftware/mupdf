@@ -179,7 +179,8 @@ fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int
 	unsigned char *p = pix->samples;
 	int stride = pix->stride - pix->w * pix->n;
 	int len;
-	int n = pix->n - 1;
+	int pn = pix->n;
+	int n = pn - pix->alpha;
 	int needed;
 	int k;
 	int h;
@@ -208,7 +209,7 @@ fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int
 				int value = (add[k] + (((p[k] << 8) * mul[k]) >> 8)) >> 8;
 				p[k] = fz_clampi(value, 0, 255);
 			}
-			p += n + 1;
+			p += pn;
 		}
 		p += stride;
 	}
