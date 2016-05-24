@@ -266,7 +266,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "bad number of components in jpeg: %d", cinfo.num_components);
 
-		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height, 1);
+		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height, 0);
 
 		if (extract_exif_resolution(cinfo.marker_list, &image->xres, &image->yres))
 			/* XPS prefers EXIF resolution to JFIF density */;
@@ -299,7 +299,6 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 			{
 				for (k = 0; k < cinfo.output_components; k++)
 					*dp++ = *sp++;
-				*dp++ = 255;
 			}
 			dp += stride;
 		}
