@@ -577,9 +577,6 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 	float spacing = 0;
 	float base_offset = 0;
 
-	if (glyph < 0)
-		goto no_glyph;
-
 	if (wmode == 0)
 	{
 		dir.x = 1;
@@ -626,6 +623,9 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 		q.x = trm->e;
 		q.y = trm->f;
 	}
+
+	if (glyph < 0)
+		goto no_glyph;
 
 	if (dev->cur_span == NULL ||
 		trm->a != dev->cur_span->transform.a || trm->b != dev->cur_span->transform.b ||
