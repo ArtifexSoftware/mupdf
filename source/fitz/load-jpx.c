@@ -204,7 +204,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 
 	fz_try(ctx)
 	{
-		img = fz_new_pixmap(ctx, colorspace, w, h, 1);
+		img = fz_new_pixmap(ctx, colorspace, w, h, a);
 	}
 	fz_catch(ctx)
 	{
@@ -213,7 +213,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 	}
 
 	p = img->samples;
-	stride = img->stride - w * (n + 1);
+	stride = img->stride - w * (n + a);
 	for (y = 0; y < h; y++)
 	{
 		for (x = 0; x < w; x++)
@@ -229,8 +229,6 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs
 					v = v << (8 - depth);
 				*p++ = v;
 			}
-			if (!a)
-				*p++ = 255;
 		}
 		p += stride;
 	}
