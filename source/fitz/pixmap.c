@@ -781,16 +781,18 @@ fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix)
 {
 	unsigned char *s = pix->samples;
 	int k, x, y;
+	int n1 = pix->n - pix->alpha;
+	int n = pix->n;
 
 	for (y = 0; y < pix->h; y++)
 	{
 		for (x = 0; x < pix->w; x++)
 		{
-			for (k = 0; k < pix->n - 1; k++)
+			for (k = 0; k < n1; k++)
 				s[k] = 255 - s[k];
-			s += pix->n;
+			s += n;
 		}
-		s += pix->stride - pix->w * pix->n;
+		s += pix->stride - pix->w * n;
 	}
 }
 
