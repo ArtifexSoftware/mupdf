@@ -85,7 +85,7 @@ static fz_pixmap *createPixMap(CGSize size)
 	dispatch_sync(queue, ^{
 		fz_try(ctx)
 		{
-			pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), size.width, size.height);
+			pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), size.width, size.height, 1);
 		}
 		fz_catch(ctx)
 		{

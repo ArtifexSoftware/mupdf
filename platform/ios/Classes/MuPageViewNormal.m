@@ -452,7 +452,7 @@ static fz_pixmap *renderPixmap(fz_document *doc, fz_display_list *page_list, fz_
 	fz_var(pix);
 	fz_try(ctx)
 	{
-		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox);
+		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox, 1);
 		fz_clear_pixmap_with_value(ctx, pix, 255);
 
 		dev = fz_new_draw_device(ctx, pix);
