@@ -492,11 +492,11 @@ make_weights(fz_context *ctx, int src_w, float x, float dst_w, fz_scale_filter *
 }
 
 static void
-scale_row_to_temp(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
-	int *contrib = &weights->index[weights->index[0]];
+	const int *contrib = &weights->index[weights->index[0]];
 	int len, i, j, n;
-	unsigned char *min;
+	const unsigned char *min;
 	int tmp[FZ_MAX_COLORS];
 	int *t = tmp;
 
@@ -552,27 +552,27 @@ scale_row_to_temp(unsigned char *dst, unsigned char *src, fz_weights *weights)
 #ifdef ARCH_ARM
 
 static void
-scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp3(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 __attribute__((naked));
 
 static void
-scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, fconst z_weights * restrict weights)
 __attribute__((naked));
 
 static void
-scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights, int width, int row)
+scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int row)
 __attribute__((naked));
 
 static void
-scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -638,7 +638,7 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -708,7 +708,7 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp3(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -793,7 +793,7 @@ scale_row_to_temp3(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
 	asm volatile(
 	ENTER_ARM
@@ -867,7 +867,7 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights, int width, int row)
+scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int row)
 {
 	asm volatile(
 	ENTER_ARM
@@ -948,11 +948,11 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 #else
 
 static void
-scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
-	int *contrib = &weights->index[weights->index[0]];
+	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
-	unsigned char *min;
+	const unsigned char *min;
 
 	assert(weights->n == 1);
 	if (weights->flip)
@@ -987,11 +987,11 @@ scale_row_to_temp1(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp2(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
-	int *contrib = &weights->index[weights->index[0]];
+	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
-	unsigned char *min;
+	const unsigned char *min;
 
 	assert(weights->n == 2);
 	if (weights->flip)
@@ -1032,11 +1032,11 @@ scale_row_to_temp2(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp3(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
-	int *contrib = &weights->index[weights->index[0]];
+	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
-	unsigned char *min;
+	const unsigned char *min;
 
 	assert(weights->n == 3);
 	if (weights->flip)
@@ -1085,11 +1085,11 @@ scale_row_to_temp3(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
+scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 {
-	int *contrib = &weights->index[weights->index[0]];
+	const int *contrib = &weights->index[weights->index[0]];
 	int len, i;
-	unsigned char *min;
+	const unsigned char *min;
 
 	assert(weights->n == 4);
 	if (weights->flip)
@@ -1142,19 +1142,20 @@ scale_row_to_temp4(unsigned char *dst, unsigned char *src, fz_weights *weights)
 }
 
 static void
-scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights, int width, int row)
+scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int w, int n, int row)
 {
-	int *contrib = &weights->index[weights->index[row]];
+	const int *contrib = &weights->index[weights->index[row]];
 	int len, x;
+	int width = w * n;
 
 	contrib++; /* Skip min */
 	len = *contrib++;
 	for (x=width; x > 0; x--)
 	{
-		unsigned char *min = src;
+		const unsigned char *min = src;
 		int val = 128;
 		int len2 = len;
-		int *contrib2 = contrib;
+		const int *contrib2 = contrib;
 
 		while (len2-- > 0)
 		{
@@ -1165,22 +1166,56 @@ scale_row_from_temp(unsigned char *dst, unsigned char *src, fz_weights *weights,
 		src++;
 	}
 }
+
+static void
+scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int w, int n, int row)
+{
+	const int *contrib = &weights->index[weights->index[row]];
+	int len, x;
+	int width = w * n;
+
+	contrib++; /* Skip min */
+	len = *contrib++;
+	for (x=w; x > 0; x--)
+	{
+		int nn;
+		for (nn = n; nn > 0; nn--)
+		{
+			const unsigned char *min = src;
+			int val = 128;
+			int len2 = len;
+			const int *contrib2 = contrib;
+
+			while (len2-- > 0)
+			{
+				val += *min * *contrib2++;
+				min += width;
+			}
+			*dst++ = (unsigned char)(val>>8);
+			src++;
+		}
+		*dst++ = 255;
+	}
+}
 #endif
 
 #ifdef SINGLE_PIXEL_SPECIALS
 static void
-duplicate_single_pixel(unsigned char *dst, unsigned char *src, int n, int w, int h, int stride)
+duplicate_single_pixel(unsigned char * restrict dst, const unsigned char * restrict src, int n, int forcealpha, int w, int h, int stride)
 {
 	int i;
 
-	w *= n;
 	for (i = n; i > 0; i--)
 		*dst++ = *src++;
-	for (i = w-n; i > 0; i--)
+	if (forcealpha)
+		*dst++ = 255;
+	n += forcealpha;
+	for (i = w-1; i > 0; i--)
 	{
-		*dst = dst[-n];
-		dst++;
+		memcpy(dst, dst-n, n);
+		dst += n;
 	}
+	w *= n;
 	dst -= w;
 	h--;
 	while (h--)
@@ -1191,15 +1226,16 @@ duplicate_single_pixel(unsigned char *dst, unsigned char *src, int n, int w, int
 }
 
 static void
-scale_single_row(unsigned char *dst, int dstride, unsigned char *src, fz_weights *weights, int src_w, int h)
+scale_single_row(unsigned char * restrict dst, int dstride, const unsigned char * restrict src, const fz_weights * restrict weights, int src_w, int h, int forcealpha)
 {
-	int *contrib = &weights->index[weights->index[0]];
-	int min, len, i, j, n;
+	const int *contrib = &weights->index[weights->index[0]];
+	int min, len, i, j, n, nf;
 	int tmp[FZ_MAX_COLORS];
 
 	n = weights->n;
+	nf = n + forcealpha;
 	/* Scale a single row */
-	for (j = 0; j < n; j++)
+	for (j = 0; j < nf; j++)
 		tmp[j] = 128;
 	if (weights->flip)
 	{
@@ -1211,18 +1247,20 @@ scale_single_row(unsigned char *dst, int dstride, unsigned char *src, fz_weights
 			min *= n;
 			while (len-- > 0)
 			{
+				int c = *contrib++;
 				for (j = 0; j < n; j++)
-					tmp[j] += src[min++] * *contrib;
-				contrib++;
+					tmp[j] += src[min++] * c;
+				if (forcealpha)
+					tmp[j] += 255 * c;
 			}
-			for (j = 0; j < n; j++)
+			for (j = 0; j < nf; j++)
 			{
 				*dst++ = (unsigned char)(tmp[j]>>8);
 				tmp[j] = 128;
 			}
-			dst -= 2*n;
+			dst -= 2*nf;
 		}
-		dst += n + dstride;
+		dst += nf + dstride;
 	}
 	else
 	{
@@ -1233,37 +1271,40 @@ scale_single_row(unsigned char *dst, int dstride, unsigned char *src, fz_weights
 			min *= n;
 			while (len-- > 0)
 			{
+				int c = *contrib++;
 				for (j = 0; j < n; j++)
-					tmp[j] += src[min++] * *contrib;
-				contrib++;
+					tmp[j] += src[min++] * c;
+				if (forcealpha)
+					tmp[j] += 255 * c;
 			}
-			for (j = 0; j < n; j++)
+			for (j = 0; j < nf; j++)
 			{
 				*dst++ = (unsigned char)(tmp[j]>>8);
 				tmp[j] = 128;
 			}
 		}
-		dst += dstride - weights->count * n;
+		dst += dstride - weights->count * nf;
 	}
 	/* And then duplicate it h times */
-	n *= weights->count;
+	nf *= weights->count;
 	while (--h > 0)
 	{
-		memcpy(dst, dst-dstride, n);
+		memcpy(dst, dst-dstride, nf);
 		dst += dstride;
 	}
 }
 
 static void
-scale_single_col(unsigned char *dst, int dstride, unsigned char *src, int sstride, fz_weights *weights, int src_w, int n, int w, int flip_y)
+scale_single_col(unsigned char * restrict dst, int dstride, const unsigned char * restrict src, int sstride, const fz_weights * restrict weights, int src_w, int n, int w, int forcealpha)
 {
-	int *contrib = &weights->index[weights->index[0]];
+	const int *contrib = &weights->index[weights->index[0]];
 	int min, len, i, j;
 	int tmp[FZ_MAX_COLORS];
+	int nf = n + forcealpha;
 
-	for (j = 0; j < n; j++)
+	for (j = 0; j < nf; j++)
 		tmp[j] = 128;
-	if (flip_y)
+	if (weights->flip)
 	{
 		src_w = (src_w-1)*sstride;
 		for (i=weights->count; i > 0; i--)
@@ -1274,23 +1315,25 @@ scale_single_col(unsigned char *dst, int dstride, unsigned char *src, int sstrid
 			min = src_w-min*sstride;
 			while (len-- > 0)
 			{
+				int c = *contrib++;
 				for (j = 0; j < n; j++)
-					tmp[j] += src[min+j] * *contrib;
+					tmp[j] += src[min+j] * c;
+				if (forcealpha)
+					tmp[j] += 255 * c;
 				min -= sstride;
-				contrib++;
 			}
-			for (j = 0; j < n; j++)
+			for (j = 0; j < nf; j++)
 			{
 				*dst++ = (unsigned char)(tmp[j]>>8);
 				tmp[j] = 128;
 			}
 			/* And then duplicate it across the row */
-			for (j = (w-1)*n; j > 0; j--)
+			for (j = (w-1)*nf; j > 0; j--)
 			{
-				*dst = dst[-n];
+				*dst = dst[-nf];
 				dst++;
 			}
-			dst += dstride - w*n;
+			dst += dstride - w*nf;
 		}
 	}
 	else
@@ -1303,27 +1346,124 @@ scale_single_col(unsigned char *dst, int dstride, unsigned char *src, int sstrid
 			min *= sstride;
 			while (len-- > 0)
 			{
+				int c = *contrib++;
 				for (j = 0; j < n; j++)
-					tmp[j] += src[min+j] * *contrib;
+					tmp[j] += src[min+j] * c;
+				if (forcealpha)
+					tmp[j] += 255 * c;
 				min += sstride;
-				contrib++;
 			}
-			for (j = 0; j < n; j++)
+			for (j = 0; j < nf; j++)
 			{
 				*dst++ = (unsigned char)(tmp[j]>>8);
 				tmp[j] = 128;
 			}
 			/* And then duplicate it across the row */
-			for (j = (w-1)*n; j > 0; j--)
+			for (j = (w-1)*nf; j > 0; j--)
 			{
-				*dst = dst[-n];
+				*dst = dst[-nf];
 				dst++;
 			}
-			dst += dstride - w*n;
+			dst += dstride - w*nf;
 		}
 	}
 }
 #endif /* SINGLE_PIXEL_SPECIALS */
+
+static void
+get_alpha_edge_values(const fz_weights * restrict rows, int * restrict tp, int * restrict bp)
+{
+	const int *contrib = &rows->index[rows->index[0]];
+	int len, i, t, b;
+
+	/* Calculate the edge alpha values */
+	contrib++; /* Skip min */
+	len = *contrib++;
+	t = 0;
+	while (len--)
+		t += *contrib++;
+	for (i=rows->count-2; i > 0; i--)
+	{
+		contrib++; /* Skip min */
+		len = *contrib++;
+		contrib += len;
+	}
+	b = 0;
+	if (i == 0)
+	{
+		contrib++;
+		len = *contrib++;
+		while (len--)
+			b += *contrib++;
+	}
+	if (rows->flip && i == 0)
+	{
+		*tp = b;
+		*bp = t;
+	}
+	else
+	{
+		*tp = t;
+		*bp = b;
+	}
+}
+
+static void
+adjust_alpha_edges(fz_pixmap * restrict pix, const fz_weights * restrict rows, const fz_weights * restrict cols)
+{
+	int t, l, r, b, tl, tr, bl, br, x, y;
+	unsigned char *dp = pix->samples;
+	int w = pix->w;
+	int n = pix->n;
+	int span = w >= 2 ? (w-1)*n : 0;
+	int stride = pix->stride;
+
+	get_alpha_edge_values(rows, &t, &b);
+	get_alpha_edge_values(cols, &l, &r);
+
+	l = (255 * l + 128)>>8;
+	r = (255 * r + 128)>>8;
+	tl = (l * t + 128)>>8;
+	tr = (r * t + 128)>>8;
+	bl = (l * b + 128)>>8;
+	br = (r * b + 128)>>8;
+	t = (255 * t + 128)>>8;
+	b = (255 * b + 128)>>8;
+	dp += n-1;
+	*dp = tl;
+	dp += n;
+	for (x = w-2; x > 0; x--)
+	{
+		*dp = t;
+		dp += n;
+	}
+	if (x == 0)
+	{
+		*dp = tr;
+		dp += n;
+	}
+	dp += stride - w*n;
+	for (y = pix->h-2; y > 0; y--)
+	{
+		dp[span] = r;
+		*dp = l;
+		dp += stride;
+	}
+	if (y == 0)
+	{
+		*dp = bl;
+		dp += n;
+		for (x = w-2; x > 0; x--)
+		{
+			*dp = b;
+			dp += n;
+		}
+		if (x == 0)
+		{
+			*dp = br;
+		}
+	}
+}
 
 fz_pixmap *
 fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_irect *clip)
@@ -1341,7 +1481,7 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 	unsigned char *temp = NULL;
 	int max_row, temp_span, temp_rows, row;
 	int dst_w_int, dst_h_int, dst_x_int, dst_y_int;
-	int flip_x, flip_y;
+	int flip_x, flip_y, forcealpha;
 	fz_rect patch;
 
 	fz_var(contrib_cols);
@@ -1376,6 +1516,10 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 	{
 		h = 1;
 	}
+
+	/* If the src has an alpha, we'll make the dst have an alpha automatically.
+	 * We also need to force the dst to have an alpha if x/y/w/h aren't ints. */
+	forcealpha = !src->alpha && (x != (float)(int)x || y != (float)(int)y || w != (float)(int)w || h != (float)(int)h);
 
 	/* Find the destination bbox, width/height, and sub pixel offset,
 	 * allowing for whether we're flipping or not. */
@@ -1507,7 +1651,7 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 #endif /* SINGLE_PIXEL_SPECIALS */
 			contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, patch.y0, patch.y1, src->n, flip_y, cache_y);
 
-		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0, src->alpha);
+		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0, src->alpha || forcealpha);
 	}
 	fz_catch(ctx)
 	{
@@ -1528,26 +1672,27 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 		if (!contrib_cols)
 		{
 			/* Only 1 pixel in the entire image! */
-			duplicate_single_pixel(output->samples, src->samples, src->n, patch.x1-patch.x0, patch.y1-patch.y0, output->stride);
+			duplicate_single_pixel(output->samples, src->samples, src->n, forcealpha, patch.x1-patch.x0, patch.y1-patch.y0, output->stride);
 			fz_valgrind_pixmap(output);
 		}
 		else
 		{
 			/* Scale the row once, then copy it. */
-			scale_single_row(output->samples, output->stride, src->samples, contrib_cols, src->w, patch.y1-patch.y0);
+			scale_single_row(output->samples, output->stride, src->samples, contrib_cols, src->w, patch.y1-patch.y0, forcealpha);
 			fz_valgrind_pixmap(output);
 		}
 	}
 	else if (!contrib_cols)
 	{
 		/* Only 1 source pixel wide. Scale the col and duplicate. */
-		scale_single_col(output->samples, output->stride, src->samples, src->stride, contrib_rows, src->h, src->n, patch.x1-patch.x0, flip_y);
+		scale_single_col(output->samples, output->stride, src->samples, src->stride, contrib_rows, src->h, src->n, patch.x1-patch.x0, forcealpha);
 		fz_valgrind_pixmap(output);
 	}
 	else
 #endif /* SINGLE_PIXEL_SPECIALS */
 	{
-		void (*row_scale)(unsigned char *dst, unsigned char *src, fz_weights *weights);
+		void (*row_scale_in)(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights);
+		void (*row_scale_out)(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int w, int n, int row);
 
 		temp_span = contrib_cols->count * src->n;
 		temp_rows = contrib_rows->max_len;
@@ -1569,21 +1714,22 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 		switch (src->n)
 		{
 		default:
-			row_scale = scale_row_to_temp;
+			row_scale_in = scale_row_to_temp;
 			break;
 		case 1: /* Image mask case or Greyscale case */
-			row_scale = scale_row_to_temp1;
+			row_scale_in = scale_row_to_temp1;
 			break;
 		case 2: /* Greyscale with alpha case */
-			row_scale = scale_row_to_temp2;
+			row_scale_in = scale_row_to_temp2;
 			break;
 		case 3: /* RGB case */
-			row_scale = scale_row_to_temp3;
+			row_scale_in = scale_row_to_temp3;
 			break;
 		case 4: /* RGBA or CMYK case */
-			row_scale = scale_row_to_temp4;
+			row_scale_in = scale_row_to_temp4;
 			break;
 		}
+		row_scale_out = forcealpha ? scale_row_from_temp_alpha : scale_row_from_temp;
 		max_row = contrib_rows->index[contrib_rows->index[0]];
 		for (row = 0; row < contrib_rows->count; row++)
 		{
@@ -1599,13 +1745,16 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 			{
 				/* Scale another row */
 				assert(max_row < src->h);
-				(*row_scale)(&temp[temp_span*(max_row % temp_rows)], &src->samples[(flip_y ? (src->h-1-max_row): max_row)*src->stride], contrib_cols);
+				(*row_scale_in)(&temp[temp_span*(max_row % temp_rows)], &src->samples[(flip_y ? (src->h-1-max_row): max_row)*src->stride], contrib_cols);
 				max_row++;
 			}
 
-			scale_row_from_temp(&output->samples[row*output->stride], temp, contrib_rows, temp_span, row);
+			(*row_scale_out)(&output->samples[row*output->stride], temp, contrib_rows, contrib_cols->count, src->n, row);
 		}
 		fz_free(ctx, temp);
+
+		if (forcealpha)
+			adjust_alpha_edges(output, contrib_rows, contrib_cols);
 
 		fz_valgrind_pixmap(output);
 	}
