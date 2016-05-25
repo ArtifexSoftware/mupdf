@@ -161,12 +161,11 @@
 
 #ifndef MEMENTO_H
 
-#include <memory.h>
+#include <stdlib.h>
 
 #ifdef __ANDROID__
 #define MEMENTO_ANDROID
 #include <stdio.h>
-#include <stdlib.h>
 #endif
 
 #define MEMENTO_H
