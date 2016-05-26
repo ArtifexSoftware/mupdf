@@ -13,8 +13,8 @@
 void fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename);
 
 void fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
-void fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n);
-void fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stride, int band, int bandheight, unsigned char *p);
+void fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha);
+void fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band, int bandheight, unsigned char *p);
 
 /*
 	fz_save_pixmap_as_pam: Save a pixmap as a PAM image file.
@@ -22,8 +22,8 @@ void fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int
 void fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha);
 
 void fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha);
-void fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int savealpha);
-void fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stride, int band, int bandheight, unsigned char *sp, int savealpha);
+void fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int savealpha);
+void fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band, int bandheight, unsigned char *sp, int savealpha);
 
 /*
 	fz_save_bitmap_as_pbm: Save a bitmap as a PBM image file.
