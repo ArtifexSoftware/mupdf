@@ -42,17 +42,19 @@ fz_paint_affine_alpha_N_lerp(byte * restrict dp, int da, const byte * restrict s
 			const byte *c = sample_nearest(sp, sw, sh, ss, n1+sa, ui, vi+1);
 			const byte *d = sample_nearest(sp, sw, sh, ss, n1+sa, ui+1, vi+1);
 			int xa = sa ? fz_mul255(bilerp(a[n1], b[n1], c[n1], d[n1], uf, vf), alpha) : alpha;
-			int t;
-			t = 255 - xa;
-			for (k = 0; k < n1; k++)
+			if (xa != 0)
 			{
-				int x = bilerp(a[k], b[k], c[k], d[k], uf, vf);
-				dp[k] = fz_mul255(x, alpha) + fz_mul255(dp[k], t);
+				int t = 255 - xa;
+				for (k = 0; k < n1; k++)
+				{
+					int x = bilerp(a[k], b[k], c[k], d[k], uf, vf);
+					dp[k] = fz_mul255(x, alpha) + fz_mul255(dp[k], t);
+				}
+				if (da)
+					dp[n1] = xa + fz_mul255(dp[n1], t);
+				if (hp)
+					hp[0] = xa + fz_mul255(hp[0], t);
 			}
-			if (da)
-				dp[n1] = xa + fz_mul255(dp[n1], t);
-			if (hp)
-				hp[0] = xa + fz_mul255(hp[0], t);
 		}
 		dp += n1+da;
 		if (hp)
@@ -79,16 +81,19 @@ fz_paint_affine_alpha_g2rgb_lerp(byte * restrict dp, int da, const byte * restri
 			const byte *c = sample_nearest(sp, sw, sh, ss, 1+sa, ui, vi+1);
 			const byte *d = sample_nearest(sp, sw, sh, ss, 1+sa, ui+1, vi+1);
 			int y = (sa ? fz_mul255(bilerp(a[1], b[1], c[1], d[1], uf, vf), alpha) : alpha);
-			int x = bilerp(a[0], b[0], c[0], d[0], uf, vf);
-			int t = 255 - y;
-			x = fz_mul255(x, alpha);
-			dp[0] = x + fz_mul255(dp[0], t);
-			dp[1] = x + fz_mul255(dp[1], t);
-			dp[2] = x + fz_mul255(dp[2], t);
-			if (da)
-				dp[3] = y + fz_mul255(dp[3], t);
-			if (hp)
-				hp[0] = y + fz_mul255(hp[0], t);
+			if (y != 0)
+			{
+				int x = bilerp(a[0], b[0], c[0], d[0], uf, vf);
+				int t = 255 - y;
+				x = fz_mul255(x, alpha);
+				dp[0] = x + fz_mul255(dp[0], t);
+				dp[1] = x + fz_mul255(dp[1], t);
+				dp[2] = x + fz_mul255(dp[2], t);
+				if (da)
+					dp[3] = y + fz_mul255(dp[3], t);
+				if (hp)
+					hp[0] = y + fz_mul255(hp[0], t);
+			}
 		}
 		dp += 4;
 		if (hp)
@@ -116,13 +121,16 @@ fz_paint_affine_alpha_N_near(byte * restrict dp, int da, const byte * restrict s
 			{
 				const byte *sample = sp + (vi * ss);
 				int a = (sa ? fz_mul255(sample[n1], alpha) : alpha);
-				int t = 255 - a;
-				for (k = 0; k < n1; k++)
-					dp[k] = fz_mul255(sample[k], alpha) + fz_mul255(dp[k], t);
-				if (da)
-					dp[n1] = a + fz_mul255(dp[n1], t);
-				if (hp)
-					hp[0] = a + fz_mul255(hp[0], t);
+				if (a != 0)
+				{
+					int t = 255 - a;
+					for (k = 0; k < n1; k++)
+						dp[k] = fz_mul255(sample[k], alpha) + fz_mul255(dp[k], t);
+					if (da)
+						dp[n1] = a + fz_mul255(dp[n1], t);
+					if (hp)
+						hp[0] = a + fz_mul255(hp[0], t);
+				}
 			}
 			dp += n1+da;
 			if (hp)
@@ -143,13 +151,16 @@ fz_paint_affine_alpha_N_near(byte * restrict dp, int da, const byte * restrict s
 			{
 				const byte *sample = sp + (ui * (n1+sa));
 				int a = (sa ? fz_mul255(sample[n1], alpha) : alpha);
-				int t = 255 - a;
-				for (k = 0; k < n1; k++)
-					dp[k] = fz_mul255(sample[k], alpha) + fz_mul255(dp[k], t);
-				if (da)
-					dp[n1] = a + fz_mul255(dp[n1], t);
-				if (hp)
-					hp[0] = a + fz_mul255(hp[0], t);
+				if (a != 0)
+				{
+					int t = 255 - a;
+					for (k = 0; k < n1; k++)
+						dp[k] = fz_mul255(sample[k], alpha) + fz_mul255(dp[k], t);
+					if (da)
+						dp[n1] = a + fz_mul255(dp[n1], t);
+					if (hp)
+						hp[0] = a + fz_mul255(hp[0], t);
+				}
 			}
 			dp += n1+da;
 			if (hp)
@@ -167,13 +178,16 @@ fz_paint_affine_alpha_N_near(byte * restrict dp, int da, const byte * restrict s
 			{
 				const byte *sample = sp + (vi * ss) + (ui * (n1+sa));
 				int a = (sa ? fz_mul255(sample[n1], alpha) : alpha);
-				int t = 255 - a;
-				for (k = 0; k < n1; k++)
-					dp[k] = fz_mul255(sample[k], alpha) + fz_mul255(dp[k], t);
-				if (da)
-					dp[n1] = a + fz_mul255(dp[n1], t);
-				if (hp)
-					hp[0] = a + fz_mul255(hp[0], t);
+				if (a != 0)
+				{
+					int t = 255 - a;
+					for (k = 0; k < n1; k++)
+						dp[k] = fz_mul255(sample[k], alpha) + fz_mul255(dp[k], t);
+					if (da)
+						dp[n1] = a + fz_mul255(dp[n1], t);
+					if (hp)
+						hp[0] = a + fz_mul255(hp[0], t);
+				}
 			}
 			dp += n1+da;
 			if (hp)
@@ -201,14 +215,17 @@ fz_paint_affine_alpha_g2rgb_near(byte * restrict dp, int da, const byte * restri
 				const byte *sample = sp + (vi * ss);
 				int x = fz_mul255(sample[0], alpha);
 				int a = (sa ? fz_mul255(sample[1], alpha) : alpha);
-				int t = 255 - a;
-				dp[0] = x + fz_mul255(dp[0], t);
-				dp[1] = x + fz_mul255(dp[1], t);
-				dp[2] = x + fz_mul255(dp[2], t);
-				if (da)
-					dp[3] = a + fz_mul255(dp[3], t);
-				if (hp)
-					hp[0] = a + fz_mul255(hp[0], t);
+				if (a != 0)
+				{
+					int t = 255 - a;
+					dp[0] = x + fz_mul255(dp[0], t);
+					dp[1] = x + fz_mul255(dp[1], t);
+					dp[2] = x + fz_mul255(dp[2], t);
+					if (da)
+						dp[3] = a + fz_mul255(dp[3], t);
+					if (hp)
+						hp[0] = a + fz_mul255(hp[0], t);
+				}
 			}
 			dp += 3 + da;
 			if (hp)
@@ -230,14 +247,17 @@ fz_paint_affine_alpha_g2rgb_near(byte * restrict dp, int da, const byte * restri
 				const byte *sample = sp + (ui * (1+sa));
 				int x = fz_mul255(sample[0], alpha);
 				int a = (sa ? fz_mul255(sample[1], alpha) : alpha);
-				int t = 255 - a;
-				dp[0] = x + fz_mul255(dp[0], t);
-				dp[1] = x + fz_mul255(dp[1], t);
-				dp[2] = x + fz_mul255(dp[2], t);
-				if (da)
-					dp[3] = a + fz_mul255(dp[3], t);
-				if (hp)
-					hp[0] = a + fz_mul255(hp[0], t);
+				if (a != 0)
+				{
+					int t = 255 - a;
+					dp[0] = x + fz_mul255(dp[0], t);
+					dp[1] = x + fz_mul255(dp[1], t);
+					dp[2] = x + fz_mul255(dp[2], t);
+					if (da)
+						dp[3] = a + fz_mul255(dp[3], t);
+					if (hp)
+						hp[0] = a + fz_mul255(hp[0], t);
+				}
 			}
 			dp += 3 + da;
 			if (hp)
@@ -256,14 +276,17 @@ fz_paint_affine_alpha_g2rgb_near(byte * restrict dp, int da, const byte * restri
 				const byte *sample = sp + (vi * ss) + (ui * (1+sa));
 				int x = fz_mul255(sample[0], alpha);
 				int a = (sa ? fz_mul255(sample[1], alpha): alpha);
-				int t = 255 - a;
-				dp[0] = x + fz_mul255(dp[0], t);
-				dp[1] = x + fz_mul255(dp[1], t);
-				dp[2] = x + fz_mul255(dp[2], t);
-				if (da)
-					dp[3] = a + fz_mul255(dp[3], t);
-				if (hp)
-					hp[0] = a + fz_mul255(hp[0], t);
+				if (a != 0)
+				{
+					int t = 255 - a;
+					dp[0] = x + fz_mul255(dp[0], t);
+					dp[1] = x + fz_mul255(dp[1], t);
+					dp[2] = x + fz_mul255(dp[2], t);
+					if (da)
+						dp[3] = a + fz_mul255(dp[3], t);
+					if (hp)
+						hp[0] = a + fz_mul255(hp[0], t);
+				}
 			}
 			dp += 3 + da;
 			if (hp)
@@ -294,16 +317,19 @@ fz_paint_affine_N_lerp(byte * restrict dp, int da, const byte * restrict sp, int
 			const byte *c = sample_nearest(sp, sw, sh, ss, n1+sa, ui, vi+1);
 			const byte *d = sample_nearest(sp, sw, sh, ss, n1+sa, ui+1, vi+1);
 			int y = sa ? bilerp(a[n1], b[n1], c[n1], d[n1], uf, vf) : 255;
-			int t = 255 - y;
-			for (k = 0; k < n1; k++)
+			if (y != 0)
 			{
-				int x = bilerp(a[k], b[k], c[k], d[k], uf, vf);
-				dp[k] = x + fz_mul255(dp[k], t);
+				int t = 255 - y;
+				for (k = 0; k < n1; k++)
+				{
+					int x = bilerp(a[k], b[k], c[k], d[k], uf, vf);
+					dp[k] = x + fz_mul255(dp[k], t);
+				}
+				if (da)
+					dp[n1] = y + fz_mul255(dp[n1], t);
+				if (hp)
+					hp[0] = y + fz_mul255(hp[0], t);
 			}
-			if (da)
-				dp[n1] = y + fz_mul255(dp[n1], t);
-			if (hp)
-				hp[0] = y + fz_mul255(hp[0], t);
 		}
 		dp += n1 + da;
 		if (hp)
@@ -329,15 +355,18 @@ fz_paint_affine_solid_g2rgb_lerp(byte * restrict dp, int da, const byte * restri
 			const byte *c = sample_nearest(sp, sw, sh, ss, 1+sa, ui, vi+1);
 			const byte *d = sample_nearest(sp, sw, sh, ss, 1+sa, ui+1, vi+1);
 			int y = (sa ? bilerp(a[1], b[1], c[1], d[1], uf, vf) : 255);
-			int t = 255 - y;
-			int x = bilerp(a[0], b[0], c[0], d[0], uf, vf);
-			dp[0] = x + fz_mul255(dp[0], t);
-			dp[1] = x + fz_mul255(dp[1], t);
-			dp[2] = x + fz_mul255(dp[2], t);
-			if (da)
-				dp[3] = y + fz_mul255(dp[3], t);
-			if (hp)
-				hp[0] = y + fz_mul255(hp[0], t);
+			if (y != 0)
+			{
+				int t = 255 - y;
+				int x = bilerp(a[0], b[0], c[0], d[0], uf, vf);
+				dp[0] = x + fz_mul255(dp[0], t);
+				dp[1] = x + fz_mul255(dp[1], t);
+				dp[2] = x + fz_mul255(dp[2], t);
+				if (da)
+					dp[3] = y + fz_mul255(dp[3], t);
+				if (hp)
+					hp[0] = y + fz_mul255(hp[0], t);
+			}
 		}
 		dp += 3 + da;
 		if (hp)
@@ -662,12 +691,15 @@ fz_paint_affine_color_N_lerp(byte * restrict dp, int da, const byte * restrict s
 			const byte *d = sample_nearest(sp, sw, sh, ss, 1, ui+1, vi+1);
 			int ma = bilerp(a[0], b[0], c[0], d[0], uf, vf);
 			int masa = FZ_COMBINE(FZ_EXPAND(ma), sa);
-			for (k = 0; k < n1; k++)
-				dp[k] = FZ_BLEND(color[k], dp[k], masa);
-			if (da)
-				dp[n1] = FZ_BLEND(255, dp[n1], masa);
-			if (hp)
-				hp[0] = FZ_BLEND(255, hp[0], masa);
+			if (masa != 0)
+			{
+				for (k = 0; k < n1; k++)
+					dp[k] = FZ_BLEND(color[k], dp[k], masa);
+				if (da)
+					dp[n1] = FZ_BLEND(255, dp[n1], masa);
+				if (hp)
+					hp[0] = FZ_BLEND(255, hp[0], masa);
+			}
 		}
 		dp += n1 + da;
 		if (hp)
@@ -691,12 +723,15 @@ fz_paint_affine_color_N_near(byte * restrict dp, int da, const byte * restrict s
 		{
 			int ma = sp[vi * ss + ui];
 			int masa = FZ_COMBINE(FZ_EXPAND(ma), sa);
-			for (k = 0; k < n1; k++)
-				dp[k] = FZ_BLEND(color[k], dp[k], masa);
-			if (da)
-				dp[n1] = FZ_BLEND(255, dp[n1], masa);
-			if (hp)
-				hp[0] = FZ_BLEND(255, hp[0], masa);
+			if (masa)
+			{
+				for (k = 0; k < n1; k++)
+					dp[k] = FZ_BLEND(color[k], dp[k], masa);
+				if (da)
+					dp[n1] = FZ_BLEND(255, dp[n1], masa);
+				if (hp)
+					hp[0] = FZ_BLEND(255, hp[0], masa);
+			}
 		}
 		dp += n1+da;
 		if (hp)
