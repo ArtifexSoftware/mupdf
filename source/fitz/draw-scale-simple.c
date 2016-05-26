@@ -564,11 +564,15 @@ scale_row_to_temp3(unsigned char * restrict dst, const unsigned char * restrict 
 __attribute__((naked));
 
 static void
-scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, fconst z_weights * restrict weights)
+scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights)
 __attribute__((naked));
 
 static void
-scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int row)
+scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
+__attribute__((naked));
+
+static void
+scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
 __attribute__((naked));
 
 static void
@@ -867,18 +871,20 @@ scale_row_to_temp4(unsigned char * restrict dst, const unsigned char * restrict 
 }
 
 static void
-scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int row)
+scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
 {
 	asm volatile(
 	ENTER_ARM
-	"ldr	r12,[r13]		@ r12= row		\n"
-	"add	r2, r2, #24		@ r2 = weights->index	\n"
 	"stmfd	r13!,{r4-r11,r14}				\n"
 	"@ r0 = dst						\n"
 	"@ r1 = src						\n"
 	"@ r2 = &weights->index[0]				\n"
 	"@ r3 = width						\n"
 	"@ r12= row						\n"
+	"ldr	r14,[r13,#4*9]		@ r14= n		\n"
+	"ldr	r12,[r13,#4*10]		@ r12= row		\n"
+	"add	r2, r2, #24		@ r2 = weights->index	\n"
+	"mul    r3, r14, r3		@ r3 = width *= n       \n"
 	"ldr	r4, [r2, r12, LSL #2]	@ r4 = index[row]	\n"
 	"add	r2, r2, #4		@ r2 = &index[1]	\n"
 	"subs	r6, r3, #4		@ r6 = x = width-4	\n"
@@ -940,6 +946,56 @@ scale_row_from_temp(unsigned char * restrict dst, const unsigned char * restrict
 	"strb	r7, [r0], #1		@ *dst++ = val		\n"
 	"bgt	5b			@ 			\n"
 	"8:							\n"
+	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
+	".ltorg							\n"
+	ENTER_THUMB
+	);
+}
+
+static void
+scale_row_from_temp_alpha(unsigned char * restrict dst, const unsigned char * restrict src, const fz_weights * restrict weights, int width, int n, int row)
+{
+	asm volatile(
+	ENTER_ARM
+	"stmfd	r13!,{r4-r11,r14}				\n"
+	"mov	r11,#255		@ r11= 255		\n"
+	"ldr	r12,[r13,#4*10]		@ r12= row		\n"
+	"@ r0 = dst						\n"
+	"@ r1 = src						\n"
+	"@ r2 = &weights->index[0]				\n"
+	"@ r3 = width						\n"
+	"@ r11= 255						\n"
+	"@ r12= row						\n"
+	"add	r2, r2, #24		@ r2 = weights->index	\n"
+	"ldr	r4, [r2, r12, LSL #2]	@ r4 = index[row]	\n"
+	"add	r2, r2, #4		@ r2 = &index[1]	\n"
+	"mov	r6, r3			@ r6 = x = width	\n"
+	"ldr	r14,[r2, r4, LSL #2]!	@ r2 = contrib = index[index[row]+1]\n"
+	"				@ r14= len = *contrib	\n"
+	"5:							\n"
+	"ldr	r4,[r13,#4*9]		@ r10= nn = n		\n"
+	"1:							\n"
+	"mov	r5, r1			@ r5 = min = src	\n"
+	"mov	r7, #128		@ r7 = val = 128	\n"
+	"movs	r8, r14			@ r8 = len2 = len	\n"
+	"add	r9, r2, #4		@ r9 = contrib2		\n"
+	"ble	7f			@ while (len2-- > 0) {	\n"
+	"6:							\n"
+	"ldr	r10,[r9], #4		@ r10 = *contrib2++	\n"
+	"ldrb	r12,[r5], r3		@ r12 = *min	r5 = min += width\n"
+	"subs	r8, r8, #1		@ len2--		\n"
+	"@ stall r12						\n"
+	"mla	r7, r10,r12,r7		@ val += r12 * r10	\n"
+	"bgt	6b			@ }			\n"
+	"7:							\n"
+	"mov	r7, r7, asr #8		@ r7 = val >>= 8	\n"
+	"subs	r4, r4, #1		@ r4 = nn--		\n"
+	"add	r1, r1, #1		@ src++			\n"
+	"strb	r7, [r0], #1		@ *dst++ = val		\n"
+	"bgt	1b			@ 			\n"
+	"subs	r6, r6, #1		@ x--			\n"
+	"strb	r11,[r0], #1		@ *dst++ = 255		\n"
+	"bgt	5b			@ 			\n"
 	"ldmfd	r13!,{r4-r11,PC}	@ pop, return to thumb	\n"
 	".ltorg							\n"
 	ENTER_THUMB
