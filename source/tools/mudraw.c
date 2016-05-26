@@ -312,6 +312,7 @@ typedef struct worker_t {
 	fz_matrix ctm;
 	fz_rect tbounds;
 	fz_pixmap *pix;
+	fz_bitmap *bit;
 	fz_cookie cookie;
 	SEMAPHORE start;
 	SEMAPHORE stop;
@@ -523,9 +524,11 @@ file_level_trailers(fz_context *ctx)
 	fz_drop_stext_sheet(ctx, sheet);
 }
 
-static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band, fz_pixmap *pix)
+static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band, fz_pixmap *pix, fz_bitmap **bit)
 {
 	fz_device *dev = NULL;
+
+	*bit = NULL;
 
 	fz_try(ctx)
 	{
@@ -553,6 +556,9 @@ static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_l
 
 		if (savealpha)
 			fz_unmultiply_pixmap(ctx, pix);
+
+		if ((output_format == OUT_PCL && out_cs == CS_MONO) || (output_format == OUT_PBM) || (output_format == OUT_PKM))
+			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
 	}
 	fz_catch(ctx)
 	{
@@ -739,6 +745,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_mono_pcl_output_context *pmcoc = NULL;
 		fz_color_pcl_output_context *pccoc = NULL;
 		fz_device *dev = NULL;
+		fz_bitmap *bit = NULL;
 
 		fz_var(dev);
 		fz_var(pix);
@@ -746,6 +753,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_var(psoc);
 		fz_var(pmcoc);
 		fz_var(pccoc);
+		fz_var(bit);
 
 		fz_bound_page(ctx, page, &bounds);
 		zoom = resolution / 72;
@@ -882,10 +890,12 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					DEBUG_THREADS(("Waiting for worker %d to complete band %d\n", w->num, band));
 					SEMAPHORE_WAIT(w->stop);
 					pix = w->pix;
+					bit = w->bit;
+					w->bit = NULL;
 					cookie->errors += w->cookie.errors;
 				}
 				else
-					drawband(ctx, savealpha, page, list, &ctm, &tbounds, cookie, band, pix);
+					drawband(ctx, savealpha, page, list, &ctm, &tbounds, cookie, band, pix, &bit);
 
 				if (output)
 				{
@@ -901,24 +911,26 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					{
 						if (out_cs == CS_MONO)
 						{
-							fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
 							fz_write_mono_pcl_band(ctx, out, pmcoc, bit);
 							fz_drop_bitmap(ctx, bit);
+							bit = NULL;
 						}
 						else
 							fz_write_color_pcl_band(ctx, out, pccoc, pix->w, totalheight, pix->n, pix->stride, band, drawheight, pix->samples);
 					}
 					else if (output_format == OUT_PS)
 						fz_write_ps_band(ctx, out, psoc, pix->w, totalheight, pix->n, pix->stride, band, drawheight, pix->samples);
-					else if (output_format == OUT_PBM) {
-						fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
+					else if (output_format == OUT_PBM)
+					{
 						fz_write_pbm_band(ctx, out, bit);
 						fz_drop_bitmap(ctx, bit);
+						bit = NULL;
 					}
-					else if (output_format == OUT_PKM) {
-						fz_bitmap *bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
+					else if (output_format == OUT_PKM)
+					{
 						fz_write_pkm_band(ctx, out, bit);
 						fz_drop_bitmap(ctx, bit);
+						bit = NULL;
 					}
 					else if (output_format == OUT_TGA)
 					{
@@ -969,6 +981,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_always(ctx)
 		{
+			fz_drop_bitmap(ctx, bit);
+			bit = NULL;
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (num_workers > 0)
@@ -1281,7 +1295,7 @@ static THREAD_RETURN_TYPE worker_thread(void *arg)
 		SEMAPHORE_WAIT(me->start);
 		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, me->band));
 		if (me->band >= 0)
-			drawband(me->ctx, me->savealpha, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band, me->pix);
+			drawband(me->ctx, me->savealpha, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band, me->pix, &me->bit);
 		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, me->band));
 		SEMAPHORE_TRIGGER(me->stop);
 	}
