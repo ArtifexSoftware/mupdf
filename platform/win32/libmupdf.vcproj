@@ -1119,6 +1119,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\track-usage.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\util.c"
 				>
 			</File>
@@ -1631,6 +1635,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\unzip.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\track-usage.h"
 					>
 				</File>
 				<File

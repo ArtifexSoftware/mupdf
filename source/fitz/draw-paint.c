@@ -263,20 +263,20 @@ fz_paint_solid_color(byte * restrict dp, int n, int w, const byte * restrict col
 	{
 		switch (n)
 		{
-		case 2: fz_paint_solid_color_2_da(dp, w, color); break;
-		case 4: fz_paint_solid_color_4_da(dp, w, color); break;
-		case 5: fz_paint_solid_color_5_da(dp, w, color); break;
-		default: fz_paint_solid_color_N(dp, n, w, color, 1); break;
+		case 2: TRACK_LABEL("p1cd2"); fz_paint_solid_color_2_da(dp, w, color); break;
+		case 4: TRACK_LABEL("p1cd4"); fz_paint_solid_color_4_da(dp, w, color); break;
+		case 5: TRACK_LABEL("p1cd5"); fz_paint_solid_color_5_da(dp, w, color); break;
+		default: TRACK_LABEL("p1cdn"); fz_paint_solid_color_N(dp, n, w, color, 1); break;
 		}
 	}
 	else
 	{
 		switch (n)
 		{
-		case 1: fz_paint_solid_color_N(dp, 1, w, color, 0); break;
-		case 3: fz_paint_solid_color_N(dp, 3, w, color, 0); break;
-		case 4: fz_paint_solid_color_N(dp, 4, w, color, 0); break;
-		default: fz_paint_solid_color_N(dp, n, w, color, 0); break;
+		case 1: TRACK_LABEL("p1c1"); fz_paint_solid_color_N(dp, 1, w, color, 0); break;
+		case 3: TRACK_LABEL("p1c3"); fz_paint_solid_color_N(dp, 3, w, color, 0); break;
+		case 4: TRACK_LABEL("p1c4"); fz_paint_solid_color_N(dp, 4, w, color, 0); break;
+		default: TRACK_LABEL("p1cn"); fz_paint_solid_color_N(dp, n, w, color, 0); break;
 		}
 	}
 }
@@ -509,20 +509,20 @@ fz_paint_span_with_color(byte * restrict dp, const byte * restrict mp, int n, in
 	{
 		switch (n)
 		{
-		case 2: fz_paint_span_with_color_2_da(dp, mp, w, color); break;
-		case 4: fz_paint_span_with_color_4_da(dp, mp, w, color); break;
-		case 5: fz_paint_span_with_color_5_da(dp, mp, w, color); break;
-		default: fz_paint_span_with_color_N(dp, mp, n, w, color, 1); break;
+		case 2: TRACK_LABEL("pscd2"); fz_paint_span_with_color_2_da(dp, mp, w, color); break;
+		case 4: TRACK_LABEL("pscd4"); fz_paint_span_with_color_4_da(dp, mp, w, color); break;
+		case 5: TRACK_LABEL("pscd5"); fz_paint_span_with_color_5_da(dp, mp, w, color); break;
+		default: TRACK_LABEL("pscdn"); fz_paint_span_with_color_N(dp, mp, n, w, color, 1); break;
 		}
 	}
 	else
 	{
 		switch (n)
 		{
-		case 1: fz_paint_span_with_color_N(dp, mp, 1, w, color, 0); break;
-		case 3: fz_paint_span_with_color_N(dp, mp, 3, w, color, 0); break;
-		case 4: fz_paint_span_with_color_N(dp, mp, 4, w, color, 0); break;
-		default: fz_paint_span_with_color_N(dp, mp, n, w, color, 0); break;
+		case 1: TRACK_LABEL("pscd1"); fz_paint_span_with_color_N(dp, mp, 1, w, color, 0); break;
+		case 3: TRACK_LABEL("pscd3"); fz_paint_span_with_color_N(dp, mp, 3, w, color, 0); break;
+		case 4: TRACK_LABEL("pscd4"); fz_paint_span_with_color_N(dp, mp, 4, w, color, 0); break;
+		default: TRACK_LABEL("pscdn"); fz_paint_span_with_color_N(dp, mp, n, w, color, 0); break;
 		}
 	}
 }
@@ -869,20 +869,20 @@ fz_paint_span_with_mask(byte * restrict dp, int da, const byte * restrict sp, in
 		{
 			switch (n)
 			{
-			case 1: fz_paint_span_with_mask_1(dp, 1, sp, 1, mp, w); break;
-			case 3: fz_paint_span_with_mask_3(dp, 1, sp, 1, mp, w); break;
-			case 4: fz_paint_span_with_mask_4(dp, 1, sp, 1, mp, w); break;
-			default: fz_paint_span_with_mask_N(dp, 1, sp, 1, mp, n, w); break;
+			case 1: TRACK_LABEL("pmds1"); fz_paint_span_with_mask_1(dp, 1, sp, 1, mp, w); break;
+			case 3: TRACK_LABEL("pmds3"); fz_paint_span_with_mask_3(dp, 1, sp, 1, mp, w); break;
+			case 4: TRACK_LABEL("pmds4"); fz_paint_span_with_mask_4(dp, 1, sp, 1, mp, w); break;
+			default: TRACK_LABEL("pmdsn"); fz_paint_span_with_mask_N(dp, 1, sp, 1, mp, n, w); break;
 			}
 		}
 		else
 		{
 			switch (n)
 			{
-			case 1: fz_paint_span_with_mask_1(dp, 1, sp, 0, mp, w); break;
-			case 3: fz_paint_span_with_mask_3(dp, 1, sp, 0, mp, w); break;
-			case 4: fz_paint_span_with_mask_4(dp, 1, sp, 0, mp, w); break;
-			default: fz_paint_span_with_mask_N(dp, 1, sp, 0, mp, n, w); break;
+			case 1: TRACK_LABEL("pmd1"); fz_paint_span_with_mask_1(dp, 1, sp, 0, mp, w); break;
+			case 3: TRACK_LABEL("pmd3"); fz_paint_span_with_mask_3(dp, 1, sp, 0, mp, w); break;
+			case 4: TRACK_LABEL("pmd4"); fz_paint_span_with_mask_4(dp, 1, sp, 0, mp, w); break;
+			default: TRACK_LABEL("pmdn"); fz_paint_span_with_mask_N(dp, 1, sp, 0, mp, n, w); break;
 			}
 		}
 	}
@@ -892,20 +892,20 @@ fz_paint_span_with_mask(byte * restrict dp, int da, const byte * restrict sp, in
 		{
 			switch (n)
 			{
-			case 1: fz_paint_span_with_mask_1(dp, 0, sp, 1, mp, w); break;
-			case 3: fz_paint_span_with_mask_3(dp, 0, sp, 1, mp, w); break;
-			case 4: fz_paint_span_with_mask_4(dp, 0, sp, 1, mp, w); break;
-			default: fz_paint_span_with_mask_N(dp, 0, sp, 1, mp, n, w); break;
+			case 1: TRACK_LABEL("pms1"); fz_paint_span_with_mask_1(dp, 0, sp, 1, mp, w); break;
+			case 3: TRACK_LABEL("pms3"); fz_paint_span_with_mask_3(dp, 0, sp, 1, mp, w); break;
+			case 4: TRACK_LABEL("pms4"); fz_paint_span_with_mask_4(dp, 0, sp, 1, mp, w); break;
+			default: TRACK_LABEL("pmsn"); fz_paint_span_with_mask_N(dp, 0, sp, 1, mp, n, w); break;
 			}
 		}
 		else
 		{
 			switch (n)
 			{
-			case 1: fz_paint_span_with_mask_1(dp, 0, sp, 0, mp, w); break;
-			case 3: fz_paint_span_with_mask_3(dp, 0, sp, 0, mp, w); break;
-			case 4: fz_paint_span_with_mask_4(dp, 0, sp, 0, mp, w); break;
-			default: fz_paint_span_with_mask_N(dp, 0, sp, 0, mp, n, w); break;
+			case 1: TRACK_LABEL("pm1"); fz_paint_span_with_mask_1(dp, 0, sp, 0, mp, w); break;
+			case 3: TRACK_LABEL("pm3"); fz_paint_span_with_mask_3(dp, 0, sp, 0, mp, w); break;
+			case 4: TRACK_LABEL("pm4"); fz_paint_span_with_mask_4(dp, 0, sp, 0, mp, w); break;
+			default: TRACK_LABEL("pmn"); fz_paint_span_with_mask_N(dp, 0, sp, 0, mp, n, w); break;
 			}
 		}
 	}
@@ -1205,21 +1205,21 @@ fz_paint_span(byte * restrict dp, int da, const byte * restrict sp, int sa, int 
 			{
 				switch (n)
 				{
-				case 0: fz_paint_span_1_dasa(dp, sp, w); break;
-				case 1: fz_paint_span_1(dp, 1, sp, 1, w); break;
-				case 3: fz_paint_span_3(dp, 1, sp, 1, w); break;
-				case 4: fz_paint_span_4(dp, 1, sp, 1, w); break;
-				default: fz_paint_span_N(dp, 1, sp, 1, n, w); break;
+				case 0: TRACK_LABEL("psds0"); fz_paint_span_1_dasa(dp, sp, w); break;
+				case 1: TRACK_LABEL("psds1"); fz_paint_span_1(dp, 1, sp, 1, w); break;
+				case 3: TRACK_LABEL("psds3"); fz_paint_span_3(dp, 1, sp, 1, w); break;
+				case 4: TRACK_LABEL("psds4"); fz_paint_span_4(dp, 1, sp, 1, w); break;
+				default: TRACK_LABEL("psdsn"); fz_paint_span_N(dp, 1, sp, 1, n, w); break;
 				}
 			}
 			else if (alpha > 0)
 			{
 				switch (n)
 				{
-				case 1: fz_paint_span_1_with_alpha(dp, 1, sp, 1, w, alpha); break;
-				case 3: fz_paint_span_3_with_alpha(dp, 1, sp, 1, w, alpha); break;
-				case 4: fz_paint_span_4_with_alpha(dp, 1, sp, 1, w, alpha); break;
-				default: fz_paint_span_N_with_alpha(dp, 1, sp, 1, n, w, alpha); break;
+				case 1: TRACK_LABEL("psdsa2"); fz_paint_span_1_with_alpha(dp, 1, sp, 1, w, alpha); break;
+				case 3: TRACK_LABEL("psdsa3"); fz_paint_span_3_with_alpha(dp, 1, sp, 1, w, alpha); break;
+				case 4: TRACK_LABEL("psdsa4"); fz_paint_span_4_with_alpha(dp, 1, sp, 1, w, alpha); break;
+				default: TRACK_LABEL("psdsan"); fz_paint_span_N_with_alpha(dp, 1, sp, 1, n, w, alpha); break;
 				}
 			}
 		}
@@ -1229,20 +1229,20 @@ fz_paint_span(byte * restrict dp, int da, const byte * restrict sp, int sa, int 
 			{
 				switch (n)
 				{
-				case 1: fz_paint_span_1(dp, 1, sp, 0, w); break;
-				case 3: fz_paint_span_3(dp, 1, sp, 0, w); break;
-				case 4: fz_paint_span_4(dp, 1, sp, 0, w); break;
-				default: fz_paint_span_N(dp, 1, sp, 0, n, w); break;
+				case 1: TRACK_LABEL("psd1"); fz_paint_span_1(dp, 1, sp, 0, w); break;
+				case 3: TRACK_LABEL("psd3"); fz_paint_span_3(dp, 1, sp, 0, w); break;
+				case 4: TRACK_LABEL("psd4"); fz_paint_span_4(dp, 1, sp, 0, w); break;
+				default: TRACK_LABEL("psdn"); fz_paint_span_N(dp, 1, sp, 0, n, w); break;
 				}
 			}
 			else if (alpha > 0)
 			{
 				switch (n)
 				{
-				case 1: fz_paint_span_1_with_alpha(dp, 1, sp, 0, w, alpha); break;
-				case 3: fz_paint_span_3_with_alpha(dp, 1, sp, 0, w, alpha); break;
-				case 4: fz_paint_span_4_with_alpha(dp, 1, sp, 0, w, alpha); break;
-				default: fz_paint_span_N_with_alpha(dp, 1, sp, 0, n, w, alpha); break;
+				case 1: TRACK_LABEL("psda1"); fz_paint_span_1_with_alpha(dp, 1, sp, 0, w, alpha); break;
+				case 3: TRACK_LABEL("psda3"); fz_paint_span_3_with_alpha(dp, 1, sp, 0, w, alpha); break;
+				case 4: TRACK_LABEL("psda4"); fz_paint_span_4_with_alpha(dp, 1, sp, 0, w, alpha); break;
+				default: TRACK_LABEL("psdan"); fz_paint_span_N_with_alpha(dp, 1, sp, 0, n, w, alpha); break;
 				}
 			}
 		}
@@ -1255,20 +1255,20 @@ fz_paint_span(byte * restrict dp, int da, const byte * restrict sp, int sa, int 
 			{
 				switch (n)
 				{
-				case 1: fz_paint_span_1(dp, 0, sp, 1, w); break;
-				case 3: fz_paint_span_3(dp, 0, sp, 1, w); break;
-				case 4: fz_paint_span_4(dp, 0, sp, 1, w); break;
-				default: fz_paint_span_N(dp, 0, sp, 1, n, w); break;
+				case 1: TRACK_LABEL("pss1"); fz_paint_span_1(dp, 0, sp, 1, w); break;
+				case 3: TRACK_LABEL("pss3"); fz_paint_span_3(dp, 0, sp, 1, w); break;
+				case 4: TRACK_LABEL("pss4"); fz_paint_span_4(dp, 0, sp, 1, w); break;
+				default: TRACK_LABEL("pssn"); fz_paint_span_N(dp, 0, sp, 1, n, w); break;
 				}
 			}
 			else if (alpha > 0)
 			{
 				switch (n)
 				{
-				case 1: fz_paint_span_1_with_alpha(dp, 0, sp, 1, w, alpha); break;
-				case 3: fz_paint_span_3_with_alpha(dp, 0, sp, 1, w, alpha); break;
-				case 4: fz_paint_span_4_with_alpha(dp, 0, sp, 1, w, alpha); break;
-				default: fz_paint_span_N_with_alpha(dp, 0, sp, 1, n, w, alpha); break;
+				case 1: TRACK_LABEL("pssa1"); fz_paint_span_1_with_alpha(dp, 0, sp, 1, w, alpha); break;
+				case 3: TRACK_LABEL("pssa3"); fz_paint_span_3_with_alpha(dp, 0, sp, 1, w, alpha); break;
+				case 4: TRACK_LABEL("pssa4"); fz_paint_span_4_with_alpha(dp, 0, sp, 1, w, alpha); break;
+				default: TRACK_LABEL("pssan"); fz_paint_span_N_with_alpha(dp, 0, sp, 1, n, w, alpha); break;
 				}
 			}
 		}
@@ -1278,20 +1278,20 @@ fz_paint_span(byte * restrict dp, int da, const byte * restrict sp, int sa, int 
 			{
 				switch (n)
 				{
-				case 1: fz_paint_span_1(dp, 0, sp, 0, w); break;
-				case 3: fz_paint_span_3(dp, 0, sp, 0, w); break;
-				case 4: fz_paint_span_4(dp, 0, sp, 0, w); break;
-				default: fz_paint_span_N(dp, 0, sp, 0, n, w); break;
+				case 1: TRACK_LABEL("ps1"); fz_paint_span_1(dp, 0, sp, 0, w); break;
+				case 3: TRACK_LABEL("ps3"); fz_paint_span_3(dp, 0, sp, 0, w); break;
+				case 4: TRACK_LABEL("ps4"); fz_paint_span_4(dp, 0, sp, 0, w); break;
+				default: TRACK_LABEL("psn"); fz_paint_span_N(dp, 0, sp, 0, n, w); break;
 				}
 			}
 			else if (alpha > 0)
 			{
 				switch (n)
 				{
-				case 1: fz_paint_span_1_with_alpha(dp, 0, sp, 0, w, alpha); break;
-				case 3: fz_paint_span_3_with_alpha(dp, 0, sp, 0, w, alpha); break;
-				case 4: fz_paint_span_4_with_alpha(dp, 0, sp, 0, w, alpha); break;
-				default: fz_paint_span_N_with_alpha(dp, 0 ,sp, 0, n, w, alpha); break;
+				case 1: TRACK_LABEL("psa1"); fz_paint_span_1_with_alpha(dp, 0, sp, 0, w, alpha); break;
+				case 3: TRACK_LABEL("psa3"); fz_paint_span_3_with_alpha(dp, 0, sp, 0, w, alpha); break;
+				case 4: TRACK_LABEL("psa4"); fz_paint_span_4_with_alpha(dp, 0, sp, 0, w, alpha); break;
+				default: TRACK_LABEL("psan"); fz_paint_span_N_with_alpha(dp, 0 ,sp, 0, n, w, alpha); break;
 				}
 			}
 		}
@@ -1614,15 +1614,19 @@ fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, un
 		switch (n)
 		{
 		case 1:
+			TRACK_LABEL("pgda1");
 			fz_paint_glyph_alpha_1_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 3:
+			TRACK_LABEL("pgda3");
 			fz_paint_glyph_alpha_3_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 4:
+			TRACK_LABEL("pgda4");
 			fz_paint_glyph_alpha_4_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		default:
+			TRACK_LABEL("pgdan");
 			fz_paint_glyph_alpha_N_da(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		}
@@ -1632,15 +1636,19 @@ fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, un
 		switch (n)
 		{
 		case 1:
+			TRACK_LABEL("pga1");
 			fz_paint_glyph_alpha_1(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 3:
+			TRACK_LABEL("pga3");
 			fz_paint_glyph_alpha_3(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 4:
+			TRACK_LABEL("pga4");
 			fz_paint_glyph_alpha_4(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		default:
+			TRACK_LABEL("pgan");
 			fz_paint_glyph_alpha_N(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		}
@@ -1655,15 +1663,19 @@ fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, un
 		switch (n)
 		{
 		case 1:
+			TRACK_LABEL("pg1d1");
 			fz_paint_glyph_solid_1_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 3:
+			TRACK_LABEL("pg1d3");
 			fz_paint_glyph_solid_3_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 4:
+			TRACK_LABEL("pg1d4");
 			fz_paint_glyph_solid_4_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		default:
+			TRACK_LABEL("pg1dn");
 			fz_paint_glyph_solid_N_da(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		}
@@ -1673,15 +1685,19 @@ fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, un
 		switch (n)
 		{
 		case 1:
+			TRACK_LABEL("pg11");
 			fz_paint_glyph_solid_1(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 3:
+			TRACK_LABEL("pg13");
 			fz_paint_glyph_solid_3(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		case 4:
+			TRACK_LABEL("pg14");
 			fz_paint_glyph_solid_4(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		default:
+			TRACK_LABEL("pg1n");
 			fz_paint_glyph_solid_N(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
 			break;
 		}
