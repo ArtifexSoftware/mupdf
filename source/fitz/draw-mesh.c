@@ -43,7 +43,7 @@ static void paint_scan(fz_pixmap *restrict pix, int y, int fx0, int fx1, int cx0
 
 	p = pix->samples + ((x0 - pix->x) * pix->n) + ((y - pix->y) * pix->stride);
 	pa = pix->alpha;
-	while (w--)
+	do
 	{
 		for (k = 0; k < n; k++)
 		{
@@ -53,6 +53,7 @@ static void paint_scan(fz_pixmap *restrict pix, int y, int fx0, int fx1, int cx0
 		if (pa)
 			*p++ = 255;
 	}
+	while (--w);
 }
 
 typedef struct edge_data_s edge_data;

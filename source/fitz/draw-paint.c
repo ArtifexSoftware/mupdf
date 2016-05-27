@@ -84,21 +84,23 @@ fz_paint_solid_color_2_da(byte * restrict dp, int n, int w, const byte * restric
 		return;
 	if (sa == 256)
 	{
-		while (w--)
+		do
 		{
 			dp[0] = color[0];
 			dp[1] = 255;
 			dp += 2;
 		}
+		while (--w);
 	}
 	else
 	{
-		while (w--)
+		do
 		{
 			dp[0] = FZ_BLEND(color[0], dp[0], sa);
 			dp[1] = FZ_BLEND(255, dp[1], sa);
 			dp += 2;
 		}
+		while (--w);
 	}
 }
 
@@ -122,18 +124,19 @@ fz_paint_solid_color_4_da(byte * restrict dp, int n, int w, const byte * restric
 		rgba |= 0xFF000000;
 	if (sa == 256)
 	{
-		while (w--)
+		do
 		{
 			*(unsigned int *)dp = rgba;
 			dp += 4;
 		}
+		while (--w);
 	}
 	else
 	{
 		unsigned int mask = 0xFF00FF00;
 		unsigned int rb = rgba & (mask>>8);
 		unsigned int ga = (rgba & mask)>>8;
-		while (w--)
+		do
 		{
 			unsigned int RGBA = *(unsigned int *)dp;
 			unsigned int RB = (RGBA<<8) & mask;
@@ -145,6 +148,7 @@ fz_paint_solid_color_4_da(byte * restrict dp, int n, int w, const byte * restric
 			*(unsigned int *)dp = (RB>>8) | GA;
 			dp += 4;
 		}
+		while (--w);
 	}
 }
 
@@ -201,9 +205,11 @@ fz_paint_solid_color_5_da(byte * restrict dp, int n, int w, const byte * restric
 				while (w > 0);
 			}
 			w += 3;
+			if (w == 0)
+				return;
 		}
 #endif
-		while (w--)
+		do
 		{
 			dp[0] = color[0];
 			dp[1] = color[1];
@@ -212,10 +218,11 @@ fz_paint_solid_color_5_da(byte * restrict dp, int n, int w, const byte * restric
 			dp[4] = 255;
 			dp += 5;
 		}
+		while (--w);
 	}
 	else
 	{
-		while (w--)
+		do
 		{
 			dp[0] = FZ_BLEND(color[0], dp[0], sa);
 			dp[1] = FZ_BLEND(color[1], dp[1], sa);
@@ -224,6 +231,7 @@ fz_paint_solid_color_5_da(byte * restrict dp, int n, int w, const byte * restric
 			dp[4] = FZ_BLEND(255, dp[5], sa);
 			dp += 5;
 		}
+		while (--w);
 	}
 }
 
@@ -238,7 +246,7 @@ fz_paint_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 		return;
 	if (sa == 256)
 	{
-		while (w--)
+		do
 		{
 			dp[0] = color[0];
 			if (n1 > 1)
@@ -251,10 +259,11 @@ fz_paint_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 				dp[n1] = 255;
 			dp += n;
 		}
+		while (--w);
 	}
 	else
 	{
-		while (w--)
+		do
 		{
 			for (k = 0; k < n1; k++)
 				dp[k] = FZ_BLEND(color[k], dp[k], sa);
@@ -262,6 +271,7 @@ fz_paint_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 				dp[k] = FZ_BLEND(255, dp[k], sa);
 			dp += n;
 		}
+		while (--w);
 	}
 }
 
@@ -331,7 +341,7 @@ fz_paint_span_with_color_2_da(byte * restrict dp, const byte * restrict mp, int 
 	TRACK_FN();
 	if (sa == 256)
 	{
-		while (w--)
+		do
 		{
 			int ma = *mp++;
 			ma = FZ_EXPAND(ma);
@@ -350,10 +360,11 @@ fz_paint_span_with_color_2_da(byte * restrict dp, const byte * restrict mp, int 
 			}
 			dp += 2;
 		}
+		while (--w);
 	}
 	else
 	{
-		while (w--)
+		do
 		{
 			int ma = *mp++;
 			ma = FZ_EXPAND(ma);
@@ -368,6 +379,7 @@ fz_paint_span_with_color_2_da(byte * restrict dp, const byte * restrict mp, int 
 			}
 			dp += 2;
 		}
+		while (--w);
 	}
 }
 
@@ -389,7 +401,7 @@ fz_paint_span_with_color_4_da(byte * restrict dp, const byte * restrict mp, int 
 	ga = (rgba & mask)>>8;
 	if (sa == 256)
 	{
-		while (w--)
+		do
 		{
 			unsigned int ma = *mp++;
 			dp += 4;
@@ -413,10 +425,11 @@ fz_paint_span_with_color_4_da(byte * restrict dp, const byte * restrict mp, int 
 				((unsigned int *)dp)[-1] = (RB>>8) | GA;
 			}
 		}
+		while (--w);
 	}
 	else
 	{
-		while (w--)
+		do
 		{
 			unsigned int ma = *mp++;
 			ma = FZ_COMBINE(FZ_EXPAND(ma), sa);
@@ -433,6 +446,7 @@ fz_paint_span_with_color_4_da(byte * restrict dp, const byte * restrict mp, int 
 				((unsigned int *)dp)[-1] = (RB>>8) | GA;
 			}
 		}
+		while (--w);
 	}
 }
 
@@ -447,7 +461,7 @@ fz_paint_span_with_color_5_da(byte * restrict dp, const byte * restrict mp, int 
 	TRACK_FN();
 	if (sa == 256)
 	{
-		while (w--)
+		do
 		{
 			int ma = *mp++;
 			ma = FZ_EXPAND(ma);
@@ -472,10 +486,11 @@ fz_paint_span_with_color_5_da(byte * restrict dp, const byte * restrict mp, int 
 			}
 			dp += 5;
 		}
+		while (--w);
 	}
 	else
 	{
-		while (w--)
+		do
 		{
 			int ma = *mp++;
 			ma = FZ_EXPAND(ma);
@@ -493,6 +508,7 @@ fz_paint_span_with_color_5_da(byte * restrict dp, const byte * restrict mp, int 
 			}
 			dp += 5;
 		}
+		while (--w);
 	}
 }
 
@@ -506,7 +522,7 @@ fz_paint_span_with_color_N_general(byte * restrict dp, const byte * restrict mp,
 		return;
 	if (sa == 256)
 	{
-		while (w--)
+		do
 		{
 			int ma = *mp++;
 			ma = FZ_EXPAND(ma);
@@ -535,10 +551,11 @@ fz_paint_span_with_color_N_general(byte * restrict dp, const byte * restrict mp,
 			}
 			dp += n;
 		}
+		while (--w);
 	}
 	else
 	{
-		while (w--)
+		do
 		{
 			int ma = *mp++;
 			ma = FZ_COMBINE(FZ_EXPAND(ma), sa);
@@ -548,6 +565,7 @@ fz_paint_span_with_color_N_general(byte * restrict dp, const byte * restrict mp,
 				dp[k] = FZ_BLEND(255, dp[k], ma);
 			dp += n;
 		}
+		while (--w);
 	}
 }
 
@@ -618,7 +636,7 @@ fz_get_span_color_painter(int n, int da, const byte * restrict color)
 static inline void
 fz_paint_span_with_mask_1_general(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
-	while (w--)
+	do
 	{
 		int masa;
 		int ma = *mp++;
@@ -679,13 +697,14 @@ fz_paint_span_with_mask_1_general(byte * restrict dp, int da, const byte * restr
 			}
 		}
 	}
+	while (--w);
 }
 
 /* FIXME: There is potential for SWAR optimisation here */
 static inline void
 fz_paint_span_with_mask_3_general(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
-	while (w--)
+	do
 	{
 		int masa;
 		int ma = *mp++;
@@ -771,13 +790,14 @@ fz_paint_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 			}
 		}
 	}
+	while (--w);
 }
 
 /* FIXME: There is potential for SWAR optimisation here */
 static inline void
 fz_paint_span_with_mask_4_general(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
-	while (w--)
+	do
 	{
 		int masa;
 		int ma = *mp++;
@@ -861,12 +881,13 @@ fz_paint_span_with_mask_4_general(byte * restrict dp, int da, const byte * restr
 			}
 		}
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_span_with_mask_N_general(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int n, int w)
 {
-	while (w--)
+	do
 	{
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
@@ -943,6 +964,7 @@ fz_paint_span_with_mask_N_general(byte * restrict dp, int da, const byte * restr
 			}
 		}
 	}
+	while (--w);
 }
 
 static void
@@ -1118,7 +1140,7 @@ fz_paint_span_1_with_alpha_general(byte * restrict dp, int da, const byte * rest
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
-	while (w--)
+	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[1], alpha) : alpha);
 		*dp = FZ_BLEND(*sp, *dp, masa);
@@ -1131,6 +1153,7 @@ fz_paint_span_1_with_alpha_general(byte * restrict dp, int da, const byte * rest
 		if (sa)
 			 sp++;
 	}
+	while (--w);
 }
 
 static inline void
@@ -1138,7 +1161,7 @@ fz_paint_span_3_with_alpha_general(byte * restrict dp, int da, const byte * rest
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
-	while (w--)
+	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[3], alpha) : alpha);
 		*dp = FZ_BLEND(*sp, *dp, masa);
@@ -1155,6 +1178,7 @@ fz_paint_span_3_with_alpha_general(byte * restrict dp, int da, const byte * rest
 		if (sa)
 			sp++;
 	}
+	while (--w);
 }
 
 static inline void
@@ -1162,7 +1186,7 @@ fz_paint_span_4_with_alpha_general(byte * restrict dp, int da, const byte * rest
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
-	while (w--)
+	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[4], alpha) : alpha);
 		*dp = FZ_BLEND(*sp, *dp, masa);
@@ -1181,6 +1205,7 @@ fz_paint_span_4_with_alpha_general(byte * restrict dp, int da, const byte * rest
 		if (sa)
 			sp++;
 	}
+	while (--w);
 }
 
 static inline void
@@ -1188,7 +1213,7 @@ fz_paint_span_N_with_alpha_general(byte * restrict dp, int da, const byte * rest
 {
 	if (sa)
 		alpha = FZ_EXPAND(alpha);
-	while (w--)
+	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[n1], alpha) : alpha);
 		int k = n1;
@@ -1205,6 +1230,7 @@ fz_paint_span_N_with_alpha_general(byte * restrict dp, int da, const byte * rest
 		if (sa)
 			sp++;
 	}
+	while (--w);
 }
 
 /* Blend source over destination */
@@ -1212,7 +1238,7 @@ fz_paint_span_N_with_alpha_general(byte * restrict dp, int da, const byte * rest
 static inline void
 fz_paint_span_1_general(byte * restrict dp, int da, const byte * restrict sp, int sa, int w)
 {
-	while (w--)
+	do
 	{
 		int t = (sa ? FZ_EXPAND(sp[1]): 256);
 		if (t == 0)
@@ -1244,12 +1270,13 @@ fz_paint_span_1_general(byte * restrict dp, int da, const byte * restrict sp, in
 			}
 		}
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_span_3_general(byte * restrict dp, int da, const byte * restrict sp, int sa, int w)
 {
-	while (w--)
+	do
 	{
 		int t = (sa ? FZ_EXPAND(sp[3]) : 256);
 		if (t == 0)
@@ -1291,12 +1318,13 @@ fz_paint_span_3_general(byte * restrict dp, int da, const byte * restrict sp, in
 			}
 		}
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_span_4_general(byte * restrict dp, int da, const byte * restrict sp, int sa, int w)
 {
-	while (w--)
+	do
 	{
 		int t = (sa ? FZ_EXPAND(sp[4]) : 256);
 		if (t == 0)
@@ -1336,12 +1364,13 @@ fz_paint_span_4_general(byte * restrict dp, int da, const byte * restrict sp, in
 			}
 		}
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_span_N_general(byte * restrict dp, int da, const byte * restrict sp, int sa, int n1, int w)
 {
-	while (w--)
+	do
 	{
 		int t = (sa ? FZ_EXPAND(sp[n1]) : 256);
 		if (t == 0)
@@ -1381,17 +1410,19 @@ fz_paint_span_N_general(byte * restrict dp, int da, const byte * restrict sp, in
 			}
 		}
 	}
+	while (--w);
 }
 
 static void
 fz_paint_span_0_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
 {
-	while (w--)
+	do
 	{
 		int t = FZ_EXPAND(255 - sp[0]);
 		*dp = *sp++ + FZ_COMBINE(*dp, t);
 		dp ++;
 	}
+	while (--w);
 }
 
 static void
@@ -1747,7 +1778,7 @@ fz_paint_pixmap_with_bbox(fz_pixmap * restrict dst, const fz_pixmap * restrict s
 	y = bbox.y0;
 	w = bbox.x1 - bbox.x0;
 	h = bbox.y1 - bbox.y0;
-	if ((w | h) == 0)
+	if (w == 0 || h == 0)
 		return;
 
 	n = src->n;
@@ -1789,7 +1820,7 @@ fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int al
 	y = bbox.y0;
 	w = bbox.x1 - bbox.x0;
 	h = bbox.y1 - bbox.y0;
-	if ((w | h) == 0)
+	if (w == 0 || h == 0)
 		return;
 
 	n = src->n;
@@ -1833,7 +1864,7 @@ fz_paint_pixmap_with_mask(fz_pixmap * restrict dst, const fz_pixmap * restrict s
 	y = bbox.y0;
 	w = bbox.x1 - bbox.x0;
 	h = bbox.y1 - bbox.y0;
-	if ((w | h) == 0)
+	if (w == 0 || h == 0)
 		return;
 
 	n = src->n;

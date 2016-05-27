@@ -31,7 +31,7 @@ fz_paint_affine_alpha_N_lerp(byte * restrict dp, int da, const byte * restrict s
 {
 	int k;
 
-	while (w--)
+	do
 	{
 		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
@@ -64,13 +64,14 @@ fz_paint_affine_alpha_N_lerp(byte * restrict dp, int da, const byte * restrict s
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 /* Special case code for gray -> rgb */
 static inline void
 fz_paint_affine_alpha_g2rgb_lerp(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int alpha, byte * restrict hp)
 {
-	while (w--)
+	do
 	{
 		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
@@ -103,6 +104,7 @@ fz_paint_affine_alpha_g2rgb_lerp(byte * restrict dp, int da, const byte * restri
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -114,7 +116,7 @@ fz_paint_affine_alpha_N_near_fa0(byte * restrict dp, int da, const byte * restri
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui * (n1+sa);
-	while (w--)
+	do
 	{
 		int vi = v >> 16;
 		if (vi >= 0 && vi < sh)
@@ -137,6 +139,7 @@ fz_paint_affine_alpha_N_near_fa0(byte * restrict dp, int da, const byte * restri
 			hp++;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -147,7 +150,7 @@ fz_paint_affine_alpha_N_near_fb0(byte * restrict dp, int da, const byte * restri
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		if (ui >= 0 && ui < sw)
@@ -170,6 +173,7 @@ fz_paint_affine_alpha_N_near_fb0(byte * restrict dp, int da, const byte * restri
 			hp++;
 		u += fa;
 	}
+	while (--w);
 }
 
 static inline void
@@ -177,7 +181,7 @@ fz_paint_affine_alpha_N_near(byte * restrict dp, int da, const byte * restrict s
 {
 	int k;
 
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		int vi = v >> 16;
@@ -202,6 +206,7 @@ fz_paint_affine_alpha_N_near(byte * restrict dp, int da, const byte * restrict s
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -211,7 +216,7 @@ fz_paint_affine_alpha_g2rgb_near_fa0(byte * restrict dp, int da, const byte * re
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui * (1+sa);
-	while (w--)
+	do
 	{
 		int vi = v >> 16;
 		if (vi >= 0 && vi < sh)
@@ -236,6 +241,7 @@ fz_paint_affine_alpha_g2rgb_near_fa0(byte * restrict dp, int da, const byte * re
 			hp++;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -245,7 +251,7 @@ fz_paint_affine_alpha_g2rgb_near_fb0(byte * restrict dp, int da, const byte * re
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		if (ui >= 0 && ui < sw)
@@ -270,12 +276,13 @@ fz_paint_affine_alpha_g2rgb_near_fb0(byte * restrict dp, int da, const byte * re
 			hp++;
 		u += fa;
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_affine_alpha_g2rgb_near(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int alpha, byte * restrict hp)
 {
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		int vi = v >> 16;
@@ -302,6 +309,7 @@ fz_paint_affine_alpha_g2rgb_near(byte * restrict dp, int da, const byte * restri
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 /* Blend premultiplied source image over destination */
@@ -310,7 +318,7 @@ fz_paint_affine_N_lerp(byte * restrict dp, int da, const byte * restrict sp, int
 {
 	int k;
 
-	while (w--)
+	do
 	{
 		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
@@ -343,12 +351,13 @@ fz_paint_affine_N_lerp(byte * restrict dp, int da, const byte * restrict sp, int
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_affine_solid_g2rgb_lerp(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, byte * restrict hp)
 {
-	while (w--)
+	do
 	{
 		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
@@ -380,6 +389,7 @@ fz_paint_affine_solid_g2rgb_lerp(byte * restrict dp, int da, const byte * restri
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -390,7 +400,7 @@ fz_paint_affine_N_near_fa0(byte * restrict dp, int da, const byte * restrict sp,
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui*(n1+sa);
-	while (w--)
+	do
 	{
 		int vi = v >> 16;
 		if (vi >= 0 && vi < sh)
@@ -438,6 +448,7 @@ fz_paint_affine_N_near_fa0(byte * restrict dp, int da, const byte * restrict sp,
 			hp++;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -448,7 +459,7 @@ fz_paint_affine_N_near_fb0(byte * restrict dp, int da, const byte * restrict sp,
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		if (ui >= 0 && ui < sw)
@@ -496,13 +507,14 @@ fz_paint_affine_N_near_fb0(byte * restrict dp, int da, const byte * restrict sp,
 			hp++;
 		u += fa;
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_affine_N_near(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int n1, byte * restrict hp)
 {
 	int k;
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		int vi = v >> 16;
@@ -552,6 +564,7 @@ fz_paint_affine_N_near(byte * restrict dp, int da, const byte * restrict sp, int
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -561,7 +574,7 @@ fz_paint_affine_solid_g2rgb_near_fa0(byte * restrict dp, int da, const byte * re
 	if (ui < 0 || ui >= sw)
 		return;
 	sp += ui * (1+sa);
-	while (w--)
+	do
 	{
 		int vi = v >> 16;
 		if (vi >= 0 && vi < sh)
@@ -599,6 +612,7 @@ fz_paint_affine_solid_g2rgb_near_fa0(byte * restrict dp, int da, const byte * re
 			hp++;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -608,7 +622,7 @@ fz_paint_affine_solid_g2rgb_near_fb0(byte * restrict dp, int da, const byte * re
 	if (vi < 0 || vi >= sh)
 		return;
 	sp += vi * ss;
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		if (ui >= 0 && ui < sw)
@@ -646,12 +660,13 @@ fz_paint_affine_solid_g2rgb_near_fb0(byte * restrict dp, int da, const byte * re
 			hp++;
 		u += fa;
 	}
+	while (--w);
 }
 
 static inline void
 fz_paint_affine_solid_g2rgb_near(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, byte * restrict hp)
 {
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		int vi = v >> 16;
@@ -691,6 +706,7 @@ fz_paint_affine_solid_g2rgb_near(byte * restrict dp, int da, const byte * restri
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 /* Blend non-premultiplied color in source image mask over destination */
@@ -701,7 +717,7 @@ fz_paint_affine_color_N_lerp(byte * restrict dp, int da, const byte * restrict s
 	int sa = color[n1];
 	int k;
 
-	while (w--)
+	do
 	{
 		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
 		{
@@ -731,6 +747,7 @@ fz_paint_affine_color_N_lerp(byte * restrict dp, int da, const byte * restrict s
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 static inline void
@@ -739,7 +756,7 @@ fz_paint_affine_color_N_near(byte * restrict dp, int da, const byte * restrict s
 	int sa = color[n1];
 	int k;
 
-	while (w--)
+	do
 	{
 		int ui = u >> 16;
 		int vi = v >> 16;
@@ -763,6 +780,7 @@ fz_paint_affine_color_N_near(byte * restrict dp, int da, const byte * restrict s
 		u += fa;
 		v += fb;
 	}
+	while (--w);
 }
 
 /* LERP DA + SA Solid */
@@ -2962,7 +2980,7 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 	if (shape && shape->y + shape->h < h)
 		h = shape->y + shape->h;
 	h -= y;
-	if (w < 0 || h < 0)
+	if (w <= 0 || h <= 0)
 		return;
 
 	/* map from screen space (x,y) to image space (u,v) */

@@ -705,19 +705,15 @@ fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity)
 
 	alpha = fz_new_pixmap_with_bbox(ctx, NULL, fz_pixmap_bbox(ctx, gray, &bbox), 1);
 	dp = alpha->samples;
-	dstride = alpha->stride - alpha->w;
+	dstride = alpha->stride;
 	sp = gray->samples;
-	sstride = gray->stride - gray->w;
+	sstride = gray->stride;
 
 	h = gray->h;
+	w = gray->w;
 	while (h--)
 	{
-		w = gray->w;
-		while (w--)
-		{
-			*dp++ = sp[0];
-			sp++;
-		}
+		memcpy(dp, sp, w);
 		sp += sstride;
 		dp += dstride;
 	}

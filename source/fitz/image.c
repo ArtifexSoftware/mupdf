@@ -99,10 +99,12 @@ fz_mask_color_key(fz_pixmap *pix, int n, const int *colorkey)
 	int k, t;
 	int h = pix->h;
 	int stride = pix->stride - pix->w * pix->n;
+	if (pix->w == 0)
+		return;
 	while (h--)
 	{
 		w = pix->w;
-		while (w--)
+		do
 		{
 			t = 1;
 			for (k = 0; k < n; k++)
@@ -113,6 +115,7 @@ fz_mask_color_key(fz_pixmap *pix, int n, const int *colorkey)
 					p[k] = 0;
 			p += pix->n;
 		}
+		while (--w);
 		p += stride;
 	}
 }
@@ -136,22 +139,26 @@ fz_unblend_masked_tile(fz_context *ctx, fz_pixmap *tile, fz_image *image)
 		return;
 	}
 
-	while (h--)
+	if (mask->w != 0)
 	{
-		int w = mask->w;
-		while (w--)
+		while (h--)
 		{
-			if (*s == 0)
-				for (k = 0; k < image->n; k++)
-					d[k] = image->colorkey[k];
-			else
-				for (k = 0; k < image->n; k++)
-					d[k] = fz_clampi(image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s, 0, 255);
-			s++;
-			d += n;
+			int w = mask->w;
+			do
+			{
+				if (*s == 0)
+					for (k = 0; k < image->n; k++)
+						d[k] = image->colorkey[k];
+				else
+					for (k = 0; k < image->n; k++)
+						d[k] = fz_clampi(image->colorkey[k] + (d[k] - image->colorkey[k]) * 255 / *s, 0, 255);
+				s++;
+				d += n;
+			}
+			while (--w);
+			s += sstride;
+			d += dstride;
 		}
-		s += sstride;
-		d += dstride;
 	}
 
 	fz_drop_pixmap(ctx, mask);

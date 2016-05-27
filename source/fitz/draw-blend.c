@@ -272,7 +272,7 @@ static inline void
 fz_blend_separable(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n1, int w, int blendmode)
 {
 	int k;
-	while (w--)
+	do
 	{
 		int sa = (sal ? sp[n1] : 255);
 		int ba = (bal ? bp[n1] : 255);
@@ -314,12 +314,13 @@ fz_blend_separable(byte * restrict bp, int bal, const byte * restrict sp, int sa
 		sp += n1 + sal;
 		bp += n1 + bal;
 	}
+	while (--w);
 }
 
 static void
 fz_blend_nonseparable(byte * restrict bp, int bal, const byte * restrict sp, int sal, int w, int blendmode)
 {
-	while (w--)
+	do
 	{
 		unsigned char rr, rg, rb;
 
@@ -365,6 +366,7 @@ fz_blend_nonseparable(byte * restrict bp, int bal, const byte * restrict sp, int
 		sp += 3 + sal;
 		bp += 3 + bal;
 	}
+	while (--w);
 }
 
 static inline void
@@ -378,7 +380,7 @@ fz_blend_separable_nonisolated(byte * restrict bp, int bal, const byte * restric
 		 * cancel one another out, and it's just a simple copy. */
 		/* FIXME: Maybe we can avoid using the shape plane entirely
 		 * and just copy? */
-		while (w--)
+		do
 		{
 			int ha = fz_mul255(*hp++, alpha); /* ha = shape_alpha */
 			/* If ha == 0 then leave everything unchanged */
@@ -395,9 +397,10 @@ fz_blend_separable_nonisolated(byte * restrict bp, int bal, const byte * restric
 			sp += n1 + sal;
 			bp += n1 + bal;
 		}
+		while (--w);
 		return;
 	}
-	while (w--)
+	do
 	{
 		int ha = *hp++;
 		int haa = fz_mul255(ha, alpha); /* ha = shape_alpha */
@@ -496,12 +499,13 @@ fz_blend_separable_nonisolated(byte * restrict bp, int bal, const byte * restric
 		sp += n1 + sal;
 		bp += n1 + bal;
 	}
+	while (--w);
 }
 
 static inline void
 fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, const byte * restrict sp, int sal, int w, int blendmode, const byte * restrict hp, int alpha)
 {
-	while (w--)
+	do
 	{
 		int ha = *hp++;
 		int haa = fz_mul255(ha, alpha);
@@ -576,6 +580,7 @@ fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, const byte * rest
 		sp += 3 + sal;
 		bp += 3 + bal;
 	}
+	while (--w);
 }
 
 void
@@ -616,6 +621,9 @@ fz_blend_pixmap(fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, i
 	y = bbox.y0;
 	w = bbox.x1 - bbox.x0;
 	h = bbox.y1 - bbox.y0;
+
+	if (w == 0 || h == 0)
+		return;
 
 	n = src->n;
 	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
