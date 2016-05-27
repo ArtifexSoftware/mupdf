@@ -246,6 +246,54 @@ fz_paint_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 		return;
 	if (sa == 256)
 	{
+		if (n == 3 && w >= 8)
+		{
+			union {uint32_t w[3]; byte b[12];} u;
+
+			u.b[0] = u.b[3] = u.b[6] = u.b[9] = color[0];
+			u.b[1] = u.b[4] = u.b[7] = u.b[10] = color[1];
+			u.b[2] = u.b[5] = u.b[8] = u.b[11] = color[2];
+
+			switch (((intptr_t)dp) & 3)
+			{
+			case 3:
+				*dp++ = color[0];
+				*(uint32_t *)dp = u.w[1];
+				dp += 4;
+				*(uint32_t *)dp = u.w[2];
+				dp += 4;
+				w -= 3;
+				break;
+			case 2:
+				*dp++ = color[0];
+				*dp++ = color[1];
+				*(uint32_t *)dp = u.w[2];
+				dp += 4;
+				w -= 2;
+				break;
+			case 1:
+				*dp++ = color[0];
+				*dp++ = color[1];
+				*dp++ = color[2];
+				w -= 1;
+				break;
+			}
+			w -= 4;
+			do
+			{
+				*(uint32_t *)dp = u.w[0];
+				dp += 4;
+				*(uint32_t *)dp = u.w[1];
+				dp += 4;
+				*(uint32_t *)dp = u.w[2];
+				dp += 4;
+				w -= 4;
+			}
+			while (w > 0);
+			w += 4;
+			if (w == 0)
+				return;
+		}
 		do
 		{
 			dp[0] = color[0];
