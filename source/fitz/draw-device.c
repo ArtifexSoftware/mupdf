@@ -572,14 +572,33 @@ draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_glyph *glyph,
 		unsigned char *mp = msk->samples + skip_y * msk->stride + skip_x;
 		int da = dst->alpha;
 
-		while (h--)
+		if (dst->colorspace)
 		{
-			if (dst->colorspace)
-				fz_paint_span_with_color(dp, mp, dst->n, w, colorbv, da);
-			else
-				fz_paint_span(dp, da, mp, 1, 0, w, 255);
-			dp += dst->stride;
-			mp += msk->stride;
+			fz_span_color_painter_t *fn;
+
+			fn = fz_get_span_color_painter(dst->n, da, colorbv);
+			if (fn == NULL)
+				return;
+			while (h--)
+			{
+				(*fn)(dp, mp, dst->n, w, colorbv, da);
+				dp += dst->stride;
+				mp += msk->stride;
+			}
+		}
+		else
+		{
+			fz_span_painter_t *fn;
+
+			fn = fz_get_span_painter(da, 1, 0, 255);
+			if (fn == NULL)
+				return;
+			while (h--)
+			{
+				(*fn)(dp, da, mp, 1, 0, w, 255);
+				dp += dst->stride;
+				mp += msk->stride;
+			}
 		}
 	}
 }
