@@ -409,7 +409,12 @@ fz_paint_affine_N_near_fa0(byte * restrict dp, int da, const byte * restrict sp,
 					}
 					else
 					{
-						for (k = 0; k < n1; k++)
+						dp[0] = sample[0];
+						if (n1 > 1)
+							dp[1] = sample[1];
+						if (n1 > 2)
+							dp[2] = sample[2];
+						for (k = 3; k < n1; k++)
 							dp[k] = sample[k];
 						if (da)
 							dp[n1] = a;
@@ -462,7 +467,12 @@ fz_paint_affine_N_near_fb0(byte * restrict dp, int da, const byte * restrict sp,
 					}
 					else
 					{
-						for (k = 0; k < n1; k++)
+						dp[0] = sample[0];
+						if (n1 > 1)
+							dp[1] = sample[1];
+						if (n1 > 2)
+							dp[2] = sample[2];
+						for (k = 3; k < n1; k++)
 							dp[k] = sample[k];
 						if (da)
 							dp[n1] = a;
@@ -512,7 +522,12 @@ fz_paint_affine_N_near(byte * restrict dp, int da, const byte * restrict sp, int
 					}
 					else
 					{
-						for (k = 0; k < n1; k++)
+						dp[0] = sample[0];
+						if (n1 > 1)
+							dp[1] = sample[1];
+						if (n1 > 2)
+							dp[2] = sample[2];
+						for (k = 3; k < n1; k++)
 							dp[k] = sample[k];
 						if (da)
 							dp[n1] = a;
