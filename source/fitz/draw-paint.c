@@ -240,10 +240,15 @@ fz_paint_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 	{
 		while (w--)
 		{
-			for (k = 0; k < n1; k++)
+			dp[0] = color[0];
+			if (n1 > 1)
+				dp[1] = color[1];
+			if (n1 > 2)
+				dp[2] = color[2];
+			for (k = 3; k < n1; k++)
 				dp[k] = color[k];
 			if (da)
-				dp[k] = 255;
+				dp[n1] = 255;
 			dp += n;
 		}
 	}
@@ -510,17 +515,23 @@ fz_paint_span_with_color_N_general(byte * restrict dp, const byte * restrict mp,
 			}
 			else if (ma == 256)
 			{
-				for (k = 0; k < n1; k++)
+				if (n1 > 0)
+					dp[0] = color[0];
+				if (n1 > 1)
+					dp[1] = color[1];
+				if (n1 > 2)
+					dp[2] = color[2];
+				for (k = 3; k < n1; k++)
 					dp[k] = color[k];
 				if (da)
-					dp[k] = 255;
+					dp[n1] = 255;
 			}
 			else
 			{
 				for (k = 0; k < n1; k++)
 					dp[k] = FZ_BLEND(color[k], dp[k], ma);
 				if (da)
-					dp[k] = FZ_BLEND(255, dp[k], ma);
+					dp[n1] = FZ_BLEND(255, dp[k], ma);
 			}
 			dp += n;
 		}
