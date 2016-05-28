@@ -1147,11 +1147,17 @@ fz_scan_convert(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *clip, 
 			fn = (void *)fz_get_span_color_painter(dst->n, dst->alpha, color);
 		else
 			fn = (void *)fz_get_span_painter(dst->alpha, 1, 0, 255);
+		assert(fn);
+		if (fn == NULL)
+			return;
 		fz_scan_convert_aa(ctx, gel, eofill, &local_clip, dst, color, fn);
 	}
 	else
 	{
 		fz_solid_color_painter_t *fn = fz_get_solid_color_painter(dst->n, color, dst->alpha);
+		assert(fn);
+		if (fn == NULL)
+			return;
 		fz_scan_convert_sharp(ctx, gel, eofill, &local_clip, dst, color, (fz_solid_color_painter_t *)fn);
 	}
 }

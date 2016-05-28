@@ -44,6 +44,7 @@ FUNCTION_NAME(NAME,N,NAME2)(const unsigned char * restrict colorbv,
 	const uint32_t color = *(const uint32_t *)colorbv;
 #endif
 #endif
+	TRACK_FN();
 	while (h--)
 	{
 		int skip_xx, ww, len, extend;
@@ -169,7 +170,7 @@ solid_run:
 							*ddp = FZ_BLEND(colorbv[k++], *ddp, sa);
 							ddp++;
 						}
-						while (k != n);
+						while (k != n1);
 #ifdef DA
 						*ddp = FZ_BLEND(0xFF, *ddp, sa);
 						ddp++;
