@@ -1099,6 +1099,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\track-usage.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\transition.c"
 				>
 			</File>
@@ -1116,10 +1120,6 @@
 			</File>
 			<File
 				RelativePath="..\..\source\fitz\unzip.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\source\fitz\track-usage.c"
 				>
 			</File>
 			<File
@@ -1478,6 +1478,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\fitz\config.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\fitz\context.h"
 					>
 				</File>
@@ -1622,6 +1626,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\fitz\track-usage.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\fitz\transition.h"
 					>
 				</File>
@@ -1635,10 +1643,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\unzip.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\mupdf\fitz\track-usage.h"
 					>
 				</File>
 				<File
