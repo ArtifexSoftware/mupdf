@@ -62,8 +62,6 @@ ALL_DIR += $(OUT)/pdf $(OUT)/pdf/js
 ALL_DIR += $(OUT)/xps
 ALL_DIR += $(OUT)/svg
 ALL_DIR += $(OUT)/cbz
-ALL_DIR += $(OUT)/img
-ALL_DIR += $(OUT)/tiff
 ALL_DIR += $(OUT)/html
 ALL_DIR += $(OUT)/gprf
 ALL_DIR += $(OUT)/tools
@@ -255,7 +253,8 @@ $(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/fitz/context.c source/fitz/e
 # --- Tools and Apps ---
 
 MUTOOL := $(addprefix $(OUT)/, mutool)
-MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o muconvert.o mudraw.o murun.o pdfclean.o pdfcreate.o pdfextract.o pdfinfo.o pdfmerge.o pdfposter.o pdfpages.o pdfshow.o)
+MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o muconvert.o mudraw.o murun.o)
+MUTOOL_OBJ += $(addprefix $(OUT)/tools/, pdfclean.o pdfcreate.o pdfextract.o pdfinfo.o pdfmerge.o pdfposter.o pdfpages.o pdfshow.o)
 $(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
 $(MUTOOL) : $(MUPDF_LIB) $(THIRD_LIB)
 $(MUTOOL) : $(MUTOOL_OBJ)

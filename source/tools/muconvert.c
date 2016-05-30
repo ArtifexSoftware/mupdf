@@ -44,7 +44,9 @@ static void usage(void)
 		"\n"
 		);
 	fprintf(stderr, "%s\n", fz_cbz_write_options_usage);
+#if FZ_ENABLE_PDF
 	fprintf(stderr, "%s\n", fz_pdf_write_options_usage);
+#endif
 	exit(1);
 }
 

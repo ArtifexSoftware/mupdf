@@ -27,7 +27,10 @@ enum {
 	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
 	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS,
 	OUT_TEXT, OUT_HTML, OUT_STEXT,
-	OUT_TRACE, OUT_SVG, OUT_PDF,
+	OUT_TRACE, OUT_SVG,
+#if FZ_ENABLE_PDF
+	OUT_PDF,
+#endif
 	OUT_GPROOF
 };
 
@@ -52,7 +55,9 @@ static const suffix_t suffix_table[] =
 	{ ".pwg", OUT_PWG },
 	{ ".pcl", OUT_PCL },
 	{ ".ps", OUT_PS },
+#if FZ_ENABLE_PDF
 	{ ".pdf", OUT_PDF },
+#endif
 	{ ".tga", OUT_TGA },
 
 	{ ".txt", OUT_TEXT },
@@ -111,7 +116,9 @@ static const format_cs_table_t format_cs_table[] =
 
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
 	{ OUT_SVG, CS_RGB, { CS_RGB } },
+#if FZ_ENABLE_PDF
 	{ OUT_PDF, CS_RGB, { CS_RGB } },
+#endif
 	{ OUT_GPROOF, CS_RGB, { CS_RGB } },
 
 	{ OUT_TEXT, CS_RGB, { CS_RGB } },
@@ -131,7 +138,7 @@ static const format_cs_table_t format_cs_table[] =
 #define SEMAPHORE HANDLE
 #define SEMAPHORE_INIT(A) do { A = CreateSemaphore(NULL, 0, 1, NULL); } while (0)
 #define SEMAPHORE_FIN(A) do { CloseHandle(A); } while (0)
-#define SEMAPHORE_TRIGGER(A) do { (void)ReleaseSemaphore(A, 1, NULL); } while (0) 
+#define SEMAPHORE_TRIGGER(A) do { (void)ReleaseSemaphore(A, 1, NULL); } while (0)
 #define SEMAPHORE_WAIT(A) do { (void)WaitForSingleObject(A, INFINITE); } while (0)
 #define THREAD HANDLE
 #define THREAD_INIT(A,B,C) do { A = CreateThread(NULL, 0, B, C, 0, NULL); } while (0)
@@ -348,7 +355,9 @@ static size_t memtrace_total = 0;
 static int showmemory = 0;
 static int showmd5 = 0;
 
+#if FZ_ENABLE_PDF
 static pdf_document *pdfout = NULL;
+#endif
 
 static int ignore_errors = 0;
 static int uselist = 1;
@@ -651,6 +660,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 	}
 
+#if FZ_ENABLE_PDF
 	else if (output_format == OUT_PDF)
 	{
 		fz_buffer *contents;
@@ -684,6 +694,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_rethrow(ctx);
 		}
 	}
+#endif
 
 	else if (output_format == OUT_SVG)
 	{
@@ -1577,11 +1588,14 @@ int mudraw_main(int argc, char **argv)
 		break;
 	}
 
+#if FZ_ENABLE_PDF
 	if (output_format == OUT_PDF)
 	{
 		pdfout = pdf_create_document(ctx);
 	}
-	else if (output_format == OUT_GPROOF)
+	else
+#endif
+	if (output_format == OUT_GPROOF)
 	{
 		/* GPROOF files are saved direct. Do not open "output". */
 	}
@@ -1668,6 +1682,7 @@ int mudraw_main(int argc, char **argv)
 	if (output_append)
 		file_level_trailers(ctx);
 
+#if FZ_ENABLE_PDF
 	if (output_format == OUT_PDF)
 	{
 		if (!output)
@@ -1675,7 +1690,9 @@ int mudraw_main(int argc, char **argv)
 		pdf_save_document(ctx, pdfout, output, NULL);
 		pdf_drop_document(ctx, pdfout);
 	}
-	else if (output_format == OUT_GPROOF)
+	else
+#endif
+	if (output_format == OUT_GPROOF)
 	{
 		/* No output file to close */
 	}

@@ -70,8 +70,10 @@ fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stre
 	int best_i, best_score;
 	fz_document_handler_context *dc;
 
-	if (ctx == NULL || magic == NULL || stream == NULL)
+	if (ctx == NULL)
 		return NULL;
+	if (magic == NULL || stream == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
 
 	dc = ctx->handler;
 	if (dc->count == 0)
@@ -92,7 +94,7 @@ fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stre
 	if (best_i >= 0)
 		return dc->handler[best_i]->open_with_stream(ctx, stream);
 
-	return NULL;
+	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file type: %s", magic);
 }
 
 fz_document *
@@ -102,8 +104,10 @@ fz_open_document(fz_context *ctx, const char *filename)
 	int best_i, best_score;
 	fz_document_handler_context *dc;
 
-	if (ctx == NULL || filename == NULL)
+	if (ctx == NULL)
 		return NULL;
+	if (filename == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
 
 	dc = ctx->handler;
 	if (dc->count == 0)
@@ -124,7 +128,7 @@ fz_open_document(fz_context *ctx, const char *filename)
 	if (best_i >= 0)
 		return dc->handler[best_i]->open(ctx, filename);
 
-	return NULL;
+	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: '%s'", filename);
 }
 
 void *
