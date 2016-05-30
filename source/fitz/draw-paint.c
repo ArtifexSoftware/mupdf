@@ -1310,7 +1310,7 @@ fz_get_span_mask_painter(int da, int sa, int n)
 					return paint_span_with_mask_1_da_sa;
 			if (!da & !sa)
 					return paint_span_with_mask_1;
-			return NULL;
+			goto fallback;
 #endif /* FZ_PLOTTERS_G */
 #if FZ_PLOTTERS_RGB
 		case 3:
@@ -1338,8 +1338,12 @@ fz_get_span_mask_painter(int da, int sa, int n)
 				else
 					return paint_span_with_mask_4;
 #endif /* FZ_PLOTTERS_CMYK */
-#if FZ_PLOTTERS_N
 		default:
+		{
+#if !FZ_PLOTTERS_G
+fallback:
+#endif /* !FZ_PLOTTERS_G */
+#if FZ_PLOTTERS_N
 			if (da)
 				if (sa)
 					return paint_span_with_mask_N_da_sa;
@@ -1351,8 +1355,9 @@ fz_get_span_mask_painter(int da, int sa, int n)
 				else
 					return paint_span_with_mask_N;
 #else
-		default: return NULL;
+			return NULL;
 #endif /* FZ_PLOTTERS_N */
+		}
 	}
 }
 
@@ -1941,7 +1946,7 @@ fz_get_span_painter(int da, int sa, int n, int alpha)
 					return paint_span_1_alpha;
 			}
 #else
-			return NULL;
+			goto fallback;
 #endif /* FZ_PLOTTERS_G */
 		break;
 #if FZ_PLOTTERS_RGB
@@ -2012,8 +2017,12 @@ fz_get_span_painter(int da, int sa, int n, int alpha)
 			}
 		break;
 #endif /* FZ_PLOTTERS_CMYK */
-#if FZ_PLOTTERS_N
 	default:
+	{
+#if !FZ_PLOTTERS_G
+fallback:
+#endif /* FZ_PLOTTERS_G */
+#if FZ_PLOTTERS_N
 		if (da)
 			if (sa)
 			{
@@ -2044,8 +2053,9 @@ fz_get_span_painter(int da, int sa, int n, int alpha)
 				else if (alpha > 0)
 					return paint_span_N_alpha;
 			}
-		break;
 #endif /* FZ_PLOTTERS_N */
+		break;
+	}
 	}
 	return NULL;
 }
@@ -2393,10 +2403,7 @@ fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, un
 #if FZ_PLOTTERS_G
 			fz_paint_glyph_alpha_1_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 #else
-		{
-			assert("Unexpected plotter" == NULL);
-			return;
-		}
+			goto fallback;
 #endif /* FZ_PLOTTERS_G */
 		else
 			fz_paint_glyph_alpha_1(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
@@ -2417,14 +2424,19 @@ fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, un
 			fz_paint_glyph_alpha_4(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 #endif /* FZ_PLOTTERS_CMYK */
-#if FZ_PLOTTERS_N
 	default:
+	{
+#if !FZ_PLOTTERS_G
+fallback:
+#endif /* !FZ_PLOTTERS_G */
+#if FZ_PLOTTERS_N
 		if (da)
 			fz_paint_glyph_alpha_N_da(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
 		else
 			fz_paint_glyph_alpha_N(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
-		break;
 #endif /* FZ_PLOTTERS_N */
+		break;
+	}
 	}
 }
 
@@ -2438,10 +2450,7 @@ fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, un
 #if FZ_PLOTTERS_G
 			fz_paint_glyph_solid_1_da(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 #else
-		{
-			assert("Unexpected plotter" == NULL);
-			return;
-		}
+			goto fallback;
 #endif /* FZ_PLOTTERS_G */
 		else
 			fz_paint_glyph_solid_1(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
@@ -2462,14 +2471,19 @@ fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, un
 			fz_paint_glyph_solid_4(colorbv, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 #endif /* FZ_PLOTTERS_CMYK */
-#if FZ_PLOTTERS_N
 	default:
+	{
+#if !FZ_PLOTTERS_G
+fallback:
+#endif /* FZ_PLOTTERS_G */
+#if FZ_PLOTTERS_N
 		if (da)
 			fz_paint_glyph_solid_N_da(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
 		else
 			fz_paint_glyph_solid_N(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y);
 		break;
 #endif /* FZ_PLOTTERS_N */
+	}
 	}
 }
 

@@ -1084,7 +1084,7 @@ fz_paint_affine_lerp(int da, int sa, int fa, int fb, int n, int alpha)
 						return paint_affine_lerp_sa_alpha_1;
 				}
 #else
-				return NULL;
+				goto fallback;
 #endif /* FZ_PLOTTERS_H */
 			else
 				if (da)
@@ -1170,8 +1170,12 @@ fz_paint_affine_lerp(int da, int sa, int fa, int fb, int n, int alpha)
 				}
 			break;
 #endif /* FZ_PLOTTERS_CMYK */
-#if FZ_PLOTTERS_N
 		default:
+		{
+#if !FZ_PLOTTERS_G
+fallback:
+#endif /* FZ_PLOTTERS_G */
+#if FZ_PLOTTERS_N
 			if (da)
 				if (sa)
 				{
@@ -1202,8 +1206,9 @@ fz_paint_affine_lerp(int da, int sa, int fa, int fb, int n, int alpha)
 					else if (alpha > 0)
 						return paint_affine_lerp_alpha_N;
 				}
-			break;
 #endif /* FZ_PLOTTERS_G */
+			break;
+		}
 	}
 	return NULL;
 }
@@ -2169,7 +2174,7 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 				}
 			}
 #else
-			return NULL;
+			goto fallback;
 #endif /* FZ_PLOTTERS_G */
 		else
 			if (da)
@@ -2395,8 +2400,12 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 			}
 #endif /* FZ_PLOTTERS_CMYK */
 		break;
-#if FZ_PLOTTERS_N
 	default:
+	{
+#if !FZ_PLOTTERS_G
+fallback:
+#endif /* FZ_PLOTTERS_G */
+#if FZ_PLOTTERS_N
 		if (da)
 			if (sa)
 			{
@@ -2485,6 +2494,7 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 			}
 #endif /* FZ_PLOTTERS_N */
 		break;
+	}
 	}
 	return NULL;
 }
@@ -3248,6 +3258,7 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 	if (img->n == sa && color)
 		sa = 0;
 
+#if FZ_PLOTTERS_RGB
 	if (n == 3 && img->n == 1 + sa && !color)
 	{
 		if (dolerp)
@@ -3256,6 +3267,7 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 			paintfn = fz_paint_affine_g2rgb_near(da, sa, fa, fb, n, alpha);
 	}
 	else
+#endif /* FZ_PLOTTERS_RGB */
 	{
 		assert((!color && img->n - sa == n) || (color && img->n - sa == 1));
 		if (dolerp)

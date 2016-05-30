@@ -1271,12 +1271,14 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 		if (pixmap->colorspace != model)
 		{
+#if FZ_PLOTTERS_RGB
 			if ((pixmap->colorspace == fz_device_gray(ctx) && model == fz_device_rgb(ctx)) ||
 				(pixmap->colorspace == fz_device_gray(ctx) && model == fz_device_bgr(ctx)))
 			{
 				/* We have special case rendering code for gray -> rgb/bgr */
 			}
 			else
+#endif
 			{
 				fz_irect bbox;
 				fz_pixmap_bbox(ctx, pixmap, &bbox);
