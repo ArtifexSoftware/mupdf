@@ -58,6 +58,10 @@
 /* To skip the SIL fonts, enable: */
 /* #define TOFU_SIL */
 
+/* To skip the Base14 fonts, enable: */
+/* #define TOFU_BASE14 */
+/* (You probably really don't want to do that except for measurement purposes!) */
+
 #ifndef FZ_PLOTTERS_G
 #define FZ_PLOTTERS_G 1
 #endif /* FZ_PLOTTERS_G */

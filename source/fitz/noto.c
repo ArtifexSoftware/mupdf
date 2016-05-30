@@ -44,6 +44,7 @@
 const char *
 fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 {
+#ifndef TOFU_BASE14
 	if (!strcmp(name, "Courier")) { RETURN(NimbusMono_Regular_cff); }
 	if (!strcmp(name, "Courier-Oblique")) { RETURN(NimbusMono_Oblique_cff); }
 	if (!strcmp(name, "Courier-Bold")) { RETURN(NimbusMono_Bold_cff); }
@@ -58,6 +59,7 @@ fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 	if (!strcmp(name, "Times-BoldItalic")) { RETURN(NimbusRomNo9L_MedIta_cff); }
 	if (!strcmp(name, "Symbol")) { RETURN(StandardSymL_cff); }
 	if (!strcmp(name, "ZapfDingbats")) { RETURN(Dingbats_cff); }
+#endif
 	return *size = 0, NULL;
 }
 
@@ -71,6 +73,7 @@ fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 const char *
 fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_italic, int *size)
 {
+#ifndef TOFU_BASE14
 	if (!strcmp(name, "Courier")) {
 		FAMILY(NimbusMono_Regular_cff,
 				NimbusMono_Oblique_cff,
@@ -89,6 +92,7 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 				NimbusRomNo9L_Med_cff,
 				NimbusRomNo9L_MedIta_cff)
 	}
+#endif
 #ifndef TOFU_SIL
 	if (!strcmp(name, "Charis SIL")) {
 		FAMILY(CharisSIL_R_cff,
