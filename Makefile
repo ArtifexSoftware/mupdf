@@ -256,8 +256,9 @@ MUTOOL := $(addprefix $(OUT)/, mutool)
 MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o muconvert.o mudraw.o murun.o)
 MUTOOL_OBJ += $(addprefix $(OUT)/tools/, pdfclean.o pdfcreate.o pdfextract.o pdfinfo.o pdfmerge.o pdfposter.o pdfpages.o pdfshow.o)
 $(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
-$(MUTOOL) : $(MUPDF_LIB) $(THIRD_LIB)
-$(MUTOOL) : $(MUTOOL_OBJ)
+MUTOOL_LIB = $(OUT)/libmutools.a
+$(MUTOOL_LIB) : $(MUTOOL_OBJ)
+$(MUTOOL) : $(MUTOOL_LIB) $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD)
 
 MJSGEN := $(OUT)/mjsgen
