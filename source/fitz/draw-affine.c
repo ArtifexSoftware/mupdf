@@ -1269,12 +1269,10 @@ paint_affine_lerp_g2rgb_alpha(byte * restrict dp, int da, const byte * restrict 
 	TRACK_FN();
 	template_affine_alpha_g2rgb_lerp(dp, 0, sp, sw, sh, ss, 0, u, v, fa, fb, w, alpha, hp);
 }
-#endif /* FZ_PLOTTERS_RGB */
 
 static paintfn_t *
 fz_paint_affine_g2rgb_lerp(int da, int sa, int fa, int fb, int n, int alpha)
 {
-#if FZ_PLOTTERS_RGB
 	if (da)
 	{
 		if (sa)
@@ -1309,9 +1307,9 @@ fz_paint_affine_g2rgb_lerp(int da, int sa, int fa, int fb, int n, int alpha)
 				return paint_affine_lerp_g2rgb_alpha;
 		}
 	}
-#endif /* FZ_PLOTTERS_RGB */
 	return NULL;
 }
+#endif /* FZ_PLOTTERS_RGB */
 
 static void
 paint_affine_near_da_sa_0_fa0(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int n, int alpha, const byte * restrict color, byte * restrict hp)
@@ -2667,12 +2665,10 @@ paint_affine_near_alpha_g2rgb(byte * restrict dp, int da, const byte * restrict 
 	TRACK_FN();
 	template_affine_alpha_g2rgb_near(dp, 0, sp, sw, sh, ss, 0, u, v, fa, fb, w, alpha, hp);
 }
-#endif /* FZ_PLOTTERS_RGB */
 
 static paintfn_t *
 fz_paint_affine_g2rgb_near(int da, int sa, int fa, int fb, int n, int alpha)
 {
-#if FZ_PLOTTERS_RGB
 	if (da)
 	{
 		if (sa)
@@ -2775,9 +2771,9 @@ fz_paint_affine_g2rgb_near(int da, int sa, int fa, int fb, int n, int alpha)
 			}
 		}
 	}
-#endif /* FZ_PLOTTERS_G */
 	return NULL;
 }
+#endif /* FZ_PLOTTERS_RGB */
 
 static void
 paint_affine_color_lerp_da_0(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int n, int alpha, const byte * restrict color, byte * restrict hp)
