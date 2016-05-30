@@ -37,6 +37,7 @@ struct fz_font_s
 
 	void *ft_face; /* has an FT_Face if used */
 	void *hb_font; /* hb_font for shaping */
+	void (*hb_destroy)(void *); /* Destructor for hb_font */
 	int ft_substitute; /* ... substitute metrics */
 	int ft_stretch; /* ... and stretch to match PDF metrics */
 

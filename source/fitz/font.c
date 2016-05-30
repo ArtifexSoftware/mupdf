@@ -156,9 +156,12 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
-	hb_lock(ctx);
-	hb_font_destroy(font->hb_font);
-	hb_unlock(ctx);
+	if (font->hb_destroy && font->hb_font)
+	{
+		hb_lock(ctx);
+		font->hb_destroy(font->hb_font);
+		hb_unlock(ctx);
+	}
 	fz_free(ctx, font);
 }
 

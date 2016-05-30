@@ -827,6 +827,8 @@ static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer
 	walker->next_font = NULL;
 }
 
+typedef void (fz_hb_font_destructor_t)(void *);
+
 static int walk_string(string_walker *walker)
 {
 	fz_context *ctx = walker->ctx;
@@ -885,6 +887,7 @@ static int walk_string(string_walker *walker)
 			if (walker->font->hb_font == NULL)
 			{
 				Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
+				walker->font->hb_destroy = (fz_hb_font_destructor_t *)hb_font_destroy;
 				walker->font->hb_font = hb_ft_font_create(face, NULL);
 				Memento_stopLeaking();
 			}
