@@ -23,6 +23,12 @@ typedef struct fz_colorspace_s fz_colorspace;
 int fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs);
 
 /*
+	fz_colorspace_is_lab: Return true, iff a given colorspace is
+	lab.
+*/
+int fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs);
+
+/*
 	fz_device_gray: Get colorspace representing device specific gray.
 */
 fz_colorspace *fz_device_gray(fz_context *ctx);

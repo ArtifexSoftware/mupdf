@@ -277,6 +277,12 @@ fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs)
 	return (cs && !strcmp(cs->name, "Indexed"));
 }
 
+int
+fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs)
+{
+	return (cs && !strcmp(cs->name, "Lab"));
+}
+
 /* Fast pixmap color conversions */
 
 static void fast_gray_to_rgb(fz_pixmap *dst, fz_pixmap *src)
