@@ -7,13 +7,17 @@ OS := $(OS:Darwin=MACOS)
 
 HAVE_LIBDL ?= yes
 
-CFLAGS += -Wall
+CFLAGS += -Wall -ffunction-sections -fdata-sections
 
 ifeq "$(build)" "debug"
 CFLAGS += -pipe -g -DDEBUG
 LDFLAGS += -g
 else ifeq "$(build)" "release"
 CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer
+LDFLAGS += -Wl,--gc-sections -Wl,-s
+else ifeq "$(build)" "small"
+CFLAGS += -pipe -Os -DNDEBUG -fomit-frame-pointer
+LDFLAGS += -Wl,--gc-sections -Wl,-s
 else ifeq "$(build)" "sanitize"
 CFLAGS += -pipe -g -DDEBUG -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS += -fsanitize=address
@@ -25,6 +29,7 @@ CFLAGS += -pipe -g -DDEBUG -pg -fprofile-arcs -ftest-coverage
 LIBS += -lgcov
 else ifeq "$(build)" "native"
 CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native -mfpmath=sse
+LDFLAGS += -Wl,--gc-sections -Wl,-s
 else ifeq "$(build)" "memento"
 CFLAGS += -pipe -g -DMEMENTO -DDEBUG
 LDFLAGS += -g -d -rdynamic
