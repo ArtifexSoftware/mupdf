@@ -162,6 +162,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
