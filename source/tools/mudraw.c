@@ -1147,7 +1147,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (showfeatures)
 	{
 		int iscolor;
-		dev = fz_new_test_device(ctx, &iscolor, 0.02f);
+		dev = fz_new_test_device(ctx, &iscolor, 0.02f, 0, NULL);
 		if (lowmemory)
 			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 		fz_try(ctx)
