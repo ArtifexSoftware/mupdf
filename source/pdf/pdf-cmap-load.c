@@ -106,7 +106,7 @@ pdf_new_identity_cmap(fz_context *ctx, int wmode, int bytes)
  * Load predefined CMap from system.
  */
 pdf_cmap *
-pdf_load_system_cmap(fz_context *ctx, char *cmap_name)
+pdf_load_system_cmap(fz_context *ctx, const char *cmap_name)
 {
 	pdf_cmap *usecmap;
 	pdf_cmap *cmap;
