@@ -28,7 +28,9 @@ static struct {
 } tools[] = {
 	{ muconvert_main, "convert", "convert document" },
 	{ mudraw_main, "draw", "convert document" },
+#if FZ_ENABLE_JS
 	{ murun_main, "run", "run javascript" },
+#endif
 #if FZ_ENABLE_PDF
 	{ pdfclean_main, "clean", "rewrite pdf file" },
 	{ pdfextract_main, "extract", "extract font and image resources" },

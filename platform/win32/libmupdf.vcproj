@@ -1239,6 +1239,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-js.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\pdf\pdf-js-util.js"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-lex.c"
 				>
 			</File>
@@ -1334,18 +1342,6 @@
 				RelativePath="..\..\source\pdf\pdf-xref.c"
 				>
 			</File>
-			<Filter
-				Name="js"
-				>
-				<File
-					RelativePath="..\..\source\pdf\js\pdf-js.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\source\pdf\js\pdf-util.js"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="!include"

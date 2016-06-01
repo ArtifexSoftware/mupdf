@@ -35,7 +35,10 @@ $(MUJS_OUT)/%.o: $(MUJS_DIR)/%.c | $(MUJS_OUT)
 
 MUJS_CFLAGS := -I$(MUJS_DIR)
 
-HAVE_MUJS := yes
+else
+
+MUJS_CFLAGS := -DFZ_ENABLE_JS=0
+
 endif
 
 # --- FreeType 2 ---

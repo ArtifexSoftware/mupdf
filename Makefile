@@ -58,7 +58,7 @@ RM_CMD = $(QUIET_RM) rm -f $@
 # --- File lists ---
 
 ALL_DIR := $(OUT)/fitz
-ALL_DIR += $(OUT)/pdf $(OUT)/pdf/js
+ALL_DIR += $(OUT)/pdf
 ALL_DIR += $(OUT)/xps
 ALL_DIR += $(OUT)/svg
 ALL_DIR += $(OUT)/cbz
@@ -98,12 +98,6 @@ SVG_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(SVG_SRC))))
 CBZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(CBZ_SRC))))
 HTML_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(HTML_SRC))))
 GPRF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(GPRF_SRC))))
-
-ifeq "$(HAVE_MUJS)" "yes"
-PDF_OBJ += $(OUT)/pdf/js/pdf-js.o
-else
-PDF_OBJ += $(OUT)/pdf/js/pdf-js-none.o
-endif
 
 $(FITZ_OBJ) : $(FITZ_HDR) $(FITZ_SRC_HDR)
 $(PDF_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PDF_SRC_HDR)
@@ -224,7 +218,7 @@ NAME_GEN := include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
 $(NAME_GEN) : resources/pdf/names.txt
 	$(QUIET_GEN) $(NAMEDUMP) resources/pdf/names.txt $(NAME_GEN)
 
-JAVASCRIPT_SRC := source/pdf/js/pdf-util.js
+JAVASCRIPT_SRC := source/pdf/pdf-js-util.js
 JAVASCRIPT_GEN := $(GEN)/gen_js_util.h
 $(JAVASCRIPT_GEN) : $(JAVASCRIPT_SRC)
 	$(QUIET_GEN) $(CQUOTE) $@ $(JAVASCRIPT_SRC)
@@ -246,7 +240,7 @@ generate: $(CMAP_GEN) $(FONT_GEN) $(JAVASCRIPT_GEN) $(ADOBECA_GEN) $(NAME_GEN)
 
 $(OUT)/pdf/pdf-cmap-table.o : $(CMAP_GEN)
 $(OUT)/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
-$(OUT)/pdf/js/pdf-js.o : $(JAVASCRIPT_GEN)
+$(OUT)/pdf/pdf-js.o : $(JAVASCRIPT_GEN)
 $(OUT)/pdf/pdf-object.o : source/pdf/pdf-name-table.h
 $(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/fitz/context.c source/fitz/error.c source/fitz/memory.c source/fitz/output.c source/fitz/string.c source/fitz/buffer.c source/fitz/stream-open.c source/fitz/stream-read.c source/fitz/strtod.c source/fitz/strtof.c source/fitz/ftoa.c source/fitz/printf.c source/fitz/time.c source/pdf/pdf-lex.c source/pdf/pdf-cmap.c source/pdf/pdf-cmap-parse.c source/pdf/pdf-name-table.h
 

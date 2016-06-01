@@ -1,4 +1,7 @@
 #include "mupdf/pdf.h"
+
+#if FZ_ENABLE_JS
+
 #include "mujs.h"
 
 struct pdf_js_s
@@ -716,3 +719,16 @@ int pdf_js_supported(fz_context *ctx, pdf_document *doc)
 {
 	return doc->js != NULL;
 }
+
+#else /* FZ_ENABLE_JS */
+
+void pdf_drop_js(fz_context *ctx, pdf_js *js) { }
+void pdf_enable_js(fz_context *ctx, pdf_document *doc) { }
+void pdf_disable_js(fz_context *ctx, pdf_document *doc) { }
+int pdf_js_supported(fz_context *ctx, pdf_document *doc) { return 0; }
+void pdf_js_setup_event(pdf_js *js, pdf_js_event *e) { }
+pdf_js_event *pdf_js_get_event(pdf_js *js) { return NULL; }
+void pdf_js_execute(pdf_js *js, char *code) { }
+void pdf_js_execute_count(pdf_js *js, char *code, int count) { }
+
+#endif /* FZ_ENABLE_JS */

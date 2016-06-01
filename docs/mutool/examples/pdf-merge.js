@@ -35,6 +35,7 @@ function copyPage(dstDoc, srcDoc, pageNumber, map) {
 	var srcPage, dstPage
 	srcPage = srcDoc.findPage(pageNumber)
 	dstPage = dstDoc.newDictionary()
+	dstPage.Type = dstDoc.newName("Page")
 	if (srcPage.MediaBox) dstPage.MediaBox = graftObject(dstDoc, srcDoc, srcPage.MediaBox, map)
 	if (srcPage.Rotate) dstPage.Rotate = graftObject(dstDoc, srcDoc, srcPage.Rotate, map)
 	if (srcPage.Resources) dstPage.Resources = graftObject(dstDoc, srcDoc, srcPage.Resources, map)

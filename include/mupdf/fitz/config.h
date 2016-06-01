@@ -30,6 +30,12 @@
 /* #define FZ_ENABLE_GPRF 1 */
 
 /*
+	Choose whether to enable JavaScript.
+	By default JavaScript is enabled both for mutool and PDF interactivity.
+*/
+/* #define FZ_ENABLE_JS 1 */
+
+/*
 	Choose which fonts to include.
 	By default we include the base 14 PDF fonts,
 	DroidSansFallback from Android for CJK, and
@@ -120,6 +126,9 @@
 #define FZ_ENABLE_GPRF 0
 #endif /* FZ_ENABLE_GPRF */
 
+#ifndef FZ_ENABLE_JS
+#define FZ_ENABLE_JS 1
+#endif /* FZ_ENABLE_JS */
 
 /* If Epub and HTML are both disabled, disable SIL fonts */
 #if FZ_ENABLE_HTML == 0 && FZ_ENABLE_EPUB == 0

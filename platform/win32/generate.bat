@@ -27,7 +27,7 @@ if not exist generated/gen_cmap_japan.h cmapdump.exe generated/gen_cmap_japan.h 
 if not exist generated/gen_cmap_korea.h cmapdump.exe generated/gen_cmap_korea.h resources\cmaps\korea\*
 
 if not exist generated/gen_adobe_ca.h bin2hex.exe generated/gen_adobe_ca.h resources/certs/AdobeCA.p7c
-if not exist generated/gen_js_util.h cquote.exe generated/gen_js_util.h source/pdf/js/pdf-util.js
+if not exist generated/gen_js_util.h cquote.exe generated/gen_js_util.h source/pdf/pdf-js-util.js
 
 if not exist generated/DroidSansFallback.c fontdump.exe generated/DroidSansFallback.c resources/fonts/droid/DroidSansFallback.ttc
 if not exist generated/DroidSansFallbackFull.c fontdump.exe generated/DroidSansFallbackFull.c resources/fonts/droid/DroidSansFallbackFull.ttc
