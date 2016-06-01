@@ -2380,7 +2380,7 @@ static void ffi_pushobj(js_State *J, pdf_obj *obj)
 static void ffi_new_PDFDocument(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	const char *filename = js_isstring(J, 1) ? js_tostring(J, 1) : NULL;
+	const char *filename = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	pdf_document *pdf = NULL;
 
 	fz_try(ctx)
