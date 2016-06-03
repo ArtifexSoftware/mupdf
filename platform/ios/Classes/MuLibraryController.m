@@ -28,7 +28,6 @@ static void showAlert(NSString *msg, NSString *filename)
 	[super viewWillAppear:animated];
 	[self setTitle: @"PDF, XPS, CBZ and EPUB Documents"];
 	[self reload];
-	printf("library viewWillAppear (starting reload timer)\n");
 	timer = [NSTimer timerWithTimeInterval: 3
 		target: self selector: @selector(reload) userInfo: nil
 		repeats: YES];
@@ -38,7 +37,6 @@ static void showAlert(NSString *msg, NSString *filename)
 - (void) viewWillDisappear: (BOOL)animated
 {
 	[super viewWillDisappear:animated];
-	printf("library viewWillDisappear (stopping reload timer)\n");
 	[timer invalidate];
 	timer = nil;
 }
@@ -102,8 +100,6 @@ static void showAlert(NSString *msg, NSString *filename)
 		strcpy(filename, [NSHomeDirectory() UTF8String]);
 		strcat(filename, "/Documents/");
 		strcat(filename, [[files objectAtIndex: row] UTF8String]);
-
-		printf("delete document '%s'\n", filename);
 
 		unlink(filename);
 
@@ -202,8 +198,6 @@ static NSString *moveOutOfInbox(NSString *docpath)
 
 	dispatch_sync(queue, ^{});
 
-	printf("open document '%s'\n", _filePath);
-
 	_filename = [nsfilename retain];
 	[doc release];
 	doc = [[MuDocRef alloc] initWithFilename:_filePath];
@@ -261,7 +255,6 @@ static NSString *moveOutOfInbox(NSString *docpath)
 {
 	[_filename release];
 	free(_filePath);
-	printf("close document (password cancel)\n");
 }
 
 @end
