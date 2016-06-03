@@ -16,17 +16,16 @@ mutool is a tool based on MuPDF for dealing with document files in various manne
 There are several sub commands available, as described below.
 
 .SH DRAW
-mudraw [options] file [pages]
-
+mutool draw [options] file [pages]
+.PP
 The draw command will render a document to image files,
 convert to another vector format, or extract the text content.
-
+.PP
 The supported input document formats are: pdf, xps, cbz, and epub.
-
-The supported output image formats are: pbm, pgm, ppm, pam, png, tga, pwg, and pcl.
+.PP
+The supported output image formats are: pbm, pgm, ppm, pam, png, tga, pwg, pcl and ps.
 The supported output vector formats are: svg, pdf, and debug trace (as xml).
 The supported output text formats are: plain text, html, and structured text (as xml).
-
 .TP
 .B \-p password
 Use the specified password if the file is encrypted.
@@ -111,6 +110,12 @@ the amount of memory used.
 .TP
 .B \-i
 Ignore errors.
+.TP
+.B \-L
+Low memory mode (avoid caching objects by clearing cache after each page).
+.TP
+.B \-P
+Run interpretation and rendering at the smae time.
 .TP
 .B pages
 Comma separated list of page numbers and ranges (for example: 1,5,10-15).
@@ -219,12 +224,6 @@ from one or more input files containing graphics commands.
 If no output file is specified, it will write the created PDF to "out.pdf"
 in the current directory.
 .TP
-.B \-a
-ASCII Hex encode binary streams.
-.TP
-.B \-z
-Deflate uncompressed streams.
-.TP
 .B page.txt
 A page is created for each input file, with the contents of the file copied
 into the content stream. Special comments in the input files are parsed to
@@ -239,6 +238,49 @@ define the page dimensions and font and image resources:
 %%Font Fn0 path/to/font/file.ttf
 .br
 %%Image Im0 path/to/image.png
+.TP
+.B \-O
+Comma separated list of format specific output options:
+.IP
+.B decompress
+.br
+Decompress all object streams.
+.IP
+.B compress
+.br
+Compress all object streams.
+.IP
+.B compress-fonts
+.br
+Compress object streams for embedded fonts.
+.IP
+.B compress-images
+.br
+Compress object streams for images.
+.IP
+.B ascii
+.br
+Encode object streams using ASCII hex encoding.
+.IP
+.B pretty
+.br
+Pretty-print objects with indentation.
+.IP
+.B linearize
+.br
+Optimize document for progressive loading in viewers.
+.IP
+.B sanitize
+.br
+Clean up graphics command in content streams.
+.IP
+.B garbage[=compact|deduplicate]
+.br
+Garbage collect unused objects. With
+.B compact
+the cross-reference table will also be compacted. With
+.B deduplicate
+duplicate objects will also be recombined.
 
 .SH PAGES
 mutool pages [options] input.pdf [pages ...]
@@ -308,6 +350,68 @@ Print all the objects in the file in a compact one-line format suitable for pipi
 .TP
 .B 'outline' or 'o'
 Print the outline (table of contents).
+
+.SH RUN
+mutool run script.js [arguments]
+.PP
+Executes a Javascript program which has access to most of the features of the
+MuPDF library. The command supports ECMAScript 5 syntax in strict mode. All of
+the MuPDF constructors and function live in the global object, and the command
+line arguments are accessible from the global argv object.
+.PP
+If invoke without any arguments, it will drop you into an interactive REPL
+(read-eval-print-loop). On the interactive prompt, if you prefix a line with an
+equal character it will automatically print the results of the line.
+.PP
+See the MuPDF documentation for details about the Javascript interfaces.
+
+.SH CONVERT
+mutool convert [options] file [pages]
+.PP
+The convert commant is used to convert a file from one format to another.
+.TP
+.B \-p password
+Use the specified password if the file is encrypted.
+.TP
+.B \-A bits
+Specify how many bits of anti-aliasing to use. The default is 8.
+.TP
+.B \-W width
+Page width in points for EPUB layout.
+.TP
+.B \-H height
+Page height in points for EPUB layout.
+.TP
+.B \-S size
+Font size in points for EPUB layout.
+.TP
+.B \-U filename
+User CSS stylesheet for EPUB layout.
+.TP
+.B \-o output
+The output format is inferred from the output filename.
+Embed %d in the name to indicate the page number (for example: "page%d.png").
+Printf modifiers are supported, for example "%03d".
+If no output is specified, the output will go to stdout.
+.TP
+.B \-F format
+Enforce a specific output format. Only necessary when outputting to stdout
+since normally the output filename is used to infer the output format.
+.TP
+.B \-O
+Comma separated list of format specific output options:
+
+.SH MERGE
+mutool merge [options] file1 [pages] file2 [pages] ...
+.PP
+The merge command is used to pick out pages from two or more files and merge
+them in order into a new output file.
+.TP
+.B \-o output
+The output filename.
+.TP
+.B \-O
+See mutool create for details on this option.
 
 .SH SEE ALSO
 .BR mupdf (1),
