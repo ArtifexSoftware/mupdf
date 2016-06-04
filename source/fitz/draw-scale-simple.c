@@ -580,6 +580,7 @@ scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict 
 {
 	asm volatile(
 	ENTER_ARM
+    ".syntax unified\n"
 	"stmfd	r13!,{r4-r7,r9,r14}				\n"
 	"@ r0 = dst						\n"
 	"@ r1 = src						\n"
@@ -600,7 +601,7 @@ scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict 
 	"blt	3f			@ while (len >= 0)	\n"
 	"2:				@ {			\n"
 	"ldrgt	r6, [r2], #4		@ r6 = *contrib++	\n"
-	"ldrgtb	r7, [r4], #1		@ r7 = *min++		\n"
+	"ldrbgt	r7, [r4], #1		@ r7 = *min++		\n"
 	"ldr	r12,[r2], #4		@ r12 = *contrib++	\n"
 	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
 	"mlagt	r5, r6, r7, r5		@ g += r6 * r7		\n"
@@ -624,7 +625,7 @@ scale_row_to_temp1(unsigned char * restrict dst, const unsigned char * restrict 
 	"blt	9f			@ while (len > 0)	\n"
 	"7:				@ {			\n"
 	"ldrgt	r6, [r2], #4		@ r6 = *contrib++	\n"
-	"ldrgtb	r7, [r4], #1		@ r7 = *min++		\n"
+	"ldrbgt	r7, [r4], #1		@ r7 = *min++		\n"
 	"ldr	r12,[r2], #4		@ r12 = *contrib++	\n"
 	"ldrb	r14,[r4], #1		@ r14 = *min++		\n"
 	"mlagt	r5, r6,r7,r5		@ a += r6 * r7		\n"
