@@ -43,7 +43,7 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	}
 }
 
-static char *tmp_path(char *path)
+static char *tmp_path(const char *path)
 {
 	int f;
 	char *buf = malloc(strlen(path) + 6 + 1);
@@ -67,7 +67,7 @@ static char *tmp_path(char *path)
 	}
 }
 
-static void saveDoc(char *current_path, fz_document *doc)
+static void saveDoc(const char *current_path, fz_document *doc)
 {
 	char *tmp;
 	pdf_document *idoc = pdf_specifics(ctx, doc);
@@ -129,7 +129,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	fz_document *doc;
 	MuDocRef *docRef;
 	NSString *key;
-	char *filePath;
+	NSString *_filePath;
 	BOOL reflowMode;
 	MuOutlineController *outline;
 	UIScrollView *canvas;
@@ -158,7 +158,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	BOOL _isRotating;
 }
 
-- (id) initWithFilename: (NSString*)filename path:(char *)cstr document: (MuDocRef *)aDoc
+- (id) initWithFilename: (NSString*)filename path:(NSString *)cstr document: (MuDocRef *)aDoc
 {
 	self = [super init];
 	if (!self)
@@ -168,10 +168,10 @@ static void saveDoc(char *current_path, fz_document *doc)
 	if ([self respondsToSelector:@selector(automaticallyAdjustsScrollViewInsets)])
 		self.automaticallyAdjustsScrollViewInsets = NO;
 #endif
-	key = [filename retain];
+	key = [filename copy];
 	docRef = [aDoc retain];
 	doc = docRef->doc;
-	filePath = strdup(cstr);
+	_filePath = [cstr copy];
 
 	//  this will be created right before the outline is shown
 	outline = nil;
@@ -341,7 +341,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	[tickButton release]; tickButton = nil;
 	[deleteButton release]; deleteButton = nil;
 	[canvas release]; canvas = nil;
-	free(filePath); filePath = NULL;
+	[_filePath release]; _filePath = NULL;
 
 	[outline release];
 	[key release];
@@ -588,7 +588,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 
 - (void) shareDocument
 {
-	NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:filePath]];
+	NSURL *url = [NSURL fileURLWithPath:_filePath];
 	UIActivityViewController *cont = [[UIActivityViewController alloc] initWithActivityItems:[NSArray arrayWithObject:url] applicationActivities:nil];
 	cont.popoverPresentationController.barButtonItem = shareButton;
 	[self presentViewController:cont animated:YES completion:nil];
@@ -779,7 +779,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 	if ([CloseAlertMessage isEqualToString:alertView.message])
 	{
 		if (buttonIndex == 1)
-			saveDoc(filePath, doc);
+			saveDoc(_filePath.UTF8String, doc);
 
 		[alertView dismissWithClickedButtonIndex:buttonIndex animated:YES];
 		[[self navigationController] popViewControllerAnimated:YES];
@@ -790,7 +790,7 @@ static void saveDoc(char *current_path, fz_document *doc)
 		[alertView dismissWithClickedButtonIndex:buttonIndex animated:NO];
 		if (buttonIndex == 1)
 		{
-			saveDoc(filePath, doc);
+			saveDoc(_filePath.UTF8String, doc);
 			[self shareDocument];
 		}
 	}

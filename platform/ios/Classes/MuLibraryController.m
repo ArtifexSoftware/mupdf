@@ -20,7 +20,7 @@ static void showAlert(NSString *msg, NSString *filename)
 	NSTimer *timer;
 	MuDocRef *doc;
 	NSString *_filename;
-	char *_filePath;
+	NSString *_filePath;
 }
 
 - (void) viewWillAppear: (BOOL)animated
@@ -186,15 +186,12 @@ static NSString *moveOutOfInbox(NSString *docpath)
 - (void) openDocument: (NSString*)nsfilename
 {
 	nsfilename = moveOutOfInbox(nsfilename);
-	NSString *nspath = [[NSArray arrayWithObjects:NSHomeDirectory(), @"Documents", nsfilename, nil]
-							componentsJoinedByString:@"/"];
-	_filePath = malloc(strlen([nspath UTF8String])+1);
+	_filePath = [[[NSArray arrayWithObjects:NSHomeDirectory(), @"Documents", nsfilename, nil]
+				 componentsJoinedByString:@"/"] retain];
 	if (_filePath == NULL) {
 		showAlert(@"Out of memory in openDocument", nsfilename);
 		return;
 	}
-
-	strcpy(_filePath, [nspath UTF8String]);
 
 	dispatch_sync(queue, ^{});
 
@@ -227,7 +224,7 @@ static NSString *moveOutOfInbox(NSString *docpath)
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-	char *password = (char*) [[[alertView textFieldAtIndex: 0] text] UTF8String];
+	const char *password = [[[alertView textFieldAtIndex: 0] text] UTF8String];
 	[alertView dismissWithClickedButtonIndex: buttonIndex animated: TRUE];
 	if (buttonIndex == 1) {
 		if (fz_authenticate_password(ctx, doc->doc, password))
@@ -248,13 +245,13 @@ static NSString *moveOutOfInbox(NSString *docpath)
 		[document release];
 	}
 	[_filename release];
-	free(_filePath);
+	[_filePath release];
 }
 
 - (void) onPasswordCancel
 {
 	[_filename release];
-	free(_filePath);
+	[_filePath release];
 }
 
 @end
