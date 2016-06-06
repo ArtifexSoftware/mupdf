@@ -259,6 +259,9 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 	uint32_t *s = (uint32_t *)(void *)samples;
 	uint8_t *t;
 
+	if (w < 0 || h < 0)
+		return;
+
 	if (alpha)
 	{
 		int c = w;
@@ -335,17 +338,18 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 		stride -= w*4;
 		if ((stride & 3) == 0)
 		{
+			size_t W = w;
 			if (stride == 0)
 			{
-				w *= h;
+				W *= h;
 				h = 1;
 			}
-			w *= 4;
+			W *= 4;
 			if (value == 0)
 			{
 				while (h--)
 				{
-					memset(s, 0, w);
+					memset(s, 0, W);
 					s += (stride>>2);
 				}
 			}
@@ -364,8 +368,8 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 					const uint32_t a0 = d.word;
 					while (h--)
 					{
-						int ww = w;
-						while (ww--)
+						size_t WW = W;
+						while (WW--)
 						{
 							*s++ = a0;
 						}
@@ -431,15 +435,18 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 	int w, h, n, stride, len;
 	int alpha = pix->alpha;
 
+	w = pix->w;
+	h = pix->h;
+	if (w < 0 || h < 0)
+		return;
+
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
 	if (pix->colorspace && pix->colorspace->n == 4)
 	{
-		clear_cmyk_bitmap(pix->samples, pix->w, pix->h, pix->stride, 255-value, pix->alpha);
+		clear_cmyk_bitmap(pix->samples, w, h, pix->stride, 255-value, pix->alpha);
 		return;
 	}
 
-	w = pix->w;
-	h = pix->h;
 	n = pix->n;
 	stride = pix->stride;
 	len = w * n;

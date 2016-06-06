@@ -289,10 +289,13 @@ static void fast_gray_to_rgb(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 3);
 	int s_line_inc = src->stride - w * (src->alpha + 1);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -306,7 +309,7 @@ static void fast_gray_to_rgb(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = s[0];
@@ -324,7 +327,7 @@ static void fast_gray_to_rgb(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = s[0];
@@ -345,7 +348,7 @@ static void fast_gray_to_rgb(fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				d[0] = s[0];
@@ -364,10 +367,13 @@ static void fast_gray_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 4);
 	int s_line_inc = src->stride - w * (src->alpha + 1);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -381,7 +387,7 @@ static void fast_gray_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = 0;
@@ -400,7 +406,7 @@ static void fast_gray_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = 0;
@@ -422,7 +428,7 @@ static void fast_gray_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				d[0] = 0;
@@ -442,10 +448,13 @@ static void fast_rgb_to_gray(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 1);
 	int s_line_inc = src->stride - w * (src->alpha + 3);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -459,7 +468,7 @@ static void fast_rgb_to_gray(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = ((s[0]+1) * 77 + (s[1]+1) * 150 + (s[2]+1) * 28) >> 8;
@@ -475,7 +484,7 @@ static void fast_rgb_to_gray(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = ((s[0]+1) * 77 + (s[1]+1) * 150 + (s[2]+1) * 28) >> 8;
@@ -494,7 +503,7 @@ static void fast_rgb_to_gray(fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				d[0] = ((s[0]+1) * 77 + (s[1]+1) * 150 + (s[2]+1) * 28) >> 8;
@@ -511,10 +520,13 @@ static void fast_bgr_to_gray(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 1);
 	int s_line_inc = src->stride - w * (src->alpha + 3);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -528,7 +540,7 @@ static void fast_bgr_to_gray(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = ((s[0]+1) * 28 + (s[1]+1) * 150 + (s[2]+1) * 77) >> 8;
@@ -544,7 +556,7 @@ static void fast_bgr_to_gray(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = ((s[0]+1) * 28 + (s[1]+1) * 150 + (s[2]+1) * 77) >> 8;
@@ -563,7 +575,7 @@ static void fast_bgr_to_gray(fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				d[0] = ((s[0]+1) * 28 + (s[1]+1) * 150 + (s[2]+1) * 77) >> 8;
@@ -580,10 +592,13 @@ static void fast_rgb_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 4);
 	int s_line_inc = src->stride - w * (src->alpha + 3);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -597,7 +612,7 @@ static void fast_rgb_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					unsigned char c = 255 - s[0];
@@ -620,7 +635,7 @@ static void fast_rgb_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					unsigned char c = 255 - s[0];
@@ -646,7 +661,7 @@ static void fast_rgb_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				unsigned char c = 255 - s[0];
@@ -670,10 +685,13 @@ static void fast_bgr_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 4);
 	int s_line_inc = src->stride - w * (src->alpha + 3);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -687,7 +705,7 @@ static void fast_bgr_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					unsigned char c = 255 - s[2];
@@ -710,7 +728,7 @@ static void fast_bgr_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					unsigned char c = 255 - s[2];
@@ -736,7 +754,7 @@ static void fast_bgr_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				unsigned char c = 255 - s[2];
@@ -760,10 +778,13 @@ static void fast_cmyk_to_gray(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 1);
 	int s_line_inc = src->stride - w * (src->alpha + 4);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -777,7 +798,7 @@ static void fast_cmyk_to_gray(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					unsigned char c = fz_mul255(s[0], 77);
@@ -796,7 +817,7 @@ static void fast_cmyk_to_gray(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					unsigned char c = fz_mul255(s[0], 77);
@@ -817,7 +838,7 @@ static void fast_cmyk_to_gray(fz_pixmap *dst, fz_pixmap *src)
 		int si = 4 + src->alpha;
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				unsigned char c = fz_mul255(s[0], 77);
@@ -1164,12 +1185,15 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 3);
 	int s_line_inc = src->stride - w * (src->alpha + 4);
 	unsigned int C,M,Y,K;
 	unsigned char r,g,b;
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	C = 0;
 	M = 0;
@@ -1198,7 +1222,7 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 #endif
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
@@ -1217,7 +1241,7 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
@@ -1240,7 +1264,7 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
@@ -1260,12 +1284,15 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 3);
 	int s_line_inc = src->stride - w * (src->alpha + 4);
 	unsigned int C,M,Y,K;
 	unsigned char r,g,b;
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	C = 0;
 	M = 0;
@@ -1287,7 +1314,7 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
@@ -1306,7 +1333,7 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
@@ -1329,7 +1356,7 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
@@ -1349,10 +1376,13 @@ static void fast_rgb_to_bgr(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * (dst->alpha + 3);
 	int s_line_inc = src->stride - w * (src->alpha + 3);
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	if (d_line_inc == 0 && s_line_inc == 0)
 	{
@@ -1366,7 +1396,7 @@ static void fast_rgb_to_bgr(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = s[2];
@@ -1382,7 +1412,7 @@ static void fast_rgb_to_bgr(fz_pixmap *dst, fz_pixmap *src)
 		{
 			while (h--)
 			{
-				int ww = w;
+				size_t ww = w;
 				while (ww--)
 				{
 					d[0] = s[2];
@@ -1402,7 +1432,7 @@ static void fast_rgb_to_bgr(fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				d[0] = s[2];
@@ -1422,7 +1452,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	float dstv[FZ_MAX_COLORS];
 	int srcn, dstn;
 	int k, i;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int d_line_inc = dst->stride - w * dst->n;
 	int s_line_inc = src->stride - w * src->n;
@@ -1434,6 +1464,9 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	srcn = ss->n;
 	dstn = ds->n;
@@ -1456,7 +1489,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		fz_lookup_color_converter(ctx, &cc, ds, ss);
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				srcv[0] = *s++ / 255.0f * 100;
@@ -1484,7 +1517,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		fz_lookup_color_converter(ctx, &cc, ds, ss);
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				for (k = 0; k < srcn; k++)
@@ -1520,7 +1553,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				i = *s++;
@@ -1550,7 +1583,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 
 		while (h--)
 		{
-			int ww = w;
+			size_t ww = w;
 			while (ww--)
 			{
 				if (*s == *sold && memcmp(sold,s,srcn) == 0)
@@ -1605,11 +1638,14 @@ static void fast_copy_alpha(fz_pixmap *dst, fz_pixmap *src)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
-	int w = src->w;
+	size_t w = src->w;
 	int h = src->h;
 	int n = src->n;
 	int d_line_inc = dst->stride - w * dst->n;
 	int s_line_inc = src->stride - w * src->n;
+
+	if ((int)w < 0 || h < 0)
+		return;
 
 	assert(dst->alpha && src->alpha && dst->n == 1);
 
@@ -1622,7 +1658,7 @@ static void fast_copy_alpha(fz_pixmap *dst, fz_pixmap *src)
 	s += n-1;
 	while (h--)
 	{
-		int ww = w;
+		size_t ww = w;
 		while (ww--)
 		{
 			*d++ = *s;
