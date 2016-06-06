@@ -2107,7 +2107,7 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 		if (info.stride != info.width)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed as bitmap width != stride");
 
-		pixmap = fz_new_pixmap(ctx, fz_device_rgb(ctx), info.width, info.height);
+		pixmap = fz_new_pixmap(ctx, fz_device_rgb(ctx), info.width, info.height, 1);
 		if (AndroidBitmap_lockPixels(env, jbitmap, &pixels) < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Bitmap lock failed in new Image");
 		memcpy(pixmap->samples, pixels, info.width * info.height * 4);
@@ -2289,7 +2289,7 @@ FUN(Pixmap_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject colorspace_, jint x, jint y, jint w, jint h)
+FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject colorspace_, jint x, jint y, jint w, jint h, jboolean alpha)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *colorspace = from_ColorSpace(env, colorspace_);
@@ -2301,7 +2301,7 @@ FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject colorspace_, jint x, ji
 
 	fz_try(ctx)
 	{
-		pixmap = fz_new_pixmap(ctx, colorspace, w, h);
+		pixmap = fz_new_pixmap(ctx, colorspace, w, h, alpha);
 		pixmap->x = x;
 		pixmap->y = y;
 	}
@@ -2346,18 +2346,9 @@ FUN(Pixmap_getX)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	int x = 0;
-
 	if (ctx == NULL || pixmap == NULL)
 		return 0;
-
-	fz_try(ctx)
-		x = fz_pixmap_x(ctx, pixmap);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return x;
+	return pixmap->x;
 }
 
 JNIEXPORT jint JNICALL
@@ -2365,18 +2356,9 @@ FUN(Pixmap_getY)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	int y = 0;
-
 	if (ctx == NULL || pixmap == NULL)
 		return 0;
-
-	fz_try(ctx)
-		y = fz_pixmap_y(ctx, pixmap);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return y;
+	return pixmap->y;
 }
 
 JNIEXPORT jint JNICALL
@@ -2384,18 +2366,9 @@ FUN(Pixmap_getWidth)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	int w = 0;
-
 	if (ctx == NULL || pixmap == NULL)
 		return 0;
-
-	fz_try(ctx)
-		w = fz_pixmap_width(ctx, pixmap);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return w;
+	return pixmap->w;
 }
 
 JNIEXPORT jint JNICALL
@@ -2403,18 +2376,9 @@ FUN(Pixmap_getHeight)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	int h = 0;
-
 	if (ctx == NULL || pixmap == NULL)
 		return 0;
-
-	fz_try(ctx)
-		h = fz_pixmap_height(ctx, pixmap);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return h;
+	return pixmap->h;
 }
 
 JNIEXPORT jint JNICALL
@@ -2422,18 +2386,19 @@ FUN(Pixmap_getNumberOfComponents)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	int n = 0;
-
 	if (ctx == NULL || pixmap == NULL)
 		return 0;
+	return pixmap->n;
+}
 
-	fz_try(ctx)
-		n = fz_pixmap_components(ctx, pixmap);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return n;
+JNIEXPORT jboolean JNICALL
+FUN(Pixmap_getAlpha)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	if (ctx == NULL || pixmap == NULL)
+		return 0;
+	return pixmap->alpha;
 }
 
 JNIEXPORT jint JNICALL
@@ -2441,18 +2406,9 @@ FUN(Pixmap_getStride)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	int stride = 0;
-
 	if (ctx == NULL || pixmap == NULL)
 		return 0;
-
-	fz_try(ctx)
-		stride = fz_pixmap_stride(ctx, pixmap);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	return stride;
+	return pixmap->stride;
 }
 
 JNIEXPORT jobject JNICALL
@@ -2482,7 +2438,7 @@ FUN(Pixmap_getSamples)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	int size = pixmap->w * pixmap->h * pixmap->n;
+	int size = pixmap->h * pixmap->stride;
 	jbyteArray ary;
 
 	if (ctx == NULL || pixmap == NULL)
@@ -2511,6 +2467,12 @@ FUN(Pixmap_getPixels)(JNIEnv *env, jobject self)
 	if (pixmap->n != 4)
 	{
 		jni_throw(env, FZ_ERROR_GENERIC, "invalid colorspace for getPixels");
+		return NULL;
+	}
+
+	if (size != pixmap->h * pixmap->stride)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "invalid stride for getPixels");
 		return NULL;
 	}
 
@@ -3200,14 +3162,14 @@ FUN(Image_getMask)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Image_toPixmap)(JNIEnv *env, jobject self, jint w, jint h)
+FUN(Image_toPixmap)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_image *img = from_Image(env, self);
 	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
-		pixmap = fz_get_pixmap_from_image(ctx, img, w, h);
+		pixmap = fz_get_pixmap_from_image(ctx, img, NULL, NULL, NULL, NULL);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

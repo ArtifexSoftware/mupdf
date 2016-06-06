@@ -37,9 +37,5 @@ public class Image
 	public native boolean getInterpolate();
 	public native Image getMask();
 
-	public native Pixmap toPixmap(int w, int h);
-
-	public Pixmap toPixmap() {
-		return toPixmap(getWidth(), getHeight());
-	}
+	public native Pixmap toPixmap();
 }

@@ -712,10 +712,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Image_getMask
 /*
  * Class:     com_artifex_mupdf_fitz_Image
  * Method:    toPixmap
- * Signature: (II)Lcom/artifex/mupdf/fitz/Pixmap;
+ * Signature: ()Lcom/artifex/mupdf/fitz/Pixmap;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Image_toPixmap
-  (JNIEnv *, jobject, jint, jint);
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
@@ -1240,10 +1240,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_finalize
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    newNative
- * Signature: (Lcom/artifex/mupdf/fitz/ColorSpace;IIII)J
+ * Signature: (Lcom/artifex/mupdf/fitz/ColorSpace;IIIIZ)J
  */
 JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Pixmap_newNative
-  (JNIEnv *, jobject, jobject, jint, jint, jint, jint);
+  (JNIEnv *, jobject, jobject, jint, jint, jint, jint, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
@@ -1315,6 +1315,14 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getStride
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getNumberOfComponents
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Pixmap
+ * Method:    getAlpha
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getAlpha
   (JNIEnv *, jobject);
 
 /*
