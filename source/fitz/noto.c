@@ -45,19 +45,19 @@ const char *
 fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 {
 #ifndef TOFU_BASE14
-	if (!strcmp(name, "Courier")) { RETURN(NimbusMono_Regular_cff); }
-	if (!strcmp(name, "Courier-Oblique")) { RETURN(NimbusMono_Oblique_cff); }
-	if (!strcmp(name, "Courier-Bold")) { RETURN(NimbusMono_Bold_cff); }
-	if (!strcmp(name, "Courier-BoldOblique")) { RETURN(NimbusMono_BoldOblique_cff); }
-	if (!strcmp(name, "Helvetica")) { RETURN(NimbusSanL_Reg_cff); }
-	if (!strcmp(name, "Helvetica-Oblique")) { RETURN(NimbusSanL_RegIta_cff); }
-	if (!strcmp(name, "Helvetica-Bold")) { RETURN(NimbusSanL_Bol_cff); }
-	if (!strcmp(name, "Helvetica-BoldOblique")) { RETURN(NimbusSanL_BolIta_cff); }
-	if (!strcmp(name, "Times-Roman")) { RETURN(NimbusRomNo9L_Reg_cff); }
-	if (!strcmp(name, "Times-Italic")) { RETURN(NimbusRomNo9L_RegIta_cff); }
-	if (!strcmp(name, "Times-Bold")) { RETURN(NimbusRomNo9L_Med_cff); }
-	if (!strcmp(name, "Times-BoldItalic")) { RETURN(NimbusRomNo9L_MedIta_cff); }
-	if (!strcmp(name, "Symbol")) { RETURN(StandardSymL_cff); }
+	if (!strcmp(name, "Courier")) { RETURN(NimbusMonoPS_Regular_cff); }
+	if (!strcmp(name, "Courier-Oblique")) { RETURN(NimbusMonoPS_Italic_cff); }
+	if (!strcmp(name, "Courier-Bold")) { RETURN(NimbusMonoPS_Bold_cff); }
+	if (!strcmp(name, "Courier-BoldOblique")) { RETURN(NimbusMonoPS_BoldItalic_cff); }
+	if (!strcmp(name, "Helvetica")) { RETURN(NimbusSans_Regular_cff); }
+	if (!strcmp(name, "Helvetica-Oblique")) { RETURN(NimbusSans_Oblique_cff); }
+	if (!strcmp(name, "Helvetica-Bold")) { RETURN(NimbusSans_Bold_cff); }
+	if (!strcmp(name, "Helvetica-BoldOblique")) { RETURN(NimbusSans_BoldOblique_cff); }
+	if (!strcmp(name, "Times-Roman")) { RETURN(NimbusRoman_Regular_cff); }
+	if (!strcmp(name, "Times-Italic")) { RETURN(NimbusRoman_Italic_cff); }
+	if (!strcmp(name, "Times-Bold")) { RETURN(NimbusRoman_Bold_cff); }
+	if (!strcmp(name, "Times-BoldItalic")) { RETURN(NimbusRoman_BoldItalic_cff); }
+	if (!strcmp(name, "Symbol")) { RETURN(StandardSymbolsPS_cff); }
 	if (!strcmp(name, "ZapfDingbats")) { RETURN(Dingbats_cff); }
 #endif
 	return *size = 0, NULL;
@@ -75,22 +75,22 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 {
 #ifndef TOFU_BASE14
 	if (!strcmp(name, "Courier")) {
-		FAMILY(NimbusMono_Regular_cff,
-				NimbusMono_Oblique_cff,
-				NimbusMono_Bold_cff,
-				NimbusMono_BoldOblique_cff)
+		FAMILY(NimbusMonoPS_Regular_cff,
+				NimbusMonoPS_Italic_cff,
+				NimbusMonoPS_Bold_cff,
+				NimbusMonoPS_BoldItalic_cff)
 	}
 	if (!strcmp(name, "Helvetica") || !strcmp(name, "Arial")) {
-		FAMILY(NimbusSanL_Reg_cff,
-				NimbusSanL_RegIta_cff,
-				NimbusSanL_Bol_cff,
-				NimbusSanL_BolIta_cff)
+		FAMILY(NimbusSans_Regular_cff,
+				NimbusSans_Oblique_cff,
+				NimbusSans_Bold_cff,
+				NimbusSans_BoldOblique_cff)
 	}
 	if (!strcmp(name, "Times") || !strcmp(name, "Times Roman") || !strcmp(name, "Times New Roman")) {
-		FAMILY(NimbusRomNo9L_Reg_cff,
-				NimbusRomNo9L_RegIta_cff,
-				NimbusRomNo9L_Med_cff,
-				NimbusRomNo9L_MedIta_cff)
+		FAMILY(NimbusRoman_Regular_cff,
+				NimbusRoman_Italic_cff,
+				NimbusRoman_Bold_cff,
+				NimbusRoman_BoldItalic_cff)
 	}
 #endif
 #ifndef TOFU_SIL

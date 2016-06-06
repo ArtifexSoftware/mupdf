@@ -33,19 +33,19 @@ if not exist generated/DroidSansFallback.c fontdump.exe generated/DroidSansFallb
 if not exist generated/DroidSansFallbackFull.c fontdump.exe generated/DroidSansFallbackFull.c resources/fonts/droid/DroidSansFallbackFull.ttc
 
 if not exist generated/Dingbats.c fontdump.exe generated/Dingbats.c resources/fonts/urw/Dingbats.cff
-if not exist generated/NimbusMono-Bold.c fontdump.exe generated/NimbusMono-Bold.c resources/fonts/urw/NimbusMono-Bold.cff
-if not exist generated/NimbusMono-BoldOblique.c fontdump.exe generated/NimbusMono-BoldOblique.c resources/fonts/urw/NimbusMono-BoldOblique.cff
-if not exist generated/NimbusMono-Oblique.c fontdump.exe generated/NimbusMono-Oblique.c resources/fonts/urw/NimbusMono-Oblique.cff
-if not exist generated/NimbusMono-Regular.c fontdump.exe generated/NimbusMono-Regular.c resources/fonts/urw/NimbusMono-Regular.cff
-if not exist generated/NimbusRomNo9L-Med.c fontdump.exe generated/NimbusRomNo9L-Med.c resources/fonts/urw/NimbusRomNo9L-Med.cff
-if not exist generated/NimbusRomNo9L-MedIta.c fontdump.exe generated/NimbusRomNo9L-MedIta.c resources/fonts/urw/NimbusRomNo9L-MedIta.cff
-if not exist generated/NimbusRomNo9L-Reg.c fontdump.exe generated/NimbusRomNo9L-Reg.c resources/fonts/urw/NimbusRomNo9L-Reg.cff
-if not exist generated/NimbusRomNo9L-RegIta.c fontdump.exe generated/NimbusRomNo9L-RegIta.c resources/fonts/urw/NimbusRomNo9L-RegIta.cff
-if not exist generated/NimbusSanL-Bol.c fontdump.exe generated/NimbusSanL-Bol.c resources/fonts/urw/NimbusSanL-Bol.cff
-if not exist generated/NimbusSanL-BolIta.c fontdump.exe generated/NimbusSanL-BolIta.c resources/fonts/urw/NimbusSanL-BolIta.cff
-if not exist generated/NimbusSanL-Reg.c fontdump.exe generated/NimbusSanL-Reg.c resources/fonts/urw/NimbusSanL-Reg.cff
-if not exist generated/NimbusSanL-RegIta.c fontdump.exe generated/NimbusSanL-RegIta.c resources/fonts/urw/NimbusSanL-RegIta.cff
-if not exist generated/StandardSymL.c fontdump.exe generated/StandardSymL.c resources/fonts/urw/StandardSymL.cff
+if not exist generated/NimbusMonoPS-Bold.c fontdump.exe generated/NimbusMonoPS-Bold.c resources/fonts/urw/NimbusMonoPS-Bold.cff
+if not exist generated/NimbusMonoPS-BoldItalic.c fontdump.exe generated/NimbusMonoPS-BoldItalic.c resources/fonts/urw/NimbusMonoPS-BoldItalic.cff
+if not exist generated/NimbusMonoPS-Italic.c fontdump.exe generated/NimbusMonoPS-Italic.c resources/fonts/urw/NimbusMonoPS-Italic.cff
+if not exist generated/NimbusMonoPS-Regular.c fontdump.exe generated/NimbusMonoPS-Regular.c resources/fonts/urw/NimbusMonoPS-Regular.cff
+if not exist generated/NimbusRoman-Bold.c fontdump.exe generated/NimbusRoman-Bold.c resources/fonts/urw/NimbusRoman-Bold.cff
+if not exist generated/NimbusRoman-BoldItalic.c fontdump.exe generated/NimbusRoman-BoldItalic.c resources/fonts/urw/NimbusRoman-BoldItalic.cff
+if not exist generated/NimbusRoman-Regular.c fontdump.exe generated/NimbusRoman-Regular.c resources/fonts/urw/NimbusRoman-Regular.cff
+if not exist generated/NimbusRoman-Italic.c fontdump.exe generated/NimbusRoman-Italic.c resources/fonts/urw/NimbusRoman-Italic.cff
+if not exist generated/NimbusSans-Bold.c fontdump.exe generated/NimbusSans-Bold.c resources/fonts/urw/NimbusSans-Bold.cff
+if not exist generated/NimbusSans-BoldOblique.c fontdump.exe generated/NimbusSans-BoldOblique.c resources/fonts/urw/NimbusSans-BoldOblique.cff
+if not exist generated/NimbusSans-Regular.c fontdump.exe generated/NimbusSans-Regular.c resources/fonts/urw/NimbusSans-Regular.cff
+if not exist generated/NimbusSans-Oblique.c fontdump.exe generated/NimbusSans-Oblique.c resources/fonts/urw/NimbusSans-Oblique.cff
+if not exist generated/StandardSymbolsPS.c fontdump.exe generated/StandardSymbolsPS.c resources/fonts/urw/StandardSymbolsPS.cff
 
 if not exist generated/CharisSIL-R.c fontdump.exe generated/CharisSIL-R.c resources/fonts/sil/CharisSIL-R.cff
 if not exist generated/CharisSIL-I.c fontdump.exe generated/CharisSIL-I.c resources/fonts/sil/CharisSIL-I.cff
