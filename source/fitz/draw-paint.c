@@ -1341,7 +1341,7 @@ fz_get_span_mask_painter(int da, int sa, int n)
 		default:
 		{
 #if !FZ_PLOTTERS_G
-fallback:
+fallback:{}
 #endif /* !FZ_PLOTTERS_G */
 #if FZ_PLOTTERS_N
 			if (da)
@@ -2020,7 +2020,7 @@ fz_get_span_painter(int da, int sa, int n, int alpha)
 	default:
 	{
 #if !FZ_PLOTTERS_G
-fallback:
+fallback:{}
 #endif /* FZ_PLOTTERS_G */
 #if FZ_PLOTTERS_N
 		if (da)
@@ -2427,7 +2427,7 @@ fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, un
 	default:
 	{
 #if !FZ_PLOTTERS_G
-fallback:
+fallback:{}
 #endif /* !FZ_PLOTTERS_G */
 #if FZ_PLOTTERS_N
 		if (da)
@@ -2474,7 +2474,7 @@ fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, un
 	default:
 	{
 #if !FZ_PLOTTERS_G
-fallback:
+fallback:{}
 #endif /* FZ_PLOTTERS_G */
 #if FZ_PLOTTERS_N
 		if (da)
