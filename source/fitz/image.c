@@ -184,11 +184,42 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 		case 1: mask = 8*f; break;
 		case 2: mask = 4*f; break;
 		case 4: mask = 2*f; break;
-		default: mask = f; break;
+		default: mask = (bpp & 7) == 0 ? f : 0; break;
 		}
-		subarea->x0 &= ~(mask - 1);
+		if (mask != 0)
+		{
+			subarea->x0 &= ~(mask - 1);
+			subarea->x1 = (subarea->x1 + mask - 1) & ~(mask - 1);
+		}
+		else
+		{
+			/* Awkward case - mask cannot be a power of 2. */
+			mask = bpp*f;
+			switch (bpp)
+			{
+			case 3:
+			case 5:
+			case 7:
+			case 9:
+			case 11:
+			case 13:
+			case 15:
+			default:
+				mask *= 8;
+				break;
+			case 6:
+			case 10:
+			case 14:
+				mask *= 4;
+				break;
+			case 12:
+				mask *= 2;
+				break;
+			}
+			subarea->x0 = (subarea->x0 / mask) * mask;
+			subarea->x1 = ((subarea->x1 + mask - 1) / mask) * mask;
+		}
 		subarea->y0 &= ~(f - 1);
-		subarea->x1 = (subarea->x1 + mask - 1) & ~(mask - 1);
 		if (subarea->x1 > image->w)
 			subarea->x1 = image->w;
 		subarea->y1 = (subarea->y1 + f - 1) & ~(f - 1);
