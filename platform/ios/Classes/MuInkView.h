@@ -4,6 +4,6 @@
 
 @property(readonly) NSArray *curves;
 
-- (id) initWithPageSize:(CGSize)pageSize;
+- (instancetype) initWithPageSize:(CGSize)pageSize;
 
 @end

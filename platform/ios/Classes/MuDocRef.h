@@ -8,5 +8,5 @@
 	fz_document *doc;
 	bool interactive;
 }
--(id) initWithFilename:(NSString *)aFilename;
+-(instancetype) initWithFilename:(NSString *)aFilename;
 @end

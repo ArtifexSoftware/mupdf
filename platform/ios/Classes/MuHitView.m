@@ -11,7 +11,7 @@
 	UIColor *color;
 }
 
-- (id) initWithSearchResults: (int)n forDocument: (fz_document *)doc
+- (instancetype) initWithSearchResults: (int)n forDocument: (fz_document *)doc
 {
 	self = [super initWithFrame: CGRectMake(0,0,100,100)];
 	if (self) {
@@ -33,7 +33,7 @@
 	return self;
 }
 
-- (id) initWithLinks: (fz_link*)link forDocument: (fz_document *)doc
+- (instancetype) initWithLinks: (fz_link*)link forDocument: (fz_document *)doc
 {
 	self = [super initWithFrame: CGRectMake(0,0,100,100)];
 	if (self) {

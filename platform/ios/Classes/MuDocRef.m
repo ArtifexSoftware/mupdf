@@ -4,7 +4,7 @@
 
 @implementation MuDocRef
 
--(id) initWithFilename:(NSString *)aFilename;
+-(instancetype) initWithFilename:(NSString *)aFilename;
 {
 	self = [super init];
 	if (self)

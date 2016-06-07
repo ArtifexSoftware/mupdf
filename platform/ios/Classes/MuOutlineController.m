@@ -8,7 +8,7 @@
 	NSMutableArray *pages;
 }
 
-- (id) initWithTarget: (id)aTarget titles: (NSMutableArray*)aTitles pages: (NSMutableArray*)aPages
+- (instancetype) initWithTarget: (id)aTarget titles: (NSMutableArray*)aTitles pages: (NSMutableArray*)aPages
 {
 	self = [super initWithStyle: UITableViewStylePlain];
 	if (self) {

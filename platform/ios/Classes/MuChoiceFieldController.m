@@ -13,7 +13,7 @@
 	NSInteger selected;
 }
 
-- (id)initWithChoices:(NSArray *)_choices okayAction:(void (^)(NSArray *))block
+- (instancetype)initWithChoices:(NSArray *)_choices okayAction:(void (^)(NSArray *))block
 {
 	self = [super initWithNibName:@"MuChoiceFieldController" bundle:nil];
 	if (self)

@@ -158,7 +158,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	BOOL _isRotating;
 }
 
-- (id) initWithFilename: (NSString*)filename path:(NSString *)cstr document: (MuDocRef *)aDoc
+- (instancetype) initWithFilename: (NSString*)filename path:(NSString *)cstr document: (MuDocRef *)aDoc
 {
 	self = [super initWithNibName:nil bundle:nil];
 	if (!self)

@@ -11,7 +11,7 @@
 
 @synthesize pageNumber;
 
--(id) initWithPageNumber:(int)aNumber
+-(instancetype) initWithPageNumber:(int)aNumber
 {
 	self = [super init];
 	if (self)
@@ -35,7 +35,7 @@
 
 @synthesize url;
 
--(id) initWithUrl:(NSString *)aString
+-(instancetype) initWithUrl:(NSString *)aString
 {
 	self = [super init];
 	if (self)
@@ -67,7 +67,7 @@
 
 @synthesize fileSpec, pageNumber, newWindow;
 
--(id) initWithFileSpec:(NSString *)aString pageNumber:(int)aNumber newWindow:(BOOL)aBool
+-(instancetype) initWithFileSpec:(NSString *)aString pageNumber:(int)aNumber newWindow:(BOOL)aBool
 {
 	self = [super init];
 	if (self)
@@ -108,7 +108,7 @@
 
 @synthesize annot;
 
--(id) initWithAnnotation:(MuAnnotation *)aAnnot
+-(instancetype) initWithAnnotation:(MuAnnotation *)aAnnot
 {
 	self = [super init];
 	if (self)

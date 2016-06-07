@@ -7,7 +7,7 @@
 	UIColor *color;
 }
 
-- (id)initWithAnnot:(MuAnnotation *)_annot pageSize:(CGSize)_pageSize
+- (instancetype)initWithAnnot:(MuAnnotation *)_annot pageSize:(CGSize)_pageSize
 {
 	self = [super initWithFrame:CGRectMake(0.0, 0.0, 100.0, 100.0)];
 	if (self)

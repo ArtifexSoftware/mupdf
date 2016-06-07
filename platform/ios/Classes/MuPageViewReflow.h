@@ -4,6 +4,6 @@
 
 @interface MuPageViewReflow : UIWebView <UIWebViewDelegate,MuPageView>
 
--(id) initWithFrame:(CGRect)frame document:(MuDocRef *)aDoc page:(int)aNumber;
+-(instancetype) initWithFrame:(CGRect)frame document:(MuDocRef *)aDoc page:(int)aNumber;
 
 @end

@@ -8,7 +8,7 @@ const int MaxStripPixels = 1024*1024;
 	MuDocRef *docRef;
 }
 
--(id) initWithDocRef:(MuDocRef *)aDocRef
+-(instancetype) initWithDocRef:(MuDocRef *)aDocRef
 {
 	self = [super init];
 	if (self)

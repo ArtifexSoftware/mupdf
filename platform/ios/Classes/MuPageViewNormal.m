@@ -641,7 +641,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		annot_list = create_annot_list(doc, page);
 }
 
--(id) initWithFrame:(CGRect)frame dialogCreator:(id<MuDialogCreator>)dia updater:(id<MuUpdater>)upd document:(MuDocRef *)aDoc page:(int)aNumber
+-(instancetype) initWithFrame:(CGRect)frame dialogCreator:(id<MuDialogCreator>)dia updater:(id<MuUpdater>)upd document:(MuDocRef *)aDoc page:(int)aNumber
 {
 	self = [super initWithFrame: frame];
 	if (self) {

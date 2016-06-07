@@ -4,6 +4,6 @@
 
 @interface MuPrintPageRenderer : UIPrintPageRenderer
 
--(id) initWithDocRef:(MuDocRef *) docRef;
+-(instancetype) initWithDocRef:(MuDocRef *) docRef;
 
 @end

@@ -78,7 +78,7 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 	float scale;
 }
 
-- (id)initWithFrame:(CGRect)frame document:(MuDocRef *)aDoc page:(int)aNumber
+- (instancetype)initWithFrame:(CGRect)frame document:(MuDocRef *)aDoc page:(int)aNumber
 {
 	self = [super initWithFrame:frame];
 	if (self) {

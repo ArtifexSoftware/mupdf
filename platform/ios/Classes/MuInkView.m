@@ -8,7 +8,7 @@
 	UIColor *color;
 }
 
-- (id) initWithPageSize:(CGSize)_pageSize
+- (instancetype) initWithPageSize:(CGSize)_pageSize
 {
 	self = [super initWithFrame:CGRectMake(0, 0, 100, 100)];
 	if (self) {
