@@ -160,7 +160,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (id) initWithFilename: (NSString*)filename path:(NSString *)cstr document: (MuDocRef *)aDoc
 {
-	self = [super init];
+	self = [super initWithNibName:nil bundle:nil];
 	if (!self)
 		return nil;
 
