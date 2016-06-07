@@ -33,9 +33,9 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 			int page = outline->dest.ld.gotor.page;
 			if (page >= 0 && outline->title)
 			{
-				NSString *title = [NSString stringWithUTF8String: outline->title];
+				NSString *title = @(outline->title);
 				[titles addObject: [NSString stringWithFormat: @"%s%@", indent, title]];
-				[pages addObject: [NSNumber numberWithInt: page]];
+				[pages addObject: @(page)];
 			}
 		}
 		flattenOutline(titles, pages, outline->down, level + 1);
@@ -190,7 +190,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	else
 	{
 		UIView *buttonView;
-		BOOL iOS7Style = ([[UIDevice currentDevice].systemVersion floatValue] >= 7.0f);
+		BOOL iOS7Style = (([UIDevice currentDevice].systemVersion).floatValue >= 7.0f);
 		UIButton *button = [UIButton buttonWithType:iOS7Style ? UIButtonTypeSystem : UIButtonTypeCustom];
 		[button setImage:[UIImage imageNamed:resource] forState:UIControlStateNormal];
 		[button addTarget:self action:selector forControlEvents:UIControlEventTouchUpInside];
@@ -210,8 +210,8 @@ static void saveDoc(const char *current_path, fz_document *doc)
 		[array addObject:outlineButton];
 	[array addObject:reflowButton];
 	[array addObject:linkButton];
-	[[self navigationItem] setRightBarButtonItems: array ];
-	[[self navigationItem] setLeftBarButtonItem:backButton];
+	self.navigationItem.rightBarButtonItems = array ;
+	self.navigationItem.leftBarButtonItem = backButton;
 }
 
 - (void) loadView
@@ -223,16 +223,16 @@ static void saveDoc(const char *current_path, fz_document *doc)
 		current = 0;
 
 	UIView *view = [[UIView alloc] initWithFrame: CGRectZero];
-	[view setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
+	view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	[view setAutoresizesSubviews: YES];
 	view.backgroundColor = [UIColor grayColor];
 
 	canvas = [[UIScrollView alloc] initWithFrame: CGRectMake(0,0,GAP,0)];
-	[canvas setAutoresizingMask: UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
+	canvas.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 	[canvas setPagingEnabled: YES];
 	[canvas setShowsHorizontalScrollIndicator: NO];
 	[canvas setShowsVerticalScrollIndicator: NO];
-	[canvas setDelegate: self];
+	canvas.delegate = self;
 
 	UITapGestureRecognizer *tapRecog = [[UITapGestureRecognizer alloc] initWithTarget: self action: @selector(onTap:)];
 	tapRecog.delegate = self;
@@ -250,27 +250,27 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	scroll_animating = NO;
 
 	indicator = [[UILabel alloc] initWithFrame: CGRectZero];
-	[indicator setAutoresizingMask: UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin];
-	[indicator setText: @"0000 of 9999"];
+	indicator.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin;
+	indicator.text = @"0000 of 9999";
 	[indicator sizeToFit];
-	[indicator setCenter: CGPointMake(0, INDICATOR_Y)];
-	[indicator setTextAlignment: NSTextAlignmentCenter];
-	[indicator setBackgroundColor: [[UIColor blackColor] colorWithAlphaComponent: 0.5]];
-	[indicator setTextColor: [UIColor whiteColor]];
+	indicator.center = CGPointMake(0, INDICATOR_Y);
+	indicator.textAlignment = NSTextAlignmentCenter;
+	indicator.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent: 0.5];
+	indicator.textColor = [UIColor whiteColor];
 
 	[view addSubview: canvas];
 	[view addSubview: indicator];
 
 	slider = [[UISlider alloc] initWithFrame: CGRectZero];
-	[slider setMinimumValue: 0];
-	[slider setMaximumValue: fz_count_pages(ctx, doc) - 1];
+	slider.minimumValue = 0;
+	slider.maximumValue = fz_count_pages(ctx, doc) - 1;
 	[slider addTarget: self action: @selector(onSlide:) forControlEvents: UIControlEventValueChanged];
 
-	if ([[[UIDevice currentDevice] systemVersion] floatValue] < 7.0)
+	if ([UIDevice currentDevice].systemVersion.floatValue < 7.0)
 	{
 		sliderWrapper = [[UIBarButtonItem alloc] initWithCustomView: slider];
 
-		[self setToolbarItems: [NSArray arrayWithObjects: sliderWrapper, nil]];
+		self.toolbarItems = @[sliderWrapper];
 	}
 
 	// Set up the buttons on the navigation and search bar
@@ -301,8 +301,8 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	deleteButton = [self newResourceBasedButton:@"ic_trash" withAction:@selector(onDelete:)];
 	searchBar = [[UISearchBar alloc] initWithFrame: CGRectMake(0,0,50,32)];
 	backButton = [self newResourceBasedButton:@"ic_arrow_left" withAction:@selector(onBack:)];
-	[searchBar setPlaceholder: @"Search"];
-	[searchBar setDelegate: self];
+	searchBar.placeholder = @"Search";
+	searchBar.delegate = self;
 
 	[prevButton setEnabled: NO];
 	[nextButton setEnabled: NO];
@@ -311,7 +311,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 	// TODO: add activityindicator to search bar
 
-	[self setView: view];
+	self.view = view;
 	[view release];
 }
 
@@ -351,55 +351,55 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) viewWillAppear: (BOOL)animated
 {
 	[super viewWillAppear:animated];
-	[self setTitle: [key lastPathComponent]];
+	self.title = key.lastPathComponent;
 
-	[slider setValue: current];
+	slider.value = current;
 
-	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
-		[[[self navigationController] toolbar] addSubview:slider];
+	if ([UIDevice currentDevice].systemVersion.floatValue >= 7.0)
+		[self.navigationController.toolbar addSubview:slider];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(ctx, doc)]];
+	indicator.text = [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(ctx, doc)];
 
-	[[self navigationController] setToolbarHidden: NO animated: animated];
+	[self.navigationController setToolbarHidden: NO animated: animated];
 }
 
 - (void) viewWillLayoutSubviews
 {
-	CGSize size = [canvas frame].size;
+	CGSize size = canvas.frame.size;
 	int max_width = fz_max(width, size.width);
 
 	width = size.width;
 	height = size.height;
 
-	[canvas setContentInset: UIEdgeInsetsZero];
-	[canvas setContentSize: CGSizeMake(fz_count_pages(ctx, doc) * width, height)];
-	[canvas setContentOffset: CGPointMake(current * width, 0)];
+	canvas.contentInset = UIEdgeInsetsZero;
+	canvas.contentSize = CGSizeMake(fz_count_pages(ctx, doc) * width, height);
+	canvas.contentOffset = CGPointMake(current * width, 0);
 
 	[sliderWrapper setWidth: SLIDER_W];
-	[searchBar setFrame: CGRectMake(0,0,SEARCH_W,32)];
-	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+	searchBar.frame = CGRectMake(0,0,SEARCH_W,32);
+	if ([UIDevice currentDevice].systemVersion.floatValue >= 7.0)
 	{
-		CGRect r = [[self navigationController] toolbar].frame;
+		CGRect r = self.navigationController.toolbar.frame;
 		r.origin.x = 0;
 		r.origin.y = 0;
-		[slider setFrame:r];
+		slider.frame = r;
 	}
 
-	[[[self navigationController] toolbar] setNeedsLayout]; // force layout!
+	[self.navigationController.toolbar setNeedsLayout]; // force layout!
 
 	// use max_width so we don't clamp the content offset too early during animation
-	[canvas setContentSize: CGSizeMake(fz_count_pages(ctx, doc) * max_width, height)];
-	[canvas setContentOffset: CGPointMake(current * width, 0)];
+	canvas.contentSize = CGSizeMake(fz_count_pages(ctx, doc) * max_width, height);
+	canvas.contentOffset = CGPointMake(current * width, 0);
 
-	for (UIView<MuPageView> *view in [canvas subviews]) {
-		if ([view number] == current) {
-			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
+	for (UIView<MuPageView> *view in canvas.subviews) {
+		if (view.number == current) {
+			view.frame = CGRectMake(view.number * width, 0, width-GAP, height);
 			[view willRotate];
 		}
 	}
-	for (UIView<MuPageView> *view in [canvas subviews]) {
-		if ([view number] != current) {
-			[view setFrame: CGRectMake([view number] * width, 0, width-GAP, height)];
+	for (UIView<MuPageView> *view in canvas.subviews) {
+		if (view.number != current) {
+			view.frame = CGRectMake(view.number * width, 0, width-GAP, height);
 			[view willRotate];
 		}
 	}
@@ -414,34 +414,34 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) viewWillDisappear: (BOOL)animated
 {
 	[super viewWillDisappear:animated];
-	if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+	if ([UIDevice currentDevice].systemVersion.floatValue >= 7.0)
 		[slider removeFromSuperview];
 
-	[self setTitle: @"Resume"];
+	self.title = @"Resume";
 	[[NSUserDefaults standardUserDefaults] removeObjectForKey: @"OpenDocumentKey"];
-	[[self navigationController] setToolbarHidden: YES animated: animated];
+	[self.navigationController setToolbarHidden: YES animated: animated];
 }
 
 - (void) showNavigationBar
 {
-	if ([[self navigationController] isNavigationBarHidden]) {
+	if (self.navigationController.navigationBarHidden) {
 		[sliderWrapper setWidth: SLIDER_W];
-		if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+		if ([UIDevice currentDevice].systemVersion.floatValue >= 7.0)
 		{
-			CGRect r = [[self navigationController] toolbar].frame;
+			CGRect r = self.navigationController.toolbar.frame;
 			r.origin.x = 0;
 			r.origin.y = 0;
-			[slider setFrame:r];
+			slider.frame = r;
 		}
-		[[self navigationController] setNavigationBarHidden: NO];
-		[[self navigationController] setToolbarHidden: NO];
+		[self.navigationController setNavigationBarHidden: NO];
+		[self.navigationController setToolbarHidden: NO];
 		[indicator setHidden: NO];
 
 		[UIView beginAnimations: @"MuNavBar" context: NULL];
 
-		[[[self navigationController] navigationBar] setAlpha: 1];
-		[[[self navigationController] toolbar] setAlpha: 1];
-		[indicator setAlpha: 1];
+		self.navigationController.navigationBar.alpha = 1;
+		self.navigationController.toolbar.alpha = 1;
+		indicator.alpha = 1;
 
 		[UIView commitAnimations];
 	}
@@ -449,16 +449,16 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) hideNavigationBar
 {
-	if (![[self navigationController] isNavigationBarHidden]) {
+	if (!self.navigationController.navigationBarHidden) {
 		[searchBar resignFirstResponder];
 
 		[UIView beginAnimations: @"MuNavBar" context: NULL];
 		[UIView setAnimationDelegate: self];
 		[UIView setAnimationDidStopSelector: @selector(onHideNavigationBarFinished)];
 
-		[[[self navigationController] navigationBar] setAlpha: 0];
-		[[[self navigationController] toolbar] setAlpha: 0];
-		[indicator setAlpha: 0];
+		self.navigationController.navigationBar.alpha = 0;
+		self.navigationController.toolbar.alpha = 0;
+		indicator.alpha = 0;
 
 		[UIView commitAnimations];
 	}
@@ -466,8 +466,8 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) onHideNavigationBarFinished
 {
-	[[self navigationController] setNavigationBarHidden: YES];
-	[[self navigationController] setToolbarHidden: YES];
+	[self.navigationController setNavigationBarHidden: YES];
+	[self.navigationController setToolbarHidden: YES];
 	[indicator setHidden: YES];
 }
 
@@ -481,7 +481,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 		NSMutableArray *pages = [[NSMutableArray alloc] init];
 		flattenOutline(titles, pages, root, 0);
 		[outline release];
-		if ([titles count])
+		if (titles.count)
 			outline = [[MuOutlineController alloc] initWithTarget: self titles: titles pages: pages];
 		[titles release];
 		[pages release];
@@ -490,13 +490,13 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 	//  now show it
 
-	[[self navigationController] pushViewController: outline animated: YES];
+	[self.navigationController pushViewController: outline animated: YES];
 }
 
 - (void) onToggleLinks: (id)sender
 {
 	showLinks = !showLinks;
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
 		if (showLinks)
 			[view showLinks];
@@ -509,12 +509,12 @@ static void saveDoc(const char *current_path, fz_document *doc)
 {
 	reflowMode = !reflowMode;
 
-	[annotButton setEnabled:!reflowMode];
-	[searchButton setEnabled:!reflowMode];
-	[linkButton setEnabled:!reflowMode];
-	[moreButton setEnabled:!reflowMode];
+	annotButton.enabled = !reflowMode;
+	searchButton.enabled = !reflowMode;
+	linkButton.enabled = !reflowMode;
+	moreButton.enabled = !reflowMode;
 
-	[[canvas subviews] makeObjectsPerformSelector:@selector(removeFromSuperview)];
+	[canvas.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
 	[self scrollViewDidScroll:canvas];
 }
 
@@ -523,20 +523,20 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	NSMutableArray *rightbuttons = [NSMutableArray arrayWithObjects:printButton, shareButton, nil];
 	if (docRef->interactive)
 		[rightbuttons insertObject:annotButton atIndex:0];
-	[[self navigationItem] setRightBarButtonItems:rightbuttons];
-	[[self navigationItem] setLeftBarButtonItem:cancelButton];
+	self.navigationItem.rightBarButtonItems = rightbuttons;
+	self.navigationItem.leftBarButtonItem = cancelButton;
 
 	barmode = BARMODE_MORE;
 }
 
 - (void) showAnnotationMenu
 {
-	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObjects:inkButton, strikeoutButton, underlineButton, highlightButton, nil]];
-	[[self navigationItem] setLeftBarButtonItem:cancelButton];
+	self.navigationItem.rightBarButtonItems = @[inkButton, strikeoutButton, underlineButton, highlightButton];
+	self.navigationItem.leftBarButtonItem = cancelButton;
 
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
-		if ([view number] == current)
+		if (view.number == current)
 			[view deselectAnnotation];
 	}
 
@@ -545,7 +545,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) update
 {
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 		[view update];
 }
 
@@ -589,7 +589,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) shareDocument
 {
 	NSURL *url = [NSURL fileURLWithPath:_filePath];
-	UIActivityViewController *cont = [[UIActivityViewController alloc] initWithActivityItems:[NSArray arrayWithObject:url] applicationActivities:nil];
+	UIActivityViewController *cont = [[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:nil];
 	cont.popoverPresentationController.barButtonItem = shareButton;
 	[self presentViewController:cont animated:YES completion:nil];
 	[cont release];
@@ -612,17 +612,17 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) textSelectModeOn
 {
-	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObject:tickButton]];
-	for (UIView<MuPageView> *view in [canvas subviews])
+	self.navigationItem.rightBarButtonItems = @[tickButton];
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
-		if ([view number] == current)
+		if (view.number == current)
 			[view textSelectModeOn];
 	}
 }
 
 - (void) textSelectModeOff
 {
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
 		[view textSelectModeOff];
 	}
@@ -630,23 +630,23 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) inkModeOn
 {
-	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObject:tickButton]];
-	for (UIView<MuPageView> *view in [canvas subviews])
+	self.navigationItem.rightBarButtonItems = @[tickButton];
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
-		if ([view number] == current)
+		if (view.number == current)
 			[view inkModeOn];
 	}
 }
 
 - (void) deleteModeOn
 {
-	[[self navigationItem] setRightBarButtonItems:[NSArray arrayWithObject:deleteButton]];
+	self.navigationItem.rightBarButtonItems = @[deleteButton];
 	barmode = BARMODE_DELETE;
 }
 
 - (void) inkModeOff
 {
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
 		[view inkModeOff];
 	}
@@ -678,10 +678,9 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) onShowSearch: (id)sender
 {
-	[[self navigationItem] setRightBarButtonItems:
-		[NSArray arrayWithObjects: nextButton, prevButton, nil]];
-	[[self navigationItem] setLeftBarButtonItem: cancelButton];
-	[[self navigationItem] setTitleView: searchBar];
+	self.navigationItem.rightBarButtonItems =	@[nextButton, prevButton];
+	self.navigationItem.leftBarButtonItem = cancelButton;
+	self.navigationItem.titleView = searchBar;
 	[searchBar becomeFirstResponder];
 	barmode = BARMODE_SEARCH;
 }
@@ -689,9 +688,9 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) onTick: (id)sender
 {
 
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
-		if ([view number] == current)
+		if (view.number == current)
 		{
 			switch (barmode)
 			{
@@ -718,9 +717,9 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) onDelete: (id)sender
 {
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
-		if ([view number] == current)
+		if (view.number == current)
 			[view deleteSelectedAnnotation];
 	}
 	[self showAnnotationMenu];
@@ -737,7 +736,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 			/* fallthrough */
 		case BARMODE_ANNOTATION:
 		case BARMODE_MORE:
-			[[self navigationItem] setTitleView: nil];
+			[self.navigationItem setTitleView: nil];
 			[self addMainMenuButtons];
 			barmode = BARMODE_MAIN;
 			break;
@@ -770,7 +769,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	}
 	else
 	{
-		[[self navigationController] popViewControllerAnimated:YES];
+		[self.navigationController popViewControllerAnimated:YES];
 	}
 }
 
@@ -782,7 +781,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 			saveDoc(_filePath.UTF8String, doc);
 
 		[alertView dismissWithClickedButtonIndex:buttonIndex animated:YES];
-		[[self navigationController] popViewControllerAnimated:YES];
+		[self.navigationController popViewControllerAnimated:YES];
 	}
 
 	if ([ShareAlertMessage isEqualToString:alertView.message])
@@ -799,7 +798,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) resetSearch
 {
 	searchPage = -1;
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 		[view clearSearchResults];
 }
 
@@ -808,8 +807,8 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	printf("search found match on page %d\n", number);
 	searchPage = number;
 	[self gotoPage: number animated: NO];
-	for (UIView<MuPageView> *view in [canvas subviews])
-		if ([view number] == number)
+	for (UIView<MuPageView> *view in canvas.subviews)
+		if (view.number == number)
 			[view showSearchResults: count];
 		else
 			[view clearSearchResults];
@@ -828,10 +827,10 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	else
 		start = current;
 
-	needle = strdup([[searchBar text] UTF8String]);
+	needle = strdup(searchBar.text.UTF8String);
 
 	searchField = nil;
-	for (id view in [searchBar subviews])
+	for (id view in searchBar.subviews)
 		if ([view isKindOfClass: [UITextField class]])
 			searchField = view;
 
@@ -871,7 +870,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 			[searchField setEnabled: YES];
 			UIAlertView *alert = [[UIAlertView alloc]
 				initWithTitle: @"No matches found for:"
-				message: [NSString stringWithUTF8String: needle]
+				message: @(needle)
 				delegate: nil
 				cancelButtonTitle: @"Close"
 				otherButtonTitles: nil];
@@ -900,7 +899,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) searchBar: (UISearchBar*)sender textDidChange: (NSString*)searchText
 {
 	[self resetSearch];
-	if ([[searchBar text] length] > 0) {
+	if (searchBar.text.length > 0) {
 		[prevButton setEnabled: YES];
 		[nextButton setEnabled: YES];
 	} else {
@@ -911,9 +910,9 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) onSlide: (id)sender
 {
-	int number = [slider value];
-	if ([slider isTracking])
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(ctx, doc)]];
+	int number = slider.value;
+	if (slider.tracking)
+		indicator.text = [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(ctx, doc)];
 	else
 		[self gotoPage: number animated: NO];
 }
@@ -928,13 +927,13 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) onTap: (UITapGestureRecognizer*)sender
 {
 	CGPoint p = [sender locationInView: canvas];
-	CGPoint ofs = [canvas contentOffset];
+	CGPoint ofs = canvas.contentOffset;
 	float x0 = (width - GAP) / 5;
 	float x1 = (width - GAP) - x0;
 	p.x -= ofs.x;
 	p.y -= ofs.y;
 	__block BOOL tapHandled = NO;
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
 		CGPoint pp = [sender locationInView:view];
 		if (CGRectContainsPoint(view.bounds, pp))
@@ -989,7 +988,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	} else if (p.x > x1) {
 		[self gotoPage: current+1 animated: YES];
 	} else {
-		if ([[self navigationController] isNavigationBarHidden])
+		if (self.navigationController.navigationBarHidden)
 			[self showNavigationBar];
 		else if (barmode == BARMODE_MAIN)
 			[self hideNavigationBar];
@@ -1010,7 +1009,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	if (sender.state == UIGestureRecognizerStateEnded)
 		scale = sender.scale;
 
-	for (UIView<MuPageView> *view in [canvas subviews])
+	for (UIView<MuPageView> *view in canvas.subviews)
 	{
 		// Zoom only the visible page until end of gesture
 		if (view.number == current || sender.state == UIGestureRecognizerStateEnded)
@@ -1042,21 +1041,21 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	if (scroll_animating)
 		return; // don't mess with layout during animations
 
-	float x = [canvas contentOffset].x + width * 0.5f;
+	float x = canvas.contentOffset.x + width * 0.5f;
 	current = x / width;
 
 	[[NSUserDefaults standardUserDefaults] setInteger: current forKey: key];
 
-	[indicator setText: [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(ctx, doc)]];
-	[slider setValue: current];
+	indicator.text = [NSString stringWithFormat: @" %d of %d ", current+1, fz_count_pages(ctx, doc)];
+	slider.value = current;
 
 	// swap the distant page views out
 
 	NSMutableSet *invisiblePages = [[NSMutableSet alloc] init];
-	for (UIView<MuPageView> *view in [canvas subviews]) {
-		if ([view number] != current)
+	for (UIView<MuPageView> *view in canvas.subviews) {
+		if (view.number != current)
 			[view resetZoomAnimated: YES];
-		if ([view number] < current - 2 || [view number] > current + 2)
+		if (view.number < current - 2 || view.number > current + 2)
 			[invisiblePages addObject: view];
 	}
 	for (UIView<MuPageView> *view in invisiblePages)
@@ -1077,8 +1076,8 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	if (number < 0 || number >= fz_count_pages(ctx, doc))
 		return;
 	int found = 0;
-	for (UIView<MuPageView> *view in [canvas subviews])
-		if ([view number] == number)
+	for (UIView<MuPageView> *view in canvas.subviews)
+		if (view.number == number)
 			found = 1;
 	if (!found) {
 		UIView<MuPageView> *view
@@ -1116,18 +1115,18 @@ static void saveDoc(const char *current_path, fz_document *doc)
 		[UIView setAnimationDelegate: self];
 		[UIView setAnimationDidStopSelector: @selector(onGotoPageFinished)];
 
-		for (UIView<MuPageView> *view in [canvas subviews])
+		for (UIView<MuPageView> *view in canvas.subviews)
 			[view resetZoomAnimated: NO];
 
-		[canvas setContentOffset: CGPointMake(number * width, 0)];
-		[slider setValue: number];
-		[indicator setText: [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(ctx, doc)]];
+		canvas.contentOffset = CGPointMake(number * width, 0);
+		slider.value = number;
+		indicator.text = [NSString stringWithFormat: @" %d of %d ", number+1, fz_count_pages(ctx, doc)];
 
 		[UIView commitAnimations];
 	} else {
-		for (UIView<MuPageView> *view in [canvas subviews])
+		for (UIView<MuPageView> *view in canvas.subviews)
 			[view resetZoomAnimated: NO];
-		[canvas setContentOffset: CGPointMake(number * width, 0)];
+		canvas.contentOffset = CGPointMake(number * width, 0);
 	}
 	current = number;
 }
@@ -1171,8 +1170,8 @@ static void saveDoc(const char *current_path, fz_document *doc)
 	// We need to set these here, because during the animation we may use a wider
 	// size (the maximum of the landscape/portrait widths), to avoid clipping during
 	// the rotation.
-	[canvas setContentSize: CGSizeMake(fz_count_pages(ctx, doc) * width, height)];
-	[canvas setContentOffset: CGPointMake(current * width, 0)];
+	canvas.contentSize = CGSizeMake(fz_count_pages(ctx, doc) * width, height);
+	canvas.contentOffset = CGPointMake(current * width, 0);
 }
 
 @end

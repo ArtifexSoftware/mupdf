@@ -48,12 +48,12 @@
 
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component
 {
-	return [choices count];
+	return choices.count;
 }
 
 - (NSString *)pickerView:(UIPickerView *)pickerView titleForRow:(NSInteger)row forComponent:(NSInteger)component
 {
-	return [choices objectAtIndex:row];
+	return choices[row];
 }
 
 - (void) pickerView:(UIPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component
@@ -63,8 +63,8 @@
 
 - (IBAction)onOkay:(id)sender
 {
-	if (selected >= 0 && selected < [choices count])
-		okayBlock([NSArray arrayWithObject:[choices objectAtIndex:selected]]);
+	if (selected >= 0 && selected < choices.count)
+		okayBlock(@[choices[selected]]);
 	[self dismissViewControllerAnimated:YES completion:nil];
 }
 

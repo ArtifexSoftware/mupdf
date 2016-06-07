@@ -33,25 +33,25 @@
 	[Fabric with:@[[Crashlytics class]]];
 #endif
 
-	screenScale = [[UIScreen mainScreen] scale];
+	screenScale = [UIScreen mainScreen].scale;
 
 	library = [[MuLibraryController alloc] initWithStyle: UITableViewStylePlain];
 
 	navigator = [[UINavigationController alloc] initWithRootViewController: library];
-	[[navigator navigationBar] setTranslucent: YES];
-	[[navigator toolbar] setTranslucent: YES];
-	[navigator setDelegate: self];
+	[navigator.navigationBar setTranslucent: YES];
+	[navigator.toolbar setTranslucent: YES];
+	navigator.delegate = self;
 
-	window = [[UIWindow alloc] initWithFrame: [[UIScreen mainScreen] bounds]];
-	[window setBackgroundColor: [UIColor grayColor]];
-	[window setRootViewController: navigator];
+	window = [[UIWindow alloc] initWithFrame: [UIScreen mainScreen].bounds];
+	window.backgroundColor = [UIColor grayColor];
+	window.rootViewController = navigator;
 	[window makeKeyAndVisible];
 
 	filename = [[NSUserDefaults standardUserDefaults] objectForKey: @"OpenDocumentKey"];
 	if (filename)
 		[library openDocument: filename];
 
-	filename = [launchOptions objectForKey: UIApplicationLaunchOptionsURLKey];
+	filename = launchOptions[UIApplicationLaunchOptionsURLKey];
 	NSLog(@"urlkey = %@\n", filename);
 
 	return YES;
@@ -60,8 +60,8 @@
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
 {
 	NSLog(@"openURL: %@\n", url);
-	if ([url isFileURL]) {
-		NSString *path = [url path];
+	if (url.fileURL) {
+		NSString *path = url.path;
 		NSString *dir = [NSString stringWithFormat: @"%@/Documents/", NSHomeDirectory()];
 		path = [path stringByReplacingOccurrencesOfString:@"/private" withString:@""];
 		path = [path stringByReplacingOccurrencesOfString:dir withString:@""];

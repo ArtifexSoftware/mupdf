@@ -12,11 +12,11 @@
 {
 	self = [super initWithStyle: UITableViewStylePlain];
 	if (self) {
-		[self setTitle: @"Table of Contents"];
+		self.title = @"Table of Contents";
 		target = aTarget; // only keep a weak reference, to avoid retain cycles
 		titles = [aTitles retain];
 		pages = [aPages retain];
-		[[self tableView] setSeparatorStyle: UITableViewCellSeparatorStyleNone];
+		self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
 	}
 	return self;
 }
@@ -40,7 +40,7 @@
 
 - (NSInteger) tableView: (UITableView*)tableView numberOfRowsInSection: (NSInteger)section
 {
-	return [titles count];
+	return titles.count;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -55,21 +55,21 @@
 	if (!cell)
 	{
 		cell = [[[UITableViewCell alloc] initWithStyle: UITableViewCellStyleValue1 reuseIdentifier: cellid] autorelease];
-		[[cell textLabel] setFont: [UIFont systemFontOfSize: 16]];
-		[[cell detailTextLabel] setFont: [UIFont systemFontOfSize: 16]];
+		cell.textLabel.font = [UIFont systemFontOfSize: 16];
+		cell.detailTextLabel.font = [UIFont systemFontOfSize: 16];
 	}
-	NSString *title = [titles objectAtIndex: [indexPath row]];
-	NSString *page = [pages objectAtIndex: [indexPath row]];
-	[[cell textLabel] setText: title];
-	[[cell detailTextLabel] setText: [NSString stringWithFormat: @"%d", [page intValue]+1]];
+	NSString *title = titles[indexPath.row];
+	NSString *page = pages[indexPath.row];
+	cell.textLabel.text = title;
+	cell.detailTextLabel.text = [NSString stringWithFormat: @"%d", page.intValue+1];
 	return cell;
 }
 
 - (void) tableView: (UITableView*)tableView didSelectRowAtIndexPath: (NSIndexPath*)indexPath
 {
-	NSNumber *page = [pages objectAtIndex: [indexPath row]];
-	[target gotoPage: [page intValue] animated: NO];
-	[[self navigationController] popViewControllerAnimated: YES];
+	NSNumber *page = pages[indexPath.row];
+	[target gotoPage: page.intValue animated: NO];
+	[self.navigationController popViewControllerAnimated: YES];
 }
 
 @end

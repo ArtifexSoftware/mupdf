@@ -85,7 +85,7 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 		number = aNumber;
 		scale = 1.0;
 		self.scalesPageToFit = NO;
-		[self setDelegate:self];
+		self.delegate = self;
 		dispatch_async(queue, ^{
 			__block NSString *cont = [textAsHtml(aDoc->doc, aNumber) retain];
 			dispatch_async(dispatch_get_main_queue(), ^{

@@ -83,7 +83,7 @@
 			}
 			if (linkUrl[i])
 			{
-				NSString *url = [NSString stringWithUTF8String:linkUrl[i]];
+				NSString *url = @(linkUrl[i]);
 				return [[[MuTapResultExternalLink alloc] initWithUrl:url] autorelease];
 			}
 		}

@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 		}
 		@catch (NSException* exception) {
 			NSLog(@"Uncaught exception %@", exception);
-			NSLog(@"Stack trace: %@", [exception callStackSymbols]);
+			NSLog(@"Stack trace: %@", exception.callStackSymbols);
 		}
 
 		return 0;

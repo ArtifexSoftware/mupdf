@@ -42,7 +42,7 @@
 	if (rec.state == UIGestureRecognizerStateBegan)
 		[curves addObject:[NSMutableArray array]];
 
-	NSMutableArray *curve = [curves lastObject];
+	NSMutableArray *curve = curves.lastObject;
 	[curve addObject:[NSValue valueWithCGPoint:p]];
 
 	[self setNeedsDisplay];
@@ -61,14 +61,14 @@
 	{
 		if (curve.count >= 2)
 		{
-			CGPoint pt = [[curve objectAtIndex:0] CGPointValue];
+			CGPoint pt = [curve[0] CGPointValue];
 			CGContextBeginPath(cref);
 			CGContextMoveToPoint(cref, pt.x, pt.y);
 			CGPoint lpt = pt;
 
 			for (int i = 1; i < curve.count; i++)
 			{
-				pt = [[curve objectAtIndex:i] CGPointValue];
+				pt = [curve[i] CGPointValue];
 				CGContextAddQuadCurveToPoint(cref, lpt.x, lpt.y, (pt.x + lpt.x)/2, (pt.y + lpt.y)/2);
 				lpt = pt;
 			}

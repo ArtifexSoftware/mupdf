@@ -53,7 +53,7 @@
 
 	for (NSArray *line in words)
 	{
-		MuWord *fst = [line objectAtIndex:0];
+		MuWord *fst = line[0];
 		float ltop = fst.rect.origin.y;
 		float lbot = ltop + fst.rect.size.height;
 
