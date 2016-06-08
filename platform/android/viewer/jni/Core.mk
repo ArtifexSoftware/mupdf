@@ -68,8 +68,6 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/gprf/*.c) \
 	$(wildcard $(MY_ROOT)/source/html/*.c) \
 	$(wildcard $(MY_ROOT)/generated/*.c)
-LOCAL_SRC_FILES += \
-	$(MY_ROOT)/source/pdf/js/pdf-js.c \
 
 ifdef SUPPORT_GPROOF
 LOCAL_SHARED_LIBRARIES := gsso
