@@ -413,4 +413,10 @@ void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const cha
 */
 void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *opts);
 
+/*
+	pdf_can_be_saved_incrementally: Return true if the document can be saved
+	incrementally. (e.g. it has not been repaired, and it is not encrypted)
+*/
+int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc);
+
 #endif

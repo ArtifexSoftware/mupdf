@@ -529,7 +529,7 @@ static int pdfapp_save(pdfapp_t *app)
 	{
 		pdf_write_options opts = { 0 };
 
-		opts.do_incremental = 1;
+		opts.do_incremental = pdf_can_be_saved_incrementally(app->ctx, idoc);
 
 		if (strcmp(buf, app->docpath) != 0)
 		{

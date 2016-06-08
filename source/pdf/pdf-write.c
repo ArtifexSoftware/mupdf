@@ -2804,6 +2804,15 @@ void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const cha
 	}
 }
 
+int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc)
+{
+	if (doc->repair_attempted)
+		return 0;
+	if (doc->crypt != NULL)
+		return 0;
+	return 1;
+}
+
 void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *in_opts)
 {
 	pdf_write_options opts_defaults = { 0 };
@@ -2819,6 +2828,8 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 	if (!in_opts)
 		in_opts = &opts_defaults;
 
+	if (in_opts->do_incremental && doc->repair_attempted)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes on a repaired file");
 	if (in_opts->do_incremental && in_opts->do_garbage)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with garbage collection");
 	if (in_opts->do_incremental && in_opts->do_linear)

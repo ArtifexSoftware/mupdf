@@ -2600,7 +2600,7 @@ JNI_FN(MuPDFCore_saveInternal)(JNIEnv * env, jobject thiz)
 		char *tmp;
 		pdf_write_options opts = { 0 };
 
-		opts.do_incremental = 1;
+		opts.do_incremental = pdf_can_be_saved_incrementally(ctx, idoc);
 
 		tmp = tmp_path(glo->current_path);
 		if (tmp)
