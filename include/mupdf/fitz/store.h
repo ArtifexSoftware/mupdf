@@ -107,7 +107,7 @@ struct fz_store_type_s
 	max: The maximum size (in bytes) that the store is allowed to grow
 	to. FZ_STORE_UNLIMITED means no limit.
 */
-void fz_new_store_context(fz_context *ctx, unsigned int max);
+void fz_new_store_context(fz_context *ctx, size_t max);
 
 /*
 	fz_drop_store_context: Drop a reference to the store.
@@ -137,7 +137,7 @@ fz_store *fz_keep_store_context(fz_context *ctx);
 
 	type: Functions used to manipulate the key.
 */
-void *fz_store_item(fz_context *ctx, void *key, void *val, unsigned int itemsize, fz_store_type *type);
+void *fz_store_item(fz_context *ctx, void *key, void *val, size_t itemsize, fz_store_type *type);
 
 /*
 	fz_find_item: Find an item within the store.
@@ -185,7 +185,7 @@ void fz_empty_store(fz_context *ctx);
 
 	Returns non zero if we managed to free any memory.
 */
-int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase);
+int fz_store_scavenge(fz_context *ctx, size_t size, int *phase);
 
 /*
 	fz_shrink_store: Evict items from the store until the total size of

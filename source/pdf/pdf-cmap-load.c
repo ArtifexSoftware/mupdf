@@ -1,6 +1,6 @@
 #include "mupdf/pdf.h"
 
-unsigned int
+size_t
 pdf_cmap_size(fz_context *ctx, pdf_cmap *cmap)
 {
 	if (cmap == NULL)

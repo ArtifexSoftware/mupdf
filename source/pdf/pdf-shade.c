@@ -424,7 +424,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 	return shade;
 }
 
-static unsigned int
+static size_t
 fz_shade_size(fz_shade *s)
 {
 	if (s == NULL)

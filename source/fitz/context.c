@@ -200,7 +200,7 @@ cleanup:
 }
 
 fz_context *
-fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, unsigned int max_store, const char *version)
+fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, size_t max_store, const char *version)
 {
 	fz_context *ctx;
 

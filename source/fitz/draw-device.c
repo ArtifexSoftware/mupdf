@@ -1936,7 +1936,7 @@ fz_new_tile_record(fz_context *ctx, fz_pixmap *dest, fz_pixmap *shape)
 	return tile;
 }
 
-unsigned int
+size_t
 fz_tile_size(fz_context *ctx, tile_record *tile)
 {
 	if (!tile)

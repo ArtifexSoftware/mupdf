@@ -25,7 +25,7 @@ pdf_drop_xobject_imp(fz_context *ctx, fz_storable *xobj_)
 	fz_free(ctx, xobj);
 }
 
-static unsigned int
+static size_t
 pdf_xobject_size(pdf_xobject *xobj)
 {
 	if (xobj == NULL)

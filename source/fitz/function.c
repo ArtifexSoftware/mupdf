@@ -42,7 +42,7 @@ fz_drop_function(fz_context *ctx, fz_function *func)
 	fz_drop_storable(ctx, &func->storable);
 }
 
-unsigned int
+size_t
 fz_function_size(fz_context *ctx, fz_function *func)
 {
 	return (func ? func->size : 0);

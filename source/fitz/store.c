@@ -6,7 +6,7 @@ struct fz_item_s
 {
 	void *key;
 	fz_storable *val;
-	unsigned int size;
+	size_t size;
 	fz_item *next;
 	fz_item *prev;
 	fz_store *store;
@@ -27,12 +27,12 @@ struct fz_store_s
 	fz_hash_table *hash;
 
 	/* We keep track of the size of the store, and keep it below max. */
-	unsigned int max;
-	unsigned int size;
+	size_t max;
+	size_t size;
 };
 
 void
-fz_new_store_context(fz_context *ctx, unsigned int max)
+fz_new_store_context(fz_context *ctx, size_t max)
 {
 	fz_store *store;
 	store = fz_malloc_struct(ctx, fz_store);
@@ -121,10 +121,10 @@ evict(fz_context *ctx, fz_item *item)
 }
 
 static int
-ensure_space(fz_context *ctx, unsigned int tofree)
+ensure_space(fz_context *ctx, size_t tofree)
 {
 	fz_item *item, *prev;
-	unsigned int count;
+	size_t count;
 	fz_store *store = ctx->store;
 
 	fz_assert_lock_held(ctx, FZ_LOCK_ALLOC);
@@ -208,10 +208,10 @@ touch(fz_store *store, fz_item *item)
 }
 
 void *
-fz_store_item(fz_context *ctx, void *key, void *val_, unsigned int itemsize, fz_store_type *type)
+fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, fz_store_type *type)
 {
 	fz_item *item = NULL;
-	unsigned int size;
+	size_t size;
 	fz_storable *val = (fz_storable *)val_;
 	fz_store *store = ctx->store;
 	fz_store_hash hash = { NULL };
@@ -525,10 +525,10 @@ fz_print_store(fz_context *ctx, fz_output *out)
 /* This is now an n^2 algorithm - not ideal, but it'll only be bad if we are
  * actually managing to scavenge lots of blocks back. */
 static int
-scavenge(fz_context *ctx, unsigned int tofree)
+scavenge(fz_context *ctx, size_t tofree)
 {
 	fz_store *store = ctx->store;
-	unsigned int count = 0;
+	size_t count = 0;
 	fz_item *item, *prev;
 
 	/* Free the items */
@@ -553,10 +553,10 @@ scavenge(fz_context *ctx, unsigned int tofree)
 	return count != 0;
 }
 
-int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
+int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 {
 	fz_store *store;
-	unsigned int max;
+	size_t max;
 
 	if (ctx == NULL)
 		return 0;
@@ -565,13 +565,13 @@ int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
 		return 0;
 
 #ifdef DEBUG_SCAVENGING
-	printf("Scavenging: store=%d size=%d phase=%d\n", store->size, size, *phase);
+	printf("Scavenging: store=" FMT_zu " size=" FMT_zu " phase=%d\n", store->size, size, *phase);
 	fz_print_store_locked(ctx, stderr);
 	Memento_stats();
 #endif
 	do
 	{
-		unsigned int tofree;
+		size_t tofree;
 
 		/* Calculate 'max' as the maximum size of the store for this phase */
 		if (*phase >= 16)
@@ -583,8 +583,8 @@ int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
 		(*phase)++;
 
 		/* Slightly baroque calculations to avoid overflow */
-		if (size > UINT_MAX - store->size)
-			tofree = UINT_MAX - max;
+		if (size > SIZE_MAX - store->size)
+			tofree = SIZE_MAX - max;
 		else if (size + store->size > max)
 			continue;
 		else
@@ -593,7 +593,7 @@ int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
 		if (scavenge(ctx, tofree))
 		{
 #ifdef DEBUG_SCAVENGING
-			printf("scavenged: store=%d\n", store->size);
+			printf("scavenged: store=" FMT_zu "\n", store->size);
 			fz_print_store(ctx, stderr);
 			Memento_stats();
 #endif
@@ -615,7 +615,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 {
 	int success;
 	fz_store *store;
-	unsigned int new_size;
+	size_t new_size;
 
 	if (ctx == NULL)
 		return 0;
@@ -628,18 +628,18 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 		return 0;
 
 #ifdef DEBUG_SCAVENGING
-	fprintf(stderr, "fz_shrink_store: %d\n", store->size/(1024*1024));
+	fprintf(stderr, "fz_shrink_store: " FMT_zu "\n", store->size/(1024*1024));
 #endif
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 
-	new_size = (unsigned int)(((uint64_t)store->size * percent) / 100);
+	new_size = (size_t)(((uint64_t)store->size * percent) / 100);
 	if (store->size > new_size)
 		scavenge(ctx, store->size - new_size);
 
 	success = (store->size <= new_size) ? 1 : 0;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 #ifdef DEBUG_SCAVENGING
-	fprintf(stderr, "fz_shrink_store after: %d\n", store->size/(1024*1024));
+	fprintf(stderr, "fz_shrink_store after: " FMT_zu "\n", store->size/(1024*1024));
 #endif
 
 	return success;

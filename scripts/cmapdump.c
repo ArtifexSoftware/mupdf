@@ -245,7 +245,7 @@ void fz_drop_storable(fz_context *ctx, const fz_storable *sc)
 		s->drop(ctx, s);
 }
 
-void fz_new_store_context(fz_context *ctx, unsigned int max)
+void fz_new_store_context(fz_context *ctx, size_t max)
 {
 }
 
@@ -258,7 +258,7 @@ fz_store *fz_keep_store_context(fz_context *ctx)
 	return NULL;
 }
 
-int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
+int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 {
 	return 0;
 }

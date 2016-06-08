@@ -7,7 +7,7 @@
 #endif
 
 static void *
-do_scavenging_malloc(fz_context *ctx, unsigned int size)
+do_scavenging_malloc(fz_context *ctx, size_t size)
 {
 	void *p;
 	int phase = 0;
@@ -27,7 +27,7 @@ do_scavenging_malloc(fz_context *ctx, unsigned int size)
 }
 
 static void *
-do_scavenging_realloc(fz_context *ctx, void *p, unsigned int size)
+do_scavenging_realloc(fz_context *ctx, void *p, size_t size)
 {
 	void *q;
 	int phase = 0;
@@ -47,7 +47,7 @@ do_scavenging_realloc(fz_context *ctx, void *p, unsigned int size)
 }
 
 void *
-fz_malloc(fz_context *ctx, unsigned int size)
+fz_malloc(fz_context *ctx, size_t size)
 {
 	void *p;
 
@@ -56,42 +56,42 @@ fz_malloc(fz_context *ctx, unsigned int size)
 
 	p = do_scavenging_malloc(ctx, size);
 	if (!p)
-		fz_throw(ctx, FZ_ERROR_OOM, "malloc of %d bytes failed", size);
+		fz_throw(ctx, FZ_ERROR_OOM, "malloc of " FMT_zu " bytes failed", size);
 	return p;
 }
 
 void *
-fz_malloc_no_throw(fz_context *ctx, unsigned int size)
+fz_malloc_no_throw(fz_context *ctx, size_t size)
 {
 	return do_scavenging_malloc(ctx, size);
 }
 
 void *
-fz_malloc_array(fz_context *ctx, unsigned int count, unsigned int size)
+fz_malloc_array(fz_context *ctx, size_t count, size_t size)
 {
 	void *p;
 
 	if (count == 0 || size == 0)
 		return 0;
 
-	if (count > UINT_MAX / size)
-		fz_throw(ctx, FZ_ERROR_OOM, "malloc of array (%d x %d bytes) failed (integer overflow)", count, size);
+	if (count > SIZE_MAX / size)
+		fz_throw(ctx, FZ_ERROR_OOM, "malloc of array (" FMT_zu " x " FMT_zu " bytes) failed (size_t overflow)", count, size);
 
 	p = do_scavenging_malloc(ctx, count * size);
 	if (!p)
-		fz_throw(ctx, FZ_ERROR_OOM, "malloc of array (%d x %d bytes) failed", count, size);
+		fz_throw(ctx, FZ_ERROR_OOM, "malloc of array (" FMT_zu " x " FMT_zu " bytes) failed", count, size);
 	return p;
 }
 
 void *
-fz_malloc_array_no_throw(fz_context *ctx, unsigned int count, unsigned int size)
+fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size)
 {
 	if (count == 0 || size == 0)
 		return 0;
 
-	if (count > UINT_MAX / size)
+	if (count > SIZE_MAX / size)
 	{
-		fprintf(stderr, "error: malloc of array (%d x %d bytes) failed (integer overflow)", count, size);
+		fprintf(stderr, "error: malloc of array (" FMT_zu " x " FMT_zu " bytes) failed (size_t overflow)", count, size);
 		return NULL;
 	}
 
@@ -99,38 +99,38 @@ fz_malloc_array_no_throw(fz_context *ctx, unsigned int count, unsigned int size)
 }
 
 void *
-fz_calloc(fz_context *ctx, unsigned int count, unsigned int size)
+fz_calloc(fz_context *ctx, size_t count, size_t size)
 {
 	void *p;
 
 	if (count == 0 || size == 0)
 		return 0;
 
-	if (count > UINT_MAX / size)
+	if (count > SIZE_MAX / size)
 	{
-		fz_throw(ctx, FZ_ERROR_OOM, "calloc (%d x %d bytes) failed (integer overflow)", count, size);
+		fz_throw(ctx, FZ_ERROR_OOM, "calloc (" FMT_zu " x " FMT_zu " bytes) failed (size_t overflow)", count, size);
 	}
 
 	p = do_scavenging_malloc(ctx, count * size);
 	if (!p)
 	{
-		fz_throw(ctx, FZ_ERROR_OOM, "calloc (%d x %d bytes) failed", count, size);
+		fz_throw(ctx, FZ_ERROR_OOM, "calloc (" FMT_zu " x " FMT_zu " bytes) failed", count, size);
 	}
 	memset(p, 0, count*size);
 	return p;
 }
 
 void *
-fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size)
+fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size)
 {
 	void *p;
 
 	if (count == 0 || size == 0)
 		return 0;
 
-	if (count > UINT_MAX / size)
+	if (count > SIZE_MAX / size)
 	{
-		fprintf(stderr, "error: calloc (%d x %d bytes) failed (integer overflow)\n", count, size);
+		fprintf(stderr, "error: calloc (" FMT_zu " x " FMT_zu " bytes) failed (size_t overflow)\n", count, size);
 		return NULL;
 	}
 
@@ -143,7 +143,7 @@ fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size)
 }
 
 void *
-fz_resize_array(fz_context *ctx, void *p, unsigned int count, unsigned int size)
+fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size)
 {
 	void *np;
 
@@ -153,17 +153,17 @@ fz_resize_array(fz_context *ctx, void *p, unsigned int count, unsigned int size)
 		return 0;
 	}
 
-	if (count > UINT_MAX / size)
-		fz_throw(ctx, FZ_ERROR_OOM, "resize array (%d x %d bytes) failed (integer overflow)", count, size);
+	if (count > SIZE_MAX / size)
+		fz_throw(ctx, FZ_ERROR_OOM, "resize array (" FMT_zu " x " FMT_zu " bytes) failed (size_t overflow)", count, size);
 
 	np = do_scavenging_realloc(ctx, p, count * size);
 	if (!np)
-		fz_throw(ctx, FZ_ERROR_OOM, "resize array (%d x %d bytes) failed", count, size);
+		fz_throw(ctx, FZ_ERROR_OOM, "resize array (" FMT_zu " x " FMT_zu " bytes) failed", count, size);
 	return np;
 }
 
 void *
-fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned int size)
+fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size)
 {
 	if (count == 0 || size == 0)
 	{
@@ -171,9 +171,9 @@ fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned 
 		return 0;
 	}
 
-	if (count > UINT_MAX / size)
+	if (count > SIZE_MAX / size)
 	{
-		fprintf(stderr, "error: resize array (%d x %d bytes) failed (integer overflow)\n", count, size);
+		fprintf(stderr, "error: resize array (" FMT_zu " x " FMT_zu " bytes) failed (size_t overflow)\n", count, size);
 		return NULL;
 	}
 
@@ -208,13 +208,13 @@ fz_strdup_no_throw(fz_context *ctx, const char *s)
 }
 
 static void *
-fz_malloc_default(void *opaque, unsigned int size)
+fz_malloc_default(void *opaque, size_t size)
 {
 	return malloc(size);
 }
 
 static void *
-fz_realloc_default(void *opaque, void *old, unsigned int size)
+fz_realloc_default(void *opaque, void *old, size_t size)
 {
 	return realloc(old, size);
 }

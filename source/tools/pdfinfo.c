@@ -668,14 +668,14 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 	int j;
 	fz_output *out = glo->out;
 
-#define PAGE_FMT "\t%d\t(%d %d R):\t"
+#define PAGE_FMT_zu "\t%d\t(%d %d R):\t"
 
 	if (show & DIMENSIONS && glo->dims > 0)
 	{
 		fz_printf(ctx, out, "Mediaboxes (%d):\n", glo->dims);
 		for (i = 0; i < glo->dims; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT "[ %g %g %g %g ]\n",
+			fz_printf(ctx, out, PAGE_FMT_zu "[ %g %g %g %g ]\n",
 				glo->dim[i].page,
 				pdf_to_num(ctx, glo->dim[i].pageref),
 				pdf_to_gen(ctx, glo->dim[i].pageref),
@@ -692,7 +692,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 		fz_printf(ctx, out, "Fonts (%d):\n", glo->fonts);
 		for (i = 0; i < glo->fonts; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT "%s '%s' (%d %d R)\n",
+			fz_printf(ctx, out, PAGE_FMT_zu "%s '%s' (%d %d R)\n",
 				glo->font[i].page,
 				pdf_to_num(ctx, glo->font[i].pageref),
 				pdf_to_gen(ctx, glo->font[i].pageref),
@@ -712,7 +712,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 			char *cs = NULL;
 			char *altcs = NULL;
 
-			fz_printf(ctx, out, PAGE_FMT "[ ",
+			fz_printf(ctx, out, PAGE_FMT_zu "[ ",
 				glo->image[i].page,
 				pdf_to_num(ctx, glo->image[i].pageref),
 				pdf_to_gen(ctx, glo->image[i].pageref));
@@ -820,7 +820,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 				"Tensor patch",
 			};
 
-			fz_printf(ctx, out, PAGE_FMT "%s (%d %d R)\n",
+			fz_printf(ctx, out, PAGE_FMT_zu "%s (%d %d R)\n",
 				glo->shading[i].page,
 				pdf_to_num(ctx, glo->shading[i].pageref),
 				pdf_to_gen(ctx, glo->shading[i].pageref),
@@ -852,7 +852,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 					"Constant/fast tiling",
 				};
 
-				fz_printf(ctx, out, PAGE_FMT "Tiling %s %s (%d %d R)\n",
+				fz_printf(ctx, out, PAGE_FMT_zu "Tiling %s %s (%d %d R)\n",
 						glo->pattern[i].page,
 						pdf_to_num(ctx, glo->pattern[i].pageref),
 						pdf_to_gen(ctx, glo->pattern[i].pageref),
@@ -863,7 +863,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 			}
 			else
 			{
-				fz_printf(ctx, out, PAGE_FMT "Shading %d %d R (%d %d R)\n",
+				fz_printf(ctx, out, PAGE_FMT_zu "Shading %d %d R (%d %d R)\n",
 						glo->pattern[i].page,
 						pdf_to_num(ctx, glo->pattern[i].pageref),
 						pdf_to_gen(ctx, glo->pattern[i].pageref),
@@ -881,7 +881,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 		fz_printf(ctx, out, "Form xobjects (%d):\n", glo->forms);
 		for (i = 0; i < glo->forms; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT "Form%s%s%s%s (%d %d R)\n",
+			fz_printf(ctx, out, PAGE_FMT_zu "Form%s%s%s%s (%d %d R)\n",
 				glo->form[i].page,
 				pdf_to_num(ctx, glo->form[i].pageref),
 				pdf_to_gen(ctx, glo->form[i].pageref),
@@ -900,7 +900,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 		fz_printf(ctx, out, "Postscript xobjects (%d):\n", glo->psobjs);
 		for (i = 0; i < glo->psobjs; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT "(%d %d R)\n",
+			fz_printf(ctx, out, PAGE_FMT_zu "(%d %d R)\n",
 				glo->psobj[i].page,
 				pdf_to_num(ctx, glo->psobj[i].pageref),
 				pdf_to_gen(ctx, glo->psobj[i].pageref),

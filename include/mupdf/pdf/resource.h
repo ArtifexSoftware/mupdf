@@ -4,7 +4,7 @@
 /*
  * PDF interface to store
  */
-void pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, unsigned int itemsize);
+void pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, size_t itemsize);
 void *pdf_find_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key);
 void pdf_remove_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key);
 

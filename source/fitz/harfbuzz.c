@@ -95,7 +95,7 @@ void *hb_malloc(size_t size)
 
 	assert(ctx != NULL);
 
-	return fz_malloc_no_throw(ctx, (unsigned int)size);
+	return fz_malloc_no_throw(ctx, size);
 }
 
 void *hb_calloc(size_t n, size_t size)
@@ -104,7 +104,7 @@ void *hb_calloc(size_t n, size_t size)
 
 	assert(ctx != NULL);
 
-	return fz_calloc_no_throw(ctx, (unsigned int)n, (unsigned int)size);
+	return fz_calloc_no_throw(ctx, n, size);
 }
 
 void *hb_realloc(void *ptr, size_t size)
@@ -113,7 +113,7 @@ void *hb_realloc(void *ptr, size_t size)
 
 	assert(ctx != NULL);
 
-	return fz_resize_array_no_throw(ctx, ptr, (unsigned int)1, (unsigned int)size);
+	return fz_resize_array_no_throw(ctx, ptr, 1, size);
 }
 
 void hb_free(void *ptr)

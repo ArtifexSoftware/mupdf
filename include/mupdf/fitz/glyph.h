@@ -122,11 +122,11 @@ struct fz_glyph_s
 	unsigned char data[1];
 };
 
-static unsigned int fz_glyph_size(fz_context *ctx, fz_glyph *glyph);
+static size_t fz_glyph_size(fz_context *ctx, fz_glyph *glyph);
 
 fz_irect *fz_glyph_bbox_no_ctx(fz_glyph *src, fz_irect *bbox);
 
-static inline unsigned int
+static inline size_t
 fz_glyph_size(fz_context *ctx, fz_glyph *glyph)
 {
 	if (glyph == NULL)

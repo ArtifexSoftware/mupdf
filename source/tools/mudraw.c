@@ -1242,7 +1242,7 @@ typedef struct
 } trace_header;
 
 static void *
-trace_malloc(void *arg, unsigned int size)
+trace_malloc(void *arg, size_t size)
 {
 	trace_header *p;
 	if (size == 0)
@@ -1270,7 +1270,7 @@ trace_free(void *arg, void *p_)
 }
 
 static void *
-trace_realloc(void *arg, void *p_, unsigned int size)
+trace_realloc(void *arg, void *p_, size_t size)
 {
 	trace_header *p = (trace_header *)p_;
 	size_t oldsize;
@@ -1764,16 +1764,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (showmemory)
 	{
-#if defined(_WIN64)
-#define FMT "%Iu"
-#elif defined(_WIN32)
-#define FMT "%u"
-#else
-#define FMT "%zu"
-#endif
-		fprintf(stderr, "Total memory use = " FMT " bytes\n", memtrace_total);
-		fprintf(stderr, "Peak memory use = " FMT " bytes\n", memtrace_peak);
-		fprintf(stderr, "Current memory use = " FMT " bytes\n", memtrace_current);
+		fprintf(stderr, "Total memory use = " FMT_zu " bytes\n", memtrace_total);
+		fprintf(stderr, "Peak memory use = " FMT_zu " bytes\n", memtrace_peak);
+		fprintf(stderr, "Current memory use = " FMT_zu " bytes\n", memtrace_current);
 	}
 
 	return (errored != 0);

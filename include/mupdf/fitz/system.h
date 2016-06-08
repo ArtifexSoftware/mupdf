@@ -199,6 +199,15 @@ typedef int fz_off_t;
 #define fz_atoo_imp atoi
 #endif
 
+/* Portable way to format a size_t */
+#if defined(_WIN64)
+#define FMT_zu "%Iu"
+#elif defined(_WIN32)
+#define FMT_zu "%u"
+#else
+#define FMT_zu "%zu"
+#endif
+
 #ifdef __ANDROID__
 #include <android/log.h>
 #define LOG_TAG "libmupdf"

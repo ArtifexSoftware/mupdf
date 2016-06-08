@@ -29,8 +29,8 @@ typedef struct fz_context_s fz_context;
 struct fz_alloc_context_s
 {
 	void *user;
-	void *(*malloc)(void *, unsigned int);
-	void *(*realloc)(void *, void *, unsigned int);
+	void *(*malloc)(void *, size_t);
+	void *(*realloc)(void *, void *, size_t);
 	void (*free)(void *, void *);
 };
 
@@ -169,7 +169,7 @@ enum {
 
 	Does not throw exceptions, but may return NULL.
 */
-fz_context *fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, unsigned int max_store, const char *version);
+fz_context *fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, size_t max_store, const char *version);
 
 #define fz_new_context(alloc, locks, max_store) fz_new_context_imp(alloc, locks, max_store, FZ_VERSION)
 
@@ -392,7 +392,7 @@ enum {
 	Returns a pointer to the allocated block. May return NULL if size is
 	0. Throws exception on failure to allocate.
 */
-void *fz_malloc(fz_context *ctx, unsigned int size);
+void *fz_malloc(fz_context *ctx, size_t size);
 
 /*
 	fz_calloc: Allocate a zeroed block of memory (with scavenging)
@@ -404,7 +404,7 @@ void *fz_malloc(fz_context *ctx, unsigned int size);
 	Returns a pointer to the allocated block. May return NULL if size
 	and/or count are 0. Throws exception on failure to allocate.
 */
-void *fz_calloc(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_calloc(fz_context *ctx, size_t count, size_t size);
 
 /*
 	fz_malloc_struct: Allocate storage for a structure (with scavenging),
@@ -432,7 +432,7 @@ void *fz_calloc(fz_context *ctx, unsigned int count, unsigned int size);
 	Returns a pointer to the allocated block. May return NULL if size
 	and/or count are 0. Throws exception on failure to allocate.
 */
-void *fz_malloc_array(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_malloc_array(fz_context *ctx, size_t count, size_t size);
 
 /*
 	fz_resize_array: Resize a block of memory (with scavenging).
@@ -447,7 +447,7 @@ void *fz_malloc_array(fz_context *ctx, unsigned int count, unsigned int size);
 	and/or count are 0. Throws exception on failure to resize (original
 	block is left unchanged).
 */
-void *fz_resize_array(fz_context *ctx, void *p, unsigned int count, unsigned int size);
+void *fz_resize_array(fz_context *ctx, void *p, size_t count, size_t size);
 
 /*
 	fz_strdup: Duplicate a C string (with scavenging)
@@ -474,7 +474,7 @@ void fz_free(fz_context *ctx, void *p);
 	Returns a pointer to the allocated block. May return NULL if size is
 	0. Returns NULL on failure to allocate.
 */
-void *fz_malloc_no_throw(fz_context *ctx, unsigned int size);
+void *fz_malloc_no_throw(fz_context *ctx, size_t size);
 
 /*
 	fz_calloc_no_throw: Allocate a zeroed block of memory (with scavenging)
@@ -486,7 +486,7 @@ void *fz_malloc_no_throw(fz_context *ctx, unsigned int size);
 	Returns a pointer to the allocated block. May return NULL if size
 	and/or count are 0. Returns NULL on failure to allocate.
 */
-void *fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size);
 
 /*
 	fz_malloc_array_no_throw: Allocate a block of (non zeroed) memory
@@ -500,7 +500,7 @@ void *fz_calloc_no_throw(fz_context *ctx, unsigned int count, unsigned int size)
 	Returns a pointer to the allocated block. May return NULL if size
 	and/or count are 0. Returns NULL on failure to allocate.
 */
-void *fz_malloc_array_no_throw(fz_context *ctx, unsigned int count, unsigned int size);
+void *fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size);
 
 /*
 	fz_resize_array_no_throw: Resize a block of memory (with scavenging).
@@ -515,7 +515,7 @@ void *fz_malloc_array_no_throw(fz_context *ctx, unsigned int count, unsigned int
 	and/or count are 0. Returns NULL on failure to resize (original
 	block is left unchanged).
 */
-void *fz_resize_array_no_throw(fz_context *ctx, void *p, unsigned int count, unsigned int size);
+void *fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size);
 
 /*
 	fz_strdup_no_throw: Duplicate a C string (with scavenging)

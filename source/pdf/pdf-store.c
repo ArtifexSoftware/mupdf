@@ -52,7 +52,7 @@ static fz_store_type pdf_obj_store_type =
 };
 
 void
-pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, unsigned int itemsize)
+pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, size_t itemsize)
 {
 	void *existing;
 	existing = fz_store_item(ctx, key, val, itemsize, &pdf_obj_store_type);

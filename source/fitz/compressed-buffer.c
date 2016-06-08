@@ -73,10 +73,10 @@ fz_open_compressed_buffer(fz_context *ctx, fz_compressed_buffer *buffer)
 	return fz_open_image_decomp_stream_from_buffer(ctx, buffer, &l2factor);
 }
 
-unsigned int
+size_t
 fz_compressed_buffer_size(fz_compressed_buffer *buffer)
 {
 	if (!buffer || !buffer->buffer)
 		return 0;
-	return (unsigned int)buffer->buffer->cap;
+	return (size_t)buffer->buffer->cap;
 }

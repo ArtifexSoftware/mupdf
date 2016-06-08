@@ -9,7 +9,7 @@
 typedef struct fz_compression_params_s fz_compression_params;
 
 typedef struct fz_compressed_buffer_s fz_compressed_buffer;
-unsigned int fz_compressed_buffer_size(fz_compressed_buffer *buffer);
+size_t fz_compressed_buffer_size(fz_compressed_buffer *buffer);
 
 fz_stream *fz_open_compressed_buffer(fz_context *ctx, fz_compressed_buffer *);
 fz_stream *fz_open_image_decomp_stream_from_buffer(fz_context *ctx, fz_compressed_buffer *, int *l2factor);

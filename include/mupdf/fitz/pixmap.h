@@ -316,7 +316,7 @@ void fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix);
 void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *r);
 void fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity);
-unsigned int fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
+size_t fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
 
 fz_pixmap *fz_scale_pixmap(fz_context *ctx, fz_pixmap *src, float x, float y, float w, float h, fz_irect *clip);
 

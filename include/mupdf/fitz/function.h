@@ -15,7 +15,7 @@ typedef struct fz_function_s fz_function;
 void fz_eval_function(fz_context *ctx, fz_function *func, const float *in, int inlen, float *out, int outlen);
 fz_function *fz_keep_function(fz_context *ctx, fz_function *func);
 void fz_drop_function(fz_context *ctx, fz_function *func);
-unsigned int fz_function_size(fz_context *ctx, fz_function *func);
+size_t fz_function_size(fz_context *ctx, fz_function *func);
 void fz_print_function(fz_context *ctx, fz_output *out, fz_function *func);
 
 enum
