@@ -409,6 +409,19 @@ struct pdf_write_options_s
 void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);
 
 /*
+	pdf_has_unsaved_sigs: Returns true if there are digital signatures waiting to
+	to updated on save.
+*/
+int pdf_has_unsaved_sigs(fz_context *ctx, pdf_document *doc);
+
+/*
+	pdf_write_document: Write out the document to an output stream with all changes finalised.
+
+	This method will throw an error if pdf_has_unsaved_sigs.
+*/
+void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_write_options *opts);
+
+/*
 	pdf_save_document: Write out the document to a file with all changes finalised.
 */
 void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename, pdf_write_options *opts);
