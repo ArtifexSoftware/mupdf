@@ -33,6 +33,7 @@ struct fz_lzwd_s
 	int early_change;
 
 	int reverse_bits;
+	int old_tiff;
 	int min_bits;			/* minimum num bits/code */
 	int code_bits;			/* num bits/code */
 	int code;			/* current code */
@@ -92,7 +93,9 @@ next_lzwd(fz_context *ctx, fz_stream *stm, int len)
 			break;
 		}
 
-		if (next_code > NUM_CODES && code != LZW_CLEAR(lzw))
+		/* Old Tiffs are allowed to NOT send the clear code, and to
+		 * overrun at the end. */
+		if (!lzw->old_tiff && next_code > NUM_CODES && code != LZW_CLEAR(lzw))
 		{
 			fz_warn(ctx, "missing clear code in lzw decode");
 			code = LZW_CLEAR(lzw);
@@ -111,17 +114,17 @@ next_lzwd(fz_context *ctx, fz_stream *stm, int len)
 		{
 			old_code = code;
 		}
-		else if (next_code == NUM_CODES)
+		else if (!lzw->old_tiff && next_code == NUM_CODES)
 		{
 			/* TODO: Ghostscript checks for a following clear code before tolerating */
 			fz_warn(ctx, "tolerating a single out of range code in lzw decode");
 			next_code++;
 		}
-		else if (code > next_code || next_code >= NUM_CODES)
+		else if (code > next_code || (!lzw->old_tiff && next_code >= NUM_CODES))
 		{
 			fz_warn(ctx, "out of range code encountered in lzw decode");
 		}
-		else
+		else if (next_code < NUM_CODES)
 		{
 			/* add new entry to the code table */
 			table[next_code].prev = old_code;
@@ -200,7 +203,7 @@ close_lzwd(fz_context *ctx, void *state_)
 
 /* Default: early_change = 1 */
 fz_stream *
-fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits, int reverse_bits)
+fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits, int reverse_bits, int old_tiff)
 {
 	fz_lzwd *lzw = NULL;
 	int i;
@@ -220,6 +223,7 @@ fz_open_lzwd(fz_context *ctx, fz_stream *chain, int early_change, int min_bits, 
 		lzw->eod = 0;
 		lzw->early_change = early_change;
 		lzw->reverse_bits = reverse_bits;
+		lzw->old_tiff = old_tiff;
 		lzw->min_bits = min_bits;
 		lzw->code_bits = lzw->min_bits;
 		lzw->code = -1;

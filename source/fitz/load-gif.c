@@ -245,7 +245,7 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 		p = gif_read_subblocks(ctx, info, p + 1, end, compressed);
 
 		stm = fz_open_buffer(ctx, compressed);
-		lzwstm = fz_open_lzwd(ctx, stm, 0, mincodesize + 1, 1);
+		lzwstm = fz_open_lzwd(ctx, stm, 0, mincodesize + 1, 1, 0);
 
 		uncompressed = fz_read_all(ctx, lzwstm, info->width * info->height);
 		sp = uncompressed->data;

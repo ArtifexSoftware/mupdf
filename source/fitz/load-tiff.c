@@ -155,9 +155,9 @@ fz_decode_tiff_packbits(fz_context *ctx, struct tiff *tiff, fz_stream *chain, un
 }
 
 static void
-fz_decode_tiff_lzw(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
+fz_decode_tiff_lzw(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int old_tiff)
 {
-	fz_stream *stm = fz_open_lzwd(ctx, chain, 1, 9, 0);
+	fz_stream *stm = fz_open_lzwd(ctx, chain, old_tiff ? 0 : 1, 9, old_tiff ? 1 : 0, old_tiff);
 	fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
 }
@@ -457,7 +457,7 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 			fz_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
 			break;
 		case 5:
-			fz_decode_tiff_lzw(ctx, tiff, stm, wp, wlen);
+			fz_decode_tiff_lzw(ctx, tiff, stm, wp, wlen, (rp[0] == 0 && rp[1] & 1));
 			break;
 		case 6:
 			fz_warn(ctx, "deprecated JPEG in TIFF compression not fully supported");
