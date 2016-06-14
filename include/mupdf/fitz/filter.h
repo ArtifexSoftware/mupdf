@@ -30,4 +30,9 @@ fz_stream *fz_open_jbig2d(fz_context *ctx, fz_stream *chain, fz_jbig2_globals *g
 fz_jbig2_globals *fz_load_jbig2_globals(fz_context *ctx, fz_buffer *buf);
 void fz_drop_jbig2_globals_imp(fz_context *ctx, fz_storable *globals);
 
+/* Extra filters for tiff */
+fz_stream *fz_open_sgilog16(fz_context *ctx, fz_stream *chain, int w);
+fz_stream *fz_open_sgilog24(fz_context *ctx, fz_stream *chain, int w);
+fz_stream *fz_open_sgilog32(fz_context *ctx, fz_stream *chain, int w);
+
 #endif

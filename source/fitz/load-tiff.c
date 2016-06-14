@@ -154,6 +154,29 @@ fz_decode_tiff_packbits(fz_context *ctx, struct tiff *tiff, fz_stream *chain, un
 	fz_drop_stream(ctx, stm);
 }
 
+fz_decode_tiff_sgilog16(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
+{
+	fz_stream *stm = fz_open_sgilog16(ctx, chain, w);
+	fz_read(ctx, stm, wp, wlen);
+	fz_drop_stream(ctx, stm);
+}
+
+static void
+fz_decode_tiff_sgilog24(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
+{
+	fz_stream *stm = fz_open_sgilog24(ctx, chain, w);
+	fz_read(ctx, stm, wp, wlen);
+	fz_drop_stream(ctx, stm);
+}
+
+static void
+fz_decode_tiff_sgilog32(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
+{
+	fz_stream *stm = fz_open_sgilog32(ctx, chain, w);
+	fz_read(ctx, stm, wp, wlen);
+	fz_drop_stream(ctx, stm);
+}
+
 static void
 fz_decode_tiff_lzw(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int old_tiff)
 {
@@ -390,6 +413,16 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 		/* it's probably a jpeg ... we let jpeg convert to rgb */
 		tiff->colorspace = fz_device_rgb(ctx);
 		break;
+	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
+		tiff->colorspace = fz_device_gray(ctx);
+		tiff->bitspersample = 8;
+		tiff->stride >>= 1;
+		break;
+	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
+		tiff->colorspace = fz_device_rgb(ctx);
+		tiff->bitspersample = 8;
+		tiff->stride >>= 1;
+		break;
 	default:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown photometric: %d", tiff->photometric);
 	}
@@ -470,6 +503,15 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 			break;
 		case 32773:
 			fz_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
+			break;
+		case 34676:
+			if (tiff->photometric == 32845)
+				fz_decode_tiff_sgilog32(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+			else
+				fz_decode_tiff_sgilog16(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+			break;
+		case 34677:
+			fz_decode_tiff_sgilog24(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 			break;
 		default:
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);

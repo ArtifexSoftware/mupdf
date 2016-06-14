@@ -883,6 +883,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\filter-sgi.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\font.c"
 				>
 			</File>
