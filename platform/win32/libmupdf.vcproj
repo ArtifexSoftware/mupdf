@@ -1243,11 +1243,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-js.c"
+				RelativePath="..\..\source\pdf\pdf-js-util.js"
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\pdf\pdf-js-util.js"
+				RelativePath="..\..\source\pdf\pdf-js.c"
 				>
 			</File>
 			<File
