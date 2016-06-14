@@ -754,7 +754,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 
 				if (!strncmp(cs, "Device", 6))
 				{
-					int len = strlen(cs + 6);
+					size_t len = strlen(cs + 6);
 					memmove(cs + 3, cs + 6, len + 1);
 					cs[3 + len + 1] = '\0';
 				}
@@ -773,7 +773,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 
 				if (!strncmp(altcs, "Device", 6))
 				{
-					int len = strlen(altcs + 6);
+					size_t len = strlen(altcs + 6);
 					memmove(altcs + 3, altcs + 6, len + 1);
 					altcs[3 + len + 1] = '\0';
 				}

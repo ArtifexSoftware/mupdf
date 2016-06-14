@@ -120,7 +120,7 @@ evict(fz_context *ctx, fz_item *item)
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 }
 
-static int
+static size_t
 ensure_space(fz_context *ctx, size_t tofree)
 {
 	fz_item *item, *prev;
@@ -298,7 +298,7 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, fz_store_
 		while (size > store->max)
 		{
 			/* ensure_space may drop, then retake the lock */
-			int saved = ensure_space(ctx, size - store->max);
+			size_t saved = ensure_space(ctx, size - store->max);
 			size -= saved;
 			if (saved == 0)
 			{

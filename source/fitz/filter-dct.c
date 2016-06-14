@@ -140,7 +140,7 @@ static void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 	{
 		while ((size_t)num_bytes > src->bytes_in_buffer)
 		{
-			num_bytes -= src->bytes_in_buffer;
+			num_bytes -= (long)src->bytes_in_buffer;
 			(void) src->fill_input_buffer(cinfo);
 		}
 		src->next_input_byte += num_bytes;
@@ -149,7 +149,7 @@ static void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 }
 
 static int
-next_dctd(fz_context *ctx, fz_stream *stm, int max)
+next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	fz_dctd *state = stm->state;
 	j_decompress_ptr cinfo = &state->cinfo;

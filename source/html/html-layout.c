@@ -1828,7 +1828,7 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *box
 static char *concat_text(fz_context *ctx, fz_xml *root)
 {
 	fz_xml *node;
-	int i = 0, n = 1;
+	size_t i = 0, n = 1;
 	char *s;
 	for (node = fz_xml_down(root); node; node = fz_xml_next(node))
 	{

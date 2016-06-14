@@ -142,14 +142,19 @@ pdf_new_real(fz_context *ctx, pdf_document *doc, float f)
 }
 
 pdf_obj *
-pdf_new_string(fz_context *ctx, pdf_document *doc, const char *str, int len)
+pdf_new_string(fz_context *ctx, pdf_document *doc, const char *str, size_t len)
 {
 	pdf_obj_string *obj;
+	unsigned short l = (unsigned short)len;
+
+	if ((size_t)l != len)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Overflow in pdf string");
+
 	obj = Memento_label(fz_malloc(ctx, offsetof(pdf_obj_string, buf) + len + 1), "pdf_obj(string)");
 	obj->super.refs = 1;
 	obj->super.kind = PDF_STRING;
 	obj->super.flags = 0;
-	obj->len = len;
+	obj->len = l;
 	memcpy(obj->buf, str, len);
 	obj->buf[len] = '\0';
 	return &obj->super;

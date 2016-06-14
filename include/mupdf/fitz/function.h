@@ -27,7 +27,7 @@ enum
 struct fz_function_s
 {
 	fz_storable storable;
-	unsigned int size;
+	size_t size;
 	int m;					/* number of input values */
 	int n;					/* number of output values */
 	void (*evaluate)(fz_context *ctx, fz_function *func, const float *in, float *out);

@@ -235,7 +235,7 @@ match_att_has_condition(fz_xml *node, const char *att, const char *needle)
 {
 	const char *haystack = fz_xml_att(node, att);
 	const char *ss;
-	int n;
+	size_t n;
 	if (haystack) {
 		/* Try matching whole property first. */
 		if (!strcmp(haystack, needle))
@@ -1013,8 +1013,8 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 
 	if (value->type == CSS_HASH)
 	{
-		int r, g, b, n;
-		n = strlen(value->data);
+		int r, g, b;
+		size_t n = strlen(value->data);
 		if (n == 3)
 		{
 			r = tohex(value->data[0]) * 16 + tohex(value->data[0]);

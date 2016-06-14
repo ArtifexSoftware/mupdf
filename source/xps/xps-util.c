@@ -148,7 +148,7 @@ xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri
 	}
 	else
 	{
-		int len = fz_strlcpy(output, base_uri, output_size);
+		size_t len = fz_strlcpy(output, base_uri, output_size);
 		if (len == 0 || output[len-1] != '/')
 			fz_strlcat(output, "/", output_size);
 		fz_strlcat(output, path, output_size);

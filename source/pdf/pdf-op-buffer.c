@@ -664,12 +664,13 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 	fz_printf(ctx, out, "ID\n");
 	if (ahx)
 	{
-		for (i = 0; i < buf->len; ++i)
+		size_t z;
+		for (z = 0; z < buf->len; ++z)
 		{
-			int c = buf->data[i];
+			int c = buf->data[z];
 			fz_putc(ctx, out, "0123456789abcdef"[(c >> 4) & 0xf]);
 			fz_putc(ctx, out, "0123456789abcdef"[c & 0xf]);
-			if ((i & 31) == 31)
+			if ((z & 31) == 31)
 				fz_putc(ctx, out, '\n');
 		}
 		fz_putc(ctx, out, '>');

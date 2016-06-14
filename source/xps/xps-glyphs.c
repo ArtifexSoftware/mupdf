@@ -354,7 +354,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 	float y = originy;
 	char *us = unicode;
 	char *is = indices;
-	int un = 0;
+	size_t un = 0;
 
 	if (!unicode && !indices)
 		fz_warn(ctx, "glyphs element with neither characters nor indices");

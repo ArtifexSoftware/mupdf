@@ -15,7 +15,7 @@ typedef struct fz_output_s fz_output;
 struct fz_output_s
 {
 	void *opaque;
-	void (*write)(fz_context *, void *opaque, const void *, int n);
+	void (*write)(fz_context *, void *opaque, const void *, size_t n);
 	void (*seek)(fz_context *, void *opaque, fz_off_t off, int whence);
 	fz_off_t (*tell)(fz_context *, void *opaque);
 	void (*close)(fz_context *, void *opaque);
@@ -71,7 +71,7 @@ void fz_drop_output(fz_context *, fz_output *);
 	fz_write: Write data to output.
 */
 
-static inline void fz_write(fz_context *ctx, fz_output *out, const void *data, int size)
+static inline void fz_write(fz_context *ctx, fz_output *out, const void *data, size_t size)
 {
 	if (out)
 		out->write(ctx, out->opaque, data, size);
@@ -141,8 +141,8 @@ static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 	%z{d,u,x} indicates that the value is a size_t.
 	%Z{d,u,x} indicates that the value is a fz_off_t.
 */
-int fz_vsnprintf(char *buffer, int space, const char *fmt, va_list args);
-int fz_snprintf(char *buffer, int space, const char *fmt, ...);
+size_t fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args);
+size_t fz_snprintf(char *buffer, size_t space, const char *fmt, ...);
 
 /*
 	fz_tempfilename: Get a temporary filename based upon 'base'.

@@ -17,7 +17,7 @@ pdf_obj *pdf_get_inheritable(fz_context *ctx, pdf_document *doc, pdf_obj *obj, p
 
 char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	int len = 0;
+	size_t len = 0;
 	char *buf = NULL;
 	fz_buffer *stmbuf = NULL;
 	char *text = NULL;

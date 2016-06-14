@@ -91,7 +91,7 @@ static void savefont(pdf_obj *dict, int num)
 	char *ext = "";
 	fz_output *out;
 	char *fontname = "font";
-	int len;
+	size_t len;
 	unsigned char *data;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_FontName);

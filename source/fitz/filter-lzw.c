@@ -49,7 +49,7 @@ struct fz_lzwd_s
 };
 
 static int
-next_lzwd(fz_context *ctx, fz_stream *stm, int len)
+next_lzwd(fz_context *ctx, fz_stream *stm, size_t len)
 {
 	fz_lzwd *lzw = stm->state;
 	lzw_code *table = lzw->table;

@@ -33,10 +33,10 @@ struct fz_glyph_cache_entry_s
 struct fz_glyph_cache_s
 {
 	int refs;
-	int total;
+	size_t total;
 #ifndef NDEBUG
 	int num_evictions;
-	int evicted;
+	ptrdiff_t evicted;
 #endif
 	fz_glyph_cache_entry *entry[GLYPH_HASH_LEN];
 	fz_glyph_cache_entry *lru_head;
@@ -453,8 +453,8 @@ fz_dump_glyph_cache_stats(fz_context *ctx)
 {
 	fz_glyph_cache *cache = ctx->glyph_cache;
 
-	fprintf(stderr, "Glyph Cache Size: %d\n", cache->total);
+	fprintf(stderr, "Glyph Cache Size: " FMT_zu "\n", cache->total);
 #ifndef NDEBUG
-	fprintf(stderr, "Glyph Cache Evictions: %d (%d bytes)\n", cache->num_evictions, cache->evicted);
+	fprintf(stderr, "Glyph Cache Evictions: %d (" FMT_zu " bytes)\n", cache->num_evictions, cache->evicted);
 #endif
 }

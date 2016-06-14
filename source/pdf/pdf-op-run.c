@@ -889,7 +889,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 	ucslen = 0;
 	if (fontdesc->to_unicode)
 		ucslen = pdf_lookup_cmap_full(fontdesc->to_unicode, cid, ucsbuf);
-	if (ucslen == 0 && cid < fontdesc->cid_to_ucs_len)
+	if (ucslen == 0 && (size_t)cid < fontdesc->cid_to_ucs_len)
 	{
 		ucsbuf[0] = fontdesc->cid_to_ucs[cid];
 		ucslen = 1;

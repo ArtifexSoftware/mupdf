@@ -316,13 +316,13 @@ fetcher_thread(curl_stream_state *state)
 }
 
 static int
-stream_next(fz_context *ctx, fz_stream *stream, int len)
+stream_next(fz_context *ctx, fz_stream *stream, size_t len)
 {
 	curl_stream_state *state = (curl_stream_state *)stream->state;
-	int len_read = 0;
-	int read_point = stream->pos;
+	size_t len_read = 0;
+	fz_off_t read_point = stream->pos;
 	int block = read_point>>BLOCK_SHIFT;
-	int left_over = (-read_point) & (BLOCK_SIZE-1);
+	size_t left_over = (-read_point) & (BLOCK_SIZE-1);
 	unsigned char *buf = state->public_buffer;
 
 	if (state->error != NULL)

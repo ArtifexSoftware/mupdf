@@ -101,7 +101,8 @@ static void jsB_read(js_State *J)
 	const char *filename = js_tostring(J, 1);
 	FILE *f;
 	char *s;
-	int n, t;
+	long n;
+	size_t t;
 
 	f = fopen(filename, "rb");
 	if (!f) {
@@ -146,7 +147,7 @@ static void jsB_read(js_State *J)
 static void jsB_readline(js_State *J)
 {
 	char line[256];
-	int n;
+	size_t n;
 	if (!fgets(line, sizeof line, stdin))
 		js_error(J, "cannot read line from stdin");
 	n = strlen(line);
@@ -556,7 +557,7 @@ static int ffi_buffer_has(js_State *J, void *buf_, const char *key)
 	fz_buffer *buf = buf_;
 	int idx;
 	if (is_number(key, &idx)) {
-		if (idx < 0 || idx >= buf->len)
+		if (idx < 0 || (size_t)idx >= buf->len)
 			js_rangeerror(J, "index out of bounds");
 		js_pushnumber(J, buf->data[idx]);
 		return 1;
@@ -573,7 +574,7 @@ static int ffi_buffer_put(js_State *J, void *buf_, const char *key)
 	fz_buffer *buf = buf_;
 	int idx;
 	if (is_number(key, &idx)) {
-		if (idx < 0 || idx >= buf->len)
+		if (idx < 0 || (size_t)idx >= buf->len)
 			js_rangeerror(J, "index out of bounds");
 		buf->data[idx] = js_tonumber(J, -1);
 		return 1;

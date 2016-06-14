@@ -59,7 +59,7 @@ static inline int paeth(int a, int b, int c)
 }
 
 static void
-fz_predict_tiff(fz_predict *state, unsigned char *out, unsigned char *in, int len)
+fz_predict_tiff(fz_predict *state, unsigned char *out, unsigned char *in)
 {
 	int left[FZ_MAX_COLORS];
 	int i, k;
@@ -95,14 +95,14 @@ fz_predict_tiff(fz_predict *state, unsigned char *out, unsigned char *in, int le
 }
 
 static void
-fz_predict_png(fz_predict *state, unsigned char *out, unsigned char *in, int len, int predictor)
+fz_predict_png(fz_predict *state, unsigned char *out, unsigned char *in, size_t len, int predictor)
 {
 	int bpp = state->bpp;
-	int i;
+	size_t i;
 	unsigned char *ref = state->ref;
 
-	if (bpp > len)
-		bpp = len;
+	if ((size_t)bpp > len)
+		bpp = (int)len;
 
 	switch (predictor)
 	{
@@ -157,14 +157,14 @@ fz_predict_png(fz_predict *state, unsigned char *out, unsigned char *in, int len
 }
 
 static int
-next_predict(fz_context *ctx, fz_stream *stm, int len)
+next_predict(fz_context *ctx, fz_stream *stm, size_t len)
 {
 	fz_predict *state = stm->state;
 	unsigned char *buf = state->buffer;
 	unsigned char *p = buf;
 	unsigned char *ep;
 	int ispng = state->predictor >= 10;
-	int n;
+	size_t n;
 
 	if (len >= sizeof(state->buffer))
 		len = sizeof(state->buffer);
@@ -182,7 +182,7 @@ next_predict(fz_context *ctx, fz_stream *stm, int len)
 		if (state->predictor == 1)
 			memcpy(state->out, state->in, n);
 		else if (state->predictor == 2)
-			fz_predict_tiff(state, state->out, state->in, n);
+			fz_predict_tiff(state, state->out, state->in);
 		else
 		{
 			fz_predict_png(state, state->out, state->in + 1, n - 1, state->in[0]);

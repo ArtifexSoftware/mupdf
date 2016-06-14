@@ -34,7 +34,7 @@ int
 fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **val)
 {
 	const char *straw;
-	int n = strlen(key);
+	size_t n = strlen(key);
 	while ((opts = fz_get_option(ctx, &straw, val, opts)))
 		if (!strncmp(straw, key, n) && (straw[n] == '=' || straw[n] == ',' || straw[n] == 0))
 			return 1;

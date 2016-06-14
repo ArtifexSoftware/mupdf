@@ -219,10 +219,10 @@ split_at_script(const uint32_t *fragment,
 static void
 classify_characters(const uint32_t *text,
 		fz_bidi_chartype *types,
-		int len,
+		size_t len,
 		fz_bidi_flags flags)
 {
-	int i;
+	size_t i;
 
 	if ((flags & BIDI_CLASSIFY_WHITE_SPACE)!=0)
 	{
@@ -264,9 +264,9 @@ classify_characters(const uint32_t *text,
  * Implements rule P2 of the Unicode Bidi Algorithm.
  * Note: Ignores explicit embeddings
  */
-static fz_bidi_level base_level_from_text(fz_bidi_chartype *types, int len)
+static fz_bidi_level base_level_from_text(fz_bidi_chartype *types, size_t len)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < len; i++)
 	{

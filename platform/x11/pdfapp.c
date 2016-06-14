@@ -863,12 +863,12 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	if (drawpage)
 	{
 		char buf2[64];
-		int len;
+		size_t len;
 
 		sprintf(buf2, " - %d/%d (%d dpi)",
 				app->pageno, app->pagecount, app->resolution);
 		len = MAX_TITLE-strlen(buf2);
-		if ((int)strlen(app->doctitle) > len)
+		if (strlen(app->doctitle) > len)
 		{
 			snprintf(buf, len-3, "%s", app->doctitle);
 			strcat(buf, "...");
@@ -1109,7 +1109,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 
 	if (app->issearching)
 	{
-		int n = strlen(app->search);
+		size_t n = strlen(app->search);
 		if (c < ' ')
 		{
 			if (c == '\b' && n > 0)

@@ -75,7 +75,7 @@ fz_print_stext_sheet(fz_context *ctx, fz_output *out, fz_stext_sheet *sheet)
 static void
 send_data_base64(fz_context *ctx, fz_output *out, fz_buffer *buffer)
 {
-	int i, len;
+	size_t i, len;
 	static const char set[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 	len = buffer->len/3;

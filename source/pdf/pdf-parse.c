@@ -52,10 +52,10 @@ pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 	fz_buffer *stmbuf = NULL;
 	unsigned char *srcptr;
 	char *dstptr, *dst;
-	int srclen;
-	int dstlen = 0;
+	size_t srclen;
+	size_t dstlen = 0;
 	int ucs;
-	int i;
+	size_t i;
 
 	fz_var(stmbuf);
 	fz_try(ctx)

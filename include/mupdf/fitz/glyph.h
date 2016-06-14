@@ -118,7 +118,7 @@ struct fz_glyph_s
 	fz_storable storable;
 	int x, y, w, h;
 	fz_pixmap *pixmap;
-	int size;
+	size_t size;
 	unsigned char data[1];
 };
 

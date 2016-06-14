@@ -23,7 +23,7 @@ char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint)
 
 #ifdef USE_HINT_FOR_DIR
 	char *hintpath;
-	int hintlen;
+	size_t hintlen;
 
 	hintlen = strlen(hint);
 	hintpath = fz_malloc(ctx, 1 + hintlen);

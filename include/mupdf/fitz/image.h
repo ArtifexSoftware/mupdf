@@ -67,7 +67,7 @@ typedef size_t (fz_image_get_size_fn)(fz_context *, fz_image *);
 fz_image *fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_image *mask, int size, fz_image_get_pixmap_fn *get, fz_image_get_size_fn *get_size, fz_drop_image_fn *drop);
 fz_image *fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_compressed_buffer *buffer, fz_image *mask);
 fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask);
-fz_image *fz_new_image_from_data(fz_context *ctx, unsigned char *data, int len);
+fz_image *fz_new_image_from_data(fz_context *ctx, unsigned char *data, size_t len);
 fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
 fz_image *fz_new_image_from_file(fz_context *ctx, const char *path);
 void fz_drop_image_imp(fz_context *ctx, fz_storable *image);
@@ -98,23 +98,23 @@ struct fz_image_s
 	float decode[FZ_MAX_COLORS * 2];
 };
 
-fz_pixmap *fz_load_jpeg(fz_context *ctx, unsigned char *data, int size);
-fz_pixmap *fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *cs, int indexed);
-fz_pixmap *fz_load_png(fz_context *ctx, unsigned char *data, int size);
-fz_pixmap *fz_load_tiff(fz_context *ctx, unsigned char *data, int size);
-fz_pixmap *fz_load_jxr(fz_context *ctx, unsigned char *data, int size);
-fz_pixmap *fz_load_gif(fz_context *ctx, unsigned char *data, int size);
-fz_pixmap *fz_load_bmp(fz_context *ctx, unsigned char *data, int size);
+fz_pixmap *fz_load_jpeg(fz_context *ctx, unsigned char *data, size_t size);
+fz_pixmap *fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *cs, int indexed);
+fz_pixmap *fz_load_png(fz_context *ctx, unsigned char *data, size_t size);
+fz_pixmap *fz_load_tiff(fz_context *ctx, unsigned char *data, size_t size);
+fz_pixmap *fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size);
+fz_pixmap *fz_load_gif(fz_context *ctx, unsigned char *data, size_t size);
+fz_pixmap *fz_load_bmp(fz_context *ctx, unsigned char *data, size_t size);
 
-void fz_load_jpeg_info(fz_context *ctx, unsigned char *data, int size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
-void fz_load_png_info(fz_context *ctx, unsigned char *data, int size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
-void fz_load_tiff_info(fz_context *ctx, unsigned char *data, int size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
-void fz_load_jxr_info(fz_context *ctx, unsigned char *data, int size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
-void fz_load_gif_info(fz_context *ctx, unsigned char *data, int size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
-void fz_load_bmp_info(fz_context *ctx, unsigned char *data, int size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
+void fz_load_jpeg_info(fz_context *ctx, unsigned char *data, size_t size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
+void fz_load_png_info(fz_context *ctx, unsigned char *data, size_t size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
+void fz_load_tiff_info(fz_context *ctx, unsigned char *data, size_t size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
+void fz_load_jxr_info(fz_context *ctx, unsigned char *data, size_t size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
+void fz_load_gif_info(fz_context *ctx, unsigned char *data, size_t size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
+void fz_load_bmp_info(fz_context *ctx, unsigned char *data, size_t size, int *w, int *h, int *xres, int *yres, fz_colorspace **cspace);
 
-int fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, int len);
-fz_pixmap *fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, int len, int subimage);
+int fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, size_t len);
+fz_pixmap *fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subimage);
 
 void fz_image_resolution(fz_image *image, int *xres, int *yres);
 

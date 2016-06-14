@@ -68,7 +68,7 @@ typedef struct xps_part_s xps_part;
 struct xps_part_s
 {
 	char *name;
-	int size;
+	size_t size;
 	unsigned char *data;
 };
 

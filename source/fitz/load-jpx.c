@@ -30,21 +30,19 @@ static void fz_opj_info_callback(const char *msg, void *client_data)
 typedef struct stream_block_s
 {
 	unsigned char *data;
-	int size;
-	int pos;
+	OPJ_SIZE_T size;
+	OPJ_SIZE_T pos;
 } stream_block;
 
 static OPJ_SIZE_T fz_opj_stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
-	int len;
+	OPJ_SIZE_T len;
 
 	len = sb->size - sb->pos;
-	if (len < 0)
-		len = 0;
 	if (len == 0)
 		return (OPJ_SIZE_T)-1; /* End of file! */
-	if ((OPJ_SIZE_T)len > p_nb_bytes)
+	if (len > p_nb_bytes)
 		len = p_nb_bytes;
 	memcpy(p_buffer, sb->data + sb->pos, len);
 	sb->pos += len;
@@ -55,8 +53,8 @@ static OPJ_OFF_T fz_opj_stream_skip(OPJ_OFF_T skip, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
 
-	if (skip > sb->size - sb->pos)
-		skip = sb->size - sb->pos;
+	if (skip > (OPJ_OFF_T)(sb->size - sb->pos))
+		skip = (OPJ_OFF_T)(sb->size - sb->pos);
 	sb->pos += skip;
 	return sb->pos;
 }
@@ -65,14 +63,14 @@ static OPJ_BOOL fz_opj_stream_seek(OPJ_OFF_T seek_pos, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
 
-	if (seek_pos > sb->size)
+	if (seek_pos > (OPJ_OFF_T)sb->size)
 		return OPJ_FALSE;
 	sb->pos = seek_pos;
 	return OPJ_TRUE;
 }
 
 fz_pixmap *
-fz_load_jpx(fz_context *ctx, unsigned char *data, int size, fz_colorspace *defcs, int indexed)
+fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed)
 {
 	fz_pixmap *img;
 	opj_dparameters_t params;

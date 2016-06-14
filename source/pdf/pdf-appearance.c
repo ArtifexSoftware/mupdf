@@ -403,8 +403,8 @@ typedef struct text_splitter_s
 	float y_orig;
 	float x;
 	float x_end;
-	int text_start;
-	int text_end;
+	size_t text_start;
+	size_t text_end;
 	int max_lines;
 	int retry;
 } text_splitter;
@@ -445,8 +445,8 @@ static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 	char *text;
 	float room;
 	float stride;
-	int count;
-	int len;
+	size_t count;
+	size_t len;
 	float fontsize = splitter->info->da_rec.font_size;
 
 	splitter->x = splitter->x_end;
@@ -594,9 +594,9 @@ static void fzbuf_print_text_end(fz_context *ctx, fz_buffer *fzbuf)
 	fz_buffer_printf(ctx, fzbuf, fmt_EMC);
 }
 
-static void fzbuf_print_text_word(fz_context *ctx, fz_buffer *fzbuf, float x, float y, char *text, int count)
+static void fzbuf_print_text_word(fz_context *ctx, fz_buffer *fzbuf, float x, float y, char *text, size_t count)
 {
-	int i;
+	size_t i;
 
 	fz_buffer_printf(ctx, fzbuf, fmt_Td, x, y);
 	fz_buffer_printf(ctx, fzbuf, "(");
@@ -677,7 +677,7 @@ static fz_buffer *create_text_appearance(fz_context *ctx, pdf_document *doc, con
 						{
 							float x, y;
 							char *word = text+splitter.text_start;
-							int wordlen = splitter.text_end-splitter.text_start;
+							size_t wordlen = splitter.text_end-splitter.text_start;
 
 							text_splitter_move(&splitter, -line, &x, &y);
 							fzbuf_print_text_word(ctx, fztmp, x, y, word, wordlen);
@@ -857,7 +857,7 @@ static int get_matrix(fz_context *ctx, pdf_document *doc, pdf_xobject *form, int
 
 static char *to_font_encoding(fz_context *ctx, pdf_font_desc *font, char *utf8)
 {
-	int i;
+	size_t i;
 	int needs_converting = 0;
 
 	/* Temporary partial solution. We are using a slow lookup in the conversion
@@ -894,7 +894,7 @@ static char *to_font_encoding(fz_context *ctx, pdf_font_desc *font, char *utf8)
 
 					/* If found store the cid */
 					if (i < font->cid_to_ucs_len)
-						*bufp++ = i;
+						*bufp++ = (char)i;
 				}
 				else
 				{
@@ -1027,7 +1027,7 @@ static void update_marked_content(fz_context *ctx, pdf_document *doc, pdf_xobjec
 	fz_stream *str_outer = NULL;
 	fz_stream *str_inner = NULL;
 	unsigned char *buf;
-	int len;
+	size_t len;
 	fz_buffer *newbuf = NULL;
 
 	pdf_lexbuf_init(ctx, &lbuf, PDF_LEXBUF_SMALL);
@@ -1351,7 +1351,7 @@ void pdf_update_listbox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *
 		for (i = 0; i < n; i++)
 		{
 			fzbuf_print_text_word(ctx, fzbuf, 0.0, i == 0 ? 0 : -fontsize *
-				lineheight, opts[i], strlen(opts[i]));
+				lineheight, opts[i], (int)strlen(opts[i]));
 		}
 		fzbuf_print_text_end(ctx, fzbuf);
 		update_marked_content(ctx, doc, form, fzbuf);
@@ -1904,7 +1904,7 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	}
 }
 
-static void add_text(fz_context *ctx, font_info *font_rec, fz_text *text, char *str, int str_len, const fz_matrix *tm_)
+static void add_text(fz_context *ctx, font_info *font_rec, fz_text *text, char *str, size_t str_len, const fz_matrix *tm_)
 {
 	fz_font *font = font_rec->font->font;
 	fz_matrix tm = *tm_;
@@ -1934,7 +1934,7 @@ static fz_text *layout_text(fz_context *ctx, font_info *font_rec, char *str, flo
 
 	fz_try(ctx)
 	{
-		add_text(ctx, font_rec, text, str, strlen(str), &tm);
+		add_text(ctx, font_rec, text, str, (int)strlen(str), &tm);
 	}
 	fz_catch(ctx)
 	{
@@ -1995,7 +1995,7 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 					{
 						float dx, dy;
 						char *word = str+splitter.text_start;
-						int wordlen = splitter.text_end-splitter.text_start;
+						size_t wordlen = splitter.text_end-splitter.text_start;
 
 						text_splitter_move(&splitter, -line, &dx, &dy);
 						tm.e += dx;

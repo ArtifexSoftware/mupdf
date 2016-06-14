@@ -210,12 +210,12 @@ void fz_md5_init(fz_md5 *context)
 /* MD5 block update operation. Continues an MD5 message-digest operation,
  * processing another message block, and updating the context.
  */
-void fz_md5_update(fz_md5 *context, const unsigned char *input, unsigned inlen)
+void fz_md5_update(fz_md5 *context, const unsigned char *input, size_t inlen)
 {
-	unsigned i, index, partlen;
+	size_t i, index, partlen;
 
 	/* Compute number of bytes mod 64 */
-	index = (unsigned)((context->count[0] >> 3) & 0x3F);
+	index = (size_t)((context->count[0] >> 3) & 0x3F);
 
 	/* Update number of bits */
 	context->count[0] += (unsigned int) inlen << 3;

@@ -215,7 +215,7 @@ static int extract_app13_resolution(jpeg_saved_marker_ptr marker, int *xres, int
 }
 
 fz_pixmap *
-fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
+fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, size_t rlen)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr err;
@@ -329,7 +329,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, int rlen)
 }
 
 void
-fz_load_jpeg_info(fz_context *ctx, unsigned char *rbuf, int rlen, int *xp, int *yp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_jpeg_info(fz_context *ctx, unsigned char *rbuf, size_t rlen, int *xp, int *yp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr err;

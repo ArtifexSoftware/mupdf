@@ -73,13 +73,13 @@ typedef struct fz_file_stream_s
 	unsigned char buffer[4096];
 } fz_file_stream;
 
-static int next_file(fz_context *ctx, fz_stream *stm, int n)
+static int next_file(fz_context *ctx, fz_stream *stm, size_t n)
 {
 	fz_file_stream *state = stm->state;
 
 	/* n is only a hint, that we can safely ignore */
 	n = fread(state->buffer, 1, sizeof(state->buffer), state->file);
-	if (n < 0)
+	if (n < sizeof(state->buffer) && ferror(state->file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = state->buffer;
 	stm->wp = state->buffer + n;
@@ -168,7 +168,7 @@ fz_open_file_w(fz_context *ctx, const wchar_t *name)
 
 /* Memory stream */
 
-static int next_buffer(fz_context *ctx, fz_stream *stm, int max)
+static int next_buffer(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	return EOF;
 }
@@ -218,7 +218,7 @@ fz_open_buffer(fz_context *ctx, fz_buffer *buf)
 }
 
 fz_stream *
-fz_open_memory(fz_context *ctx, unsigned char *data, int len)
+fz_open_memory(fz_context *ctx, unsigned char *data, size_t len)
 {
 	fz_stream *stm;
 

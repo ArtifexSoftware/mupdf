@@ -847,7 +847,7 @@ bmp_read_bitmap(fz_context *ctx, struct info *info, unsigned char *p, unsigned c
 }
 
 static fz_pixmap *
-bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, int only_metadata)
+bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, size_t total, int only_metadata)
 {
 	unsigned char *begin = p;
 	unsigned char *end = p + total;
@@ -857,7 +857,7 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 
 	p = bmp_read_file_header(ctx, info, p, end);
 
-	info->filesize = fz_mini(info->filesize, total);
+	info->filesize = fz_mini(info->filesize, (int)total);
 
 	if (end - p < 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in bitmap core header in bmp image");
@@ -936,7 +936,7 @@ bmp_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 }
 
 fz_pixmap *
-fz_load_bmp(fz_context *ctx, unsigned char *p, int total)
+fz_load_bmp(fz_context *ctx, unsigned char *p, size_t total)
 {
 	struct info bmp;
 	fz_pixmap *image;
@@ -949,7 +949,7 @@ fz_load_bmp(fz_context *ctx, unsigned char *p, int total)
 }
 
 void
-fz_load_bmp_info(fz_context *ctx, unsigned char *p, int total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_bmp_info(fz_context *ctx, unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	struct info bmp;
 

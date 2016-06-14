@@ -385,7 +385,7 @@ gif_mask_transparency(fz_context *ctx, fz_pixmap *image, struct info *info)
 }
 
 static fz_pixmap *
-gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, int only_metadata)
+gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, size_t total, int only_metadata)
 {
 	fz_pixmap *pix;
 	unsigned char *end = p + total;
@@ -514,7 +514,7 @@ gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, int total, 
 }
 
 fz_pixmap *
-fz_load_gif(fz_context *ctx, unsigned char *p, int total)
+fz_load_gif(fz_context *ctx, unsigned char *p, size_t total)
 {
 	fz_pixmap *image;
 	struct info gif;
@@ -527,7 +527,7 @@ fz_load_gif(fz_context *ctx, unsigned char *p, int total)
 }
 
 void
-fz_load_gif_info(fz_context *ctx, unsigned char *p, int total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_gif_info(fz_context *ctx, unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	struct info gif;
 

@@ -323,24 +323,24 @@ void reverse(uint32_t *psz, int cch)
 // Set a run of cval values at locations all prior to, but not including
 // iStart, to the new value nval.
 static
-void set_deferred_run(fz_bidi_chartype *pval, int cval, int iStart, fz_bidi_chartype nval)
+void set_deferred_run(fz_bidi_chartype *pval, size_t cval, size_t iStart, fz_bidi_chartype nval)
 {
-	int i;
+	size_t i;
 
-	for (i = iStart - 1; i >= iStart - cval; i--)
+	for (i = iStart; i > iStart - cval; )
 	{
-		pval[i] = nval;
+		pval[--i] = nval;
 	}
 }
 
 static
-void set_deferred_level_run(fz_bidi_level *pval, int cval, int iStart, fz_bidi_level nval)
+void set_deferred_level_run(fz_bidi_level *pval, size_t cval, size_t iStart, fz_bidi_level nval)
 {
-	int i;
+	size_t i;
 
-	for (i = iStart - 1; i >= iStart - cval; i--)
+	for (i = iStart; i > iStart - cval; )
 	{
-		pval[i] = nval;
+		pval[--i] = nval;
 	}
 }
 
@@ -451,10 +451,10 @@ static fz_bidi_chartype embedding_direction(fz_bidi_chartype level)
 		  the outermost call. The nesting counter counts the recursion
 		  depth and not the embedding level.
 ------------------------------------------------------------------------*/
-int fz_bidi_resolve_explicit(fz_bidi_level level, fz_bidi_chartype dir, fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch,
+size_t fz_bidi_resolve_explicit(fz_bidi_level level, fz_bidi_chartype dir, fz_bidi_chartype *pcls, fz_bidi_level *plevel, size_t cch,
 				fz_bidi_level n_nest)
 {
-	int ich;
+	size_t ich;
 
 	// always called with a valid nesting level
 	// nesting levels are != embedding levels
@@ -704,23 +704,23 @@ fz_bidi_chartype get_resolved_type(fz_bidi_action action)
 	Note: On input only these directional classes are expected
 		  AL, HL, R, L,  ON, BDI_BN, NSM, AN, EN, ES, ET, CS,
 ------------------------------------------------------------------------*/
-void fz_bidi_resolve_weak(fz_context *ctx, fz_bidi_level baselevel, fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch)
+void fz_bidi_resolve_weak(fz_context *ctx, fz_bidi_level baselevel, fz_bidi_chartype *pcls, fz_bidi_level *plevel, size_t cch)
 {
 	int state = odd(baselevel) ? xr : xl;
 	fz_bidi_chartype cls;
-	int ich;
+	size_t ich;
 	fz_bidi_action action;
 	fz_bidi_chartype cls_run;
 	fz_bidi_chartype cls_new;
 
 	fz_bidi_level level = baselevel;
 
-	int cch_run = 0;
+	size_t cch_run = 0;
 
 	for (ich = 0; ich < cch; ich++)
 	{
 		if (pcls[ich] > BDI_BN) {
-			fz_warn(ctx, "error: pcls[%d] > BN (%d)\n", ich, pcls[ich]);
+			fz_warn(ctx, "error: pcls[" FMT_zu "] > BN (%d)\n", ich, pcls[ich]);
 		}
 
 		// ignore boundary neutrals
@@ -897,15 +897,15 @@ const int state_neutrals[][5] =
 
 		  W8 resolves a number of ENs to L
 ------------------------------------------------------------------------*/
-void fz_bidi_resolve_neutrals(fz_bidi_level baselevel, fz_bidi_chartype *pcls, const fz_bidi_level *plevel, int cch)
+void fz_bidi_resolve_neutrals(fz_bidi_level baselevel, fz_bidi_chartype *pcls, const fz_bidi_level *plevel, size_t cch)
 {
 	// the state at the start of text depends on the base level
 	int state = odd(baselevel) ? r : l;
 	fz_bidi_chartype cls;
-	int ich;
+	size_t ich;
 	fz_bidi_chartype cls_run;
 
-	int cch_run = 0;
+	size_t cch_run = 0;
 	fz_bidi_level level = baselevel;
 
 	for (ich = 0; ich < cch; ich++)
@@ -985,9 +985,9 @@ const fz_bidi_level add_level[][4] =
 
 };
 
-void fz_bidi_resolve_implicit(const fz_bidi_chartype *pcls, fz_bidi_level *plevel, int cch)
+void fz_bidi_resolve_implicit(const fz_bidi_chartype *pcls, fz_bidi_level *plevel, size_t cch)
 {
-	int ich;
+	size_t ich;
 
 	for (ich = 0; ich < cch; ich++)
 	{
@@ -1058,11 +1058,11 @@ static int resolve_lines(uint32_t *psz_input, int *pbrk, int cch)
 		  would have to be adjusted.
 ------------------------------------------------------------------------*/
 void fz_bidi_resolve_whitespace(fz_bidi_level baselevel, const fz_bidi_chartype *pcls, fz_bidi_level *plevel,
-							int cch)
+				size_t cch)
 {
-	int cchrun = 0;
+	size_t cchrun = 0;
 	fz_bidi_level oldlevel = baselevel;
-	int ich;
+	size_t ich;
 
 	for (ich = 0; ich < cch; ich++)
 	{

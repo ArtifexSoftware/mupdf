@@ -3,7 +3,7 @@
 static void xps_init_document(fz_context *ctx, xps_document *doc);
 
 xps_part *
-xps_new_part(fz_context *ctx, xps_document *doc, char *name, unsigned char *data, int size)
+xps_new_part(fz_context *ctx, xps_document *doc, char *name, unsigned char *data, size_t size)
 {
 	xps_part *part;
 
@@ -43,7 +43,7 @@ xps_read_part(fz_context *ctx, xps_document *doc, char *partname)
 	fz_buffer *buf, *tmp;
 	char path[2048];
 	unsigned char *data;
-	int size;
+	size_t size;
 	int count;
 	char *name;
 	int seen_last;
@@ -224,7 +224,7 @@ static int
 xps_lookup_metadata(fz_context *ctx, xps_document *doc, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
-		return fz_strlcpy(buf, "XPS", size);
+		return (int)fz_strlcpy(buf, "XPS", size);
 	return -1;
 }
 

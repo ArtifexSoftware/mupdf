@@ -30,12 +30,12 @@ fz_strsep(char **stringp, const char *delim)
 	return ret;
 }
 
-int
-fz_strlcpy(char *dst, const char *src, int siz)
+size_t
+fz_strlcpy(char *dst, const char *src, size_t siz)
 {
 	register char *d = dst;
 	register const char *s = src;
-	register int n = siz;
+	register size_t n = siz;
 
 	/* Copy as many bytes as will fit */
 	if (n != 0 && --n != 0) {
@@ -56,13 +56,13 @@ fz_strlcpy(char *dst, const char *src, int siz)
 	return(s - src - 1);	/* count does not include NUL */
 }
 
-int
-fz_strlcat(char *dst, const char *src, int siz)
+size_t
+fz_strlcat(char *dst, const char *src, size_t siz)
 {
 	register char *d = dst;
 	register const char *s = src;
-	register int n = siz;
-	int dlen;
+	register size_t n = siz;
+	size_t dlen;
 
 	/* Find the end of dst and adjust bytes left but don't go past end */
 	while (*d != '\0' && n-- != 0)
@@ -85,9 +85,9 @@ fz_strlcat(char *dst, const char *src, int siz)
 }
 
 void
-fz_dirname(char *dir, const char *path, int n)
+fz_dirname(char *dir, const char *path, size_t n)
 {
-	int i;
+	size_t i;
 
 	if (!path || !path[0])
 	{
@@ -143,7 +143,7 @@ fz_urldecode(char *url)
 }
 
 void
-fz_format_output_path(fz_context *ctx, char *path, int size, const char *fmt, int page)
+fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt, int page)
 {
 	const char *s, *p;
 	char num[40];

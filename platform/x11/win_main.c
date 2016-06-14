@@ -52,7 +52,7 @@ static char filename[PATH_MAX];
 	RegCreateKeyExA(parent, name, 0, 0, 0, KEY_WRITE, 0, &ptr, 0)
 
 #define SET_KEY(parent, name, value) \
-	RegSetValueExA(parent, name, 0, REG_SZ, (const BYTE *)(value), strlen(value) + 1)
+	RegSetValueExA(parent, name, 0, REG_SZ, (const BYTE *)(value), (DWORD)strlen(value) + 1)
 
 void install_app(char *argv0)
 {
@@ -290,7 +290,7 @@ static char **cd_opts;
 static char **cd_vals;
 static int pd_okay = 0;
 
-INT CALLBACK
+INT_PTR CALLBACK
 dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -317,7 +317,7 @@ dlogpassproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-INT CALLBACK
+INT_PTR CALLBACK
 dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -354,7 +354,7 @@ dlogtextproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-INT CALLBACK
+INT_PTR CALLBACK
 dlogchoiceproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HWND listbox;
@@ -455,7 +455,7 @@ int winchoiceinput(pdfapp_t *app, int nopts, char *opts[], int *nvals, char *val
 	return pd_okay;
 }
 
-INT CALLBACK
+INT_PTR CALLBACK
 dloginfoproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	char buf[256];
@@ -536,7 +536,7 @@ void info()
 		winerror(&gapp, "cannot create info dialog");
 }
 
-INT CALLBACK
+INT_PTR CALLBACK
 dlogaboutproc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message)
@@ -727,7 +727,7 @@ void windrawstring(pdfapp_t *app, int x, int y, char *s)
 {
 	HFONT font = (HFONT)GetStockObject(ANSI_FIXED_FONT);
 	SelectObject(hdc, font);
-	TextOutA(hdc, x, y - 12, s, strlen(s));
+	TextOutA(hdc, x, y - 12, s, (int)strlen(s));
 }
 
 void winblitsearch()

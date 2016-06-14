@@ -22,7 +22,7 @@ static void zfree(void *opaque, void *ptr)
 }
 
 static int
-next_flated(fz_context *ctx, fz_stream *stm, int required)
+next_flated(fz_context *ctx, fz_stream *stm, size_t required)
 {
 	fz_flate *state = stm->state;
 	fz_stream *chain = state->chain;
@@ -39,7 +39,7 @@ next_flated(fz_context *ctx, fz_stream *stm, int required)
 
 	while (zp->avail_out > 0)
 	{
-		zp->avail_in = fz_available(ctx, chain, 1);
+		zp->avail_in = (uInt)fz_available(ctx, chain, 1);
 		zp->next_in = chain->rp;
 
 		code = inflate(zp, Z_SYNC_FLUSH);

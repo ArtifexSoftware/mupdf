@@ -291,8 +291,8 @@ static void fast_gray_to_rgb(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 3);
-	int s_line_inc = src->stride - w * (src->alpha + 1);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 3);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 1);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -369,8 +369,8 @@ static void fast_gray_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 4);
-	int s_line_inc = src->stride - w * (src->alpha + 1);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 4);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 1);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -450,8 +450,8 @@ static void fast_rgb_to_gray(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 1);
-	int s_line_inc = src->stride - w * (src->alpha + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 1);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 3);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -522,8 +522,8 @@ static void fast_bgr_to_gray(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 1);
-	int s_line_inc = src->stride - w * (src->alpha + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 1);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 3);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -594,8 +594,8 @@ static void fast_rgb_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 4);
-	int s_line_inc = src->stride - w * (src->alpha + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 4);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 3);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -687,8 +687,8 @@ static void fast_bgr_to_cmyk(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 4);
-	int s_line_inc = src->stride - w * (src->alpha + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 4);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 3);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -780,8 +780,8 @@ static void fast_cmyk_to_gray(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 1);
-	int s_line_inc = src->stride - w * (src->alpha + 4);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 1);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 4);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1187,8 +1187,8 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 3);
-	int s_line_inc = src->stride - w * (src->alpha + 4);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 3);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 4);
 	unsigned int C,M,Y,K;
 	unsigned char r,g,b;
 
@@ -1286,8 +1286,8 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 3);
-	int s_line_inc = src->stride - w * (src->alpha + 4);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 3);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 4);
 	unsigned int C,M,Y,K;
 	unsigned char r,g,b;
 
@@ -1378,8 +1378,8 @@ static void fast_rgb_to_bgr(fz_pixmap *dst, fz_pixmap *src)
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * (dst->alpha + 3);
-	int s_line_inc = src->stride - w * (src->alpha + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * (dst->alpha + 3);
+	ptrdiff_t s_line_inc = src->stride - w * (src->alpha + 3);
 
 	if ((int)w < 0 || h < 0)
 		return;
@@ -1454,8 +1454,8 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	int k, i;
 	size_t w = src->w;
 	int h = src->h;
-	int d_line_inc = dst->stride - w * dst->n;
-	int s_line_inc = src->stride - w * src->n;
+	ptrdiff_t d_line_inc = dst->stride - w * dst->n;
+	ptrdiff_t s_line_inc = src->stride - w * src->n;
 	int da = dst->alpha;
 	int sa = src->alpha;
 
@@ -1641,8 +1641,8 @@ static void fast_copy_alpha(fz_pixmap *dst, fz_pixmap *src)
 	size_t w = src->w;
 	int h = src->h;
 	int n = src->n;
-	int d_line_inc = dst->stride - w * dst->n;
-	int s_line_inc = src->stride - w * src->n;
+	ptrdiff_t d_line_inc = dst->stride - w * dst->n;
+	ptrdiff_t s_line_inc = src->stride - w * src->n;
 
 	if ((int)w < 0 || h < 0)
 		return;

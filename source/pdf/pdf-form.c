@@ -116,7 +116,7 @@ pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, char *name)
 	{
 		namep = dot + 1;
 		dot = strchr(namep, '.');
-		len = dot ? dot - namep : strlen(namep);
+		len = dot ? dot - namep : (int)strlen(namep);
 		dict = find_field(ctx, form, namep, len);
 		if (dot)
 			form = pdf_dict_get(ctx, dict, PDF_NAME_Kids);
@@ -1028,7 +1028,7 @@ static char *get_field_name(fz_context *ctx, pdf_document *doc, pdf_obj *field, 
 	char *res = NULL;
 	pdf_obj *parent = pdf_dict_get(ctx, field, PDF_NAME_Parent);
 	char *lname = pdf_to_str_buf(ctx, pdf_dict_get(ctx, field, PDF_NAME_T));
-	int llen = strlen(lname);
+	int llen = (int)strlen(lname);
 
 	/*
 	 * If we found a name at this point in the field hierarchy
@@ -1127,7 +1127,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	fz_buffer *fzbuf = NULL;
 	char *da = pdf_to_str_buf(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME_DA));
 	unsigned char *buf;
-	int len;
+	size_t len;
 	pdf_obj *daobj = NULL;
 
 	memset(&di, 0, sizeof(di));
@@ -1137,12 +1137,12 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	fz_var(daobj);
 	fz_try(ctx)
 	{
-		int i;
+		size_t i;
 
 		pdf_parse_da(ctx, da, &di);
 		di.col_size = pdf_array_len(ctx, col);
 
-		len = fz_mini(di.col_size, nelem(di.col));
+		len = fz_mini(di.col_size, (int)nelem(di.col));
 		for (i = 0; i < len; i++)
 			di.col[i] = pdf_to_real(ctx, pdf_array_get(ctx, col, i));
 

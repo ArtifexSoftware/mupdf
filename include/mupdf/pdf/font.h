@@ -51,7 +51,7 @@ struct pdf_vmtx_s
 struct pdf_font_desc_s
 {
 	fz_storable storable;
-	unsigned int size;
+	size_t size;
 
 	fz_font *font;
 
@@ -67,12 +67,12 @@ struct pdf_font_desc_s
 	/* Encoding (CMap) */
 	pdf_cmap *encoding;
 	pdf_cmap *to_ttf_cmap;
-	int cid_to_gid_len;
+	size_t cid_to_gid_len;
 	unsigned short *cid_to_gid;
 
 	/* ToUnicode */
 	pdf_cmap *to_unicode;
-	int cid_to_ucs_len;
+	size_t cid_to_ucs_len;
 	unsigned short *cid_to_ucs;
 
 	/* Metrics (given in the PDF file) */
@@ -116,8 +116,8 @@ void pdf_drop_font(fz_context *ctx, pdf_font_desc *font);
 
 void pdf_print_font(fz_context *ctx, fz_output *out, pdf_font_desc *fontdesc);
 
-fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len, fz_rect *rect);
-float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, int len, float room, int *count);
+fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, size_t len, fz_rect *rect);
+float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, size_t len, float room, size_t *count);
 
 void pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer *contents, fz_device *dev, const fz_matrix *ctm, void *gstate, int nestedDepth);
 

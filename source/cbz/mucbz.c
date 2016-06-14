@@ -190,7 +190,7 @@ static int
 cbz_lookup_metadata(fz_context *ctx, cbz_document *doc, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
-		return fz_strlcpy(buf, "CBZ", size);
+		return (int)fz_strlcpy(buf, "CBZ", size);
 	return -1;
 }
 

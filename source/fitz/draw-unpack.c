@@ -47,7 +47,7 @@ init_get1_tables(void)
 }
 
 void
-fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale)
+fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, size_t stride, int scale)
 {
 	int pad, x, y, k;
 	int w = dst->w;
@@ -71,8 +71,8 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 
 	for (y = 0; y < dst->h; y++)
 	{
-		unsigned char *sp = src + (unsigned int)(y * stride);
-		unsigned char *dp = dst->samples + (unsigned int)(y * dst->stride);
+		unsigned char *sp = src + (y * stride);
+		unsigned char *dp = dst->samples + (y * dst->stride);
 
 		/* Specialized loops */
 

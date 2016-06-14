@@ -694,7 +694,7 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 				fz_try(ctx)
 				{
 					unsigned char *dataa, *datab;
-					int lena, lenb;
+					size_t lena, lenb;
 					sa = pdf_load_raw_renumbered_stream(ctx, doc, num, 0, num, 0);
 					sb = pdf_load_raw_renumbered_stream(ctx, doc, other, 0, other, 0);
 					lena = fz_buffer_storage(ctx, sa, &dataa);
@@ -1530,14 +1530,14 @@ static inline int isbinary(int c)
 
 static int isbinarystream(fz_buffer *buf)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < buf->len; i++)
 		if (isbinary(buf->data[i]))
 			return 1;
 	return 0;
 }
 
-static fz_buffer *hexbuf(fz_context *ctx, unsigned char *p, int n)
+static fz_buffer *hexbuf(fz_context *ctx, unsigned char *p, size_t n)
 {
 	static const char hex[17] = "0123456789abcdef";
 	fz_buffer *buf;
@@ -1614,15 +1614,19 @@ static void addhexfilter(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 }
 
-static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, int n)
+static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, size_t n)
 {
 	fz_buffer *buf;
 	uLongf csize;
 	int t;
+	uLong longN = (uLong)n;
 
-	buf = fz_new_buffer(ctx, compressBound(n));
-	csize = buf->cap;
-	t = compress(buf->data, &csize, p, n);
+	if (n != (size_t)longN)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Buffer to large to deflate");
+
+	buf = fz_new_buffer(ctx, compressBound(longN));
+	csize = (uLongf)buf->cap;
+	t = compress(buf->data, &csize, p, longN);
 	if (t != Z_OK)
 	{
 		fz_drop_buffer(ctx, buf);
@@ -1661,7 +1665,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 		addhexfilter(ctx, doc, obj);
 
-		newlen = pdf_new_int(ctx, doc, buf->len);
+		newlen = pdf_new_int(ctx, doc, (int)buf->len);
 		pdf_dict_put(ctx, obj, PDF_NAME_Length, newlen);
 		pdf_drop_obj(ctx, newlen);
 	}
@@ -1713,7 +1717,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		addhexfilter(ctx, doc, obj);
 	}
 
-	newlen = pdf_new_int(ctx, doc, buf->len);
+	newlen = pdf_new_int(ctx, doc, (int)buf->len);
 	pdf_dict_put(ctx, obj, PDF_NAME_Length, newlen);
 	pdf_drop_obj(ctx, newlen);
 
@@ -2436,7 +2440,7 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 	/* Pad, and then do shared object hint table */
 	fz_write_buffer_pad(ctx, buf);
-	opts->hints_shared_offset = buf->len;
+	opts->hints_shared_offset = (int)buf->len;
 
 	/* Table F.5: */
 	/* Header Item 1: Object number of the first object in the shared
@@ -2513,7 +2517,7 @@ make_hint_stream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 	{
 		make_page_offset_hints(ctx, doc, opts, buf);
 		pdf_update_stream(ctx, doc, pdf_load_object(ctx, doc, pdf_xref_len(ctx, doc)-1, 0), buf, 0);
-		opts->hintstream_len = buf->len;
+		opts->hintstream_len = (int)buf->len;
 		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
@@ -2749,7 +2753,7 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 
 static int opteq(const char *a, const char *b)
 {
-	int n = strlen(b);
+	size_t n = strlen(b);
 	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
 }
 

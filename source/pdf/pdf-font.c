@@ -182,7 +182,7 @@ static int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
 		return ft_char_index(fontdesc->font->ft_face, cid);
 	}
 
-	if (fontdesc->cid_to_gid && cid < fontdesc->cid_to_gid_len && cid >= 0)
+	if (fontdesc->cid_to_gid && (size_t)cid < fontdesc->cid_to_gid_len && cid >= 0)
 		return fontdesc->cid_to_gid[cid];
 
 	return cid;
@@ -962,14 +962,15 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		if (pdf_is_indirect(ctx, cidtogidmap))
 		{
 			fz_buffer *buf;
+			size_t z;
 
 			buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, cidtogidmap), pdf_to_gen(ctx, cidtogidmap));
 
 			fontdesc->cid_to_gid_len = (buf->len) / 2;
 			fontdesc->cid_to_gid = fz_malloc_array(ctx, fontdesc->cid_to_gid_len, sizeof(unsigned short));
 			fontdesc->size += fontdesc->cid_to_gid_len * sizeof(unsigned short);
-			for (i = 0; i < fontdesc->cid_to_gid_len; i++)
-				fontdesc->cid_to_gid[i] = (buf->data[i * 2] << 8) + buf->data[i * 2 + 1];
+			for (z = 0; z < fontdesc->cid_to_gid_len; z++)
+				fontdesc->cid_to_gid[z] = (buf->data[z * 2] << 8) + buf->data[z * 2 + 1];
 
 			fz_drop_buffer(ctx, buf);
 		}
@@ -1338,9 +1339,9 @@ pdf_print_font(fz_context *ctx, fz_output *out, pdf_font_desc *fontdesc)
 	}
 }
 
-fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, int len, fz_rect *acc)
+fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned char *buf, size_t len, fz_rect *acc)
 {
-	int i;
+	size_t i;
 	int w = 0;
 
 	for (i = 0; i < len; i++)
@@ -1354,10 +1355,10 @@ fz_rect *pdf_measure_text(fz_context *ctx, pdf_font_desc *fontdesc, unsigned cha
 	return acc;
 }
 
-float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, int len, float room, int *count)
+float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, unsigned char *buf, size_t len, float room, size_t *count)
 {
 	pdf_hmtx h;
-	int i = 0;
+	size_t i = 0;
 	float x = 0.0;
 
 	while(i < len)
@@ -1398,12 +1399,12 @@ pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_font *font)
 	fz_try(ctx)
 	{
 		obj = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length1, pdf_new_int(ctx, doc, buf->len));
+		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length1, pdf_new_int(ctx, doc, (int)buf->len));
 		switch (ft_font_file_kind(font->ft_face))
 		{
 		case 1:
 			/* TODO: these may not be the correct values, but I doubt it matters */
-			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length2, pdf_new_int(ctx, doc, buf->len));
+			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length2, pdf_new_int(ctx, doc, (int)buf->len));
 			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length3, pdf_new_int(ctx, doc, 0));
 			break;
 		case 2:

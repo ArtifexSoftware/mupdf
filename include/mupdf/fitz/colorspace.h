@@ -71,7 +71,7 @@ void fz_set_device_cmyk(fz_context *ctx, fz_colorspace *cs);
 struct fz_colorspace_s
 {
 	fz_storable storable;
-	unsigned int size;
+	size_t size;
 	char name[16];
 	int n;
 	void (*to_rgb)(fz_context *ctx, fz_colorspace *, const float *src, float *rgb);

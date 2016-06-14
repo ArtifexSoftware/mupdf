@@ -367,7 +367,7 @@ png_read_phys(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 }
 
 static void
-png_read_image(fz_context *ctx, struct info *info, unsigned char *p, unsigned int total, int only_metadata)
+png_read_image(fz_context *ctx, struct info *info, unsigned char *p, size_t total, int only_metadata)
 {
 	unsigned int passw[7], passh[7], passofs[8];
 	unsigned int code, size;
@@ -554,7 +554,7 @@ png_mask_transparency(struct info *info, fz_pixmap *dst)
 }
 
 fz_pixmap *
-fz_load_png(fz_context *ctx, unsigned char *p, int total)
+fz_load_png(fz_context *ctx, unsigned char *p, size_t total)
 {
 	fz_pixmap *image;
 	fz_colorspace *colorspace;
@@ -610,7 +610,7 @@ fz_load_png(fz_context *ctx, unsigned char *p, int total)
 }
 
 void
-fz_load_png_info(fz_context *ctx, unsigned char *p, int total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_png_info(fz_context *ctx, unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	struct info png;
 

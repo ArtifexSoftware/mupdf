@@ -107,7 +107,7 @@ int
 htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
-		return fz_strlcpy(buf, "XHTML", size);
+		return (int)fz_strlcpy(buf, "XHTML", size);
 	return -1;
 }
 

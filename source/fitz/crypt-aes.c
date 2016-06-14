@@ -475,7 +475,7 @@ void aes_crypt_ecb( aes_context *ctx,
  */
 void aes_crypt_cbc( aes_context *ctx,
 	int mode,
-	int length,
+	size_t length,
 	unsigned char iv[16],
 	const unsigned char *input,
 	unsigned char *output )

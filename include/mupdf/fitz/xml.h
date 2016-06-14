@@ -15,7 +15,7 @@ typedef struct fz_xml_s fz_xml;
 
 	preserve_white: whether to keep or delete all-whitespace nodes.
 */
-fz_xml *fz_parse_xml(fz_context *ctx, unsigned char *buf, int len, int preserve_white);
+fz_xml *fz_parse_xml(fz_context *ctx, unsigned char *buf, size_t len, int preserve_white);
 
 /*
 	fz_xml_prev: Return previous sibling of XML node.

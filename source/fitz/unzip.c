@@ -214,24 +214,26 @@ static void read_zip_dir(fz_context *ctx, fz_archive *zip)
 {
 	fz_stream *file = zip->file;
 	unsigned char buf[512];
-	int size, back, maxback;
-	int i, n;
+	size_t size, back, maxback;
+	size_t i, n;
 
 	fz_seek(ctx, file, 0, SEEK_END);
 	size = fz_tell(ctx, file);
 
-	maxback = fz_mini(size, 0xFFFF + sizeof buf);
-	back = fz_mini(maxback, sizeof buf);
+	maxback = fz_minz(size, 0xFFFF + sizeof buf);
+	back = fz_minz(maxback, sizeof buf);
 
 	while (back < maxback)
 	{
 		fz_seek(ctx, file, size - back, 0);
 		n = fz_read(ctx, file, buf, sizeof buf);
+		if (n < 4)
+			break;
 		for (i = n - 4; i > 0; i--)
 		{
 			if (!memcmp(buf + i, "PK\5\6", 4))
 			{
-				read_zip_dir_imp(ctx, zip, size - back + i);
+				read_zip_dir_imp(ctx, zip, (int)(size - back + i));
 				return;
 			}
 		}

@@ -287,7 +287,7 @@ close_jbig2d(fz_context *ctx, void *state_)
 }
 
 static int
-next_jbig2d(fz_context *ctx, fz_stream *stm, int len)
+next_jbig2d(fz_context *ctx, fz_stream *stm, size_t len)
 {
 	fz_jbig2d *state = stm->state;
 	unsigned char tmp[4096];
@@ -295,7 +295,8 @@ next_jbig2d(fz_context *ctx, fz_stream *stm, int len)
 	unsigned char *p = buf;
 	unsigned char *ep;
 	unsigned char *s;
-	int x, w, n;
+	int x, w;
+	size_t n;
 
 	if (len > sizeof(state->buffer))
 		len = sizeof(state->buffer);

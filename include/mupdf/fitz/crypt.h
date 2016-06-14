@@ -21,7 +21,7 @@ struct fz_md5_s
 };
 
 void fz_md5_init(fz_md5 *state);
-void fz_md5_update(fz_md5 *state, const unsigned char *input, unsigned inlen);
+void fz_md5_update(fz_md5 *state, const unsigned char *input, size_t inlen);
 void fz_md5_final(fz_md5 *state, unsigned char digest[16]);
 
 /* sha-256 digests */
@@ -39,7 +39,7 @@ struct fz_sha256_s
 };
 
 void fz_sha256_init(fz_sha256 *state);
-void fz_sha256_update(fz_sha256 *state, const unsigned char *input, unsigned int inlen);
+void fz_sha256_update(fz_sha256 *state, const unsigned char *input, size_t inlen);
 void fz_sha256_final(fz_sha256 *state, unsigned char digest[32]);
 
 /* sha-512 digests */
@@ -57,7 +57,7 @@ struct fz_sha512_s
 };
 
 void fz_sha512_init(fz_sha512 *state);
-void fz_sha512_update(fz_sha512 *state, const unsigned char *input, unsigned int inlen);
+void fz_sha512_update(fz_sha512 *state, const unsigned char *input, size_t inlen);
 void fz_sha512_final(fz_sha512 *state, unsigned char digest[64]);
 
 /* sha-384 digests */
@@ -65,7 +65,7 @@ void fz_sha512_final(fz_sha512 *state, unsigned char digest[64]);
 typedef struct fz_sha512_s fz_sha384;
 
 void fz_sha384_init(fz_sha384 *state);
-void fz_sha384_update(fz_sha384 *state, const unsigned char *input, unsigned int inlen);
+void fz_sha384_update(fz_sha384 *state, const unsigned char *input, size_t inlen);
 void fz_sha384_final(fz_sha384 *state, unsigned char digest[64]);
 
 /* arc4 crypto */
@@ -79,8 +79,8 @@ struct fz_arc4_s
 	unsigned char state[256];
 };
 
-void fz_arc4_init(fz_arc4 *state, const unsigned char *key, unsigned len);
-void fz_arc4_encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *src, unsigned len);
+void fz_arc4_init(fz_arc4 *state, const unsigned char *key, size_t len);
+void fz_arc4_encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *src, size_t len);
 
 /* AES block cipher implementation from XYSSL */
 
@@ -98,7 +98,7 @@ struct fz_aes_s
 
 int aes_setkey_enc( fz_aes *ctx, const unsigned char *key, int keysize );
 int aes_setkey_dec( fz_aes *ctx, const unsigned char *key, int keysize );
-void aes_crypt_cbc( fz_aes *ctx, int mode, int length,
+void aes_crypt_cbc( fz_aes *ctx, int mode, size_t length,
 	unsigned char iv[16],
 	const unsigned char *input,
 	unsigned char *output );

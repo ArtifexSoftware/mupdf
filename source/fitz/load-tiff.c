@@ -215,7 +215,7 @@ fz_decode_tiff_jpeg(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsign
 	fz_stream *jpegtables = NULL;
 	int color_transform = -1; /* unset */
 	if (tiff->jpegtables && (int)tiff->jpegtableslen > 0)
-		jpegtables = fz_open_memory(ctx, tiff->jpegtables, (int)tiff->jpegtableslen);
+		jpegtables = fz_open_memory(ctx, tiff->jpegtables, tiff->jpegtableslen);
 	if (tiff->photometric == 2 /* RGB */ || tiff->photometric == 3 /* RGBPal */)
 		color_transform = 0;
 	stm = fz_open_dctd(ctx, chain, color_transform, 0, jpegtables);
@@ -764,7 +764,7 @@ fz_swap_tiff_byte_order(unsigned char *buf, int n)
 }
 
 static void
-fz_decode_tiff_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, int len)
+fz_decode_tiff_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, size_t len)
 {
 	unsigned version;
 
@@ -868,7 +868,7 @@ fz_decode_tiff_ifd(fz_context *ctx, struct tiff *tiff)
 }
 
 fz_pixmap *
-fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, int len, int subimage)
+fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subimage)
 {
 	fz_pixmap *image;
 	struct tiff tiff = { 0 };
@@ -932,13 +932,13 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, int len, int subimage
 }
 
 fz_pixmap *
-fz_load_tiff(fz_context *ctx, unsigned char *buf, int len)
+fz_load_tiff(fz_context *ctx, unsigned char *buf, size_t len)
 {
 	return fz_load_tiff_subimage(ctx, buf, len, 0);
 }
 
 void
-fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, int len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep, int subimage)
+fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep, int subimage)
 {
 	struct tiff tiff = { 0 };
 
@@ -970,13 +970,13 @@ fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, int len, int *wp
 }
 
 void
-fz_load_tiff_info(fz_context *ctx, unsigned char *buf, int len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_tiff_info(fz_context *ctx, unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	fz_load_tiff_info_subimage(ctx, buf, len, wp, hp, xresp, yresp, cspacep, 0);
 }
 
 int
-fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, int len)
+fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, size_t len)
 {
 	unsigned offset;
 	unsigned subimage_count = 0;

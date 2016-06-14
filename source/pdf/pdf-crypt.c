@@ -353,7 +353,7 @@ static const unsigned char padding[32] =
 };
 
 static void
-pdf_compute_encryption_key(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, int pwlen, unsigned char *key)
+pdf_compute_encryption_key(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen, unsigned char *key)
 {
 	unsigned char buf[32];
 	unsigned int p;
@@ -422,7 +422,7 @@ pdf_compute_encryption_key(fz_context *ctx, pdf_crypt *crypt, unsigned char *pas
  */
 
 static void
-pdf_compute_encryption_key_r5(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, int pwlen, int ownerkey, unsigned char *validationkey)
+pdf_compute_encryption_key_r5(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen, int ownerkey, unsigned char *validationkey)
 {
 	unsigned char buffer[128 + 8 + 48];
 	fz_sha256 sha256;
@@ -477,12 +477,12 @@ pdf_compute_encryption_key_r5(fz_context *ctx, pdf_crypt *crypt, unsigned char *
  */
 
 static void
-pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, int pwlen, unsigned char salt[16], unsigned char *ownerkey, unsigned char hash[32])
+pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, size_t pwlen, unsigned char salt[16], unsigned char *ownerkey, unsigned char hash[32])
 {
 	unsigned char data[(128 + 64 + 48) * 64];
 	unsigned char block[64];
 	int block_size = 32;
-	int data_len = 0;
+	size_t data_len = 0;
 	int i, j, sum;
 
 	fz_sha256 sha256;
@@ -545,7 +545,7 @@ pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, int pwlen
 }
 
 static void
-pdf_compute_encryption_key_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, int pwlen, int ownerkey, unsigned char *validationkey)
+pdf_compute_encryption_key_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen, int ownerkey, unsigned char *validationkey)
 {
 	unsigned char hash[32];
 	unsigned char iv[16];
@@ -575,7 +575,7 @@ pdf_compute_encryption_key_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *
  */
 
 static void
-pdf_compute_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, int pwlen, unsigned char *output)
+pdf_compute_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen, unsigned char *output)
 {
 	if (crypt->r == 2)
 	{
@@ -636,7 +636,7 @@ pdf_compute_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *pass
  */
 
 static int
-pdf_authenticate_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, int pwlen)
+pdf_authenticate_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *password, size_t pwlen)
 {
 	unsigned char output[32];
 	pdf_compute_user_password(ctx, crypt, password, pwlen, output);
@@ -655,7 +655,7 @@ pdf_authenticate_user_password(fz_context *ctx, pdf_crypt *crypt, unsigned char 
  */
 
 static int
-pdf_authenticate_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *ownerpass, int pwlen)
+pdf_authenticate_owner_password(fz_context *ctx, pdf_crypt *crypt, unsigned char *ownerpass, size_t pwlen)
 {
 	unsigned char pwbuf[32];
 	unsigned char key[32];

@@ -169,7 +169,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 {
 	fz_image *image = &cimg->super;
 	fz_pixmap *tile = NULL;
-	int stride, len, i;
+	size_t stride, len, i;
 	unsigned char *samples = NULL;
 	int f = 1<<l2factor;
 	int w = image->w;
@@ -251,16 +251,16 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 			int hh;
 			unsigned char *s = samples;
 			int stream_w = (image->w + f - 1)>>l2factor;
-			int stream_stride = (stream_w * image->n * image->bpc + 7) / 8;
+			size_t stream_stride = (stream_w * image->n * image->bpc + 7) / 8;
 			int l_margin = subarea->x0 >> l2factor;
 			int t_margin = subarea->y0 >> l2factor;
 			int r_margin = (image->w + f - 1 - subarea->x1) >> l2factor;
 			int b_margin = (image->h + f - 1 - subarea->y1) >> l2factor;
 			int l_skip = (l_margin * image->n * image->bpc)/8;
 			int r_skip = (r_margin * image->n * image->bpc + 7)/8;
-			int t_skip = t_margin * stream_stride + l_skip;
-			int b_skip = b_margin * stream_stride + r_skip;
-			int l = fz_skip(ctx, stm, t_skip);
+			size_t t_skip = t_margin * stream_stride + l_skip;
+			size_t b_skip = b_margin * stream_stride + r_skip;
+			size_t l = fz_skip(ctx, stm, t_skip);
 			len = 0;
 			if (l == t_skip)
 			{
@@ -275,7 +275,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 					if (--hh == 0)
 						break;
 					l = fz_skip(ctx, stm, r_skip + l_skip);
-					if (l < r_skip + l_skip)
+					if (l < (size_t)(r_skip + l_skip))
 						break;
 				}
 				while (1);
@@ -864,7 +864,7 @@ void fz_set_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *image, fz_pixmap
 }
 
 fz_image *
-fz_new_image_from_data(fz_context *ctx, unsigned char *data, int len)
+fz_new_image_from_data(fz_context *ctx, unsigned char *data, size_t len)
 {
 	fz_buffer *buffer = NULL;
 	fz_image *image;
@@ -897,7 +897,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	fz_compressed_buffer *bc = NULL;
 	int w, h, xres, yres;
 	fz_colorspace *cspace = NULL;
-	int len = buffer->len;
+	size_t len = buffer->len;
 	unsigned char *buf = buffer->data;
 	fz_image *image;
 

@@ -103,7 +103,7 @@ static int
 tiff_lookup_metadata(fz_context *ctx, tiff_document *doc, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
-		return fz_strlcpy(buf, "TIFF", size);
+		return (int)fz_strlcpy(buf, "TIFF", size);
 	return -1;
 }
 

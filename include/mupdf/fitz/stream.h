@@ -68,7 +68,7 @@ fz_stream *fz_open_file_ptr(fz_context *ctx, FILE *file);
 	Returns pointer to newly created stream. May throw exceptions on
 	failure to allocate.
 */
-fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, int len);
+fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, size_t len);
 
 /*
 	fz_open_buffer: Open a buffer as a stream.
@@ -133,7 +133,7 @@ void fz_seek(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence);
 
 	Returns the number of bytes read. May throw exceptions.
 */
-int fz_read(fz_context *ctx, fz_stream *stm, unsigned char *data, int len);
+size_t fz_read(fz_context *ctx, fz_stream *stm, unsigned char *data, size_t len);
 
 /*
 	fz_skip: Read from a stream discarding data.
@@ -144,7 +144,7 @@ int fz_read(fz_context *ctx, fz_stream *stm, unsigned char *data, int len);
 
 	Returns the number of bytes read. May throw exceptions.
 */
-int fz_skip(fz_context *ctx, fz_stream *stm, int len);
+size_t fz_skip(fz_context *ctx, fz_stream *stm, size_t len);
 
 /*
 	fz_read_all: Read all of a stream into a buffer.
@@ -156,7 +156,7 @@ int fz_skip(fz_context *ctx, fz_stream *stm, int len);
 	Returns a buffer created from reading from the stream. May throw
 	exceptions on failure to allocate.
 */
-fz_buffer *fz_read_all(fz_context *ctx, fz_stream *stm, int initial);
+fz_buffer *fz_read_all(fz_context *ctx, fz_stream *stm, size_t initial);
 
 /*
 	fz_read_file: Read all the contents of a file into a buffer.
@@ -205,7 +205,7 @@ enum
 
 int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
 
-typedef int (fz_stream_next_fn)(fz_context *ctx, fz_stream *stm, int max);
+typedef int (fz_stream_next_fn)(fz_context *ctx, fz_stream *stm, size_t max);
 typedef void (fz_stream_close_fn)(fz_context *ctx, void *state);
 typedef void (fz_stream_seek_fn)(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence);
 typedef int (fz_stream_meta_fn)(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
@@ -243,7 +243,7 @@ fz_stream *fz_keep_stream(fz_context *ctx, fz_stream *stm);
 
 	Returns a buffer created from reading from the stream.
 */
-fz_buffer *fz_read_best(fz_context *ctx, fz_stream *stm, int initial, int *truncated);
+fz_buffer *fz_read_best(fz_context *ctx, fz_stream *stm, size_t initial, int *truncated);
 
 /*
 	fz_read_line: Read a line from stream into the buffer until either a
@@ -252,7 +252,7 @@ fz_buffer *fz_read_best(fz_context *ctx, fz_stream *stm, int initial, int *trunc
 	Returns buf on success, and NULL when end of file occurs while no characters
 	have been read.
 */
-char *fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, int max);
+char *fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, size_t max);
 
 /*
 	fz_available: Ask how many bytes are available immediately from
@@ -269,7 +269,7 @@ char *fz_read_line(fz_context *ctx, fz_stream *stm, char *buf, int max);
 	if we have hit EOF. The number of bytes returned here need have
 	no relation to max (could be larger, could be smaller).
 */
-static inline size_t fz_available(fz_context *ctx, fz_stream *stm, int max)
+static inline size_t fz_available(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	size_t len = stm->wp - stm->rp;
 	int c = EOF;
@@ -349,7 +349,7 @@ static inline int fz_is_eof(fz_context *ctx, fz_stream *stm)
 
 static inline unsigned int fz_read_bits(fz_context *ctx, fz_stream *stm, int n)
 {
-	unsigned int x;
+	int x;
 
 	if (n <= stm->avail)
 	{
@@ -381,7 +381,7 @@ static inline unsigned int fz_read_bits(fz_context *ctx, fz_stream *stm, int n)
 
 static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
 {
-	unsigned int x;
+	int x;
 
 	if (n <= stm->avail)
 	{

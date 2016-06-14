@@ -214,7 +214,7 @@ sgilog16val(fz_context *ctx, uint16_t v)
 }
 
 static int
-next_sgilog16(fz_context *ctx, fz_stream *stm, int max)
+next_sgilog16(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	fz_sgilog16 *state = stm->state;
 	uint16_t *p;
@@ -434,7 +434,7 @@ sgilog24val(fz_context *ctx, fz_stream *chain, uint8_t *rgb)
 }
 
 static int
-next_sgilog24(fz_context *ctx, fz_stream *stm, int max)
+next_sgilog24(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	fz_sgilog24 *state = stm->state;
 	uint8_t *p;
@@ -557,7 +557,7 @@ sgilog32val(fz_context *ctx, uint32_t p, uint8_t *rgb)
 }
 
 static int
-next_sgilog32(fz_context *ctx, fz_stream *stm, int max)
+next_sgilog32(fz_context *ctx, fz_stream *stm, size_t max)
 {
 	fz_sgilog32 *state = stm->state;
 	uint32_t *p;

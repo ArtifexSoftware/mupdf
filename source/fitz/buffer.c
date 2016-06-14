@@ -1,7 +1,7 @@
 #include "mupdf/fitz.h"
 
 fz_buffer *
-fz_new_buffer(fz_context *ctx, int size)
+fz_new_buffer(fz_context *ctx, size_t size)
 {
 	fz_buffer *b;
 
@@ -26,7 +26,7 @@ fz_new_buffer(fz_context *ctx, int size)
 }
 
 fz_buffer *
-fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, int size)
+fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, size_t size)
 {
 	fz_buffer *b;
 
@@ -41,7 +41,7 @@ fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, int size)
 }
 
 fz_buffer *
-fz_new_buffer_from_shared_data(fz_context *ctx, const char *data, int size)
+fz_new_buffer_from_shared_data(fz_context *ctx, const char *data, size_t size)
 {
 	fz_buffer *b;
 
@@ -57,7 +57,7 @@ fz_new_buffer_from_shared_data(fz_context *ctx, const char *data, int size)
 }
 
 fz_buffer *
-fz_new_buffer_from_base64(fz_context *ctx, const char *data, int size)
+fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t size)
 {
 	fz_buffer *buf = fz_new_buffer(ctx, size);
 	const char *end = data + size;
@@ -109,7 +109,7 @@ fz_drop_buffer(fz_context *ctx, fz_buffer *buf)
 }
 
 void
-fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size)
+fz_resize_buffer(fz_context *ctx, fz_buffer *buf, size_t size)
 {
 	if (buf->shared)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot resize a buffer with shared storage");
@@ -122,16 +122,16 @@ fz_resize_buffer(fz_context *ctx, fz_buffer *buf, int size)
 void
 fz_grow_buffer(fz_context *ctx, fz_buffer *buf)
 {
-	int newsize = (buf->cap * 3) / 2;
+	size_t newsize = (buf->cap * 3) / 2;
 	if (newsize == 0)
 		newsize = 256;
 	fz_resize_buffer(ctx, buf, newsize);
 }
 
 static void
-fz_ensure_buffer(fz_context *ctx, fz_buffer *buf, int min)
+fz_ensure_buffer(fz_context *ctx, fz_buffer *buf, size_t min)
 {
-	int newsize = buf->cap;
+	size_t newsize = buf->cap;
 	if (newsize < 16)
 		newsize = 16;
 	while (newsize < min)
@@ -148,7 +148,7 @@ fz_trim_buffer(fz_context *ctx, fz_buffer *buf)
 		fz_resize_buffer(ctx, buf, buf->len);
 }
 
-int
+size_t
 fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
 {
 	if (datap)
@@ -169,7 +169,7 @@ fz_append_buffer(fz_context *ctx, fz_buffer *buf, fz_buffer *extra)
 	buf->len += extra->len;
 }
 
-void fz_write_buffer(fz_context *ctx, fz_buffer *buf, const void *data, int len)
+void fz_write_buffer(fz_context *ctx, fz_buffer *buf, const void *data, size_t len)
 {
 	if (buf->len + len > buf->cap)
 		fz_ensure_buffer(ctx, buf, buf->len + len);
@@ -277,10 +277,10 @@ void fz_write_buffer_pad(fz_context *ctx, fz_buffer *buf)
 	buf->unused_bits = 0;
 }
 
-int
+size_t
 fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...)
 {
-	int ret;
+	size_t ret;
 	va_list args;
 	va_start(args, fmt);
 	ret = fz_buffer_vprintf(ctx, buffer, fmt, args);
@@ -288,11 +288,11 @@ fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...)
 	return ret;
 }
 
-int
+size_t
 fz_buffer_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list old_args)
 {
-	int slack;
-	int len;
+	size_t slack;
+	size_t len;
 	va_list args;
 
 	slack = buffer->cap - buffer->len;
@@ -321,7 +321,7 @@ fz_buffer_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list o
 void
 fz_buffer_print_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text)
 {
-	int len = 2;
+	size_t len = 2;
 	const char *s = text;
 	char *d;
 	char c;

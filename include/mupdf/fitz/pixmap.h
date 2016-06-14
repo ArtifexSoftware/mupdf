@@ -302,7 +302,8 @@ void fz_convert_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src);
 struct fz_pixmap_s
 {
 	fz_storable storable;
-	int x, y, w, h, n, stride;
+	int x, y, w, h, n;
+	ptrdiff_t stride;
 	int alpha;
 	int interpolate;
 	int xres, yres;
@@ -332,7 +333,7 @@ fz_irect *fz_pixmap_bbox_no_ctx(const fz_pixmap *src, fz_irect *bbox);
 
 void fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode);
 void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode, int maxval);
-void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, int stride, int scale);
+void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, size_t stride, int scale);
 
 /*
 	fz_md5_pixmap: Return the md5 digest for a pixmap

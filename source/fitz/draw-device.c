@@ -13,7 +13,7 @@ const char *fz_draw_options_usage =
 
 static int opteq(const char *a, const char *b)
 {
-	int n = strlen(b);
+	size_t n = strlen(b);
 	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
 }
 

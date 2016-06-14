@@ -281,7 +281,9 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 	int stm_len;
 	pdf_token tok;
 	int next;
-	int i, n, c;
+	int i;
+	size_t j, n;
+	int c;
 	pdf_lexbuf *buf = &doc->lexbuf.base;
 	int num_roots = 0;
 	int max_roots = 0;
@@ -316,7 +318,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		n = fz_read(ctx, doc->file, (unsigned char *)buf->scratch, fz_mini(buf->size, 1024));
 
 		fz_seek(ctx, doc->file, 0, 0);
-		for (i = 0; i < n - 4; i++)
+		for (j = 0; j < n - 4; j++)
 		{
 			if (memcmp(&buf->scratch[i], "%PDF", 4) == 0)
 			{

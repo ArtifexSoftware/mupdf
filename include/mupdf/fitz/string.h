@@ -36,7 +36,7 @@ char *fz_strsep(char **stringp, const char *delim);
 
 	Returns the length (excluding terminator) of src.
 */
-int fz_strlcpy(char *dst, const char *src, int n);
+size_t fz_strlcpy(char *dst, const char *src, size_t n);
 
 /*
 	fz_strlcat: Concatenate 2 strings, with a maximum length.
@@ -50,12 +50,12 @@ int fz_strlcpy(char *dst, const char *src, int n);
 	Returns the real length that a concatenated dst + src would have been
 	(not including terminator).
 */
-int fz_strlcat(char *dst, const char *src, int n);
+size_t fz_strlcat(char *dst, const char *src, size_t n);
 
 /*
 	fz_dirname: extract the directory component from a path.
 */
-void fz_dirname(char *dir, const char *path, int dirsize);
+void fz_dirname(char *dir, const char *path, size_t dirsize);
 
 /*
 	fz_urldecode: decode url escapes.
@@ -69,7 +69,7 @@ char *fz_urldecode(char *url);
 		number will be inserted before the file suffix. If the template does not have
 		a file suffix, the page number will be added to the end.
 */
-void fz_format_output_path(fz_context *ctx, char *path, int size, const char *fmt, int page);
+void fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt, int page);
 
 /*
 	fz_cleanname: rewrite path to the shortest string that names the same path.

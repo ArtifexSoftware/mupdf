@@ -70,9 +70,9 @@ static void showpagetree(void)
 	fz_printf(ctx, out, "\n");
 }
 
-static void showsafe(unsigned char *buf, int n)
+static void showsafe(unsigned char *buf, size_t n)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < n; i++) {
 		if (buf[i] == '\r' || buf[i] == '\n') {
 			putchar('\n');
@@ -97,7 +97,7 @@ static void showstream(int num, int gen)
 {
 	fz_stream *stm;
 	unsigned char buf[2048];
-	int n;
+	size_t n;
 
 	showcolumn = 0;
 

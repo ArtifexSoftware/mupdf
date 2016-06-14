@@ -248,10 +248,10 @@ void fz_detach_xml(fz_xml *node)
 		node->up->down = NULL;
 }
 
-static int xml_parse_entity(int *c, char *a)
+static size_t xml_parse_entity(int *c, char *a)
 {
 	char *b;
-	int i;
+	size_t i;
 
 	if (a[1] == '#') {
 		if (a[2] == 'x')
@@ -284,7 +284,7 @@ static int xml_parse_entity(int *c, char *a)
 
 	/* We should only be doing this for XHTML, but it shouldn't be a problem. */
 	for (i = 0; i < nelem(html_entities); ++i) {
-		unsigned int n = strlen(html_entities[i].ent);
+		size_t n = strlen(html_entities[i].ent);
 		if (!memcmp(a+1, html_entities[i].ent, n) && a[1+n] == ';') {
 			*c = html_entities[i].ucs;
 			return n + 2;
@@ -585,7 +585,7 @@ parse_attribute_value:
 	return "end of data in attribute value";
 }
 
-static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n, int *dofree)
+static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *dofree)
 {
 	unsigned char *e = s + n;
 	char *dst, *d;
@@ -626,7 +626,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, int n, int *dofr
 }
 
 fz_xml *
-fz_parse_xml(fz_context *ctx, unsigned char *s, int n, int preserve_white)
+fz_parse_xml(fz_context *ctx, unsigned char *s, size_t n, int preserve_white)
 {
 	struct parser parser;
 	fz_xml root, *node;

@@ -13,10 +13,10 @@ typedef struct prog_state
 	unsigned char buffer[4096];
 } prog_state;
 
-static int next_prog(fz_context *ctx, fz_stream *stm, int len)
+static int next_prog(fz_context *ctx, fz_stream *stm, size_t len)
 {
 	prog_state *ps = (prog_state *)stm->state;
-	int n;
+	size_t n;
 	unsigned char *buf = ps->buffer;
 
 	if (len > sizeof(ps->buffer))
@@ -30,7 +30,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 			av = ps->length;
 		ps->available = av;
 		/* Limit any fetches to be within the data we have */
-		if (av < ps->length && len + stm->pos > av)
+		if (av < ps->length && len + stm->pos > (size_t)av)
 		{
 			len = av - stm->pos;
 			if (len <= 0)
@@ -38,8 +38,8 @@ static int next_prog(fz_context *ctx, fz_stream *stm, int len)
 		}
 	}
 
-	n = (len > 0 ? fread(buf, 1, (unsigned int)len, ps->file) : 0);
-	if (n < 0)
+	n = (len > 0 ? fread(buf, 1, len, ps->file) : 0);
+	if (n < len && ferror(ps->file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = ps->buffer + stm->pos;
 	stm->wp = ps->buffer + stm->pos + n;

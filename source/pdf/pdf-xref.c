@@ -556,7 +556,7 @@ static void
 pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 {
 	unsigned char buf[1024];
-	int i, n;
+	size_t i, n;
 	fz_off_t t;
 
 	fz_seek(ctx, doc->file, 0, SEEK_END);
@@ -567,8 +567,11 @@ pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 	fz_seek(ctx, doc->file, t, SEEK_SET);
 
 	n = fz_read(ctx, doc->file, buf, sizeof buf);
+	if (n < 9)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find startxref");
 
-	for (i = n - 9; i >= 0; i--)
+	i = n - 9;
+	do
 	{
 		if (memcmp(buf + i, "startxref", 9) == 0)
 		{
@@ -586,7 +589,7 @@ pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 				return;
 			break;
 		}
-	}
+	} while (i-- > 0);
 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find startxref");
 }
@@ -766,7 +769,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	fz_off_t ofs;
 	int len;
 	char *s;
-	int n;
+	size_t n;
 	pdf_token tok;
 	fz_off_t i;
 	int c;
@@ -2225,7 +2228,7 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *n
 	fz_drop_buffer(ctx, x->stm_buf);
 	x->stm_buf = fz_keep_buffer(ctx, newbuf);
 
-	pdf_dict_puts_drop(ctx, obj, "Length", pdf_new_int(ctx, doc, newbuf->len));
+	pdf_dict_puts_drop(ctx, obj, "Length", pdf_new_int(ctx, doc, (int)newbuf->len));
 	if (!compressed)
 	{
 		pdf_dict_dels(ctx, obj, "Filter");
@@ -2237,18 +2240,18 @@ int
 pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
-		return fz_snprintf(buf, size, "PDF %d.%d", doc->version/10, doc->version % 10);
+		return (int)fz_snprintf(buf, size, "PDF %d.%d", doc->version/10, doc->version % 10);
 
 	if (!strcmp(key, "encryption"))
 	{
 		if (doc->crypt)
-			return fz_snprintf(buf, size, "Standard V%d R%d %d-bit %s",
+			return (int)fz_snprintf(buf, size, "Standard V%d R%d %d-bit %s",
 					pdf_crypt_version(ctx, doc),
 					pdf_crypt_revision(ctx, doc),
 					pdf_crypt_length(ctx, doc),
 					pdf_crypt_method(ctx, doc));
 		else
-			return fz_strlcpy(buf, "None", size);
+			return (int)fz_strlcpy(buf, "None", size);
 	}
 
 	if (strstr(key, "info:") == key)
@@ -2266,7 +2269,7 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 			return -1;
 
 		s = pdf_to_utf8(ctx, doc, info);
-		n = fz_strlcpy(buf, s, size);
+		n = (int)fz_strlcpy(buf, s, size);
 		fz_free(ctx, s);
 		return n;
 	}

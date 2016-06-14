@@ -437,7 +437,7 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 	fz_keep_freetype(ctx);
 
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
-	fterr = FT_New_Memory_Face(ctx->font->ftlib, buffer->data, buffer->len, index, &face);
+	fterr = FT_New_Memory_Face(ctx->font->ftlib, buffer->data, (FT_Long)buffer->len, index, &face);
 	fz_unlock(ctx, FZ_LOCK_FREETYPE);
 	if (fterr)
 	{

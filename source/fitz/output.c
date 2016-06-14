@@ -7,7 +7,7 @@ struct fz_output_context_s
 	fz_output *err;
 };
 
-static void std_write(fz_context *ctx, void *opaque, const void *buffer, int count);
+static void std_write(fz_context *ctx, void *opaque, const void *buffer, size_t count);
 
 static fz_output fz_stdout_global = {
 	&fz_stdout_global,
@@ -83,12 +83,12 @@ fz_stderr(fz_context *ctx)
 }
 
 static void
-file_write(fz_context *ctx, void *opaque, const void *buffer, int count)
+file_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
 {
 	FILE *file = opaque;
 	size_t n;
 
-	if (count < 0)
+	if (count == 0)
 		return;
 
 	if (count == 1)
@@ -100,12 +100,12 @@ file_write(fz_context *ctx, void *opaque, const void *buffer, int count)
 	}
 
 	n = fwrite(buffer, 1, count, file);
-	if (n < (size_t)count && ferror(file))
+	if (n < count && ferror(file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fwrite: %s", strerror(errno));
 }
 
 static void
-std_write(fz_context *ctx, void *opaque, const void *buffer, int count)
+std_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
 {
 	FILE *f = opaque == &fz_stdout_global ? stdout : opaque == &fz_stderr_global ? stderr : NULL;
 	file_write(ctx, f, buffer, count);
@@ -177,7 +177,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 }
 
 static void
-buffer_write(fz_context *ctx, void *opaque, const void *data, int len)
+buffer_write(fz_context *ctx, void *opaque, const void *data, size_t len)
 {
 	fz_buffer *buffer = opaque;
 	fz_write_buffer(ctx, buffer, data, len);
@@ -243,7 +243,7 @@ void
 fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list old_args)
 {
 	char buffer[256], *p = buffer;
-	int len;
+	size_t len;
 	va_list args;
 
 	if (!out) return;

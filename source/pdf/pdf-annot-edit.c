@@ -414,7 +414,7 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	fz_try(ctx)
 	{
 		unsigned char *da_str;
-		int da_len;
+		size_t da_len;
 		fz_rect bounds;
 
 		find_free_font_name(ctx, form_fonts, nbuf, sizeof(nbuf));
