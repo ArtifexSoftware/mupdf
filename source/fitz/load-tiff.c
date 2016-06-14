@@ -154,6 +154,7 @@ fz_decode_tiff_packbits(fz_context *ctx, struct tiff *tiff, fz_stream *chain, un
 	fz_drop_stream(ctx, stm);
 }
 
+static void
 fz_decode_tiff_sgilog16(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
 {
 	fz_stream *stm = fz_open_sgilog16(ctx, chain, w);
