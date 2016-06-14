@@ -1820,7 +1820,7 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 		fz_buffer_printf(ctx, buf, "endcodespacerange\n");
 
 		/* Note to have a valid CMap, the number of entries in table set can
-		 * not exceed 100, so we have to break into multipe tables. Also, note
+		 * not exceed 100, so we have to break into multiple tables. Also, note
 		 * that to reduce the file size we should be looking for sequential
 		 * ranges. Per Adobe technical note #5411, we can't have a range
 		 * cross a boundary where the high order byte changes */

@@ -269,7 +269,7 @@ static const char *pairbrk[29] =
 	"%^^%%%^^^__%%%_%%%__^^^______", /* CM combining mark */
 	"%^^%%%^^^%%%%%%%%%%%^^^%%%%%%", /* WJ word joiner */
 	"_^^%%%^^^_%____%%%__^^^___%%_", /* H2 hangul leading/vowel syllable */
-	"_^^%%%^^^_%____%%%__^^^____%_", /* H3 hangul leading/voewl/trailing syllable */
+	"_^^%%%^^^_%____%%%__^^^____%_", /* H3 hangul leading/vowel/trailing syllable */
 	"_^^%%%^^^_%____%%%__^^^%%%%__", /* JL hangul leading jamo */
 	"_^^%%%^^^_%____%%%__^^^___%%_", /* JV hangul vowel jamo */
 	"_^^%%%^^^_%____%%%__^^^____%_", /* JT hangul trailing jamo */

@@ -3249,7 +3249,7 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 	/* TODO: if (fb == 0 && fa == 1) call fz_paint_span */
 
 	/* Sometimes we can get an alpha only input to be
-	 * ploted. In this case treat it as a greyscale
+	 * plotted. In this case treat it as a greyscale
 	 * input. */
 	if (img->n == sa && color)
 		sa = 0;

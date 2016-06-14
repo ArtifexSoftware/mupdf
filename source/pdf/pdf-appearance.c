@@ -860,7 +860,7 @@ static char *to_font_encoding(fz_context *ctx, pdf_font_desc *font, char *utf8)
 	int i;
 	int needs_converting = 0;
 
-	/* Temporay partial solution. We are using a slow lookup in the conversion
+	/* Temporary partial solution. We are using a slow lookup in the conversion
 	 * below, so we avoid performing the conversion unnecessarily. We check for
 	 * top-bit-set chars, and convert only if they are present. We should also
 	 * check that the font encoding is one that agrees with utf8 from 0 to 7f,
@@ -2012,7 +2012,7 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 		}
 
 		/* Post process text with the scale determined by the splitter
-		 * and with the required offst */
+		 * and with the required offset */
 		for (span = text->head; span; span = span->next)
 		{
 			fz_pre_scale(&span->trm, splitter.scale, splitter.scale);

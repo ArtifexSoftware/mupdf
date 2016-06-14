@@ -127,7 +127,7 @@ pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, char *name)
 
 static void reset_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	/* Set V to DV whereever DV is present, and delete V where DV is not.
+	/* Set V to DV wherever DV is present, and delete V where DV is not.
 	 * FIXME: we assume for now that V has not been set unequal
 	 * to DV higher in the hierarchy than "field".
 	 *
@@ -627,7 +627,7 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 					hp->gen = pdf_to_gen(ctx, annot->obj);
 					hp->state = HOTSPOT_POINTER_DOWN;
 					changed = 1;
-					/* Exectute the down and focus actions */
+					/* Execute the down and focus actions */
 					execute_additional_action(ctx, doc, annot->obj, "AA/Fo");
 					execute_additional_action(ctx, doc, annot->obj, "AA/D");
 				}

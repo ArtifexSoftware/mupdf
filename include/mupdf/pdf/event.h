@@ -87,9 +87,9 @@ void pdf_set_doc_event_callback(fz_context *ctx, pdf_document *doc, pdf_doc_even
 
 /*
 	pdf_alert_event: details of an alert event. In response the app should
-	display an alert dialog with the bittons specified by "button_type_group".
+	display an alert dialog with the buttons specified by "button_type_group".
 	If "check_box_message" is non-NULL, a checkbox should be displayed in
-	the lower-left corned along with the messsage.
+	the lower-left corned along with the message.
 
 	"finally_checked" and "button_pressed" should be set by the app
 	before returning from the callback. "finally_checked" need be set
@@ -138,7 +138,7 @@ enum
 /*
 	pdf_access_alert_event: access the details of an alert event
 	The returned pointer and all the data referred to by the
-	structire are owned by mupdf and need not be freed by the
+	structure are owned by mupdf and need not be freed by the
 	caller.
 */
 pdf_alert_event *pdf_access_alert_event(fz_context *ctx, pdf_doc_event *event);
@@ -202,7 +202,7 @@ typedef struct
 } pdf_mail_doc_event;
 
 /*
-	pdf_acccess_mail_doc_event: access the details of a mail-doc event.
+	pdf_access_mail_doc_event: access the details of a mail-doc event.
 */
 pdf_mail_doc_event *pdf_access_mail_doc_event(fz_context *ctx, pdf_doc_event *event);
 

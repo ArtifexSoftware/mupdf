@@ -198,7 +198,7 @@ static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, v
 		{
 			pdf_mail_doc_event *mail_doc = pdf_access_mail_doc_event(ctx, event);
 
-			pdfapp_warn(app, "The document attmepted to mail the document%s%s%s%s%s%s%s%s (Not supported)",
+			pdfapp_warn(app, "The document attempted to mail the document%s%s%s%s%s%s%s%s (Not supported)",
 				mail_doc->to[0]?", To: ":"", mail_doc->to,
 				mail_doc->cc[0]?", Cc: ":"", mail_doc->cc,
 				mail_doc->bcc[0]?", Bcc: ":"", mail_doc->bcc,

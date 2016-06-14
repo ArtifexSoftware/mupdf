@@ -219,7 +219,7 @@ void fz_set_user_context(fz_context *ctx, void *user);
 void *fz_user_context(fz_context *ctx);
 
 /*
-	In order to tune MuPDFs behaviour, certain functions can
+	In order to tune MuPDF's behaviour, certain functions can
 	(optionally) be provided by callers.
 */
 
@@ -371,7 +371,7 @@ enum {
 /*
 	Memory Allocation and Scavenging:
 
-	All calls to MuPDFs allocator functions pass through to the
+	All calls to MuPDF's allocator functions pass through to the
 	underlying allocators passed in when the initial context is
 	created, after locks are taken (using the supplied locking function)
 	to ensure that only one thread at a time calls through.

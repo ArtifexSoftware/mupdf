@@ -2289,7 +2289,7 @@ pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration)
 	The functions are split across two files to allow calls to a
 	version of the constructor that does not link in the interpreter.
 	The interpreter references the built-in font and cmap resources
-	which are quite big. Not linking those into the mubusy binary
+	which are quite big. Not linking those into the mutool binary
 	saves roughly 6MB of space.
 */
 

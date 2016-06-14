@@ -29,11 +29,11 @@ enum
 */
 
 /*
-	pdf_focused_widget: returns the currently focussed widget
+	pdf_focused_widget: returns the currently focused widget
 
-	Widgets can become focussed as a result of passing in ui events.
-	NULL is returned if there is no currently focussed widget. An
-	app may wish to create a native representative of the focussed
+	Widgets can become focused as a result of passing in ui events.
+	NULL is returned if there is no currently focused widget. An
+	app may wish to create a native representative of the focused
 	widget, e.g., to collect the text for a text widget, rather than
 	routing key strokes through pdf_pass_event.
 */
@@ -110,7 +110,7 @@ int pdf_choice_widget_is_multiselect(fz_context *ctx, pdf_document *doc, pdf_wid
 
 /*
 	pdf_choice_widget_value: get the value of a choice widget.
-	Returns the number of options curently selected and fills in
+	Returns the number of options currently selected and fills in
 	the supplied array with their strings. Should first be called
 	with NULL as the array to find out how big the array need to
 	be. The filled in elements should not be freed by the caller.

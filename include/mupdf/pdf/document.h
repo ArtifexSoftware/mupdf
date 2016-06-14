@@ -378,7 +378,7 @@ typedef struct pdf_write_options_s pdf_write_options;
 /*
 	In calls to fz_save_document, the following options structure can be used
 	to control aspects of the writing process. This structure may grow
-	in future, and should be zero-filled to allow forwards compatiblity.
+	in future, and should be zero-filled to allow forwards compatibility.
 */
 struct pdf_write_options_s
 {

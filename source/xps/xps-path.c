@@ -90,7 +90,7 @@ angle_between(const fz_point u, const fz_point v)
 }
 
 /*
-	Some explaination of the parameters here is warranted. See:
+	Some explanation of the parameters here is warranted. See:
 
 	http://www.w3.org/TR/SVG11/implnote.html#ArcImplementationNotes
 

@@ -997,7 +997,7 @@ fz_image_resolution(fz_image *image, int *xres, int *yres)
 		*yres = *xres;
 	}
 
-	/* Scale xres and yres up until we get beleivable values */
+	/* Scale xres and yres up until we get believable values */
 	if (*xres < SANE_DPI || *yres < SANE_DPI || *xres > INSANE_DPI || *yres > INSANE_DPI)
 	{
 		if (*xres == *yres)
@@ -1051,7 +1051,7 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 		pix = fz_new_pixmap(ctx, image->super.colorspace, w, h, 0);
 	}
 
-	/* If we render the displaylist into pix with the image matrix, we'll get a unit
+	/* If we render the display list into pix with the image matrix, we'll get a unit
 	 * square result. Therefore scale by w, h. */
 	ctm = image->transform;
 	fz_pre_scale(&ctm, w, h);

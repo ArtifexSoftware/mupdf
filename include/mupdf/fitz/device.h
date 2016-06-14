@@ -13,7 +13,7 @@
 /*
 	The different format handlers (pdf, xps etc) interpret pages to a
 	device. These devices can then process the stream of calls they
-	recieve in various ways:
+	receive in various ways:
 		The trace device outputs debugging information for the calls.
 		The draw device will render them.
 		The list device stores them in a list to play back later.
@@ -228,7 +228,7 @@ typedef struct fz_cookie_s fz_cookie;
 	feedback or abort a job that takes a long time to finish. The
 	communication is unsynchronized without locking.
 
-	abort: The appliation should set this field to 0 before
+	abort: The application should set this field to 0 before
 	calling fz_run_page to render a page. At any point when the
 	page is being rendered the application my set this field to 1
 	which will cause the rendering to finish soon. This field is

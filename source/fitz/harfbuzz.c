@@ -27,7 +27,7 @@
  * harfbuzz instances.
  *
  * In order to ensure that allocations throughout mupdf
- * are done consistently, we get harfbuff to call our
+ * are done consistently, we get harfbuzz to call our
  * own hb_malloc/realloc/calloc/free functions that
  * call down to fz_malloc/realloc/calloc/free. These
  * require context variables, so we get our hb_lock

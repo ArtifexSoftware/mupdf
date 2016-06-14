@@ -5,7 +5,7 @@
 /*
 	Choose which plotters we need.
 	By default we build the greyscale, RGB and CMYK plotters in,
-	but omit the arbitraryall the plotters in. To avoid building
+	but omit the arbitrary plotters. To avoid building
 	plotters in that aren't needed, define the unwanted
 	FZ_PLOTTERS_... define to 0.
 */

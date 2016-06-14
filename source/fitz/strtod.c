@@ -106,7 +106,7 @@ fz_strtod(const char *as, char **aas)
 	flag = 0;	/* Fsign, Fesign, Fdpoint */
 	na = 0;		/* number of digits of a[] */
 	dp = 0;		/* na of decimal point */
-	ex = 0;		/* exonent */
+	ex = 0;		/* exponent */
 
 	state = S0;
 	for(s=(char*)as;; s++) {

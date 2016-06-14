@@ -23,7 +23,7 @@
    4) Round x to a float using rounding mode 'to even'.
 
    Step 1) is always lossless as the strtof_fp_t's significand can hold a 9-digit integer.
-   In the case |dexp| <= 13 the cached power is exact and the algoritm returns
+   In the case |dexp| <= 13 the cached power is exact and the algorithm returns
    the exactly rounded result (with rounding mode 'to even').
    There is no double-rounding in 3), 4) as the multiply/divide uses 'round to odd'.
 
@@ -197,7 +197,7 @@ diy_to_float(strtof_fp_t x, int negative)
 	/* We have 2^32 - 2^8 = 0xffffff00.  */
 	else if (x.e > -158)
 	{
-		/* x is greator or equal to FLT_MAX. So we get a normalized number. */
+		/* x is greater or equal to FLT_MAX. So we get a normalized number. */
 		result = (uint32_t) (x.e + 158) << SP_SIGNIFICAND_SIZE;
 		result |= (x.f >> 8) & SP_SIGNIFICAND_MASK;
 
@@ -239,7 +239,7 @@ diy_to_float(strtof_fp_t x, int negative)
 	else if (x.e == -181 && x.f > 0x80000000)
 	{
 		/* x is in the range (0.5,1) *  2^-149 so it rounds to the smallest
-		   denormal. Cant't handle this in the previous case as shifting a
+		   denormal. Can't handle this in the previous case as shifting a
 		   uint32_t 32 bits to the right is undefined behaviour.  */
 		result = 1;
 	}

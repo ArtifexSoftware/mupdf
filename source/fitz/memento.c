@@ -207,7 +207,7 @@ static const char *eventType[] =
 /* When we list leaked blocks at the end of execution, we search for pointers
  * between blocks in order to be able to give a nice nested view.
  * Unfortunately, if you have are running your own allocator (such as
- * ghostscripts chunk allocator) you can often find that the header of the
+ * postscript's chunk allocator) you can often find that the header of the
  * block always contains pointers to next or previous blocks. This tends to
  * mean the nesting displayed is "uninteresting" at best :)
  *
@@ -564,7 +564,7 @@ typedef struct MY_SYMBOL_INFO {
     ULONG64     Reserved[2];
     ULONG       info;
     ULONG       Size;
-    ULONG64     ModBase;          // Base Address of module comtaining this symbol
+    ULONG64     ModBase;          // Base Address of module containing this symbol
     ULONG       Flags;
     ULONG64     Value;            // Value of symbol, ValuePresent should be 1
     ULONG64     Address;          // Address of symbol including base address of module
@@ -1420,7 +1420,7 @@ void Memento_info(void *addr)
 /* MacOSX has 10240, Ubuntu seems to have 256 */
 #define OPEN_MAX 10240
 
-/* stashed_map[j] = i means that filedescriptor i-1 was duplicated to j */
+/* stashed_map[j] = i means that file descriptor i-1 was duplicated to j */
 int stashed_map[OPEN_MAX];
 
 static void Memento_signal(void)

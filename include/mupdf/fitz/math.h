@@ -112,7 +112,7 @@ struct fz_point_s
 
 	Rectangles are always axis-aligned with the X- and Y- axes.
 	The relationship between the coordinates are that x0 <= x1 and
-	y0 <= y1 in all cases except for infinte rectangles. The area
+	y0 <= y1 in all cases except for infinite rectangles. The area
 	of a rectangle is defined as (x1 - x0) * (y1 - y0). If either
 	x0 > x1 or y0 > y1 is true for a given rectangle then it is
 	defined to be infinite.
@@ -122,7 +122,7 @@ struct fz_point_s
 
 	x0, y0: The top left corner.
 
-	x1, y1: The botton right corner.
+	x1, y1: The bottom right corner.
 */
 typedef struct fz_rect_s fz_rect;
 struct fz_rect_s

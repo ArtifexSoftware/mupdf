@@ -170,7 +170,7 @@ static fz_bidi_chartype class_from_ch_n(uint32_t ch)
 	return from_ch_ws;
 }
 
-/* Split fragments into single scripts (or punctation + single script) */
+/* Split fragments into single scripts (or punctuation + single script) */
 static void
 split_at_script(const uint32_t *fragment,
 		size_t fragment_len,

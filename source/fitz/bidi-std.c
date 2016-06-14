@@ -20,7 +20,7 @@
 	-----------
 
 	Sample Implementation of the Unicode Bidirectional Algorithm as it
-	was revised by Revision 5 of the Uniode Technical Report # 9
+	was revised by Revision 5 of the Unicode Technical Report # 9
 	(1999-8-17)
 
 	Verified for changes to the algorithm up through Unicode 5.2.0 (2009).
@@ -44,7 +44,7 @@
 	in UAX#9 had been clarified.
 
 	To see this code running in an actual Windows program,
-	download the free Unibook uitlity from http://unicode.org/unibook
+	download the free Unibook utility from http://unicode.org/unibook
 	The bidi demo is executed from the tools menu. It is build from
 	this source file.
 
@@ -131,7 +131,7 @@
 	3. Process the first paragraph by calling BidiParagraph. That
 	   function changes B into BN and returns a length including the
 	   paragraph separator. (The iteration over multiple paragraphs
-	   is left as excercise for the reader).
+	   is left as exercise for the reader).
 
 	4. Assign directional types again, but now assign specific types
 	   to whitespace characters.
@@ -152,7 +152,7 @@
 	reference implementation. Version 25 and its updates fix various
 	minor issues with the scaffolding used for demonstrating the
 	algorithm using pseudo-alphabets from the command line or dialog
-	box. No changes to the implementation of the actual bidi algrithm
+	box. No changes to the implementation of the actual bidi algorithm
 	are made in any of the minor updates to version 25. Version 26
 	also makes no change to the actual algorithm but was verified
 	against the official BidiTest.txt file for Unicode 5.2.0.
@@ -535,7 +535,7 @@ int fz_bidi_resolve_explicit(fz_bidi_level level, fz_bidi_chartype dir, fz_bidi_
 enum bidi_state // possible states
 {
 	xa,	//	arabic letter
-	xr,	//	right leter
+	xr,	//	right letter
 	xl,	//	left letter
 
 	ao,	//	arabic lett. foll by ON
@@ -625,7 +625,7 @@ const fz_bidi_action action_weak[][10] =
 {
 	//   N,.. L,   R,  AN,  EN,  AL, NSM,  CS,..ES,  ET,
 /*xa*/ { xxx, xxx, xxx, xxx, xxA, xxR, xxR, xxN, xxN, xxN }, /* arabic letter			*/
-/*xr*/ { xxx, xxx, xxx, xxx, xxE, xxR, xxR, xxN, xxN, xIx }, /* right leter			 */
+/*xr*/ { xxx, xxx, xxx, xxx, xxE, xxR, xxR, xxN, xxN, xIx }, /* right letter			 */
 /*xl*/ { xxx, xxx, xxx, xxx, xxL, xxR, xxL, xxN, xxN, xIx }, /* left letter			 */
 
 /*ao*/ { xxx, xxx, xxx, xxx, xxA, xxR, xxN, xxN, xxN, xxN }, /* arabic lett. foll by ON	*/
@@ -667,7 +667,7 @@ fz_bidi_chartype get_resolved_type(fz_bidi_action action)
 
 	States can be of two kinds:
 	 - Immediate Resolution State, where each input token
-	   is resolved as soon as it is seen. These states havve
+	   is resolved as soon as it is seen. These states have
 	   only single action codes (xxN) or the no-op (xxx)
 	   for static input tokens.
 	 - Deferred Resolution State, where input tokens either
@@ -796,7 +796,7 @@ void fz_bidi_resolve_weak(fz_context *ctx, fz_bidi_level baselevel, fz_bidi_char
 		set_deferred_run(pcls, cch_run, ich, cls_run);
 }
 
-// === RESOLVE NEUTAL TYPES ==============================================
+// === RESOLVE NEUTRAL TYPES ==============================================
 
 // action values
 enum neutral_action
@@ -838,7 +838,7 @@ enum neutral_state
 	rn,	// N preceded by right
 	ln,	// N preceded by left
 	a,	// AN preceded by left (the abbrev 'la' is used up above)
-	na	// N preceeded by a
+	na	// N preceded by a
 } ;
 
 /*------------------------------------------------------------------------
@@ -958,7 +958,7 @@ void fz_bidi_resolve_neutrals(fz_bidi_level baselevel, fz_bidi_chartype *pcls, c
 		set_deferred_run(pcls, cch_run, ich, cls_run);
 }
 
-// === RESOLVE IMPLLICIT =================================================
+// === RESOLVE IMPLICITLY =================================================
 
 /*------------------------------------------------------------------------
 	Function: resolveImplicit

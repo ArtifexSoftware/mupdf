@@ -1,7 +1,7 @@
 #include "mupdf/fitz.h"
 
 /*
-	Convert IEEE single precison numbers into decimal ASCII strings, while
+	Convert IEEE single precision numbers into decimal ASCII strings, while
 	satisfying the following two properties:
 	1) Calling strtof or '(float) strtod' on the result must produce the
 	original float, independent of the rounding mode used by strtof/strtod.
@@ -166,7 +166,7 @@ static int
 k_comp(int n)
 {
 	/* Avoid ceil and floating point multiplication for better
-	 * performace and portability. Instead use the approximation
+	 * performance and portability. Instead use the approximation
 	 * log10(2) ~ 1233/(2^12). Tests show that this gives the correct
 	 * result for all values of n in the range -500..500. */
 	int tmp = n + DIY_SIGNIFICAND_SIZE - 1;

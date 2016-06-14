@@ -67,7 +67,7 @@ enum {
 
 		gotor.rb: The bottom right corner of the destination bounding
 		box. If fz_link_flag_r_is_zoom is set, then the r figure
-		should actually be interpretted as a zoom ratio.
+		should actually be interpreted as a zoom ratio.
 
 		gotor.file_spec: If set, this destination should cause a new
 		file to be opened; this field holds a pointer to a remote

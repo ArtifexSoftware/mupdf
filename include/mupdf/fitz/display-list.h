@@ -17,7 +17,7 @@
 	structure in multi-threading where one thread parses the page
 	and another renders pages.
 
-	Create a displaylist with fz_new_display_list, hand it over to
+	Create a display list with fz_new_display_list, hand it over to
 	fz_new_list_device to have it populated, and later replay the
 	list (once or many times) by calling fz_run_display_list. When
 	the list is no longer needed drop it with fz_drop_display_list.
@@ -36,7 +36,7 @@ fz_display_list *fz_new_display_list(fz_context *ctx);
 	fz_new_list_device: Create a rendering device for a display list.
 
 	When the device is rendering a page it will populate the
-	display list with drawing commsnds (text, images, etc.). The
+	display list with drawing commands (text, images, etc.). The
 	display list can later be reused to render a page many times
 	without having to re-interpret the page from the document file
 	for each rendering. Once the device is no longer needed, free

@@ -132,7 +132,7 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *an
 fz_annot_type pdf_annot_obj_type(fz_context *ctx, pdf_obj *obj);
 
 /*
-	pdf_poll_changed_annot: enumerate the changed annotations recoreded
+	pdf_poll_changed_annot: enumerate the changed annotations recorded
 	by a call to pdf_update_page.
 */
 pdf_annot *pdf_poll_changed_annot(fz_context *ctx, pdf_document *idoc, pdf_page *page);

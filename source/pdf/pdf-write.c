@@ -1197,7 +1197,7 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		/* FIXME: Do we have named destinations? Do a E entry */
 		/* FIXME: Do we have interactive forms? Do a V entry */
 		/* FIXME: Do we have document information? Do an I entry */
-		/* FIXME: Do we have logical structure heirarchy? Do a C entry */
+		/* FIXME: Do we have logical structure hierarchy? Do a C entry */
 		/* FIXME: Do L, Page Label hint table */
 		pdf_dict_put_drop(ctx, hint_obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
 		opts->hints_length = pdf_new_int(ctx, doc, INT_MIN);

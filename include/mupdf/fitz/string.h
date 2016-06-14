@@ -9,7 +9,7 @@
 
 /*
 	fz_strsep: Given a pointer to a C string (or a pointer to NULL) break
-	it at the first occurence of a delimiter char (from a given set).
+	it at the first occurrence of a delimiter char (from a given set).
 
 	stringp: Pointer to a C string pointer (or NULL). Updated on exit to
 	point to the first char of the string after the delimiter that was

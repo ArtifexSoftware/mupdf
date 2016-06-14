@@ -386,7 +386,7 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font)
 	if (font->t3procs)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support type 3 fonts");
 	if (font->ft_substitute)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support substitute fnots");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support substitute fonts");
 	if (!pdf_font_writing_supported(font))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support font types found in this file");
 
