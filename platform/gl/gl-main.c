@@ -943,7 +943,7 @@ static void do_info(void)
 	int x = canvas_x + 4 * ui.lineheight;
 	int y = canvas_y + 4 * ui.lineheight;
 	int w = canvas_w - 8 * ui.lineheight;
-	int h = 7 * ui.lineheight;
+	int h = 9 * ui.lineheight;
 
 	glBegin(GL_TRIANGLE_STRIP);
 	{
@@ -969,6 +969,10 @@ static void do_info(void)
 		y = do_info_line(x, y, "Encryption", buf);
 	if (pdf_specifics(ctx, doc))
 	{
+		if (fz_lookup_metadata(ctx, doc, "info:Creator", buf, sizeof buf) > 0)
+			y = do_info_line(x, y, "PDF Creator", buf);
+		if (fz_lookup_metadata(ctx, doc, "info:Producer", buf, sizeof buf) > 0)
+			y = do_info_line(x, y, "PDF Producer", buf);
 		buf[0] = 0;
 		if (fz_has_permission(ctx, doc, FZ_PERMISSION_PRINT))
 			fz_strlcat(buf, "print, ", sizeof buf);
