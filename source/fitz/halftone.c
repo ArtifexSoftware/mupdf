@@ -511,7 +511,7 @@ static int gcd(int u, int v)
 	while (1);
 }
 
-fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band, int bandheight)
+fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start, int bandheight)
 {
 	fz_bitmap *out = NULL;
 	unsigned char *ht_line = NULL;
@@ -528,7 +528,6 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	fz_var(ht_line);
 	fz_var(out);
 
-	band *= bandheight;
 	n = pix->n;
 
 	switch(n)
@@ -572,7 +571,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 
 		h = pix->h;
 		x = pix->x;
-		y = pix->y + band;
+		y = pix->y + band_start;
 		w = pix->w;
 		ostride = out->stride;
 		pstride = pix->stride;

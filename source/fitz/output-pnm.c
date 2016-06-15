@@ -20,12 +20,11 @@ fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 }
 
 void
-fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band, int bandheight, unsigned char *p)
+fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band_start, int bandheight, unsigned char *p)
 {
 	char buffer[2*3*4*5*6]; /* Buffer must be a multiple of 2 and 3 at least. */
 	int len;
-	int start = band * bandheight;
-	int end = start + bandheight;
+	int end = band_start + bandheight;
 
 	if (n-alpha != 1 && n-alpha != 3)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
@@ -35,7 +34,7 @@ fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alph
 
 	if (end > h)
 		end = h;
-	end -= start;
+	end -= band_start;
 
 	/* Tests show that writing single bytes out at a time
 	 * is appallingly slow. We get a huge improvement
@@ -135,18 +134,17 @@ fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 }
 
 void
-fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stride, int band, int bandheight, unsigned char *sp)
+fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stride, int band_start, int bandheight, unsigned char *sp)
 {
 	int y;
-	int start = band * bandheight;
-	int end = start + bandheight;
+	int end = band_start + bandheight;
 
 	if (!out)
 		return;
 
 	if (end > h)
 		end = h;
-	end -= start;
+	end -= band_start;
 
 	for (y = 0; y < end; y++)
 	{

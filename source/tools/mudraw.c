@@ -532,7 +532,7 @@ file_level_trailers(fz_context *ctx)
 	fz_drop_stext_sheet(ctx, sheet);
 }
 
-static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band, fz_pixmap *pix, fz_bitmap **bit)
+static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band_start, fz_pixmap *pix, fz_bitmap **bit)
 {
 	fz_device *dev = NULL;
 
@@ -566,7 +566,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 			fz_unmultiply_pixmap(ctx, pix);
 
 		if ((output_format == OUT_PCL && out_cs == CS_MONO) || (output_format == OUT_PBM) || (output_format == OUT_PKM))
-			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band, bandheight);
+			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band_start, bandheight);
 	}
 	fz_catch(ctx)
 	{
@@ -903,7 +903,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					cookie->errors += w->cookie.errors;
 				}
 				else
-					drawband(ctx, page, list, &ctm, &tbounds, cookie, band, pix, &bit);
+					drawband(ctx, page, list, &ctm, &tbounds, cookie, band * bandheight, pix, &bit);
 
 				if (output)
 				{
@@ -1303,7 +1303,7 @@ static THREAD_RETURN_TYPE worker_thread(void *arg)
 		SEMAPHORE_WAIT(me->start);
 		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, me->band));
 		if (me->band >= 0)
-			drawband(me->ctx, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band, me->pix, &me->bit);
+			drawband(me->ctx, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band * bandheight, me->pix, &me->bit);
 		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, me->band));
 		SEMAPHORE_TRIGGER(me->stop);
 	}

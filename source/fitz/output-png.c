@@ -130,7 +130,7 @@ fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 }
 
 void
-fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, int stride, int band, int bandheight, unsigned char *sp)
+fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, int stride, int band_start, int bandheight, unsigned char *sp)
 {
 	unsigned char *dp;
 	int y, x, k, err, finalband;
@@ -144,10 +144,9 @@ fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, i
 	n = poc->n;
 	alpha = poc->alpha;
 
-	band *= bandheight;
-	finalband = (band+bandheight >= h);
+	finalband = (band_start+bandheight >= h);
 	if (finalband)
-		bandheight = h - band;
+		bandheight = h - band_start;
 
 	if (poc->udata == NULL)
 	{
