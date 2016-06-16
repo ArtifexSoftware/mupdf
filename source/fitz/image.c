@@ -1057,8 +1057,8 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 	fz_pre_scale(&ctm, w, h);
 
 	fz_clear_pixmap(ctx, pix); /* clear to transparent */
-	dev = fz_new_draw_device(ctx, pix);
-	fz_run_display_list(ctx, image->list, dev, &ctm, NULL, NULL);
+	dev = fz_new_draw_device(ctx, &ctm, pix);
+	fz_run_display_list(ctx, image->list, dev, &fz_identity, NULL, NULL);
 	fz_drop_device(ctx, dev);
 
 	/* Never do more subsampling, cos we've already given them the right size */

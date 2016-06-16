@@ -306,16 +306,6 @@ static void ffi_pushmatrix(js_State *J, fz_matrix matrix)
 	js_pushnumber(J, matrix.f); js_setindex(J, -2, 5);
 }
 
-static void ffi_setmatrix(js_State *J, int idx, fz_matrix matrix)
-{
-	js_pushnumber(J, matrix.a); js_setindex(J, idx, 0);
-	js_pushnumber(J, matrix.b); js_setindex(J, idx, 1);
-	js_pushnumber(J, matrix.c); js_setindex(J, idx, 2);
-	js_pushnumber(J, matrix.d); js_setindex(J, idx, 3);
-	js_pushnumber(J, matrix.e); js_setindex(J, idx, 4);
-	js_pushnumber(J, matrix.f); js_setindex(J, idx, 5);
-}
-
 static fz_rect ffi_torect(js_State *J, int idx)
 {
 	fz_rect rect;
@@ -2117,11 +2107,12 @@ static void ffi_new_DisplayListDevice(js_State *J)
 static void ffi_new_DrawDevice(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_pixmap *pixmap = js_touserdata(J, 1, "fz_pixmap");
+	fz_matrix transform = ffi_tomatrix(J, 1);
+	fz_pixmap *pixmap = js_touserdata(J, 2, "fz_pixmap");
 	fz_device *device;
 
 	fz_try(ctx)
-		device = fz_new_draw_device(ctx, pixmap);
+		device = fz_new_draw_device(ctx, &transform, pixmap);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2151,15 +2142,12 @@ static void ffi_DocumentWriter_beginPage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_document_writer *wri = js_touserdata(J, 0, "fz_document_writer");
 	fz_rect mediabox = ffi_torect(J, 1);
-	fz_matrix ctm = fz_identity;
 	fz_device *device;
 
 	fz_try(ctx)
-		device = fz_begin_page(ctx, wri, &mediabox, &ctm);
+		device = fz_begin_page(ctx, wri, &mediabox);
 	fz_catch(ctx)
 		rethrow(J);
-
-	ffi_setmatrix(J, 2, ctm);
 
 	js_getregistry(J, "fz_device");
 	js_newuserdata(J, "fz_device", fz_keep_device(ctx, device), ffi_gc_fz_device);
@@ -3253,7 +3241,7 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
-		jsB_propfun(J, "DocumentWriter.beginPage", ffi_DocumentWriter_beginPage, 2);
+		jsB_propfun(J, "DocumentWriter.beginPage", ffi_DocumentWriter_beginPage, 1);
 		jsB_propfun(J, "DocumentWriter.endPage", ffi_DocumentWriter_endPage, 1);
 		jsB_propfun(J, "DocumentWriter.close", ffi_DocumentWriter_close, 1);
 	}
@@ -3335,7 +3323,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);
 		jsB_propcon(J, "fz_path", "Path", ffi_new_Path, 0);
 		jsB_propcon(J, "fz_display_list", "DisplayList", ffi_new_DisplayList, 0);
-		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 1);
+		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 2);
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
 

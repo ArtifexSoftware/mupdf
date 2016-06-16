@@ -1248,7 +1248,7 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 	glyph = fz_new_pixmap_with_bbox(ctx, model, &bbox, 1);
 	fz_clear_pixmap(ctx, glyph);
 
-	dev = fz_new_draw_device_type3(ctx, glyph);
+	dev = fz_new_draw_device_type3(ctx, NULL, glyph);
 	fz_try(ctx)
 	{
 		fz_run_t3_glyph(ctx, font, gid, trm, dev);

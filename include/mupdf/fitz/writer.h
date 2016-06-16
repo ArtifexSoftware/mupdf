@@ -11,7 +11,7 @@ typedef struct fz_document_writer_s fz_document_writer;
 
 struct fz_document_writer_s
 {
-	fz_device *(*begin_page)(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox, fz_matrix *ctm);
+	fz_device *(*begin_page)(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox);
 	void (*end_page)(fz_context *ctx, fz_document_writer *wri, fz_device *dev);
 	void (*close)(fz_context *ctx, fz_document_writer *wri);
 };
@@ -20,7 +20,7 @@ int fz_has_option(fz_context *ctx, const char *opts, const char *key, const char
 
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
 
-fz_device *fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox, fz_matrix *ctm);
+fz_device *fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox);
 void fz_end_page(fz_context *ctx, fz_document_writer *wri, fz_device *dev);
 void fz_close_document_writer(fz_context *ctx, fz_document_writer *wri);
 void fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri);

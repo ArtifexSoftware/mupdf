@@ -62,8 +62,8 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 
 	fz_try(ctx)
 	{
-		dev = fz_new_draw_device(ctx, pix);
-		fz_run_display_list(ctx, list, dev, ctm, NULL, NULL);
+		dev = fz_new_draw_device(ctx, ctm, pix);
+		fz_run_display_list(ctx, list, dev, &fz_identity, NULL, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -95,8 +95,8 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 
 	fz_try(ctx)
 	{
-		dev = fz_new_draw_device(ctx, pix);
-		fz_run_page_contents(ctx, page, dev, ctm, NULL);
+		dev = fz_new_draw_device(ctx, ctm, pix);
+		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -128,8 +128,8 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 
 	fz_try(ctx)
 	{
-		dev = fz_new_draw_device(ctx, pix);
-		fz_run_annot(ctx, annot, dev, ctm, NULL);
+		dev = fz_new_draw_device(ctx, ctm, pix);
+		fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -161,8 +161,8 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 
 	fz_try(ctx)
 	{
-		dev = fz_new_draw_device(ctx, pix);
-		fz_run_page(ctx, page, dev, ctm, NULL);
+		dev = fz_new_draw_device(ctx, ctm, pix);
+		fz_run_page(ctx, page, dev, &fz_identity, NULL);
 	}
 	fz_always(ctx)
 	{

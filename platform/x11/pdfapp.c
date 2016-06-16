@@ -793,7 +793,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 		fz_transform_rect(fz_bound_annot(app->ctx, annot, &bounds), &ctm);
 		fz_rect_from_irect(&bounds, fz_round_rect(&ibounds, &bounds));
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
-		idev = fz_new_draw_device_with_bbox(app->ctx, app->image, &ibounds);
+		idev = fz_new_draw_device_with_bbox(app->ctx, NULL, app->image, &ibounds);
 		pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
 		fz_drop_device(app->ctx, idev);
 	}
@@ -895,7 +895,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		fz_clear_pixmap_with_value(app->ctx, app->image, 255);
 		if (app->page_list || app->annotations_list)
 		{
-			idev = fz_new_draw_device(app->ctx, app->image);
+			idev = fz_new_draw_device(app->ctx, NULL, app->image);
 			pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
 			fz_drop_device(app->ctx, idev);
 		}

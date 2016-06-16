@@ -81,9 +81,9 @@ fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 }
 
 fz_device *
-fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox, fz_matrix *ctm)
+fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox)
 {
-	return wri->begin_page(ctx, wri, mediabox, ctm);
+	return wri->begin_page(ctx, wri, mediabox);
 }
 
 void

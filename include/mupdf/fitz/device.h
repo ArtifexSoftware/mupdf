@@ -338,8 +338,10 @@ enum
 	draw device, see fz_clear_pixmap* for how to clear it prior to
 	calling fz_new_draw_device. Free the device by calling
 	fz_drop_device.
+
+	transform: Transform from user space in points to device space in pixels.
 */
-fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
+fz_device *fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest);
 
 /*
 	fz_new_draw_device_with_bbox: Create a device to draw on a pixmap.
@@ -350,12 +352,14 @@ fz_device *fz_new_draw_device(fz_context *ctx, fz_pixmap *dest);
 	calling fz_new_draw_device. Free the device by calling
 	fz_drop_device.
 
+	transform: Transform from user space in points to device space in pixels.
+
 	clip: Bounding box to restrict any marking operations of the
 	draw device.
 */
-fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const fz_irect *clip);
+fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, const fz_irect *clip);
 
-fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest);
+fz_device *fz_new_draw_device_type3(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest);
 
 /*
 	struct fz_draw_options: Options for creating a pixmap and draw device.
@@ -382,10 +386,10 @@ fz_draw_options *fz_parse_draw_options(fz_context *ctx, fz_draw_options *options
 /*
 	fz_new_draw_device_with_options: Create a new pixmap and draw device, using the specified options.
 
-	mediabox: An in parameter containing the size of the page.
+	options: Options to configure the draw device, and choose the resolution and colorspace.
+	mediabox: The bounds of the page in points.
 	pixmap: An out parameter containing the newly created pixmap.
-	transform: An out parameter containing the transform to be used when running the page.
 */
-fz_device *fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, const fz_rect *mediabox, fz_matrix *transform, fz_pixmap **pixmap);
+fz_device *fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *options, const fz_rect *mediabox, fz_pixmap **pixmap);
 
 #endif

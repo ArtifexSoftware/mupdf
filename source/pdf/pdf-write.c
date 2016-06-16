@@ -3204,11 +3204,10 @@ struct pdf_writer_s
 };
 
 static fz_device *
-pdf_writer_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox, fz_matrix *ctm)
+pdf_writer_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
 {
 	pdf_writer *wri = (pdf_writer*)wri_;
 	wri->mediabox = *mediabox;
-	*ctm = fz_identity;
 	return pdf_page_write(ctx, wri->pdf, &wri->mediabox, &wri->resources, &wri->contents);
 }
 

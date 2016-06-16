@@ -16,10 +16,10 @@ struct fz_cbz_writer_s
 const char *fz_cbz_write_options_usage = "";
 
 static fz_device *
-cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox, fz_matrix *transform)
+cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
 {
 	fz_cbz_writer *wri = (fz_cbz_writer*)wri_;
-	return fz_new_draw_device_with_options(ctx, &wri->options, mediabox, transform, &wri->pixmap);
+	return fz_new_draw_device_with_options(ctx, &wri->options, mediabox, &wri->pixmap);
 }
 
 static void

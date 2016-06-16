@@ -54,15 +54,14 @@ static void usage(void)
 
 static void runpage(int number)
 {
-	fz_matrix ctm;
 	fz_rect mediabox;
 	fz_page *page;
 	fz_device *dev;
 
 	page = fz_load_page(ctx, doc, number - 1);
 	fz_bound_page(ctx, page, &mediabox);
-	dev = fz_begin_page(ctx, out, &mediabox, &ctm);
-	fz_run_page(ctx, page, dev, &ctm, NULL);
+	dev = fz_begin_page(ctx, out, &mediabox);
+	fz_run_page(ctx, page, dev, &fz_identity, NULL);
 	fz_end_page(ctx, out, dev);
 	fz_drop_page(ctx, page);
 }

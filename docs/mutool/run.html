@@ -120,6 +120,9 @@ Matrices and Rectangles
 </h2>
 
 <p>
+All dimensions are in points unless otherwise specified.
+
+<p>
 Matrices are simply 6-element arrays representing a 3-by-3 transformation matrix as
 
 <pre>
@@ -183,6 +186,7 @@ MuPDF can open many document types (PDF, XPS, CBZ, EPUB, FB2 and a handful of im
 <dt>Page#run(device, transform)
 <dd>Calls device functions for all the contents on the page, using the specified transform matrix.
 The device can be one of the built-in devices or a JavaScript object with methods for the device calls.
+The transform maps from user space points to device space pixels.
 <dt>Page#toPixmap(transform, colorspace)
 <dd>Render the page into a Pixmap, using the transform and colorspace.
 <dt>Page#toDisplayList()
@@ -251,7 +255,7 @@ DrawDevice
 The DrawDevice can be used to render to a Pixmap; either by running a Page with it or by calling its methods directly.
 
 <dl>
-<dt>new DrawDevice(pixmap)
+<dt>new DrawDevice(transform, pixmap)
 <dd>Create a device for drawing into a pixmap. The pixmap bounds used should match the transformed page bounds,
 or you can adjust them to only draw a part of the page.
 </dl>
@@ -481,10 +485,8 @@ Document writer objects are used to create new documents in several formats.
 <dd>Create a new document writer to create a document with the specified format and output options.
 If format is null it is inferred from the filename suffix. The options argument is a comma separated list
 of flags and key-value pairs. See below for more details.
-<dt>DocumentWriter#beginPage(mediabox, transform)
+<dt>DocumentWriter#beginPage(mediabox)
 <dd>Begin rendering a new page. Returns a Device that can be used to render the page graphics.
-The transform argument must be an empty array which is set to the transform matrix to be
-used with the device functions.
 <dt>DocumentWriter#endPage(device)
 <dd>Finish the page rendering.
 The argument must be the same device object that was returned by the beginPage method.
