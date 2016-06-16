@@ -406,7 +406,7 @@ struct pdf_write_options_s
 		z: deflate
 		s: sanitize content streams
 */
-void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);
+pdf_write_options *pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);
 
 /*
 	pdf_has_unsaved_sigs: Returns true if there are digital signatures waiting to

@@ -2755,7 +2755,7 @@ static int opteq(const char *a, const char *b)
 
 const char *fz_pdf_write_options_usage =
 	"PDF output options:\n"
-	"\tdecompress: decompress all streams (except when compress-fonts or compress-images)\n"
+	"\tdecompress: decompress all streams (except compress-fonts/images)\n"
 	"\tcompress: compress all streams\n"
 	"\tcompress-fonts: compress embedded fonts\n"
 	"\tcompress-images: compress images\n"
@@ -2768,7 +2768,8 @@ const char *fz_pdf_write_options_usage =
 	"\tor garbage=deduplicate: ... and remove duplicate objects\n"
 	;
 
-void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args)
+pdf_write_options *
+pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args)
 {
 	const char *val;
 
@@ -2801,6 +2802,8 @@ void pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const cha
 		else
 			opts->do_garbage = atoi(val);
 	}
+
+	return opts;
 }
 
 int pdf_can_be_saved_incrementally(fz_context *ctx, pdf_document *doc)
