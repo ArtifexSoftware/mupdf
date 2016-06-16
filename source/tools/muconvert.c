@@ -43,9 +43,10 @@ static void usage(void)
 		"\tpages\tcomma separated list of page numbers and ranges, where N is the last page\n"
 		"\n"
 		);
-	fprintf(stderr, "%s\n", fz_cbz_write_options_usage);
+	fprintf(stderr, "%s", fz_draw_options_usage);
+	fprintf(stderr, "%s", fz_cbz_write_options_usage);
 #if FZ_ENABLE_PDF
-	fprintf(stderr, "%s\n", fz_pdf_write_options_usage);
+	fprintf(stderr, "%s", fz_pdf_write_options_usage);
 #endif
 	exit(1);
 }

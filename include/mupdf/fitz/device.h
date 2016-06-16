@@ -357,4 +357,35 @@ fz_device *fz_new_draw_device_with_bbox(fz_context *ctx, fz_pixmap *dest, const 
 
 fz_device *fz_new_draw_device_type3(fz_context *ctx, fz_pixmap *dest);
 
+/*
+	struct fz_draw_options: Options for creating a pixmap and draw device.
+*/
+typedef struct fz_draw_options_s fz_draw_options;
+
+struct fz_draw_options_s
+{
+	int rotate;
+	int resolution;
+	int width;
+	int height;
+	fz_colorspace *colorspace;
+	int alpha;
+};
+
+extern const char *fz_draw_options_usage;
+
+/*
+	fz_parse_draw_options: Parse draw device options from a comma separated key-value string.
+*/
+fz_draw_options *fz_parse_draw_options(fz_context *ctx, fz_draw_options *options, const char *string);
+
+/*
+	fz_new_draw_device_with_options: Create a new pixmap and draw device, using the specified options.
+
+	mediabox: An in parameter containing the size of the page.
+	pixmap: An out parameter containing the newly created pixmap.
+	transform: An out parameter containing the transform to be used when running the page.
+*/
+fz_device *fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, const fz_rect *mediabox, fz_matrix *transform, fz_pixmap **pixmap);
+
 #endif
