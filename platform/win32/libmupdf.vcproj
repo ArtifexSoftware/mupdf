@@ -995,11 +995,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\output-png.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\fitz\output-pnm.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\output-ps.c"
 				>
 			</File>
 			<File
 				RelativePath="..\..\source\fitz\output-pwg.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\fitz\output-tga.c"
 				>
 			</File>
 			<File
