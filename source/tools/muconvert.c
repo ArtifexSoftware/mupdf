@@ -13,7 +13,7 @@ static float layout_em = 12;
 static char *layout_css = NULL;
 
 /* output options */
-static const char *output = "out.pdf";
+static const char *output = NULL;
 static const char *format = NULL;
 static const char *options = "";
 
@@ -37,16 +37,17 @@ static void usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\tcbz, pdf\n"
+		"\t\tcbz, pdf, png\n"
 		"\t-O -\tcomma separated list of options for output format\n"
 		"\n"
-		"\tpages\tcomma separated list of page numbers and ranges, where N is the last page\n"
+		"\tpages\tcomma separated list of page ranges (N=last page)\n"
 		"\n"
 		);
-	fprintf(stderr, "%s", fz_draw_options_usage);
-	fprintf(stderr, "%s", fz_cbz_write_options_usage);
+	fputs(fz_draw_options_usage, stderr);
+	fputs(fz_cbz_write_options_usage, stderr);
+	fputs(fz_png_write_options_usage, stderr);
 #if FZ_ENABLE_PDF
-	fprintf(stderr, "%s", fz_pdf_write_options_usage);
+	fputs(fz_pdf_write_options_usage, stderr);
 #endif
 	exit(1);
 }
@@ -104,7 +105,7 @@ int muconvert_main(int argc, char **argv)
 		}
 	}
 
-	if (fz_optind == argc)
+	if (fz_optind == argc || (!format && !output))
 		usage();
 
 	/* Create a context to hold the exception stack and various caches. */
@@ -140,7 +141,7 @@ int muconvert_main(int argc, char **argv)
 		out = fz_new_document_writer(ctx, output, format, options);
 	fz_catch(ctx)
 	{
-		fprintf(stderr, "cannot open document: %s\n", fz_caught_message(ctx));
+		fprintf(stderr, "cannot create document: %s\n", fz_caught_message(ctx));
 		fz_drop_context(ctx);
 		return EXIT_FAILURE;
 	}

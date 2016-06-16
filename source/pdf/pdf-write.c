@@ -2766,7 +2766,7 @@ const char *fz_pdf_write_options_usage =
 	"\tgarbage: garbage collect unused objects\n"
 	"\tor garbage=compact: ... and compact cross reference table\n"
 	"\tor garbage=deduplicate: ... and remove duplicate objects\n"
-	;
+	"\n";
 
 pdf_write_options *
 pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args)
@@ -3264,7 +3264,8 @@ fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options)
 
 	fz_try(ctx)
 	{
-		wri->filename = fz_strdup(ctx, path);
+		pdf_parse_write_options(ctx, &wri->opts, options);
+		wri->filename = fz_strdup(ctx, path ? path : "out.pdf");
 		wri->pdf = pdf_create_document(ctx);
 	}
 	fz_catch(ctx)
@@ -3274,8 +3275,6 @@ fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options)
 		fz_free(ctx, wri);
 		fz_rethrow(ctx);
 	}
-
-	pdf_parse_write_options(ctx, &wri->opts, options);
 
 	return (fz_document_writer*)wri;
 }

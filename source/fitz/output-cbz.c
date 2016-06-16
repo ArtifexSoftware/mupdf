@@ -7,10 +7,10 @@ typedef struct fz_cbz_writer_s fz_cbz_writer;
 struct fz_cbz_writer_s
 {
 	fz_document_writer super;
-	fz_zip_writer *zip;
 	fz_draw_options options;
 	fz_pixmap *pixmap;
 	int count;
+	fz_zip_writer *zip;
 };
 
 const char *fz_cbz_write_options_usage = "";
@@ -72,7 +72,7 @@ fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 	fz_try(ctx)
 	{
 		fz_parse_draw_options(ctx, &wri->options, options);
-		wri->zip = fz_new_zip_writer(ctx, path);
+		wri->zip = fz_new_zip_writer(ctx, path ? path : "out.cbz");
 	}
 	fz_catch(ctx)
 	{

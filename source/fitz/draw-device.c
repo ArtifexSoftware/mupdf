@@ -9,7 +9,7 @@ const char *fz_draw_options_usage =
 	"\theight=N: render pages to fit N pixels tall (ignore resolution option)\n"
 	"\tcolorspace=(gray|rgb|cmyk): render using specified colorspace\n"
 	"\talpha: render pages with alpha channel and transparent background\n"
-	;
+	"\n";
 
 static int opteq(const char *a, const char *b)
 {
