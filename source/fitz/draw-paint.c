@@ -320,6 +320,7 @@ template_solid_color_N_sa(byte * restrict dp, int n, int w, const byte * restric
 	while (--w);
 }
 
+#if FZ_PLOTTERS_N
 static inline void
 template_solid_color_N_general(byte * restrict dp, int n, int w, const byte * restrict color, int da, int sa)
 {
@@ -355,6 +356,7 @@ template_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 		while (--w);
 	}
 }
+#endif
 
 #if FZ_PLOTTERS_G
 static void paint_solid_color_1_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da)
@@ -1436,6 +1438,7 @@ template_span_4_with_alpha_general(byte * restrict dp, int da, const byte * rest
 	while (--w);
 }
 
+#if FZ_PLOTTERS_N
 static inline void
 template_span_N_with_alpha_general(byte * restrict dp, int da, const byte * restrict sp, int sa, int n1, int w, int alpha)
 {
@@ -1460,6 +1463,7 @@ template_span_N_with_alpha_general(byte * restrict dp, int da, const byte * rest
 	}
 	while (--w);
 }
+#endif
 
 /* Blend source over destination */
 
@@ -1595,6 +1599,7 @@ template_span_4_general(byte * restrict dp, int da, const byte * restrict sp, in
 	while (--w);
 }
 
+#if FZ_PLOTTERS_N
 static inline void
 template_span_N_general(byte * restrict dp, int da, const byte * restrict sp, int sa, int n1, int w)
 {
@@ -1640,6 +1645,7 @@ template_span_N_general(byte * restrict dp, int da, const byte * restrict sp, in
 	}
 	while (--w);
 }
+#endif
 
 static void
 paint_span_0_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
