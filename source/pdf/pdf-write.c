@@ -2745,7 +2745,6 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	pdf_drop_obj(ctx, opts->hints_s);
 	pdf_drop_obj(ctx, opts->hints_length);
 	page_objects_list_destroy(ctx, opts->page_object_lists);
-	fz_drop_output(ctx, opts->out);
 }
 
 static int opteq(const char *a, const char *b)
