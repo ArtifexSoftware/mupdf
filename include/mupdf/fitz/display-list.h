@@ -29,8 +29,10 @@ typedef struct fz_display_list_s fz_display_list;
 
 	A display list contains drawing commands (text, images, etc.).
 	Use fz_new_list_device for populating the list.
+
+	mediabox: Bounds of the page (in points) represented by the display list.
 */
-fz_display_list *fz_new_display_list(fz_context *ctx);
+fz_display_list *fz_new_display_list(fz_context *ctx, const fz_rect *mediabox);
 
 /*
 	fz_new_list_device: Create a rendering device for a display list.
@@ -89,7 +91,7 @@ fz_display_list *fz_keep_display_list(fz_context *ctx, fz_display_list *list);
 void fz_drop_display_list(fz_context *ctx, fz_display_list *list);
 
 /*
-	fz_bound_display_list: Return the bounding box of the pages recorded in a display list.
+	fz_bound_display_list: Return the bounding box of the page recorded in a display list.
 */
 fz_rect *fz_bound_display_list(fz_context *ctx, fz_display_list *list, fz_rect *bounds);
 

@@ -1352,12 +1352,12 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 }
 
 fz_display_list *
-fz_new_display_list(fz_context *ctx)
+fz_new_display_list(fz_context *ctx, const fz_rect *mediabox)
 {
 	fz_display_list *list = fz_malloc_struct(ctx, fz_display_list);
 	FZ_INIT_STORABLE(list, 1, fz_drop_display_list_imp);
 	list->list = NULL;
-	list->mediabox = fz_empty_rect;
+	list->mediabox = mediabox ? *mediabox : fz_empty_rect;
 	list->max = 0;
 	list->len = 0;
 	return list;

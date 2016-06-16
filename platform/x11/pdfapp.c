@@ -669,7 +669,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	{
 		fz_annot *annot;
 		/* Create display lists */
-		app->page_list = fz_new_display_list(app->ctx);
+		app->page_list = fz_new_display_list(app->ctx, NULL);
 		mdev = fz_new_list_device(app->ctx, app->page_list);
 		if (no_cache)
 			fz_enable_device_hints(app->ctx, mdev, FZ_NO_CACHE);
@@ -677,7 +677,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 		fz_run_page_contents(app->ctx, app->page, mdev, &fz_identity, &cookie);
 		fz_drop_device(app->ctx, mdev);
 		mdev = NULL;
-		app->annotations_list = fz_new_display_list(app->ctx);
+		app->annotations_list = fz_new_display_list(app->ctx, NULL);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
 		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
 			fz_run_annot(app->ctx, annot, mdev, &fz_identity, &cookie);
@@ -737,7 +737,7 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 	{
 		fz_annot *annot;
 		/* Create display list */
-		app->annotations_list = fz_new_display_list(app->ctx);
+		app->annotations_list = fz_new_display_list(app->ctx, NULL);
 		mdev = fz_new_list_device(app->ctx, app->annotations_list);
 		for (annot = fz_first_annot(app->ctx, app->page); annot; annot = fz_next_annot(app->ctx, annot))
 			fz_run_annot(app->ctx, annot, mdev, &fz_identity, &cookie);

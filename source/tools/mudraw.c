@@ -1100,6 +1100,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	int start;
 	fz_cookie cookie = { 0 };
 	int first_page = !output_append;
+	fz_rect bounds;
 
 	fz_var(list);
 	fz_var(dev);
@@ -1116,7 +1117,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	{
 		fz_try(ctx)
 		{
-			list = fz_new_display_list(ctx);
+			list = fz_new_display_list(ctx, fz_bound_page(ctx, page, &bounds));
 			dev = fz_new_list_device(ctx, list);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);

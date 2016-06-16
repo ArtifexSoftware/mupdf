@@ -4,9 +4,10 @@ fz_display_list *
 fz_new_display_list_from_page(fz_context *ctx, fz_page *page)
 {
 	fz_display_list *list;
+	fz_rect bounds;
 	fz_device *dev;
 
-	list = fz_new_display_list(ctx);
+	list = fz_new_display_list(ctx, fz_bound_page(ctx, page, &bounds));
 
 	fz_try(ctx)
 	{

@@ -1131,7 +1131,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 	/* We've not already loaded this one! */
 	assert(font->t3lists[gid] == NULL);
 
-	font->t3lists[gid] = fz_new_display_list(ctx);
+	font->t3lists[gid] = fz_new_display_list(ctx, &font->bbox);
 
 	dev = fz_new_list_device(ctx, font->t3lists[gid]);
 	dev->flags = FZ_DEVFLAG_FILLCOLOR_UNDEFINED |

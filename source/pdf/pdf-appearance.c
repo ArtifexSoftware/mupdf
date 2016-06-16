@@ -1709,7 +1709,7 @@ void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 		for (i = 0; i < n; i++)
 			fz_include_point_in_rect(&rect, &qp[i]);
 
-		strike_list = fz_new_display_list(ctx);
+		strike_list = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, strike_list);
 
 		for (i = 0; i < n; i += 4)
@@ -1831,7 +1831,7 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 
 		n = pdf_array_len(ctx, list);
 
-		strike_list = fz_new_display_list(ctx);
+		strike_list = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, strike_list);
 		path = fz_new_path(ctx);
 		stroke = fz_new_stroke_state(ctx);
@@ -2109,7 +2109,7 @@ void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_an
 		fz_matrix tm;
 
 		pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &rect);
-		dlist = fz_new_display_list(ctx);
+		dlist = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, dlist);
 		stroke = fz_new_stroke_state(ctx);
 		stroke->linewidth = outline_thickness;
@@ -2197,7 +2197,7 @@ void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, p
 
 		text = layout_text(ctx, &font_rec, contents, pos.x, pos.y);
 
-		dlist = fz_new_display_list(ctx);
+		dlist = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, dlist);
 		fz_fill_text(ctx, dev, text, page_ctm, cs, font_rec.da_rec.col, 1.0f);
 
@@ -2370,7 +2370,7 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		fz_matrix logo_tm;
 		unsigned char *bufstr;
 
-		dlist = fz_new_display_list(ctx);
+		dlist = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, dlist);
 
 		path = fz_new_path(ctx);

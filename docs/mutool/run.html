@@ -272,8 +272,8 @@ since then you can avoid reinterpreting the page each time. Be aware though, tha
 will keep all the graphics required in memory, so will increase the amount of memory required.
 
 <dl>
-<dt>new DisplayList()
-<dd>Create an empty display list.
+<dt>new DisplayList(mediabox)
+<dd>Create an empty display list. The mediabox rect has the bounds of the page in points.
 <dt>DisplayList#run(device, transform)
 <dd>Play back the recorded device calls onto the device.
 <dt>DisplayList#toPixmap(transform, colorspace, alpha)

@@ -2035,10 +2035,11 @@ static void ffi_Path_rect(js_State *J)
 static void ffi_new_DisplayList(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
+	fz_rect mediabox = js_iscoercible(J, 1) ? ffi_torect(J, 1) : fz_empty_rect;
 	fz_display_list *list;
 
 	fz_try(ctx)
-		list = fz_new_display_list(ctx);
+		list = fz_new_display_list(ctx, &mediabox);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -3322,7 +3323,7 @@ int murun_main(int argc, char **argv)
 		jsB_propcon(J, "fz_font", "Font", ffi_new_Font, 2);
 		jsB_propcon(J, "fz_text", "Text", ffi_new_Text, 0);
 		jsB_propcon(J, "fz_path", "Path", ffi_new_Path, 0);
-		jsB_propcon(J, "fz_display_list", "DisplayList", ffi_new_DisplayList, 0);
+		jsB_propcon(J, "fz_display_list", "DisplayList", ffi_new_DisplayList, 1);
 		jsB_propcon(J, "fz_device", "DrawDevice", ffi_new_DrawDevice, 2);
 		jsB_propcon(J, "fz_device", "DisplayListDevice", ffi_new_DisplayListDevice, 1);
 		jsB_propcon(J, "fz_document_writer", "DocumentWriter", ffi_new_DocumentWriter, 3);
