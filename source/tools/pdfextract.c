@@ -39,7 +39,7 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
 	if (rgb && pix->colorspace && pix->colorspace != fz_device_rgb(ctx))
 	{
 		fz_irect bbox;
-		converted = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_pixmap_bbox(ctx, pix, &bbox), 1);
+		converted = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_pixmap_bbox(ctx, pix, &bbox), pix->alpha);
 		fz_convert_pixmap(ctx, converted, pix);
 		pix = converted;
 	}
@@ -48,13 +48,13 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
 	{
 		snprintf(buf, sizeof(buf), "%s.png", file);
 		printf("extracting image %s\n", buf);
-		fz_save_pixmap_as_png(ctx, pix, buf, 0);
+		fz_save_pixmap_as_png(ctx, pix, buf);
 	}
 	else
 	{
 		snprintf(buf, sizeof(buf), "%s.pam", file);
 		printf("extracting image %s\n", buf);
-		fz_save_pixmap_as_pam(ctx, pix, buf, 0);
+		fz_save_pixmap_as_pam(ctx, pix, buf);
 	}
 
 	fz_drop_pixmap(ctx, converted);

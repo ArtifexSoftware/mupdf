@@ -1,9 +1,5 @@
 #include "mupdf/fitz.h"
 
-/*
- * Write pixmap to PNG file (with or without alpha channel)
- */
-
 #include <zlib.h>
 
 static inline void big32(unsigned char *buf, unsigned int v)
@@ -27,7 +23,7 @@ static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *
 }
 
 void
-fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savealpha)
+fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_png_output_context *poc = NULL;
@@ -36,7 +32,7 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 
 	fz_try(ctx)
 	{
-		poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, savealpha);
+		poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
 		fz_write_png_band(ctx, out, poc, pixmap->stride, 0, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -51,14 +47,14 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 }
 
 void
-fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, int savealpha)
+fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap)
 {
 	fz_png_output_context *poc;
 
 	if (!out)
 		return;
 
-	poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, savealpha);
+	poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
 
 	fz_try(ctx)
 	{
@@ -84,11 +80,10 @@ struct fz_png_output_context_s
 	int h;
 	int n;
 	int alpha;
-	int savealpha;
 };
 
 fz_png_output_context *
-fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int savealpha)
+fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha)
 {
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	unsigned char head[13];
@@ -110,16 +105,11 @@ fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as png");
 	}
 
-	/* If we have no alpha, save no alpha */
-	if (!alpha)
-		savealpha = 0;
-
 	poc = fz_malloc_struct(ctx, fz_png_output_context);
 	poc->w = w;
 	poc->h = h;
 	poc->n = n;
 	poc->alpha = alpha;
-	poc->savealpha = savealpha;
 
 	big32(head+0, w);
 	big32(head+4, h);
@@ -139,8 +129,8 @@ void
 fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, int stride, int band, int bandheight, unsigned char *sp)
 {
 	unsigned char *dp;
-	int y, x, k, sn, dn, err, finalband;
-	int w, h, n, alpha, savealpha;
+	int y, x, k, err, finalband;
+	int w, h, n, alpha;
 
 	if (!out || !sp || !poc)
 		return;
@@ -149,19 +139,15 @@ fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, i
 	h = poc->h;
 	n = poc->n;
 	alpha = poc->alpha;
-	savealpha = poc->savealpha;
 
 	band *= bandheight;
 	finalband = (band+bandheight >= h);
 	if (finalband)
 		bandheight = h - band;
 
-	sn = n;
-	dn = n - alpha + savealpha;
-
 	if (poc->udata == NULL)
 	{
-		poc->usize = (w * dn + 1) * bandheight;
+		poc->usize = (w * n + 1) * bandheight;
 		/* Sadly the bound returned by compressBound is just for a
 		 * single usize chunk; if you compress a sequence of them
 		 * the buffering can result in you suddenly getting a block
@@ -186,21 +172,21 @@ fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, i
 	}
 
 	dp = poc->udata;
-	stride -= w*sn;
+	stride -= w*n;
 	for (y = 0; y < bandheight; y++)
 	{
 		*dp++ = 1; /* sub prediction filter */
 		for (x = 0; x < w; x++)
 		{
-			for (k = 0; k < dn; k++)
+			for (k = 0; k < n; k++)
 			{
 				if (x == 0)
 					dp[k] = sp[k];
 				else
-					dp[k] = sp[k] - sp[k-sn];
+					dp[k] = sp[k] - sp[k-n];
 			}
-			sp += sn;
-			dp += dn;
+			sp += n;
+			dp += n;
 		}
 		sp += stride;
 	}
@@ -272,7 +258,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 	{
 		if (pix->colorspace && pix->colorspace != fz_device_gray(ctx) && pix->colorspace != fz_device_rgb(ctx))
 		{
-			pix2 = fz_new_pixmap(ctx, fz_device_rgb(ctx), pix->w, pix->h, 1);
+			pix2 = fz_new_pixmap(ctx, fz_device_rgb(ctx), pix->w, pix->h, pix->alpha);
 			fz_convert_pixmap(ctx, pix2, pix);
 			if (drop)
 				fz_drop_pixmap(ctx, pix);
@@ -280,7 +266,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 		}
 		buf = fz_new_buffer(ctx, 1024);
 		out = fz_new_output_with_buffer(ctx, buf);
-		fz_write_pixmap_as_png(ctx, out, pix, 1);
+		fz_write_pixmap_as_png(ctx, out, pix);
 	}
 	fz_always(ctx)
 	{
@@ -298,7 +284,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 fz_buffer *
 fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image)
 {
-	return png_from_pixmap(ctx, fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL), 1);
+	return png_from_pixmap(ctx, fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL), 0);
 }
 
 fz_buffer *

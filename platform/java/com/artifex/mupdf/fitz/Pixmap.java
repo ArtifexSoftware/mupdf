@@ -44,7 +44,7 @@ public class Pixmap
 	public native void clear();
 	public native void clearWithValue(int value);
 
-	public native void saveAsPNG(String filename, boolean saveAlpha);
+	public native void saveAsPNG(String filename);
 
 	public native int getX();
 	public native int getY();

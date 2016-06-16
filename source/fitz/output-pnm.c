@@ -118,41 +118,28 @@ fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
  */
 
 void
-fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int savealpha)
+fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha)
 {
-	int sn = n;
-	int dn = n - alpha;
-	if (!alpha)
-		savealpha = 0;
-
-	dn += savealpha;
-
 	fz_printf(ctx, out, "P7\n");
 	fz_printf(ctx, out, "WIDTH %d\n", w);
 	fz_printf(ctx, out, "HEIGHT %d\n", h);
-	fz_printf(ctx, out, "DEPTH %d\n", dn);
+	fz_printf(ctx, out, "DEPTH %d\n", n);
 	fz_printf(ctx, out, "MAXVAL 255\n");
-	if (dn == 1) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
-	else if (dn == 2 && sn == 2) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
-	else if (dn == 3 && sn == 3) fz_printf(ctx, out, "TUPLTYPE RGB\n");
-	else if (dn == 4 && sn == 3) fz_printf(ctx, out, "TUPLTYPE RGB_ALPHA\n");
-	else if (dn == 4 && sn == 4) fz_printf(ctx, out, "TUPLTYPE CMYK\n");
-	else if (dn == 5 && sn == 4) fz_printf(ctx, out, "TUPLTYPE CMYK_ALPHA\n");
+	if (n == 1) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
+	else if (n == 2) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
+	else if (n == 3) fz_printf(ctx, out, "TUPLTYPE RGB\n");
+	else if (n == 4 && alpha) fz_printf(ctx, out, "TUPLTYPE RGB_ALPHA\n");
+	else if (n == 4 && !alpha) fz_printf(ctx, out, "TUPLTYPE CMYK\n");
+	else if (n == 5) fz_printf(ctx, out, "TUPLTYPE CMYK_ALPHA\n");
 	fz_printf(ctx, out, "ENDHDR\n");
 }
 
 void
-fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band, int bandheight, unsigned char *sp, int savealpha)
+fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stride, int band, int bandheight, unsigned char *sp)
 {
-	int y, x;
+	int y;
 	int start = band * bandheight;
 	int end = start + bandheight;
-	int sn = n;
-	int dn = n - alpha;
-	if (!alpha)
-		savealpha = 0;
-
-	dn += savealpha;
 
 	if (!out)
 		return;
@@ -163,31 +150,26 @@ fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alph
 
 	for (y = 0; y < end; y++)
 	{
-		x = w;
-		while (x--)
-		{
-			fz_write(ctx, out, sp, dn);
-			sp += sn;
-		}
-		sp += stride - w*n;
+		fz_write(ctx, out, sp, w * n);
+		sp += stride;
 	}
 }
 
 void
-fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha)
+fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
-	fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, savealpha);
-	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples, savealpha);
+	fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
+	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->stride, 0, pixmap->h, pixmap->samples);
 }
 
 void
-fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename, int savealpha)
+fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
 	{
-		fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, savealpha);
-		fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples, savealpha);
+		fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
+		fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->stride, 0, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);

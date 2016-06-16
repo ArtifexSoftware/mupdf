@@ -665,6 +665,9 @@ fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix)
 	int k, x, y;
 	int stride = pix->stride - pix->w * pix->n;
 
+	if (!pix->alpha)
+		return;
+
 	for (y = 0; y < pix->h; y++)
 	{
 		for (x = 0; x < pix->w; x++)
@@ -685,6 +688,9 @@ fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix)
 	int a, inva;
 	int k, x, y;
 	int stride = pix->stride - pix->w * pix->n;
+
+	if (!pix->alpha)
+		return;
 
 	for (y = 0; y < pix->h; y++)
 	{

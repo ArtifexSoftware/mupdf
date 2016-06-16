@@ -314,7 +314,6 @@ typedef struct worker_t {
 	fz_context *ctx;
 	int num;
 	int band; /* -1 to shutdown, or band to render */
-	int savealpha;
 	fz_display_list *list;
 	fz_matrix ctm;
 	fz_rect tbounds;
@@ -533,7 +532,7 @@ file_level_trailers(fz_context *ctx)
 	fz_drop_stext_sheet(ctx, sheet);
 }
 
-static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band, fz_pixmap *pix, fz_bitmap **bit)
+static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band, fz_pixmap *pix, fz_bitmap **bit)
 {
 	fz_device *dev = NULL;
 
@@ -541,7 +540,7 @@ static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_l
 
 	fz_try(ctx)
 	{
-		if (savealpha)
+		if (pix->alpha)
 			fz_clear_pixmap(ctx, pix);
 		else
 			fz_clear_pixmap_with_value(ctx, pix, 255);
@@ -563,7 +562,7 @@ static void drawband(fz_context *ctx, int savealpha, fz_page *page, fz_display_l
 		if (gamma_value != 1)
 			fz_gamma_pixmap(ctx, pix, gamma_value);
 
-		if (savealpha)
+		if (pix->alpha)
 			fz_unmultiply_pixmap(ctx, pix);
 
 		if ((output_format == OUT_PCL && out_cs == CS_MONO) || (output_format == OUT_PBM) || (output_format == OUT_PKM))
@@ -827,7 +826,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 		fz_try(ctx)
 		{
-			int savealpha = (out_cs == CS_GRAY_ALPHA || out_cs == CS_RGB_ALPHA || out_cs == CS_CMYK_ALPHA);
 			fz_irect band_ibounds = ibounds;
 			int band, bands = 1;
 			int totalheight = ibounds.y1 - ibounds.y0;
@@ -850,7 +848,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				for (band = 0; band < fz_mini(num_workers, bands); band++)
 				{
 					workers[band].band = band;
-					workers[band].savealpha = savealpha; /* Constant on a page */
 					workers[band].ctm = ctm;
 					workers[band].tbounds = tbounds;
 					memset(&workers[band].cookie, 0, sizeof(fz_cookie));
@@ -875,9 +872,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
 					fz_write_pnm_header(ctx, out, pix->w, totalheight, pix->n, pix->alpha);
 				else if (output_format == OUT_PAM)
-					fz_write_pam_header(ctx, out, pix->w, totalheight, pix->n, pix->alpha, savealpha);
+					fz_write_pam_header(ctx, out, pix->w, totalheight, pix->n, pix->alpha);
 				else if (output_format == OUT_PNG)
-					poc = fz_write_png_header(ctx, out, pix->w, totalheight, pix->n, pix->alpha, savealpha);
+					poc = fz_write_png_header(ctx, out, pix->w, totalheight, pix->n, pix->alpha);
 				else if (output_format == OUT_PBM)
 					fz_write_pbm_header(ctx, out, pix->w, totalheight);
 				else if (output_format == OUT_PKM)
@@ -906,14 +903,14 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					cookie->errors += w->cookie.errors;
 				}
 				else
-					drawband(ctx, savealpha, page, list, &ctm, &tbounds, cookie, band, pix, &bit);
+					drawband(ctx, page, list, &ctm, &tbounds, cookie, band, pix, &bit);
 
 				if (output)
 				{
 					if (output_format == OUT_PGM || output_format == OUT_PPM || output_format == OUT_PNM)
 						fz_write_pnm_band(ctx, out, pix->w, totalheight, pix->n, pix->alpha, pix->stride, band, drawheight, pix->samples);
 					else if (output_format == OUT_PAM)
-						fz_write_pam_band(ctx, out, pix->w, totalheight, pix->n, pix->alpha, pix->stride, band, drawheight, pix->samples, savealpha);
+						fz_write_pam_band(ctx, out, pix->w, totalheight, pix->n, pix->stride, band, drawheight, pix->samples);
 					else if (output_format == OUT_PNG)
 						fz_write_png_band(ctx, out, poc, pix->stride, band, drawheight, pix->samples);
 					else if (output_format == OUT_PWG)
@@ -945,7 +942,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					}
 					else if (output_format == OUT_TGA)
 					{
-						fz_write_pixmap_as_tga(ctx, out, pix, savealpha);
+						fz_write_pixmap_as_tga(ctx, out, pix);
 					}
 				}
 
@@ -1306,7 +1303,7 @@ static THREAD_RETURN_TYPE worker_thread(void *arg)
 		SEMAPHORE_WAIT(me->start);
 		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, me->band));
 		if (me->band >= 0)
-			drawband(me->ctx, me->savealpha, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band, me->pix, &me->bit);
+			drawband(me->ctx, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band, me->pix, &me->bit);
 		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, me->band));
 		SEMAPHORE_TRIGGER(me->stop);
 	}

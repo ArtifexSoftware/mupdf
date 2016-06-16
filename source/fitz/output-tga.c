@@ -24,11 +24,11 @@ static inline void tga_put_pixel(fz_context *ctx, fz_output *out, unsigned char 
 }
 
 void
-fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, int savealpha)
+fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
-		fz_write_pixmap_as_tga(ctx, out, pixmap, savealpha);
+		fz_write_pixmap_as_tga(ctx, out, pixmap);
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)
@@ -36,11 +36,11 @@ fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename, 
 }
 
 void
-fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int savealpha)
+fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
 	unsigned char head[18];
 	int n = pixmap->n;
-	int d = savealpha || n == 1 ? n : n - 1;
+	int d = pixmap->alpha || n == 1 ? n : n - 1;
 	int is_bgr = pixmap->colorspace == fz_device_bgr(ctx);
 	int k;
 
@@ -55,8 +55,8 @@ fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap, int s
 	head[12] = pixmap->w & 0xFF; head[13] = (pixmap->w >> 8) & 0xFF;
 	head[14] = pixmap->h & 0xFF; head[15] = (pixmap->h >> 8) & 0xFF;
 	head[16] = d * 8;
-	head[17] = savealpha && n > 1 ? 8 : 0;
-	if (savealpha && d == 2)
+	head[17] = pixmap->alpha && n > 1 ? 8 : 0;
+	if (pixmap->alpha && d == 2)
 		head[16] = 32;
 
 	fz_write(ctx, out, head, sizeof(head));
