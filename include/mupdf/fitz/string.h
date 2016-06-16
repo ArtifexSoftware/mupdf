@@ -63,6 +63,15 @@ void fz_dirname(char *dir, const char *path, int dirsize);
 char *fz_urldecode(char *url);
 
 /*
+	fz_format_output_path: create output file name using a template.
+		If the path contains %[0-9]*d, the first such pattern will be replaced
+		with the page number. If the template does not contain such a pattern, the page
+		number will be inserted before the file suffix. If the template does not have
+		a file suffix, the page number will be added to the end.
+*/
+void fz_format_output_path(fz_context *ctx, char *path, int size, const char *fmt, int page);
+
+/*
 	fz_cleanname: rewrite path to the shortest string that names the same path.
 
 	Eliminates multiple and trailing slashes, interprets "." and "..".

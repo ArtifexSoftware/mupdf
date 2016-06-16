@@ -142,6 +142,50 @@ fz_urldecode(char *url)
 	return url;
 }
 
+void
+fz_format_output_path(fz_context *ctx, char *path, int size, const char *fmt, int page)
+{
+	const char *s, *p;
+	char num[40];
+	int i, n;
+	int z = 0;
+
+	for (i = 0; page; page /= 10)
+		num[i++] = '0' + page % 10;
+	num[i] = 0;
+
+	s = p = strchr(fmt, '%');
+	if (p)
+	{
+		++p;
+		while (*p >= '0' && *p <= '9')
+			z = z * 10 + (*p++ - '0');
+	}
+	if (p && *p == 'd')
+	{
+		++p;
+	}
+	else
+	{
+		s = p = strrchr(fmt, '.');
+		if (!p)
+			s = p = fmt + strlen(fmt);
+	}
+
+	if (z < 1)
+		z = 1;
+	while (i < z && i < sizeof num)
+		num[i++] = '0';
+	n = s - fmt;
+	if (n + i + strlen(p) >= size)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "path name buffer overflow");
+	memcpy(path, fmt, n);
+	while (i > 0)
+		path[n++] = num[--i];
+	fz_strlcpy(path + n, p, size - n);
+
+}
+
 #define SEP(x) ((x)=='/' || (x) == 0)
 
 char *
