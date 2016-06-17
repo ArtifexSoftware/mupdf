@@ -1,0 +1,22 @@
+Various different integer types are used throughout MuPDF.
+
+In general:
+
+  * int is assumed to be 32bit at least.
+
+  * short is assumed to be exactly 16 bits.
+
+  * char is assumed to be exactly 8 bits.
+
+  * array sizes, string lengths, and allocations
+    are measured using size_t. size_t is 32bit in 32bit builds,
+    and 64bit on all 64bit builds.
+
+  * buffers of data use unsigned chars (or uint8_t's).
+
+  * Offsets within files/streams are represented using fz_off_t's.
+    fz_off_t's are 64bits in 64bit builds, or in 32bit builds with
+    FZ_LARGEFILE defined. Otherwise they are a native int (so 32bit
+    in 32bit builds).
+
+In addition, we use floats and doubles, assumed to be IEEE compliant.
