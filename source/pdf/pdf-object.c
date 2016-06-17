@@ -48,7 +48,7 @@ typedef struct pdf_obj_num_s
 typedef struct pdf_obj_string_s
 {
 	pdf_obj super;
-	unsigned short len;
+	unsigned int len;
 	char buf[1];
 } pdf_obj_string;
 
@@ -145,7 +145,7 @@ pdf_obj *
 pdf_new_string(fz_context *ctx, pdf_document *doc, const char *str, size_t len)
 {
 	pdf_obj_string *obj;
-	unsigned short l = (unsigned short)len;
+	unsigned int l = (unsigned int)len;
 
 	if ((size_t)l != len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Overflow in pdf string");
