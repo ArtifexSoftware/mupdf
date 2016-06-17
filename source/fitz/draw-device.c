@@ -4,7 +4,9 @@
 const char *fz_draw_options_usage =
 	"Common raster format output options:\n"
 	"\trotate=N: rotate rendered pages N degrees counterclockwise\n"
-	"\tresolution=N: resolution of rendered pages in pixels per inch\n"
+	"\tresolution=N: set both X and Y resolution of rendered pages in pixels per inch\n"
+	"\tx-resolution=N: X resolution of rendered pages in pixels per inch\n"
+	"\ty-resolution=N: Y resolution of rendered pages in pixels per inch\n"
 	"\twidth=N: render pages to fit N pixels wide (ignore resolution option)\n"
 	"\theight=N: render pages to fit N pixels tall (ignore resolution option)\n"
 	"\tcolorspace=(gray|rgb|cmyk): render using specified colorspace\n"
@@ -24,7 +26,8 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 
 	memset(opts, 0, sizeof *opts);
 
-	opts->resolution = 96;
+	opts->x_resolution = 96;
+	opts->y_resolution = 96;
 	opts->rotate = 0;
 	opts->width = 0;
 	opts->height = 0;
@@ -34,7 +37,11 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 	if (fz_has_option(ctx, args, "rotate", &val))
 		opts->rotate = fz_atoi(val);
 	if (fz_has_option(ctx, args, "resolution", &val))
-		opts->resolution = fz_atoi(val);
+		opts->x_resolution = opts->y_resolution = fz_atoi(val);
+	if (fz_has_option(ctx, args, "x-resolution", &val))
+		opts->x_resolution = fz_atoi(val);
+	if (fz_has_option(ctx, args, "y-resolution", &val))
+		opts->y_resolution = fz_atoi(val);
 	if (fz_has_option(ctx, args, "width", &val))
 		opts->width = fz_atoi(val);
 	if (fz_has_option(ctx, args, "height", &val))
@@ -54,7 +61,8 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 		opts->alpha = opteq(val, "yes");
 
 	/* Sanity check values */
-	if (opts->resolution <= 0) opts->resolution = 96;
+	if (opts->x_resolution <= 0) opts->x_resolution = 96;
+	if (opts->y_resolution <= 0) opts->y_resolution = 96;
 	if (opts->width < 0) opts->width = 0;
 	if (opts->height < 0) opts->height = 0;
 
@@ -64,7 +72,8 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 fz_device *
 fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, const fz_rect *mediabox, fz_pixmap **pixmap)
 {
-	float zoom = opts->resolution / 72.0f;
+	float x_zoom = opts->x_resolution / 72.0f;
+	float y_zoom = opts->y_resolution / 72.0f;
 	int w = opts->width;
 	int h = opts->height;
 	fz_rect bounds;
@@ -72,7 +81,7 @@ fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, co
 	fz_matrix transform;
 	fz_device *dev;
 
-	fz_pre_scale(fz_rotate(&transform, opts->rotate), zoom, zoom);
+	fz_pre_scale(fz_rotate(&transform, opts->rotate), x_zoom, y_zoom);
 	bounds = *mediabox;
 	fz_round_rect(&ibounds, fz_transform_rect(&bounds, &transform));
 

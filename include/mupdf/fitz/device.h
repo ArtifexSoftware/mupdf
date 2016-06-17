@@ -369,7 +369,8 @@ typedef struct fz_draw_options_s fz_draw_options;
 struct fz_draw_options_s
 {
 	int rotate;
-	int resolution;
+	int x_resolution;
+	int y_resolution;
 	int width;
 	int height;
 	fz_colorspace *colorspace;

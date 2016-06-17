@@ -495,13 +495,24 @@ The argument must be the same device object that was returned by the beginPage m
 </dl>
 
 <p>
-The current output formats supported are CBZ and PDF.
+The current output formats supported are CBZ, PNG and PDF.
 
 <p>
-The CBZ output options are:
+The image format (CBZ, PNG, etc) output options are:
 <dl>
-<dt>resolution=N
+<dt>rotate=N
+<dd>Rotate rendered pages N degrees counterclockwise.
+<dt>resolution=N, x-resolution=N, y-resolution=N
 <dd>Render each page to an image at N pixels per inch.
+<dt>width=N
+<dd>Render pages to fit N pixels wide (ignore resolution option).
+<dt>height=N
+<dd>Render pages to fit N pixels tall (ignore resolution option).
+<dt>colorspace=(gray|rgb|cmyk)
+<dd>Render using specified colorspace.
+<dt>alpha
+<dd>Render pages with alpha channel and transparent background.
+
 </dl>
 
 <p id="pdf-write-options">
