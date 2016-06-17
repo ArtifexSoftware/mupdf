@@ -202,7 +202,7 @@ split_at_script(const uint32_t *fragment,
 		{
 			/* Change of script. Break the fragment. */
 			(*callback)(&fragment[script_start], i - script_start, level, script, arg);
-			script_start = i+1;
+			script_start = i;
 			script = s;
 		}
 	}
