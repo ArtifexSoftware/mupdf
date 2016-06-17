@@ -81,7 +81,7 @@ fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, co
 	fz_matrix transform;
 	fz_device *dev;
 
-	fz_pre_scale(fz_rotate(&transform, opts->rotate), x_zoom, y_zoom);
+	fz_pre_rotate(fz_scale(&transform, x_zoom, y_zoom), opts->rotate);
 	bounds = *mediabox;
 	fz_round_rect(&ibounds, fz_transform_rect(&bounds, &transform));
 
@@ -116,6 +116,7 @@ fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, co
 	*pixmap = fz_new_pixmap_with_bbox(ctx, opts->colorspace, &ibounds, opts->alpha);
 	fz_try(ctx)
 	{
+		fz_set_pixmap_resolution(ctx, *pixmap, opts->x_resolution, opts->y_resolution);
 		if (opts->alpha)
 			fz_clear_pixmap(ctx, *pixmap);
 		else

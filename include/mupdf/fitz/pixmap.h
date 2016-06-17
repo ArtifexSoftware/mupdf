@@ -167,7 +167,10 @@ unsigned char *fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix);
 */
 int fz_pixmap_stride(fz_context *ctx, fz_pixmap *pix);
 
-void fz_pixmap_set_resolution(fz_pixmap *pix, int res);
+/*
+	fz_pixmap_set_resolution: Set the pixels per inch resolution of the pixmap.
+*/
+void fz_set_pixmap_resolution(fz_context *ctx, fz_pixmap *pix, int xres, int yres);
 
 /*
 	fz_clear_pixmap_with_value: Clears a pixmap with the given value.

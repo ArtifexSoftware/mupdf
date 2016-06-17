@@ -853,7 +853,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					memset(&workers[band].cookie, 0, sizeof(fz_cookie));
 					workers[band].list = list;
 					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
-					fz_pixmap_set_resolution(workers[band].pix, resolution);
+					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
 					SEMAPHORE_TRIGGER(workers[band].start);
 					ctm.f -= drawheight;
@@ -863,7 +863,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else
 			{
 				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
-				fz_pixmap_set_resolution(pix, resolution);
+				fz_set_pixmap_resolution(ctx, pix, resolution, resolution);
 			}
 
 			/* Output any page level headers (for banded formats) */

@@ -1227,10 +1227,10 @@ fz_subsample_pixmap(fz_context *ctx, fz_pixmap *tile, int factor)
 }
 
 void
-fz_pixmap_set_resolution(fz_pixmap *pix, int res)
+fz_set_pixmap_resolution(fz_context *ctx, fz_pixmap *pix, int xres, int yres)
 {
-	pix->xres = res;
-	pix->yres = res;
+	pix->xres = xres;
+	pix->yres = yres;
 }
 
 void
