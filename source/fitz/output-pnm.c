@@ -125,16 +125,16 @@ fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 	fz_printf(ctx, out, "DEPTH %d\n", n);
 	fz_printf(ctx, out, "MAXVAL 255\n");
 	if (n == 1) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
-	else if (n == 2) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
+	else if (n == 1 && alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
 	else if (n == 3) fz_printf(ctx, out, "TUPLTYPE RGB\n");
-	else if (n == 4 && alpha) fz_printf(ctx, out, "TUPLTYPE RGB_ALPHA\n");
+	else if (n == 3 && alpha) fz_printf(ctx, out, "TUPLTYPE RGB_ALPHA\n");
 	else if (n == 4 && !alpha) fz_printf(ctx, out, "TUPLTYPE CMYK\n");
 	else if (n == 5) fz_printf(ctx, out, "TUPLTYPE CMYK_ALPHA\n");
 	fz_printf(ctx, out, "ENDHDR\n");
 }
 
 void
-fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stride, int band_start, int bandheight, unsigned char *sp)
+fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band_start, int bandheight, unsigned char *sp)
 {
 	int y;
 	int end = band_start + bandheight;
@@ -142,6 +142,7 @@ fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stri
 	if (!out)
 		return;
 
+	n += alpha;
 	if (end > h)
 		end = h;
 	end -= band_start;
@@ -157,7 +158,7 @@ void
 fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
 	fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
-	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->stride, 0, pixmap->h, pixmap->samples);
+	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples);
 }
 
 void
@@ -167,7 +168,7 @@ fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 	fz_try(ctx)
 	{
 		fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
-		fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);

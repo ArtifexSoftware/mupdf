@@ -23,7 +23,7 @@ void fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename);
 
 void fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
 void fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha);
-void fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int stride, int band_start, int bandheight, unsigned char *sp);
+void fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band_start, int bandheight, unsigned char *sp);
 
 /*
 	fz_save_bitmap_as_pbm: Save a bitmap as a PBM image file.
