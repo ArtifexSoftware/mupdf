@@ -126,13 +126,12 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 const char *
 fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *size, int *index)
 {
+	if (index) *index = 0;
 #ifndef TOFU_CJK
 #ifndef TOFU_CJK_EXT
-	if (index) *index = wmode;
-	{ RETURN(DroidSansFallbackFull_ttc); }
+	RETURN(DroidSansFallbackFull_ttf);
 #else
-	if (index) *index = wmode;
-	{ RETURN(DroidSansFallback_ttc); }
+	RETURN(DroidSansFallback_ttf);
 #endif
 #else
 	return *size = 0, NULL;
