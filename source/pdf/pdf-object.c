@@ -364,7 +364,7 @@ void pdf_set_str_len(fz_context *ctx, pdf_obj *obj, int newlen)
 	RESOLVE(obj);
 	if (obj < PDF_OBJ__LIMIT || obj->kind != PDF_STRING)
 		return; /* This should never happen */
-	if (newlen > STRING(obj)->len)
+	if (newlen < 0 || (unsigned int)newlen > STRING(obj)->len)
 		return; /* This should never happen */
 	STRING(obj)->len = newlen;
 }
