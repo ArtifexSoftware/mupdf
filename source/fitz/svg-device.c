@@ -240,7 +240,7 @@ svg_dev_text(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_t
 	int start, is_wspace, was_wspace;
 	fz_text_span *span;
 
-	for (span = text->head; text; span = span->next)
+	for (span = text->head; span; span = span->next)
 	{
 		/* Rely on the fact that trm.{e,f} == 0 */
 		size = fz_matrix_expansion(&span->trm);
