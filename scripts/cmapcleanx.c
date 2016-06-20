@@ -1,21 +1,31 @@
 /* cmapclean.c -- parse a CMap file and write it back out */
 
-#include <stdio.h>
-#include <string.h>
-
 /* We never want to build memento versions of the cmapdump util */
 #undef MEMENTO
+
+/* We never want large file access here */
+#undef FZ_LARGEFILE
+
+#include <stdio.h>
+#include <string.h>
 
 #include "mupdf/pdf.h"
 
 #include "../source/fitz/context.c"
 #include "../source/fitz/error.c"
 #include "../source/fitz/memory.c"
+#include "../source/fitz/output.c"
 #include "../source/fitz/string.c"
 #include "../source/fitz/buffer.c"
 #include "../source/fitz/stream-open.c"
 #include "../source/fitz/stream-read.c"
+#include "../source/fitz/strtod.c"
+#include "../source/fitz/strtof.c"
+#include "../source/fitz/ftoa.c"
 #include "../source/fitz/printf.c"
+#ifdef _WIN32
+#include "../source/fitz/time.c"
+#endif
 
 #include "../source/pdf/pdf-lex.c"
 #include "../source/pdf/pdf-cmap.c"
@@ -176,7 +186,7 @@ void fz_new_aa_context(fz_context *ctx)
 {
 }
 
-void fz_free_aa_context(fz_context *ctx)
+void fz_drop_aa_context(fz_context *ctx)
 {
 }
 
@@ -184,16 +194,20 @@ void fz_copy_aa_context(fz_context *dst, fz_context *src)
 {
 }
 
-void *fz_keep_storable(fz_context *ctx, fz_storable *s)
+void *fz_keep_storable(fz_context *ctx, const fz_storable *sc)
 {
-	return s;
+	fz_storable *s = (fz_storable *)sc;
+	return fz_keep_imp(ctx, s, &s->refs);
 }
 
-void fz_drop_storable(fz_context *ctx, fz_storable *s)
+void fz_drop_storable(fz_context *ctx, const fz_storable *sc)
 {
+	fz_storable *s = (fz_storable *)sc;
+	if (fz_drop_imp(ctx, s, &s->refs))
+		s->drop(ctx, s);
 }
 
-void fz_new_store_context(fz_context *ctx, unsigned int max)
+void fz_new_store_context(fz_context *ctx, size_t max)
 {
 }
 
@@ -206,7 +220,7 @@ fz_store *fz_keep_store_context(fz_context *ctx)
 	return NULL;
 }
 
-int fz_store_scavenge(fz_context *ctx, unsigned int size, int *phase)
+int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 {
 	return 0;
 }
@@ -235,4 +249,13 @@ void fz_drop_document_handler_context(fz_context *ctx)
 fz_document_handler_context *fz_keep_document_handler_context(fz_context *ctx)
 {
 	return NULL;
+}
+
+void fz_default_image_decode(void *arg, int w, int h, int l2factor, fz_irect *irect)
+{
+}
+
+int fz_default_image_scale(void *arg, int w, int h, int src_w, int src_h)
+{
+	return 0;
 }
