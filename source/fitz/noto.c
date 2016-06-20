@@ -92,6 +92,12 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 				NimbusRoman_Bold_cff,
 				NimbusRoman_BoldItalic_cff)
 	}
+	if (!strcmp(name, "Dingbats") || !strcmp(name, "Zapf Dingbats")) {
+		RETURN(Dingbats_cff);
+	}
+	if (!strcmp(name, "Symbol")) {
+		RETURN(StandardSymbolsPS_cff);
+	}
 #endif
 #ifndef TOFU_SIL
 	if (!strcmp(name, "Charis SIL")) {
@@ -107,6 +113,11 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 	}
 	if (!strcmp(name, "Noto Sans")) {
 		RETURN(NotoSans_Regular_ttf);
+	}
+#endif
+#ifndef TOFU_EMOJI
+	if (!strcmp(name, "Emoji") || !strcmp(name, "Noto Emoji")) {
+		RETURN(NotoEmoji_Regular_ttf);
 	}
 #endif
 	return *size = 0, NULL;
