@@ -175,7 +175,7 @@ endif
 
 # --- LURATECH ---
 
-ifneq "$(wildcard $(LURATECH_DIR)/ldf_jb2)" ""
+ifneq "$(wildcard $(LURATECH_DIR)/ldf_jb2)$(wildcard $(LURATECH_DIR)/lwf_jp2)" ""
 
 LURATECH_OUT := $(OUT)/luratech
 LURATECH_SRC := \
@@ -248,7 +248,63 @@ LURATECH_SRC := \
 	jb2_adt_write_data.c \
 	jb2_adt_write_pdf.c \
 	jb2_common.c \
-	jb2_license_dummy.c
+	jb2_license_dummy.c \
+	jp2_adt_band_array.c \
+	jp2_adt_band_buffer.c \
+	jp2_adt_block_array.c \
+	jp2_adt_cache.c \
+	jp2_adt_comp.c \
+	jp2_adt_component_array.c \
+	jp2_adt_decomp.c \
+	jp2_adt_ebcot_decoder.c \
+	jp2_adt_external_cache.c \
+	jp2_adt_image.c \
+	jp2_adt_memory.c \
+	jp2_adt_mq_decoder.c \
+	jp2_adt_mq_state.c \
+	jp2_adt_packet_decoder.c \
+	jp2_adt_precinct_array.c \
+	jp2_adt_rate.c \
+	jp2_adt_rate_list.c \
+	jp2_adt_read_bits.c \
+	jp2_adt_read_data.c \
+	jp2_adt_reader_requirements.c \
+	jp2_adt_resolution_array.c \
+	jp2_adt_tile_array.c \
+	jp2_adt_tlm_marker_array.c \
+	jp2_adt_write_data.c \
+	jp2_buffer.c \
+	jp2c_code_cb.c \
+	jp2c_coder.c \
+	jp2c_codestream.c \
+	jp2c_file_format.c \
+	jp2c_format.c \
+	jp2c_memory.c \
+	jp2_code_cb.c \
+	jp2_common.c \
+	jp2c_progression.c \
+	jp2c_quant.c \
+	jp2c_wavelet.c \
+	jp2c_wavelet_lifting.c \
+	jp2c_weights.c \
+	jp2c_write.c \
+	jp2d_codestream.c \
+	jp2d_decoder.c \
+	jp2d_file_format.c \
+	jp2d_format.c \
+	jp2d_image.c \
+	jp2d_memory.c \
+	jp2d_partial_decoding.c \
+	jp2d_progression.c \
+	jp2d_quant.c \
+	jp2d_scale.c \
+	jp2d_wavelet.c \
+	jp2d_wavelet_lifting.c \
+	jp2d_write.c \
+	jp2_icc.c \
+	jp2_license.c \
+	jp2_packet.c \
+	jp2_tag_tree.c
 
 LURATECH_OBJ := $(addprefix $(LURATECH_OUT)/, $(LURATECH_SRC:%.c=%.o))
 
@@ -256,24 +312,23 @@ $(LURATECH_OUT):
 	$(MKDIR_CMD)
 $(LURATECH_OUT)/%.o: $(LURATECH_DIR)/ldf_jb2/source/common/%.c | $(LURATECH_OUT)
 	$(CC_CMD) \
-		-I$(LURATECH_DIR)/ldf_jb2/source/libraries \
-		-I$(LURATECH_DIR)/ldf_jb2/source/compress \
 		-I$(LURATECH_DIR)/ldf_jb2/source/common \
 		-DLINUX
 $(LURATECH_OUT)/%.o: $(LURATECH_DIR)/ldf_jb2/source/compress/%.c | $(LURATECH_OUT)
 	$(CC_CMD) \
-		-I$(LURATECH_DIR)/ldf_jb2/source/libraries \
-		-I$(LURATECH_DIR)/ldf_jb2/source/compress \
 		-I$(LURATECH_DIR)/ldf_jb2/source/common \
 		-DLINUX
-$(LURATECH_OUT)/%.o: $(LURATECH_DIR)/lwf_jp2/%.c | $(LURATECH_OUT)
+$(LURATECH_OUT)/%.o: $(LURATECH_DIR)/lwf_jp2/library/source/%.c | $(LURATECH_OUT)
 	$(CC_CMD) \
-		-I$(LURATECH_DIR)/ldf_jb2/source/libraries \
-		-I$(LURATECH_DIR)/ldf_jb2/source/compress \
 		-I$(LURATECH_DIR)/ldf_jb2/source/common \
 		-DLINUX
 
-LURATECH_CFLAGS := -I$(LURATECH_DIR)/ldf_jb2/source/libraries -DHAVE_LURATECH
+LURATECH_CFLAGS := \
+-I$(LURATECH_DIR)/ldf_jb2/source/common \
+	-I$(LURATECH_DIR)/ldf_jb2/source/libraries \
+	-I$(LURATECH_DIR)/ldf_jb2/source/compress \
+	-I$(LURATECH_DIR)/lwf_jp2/library/source \
+	-DHAVE_LURATECH
 
 else # --- LURATECH ---
 
@@ -310,6 +365,49 @@ JBIG2DEC_CFLAGS := -I$(JBIG2DEC_DIR)
 else
 JBIG2DEC_CFLAGS := $(SYS_JBIG2DEC_CFLAGS)
 JBIG2DEC_LIBS := $(SYS_JBIG2DEC_LIBS)
+endif
+
+# --- OpenJPEG ---
+
+ifneq "$(wildcard $(OPENJPEG_DIR)/CMakeLists.txt)" ""
+
+OPENJPEG_OUT := $(OUT)/openjpeg
+OPENJPEG_SRC := \
+	bio.c \
+	cidx_manager.c \
+	cio.c \
+	dwt.c \
+	event.c \
+	function_list.c \
+	image.c \
+	invert.c \
+	j2k.c \
+	jp2.c \
+	mct.c \
+	mqc.c \
+	openjpeg.c \
+	phix_manager.c \
+	pi.c \
+	ppix_manager.c \
+	raw.c \
+	t1.c \
+	t2.c \
+	tcd.c \
+	tgt.c \
+	thix_manager.c \
+	tpix_manager.c \
+
+OPENJPEG_OBJ := $(addprefix $(OPENJPEG_OUT)/, $(OPENJPEG_SRC:%.c=%.o))
+
+$(OPENJPEG_OUT):
+	$(MKDIR_CMD)
+$(OPENJPEG_OUT)/%.o: $(OPENJPEG_DIR)/%.c | $(OPENJPEG_OUT)
+	$(CC_CMD) -DOPJ_STATIC -DOPJ_HAVE_STDINT_H
+
+OPENJPEG_CFLAGS += -I$(OPENJPEG_DIR) -DOPJ_HAVE_INTTYPES_H=1 -DUSE_JPIP=1
+else
+OPENJPEG_CFLAGS := $(SYS_OPENJPEG_CFLAGS)
+OPENJPEG_LIBS := $(SYS_OPENJPEG_LIBS)
 endif
 
 endif # --- LURATECH ---
@@ -362,49 +460,6 @@ JPEG_CFLAGS := -Iscripts/jpeg -I$(JPEG_DIR)
 else
 JPEG_CFLAGS := $(SYS_JPEG_CFLAGS) -DSHARE_JPEG
 JPEG_LIBS := $(SYS_JPEG_LIBS)
-endif
-
-# --- OpenJPEG ---
-
-ifneq "$(wildcard $(OPENJPEG_DIR)/CMakeLists.txt)" ""
-
-OPENJPEG_OUT := $(OUT)/openjpeg
-OPENJPEG_SRC := \
-	bio.c \
-	cidx_manager.c \
-	cio.c \
-	dwt.c \
-	event.c \
-	function_list.c \
-	image.c \
-	invert.c \
-	j2k.c \
-	jp2.c \
-	mct.c \
-	mqc.c \
-	openjpeg.c \
-	phix_manager.c \
-	pi.c \
-	ppix_manager.c \
-	raw.c \
-	t1.c \
-	t2.c \
-	tcd.c \
-	tgt.c \
-	thix_manager.c \
-	tpix_manager.c \
-
-OPENJPEG_OBJ := $(addprefix $(OPENJPEG_OUT)/, $(OPENJPEG_SRC:%.c=%.o))
-
-$(OPENJPEG_OUT):
-	$(MKDIR_CMD)
-$(OPENJPEG_OUT)/%.o: $(OPENJPEG_DIR)/%.c | $(OPENJPEG_OUT)
-	$(CC_CMD) -DOPJ_STATIC -DOPJ_HAVE_STDINT_H
-
-OPENJPEG_CFLAGS += -I$(OPENJPEG_DIR) -DOPJ_HAVE_INTTYPES_H=1 -DUSE_JPIP=1
-else
-OPENJPEG_CFLAGS := $(SYS_OPENJPEG_CFLAGS)
-OPENJPEG_LIBS := $(SYS_OPENJPEG_LIBS)
 endif
 
 # --- ZLIB ---
