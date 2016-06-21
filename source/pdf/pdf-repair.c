@@ -320,9 +320,9 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		fz_seek(ctx, doc->file, 0, 0);
 		for (j = 0; j < n - 4; j++)
 		{
-			if (memcmp(&buf->scratch[i], "%PDF", 4) == 0)
+			if (memcmp(&buf->scratch[j], "%PDF", 4) == 0)
 			{
-				fz_seek(ctx, doc->file, i + 8, 0); /* skip "%PDF-X.Y" */
+				fz_seek(ctx, doc->file, j + 8, 0); /* skip "%PDF-X.Y" */
 				break;
 			}
 		}
