@@ -1917,7 +1917,7 @@ FUN(DrawDevice_newNative)(JNIEnv *env, jclass self, jobject pixmap_)
 		return 0;
 
 	fz_try(ctx)
-		device = fz_new_draw_device(ctx, pixmap);
+		device = fz_new_draw_device(ctx, NULL, pixmap);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
@@ -1991,7 +1991,7 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 		 * match the pixels data */
 		pixbbox = clip;
 		pixbbox.x1 = pixbbox.x0 + width;
-		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), &pixbbox, &dummy);
+		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), &pixbbox, 1, &dummy);
 		ninfo = fz_malloc(ctx, sizeof(*ninfo));
 		ninfo->pixmap = pixmap;
 		ninfo->lock = lock;
@@ -2005,7 +2005,7 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 		lockNativeDevice(env,self);
 		fz_clear_pixmap_rect_with_value(ctx, pixmap, 0xff, &clip);
 		unlockNativeDevice(env,ninfo);
-		device = fz_new_draw_device_with_bbox(ctx, pixmap, &clip);
+		device = fz_new_draw_device_with_bbox(ctx, NULL, pixmap, &clip);
 	}
 	fz_catch(ctx)
 	{
@@ -3659,7 +3659,7 @@ FUN(DisplayList_newNative)(JNIEnv *env, jobject self)
 		return 0;
 
 	fz_try(ctx)
-		list = fz_new_display_list(ctx);
+		list = fz_new_display_list(ctx, NULL);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

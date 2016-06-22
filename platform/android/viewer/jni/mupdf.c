@@ -372,7 +372,7 @@ typedef struct buffer_state_s
 }
 buffer_state;
 
-static int bufferStreamNext(fz_context *ctx, fz_stream *stream, int max)
+static int bufferStreamNext(fz_context *ctx, fz_stream *stream, size_t max)
 {
 	buffer_state *bs = (buffer_state *)stream->state;
 	globals *glo = bs->globals;
@@ -396,6 +396,7 @@ static int bufferStreamNext(fz_context *ctx, fz_stream *stream, int max)
 	stream->pos += len;
 	if (len == 0)
 		return EOF;
+
 	return *stream->rp++;
 }
 
@@ -754,7 +755,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		if (pc->page_list == NULL)
 		{
 			/* Render to list */
-			pc->page_list = fz_new_display_list(ctx);
+			pc->page_list = fz_new_display_list(ctx, NULL);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(ctx, pc->page, dev, &fz_identity, cookie);
 			fz_drop_device(ctx, dev);
@@ -769,7 +770,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		if (pc->annot_list == NULL)
 		{
 			fz_annot *annot;
-			pc->annot_list = fz_new_display_list(ctx);
+			pc->annot_list = fz_new_display_list(ctx, NULL);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
 				fz_run_annot(ctx, annot, dev, &fz_identity, cookie);
@@ -809,7 +810,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		fz_concat(&ctm, &ctm, fz_scale(&scale, xscale, yscale));
 		rect = pc->media_box;
 		fz_transform_rect(&rect, &ctm);
-		dev = fz_new_draw_device(ctx, pix);
+		dev = fz_new_draw_device(ctx, NULL, pix);
 #ifdef TIME_DISPLAY_LIST
 		{
 			clock_t time;
@@ -953,7 +954,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		if (pc->page_list == NULL)
 		{
 			/* Render to list */
-			pc->page_list = fz_new_display_list(ctx);
+			pc->page_list = fz_new_display_list(ctx, NULL);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(ctx, pc->page, dev, &fz_identity, cookie);
 			fz_drop_device(ctx, dev);
@@ -967,7 +968,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 		}
 
 		if (pc->annot_list == NULL) {
-			pc->annot_list = fz_new_display_list(ctx);
+			pc->annot_list = fz_new_display_list(ctx, NULL);
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
 				fz_run_annot(ctx, annot, dev, &fz_identity, cookie);
@@ -1016,7 +1017,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			{
 				LOGI("And it isn't empty");
 				fz_clear_pixmap_rect_with_value(ctx, pix, 0xff, &abox);
-				dev = fz_new_draw_device_with_bbox(ctx, pix, &abox);
+				dev = fz_new_draw_device_with_bbox(ctx, NULL, pix, &abox);
 				if (pc->page_list)
 					fz_run_display_list(ctx, pc->page_list, dev, &ctm, &arect, cookie);
 				if (cookie != NULL && cookie->abort)
