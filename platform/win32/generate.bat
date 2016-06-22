@@ -29,8 +29,8 @@ if not exist generated/gen_cmap_korea.h cmapdump.exe generated/gen_cmap_korea.h 
 if not exist generated/gen_adobe_ca.h bin2hex.exe generated/gen_adobe_ca.h resources/certs/AdobeCA.p7c
 if not exist generated/gen_js_util.h cquote.exe generated/gen_js_util.h source/pdf/pdf-js-util.js
 
-if not exist generated/DroidSansFallback.c fontdump.exe generated/DroidSansFallback.c resources/fonts/droid/DroidSansFallback.ttc
-if not exist generated/DroidSansFallbackFull.c fontdump.exe generated/DroidSansFallbackFull.c resources/fonts/droid/DroidSansFallbackFull.ttc
+if not exist generated/DroidSansFallback.c fontdump.exe generated/DroidSansFallback.c resources/fonts/droid/DroidSansFallback.ttf
+if not exist generated/DroidSansFallbackFull.c fontdump.exe generated/DroidSansFallbackFull.c resources/fonts/droid/DroidSansFallbackFull.ttf
 
 if not exist generated/Dingbats.c fontdump.exe generated/Dingbats.c resources/fonts/urw/Dingbats.cff
 if not exist generated/NimbusMonoPS-Bold.c fontdump.exe generated/NimbusMonoPS-Bold.c resources/fonts/urw/NimbusMonoPS-Bold.cff

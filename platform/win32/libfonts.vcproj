@@ -417,51 +417,51 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusMono-Bold.c"
+			RelativePath="..\..\generated\NimbusMonoPS-Bold.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusMono-BoldOblique.c"
+			RelativePath="..\..\generated\NimbusMonoPS-BoldItalic.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusMono-Oblique.c"
+			RelativePath="..\..\generated\NimbusMonoPS-Italic.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusMono-Regular.c"
+			RelativePath="..\..\generated\NimbusMonoPS-Regular.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusRomNo9L-Med.c"
+			RelativePath="..\..\generated\NimbusRoman-Bold.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusRomNo9L-MedIta.c"
+			RelativePath="..\..\generated\NimbusRoman-BoldItalic.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusRomNo9L-Reg.c"
+			RelativePath="..\..\generated\NimbusRoman-Italic.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusRomNo9L-RegIta.c"
+			RelativePath="..\..\generated\NimbusRoman-Regular.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusSanL-Bol.c"
+			RelativePath="..\..\generated\NimbusSans-Bold.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusSanL-BolIta.c"
+			RelativePath="..\..\generated\NimbusSans-BoldOblique.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusSanL-Reg.c"
+			RelativePath="..\..\generated\NimbusSans-Oblique.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\NimbusSanL-RegIta.c"
+			RelativePath="..\..\generated\NimbusSans-Regular.c"
 			>
 		</File>
 		<File
@@ -877,7 +877,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\StandardSymL.c"
+			RelativePath="..\..\generated\StandardSymbolsPS.c"
 			>
 		</File>
 	</Files>
