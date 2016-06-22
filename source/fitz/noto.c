@@ -37,9 +37,11 @@
 #endif
 
 #define RETURN(NAME) \
+	do {\
 	extern const int fz_font_ ## NAME ## _size; \
 	extern const char fz_font_ ## NAME []; \
-	return *size = fz_font_ ## NAME ## _size, fz_font_ ## NAME
+	return *size = fz_font_ ## NAME ## _size, fz_font_ ## NAME;\
+	} while (0)
 
 const char *
 fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
