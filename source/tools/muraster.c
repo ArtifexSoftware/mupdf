@@ -141,7 +141,6 @@
 */
 
 #include "mupdf/fitz.h"
-#include "mupdf/pdf.h" /* for pdf output */
 
 #ifdef _MSC_VER
 #include <winsock2.h>
@@ -405,30 +404,27 @@ my_semaphore_signal(my_semaphore_t * sem)
 #define MUTEX_LOCK(A) do { (void)pthread_mutex_lock(&A); } while (0)
 #define MUTEX_UNLOCK(A) do { (void)pthread_mutex_unlock(&A); } while (0)
 
-/*
-	ADD OTHER THREADING IMPLEMENTATIONS HERE.
-	See the above implementations for what the different
-	arguments mean.
-
-#elif MURASTER_THREADS == 3
-
-#define SEMAPHORE		/* type for a semaphore */
-#define SEMAPHORE_INIT(A)	/* init a semaphore */
-#define SEMAPHORE_FIN(A)	/* finalise a semaphore */
-#define SEMAPHORE_TRIGGER(A)	/* trigger a semaphore */
-#define SEMAPHORE_WAIT(A)	/* wait for a semaphore */
-#define THREAD			/* type for a thread */
-#define THREAD_INIT(A,B,C)	/* initialise a new thread */
-#define THREAD_FIN(A)		/* finalise a thread */
-#define THREAD_RETURN_TYPE	/* return type for the thread */
-#define THREAD_RETURN()		/* command to return from a thread */
-#define MUTEX			/* type for a mutex */
-#define MUTEX_INIT(A)		/* initialise a mutex */
-#define MUTEX_FIN(A)		/* finalise a mutex */
-#define MUTEX_LOCK(A)		/* lock a mutex */
-#define MUTEX_UNLOCK(A)		/* unlock a mutex */
-
-*/
+//	ADD OTHER THREADING IMPLEMENTATIONS HERE.
+//	See the above implementations for what the different
+//	arguments mean.
+//
+//#elif MURASTER_THREADS == 3
+//
+//#define SEMAPHORE		/* type for a semaphore */
+//#define SEMAPHORE_INIT(A)	/* init a semaphore */
+//#define SEMAPHORE_FIN(A)	/* finalise a semaphore */
+//#define SEMAPHORE_TRIGGER(A)	/* trigger a semaphore */
+//#define SEMAPHORE_WAIT(A)	/* wait for a semaphore */
+//#define THREAD		/* type for a thread */
+//#define THREAD_INIT(A,B,C)	/* initialise a new thread */
+//#define THREAD_FIN(A)		/* finalise a thread */
+//#define THREAD_RETURN_TYPE	/* return type for the thread */
+//#define THREAD_RETURN()	/* command to return from a thread */
+//#define MUTEX			/* type for a mutex */
+//#define MUTEX_INIT(A)		/* initialise a mutex */
+//#define MUTEX_FIN(A)		/* finalise a mutex */
+//#define MUTEX_LOCK(A)		/* lock a mutex */
+//#define MUTEX_UNLOCK(A)	/* unlock a mutex */
 
 #else
 #error Unknown MURASTER_THREADS setting
@@ -542,7 +538,6 @@ static int output_cs;
 static int rotation = -1;
 static float x_resolution;
 static float y_resolution;
-static int res_specified = 0;
 static int width = 0;
 static int height = 0;
 static int fit = 0;
@@ -565,7 +560,6 @@ static int alphabits_graphics = 8;
 static int min_band_height;
 static int max_band_memory;
 int band_height;
-static int lowmemory = 0;
 
 static int errored = 0;
 static fz_colorspace *colorspace;
@@ -713,9 +707,9 @@ static int drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const
 		if (alphabits_graphics == 0)
 			fz_enable_device_hints(ctx, dev, FZ_DONT_INTERPOLATE_IMAGES);
 		if (list)
-			fz_run_display_list(ctx, list, dev, ctm, tbounds, cookie);
+			fz_run_display_list(ctx, list, dev, &fz_identity, tbounds, cookie);
 		else
-			fz_run_page(ctx, page, dev, ctm, cookie);
+			fz_run_page(ctx, page, dev, &fz_identity, cookie);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
@@ -774,7 +768,6 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 				memset(&w->cookie, 0, sizeof(fz_cookie));
 				w->list = render->list;
 				w->pix = fz_new_pixmap_with_bbox(ctx, colorspace, &ibounds, 0);
-				/* FIXME: Only 1 resolutions for a pixmap */
 				fz_set_pixmap_resolution(ctx, w->pix, x_resolution, y_resolution);
 				DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
 				w->started = 1;
@@ -786,7 +779,6 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 		else
 		{
 			pix = fz_new_pixmap_with_bbox(ctx, colorspace, &ibounds, 0);
-			/* FIXME: Only 1 resolutions for a pixmap */
 			fz_set_pixmap_resolution(ctx, pix, x_resolution, y_resolution);
 		}
 
@@ -1024,15 +1016,6 @@ static int try_render_page(fz_context *ctx, int pagenum, fz_cookie *cookie, int 
 	return status;
 }
 
-static void bgprint_flush(void)
-{
-	if (!bgprint.active || !bgprint.started)
-		return;
-
-	SEMAPHORE_WAIT(bgprint.stop);
-	bgprint.started = 0;
-}
-
 static int wait_for_bgprint_to_finish(void)
 {
 	if (!bgprint.active || !bgprint.started)
@@ -1115,6 +1098,10 @@ get_page_render_details(fz_context *ctx, fz_page *page, render_details *render)
 
 			rot = (lost0 <= lost90 ? 0 : 90);
 		}
+	}
+	else
+	{
+		rot = rotation;
 	}
 
 	fz_pre_scale(fz_rotate(&render->ctm, rot), s_x, s_y);
@@ -1206,7 +1193,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		/* Make the display list, and see if we need color */
 		fz_try(ctx)
 		{
-			list = fz_new_display_list(ctx, NULL);
+			list = fz_new_display_list(ctx, &render.bounds);
 			list_dev = fz_new_list_device(ctx, list);
 #if GREY_FALLBACK != 0
 			test_dev = fz_new_test_device(ctx, &is_color, 0.01f, 0, list_dev);
