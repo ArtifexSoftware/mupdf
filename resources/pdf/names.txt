@@ -76,6 +76,7 @@ Contents
 Coords
 Count
 Cover
+CreationDate
 Creator
 CropBox
 Crypt
@@ -169,6 +170,7 @@ I
 ICCBased
 ID
 IM
+IRT
 Identity
 Identity-H
 Identity-V
