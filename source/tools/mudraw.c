@@ -553,7 +553,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 		if (list)
 			fz_run_display_list(ctx, list, dev, &fz_identity, tbounds, cookie);
 		else
-			fz_run_page(ctx, page, dev, ctm, cookie);
+			fz_run_page(ctx, page, dev, &fz_identity, cookie);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
