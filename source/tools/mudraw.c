@@ -1064,8 +1064,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 	}
 
-	if (showmd5 || showtime || showfeatures)
-		fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 
 	if (lowmemory)
 	{
@@ -1181,7 +1180,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	if (bgprint.active)
 	{
 		bgprint_flush();
-		if (bgprint.active && (showmd5 || showtime || showfeatures))
+		if (bgprint.active)
 		{
 			fprintf(stderr, "page %s %d", filename, pagenum);
 		}
@@ -1196,6 +1195,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	}
 	else
 	{
+		fprintf(stderr, "page %s %d%s", filename, pagenum, showmd5 || showtime || showfeatures ? "" : "\n");
 		dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0);
 	}
 }
