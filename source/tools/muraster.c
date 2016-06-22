@@ -107,12 +107,12 @@
 
 /*
 	MURASTER_CONFIG_GREY_FALLBACK: 0, 1 or 2.
-	
+
 	Set to 1 to fallback to grey rendering if the page
 	is definitely grey. Any images in colored color
 	spaces will be assumed to be color. This may refuse
 	to fallback in some cases when it could have done.
-	
+
 	Set to 2 to fallback to grey rendering if the page
 	is definitely grey. Any images in colored color
 	spaces will be exhaustively checked. This will
@@ -123,7 +123,7 @@
 
 /*
 	MURASTER_CONFIG_THREAD_SYSTEM:
-	
+
 	0 for no threading available.
 
 	1 for Windows (or leave undefined to autodetect)
@@ -709,7 +709,7 @@ static int drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const
 	{
 		fz_clear_pixmap_with_value(ctx, pix, 255);
 
-		dev = fz_new_draw_device(ctx, pix);
+		dev = fz_new_draw_device(ctx, ctm, pix);
 		if (alphabits_graphics == 0)
 			fz_enable_device_hints(ctx, dev, FZ_DONT_INTERPOLATE_IMAGES);
 		if (list)
@@ -775,7 +775,7 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 				w->list = render->list;
 				w->pix = fz_new_pixmap_with_bbox(ctx, colorspace, &ibounds, 0);
 				/* FIXME: Only 1 resolutions for a pixmap */
-				fz_pixmap_set_resolution(w->pix, fz_mini(x_resolution, y_resolution));
+				fz_set_pixmap_resolution(ctx, w->pix, x_resolution, y_resolution);
 				DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
 				w->started = 1;
 				SEMAPHORE_TRIGGER(w->start);
@@ -787,7 +787,7 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 		{
 			pix = fz_new_pixmap_with_bbox(ctx, colorspace, &ibounds, 0);
 			/* FIXME: Only 1 resolutions for a pixmap */
-			fz_pixmap_set_resolution(pix, fz_mini(x_resolution, y_resolution));
+			fz_set_pixmap_resolution(ctx, pix, x_resolution, y_resolution);
 		}
 
 		for (band = 0; band < bands; band++)
@@ -950,7 +950,7 @@ static int try_render_page(fz_context *ctx, int pagenum, fz_cookie *cookie, int 
 			DEBUG_THREADS(("Render failure; trying again with %d band height multiple\n", render->band_height_multiple));
 			continue;
 		}
-		
+
 		/* If all else fails, ditch the list and try again. */
 		if (render->list)
 		{
@@ -1206,7 +1206,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		/* Make the display list, and see if we need color */
 		fz_try(ctx)
 		{
-			list = fz_new_display_list(ctx);
+			list = fz_new_display_list(ctx, NULL);
 			list_dev = fz_new_list_device(ctx, list);
 #if GREY_FALLBACK != 0
 			test_dev = fz_new_test_device(ctx, &is_color, 0.01f, 0, list_dev);
@@ -1539,12 +1539,12 @@ static int
 read_rotation(const char *arg)
 {
 	int i;
-	
+
 	if (strcmp(arg, "auto"))
 	{
 		return -1;
 	}
-	
+
 	i = fz_atoi(arg);
 
 	i = i % 360;
