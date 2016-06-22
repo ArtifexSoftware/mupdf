@@ -562,7 +562,9 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
+		fz_rect tscissor = *scissor;
+		fz_transform_rect(&tscissor, &dev->transform);
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
 	}
 
 	if (fz_is_empty_irect(&bbox) || fz_is_rect_gel(ctx, gel))
@@ -643,7 +645,9 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
+		fz_rect tscissor = *scissor;
+		fz_transform_rect(&tscissor, &dev->transform);
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
 	}
 
 	fz_try(ctx)
@@ -928,7 +932,9 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
+		fz_rect tscissor = *scissor;
+		fz_transform_rect(&tscissor, &dev->transform);
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
 	}
 
 	fz_try(ctx)
@@ -1051,7 +1057,9 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
+		fz_rect tscissor = *scissor;
+		fz_transform_rect(&tscissor, &dev->transform);
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
 	}
 
 	fz_try(ctx)
@@ -1610,7 +1618,9 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	if (scissor)
 	{
 		fz_irect bbox2;
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, scissor));
+		fz_rect tscissor = *scissor;
+		fz_transform_rect(&tscissor, &dev->transform);
+		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
 	}
 
 	fz_try(ctx)
@@ -1746,9 +1756,11 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 	fz_irect bbox;
 	fz_draw_state *state = push_stack(ctx, dev);
 	fz_pixmap *shape = state->shape;
+	fz_rect trect = *rect;
 
 	STACK_PUSHED("mask");
-	fz_intersect_irect(fz_irect_from_rect(&bbox, rect), &state->scissor);
+	fz_transform_rect(&trect, &dev->transform);
+	fz_intersect_irect(fz_irect_from_rect(&bbox, &trect), &state->scissor);
 
 	fz_try(ctx)
 	{
@@ -1878,13 +1890,15 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, int i
 	fz_pixmap *dest;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
+	fz_rect trect = *rect;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_begin(ctx, dev);
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("group");
-	fz_intersect_irect(fz_irect_from_rect(&bbox, rect), &state->scissor);
+	fz_transform_rect(&trect, &dev->transform);
+	fz_intersect_irect(fz_irect_from_rect(&bbox, &trect), &state->scissor);
 
 	fz_try(ctx)
 	{
