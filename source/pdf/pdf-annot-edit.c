@@ -373,17 +373,17 @@ void pdf_set_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Contents, pdf_new_string(ctx, doc, text, strlen(text)));
 }
 
-char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot)
+const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot)
 {
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Contents));
 }
 
-char *pdf_annot_author(fz_context *ctx, pdf_annot *annot)
+const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot)
 {
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_T));
 }
 
-char *pdf_annot_date(fz_context *ctx, pdf_annot *annot)
+const char *pdf_annot_date(fz_context *ctx, pdf_annot *annot)
 {
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_CreationDate));
 }

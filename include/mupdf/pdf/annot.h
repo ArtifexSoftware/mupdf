@@ -121,17 +121,17 @@ void pdf_set_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot
 /*
 	pdf_annot_contents: return the contents of an annotation.
 */
-char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot);
+const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_annot_author: return the author of an annotation.
 */
-char *pdf_annot_author(fz_context *ctx, pdf_annot *annot);
+const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_annot_author: return the date of an annotation.
 */
-char *pdf_annot_date(fz_context *ctx, pdf_annot *annot);
+const char *pdf_annot_date(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_annot_irt: return the indirect reference that this annotation is in reply to.
