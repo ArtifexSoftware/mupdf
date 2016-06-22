@@ -250,7 +250,7 @@ $(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/fitz/context.c source/fitz/e
 
 # --- Tools and Apps ---
 
-MUTOOL := $(addprefix $(OUT)/, mutool)
+MUTOOL := $(OUT)/mutool
 MUTOOL_OBJ := $(addprefix $(OUT)/tools/, mutool.o muconvert.o mudraw.o murun.o)
 MUTOOL_OBJ += $(addprefix $(OUT)/tools/, pdfclean.o pdfcreate.o pdfextract.o pdfinfo.o pdfmerge.o pdfposter.o pdfpages.o pdfshow.o)
 $(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
@@ -260,31 +260,29 @@ $(MUTOOL) : $(MUTOOL_LIB) $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD)
 
 MJSGEN := $(OUT)/mjsgen
-$(MJSGEN) : $(MUPDF_LIB) $(THIRD_LIB)
-$(MJSGEN) : $(addprefix $(OUT)/tools/, mjsgen.o)
+MJSGEN_OBJ := $(addprefix $(OUT)/tools/, mjsgen.o)
+$(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
+$(MJSGEN) : $(MJSGEN_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD)
 
 MUJSTEST := $(OUT)/mujstest
 MUJSTEST_OBJ := $(addprefix $(OUT)/platform/x11/, jstest_main.o pdfapp.o)
 $(MUJSTEST_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUJSTEST) : $(MUPDF_LIB) $(THIRD_LIB)
-$(MUJSTEST) : $(MUJSTEST_OBJ)
+$(MUJSTEST) : $(MUJSTEST_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD)
 
 ifeq "$(HAVE_X11)" "yes"
 MUVIEW_X11 := $(OUT)/mupdf-x11
 MUVIEW_X11_OBJ := $(addprefix $(OUT)/platform/x11/, x11_main.o x11_image.o pdfapp.o)
 $(MUVIEW_X11_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUVIEW_X11) : $(MUPDF_LIB) $(THIRD_LIB)
-$(MUVIEW_X11) : $(MUVIEW_X11_OBJ)
+$(MUVIEW_X11) : $(MUVIEW_X11_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(X11_LIBS)
 
 ifeq "$(HAVE_GLFW)" "yes"
 MUVIEW_GLFW := $(OUT)/mupdf-gl
 MUVIEW_GLFW_OBJ := $(addprefix $(OUT)/platform/gl/, gl-font.o gl-input.o gl-main.o)
 $(MUVIEW_GLFW_OBJ) : $(FITZ_HDR) $(PDF_HDR) platform/gl/gl-app.h
-$(MUVIEW_GLFW) : $(MUPDF_LIB) $(THIRD_LIB) $(GLFW_LIB)
-$(MUVIEW_GLFW) : $(MUVIEW_GLFW_OBJ)
+$(MUVIEW_GLFW) : $(MUVIEW_GLFW_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(GLFW_LIB)
 	$(LINK_CMD) $(GLFW_LIBS)
 endif
 
@@ -292,8 +290,7 @@ ifeq "$(HAVE_CURL)" "yes"
 MUVIEW_X11_CURL := $(OUT)/mupdf-x11-curl
 MUVIEW_X11_CURL_OBJ := $(addprefix $(OUT)/platform/x11/curl/, x11_main.o x11_image.o pdfapp.o curl_stream.o)
 $(MUVIEW_X11_CURL_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUVIEW_X11_CURL) : $(MUPDF_LIB) $(THIRD_LIB) $(CURL_LIB)
-$(MUVIEW_X11_CURL) : $(MUVIEW_X11_CURL_OBJ)
+$(MUVIEW_X11_CURL) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(CURL_LIB)
 	$(LINK_CMD) $(X11_LIBS) $(CURL_LIBS) $(SYS_CURL_DEPS)
 endif
 endif
@@ -302,8 +299,7 @@ ifeq "$(HAVE_WIN32)" "yes"
 MUVIEW_WIN32 := $(OUT)/mupdf
 MUVIEW_WIN32_OBJ := $(addprefix $(OUT)/platform/x11/, win_main.o pdfapp.o win_res.o)
 $(MUVIEW_WIN32_OBJ) : $(FITZ_HDR) $(PDF_HDR)
-$(MUVIEW_WIN32) : $(MUPDF_LIB) $(THIRD_LIB)
-$(MUVIEW_WIN32) : $(MUVIEW_WIN32_OBJ)
+$(MUVIEW_WIN32) : $(MUVIEW_WIN32_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(WIN32_LIBS)
 endif
 
