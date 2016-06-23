@@ -1457,10 +1457,11 @@ static void ffi_Page_toPixmap(js_State *J)
 	fz_page *page = js_touserdata(J, 0, "fz_page");
 	fz_matrix ctm = ffi_tomatrix(J, 1);
 	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
+	int alpha = js_toboolean(J, 3);
 	fz_pixmap *pixmap;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, colorspace);
+		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, colorspace, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -3100,7 +3101,7 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "Page.bound", ffi_Page_bound, 0);
 		jsB_propfun(J, "Page.run", ffi_Page_run, 2);
-		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 1);
+		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 3);
 		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 0);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
 	}

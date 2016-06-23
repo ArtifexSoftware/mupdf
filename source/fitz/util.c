@@ -80,7 +80,7 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs)
+fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect irect;
@@ -91,8 +91,11 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0);
-	fz_clear_pixmap_with_value(ctx, pix, 0xFF);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	if (alpha)
+		fz_clear_pixmap(ctx, pix);
+	else
+		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
 	fz_try(ctx)
 	{
@@ -113,7 +116,7 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 }
 
 fz_pixmap *
-fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs)
+fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect irect;
@@ -124,8 +127,11 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 1);
-	fz_clear_pixmap(ctx, pix);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	if (alpha)
+		fz_clear_pixmap(ctx, pix);
+	else
+		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
 	fz_try(ctx)
 	{
@@ -146,7 +152,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs)
+fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_rect rect;
 	fz_irect irect;
@@ -157,8 +163,11 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0);
-	fz_clear_pixmap_with_value(ctx, pix, 0xFF);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	if (alpha)
+		fz_clear_pixmap(ctx, pix);
+	else
+		fz_clear_pixmap_with_value(ctx, pix, 0xFF);
 
 	fz_try(ctx)
 	{
@@ -179,14 +188,14 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 }
 
 fz_pixmap *
-fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_matrix *ctm, fz_colorspace *cs)
+fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {
 	fz_page *page;
 	fz_pixmap *pix;
 
 	page = fz_load_page(ctx, doc, number);
 	fz_try(ctx)
-		pix = fz_new_pixmap_from_page(ctx, page, ctm, cs);
+		pix = fz_new_pixmap_from_page(ctx, page, ctm, cs, alpha);
 	fz_always(ctx)
 		fz_drop_page(ctx, page);
 	fz_catch(ctx)

@@ -1055,10 +1055,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_getBounds
 /*
  * Class:     com_artifex_mupdf_fitz_Page
  * Method:    toPixmap
- * Signature: (Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;)Lcom/artifex/mupdf/fitz/Pixmap;
+ * Signature: (Lcom/artifex/mupdf/fitz/Matrix;Lcom/artifex/mupdf/fitz/ColorSpace;Z)Lcom/artifex/mupdf/fitz/Pixmap;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toPixmap
-  (JNIEnv *, jobject, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jobject, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page
@@ -1264,10 +1264,10 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_clearWithValue
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
  * Method:    saveAsPNG
- * Signature: (Ljava/lang/String;Z)V
+ * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Pixmap_saveAsPNG
-  (JNIEnv *, jobject, jstring, jboolean);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap

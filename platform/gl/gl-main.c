@@ -263,14 +263,14 @@ void render_page(void)
 	links = NULL;
 	links = fz_load_links(ctx, page);
 
-	pix = fz_new_pixmap_from_page_contents(ctx, page, &page_ctm, fz_device_rgb(ctx));
+	pix = fz_new_pixmap_from_page_contents(ctx, page, &page_ctm, fz_device_rgb(ctx), 0);
 	texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
 
 	annot_count = 0;
 	for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
 	{
-		pix = fz_new_pixmap_from_annot(ctx, annot, &page_ctm, fz_device_rgb(ctx));
+		pix = fz_new_pixmap_from_annot(ctx, annot, &page_ctm, fz_device_rgb(ctx), 1);
 		texture_from_pixmap(&annot_tex[annot_count++], pix);
 		fz_drop_pixmap(ctx, pix);
 	}

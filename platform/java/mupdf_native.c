@@ -2464,13 +2464,13 @@ FUN(Pixmap_getPixels)(JNIEnv *env, jobject self)
 	if (ctx == NULL || pixmap == NULL)
 		return NULL;
 
-	if (pixmap->n != 4)
+	if (pixmap->n != 4 || !pixmap->alpha)
 	{
-		jni_throw(env, FZ_ERROR_GENERIC, "invalid colorspace for getPixels");
+		jni_throw(env, FZ_ERROR_GENERIC, "invalid colorspace for getPixels (must be RGB/BGR with alpha)");
 		return NULL;
 	}
 
-	if (size != pixmap->h * pixmap->stride)
+	if (size * 4 != pixmap->h * pixmap->stride)
 	{
 		jni_throw(env, FZ_ERROR_GENERIC, "invalid stride for getPixels");
 		return NULL;
@@ -3461,7 +3461,7 @@ FUN(Page_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject ctm_, jobject colorspace_)
+FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject ctm_, jobject colorspace_, jboolean alpha)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
@@ -3471,7 +3471,7 @@ FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject ctm_, jobject colorspace_)
 	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, colorspace);
+		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, colorspace, alpha);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

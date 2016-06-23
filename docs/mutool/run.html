@@ -187,8 +187,9 @@ MuPDF can open many document types (PDF, XPS, CBZ, EPUB, FB2 and a handful of im
 <dd>Calls device functions for all the contents on the page, using the specified transform matrix.
 The device can be one of the built-in devices or a JavaScript object with methods for the device calls.
 The transform maps from user space points to device space pixels.
-<dt>Page#toPixmap(transform, colorspace)
+<dt>Page#toPixmap(transform, colorspace, alpha)
 <dd>Render the page into a Pixmap, using the transform and colorspace.
+If alpha is true, the page will be drawn on a transparent background, otherwise white.
 <dt>Page#toDisplayList()
 <dd>Record the contents on the page into a DisplayList.
 <dt>Page#search(needle)
