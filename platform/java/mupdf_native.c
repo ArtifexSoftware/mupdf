@@ -1991,13 +1991,14 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 		 * match the pixels data */
 		pixbbox = clip;
 		pixbbox.x1 = pixbbox.x0 + width;
+
 		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), &pixbbox, 1, &dummy);
 		ninfo = fz_malloc(ctx, sizeof(*ninfo));
 		ninfo->pixmap = pixmap;
 		ninfo->lock = lock;
 		ninfo->unlock = unlock;
-		ninfo->pageX0 = pageX0;
-		ninfo->pageY0 = pageY0;
+		ninfo->pageX0 = patchX0;
+		ninfo->pageY0 = patchY0;
 		ninfo->width = width;
 		ninfo->object = obj;
 		(*env)->SetLongField(env, self, fid_NativeDevice_nativeInfo, jlong_cast(ninfo));
@@ -2030,7 +2031,7 @@ static void androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	}
 
 	/* Now offset pixels to allow for the page offsets */
-	//pixels += sizeof(int32_t) * (info->pageX0 + info->width * info->pageY0);
+	pixels += sizeof(int32_t) * (info->pageX0 + info->width * info->pageY0);
 
 	info->pixmap->samples = pixels;
 }

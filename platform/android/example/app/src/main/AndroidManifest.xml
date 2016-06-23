@@ -3,7 +3,7 @@
 	package="com.artifex.mupdf.example">
 
 	<uses-sdk
-		android:minSdkVersion="8"
+		android:minSdkVersion="16"
 		android:targetSdkVersion="16" />
 
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
