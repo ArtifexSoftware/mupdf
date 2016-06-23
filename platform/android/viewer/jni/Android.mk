@@ -20,7 +20,11 @@ LOCAL_C_INCLUDES := \
 	$(MUPDF_ROOT)/platform/java
 LOCAL_CFLAGS := -DHAVE_ANDROID
 LOCAL_MODULE    := mupdf_java
-LOCAL_SRC_FILES := mupdf.c
+
+LOCAL_SRC_FILES := \
+	mupdf.c \
+	$(MUPDF_ROOT)/../platform/java/mupdf_native.c
+
 LOCAL_STATIC_LIBRARIES := mupdfcore mupdfthirdparty
 ifdef NDK_PROFILER
 LOCAL_CFLAGS += -pg -DNDK_PROFILER
