@@ -295,9 +295,10 @@ fz_font *fz_load_system_cjk_font(fz_context *ctx, const char *name, int ros, int
 	return font;
 }
 
-fz_font *fz_load_fallback_font(fz_context *ctx, int script, int serif, int bold, int italic)
+fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic)
 {
 	const char *data;
+	int index;
 	int size;
 
 	if (script < 0 || script > nelem(ctx->font->fallback))
@@ -305,25 +306,42 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int serif, int bold,
 
 	/* TODO: bold and italic */
 
+	index = script;
+	if (script == UCDN_SCRIPT_HAN)
+	{
+		switch (language)
+		{
+		case FZ_LANG_ja: index = UCDN_LAST_SCRIPT + 1; break;
+		case FZ_LANG_ko: index = UCDN_LAST_SCRIPT + 2; break;
+		case FZ_LANG_zh_Hant: index = UCDN_LAST_SCRIPT + 3; break;
+		case FZ_LANG_zh_Hans: index = UCDN_LAST_SCRIPT + 4; break;
+		}
+	}
+	if (script == UCDN_SCRIPT_ARABIC)
+	{
+		if (language == FZ_LANG_ur || language == FZ_LANG_urd)
+			index = UCDN_LAST_SCRIPT + 5;
+	}
+
 	if (serif)
 	{
-		if (ctx->font->fallback[script].serif)
-			return ctx->font->fallback[script].serif;
-		data = fz_lookup_noto_font(ctx, script, 1, &size);
+		if (ctx->font->fallback[index].serif)
+			return ctx->font->fallback[index].serif;
+		data = fz_lookup_noto_font(ctx, script, language, 1, &size);
 		if (data)
 		{
-			ctx->font->fallback[script].serif = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
-			return ctx->font->fallback[script].serif;
+			ctx->font->fallback[index].serif = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+			return ctx->font->fallback[index].serif;
 		}
 	}
 
-	if (ctx->font->fallback[script].sans)
-		return ctx->font->fallback[script].sans;
-	data = fz_lookup_noto_font(ctx, script, 0, &size);
+	if (ctx->font->fallback[index].sans)
+		return ctx->font->fallback[index].sans;
+	data = fz_lookup_noto_font(ctx, script, language, 0, &size);
 	if (data)
 	{
-		ctx->font->fallback[script].sans = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
-		return ctx->font->fallback[script].sans;
+		ctx->font->fallback[index].sans = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
+		return ctx->font->fallback[index].sans;
 	}
 
 	return NULL;
@@ -1488,7 +1506,7 @@ fz_encode_character(fz_context *ctx, fz_font *font, int ucs)
 /* FIXME: This should take language too eventually, to allow for fonts where we can select different
  * languages using opentype features. */
 int
-fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unicode, int script, fz_font **out_font)
+fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unicode, int script, int language, fz_font **out_font)
 {
 	fz_font *font;
 	int gid;
@@ -1500,7 +1518,7 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	if (script == 0)
 		script = ucdn_get_script(unicode);
 
-	font = fz_load_fallback_font(ctx, script, user_font->is_serif, user_font->is_bold, user_font->is_italic);
+	font = fz_load_fallback_font(ctx, script, language, user_font->is_serif, user_font->is_bold, user_font->is_italic);
 	if (font)
 	{
 		gid = fz_encode_character(ctx, font, unicode);

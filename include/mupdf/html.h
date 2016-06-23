@@ -219,11 +219,11 @@ struct fz_html_flow_s
 	/* Direction setting for text - UAX#9 says 125 is the max */
 	unsigned int bidi_level : 7;
 
-	/* Whether the markup specifies a given language. */
-	unsigned int markup_lang : 8;
-
 	/* The script detected by the bidi code. */
 	unsigned int script : 8;
+
+	/* Whether the markup specifies a given language. */
+	unsigned int markup_lang : 15;
 
 	float x, y, w, h;
 	fz_html *box; /* for style and em */

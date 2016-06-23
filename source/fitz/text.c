@@ -114,7 +114,7 @@ fz_show_string(fz_context *ctx, fz_text *text, fz_font *user_font, fz_matrix *tr
 	while (*s)
 	{
 		s += fz_chartorune(&ucs, s);
-		gid = fz_encode_character_with_fallback(ctx, user_font, ucs, 0, &font);
+		gid = fz_encode_character_with_fallback(ctx, user_font, ucs, 0, language, &font);
 		fz_show_glyph(ctx, text, font, trm, gid, ucs, wmode, bidi_level, markup_dir, language);
 		adv = fz_advance_glyph(ctx, font, gid, wmode);
 		if (wmode == 0)
@@ -227,6 +227,16 @@ fz_text_language fz_text_language_from_string(const char *str)
 	if (str == NULL)
 		return FZ_LANG_UNSET;
 
+	if (!strcmp(str, "zh-Hant") ||
+			!strcmp(str, "zh-HK") ||
+			!strcmp(str, "zh-MO") ||
+			!strcmp(str, "zh-SG") ||
+			!strcmp(str, "zh-TW"))
+		return FZ_LANG_zh_Hant;
+	if (!strcmp(str, "zh-Hans") ||
+			!strcmp(str, "zh-CN"))
+		return FZ_LANG_zh_Hans;
+
 	/* 1st char */
 	if (str[0] >= 'a' && str[0] <= 'z')
 		lang = str[0] - 'a' + 1;
@@ -254,23 +264,30 @@ fz_text_language fz_text_language_from_string(const char *str)
 	return lang;
 }
 
-char *fz_string_from_text_language(char str[4], fz_text_language lang)
+char *fz_string_from_text_language(char str[8], fz_text_language lang)
 {
 	int c;
 
-	/* str is supposed to be at least 4 chars in size */
+	/* str is supposed to be at least 8 chars in size */
 	if (str == NULL)
 		return NULL;
 
-	c = lang % 27;
-	lang = lang / 27;
-	str[0] = c == 0 ? 0 : c - 1 + 'a';
-	c = lang % 27;
-	lang = lang / 27;
-	str[1] = c == 0 ? 0 : c - 1 + 'a';
-	c = lang % 27;
-	str[2] = c == 0 ? 0 : c - 1 + 'a';
-	str[3] = 0;
+	if (lang == FZ_LANG_zh_Hant)
+		fz_strlcpy(str, "zh-Hant", 8);
+	else if (lang == FZ_LANG_zh_Hans)
+		fz_strlcpy(str, "zh-Hans", 8);
+	else
+	{
+		c = lang % 27;
+		lang = lang / 27;
+		str[0] = c == 0 ? 0 : c - 1 + 'a';
+		c = lang % 27;
+		lang = lang / 27;
+		str[1] = c == 0 ? 0 : c - 1 + 'a';
+		c = lang % 27;
+		str[2] = c == 0 ? 0 : c - 1 + 'a';
+		str[3] = 0;
+	}
 
 	return str;
 }

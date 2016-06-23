@@ -154,6 +154,7 @@ static fz_html_flow *add_flow(fz_context *ctx, fz_pool *pool, fz_html *top, fz_h
 	flow->type = type;
 	flow->expand = 0;
 	flow->bidi_level = 0;
+	flow->markup_lang = 0;
 	flow->breaks_line = 0;
 	flow->box = inline_box;
 	*top->flow_tail = flow;
@@ -182,12 +183,13 @@ static void add_flow_shyphen(fz_context *ctx, fz_pool *pool, fz_html *top, fz_ht
 	(void)add_flow(ctx, pool, top, inline_box, FLOW_SHYPHEN);
 }
 
-static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box, const char *a, const char *b)
+static void add_flow_word(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box, const char *a, const char *b, int lang)
 {
 	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_WORD);
 	flow->content.text = fz_pool_alloc(ctx, pool, b - a + 1);
 	memcpy(flow->content.text, a, b - a);
 	flow->content.text[b - a] = 0;
+	flow->markup_lang = lang;
 }
 
 static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box, fz_image *img)
@@ -223,7 +225,7 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 	return new_flow;
 }
 
-static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_html *inline_box, struct genstate *g)
+static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_html *inline_box, int lang, struct genstate *g)
 {
 	static const char *space = " ";
 	int bsp = inline_box->style.white_space & WS_ALLOW_BREAK_SPACE;
@@ -234,7 +236,7 @@ static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_html *
 			if (bsp)
 				add_flow_space(ctx, pool, flow, inline_box);
 			else
-				add_flow_word(ctx, pool, flow, inline_box, space, space+1);
+				add_flow_word(ctx, pool, flow, inline_box, space, space+1, lang);
 		}
 		g->emit_white = 0;
 	}
@@ -276,7 +278,7 @@ static const char *pairbrk[29] =
 	"_^^%%%^^^_______%%__^^^_____%", /* RI regional indicator */
 };
 
-static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const char *text, struct genstate *g)
+static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const char *text, int lang, struct genstate *g)
 {
 	fz_html *flow;
 
@@ -319,7 +321,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 				if (bsp)
 					add_flow_space(ctx, pool, flow, box);
 				else
-					add_flow_word(ctx, pool, flow, box, space, space+1);
+					add_flow_word(ctx, pool, flow, box, space, space+1, lang);
 				++text;
 			}
 			g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a space */
@@ -329,7 +331,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 			const char *prev, *mark = text;
 			int c;
 
-			flush_space(ctx, pool, flow, box, g);
+			flush_space(ctx, pool, flow, box, lang, g);
 
 			if (g->at_bol)
 				g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ;
@@ -341,7 +343,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 				if (c == 0xAD) /* soft hyphen */
 				{
 					if (mark != prev)
-						add_flow_word(ctx, pool, flow, box, mark, prev);
+						add_flow_word(ctx, pool, flow, box, mark, prev, lang);
 					add_flow_shyphen(ctx, pool, flow, box);
 					mark = text;
 					g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ; /* don't add sbreaks after a soft hyphen */
@@ -361,7 +363,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 						if (brk == '_')
 						{
 							if (mark != prev)
-								add_flow_word(ctx, pool, flow, box, mark, prev);
+								add_flow_word(ctx, pool, flow, box, mark, prev, lang);
 							add_flow_sbreak(ctx, pool, flow, box);
 							mark = prev;
 						}
@@ -371,7 +373,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 				}
 			}
 			if (mark != text)
-				add_flow_word(ctx, pool, flow, box, mark, text);
+				add_flow_word(ctx, pool, flow, box, mark, text, lang);
 
 			g->at_bol = 0;
 		}
@@ -420,12 +422,12 @@ static void generate_image(fz_context *ctx, fz_pool *pool, fz_html *box, fz_imag
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
 
-	flush_space(ctx, pool, flow, box, g);
+	flush_space(ctx, pool, flow, box, 0, g);
 
 	if (!img)
 	{
 		const char *alt = "[image]";
-		add_flow_word(ctx, pool, flow, box, alt, alt + 7);
+		add_flow_word(ctx, pool, flow, box, alt, alt + 7, 0);
 	}
 	else
 	{
@@ -578,7 +580,7 @@ static void insert_inline_box(fz_context *ctx, fz_pool *pool, fz_html *box, fz_h
 }
 
 static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
-		fz_css_match *up_match, int list_counter, int markup_dir, struct genstate *g)
+		fz_css_match *up_match, int list_counter, int markup_dir, int markup_lang, struct genstate *g)
 {
 	fz_css_match match;
 	fz_html *box;
@@ -656,9 +658,11 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 
 			else if (display != DIS_NONE)
 			{
+				const char *dir, *lang;
 				int child_dir = markup_dir;
+				int child_lang = markup_lang;
 
-				const char *dir = fz_xml_att(node, "dir");
+				dir = fz_xml_att(node, "dir");
 				if (dir)
 				{
 					if (!strcmp(dir, "auto"))
@@ -670,6 +674,10 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 					else
 						child_dir = DEFAULT_DIR;
 				}
+
+				lang = fz_xml_att(node, "lang");
+				if (lang)
+					child_lang = fz_text_language_from_string(lang);
 
 				box = new_box(ctx, g->pool, child_dir);
 				fz_apply_css_style(ctx, g->set, &box->style, &match);
@@ -698,7 +706,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 					int child_counter = list_counter;
 					if (!strcmp(tag, "ul") || !strcmp(tag, "ol"))
 						child_counter = 0;
-					generate_boxes(ctx, fz_xml_down(node), box, &match, child_counter, child_dir, g);
+					generate_boxes(ctx, fz_xml_down(node), box, &match, child_counter, child_dir, child_lang, g);
 				}
 			}
 		}
@@ -721,11 +729,11 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 					/* Make sure not to recursively multiply font sizes. */
 					box->style.font_size.value = 1;
 					box->style.font_size.unit = N_SCALE;
-					generate_text(ctx, g->pool, box, text, g);
+					generate_text(ctx, g->pool, box, text, markup_lang, g);
 				}
 				else
 				{
-					generate_text(ctx, g->pool, top, text, g);
+					generate_text(ctx, g->pool, top, text, markup_lang, g);
 				}
 			}
 		}
@@ -760,6 +768,7 @@ typedef struct string_walker
 	const char *s;
 	fz_font *base_font;
 	int script;
+	int language;
 	fz_font *font;
 	fz_font *next_font;
 	hb_glyph_position_t *glyph_pos;
@@ -813,7 +822,7 @@ static int quick_ligature(fz_context *ctx, string_walker *walker, unsigned int i
 	return walker->glyph_info[i].codepoint;
 }
 
-static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int rtl, fz_font *font, int script, const char *text)
+static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer_t *hb_buf, int rtl, fz_font *font, int script, int language, const char *text)
 {
 	walker->ctx = ctx;
 	walker->hb_buf = hb_buf;
@@ -823,6 +832,7 @@ static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer
 	walker->s = text;
 	walker->base_font = font;
 	walker->script = script;
+	walker->language = language;
 	walker->font = NULL;
 	walker->next_font = NULL;
 }
@@ -835,6 +845,7 @@ static int walk_string(string_walker *walker)
 	FT_Face face;
 	int fterr;
 	int quickshape;
+	char lang[8];
 
 	walker->start = walker->end;
 	walker->end = walker->s;
@@ -850,7 +861,7 @@ static int walk_string(string_walker *walker)
 		int c;
 
 		walker->s += fz_chartorune(&c, walker->s);
-		(void)fz_encode_character_with_fallback(ctx, walker->base_font, c, walker->script, &walker->next_font);
+		(void)fz_encode_character_with_fallback(ctx, walker->base_font, c, walker->script, walker->language, &walker->next_font);
 		if (walker->next_font != walker->font)
 		{
 			if (walker->font != NULL)
@@ -876,8 +887,12 @@ static int walk_string(string_walker *walker)
 
 		hb_buffer_clear_contents(walker->hb_buf);
 		hb_buffer_set_direction(walker->hb_buf, walker->rtl ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
-		/* hb_buffer_set_script(hb_buf, hb_ucdn_script_translate(script)); */
-		/* hb_buffer_set_language(hb_buf, hb_language_from_string("en", strlen("en"))); */
+		/* hb_buffer_set_script(walker->hb_buf, hb_ucdn_script_translate(walker->script)); */
+		if (walker->language)
+		{
+			fz_string_from_text_language(lang, walker->language);
+			hb_buffer_set_language(walker->hb_buf, hb_language_from_string(lang, strlen(lang)));
+		}
 		/* hb_buffer_set_cluster_level(hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS); */
 
 		hb_buffer_add_utf8(walker->hb_buf, walker->start, walker->end - walker->start, 0, -1);
@@ -955,7 +970,7 @@ static void measure_string(fz_context *ctx, fz_html_flow *node, hb_buffer_t *hb_
 	node->h = fz_from_css_number_scale(node->box->style.line_height, em, em, em);
 
 	s = get_node_text(ctx, node);
-	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style.font, node->script, s);
+	init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, node->box->style.font, node->script, node->markup_lang, s);
 	while (walk_string(&walker))
 	{
 		int x = 0;
@@ -1488,7 +1503,7 @@ static void draw_flow_box(fz_context *ctx, fz_html *box, float page_top, float p
 			trm.f = y;
 
 			s = get_node_text(ctx, node);
-			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, s);
+			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, node->markup_lang, s);
 			while (walk_string(&walker))
 			{
 				float node_scale = node->box->em / walker.scale;
@@ -1726,7 +1741,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
+		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, FZ_LANG_UNSET, &font);
 		w += fz_advance_glyph(ctx, font, g, 0) * box->em;
 	}
 
@@ -1736,7 +1751,7 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 	while (*s)
 	{
 		s += fz_chartorune(&c, s);
-		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, &font);
+		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, FZ_LANG_UNSET, &font);
 		fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 		trm.e += fz_advance_glyph(ctx, font, g, 0) * box->em;
 	}
@@ -2301,7 +2316,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	fz_apply_css_style(ctx, g.set, &box->style, &match);
 	// TODO: transfer page margins out of this hacky box
 
-	generate_boxes(ctx, xml, box, &match, 0, DEFAULT_DIR, &g);
+	generate_boxes(ctx, xml, box, &match, 0, DEFAULT_DIR, FZ_LANG_UNSET, &g);
 
 	fz_drop_css(ctx, g.css);
 	fz_drop_xml(ctx, xml);
