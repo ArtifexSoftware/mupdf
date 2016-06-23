@@ -877,6 +877,22 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\generated\SourceHanSansCN-Regular.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\SourceHanSansJP-Regular.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\SourceHanSansKR-Regular.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\SourceHanSansTW-Regular.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\generated\StandardSymbolsPS.c"
 			>
 		</File>

@@ -3,13 +3,15 @@
 /*
 	Base 14 PDF fonts from URW.
 	Noto fonts from Google.
+	Source Han Sans from Adobe for CJK.
 	DroidSansFallback from Android for CJK.
 	Charis SIL from SIL.
 
 	Define TOFU to only include the Base14 and CJK fonts.
 
-	Define TOFU_CJK to skip CJK font.
-	Define TOFU_CJK_EXT to skip CJK Extension A support.
+	Define TOFU_CJK_LANG to skip Source Han Sans per-language fonts.
+	Define TOFU_CJK_EXT to skip DroidSansFallbackFull (and the above).
+	Define TOFU_CJK to skip DroidSansFallback (and the above).
 
 	Define TOFU_EMOJI to skip emoji font.
 	Define TOFU_HISTORIC to skip ancient/historic scripts.
@@ -133,7 +135,17 @@ fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *siz
 	if (index) *index = 0;
 #ifndef TOFU_CJK
 #ifndef TOFU_CJK_EXT
+#ifndef TOFU_CJK_LANG
+	switch (registry) {
+	case FZ_ADOBE_JAPAN_1: RETURN(SourceHanSansJP_Regular_otf);
+	case FZ_ADOBE_KOREA_1: RETURN(SourceHanSansKR_Regular_otf);
+	default:
+	case FZ_ADOBE_GB_1: RETURN(SourceHanSansCN_Regular_otf);
+	case FZ_ADOBE_CNS_1: RETURN(SourceHanSansTW_Regular_otf);
+	}
+#else
 	RETURN(DroidSansFallbackFull_ttf);
+#endif
 #else
 	RETURN(DroidSansFallback_ttf);
 #endif
