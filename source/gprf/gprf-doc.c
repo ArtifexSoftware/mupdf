@@ -1,4 +1,4 @@
-#ifdef SUPPORT_GPROOF
+#if FZ_ENABLE_GPRF
 /* Choose whether to call gs via an exe or via an API */
 #if defined(__ANDROID__) || defined(GSVIEW_WIN)
 #define USE_GS_API
@@ -112,7 +112,7 @@ struct gprf_page_s
 
 typedef struct fz_image_gprf_s
 {
-	fz_image base;
+	fz_image super;
 	fz_off_t offset[FZ_MAX_SEPARATIONS+3+1]; /* + RGB + END */
 	gprf_file *file;
 	fz_separations *separations;
@@ -319,7 +319,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 	/* The file contains RGB + up to FZ_MAX_SEPARATIONS. Hence the
 	 * "3 + FZ_MAX_SEPARATIONS" usage in all the arrays below. */
 	fz_image_gprf *image = (fz_image_gprf *)image_;
-	fz_pixmap *pix = fz_new_pixmap(ctx, image->base.colorspace, image->base.w, image->base.h);
+	fz_pixmap *pix = fz_new_pixmap(ctx, image->super.colorspace, image->super.w, image->super.h, 1);
 	fz_stream *file[3 + FZ_MAX_SEPARATIONS] = { NULL };
 	int read_sep[3 + FZ_MAX_SEPARATIONS] = { 0 };
 	int num_seps, i, j, n;
@@ -327,7 +327,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 	unsigned char data[(3 + FZ_MAX_SEPARATIONS) * decode_chunk_size];
 	unsigned char delta[3 + FZ_MAX_SEPARATIONS] = { 0 };
 	unsigned char equiv[3 + FZ_MAX_SEPARATIONS][4];
-	int bytes_per_channel = image->base.w * image->base.h;
+	int bytes_per_channel = image->super.w * image->super.h;
 	unsigned char *out = fz_pixmap_samples(ctx, pix);
 
 	fz_var(file);
@@ -336,8 +336,8 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 	{
 		area->x0 = 0;
 		area->y0 = 0;
-		area->x1 = image->base.w;
-		area->y1 = image->base.h;
+		area->x1 = image->super.w;
+		area->y1 = image->super.h;
 	}
 
 	fz_try(ctx)
@@ -474,24 +474,22 @@ fz_new_gprf_image(fz_context *ctx, gprf_page *page, int imagenum, fz_off_t offse
 			h = GPRF_TILESIZE;
 	}
 
-	FZ_INIT_STORABLE(&image->base, 1, fz_drop_image_gprf_imp);
-	image->base.w = w;
-	image->base.h = h;
-	image->base.n = 4; /* Always RGB + Alpha */
-	image->base.colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-	image->base.bpc = 8;
-	image->base.buffer = NULL;
-	image->base.get_pixmap = gprf_get_pixmap;
-	image->base.xres = page->doc->res;
-	image->base.yres = page->doc->res;
-	image->base.tile = NULL;
-	image->base.mask = NULL;
+	FZ_INIT_STORABLE(&image->super, 1, fz_drop_image_gprf_imp);
+	image->super.w = w;
+	image->super.h = h;
+	image->super.n = 4; /* Always RGB + Alpha */
+	image->super.colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+	image->super.bpc = 8;
+	image->super.get_pixmap = gprf_get_pixmap;
+	image->super.xres = page->doc->res;
+	image->super.yres = page->doc->res;
+	image->super.mask = NULL;
 	image->file = fz_keep_gprf_file(ctx, page->file);
 	memcpy(image->offset, offsets, sizeof(fz_off_t) * (3+seps));
 	image->offset[seps+3] = end;
 	image->separations = fz_keep_separations(ctx, page->separations);
 
-	return &image->base;
+	return &image->super;
 }
 
 static void
@@ -594,7 +592,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS run failed: %d", code);
 #else
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I\%rom\%Resource/Init/ -dFirstPage=%d -dLastPage=%d %s",
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I%%rom%%Resource/Init/ -dFirstPage=%d -dLastPage=%d %s",
 			doc->res, filename, disp_profile, print_profile, page->number+1, page->number+1, doc->pdf_filename);
 		fz_system(ctx, gs_command);
 #endif

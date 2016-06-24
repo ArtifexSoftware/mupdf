@@ -52,6 +52,14 @@ fz_pixmap *fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_i
 void fz_drop_image(fz_context *ctx, fz_image *image);
 
 /*
+	fz_drop_image: Drop a reference to the base class of an
+	image (for internal use in derived image classes only).
+
+	image: The image to drop a reference to.
+*/
+void fz_drop_image_base(fz_context *ctx, fz_image *image);
+
+/*
 	fz_keep_image: Increment the reference count of an image.
 
 	image: The image to take a reference to.
