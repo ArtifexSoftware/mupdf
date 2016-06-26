@@ -410,6 +410,9 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 	case FZ_IMAGE_JXR:
 		tile = fz_load_jxr(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
+	case FZ_IMAGE_JPX:
+		tile = fz_load_jpx(ctx, image->buffer->buffer->data, image->buffer->buffer->len, NULL, 0);
+		break;
 	case FZ_IMAGE_JPEG:
 		/* Scan JPEG stream and patch missing height values in header */
 		{
@@ -912,7 +915,17 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		bc = fz_malloc_struct(ctx, fz_compressed_buffer);
 		bc->buffer = fz_keep_buffer(ctx, buffer);
 
-		if (buf[0] == 0xff && buf[1] == 0xd8)
+		if (buf[0] == 0xff && buf[1] == 0x4f)
+		{
+			bc->params.type = FZ_IMAGE_JPX;
+			fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		}
+		else if (buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0x00 && buf[3] == 0x0c && buf[4] == 0x6a && buf[5] == 0x50 && buf[6] == 0x20 && buf[7] == 0x20)
+		{
+			bc->params.type = FZ_IMAGE_JPX;
+			fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		}
+		else if (buf[0] == 0xff && buf[1] == 0xd8)
 		{
 			bc->params.type = FZ_IMAGE_JPEG;
 			bc->params.u.jpeg.color_transform = -1;

@@ -69,8 +69,8 @@ static OPJ_BOOL fz_opj_stream_seek(OPJ_OFF_T seek_pos, void * p_user_data)
 	return OPJ_TRUE;
 }
 
-fz_pixmap *
-fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed)
+static fz_pixmap *
+jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
 {
 	fz_pixmap *img;
 	opj_dparameters_t params;
@@ -210,40 +210,61 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *de
 		fz_rethrow(ctx);
 	}
 
-	p = img->samples;
-	stride = img->stride - w * (n + a);
-	for (y = 0; y < h; y++)
+	if (!onlymeta)
 	{
-		for (x = 0; x < w; x++)
+		p = img->samples;
+		stride = img->stride - w * (n + a);
+		for (y = 0; y < h; y++)
 		{
-			for (k = 0; k < n + a; k++)
+			for (x = 0; x < w; x++)
 			{
-				v = jpx->comps[k].data[y * w + x];
-				if (sgnd)
-					v = v + (1 << (depth - 1));
-				if (depth > 8)
-					v = v >> (depth - 8);
-				else if (depth < 8)
-					v = v << (8 - depth);
-				*p++ = v;
+				for (k = 0; k < n + a; k++)
+				{
+					v = jpx->comps[k].data[y * w + x];
+					if (sgnd)
+						v = v + (1 << (depth - 1));
+					if (depth > 8)
+						v = v >> (depth - 8);
+					else if (depth < 8)
+						v = v << (8 - depth);
+					*p++ = v;
+				}
 			}
+			p += stride;
 		}
-		p += stride;
+
+		if (a)
+		{
+			if (n == 4)
+			{
+				fz_pixmap *tmp = fz_new_pixmap(ctx, fz_device_rgb(ctx), w, h, 1);
+				fz_convert_pixmap(ctx, tmp, img);
+				fz_drop_pixmap(ctx, img);
+				img = tmp;
+			}
+			fz_premultiply_pixmap(ctx, img);
+		}
 	}
 
 	opj_image_destroy(jpx);
 
-	if (a)
-	{
-		if (n == 4)
-		{
-			fz_pixmap *tmp = fz_new_pixmap(ctx, fz_device_rgb(ctx), w, h, 1);
-			fz_convert_pixmap(ctx, tmp, img);
-			fz_drop_pixmap(ctx, img);
-			img = tmp;
-		}
-		fz_premultiply_pixmap(ctx, img);
-	}
-
 	return img;
+}
+
+fz_pixmap *
+fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed)
+{
+	return jpx_read_image(ctx, data, size, defcs, indexed, 0);
+}
+
+void
+fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+{
+	fz_pixmap *img = jpx_read_image(ctx, data, size, NULL, 0, 1);
+
+	*cspacep = fz_keep_colorspace(ctx, img->colorspace);
+	*wp = img->w;
+	*hp = img->h;
+	*xresp = 72; /* openjpeg does not read the JPEG 2000 resc box */
+	*yresp = 72; /* openjpeg does not read the JPEG 2000 resc box */
 }

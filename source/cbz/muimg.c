@@ -159,7 +159,9 @@ img_recognize(fz_context *doc, const char *magic)
 		if (!fz_strcasecmp(ext, ".png") || !fz_strcasecmp(ext, ".jpg") ||
 			!fz_strcasecmp(ext, ".jpeg") || !fz_strcasecmp(ext, ".jfif") ||
 			!fz_strcasecmp(ext, ".jfif-tbnl") || !fz_strcasecmp(ext, ".jpe") ||
-			!fz_strcasecmp(ext, ".gif") || !fz_strcasecmp(ext, ".bmp"))
+			!fz_strcasecmp(ext, ".gif") || !fz_strcasecmp(ext, ".bmp") ||
+			!fz_strcasecmp(ext, ".jpx") || !fz_strcasecmp(ext, ".jp2") ||
+			!fz_strcasecmp(ext, ".j2k"))
 			return 100;
 	}
 	if (!strcmp(magic, "png") || !strcmp(magic, "image/png") ||
@@ -167,7 +169,10 @@ img_recognize(fz_context *doc, const char *magic)
 		!strcmp(magic, "jpeg") || !strcmp(magic, "image/pjpeg") ||
 		!strcmp(magic, "jpe") || !strcmp(magic, "jfif") ||
 		!strcmp(magic, "gif") || !strcmp(magic, "image/gif") ||
-		!strcmp(magic, "bmp") || !strcmp(magic, "image/bmp"))
+		!strcmp(magic, "bmp") || !strcmp(magic, "image/bmp") ||
+		!strcmp(magic, "jpx") || !strcmp(magic, "image/jpx") ||
+		!strcmp(magic, "jp2") || !strcmp(magic, "image/jp2") ||
+		!strcmp(magic, "j2k"))
 		return 100;
 
 	return 0;

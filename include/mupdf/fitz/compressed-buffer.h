@@ -19,7 +19,7 @@ enum
 {
 	FZ_IMAGE_UNKNOWN = 0,
 	FZ_IMAGE_JPEG = 1,
-	FZ_IMAGE_JPX = 2, /* Placeholder until supported */
+	FZ_IMAGE_JPX = 2,
 	FZ_IMAGE_FAX = 3,
 	FZ_IMAGE_JBIG2 = 4,
 	FZ_IMAGE_RAW = 5,
