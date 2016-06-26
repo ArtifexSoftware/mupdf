@@ -407,6 +407,9 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 	case FZ_IMAGE_TIFF:
 		tile = fz_load_tiff(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
+	case FZ_IMAGE_PNM:
+		tile = fz_load_pnm(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
+		break;
 	case FZ_IMAGE_JXR:
 		tile = fz_load_jxr(ctx, image->buffer->buffer->data, image->buffer->buffer->len);
 		break;
@@ -915,7 +918,12 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 		bc = fz_malloc_struct(ctx, fz_compressed_buffer);
 		bc->buffer = fz_keep_buffer(ctx, buffer);
 
-		if (buf[0] == 0xff && buf[1] == 0x4f)
+		if (buf[0] == 'P' && buf[1] >= '1' && buf[1] <= '7')
+		{
+			bc->params.type = FZ_IMAGE_PNM;
+			fz_load_pnm_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
+		}
+		else if (buf[0] == 0xff && buf[1] == 0x4f)
 		{
 			bc->params.type = FZ_IMAGE_JPX;
 			fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);

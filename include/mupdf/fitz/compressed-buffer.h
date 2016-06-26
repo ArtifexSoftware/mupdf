@@ -31,6 +31,7 @@ enum
 	FZ_IMAGE_JXR = 11,
 	FZ_IMAGE_GIF = 12,
 	FZ_IMAGE_BMP = 13,
+	FZ_IMAGE_PNM = 14,
 };
 
 struct fz_compression_params_s
