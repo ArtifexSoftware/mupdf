@@ -36,6 +36,7 @@ struct info
 			pdf_obj *obj;
 			pdf_obj *subtype;
 			pdf_obj *name;
+			pdf_obj *encoding;
 		} font;
 		struct {
 			pdf_obj *obj;
@@ -251,6 +252,7 @@ gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 		pdf_obj *subtype = NULL;
 		pdf_obj *basefont = NULL;
 		pdf_obj *name = NULL;
+		pdf_obj *encoding = NULL;
 		int k;
 
 		fontdict = pdf_dict_get_val(ctx, dict, i);
@@ -264,6 +266,9 @@ gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 		basefont = pdf_dict_get(ctx, fontdict, PDF_NAME_BaseFont);
 		if (!basefont || pdf_is_null(ctx, basefont))
 			name = pdf_dict_get(ctx, fontdict, PDF_NAME_Name);
+		encoding = pdf_dict_get(ctx, fontdict, PDF_NAME_Encoding);
+		if (pdf_is_dict(ctx, encoding))
+			encoding = pdf_dict_get(ctx, encoding, PDF_NAME_BaseEncoding);
 
 		for (k = 0; k < glo->fonts; k++)
 			if (!pdf_objcmp(ctx, glo->font[k].u.font.obj, fontdict))
@@ -281,6 +286,7 @@ gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 		glo->font[glo->fonts - 1].u.font.obj = fontdict;
 		glo->font[glo->fonts - 1].u.font.subtype = subtype;
 		glo->font[glo->fonts - 1].u.font.name = basefont ? basefont : name;
+		glo->font[glo->fonts - 1].u.font.encoding = encoding;
 	}
 }
 
@@ -692,12 +698,14 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 		fz_printf(ctx, out, "Fonts (%d):\n", glo->fonts);
 		for (i = 0; i < glo->fonts; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT_zu "%s '%s' (%d %d R)\n",
+			fz_printf(ctx, out, PAGE_FMT_zu "%s '%s' %s%s(%d %d R)\n",
 				glo->font[i].page,
 				pdf_to_num(ctx, glo->font[i].pageref),
 				pdf_to_gen(ctx, glo->font[i].pageref),
 				pdf_to_name(ctx, glo->font[i].u.font.subtype),
 				pdf_to_name(ctx, glo->font[i].u.font.name),
+				glo->font[i].u.font.encoding ? pdf_to_name(ctx, glo->font[i].u.font.encoding) : "",
+				glo->font[i].u.font.encoding ? " " : "",
 				pdf_to_num(ctx, glo->font[i].u.font.obj),
 				pdf_to_gen(ctx, glo->font[i].u.font.obj));
 		}
