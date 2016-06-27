@@ -8,6 +8,12 @@ Library		Version		Function	License			URL
 freetype	2.5.5		Font scaling	Freetype		http://www.freetype.org/
 				and rendering	License
 
+glfw		3.1.1		Open GL API	BSD-style		http://www.glfw.org/
+		(with patches)	for UI
+
+harfbuzz	1.2.7		Text shaping	MIT-style		http://www.harfbuzz.org/
+		(with patches)
+
 jpeg		9.0		JPEG decoding	"Free", with
 						acknowledgement		http://www.ijg.org/
 
@@ -23,5 +29,7 @@ zlib		1.2.7		(De)Flate	zlib License		http://www.zlib.net/
 curl		7.31.0		HTTP data	MIT-style		http://curl.haxx.se/
 				transfer
 
+Luratech JBIG2			JBIG2		commercial		http://www.luratech.com/
+				decoding
 
 NOTE: jbig2dec and mujs are included in "thirdparty" but are copyright Artifex Software Inc.
