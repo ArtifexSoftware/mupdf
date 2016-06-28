@@ -545,15 +545,15 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 		else
 			fz_clear_pixmap_with_value(ctx, pix, 255);
 
-		dev = fz_new_draw_device(ctx, ctm, pix);
+		dev = fz_new_draw_device(ctx, NULL, pix);
 		if (lowmemory)
 			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 		if (alphabits_graphics == 0)
 			fz_enable_device_hints(ctx, dev, FZ_DONT_INTERPOLATE_IMAGES);
 		if (list)
-			fz_run_display_list(ctx, list, dev, &fz_identity, tbounds, cookie);
+			fz_run_display_list(ctx, list, dev, ctm, tbounds, cookie);
 		else
-			fz_run_page(ctx, page, dev, &fz_identity, cookie);
+			fz_run_page(ctx, page, dev, ctm, cookie);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
