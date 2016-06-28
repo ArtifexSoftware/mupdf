@@ -124,6 +124,9 @@ fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 	fz_printf(ctx, out, "HEIGHT %d\n", h);
 	fz_printf(ctx, out, "DEPTH %d\n", n);
 	fz_printf(ctx, out, "MAXVAL 255\n");
+
+	n -= alpha;
+
 	if (n == 1 && !alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
 	else if (n == 1 && alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
 	else if (n == 3 && !alpha) fz_printf(ctx, out, "TUPLTYPE RGB\n");
@@ -142,7 +145,6 @@ fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alph
 	if (!out)
 		return;
 
-	n += alpha;
 	if (end > h)
 		end = h;
 	end -= band_start;
