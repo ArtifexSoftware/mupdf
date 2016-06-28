@@ -127,7 +127,8 @@ fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 
 	n -= alpha;
 
-	if (n == 1 && !alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
+	if (n == 0 && alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
+	else if (n == 1 && !alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
 	else if (n == 1 && alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
 	else if (n == 3 && !alpha) fz_printf(ctx, out, "TUPLTYPE RGB\n");
 	else if (n == 3 && alpha) fz_printf(ctx, out, "TUPLTYPE RGB_ALPHA\n");
