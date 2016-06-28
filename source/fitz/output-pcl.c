@@ -777,7 +777,7 @@ fz_color_pcl_output_context *fz_write_color_pcl_header(fz_context *ctx, fz_outpu
 	return pcoc;
 }
 
-void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_output_context *pcoc, int w, int h, int n, int stride, int band, int bandheight, unsigned char *sp)
+void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_output_context *pcoc, int w, int h, int n, int stride, int band_start, int bandheight, unsigned char *sp)
 {
 	int y, ss, ds, seed_valid, fill;
 	unsigned char *prev;
@@ -796,9 +796,8 @@ void fz_write_color_pcl_band(fz_context *ctx, fz_output *out, fz_color_pcl_outpu
 	comp = pcoc->compbuf;
 	seed_valid = pcoc->seed_valid;
 
-	band *= bandheight;
-	if (band+bandheight >= h)
-		bandheight = h - band;
+	if (band_start+bandheight >= h)
+		bandheight = h - band_start;
 
 	y = 0;
 	while (y < bandheight)

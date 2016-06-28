@@ -153,16 +153,15 @@ void fz_save_pixmap_as_ps(fz_context *ctx, fz_pixmap *pixmap, char *filename, in
 		fz_rethrow(ctx);
 }
 
-void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int stride, int band, int bandheight, unsigned char *samples)
+void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int stride, int band_start, int bandheight, unsigned char *samples)
 {
 	int x, y, i, err;
 	int required_input;
 	int required_output;
 	unsigned char *o;
 
-	band *= bandheight;
-	if (band+bandheight >= h)
-		bandheight = h - band;
+	if (band_start+bandheight >= h)
+		bandheight = h - band_start;
 
 	required_input = w*(n-1)*bandheight;
 	required_output = (int)deflateBound(&psoc->stream, required_input);
