@@ -7,7 +7,6 @@ typedef struct cbz_page_s cbz_page;
 
 static const char *cbz_ext_list[] = {
 	".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tif", ".tiff",
-	".JPG", ".JPEG", ".PNG", ".GIF", ".BMP", ".TIF", ".TIFF",
 	NULL
 };
 
@@ -89,7 +88,8 @@ cbz_create_page_list(fz_context *ctx, cbz_document *doc)
 		for (k = 0; cbz_ext_list[k]; k++)
 		{
 			const char *name = fz_list_archive_entry(ctx, zip, i);
-			if (strstr(name, cbz_ext_list[k]))
+			const char *ext = name ? strrchr(name, '.') : NULL;
+			if (ext && !fz_strcasecmp(ext, cbz_ext_list[k]))
 			{
 				doc->page[doc->page_count++] = name;
 				break;
