@@ -318,12 +318,15 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 		n = fz_read(ctx, doc->file, (unsigned char *)buf->scratch, fz_mini(buf->size, 1024));
 
 		fz_seek(ctx, doc->file, 0, 0);
-		for (j = 0; j < n - 4; j++)
+		if (n >= 4)
 		{
-			if (memcmp(&buf->scratch[j], "%PDF", 4) == 0)
+			for (j = 0; j < n - 4; j++)
 			{
-				fz_seek(ctx, doc->file, j + 8, 0); /* skip "%PDF-X.Y" */
-				break;
+				if (memcmp(&buf->scratch[j], "%PDF", 4) == 0)
+				{
+					fz_seek(ctx, doc->file, j + 8, 0); /* skip "%PDF-X.Y" */
+					break;
+				}
 			}
 		}
 
