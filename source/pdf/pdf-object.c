@@ -625,7 +625,7 @@ pdf_array_get(fz_context *ctx, pdf_obj *obj, int i)
 
 static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj *val)
 {
-	pdf_document *doc;
+	pdf_document *doc, *val_doc;
 	int parent;
 
 	/*
@@ -648,6 +648,14 @@ static void prepare_object_for_alteration(fz_context *ctx, pdf_obj *obj, pdf_obj
 	default:
 		return;
 	}
+
+	if (val)
+	{
+		val_doc = pdf_get_bound_document(ctx, val);
+		if (doc && val_doc && val_doc != doc)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "container and item belong to different documents");
+	}
+
 	/*
 		parent_num = 0 while an object is being parsed from the file.
 		No further action is necessary.

@@ -2699,7 +2699,12 @@ pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc)
 pdf_obj *
 pdf_add_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
+	pdf_document *orig_doc;
 	int num;
+
+	orig_doc = pdf_get_bound_document(ctx, obj);
+	if (orig_doc && orig_doc != doc)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "tried to add an object belonging to a different document");
 	if (pdf_is_indirect(ctx, obj))
 		return pdf_keep_obj(ctx, obj);
 	num = pdf_create_object(ctx, doc);
