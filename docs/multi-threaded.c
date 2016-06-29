@@ -94,7 +94,7 @@ renderer(void *data)
 	// will render the request area of the page to the pixmap.
 
 	fprintf(stderr, "thread at page %d rendering!\n", pagenumber);
-	dev = fz_new_draw_device(ctx, pix);
+	dev = fz_new_draw_device(ctx, &fz_identity, pix);
 	fz_run_display_list(ctx, list, dev, &fz_identity, &bbox, NULL);
 	fz_drop_device(ctx, dev);
 
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 		// this can safely be used on any other thread as it is
 		// not bound to a given context.
 
-		list = fz_new_display_list(ctx);
+		list = fz_new_display_list(ctx, &bbox);
 
 		// Run the loaded page through a display list device
 		// to populate the page's display list.
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
 
 		// Create a white pixmap using the correct dimensions.
 
-		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_round_rect(&rbox, &bbox));
+		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_round_rect(&rbox, &bbox), 0);
 		fz_clear_pixmap_with_value(ctx, pix, 0xff);
 
 		// Populate the data structure to be sent to the
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
 
 		// Write the rendered image to a PNG file
 
-		fz_save_pixmap_as_png(ctx, data->pix, filename, 0);
+		fz_save_pixmap_as_png(ctx, data->pix, filename);
 
 		// Free the thread's pixmap and display list since
 		// they were allocated by the main thread above.

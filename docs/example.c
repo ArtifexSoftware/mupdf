@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 
 	/* Render page to an RGB pixmap. */
 	fz_try(ctx)
-		pix = fz_new_pixmap_from_page_number(ctx, doc, page_number, &ctm, fz_device_rgb(ctx));
+		pix = fz_new_pixmap_from_page_number(ctx, doc, page_number, &ctm, fz_device_rgb(ctx), 0);
 	fz_catch(ctx)
 	{
 		fprintf(stderr, "cannot render page: %s\n", fz_caught_message(ctx));
@@ -110,13 +110,13 @@ int main(int argc, char **argv)
 	printf("255\n");
 	for (y = 0; y < pix->h; ++y)
 	{
-		unsigned char *p = &pix->samples[y * pix->w * pix->n];
+		unsigned char *p = &pix->samples[y * pix->stride];
 		for (x = 0; x < pix->w; ++x)
 		{
 			if (x > 0)
 				printf("  ");
 			printf("%3d %3d %3d", p[0], p[1], p[2]);
-			p += 4;
+			p += pix->n;
 		}
 		printf("\n");
 	}
