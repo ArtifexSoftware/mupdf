@@ -2179,7 +2179,7 @@ pdf_delete_object(fz_context *ctx, pdf_document *doc, int num)
 
 	x->type = 'f';
 	x->ofs = 0;
-	x->gen = 0;
+	x->gen += 1;
 	x->stm_ofs = 0;
 	x->stm_buf = NULL;
 	x->obj = NULL;
