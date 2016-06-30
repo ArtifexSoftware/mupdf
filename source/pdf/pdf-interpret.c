@@ -137,7 +137,6 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 		/* An Optional Content Group */
 		int default_value = 0;
 		int num = pdf_to_num(ctx, ocg);
-		int gen = pdf_to_gen(ctx, ocg);
 		int len = desc->len;
 		int i;
 		pdf_obj *es;
@@ -145,7 +144,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 		/* by default an OCG is visible, unless it's explicitly hidden */
 		for (i = 0; i < len; i++)
 		{
-			if (desc->ocgs[i].num == num && desc->ocgs[i].gen == gen)
+			if (desc->ocgs[i].num == num)
 			{
 				default_value = desc->ocgs[i].state == 0;
 				break;
@@ -438,7 +437,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 
 			group = pdf_dict_get(ctx, obj, PDF_NAME_G);
 			if (!group)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load softmask xobject (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load softmask xobject (%d 0 R)", pdf_to_num(ctx, obj));
 			xobj = pdf_load_xobject(ctx, csi->doc, group);
 
 			fz_try(ctx)

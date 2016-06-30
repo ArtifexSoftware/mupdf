@@ -99,6 +99,7 @@ static void pdf_resize_xref(fz_context *ctx, pdf_document *doc, int newlen)
 		sub->table[i].type = 0;
 		sub->table[i].ofs = 0;
 		sub->table[i].gen = 0;
+		sub->table[i].num = 0;
 		sub->table[i].stm_ofs = 0;
 		sub->table[i].stm_buf = NULL;
 		sub->table[i].obj = NULL;
@@ -826,9 +827,10 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 				entry->ofs = fz_atoo(s);
 				entry->gen = fz_atoi(s + 11);
+				entry->num = (int)i;
 				entry->type = s[17];
 				if (s[17] != 'f' && s[17] != 'n' && s[17] != 'o')
-					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: %#x (%d %d R)", s[17], (int)i, entry->gen);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: %#x (%d %d R)", s[17], entry->num, entry->gen);
 			}
 		}
 	}
@@ -879,6 +881,7 @@ pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, fz
 			entry->type = t == 0 ? 'f' : t == 1 ? 'n' : t == 2 ? 'o' : 0;
 			entry->ofs = w1 ? b : 0;
 			entry->gen = w2 ? c : 0;
+			entry->num = i;
 		}
 	}
 
@@ -918,13 +921,13 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		obj = pdf_dict_get(ctx, trailer, PDF_NAME_Size);
 		if (!obj)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream missing Size entry (%d %d R)", num, gen);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream missing Size entry (%d 0 R)", num);
 
 		size = pdf_to_int(ctx, obj);
 
 		obj = pdf_dict_get(ctx, trailer, PDF_NAME_W);
 		if (!obj)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream missing W entry (%d %d R)", num, gen);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream missing W entry (%d  R)", num);
 		w0 = pdf_to_int(ctx, pdf_array_get(ctx, obj, 0));
 		w1 = pdf_to_int(ctx, pdf_array_get(ctx, obj, 1));
 		w2 = pdf_to_int(ctx, pdf_array_get(ctx, obj, 2));
@@ -942,7 +945,7 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		index = pdf_dict_get(ctx, trailer, PDF_NAME_Index);
 
-		stm = pdf_open_stream_with_offset(ctx, doc, num, gen, trailer, stm_ofs);
+		stm = pdf_open_stream_with_offset(ctx, doc, num, trailer, stm_ofs);
 
 		if (!index)
 		{
@@ -961,6 +964,7 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 		entry = pdf_get_populating_xref_entry(ctx, doc, num);
 		entry->ofs = ofs;
 		entry->gen = gen;
+		entry->num = num;
 		entry->stm_ofs = stm_ofs;
 		pdf_drop_obj(ctx, entry->obj);
 		entry->obj = pdf_keep_obj(ctx, trailer);
@@ -1159,6 +1163,7 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	{
 		entry->type = 'f';
 		entry->gen = 65535;
+		entry->num = 0;
 	}
 	/* broken pdfs where first object is not free */
 	else if (entry->type != 'f')
@@ -1300,10 +1305,9 @@ pdf_ocg_set_config(fz_context *ctx, pdf_document *doc, int config)
 	{
 		pdf_obj *o = pdf_array_get(ctx, obj, i);
 		int n = pdf_to_num(ctx, o);
-		int g = pdf_to_gen(ctx, o);
 		for (j=0; j < len; j++)
 		{
-			if (desc->ocgs[j].num == n && desc->ocgs[j].gen == g)
+			if (desc->ocgs[j].num == n)
 			{
 				desc->ocgs[j].state = 1;
 				break;
@@ -1317,10 +1321,9 @@ pdf_ocg_set_config(fz_context *ctx, pdf_document *doc, int config)
 	{
 		pdf_obj *o = pdf_array_get(ctx, obj, i);
 		int n = pdf_to_num(ctx, o);
-		int g = pdf_to_gen(ctx, o);
 		for (j=0; j < len; j++)
 		{
-			if (desc->ocgs[j].num == n && desc->ocgs[j].gen == g)
+			if (desc->ocgs[j].num == n)
 			{
 				desc->ocgs[j].state = 0;
 				break;
@@ -1370,7 +1373,6 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 		{
 			pdf_obj *o = pdf_array_get(ctx, ocg, i);
 			desc->ocgs[i].num = pdf_to_num(ctx, o);
-			desc->ocgs[i].gen = pdf_to_gen(ctx, o);
 			desc->ocgs[i].state = 1;
 		}
 		doc->ocg = desc;
@@ -1481,7 +1483,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 
 				fz_try(ctx)
 				{
-					dict = pdf_load_object(ctx, doc, i, 0);
+					dict = pdf_load_object(ctx, doc, i);
 				}
 				fz_catch(ctx)
 				{
@@ -1640,7 +1642,7 @@ pdf_print_xref(fz_context *ctx, pdf_document *doc)
  */
 
 static pdf_xref_entry *
-pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbuf *buf, int target)
+pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, int target)
 {
 	fz_stream *stm = NULL;
 	pdf_obj *objstm = NULL;
@@ -1661,7 +1663,7 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbu
 
 	fz_try(ctx)
 	{
-		objstm = pdf_load_object(ctx, doc, num, gen);
+		objstm = pdf_load_object(ctx, doc, num);
 
 		count = pdf_to_int(ctx, pdf_dict_get(ctx, objstm, PDF_NAME_N));
 		first = pdf_to_int(ctx, pdf_dict_get(ctx, objstm, PDF_NAME_First));
@@ -1674,17 +1676,17 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_lexbu
 		numbuf = fz_calloc(ctx, count, sizeof(*numbuf));
 		ofsbuf = fz_calloc(ctx, count, sizeof(*ofsbuf));
 
-		stm = pdf_open_stream(ctx, doc, num, gen);
+		stm = pdf_open_stream(ctx, doc, num);
 		for (i = 0; i < count; i++)
 		{
 			tok = pdf_lex(ctx, stm, buf);
 			if (tok != PDF_TOK_INT)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d %d R)", num, gen);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d 0 R)", num);
 			numbuf[i] = buf->i;
 
 			tok = pdf_lex(ctx, stm, buf);
 			if (tok != PDF_TOK_INT)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d %d R)", num, gen);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "corrupt object stream (%d 0 R)", num);
 			ofsbuf[i] = buf->i;
 		}
 
@@ -1863,7 +1865,8 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, fz_off_t *offset, int *nump, pd
 			DEBUGMESS((ctx, "Successfully read object %d @ %d", num, numofs));
 		}
 		entry->type = 'n';
-		entry->gen = 0;
+		entry->gen = gen; // XXX: was 0
+		entry->num = num;
 		entry->ofs = numofs;
 		entry->stm_ofs = stmofs;
 	}
@@ -1895,7 +1898,7 @@ pdf_load_hinted_page(fz_context *ctx, pdf_document *doc, int pagenum)
 	fz_try(ctx)
 	{
 		int num = doc->hint_page[pagenum].number;
-		pdf_obj *page = pdf_load_object(ctx, doc, num, 0);
+		pdf_obj *page = pdf_load_object(ctx, doc, num);
 		if (pdf_name_eq(ctx, PDF_NAME_Page, pdf_dict_get(ctx, page, PDF_NAME_Type)))
 		{
 			/* We have found the page object! */
@@ -1985,7 +1988,7 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 }
 
 pdf_xref_entry *
-pdf_cache_object(fz_context *ctx, pdf_document *doc, int num, int gen)
+pdf_cache_object(fz_context *ctx, pdf_document *doc, int num)
 {
 	pdf_xref_entry *x;
 	int rnum, rgen, try_repair;
@@ -1993,7 +1996,7 @@ pdf_cache_object(fz_context *ctx, pdf_document *doc, int num, int gen)
 	fz_var(try_repair);
 
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "object out of range (%d %d R); xref size %d", num, gen, pdf_xref_len(ctx, doc));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "object out of range (%d 0 R); xref size %d", num, pdf_xref_len(ctx, doc));
 
 object_updated:
 	try_repair = 0;
@@ -2029,6 +2032,7 @@ object_updated:
 			x->type = 'f';
 			x->ofs = -1;
 			x->gen = 0;
+			x->num = 0;
 			x->stm_ofs = 0;
 			x->obj = NULL;
 			try_repair = (doc->repair_attempted == 0);
@@ -2044,25 +2048,25 @@ object_updated:
 			fz_catch(ctx)
 			{
 				if (rnum == num)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse object (%d %d R)", num, gen);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse object (%d 0 R)", num);
 				else
-					fz_throw(ctx, FZ_ERROR_GENERIC, "found object (%d %d R) instead of (%d %d R)", rnum, rgen, num, gen);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "found object (%d 0 R) instead of (%d 0 R)", rnum, num);
 			}
 			goto object_updated;
 		}
 
 		if (doc->crypt)
-			pdf_crypt_obj(ctx, doc->crypt, x->obj, num, gen);
+			pdf_crypt_obj(ctx, doc->crypt, x->obj, x->num, x->gen);
 	}
 	else if (x->type == 'o')
 	{
 		if (!x->obj)
 		{
-			x = pdf_load_obj_stm(ctx, doc, x->ofs, 0, &doc->lexbuf.base, num);
+			x = pdf_load_obj_stm(ctx, doc, x->ofs, &doc->lexbuf.base, num);
 			if (x == NULL)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load object stream containing object (%d %d R)", num, gen);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load object stream containing object (%d 0 R)", num);
 			if (!x->obj)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "object (%d %d R) was not found in its object stream", num, gen);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "object (%d 0 R) was not found in its object stream", num);
 		}
 	}
 	else if (doc->hint_obj_offsets && read_hinted_object(ctx, doc, num))
@@ -2071,11 +2075,11 @@ object_updated:
 	}
 	else if (doc->file_length && doc->linear_pos < doc->file_length)
 	{
-		fz_throw(ctx, FZ_ERROR_TRYLATER, "cannot find object in xref (%d %d R) - not loaded yet?", num, gen);
+		fz_throw(ctx, FZ_ERROR_TRYLATER, "cannot find object in xref (%d 0 R) - not loaded yet?", num);
 	}
 	else
 	{
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find object in xref (%d %d R)", num, gen);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find object in xref (%d 0 R)", num);
 	}
 
 	pdf_set_obj_parent(ctx, x->obj, num);
@@ -2083,9 +2087,9 @@ object_updated:
 }
 
 pdf_obj *
-pdf_load_object(fz_context *ctx, pdf_document *doc, int num, int gen)
+pdf_load_object(fz_context *ctx, pdf_document *doc, int num)
 {
-	pdf_xref_entry *entry = pdf_cache_object(ctx, doc, num, gen);
+	pdf_xref_entry *entry = pdf_cache_object(ctx, doc, num);
 	assert(entry->obj != NULL);
 	return pdf_keep_obj(ctx, entry->obj);
 }
@@ -2095,7 +2099,6 @@ pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 {
 	int sanity = 10;
 	int num;
-	int gen;
 	pdf_xref_entry *entry;
 
 	while (pdf_is_indirect(ctx, ref))
@@ -2104,7 +2107,7 @@ pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 
 		if (--sanity == 0)
 		{
-			fz_warn(ctx, "too many indirections (possible indirection cycle involving %d %d R)", num, gen);
+			fz_warn(ctx, "too many indirections (possible indirection cycle involving %d 0 R)", num);
 			return NULL;
 		}
 
@@ -2112,22 +2115,21 @@ pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 		if (!doc)
 			return NULL;
 		num = pdf_to_num(ctx, ref);
-		gen = pdf_to_gen(ctx, ref);
 
-		if (num <= 0 || gen < 0)
+		if (num <= 0)
 		{
-			fz_warn(ctx, "invalid indirect reference (%d %d R)", num, gen);
+			fz_warn(ctx, "invalid indirect reference (%d 0 R)", num);
 			return NULL;
 		}
 
 		fz_try(ctx)
 		{
-			entry = pdf_cache_object(ctx, doc, num, gen);
+			entry = pdf_cache_object(ctx, doc, num);
 		}
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-			fz_warn(ctx, "cannot load object (%d %d R) into cache", num, gen);
+			fz_warn(ctx, "cannot load object (%d 0 R) into cache", num);
 			return NULL;
 		}
 
@@ -2155,6 +2157,7 @@ pdf_create_object(fz_context *ctx, pdf_document *doc)
 	entry->type = 'f';
 	entry->ofs = -1;
 	entry->gen = 0;
+	entry->num = num;
 	entry->stm_ofs = 0;
 	entry->stm_buf = NULL;
 	entry->obj = NULL;
@@ -2180,6 +2183,7 @@ pdf_delete_object(fz_context *ctx, pdf_document *doc, int num)
 	x->type = 'f';
 	x->ofs = 0;
 	x->gen += 1;
+	x->num = 0;
 	x->stm_ofs = 0;
 	x->stm_buf = NULL;
 	x->obj = NULL;
@@ -2361,7 +2365,7 @@ pdf_open_document(fz_context *ctx, const char *filename)
 }
 
 static void
-pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum, int gennum)
+pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 {
 	fz_stream *stream = NULL;
 	pdf_obj *dict;
@@ -2383,7 +2387,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum, int gennum)
 		int least_shared_group_len, shared_group_len_num_bits;
 		int max_object_num = pdf_xref_len(ctx, doc);
 
-		stream = pdf_open_stream(ctx, doc, objnum, gennum);
+		stream = pdf_open_stream(ctx, doc, objnum);
 		dict = pdf_get_xref_entry(ctx, doc, objnum)->obj;
 		if (dict == NULL || !pdf_is_dict(ctx, dict))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "malformed hint object");
@@ -2604,7 +2608,7 @@ pdf_load_hint_object(fz_context *ctx, pdf_document *doc)
 			if (tok != PDF_TOK_OBJ)
 				break;
 			(void)pdf_repair_obj(ctx, doc, buf, &tmpofs, NULL, NULL, NULL, &page, &tmpofs, NULL);
-			pdf_load_hints(ctx, doc, num, gen);
+			pdf_load_hints(ctx, doc, num);
 		}
 	}
 	fz_always(ctx)

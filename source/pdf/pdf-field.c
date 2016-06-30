@@ -33,7 +33,7 @@ char *pdf_get_string_or_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		}
 		else if (pdf_is_stream(ctx, obj))
 		{
-			stmbuf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+			stmbuf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, obj));
 			len = fz_buffer_storage(ctx, stmbuf, (unsigned char **)&buf);
 		}
 

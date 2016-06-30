@@ -68,7 +68,6 @@ struct pdf_write_state_s
 	int *errors;
 	/* The following extras are required for linearization */
 	int *rev_renumber_map;
-	int *rev_gen_list;
 	int start;
 	fz_off_t first_xref_offset;
 	fz_off_t main_xref_offset;
@@ -520,7 +519,6 @@ objects_dump(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pdf_obj *obj, int *duff)
 {
 	int num = pdf_to_num(ctx, obj);
-	int gen = pdf_to_gen(ctx, obj);
 
 	if (num <= 0 || num >= pdf_xref_len(ctx, doc))
 	{
@@ -536,7 +534,7 @@ static pdf_obj *markref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	/* Bake in /Length in stream objects */
 	fz_try(ctx)
 	{
-		if (pdf_obj_num_is_stream(ctx, doc, num, gen))
+		if (pdf_obj_num_is_stream(ctx, doc, num))
 		{
 			pdf_obj *len = pdf_dict_get(ctx, obj, PDF_NAME_Length);
 			if (pdf_is_indirect(ctx, len))
@@ -653,13 +651,13 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 			/*
 			 * Comparing stream objects data contents would take too long.
 			 *
-			 * pdf_is_stream calls pdf_cache_object and ensures
+			 * pdf_obj_num_is_stream calls pdf_cache_object and ensures
 			 * that the xref table has the objects loaded.
 			 */
 			fz_try(ctx)
 			{
-				streama = pdf_obj_num_is_stream(ctx, doc, num, 0);
-				streamb = pdf_obj_num_is_stream(ctx, doc, other, 0);
+				streama = pdf_obj_num_is_stream(ctx, doc, num);
+				streamb = pdf_obj_num_is_stream(ctx, doc, other);
 				differ = streama || streamb;
 				if (streama && streamb && opts->do_garbage >= 4)
 					differ = 0;
@@ -695,8 +693,8 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 				{
 					unsigned char *dataa, *datab;
 					size_t lena, lenb;
-					sa = pdf_load_raw_renumbered_stream(ctx, doc, num, 0, num, 0);
-					sb = pdf_load_raw_renumbered_stream(ctx, doc, other, 0, other, 0);
+					sa = pdf_load_raw_stream(ctx, doc, num);
+					sb = pdf_load_raw_stream(ctx, doc, other);
 					lena = fz_buffer_storage(ctx, sa, &dataa);
 					lenb = fz_buffer_storage(ctx, sb, &datab);
 					if (lena == lenb && memcmp(dataa, datab, lena) == 0)
@@ -758,7 +756,6 @@ static void compactxref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 		else if (opts->renumber_map[num] == num)
 		{
 			opts->rev_renumber_map[newnum] = opts->rev_renumber_map[num];
-			opts->rev_gen_list[newnum] = opts->rev_gen_list[num];
 			opts->renumber_map[num] = newnum++;
 		}
 		/* Otherwise it's used, and moved. We know that it must have
@@ -1159,7 +1156,6 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		opts->renumber_map[params_num] = params_num;
 		opts->rev_renumber_map[params_num] = params_num;
 		opts->gen_list[params_num] = 0;
-		opts->rev_gen_list[params_num] = 0;
 		pdf_dict_put_drop(ctx, params_obj, PDF_NAME_Linearized, pdf_new_real(ctx, doc, 1.0));
 		opts->linear_l = pdf_new_int(ctx, doc, INT_MIN);
 		pdf_dict_put(ctx, params_obj, PDF_NAME_L, opts->linear_l);
@@ -1187,7 +1183,6 @@ add_linearization_objs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		opts->renumber_map[hint_num] = hint_num;
 		opts->rev_renumber_map[hint_num] = hint_num;
 		opts->gen_list[hint_num] = 0;
-		opts->rev_gen_list[hint_num] = 0;
 		pdf_dict_put_drop(ctx, hint_obj, PDF_NAME_P, pdf_new_int(ctx, doc, 0));
 		opts->hints_s = pdf_new_int(ctx, doc, INT_MIN);
 		pdf_dict_put(ctx, hint_obj, PDF_NAME_S, opts->hints_s);
@@ -1400,7 +1395,6 @@ linearize(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 	int n = pdf_xref_len(ctx, doc) + 2;
 	int *reorder;
 	int *rev_renumber_map;
-	int *rev_gen_list;
 
 	opts->page_object_lists = page_objects_list_create(ctx);
 
@@ -1428,7 +1422,6 @@ linearize(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 	/* Allocate/init the structures used for renumbering the objects */
 	reorder = fz_calloc(ctx, n, sizeof(int));
 	rev_renumber_map = fz_calloc(ctx, n, sizeof(int));
-	rev_gen_list = fz_calloc(ctx, n, sizeof(int));
 	for (i = 0; i < n; i++)
 	{
 		reorder[i] = i;
@@ -1454,12 +1447,9 @@ linearize(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 	{
 		opts->renumber_map[reorder[i]] = i;
 		rev_renumber_map[i] = opts->rev_renumber_map[reorder[i]];
-		rev_gen_list[i] = opts->rev_gen_list[reorder[i]];
 	}
 	fz_free(ctx, opts->rev_renumber_map);
-	fz_free(ctx, opts->rev_gen_list);
 	opts->rev_renumber_map = rev_renumber_map;
-	opts->rev_gen_list = rev_gen_list;
 	fz_free(ctx, reorder);
 
 	/* Apply the renumber_map */
@@ -1511,7 +1501,7 @@ static void preloadobjstms(fz_context *ctx, pdf_document *doc)
 	{
 		if (pdf_get_xref_entry(ctx, doc, num)->type == 'o')
 		{
-			obj = pdf_load_object(ctx, doc, num, 0);
+			obj = pdf_load_object(ctx, doc, num);
 			pdf_drop_obj(ctx, obj);
 		}
 	}
@@ -1641,10 +1631,8 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	fz_buffer *buf, *tmp;
 	pdf_obj *newlen;
 	pdf_obj *obj;
-	int orig_num = opts->rev_renumber_map[num];
-	int orig_gen = opts->rev_gen_list[num];
 
-	buf = pdf_load_raw_renumbered_stream(ctx, doc, num, gen, orig_num, orig_gen);
+	buf = pdf_load_raw_stream(ctx, doc, num);
 
 	obj = pdf_copy_dict(ctx, obj_orig);
 
@@ -1687,11 +1675,9 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	fz_buffer *buf, *tmp;
 	pdf_obj *newlen;
 	pdf_obj *obj;
-	int orig_num = opts->rev_renumber_map[num];
-	int orig_gen = opts->rev_gen_list[num];
 	int truncated = 0;
 
-	buf = pdf_load_renumbered_stream(ctx, doc, num, gen, orig_num, orig_gen, (opts->continue_on_error ? &truncated : NULL));
+	buf = pdf_load_stream_truncated(ctx, doc, num, (opts->continue_on_error ? &truncated : NULL));
 	if (truncated && opts->errors)
 		(*opts->errors)++;
 
@@ -1802,7 +1788,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 
 	fz_try(ctx)
 	{
-		obj = pdf_load_object(ctx, doc, num, gen);
+		obj = pdf_load_object(ctx, doc, num);
 	}
 	fz_catch(ctx)
 	{
@@ -1838,7 +1824,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	}
 
 	entry = pdf_get_xref_entry(ctx, doc, num);
-	if (!pdf_obj_num_is_stream(ctx, doc, num, gen))
+	if (!pdf_obj_num_is_stream(ctx, doc, num))
 	{
 		fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
@@ -2516,7 +2502,7 @@ make_hint_stream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 	fz_try(ctx)
 	{
 		make_page_offset_hints(ctx, doc, opts, buf);
-		pdf_update_stream(ctx, doc, pdf_load_object(ctx, doc, pdf_xref_len(ctx, doc)-1, 0), buf, 0);
+		pdf_update_stream(ctx, doc, pdf_load_object(ctx, doc, pdf_xref_len(ctx, doc)-1), buf, 0);
 		opts->hintstream_len = (int)buf->len;
 		fz_drop_buffer(ctx, buf);
 	}
@@ -2716,7 +2702,6 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 	opts->gen_list = fz_calloc(ctx, xref_len + 3, sizeof(int));
 	opts->renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
 	opts->rev_renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
-	opts->rev_gen_list = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
 	opts->continue_on_error = in_opts->continue_on_error;
 	opts->errors = in_opts->errors;
 
@@ -2726,7 +2711,6 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 		opts->ofs_list[num] = 0;
 		opts->renumber_map[num] = num;
 		opts->rev_renumber_map[num] = num;
-		opts->rev_gen_list[num] = pdf_get_xref_entry(ctx, doc, num)->gen;
 	}
 }
 
@@ -2738,7 +2722,6 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	fz_free(ctx, opts->gen_list);
 	fz_free(ctx, opts->renumber_map);
 	fz_free(ctx, opts->rev_renumber_map);
-	fz_free(ctx, opts->rev_gen_list);
 	pdf_drop_obj(ctx, opts->linear_l);
 	pdf_drop_obj(ctx, opts->linear_h0);
 	pdf_drop_obj(ctx, opts->linear_h1);

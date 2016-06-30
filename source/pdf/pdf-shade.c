@@ -256,7 +256,7 @@ pdf_load_type4_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict));
 }
 
 static void
@@ -268,7 +268,7 @@ pdf_load_type5_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict));
 }
 
 /* Type 6 & 7 -- Patch mesh shadings */
@@ -282,7 +282,7 @@ pdf_load_type6_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict));
 }
 
 static void
@@ -294,7 +294,7 @@ pdf_load_type7_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 	if (funcs > 0)
 		pdf_sample_shade_function(ctx, shade, funcs, func, shade->u.m.c0[0], shade->u.m.c1[0]);
 
-	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict), pdf_to_gen(ctx, dict));
+	shade->buffer = pdf_load_compressed_stream(ctx, doc, pdf_to_num(ctx, dict));
 }
 
 /* Load all of the shading dictionary parameters, then switch on the shading type. */
@@ -361,7 +361,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 
 			func[0] = pdf_load_function(ctx, doc, obj, in, out);
 			if (!func[0])
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load shading function (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load shading function (%d 0 R)", pdf_to_num(ctx, obj));
 		}
 		else if (pdf_is_array(ctx, obj))
 		{
@@ -387,13 +387,13 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 			{
 				func[i] = pdf_load_function(ctx, doc, pdf_array_get(ctx, obj, i), in, out);
 				if (!func[i])
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load shading function (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load shading function (%d 0 R)", pdf_to_num(ctx, obj));
 			}
 		}
 		else if (type < 4)
 		{
 			/* Functions are compulsory for types 1,2,3 */
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load shading function (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load shading function (%d 0 R)", pdf_to_num(ctx, obj));
 		}
 
 		shade->type = type;

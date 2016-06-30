@@ -137,7 +137,7 @@ static void savefont(pdf_obj *dict, int num)
 		return;
 	}
 
-	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stream), pdf_to_gen(ctx, stream));
+	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stream));
 	len = fz_buffer_storage(ctx, buf, &data);
 	fz_try(ctx)
 	{
@@ -166,7 +166,7 @@ static void showobject(int num)
 
 	fz_try(ctx)
 	{
-		obj = pdf_load_object(ctx, doc, num, 0);
+		obj = pdf_load_object(ctx, doc, num);
 
 		if (isimage(obj))
 			saveimage(num);

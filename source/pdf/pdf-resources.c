@@ -64,7 +64,7 @@ res_image_init(fz_context *ctx, pdf_document *doc, pdf_res_table *table)
 		len = pdf_count_objects(ctx, doc);
 		for (k = 1; k < len; k++)
 		{
-			obj = pdf_load_object(ctx, doc, k, 0);
+			obj = pdf_load_object(ctx, doc, k);
 			type = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
 			if (pdf_name_eq(ctx, type, PDF_NAME_Image))
 			{

@@ -564,9 +564,7 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 			if (!keep_annot)
 				break;
 
-			if (hp->num == pdf_to_num(ctx, obj)
-				&& hp->gen == pdf_to_gen(ctx, obj)
-				&& (hp->state & HOTSPOT_POINTER_DOWN))
+			if (hp->num == pdf_to_num(ctx, obj) && (hp->state & HOTSPOT_POINTER_DOWN))
 			{
 				n = pdf_dict_get(ctx, ap, PDF_NAME_D); /* down state */
 			}

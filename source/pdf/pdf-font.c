@@ -411,7 +411,7 @@ pdf_load_embedded_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
 {
 	fz_buffer *buf;
 
-	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stmref), pdf_to_gen(ctx, stmref));
+	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stmref));
 	fz_try(ctx)
 		fontdesc->font = fz_new_font_from_buffer(ctx, fontname, buf, 0, 1);
 	fz_always(ctx)
@@ -867,9 +867,8 @@ pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 static int
 hail_mary_make_hash_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 {
-	hash->u.i.i0 = 0;
-	hash->u.i.i1 = 0;
-	hash->u.i.ptr = NULL;
+	hash->u.pi.i = 0;
+	hash->u.pi.ptr = NULL;
 	return 1;
 }
 
@@ -1021,7 +1020,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 			fz_buffer *buf;
 			size_t z;
 
-			buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, cidtogidmap), pdf_to_gen(ctx, cidtogidmap));
+			buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, cidtogidmap));
 
 			fontdesc->cid_to_gid_len = (buf->len) / 2;
 			fontdesc->cid_to_gid = fz_malloc_array(ctx, fontdesc->cid_to_gid_len, sizeof(unsigned short));

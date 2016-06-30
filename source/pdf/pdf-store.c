@@ -7,9 +7,8 @@ pdf_make_hash_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 
 	if (!pdf_is_indirect(ctx, key))
 		return 0;
-	hash->u.i.i0 = pdf_to_num(ctx, key);
-	hash->u.i.i1 = pdf_to_gen(ctx, key);
-	hash->u.i.ptr = pdf_get_indirect_document(ctx, key);
+	hash->u.pi.i = pdf_to_num(ctx, key);
+	hash->u.pi.ptr = pdf_get_indirect_document(ctx, key);
 	return 1;
 }
 
@@ -37,7 +36,7 @@ pdf_print_key(fz_context *ctx, fz_output *out, void *key_)
 	pdf_obj *key = (pdf_obj *)key_;
 
 	if (pdf_is_indirect(ctx, key))
-		fz_printf(ctx, out, "(%d %d R) ", pdf_to_num(ctx, key), pdf_to_gen(ctx, key));
+		fz_printf(ctx, out, "(%d 0 R) ", pdf_to_num(ctx, key));
 	else
 		pdf_print_obj(ctx, out, key, 0);
 }

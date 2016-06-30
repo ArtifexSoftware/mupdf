@@ -54,9 +54,7 @@ pdf_update_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 
 		n = NULL;
 
-		if (hp->num == pdf_to_num(ctx, obj)
-			&& hp->gen == pdf_to_gen(ctx, obj)
-			&& (hp->state & HOTSPOT_POINTER_DOWN))
+		if (hp->num == pdf_to_num(ctx, obj) && (hp->state & HOTSPOT_POINTER_DOWN))
 		{
 			n = pdf_dict_get(ctx, ap, PDF_NAME_D); /* down state */
 		}

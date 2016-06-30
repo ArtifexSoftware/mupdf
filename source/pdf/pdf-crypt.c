@@ -290,7 +290,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 	int is_stdcf = (!is_identity && pdf_name_eq(ctx, name, PDF_NAME_StdCF));
 
 	if (!is_identity && !is_stdcf)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Crypt Filter not Identity or StdCF (%d %d R)", pdf_to_num(ctx, crypt->cf), pdf_to_gen(ctx, crypt->cf));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Crypt Filter not Identity or StdCF (%d 0 R)", pdf_to_num(ctx, crypt->cf));
 
 	cf->method = PDF_CRYPT_NONE;
 	cf->length = crypt->length;
@@ -324,7 +324,7 @@ pdf_parse_crypt_filter(fz_context *ctx, pdf_crypt_filter *cf, pdf_crypt *crypt, 
 			cf->length = pdf_to_int(ctx, obj);
 	}
 	else if (!is_identity)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse crypt filter (%d %d R)", pdf_to_num(ctx, crypt->cf), pdf_to_gen(ctx, crypt->cf));
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse crypt filter (%d 0 R)", pdf_to_num(ctx, crypt->cf));
 
 	/* the length for crypt filters is supposed to be in bytes not bits */
 	if (cf->length < 40)

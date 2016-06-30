@@ -100,7 +100,7 @@ load_separation(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 	{
 		tint = pdf_load_function(ctx, doc, tintobj, n, base->n);
 		/* RJW: fz_drop_colorspace(ctx, base);
-		 * "cannot load tint function (%d %d R)", pdf_to_num(ctx, tintobj), pdf_to_gen(ctx, tintobj) */
+		 * "cannot load tint function (%d 0 R)", pdf_to_num(ctx, tintobj) */
 
 		sep = fz_malloc_struct(ctx, struct separation);
 		sep->base = base;
@@ -168,7 +168,7 @@ load_indexed(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 
 			fz_try(ctx)
 			{
-				file = pdf_open_stream(ctx, doc, pdf_to_num(ctx, lookupobj), pdf_to_gen(ctx, lookupobj));
+				file = pdf_open_stream(ctx, doc, pdf_to_num(ctx, lookupobj));
 				i = (int)fz_read(ctx, file, lookup, n);
 				if (i < n)
 					memset(lookup+i, 0, n-i);
@@ -303,7 +303,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		}
 	}
 
-	fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: could not parse color space (%d %d R)", pdf_to_num(ctx, obj), pdf_to_gen(ctx, obj));
+	fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: could not parse color space (%d 0 R)", pdf_to_num(ctx, obj));
 }
 
 fz_colorspace *

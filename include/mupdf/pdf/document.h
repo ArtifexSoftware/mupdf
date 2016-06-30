@@ -40,7 +40,6 @@ struct pdf_lexbuf_large_s
 struct pdf_hotspot_s
 {
 	int num;
-	int gen;
 	int state;
 };
 
@@ -115,7 +114,6 @@ typedef struct pdf_ocg_entry_s pdf_ocg_entry;
 struct pdf_ocg_entry_s
 {
 	int num;
-	int gen;
 	int state;
 };
 

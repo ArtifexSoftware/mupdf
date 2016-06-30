@@ -624,7 +624,6 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 					doc->focus_obj = pdf_keep_obj(ctx, annot->obj);
 
 					hp->num = pdf_to_num(ctx, annot->obj);
-					hp->gen = pdf_to_gen(ctx, annot->obj);
 					hp->state = HOTSPOT_POINTER_DOWN;
 					changed = 1;
 					/* Execute the down and focus actions */
@@ -638,7 +637,6 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 					changed = 1;
 
 				hp->num = 0;
-				hp->gen = 0;
 				hp->state = 0;
 
 				if (annot)

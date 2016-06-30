@@ -67,12 +67,6 @@ struct fz_store_hash_s
 	{
 		struct
 		{
-			int i0;
-			int i1;
-			void *ptr;
-		} i;
-		struct
-		{
 			const void *ptr;
 			int i;
 		} pi;

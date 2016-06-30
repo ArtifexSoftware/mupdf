@@ -37,13 +37,14 @@ typedef struct pdf_xref_entry_s pdf_xref_entry;
 
 struct pdf_xref_entry_s
 {
-	char type;	/* 0=unset (f)ree i(n)use (o)bjstm */
-	unsigned char flags; /* bit 0 = marked */
+	char type;		/* 0=unset (f)ree i(n)use (o)bjstm */
+	unsigned char flags;	/* bit 0 = marked */
 	unsigned short gen;	/* generation / objstm index */
-	fz_off_t ofs;	/* file offset / objstm object number */
+	int num;		/* original object number (for decryption after renumbering) */
+	fz_off_t ofs;		/* file offset / objstm object number */
 	fz_off_t stm_ofs;	/* on-disk stream */
-	fz_buffer *stm_buf; /* in-memory stream (for updated objects) */
-	pdf_obj *obj;	/* stored/cached object */
+	fz_buffer *stm_buf;	/* in-memory stream (for updated objects) */
+	pdf_obj *obj;		/* stored/cached object */
 };
 
 enum
@@ -72,26 +73,24 @@ struct pdf_xref_s
 	fz_off_t end_ofs; /* file offset to end of xref */
 };
 
-pdf_xref_entry *pdf_cache_object(fz_context *ctx, pdf_document *doc, int num, int gen);
+pdf_xref_entry *pdf_cache_object(fz_context *ctx, pdf_document *doc, int num);
 
 int pdf_count_objects(fz_context *ctx, pdf_document *doc);
 pdf_obj *pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref);
-pdf_obj *pdf_load_object(fz_context *ctx, pdf_document *doc, int num, int gen);
+pdf_obj *pdf_load_object(fz_context *ctx, pdf_document *doc, int num);
 
-fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_document *doc, int num, int gen);
-fz_buffer *pdf_load_stream(fz_context *ctx, pdf_document *doc, int num, int gen);
-fz_stream *pdf_open_raw_stream(fz_context *ctx, pdf_document *doc, int num, int gen);
-fz_stream *pdf_open_stream(fz_context *ctx, pdf_document *doc, int num, int gen);
+fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_document *doc, int num);
+fz_buffer *pdf_load_stream(fz_context *ctx, pdf_document *doc, int num);
+fz_stream *pdf_open_raw_stream(fz_context *ctx, pdf_document *doc, int num);
+fz_stream *pdf_open_stream(fz_context *ctx, pdf_document *doc, int num);
 
 fz_stream *pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int length, fz_stream *chain, fz_compression_params *params);
-fz_compressed_buffer *pdf_load_compressed_stream(fz_context *ctx, pdf_document *doc, int num, int gen);
+fz_compressed_buffer *pdf_load_compressed_stream(fz_context *ctx, pdf_document *doc, int num);
 void pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int length, fz_stream *cstm, int indexed, fz_compressed_image *image);
-fz_stream *pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, int gen, pdf_obj *dict, fz_off_t stm_ofs);
+fz_stream *pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj *dict, fz_off_t stm_ofs);
 fz_stream *pdf_open_compressed_stream(fz_context *ctx, fz_compressed_buffer *);
 fz_stream *pdf_open_contents_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
-fz_buffer *pdf_load_raw_renumbered_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int orig_num, int orig_gen);
-fz_buffer *pdf_load_renumbered_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int orig_num, int orig_gen, int *truncated);
-fz_stream *pdf_open_raw_renumbered_stream(fz_context *ctx, pdf_document *doc, int num, int gen, int orig_num, int orig_gen);
+fz_buffer *pdf_load_stream_truncated(fz_context *ctx, pdf_document *doc, int num, int *truncated);
 
 pdf_obj *pdf_trailer(fz_context *ctx, pdf_document *doc);
 void pdf_set_populating_xref_trailer(fz_context *ctx, pdf_document *doc, pdf_obj *trailer);
