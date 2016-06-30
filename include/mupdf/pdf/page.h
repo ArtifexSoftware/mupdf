@@ -14,6 +14,14 @@ pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
 int pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name);
 
 /*
+	pdf_flatten_inheritable_page_items: Make page self sufficient.
+
+	Copy any inheritable page keys into the actual page object, removing
+	any dependencies on the page tree parents.
+*/
+void pdf_flatten_inheritable_page_items(fz_context *ctx, pdf_document *doc, pdf_obj *page);
+
+/*
 	pdf_load_page: Load a page and its resources.
 
 	Locates the page in the PDF document and loads the page and its

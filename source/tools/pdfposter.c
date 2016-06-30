@@ -55,7 +55,7 @@ intersect_box(fz_context *ctx, pdf_document *doc, pdf_obj *page, pdf_obj *box_na
 
 static void decimatepages(fz_context *ctx, pdf_document *doc)
 {
-	pdf_obj *oldroot, *root, *pages, *kids, *parent;
+	pdf_obj *oldroot, *root, *pages, *kids;
 	int num_pages = pdf_count_pages(ctx, doc);
 	int page, kidcount;
 
@@ -71,7 +71,6 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 	pdf_drop_obj(ctx, root);
 
 	/* Create a new kids array with our new pages in */
-	parent = pdf_new_indirect(ctx, doc, pdf_to_num(ctx, pages), pdf_to_gen(ctx, pages));
 	kids = pdf_new_array(ctx, doc, 1);
 
 	kidcount = 0;
@@ -102,12 +101,10 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 			{
 				pdf_obj *newpageobj, *newpageref, *newmediabox;
 				fz_rect mb;
-				int num;
 
 				newpageobj = pdf_copy_dict(ctx, pdf_lookup_page_obj(ctx, doc, page));
-				num = pdf_create_object(ctx, doc);
-				pdf_update_object(ctx, doc, num, newpageobj);
-				newpageref = pdf_new_indirect(ctx, doc, num, 0);
+				pdf_flatten_inheritable_page_items(ctx, doc, newpageobj);
+				newpageref = pdf_add_object(ctx, doc, newpageobj);
 
 				newmediabox = pdf_new_array(ctx, doc, 4);
 
@@ -127,7 +124,7 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.x1));
 				pdf_array_push(ctx, newmediabox, pdf_new_real(ctx, doc, mb.y1));
 
-				pdf_dict_put(ctx, newpageobj, PDF_NAME_Parent, parent);
+				pdf_dict_put(ctx, newpageobj, PDF_NAME_Parent, pages);
 				pdf_dict_put_drop(ctx, newpageobj, PDF_NAME_MediaBox, newmediabox);
 
 				intersect_box(ctx, doc, newpageobj, PDF_NAME_CropBox, &mb);
@@ -142,8 +139,6 @@ static void decimatepages(fz_context *ctx, pdf_document *doc)
 			}
 		}
 	}
-
-	pdf_drop_obj(ctx, parent);
 
 	/* Update page count and kids array */
 	pdf_dict_put_drop(ctx, pages, PDF_NAME_Count, pdf_new_int(ctx, doc, kidcount));

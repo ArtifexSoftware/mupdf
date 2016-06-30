@@ -30,6 +30,8 @@ static void retainpage(fz_context *ctx, pdf_document *doc, pdf_obj *parent, pdf_
 	pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, page-1);
 	pdf_obj *pageobj = pdf_resolve_indirect(ctx, pageref);
 
+	pdf_flatten_inheritable_page_items(ctx, doc, pageobj);
+
 	pdf_dict_put(ctx, pageobj, PDF_NAME_Parent, parent);
 
 	/* Store page object in new kids array */
@@ -170,7 +172,7 @@ static int strip_outlines(fz_context *ctx, pdf_document *doc, pdf_obj *outlines,
 
 static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 {
-	pdf_obj *oldroot, *root, *pages, *kids, *countobj, *parent, *olddests;
+	pdf_obj *oldroot, *root, *pages, *kids, *countobj, *olddests;
 	pdf_document *doc = glo->doc;
 	int argidx = 0;
 	pdf_obj *names_list = NULL;
@@ -199,7 +201,6 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	pdf_update_object(ctx, doc, pdf_to_num(ctx, oldroot), root);
 
 	/* Create a new kids array with only the pages we want to keep */
-	parent = pdf_new_indirect(ctx, doc, pdf_to_num(ctx, pages), pdf_to_gen(ctx, pages));
 	kids = pdf_new_array(ctx, doc, 1);
 
 	/* Retain pages specified */
@@ -214,16 +215,14 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 		{
 			if (spage < epage)
 				for (page = spage; page <= epage; ++page)
-					retainpage(ctx, doc, parent, kids, page);
+					retainpage(ctx, doc, pages, kids, page);
 			else
 				for (page = spage; page >= epage; --page)
-					retainpage(ctx, doc, parent, kids, page);
+					retainpage(ctx, doc, pages, kids, page);
 		}
 
 		argidx++;
 	}
-
-	pdf_drop_obj(ctx, parent);
 
 	/* Update page count and kids array */
 	countobj = pdf_new_int(ctx, doc, pdf_array_len(ctx, kids));

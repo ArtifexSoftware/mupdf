@@ -258,6 +258,23 @@ pdf_lookup_inherited_page_item(fz_context *ctx, pdf_document *doc, pdf_obj *node
 	return val;
 }
 
+static void
+pdf_flatten_inheritable_page_item(fz_context *ctx, pdf_document *doc, pdf_obj *page, pdf_obj *key)
+{
+	pdf_obj *val = pdf_lookup_inherited_page_item(ctx, doc, page, key);
+	if (val)
+		pdf_dict_put(ctx, page, key, val);
+}
+
+void
+pdf_flatten_inheritable_page_items(fz_context *ctx, pdf_document *doc, pdf_obj *page)
+{
+	pdf_flatten_inheritable_page_item(ctx, doc, page, PDF_NAME_MediaBox);
+	pdf_flatten_inheritable_page_item(ctx, doc, page, PDF_NAME_CropBox);
+	pdf_flatten_inheritable_page_item(ctx, doc, page, PDF_NAME_Rotate);
+	pdf_flatten_inheritable_page_item(ctx, doc, page, PDF_NAME_Resources);
+}
+
 /* We need to know whether to install a page-level transparency group */
 
 static int pdf_resources_use_blending(fz_context *ctx, pdf_document *doc, pdf_obj *rdb);
