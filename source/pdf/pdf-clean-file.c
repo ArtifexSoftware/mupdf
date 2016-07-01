@@ -28,11 +28,10 @@ string_in_names_list(fz_context *ctx, pdf_obj *p, pdf_obj *names_list)
 static void retainpage(fz_context *ctx, pdf_document *doc, pdf_obj *parent, pdf_obj *kids, int page)
 {
 	pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, page-1);
-	pdf_obj *pageobj = pdf_resolve_indirect(ctx, pageref);
 
-	pdf_flatten_inheritable_page_items(ctx, doc, pageobj);
+	pdf_flatten_inheritable_page_items(ctx, doc, pageref);
 
-	pdf_dict_put(ctx, pageobj, PDF_NAME_Parent, parent);
+	pdf_dict_put(ctx, pageref, PDF_NAME_Parent, parent);
 
 	/* Store page object in new kids array */
 	pdf_array_push(ctx, kids, pageref);
@@ -283,9 +282,8 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	for (i = 0; i < pagecount; i++)
 	{
 		pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, i);
-		pdf_obj *pageobj = pdf_resolve_indirect(ctx, pageref);
 
-		pdf_obj *annots = pdf_dict_get(ctx, pageobj, PDF_NAME_Annots);
+		pdf_obj *annots = pdf_dict_get(ctx, pageref, PDF_NAME_Annots);
 
 		int len = pdf_array_len(ctx, annots);
 		int j;

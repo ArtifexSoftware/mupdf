@@ -20,7 +20,6 @@ struct info
 {
 	int page;
 	pdf_obj *pageref;
-	pdf_obj *pageobj;
 	union {
 		struct {
 			pdf_obj *obj;
@@ -199,19 +198,19 @@ showglobalinfo(fz_context *ctx, globals *glo)
 }
 
 static void
-gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *pageobj)
+gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref)
 {
 	fz_rect bbox;
 	pdf_obj *obj;
 	int j;
 
-	obj = pdf_dict_get(ctx, pageobj, PDF_NAME_MediaBox);
+	obj = pdf_dict_get(ctx, pageref, PDF_NAME_MediaBox);
 	if (!pdf_is_array(ctx, obj))
 		return;
 
 	pdf_to_rect(ctx, obj, &bbox);
 
-	obj = pdf_dict_get(ctx, pageobj, PDF_NAME_UserUnit);
+	obj = pdf_dict_get(ctx, pageref, PDF_NAME_UserUnit);
 	if (pdf_is_real(ctx, obj))
 	{
 		float unit = pdf_to_real(ctx, obj);
@@ -233,7 +232,6 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_
 
 	glo->dim[glo->dims - 1].page = page;
 	glo->dim[glo->dims - 1].pageref = pageref;
-	glo->dim[glo->dims - 1].pageobj = pageobj;
 	glo->dim[glo->dims - 1].u.dim.bbox = fz_malloc(ctx, sizeof(fz_rect));
 	memcpy(glo->dim[glo->dims - 1].u.dim.bbox, &bbox, sizeof (fz_rect));
 
@@ -241,7 +239,7 @@ gatherdimensions(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_
 }
 
 static void
-gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *pageobj, pdf_obj *dict)
+gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *dict)
 {
 	int i, n;
 
@@ -282,7 +280,6 @@ gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 
 		glo->font[glo->fonts - 1].page = page;
 		glo->font[glo->fonts - 1].pageref = pageref;
-		glo->font[glo->fonts - 1].pageobj = pageobj;
 		glo->font[glo->fonts - 1].u.font.obj = fontdict;
 		glo->font[glo->fonts - 1].u.font.subtype = subtype;
 		glo->font[glo->fonts - 1].u.font.name = basefont ? basefont : name;
@@ -291,7 +288,7 @@ gatherfonts(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 }
 
 static void
-gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *pageobj, pdf_obj *dict)
+gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *dict)
 {
 	int i, n;
 
@@ -352,7 +349,6 @@ gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 
 		glo->image[glo->images - 1].page = page;
 		glo->image[glo->images - 1].pageref = pageref;
-		glo->image[glo->images - 1].pageobj = pageobj;
 		glo->image[glo->images - 1].u.image.obj = imagedict;
 		glo->image[glo->images - 1].u.image.width = width;
 		glo->image[glo->images - 1].u.image.height = height;
@@ -364,7 +360,7 @@ gatherimages(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 }
 
 static void
-gatherforms(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *pageobj, pdf_obj *dict)
+gatherforms(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *dict)
 {
 	int i, n;
 
@@ -410,7 +406,6 @@ gatherforms(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 
 		glo->form[glo->forms - 1].page = page;
 		glo->form[glo->forms - 1].pageref = pageref;
-		glo->form[glo->forms - 1].pageobj = pageobj;
 		glo->form[glo->forms - 1].u.form.obj = xobjdict;
 		glo->form[glo->forms - 1].u.form.groupsubtype = groupsubtype;
 		glo->form[glo->forms - 1].u.form.reference = reference;
@@ -418,7 +413,7 @@ gatherforms(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *
 }
 
 static void
-gatherpsobjs(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *pageobj, pdf_obj *dict)
+gatherpsobjs(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *dict)
 {
 	int i, n;
 
@@ -455,13 +450,12 @@ gatherpsobjs(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj 
 
 		glo->psobj[glo->psobjs - 1].page = page;
 		glo->psobj[glo->psobjs - 1].pageref = pageref;
-		glo->psobj[glo->psobjs - 1].pageobj = pageobj;
 		glo->psobj[glo->psobjs - 1].u.form.obj = xobjdict;
 	}
 }
 
 static void
-gathershadings(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *pageobj, pdf_obj *dict)
+gathershadings(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *dict)
 {
 	int i, n;
 
@@ -498,14 +492,13 @@ gathershadings(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 
 		glo->shading[glo->shadings - 1].page = page;
 		glo->shading[glo->shadings - 1].pageref = pageref;
-		glo->shading[glo->shadings - 1].pageobj = pageobj;
 		glo->shading[glo->shadings - 1].u.shading.obj = shade;
 		glo->shading[glo->shadings - 1].u.shading.type = type;
 	}
 }
 
 static void
-gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *pageobj, pdf_obj *dict)
+gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_obj *dict)
 {
 	int i, n;
 
@@ -566,7 +559,6 @@ gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 
 		glo->pattern[glo->patterns - 1].page = page;
 		glo->pattern[glo->patterns - 1].pageref = pageref;
-		glo->pattern[glo->patterns - 1].pageobj = pageobj;
 		glo->pattern[glo->patterns - 1].u.pattern.obj = patterndict;
 		glo->pattern[glo->patterns - 1].u.pattern.type = type;
 		glo->pattern[glo->patterns - 1].u.pattern.paint = paint;
@@ -578,7 +570,6 @@ gatherpatterns(fz_context *ctx, globals *glo, int page, pdf_obj *pageref, pdf_ob
 static void
 gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int show)
 {
-	pdf_obj *pageobj;
 	pdf_obj *pageref;
 	pdf_obj *font;
 	pdf_obj *xobj;
@@ -588,9 +579,8 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 	int i;
 
 	pageref = pdf_lookup_page_obj(ctx, glo->doc, page-1);
-	pageobj = pdf_resolve_indirect(ctx, pageref);
 
-	if (!pageobj)
+	if (!pageref)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot retrieve info from page %d", page);
 
 	font = pdf_dict_get(ctx, rsrc, PDF_NAME_Font);
@@ -598,7 +588,7 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 	{
 		int n;
 
-		gatherfonts(ctx, glo, page, pageref, pageobj, font);
+		gatherfonts(ctx, glo, page, pageref, font);
 		n = pdf_dict_len(ctx, font);
 		for (i = 0; i < n; i++)
 		{
@@ -615,9 +605,9 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 	{
 		int n;
 
-		gatherimages(ctx, glo, page, pageref, pageobj, xobj);
-		gatherforms(ctx, glo, page, pageref, pageobj, xobj);
-		gatherpsobjs(ctx, glo, page, pageref, pageobj, xobj);
+		gatherimages(ctx, glo, page, pageref, xobj);
+		gatherforms(ctx, glo, page, pageref, xobj);
+		gatherpsobjs(ctx, glo, page, pageref, xobj);
 		n = pdf_dict_len(ctx, xobj);
 		for (i = 0; i < n; i++)
 		{
@@ -630,13 +620,13 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 
 	shade = pdf_dict_get(ctx, rsrc, PDF_NAME_Shading);
 	if (show & SHADINGS && shade)
-		gathershadings(ctx, glo, page, pageref, pageobj, shade);
+		gathershadings(ctx, glo, page, pageref, shade);
 
 	pattern = pdf_dict_get(ctx, rsrc, PDF_NAME_Pattern);
 	if (show & PATTERNS && pattern)
 	{
 		int n;
-		gatherpatterns(ctx, glo, page, pageref, pageobj, pattern);
+		gatherpatterns(ctx, glo, page, pageref, pattern);
 		n = pdf_dict_len(ctx, pattern);
 		for (i = 0; i < n; i++)
 		{
@@ -651,19 +641,17 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 static void
 gatherpageinfo(fz_context *ctx, globals *glo, int page, int show)
 {
-	pdf_obj *pageobj;
 	pdf_obj *pageref;
 	pdf_obj *rsrc;
 
 	pageref = pdf_lookup_page_obj(ctx, glo->doc, page-1);
-	pageobj = pdf_resolve_indirect(ctx, pageref);
 
-	if (!pageobj)
+	if (!pageref)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot retrieve info from page %d", page);
 
-	gatherdimensions(ctx, glo, page, pageref, pageobj);
+	gatherdimensions(ctx, glo, page, pageref);
 
-	rsrc = pdf_dict_get(ctx, pageobj, PDF_NAME_Resources);
+	rsrc = pdf_dict_get(ctx, pageref, PDF_NAME_Resources);
 	gatherresourceinfo(ctx, glo, page, rsrc, show);
 }
 
