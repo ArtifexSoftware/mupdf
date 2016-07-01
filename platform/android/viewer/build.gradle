@@ -1,0 +1,89 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.2.3'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+apply plugin: 'com.android.application'
+
+dependencies {
+    compile fileTree(dir: 'libs', include: '*.so')
+}
+
+android {
+
+    compileSdkVersion 17
+    buildToolsVersion '21.1.2'
+
+    /*  this stops gradle from making it's own Android.mk file */
+	sourceSets.main.jni.srcDirs = []
+   
+    sourceSets {
+        main {
+            manifest {
+                srcFile 'AndroidManifest.xml'
+            }
+            java {
+                srcDir 'src'
+                exclude 'com/artifex/mupdf/fitz/AndroidDrawDevice.java'
+            }
+            res {
+                srcDir 'res'
+            }
+            assets {
+                srcDir 'assets'
+            }
+            resources {
+                srcDir 'src'
+            }
+            jniLibs {
+            	srcDir 'libs'
+            }
+        }
+    }
+
+    /* This is important, it will run lint checks but won't abort build */
+  lintOptions {
+      abortOnError false
+  }
+    
+}
+
+/*  This defines the path to Android's ndk-build.  */
+def ndkBuildPath = plugins.getPlugin('com.android.application').sdkHandler.getNdkFolder().absolutePath + File.separator + 'ndk-build'
+if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+    ndkBuildPath +='.cmd'
+}
+
+/*  This task builds the native part  */
+task buildNative(type: Exec,description: 'Compile JNI source via NDK') {
+    println('executing buildNative')
+    commandLine ndkBuildPath, '-C', file('.').absolutePath, ' FZ_ENABLE_GPRF=1'
+    //'NDK_PROJECT_PATH=build','APP_BUILD_SCRIPT=src/main/jni/Android.mk'//force using appropriate Makefile
+}
+
+/*  This task cleans the native part  */
+task cleanNative(type: Exec, description: 'Clean JNI object files') {
+    println('executing cleanNative')
+    commandLine ndkBuildPath, '-C', file('.').absolutePath, 'clean'
+}
+
+/*  cleaning should also include cleaning native  */
+clean.dependsOn 'cleanNative'
+
+/*  building should include native  */
+tasks.withType(JavaCompile){
+    compileTask -> compileTask.dependsOn buildNative
+}
+
