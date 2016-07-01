@@ -77,6 +77,7 @@ pdf_xref_entry *pdf_cache_object(fz_context *ctx, pdf_document *doc, int num);
 
 int pdf_count_objects(fz_context *ctx, pdf_document *doc);
 pdf_obj *pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref);
+pdf_obj *pdf_resolve_indirect_chain(fz_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_load_object(fz_context *ctx, pdf_document *doc, int num);
 
 fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_document *doc, int num);

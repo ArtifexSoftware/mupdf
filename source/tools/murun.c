@@ -2986,7 +2986,7 @@ static void ffi_PDFObject_forEach(js_State *J)
 	int i, n;
 
 	fz_try(ctx)
-		obj = pdf_resolve_indirect(ctx, obj);
+		obj = pdf_resolve_indirect_chain(ctx, obj);
 	fz_catch(ctx)
 		rethrow(J);
 

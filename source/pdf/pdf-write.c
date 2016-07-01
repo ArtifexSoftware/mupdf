@@ -589,7 +589,7 @@ static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pd
 
 	DEBUGGING_MARKING(depth++);
 
-	if (pdf_is_indirect(ctx, obj))
+	while (pdf_is_indirect(ctx, obj))
 	{
 		int duff;
 		DEBUGGING_MARKING(indent(); printf("Marking object %d\n", pdf_to_num(ctx, obj)));
@@ -648,6 +648,8 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 			if (num == other || !opts->use_list[num] || !opts->use_list[other])
 				continue;
 
+			/* TODO: resolve indirect references to see if we can omit them */
+
 			/*
 			 * Comparing stream objects data contents would take too long.
 			 *
@@ -672,9 +674,6 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 			a = pdf_get_xref_entry(ctx, doc, num)->obj;
 			b = pdf_get_xref_entry(ctx, doc, other)->obj;
-
-			a = pdf_resolve_indirect(ctx, a);
-			b = pdf_resolve_indirect(ctx, b);
 
 			if (pdf_objcmp(ctx, a, b))
 				continue;
@@ -1439,7 +1438,7 @@ linearize(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 #endif
 
 	/* Find the split point */
-	for (i = 1; (opts->use_list[reorder[i]] & USE_PARAMS) == 0; i++);
+	for (i = 1; (opts->use_list[reorder[i]] & USE_PARAMS) == 0; i++) {}
 	opts->start = i;
 
 	/* Roll the reordering into the renumber_map */

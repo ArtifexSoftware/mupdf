@@ -216,7 +216,7 @@ int pdf_is_indirect(fz_context *ctx, pdf_obj *obj)
 
 #define RESOLVE(obj) \
 	if (obj >= PDF_OBJ__LIMIT && obj->kind == PDF_INDIRECT) \
-		obj = pdf_resolve_indirect(ctx, obj); \
+		obj = pdf_resolve_indirect_chain(ctx, obj); \
 
 int pdf_is_null(fz_context *ctx, pdf_obj *obj)
 {

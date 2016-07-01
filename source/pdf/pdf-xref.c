@@ -2097,25 +2097,14 @@ pdf_load_object(fz_context *ctx, pdf_document *doc, int num)
 pdf_obj *
 pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 {
-	int sanity = 10;
-	int num;
-	pdf_xref_entry *entry;
-
-	while (pdf_is_indirect(ctx, ref))
+	if (pdf_is_indirect(ctx, ref))
 	{
-		pdf_document *doc;
+		pdf_document *doc = pdf_get_indirect_document(ctx, ref);
+		int num = pdf_to_num(ctx, ref);
+		pdf_xref_entry *entry;
 
-		if (--sanity == 0)
-		{
-			fz_warn(ctx, "too many indirections (possible indirection cycle involving %d 0 R)", num);
-			return NULL;
-		}
-
-		doc = pdf_get_indirect_document(ctx, ref);
 		if (!doc)
 			return NULL;
-		num = pdf_to_num(ctx, ref);
-
 		if (num <= 0)
 		{
 			fz_warn(ctx, "invalid indirect reference (%d 0 R)", num);
@@ -2123,9 +2112,7 @@ pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 		}
 
 		fz_try(ctx)
-		{
 			entry = pdf_cache_object(ctx, doc, num);
-		}
 		fz_catch(ctx)
 		{
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
@@ -2133,9 +2120,25 @@ pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref)
 			return NULL;
 		}
 
-		if (entry->obj == NULL)
-			return NULL;
 		ref = entry->obj;
+	}
+	return ref;
+}
+
+pdf_obj *
+pdf_resolve_indirect_chain(fz_context *ctx, pdf_obj *ref)
+{
+	int sanity = 10;
+
+	while (pdf_is_indirect(ctx, ref))
+	{
+		if (--sanity == 0)
+		{
+			fz_warn(ctx, "too many indirections (possible indirection cycle involving %d 0 R)", pdf_to_num(ctx, ref));
+			return NULL;
+		}
+
+		ref = pdf_resolve_indirect(ctx, ref);
 	}
 
 	return ref;

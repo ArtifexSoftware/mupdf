@@ -506,7 +506,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	}
 	else
 		pageref = pdf_lookup_page_obj(ctx, doc, number);
-	pageobj = pdf_resolve_indirect(ctx, pageref);
+	pageobj = pdf_resolve_indirect_chain(ctx, pageref);
 
 	page = pdf_new_page(ctx, doc);
 	page->me = pdf_keep_obj(ctx, pageobj);
