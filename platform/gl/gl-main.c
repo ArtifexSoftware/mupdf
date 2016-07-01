@@ -273,6 +273,11 @@ void render_page(void)
 		pix = fz_new_pixmap_from_annot(ctx, annot, &page_ctm, fz_device_rgb(ctx), 1);
 		texture_from_pixmap(&annot_tex[annot_count++], pix);
 		fz_drop_pixmap(ctx, pix);
+		if (annot_count >= nelem(annot_tex))
+		{
+			fz_warn(ctx, "too many annotations to display!");
+			break;
+		}
 	}
 
 }
