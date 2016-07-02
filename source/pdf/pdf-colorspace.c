@@ -45,47 +45,6 @@ load_icc_based(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 /* Lab */
 
-static inline float fung(float x)
-{
-	if (x >= 6.0f / 29.0f)
-		return x * x * x;
-	return (108.0f / 841.0f) * (x - (4.0f / 29.0f));
-}
-
-static void
-lab_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *lab, float *rgb)
-{
-	/* input is in range (0..100, -128..127, -128..127) not (0..1, 0..1, 0..1) */
-	float lstar, astar, bstar, l, m, n, x, y, z, r, g, b;
-	lstar = lab[0];
-	astar = lab[1];
-	bstar = lab[2];
-	m = (lstar + 16) / 116;
-	l = m + astar / 500;
-	n = m - bstar / 200;
-	x = fung(l);
-	y = fung(m);
-	z = fung(n);
-	r = (3.240449f * x + -1.537136f * y + -0.498531f * z) * 0.830026f;
-	g = (-0.969265f * x + 1.876011f * y + 0.041556f * z) * 1.05452f;
-	b = (0.055643f * x + -0.204026f * y + 1.057229f * z) * 1.1003f;
-	rgb[0] = sqrtf(fz_clamp(r, 0, 1));
-	rgb[1] = sqrtf(fz_clamp(g, 0, 1));
-	rgb[2] = sqrtf(fz_clamp(b, 0, 1));
-}
-
-static void
-rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
-{
-	fz_warn(ctx, "cannot convert into L*a*b colorspace");
-	lab[0] = rgb[0];
-	lab[1] = rgb[1];
-	lab[2] = rgb[2];
-}
-
-static fz_colorspace k_device_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, lab_to_rgb, rgb_to_lab };
-static fz_colorspace *fz_device_lab = &k_device_lab;
-
 /* Separation and DeviceN */
 
 struct separation
@@ -295,7 +254,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalCMYK))
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_Lab))
-				return fz_device_lab;
+				return fz_device_lab(ctx);
 			else
 			{
 				fz_colorspace *cs;

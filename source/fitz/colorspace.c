@@ -169,20 +169,60 @@ static void rgb_to_cmyk(fz_context *ctx, fz_colorspace *cs, const float *rgb, fl
 	cmyk[3] = k;
 }
 
+static inline float fung(float x)
+{
+	if (x >= 6.0f / 29.0f)
+		return x * x * x;
+	return (108.0f / 841.0f) * (x - (4.0f / 29.0f));
+}
+
+static void
+lab_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *lab, float *rgb)
+{
+	/* input is in range (0..100, -128..127, -128..127) not (0..1, 0..1, 0..1) */
+	float lstar, astar, bstar, l, m, n, x, y, z, r, g, b;
+	lstar = lab[0];
+	astar = lab[1];
+	bstar = lab[2];
+	m = (lstar + 16) / 116;
+	l = m + astar / 500;
+	n = m - bstar / 200;
+	x = fung(l);
+	y = fung(m);
+	z = fung(n);
+	r = (3.240449f * x + -1.537136f * y + -0.498531f * z) * 0.830026f;
+	g = (-0.969265f * x + 1.876011f * y + 0.041556f * z) * 1.05452f;
+	b = (0.055643f * x + -0.204026f * y + 1.057229f * z) * 1.1003f;
+	rgb[0] = sqrtf(fz_clamp(r, 0, 1));
+	rgb[1] = sqrtf(fz_clamp(g, 0, 1));
+	rgb[2] = sqrtf(fz_clamp(b, 0, 1));
+}
+
+static void
+rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
+{
+	fz_warn(ctx, "cannot convert into L*a*b colorspace");
+	lab[0] = rgb[0];
+	lab[1] = rgb[1];
+	lab[2] = rgb[2];
+}
+
 static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, gray_to_rgb, rgb_to_gray };
 static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, rgb_to_rgb, rgb_to_rgb };
 static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, bgr_to_rgb, rgb_to_bgr };
 static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, cmyk_to_rgb, rgb_to_cmyk };
+static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, lab_to_rgb, rgb_to_lab };
 
 static fz_colorspace *fz_default_gray = &k_default_gray;
 static fz_colorspace *fz_default_rgb = &k_default_rgb;
 static fz_colorspace *fz_default_bgr = &k_default_bgr;
 static fz_colorspace *fz_default_cmyk = &k_default_cmyk;
+static fz_colorspace *fz_default_lab = &k_default_lab;
 
 struct fz_colorspace_context_s
 {
 	int ctx_refs;
-	fz_colorspace *gray, *rgb, *bgr, *cmyk;
+	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;
 };
 
 void fz_new_colorspace_context(fz_context *ctx)
@@ -193,6 +233,7 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace->rgb = fz_default_rgb;
 	ctx->colorspace->bgr = fz_default_bgr;
 	ctx->colorspace->cmyk = fz_default_cmyk;
+	ctx->colorspace->lab = fz_default_lab;
 }
 
 fz_colorspace_context *
@@ -235,6 +276,12 @@ fz_device_cmyk(fz_context *ctx)
 	return ctx->colorspace->cmyk;
 }
 
+fz_colorspace *
+fz_device_lab(fz_context *ctx)
+{
+	return ctx->colorspace->lab;
+}
+
 void
 fz_set_device_gray(fz_context *ctx, fz_colorspace *cs)
 {
@@ -268,6 +315,15 @@ fz_set_device_cmyk(fz_context *ctx, fz_colorspace *cs)
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	fz_drop_colorspace(ctx, ctx->colorspace->cmyk);
 	ctx->colorspace->cmyk = fz_keep_colorspace(ctx, cs);
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+}
+
+void
+fz_set_device_lab(fz_context *ctx, fz_colorspace *cs)
+{
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	fz_drop_colorspace(ctx, ctx->colorspace->lab);
+	ctx->colorspace->lab = fz_keep_colorspace(ctx, cs);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
