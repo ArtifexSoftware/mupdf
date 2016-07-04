@@ -43,6 +43,60 @@ fz_new_display_list_from_page_number(fz_context *ctx, fz_document *doc, int numb
 	return list;
 }
 
+fz_display_list *
+fz_new_display_list_from_page_contents(fz_context *ctx, fz_page *page)
+{
+	fz_display_list *list;
+	fz_rect bounds;
+	fz_device *dev;
+
+	list = fz_new_display_list(ctx, fz_bound_page(ctx, page, &bounds));
+
+	fz_try(ctx)
+	{
+		dev = fz_new_list_device(ctx, list);
+		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_display_list(ctx, list);
+		fz_rethrow(ctx);
+	}
+
+	return list;
+}
+
+fz_display_list *
+fz_new_display_list_from_annot(fz_context *ctx, fz_annot *annot)
+{
+	fz_display_list *list;
+	fz_rect bounds;
+	fz_device *dev;
+
+	list = fz_new_display_list(ctx, fz_bound_annot(ctx, annot, &bounds));
+
+	fz_try(ctx)
+	{
+		dev = fz_new_list_device(ctx, list);
+		fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_display_list(ctx, list);
+		fz_rethrow(ctx);
+	}
+
+	return list;
+}
+
 fz_pixmap *
 fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz_matrix *ctm, fz_colorspace *cs, int alpha)
 {

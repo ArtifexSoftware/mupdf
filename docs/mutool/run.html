@@ -183,17 +183,31 @@ MuPDF can open many document types (PDF, XPS, CBZ, EPUB, FB2 and a handful of im
 <dl>
 <dt>Page#bound()
 <dd>Returns a rectangle containing the page dimensions.
-<dt>Page#run(device, transform)
+<dt>Page#run(device, transform, skipAnnotations)
 <dd>Calls device functions for all the contents on the page, using the specified transform matrix.
 The device can be one of the built-in devices or a JavaScript object with methods for the device calls.
 The transform maps from user space points to device space pixels.
-<dt>Page#toPixmap(transform, colorspace, alpha)
+If skipAnnotations is true, ignore annotations.
+<dt>Page#toPixmap(transform, colorspace, alpha, skipAnnotations)
 <dd>Render the page into a Pixmap, using the transform and colorspace.
 If alpha is true, the page will be drawn on a transparent background, otherwise white.
-<dt>Page#toDisplayList()
+<dt>Page#toDisplayList(skipAnnotations)
 <dd>Record the contents on the page into a DisplayList.
 <dt>Page#search(needle)
 <dd>Search for 'needle' text on the page, and return an array with rectangles of all matches found.
+<dt>Page#getAnnotations()
+<dd>Return array of all annotations on the page.
+</dl>
+
+<dl>
+<dt>Annotation#bound()
+<dd>Returns a rectangle containing the location and dimension of the annotation.
+<dt>Annotation#run(device, transform)
+<dd>Calls device functions to draw the annotation.
+<dt>Annotation#toPixmap(transform, colorspace, alpha)
+<dd>Render the annotation into a Pixmap, using the transform and colorspace.
+<dt>Annotation#toDisplayList()
+<dd>Record the contents of the annotation into a DisplayList.
 </dl>
 
 <h2>

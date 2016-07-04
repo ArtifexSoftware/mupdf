@@ -193,6 +193,12 @@ static void ffi_gc_fz_page(js_State *J, void *page)
 	fz_drop_page(ctx, page);
 }
 
+static void ffi_gc_fz_annot(js_State *J, void *annot)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_annot(ctx, annot);
+}
+
 static void ffi_gc_fz_colorspace(js_State *J, void *colorspace)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -1451,6 +1457,71 @@ static void ffi_Document_toPDF(js_State *J)
 #endif
 }
 
+static void ffi_Page_bound(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = js_touserdata(J, 0, "fz_page");
+	fz_rect bounds;
+
+	fz_try(ctx)
+		fz_bound_page(ctx, page, &bounds);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushrect(J, bounds);
+}
+
+static void ffi_Page_run(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = js_touserdata(J, 0, "fz_page");
+	fz_device *device = NULL;
+	fz_matrix ctm = ffi_tomatrix(J, 2);
+	int no_annots = js_toboolean(J, 3);
+
+	if (js_isuserdata(J, 1, "fz_device")) {
+		device = js_touserdata(J, 1, "fz_device");
+		fz_try(ctx)
+			if (no_annots)
+				fz_run_page_contents(ctx, page, device, &ctm, NULL);
+			else
+				fz_run_page(ctx, page, device, &ctm, NULL);
+		fz_catch(ctx)
+			rethrow(J);
+	} else {
+		device = new_js_device(ctx, J);
+		js_copy(J, 1); /* put the js device on the top so the callbacks know where to get it */
+		fz_try(ctx)
+			if (no_annots)
+				fz_run_page_contents(ctx, page, device, &ctm, NULL);
+			else
+				fz_run_page(ctx, page, device, &ctm, NULL);
+		fz_always(ctx)
+			fz_drop_device(ctx, device);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_Page_toDisplayList(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = js_touserdata(J, 0, "fz_page");
+	int no_annots = js_toboolean(J, 1);
+	fz_display_list *list;
+
+	fz_try(ctx)
+		if (no_annots)
+			list = fz_new_display_list_from_page_contents(ctx, page);
+		else
+			list = fz_new_display_list_from_page(ctx, page);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_display_list");
+	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
+}
+
 static void ffi_Page_toPixmap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -1458,30 +1529,19 @@ static void ffi_Page_toPixmap(js_State *J)
 	fz_matrix ctm = ffi_tomatrix(J, 1);
 	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
 	int alpha = js_toboolean(J, 3);
+	int no_annots = js_toboolean(J, 4);
 	fz_pixmap *pixmap;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, colorspace, alpha);
+		if (no_annots)
+			pixmap = fz_new_pixmap_from_page_contents(ctx, page, &ctm, colorspace, alpha);
+		else
+			pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, colorspace, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 
 	js_getregistry(J, "fz_pixmap");
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
-}
-
-static void ffi_Page_toDisplayList(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	fz_page *page = js_touserdata(J, 0, "fz_page");
-	fz_display_list *list;
-
-	fz_try(ctx)
-		list = fz_new_display_list_from_page(ctx, page);
-	fz_catch(ctx)
-		rethrow(J);
-
-	js_getregistry(J, "fz_display_list");
-	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
 }
 
 static void ffi_Page_search(js_State *J)
@@ -1504,43 +1564,103 @@ static void ffi_Page_search(js_State *J)
 	}
 }
 
-static void ffi_Page_bound(js_State *J)
+static void ffi_Page_getAnnotations(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = js_touserdata(J, 0, "fz_page");
+	fz_annot *annot;
+	int i = 0;
+
+	js_newarray(J);
+
+	fz_try(ctx)
+		annot = fz_first_annot(ctx, page);
+	fz_catch(ctx)
+		rethrow(J);
+
+	while (annot)
+	{
+		js_getregistry(J, "fz_annot");
+		js_newuserdata(J, "fz_annot", fz_keep_annot(ctx, annot), ffi_gc_fz_annot);
+		js_setindex(J, -2, i++);
+
+		fz_try(ctx)
+			annot = fz_next_annot(ctx, annot);
+		fz_catch(ctx)
+			rethrow(J);
+	}
+}
+
+static void ffi_Annotation_bound(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_annot *annot = js_touserdata(J, 0, "fz_annot");
 	fz_rect bounds;
 
 	fz_try(ctx)
-		fz_bound_page(ctx, page, &bounds);
+		fz_bound_annot(ctx, annot, &bounds);
 	fz_catch(ctx)
 		rethrow(J);
 
 	ffi_pushrect(J, bounds);
 }
 
-static void ffi_Page_run(js_State *J)
+static void ffi_Annotation_run(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_page *page = js_touserdata(J, 0, "fz_page");
+	fz_annot *annot = js_touserdata(J, 0, "fz_annot");
 	fz_device *device = NULL;
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 
 	if (js_isuserdata(J, 1, "fz_device")) {
 		device = js_touserdata(J, 1, "fz_device");
 		fz_try(ctx)
-			fz_run_page(ctx, page, device, &ctm, NULL);
+			fz_run_annot(ctx, annot, device, &ctm, NULL);
 		fz_catch(ctx)
 			rethrow(J);
 	} else {
 		device = new_js_device(ctx, J);
 		js_copy(J, 1); /* put the js device on the top so the callbacks know where to get it */
 		fz_try(ctx)
-			fz_run_page(ctx, page, device, &ctm, NULL);
+			fz_run_annot(ctx, annot, device, &ctm, NULL);
 		fz_always(ctx)
 			fz_drop_device(ctx, device);
 		fz_catch(ctx)
 			rethrow(J);
 	}
+}
+
+static void ffi_Annotation_toDisplayList(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_annot *annot = js_touserdata(J, 0, "fz_annot");
+	fz_display_list *list;
+
+	fz_try(ctx)
+		list = fz_new_display_list_from_annot(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_display_list");
+	js_newuserdata(J, "fz_display_list", list, ffi_gc_fz_display_list);
+}
+
+static void ffi_Annotation_toPixmap(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_annot *annot = js_touserdata(J, 0, "fz_annot");
+	fz_matrix ctm = ffi_tomatrix(J, 1);
+	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
+	int alpha = js_toboolean(J, 3);
+	fz_pixmap *pixmap;
+
+	fz_try(ctx)
+		pixmap = fz_new_pixmap_from_annot(ctx, annot, &ctm, colorspace, alpha);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_pixmap");
+	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
 static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
@@ -3100,12 +3220,22 @@ int murun_main(int argc, char **argv)
 	js_newobject(J);
 	{
 		jsB_propfun(J, "Page.bound", ffi_Page_bound, 0);
-		jsB_propfun(J, "Page.run", ffi_Page_run, 2);
-		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 3);
-		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 0);
+		jsB_propfun(J, "Page.run", ffi_Page_run, 3);
+		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 4);
+		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
+		jsB_propfun(J, "Page.getAnnotations", ffi_Page_getAnnotations, 0);
 	}
 	js_setregistry(J, "fz_page");
+
+	js_newobject(J);
+	{
+		jsB_propfun(J, "Annotation.bound", ffi_Annotation_bound, 0);
+		jsB_propfun(J, "Annotation.run", ffi_Annotation_run, 2);
+		jsB_propfun(J, "Annotation.toPixmap", ffi_Annotation_toPixmap, 3);
+		jsB_propfun(J, "Annotation.toDisplayList", ffi_Annotation_toDisplayList, 0);
+	}
+	js_setregistry(J, "fz_annot");
 
 	js_newobject(J);
 	{
