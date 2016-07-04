@@ -368,7 +368,7 @@ clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, i
 					const uint32_t a0 = d.word;
 					while (h--)
 					{
-						size_t WW = W;
+						size_t WW = W >> 2;
 						while (WW--)
 						{
 							*s++ = a0;
