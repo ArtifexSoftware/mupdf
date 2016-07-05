@@ -96,10 +96,21 @@ pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 void pdf_drop_document(fz_context *ctx, pdf_document *doc);
 
 /*
-	pdf_specific: down-cast an fz_document to a pdf_document.
+	pdf_specifics: down-cast an fz_document to a pdf_document.
 	Returns NULL if underlying document is not PDF
 */
 pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc);
+
+/*
+	pdf_document_from_fz_document,
+	pdf_page_from_fz_page,
+	pdf_annot_from_fz_annot:
+		Down-cast generic fitz objects into pdf specific variants.
+		Returns NULL if the objects are not from a PDF document.
+*/
+pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr);
+pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr);
+pdf_annot *pdf_annot_from_fz_annot(fz_context *ctx, fz_annot *ptr);
 
 int pdf_needs_password(fz_context *ctx, pdf_document *doc);
 int pdf_authenticate_password(fz_context *ctx, pdf_document *doc, const char *pw);

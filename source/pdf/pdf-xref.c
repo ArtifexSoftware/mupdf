@@ -2698,9 +2698,24 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 	return doc->linear_page_refs[pagenum];
 }
 
+pdf_document *pdf_document_from_fz_document(fz_context *ctx, fz_document *ptr)
+{
+	return (pdf_document *)((ptr && ptr->count_pages == (void*)pdf_count_pages) ? ptr : NULL);
+}
+
+pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr)
+{
+	return (pdf_page *)((ptr && ptr->bound_page == (void*)pdf_bound_page) ? ptr : NULL);
+}
+
+pdf_annot *pdf_annot_from_fz_annot(fz_context *ctx, fz_annot *ptr)
+{
+	return (pdf_annot *)((ptr && ptr->bound_annot == (void*)pdf_bound_annot) ? ptr : NULL);
+}
+
 pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc)
 {
-	return (pdf_document *)((doc && doc->close == (fz_document_close_fn *)pdf_close_document) ? doc : NULL);
+	return pdf_document_from_fz_document(ctx, doc);
 }
 
 pdf_obj *

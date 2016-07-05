@@ -197,6 +197,8 @@ If alpha is true, the page will be drawn on a transparent background, otherwise 
 <dd>Search for 'needle' text on the page, and return an array with rectangles of all matches found.
 <dt>Page#getAnnotations()
 <dd>Return array of all annotations on the page.
+<dt>Page#toPDF()
+<dd>Returns the PDFObject/PDFPage for the page, if the document is a PDF file.
 </dl>
 
 <dl>
@@ -208,6 +210,8 @@ If alpha is true, the page will be drawn on a transparent background, otherwise 
 <dd>Render the annotation into a Pixmap, using the transform and colorspace.
 <dt>Annotation#toDisplayList()
 <dd>Record the contents of the annotation into a DisplayList.
+<dt>Annotation#toPDF()
+<dd>Returns the PDFObject/PDFAnnotation for the annotation, if the document is a PDF file.
 </dl>
 
 <h2>
