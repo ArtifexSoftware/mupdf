@@ -11,9 +11,11 @@ JAVA_CFLAGS := \
 	-I /usr/lib/jvm/java-7-openjdk-i386/include \
 	-I /usr/lib/jvm/java-7-openjdk-i386/include/linux \
 	-I /usr/lib/jvm/java-7-openjdk-amd64/include \
-	-I /usr/lib/jvm/java-7-openjdk-amd64/include/linux
+	-I /usr/lib/jvm/java-7-openjdk-amd64/include/linux \
+	$(shell pkg-config --cflags freetype2)
 JAVA_LIBS := \
-	$(shell pkg-config --cflags freetype2) -lz
+	$(shell pkg-config --libs freetype2) \
+	-lz
 endif
 
 default: $(MUPDF_JAVA) libmupdf.jar
