@@ -592,7 +592,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS run failed: %d", code);
 #else
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I%%rom%%Resource/Init/ -dFirstPage=%d -dLastPage=%d %s",
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I%%rom%%Resource/Init/ -dFirstPage=%d -dLastPage=%d \"%s\"",
 			doc->res, filename, disp_profile, print_profile, page->number+1, page->number+1, doc->pdf_filename);
 		fz_system(ctx, gs_command);
 #endif
