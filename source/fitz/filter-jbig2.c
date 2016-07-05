@@ -128,7 +128,7 @@ jbig2_write(unsigned char *buf, unsigned long row, unsigned long width, unsigned
 }
 
 static int
-next_jbig2d(fz_context *ctx, fz_stream *stm, int len)
+next_jbig2d(fz_context *ctx, fz_stream *stm, size_t len)
 {
 	fz_jbig2d *state = stm->state;
 	JB2_Error err;
