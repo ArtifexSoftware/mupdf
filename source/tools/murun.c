@@ -247,6 +247,12 @@ static void ffi_gc_fz_display_list(js_State *J, void *list)
 	fz_drop_display_list(ctx, list);
 }
 
+static void ffi_gc_fz_stext_page(js_State *J, void *text)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_drop_stext_page(ctx, text);
+}
+
 static void ffi_gc_fz_device(js_State *J, void *device)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -1544,6 +1550,29 @@ static void ffi_Page_toPixmap(js_State *J)
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
 }
 
+static void ffi_Page_toStructuredText(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = js_touserdata(J, 0, "fz_page");
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text;
+
+	fz_var(sheet);
+
+	fz_try(ctx)
+	{
+		sheet = fz_new_stext_sheet(ctx);
+		text = fz_new_stext_page_from_page(ctx, page, sheet);
+	}
+	fz_always(ctx)
+		fz_drop_stext_sheet(ctx, sheet);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_stext_page");
+	js_newuserdata(J, "fz_stext_page", text, ffi_gc_fz_stext_page);
+}
+
 static void ffi_Page_search(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -2209,6 +2238,109 @@ static void ffi_DisplayList_toPixmap(js_State *J)
 
 	js_getregistry(J, "fz_pixmap");
 	js_newuserdata(J, "fz_pixmap", pixmap, ffi_gc_fz_pixmap);
+}
+
+static void ffi_DisplayList_toStructuredText(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text;
+
+	fz_var(sheet);
+
+	fz_try(ctx)
+	{
+		sheet = fz_new_stext_sheet(ctx);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet);
+	}
+	fz_always(ctx)
+		fz_drop_stext_sheet(ctx, sheet);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_getregistry(J, "fz_stext_page");
+	js_newuserdata(J, "fz_stext_page", text, ffi_gc_fz_stext_page);
+}
+
+static void ffi_DisplayList_search(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	const char *needle = js_tostring(J, 1);
+	fz_rect hits[256];
+	int i, n;
+
+	fz_try(ctx)
+		n = fz_search_display_list(ctx, list, needle, hits, nelem(hits));
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+	for (i = 0; i < n; ++i) {
+		ffi_pushrect(J, hits[i]);
+		js_setindex(J, -2, i);
+	}
+}
+
+static void ffi_StructuredText_search(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
+	const char *needle = js_tostring(J, 1);
+	fz_rect hits[256];
+	int i, n;
+
+	fz_try(ctx)
+		n = fz_search_stext_page(ctx, text, needle, hits, nelem(hits));
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+	for (i = 0; i < n; ++i) {
+		ffi_pushrect(J, hits[i]);
+		js_setindex(J, -2, i);
+	}
+}
+
+static void ffi_StructuredText_highlight(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
+	fz_rect rect = ffi_torect(J, 1);
+	fz_rect hits[256];
+	int i, n;
+
+	fz_try(ctx)
+		n = fz_highlight_selection(ctx, text, rect, hits, nelem(hits));
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+	for (i = 0; i < n; ++i) {
+		ffi_pushrect(J, hits[i]);
+		js_setindex(J, -2, i);
+	}
+}
+
+static void ffi_StructuredText_copy(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
+	fz_rect rect = ffi_torect(J, 1);
+	char *s;
+
+	fz_try(ctx)
+		s = fz_copy_selection(ctx, text, rect);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushstring(J, s);
+
+	fz_try(ctx)
+		fz_free(ctx, s);
+	fz_catch(ctx)
+		rethrow(J);
 }
 
 static void ffi_new_DisplayListDevice(js_State *J)
@@ -3223,6 +3355,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.run", ffi_Page_run, 3);
 		jsB_propfun(J, "Page.toPixmap", ffi_Page_toPixmap, 4);
 		jsB_propfun(J, "Page.toDisplayList", ffi_Page_toDisplayList, 1);
+		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 0);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
 		jsB_propfun(J, "Page.getAnnotations", ffi_Page_getAnnotations, 0);
 	}
@@ -3339,8 +3472,18 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "DisplayList.run", ffi_DisplayList_run, 2);
 		jsB_propfun(J, "DisplayList.toPixmap", ffi_DisplayList_toPixmap, 3);
+		jsB_propfun(J, "DisplayList.toStructuredText", ffi_DisplayList_toStructuredText, 0);
+		jsB_propfun(J, "DisplayList.search", ffi_DisplayList_search, 1);
 	}
 	js_setregistry(J, "fz_display_list");
+
+	js_newobject(J);
+	{
+		jsB_propfun(J, "StructuredText.search", ffi_StructuredText_search, 1);
+		jsB_propfun(J, "StructuredText.highlight", ffi_StructuredText_highlight, 1);
+		jsB_propfun(J, "StructuredText.copy", ffi_StructuredText_copy, 1);
+	}
+	js_setregistry(J, "fz_stext_page");
 
 	js_newobject(J);
 	{

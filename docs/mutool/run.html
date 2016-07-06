@@ -193,6 +193,8 @@ If skipAnnotations is true, ignore annotations.
 If alpha is true, the page will be drawn on a transparent background, otherwise white.
 <dt>Page#toDisplayList(skipAnnotations)
 <dd>Record the contents on the page into a DisplayList.
+<dt>Page#toStructuredText()
+<dd>Extract the text on the page into a StructuredText object.
 <dt>Page#search(needle)
 <dd>Search for 'needle' text on the page, and return an array with rectangles of all matches found.
 <dt>Page#getAnnotations()
@@ -212,6 +214,23 @@ If alpha is true, the page will be drawn on a transparent background, otherwise 
 <dd>Record the contents of the annotation into a DisplayList.
 <dt>Annotation#toPDF()
 <dd>Returns the PDFObject/PDFAnnotation for the annotation, if the document is a PDF file.
+</dl>
+
+<h2>
+StructuredText
+</h2>
+
+<p>
+StructuredText objects hold text from a page that has been analyzed and grouped into blocks, lines and spans.
+</p>
+
+<dl>
+<dt>StructuredText#search(needle)
+<dd>Search the text for all instances of 'needle', and return an array with rectangles of all matches found.
+<dt>StructuredText#highlight(rect)
+<dd>Return an array with rectangles needed to highlight a selection defined by the two corners of the rectangle.
+<dt>StructuredText#copy(rect)
+<dd>Return the text from the selection defined by the two corners of the rectangle.
 </dl>
 
 <h2>
@@ -297,6 +316,11 @@ will keep all the graphics required in memory, so will increase the amount of me
 <dd>Play back the recorded device calls onto the device.
 <dt>DisplayList#toPixmap(transform, colorspace, alpha)
 <dd>Render display list to a pixmap. If alpha is true, it will render to a transparent background, otherwise white.
+<dt>DisplayList#toStructuredText(skipAnnotations)
+<dd>Extract the text in the display list into a StructuredText object.
+<dt>DisplayList#search(needle)
+<dd>Search the display list text for all instances of 'needle', and return an array with rectangles of all matches found.
+<dd>
 </dl>
 
 <dl>
