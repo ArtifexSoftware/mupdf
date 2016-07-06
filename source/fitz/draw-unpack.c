@@ -49,12 +49,18 @@ init_get1_tables(void)
 void
 fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, size_t stride, int scale)
 {
-	int pad, x, y, k;
+	int pad, x, y, k, skip;
 	int w = dst->w;
 
 	pad = 0;
+	skip = 0;
 	if (dst->n > n)
 		pad = 255;
+	if (dst->n < n)
+	{
+		skip = n - dst->n;
+		n = dst->n;
+	}
 
 	if (depth == 1)
 		init_get1_tables();
@@ -76,7 +82,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 
 		/* Specialized loops */
 
-		if (n == 1 && depth == 1 && scale == 1 && !pad)
+		if (n == 1 && depth == 1 && scale == 1 && !pad && !skip)
 		{
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
@@ -89,7 +95,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 				memcpy(dp, get1_tab_1[*sp], w - x);
 		}
 
-		else if (n == 1 && depth == 1 && scale == 255 && !pad)
+		else if (n == 1 && depth == 1 && scale == 255 && !pad && !skip)
 		{
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
@@ -102,7 +108,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 				memcpy(dp, get1_tab_255[*sp], w - x);
 		}
 
-		else if (n == 1 && depth == 1 && scale == 1 && pad)
+		else if (n == 1 && depth == 1 && scale == 1 && pad && !skip)
 		{
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
@@ -115,7 +121,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 				memcpy(dp, get1_tab_1p[*sp], (w - x) << 1);
 		}
 
-		else if (n == 1 && depth == 1 && scale == 255 && pad)
+		else if (n == 1 && depth == 1 && scale == 255 && pad && !skip)
 		{
 			int w3 = w >> 3;
 			for (x = 0; x < w3; x++)
@@ -128,14 +134,14 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 				memcpy(dp, get1_tab_255p[*sp], (w - x) << 1);
 		}
 
-		else if (depth == 8 && !pad)
+		else if (depth == 8 && !pad && !skip)
 		{
 			int len = w * n;
 			while (len--)
 				*dp++ = *sp++;
 		}
 
-		else if (depth == 8 && pad)
+		else if (depth == 8 && pad && !skip)
 		{
 			for (x = 0; x < w; x++)
 			{
@@ -162,6 +168,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 					}
 					b++;
 				}
+				b += skip;
 				if (pad)
 					*dp++ = 255;
 			}
