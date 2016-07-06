@@ -913,7 +913,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			colorspace = fz_device_gray(app->ctx);
 		else
 			colorspace = app->colorspace;
-		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, app->image->alpha);
+		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, 1);
 		app->duration = 0;
 		fz_page_presentation(app->ctx, app->page, &app->transition, &app->duration);
 		if (app->duration == 0)
