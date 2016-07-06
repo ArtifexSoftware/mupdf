@@ -53,7 +53,7 @@ jpx_read(unsigned char *pucData,
 {
 	fz_jpxd *state = (fz_jpxd *) param;
 
-	if (ulPos < 0 || ulPos >= state->size)
+	if (ulPos >= state->size)
 		return 0;
 
 	ulSize = fz_mini(ulSize, state->size - ulPos);
@@ -66,6 +66,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 		unsigned long ulStart, unsigned long ulNum, JP2_Callback_Param param)
 {
 	fz_jpxd *state = (fz_jpxd *) param;
+	JP2_Property_Value hstep, vstep;
 	unsigned char *row;
 	int x, y, i;
 
@@ -73,21 +74,24 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 		return cJP2_Error_OK;
 
 	ulNum = fz_mini(ulNum, state->pix->w - ulStart);
+	hstep = state->hstep[sComponent];
+	vstep = state->vstep[sComponent];
 
 	if (state->palette)
 	{
 
-		row = &state->pix->samples[state->pix->stride * ulRow * state->vstep[sComponent] +
-			state->pix->n * ulStart * state->hstep[sComponent] +
-			sComponent];
+		row = state->pix->samples +
+			state->pix->stride * ulRow * vstep +
+			state->pix->n * ulStart * hstep +
+			sComponent;
 
-		for (y = 0; ulRow * state->vstep[sComponent] + y < state->pix->h && y < state->vstep[sComponent]; y++)
+		for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
 		{
 			unsigned char *p = row;
 
 			for (i = 0; i < ulNum; i++)
 			{
-				for (x = 0; (ulStart + i) * state->hstep[sComponent] + x < state->pix->w && x < state->hstep[sComponent]; x++)
+				for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
 				{
 					unsigned char v = fz_clampi(pucData[i], 0, state->palette->ulEntries);
 
@@ -100,7 +104,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 					}
 					else
 					{
-						*p= v;
+						*p = v;
 						p++;
 					}
 				}
@@ -118,19 +122,19 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 		else
 			signedoffset = 0;
 
-		row = &state->pix->samples[state->pix->stride * ulRow * state->vstep[sComponent] +
-			state->pix->n * ulStart * state->hstep[sComponent] +
+		row = &state->pix->samples[state->pix->stride * ulRow * vstep +
+			state->pix->n * ulStart * hstep +
 			sComponent];
 
 		if (state->bpss[sComponent] > 8)
 		{
-			for (y = 0; ulRow * state->vstep[sComponent] + y < state->pix->h && y < state->vstep[sComponent]; y++)
+			for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
 			{
 				unsigned char *p = row;
 
 				for (i = 0; i < ulNum; i++)
 				{
-					for (x = 0; (ulStart + i) * state->hstep[sComponent] + x < state->pix->w && x < state->hstep[sComponent]; x++)
+					for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
 					{
 						unsigned int v = (pucData[2 * i + 1] << 8) | pucData[2 * i + 0];
 						v &= (1 << state->bpss[sComponent]) - 1;
@@ -145,13 +149,13 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 		}
 		else if (state->bpss[sComponent] == 8)
 		{
-			for (y = 0; ulRow * state->vstep[sComponent] + y < state->pix->h && y < state->vstep[sComponent]; y++)
+			for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
 			{
 				unsigned char *p = row;
 
 				for (i = 0; i < ulNum; i++)
 				{
-					for (x = 0; (ulStart + i) * state->hstep[sComponent] + x < state->pix->w && x < state->hstep[sComponent]; x++)
+					for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << state->bpss[sComponent]) - 1;
@@ -166,13 +170,13 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 		}
 		else
 		{
-			for (y = 0; ulRow * state->vstep[sComponent] + y < state->pix->h && y < state->vstep[sComponent]; y++)
+			for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
 			{
 				unsigned char *p = row;
 
 				for (i = 0; i < ulNum; i++)
 				{
-					for (x = 0; (ulStart + i) * state->hstep[sComponent] + x < state->pix->w && x < state->hstep[sComponent]; x++)
+					for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << state->bpss[sComponent]) - 1;
