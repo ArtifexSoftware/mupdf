@@ -907,7 +907,6 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 	if (transition)
 	{
-		fz_transition *new_trans;
 		app->new_image = app->image;
 		app->image = NULL;
 		if (app->grayscale)
@@ -916,9 +915,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			colorspace = app->colorspace;
 		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, app->image->alpha);
 		app->duration = 0;
-		new_trans = fz_page_presentation(app->ctx, app->page, &app->duration);
-		if (new_trans)
-			app->transition = *new_trans;
+		fz_page_presentation(app->ctx, app->page, &app->transition, &app->duration);
 		if (app->duration == 0)
 			app->duration = 5;
 		app->in_transit = fz_generate_transition(app->ctx, app->image, app->old_image, app->new_image, 0, &app->transition);

@@ -29,7 +29,7 @@ static void retainpage(fz_context *ctx, pdf_document *doc, pdf_obj *parent, pdf_
 {
 	pdf_obj *pageref = pdf_lookup_page_obj(ctx, doc, page-1);
 
-	pdf_flatten_inheritable_page_items(ctx, doc, pageref);
+	pdf_flatten_inheritable_page_items(ctx, pageref);
 
 	pdf_dict_put(ctx, pageref, PDF_NAME_Parent, parent);
 

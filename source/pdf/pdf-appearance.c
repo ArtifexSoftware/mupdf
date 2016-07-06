@@ -1568,22 +1568,17 @@ static void update_rect(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot->rect);
 	annot->pagerect = annot->rect;
-	fz_transform_rect(&annot->pagerect, &annot->page->ctm);
+	fz_transform_rect(&annot->pagerect, &annot->page_ctm);
 }
 
 void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list)
 {
 	pdf_obj *obj = annot->obj;
-	const fz_matrix *page_ctm = &annot->page->ctm;
-	fz_matrix ctm;
-	fz_matrix mat = fz_identity;
 	fz_device *dev = NULL;
 	pdf_xobject *xobj = NULL;
 
 	pdf_obj *resources;
 	fz_buffer *contents;
-
-	fz_invert_matrix(&ctm, page_ctm);
 
 	fz_var(dev);
 	fz_try(ctx)
@@ -1591,7 +1586,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		pdf_obj *ap_obj;
 		fz_rect trect = *rect;
 
-		fz_transform_rect(&trect, &ctm);
+		fz_transform_rect(&trect, &annot->inv_page_ctm);
 
 		pdf_dict_put_drop(ctx, obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &trect));
 
@@ -1602,7 +1597,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 
 		if (ap_obj == NULL)
 		{
-			ap_obj = pdf_new_xobject(ctx, doc, &trect, &mat);
+			ap_obj = pdf_new_xobject(ctx, doc, &trect, &fz_identity);
 			pdf_dict_putl_drop(ctx, obj, ap_obj, PDF_NAME_AP, PDF_NAME_N, NULL);
 		}
 		else
@@ -1610,7 +1605,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 			pdf_xref_ensure_incremental_object(ctx, doc, pdf_to_num(ctx, ap_obj));
 			/* Update bounding box and matrix in reused xobject obj */
 			pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_BBox, pdf_new_rect(ctx, doc, &trect));
-			pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_Matrix, pdf_new_matrix(ctx, doc, &mat));
+			pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_Matrix, pdf_new_matrix(ctx, doc, &fz_identity));
 		}
 
 		resources = pdf_dict_get(ctx, ap_obj, PDF_NAME_Resources);
@@ -1618,7 +1613,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		contents = fz_new_buffer(ctx, 0);
 
 		dev = pdf_new_pdf_device(ctx, doc, &fz_identity, &trect, resources, contents);
-		fz_run_display_list(ctx, disp_list, dev, &ctm, &fz_infinite_rect, NULL);
+		fz_run_display_list(ctx, disp_list, dev, &annot->inv_page_ctm, &fz_infinite_rect, NULL);
 		fz_drop_device(ctx, dev);
 
 		pdf_update_stream(ctx, doc, ap_obj, contents, 0);
@@ -1630,7 +1625,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		{
 			/* Update bounding box and matrix also in the xobject structure */
 			xobj->bbox = trect;
-			xobj->matrix = mat;
+			xobj->matrix = fz_identity;
 			xobj->iteration++;
 			pdf_drop_xobject(ctx, xobj);
 		}
@@ -1685,7 +1680,7 @@ quadpoints(fz_context *ctx, pdf_document *doc, pdf_obj *annot, int *nout)
 
 void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, float color[3], float alpha, float line_thickness, float line_height)
 {
-	const fz_matrix *page_ctm = &annot->page->ctm;
+	const fz_matrix *page_ctm = &annot->page_ctm;
 	fz_path *path = NULL;
 	fz_stroke_state *stroke = NULL;
 	fz_device *dev = NULL;
@@ -1793,7 +1788,7 @@ static fz_colorspace *pdf_to_color(fz_context *ctx, pdf_document *doc, pdf_obj *
 
 void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 {
-	const fz_matrix *page_ctm = &annot->page->ctm;
+	const fz_matrix *page_ctm = &annot->page_ctm;
 	fz_path *path = NULL;
 	fz_stroke_state *stroke = NULL;
 	fz_device *dev = NULL;
@@ -2090,7 +2085,7 @@ void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_an
 	static float yellow[3] = {1.0, 1.0, 0.0};
 	static float black[3] = {0.0, 0.0, 0.0};
 
-	const fz_matrix *page_ctm = &annot->page->ctm;
+	const fz_matrix *page_ctm = &annot->page_ctm;
 	fz_display_list *dlist = NULL;
 	fz_device *dev = NULL;
 	fz_colorspace *cs = NULL;
@@ -2156,9 +2151,9 @@ void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_an
 
 void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 {
-	const fz_matrix *page_ctm = &annot->page->ctm;
+	const fz_matrix *page_ctm = &annot->page_ctm;
 	pdf_obj *obj = annot->obj;
-	pdf_obj *dr = pdf_dict_get(ctx, annot->page->me, PDF_NAME_Resources);
+	pdf_obj *dr = pdf_dict_get(ctx, annot->page->obj, PDF_NAME_Resources);
 	fz_display_list *dlist = NULL;
 	fz_device *dev = NULL;
 	font_info font_rec;
@@ -2340,7 +2335,7 @@ static float logo_color[3] = {(float)0x25/(float)0xFF, (float)0x72/(float)0xFF, 
 
 void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, char *name, char *dn, char *date)
 {
-	const fz_matrix *page_ctm = &annot->page->ctm;
+	const fz_matrix *page_ctm = &annot->page_ctm;
 	pdf_obj *obj = annot->obj;
 	pdf_obj *dr = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_AcroForm, PDF_NAME_DR, NULL);
 	fz_display_list *dlist = NULL;

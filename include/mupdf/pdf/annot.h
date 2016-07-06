@@ -59,6 +59,7 @@ struct pdf_annot_s
 {
 	fz_annot super;
 	pdf_page *page;
+	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *obj;
 	fz_rect rect;
 	fz_rect pagerect;
@@ -81,7 +82,7 @@ pdf_obj *pdf_load_name_tree(fz_context *ctx, pdf_document *doc, pdf_obj *which);
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, const fz_matrix *page_ctm);
 
 void pdf_transform_annot(fz_context *ctx, pdf_annot *annot);
-void pdf_load_annots(fz_context *ctx, pdf_document *, pdf_page *page, pdf_obj *annots);
+void pdf_load_annots(fz_context *ctx, pdf_document *, pdf_page *page, pdf_obj *annots, const fz_matrix *page_transform);
 void pdf_update_annot(fz_context *ctx, pdf_document *, pdf_annot *annot);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 
@@ -155,6 +156,6 @@ pdf_annot *pdf_poll_changed_annot(fz_context *ctx, pdf_document *idoc, pdf_page 
 /*
 	pdf_new_annot: Internal function for creating a new pdf annotation.
 */
-pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page);
+pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, const fz_matrix *page_ctm, const fz_matrix *inv_page_ctm);
 
 #endif

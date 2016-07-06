@@ -92,6 +92,8 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 	pdf_annot *annot = NULL;
 	pdf_obj *annot_obj = pdf_new_dict(ctx, doc, 0);
 	pdf_obj *ind_obj = NULL;
+	fz_rect mediabox;
+	fz_matrix page_ctm, inv_page_ctm;
 
 	fz_var(annot);
 	fz_var(ind_obj);
@@ -100,11 +102,11 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 		int ind_obj_num;
 		fz_rect rect = {0.0, 0.0, 0.0, 0.0};
 		const char *type_str = annot_type_str(type);
-		pdf_obj *annot_arr = pdf_dict_get(ctx, page->me, PDF_NAME_Annots);
+		pdf_obj *annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME_Annots);
 		if (annot_arr == NULL)
 		{
 			annot_arr = pdf_new_array(ctx, doc, 0);
-			pdf_dict_put_drop(ctx, page->me, PDF_NAME_Annots, annot_arr);
+			pdf_dict_put_drop(ctx, page->obj, PDF_NAME_Annots, annot_arr);
 		}
 
 		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_Type, PDF_NAME_Annot);
@@ -115,7 +117,10 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 		/* Make printable as default */
 		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_F, pdf_new_int(ctx, doc, F_Print));
 
-		annot = pdf_new_annot(ctx, page);
+		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
+		fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+		annot = pdf_new_annot(ctx, page, &page_ctm, &inv_page_ctm);
 		annot->rect = rect;
 		annot->pagerect = rect;
 		annot->ap = NULL;
@@ -191,7 +196,7 @@ pdf_delete_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *
 	annot->ap = NULL;
 
 	/* Recreate the "Annots" array with this annot removed */
-	old_annot_arr = pdf_dict_get(ctx, page->me, PDF_NAME_Annots);
+	old_annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME_Annots);
 
 	if (old_annot_arr)
 	{
@@ -211,7 +216,7 @@ pdf_delete_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *
 			if (pdf_is_indirect(ctx, old_annot_arr))
 				pdf_update_object(ctx, doc, pdf_to_num(ctx, old_annot_arr), annot_arr);
 			else
-				pdf_dict_put(ctx, page->me, PDF_NAME_Annots, annot_arr);
+				pdf_dict_put(ctx, page->obj, PDF_NAME_Annots, annot_arr);
 
 			if (pdf_is_indirect(ctx, annot->obj))
 				pdf_delete_object(ctx, doc, pdf_to_num(ctx, annot->obj));
@@ -234,11 +239,8 @@ pdf_delete_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *
 void
 pdf_set_markup_annot_quadpoints(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *qp, int n)
 {
-	fz_matrix ctm;
 	pdf_obj *arr = pdf_new_array(ctx, doc, n*2);
 	int i;
-
-	fz_invert_matrix(&ctm, &annot->page->ctm);
 
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_QuadPoints, arr);
 
@@ -247,7 +249,7 @@ pdf_set_markup_annot_quadpoints(fz_context *ctx, pdf_document *doc, pdf_annot *a
 		fz_point pt = qp[i];
 		pdf_obj *r;
 
-		fz_transform_point(&pt, &ctm);
+		fz_transform_point(&pt, &annot->inv_page_ctm);
 		r = pdf_new_real(ctx, doc, pt.x);
 		pdf_array_push_drop(ctx, arr, r);
 		r = pdf_new_real(ctx, doc, pt.y);
@@ -259,19 +261,16 @@ static void update_rect(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot->rect);
 	annot->pagerect = annot->rect;
-	fz_transform_rect(&annot->pagerect, &annot->page->ctm);
+	fz_transform_rect(&annot->pagerect, &annot->page_ctm);
 }
 
 void
 pdf_set_ink_annot_list(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *pts, int *counts, int ncount, float color[3], float thickness)
 {
-	fz_matrix ctm;
 	pdf_obj *list = pdf_new_array(ctx, doc, ncount);
 	pdf_obj *bs, *col;
 	fz_rect rect;
 	int i, k = 0;
-
-	fz_invert_matrix(&ctm, &annot->page->ctm);
 
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_InkList, list);
 
@@ -286,7 +285,7 @@ pdf_set_ink_annot_list(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_
 		{
 			fz_point pt = pts[k];
 
-			fz_transform_point(&pt, &ctm);
+			fz_transform_point(&pt, &annot->inv_page_ctm);
 
 			if (i == 0 && j == 0)
 			{
@@ -346,16 +345,14 @@ static void find_free_font_name(fz_context *ctx, pdf_obj *fdict, char *buf, int 
 
 void pdf_set_text_annot_position(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point pt)
 {
-	fz_matrix ctm;
 	fz_rect rect;
 	int flags;
 
-	fz_invert_matrix(&ctm, &annot->page->ctm);
 	rect.x0 = pt.x;
 	rect.x1 = pt.x + TEXT_ANNOT_SIZE;
 	rect.y0 = pt.y;
 	rect.y1 = pt.y + TEXT_ANNOT_SIZE;
-	fz_transform_rect(&rect, &ctm);
+	fz_transform_rect(&rect, &annot->inv_page_ctm);
 
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &rect));
 
@@ -401,16 +398,13 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	pdf_font_desc *font_desc = NULL;
 	pdf_da_info da_info;
 	fz_buffer *fzbuf = NULL;
-	fz_matrix ctm;
 	fz_point page_pos;
 
-	fz_invert_matrix(&ctm, &annot->page->ctm);
-
-	dr = pdf_dict_get(ctx, annot->page->me, PDF_NAME_Resources);
+	dr = pdf_dict_get(ctx, annot->page->obj, PDF_NAME_Resources);
 	if (!dr)
 	{
 		dr = pdf_new_dict(ctx, doc, 1);
-		pdf_dict_put_drop(ctx, annot->page->me, PDF_NAME_Resources, dr);
+		pdf_dict_put_drop(ctx, annot->page->obj, PDF_NAME_Resources, dr);
 	}
 
 	/* Ensure the resource dictionary includes a font dict */
@@ -459,7 +453,7 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *an
 		pdf_measure_text(ctx, font_desc, (unsigned char *)text, strlen(text), &bounds);
 
 		page_pos = *pos;
-		fz_transform_point(&page_pos, &ctm);
+		fz_transform_point(&page_pos, &annot->inv_page_ctm);
 
 		bounds.x0 *= font_size;
 		bounds.x1 *= font_size;

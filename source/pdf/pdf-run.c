@@ -3,10 +3,12 @@
 static void
 pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
 {
-	fz_matrix local_ctm;
+	fz_matrix local_ctm, page_ctm;
+	fz_rect mediabox;
 	pdf_processor *proc;
 
-	fz_concat(&local_ctm, &page->ctm, ctm);
+	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
+	fz_concat(&local_ctm, &page_ctm, ctm);
 
 	proc = pdf_new_run_processor(ctx, dev, &local_ctm, event, NULL, 0);
 	fz_try(ctx)
@@ -19,21 +21,24 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 
 static void pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
 {
-	fz_matrix local_ctm;
+	fz_matrix local_ctm, page_ctm;
+	pdf_obj *resources;
+	pdf_obj *contents;
+	fz_rect mediabox;
 	pdf_processor *proc;
 
-	fz_concat(&local_ctm, &page->ctm, ctm);
+	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
+	fz_concat(&local_ctm, &page_ctm, ctm);
+
+	resources = pdf_page_resources(ctx, page);
+	contents = pdf_page_contents(ctx, page);
 
 	if (page->transparency)
-	{
-		fz_rect mediabox = page->mediabox;
 		fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), 1, 0, 0, 1);
-	}
 
 	proc = pdf_new_run_processor(ctx, dev, &local_ctm, event, NULL, 0);
-
 	fz_try(ctx)
-		pdf_process_contents(ctx, proc, doc, page->resources, page->contents, cookie);
+		pdf_process_contents(ctx, proc, doc, resources, contents, cookie);
 	fz_always(ctx)
 		pdf_drop_processor(ctx, proc);
 	fz_catch(ctx)

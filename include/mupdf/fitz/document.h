@@ -40,7 +40,7 @@ typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
 typedef fz_rect *(fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_rect *);
 typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 typedef void (fz_page_drop_page_imp_fn)(fz_context *ctx, fz_page *page);
-typedef fz_transition *(fz_page_page_presentation_fn)(fz_context *ctx, fz_page *page, float *duration);
+typedef fz_transition *(fz_page_page_presentation_fn)(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
 
 typedef fz_annot *(fz_page_first_annot_fn)(fz_context *ctx, fz_page *page);
 
@@ -334,15 +334,15 @@ void *fz_new_annot(fz_context *ctx, int size);
 /*
 	fz_page_presentation: Get the presentation details for a given page.
 
-	duration: NULL, or a pointer to a place to set the page duration in
-	seconds. (Will be set to 0 if unspecified).
+	transition: A pointer to a transition struct to fill out.
 
-	Returns: a pointer to a transition structure, or NULL if there isn't
-	one.
+	duration: A pointer to a place to set the page duration in seconds.
+	Will be set to 0 if no transition is specified for the page.
 
-	Does not throw exceptions.
+	Returns: a pointer to a the transition structure, or NULL if there is no
+	transition specified for the page.
 */
-fz_transition *fz_page_presentation(fz_context *ctx, fz_page *page, float *duration);
+fz_transition *fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
 
 /*
 	fz_has_permission: Check permission flags on document.

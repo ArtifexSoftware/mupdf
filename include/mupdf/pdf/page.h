@@ -19,7 +19,7 @@ int pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name);
 	Copy any inheritable page keys into the actual page object, removing
 	any dependencies on the page tree parents.
 */
-void pdf_flatten_inheritable_page_items(fz_context *ctx, pdf_document *doc, pdf_obj *page);
+void pdf_flatten_inheritable_page_items(fz_context *ctx, pdf_obj *page);
 
 /*
 	pdf_load_page: Load a page and its resources.
@@ -32,8 +32,11 @@ void pdf_flatten_inheritable_page_items(fz_context *ctx, pdf_document *doc, pdf_
 	number: page number, where 0 is the first page of the document.
 */
 pdf_page *pdf_load_page(fz_context *ctx, pdf_document *doc, int number);
-
 void pdf_drop_page(fz_context *ctx, pdf_page *page);
+
+void pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *mediabox, fz_matrix *ctm);
+pdf_obj *pdf_page_resources(fz_context *ctx, pdf_page *page);
+pdf_obj *pdf_page_contents(fz_context *ctx, pdf_page *page);
 
 fz_link *pdf_load_links(fz_context *ctx, pdf_page *page);
 
@@ -159,7 +162,7 @@ void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 /*
 	Presentation interface.
 */
-fz_transition *pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration);
+fz_transition *pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition, float *duration);
 
 /*
  * Page tree, pages and related objects
@@ -169,23 +172,17 @@ struct pdf_page_s
 {
 	fz_page super;
 	pdf_document *doc;
+	pdf_obj *obj;
 
-	fz_matrix ctm; /* calculated from mediabox and rotate */
-	fz_rect mediabox;
-	int rotate;
 	int transparency;
-	pdf_obj *resources;
-	pdf_obj *contents;
+
 	fz_link *links;
 	pdf_annot *annots;
 	pdf_annot **annot_tailp;
 	pdf_annot *changed_annots;
 	pdf_annot *deleted_annots;
 	pdf_annot *tmp_annots;
-	pdf_obj *me;
-	float duration;
-	int transition_present;
-	fz_transition transition;
+
 	int incomplete;
 };
 

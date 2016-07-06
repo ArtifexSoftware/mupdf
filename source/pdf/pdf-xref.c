@@ -2284,15 +2284,6 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 	return -1;
 }
 
-fz_transition *
-pdf_page_presentation(fz_context *ctx, pdf_page *page, float *duration)
-{
-	*duration = page->duration;
-	if (!page->transition_present)
-		return NULL;
-	return &page->transition;
-}
-
 /*
 	Initializers for the fz_document interface.
 

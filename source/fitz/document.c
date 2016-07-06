@@ -398,7 +398,7 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 }
 
 fz_transition *
-fz_page_presentation(fz_context *ctx, fz_page *page, float *duration)
+fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration)
 {
 	float dummy;
 	if (duration)
@@ -406,7 +406,7 @@ fz_page_presentation(fz_context *ctx, fz_page *page, float *duration)
 	else
 		duration = &dummy;
 	if (page && page->page_presentation && page)
-		return page->page_presentation(ctx, page, duration);
+		return page->page_presentation(ctx, page, transition, duration);
 	return NULL;
 }
 

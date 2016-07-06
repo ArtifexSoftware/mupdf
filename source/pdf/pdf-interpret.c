@@ -1256,7 +1256,7 @@ pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_p
 		proc->op_cm(ctx, proc,
 				annot->matrix.a, annot->matrix.b, annot->matrix.c,
 				annot->matrix.d, annot->matrix.e, annot->matrix.f);
-		proc->op_Do_form(ctx, proc, NULL, annot->ap, page->resources);
+		proc->op_Do_form(ctx, proc, NULL, annot->ap, pdf_page_resources(ctx, page));
 		proc->op_Q(ctx, proc);
 	}
 }

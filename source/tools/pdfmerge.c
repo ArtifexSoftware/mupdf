@@ -41,7 +41,7 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 	fz_try(ctx)
 	{
 		page_ref = pdf_lookup_page_obj(ctx, doc_src, page_from - 1);
-		pdf_flatten_inheritable_page_items(ctx, doc_src, page_ref);
+		pdf_flatten_inheritable_page_items(ctx, page_ref);
 
 		/* Make a new page object dictionary to hold the items we copy from the source page. */
 		page_dict = pdf_new_dict(ctx, doc_des, 4);
