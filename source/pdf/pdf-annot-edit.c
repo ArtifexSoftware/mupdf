@@ -121,7 +121,6 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 		fz_invert_matrix(&inv_page_ctm, &page_ctm);
 
 		annot = pdf_new_annot(ctx, page, &page_ctm, &inv_page_ctm);
-		annot->rect = rect;
 		annot->ap = NULL;
 		annot->widget_type = PDF_WIDGET_TYPE_NOT_WIDGET;
 		annot->annot_type = type;
@@ -256,11 +255,6 @@ pdf_set_markup_annot_quadpoints(fz_context *ctx, pdf_document *doc, pdf_annot *a
 	}
 }
 
-static void update_rect(fz_context *ctx, pdf_annot *annot)
-{
-	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot->rect);
-}
-
 void
 pdf_set_ink_annot_list(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *pts, int *counts, int ncount, float color[3], float thickness)
 {
@@ -314,7 +308,6 @@ pdf_set_ink_annot_list(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_
 	}
 
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &rect));
-	update_rect(ctx, annot);
 
 	bs = pdf_new_dict(ctx, doc, 1);
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_BS, bs);
@@ -356,8 +349,6 @@ void pdf_set_text_annot_position(fz_context *ctx, pdf_document *doc, pdf_annot *
 	flags = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
 	flags |= (F_NoZoom|F_NoRotate);
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_F, pdf_new_int(ctx, doc, flags));
-
-	update_rect(ctx, annot);
 }
 
 void pdf_set_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, char *text)
@@ -463,7 +454,6 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *an
 		bounds.y1 += page_pos.y;
 
 		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &bounds));
-		update_rect(ctx, annot);
 	}
 	fz_always(ctx)
 	{

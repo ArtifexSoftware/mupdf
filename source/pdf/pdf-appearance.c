@@ -1564,11 +1564,6 @@ void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_a
 	pdf_set_markup_appearance(ctx, doc, annot, color, alpha, line_thickness, line_height);
 }
 
-static void update_rect(fz_context *ctx, pdf_annot *annot)
-{
-	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot->rect);
-}
-
 void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list)
 {
 	pdf_obj *obj = annot->obj;
@@ -1629,8 +1624,6 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		}
 
 		doc->dirty = 1;
-
-		update_rect(ctx, annot);
 	}
 	fz_catch(ctx)
 	{
@@ -2172,8 +2165,10 @@ void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, p
 	{
 		char *contents = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Contents));
 		char *da = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME_DA));
-		fz_rect rect = annot->rect;
 		fz_point pos;
+		fz_rect rect;
+
+		pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &rect);
 
 		get_font_info(ctx, doc, dr, da, &font_rec);
 
@@ -2358,10 +2353,14 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 	fz_try(ctx)
 	{
 		char *da = pdf_to_str_buf(ctx, pdf_dict_get(ctx, obj, PDF_NAME_DA));
-		fz_rect rect = annot->rect;
+		fz_rect annot_rect;
 		fz_rect logo_bounds;
 		fz_matrix logo_tm;
 		unsigned char *bufstr;
+		fz_rect rect;
+
+		pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot_rect);
+		rect = annot_rect;
 
 		dlist = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, dlist);
@@ -2399,12 +2398,12 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		if (date)
 			fz_buffer_printf(ctx, fzbuf, "\nDate: %s", date);
 		(void)fz_buffer_storage(ctx, fzbuf, &bufstr);
-		rect = annot->rect;
+		rect = annot_rect;
 		rect.x0 = (rect.x0 + rect.x1)/2.0f;
 		text = fit_text(ctx, &font_rec, (char *)bufstr, &rect);
 		fz_fill_text(ctx, dev, text, page_ctm, cs, font_rec.da_rec.col, 1.0f);
 
-		rect = annot->rect;
+		rect = annot_rect;
 		fz_transform_rect(&rect, page_ctm);
 		pdf_set_annot_appearance(ctx, doc, annot, &rect, dlist);
 

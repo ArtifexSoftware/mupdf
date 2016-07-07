@@ -406,8 +406,10 @@ void
 pdf_transform_annot(fz_context *ctx, pdf_annot *annot)
 {
 	fz_rect bbox = annot->ap->bbox;
-	fz_rect rect = annot->rect;
+	fz_rect rect;
 	float w, h, x, y;
+
+	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &rect);
 
 	fz_transform_rect(&bbox, &annot->ap->matrix);
 	if (bbox.x1 == bbox.x0)
@@ -501,7 +503,7 @@ void
 pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *annots, const fz_matrix *page_ctm)
 {
 	pdf_annot *annot, **itr;
-	pdf_obj *obj, *ap, *as, *n, *rect;
+	pdf_obj *obj, *ap, *as, *n;
 	int i, len, keep_annot;
 	fz_matrix inv_page_ctm;
 
@@ -558,7 +560,6 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 				doc->update_appearance(ctx, doc, annot);
 
 			obj = annot->obj;
-			rect = pdf_dict_get(ctx, obj, PDF_NAME_Rect);
 			ap = pdf_dict_get(ctx, obj, PDF_NAME_AP);
 			as = pdf_dict_get(ctx, obj, PDF_NAME_AS);
 
@@ -581,7 +582,6 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 			if (!pdf_is_stream(ctx, n))
 				n = pdf_dict_get(ctx, n, as);
 
-			pdf_to_rect(ctx, rect, &annot->rect);
 			annot->ap = NULL;
 			annot->annot_type = pdf_annot_obj_type(ctx, obj);
 			annot->widget_type = annot->annot_type == FZ_ANNOT_WIDGET ? pdf_field_type(ctx, doc, obj) : PDF_WIDGET_TYPE_NOT_WIDGET;
