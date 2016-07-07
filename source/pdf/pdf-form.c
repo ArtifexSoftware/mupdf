@@ -643,7 +643,7 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 
 				if (annot)
 				{
-					switch (annot->widget_type)
+					switch (pdf_widget_type(ctx, (pdf_widget*)annot))
 					{
 					case PDF_WIDGET_TYPE_RADIOBUTTON:
 					case PDF_WIDGET_TYPE_CHECKBOX:
@@ -748,7 +748,7 @@ pdf_widget *pdf_first_widget(fz_context *ctx, pdf_document *doc, pdf_page *page)
 {
 	pdf_annot *annot = page->annots;
 
-	while (annot && annot->widget_type == PDF_WIDGET_TYPE_NOT_WIDGET)
+	while (annot && pdf_annot_type(ctx, annot) != FZ_ANNOT_WIDGET)
 		annot = annot->next;
 
 	return (pdf_widget *)annot;
@@ -761,7 +761,7 @@ pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous)
 	if (annot)
 		annot = annot->next;
 
-	while (annot && annot->widget_type == PDF_WIDGET_TYPE_NOT_WIDGET)
+	while (annot && pdf_annot_type(ctx, annot) != FZ_ANNOT_WIDGET)
 		annot = annot->next;
 
 	return (pdf_widget *)annot;
@@ -777,7 +777,6 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 	{
 		pdf_set_field_type(ctx, doc, annot->obj, type);
 		pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_T, pdf_new_string(ctx, doc, fieldname, strlen(fieldname)));
-		annot->widget_type = type;
 
 		if (type == PDF_WIDGET_TYPE_SIGNATURE)
 		{
@@ -813,10 +812,12 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 	return (pdf_widget *)annot;
 }
 
-int pdf_widget_get_type(fz_context *ctx, pdf_widget *widget)
+int pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
-	return annot->widget_type;
+	if (pdf_annot_type(ctx, annot) == FZ_ANNOT_WIDGET)
+		return pdf_field_type(ctx, pdf_get_bound_document(ctx, annot->obj), annot->obj);
+	return PDF_WIDGET_TYPE_NOT_WIDGET;
 }
 
 static int set_text_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)

@@ -1606,7 +1606,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 			if (widget)
 			{
-				switch (pdf_widget_get_type(ctx, widget))
+				switch (pdf_widget_type(ctx, widget))
 				{
 				case PDF_WIDGET_TYPE_TEXT:
 					{

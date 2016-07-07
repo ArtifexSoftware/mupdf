@@ -427,8 +427,9 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm)
 	fz_pre_scale(fz_translate(annot_ctm, x, y), w, h);
 }
 
-fz_annot_type pdf_annot_obj_type(fz_context *ctx, pdf_obj *obj)
+fz_annot_type pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 {
+	pdf_obj *obj = annot->obj;
 	pdf_obj *subtype = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
 	if (pdf_name_eq(ctx, PDF_NAME_Text, subtype))
 		return FZ_ANNOT_TEXT;
@@ -584,8 +585,6 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 				n = pdf_dict_get(ctx, n, as);
 
 			annot->ap = NULL;
-			annot->annot_type = pdf_annot_obj_type(ctx, obj);
-			annot->widget_type = annot->annot_type == FZ_ANNOT_WIDGET ? pdf_field_type(ctx, doc, obj) : PDF_WIDGET_TYPE_NOT_WIDGET;
 
 			if (pdf_is_stream(ctx, n))
 			{
@@ -643,10 +642,4 @@ pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect)
 	pdf_to_rect(ctx, obj, rect);
 	fz_transform_rect(rect, &annot->page_ctm);
 	return rect;
-}
-
-fz_annot_type
-pdf_annot_type(fz_context *ctx, pdf_annot *annot)
-{
-	return annot->annot_type;
 }

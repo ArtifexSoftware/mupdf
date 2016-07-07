@@ -121,8 +121,6 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 
 		annot = pdf_new_annot(ctx, page, &page_ctm, &inv_page_ctm);
 		annot->ap = NULL;
-		annot->widget_type = PDF_WIDGET_TYPE_NOT_WIDGET;
-		annot->annot_type = type;
 
 		/*
 			Both annotation object and annotation structure are now created.

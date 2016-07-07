@@ -66,8 +66,6 @@ struct pdf_annot_s
 	int ap_iteration;
 	pdf_annot *next;
 	pdf_annot *next_changed;
-	int annot_type;
-	int widget_type;
 };
 
 fz_link_dest pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kind kind, pdf_obj *dest);
@@ -142,8 +140,6 @@ pdf_obj *pdf_annot_irt(fz_context *ctx, pdf_annot *annot);
 	Only base 14 fonts are supported and are specified by name.
 */
 void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3]);
-
-fz_annot_type pdf_annot_obj_type(fz_context *ctx, pdf_obj *obj);
 
 /*
 	pdf_poll_changed_annot: enumerate the changed annotations recorded

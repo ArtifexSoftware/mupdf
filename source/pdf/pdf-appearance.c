@@ -2435,7 +2435,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 	pdf_obj *obj = annot->obj;
 	if (!pdf_dict_get(ctx, obj, PDF_NAME_AP) || pdf_obj_is_dirty(ctx, obj))
 	{
-		fz_annot_type type = pdf_annot_obj_type(ctx, obj);
+		fz_annot_type type = pdf_annot_type(ctx, annot);
 		switch (type)
 		{
 		case FZ_ANNOT_WIDGET:

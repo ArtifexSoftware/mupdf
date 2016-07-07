@@ -55,12 +55,12 @@ pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous);
 pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page, int type, char *fieldname);
 
 /*
-	pdf_widget_get_type: find out the type of a widget.
+	pdf_widget_type: find out the type of a widget.
 
 	The type determines what widget subclass the widget
 	can safely be cast to.
 */
-int pdf_widget_get_type(fz_context *ctx, pdf_widget *widget);
+int pdf_widget_type(fz_context *ctx, pdf_widget *widget);
 
 /*
 	pdf_bound_widget: get the bounding box of a widget.
