@@ -1282,11 +1282,11 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 
 		/* run contents */
 
-		resources = xobj->resources;
+		resources = pdf_xobject_resources(ctx, xobj);
 		if (!resources)
 			resources = page_resources;
 
-		pdf_process_contents(ctx, (pdf_processor*)pr, xobj->document, resources, xobj->contents, NULL);
+		pdf_process_contents(ctx, (pdf_processor*)pr, xobj->document, resources, xobj->obj, NULL);
 	}
 	fz_always(ctx)
 	{

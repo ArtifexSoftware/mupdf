@@ -19,8 +19,6 @@ pdf_drop_xobject_imp(fz_context *ctx, fz_storable *xobj_)
 
 	if (xobj->colorspace)
 		fz_drop_colorspace(ctx, xobj->colorspace);
-	pdf_drop_obj(ctx, xobj->resources);
-	pdf_drop_obj(ctx, xobj->contents);
 	pdf_drop_obj(ctx, xobj->obj);
 	fz_free(ctx, xobj);
 }
@@ -31,6 +29,12 @@ pdf_xobject_size(pdf_xobject *xobj)
 	if (xobj == NULL)
 		return 0;
 	return sizeof(*xobj) + (xobj->colorspace ? xobj->colorspace->size : 0);
+}
+
+pdf_obj *
+pdf_xobject_resources(fz_context *ctx, pdf_xobject *xobj)
+{
+	return pdf_dict_get(ctx, xobj->obj, PDF_NAME_Resources);
 }
 
 pdf_xobject *
@@ -47,8 +51,6 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	form = fz_malloc_struct(ctx, pdf_xobject);
 	FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
 	form->document = doc;
-	form->resources = NULL;
-	form->contents = NULL;
 	form->colorspace = NULL;
 	form->obj = NULL;
 	form->iteration = 0;
@@ -96,12 +98,6 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 				}
 			}
 		}
-
-		form->resources = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
-		if (form->resources)
-			pdf_keep_obj(ctx, form->resources);
-
-		form->contents = pdf_keep_obj(ctx, dict);
 	}
 	fz_catch(ctx)
 	{
@@ -109,6 +105,7 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		pdf_drop_xobject(ctx, form);
 		fz_rethrow(ctx);
 	}
+
 	form->obj = pdf_keep_obj(ctx, dict);
 
 	return form;
@@ -151,8 +148,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		form = fz_malloc_struct(ctx, pdf_xobject);
 		FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
 		form->document = doc;
-		form->resources = NULL;
-		form->contents = NULL;
 		form->colorspace = NULL;
 		form->obj = NULL;
 		form->iteration = 0;
@@ -165,9 +160,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		form->knockout = 0;
 		form->transparency = 0;
 
-		form->resources = res;
-		res = NULL;
-
 		idict_num = pdf_create_object(ctx, doc);
 		pdf_update_object(ctx, doc, idict_num, dict);
 		idict = pdf_new_indirect(ctx, doc, idict_num, 0);
@@ -176,7 +168,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 
 		pdf_store_item(ctx, idict, form, pdf_xobject_size(form));
 
-		form->contents = pdf_keep_obj(ctx, idict);
 		form->obj = pdf_keep_obj(ctx, idict);
 
 		pdf_drop_xobject(ctx, form);
@@ -196,6 +187,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 
 void pdf_update_xobject_contents(fz_context *ctx, pdf_document *doc, pdf_xobject *form, fz_buffer *buffer)
 {
-	pdf_update_stream(ctx, doc, form->contents, buffer, 0);
+	pdf_update_stream(ctx, doc, form->obj, buffer, 0);
 	form->iteration ++;
 }

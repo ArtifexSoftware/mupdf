@@ -608,7 +608,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 		else if (pdf_name_eq(ctx, pdf_dict_getp(ctx, pageobj, "Group/S"), PDF_NAME_Transparency))
 			page->transparency = 1;
 		for (annot = page->annots; annot && !page->transparency; annot = annot->next)
-			if (annot->ap && pdf_resources_use_blending(ctx, annot->ap->resources))
+			if (annot->ap && pdf_resources_use_blending(ctx, pdf_xobject_resources(ctx, annot->ap)))
 				page->transparency = 1;
 	}
 	fz_catch(ctx)

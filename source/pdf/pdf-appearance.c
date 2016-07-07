@@ -778,7 +778,7 @@ static int get_matrix(fz_context *ctx, pdf_document *doc, pdf_xobject *form, int
 	pdf_lexbuf lbuf;
 	fz_stream *str;
 
-	str = pdf_open_stream(ctx, doc, pdf_to_num(ctx, form->contents));
+	str = pdf_open_stream(ctx, doc, pdf_to_num(ctx, form->obj));
 
 	pdf_lexbuf_init(ctx, &lbuf, PDF_LEXBUF_SMALL);
 
@@ -824,7 +824,7 @@ static int get_matrix(fz_context *ctx, pdf_document *doc, pdf_xobject *form, int
 		if (found)
 		{
 			fz_rect bbox;
-			pdf_to_rect(ctx, pdf_dict_get(ctx, form->contents, PDF_NAME_BBox), &bbox);
+			pdf_to_rect(ctx, pdf_dict_get(ctx, form->obj, PDF_NAME_BBox), &bbox);
 
 			switch (q)
 			{
@@ -1005,7 +1005,7 @@ static pdf_xobject *load_or_create_form(fz_context *ctx, pdf_document *doc, pdf_
 			pdf_update_xobject_contents(ctx, doc, form, fzbuf);
 		}
 
-		copy_resources(ctx, form->resources, pdf_get_inheritable(ctx, doc, obj, PDF_NAME_DR));
+		copy_resources(ctx, pdf_xobject_resources(ctx, form), pdf_get_inheritable(ctx, doc, obj, PDF_NAME_DR));
 	}
 	fz_always(ctx)
 	{
@@ -1041,7 +1041,7 @@ static void update_marked_content(fz_context *ctx, pdf_document *doc, pdf_xobjec
 		int first = 1;
 
 		newbuf = fz_new_buffer(ctx, 0);
-		str_outer = pdf_open_stream(ctx, doc, pdf_to_num(ctx, form->contents));
+		str_outer = pdf_open_stream(ctx, doc, pdf_to_num(ctx, form->obj));
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
 		str_inner = fz_open_memory(ctx, buf, len);
 
@@ -1504,7 +1504,7 @@ void pdf_update_pushbutton_appearance(fz_context *ctx, pdf_document *doc, pdf_ob
 			clip.x1 -= btotal;
 			clip.y1 -= btotal;
 
-			get_font_info(ctx, doc, form->resources, da, &font_rec);
+			get_font_info(ctx, doc, pdf_xobject_resources(ctx, form), da, &font_rec);
 			measure_text(ctx, doc, &font_rec, &fz_identity, text, &bounds);
 			fz_translate(&mat, (rect.x1 - bounds.x1)/2, (rect.y1 - bounds.y1)/2);
 			fzbuf_print_text(ctx, fzbuf, &clip, NULL, &font_rec, &mat, text);

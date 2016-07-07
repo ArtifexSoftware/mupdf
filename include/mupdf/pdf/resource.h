@@ -91,6 +91,7 @@ struct pdf_xobject_s
 {
 	fz_storable storable;
 	pdf_obj *obj;
+	pdf_document *document;
 
 	fz_matrix matrix;
 	fz_rect bbox;
@@ -98,9 +99,6 @@ struct pdf_xobject_s
 	int knockout;
 	int transparency;
 	fz_colorspace *colorspace;
-	pdf_document *document;
-	pdf_obj *resources;
-	pdf_obj *contents;
 	int iteration;
 };
 
@@ -111,5 +109,7 @@ void pdf_drop_xobject(fz_context *ctx, pdf_xobject *xobj);
 void pdf_update_xobject_contents(fz_context *ctx, pdf_document *doc, pdf_xobject *form, fz_buffer *buffer);
 
 void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
+
+pdf_obj *pdf_xobject_resources(fz_context *ctx, pdf_xobject *xobj);
 
 #endif
