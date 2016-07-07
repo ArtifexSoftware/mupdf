@@ -402,8 +402,9 @@ pdf_drop_annots(fz_context *ctx, pdf_annot *annot)
 	}
 }
 
+/* Create transform to fit appearance stream to annotation Rect */
 void
-pdf_transform_annot(fz_context *ctx, pdf_annot *annot)
+pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm)
 {
 	fz_rect bbox = annot->ap->bbox;
 	fz_rect rect;
@@ -423,7 +424,7 @@ pdf_transform_annot(fz_context *ctx, pdf_annot *annot)
 	x = rect.x0 - bbox.x0;
 	y = rect.y0 - bbox.y0;
 
-	fz_pre_scale(fz_translate(&annot->matrix, x, y), w, h);
+	fz_pre_scale(fz_translate(annot_ctm, x, y), w, h);
 }
 
 fz_annot_type pdf_annot_obj_type(fz_context *ctx, pdf_obj *obj)
@@ -589,9 +590,10 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 			if (pdf_is_stream(ctx, n))
 			{
 				annot->ap = pdf_load_xobject(ctx, doc, n);
-				pdf_transform_annot(ctx, annot);
 				annot->ap_iteration = annot->ap->iteration;
 			}
+			else
+				fz_warn(ctx, "no appearance stream for annotation %d 0 R", pdf_to_num(ctx, annot->obj));
 
 			if (obj == doc->focus_obj)
 				doc->focus = annot;

@@ -74,7 +74,6 @@ pdf_update_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 			fz_try(ctx)
 			{
 				annot->ap = pdf_load_xobject(ctx, doc, n);
-				pdf_transform_annot(ctx, annot);
 				annot->ap_iteration = annot->ap->iteration;
 			}
 			fz_catch(ctx)

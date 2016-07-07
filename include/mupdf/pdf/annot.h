@@ -64,7 +64,6 @@ struct pdf_annot_s
 
 	pdf_xobject *ap;
 	int ap_iteration;
-	fz_matrix matrix;
 	pdf_annot *next;
 	pdf_annot *next_changed;
 	int annot_type;
@@ -80,7 +79,7 @@ pdf_obj *pdf_load_name_tree(fz_context *ctx, pdf_document *doc, pdf_obj *which);
 
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, const fz_matrix *page_ctm);
 
-void pdf_transform_annot(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm);
 void pdf_load_annots(fz_context *ctx, pdf_document *, pdf_page *page, pdf_obj *annots, const fz_matrix *page_transform);
 void pdf_update_annot(fz_context *ctx, pdf_document *, pdf_annot *annot);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
