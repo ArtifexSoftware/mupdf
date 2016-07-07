@@ -21,7 +21,7 @@ pdf_drop_xobject_imp(fz_context *ctx, fz_storable *xobj_)
 		fz_drop_colorspace(ctx, xobj->colorspace);
 	pdf_drop_obj(ctx, xobj->resources);
 	pdf_drop_obj(ctx, xobj->contents);
-	pdf_drop_obj(ctx, xobj->me);
+	pdf_drop_obj(ctx, xobj->obj);
 	fz_free(ctx, xobj);
 }
 
@@ -50,7 +50,7 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	form->resources = NULL;
 	form->contents = NULL;
 	form->colorspace = NULL;
-	form->me = NULL;
+	form->obj = NULL;
 	form->iteration = 0;
 
 	/* Store item immediately, to avoid possible recursion if objects refer back to this one */
@@ -109,7 +109,7 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		pdf_drop_xobject(ctx, form);
 		fz_rethrow(ctx);
 	}
-	form->me = pdf_keep_obj(ctx, dict);
+	form->obj = pdf_keep_obj(ctx, dict);
 
 	return form;
 }
@@ -154,7 +154,7 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		form->resources = NULL;
 		form->contents = NULL;
 		form->colorspace = NULL;
-		form->me = NULL;
+		form->obj = NULL;
 		form->iteration = 0;
 
 		form->bbox = *bbox;
@@ -177,7 +177,7 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		pdf_store_item(ctx, idict, form, pdf_xobject_size(form));
 
 		form->contents = pdf_keep_obj(ctx, idict);
-		form->me = pdf_keep_obj(ctx, idict);
+		form->obj = pdf_keep_obj(ctx, idict);
 
 		pdf_drop_xobject(ctx, form);
 		form = NULL;

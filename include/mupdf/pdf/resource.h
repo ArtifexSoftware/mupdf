@@ -90,6 +90,8 @@ typedef struct pdf_xobject_s pdf_xobject;
 struct pdf_xobject_s
 {
 	fz_storable storable;
+	pdf_obj *obj;
+
 	fz_matrix matrix;
 	fz_rect bbox;
 	int isolated;
@@ -99,7 +101,6 @@ struct pdf_xobject_s
 	pdf_document *document;
 	pdf_obj *resources;
 	pdf_obj *contents;
-	pdf_obj *me;
 	int iteration;
 };
 

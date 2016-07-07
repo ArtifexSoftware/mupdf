@@ -1220,7 +1220,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	pdf_obj *resources;
 
 	/* Avoid infinite recursion */
-	if (xobj == NULL || pdf_mark_obj(ctx, xobj->me))
+	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
 		return;
 
 	fz_var(cleanup_state);
@@ -1333,7 +1333,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 			pdf_grestore(ctx, pr);
 		}
 
-		pdf_unmark_obj(ctx, xobj->me);
+		pdf_unmark_obj(ctx, xobj->obj);
 	}
 	fz_catch(ctx)
 	{
