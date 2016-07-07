@@ -91,8 +91,6 @@ struct pdf_xobject_s
 {
 	fz_storable storable;
 	pdf_obj *obj;
-
-	fz_colorspace *colorspace;
 	int iteration;
 };
 
@@ -110,5 +108,6 @@ fz_matrix *pdf_xobject_matrix(fz_context *ctx, pdf_xobject *xobj, fz_matrix *mat
 int pdf_xobject_isolated(fz_context *ctx, pdf_xobject *xobj);
 int pdf_xobject_knockout(fz_context *ctx, pdf_xobject *xobj);
 int pdf_xobject_transparency(fz_context *ctx, pdf_xobject *xobj);
+fz_colorspace *pdf_xobject_colorspace(fz_context *ctx, pdf_xobject *xobj);
 
 #endif

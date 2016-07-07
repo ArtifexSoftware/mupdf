@@ -431,6 +431,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 			pdf_obj *group, *s, *bc, *tr;
 			float softmask_bc[FZ_MAX_COLORS];
 			fz_colorspace *colorspace;
+			int colorspace_n = 1;
 			int k, luminosity;
 
 			fz_var(xobj);
@@ -442,17 +443,20 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 
 			fz_try(ctx)
 			{
-				colorspace = xobj->colorspace;
-				if (!colorspace)
-					colorspace = fz_device_gray(ctx);
+				colorspace = pdf_xobject_colorspace(ctx, xobj);
+				if (colorspace)
+				{
+					colorspace_n = colorspace->n;
+					fz_drop_colorspace(ctx, colorspace);
+				}
 
-				for (k = 0; k < colorspace->n; k++)
+				for (k = 0; k < colorspace_n; k++)
 					softmask_bc[k] = 0;
 
 				bc = pdf_dict_get(ctx, obj, PDF_NAME_BC);
 				if (pdf_is_array(ctx, bc))
 				{
-					for (k = 0; k < colorspace->n; k++)
+					for (k = 0; k < colorspace_n; k++)
 						softmask_bc[k] = pdf_to_real(ctx, pdf_array_get(ctx, bc, k));
 				}
 

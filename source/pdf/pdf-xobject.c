@@ -16,9 +16,6 @@ static void
 pdf_drop_xobject_imp(fz_context *ctx, fz_storable *xobj_)
 {
 	pdf_xobject *xobj = (pdf_xobject *)xobj_;
-
-	if (xobj->colorspace)
-		fz_drop_colorspace(ctx, xobj->colorspace);
 	pdf_drop_obj(ctx, xobj->obj);
 	fz_free(ctx, xobj);
 }
@@ -28,7 +25,7 @@ pdf_xobject_size(pdf_xobject *xobj)
 {
 	if (xobj == NULL)
 		return 0;
-	return sizeof(*xobj) + (xobj->colorspace ? xobj->colorspace->size : 0);
+	return sizeof(*xobj);
 }
 
 pdf_obj *
@@ -74,53 +71,41 @@ int pdf_xobject_transparency(fz_context *ctx, pdf_xobject *xobj)
 	return 0;
 }
 
+fz_colorspace *
+pdf_xobject_colorspace(fz_context *ctx, pdf_xobject *xobj)
+{
+	pdf_obj *group = pdf_dict_get(ctx, xobj->obj, PDF_NAME_Group);
+	if (group)
+	{
+		pdf_obj *cs = pdf_dict_get(ctx, group, PDF_NAME_CS);
+		if (cs)
+		{
+			fz_colorspace *colorspace = NULL;
+			fz_try(ctx)
+				colorspace = pdf_load_colorspace(ctx, pdf_get_bound_document(ctx, xobj->obj), cs);
+			fz_catch(ctx)
+				fz_warn(ctx, "cannot load xobject colorspace");
+			return colorspace;
+		}
+	}
+	return NULL;
+}
+
 pdf_xobject *
 pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
 	pdf_xobject *form;
-	pdf_obj *obj;
 
 	if ((form = pdf_find_item(ctx, pdf_drop_xobject_imp, dict)) != NULL)
-	{
 		return form;
-	}
 
 	form = fz_malloc_struct(ctx, pdf_xobject);
 	FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
-	form->colorspace = NULL;
 	form->obj = NULL;
 	form->iteration = 0;
 
 	/* Store item immediately, to avoid possible recursion if objects refer back to this one */
 	pdf_store_item(ctx, dict, form, pdf_xobject_size(form));
-
-	fz_try(ctx)
-	{
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_Group);
-		if (obj)
-		{
-			pdf_obj *attrs = obj;
-
-			obj = pdf_dict_get(ctx, attrs, PDF_NAME_CS);
-			if (obj)
-			{
-				fz_try(ctx)
-				{
-					form->colorspace = pdf_load_colorspace(ctx, doc, obj);
-				}
-				fz_catch(ctx)
-				{
-					fz_warn(ctx, "cannot load xobject colorspace");
-				}
-			}
-		}
-	}
-	fz_catch(ctx)
-	{
-		pdf_remove_item(ctx, pdf_drop_xobject_imp, dict);
-		pdf_drop_xobject(ctx, form);
-		fz_rethrow(ctx);
-	}
 
 	form->obj = pdf_keep_obj(ctx, dict);
 
@@ -163,7 +148,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 
 		form = fz_malloc_struct(ctx, pdf_xobject);
 		FZ_INIT_STORABLE(form, 1, pdf_drop_xobject_imp);
-		form->colorspace = NULL;
 		form->obj = NULL;
 		form->iteration = 0;
 

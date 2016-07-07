@@ -111,6 +111,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	fz_rect mask_bbox;
 	fz_matrix save_tm, save_tlm, save_ctm;
 	fz_matrix mask_matrix;
+	fz_colorspace *mask_colorspace;
 
 	save->softmask = softmask;
 	if (softmask == NULL)
@@ -121,6 +122,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 
 	pdf_xobject_bbox(ctx, softmask, &mask_bbox);
 	pdf_xobject_matrix(ctx, softmask, &mask_matrix);
+
 	save_tm = pr->tm;
 	save_tlm = pr->tlm;
 
@@ -135,12 +137,14 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	gstate->softmask_resources = NULL;
 	gstate->ctm = gstate->softmask_ctm;
 
-	fz_begin_mask(ctx, pr->dev, &mask_bbox, gstate->luminosity,
-			softmask->colorspace, gstate->softmask_bc);
+	mask_colorspace = pdf_xobject_colorspace(ctx, softmask);
 	fz_try(ctx)
 	{
+		fz_begin_mask(ctx, pr->dev, &mask_bbox, gstate->luminosity, mask_colorspace, gstate->softmask_bc);
 		pdf_run_xobject(ctx, pr, softmask, save->page_resources, &fz_identity);
 	}
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, mask_colorspace);
 	fz_catch(ctx)
 	{
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
@@ -1474,15 +1478,20 @@ static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_xobject *
 
 	if (smask)
 	{
-		fz_colorspace *cs = smask->colorspace;
-		if (!cs)
-			cs = fz_device_gray(ctx);
+		fz_colorspace *cs = pdf_xobject_colorspace(ctx, smask);
+		int cs_n = 1;
+		if (cs)
+		{
+			cs_n = cs->n;
+			fz_drop_colorspace(ctx, cs);
+		}
 		gstate->softmask_ctm = gstate->ctm;
 		gstate->softmask = pdf_keep_xobject(ctx, smask);
 		gstate->softmask_resources = pdf_keep_obj(ctx, page_resources);
-		for (i = 0; i < cs->n; ++i)
+		for (i = 0; i < cs_n; ++i)
 			gstate->softmask_bc[i] = bc[i];
 		gstate->luminosity = luminosity;
+		fz_drop_colorspace(ctx, cs);
 	}
 }
 
