@@ -447,9 +447,12 @@ pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_m
 {
 	pdf_obj *pageobj = page->obj;
 	pdf_obj *obj;
-	fz_rect mediabox, cropbox, realbox;
+	fz_rect mediabox, cropbox, realbox, pagebox;
 	float userunit = 1;
 	int rotate;
+
+	if (!page_mediabox)
+		page_mediabox = &pagebox;
 
 	obj = pdf_dict_get(ctx, pageobj, PDF_NAME_UserUnit);
 	if (pdf_is_real(ctx, obj))
@@ -584,7 +587,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 			fz_matrix page_ctm;
 			pdf_page_transform(ctx, page, &page_mediabox, &page_ctm);
 			page->links = pdf_load_link_annots(ctx, doc, obj, &page_ctm);
-			pdf_load_annots(ctx, doc, page, obj, &page_ctm);
+			pdf_load_annots(ctx, doc, page, obj);
 		}
 	}
 	fz_catch(ctx)

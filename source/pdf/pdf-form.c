@@ -1168,11 +1168,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 
 fz_rect *pdf_bound_widget(fz_context *ctx, pdf_widget *widget, fz_rect *rect)
 {
-	pdf_annot *annot = (pdf_annot *)widget;
-	pdf_obj *obj = pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect);
-	pdf_to_rect(ctx, obj, rect);
-	fz_transform_rect(rect, &annot->page_ctm);
-	return rect;
+	return pdf_bound_annot(ctx, (pdf_annot*)widget, rect);
 }
 
 char *pdf_text_widget_text(fz_context *ctx, pdf_document *doc, pdf_widget *tw)
