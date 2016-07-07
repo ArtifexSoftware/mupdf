@@ -61,8 +61,8 @@ struct pdf_annot_s
 	pdf_page *page;
 	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *obj;
+
 	fz_rect rect;
-	fz_rect pagerect;
 	pdf_xobject *ap;
 	int ap_iteration;
 	fz_matrix matrix;

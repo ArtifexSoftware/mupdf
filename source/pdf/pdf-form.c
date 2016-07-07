@@ -583,14 +583,16 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	pdf_hotspot *hp = &doc->hotspot;
 	fz_point *pt = &(ui_event->event.pointer.pt);
 	int changed = 0;
+	fz_rect bbox;
 
 	if (page == NULL)
 		return 0;
 
 	for (annot = page->annots; annot; annot = annot->next)
 	{
-		if (pt->x >= annot->pagerect.x0 && pt->x <= annot->pagerect.x1)
-			if (pt->y >= annot->pagerect.y0 && pt->y <= annot->pagerect.y1)
+		pdf_bound_annot(ctx, annot, &bbox);
+		if (pt->x >= bbox.x0 && pt->x <= bbox.x1)
+			if (pt->y >= bbox.y0 && pt->y <= bbox.y1)
 				break;
 	}
 
@@ -1166,11 +1168,9 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 fz_rect *pdf_bound_widget(fz_context *ctx, pdf_widget *widget, fz_rect *rect)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
-
-	if (rect == NULL)
-		return NULL;
-	*rect = annot->pagerect;
-
+	pdf_obj *obj = pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect);
+	pdf_to_rect(ctx, obj, rect);
+	fz_transform_rect(rect, &annot->page_ctm);
 	return rect;
 }
 

@@ -1567,8 +1567,6 @@ void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_a
 static void update_rect(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot->rect);
-	annot->pagerect = annot->rect;
-	fz_transform_rect(&annot->pagerect, &annot->page_ctm);
 }
 
 void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_rect *rect, fz_display_list *disp_list)

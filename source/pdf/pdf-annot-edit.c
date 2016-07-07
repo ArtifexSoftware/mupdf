@@ -122,7 +122,6 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 
 		annot = pdf_new_annot(ctx, page, &page_ctm, &inv_page_ctm);
 		annot->rect = rect;
-		annot->pagerect = rect;
 		annot->ap = NULL;
 		annot->widget_type = PDF_WIDGET_TYPE_NOT_WIDGET;
 		annot->annot_type = type;
@@ -260,8 +259,6 @@ pdf_set_markup_annot_quadpoints(fz_context *ctx, pdf_document *doc, pdf_annot *a
 static void update_rect(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot->rect);
-	annot->pagerect = annot->rect;
-	fz_transform_rect(&annot->pagerect, &annot->page_ctm);
 }
 
 void

@@ -582,8 +582,6 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 				n = pdf_dict_get(ctx, n, as);
 
 			pdf_to_rect(ctx, rect, &annot->rect);
-			annot->pagerect = annot->rect;
-			fz_transform_rect(&annot->pagerect, page_ctm);
 			annot->ap = NULL;
 			annot->annot_type = pdf_annot_obj_type(ctx, obj);
 			annot->widget_type = annot->annot_type == FZ_ANNOT_WIDGET ? pdf_field_type(ctx, doc, obj) : PDF_WIDGET_TYPE_NOT_WIDGET;
@@ -639,13 +637,9 @@ pdf_next_annot(fz_context *ctx, pdf_annot *annot)
 fz_rect *
 pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect)
 {
-	if (rect == NULL)
-		return NULL;
-
-	if (annot)
-		*rect = annot->pagerect;
-	else
-		*rect = fz_empty_rect;
+	pdf_obj *obj = pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect);
+	pdf_to_rect(ctx, obj, rect);
+	fz_transform_rect(rect, &annot->page_ctm);
 	return rect;
 }
 
