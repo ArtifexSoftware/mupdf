@@ -94,7 +94,6 @@ struct pdf_xobject_s
 	pdf_document *document;
 
 	fz_matrix matrix;
-	fz_rect bbox;
 	int isolated;
 	int knockout;
 	int transparency;
@@ -111,5 +110,6 @@ void pdf_update_xobject_contents(fz_context *ctx, pdf_document *doc, pdf_xobject
 void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot);
 
 pdf_obj *pdf_xobject_resources(fz_context *ctx, pdf_xobject *xobj);
+fz_rect *pdf_xobject_bbox(fz_context *ctx, pdf_xobject *xobj, fz_rect *bbox);
 
 #endif

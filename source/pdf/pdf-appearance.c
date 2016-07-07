@@ -1135,7 +1135,7 @@ void pdf_update_text_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj
 	pdf_xobject *form = NULL;
 	fz_buffer *fzbuf = NULL;
 	fz_matrix tm;
-	fz_rect rect;
+	fz_rect rect, form_bbox;
 	int has_tm;
 	char *text = NULL;
 
@@ -1156,9 +1156,9 @@ void pdf_update_text_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj
 
 		form = load_or_create_form(ctx, doc, obj, &rect);
 
+		pdf_xobject_bbox(ctx, form, &form_bbox);
 		has_tm = get_matrix(ctx, doc, form, info.q, &tm);
-		fzbuf = create_text_appearance(ctx, doc, &form->bbox, has_tm ? &tm : NULL, &info,
-			text?text:"");
+		fzbuf = create_text_appearance(ctx, doc, &form_bbox, has_tm ? &tm : NULL, &info, text?text:"");
 		update_marked_content(ctx, doc, form, fzbuf);
 	}
 	fz_always(ctx)
@@ -1377,7 +1377,7 @@ void pdf_update_combobox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj 
 	pdf_xobject *form = NULL;
 	fz_buffer *fzbuf = NULL;
 	fz_matrix tm;
-	fz_rect rect;
+	fz_rect rect, form_bbox;
 	int has_tm;
 	pdf_obj *val;
 	char *text;
@@ -1403,8 +1403,9 @@ void pdf_update_combobox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj 
 
 		form = load_or_create_form(ctx, doc, obj, &rect);
 
+		pdf_xobject_bbox(ctx, form, &form_bbox);
 		has_tm = get_matrix(ctx, doc, form, info.q, &tm);
-		fzbuf = create_text_appearance(ctx, doc, &form->bbox, has_tm ? &tm : NULL, &info,
+		fzbuf = create_text_appearance(ctx, doc, &form_bbox, has_tm ? &tm : NULL, &info,
 			text?text:"");
 		update_marked_content(ctx, doc, form, fzbuf);
 	}
@@ -1621,7 +1622,6 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		if (xobj)
 		{
 			/* Update bounding box and matrix also in the xobject structure */
-			xobj->bbox = trect;
 			xobj->matrix = fz_identity;
 			xobj->iteration++;
 			pdf_drop_xobject(ctx, xobj);

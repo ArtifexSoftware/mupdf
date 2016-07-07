@@ -118,7 +118,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	save->ctm = gstate->softmask_ctm;
 	save_ctm = gstate->ctm;
 
-	mask_bbox = softmask->bbox;
+	pdf_xobject_bbox(ctx, softmask, &mask_bbox);
 	save_tm = pr->tm;
 	save_tlm = pr->tlm;
 
@@ -1218,10 +1218,13 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	int cleanup_state = 0;
 	char errmess[256] = "";
 	pdf_obj *resources;
+	fz_rect xobj_bbox;
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
 		return;
+
+	pdf_xobject_bbox(ctx, xobj, &xobj_bbox);
 
 	fz_var(cleanup_state);
 	fz_var(gstate);
@@ -1248,7 +1251,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		/* apply soft mask, create transparency group and reset state */
 		if (xobj->transparency)
 		{
-			fz_rect bbox = xobj->bbox;
+			fz_rect bbox;
+			bbox = xobj_bbox;
 			fz_transform_rect(&bbox, &gstate->ctm);
 
 			/* Remember that we tried to call begin_softmask. Even
@@ -1272,10 +1276,10 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		pdf_gsave(ctx, pr); /* Save here so the clippath doesn't persist */
 
 		/* clip to the bounds */
-		fz_moveto(ctx, pr->path, xobj->bbox.x0, xobj->bbox.y0);
-		fz_lineto(ctx, pr->path, xobj->bbox.x1, xobj->bbox.y0);
-		fz_lineto(ctx, pr->path, xobj->bbox.x1, xobj->bbox.y1);
-		fz_lineto(ctx, pr->path, xobj->bbox.x0, xobj->bbox.y1);
+		fz_moveto(ctx, pr->path, xobj_bbox.x0, xobj_bbox.y0);
+		fz_lineto(ctx, pr->path, xobj_bbox.x1, xobj_bbox.y0);
+		fz_lineto(ctx, pr->path, xobj_bbox.x1, xobj_bbox.y1);
+		fz_lineto(ctx, pr->path, xobj_bbox.x0, xobj_bbox.y1);
 		fz_closepath(ctx, pr->path);
 		pr->clip = 1;
 		pdf_show_path(ctx, pr, 0, 0, 0, 0);

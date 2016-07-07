@@ -406,11 +406,12 @@ pdf_drop_annots(fz_context *ctx, pdf_annot *annot)
 void
 pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm)
 {
-	fz_rect bbox = annot->ap->bbox;
+	fz_rect bbox;
 	fz_rect rect;
 	float w, h, x, y;
 
 	pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &rect);
+	pdf_xobject_bbox(ctx, annot->ap, &bbox);
 
 	fz_transform_rect(&bbox, &annot->ap->matrix);
 	if (bbox.x1 == bbox.x0)

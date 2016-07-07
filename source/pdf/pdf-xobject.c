@@ -37,6 +37,12 @@ pdf_xobject_resources(fz_context *ctx, pdf_xobject *xobj)
 	return pdf_dict_get(ctx, xobj->obj, PDF_NAME_Resources);
 }
 
+fz_rect *
+pdf_xobject_bbox(fz_context *ctx, pdf_xobject *xobj, fz_rect *bbox)
+{
+	return pdf_to_rect(ctx, pdf_dict_get(ctx, xobj->obj, PDF_NAME_BBox), bbox);
+}
+
 pdf_xobject *
 pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
@@ -60,8 +66,6 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_BBox);
-		pdf_to_rect(ctx, obj, &form->bbox);
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_Matrix);
 		if (obj)
@@ -151,8 +155,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		form->colorspace = NULL;
 		form->obj = NULL;
 		form->iteration = 0;
-
-		form->bbox = *bbox;
 
 		form->matrix = *mat;
 
