@@ -1222,6 +1222,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	pdf_obj *resources;
 	fz_rect xobj_bbox;
 	fz_matrix xobj_matrix;
+	int transparency;
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
@@ -1229,6 +1230,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 
 	pdf_xobject_bbox(ctx, xobj, &xobj_bbox);
 	pdf_xobject_matrix(ctx, xobj, &xobj_matrix);
+	transparency = pdf_xobject_transparency(ctx, xobj);
 
 	fz_var(cleanup_state);
 	fz_var(gstate);
@@ -1253,7 +1255,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		pr->gstate[pr->gparent].ctm = gstate->ctm;
 
 		/* apply soft mask, create transparency group and reset state */
-		if (xobj->transparency)
+		if (transparency)
 		{
 			fz_rect bbox;
 			bbox = xobj_bbox;
@@ -1267,7 +1269,10 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 			/* Remember that we tried to call fz_begin_group. Even
 			 * if it throws an error, we must call fz_end_group. */
 			cleanup_state = 2;
-			fz_begin_group(ctx, pr->dev, &bbox, xobj->isolated, xobj->knockout, gstate->blendmode, gstate->fill.alpha);
+			fz_begin_group(ctx, pr->dev, &bbox,
+					pdf_xobject_isolated(ctx, xobj),
+					pdf_xobject_knockout(ctx, xobj),
+					gstate->blendmode, gstate->fill.alpha);
 
 			gstate->blendmode = 0;
 			gstate->stroke.alpha = 1;
@@ -1302,7 +1307,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 			pdf_grestore(ctx, pr); /* Remove the clippath */
 
 		/* wrap up transparency stacks */
-		if (xobj->transparency)
+		if (transparency)
 		{
 			if (cleanup_state >= 2)
 			{

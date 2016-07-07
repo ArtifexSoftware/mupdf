@@ -49,6 +49,31 @@ pdf_xobject_matrix(fz_context *ctx, pdf_xobject *xobj, fz_matrix *matrix)
 	return pdf_to_matrix(ctx, pdf_dict_get(ctx, xobj->obj, PDF_NAME_Matrix), matrix);
 }
 
+int pdf_xobject_isolated(fz_context *ctx, pdf_xobject *xobj)
+{
+	pdf_obj *group = pdf_dict_get(ctx, xobj->obj, PDF_NAME_Group);
+	if (group)
+		return pdf_to_bool(ctx, pdf_dict_get(ctx, group, PDF_NAME_I));
+	return 0;
+}
+
+int pdf_xobject_knockout(fz_context *ctx, pdf_xobject *xobj)
+{
+	pdf_obj *group = pdf_dict_get(ctx, xobj->obj, PDF_NAME_Group);
+	if (group)
+		return pdf_to_bool(ctx, pdf_dict_get(ctx, group, PDF_NAME_K));
+	return 0;
+}
+
+int pdf_xobject_transparency(fz_context *ctx, pdf_xobject *xobj)
+{
+	pdf_obj *group = pdf_dict_get(ctx, xobj->obj, PDF_NAME_Group);
+	if (group)
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, group, PDF_NAME_S), PDF_NAME_Transparency))
+			return 1;
+	return 0;
+}
+
 pdf_xobject *
 pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
@@ -72,21 +97,10 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-		form->isolated = 0;
-		form->knockout = 0;
-		form->transparency = 0;
-
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_Group);
 		if (obj)
 		{
 			pdf_obj *attrs = obj;
-
-			form->isolated = pdf_to_bool(ctx, pdf_dict_get(ctx, attrs, PDF_NAME_I));
-			form->knockout = pdf_to_bool(ctx, pdf_dict_get(ctx, attrs, PDF_NAME_K));
-
-			obj = pdf_dict_get(ctx, attrs, PDF_NAME_S);
-			if (pdf_name_eq(ctx, obj, PDF_NAME_Transparency))
-				form->transparency = 1;
 
 			obj = pdf_dict_get(ctx, attrs, PDF_NAME_CS);
 			if (obj)
@@ -154,10 +168,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		form->colorspace = NULL;
 		form->obj = NULL;
 		form->iteration = 0;
-
-		form->isolated = 0;
-		form->knockout = 0;
-		form->transparency = 0;
 
 		idict_num = pdf_create_object(ctx, doc);
 		pdf_update_object(ctx, doc, idict_num, dict);

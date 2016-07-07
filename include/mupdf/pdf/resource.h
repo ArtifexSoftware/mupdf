@@ -93,9 +93,6 @@ struct pdf_xobject_s
 	pdf_obj *obj;
 	pdf_document *document;
 
-	int isolated;
-	int knockout;
-	int transparency;
 	fz_colorspace *colorspace;
 	int iteration;
 };
@@ -111,5 +108,8 @@ void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 pdf_obj *pdf_xobject_resources(fz_context *ctx, pdf_xobject *xobj);
 fz_rect *pdf_xobject_bbox(fz_context *ctx, pdf_xobject *xobj, fz_rect *bbox);
 fz_matrix *pdf_xobject_matrix(fz_context *ctx, pdf_xobject *xobj, fz_matrix *matrix);
+int pdf_xobject_isolated(fz_context *ctx, pdf_xobject *xobj);
+int pdf_xobject_knockout(fz_context *ctx, pdf_xobject *xobj);
+int pdf_xobject_transparency(fz_context *ctx, pdf_xobject *xobj);
 
 #endif
