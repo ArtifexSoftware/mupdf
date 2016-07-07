@@ -485,7 +485,7 @@ fz_annot_type pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 		return -1;
 }
 
-pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, const fz_matrix *page_ctm, const fz_matrix *inv_page_ctm)
+pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, const fz_matrix *page_ctm)
 {
 	pdf_annot *annot = fz_new_annot(ctx, sizeof(pdf_annot));
 
@@ -496,7 +496,6 @@ pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, const fz_matrix *page_
 
 	annot->page = page;
 	annot->page_ctm = *page_ctm;
-	annot->inv_page_ctm = *inv_page_ctm;
 
 	return annot;
 }
@@ -507,13 +506,10 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 	pdf_annot *annot, **itr;
 	pdf_obj *obj, *ap, *as, *n;
 	int i, len, keep_annot;
-	fz_matrix inv_page_ctm;
 
 	fz_var(annot);
 	fz_var(itr);
 	fz_var(keep_annot);
-
-	fz_invert_matrix(&inv_page_ctm, page_ctm);
 
 	itr = &page->annots;
 
@@ -530,7 +526,7 @@ pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *ann
 		{
 			obj = pdf_array_get(ctx, annots, i);
 
-			annot = pdf_new_annot(ctx, page, page_ctm, &inv_page_ctm);
+			annot = pdf_new_annot(ctx, page, page_ctm);
 			*itr = annot;
 			annot->obj = pdf_keep_obj(ctx, obj);
 			itr = &annot->next;

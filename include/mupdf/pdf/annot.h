@@ -59,10 +59,12 @@ struct pdf_annot_s
 {
 	fz_annot super;
 	pdf_page *page;
-	fz_matrix page_ctm, inv_page_ctm;
 	pdf_obj *obj;
 
+	fz_matrix page_ctm;
+
 	pdf_xobject *ap;
+
 	int ap_iteration;
 	pdf_annot *next;
 	pdf_annot *next_changed;
@@ -150,6 +152,6 @@ pdf_annot *pdf_poll_changed_annot(fz_context *ctx, pdf_document *idoc, pdf_page 
 /*
 	pdf_new_annot: Internal function for creating a new pdf annotation.
 */
-pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, const fz_matrix *page_ctm, const fz_matrix *inv_page_ctm);
+pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page, const fz_matrix *page_ctm);
 
 #endif

@@ -1569,9 +1569,12 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 	pdf_obj *obj = annot->obj;
 	fz_device *dev = NULL;
 	pdf_xobject *xobj = NULL;
+	fz_matrix inv_page_ctm;
 
 	pdf_obj *resources;
 	fz_buffer *contents;
+
+	fz_invert_matrix(&inv_page_ctm, &annot->page_ctm);
 
 	fz_var(dev);
 	fz_try(ctx)
@@ -1579,7 +1582,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		pdf_obj *ap_obj;
 		fz_rect trect = *rect;
 
-		fz_transform_rect(&trect, &annot->inv_page_ctm);
+		fz_transform_rect(&trect, &inv_page_ctm);
 
 		pdf_dict_put_drop(ctx, obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &trect));
 
@@ -1606,7 +1609,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		contents = fz_new_buffer(ctx, 0);
 
 		dev = pdf_new_pdf_device(ctx, doc, &fz_identity, &trect, resources, contents);
-		fz_run_display_list(ctx, disp_list, dev, &annot->inv_page_ctm, &fz_infinite_rect, NULL);
+		fz_run_display_list(ctx, disp_list, dev, &inv_page_ctm, &fz_infinite_rect, NULL);
 		fz_drop_device(ctx, dev);
 
 		pdf_update_stream(ctx, doc, ap_obj, contents, 0);
