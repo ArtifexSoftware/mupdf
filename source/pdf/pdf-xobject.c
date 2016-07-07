@@ -43,6 +43,12 @@ pdf_xobject_bbox(fz_context *ctx, pdf_xobject *xobj, fz_rect *bbox)
 	return pdf_to_rect(ctx, pdf_dict_get(ctx, xobj->obj, PDF_NAME_BBox), bbox);
 }
 
+fz_matrix *
+pdf_xobject_matrix(fz_context *ctx, pdf_xobject *xobj, fz_matrix *matrix)
+{
+	return pdf_to_matrix(ctx, pdf_dict_get(ctx, xobj->obj, PDF_NAME_Matrix), matrix);
+}
+
 pdf_xobject *
 pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
@@ -66,13 +72,6 @@ pdf_load_xobject(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-
-		obj = pdf_dict_get(ctx, dict, PDF_NAME_Matrix);
-		if (obj)
-			pdf_to_matrix(ctx, obj, &form->matrix);
-		else
-			form->matrix = fz_identity;
-
 		form->isolated = 0;
 		form->knockout = 0;
 		form->transparency = 0;
@@ -155,8 +154,6 @@ pdf_new_xobject(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const f
 		form->colorspace = NULL;
 		form->obj = NULL;
 		form->iteration = 0;
-
-		form->matrix = *mat;
 
 		form->isolated = 0;
 		form->knockout = 0;

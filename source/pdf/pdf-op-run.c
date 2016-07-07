@@ -110,6 +110,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	pdf_xobject *softmask = gstate->softmask;
 	fz_rect mask_bbox;
 	fz_matrix save_tm, save_tlm, save_ctm;
+	fz_matrix mask_matrix;
 
 	save->softmask = softmask;
 	if (softmask == NULL)
@@ -119,6 +120,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	save_ctm = gstate->ctm;
 
 	pdf_xobject_bbox(ctx, softmask, &mask_bbox);
+	pdf_xobject_matrix(ctx, softmask, &mask_matrix);
 	save_tm = pr->tm;
 	save_tlm = pr->tlm;
 
@@ -126,7 +128,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 		mask_bbox = fz_infinite_rect;
 	else
 	{
-		fz_transform_rect(&mask_bbox, &softmask->matrix);
+		fz_transform_rect(&mask_bbox, &mask_matrix);
 		fz_transform_rect(&mask_bbox, &gstate->softmask_ctm);
 	}
 	gstate->softmask = NULL;
@@ -1219,12 +1221,14 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	char errmess[256] = "";
 	pdf_obj *resources;
 	fz_rect xobj_bbox;
+	fz_matrix xobj_matrix;
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
 		return;
 
 	pdf_xobject_bbox(ctx, xobj, &xobj_bbox);
+	pdf_xobject_matrix(ctx, xobj, &xobj_matrix);
 
 	fz_var(cleanup_state);
 	fz_var(gstate);
@@ -1241,7 +1245,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		oldtop = pr->gtop;
 
 		/* apply xobject's transform matrix */
-		fz_concat(&local_transform, &xobj->matrix, &local_transform);
+		fz_concat(&local_transform, &xobj_matrix, &local_transform);
 		fz_concat(&gstate->ctm, &local_transform, &gstate->ctm);
 
 		/* The gparent is updated with the modified ctm */

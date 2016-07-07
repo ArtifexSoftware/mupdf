@@ -1621,8 +1621,6 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		xobj = pdf_load_xobject(ctx, doc, ap_obj);
 		if (xobj)
 		{
-			/* Update bounding box and matrix also in the xobject structure */
-			xobj->matrix = fz_identity;
 			xobj->iteration++;
 			pdf_drop_xobject(ctx, xobj);
 		}
