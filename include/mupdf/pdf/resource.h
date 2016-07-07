@@ -91,7 +91,6 @@ struct pdf_xobject_s
 {
 	fz_storable storable;
 	pdf_obj *obj;
-	pdf_document *document;
 
 	fz_colorspace *colorspace;
 	int iteration;

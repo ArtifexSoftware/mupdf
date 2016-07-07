@@ -1223,6 +1223,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	fz_rect xobj_bbox;
 	fz_matrix xobj_matrix;
 	int transparency;
+	pdf_document *doc;
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
@@ -1299,7 +1300,9 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		if (!resources)
 			resources = page_resources;
 
-		pdf_process_contents(ctx, (pdf_processor*)pr, xobj->document, resources, xobj->obj, NULL);
+		doc = pdf_get_bound_document(ctx, xobj->obj);
+
+		pdf_process_contents(ctx, (pdf_processor*)pr, doc, resources, xobj->obj, NULL);
 	}
 	fz_always(ctx)
 	{
