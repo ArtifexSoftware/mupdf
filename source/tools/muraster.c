@@ -496,7 +496,7 @@ static void fin_muraster_locks(void)
 #endif
 
 #if MURASTER_THREADS == 0 && NUM_RENDER_THREADS != 0
-#error Can't have MURASTER_CONFIG_RENDER_THREADS > 0 without having a threading library!
+#error "Can't have MURASTER_CONFIG_RENDER_THREADS > 0 without having a threading library!"
 #endif
 
 #ifdef MURASTER_CONFIG_BGPRINT
@@ -508,7 +508,7 @@ static void fin_muraster_locks(void)
 #endif
 
 #if MURASTER_THREADS == 0 && BGPRINT != 0
-#error Can't have MURASTER_CONFIG_BGPRINT > 0 without having a threading library!
+#error "Can't have MURASTER_CONFIG_BGPRINT > 0 without having a threading library!"
 #endif
 
 typedef struct worker_t {
@@ -662,7 +662,7 @@ static void usage(void)
 		"\t-f\tfit file to page if too large\n"
 		"\t-B -\tminimum bandheight (e.g. 32)\n"
 		"\t-M -\tmax bandmemory (e.g. 655360)\n"
-#ifdef MURASTER_THREADS
+#if MURASTER_THREADS != 0
 		"\t-T -\tnumber of threads to use for rendering\n"
 #endif
 		"\n"
@@ -1457,7 +1457,7 @@ trace_realloc(void *arg, void *p_, size_t size)
 	return &p[1];
 }
 
-#ifdef MURASTER_THREADS
+#if MURASTER_THREADS != 0
 static THREAD_RETURN_TYPE worker_thread(void *arg)
 {
 	worker_t *me = (worker_t *)arg;
