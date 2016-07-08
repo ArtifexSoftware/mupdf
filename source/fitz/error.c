@@ -54,7 +54,6 @@ void fz_warn(fz_context *ctx, const char *fmt, ...)
 	va_end(ap);
 }
 
-
 /* Error context */
 
 /* When we first setjmp, code is set to 0. Whenever we throw, we add 2 to

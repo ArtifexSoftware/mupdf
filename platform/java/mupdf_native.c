@@ -190,7 +190,6 @@ static void fz_throw_java(fz_context *ctx, JNIEnv *env)
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown java error");
 }
 
-
 /* Load classes, field and method IDs. */
 
 static const char *current_class_name = NULL;

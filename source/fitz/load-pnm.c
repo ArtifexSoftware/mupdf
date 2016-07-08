@@ -217,7 +217,6 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	p = pnm_read_number(ctx, p, e, &pnm->width);
 	p = pnm_read_white(ctx, p, e, 0);
 
-
 	if (bitmap)
 	{
 		p = pnm_read_number(ctx, p, e, &pnm->height);

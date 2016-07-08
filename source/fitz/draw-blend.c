@@ -596,7 +596,7 @@ fz_blend_pixmap(fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, i
 	/* TODO: fix this hack! */
 	if (isolated && alpha < 255)
 	{
-		unsigned char *sp2; 
+		unsigned char *sp2;
 		int nn;
 		h = src->h;
 		sp2 = src->samples;

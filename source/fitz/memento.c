@@ -2213,7 +2213,6 @@ void Memento_stopLeaking(void)
 	memento.leaking--;
 }
 
-
 #endif /* MEMENTO_CPP_EXTRAS_ONLY */
 
 #ifdef __cplusplus

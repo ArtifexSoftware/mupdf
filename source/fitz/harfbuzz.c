@@ -49,7 +49,6 @@
  * about this.
  */
 
-
 /* Potentially we can write different versions
  * of get_context and set_context for different
  * threading systems.

@@ -203,7 +203,6 @@ fz_set_graphics_aa_level(fz_context *ctx, int level)
 #endif
 }
 
-
 /*
  * Global Edge List -- list of straight path segments for scan conversion
  *

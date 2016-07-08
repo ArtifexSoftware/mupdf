@@ -83,7 +83,6 @@ jbig2_message(const char *msg, JB2_Message_Level level, void *userdata)
 		}
 }
 
-
 static JB2_Size_T JB2_Callback
 jbig2_read(unsigned char *buf, JB2_Size_T offset, JB2_Size_T size, void *userdata)
 {

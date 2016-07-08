@@ -486,7 +486,6 @@ bmp_decompress_rle24(fz_context *ctx, struct info *info, unsigned char *p, unsig
 	return decompressed;
 }
 
-
 static unsigned char *
 bmp_decompress_rle8(fz_context *ctx, struct info *info, unsigned char *p, unsigned char **end)
 {

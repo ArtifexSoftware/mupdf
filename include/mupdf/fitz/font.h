@@ -41,7 +41,6 @@ struct fz_font_s
 	int ft_substitute; /* ... substitute metrics */
 	int ft_stretch; /* ... and stretch to match PDF metrics */
 
-
 	int fake_bold; /* ... synthesize bold */
 	int fake_italic; /* ... synthesize italic */
 	int force_hinting; /* ... force hinting for DynaLab fonts */
