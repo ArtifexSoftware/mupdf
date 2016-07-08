@@ -47,6 +47,10 @@ fz_colorspace *fz_device_bgr(fz_context *ctx);
 	fz_device_cmyk: Get colorspace representing device specific CMYK.
 */
 fz_colorspace *fz_device_cmyk(fz_context *ctx);
+
+/*
+	fz_device_cmyk: Get colorspace representing device specific LAB.
+*/
 fz_colorspace *fz_device_lab(fz_context *ctx);
 
 /*
