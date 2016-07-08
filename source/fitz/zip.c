@@ -15,6 +15,7 @@ struct fz_zip_writer_s
 	fz_output *output;
 	fz_buffer *central;
 	int count;
+	int closed;
 };
 
 void
@@ -63,33 +64,34 @@ fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buf
 }
 
 void
+fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip)
+{
+	fz_off_t offset = fz_tell_output(ctx, zip->output);
+
+	fz_write(ctx, zip->output, zip->central->data, zip->central->len);
+
+	fz_write_int32_le(ctx, zip->output, ZIP_END_OF_CENTRAL_DIRECTORY_SIG);
+	fz_write_int16_le(ctx, zip->output, 0); /* number of this disk */
+	fz_write_int16_le(ctx, zip->output, 0); /* number of disk where central directory starts */
+	fz_write_int16_le(ctx, zip->output, zip->count); /* entries in central directory in this disk */
+	fz_write_int16_le(ctx, zip->output, zip->count); /* entries in central directory in total */
+	fz_write_int32_le(ctx, zip->output, (int)zip->central->len); /* size of the central directory */
+	fz_write_int32_le(ctx, zip->output, (int)offset); /* offset of the central directory */
+	fz_write_int16_le(ctx, zip->output, 5); /* zip file comment length */
+
+	fz_write(ctx, zip->output, "MuPDF", 5);
+
+	zip->closed = 1;
+}
+
+void
 fz_drop_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 {
-	fz_try(ctx)
-	{
-		fz_off_t offset = fz_tell_output(ctx, zip->output);
-
-		fz_write(ctx, zip->output, zip->central->data, zip->central->len);
-
-		fz_write_int32_le(ctx, zip->output, ZIP_END_OF_CENTRAL_DIRECTORY_SIG);
-		fz_write_int16_le(ctx, zip->output, 0); /* number of this disk */
-		fz_write_int16_le(ctx, zip->output, 0); /* number of disk where central directory starts */
-		fz_write_int16_le(ctx, zip->output, zip->count); /* entries in central directory in this disk */
-		fz_write_int16_le(ctx, zip->output, zip->count); /* entries in central directory in total */
-		fz_write_int32_le(ctx, zip->output, (int)zip->central->len); /* size of the central directory */
-		fz_write_int32_le(ctx, zip->output, (int)offset); /* offset of the central directory */
-		fz_write_int16_le(ctx, zip->output, 5); /* zip file comment length */
-
-		fz_write(ctx, zip->output, "MuPDF", 5);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_output(ctx, zip->output);
-		fz_drop_buffer(ctx, zip->central);
-		fz_free(ctx, zip);
-	}
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	if (!zip->closed)
+		fz_warn(ctx, "dropping unclosed zip writer");
+	fz_drop_output(ctx, zip->output);
+	fz_drop_buffer(ctx, zip->central);
+	fz_free(ctx, zip);
 }
 
 fz_zip_writer *

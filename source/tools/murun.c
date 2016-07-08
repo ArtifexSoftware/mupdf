@@ -178,7 +178,10 @@ static const char *require_js =
 static void ffi_gc_fz_buffer(js_State *J, void *buf)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_drop_buffer(ctx, buf);
+	fz_try(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		rethrow(J);
 }
 
 static void ffi_gc_fz_document(js_State *J, void *doc)
@@ -1497,11 +1500,13 @@ static void ffi_Page_run(js_State *J)
 	} else {
 		device = new_js_device(ctx, J);
 		js_copy(J, 1); /* put the js device on the top so the callbacks know where to get it */
-		fz_try(ctx)
+		fz_try(ctx) {
 			if (no_annots)
 				fz_run_page_contents(ctx, page, device, &ctm, NULL);
 			else
 				fz_run_page(ctx, page, device, &ctm, NULL);
+			fz_close_device(ctx, device);
+		}
 		fz_always(ctx)
 			fz_drop_device(ctx, device);
 		fz_catch(ctx)
@@ -1650,8 +1655,10 @@ static void ffi_Annotation_run(js_State *J)
 	} else {
 		device = new_js_device(ctx, J);
 		js_copy(J, 1); /* put the js device on the top so the callbacks know where to get it */
-		fz_try(ctx)
+		fz_try(ctx) {
 			fz_run_annot(ctx, annot, device, &ctm, NULL);
+			fz_close_device(ctx, device);
+		}
 		fz_always(ctx)
 			fz_drop_device(ctx, device);
 		fz_catch(ctx)
@@ -2213,8 +2220,10 @@ static void ffi_DisplayList_run(js_State *J)
 	} else {
 		device = new_js_device(ctx, J);
 		js_copy(J, 1);
-		fz_try(ctx)
+		fz_try(ctx) {
 			fz_run_display_list(ctx, list, device, &ctm, NULL, NULL);
+			fz_close_device(ctx, device);
+		}
 		fz_always(ctx)
 			fz_drop_device(ctx, device);
 		fz_catch(ctx)
@@ -2417,7 +2426,6 @@ static void ffi_DocumentWriter_endPage(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 }
-
 
 static void ffi_DocumentWriter_close(js_State *J)
 {

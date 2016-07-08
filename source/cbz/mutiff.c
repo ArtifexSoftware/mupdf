@@ -47,7 +47,7 @@ tiff_run_page(fz_context *ctx, tiff_page *page, fz_device *dev, const fz_matrix 
 }
 
 static void
-tiff_drop_page_imp(fz_context *ctx, tiff_page *page)
+tiff_drop_page(fz_context *ctx, tiff_page *page)
 {
 	if (!page)
 		return;
@@ -76,7 +76,7 @@ tiff_load_page(fz_context *ctx, tiff_document *doc, int number)
 		page = fz_new_page(ctx, sizeof *page);
 		page->super.bound_page = (fz_page_bound_page_fn *)tiff_bound_page;
 		page->super.run_page_contents = (fz_page_run_page_contents_fn *)tiff_run_page;
-		page->super.drop_page_imp = (fz_page_drop_page_imp_fn *)tiff_drop_page_imp;
+		page->super.drop_page = (fz_page_drop_page_fn *)tiff_drop_page;
 		page->image = fz_keep_image(ctx, image);
 	}
 	fz_always(ctx)
@@ -108,7 +108,7 @@ tiff_lookup_metadata(fz_context *ctx, tiff_document *doc, const char *key, char 
 }
 
 static void
-tiff_close_document(fz_context *ctx, tiff_document *doc)
+tiff_drop_document(fz_context *ctx, tiff_document *doc)
 {
 	fz_drop_buffer(ctx, doc->buffer);
 	fz_free(ctx, doc);
@@ -121,7 +121,7 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	doc = fz_new_document(ctx, tiff_document);
 
-	doc->super.close = (fz_document_close_fn *)tiff_close_document;
+	doc->super.drop_document = (fz_document_drop_fn *)tiff_drop_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)tiff_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)tiff_load_page;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)tiff_lookup_metadata;
@@ -133,7 +133,7 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		tiff_close_document(ctx, doc);
+		tiff_drop_document(ctx, doc);
 		fz_rethrow(ctx);
 	}
 

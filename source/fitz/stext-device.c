@@ -1015,7 +1015,7 @@ fz_bidi_reorder_stext_page(fz_context *ctx, fz_stext_page *page)
 }
 
 static void
-fz_stext_close(fz_context *ctx, fz_device *dev)
+fz_stext_close_device(fz_context *ctx, fz_device *dev)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 
@@ -1023,13 +1023,19 @@ fz_stext_close(fz_context *ctx, fz_device *dev)
 	tdev->cur_span = NULL;
 
 	strain_soup(ctx, tdev);
-	free_span_soup(ctx, tdev->spans);
-	tdev->spans = NULL;
 
 	/* TODO: smart sorting of blocks in reading order */
 	/* TODO: unicode NFC normalization */
 
 	fz_bidi_reorder_stext_page(ctx, tdev->page);
+}
+
+static void
+fz_stext_drop_device(fz_context *ctx, fz_device *dev)
+{
+	fz_stext_device *tdev = (fz_stext_device*)dev;
+	free_span_soup(ctx, tdev->spans);
+	tdev->spans = NULL;
 }
 
 fz_device *
@@ -1039,7 +1045,9 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page)
 
 	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
 
-	dev->super.close = fz_stext_close;
+	dev->super.close_device = fz_stext_close_device;
+	dev->super.drop_device = fz_stext_drop_device;
+
 	dev->super.fill_text = fz_stext_fill_text;
 	dev->super.stroke_text = fz_stext_stroke_text;
 	dev->super.clip_text = fz_stext_clip_text;

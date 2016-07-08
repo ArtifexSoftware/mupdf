@@ -33,14 +33,14 @@ xps_document *xps_open_document(fz_context *ctx, const char *filename);
 xps_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
 /*
-	xps_close_document: Closes and frees an opened document.
+	xps_drop_document: Closes and frees an opened document.
 
 	The resource store in the context associated with xps_document
 	is emptied.
 
 	Does not throw exceptions.
 */
-void xps_close_document(fz_context *ctx, xps_document *doc);
+void xps_drop_document(fz_context *ctx, xps_document *doc);
 
 int xps_count_pages(fz_context *ctx, xps_document *doc);
 xps_page *xps_load_page(fz_context *ctx, xps_document *doc, int number);

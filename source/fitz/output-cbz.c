@@ -29,6 +29,9 @@ cbz_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_buffer *buffer;
 	char name[40];
 
+	fz_close_device(ctx, dev);
+	fz_drop_device(ctx, dev);
+
 	wri->count += 1;
 
 	fz_snprintf(name, sizeof name, "p%04d.png", wri->count);
@@ -43,20 +46,21 @@ cbz_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 
 	fz_drop_pixmap(ctx, wri->pixmap);
 	wri->pixmap = NULL;
-
-	fz_drop_device(ctx, dev);
 }
 
 static void
-cbz_close(fz_context *ctx, fz_document_writer *wri_)
+cbz_close_writer(fz_context *ctx, fz_document_writer *wri_)
 {
 	fz_cbz_writer *wri = (fz_cbz_writer*)wri_;
-	fz_try(ctx)
-		fz_drop_zip_writer(ctx, wri->zip);
-	fz_always(ctx)
-		fz_drop_pixmap(ctx, wri->pixmap);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	fz_close_zip_writer(ctx, wri->zip);
+}
+
+static void
+cbz_drop_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_cbz_writer *wri = (fz_cbz_writer*)wri_;
+	fz_drop_zip_writer(ctx, wri->zip);
+	fz_drop_pixmap(ctx, wri->pixmap);
 }
 
 fz_document_writer *
@@ -67,7 +71,8 @@ fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 	wri = fz_malloc_struct(ctx, fz_cbz_writer);
 	wri->super.begin_page = cbz_begin_page;
 	wri->super.end_page = cbz_end_page;
-	wri->super.close = cbz_close;
+	wri->super.close_writer = cbz_close_writer;
+	wri->super.drop_writer = cbz_drop_writer;
 
 	fz_try(ctx)
 	{

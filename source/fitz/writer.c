@@ -67,16 +67,18 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 void
 fz_close_document_writer(fz_context *ctx, fz_document_writer *wri)
 {
-	if (wri->close)
-		wri->close(ctx, wri);
-	wri->close = NULL;
+	if (wri->close_writer)
+		wri->close_writer(ctx, wri);
+	wri->close_writer = NULL;
 }
 
 void
 fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 {
-	if (wri->close)
-		wri->close(ctx, wri);
+	if (wri->close_writer)
+		fz_warn(ctx, "dropping unclosed document writer");
+	if (wri->drop_writer)
+		wri->drop_writer(ctx, wri);
 	fz_free(ctx, wri);
 }
 

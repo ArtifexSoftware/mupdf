@@ -179,7 +179,7 @@ fz_bbox_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_bbox_close(fz_context *ctx, fz_device *dev)
+fz_bbox_drop_device(fz_context *ctx, fz_device *dev)
 {
 	fz_bbox_device *bdev = (fz_bbox_device*)dev;
 	if (bdev->top > 0)
@@ -191,7 +191,7 @@ fz_new_bbox_device(fz_context *ctx, fz_rect *result)
 {
 	fz_bbox_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.close = fz_bbox_close;
+	dev->super.drop_device = fz_bbox_drop_device;
 
 	dev->super.fill_path = fz_bbox_fill_path;
 	dev->super.stroke_path = fz_bbox_stroke_path;

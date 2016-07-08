@@ -13,6 +13,7 @@ fz_new_display_list_from_page(fz_context *ctx, fz_page *page)
 	{
 		dev = fz_new_list_device(ctx, list);
 		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -56,6 +57,7 @@ fz_new_display_list_from_page_contents(fz_context *ctx, fz_page *page)
 	{
 		dev = fz_new_list_device(ctx, list);
 		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -83,6 +85,7 @@ fz_new_display_list_from_annot(fz_context *ctx, fz_annot *annot)
 	{
 		dev = fz_new_list_device(ctx, list);
 		fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -119,6 +122,7 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
 		fz_run_display_list(ctx, list, dev, &fz_identity, NULL, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -155,6 +159,7 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
 		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -191,6 +196,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
 		fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -227,6 +233,7 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 	{
 		dev = fz_new_draw_device(ctx, ctm, pix);
 		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -268,6 +275,7 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_s
 	{
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_display_list(ctx, list, dev, &fz_identity, NULL, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -293,6 +301,7 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *shee
 	{
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{

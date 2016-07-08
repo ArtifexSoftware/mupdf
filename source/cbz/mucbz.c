@@ -101,7 +101,7 @@ cbz_create_page_list(fz_context *ctx, cbz_document *doc)
 }
 
 static void
-cbz_close_document(fz_context *ctx, cbz_document *doc)
+cbz_drop_document(fz_context *ctx, cbz_document *doc)
 {
 	fz_drop_archive(ctx, doc->zip);
 	fz_free(ctx, (char **)doc->page);
@@ -143,7 +143,7 @@ cbz_run_page(fz_context *ctx, cbz_page *page, fz_device *dev, const fz_matrix *c
 }
 
 static void
-cbz_drop_page_imp(fz_context *ctx, cbz_page *page)
+cbz_drop_page(fz_context *ctx, cbz_page *page)
 {
 	if (!page)
 		return;
@@ -169,7 +169,7 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 		page = fz_new_page(ctx, sizeof *page);
 		page->super.bound_page = (fz_page_bound_page_fn *)cbz_bound_page;
 		page->super.run_page_contents = (fz_page_run_page_contents_fn *)cbz_run_page;
-		page->super.drop_page_imp = (fz_page_drop_page_imp_fn *)cbz_drop_page_imp;
+		page->super.drop_page = (fz_page_drop_page_fn *)cbz_drop_page;
 		page->image = fz_new_image_from_buffer(ctx, buf);
 	}
 	fz_always(ctx)
@@ -179,7 +179,7 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, data);
-		cbz_drop_page_imp(ctx, page);
+		cbz_drop_page(ctx, page);
 		fz_rethrow(ctx);
 	}
 
@@ -199,7 +199,7 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	cbz_document *doc = fz_new_document(ctx, cbz_document);
 
-	doc->super.close = (fz_document_close_fn *)cbz_close_document;
+	doc->super.drop_document = (fz_document_drop_fn *)cbz_drop_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)cbz_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)cbz_load_page;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)cbz_lookup_metadata;
@@ -211,7 +211,7 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		cbz_close_document(ctx, doc);
+		cbz_drop_document(ctx, doc);
 		fz_rethrow(ctx);
 	}
 	return doc;

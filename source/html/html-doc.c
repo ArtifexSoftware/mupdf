@@ -23,7 +23,7 @@ struct html_page_s
 };
 
 static void
-htdoc_close_document(fz_context *ctx, fz_document *doc_)
+htdoc_drop_document(fz_context *ctx, fz_document *doc_)
 {
 	html_document *doc = (html_document*)doc_;
 	fz_drop_archive(ctx, doc->zip);
@@ -61,7 +61,7 @@ htdoc_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 }
 
 static void
-htdoc_drop_page_imp(fz_context *ctx, fz_page *page_)
+htdoc_drop_page(fz_context *ctx, fz_page *page_)
 {
 }
 
@@ -97,7 +97,7 @@ htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 	html_page *page = fz_new_page(ctx, sizeof *page);
 	page->super.bound_page = htdoc_bound_page;
 	page->super.run_page_contents = htdoc_run_page;
-	page->super.drop_page_imp = htdoc_drop_page_imp;
+	page->super.drop_page = htdoc_drop_page;
 	page->doc = doc;
 	page->number = number;
 	return (fz_page*)page;
@@ -119,7 +119,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	doc = fz_new_document(ctx, html_document);
 
-	doc->super.close = htdoc_close_document;
+	doc->super.drop_document = htdoc_drop_document;
 	doc->super.layout = htdoc_layout;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
@@ -145,7 +145,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	fz_dirname(dirname, filename, sizeof dirname);
 
 	doc = fz_new_document(ctx, html_document);
-	doc->super.close = htdoc_close_document;
+	doc->super.drop_document = htdoc_drop_document;
 	doc->super.layout = htdoc_layout;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;

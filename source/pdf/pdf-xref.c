@@ -1556,7 +1556,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 }
 
 static void
-pdf_close_document(fz_context *ctx, pdf_document *doc)
+pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 {
 	int i;
 
@@ -2299,7 +2299,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 {
 	pdf_document *doc = fz_new_document(ctx, pdf_document);
 
-	doc->super.close = (fz_document_close_fn *)pdf_close_document;
+	doc->super.drop_document = (fz_document_drop_fn *)pdf_drop_document_imp;
 	doc->super.needs_password = (fz_document_needs_password_fn *)pdf_needs_password;
 	doc->super.authenticate_password = (fz_document_authenticate_password_fn *)pdf_authenticate_password;
 	doc->super.has_permission = (fz_document_has_permission_fn *)pdf_has_permission;
@@ -2325,7 +2325,7 @@ pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		pdf_close_document(ctx, doc);
+		pdf_drop_document_imp(ctx, doc);
 		fz_rethrow(ctx);
 	}
 	return doc;
@@ -2352,7 +2352,7 @@ pdf_open_document(fz_context *ctx, const char *filename)
 	}
 	fz_catch(ctx)
 	{
-		pdf_close_document(ctx, doc);
+		pdf_drop_document_imp(ctx, doc);
 		fz_rethrow(ctx);
 	}
 	return doc;

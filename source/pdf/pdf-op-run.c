@@ -1999,7 +1999,7 @@ static void pdf_run_END(fz_context *ctx, pdf_processor *proc)
 }
 
 static void
-pdf_run_drop_imp(fz_context *ctx, pdf_processor *proc)
+pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 
@@ -2030,7 +2030,7 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 	{
 		proc->super.event = event;
 
-		proc->super.drop_imp = pdf_run_drop_imp;
+		proc->super.drop_processor = pdf_drop_run_processor;
 
 		/* general graphics state */
 		proc->super.op_w = pdf_run_w;

@@ -491,7 +491,7 @@ pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot = fz_new_annot(ctx, sizeof(pdf_annot));
 
-	annot->super.drop_annot_imp = (fz_annot_drop_imp_fn*)pdf_drop_annot_imp;
+	annot->super.drop_annot = (fz_annot_drop_fn*)pdf_drop_annot_imp;
 	annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
 	annot->super.run_annot = (fz_annot_run_fn*)pdf_run_annot;
 	annot->super.next_annot = (fz_annot_next_fn*)pdf_next_annot;

@@ -3221,20 +3221,20 @@ pdf_writer_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 }
 
 static void
-pdf_writer_close(fz_context *ctx, fz_document_writer *wri_)
+pdf_writer_close_writer(fz_context *ctx, fz_document_writer *wri_)
 {
 	pdf_writer *wri = (pdf_writer*)wri_;
-	fz_try(ctx)
-		pdf_save_document(ctx, wri->pdf, wri->filename, &wri->opts);
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, wri->contents);
-		pdf_drop_obj(ctx, wri->resources);
-		pdf_drop_document(ctx, wri->pdf);
-		fz_free(ctx, wri->filename);
-	}
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	pdf_save_document(ctx, wri->pdf, wri->filename, &wri->opts);
+}
+
+static void
+pdf_writer_drop_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	pdf_writer *wri = (pdf_writer*)wri_;
+	fz_drop_buffer(ctx, wri->contents);
+	pdf_drop_obj(ctx, wri->resources);
+	pdf_drop_document(ctx, wri->pdf);
+	fz_free(ctx, wri->filename);
 }
 
 fz_document_writer *
@@ -3245,7 +3245,8 @@ fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options)
 	wri = fz_malloc_struct(ctx, pdf_writer);
 	wri->super.begin_page = pdf_writer_begin_page;
 	wri->super.end_page = pdf_writer_end_page;
-	wri->super.close = pdf_writer_close;
+	wri->super.close_writer = pdf_writer_close_writer;
+	wri->super.drop_writer = pdf_writer_drop_writer;
 
 	fz_try(ctx)
 	{

@@ -26,7 +26,7 @@ typedef enum
 }
 fz_permission;
 
-typedef void (fz_document_close_fn)(fz_context *ctx, fz_document *doc);
+typedef void (fz_document_drop_fn)(fz_context *ctx, fz_document *doc);
 typedef int (fz_document_needs_password_fn)(fz_context *ctx, fz_document *doc);
 typedef int (fz_document_authenticate_password_fn)(fz_context *ctx, fz_document *doc, const char *password);
 typedef int (fz_document_has_permission_fn)(fz_context *ctx, fz_document *doc, fz_permission permission);
@@ -39,7 +39,7 @@ typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, 
 typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
 typedef fz_rect *(fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_rect *);
 typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
-typedef void (fz_page_drop_page_imp_fn)(fz_context *ctx, fz_page *page);
+typedef void (fz_page_drop_page_fn)(fz_context *ctx, fz_page *page);
 typedef fz_transition *(fz_page_page_presentation_fn)(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
 
 typedef fz_annot *(fz_page_first_annot_fn)(fz_context *ctx, fz_page *page);
@@ -49,7 +49,7 @@ typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int
 typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
 typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
 
-typedef void (fz_annot_drop_imp_fn)(fz_context *ctx, fz_annot *annot);
+typedef void (fz_annot_drop_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_rect *(fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot, fz_rect *rect);
 typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
@@ -57,7 +57,7 @@ typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev,
 struct fz_annot_s
 {
 	int refs;
-	fz_annot_drop_imp_fn *drop_annot_imp;
+	fz_annot_drop_fn *drop_annot;
 	fz_annot_bound_fn *bound_annot;
 	fz_annot_run_fn *run_annot;
 	fz_annot_next_fn *next_annot;
@@ -66,7 +66,7 @@ struct fz_annot_s
 struct fz_page_s
 {
 	int refs;
-	fz_page_drop_page_imp_fn *drop_page_imp;
+	fz_page_drop_page_fn *drop_page;
 	fz_page_bound_page_fn *bound_page;
 	fz_page_run_page_contents_fn *run_page_contents;
 	fz_page_load_links_fn *load_links;
@@ -81,7 +81,7 @@ struct fz_page_s
 struct fz_document_s
 {
 	int refs;
-	fz_document_close_fn *close;
+	fz_document_drop_fn *drop_document;
 	fz_document_needs_password_fn *needs_password;
 	fz_document_authenticate_password_fn *authenticate_password;
 	fz_document_has_permission_fn *has_permission;

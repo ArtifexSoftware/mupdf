@@ -554,6 +554,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 			fz_run_display_list(ctx, list, dev, ctm, tbounds, cookie);
 		else
 			fz_run_page(ctx, page, dev, ctm, cookie);
+		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
@@ -596,6 +597,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, cookie);
 			fz_printf(ctx, out, "</page>\n");
+			fz_close_device(ctx, dev);
 		}
 		fz_always(ctx)
 		{
@@ -628,6 +630,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, cookie);
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, cookie);
+			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (output_format == OUT_STEXT)
@@ -674,6 +677,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				fz_run_display_list(ctx, list, dev, &fz_identity, NULL, cookie);
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, cookie);
+			fz_close_device(ctx, dev);
 
 			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, resources, contents);
 			pdf_insert_page(ctx, pdfout, -1, page_obj);
@@ -726,6 +730,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				fz_run_display_list(ctx, list, dev, &ctm, &tbounds, cookie);
 			else
 				fz_run_page(ctx, page, dev, &ctm, cookie);
+			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 		}
@@ -754,10 +759,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_ps_output_context *psoc = NULL;
 		fz_mono_pcl_output_context *pmcoc = NULL;
 		fz_color_pcl_output_context *pccoc = NULL;
-		fz_device *dev = NULL;
 		fz_bitmap *bit = NULL;
 
-		fz_var(dev);
 		fz_var(pix);
 		fz_var(poc);
 		fz_var(psoc);
@@ -991,8 +994,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		{
 			fz_drop_bitmap(ctx, bit);
 			bit = NULL;
-			fz_drop_device(ctx, dev);
-			dev = NULL;
 			if (num_workers > 0)
 			{
 				int band;
@@ -1121,6 +1122,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+			fz_close_device(ctx, dev);
 		}
 		fz_always(ctx)
 		{
@@ -1153,6 +1155,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, NULL);
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, &cookie);
+			fz_close_device(ctx, dev);
 		}
 		fz_always(ctx)
 		{

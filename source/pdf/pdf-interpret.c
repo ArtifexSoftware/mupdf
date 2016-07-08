@@ -7,10 +7,25 @@ pdf_new_processor(fz_context *ctx, int size)
 }
 
 void
+pdf_close_processor(fz_context *ctx, pdf_processor *proc)
+{
+	if (proc && proc->close_processor)
+	{
+		proc->close_processor(ctx, proc);
+		proc->close_processor = NULL;
+	}
+}
+
+void
 pdf_drop_processor(fz_context *ctx, pdf_processor *proc)
 {
-	if (proc && proc->drop_imp)
-		proc->drop_imp(ctx, proc);
+	if (proc)
+	{
+		if (proc->close_processor)
+			fz_warn(ctx, "dropping unclosed PDF processor");
+		if (proc->drop_processor)
+			proc->drop_processor(ctx, proc);
+	}
 	fz_free(ctx, proc);
 }
 

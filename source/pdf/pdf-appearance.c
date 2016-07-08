@@ -1612,7 +1612,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 
 		dev = pdf_new_pdf_device(ctx, doc, &fz_identity, &trect, resources, contents);
 		fz_run_display_list(ctx, disp_list, dev, &inv_page_ctm, &fz_infinite_rect, NULL);
-		fz_drop_device(ctx, dev);
+		fz_close_device(ctx, dev);
 
 		pdf_update_stream(ctx, doc, ap_obj, contents, 0);
 		fz_drop_buffer(ctx, contents);
@@ -1627,11 +1627,10 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 
 		doc->dirty = 1;
 	}
-	fz_catch(ctx)
-	{
+	fz_always(ctx)
 		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
 		fz_rethrow(ctx);
-	}
 }
 
 static fz_point *
@@ -1744,6 +1743,8 @@ void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 		{
 			fz_stroke_path(ctx, dev, path, stroke, &page_ctm, fz_device_rgb(ctx), color, alpha);
 		}
+
+		fz_close_device(ctx, dev);
 
 		fz_transform_rect(&rect, &page_ctm);
 		pdf_set_annot_appearance(ctx, doc, annot, &rect, strike_list);
@@ -1878,6 +1879,8 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 			rect.x1 += width;
 			rect.y1 += width;
 		}
+
+		fz_close_device(ctx, dev);
 
 		fz_transform_rect(&rect, &page_ctm);
 		pdf_set_annot_appearance(ctx, doc, annot, &rect, strike_list);
@@ -2126,6 +2129,8 @@ void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_an
 		fz_fill_path(ctx, dev, path, 0, &tm, cs, white, 1.0f);
 		fz_stroke_path(ctx, dev, path, stroke, &tm, cs, black, 1.0f);
 
+		fz_close_device(ctx, dev);
+
 		fz_transform_rect(&rect, &page_ctm);
 		pdf_set_annot_appearance(ctx, doc, annot, &rect, dlist);
 
@@ -2198,6 +2203,7 @@ void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, p
 		dlist = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, dlist);
 		fz_fill_text(ctx, dev, text, &page_ctm, cs, font_rec.da_rec.col, 1.0f);
+		fz_close_device(ctx, dev);
 
 		fz_transform_rect(&rect, &page_ctm);
 		pdf_set_annot_appearance(ctx, doc, annot, &rect, dlist);
@@ -2414,6 +2420,8 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		rect.x0 = (rect.x0 + rect.x1)/2.0f;
 		text = fit_text(ctx, &font_rec, (char *)bufstr, &rect);
 		fz_fill_text(ctx, dev, text, &page_ctm, cs, font_rec.da_rec.col, 1.0f);
+
+		fz_close_device(ctx, dev);
 
 		rect = annot_rect;
 		fz_transform_rect(&rect, &page_ctm);

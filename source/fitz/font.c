@@ -1169,6 +1169,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 		font->bbox_table[gid] = dev->d1_rect;
 		fz_transform_rect(&font->bbox_table[gid], &font->t3matrix);
 	}
+	fz_close_device(ctx, dev);
 	fz_drop_device(ctx, dev);
 }
 
@@ -1191,6 +1192,7 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
 	fz_try(ctx)
 	{
 		fz_run_display_list(ctx, list, dev, &font->t3matrix, &fz_infinite_rect, NULL);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{
@@ -1270,6 +1272,7 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 	fz_try(ctx)
 	{
 		fz_run_t3_glyph(ctx, font, gid, trm, dev);
+		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
 	{

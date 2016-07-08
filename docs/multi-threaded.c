@@ -96,6 +96,7 @@ renderer(void *data)
 	fprintf(stderr, "thread at page %d rendering!\n", pagenumber);
 	dev = fz_new_draw_device(ctx, &fz_identity, pix);
 	fz_run_display_list(ctx, list, dev, &fz_identity, &bbox, NULL);
+	fz_close_device(ctx, dev);
 	fz_drop_device(ctx, dev);
 
 	// This threads context is freed.
@@ -212,6 +213,7 @@ int main(int argc, char **argv)
 
 		dev = fz_new_list_device(ctx, list);
 		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
 
 		// The page is no longer needed, all drawing commands

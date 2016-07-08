@@ -9,7 +9,7 @@ struct svg_page_s
 };
 
 static void
-svg_close_document(fz_context *ctx, fz_document *doc_)
+svg_drop_document(fz_context *ctx, fz_document *doc_)
 {
 	svg_document *doc = (svg_document*)doc_;
 	fz_drop_tree(ctx, doc->idmap, NULL);
@@ -47,7 +47,7 @@ svg_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *c
 }
 
 static void
-svg_drop_page_imp(fz_context *ctx, fz_page *page_)
+svg_drop_page(fz_context *ctx, fz_page *page_)
 {
 	/* nothing */
 }
@@ -64,7 +64,7 @@ svg_load_page(fz_context *ctx, fz_document *doc_, int number)
 	page = fz_new_page(ctx, sizeof *page);
 	page->super.bound_page = svg_bound_page;
 	page->super.run_page_contents = svg_run_page;
-	page->super.drop_page_imp = svg_drop_page_imp;
+	page->super.drop_page = svg_drop_page;
 	page->doc = doc;
 
 	return (fz_page*)page;
@@ -92,7 +92,7 @@ svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 	root = fz_parse_xml(ctx, buf->data, buf->len, 0);
 
 	doc = fz_new_document(ctx, svg_document);
-	doc->super.close = svg_close_document;
+	doc->super.drop_document = svg_drop_document;
 	doc->super.count_pages = svg_count_pages;
 	doc->super.load_page = svg_load_page;
 

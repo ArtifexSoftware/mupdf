@@ -324,6 +324,9 @@ png_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_png_writer *wri = (fz_png_writer*)wri_;
 	char path[PATH_MAX];
 
+	fz_close_device(ctx, dev);
+	fz_drop_device(ctx, dev);
+
 	wri->count += 1;
 
 	fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
@@ -333,7 +336,7 @@ png_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 }
 
 static void
-png_close(fz_context *ctx, fz_document_writer *wri_)
+png_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 {
 	fz_png_writer *wri = (fz_png_writer*)wri_;
 	fz_drop_pixmap(ctx, wri->pixmap);
@@ -348,7 +351,7 @@ fz_new_png_writer(fz_context *ctx, const char *path, const char *options)
 	wri = fz_malloc_struct(ctx, fz_png_writer);
 	wri->super.begin_page = png_begin_page;
 	wri->super.end_page = png_end_page;
-	wri->super.close = png_close;
+	wri->super.drop_writer = png_drop_writer;
 
 	fz_try(ctx)
 	{

@@ -1037,12 +1037,17 @@ pdf_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-pdf_dev_close(fz_context *ctx, fz_device *dev)
+pdf_dev_close_device(fz_context *ctx, fz_device *dev)
+{
+	pdf_device *pdev = (pdf_device*)dev;
+	pdf_dev_end_text(ctx, pdev);
+}
+
+static void
+pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	int i;
-
-	pdf_dev_end_text(ctx, pdev);
 
 	for (i = pdev->num_gstates-1; i >= 0; i--)
 		fz_drop_stroke_state(ctx, pdev->gstates[i].stroke_state);
@@ -1066,7 +1071,8 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matri
 {
 	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.close = pdf_dev_close;
+	dev->super.close_device = pdf_dev_close_device;
+	dev->super.drop_device = pdf_dev_drop_device;
 
 	dev->super.fill_path = pdf_dev_fill_path;
 	dev->super.stroke_path = pdf_dev_stroke_path;

@@ -710,6 +710,7 @@ static int drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const
 			fz_run_display_list(ctx, list, dev, ctm, tbounds, cookie);
 		else
 			fz_run_page(ctx, page, dev, ctm, cookie);
+		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
@@ -726,12 +727,10 @@ static int drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const
 
 static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_details *render)
 {
-	fz_device *dev = NULL;
 	fz_pixmap *pix = NULL;
 	fz_bitmap *bit = NULL;
 	int errors_are_fatal = 0;
 
-	fz_var(dev);
 	fz_var(pix);
 	fz_var(bit);
 	fz_var(errors_are_fatal);
@@ -852,8 +851,6 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 	{
 		fz_drop_bitmap(ctx, bit);
 		bit = NULL;
-		fz_drop_device(ctx, dev);
-		dev = NULL;
 		if (render->num_workers > 0)
 		{
 			int band;
@@ -1198,9 +1195,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 #if GREY_FALLBACK != 0
 			test_dev = fz_new_test_device(ctx, &is_color, 0.01f, 0, list_dev);
 			fz_run_page(ctx, page, test_dev, &fz_identity, &cookie);
+			fz_close_device(ctx, test_dev);
 #else
 			fz_run_page(ctx, page, list_dev, &fz_identity, &cookie);
 #endif
+			fz_close_device(ctx, list_dev);
 		}
 		fz_always(ctx)
 		{
@@ -1229,6 +1228,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			{
 				test_dev = fz_new_test_device(ctx, &is_color, 0.01f, 0, test_dev);
 				fz_run_page(ctx, page, test_dev, &fz_identity, &cookie);
+				fz_close_device(ctx, test_dev);
 			}
 			fz_always(ctx)
 			{
@@ -1258,6 +1258,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					fz_run_display_list(ctx, list, test_dev, &fz_identity, &fz_infinite_rect, &cookie);
 				else
 					fz_run_page(ctx, page, test_dev, &fz_identity, &cookie);
+				fz_close_device(ctx, test_dev);
 			}
 			fz_always(ctx)
 			{

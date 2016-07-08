@@ -93,7 +93,7 @@ epub_count_pages(fz_context *ctx, fz_document *doc_)
 }
 
 static void
-epub_drop_page_imp(fz_context *ctx, fz_page *page_)
+epub_drop_page(fz_context *ctx, fz_page *page_)
 {
 }
 
@@ -154,14 +154,14 @@ epub_load_page(fz_context *ctx, fz_document *doc_, int number)
 	epub_page *page = fz_new_page(ctx, sizeof *page);
 	page->super.bound_page = epub_bound_page;
 	page->super.run_page_contents = epub_run_page;
-	page->super.drop_page_imp = epub_drop_page_imp;
+	page->super.drop_page = epub_drop_page;
 	page->doc = doc;
 	page->number = number;
 	return (fz_page*)page;
 }
 
 static void
-epub_close_document(fz_context *ctx, fz_document *doc_)
+epub_drop_document(fz_context *ctx, fz_document *doc_)
 {
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch, *next;
@@ -419,7 +419,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	doc->zip = zip;
 	doc->set = fz_new_html_font_set(ctx);
 
-	doc->super.close = epub_close_document;
+	doc->super.drop_document = epub_drop_document;
 	doc->super.layout = epub_layout;
 	doc->super.load_outline = epub_load_outline;
 	doc->super.count_pages = epub_count_pages;
@@ -432,7 +432,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	}
 	fz_catch(ctx)
 	{
-		epub_close_document(ctx, (fz_document*)doc);
+		epub_drop_document(ctx, (fz_document*)doc);
 		fz_rethrow(ctx);
 	}
 

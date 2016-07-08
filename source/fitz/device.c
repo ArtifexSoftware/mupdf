@@ -13,11 +13,11 @@ fz_close_device(fz_context *ctx, fz_device *dev)
 {
 	if (dev == NULL)
 		return;
-	if (dev->close)
-		dev->close(ctx, dev);
+	if (dev->close_device)
+		dev->close_device(ctx, dev);
 
 	/* Don't call more than once! */
-	dev->close = NULL;
+	dev->close_device = NULL;
 
 	/* And disable all further device calls. */
 	dev->fill_path = NULL;
@@ -53,8 +53,10 @@ fz_drop_device(fz_context *ctx, fz_device *dev)
 {
 	if (fz_drop_imp(ctx, dev, &dev->refs))
 	{
-		if (dev->close)
-			dev->close(ctx, dev);
+		if (dev->close_device)
+			fz_warn(ctx, "dropping unclosed device");
+		if (dev->drop_device)
+			dev->drop_device(ctx, dev);
 		fz_free(ctx, dev->container);
 		fz_free(ctx, dev);
 	}

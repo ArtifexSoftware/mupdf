@@ -6,11 +6,13 @@ typedef struct pdf_gstate_s pdf_gstate;
 typedef struct pdf_processor_s pdf_processor;
 
 void *pdf_new_processor(fz_context *ctx, int size);
+void pdf_close_processor(fz_context *ctx, pdf_processor *proc);
 void pdf_drop_processor(fz_context *ctx, pdf_processor *proc);
 
 struct pdf_processor_s
 {
-	void (*drop_imp)(fz_context *ctx, pdf_processor *proc);
+	void (*close_processor)(fz_context *ctx, pdf_processor *proc);
+	void (*drop_processor)(fz_context *ctx, pdf_processor *proc);
 
 	/* general graphics state */
 	void (*op_w)(fz_context *ctx, pdf_processor *proc, float linewidth);

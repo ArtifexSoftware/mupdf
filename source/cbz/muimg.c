@@ -18,7 +18,7 @@ struct img_document_s
 };
 
 static void
-img_close_document(fz_context *ctx, img_document *doc)
+img_drop_document(fz_context *ctx, img_document *doc)
 {
 	fz_drop_image(ctx, doc->image);
 	fz_free(ctx, doc);
@@ -57,7 +57,7 @@ img_run_page(fz_context *ctx, img_page *page, fz_device *dev, const fz_matrix *c
 }
 
 static void
-img_drop_page_imp(fz_context *ctx, img_page *page)
+img_drop_page(fz_context *ctx, img_page *page)
 {
 	fz_drop_image(ctx, page->image);
 }
@@ -74,7 +74,7 @@ img_load_page(fz_context *ctx, img_document *doc, int number)
 
 	page->super.bound_page = (fz_page_bound_page_fn *)img_bound_page;
 	page->super.run_page_contents = (fz_page_run_page_contents_fn *)img_run_page;
-	page->super.drop_page_imp = (fz_page_drop_page_imp_fn *)img_drop_page_imp;
+	page->super.drop_page = (fz_page_drop_page_fn *)img_drop_page;
 
 	page->image = fz_keep_image(ctx, doc->image);
 
@@ -94,7 +94,7 @@ img_new_document(fz_context *ctx, fz_image *image)
 {
 	img_document *doc = fz_new_document(ctx, img_document);
 
-	doc->super.close = (fz_document_close_fn *)img_close_document;
+	doc->super.drop_document = (fz_document_drop_fn *)img_drop_document;
 	doc->super.count_pages = (fz_document_count_pages_fn *)img_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)img_load_page;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)img_lookup_metadata;

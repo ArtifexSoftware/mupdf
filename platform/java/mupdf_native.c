@@ -1284,7 +1284,7 @@ fz_java_device_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_java_device_close(fz_context *ctx, fz_device *dev)
+fz_java_device_drop(fz_context *ctx, fz_device *dev)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
@@ -1303,7 +1303,7 @@ static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
 
 		dev->self = (*env)->NewGlobalRef(env, self);
 
-		dev->super.close = fz_java_device_close;
+		dev->super.drop_device = fz_java_device_drop;
 
 		dev->super.fill_path = fz_java_device_fill_path;
 		dev->super.stroke_path = fz_java_device_stroke_path;

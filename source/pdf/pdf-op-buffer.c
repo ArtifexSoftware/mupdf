@@ -761,7 +761,7 @@ pdf_out_EX(fz_context *ctx, pdf_processor *proc)
 }
 
 static void
-pdf_drop_imp_output_processor(fz_context *ctx, pdf_processor *proc)
+pdf_drop_output_processor(fz_context *ctx, pdf_processor *proc)
 {
 	fz_output *out = ((pdf_output_processor*)proc)->out;
 	fz_drop_output(ctx, out);
@@ -772,7 +772,7 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
 {
 	pdf_output_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
-		proc->super.drop_imp = pdf_drop_imp_output_processor;
+		proc->super.drop_processor = pdf_drop_output_processor;
 
 		/* general graphics state */
 		proc->super.op_w = pdf_out_w;

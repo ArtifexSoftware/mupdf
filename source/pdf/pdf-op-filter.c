@@ -1113,7 +1113,7 @@ pdf_filter_END(fz_context *ctx, pdf_processor *proc)
 }
 
 static void
-pdf_drop_imp_filter_processor(fz_context *ctx, pdf_processor *proc)
+pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	fz_free(ctx, p->gstate);
@@ -1125,7 +1125,7 @@ pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_document *do
 
 	pdf_filter_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
-		proc->super.drop_imp = pdf_drop_imp_filter_processor;
+		proc->super.drop_processor = pdf_drop_filter_processor;
 
 		/* general graphics state */
 		proc->super.op_w = pdf_filter_w;

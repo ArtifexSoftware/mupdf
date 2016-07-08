@@ -13,7 +13,8 @@ struct fz_document_writer_s
 {
 	fz_device *(*begin_page)(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox);
 	void (*end_page)(fz_context *ctx, fz_document_writer *wri, fz_device *dev);
-	void (*close)(fz_context *ctx, fz_document_writer *wri);
+	void (*close_writer)(fz_context *ctx, fz_document_writer *wri);
+	void (*drop_writer)(fz_context *ctx, fz_document_writer *wri);
 };
 
 int fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **val);

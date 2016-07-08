@@ -1199,7 +1199,7 @@ fz_list_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
 }
 
 static void
-drop_writer(fz_context *ctx, fz_device *dev)
+fz_list_drop_device(fz_context *ctx, fz_device *dev)
 {
 	fz_list_device *writer = (fz_list_device *)dev;
 
@@ -1243,7 +1243,7 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 
 	dev->super.render_flags = fz_list_render_flags;
 
-	dev->super.close = drop_writer;
+	dev->super.drop_device = fz_list_drop_device;
 
 	dev->list = list;
 	dev->path = NULL;

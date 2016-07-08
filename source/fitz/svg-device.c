@@ -1063,23 +1063,28 @@ svg_dev_end_tile(fz_context *ctx, fz_device *dev)
 }
 
 static void
-svg_dev_close(fz_context *ctx, fz_device *dev)
+svg_dev_close_device(fz_context *ctx, fz_device *dev)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
+	fz_printf(ctx, out, "</svg>\n");
+}
 
+static void
+svg_dev_drop_device(fz_context *ctx, fz_device *dev)
+{
+	svg_device *sdev = (svg_device*)dev;
 	fz_free(ctx, sdev->tiles);
 	fz_drop_buffer(ctx, sdev->defs_buffer);
 	fz_drop_output(ctx, sdev->defs);
-
-	fz_printf(ctx, out, "</svg>\n");
 }
 
 fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height)
 {
 	svg_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.close = svg_dev_close;
+	dev->super.close_device = svg_dev_close_device;
+	dev->super.drop_device = svg_dev_drop_device;
 
 	dev->super.fill_path = svg_dev_fill_path;
 	dev->super.stroke_path = svg_dev_stroke_path;

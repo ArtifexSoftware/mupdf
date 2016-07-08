@@ -150,8 +150,8 @@ fz_keep_document(fz_context *ctx, fz_document *doc)
 void
 fz_drop_document(fz_context *ctx, fz_document *doc)
 {
-	if (doc && --doc->refs == 0 && doc->close)
-		doc->close(ctx, doc);
+	if (doc && --doc->refs == 0 && doc->drop_document)
+		doc->drop_document(ctx, doc);
 }
 
 static void
@@ -362,8 +362,8 @@ fz_drop_annot(fz_context *ctx, fz_annot *annot)
 {
 	if (annot && --annot->refs == 0)
 	{
-		if (annot->drop_annot_imp)
-			annot->drop_annot_imp(ctx, annot);
+		if (annot->drop_annot)
+			annot->drop_annot(ctx, annot);
 		fz_free(ctx, annot);
 	}
 }
@@ -389,9 +389,9 @@ fz_drop_page(fz_context *ctx, fz_page *page)
 {
 	if (page)
 	{
-		if (--page->refs == 0 && page->drop_page_imp)
+		if (--page->refs == 0 && page->drop_page)
 		{
-			page->drop_page_imp(ctx, page);
+			page->drop_page(ctx, page);
 			fz_free(ctx, page);
 		}
 	}
