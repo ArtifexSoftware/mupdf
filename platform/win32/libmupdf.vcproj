@@ -1092,6 +1092,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\load-pnm.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\load-tiff.c"
 				>
 			</File>

@@ -52,10 +52,10 @@ if not exist generated/CharisSIL-I.c fontdump.exe generated/CharisSIL-I.c resour
 if not exist generated/CharisSIL-B.c fontdump.exe generated/CharisSIL-B.c resources/fonts/sil/CharisSIL-B.cff
 if not exist generated/CharisSIL-BI.c fontdump.exe generated/CharisSIL-BI.c resources/fonts/sil/CharisSIL-BI.cff
 
-if not exist generated/SourceHanSansCN-Regular.c fontdump.exe generated/SourceHanSansCN-Regular.c resources/fonts/sil/SourceHanSansCN-Regular.otf
-if not exist generated/SourceHanSansJP-Regular.c fontdump.exe generated/SourceHanSansJP-Regular.c resources/fonts/sil/SourceHanSansJP-Regular.otf
-if not exist generated/SourceHanSansKR-Regular.c fontdump.exe generated/SourceHanSansKR-Regular.c resources/fonts/sil/SourceHanSansKR-Regular.otf
-if not exist generated/SourceHanSansTW-Regular.c fontdump.exe generated/SourceHanSansTW-Regular.c resources/fonts/sil/SourceHanSansTW-Regular.otf
+if not exist generated/SourceHanSansCN-Regular.c fontdump.exe generated/SourceHanSansCN-Regular.c resources/fonts/han/SourceHanSansCN-Regular.otf
+if not exist generated/SourceHanSansJP-Regular.c fontdump.exe generated/SourceHanSansJP-Regular.c resources/fonts/han/SourceHanSansJP-Regular.otf
+if not exist generated/SourceHanSansKR-Regular.c fontdump.exe generated/SourceHanSansKR-Regular.c resources/fonts/han/SourceHanSansKR-Regular.otf
+if not exist generated/SourceHanSansTW-Regular.c fontdump.exe generated/SourceHanSansTW-Regular.c resources/fonts/han/SourceHanSansTW-Regular.otf
 
 if not exist generated/NotoEmoji-Regular.c fontdump.exe generated/NotoEmoji-Regular.c resources/fonts/noto/NotoEmoji-Regular.ttf
 if not exist generated/NotoKufiArabic-Regular.c fontdump.exe generated/NotoKufiArabic-Regular.c resources/fonts/noto/NotoKufiArabic-Regular.ttf
