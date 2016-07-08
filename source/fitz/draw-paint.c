@@ -2123,6 +2123,9 @@ fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int al
 	int x, y, w, h, n, da, sa;
 	fz_span_painter_t *fn;
 
+	if (alpha == 0)
+		return;
+
 	assert(dst->n - dst->alpha == src->n - src->alpha);
 
 	fz_pixmap_bbox_no_ctx(dst, &bbox);
