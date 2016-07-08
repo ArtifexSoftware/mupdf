@@ -18,21 +18,19 @@ fz_new_halftone(fz_context *ctx, int comps)
 fz_halftone *
 fz_keep_halftone(fz_context *ctx, fz_halftone *ht)
 {
-	if (ht)
-		ht->refs++;
-	return ht;
+	return fz_keep_imp(ctx, ht, &ht->refs);
 }
 
 void
 fz_drop_halftone(fz_context *ctx, fz_halftone *ht)
 {
 	int i;
-
-	if (!ht || --ht->refs != 0)
-		return;
-	for (i = 0; i < ht->n; i++)
-		fz_drop_pixmap(ctx, ht->comp[i]);
-	fz_free(ctx, ht);
+	if (fz_drop_imp(ctx, ht, &ht->refs))
+	{
+		for (i = 0; i < ht->n; i++)
+			fz_drop_pixmap(ctx, ht->comp[i]);
+		fz_free(ctx, ht);
+	}
 }
 
 /* Default mono halftone, lifted from Ghostscript. */

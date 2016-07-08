@@ -142,16 +142,15 @@ fz_new_document_of_size(fz_context *ctx, int size)
 fz_document *
 fz_keep_document(fz_context *ctx, fz_document *doc)
 {
-	if (doc)
-		++doc->refs;
-	return doc;
+	return fz_keep_imp(ctx, doc, &doc->refs);
 }
 
 void
 fz_drop_document(fz_context *ctx, fz_document *doc)
 {
-	if (doc && --doc->refs == 0 && doc->drop_document)
-		doc->drop_document(ctx, doc);
+	if (fz_drop_imp(ctx, doc, &doc->refs))
+		if (doc->drop_document)
+			doc->drop_document(ctx, doc);
 }
 
 static void
@@ -352,15 +351,13 @@ fz_new_annot(fz_context *ctx, int size)
 fz_annot *
 fz_keep_annot(fz_context *ctx, fz_annot *annot)
 {
-	if (annot)
-		++annot->refs;
-	return annot;
+	return fz_keep_imp(ctx, annot, &annot->refs);
 }
 
 void
 fz_drop_annot(fz_context *ctx, fz_annot *annot)
 {
-	if (annot && --annot->refs == 0)
+	if (fz_drop_imp(ctx, annot, &annot->refs))
 	{
 		if (annot->drop_annot)
 			annot->drop_annot(ctx, annot);
@@ -379,21 +376,17 @@ fz_new_page(fz_context *ctx, int size)
 fz_page *
 fz_keep_page(fz_context *ctx, fz_page *page)
 {
-	if (page)
-		++page->refs;
-	return page;
+	return fz_keep_imp(ctx, page, &page->refs);
 }
 
 void
 fz_drop_page(fz_context *ctx, fz_page *page)
 {
-	if (page)
+	if (fz_drop_imp(ctx, page, &page->refs))
 	{
-		if (--page->refs == 0 && page->drop_page)
-		{
+		if (page->drop_page)
 			page->drop_page(ctx, page);
-			fz_free(ctx, page);
-		}
+		fz_free(ctx, page);
 	}
 }
 

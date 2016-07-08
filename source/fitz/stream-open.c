@@ -46,18 +46,13 @@ fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_c
 fz_stream *
 fz_keep_stream(fz_context *ctx, fz_stream *stm)
 {
-	if (Memento_takeRef(stm))
-		stm->refs ++;
-	return stm;
+	return fz_keep_imp(ctx, stm, &stm->refs);
 }
 
 void
 fz_drop_stream(fz_context *ctx, fz_stream *stm)
 {
-	if (!Memento_dropRef(stm))
-		return;
-	stm->refs --;
-	if (stm->refs == 0)
+	if (fz_drop_imp(ctx, stm, &stm->refs))
 	{
 		if (stm->close)
 			stm->close(ctx, stm->state);

@@ -69,25 +69,16 @@ fz_keep_gprf_file(fz_context *ctx, gprf_file *file)
 	if (!ctx || !file)
 		return NULL;
 
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	file->refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-
-	return file;
+	return fz_keep_imp(ctx, file, &file->refs);
 }
 
 static void
 fz_drop_gprf_file(fz_context *ctx, gprf_file *file)
 {
-	int i;
-
 	if (!ctx || !file)
 		return;
 
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	i = --file->refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (i == 0)
+	if (fz_drop_imp(ctx, file, &file->refs))
 	{
 		unlink(file->filename);
 		fz_free(ctx, file->filename);

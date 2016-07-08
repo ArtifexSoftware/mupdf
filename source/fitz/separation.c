@@ -22,34 +22,20 @@ fz_separations *fz_new_separations(fz_context *ctx)
 
 fz_separations *fz_keep_separations(fz_context *ctx, fz_separations *sep)
 {
-	int i;
-
 	if (!ctx || !sep)
 		return NULL;
 
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	i = sep->refs;
-	if (i > 0)
-		sep->refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-
-	return sep;
+	return fz_keep_imp(ctx, sep, &sep->refs);
 }
 
 void fz_drop_separations(fz_context *ctx, fz_separations *sep)
 {
-	int i;
-
 	if (!ctx || !sep)
 		return;
 
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	i = sep->refs;
-	if (i > 0)
-		sep->refs--;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (i == 1)
+	if (fz_drop_imp(ctx, sep, &sep->refs))
 	{
+		int i;
 		for (i = 0; i < sep->num_separations; i++)
 			fz_free(ctx, sep->name[i]);
 		fz_free(ctx, sep);

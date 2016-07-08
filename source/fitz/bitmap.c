@@ -284,15 +284,13 @@ fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yres)
 fz_bitmap *
 fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit)
 {
-	if (bit)
-		bit->refs++;
-	return bit;
+	return fz_keep_imp(ctx, bit, &bit->refs);
 }
 
 void
 fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit)
 {
-	if (bit && --bit->refs == 0)
+	if (fz_drop_imp(ctx, bit, &bit->refs))
 	{
 		fz_free(ctx, bit->samples);
 		fz_free(ctx, bit);

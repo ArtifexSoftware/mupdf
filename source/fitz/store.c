@@ -101,8 +101,10 @@ evict(fz_context *ctx, fz_item *item)
 		item->prev->next = item->next;
 	else
 		store->head = item->next;
+
 	/* Drop a reference to the value (freeing if required) */
 	drop = (item->val->refs > 0 && --item->val->refs == 0);
+
 	/* Remove from the hash table */
 	if (item->type->make_hash_key)
 	{
@@ -114,6 +116,7 @@ evict(fz_context *ctx, fz_item *item)
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 	if (drop)
 		item->val->drop(ctx, item->val);
+
 	/* Always drops the key and drop the item */
 	item->type->drop_key(ctx, item->key);
 	fz_free(ctx, item);
@@ -457,28 +460,21 @@ fz_keep_store_context(fz_context *ctx)
 {
 	if (ctx == NULL || ctx->store == NULL)
 		return NULL;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	ctx->store->refs++;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	return ctx->store;
+	return fz_keep_imp(ctx, ctx->store, &ctx->store->refs);
 }
 
 void
 fz_drop_store_context(fz_context *ctx)
 {
-	int refs;
 	if (ctx == NULL || ctx->store == NULL)
 		return;
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	refs = --ctx->store->refs;
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (refs != 0)
-		return;
-
-	fz_empty_store(ctx);
-	fz_drop_hash(ctx, ctx->store->hash);
-	fz_free(ctx, ctx->store);
-	ctx->store = NULL;
+	if (fz_drop_imp(ctx, ctx->store, &ctx->store->refs))
+	{
+		fz_empty_store(ctx);
+		fz_drop_hash(ctx, ctx->store->hash);
+		fz_free(ctx, ctx->store);
+		ctx->store = NULL;
+	}
 }
 
 static void

@@ -507,21 +507,16 @@ pdf_signer *pdf_read_pfx(fz_context *ctx, const char *pfile, const char *pw)
 
 pdf_signer *pdf_keep_signer(fz_context *ctx, pdf_signer *signer)
 {
-	if (signer)
-		signer->refs++;
-	return signer;
+	return fz_keep_imp(ctx, signer, &signer->refs);
 }
 
 void pdf_drop_signer(fz_context *ctx, pdf_signer *signer)
 {
-	if (signer)
+	if (fz_drop_imp(ctx, signer, &signer->refs))
 	{
-		if (--signer->refs == 0)
-		{
-			X509_free(signer->x509);
-			EVP_PKEY_free(signer->pkey);
-			fz_free(ctx, signer);
-		}
+		X509_free(signer->x509);
+		EVP_PKEY_free(signer->pkey);
+		fz_free(ctx, signer);
 	}
 }
 

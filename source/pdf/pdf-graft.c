@@ -33,15 +33,13 @@ pdf_new_graft_map(fz_context *ctx, pdf_document *src)
 pdf_graft_map *
 fz_keep_graft_map(fz_context *ctx, pdf_graft_map *map)
 {
-	if (map)
-		++map->refs;
-	return map;
+	return fz_keep_imp(ctx, map, &map->refs);
 }
 
 void
 pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map)
 {
-	if (map && --map->refs == 0)
+	if (fz_drop_imp(ctx, map, &map->refs))
 	{
 		fz_drop_document(ctx, (fz_document*)map->src);
 		fz_free(ctx, map->dst_from_src);

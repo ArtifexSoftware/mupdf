@@ -1494,7 +1494,7 @@ fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke)
 fz_stroke_state *
 fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, int len)
 {
-	int single, unsize, shsize, shlen, drop;
+	int single, unsize, shsize, shlen;
 	fz_stroke_state *unshared;
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
@@ -1516,10 +1516,7 @@ fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_stroke_state *shared, 
 	memcpy(unshared, shared, (shsize > unsize ? unsize : shsize));
 	unshared->refs = 1;
 
-	fz_lock(ctx, FZ_LOCK_ALLOC);
-	drop = (shared->refs > 0 ? --shared->refs == 0 : 0);
-	fz_unlock(ctx, FZ_LOCK_ALLOC);
-	if (drop)
+	if (fz_drop_imp(ctx, shared, &shared->refs))
 		fz_free(ctx, shared);
 	return unshared;
 }

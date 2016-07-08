@@ -90,17 +90,13 @@ fz_new_buffer_from_base64(fz_context *ctx, const char *data, size_t size)
 fz_buffer *
 fz_keep_buffer(fz_context *ctx, fz_buffer *buf)
 {
-	if (buf)
-		buf->refs ++;
-	return buf;
+	return fz_keep_imp(ctx, buf, &buf->refs);
 }
 
 void
 fz_drop_buffer(fz_context *ctx, fz_buffer *buf)
 {
-	if (!buf)
-		return;
-	if (--buf->refs == 0)
+	if (fz_drop_imp(ctx, buf, &buf->refs))
 	{
 		if (!buf->shared)
 			fz_free(ctx, buf->data);
