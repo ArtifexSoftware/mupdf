@@ -377,7 +377,7 @@ static fz_display_list *create_page_list(fz_document *doc, fz_page *page)
 	fz_var(dev);
 	fz_try(ctx)
 	{
-		list = fz_new_display_list(ctx);
+		list = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, list);
 		fz_run_page_contents(ctx, page, dev, &fz_identity, NULL);
 	}
@@ -406,7 +406,7 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 
 		if (idoc)
 			pdf_update_page(ctx, idoc, (pdf_page *)page);
-		list = fz_new_display_list(ctx);
+		list = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, list);
 		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
 			fz_run_annot(ctx, annot, dev, &fz_identity, NULL);
@@ -455,9 +455,9 @@ static fz_pixmap *renderPixmap(fz_document *doc, fz_display_list *page_list, fz_
 		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox, 1);
 		fz_clear_pixmap_with_value(ctx, pix, 255);
 
-		dev = fz_new_draw_device(ctx, pix);
-		fz_run_display_list(ctx, page_list, dev, &ctm, &rect, NULL);
-		fz_run_display_list(ctx, annot_list, dev, &ctm, &rect, NULL);
+		dev = fz_new_draw_device(ctx, &ctm, pix);
+		fz_run_display_list(ctx, page_list, dev, &fz_identity, &rect, NULL);
+		fz_run_display_list(ctx, annot_list, dev, &fz_identity, &rect, NULL);
 	}
 	fz_always(ctx)
 	{
@@ -560,9 +560,9 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			if (!fz_is_empty_irect(&abox))
 			{
 				fz_clear_pixmap_rect_with_value(ctx, pixmap, 255, &abox);
-				dev = fz_new_draw_device_with_bbox(ctx, pixmap, &abox);
-				fz_run_display_list(ctx, page_list, dev, &ctm, &arect, NULL);
-				fz_run_display_list(ctx, annot_list, dev, &ctm, &arect, NULL);
+				dev = fz_new_draw_device_with_bbox(ctx, &ctm, pixmap, &abox);
+				fz_run_display_list(ctx, page_list, dev, &fz_identity, &arect, NULL);
+				fz_run_display_list(ctx, annot_list, dev, &fz_identity, &arect, NULL);
 				fz_drop_device(ctx, dev);
 				dev = NULL;
 			}

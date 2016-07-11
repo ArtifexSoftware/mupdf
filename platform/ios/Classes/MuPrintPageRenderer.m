@@ -110,9 +110,9 @@ static void renderPage(fz_document *doc, fz_page *page, fz_pixmap *pix, fz_matri
 		fz_var(dev);
 		fz_try(ctx)
 		{
-			dev = fz_new_draw_device(ctx, pix);
+			dev = fz_new_draw_device(ctx, ctm, pix);
 			fz_clear_pixmap_with_value(ctx, pix, 0xFF);
-			fz_run_page(ctx, page, dev, ctm, NULL);
+			fz_run_page(ctx, page, dev, &fz_identity, NULL);
 		}
 		fz_always(ctx)
 		{
