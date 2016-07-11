@@ -1,5 +1,9 @@
 #include <jni.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
 
 #ifdef NDK_PROFILER
 #include "prof.h"
@@ -144,7 +148,11 @@ static jmethodID mid_StrokeState_init;
 static jmethodID mid_Text_init;
 static jmethodID mid_TextWalker_showGlyph;
 
+#ifdef _WIN32
+static DWORD context_key;
+#else
 static pthread_key_t context_key;
+#endif
 static fz_context *base_context;
 
 /* Helper functions to set the java exception flag. */
@@ -437,16 +445,28 @@ static void lose_fids(JNIEnv *env)
 
 /* Put the fz_context in thread-local storage */
 
+#ifdef _WIN32
+static CRITICAL_SECTION mutexes[FZ_LOCK_MAX];
+#else
 static pthread_mutex_t mutexes[FZ_LOCK_MAX];
+#endif
 
 static void lock(void *user, int lock)
 {
+#ifdef _WIN32
+	EnterCriticalSection(&mutexes[lock]);
+#else
 	(void)pthread_mutex_lock(&mutexes[lock]);
+#endif
 }
 
 static void unlock(void *user, int lock)
 {
+#ifdef _WIN32
+	LeaveCriticalSection(&mutexes[lock]);
+#else
 	(void)pthread_mutex_unlock(&mutexes[lock]);
+#endif
 }
 
 static const fz_locks_context locks =
@@ -461,7 +481,11 @@ static void fin_base_context(JNIEnv *env)
 	int i;
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
+#ifdef _WIN32
+		DeleteCriticalSection(&mutexes[i]);
+#else
 		(void)pthread_mutex_destroy(&mutexes[i]);
+#endif
 
 	fz_drop_context(base_context);
 	base_context = NULL;
@@ -471,10 +495,20 @@ static int init_base_context(JNIEnv *env)
 {
 	int i;
 
+#ifdef _WIN32
+	context_key = TlsAlloc();
+	if (context_key == TLS_OUT_OF_INDEXES)
+		return -1;
+#else
 	pthread_key_create(&context_key, NULL);
+#endif
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
+#ifdef _WIN32
+		InitializeCriticalSection(&mutexes[i]);
+#else
 		(void)pthread_mutex_init(&mutexes[i], NULL);
+#endif
 
 	base_context = fz_new_context(NULL, &locks, FZ_STORE_DEFAULT);
 	if (base_context == NULL)
@@ -487,7 +521,12 @@ static int init_base_context(JNIEnv *env)
 
 static fz_context *get_context(JNIEnv *env)
 {
-	fz_context *ctx = (fz_context *)pthread_getspecific(context_key);
+	fz_context *ctx = (fz_context *)
+#ifdef _WIN32
+		TlsGetValue(context_key);
+#else
+		pthread_getspecific(context_key);
+#endif
 
 	if (ctx != NULL)
 		return ctx;
@@ -498,11 +537,16 @@ static fz_context *get_context(JNIEnv *env)
 		jni_throw_oom(env, "Failed to clone fz_context");
 		return NULL;
 	}
+#ifdef _WIN32
+	TlsSetValue(context_key, ctx);
+#else
 	pthread_setspecific(context_key, ctx);
+#endif
 	return ctx;
 }
 
-jint JNI_OnLoad(JavaVM *vm, void *reserved)
+JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM *vm, void *reserved)
 {
 	JNIEnv *env;
 
@@ -512,7 +556,7 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved)
 	return MY_JNI_VERSION;
 }
 
-void JNI_OnUnload(JavaVM *vm, void *reserved)
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
 {
 	JNIEnv *env;
 
