@@ -658,6 +658,8 @@ static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *anno
 	if (jannot == NULL)
 		fz_throw_java(ctx, env);
 
+	fz_keep_annot(ctx, annot);
+
 	return jannot;
 }
 
@@ -755,6 +757,8 @@ static inline jobject to_Page(fz_context *ctx, JNIEnv *env, fz_page *page)
 	jobj = (*env)->NewObject(env, cls_Page, mid_Page_init, jlong_cast(page));
 	if (jobj == NULL)
 		fz_throw_java(ctx, env);
+
+	fz_keep_page(ctx, page);
 
 	return jobj;
 }
