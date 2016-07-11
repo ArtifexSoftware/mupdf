@@ -19,6 +19,7 @@ public class PageCanvas extends java.awt.Canvas
 
 	public static BufferedImage imageFromPageWithDevice(Page page, Matrix ctm) {
 		Rect bbox = page.getBounds();
+		bbox.transform(ctm);
 		Pixmap pixmap = new Pixmap(ColorSpace.DeviceBGR, bbox);
 		pixmap.clear(255);
 		DrawDevice dev = new DrawDevice(pixmap);
