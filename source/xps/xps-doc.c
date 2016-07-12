@@ -470,15 +470,16 @@ xps_recognize(fz_context *ctx, const char *magic)
 
 	if (ext)
 	{
-		if (!fz_strcasecmp(ext, ".xps") || !fz_strcasecmp(ext, ".rels") || !fz_strcasecmp(ext, ".oxps"))
+		if (!fz_strcasecmp(ext, ".xps") || !fz_strcasecmp(ext, ".oxps"))
 			return 100;
 	}
+	if (strstr(magic, "/_rels/.rels") || strstr(magic, "\\_rels\\.rels"))
+		return 100;
 	if (!strcmp(magic, "xps") || !strcmp(magic, "oxps") ||
 		!strcmp(magic, "application/vnd.ms-xpsdocument") ||
 		!strcmp(magic, "application/xps") ||
 		!strcmp(magic, "application/oxps"))
 		return 100;
-
 	return 0;
 }
 
