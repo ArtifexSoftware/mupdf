@@ -27,6 +27,7 @@ void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap)
 	char buf[sizeof ctx->warn->message];
 
 	fz_vsnprintf(buf, sizeof buf, fmt, ap);
+	buf[sizeof(buf) - 1] = 0;
 #ifdef USE_OUTPUT_DEBUG_STRING
 	OutputDebugStringA(buf);
 	OutputDebugStringA("\n");
@@ -112,7 +113,8 @@ static int fz_fake_throw(fz_context *ctx, int code, const char *fmt, ...)
 	va_list args;
 	ctx->error->errcode = code;
 	va_start(args, fmt);
-	vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
+	fz_vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, args);
+	ctx->error->message[sizeof(ctx->error->message) - 1] = 0;
 	va_end(args);
 
 	if (code != FZ_ERROR_ABORT)
@@ -164,6 +166,7 @@ void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 {
 	ctx->error->errcode = code;
 	fz_vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, ap);
+	ctx->error->message[sizeof(ctx->error->message) - 1] = 0;
 
 	if (code != FZ_ERROR_ABORT)
 	{
