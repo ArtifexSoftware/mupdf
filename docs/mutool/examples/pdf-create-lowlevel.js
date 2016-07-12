@@ -30,7 +30,7 @@ image.writeObject({
 })
 // Write raw stream data into the slot; hex encoded
 // to match the Filter entry in the dictionary.
-image.writeRawStream("004488CCEEBB7733&gt;")
+image.writeRawStream("004488CCEEBB7733>")
 
 // Create resource dictionary.
 var resources = pdf.addObject({

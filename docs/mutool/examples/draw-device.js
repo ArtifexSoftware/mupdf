@@ -6,7 +6,7 @@ var path, text;
 
 var pixmap = new Pixmap(DeviceRGB, [0,0,500,600], false);
 pixmap.clear(255);
-var device = new DrawDevice(pixmap);
+var device = new DrawDevice(Identity, pixmap);
 var transform = [2,0,0,2,0,0]
 {
 	text = new Text();
