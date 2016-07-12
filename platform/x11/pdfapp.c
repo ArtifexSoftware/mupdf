@@ -675,6 +675,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 			fz_enable_device_hints(app->ctx, mdev, FZ_NO_CACHE);
 		cookie.incomplete_ok = 1;
 		fz_run_page_contents(app->ctx, app->page, mdev, &fz_identity, &cookie);
+		fz_close_device(app->ctx, mdev);
 		fz_drop_device(app->ctx, mdev);
 		mdev = NULL;
 		app->annotations_list = fz_new_display_list(app->ctx, NULL);
@@ -691,6 +692,7 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 			pdfapp_warn(app, "Errors found on page");
 			errored = 1;
 		}
+		fz_close_device(app->ctx, mdev);
 	}
 	fz_always(app->ctx)
 	{
@@ -751,6 +753,7 @@ static void pdfapp_recreate_annotationslist(pdfapp_t *app)
 			pdfapp_warn(app, "Errors found on page");
 			errored = 1;
 		}
+		fz_close_device(app->ctx, mdev);
 	}
 	fz_always(app->ctx)
 	{
@@ -795,6 +798,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
 		idev = fz_new_draw_device_with_bbox(app->ctx, NULL, app->image, &ibounds);
 		pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
+		fz_close_device(app->ctx, idev);
 		fz_drop_device(app->ctx, idev);
 	}
 
@@ -857,6 +861,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		{
 			tdev = fz_new_stext_device(app->ctx, app->page_sheet, app->page_text);
 			pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
+			fz_close_device(app->ctx, tdev);
 			fz_drop_device(app->ctx, tdev);
 		}
 	}
@@ -898,6 +903,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		{
 			idev = fz_new_draw_device(app->ctx, NULL, app->image);
 			pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
+			fz_close_device(app->ctx, idev);
 			fz_drop_device(app->ctx, idev);
 		}
 		if (app->invert)
