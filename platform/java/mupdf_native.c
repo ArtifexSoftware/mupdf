@@ -654,7 +654,7 @@ static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *anno
 	if (ctx == NULL || annot == NULL)
 		return NULL;
 
-	jannot = (*env)->NewObject(env, cls_Annot, mid_Annot_init, annot);
+	jannot = (*env)->NewObject(env, cls_Annot, mid_Annot_init, jlong_cast(annot));
 	if (jannot == NULL)
 		fz_throw_java(ctx, env);
 
