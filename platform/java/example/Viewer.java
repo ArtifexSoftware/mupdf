@@ -29,9 +29,12 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 	protected Panel toolbar;
 	protected PageCanvas pageCanvas;
 	protected Label pageLabel;
-	protected Button firstButton, prevButton, nextButton, lastButton, zoomInButton, zoomOutButton;
+	protected Button firstButton, prevButton, nextButton, lastButton, zoomInButton, zoomOutButton, fontIncButton, fontDecButton;
 	protected int pageCount;
 	protected int pageNumber;
+	protected int layoutWidth;
+	protected int layoutHeight;
+	protected int layoutEm;
 
 	private float retinaScale;
 
@@ -45,7 +48,11 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		pageCount = doc.countPages();
 		pageNumber = 0;
 
-		setSize(1200, 900);
+		layoutWidth = 1200;
+		layoutHeight = 800;
+		layoutEm = 12;
+
+		setSize(layoutWidth, layoutHeight + 100);
 		setTitle("MuPDF: " + doc.getMetaData(Document.META_INFO_TITLE));
 
 		toolbar = new Panel();
@@ -62,6 +69,14 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		zoomInButton.addActionListener(this);
 		zoomOutButton = new Button("-");
 		zoomOutButton.addActionListener(this);
+
+		if (doc.isReflowable()) {
+			fontIncButton = new Button("FONT");
+			fontIncButton.addActionListener(this);
+			fontDecButton = new Button("font");
+			fontDecButton.addActionListener(this);
+		}
+
 		pageLabel = new Label();
 
 		toolbar.add(firstButton);
@@ -70,6 +85,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		toolbar.add(lastButton);
 		toolbar.add(zoomInButton);
 		toolbar.add(zoomOutButton);
+		if (doc.isReflowable()) {
+			toolbar.add(fontIncButton);
+			toolbar.add(fontDecButton);
+		}
 		toolbar.add(pageLabel);
 
 		add(toolbar, BorderLayout.NORTH);
@@ -91,6 +110,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 	public void actionPerformed(ActionEvent event) {
 		Object source = event.getSource();
 		int oldPageNumber = pageNumber;
+		int oldLayoutEm = layoutEm;
 
 		if (source == firstButton)
 			pageNumber = 0;
@@ -109,6 +129,12 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 			if (pageNumber >= pageCount)
 				pageNumber = pageCount - 1;
 		}
+		if (doc.isReflowable() && source == fontIncButton) {
+			layoutEm = layoutEm + 1;
+		}
+		if (doc.isReflowable() && source == fontDecButton) {
+			layoutEm = layoutEm - 1;
+		}
 
 		if (source == zoomInButton) {
 			pageCanvas.zoomIn();
@@ -118,7 +144,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 			pageCanvas.zoomOut();
 		}
 
-		if (pageNumber != oldPageNumber)
+		if (layoutEm != oldLayoutEm)
+			doc.layout(layoutWidth, layoutHeight, layoutEm);
+
+		if (pageNumber != oldPageNumber || layoutEm != oldLayoutEm)
 			stuff();
 	}
 
@@ -141,7 +170,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		{
 			public String getDescription()
 			{
-				return "Supported files (*.pdf, *,xps, *.jpg, *.jpeg, *.png, *.epub, *.cbz, *.cbr)";
+				return "Supported files (*.pdf, *,xps, *.jpg, *.jpeg, *.png, *.epub, *.cbz, *.cbr, *.epub)";
 			}
 
 			public boolean accept(File f)
@@ -165,6 +194,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 				if (filename.endsWith(".cbz"))
 					return true;
 				if (filename.endsWith(".cbr"))
+					return true;
+				if (filename.endsWith(".epub"))
 					return true;
 
 				return false;
