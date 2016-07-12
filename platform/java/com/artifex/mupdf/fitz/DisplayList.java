@@ -17,6 +17,13 @@ public class DisplayList
 		pointer = newNative();
 	}
 
+	private DisplayList(long p) {
+		pointer = p;
+	}
+
+	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace, boolean alpha);
+	public native Rect[] search(String needle);
+
 	public native void run(Device dev, Matrix ctm, Rect scissor, Cookie cookie);
 
 	public void run(Device dev, Matrix ctm, Cookie cookie) {

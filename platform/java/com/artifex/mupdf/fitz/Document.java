@@ -32,6 +32,10 @@ public class Document
 		pointer = newNativeWithBuffer(buffer, magic);
 	}
 
+	private Document(long p) {
+		pointer = p;
+	}
+
 	public native boolean needsPassword();
 	public native boolean authenticatePassword(String password);
 
@@ -39,6 +43,10 @@ public class Document
 	public native Page loadPage(int number);
 	public native Outline loadOutline();
 	public native String getMetaData(String key);
+	public native boolean isReflowable();
+	public native void layout(float width, float height, float em);
 
 	public native boolean isUnencryptedPDF();
+
+	public native PDFDocument toPDFDocument();
 }

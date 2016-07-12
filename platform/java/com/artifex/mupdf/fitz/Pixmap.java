@@ -55,10 +55,19 @@ public class Pixmap
 	public native boolean getAlpha();
 	public native ColorSpace getColorSpace();
 	public native byte[] getSamples();
+	public native byte getSamples(int x, int y, int n);
 	public native int[] getPixels(); /* only valid for RGBA or BGRA pixmaps */
+	public native int getXResolution();
+	public native int getYResolution();
 
 	public void clear(int value) {
 		clearWithValue(value);
+	}
+
+	public Rect getBounds() {
+		int x = getX();
+		int y = getY();
+		return new Rect(x, y, x + getWidth(), y+ getHeight());
 	}
 
 	public String toString() {

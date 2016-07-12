@@ -31,6 +31,7 @@ public class Image
 	public native int getXResolution();
 	public native int getYResolution();
 
+	public native ColorSpace getColorSpace();
 	public native int getNumberOfComponents();
 	public native int getBitsPerComponent();
 	public native boolean getImageMask();

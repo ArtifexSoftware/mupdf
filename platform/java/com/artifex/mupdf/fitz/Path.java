@@ -33,6 +33,7 @@ public class Path implements PathWalker
 	public native void curveTo(float cx1, float cy1, float cx2, float cy2, float ex, float ey);
 	public native void curveToV(float cx, float cy, float ex, float ey);
 	public native void curveToY(float cx, float cy, float ex, float ey);
+	public native void rect(int x1, int y1, int x2, int y2);
 	public native void closePath();
 
 	public void moveTo(Point xy) {

@@ -16,6 +16,9 @@ public class Annotation
 	}
 
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
+	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace, boolean alpha);
+	public native Rect getBounds();
+	public native DisplayList toDisplayList();
 
 	private native long advance();
 }
