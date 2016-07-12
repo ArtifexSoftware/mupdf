@@ -550,6 +550,12 @@ static void ffi_pushimage(js_State *J, fz_image *image)
 	js_newuserdata(J, "fz_image", fz_keep_image(ctx, image), ffi_gc_fz_image);
 }
 
+static void ffi_pushimage_own(js_State *J, fz_image *image)
+{
+	js_getregistry(J, "fz_image");
+	js_newuserdata(J, "fz_image", image, ffi_gc_fz_image);
+}
+
 static int is_number(const char *key, int *idx)
 {
 	char *end;
@@ -1851,7 +1857,7 @@ static void ffi_new_Image(js_State *J)
 			rethrow(J);
 	}
 
-	ffi_pushimage(J, image);
+	ffi_pushimage_own(J, image);
 }
 
 static void ffi_Image_getWidth(js_State *J)
