@@ -11,7 +11,7 @@ public class Document
 	public static final String META_INFO_AUTHOR = "info:Author";
 	public static final String META_INFO_TITLE = "info:Title";
 
-	protected long pointer;
+	private long pointer;
 
 	protected native void finalize();
 

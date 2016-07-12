@@ -17,28 +17,28 @@ public class Pixmap
 		pointer = p;
 	}
 
-	public Pixmap(ColorSpace colorspace, int x, int y, int w, int h, boolean alpha) {
-		pointer = newNative(colorspace, x, y, w, h, alpha);
+	public Pixmap(ColorSpace cs, int x, int y, int w, int h, boolean alpha) {
+		pointer = newNative(cs, x, y, w, h, alpha);
 	}
 
-	public Pixmap(ColorSpace colorspace, int x, int y, int w, int h) {
-		this(colorspace, x, y, w, h, false);
+	public Pixmap(ColorSpace cs, int x, int y, int w, int h) {
+		this(cs, x, y, w, h, false);
 	}
 
-	public Pixmap(ColorSpace colorspace, int w, int h, boolean alpha) {
-		this(colorspace, 0, 0, w, h, alpha);
+	public Pixmap(ColorSpace cs, int w, int h, boolean alpha) {
+		this(cs, 0, 0, w, h, alpha);
 	}
 
-	public Pixmap(ColorSpace colorspace, int w, int h) {
-		this(colorspace, 0, 0, w, h, false);
+	public Pixmap(ColorSpace cs, int w, int h) {
+		this(cs, 0, 0, w, h, false);
 	}
 
-	public Pixmap(ColorSpace colorspace, Rect rect, boolean alpha) {
-		this(colorspace, (int)rect.x0, (int)rect.y0, (int)(rect.x1 - rect.x0), (int)(rect.y1 - rect.y0), alpha);
+	public Pixmap(ColorSpace cs, Rect rect, boolean alpha) {
+		this(cs, (int)rect.x0, (int)rect.y0, (int)(rect.x1 - rect.x0), (int)(rect.y1 - rect.y0), alpha);
 	}
 
-	public Pixmap(ColorSpace colorspace, Rect rect) {
-		this(colorspace, rect, false);
+	public Pixmap(ColorSpace cs, Rect rect) {
+		this(cs, rect, false);
 	}
 
 	public native void clear();

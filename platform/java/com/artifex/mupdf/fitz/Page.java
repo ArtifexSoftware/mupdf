@@ -20,7 +20,7 @@ public class Page
 
 	public native Rect getBounds();
 
-	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace, boolean alpha);
+	public native Pixmap toPixmap(Matrix ctm, ColorSpace cs, boolean alpha);
 
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
 	public native void runPageContents(Device dev, Matrix ctm, Cookie cookie);

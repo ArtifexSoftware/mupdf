@@ -27,7 +27,7 @@ public class Text implements TextWalker
 	}
 
 	public native void showGlyph(Font font, Matrix trm, int glyph, int unicode, boolean wmode);
-	public native void showString(Font font, Matrix trm, String string, boolean wmode);
+	public native void showString(Font font, Matrix trm, String str, boolean wmode);
 
 	public native Rect getBounds(StrokeState stroke, Matrix ctm);
 
@@ -35,8 +35,8 @@ public class Text implements TextWalker
 		showGlyph(font, trm, glyph, unicode, false);
 	}
 
-	public void showString(Font font, Matrix trm, String string) {
-		showString(font, trm, string, false);
+	public void showString(Font font, Matrix trm, String str) {
+		showString(font, trm, str, false);
 	}
 
 	public native void walk(TextWalker walker);

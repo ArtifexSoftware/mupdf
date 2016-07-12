@@ -710,26 +710,8 @@ static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 	return jobj;
 }
 
-#if 0
-static inline jobject to_Outline(fz_context *ctx, JNIEnv *env, fz_outline *outline)
-{
-	jobject joutline;
-
-	if (ctx == NULL || outline == NULL)
-		return NULL;
-
-	joutline = (*env)->NewObject(env, cls_Outline, mid_Outline_init, jlong_cast(outline));
-	if (joutline == NULL)
-		fz_throw_java(ctx, env);
-
-	fz_keep_outline(ctx, outline);
-
-	return joutline;
-}
-#endif
-
 /* take ownership and don't throw fitz exceptions */
-static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *outline)
+static inline jobject to_Outline_safe_own(fz_context *ctx, JNIEnv *env, fz_outline *outline)
 {
 	jobject joutline;
 
@@ -746,26 +728,8 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *
 	return joutline;
 }
 
-#if 0
-static inline jobject to_Page(fz_context *ctx, JNIEnv *env, fz_page *page)
-{
-	jobject jobj;
-
-	if (ctx == NULL || page == NULL)
-		return NULL;
-
-	jobj = (*env)->NewObject(env, cls_Page, mid_Page_init, jlong_cast(page));
-	if (jobj == NULL)
-		fz_throw_java(ctx, env);
-
-	fz_keep_page(ctx, page);
-
-	return jobj;
-}
-#endif
-
 /* take ownership and don't throw fitz exceptions */
-static inline jobject to_Page_safe(fz_context *ctx, JNIEnv *env, fz_page *page)
+static inline jobject to_Page_safe_own(fz_context *ctx, JNIEnv *env, fz_page *page)
 {
 	jobject jobj;
 
@@ -798,26 +762,8 @@ static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
 	return jobj;
 }
 
-#if 0
-static inline jobject to_Pixmap(fz_context *ctx, JNIEnv *env, fz_pixmap *pixmap)
-{
-	jobject jobj;
-
-	if (ctx == NULL || pixmap == NULL)
-		return NULL;
-
-	jobj = (*env)->NewObject(env, cls_Pixmap, mid_Pixmap_init, jlong_cast(pixmap));
-	if (jobj == NULL)
-		fz_throw_java(ctx, env);
-
-	fz_keep_pixmap(ctx, pixmap);
-
-	return jobj;
-}
-#endif
-
 /* take ownership and don't throw fitz exceptions */
-static inline jobject to_Pixmap_safe(fz_context *ctx, JNIEnv *env, fz_pixmap *pixmap)
+static inline jobject to_Pixmap_safe_own(fz_context *ctx, JNIEnv *env, fz_pixmap *pixmap)
 {
 	jobject jobj;
 
@@ -834,18 +780,18 @@ static inline jobject to_Pixmap_safe(fz_context *ctx, JNIEnv *env, fz_pixmap *pi
 	return jobj;
 }
 
-static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shade)
+static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shd)
 {
 	jobject jobj;
 
-	if (ctx == NULL || shade == NULL)
+	if (ctx == NULL || shd == NULL)
 		return NULL;
 
-	jobj = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shade));
+	jobj = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
 	if (jobj == NULL)
 		fz_throw_java(ctx, env);
 
-	fz_keep_shade(ctx, shade);
+	fz_keep_shade(ctx, shd);
 
 	return jobj;
 }
@@ -888,6 +834,9 @@ static inline fz_matrix from_Matrix(JNIEnv *env, jobject jmat)
 {
 	fz_matrix mat;
 
+	if (jmat == NULL)
+		return fz_identity;
+
 	mat.a = (*env)->GetFloatField(env, jmat, fid_Matrix_a);
 	mat.b = (*env)->GetFloatField(env, jmat, fid_Matrix_b);
 	mat.c = (*env)->GetFloatField(env, jmat, fid_Matrix_c);
@@ -902,6 +851,9 @@ static inline fz_rect from_Rect(JNIEnv *env, jobject jrect)
 {
 	fz_rect rect;
 
+	if (jrect == NULL)
+		return fz_empty_rect;
+
 	rect.x0 = (*env)->GetFloatField(env, jrect, fid_Rect_x0);
 	rect.x1 = (*env)->GetFloatField(env, jrect, fid_Rect_x1);
 	rect.y0 = (*env)->GetFloatField(env, jrect, fid_Rect_y0);
@@ -912,12 +864,19 @@ static inline fz_rect from_Rect(JNIEnv *env, jobject jrect)
 
 static inline void from_jfloatArray(JNIEnv *env, float *color, jint n, jfloatArray jcolor)
 {
-	jsize len = (*env)->GetArrayLength(env, jcolor);
-	if (len > n)
-		len = n;
-	(*env)->GetFloatArrayRegion(env, jcolor, 0, len, color);
+	jsize len;
+
+	if (jcolor == NULL)
+		len = 0;
+	else {
+		len = (*env)->GetArrayLength(env, jcolor);
+		if (len > n)
+			len = n;
+		(*env)->GetFloatArrayRegion(env, jcolor, 0, len, color);
+	}
+
 	if (len < n)
-		memset(color+len, 0, (n-len)*sizeof(float));
+		memset(color+len, 0, (n - len) * sizeof(float));
 }
 
 static inline fz_annot *from_Annotation(JNIEnv *env, jobject jobj)
@@ -941,7 +900,7 @@ static inline fz_colorspace *from_ColorSpace(JNIEnv *env, jobject jobj)
 	return CAST(fz_colorspace *, (*env)->GetLongField(env, jobj, fid_ColorSpace_pointer));
 }
 
-static fz_device *from_Device(JNIEnv *env, jobject jobj, fz_context *ctx)
+static fz_device *from_Device(JNIEnv *env, jobject jobj)
 {
 	if (jobj == NULL)
 		return NULL;
@@ -1407,7 +1366,7 @@ JNIEXPORT void JNICALL
 FUN(Device_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 
 	if (ctx == NULL || dev == NULL)
 		return;
@@ -1476,7 +1435,7 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *ninfo;
 
 	if (ctx == NULL || dev == NULL)
@@ -1496,7 +1455,7 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_close)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
 
 	if (ctx == NULL || dev == NULL)
@@ -1512,20 +1471,20 @@ FUN(NativeDevice_close)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_fillPath)(JNIEnv *env, jobject self, jobject jpath, jboolean even_odd, jobject jctm, jobject jcs, jfloatArray jcolor, float alpha)
+FUN(NativeDevice_fillPath)(JNIEnv *env, jobject self, jobject jpath, jboolean even_odd, jobject jctm, jobject jcs, jfloatArray jcolor, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_path *path = from_Path(env, jpath);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_colorspace *cs = from_ColorSpace(env, jcs);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
-		return;
-
 	from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor);
+
+	if (ctx == NULL || dev == NULL || path == NULL || cs == NULL)
+		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -1537,21 +1496,21 @@ FUN(NativeDevice_fillPath)(JNIEnv *env, jobject self, jobject jpath, jboolean ev
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_strokePath)(JNIEnv *env, jobject self, jobject jpath, jobject jstroke, jobject jctm, jobject jcs, jfloatArray jcolor, float alpha)
+FUN(NativeDevice_strokePath)(JNIEnv *env, jobject self, jobject jpath, jobject jstroke, jobject jctm, jobject jcs, jfloatArray jcolor, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_path *path = from_Path(env, jpath);
+	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_colorspace *cs = from_ColorSpace(env, jcs);
-	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
-		return;
-
 	from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor);
+
+	if (ctx == NULL || dev == NULL || path == NULL || stroke == NULL || cs == NULL)
+		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -1566,12 +1525,12 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_clipPath)(JNIEnv *env, jobject self, jobject jpath, jboolean even_odd, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_path *path = from_Path(env, jpath);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
+	if (ctx == NULL || dev == NULL || path == NULL)
 		return;
 
 	info = lockNativeDevice(env, self);
@@ -1587,13 +1546,13 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_clipStrokePath)(JNIEnv *env, jobject self, jobject jpath, jobject jstroke, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_path *path = from_Path(env, jpath);
-	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
+	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
+	if (ctx == NULL || dev == NULL || path == NULL || stroke == NULL)
 		return;
 
 	info = lockNativeDevice(env, self);
@@ -1606,20 +1565,20 @@ FUN(NativeDevice_clipStrokePath)(JNIEnv *env, jobject self, jobject jpath, jobje
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_fillText)(JNIEnv *env, jobject self, jobject jtext, jobject jctm, jobject jcs, jfloatArray jcolor, float alpha)
+FUN(NativeDevice_fillText)(JNIEnv *env, jobject self, jobject jtext, jobject jctm, jobject jcs, jfloatArray jcolor, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_text *text = from_Text(env, jtext);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_colorspace *cs = from_ColorSpace(env, jcs);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
-		return;
-
 	from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor);
+
+	if (ctx == NULL || dev == NULL || text == NULL || cs == NULL)
+		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -1631,21 +1590,21 @@ FUN(NativeDevice_fillText)(JNIEnv *env, jobject self, jobject jtext, jobject jct
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_strokeText)(JNIEnv *env, jobject self, jobject jtext, jobject jstroke, jobject jctm, jobject jcs, jfloatArray jcolor, float alpha)
+FUN(NativeDevice_strokeText)(JNIEnv *env, jobject self, jobject jtext, jobject jstroke, jobject jctm, jobject jcs, jfloatArray jcolor, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_text *text = from_Text(env, jtext);
+	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_colorspace *cs = from_ColorSpace(env, jcs);
-	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
-		return;
-
 	from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor);
+
+	if (ctx == NULL || dev == NULL || text == NULL || stroke == NULL || cs == NULL)
+		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -1660,7 +1619,7 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_clipText)(JNIEnv *env, jobject self, jobject jtext, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_text *text = from_Text(env, jtext);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
@@ -1681,13 +1640,13 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_clipStrokeText)(JNIEnv *env, jobject self, jobject jtext, jobject jstroke, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
-	fz_matrix ctm = from_Matrix(env, jctm);
+	fz_device *dev = from_Device(env, self);
 	fz_text *text = from_Text(env, jtext);
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
+	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
+	if (ctx == NULL || dev == NULL || text == NULL || stroke == NULL)
 		return;
 
 	info = lockNativeDevice(env, self);
@@ -1703,12 +1662,12 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_ignoreText)(JNIEnv *env, jobject self, jobject jtext, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_text *text = from_Text(env, jtext);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
+	if (ctx == NULL || dev == NULL || text == NULL)
 		return;
 
 	info = lockNativeDevice(env, self);
@@ -1721,20 +1680,20 @@ FUN(NativeDevice_ignoreText)(JNIEnv *env, jobject self, jobject jtext, jobject j
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_fillShade)(JNIEnv *env, jobject self, jobject jshade, jobject jctm, float alpha)
+FUN(NativeDevice_fillShade)(JNIEnv *env, jobject self, jobject jshd, jobject jctm, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
+	fz_shade *shd = from_Shade(env, jshd);
 	fz_matrix ctm = from_Matrix(env, jctm);
-	fz_shade *shade = from_Shade(env, jshade);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
+	if (ctx == NULL || dev == NULL || shd == NULL)
 		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_fill_shade(ctx, dev, shade, &ctm, alpha);
+		fz_fill_shade(ctx, dev, shd, &ctm, alpha);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1742,20 +1701,20 @@ FUN(NativeDevice_fillShade)(JNIEnv *env, jobject self, jobject jshade, jobject j
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_fillImage)(JNIEnv *env, jobject self, jobject jimg, jobject jctm, float alpha)
+FUN(NativeDevice_fillImage)(JNIEnv *env, jobject self, jobject jimg, jobject jctm, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
-	fz_image *image = from_Image(env, jimg);
+	fz_device *dev = from_Device(env, self);
+	fz_image *img = from_Image(env, jimg);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
+	if (ctx == NULL || dev == NULL || img == NULL)
 		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_fill_image(ctx, dev, image, &ctm, alpha);
+		fz_fill_image(ctx, dev, img, &ctm, alpha);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1763,24 +1722,24 @@ FUN(NativeDevice_fillImage)(JNIEnv *env, jobject self, jobject jimg, jobject jct
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_fillImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject jctm, jobject jcs, jfloatArray jcolor, float alpha)
+FUN(NativeDevice_fillImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject jctm, jobject jcs, jfloatArray jcolor, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
-	fz_image *image = from_Image(env, jimg);
+	fz_device *dev = from_Device(env, self);
+	fz_image *img = from_Image(env, jimg);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_colorspace *cs = from_ColorSpace(env, jcs);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
-		return;
-
 	from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor);
+
+	if (ctx == NULL || dev == NULL || img == NULL || cs == NULL)
+		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_fill_image_mask(ctx, dev, image, &ctm, cs, color, alpha);
+		fz_fill_image_mask(ctx, dev, img, &ctm, cs, color, alpha);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1791,17 +1750,17 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_clipImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject jctm)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
-	fz_image *image = from_Image(env, jimg);
+	fz_device *dev = from_Device(env, self);
+	fz_image *img = from_Image(env, jimg);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
+	if (ctx == NULL || dev == NULL || img == NULL)
 		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_clip_image_mask(ctx, dev, image, &ctm, NULL);
+		fz_clip_image_mask(ctx, dev, img, &ctm, NULL);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -1812,7 +1771,7 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_popClip)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
 
 	if (ctx == NULL || dev == NULL)
@@ -1831,16 +1790,16 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_beginMask)(JNIEnv *env, jobject self, jobject jrect, jboolean luminosity, jobject jcs, jfloatArray jcolor)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_rect rect = from_Rect(env, jrect);
 	fz_colorspace *cs = from_ColorSpace(env, jcs);
 	float color[FZ_MAX_COLORS];
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || dev == NULL)
-		return;
-
 	from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor);
+
+	if (ctx == NULL || dev == NULL || cs == NULL)
+		return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -1855,7 +1814,7 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_endMask)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
 
 	if (ctx == NULL || dev == NULL)
@@ -1871,10 +1830,10 @@ FUN(NativeDevice_endMask)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT void JNICALL
-FUN(NativeDevice_beginGroup)(JNIEnv *env, jobject self, jobject jrect, jboolean isolated, jboolean knockout, jint blendmode, float alpha)
+FUN(NativeDevice_beginGroup)(JNIEnv *env, jobject self, jobject jrect, jboolean isolated, jboolean knockout, jint blendmode, jfloat alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	fz_rect rect = from_Rect(env, jrect);
 	NativeDeviceInfo *info;
 
@@ -1894,7 +1853,7 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_endGroup)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
 
 	if (ctx == NULL || dev == NULL)
@@ -1910,13 +1869,13 @@ FUN(NativeDevice_endGroup)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jint JNICALL
-FUN(NativeDevice_beginTile)(JNIEnv *env, jobject self, jobject jarea, jobject jview, float xstep, float ystep, jobject jctm, jint id)
+FUN(NativeDevice_beginTile)(JNIEnv *env, jobject self, jobject jarea, jobject jview, jfloat xstep, jfloat ystep, jobject jctm, jint id)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
-	fz_matrix ctm = from_Matrix(env, jctm);
+	fz_device *dev = from_Device(env, self);
 	fz_rect area = from_Rect(env, jarea);
 	fz_rect view = from_Rect(env, jview);
+	fz_matrix ctm = from_Matrix(env, jctm);
 	NativeDeviceInfo *info;
 	int i = 0;
 
@@ -1938,7 +1897,7 @@ JNIEXPORT void JNICALL
 FUN(NativeDevice_endTile)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_device *dev = from_Device(env, self, ctx);
+	fz_device *dev = from_Device(env, self);
 	NativeDeviceInfo *info;
 
 	if (ctx == NULL || dev == NULL)
@@ -1954,10 +1913,10 @@ FUN(NativeDevice_endTile)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(DrawDevice_newNative)(JNIEnv *env, jclass self, jobject pixmap_)
+FUN(DrawDevice_newNative)(JNIEnv *env, jclass self, jobject jpixmap)
 {
 	fz_context *ctx = get_context(env);
-	fz_pixmap *pixmap = from_Pixmap(env, pixmap_);
+	fz_pixmap *pixmap = from_Pixmap(env, jpixmap);
 	fz_device *device = NULL;
 
 	if (ctx == NULL || pixmap == NULL)
@@ -2102,6 +2061,9 @@ FUN(AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitmap, jint
 	jlong device = 0;
 	int ret;
 
+	if (ctx == NULL || jbitmap == NULL)
+		return 0;
+
 	fz_try(ctx)
 	{
 		if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) < 0)
@@ -2116,9 +2078,8 @@ FUN(AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitmap, jint
 		device = newNativeAndroidDrawDevice(env, self, ctx, jbitmap, info.width, info.height, androidDrawDevice_lock, androidDrawDevice_unlock, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
 	}
 	fz_catch(ctx)
-	{
 		jni_rethrow(env, ctx);
-	}
+
 	return device;
 }
 
@@ -2136,7 +2097,7 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 	void *pixels;
 	int ret;
 
-	if (ctx == NULL)
+	if (ctx == NULL || jbitmap == NULL)
 		return 0;
 
 	fz_var(pixmap);
@@ -2164,13 +2125,10 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 		image = fz_new_image_from_pixmap(ctx, fz_keep_pixmap(ctx, pixmap), fz_keep_image(ctx, mask));
 	}
 	fz_always(ctx)
-	{
 		fz_drop_pixmap(ctx, pixmap);
-	}
 	fz_catch(ctx)
-	{
 		jni_rethrow(env, ctx);
-	}
+
 	return jlong_cast(image);
 }
 #endif
@@ -2182,10 +2140,8 @@ FUN(ColorSpace_finalize)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-
 	if (ctx == NULL || cs == NULL)
 		return;
-
 	fz_drop_colorspace(ctx, cs);
 }
 
@@ -2193,10 +2149,8 @@ JNIEXPORT jint JNICALL
 FUN(ColorSpace_getNumberOfComponents)(JNIEnv *env, jobject self)
 {
 	fz_colorspace *cs = from_ColorSpace(env, self);
-
 	if (cs == NULL)
 		return 0;
-
 	return cs->n;
 }
 
@@ -2204,6 +2158,8 @@ JNIEXPORT jlong JNICALL
 FUN(ColorSpace_nativeDeviceGray)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
+	if (ctx == NULL)
+		return 0;
 	return jlong_cast(fz_device_gray(ctx));
 }
 
@@ -2211,6 +2167,8 @@ JNIEXPORT jlong JNICALL
 FUN(ColorSpace_nativeDeviceRGB)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
+	if (ctx == NULL)
+		return 0;
 	return jlong_cast(fz_device_rgb(ctx));
 }
 
@@ -2218,6 +2176,8 @@ JNIEXPORT jlong JNICALL
 FUN(ColorSpace_nativeDeviceBGR)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
+	if (ctx == NULL)
+		return 0;
 	return jlong_cast(fz_device_bgr(ctx));
 }
 
@@ -2225,6 +2185,8 @@ JNIEXPORT jlong JNICALL
 FUN(ColorSpace_nativeDeviceCMYK)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
+	if (ctx == NULL)
+		return 0;
 	return jlong_cast(fz_device_cmyk(ctx));
 }
 
@@ -2254,12 +2216,16 @@ FUN(Font_newNative)(JNIEnv *env, jobject self, jstring jname, jint index)
 
 	name = (*env)->GetStringUTFChars(env, jname, NULL);
 	if (name == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "Font constructor failed");
 		return 0;
+	}
 
 	fz_try(ctx)
 	{
 		const char *data;
 		int size;
+
 		data = fz_lookup_base14_font(ctx, name, &size);
 		if (data)
 			font = fz_new_font_from_memory(ctx, name, data, size, index, 0);
@@ -2267,7 +2233,8 @@ FUN(Font_newNative)(JNIEnv *env, jobject self, jstring jname, jint index)
 			font = fz_new_font_from_file(ctx, name, name, index, 0);
 	}
 	fz_always(ctx)
-		(*env)->ReleaseStringUTFChars(env, jname, name);
+		if (name != NULL)
+			(*env)->ReleaseStringUTFChars(env, jname, name);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
@@ -2337,19 +2304,18 @@ FUN(Pixmap_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject colorspace_, jint x, jint y, jint w, jint h, jboolean alpha)
+FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject jcs, jint x, jint y, jint w, jint h, jboolean alpha)
 {
 	fz_context *ctx = get_context(env);
-	fz_colorspace *colorspace = from_ColorSpace(env, colorspace_);
-
+	fz_colorspace *cs = from_ColorSpace(env, jcs);
 	fz_pixmap *pixmap = NULL;
 
-	if (ctx == NULL)
+	if (ctx == NULL || cs == NULL)
 		return 0;
 
 	fz_try(ctx)
 	{
-		pixmap = fz_new_pixmap(ctx, colorspace, w, h, alpha);
+		pixmap = fz_new_pixmap(ctx, cs, w, h, alpha);
 		pixmap->x = x;
 		pixmap->y = y;
 	}
@@ -2464,21 +2430,20 @@ FUN(Pixmap_getColorSpace)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	jobject jcolorspace = NULL;
+	jobject jcs = NULL;
 
 	if (ctx == NULL || pixmap == NULL)
 		return 0;
 
 	fz_try(ctx)
 	{
-		fz_colorspace *colorspace = fz_pixmap_colorspace(ctx, pixmap);
-		jcolorspace = to_ColorSpace(ctx, env, colorspace);
+		fz_colorspace *cs = fz_pixmap_colorspace(ctx, pixmap);
+		jcs = to_ColorSpace(ctx, env, cs);
 	}
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return jcolorspace;
+	return jcs;
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -2487,18 +2452,18 @@ FUN(Pixmap_getSamples)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
 	int size = pixmap->h * pixmap->stride;
-	jbyteArray ary;
+	jbyteArray arr;
 
 	if (ctx == NULL || pixmap == NULL)
 		return NULL;
 
-	ary = (*env)->NewByteArray(env, size);
-	if (!ary)
+	arr = (*env)->NewByteArray(env, size);
+	if (arr == NULL)
 		return NULL;
 
-	(*env)->SetByteArrayRegion(env, ary, 0, size, (const jbyte *)pixmap->samples);
+	(*env)->SetByteArrayRegion(env, arr, 0, size, (const jbyte *)pixmap->samples);
 
-	return ary;
+	return arr;
 }
 
 JNIEXPORT jintArray JNICALL
@@ -2507,7 +2472,7 @@ FUN(Pixmap_getPixels)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
 	int size = pixmap->w * pixmap->h;
-	jintArray ary;
+	jintArray arr;
 
 	if (ctx == NULL || pixmap == NULL)
 		return NULL;
@@ -2524,13 +2489,13 @@ FUN(Pixmap_getPixels)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	ary = (*env)->NewIntArray(env, size);
-	if (!ary)
+	arr = (*env)->NewIntArray(env, size);
+	if (arr == NULL)
 		return NULL;
 
-	(*env)->SetIntArrayRegion(env, ary, 0, size, (const jint *)pixmap->samples);
+	(*env)->SetIntArrayRegion(env, arr, 0, size, (const jint *)pixmap->samples);
 
-	return ary;
+	return arr;
 }
 
 /* Path Interface */
@@ -2583,7 +2548,7 @@ FUN(Path_currentPoint)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT void JNICALL
-FUN(Path_moveTo)(JNIEnv *env, jobject self, float x, float y)
+FUN(Path_moveTo)(JNIEnv *env, jobject self, jfloat x, jfloat y)
 {
 	fz_context *ctx = get_context(env);
 	fz_path *path = from_Path(env, self);
@@ -2598,7 +2563,7 @@ FUN(Path_moveTo)(JNIEnv *env, jobject self, float x, float y)
 }
 
 JNIEXPORT void JNICALL
-FUN(Path_lineTo)(JNIEnv *env, jobject self, float x, float y)
+FUN(Path_lineTo)(JNIEnv *env, jobject self, jfloat x, jfloat y)
 {
 	fz_context *ctx = get_context(env);
 	fz_path *path = from_Path(env, self);
@@ -2613,7 +2578,7 @@ FUN(Path_lineTo)(JNIEnv *env, jobject self, float x, float y)
 }
 
 JNIEXPORT void JNICALL
-FUN(Path_curveTo)(JNIEnv *env, jobject self, float cx1, float cy1, float cx2, float cy2, float ex, float ey)
+FUN(Path_curveTo)(JNIEnv *env, jobject self, jfloat cx1, jfloat cy1, jfloat cx2, jfloat cy2, jfloat ex, jfloat ey)
 {
 	fz_context *ctx = get_context(env);
 	fz_path *path = from_Path(env, self);
@@ -2628,7 +2593,7 @@ FUN(Path_curveTo)(JNIEnv *env, jobject self, float cx1, float cy1, float cx2, fl
 }
 
 JNIEXPORT void JNICALL
-FUN(Path_curveToV)(JNIEnv *env, jobject self, float cx, float cy, float ex, float ey)
+FUN(Path_curveToV)(JNIEnv *env, jobject self, jfloat cx, jfloat cy, jfloat ex, jfloat ey)
 {
 	fz_context *ctx = get_context(env);
 	fz_path *path = from_Path(env, self);
@@ -2643,7 +2608,7 @@ FUN(Path_curveToV)(JNIEnv *env, jobject self, float cx, float cy, float ex, floa
 }
 
 JNIEXPORT void JNICALL
-FUN(Path_curveToY)(JNIEnv *env, jobject self, float cx, float cy, float ex, float ey)
+FUN(Path_curveToY)(JNIEnv *env, jobject self, jfloat cx, jfloat cy, jfloat ex, jfloat ey)
 {
 	fz_context *ctx = get_context(env);
 	fz_path *path = from_Path(env, self);
@@ -2716,7 +2681,7 @@ FUN(Path_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	jobject jrect = NULL;
 	fz_rect rect;
 
-	if (ctx == NULL || path == NULL)
+	if (ctx == NULL || path == NULL || stroke == NULL)
 		return NULL;
 
 	fz_try(ctx)
@@ -2791,7 +2756,7 @@ FUN(Path_walk)(JNIEnv *env, jobject self, jobject obj)
 	fz_path *path = from_Path(env, self);
 	path_walker_state state;
 
-	if (path == NULL || obj == NULL)
+	if (ctx == NULL || path == NULL || obj == NULL)
 		return;
 
 	state.env = env;
@@ -2818,14 +2783,16 @@ FUN(StrokeState_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(Path_newStrokeState)(JNIEnv *env, jobject self, jint startCap, jint dashCap, jint endCap, jint lineJoin, float lineWidth, float miterLimit, float dashPhase, jfloatArray dash)
+FUN(Path_newStrokeState)(JNIEnv *env, jobject self, jint startCap, jint dashCap, jint endCap, jint lineJoin, jfloat lineWidth, jfloat miterLimit, jfloat dashPhase, jfloatArray dash)
 {
 	fz_context *ctx = get_context(env);
 	fz_stroke_state *stroke = NULL;
-	jsize len = (*env)->GetArrayLength(env, dash);
+	jsize len = 0;
 
-	if (ctx == NULL)
+	if (ctx == NULL || dash == NULL)
 		return 0;
+
+	len = (*env)->GetArrayLength(env, dash);
 
 	fz_try(ctx)
 	{
@@ -2902,12 +2869,15 @@ FUN(StrokeState_getDashes)(JNIEnv *env, jobject self)
 	fz_stroke_state *stroke = from_StrokeState(env, self);
 	jfloatArray arr;
 
-	if (stroke->dash_len == 0)
+	if (ctx == NULL || stroke == NULL || stroke->dash_len == 0)
 		return NULL;
 
 	arr = (*env)->NewFloatArray(env, stroke->dash_len);
 	if (arr == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "JNI creation of floatArray failed");
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "JNI creation of floatArray failed");
+		return NULL;
+	}
 
 	(*env)->SetFloatArrayRegion(env, arr, 0, stroke->dash_len, &stroke->dash_list[0]);
 
@@ -2973,7 +2943,7 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	jobject jrect = NULL;
 	fz_rect rect;
 
-	if (ctx == NULL || text == NULL)
+	if (ctx == NULL || text == NULL || stroke == NULL)
 		return NULL;
 
 	fz_try(ctx)
@@ -2985,14 +2955,14 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 }
 
 JNIEXPORT void JNICALL
-FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jint glyph, jint unicode, jboolean wmode)
+FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject jfont, jobject jtrm, jint glyph, jint unicode, jboolean wmode)
 {
 	fz_context *ctx = get_context(env);
 	fz_text *text = from_Text(env, self);
-	fz_font *font = from_Font(env, font_);
-	fz_matrix trm = from_Matrix(env, matrix_);
+	fz_font *font = from_Font(env, jfont);
+	fz_matrix trm = from_Matrix(env, jtrm);
 
-	if (ctx == NULL || text == NULL)
+	if (ctx == NULL || text == NULL || font == NULL)
 		return;
 
 	fz_try(ctx)
@@ -3002,30 +2972,34 @@ FUN(Text_showGlyph)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, j
 }
 
 JNIEXPORT void JNICALL
-FUN(Text_showString)(JNIEnv *env, jobject self, jobject font_, jobject matrix_, jstring string_, jboolean wmode)
+FUN(Text_showString)(JNIEnv *env, jobject self, jobject jfont, jobject jtrm, jstring jstr, jboolean wmode)
 {
 	fz_context *ctx = get_context(env);
 	fz_text *text = from_Text(env, self);
-	fz_font *font = from_Font(env, font_);
-	fz_matrix trm = from_Matrix(env, matrix_);
-	const char *string;
+	fz_font *font = from_Font(env, jfont);
+	fz_matrix trm = from_Matrix(env, jtrm);
+	const char *str;
 
-	if (ctx == NULL || text == NULL)
+	if (ctx == NULL || text == NULL || font == NULL || jstr == NULL)
 		return;
 
-	string = (*env)->GetStringUTFChars(env, string_, NULL);
-	if (string == NULL)
+	str = (*env)->GetStringUTFChars(env, jstr, NULL);
+	if (str == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "showString failed");
 		return;
+	}
 
 	fz_try(ctx)
-		fz_show_string(ctx, text, font, &trm, string, wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+		fz_show_string(ctx, text, font, &trm, str, wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 	fz_always(ctx)
-		(*env)->ReleaseStringUTFChars(env, string_, string);
+		if (str != NULL)
+			(*env)->ReleaseStringUTFChars(env, jstr, str);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	(*env)->SetFloatField(env, matrix_, fid_Matrix_e, trm.e);
-	(*env)->SetFloatField(env, matrix_, fid_Matrix_f, trm.f);
+	(*env)->SetFloatField(env, jtrm, fid_Matrix_e, trm.e);
+	(*env)->SetFloatField(env, jtrm, fid_Matrix_f, trm.f);
 }
 
 JNIEXPORT void JNICALL
@@ -3039,7 +3013,7 @@ FUN(Text_walk)(JNIEnv *env, jobject self, jobject walker)
 	jobject jtrm = NULL;
 	int i;
 
-	if (!text->head)
+	if (ctx == NULL || walker == NULL || text->head == NULL)
 		return;
 
 	/* TODO: We reuse the same Matrix object for each call, but should we? */
@@ -3094,13 +3068,13 @@ FUN(Image_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(Image_newNativeFromPixmap)(JNIEnv *env, jobject self, jobject pixmap_)
+FUN(Image_newNativeFromPixmap)(JNIEnv *env, jobject self, jobject jpixmap)
 {
 	fz_context *ctx = get_context(env);
-	fz_pixmap *pixmap = from_Pixmap(env, pixmap_);
+	fz_pixmap *pixmap = from_Pixmap(env, jpixmap);
 	fz_image *image = NULL;
 
-	if (ctx == NULL)
+	if (ctx == NULL || pixmap == NULL)
 		return 0;
 
 	fz_try(ctx)
@@ -3123,12 +3097,16 @@ FUN(Image_newNativeFromFile)(JNIEnv *env, jobject self, jstring jfilename)
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
 	if (filename == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "Image constructor failed");
 		return 0;
+	}
 
 	fz_try(ctx)
 		image = fz_new_image_from_file(ctx, filename);
 	fz_always(ctx)
-		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		if (filename != NULL)
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
@@ -3198,7 +3176,7 @@ FUN(Image_getMask)(JNIEnv *env, jobject self)
 	fz_image *img = from_Image(env, self);
 	jobject jmask = NULL;
 
-	if (img == NULL || img->mask == NULL)
+	if (ctx == NULL || img == NULL || img->mask == NULL)
 		return NULL;
 
 	fz_try(ctx)
@@ -3216,12 +3194,15 @@ FUN(Image_toPixmap)(JNIEnv *env, jobject self)
 	fz_image *img = from_Image(env, self);
 	fz_pixmap *pixmap = NULL;
 
+	if (ctx == NULL || img == NULL)
+		return NULL;
+
 	fz_try(ctx)
 		pixmap = fz_get_pixmap_from_image(ctx, img, NULL, NULL, NULL, NULL);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_Pixmap_safe(ctx, env, pixmap);
+	return to_Pixmap_safe_own(ctx, env, pixmap);
 }
 
 /* Outline interface */
@@ -3256,13 +3237,13 @@ JNIEXPORT void JNICALL
 FUN(Annotation_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobject jcookie)
 {
 	fz_context *ctx = get_context(env);
+	fz_annot *annot = from_Annotation(env, self);
+	fz_device *dev = from_Device(env, jdev);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_cookie *cookie= from_Cookie(env, jcookie);
-	fz_device *dev = from_Device(env, jdev, ctx);
-	fz_annot *annot = from_Annotation(env, self);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || self == NULL || jdev == NULL)
+	if (ctx == NULL || annot == NULL || dev == NULL)
 		return;
 
 	info = lockNativeDevice(env, jdev);
@@ -3278,16 +3259,13 @@ JNIEXPORT jlong JNICALL
 FUN(Annotation_advance)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_annot *annot = NULL;
+	fz_annot *annot = from_Annotation(env, self);
 
-	if (ctx == NULL || self == NULL)
+	if (ctx == NULL || annot == NULL)
 		return 0;
 
 	fz_try(ctx)
-	{
-		annot = from_Annotation(env, self);
 		annot = fz_next_annot(ctx, annot);
-	}
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
@@ -3326,7 +3304,7 @@ JNIEXPORT jlong JNICALL
 FUN(Document_newNativeWithPath)(JNIEnv *env, jobject self, jstring jfilename)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = NULL;
+	fz_document *doc = NULL;
 	const char *filename = NULL;
 
 	if (ctx == NULL || jfilename == NULL)
@@ -3334,30 +3312,34 @@ FUN(Document_newNativeWithPath)(JNIEnv *env, jobject self, jstring jfilename)
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
 	if (filename == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "Document constructor failed");
 		return 0;
+	}
 
 	fz_try(ctx)
-		document = fz_open_document(ctx, filename);
+		doc = fz_open_document(ctx, filename);
 	fz_always(ctx)
-		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		if (filename != NULL)
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return jlong_cast(document);
+	return jlong_cast(doc);
 }
 
 JNIEXPORT jboolean JNICALL
 FUN(Document_needsPassword)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = from_Document(env, self);
+	fz_document *doc = from_Document(env, self);
 	int okay = 0;
 
-	if (ctx == NULL || document == NULL)
+	if (ctx == NULL || doc == NULL)
 		return 0;
 
 	fz_try(ctx)
-		okay = fz_needs_password(ctx, document);
+		okay = fz_needs_password(ctx, doc);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
@@ -3368,11 +3350,11 @@ JNIEXPORT jboolean JNICALL
 FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = from_Document(env, self);
+	fz_document *doc = from_Document(env, self);
 	const char *password = NULL;
 	int okay = 0;
 
-	if (ctx == NULL || document == NULL)
+	if (ctx == NULL || doc == NULL)
 		return 0;
 
 	if (jpassword == NULL)
@@ -3381,13 +3363,16 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 	{
 		password = (*env)->GetStringUTFChars(env, jpassword, NULL);
 		if (!password)
+		{
+			jni_throw(env, FZ_ERROR_GENERIC, "autenticatePassword failed");
 			return 0;
+		}
 	}
 
 	fz_try(ctx)
-		okay = fz_authenticate_password(ctx, document, password);
+		okay = fz_authenticate_password(ctx, doc, password);
 	fz_always(ctx)
-		if (jpassword != NULL)
+		if (password != NULL)
 			(*env)->ReleaseStringUTFChars(env, jpassword, password);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
@@ -3399,14 +3384,14 @@ JNIEXPORT jint JNICALL
 FUN(Document_countPages)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = from_Document(env, self);
+	fz_document *doc = from_Document(env, self);
 	int count = 0;
 
-	if (ctx == NULL || document == NULL)
+	if (ctx == NULL || doc == NULL)
 		return 0;
 
 	fz_try(ctx)
-		count = fz_count_pages(ctx, document);
+		count = fz_count_pages(ctx, doc);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
@@ -3417,39 +3402,43 @@ JNIEXPORT jobject JNICALL
 FUN(Document_loadPage)(JNIEnv *env, jobject self, jint number)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = from_Document(env, self);
+	fz_document *doc = from_Document(env, self);
 	fz_page *page = NULL;
 
-	if (ctx == NULL || document == NULL)
+	if (ctx == NULL || doc == NULL)
 		return NULL;
 
 	fz_try(ctx)
-		page = fz_load_page(ctx, document, number);
+		page = fz_load_page(ctx, doc, number);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_Page_safe(ctx, env, page);
+	return to_Page_safe_own(ctx, env, page);
 }
 
 JNIEXPORT jobject JNICALL
 FUN(Document_getMetaData)(JNIEnv *env, jobject self, jstring jkey)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = from_Document(env, self);
-	const char *ckey;
+	fz_document *doc = from_Document(env, self);
+	const char *key;
 	char info[256];
 
-	if (ctx == NULL || document == NULL)
+	if (ctx == NULL || doc == NULL || jkey == NULL)
 		return NULL;
 
-	ckey = (*env)->GetStringUTFChars(env, jkey, NULL);
-	if (!ckey)
+	key = (*env)->GetStringUTFChars(env, jkey, NULL);
+	if (!key)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "getMetaData failed");
 		return NULL;
+	}
 
 	fz_try(ctx)
-		fz_lookup_metadata(ctx, document, ckey, info, sizeof info);
+		fz_lookup_metadata(ctx, doc, key, info, sizeof info);
 	fz_always(ctx)
-		(*env)->ReleaseStringUTFChars(env, jkey, ckey);
+		if (key != NULL)
+			(*env)->ReleaseStringUTFChars(env, jkey, key);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -3463,11 +3452,11 @@ JNIEXPORT jboolean JNICALL
 FUN(Document_isUnencryptedPDF)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = from_Document(env, self);
-	pdf_document *idoc = pdf_specifics(ctx, document);
+	fz_document *doc = from_Document(env, self);
+	pdf_document *idoc = pdf_specifics(ctx, doc);
 	int cryptVer;
 
-	if (idoc == NULL)
+	if (ctx == NULL || idoc == NULL)
 		return JNI_FALSE; // Not a PDF
 
 	cryptVer = pdf_crypt_version(ctx, idoc);
@@ -3478,20 +3467,20 @@ JNIEXPORT jobject JNICALL
 FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_document *document = from_Document(env, self);
+	fz_document *doc = from_Document(env, self);
 	fz_outline *outline = NULL;
 
-	if (ctx == NULL || document == NULL)
+	if (ctx == NULL || doc == NULL)
 		return NULL;
 
 	fz_var(outline);
 
 	fz_try(ctx)
-		outline = fz_load_outline(ctx, document);
+		outline = fz_load_outline(ctx, doc);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_Outline_safe(ctx, env, outline);
+	return to_Outline_safe_own(ctx, env, outline);
 }
 
 /* Page interface */
@@ -3509,21 +3498,23 @@ FUN(Page_finalize)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject ctm_, jobject colorspace_, jboolean alpha)
+FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolean alpha)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	fz_colorspace *colorspace = from_ColorSpace(env, colorspace_);
-	fz_matrix ctm = from_Matrix(env, ctm_);
-
+	fz_colorspace *cs = from_ColorSpace(env, jcs);
+	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_pixmap *pixmap = NULL;
 
+	if (ctx == NULL || page == NULL || cs == NULL)
+		return NULL;
+
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, colorspace, alpha);
+		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, cs, alpha);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_Pixmap_safe(ctx, env, pixmap);
+	return to_Pixmap_safe_own(ctx, env, pixmap);
 }
 
 JNIEXPORT jobject JNICALL
@@ -3549,13 +3540,13 @@ JNIEXPORT void JNICALL
 FUN(Page_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobject jcookie)
 {
 	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_device *dev = from_Device(env, jdev);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_cookie *cookie = from_Cookie(env, jcookie);
-	fz_device *dev = from_Device(env, jdev, ctx);
-	fz_page *page = from_Page(env, self);
 	NativeDeviceInfo *info;
 
-	if (ctx == NULL || self == NULL || jdev == NULL)
+	if (ctx == NULL || page == NULL || dev == NULL)
 		return;
 
 	info = lockNativeDevice(env, jdev);
@@ -3571,10 +3562,10 @@ JNIEXPORT void JNICALL
 FUN(Page_runPageContents)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobject jcookie)
 {
 	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_device *dev = from_Device(env, jdev);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_cookie *cookie = from_Cookie(env, jcookie);
-	fz_device *dev = from_Device(env, jdev, ctx);
-	fz_page *page = from_Page(env, self);
 	NativeDeviceInfo *info;
 
 	if (ctx == NULL || page == NULL || dev == NULL)
@@ -3700,7 +3691,6 @@ JNIEXPORT jlong JNICALL
 FUN(DisplayList_newNative)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-
 	fz_display_list *list = NULL;
 
 	if (ctx == NULL)
@@ -3719,14 +3709,14 @@ FUN(DisplayList_run)(JNIEnv *env, jobject self, jobject jdev, jobject jctm, jobj
 {
 	fz_context *ctx = get_context(env);
 	fz_display_list *list = from_DisplayList(env, self);
+	fz_device *dev = from_Device(env, jdev);
 	fz_matrix ctm = from_Matrix(env, jctm);
 	fz_cookie *cookie = from_Cookie(env, jcookie);
-	fz_device *dev = from_Device(env, jdev, ctx);
 	NativeDeviceInfo *info;
 	fz_rect local_rect;
 	fz_rect *rect = NULL;
 
-	if (ctx == NULL || self == NULL || jdev == NULL || list == NULL)
+	if (ctx == NULL || list == NULL || dev == NULL)
 		return;
 
 	/* Use a scissor rectangle if one is supplied */

@@ -48,7 +48,7 @@ public class Device
 	public void clipText(Text text, Matrix ctm) {}
 	public void clipStrokeText(Text text, StrokeState stroke, Matrix ctm) {}
 	public void ignoreText(Text text, Matrix ctm) {}
-	public void fillShade(Shade shade, Matrix ctm, float alpha) {}
+	public void fillShade(Shade shd, Matrix ctm, float alpha) {}
 	public void fillImage(Image img, Matrix ctm, float alpha) {}
 	public void fillImageMask(Image img, Matrix ctm, ColorSpace cs, float color[], float alpha) {}
 	public void clipImageMask(Image img, Matrix ctm) {}
