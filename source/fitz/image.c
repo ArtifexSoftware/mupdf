@@ -724,8 +724,7 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 	fz_try(ctx)
 	{
 		image = (fz_pixmap_image *)
-				fz_new_image(ctx, pixmap->w, pixmap->h,
-						pixmap->n, pixmap->colorspace,
+				fz_new_image(ctx, pixmap->w, pixmap->h, 8, pixmap->colorspace,
 						pixmap->xres, pixmap->yres, 0, 0,
 						NULL, NULL, mask,
 						sizeof(fz_pixmap_image),
