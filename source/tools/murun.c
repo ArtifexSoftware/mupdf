@@ -1266,7 +1266,7 @@ static void ffi_readFile(js_State *J)
 static void ffi_new_Buffer(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	int n = js_tonumber(J, 1);
+	int n = js_isdefined(J, 1) ? js_tonumber(J, 1) : 0;
 	fz_buffer *buf;
 	fz_try(ctx)
 		buf = fz_new_buffer(ctx, n);
@@ -1492,7 +1492,7 @@ static void ffi_Page_run(js_State *J)
 	fz_page *page = js_touserdata(J, 0, "fz_page");
 	fz_device *device = NULL;
 	fz_matrix ctm = ffi_tomatrix(J, 2);
-	int no_annots = js_toboolean(J, 3);
+	int no_annots = js_isdefined(J, 3) ? js_toboolean(J, 3) : 0;
 
 	if (js_isuserdata(J, 1, "fz_device")) {
 		device = js_touserdata(J, 1, "fz_device");
@@ -1524,7 +1524,7 @@ static void ffi_Page_toDisplayList(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = js_touserdata(J, 0, "fz_page");
-	int no_annots = js_toboolean(J, 1);
+	int no_annots = js_isdefined(J, 1) ? js_toboolean(J, 1) : 0;
 	fz_display_list *list;
 
 	fz_try(ctx)
@@ -1546,7 +1546,7 @@ static void ffi_Page_toPixmap(js_State *J)
 	fz_matrix ctm = ffi_tomatrix(J, 1);
 	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
 	int alpha = js_toboolean(J, 3);
-	int no_annots = js_toboolean(J, 4);
+	int no_annots = js_isdefined(J, 4) ? js_toboolean(J, 4) : 0;
 	fz_pixmap *pixmap;
 
 	fz_try(ctx)
