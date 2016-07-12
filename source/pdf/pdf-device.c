@@ -857,6 +857,10 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_pre_translate(&local_ctm, 0, -1);
 	pdf_dev_ctm(ctx, pdev, &local_ctm);
 	fz_buffer_printf(ctx, gs->buf, "/Img%d Do Q\n", pdf_to_num(ctx, im_res));
+
+	/* Possibly add to page resources */
+	pdf_dev_add_image_res(ctx, dev, im_res);
+	pdf_drop_obj(ctx, im_res);
 }
 
 static void

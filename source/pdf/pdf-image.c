@@ -329,12 +329,12 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 				colorspace = pixmap->colorspace; /* May be different to image->colorspace! */
 				n = (pixmap->n == 1 ? 1 : pixmap->n - pixmap->alpha);
-				d = buffer->data;
 				s = pixmap->samples;
 				h = image->h;
 				size = image->w * n;
-				buffer = fz_new_buffer(ctx, size);
-				buffer->len = size;
+				buffer = fz_new_buffer(ctx, size * h);
+				buffer->len = size * h;
+				d = buffer->data;
 				if (pixmap->alpha == 0 || n == 1)
 				{
 					while (h--)
@@ -347,18 +347,20 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				else
 				{
 					/* Need to remove the alpha plane */
-					int mod = n;
-					int stride = pixmap->stride - pixmap->w * pixmap->n;
+					/* TODO: extract alpha plane to a soft mask */
+					int pad = pixmap->stride - pixmap->w * pixmap->n;
 					while (h--)
 					{
-						while (size--)
+						unsigned int size2 = size;
+						int mod = n;
+						while (size2--)
 						{
 							*d++ = *s++;
 							mod--;
 							if (mod == 0)
 								s++, mod = n;
 						}
-						s += stride;
+						s += pad;
 					}
 				}
 			}
@@ -447,7 +449,10 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ImageMask, pdf_new_bool(ctx, doc, 1));
 			}
 			if (image->mask)
-				pdf_add_image(ctx, doc, image->mask, 0);
+			{
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_SMask, pdf_add_image(ctx, doc, image->mask, 0));
+			}
+
 			imref = pdf_add_object(ctx, doc, imobj);
 			pdf_update_stream(ctx, doc, imref, buffer, 1);
 
