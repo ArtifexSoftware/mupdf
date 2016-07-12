@@ -178,6 +178,10 @@ MuPDF can open many document types (PDF, XPS, CBZ, EPUB, FB2 and a handful of im
 <dd>Count the number of pages in the document. This may change if you call the layout function with different parameters.
 <dt>Document#loadPage(number)
 <dd>Returns a Page object for the given page number. Page number zero (0) is the first page in the document.
+<dt>Document#loadOutline()
+<dd>Returns an array with the outline (table of contents).
+In the array is an object for each heading with the property 'title', and a property 'page' containing the page number.
+If the object has a 'down' property, it contains an array with all the sub-headings for that entry.
 </dl>
 
 <dl>
@@ -199,6 +203,10 @@ If alpha is true, the page will be drawn on a transparent background, otherwise 
 <dd>Search for 'needle' text on the page, and return an array with rectangles of all matches found.
 <dt>Page#getAnnotations()
 <dd>Return array of all annotations on the page.
+<dt>Page#getLinks()
+<dd>Return an array of all the links on the page.
+Each link is an object with a 'bounds' property, and either a 'page' or 'uri' property,
+depending on whether it's an internal or external link.
 <dt>Page#toPDF()
 <dd>Returns the PDFObject/PDFPage for the page, if the document is a PDF file.
 </dl>

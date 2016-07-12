@@ -1449,6 +1449,54 @@ static void ffi_Document_layout(js_State *J)
 		rethrow(J);
 }
 
+static void to_outline(js_State *J, fz_outline *outline)
+{
+	js_newarray(J);
+	int i = 0;
+	while (outline) {
+		js_newobject(J);
+
+		if (outline->title)
+			js_pushstring(J, outline->title);
+		else
+			js_pushundefined(J);
+		js_setproperty(J, -2, "title");
+
+		if (outline->dest.kind == FZ_LINK_GOTO) {
+			js_pushnumber(J, outline->dest.ld.gotor.page);
+			js_setproperty(J, -2, "page");
+		}
+		if (outline->dest.kind == FZ_LINK_URI) {
+			js_pushstring(J, outline->dest.ld.uri.uri);
+			js_setproperty(J, -2, "uri");
+		}
+
+		if (outline->down) {
+			to_outline(J, outline->down);
+			js_setproperty(J, -2, "down");
+		}
+
+		js_setindex(J, -2, i++);
+		outline = outline->next;
+	}
+}
+
+static void ffi_Document_loadOutline(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = js_touserdata(J, 0, "fz_document");
+	fz_outline *outline;
+
+	fz_try(ctx)
+		outline = fz_load_outline(ctx, doc);
+	fz_catch(ctx)
+		rethrow(J);
+
+	to_outline(J, outline);
+
+	fz_drop_outline(ctx, outline);
+}
+
 static void ffi_Document_toPDF(js_State *J)
 {
 #if FZ_ENABLE_PDF
@@ -1570,8 +1618,7 @@ static void ffi_Page_toStructuredText(js_State *J)
 
 	fz_var(sheet);
 
-	fz_try(ctx)
-	{
+	fz_try(ctx) {
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page_from_page(ctx, page, sheet);
 	}
@@ -1618,8 +1665,7 @@ static void ffi_Page_getAnnotations(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	while (annot)
-	{
+	while (annot) {
 		js_getregistry(J, "fz_annot");
 		js_newuserdata(J, "fz_annot", fz_keep_annot(ctx, annot), ffi_gc_fz_annot);
 		js_setindex(J, -2, i++);
@@ -1629,6 +1675,42 @@ static void ffi_Page_getAnnotations(js_State *J)
 		fz_catch(ctx)
 			rethrow(J);
 	}
+}
+
+static void ffi_Page_getLinks(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_page *page = js_touserdata(J, 0, "fz_page");
+	fz_link *link, *n;
+	int i = 0;
+
+	js_newarray(J);
+
+	fz_try(ctx)
+		link = fz_load_links(ctx, page);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+	for (n = link; n; n = n->next) {
+		js_newobject(J);
+
+		ffi_pushrect(J, link->rect);
+		js_setproperty(J, -2, "bounds");
+
+		if (link->dest.kind == FZ_LINK_GOTO) {
+			js_pushnumber(J, link->dest.ld.gotor.page);
+			js_setproperty(J, -2, "page");
+		}
+		if (link->dest.kind == FZ_LINK_URI) {
+			js_pushstring(J, link->dest.ld.uri.uri);
+			js_setproperty(J, -2, "uri");
+		}
+
+		js_setindex(J, -2, i++);
+	}
+
+	fz_drop_link(ctx, link);
 }
 
 static void ffi_Annotation_bound(js_State *J)
@@ -2264,8 +2346,7 @@ static void ffi_DisplayList_toStructuredText(js_State *J)
 
 	fz_var(sheet);
 
-	fz_try(ctx)
-	{
+	fz_try(ctx) {
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page_from_display_list(ctx, list, sheet);
 	}
@@ -3360,6 +3441,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Document.layout", ffi_Document_layout, 3);
 		jsB_propfun(J, "Document.countPages", ffi_Document_countPages, 0);
 		jsB_propfun(J, "Document.loadPage", ffi_Document_loadPage, 1);
+		jsB_propfun(J, "Document.loadOutline", ffi_Document_loadOutline, 0);
 	}
 	js_setregistry(J, "fz_document");
 
@@ -3372,6 +3454,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Page.toStructuredText", ffi_Page_toStructuredText, 0);
 		jsB_propfun(J, "Page.search", ffi_Page_search, 0);
 		jsB_propfun(J, "Page.getAnnotations", ffi_Page_getAnnotations, 0);
+		jsB_propfun(J, "Page.getLinks", ffi_Page_getLinks, 0);
 	}
 	js_setregistry(J, "fz_page");
 
