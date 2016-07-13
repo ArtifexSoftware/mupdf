@@ -379,6 +379,7 @@ svg_dev_text_span_as_paths_defs(fz_context *ctx, fz_device *dev, fz_text_span *s
 				fz_printf(ctx, out, "<path");
 				svg_dev_path(ctx, sdev, path);
 				fz_printf(ctx, out, "/>\n");
+				fz_drop_path(ctx, path);
 			}
 			else
 			{
@@ -1084,9 +1085,17 @@ static void
 svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 {
 	svg_device *sdev = (svg_device*)dev;
+	int i;
+
 	fz_free(ctx, sdev->tiles);
 	fz_drop_buffer(ctx, sdev->defs_buffer);
 	fz_drop_output(ctx, sdev->defs);
+	for (i = 0; i < sdev->num_fonts; i++)
+	{
+		fz_drop_font(ctx, sdev->fonts[i].font);
+		fz_free(ctx, sdev->fonts[i].sentlist);
+	}
+	fz_free(ctx, sdev->fonts);
 }
 
 fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height)
