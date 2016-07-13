@@ -202,10 +202,10 @@ pdf_init_resource_tables(fz_context *ctx, pdf_document *doc)
 {
 	fz_try(ctx)
 	{
-		doc->resources = fz_calloc(ctx, 1, sizeof(pdf_resource_tables));
-		doc->resources->image = fz_calloc(ctx, 1, sizeof(pdf_res_table));
+		doc->resources = fz_malloc_struct(ctx, pdf_resource_tables);
+		doc->resources->image = fz_malloc_struct(ctx, pdf_res_table);
 		doc->resources->image->search = res_image_search;
-		doc->resources->font = fz_calloc(ctx, 1, sizeof(pdf_res_table));
+		doc->resources->font = fz_malloc_struct(ctx, pdf_res_table);
 		doc->resources->font->search = res_font_search;
 	}
 	fz_catch(ctx)

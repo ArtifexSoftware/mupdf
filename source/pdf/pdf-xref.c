@@ -210,7 +210,7 @@ pdf_xref_entry *pdf_get_populating_xref_entry(fz_context *ctx, pdf_document *doc
 
 	if (doc->num_xref_sections == 0)
 	{
-		doc->xref_sections = fz_calloc(ctx, 1, sizeof(pdf_xref));
+		doc->xref_sections = fz_malloc_struct(ctx, pdf_xref);
 		doc->num_xref_sections = 1;
 	}
 
@@ -1365,7 +1365,7 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 	len = pdf_array_len(ctx, ocg);
 	fz_try(ctx)
 	{
-		desc = fz_calloc(ctx, 1, sizeof(*desc));
+		desc = fz_malloc_struct(ctx, pdf_ocg_descriptor);
 		desc->len = len;
 		desc->ocgs = fz_calloc(ctx, len, sizeof(*desc->ocgs));
 		desc->intent = NULL;
