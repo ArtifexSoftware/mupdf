@@ -229,7 +229,7 @@ is_xml_wspace(int c)
 }
 
 static void
-svg_dev_text(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_text *text)
+svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_text_span *span)
 {
 	fz_output *out = sdev->out;
 
@@ -238,82 +238,78 @@ svg_dev_text(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_t
 	fz_matrix local_trm;
 	float size;
 	int start, is_wspace, was_wspace;
-	fz_text_span *span;
 
-	for (span = text->head; span; span = span->next)
+	/* Rely on the fact that trm.{e,f} == 0 */
+	size = fz_matrix_expansion(&span->trm);
+	local_trm.a = span->trm.a / size;
+	local_trm.b = span->trm.b / size;
+	local_trm.c = -span->trm.c / size;
+	local_trm.d = -span->trm.d / size;
+	local_trm.e = 0;
+	local_trm.f = 0;
+	fz_invert_matrix(&inverse, &local_trm);
+	fz_concat(&local_trm, &local_trm, ctm);
+
+	fz_printf(ctx, out, " transform=\"matrix(%g,%g,%g,%g,%g,%g)\"",
+			local_trm.a, local_trm.b, local_trm.c, local_trm.d, local_trm.e, local_trm.f);
+	fz_printf(ctx, out, " font-size=\"%g\"", size);
+	fz_printf(ctx, out, " font-family=\"%s\"", span->font->name);
+
+	/* Leading (and repeated) whitespace presents a problem for SVG
+	 * text, so elide it here. */
+	for (start=0; start < span->len; start++)
 	{
-		/* Rely on the fact that trm.{e,f} == 0 */
-		size = fz_matrix_expansion(&span->trm);
-		local_trm.a = span->trm.a / size;
-		local_trm.b = span->trm.b / size;
-		local_trm.c = -span->trm.c / size;
-		local_trm.d = -span->trm.d / size;
-		local_trm.e = 0;
-		local_trm.f = 0;
-		fz_invert_matrix(&inverse, &local_trm);
-		fz_concat(&local_trm, &local_trm, ctm);
-
-		fz_printf(ctx, out, " transform=\"matrix(%g,%g,%g,%g,%g,%g)\"",
-				local_trm.a, local_trm.b, local_trm.c, local_trm.d, local_trm.e, local_trm.f);
-		fz_printf(ctx, out, " font-size=\"%g\"", size);
-		fz_printf(ctx, out, " font-family=\"%s\"", span->font->name);
-
-		/* Leading (and repeated) whitespace presents a problem for SVG
-		 * text, so elide it here. */
-		for (start=0; start < span->len; start++)
-		{
-			fz_text_item *it = &span->items[start];
-			if (!is_xml_wspace(it->ucs))
-				break;
-		}
-
-		fz_printf(ctx, out, " x=");
-		was_wspace = 0;
-		for (i=start; i < span->len; i++)
-		{
-			fz_text_item *it = &span->items[i];
-			fz_point p;
-			is_wspace = is_xml_wspace(it->ucs);
-			if (is_wspace && was_wspace)
-				continue;
-			was_wspace = is_wspace;
-			p.x = it->x;
-			p.y = it->y;
-			fz_transform_point(&p, &inverse);
-			fz_printf(ctx, out, "%c%g", i == start ? '\"' : ' ', p.x);
-		}
-		fz_printf(ctx, out, "\" y=");
-		was_wspace = 0;
-		for (i=start; i < span->len; i++)
-		{
-			fz_text_item *it = &span->items[i];
-			fz_point p;
-			is_wspace = is_xml_wspace(it->ucs);
-			if (is_wspace && was_wspace)
-				continue;
-			was_wspace = is_wspace;
-			p.x = it->x;
-			p.y = it->y;
-			fz_transform_point(&p, &inverse);
-			fz_printf(ctx, out, "%c%g", i == start ? '\"' : ' ', p.y);
-		}
-		fz_printf(ctx, out, "\">\n");
-		was_wspace = 0;
-		for (i=start; i < span->len; i++)
-		{
-			fz_text_item *it = &span->items[i];
-			int c = it->ucs;
-			is_wspace = is_xml_wspace(c);
-			if (is_wspace && was_wspace)
-				continue;
-			was_wspace = is_wspace;
-			if (c >= 32 && c <= 127 && c != '<' && c != '&')
-				fz_printf(ctx, out, "%c", c);
-			else
-				fz_printf(ctx, out, "&#x%04x;", c);
-		}
-		fz_printf(ctx, out, "\n</text>\n");
+		fz_text_item *it = &span->items[start];
+		if (!is_xml_wspace(it->ucs))
+			break;
 	}
+
+	fz_printf(ctx, out, " x=");
+	was_wspace = 0;
+	for (i=start; i < span->len; i++)
+	{
+		fz_text_item *it = &span->items[i];
+		fz_point p;
+		is_wspace = is_xml_wspace(it->ucs);
+		if (is_wspace && was_wspace)
+			continue;
+		was_wspace = is_wspace;
+		p.x = it->x;
+		p.y = it->y;
+		fz_transform_point(&p, &inverse);
+		fz_printf(ctx, out, "%c%g", i == start ? '\"' : ' ', p.x);
+	}
+	fz_printf(ctx, out, "\" y=");
+	was_wspace = 0;
+	for (i=start; i < span->len; i++)
+	{
+		fz_text_item *it = &span->items[i];
+		fz_point p;
+		is_wspace = is_xml_wspace(it->ucs);
+		if (is_wspace && was_wspace)
+			continue;
+		was_wspace = is_wspace;
+		p.x = it->x;
+		p.y = it->y;
+		fz_transform_point(&p, &inverse);
+		fz_printf(ctx, out, "%c%g", i == start ? '\"' : ' ', p.y);
+	}
+	fz_printf(ctx, out, "\">\n");
+	was_wspace = 0;
+	for (i=start; i < span->len; i++)
+	{
+		fz_text_item *it = &span->items[i];
+		int c = it->ucs;
+		is_wspace = is_xml_wspace(c);
+		if (is_wspace && was_wspace)
+			continue;
+		was_wspace = is_wspace;
+		if (c >= 32 && c <= 127 && c != '<' && c != '&')
+			fz_printf(ctx, out, "%c", c);
+		else
+			fz_printf(ctx, out, "&#x%04x;", c);
+	}
+	fz_printf(ctx, out, "\n</text>\n");
 }
 
 static font *
@@ -567,13 +563,15 @@ svg_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
-
 	font *fnt;
 	fz_text_span *span;
 
-	fz_printf(ctx, out, "<text");
-	svg_dev_fill_color(ctx, sdev, colorspace, color, 0.0f);
-	svg_dev_text(ctx, sdev, ctm, text);
+	for (span = text->head; span; span = span->next)
+	{
+		fz_printf(ctx, out, "<text");
+		svg_dev_fill_color(ctx, sdev, colorspace, color, 0.0f);
+		svg_dev_text_span(ctx, sdev, ctm, span);
+	}
 	for (span = text->head; span; span = span->next)
 	{
 		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
@@ -587,13 +585,15 @@ svg_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
-
 	font *fnt;
 	fz_text_span *span;
 
-	fz_printf(ctx, out, "<text");
-	svg_dev_fill_color(ctx, sdev, colorspace, color, 0.0f);
-	svg_dev_text(ctx, sdev, ctm, text);
+	for (span = text->head; span; span = span->next)
+	{
+		fz_printf(ctx, out, "<text");
+		svg_dev_fill_color(ctx, sdev, colorspace, color, 0.0f);
+		svg_dev_text_span(ctx, sdev, ctm, span);
+	}
 	for (span = text->head; span; span = span->next)
 	{
 		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
@@ -618,9 +618,12 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 	out = start_def(ctx, sdev);
 	fz_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n",
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
-	fz_printf(ctx, out, "<text");
-	svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), white, 0.0f);
-	svg_dev_text(ctx, sdev, ctm, text);
+	for (span = text->head; span; span = span->next)
+	{
+		fz_printf(ctx, out, "<text");
+		svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), white, 0.0f);
+		svg_dev_text_span(ctx, sdev, ctm, span);
+	}
 	for (span = text->head; span; span = span->next)
 	{
 		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
@@ -648,10 +651,13 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	out = start_def(ctx, sdev);
 	fz_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n",
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
-	fz_printf(ctx, out, "<text");
-	svg_dev_stroke_state(ctx, sdev, stroke, &fz_identity);
-	svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, 0.0f);
-	svg_dev_text(ctx, sdev, ctm, text);
+	for (span = text->head; span; span = span->next)
+	{
+		fz_printf(ctx, out, "<text");
+		svg_dev_stroke_state(ctx, sdev, stroke, &fz_identity);
+		svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, 0.0f);
+		svg_dev_text_span(ctx, sdev, ctm, span);
+	}
 	for (span = text->head; span; span = span->next)
 	{
 		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
@@ -667,12 +673,16 @@ svg_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
+	fz_text_span *span;
 
 	float black[3] = { 0, 0, 0};
 
-	fz_printf(ctx, out, "<text");
-	svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), black, 0.0f);
-	svg_dev_text(ctx, sdev, ctm, text);
+	for (span = text->head; span; span = span->next)
+	{
+		fz_printf(ctx, out, "<text");
+		svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), black, 0.0f);
+		svg_dev_text_span(ctx, sdev, ctm, span);
+	}
 }
 
 static void
