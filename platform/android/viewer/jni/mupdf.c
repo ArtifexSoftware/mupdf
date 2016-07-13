@@ -758,6 +758,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			pc->page_list = fz_new_display_list(ctx, NULL);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(ctx, pc->page, dev, &fz_identity, cookie);
+			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
@@ -774,6 +775,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
 				fz_run_annot(ctx, annot, dev, &fz_identity, cookie);
+			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
@@ -836,6 +838,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 			LOGI("100 renders in %d (%d per sec)", time, CLOCKS_PER_SEC);
 		}
 #endif
+		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 		fz_drop_pixmap(ctx, pix);
@@ -957,6 +960,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			pc->page_list = fz_new_display_list(ctx, NULL);
 			dev = fz_new_list_device(ctx, pc->page_list);
 			fz_run_page_contents(ctx, pc->page, dev, &fz_identity, cookie);
+			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
@@ -972,6 +976,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 			dev = fz_new_list_device(ctx, pc->annot_list);
 			for (annot = fz_first_annot(ctx, pc->page); annot; annot = fz_next_annot(ctx, annot))
 				fz_run_annot(ctx, annot, dev, &fz_identity, cookie);
+			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
 			if (cookie != NULL && cookie->abort)
@@ -1028,6 +1033,7 @@ JNI_FN(MuPDFCore_updatePageInternal)(JNIEnv *env, jobject thiz, jobject bitmap, 
 				if (cookie != NULL && cookie->abort)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
 
+				fz_close_device(ctx, dev);
 				fz_drop_device(ctx, dev);
 				dev = NULL;
 			}
@@ -1262,6 +1268,7 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
+		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
@@ -1353,6 +1360,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
+		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
@@ -1462,6 +1470,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
+		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
 		dev = NULL;
 
