@@ -1762,6 +1762,10 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 	fz_transform_rect(&trect, &dev->transform);
 	fz_intersect_irect(fz_irect_from_rect(&bbox, &trect), &state->scissor);
 
+	/* Reset the blendmode for the mask rendering. In particular,
+	 * don't carry forward knockout or isolated. */
+	state[1].blendmode = 0;
+
 	fz_try(ctx)
 	{
 		/* If luminosity, then we generate a mask from the greyscale value of the shapes.
