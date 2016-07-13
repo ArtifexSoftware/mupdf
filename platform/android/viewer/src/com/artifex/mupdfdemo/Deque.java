@@ -452,7 +452,6 @@ public interface Deque<E> extends Queue<E> {
      */
     E peek();
 
-
     // *** Stack methods ***
 
     /**
@@ -487,7 +486,6 @@ public interface Deque<E> extends Queue<E> {
      * @throws NoSuchElementException if this deque is empty
      */
     E pop();
-
 
     // *** Collection methods ***
 

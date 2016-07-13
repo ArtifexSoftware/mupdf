@@ -225,7 +225,7 @@ multi-threaded operations run smoothly:
 	cause it to get confused and may crash. Calling a device from
 	several different threads is perfectly acceptable as long as
 	there are safeguards in place to prevent the calls being
-	simultaneous. 
+	simultaneous.
 
 So, how does a multi-threaded example differ from a non-multithreaded
 one?

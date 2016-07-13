@@ -5,7 +5,6 @@ MuPDFActivity is the main activity used when displaying and interacting with a
 document. This class is responsible for creating the view hierarchy and the
 menus.
 
-
 Main view classes
 ~~~~~~~~~~~~~~~~~
 
@@ -83,7 +82,6 @@ appearances, can take on their correct size immediately. (The determining of
 page size is not a completely trivial operation and is performed on a
 background thread, as is all interaction with the core MuPDF library).
 
-
 C library wrapper
 ~~~~~~~~~~~~~~~~~
 
@@ -97,7 +95,6 @@ time to be run on the UI thread, hence they need to be run in the background,
 and because even the fast methods have to be synchronised with the slower
 methods, (almost) all methods should be called in the background. There are a
 few non synchronised ones that have special purposes.
-
 
 Link handling
 ~~~~~~~~~~~~~
@@ -178,10 +175,8 @@ PrintDialogActivity
 ~~~~~~~~~~~~~~~~~~~
 This activity allows the user to print documents via Google Cloud Print.
 
-
 Copied system classes
 ~~~~~~~~~~~~~~~~~~~~~
 AsyncTask has had improvements made to it since issuing at the lowest android
 API level we support, and so we include the improved version as part of the
 MuPDF app. We also include Deque and ArrayDeque, which are used my AsyncTask.
-

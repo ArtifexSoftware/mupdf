@@ -73,8 +73,8 @@ public class PageCanvas extends java.awt.Canvas
 	}
 
 	public void zoomOut() {
-	    mScale -= 0.25f;
-	    run();
+		mScale -= 0.25f;
+		run();
 	}
 
 	public void paint(Graphics g)

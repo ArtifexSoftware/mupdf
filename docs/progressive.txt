@@ -16,7 +16,6 @@ For optimum performance a file should be both linearized and be
 available over a byte-range supporting link, but benefits can still
 be had with either one of these alone.
 
-
 Progressive download using "linearized" files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -54,7 +53,6 @@ uses, shared or otherwise, subsequent pages do not get shared
 resources until after all the unshared page objects have been
 sent.]
 
-
 The Hint Stream
 ~~~~~~~~~~~~~~~
 
@@ -66,7 +64,6 @@ something that doesn't quite conform to the spec.
 Consequently very few people actually use it. MuPDF will use it
 after sanity checking the values, and should cope with illegal/
 incorrect values.
-
 
 So how does MuPDF handle progressive loading?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -147,7 +144,6 @@ progressive loading.
     rendering will continue. When control returns to the caller
     the caller can check the value of the 'incomplete' field and
     know that the rendering it received is not authoritative.
-
 
 Progressive loading using byte range requests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -248,7 +244,7 @@ a server.
      non-linear file can be 20%+ of the file data. Once past this
      initial point however, pages and data can be pulled from the
      file almost as fast as with a linearized file.]
-     
+
    For a non-linearized PDF on a non-byte request capable stream:
 
    - MuPDF will immediately seek to the end of the file to attempt

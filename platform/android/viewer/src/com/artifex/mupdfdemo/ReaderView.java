@@ -80,7 +80,7 @@ public class ReaderView
 
 	public ReaderView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		
+
 		// "Edit mode" means when the View is being displayed in the Android GUI editor. (this class
 		// is instantiated in the IDE, so we need to be a bit careful what we do).
 		if (isInEditMode())

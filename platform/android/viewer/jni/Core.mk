@@ -2,7 +2,7 @@ LOCAL_PATH := $(call my-dir)
 
 ifdef SUPPORT_GPROOF
 include $(CLEAR_VARS)
-LOCAL_MODULE    := gsso
+LOCAL_MODULE := gsso
 LOCAL_SRC_FILES := libgs.so
 include $(PREBUILT_SHARED_LIBRARY)
 endif
@@ -58,7 +58,7 @@ ifdef SSL_BUILD
 LOCAL_C_INCLUDES += $(MY_ROOT)/thirdparty/openssl/include
 endif
 
-LOCAL_MODULE    := mupdfcore
+LOCAL_MODULE := mupdfcore
 LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/fitz/*.c) \
 	$(wildcard $(MY_ROOT)/source/pdf/*.c) \
@@ -72,7 +72,7 @@ LOCAL_SRC_FILES := \
 ifdef SUPPORT_GPROOF
 LOCAL_SHARED_LIBRARIES := gsso
 endif
-LOCAL_LDLIBS    := -lm -llog -ljnigraphics
+LOCAL_LDLIBS := -lm -llog -ljnigraphics
 
 LOCAL_SRC_FILES := $(addprefix ../, $(LOCAL_SRC_FILES))
 

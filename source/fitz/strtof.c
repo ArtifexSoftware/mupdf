@@ -342,8 +342,7 @@ strtof_internal(const char *string, char **tailptr, int exp_format)
 
 	/* Skip leading whitespace (isspace in "C" locale).  */
 	s = string;
-	while (*s == ' ' || *s == '\f' || *s == '\n' || *s == '\r' || *s ==  '\t'
-	       || *s == '\v')
+	while (*s == ' ' || *s == '\f' || *s == '\n' || *s == '\r' || *s ==  '\t' || *s == '\v')
 		++s;
 
 	/* Parse sign.  */

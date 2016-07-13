@@ -39,7 +39,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		super("MuPDF");
 
 		retinaScale = getRetinaScale();
-		
+
 		this.doc = doc_;
 
 		pageCount = doc.countPages();
@@ -228,7 +228,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 
 	public float getRetinaScale()
 	{
-		//  first try Oracle's VM (we should also test for 1.7.0_40 or higher)
+		// first try Oracle's VM (we should also test for 1.7.0_40 or higher)
 		final String vendor = System.getProperty("java.vm.vendor");
 		boolean isOracle = vendor != null && vendor.toLowerCase().contains("Oracle".toLowerCase());
 		if (isOracle)
@@ -250,7 +250,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 			return 1.0f;
 		}
 
-		//  try Apple VM
+		// try Apple VM
 		final Float scaleFactor = (Float)Toolkit.getDefaultToolkit().getDesktopProperty("apple.awt.contentScaleFactor");
 		if (scaleFactor != null && scaleFactor.intValue() == 2) {
 			return 2.0f;

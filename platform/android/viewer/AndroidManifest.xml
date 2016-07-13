@@ -3,7 +3,7 @@
 	package="com.artifex.mupdfdemo"
 	android:versionCode="50"
 	android:versionName="@string/version"
-        android:debuggable="false"
+	android:debuggable="false"
 	android:installLocation="auto">
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 	<uses-permission android:name="android.permission.INTERNET" />
@@ -99,4 +99,4 @@
 			android:label="@string/print">
 		</activity>
 	</application>
-</manifest> 
+</manifest>

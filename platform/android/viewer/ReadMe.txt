@@ -20,11 +20,11 @@ will show you the install location.
 
 The Android Studio SDK unpacked as:
 
- C:\Users\UserName\AppData\Local\Android\sdk
+    C:\Users\UserName\AppData\Local\Android\sdk
 
 on Windows. On MacOS it installed in:
 
-   /Users/UserName/Library/Android/sdk
+    /Users/UserName/Library/Android/sdk
 
 In the 'SDK Plaforms' tab, ensure that at least API 16 is
 downloaded. I have a selection of later APIs too (17, 19, 22),

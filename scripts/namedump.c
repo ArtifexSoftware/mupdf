@@ -24,7 +24,6 @@ static char *get_line(FILE *in)
 	return buffer;
 }
 
-
 int
 main(int argc, char **argv)
 {

@@ -656,7 +656,6 @@ public abstract class PageView extends ViewGroup {
 			mDrawPatch = null;
 		}
 
-
 		// Render the page in the background
 		mDrawEntire = new CancellableAsyncTask<Void, Void>(getUpdatePageTask(mEntireBm, mSize.x, mSize.y, 0, 0, mSize.x, mSize.y)) {
 

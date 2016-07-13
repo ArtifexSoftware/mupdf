@@ -19,7 +19,7 @@ LOCAL_C_INCLUDES := \
 	$(MUPDF_ROOT)/source/pdf \
 	$(MUPDF_ROOT)/platform/java
 LOCAL_CFLAGS := -DHAVE_ANDROID
-LOCAL_MODULE    := mupdf_java
+LOCAL_MODULE := mupdf_java
 
 LOCAL_SRC_FILES := \
 	mupdf.c \
@@ -34,9 +34,9 @@ ifdef SUPPORT_GPROOF
 LOCAL_CFLAGS += -DSUPPORT_GPROOF
 endif
 
-LOCAL_LDLIBS    := -lm -llog -ljnigraphics
+LOCAL_LDLIBS := -lm -llog -ljnigraphics
 ifdef SSL_BUILD
-LOCAL_LDLIBS	+= -L$(MUPDF_ROOT)/thirdparty/openssl/android -lcrypto -lssl
+LOCAL_LDLIBS += -L$(MUPDF_ROOT)/thirdparty/openssl/android -lcrypto -lssl
 endif
 
 include $(BUILD_SHARED_LIBRARY)

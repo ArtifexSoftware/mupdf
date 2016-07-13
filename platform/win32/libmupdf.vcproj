@@ -1696,11 +1696,7 @@
 				RelativePath="..\..\source\pdf\pdf-repair.c"
 				>
 			</File>
-      <File
-				RelativePath="..\..\source\pdf\pdf-resources.c"
-				>
-			</File>
-      <File
+			<File
 				RelativePath="..\..\source\pdf\pdf-resources.c"
 				>
 			</File>
