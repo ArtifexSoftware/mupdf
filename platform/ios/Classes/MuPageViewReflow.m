@@ -11,6 +11,7 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 	fz_matrix ctm;
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
+	fz_rect mediabox;
 
 	fz_var(page);
 	fz_var(sheet);
@@ -23,7 +24,7 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 	{
 		ctm = fz_identity;
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page(ctx);
+		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
 		dev = fz_new_stext_device(ctx, sheet, text);
 		page = fz_load_page(ctx, doc, pageNum);
 		fz_run_page(ctx, page, dev, &ctm, NULL);

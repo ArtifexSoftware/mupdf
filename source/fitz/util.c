@@ -269,8 +269,12 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_s
 {
 	fz_stext_page *text;
 	fz_device *dev;
+	fz_rect mediabox;
 
-	text = fz_new_stext_page(ctx);
+	if (list == NULL)
+		return NULL;
+
+	text = fz_new_stext_page(ctx, fz_bound_display_list(ctx, list, &mediabox));
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, sheet, text);
@@ -295,8 +299,12 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *shee
 {
 	fz_stext_page *text;
 	fz_device *dev;
+	fz_rect *mediabox;
 
-	text = fz_new_stext_page(ctx);
+	if (page == NULL)
+		return NULL;
+
+	text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
 	fz_try(ctx)
 	{
 		dev = fz_new_stext_device(ctx, sheet, text);

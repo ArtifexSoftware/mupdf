@@ -215,8 +215,10 @@ void fz_drop_stext_sheet(fz_context *ctx, fz_stext_sheet *sheet);
 
 	The text page is filled out by the text device to contain the blocks,
 	lines and spans of text on the page.
+
+	mediabox: optional mediabox information.
 */
-fz_stext_page *fz_new_stext_page(fz_context *ctx);
+fz_stext_page *fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox);
 void fz_drop_stext_page(fz_context *ctx, fz_stext_page *page);
 
 void fz_analyze_text(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page);

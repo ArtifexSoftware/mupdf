@@ -456,10 +456,10 @@ fz_lookup_stext_style(fz_context *ctx, fz_stext_sheet *sheet, fz_text_span *span
 }
 
 fz_stext_page *
-fz_new_stext_page(fz_context *ctx)
+fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox)
 {
 	fz_stext_page *page = fz_malloc(ctx, sizeof(*page));
-	page->mediabox = fz_empty_rect;
+	page->mediabox = *mediabox;
 	page->len = 0;
 	page->cap = 0;
 	page->blocks = NULL;
