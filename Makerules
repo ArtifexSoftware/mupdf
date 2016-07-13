@@ -245,6 +245,9 @@ CROSSCOMPILE=yes
 endif
 
 ifeq "$(OS)" "MINGW"
+CC=gcc
+# Add flags required for Harfbuzz because of missing strdup
+CFLAGS+= -U__STRICT_ANSI__
 WIN32_LIBS=-lcomdlg32 -lgdi32
 HAVE_WIN32=yes
 LDFLAGS += -Wl,-subsystem,windows
