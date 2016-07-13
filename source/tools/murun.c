@@ -1451,8 +1451,8 @@ static void ffi_Document_layout(js_State *J)
 
 static void to_outline(js_State *J, fz_outline *outline)
 {
-	js_newarray(J);
 	int i = 0;
+	js_newarray(J);
 	while (outline) {
 		js_newobject(J);
 
