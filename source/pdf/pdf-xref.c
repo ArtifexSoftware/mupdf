@@ -2770,7 +2770,6 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		doc->num_incremental_sections = 0;
 		doc->xref_base = 0;
 		doc->disallow_new_increments = 0;
-		pdf_init_resource_tables(ctx, doc);
 		pdf_get_populating_xref_entry(ctx, doc, 0);
 		trailer = pdf_new_dict(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, 3));
