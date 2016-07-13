@@ -299,7 +299,7 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *shee
 {
 	fz_stext_page *text;
 	fz_device *dev;
-	fz_rect *mediabox;
+	fz_rect mediabox;
 
 	if (page == NULL)
 		return NULL;
