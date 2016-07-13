@@ -1292,7 +1292,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		focus = pdf_focused_widget(ctx, idoc);
 		if (focus)
 		{
-			switch (pdf_widget_get_type(ctx, focus))
+			switch (pdf_widget_type(ctx, focus))
 			{
 				case PDF_WIDGET_TYPE_TEXT:
 				{
