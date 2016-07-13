@@ -51,6 +51,7 @@ QUIET_LINK = @ echo ' ' ' ' LINK $@ ;
 QUIET_MKDIR = @ echo ' ' ' ' MKDIR $@ ;
 QUIET_RM = @ echo ' ' ' ' RM $@ ;
 QUIET_TAGS = @ echo ' ' ' ' TAGS $@ ;
+QUIET_WINDRES = @ echo ' ' ' ' WINDRES $@ ;
 endif
 
 CC_CMD = $(QUIET_CC) $(CC) $(CFLAGS) -o $@ -c $<
@@ -60,6 +61,7 @@ LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
 RM_CMD = $(QUIET_RM) rm -f $@
 TAGS_CMD = $(QUIET_TAGS) ctags $^
+WINRES_CMD = $(QUIET_WINDRES) $(WINDRES) $< $@
 
 # --- File lists ---
 
@@ -191,7 +193,7 @@ $(OUT)/platform/x11/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS)
 
 $(OUT)/platform/x11/%.o: platform/x11/%.rc | $(OUT)
-	windres $< $@
+	$(WINDRES_CMD)
 
 $(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL

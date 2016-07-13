@@ -63,7 +63,12 @@ endif
 # Windows (MINGW) build doesn't use system libraries.
 ifeq "$(OS)" "MINGW"
 
+WINDRES = windres
 HAVE_X11 ?= no
+HAVE_WIN32 = yes
+CC=gcc
+# Add flags required for Harfbuzz because of missing strdup
+CFLAGS+= -U__STRICT_ANSI__
 
 # Mac OS X doesn't have pkg-config so we hard code paths.
 else ifeq "$(OS)" "MACOS"
@@ -184,14 +189,18 @@ ifeq "$(OS)" "w64_x86-cross-mingw32"
 CC = i686-w64-mingw32-gcc
 LD = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
+WINDRES = i686-w64-mingw32-windres
 CROSSCOMPILE=yes
+HAVE_WIN32=yes
 endif
 
 ifeq "$(OS)" "w64_amd64-cross-mingw32"
 CC = x86_64-w64-mingw32-gcc
 LD = x86_64-w64-mingw32-gcc
 AR = x86_64-w64-mingw32-ar
+WINDRES = x86-64-mingw32-windres
 CROSSCOMPILE=yes
+HAVE_WIN32=yes
 endif
 
 ifeq "$(OS)" "pnacl-cross"
@@ -244,12 +253,8 @@ LD = $(TIZEN_TOOLS)ld $(TIZEN_FLAGS)
 CROSSCOMPILE=yes
 endif
 
-ifeq "$(OS)" "MINGW"
-CC=gcc
-# Add flags required for Harfbuzz because of missing strdup
-CFLAGS+= -U__STRICT_ANSI__
+ifeq "$(HAVE_WIN32)" "yes"
 WIN32_LIBS=-lcomdlg32 -lgdi32
-HAVE_WIN32=yes
 LDFLAGS += -Wl,-subsystem,windows
 endif
 
