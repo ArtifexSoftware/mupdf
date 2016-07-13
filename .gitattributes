@@ -2,15 +2,22 @@
 [attr]tabs		whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=4
 [attr]spaces		whitespace=trailing-space,space-before-tab,tabs-in-indent
 
-# Files:
+# Source files:
 *			text=auto
 Make*			tabs
 *.mk			tabs
 *.[chm]			tabs
 *.java			tabs
 *.xml			tabs
-build.xml		spaces
+
+# Documentation files:
+*.txt			spaces
+[A-Z]*			spaces
+
+# Legacy source files:
 memento.*		spaces
-*.vcxproj*		spaces
-jmem*			spaces
-*.gradle		spaces
+
+# iOS project files:
+*.xib			spaces
+*.xcscheme		spaces
+*.json			spaces
