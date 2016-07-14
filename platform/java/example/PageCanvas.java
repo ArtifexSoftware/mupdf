@@ -12,6 +12,8 @@ public class PageCanvas extends java.awt.Canvas
 	protected float mScale = 1.0f;
 	private float mRetinaScale = 1.0f;
 
+	private static boolean mShowAnnots = false;
+
 	public static BufferedImage imageFromPixmap(Pixmap pixmap) {
 		int w = pixmap.getWidth();
 		int h = pixmap.getHeight();
@@ -21,15 +23,35 @@ public class PageCanvas extends java.awt.Canvas
 	}
 
 	public static BufferedImage imageFromPageWithDevice(Page page, Matrix ctm) {
+		//  make a blank pixmap
 		Rect bbox = page.getBounds();
 		bbox.transform(ctm);
-		Pixmap pixmap = new Pixmap(ColorSpace.DeviceBGR, bbox);
+		Pixmap pixmap = new Pixmap(ColorSpace.DeviceBGR, bbox, true);
 		pixmap.clear(255);
+
+		//  make a device
 		DrawDevice dev = new DrawDevice(pixmap);
-		page.run(dev, ctm);
+
+		//  run page contents (without annotations)
+		page.runPageContents(dev, ctm, new Cookie());
+
+		//  run annotations
+		if (mShowAnnots)
+		{
+			Annotation annotations[] = page.getAnnotations();
+			if (annotations != null && annotations.length>0)
+			{
+				for (Annotation annot : annotations) {
+					annot.run(dev, ctm, new Cookie());
+				}
+			}
+		}
+
 		dev.destroy();
+
 		BufferedImage image = imageFromPixmap(pixmap);
 		pixmap.destroy();
+
 		return image;
 	}
 
@@ -51,7 +73,7 @@ public class PageCanvas extends java.awt.Canvas
 	{
 		Matrix ctm = new Matrix();
 		ctm.scale(mScale);
-		image = imageFromPage(page, ctm);
+		image = imageFromPageWithDevice(page, ctm);
 		repaint();
 	}
 
@@ -79,6 +101,11 @@ public class PageCanvas extends java.awt.Canvas
 			mScale -= 0.25f;
 			run();
 		}
+	}
+
+	public void toggleAnnots() {
+		mShowAnnots = !mShowAnnots;
+		run();
 	}
 
 	public void paint(Graphics g)

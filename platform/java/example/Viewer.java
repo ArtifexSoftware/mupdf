@@ -29,7 +29,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 	protected Panel toolbar;
 	protected PageCanvas pageCanvas;
 	protected Label pageLabel;
-	protected Button firstButton, prevButton, nextButton, lastButton, zoomInButton, zoomOutButton, fontIncButton, fontDecButton;
+	protected Button firstButton, prevButton, nextButton, lastButton, zoomInButton, zoomOutButton, fontIncButton, fontDecButton, toggleAnnotsButton;
 	protected int pageCount;
 	protected int pageNumber;
 	protected int layoutWidth;
@@ -70,6 +70,9 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		zoomOutButton = new Button("-");
 		zoomOutButton.addActionListener(this);
 
+		toggleAnnotsButton = new Button("toggle annots");
+		toggleAnnotsButton.addActionListener(this);
+
 		if (doc.isReflowable()) {
 			fontIncButton = new Button("FONT");
 			fontIncButton.addActionListener(this);
@@ -85,6 +88,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		toolbar.add(lastButton);
 		toolbar.add(zoomInButton);
 		toolbar.add(zoomOutButton);
+		toolbar.add(toggleAnnotsButton);
 		if (doc.isReflowable()) {
 			toolbar.add(fontIncButton);
 			toolbar.add(fontDecButton);
@@ -146,6 +150,10 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 
 		if (layoutEm != oldLayoutEm)
 			doc.layout(layoutWidth, layoutHeight, layoutEm);
+
+		if (source == toggleAnnotsButton) {
+			pageCanvas.toggleAnnots();
+		}
 
 		if (pageNumber != oldPageNumber || layoutEm != oldLayoutEm)
 			stuff();
