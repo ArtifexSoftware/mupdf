@@ -91,6 +91,7 @@ struct fz_document_s
 	fz_document_load_page_fn *load_page;
 	fz_document_lookup_metadata_fn *lookup_metadata;
 	int did_layout;
+	int is_reflowable;
 };
 
 typedef fz_document *(fz_document_open_fn)(fz_context *ctx, const char *filename);
@@ -195,6 +196,13 @@ int fz_authenticate_password(fz_context *ctx, fz_document *doc, const char *pass
 	Should be freed by fz_drop_outline.
 */
 fz_outline *fz_load_outline(fz_context *ctx, fz_document *doc);
+
+/*
+	fz_is_document_reflowable: Is the document reflowable.
+
+	Returns 1 to indicate reflowable documents, otherwise 0.
+*/
+int fz_is_document_reflowable(fz_context *ctx, fz_document *doc);
 
 /*
 	fz_layout_document: Layout reflowable document types.

@@ -1435,6 +1435,20 @@ static void ffi_Document_getMetaData(js_State *J)
 	js_pushstring(J, info);
 }
 
+static void ffi_Document_isReflowable(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_document *doc = js_touserdata(J, 0, "fz_document");
+	int is_reflowable;
+
+	fz_try(ctx)
+		is_reflowable = fz_is_document_reflowable(ctx, doc);
+	fz_catch(ctx)
+		rethrow(J);
+
+	js_pushboolean(J, is_reflowable);
+}
+
 static void ffi_Document_layout(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3438,6 +3452,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Document.authenticatePassword", ffi_Document_authenticatePassword, 1);
 		//jsB_propfun(J, "Document.hasPermission", ffi_Document_hasPermission, 1);
 		jsB_propfun(J, "Document.getMetaData", ffi_Document_getMetaData, 1);
+		jsB_propfun(J, "Document.isReflowable", ffi_Document_isReflowable, 0);
 		jsB_propfun(J, "Document.layout", ffi_Document_layout, 3);
 		jsB_propfun(J, "Document.countPages", ffi_Document_countPages, 0);
 		jsB_propfun(J, "Document.loadPage", ffi_Document_loadPage, 1);

@@ -164,6 +164,12 @@ fz_ensure_layout(fz_context *ctx, fz_document *doc)
 }
 
 int
+fz_is_document_reflowable(fz_context *ctx, fz_document *doc)
+{
+	return doc ? doc->is_reflowable : 0;
+}
+
+int
 fz_needs_password(fz_context *ctx, fz_document *doc)
 {
 	if (doc && doc->needs_password)

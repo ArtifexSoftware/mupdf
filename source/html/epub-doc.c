@@ -425,6 +425,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	doc->super.count_pages = epub_count_pages;
 	doc->super.load_page = epub_load_page;
 	doc->super.lookup_metadata = epub_lookup_metadata;
+	doc->super.is_reflowable = 1;
 
 	fz_try(ctx)
 	{
