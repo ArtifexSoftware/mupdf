@@ -61,7 +61,7 @@ LINK_CMD = $(QUIET_LINK) $(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
 RM_CMD = $(QUIET_RM) rm -f $@
 TAGS_CMD = $(QUIET_TAGS) ctags $^
-WINRES_CMD = $(QUIET_WINDRES) $(WINDRES) $< $@
+WINDRES_CMD = $(QUIET_WINDRES) $(WINDRES) $< $@
 
 # --- File lists ---
 
