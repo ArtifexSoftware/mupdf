@@ -2171,7 +2171,7 @@ JNI_FN(MuPDFCore_getFocusedWidgetChoiceOptions)(JNIEnv * env, jobject thiz)
 	if (focus == NULL)
 		return NULL;
 
-	type = pdf_widget_get_type(ctx, focus);
+	type = pdf_widget_type(ctx, focus);
 	if (type != PDF_WIDGET_TYPE_LISTBOX && type != PDF_WIDGET_TYPE_COMBOBOX)
 		return NULL;
 
@@ -2227,7 +2227,7 @@ JNI_FN(MuPDFCore_getFocusedWidgetChoiceSelected)(JNIEnv * env, jobject thiz)
 	if (focus == NULL)
 		return NULL;
 
-	type = pdf_widget_get_type(ctx, focus);
+	type = pdf_widget_type(ctx, focus);
 	if (type != PDF_WIDGET_TYPE_LISTBOX && type != PDF_WIDGET_TYPE_COMBOBOX)
 		return NULL;
 
@@ -2282,7 +2282,7 @@ JNI_FN(MuPDFCore_setFocusedWidgetChoiceSelectedInternal)(JNIEnv * env, jobject t
 	if (focus == NULL)
 		return;
 
-	type = pdf_widget_get_type(ctx, focus);
+	type = pdf_widget_type(ctx, focus);
 	if (type != PDF_WIDGET_TYPE_LISTBOX && type != PDF_WIDGET_TYPE_COMBOBOX)
 		return;
 
@@ -2337,7 +2337,7 @@ JNI_FN(MuPDFCore_getFocusedWidgetTypeInternal)(JNIEnv * env, jobject thiz)
 	if (focus == NULL)
 		return NONE;
 
-	switch (pdf_widget_get_type(ctx, focus))
+	switch (pdf_widget_type(ctx, focus))
 	{
 	case PDF_WIDGET_TYPE_TEXT: return TEXT;
 	case PDF_WIDGET_TYPE_LISTBOX: return LISTBOX;
