@@ -1265,7 +1265,7 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 		zoom = glo->resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
+		text = fz_new_stext_page(ctx, fz_bound_page(ctx, pc->page, &mediabox));
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
@@ -1357,7 +1357,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 		zoom = glo->resolution / 72;
 		fz_scale(&ctm, zoom, zoom);
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
+		text = fz_new_stext_page(ctx, fz_bound_page(ctx, pc->page, &mediabox));
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
@@ -1467,7 +1467,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 
 		ctm = fz_identity;
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
+		text = fz_new_stext_page(ctx, fz_bound_page(ctx, pc->page, &mediabox));
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
