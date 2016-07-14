@@ -13,7 +13,7 @@ import android.view.KeyEvent.Callback;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.artifex.mupdf.fitz.AndroidDrawDevice;
+import com.artifex.mupdf.fitz.android.AndroidDrawDevice;
 import com.artifex.mupdf.fitz.Cookie;
 import com.artifex.mupdf.fitz.DisplayList;
 import com.artifex.mupdf.fitz.DisplayListDevice;

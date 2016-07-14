@@ -22,8 +22,7 @@ android {
 		main {
 			java {
 				//  we're getting java sources from two places
-				srcDirs = ["src/main/java", "../../../java/com"]
-				exclude "example/*"
+				srcDirs = ["src/main/java", "../../../java/src"]
 			}
 			jni.srcDirs = [] // This prevents the auto generation of Android.mk
 			jniLibs.srcDir 'libs'  //  where to find the .so file(s)

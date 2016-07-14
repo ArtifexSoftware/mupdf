@@ -1,4 +1,4 @@
-package com.artifex.mupdf.fitz;
+package com.artifex.mupdf.fitz.android;
 
 import android.graphics.Bitmap;
 
