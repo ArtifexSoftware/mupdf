@@ -274,7 +274,7 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 		super.onCreate(savedInstanceState);
 
 		mAlertBuilder = new AlertDialog.Builder(this);
-		gAlertBuilder = mAlertBuilder;  //  keep a static copy of this that other classes can use
+		gAlertBuilder = mAlertBuilder; //  keep a static copy of this that other classes can use
 
 		if (core == null) {
 			core = (MuPDFCore)getLastNonConfigurationInstance();

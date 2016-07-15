@@ -4,7 +4,7 @@ import android.graphics.RectF;
 
 public class SearchTaskResult {
 	public final String txt;
-	public final int   pageNumber;
+	public final int pageNumber;
 	public final RectF searchBoxes[];
 	static private SearchTaskResult singleton;
 

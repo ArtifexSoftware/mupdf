@@ -2,5 +2,5 @@ package com.artifex.mupdf.android;
 
 public interface RenderListener
 {
-    void progress(int error);
+	void progress(int error);
 }

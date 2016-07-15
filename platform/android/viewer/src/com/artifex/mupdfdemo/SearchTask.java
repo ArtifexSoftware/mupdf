@@ -88,7 +88,7 @@ public abstract class SearchTask {
 			protected void onPostExecute(SearchTaskResult result) {
 				progressDialog.cancel();
 				if (result != null) {
-				    onTextFound(result);
+					onTextFound(result);
 				} else {
 					mAlertBuilder.setTitle(SearchTaskResult.get() == null ? R.string.text_not_found : R.string.no_further_occurrences_found);
 					AlertDialog alert = mAlertBuilder.create();
