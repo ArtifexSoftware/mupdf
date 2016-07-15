@@ -12,7 +12,6 @@ Make*			tabs
 
 # Documentation files:
 *.txt			spaces
-[A-Z]*			spaces
 
 # Legacy source files:
 memento.*		spaces
