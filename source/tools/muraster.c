@@ -664,6 +664,7 @@ static void usage(void)
 		"\t-M -\tmax bandmemory (e.g. 655360)\n"
 #if MURASTER_THREADS != 0
 		"\t-T -\tnumber of threads to use for rendering\n"
+		"\t-P\tparallel interpretation/rendering\n"
 #endif
 		"\n"
 		"\t-W -\tpage width for EPUB layout\n"
@@ -1564,7 +1565,7 @@ int main(int argc, char **argv)
 	x_resolution = X_RESOLUTION;
 	y_resolution = Y_RESOLUTION;
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:M:s:A:iW:H:S:T:U:v")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:M:s:A:iW:H:S:T:U:vP")) != -1)
 	{
 		switch (c)
 		{
@@ -1609,6 +1610,13 @@ int main(int argc, char **argv)
 		case 'T':
 #if MURASTER_THREADS != 0
 			num_workers = atoi(fz_optarg); break;
+#else
+			fprintf(stderr, "Threads not enabled in this build\n");
+			break;
+#endif
+		case 'P':
+#if MURASTER_THREADS != 0
+			bgprint.active = 1; break;
 #else
 			fprintf(stderr, "Threads not enabled in this build\n");
 			break;
