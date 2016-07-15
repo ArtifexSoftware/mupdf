@@ -15,6 +15,9 @@ import android.view.ViewGroup;
 
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice;
 import com.artifex.mupdf.fitz.Annotation;
+import com.artifex.mupdf.fitz.Cookie;
+import com.artifex.mupdf.fitz.DisplayList;
+import com.artifex.mupdf.fitz.DisplayListDevice;
 import com.artifex.mupdf.fitz.Document;
 import com.artifex.mupdf.fitz.Matrix;
 import com.artifex.mupdf.fitz.Page;
@@ -45,6 +48,10 @@ public class DocPageView extends View implements Callback
 	private final Rect mSrcRect = new Rect();
 	private final Rect mDstRect = new Rect();
 
+	//  cached display lists
+	DisplayList pageContents = null;
+	DisplayList annotContents = null;
+
 	//  current size of this view
 	private Point mSize;
 
@@ -71,6 +78,16 @@ public class DocPageView extends View implements Callback
 		if (thePageNum != mPageNum)
 		{
 			mPageNum = thePageNum;
+
+			//  de-cache contents and annotations
+			if (pageContents != null) {
+				pageContents.destroy();
+				pageContents = null;
+			}
+			if (annotContents != null) {
+				annotContents.destroy();
+				annotContents = null;
+			}
 
 			//  destroy the page before making a new one.
 			if (mPage!=null)
@@ -210,6 +227,9 @@ public class DocPageView extends View implements Callback
 		mRenderScale = mScale;
 		mRenderBitmap = bitmap;
 
+		//  cache this page's display and annotation lists
+		cachePage();
+
 		// Render the page in the background
 		RenderTaskParams params = new RenderTaskParams(new RenderListener() {
 			@Override
@@ -227,6 +247,53 @@ public class DocPageView extends View implements Callback
 		}, ctm, mRenderBitmap, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1, showAnnotations);
 
 		new RenderTask().execute(params, null, null);
+	}
+
+	private void cachePage()
+	{
+		Cookie cookie = new Cookie();
+
+		if (pageContents==null)
+		{
+			pageContents = new DisplayList();
+			DisplayListDevice dispDev = new DisplayListDevice(pageContents);
+			try {
+				mPage.runPageContents(dispDev, new Matrix(1, 0, 0, 1, 0, 0), cookie);
+			}
+			catch (RuntimeException e) {
+				pageContents.destroy();
+				dispDev.destroy();
+				throw(e);
+			}
+			finally {
+				dispDev.destroy();
+			}
+		}
+
+		if (annotContents==null)
+		{
+			//  run the annotation list
+			annotContents = new DisplayList();
+			DisplayListDevice annotDev = new DisplayListDevice(annotContents);
+			try {
+				Annotation annotations[] = mPage.getAnnotations();
+				if (annotations != null)
+				{
+					for (Annotation annot : annotations)
+					{
+						annot.run(annotDev, new Matrix(1, 0, 0, 1, 0, 0), cookie);
+					}
+				}
+			}
+			catch (RuntimeException e) {
+				annotContents.destroy();
+				annotDev.destroy();
+				throw(e);
+			}
+			finally {
+				annotDev.destroy();
+			}
+		}
 	}
 
 	@Override
@@ -375,20 +442,12 @@ public class DocPageView extends View implements Callback
 			AndroidDrawDevice dev = new AndroidDrawDevice(params.bitmap, params.pageX0, params.pageY0, params.pageX1, params.pageY1, params.patchX0, params.patchY0, params.patchX1, params.patchY1);
 			try
 			{
-				//  do the page
-				mPage.runPageContents(dev, params.ctm, null);
-
-				//  do the annotations
-				if (params.showAnnotations)
-				{
-					Annotation annotations[] = mPage.getAnnotations();
-					if (annotations != null)
-					{
-						for (Annotation annot : annotations)
-						{
-							annot.run(dev, params.ctm, null);
-						}
-					}
+				Cookie cookie = new Cookie();
+				if (pageContents != null) {
+					pageContents.run(dev, params.ctm, cookie);
+				}
+				if (annotContents != null && params.showAnnotations) {
+					annotContents.run(dev, params.ctm, cookie);
 				}
 			}
 			catch (Exception e)
