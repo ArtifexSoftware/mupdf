@@ -37,12 +37,14 @@ public class DocPageView extends View implements Callback
 	private final Rect mRenderSrcRect = new Rect();
 	private final Rect mRenderDstRect = new Rect();
 	private float mRenderScale;
+	private Rect mPatchRect = new Rect();
 
 	//  drawing
 	private Bitmap mDrawBitmap = null;
 	private final Rect mDrawSrcRect = new Rect();
 	private final Rect mDrawDstRect = new Rect();
 	private float mDrawScale;
+	private Rect mDisplayRect = new Rect();
 
 	private final Paint mPainter;
 	private final Rect mSrcRect = new Rect();
@@ -58,6 +60,9 @@ public class DocPageView extends View implements Callback
 	private static final boolean DEBUG_PAGE_RENDERING = false;
 
 	private static final float mResolution = 160f;
+
+	public static int bitmapMarginX = 0;
+	public static int bitmapMarginY = 0;
 
 	public DocPageView(Context context, Document theDoc)
 	{
@@ -186,26 +191,51 @@ public class DocPageView extends View implements Callback
 		//  do the render.
 		if (DEBUG_PAGE_RENDERING)
 			renderNoPage(bitmap, listener, localVisRect, globalVisRect);
-		else
+		else {
+			cachePage();
 			renderPage(bitmap, listener, localVisRect, globalVisRect, showAnnotations);
+		}
 	}
 
 	//  This function renders the document's page.
 	private void renderPage(final Bitmap bitmap, final RenderListener listener, final Rect localVisRect, final Rect globalVisRect, final boolean showAnnotations)
 	{
-		//  make a rect representing the entire page
-		//  This might be outside the bounds of the bitmap
+		//  make a rect representing the entire page; this might be outside the bounds of the bitmap
 		int[] locations = new int[2];
 		getLocationOnScreen(locations);
 		Rect pageRect = new Rect(locations[0], locations[1], locations[0] + getCalculatedWidth(), locations[1] + getCalculatedHeight());
 
-		//  make a rect representing the patch
-		//  clip this to the bitmap
-		Rect patchRect   = new Rect(pageRect);
-		patchRect.left   = Math.max(patchRect.left, 0);
-		patchRect.top    = Math.max(patchRect.top, 0);
-		patchRect.right  = Math.min(patchRect.right, bitmap.getWidth());
-		patchRect.bottom = Math.min(patchRect.bottom, bitmap.getHeight());
+		//  Set rects for rendering and display
+		mPatchRect.set(globalVisRect);
+		mDisplayRect.set(localVisRect);
+
+		//  enlarge rendering and display rects to account for available margins
+		int topMargin    = Math.min(Math.max(globalVisRect.top -pageRect.top,0),        bitmapMarginY);
+		int bottomMargin = Math.min(Math.max(pageRect.bottom   -globalVisRect.bottom,0),bitmapMarginY);
+		int leftMargin   = Math.min(Math.max(globalVisRect.left-pageRect.left,0),       bitmapMarginX);
+		int rightMargin  = Math.min(Math.max(pageRect.right    -globalVisRect.right,0), bitmapMarginX);
+
+		mPatchRect.top      -= topMargin;
+		mDisplayRect.top    -= topMargin;
+		mPatchRect.bottom   += bottomMargin;
+		mDisplayRect.bottom += bottomMargin;
+
+		mPatchRect.left     -= leftMargin;
+		mDisplayRect.left   -= leftMargin;
+		mPatchRect.right    += rightMargin;
+		mDisplayRect.right  += rightMargin;
+
+		//  ... but clip to the bitmap
+		Rect oldPatch = new Rect(mPatchRect);
+		mPatchRect.left   = Math.max(mPatchRect.left, 0);
+		mPatchRect.top    = Math.max(mPatchRect.top, 0);
+		mPatchRect.right  = Math.min(mPatchRect.right, bitmap.getWidth());
+		mPatchRect.bottom = Math.min(mPatchRect.bottom, bitmap.getHeight());
+
+		mDisplayRect.left   += (mPatchRect.left-oldPatch.left);
+		mDisplayRect.top    += (mPatchRect.top-oldPatch.top);
+		mDisplayRect.right  -= (mPatchRect.right-oldPatch.right);
+		mDisplayRect.bottom -= (mPatchRect.bottom-oldPatch.bottom);
 
 		//  set up the page and patch coordinates for the device
 		int pageX0 = pageRect.left;
@@ -213,22 +243,20 @@ public class DocPageView extends View implements Callback
 		int pageX1 = pageRect.right;
 		int pageY1 = pageRect.bottom;
 
-		int patchX0 = patchRect.left;
-		int patchY0 = patchRect.top;
-		int patchX1 = patchRect.right;
-		int patchY1 = patchRect.bottom;
+		int patchX0 = mPatchRect.left;
+		int patchY0 = mPatchRect.top;
+		int patchX1 = mPatchRect.right;
+		int patchY1 = mPatchRect.bottom;
 
 		//  set up a matrix for scaling
 		Matrix ctm = Matrix.Identity();
 		ctm.scale(mScale * mZoom * mResolution / 72f);
 
-		mRenderSrcRect.set(globalVisRect);
-		mRenderDstRect.set(localVisRect);
+		//  remember the final values
+		mRenderSrcRect.set(mPatchRect);
+		mRenderDstRect.set(mDisplayRect);
 		mRenderScale = mScale;
 		mRenderBitmap = bitmap;
-
-		//  cache this page's display and annotation lists
-		cachePage();
 
 		// Render the page in the background
 		RenderTaskParams params = new RenderTaskParams(new RenderListener() {
@@ -240,7 +268,6 @@ public class DocPageView extends View implements Callback
 				mDrawDstRect.set(mRenderDstRect);
 				mDrawScale = mRenderScale;
 
-				invalidate();
 				listener.progress(0);
 
 			}

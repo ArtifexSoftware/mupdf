@@ -45,7 +45,7 @@ public class DocView
 
 	//  bitmaps for rendering
 	//  these are created by the activity and set using setBitmaps()
-	private final static double OVERSIZE_FACTOR = 1.1;
+	private final static double OVERSIZE_FACTOR = 1.3;
 	private final Bitmap[] bitmaps = {null,null};
 
 	private int bitmapIndex = 0;
@@ -117,6 +117,8 @@ public class DocView
 		mScroller = new Scroller(context);
 		mStepper = new Stepper(this, this);
 
+		this.setClipChildren(false);
+
 		//  create bitmaps
 		makeBitmaps();
 	}
@@ -139,6 +141,9 @@ public class DocView
 		int size = Math.max(w,h);
 		for (int i=0;i<bitmaps.length;i++)
 			bitmaps[i] = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+
+		DocPageView.bitmapMarginX = (w-screenW)/2;
+		DocPageView.bitmapMarginY = (h-screenH)/2;
 	}
 
 	public void start(final String path)
@@ -384,12 +389,15 @@ public class DocView
 		scaleChildren();
 
 		//  maintain focus while scaling
-		float currentFocusX = detector.getFocusX();
-		float currentFocusY = detector.getFocusY();
-		int viewFocusX = (int)currentFocusX + getScrollX();
-		int viewFocusY = (int)currentFocusY + getScrollY();
-		mXScroll += viewFocusX - viewFocusX * detector.getScaleFactor();
-		mYScroll += viewFocusY - viewFocusY * detector.getScaleFactor();
+		double scale = mScale/previousScale;
+		double currentFocusX = detector.getFocusX();
+		double currentFocusY = detector.getFocusY();
+		double viewFocusX = (int)currentFocusX + getScrollX();
+		double viewFocusY = (int)currentFocusY + getScrollY();
+		int diffX = (int)(viewFocusX * (1-scale));
+		int diffY = (int)(viewFocusY * (1-scale));
+		mXScroll += diffX;
+		mYScroll += diffY;
 
 		requestLayout();
 
