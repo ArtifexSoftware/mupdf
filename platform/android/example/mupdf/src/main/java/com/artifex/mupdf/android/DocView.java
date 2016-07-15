@@ -783,7 +783,7 @@ public class DocView
 							}
 						}
 					}
-				});
+				}, mShowAnnotations);
 			}
 		}
 	}
@@ -914,5 +914,12 @@ public class DocView
 			int diff = (viewport.top + viewport.bottom)/2 - point.y;
 			smoothScrollBy(0,diff);
 		}
+	}
+
+	private boolean mShowAnnotations = false;
+	public void toggleAnnotations()
+	{
+		mShowAnnotations = !mShowAnnotations;
+		triggerRender();
 	}
 }

@@ -14,9 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice;
-import com.artifex.mupdf.fitz.Cookie;
-import com.artifex.mupdf.fitz.DisplayList;
-import com.artifex.mupdf.fitz.DisplayListDevice;
+import com.artifex.mupdf.fitz.Annotation;
 import com.artifex.mupdf.fitz.Document;
 import com.artifex.mupdf.fitz.Matrix;
 import com.artifex.mupdf.fitz.Page;
@@ -31,29 +29,28 @@ public class DocPageView extends View implements Callback
 	private float mScale = 1.0f;
 	private float mZoom = 1.0f;
 
-	//  drawing bitmap
+	//  rendering
+	private Bitmap mRenderBitmap = null;
+	private final Rect mRenderSrcRect = new Rect();
+	private final Rect mRenderDstRect = new Rect();
+	private float mRenderScale;
+
+	//  drawing
 	private Bitmap mDrawBitmap = null;
-	private Rect mDrawSrcRect = new Rect();
+	private final Rect mDrawSrcRect = new Rect();
 	private final Rect mDrawDstRect = new Rect();
-	private final Rect sourceRect = new Rect();
-	private final Rect renderRect = new Rect();
-	private float renderScale;
+	private float mDrawScale;
+
+	private final Paint mPainter;
+	private final Rect mSrcRect = new Rect();
+	private final Rect mDstRect = new Rect();
 
 	//  current size of this view
 	private Point mSize;
 
-	//  for drawing
-	private final Paint mPainter;
-	private final Rect mSrcRect = new Rect();
-	private final Rect mDstRect = new Rect();
-	private float drawScale;
-
 	private static final boolean DEBUG_PAGE_RENDERING = false;
 
 	private static final float mResolution = 160f;
-
-	DisplayList pageContents = null;
-	DisplayList annotContents = null;
 
 	public DocPageView(Context context, Document theDoc)
 	{
@@ -74,16 +71,6 @@ public class DocPageView extends View implements Callback
 		if (thePageNum != mPageNum)
 		{
 			mPageNum = thePageNum;
-
-			//  de-cache contents and annotations
-			if (pageContents != null) {
-				pageContents.destroy();
-				pageContents = null;
-			}
-			if (annotContents != null) {
-				annotContents.destroy();
-				annotContents = null;
-			}
 
 			//  destroy the page before making a new one.
 			if (mPage!=null)
@@ -160,7 +147,7 @@ public class DocPageView extends View implements Callback
 		listener.progress(0);
 	}
 
-	public void render(Bitmap bitmap, final RenderListener listener)
+	public void render(Bitmap bitmap, final RenderListener listener, final boolean showAnnotations)
 	{
 		if (mFinished)
 			return;
@@ -183,31 +170,31 @@ public class DocPageView extends View implements Callback
 		if (DEBUG_PAGE_RENDERING)
 			renderNoPage(bitmap, listener, localVisRect, globalVisRect);
 		else
-			renderPage(bitmap, listener, localVisRect, globalVisRect);
+			renderPage(bitmap, listener, localVisRect, globalVisRect, showAnnotations);
 	}
 
 	//  This function renders the document's page.
-	private void renderPage(final Bitmap bitmap, final RenderListener listener, final Rect localVisRect, final Rect globalVisRect)
+	private void renderPage(final Bitmap bitmap, final RenderListener listener, final Rect localVisRect, final Rect globalVisRect, final boolean showAnnotations)
 	{
 		//  make a rect representing the entire page
 		//  This might be outside the bounds of the bitmap
 		int[] locations = new int[2];
 		getLocationOnScreen(locations);
-		Rect pageRect = new Rect(locations[0], locations[1], locations[0]+getCalculatedWidth(), locations[1]+getCalculatedHeight());
+		Rect pageRect = new Rect(locations[0], locations[1], locations[0] + getCalculatedWidth(), locations[1] + getCalculatedHeight());
 
 		//  make a rect representing the patch
 		//  clip this to the bitmap
-		Rect patchRect = new Rect(pageRect);
-		patchRect.left = Math.max(patchRect.left,0);
-		patchRect.top  = Math.max(patchRect.top,0);
-		patchRect.right = Math.min(patchRect.right,bitmap.getWidth());
-		patchRect.bottom = Math.min(patchRect.bottom,bitmap.getHeight());
+		Rect patchRect   = new Rect(pageRect);
+		patchRect.left   = Math.max(patchRect.left, 0);
+		patchRect.top    = Math.max(patchRect.top, 0);
+		patchRect.right  = Math.min(patchRect.right, bitmap.getWidth());
+		patchRect.bottom = Math.min(patchRect.bottom, bitmap.getHeight());
 
 		//  set up the page and patch coordinates for the device
-		int pageX0  = pageRect.left;
-		int pageY0  = pageRect.top;
-		int pageX1  = pageRect.right;
-		int pageY1  = pageRect.bottom;
+		int pageX0 = pageRect.left;
+		int pageY0 = pageRect.top;
+		int pageX1 = pageRect.right;
+		int pageY1 = pageRect.bottom;
 
 		int patchX0 = patchRect.left;
 		int patchY0 = patchRect.top;
@@ -216,84 +203,39 @@ public class DocPageView extends View implements Callback
 
 		//  set up a matrix for scaling
 		Matrix ctm = Matrix.Identity();
-		ctm.scale(mScale*mZoom*mResolution/72f);
+		ctm.scale(mScale * mZoom * mResolution / 72f);
 
-		//  cache this page's display and annotation lists
-		cachePage();
-
-		sourceRect.set(globalVisRect);
-		renderRect.set(localVisRect);
-		renderScale = mScale;
+		mRenderSrcRect.set(globalVisRect);
+		mRenderDstRect.set(localVisRect);
+		mRenderScale = mScale;
+		mRenderBitmap = bitmap;
 
 		// Render the page in the background
-		DrawTaskParams params = new DrawTaskParams(new RenderListener() {
+		RenderTaskParams params = new RenderTaskParams(new RenderListener() {
 			@Override
-			public void progress(int error)
-			{
+			public void progress(int error) {
 				//  specify where to draw to and from
-				mDrawBitmap = bitmap;
-				mDrawSrcRect.set(sourceRect);
-				mDrawDstRect.set(renderRect);
-				drawScale = renderScale;
+				mDrawBitmap = mRenderBitmap;
+				mDrawSrcRect.set(mRenderSrcRect);
+				mDrawDstRect.set(mRenderDstRect);
+				mDrawScale = mRenderScale;
 
 				invalidate();
 				listener.progress(0);
-			}
-		}, ctm, bitmap, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
 
-		new DrawTask().execute(params, null, null);
-	}
+			}
+		}, ctm, mRenderBitmap, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1, showAnnotations);
 
-	private void cachePage()
-	{
-		Cookie cookie = new Cookie();
-
-		if (pageContents==null)
-		{
-			//  run the display list
-			pageContents = new DisplayList();
-			DisplayListDevice dispDev = new DisplayListDevice(pageContents);
-			try {
-				mPage.run(dispDev, new Matrix(1, 0, 0, 1, 0, 0), cookie);
-			}
-			catch (RuntimeException e) {
-				pageContents.destroy();
-				dispDev.destroy();
-				throw(e);
-			}
-			finally {
-				dispDev.destroy();
-			}
-		}
-
-		if (annotContents==null)
-		{
-			//  run the annotation list
-			annotContents = new DisplayList();
-			DisplayListDevice annotDev = new DisplayListDevice(annotContents);
-			try {
-				mPage.run(annotDev, new Matrix(1, 0, 0, 1, 0, 0), cookie);
-			}
-			catch (RuntimeException e) {
-				annotContents.destroy();
-				annotDev.destroy();
-				throw(e);
-			}
-			finally {
-				annotDev.destroy();
-			}
-		}
+		new RenderTask().execute(params, null, null);
 	}
 
 	@Override
-	public void onDraw(Canvas canvas) {
-
+	public void onDraw(Canvas canvas)
+	{
 		if (mFinished)
 			return;
 
-		//  get bitmap to draw
-		Bitmap bitmap = mDrawBitmap;
-		if (bitmap==null)
+		if (mDrawBitmap==null)
 			return;  //  not yet rendered
 
 		//  set rectangles for drawing
@@ -301,16 +243,17 @@ public class DocPageView extends View implements Callback
 		mDstRect.set(mDrawDstRect);
 
 		//  if the scale has changed, adjust the destination
-		if (drawScale != mScale)
+		if (mDrawScale != mScale)
 		{
-			mDstRect.left   *= (mScale/drawScale);
-			mDstRect.top    *= (mScale/drawScale);
-			mDstRect.right  *= (mScale/drawScale);
-			mDstRect.bottom *= (mScale/drawScale);
+			double scale = (((double)mScale)/((double) mDrawScale));
+			mDstRect.left   *= scale;
+			mDstRect.top    *= scale;
+			mDstRect.right  *= scale;
+			mDstRect.bottom *= scale;
 		}
 
 		//  draw
-		canvas.drawBitmap(bitmap, mSrcRect, mDstRect, mPainter);
+		canvas.drawBitmap(mDrawBitmap, mSrcRect, mDstRect, mPainter);
 	}
 
 	public boolean onSingleTap(int x, int y) {
@@ -381,10 +324,10 @@ public class DocPageView extends View implements Callback
 	public void setChildRect(Rect r) {mChildRect.set(r);}
 	public Rect getChildRect() {return mChildRect;}
 
-	private class DrawTaskParams {
-		DrawTaskParams (RenderListener listener, Matrix ctm, Bitmap bitmap,
-						int pageX0, int pageY0, int pageX1, int pageY1,
-						int patchX0, int patchY0, int patchX1, int patchY1)
+	private class RenderTaskParams {
+		RenderTaskParams(RenderListener listener, Matrix ctm, Bitmap bitmap,
+						 int pageX0, int pageY0, int pageX1, int pageY1,
+						 int patchX0, int patchY0, int patchX1, int patchY1, boolean showAnnotations)
 		{
 			this.listener = listener;
 			this.ctm      = ctm;
@@ -397,6 +340,7 @@ public class DocPageView extends View implements Callback
 			this.patchY0  = patchY0;
 			this.patchX1  = patchX1;
 			this.patchY1  = patchY1;
+			this.showAnnotations = showAnnotations;
 		}
 
 		public RenderListener listener;
@@ -410,12 +354,13 @@ public class DocPageView extends View implements Callback
 		public int patchY0;
 		public int patchX1;
 		public int patchY1;
+		public boolean showAnnotations;
 	}
 
 	// The definition of our task class
-	private class DrawTask extends AsyncTask<DrawTaskParams, Void, Void>
+	private class RenderTask extends AsyncTask<RenderTaskParams, Void, Void>
 	{
-		private DrawTaskParams params = null;
+		private RenderTaskParams params = null;
 
 		@Override
 		protected void onPreExecute() {
@@ -423,17 +368,27 @@ public class DocPageView extends View implements Callback
 		}
 
 		@Override
-		protected Void doInBackground(DrawTaskParams... paramList) {
+		protected Void doInBackground(RenderTaskParams... paramList)
+		{
 			params = paramList[0];
 
-			Cookie cookie = new Cookie();
 			AndroidDrawDevice dev = new AndroidDrawDevice(params.bitmap, params.pageX0, params.pageY0, params.pageX1, params.pageY1, params.patchX0, params.patchY0, params.patchX1, params.patchY1);
-			try {
-				if (pageContents != null) {
-					pageContents.run(dev, params.ctm, cookie);
-				}
-				if (annotContents != null) {
-					annotContents.run(dev, params.ctm, cookie);
+			try
+			{
+				//  do the page
+				mPage.runPageContents(dev, params.ctm, null);
+
+				//  do the annotations
+				if (params.showAnnotations)
+				{
+					Annotation annotations[] = mPage.getAnnotations();
+					if (annotations != null)
+					{
+						for (Annotation annot : annotations)
+						{
+							annot.run(dev, params.ctm, null);
+						}
+					}
 				}
 			}
 			catch (Exception e)

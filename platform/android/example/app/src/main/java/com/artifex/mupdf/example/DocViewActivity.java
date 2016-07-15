@@ -3,6 +3,7 @@ package com.artifex.mupdf.example;
 import android.app.Activity;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 
 import com.artifex.mupdf.android.DocView;
 
@@ -25,5 +26,10 @@ public class DocViewActivity extends Activity
 
 		//  start the view
 		mDocView.start(path);
+	}
+
+	public void onToggleAnnotations(View v)
+	{
+		mDocView.toggleAnnotations();
 	}
 }
