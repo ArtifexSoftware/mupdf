@@ -96,13 +96,13 @@ fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pi
 	if (!out || !pixmap)
 		return;
 
-	if (pixmap->n != 1 && pixmap->n != 2 && pixmap->n != 4 && pixmap->n != 5)
+	if (pixmap->alpha != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot write pwg with alpha");
+	sn = pixmap->n;
+	if (sn != 1 && sn != 3 && sn != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale, rgb or cmyk to write as pwg");
 
-	sn = pixmap->n;
 	dn = pixmap->n;
-	if (dn > 1)
-		dn--;
 
 	fz_write_pwg_page_header(ctx, out, pwg, pixmap->xres, pixmap->yres, pixmap->w, pixmap->h, dn*8);
 
