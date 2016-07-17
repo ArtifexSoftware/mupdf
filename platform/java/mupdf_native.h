@@ -1689,6 +1689,46 @@ JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_PDFObject_readRawStream
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    writeObject
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFObject;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_writeObject
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    writeStreamBuffer
+ * Signature: (Lcom/artifex/mupdf/fitz/Buffer;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_writeStreamBuffer
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    writeStreamString
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_writeStreamString
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    writeRawStreamBuffer
+ * Signature: (Lcom/artifex/mupdf/fitz/Buffer;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_writeRawStreamBuffer
+  (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    writeRawStreamString
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_writeRawStreamString
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    getArray
  * Signature: (I)Lcom/artifex/mupdf/fitz/PDFObject;
  */

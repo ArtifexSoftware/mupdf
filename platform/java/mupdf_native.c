@@ -6156,6 +6156,142 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 	return arr;
 }
 
+JNIEXPORT void JNICALL
+FUN(PDFObject_writeObject)(JNIEnv *env, jobject self, jobject jobj)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *ref = from_PDFObject(env, self);
+	pdf_document *pdf = pdf_get_bound_document(ctx, ref);
+	pdf_obj *obj = from_PDFObject(env, jobj);
+
+	if (ctx == NULL || pdf == NULL || obj == NULL)
+		return;
+
+	fz_try(ctx)
+		pdf_update_object(ctx, pdf, pdf_to_num(ctx, ref), obj);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFObject_writeStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
+	fz_buffer *buf = from_Buffer(env, jbuf);
+
+	if (ctx == NULL || pdf == NULL || buf == NULL)
+		return;
+
+	fz_try(ctx)
+		pdf_update_stream(ctx, pdf, obj, buf, 0);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFObject_writeStreamString)(JNIEnv *env, jobject self, jstring jstr)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
+	const char *str = NULL;
+	unsigned char *data = NULL;
+	fz_buffer *buf = NULL;
+
+	if (ctx == NULL || pdf == NULL || jstr == NULL)
+		return;
+
+	str = (*env)->GetStringUTFChars(env, jstr, NULL);
+	if (str == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "writeStream failed");
+		return;
+	}
+
+	fz_var(data);
+	fz_var(buf);
+
+	fz_try(ctx)
+	{
+		int len = strlen(str);
+		data = fz_malloc(ctx, len);
+		memcpy(data, str, len);
+		buf = fz_new_buffer_from_data(ctx, data, len);
+		data = NULL;
+		pdf_update_stream(ctx, pdf, obj, buf, 0);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_free(ctx, data);
+		(*env)->ReleaseStringUTFChars(env, jstr, str);
+	}
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFObject_writeRawStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
+	fz_buffer *buf = from_Buffer(env, jbuf);
+
+	if (ctx == NULL || pdf == NULL || buf == NULL)
+		return;
+
+	fz_try(ctx)
+		pdf_update_stream(ctx, pdf, obj, buf, 1);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFObject_writeRawStreamString)(JNIEnv *env, jobject self, jstring jstr)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
+	const char *str = NULL;
+	unsigned char *data = NULL;
+	fz_buffer *buf = NULL;
+
+	if (ctx == NULL || pdf == NULL || jstr == NULL)
+		return;
+
+	str = (*env)->GetStringUTFChars(env, jstr, NULL);
+	if (str == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "writeStream failed");
+		return;
+	}
+
+	fz_var(data);
+	fz_var(buf);
+
+	fz_try(ctx)
+	{
+		int len = strlen(str);
+		data = fz_malloc(ctx, len);
+		memcpy(data, str, len);
+		buf = fz_new_buffer_from_data(ctx, data, len);
+		data = NULL;
+		pdf_update_stream(ctx, pdf, obj, buf, 1);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_free(ctx, data);
+		(*env)->ReleaseStringUTFChars(env, jstr, str);
+	}
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+
 JNIEXPORT jobject JNICALL
 FUN(PDFObject_resolve)(JNIEnv *env, jobject self)
 {

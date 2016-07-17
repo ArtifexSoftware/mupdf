@@ -47,6 +47,28 @@ public class PDFObject
 	public native byte[] readStream();
 	public native byte[] readRawStream();
 
+	public native void writeObject(PDFObject obj);
+	private native void writeStreamBuffer(Buffer buf);
+	private native void writeStreamString(String str);
+	private native void writeRawStreamBuffer(Buffer buf);
+	private native void writeRawStreamString(String str);
+
+	public void writeStream(Buffer buf) {
+		writeStreamBuffer(buf);
+	}
+
+	public void writeStream(String str) {
+		writeStreamString(str);
+	}
+
+	public void writeRawStream(Buffer buf) {
+		writeRawStreamBuffer(buf);
+	}
+
+	public void writeRawStream(String str) {
+		writeRawStreamString(str);
+	}
+
 	private native PDFObject getArray(int index);
 	private native PDFObject getDictionary(String name);
 
