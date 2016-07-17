@@ -4507,6 +4507,35 @@ FUN(DisplayList_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, 
 }
 
 JNIEXPORT jobject JNICALL
+FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_display_list *list = from_DisplayList(env, self);
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text = NULL;
+
+	if (ctx == NULL || list == NULL)
+		return NULL;
+
+	fz_var(sheet);
+
+	fz_try(ctx)
+	{
+		sheet = fz_new_stext_sheet(ctx);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet);
+	}
+	fz_always(ctx)
+		fz_drop_stext_sheet(ctx, sheet);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_StructuredText_safe_own(ctx, env, text);
+}
+
+JNIEXPORT jobject JNICALL
 FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 {
 	fz_context *ctx = get_context(env);

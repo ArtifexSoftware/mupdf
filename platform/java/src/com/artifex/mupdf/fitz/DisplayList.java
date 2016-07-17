@@ -22,6 +22,7 @@ public class DisplayList
 	}
 
 	public native Pixmap toPixmap(Matrix ctm, ColorSpace colorspace, boolean alpha);
+	public native StructuredText toStructuredText();
 	public native Rect[] search(String needle);
 
 	public native void run(Device dev, Matrix ctm, Rect scissor, Cookie cookie);

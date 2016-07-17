@@ -469,6 +469,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DisplayList_toPixmap
 
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
+ * Method:    toStructuredText
+ * Signature: ()Lcom/artifex/mupdf/fitz/StructuredText;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DisplayList_toStructuredText
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_DisplayList
  * Method:    search
  * Signature: (Ljava/lang/String;)[Lcom/artifex/mupdf/fitz/Rect;
  */
@@ -2232,15 +2240,15 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getColorSpace
  * Method:    getSamples
  * Signature: ()[B
  */
-JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getSamples__
+JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getSamples
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Pixmap
- * Method:    getSamples
+ * Method:    getSample
  * Signature: (III)B
  */
-JNIEXPORT jbyte JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getSamples__III
+JNIEXPORT jbyte JNICALL Java_com_artifex_mupdf_fitz_Pixmap_getSample
   (JNIEnv *, jobject, jint, jint, jint);
 
 /*
