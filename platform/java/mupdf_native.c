@@ -3970,7 +3970,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
 	fz_annot *annot = NULL;
-	fz_annot *first = NULL;
+	fz_annot *annots = NULL;
 	jobject jannots = NULL;
 	int annot_count;
 	int i;
@@ -3985,10 +3985,10 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 	{
 		jannots = (*env)->GetObjectField(env, self, fid_Page_nativeAnnots);
 
-		first = fz_first_annot(ctx, page);
+		annots = fz_first_annot(ctx, page);
 
 		/* Count the annotations */
-		annot = first;
+		annot = annots;
 		for (annot_count = 0; annot != NULL; annot_count++)
 			annot = fz_next_annot(ctx, annot);
 
@@ -3997,9 +3997,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 			/* If no annotations, we don't want an annotation
 			 * object stored in the page. */
 			if (jannots != NULL)
-			{
 				(*env)->SetObjectField(env, self, fid_Page_nativeAnnots, NULL);
-			}
 			break; /* No annotations! */
 		}
 
@@ -4009,7 +4007,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 		(*env)->SetObjectField(env, self, fid_Page_nativeAnnots, jannots);
 
 		/* Now run through actually creating the annotation objects */
-		annot = first;
+		annot = annots;
 		for (i = 0; annot != NULL && i < annot_count; i++)
 		{
 			jobject jannot = to_Annotation(ctx, env, annot);
@@ -6129,9 +6127,9 @@ FUN(PDFObject_toByteString)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
-	signed char *bs = NULL;
 	const char *str = NULL;
 	jobject jbs = NULL;
+	jbyte *bs = NULL;
 
 	if (ctx == NULL || obj == NULL)
 		return 0;

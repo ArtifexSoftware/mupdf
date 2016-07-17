@@ -24,13 +24,12 @@ public class Page
 
 	public native void run(Device dev, Matrix ctm, Cookie cookie);
 	public native void runPageContents(Device dev, Matrix ctm, Cookie cookie);
-	public native Annotation[] getAnnotations();
 
 	public void run(Device dev, Matrix ctm) {
 		run(dev, ctm, null);
 	}
 
-	// FIXME: Later
+	public native Annotation[] getAnnotations();
 	public native Link[] getLinks();
 
 	// FIXME: Later. Much later.
