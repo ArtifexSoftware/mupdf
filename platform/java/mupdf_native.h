@@ -94,6 +94,30 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Buffer_getLength
 
 /*
  * Class:     com_artifex_mupdf_fitz_Buffer
+ * Method:    readByte
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Buffer_readByte
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Buffer
+ * Method:    readBytes
+ * Signature: (I[B)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Buffer_readBytes
+  (JNIEnv *, jobject, jint, jbyteArray);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Buffer
+ * Method:    readBytesInto
+ * Signature: (I[BII)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Buffer_readBytesInto
+  (JNIEnv *, jobject, jint, jbyteArray, jint, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Buffer
  * Method:    writeByte
  * Signature: (B)V
  */
@@ -107,6 +131,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Buffer_writeByte
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Buffer_writeBytes
   (JNIEnv *, jobject, jbyteArray);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Buffer
+ * Method:    writeBytesFrom
+ * Signature: ([BII)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Buffer_writeBytesFrom
+  (JNIEnv *, jobject, jbyteArray, jint, jint);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Buffer

@@ -60,9 +60,11 @@ static jclass cls_DocumentWriter;
 static jclass cls_Exception;
 static jclass cls_Font;
 static jclass cls_Image;
+static jclass cls_IndexOutOfBoundsException;
 static jclass cls_Link;
 static jclass cls_Matrix;
 static jclass cls_NativeDevice;
+static jclass cls_NullPointerException;
 static jclass cls_Object;
 static jclass cls_OutOfMemoryError;
 static jclass cls_Outline;
@@ -445,6 +447,8 @@ static int find_fids(JNIEnv *env)
 	mid_Object_toString = get_method(&err, env, "toString", "()Ljava/lang/String;");
 
 	cls_Exception = get_class(&err, env, "java/lang/Exception");
+	cls_IndexOutOfBoundsException = get_class(&err, env, "java/lang/IndexOutOfBoundsException");
+	cls_NullPointerException = get_class(&err, env, "java/lang/NullPointerException");
 
 	cls_OutOfMemoryError = get_class(&err, env, "java/lang/OutOfMemoryError");
 
@@ -462,9 +466,11 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Exception);
 	(*env)->DeleteGlobalRef(env, cls_Font);
 	(*env)->DeleteGlobalRef(env, cls_Image);
+	(*env)->DeleteGlobalRef(env, cls_IndexOutOfBoundsException);
 	(*env)->DeleteGlobalRef(env, cls_Link);
 	(*env)->DeleteGlobalRef(env, cls_Matrix);
 	(*env)->DeleteGlobalRef(env, cls_NativeDevice);
+	(*env)->DeleteGlobalRef(env, cls_NullPointerException);
 	(*env)->DeleteGlobalRef(env, cls_Object);
 	(*env)->DeleteGlobalRef(env, cls_OutOfMemoryError);
 	(*env)->DeleteGlobalRef(env, cls_Outline);
@@ -4343,6 +4349,88 @@ FUN(Buffer_getLength)(JNIEnv *env, jobject self)
 	return buf->len;
 }
 
+JNIEXPORT jint JNICALL
+FUN(Buffer_readByte)(JNIEnv *env, jobject self, jint jat)
+{
+	fz_context *ctx = get_context(env);
+	fz_buffer *buf = from_Buffer(env, self);
+	size_t at = (size_t) jat;
+
+	if (ctx == NULL || buf == NULL || jat < 0)
+		return -1;
+
+	if (at >= buf->len)
+		return -1;
+
+	return buf->data[at];
+}
+
+JNIEXPORT jint JNICALL
+FUN(Buffer_readBytes)(JNIEnv *env, jobject self, jint jat, jobject jbs)
+{
+	fz_context *ctx = get_context(env);
+	fz_buffer *buf = from_Buffer(env, self);
+	size_t at = (size_t) jat;
+	jbyte *bs = NULL;
+	size_t len = 0;
+	size_t remaining_input = 0;
+	size_t remaining_output = 0;
+
+	if (ctx == NULL || buf == NULL || jat < 0 || jbs == NULL)
+		return -1;
+
+	if (at >= buf->len)
+		return -1;
+
+	remaining_input = buf->len - at;
+	remaining_output = (*env)->GetArrayLength(env, jbs);
+	len = fz_mini(0, remaining_output);
+	len = fz_mini(len, remaining_input);
+
+	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+	memcpy(bs, &buf->data[at], len);
+	(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
+
+	return len;
+}
+
+JNIEXPORT jint JNICALL
+FUN(Buffer_readBytesInto)(JNIEnv *env, jobject self, jint jat, jobject jbs, jint joff, jint jlen)
+{
+	fz_context *ctx = get_context(env);
+	fz_buffer *buf = from_Buffer(env, self);
+	size_t at = (size_t) jat;
+	jbyte *bs = NULL;
+	jsize off = (jsize) joff;
+	jsize len = (jsize) jlen;
+	jsize bslen = 0;
+
+	if (ctx == NULL || buf == NULL || jat < 0)
+		return -1;
+
+	if (jbs == NULL)
+		(*env)->ThrowNew(env, cls_NullPointerException, "buffer is null");
+
+	bslen = (*env)->GetArrayLength(env, jbs);
+	if (joff < 0)
+		(*env)->ThrowNew(env, cls_IndexOutOfBoundsException, "offset is negative");
+	if (jlen < 0)
+		(*env)->ThrowNew(env, cls_IndexOutOfBoundsException, "length is negative");
+	if (len > bslen - off)
+		(*env)->ThrowNew(env, cls_IndexOutOfBoundsException, "offset + length is outside of buffer");
+
+	if (at >= buf->len)
+		return -1;
+
+	len = fz_mini(len, buf->len - at);
+
+	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+	memcpy(&bs[off], &buf->data[at], len);
+	(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
+
+	return len;
+}
+
 JNIEXPORT void JNICALL
 FUN(Buffer_writeByte)(JNIEnv *env, jobject self, jbyte b)
 {
@@ -4363,22 +4451,57 @@ FUN(Buffer_writeBytes)(JNIEnv *env, jobject self, jobject jbs)
 {
 	fz_context *ctx = get_context(env);
 	fz_buffer *buf = from_Buffer(env, self);
+	jsize len = 0;
 	jbyte *bs = NULL;
-	int n = 0;
 
 	if (ctx == NULL || buf == NULL || jbs == NULL)
 		return;
 
-	n = (*env)->GetArrayLength(env, jbs);
+	len = (*env)->GetArrayLength(env, jbs);
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 
 	fz_try(ctx)
-		fz_write_buffer(ctx, buf, bs, n);
+		fz_write_buffer(ctx, buf, bs, len);
 	fz_always(ctx)
 		(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
+
+JNIEXPORT void JNICALL
+FUN(Buffer_writeBytesFrom)(JNIEnv *env, jobject self, jobject jbs, jint joff, jint jlen)
+{
+	fz_context *ctx = get_context(env);
+	fz_buffer *buf = from_Buffer(env, self);
+	jbyte *bs = NULL;
+	jsize off = (jsize) joff;
+	jsize len = (jsize) jlen;
+	jsize bslen = 0;
+
+	if (ctx == NULL || buf == NULL)
+		return;
+
+	if (jbs == NULL)
+		(*env)->ThrowNew(env, cls_NullPointerException, "buffer is null");
+
+	bslen = (*env)->GetArrayLength(env, jbs);
+	if (joff < 0)
+		(*env)->ThrowNew(env, cls_IndexOutOfBoundsException, "offset is negative");
+	if (jlen < 0)
+		(*env)->ThrowNew(env, cls_IndexOutOfBoundsException, "length is negative");
+	if (off + len >= bslen)
+		(*env)->ThrowNew(env, cls_IndexOutOfBoundsException, "offset + length is outside of buffer");
+
+	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+
+	fz_try(ctx)
+		fz_write_buffer(ctx, buf, &bs[off], len);
+	fz_always(ctx)
+		(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
 
 JNIEXPORT void JNICALL
 FUN(Buffer_writeBuffer)(JNIEnv *env, jobject self, jobject jbuf)
@@ -4442,14 +4565,14 @@ FUN(Buffer_writeLines)(JNIEnv *env, jobject self, jobject jlines)
 	fz_context *ctx = get_context(env);
 	fz_buffer *buf = from_Buffer(env, self);
 	int i = 0;
-	int n = 0;
+	jsize len = 0;
 
 	if (ctx == NULL || buf == NULL || jlines == NULL)
 		return;
 
-	n = (*env)->GetArrayLength(env, jlines);
+	len = (*env)->GetArrayLength(env, jlines);
 
-	for (i = 0; i < n; ++i)
+	for (i = 0; i < len; ++i)
 	{
 		jobject jline = (*env)->GetObjectArrayElement(env, jlines, i);
 		const char *line = NULL;
