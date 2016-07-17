@@ -184,6 +184,30 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Buffer_save
 }
 #endif
 #endif
+/* Header for class com_artifex_mupdf_fitz_BufferInputStream */
+
+#ifndef _Included_com_artifex_mupdf_fitz_BufferInputStream
+#define _Included_com_artifex_mupdf_fitz_BufferInputStream
+#ifdef __cplusplus
+extern "C" {
+#endif
+#undef com_artifex_mupdf_fitz_BufferInputStream_MAX_SKIP_BUFFER_SIZE
+#define com_artifex_mupdf_fitz_BufferInputStream_MAX_SKIP_BUFFER_SIZE 2048L
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_BufferOutputStream */
+
+#ifndef _Included_com_artifex_mupdf_fitz_BufferOutputStream
+#define _Included_com_artifex_mupdf_fitz_BufferOutputStream
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
 /* Header for class com_artifex_mupdf_fitz_ColorSpace */
 
 #ifndef _Included_com_artifex_mupdf_fitz_ColorSpace
