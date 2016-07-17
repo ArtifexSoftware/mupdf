@@ -93,7 +93,9 @@ static jfieldID fid_Document_pointer;
 static jfieldID fid_DocumentWriter_pointer;
 static jfieldID fid_Font_pointer;
 static jfieldID fid_Image_pointer;
-static jfieldID fid_Link_pointer;
+static jfieldID fid_Link_bounds;
+static jfieldID fid_Link_page;
+static jfieldID fid_Link_uri;
 static jfieldID fid_Matrix_a;
 static jfieldID fid_Matrix_b;
 static jfieldID fid_Matrix_c;
@@ -104,6 +106,7 @@ static jfieldID fid_NativeDevice_nativeInfo;
 static jfieldID fid_NativeDevice_nativeResource;
 static jfieldID fid_Outline_pointer;
 static jfieldID fid_Page_nativeAnnots;
+static jfieldID fid_Page_nativeLinks;
 static jfieldID fid_Page_pointer;
 static jfieldID fid_Path_pointer;
 static jfieldID fid_PDFDocument_pointer;
@@ -146,6 +149,7 @@ static jmethodID mid_DisplayList_init;
 static jmethodID mid_Document_init;
 static jmethodID mid_Font_init;
 static jmethodID mid_Image_init;
+static jmethodID mid_Link_init;
 static jmethodID mid_Matrix_init;
 static jmethodID mid_Object_toString;
 static jmethodID mid_Outline_init;
@@ -368,7 +372,10 @@ static int find_fids(JNIEnv *env)
 	mid_Image_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_Link = get_class(&err, env, PKG"Link");
-	fid_Link_pointer = get_field(&err, env, "pointer", "J");
+	fid_Link_bounds = get_field(&err, env, "bounds", "L"PKG"Rect;");
+	fid_Link_page = get_field(&err, env, "page", "I");
+	fid_Link_uri = get_field(&err, env, "uri", "Ljava/lang/String;");
+	mid_Link_init = get_method(&err, env, "<init>", "(L"PKG"Rect;ILjava/lang/String;)V");
 
 	cls_Matrix = get_class(&err, env, PKG"Matrix");
 	fid_Matrix_a = get_field(&err, env, "a", "F");
@@ -386,6 +393,7 @@ static int find_fids(JNIEnv *env)
 	cls_Page = get_class(&err, env, PKG"Page");
 	fid_Page_pointer = get_field(&err, env, "pointer", "J");
 	fid_Page_nativeAnnots = get_field(&err, env, "nativeAnnots", "[L"PKG"Annotation;");
+	fid_Page_nativeLinks = get_field(&err, env, "nativeLinks", "[L"PKG"Link;");
 	mid_Page_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_Path = get_class(&err, env, PKG"Path");
@@ -1123,13 +1131,6 @@ static inline fz_image *from_Image(JNIEnv *env, jobject jobj)
 	if (jobj == NULL)
 		return NULL;
 	return CAST(fz_image *, (*env)->GetLongField(env, jobj, fid_Image_pointer));
-}
-
-static inline fz_link *from_Link(JNIEnv *env, jobject jobj)
-{
-	if (jobj == NULL)
-		return NULL;
-	return CAST(fz_link *, (*env)->GetLongField(env, jobj, fid_Link_pointer));
 }
 
 static inline fz_outline *from_Outline(JNIEnv *env, jobject jobj)
@@ -3613,18 +3614,6 @@ FUN(Annotation_toDisplayList)(JNIEnv *env, jobject self)
 
 /* Link interface */
 
-JNIEXPORT void JNICALL
-FUN(Link_finalize)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_link *link = from_Link(env, self);
-
-	if (ctx == NULL || link == NULL)
-		return;
-
-	fz_drop_link(ctx, link);
-}
-
 /* Document interface */
 
 JNIEXPORT void JNICALL
@@ -4027,6 +4016,80 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 		jni_rethrow(env, ctx);
 
 	return jannots;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Page_getLinks)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	fz_link *link = NULL;
+	fz_link *links = NULL;
+	jobject jlinks = NULL;
+	int link_count;
+	int i;
+
+	if (ctx == NULL || page == NULL)
+		return NULL;
+
+	fz_var(link);
+	fz_var(links);
+	fz_var(jlinks);
+
+	fz_try(ctx)
+	{
+		jlinks = (*env)->GetObjectField(env, self, fid_Page_nativeLinks);
+
+		links = fz_load_links(ctx, page);
+
+		/* Count the links */
+		link = links;
+		for (link_count = 0; link != NULL; link_count++)
+			link = link->next;
+
+		if (link_count == 0)
+		{
+			/* If no links, we don't want an link
+			 * object stored in the page. */
+			if (jlinks != NULL)
+				(*env)->SetObjectField(env, self, fid_Page_nativeLinks, NULL);
+			break; /* No links! */
+		}
+
+		jlinks = (*env)->NewObjectArray(env, link_count, cls_Link, NULL);
+		if (jlinks == NULL)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (1)");
+		(*env)->SetObjectField(env, self, fid_Page_nativeLinks, jlinks);
+
+		/* Now run through actually creating the link objects */
+		link = links;
+		for (i = 0; link != NULL && i < link_count; i++)
+		{
+			jobject jbounds = NULL;
+			jobject jlink = NULL;
+			jobject juri = NULL;
+			int page = 0;
+
+			jbounds = to_Rect(ctx, env, &link->rect);
+			if (link->dest.kind == FZ_LINK_GOTO)
+				page = link->dest.ld.gotor.page;
+			else if (link->dest.kind == FZ_LINK_URI)
+				juri = (*env)->NewStringUTF(env, link->dest.ld.uri.uri);
+
+			jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
+
+			(*env)->SetObjectArrayElement(env, jlinks, i, jlink);
+			link = link->next;
+		}
+		if (link != NULL || i != link_count)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (2)");
+	}
+	fz_always(ctx)
+		fz_drop_link(ctx, links);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return jlinks;
 }
 
 JNIEXPORT jobject JNICALL

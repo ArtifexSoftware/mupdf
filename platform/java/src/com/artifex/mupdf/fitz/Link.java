@@ -2,18 +2,14 @@ package com.artifex.mupdf.fitz;
 
 public class Link
 {
-	private long pointer;
+	public Rect bounds;
+	public int page;
+	public String uri;
 
-	protected native void finalize();
-
-	public void destroy() {
-		finalize();
-		pointer = 0;
+	public Link(Rect bounds, int page, String uri) {
+		this.bounds = bounds;
+		this.page = page;
+		this.uri = uri;
 	}
 
-	private Link(long p) {
-		pointer = p;
-	}
-
-	public native Link getNext();
 }

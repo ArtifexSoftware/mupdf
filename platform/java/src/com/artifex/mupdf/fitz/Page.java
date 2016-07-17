@@ -4,6 +4,7 @@ public class Page
 {
 	private long pointer;
 	private Annotation nativeAnnots[];
+	private Link nativeLinks[];
 
 	protected native void finalize();
 

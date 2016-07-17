@@ -1000,22 +1000,6 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Image_toPixmap
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     com_artifex_mupdf_fitz_Link
- * Method:    finalize
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Link_finalize
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Link
- * Method:    getNext
- * Signature: ()Lcom/artifex/mupdf/fitz/Link;
- */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Link_getNext
-  (JNIEnv *, jobject);
-
 #ifdef __cplusplus
 }
 #endif
