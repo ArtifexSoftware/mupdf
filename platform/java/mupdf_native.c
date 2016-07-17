@@ -104,7 +104,6 @@ static jfieldID fid_Matrix_e;
 static jfieldID fid_Matrix_f;
 static jfieldID fid_NativeDevice_nativeInfo;
 static jfieldID fid_NativeDevice_nativeResource;
-static jfieldID fid_Outline_pointer;
 static jfieldID fid_Page_nativeAnnots;
 static jfieldID fid_Page_nativeLinks;
 static jfieldID fid_Page_pointer;
@@ -387,8 +386,7 @@ static int find_fids(JNIEnv *env)
 	mid_Matrix_init = get_method(&err, env, "<init>", "(FFFFFF)V");
 
 	cls_Outline = get_class(&err, env, PKG"Outline");
-	fid_Outline_pointer = get_field(&err, env, "pointer", "J");
-	mid_Outline_init = get_method(&err, env, "<init>", "(J)V");
+	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;ILjava/lang/String;[L"PKG"Outline;)V");
 
 	cls_Page = get_class(&err, env, PKG"Page");
 	fid_Page_pointer = get_field(&err, env, "pointer", "J");
@@ -799,22 +797,68 @@ static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 	return jobj;
 }
 
-/* take ownership and don't throw fitz exceptions */
-static inline jobject to_Outline_safe_own(fz_context *ctx, JNIEnv *env, fz_outline *outline)
+/* don't throw fitz exceptions */
+static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *outline)
 {
-	jobject joutline;
+	jobject joutline = NULL;
+	jobject jarr = NULL;
+	jsize jindex = 0;
+	jsize count = 0;
+	fz_outline *counter = outline;
 
 	if (ctx == NULL || outline == NULL)
 		return NULL;
 
-	joutline = (*env)->NewObject(env, cls_Outline, mid_Outline_init, jlong_cast(outline));
-	if (joutline == NULL)
+	while (counter != NULL)
 	{
-		fz_drop_outline(ctx, outline);
+		count++;
+		counter = counter->next;
+	}
+
+	jarr = (*env)->NewObjectArray(env, count, cls_Outline, NULL);
+	if (jarr == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed (1)");
 		return NULL;
 	}
 
-	return joutline;
+	while (outline != NULL)
+	{
+		jstring jtitle = NULL;
+		jint jpage = 0;
+		jstring juri = NULL;
+		jobject jdown = NULL;
+
+		if (outline->title)
+			jtitle = (*env)->NewStringUTF(env, outline->title);
+
+		if (outline->dest.kind == FZ_LINK_GOTO)
+			jpage = outline->dest.ld.gotor.page;
+		else if (outline->dest.kind == FZ_LINK_URI)
+			juri = (*env)->NewStringUTF(env, outline->dest.ld.uri.uri);
+
+		if (outline->down)
+		{
+			jdown = to_Outline_safe(ctx, env, outline->down);
+			if (jdown == NULL)
+			{
+				jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed (2)");
+				return NULL;
+			}
+		}
+
+		joutline = (*env)->NewObject(env, cls_Outline, mid_Outline_init, jtitle, jpage, juri, jdown);
+		if (joutline == NULL)
+		{
+			jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed (3)");
+			return NULL;
+		}
+
+		(*env)->SetObjectArrayElement(env, jarr, jindex++, joutline);
+		outline = outline->next;
+	}
+
+	return jarr;
 }
 
 /* take ownership and don't throw fitz exceptions */
@@ -1131,13 +1175,6 @@ static inline fz_image *from_Image(JNIEnv *env, jobject jobj)
 	if (jobj == NULL)
 		return NULL;
 	return CAST(fz_image *, (*env)->GetLongField(env, jobj, fid_Image_pointer));
-}
-
-static inline fz_outline *from_Outline(JNIEnv *env, jobject jobj)
-{
-	if (jobj == NULL)
-		return NULL;
-	return CAST(fz_outline *, (*env)->GetLongField(env, jobj, fid_Outline_pointer));
 }
 
 static inline fz_page *from_Page(JNIEnv *env, jobject jobj)
@@ -3488,20 +3525,6 @@ FUN(Image_toPixmap)(JNIEnv *env, jobject self)
 	return to_Pixmap_safe_own(ctx, env, pixmap);
 }
 
-/* Outline interface */
-
-JNIEXPORT void JNICALL
-FUN(Outline_finalize)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_outline *outline = from_Outline(env, self);
-
-	if (ctx == NULL || outline == NULL)
-		return;
-
-	fz_drop_outline(ctx, outline);
-}
-
 /* Annotation Interface */
 
 JNIEXPORT void JNICALL
@@ -3830,6 +3853,7 @@ FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
 	fz_outline *outline = NULL;
+	jobject joutline = NULL;
 
 	if (ctx == NULL || doc == NULL)
 		return NULL;
@@ -3841,7 +3865,14 @@ FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 
-	return to_Outline_safe_own(ctx, env, outline);
+	joutline = to_Outline_safe(ctx, env, outline);
+	if (joutline == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed");
+	}
+	fz_drop_outline(ctx, outline);
+
+	return joutline;
 }
 
 JNIEXPORT jobject JNICALL

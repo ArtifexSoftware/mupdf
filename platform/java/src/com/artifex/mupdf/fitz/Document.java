@@ -41,7 +41,7 @@ public class Document
 
 	public native int countPages();
 	public native Page loadPage(int number);
-	public native Outline loadOutline();
+	public native Outline[] loadOutline();
 	public native String getMetaData(String key);
 	public native boolean isReflowable();
 	public native void layout(float width, float height, float em);

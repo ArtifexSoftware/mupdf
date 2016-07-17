@@ -636,9 +636,9 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_loadPage
 /*
  * Class:     com_artifex_mupdf_fitz_Document
  * Method:    loadOutline
- * Signature: ()Lcom/artifex/mupdf/fitz/Outline;
+ * Signature: ()[Lcom/artifex/mupdf/fitz/Outline;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_loadOutline
+JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Document_loadOutline
   (JNIEnv *, jobject);
 
 /*
@@ -1273,14 +1273,6 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_NativeDevice_endTile
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     com_artifex_mupdf_fitz_Outline
- * Method:    finalize
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Outline_finalize
-  (JNIEnv *, jobject);
-
 #ifdef __cplusplus
 }
 #endif
