@@ -5172,13 +5172,14 @@ FUN(PDFDocument_countPages)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFDocument_findPage)(JNIEnv *env, jobject self, jint at)
+FUN(PDFDocument_findPage)(JNIEnv *env, jobject self, jint jat)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
+	size_t at = (size_t) jat;
 	pdf_obj *obj = NULL;
 
-	if (ctx == NULL || pdf == NULL)
+	if (ctx == NULL || pdf == NULL || jat < 0)
 		return NULL;
 
 	fz_try(ctx)
@@ -5299,13 +5300,14 @@ FUN(PDFDocument_addPage)(JNIEnv *env, jobject self, jobject jmediabox, jint rota
 }
 
 JNIEXPORT void JNICALL
-FUN(PDFDocument_insertPage)(JNIEnv *env, jobject self, jint at, jobject jpage)
+FUN(PDFDocument_insertPage)(JNIEnv *env, jobject self, jint jat, jobject jpage)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
+	size_t at = (size_t) jat;
 	pdf_obj *page = from_PDFObject(env, jpage);
 
-	if (ctx == NULL || pdf == NULL || page == NULL)
+	if (ctx == NULL || pdf == NULL || jat < 0 || page == NULL)
 		return;
 
 	fz_try(ctx)
@@ -5315,12 +5317,13 @@ FUN(PDFDocument_insertPage)(JNIEnv *env, jobject self, jint at, jobject jpage)
 }
 
 JNIEXPORT void JNICALL
-FUN(PDFDocument_deletePage)(JNIEnv *env, jobject self, jint at)
+FUN(PDFDocument_deletePage)(JNIEnv *env, jobject self, jint jat)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
+	size_t at = (size_t) jat;
 
-	if (ctx == NULL || pdf == NULL)
+	if (ctx == NULL || pdf == NULL || jat < 0)
 		return;
 
 	fz_try(ctx)
