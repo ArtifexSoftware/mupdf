@@ -41,9 +41,28 @@ public class PDFDocument
 	public native PDFObject createObject();
 	public native void deleteObject(int i);
 
-	public native PDFObject addStream(Buffer buf);
+	public native PDFObject addStreamBuffer(Buffer buf);
+	public native PDFObject addStreamString(String str);
 
-	public native PDFObject addPage(Rect mediabox, int rotate, PDFObject resources, Buffer contents);
+	public PDFObject addStream(Buffer buf) {
+		return addStreamBuffer(buf);
+	}
+
+	public PDFObject addStream(String str) {
+		return addStreamString(str);
+	}
+
+	public native PDFObject addPageBuffer(Rect mediabox, int rotate, PDFObject resources, Buffer contents);
+	public native PDFObject addPageString(Rect mediabox, int rotate, PDFObject resources, String contents);
+
+	public PDFObject addPage(Rect mediabox, int rotate, PDFObject resources, Buffer contents) {
+		return addPageBuffer(mediabox, rotate, resources, contents);
+	}
+
+	public PDFObject addPage(Rect mediabox, int rotate, PDFObject resources, String contents) {
+		return addPageString(mediabox, rotate, resources, contents);
+	}
+
 	public native void insertPage(int at, PDFObject page);
 	public native void deletePage(int at);
 	public native PDFObject addImage(Image image);

@@ -5260,7 +5260,7 @@ FUN(PDFDocument_deleteObject)(JNIEnv *env, jobject self, jint num)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFDocument_addStream)(JNIEnv *env, jobject self, jobject jbuf)
+FUN(PDFDocument_addStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
@@ -5279,7 +5279,48 @@ FUN(PDFDocument_addStream)(JNIEnv *env, jobject self, jobject jbuf)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFDocument_addPage)(JNIEnv *env, jobject self, jobject jmediabox, jint rotate, jobject jresources, jobject jcontents)
+FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	fz_buffer *buf = NULL;
+	const char *sbuf = NULL;
+	unsigned char *data = NULL;
+	pdf_obj *ind = NULL;
+
+	if (ctx == NULL || pdf == NULL || jbuf == NULL)
+		return NULL;
+
+	sbuf = (*env)->GetStringUTFChars(env, jbuf, NULL);
+	if (sbuf == NULL)
+		return NULL;
+
+	fz_var(data);
+
+	fz_try(ctx)
+	{
+		int len = strlen(sbuf);
+		data = fz_malloc(ctx, len);
+		memcpy(data, sbuf, len);
+		buf = fz_new_buffer_from_data(ctx, data, len);
+		data = NULL;
+		ind = pdf_add_stream(ctx, pdf, buf);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, buf);
+		fz_free(ctx, data);
+		(*env)->ReleaseStringUTFChars(env, jbuf, sbuf);
+	}
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_PDFObject_safe_own(ctx, env, self, ind);
+}
+
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_addPageBuffer)(JNIEnv *env, jobject self, jobject jmediabox, jint rotate, jobject jresources, jobject jcontents)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
@@ -5293,6 +5334,47 @@ FUN(PDFDocument_addPage)(JNIEnv *env, jobject self, jobject jmediabox, jint rota
 
 	fz_try(ctx)
 		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return to_PDFObject_safe_own(ctx, env, self, ind);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jint rotate, jobject jresources, jstring jcontents)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	fz_rect mediabox = from_Rect(env, jmediabox);
+	pdf_obj *resources = from_PDFObject(env, jresources);
+	const char *scontents = NULL;
+	fz_buffer *contents = NULL;
+	unsigned char *data = NULL;
+	pdf_obj *ind = NULL;
+
+	if (ctx == NULL || pdf == NULL || resources == NULL || jcontents == NULL)
+		return NULL;
+
+	scontents = (*env)->GetStringUTFChars(env, jcontents, NULL);
+	if (scontents == NULL)
+		return NULL;
+
+	fz_var(data);
+
+	fz_try(ctx)
+	{
+		int len = strlen(scontents);
+		data = fz_malloc(ctx, len);
+		contents = fz_new_buffer_from_data(ctx, data, len);
+		data = NULL;
+		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_buffer(ctx, contents);
+		fz_free(ctx, data);
+		(*env)->ReleaseStringUTFChars(env, jcontents, scontents);
+	}
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 

@@ -1454,19 +1454,35 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_deleteObject
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    addStream
+ * Method:    addStreamBuffer
  * Signature: (Lcom/artifex/mupdf/fitz/Buffer;)Lcom/artifex/mupdf/fitz/PDFObject;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addStream
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addStreamBuffer
   (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    addPage
+ * Method:    addStreamString
+ * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addStreamString
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    addPageBuffer
  * Signature: (Lcom/artifex/mupdf/fitz/Rect;ILcom/artifex/mupdf/fitz/PDFObject;Lcom/artifex/mupdf/fitz/Buffer;)Lcom/artifex/mupdf/fitz/PDFObject;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addPage
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addPageBuffer
   (JNIEnv *, jobject, jobject, jint, jobject, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    addPageString
+ * Signature: (Lcom/artifex/mupdf/fitz/Rect;ILcom/artifex/mupdf/fitz/PDFObject;Ljava/lang/String;)Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addPageString
+  (JNIEnv *, jobject, jobject, jint, jobject, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
