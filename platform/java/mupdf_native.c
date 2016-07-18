@@ -3863,14 +3863,18 @@ FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		outline = fz_load_outline(ctx, doc);
 	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-
-	joutline = to_Outline_safe(ctx, env, outline);
-	if (joutline == NULL)
 	{
-		jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed");
+		jni_rethrow(env, ctx);
+		return NULL;
 	}
-	fz_drop_outline(ctx, outline);
+
+	if (outline != NULL)
+	{
+		joutline = to_Outline_safe(ctx, env, outline);
+		if (joutline == NULL)
+			jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed");
+		fz_drop_outline(ctx, outline);
+	}
 
 	return joutline;
 }
