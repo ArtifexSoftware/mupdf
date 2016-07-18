@@ -853,8 +853,15 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *
 			jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed (3)");
 			return NULL;
 		}
+		if (jdown != NULL)
+			(*env)->DeleteLocalRef(env, jdown);
+		if (juri != NULL)
+			(*env)->DeleteLocalRef(env, juri);
+		if (jtitle != NULL)
+			(*env)->DeleteLocalRef(env, jtitle);
 
 		(*env)->SetObjectArrayElement(env, jarr, jindex++, joutline);
+		(*env)->DeleteLocalRef(env, joutline);
 		outline = outline->next;
 	}
 
@@ -4042,6 +4049,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 		{
 			jobject jannot = to_Annotation(ctx, env, annot);
 			(*env)->SetObjectArrayElement(env, jannots, i, jannot);
+			(*env)->DeleteLocalRef(env, jannot);
 			annot = fz_next_annot(ctx, annot);
 		}
 		if (annot != NULL || i != annot_count)
@@ -4112,12 +4120,22 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 				juri = (*env)->NewStringUTF(env, link->dest.ld.uri.uri);
 
 			jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
+			if (jbounds != NULL)
+				(*env)->DeleteLocalRef(env, jbounds);
+			if (juri != NULL)
+				(*env)->DeleteLocalRef(env, juri);
+			if (jlink == NULL)
+			{
+				(*env)->SetObjectField(env, self, fid_Page_nativeLinks, NULL);
+				break;
+			}
 
 			(*env)->SetObjectArrayElement(env, jlinks, i, jlink);
+			(*env)->DeleteLocalRef(env, jlink);
 			link = link->next;
 		}
 		if (link != NULL || i != link_count)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (2)");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (3)");
 	}
 	fz_always(ctx)
 		fz_drop_link(ctx, links);
@@ -4168,6 +4186,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 		{
 			jobject jhit = to_Rect(ctx, env, &hits[i]);
 			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
+			(*env)->DeleteLocalRef(env, jhit);
 		}
 	}
 	fz_catch(ctx)
@@ -4393,6 +4412,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 		{
 			jobject jhit = to_Rect(ctx, env, &hits[i]);
 			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
+			(*env)->DeleteLocalRef(env, jhit);
 		}
 	}
 	fz_catch(ctx)
@@ -4895,6 +4915,7 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 		{
 			jobject jhit = to_Rect(ctx, env, &hits[i]);
 			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
+			(*env)->DeleteLocalRef(env, jhit);
 		}
 	}
 	fz_catch(ctx)
@@ -4938,6 +4959,7 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jrect)
 		{
 			jobject jhit = to_Rect(ctx, env, &hits[i]);
 			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
+			(*env)->DeleteLocalRef(env, jhit);
 		}
 	}
 	fz_catch(ctx)
