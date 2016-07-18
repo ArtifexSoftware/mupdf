@@ -294,9 +294,14 @@ public class MuPDFActivity extends Activity implements FilePicker.FilePickerSupp
 					String reason = null;
 					try {
 						InputStream is = getContentResolver().openInputStream(uri);
-						int len = is.available();
-						buffer = new byte[len];
-						is.read(buffer, 0, len);
+						int len;
+						ByteArrayOutputStream bufferStream = new ByteArrayOutputStream();
+						byte[] data = new byte[16384];
+						while ((len = is.read(data, 0, data.length)) != -1) {
+							bufferStream.write(data, 0, len);
+						}
+						bufferStream.flush();
+						buffer = bufferStream.toByteArray();
 						is.close();
 					}
 					catch (java.lang.OutOfMemoryError e) {
