@@ -1137,7 +1137,7 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 	dev->out_store = out;
 	dev->id = 0;
 
-	fz_printf(ctx, out, "<?xml version=\"1.0\" standalone=\"no\"?>\n");
+	fz_printf(ctx, out, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
 	fz_printf(ctx, out, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
 	fz_printf(ctx, out, "<svg xmlns=\"http://www.w3.org/2000/svg\" "
 		"xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" "
