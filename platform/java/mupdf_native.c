@@ -72,6 +72,7 @@ static jclass cls_Page;
 static jclass cls_Path;
 static jclass cls_PathWalker;
 static jclass cls_PDFDocument;
+static jclass cls_PDFGraftMap;
 static jclass cls_PDFObject;
 static jclass cls_Pixmap;
 static jclass cls_Point;
@@ -109,6 +110,7 @@ static jfieldID fid_Page_nativeLinks;
 static jfieldID fid_Page_pointer;
 static jfieldID fid_Path_pointer;
 static jfieldID fid_PDFDocument_pointer;
+static jfieldID fid_PDFGraftMap_pointer;
 static jfieldID fid_PDFObject_pointer;
 static jfieldID fid_Pixmap_pointer;
 static jfieldID fid_Rect_x0;
@@ -159,6 +161,7 @@ static jmethodID mid_PathWalker_lineTo;
 static jmethodID mid_PathWalker_moveTo;
 static jmethodID mid_Path_init;
 static jmethodID mid_PDFDocument_init;
+static jmethodID mid_PDFGraftMap_init;
 static jmethodID mid_PDFObject_init;
 static jmethodID mid_Pixmap_init;
 static jmethodID mid_Point_init;
@@ -401,6 +404,10 @@ static int find_fids(JNIEnv *env)
 	cls_PDFDocument = get_class(&err, env, PKG"PDFDocument");
 	fid_PDFDocument_pointer = get_field(&err, env, "pointer", "J");
 	mid_PDFDocument_init = get_method(&err, env, "<init>", "(J)V");
+
+	cls_PDFGraftMap = get_class(&err, env, PKG"PDFGraftMap");
+	fid_PDFGraftMap_pointer = get_field(&err, env, "pointer", "J");
+	mid_PDFGraftMap_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_PDFObject = get_class(&err, env, PKG"PDFObject");
 	fid_PDFObject_pointer = get_field(&err, env, "pointer", "J");
@@ -779,6 +786,24 @@ static inline jobject to_Font_safe(fz_context *ctx, JNIEnv *env, fz_font *font)
 		fz_keep_font(ctx, font);
 
 	return jfont;
+}
+
+/* take ownership and don't throw fitz exceptions */
+static inline jobject to_PDFGraftMap_safe_own(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_graft_map *map)
+{
+	jobject jmap;
+
+	if (ctx == NULL || map == NULL || pdf == NULL)
+		return NULL;
+
+	jmap = (*env)->NewObject(env, cls_PDFGraftMap, mid_PDFGraftMap_init, jlong_cast(map), pdf);
+	if (jmap == NULL)
+	{
+		pdf_drop_graft_map(ctx, map);
+		return NULL;
+	}
+
+	return jmap;
 }
 
 static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
@@ -1161,6 +1186,13 @@ static inline pdf_document *from_PDFDocument(JNIEnv *env, jobject jobj)
 	if (jobj == NULL)
 		return NULL;
 	return CAST(pdf_document *, (*env)->GetLongField(env, jobj, fid_PDFDocument_pointer));
+}
+
+static inline pdf_graft_map *from_PDFGraftMap(JNIEnv *env, jobject jobj)
+{
+	if (jobj == NULL)
+		return NULL;
+	return CAST(pdf_graft_map *, (*env)->GetLongField(env, jobj, fid_PDFGraftMap_pointer));
 }
 
 static inline pdf_obj *from_PDFObject(JNIEnv *env, jobject jobj)
@@ -5568,6 +5600,50 @@ FUN(PDFDocument_deleteObject)(JNIEnv *env, jobject self, jint num)
 		pdf_delete_object(ctx, pdf, num);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_newPDFGraftMap)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	pdf_graft_map *map = NULL;
+
+	if (ctx == NULL || pdf == NULL)
+		return NULL;
+
+	fz_try(ctx)
+		map = pdf_new_graft_map(ctx, pdf);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_PDFGraftMap_safe_own(ctx, env, self, map);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_graftObject)(JNIEnv *env, jobject self, jobject jsrc, jobject jobj, jobject jmap)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *dst = from_PDFDocument(env, self);
+	pdf_document *src = from_PDFDocument(env, jsrc);
+	pdf_obj *obj = from_PDFObject(env, jobj);
+	pdf_graft_map *map = from_PDFGraftMap(env, jmap);
+
+	if (ctx == NULL || dst == NULL || src == NULL || obj == NULL || map == NULL)
+		return NULL;
+
+	fz_try(ctx)
+		obj = pdf_graft_object(ctx, dst, src, obj, map);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_PDFObject_safe_own(ctx, env, self, obj);
 }
 
 JNIEXPORT jobject JNICALL

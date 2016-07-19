@@ -45,6 +45,9 @@ public class PDFDocument
 		deleteObject(obj.toIndirect());
 	}
 
+	public native PDFGraftMap newPDFGraftMap();
+	public native PDFObject graftObject(PDFDocument src, PDFObject obj, PDFGraftMap map);
+
 	private native PDFObject addStreamBuffer(Buffer buf);
 	private native PDFObject addStreamString(String str);
 
