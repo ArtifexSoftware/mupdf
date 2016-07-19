@@ -287,7 +287,18 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 fz_buffer *
 fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image)
 {
-	return png_from_pixmap(ctx, fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL), 0);
+	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
+	fz_buffer *buf = NULL;
+
+	fz_var(buf);
+
+	fz_try(ctx)
+		buf = png_from_pixmap(ctx, pix, 0);
+	fz_always(ctx)
+		fz_drop_pixmap(ctx, pix);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return buf;
 }
 
 fz_buffer *
