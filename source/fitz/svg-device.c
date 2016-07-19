@@ -5,6 +5,7 @@ typedef struct svg_device_s svg_device;
 typedef struct tile_s tile;
 typedef struct font_s font;
 typedef struct glyph_s glyph;
+typedef struct image_s image;
 
 struct tile_s
 {
@@ -29,6 +30,12 @@ struct font_s
 	glyph *sentlist;
 };
 
+struct image_s
+{
+	int id;
+	fz_image *image;
+};
+
 struct svg_device_s
 {
 	fz_device super;
@@ -48,6 +55,10 @@ struct svg_device_s
 	int num_fonts;
 	int max_fonts;
 	font *fonts;
+
+	int num_images;
+	int max_images;
+	image *images;
 };
 
 /* SVG is awkward about letting us define things within symbol definitions
@@ -734,12 +745,90 @@ send_data_base64(fz_context *ctx, fz_output *out, fz_buffer *buffer)
 	}
 }
 
+/* We spot repeated images, and send them just once using
+ * symbols. Unfortunately, for pathological files, such
+ * as the example in Bug695988, this can cause viewers to
+ * have conniptions. We therefore have a define that can
+ * be made to avoid this (SVG_SEND_REPEATED_IMAGES). */
+static void
+svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img)
+{
+	fz_output *out = sdev->out;
+	fz_compressed_buffer *buffer;
+#ifndef SVG_SEND_REPEATED_IMAGES
+	int i;
+	int id;
+
+	for (i = sdev->num_images-1; i >= 0; i--)
+	{
+		if (img == sdev->images[i].image)
+			break;
+	}
+	if (i >= 0)
+		id = sdev->images[i].id;
+	else
+	{
+		/* We need to send this image for the first time */
+		if (sdev->num_images == sdev->max_images)
+		{
+			int new_max = sdev->max_images * 2;
+			if (new_max == 0)
+				new_max = 32;
+			sdev->images = fz_resize_array(ctx, sdev->images, new_max, sizeof(image));
+			sdev->max_images = new_max;
+		}
+
+		id = sdev->id++;
+		out = start_def(ctx, sdev);
+		fz_printf(ctx, out, "<symbol id=\"im%d\">", id);
+#endif
+		fz_printf(ctx, out, "<image");
+		buffer = fz_compressed_image_buffer(ctx, img);
+		fz_printf(ctx, out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", img->w, img->h);
+		switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
+		{
+		case FZ_IMAGE_PNG:
+			fz_printf(ctx, out, "image/png;base64,");
+			send_data_base64(ctx, out, buffer->buffer);
+			break;
+		case FZ_IMAGE_JPEG:
+			/* SVG cannot cope with CMYK images */
+			if (img->colorspace != fz_device_cmyk(ctx))
+			{
+				fz_printf(ctx, out, "image/jpeg;base64,");
+				send_data_base64(ctx, out, buffer->buffer);
+				break;
+			}
+			/*@fallthough@*/
+		default:
+			{
+				fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, img);
+				fz_printf(ctx, out, "image/png;base64,");
+				send_data_base64(ctx, out, buf);
+				fz_drop_buffer(ctx, buf);
+				break;
+			}
+		}
+		fz_printf(ctx, out, "\"/>");
+#ifndef SVG_SEND_REPEATED_IMAGES
+
+		fz_printf(ctx, out, "</symbol>");
+		out = end_def(ctx, sdev);
+
+		sdev->images[sdev->num_images].id = id;
+		sdev->images[sdev->num_images].image = fz_keep_image(ctx, img);
+		sdev->num_images++;
+	}
+
+	fz_printf(ctx, out, "<use x=\"0\" y=\"0\" xlink:href=\"#im%d\"/>", id);
+#endif
+}
+
 static void
 svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
-	fz_compressed_buffer *buffer;
 
 	fz_matrix local_ctm = *ctm;
 	fz_matrix scale = { 0 };
@@ -748,34 +837,13 @@ svg_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 	scale.d = 1.0f / image->h;
 
 	fz_concat(&local_ctm, &scale, ctm);
+	fz_printf(ctx, out, "<g");
 	if (alpha != 1.0f)
-		fz_printf(ctx, out, "<g opacity=\"%g\">", alpha);
-	fz_printf(ctx, out, "<image");
+		fz_printf(ctx, out, " opacity=\"%g\"", alpha);
 	svg_dev_ctm(ctx, sdev, &local_ctm);
-	buffer = fz_compressed_image_buffer(ctx, image);
-	fz_printf(ctx, out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
-	switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
-	{
-	case FZ_IMAGE_JPEG:
-		fz_printf(ctx, out, "image/jpeg;base64,");
-		send_data_base64(ctx, out, buffer->buffer);
-		break;
-	case FZ_IMAGE_PNG:
-		fz_printf(ctx, out, "image/png;base64,");
-		send_data_base64(ctx, out, buffer->buffer);
-		break;
-	default:
-		{
-			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image);
-			fz_printf(ctx, out, "image/png;base64,");
-			send_data_base64(ctx, out, buf);
-			fz_drop_buffer(ctx, buf);
-			break;
-		}
-	}
-	fz_printf(ctx, out, "\"/>\n");
-	if (alpha != 1.0f)
-		fz_printf(ctx, out, "</g>");
+	fz_printf(ctx, out, ">");
+	svg_send_image(ctx, sdev, image);
+	fz_printf(ctx, out, "</g>\n");
 }
 
 static void
@@ -783,7 +851,6 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 {
 	svg_device *sdev = (svg_device*)dev;
 	fz_output *out = sdev->out;
-
 	fz_rect rect;
 	fz_irect bbox;
 	fz_pixmap *pix;
@@ -828,8 +895,6 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	svg_device *sdev = (svg_device*)dev;
-	fz_compressed_buffer *buffer;
-
 	fz_output *out;
 	fz_matrix local_ctm = *ctm;
 	fz_matrix scale = { 0 };
@@ -840,29 +905,9 @@ svg_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 
 	fz_concat(&local_ctm, &scale, ctm);
 	out = start_def(ctx, sdev);
-	fz_printf(ctx, out, "<mask id=\"ma%d\"><image", mask);
-	fz_printf(ctx, out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
-	buffer = fz_compressed_image_buffer(ctx, image);
-	switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
-	{
-	case FZ_IMAGE_JPEG:
-		fz_printf(ctx, out, "image/jpeg;base64,");
-		send_data_base64(ctx, out, buffer->buffer);
-		break;
-	case FZ_IMAGE_PNG:
-		fz_printf(ctx, out, "image/png;base64,");
-		send_data_base64(ctx, out, buffer->buffer);
-		break;
-	default:
-		{
-			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image);
-			fz_printf(ctx, out, "image/png;base64,");
-			send_data_base64(ctx, out, buf);
-			fz_drop_buffer(ctx, buf);
-			break;
-		}
-	}
-	fz_printf(ctx, out, "\"/></mask>\n");
+	fz_printf(ctx, out, "<mask id=\"ma%d\">", mask);
+	svg_send_image(ctx, sdev, image);
+	fz_printf(ctx, out, "</mask>\n");
 	out = end_def(ctx, sdev);
 	fz_printf(ctx, out, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"", image->w, image->h);
 	svg_dev_fill_color(ctx, sdev, colorspace, color, alpha);
@@ -878,37 +923,17 @@ svg_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_matrix local_ctm = *ctm;
 	fz_matrix scale = { 0 };
 	int mask = sdev->id++;
-	fz_compressed_buffer *buffer;
 
 	scale.a = 1.0f / image->w;
 	scale.d = 1.0f / image->h;
 
 	fz_concat(&local_ctm, &scale, ctm);
 	out = start_def(ctx, sdev);
-	fz_printf(ctx, out, "<mask id=\"ma%d\"><image", mask);
+	fz_printf(ctx, out, "<mask id=\"ma%d\"><g", mask);
 	svg_dev_ctm(ctx, sdev, &local_ctm);
-	fz_printf(ctx, out, " width=\"%dpx\" height=\"%dpx\" xlink:href=\"data:", image->w, image->h);
-	buffer = fz_compressed_image_buffer(ctx, image);
-	switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
-	{
-	case FZ_IMAGE_JPEG:
-		fz_printf(ctx, out, "image/jpeg;base64,");
-		send_data_base64(ctx, out, buffer->buffer);
-		break;
-	case FZ_IMAGE_PNG:
-		fz_printf(ctx, out, "image/png;base64,");
-		send_data_base64(ctx, out, buffer->buffer);
-		break;
-	default:
-		{
-			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image);
-			fz_printf(ctx, out, "image/png;base64,");
-			send_data_base64(ctx, out, buf);
-			fz_drop_buffer(ctx, buf);
-			break;
-		}
-	}
-	fz_printf(ctx, out, "\"/></mask>\n");
+	fz_printf(ctx, out, ">");
+	svg_send_image(ctx, sdev, image);
+	fz_printf(ctx, out, "</g></mask>\n");
 	out = end_def(ctx, sdev);
 	fz_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", mask);
 }
@@ -1106,6 +1131,11 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 		fz_free(ctx, sdev->fonts[i].sentlist);
 	}
 	fz_free(ctx, sdev->fonts);
+	for (i = 0; i < sdev->num_images; i++)
+	{
+		fz_drop_image(ctx, sdev->images[i].image);
+	}
+	fz_free(ctx, sdev->images);
 }
 
 fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height)
