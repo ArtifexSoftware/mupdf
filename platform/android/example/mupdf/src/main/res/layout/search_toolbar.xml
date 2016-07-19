@@ -1,0 +1,79 @@
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+                          android:layout_width="match_parent"
+                          android:layout_height="match_parent"
+                          android:background="@color/toolbar">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                      android:orientation="horizontal"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      android:background="@color/toolbar"
+                      android:paddingTop="10dp"
+                      android:paddingBottom="10dp">
+
+            <Space
+                android:layout_width="15dp"
+                android:layout_height="1dp"/>
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                          android:orientation="horizontal"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:background="@drawable/search_input_wrapper"
+                          android:layout_centerVertical="true"
+                          android:padding="5dp">
+
+                <Space
+                    android:layout_width="10dp"
+                    android:layout_height="1dp"/>
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/device_icon"
+                    android:src="@drawable/icon_find"
+                    />
+
+                <EditText
+                    android:hint="@string/find"
+                    android:textColorHint="#B3B3B3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="400dp"
+                    android:id="@+id/search_text_input"
+                    android:textSize="20sp"
+                    android:background="@drawable/search_text_input"
+                    android:textColor="@color/black"
+                    android:maxLines="1"
+                    android:inputType="text"/>
+
+            </LinearLayout>
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:background="@drawable/button"
+                android:id="@+id/search_next_button"
+                android:src="@drawable/icon_find_next" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:background="@drawable/button"
+                android:id="@+id/search_previous_button"
+                android:src="@drawable/icon_find_previous" />
+
+        </LinearLayout>
+
+
+    </HorizontalScrollView>
+
+</merge>

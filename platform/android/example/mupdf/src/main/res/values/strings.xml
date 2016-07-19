@@ -1,3 +1,11 @@
 <resources>
 	<string name="app_name">mupdf</string>
+	<string name="find">Find</string>
+	<string name="title">Title</string>
+
+	<string name="hidden_tab">HIDDEN</string>
+	<string name="file_tab">FILE</string>
+	<string name="annotate_tab">ANNOTATE</string>
+	<string name="pages_tab">PAGES</string>
+
 </resources>

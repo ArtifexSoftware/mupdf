@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="@color/button_pressed" />
+            <corners android:radius="12dp"/>
+            <!--<padding android:left="10dp" android:top="10dp" android:right="10dp" android:bottom="10dp" />-->
+        </shape>
+    </item>
+    <item android:state_focused="true">
+        <shape>
+            <solid android:color="@color/button_normal" />
+            <!--<padding android:left="10dp" android:top="10dp" android:right="10dp" android:bottom="10dp" />-->
+        </shape>
+    </item>
+    <item android:state_selected="true">
+        <shape>
+            <solid android:color="@color/button_selected" />
+            <corners android:radius="12dp"/>
+            <!--<padding android:left="10dp" android:top="10dp" android:right="10dp" android:bottom="10dp" />-->
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <solid android:color="@color/button_normal" />
+            <!--<padding android:left="10dp" android:top="10dp" android:right="10dp" android:bottom="10dp" />-->
+        </shape>
+    </item>
+</selector>

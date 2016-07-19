@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="button_normal">#00000000</color>
+    <color name="button_selected">#FFBFC1C2</color>
+    <color name="button_outline">#FF000000</color>
+    <color name="button_pressed">#FF2572AC</color>
+
+    <color name="toolbar">#DDDFE0</color>
+    <color name="transparent">#00000000</color>
+    <color name="my_blue">#FF65FFFF</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="red">#FFFF0000</color>
+    <color name="black">#000000</color>
+    <color name="bluish_grey">#43657D</color>
+    <color name="ltgrey">#CCCCCC</color>
+
+    <color name="sheet_button_normal">#DFDFDF</color>
+    <color name="sheet_button_plus_normal">#878787</color>
+    <color name="sheet_button_selected">#2EC0EF</color>
+    <color name="sheet_button_text_selected">#ffffff</color>
+    <color name="sheet_button_text">#000000</color>
+
+    <color name="alignment_button_selected">#1176BA</color>
+    <color name="alignment_dialog_background">#42515F</color>
+
+    <color name="footer">#DFDFDF</color>
+    <color name="footer_text">#717171</color>
+
+    <color name="breadcrumb_background">#546371</color>
+
+    <color name="formula_popup_background">#42515F</color>
+    <color name="number_format_popup_background">#42515F</color>
+    <color name="explorer_blue">#1eb3dc</color>
+
+    <!-- argb overlay color -->
+    <color name="control_overlay">#44BBFFFF</color>
+    <!-- rgb version (against white) -->
+    <color name="control_box">#E7FEFE</color>
+
+    <!-- Slider colors -->
+    <color name="slider_track_color">#444444</color>
+    <color name="slider_thumb_color">#0080FF</color>
+
+    <!-- text highlighting -->
+    <color name="text_highlight_color">#66CCFF</color>
+
+    <color name="blue_dot_color">#0080FF</color>
+
+</resources>
