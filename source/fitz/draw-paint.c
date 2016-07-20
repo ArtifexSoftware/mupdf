@@ -358,6 +358,24 @@ template_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 }
 #endif
 
+static inline void
+template_solid_color_0_da(byte * restrict dp, int w, int sa)
+{
+	if (sa == 256)
+	{
+		memset(dp, 255, w);
+	}
+	else
+	{
+		do
+		{
+			*dp = FZ_BLEND(255, *dp, sa);
+			dp++;
+		}
+		while (--w);
+	}
+}
+
 #if FZ_PLOTTERS_G
 static void paint_solid_color_1_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da)
 {
@@ -377,6 +395,12 @@ static void paint_solid_color_1_da(byte * restrict dp, int n, int w, const byte 
 	template_solid_color_1_da(dp, 2, w, color, 1);
 }
 #endif /* FZ_PLOTTERS_G */
+
+static void paint_solid_color_0_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+{
+	TRACK_FN();
+	template_solid_color_0_da(dp, w, 1);
+}
 
 #if FZ_PLOTTERS_RGB
 static void paint_solid_color_3_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da)
@@ -443,6 +467,8 @@ fz_get_solid_color_painter(int n, const byte * restrict color, int da)
 {
 	switch (n-da)
 	{
+		case 0:
+			return paint_solid_color_0_da;
 #if FZ_PLOTTERS_G
 		case 1:
 			if (da)
