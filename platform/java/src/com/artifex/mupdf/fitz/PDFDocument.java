@@ -41,8 +41,12 @@ public class PDFDocument
 	public native PDFObject createObject();
 	public native void deleteObject(int i);
 
-	public native PDFObject addStreamBuffer(Buffer buf);
-	public native PDFObject addStreamString(String str);
+	public void deleteObject(PDFObject obj) {
+		deleteObject(obj.toIndirect());
+	}
+
+	private native PDFObject addStreamBuffer(Buffer buf);
+	private native PDFObject addStreamString(String str);
 
 	public PDFObject addStream(Buffer buf) {
 		return addStreamBuffer(buf);
@@ -52,8 +56,8 @@ public class PDFDocument
 		return addStreamString(str);
 	}
 
-	public native PDFObject addPageBuffer(Rect mediabox, int rotate, PDFObject resources, Buffer contents);
-	public native PDFObject addPageString(Rect mediabox, int rotate, PDFObject resources, String contents);
+	private native PDFObject addPageBuffer(Rect mediabox, int rotate, PDFObject resources, Buffer contents);
+	private native PDFObject addPageString(Rect mediabox, int rotate, PDFObject resources, String contents);
 
 	public PDFObject addPage(Rect mediabox, int rotate, PDFObject resources, Buffer contents) {
 		return addPageBuffer(mediabox, rotate, resources, contents);
@@ -70,7 +74,4 @@ public class PDFDocument
 	public native PDFObject addFont(Font font);
 	public native void save(String filename, String options);
 
-	public void deleteObject(PDFObject obj) {
-		deleteObject(obj.toIndirect());
-	}
 }

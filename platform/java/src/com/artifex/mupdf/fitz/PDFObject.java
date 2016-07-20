@@ -47,8 +47,8 @@ public class PDFObject
 	public native byte[] readStream();
 	public native byte[] readRawStream();
 
-	public native PDFObject getArray(int index);
-	public native PDFObject getDictionary(String name);
+	private native PDFObject getArray(int index);
+	private native PDFObject getDictionary(String name);
 
 	public PDFObject get(int index) {
 		return getArray(index);
@@ -58,24 +58,23 @@ public class PDFObject
 		return getDictionary(name);
 	}
 
-	public native void putArrayBoolean(int index, boolean b);
-	public native void putArrayInteger(int index, int i);
-	public native void putArrayFloat(int index, float f);
-	public native void putArrayString(int index, String str);
-	public native void putArrayPDFObject(int index, PDFObject obj);
+	private native void putArrayBoolean(int index, boolean b);
+	private native void putArrayInteger(int index, int i);
+	private native void putArrayFloat(int index, float f);
+	private native void putArrayString(int index, String str);
+	private native void putArrayPDFObject(int index, PDFObject obj);
 
-	public native void putDictionaryStringBoolean(String name, boolean b);
-	public native void putDictionaryStringInteger(String name, int i);
-	public native void putDictionaryStringFloat(String name, float f);
-	public native void putDictionaryStringString(String name, String str);
-	public native void putDictionaryStringPDFObject(String name, PDFObject obj);
+	private native void putDictionaryStringBoolean(String name, boolean b);
+	private native void putDictionaryStringInteger(String name, int i);
+	private native void putDictionaryStringFloat(String name, float f);
+	private native void putDictionaryStringString(String name, String str);
+	private native void putDictionaryStringPDFObject(String name, PDFObject obj);
 
-	public native void putDictionaryPDFObjectBoolean(PDFObject name, boolean b);
-	public native void putDictionaryPDFObjectInteger(PDFObject name, int i);
-	public native void putDictionaryPDFObjectFloat(PDFObject name, float f);
-	public native void putDictionaryPDFObjectString(PDFObject name, String str);
-	public native void putDictionaryPDFObjectPDFObject(PDFObject name, PDFObject obj);
-
+	private native void putDictionaryPDFObjectBoolean(PDFObject name, boolean b);
+	private native void putDictionaryPDFObjectInteger(PDFObject name, int i);
+	private native void putDictionaryPDFObjectFloat(PDFObject name, float f);
+	private native void putDictionaryPDFObjectString(PDFObject name, String str);
+	private native void putDictionaryPDFObjectPDFObject(PDFObject name, PDFObject obj);
 
 	public void put(int index, boolean b) {
 		putArrayBoolean(index, b);
@@ -137,9 +136,9 @@ public class PDFObject
 		putDictionaryPDFObjectPDFObject(name, obj);
 	}
 
-	public native void deleteArray(int index);
-	public native void deleteDictionaryString(String name);
-	public native void deleteDictionaryPDFObject(PDFObject name);
+	private native void deleteArray(int index);
+	private native void deleteDictionaryString(String name);
+	private native void deleteDictionaryPDFObject(PDFObject name);
 
 	public void delete(int index) {
 		deleteArray(index);
