@@ -286,8 +286,8 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 	key.d = subpix_ctm.d * 65536;
 	key.aa = fz_text_aa_level(ctx);
 
-	fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
 	hash = do_hash((unsigned char *)&key, sizeof(key)) % GLYPH_HASH_LEN;
+	fz_lock(ctx, FZ_LOCK_GLYPHCACHE);
 	entry = cache->entry[hash];
 	while (entry)
 	{
