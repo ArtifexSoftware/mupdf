@@ -937,7 +937,7 @@ static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pd
 {
 	jobject jobj;
 
-	if (ctx == NULL || obj == NULL)
+	if (ctx == NULL || obj == NULL || pdf == NULL)
 		return NULL;
 
 	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
@@ -952,7 +952,7 @@ static inline jobject to_PDFObject_safe_own(fz_context *ctx, JNIEnv *env, jobjec
 {
 	jobject jobj;
 
-	if (ctx == NULL || obj == NULL)
+	if (ctx == NULL || obj == NULL || pdf == NULL)
 		return NULL;
 
 	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
@@ -1003,7 +1003,7 @@ static inline jobject to_StrokeState(fz_context *ctx, JNIEnv *env, const fz_stro
 {
 	jobject jobj;
 
-	if (ctx == NULL)
+	if (ctx == NULL || state == NULL)
 		return NULL;
 
 	jobj = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
