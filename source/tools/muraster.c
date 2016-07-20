@@ -979,9 +979,10 @@ static int try_render_page(fz_context *ctx, int pagenum, fz_cookie *cookie, int 
 				timing.maxpage = pagenum;
 				timing.maxfilename = filename;
 			}
+			timing.total += diff + interptime;
 			timing.count ++;
 
-			fprintf(stderr, " %dms (interpretation) %dms (rendering) %dms (total)", interptime, diff, diff + interptime);
+			fprintf(stderr, " %dms (interpretation) %dms (rendering) %dms (total)\n", interptime, diff, diff + interptime);
 		}
 		else
 		{
@@ -1320,13 +1321,12 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	}
 	while (1);
 
+	if (showtime)
+	{
+		fprintf(stderr, "page %s %d", filename, pagenum);
+	}
 	if (bgprint.active)
 	{
-		if (bgprint.active && showtime)
-		{
-			fprintf(stderr, "page %s %d", filename, pagenum);
-		}
-
 		bgprint.started = 1;
 		bgprint.solo = 0;
 		bgprint.render = render;
@@ -1556,7 +1556,7 @@ int main(int argc, char **argv)
 
 	fz_var(doc);
 
-	bgprint.active = BGPRINT;
+	bgprint.active = 0;			/* set by -P */
 	min_band_height = MIN_BAND_HEIGHT;
 	max_band_memory = BAND_MEMORY;
 	width = 0;
