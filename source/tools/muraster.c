@@ -767,6 +767,9 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 				w->tbounds = tbounds;
 				memset(&w->cookie, 0, sizeof(fz_cookie));
 				w->list = render->list;
+				if (remaining_height < band_height)
+					ibounds.y1 = ibounds.y0 + remaining_height;
+				remaining_height -= band_height;
 				w->pix = fz_new_pixmap_with_bbox(ctx, colorspace, &ibounds, 0);
 				fz_set_pixmap_resolution(ctx, w->pix, x_resolution, y_resolution);
 				DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
@@ -1112,7 +1115,7 @@ static void
 initialise_banding(fz_context *ctx, render_details *render, int color)
 {
 	size_t min_band_mem;
-	int bpp, w, reps;
+	int bpp, h, w, reps;
 
 	render->colorspace = output_cs;
 	render->format = output_format;
@@ -1155,6 +1158,20 @@ initialise_banding(fz_context *ctx, render_details *render, int color)
 	reps = max_band_memory / min_band_mem;
 	if (reps < 1)
 		reps = 1;
+
+	/* Adjust reps to even out the work between threads */
+	if (render->num_workers > 0)
+	{
+		int runs, num_bands;
+		h = render->ibounds.y1 - render->ibounds.y0;
+		num_bands = (h + min_band_height - 1) / min_band_height;
+		/* num_bands = number of min_band_height bands */
+		runs = (num_bands + reps-1) / reps;
+		/* runs = number of worker runs of reps min_band_height bands */
+		runs = ((runs + render->num_workers - 1) / render->num_workers) * render->num_workers;
+		/* runs = number of worker runs rounded up to make use of all our threads */
+		reps = (num_bands + runs - 1) / runs;
+	}
 
 	render->band_height_multiple = reps;
 	render->bands_rendered = 0;
