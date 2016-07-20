@@ -1582,6 +1582,7 @@ static fz_device *fz_new_java_device(fz_context *ctx, JNIEnv *env, jobject self)
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
+		return NULL;
 	}
 
 	return (fz_device*)dev;
@@ -1599,7 +1600,10 @@ FUN(Device_newNative)(JNIEnv *env, jclass self)
 	fz_try(ctx)
 		dev = fz_new_java_device(ctx, env, self);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(dev);
 }
@@ -2130,7 +2134,10 @@ FUN(NativeDevice_beginTile)(JNIEnv *env, jobject self, jobject jarea, jobject jv
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return i;
 }
@@ -2167,7 +2174,10 @@ FUN(DrawDevice_newNative)(JNIEnv *env, jclass self, jobject jpixmap)
 	fz_try(ctx)
 		device = fz_new_draw_device(ctx, NULL, pixmap);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(device);
 }
@@ -2182,10 +2192,15 @@ FUN(DisplayListDevice_newNative)(JNIEnv *env, jclass self, jobject jlist)
 	if (ctx == NULL || list == NULL)
 		return 0;
 
+	fz_var(device);
+
 	fz_try(ctx)
 		device = fz_new_list_device(ctx, list);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(device);
 }
@@ -2261,7 +2276,9 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 		fz_drop_pixmap(ctx, pixmap);
 		fz_free(ctx, ninfo);
 		jni_rethrow(env, ctx);
+		return 0;
 	}
+
 	return jlong_cast(device);
 }
 
@@ -2320,7 +2337,10 @@ FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitm
 		device = newNativeAndroidDrawDevice(env, self, ctx, jbitmap, info.width, info.height, androidDrawDevice_lock, androidDrawDevice_unlock, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return device;
 }
@@ -2369,7 +2389,10 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 	fz_always(ctx)
 		fz_drop_pixmap(ctx, pixmap);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(image);
 }
@@ -2478,7 +2501,10 @@ FUN(Font_newNative)(JNIEnv *env, jobject self, jstring jname, jint index)
 		if (name != NULL)
 			(*env)->ReleaseStringUTFChars(env, jname, name);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(font);
 }
@@ -2508,7 +2534,10 @@ FUN(Font_encodeCharacter)(JNIEnv *env, jobject self, jint unicode)
 	fz_try(ctx)
 		glyph = fz_encode_character(ctx, font, unicode);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return glyph;
 }
@@ -2526,7 +2555,10 @@ FUN(Font_advanceGlyph)(JNIEnv *env, jobject self, jint glyph, jboolean wmode)
 	fz_try(ctx)
 		advance = fz_advance_glyph(ctx, font, glyph, wmode);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return advance;
 }
@@ -2562,7 +2594,10 @@ FUN(Pixmap_newNative)(JNIEnv *env, jobject self, jobject jcs, jint x, jint y, ji
 		pixmap->y = y;
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(pixmap);
 }
@@ -2675,7 +2710,7 @@ FUN(Pixmap_getColorSpace)(JNIEnv *env, jobject self)
 	jobject jcs = NULL;
 
 	if (ctx == NULL || pixmap == NULL)
-		return 0;
+		return NULL;
 
 	fz_try(ctx)
 	{
@@ -2683,7 +2718,10 @@ FUN(Pixmap_getColorSpace)(JNIEnv *env, jobject self)
 		jcs = to_ColorSpace(ctx, env, cs);
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jcs;
 }
@@ -2818,7 +2856,10 @@ FUN(Path_newNative)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		path = fz_new_path(ctx);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(path);
 }
@@ -2836,7 +2877,10 @@ FUN(Path_currentPoint)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		jpoint = to_Point(ctx, env, fz_currentpoint(ctx, path));
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jpoint;
 }
@@ -2975,7 +3019,10 @@ FUN(Path_cloneNative)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		new_path = fz_clone_path(ctx, old_path);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(new_path);
 }
@@ -2996,7 +3043,10 @@ FUN(Path_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	fz_try(ctx)
 		jrect = to_Rect(ctx, env, fz_bound_path(ctx, path, stroke, &ctm, &rect));
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jrect;
 }
@@ -3117,7 +3167,10 @@ FUN(Path_newStrokeState)(JNIEnv *env, jobject self, jint startCap, jint dashCap,
 		(*env)->GetFloatArrayRegion(env, dash, 0, len, &stroke->dash_list[0]);
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(stroke);
 }
@@ -3220,7 +3273,10 @@ FUN(Text_clone)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		new_text = fz_clone_text(ctx, old_text);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(new_text);
 }
@@ -3237,7 +3293,10 @@ FUN(Text_newNative)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		text = fz_new_text(ctx);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(text);
 }
@@ -3258,7 +3317,10 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	fz_try(ctx)
 		jrect = to_Rect(ctx, env, fz_bound_text(ctx, text, stroke, &ctm, &rect));
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jrect;
 }
@@ -3305,7 +3367,10 @@ FUN(Text_showString)(JNIEnv *env, jobject self, jobject jfont, jobject jtrm, jst
 		if (str != NULL)
 			(*env)->ReleaseStringUTFChars(env, jstr, str);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return;
+	}
 
 	(*env)->SetFloatField(env, jtrm, fid_Matrix_e, trm.e);
 	(*env)->SetFloatField(env, jtrm, fid_Matrix_f, trm.f);
@@ -3389,7 +3454,10 @@ FUN(Image_newNativeFromPixmap)(JNIEnv *env, jobject self, jobject jpixmap)
 	fz_try(ctx)
 		image = fz_new_image_from_pixmap(ctx, pixmap, NULL);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(image);
 }
@@ -3417,7 +3485,10 @@ FUN(Image_newNativeFromFile)(JNIEnv *env, jobject self, jstring jfilename)
 		if (filename != NULL)
 			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(image);
 }
@@ -3456,7 +3527,10 @@ FUN(Image_getColorSpace)(JNIEnv *env, jobject self)
 	fz_try (ctx)
 		jcs = to_ColorSpace(ctx, env, image->colorspace);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jcs;
 }
@@ -3509,7 +3583,10 @@ FUN(Image_getMask)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		jmask = to_Image(ctx, env, img->mask);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jmask;
 }
@@ -3527,7 +3604,10 @@ FUN(Image_toPixmap)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		pixmap = fz_get_pixmap_from_image(ctx, img, NULL, NULL, NULL, NULL);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_Pixmap_safe_own(ctx, env, pixmap);
 }
@@ -3580,7 +3660,10 @@ FUN(Annotation_advance)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		annot = fz_next_annot(ctx, annot);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(annot);
 }
@@ -3600,7 +3683,10 @@ FUN(Annotation_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, j
 	fz_try(ctx)
 		pixmap = fz_new_pixmap_from_annot(ctx, annot, &ctm, cs, alpha);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_Pixmap_safe_own(ctx, env, pixmap);
 }
@@ -3619,7 +3705,10 @@ FUN(Annotation_getBounds)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		jrect = to_Rect(ctx, env, fz_bound_annot(ctx, annot, &rect));
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jrect;
 }
@@ -3637,7 +3726,10 @@ FUN(Annotation_toDisplayList)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		list = fz_new_display_list_from_annot(ctx, annot);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_DisplayList_safe_own(ctx, env, list);
 }
@@ -3681,7 +3773,10 @@ FUN(Document_newNativeWithPath)(JNIEnv *env, jobject self, jstring jfilename)
 		if (filename != NULL)
 			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(doc);
 }
@@ -3699,7 +3794,10 @@ FUN(Document_needsPassword)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		okay = fz_needs_password(ctx, doc);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return okay;
 }
@@ -3733,7 +3831,10 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 		if (password != NULL)
 			(*env)->ReleaseStringUTFChars(env, jpassword, password);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return okay;
 }
@@ -3751,7 +3852,10 @@ FUN(Document_countPages)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		count = fz_count_pages(ctx, doc);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return count;
 }
@@ -3769,7 +3873,10 @@ FUN(Document_isReflowable)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		is_reflowable = fz_is_document_reflowable(ctx, doc);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return is_reflowable;
 }
@@ -3802,7 +3909,10 @@ FUN(Document_loadPage)(JNIEnv *env, jobject self, jint number)
 	fz_try(ctx)
 		page = fz_load_page(ctx, doc, number);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_Page_safe_own(ctx, env, page);
 }
@@ -3899,7 +4009,10 @@ FUN(Document_toPDFDocument)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		pdf = pdf_specifics(ctx, doc);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFDocument_safe(ctx, env, pdf);
 }
@@ -3933,7 +4046,10 @@ FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolea
 	fz_try(ctx)
 		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, cs, alpha);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_Pixmap_safe_own(ctx, env, pixmap);
 }
@@ -3952,7 +4068,10 @@ FUN(Page_getBounds)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		jrect = to_Rect(ctx, env, fz_bound_page(ctx, page, &rect));
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jrect;
 }
@@ -4015,9 +4134,6 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 	if (ctx == NULL || page == NULL)
 		return NULL;
 
-	fz_var(annot);
-	fz_var(jannots);
-
 	fz_try(ctx)
 	{
 		jannots = (*env)->GetObjectField(env, self, fid_Page_nativeAnnots);
@@ -4056,7 +4172,10 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (4)");
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jannots;
 }
@@ -4075,9 +4194,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 	if (ctx == NULL || page == NULL)
 		return NULL;
 
-	fz_var(link);
 	fz_var(links);
-	fz_var(jlinks);
 
 	fz_try(ctx)
 	{
@@ -4140,7 +4257,10 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 	fz_always(ctx)
 		fz_drop_link(ctx, links);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jlinks;
 }
@@ -4214,7 +4334,10 @@ FUN(Page_toDisplayList)(JNIEnv *env, jobject self, jboolean no_annotations)
 		else
 			list = fz_new_display_list_from_page(ctx, page);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_DisplayList_safe_own(ctx, env, list);
 }
@@ -4240,7 +4363,10 @@ FUN(Page_toStructuredText)(JNIEnv *env, jobject self)
 	fz_always(ctx)
 		fz_drop_stext_sheet(ctx, sheet);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_StructuredText_safe_own(ctx, env, text);
 }
@@ -4271,7 +4397,10 @@ FUN(Cookie_newNative)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		cookie = fz_malloc_struct(ctx, fz_cookie);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(cookie);
 }
@@ -4303,7 +4432,10 @@ FUN(DisplayList_newNative)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		list = fz_new_display_list(ctx, NULL);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(list);
 }
@@ -4366,7 +4498,10 @@ FUN(DisplayList_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, 
 	fz_try(ctx)
 		pixmap = fz_new_pixmap_from_display_list(ctx, list, &ctm, cs, alpha);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_Pixmap_safe_own(ctx, env, pixmap);
 }
@@ -4450,7 +4585,10 @@ FUN(Buffer_newNativeBuffer)(JNIEnv *env, jobject self, jint n)
 	fz_try(ctx)
 		buf = fz_new_buffer(ctx, n);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(buf);
 }
@@ -4808,7 +4946,10 @@ FUN(DocumentWriter_newNativeDocumentWriter)(JNIEnv *env, jobject self, jstring j
 		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return jlong_cast(wri);
 }
@@ -4827,7 +4968,10 @@ FUN(DocumentWriter_beginPage)(JNIEnv *env, jobject self, jobject jmediabox)
 	fz_try(ctx)
 		device = fz_begin_page(ctx, wri, &mediabox);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_Device_safe_own(ctx, env, device);
 }
@@ -5026,7 +5170,10 @@ FUN(PDFDocument_countObjects)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		count = pdf_xref_len(ctx, pdf);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return count;
 }
@@ -5286,7 +5433,10 @@ FUN(PDFDocument_countPages)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		count = pdf_count_pages(ctx, pdf);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return count;
 }
@@ -5305,7 +5455,10 @@ FUN(PDFDocument_findPage)(JNIEnv *env, jobject self, jint jat)
 	fz_try(ctx)
 		obj = pdf_lookup_page_obj(ctx, pdf, at);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe(ctx, env, self, obj);
 }
@@ -5323,7 +5476,10 @@ FUN(PDFDocument_getTrailer)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		obj = pdf_trailer(ctx, pdf);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe(ctx, env, self, obj);
 }
@@ -5341,7 +5497,10 @@ FUN(PDFDocument_addObject)(JNIEnv *env, jobject self, jobject jobj)
 	fz_try(ctx)
 		obj = pdf_add_object_drop(ctx, pdf, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return jobj;
 }
@@ -5359,7 +5518,10 @@ FUN(PDFDocument_createObject)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		ind = pdf_new_indirect(ctx, pdf, pdf_create_object(ctx, pdf), 0);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5393,7 +5555,10 @@ FUN(PDFDocument_addStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
 	fz_try(ctx)
 		ind = pdf_add_stream(ctx, pdf, buf);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5416,6 +5581,7 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf)
 		return NULL;
 
 	fz_var(data);
+	fz_var(buf);
 
 	fz_try(ctx)
 	{
@@ -5433,7 +5599,10 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf)
 		(*env)->ReleaseStringUTFChars(env, jbuf, sbuf);
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5455,7 +5624,10 @@ FUN(PDFDocument_addPageBuffer)(JNIEnv *env, jobject self, jobject jmediabox, jin
 	fz_try(ctx)
 		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5480,6 +5652,7 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 		return NULL;
 
 	fz_var(data);
+	fz_var(contents);
 
 	fz_try(ctx)
 	{
@@ -5496,7 +5669,10 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 		(*env)->ReleaseStringUTFChars(env, jcontents, scontents);
 	}
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5548,7 +5724,10 @@ FUN(PDFDocument_addImage)(JNIEnv *env, jobject self, jobject jimage)
 	fz_try(ctx)
 		ind = pdf_add_image(ctx, pdf, image, 0);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5567,7 +5746,10 @@ FUN(PDFDocument_addFont)(JNIEnv *env, jobject self, jobject jfont)
 	fz_try(ctx)
 		ind = pdf_add_cid_font(ctx, pdf, font);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5586,7 +5768,10 @@ FUN(PDFDocument_addSimpleFont)(JNIEnv *env, jobject self, jobject jfont)
 	fz_try(ctx)
 		ind = pdf_add_simple_font(ctx, pdf, font);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
@@ -5656,7 +5841,10 @@ FUN(PDFObject_toIndirect)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		num = pdf_to_num(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return num;
 }
@@ -5674,7 +5862,10 @@ FUN(PDFObject_isIndirect)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_indirect(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5692,7 +5883,10 @@ FUN(PDFObject_isNull)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_null(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5710,7 +5904,10 @@ FUN(PDFObject_isBoolean)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_bool(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5728,7 +5925,10 @@ FUN(PDFObject_isInteger)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_int(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5746,7 +5946,10 @@ FUN(PDFObject_isReal)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_real(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5764,7 +5967,10 @@ FUN(PDFObject_isNumber)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_number(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5782,7 +5988,10 @@ FUN(PDFObject_isString)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_string(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5800,7 +6009,10 @@ FUN(PDFObject_isName)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_name(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5818,7 +6030,10 @@ FUN(PDFObject_isArray)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_array(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5836,7 +6051,10 @@ FUN(PDFObject_isDictionary)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_dict(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5854,7 +6072,10 @@ FUN(PDFObject_isStream)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_is_stream(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -5889,7 +6110,10 @@ FUN(PDFObject_readStream)(JNIEnv *env, jobject self)
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return arr;
 }
@@ -5924,7 +6148,10 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return arr;
 }
@@ -5943,7 +6170,10 @@ FUN(PDFObject_resolve)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		ind = pdf_resolve_indirect(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(ind), self);
 	if (jobj != NULL)
@@ -5965,7 +6195,10 @@ FUN(PDFObject_getArray)(JNIEnv *env, jobject self, jint index)
 	fz_try(ctx)
 		val = pdf_array_get(ctx, obj, index);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe(ctx, env, self, val);
 }
@@ -5990,7 +6223,10 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jname, name);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return to_PDFObject_safe(ctx, env, self, val);
 }
@@ -6409,7 +6645,10 @@ FUN(PDFObject_toBoolean)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		b = pdf_to_bool(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return b;
 }
@@ -6427,7 +6666,10 @@ FUN(PDFObject_toInteger)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		i = pdf_to_int(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return i;
 }
@@ -6445,7 +6687,10 @@ FUN(PDFObject_toFloat)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		f = pdf_to_real(ctx, obj);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return f;
 }
@@ -6495,6 +6740,8 @@ FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
 	if (ctx == NULL || obj == NULL)
 		return 0;
 
+	fz_var(s);
+
 	fz_try(ctx)
 	{
 		n = pdf_sprint_obj(ctx, NULL, 0, obj, tight);
@@ -6505,7 +6752,10 @@ FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
 	fz_always(ctx)
 		fz_free(ctx, s);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return NULL;
+	}
 
 	return string;
 }
