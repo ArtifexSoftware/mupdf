@@ -62,24 +62,33 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
 
 static void saveimage(int num)
 {
-	fz_image *image;
-	fz_pixmap *pix;
+	fz_image *image = NULL;
+	fz_pixmap *pix = NULL;
 	pdf_obj *ref;
 	char buf[32];
 
 	ref = pdf_new_indirect(ctx, doc, num, 0);
 
-	/* TODO: detect DCTD and save as jpeg */
+	fz_var(image);
+	fz_var(pix);
 
-	image = pdf_load_image(ctx, doc, ref);
-	pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
-	fz_drop_image(ctx, image);
+	fz_try(ctx)
+	{
+		/* TODO: detect DCTD and save as jpeg */
+		image = pdf_load_image(ctx, doc, ref);
+		pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
+		snprintf(buf, sizeof(buf), "img-%04d", num);
+		writepixmap(ctx, pix, buf, dorgb);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_image(ctx, image);
+		fz_drop_pixmap(ctx, pix);
+		pdf_drop_obj(ctx, ref);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
-	snprintf(buf, sizeof(buf), "img-%04d", num);
-	writepixmap(ctx, pix, buf, dorgb);
-
-	fz_drop_pixmap(ctx, pix);
-	pdf_drop_obj(ctx, ref);
 }
 
 static void savefont(pdf_obj *dict, int num)
