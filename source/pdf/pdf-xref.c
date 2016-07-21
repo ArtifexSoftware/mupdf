@@ -1184,8 +1184,14 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "object offset out of range: %d (%d 0 R)", (int)entry->ofs, i);
 		}
 		if (entry->type == 'o')
-			if (entry->ofs <= 0 || entry->ofs >= xref_len || pdf_get_xref_entry(ctx, doc, entry->ofs)->type != 'n')
-				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)entry->ofs, i);
+		{
+			/* Read this into a local variable here, because pdf_get_xref_entry
+			 * may solidify the xref, hence invalidating "entry", meaning we
+			 * need a stashed value for the throw. */
+			fz_off_t ofs = entry->ofs;
+			if (ofs <= 0 || ofs >= xref_len || pdf_get_xref_entry(ctx, doc, ofs)->type != 'n')
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)ofs, i);
+		}
 	}
 }
 
