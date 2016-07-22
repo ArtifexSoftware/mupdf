@@ -42,7 +42,10 @@ public class Pixmap
 	}
 
 	public native void clear();
-	public native void clearWithValue(int value);
+	private native void clearWithValue(int value);
+	public void clear(int value) {
+		clearWithValue(value);
+	}
 
 	public native void saveAsPNG(String filename);
 
@@ -59,10 +62,6 @@ public class Pixmap
 	public native int[] getPixels(); /* only valid for RGBA or BGRA pixmaps */
 	public native int getXResolution();
 	public native int getYResolution();
-
-	public void clear(int value) {
-		clearWithValue(value);
-	}
 
 	public Rect getBounds() {
 		int x = getX();
