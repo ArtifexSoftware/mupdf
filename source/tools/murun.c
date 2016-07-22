@@ -1874,6 +1874,18 @@ static void ffi_Pixmap_clear(js_State *J)
 	}
 }
 
+static void ffi_Pixmap_getX(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->x);
+}
+
+static void ffi_Pixmap_getY(js_State *J)
+{
+	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
+	js_pushnumber(J, pixmap->y);
+}
+
 static void ffi_Pixmap_getWidth(js_State *J)
 {
 	fz_pixmap *pixmap = js_touserdata(J, 0, "fz_pixmap");
@@ -3602,6 +3614,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Pixmap.bound", ffi_Pixmap_bound, 0);
 		jsB_propfun(J, "Pixmap.clear", ffi_Pixmap_clear, 1);
 
+		jsB_propfun(J, "Pixmap.getX", ffi_Pixmap_getX, 0);
+		jsB_propfun(J, "Pixmap.getY", ffi_Pixmap_getY, 0);
 		jsB_propfun(J, "Pixmap.getWidth", ffi_Pixmap_getWidth, 0);
 		jsB_propfun(J, "Pixmap.getHeight", ffi_Pixmap_getHeight, 0);
 		jsB_propfun(J, "Pixmap.getNumberOfComponents", ffi_Pixmap_getNumberOfComponents, 0);
