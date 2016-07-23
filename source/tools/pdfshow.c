@@ -180,6 +180,7 @@ static void showgrep(char *filename)
 
 			fz_printf(ctx, out, "%s:%d: ", filename, i);
 			pdf_print_obj(ctx, out, obj, 1);
+			fz_printf(ctx, out, "\n");
 
 			pdf_drop_obj(ctx, obj);
 		}
@@ -187,6 +188,7 @@ static void showgrep(char *filename)
 
 	fz_printf(ctx, out, "%s:trailer: ", filename);
 	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 1);
+	fz_printf(ctx, out, "\n");
 }
 
 static void showoutline(void)
