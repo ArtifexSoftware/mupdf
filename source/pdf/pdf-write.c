@@ -2777,6 +2777,10 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		opts->do_linear = opteq(val, "yes");
 	if (fz_has_option(ctx, args, "sanitize", &val))
 		opts->do_clean = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "incremental", &val))
+		opts->do_incremental = opteq(val, "yes");
+	if (fz_has_option(ctx, args, "continue-on-error", &val))
+		opts->continue_on_error = opteq(val, "yes");
 	if (fz_has_option(ctx, args, "garbage", &val))
 	{
 		if (opteq(val, "yes"))
