@@ -471,11 +471,13 @@ static int find_fids(JNIEnv *env)
 static void lose_fids(JNIEnv *env)
 {
 	(*env)->DeleteGlobalRef(env, cls_Annot);
+	(*env)->DeleteGlobalRef(env, cls_Buffer);
 	(*env)->DeleteGlobalRef(env, cls_ColorSpace);
 	(*env)->DeleteGlobalRef(env, cls_Cookie);
 	(*env)->DeleteGlobalRef(env, cls_Device);
 	(*env)->DeleteGlobalRef(env, cls_DisplayList);
 	(*env)->DeleteGlobalRef(env, cls_Document);
+	(*env)->DeleteGlobalRef(env, cls_DocumentWriter);
 	(*env)->DeleteGlobalRef(env, cls_Exception);
 	(*env)->DeleteGlobalRef(env, cls_Font);
 	(*env)->DeleteGlobalRef(env, cls_Image);
@@ -491,13 +493,16 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Path);
 	(*env)->DeleteGlobalRef(env, cls_PathWalker);
 	(*env)->DeleteGlobalRef(env, cls_PDFDocument);
+	(*env)->DeleteGlobalRef(env, cls_PDFGraftMap);
 	(*env)->DeleteGlobalRef(env, cls_PDFObject);
 	(*env)->DeleteGlobalRef(env, cls_Pixmap);
 	(*env)->DeleteGlobalRef(env, cls_Point);
 	(*env)->DeleteGlobalRef(env, cls_Rect);
 	(*env)->DeleteGlobalRef(env, cls_Shade);
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
+	(*env)->DeleteGlobalRef(env, cls_StructuredText);
 	(*env)->DeleteGlobalRef(env, cls_Text);
+	(*env)->DeleteGlobalRef(env, cls_TextWalker);
 	(*env)->DeleteGlobalRef(env, cls_TryLaterException);
 }
 
