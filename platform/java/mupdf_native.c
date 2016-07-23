@@ -5886,7 +5886,23 @@ FUN(PDFDocument_addSimpleFont)(JNIEnv *env, jobject self, jobject jfont)
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jboolean JNICALL
+FUN(PDFDocument_hasUnsavedChanges)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	return pdf_has_unsaved_changes(ctx, pdf);
+}
+
+JNIEXPORT jboolean JNICALL
+FUN(PDFDocument_canBeSavedIncrementally)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	return pdf_can_be_saved_incrementally(ctx, pdf);
+}
+
+JNIEXPORT jint JNICALL
 FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
@@ -5894,24 +5910,26 @@ FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring jopt
 	const char *filename = NULL;
 	const char *options = NULL;
 	pdf_write_options pwo = { 0 };
+	int errors = 0;
 
 	if (ctx == NULL || pdf == NULL || jfilename == NULL)
-		return;
+		return 0;
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
 	if (filename == NULL)
-		return;
+		return 0;
 
 	if (joptions != NULL)
 	{
 		options = (*env)->GetStringUTFChars(env, joptions, NULL);
 		if (options == NULL)
-			return;
+			return 0;
 	}
 
 	fz_try(ctx)
 	{
 		pdf_parse_write_options(ctx, &pwo, options);
+		pwo.errors = &errors;
 		pdf_save_document(ctx, pdf, filename, &pwo);
 	}
 	fz_always(ctx)
@@ -5922,6 +5940,8 @@ FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring jopt
 	}
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
+
+	return errors;
 }
 
 /* PDFObject interface */

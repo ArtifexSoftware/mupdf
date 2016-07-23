@@ -75,6 +75,8 @@ public class PDFDocument
 	public native PDFObject addImage(Image image);
 	public native PDFObject addSimpleFont(Font font);
 	public native PDFObject addFont(Font font);
-	public native void save(String filename, String options);
+	public native boolean hasUnsavedChanges();
+	public native boolean canBeSavedIncrementally();
+	public native int save(String filename, String options);
 
 }

@@ -1526,10 +1526,26 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addFont
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    save
- * Signature: (Ljava/lang/String;Ljava/lang/String;)V
+ * Method:    hasUnsavedChanges
+ * Signature: ()Z
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_hasUnsavedChanges
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    canBeSavedIncrementally
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_canBeSavedIncrementally
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    save
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_save
   (JNIEnv *, jobject, jstring, jstring);
 
 #ifdef __cplusplus
