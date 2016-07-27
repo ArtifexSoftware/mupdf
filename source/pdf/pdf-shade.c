@@ -206,7 +206,7 @@ pdf_load_mesh_params(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_Decode);
 	if (pdf_array_len(ctx, obj) >= 6)
 	{
-		n = (pdf_array_len(ctx, obj) - 4) / 2;
+		n = fz_mini(FZ_MAX_COLORS, (pdf_array_len(ctx, obj) - 4) / 2);
 		shade->u.m.x0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
 		shade->u.m.x1 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
 		shade->u.m.y0 = pdf_to_real(ctx, pdf_array_get(ctx, obj, 2));
