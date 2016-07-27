@@ -299,6 +299,7 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 			{
 				/* Remove this annotation */
 				pdf_array_delete(ctx, annots, j);
+				len--;
 				j--;
 			}
 		}
