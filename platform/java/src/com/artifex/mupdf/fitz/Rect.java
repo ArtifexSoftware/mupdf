@@ -74,4 +74,12 @@ public class Rect
 
 		return this;
 	}
+
+	public boolean contains(float x, float y)
+	{
+		if (x>=x0 && x<x1 && y>=y0 && y<y1)
+			return true;
+
+		return false;
+	}
 }
