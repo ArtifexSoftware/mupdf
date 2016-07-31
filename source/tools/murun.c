@@ -2366,6 +2366,34 @@ static void ffi_Path_rect(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Path_bound(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_path *path = js_touserdata(J, 0, "fz_path");
+	fz_stroke_state stroke = ffi_tostroke(J, 1);
+	fz_matrix ctm = ffi_tomatrix(J, 2);
+	fz_rect bounds;
+
+	fz_try(ctx)
+		fz_bound_path(ctx, path, &stroke, &ctm, &bounds);
+	fz_catch(ctx)
+		rethrow(J);
+
+	ffi_pushrect(J, bounds);
+}
+
+static void ffi_Path_transform(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_path *path = js_touserdata(J, 0, "fz_path");
+	fz_matrix ctm = ffi_tomatrix(J, 1);
+
+	fz_try(ctx)
+		fz_transform_path(ctx, path, &ctm);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_new_DisplayList(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3672,6 +3700,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Path.curveToY", ffi_Path_curveToY, 4);
 		jsB_propfun(J, "Path.closePath", ffi_Path_closePath, 0);
 		jsB_propfun(J, "Path.rect", ffi_Path_rect, 4);
+		jsB_propfun(J, "Path.bound", ffi_Path_bound, 2);
+		jsB_propfun(J, "Path.transform", ffi_Path_transform, 1);
 	}
 	js_setregistry(J, "fz_path");
 
