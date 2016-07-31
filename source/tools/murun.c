@@ -2307,6 +2307,36 @@ static void ffi_Path_curveTo(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_Path_curveToV(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_path *path = js_touserdata(J, 0, "fz_path");
+	float cx = js_tonumber(J, 1);
+	float cy = js_tonumber(J, 2);
+	float ex = js_tonumber(J, 3);
+	float ey = js_tonumber(J, 4);
+
+	fz_try(ctx)
+		fz_curvetov(ctx, path, cx, cy, ex, ey);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_Path_curveToY(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	fz_path *path = js_touserdata(J, 0, "fz_path");
+	float cx = js_tonumber(J, 1);
+	float cy = js_tonumber(J, 2);
+	float ex = js_tonumber(J, 3);
+	float ey = js_tonumber(J, 4);
+
+	fz_try(ctx)
+		fz_curvetoy(ctx, path, cx, cy, ex, ey);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_Path_closePath(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3622,6 +3652,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "Path.moveTo", ffi_Path_moveTo, 2);
 		jsB_propfun(J, "Path.lineTo", ffi_Path_lineTo, 2);
 		jsB_propfun(J, "Path.curveTo", ffi_Path_curveTo, 6);
+		jsB_propfun(J, "Path.curveToV", ffi_Path_curveToV, 4);
+		jsB_propfun(J, "Path.curveToY", ffi_Path_curveToY, 4);
 		jsB_propfun(J, "Path.closePath", ffi_Path_closePath, 0);
 		jsB_propfun(J, "Path.rect", ffi_Path_rect, 4);
 	}
