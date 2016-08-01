@@ -59,7 +59,7 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 
 	font->glyph_count = glyph_count;
 
-	font->use_glyph_bbox = use_glyph_bbox;
+	font->use_glyph_bbox = !!use_glyph_bbox;
 	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
 	{
 		font->bbox_table = fz_malloc_array(ctx, glyph_count, sizeof(fz_rect));
