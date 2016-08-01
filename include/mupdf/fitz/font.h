@@ -56,6 +56,7 @@ struct fz_font_s
 	void (*t3run)(fz_context *ctx, void *doc, void *resources, fz_buffer *contents, struct fz_device_s *dev, const fz_matrix *ctm, void *gstate, int nestedDepth);
 	void (*t3freeres)(fz_context *ctx, void *doc, void *resources);
 
+	char invalid_bbox;
 	fz_rect bbox;	/* font bbox is used only for t3 fonts */
 
 	int glyph_count;

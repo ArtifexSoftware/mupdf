@@ -176,6 +176,7 @@ fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float x
 		font->bbox.y0 = -1;
 		font->bbox.x1 = 2;
 		font->bbox.y1 = 2;
+		font->invalid_bbox = 1;
 	}
 	else
 	{
@@ -1203,11 +1204,14 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
 		fz_rethrow(ctx);
 	}
 
-	/* clip the bbox size to a reasonable maximum for degenerate glyphs */
-	big = font->bbox;
-	m = fz_max(fz_abs(big.x1 - big.x0), fz_abs(big.y1 - big.y0));
-	fz_expand_rect(&big, fz_max(fz_matrix_expansion(&font->t3matrix) * 2, m));
-	fz_intersect_rect(bounds, &big);
+	if (!font->invalid_bbox)
+	{
+		/* clip the bbox size to a reasonable maximum for degenerate glyphs */
+		big = font->bbox;
+		m = fz_max(fz_abs(big.x1 - big.x0), fz_abs(big.y1 - big.y0));
+		fz_expand_rect(&big, fz_max(fz_matrix_expansion(&font->t3matrix) * 2, m));
+		fz_intersect_rect(bounds, &big);
+	}
 
 	return bounds;
 }
