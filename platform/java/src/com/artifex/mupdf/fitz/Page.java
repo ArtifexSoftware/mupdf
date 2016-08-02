@@ -33,7 +33,7 @@ public class Page
 	//fz_transition *fz_page_presentation(fz_document *doc, fz_page *page, float *duration);
 
 	public native DisplayList toDisplayList(boolean no_annotations);
-	public native StructuredText toStructuredText();
+	public native StructuredText toStructuredText(int options);
 
 	public native Rect[] search(String needle);
 

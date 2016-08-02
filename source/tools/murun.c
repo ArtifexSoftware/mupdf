@@ -1627,6 +1627,7 @@ static void ffi_Page_toStructuredText(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = js_touserdata(J, 0, "fz_page");
+	const char *options = js_tointeger(J, 1);
 	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text;
 
@@ -1634,7 +1635,7 @@ static void ffi_Page_toStructuredText(js_State *J)
 
 	fz_try(ctx) {
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_page(ctx, page, sheet);
+		text = fz_new_stext_page_from_page(ctx, page, sheet, options);
 	}
 	fz_always(ctx)
 		fz_drop_stext_sheet(ctx, sheet);
@@ -2458,6 +2459,7 @@ static void ffi_DisplayList_toStructuredText(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
+	const char *options = js_tointeger(J, 1);
 	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text;
 
@@ -2465,7 +2467,7 @@ static void ffi_DisplayList_toStructuredText(js_State *J)
 
 	fz_try(ctx) {
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_display_list(ctx, list, sheet);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet, options);
 	}
 	fz_always(ctx)
 		fz_drop_stext_sheet(ctx, sheet);

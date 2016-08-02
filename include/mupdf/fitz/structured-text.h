@@ -28,6 +28,25 @@ typedef struct fz_stext_sheet_s fz_stext_sheet;
 typedef struct fz_stext_page_s fz_stext_page;
 
 /*
+	FZ_STEXT_PRESERVE_LIGATURES: If this option is activated ligatures
+	are passed through to the application in their original form. If
+	this option is deactivated ligatures are expanded into their
+	constituent parts, e.g. the ligature ffi is expanded into three
+	separate characters f, f and i.
+
+	FZ_STEXT_PRESERVE_WHITESPACE: If this option is actived whitespace
+	is passed through to the application in its original form. If this
+	option is deactivated any type of horizontal whitespace (including
+	horizontal tabs) will be replaced with space characters of variable
+	width.
+*/
+enum
+{
+	FZ_STEXT_PRESERVE_LIGATURES = 1,
+	FZ_STEXT_PRESERVE_WHITESPACE = 2,
+};
+
+/*
 	fz_stext_sheet: A text sheet contains a list of distinct text styles
 	used on a page (or a series of pages).
 */
@@ -280,9 +299,13 @@ char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect);
 
 	page: The text page to which content should be added. This will
 	usually be a newly created (empty) text page, but it can be one
-	containing data already (for example when merging multiple pages, or
-	watermarking).
+	containing data already (for example when merging multiple pages,
+	or watermarking).
+
+	options: Mask of heuristic options to activate. If 0 is given the
+	default is to activate both FZ_STEXT_PRESERVE_LIGATURES and
+	FZ_STEXT_PRESERVE_WHITESPACE.
 */
-fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page);
+fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, int options);
 
 #endif

@@ -77,7 +77,7 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text, 0);
 		fz_run_page(ctx, page, dev, &fz_identity, NULL);
 		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);

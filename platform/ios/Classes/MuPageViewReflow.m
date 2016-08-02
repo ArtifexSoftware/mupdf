@@ -25,7 +25,7 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 		ctm = fz_identity;
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text, 0);
 		page = fz_load_page(ctx, doc, pageNum);
 		fz_run_page(ctx, page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);

@@ -626,7 +626,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else
 				fz_bound_page(ctx, page, &mediabox);
 			text = fz_new_stext_page(ctx, &mediabox);
-			dev = fz_new_stext_device(ctx, sheet, text);
+			dev = fz_new_stext_device(ctx, sheet, text, 0);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (output_format == OUT_HTML)

@@ -1266,7 +1266,7 @@ JNI_FN(MuPDFCore_searchPage)(JNIEnv * env, jobject thiz, jstring jtext)
 		fz_scale(&ctm, zoom, zoom);
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, pc->page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text, 0);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
@@ -1358,7 +1358,7 @@ JNI_FN(MuPDFCore_text)(JNIEnv * env, jobject thiz)
 		fz_scale(&ctm, zoom, zoom);
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, pc->page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text, 0);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);
@@ -1468,7 +1468,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		ctm = fz_identity;
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, pc->page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text, 0);
 		fz_run_page(ctx, pc->page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
 		fz_drop_device(ctx, dev);

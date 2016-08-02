@@ -4202,7 +4202,7 @@ FUN(Page_toDisplayList)(JNIEnv *env, jobject self, jboolean no_annotations)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Page_toStructuredText)(JNIEnv *env, jobject self)
+FUN(Page_toStructuredText)(JNIEnv *env, jobject self, jint joptions)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
@@ -4216,7 +4216,7 @@ FUN(Page_toStructuredText)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 	{
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_page(ctx, page, sheet);
+		text = fz_new_stext_page_from_page(ctx, page, sheet, joptions);
 	}
 	fz_always(ctx)
 		fz_drop_stext_sheet(ctx, sheet);
@@ -4258,7 +4258,7 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		ctm = fz_identity;
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text);
+		dev = fz_new_stext_device(ctx, sheet, text, 0);
 		fz_run_page(ctx, page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
 
@@ -4436,7 +4436,7 @@ FUN(DisplayList_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, 
 }
 
 JNIEXPORT jobject JNICALL
-FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self)
+FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self, jint joptions)
 {
 	fz_context *ctx = get_context(env);
 	fz_display_list *list = from_DisplayList(env, self);
@@ -4450,7 +4450,7 @@ FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 	{
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_display_list(ctx, list, sheet);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet, joptions);
 	}
 	fz_always(ctx)
 		fz_drop_stext_sheet(ctx, sheet);

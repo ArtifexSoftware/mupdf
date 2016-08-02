@@ -30,6 +30,7 @@ struct fz_stext_device_s
 	span_soup *spans;
 	fz_stext_span *cur_span;
 	int lastchar;
+	int options;
 };
 
 static fz_rect *
@@ -715,41 +716,68 @@ no_glyph:
 static void
 fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, int c, int glyph, fz_matrix *trm, float adv, int wmode)
 {
-	switch (c)
-	{
-	case -1: /* ignore when one unicode character maps to multiple glyphs */
-		break;
-	case 0xFB00: /* ff */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
-		break;
-	case 0xFB01: /* fi */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'i', -1, trm, 0, wmode);
-		break;
-	case 0xFB02: /* fl */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'l', -1, trm, 0, wmode);
-		break;
-	case 0xFB03: /* ffi */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'i', -1, trm, 0, wmode);
-		break;
-	case 0xFB04: /* ffl */
-		fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 'l', -1, trm, 0, wmode);
-		break;
-	case 0xFB05: /* long st */
-	case 0xFB06: /* st */
-		fz_add_stext_char_imp(ctx, dev, style, 's', glyph, trm, adv, wmode);
-		fz_add_stext_char_imp(ctx, dev, style, 't', -1, trm, 0, wmode);
-		break;
-	default:
-		fz_add_stext_char_imp(ctx, dev, style, c, glyph, trm, adv, wmode);
-		break;
-	}
+	/* ignore when one unicode character maps to multiple glyphs */
+	if (c == -1)
+		return;
+
+	if (!(dev->options & FZ_STEXT_PRESERVE_LIGATURES))
+		switch (c)
+		{
+		case 0xFB00: /* ff */
+			fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
+			return;
+		case 0xFB01: /* fi */
+			fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 'i', -1, trm, 0, wmode);
+			return;
+		case 0xFB02: /* fl */
+			fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 'l', -1, trm, 0, wmode);
+			return;
+		case 0xFB03: /* ffi */
+			fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 'i', -1, trm, 0, wmode);
+			return;
+		case 0xFB04: /* ffl */
+			fz_add_stext_char_imp(ctx, dev, style, 'f', glyph, trm, adv, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 'f', -1, trm, 0, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 'l', -1, trm, 0, wmode);
+			return;
+		case 0xFB05: /* long st */
+		case 0xFB06: /* st */
+			fz_add_stext_char_imp(ctx, dev, style, 's', glyph, trm, adv, wmode);
+			fz_add_stext_char_imp(ctx, dev, style, 't', -1, trm, 0, wmode);
+			return;
+		}
+
+	if (!(dev->options & FZ_STEXT_PRESERVE_WHITESPACE))
+		switch (c)
+		{
+		case 0x0009: /* tab */
+		case 0x0020: /* space */
+		case 0x00A0: /* no-break space */
+		case 0x1680: /* ogham space mark */
+		case 0x180E: /* mongolian vowel separator */
+		case 0x2000: /* en quad */
+		case 0x2001: /* em quad */
+		case 0x2002: /* en space */
+		case 0x2003: /* em space */
+		case 0x2004: /* three-per-em space */
+		case 0x2005: /* four-per-em space */
+		case 0x2006: /* six-per-em space */
+		case 0x2007: /* figure space */
+		case 0x2008: /* punctuation space */
+		case 0x2009: /* thin space */
+		case 0x200A: /* hair space */
+		case 0x202F: /* narrow no-break space */
+		case 0x205F: /* medium mathematical space */
+		case 0x3000: /* ideographic spac */
+			fz_add_stext_char_imp(ctx, dev, style, ' ', glyph, trm, adv, wmode);
+		}
+
+	fz_add_stext_char_imp(ctx, dev, style, c, glyph, trm, adv, wmode);
 }
 
 static void
@@ -1039,11 +1067,11 @@ fz_stext_drop_device(fz_context *ctx, fz_device *dev)
 }
 
 fz_device *
-fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page)
+fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, int options)
 {
 	fz_stext_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
+	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE | FZ_STEXT_PRESERVE_LIGATURES | FZ_STEXT_PRESERVE_WHITESPACE;
 
 	dev->super.close_device = fz_stext_close_device;
 	dev->super.drop_device = fz_stext_drop_device;
@@ -1061,6 +1089,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page)
 	dev->spans = NULL;
 	dev->cur_span = NULL;
 	dev->lastchar = ' ';
+	dev->options = options ? options : FZ_STEXT_PRESERVE_LIGATURES | FZ_STEXT_PRESERVE_WHITESPACE;
 
 	return (fz_device*)dev;
 }

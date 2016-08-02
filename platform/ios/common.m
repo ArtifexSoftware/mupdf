@@ -23,7 +23,7 @@ int search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 	fz_rect mediabox;
 	fz_stext_sheet *sheet = fz_new_stext_sheet(ctx);
 	fz_stext_page *text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
-	fz_device *dev = fz_new_stext_device(ctx, sheet, text);
+	fz_device *dev = fz_new_stext_device(ctx, sheet, text, 0);
 	fz_run_page(ctx, page, dev, &fz_identity, cookie);
 	fz_drop_device(ctx, dev);
 
