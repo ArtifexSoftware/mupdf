@@ -2747,12 +2747,6 @@ static void finalise_write_state(fz_context *ctx, pdf_write_state *opts)
 	page_objects_list_destroy(ctx, opts->page_object_lists);
 }
 
-static int opteq(const char *a, const char *b)
-{
-	size_t n = strlen(b);
-	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
-}
-
 const char *fz_pdf_write_options_usage =
 	"PDF output options:\n"
 	"\tdecompress: decompress all streams (except compress-fonts/images)\n"
@@ -2776,32 +2770,32 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 	memset(opts, 0, sizeof *opts);
 
 	if (fz_has_option(ctx, args, "decompress", &val))
-		opts->do_decompress = opteq(val, "yes");
+		opts->do_decompress = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "compress", &val))
-		opts->do_compress = opteq(val, "yes");
+		opts->do_compress = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "compress-fonts", &val))
-		opts->do_compress_fonts = opteq(val, "yes");
+		opts->do_compress_fonts = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "compress-images", &val))
-		opts->do_compress_images = opteq(val, "yes");
+		opts->do_compress_images = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "ascii", &val))
-		opts->do_ascii = opteq(val, "yes");
+		opts->do_ascii = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "pretty", &val))
-		opts->do_pretty = opteq(val, "yes");
+		opts->do_pretty = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "linearize", &val))
-		opts->do_linear = opteq(val, "yes");
+		opts->do_linear = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "sanitize", &val))
-		opts->do_clean = opteq(val, "yes");
+		opts->do_clean = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "incremental", &val))
-		opts->do_incremental = opteq(val, "yes");
+		opts->do_incremental = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "continue-on-error", &val))
-		opts->continue_on_error = opteq(val, "yes");
+		opts->continue_on_error = fz_option_eq(val, "yes");
 	if (fz_has_option(ctx, args, "garbage", &val))
 	{
-		if (opteq(val, "yes"))
+		if (fz_option_eq(val, "yes"))
 			opts->do_garbage = 1;
-		else if (opteq(val, "compact"))
+		else if (fz_option_eq(val, "compact"))
 			opts->do_garbage = 2;
-		else if (opteq(val, "deduplicate"))
+		else if (fz_option_eq(val, "deduplicate"))
 			opts->do_garbage = 3;
 		else
 			opts->do_garbage = atoi(val);

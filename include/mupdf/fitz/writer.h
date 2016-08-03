@@ -18,6 +18,7 @@ struct fz_document_writer_s
 };
 
 int fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **val);
+int fz_option_eq(const char *a, const char *b);
 
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
 

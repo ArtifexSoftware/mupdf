@@ -41,6 +41,13 @@ fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **v
 	return 0;
 }
 
+int
+fz_option_eq(const char *a, const char *b)
+{
+	size_t n = strlen(b);
+	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
+}
+
 fz_document_writer *
 fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options)
 {
