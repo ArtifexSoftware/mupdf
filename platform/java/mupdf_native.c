@@ -81,6 +81,10 @@ static jclass cls_Shade;
 static jclass cls_StrokeState;
 static jclass cls_StructuredText;
 static jclass cls_Text;
+static jclass cls_TextBlock;
+static jclass cls_TextChar;
+static jclass cls_TextLine;
+static jclass cls_TextSpan;
 static jclass cls_TextWalker;
 static jclass cls_TryLaterException;
 
@@ -121,6 +125,14 @@ static jfieldID fid_Shade_pointer;
 static jfieldID fid_StrokeState_pointer;
 static jfieldID fid_StructuredText_pointer;
 static jfieldID fid_Text_pointer;
+static jfieldID fid_TextBlock_bbox;
+static jfieldID fid_TextBlock_lines;
+static jfieldID fid_TextChar_bbox;
+static jfieldID fid_TextChar_c;
+static jfieldID fid_TextLine_bbox;
+static jfieldID fid_TextLine_spans;
+static jfieldID fid_TextSpan_bbox;
+static jfieldID fid_TextSpan_chars;
 
 static jmethodID mid_Annot_init;
 static jmethodID mid_ColorSpace_fromPointer;
@@ -170,6 +182,10 @@ static jmethodID mid_Shade_init;
 static jmethodID mid_StrokeState_init;
 static jmethodID mid_StructuredText_init;
 static jmethodID mid_Text_init;
+static jmethodID mid_TextBlock_init;
+static jmethodID mid_TextChar_init;
+static jmethodID mid_TextLine_init;
+static jmethodID mid_TextSpan_init;
 static jmethodID mid_TextWalker_showGlyph;
 
 #ifdef _WIN32
@@ -449,6 +465,26 @@ static int find_fids(JNIEnv *env)
 	fid_Text_pointer = get_field(&err, env, "pointer", "J");
 	mid_Text_init = get_method(&err, env, "<init>", "(J)V");
 
+	cls_TextBlock = get_class(&err, env, PKG"StructuredText$TextBlock");
+	mid_TextBlock_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
+	fid_TextBlock_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextBlock_lines = get_field(&err, env, "lines", "[L"PKG"StructuredText$TextLine;");
+
+	cls_TextChar = get_class(&err, env, PKG"StructuredText$TextChar");
+	mid_TextChar_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
+	fid_TextChar_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextChar_c = get_field(&err, env, "c", "I");
+
+	cls_TextLine = get_class(&err, env, PKG"StructuredText$TextLine");
+	mid_TextLine_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
+	fid_TextLine_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextLine_spans = get_field(&err, env, "spans", "[L"PKG"StructuredText$TextSpan;");
+
+	cls_TextSpan = get_class(&err, env, PKG"StructuredText$TextSpan");
+	mid_TextSpan_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
+	fid_TextSpan_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextSpan_chars = get_field(&err, env, "chars", "[L"PKG"StructuredText$TextChar;");
+
 	cls_TextWalker = get_class(&err, env, PKG"TextWalker");
 	mid_TextWalker_showGlyph = get_method(&err, env, "showGlyph", "(L"PKG"Font;L"PKG"Matrix;IIZ)V");
 
@@ -502,6 +538,10 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
 	(*env)->DeleteGlobalRef(env, cls_StructuredText);
 	(*env)->DeleteGlobalRef(env, cls_Text);
+	(*env)->DeleteGlobalRef(env, cls_TextBlock);
+	(*env)->DeleteGlobalRef(env, cls_TextChar);
+	(*env)->DeleteGlobalRef(env, cls_TextLine);
+	(*env)->DeleteGlobalRef(env, cls_TextSpan);
 	(*env)->DeleteGlobalRef(env, cls_TextWalker);
 	(*env)->DeleteGlobalRef(env, cls_TryLaterException);
 }
@@ -5210,6 +5250,186 @@ FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jrect)
 
 	return jstring;
 }
+
+JNIEXPORT jobject JNICALL
+FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_stext_page *text = from_StructuredText(env, self);
+
+	jobject barr = NULL;
+	jobject larr = NULL;
+	jobject sarr = NULL;
+	jobject carr = NULL;
+	jobject jrect = NULL;
+
+	int b;
+	int l;
+	int s;
+	int c;
+
+	fz_stext_block *block = NULL;
+	fz_stext_line *line = NULL;
+	fz_stext_span *span = NULL;
+
+	jobject jblock = NULL;
+	jobject jline = NULL;
+	jobject jspan = NULL;
+	jobject jchar = NULL;
+
+	fz_rect sbbox;
+	fz_rect bbox;
+	fz_stext_char *ch = NULL;
+
+	//  create block array
+	barr = (*env)->NewObjectArray(env, text->len, cls_TextBlock, NULL);
+	if (barr == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (1)");
+		return NULL;
+	}
+
+	for (b = 0; b < text->len; b++)
+	{
+		//  only do text blocks
+		if (text->blocks[b].type != FZ_PAGE_BLOCK_TEXT)
+			continue;
+
+		//  make a block
+		block = text->blocks[b].u.text;
+		jblock = (*env)->NewObject(env, cls_TextBlock, mid_TextBlock_init, self);
+		if (jblock == NULL)
+		{
+			jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (2)");
+			return NULL;
+		}
+
+		//  set block's bbox
+		jrect = to_Rect(ctx, env, &(block->bbox));
+		(*env)->SetObjectField(env, jblock, fid_TextBlock_bbox, jrect);
+		(*env)->DeleteLocalRef(env, jrect);
+
+		//  create block's line array
+		larr = (*env)->NewObjectArray(env, block->len, cls_TextLine, NULL);
+		if (larr == NULL)
+		{
+			jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (3)");
+			return NULL;
+		}
+
+		for (l = 0; l < block->len; l++)
+		{
+			//  make a line
+			line = &block->lines[l];
+			jline = (*env)->NewObject(env, cls_TextLine, mid_TextLine_init, self);
+			if (jline == NULL)
+			{
+				jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (4)");
+				return NULL;
+			}
+
+			//  set line's bbox
+			jrect = to_Rect(ctx, env, &(line->bbox));
+			(*env)->SetObjectField(env, jline, fid_TextLine_bbox, jrect);
+			(*env)->DeleteLocalRef(env, jrect);
+
+			//  count the spans
+			int len = 0;
+			for (span = line->first_span; span; span = span->next)
+				len++;
+
+			//  create a span array
+			sarr = (*env)->NewObjectArray(env, len, cls_TextSpan, NULL);
+			if (sarr == NULL)
+			{
+				jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (5)");
+				return NULL;
+			}
+
+			for (s=0, span = line->first_span; span; s++, span = span->next)
+			{
+				//  create a span
+				jspan = (*env)->NewObject(env, cls_TextSpan, mid_TextSpan_init, self);
+				if (jspan == NULL)
+				{
+					jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (6)");
+					return NULL;
+				}
+
+				//  make a char array
+				carr = (*env)->NewObjectArray(env, span->len, cls_TextChar, NULL);
+				if (carr == NULL)
+				{
+					jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (7)");
+					return NULL;
+				}
+
+				sbbox = fz_empty_rect;
+				for (c = 0; c < span->len; c++)
+				{
+					ch = &span->text[c];
+
+					//  create a char
+					jchar = (*env)->NewObject(env, cls_TextChar, mid_TextChar_init, self);
+					if (jchar == NULL)
+					{
+						jni_throw(env, FZ_ERROR_GENERIC, "StructuredText_getBlocks failed (8)");
+						return NULL;
+					}
+
+					//  set the char's bbox
+					fz_stext_char_bbox(ctx, &bbox, span, c);
+					jrect = to_Rect(ctx, env, &(bbox));
+					(*env)->SetObjectField(env, jchar, fid_TextChar_bbox, jrect);
+					(*env)->DeleteLocalRef(env, jrect);
+
+					//  set the char's value
+					(*env)->SetIntField(env, jchar, fid_TextChar_c, ch->c);
+
+					//  add it to the char array
+					(*env)->SetObjectArrayElement(env, carr, c, jchar);
+					(*env)->DeleteLocalRef(env, jchar);
+
+					//  add this char's bbox to the containing span's bbox
+					fz_union_rect(&sbbox, &bbox);
+
+				}
+
+				//  set the span's bbox
+				jrect = to_Rect(ctx, env, &sbbox);
+				(*env)->SetObjectField(env, jspan, fid_TextSpan_bbox, jrect);
+				(*env)->DeleteLocalRef(env, jrect);
+
+				//  set the span's char array
+				(*env)->SetObjectField(env, jspan, fid_TextSpan_chars, carr);
+				(*env)->DeleteLocalRef(env, carr);
+
+				//  add it to the span array
+				(*env)->SetObjectArrayElement(env, sarr, s, jspan);
+				(*env)->DeleteLocalRef(env, jspan);
+			}
+
+			//  set the line's span array
+			(*env)->SetObjectField(env, jline, fid_TextLine_spans, sarr);
+			(*env)->DeleteLocalRef(env, sarr);
+
+			//  add to the line array
+			(*env)->SetObjectArrayElement(env, larr, l, jline);
+			(*env)->DeleteLocalRef(env, jline);
+		}
+
+		//  set the block's line array
+		(*env)->SetObjectField(env, jblock, fid_TextBlock_lines, larr);
+		(*env)->DeleteLocalRef(env, larr);
+
+		//  add to the block array
+		(*env)->SetObjectArrayElement(env, barr, b, jblock);
+		(*env)->DeleteLocalRef(env, jblock);
+	}
+
+	return barr;
+}
+
 
 /* PDFDocument interface */
 
