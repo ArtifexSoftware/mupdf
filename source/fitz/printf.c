@@ -197,6 +197,8 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 			case 'z':
 				if (sizeof(size_t) >= 8)
 					length = 64;
+				else
+					length = 32;
 				break;
 			case 'Z':
 				if (sizeof(fz_off_t) >= 8)
