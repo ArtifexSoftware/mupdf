@@ -597,8 +597,14 @@ static void pdfapp_viewctm(fz_matrix *mat, pdfapp_t *app)
 
 static void pdfapp_panview(pdfapp_t *app, int newx, int newy)
 {
-	int image_w = fz_pixmap_width(app->ctx, app->image);
-	int image_h = fz_pixmap_height(app->ctx, app->image);
+	int image_w = 0;
+	int image_h = 0;
+
+	if (app->image)
+	{
+		image_w = fz_pixmap_width(app->ctx, app->image);
+		image_h = fz_pixmap_height(app->ctx, app->image);
+	}
 
 	if (newx > 0)
 		newx = 0;
@@ -896,20 +902,30 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			colorspace = fz_device_gray(app->ctx);
 		else
 			colorspace = app->colorspace;
+
 		app->image = NULL;
-		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, 1);
-		fz_clear_pixmap_with_value(app->ctx, app->image, 255);
-		if (app->page_list || app->annotations_list)
+		fz_var(app->image);
+
+		fz_try(app->ctx)
 		{
-			idev = fz_new_draw_device(app->ctx, NULL, app->image);
-			pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
-			fz_close_device(app->ctx, idev);
-			fz_drop_device(app->ctx, idev);
+			app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, 1);
+			fz_clear_pixmap_with_value(app->ctx, app->image, 255);
+			if (app->page_list || app->annotations_list)
+			{
+				idev = fz_new_draw_device(app->ctx, NULL, app->image);
+				pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
+				fz_close_device(app->ctx, idev);
+				fz_drop_device(app->ctx, idev);
+			}
+			if (app->invert)
+				fz_invert_pixmap(app->ctx, app->image);
+			if (app->tint)
+				fz_tint_pixmap(app->ctx, app->image, app->tint_r, app->tint_g, app->tint_b);
 		}
-		if (app->invert)
-			fz_invert_pixmap(app->ctx, app->image);
-		if (app->tint)
-			fz_tint_pixmap(app->ctx, app->image, app->tint_r, app->tint_g, app->tint_b);
+		fz_catch(app->ctx)
+		{
+			cookie.errors++;
+		}
 	}
 
 	if (transition)
@@ -938,10 +954,16 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 	{
 		pdfapp_panview(app, app->panx, app->pany);
 
-		if (app->shrinkwrap)
+		if (!app->image)
+		{
+			/* there is no image to blit, but there might be an error message */
+			winresize(app, app->layout_w, app->layout_h);
+		}
+		else if (app->shrinkwrap)
 		{
 			int w = fz_pixmap_width(app->ctx, app->image);
 			int h = fz_pixmap_height(app->ctx, app->image);
+
 			if (app->winw == w)
 				app->panx = 0;
 			if (app->winh == h)
@@ -1575,13 +1597,14 @@ static void handlescroll(pdfapp_t *app, int modifiers, int dir)
 void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int state)
 {
 	fz_context *ctx = app->ctx;
-	fz_irect irect;
+	fz_irect irect = { 0, 0, app->layout_w, app->layout_h };
 	fz_link *link;
 	fz_matrix ctm;
 	fz_point p;
 	int processed = 0;
 
-	fz_pixmap_bbox(app->ctx, app->image, &irect);
+	if (app->image)
+		fz_pixmap_bbox(app->ctx, app->image, &irect);
 	p.x = x - app->panx + irect.x0;
 	p.y = y - app->pany + irect.y0;
 
@@ -1797,9 +1820,13 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 	{
 		int newx = app->panx + x - app->selx;
 		int newy = app->pany + y - app->sely;
+		int imgh = app->winh;
+		if (app->image)
+			imgh = fz_pixmap_height(app->ctx, app->image);
+
 		/* Scrolling beyond limits implies flipping pages */
 		/* Are we requested to scroll beyond limits? */
-		if (newy + fz_pixmap_height(app->ctx, app->image) < app->winh || newy > 0)
+		if (newy + imgh < app->winh || newy > 0)
 		{
 			/* Yes. We can assume that deltay != 0 */
 			int deltay = y - app->sely;
@@ -1821,7 +1848,8 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					{
 						app->pageno--;
 						pdfapp_showpage(app, 1, 1, 1, 0, 0);
-						newy = -fz_pixmap_height(app->ctx, app->image);
+						if (app->image)
+							newy = -fz_pixmap_height(app->ctx, app->image);
 					}
 					app->beyondy = 0;
 				}

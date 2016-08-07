@@ -388,10 +388,16 @@ void winhelp(pdfapp_t *app)
 
 void winresize(pdfapp_t *app, int w, int h)
 {
-	int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
-	int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
+	int image_w = gapp.layout_w;
+	int image_h = gapp.layout_h;
 	XWindowChanges values;
 	int mask, width, height;
+
+	if (gapp.image)
+	{
+		image_w = fz_pixmap_width(gapp.ctx, gapp.image);
+		image_h = fz_pixmap_height(gapp.ctx, gapp.image);
+	}
 
 	mask = CWWidth | CWHeight;
 	values.width = w;
@@ -487,72 +493,80 @@ static void winblitstatusbar(pdfapp_t *app)
 
 static void winblit(pdfapp_t *app)
 {
-	int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
-	int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
-	int image_n = fz_pixmap_components(gapp.ctx, gapp.image);
-	unsigned char *image_samples = fz_pixmap_samples(gapp.ctx, gapp.image);
-	int x0 = gapp.panx;
-	int y0 = gapp.pany;
-	int x1 = gapp.panx + image_w;
-	int y1 = gapp.pany + image_h;
-
-	XSetForeground(xdpy, xgc, xbgcolor.pixel);
-	fillrect(0, 0, x0, gapp.winh);
-	fillrect(x1, 0, gapp.winw - x1, gapp.winh);
-	fillrect(0, 0, gapp.winw, y0);
-	fillrect(0, y1, gapp.winw, gapp.winh - y1);
-
-	XSetForeground(xdpy, xgc, xshcolor.pixel);
-	fillrect(x0+2, y1, image_w, 2);
-	fillrect(x1, y0+2, 2, image_h);
-
-	if (gapp.iscopying || justcopied)
+	if (gapp.image)
 	{
-		pdfapp_invert(&gapp, &gapp.selr);
-		justcopied = 1;
-	}
+		int image_w = fz_pixmap_width(gapp.ctx, gapp.image);
+		int image_h = fz_pixmap_height(gapp.ctx, gapp.image);
+		int image_n = fz_pixmap_components(gapp.ctx, gapp.image);
+		unsigned char *image_samples = fz_pixmap_samples(gapp.ctx, gapp.image);
+		int x0 = gapp.panx;
+		int y0 = gapp.pany;
+		int x1 = gapp.panx + image_w;
+		int y1 = gapp.pany + image_h;
 
-	pdfapp_inverthit(&gapp);
+		XSetForeground(xdpy, xgc, xbgcolor.pixel);
+		fillrect(0, 0, x0, gapp.winh);
+		fillrect(x1, 0, gapp.winw - x1, gapp.winh);
+		fillrect(0, 0, gapp.winw, y0);
+		fillrect(0, y1, gapp.winw, gapp.winh - y1);
 
-	if (image_n == 4)
-		ximage_blit(xwin, xgc,
-			x0, y0,
-			image_samples,
-			0, 0,
-			image_w,
-			image_h,
-			image_w * image_n);
-	else if (image_n == 2)
-	{
-		int i = image_w*image_h;
-		unsigned char *color = malloc(i*4);
-		if (color)
+		XSetForeground(xdpy, xgc, xshcolor.pixel);
+		fillrect(x0+2, y1, image_w, 2);
+		fillrect(x1, y0+2, 2, image_h);
+
+		if (gapp.iscopying || justcopied)
 		{
-			unsigned char *s = image_samples;
-			unsigned char *d = color;
-			for (; i > 0 ; i--)
-			{
-				d[2] = d[1] = d[0] = *s++;
-				d[3] = *s++;
-				d += 4;
-			}
+			pdfapp_invert(&gapp, &gapp.selr);
+			justcopied = 1;
+		}
+
+		pdfapp_inverthit(&gapp);
+
+		if (image_n == 4)
 			ximage_blit(xwin, xgc,
 				x0, y0,
-				color,
+				image_samples,
 				0, 0,
 				image_w,
 				image_h,
-				image_w * 4);
-			free(color);
+				image_w * image_n);
+		else if (image_n == 2)
+		{
+			int i = image_w*image_h;
+			unsigned char *color = malloc(i*4);
+			if (color)
+			{
+				unsigned char *s = image_samples;
+				unsigned char *d = color;
+				for (; i > 0 ; i--)
+				{
+					d[2] = d[1] = d[0] = *s++;
+					d[3] = *s++;
+					d += 4;
+				}
+				ximage_blit(xwin, xgc,
+					x0, y0,
+					color,
+					0, 0,
+					image_w,
+					image_h,
+					image_w * 4);
+				free(color);
+			}
+		}
+
+		pdfapp_inverthit(&gapp);
+
+		if (gapp.iscopying || justcopied)
+		{
+			pdfapp_invert(&gapp, &gapp.selr);
+			justcopied = 1;
 		}
 	}
-
-	pdfapp_inverthit(&gapp);
-
-	if (gapp.iscopying || justcopied)
+	else
 	{
-		pdfapp_invert(&gapp, &gapp.selr);
-		justcopied = 1;
+		XSetForeground(xdpy, xgc, xbgcolor.pixel);
+		fillrect(0, 0, gapp.winw, gapp.winh);
 	}
 
 	winblitstatusbar(app);
