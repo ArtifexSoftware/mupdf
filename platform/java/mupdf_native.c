@@ -4194,7 +4194,6 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 		jannots = (*env)->NewObjectArray(env, annot_count, cls_Annot, NULL);
 		if (jannots == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (1)");
-		(*env)->SetObjectField(env, self, fid_Page_nativeAnnots, jannots);
 
 		/* Now run through actually creating the annotation objects */
 		annot = annots;
@@ -4207,6 +4206,8 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 		}
 		if (annot != NULL || i != annot_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (4)");
+
+		(*env)->SetObjectField(env, self, fid_Page_nativeAnnots, jannots);
 	}
 	fz_catch(ctx)
 	{
@@ -4256,7 +4257,6 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		jlinks = (*env)->NewObjectArray(env, link_count, cls_Link, NULL);
 		if (jlinks == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (1)");
-		(*env)->SetObjectField(env, self, fid_Page_nativeLinks, jlinks);
 
 		/* Now run through actually creating the link objects */
 		link = links;
@@ -4290,6 +4290,8 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		}
 		if (link != NULL || i != link_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (3)");
+
+		(*env)->SetObjectField(env, self, fid_Page_nativeLinks, jlinks);
 	}
 	fz_always(ctx)
 		fz_drop_link(ctx, links);
