@@ -887,7 +887,7 @@ fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 }
 
 static fz_rect *
-fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
+fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 {
 	FT_Face face = font->ft_face;
 	FT_Error fterr;
@@ -895,6 +895,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
 	FT_Matrix m;
 	FT_Vector v;
 	int ft_flags;
+	fz_rect *bounds = &font->bbox_table[gid];
 
 	// TODO: refactor loading into fz_load_ft_glyph
 	// TODO: cache results
@@ -1137,11 +1138,41 @@ fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix)
 	return font;
 }
 
+static void
+fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid)
+{
+	fz_display_list *list;
+	fz_device *dev;
+
+	list = font->t3lists[gid];
+	if (!list)
+	{
+		font->bbox_table[gid] = fz_empty_rect;
+		return;
+	}
+
+	dev = fz_new_bbox_device(ctx, &font->bbox_table[gid]);
+	fz_try(ctx)
+	{
+		fz_run_display_list(ctx, list, dev, &font->t3matrix, &fz_infinite_rect, NULL);
+		fz_close_device(ctx, dev);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_device(ctx, dev);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+}
+
 void
 fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 {
 	fz_buffer *contents;
 	fz_device *dev;
+	fz_rect d1_rect;
 
 	contents = font->t3procs[gid];
 	if (!contents)
@@ -1162,58 +1193,26 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 			FZ_DEVFLAG_MITERLIMIT_UNDEFINED |
 			FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
 	font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, &fz_identity, NULL, 0);
+	fz_close_device(ctx, dev);
 	font->t3flags[gid] = dev->flags;
-	if (dev->flags & FZ_DEVFLAG_BBOX_DEFINED)
+	d1_rect = dev->d1_rect;
+	fz_drop_device(ctx, dev);
+	dev = NULL;
+	if (font->t3flags[gid] & FZ_DEVFLAG_BBOX_DEFINED)
 	{
 		assert(font->bbox_table != NULL);
 		assert(font->glyph_count > gid);
-		font->bbox_table[gid] = dev->d1_rect;
+		font->bbox_table[gid] = d1_rect;
 		fz_transform_rect(&font->bbox_table[gid], &font->t3matrix);
-	}
-	fz_close_device(ctx, dev);
-	fz_drop_device(ctx, dev);
-}
 
-static fz_rect *
-fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid, fz_rect *bounds)
-{
-	fz_display_list *list;
-	fz_device *dev;
-	fz_rect big;
-	float m;
-
-	list = font->t3lists[gid];
-	if (!list)
-	{
-		*bounds = fz_empty_rect;
-		return bounds;
+		if (font->invalid_bbox || !fz_contains_rect(&font->bbox, &d1_rect))
+		{
+			/* Either the font bbox is invalid, or the d1_rect returned is
+			 * incompatible with it. Either way, don't trust the d1 rect
+			 * and calculate it from the contents. */
+			fz_bound_t3_glyph(ctx, font, gid);
+		}
 	}
-
-	dev = fz_new_bbox_device(ctx, bounds);
-	fz_try(ctx)
-	{
-		fz_run_display_list(ctx, list, dev, &font->t3matrix, &fz_infinite_rect, NULL);
-		fz_close_device(ctx, dev);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_device(ctx, dev);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
-
-	if (!font->invalid_bbox)
-	{
-		/* clip the bbox size to a reasonable maximum for degenerate glyphs */
-		big = font->bbox;
-		m = fz_max(fz_abs(big.x1 - big.x0), fz_abs(big.y1 - big.y0));
-		fz_expand_rect(&big, fz_max(fz_matrix_expansion(&font->t3matrix) * 2, m));
-		fz_intersect_rect(bounds, &big);
-	}
-
-	return bounds;
 }
 
 void
@@ -1379,9 +1378,9 @@ fz_bound_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, fz
 		if (fz_is_infinite_rect(&font->bbox_table[gid]))
 		{
 			if (font->ft_face)
-				fz_bound_ft_glyph(ctx, font, gid, &font->bbox_table[gid]);
+				fz_bound_ft_glyph(ctx, font, gid);
 			else if (font->t3lists)
-				fz_bound_t3_glyph(ctx, font, gid, &font->bbox_table[gid]);
+				fz_bound_t3_glyph(ctx, font, gid);
 			else
 				font->bbox_table[gid] = fz_empty_rect;
 		}

@@ -575,6 +575,15 @@ fz_rect *fz_include_point_in_rect(fz_rect *r, const fz_point *p);
 fz_irect *fz_translate_irect(fz_irect *a, int xoff, int yoff);
 
 /*
+	fz_contains_rect: Test rectangle inclusion.
+
+	Return true if a entirely contains b.
+
+	Does not throw exceptions.
+*/
+int fz_contains_rect(const fz_rect *a, const fz_rect *b);
+
+/*
 	fz_transform_point: Apply a transformation to a point.
 
 	transform: Transformation matrix to apply. See fz_concat,

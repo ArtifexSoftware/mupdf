@@ -538,3 +538,17 @@ fz_rect *fz_include_point_in_rect(fz_rect *r, const fz_point *p)
 
 	return r;
 }
+
+int fz_contains_rect(const fz_rect *a, const fz_rect *b)
+{
+	if (a == NULL || b == NULL)
+		return 0;
+	if (fz_is_empty_rect(b))
+		return 1;
+	if (fz_is_empty_rect(a))
+		return 0;
+	return ((a->x0 > b->x0) ||
+		(a->y0 > b->y0) ||
+		(a->x1 < b->x1) ||
+		(a->y1 < b->y1));
+}
