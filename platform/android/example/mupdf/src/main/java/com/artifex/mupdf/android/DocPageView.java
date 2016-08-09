@@ -26,6 +26,8 @@ import com.artifex.mupdf.fitz.R;
 import com.artifex.mupdf.fitz.StructuredText;
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice;
 
+import java.util.ArrayList;
+
 public class DocPageView extends View implements Callback
 {
 	private final Document mDoc;
@@ -73,10 +75,8 @@ public class DocPageView extends View implements Callback
 	//  use this to control whether the blue dot is drawn in the upper left corner.
 	private boolean isMostVisible = false;
 
-	///  structured text, defined once at page setup time.
-	StructuredText mStructuredText = null;
-	Rect mHighlightRects[] = null;
-	Rect hlRect = new Rect();
+	//  currently selected TextChars
+	ArrayList<StructuredText.TextChar> mSelection = null;
 
 	public DocPageView(Context context, Document theDoc)
 	{
@@ -135,9 +135,6 @@ public class DocPageView extends View implements Callback
 
 		mZoom = w / pagew;
 		mSize = new Point((int) (pagew * mZoom), (int) (pageH * mZoom));
-
-		//  get structured text
-		mStructuredText = getPage().toStructuredText();
 	}
 
 	public Page getPage()
@@ -380,30 +377,88 @@ public class DocPageView extends View implements Callback
 		}
 	}
 
-	public void setHighlight(Point ul, Point dr)
+	public Point getSelectionStart()
 	{
-		//  remember the rect we've been given
-		hlRect.set(ul.x, ul.y, dr.x, dr.y);
+		if (mSelection == null)
+			return null;
+		if (mSelection.size()==0)
+			return null;
 
-		//  find the included text rects
-		com.artifex.mupdf.fitz.Rect rects[] = mStructuredText.highlight(new com.artifex.mupdf.fitz.Rect(ul.x, ul.y, dr.x, dr.y));
-		if (rects == null || rects.length <= 0)
-		{
-			mHighlightRects = null;
-			return;
-		}
+		StructuredText.TextChar tchar = mSelection.get(0);
 
-		//  convert to Android Rects. They will be used to draw the highlights.
-		mHighlightRects = new Rect[rects.length];
-		for (int i = 0; i < rects.length; i++)
-		{
-			mHighlightRects[i] = new Rect((int) rects[i].x0, (int) rects[i].y0, (int) rects[i].x1, (int) rects[i].y1);
-		}
+		return new Point((int)tchar.bbox.x0, (int)tchar.bbox.y0);
 	}
 
-	public void removeHighlight()
+	public Point getSelectionEnd()
 	{
-		mHighlightRects = null;
+		if (mSelection == null)
+			return null;
+		if (mSelection.size()==0)
+			return null;
+
+		StructuredText.TextChar tchar = mSelection.get(mSelection.size()-1);
+
+		return new Point((int)tchar.bbox.x1, (int)tchar.bbox.y1);
+	}
+
+	public void setSelection(Point ul, Point dr)
+	{
+		mSelection = new ArrayList<>();
+
+		//  get structured text and the block structure
+		StructuredText structuredText = getPage().toStructuredText();
+		StructuredText.TextBlock textBlocks[] = structuredText.getBlocks();
+
+		com.artifex.mupdf.fitz.Rect r = new com.artifex.mupdf.fitz.Rect(ul.x, ul.y, dr.x, dr.y);
+		for (StructuredText.TextBlock block : textBlocks)
+		{
+			for (StructuredText.TextLine line : block.lines)
+			{
+				boolean firstLine = false;
+				boolean lastLine = false;
+				boolean middleLine = false;
+				if (line.bbox.contains(ul.x, ul.y))
+					firstLine = true;
+				if (line.bbox.contains(dr.x, dr.y))
+					lastLine = true;
+				if (line.bbox.y0 >= ul.y && line.bbox.y1 <= dr.y)
+					middleLine = true;
+
+				for (StructuredText.TextSpan span : line.spans)
+				{
+					for (StructuredText.TextChar tchar : span.chars)
+					{
+						if (firstLine && lastLine)
+						{
+							if (tchar.bbox.x0 >= ul.x && tchar.bbox.x1 <= dr.x)
+								mSelection.add(tchar);
+						}
+						else if (firstLine)
+						{
+							if (tchar.bbox.x0 >= ul.x)
+								mSelection.add(tchar);
+						}
+						else if (lastLine)
+						{
+							if (tchar.bbox.x1 <= dr.x)
+								mSelection.add(tchar);
+						}
+						else if (middleLine)
+						{
+							mSelection.add(tchar);
+						}
+					}
+				}
+			}
+		}
+
+		invalidate();
+	}
+
+	public void removeSelection()
+	{
+		mSelection = new ArrayList<>();
+		invalidate();
 	}
 
 	@Override
@@ -440,10 +495,11 @@ public class DocPageView extends View implements Callback
 		canvas.drawBitmap(mDrawBitmap, mSrcRect, mDstRect, mPainter);
 
 		//  highlights
-		if (mHighlightRects != null)
+		if (mSelection != null && !mSelection.isEmpty())
 		{
-			for (Rect r : mHighlightRects)
+			for (StructuredText.TextChar tchar : mSelection)
 			{
+				Rect r = new Rect((int) tchar.bbox.x0, (int) tchar.bbox.y0, (int) tchar.bbox.x1, (int) tchar.bbox.y1);
 				Rect r2 = pageToView(r);
 				canvas.drawRect(r2, mHighlightPainter);
 			}
@@ -458,30 +514,114 @@ public class DocPageView extends View implements Callback
 		canvas.restore();
 	}
 
-	public Rect getTappedRect(Point p)
+	public Rect selectWord(Point p)
 	{
+		//  in page units
 		Point pPage = screenToPage(p.x, p.y);
-		com.artifex.mupdf.fitz.Rect bounds = mPage.getBounds();
-		com.artifex.mupdf.fitz.Rect rects[] =
-				mStructuredText.highlight(new com.artifex.mupdf.fitz.Rect(bounds.x0, bounds.y0, bounds.x1, bounds.y1));
 
-		Rect rfound = null;
-		for (com.artifex.mupdf.fitz.Rect r : rects)
+		//  get structured text and the block structure
+		StructuredText structuredText = getPage().toStructuredText();
+		StructuredText.TextBlock textBlocks[] = structuredText.getBlocks();
+
+		StructuredText.TextBlock block = blockContainingPoint(textBlocks, pPage);
+		if (block == null)
+			return null;
+
+		StructuredText.TextLine line = lineContainingPoint(block.lines, pPage);
+		if (line == null)
+			return null;
+
+		StructuredText.TextSpan span = spanContainingPoint(line.spans, pPage);
+		if (span == null)
+			return null;
+
+		//  find the char containing my point
+		int n = -1;
+		int i;
+		for (i = 0; i < span.chars.length; i++)
 		{
-			if (r.contains(pPage.x, pPage.y))
-				rfound = new Rect((int) r.x0, (int) r.y0, (int) r.x1, (int) r.y1);
+			if (span.chars[i].bbox.contains(pPage.x, pPage.y))
+			{
+				n = i;
+				break;
+			}
+		}
+		//  not found
+		if (n == -1)
+			return null;
+		//  must be non-blank
+		if (isBlank(span.chars[n].c))
+			return null;
+
+		//  look forward for a space, or the end
+		int nEnd = n;
+		while (nEnd + 1 < span.chars.length && !isBlank(span.chars[nEnd + 1].c))
+			nEnd++;
+
+		//  look backward for a space, or the beginning
+		int nStart = n;
+		while (nStart - 1 >= 0 && !isBlank(span.chars[nStart - 1].c))
+			nStart--;
+
+		mSelection = new ArrayList<>();
+		com.artifex.mupdf.fitz.Rect rWord = new com.artifex.mupdf.fitz.Rect();
+		for (i = nStart; i <= nEnd; i++)
+		{
+			mSelection.add(span.chars[i]);
+			rWord.union(span.chars[i].bbox);
 		}
 
-		return rfound;
+		return new Rect((int) rWord.x0, (int) rWord.y0, (int) rWord.x1, (int) rWord.y1);
 	}
 
-	public String getSelectedText()
+	private boolean isBlank(int c)
 	{
-		//  convert to fitz rect
-		com.artifex.mupdf.fitz.Rect r =
-				new com.artifex.mupdf.fitz.Rect(hlRect.left, hlRect.top, hlRect.right, hlRect.bottom);
+		String s = Character.toString((char) c);
+		return s.trim().isEmpty();
+	}
 
-		return mStructuredText.copy(r);
+	private StructuredText.TextBlock blockContainingPoint(StructuredText.TextBlock blocks[], Point p)
+	{
+		for (StructuredText.TextBlock block : blocks)
+		{
+			if (block.bbox.contains(p.x, p.y))
+				return block;
+		}
+
+		return null;
+	}
+
+	private StructuredText.TextLine lineContainingPoint(StructuredText.TextLine lines[], Point p)
+	{
+		for (StructuredText.TextLine line : lines)
+		{
+			if (line.bbox.contains(p.x, p.y))
+				return line;
+		}
+
+		return null;
+	}
+
+	private StructuredText.TextSpan spanContainingPoint(StructuredText.TextSpan spans[], Point p)
+	{
+		for (StructuredText.TextSpan span : spans)
+		{
+			if (span.bbox.contains(p.x, p.y))
+				return span;
+		}
+
+		return null;
+	}
+
+	private StructuredText.TextChar charContainingPoint(StructuredText.TextChar chars[], Point p)
+	{
+		for (StructuredText.TextChar tchar : chars)
+		{
+			if (tchar.bbox.contains(p.x, p.y))
+				return tchar;
+		}
+
+		return null;
 	}
 
 	public Point screenToPage(Point p)

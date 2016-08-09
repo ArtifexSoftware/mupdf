@@ -6,7 +6,6 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RelativeLayout;
@@ -122,7 +121,7 @@ public class DocView extends DocViewBase implements DragHandleListener
 			for (int i = 0; i < numPages; i++)
 			{
 				DocPageView cv = (DocPageView) getOrCreateChild(i);
-				cv.removeHighlight();
+				cv.removeSelection();
 				if (cv.isReallyVisible())
 					cv.invalidate();
 			}
@@ -130,7 +129,7 @@ public class DocView extends DocViewBase implements DragHandleListener
 		else
 		{
 			//  point in screen coordinates, result in page coordinates
-			Rect r = dpv.getTappedRect(p);
+			Rect r = dpv.selectWord(p);
 			if (r != null)
 			{
 				//  show handles
@@ -142,31 +141,8 @@ public class DocView extends DocViewBase implements DragHandleListener
 				selectionEndPage = dpv;
 				selectionEndLoc.set(r.right, r.bottom);
 
-				//  do highlight
-				doHighlight();
-
 				moveHandlesToCorners();
 			}
-		}
-	}
-
-	private void doHighlight()
-	{
-		//  TODO: for now, we're dealing with one page at a time
-		int numPages = getPageCount();
-		for (int i = 0; i < numPages; i++)
-		{
-			DocPageView cv = (DocPageView) getOrCreateChild(i);
-			if (cv.isReallyVisible() && cv == selectionStartPage && cv == selectionEndPage)
-			{
-				cv.setHighlight(selectionStartLoc, selectionEndLoc);
-				logSelectedText();
-			}
-			else
-			{
-				cv.removeHighlight();
-			}
-			cv.invalidate();
 		}
 	}
 
@@ -247,28 +223,27 @@ public class DocView extends DocViewBase implements DragHandleListener
 			}
 		}
 
-		doHighlight();
+		//  TODO: for now, we're dealing with one page at a time
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			if (cv.isReallyVisible() && cv == selectionStartPage && cv == selectionEndPage)
+			{
+				cv.setSelection(selectionStartLoc, selectionEndLoc);
+			}
+			else
+			{
+				cv.removeSelection();
+			}
+			cv.invalidate();
+		}
 	}
 
 	@Override
 	public void onEndDrag(DragHandle handle)
 	{
 		moveHandlesToCorners();
-		logSelectedText();
-	}
-
-	private void logSelectedText()
-	{
-		int numPages = getPageCount();
-		for (int i = 0; i < numPages; i++)
-		{
-			DocPageView cv = (DocPageView) getOrCreateChild(i);
-			String s = cv.getSelectedText();
-			if (s != null)
-			{
-				Log.i("example", s);
-			}
-		}
 	}
 
 	@Override
@@ -284,8 +259,18 @@ public class DocView extends DocViewBase implements DragHandleListener
 	{
 		if (selectionStartPage != null && selectionEndPage != null)
 		{
-			positionHandle(mSelectionHandleTopLeft, selectionStartPage, selectionStartLoc.x, selectionStartLoc.y);
-			positionHandle(mSelectionHandleBottomRight, selectionEndPage, selectionEndLoc.x, selectionEndLoc.y);
+			Point p1 = selectionStartPage.getSelectionStart();
+			Point p2 = selectionEndPage.getSelectionEnd();
+
+			if (p1 != null && p2 != null)
+			{
+				selectionStartLoc.set(p1.x, p1.y);
+				selectionEndLoc.set(p2.x, p2.y);
+				positionHandle(mSelectionHandleTopLeft, selectionStartPage, selectionStartLoc.x, selectionStartLoc.y);
+				positionHandle(mSelectionHandleBottomRight, selectionEndPage, selectionEndLoc.x, selectionEndLoc.y);
+			}
+
+
 		}
 	}
 }

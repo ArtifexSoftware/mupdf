@@ -45,7 +45,7 @@ public class DocViewBase
 
 	//  bitmaps for rendering
 	//  these are created by the activity and set using setBitmaps()
-	private final static double OVERSIZE_FACTOR = 1.3;
+	private final static double OVERSIZE_FACTOR = 1.4;
 	private final Bitmap[] bitmaps = {null, null};
 
 	private int bitmapIndex = 0;
