@@ -7,6 +7,11 @@ public class RectI
 	public int x1;
 	public int y1;
 
+	public RectI()
+	{
+		x0 = y0 = x1 = y1 = 0;
+	}
+
 	public RectI(int x0, int y0, int x1, int y1) {
 		this.x0 = x0;
 		this.y0 = y0;
@@ -76,5 +81,32 @@ public class RectI
 		y1 = (int)Math.ceil(bx1);
 
 		return this;
+	}
+
+	public boolean isEmpty()
+	{
+		return (x0 == x1 || y0 == y1);
+	}
+
+	public void union(RectI r)
+	{
+		if (isEmpty())
+		{
+			x0 = r.x0;
+			y0 = r.y0;
+			x1 = r.x1;
+			y1 = r.y1;
+		}
+		else
+		{
+			if (r.x0 < x0)
+				x0 = r.x0;
+			if (r.y0 < y0)
+				y0 = r.y0;
+			if (r.x1 > x1)
+				x1 = r.x1;
+			if (r.y1 > y1)
+				y1 = r.y1;
+		}
 	}
 }

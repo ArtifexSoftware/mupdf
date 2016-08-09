@@ -7,30 +7,41 @@ public class Rect
 	public float x1;
 	public float y1;
 
-	public Rect(float x0, float y0, float x1, float y1) {
+	public Rect()
+	{
+		x0 = y0 = x1 = y1 = 0;
+	}
+
+	public Rect(float x0, float y0, float x1, float y1)
+	{
 		this.x0 = x0;
 		this.y0 = y0;
 		this.x1 = x1;
 		this.y1 = y1;
 	}
 
-	public Rect(Rect r) {
+	public Rect(Rect r)
+	{
 		this(r.x0, r.y0, r.x1, r.y1);
 	}
 
-	public Rect(RectI r) {
+	public Rect(RectI r)
+	{
 		this(r.x0, r.y0, r.x1, r.y1);
 	}
 
-	public String toString() {
+	public String toString()
+	{
 		return "[" + x0 + " " + y0 + " " + x1 + " " + y1 + "]";
 	}
 
-	public Rect transform(Matrix tm) {
+	public Rect transform(Matrix tm)
+	{
 		float ax0 = x0 * tm.a;
 		float ax1 = x1 * tm.a;
 
-		if (ax0 > ax1) {
+		if (ax0 > ax1)
+		{
 			float t = ax0;
 			ax0 = ax1;
 			ax1 = t;
@@ -39,7 +50,8 @@ public class Rect
 		float cy0 = y0 * tm.c;
 		float cy1 = y1 * tm.c;
 
-		if (cy0 > cy1) {
+		if (cy0 > cy1)
+		{
 			float t = cy0;
 			cy0 = cy1;
 			cy1 = t;
@@ -50,7 +62,8 @@ public class Rect
 		float bx0 = x0 * tm.b;
 		float bx1 = x1 * tm.b;
 
-		if (bx0 > bx1) {
+		if (bx0 > bx1)
+		{
 			float t = bx0;
 			bx0 = bx1;
 			bx1 = t;
@@ -59,7 +72,8 @@ public class Rect
 		float dy0 = y0 * tm.d;
 		float dy1 = y1 * tm.d;
 
-		if (dy0 > dy1) {
+		if (dy0 > dy1)
+		{
 			float t = dy0;
 			dy0 = dy1;
 			dy1 = t;
@@ -77,9 +91,44 @@ public class Rect
 
 	public boolean contains(float x, float y)
 	{
-		if (x>=x0 && x<x1 && y>=y0 && y<y1)
+		if (x >= x0 && x < x1 && y >= y0 && y < y1)
 			return true;
 
 		return false;
+	}
+
+	public boolean contains(Rect r)
+	{
+		if (r.x0 >= x0 && r.x1 < x1 && r.y0 >= y0 && r.y1 < y1)
+			return true;
+
+		return false;
+	}
+
+	public boolean isEmpty()
+	{
+		return (x0 == x1 || y0 == y1);
+	}
+
+	public void union(Rect r)
+	{
+		if (isEmpty())
+		{
+			x0 = r.x0;
+			y0 = r.y0;
+			x1 = r.x1;
+			y1 = r.y1;
+		}
+		else
+		{
+			if (r.x0 < x0)
+				x0 = r.x0;
+			if (r.y0 < y0)
+				y0 = r.y0;
+			if (r.x1 > x1)
+				x1 = r.x1;
+			if (r.y1 > y1)
+				y1 = r.y1;
+		}
 	}
 }
