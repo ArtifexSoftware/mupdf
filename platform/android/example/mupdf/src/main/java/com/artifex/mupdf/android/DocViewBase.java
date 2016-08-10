@@ -920,6 +920,12 @@ public class DocViewBase
 			removeViewInLayout(cv);
 			cv.finish();
 		}
+
+		//  get rid of bitmaps
+		bitmaps[0].recycle();
+		bitmaps[0] = null;
+		bitmaps[1].recycle();
+		bitmaps[1] = null;
 	}
 
 	public boolean finished()

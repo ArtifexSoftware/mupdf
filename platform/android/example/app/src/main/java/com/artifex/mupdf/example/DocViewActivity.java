@@ -27,4 +27,13 @@ public class DocViewActivity extends Activity
 		mDocActivityView.showUI(true);  //  set to false for no built-in UI
 		mDocActivityView.start(path);
 	}
+
+	@Override
+	public void finish()
+	{
+		//  stop the view
+		mDocActivityView.stop();
+
+		super.finish();
+	}
 }

@@ -340,4 +340,13 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			requestLayout();
 		}
 	}
+
+	public void stop()
+	{
+		mDocView.finish();
+		if (usePagesView())
+		{
+			mDocView2.finish();
+		}
+	}
 }
