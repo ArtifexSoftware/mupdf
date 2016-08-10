@@ -935,8 +935,13 @@ public class DocViewBase
 
 	protected void smoothScrollBy(int dx, int dy)
 	{
+		smoothScrollBy(dx, dy, 400);
+	}
+
+	protected void smoothScrollBy(int dx, int dy, int ms)
+	{
 		mScrollerLastX = mScrollerLastY = 0;
-		mScroller.startScroll(0, 0, dx, dy, 400);
+		mScroller.startScroll(0, 0, dx, dy, ms);
 		mStepper.prod();
 	}
 
@@ -961,7 +966,7 @@ public class DocViewBase
 		if ((childRect.height()) > viewport.height())
 		{
 			//  put the top of the page at the top and the left at 0
-			smoothScrollBy(getScrollX(), getScrollY() - childRect.top);
+			smoothScrollBy(getScrollX(), getScrollY() - childRect.top, 1);
 		}
 		else
 		{
@@ -969,9 +974,9 @@ public class DocViewBase
 			if (childRect.top < viewport.top || childRect.bottom > viewport.bottom)
 			{
 				if (childRect.top == 0)
-					smoothScrollBy(0, getScrollY());
+					smoothScrollBy(0, getScrollY(), 1);
 				else
-					smoothScrollBy(0, getScrollY() + viewport.height() / 2 - (childRect.bottom + childRect.top) / 2);
+					smoothScrollBy(0, getScrollY() + viewport.height() / 2 - (childRect.bottom + childRect.top) / 2, 1);
 			}
 		}
 	}

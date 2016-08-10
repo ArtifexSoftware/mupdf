@@ -59,7 +59,6 @@ public class DocView extends DocViewBase implements DragHandleListener
 
 		selectionHandlePadPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, padDp, metrics);
 		selectionHandleSizePx = (int) (scale * TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, sizeDp, metrics));
-		selectionHandleSizePx = selectionHandleSizePx * 8 / 10;
 	}
 
 	//  create the selection handles
@@ -149,7 +148,6 @@ public class DocView extends DocViewBase implements DragHandleListener
 	@Override
 	protected void doDoubleTap(float fx, float fy)
 	{
-
 	}
 
 	private Point viewToScreen(Point p)
@@ -189,7 +187,6 @@ public class DocView extends DocViewBase implements DragHandleListener
 	@Override
 	public void onStartDrag(DragHandle handle)
 	{
-
 	}
 
 	@Override
@@ -249,7 +246,6 @@ public class DocView extends DocViewBase implements DragHandleListener
 	@Override
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom)
 	{
-
 		super.onLayout(changed, left, top, right, bottom);
 
 		moveHandlesToCorners();
@@ -269,8 +265,6 @@ public class DocView extends DocViewBase implements DragHandleListener
 				positionHandle(mSelectionHandleTopLeft, selectionStartPage, selectionStartLoc.x, selectionStartLoc.y);
 				positionHandle(mSelectionHandleBottomRight, selectionEndPage, selectionEndLoc.x, selectionEndLoc.y);
 			}
-
-
 		}
 	}
 }

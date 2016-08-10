@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <integer name="page_width_percentage">87</integer>
-    <integer name="pagelist_width_percentage">13</integer>
+    <integer name="page_width_percentage">90</integer>
+    <integer name="pagelist_width_percentage">10</integer>
 
     <integer name="text_highlight_alpha">60</integer>
 

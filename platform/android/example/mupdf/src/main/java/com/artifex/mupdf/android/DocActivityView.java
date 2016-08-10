@@ -1,11 +1,13 @@
 package com.artifex.mupdf.android;
 
+import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -21,8 +23,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 {
 	private DocView mDocView;
 	private DocListPagesView mDocView2;
-	private Context mContext = null;
-	private boolean layoutAgain = false;
+	private boolean mShowUI = true;
 
 	//  tab tags
 	private String mTagHidden;
@@ -33,69 +34,16 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	public DocActivityView(Context context)
 	{
 		super(context);
-		initialize(context);
 	}
 
 	public DocActivityView(Context context, AttributeSet attrs)
 	{
 		super(context, attrs);
-		initialize(context);
 	}
 
 	public DocActivityView(Context context, AttributeSet attrs, int defStyle)
 	{
 		super(context, attrs, defStyle);
-		initialize(context);
-	}
-
-	protected void initialize(Context context)
-	{
-		mContext = context;
-
-		final LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		final LinearLayout view = (LinearLayout) inflater.inflate(R.layout.doc_view, null);
-		addView(view);
-
-		mDocView = (DocView) view.findViewById(R.id.doc_view_inner);
-
-		if (usePagesView())
-		{
-			mDocView2 = new DocListPagesView(context);
-			mDocView2.setMainView(mDocView);
-		}
-
-		if (usePagesView())
-		{
-			//  pages container
-			LinearLayout layout2 = (LinearLayout) findViewById(R.id.pages_container);
-			layout2.addView(mDocView2);
-		}
-
-		//  tabs
-		setupTabs();
-
-		//  selection handles
-		View v = view.findViewById(R.id.doc_wrapper);
-		RelativeLayout layout = (RelativeLayout) v;
-		mDocView.setupHandles(layout);
-
-		//  listen for layout changes on the main doc view, and
-		//  copy the "most visible" value to the page list.
-		ViewTreeObserver observer2 = mDocView.getViewTreeObserver();
-		observer2.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
-		{
-			@Override
-			public void onGlobalLayout()
-			{
-				if (usePagesView())
-				{
-					int mvp = mDocView.getMostVisiblePage();
-					mDocView2.setMostVisiblePage(mvp);
-				}
-			}
-		});
-
-		//  TODO: connect buttons to functions
 	}
 
 	protected boolean usePagesView()
@@ -160,7 +108,6 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 
 	private void showSearchSelected(boolean selected)
 	{
-
 	}
 
 	protected void handlePagesTab(String tabId)
@@ -218,7 +165,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	public boolean showKeyboard()
 	{
 		//  show keyboard
-		InputMethodManager im = (InputMethodManager) mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+		InputMethodManager im = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 		im.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
 
 		return true;
@@ -227,48 +174,101 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	public void hideKeyboard()
 	{
 		//  hide the keyboard
-		InputMethodManager im = (InputMethodManager) mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+		InputMethodManager im = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 		im.hideSoftInputFromWindow(mDocView.getWindowToken(), 0);
 	}
 
+	private boolean started = false;
 	public void start(final String path)
 	{
-		//  wait for the first layout to finish
-		ViewTreeObserver observer = getViewTreeObserver();
-		observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
+		started = false;
+
+		((Activity)getContext()).getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+		((Activity)getContext()).getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+
+		//  inflate the UI
+		final LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		final LinearLayout view = (LinearLayout) inflater.inflate(R.layout.doc_view, null);
+
+		final ViewTreeObserver vto = getViewTreeObserver();
+		vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
 		{
 			@Override
 			public void onGlobalLayout()
 			{
-				getViewTreeObserver().removeOnGlobalLayoutListener(this);
-
-				//  signal that we want one more layout.  When the title bar get hidden,
-				//  this view will get an additional layout, at which time we'll
-				//  re-layout the inner view. (see below)
-				//  I don't like this, but it seems to work.
-				layoutAgain = true;
-				mDocView.start(path);
-
-				if (usePagesView())
+				if (!started)
 				{
-					mDocView2.clone(mDocView);
-				}
+					findViewById(R.id.tabhost).setVisibility(mShowUI?View.VISIBLE:View.GONE);
+					findViewById(R.id.footer).setVisibility(mShowUI?View.VISIBLE:View.GONE);
+					start2(path);
 
+					started = true;
+				}
 			}
 		});
+
+		addView(view);
 	}
 
-	protected void onLayout(boolean changed, int left, int top, int right, int bottom)
+	public void start2(final String path)
 	{
+		//  main view
+		mDocView = (DocView) findViewById(R.id.doc_view_inner);
 
-		super.onLayout(changed, left, top, right, bottom);
-
-		if (layoutAgain)
+		//  page list
+		if (usePagesView())
 		{
-			//  this is the additional layout.
-			//  so now re-lay out the inner view.
-			layoutAgain = false;
-			mDocView.requestLayout();
+			mDocView2 = new DocListPagesView(getContext());
+			mDocView2.setMainView(mDocView);
+			LinearLayout layout2 = (LinearLayout) findViewById(R.id.pages_container);
+			layout2.addView(mDocView2);
+		}
+
+		//  tabs
+		setupTabs();
+
+		//  selection handles
+		View v = findViewById(R.id.doc_wrapper);
+		RelativeLayout layout = (RelativeLayout) v;
+		mDocView.setupHandles(layout);
+
+		//  listen for layout changes on the main doc view, and
+		//  copy the "most visible" value to the page list.
+		ViewTreeObserver observer2 = mDocView.getViewTreeObserver();
+		observer2.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
+		{
+			@Override
+			public void onGlobalLayout()
+			{
+				if (usePagesView())
+				{
+					int mvp = mDocView.getMostVisiblePage();
+					mDocView2.setMostVisiblePage(mvp);
+				}
+			}
+		});
+
+		//  TODO: connect buttons to functions
+
+		//  start the views
+		mDocView.start(path);
+		if (usePagesView())
+		{
+			mDocView2.clone(mDocView);
+		}
+	}
+
+	public void showUI(boolean show)
+	{
+		mShowUI = show;
+	}
+
+	public void stop()
+	{
+		mDocView.finish();
+		if (usePagesView())
+		{
+			mDocView2.finish();
 		}
 	}
 
@@ -320,33 +320,6 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 				Log.i("example", String.format("no links for page %d", pageNum));
 			}
 
-		}
-	}
-
-	public void showUI(boolean show)
-	{
-		View tabHost = findViewById(R.id.tabhost);
-		View footer = findViewById(R.id.footer);
-		if (show)
-		{
-			tabHost.setVisibility(View.VISIBLE);
-			footer.setVisibility(View.VISIBLE);
-			requestLayout();
-		}
-		else
-		{
-			tabHost.setVisibility(View.GONE);
-			footer.setVisibility(View.GONE);
-			requestLayout();
-		}
-	}
-
-	public void stop()
-	{
-		mDocView.finish();
-		if (usePagesView())
-		{
-			mDocView2.finish();
 		}
 	}
 }

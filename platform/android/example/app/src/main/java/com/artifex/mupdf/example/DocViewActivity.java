@@ -15,16 +15,16 @@ public class DocViewActivity extends Activity
 	{
 		super.onCreate(savedInstanceState);
 
-		//  set up UI
-		setContentView(R.layout.activity_doc_view);
-		mDocActivityView = (DocActivityView) findViewById(R.id.doc_view);
-
 		//  get the file path
 		Uri uri = getIntent().getData();
 		final String path = Uri.decode(uri.getEncodedPath());
 
-		//  start the view
+		//  set up UI
+		setContentView(R.layout.activity_doc_view);
+		mDocActivityView = (DocActivityView) findViewById(R.id.doc_view);
 		mDocActivityView.showUI(true);  //  set to false for no built-in UI
+
+		//  Go!
 		mDocActivityView.start(path);
 	}
 
