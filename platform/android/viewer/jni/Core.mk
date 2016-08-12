@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
-ifdef SUPPORT_GPROOF
+ifdef FZ_ENABLE_GPRF
 include $(CLEAR_VARS)
 LOCAL_MODULE := gsso
 LOCAL_SRC_FILES := libgs.so
@@ -19,8 +19,8 @@ ifdef NDK_PROFILER
 LOCAL_CFLAGS += -pg -DNDK_PROFILER
 endif
 endif
-ifdef SUPPORT_GPROOF
-LOCAL_CFLAGS += -DSUPPORT_GPROOF
+ifdef FZ_ENABLE_GPRF
+LOCAL_CFLAGS += -DFZ_ENABLE_GPRF
 endif
 LOCAL_CFLAGS += -DAA_BITS=8
 ifdef MEMENTO
@@ -69,7 +69,7 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(MY_ROOT)/source/html/*.c) \
 	$(wildcard $(MY_ROOT)/generated/*.c)
 
-ifdef SUPPORT_GPROOF
+ifdef FZ_ENABLE_GPRF
 LOCAL_SHARED_LIBRARIES := gsso
 endif
 LOCAL_LDLIBS := -lm -llog -ljnigraphics

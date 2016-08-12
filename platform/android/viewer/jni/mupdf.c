@@ -2749,7 +2749,7 @@ static char *tmp_gproof_path(char *path)
 JNIEXPORT jstring JNICALL
 JNI_FN(MuPDFCore_startProofInternal)(JNIEnv * env, jobject thiz, int inResolution)
 {
-#ifdef SUPPORT_GPROOF
+#ifdef FZ_ENABLE_GPRF
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	char *tmp;
@@ -2790,7 +2790,7 @@ JNI_FN(MuPDFCore_startProofInternal)(JNIEnv * env, jobject thiz, int inResolutio
 JNIEXPORT void JNICALL
 JNI_FN(MuPDFCore_endProofInternal)(JNIEnv * env, jobject thiz, jstring jfilename)
 {
-#ifdef SUPPORT_GPROOF
+#ifdef FZ_ENABLE_GPRF
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
 	const char *tmp;
@@ -2812,7 +2812,7 @@ JNI_FN(MuPDFCore_endProofInternal)(JNIEnv * env, jobject thiz, jstring jfilename
 JNIEXPORT jboolean JNICALL
 JNI_FN(MuPDFCore_gprfSupportedInternal)(JNIEnv * env)
 {
-#ifdef SUPPORT_GPROOF
+#ifdef FZ_ENABLE_GPRF
 	return JNI_TRUE;
 #else
 	return JNI_FALSE;

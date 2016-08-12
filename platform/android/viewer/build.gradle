@@ -1,5 +1,3 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-
 buildscript {
 	repositories {
 		jcenter()
@@ -58,29 +56,37 @@ android {
 	}
 }
 
-/* This defines the path to Android's ndk-build. */
+//  This defines the path to Android's ndk-build.
+import org.apache.tools.ant.taskdefs.condition.Os
 def ndkBuildPath = plugins.getPlugin('com.android.application').sdkHandler.getNdkFolder().absolutePath + File.separator + 'ndk-build'
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 	ndkBuildPath +='.cmd'
 }
 
-/* This task builds the native part */
+//  This task builds the native part
+//  To build with experimental proofing enabled, define FZ_ENABLE_GPRF,
+//  as shown below, and put a copy of libgs.so in the
+//  JNI folder before building.
+
 task buildNative(type: Exec,description: 'Compile JNI source via NDK') {
 	println('executing buildNative')
-	commandLine ndkBuildPath, '-C', file('.').absolutePath, ' FZ_ENABLE_GPRF=1'
-	//'NDK_PROJECT_PATH=build','APP_BUILD_SCRIPT=src/main/jni/Android.mk'//force using appropriate Makefile
+//	commandLine ndkBuildPath, '-C', file('.').absolutePath, ' FZ_ENABLE_GPRF=1'
+	commandLine ndkBuildPath, '-C', file('.').absolutePath
 }
 
-/* This task cleans the native part */
+//  This task cleans the native part
+
 task cleanNative(type: Exec, description: 'Clean JNI object files') {
 	println('executing cleanNative')
 	commandLine ndkBuildPath, '-C', file('.').absolutePath, 'clean'
 }
 
-/* cleaning should also include cleaning native */
+//  cleaning should also include cleaning native
+
 clean.dependsOn 'cleanNative'
 
-/* building should include native */
-tasks.withType(JavaCompile){
+//  building should include native
+
+tasks.withType(JavaCompile) {
 	compileTask -> compileTask.dependsOn buildNative
 }

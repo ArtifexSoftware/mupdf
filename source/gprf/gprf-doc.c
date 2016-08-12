@@ -791,7 +791,7 @@ gprf_load_page(fz_context *ctx, fz_document *doc_, int number)
 	{
 		page->super.bound_page = gprf_bound_page;
 		page->super.run_page_contents = gprf_run_page;
-		page->super.drop_page_imp = gprf_drop_page_imp;
+		page->super.drop_page = gprf_drop_page_imp;
 		page->super.count_separations = gprf_count_separations;
 		page->super.control_separation = gprf_control_separation;
 		page->super.separation_disabled = gprf_separation_disabled;
@@ -844,7 +844,7 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	gprf_document *doc;
 
 	doc = fz_new_document(ctx, gprf_document);
-	doc->super.close = gprf_close_document;
+	doc->super.drop_document = gprf_close_document;
 	doc->super.count_pages = gprf_count_pages;
 	doc->super.load_page = gprf_load_page;
 	doc->super.lookup_metadata = gprf_lookup_metadata;
