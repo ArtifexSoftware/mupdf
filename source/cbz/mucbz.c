@@ -256,6 +256,12 @@ cbz_recognize(fz_context *ctx, const char *magic)
 	if ((ext && !fz_strcasecmp(ext, ".zip")) || !strcmp(magic, "zip") ||
 			!strcmp(magic, "application/zip"))
 		return 100;
+	if ((ext && !fz_strcasecmp(ext, ".tar")) || !strcmp(magic, "tar") ||
+			!strcmp(magic, "application/x-tar"))
+		return 100;
+	if ((ext && !fz_strcasecmp(ext, ".cbt")) || !strcmp(magic, "cbt") ||
+			!strcmp(magic, "application/x-cbt"))
+		return 100;
 	return 0;
 }
 

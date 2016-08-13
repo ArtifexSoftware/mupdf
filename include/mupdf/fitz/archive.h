@@ -28,7 +28,7 @@ fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
 #define fz_new_archive(C,F,M) ((M*)Memento_label(fz_new_archive_of_size(C, F, sizeof(M)), #M))
 
 /*
-	fz_open_archive: Open a zip archive
+	fz_open_archive: Open a zip or tar archive
 
 	Open a file and identify its archive type based on the archive
 	signature contained inside.
@@ -38,7 +38,7 @@ fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
 fz_archive *fz_open_archive(fz_context *ctx, const char *filename);
 
 /*
-	fz_open_archive_with_stream: Open zip archive stream.
+	fz_open_archive_with_stream: Open zip or tar archive stream.
 
 	Open an archive using a seekable stream object rather than
 	opening a file or directory on disk.
@@ -115,6 +115,37 @@ fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *
 */
 
 fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
+
+/*
+	fz_is_tar_archive: Detect if stream object is a tar achive.
+
+	Assumes that the stream object is seekable.
+*/
+int fz_is_tar_archive(fz_context *ctx, fz_stream *file);
+
+/*
+	fz_open_tar_archive: Open a tar archive file.
+
+	An exception is throw if the file is not a tar archive as
+	indicated by the presence of a tar signature.
+
+	filename: a path to a tar archive file as it would be given to
+	open(2).
+*/
+fz_archive *fz_open_tar_archive(fz_context *ctx, const char *filename);
+
+/*
+	fz_open_tar_archive: Open a tar archive stream.
+
+	Open an archive using a seekable stream object rather than
+	opening a file or directory on disk.
+
+	An exception is throw if the stream is not a tar archive as
+	indicated by the presence of a tar signature.
+
+*/
+fz_archive *fz_open_tar_archive_with_stream(fz_context *ctx, fz_stream *file);
+
 /*
 	fz_is_zip_archive: Detect if stream object is a zip achive.
 
