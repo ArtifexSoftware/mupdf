@@ -165,11 +165,13 @@ void fz_free_argv(int argc, char **argv);
 #define fseeko64 _fseeki64
 #define ftello64 _ftelli64
 #define atoll _atoi64
+#define stat _stat
 
 #else /* Unix or close enough */
 
 #include <stdint.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #ifndef O_BINARY
 #define O_BINARY 0
