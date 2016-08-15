@@ -40,4 +40,6 @@ public class Page
 	public native StructuredText toStructuredText();
 
 	public native Rect[] search(String needle);
+
+	public native byte[] textAsHtml();
 }
