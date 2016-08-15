@@ -293,7 +293,7 @@ static inline int is_real_num_char(int c)
 }
 
 static char *
-xps_parse_real_num(char *s, float *number)
+xps_parse_real_num(char *s, float *number, int *override)
 {
 	char buf[64];
 	char *p = buf;
@@ -301,7 +301,14 @@ xps_parse_real_num(char *s, float *number)
 		*p++ = *s++;
 	*p = 0;
 	if (buf[0])
+	{
+		*override = 1;
 		*number = fz_atof(buf);
+	}
+	else
+	{
+		*override = 0;
+	}
 	return s;
 }
 
@@ -326,14 +333,19 @@ xps_parse_glyph_index(char *s, int *glyph_index)
 }
 
 static char *
-xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
+xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs, int bidi_level)
 {
+	int override;
 	if (*s == ',')
-		s = xps_parse_real_num(s + 1, advance);
+	{
+		s = xps_parse_real_num(s + 1, advance, &override);
+		if (override && (bidi_level & 1))
+			*advance = -*advance;
+	}
 	if (*s == ',')
-		s = xps_parse_real_num(s + 1, uofs);
+		s = xps_parse_real_num(s + 1, uofs, &override);
 	if (*s == ',')
-		s = xps_parse_real_num(s + 1, vofs);
+		s = xps_parse_real_num(s + 1, vofs, &override);
 	return s;
 }
 
@@ -429,7 +441,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 			if (is && *is)
 			{
-				is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset);
+				is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset, bidi_level);
 				if (*is == ';')
 					is ++;
 			}
