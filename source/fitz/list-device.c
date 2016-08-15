@@ -257,12 +257,7 @@ fz_append_display_node(
 		rect_off = size;
 		size += SIZE_IN_NODES(sizeof(fz_rect));
 	}
-	if (color && !colorspace)
-	{
-		/* SoftMasks can omit a colorspace, but we know what they mean */
-		colorspace = fz_device_gray(ctx);
-	}
-	if (colorspace)
+	if (color || colorspace)
 	{
 		if (colorspace != writer->colorspace)
 		{
@@ -307,7 +302,7 @@ fz_append_display_node(
 			else
 			{
 				int i;
-				int n = colorspace->n;
+				int n = colorspace ? colorspace->n : 0;
 
 				colorspace_off = size;
 				size += SIZE_IN_NODES(sizeof(fz_colorspace *));
@@ -378,7 +373,7 @@ fz_append_display_node(
 			else
 			{
 				int i;
-				int n = colorspace->n;
+				int n = colorspace ? colorspace->n : 0;
 				for (i=0; i < n; i++)
 					if (color[i] != 0.0f)
 						break;
@@ -394,7 +389,6 @@ fz_append_display_node(
 	}
 	if (color)
 	{
-
 		int i, n;
 		const float *wc = &writer->color[0];
 
@@ -569,7 +563,8 @@ fz_append_display_node(
 		default:
 		{
 			fz_colorspace **out_colorspace = (fz_colorspace **)(void *)(&node_ptr[colorspace_off]);
-			int i, n = colorspace->n;
+			int i, n;
+			n = colorspace ? colorspace->n : 0;
 			*out_colorspace = fz_keep_colorspace(ctx, colorspace);
 
 			writer->colorspace = fz_keep_colorspace(ctx, colorspace);
@@ -1296,7 +1291,9 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 			cs_n = 4;
 			break;
 		case CS_OTHER_0:
-			cs_n = (*(fz_colorspace **)node)->n;
+			cs_n = 0;
+			if (*(fz_colorspace **)node)
+				cs_n = (*(fz_colorspace **)node)->n;
 			fz_drop_colorspace(ctx, *(fz_colorspace **)node);
 			node += SIZE_IN_NODES(sizeof(fz_colorspace *));
 			break;
@@ -1442,7 +1439,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 		}
 		if (n.cs)
 		{
-			int i;
+			int i, en;
 
 			fz_drop_colorspace(ctx, colorspace);
 			switch (n.cs)
@@ -1485,7 +1482,8 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			case CS_OTHER_0:
 				colorspace = fz_keep_colorspace(ctx, *(fz_colorspace **)(node));
 				node += SIZE_IN_NODES(sizeof(fz_colorspace *));
-				for (i = 0; i < colorspace->n; i++)
+				en = colorspace ? colorspace->n : 0;
+				for (i = 0; i < en; i++)
 					color[i] = 0.0f;
 				break;
 			}

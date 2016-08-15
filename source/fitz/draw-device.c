@@ -421,6 +421,9 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
 
+	if (colorspace == NULL && model != NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
+
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
@@ -437,9 +440,14 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 		state = fz_knockout_begin(ctx, dev);
 
 	n = model ? model->n : 0;
-	fz_convert_color(ctx, model, colorfv, colorspace, color);
-	for (i = 0; i < n; i++)
-		colorbv[i] = colorfv[i] * 255;
+	if (n > 0)
+	{
+		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		for (i = 0; i < n; i++)
+			colorbv[i] = colorfv[i] * 255;
+	}
+	else
+		i = 0;
 	colorbv[i] = alpha * 255;
 
 	fz_scan_convert(ctx, gel, even_odd, &bbox, state->dest, colorbv);
@@ -476,6 +484,9 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
 
+	if (colorspace == NULL && model != NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
+
 	if (linewidth * expansion < aa_level)
 		linewidth = aa_level / expansion;
 	if (flatness < 0.001f)
@@ -497,9 +508,14 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 		state = fz_knockout_begin(ctx, dev);
 
 	n = model ? model->n : 0;
-	fz_convert_color(ctx, model, colorfv, colorspace, color);
-	for (i = 0; i < n; i++)
-		colorbv[i] = colorfv[i] * 255;
+	if (n > 0)
+	{
+		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		for (i = 0; i < n; i++)
+			colorbv[i] = colorfv[i] * 255;
+	}
+	else
+		i = 0;
 	colorbv[i] = alpha * 255;
 
 #ifdef DUMP_GROUP_BLENDS
@@ -767,13 +783,21 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_text_span *span;
 	int i, n;
 
+	if (colorspace == NULL && model != NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
+
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
 	n = model ? model->n : 0;
-	fz_convert_color(ctx, model, colorfv, colorspace, color);
-	for (i = 0; i < n; i++)
-		colorbv[i] = colorfv[i] * 255;
+	if (n > 0)
+	{
+		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		for (i = 0; i < n; i++)
+			colorbv[i] = colorfv[i] * 255;
+	}
+	else
+		i = 0;
 	colorbv[i] = alpha * 255;
 	shapebv = 255;
 
@@ -850,13 +874,21 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	fz_text_span *span;
 	int i, n;
 
+	if (colorspace == NULL && model != NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
+
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
 	n = model ? model->n : 0;
-	fz_convert_color(ctx, model, colorfv, colorspace, color);
-	for (i = 0; i < n; i++)
-		colorbv[i] = colorfv[i] * 255;
+	if (n > 0)
+	{
+		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		for (i = 0; i < n; i++)
+			colorbv[i] = colorfv[i] * 255;
+	}
+	else
+		i = 0;
 	colorbv[i] = alpha * 255;
 
 	for (span = text->head; span; span = span->next)
@@ -1207,9 +1239,14 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		unsigned char *s;
 		int x, y, n, i;
 		n = model ? model->n : 0;
-		fz_convert_color(ctx, model, colorfv, shade->colorspace, shade->background);
-		for (i = 0; i < n; i++)
-			colorbv[i] = colorfv[i] * 255;
+		if (n > 0)
+		{
+			fz_convert_color(ctx, model, colorfv, shade->colorspace, shade->background);
+			for (i = 0; i < n; i++)
+				colorbv[i] = colorfv[i] * 255;
+		}
+		else
+			i = 0;
 		colorbv[i] = 255;
 
 		n = dest->n;
@@ -1481,6 +1518,9 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_matrix inverse;
 	fz_irect src_area;
 
+	if (colorspace == NULL && model != NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
+
 	fz_pixmap_bbox(ctx, state->dest, &clip);
 	fz_intersect_irect(&clip, &state->scissor);
 
@@ -1547,9 +1587,14 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		}
 
 		n = model ? model->n : 0;
-		fz_convert_color(ctx, model, colorfv, colorspace, color);
-		for (i = 0; i < n; i++)
-			colorbv[i] = colorfv[i] * 255;
+		if (n > 0)
+		{
+			fz_convert_color(ctx, model, colorfv, colorspace, color);
+			for (i = 0; i < n; i++)
+				colorbv[i] = colorfv[i] * 255;
+		}
+		else
+			i = 0;
 		colorbv[i] = alpha * 255;
 
 		fz_paint_image_with_color(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, colorbv, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
