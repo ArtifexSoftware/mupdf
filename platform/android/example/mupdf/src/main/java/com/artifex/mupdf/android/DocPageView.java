@@ -697,6 +697,8 @@ public class DocPageView extends View implements Callback
 		}
 	}
 
+	public boolean getMostVisible() {return isMostVisible;}
+
 	public void setMostVisible(boolean val)
 	{
 		boolean wasMostVisible = isMostVisible;

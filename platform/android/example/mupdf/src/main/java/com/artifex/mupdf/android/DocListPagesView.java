@@ -8,8 +8,7 @@ import android.view.ScaleGestureDetector;
 
 public class DocListPagesView extends DocViewBase
 {
-
-	private DocViewBase mMainView;
+	private SelectionListener mSelectionListener = null;
 
 	public DocListPagesView(Context context)
 	{
@@ -26,11 +25,6 @@ public class DocListPagesView extends DocViewBase
 		super(context, attrs, defStyle);
 	}
 
-	public void setMainView(DocViewBase v)
-	{
-		mMainView = v;
-	}
-
 	@Override
 	protected void doSingleTap(float fx, float fy)
 	{
@@ -39,7 +33,9 @@ public class DocListPagesView extends DocViewBase
 		if (v != null)
 		{
 			int pageNumber = v.getPageNumber();
-			mMainView.scrollToPage(pageNumber);
+
+			if (mSelectionListener != null)
+				mSelectionListener.onPageSelected(pageNumber);
 		}
 	}
 
@@ -94,6 +90,18 @@ public class DocListPagesView extends DocViewBase
 		}
 	}
 
+	public int getMostVisiblePage()
+	{
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			if (cv.getMostVisible())
+				return i;
+		}
+		return 0;
+	}
+
 	@Override
 	public void onShowPages()
 	{
@@ -104,4 +112,10 @@ public class DocListPagesView extends DocViewBase
 	{
 	}
 
+	public interface SelectionListener
+	{
+		void onPageSelected(int pageNumber);
+	}
+
+	public void setSelectionListener(SelectionListener l) {mSelectionListener=l;}
 }

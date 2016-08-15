@@ -165,6 +165,13 @@
                     android:layout_height="match_parent">
                 </com.artifex.mupdf.android.DocView>
 
+                <com.artifex.mupdf.android.DocReflowView
+                    android:id="@+id/doc_reflow_view"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                </com.artifex.mupdf.android.DocReflowView>
+
             </RelativeLayout>
 
         </LinearLayout>

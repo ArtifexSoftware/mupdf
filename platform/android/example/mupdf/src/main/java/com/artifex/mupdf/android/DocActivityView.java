@@ -10,6 +10,7 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TabHost;
@@ -19,10 +20,12 @@ import com.artifex.mupdf.fitz.Link;
 import com.artifex.mupdf.fitz.Outline;
 import com.artifex.mupdf.fitz.R;
 
-public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeListener
+public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeListener, View.OnClickListener
 {
 	private DocView mDocView;
-	private DocListPagesView mDocView2;
+	private DocReflowView mDocReflowView;
+	private DocListPagesView mDocPagesView;
+
 	private boolean mShowUI = true;
 
 	//  tab tags
@@ -30,6 +33,8 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private String mTagFile;
 	private String mTagAnnotate;
 	private String mTagPages;
+
+	ImageButton mReflowButton;
 
 	public DocActivityView(Context context)
 	{
@@ -115,7 +120,10 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		if (tabId.equals(mTagPages))
 			showPages();
 		else
+		{
+			hideReflow();
 			hidePages();
+		}
 	}
 
 	protected void showPages()
@@ -214,14 +222,29 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	{
 		//  main view
 		mDocView = (DocView) findViewById(R.id.doc_view_inner);
+		mDocReflowView = (DocReflowView) findViewById(R.id.doc_reflow_view);
 
 		//  page list
 		if (usePagesView())
 		{
-			mDocView2 = new DocListPagesView(getContext());
-			mDocView2.setMainView(mDocView);
+			mDocPagesView = new DocListPagesView(getContext());
+			mDocPagesView.setSelectionListener(new DocListPagesView.SelectionListener()
+			{
+				@Override
+				public void onPageSelected(int pageNumber)
+				{
+					mDocView.scrollToPage(pageNumber);
+
+					if (mDocReflowView.getVisibility() == View.VISIBLE)
+					{
+						setReflowText(pageNumber);
+						mDocPagesView.setMostVisiblePage(pageNumber);
+					}
+				}
+			});
+
 			LinearLayout layout2 = (LinearLayout) findViewById(R.id.pages_container);
-			layout2.addView(mDocView2);
+			layout2.addView(mDocPagesView);
 		}
 
 		//  tabs
@@ -242,19 +265,25 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			{
 				if (usePagesView())
 				{
-					int mvp = mDocView.getMostVisiblePage();
-					mDocView2.setMostVisiblePage(mvp);
+					if (mDocView.getVisibility() == View.VISIBLE)
+					{
+						int mvp = mDocView.getMostVisiblePage();
+						mDocPagesView.setMostVisiblePage(mvp);
+					}
 				}
 			}
 		});
 
 		//  TODO: connect buttons to functions
 
+		mReflowButton = (ImageButton)findViewById(R.id.reflow_button);
+		mReflowButton.setOnClickListener(this);
+
 		//  start the views
 		mDocView.start(path);
 		if (usePagesView())
 		{
-			mDocView2.clone(mDocView);
+			mDocPagesView.clone(mDocView);
 		}
 	}
 
@@ -268,7 +297,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		mDocView.finish();
 		if (usePagesView())
 		{
-			mDocView2.finish();
+			mDocPagesView.finish();
 		}
 	}
 
@@ -321,5 +350,48 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			}
 
 		}
+	}
+
+	@Override
+	public void onClick(View v)
+	{
+		if (v == mReflowButton)
+			onReflowButton();
+	}
+
+	private void onReflowButton()
+	{
+		if (mDocView.getVisibility() == View.VISIBLE)
+		{
+			//  set initial text into reflow view
+			setReflowText(mDocPagesView.getMostVisiblePage());
+
+			//  show reflow
+			showReflow();
+		}
+		else
+		{
+			//  hide reflow
+			hideReflow();
+		}
+	}
+
+	private void showReflow()
+	{
+		mDocView.setVisibility(View.GONE);
+		mDocReflowView.setVisibility(View.VISIBLE);
+	}
+
+	private void hideReflow()
+	{
+		mDocReflowView.setVisibility(View.GONE);
+		mDocView.setVisibility(View.VISIBLE);
+	}
+
+	private void setReflowText(int pageNumber)
+	{
+		DocPageView dpv = (DocPageView)mDocView.getAdapter().getView(pageNumber, null, null);
+		byte bytes[] = dpv.getPage().textAsHtml();
+		mDocReflowView.setHTML(bytes);
 	}
 }
