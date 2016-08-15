@@ -7247,3 +7247,31 @@ FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
 
 	return string;
 }
+
+/* Shade interface */
+
+JNIEXPORT void JNICALL
+FUN(Shade_finalize)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_shade *shd = from_Shade(env, self);
+
+	if (ctx == NULL || shd == NULL)
+		return;
+
+	fz_drop_shade(ctx, shd);
+}
+
+/* PDFGraftMap interface */
+
+JNIEXPORT void JNICALL
+FUN(PDFGraftMap_finalize)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_graft_map *map = from_PDFGraftMap(env, self);
+
+	if (ctx == NULL || map == NULL)
+		return;
+
+	pdf_drop_graft_map(ctx, map);
+}
