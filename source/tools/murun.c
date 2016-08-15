@@ -2019,7 +2019,10 @@ static void ffi_Image_getImageMask(js_State *J)
 static void ffi_Image_getMask(js_State *J)
 {
 	fz_image *image = js_touserdata(J, 0, "fz_image");
-	ffi_pushimage(J, image->mask);
+	if (image->mask)
+		ffi_pushimage(J, image->mask);
+	else
+		js_pushnull(J);
 }
 
 static void ffi_Image_getColorSpace(js_State *J)
