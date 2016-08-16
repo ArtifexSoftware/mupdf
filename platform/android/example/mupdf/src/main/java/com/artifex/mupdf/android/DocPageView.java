@@ -401,7 +401,13 @@ public class DocPageView extends View implements Callback
 		return new Point((int)tchar.bbox.x1, (int)tchar.bbox.y1);
 	}
 
-	public void setSelection(Point ul, Point dr)
+	//  Find the collection ot TextChars belonging to lines
+	//  that intersect the rectangle define by two points.
+	//  For the first line, include those to the right of upperLeft.x
+	//  For the last line, include those to the left of lowerLeft.x
+	//  ASSUMPTION: this algorith does not handle right-to-left languages.
+
+	public void setSelection(Point upperLeft, Point lowerLeft)
 	{
 		mSelection = new ArrayList<>();
 
@@ -409,7 +415,7 @@ public class DocPageView extends View implements Callback
 		StructuredText structuredText = getPage().toStructuredText();
 		StructuredText.TextBlock textBlocks[] = structuredText.getBlocks();
 
-		com.artifex.mupdf.fitz.Rect r = new com.artifex.mupdf.fitz.Rect(ul.x, ul.y, dr.x, dr.y);
+		com.artifex.mupdf.fitz.Rect r = new com.artifex.mupdf.fitz.Rect(upperLeft.x, upperLeft.y, lowerLeft.x, lowerLeft.y);
 		for (StructuredText.TextBlock block : textBlocks)
 		{
 			for (StructuredText.TextLine line : block.lines)
@@ -417,11 +423,11 @@ public class DocPageView extends View implements Callback
 				boolean firstLine = false;
 				boolean lastLine = false;
 				boolean middleLine = false;
-				if (line.bbox.contains(ul.x, ul.y))
+				if (line.bbox.contains(upperLeft.x, upperLeft.y))
 					firstLine = true;
-				if (line.bbox.contains(dr.x, dr.y))
+				if (line.bbox.contains(lowerLeft.x, lowerLeft.y))
 					lastLine = true;
-				if (line.bbox.y0 >= ul.y && line.bbox.y1 <= dr.y)
+				if (line.bbox.y0 >= upperLeft.y && line.bbox.y1 <= lowerLeft.y)
 					middleLine = true;
 
 				for (StructuredText.TextSpan span : line.spans)
@@ -430,17 +436,17 @@ public class DocPageView extends View implements Callback
 					{
 						if (firstLine && lastLine)
 						{
-							if (tchar.bbox.x0 >= ul.x && tchar.bbox.x1 <= dr.x)
+							if (tchar.bbox.x0 >= upperLeft.x && tchar.bbox.x1 <= lowerLeft.x)
 								mSelection.add(tchar);
 						}
 						else if (firstLine)
 						{
-							if (tchar.bbox.x0 >= ul.x)
+							if (tchar.bbox.x0 >= upperLeft.x)
 								mSelection.add(tchar);
 						}
 						else if (lastLine)
 						{
-							if (tchar.bbox.x1 <= dr.x)
+							if (tchar.bbox.x1 <= lowerLeft.x)
 								mSelection.add(tchar);
 						}
 						else if (middleLine)
@@ -550,17 +556,17 @@ public class DocPageView extends View implements Callback
 		if (n == -1)
 			return null;
 		//  must be non-blank
-		if (isBlank(span.chars[n].c))
+		if (span.chars[n].isWhitespace())
 			return null;
 
 		//  look forward for a space, or the end
 		int nEnd = n;
-		while (nEnd + 1 < span.chars.length && !isBlank(span.chars[nEnd + 1].c))
+		while (nEnd + 1 < span.chars.length && !span.chars[nEnd + 1].isWhitespace())
 			nEnd++;
 
 		//  look backward for a space, or the beginning
 		int nStart = n;
-		while (nStart - 1 >= 0 && !isBlank(span.chars[nStart - 1].c))
+		while (nStart - 1 >= 0 && !span.chars[nStart - 1].isWhitespace())
 			nStart--;
 
 		mSelection = new ArrayList<>();
@@ -572,12 +578,6 @@ public class DocPageView extends View implements Callback
 		}
 
 		return new Rect((int) rWord.x0, (int) rWord.y0, (int) rWord.x1, (int) rWord.y1);
-	}
-
-	private boolean isBlank(int c)
-	{
-		String s = Character.toString((char) c);
-		return s.trim().isEmpty();
 	}
 
 	private StructuredText.TextBlock blockContainingPoint(StructuredText.TextBlock blocks[], Point p)

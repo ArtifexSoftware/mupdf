@@ -208,7 +208,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 				{
 					findViewById(R.id.tabhost).setVisibility(mShowUI?View.VISIBLE:View.GONE);
 					findViewById(R.id.footer).setVisibility(mShowUI?View.VISIBLE:View.GONE);
-					start2(path);
+					afterFirstLayoutComplete(path);
 
 					started = true;
 				}
@@ -218,7 +218,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		addView(view);
 	}
 
-	public void start2(final String path)
+	public void afterFirstLayoutComplete(final String path)
 	{
 		//  main view
 		mDocView = (DocView) findViewById(R.id.doc_view_inner);
