@@ -43,6 +43,11 @@ public class StructuredText
 	{
 		public int c;
 		public Rect bbox;
+
+		public boolean isWhitespace()
+		{
+			return Character.isWhitespace(c);
+		}
 	}
 
 }
