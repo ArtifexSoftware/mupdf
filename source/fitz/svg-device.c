@@ -187,7 +187,7 @@ svg_dev_fill_color(fz_context *ctx, svg_device *sdev, fz_colorspace *colorspace,
 	if (colorspace != fz_device_rgb(ctx))
 	{
 		/* If it's not rgb, make it rgb */
-		colorspace->to_rgb(ctx, colorspace, color, rgb);
+		fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, color);
 		color = rgb;
 	}
 
@@ -210,7 +210,7 @@ svg_dev_stroke_color(fz_context *ctx, svg_device *sdev, fz_colorspace *colorspac
 	if (colorspace != fz_device_rgb(ctx))
 	{
 		/* If it's not rgb, make it rgb */
-		colorspace->to_rgb(ctx, colorspace, color, rgb);
+		fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, color);
 		color = rgb;
 	}
 

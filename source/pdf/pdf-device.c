@@ -238,7 +238,7 @@ pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, cons
 	if (cspace == 0)
 	{
 		/* If it's an unknown colorspace, fallback to rgb */
-		colorspace->to_rgb(ctx, colorspace, color, rgb);
+		fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, color);
 		color = rgb;
 		colorspace = fz_device_rgb(ctx);
 	}
