@@ -292,6 +292,7 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *zip, struct zip_en
 	int method;
 	z_stream z;
 	int code;
+	int len;
 
 	method = read_zip_entry_header(ctx, zip, ent);
 
@@ -302,7 +303,10 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *zip, struct zip_en
 	{
 		fz_try(ctx)
 		{
-			fz_read(ctx, file, ubuf->data, ent->usize);
+			len = fz_read(ctx, file, ubuf->data, ubuf->len);
+			if (len < ubuf->len)
+				fz_warn(ctx, "premature end of data in stored archive entry");
+			ubuf->len = len;
 		}
 		fz_catch(ctx)
 		{
@@ -343,6 +347,11 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *zip, struct zip_en
 			{
 				fz_throw(ctx, FZ_ERROR_GENERIC, "zlib inflateEnd error: %s", z.msg);
 			}
+
+			len = ent->usize - z.avail_out;
+			if (len < ubuf->len)
+				fz_warn(ctx, "premature end of data in compressed archive entry");
+			ubuf->len = len;
 		}
 		fz_always(ctx)
 		{
