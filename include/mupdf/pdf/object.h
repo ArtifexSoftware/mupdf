@@ -95,6 +95,7 @@ void pdf_array_push_drop(fz_context *ctx, pdf_obj *array, pdf_obj *obj);
 void pdf_array_insert(fz_context *ctx, pdf_obj *array, pdf_obj *obj, int index);
 void pdf_array_insert_drop(fz_context *ctx, pdf_obj *array, pdf_obj *obj, int index);
 void pdf_array_delete(fz_context *ctx, pdf_obj *array, int index);
+int pdf_array_find(fz_context *ctx, pdf_obj *array, pdf_obj *obj);
 int pdf_array_contains(fz_context *ctx, pdf_obj *array, pdf_obj *obj);
 
 int pdf_dict_len(fz_context *ctx, pdf_obj *dict);
