@@ -35,6 +35,8 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private String mTagPages;
 
 	ImageButton mReflowButton;
+	ImageButton mFirstPageButton;
+	ImageButton mLastPageButton;
 
 	public DocActivityView(Context context)
 	{
@@ -233,13 +235,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 				@Override
 				public void onPageSelected(int pageNumber)
 				{
-					mDocView.scrollToPage(pageNumber);
-
-					if (mDocReflowView.getVisibility() == View.VISIBLE)
-					{
-						setReflowText(pageNumber);
-						mDocPagesView.setMostVisiblePage(pageNumber);
-					}
+					goToPage(pageNumber);
 				}
 			});
 
@@ -274,10 +270,16 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			}
 		});
 
-		//  TODO: connect buttons to functions
+		//  connect buttons to functions
 
 		mReflowButton = (ImageButton)findViewById(R.id.reflow_button);
 		mReflowButton.setOnClickListener(this);
+
+		mFirstPageButton = (ImageButton)findViewById(R.id.first_page_button);
+		mFirstPageButton.setOnClickListener(this);
+
+		mLastPageButton = (ImageButton)findViewById(R.id.last_page_button);
+		mLastPageButton.setOnClickListener(this);
 
 		//  start the views
 		mDocView.start(path);
@@ -357,6 +359,32 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	{
 		if (v == mReflowButton)
 			onReflowButton();
+		if (v == mFirstPageButton)
+			onFirstPageButton();
+		if (v == mLastPageButton)
+			onLastPageButton();
+	}
+
+	private void onFirstPageButton()
+	{
+		goToPage(0);
+	}
+
+	private void onLastPageButton()
+	{
+		int npages = mDocView.getPageCount();
+		goToPage(npages-1);
+	}
+
+	private void goToPage(int pageNumber)
+	{
+		mDocView.scrollToPage(pageNumber);
+
+		if (mDocReflowView.getVisibility() == View.VISIBLE)
+		{
+			setReflowText(pageNumber);
+			mDocPagesView.setMostVisiblePage(pageNumber);
+		}
 	}
 
 	private void onReflowButton()

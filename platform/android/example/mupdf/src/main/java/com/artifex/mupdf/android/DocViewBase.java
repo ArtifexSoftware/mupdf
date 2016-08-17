@@ -949,6 +949,8 @@ public class DocViewBase
 	{
 		//  scroll to bring the page into view
 
+		int scrollTime = 400;
+
 		//  get current viewport
 		Rect viewport = new Rect();
 		getGlobalVisibleRect(viewport);
@@ -966,7 +968,7 @@ public class DocViewBase
 		if ((childRect.height()) > viewport.height())
 		{
 			//  put the top of the page at the top and the left at 0
-			smoothScrollBy(getScrollX(), getScrollY() - childRect.top, 1);
+			smoothScrollBy(getScrollX(), getScrollY() - childRect.top, scrollTime);
 		}
 		else
 		{
@@ -974,9 +976,9 @@ public class DocViewBase
 			if (childRect.top < viewport.top || childRect.bottom > viewport.bottom)
 			{
 				if (childRect.top == 0)
-					smoothScrollBy(0, getScrollY(), 1);
+					smoothScrollBy(0, getScrollY(), scrollTime);
 				else
-					smoothScrollBy(0, getScrollY() + viewport.height() / 2 - (childRect.bottom + childRect.top) / 2, 1);
+					smoothScrollBy(0, getScrollY() + viewport.height() / 2 - (childRect.bottom + childRect.top) / 2, scrollTime);
 			}
 		}
 	}

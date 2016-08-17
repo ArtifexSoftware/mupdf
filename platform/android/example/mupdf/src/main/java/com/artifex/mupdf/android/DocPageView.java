@@ -54,6 +54,7 @@ public class DocPageView extends View implements Callback
 
 	private final Paint mPainter;
 	private final Paint mHighlightPainter;
+	private final Paint mBlankPainter;
 	private final Paint mDotPainter;
 	private final Rect mSrcRect = new Rect();
 	private final Rect mDstRect = new Rect();
@@ -91,6 +92,10 @@ public class DocPageView extends View implements Callback
 		mHighlightPainter.setColor(ContextCompat.getColor(context, R.color.text_highlight_color));
 		mHighlightPainter.setStyle(Paint.Style.FILL);
 		mHighlightPainter.setAlpha(getContext().getResources().getInteger(R.integer.text_highlight_alpha));
+
+		mBlankPainter = new Paint();
+		mBlankPainter.setStyle(Paint.Style.FILL);
+		mBlankPainter.setColor(Color.WHITE);
 
 		mDotPainter = new Paint();
 		mDotPainter.setStyle(Paint.Style.FILL);
@@ -470,6 +475,11 @@ public class DocPageView extends View implements Callback
 	@Override
 	public void onDraw(Canvas canvas)
 	{
+		//  always start with a blank white background
+		Rect rBlank = new Rect();
+		getLocalVisibleRect(rBlank);
+		canvas.drawRect(rBlank, mBlankPainter);
+
 		if (mFinished)
 			return;
 
