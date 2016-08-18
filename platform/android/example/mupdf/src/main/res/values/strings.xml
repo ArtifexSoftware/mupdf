@@ -8,4 +8,7 @@
 	<string name="annotate_tab">ANNOTATE</string>
 	<string name="pages_tab">PAGES</string>
 
+	<string name="next_upper">NEXT</string>
+	<string name="previous_upper">PREVIOUS</string>
+
 </resources>

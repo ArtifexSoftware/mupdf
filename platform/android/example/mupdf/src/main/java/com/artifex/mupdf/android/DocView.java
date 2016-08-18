@@ -10,6 +10,7 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.RelativeLayout;
 
+import com.artifex.mupdf.fitz.Page;
 import com.artifex.mupdf.fitz.R;
 
 public class DocView extends DocViewBase implements DragHandleListener
@@ -27,6 +28,16 @@ public class DocView extends DocViewBase implements DragHandleListener
 	Point selectionStartLoc = new Point();
 	DocPageView selectionEndPage = null;
 	Point selectionEndLoc = new Point();
+
+	//  searching
+	//  what we're searching for
+	private String mSearchNeedle = "";
+	//  current page we're searching
+	private int mSearchPage = 0;
+	//  array of matching rects
+	private com.artifex.mupdf.fitz.Rect mSearchRects[] = null;
+	//  index into the array
+	private int mSearchIndex = -1;
 
 	public DocView(Context context)
 	{
@@ -267,4 +278,143 @@ public class DocView extends DocViewBase implements DragHandleListener
 			}
 		}
 	}
+
+	//  clear the selection on all pages
+	private void removeSearchHighlights()
+	{
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			cv.setSearchHighlight(null);
+		}
+	}
+
+	//  change what's being searched for
+	private void setNeedle(String needle)
+	{
+		if (!needle.equals(mSearchNeedle))
+		{
+			mSearchNeedle = needle;
+			mSearchRects = null;
+		}
+	}
+
+	public void onSearchNext(String needle)
+	{
+		setNeedle(needle);
+		removeSearchHighlights();
+
+		if (doSearch(1, mSearchPage))
+		{
+			DocPageView dpv = (DocPageView)getOrCreateChild(mSearchPage);
+			dpv.setSearchHighlight(mSearchRects[mSearchIndex]);
+			scrollRectIntoView(mSearchPage, mSearchRects[mSearchIndex]);
+		}
+	}
+
+	public void onSearchPrevious(String needle)
+	{
+		setNeedle(needle);
+		removeSearchHighlights();
+
+		if (doSearch(-1, mSearchPage))
+		{
+			DocPageView dpv = (DocPageView)getOrCreateChild(mSearchPage);
+			dpv.setSearchHighlight(mSearchRects[mSearchIndex]);
+			scrollRectIntoView(mSearchPage, mSearchRects[mSearchIndex]);
+		}
+	}
+
+	//  performs a search for the next match.
+	//     direction - 1 for forward, -1 for backward
+	//     startPage - used as a test for circularity.
+
+	private boolean doSearch(int direction, int startPage)
+	{
+		if (mSearchRects == null)
+		{
+			//  see if we have matches for this page
+			DocPageView dpv = (DocPageView)getOrCreateChild(mSearchPage);
+			Page page = dpv.getPage();
+			mSearchRects = page.search(mSearchNeedle);
+
+			if (mSearchRects!=null && mSearchRects.length>0)
+			{
+				//  matches found, return the first one
+				if (direction>0)
+					mSearchIndex = 0;
+				else
+					mSearchIndex = mSearchRects.length-1;
+				return true;
+			}
+		}
+
+		//  look forward or backward for the next match
+		if (mSearchRects!=null && mSearchRects.length>0)
+		{
+			if (direction>0)
+			{
+				if (mSearchIndex+1 < mSearchRects.length && mSearchIndex+1 >= 0)
+				{
+					mSearchIndex++;
+					return true;
+				}
+			}
+			else
+			{
+				if (mSearchIndex-1 < mSearchRects.length && mSearchIndex-1 >= 0)
+				{
+					mSearchIndex--;
+					return true;
+				}
+			}
+		}
+
+		//  no more matches on this page, go to the next (or previous) page
+		if (direction>0)
+		{
+			mSearchPage++;
+			if (mSearchPage >= getPageCount())
+				mSearchPage = 0;
+		}
+		else
+		{
+			mSearchPage--;
+			if (mSearchPage < 0)
+				mSearchPage = getPageCount()-1;
+		}
+		mSearchRects = null;
+
+		//  give up if we're still looking
+		if (mSearchPage == startPage)
+			return false;
+
+		//  look on the next page
+		return doSearch(direction, startPage);
+	}
+
+	public void scrollRectIntoView(int pageNum, com.artifex.mupdf.fitz.Rect box)
+	{
+		//  get our viewport
+		Rect viewport = new Rect();
+		getGlobalVisibleRect(viewport);
+		viewport.offset(0, -viewport.top);
+
+		//  get the location of the box's lower left corner,
+		//  relative to the viewport
+		DocPageView cv = (DocPageView) getOrCreateChild(pageNum);
+		Point point = cv.pageToView((int) box.x0, (int) box.y1);
+		Rect childRect = cv.getChildRect();
+		point.y += childRect.top;
+		point.y -= getScrollY();
+
+		//  if the point is outside the viewport, scroll so it is.
+		if (point.y < viewport.top || point.y >= viewport.bottom)
+		{
+			int diff = (viewport.top + viewport.bottom) / 2 - point.y;
+			smoothScrollBy(0, diff);
+		}
+	}
+
 }

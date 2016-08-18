@@ -2,13 +2,17 @@ package com.artifex.mupdf.android;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -34,9 +38,14 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private String mTagAnnotate;
 	private String mTagPages;
 
-	ImageButton mReflowButton;
-	ImageButton mFirstPageButton;
-	ImageButton mLastPageButton;
+	private ImageButton mReflowButton;
+	private ImageButton mFirstPageButton;
+	private ImageButton mLastPageButton;
+
+	private ImageButton mSearchButton;
+	private EditText mSearchText;
+	private ImageButton mSearchNextButton;
+	private ImageButton mSearchPreviousButton;
 
 	public DocActivityView(Context context)
 	{
@@ -115,6 +124,14 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 
 	private void showSearchSelected(boolean selected)
 	{
+		//  set the view
+		mSearchButton.setSelected(selected);
+
+		//  colorize
+		if (selected)
+			mSearchButton.setColorFilter(0xff000000, PorterDuff.Mode.SRC_IN);
+		else
+			mSearchButton.setColorFilter(0xffffffff, PorterDuff.Mode.SRC_IN);
 	}
 
 	protected void handlePagesTab(String tabId)
@@ -281,6 +298,33 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		mLastPageButton = (ImageButton)findViewById(R.id.last_page_button);
 		mLastPageButton.setOnClickListener(this);
 
+		mSearchButton = (ImageButton)findViewById(R.id.search_button);
+		mSearchButton.setOnClickListener(this);
+		showSearchSelected(false);
+		mSearchText = (EditText) findViewById(R.id.search_text_input);
+		mSearchText.setOnClickListener(this);
+
+		//  this listener will
+		mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener()
+		{
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+			{
+				if (actionId == EditorInfo.IME_ACTION_NEXT)
+				{
+					onSearchNextButton();
+					return true;
+				}
+				return false;
+			}
+		});
+
+		mSearchNextButton = (ImageButton)findViewById(R.id.search_next_button);
+		mSearchNextButton.setOnClickListener(this);
+
+		mSearchPreviousButton = (ImageButton)findViewById(R.id.search_previous_button);
+		mSearchPreviousButton.setOnClickListener(this);
+
 		//  start the views
 		mDocView.start(path);
 		if (usePagesView())
@@ -363,6 +407,57 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			onFirstPageButton();
 		if (v == mLastPageButton)
 			onLastPageButton();
+		if (v == mSearchButton)
+			onShowSearch();
+		if (v == mSearchText)
+			onEditSearchText();
+		if (v == mSearchNextButton)
+			onSearchNextButton();
+		if (v == mSearchPreviousButton)
+			onSearchPreviousButton();
+	}
+
+	public void onSearchNextButton()
+	{
+		hideKeyboard();
+		mDocView.onSearchNext(mSearchText.getText().toString());
+	}
+
+	public void onSearchPreviousButton()
+	{
+		hideKeyboard();
+		mDocView.onSearchPrevious(mSearchText.getText().toString());
+	}
+
+	public void onEditSearchText()
+	{
+		mSearchText.requestFocus();
+		showKeyboard();
+	}
+
+	public void onShowSearch()
+	{
+		//  "deselect" all the visible tabs by selecting the hidden (first) one
+		TabHost tabHost = (TabHost)findViewById(R.id.tabhost);
+		tabHost.setCurrentTabByTag("HIDDEN");
+
+		//  show search as selected
+		showSearchSelected(true);
+
+		//  hide all the other tabs
+		hideAllTabs();
+
+		//  show the search tab
+		findViewById(R.id.searchTab).setVisibility(View.VISIBLE);
+		mSearchText.getText().clear();
+	}
+
+	protected void hideAllTabs()
+	{
+		//  hide all the other tabs
+		findViewById(R.id.fileTab).setVisibility(View.GONE);
+		findViewById(R.id.annotateTab).setVisibility(View.GONE);
+		findViewById(R.id.pagesTab).setVisibility(View.GONE);
 	}
 
 	private void onFirstPageButton()

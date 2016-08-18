@@ -53,11 +53,14 @@ public class DocPageView extends View implements Callback
 	private Rect mDisplayRect = new Rect();
 
 	private final Paint mPainter;
-	private final Paint mHighlightPainter;
+	private final Paint mSelectionHighlightPainter;
+	private final Paint mSearchHighlightPainter;
 	private final Paint mBlankPainter;
 	private final Paint mDotPainter;
 	private final Rect mSrcRect = new Rect();
 	private final Rect mDstRect = new Rect();
+
+	private Rect mHighlightingRect = new Rect();
 
 	//  cached display lists
 	DisplayList pageContents = null;
@@ -77,7 +80,10 @@ public class DocPageView extends View implements Callback
 	private boolean isMostVisible = false;
 
 	//  currently selected TextChars
-	ArrayList<StructuredText.TextChar> mSelection = null;
+	private ArrayList<StructuredText.TextChar> mSelection = null;
+
+	//  current search hilight
+	private com.artifex.mupdf.fitz.Rect mSearchHighlight = null;
 
 	public DocPageView(Context context, Document theDoc)
 	{
@@ -88,10 +94,14 @@ public class DocPageView extends View implements Callback
 
 		mPainter = new Paint();
 
-		mHighlightPainter = new Paint();
-		mHighlightPainter.setColor(ContextCompat.getColor(context, R.color.text_highlight_color));
-		mHighlightPainter.setStyle(Paint.Style.FILL);
-		mHighlightPainter.setAlpha(getContext().getResources().getInteger(R.integer.text_highlight_alpha));
+		mSelectionHighlightPainter = new Paint();
+		mSelectionHighlightPainter.setColor(ContextCompat.getColor(context, R.color.text_highlight_color));
+		mSelectionHighlightPainter.setStyle(Paint.Style.FILL);
+		mSelectionHighlightPainter.setAlpha(getContext().getResources().getInteger(R.integer.text_highlight_alpha));
+
+		mSearchHighlightPainter = new Paint();
+		mSearchHighlightPainter.setStyle(Paint.Style.STROKE);
+		mSearchHighlightPainter.setColor(ContextCompat.getColor(context, R.color.black));
 
 		mBlankPainter = new Paint();
 		mBlankPainter.setStyle(Paint.Style.FILL);
@@ -420,7 +430,6 @@ public class DocPageView extends View implements Callback
 		StructuredText structuredText = getPage().toStructuredText();
 		StructuredText.TextBlock textBlocks[] = structuredText.getBlocks();
 
-		com.artifex.mupdf.fitz.Rect r = new com.artifex.mupdf.fitz.Rect(upperLeft.x, upperLeft.y, lowerLeft.x, lowerLeft.y);
 		for (StructuredText.TextBlock block : textBlocks)
 		{
 			for (StructuredText.TextLine line : block.lines)
@@ -466,6 +475,12 @@ public class DocPageView extends View implements Callback
 		invalidate();
 	}
 
+	public void setSearchHighlight(com.artifex.mupdf.fitz.Rect r)
+	{
+		mSearchHighlight = r;
+		invalidate();
+	}
+
 	public void removeSelection()
 	{
 		mSelection = new ArrayList<>();
@@ -475,16 +490,27 @@ public class DocPageView extends View implements Callback
 	@Override
 	public void onDraw(Canvas canvas)
 	{
+		//  clip
+		canvas.save();
+		getLocalVisibleRect(clipRect);
+		clipPath.reset();
+		clipPath.addRect(clipRect.left, clipRect.top, clipRect.right, clipRect.bottom, Path.Direction.CW);
+		canvas.clipPath(clipPath);
+
 		//  always start with a blank white background
-		Rect rBlank = new Rect();
-		getLocalVisibleRect(rBlank);
-		canvas.drawRect(rBlank, mBlankPainter);
+		canvas.drawRect(clipRect, mBlankPainter);
 
 		if (mFinished)
+		{
+			canvas.restore();
 			return;
+		}
 
 		if (mDrawBitmap == null)
+		{
+			canvas.restore();
 			return;  //  not yet rendered
+		}
 
 		//  set rectangles for drawing
 		mSrcRect.set(mDrawSrcRect);
@@ -500,13 +526,6 @@ public class DocPageView extends View implements Callback
 			mDstRect.bottom *= scale;
 		}
 
-		//  clip
-		canvas.save();
-		getLocalVisibleRect(clipRect);
-		clipPath.reset();
-		clipPath.addRect(clipRect.left, clipRect.top, clipRect.right, clipRect.bottom, Path.Direction.CW);
-		canvas.clipPath(clipPath);
-
 		//  draw
 		canvas.drawBitmap(mDrawBitmap, mSrcRect, mDstRect, mPainter);
 
@@ -515,10 +534,20 @@ public class DocPageView extends View implements Callback
 		{
 			for (StructuredText.TextChar tchar : mSelection)
 			{
-				Rect r = new Rect((int) tchar.bbox.x0, (int) tchar.bbox.y0, (int) tchar.bbox.x1, (int) tchar.bbox.y1);
-				Rect r2 = pageToView(r);
-				canvas.drawRect(r2, mHighlightPainter);
+				mHighlightingRect.set((int) tchar.bbox.x0, (int) tchar.bbox.y0, (int) tchar.bbox.x1, (int) tchar.bbox.y1);
+				pageToView(mHighlightingRect, mHighlightingRect);
+				canvas.drawRect(mHighlightingRect, mSelectionHighlightPainter);
 			}
+		}
+
+		//  search highlight.  Same as the selection highlight, but with
+		//  a thin black outline.
+		if (mSearchHighlight != null)
+		{
+			mHighlightingRect.set((int) mSearchHighlight.x0, (int) mSearchHighlight.y0, (int) mSearchHighlight.x1, (int) mSearchHighlight.y1);
+			pageToView(mHighlightingRect, mHighlightingRect);
+			canvas.drawRect(mHighlightingRect, mSelectionHighlightPainter);
+			canvas.drawRect(mHighlightingRect, mSearchHighlightPainter);
 		}
 
 		//  draw blue dot
@@ -673,7 +702,7 @@ public class DocPageView extends View implements Callback
 		return new Point(viewX, viewY);
 	}
 
-	public Rect pageToView(Rect pageR)
+	public void pageToView(Rect pageR, Rect viewR)
 	{
 		double factor = getFactor();
 
@@ -682,7 +711,7 @@ public class DocPageView extends View implements Callback
 		int right = (int) (((double) pageR.right) * factor);
 		int bottom = (int) (((double) pageR.bottom) * factor);
 
-		return new Rect(left, top, right, bottom);
+		viewR.set(left, top, right, bottom);
 	}
 
 	public Point viewToPage(int viewX, int viewY)

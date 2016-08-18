@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -993,29 +992,6 @@ public class DocViewBase
 		newPoint.offset(r.left, r.top);
 
 		return newPoint;
-	}
-
-	public void scrollBoxIntoView(int pageNum, RectF box)
-	{
-		//  get our viewport
-		Rect viewport = new Rect();
-		getGlobalVisibleRect(viewport);
-		viewport.offset(0, -viewport.top);
-
-		//  get the location of the box's lower left corner,
-		//  relative to the viewport
-		DocPageView cv = (DocPageView) getOrCreateChild(pageNum);
-		Point point = cv.pageToView((int) box.left, (int) box.bottom);
-		Rect childRect = cv.getChildRect();
-		point.y += childRect.top;
-		point.y -= getScrollY();
-
-		//  if the point is outside the viewport, scroll so it is.
-		if (point.y < viewport.top || point.y >= viewport.bottom)
-		{
-			int diff = (viewport.top + viewport.bottom) / 2 - point.y;
-			smoothScrollBy(0, diff);
-		}
 	}
 
 	public void toggleAnnotations()

@@ -11,7 +11,9 @@
                       android:layout_height="match_parent"
                       android:background="@color/toolbar"
                       android:paddingTop="10dp"
-                      android:paddingBottom="10dp">
+                      android:paddingBottom="10dp"
+                      android:gravity="center_vertical"
+            >
 
             <Space
                 android:layout_width="15dp"
@@ -22,54 +24,85 @@
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:background="@drawable/search_input_wrapper"
-                          android:layout_centerVertical="true"
                           android:padding="5dp">
 
                 <Space
-                    android:layout_width="10dp"
+                    android:layout_width="5dp"
                     android:layout_height="1dp"/>
 
                 <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
                     android:id="@+id/device_icon"
                     android:src="@drawable/icon_find"
+                    android:scaleType="centerCrop"
                     />
 
                 <EditText
                     android:hint="@string/find"
                     android:textColorHint="#B3B3B3"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="fill_parent"
                     android:minWidth="400dp"
                     android:id="@+id/search_text_input"
                     android:textSize="20sp"
                     android:background="@drawable/search_text_input"
                     android:textColor="@color/black"
                     android:maxLines="1"
-                    android:inputType="text"/>
+                    android:inputType="text"
+                    />
 
             </LinearLayout>
 
-            <ImageButton
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_marginLeft="5dp"
-                android:layout_marginRight="5dp"
-                android:background="@drawable/button"
-                android:id="@+id/search_next_button"
-                android:src="@drawable/icon_find_next" />
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:gravity="center"
+                >
 
-            <ImageButton
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:background="@drawable/toolbar_button"
+                    android:id="@+id/search_next_button"
+                    android:src="@drawable/icon_find_next" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="@string/next_upper"/>
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_marginLeft="5dp"
-                android:layout_marginRight="5dp"
-                android:background="@drawable/button"
-                android:id="@+id/search_previous_button"
-                android:src="@drawable/icon_find_previous" />
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:gravity="center"
+                >
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:background="@drawable/toolbar_button"
+                    android:id="@+id/search_previous_button"
+                    android:src="@drawable/icon_find_previous" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="@string/previous_upper"/>
+            </LinearLayout>
 
         </LinearLayout>
 

@@ -73,9 +73,10 @@
                     android:layout_centerVertical="true"
                     android:id="@+id/search_button"
                     android:src="@drawable/icon_find"
-                    android:tint="@color/white"
-                    android:background="@color/transparent"
-                    android:layout_gravity="center_vertical" />
+                    android:background="@drawable/search_button"
+                    android:layout_gravity="center_vertical"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="12dp"/>
 
             </LinearLayout>
 
