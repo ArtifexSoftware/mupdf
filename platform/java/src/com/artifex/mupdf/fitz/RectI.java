@@ -83,6 +83,22 @@ public class RectI
 		return this;
 	}
 
+	public boolean contains(int x, int y)
+	{
+		if (isEmpty())
+			return false;
+
+		return (x >= x0 && x < x1 && y >= y0 && y < y1);
+	}
+
+	public boolean contains(Rect r)
+	{
+		if (isEmpty() || r.isEmpty())
+			return false;
+
+		return (r.x0 >= x0 && r.x1 <= x1 && r.y0 >= y0 && r.y1 <= y1);
+	}
+
 	public boolean isEmpty()
 	{
 		return (x0 == x1 || y0 == y1);
