@@ -207,7 +207,7 @@ fz_is_empty_irect(const fz_irect *r)
 }
 
 /*
-	fz_is_infinite: Check if rectangle is infinite.
+	fz_is_infinite_rect: Check if rectangle is infinite.
 
 	An infinite rectangle is defined as one where either of the
 	two relationships between corner coordinates are not true.
@@ -218,6 +218,13 @@ fz_is_infinite_rect(const fz_rect *r)
 	return ((r)->x0 > (r)->x1 || (r)->y0 > (r)->y1);
 }
 
+/*
+	fz_is_infinite_irect: Check if an integer rectangle
+	is infinite.
+
+	An infinite rectangle is defined as one where either of the
+	two relationships between corner coordinates are not true.
+*/
 static inline int
 fz_is_infinite_irect(const fz_irect *r)
 {

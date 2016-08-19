@@ -77,7 +77,19 @@ struct fz_halftone_s
 };
 
 fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
+
+/*
+	fz_default_halftone: Create a 'default' halftone structure
+	for the given number of components.
+
+	num_comps: The number of components to use.
+
+	Returns a simple default halftone. The default halftone uses
+	the same halftone tile for each plane, which may not be ideal
+	for all purposes.
+*/
 fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps);
+
 void fz_drop_halftone(fz_context *ctx, fz_halftone *half);
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
 
