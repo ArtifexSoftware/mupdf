@@ -24,8 +24,19 @@ public class DocViewActivity extends Activity
 		mDocActivityView = (DocActivityView) findViewById(R.id.doc_view);
 		mDocActivityView.showUI(true);  //  set to false for no built-in UI
 
+		//  set a listener for when it's done
+		mDocActivityView.setOnDoneListener(new DocActivityView.OnDoneListener()
+		{
+			@Override
+			public void done()
+			{
+				finish();
+			}
+		});
+
 		//  Go!
 		mDocActivityView.start(path);
+
 	}
 
 	@Override

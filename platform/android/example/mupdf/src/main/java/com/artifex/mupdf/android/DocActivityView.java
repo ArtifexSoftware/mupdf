@@ -46,6 +46,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private EditText mSearchText;
 	private ImageButton mSearchNextButton;
 	private ImageButton mSearchPreviousButton;
+	private ImageButton mBackButton;
 
 	public DocActivityView(Context context)
 	{
@@ -289,6 +290,9 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 
 		//  connect buttons to functions
 
+		mBackButton = (ImageButton)findViewById(R.id.back_button);
+		mBackButton.setOnClickListener(this);
+
 		mReflowButton = (ImageButton)findViewById(R.id.reflow_button);
 		mReflowButton.setOnClickListener(this);
 
@@ -415,6 +419,8 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			onSearchNextButton();
 		if (v == mSearchPreviousButton)
 			onSearchPreviousButton();
+		if (v == mBackButton)
+			onBackButton();
 	}
 
 	public void onSearchNextButton()
@@ -516,5 +522,18 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		DocPageView dpv = (DocPageView)mDocView.getAdapter().getView(pageNumber, null, null);
 		byte bytes[] = dpv.getPage().textAsHtml();
 		mDocReflowView.setHTML(bytes);
+	}
+
+	private void onBackButton()
+	{
+		if (mDoneListener != null)
+			mDoneListener.done();
+	}
+
+	private OnDoneListener mDoneListener = null;
+	public void setOnDoneListener(OnDoneListener l) {mDoneListener = l;}
+	public interface OnDoneListener
+	{
+		public void done();
 	}
 }
