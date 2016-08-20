@@ -150,7 +150,7 @@ fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz
 */
 void *fz_new_document_of_size(fz_context *ctx, int size);
 
-#define fz_new_document(C,M) ((M*)Memento_label(fz_new_document_of_size(ctx, sizeof(M)), #M))
+#define fz_new_document(C,M) ((M*)Memento_label(fz_new_document_of_size(C, sizeof(M)), #M))
 
 /*
 	fz_keep_document: Keep a reference to an open document.
