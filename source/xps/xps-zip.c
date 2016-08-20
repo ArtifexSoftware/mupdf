@@ -151,7 +151,7 @@ xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	fz_try(ctx)
 	{
-		doc->zip = fz_open_archive_with_stream(ctx, file);
+		doc->zip = fz_open_zip_archive_with_stream(ctx, file);
 		xps_read_page_list(ctx, doc);
 	}
 	fz_catch(ctx)

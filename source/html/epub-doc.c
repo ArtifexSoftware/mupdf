@@ -443,7 +443,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 static fz_document *
 epub_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
-	return epub_init(ctx, fz_open_archive_with_stream(ctx, file));
+	return epub_init(ctx, fz_open_zip_archive_with_stream(ctx, file));
 }
 
 static fz_document *
@@ -460,7 +460,7 @@ epub_open_document(fz_context *ctx, const char *filename)
 		return epub_init(ctx, fz_open_directory(ctx, dirname));
 	}
 
-	return epub_init(ctx, fz_open_archive(ctx, filename));
+	return epub_init(ctx, fz_open_zip_archive(ctx, filename));
 }
 
 static int
