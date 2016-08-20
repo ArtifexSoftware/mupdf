@@ -19,7 +19,9 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.artifex.mupdf.fitz.Document;
 import com.artifex.mupdf.fitz.Link;
 import com.artifex.mupdf.fitz.Outline;
 import com.artifex.mupdf.fitz.R;
@@ -47,6 +49,12 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private ImageButton mSearchNextButton;
 	private ImageButton mSearchPreviousButton;
 	private ImageButton mBackButton;
+
+	private ImageButton mSaveButton;
+	private ImageButton mSaveAsButton;
+	private ImageButton mPrintButton;
+	private ImageButton mShareButton;
+	private ImageButton mOpenInButton;
 
 	public DocActivityView(Context context)
 	{
@@ -308,6 +316,21 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		mSearchText = (EditText) findViewById(R.id.search_text_input);
 		mSearchText.setOnClickListener(this);
 
+		mSaveButton = (ImageButton)findViewById(R.id.save_button);
+		mSaveButton.setOnClickListener(this);
+
+		mSaveAsButton = (ImageButton)findViewById(R.id.save_as_button);
+		mSaveAsButton.setOnClickListener(this);
+
+		mPrintButton = (ImageButton)findViewById(R.id.print_button);
+		mPrintButton.setOnClickListener(this);
+
+		mShareButton = (ImageButton)findViewById(R.id.share_button);
+		mShareButton.setOnClickListener(this);
+
+		mOpenInButton = (ImageButton)findViewById(R.id.open_in_button);
+		mOpenInButton.setOnClickListener(this);
+
 		//  this listener will
 		mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener()
 		{
@@ -329,8 +352,54 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		mSearchPreviousButton = (ImageButton)findViewById(R.id.search_previous_button);
 		mSearchPreviousButton.setOnClickListener(this);
 
+		mDoc = new Document(path);
+
+		if (mDoc.needsPassword())
+		{
+			askForPassword();
+		}
+		else
+		{
+			afterPassword();
+		}
+	}
+
+	private Document mDoc;
+
+	private void askForPassword()
+	{
+		Utilities.passwordDialog((Activity) getContext(), new Utilities.passwordDialogListener()
+		{
+			@Override
+			public void onOK(String password)
+			{
+				//  yes
+				boolean ok = mDoc.authenticatePassword(password);
+				if (ok)
+				{
+					afterPassword();
+					mDocView.requestLayout();
+				}
+				else
+				{
+					askForPassword();
+				}
+			}
+
+			@Override
+			public void onCancel()
+			{
+				mDoc.destroy();
+				if (mDoneListener != null)
+					mDoneListener.done();
+			}
+		});
+	}
+
+	private void afterPassword()
+	{
 		//  start the views
-		mDocView.start(path);
+		mDocView.start(mDoc);
 		if (usePagesView())
 		{
 			mDocPagesView.clone(mDocView);
@@ -421,6 +490,17 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			onSearchPreviousButton();
 		if (v == mBackButton)
 			onBackButton();
+
+		if (v == mSaveButton)
+			onSaveButton();
+		if (v == mSaveAsButton)
+			onSaveAsButton();
+		if (v == mPrintButton)
+			onPrintButton();
+		if (v == mShareButton)
+			onShareButton();
+		if (v == mOpenInButton)
+			onOpenInButton();
 	}
 
 	public void onSearchNextButton()
@@ -528,6 +608,31 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	{
 		if (mDoneListener != null)
 			mDoneListener.done();
+	}
+
+	private void onSaveButton()
+	{
+		Toast.makeText(getContext(),"onSaveButton", Toast.LENGTH_SHORT).show();
+	}
+
+	private void onSaveAsButton()
+	{
+		Toast.makeText(getContext(),"onSaveAsButton", Toast.LENGTH_SHORT).show();
+	}
+
+	private void onPrintButton()
+	{
+		Toast.makeText(getContext(),"onPrintButton", Toast.LENGTH_SHORT).show();
+	}
+
+	private void onShareButton()
+	{
+		Toast.makeText(getContext(),"onShareButton", Toast.LENGTH_SHORT).show();
+	}
+
+	private void onOpenInButton()
+	{
+		Toast.makeText(getContext(),"onOpenInButton", Toast.LENGTH_SHORT).show();
 	}
 
 	private OnDoneListener mDoneListener = null;

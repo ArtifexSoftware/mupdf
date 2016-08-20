@@ -10,5 +10,7 @@
 
 	<string name="next_upper">NEXT</string>
 	<string name="previous_upper">PREVIOUS</string>
+	<string name="ok">OK</string>
+	<string name="cancel">Cancel</string>
 
 </resources>

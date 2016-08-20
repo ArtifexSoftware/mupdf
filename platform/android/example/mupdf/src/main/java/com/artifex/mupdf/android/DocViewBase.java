@@ -153,11 +153,11 @@ public class DocViewBase
 		DocPageView.bitmapMarginY = (h - screenH) / 2;
 	}
 
-	public void start(final String path)
+	public void start (Document doc)
 	{
+		mDoc = doc;
 		mAdapter = new PageAdapter(mContext);
 		mAdapter.setWidth(getWidth());
-		mDoc = new Document(path);
 		mAdapter.setDocument(mDoc);
 		mScale = 1.0f;
 		mStarted = true;
@@ -501,7 +501,10 @@ public class DocViewBase
 
 	protected int getPageCount()
 	{
-		return getAdapter().getCount();
+		Adapter adapter = getAdapter();
+		if (null != adapter)
+			return adapter.getCount();
+		return 0;
 	}
 
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom)
@@ -921,10 +924,14 @@ public class DocViewBase
 		}
 
 		//  get rid of bitmaps
-		bitmaps[0].recycle();
-		bitmaps[0] = null;
-		bitmaps[1].recycle();
-		bitmaps[1] = null;
+		for (int i=0;i<bitmaps.length;i++)
+		{
+			if (null != bitmaps[i])
+			{
+				bitmaps[i].recycle();
+				bitmaps[i] = null;
+			}
+		}
 	}
 
 	public boolean finished()

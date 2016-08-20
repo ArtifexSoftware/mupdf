@@ -18,7 +18,9 @@
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
 
                 <ImageButton
                     android:layout_width="wrap_content"
@@ -36,6 +38,113 @@
                     android:textColor="@color/black"
                     android:textSize="11sp"
                     android:text="SAVE"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/toolbar_button"
+                    android:id="@+id/save_as_button"
+                    android:src="@drawable/icon_save_as" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="SAVE AS"/>
+            </LinearLayout>
+
+            <!--a divider-->
+            <View
+                android:layout_width="1dp"
+                android:paddingRight="3dp" android:paddingLeft="3dp"
+                android:layout_height="match_parent"
+                android:background="#FF8E8F90" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/toolbar_button"
+                    android:id="@+id/print_button"
+                    android:src="@drawable/icon_print" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="PRINT"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/toolbar_button"
+                    android:id="@+id/share_button"
+                    android:src="@drawable/icon_share" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="SHARE"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/toolbar_button"
+                    android:id="@+id/open_in_button"
+                    android:src="@drawable/icon_open_in" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="OPEN IN"/>
             </LinearLayout>
 
             <!--a divider-->
