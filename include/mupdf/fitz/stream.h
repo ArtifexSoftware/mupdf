@@ -226,6 +226,17 @@ struct fz_stream_s
 	fz_stream_meta_fn *meta;
 };
 
+/*
+	fz_new_stream: Create a new stream object with the given
+	internal state and function pointers.
+
+	next: Should provide the next set of bytes (up to max) of stream
+	data. Return the number of bytes read, or EOF when there is no
+	more data.
+
+	close: Should clean up and free the internal state. May not
+	throw exceptions.
+*/
 fz_stream *fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_close_fn *close);
 
 fz_stream *fz_keep_stream(fz_context *ctx, fz_stream *stm);
