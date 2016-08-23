@@ -698,6 +698,9 @@ pdf_array_put(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 	if (i < 0 || i >= ARRAY(obj)->len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
 
+	if (!item)
+		item = PDF_OBJ_NULL;
+
 	prepare_object_for_alteration(ctx, obj, item);
 	pdf_drop_obj(ctx, ARRAY(obj)->items[i]);
 	ARRAY(obj)->items[i] = pdf_keep_obj(ctx, item);
@@ -716,6 +719,9 @@ pdf_array_push(fz_context *ctx, pdf_obj *obj, pdf_obj *item)
 	RESOLVE(obj);
 	if (!OBJ_IS_ARRAY(obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not an array (%s)", pdf_objkindstr(obj));
+
+	if (!item)
+		item = PDF_OBJ_NULL;
 
 	prepare_object_for_alteration(ctx, obj, item);
 	if (ARRAY(obj)->len + 1 > ARRAY(obj)->cap)
@@ -747,6 +753,9 @@ pdf_array_insert(fz_context *ctx, pdf_obj *obj, pdf_obj *item, int i)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not an array (%s)", pdf_objkindstr(obj));
 	if (i < 0 || i > ARRAY(obj)->len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
+
+	if (!item)
+		item = PDF_OBJ_NULL;
 
 	prepare_object_for_alteration(ctx, obj, item);
 	if (ARRAY(obj)->len + 1 > ARRAY(obj)->cap)
@@ -1021,23 +1030,26 @@ pdf_dict_get_val(fz_context *ctx, pdf_obj *obj, int i)
 }
 
 void
-pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *new_obj)
+pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *val)
 {
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
 	{
-		pdf_drop_obj(ctx, new_obj);
+		pdf_drop_obj(ctx, val);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a dict (%s)", pdf_objkindstr(obj));
 	}
 	if (i < 0 || i >= DICT(obj)->len)
 	{
 		/* FIXME: Should probably extend the dict here */
-		pdf_drop_obj(ctx, new_obj);
+		pdf_drop_obj(ctx, val);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
 	}
 
+	if (!val)
+		val = PDF_OBJ_NULL;
+
 	pdf_drop_obj(ctx, DICT(obj)->items[i].v);
-	DICT(obj)->items[i].v = new_obj;
+	DICT(obj)->items[i].v = val;
 }
 
 /* Returns 0 <= i < len for key found. Returns -1-len < i <= -1 for key
@@ -1251,8 +1263,9 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a dict (%s)", pdf_objkindstr(obj));
 	if (!OBJ_IS_NAME(key))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "key is not a name (%s)", pdf_objkindstr(obj));
+
 	if (!val)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "new val for key (%s) does not exist", pdf_to_name(ctx, key));
+		val = PDF_OBJ_NULL;
 
 	if (DICT(obj)->len > 100 && !(obj->flags & PDF_FLAGS_SORTED))
 		pdf_sort_dict(ctx, obj);
