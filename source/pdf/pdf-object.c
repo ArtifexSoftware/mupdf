@@ -1244,7 +1244,6 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a dict (%s)", pdf_objkindstr(obj));
-	RESOLVE(key);
 	if (!OBJ_IS_NAME(key))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "key is not a name (%s)", pdf_objkindstr(obj));
 	if (!val)
@@ -1516,7 +1515,6 @@ pdf_dict_dels(fz_context *ctx, pdf_obj *obj, const char *key)
 void
 pdf_dict_del(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 {
-	RESOLVE(key);
 	if (!OBJ_IS_NAME(key))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "key is not a name (%s)", pdf_objkindstr(key));
 
