@@ -1207,7 +1207,7 @@ pdf_dict_get(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 	if (!OBJ_IS_DICT(obj))
 		return NULL;
 
-	if (key < PDF_OBJ__LIMIT)
+	if (key < PDF_OBJ_NAME__LIMIT)
 		i = pdf_dict_find(ctx, obj, key);
 	else
 		i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key));
@@ -1253,7 +1253,7 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 	if (DICT(obj)->len > 100 && !(obj->flags & PDF_FLAGS_SORTED))
 		pdf_sort_dict(ctx, obj);
 
-	if (key < PDF_OBJ__LIMIT)
+	if (key < PDF_OBJ_NAME__LIMIT)
 		i = pdf_dict_find(ctx, obj, key);
 	else
 		i = pdf_dict_finds(ctx, obj, pdf_to_name(ctx, key));
@@ -1520,9 +1520,9 @@ pdf_dict_del(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 	if (!OBJ_IS_NAME(key))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "key is not a name (%s)", pdf_objkindstr(key));
 
-	if (key < PDF_OBJ__LIMIT)
+	if (key < PDF_OBJ_NAME__LIMIT)
 		pdf_dict_dels(ctx, obj, PDF_NAMES[(intptr_t)key]);
-	else if (key->kind == PDF_NAME)
+	else
 		pdf_dict_dels(ctx, obj, NAME(key)->n);
 }
 
