@@ -55,6 +55,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private ImageButton mPrintButton;
 	private ImageButton mShareButton;
 	private ImageButton mOpenInButton;
+	private ImageButton mToggleAnnotButton;
 
 	public DocActivityView(Context context)
 	{
@@ -352,6 +353,10 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		mSearchPreviousButton = (ImageButton)findViewById(R.id.search_previous_button);
 		mSearchPreviousButton.setOnClickListener(this);
 
+		mToggleAnnotButton = (ImageButton)findViewById(R.id.show_annot_button);
+		mToggleAnnotButton.setOnClickListener(this);
+
+
 		mDoc = new Document(path);
 
 		if (mDoc.needsPassword())
@@ -501,6 +506,8 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			onShareButton();
 		if (v == mOpenInButton)
 			onOpenInButton();
+		if (v == mToggleAnnotButton)
+			onToggleAnnotButton();
 	}
 
 	public void onSearchNextButton()
@@ -633,6 +640,11 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private void onOpenInButton()
 	{
 		Toast.makeText(getContext(),"onOpenInButton", Toast.LENGTH_SHORT).show();
+	}
+
+	private void onToggleAnnotButton()
+	{
+		mDocView.toggleAnnotations();
 	}
 
 	private OnDoneListener mDoneListener = null;
