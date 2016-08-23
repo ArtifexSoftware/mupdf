@@ -2037,6 +2037,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toStructuredText
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Page_search
   (JNIEnv *, jobject, jstring);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    textAsHtml
+ * Signature: ()[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_Page_textAsHtml
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
@@ -2536,6 +2544,58 @@ JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_highli
 JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_StructuredText_copy
   (JNIEnv *, jobject, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_StructuredText
+ * Method:    getBlocks
+ * Signature: ()[Lcom/artifex/mupdf/fitz/StructuredText/TextBlock;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_getBlocks
+  (JNIEnv *, jobject);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_StructuredText_TextChar */
+
+#ifndef _Included_com_artifex_mupdf_fitz_StructuredText_TextChar
+#define _Included_com_artifex_mupdf_fitz_StructuredText_TextChar
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_StructuredText_TextSpan */
+
+#ifndef _Included_com_artifex_mupdf_fitz_StructuredText_TextSpan
+#define _Included_com_artifex_mupdf_fitz_StructuredText_TextSpan
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_StructuredText_TextLine */
+
+#ifndef _Included_com_artifex_mupdf_fitz_StructuredText_TextLine
+#define _Included_com_artifex_mupdf_fitz_StructuredText_TextLine
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_StructuredText_TextBlock */
+
+#ifndef _Included_com_artifex_mupdf_fitz_StructuredText_TextBlock
+#define _Included_com_artifex_mupdf_fitz_StructuredText_TextBlock
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __cplusplus
 }
 #endif

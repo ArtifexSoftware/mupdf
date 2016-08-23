@@ -467,22 +467,22 @@ static int find_fids(JNIEnv *env)
 
 	cls_TextBlock = get_class(&err, env, PKG"StructuredText$TextBlock");
 	mid_TextBlock_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
-	fid_TextBlock_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextBlock_bbox = get_field(&err, env, "bbox", "L"PKG"Rect;");
 	fid_TextBlock_lines = get_field(&err, env, "lines", "[L"PKG"StructuredText$TextLine;");
 
 	cls_TextChar = get_class(&err, env, PKG"StructuredText$TextChar");
 	mid_TextChar_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
-	fid_TextChar_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextChar_bbox = get_field(&err, env, "bbox", "L"PKG"Rect;");
 	fid_TextChar_c = get_field(&err, env, "c", "I");
 
 	cls_TextLine = get_class(&err, env, PKG"StructuredText$TextLine");
 	mid_TextLine_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
-	fid_TextLine_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextLine_bbox = get_field(&err, env, "bbox", "L"PKG"Rect;");
 	fid_TextLine_spans = get_field(&err, env, "spans", "[L"PKG"StructuredText$TextSpan;");
 
 	cls_TextSpan = get_class(&err, env, PKG"StructuredText$TextSpan");
 	mid_TextSpan_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
-	fid_TextSpan_bbox = get_field(&err, env, "bbox", PKG"Rect");
+	fid_TextSpan_bbox = get_field(&err, env, "bbox", "L"PKG"Rect;");
 	fid_TextSpan_chars = get_field(&err, env, "chars", "[L"PKG"StructuredText$TextChar;");
 
 	cls_TextWalker = get_class(&err, env, PKG"TextWalker");
@@ -2301,7 +2301,7 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 
 	fz_try(ctx)
 	{
-		LOGI("DrawDeviceNative: bitmap=%d,%d page=%d,%d->%d,%d patch=%d,%d->%d,%d", width, height, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
+//		LOGI("DrawDeviceNative: bitmap=%d,%d page=%d,%d->%d,%d patch=%d,%d->%d,%d", width, height, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
 		/* Sanitise patch w.r.t page. */
 		if (patchX0 < pageX0)
 			patchX0 = pageX0;
