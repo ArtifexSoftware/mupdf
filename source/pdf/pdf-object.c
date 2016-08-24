@@ -695,7 +695,7 @@ pdf_array_put(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 	RESOLVE(obj);
 	if (!OBJ_IS_ARRAY(obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not an array (%s)", pdf_objkindstr(obj));
-	else if (i < 0 || i >= ARRAY(obj)->len)
+	if (i < 0 || i >= ARRAY(obj)->len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
 
 	prepare_object_for_alteration(ctx, obj, item);
@@ -777,6 +777,8 @@ pdf_array_delete(fz_context *ctx, pdf_obj *obj, int i)
 	RESOLVE(obj);
 	if (!OBJ_IS_ARRAY(obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not an array (%s)", pdf_objkindstr(obj));
+	if (i < 0 || i >= ARRAY(obj)->len)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
 
 	pdf_drop_obj(ctx, ARRAY(obj)->items[i]);
 	ARRAY(obj)->items[i] = 0;
@@ -1140,11 +1142,12 @@ pdf_dict_gets(fz_context *ctx, pdf_obj *obj, const char *key)
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
 		return NULL;
+	if (!key)
+		return NULL;
 
 	i = pdf_dict_finds(ctx, obj, key);
 	if (i >= 0)
 		return DICT(obj)->items[i].v;
-
 	return NULL;
 }
 
@@ -1205,6 +1208,8 @@ pdf_dict_get(fz_context *ctx, pdf_obj *obj, pdf_obj *key)
 
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
+		return NULL;
+	if (!OBJ_IS_NAME(key))
 		return NULL;
 
 	if (key < PDF_OBJ_NAME__LIMIT)
@@ -1499,6 +1504,8 @@ pdf_dict_dels(fz_context *ctx, pdf_obj *obj, const char *key)
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a dict (%s)", pdf_objkindstr(obj));
+	if (!key)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "key is null");
 
 	prepare_object_for_alteration(ctx, obj, NULL);
 	i = pdf_dict_finds(ctx, obj, key);
