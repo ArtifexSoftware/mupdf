@@ -4473,7 +4473,6 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 	{
 		fz_rect mediabox;
-		int b, l, s, c;
 
 		ctm = fz_identity;
 		sheet = fz_new_stext_sheet(ctx);
@@ -4510,7 +4509,7 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		bArray = (*env)->NewByteArray(env, buf->len);
 		if (bArray == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to make byteArray");
-		(*env)->SetByteArrayRegion(env, bArray, 0, buf->len, buf->data);
+		(*env)->SetByteArrayRegion(env, bArray, 0, buf->len, (jbyte *) buf->data);
 
 	}
 	fz_always(ctx)
