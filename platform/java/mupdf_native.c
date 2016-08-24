@@ -1155,7 +1155,8 @@ static inline void from_jfloatArray(JNIEnv *env, float *color, jint n, jfloatArr
 
 	if (jcolor == NULL)
 		len = 0;
-	else {
+	else
+	{
 		len = (*env)->GetArrayLength(env, jcolor);
 		if (len > n)
 			len = n;
@@ -3124,7 +3125,8 @@ FUN(Path_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	return jrect;
 }
 
-typedef struct {
+typedef struct
+{
 	JNIEnv *env;
 	jobject obj;
 } path_walker_state;
@@ -3807,8 +3809,6 @@ FUN(Annotation_toDisplayList)(JNIEnv *env, jobject self)
 	return to_DisplayList_safe_own(ctx, env, list);
 }
 
-/* Link interface */
-
 /* Document interface */
 
 JNIEXPORT void JNICALL
@@ -4233,7 +4233,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 			annot = fz_next_annot(ctx, annot);
 		}
 		if (annot != NULL || i != annot_count)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (4)");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (2)");
 	}
 	fz_catch(ctx)
 	{
@@ -4304,7 +4304,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 			link = link->next;
 		}
 		if (link != NULL || i != link_count)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (3)");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (2)");
 	}
 	fz_always(ctx)
 		fz_drop_link(ctx, links);
