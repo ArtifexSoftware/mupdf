@@ -2723,7 +2723,16 @@ static int ffi_pdf_obj_has(js_State *J, void *obj, const char *key)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *val;
-	int idx;
+	int idx, len;
+
+	if (!strcmp(key, "length")) {
+		fz_try(ctx)
+			len = pdf_array_len(ctx, obj);
+		fz_catch(ctx)
+			rethrow(J);
+		js_pushnumber(J, len);
+		return 1;
+	}
 
 	if (is_number(key, &idx)) {
 		fz_try(ctx)
@@ -3223,6 +3232,20 @@ static void ffi_PDFObject_delete(js_State *J)
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
 	const char *key = js_tostring(J, 1);
 	ffi_pdf_obj_delete(J, obj, key);
+}
+
+static void ffi_PDFObject_push(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	pdf_document *pdf = pdf_get_bound_document(ctx, obj);
+	pdf_obj *item = ffi_toobj(J, pdf, 1);
+	fz_try(ctx)
+		pdf_array_push(ctx, obj, item);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, item);
+	fz_catch(ctx)
+		rethrow(J);
 }
 
 static void ffi_PDFObject_resolve(js_State *J)
@@ -3758,6 +3781,7 @@ int murun_main(int argc, char **argv)
 	{
 		jsB_propfun(J, "PDFObject.get", ffi_PDFObject_get, 0);
 		jsB_propfun(J, "PDFObject.put", ffi_PDFObject_put, 0);
+		jsB_propfun(J, "PDFObject.push", ffi_PDFObject_push, 0);
 		jsB_propfun(J, "PDFObject.delete", ffi_PDFObject_delete, 0);
 		jsB_propfun(J, "PDFObject.resolve", ffi_PDFObject_resolve, 0);
 		jsB_propfun(J, "PDFObject.toString", ffi_PDFObject_toString, 1);
