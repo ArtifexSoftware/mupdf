@@ -2762,8 +2762,8 @@ FUN(Pixmap_getAlpha)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
 	if (ctx == NULL || pixmap == NULL)
-		return 0;
-	return pixmap->alpha;
+		return JNI_FALSE;
+	return pixmap->alpha ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
@@ -3635,14 +3635,16 @@ JNIEXPORT jboolean JNICALL
 FUN(Image_getImageMask)(JNIEnv *env, jobject self)
 {
 	fz_image *image = from_Image(env, self);
-	return image ? image->imagemask : 0;
+	if (!image) return JNI_FALSE;
+	return image->imagemask ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
 FUN(Image_getInterpolate)(JNIEnv *env, jobject self)
 {
 	fz_image *image = from_Image(env, self);
-	return image ? image->interpolate : 0;
+	if (!image) return JNI_FALSE;
+	return image->interpolate ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jobject JNICALL
@@ -3862,17 +3864,17 @@ FUN(Document_needsPassword)(JNIEnv *env, jobject self)
 	int okay = 0;
 
 	if (ctx == NULL || doc == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		okay = fz_needs_password(ctx, doc);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return okay;
+	return okay ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -3884,7 +3886,7 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 	int okay = 0;
 
 	if (ctx == NULL || doc == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	if (jpassword == NULL)
 		password = "";
@@ -3894,7 +3896,7 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 		if (!password)
 		{
 			jni_throw(env, FZ_ERROR_GENERIC, "autenticatePassword failed");
-			return 0;
+			return JNI_FALSE;
 		}
 	}
 
@@ -3906,10 +3908,10 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return okay;
+	return okay ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
@@ -3941,17 +3943,17 @@ FUN(Document_isReflowable)(JNIEnv *env, jobject self)
 	int is_reflowable = 0;
 
 	if (ctx == NULL || doc == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		is_reflowable = fz_is_document_reflowable(ctx, doc);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return is_reflowable;
+	return is_reflowable ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL
@@ -6170,7 +6172,7 @@ FUN(PDFDocument_hasUnsavedChanges)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	return pdf_has_unsaved_changes(ctx, pdf);
+	return pdf_has_unsaved_changes(ctx, pdf) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6178,7 +6180,7 @@ FUN(PDFDocument_canBeSavedIncrementally)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	return pdf_can_be_saved_incrementally(ctx, pdf);
+	return pdf_can_be_saved_incrementally(ctx, pdf) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
@@ -6266,17 +6268,17 @@ FUN(PDFObject_isIndirect)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_indirect(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6287,17 +6289,17 @@ FUN(PDFObject_isNull)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_null(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6308,17 +6310,17 @@ FUN(PDFObject_isBoolean)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_bool(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6329,17 +6331,17 @@ FUN(PDFObject_isInteger)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_int(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6350,17 +6352,17 @@ FUN(PDFObject_isReal)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_real(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6371,17 +6373,17 @@ FUN(PDFObject_isNumber)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_number(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6392,17 +6394,17 @@ FUN(PDFObject_isString)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_string(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6413,17 +6415,17 @@ FUN(PDFObject_isName)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_name(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6434,17 +6436,17 @@ FUN(PDFObject_isArray)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_array(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6455,17 +6457,17 @@ FUN(PDFObject_isDictionary)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_dict(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -6476,17 +6478,17 @@ FUN(PDFObject_isStream)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_is_stream(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -7177,17 +7179,17 @@ FUN(PDFObject_toBoolean)(JNIEnv *env, jobject self)
 	int b = 0;
 
 	if (ctx == NULL || obj == NULL)
-		return 0;
+		return JNI_FALSE;
 
 	fz_try(ctx)
 		b = pdf_to_bool(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
-		return 0;
+		return JNI_FALSE;
 	}
 
-	return b;
+	return b ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
