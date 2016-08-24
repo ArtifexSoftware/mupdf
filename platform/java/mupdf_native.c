@@ -221,7 +221,7 @@ static void fz_throw_java(fz_context *ctx, JNIEnv *env)
 	if (ex)
 	{
 		jobject msg = (*env)->CallObjectMethod(env, ex, mid_Object_toString);
-		if (msg)
+		if (!(*env)->ExceptionCheck(env) && msg)
 		{
 			const char *p = (*env)->GetStringUTFChars(env, msg, NULL);
 			if (p)
