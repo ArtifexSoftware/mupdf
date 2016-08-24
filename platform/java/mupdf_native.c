@@ -109,8 +109,6 @@ static jfieldID fid_Matrix_e;
 static jfieldID fid_Matrix_f;
 static jfieldID fid_NativeDevice_nativeInfo;
 static jfieldID fid_NativeDevice_nativeResource;
-static jfieldID fid_Page_nativeAnnots;
-static jfieldID fid_Page_nativeLinks;
 static jfieldID fid_Page_pointer;
 static jfieldID fid_Path_pointer;
 static jfieldID fid_PDFDocument_pointer;
@@ -409,8 +407,6 @@ static int find_fids(JNIEnv *env)
 
 	cls_Page = get_class(&err, env, PKG"Page");
 	fid_Page_pointer = get_field(&err, env, "pointer", "J");
-	fid_Page_nativeAnnots = get_field(&err, env, "nativeAnnots", "[L"PKG"Annotation;");
-	fid_Page_nativeLinks = get_field(&err, env, "nativeLinks", "[L"PKG"Link;");
 	mid_Page_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_Path = get_class(&err, env, PKG"Path");
@@ -4213,8 +4209,6 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		jannots = (*env)->GetObjectField(env, self, fid_Page_nativeAnnots);
-
 		annots = fz_first_annot(ctx, page);
 
 		/* Count the annotations */
@@ -4223,13 +4217,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 			annot = fz_next_annot(ctx, annot);
 
 		if (annot_count == 0)
-		{
-			/* If no annotations, we don't want an annotation
-			 * object stored in the page. */
-			if (jannots != NULL)
-				(*env)->SetObjectField(env, self, fid_Page_nativeAnnots, NULL);
 			break; /* No annotations! */
-		}
 
 		jannots = (*env)->NewObjectArray(env, annot_count, cls_Annot, NULL);
 		if (jannots == NULL)
@@ -4246,8 +4234,6 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 		}
 		if (annot != NULL || i != annot_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (4)");
-
-		(*env)->SetObjectField(env, self, fid_Page_nativeAnnots, jannots);
 	}
 	fz_catch(ctx)
 	{
@@ -4276,8 +4262,6 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		jlinks = (*env)->GetObjectField(env, self, fid_Page_nativeLinks);
-
 		links = fz_load_links(ctx, page);
 
 		/* Count the links */
@@ -4286,13 +4270,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 			link = link->next;
 
 		if (link_count == 0)
-		{
-			/* If no links, we don't want an link
-			 * object stored in the page. */
-			if (jlinks != NULL)
-				(*env)->SetObjectField(env, self, fid_Page_nativeLinks, NULL);
 			break; /* No links! */
-		}
 
 		jlinks = (*env)->NewObjectArray(env, link_count, cls_Link, NULL);
 		if (jlinks == NULL)
@@ -4319,10 +4297,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 			if (juri != NULL)
 				(*env)->DeleteLocalRef(env, juri);
 			if (jlink == NULL)
-			{
-				(*env)->SetObjectField(env, self, fid_Page_nativeLinks, NULL);
 				break;
-			}
 
 			(*env)->SetObjectArrayElement(env, jlinks, i, jlink);
 			(*env)->DeleteLocalRef(env, jlink);
@@ -4330,8 +4305,6 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		}
 		if (link != NULL || i != link_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (3)");
-
-		(*env)->SetObjectField(env, self, fid_Page_nativeLinks, jlinks);
 	}
 	fz_always(ctx)
 		fz_drop_link(ctx, links);

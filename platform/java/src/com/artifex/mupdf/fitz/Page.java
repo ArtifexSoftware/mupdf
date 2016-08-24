@@ -3,20 +3,16 @@ package com.artifex.mupdf.fitz;
 public class Page
 {
 	private long pointer;
-	private Annotation nativeAnnots[];
-	private Link nativeLinks[];
 
 	protected native void finalize();
 
 	public void destroy() {
 		finalize();
 		pointer = 0;
-		nativeAnnots = null;
 	}
 
 	private Page(long p) {
 		pointer = p;
-		nativeAnnots = null;
 	}
 
 	public native Rect getBounds();
