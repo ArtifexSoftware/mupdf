@@ -447,7 +447,7 @@ fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text, const fz_rec
 						fz_stext_char_bbox(ctx, &hitbox, span, i);
 						c = span->text[i].c;
 						if (c < 32)
-							c = '?';
+							c = 0xFFFD;
 						if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
 						{
 							saw_text = 1;

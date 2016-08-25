@@ -96,7 +96,7 @@ pdf_load_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *font,
 			if (strings[cpt])
 				font->cid_to_ucs[cpt] = pdf_lookup_agl(strings[cpt]);
 			else
-				font->cid_to_ucs[cpt] = '?';
+				font->cid_to_ucs[cpt] = 0xFFFD; /* replacement character */
 		}
 	}
 
