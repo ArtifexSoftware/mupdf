@@ -13,4 +13,7 @@
 	<string name="ok">OK</string>
 	<string name="cancel">Cancel</string>
 
+	<string name="background">Background</string>
+	<string name="color">Color</string>
+
 </resources>

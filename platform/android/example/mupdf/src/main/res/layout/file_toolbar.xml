@@ -22,7 +22,7 @@
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp">
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"
@@ -47,7 +47,7 @@
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp">
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"
@@ -79,7 +79,7 @@
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp">
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"
@@ -104,7 +104,7 @@
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp">
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"
@@ -129,7 +129,7 @@
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp">
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"

@@ -2,6 +2,7 @@ package com.artifex.mupdf.android;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -26,7 +27,7 @@ import com.artifex.mupdf.fitz.Link;
 import com.artifex.mupdf.fitz.Outline;
 import com.artifex.mupdf.fitz.R;
 
-public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeListener, View.OnClickListener
+public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeListener, View.OnClickListener, DocView.SelectionChangeListener
 {
 	private DocView mDocView;
 	private DocReflowView mDocReflowView;
@@ -55,7 +56,15 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private ImageButton mPrintButton;
 	private ImageButton mShareButton;
 	private ImageButton mOpenInButton;
+
 	private ImageButton mToggleAnnotButton;
+	private ImageButton mHighlightButton;
+	private ImageButton mDeleteButton;
+
+	private ImageButton mNoteButton;
+	private ImageButton mDrawButton;
+	private ImageButton mLineColorButton;
+	private ImageButton mLineThicknessButton;
 
 	public DocActivityView(Context context)
 	{
@@ -356,6 +365,23 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		mToggleAnnotButton = (ImageButton)findViewById(R.id.show_annot_button);
 		mToggleAnnotButton.setOnClickListener(this);
 
+		mHighlightButton = (ImageButton)findViewById(R.id.highlight_button);
+		mHighlightButton.setOnClickListener(this);
+
+		mNoteButton = (ImageButton)findViewById(R.id.note_button);
+		mNoteButton.setOnClickListener(this);
+
+		mDrawButton = (ImageButton)findViewById(R.id.draw_button);
+		mDrawButton.setOnClickListener(this);
+
+		mLineColorButton = (ImageButton)findViewById(R.id.line_color_button);
+		mLineColorButton.setOnClickListener(this);
+
+		mLineThicknessButton = (ImageButton)findViewById(R.id.line_thickness_button);
+		mLineThicknessButton.setOnClickListener(this);
+
+		mDeleteButton = (ImageButton)findViewById(R.id.delete_button);
+		mDeleteButton.setOnClickListener(this);
 
 		mDoc = new Document(path);
 
@@ -409,6 +435,10 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		{
 			mDocPagesView.clone(mDocView);
 		}
+
+		mHighlightButton.setEnabled(false);
+		mDocView.setSelectionChangeListener(this);
+		onSelectionChanged();
 	}
 
 	public void showUI(boolean show)
@@ -481,10 +511,12 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	{
 		if (v == mReflowButton)
 			onReflowButton();
+
 		if (v == mFirstPageButton)
 			onFirstPageButton();
 		if (v == mLastPageButton)
 			onLastPageButton();
+
 		if (v == mSearchButton)
 			onShowSearch();
 		if (v == mSearchText)
@@ -493,6 +525,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			onSearchNextButton();
 		if (v == mSearchPreviousButton)
 			onSearchPreviousButton();
+
 		if (v == mBackButton)
 			onBackButton();
 
@@ -506,8 +539,22 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			onShareButton();
 		if (v == mOpenInButton)
 			onOpenInButton();
+
 		if (v == mToggleAnnotButton)
 			onToggleAnnotButton();
+		if (v == mHighlightButton)
+			onHighlightButton();
+		if (v == mDeleteButton)
+			onDeleteButton();
+
+		if (v == mNoteButton)
+			onNoteButton();
+		if (v == mDrawButton)
+			onDrawButton();
+		if (v == mLineColorButton)
+			onLineColorButton();
+		if (v == mLineThicknessButton)
+			onLineThicknessButton();
 	}
 
 	public void onSearchNextButton()
@@ -645,6 +692,83 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private void onToggleAnnotButton()
 	{
 		mDocView.toggleAnnotations();
+	}
+
+	private void onHighlightButton()
+	{
+		mDocView.onHighlight();
+	}
+
+	private void onNoteButton()
+	{
+		mDocView.onNoteMode();
+	}
+
+	private void onDrawButton()
+	{
+		mDocView.onDrawMode();
+	}
+
+	private void onLineColorButton()
+	{
+		if (mDocView.getDrawMode() || mDocView.hasInkAnnotationSelected())
+		{
+			ColorDialog dlg = new ColorDialog(ColorDialog.BG_COLORS,
+					getContext(), mLineColorButton, new ColorDialog.ColorChangedListener()
+			{
+				@Override
+				public void onColorChanged(String color)
+				{
+					int icolor = Color.parseColor(color);
+					mDocView.setInkLineColor(icolor);
+					mLineColorButton.setColorFilter(icolor, PorterDuff.Mode.SRC_IN);
+				}
+			}, true);
+			dlg.setShowTitle(false);
+			dlg.show();
+		}
+	}
+
+	private void onLineThicknessButton()
+	{
+		if (mDocView.getDrawMode() || mDocView.hasInkAnnotationSelected())
+		{
+			float val = mDocView.getInkLineThickness();
+			LineWidthDialog.show(getContext(), mLineThicknessButton, val,
+					new LineWidthDialog.WidthChangedListener()
+					{
+						@Override
+						public void onWidthChanged(float value)
+						{
+							mDocView.setInkLineThickness(value);
+						}
+					});
+		}
+	}
+
+	private void onDeleteButton()
+	{
+		mDocView.onDelete();
+	}
+
+	public void onSelectionChanged()
+	{
+		boolean hasSel = mDocView.hasSelection();
+		boolean hasInkAnnotSel = mDocView.hasInkAnnotationSelected();
+
+		mHighlightButton.setEnabled(hasSel);
+
+		boolean noteMode = mDocView.getNoteMode();
+		mNoteButton.setSelected(noteMode);
+		findViewById(R.id.note_holder).setSelected(noteMode);
+
+		boolean drawMode = mDocView.getDrawMode();
+		mDrawButton.setSelected(drawMode);
+		mLineColorButton.setEnabled(drawMode || hasInkAnnotSel);
+		mLineThicknessButton.setEnabled(drawMode || hasInkAnnotSel);
+		mDeleteButton.setEnabled(!drawMode && hasInkAnnotSel);
+
+		findViewById(R.id.draw_tools_holder).setSelected(drawMode);
 	}
 
 	private OnDoneListener mDoneListener = null;

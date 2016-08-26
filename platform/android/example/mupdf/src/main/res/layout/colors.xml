@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:background="@drawable/colors"
+              android:orientation="vertical"
+    >
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="false"
+            android:layout_alignParentTop="true"
+            android:id="@+id/font_panel">
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/bluish_grey"
+                android:textColor="#FFFFFFFF"
+                android:textSize="12pt"
+                android:id="@+id/color_dialog_title" />
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                          android:layout_width="fill_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal"
+                          android:id="@+id/fontcolors_row1" >
+
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+
+            </LinearLayout>
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                          android:layout_width="fill_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal"
+                          android:id="@+id/fontcolors_row2">
+
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+
+            </LinearLayout>
+
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                          android:layout_width="fill_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal"
+                          android:id="@+id/fontcolors_row3">
+
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+                <Button style="@style/font_color_button" android:background="#000000" android:tag="#000000"/>
+
+                <Button style="@style/font_color_button"
+                        android:id="@+id/transparent_color_button"
+                        android:background="@drawable/transparent_color_swatch"
+                        android:tag="transparent"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <!--<Button-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="@string/done"-->
+        <!--android:id="@+id/done_button"-->
+        <!--android:background="@drawable/button"-->
+        <!--android:textColor="#FFFFFFFF"-->
+        <!--android:layout_gravity="right"/>-->
+
+</LinearLayout>

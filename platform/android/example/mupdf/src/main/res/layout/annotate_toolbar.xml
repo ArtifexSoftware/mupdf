@@ -19,25 +19,26 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:gravity="center_horizontal"
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp">
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"
                     android:layout_centerVertical="true"
                     android:background="@drawable/toolbar_button"
-                    android:id="@+id/show_annot_button"
-                    android:src="@drawable/icon_toggle_annotations" />
+                    android:id="@+id/highlight_button"
+                    android:src="@drawable/icon_highlight" />
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:textColor="@color/black"
                     android:textSize="11sp"
-                    android:text="TOGGLE"/>
+                    android:text="HIGHLIGHT"/>
             </LinearLayout>
 
             <!--a divider-->
@@ -46,6 +47,218 @@
                 android:paddingRight="3dp" android:paddingLeft="3dp"
                 android:layout_height="match_parent"
                 android:background="#FF8E8F90" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:id="@+id/draw_tools_holder"
+                android:background="@drawable/toolbar_button2"
+                >
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp">
+
+                    <com.artifex.mupdf.android.ToolbarButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scaleType="fitXY"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/toolbar_button2"
+                        android:id="@+id/draw_button"
+                        android:src="@drawable/icon_draw" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@color/black"
+                        android:textSize="11sp"
+                        android:text="DRAW"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp">
+
+                    <com.artifex.mupdf.android.ToolbarButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scaleType="fitXY"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/toolbar_button2"
+                        android:id="@+id/line_color_button"
+                        android:src="@drawable/icon_line_color" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@color/black"
+                        android:textSize="11sp"
+                        android:text=""/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp">
+
+                    <com.artifex.mupdf.android.ToolbarButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scaleType="fitXY"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/toolbar_button2"
+                        android:id="@+id/line_thickness_button"
+                        android:src="@drawable/icon_line_thickness" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@color/black"
+                        android:textSize="11sp"
+                        android:text=""/>
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+            <!--a divider-->
+            <View
+                android:layout_width="1dp"
+                android:paddingRight="3dp" android:paddingLeft="3dp"
+                android:layout_height="match_parent"
+                android:background="#FF8E8F90" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:id="@+id/note_holder"
+            android:background="@drawable/toolbar_button2"
+            >
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <com.artifex.mupdf.android.ToolbarButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/toolbar_button2"
+                    android:id="@+id/note_button"
+                    android:src="@drawable/icon_note" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="NOTE"/>
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+
+            <!--a divider-->
+            <View
+                android:layout_width="1dp"
+                android:paddingRight="3dp" android:paddingLeft="3dp"
+                android:layout_height="match_parent"
+                android:background="#FF8E8F90" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <com.artifex.mupdf.android.ToolbarButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitXY"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/toolbar_button"
+                    android:id="@+id/delete_button"
+                    android:src="@drawable/icon_delete" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/black"
+                    android:textSize="11sp"
+                    android:text="DELETE"/>
+            </LinearLayout>
+
+
+            <!--
+                this layout holds some buttons for testing
+                normally it's not shown.
+            -->
+
+            <LinearLayout
+                android:visibility="gone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <!--a divider-->
+                <View
+                    android:layout_width="1dp"
+                    android:paddingRight="3dp" android:paddingLeft="3dp"
+                    android:layout_height="match_parent"
+                    android:background="#FF8E8F90" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp">
+
+                    <com.artifex.mupdf.android.ToolbarButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:scaleType="fitXY"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/toolbar_button"
+                        android:id="@+id/show_annot_button"
+                        android:src="@drawable/icon_toggle_annotations" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@color/black"
+                        android:textSize="11sp"
+                        android:text="TOGGLE"/>
+                </LinearLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
 

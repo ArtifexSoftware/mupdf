@@ -7,10 +7,13 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.AsyncTask;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent.Callback;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +30,8 @@ import com.artifex.mupdf.fitz.StructuredText;
 import com.artifex.mupdf.fitz.android.AndroidDrawDevice;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.ListIterator;
 
 public class DocPageView extends View implements Callback
 {
@@ -550,6 +555,17 @@ public class DocPageView extends View implements Callback
 			canvas.drawRect(mHighlightingRect, mSearchHighlightPainter);
 		}
 
+		//  draw ink annotations
+		if (mInkAnnots != null)
+		{
+			Iterator<InkAnnotation> it = mInkAnnots.iterator();
+			while (it.hasNext())
+			{
+				InkAnnotation annot = it.next();
+				annot.draw(canvas);
+			}
+		}
+
 		//  draw blue dot
 		if (isMostVisible)
 		{
@@ -668,9 +684,22 @@ public class DocPageView extends View implements Callback
 		return screenToPage(p.x, p.y);
 	}
 
+	public PointF screenToPage(PointF p)
+	{
+		Point pp = screenToPage(new Point((int)p.x, (int)p.y));
+		return new PointF(pp.x, pp.y);
+	}
+
 	private double getFactor()
 	{
 		return mZoom * mScale * mResolution / 72f;
+	}
+
+	private double pageToScreen(double val)
+	{
+		double factor = getFactor();
+
+		return factor * val;
 	}
 
 	private Point screenToPage(int screenX, int screenY)
@@ -700,6 +729,36 @@ public class DocPageView extends View implements Callback
 		int viewY = (int) (((double) pageY) * factor);
 
 		return new Point(viewX, viewY);
+	}
+
+	public void pageToView(Point pageP, Point viewP)
+	{
+		double factor = getFactor();
+
+		int x = (int) (((double) pageP.x) * factor);
+		int y = (int) (((double) pageP.y) * factor);
+
+		viewP.set(x, y);
+	}
+
+	public void pageToView(PointF pageP, PointF viewP)
+	{
+		double factor = getFactor();
+
+		float x = (pageP.x * (float)factor);
+		float y = (pageP.y * (float)factor);
+
+		viewP.set(x, y);
+	}
+
+	private PointF pageToView(PointF pageP)
+	{
+		double factor = getFactor();
+
+		float x = (pageP.x * (float)factor);
+		float y = (pageP.y * (float)factor);
+
+		return new PointF(x, y);
 	}
 
 	public void pageToView(Rect pageR, Rect viewR)
@@ -751,6 +810,35 @@ public class DocPageView extends View implements Callback
 
 	public boolean onSingleTap(int x, int y)
 	{
+		//  see if an ink annotation has been tapped on
+		if (mInkAnnots != null)
+		{
+			boolean hit = false;
+
+			//  switch to page coordinates
+			Point pt = screenToPage(x, y);
+
+			//  iterate in reverse order
+			ListIterator<InkAnnotation> li = mInkAnnots.listIterator(mInkAnnots.size());
+			while (li.hasPrevious())
+			{
+				InkAnnotation annot = li.previous();
+				annot.setSelected(false);
+				if(annot.hitTest(pt))
+				{
+					if (!hit)
+						annot.setSelected(true);
+					hit = true;
+				}
+			}
+
+			if (hit)
+			{
+				invalidate();
+				return true;
+			}
+		}
+
 		//  NOTE: when double-tapping, a single-tap will also happen first.
 		//  so that must be safe to do.
 
@@ -765,15 +853,51 @@ public class DocPageView extends View implements Callback
 
 	//  during layout, a DocView-relative rect is calculated and stashed here.
 	private final Rect mChildRect = new Rect();
-
 	public void setChildRect(Rect r)
 	{
 		mChildRect.set(r);
 	}
-
 	public Rect getChildRect()
 	{
 		return mChildRect;
+	}
+
+	private ArrayList<InkAnnotation> mInkAnnots;
+
+	public void startDraw(float x, float y, int color, float thickness)
+	{
+		//  create annotation list
+		if (mInkAnnots == null)
+			mInkAnnots = new ArrayList<>();
+
+		//  add a new annotation to the list
+		//  convert thickness from pt to pixels
+		float px = thickness * (float)getFactor();
+		InkAnnotation annot = new InkAnnotation(color, px);
+		mInkAnnots.add(annot);
+
+		//  add first point to the new annot, in page coords
+		PointF pScreen = new PointF(x, y);
+		PointF pPage = screenToPage(pScreen);
+		annot.add(pPage);
+
+		invalidate();
+	}
+
+	public void continueDraw(float x, float y)
+	{
+		if (mInkAnnots!=null && mInkAnnots.size()>0)
+		{
+			//  get the most recent annotation
+			InkAnnotation annot = mInkAnnots.get(mInkAnnots.size()-1);
+
+			//  add the point, in page coords
+			PointF pScreen = new PointF(x, y);
+			PointF pPage = screenToPage(pScreen);
+			annot.add(pPage);
+
+			invalidate();
+		}
 	}
 
 	private class RenderTaskParams
@@ -862,6 +986,249 @@ public class DocPageView extends View implements Callback
 		{
 			super.onPostExecute(result);
 			params.listener.progress(0);
+		}
+	}
+
+	private InkAnnotation getSelectedInkAnnotation()
+	{
+		if (mInkAnnots != null)
+		{
+			//  iterate in reverse order
+			ListIterator<InkAnnotation> li = mInkAnnots.listIterator(mInkAnnots.size());
+			while (li.hasPrevious())
+			{
+				InkAnnotation annot = li.previous();
+				if (annot.isSelected())
+					return annot;
+			}
+		}
+
+		return null;
+	}
+
+	public boolean hasInkAnnotationSelected()
+	{
+		return (getSelectedInkAnnotation() != null);
+	}
+
+	public void setSelectedInkLineColor(int val)
+	{
+		InkAnnotation annot = getSelectedInkAnnotation();
+		if (annot != null)
+		{
+			annot.setLineColor(val);
+			invalidate();
+		}
+	}
+
+	public void setSelectedInkLineThickness(float val)
+	{
+		InkAnnotation annot = getSelectedInkAnnotation();
+		if (annot != null)
+		{
+			float px = val * (float)getFactor();
+			annot.setLineThickness(px);
+			invalidate();
+		}
+	}
+
+	public void deleteSelectedInkAnnotation()
+	{
+		InkAnnotation annot = getSelectedInkAnnotation();
+		if (annot != null)
+		{
+			mInkAnnots.remove(annot);
+			invalidate();
+		}
+	}
+
+//-----------------------------------------------------
+
+	public class InkAnnotation
+	{
+		private float mLineThickness;
+		public void setLineThickness(float lineThickness) {mLineThickness = lineThickness;}
+
+		private int mLineColor;
+		public void setLineColor(int lineColor) {mLineColor = lineColor;}
+
+		private boolean mSelected = false;
+		public void setSelected(boolean sel) {mSelected = sel;}
+		public boolean isSelected() {return mSelected;}
+
+		private ArrayList<PointF> mArc;
+
+		//  touch margin is 2mm either side of the arc
+		private final float HIT_MARGIN = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_MM, 2,
+				getResources().getDisplayMetrics());
+
+		public InkAnnotation(int lineColor, float lineThickness)
+		{
+			mLineColor = lineColor;
+			mLineThickness = lineThickness;
+			mArc = new ArrayList<>();
+		}
+
+		public void add(PointF p)
+		{
+			mArc.add(p);
+		}
+
+		public boolean hitTest(Point pt)
+		{
+			PointF p1, p2;
+			PointF ptf = new PointF(pt);
+
+			if (mArc.size() >= 2)
+			{
+				Iterator<PointF> iit = mArc.iterator();
+				p1 = iit.next();
+				while (iit.hasNext())
+				{
+					p2 = iit.next();
+
+					//  test
+					double d = LineToPointDistance2D(p1, p2, ptf);
+					d = pageToScreen(d);
+
+					if (d <= HIT_MARGIN)
+					{
+						return true;
+					}
+
+					p1 = p2;
+				}
+			}
+			else
+			{
+				p1 = mArc.get(0);
+
+				//  test
+				double d = Distance(p1, ptf);
+				d = pageToScreen(d);
+
+				if (d <= HIT_MARGIN)
+				{
+					return true;
+				}
+
+			}
+
+			return false;
+		}
+
+		public void draw(Canvas canvas)
+		{
+			Path path = new Path();
+			PointF pPage;
+			PointF pView = new PointF();
+
+			Paint paint = new Paint();
+			paint.setAntiAlias(true);
+			paint.setDither(true);
+			paint.setStrokeJoin(Paint.Join.ROUND);
+			paint.setStrokeCap(Paint.Cap.ROUND);
+			paint.setStyle(Paint.Style.FILL);
+			paint.setStrokeWidth(mLineThickness * mScale);
+			paint.setColor(mLineColor);
+
+			RectF bounds = new RectF();
+
+			if (mArc.size() >= 2)
+			{
+				Iterator<PointF> iit = mArc.iterator();
+				pPage = iit.next();
+				pageToView(pPage, pView);
+				float mX = pView.x;
+				float mY = pView.y;
+				path.moveTo(mX, mY);
+				while (iit.hasNext())
+				{
+					pPage = iit.next();
+					pageToView(pPage, pView);
+					float x = pView.x;
+					float y = pView.y;
+					path.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+					mX = x;
+					mY = y;
+				}
+				path.lineTo(mX, mY);
+				paint.setStyle(Paint.Style.STROKE);
+				canvas.drawPath(path, paint);
+
+				path.computeBounds(bounds, true);
+			}
+			else
+			{
+				pPage = mArc.get(0);
+				pageToView(pPage, pView);
+				float r = mLineThickness * mScale / 2;
+				bounds.set(pView.x-r, pView.y-r, pView.x+r, pView.y+r);
+				canvas.drawCircle(pView.x, pView.y, r, paint);
+			}
+
+			if (isSelected())
+			{
+				//  expand the bounds to account for ine thickness
+				float px = mLineThickness * mScale / 2;
+				bounds.inset(-px, -px);
+
+				mHighlightingRect.set((int)bounds.left, (int)bounds.top, (int)bounds.right, (int)bounds.bottom);
+				canvas.drawRect(mHighlightingRect, mSelectionHighlightPainter);
+			}
+		}
+
+		private double DotProduct(PointF pointA, PointF pointB, PointF pointC)
+		{
+			double[] AB = new double[2];
+			double[] BC = new double[2];
+			AB[0] = pointB.x - pointA.x;
+			AB[1] = pointB.y - pointA.y;
+			BC[0] = pointC.x - pointB.x;
+			BC[1] = pointC.y - pointB.y;
+			double dot = AB[0] * BC[0] + AB[1] * BC[1];
+
+			return dot;
+		}
+
+		//Compute the cross product AB x AC
+		private double CrossProduct(PointF pointA, PointF pointB, PointF pointC)
+		{
+			double[] AB = new double[2];
+			double[] AC = new double[2];
+			AB[0] = pointB.x - pointA.x;
+			AB[1] = pointB.y - pointA.y;
+			AC[0] = pointC.x - pointA.x;
+			AC[1] = pointC.y - pointA.y;
+			double cross = AB[0] * AC[1] - AB[1] * AC[0];
+
+			return cross;
+		}
+
+		//Compute the distance from A to B
+		double Distance(PointF pointA, PointF pointB)
+		{
+			double d1 = pointA.x - pointB.x;
+			double d2 = pointA.y - pointB.y;
+
+			return Math.sqrt(d1 * d1 + d2 * d2);
+		}
+
+		//Compute the distance from AB to C
+		double LineToPointDistance2D(PointF pointA, PointF pointB, PointF pointC)
+		{
+			double dist = CrossProduct(pointA, pointB, pointC) / Distance(pointA, pointB);
+			if (true)
+			{
+				double dot1 = DotProduct(pointA, pointB, pointC);
+				if (dot1 > 0)
+					return Distance(pointB, pointC);
+
+				double dot2 = DotProduct(pointB, pointA, pointC);
+				if (dot2 > 0)
+					return Distance(pointA, pointC);
+			}
+			return Math.abs(dist);
 		}
 	}
 

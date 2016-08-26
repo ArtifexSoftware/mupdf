@@ -7,8 +7,9 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
-import android.view.View;
+import android.view.MotionEvent;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.artifex.mupdf.fitz.Page;
 import com.artifex.mupdf.fitz.R;
@@ -109,11 +110,6 @@ public class DocView extends DocViewBase implements DragHandleListener
 		mSelectionHandleBottomRight.show(show);
 	}
 
-	private boolean getSelectionHandlesVisible()
-	{
-		return (mSelectionHandleTopLeft.getVisibility() == View.VISIBLE);
-	}
-
 	@Override
 	protected void doSingleTap(float fx, float fy)
 	{
@@ -123,18 +119,20 @@ public class DocView extends DocViewBase implements DragHandleListener
 		if (dpv == null)
 			return;
 
-		if (getSelectionHandlesVisible())
+		if (!getDrawMode())
 		{
-			//  hide handles and remove selection from pages
-			showSelectionHandles(false);
-			int numPages = getPageCount();
-			for (int i = 0; i < numPages; i++)
+			if (dpv.onSingleTap(p.x, p.y))
 			{
-				DocPageView cv = (DocPageView) getOrCreateChild(i);
-				cv.removeSelection();
-				if (cv.isReallyVisible())
-					cv.invalidate();
+				onChangeSelection();
+				return;
 			}
+			onChangeSelection();
+		}
+
+		if (hasSelection())
+		{
+			clearSelection();
+			onChangeSelection();
 		}
 		else
 		{
@@ -142,18 +140,86 @@ public class DocView extends DocViewBase implements DragHandleListener
 			Rect r = dpv.selectWord(p);
 			if (r != null)
 			{
-				//  show handles
 				showSelectionHandles(true);
 
-				//  set highlight boundaries
 				selectionStartPage = dpv;
 				selectionStartLoc.set(r.left, r.top);
 				selectionEndPage = dpv;
 				selectionEndLoc.set(r.right, r.bottom);
 
 				moveHandlesToCorners();
+
+				onChangeSelection();
 			}
 		}
+	}
+
+	private void clearSelection()
+	{
+		selectionStartPage = null;
+		selectionEndPage = null;
+		showSelectionHandles(false);
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			cv.removeSelection();
+			if (cv.isReallyVisible())
+				cv.invalidate();
+		}
+	}
+
+	public boolean hasSelection()
+	{
+		return (selectionStartPage != null && selectionEndPage != null);
+	}
+
+	public boolean hasInkAnnotationSelected()
+	{
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			if (cv.hasInkAnnotationSelected())
+				return true;
+		}
+
+		return false;
+	}
+
+	public void setSelectedInkLineColor(int val)
+	{
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			if (cv.hasInkAnnotationSelected())
+				cv.setSelectedInkLineColor(val);
+		}
+	}
+
+	public void setSelectedInkLineThickness(float val)
+	{
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			if (cv.hasInkAnnotationSelected())
+				cv.setSelectedInkLineThickness(val);
+		}
+	}
+
+	private void onChangeSelection()
+	{
+		if (mSelectionChangeListener != null)
+			mSelectionChangeListener.onSelectionChanged();
+	}
+
+	private SelectionChangeListener mSelectionChangeListener = null;
+	public void setSelectionChangeListener (SelectionChangeListener l) {mSelectionChangeListener = l;}
+	public interface SelectionChangeListener
+	{
+		public void onSelectionChanged();
 	}
 
 	@Override
@@ -214,6 +280,7 @@ public class DocView extends DocViewBase implements DragHandleListener
 				selectionStartPage = pageView1;
 				p1 = pageView1.screenToPage(p1);
 				selectionStartLoc.set(p1.x, p1.y);
+				onChangeSelection();
 			}
 		}
 
@@ -228,6 +295,7 @@ public class DocView extends DocViewBase implements DragHandleListener
 				selectionEndPage = pageView2;
 				p2 = pageView2.screenToPage(p2);
 				selectionEndLoc.set(p2.x, p2.y);
+				onChangeSelection();
 			}
 		}
 
@@ -415,6 +483,131 @@ public class DocView extends DocViewBase implements DragHandleListener
 			int diff = (viewport.top + viewport.bottom) / 2 - point.y;
 			smoothScrollBy(0, diff);
 		}
+	}
+
+	public void onHighlight()
+	{
+		if (hasSelection())
+		{
+			Toast.makeText(getContext(),"onHighlight", Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	private boolean mNoteMode = false;
+	public boolean getNoteMode() {return mNoteMode;}
+	public void onNoteMode()
+	{
+		mNoteMode = !mNoteMode;
+		mDrawMode = false;
+		clearSelection();
+		onChangeSelection();
+	}
+
+	private boolean mDrawMode = false;
+	public boolean getDrawMode() {return mDrawMode;}
+	public void onDrawMode()
+	{
+		mDrawMode = !mDrawMode;
+		mNoteMode = false;
+		clearSelection();
+		onChangeSelection();
+	}
+
+	public void onDelete()
+	{
+		int numPages = getPageCount();
+		for (int i = 0; i < numPages; i++)
+		{
+			DocPageView cv = (DocPageView) getOrCreateChild(i);
+			if (cv.hasInkAnnotationSelected())
+				cv.deleteSelectedInkAnnotation();
+		}
+	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event)
+	{
+		if (mDrawMode)
+		{
+			float x = event.getX();
+			float y = event.getY();
+			switch (event.getAction())
+			{
+				case MotionEvent.ACTION_DOWN:
+					touch_start(x, y);
+					break;
+				case MotionEvent.ACTION_MOVE:
+					touch_move(x, y);
+					break;
+				case MotionEvent.ACTION_UP:
+					touch_up();
+					break;
+			}
+
+			return true;
+		}
+
+		return super.onTouchEvent(event);
+	}
+
+	private float mX, mY;
+	private static final float TOUCH_TOLERANCE = 2;
+
+	private int mCurrentInkLineColor = 0xFFFF0000;
+	public void setInkLineColor(int val)
+	{
+		mCurrentInkLineColor=val;
+
+		//  also change any selected annotation
+		if (hasInkAnnotationSelected())
+			setSelectedInkLineColor(val);
+	}
+	public int getInkLineColor() {return mCurrentInkLineColor;}
+
+	private float mCurrentInkLineThickness = 4.5f;
+	public float getInkLineThickness() {return mCurrentInkLineThickness;}
+	public void setInkLineThickness(float val)
+	{
+		mCurrentInkLineThickness=val;
+
+		//  also change any selected annotation
+		if (hasInkAnnotationSelected())
+			setSelectedInkLineThickness(val);
+	}
+
+	private void touch_start(float x, float y)
+	{
+		Point p = eventToScreen(x, y);
+		final DocPageView dpv = findPageViewContainingPoint(p.x, p.y, false);
+		if (dpv != null)
+		{
+			dpv.startDraw(p.x, p.y, mCurrentInkLineColor, mCurrentInkLineThickness);
+		}
+
+		mX = x;
+		mY = y;
+	}
+
+	private void touch_move(float x, float y) {
+
+		float dx = Math.abs(x - mX);
+		float dy = Math.abs(y - mY);
+		if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE)
+		{
+			Point p = eventToScreen(x, y);
+			final DocPageView dpv = findPageViewContainingPoint(p.x, p.y, false);
+			if (dpv != null)
+			{
+				dpv.continueDraw(p.x, p.y);
+			}
+			mX = x;
+			mY = y;
+		}
+	}
+
+	private void touch_up()
+	{
+		// NOOP
 	}
 
 }

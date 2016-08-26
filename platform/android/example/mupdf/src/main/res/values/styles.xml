@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- font color selection button. -->
+    <style name="font_color_button" parent="@android:style/Widget.Button">
+        <item name="android:layout_height">20pt</item>
+        <item name="android:layout_width">20pt</item>
+        <item name="android:layout_margin">12dp</item>
+    </style>
+
+</resources>

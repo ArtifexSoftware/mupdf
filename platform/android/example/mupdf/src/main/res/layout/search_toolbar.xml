@@ -63,7 +63,7 @@
                 android:gravity="center"
                 >
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"
@@ -88,7 +88,7 @@
                 android:gravity="center"
                 >
 
-                <ImageButton
+                <com.artifex.mupdf.android.ToolbarButton
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="fitXY"
