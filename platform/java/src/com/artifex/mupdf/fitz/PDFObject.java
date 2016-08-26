@@ -173,4 +173,32 @@ public class PDFObject
 	public void delete(PDFObject name) {
 		deleteDictionaryPDFObject(name);
 	}
+
+	public native int size();
+
+	private native void pushBoolean(boolean b);
+	private native void pushInteger(int i);
+	private native void pushFloat(float f);
+	private native void pushString(String s);
+	private native void pushPDFObject(PDFObject item);
+
+	public void push(boolean b) {
+		pushBoolean(b);
+	}
+
+	public void push(int i) {
+		pushInteger(i);
+	}
+
+	public void push(float f) {
+		pushFloat(f);
+	}
+
+	public void push(String s) {
+		pushString(s);
+	}
+
+	public void push(PDFObject obj) {
+		pushPDFObject(obj);
+	}
 }
