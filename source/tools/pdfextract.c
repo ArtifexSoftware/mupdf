@@ -44,7 +44,7 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
 		pix = converted;
 	}
 
-	if (pix->n <= 4)
+	if (pix->n - pix->alpha <= 3)
 	{
 		snprintf(buf, sizeof(buf), "%s.png", file);
 		printf("extracting image %s\n", buf);
