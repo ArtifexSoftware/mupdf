@@ -12,7 +12,6 @@ typedef struct pdf_annot_s pdf_annot;
 typedef struct pdf_widget_s pdf_widget;
 typedef struct pdf_hotspot_s pdf_hotspot;
 typedef struct pdf_js_s pdf_js;
-typedef struct pdf_resource_tables_s pdf_resource_tables;
 
 enum
 {
@@ -266,7 +265,10 @@ struct pdf_document_s
 	int max_type3_fonts;
 	fz_font **type3_fonts;
 
-	pdf_resource_tables *resources;
+	struct {
+		fz_hash_table *images;
+		fz_hash_table *fonts;
+	} resources;
 };
 
 /*

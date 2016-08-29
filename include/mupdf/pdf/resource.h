@@ -16,29 +16,11 @@ void pdf_remove_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key);
  * the data, enabling rapid lookup.
  */
 
-typedef struct pdf_res_table_s pdf_res_table;
-typedef pdf_obj *(pdf_res_search_fn)(fz_context *ctx, pdf_document *doc, pdf_res_table *list,
-	void *item, unsigned char md5[16]);
-
-struct pdf_res_table_s
-{
-	fz_hash_table *hash;
-	pdf_res_search_fn *search;
-};
-
-struct pdf_resource_tables_s
-{
-	pdf_res_table *image;
-	pdf_res_table *font;
-	pdf_res_table *color;
-	pdf_res_table *pattern;
-	pdf_res_table *shading;
-};
-
-pdf_obj *pdf_find_resource(fz_context *ctx, pdf_document *doc, pdf_res_table *table, void *item, unsigned char md5[16]);
-void pdf_init_resource_tables(fz_context *ctx, pdf_document *doc);
+pdf_obj *pdf_find_font_resource(fz_context *ctx, pdf_document *doc, fz_buffer *item, unsigned char md5[16]);
+pdf_obj *pdf_insert_font_resource(fz_context *ctx, pdf_document *doc, unsigned char md5[16], pdf_obj *obj);
+pdf_obj *pdf_find_image_resource(fz_context *ctx, pdf_document *doc, fz_image *item, unsigned char md5[16]);
+pdf_obj *pdf_insert_image_resource(fz_context *ctx, pdf_document *doc, unsigned char md5[16], pdf_obj *obj);
 void pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc);
-pdf_obj *pdf_insert_resource(fz_context *ctx, pdf_res_table *table, void *key, pdf_obj *obj);
 
 /*
  * Functions, Colorspaces, Shadings and Images

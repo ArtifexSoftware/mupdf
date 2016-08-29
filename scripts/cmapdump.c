@@ -17,6 +17,7 @@
 #include "../source/fitz/output.c"
 #include "../source/fitz/string.c"
 #include "../source/fitz/buffer.c"
+#include "../source/fitz/crypt-md5.c"
 #include "../source/fitz/stream-open.c"
 #include "../source/fitz/stream-read.c"
 #include "../source/fitz/strtod.c"

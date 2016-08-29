@@ -2002,7 +2002,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_resource(ctx, doc, doc->resources->font, font->buffer, digest);
+		fref = pdf_find_font_resource(ctx, doc, font->buffer, digest);
 		if (fref == NULL)
 		{
 			/* Set up desc, width, and font file */
@@ -2031,7 +2031,7 @@ pdf_add_cid_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			fref = pdf_add_object(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
-			fref = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
+			fref = pdf_insert_font_resource(ctx, doc, digest, fref);
 		}
 	}
 	fz_always(ctx)
@@ -2077,7 +2077,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 		/* Before we add this font as a resource check if the same font
 		 * already exists in our resources for this doc. If yes, then
 		 * hand back that reference */
-		fref = pdf_find_resource(ctx, doc, doc->resources->font, font->buffer, digest);
+		fref = pdf_find_font_resource(ctx, doc, font->buffer, digest);
 		if (fref == NULL)
 		{
 			fobj = pdf_new_dict(ctx, doc, 10);
@@ -2119,7 +2119,7 @@ pdf_add_simple_font(fz_context *ctx, pdf_document *doc, fz_font *font)
 			fref = pdf_add_object(ctx, doc, fobj);
 
 			/* Add ref to our font resource hash table. */
-			fref = pdf_insert_resource(ctx, doc->resources->font, digest, fref);
+			fref = pdf_insert_font_resource(ctx, doc, digest, fref);
 		}
 	}
 	fz_always(ctx)

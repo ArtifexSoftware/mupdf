@@ -310,7 +310,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 		/* Before we add this image as a resource check if the same image
 		 * already exists in our resources for this doc.  If yes, then
 		 * hand back that reference */
-		imref = pdf_find_resource(ctx, doc, doc->resources->image, image, digest);
+		imref = pdf_find_image_resource(ctx, doc, image, digest);
 		if (imref == NULL)
 		{
 			if (cbuffer != NULL && cbuffer->params.type != FZ_IMAGE_PNG && cbuffer->params.type != FZ_IMAGE_TIFF)
@@ -457,7 +457,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 			pdf_update_stream(ctx, doc, imref, buffer, 1);
 
 			/* Add ref to our image resource hash table. */
-			imref = pdf_insert_resource(ctx, doc->resources->image, digest, imref);
+			imref = pdf_insert_image_resource(ctx, doc, digest, imref);
 		}
 	}
 	fz_always(ctx)

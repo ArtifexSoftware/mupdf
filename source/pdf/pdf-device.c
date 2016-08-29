@@ -1127,11 +1127,6 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matri
 
 		if (topctm != &fz_identity)
 			fz_buffer_printf(ctx, buf, "%M cm\n", topctm);
-
-		/* Initialise the resource tables if we have not done so
-		 * already. */
-		if (doc->resources == NULL)
-			pdf_init_resource_tables(ctx, doc);
 	}
 	fz_catch(ctx)
 	{

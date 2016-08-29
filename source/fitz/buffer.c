@@ -390,6 +390,14 @@ fz_buffer_print_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text)
 	buffer->len += len;
 }
 
+void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16])
+{
+	fz_md5 state;
+	fz_md5_init(&state);
+	fz_md5_update(&state, buffer->data, buffer->len);
+	fz_md5_final(&state, digest);
+}
+
 #ifdef TEST_BUFFER_WRITE
 
 #define TEST_LEN 1024

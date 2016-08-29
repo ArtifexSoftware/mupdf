@@ -138,4 +138,9 @@ size_t fz_buffer_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...
 size_t fz_buffer_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list args);
 void fz_buffer_print_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
 
+/*
+	fz_md5_buffer: create MD5 digest of buffer contents.
+*/
+void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16]);
+
 #endif
