@@ -332,7 +332,7 @@ static void ensure_incremental_xref(fz_context *ctx, pdf_document *doc)
 		fz_try(ctx)
 		{
 			sub = fz_malloc_struct(ctx, pdf_xref_subsec);
-			trailer = pdf_copy_dict(ctx, xref->trailer);
+			trailer = xref->trailer ? pdf_copy_dict(ctx, xref->trailer) : NULL;
 			doc->xref_sections = fz_resize_array(ctx, doc->xref_sections, doc->num_xref_sections + 1, sizeof(pdf_xref));
 			xref = &doc->xref_sections[0];
 			pxref = &doc->xref_sections[1];
