@@ -753,11 +753,10 @@ static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *anno
 	if (!ctx || !annot)
 		return NULL;
 
+	fz_keep_annot(ctx, annot);
 	jannot = (*env)->NewObject(env, cls_Annot, mid_Annot_init, jlong_cast(annot));
 	if (!jannot)
 		fz_throw_java(ctx, env);
-
-	fz_keep_annot(ctx, annot);
 
 	return jannot;
 }
@@ -769,11 +768,10 @@ static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace 
 	if (!ctx || !cs)
 		return NULL;
 
+	fz_keep_colorspace(ctx, cs);
 	jobj = (*env)->CallStaticObjectMethod(env, cls_ColorSpace, mid_ColorSpace_fromPointer, jlong_cast(cs));
 	if (!jobj)
 		fz_throw_java(ctx, env);
-
-	fz_keep_colorspace(ctx, cs);
 
 	return jobj;
 }
@@ -822,9 +820,8 @@ static inline jobject to_Font_safe(fz_context *ctx, JNIEnv *env, fz_font *font)
 	if (!ctx || !font)
 		return NULL;
 
+	fz_keep_font(ctx, font);
 	jfont = (*env)->NewObject(env, cls_Font, mid_Font_init, jlong_cast(font));
-	if (jfont)
-		fz_keep_font(ctx, font);
 
 	return jfont;
 }
@@ -854,11 +851,10 @@ static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 	if (!ctx || !img)
 		return NULL;
 
+	fz_keep_image(ctx, img);
 	jobj = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
 	if (!jobj)
 		fz_throw_java(ctx, env);
-
-	fz_keep_image(ctx, img);
 
 	return jobj;
 }
@@ -959,11 +955,10 @@ static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
 	if (!ctx || !path)
 		return NULL;
 
+	fz_keep_path(ctx, path);
 	jobj = (*env)->NewObject(env, cls_Path, mid_Path_init, jlong_cast(path));
 	if (!jobj)
 		fz_throw_java(ctx, env);
-
-	fz_keep_path(ctx, path);
 
 	return jobj;
 }
@@ -971,46 +966,31 @@ static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
 /* don't throw fitz exceptions */
 static inline jobject to_Document_safe(fz_context *ctx, JNIEnv *env, fz_document *doc)
 {
-	jobject jdoc;
-
 	if (!ctx || !doc)
 		return NULL;
 
-	jdoc = (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
-	if (jdoc)
-		fz_keep_document(ctx, doc);
-
-	return jdoc;
+	fz_keep_document(ctx, doc);
+	return (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
 }
 
 /* don't throw fitz exceptions */
 static inline jobject to_PDFDocument_safe(fz_context *ctx, JNIEnv *env, pdf_document *pdf)
 {
-	jobject jpdf;
-
 	if (!ctx || !pdf)
 		return NULL;
 
-	jpdf = (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
-	if (jpdf)
-		fz_keep_document(ctx, (fz_document *) pdf);
-
-	return jpdf;
+	fz_keep_document(ctx, (fz_document *) pdf);
+	return (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
 }
 
 /* don't throw fitz exceptions */
 static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_obj *obj)
 {
-	jobject jobj;
-
 	if (!ctx || !obj || !pdf)
 		return NULL;
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
-	if (jobj)
-		pdf_keep_obj(ctx, obj);
-
-	return jobj;
+	pdf_keep_obj(ctx, obj);
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
 }
 
 /* take ownership and don't throw fitz exceptions */
@@ -1056,11 +1036,10 @@ static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shd)
 	if (!ctx || !shd)
 		return NULL;
 
+	fz_keep_shade(ctx, shd);
 	jobj = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
 	if (!jobj)
 		fz_throw_java(ctx, env);
-
-	fz_keep_shade(ctx, shd);
 
 	return jobj;
 }
@@ -1072,11 +1051,10 @@ static inline jobject to_StrokeState(fz_context *ctx, JNIEnv *env, const fz_stro
 	if (!ctx || !state)
 		return NULL;
 
+	fz_keep_stroke_state(ctx, state);
 	jobj = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
 	if (!jobj)
 		fz_throw_java(ctx, env);
-
-	fz_keep_stroke_state(ctx, state);
 
 	return jobj;
 }
@@ -1106,11 +1084,10 @@ static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
 	if (!ctx)
 		return NULL;
 
+	fz_keep_text(ctx, text);
 	jobj = (*env)->NewObject(env, cls_Text, mid_Text_init, jlong_cast(text));
 	if (!jobj)
 		fz_throw_java(ctx, env);
-
-	fz_keep_text(ctx, text);
 
 	return jobj;
 }
