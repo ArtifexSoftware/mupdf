@@ -2791,21 +2791,9 @@ FUN(Pixmap_getSample)(JNIEnv *env, jobject self, jint x, jint y, jint k)
 
 	if (!ctx) return 0;
 
-	if (x < 0 || x >= pixmap->w)
-	{
-		jni_throw(env, FZ_ERROR_GENERIC, "X out of range");
-		return 0;
-	}
-	if (y < 0 || y >= pixmap->h)
-	{
-		jni_throw(env, FZ_ERROR_GENERIC, "Y out of range");
-		return 0;
-	}
-	if (k < 0 || k >= pixmap->n)
-	{
-		jni_throw(env, FZ_ERROR_GENERIC, "K out of range");
-		return 0;
-	}
+	if (x < 0 || x >= pixmap->w) { jni_throw_oob(env, "X out of range"); return 0; }
+	if (y < 0 || y >= pixmap->h) { jni_throw_oob(env, "Y out of range"); return 0; }
+	if (k < 0 || k >= pixmap->n) { jni_throw_oob(env, "K out of range"); return 0; }
 
 	return pixmap->samples[(x + y * pixmap->w) * pixmap->n + k];
 }
