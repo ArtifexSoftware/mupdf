@@ -60,6 +60,7 @@ static jclass cls_DocumentWriter;
 static jclass cls_Font;
 static jclass cls_Image;
 static jclass cls_IllegalArgumentException;
+static jclass cls_IOException;
 static jclass cls_IndexOutOfBoundsException;
 static jclass cls_Link;
 static jclass cls_Matrix;
@@ -221,6 +222,11 @@ static void jni_throw_oob(JNIEnv *env, const char *info)
 static void jni_throw_arg(JNIEnv *env, const char *info)
 {
 	(*env)->ThrowNew(env, cls_IllegalArgumentException, info);
+}
+
+static void jni_throw_io(JNIEnv *env, const char *info)
+{
+	(*env)->ThrowNew(env, cls_IOException, info);
 }
 
 /* Convert a java exception and throw into fitz. */
@@ -503,6 +509,7 @@ static int find_fids(JNIEnv *env)
 
 	cls_IndexOutOfBoundsException = get_class(&err, env, "java/lang/IndexOutOfBoundsException");
 	cls_IllegalArgumentException = get_class(&err, env, "java/lang/IllegalArgumentException");
+	cls_IOException = get_class(&err, env, "java/io/IOException");
 	cls_RuntimeException = get_class(&err, env, "java/lang/RuntimeException");
 
 	cls_OutOfMemoryError = get_class(&err, env, "java/lang/OutOfMemoryError");
@@ -524,6 +531,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Image);
 	(*env)->DeleteGlobalRef(env, cls_IndexOutOfBoundsException);
 	(*env)->DeleteGlobalRef(env, cls_IllegalArgumentException);
+	(*env)->DeleteGlobalRef(env, cls_IOException);
 	(*env)->DeleteGlobalRef(env, cls_Link);
 	(*env)->DeleteGlobalRef(env, cls_Matrix);
 	(*env)->DeleteGlobalRef(env, cls_NativeDevice);
@@ -4697,6 +4705,8 @@ FUN(Buffer_readBytes)(JNIEnv *env, jobject self, jint jat, jobject jbs)
 	len = fz_mini(len, remaining_input);
 
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+	if (!bs) { jni_throw_io(env, "cannot get bytes to read"); return -1; }
+
 	memcpy(bs, &buf->data[at], len);
 	(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
 
@@ -4729,6 +4739,8 @@ FUN(Buffer_readBytesInto)(JNIEnv *env, jobject self, jint jat, jobject jbs, jint
 	len = fz_mini(len, buf->len - at);
 
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+	if (!bs) { jni_throw_io(env, "cannot get bytes to read"); return -1; }
+
 	memcpy(&bs[off], &buf->data[at], len);
 	(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
 
@@ -4762,6 +4774,7 @@ FUN(Buffer_writeBytes)(JNIEnv *env, jobject self, jobject jbs)
 
 	len = (*env)->GetArrayLength(env, jbs);
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+	if (!bs) { jni_throw_io(env, "cannot get bytes to write"); return; }
 
 	fz_try(ctx)
 		fz_write_buffer(ctx, buf, bs, len);
@@ -4802,6 +4815,7 @@ FUN(Buffer_writeBytesFrom)(JNIEnv *env, jobject self, jobject jbs, jint joff, ji
 	}
 
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+	if (!bs) { jni_throw_io(env, "cannot get bytes to write"); return; }
 
 	fz_try(ctx)
 		fz_write_buffer(ctx, buf, &bs[off], len);
