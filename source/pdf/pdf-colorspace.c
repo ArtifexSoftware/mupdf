@@ -168,7 +168,7 @@ load_indexed(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 
 			fz_try(ctx)
 			{
-				file = pdf_open_stream(ctx, doc, pdf_to_num(ctx, lookupobj));
+				file = pdf_open_stream(ctx, lookupobj);
 				i = (int)fz_read(ctx, file, lookup, n);
 				if (i < n)
 					memset(lookup+i, 0, n-i);

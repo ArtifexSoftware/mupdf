@@ -146,7 +146,7 @@ static void savefont(pdf_obj *dict, int num)
 		return;
 	}
 
-	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, stream));
+	buf = pdf_load_stream(ctx, stream);
 	len = fz_buffer_storage(ctx, buf, &data);
 	fz_try(ctx)
 	{

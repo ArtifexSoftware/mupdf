@@ -110,7 +110,7 @@ pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj 
 			ref = pdf_new_indirect(ctx, dst, new_num, 0);
 			if (pdf_is_stream(ctx, obj_ref))
 			{
-				buffer = pdf_load_raw_stream(ctx, src, src_num);
+				buffer = pdf_load_raw_stream_number(ctx, src, src_num);
 				pdf_update_stream(ctx, dst, ref, buffer, 1);
 			}
 		}

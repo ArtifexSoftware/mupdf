@@ -692,8 +692,8 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 				{
 					unsigned char *dataa, *datab;
 					size_t lena, lenb;
-					sa = pdf_load_raw_stream(ctx, doc, num);
-					sb = pdf_load_raw_stream(ctx, doc, other);
+					sa = pdf_load_raw_stream_number(ctx, doc, num);
+					sb = pdf_load_raw_stream_number(ctx, doc, other);
 					lena = fz_buffer_storage(ctx, sa, &dataa);
 					lenb = fz_buffer_storage(ctx, sb, &datab);
 					if (lena == lenb && memcmp(dataa, datab, lena) == 0)
@@ -1631,7 +1631,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	pdf_obj *newlen;
 	pdf_obj *obj;
 
-	buf = pdf_load_raw_stream(ctx, doc, num);
+	buf = pdf_load_raw_stream_number(ctx, doc, num);
 
 	obj = pdf_copy_dict(ctx, obj_orig);
 

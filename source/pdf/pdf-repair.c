@@ -213,7 +213,7 @@ pdf_repair_obj_stm(fz_context *ctx, pdf_document *doc, int stm_num)
 
 		pdf_drop_obj(ctx, obj);
 
-		stm = pdf_open_stream(ctx, doc, stm_num);
+		stm = pdf_open_stream_number(ctx, doc, stm_num);
 
 		for (i = 0; i < count; i++)
 		{

@@ -778,7 +778,7 @@ static int get_matrix(fz_context *ctx, pdf_document *doc, pdf_xobject *form, int
 	pdf_lexbuf lbuf;
 	fz_stream *str;
 
-	str = pdf_open_stream(ctx, doc, pdf_to_num(ctx, form->obj));
+	str = pdf_open_stream(ctx, form->obj);
 
 	pdf_lexbuf_init(ctx, &lbuf, PDF_LEXBUF_SMALL);
 
@@ -1041,7 +1041,7 @@ static void update_marked_content(fz_context *ctx, pdf_document *doc, pdf_xobjec
 		int first = 1;
 
 		newbuf = fz_new_buffer(ctx, 0);
-		str_outer = pdf_open_stream(ctx, doc, pdf_to_num(ctx, form->obj));
+		str_outer = pdf_open_stream(ctx, form->obj);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
 		str_inner = fz_open_memory(ctx, buf, len);
 

@@ -1682,7 +1682,7 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 		numbuf = fz_calloc(ctx, count, sizeof(*numbuf));
 		ofsbuf = fz_calloc(ctx, count, sizeof(*ofsbuf));
 
-		stm = pdf_open_stream(ctx, doc, num);
+		stm = pdf_open_stream_number(ctx, doc, num);
 		for (i = 0; i < count; i++)
 		{
 			tok = pdf_lex(ctx, stm, buf);
@@ -2387,7 +2387,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		int least_shared_group_len, shared_group_len_num_bits;
 		int max_object_num = pdf_xref_len(ctx, doc);
 
-		stream = pdf_open_stream(ctx, doc, objnum);
+		stream = pdf_open_stream_number(ctx, doc, objnum);
 		dict = pdf_get_xref_entry(ctx, doc, objnum)->obj;
 		if (dict == NULL || !pdf_is_dict(ctx, dict))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "malformed hint object");

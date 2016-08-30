@@ -102,9 +102,9 @@ static void showstream(int num)
 	showcolumn = 0;
 
 	if (showdecode)
-		stm = pdf_open_stream(ctx, doc, num);
+		stm = pdf_open_stream_number(ctx, doc, num);
 	else
-		stm = pdf_open_raw_stream(ctx, doc, num);
+		stm = pdf_open_raw_stream_number(ctx, doc, num);
 
 	while (1)
 	{

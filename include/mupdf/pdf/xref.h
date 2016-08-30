@@ -80,10 +80,14 @@ pdf_obj *pdf_resolve_indirect(fz_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_resolve_indirect_chain(fz_context *ctx, pdf_obj *ref);
 pdf_obj *pdf_load_object(fz_context *ctx, pdf_document *doc, int num);
 
-fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_document *doc, int num);
-fz_buffer *pdf_load_stream(fz_context *ctx, pdf_document *doc, int num);
-fz_stream *pdf_open_raw_stream(fz_context *ctx, pdf_document *doc, int num);
-fz_stream *pdf_open_stream(fz_context *ctx, pdf_document *doc, int num);
+fz_buffer *pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num);
+fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_obj *ref);
+fz_buffer *pdf_load_stream_number(fz_context *ctx, pdf_document *doc, int num);
+fz_buffer *pdf_load_stream(fz_context *ctx, pdf_obj *ref);
+fz_stream *pdf_open_raw_stream_number(fz_context *ctx, pdf_document *doc, int num);
+fz_stream *pdf_open_raw_stream(fz_context *ctx, pdf_obj *ref);
+fz_stream *pdf_open_stream_number(fz_context *ctx, pdf_document *doc, int num);
+fz_stream *pdf_open_stream(fz_context *ctx, pdf_obj *ref);
 
 fz_stream *pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int length, fz_stream *chain, fz_compression_params *params);
 fz_compressed_buffer *pdf_load_compressed_stream(fz_context *ctx, pdf_document *doc, int num);

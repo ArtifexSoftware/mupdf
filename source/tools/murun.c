@@ -3366,15 +3366,22 @@ static void ffi_PDFObject_readStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	pdf_document *pdf;
 	fz_buffer *buf;
+	fz_try(ctx)
+		buf = pdf_load_stream(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushbuffer(J, buf);
+}
 
-	fz_try(ctx) {
-		if (!pdf_is_stream(ctx, obj))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "not a stream");
-		pdf = pdf_get_indirect_document(ctx, obj);
-		buf = pdf_load_stream(ctx, pdf, pdf_to_num(ctx, obj));
-	} fz_catch(ctx)
+static void ffi_PDFObject_readRawStream(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	fz_buffer *buf;
+	fz_try(ctx)
+		buf = pdf_load_raw_stream(ctx, obj);
+	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushbuffer(J, buf);
 }
@@ -3417,23 +3424,6 @@ static void ffi_PDFObject_writeRawStream(js_State *J)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
 		rethrow(J);
-}
-
-static void ffi_PDFObject_readRawStream(js_State *J)
-{
-	fz_context *ctx = js_getcontext(J);
-	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	pdf_document *pdf;
-	fz_buffer *buf;
-
-	fz_try(ctx) {
-		if (!pdf_is_stream(ctx, obj))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "not a stream");
-		pdf = pdf_get_indirect_document(ctx, obj);
-		buf = pdf_load_raw_stream(ctx, pdf, pdf_to_num(ctx, obj));
-	} fz_catch(ctx)
-		rethrow(J);
-	ffi_pushbuffer(J, buf);
 }
 
 static void ffi_PDFObject_forEach(js_State *J)

@@ -221,7 +221,7 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 	fz_var(colorspace);
 	fz_var(mask);
 
-	buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, dict));
+	buf = pdf_load_stream(ctx, dict);
 
 	/* FIXME: We can't handle decode arrays for indexed images currently */
 	fz_try(ctx)

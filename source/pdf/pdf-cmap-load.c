@@ -37,7 +37,7 @@ pdf_load_embedded_cmap(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj)
 
 	fz_try(ctx)
 	{
-		file = pdf_open_stream(ctx, doc, pdf_to_num(ctx, stmobj));
+		file = pdf_open_stream(ctx, stmobj);
 		cmap = pdf_load_cmap(ctx, file);
 
 		obj = pdf_dict_get(ctx, stmobj, PDF_NAME_WMode);

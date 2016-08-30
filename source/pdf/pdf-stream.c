@@ -68,7 +68,7 @@ pdf_load_jbig2_globals(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-		buf = pdf_load_stream(ctx, doc, pdf_to_num(ctx, dict));
+		buf = pdf_load_stream(ctx, dict);
 		globals = fz_load_jbig2_globals(ctx, buf);
 		pdf_store_item(ctx, dict, globals, buf->len);
 	}
@@ -382,7 +382,7 @@ pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *di
  * Open a stream for reading the raw (compressed but decrypted) data.
  */
 fz_stream *
-pdf_open_raw_stream(fz_context *ctx, pdf_document *doc, int num)
+pdf_open_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
 	pdf_xref_entry *x;
 	int orig_num, orig_gen;
@@ -418,7 +418,7 @@ pdf_open_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
  * Using doc->file while a stream is open is a Bad idea.
  */
 fz_stream *
-pdf_open_stream(fz_context *ctx, pdf_document *doc, int num)
+pdf_open_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
 	return pdf_open_image_stream(ctx, doc, num, NULL);
 }
@@ -435,7 +435,7 @@ pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj
  * Load raw (compressed but decrypted) contents of a stream into buf.
  */
 fz_buffer *
-pdf_load_raw_stream(fz_context *ctx, pdf_document *doc, int num)
+pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
 	fz_stream *stm;
 	pdf_obj *dict;
@@ -456,7 +456,7 @@ pdf_load_raw_stream(fz_context *ctx, pdf_document *doc, int num)
 
 	pdf_drop_obj(ctx, dict);
 
-	stm = pdf_open_raw_stream(ctx, doc, num);
+	stm = pdf_open_raw_stream_number(ctx, doc, num);
 
 	buf = fz_read_all(ctx, stm, len);
 
@@ -588,7 +588,7 @@ pdf_load_image_stream(fz_context *ctx, pdf_document *doc, int num, fz_compressio
  * Load uncompressed contents of a stream into buf.
  */
 fz_buffer *
-pdf_load_stream(fz_context *ctx, pdf_document *doc, int num)
+pdf_load_stream_number(fz_context *ctx, pdf_document *doc, int num)
 {
 	return pdf_load_image_stream(ctx, doc, num, NULL, NULL);
 }
@@ -631,7 +631,7 @@ pdf_open_object_array(fz_context *ctx, pdf_document *doc, pdf_obj *list)
 		pdf_obj *obj = pdf_array_get(ctx, list, i);
 		fz_try(ctx)
 		{
-			fz_concat_push(ctx, stm, pdf_open_stream(ctx, doc, pdf_to_num(ctx, obj)));
+			fz_concat_push(ctx, stm, pdf_open_stream(ctx, obj));
 		}
 		fz_catch(ctx)
 		{
@@ -657,4 +657,32 @@ pdf_open_contents_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		return pdf_open_image_stream(ctx, doc, num, NULL);
 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "pdf object stream missing (%d 0 R)", num);
+}
+
+fz_buffer *pdf_load_raw_stream(fz_context *ctx, pdf_obj *ref)
+{
+	if (pdf_is_stream(ctx, ref))
+		return pdf_load_raw_stream_number(ctx, pdf_get_indirect_document(ctx, ref), pdf_to_num(ctx, ref));
+	fz_throw(ctx, FZ_ERROR_GENERIC, "object is not a stream");
+}
+
+fz_buffer *pdf_load_stream(fz_context *ctx, pdf_obj *ref)
+{
+	if (pdf_is_stream(ctx, ref))
+		return pdf_load_stream_number(ctx, pdf_get_indirect_document(ctx, ref), pdf_to_num(ctx, ref));
+	fz_throw(ctx, FZ_ERROR_GENERIC, "object is not a stream");
+}
+
+fz_stream *pdf_open_raw_stream(fz_context *ctx, pdf_obj *ref)
+{
+	if (pdf_is_stream(ctx, ref))
+		return pdf_open_raw_stream_number(ctx, pdf_get_indirect_document(ctx, ref), pdf_to_num(ctx, ref));
+	fz_throw(ctx, FZ_ERROR_GENERIC, "object is not a stream");
+}
+
+fz_stream *pdf_open_stream(fz_context *ctx, pdf_obj *ref)
+{
+	if (pdf_is_stream(ctx, ref))
+		return pdf_open_stream_number(ctx, pdf_get_indirect_document(ctx, ref), pdf_to_num(ctx, ref));
+	fz_throw(ctx, FZ_ERROR_GENERIC, "object is not a stream");
 }
