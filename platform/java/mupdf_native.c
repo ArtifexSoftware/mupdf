@@ -57,7 +57,6 @@ static jclass cls_Device;
 static jclass cls_DisplayList;
 static jclass cls_Document;
 static jclass cls_DocumentWriter;
-static jclass cls_Exception;
 static jclass cls_Font;
 static jclass cls_Image;
 static jclass cls_IllegalArgumentException;
@@ -77,6 +76,7 @@ static jclass cls_PDFObject;
 static jclass cls_Pixmap;
 static jclass cls_Point;
 static jclass cls_Rect;
+static jclass cls_RuntimeException;
 static jclass cls_Shade;
 static jclass cls_StrokeState;
 static jclass cls_StructuredText;
@@ -200,7 +200,7 @@ static void jni_throw(JNIEnv *env, int type, const char *mess)
 	if (type == FZ_ERROR_TRYLATER)
 		(*env)->ThrowNew(env, cls_TryLaterException, mess);
 	else
-		(*env)->ThrowNew(env, cls_Exception, mess);
+		(*env)->ThrowNew(env, cls_RuntimeException, mess);
 }
 
 static void jni_rethrow(JNIEnv *env, fz_context *ctx)
@@ -501,9 +501,9 @@ static int find_fids(JNIEnv *env)
 	cls_Object = get_class(&err, env, "java/lang/Object");
 	mid_Object_toString = get_method(&err, env, "toString", "()Ljava/lang/String;");
 
-	cls_Exception = get_class(&err, env, "java/lang/Exception");
 	cls_IndexOutOfBoundsException = get_class(&err, env, "java/lang/IndexOutOfBoundsException");
 	cls_IllegalArgumentException = get_class(&err, env, "java/lang/IllegalArgumentException");
+	cls_RuntimeException = get_class(&err, env, "java/lang/RuntimeException");
 
 	cls_OutOfMemoryError = get_class(&err, env, "java/lang/OutOfMemoryError");
 
@@ -520,7 +520,6 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_DisplayList);
 	(*env)->DeleteGlobalRef(env, cls_Document);
 	(*env)->DeleteGlobalRef(env, cls_DocumentWriter);
-	(*env)->DeleteGlobalRef(env, cls_Exception);
 	(*env)->DeleteGlobalRef(env, cls_Font);
 	(*env)->DeleteGlobalRef(env, cls_Image);
 	(*env)->DeleteGlobalRef(env, cls_IndexOutOfBoundsException);
@@ -540,6 +539,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Pixmap);
 	(*env)->DeleteGlobalRef(env, cls_Point);
 	(*env)->DeleteGlobalRef(env, cls_Rect);
+	(*env)->DeleteGlobalRef(env, cls_RuntimeException);
 	(*env)->DeleteGlobalRef(env, cls_Shade);
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
 	(*env)->DeleteGlobalRef(env, cls_StructuredText);

@@ -2737,6 +2737,8 @@ extern "C" {
 #define com_artifex_mupdf_fitz_TryLaterException_serialVersionUID -3042686055658047285LL
 #undef com_artifex_mupdf_fitz_TryLaterException_serialVersionUID
 #define com_artifex_mupdf_fitz_TryLaterException_serialVersionUID -3387516993124229948LL
+#undef com_artifex_mupdf_fitz_TryLaterException_serialVersionUID
+#define com_artifex_mupdf_fitz_TryLaterException_serialVersionUID -7034897190745766939LL
 #ifdef __cplusplus
 }
 #endif
