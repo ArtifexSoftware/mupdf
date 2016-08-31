@@ -174,6 +174,33 @@ static int ft_char_index(FT_Face face, int cid)
 	return gid;
 }
 
+static int ft_name_index(FT_Face face, char *name)
+{
+	int code = FT_Get_Name_Index(face, name);
+	if (code == 0)
+	{
+		int unicode = pdf_lookup_agl(name);
+		if (unicode)
+		{
+			const char **dupnames = pdf_lookup_agl_duplicates(unicode);
+			while (*dupnames)
+			{
+				code = FT_Get_Name_Index(face, (char*)*dupnames);
+				if (code)
+					break;
+				dupnames++;
+			}
+			if (code == 0)
+			{
+				char buf[10];
+				sprintf(buf, "uni%04X", unicode);
+				code = FT_Get_Name_Index(face, buf);
+			}
+		}
+	}
+	return code;
+}
+
 static int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
 {
 	if (fontdesc->to_ttf_cmap)
@@ -528,6 +555,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 	FT_CharMap cmap;
 	int symbolic;
 	int kind;
+	int glyph;
 
 	char *estrings[256];
 	char ebuffer[256][32];
@@ -694,25 +722,9 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 			{
 				if (estrings[i])
 				{
-					etable[i] = FT_Get_Name_Index(face, estrings[i]);
-					if (etable[i] == 0)
-					{
-						int aglcode = pdf_lookup_agl(estrings[i]);
-						const char **dupnames = pdf_lookup_agl_duplicates(aglcode);
-						while (*dupnames)
-						{
-							etable[i] = FT_Get_Name_Index(face, (char*)*dupnames);
-							if (etable[i])
-								break;
-							dupnames++;
-						}
-						if (etable[i] == 0)
-						{
-							char buf[10];
-							sprintf(buf, "uni%04X", aglcode);
-							etable[i] = FT_Get_Name_Index(face, buf);
-						}
-					}
+					glyph = ft_name_index(face, estrings[i]);
+					if (glyph > 0)
+						etable[i] = glyph;
 				}
 			}
 		}
@@ -727,11 +739,13 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 				{
 					if (estrings[i])
 					{
-						int aglcode = pdf_lookup_agl(estrings[i]);
-						if (!aglcode)
-							etable[i] = FT_Get_Name_Index(face, estrings[i]);
+						int unicode = pdf_lookup_agl(estrings[i]);
+						if (unicode > 0)
+							glyph = ft_char_index(face, unicode);
 						else
-							etable[i] = ft_char_index(face, aglcode);
+							glyph = ft_name_index(face, estrings[i]);
+						if (glyph > 0)
+							etable[i] = glyph;
 					}
 				}
 			}
@@ -743,11 +757,13 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 				{
 					if (estrings[i])
 					{
-						k = lookup_mre_code(estrings[i]);
-						if (k <= 0)
-							etable[i] = FT_Get_Name_Index(face, estrings[i]);
+						int mrcode = lookup_mre_code(estrings[i]);
+						if (mrcode > 0)
+							glyph = ft_char_index(face, mrcode);
 						else
-							etable[i] = ft_char_index(face, k);
+							glyph = ft_name_index(face, estrings[i]);
+						if (glyph > 0)
+							etable[i] = glyph;
 					}
 				}
 			}
@@ -759,9 +775,9 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 				{
 					if (estrings[i])
 					{
-						etable[i] = FT_Get_Name_Index(face, estrings[i]);
-						if (etable[i] == 0)
-							etable[i] = ft_char_index(face, i);
+						glyph = ft_name_index(face, estrings[i]);
+						if (glyph > 0)
+							etable[i] = glyph;
 					}
 				}
 			}
