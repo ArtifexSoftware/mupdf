@@ -344,6 +344,11 @@ public class DocPageView extends View implements Callback
 		new RenderTask().execute(params, null, null);
 	}
 
+	public void stopRender()
+	{
+		//  TODO ??
+	}
+
 	private void cachePage()
 	{
 		Cookie cookie = new Cookie();
@@ -637,10 +642,13 @@ public class DocPageView extends View implements Callback
 
 	private StructuredText.TextBlock blockContainingPoint(StructuredText.TextBlock blocks[], Point p)
 	{
-		for (StructuredText.TextBlock block : blocks)
+		if (blocks != null)
 		{
-			if (block.bbox.contains(p.x, p.y))
-				return block;
+			for (StructuredText.TextBlock block : blocks)
+			{
+				if (block.bbox.contains(p.x, p.y))
+					return block;
+			}
 		}
 
 		return null;
@@ -648,10 +656,13 @@ public class DocPageView extends View implements Callback
 
 	private StructuredText.TextLine lineContainingPoint(StructuredText.TextLine lines[], Point p)
 	{
-		for (StructuredText.TextLine line : lines)
+		if (lines != null)
 		{
-			if (line.bbox.contains(p.x, p.y))
-				return line;
+			for (StructuredText.TextLine line : lines)
+			{
+				if (line.bbox.contains(p.x, p.y))
+					return line;
+			}
 		}
 
 		return null;
@@ -659,10 +670,13 @@ public class DocPageView extends View implements Callback
 
 	private StructuredText.TextSpan spanContainingPoint(StructuredText.TextSpan spans[], Point p)
 	{
-		for (StructuredText.TextSpan span : spans)
+		if (spans != null)
 		{
-			if (span.bbox.contains(p.x, p.y))
-				return span;
+			for (StructuredText.TextSpan span : spans)
+			{
+				if (span.bbox.contains(p.x, p.y))
+					return span;
+			}
 		}
 
 		return null;
@@ -670,10 +684,13 @@ public class DocPageView extends View implements Callback
 
 	private StructuredText.TextChar charContainingPoint(StructuredText.TextChar chars[], Point p)
 	{
-		for (StructuredText.TextChar tchar : chars)
+		if (chars != null)
 		{
-			if (tchar.bbox.contains(p.x, p.y))
-				return tchar;
+			for (StructuredText.TextChar tchar : chars)
+			{
+				if (tchar.bbox.contains(p.x, p.y))
+					return tchar;
+			}
 		}
 
 		return null;

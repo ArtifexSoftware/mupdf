@@ -47,7 +47,10 @@
                     android:layout_height="match_parent">
                 </TabWidget>
 
+                <!--NOTE: undo and redo are "gone" for the time being.-->
+
                 <ImageButton
+                    android:visibility="gone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
@@ -58,6 +61,7 @@
                     android:layout_gravity="center_vertical" />
 
                 <ImageButton
+                    android:visibility="gone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"

@@ -38,4 +38,9 @@ public class Page
 	public native Rect[] search(String needle);
 
 	public native byte[] textAsHtml();
+
+	public native int countSeparations();
+	public native Separation getSeparation(int index);
+	public native void enableSeparation(int index, boolean enabled);
+
 }

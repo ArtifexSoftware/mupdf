@@ -44,7 +44,7 @@ public class DocViewBase
 
 	//  bitmaps for rendering
 	//  these are created by the activity and set using setBitmaps()
-	private final static double OVERSIZE_FACTOR = 1.4;
+	private final static double OVERSIZE_FACTOR = 1.0;
 	private final Bitmap[] bitmaps = {null, null};
 
 	private int bitmapIndex = 0;
@@ -446,34 +446,42 @@ public class DocViewBase
 		return true;
 	}
 
+	public boolean shouldAdjustScaleEnd()
+	{
+		return true;
+	}
+
 	public void onScaleEnd(ScaleGestureDetector detector)
 	{
-		//  When a pinch-scale is done, we want to get n-across
-		//  to fit properly.
-
-		//  get current viewport
-		Rect viewport = new Rect();
-		getGlobalVisibleRect(viewport);
-
-		//  if we're at one column and wider than the viewport,
-		//  leave it alone.
-		if (mLastLayoutColumns == 0 && mPageCollectionWidth >= viewport.width())
+		if (shouldAdjustScaleEnd())
 		{
-			mScaling = false;
-			return;
+			//  When a pinch-scale is done, we want to get n-across
+			//  to fit properly.
+
+			//  get current viewport
+			Rect viewport = new Rect();
+			getGlobalVisibleRect(viewport);
+
+			//  if we're at one column and wider than the viewport,
+			//  leave it alone.
+			if (mLastLayoutColumns == 0 && mPageCollectionWidth >= viewport.width())
+			{
+				mScaling = false;
+				return;
+			}
+
+			//  ratio of the viewport width to layout width
+			float ratio = ((float) (viewport.width())) / ((float) (mPageCollectionWidth));
+
+			//  set a new scale factor
+			mScale *= ratio;
+			scaleChildren();
+
+			//  scroll so the left edged is flush to the viewport.
+			mXScroll += getScrollX();
+
+			requestLayout();
 		}
-
-		//  ratio of the viewport width to layout width
-		float ratio = ((float) (viewport.width())) / ((float) (mPageCollectionWidth));
-
-		//  set a new scale factor
-		mScale *= ratio;
-		scaleChildren();
-
-		//  scroll so the left edged is flush to the viewport.
-		mXScroll += getScrollX();
-
-		requestLayout();
 
 		mScaling = false;
 	}
@@ -509,7 +517,6 @@ public class DocViewBase
 
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom)
 	{
-
 		super.onLayout(changed, left, top, right, bottom);
 
 		if (!mStarted)
@@ -795,6 +802,11 @@ public class DocViewBase
 		return v;
 	}
 
+	protected void clearChildViews()
+	{
+		mChildViews.clear();
+	}
+
 	protected View getViewFromAdapter(int index)
 	{
 		return getAdapter().getView(index, getCached(), this);
@@ -867,6 +879,10 @@ public class DocViewBase
 								// If this phase of rendering has completed and another has
 								// been requested, start it now
 								renderPages();
+							}
+							else {
+								if (mIdleRenderListener != null)
+									mIdleRenderListener.onIdle();
 							}
 						}
 					}
@@ -1021,6 +1037,14 @@ public class DocViewBase
 		int pagelist_width_percentage = getContext().getResources().getInteger(R.integer.pagelist_width_percentage);
 
 		onSizeChange((float) (page_width_percentage + pagelist_width_percentage) / (float) (page_width_percentage));
+	}
+
+	private IdleRenderListener mIdleRenderListener = null;
+	public void setIdleRenderListener(IdleRenderListener l) {mIdleRenderListener=l;}
+
+	public interface IdleRenderListener
+	{
+		public void onIdle();
 	}
 
 }

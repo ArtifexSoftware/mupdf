@@ -1,15 +1,19 @@
 package com.artifex.mupdf.android;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -18,6 +22,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,6 +31,12 @@ import com.artifex.mupdf.fitz.Document;
 import com.artifex.mupdf.fitz.Link;
 import com.artifex.mupdf.fitz.Outline;
 import com.artifex.mupdf.fitz.R;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.UUID;
 
 public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeListener, View.OnClickListener, DocView.SelectionChangeListener
 {
@@ -65,6 +76,8 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private ImageButton mDrawButton;
 	private ImageButton mLineColorButton;
 	private ImageButton mLineThicknessButton;
+
+	private ImageButton mProofButton;
 
 	public DocActivityView(Context context)
 	{
@@ -341,6 +354,9 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		mOpenInButton = (ImageButton)findViewById(R.id.open_in_button);
 		mOpenInButton.setOnClickListener(this);
 
+		mProofButton = (ImageButton)findViewById(R.id.proof_button);
+		mProofButton.setOnClickListener(this);
+
 		//  this listener will
 		mSearchText.setOnEditorActionListener(new TextView.OnEditorActionListener()
 		{
@@ -555,6 +571,10 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			onLineColorButton();
 		if (v == mLineThicknessButton)
 			onLineThicknessButton();
+
+		if (v == mProofButton)
+			onProof();
+
 	}
 
 	public void onSearchNextButton()
@@ -744,6 +764,147 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 						}
 					});
 		}
+	}
+
+	private void onProof()
+	{
+		proofSetup();
+		if (!proofSupported())
+		{
+			Utilities.showMessage((Activity)getContext(), "gprf not supported", "gprf not supported");
+			return;
+		}
+
+
+
+
+
+		//  show a dialog to collect the resolution and profiles
+		final Activity activity = (Activity)getContext();
+
+		final Dialog dialog = new Dialog(activity);
+		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+		dialog.setContentView(R.layout.proof_dialog);
+
+		final Spinner sp1 = (Spinner)(dialog.findViewById(R.id.print_profile_spinner));
+		final Spinner sp2 = (Spinner)(dialog.findViewById(R.id.display_profile_spinner));
+		final Spinner sp3 = (Spinner)(dialog.findViewById(R.id.resolution_spinner));
+
+		dialog.findViewById(R.id.cancel_button).setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+				//  Cancel
+				dialog.dismiss();
+			}
+		});
+
+		dialog.findViewById(R.id.ok_button).setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+				//  OK
+				dialog.dismiss();
+				doProof(sp1.getSelectedItemPosition(), sp2.getSelectedItemPosition(), sp3.getSelectedItemPosition());
+
+			}
+		});
+
+		dialog.show();
+	}
+
+	private static boolean proofSetupDone = false;
+	private static boolean proofCodeSupported = false;
+	private static boolean proofGsLibLoaded = false;
+	private static void proofSetup()
+	{
+		if (proofSetupDone)
+			return;
+
+		proofCodeSupported = (com.artifex.mupdf.fitz.Context.gprfSupportedNative()==1);
+
+		if (proofCodeSupported)
+		{
+			try
+			{
+				System.loadLibrary("gs");
+				proofGsLibLoaded = true;
+			}
+			catch (UnsatisfiedLinkError e)
+			{
+			}
+		}
+
+		proofSetupDone = true;
+	}
+
+	private static boolean proofSupported()
+	{
+		return (proofCodeSupported && proofGsLibLoaded);
+	}
+
+	private void doProof(int printProfileIndex, int displayProfileIndex, int resolutionIndex)
+	{
+		//  get the resolution
+		String[] resolutions = getResources().getStringArray(R.array.proof_resolutions);
+		String resolutionString = resolutions[resolutionIndex];
+		int resolution = Integer.parseInt(resolutionString);
+
+		//  get the print profile as a temp file
+		String[] printProfiles = getResources().getStringArray(R.array.proof_print_profile_files);
+		String printProfileFile = printProfiles[printProfileIndex];
+		String printProfilePath   = extractProfileAsset("profiles/CMYK/" + printProfileFile);
+
+		//  get the display profile as a temp file
+		String[] displayProfiles = getResources().getStringArray(R.array.proof_display_profile_files);
+		String displayProfileFile = displayProfiles[displayProfileIndex];
+		String displayProfilePath = extractProfileAsset("profiles/RGB/"  + displayProfileFile);
+
+		//  what page are we doing?
+		int thePage = mDocView.getMostVisiblePage();
+
+		String proofFile = mDocView.getDoc().makeProof(mDocView.getDoc().getPath(), printProfilePath, displayProfilePath, resolution);
+
+		Uri uri = Uri.parse("file://" + proofFile);
+		Intent intent = new Intent((Activity)getContext(), ProofActivity.class);
+		intent.setAction(Intent.ACTION_VIEW);
+		intent.setData(uri);
+		// add the current page so it can be found when the activity is running
+		intent.putExtra("startingPage", thePage);
+		((Activity)getContext()).startActivity(intent);
+	}
+
+	private String extractProfileAsset(String profile)
+	{
+		try
+		{
+			InputStream inStream = getContext().getAssets().open(profile);
+			String tempfile = getContext().getExternalCacheDir() + "/shared/" + UUID.randomUUID() + ".profile";
+			new File(tempfile).mkdirs();
+			Utilities.deleteFile(tempfile);
+
+			FileOutputStream outStream = new FileOutputStream(tempfile);
+			byte[] buffer = new byte[4096]; // To hold file contents
+			int bytes_read; // How many bytes in buffer
+
+			// Read a chunk of bytes into the buffer, then write them out,
+			// looping until we reach the end of the file (when read() returns
+			// -1). Note the combination of assignment and comparison in this
+			// while loop. This is a common I/O programming idiom.
+			while ((bytes_read = inStream.read(buffer)) != -1)
+				// Read until EOF
+				outStream.write(buffer, 0, bytes_read); // write
+
+			return tempfile;
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+
+		return "";
 	}
 
 	private void onDeleteButton()

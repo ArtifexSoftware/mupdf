@@ -8,4 +8,9 @@
         <item name="android:layout_margin">12dp</item>
     </style>
 
+    <style name="proofButton" parent="@style/Widget.AppCompat.Button.Borderless">
+        <item name="android:textColor">#ffffffff</item>
+        <item name="android:background">#ff535353</item>
+    </style>
+
 </resources>

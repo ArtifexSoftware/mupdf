@@ -697,6 +697,16 @@ FUN(Context_initNative)(JNIEnv *env, jclass cls)
 	return 0;
 }
 
+JNIEXPORT jint JNICALL
+FUN(Context_gprfSupportedNative)(JNIEnv * env, jclass class)
+{
+#ifdef FZ_ENABLE_GPRF
+	return JNI_TRUE;
+#else
+	return JNI_FALSE;
+#endif
+}
+
 /* Conversion functions: C to Java. These all throw fitz exceptions. */
 
 static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *annot)
@@ -3658,6 +3668,118 @@ FUN(Annotation_toDisplayList)(JNIEnv *env, jobject self)
 
 /* Document interface */
 
+static char *tmp_gproof_path(const char *path)
+{
+	FILE *f;
+	int i;
+	char *buf = malloc(strlen(path) + 20 + 1);
+	if (!buf)
+		return NULL;
+
+	for (i = 0; i < 10000; i++)
+	{
+		sprintf(buf, "%s.%d.gproof", path, i);
+
+		LOGE("Trying for %s\n", buf);
+		f = fopen(buf, "r");
+		if (f != NULL)
+		{
+			fclose(f);
+			continue;
+		}
+
+		f = fopen(buf, "w");
+		if (f != NULL)
+		{
+			fclose(f);
+			break;
+		}
+	}
+	if (i == 10000)
+	{
+		LOGE("Failed to find temp gproof name");
+		free(buf);
+		return NULL;
+	}
+
+	LOGE("Rewritten to %s\n", buf);
+	return buf;
+}
+
+JNIEXPORT jstring JNICALL
+FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstring jPrintProfile, jstring jDisplayProfile, int inResolution)
+{
+#ifdef FZ_ENABLE_GPRF
+
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+
+	char *tmp;
+	jstring ret;
+	const char *currentPath = NULL;
+	const char *printProfile = NULL;
+	const char *displayProfile = NULL;
+
+	if (ctx == NULL || doc == NULL || jCurrentPath == NULL || jPrintProfile == NULL || jDisplayProfile == NULL)
+		return NULL;
+
+	currentPath = (*env)->GetStringUTFChars(env, jCurrentPath, NULL);
+	if (currentPath == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "Document_proofNative failed");
+		return NULL;
+	}
+
+	printProfile = (*env)->GetStringUTFChars(env, jPrintProfile, NULL);
+	if (printProfile == NULL)
+	{
+		jni_throw(env, FZ_ERROR_GENERIC, "Document_proofNative failed");
+		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
+		return NULL;
+	}
+
+	displayProfile = (*env)->GetStringUTFChars(env, jDisplayProfile, NULL);
+	if (displayProfile == NULL)
+	{
+		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
+		(*env)->ReleaseStringUTFChars(env, jPrintProfile, printProfile);
+		jni_throw(env, FZ_ERROR_GENERIC, "Document_proofNative failed");
+		return NULL;
+	}
+
+	tmp = tmp_gproof_path(currentPath);
+	if (!tmp)
+	{
+		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
+		(*env)->ReleaseStringUTFChars(env, jPrintProfile, printProfile);
+		(*env)->ReleaseStringUTFChars(env, jDisplayProfile, displayProfile);
+		return NULL;
+	}
+
+	fz_try(ctx)
+	{
+		LOGE("Creating %s\n", tmp);
+		fz_save_gproof(ctx, currentPath, doc, tmp, inResolution, printProfile, displayProfile);
+		ret = (*env)->NewStringUTF(env, tmp);
+	}
+	fz_always(ctx)
+	{
+		free(tmp);
+		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
+		(*env)->ReleaseStringUTFChars(env, jPrintProfile, printProfile);
+		(*env)->ReleaseStringUTFChars(env, jDisplayProfile, displayProfile);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+	return ret;
+#else
+	return NULL;
+#endif
+}
+
 JNIEXPORT void JNICALL
 FUN(Document_finalize)(JNIEnv *env, jobject self)
 {
@@ -3926,6 +4048,87 @@ FUN(Page_finalize)(JNIEnv *env, jobject self)
 	if (!ctx) return;
 
 	fz_drop_page(ctx, page);
+}
+
+JNIEXPORT int JNICALL
+FUN(Page_countSeparations)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	int nSep;
+
+	if (ctx==NULL || page==NULL)
+	{
+		LOGI("Page_countSeparations fail %x %x", (unsigned int)ctx, (unsigned int)page);
+		return 0;
+	}
+
+	nSep = fz_count_separations_on_page(ctx, page);
+
+	LOGI("Page_countSeparations %d", nSep);
+
+	return nSep;
+}
+
+JNIEXPORT void JNICALL
+FUN(Page_enableSeparation)(JNIEnv *env, jobject self, int sep, jboolean enable)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+	int i;
+
+	if (ctx==NULL || page==NULL)
+	{
+		LOGI("Page_enableSeparation fail %x %x", (unsigned int)ctx, (unsigned int)page);
+		return;
+	}
+
+	fz_control_separation_on_page(ctx, page, sep, !enable);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(Page_getSeparation)(JNIEnv *env, jobject self, int sep)
+{
+	fz_context *ctx = get_context(env);
+	fz_page *page = from_Page(env, self);
+
+	const char *name;
+	char rgba[4];
+	unsigned int bgra;
+	unsigned int cmyk;
+	jobject jname;
+	jclass sepClass;
+	jmethodID ctor;
+	int i;
+	int err;
+
+	if (ctx==NULL || page==NULL)
+	{
+		LOGI("Page_getSeparation fail %x %x", (unsigned int)ctx, (unsigned int)page);
+		return 0;
+	}
+
+	err = 0;
+	sepClass = get_class(&err, env, PKG"Separation");
+	if (sepClass == NULL)
+	{
+		LOGI("Page_getSeparation failed to get class for Separation");
+		return NULL;
+	}
+
+	ctor = (*env)->GetMethodID(env, sepClass, "<init>", "(Ljava/lang/String;II)V");
+	if (ctor == NULL)
+	{
+		LOGI("Page_getSeparation failed to get ctor for Separation");
+		return NULL;
+	}
+
+	/* MuPDF returns RGBA as bytes. Android wants a packed BGRA int. */
+	name = fz_get_separation_on_page(ctx, page, sep, (unsigned int *)(&rgba[0]), &cmyk);
+	bgra = (rgba[0] << 16) | (rgba[1]<<8) | rgba[2] | (rgba[3]<<24);
+	jname = name ? (*env)->NewStringUTF(env, name) : NULL;
+
+	return (*env)->NewObject(env, sepClass, ctor, jname, bgra, cmyk);
 }
 
 JNIEXPORT jobject JNICALL

@@ -140,7 +140,8 @@
             <!--a divider-->
             <View
                 android:layout_width="1dp"
-                android:paddingRight="3dp" android:paddingLeft="3dp"
+                android:paddingRight="3dp"
+                android:paddingLeft="3dp"
                 android:layout_height="match_parent"
                 android:background="#FF8E8F90" />
 

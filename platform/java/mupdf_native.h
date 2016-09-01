@@ -282,6 +282,14 @@ extern "C" {
 JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Context_initNative
   (JNIEnv *, jclass);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Context
+ * Method:    gprfSupportedNative
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Context_gprfSupportedNative
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
@@ -688,6 +696,14 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_isUnencryptedPDF
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_toPDFDocument
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    proofNative
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_Document_proofNative
+  (JNIEnv *, jobject, jstring, jstring, jstring, jint);
 
 #ifdef __cplusplus
 }
@@ -2093,6 +2109,30 @@ JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_Page_search
 JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_Page_textAsHtml
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    countSeparations
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Page_countSeparations
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    getSeparation
+ * Signature: (I)Lcom/artifex/mupdf/fitz/Separation;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_getSeparation
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Page
+ * Method:    enableSeparation
+ * Signature: (IZ)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Page_enableSeparation
+  (JNIEnv *, jobject, jint, jboolean);
+
 #ifdef __cplusplus
 }
 #endif
@@ -2412,6 +2452,17 @@ extern "C" {
 
 #ifndef _Included_com_artifex_mupdf_fitz_RectI
 #define _Included_com_artifex_mupdf_fitz_RectI
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_Separation */
+
+#ifndef _Included_com_artifex_mupdf_fitz_Separation
+#define _Included_com_artifex_mupdf_fitz_Separation
 #ifdef __cplusplus
 extern "C" {
 #endif

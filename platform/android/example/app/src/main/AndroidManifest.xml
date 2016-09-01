@@ -39,7 +39,7 @@
 			</intent-filter>
 		</activity>
 
-		<activity android:name=".DocViewActivity">
+		<activity android:name=".DocViewActivity" android:configChanges="orientation|screenSize">
 		</activity>
 	</application>
 

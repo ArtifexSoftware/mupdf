@@ -24,7 +24,10 @@ public class Document
 	private native long newNativeWithBuffer(byte buffer[], String magic);
 	// private native long newNativeWithRandomAccessFile(RandomAccessFile file, String magic);
 
+	private String mPath=null;
+	public String getPath() {return mPath;}
 	public Document(String filename) {
+		mPath = filename;
 		pointer = newNativeWithPath(filename);
 	}
 
@@ -49,4 +52,12 @@ public class Document
 	public native boolean isUnencryptedPDF();
 
 	public native PDFDocument toPDFDocument();
+
+	public String makeProof (String currentPath, String printProfile, String displayProfile, int resolution)
+	{
+		String proofFile = proofNative( currentPath,  printProfile,  displayProfile,  resolution);
+		return proofFile;
+	}
+
+	public native String proofNative (String currentPath, String printProfile, String displayProfile, int resolution);
 }

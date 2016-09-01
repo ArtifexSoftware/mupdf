@@ -10,6 +10,7 @@ public class Context
 {
 	private static boolean inited = false;
 	private static native int initNative();
+	public static native int gprfSupportedNative();
 
 	public static void init() {
 		if (!inited) {

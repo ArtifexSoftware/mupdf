@@ -16,4 +16,44 @@
 	<string name="background">Background</string>
 	<string name="color">Color</string>
 
+	<string name="proof">Proof</string>
+
+	<string-array name="proof_print_profiles">
+		<item>US Web Coated SWOP</item>
+		<item>Coated FOGRA39</item>
+		<item>Euroscale Coated</item>
+		<item>Japan Web Coated</item>
+	</string-array>
+
+	<string-array name="proof_print_profile_files">
+		<item>USWebCoatedSWOP.icc</item>
+		<item>CoatedFOGRA39.icc</item>
+		<item>EuroscaleCoated.icc</item>
+		<item>JapanWebCoated.icc</item>
+	</string-array>
+
+	<string-array name="proof_display_profiles">
+		<item>sRGB</item>
+		<item>Adobe RGB 1998</item>
+		<item>CIE RGB</item>
+		<item>Wide Gamut RGB</item>
+	</string-array>
+
+	<string-array name="proof_display_profile_files">
+		<item>sRGB Color Space Profile.icm</item>
+		<item>AdobeRGB1998.icc</item>
+		<item>CIERGB.icc</item>
+		<item>WideGamutRGB.icc</item>
+	</string-array>
+
+	<string-array name="proof_resolutions">
+		<item>72</item>
+		<item>96</item>
+		<item>150</item>
+		<item>300</item>
+		<item>600</item>
+		<item>1200</item>
+		<item>2400</item>
+	</string-array>
+
 </resources>
