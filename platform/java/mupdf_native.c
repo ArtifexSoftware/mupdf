@@ -6522,7 +6522,6 @@ FUN(PDFObject_readStream)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
-	pdf_document *pdf = NULL;
 	fz_buffer *buf = NULL;
 	jbyteArray arr = NULL;
 
@@ -6533,10 +6532,7 @@ FUN(PDFObject_readStream)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		if (!pdf_is_stream(ctx, obj))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "not a stream");
-		pdf = pdf_get_indirect_document(ctx, obj);
-		buf = pdf_load_stream(ctx, pdf, pdf_to_num(ctx, obj));
+		buf = pdf_load_stream(ctx, obj);
 
 		arr = (*env)->NewByteArray(env, buf->len);
 		if (arr == NULL)
@@ -6560,7 +6556,6 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
-	pdf_document *pdf = NULL;
 	fz_buffer *buf = NULL;
 	jbyteArray arr = NULL;
 
@@ -6571,10 +6566,7 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		if (!pdf_is_stream(ctx, obj))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "not a stream");
-		pdf = pdf_get_indirect_document(ctx, obj);
-		buf = pdf_load_raw_stream(ctx, pdf, pdf_to_num(ctx, obj));
+		buf = pdf_load_raw_stream(ctx, obj);
 
 		arr = (*env)->NewByteArray(env, buf->len);
 		if (arr == NULL)
