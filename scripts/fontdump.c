@@ -73,6 +73,14 @@ main(int argc, char **argv)
 		else
 			basename = argv[i];
 
+		if (strlen(basename) >= sizeof(fontname))
+		{
+			fclose(fi);
+			fclose(fo);
+			fprintf(stderr, "fontdump: filename '%s' too long\n", basename);
+			return 1;
+		}
+
 		strcpy(fontname, basename);
 		for (p = fontname; *p; ++p)
 		{
