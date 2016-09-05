@@ -138,6 +138,10 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	gstate->ctm = gstate->softmask_ctm;
 
 	mask_colorspace = pdf_xobject_colorspace(ctx, softmask);
+
+	if (gstate->luminosity && !mask_colorspace)
+		mask_colorspace = fz_device_gray(ctx);
+
 	fz_try(ctx)
 	{
 		fz_begin_mask(ctx, pr->dev, &mask_bbox, gstate->luminosity, mask_colorspace, gstate->softmask_bc);
