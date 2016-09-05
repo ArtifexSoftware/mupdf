@@ -58,16 +58,16 @@ static jclass cls_DisplayList;
 static jclass cls_Document;
 static jclass cls_DocumentWriter;
 static jclass cls_Font;
-static jclass cls_Image;
 static jclass cls_IllegalArgumentException;
-static jclass cls_IOException;
+static jclass cls_Image;
 static jclass cls_IndexOutOfBoundsException;
+static jclass cls_IOException;
 static jclass cls_Link;
 static jclass cls_Matrix;
 static jclass cls_NativeDevice;
 static jclass cls_Object;
-static jclass cls_OutOfMemoryError;
 static jclass cls_Outline;
+static jclass cls_OutOfMemoryError;
 static jclass cls_Page;
 static jclass cls_Path;
 static jclass cls_PathWalker;
@@ -123,13 +123,13 @@ static jfieldID fid_Rect_y1;
 static jfieldID fid_Shade_pointer;
 static jfieldID fid_StrokeState_pointer;
 static jfieldID fid_StructuredText_pointer;
-static jfieldID fid_Text_pointer;
 static jfieldID fid_TextBlock_bbox;
 static jfieldID fid_TextBlock_lines;
 static jfieldID fid_TextChar_bbox;
 static jfieldID fid_TextChar_c;
 static jfieldID fid_TextLine_bbox;
 static jfieldID fid_TextLine_spans;
+static jfieldID fid_Text_pointer;
 static jfieldID fid_TextSpan_bbox;
 static jfieldID fid_TextSpan_chars;
 
@@ -166,11 +166,11 @@ static jmethodID mid_Matrix_init;
 static jmethodID mid_Object_toString;
 static jmethodID mid_Outline_init;
 static jmethodID mid_Page_init;
+static jmethodID mid_Path_init;
 static jmethodID mid_PathWalker_closePath;
 static jmethodID mid_PathWalker_curveTo;
 static jmethodID mid_PathWalker_lineTo;
 static jmethodID mid_PathWalker_moveTo;
-static jmethodID mid_Path_init;
 static jmethodID mid_PDFDocument_init;
 static jmethodID mid_PDFGraftMap_init;
 static jmethodID mid_PDFObject_init;
@@ -180,9 +180,9 @@ static jmethodID mid_Rect_init;
 static jmethodID mid_Shade_init;
 static jmethodID mid_StrokeState_init;
 static jmethodID mid_StructuredText_init;
-static jmethodID mid_Text_init;
 static jmethodID mid_TextBlock_init;
 static jmethodID mid_TextChar_init;
+static jmethodID mid_Text_init;
 static jmethodID mid_TextLine_init;
 static jmethodID mid_TextSpan_init;
 static jmethodID mid_TextWalker_showGlyph;
@@ -261,8 +261,7 @@ static jclass get_class(int *failed, JNIEnv *env, const char *name)
 {
 	jclass local;
 
-	if (*failed)
-		return NULL;
+	if (*failed) return NULL;
 
 	current_class_name = name;
 	local = (*env)->FindClass(env, name);
@@ -290,8 +289,7 @@ static jfieldID get_field(int *failed, JNIEnv *env, const char *field, const cha
 {
 	jfieldID fid;
 
-	if (*failed || !current_class)
-		return NULL;
+	if (*failed || !current_class) return NULL;
 
 	fid = (*env)->GetFieldID(env, current_class, field, sig);
 	if (fid == 0)
@@ -307,8 +305,7 @@ static jmethodID get_method(int *failed, JNIEnv *env, const char *method, const 
 {
 	jmethodID mid;
 
-	if (*failed || !current_class)
-		return NULL;
+	if (*failed || !current_class) return NULL;
 
 	mid = (*env)->GetMethodID(env, current_class, method, sig);
 	if (mid == 0)
@@ -324,8 +321,7 @@ static jmethodID get_static_method(int *failed, JNIEnv *env, const char *method,
 {
 	jmethodID mid;
 
-	if (*failed || !current_class)
-		return NULL;
+	if (*failed || !current_class) return NULL;
 
 	mid = (*env)->GetStaticMethodID(env, current_class, method, sig);
 	if (mid == 0)
@@ -380,10 +376,6 @@ static int find_fids(JNIEnv *env)
 	mid_Device_beginTile = get_method(&err, env, "beginTile", "(L"PKG"Rect;L"PKG"Rect;FFL"PKG"Matrix;I)I");
 	mid_Device_endTile = get_method(&err, env, "endTile", "()V");
 
-	cls_NativeDevice = get_class(&err, env, PKG"NativeDevice");
-	fid_NativeDevice_nativeResource = get_field(&err, env, "nativeResource", "Ljava/lang/Object;");
-	fid_NativeDevice_nativeInfo = get_field(&err, env, "nativeInfo", "J");
-
 	cls_DisplayList = get_class(&err, env, PKG"DisplayList");
 	fid_DisplayList_pointer = get_field(&err, env, "pointer", "J");
 	mid_DisplayList_init = get_method(&err, env, "<init>", "(J)V");
@@ -418,6 +410,10 @@ static int find_fids(JNIEnv *env)
 	fid_Matrix_f = get_field(&err, env, "f", "F");
 	mid_Matrix_init = get_method(&err, env, "<init>", "(FFFFFF)V");
 
+	cls_NativeDevice = get_class(&err, env, PKG"NativeDevice");
+	fid_NativeDevice_nativeResource = get_field(&err, env, "nativeResource", "Ljava/lang/Object;");
+	fid_NativeDevice_nativeInfo = get_field(&err, env, "nativeInfo", "J");
+
 	cls_Outline = get_class(&err, env, PKG"Outline");
 	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;ILjava/lang/String;[L"PKG"Outline;)V");
 
@@ -428,6 +424,12 @@ static int find_fids(JNIEnv *env)
 	cls_Path = get_class(&err, env, PKG"Path");
 	fid_Path_pointer = get_field(&err, env, "pointer", "J");
 	mid_Path_init = get_method(&err, env, "<init>", "(J)V");
+
+	cls_PathWalker = get_class(&err, env, PKG"PathWalker");
+	mid_PathWalker_moveTo = get_method(&err, env, "moveTo", "(FF)V");
+	mid_PathWalker_lineTo = get_method(&err, env, "lineTo", "(FF)V");
+	mid_PathWalker_curveTo = get_method(&err, env, "curveTo", "(FFFFFF)V");
+	mid_PathWalker_closePath = get_method(&err, env, "closePath", "()V");
 
 	cls_PDFDocument = get_class(&err, env, PKG"PDFDocument");
 	fid_PDFDocument_pointer = get_field(&err, env, "pointer", "J");
@@ -447,12 +449,6 @@ static int find_fids(JNIEnv *env)
 
 	cls_Point = get_class(&err, env, PKG"Point");
 	mid_Point_init = get_method(&err, env, "<init>", "(FF)V");
-
-	cls_PathWalker = get_class(&err, env, PKG"PathWalker");
-	mid_PathWalker_moveTo = get_method(&err, env, "moveTo", "(FF)V");
-	mid_PathWalker_lineTo = get_method(&err, env, "lineTo", "(FF)V");
-	mid_PathWalker_curveTo = get_method(&err, env, "curveTo", "(FFFFFF)V");
-	mid_PathWalker_closePath = get_method(&err, env, "closePath", "()V");
 
 	cls_Rect = get_class(&err, env, PKG"Rect");
 	fid_Rect_x0 = get_field(&err, env, "x0", "F");
@@ -528,16 +524,16 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Document);
 	(*env)->DeleteGlobalRef(env, cls_DocumentWriter);
 	(*env)->DeleteGlobalRef(env, cls_Font);
+	(*env)->DeleteGlobalRef(env, cls_IllegalArgumentException);
 	(*env)->DeleteGlobalRef(env, cls_Image);
 	(*env)->DeleteGlobalRef(env, cls_IndexOutOfBoundsException);
-	(*env)->DeleteGlobalRef(env, cls_IllegalArgumentException);
 	(*env)->DeleteGlobalRef(env, cls_IOException);
 	(*env)->DeleteGlobalRef(env, cls_Link);
 	(*env)->DeleteGlobalRef(env, cls_Matrix);
 	(*env)->DeleteGlobalRef(env, cls_NativeDevice);
 	(*env)->DeleteGlobalRef(env, cls_Object);
-	(*env)->DeleteGlobalRef(env, cls_OutOfMemoryError);
 	(*env)->DeleteGlobalRef(env, cls_Outline);
+	(*env)->DeleteGlobalRef(env, cls_OutOfMemoryError);
 	(*env)->DeleteGlobalRef(env, cls_Page);
 	(*env)->DeleteGlobalRef(env, cls_Path);
 	(*env)->DeleteGlobalRef(env, cls_PathWalker);
@@ -703,70 +699,11 @@ FUN(Context_initNative)(JNIEnv *env, jclass cls)
 
 /* Conversion functions: C to Java. These all throw fitz exceptions. */
 
-static inline jobject to_Matrix(fz_context *ctx, JNIEnv *env, const fz_matrix *mat)
-{
-	jobject jobj;
-
-	if (!ctx)
-		return NULL;
-
-	jobj = (*env)->NewObject(env, cls_Matrix, mid_Matrix_init, mat->a, mat->b, mat->c, mat->d, mat->e, mat->f);
-	if (!jobj)
-		fz_throw_java(ctx, env);
-
-	return jobj;
-}
-
-static inline jobject to_Rect(fz_context *ctx, JNIEnv *env, const fz_rect *rect)
-{
-	jobject jobj;
-
-	if (!ctx)
-		return NULL;
-
-	jobj = (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
-	if (!jobj)
-		fz_throw_java(ctx, env);
-
-	return jobj;
-}
-
-static inline jobject to_Point(fz_context *ctx, JNIEnv *env, fz_point point)
-{
-	jobject jpoint;
-
-	if (!ctx)
-		return NULL;
-
-	jpoint = (*env)->NewObject(env, cls_Point, mid_Point_init, point.x, point.y);
-	if (!jpoint)
-		fz_throw_java(ctx, env);
-
-	return jpoint;
-}
-
-static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const float *color, jint n)
-{
-	jfloatArray arr;
-
-	if (!ctx)
-		return NULL;
-
-	arr = (*env)->NewFloatArray(env, n);
-	if (!arr)
-		fz_throw_java(ctx, env);
-
-	(*env)->SetFloatArrayRegion(env, arr, 0, n, color);
-
-	return arr;
-}
-
 static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *annot)
 {
 	jobject jannot;
 
-	if (!ctx || !annot)
-		return NULL;
+	if (!ctx || !annot) return NULL;
 
 	fz_keep_annot(ctx, annot);
 	jannot = (*env)->NewObject(env, cls_Annot, mid_Annot_init, jlong_cast(annot));
@@ -780,8 +717,7 @@ static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace 
 {
 	jobject jobj;
 
-	if (!ctx || !cs)
-		return NULL;
+	if (!ctx || !cs) return NULL;
 
 	fz_keep_colorspace(ctx, cs);
 	jobj = (*env)->CallStaticObjectMethod(env, cls_ColorSpace, mid_ColorSpace_fromPointer, jlong_cast(cs));
@@ -791,80 +727,11 @@ static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace 
 	return jobj;
 }
 
-/* take ownership and don't throw fitz exceptions */
-static inline jobject to_Device_safe_own(fz_context *ctx, JNIEnv *env, fz_device *device)
-{
-	jobject jdev;
-
-	if (!ctx || !device)
-		return NULL;
-
-	jdev = (*env)->NewObject(env, cls_DisplayList, mid_Device_init, jlong_cast(device));
-	if (!jdev)
-	{
-		fz_drop_device(ctx, device);
-		return NULL;
-	}
-
-	return jdev;
-}
-
-/* take ownership and don't throw fitz exceptions */
-static inline jobject to_DisplayList_safe_own(fz_context *ctx, JNIEnv *env, fz_display_list *list)
-{
-	jobject jlist;
-
-	if (!ctx || !list)
-		return NULL;
-
-	jlist = (*env)->NewObject(env, cls_DisplayList, mid_DisplayList_init, jlong_cast(list));
-	if (!jlist)
-	{
-		fz_drop_display_list(ctx, list);
-		return NULL;
-	}
-
-	return jlist;
-}
-
-/* don't throw fitz exceptions */
-static inline jobject to_Font_safe(fz_context *ctx, JNIEnv *env, fz_font *font)
-{
-	jobject jfont;
-
-	if (!ctx || !font)
-		return NULL;
-
-	fz_keep_font(ctx, font);
-	jfont = (*env)->NewObject(env, cls_Font, mid_Font_init, jlong_cast(font));
-
-	return jfont;
-}
-
-/* take ownership and don't throw fitz exceptions */
-static inline jobject to_PDFGraftMap_safe_own(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_graft_map *map)
-{
-	jobject jmap;
-
-	if (!ctx || !map || !pdf)
-		return NULL;
-
-	jmap = (*env)->NewObject(env, cls_PDFGraftMap, mid_PDFGraftMap_init, jlong_cast(map), pdf);
-	if (!jmap)
-	{
-		pdf_drop_graft_map(ctx, map);
-		return NULL;
-	}
-
-	return jmap;
-}
-
 static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 {
 	jobject jobj;
 
-	if (!ctx || !img)
-		return NULL;
+	if (!ctx || !img) return NULL;
 
 	fz_keep_image(ctx, img);
 	jobj = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
@@ -874,7 +741,138 @@ static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 	return jobj;
 }
 
-/* don't throw fitz exceptions */
+static inline jobject to_Matrix(fz_context *ctx, JNIEnv *env, const fz_matrix *mat)
+{
+	jobject jobj;
+
+	if (!ctx) return NULL;
+
+	jobj = (*env)->NewObject(env, cls_Matrix, mid_Matrix_init, mat->a, mat->b, mat->c, mat->d, mat->e, mat->f);
+	if (!jobj)
+		fz_throw_java(ctx, env);
+
+	return jobj;
+}
+
+static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
+{
+	jobject jobj;
+
+	if (!ctx || !path) return NULL;
+
+	fz_keep_path(ctx, path);
+	jobj = (*env)->NewObject(env, cls_Path, mid_Path_init, jlong_cast(path));
+	if (!jobj)
+		fz_throw_java(ctx, env);
+
+	return jobj;
+}
+
+static inline jobject to_Point(fz_context *ctx, JNIEnv *env, fz_point point)
+{
+	jobject jpoint;
+
+	if (!ctx) return NULL;
+
+	jpoint = (*env)->NewObject(env, cls_Point, mid_Point_init, point.x, point.y);
+	if (!jpoint)
+		fz_throw_java(ctx, env);
+
+	return jpoint;
+}
+
+static inline jobject to_Rect(fz_context *ctx, JNIEnv *env, const fz_rect *rect)
+{
+	jobject jobj;
+
+	if (!ctx) return NULL;
+
+	jobj = (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
+	if (!jobj)
+		fz_throw_java(ctx, env);
+
+	return jobj;
+}
+
+static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shd)
+{
+	jobject jobj;
+
+	if (!ctx || !shd) return NULL;
+
+	fz_keep_shade(ctx, shd);
+	jobj = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
+	if (!jobj)
+		fz_throw_java(ctx, env);
+
+	return jobj;
+}
+
+static inline jobject to_StrokeState(fz_context *ctx, JNIEnv *env, const fz_stroke_state *state)
+{
+	jobject jobj;
+
+	if (!ctx || !state) return NULL;
+
+	fz_keep_stroke_state(ctx, state);
+	jobj = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
+	if (!jobj)
+		fz_throw_java(ctx, env);
+
+	return jobj;
+}
+
+static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
+{
+	jobject jobj;
+
+	if (!ctx) return NULL;
+
+	fz_keep_text(ctx, text);
+	jobj = (*env)->NewObject(env, cls_Text, mid_Text_init, jlong_cast(text));
+	if (!jobj)
+		fz_throw_java(ctx, env);
+
+	return jobj;
+}
+
+static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const float *color, jint n)
+{
+	jfloatArray arr;
+
+	if (!ctx) return NULL;
+
+	arr = (*env)->NewFloatArray(env, n);
+	if (!arr)
+		fz_throw_java(ctx, env);
+
+	(*env)->SetFloatArrayRegion(env, arr, 0, n, color);
+
+	return arr;
+}
+
+/* Conversion functions: C to Java. None of these throw fitz exceptions. */
+
+static inline jobject to_Document_safe(fz_context *ctx, JNIEnv *env, fz_document *doc)
+{
+	if (!ctx || !doc) return NULL;
+
+	fz_keep_document(ctx, doc);
+	return (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
+}
+
+static inline jobject to_Font_safe(fz_context *ctx, JNIEnv *env, fz_font *font)
+{
+	jobject jfont;
+
+	if (!ctx || !font) return NULL;
+
+	fz_keep_font(ctx, font);
+	jfont = (*env)->NewObject(env, cls_Font, mid_Font_init, jlong_cast(font));
+
+	return jfont;
+}
+
 static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *outline)
 {
 	jobject joutline = NULL;
@@ -883,8 +881,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *
 	jsize count = 0;
 	fz_outline *counter = outline;
 
-	if (!ctx || !outline)
-		return NULL;
+	if (!ctx || !outline) return NULL;
 
 	while (counter)
 	{
@@ -951,13 +948,61 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *
 	return jarr;
 }
 
-/* take ownership and don't throw fitz exceptions */
+static inline jobject to_PDFDocument_safe(fz_context *ctx, JNIEnv *env, pdf_document *pdf)
+{
+	if (!ctx || !pdf) return NULL;
+
+	fz_keep_document(ctx, (fz_document *) pdf);
+	return (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
+}
+
+static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_obj *obj)
+{
+	if (!ctx || !obj || !pdf) return NULL;
+
+	pdf_keep_obj(ctx, obj);
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
+}
+
+/* Conversion functions: C to Java. Take ownership of fitz object. None of these throw fitz exceptions. */
+
+static inline jobject to_Device_safe_own(fz_context *ctx, JNIEnv *env, fz_device *device)
+{
+	jobject jdev;
+
+	if (!ctx || !device) return NULL;
+
+	jdev = (*env)->NewObject(env, cls_DisplayList, mid_Device_init, jlong_cast(device));
+	if (!jdev)
+	{
+		fz_drop_device(ctx, device);
+		return NULL;
+	}
+
+	return jdev;
+}
+
+static inline jobject to_DisplayList_safe_own(fz_context *ctx, JNIEnv *env, fz_display_list *list)
+{
+	jobject jlist;
+
+	if (!ctx || !list) return NULL;
+
+	jlist = (*env)->NewObject(env, cls_DisplayList, mid_DisplayList_init, jlong_cast(list));
+	if (!jlist)
+	{
+		fz_drop_display_list(ctx, list);
+		return NULL;
+	}
+
+	return jlist;
+}
+
 static inline jobject to_Page_safe_own(fz_context *ctx, JNIEnv *env, fz_page *page)
 {
 	jobject jobj;
 
-	if (!ctx || !page)
-		return NULL;
+	if (!ctx || !page) return NULL;
 
 	jobj = (*env)->NewObject(env, cls_Page, mid_Page_init, jlong_cast(page));
 	if (!jobj)
@@ -969,58 +1014,27 @@ static inline jobject to_Page_safe_own(fz_context *ctx, JNIEnv *env, fz_page *pa
 	return jobj;
 }
 
-static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
+static inline jobject to_PDFGraftMap_safe_own(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_graft_map *map)
 {
-	jobject jobj;
+	jobject jmap;
 
-	if (!ctx || !path)
+	if (!ctx || !map || !pdf) return NULL;
+
+	jmap = (*env)->NewObject(env, cls_PDFGraftMap, mid_PDFGraftMap_init, jlong_cast(map), pdf);
+	if (!jmap)
+	{
+		pdf_drop_graft_map(ctx, map);
 		return NULL;
+	}
 
-	fz_keep_path(ctx, path);
-	jobj = (*env)->NewObject(env, cls_Path, mid_Path_init, jlong_cast(path));
-	if (!jobj)
-		fz_throw_java(ctx, env);
-
-	return jobj;
+	return jmap;
 }
 
-/* don't throw fitz exceptions */
-static inline jobject to_Document_safe(fz_context *ctx, JNIEnv *env, fz_document *doc)
-{
-	if (!ctx || !doc)
-		return NULL;
-
-	fz_keep_document(ctx, doc);
-	return (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
-}
-
-/* don't throw fitz exceptions */
-static inline jobject to_PDFDocument_safe(fz_context *ctx, JNIEnv *env, pdf_document *pdf)
-{
-	if (!ctx || !pdf)
-		return NULL;
-
-	fz_keep_document(ctx, (fz_document *) pdf);
-	return (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
-}
-
-/* don't throw fitz exceptions */
-static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_obj *obj)
-{
-	if (!ctx || !obj || !pdf)
-		return NULL;
-
-	pdf_keep_obj(ctx, obj);
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
-}
-
-/* take ownership and don't throw fitz exceptions */
 static inline jobject to_PDFObject_safe_own(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_obj *obj)
 {
 	jobject jobj;
 
-	if (!ctx || !obj || !pdf)
-		return NULL;
+	if (!ctx || !obj || !pdf) return NULL;
 
 	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
 	if (!jobj)
@@ -1032,13 +1046,11 @@ static inline jobject to_PDFObject_safe_own(fz_context *ctx, JNIEnv *env, jobjec
 	return jobj;
 }
 
-/* take ownership and don't throw fitz exceptions */
 static inline jobject to_Pixmap_safe_own(fz_context *ctx, JNIEnv *env, fz_pixmap *pixmap)
 {
 	jobject jobj;
 
-	if (!ctx || !pixmap)
-		return NULL;
+	if (!ctx || !pixmap) return NULL;
 
 	jobj = (*env)->NewObject(env, cls_Pixmap, mid_Pixmap_init, jlong_cast(pixmap));
 	if (!jobj)
@@ -1050,43 +1062,11 @@ static inline jobject to_Pixmap_safe_own(fz_context *ctx, JNIEnv *env, fz_pixmap
 	return jobj;
 }
 
-static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shd)
-{
-	jobject jobj;
-
-	if (!ctx || !shd)
-		return NULL;
-
-	fz_keep_shade(ctx, shd);
-	jobj = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
-	if (!jobj)
-		fz_throw_java(ctx, env);
-
-	return jobj;
-}
-
-static inline jobject to_StrokeState(fz_context *ctx, JNIEnv *env, const fz_stroke_state *state)
-{
-	jobject jobj;
-
-	if (!ctx || !state)
-		return NULL;
-
-	fz_keep_stroke_state(ctx, state);
-	jobj = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
-	if (!jobj)
-		fz_throw_java(ctx, env);
-
-	return jobj;
-}
-
-/* take ownership and don't throw fitz exceptions */
 static inline jobject to_StructuredText_safe_own(fz_context *ctx, JNIEnv *env, fz_stext_page *text)
 {
 	jobject jtext;
 
-	if (!ctx || !text)
-		return NULL;
+	if (!ctx || !text) return NULL;
 
 	jtext = (*env)->NewObject(env, cls_StructuredText, mid_StructuredText_init, jlong_cast(text));
 	if (!jtext)
@@ -1098,22 +1078,25 @@ static inline jobject to_StructuredText_safe_own(fz_context *ctx, JNIEnv *env, f
 	return jtext;
 }
 
-static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
-{
-	jobject jobj;
-
-	if (!ctx)
-		return NULL;
-
-	fz_keep_text(ctx, text);
-	jobj = (*env)->NewObject(env, cls_Text, mid_Text_init, jlong_cast(text));
-	if (!jobj)
-		fz_throw_java(ctx, env);
-
-	return jobj;
-}
-
 /* Conversion functions: Java to C. These all throw java exceptions. */
+
+static inline void from_jfloatArray(JNIEnv *env, float *color, jint n, jfloatArray jcolor)
+{
+	jsize len;
+
+	if (!jcolor)
+		len = 0;
+	else
+	{
+		len = (*env)->GetArrayLength(env, jcolor);
+		if (len > n)
+			len = n;
+		(*env)->GetFloatArrayRegion(env, jcolor, 0, len, color);
+	}
+
+	if (len < n)
+		memset(color+len, 0, (n - len) * sizeof(float));
+}
 
 static inline fz_matrix from_Matrix(JNIEnv *env, jobject jmat)
 {
@@ -1147,161 +1130,123 @@ static inline fz_rect from_Rect(JNIEnv *env, jobject jrect)
 	return rect;
 }
 
-static inline void from_jfloatArray(JNIEnv *env, float *color, jint n, jfloatArray jcolor)
-{
-	jsize len;
-
-	if (!jcolor)
-		len = 0;
-	else
-	{
-		len = (*env)->GetArrayLength(env, jcolor);
-		if (len > n)
-			len = n;
-		(*env)->GetFloatArrayRegion(env, jcolor, 0, len, color);
-	}
-
-	if (len < n)
-		memset(color+len, 0, (n - len) * sizeof(float));
-}
-
 static inline fz_annot *from_Annotation(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_annot *, (*env)->GetLongField(env, jobj, fid_Annot_pointer));
 }
 
 static inline fz_buffer *from_Buffer(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_buffer *, (*env)->GetLongField(env, jobj, fid_Buffer_pointer));
-}
-
-static inline fz_cookie *from_Cookie(JNIEnv *env, jobject jobj)
-{
-	if (!jobj)
-		return NULL;
-	return CAST(fz_cookie *, (*env)->GetLongField(env, jobj, fid_Cookie_pointer));
 }
 
 static inline fz_colorspace *from_ColorSpace(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_colorspace *, (*env)->GetLongField(env, jobj, fid_ColorSpace_pointer));
+}
+
+static inline fz_cookie *from_Cookie(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(fz_cookie *, (*env)->GetLongField(env, jobj, fid_Cookie_pointer));
 }
 
 static fz_device *from_Device(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_device *, (*env)->GetLongField(env, jobj, fid_Device_pointer));
 }
 
 static inline fz_display_list *from_DisplayList(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_display_list *, (*env)->GetLongField(env, jobj, fid_DisplayList_pointer));
 }
 
 static inline fz_document *from_Document(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_document *, (*env)->GetLongField(env, jobj, fid_Document_pointer));
 }
 
 static inline fz_document_writer *from_DocumentWriter(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_document_writer *, (*env)->GetLongField(env, jobj, fid_DocumentWriter_pointer));
-}
-
-static inline pdf_document *from_PDFDocument(JNIEnv *env, jobject jobj)
-{
-	if (!jobj)
-		return NULL;
-	return CAST(pdf_document *, (*env)->GetLongField(env, jobj, fid_PDFDocument_pointer));
-}
-
-static inline pdf_graft_map *from_PDFGraftMap(JNIEnv *env, jobject jobj)
-{
-	if (!jobj)
-		return NULL;
-	return CAST(pdf_graft_map *, (*env)->GetLongField(env, jobj, fid_PDFGraftMap_pointer));
-}
-
-static inline pdf_obj *from_PDFObject(JNIEnv *env, jobject jobj)
-{
-	if (!jobj)
-		return NULL;
-	return CAST(pdf_obj *, (*env)->GetLongField(env, jobj, fid_PDFObject_pointer));
 }
 
 static inline fz_font *from_Font(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_font *, (*env)->GetLongField(env, jobj, fid_Font_pointer));
 }
 
 static inline fz_image *from_Image(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_image *, (*env)->GetLongField(env, jobj, fid_Image_pointer));
 }
 
 static inline fz_page *from_Page(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_page *, (*env)->GetLongField(env, jobj, fid_Page_pointer));
 }
 
 static inline fz_path *from_Path(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_path *, (*env)->GetLongField(env, jobj, fid_Path_pointer));
+}
+
+static inline pdf_document *from_PDFDocument(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(pdf_document *, (*env)->GetLongField(env, jobj, fid_PDFDocument_pointer));
+}
+
+static inline pdf_graft_map *from_PDFGraftMap(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(pdf_graft_map *, (*env)->GetLongField(env, jobj, fid_PDFGraftMap_pointer));
+}
+
+static inline pdf_obj *from_PDFObject(JNIEnv *env, jobject jobj)
+{
+	if (!jobj) return NULL;
+	return CAST(pdf_obj *, (*env)->GetLongField(env, jobj, fid_PDFObject_pointer));
 }
 
 static inline fz_pixmap *from_Pixmap(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_pixmap *, (*env)->GetLongField(env, jobj, fid_Pixmap_pointer));
 }
 
 static inline fz_shade *from_Shade(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_shade *, (*env)->GetLongField(env, jobj, fid_Shade_pointer));
 }
 
 static inline fz_stroke_state *from_StrokeState(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_stroke_state *, (*env)->GetLongField(env, jobj, fid_StrokeState_pointer));
 }
 
 static inline fz_stext_page *from_StructuredText(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_stext_page *, (*env)->GetLongField(env, jobj, fid_StructuredText_pointer));
 }
 
 static inline fz_text *from_Text(JNIEnv *env, jobject jobj)
 {
-	if (!jobj)
-		return NULL;
+	if (!jobj) return NULL;
 	return CAST(fz_text *, (*env)->GetLongField(env, jobj, fid_Text_pointer));
 }
 
@@ -2280,8 +2225,7 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 	NativeDeviceInfo *ninfo = NULL;
 	fz_irect clip, pixbbox;
 
-	if (!ctx)
-		return 0;
+	if (!ctx) return 0;
 
 	fz_var(pixmap);
 	fz_var(ninfo);
@@ -2355,7 +2299,7 @@ static void androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 
 	if (AndroidBitmap_lockPixels(env, info->object, (void **)&pixels) < 0)
 	{
-		jni_throw(env, FZ_ERROR_GENERIC, "Bitmap lock failed in DrawDevice call");
+		jni_throw(env, FZ_ERROR_GENERIC, "bitmap lock failed in DrawDevice call");
 		return;
 	}
 
@@ -2372,7 +2316,7 @@ static void androidDrawDevice_unlock(JNIEnv *env, NativeDeviceInfo *info)
 
 	if (AndroidBitmap_unlockPixels(env, info->object) < 0)
 	{
-		jni_throw(env, FZ_ERROR_GENERIC, "Bitmap unlock failed in DrawDevice call");
+		jni_throw(env, FZ_ERROR_GENERIC, "bitmap unlock failed in DrawDevice call");
 	}
 }
 
@@ -2409,9 +2353,6 @@ FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitm
 	return device;
 }
 
-#endif
-
-#ifdef HAVE_ANDROID
 JNIEXPORT jlong JNICALL
 FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong jmask)
 {
@@ -2444,7 +2385,7 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 
 		pixmap = fz_new_pixmap(ctx, fz_device_rgb(ctx), info.width, info.height, 1);
 		if (AndroidBitmap_lockPixels(env, jbitmap, &pixels) < 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Bitmap lock failed in new Image");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "bitmap lock failed in new Image");
 		memcpy(pixmap->samples, pixels, info.width * info.height * 4);
 		(void)AndroidBitmap_unlockPixels(env, jbitmap);
 
@@ -2775,8 +2716,7 @@ FUN(Pixmap_getSamples)(JNIEnv *env, jobject self)
 	if (!ctx) return NULL;
 
 	arr = (*env)->NewByteArray(env, size);
-	if (!arr)
-		return NULL;
+	if (!arr) return NULL;
 
 	(*env)->SetByteArrayRegion(env, arr, 0, size, (const jbyte *)pixmap->samples);
 
@@ -2791,9 +2731,9 @@ FUN(Pixmap_getSample)(JNIEnv *env, jobject self, jint x, jint y, jint k)
 
 	if (!ctx) return 0;
 
-	if (x < 0 || x >= pixmap->w) { jni_throw_oob(env, "X out of range"); return 0; }
-	if (y < 0 || y >= pixmap->h) { jni_throw_oob(env, "Y out of range"); return 0; }
-	if (k < 0 || k >= pixmap->n) { jni_throw_oob(env, "K out of range"); return 0; }
+	if (x < 0 || x >= pixmap->w) { jni_throw_oob(env, "x out of range"); return 0; }
+	if (y < 0 || y >= pixmap->h) { jni_throw_oob(env, "y out of range"); return 0; }
+	if (k < 0 || k >= pixmap->n) { jni_throw_oob(env, "k out of range"); return 0; }
 
 	return pixmap->samples[(x + y * pixmap->w) * pixmap->n + k];
 }
@@ -2821,8 +2761,7 @@ FUN(Pixmap_getPixels)(JNIEnv *env, jobject self)
 	}
 
 	arr = (*env)->NewIntArray(env, size);
-	if (!arr)
-		return NULL;
+	if (!arr) return NULL;
 
 	(*env)->SetIntArrayRegion(env, arr, 0, size, (const jint *)pixmap->samples);
 
@@ -3581,9 +3520,7 @@ FUN(Image_getMask)(JNIEnv *env, jobject self)
 	jobject jmask = NULL;
 
 	if (!ctx) return NULL;
-
-	if (!img->mask)
-		return NULL;
+	if (!img->mask) return NULL;
 
 	/* image has a mask, package it as a java object */
 	fz_try(ctx)
@@ -4394,7 +4331,7 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 	}
 	fz_catch(ctx)
 	{
-		jni_throw_oom(env, "Out of memory in MuPDFCore_textAsHtml");
+		jni_throw_oom(env, "out of memory in MuPDFCore_textAsHtml");
 		return NULL;
 	}
 
@@ -5399,7 +5336,6 @@ FUN(PDFDocument_newNull)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 
 	if (!ctx) return NULL;
@@ -5412,9 +5348,7 @@ FUN(PDFDocument_newNull)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5422,7 +5356,6 @@ FUN(PDFDocument_newBoolean)(JNIEnv *env, jobject self, jboolean b)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 
 	if (!ctx) return NULL;
@@ -5435,9 +5368,7 @@ FUN(PDFDocument_newBoolean)(JNIEnv *env, jobject self, jboolean b)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5445,7 +5376,6 @@ FUN(PDFDocument_newInteger)(JNIEnv *env, jobject self, jint i)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 
 	if (!ctx) return NULL;
@@ -5458,9 +5388,7 @@ FUN(PDFDocument_newInteger)(JNIEnv *env, jobject self, jint i)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5468,7 +5396,6 @@ FUN(PDFDocument_newReal)(JNIEnv *env, jobject self, jfloat f)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 
 	if (!ctx) return NULL;
@@ -5481,9 +5408,7 @@ FUN(PDFDocument_newReal)(JNIEnv *env, jobject self, jfloat f)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5491,7 +5416,6 @@ FUN(PDFDocument_newString)(JNIEnv *env, jobject self, jstring jstring)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 	const char *s = NULL;
 
@@ -5511,9 +5435,7 @@ FUN(PDFDocument_newString)(JNIEnv *env, jobject self, jstring jstring)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5521,7 +5443,6 @@ FUN(PDFDocument_newName)(JNIEnv *env, jobject self, jstring jname)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 	const char *name = NULL;
 
@@ -5529,8 +5450,7 @@ FUN(PDFDocument_newName)(JNIEnv *env, jobject self, jstring jname)
 	if (!jname) { jni_throw_arg(env, "name must not be null"); return NULL; }
 
 	name = (*env)->GetStringUTFChars(env, jname, NULL);
-	if (!name)
-		return NULL;
+	if (!name) return NULL;
 
 	fz_try(ctx)
 		obj = pdf_new_name(ctx, pdf, name);
@@ -5542,9 +5462,7 @@ FUN(PDFDocument_newName)(JNIEnv *env, jobject self, jstring jname)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5552,7 +5470,6 @@ FUN(PDFDocument_newIndirect)(JNIEnv *env, jobject self, jint num, jint gen)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 
 	if (!ctx) return NULL;
@@ -5565,9 +5482,7 @@ FUN(PDFDocument_newIndirect)(JNIEnv *env, jobject self, jint num, jint gen)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5575,7 +5490,6 @@ FUN(PDFDocument_newArray)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 
 	if (!ctx) return NULL;
@@ -5588,9 +5502,7 @@ FUN(PDFDocument_newArray)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5598,7 +5510,6 @@ FUN(PDFDocument_newDictionary)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	jobject jobj = NULL;
 	pdf_obj *obj = NULL;
 
 	if (!ctx) return NULL;
@@ -5611,9 +5522,7 @@ FUN(PDFDocument_newDictionary)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-
-	return jobj;
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
 }
 
 JNIEXPORT jobject JNICALL
