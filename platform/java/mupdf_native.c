@@ -2246,42 +2246,42 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 
 	if (!ctx) return 0;
 
+//	LOGI("DrawDeviceNative: bitmap=%d,%d page=%d,%d->%d,%d patch=%d,%d->%d,%d", width, height, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
+	/* Sanitise patch w.r.t page. */
+	if (patchX0 < pageX0)
+		patchX0 = pageX0;
+	if (patchY0 < pageY0)
+		patchY0 = pageY0;
+	if (patchX1 > pageX1)
+		patchX1 = pageX1;
+	if (patchY1 > pageY1)
+		patchY1 = pageY1;
+
+	clip.x0 = patchX0;
+	clip.y0 = patchY0;
+	clip.x1 = patchX1;
+	clip.y1 = patchY1;
+
+	/* Check for sanity. */
+	//LOGI("clip = %d,%d->%d,%d", clip.x0, clip.y0, clip.x1, clip.y1);
+	if (clip.x0 < 0 || clip.y0 < 0 || clip.x1 > width || clip.y1 > height)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "patch would draw out of bounds!");
+
+	clip.x0 -= pageX0;
+	clip.y0 -= pageY0;
+	clip.x1 -= pageX0;
+	clip.y1 -= pageY0;
+
+	/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to
+	 * match the pixels data */
+	pixbbox = clip;
+	pixbbox.x1 = pixbbox.x0 + width;
+
 	fz_var(pixmap);
 	fz_var(ninfo);
 
 	fz_try(ctx)
 	{
-//		LOGI("DrawDeviceNative: bitmap=%d,%d page=%d,%d->%d,%d patch=%d,%d->%d,%d", width, height, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
-		/* Sanitise patch w.r.t page. */
-		if (patchX0 < pageX0)
-			patchX0 = pageX0;
-		if (patchY0 < pageY0)
-			patchY0 = pageY0;
-		if (patchX1 > pageX1)
-			patchX1 = pageX1;
-		if (patchY1 > pageY1)
-			patchY1 = pageY1;
-
-		clip.x0 = patchX0;
-		clip.y0 = patchY0;
-		clip.x1 = patchX1;
-		clip.y1 = patchY1;
-
-		/* Check for sanity. */
-		//LOGI("clip = %d,%d->%d,%d", clip.x0, clip.y0, clip.x1, clip.y1);
-		if (clip.x0 < 0 || clip.y0 < 0 || clip.x1 > width || clip.y1 > height)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "patch would draw out of bounds!");
-
-		clip.x0 -= pageX0;
-		clip.y0 -= pageY0;
-		clip.x1 -= pageX0;
-		clip.y1 -= pageY0;
-
-		/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to
-		 * match the pixels data */
-		pixbbox = clip;
-		pixbbox.x1 = pixbbox.x0 + width;
-
 		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), &pixbbox, 1, &dummy);
 		ninfo = fz_malloc(ctx, sizeof(*ninfo));
 		ninfo->pixmap = pixmap;
@@ -2348,19 +2348,15 @@ FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitm
 	if (!ctx) return 0;
 	if (!jbitmap) { jni_throw_arg(env, "bitmap must not be null"); return 0; }
 
+	if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) != ANDROID_BITMAP_RESULT_SUCCESS)
+		jni_throw(env, FZ_ERROR_GENERIC, "new DrawDevice failed to get bitmap info");
+	if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
+		jni_throw(env, FZ_ERROR_GENERIC, "new DrawDevice failed as bitmap format is not RGBA_8888");
+	if (info.stride != info.width * 4)
+		jni_throw(env, FZ_ERROR_GENERIC, "new DrawDevice failed as bitmap width != stride");
+
 	fz_try(ctx)
-	{
-		if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) != ANDROID_BITMAP_RESULT_SUCCESS)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "new DrawDevice failed to get bitmap info");
-
-		if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "new DrawDevice failed as bitmap format is not RGBA_8888");
-
-		if (info.stride != info.width*4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "new DrawDevice failed as bitmap width != stride");
-
 		device = newNativeAndroidDrawDevice(env, self, ctx, jbitmap, info.width, info.height, androidDrawDevice_lock, androidDrawDevice_unlock, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
-	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -2384,22 +2380,19 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 	if (!ctx) return 0;
 	if (!jbitmap) { jni_throw_arg(env, "bitmap must not be null"); return 0; }
 
+	if (mask && mask->mask)
+		jni_throw(env, FZ_ERROR_GENERIC, "new Image failed as mask cannot be masked");
+	if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) != ANDROID_BITMAP_RESULT_SUCCESS)
+		jni_throw(env, FZ_ERROR_GENERIC, "new Image failed to get bitmap info");
+	if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
+		jni_throw(env, FZ_ERROR_GENERIC, "new Image failed as bitmap format is not RGBA_8888");
+	if (info.stride != info.width)
+		jni_throw(env, FZ_ERROR_GENERIC, "new Image failed as bitmap width != stride");
+
 	fz_var(pixmap);
 
 	fz_try(ctx)
 	{
-		if (mask && mask->mask)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed as mask cannot be masked");
-
-		if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) != ANDROID_BITMAP_RESULT_SUCCESS)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed to get bitmap info");
-
-		if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed as bitmap format is not RGBA_8888");
-
-		if (info.stride != info.width)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed as bitmap width != stride");
-
 		pixmap = fz_new_pixmap(ctx, fz_device_rgb(ctx), info.width, info.height, 1);
 		if (AndroidBitmap_lockPixels(env, jbitmap, &pixels) != ANDROID_BITMAP_RESULT_SUCCESS)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "bitmap lock failed in new Image");
