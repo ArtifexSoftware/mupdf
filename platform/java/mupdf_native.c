@@ -6345,7 +6345,6 @@ FUN(PDFObject_resolve)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
 	pdf_obj *ind = NULL;
-	jobject jobj = NULL;
 
 	if (!ctx) return NULL;
 	if (!obj) { jni_throw_arg(env, "object must not be null"); return NULL; }
@@ -6358,11 +6357,8 @@ FUN(PDFObject_resolve)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(ind), self);
-	if (jobj)
-		pdf_keep_obj(ctx, ind);
-
-	return jobj;
+	pdf_keep_obj(ctx, ind);
+	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(ind), self);
 }
 
 JNIEXPORT jobject JNICALL
