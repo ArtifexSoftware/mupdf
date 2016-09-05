@@ -4578,7 +4578,7 @@ FUN(Buffer_readBytes)(JNIEnv *env, jobject self, jint jat, jobject jbs)
 	if (!bs) { jni_throw_io(env, "cannot get bytes to read"); return -1; }
 
 	memcpy(bs, &buf->data[at], len);
-	(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
+	(*env)->ReleaseByteArrayElements(env, jbs, bs, 0);
 
 	return len;
 }
@@ -4612,7 +4612,7 @@ FUN(Buffer_readBytesInto)(JNIEnv *env, jobject self, jint jat, jobject jbs, jint
 	if (!bs) { jni_throw_io(env, "cannot get bytes to read"); return -1; }
 
 	memcpy(&bs[off], &buf->data[at], len);
-	(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
+	(*env)->ReleaseByteArrayElements(env, jbs, bs, 0);
 
 	return len;
 }
