@@ -2316,7 +2316,7 @@ static void androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	assert(info);
 	assert(info->object);
 
-	if (AndroidBitmap_lockPixels(env, info->object, (void **)&pixels) < 0)
+	if (AndroidBitmap_lockPixels(env, info->object, (void **)&pixels) != ANDROID_BITMAP_RESULT_SUCCESS)
 	{
 		jni_throw(env, FZ_ERROR_GENERIC, "bitmap lock failed in DrawDevice call");
 		return;
@@ -2333,10 +2333,8 @@ static void androidDrawDevice_unlock(JNIEnv *env, NativeDeviceInfo *info)
 	assert(info);
 	assert(info->object);
 
-	if (AndroidBitmap_unlockPixels(env, info->object) < 0)
-	{
+	if (AndroidBitmap_unlockPixels(env, info->object) != ANDROID_BITMAP_RESULT_SUCCESS)
 		jni_throw(env, FZ_ERROR_GENERIC, "bitmap unlock failed in DrawDevice call");
-	}
 }
 
 JNIEXPORT jlong JNICALL
@@ -2352,7 +2350,7 @@ FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitm
 
 	fz_try(ctx)
 	{
-		if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) < 0)
+		if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) != ANDROID_BITMAP_RESULT_SUCCESS)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "new DrawDevice failed to get bitmap info");
 
 		if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
@@ -2393,7 +2391,7 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 		if (mask && mask->mask)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed as mask cannot be masked");
 
-		if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) < 0)
+		if ((ret = AndroidBitmap_getInfo(env, jbitmap, &info)) != ANDROID_BITMAP_RESULT_SUCCESS)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed to get bitmap info");
 
 		if (info.format != ANDROID_BITMAP_FORMAT_RGBA_8888)
@@ -2403,7 +2401,7 @@ FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong 
 			fz_throw(ctx, FZ_ERROR_GENERIC, "new Image failed as bitmap width != stride");
 
 		pixmap = fz_new_pixmap(ctx, fz_device_rgb(ctx), info.width, info.height, 1);
-		if (AndroidBitmap_lockPixels(env, jbitmap, &pixels) < 0)
+		if (AndroidBitmap_lockPixels(env, jbitmap, &pixels) != ANDROID_BITMAP_RESULT_SUCCESS)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "bitmap lock failed in new Image");
 		memcpy(pixmap->samples, pixels, info.width * info.height * 4);
 		(void)AndroidBitmap_unlockPixels(env, jbitmap);
