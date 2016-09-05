@@ -768,19 +768,6 @@ static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
 	return jobj;
 }
 
-static inline jobject to_Point(fz_context *ctx, JNIEnv *env, fz_point point)
-{
-	jobject jpoint;
-
-	if (!ctx) return NULL;
-
-	jpoint = (*env)->NewObject(env, cls_Point, mid_Point_init, point.x, point.y);
-	if (!jpoint)
-		fz_throw_java(ctx, env);
-
-	return jpoint;
-}
-
 static inline jobject to_Rect(fz_context *ctx, JNIEnv *env, const fz_rect *rect)
 {
 	jobject jobj;
@@ -855,6 +842,19 @@ static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const flo
 
 /* Conversion functions: C to Java. None of these throw fitz exceptions. */
 
+static inline jobject to_ColorSpace_safe(fz_context *ctx, JNIEnv *env, fz_colorspace *cs)
+{
+	jobject jcs;
+
+	if (!ctx || !cs) return NULL;
+
+	fz_keep_colorspace(ctx, cs);
+	jcs = (*env)->CallStaticObjectMethod(env, cls_ColorSpace, mid_ColorSpace_fromPointer, jlong_cast(cs));
+	if ((*env)->ExceptionCheck(env)) return NULL;
+
+	return jcs;
+}
+
 static inline jobject to_Document_safe(fz_context *ctx, JNIEnv *env, fz_document *doc)
 {
 	if (!ctx || !doc) return NULL;
@@ -873,6 +873,14 @@ static inline jobject to_Font_safe(fz_context *ctx, JNIEnv *env, fz_font *font)
 	jfont = (*env)->NewObject(env, cls_Font, mid_Font_init, jlong_cast(font));
 
 	return jfont;
+}
+
+static inline jobject to_Image_safe(fz_context *ctx, JNIEnv *env, fz_image *img)
+{
+	if (!ctx || !img) return NULL;
+
+	fz_keep_image(ctx, img);
+	return (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
 }
 
 static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *outline)
@@ -955,6 +963,44 @@ static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pd
 
 	pdf_keep_obj(ctx, obj);
 	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
+}
+
+static inline jobject to_Point_safe(fz_context *ctx, JNIEnv *env, fz_point point)
+{
+	if (!ctx) return NULL;
+
+	return (*env)->NewObject(env, cls_Point, mid_Point_init, point.x, point.y);
+}
+
+static inline jobject to_Rect_safe(fz_context *ctx, JNIEnv *env, const fz_rect *rect)
+{
+	if (!ctx || !rect) return NULL;
+
+	return (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
+}
+
+static inline jobjectArray to_jRectArray_safe(fz_context *ctx, JNIEnv *env, const fz_rect *rects, jint n)
+{
+	jobjectArray arr;
+	int i;
+
+	if (!ctx || !rects) return NULL;
+
+	arr = (*env)->NewObjectArray(env, n, cls_Rect, NULL);
+	if (!arr) return NULL;
+
+	for (i = 0; i < n; i++)
+	{
+		jobject jrect = to_Rect_safe(ctx, env, &rects[i]);
+		if (!jrect) return NULL;
+
+		(*env)->SetObjectArrayElement(env, arr, i, jrect);
+		if ((*env)->ExceptionCheck(env)) return NULL;
+
+		(*env)->DeleteLocalRef(env, jrect);
+	}
+
+	return arr;
 }
 
 /* Conversion functions: C to Java. Take ownership of fitz object. None of these throw fitz exceptions. */
@@ -2660,22 +2706,19 @@ FUN(Pixmap_getColorSpace)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	jobject jcs = NULL;
+	fz_colorspace *cs;
 
 	if (!ctx) return NULL;
 
 	fz_try(ctx)
-	{
-		fz_colorspace *cs = fz_pixmap_colorspace(ctx, pixmap);
-		jcs = to_ColorSpace(ctx, env, cs);
-	}
+		cs = fz_pixmap_colorspace(ctx, pixmap);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return jcs;
+	return to_ColorSpace_safe(ctx, env, cs);
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -2802,19 +2845,19 @@ FUN(Path_currentPoint)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_path *path = from_Path(env, self);
-	jobject jpoint = NULL;
+	fz_point point;
 
 	if (!ctx) return NULL;
 
 	fz_try(ctx)
-		jpoint = to_Point(ctx, env, fz_currentpoint(ctx, path));
+		point = fz_currentpoint(ctx, path);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return jpoint;
+	return to_Point_safe(ctx, env, point);
 }
 
 JNIEXPORT void JNICALL
@@ -2957,21 +3000,20 @@ FUN(Path_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	fz_path *path = from_Path(env, self);
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	fz_matrix ctm = from_Matrix(env, jctm);
-	jobject jrect = NULL;
 	fz_rect rect;
 
 	if (!ctx) return NULL;
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return NULL; }
 
 	fz_try(ctx)
-		jrect = to_Rect(ctx, env, fz_bound_path(ctx, path, stroke, &ctm, &rect));
+		fz_bound_path(ctx, path, stroke, &ctm, &rect);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return jrect;
+	return to_Rect_safe(ctx, env, &rect);
 }
 
 typedef struct
@@ -3230,21 +3272,20 @@ FUN(Text_getBounds)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
 	fz_text *text = from_Text(env, self);
 	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
 	fz_matrix ctm = from_Matrix(env, jctm);
-	jobject jrect = NULL;
 	fz_rect rect;
 
 	if (!ctx) return NULL;
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return NULL; }
 
 	fz_try(ctx)
-		jrect = to_Rect(ctx, env, fz_bound_text(ctx, text, stroke, &ctm, &rect));
+		fz_bound_text(ctx, text, stroke, &ctm, &rect);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return jrect;
+	return to_Rect_safe(ctx, env, &rect);
 }
 
 JNIEXPORT void JNICALL
@@ -3431,19 +3472,10 @@ FUN(Image_getColorSpace)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_image *image = from_Image(env, self);
-	jobject jcs = NULL;
 
 	if (!ctx) return NULL;
 
-	fz_try (ctx)
-		jcs = to_ColorSpace(ctx, env, image->colorspace);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	return jcs;
+	return to_ColorSpace_safe(ctx, env, image->colorspace);
 }
 
 JNIEXPORT jint JNICALL
@@ -3488,21 +3520,11 @@ FUN(Image_getMask)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_image *img = from_Image(env, self);
-	jobject jmask = NULL;
 
 	if (!ctx) return NULL;
-	if (!img->mask) return NULL;
+	if (!img) { jni_throw_arg(env, "image must not be null"); return NULL; }
 
-	/* image has a mask, package it as a java object */
-	fz_try(ctx)
-		jmask = to_Image(ctx, env, img->mask);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	return jmask;
+	return to_Image_safe(ctx, env, img->mask);
 }
 
 JNIEXPORT jobject JNICALL
@@ -3606,20 +3628,19 @@ FUN(Annotation_getBounds)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_annot *annot = from_Annotation(env, self);
-	jobject jrect = NULL;
 	fz_rect rect;
 
 	if (!ctx) return NULL;
 
 	fz_try(ctx)
-		jrect = to_Rect(ctx, env, fz_bound_annot(ctx, annot, &rect));
+		fz_bound_annot(ctx, annot, &rect);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return jrect;
+	return to_Rect_safe(ctx, env, &rect);
 }
 
 JNIEXPORT jobject JNICALL
@@ -3941,20 +3962,19 @@ FUN(Page_getBounds)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	jobject jrect = NULL;
 	fz_rect rect;
 
 	if (!ctx) return NULL;
 
 	fz_try(ctx)
-		jrect = to_Rect(ctx, env, fz_bound_page(ctx, page, &rect));
+		fz_bound_page(ctx, page, &rect);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return jrect;
+	return to_Rect_safe(ctx, env, &rect);
 }
 
 JNIEXPORT void JNICALL
@@ -4097,7 +4117,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 			jobject juri = NULL;
 			int page = 0;
 
-			jbounds = to_Rect(ctx, env, &link->rect);
+			jbounds = to_Rect_safe(ctx, env, &link->rect);
 			if (!jbounds)
 				break;
 			if (link->dest.kind == FZ_LINK_GOTO)
@@ -4143,9 +4163,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 	fz_page *page = from_Page(env, self);
 	fz_rect hits[256] = { 0 };
 	const char *needle = NULL;
-	jobject jhits = NULL;
 	int n = 0;
-	int i;
 
 	if (!ctx) return NULL;
 	if (!jneedle) { jni_throw_arg(env, "needle must not be null"); return NULL; }
@@ -4163,29 +4181,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	jhits = (*env)->NewObjectArray(env, n, cls_Rect, NULL);
-	if (!jhits)
-	{
-		jni_throw(env, FZ_ERROR_GENERIC, "search failed");
-		return NULL;
-	}
-
-	fz_try(ctx)
-	{
-		for (i = 0; i < n; i++)
-		{
-			jobject jhit = to_Rect(ctx, env, &hits[i]);
-			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
-			(*env)->DeleteLocalRef(env, jhit);
-		}
-	}
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	return jhits;
+	return to_jRectArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -4484,9 +4480,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 	fz_display_list *list = from_DisplayList(env, self);
 	fz_rect hits[256] = { 0 };
 	const char *needle = NULL;
-	jobject jhits = NULL;
 	int n = 0;
-	int i;
 
 	if (!ctx) return NULL;
 	if (!jneedle) { jni_throw_arg(env, "needle must not be null"); return NULL; }
@@ -4504,29 +4498,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	jhits = (*env)->NewObjectArray(env, n, cls_Rect, NULL);
-	if (!jhits)
-	{
-		jni_throw(env, FZ_ERROR_GENERIC, "search failed");
-		return NULL;
-	}
-
-	fz_try(ctx)
-	{
-		for (i = 0; i < n; i++)
-		{
-			jobject jhit = to_Rect(ctx, env, &hits[i]);
-			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
-			(*env)->DeleteLocalRef(env, jhit);
-		}
-	}
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	return jhits;
+	return to_jRectArray_safe(ctx, env, hits, n);
 }
 
 /* Buffer interface */
@@ -4989,9 +4961,7 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 	fz_stext_page *text = from_StructuredText(env, self);
 	fz_rect hits[256] = { 0 };
 	const char *needle = NULL;
-	jobject jhits = NULL;
 	int n = 0;
-	int i;
 
 	if (!ctx) return NULL;
 	if (!jneedle) { jni_throw_arg(env, "needle must not be null"); return NULL; }
@@ -5009,26 +4979,7 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 		return NULL;
 	}
 
-	jhits = (*env)->NewObjectArray(env, n, cls_Rect, NULL);
-	if (!jhits)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "search failed");
-
-	fz_try(ctx)
-	{
-		for (i = 0; i < n; i++)
-		{
-			jobject jhit = to_Rect(ctx, env, &hits[i]);
-			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
-			(*env)->DeleteLocalRef(env, jhit);
-		}
-	}
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	return jhits;
+	return to_jRectArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5038,9 +4989,7 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jrect)
 	fz_stext_page *text = from_StructuredText(env, self);
 	fz_rect rect = from_Rect(env, jrect);
 	fz_rect hits[256] = { 0 };
-	jobject jhits = NULL;
 	int n = 0;
-	int i;
 
 	if (!ctx) return NULL;
 
@@ -5052,26 +5001,7 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jrect)
 		return NULL;
 	}
 
-	jhits = (*env)->NewObjectArray(env, n, cls_Rect, NULL);
-	if (!jhits)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "search failed (1)");
-
-	fz_try(ctx)
-	{
-		for (i = 0; i < n; i++)
-		{
-			jobject jhit = to_Rect(ctx, env, &hits[i]);
-			(*env)->SetObjectArrayElement(env, jhits, i, jhit);
-			(*env)->DeleteLocalRef(env, jhit);
-		}
-	}
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	return jhits;
+	return to_jRectArray_safe(ctx, env, hits, n);
 }
 
 JNIEXPORT jobject JNICALL
@@ -5149,7 +5079,9 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 		if (!jblock) return NULL;
 
 		//  set block's bbox
-		jrect = to_Rect(ctx, env, &(block->bbox));
+		jrect = to_Rect_safe(ctx, env, &(block->bbox));
+		if (!jrect) return NULL;
+
 		(*env)->SetObjectField(env, jblock, fid_TextBlock_bbox, jrect);
 		(*env)->DeleteLocalRef(env, jrect);
 
@@ -5165,7 +5097,9 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 			if (!jline) return NULL;
 
 			//  set line's bbox
-			jrect = to_Rect(ctx, env, &(line->bbox));
+			jrect = to_Rect_safe(ctx, env, &(line->bbox));
+			if (!jrect) return NULL;
+
 			(*env)->SetObjectField(env, jline, fid_TextLine_bbox, jrect);
 			(*env)->DeleteLocalRef(env, jrect);
 
@@ -5199,7 +5133,9 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 
 					//  set the char's bbox
 					fz_stext_char_bbox(ctx, &bbox, span, c);
-					jrect = to_Rect(ctx, env, &(bbox));
+					jrect = to_Rect_safe(ctx, env, &(bbox));
+					if (!jrect) return NULL;
+
 					(*env)->SetObjectField(env, jchar, fid_TextChar_bbox, jrect);
 					(*env)->DeleteLocalRef(env, jrect);
 
@@ -5218,7 +5154,9 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 				}
 
 				//  set the span's bbox
-				jrect = to_Rect(ctx, env, &sbbox);
+				jrect = to_Rect_safe(ctx, env, &sbbox);
+				if (!jrect) return NULL;
+
 				(*env)->SetObjectField(env, jspan, fid_TextSpan_bbox, jrect);
 				(*env)->DeleteLocalRef(env, jrect);
 
