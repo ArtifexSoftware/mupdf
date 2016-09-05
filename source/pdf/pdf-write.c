@@ -1637,11 +1637,18 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 	if (do_deflate && !pdf_dict_get(ctx, obj, PDF_NAME_Filter))
 	{
-		pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
-
 		tmp = deflatebuf(ctx, buf->data, buf->len);
-		fz_drop_buffer(ctx, buf);
-		buf = tmp;
+		if (tmp->len >= buf->len)
+		{
+			/* Don't bother compressing, as we gain nothing. */
+			fz_drop_buffer(ctx, tmp);
+		}
+		else
+		{
+			pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
+			fz_drop_buffer(ctx, buf);
+			buf = tmp;
+		}
 	}
 
 	if (opts->do_ascii && isbinarystream(buf))
@@ -1651,11 +1658,11 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		buf = tmp;
 
 		addhexfilter(ctx, doc, obj);
-
-		newlen = pdf_new_int(ctx, doc, (int)buf->len);
-		pdf_dict_put(ctx, obj, PDF_NAME_Length, newlen);
-		pdf_drop_obj(ctx, newlen);
 	}
+
+	newlen = pdf_new_int(ctx, doc, (int)buf->len);
+	pdf_dict_put(ctx, obj, PDF_NAME_Length, newlen);
+	pdf_drop_obj(ctx, newlen);
 
 	fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 	pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
@@ -1686,11 +1693,18 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 
 	if (do_deflate)
 	{
-		pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
-
 		tmp = deflatebuf(ctx, buf->data, buf->len);
-		fz_drop_buffer(ctx, buf);
-		buf = tmp;
+		if (tmp->len >= buf->len)
+		{
+			/* Don't bother compressing, as we gain nothing. */
+			fz_drop_buffer(ctx, tmp);
+		}
+		else
+		{
+			pdf_dict_put(ctx, obj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
+			fz_drop_buffer(ctx, buf);
+			buf = tmp;
+		}
 	}
 
 	if (opts->do_ascii && isbinarystream(buf))
