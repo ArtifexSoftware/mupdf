@@ -146,6 +146,9 @@ static int strip_outlines(fz_context *ctx, pdf_document *doc, pdf_obj *outlines,
 	pdf_obj *first;
 	pdf_obj *last;
 
+	if (outlines == NULL)
+		return 0;
+
 	first = pdf_dict_get(ctx, outlines, PDF_NAME_First);
 	if (first == NULL)
 		nc = 0;
