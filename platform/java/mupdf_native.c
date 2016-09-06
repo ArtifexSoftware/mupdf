@@ -4260,8 +4260,6 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		dev = fz_new_stext_device(ctx, sheet, text);
 		fz_run_page(ctx, page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
-		fz_drop_device(ctx, dev);
-		dev = NULL;
 
 		fz_analyze_text(ctx, sheet, text);
 
@@ -4283,8 +4281,6 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		fz_printf(ctx, out, "<style>\n");
 		fz_print_stext_sheet(ctx, out, sheet);
 		fz_printf(ctx, out, "</style>\n</html>\n");
-		fz_drop_output(ctx, out);
-		out = NULL;
 
 	}
 	fz_always(ctx)
