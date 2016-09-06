@@ -3351,6 +3351,8 @@ FUN(Text_walk)(JNIEnv *env, jobject self, jobject walker)
 	{
 		if (font != span->font)
 		{
+			if (jfont)
+				(*env)->DeleteLocalRef(env, jfont);
 			font = span->font;
 			jfont = to_Font_safe(ctx, env, font);
 			if (!jfont) return;
