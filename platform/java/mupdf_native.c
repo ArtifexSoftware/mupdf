@@ -4027,44 +4027,47 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 
 	if (!ctx) return NULL;
 
+	/* count the annotations */
 	fz_try(ctx)
 	{
 		annots = fz_first_annot(ctx, page);
 
-		/* Count the annotations */
 		annot = annots;
 		for (annot_count = 0; annot; annot_count++)
 			annot = fz_next_annot(ctx, annot);
-
-		if (annot_count == 0)
-			break; /* No annotations! */
-
-		jannots = (*env)->NewObjectArray(env, annot_count, cls_Annot, NULL);
-		if (!jannots)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (1)");
-
-		/* Now run through actually creating the annotation objects */
-		annot = annots;
-		for (i = 0; annot && i < annot_count; i++)
-		{
-			jobject jannot = to_Annotation(ctx, env, annot);
-			if (!jannot)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (2)");
-
-			(*env)->SetObjectArrayElement(env, jannots, i, jannot);
-			if ((*env)->ExceptionCheck(env))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (3)");
-
-			(*env)->DeleteLocalRef(env, jannot);
-			annot = fz_next_annot(ctx, annot);
-		}
-		if (annot || i != annot_count)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "getAnnotations failed (4)");
 	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
+	}
+
+	/* no annotations, return NULL instead of empty array */
+	if (annot_count == 0)
+		return NULL;
+
+	/* now run through actually creating the annotation objects */
+	jannots = (*env)->NewObjectArray(env, annot_count, cls_Annot, NULL);
+	if (!jannots) return NULL;
+
+	annot = annots;
+	for (i = 0; annot && i < annot_count; i++)
+	{
+		jobject jannot = to_Annotation(ctx, env, annot);
+		if (!jannot) return NULL;
+
+		(*env)->SetObjectArrayElement(env, jannots, i, jannot);
+		if ((*env)->ExceptionCheck(env)) return NULL;
+
+		(*env)->DeleteLocalRef(env, jannot);
+
+		fz_try(ctx)
+			annot = fz_next_annot(ctx, annot);
+		fz_catch(ctx)
+		{
+			jni_rethrow(env, ctx);
+			return NULL;
+		}
 	}
 
 	return jannots;
@@ -4086,65 +4089,63 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 	fz_var(links);
 
 	fz_try(ctx)
-	{
 		links = fz_load_links(ctx, page);
-
-		/* Count the links */
-		link = links;
-		for (link_count = 0; link; link_count++)
-			link = link->next;
-
-		if (link_count == 0)
-			break; /* No links! */
-
-		jlinks = (*env)->NewObjectArray(env, link_count, cls_Link, NULL);
-		if (!jlinks)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (1)");
-
-		/* Now run through actually creating the link objects */
-		link = links;
-		for (i = 0; link && i < link_count; i++)
-		{
-			jobject jbounds = NULL;
-			jobject jlink = NULL;
-			jobject juri = NULL;
-			int page = 0;
-
-			jbounds = to_Rect_safe(ctx, env, &link->rect);
-			if (!jbounds)
-				break;
-			if (link->dest.kind == FZ_LINK_GOTO)
-				page = link->dest.ld.gotor.page;
-			else if (link->dest.kind == FZ_LINK_URI)
-			{
-				juri = (*env)->NewStringUTF(env, link->dest.ld.uri.uri);
-				if (!juri) break;
-			}
-
-			jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
-			(*env)->DeleteLocalRef(env, jbounds);
-			if (juri)
-				(*env)->DeleteLocalRef(env, juri);
-			if (!jlink)
-				break;
-
-			(*env)->SetObjectArrayElement(env, jlinks, i, jlink);
-			if ((*env)->ExceptionCheck(env))
-				break;
-
-			(*env)->DeleteLocalRef(env, jlink);
-			link = link->next;
-		}
-		if (link || i != link_count)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "getLinks failed (2)");
-	}
-	fz_always(ctx)
-		fz_drop_link(ctx, links);
 	fz_catch(ctx)
 	{
+		fz_drop_link(ctx, links);
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
+
+	/* count the links */
+	link = links;
+	for (link_count = 0; link; link_count++)
+		link = link->next;
+
+	/* no links, return NULL instead of empty array */
+	if (link_count == 0)
+	{
+		fz_drop_link(ctx, links);
+		return NULL;
+	}
+
+	/* now run through actually creating the link objects */
+	jlinks = (*env)->NewObjectArray(env, link_count, cls_Link, NULL);
+	if (!jlinks) return NULL;
+
+	link = links;
+	for (i = 0; link && i < link_count; i++)
+	{
+		jobject jbounds = NULL;
+		jobject jlink = NULL;
+		jobject juri = NULL;
+		int page = 0;
+
+		jbounds = to_Rect_safe(ctx, env, &link->rect);
+		if (!jbounds) return NULL;
+
+		if (link->dest.kind == FZ_LINK_GOTO)
+			page = link->dest.ld.gotor.page;
+		else if (link->dest.kind == FZ_LINK_URI)
+		{
+			juri = (*env)->NewStringUTF(env, link->dest.ld.uri.uri);
+			if (!juri) return NULL;
+		}
+
+		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
+		(*env)->DeleteLocalRef(env, jbounds);
+		if (!jlink) return NULL;
+		if (juri)
+			(*env)->DeleteLocalRef(env, juri);
+
+		(*env)->SetObjectArrayElement(env, jlinks, i, jlink);
+		if ((*env)->ExceptionCheck(env)) return NULL;
+
+		(*env)->DeleteLocalRef(env, jlink);
+		link = link->next;
+	}
+
+	fz_drop_link(ctx, links);
 
 	return jlinks;
 }
