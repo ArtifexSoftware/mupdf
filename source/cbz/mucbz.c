@@ -87,13 +87,8 @@ cbz_create_page_list(fz_context *ctx, cbz_document *doc)
 	{
 		for (k = 0; cbz_ext_list[k]; k++)
 		{
-			const char *name;
-			const char *ext;
-
-			if (arch)
-				name = fz_list_archive_entry(ctx, arch, i);
-
-			ext = name ? strrchr(name, '.') : NULL;
+			const char *name = fz_list_archive_entry(ctx, arch, i);
+			const char *ext = name ? strrchr(name, '.') : NULL;
 			if (ext && !fz_strcasecmp(ext, cbz_ext_list[k]))
 			{
 				doc->page[doc->page_count++] = name;
