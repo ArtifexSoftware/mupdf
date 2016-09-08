@@ -51,7 +51,7 @@ static void pdfapp_warn(pdfapp_t *app, const char *fmt, ...)
 	char buf[1024];
 	va_list ap;
 	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, ap);
+	fz_vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 	buf[sizeof(buf)-1] = 0;
 	winwarn(app, buf);
