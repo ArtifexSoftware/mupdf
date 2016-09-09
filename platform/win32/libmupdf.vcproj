@@ -1121,6 +1121,10 @@
 			Name="fitz"
 			>
 			<File
+				RelativePath="..\..\source\fitz\archive.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\bbox-device.c"
 				>
 			</File>
@@ -1170,6 +1174,10 @@
 			</File>
 			<File
 				RelativePath="..\..\source\fitz\device.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\fitz\directory.c"
 				>
 			</File>
 			<File
@@ -1514,6 +1522,10 @@
 			</File>
 			<File
 				RelativePath="..\..\source\fitz\unicodedata_db.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\fitz\untar.c"
 				>
 			</File>
 			<File
