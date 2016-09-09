@@ -165,6 +165,9 @@ void fz_free_argv(int argc, char **argv);
 #define fseeko64 _fseeki64
 #define ftello64 _ftelli64
 #define atoll _atoi64
+
+#include <sys/stat.h>
+
 #define stat _stat
 
 #else /* Unix or close enough */
