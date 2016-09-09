@@ -1627,7 +1627,7 @@ static void ffi_Page_toStructuredText(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = js_touserdata(J, 0, "fz_page");
-	const char *options = js_tointeger(J, 1);
+	int options = js_tointeger(J, 1);
 	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text;
 
@@ -2459,7 +2459,7 @@ static void ffi_DisplayList_toStructuredText(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
-	const char *options = js_tointeger(J, 1);
+	int options = js_tointeger(J, 1);
 	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text;
 
