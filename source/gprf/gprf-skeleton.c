@@ -41,8 +41,9 @@ fz_save_gproof(fz_context *ctx, const char *pdf_file, fz_document *doc, const ch
 			fz_drop_page(ctx, page);
 			page = NULL;
 
-			w = (int)((rect.x1 - rect.x0) * res / 72.0 + 0.5);
-			h = (int)((rect.y1 - rect.y0) * res / 72.0 + 0.5);
+			/* Same lack of rounding as gs uses */
+			w = (int)((rect.x1 - rect.x0) * res / 72.0);
+			h = (int)((rect.y1 - rect.y0) * res / 72.0);
 			fz_write_int32_le(ctx, out, w);
 			fz_write_int32_le(ctx, out, h);
 		}
