@@ -553,22 +553,22 @@ generate_page(fz_context *ctx, gprf_page *page)
 #ifdef USE_GS_API
 		void *instance;
 		int code;
-		char *argv[] = { "gs", "-sDEVICE=gprf", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+		char *argv[] = { "gs", "-sDEVICE=gprf", "-dUsePDFX3Profile", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 		char arg_res[32];
 		char arg_fp[32];
 		char arg_lp[32];
 
 		sprintf(arg_res, "-r%d", doc->res);
-		argv[2] = arg_res;
-		argv[4] = filename;
+		argv[3] = arg_res;
+		argv[5] = filename;
 		sprintf(arg_fp, "-dFirstPage=%d", page->number+1);
-		argv[5] = arg_fp;
+		argv[6] = arg_fp;
 		sprintf(arg_lp, "-dLastPage=%d", page->number+1);
-		argv[6] = arg_lp;
-		argv[7] = disp_profile;
-		argv[8] = print_profile;
-		argv[9] = "-I%rom%Resource/Init/";
-		argv[10] = doc->pdf_filename;
+		argv[7] = arg_lp;
+		argv[8] = disp_profile;
+		argv[9] = print_profile;
+		argv[10] = "-I%rom%Resource/Init/";
+		argv[11] = doc->pdf_filename;
 
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
