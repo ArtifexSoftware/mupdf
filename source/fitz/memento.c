@@ -718,14 +718,14 @@ static void Memento_showStacktrace(void **stack, int numberOfFrames)
     for (i = 0; i < numberOfFrames; i++)
     {
         Dl_info info;
-        int status = 0;
         if (dladdr(stack[i], &info))
         {
+            int status = 0;
             const char *sym = info.dli_sname ? info.dli_sname : "<unknown>";
-            const debuf[256];
-            char *demangled = __cxa_demangle(sym, debuf, sizeof(debuf), &status);
+            char *demangled = __cxa_demangle(sym, NULL, 0, &status);
             int offset = stack[i] - info.dli_saddr;
             fprintf(stderr, "    [%p]%s(+0x%x)\n", stack[i], demangled && status == 0 ? demangled : sym, offset);
+            free(demangled);
         }
         else
         {
