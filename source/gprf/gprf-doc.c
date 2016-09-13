@@ -1,3 +1,5 @@
+#include "mupdf/fitz.h"
+
 #if FZ_ENABLE_GPRF
 /* Choose whether to call gs via an exe or via an API */
 #if defined(__ANDROID__) || defined(GSVIEW_WIN)
