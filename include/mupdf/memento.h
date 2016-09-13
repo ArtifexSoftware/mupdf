@@ -228,6 +228,8 @@ void *Memento_reference(void *blk);
 void Memento_startLeaking(void);
 void Memento_stopLeaking(void);
 
+void Memento_fin(void);
+
 #ifdef MEMENTO
 
 #ifndef COMPILING_MEMENTO_C

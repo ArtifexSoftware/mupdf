@@ -66,10 +66,11 @@ android_fprintf(FILE *file, const char *fmt, ...)
     va_start(args, fmt);
     __android_log_vprint(ANDROID_LOG_ERROR,"memento", fmt, args);
     va_end(args);
+    return 0;
 }
 
 #define fprintf android_fprintf
-#define MEMENTO_STACKTRACE_METHOD 0
+#define MEMENTO_STACKTRACE_METHOD 3
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -654,6 +655,85 @@ static void Memento_showStacktrace(void **stack, int numberOfFrames)
         fprintf(stderr, "    %s in %s:%d\n", symbol->Name, line.FileName, line.LineNumber);
     }
 }
+#elif defined(MEMENTO_STACKTRACE_METHOD) && MEMENTO_STACKTRACE_METHOD == 3
+
+#include <unwind.h>
+#include <dlfcn.h>
+
+/* From cxxabi.h */
+extern char* __cxa_demangle(const char* mangled_name,
+                            char*       output_buffer,
+                            size_t*     length,
+                            int*        status);
+
+static void Memento_initStacktracer(void)
+{
+}
+
+#define MEMENTO_BACKTRACE_MAX 256
+
+typedef struct
+{
+    int count;
+    void **addr;
+} my_unwind_details;
+
+static _Unwind_Reason_Code unwind_populate_callback(struct _Unwind_Context *context,
+                                                    void *arg)
+{
+    my_unwind_details *uw = (my_unwind_details *)arg;
+    int count = uw->count;
+
+    if (count >= MEMENTO_BACKTRACE_MAX)
+        return _URC_END_OF_STACK;
+
+    uw->addr[count] = (void *)_Unwind_GetIP(context);
+    uw->count++;
+
+    return _URC_NO_REASON;
+}
+
+static int Memento_getStacktrace(void **stack, int *skip)
+{
+    my_unwind_details uw = { 0, stack };
+    int count;
+
+    *skip = 0;
+
+    /* Collect the backtrace. Deliberately only unwind once,
+     * and avoid using malloc etc until this completes just
+     * in case. */
+    _Unwind_Backtrace(unwind_populate_callback, &uw);
+    if (uw.count <= SkipStackBackTraceLevels)
+        return 0;
+
+    *skip = SkipStackBackTraceLevels;
+    return uw.count-SkipStackBackTraceLevels;
+}
+
+static void Memento_showStacktrace(void **stack, int numberOfFrames)
+{
+    int i;
+
+    for (i = 0; i < numberOfFrames; i++)
+    {
+        Dl_info info;
+        int status = 0;
+        if (dladdr(stack[i], &info))
+        {
+            const char *sym = info.dli_sname ? info.dli_sname : "<unknown>";
+            const debuf[256];
+            char *demangled = __cxa_demangle(sym, debuf, sizeof(debuf), &status);
+            int offset = stack[i] - info.dli_saddr;
+            fprintf(stderr, "    [%p]%s(+0x%x)\n", stack[i], demangled && status == 0 ? demangled : sym, offset);
+        }
+        else
+        {
+            fprintf(stderr, "    [%p]\n", stack[i]);
+        }
+    }
+}
+
 #else
 static void Memento_initStacktracer(void)
 {
@@ -1278,7 +1358,7 @@ static int Memento_nonLeakBlocksLeaked(void)
 	return 0;
 }
 
-static void Memento_fin(void)
+void Memento_fin(void)
 {
     Memento_checkAllMemory();
     Memento_endStats();
