@@ -4155,7 +4155,7 @@ FUN(Page_search)(JNIEnv *env, jobject self, jstring jneedle)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	fz_rect hits[256] = { 0 };
+	fz_rect hits[256];
 	const char *needle = NULL;
 	int n = 0;
 
@@ -4468,7 +4468,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 {
 	fz_context *ctx = get_context(env);
 	fz_display_list *list = from_DisplayList(env, self);
-	fz_rect hits[256] = { 0 };
+	fz_rect hits[256];
 	const char *needle = NULL;
 	int n = 0;
 
@@ -4949,7 +4949,7 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 {
 	fz_context *ctx = get_context(env);
 	fz_stext_page *text = from_StructuredText(env, self);
-	fz_rect hits[256] = { 0 };
+	fz_rect hits[256];
 	const char *needle = NULL;
 	int n = 0;
 
@@ -4978,7 +4978,7 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jrect)
 	fz_context *ctx = get_context(env);
 	fz_stext_page *text = from_StructuredText(env, self);
 	fz_rect rect = from_Rect(env, jrect);
-	fz_rect hits[256] = { 0 };
+	fz_rect hits[256];
 	int n = 0;
 
 	if (!ctx) return NULL;
@@ -5845,7 +5845,7 @@ FUN(PDFDocument_save)(JNIEnv *env, jobject self, jstring jfilename, jstring jopt
 	pdf_document *pdf = from_PDFDocument(env, self);
 	const char *filename = NULL;
 	const char *options = NULL;
-	pdf_write_options pwo = { 0 };
+	pdf_write_options pwo;
 	int errors = 0;
 
 	if (!ctx) return 0;
@@ -6981,7 +6981,10 @@ FUN(PDFObject_size)(JNIEnv *env, jobject self)
 	fz_try(ctx)
 		len = pdf_array_len(ctx, arr);
 	fz_catch(ctx)
+	{
 		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return len;
 }
