@@ -1784,8 +1784,7 @@ JNI_FN(MuPDFCore_destroying)(JNIEnv * env, jobject thiz)
 	free(glo);
 #ifdef MEMENTO
 	LOGI("Destroying dump start");
-	Memento_listBlocks();
-	Memento_stats();
+	Memento_fin();
 	LOGI("Destroying dump end");
 #endif
 #ifdef NDK_PROFILER

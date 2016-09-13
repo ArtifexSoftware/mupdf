@@ -40,6 +40,7 @@ APP_STL := stlport_static
 endif
 ifdef MEMENTO
 APP_CFLAGS += -DMEMENTO -DMEMENTO_LEAKONLY
+APP_STL = gnustl_static
 endif
 
 # If the ndk is r8b then workaround bug by uncommenting the following line
