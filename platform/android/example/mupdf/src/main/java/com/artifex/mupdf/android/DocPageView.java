@@ -126,23 +126,11 @@ public class DocPageView extends View implements Callback
 		//  make a new page object.
 		if (thePageNum != mPageNum)
 		{
+			//  destroy current page and lists
+			destroyPageAndLists();
+
+			//  switch to the new page
 			mPageNum = thePageNum;
-
-			//  de-cache contents and annotations
-			if (pageContents != null)
-			{
-				pageContents.destroy();
-				pageContents = null;
-			}
-			if (annotContents != null)
-			{
-				annotContents.destroy();
-				annotContents = null;
-			}
-
-			//  destroy the page before making a new one.
-			if (mPage != null)
-				mPage.destroy();
 			mPage = mDoc.loadPage(mPageNum);
 		}
 
@@ -155,6 +143,26 @@ public class DocPageView extends View implements Callback
 
 		mZoom = w / pagew;
 		mSize = new Point((int) (pagew * mZoom), (int) (pageH * mZoom));
+	}
+
+	private void destroyPageAndLists()
+	{
+		//  de-cache contents and annotations
+		if (pageContents != null)
+		{
+			pageContents.destroy();
+			pageContents = null;
+		}
+		if (annotContents != null)
+		{
+			annotContents.destroy();
+			annotContents = null;
+		}
+
+		//  destroy the page before making a new one.
+		if (mPage != null)
+			mPage.destroy();
+		mPage = null;
 	}
 
 	public Page getPage()
@@ -364,6 +372,7 @@ public class DocPageView extends View implements Callback
 			catch (RuntimeException e)
 			{
 				pageContents.destroy();
+				pageContents = null;
 				dispDev.destroy();
 				throw (e);
 			}
@@ -392,6 +401,7 @@ public class DocPageView extends View implements Callback
 			catch (RuntimeException e)
 			{
 				annotContents.destroy();
+				annotContents = null;
 				annotDev.destroy();
 				throw (e);
 			}
@@ -806,12 +816,8 @@ public class DocPageView extends View implements Callback
 	{
 		mFinished = true;
 
-		//  destroy the page
-		if (mPage != null)
-		{
-			mPage.destroy();
-			mPage = null;
-		}
+		//  destroy page and lists
+		destroyPageAndLists();
 	}
 
 	public boolean getMostVisible() {return isMostVisible;}

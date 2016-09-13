@@ -29,7 +29,11 @@ import com.artifex.mupdf.fitz.Page;
 import com.artifex.mupdf.fitz.R;
 import com.artifex.mupdf.fitz.Separation;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.util.LinkedList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ProofActivity extends Activity implements View.OnClickListener, DocViewBase.IdleRenderListener
 {
@@ -112,8 +116,29 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 		//  stop the view
 		mDocView.finish();
 
+		//  kill the document
+		mDoc.destroy();
+
 		//  delete the .gproof file
 		Utilities.deleteFile(mPath);
+
+		//  delete temp files left by the proofing.
+		//  these are of the form gprf_n_xxxxxx
+		File dir = new File(mPath).getParentFile();
+		final Pattern pattern = Pattern.compile("gprf_.*_.*");
+		File[] files = dir.listFiles(new FileFilter()
+		{
+			public boolean accept(File file)
+			{
+				Matcher matcher = pattern.matcher(file.getName());
+				return matcher.matches();
+			}
+		});
+		for (File file:files)
+		{
+			System.out.println(String.format("deleting %s", file.getAbsolutePath()));
+			file.delete();
+		}
 
 		super.finish();
 	}
