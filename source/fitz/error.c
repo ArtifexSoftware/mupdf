@@ -16,7 +16,6 @@ void fz_flush_warnings(fz_context *ctx)
 	if (ctx->warn->count > 1)
 	{
 		fprintf(stderr, "warning: ... repeated %d times ...\n", ctx->warn->count);
-		LOGE("warning: ... repeated %d times ...\n", ctx->warn->count);
 	}
 	ctx->warn->message[0] = 0;
 	ctx->warn->count = 0;
@@ -41,7 +40,6 @@ void fz_vwarn(fz_context *ctx, const char *fmt, va_list ap)
 	{
 		fz_flush_warnings(ctx);
 		fprintf(stderr, "warning: %s\n", buf);
-		LOGE("warning: %s\n", buf);
 		fz_strlcpy(ctx->warn->message, buf, sizeof ctx->warn->message);
 		ctx->warn->count = 1;
 	}
@@ -96,7 +94,6 @@ FZ_NORETURN static void throw(fz_context *ctx)
 	else
 	{
 		fprintf(stderr, "uncaught exception: %s\n", ctx->error->message);
-		LOGE("uncaught exception: %s\n", ctx->error->message);
 #ifdef USE_OUTPUT_DEBUG_STRING
 		OutputDebugStringA("uncaught exception: ");
 		OutputDebugStringA(ctx->error->message);
@@ -121,7 +118,6 @@ static int fz_fake_throw(fz_context *ctx, int code, const char *fmt, ...)
 	{
 		fz_flush_warnings(ctx);
 		fprintf(stderr, "error: %s\n", ctx->error->message);
-		LOGE("error: %s\n", ctx->error->message);
 #ifdef USE_OUTPUT_DEBUG_STRING
 		OutputDebugStringA("error: ");
 		OutputDebugStringA(ctx->error->message);
@@ -172,7 +168,6 @@ void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 	{
 		fz_flush_warnings(ctx);
 		fprintf(stderr, "error: %s\n", ctx->error->message);
-		LOGE("error: %s\n", ctx->error->message);
 #ifdef USE_OUTPUT_DEBUG_STRING
 		OutputDebugStringA("error: ");
 		OutputDebugStringA(ctx->error->message);
@@ -203,3 +198,73 @@ void fz_rethrow_if(fz_context *ctx, int err)
 	if (ctx->error->errcode == err)
 		fz_rethrow(ctx);
 }
+
+/* Android specific code to take fprintf to LOG */
+
+#ifdef __ANDROID__
+#include <android/log.h>
+
+#define LOG_TAG "libmupdf"
+
+static char android_log_buffer[4096];
+static int android_log_fill = 0;
+
+static char android_log_buffer2[4096];
+
+int fz_android_fprintf(FILE *file, const char *fmt, ...)
+{
+	va_list args;
+	char *p, *q;
+
+	/* Just in case someone has some magic fprintf redirection code working */
+	va_start(args, fmt);
+	vfprintf(file, fmt, args);
+	va_end(args);
+
+	if (file != stdout && file != stderr)
+		return 0;
+
+	va_start(args, fmt);
+	vsnprintf(android_log_buffer2, sizeof(android_log_buffer2)-1, fmt, args);
+	va_end(args);
+
+	/* Ensure we are always null terminated */
+	android_log_buffer2[sizeof(android_log_buffer2)-1] = 0;
+
+	p = android_log_buffer2;
+	q = p;
+	do
+	{
+		/* Find the end of the string, or the next \n */
+		while (*p && *p != '\n')
+			p++;
+
+		/* We need to output from q to p. Limit ourselves to what
+		 * will fit in the existing buffer. */
+		if (p - q >= sizeof(android_log_buffer)-1 - android_log_fill)
+			p = q + sizeof(android_log_buffer)-1 - android_log_fill;
+
+		memcpy(&android_log_buffer[android_log_fill], q, p-q);
+		android_log_fill += p-q;
+		if (*p == '\n')
+		{
+			android_log_buffer[android_log_fill] = 0;
+			__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "%s", android_log_buffer);
+			usleep(1); /* Hack to avoid the logcat buffer losing data */
+			android_log_fill = 0;
+			p++; /* Skip over the \n */
+		}
+		else if (android_log_fill >= sizeof(android_log_buffer)-1)
+		{
+			android_log_buffer[sizeof(android_log_buffer2)-1] = 0;
+			__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "%s", android_log_buffer);
+			usleep(1); /* Hack to avoid the logcat buffer losing data */
+			android_log_fill = 0;
+		}
+		q = p;
+	}
+	while (*p);
+
+	return 0;
+}
+#endif
