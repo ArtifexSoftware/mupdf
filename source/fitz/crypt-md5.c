@@ -38,7 +38,7 @@ static void encode(unsigned char *, const unsigned int *, const unsigned);
 static void decode(unsigned int *, const unsigned char *, const unsigned);
 static void transform(unsigned int state[4], const unsigned char block[64]);
 
-static unsigned char padding[64] =
+static const unsigned char padding[64] =
 {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
