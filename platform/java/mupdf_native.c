@@ -3668,7 +3668,7 @@ FUN(Annotation_toDisplayList)(JNIEnv *env, jobject self)
 
 /* Document interface */
 
-static char *tmp_gproof_path(const char *path)
+static char *make_tmp_gproof_path(const char *path)
 {
 	FILE *f;
 	int i;
@@ -3747,7 +3747,7 @@ FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstri
 		return NULL;
 	}
 
-	tmp = tmp_gproof_path(currentPath);
+	tmp = make_tmp_gproof_path(currentPath);
 	if (!tmp)
 	{
 		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
