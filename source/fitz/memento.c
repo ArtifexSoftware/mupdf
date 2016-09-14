@@ -58,14 +58,59 @@ int atexit(void (*)(void));
 #ifdef MEMENTO_ANDROID
 #include <android/log.h>
 
+static char log_buffer[4096];
+static int log_fill = 0;
+
+static char log_buffer2[4096];
+
 static int
 android_fprintf(FILE *file, const char *fmt, ...)
 {
     va_list args;
+    char *p, *q;
 
     va_start(args, fmt);
-    __android_log_vprint(ANDROID_LOG_ERROR,"memento", fmt, args);
+    //__android_log_vprint(ANDROID_LOG_ERROR,"memento", fmt, args);
+    vsnprintf(log_buffer2, sizeof(log_buffer2)-1, fmt, args);
     va_end(args);
+
+    /* Ensure we are always null terminated */
+    log_buffer2[sizeof(log_buffer2)-1] = 0;
+
+    p = log_buffer2;
+    q = p;
+    do
+    {
+        /* Find the end of the string, or the next \n */
+        while (*p && *p != '\n')
+            p++;
+
+        /* We need to output from q to p. Limit ourselves to what
+         * will fit in the existing */
+        if (p - q >= sizeof(log_buffer)-1 - log_fill)
+                p = q + sizeof(log_buffer)-1 - log_fill;
+
+        memcpy(&log_buffer[log_fill], q, p-q);
+        log_fill += p-q;
+        if (*p == '\n')
+        {
+            log_buffer[log_fill] = 0;
+            __android_log_print(ANDROID_LOG_ERROR, "memento", "%s", log_buffer);
+            usleep(1);
+            log_fill = 0;
+            p++; /* Skip over the \n */
+        }
+        else if (log_fill >= sizeof(log_buffer)-1)
+        {
+            log_buffer[sizeof(log_buffer2)-1] = 0;
+            __android_log_print(ANDROID_LOG_ERROR, "memento", "%s", log_buffer);
+            usleep(1);
+            log_fill = 0;
+        }
+        q = p;
+    }
+    while (*p);
+
     return 0;
 }
 
@@ -696,7 +741,6 @@ static _Unwind_Reason_Code unwind_populate_callback(struct _Unwind_Context *cont
 static int Memento_getStacktrace(void **stack, int *skip)
 {
     my_unwind_details uw = { 0, stack };
-    int count;
 
     *skip = 0;
 
@@ -1178,10 +1222,10 @@ int Memento_listBlocksNested(void)
     /* Populate our block list */
     b = memento.used.head;
     minptr = maxptr = MEMBLK_TOBLK(b);
-    mask = (long)minptr;
+    mask = (intptr_t)minptr;
     for (i = 0; b; b = b->next, i++) {
         void *p = MEMBLK_TOBLK(b);
-        mask &= (long)p;
+        mask &= (intptr_t)p;
         if (p < minptr)
             minptr = p;
         if (p > maxptr)
