@@ -104,14 +104,14 @@ fz_dirname(char *dir, const char *path, size_t n)
 	dir[i+1] = 0;
 }
 
-static int ishex(int a)
+static inline int ishex(int a)
 {
 	return (a >= 'A' && a <= 'F') ||
 		(a >= 'a' && a <= 'f') ||
 		(a >= '0' && a <= '9');
 }
 
-static int tohex(int c)
+static inline int tohex(int c)
 {
 	if (c >= '0' && c <= '9') return c - '0';
 	if (c >= 'a' && c <= 'f') return c - 'a' + 0xA;

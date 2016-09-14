@@ -167,7 +167,7 @@ struct paint_tri_data
 };
 
 static void
-prepare_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input)
+prepare_mesh_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input)
 {
 	struct paint_tri_data *ptd = (struct paint_tri_data *)arg;
 	const fz_shade *shade = ptd->shade;
@@ -246,7 +246,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		ptd.bbox = bbox;
 
 		fz_init_cached_color_converter(ctx, &ptd.cc, temp->colorspace, shade->colorspace);
-		fz_process_mesh(ctx, shade, &local_ctm, &prepare_vertex, &do_paint_tri, &ptd);
+		fz_process_mesh(ctx, shade, &local_ctm, &prepare_mesh_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)
 		{

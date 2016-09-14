@@ -55,7 +55,7 @@ fz_char_and_box *fz_stext_char_at(fz_context *ctx, fz_char_and_box *cab, fz_stex
 	return cab;
 }
 
-static int charat(fz_context *ctx, fz_stext_page *page, int idx)
+static inline int charat(fz_context *ctx, fz_stext_page *page, int idx)
 {
 	fz_char_and_box cab;
 	return fz_stext_char_at(ctx, &cab, page, idx)->c;
@@ -69,7 +69,7 @@ static fz_rect *bboxat(fz_context *ctx, fz_stext_page *page, int idx, fz_rect *b
 	return bbox;
 }
 
-static int textlen(fz_context *ctx, fz_stext_page *page)
+static int textlen_stext(fz_context *ctx, fz_stext_page *page)
 {
 	int len = 0;
 	int block_num;
@@ -95,7 +95,7 @@ static int textlen(fz_context *ctx, fz_stext_page *page)
 	return len;
 }
 
-static int match(fz_context *ctx, fz_stext_page *page, const char *s, int n)
+static int match_stext(fz_context *ctx, fz_stext_page *page, const char *s, int n)
 {
 	int orig = n;
 	int c;
@@ -134,10 +134,10 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, f
 		return 0;
 
 	hit_count = 0;
-	len = textlen(ctx, text);
+	len = textlen_stext(ctx, text);
 	for (pos = 0; pos < len; pos++)
 	{
-		n = match(ctx, text, needle, pos);
+		n = match_stext(ctx, text, needle, pos);
 		if (n)
 		{
 			fz_rect linebox = fz_empty_rect;

@@ -11,12 +11,12 @@ struct fz_flate_s
 	unsigned char buffer[4096];
 };
 
-static void *zalloc(void *opaque, unsigned int items, unsigned int size)
+static void *zalloc_flate(void *opaque, unsigned int items, unsigned int size)
 {
 	return fz_malloc_array_no_throw(opaque, items, size);
 }
 
-static void zfree(void *opaque, void *ptr)
+static void zfree_flate(void *opaque, void *ptr)
 {
 	fz_free(opaque, ptr);
 }
@@ -111,8 +111,8 @@ fz_open_flated(fz_context *ctx, fz_stream *chain, int window_bits)
 		state = fz_malloc_struct(ctx, fz_flate);
 		state->chain = chain;
 
-		state->z.zalloc = zalloc;
-		state->z.zfree = zfree;
+		state->z.zalloc = zalloc_flate;
+		state->z.zfree = zfree_flate;
 		state->z.opaque = ctx;
 		state->z.next_in = NULL;
 		state->z.avail_in = 0;

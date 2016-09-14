@@ -73,7 +73,7 @@ fz_print_stext_sheet(fz_context *ctx, fz_output *out, fz_stext_sheet *sheet)
 }
 
 static void
-send_data_base64(fz_context *ctx, fz_output *out, fz_buffer *buffer)
+send_data_base64_stext(fz_context *ctx, fz_output *out, fz_buffer *buffer)
 {
 	size_t i, len;
 	static const char set[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -251,17 +251,17 @@ fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
 			{
 			case FZ_IMAGE_JPEG:
 				fz_printf(ctx, out, "image/jpeg;base64,");
-				send_data_base64(ctx, out, buffer->buffer);
+				send_data_base64_stext(ctx, out, buffer->buffer);
 				break;
 			case FZ_IMAGE_PNG:
 				fz_printf(ctx, out, "image/png;base64,");
-				send_data_base64(ctx, out, buffer->buffer);
+				send_data_base64_stext(ctx, out, buffer->buffer);
 				break;
 			default:
 				{
 					fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image->image);
 					fz_printf(ctx, out, "image/png;base64,");
-					send_data_base64(ctx, out, buf);
+					send_data_base64_stext(ctx, out, buf);
 					fz_drop_buffer(ctx, buf);
 					break;
 				}

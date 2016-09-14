@@ -10,14 +10,14 @@ struct fz_tree_s
 	int level;
 };
 
-static fz_tree sentinel = { "", NULL, &sentinel, &sentinel, 0 };
+static fz_tree tree_sentinel = { "", NULL, &tree_sentinel, &tree_sentinel, 0 };
 
 static fz_tree *fz_tree_new_node(fz_context *ctx, const char *key, void *value)
 {
 	fz_tree *node = fz_malloc_struct(ctx, fz_tree);
 	node->key = fz_strdup(ctx, key);
 	node->value = value;
-	node->left = node->right = &sentinel;
+	node->left = node->right = &tree_sentinel;
 	node->level = 1;
 	return node;
 }
@@ -26,7 +26,7 @@ void *fz_tree_lookup(fz_context *ctx, fz_tree *node, const char *key)
 {
 	if (node)
 	{
-		while (node != &sentinel)
+		while (node != &tree_sentinel)
 		{
 			int c = strcmp(key, node->key);
 			if (c == 0)
@@ -72,7 +72,7 @@ static fz_tree *fz_tree_split(fz_tree *node)
 
 fz_tree *fz_tree_insert(fz_context *ctx, fz_tree *node, const char *key, void *value)
 {
-	if (node && node != &sentinel)
+	if (node && node != &tree_sentinel)
 	{
 		int c = strcmp(key, node->key);
 		if (c < 0)
@@ -93,9 +93,9 @@ void fz_drop_tree(fz_context *ctx, fz_tree *node, void (*dropfunc)(fz_context *c
 {
 	if (node)
 	{
-		if (node->left != &sentinel)
+		if (node->left != &tree_sentinel)
 			fz_drop_tree(ctx, node->left, dropfunc);
-		if (node->right != &sentinel)
+		if (node->right != &tree_sentinel)
 			fz_drop_tree(ctx, node->right, dropfunc);
 		fz_free(ctx, node->key);
 		if (dropfunc)
@@ -106,19 +106,19 @@ void fz_drop_tree(fz_context *ctx, fz_tree *node, void (*dropfunc)(fz_context *c
 static void print_tree_imp(fz_context *ctx, fz_tree *node, int level)
 {
 	int i;
-	if (node->left != &sentinel)
+	if (node->left != &tree_sentinel)
 		print_tree_imp(ctx, node->left, level + 1);
 	for (i = 0; i < level; i++)
 		putchar(' ');
 	printf("%s = %p (%d)\n", node->key, node->value, node->level);
-	if (node->right != &sentinel)
+	if (node->right != &tree_sentinel)
 		print_tree_imp(ctx, node->right, level + 1);
 }
 
 void fz_debug_tree(fz_context *ctx, fz_tree *root)
 {
 	printf("--- tree dump ---\n");
-	if (root && root != &sentinel)
+	if (root && root != &tree_sentinel)
 		print_tree_imp(ctx, root, 0);
 	printf("---\n");
 }

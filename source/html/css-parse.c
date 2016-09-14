@@ -165,7 +165,7 @@ static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s, con
 	buf->string_len = 0;
 }
 
-static int iswhite(int c)
+static inline int iswhite(int c)
 {
 	return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f';
 }

@@ -86,24 +86,24 @@ fz_dct_mem_term(fz_dctd *state)
 
 #endif /* SHARE_JPEG */
 
-static void error_exit(j_common_ptr cinfo)
+static void error_exit_dct(j_common_ptr cinfo)
 {
 	fz_dctd *state = JZ_DCT_STATE_FROM_CINFO(cinfo);
 	cinfo->err->format_message(cinfo, state->msg);
 	longjmp(state->jb, 1);
 }
 
-static void init_source(j_decompress_ptr cinfo)
+static void init_source_dct(j_decompress_ptr cinfo)
 {
 	/* nothing to do */
 }
 
-static void term_source(j_decompress_ptr cinfo)
+static void term_source_dct(j_decompress_ptr cinfo)
 {
 	/* nothing to do */
 }
 
-static boolean fill_input_buffer(j_decompress_ptr cinfo)
+static boolean fill_input_buffer_dct(j_decompress_ptr cinfo)
 {
 	struct jpeg_source_mgr *src = cinfo->src;
 	fz_dctd *state = JZ_DCT_STATE_FROM_CINFO(cinfo);
@@ -133,7 +133,7 @@ static boolean fill_input_buffer(j_decompress_ptr cinfo)
 	return 1;
 }
 
-static void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
+static void skip_input_data_dct(j_decompress_ptr cinfo, long num_bytes)
 {
 	struct jpeg_source_mgr *src = cinfo->src;
 	if (num_bytes > 0)
@@ -173,7 +173,7 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 		cinfo->client_data = state;
 		cinfo->err = &state->errmgr;
 		jpeg_std_error(cinfo->err);
-		cinfo->err->error_exit = error_exit;
+		cinfo->err->error_exit = error_exit_dct;
 
 		fz_dct_mem_init(state);
 
@@ -185,11 +185,11 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 			(void)fz_read_byte(ctx, state->chain);
 
 		cinfo->src = &state->srcmgr;
-		cinfo->src->init_source = init_source;
-		cinfo->src->fill_input_buffer = fill_input_buffer;
-		cinfo->src->skip_input_data = skip_input_data;
+		cinfo->src->init_source = init_source_dct;
+		cinfo->src->fill_input_buffer = fill_input_buffer_dct;
+		cinfo->src->skip_input_data = skip_input_data_dct;
 		cinfo->src->resync_to_restart = jpeg_resync_to_restart;
-		cinfo->src->term_source = term_source;
+		cinfo->src->term_source = term_source_dct;
 
 		/* optionally load additional JPEG tables first */
 		if (state->jpegtables)

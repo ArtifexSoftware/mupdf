@@ -20,7 +20,7 @@ FZ_NORETURN static void rethrow(pdf_js *js)
 }
 
 /* Unpack argument object with named arguments into actual parameters. */
-static pdf_js *arguments(js_State *J, ...)
+static pdf_js *unpack_arguments(js_State *J, ...)
 {
 	if (js_isobject(J, 1))
 	{
@@ -80,7 +80,7 @@ static char *pdf_from_utf8(fz_context *ctx, const char *utf8)
 
 static void app_alert(js_State *J)
 {
-	pdf_js *js = arguments(J, "cMsg", "nIcon", "nType", "cTitle", 0);
+	pdf_js *js = unpack_arguments(J, "cMsg", "nIcon", "nType", "cTitle", 0);
 	pdf_alert_event event;
 
 	event.message = js_tostring(J, 1);
@@ -461,7 +461,7 @@ static void doc_print(js_State *J)
 
 static void doc_mailDoc(js_State *J)
 {
-	pdf_js *js = arguments(J, "bUI", "cTo", "cCc", "cBcc", "cSubject", "cMessage", 0);
+	pdf_js *js = unpack_arguments(J, "bUI", "cTo", "cCc", "cBcc", "cSubject", "cMessage", 0);
 	pdf_mail_doc_event event;
 
 	event.ask_user = js_isdefined(J, 1) ? js_toboolean(J, 1) : 1;

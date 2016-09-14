@@ -85,7 +85,7 @@ struct fz_xml_s
 	fz_xml *up, *down, *tail, *prev, *next;
 };
 
-static void indent(int n)
+static void xml_indent(int n)
 {
 	while (n--) {
 		putchar(' ');
@@ -99,7 +99,7 @@ void fz_debug_xml(fz_xml *item, int level)
 	{
 		char *s = item->text;
 		int c;
-		indent(level);
+		xml_indent(level);
 		putchar('"');
 		while ((c = *s++)) {
 			switch (c) {
@@ -128,16 +128,16 @@ void fz_debug_xml(fz_xml *item, int level)
 		fz_xml *child;
 		struct attribute *att;
 
-		indent(level);
+		xml_indent(level);
 		printf("(%s\n", item->name);
 		for (att = item->atts; att; att = att->next)
 		{
-			indent(level);
+			xml_indent(level);
 			printf("=%s %s\n", att->name, att->value);
 		}
 		for (child = item->down; child; child = child->next)
 			fz_debug_xml(child, level + 1);
-		indent(level);
+		xml_indent(level);
 		printf(")%s\n", item->name);
 	}
 }

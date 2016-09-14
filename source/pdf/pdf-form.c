@@ -125,7 +125,7 @@ pdf_obj *pdf_lookup_field(fz_context *ctx, pdf_obj *form, char *name)
 	return dict;
 }
 
-static void reset_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
+static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
 	/* Set V to DV wherever DV is present, and delete V where DV is not.
 	 * FIXME: we assume for now that V has not been set unequal
@@ -192,7 +192,7 @@ void pdf_field_reset(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
 	pdf_obj *kids = pdf_dict_get(ctx, field, PDF_NAME_Kids);
 
-	reset_field(ctx, doc, field);
+	reset_form_field(ctx, doc, field);
 
 	if (kids)
 	{
@@ -317,7 +317,7 @@ static void reset_form(fz_context *ctx, pdf_document *doc, pdf_obj *fields, int 
 		int i, n = pdf_array_len(ctx, sfields);
 
 		for (i = 0; i < n; i++)
-			reset_field(ctx, doc, pdf_array_get(ctx, sfields, i));
+			reset_form_field(ctx, doc, pdf_array_get(ctx, sfields, i));
 	}
 	fz_always(ctx)
 	{
