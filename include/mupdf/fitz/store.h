@@ -26,6 +26,7 @@
  */
 
 typedef struct fz_storable_s fz_storable;
+typedef struct fz_key_storable_s fz_key_storable;
 
 typedef void (fz_store_drop_fn)(fz_context *, fz_storable *);
 
@@ -34,13 +35,29 @@ struct fz_storable_s {
 	fz_store_drop_fn *drop;
 };
 
+struct fz_key_storable_s {
+	fz_storable storable;
+	int store_key_refs;
+};
+
 #define FZ_INIT_STORABLE(S_,RC,DROP) \
 	do { fz_storable *S = &(S_)->storable; S->refs = (RC); \
 	S->drop = (DROP); \
 	} while (0)
 
+#define FZ_INIT_KEY_STORABLE(KS_,RC,DROP) \
+	do { fz_key_storable *KS = &(KS_)->key_storable; KS->store_key_refs = 0;\
+	FZ_INIT_STORABLE(KS,RC,DROP); \
+	} while (0)
+
 void *fz_keep_storable(fz_context *, const fz_storable *);
 void fz_drop_storable(fz_context *, const fz_storable *);
+
+void *fz_keep_key_storable(fz_context *, const fz_key_storable *);
+int fz_drop_key_storable(fz_context *, const fz_key_storable *);
+
+void *fz_keep_key_storable_key(fz_context *, const fz_key_storable *);
+void fz_drop_key_storable_key(fz_context *, const fz_key_storable *);
 
 /*
 	The store can be seen as a dictionary that maps keys to fz_storable
@@ -191,6 +208,10 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase);
 	Returns non zero if we managed to free enough memory, zero otherwise.
 */
 int fz_shrink_store(fz_context *ctx, unsigned int percent);
+
+typedef int (fz_store_filter_fn)(fz_context *ctx, void *arg, void *key);
+
+void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_store_type *type);
 
 /*
 	fz_print_store: Dump the contents of the store for debugging.

@@ -18,18 +18,6 @@ struct fz_pixmap_image_s
 	fz_pixmap *tile;
 };
 
-fz_image *
-fz_keep_image(fz_context *ctx, fz_image *image)
-{
-	return fz_keep_storable(ctx, &image->storable);
-}
-
-void
-fz_drop_image(fz_context *ctx, fz_image *image)
-{
-	fz_drop_storable(ctx, &image->storable);
-}
-
 typedef struct fz_image_key_s fz_image_key;
 
 struct fz_image_key_s {
@@ -38,6 +26,24 @@ struct fz_image_key_s {
 	int l2factor;
 	fz_irect rect;
 };
+
+fz_image *
+fz_keep_image(fz_context *ctx, fz_image *image)
+{
+	return fz_keep_key_storable(ctx, &image->key_storable);
+}
+
+fz_image *
+fz_keep_image_store_key(fz_context *ctx, fz_image *image)
+{
+	return fz_keep_key_storable_key(ctx, &image->key_storable);
+}
+
+void
+fz_drop_image_store_key(fz_context *ctx, fz_image *image)
+{
+	fz_drop_key_storable_key(ctx, &image->key_storable);
+}
 
 static int
 fz_make_hash_image_key(fz_context *ctx, fz_store_hash *hash, void *key_)
@@ -62,7 +68,7 @@ fz_drop_image_key(fz_context *ctx, void *key_)
 	fz_image_key *key = (fz_image_key *)key_;
 	if (fz_drop_imp(ctx, key, &key->refs))
 	{
-		fz_drop_image(ctx, key->image);
+		fz_drop_image_store_key(ctx, key->image);
 		fz_free(ctx, key);
 	}
 }
@@ -90,6 +96,26 @@ static fz_store_type fz_image_store_type =
 	fz_cmp_image_key,
 	fz_print_image
 };
+
+static int
+drop_matching_images(fz_context *ctx, void *image_, void *key_)
+{
+	fz_image_key *key = (fz_image_key *)key_;
+	fz_image *image = (fz_image *)image_;
+
+	return key->image == image;
+}
+
+void
+fz_drop_image(fz_context *ctx, fz_image *image)
+{
+	if (fz_drop_key_storable(ctx, &image->key_storable))
+	{
+		/* All the image refs left are references from keys in the store. */
+		/* We can never hope to match these keys again, so drop the objects. */
+		fz_filter_store(ctx, drop_matching_images, image, &fz_image_store_type);
+	}
+}
 
 static void
 fz_mask_color_key(fz_pixmap *pix, int n, const int *colorkey)
@@ -671,7 +697,7 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 
 		keyp = fz_malloc_struct(ctx, fz_image_key);
 		keyp->refs = 1;
-		keyp->image = fz_keep_image(ctx, image);
+		keyp->image = fz_keep_image_store_key(ctx, image);
 		keyp->l2factor = l2factor;
 		keyp->rect = key.rect;
 		existing_tile = fz_store_item(ctx, keyp, tile, fz_pixmap_size(ctx, tile), &fz_image_store_type);
@@ -754,7 +780,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 	assert(size >= sizeof(fz_image));
 
 	image = Memento_label(fz_calloc(ctx, 1, size), "fz_image");
-	FZ_INIT_STORABLE(image, 1, fz_drop_image_imp);
+	FZ_INIT_KEY_STORABLE(image, 1, fz_drop_image_imp);
 	image->drop_image = drop;
 	image->get_pixmap = get;
 	image->get_size = get_size;

@@ -68,6 +68,9 @@ void fz_drop_image_base(fz_context *ctx, fz_image *image);
 */
 fz_image *fz_keep_image(fz_context *ctx, fz_image *image);
 
+fz_image *fz_keep_image_store_key(fz_context *ctx, fz_image *image);
+void fz_drop_image_store_key(fz_context *ctx, fz_image *image);
+
 typedef void (fz_drop_image_fn)(fz_context *ctx, fz_image *image);
 typedef fz_pixmap *(fz_image_get_pixmap_fn)(fz_context *, fz_image *, fz_irect *, int, int, int *);
 typedef size_t (fz_image_get_size_fn)(fz_context *, fz_image *);
@@ -85,7 +88,7 @@ size_t fz_image_size(fz_context *ctx, fz_image *im);
 
 struct fz_image_s
 {
-	fz_storable storable;
+	fz_key_storable key_storable;
 	int w, h;
 	uint8_t n;
 	uint8_t bpc;

@@ -467,7 +467,7 @@ fz_new_gprf_image(fz_context *ctx, gprf_page *page, int imagenum, fz_off_t offse
 			h = GPRF_TILESIZE;
 	}
 
-	FZ_INIT_STORABLE(&image->super, 1, fz_drop_image_gprf_imp);
+	FZ_INIT_KEY_STORABLE(&image->super, 1, fz_drop_image_gprf_imp);
 	image->super.w = w;
 	image->super.h = h;
 	image->super.n = 4; /* Always RGB + Alpha */

@@ -81,6 +81,95 @@ fz_drop_storable(fz_context *ctx, const fz_storable *sc)
 		s->drop(ctx, s);
 }
 
+void *fz_keep_key_storable(fz_context *ctx, const fz_key_storable *sc)
+{
+	return fz_keep_storable(ctx, &sc->storable);
+}
+
+int fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
+{
+	/* Explicitly drop const to allow us to use const
+	 * sanely throughout the code. */
+	fz_key_storable *s = (fz_key_storable *)sc;
+	int drop;
+	int only_refs_are_store_key_refs = 0;
+
+	if (s == NULL)
+		return 0;
+
+	if (s->storable.refs > 0)
+		(void)Memento_dropRef(s);
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	if (s->storable.refs > 0)
+	{
+		drop = --s->storable.refs == 0;
+		if (!drop && s->storable.refs == s->store_key_refs)
+			only_refs_are_store_key_refs = 1;
+	}
+	else
+		drop = 0;
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	/*
+		If we are dropping the last reference to an object, then
+		it cannot possibly be in the store (as the store always
+		keeps a ref to everything in it, and doesn't drop via
+		this method. So we can simply drop the storable object
+		itself without any operations on the fz_store.
+	 */
+	if (drop)
+		s->storable.drop(ctx, &s->storable);
+	return only_refs_are_store_key_refs;
+}
+
+void *fz_keep_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
+{
+	/* Explicitly drop const to allow us to use const
+	 * sanely throughout the code. */
+	fz_key_storable *s = (fz_key_storable *)sc;
+
+	if (s == NULL)
+		return NULL;
+
+	if (s->storable.refs > 0)
+		(void)Memento_takeRef(s);
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	if (s->storable.refs > 0)
+	{
+		++s->storable.refs;
+		++s->store_key_refs;
+	}
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	return s;
+}
+
+void fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
+{
+	/* Explicitly drop const to allow us to use const
+	 * sanely throughout the code. */
+	fz_key_storable *s = (fz_key_storable *)sc;
+	int drop;
+
+	if (s == NULL)
+		return;
+
+	if (s->storable.refs > 0)
+		(void)Memento_dropRef(s);
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	assert(s->store_key_refs > 0 && s->storable.refs >= s->store_key_refs);
+	drop = --s->storable.refs == 0;
+	--s->store_key_refs;
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	/*
+		If we are dropping the last reference to an object, then
+		it cannot possibly be in the store (as the store always
+		keeps a ref to everything in it, and doesn't drop via
+		this method. So we can simply drop the storable object
+		itself without any operations on the fz_store.
+	 */
+	if (drop)
+		s->storable.drop(ctx, &s->storable);
+}
+
 static void
 evict(fz_context *ctx, fz_item *item)
 {
@@ -635,4 +724,37 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 #endif
 
 	return success;
+}
+
+void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_store_type *type)
+{
+	fz_store *store;
+	fz_item *item, *prev;
+
+	if (ctx == NULL)
+		return;
+	store = ctx->store;
+	if (store == NULL)
+		return;
+
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+
+	/* Free the items */
+	for (item = store->tail; item; item = prev)
+	{
+		prev = item->prev;
+		if (item->type != type)
+			continue;
+
+		if (fn(ctx, arg, item->key))
+		{
+			/* Free this item */
+			evict(ctx, item); /* Drops then retakes lock */
+
+			/* Have to restart search again, as prev may no longer
+			 * be valid due to release of lock in evict. */
+			prev = store->tail;
+		}
+	}
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
