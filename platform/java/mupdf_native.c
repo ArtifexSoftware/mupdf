@@ -3720,7 +3720,8 @@ FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstri
 	const char *printProfile = NULL;
 	const char *displayProfile = NULL;
 
-	if (ctx == NULL || doc == NULL || jCurrentPath == NULL || jPrintProfile == NULL || jDisplayProfile == NULL)
+	if (!ctx) return NULL;
+	if (jCurrentPath == NULL || jPrintProfile == NULL || jDisplayProfile == NULL)
 		return NULL;
 
 	currentPath = (*env)->GetStringUTFChars(env, jCurrentPath, NULL);
@@ -4057,11 +4058,7 @@ FUN(Page_countSeparations)(JNIEnv *env, jobject self)
 	fz_page *page = from_Page(env, self);
 	int nSep;
 
-	if (ctx==NULL || page==NULL)
-	{
-		LOGI("Page_countSeparations fail %x %x", (unsigned int)ctx, (unsigned int)page);
-		return 0;
-	}
+	if (!ctx) return 0;
 
 	nSep = fz_count_separations_on_page(ctx, page);
 
@@ -4076,11 +4073,7 @@ FUN(Page_enableSeparation)(JNIEnv *env, jobject self, int sep, jboolean enable)
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
 
-	if (ctx==NULL || page==NULL)
-	{
-		LOGI("Page_enableSeparation fail %x %x", (unsigned int)ctx, (unsigned int)page);
-		return;
-	}
+	if (!ctx) return;
 
 	fz_control_separation_on_page(ctx, page, sep, !enable);
 }
@@ -4099,11 +4092,7 @@ FUN(Page_getSeparation)(JNIEnv *env, jobject self, int sep)
 	jclass sepClass;
 	jmethodID ctor;
 
-	if (ctx==NULL || page==NULL)
-	{
-		LOGI("Page_getSeparation fail %x %x", (unsigned int)ctx, (unsigned int)page);
-		return 0;
-	}
+	if (!ctx) return NULL;
 
 	err = 0;
 	sepClass = get_class(&err, env, PKG"Separation");
