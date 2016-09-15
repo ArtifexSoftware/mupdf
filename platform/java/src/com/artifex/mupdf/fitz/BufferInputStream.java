@@ -29,18 +29,23 @@ public class BufferInputStream extends InputStream
 	}
 
 	public int read() {
-		return buffer.readByte(position++);
+		int c = buffer.readByte(position);
+		if (c >= 0)
+			position++;
+		return c;
 	}
 
 	public int read(byte[] b) {
 		int n = buffer.readBytes(position, b);
-		position += n;
+		if (n >= 0)
+			position += n;
 		return n;
 	}
 
 	public int read(byte[] b, int off, int len) {
 		int n = buffer.readBytesInto(position, b, off, len);
-		position += n;
+		if (n >= 0)
+			position += n;
 		return n;
 	}
 
