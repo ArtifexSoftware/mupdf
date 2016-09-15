@@ -555,10 +555,11 @@ generate_page(fz_context *ctx, gprf_page *page)
 #ifdef USE_GS_API
 		void *instance;
 		int code;
-		char *argv[] = { "gs", "-sDEVICE=gprf", "-dUsePDFX3Profile", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+		char *argv[] = { "gs", "-sDEVICE=gprf", "-dUsePDFX3Profile", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL, "-dFitPage", NULL};
 		char arg_res[32];
 		char arg_fp[32];
 		char arg_lp[32];
+		char arg_g[32];
 
 		sprintf(arg_res, "-r%d", doc->res);
 		argv[3] = arg_res;
@@ -570,7 +571,9 @@ generate_page(fz_context *ctx, gprf_page *page)
 		argv[8] = disp_profile;
 		argv[9] = print_profile;
 		argv[10] = "-I%rom%Resource/Init/";
-		argv[11] = doc->pdf_filename;
+		sprintf(arg_g, "-g%dx%d", page->width, page->height);
+		argv[11] = arg_g;
+		argv[13] = doc->pdf_filename;
 
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
@@ -585,8 +588,8 @@ generate_page(fz_context *ctx, gprf_page *page)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS run failed: %d", code);
 #else
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I%%rom%%Resource/Init/ -dFirstPage=%d -dLastPage=%d \"%s\"",
-			doc->res, filename, disp_profile, print_profile, page->number+1, page->number+1, doc->pdf_filename);
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I%%rom%%Resource/Init/ -dFirstPage=%d -dLastPage=%d -g%dx%d -dFitPage \"%s\"",
+			doc->res, filename, disp_profile, print_profile, page->number+1, page->number+1, page->width, page->height, doc->pdf_filename);
 		fz_system(ctx, gs_command);
 #endif
 
