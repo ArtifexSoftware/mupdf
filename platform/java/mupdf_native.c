@@ -3727,8 +3727,9 @@ FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstri
 	const char *displayProfile = NULL;
 
 	if (!ctx) return NULL;
-	if (jCurrentPath == NULL || jPrintProfile == NULL || jDisplayProfile == NULL)
-		return NULL;
+	if (!jCurrentPath) { jni_throw_arg(env, "currentPath must not be null"); return NULL; }
+	if (!jPrintProfile) { jni_throw_arg(env, "printProfile must not be null"); return NULL; }
+	if (!jDisplayProfile) { jni_throw_arg(env, "displayProfile must not be null"); return NULL; }
 
 	currentPath = (*env)->GetStringUTFChars(env, jCurrentPath, NULL);
 	if (currentPath == NULL)
