@@ -4062,9 +4062,13 @@ FUN(Page_countSeparations)(JNIEnv *env, jobject self)
 
 	if (!ctx) return 0;
 
-	nSep = fz_count_separations_on_page(ctx, page);
-
-	LOGI("Page_countSeparations %d", nSep);
+	fz_try(ctx)
+		nSep = fz_count_separations_on_page(ctx, page);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
 
 	return nSep;
 }
@@ -4077,7 +4081,10 @@ FUN(Page_enableSeparation)(JNIEnv *env, jobject self, int sep, jboolean enable)
 
 	if (!ctx) return;
 
-	fz_control_separation_on_page(ctx, page, sep, !enable);
+	fz_try(ctx)
+		fz_control_separation_on_page(ctx, page, sep, !enable);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
 }
 
 JNIEXPORT jobject JNICALL
