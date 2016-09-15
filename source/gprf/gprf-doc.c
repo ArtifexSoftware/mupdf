@@ -10,6 +10,16 @@
 #define GS_API_NULL_STDIO
 #endif
 
+/* Avoid having to #include the gs api */
+#ifdef USE_GS_API
+extern int gsapi_new_instance(void **, void *);
+extern int gsapi_init_with_args(void *, int, char *argv[]);
+extern void gsapi_delete_instance(void *);
+#ifdef GS_API_NULL_STDIO
+extern int gsapi_set_stdio(void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), int (*)(void *, const char *, int));
+#endif
+#endif
+
 #include "mupdf/fitz.h"
 #if defined(USE_GS_API) && !defined(__ANDROID__)
 #ifdef _MSC_VER
@@ -485,6 +495,7 @@ fz_new_gprf_image(fz_context *ctx, gprf_page *page, int imagenum, fz_off_t offse
 	return &image->super;
 }
 
+#ifndef USE_GS_API
 static void
 fz_system(fz_context *ctx, const char *cmd)
 {
@@ -493,6 +504,7 @@ fz_system(fz_context *ctx, const char *cmd)
 	if (ret != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "child process reported error %d", ret);
 }
+#endif
 
 #ifdef GS_API_NULL_STDIO
 static int GSDLLCALL
@@ -514,7 +526,6 @@ generate_page(fz_context *ctx, gprf_page *page)
 	gprf_document *doc = page->doc;
 	char nameroot[32];
 	char *filename;
-	char gs_command[1024];
 	char *disp_profile = NULL;
 	char *print_profile = NULL;
 	int len;
@@ -587,6 +598,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 		if (code < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS run failed: %d", code);
 #else
+		char gs_command[1024];
 		/* Invoke gs to convert to a temp file. */
 		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I%%rom%%Resource/Init/ -dFirstPage=%d -dLastPage=%d -g%dx%d -dFitPage \"%s\"",
 			doc->res, filename, disp_profile, print_profile, page->number+1, page->number+1, page->width, page->height, doc->pdf_filename);
