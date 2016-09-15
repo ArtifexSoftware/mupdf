@@ -618,16 +618,30 @@ static void fin_base_context(JNIEnv *env)
 	base_context = NULL;
 }
 
+#ifndef _WIN32
+static void drop_tls_context(void *arg)
+{
+	fz_context *ctx = (fz_context *)arg;
+
+	fz_drop_context(ctx);
+}
+#endif
+
 static int init_base_context(JNIEnv *env)
 {
 	int i;
 
 #ifdef _WIN32
+	/* No destructor on windows. We will leak contexts.
+	 * There is no easy way around this, but this page:
+	 * http://stackoverflow.com/questions/3241732/is-there-anyway-to-dynamically-free-thread-local-storage-in-the-win32-apis/3245082#3245082
+	 * suggests a workaround that we can implement if we
+	 * need to. */
 	context_key = TlsAlloc();
 	if (context_key == TLS_OUT_OF_INDEXES)
 		return -1;
 #else
-	pthread_key_create(&context_key, NULL);
+	pthread_key_create(&context_key, drop_tls_context);
 #endif
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
