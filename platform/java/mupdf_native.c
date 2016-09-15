@@ -78,6 +78,7 @@ static jclass cls_Pixmap;
 static jclass cls_Point;
 static jclass cls_Rect;
 static jclass cls_RuntimeException;
+static jclass cls_Separation;
 static jclass cls_Shade;
 static jclass cls_StrokeState;
 static jclass cls_StructuredText;
@@ -178,6 +179,7 @@ static jmethodID mid_Pixmap_init;
 static jmethodID mid_Point_init;
 static jmethodID mid_Rect_init;
 static jmethodID mid_Shade_init;
+static jmethodID mid_Separation_init;
 static jmethodID mid_StrokeState_init;
 static jmethodID mid_StructuredText_init;
 static jmethodID mid_TextBlock_init;
@@ -461,6 +463,9 @@ static int find_fids(JNIEnv *env)
 	fid_Shade_pointer = get_field(&err, env, "pointer", "J");
 	mid_Shade_init = get_method(&err, env, "<init>", "(J)V");
 
+	cls_Separation = get_class(&err, env, PKG"Separation");
+	mid_Separation_init = get_method(&err, env, "<init>", "(Ljava/lang/String;II)V");
+
 	cls_StrokeState = get_class(&err, env, PKG"StrokeState");
 	fid_StrokeState_pointer = get_field(&err, env, "pointer", "J");
 	mid_StrokeState_init = get_method(&err, env, "<init>", "(J)V");
@@ -544,6 +549,7 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Point);
 	(*env)->DeleteGlobalRef(env, cls_Rect);
 	(*env)->DeleteGlobalRef(env, cls_RuntimeException);
+	(*env)->DeleteGlobalRef(env, cls_Separation);
 	(*env)->DeleteGlobalRef(env, cls_Shade);
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
 	(*env)->DeleteGlobalRef(env, cls_StructuredText);
@@ -4089,32 +4095,15 @@ FUN(Page_getSeparation)(JNIEnv *env, jobject self, int sep)
 	unsigned int bgra;
 	unsigned int cmyk;
 	jobject jname;
-	jclass sepClass;
-	jmethodID ctor;
 
 	if (!ctx) return NULL;
-
-	err = 0;
-	sepClass = get_class(&err, env, PKG"Separation");
-	if (sepClass == NULL)
-	{
-		LOGI("Page_getSeparation failed to get class for Separation");
-		return NULL;
-	}
-
-	ctor = (*env)->GetMethodID(env, sepClass, "<init>", "(Ljava/lang/String;II)V");
-	if (ctor == NULL)
-	{
-		LOGI("Page_getSeparation failed to get ctor for Separation");
-		return NULL;
-	}
 
 	/* MuPDF returns RGBA as bytes. Android wants a packed BGRA int. */
 	name = fz_get_separation_on_page(ctx, page, sep, (unsigned int *)(&rgba[0]), &cmyk);
 	bgra = (rgba[0] << 16) | (rgba[1]<<8) | rgba[2] | (rgba[3]<<24);
 	jname = name ? (*env)->NewStringUTF(env, name) : NULL;
 
-	return (*env)->NewObject(env, sepClass, ctor, jname, bgra, cmyk);
+	return (*env)->NewObject(env, cls_Separation, mid_Separation_init, jname, bgra, cmyk);
 }
 
 JNIEXPORT jobject JNICALL
