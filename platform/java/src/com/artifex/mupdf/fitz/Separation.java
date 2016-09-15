@@ -3,13 +3,13 @@ package com.artifex.mupdf.fitz;
 public class Separation
 {
 	public String name;
-	public int rgba;
+	public int bgra;
 	public int cmyk;
 
-	public Separation(String name, int rgba, int cmyk)
+	public Separation(String name, int bgra, int cmyk)
 	{
 		this.name = name;
-		this.rgba = rgba;
+		this.bgra = bgra;
 		this.cmyk = cmyk;
 	}
 }
