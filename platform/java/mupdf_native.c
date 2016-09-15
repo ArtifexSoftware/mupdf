@@ -4075,7 +4075,6 @@ FUN(Page_enableSeparation)(JNIEnv *env, jobject self, int sep, jboolean enable)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	int i;
 
 	if (ctx==NULL || page==NULL)
 	{
@@ -4099,8 +4098,6 @@ FUN(Page_getSeparation)(JNIEnv *env, jobject self, int sep)
 	jobject jname;
 	jclass sepClass;
 	jmethodID ctor;
-	int i;
-	int err;
 
 	if (ctx==NULL || page==NULL)
 	{
