@@ -3732,26 +3732,21 @@ FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstri
 	if (!jDisplayProfile) { jni_throw_arg(env, "displayProfile must not be null"); return NULL; }
 
 	currentPath = (*env)->GetStringUTFChars(env, jCurrentPath, NULL);
-	if (currentPath == NULL)
-	{
-		jni_throw(env, FZ_ERROR_GENERIC, "Document_proofNative failed");
+	if (!currentPath)
 		return NULL;
-	}
 
 	printProfile = (*env)->GetStringUTFChars(env, jPrintProfile, NULL);
-	if (printProfile == NULL)
+	if (!printProfile)
 	{
-		jni_throw(env, FZ_ERROR_GENERIC, "Document_proofNative failed");
 		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
 		return NULL;
 	}
 
 	displayProfile = (*env)->GetStringUTFChars(env, jDisplayProfile, NULL);
-	if (displayProfile == NULL)
+	if (!displayProfile)
 	{
 		(*env)->ReleaseStringUTFChars(env, jCurrentPath, currentPath);
 		(*env)->ReleaseStringUTFChars(env, jPrintProfile, printProfile);
-		jni_throw(env, FZ_ERROR_GENERIC, "Document_proofNative failed");
 		return NULL;
 	}
 
