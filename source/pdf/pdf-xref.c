@@ -1610,7 +1610,7 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 
 	pdf_drop_ocg(ctx, doc->ocg);
 
-	fz_empty_store(ctx);
+	pdf_empty_store(ctx, doc);
 
 	pdf_lexbuf_fin(ctx, &doc->lexbuf.base);
 

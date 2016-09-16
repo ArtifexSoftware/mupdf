@@ -54,6 +54,8 @@ void
 pdf_store_item(fz_context *ctx, pdf_obj *key, void *val, size_t itemsize)
 {
 	void *existing;
+
+	assert(pdf_is_array(ctx, key) || pdf_is_dict(ctx, key) || pdf_is_indirect(ctx, key));
 	existing = fz_store_item(ctx, key, val, itemsize, &pdf_obj_store_type);
 	assert(existing == NULL);
 	(void)existing; /* Silence warning in release builds */
@@ -69,4 +71,20 @@ void
 pdf_remove_item(fz_context *ctx, fz_store_drop_fn *drop, pdf_obj *key)
 {
 	fz_remove_item(ctx, drop, key, &pdf_obj_store_type);
+}
+
+static int
+pdf_filter_store(fz_context *ctx, void *doc_, void *key)
+{
+	pdf_document *doc = (pdf_document *)doc_;
+	pdf_obj *obj = (pdf_obj *)key;
+	pdf_document *key_doc = pdf_get_bound_document(ctx, obj);
+
+	return (doc == key_doc);
+}
+
+void
+pdf_empty_store(fz_context *ctx, pdf_document *doc)
+{
+	fz_filter_store(ctx, pdf_filter_store, doc, &pdf_obj_store_type);
 }
