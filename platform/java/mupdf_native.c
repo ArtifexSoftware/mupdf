@@ -2095,7 +2095,6 @@ FUN(NativeDevice_beginMask)(JNIEnv *env, jobject self, jobject jrect, jboolean l
 
 	if (!ctx) return;
 	if (!from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor)) return;
-	/* FIXME: we cannot handle cs == NULL gracefully yet */
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
