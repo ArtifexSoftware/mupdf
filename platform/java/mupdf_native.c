@@ -6933,7 +6933,6 @@ FUN(PDFObject_putDictionaryPDFObjectString)(JNIEnv *env, jobject self, jobject j
 	pdf_obj *val = NULL;
 
 	if (!ctx) return;
-	if (!jstr) { jni_throw_arg(env, "string must not be null"); return; }
 	if (jstr)
 	{
 		str = (*env)->GetStringUTFChars(env, jstr, NULL);
