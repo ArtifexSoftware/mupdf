@@ -729,7 +729,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_store_type *type)
 {
 	fz_store *store;
-	fz_item *item, *prev;
+	fz_item *item, *prev, *remove;
 
 	if (ctx == NULL)
 		return;
@@ -739,22 +739,60 @@ void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_stor
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 
-	/* Free the items */
+	/* Filter the items */
+	remove = NULL;
 	for (item = store->tail; item; item = prev)
 	{
 		prev = item->prev;
 		if (item->type != type)
 			continue;
 
-		if (fn(ctx, arg, item->key))
-		{
-			/* Free this item */
-			evict(ctx, item); /* Drops then retakes lock */
+		if (fn(ctx, arg, item->key) == 0)
+			continue;
 
-			/* Have to restart search again, as prev may no longer
-			 * be valid due to release of lock in evict. */
-			prev = store->tail;
+		/* We have to drop it */
+		store->size -= item->size;
+
+		/* Unlink from the linked list */
+		if (item->next)
+			item->next->prev = item->prev;
+		else
+			store->tail = item->prev;
+		if (item->prev)
+			item->prev->next = item->next;
+		else
+			store->head = item->next;
+
+		/* Remove from the hash table */
+		if (item->type->make_hash_key)
+		{
+			fz_store_hash hash = { NULL };
+			hash.drop = item->val->drop;
+			if (item->type->make_hash_key(ctx, &hash, item->key))
+				fz_hash_remove(ctx, store->hash, &hash);
 		}
+
+		/* Store whether to drop this value or not in 'prev' */
+		item->prev = (item->val->refs > 0 && --item->val->refs == 0) ? item : NULL;
+
+		/* Store it in our removal chain - just singly linked */
+		item->next = remove;
+		remove = item;
 	}
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
+
+	/* Now drop the remove chain */
+	for (item = remove; item != NULL; item = remove)
+	{
+		remove = item->next;
+
+		/* Drop a reference to the value (freeing if required) */
+		if (item->prev)
+			item->val->drop(ctx, item->val);
+
+		/* Always drops the key and drop the item */
+		item->type->drop_key(ctx, item->key);
+		fz_free(ctx, item);
+	}
+
 }
