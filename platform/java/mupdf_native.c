@@ -3508,7 +3508,6 @@ FUN(Image_getMask)(JNIEnv *env, jobject self)
 	fz_image *img = from_Image(env, self);
 
 	if (!ctx) return NULL;
-	if (!img) { jni_throw_arg(env, "image must not be null"); return NULL; }
 
 	return to_Image_safe(ctx, env, img->mask);
 }
