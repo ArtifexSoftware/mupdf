@@ -332,111 +332,147 @@
 			Name="com/artifex/mupdf/fitz"
 			>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Annotation.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Annotation.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\ColorSpace.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\BufferInputStream.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Context.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Buffer.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Cookie.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\BufferOutputStream.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Device.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\ColorSpace.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\DisplayList.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Context.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\DisplayListDevice.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Cookie.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Document.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Device.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\DrawDevice.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\DisplayList.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Font.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\DisplayListDevice.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Image.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Document.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Link.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\DocumentWriter.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Matrix.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\DrawDevice.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\NativeDevice.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Font.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Outline.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Image.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Page.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Link.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Path.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Matrix.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\PathWalker.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\NativeDevice.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Pixmap.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Outline.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Point.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Page.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Rect.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Path.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\RectI.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\PathWalker.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Shade.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\PDFDocument.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\StrokeState.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\PDFGraftMap.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\Text.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\PDFObject.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\TextWalker.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Pixmap.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\com\artifex\mupdf\fitz\TryLaterException.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Point.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Rect.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\RectI.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Separation.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Shade.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\StrokeState.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\StructuredText.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Text.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\TextWalker.java"
+				>
+			</File>
+			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\TryLaterException.java"
 				>
 			</File>
 		</Filter>
