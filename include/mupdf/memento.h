@@ -271,6 +271,7 @@ void Memento_fin(void);
 #define Memento_reference(A)      (A)
 #define Memento_startLeaking()    do {} while (0)
 #define Memento_stopLeaking()     do {} while (0)
+#define Memento_fin()             do {} while (0)
 
 #endif /* MEMENTO */
 
