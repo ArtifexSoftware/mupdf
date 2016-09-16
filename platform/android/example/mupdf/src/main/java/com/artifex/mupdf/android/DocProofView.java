@@ -32,11 +32,11 @@ public class DocProofView extends DocViewBase
 	@Override
 	protected void onLayout(boolean changed, int left, int top, int right, int bottom)
 	{
-		super.onLayout(changed, left, top, right, bottom);
-
 		//  not if we've been finished
 		if (finished())
 			return;
+
+		super.onLayout(changed, left, top, right, bottom);
 
 		//  see if we've been given a start page
 		handleStartPage();
