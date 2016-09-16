@@ -907,9 +907,9 @@ typedef struct BlkCheckData {
     int index;
 } BlkCheckData;
 
+#ifndef MEMENTO_LEAKONLY
 static int Memento_Internal_checkAllocedBlock(Memento_BlkHeader *b, void *arg)
 {
-#ifndef MEMENTO_LEAKONLY
     int             i;
     MEMENTO_UINT32 *ip;
     unsigned char  *p;
@@ -966,13 +966,11 @@ post_corrupt:
         b->lastCheckedOK = memento.sequence;
     }
     data->found |= 1;
-#endif
     return 0;
 }
 
 static int Memento_Internal_checkFreedBlock(Memento_BlkHeader *b, void *arg)
 {
-#ifndef MEMENTO_LEAKONLY
     int            i;
     unsigned char *p;
     BlkCheckData  *data = (BlkCheckData *)arg;
@@ -1004,10 +1002,8 @@ mismatch:
         data->index       = b->rawsize-i;
     }
     return Memento_Internal_checkAllocedBlock(b, arg);
-#else
-    return 0;
-#endif
 }
+#endif /* MEMENTO_LEAKONLY */
 
 static void Memento_removeBlock(Memento_Blocks    *blks,
                                 Memento_BlkHeader *b)
@@ -1089,6 +1085,7 @@ static int Memento_appBlocks(Memento_Blocks *blks,
     return 0;
 }
 
+#ifndef MEMENTO_LEAKONLY
 /* Distrustful - check the block is a real one */
 static int Memento_appBlockUser(Memento_Blocks    *blks,
                                 int                (*app)(Memento_BlkHeader *,
@@ -1132,6 +1129,7 @@ static int Memento_appBlock(Memento_Blocks    *blks,
     VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(Memento_BlkHeader));
     return result;
 }
+#endif /* MEMENTO_LEAKONLY */
 
 static void showBlock(Memento_BlkHeader *b, int space)
 {
@@ -1542,7 +1540,9 @@ void Memento_info(void *addr)
 
 /* FIXME: Find some portable way of getting this */
 /* MacOSX has 10240, Ubuntu seems to have 256 */
+#ifndef OPEN_MAX
 #define OPEN_MAX 10240
+#endif
 
 /* stashed_map[j] = i means that file descriptor i-1 was duplicated to j */
 int stashed_map[OPEN_MAX];
@@ -2047,16 +2047,13 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     if (memento.peakAlloc < memento.alloc)
         memento.peakAlloc = memento.alloc;
     newmemblk->flags = flags;
+#ifndef MEMENTO_LEAKONLY
     if (newmemblk->rawsize < newsize) {
         char *newbytes = ((char *)MEMBLK_TOBLK(newmemblk))+newmemblk->rawsize;
         VALGRIND_MAKE_MEM_DEFINED(newbytes, newsize - newmemblk->rawsize);
-#ifndef MEMENTO_LEAKONLY
         memset(newbytes, MEMENTO_ALLOCFILL, newsize - newmemblk->rawsize);
-#endif
         VALGRIND_MAKE_MEM_UNDEFINED(newbytes, newsize - newmemblk->rawsize);
     }
-    newmemblk->rawsize = newsize;
-#ifndef MEMENTO_LEAKONLY
     VALGRIND_MAKE_MEM_DEFINED(newmemblk->preblk, Memento_PreSize);
     memset(newmemblk->preblk, MEMENTO_PREFILL, Memento_PreSize);
     VALGRIND_MAKE_MEM_UNDEFINED(newmemblk->preblk, Memento_PreSize);
@@ -2064,6 +2061,7 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     memset(MEMBLK_POSTPTR(newmemblk), MEMENTO_POSTFILL, Memento_PostSize);
     VALGRIND_MAKE_MEM_UNDEFINED(MEMBLK_POSTPTR(newmemblk), Memento_PostSize);
 #endif
+    newmemblk->rawsize = newsize;
     Memento_addBlockHead(&memento.used, newmemblk, 2);
     return MEMBLK_TOBLK(newmemblk);
 }
@@ -2090,6 +2088,7 @@ int Memento_checkBlock(void *blk)
     return checkBlockUser(memblk, "check");
 }
 
+#ifndef MEMENTO_LEAKONLY
 static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg)
 {
     BlkCheckData *data = (BlkCheckData *)arg;
@@ -2162,6 +2161,7 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
         memblk->lastCheckedOK = memento.sequence;
     return 0;
 }
+#endif /* MEMENTO_LEAKONLY */
 
 int Memento_checkAllMemory(void)
 {
