@@ -2594,7 +2594,7 @@ pdf_load_hint_object(fz_context *ctx, pdf_document *doc)
 		{
 			pdf_obj *page = NULL;
 			fz_off_t tmpofs;
-			int num, gen, tok;
+			int num, tok;
 
 			tok = pdf_lex(ctx, doc->file, buf);
 			if (tok != PDF_TOK_INT)
