@@ -138,6 +138,8 @@ svg_run_circle(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node,
 	//fz_arcn(ctx, path, cx, cy, r, 180, 270);
 	//fz_arcn(ctx, path, cx, cy, r, 270, 360);
 	//fz_closepath(ctx, path);
+	(void)cx; // avoid compiler warning until this is fixed
+	(void)cy;
 	svg_draw_path(ctx, dev, doc, path, &local_state);
 	fz_drop_path(ctx, path);
 }
@@ -172,6 +174,8 @@ svg_run_ellipse(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node
 	path = fz_new_path(ctx);
 	/* TODO: we need elliptic arcs */
 	// TODO: arc...
+	(void)cx; // avoid compiler warning until this is fixed
+	(void)cy;
 	svg_draw_path(ctx, dev, doc, path, &local_state);
 	fz_drop_path(ctx, path);
 }
