@@ -3845,6 +3845,9 @@ FUN(Document_finalize)(JNIEnv *env, jobject self)
 	if (!ctx || !doc) return;
 
 	fz_drop_document(ctx, doc);
+
+	/* This is a reasonable place to call Memento. */
+	Memento_fin();
 }
 
 JNIEXPORT jlong JNICALL
