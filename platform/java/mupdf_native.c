@@ -4992,6 +4992,7 @@ FUN(DocumentWriter_newNativeDocumentWriter)(JNIEnv *env, jobject self, jstring j
 	const char *format = NULL;
 	const char *options = NULL;
 
+	if (!ctx) return 0;
 	if (!jfilename) { jni_throw_arg(env, "filename must not be null"); return 0; }
 
 	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
@@ -5728,6 +5729,7 @@ FUN(PDFDocument_graftObject)(JNIEnv *env, jobject self, jobject jsrc, jobject jo
 	pdf_obj *obj = from_PDFObject(env, jobj);
 	pdf_graft_map *map = from_PDFGraftMap(env, jmap);
 
+	if (!ctx) return NULL;
 	if (!src) { jni_throw_arg(env, "source must not be null"); return NULL; }
 
 	fz_try(ctx)
@@ -6886,7 +6888,6 @@ FUN(PDFObject_putDictionaryPDFObjectInteger)(JNIEnv *env, jobject self, jobject 
 	pdf_obj *val = NULL;
 
 	if (!ctx) return;
-	if (!ctx) return;
 
 	fz_try(ctx)
 	{
@@ -6908,7 +6909,6 @@ FUN(PDFObject_putDictionaryPDFObjectFloat)(JNIEnv *env, jobject self, jobject jn
 	pdf_obj *name = from_PDFObject(env, jname);
 	pdf_obj *val = NULL;
 
-	if (!ctx) return;
 	if (!ctx) return;
 
 	fz_try(ctx)
