@@ -2647,63 +2647,49 @@ FUN(Pixmap_clearWithValue)(JNIEnv *env, jobject self, jint value)
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getX)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	if (!ctx) return 0;
 	return pixmap->x;
 }
 
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getY)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	if (!ctx) return 0;
 	return pixmap->y;
 }
 
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getWidth)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	if (!ctx) return 0;
 	return pixmap->w;
 }
 
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getHeight)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	if (!ctx) return 0;
 	return pixmap->h;
 }
 
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getNumberOfComponents)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	if (!ctx) return 0;
 	return pixmap->n;
 }
 
 JNIEXPORT jboolean JNICALL
 FUN(Pixmap_getAlpha)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	if (!ctx) return JNI_FALSE;
 	return pixmap->alpha ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getStride)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-	if (!ctx) return 0;
 	return pixmap->stride;
 }
 
@@ -2795,22 +2781,14 @@ FUN(Pixmap_getPixels)(JNIEnv *env, jobject self)
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getXResolution)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	if (!ctx) return 0;
-
 	return pixmap->xres;
 }
 
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getYResolution)(JNIEnv *env, jobject self)
 {
-	fz_context *ctx = get_context(env);
 	fz_pixmap *pixmap = from_Pixmap(env, self);
-
-	if (!ctx) return 0;
-
 	return pixmap->yres;
 }
 
