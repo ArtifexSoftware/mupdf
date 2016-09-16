@@ -10,25 +10,37 @@
 #define GS_API_NULL_STDIO
 #endif
 
-/* Avoid having to #include the gs api */
-#ifdef USE_GS_API
-extern int gsapi_new_instance(void **, void *);
-extern int gsapi_init_with_args(void *, int, char *argv[]);
-extern void gsapi_delete_instance(void *);
-#ifdef GS_API_NULL_STDIO
-extern int gsapi_set_stdio(void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), int (*)(void *, const char *, int));
-#endif
+#include "mupdf/fitz.h"
+
+#if defined(USE_GS_API)
+
+/* We are assumed to be using the DLL here */
+#define GSDLLEXPORT
+#define GSDLLCALL
+#ifdef _MSC_VER
+#define GSDLLAPI __stdcall
+#else
+#define GSDLLAPI
 #endif
 
-#include "mupdf/fitz.h"
-#if defined(USE_GS_API) && !defined(__ANDROID__)
-#ifdef _MSC_VER
-#define GSDLLEXPORT
-#define GSDLLAPI __stdcall
-#define GSDLLCALL
-#endif
+/*
+	We can either rely on the official iapi.h from ghostscript
+	(which is not supplied in the MuPDF source), or we can use
+	a potted version of it inline here (which suffices for
+	android, but has not been verified on all platforms).
+*/
+#if HAVE_IAPI_H
 #include "iapi.h"
-#endif
+#else
+/* Avoid having to #include the gs api */
+extern GSDLLEXPORT int GSDLLAPI gsapi_new_instance(void **, void *);
+extern GSDLLEXPORT int GSDLLAPI gsapi_init_with_args(void *, int, char *argv[]);
+extern GSDLLEXPORT void GSDLLAPI gsapi_delete_instance(void *);
+#ifdef GS_API_NULL_STDIO
+extern GSDLLEXPORT int GSDLLAPI gsapi_set_stdio(void *, int (GSDLLCALL *)(void *, char *, int), int (GSDLLCALL *)(void *, const char *, int), int (GSDLLCALL *)(void *, const char *, int));
+#endif /* GS_API_NULL_STDIO */
+#endif /* HAVE_IAPI_H */
+#endif /* USE_GS_API */
 
 typedef struct gprf_document_s gprf_document;
 typedef struct gprf_chapter_s gprf_chapter;
