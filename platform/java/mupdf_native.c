@@ -1194,7 +1194,7 @@ static inline fz_annot *from_Annotation(JNIEnv *env, jobject jobj)
 	fz_annot *annot;
 	if (!jobj) return NULL;
 	annot = CAST(fz_annot *, (*env)->GetLongField(env, jobj, fid_Annot_pointer));
-	if (!annot) jni_throw_null(env, "cannot use already destroyed object");
+	if (!annot) jni_throw_null(env, "cannot use already destroyed Annotation");
 	return annot;
 }
 
@@ -1203,7 +1203,7 @@ static inline fz_buffer *from_Buffer(JNIEnv *env, jobject jobj)
 	fz_buffer *buffer;
 	if (!jobj) return NULL;
 	buffer = CAST(fz_buffer *, (*env)->GetLongField(env, jobj, fid_Buffer_pointer));
-	if (!buffer) jni_throw_null(env, "cannot use already destroyed object");
+	if (!buffer) jni_throw_null(env, "cannot use already destroyed Buffer");
 	return buffer;
 }
 
@@ -1212,7 +1212,7 @@ static inline fz_colorspace *from_ColorSpace(JNIEnv *env, jobject jobj)
 	fz_colorspace *cs;
 	if (!jobj) return NULL;
 	cs = CAST(fz_colorspace *, (*env)->GetLongField(env, jobj, fid_ColorSpace_pointer));
-	if (!cs) jni_throw_null(env, "cannot use already destroyed object");
+	if (!cs) jni_throw_null(env, "cannot use already destroyed ColorSpace");
 	return cs;
 }
 
@@ -1221,7 +1221,7 @@ static inline fz_cookie *from_Cookie(JNIEnv *env, jobject jobj)
 	fz_cookie *cookie;
 	if (!jobj) return NULL;
 	cookie = CAST(fz_cookie *, (*env)->GetLongField(env, jobj, fid_Cookie_pointer));
-	if (!cookie) jni_throw_null(env, "cannot use already destroyed object");
+	if (!cookie) jni_throw_null(env, "cannot use already destroyed Cookie");
 	return cookie;
 }
 
@@ -1230,7 +1230,7 @@ static fz_device *from_Device(JNIEnv *env, jobject jobj)
 	fz_device *dev;
 	if (!jobj) return NULL;
 	dev = CAST(fz_device *, (*env)->GetLongField(env, jobj, fid_Device_pointer));
-	if (!dev) jni_throw_null(env, "cannot use already destroyed object");
+	if (!dev) jni_throw_null(env, "cannot use already destroyed Device");
 	return dev;
 }
 
@@ -1239,7 +1239,7 @@ static inline fz_display_list *from_DisplayList(JNIEnv *env, jobject jobj)
 	fz_display_list *list;
 	if (!jobj) return NULL;
 	list = CAST(fz_display_list *, (*env)->GetLongField(env, jobj, fid_DisplayList_pointer));
-	if (!list) jni_throw_null(env, "cannot use already destroyed object");
+	if (!list) jni_throw_null(env, "cannot use already destroyed DisplayList");
 	return list;
 }
 
@@ -1248,7 +1248,7 @@ static inline fz_document *from_Document(JNIEnv *env, jobject jobj)
 	fz_document *doc;
 	if (!jobj) return NULL;
 	doc = CAST(fz_document *, (*env)->GetLongField(env, jobj, fid_Document_pointer));
-	if (!doc) jni_throw_null(env, "cannot use already destroyed object");
+	if (!doc) jni_throw_null(env, "cannot use already destroyed Document");
 	return doc;
 }
 
@@ -1257,7 +1257,7 @@ static inline fz_document_writer *from_DocumentWriter(JNIEnv *env, jobject jobj)
 	fz_document_writer *wri;
 	if (!jobj) return NULL;
 	wri = CAST(fz_document_writer *, (*env)->GetLongField(env, jobj, fid_DocumentWriter_pointer));
-	if (!wri) jni_throw_null(env, "cannot use already destroyed object");
+	if (!wri) jni_throw_null(env, "cannot use already destroyed DocumentWriter");
 	return wri;
 }
 
@@ -1266,7 +1266,7 @@ static inline fz_font *from_Font(JNIEnv *env, jobject jobj)
 	fz_font *font;
 	if (!jobj) return NULL;
 	font = CAST(fz_font *, (*env)->GetLongField(env, jobj, fid_Font_pointer));
-	if (!font) jni_throw_null(env, "cannot use already destroyed object");
+	if (!font) jni_throw_null(env, "cannot use already destroyed Font");
 	return font;
 }
 
@@ -1275,7 +1275,7 @@ static inline fz_image *from_Image(JNIEnv *env, jobject jobj)
 	fz_image *image;
 	if (!jobj) return NULL;
 	image = CAST(fz_image *, (*env)->GetLongField(env, jobj, fid_Image_pointer));
-	if (!image) jni_throw_null(env, "cannot use already destroyed object");
+	if (!image) jni_throw_null(env, "cannot use already destroyed Image");
 	return image;
 }
 
@@ -1284,7 +1284,7 @@ static inline fz_page *from_Page(JNIEnv *env, jobject jobj)
 	fz_page *page;
 	if (!jobj) return NULL;
 	page = CAST(fz_page *, (*env)->GetLongField(env, jobj, fid_Page_pointer));
-	if (!page) jni_throw_null(env, "cannot use already destroyed object");
+	if (!page) jni_throw_null(env, "cannot use already destroyed Page");
 	return page;
 }
 
@@ -1293,7 +1293,7 @@ static inline fz_path *from_Path(JNIEnv *env, jobject jobj)
 	fz_path *path;
 	if (!jobj) return NULL;
 	path = CAST(fz_path *, (*env)->GetLongField(env, jobj, fid_Path_pointer));
-	if (!path) jni_throw_null(env, "cannot use already destroyed object");
+	if (!path) jni_throw_null(env, "cannot use already destroyed Path");
 	return path;
 }
 
@@ -1302,7 +1302,7 @@ static inline pdf_document *from_PDFDocument(JNIEnv *env, jobject jobj)
 	pdf_document *pdf;
 	if (!jobj) return NULL;
 	pdf = CAST(pdf_document *, (*env)->GetLongField(env, jobj, fid_PDFDocument_pointer));
-	if (!pdf) jni_throw_null(env, "cannot use already destroyed object");
+	if (!pdf) jni_throw_null(env, "cannot use already destroyed PDFDocument");
 	return pdf;
 }
 
@@ -1311,7 +1311,7 @@ static inline pdf_graft_map *from_PDFGraftMap(JNIEnv *env, jobject jobj)
 	pdf_graft_map *map;
 	if (!jobj) return NULL;
 	map = CAST(pdf_graft_map *, (*env)->GetLongField(env, jobj, fid_PDFGraftMap_pointer));
-	if (!map) jni_throw_null(env, "cannot use already destroyed object");
+	if (!map) jni_throw_null(env, "cannot use already destroyed PDFGraftMap");
 	return map;
 }
 
@@ -1320,7 +1320,7 @@ static inline pdf_obj *from_PDFObject(JNIEnv *env, jobject jobj)
 	pdf_obj *obj;
 	if (!jobj) return NULL;
 	obj = CAST(pdf_obj *, (*env)->GetLongField(env, jobj, fid_PDFObject_pointer));
-	if (!obj) jni_throw_null(env, "cannot use already destroyed object");
+	if (!obj) jni_throw_null(env, "cannot use already destroyed PDFObject");
 	return obj;
 }
 
@@ -1329,7 +1329,7 @@ static inline fz_pixmap *from_Pixmap(JNIEnv *env, jobject jobj)
 	fz_pixmap *pixmap;
 	if (!jobj) return NULL;
 	pixmap = CAST(fz_pixmap *, (*env)->GetLongField(env, jobj, fid_Pixmap_pointer));
-	if (!pixmap) jni_throw_null(env, "cannot use already destroyed object");
+	if (!pixmap) jni_throw_null(env, "cannot use already destroyed Pixmap");
 	return pixmap;
 }
 
@@ -1338,7 +1338,7 @@ static inline fz_shade *from_Shade(JNIEnv *env, jobject jobj)
 	fz_shade *shd;
 	if (!jobj) return NULL;
 	shd = CAST(fz_shade *, (*env)->GetLongField(env, jobj, fid_Shade_pointer));
-	if (!shd) jni_throw_null(env, "cannot use already destroyed object");
+	if (!shd) jni_throw_null(env, "cannot use already destroyed Shade");
 	return shd;
 }
 
@@ -1347,7 +1347,7 @@ static inline fz_stroke_state *from_StrokeState(JNIEnv *env, jobject jobj)
 	fz_stroke_state *stroke;
 	if (!jobj) return NULL;
 	stroke = CAST(fz_stroke_state *, (*env)->GetLongField(env, jobj, fid_StrokeState_pointer));
-	if (!stroke) jni_throw_null(env, "cannot use already destroyed object");
+	if (!stroke) jni_throw_null(env, "cannot use already destroyed StrokeState");
 	return stroke;
 }
 
@@ -1356,7 +1356,7 @@ static inline fz_stext_page *from_StructuredText(JNIEnv *env, jobject jobj)
 	fz_stext_page *stext;
 	if (!jobj) return NULL;
 	stext = CAST(fz_stext_page *, (*env)->GetLongField(env, jobj, fid_StructuredText_pointer));
-	if (!stext) jni_throw_null(env, "cannot use already destroyed object");
+	if (!stext) jni_throw_null(env, "cannot use already destroyed StructuredText");
 	return stext;
 }
 
@@ -1365,7 +1365,7 @@ static inline fz_text *from_Text(JNIEnv *env, jobject jobj)
 	fz_text *text;
 	if (!jobj) return NULL;
 	text = CAST(fz_text *, (*env)->GetLongField(env, jobj, fid_Text_pointer));
-	if (!text) jni_throw_null(env, "cannot use already destroyed object");
+	if (!text) jni_throw_null(env, "cannot use already destroyed Text");
 	return text;
 }
 
