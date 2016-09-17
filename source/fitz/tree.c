@@ -100,6 +100,7 @@ void fz_drop_tree(fz_context *ctx, fz_tree *node, void (*dropfunc)(fz_context *c
 		fz_free(ctx, node->key);
 		if (dropfunc)
 			dropfunc(ctx, node->value);
+		fz_free(ctx, node);
 	}
 }
 
