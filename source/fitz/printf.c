@@ -262,6 +262,12 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 				f = va_arg(args, double);
 				fmtfloat(&out, f);
 				break;
+			case 'p':
+				length = 8 * sizeof(void *);
+				z = 2 * sizeof(void *);
+				fmtputc(&out, '0');
+				fmtputc(&out, 'x');
+				/* fallthrough */
 			case 'x':
 				if (length == 64)
 				{
