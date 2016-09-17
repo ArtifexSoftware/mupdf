@@ -327,11 +327,11 @@ fz_hash_remove_fast(fz_context *ctx, fz_hash_table *table, const void *key, unsi
 void
 fz_print_hash(fz_context *ctx, fz_output *out, fz_hash_table *table)
 {
-	fz_print_hash_details(ctx, out, table, NULL);
+	fz_print_hash_details(ctx, out, table, NULL, 0);
 }
 
 void
-fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, void (*details)(fz_context*,fz_output*,void*))
+fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, void (*details)(fz_context*,fz_output*,void*), int compact)
 {
 	int i, k;
 
@@ -339,9 +339,9 @@ fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, voi
 
 	for (i = 0; i < table->size; i++)
 	{
-		if (!table->ents[i].val)
+		if (!table->ents[i].val && !compact)
 			fz_printf(ctx, out, "table %04d: empty\n", i);
-		else
+		else if (table->ents[i].val)
 		{
 			fz_printf(ctx, out, "table %04d: key=", i);
 			for (k = 0; k < MAX_KEY_LEN; k++)

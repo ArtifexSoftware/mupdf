@@ -591,7 +591,7 @@ fz_print_store_locked(fz_context *ctx, fz_output *out)
 			next->val->refs--;
 	}
 	fz_printf(ctx, out, "-- resource store hash contents --\n");
-	fz_print_hash_details(ctx, out, store->hash, print_item);
+	fz_print_hash_details(ctx, out, store->hash, print_item, 1);
 	fz_printf(ctx, out, "-- end --\n");
 }
 
