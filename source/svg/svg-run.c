@@ -691,7 +691,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 
 	if (opacity_att)
 	{
-		state->opacity = svg_parse_number(fill_opacity_att, 0, 1, state->opacity);
+		state->opacity = svg_parse_number(opacity_att, 0, 1, state->opacity);
 	}
 
 	if (fill_att)
