@@ -871,6 +871,7 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 {
 	fz_pixmap *image;
 	struct tiff tiff = { 0 };
+	int alpha;
 
 	fz_try(ctx)
 	{
@@ -891,7 +892,8 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 				fz_swap_tiff_byte_order(tiff.samples, tiff.imagewidth * tiff.imagelength * tiff.samplesperpixel);
 
 		/* Expand into fz_pixmap struct */
-		image = fz_new_pixmap(ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength, 1);
+		alpha = tiff.extrasamples != 0;
+		image = fz_new_pixmap(ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength, alpha);
 		image->xres = tiff.xresolution;
 		image->yres = tiff.yresolution;
 
