@@ -42,7 +42,7 @@ svg_lex_number(float *fp, const char *ss)
 		while (*s >= '0' && *s <= '9')
 			++s;
 	}
-	*fp = atof(ss);
+	*fp = fz_atof(ss);
 	return s;
 }
 
@@ -52,7 +52,7 @@ svg_parse_number(const char *str, float min, float max, float inherit)
 	float x;
 	if (!strcmp(str, "inherit"))
 		return inherit;
-	x = atof(str);
+	x = fz_atof(str);
 	if (x < min) return min;
 	if (x > max) return max;
 	return x;
@@ -65,7 +65,7 @@ svg_parse_length(const char *str, float percent, float font_size)
 	char *end;
 	float val;
 
-	val = (float)strtod(str, &end);
+	val = (float)fz_strtod(str, &end);
 	if (end == str)
 		return 0; /* failed */
 
@@ -96,7 +96,7 @@ svg_parse_angle(const char *str)
 	char *end;
 	float val;
 
-	val = (float)strtod(str, &end);
+	val = (float)fz_strtod(str, &end);
 	if (end == str)
 		return 0; /* failed */
 
@@ -170,7 +170,7 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 				number[numberlen++] = *str++;
 			number[numberlen] = 0;
 
-			args[nargs++] = atof(number);
+			args[nargs++] = fz_atof(number);
 
 			while (svg_is_whitespace_or_comma(*str))
 				str ++;

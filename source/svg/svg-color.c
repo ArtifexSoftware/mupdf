@@ -230,11 +230,11 @@ svg_parse_color(fz_context *ctx, svg_document *doc, char *str, float *rgb)
 				if (*str == '%')
 				{
 					str ++;
-					rgb[i] = atof(numberbuf) / 100.0;
+					rgb[i] = fz_atof(numberbuf) / 100.0;
 				}
 				else
 				{
-					rgb[i] = atof(numberbuf) / 255.0;
+					rgb[i] = fz_atof(numberbuf) / 255.0;
 				}
 			}
 		}

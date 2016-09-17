@@ -940,7 +940,7 @@ svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root)
 
 	version = 10;
 	if (version_att)
-		version = atof(version_att) * 10;
+		version = fz_atof(version_att) * 10;
 
 	if (version > 12)
 		fz_warn(ctx, "svg document version is newer than we support");
