@@ -192,7 +192,10 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 				if (c == 'l')
 					length = 64;
 				else
+				{
+					length = sizeof(long) * 8;
 					fmt--;
+				}
 				break;
 			case 'z':
 				if (sizeof(size_t) >= 8)
