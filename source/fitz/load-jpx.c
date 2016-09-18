@@ -93,7 +93,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 			{
 				for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
 				{
-					unsigned char v = fz_clampi(pucData[i], 0, state->palette->ulEntries);
+					unsigned char v = fz_clampi(pucData[i], 0, state->palette->ulEntries - 1);
 
 					if (state->expand_indexed)
 					{
