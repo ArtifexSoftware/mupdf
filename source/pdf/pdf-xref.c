@@ -1569,54 +1569,65 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 	if (!doc)
 		return;
 
-	/* Type3 glyphs in the glyph cache can contain pdf_obj pointers
-	 * that we are about to destroy. Simplest solution is to bin the
-	 * glyph cache at this point. */
-	fz_purge_glyph_cache(ctx);
-
-	if (doc->js)
-		pdf_drop_js(ctx, doc->js);
-
-	pdf_drop_xref_sections(ctx, doc);
-	fz_free(ctx, doc->xref_index);
-
-	if (doc->focus_obj)
-		pdf_drop_obj(ctx, doc->focus_obj);
-	if (doc->file)
-		fz_drop_stream(ctx, doc->file);
-	if (doc->crypt)
-		pdf_drop_crypt(ctx, doc->crypt);
-
-	pdf_drop_obj(ctx, doc->linear_obj);
-	if (doc->linear_page_refs)
+	fz_try(ctx)
 	{
-		for (i=0; i < doc->page_count; i++)
+		fz_defer_reap_start(ctx);
+
+		/* Type3 glyphs in the glyph cache can contain pdf_obj pointers
+		 * that we are about to destroy. Simplest solution is to bin the
+		 * glyph cache at this point. */
+		fz_purge_glyph_cache(ctx);
+
+		if (doc->js)
+			pdf_drop_js(ctx, doc->js);
+
+		pdf_drop_xref_sections(ctx, doc);
+		fz_free(ctx, doc->xref_index);
+
+		if (doc->focus_obj)
+			pdf_drop_obj(ctx, doc->focus_obj);
+		if (doc->file)
+			fz_drop_stream(ctx, doc->file);
+		if (doc->crypt)
+			pdf_drop_crypt(ctx, doc->crypt);
+
+		pdf_drop_obj(ctx, doc->linear_obj);
+		if (doc->linear_page_refs)
 		{
-			pdf_drop_obj(ctx, doc->linear_page_refs[i]);
+			for (i=0; i < doc->page_count; i++)
+			{
+				pdf_drop_obj(ctx, doc->linear_page_refs[i]);
+			}
+			fz_free(ctx, doc->linear_page_refs);
 		}
-		fz_free(ctx, doc->linear_page_refs);
-	}
-	fz_free(ctx, doc->hint_page);
-	fz_free(ctx, doc->hint_shared_ref);
-	fz_free(ctx, doc->hint_shared);
-	fz_free(ctx, doc->hint_obj_offsets);
+		fz_free(ctx, doc->hint_page);
+		fz_free(ctx, doc->hint_shared_ref);
+		fz_free(ctx, doc->hint_shared);
+		fz_free(ctx, doc->hint_obj_offsets);
 
-	for (i=0; i < doc->num_type3_fonts; i++)
+		for (i=0; i < doc->num_type3_fonts; i++)
+		{
+			fz_decouple_type3_font(ctx, doc->type3_fonts[i], (void *)doc);
+			fz_drop_font(ctx, doc->type3_fonts[i]);
+		}
+		fz_free(ctx, doc->type3_fonts);
+
+		pdf_drop_ocg(ctx, doc->ocg);
+
+		pdf_empty_store(ctx, doc);
+
+		pdf_lexbuf_fin(ctx, &doc->lexbuf.base);
+
+		pdf_drop_resource_tables(ctx, doc);
+
+		fz_free(ctx, doc);
+	}
+	fz_always(ctx)
 	{
-		fz_decouple_type3_font(ctx, doc->type3_fonts[i], (void *)doc);
-		fz_drop_font(ctx, doc->type3_fonts[i]);
+		fz_defer_reap_end(ctx);
 	}
-	fz_free(ctx, doc->type3_fonts);
-
-	pdf_drop_ocg(ctx, doc->ocg);
-
-	pdf_empty_store(ctx, doc);
-
-	pdf_lexbuf_fin(ctx, &doc->lexbuf.base);
-
-	pdf_drop_resource_tables(ctx, doc);
-
-	fz_free(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 void

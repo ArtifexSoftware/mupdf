@@ -1369,7 +1369,9 @@ fz_keep_display_list(fz_context *ctx, fz_display_list *list)
 void
 fz_drop_display_list(fz_context *ctx, fz_display_list *list)
 {
+	fz_defer_reap_start(ctx);
 	fz_drop_storable(ctx, &list->storable);
+	fz_defer_reap_end(ctx);
 }
 
 fz_rect *

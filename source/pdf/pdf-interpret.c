@@ -1231,12 +1231,14 @@ pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pd
 
 	fz_try(ctx)
 	{
+		fz_defer_reap_start(ctx);
 		stm = pdf_open_contents_stream(ctx, doc, stmobj);
 		pdf_process_stream(ctx, proc, &csi, stm);
 		pdf_process_end(ctx, proc, &csi);
 	}
 	fz_always(ctx)
 	{
+		fz_defer_reap_end(ctx);
 		fz_drop_stream(ctx, stm);
 		pdf_clear_stack(ctx, &csi);
 		pdf_lexbuf_fin(ctx, &buf);

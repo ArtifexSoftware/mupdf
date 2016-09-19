@@ -37,7 +37,8 @@ struct fz_storable_s {
 
 struct fz_key_storable_s {
 	fz_storable storable;
-	int store_key_refs;
+	short store_key_refs;
+	unsigned short needs_reaping;
 };
 
 #define FZ_INIT_STORABLE(S_,RC,DROP) \
@@ -47,14 +48,14 @@ struct fz_key_storable_s {
 
 #define FZ_INIT_KEY_STORABLE(KS_,RC,DROP) \
 	do { fz_key_storable *KS = &(KS_)->key_storable; KS->store_key_refs = 0;\
-	FZ_INIT_STORABLE(KS,RC,DROP); \
+	KS->needs_reaping = 0; FZ_INIT_STORABLE(KS,RC,DROP); \
 	} while (0)
 
 void *fz_keep_storable(fz_context *, const fz_storable *);
 void fz_drop_storable(fz_context *, const fz_storable *);
 
 void *fz_keep_key_storable(fz_context *, const fz_key_storable *);
-int fz_drop_key_storable(fz_context *, const fz_key_storable *);
+void fz_drop_key_storable(fz_context *, const fz_key_storable *);
 
 void *fz_keep_key_storable_key(fz_context *, const fz_key_storable *);
 void fz_drop_key_storable_key(fz_context *, const fz_key_storable *);
@@ -74,6 +75,39 @@ void fz_drop_key_storable_key(fz_context *, const fz_key_storable *);
 	to an fz_store_hash structure. If make_hash_key function returns 0,
 	then the key is determined not to be hashable, and the value is
 	not stored in the hash table.
+
+	Some objects can be used both as values within the store, and as a
+	component of keys within the store. We refer to these objects as
+	"key storable" objects. In this case, we need to take additional
+	care to ensure that we do not end up keeping an item within the
+	store, purely because it's value is referred to by another key in
+	the store.
+
+	An example of this are fz_images in PDF files. Each fz_image is
+	placed into the	store to enable it to be easily reused. When the
+	image is rendered, a pixmap is generated from the image, and the
+	pixmap is placed into the store so it can be reused on subsequent
+	renders. The image forms part of the key for the pixmap.
+
+	When we close the pdf document (and any associated pages/display
+	lists etc), we drop the images from the store. This may leave us
+	in the position of the images having non-zero reference counts
+	purely because they are used as part of the keys for the pixmaps.
+
+	We therefore use special reference counting functions to keep
+	track of these "key storable" items, and hence store the number of
+	references to these items that are used in keys.
+
+	When the number of references to an object == the number of
+	references to an object from keys in the store, we know that we can
+	remove all the items which have that object as part of the key.
+	This is done by running a pass over the store, 'reaping' those
+	items.
+
+	Reap passes are slower than we would like as they touching every
+	item in the store. We therefore provide a way to 'batch' such
+	reap passes together, using fz_defer_reap_start/fz_defer_reap_end
+	to bracket a region in which many may be triggered.
 */
 typedef struct fz_store_hash_s fz_store_hash;
 
@@ -110,6 +144,7 @@ struct fz_store_type_s
 	void (*drop_key)(fz_context *,void *);
 	int (*cmp_key)(fz_context *ctx, void *, void *);
 	void (*print)(fz_context *ctx, fz_output *out, void *);
+	int (*needs_reap)(fz_context *ctx, void *);
 };
 
 /*
@@ -218,5 +253,34 @@ void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_stor
 */
 void fz_print_store(fz_context *ctx, fz_output *out);
 void fz_print_store_locked(fz_context *ctx, fz_output *out);
+
+/*
+	fz_defer_reap_start: Increment the defer reap count.
+
+	No reap operations will take place (except for those
+	triggered by an immediate failed malloc) until the
+	defer reap count returns to 0.
+
+	Call this at the start of a process during which you
+	potentially might drop many reapable objects.
+
+	It is vital that every fz_defer_reap_start is matched
+	by a fz_defer_reap_end call.
+*/
+void fz_defer_reap_start(fz_context *ctx);
+
+/*
+	fz_defer_reap_end: Decrement the defer reap count.
+
+	If the defer reap count returns to 0, and the store
+	has reapable objects in, a reap pass will begin.
+
+	Call this at the end of a process during which you
+	potentially might drop many reapable objects.
+
+	It is vital that every fz_defer_reap_start is matched
+	by a fz_defer_reap_end call.
+*/
+void fz_defer_reap_end(fz_context *ctx);
 
 #endif

@@ -47,7 +47,8 @@ static fz_store_type pdf_obj_store_type =
 	pdf_keep_key,
 	pdf_drop_key,
 	pdf_cmp_key,
-	pdf_print_key
+	pdf_print_key,
+	NULL
 };
 
 void

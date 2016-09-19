@@ -82,10 +82,18 @@ fz_cmp_image_key(fz_context *ctx, void *k0_, void *k1_)
 }
 
 static void
-fz_print_image(fz_context *ctx, fz_output *out, void *key_)
+fz_print_image_key(fz_context *ctx, fz_output *out, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
 	fz_printf(ctx, out, "(image %d x %d sf=%d) ", key->image->w, key->image->h, key->l2factor);
+}
+
+static int
+fz_needs_reap_image_key(fz_context *ctx, void *key_)
+{
+	fz_image_key *key = (fz_image_key *)key_;
+
+	return (key->image->key_storable.needs_reaping);
 }
 
 static fz_store_type fz_image_store_type =
@@ -94,27 +102,14 @@ static fz_store_type fz_image_store_type =
 	fz_keep_image_key,
 	fz_drop_image_key,
 	fz_cmp_image_key,
-	fz_print_image
+	fz_print_image_key,
+	fz_needs_reap_image_key
 };
-
-static int
-drop_matching_images(fz_context *ctx, void *image_, void *key_)
-{
-	fz_image_key *key = (fz_image_key *)key_;
-	fz_image *image = (fz_image *)image_;
-
-	return key->image == image;
-}
 
 void
 fz_drop_image(fz_context *ctx, fz_image *image)
 {
-	if (fz_drop_key_storable(ctx, &image->key_storable))
-	{
-		/* All the image refs left are references from keys in the store. */
-		/* We can never hope to match these keys again, so drop the objects. */
-		fz_filter_store(ctx, drop_matching_images, image, &fz_image_store_type);
-	}
+	fz_drop_key_storable(ctx, &image->key_storable);
 }
 
 static void

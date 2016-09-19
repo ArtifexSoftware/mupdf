@@ -361,8 +361,8 @@ struct fz_locks_context_s
 };
 
 enum {
-	FZ_LOCK_ALLOC = 0,
-	FZ_LOCK_FILE, /* Unused now */
+	FZ_LOCK_REAP = 0,
+	FZ_LOCK_ALLOC,
 	FZ_LOCK_FREETYPE,
 	FZ_LOCK_GLYPHCACHE,
 	FZ_LOCK_MAX
