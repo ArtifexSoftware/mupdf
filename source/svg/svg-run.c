@@ -951,6 +951,7 @@ svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root)
 	char *version_att;
 	char *w_att;
 	char *h_att;
+	char *viewbox_att;
 	int version;
 
 	if (!fz_xml_is_tag(root, "svg"))
@@ -959,6 +960,7 @@ svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root)
 	version_att = fz_xml_att(root, "version");
 	w_att = fz_xml_att(root, "width");
 	h_att = fz_xml_att(root, "height");
+	viewbox_att = fz_xml_att(root, "viewBox");
 
 	version = 10;
 	if (version_att)
@@ -967,13 +969,24 @@ svg_parse_document_bounds(fz_context *ctx, svg_document *doc, fz_xml *root)
 	if (version > 12)
 		fz_warn(ctx, "svg document version is newer than we support");
 
-	doc->width = DEF_WIDTH;
-	if (w_att)
-		doc->width = svg_parse_length(w_att, doc->width, DEF_FONTSIZE);
+	/* If no width or height attributes, then guess from the viewbox */
+	if (w_att == NULL && h_att == NULL && viewbox_att != NULL)
+	{
+		float min_x, min_y, box_w, box_h;
+		sscanf(viewbox_att, "%g %g %g %g", &min_x, &min_y, &box_w, &box_h);
+		doc->width = box_w;
+		doc->height = box_h;
+	}
+	else
+	{
+		doc->width = DEF_WIDTH;
+		if (w_att)
+			doc->width = svg_parse_length(w_att, doc->width, DEF_FONTSIZE);
 
-	doc->height = DEF_HEIGHT;
-	if (h_att)
-		doc->height = svg_parse_length(h_att, doc->height, DEF_FONTSIZE);
+		doc->height = DEF_HEIGHT;
+		if (h_att)
+			doc->height = svg_parse_length(h_att, doc->height, DEF_FONTSIZE);
+	}
 }
 
 void
