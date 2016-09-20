@@ -578,14 +578,11 @@ generate_page(fz_context *ctx, gprf_page *page)
 #ifdef USE_GS_API
 		void *instance;
 		int code;
-		char *argv[] = { "gs", "-sDEVICE=gprf", "-dUsePDFX3Profile", NULL, "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL, "-dFitPage", NULL};
-		char arg_res[32];
+		char *argv[] = { "gs", "-sDEVICE=gprf", "-dUsePDFX3Profile", "-dFitPage", "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 		char arg_fp[32];
 		char arg_lp[32];
 		char arg_g[32];
 
-		sprintf(arg_res, "-r%d", doc->res);
-		argv[3] = arg_res;
 		argv[5] = filename;
 		sprintf(arg_fp, "-dFirstPage=%d", page->number+1);
 		argv[6] = arg_fp;
@@ -596,13 +593,23 @@ generate_page(fz_context *ctx, gprf_page *page)
 		argv[10] = "-I%rom%Resource/Init/";
 		sprintf(arg_g, "-g%dx%d", page->width, page->height);
 		argv[11] = arg_g;
-		argv[13] = doc->pdf_filename;
+		argv[12] = doc->pdf_filename;
 
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS startup failed: %d", code);
 #ifdef GS_API_NULL_STDIO
 		gsapi_set_stdio(instance, NULL, gsdll_stdout, gsdll_stderr);
+#endif
+#ifndef NDEBUG
+		{
+			int i;
+			fprintf(stderr, "Invoking GS\n");
+			for (i = 0; i < sizeof(argv)/sizeof(*argv); i++)
+			{
+				fprintf(stderr, "%s\n", argv[i]);
+			}
+		}
 #endif
 		code = gsapi_init_with_args(instance, sizeof(argv)/sizeof(*argv), argv);
 
@@ -612,8 +619,8 @@ generate_page(fz_context *ctx, gprf_page *page)
 #else
 		char gs_command[1024];
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -r%d -o \"%s\" %s %s -I%%rom%%Resource/Init/ -dFirstPage=%d -dLastPage=%d -g%dx%d -dFitPage \"%s\"",
-			doc->res, filename, disp_profile, print_profile, page->number+1, page->number+1, page->width, page->height, doc->pdf_filename);
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -dUsePDFX3Profile -dFitPage -o \"%s\" -dFirstPage=%d -dLastPage=%d %s %s -I%%rom%%Resource/Init/ -g%dx%d \"%s\"",
+			filename, page->number+1, page->number+1, disp_profile, print_profile, page->width, page->height, doc->pdf_filename);
 		fz_system(ctx, gs_command);
 #endif
 
