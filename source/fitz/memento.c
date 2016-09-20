@@ -2080,6 +2080,9 @@ static void *do_realloc(void *blk, size_t newsize, int type)
         memset(newbytes, MEMENTO_ALLOCFILL, newsize - newmemblk->rawsize);
         VALGRIND_MAKE_MEM_UNDEFINED(newbytes, newsize - newmemblk->rawsize);
     }
+#endif
+    newmemblk->rawsize = newsize;
+#ifndef MEMENTO_LEAKONLY
     VALGRIND_MAKE_MEM_DEFINED(newmemblk->preblk, Memento_PreSize);
     memset(newmemblk->preblk, MEMENTO_PREFILL, Memento_PreSize);
     VALGRIND_MAKE_MEM_UNDEFINED(newmemblk->preblk, Memento_PreSize);
@@ -2087,7 +2090,6 @@ static void *do_realloc(void *blk, size_t newsize, int type)
     memset(MEMBLK_POSTPTR(newmemblk), MEMENTO_POSTFILL, Memento_PostSize);
     VALGRIND_MAKE_MEM_UNDEFINED(MEMBLK_POSTPTR(newmemblk), Memento_PostSize);
 #endif
-    newmemblk->rawsize = newsize;
     Memento_addBlockHead(&memento.used, newmemblk, 2);
     return MEMBLK_TOBLK(newmemblk);
 }
