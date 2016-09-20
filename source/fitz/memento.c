@@ -33,13 +33,7 @@
 #ifdef MEMENTO_GS_HACKS
 /* For GS we include malloc_.h. Anyone else would just include memento.h */
 #include "malloc_.h"
-#ifdef __MACH__
-#include <string.h>
-#else
-#ifndef memset
-void *memset(void *,int,size_t);
-#endif
-#endif
+#include "memory_.h"
 int atexit(void (*)(void));
 #else
 #include "mupdf/memento.h"
@@ -70,7 +64,6 @@ android_fprintf(FILE *file, const char *fmt, ...)
     char *p, *q;
 
     va_start(args, fmt);
-    //__android_log_vprint(ANDROID_LOG_ERROR,"memento", fmt, args);
     vsnprintf(log_buffer2, sizeof(log_buffer2)-1, fmt, args);
     va_end(args);
 
@@ -532,13 +525,13 @@ static void print_stack_default(void *addr)
         /* Probably a "path [address]" format string */
         char *s = strchr(strings[0], ' ');
 
-	if (s != strings[0])
-	{
+        if (s != strings[0])
+        {
             memcpy(backtrace_exe, strings[0], s - strings[0]);
             backtrace_exe[s-strings[0]] = 0;
-	    if (init_libbt())
+            if (init_libbt())
                 print_stack_value(addr);
-	}
+        }
     }
 #endif
     else
@@ -1390,14 +1383,14 @@ void Memento_listBlockInfo(void)
 
 static int Memento_nonLeakBlocksLeaked(void)
 {
-	Memento_BlkHeader *blk = memento.used.head;
-	while (blk)
-	{
-		if ((blk->flags & Memento_Flag_KnownLeak) == 0)
-			return 1;
-		blk = blk->next;
-	}
-	return 0;
+    Memento_BlkHeader *blk = memento.used.head;
+    while (blk)
+    {
+        if ((blk->flags & Memento_Flag_KnownLeak) == 0)
+            return 1;
+        blk = blk->next;
+    }
+    return 0;
 }
 
 void Memento_fin(void)
@@ -1672,7 +1665,7 @@ static void Memento_startFailing(void)
     }
 }
 
-static void Memento_event(void)
+static int Memento_event(void)
 {
     memento.sequence++;
     if ((memento.sequence >= memento.paranoidAt) && (memento.paranoidAt != 0)) {
@@ -1693,8 +1686,9 @@ static void Memento_event(void)
 
     if (memento.sequence == memento.breakAt) {
         fprintf(stderr, "Breaking at event %d\n", memento.breakAt);
-        Memento_breakpoint();
+        return 1;
     }
+    return 0;
 }
 
 int Memento_breakAt(int event)
@@ -1708,6 +1702,9 @@ static void *safe_find_block(void *ptr)
     Memento_BlkHeader *block;
     int valid;
 
+    if (ptr == NULL)
+        return NULL;
+
     block = MEMBLK_FROMBLK(ptr);
     /* Sometimes wrapping allocators can mean Memento_label
      * is called with a value within the block, rather than
@@ -1719,7 +1716,7 @@ static void *safe_find_block(void *ptr)
              block->sibling == MEMENTO_SIBLING_MAGIC);
     VALGRIND_MAKE_MEM_NOACCESS(&block->child, sizeof(block->child));
     VALGRIND_MAKE_MEM_NOACCESS(&block->sibling, sizeof(block->sibling));
-    if (!valid);
+    if (!valid)
     {
         findBlkData data;
 
@@ -1727,9 +1724,9 @@ static void *safe_find_block(void *ptr)
         data.blk   = NULL;
         data.flags = 0;
         Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
-	if (data.blk == NULL)
-            return ptr;
-	block = data.blk;
+        if (data.blk == NULL)
+            return NULL;
+        block = data.blk;
     }
     return block;
 }
@@ -1741,10 +1738,20 @@ void *Memento_label(void *ptr, const char *label)
     if (ptr == NULL)
         return NULL;
     block = safe_find_block(ptr);
+    if (block == NULL)
+        return ptr;
     VALGRIND_MAKE_MEM_DEFINED(&block->label, sizeof(block->label));
     block->label = label;
     VALGRIND_MAKE_MEM_NOACCESS(&block->label, sizeof(block->label));
     return ptr;
+}
+
+void Memento_tick(void)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
 }
 
 int Memento_failThisEvent(void)
@@ -1754,7 +1761,7 @@ int Memento_failThisEvent(void)
     if (!memento.inited)
         Memento_init();
 
-    Memento_event();
+    if (Memento_event()) Memento_breakpoint();
 
     if ((memento.sequence >= memento.failAt) && (memento.failAt != 0))
         Memento_startFailing();
@@ -1824,7 +1831,7 @@ static void *do_malloc(size_t s, int eventType)
     Memento_addBlockHead(&memento.used, memblk, 0);
 
     if (memento.leaking > 0)
-	    memblk->flags |= Memento_Flag_KnownLeak;
+        memblk->flags |= Memento_Flag_KnownLeak;
 
     return MEMBLK_TOBLK(memblk);
 }
@@ -1861,6 +1868,25 @@ void *Memento_dropRef(void *blk)
 {
     if (blk)
         do_reference(safe_find_block(blk), Memento_EventType_dropRef);
+    return blk;
+}
+
+void *Memento_adjustRef(void *blk, int adjust)
+{
+    if (blk == NULL)
+        return NULL;
+
+    while (adjust > 0)
+    {
+        Memento_takeRef(blk);
+        adjust--;
+    }
+    while (adjust < 0)
+    {
+        Memento_dropRef(blk);
+        adjust++;
+    }
+
     return blk;
 }
 
@@ -1961,7 +1987,7 @@ static void do_free(void *blk, int eventType)
     if (!memento.inited)
         Memento_init();
 
-    Memento_event();
+    if (Memento_event()) Memento_breakpoint();
 
     if (blk == NULL)
         return;
@@ -2329,12 +2355,12 @@ size_t Memento_setMax(size_t max)
 
 void Memento_startLeaking(void)
 {
-	memento.leaking++;
+    memento.leaking++;
 }
 
 void Memento_stopLeaking(void)
 {
-	memento.leaking--;
+    memento.leaking--;
 }
 
 #endif /* MEMENTO_CPP_EXTRAS_ONLY */
@@ -2437,6 +2463,11 @@ void *(Memento_takeRef)(void *a)
 }
 
 void *(Memento_dropRef)(void *a)
+{
+    return a;
+}
+
+void *(Memento_adjustRef)(void *a, int adjust)
 {
     return a;
 }
