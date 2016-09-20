@@ -140,7 +140,7 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int start_off
 
 		name = fz_malloc(ctx, namesize + 1);
 		n = fz_read(ctx, file, (unsigned char*)name, namesize);
-		if (n < namesize)
+		if (n < (size_t)namesize)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end of data in zip entry name");
 		name[namesize] = '\0';
 
@@ -300,7 +300,7 @@ static fz_buffer *read_zip_entry(fz_context *ctx, fz_archive *arch, const char *
 		fz_try(ctx)
 		{
 			ubuf->len = fz_read(ctx, file, ubuf->data, ent->usize);
-			if (ubuf->len < ent->usize)
+			if (ubuf->len < (size_t)ent->usize)
 				fz_warn(ctx, "premature end of data in stored zip archive entry");
 		}
 		fz_catch(ctx)
