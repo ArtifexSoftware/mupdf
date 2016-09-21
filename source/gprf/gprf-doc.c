@@ -546,6 +546,17 @@ generate_page(fz_context *ctx, gprf_page *page)
 	sprintf(nameroot, "gprf_%d_", page->number);
 	filename = fz_tempfilename(ctx, nameroot, doc->gprf_filename);
 
+/*
+	When invoking gs via the GS API, we need to give the profile
+	names unquoted. When invoking via system, we need to quote them.
+	Use a #define to keep the code simple.
+*/
+#ifdef USE_GS_API
+#define QUOTE
+#else
+#define QUOTE "\""
+#endif
+
 	/* Set up the icc profiles */
 	if (strlen(doc->display_profile) == 0)
 	{
@@ -555,9 +566,9 @@ generate_page(fz_context *ctx, gprf_page *page)
 	}
 	else
 	{
-		len = sizeof("-sPostRenderProfile=\"\""); /* with quotes */
+		len = sizeof("-sPostRenderProfile=" QUOTE QUOTE); /* with quotes */
 		disp_profile = (char*)fz_malloc(ctx, len + strlen(doc->display_profile) + 1);
-		sprintf(disp_profile, "-sPostRenderProfile=\"%s\"", doc->display_profile);
+		sprintf(disp_profile, "-sPostRenderProfile=" QUOTE "%s " QUOTE, doc->display_profile);
 	}
 
 	if (strlen(doc->print_profile) == 0)
@@ -570,7 +581,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 	{
 		len = sizeof("-sOutputICCProfile=\"\""); /* with quotes */
 		print_profile = (char*)fz_malloc(ctx, len + strlen(doc->print_profile) + 1);
-		sprintf(print_profile, "-sOutputICCProfile=\"%s\"", doc->print_profile);
+		sprintf(print_profile, "-sOutputICCProfile=" QUOTE "%s" QUOTE, doc->print_profile);
 	}
 
 	fz_try(ctx)
