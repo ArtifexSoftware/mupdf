@@ -429,6 +429,7 @@ xx:
 		n -= c<<b;
 		*p++ = c + '0';
 		(*na)++;
+		if (*na >= Ndig) break; /* abort if overflowing */
 	}
 	*p = 0;
 }
