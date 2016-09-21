@@ -568,7 +568,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 	{
 		len = sizeof("-sPostRenderProfile=" QUOTE QUOTE); /* with quotes */
 		disp_profile = (char*)fz_malloc(ctx, len + strlen(doc->display_profile) + 1);
-		sprintf(disp_profile, "-sPostRenderProfile=" QUOTE "%s " QUOTE, doc->display_profile);
+		sprintf(disp_profile, "-sPostRenderProfile=" QUOTE "%s" QUOTE, doc->display_profile);
 	}
 
 	if (strlen(doc->print_profile) == 0)
@@ -579,7 +579,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 	}
 	else
 	{
-		len = sizeof("-sOutputICCProfile=\"\""); /* with quotes */
+		len = sizeof("-sOutputICCProfile=" QUOTE QUOTE); /* with quotes */
 		print_profile = (char*)fz_malloc(ctx, len + strlen(doc->print_profile) + 1);
 		sprintf(print_profile, "-sOutputICCProfile=" QUOTE "%s" QUOTE, doc->print_profile);
 	}
