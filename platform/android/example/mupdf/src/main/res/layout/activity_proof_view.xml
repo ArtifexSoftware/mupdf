@@ -45,7 +45,7 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/proof_apply_button"
                 android:layout_gravity="center_horizontal"
-                android:background="#535353"
+                android:background="@drawable/apply_button"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:padding="10dp"

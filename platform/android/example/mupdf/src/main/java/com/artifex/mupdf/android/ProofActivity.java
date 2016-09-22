@@ -90,6 +90,7 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 
 		mApplyButton = (Button) findViewById(R.id.proof_apply_button);
 		mApplyButton.setOnClickListener(this);
+		mApplyButton.setEnabled(false);
 
 		//  wait for layout to open the document
 		final ProofActivity activity = this;
@@ -179,6 +180,7 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 		}
 		else if (v == mApplyButton)
 		{
+			mApplyButton.setEnabled(false);
 			updateColors();
 		}
 	}
@@ -278,7 +280,12 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 
 			//  set up the list
 			mColorList = (ListView)findViewById(R.id.proof_color_list);
-			mColorAdapter = new ChooseColorAdapter(getLayoutInflater());
+			mColorAdapter = new ChooseColorAdapter(getLayoutInflater(), new ColorChangeListener() {
+				@Override
+				public void onColorChange() {
+					mApplyButton.setEnabled(true);
+				}
+			});
 			mColorList.setAdapter(mColorAdapter);
 
 			//  get each one
@@ -377,14 +384,21 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 
 	//---------------------------------------------------------------------------------------------------------
 
+	public interface ColorChangeListener
+	{
+		void onColorChange();
+	}
+
 	public class ChooseColorAdapter extends BaseAdapter
 	{
 		private final LinkedList<ChooseColorItem> mItems;
 		private final LayoutInflater mInflater;
+		ColorChangeListener mColorChangeListener = null;
 
-		public ChooseColorAdapter(LayoutInflater inflater)
+		public ChooseColorAdapter(LayoutInflater inflater, ColorChangeListener listener)
 		{
 			mInflater = inflater;
+			mColorChangeListener = listener;
 			mItems = new LinkedList<>();
 		}
 
@@ -441,6 +455,8 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
 				{
 					item.checked = isChecked;
+					if (mColorChangeListener!=null)
+						mColorChangeListener.onColorChange();
 				}
 			});
 
