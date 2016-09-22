@@ -30,6 +30,8 @@ import android.widget.Toast;
 import com.artifex.mupdf.fitz.Document;
 import com.artifex.mupdf.fitz.Link;
 import com.artifex.mupdf.fitz.Outline;
+import com.artifex.mupdf.fitz.PDFDocument;
+import com.artifex.mupdf.fitz.PDFObject;
 import com.artifex.mupdf.fitz.R;
 
 import java.io.File;
@@ -766,6 +768,78 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		}
 	}
 
+	private String getEmbeddedProfileName()
+	{
+		PDFDocument doc = mDoc.toPDFDocument();
+		if (doc == null)
+			return null;
+		PDFObject obj = doc.getTrailer();
+		if (obj == null)
+			return null;
+		obj = obj.get("Root");
+		if (obj == null)
+			return null;
+		PDFObject outputIntents = obj.get("OutputIntents");
+		if (outputIntents == null)
+			return null;
+
+		int length = outputIntents.size();
+		int i;
+
+		for (i = 0 ; i < length; i++)
+		{
+			PDFObject intent = outputIntents.get(i);
+
+			if (intent == null || !intent.isDictionary())
+				continue;
+
+			/* FIXME: Getting a name as a ByteString is horrible */
+			obj = intent.get("S");
+			if (obj == null)
+				continue;
+			byte name[] = obj.toByteString();
+			if (name == null || name.length != 9)
+				continue;
+			if (name[0] != 'G' || name[1] != 'T' || name[2] != 'S' || name[3] != '_' ||
+				name[4] != 'P' || name[5] != 'D' || name[6] != 'F' || name[7] != 'X' || name[8] != 0)
+				continue;
+
+			/* We can't use the embedded profile if it's not CMYK based. */
+			obj = intent.get("DestOutputProfile");
+			if (obj == null)
+				continue;
+			obj = obj.get("N");
+			if (obj == null)
+				continue;
+			if (obj.toInteger() != 4)
+				continue;
+
+			String id;
+			obj = intent.get("Info");
+			if (obj != null)
+			{
+				id = obj.toString();
+				if (id != null)
+					return id;
+			}
+			obj = intent.get("OutputConditionIdentifier");
+			if (obj != null)
+			{
+				id = obj.toString();
+				if (id != null)
+					return id;
+			}
+			obj = intent.get("OutputCondition");
+			if (obj != null)
+			{
+				id = obj.toString();
+				if (id != null)
+					return id;
+			}
+		}
+		return null;
+	}
+
 	private void onProof()
 	{
 		proofSetup();
@@ -785,6 +859,8 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		final Dialog dialog = new Dialog(activity);
 		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		dialog.setContentView(R.layout.proof_dialog);
+
+		final String embeddedProfile = getEmbeddedProfileName();
 
 		final Spinner sp1 = (Spinner)(dialog.findViewById(R.id.print_profile_spinner));
 		final Spinner sp2 = (Spinner)(dialog.findViewById(R.id.display_profile_spinner));
