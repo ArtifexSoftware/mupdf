@@ -12,7 +12,6 @@
 
 static pdfapp_t gapp;
 static int file_open = 0;
-static char filename[1024] = "";
 static char *scriptname;
 static char *output = "out%03d.png";
 static char *prefix = NULL;
@@ -350,7 +349,6 @@ main(int argc, char *argv[])
 					char path[1024];
 					if (file_open)
 						pdfapp_close(&gapp);
-					strcpy(filename, line);
 					if (prefix)
 					{
 						sprintf(path, "%s%s", prefix, line);
