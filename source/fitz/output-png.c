@@ -134,7 +134,7 @@ fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, i
 {
 	unsigned char *dp;
 	int y, x, k, err, finalband;
-	int w, h, n, alpha;
+	int w, h, n;
 
 	if (!out || !sp || !poc)
 		return;
@@ -142,7 +142,6 @@ fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, i
 	w = poc->w;
 	h = poc->h;
 	n = poc->n;
-	alpha = poc->alpha;
 
 	finalband = (band_start+bandheight >= h);
 	if (finalband)
