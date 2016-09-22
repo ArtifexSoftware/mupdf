@@ -605,7 +605,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 		print_profile = (char*)fz_malloc(ctx, len + 1);
 		sprintf(print_profile, "-sOutputICCProfile=default_cmyk.icc");
 	}
-	else
+	else if (strcmp(doc->print_profile, "<EMBEDDED>") != 0)
 	{
 		len = sizeof("-sOutputICCProfile=" QUOTE QUOTE); /* with quotes */
 		print_profile = (char*)fz_malloc(ctx, len + strlen(doc->print_profile) + 1);
@@ -617,22 +617,31 @@ generate_page(fz_context *ctx, gprf_page *page)
 #ifdef USE_GS_API
 		void *instance;
 		int code;
-		char *argv[] = { "gs", "-sDEVICE=gprf", "-dUsePDFX3Profile", "-dFitPage", "-o", NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+		char *argv[20];
 		char arg_fp[32];
 		char arg_lp[32];
 		char arg_g[32];
+		int argc = 0;
 
-		argv[5] = filename;
+		argv[argc++] = "gs";
+		argv[argc++] = "-sDEVICE=gprf";
+		if (print_profile == NULL)
+			argv[argc++] = "-dUsePDFX3Profile";
+		else
+			argv[argc++] = print_profile;
+		argv[argc++] = display_profile;
+		argv[argc++] = "-dFitPage";
+		argv[argc++] = "-o";
+		argv[argc++] = filename;
 		sprintf(arg_fp, "-dFirstPage=%d", page->number+1);
-		argv[6] = arg_fp;
+		argv[argc++] = arg_fp;
 		sprintf(arg_lp, "-dLastPage=%d", page->number+1);
-		argv[7] = arg_lp;
-		argv[8] = disp_profile;
-		argv[9] = print_profile;
-		argv[10] = "-I%rom%Resource/Init/";
+		argv[argc++] = arg_lp;
+		argv[argc++] = "-I%rom%Resource/Init/";
 		sprintf(arg_g, "-g%dx%d", page->width, page->height);
-		argv[11] = arg_g;
-		argv[12] = doc->pdf_filename;
+		argv[argc++] = arg_g;
+		argv[argc++] = doc->pdf_filename;
+		assert(argc <= sizeof(argv)/sizeof(*argv));
 
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
@@ -642,13 +651,13 @@ generate_page(fz_context *ctx, gprf_page *page)
 		{
 			int i;
 			fprintf(stderr, "Invoking GS\n");
-			for (i = 0; i < sizeof(argv)/sizeof(*argv); i++)
+			for (i = 0; i < argc; i++)
 			{
 				fprintf(stderr, "%s\n", argv[i]);
 			}
 		}
 #endif
-		code = gsapi_init_with_args(instance, sizeof(argv)/sizeof(*argv), argv);
+		code = gsapi_init_with_args(instance, argc, argv);
 
 		gsapi_delete_instance(instance);
 		if (code < 0)
@@ -656,8 +665,9 @@ generate_page(fz_context *ctx, gprf_page *page)
 #else
 		char gs_command[1024];
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf -dUsePDFX3Profile -dFitPage -o \"%s\" -dFirstPage=%d -dLastPage=%d %s %s -I%%rom%%Resource/Init/ -g%dx%d \"%s\"",
-			filename, page->number+1, page->number+1, disp_profile, print_profile, page->width, page->height, doc->pdf_filename);
+		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf %s %s -dFitPage -o \"%s\" -dFirstPage=%d -dLastPage=%d -I%%rom%%Resource/Init/ -g%dx%d \"%s\"",
+			print_profile == NULL ? "-dUsePDFX3Profile" : print_profile, display_profile,
+			filename, page->number+1, page->number+1, page->width, page->height, doc->pdf_filename);
 		fz_system(ctx, gs_command);
 #endif
 
