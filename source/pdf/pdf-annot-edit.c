@@ -35,60 +35,11 @@ static const char *annot_type_str(fz_annot_type type)
 	}
 }
 
-void
-pdf_update_annot(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
-{
-	pdf_obj *obj, *ap, *as, *n;
-
-	if (doc->update_appearance)
-		doc->update_appearance(ctx, doc, annot);
-
-	obj = annot->obj;
-
-	ap = pdf_dict_get(ctx, obj, PDF_NAME_AP);
-	as = pdf_dict_get(ctx, obj, PDF_NAME_AS);
-
-	if (pdf_is_dict(ctx, ap))
-	{
-		pdf_hotspot *hp = &doc->hotspot;
-
-		n = NULL;
-
-		if (hp->num == pdf_to_num(ctx, obj) && (hp->state & HOTSPOT_POINTER_DOWN))
-		{
-			n = pdf_dict_get(ctx, ap, PDF_NAME_D); /* down state */
-		}
-
-		if (n == NULL)
-			n = pdf_dict_get(ctx, ap, PDF_NAME_N); /* normal state */
-
-		/* lookup current state in sub-dictionary */
-		if (!pdf_is_stream(ctx, n))
-			n = pdf_dict_get(ctx, n, as);
-
-		pdf_drop_xobject(ctx, annot->ap);
-		annot->ap = NULL;
-
-		if (pdf_is_stream(ctx, n))
-		{
-			fz_try(ctx)
-			{
-				annot->ap = pdf_load_xobject(ctx, doc, n);
-				annot->ap_iteration = annot->ap->iteration;
-			}
-			fz_catch(ctx)
-			{
-				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-				fz_warn(ctx, "ignoring broken annotation");
-			}
-		}
-	}
-}
-
 pdf_annot *
-pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_type type)
+pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
 {
 	pdf_annot *annot = NULL;
+	pdf_document *doc = page->doc;
 	pdf_obj *annot_obj = pdf_new_dict(ctx, doc, 0);
 	pdf_obj *ind_obj = NULL;
 
@@ -153,11 +104,12 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 }
 
 void
-pdf_delete_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot)
+pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 {
+	pdf_document *doc = annot->page->doc;
 	pdf_annot **annotptr;
-	pdf_obj *old_annot_arr;
 	pdf_obj *annot_arr;
+	int i;
 
 	if (annot == NULL)
 		return;
@@ -174,55 +126,35 @@ pdf_delete_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *
 		return;
 
 	*annotptr = annot->next;
+
 	/* If the removed annotation was the last in the list adjust the end pointer */
 	if (*annotptr == NULL)
 		page->annot_tailp = annotptr;
 
-	/* Stick it in the deleted list */
-	annot->next = page->deleted_annots;
-	page->deleted_annots = annot;
-
-	pdf_drop_xobject(ctx, annot->ap);
-	annot->ap = NULL;
-
-	/* Recreate the "Annots" array with this annot removed */
-	old_annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME_Annots);
-
-	if (old_annot_arr)
+	/* If the removed annotation has the focus, blur it. */
+	if (doc->focus == annot)
 	{
-		int i, n = pdf_array_len(ctx, old_annot_arr);
-		annot_arr = pdf_new_array(ctx, doc, n?(n-1):0);
-
-		fz_try(ctx)
-		{
-			for (i = 0; i < n; i++)
-			{
-				pdf_obj *obj = pdf_array_get(ctx, old_annot_arr, i);
-
-				if (obj != annot->obj)
-					pdf_array_push(ctx, annot_arr, obj);
-			}
-
-			if (pdf_is_indirect(ctx, old_annot_arr))
-				pdf_update_object(ctx, doc, pdf_to_num(ctx, old_annot_arr), annot_arr);
-			else
-				pdf_dict_put(ctx, page->obj, PDF_NAME_Annots, annot_arr);
-
-			if (pdf_is_indirect(ctx, annot->obj))
-				pdf_delete_object(ctx, doc, pdf_to_num(ctx, annot->obj));
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_obj(ctx, annot_arr);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
+		doc->focus = NULL;
+		doc->focus_obj = NULL;
 	}
 
-	pdf_drop_obj(ctx, annot->obj);
-	annot->obj = NULL;
+	/* Remove the annot from the "Annots" array. */
+	annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME_Annots);
+	i = pdf_array_find(ctx, annot_arr, annot->obj);
+	if (i >= 0)
+		pdf_array_delete(ctx, annot_arr, i);
+
+	if (pdf_is_indirect(ctx, annot_arr))
+		pdf_update_object(ctx, doc, pdf_to_num(ctx, annot_arr), annot_arr);
+	else
+		pdf_dict_put(ctx, page->obj, PDF_NAME_Annots, annot_arr);
+
+	/* The garbage collection pass when saving will remove the annot object,
+	 * removing it here may break files if multiple pages use the same annot. */
+
+	/* And free it. */
+	fz_drop_annot(ctx, (fz_annot*)annot);
+
 	doc->dirty = 1;
 }
 

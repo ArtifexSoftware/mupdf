@@ -175,15 +175,10 @@ struct pdf_page_s
 	pdf_obj *obj;
 
 	int transparency;
+	int incomplete;
 
 	fz_link *links;
-	pdf_annot *annots;
-	pdf_annot **annot_tailp;
-	pdf_annot *changed_annots;
-	pdf_annot *deleted_annots;
-	pdf_annot *tmp_annots;
-
-	int incomplete;
+	pdf_annot *annots, **annot_tailp;
 };
 
 enum

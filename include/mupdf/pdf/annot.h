@@ -93,8 +93,9 @@ struct pdf_annot_s
 	pdf_xobject *ap;
 
 	int ap_iteration;
+	int changed;
+
 	pdf_annot *next;
-	pdf_annot *next_changed;
 };
 
 fz_link_dest pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kind kind, pdf_obj *dest);
@@ -107,8 +108,8 @@ pdf_obj *pdf_load_name_tree(fz_context *ctx, pdf_document *doc, pdf_obj *which);
 fz_link *pdf_load_link_annots(fz_context *ctx, pdf_document *, pdf_obj *annots, const fz_matrix *page_ctm);
 
 void pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm);
-void pdf_load_annots(fz_context *ctx, pdf_document *, pdf_page *page, pdf_obj *annots);
-void pdf_update_annot(fz_context *ctx, pdf_document *, pdf_annot *annot);
+void pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots);
+void pdf_update_annot(fz_context *ctx, pdf_annot *annot);
 void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 
 /*
@@ -116,12 +117,12 @@ void pdf_drop_annots(fz_context *ctx, pdf_annot *annot_list);
 	specified page. The returned pdf_annot structure is owned by the page
 	and does not need to be freed.
 */
-pdf_annot *pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_type type);
+pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type);
 
 /*
 	pdf_delete_annot: delete an annotation
 */
-void pdf_delete_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot);
+void pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot);
 
 /*
 	pdf_set_markup_annot_quadpoints: set the quadpoints for a text-markup annotation.
@@ -169,12 +170,6 @@ pdf_obj *pdf_annot_irt(fz_context *ctx, pdf_annot *annot);
 	Only base 14 fonts are supported and are specified by name.
 */
 void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3]);
-
-/*
-	pdf_poll_changed_annot: enumerate the changed annotations recorded
-	by a call to pdf_update_page.
-*/
-pdf_annot *pdf_poll_changed_annot(fz_context *ctx, pdf_document *idoc, pdf_page *page);
 
 /*
 	pdf_new_annot: Internal function for creating a new pdf annotation.

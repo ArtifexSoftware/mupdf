@@ -140,7 +140,7 @@ struct pdf_ocg_descriptor_s
 	are out of date, checks for cases where different appearance streams
 	should be selected because of state changes, and records internally
 	each annotation that has changed appearance. The list of changed annotations
-	is then available via pdf_poll_changed_annot. Note that a call to
+	is then available via querying the annot->changed flag. Note that a call to
 	pdf_pass_event for one page may lead to changes on any other, so an app
 	should call pdf_update_page for every page it currently displays. Also
 	it is important that the pdf_page object is the one used to last render
@@ -148,7 +148,7 @@ struct pdf_ocg_descriptor_s
 	a call to pdf_update_page would not reliably be able to report all changed
 	areas.
 */
-void pdf_update_page(fz_context *ctx, pdf_document *doc, pdf_page *page);
+void pdf_update_page(fz_context *ctx, pdf_page *page);
 
 /*
 	Determine whether changes have been made since the

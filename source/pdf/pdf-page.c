@@ -511,10 +511,7 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 		fz_drop_link(ctx, page->links);
 	if (page->annots)
 		pdf_drop_annots(ctx, page->annots);
-	if (page->deleted_annots)
-		pdf_drop_annots(ctx, page->deleted_annots);
-	if (page->tmp_annots)
-		pdf_drop_annots(ctx, page->tmp_annots);
+
 	/* doc->focus, when not NULL, refers to one of
 	 * the annotations and must be NULLed when the
 	 * annotations are destroyed. doc->focus_obj
@@ -551,8 +548,6 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->links = NULL;
 	page->annots = NULL;
 	page->annot_tailp = &page->annots;
-	page->deleted_annots = NULL;
-	page->tmp_annots = NULL;
 	page->incomplete = 0;
 
 	return page;
@@ -587,7 +582,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 			fz_matrix page_ctm;
 			pdf_page_transform(ctx, page, &page_mediabox, &page_ctm);
 			page->links = pdf_load_link_annots(ctx, doc, obj, &page_ctm);
-			pdf_load_annots(ctx, doc, page, obj);
+			pdf_load_annots(ctx, page, obj);
 		}
 	}
 	fz_catch(ctx)

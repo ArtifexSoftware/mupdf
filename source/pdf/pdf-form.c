@@ -667,24 +667,15 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	return changed;
 }
 
-void pdf_update_page(fz_context *ctx, pdf_document *doc, pdf_page *page)
+void pdf_update_page(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot;
 
 	/* Reset changed_annots to empty */
-	page->changed_annots = NULL;
+	for (annot = page->annots; annot; annot = annot->next)
+		annot->changed = 0;
 
-	/*
-		Free all annots in tmp_annots, since these were
-		referenced only from changed_annots.
-	*/
-	if (page->tmp_annots)
-	{
-		pdf_drop_annots(ctx, page->tmp_annots);
-		page->tmp_annots = NULL;
-	}
-
-	/* Add all changed annots to the list */
+	/* Flag all changed annots */
 	for (annot = page->annots; annot; annot = annot->next)
 	{
 		pdf_xobject *ap = pdf_keep_xobject(ctx, annot->ap);
@@ -692,51 +683,15 @@ void pdf_update_page(fz_context *ctx, pdf_document *doc, pdf_page *page)
 
 		fz_try(ctx)
 		{
-			pdf_update_annot(ctx, doc, annot);
-
+			pdf_update_annot(ctx, annot);
 			if ((ap != annot->ap || ap_iteration != annot->ap_iteration))
-			{
-				annot->next_changed = page->changed_annots;
-				page->changed_annots = annot;
-			}
+				annot->changed = 1;
 		}
 		fz_always(ctx)
-		{
 			pdf_drop_xobject(ctx, ap);
-		}
 		fz_catch(ctx)
-		{
 			fz_rethrow(ctx);
-		}
 	}
-
-	/*
-		Add all deleted annots to the list, since these also
-		warrant a screen update
-	*/
-	for (annot = page->deleted_annots; annot; annot = annot->next)
-	{
-		annot->next_changed = page->changed_annots;
-		page->changed_annots = annot;
-	}
-
-	/*
-		Move deleted_annots to tmp_annots to keep them separate
-		from any future deleted ones. They cannot yet be freed
-		since they are linked into changed_annots
-	*/
-	page->tmp_annots = page->deleted_annots;
-	page->deleted_annots = NULL;
-}
-
-pdf_annot *pdf_poll_changed_annot(fz_context *ctx, pdf_document *idoc, pdf_page *page)
-{
-	pdf_annot *annot = page->changed_annots;
-
-	if (annot)
-		page->changed_annots = annot->next_changed;
-
-	return annot;
 }
 
 pdf_widget *pdf_focused_widget(fz_context *ctx, pdf_document *doc)
@@ -771,7 +726,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 {
 	pdf_obj *form = NULL;
 	int old_sigflags = pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/SigFlags"));
-	pdf_annot *annot = pdf_create_annot(ctx, doc, page, PDF_ANNOT_WIDGET);
+	pdf_annot *annot = pdf_create_annot(ctx, page, PDF_ANNOT_WIDGET);
 
 	fz_try(ctx)
 	{
@@ -799,7 +754,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 	}
 	fz_catch(ctx)
 	{
-		pdf_delete_annot(ctx, doc, page, annot);
+		pdf_delete_annot(ctx, page, annot);
 
 		/* An empty Fields array may have been created, but that is harmless */
 

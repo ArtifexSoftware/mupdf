@@ -504,19 +504,21 @@ static rect_list *updatePage(fz_document *doc, fz_page *page)
 	fz_try(ctx)
 	{
 		pdf_document *idoc = pdf_specifics(ctx, doc);
-
 		if (idoc)
 		{
-			fz_annot *annot;
+			pdf_page *page = (pdf_page*)page;
+			pdf_annot *pannot;
 
-			pdf_update_page(ctx, idoc, (pdf_page *)page);
-			while ((annot = (fz_annot *)pdf_poll_changed_annot(ctx, idoc, (pdf_page *)page)) != NULL)
+			pdf_update_page(ctx, (pdf_page *)page);
+			for (pannot = pdf_first_annot(ctx, ppage); pannot; pannot = pdf_next_annot(ctx, pannot))
 			{
-				rect_list *node = fz_malloc_struct(ctx, rect_list);
-
-				fz_bound_annot(ctx, annot, &node->rect);
-				node->next = list;
-				list = node;
+				if (pannot->changed)
+				{
+					rect_list *node = fz_malloc_struct(ctx, rect_list);
+					fz_bound_annot(ctx, (fz_annot*)pannot, &node->rect);
+					node->next = list;
+					list = node;
+				}
 			}
 		}
 	}

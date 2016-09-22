@@ -679,7 +679,7 @@ static void do_forms(float xofs, float yofs)
 		{
 			if (pdf->focus)
 				ui.active = do_forms;
-			pdf_update_page(ctx, pdf, (pdf_page*)page);
+			pdf_update_page(ctx, (pdf_page*)page);
 			render_page();
 			ui_needs_update = 1;
 		}
@@ -692,7 +692,7 @@ static void do_forms(float xofs, float yofs)
 		event.event.pointer.ptype = PDF_POINTER_UP;
 		if (pdf_pass_event(ctx, pdf, (pdf_page*)page, &event))
 		{
-			pdf_update_page(ctx, pdf, (pdf_page*)page);
+			pdf_update_page(ctx, (pdf_page*)page);
 			render_page();
 			ui_needs_update = 1;
 		}

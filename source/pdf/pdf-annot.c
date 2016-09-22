@@ -502,8 +502,9 @@ pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page)
 }
 
 void
-pdf_load_annots(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_obj *annots)
+pdf_load_annots(fz_context *ctx, pdf_page *page, pdf_obj *annots)
 {
+	pdf_document *doc = page->doc;
 	pdf_annot *annot, **itr;
 	pdf_obj *obj, *ap, *as, *n;
 	int i, len, keep_annot;

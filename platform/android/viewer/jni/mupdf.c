@@ -669,21 +669,27 @@ JNI_FN(MuPDFCore_javascriptSupported)(JNIEnv *env, jobject thiz)
 static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *idoc)
 {
 	fz_context *ctx = glo->ctx;
-	fz_annot *annot;
+	pdf_page *ppage = (pdf_page*)pc->page;
+	pdf_annot *pannot;
 
-	pdf_update_page(ctx, idoc, (pdf_page *)pc->page);
-	while ((annot = (fz_annot *)pdf_poll_changed_annot(ctx, idoc, (pdf_page *)pc->page)) != NULL)
+	pdf_update_page(ctx, ppage);
+	for (pannot = pdf_first_annot(ctx, ppage); pannot; pannot = pdf_next_annot(ctx, pannot))
 	{
-		/* FIXME: We bound the annot twice here */
-		rect_node *node = fz_malloc_struct(glo->ctx, rect_node);
-		fz_bound_annot(ctx, annot, &node->rect);
-		node->next = pc->changed_rects;
-		pc->changed_rects = node;
+		if (pannot->changed)
+		{
+			fz_annot *annot = (fz_annot*)pannot;
 
-		node = fz_malloc_struct(glo->ctx, rect_node);
-		fz_bound_annot(ctx, annot, &node->rect);
-		node->next = pc->hq_changed_rects;
-		pc->hq_changed_rects = node;
+			/* FIXME: We bound the annot twice here */
+			rect_node *node = fz_malloc_struct(ctx, rect_node);
+			fz_bound_annot(ctx, annot, &node->rect);
+			node->next = pc->changed_rects;
+			pc->changed_rects = node;
+
+			node = fz_malloc_struct(ctx, rect_node);
+			fz_bound_annot(ctx, annot, &node->rect);
+			node->next = pc->hq_changed_rects;
+			pc->hq_changed_rects = node;
+		}
 	}
 }
 
@@ -1740,7 +1746,7 @@ JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot
 
 		if (annot)
 		{
-			pdf_delete_annot(ctx, idoc, (pdf_page *)pc->page, (pdf_annot *)annot);
+			pdf_delete_annot(ctx, (pdf_page *)pc->page, (pdf_annot *)annot);
 			dump_annotation_display_lists(glo);
 		}
 	}

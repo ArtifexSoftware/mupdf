@@ -786,26 +786,29 @@ static void pdfapp_runpage(pdfapp_t *app, fz_device *dev, const fz_matrix *ctm, 
 
 static void pdfapp_updatepage(pdfapp_t *app)
 {
-	pdf_document *idoc = pdf_specifics(app->ctx, app->doc);
 	fz_device *idev;
 	fz_matrix ctm;
-	fz_annot *annot;
+	pdf_annot *pannot;
 
 	pdfapp_viewctm(&ctm, app);
-	pdf_update_page(app->ctx, idoc, (pdf_page *)app->page);
+	pdf_update_page(app->ctx, (pdf_page *)app->page);
 	pdfapp_recreate_annotationslist(app);
 
-	while ((annot = (fz_annot *)pdf_poll_changed_annot(app->ctx, idoc, (pdf_page *)app->page)) != NULL)
+	for (pannot = pdf_first_annot(app->ctx, (pdf_page*)app->page); pannot; pannot = pdf_next_annot(app->ctx, pannot))
 	{
-		fz_rect bounds;
-		fz_irect ibounds;
-		fz_transform_rect(fz_bound_annot(app->ctx, annot, &bounds), &ctm);
-		fz_rect_from_irect(&bounds, fz_round_rect(&ibounds, &bounds));
-		fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
-		idev = fz_new_draw_device_with_bbox(app->ctx, NULL, app->image, &ibounds);
-		pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
-		fz_close_device(app->ctx, idev);
-		fz_drop_device(app->ctx, idev);
+		if (pannot->changed)
+		{
+			fz_annot *annot = (fz_annot*)pannot;
+			fz_rect bounds;
+			fz_irect ibounds;
+			fz_transform_rect(fz_bound_annot(app->ctx, annot, &bounds), &ctm);
+			fz_rect_from_irect(&bounds, fz_round_rect(&ibounds, &bounds));
+			fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
+			idev = fz_new_draw_device_with_bbox(app->ctx, NULL, app->image, &ibounds);
+			pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
+			fz_close_device(app->ctx, idev);
+			fz_drop_device(app->ctx, idev);
+		}
 	}
 
 	pdfapp_showpage(app, 0, 0, 1, 0, 0);
