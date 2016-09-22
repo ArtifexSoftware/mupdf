@@ -600,7 +600,7 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 	{
 		int f = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
 
-		if (f & (F_Hidden|F_NoView))
+		if (f & (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_NO_VIEW))
 			annot = NULL;
 	}
 
@@ -748,7 +748,7 @@ pdf_widget *pdf_first_widget(fz_context *ctx, pdf_document *doc, pdf_page *page)
 {
 	pdf_annot *annot = page->annots;
 
-	while (annot && pdf_annot_type(ctx, annot) != FZ_ANNOT_WIDGET)
+	while (annot && pdf_annot_type(ctx, annot) != PDF_ANNOT_WIDGET)
 		annot = annot->next;
 
 	return (pdf_widget *)annot;
@@ -761,7 +761,7 @@ pdf_widget *pdf_next_widget(fz_context *ctx, pdf_widget *previous)
 	if (annot)
 		annot = annot->next;
 
-	while (annot && pdf_annot_type(ctx, annot) != FZ_ANNOT_WIDGET)
+	while (annot && pdf_annot_type(ctx, annot) != PDF_ANNOT_WIDGET)
 		annot = annot->next;
 
 	return (pdf_widget *)annot;
@@ -771,7 +771,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 {
 	pdf_obj *form = NULL;
 	int old_sigflags = pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/AcroForm/SigFlags"));
-	pdf_annot *annot = pdf_create_annot(ctx, doc, page, FZ_ANNOT_WIDGET);
+	pdf_annot *annot = pdf_create_annot(ctx, doc, page, PDF_ANNOT_WIDGET);
 
 	fz_try(ctx)
 	{
@@ -815,7 +815,7 @@ pdf_widget *pdf_create_widget(fz_context *ctx, pdf_document *doc, pdf_page *page
 int pdf_widget_type(fz_context *ctx, pdf_widget *widget)
 {
 	pdf_annot *annot = (pdf_annot *)widget;
-	if (pdf_annot_type(ctx, annot) == FZ_ANNOT_WIDGET)
+	if (pdf_annot_type(ctx, annot) == PDF_ANNOT_WIDGET)
 		return pdf_field_type(ctx, pdf_get_bound_document(ctx, annot->obj), annot->obj);
 	return PDF_WIDGET_TYPE_NOT_WIDGET;
 }
@@ -1000,18 +1000,18 @@ int pdf_field_display(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 
 	f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME_F));
 
-	if (f & F_Hidden)
+	if (f & PDF_ANNOT_IS_HIDDEN)
 	{
 		res = Display_Hidden;
 	}
-	else if (f & F_Print)
+	else if (f & PDF_ANNOT_IS_PRINT)
 	{
-		if (f & F_NoView)
+		if (f & PDF_ANNOT_IS_NO_VIEW)
 			res = Display_NoView;
 	}
 	else
 	{
-		if (f & F_NoView)
+		if (f & PDF_ANNOT_IS_NO_VIEW)
 			res = Display_Hidden;
 		else
 			res = Display_NoPrint;
@@ -1070,20 +1070,20 @@ void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, i
 
 	if (!kids)
 	{
-		int mask = (F_Hidden|F_Print|F_NoView);
+		int mask = (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_PRINT|PDF_ANNOT_IS_NO_VIEW);
 		int f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME_F)) & ~mask;
 		pdf_obj *fo = NULL;
 
 		switch (d)
 		{
 		case Display_Visible:
-			f |= F_Print;
+			f |= PDF_ANNOT_IS_PRINT;
 			break;
 		case Display_Hidden:
-			f |= F_Hidden;
+			f |= PDF_ANNOT_IS_HIDDEN;
 			break;
 		case Display_NoView:
-			f |= (F_Print|F_NoView);
+			f |= (PDF_ANNOT_IS_PRINT|PDF_ANNOT_IS_NO_VIEW);
 			break;
 		case Display_NoPrint:
 			break;

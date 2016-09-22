@@ -1546,7 +1546,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 
 	switch (type)
 	{
-		case FZ_ANNOT_HIGHLIGHT:
+		case PDF_ANNOT_HIGHLIGHT:
 			color[0] = 1.0;
 			color[1] = 1.0;
 			color[2] = 0.0;
@@ -1554,7 +1554,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 			line_thickness = 1.0;
 			line_height = 0.5;
 			break;
-		case FZ_ANNOT_UNDERLINE:
+		case PDF_ANNOT_UNDERLINE:
 			color[0] = 0.0;
 			color[1] = 0.0;
 			color[2] = 1.0;
@@ -1562,7 +1562,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 			line_thickness = LINE_THICKNESS;
 			line_height = UNDERLINE_HEIGHT;
 			break;
-		case FZ_ANNOT_STRIKEOUT:
+		case PDF_ANNOT_STRIKE_OUT:
 			color[0] = 1.0;
 			color[1] = 0.0;
 			color[2] = 0.0;
@@ -1697,7 +1697,7 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 			(*env)->DeleteLocalRef(env, arc);
 		}
 
-		annot = (fz_annot *)pdf_create_annot(ctx, idoc, (pdf_page *)pc->page, FZ_ANNOT_INK);
+		annot = (fz_annot *)pdf_create_annot(ctx, idoc, (pdf_page *)pc->page, PDF_ANNOT_INK);
 
 		pdf_set_ink_annot_list(ctx, idoc, (pdf_annot *)annot, pts, counts, n, color, INK_THICKNESS);
 

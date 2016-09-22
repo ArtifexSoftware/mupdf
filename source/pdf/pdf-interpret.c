@@ -1254,14 +1254,14 @@ pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_p
 {
 	int flags = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
 
-	if (flags & (F_Invisible | F_Hidden))
+	if (flags & (PDF_ANNOT_IS_INVISIBLE | PDF_ANNOT_IS_HIDDEN))
 		return;
 
 	if (proc->event)
 	{
-		if (!strcmp(proc->event, "Print") && !(flags & F_Print))
+		if (!strcmp(proc->event, "Print") && !(flags & PDF_ANNOT_IS_PRINT))
 			return;
-		if (!strcmp(proc->event, "View") && (flags & F_NoView))
+		if (!strcmp(proc->event, "View") && (flags & PDF_ANNOT_IS_NO_VIEW))
 			return;
 	}
 

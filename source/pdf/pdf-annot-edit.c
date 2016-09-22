@@ -6,31 +6,31 @@ static const char *annot_type_str(fz_annot_type type)
 {
 	switch (type)
 	{
-	case FZ_ANNOT_TEXT: return "Text";
-	case FZ_ANNOT_LINK: return "Link";
-	case FZ_ANNOT_FREETEXT: return "FreeText";
-	case FZ_ANNOT_LINE: return "Line";
-	case FZ_ANNOT_SQUARE: return "Square";
-	case FZ_ANNOT_CIRCLE: return "Circle";
-	case FZ_ANNOT_POLYGON: return "Polygon";
-	case FZ_ANNOT_POLYLINE: return "PolyLine";
-	case FZ_ANNOT_HIGHLIGHT: return "Highlight";
-	case FZ_ANNOT_UNDERLINE: return "Underline";
-	case FZ_ANNOT_SQUIGGLY: return "Squiggly";
-	case FZ_ANNOT_STRIKEOUT: return "StrikeOut";
-	case FZ_ANNOT_STAMP: return "Stamp";
-	case FZ_ANNOT_CARET: return "Caret";
-	case FZ_ANNOT_INK: return "Ink";
-	case FZ_ANNOT_POPUP: return "Popup";
-	case FZ_ANNOT_FILEATTACHMENT: return "FileAttachment";
-	case FZ_ANNOT_SOUND: return "Sound";
-	case FZ_ANNOT_MOVIE: return "Movie";
-	case FZ_ANNOT_WIDGET: return "Widget";
-	case FZ_ANNOT_SCREEN: return "Screen";
-	case FZ_ANNOT_PRINTERMARK: return "PrinterMark";
-	case FZ_ANNOT_TRAPNET: return "TrapNet";
-	case FZ_ANNOT_WATERMARK: return "Watermark";
-	case FZ_ANNOT_3D: return "3D";
+	case PDF_ANNOT_TEXT: return "Text";
+	case PDF_ANNOT_LINK: return "Link";
+	case PDF_ANNOT_FREE_TEXT: return "FreeText";
+	case PDF_ANNOT_LINE: return "Line";
+	case PDF_ANNOT_SQUARE: return "Square";
+	case PDF_ANNOT_CIRCLE: return "Circle";
+	case PDF_ANNOT_POLYGON: return "Polygon";
+	case PDF_ANNOT_POLY_LINE: return "PolyLine";
+	case PDF_ANNOT_HIGHLIGHT: return "Highlight";
+	case PDF_ANNOT_UNDERLINE: return "Underline";
+	case PDF_ANNOT_SQUIGGLY: return "Squiggly";
+	case PDF_ANNOT_STRIKE_OUT: return "StrikeOut";
+	case PDF_ANNOT_STAMP: return "Stamp";
+	case PDF_ANNOT_CARET: return "Caret";
+	case PDF_ANNOT_INK: return "Ink";
+	case PDF_ANNOT_POPUP: return "Popup";
+	case PDF_ANNOT_FILE_ATTACHMENT: return "FileAttachment";
+	case PDF_ANNOT_SOUND: return "Sound";
+	case PDF_ANNOT_MOVIE: return "Movie";
+	case PDF_ANNOT_WIDGET: return "Widget";
+	case PDF_ANNOT_SCREEN: return "Screen";
+	case PDF_ANNOT_PRINTER_MARK: return "PrinterMark";
+	case PDF_ANNOT_TRAP_NET: return "TrapNet";
+	case PDF_ANNOT_WATERMARK: return "Watermark";
+	case PDF_ANNOT_3D: return "3D";
 	default: return "";
 	}
 }
@@ -112,7 +112,7 @@ pdf_create_annot(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_annot_ty
 		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &rect));
 
 		/* Make printable as default */
-		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_F, pdf_new_int(ctx, doc, F_Print));
+		pdf_dict_put_drop(ctx, annot_obj, PDF_NAME_F, pdf_new_int(ctx, doc, PDF_ANNOT_IS_PRINT));
 
 		annot = pdf_new_annot(ctx, page);
 		annot->ap = NULL;
@@ -351,7 +351,7 @@ void pdf_set_text_annot_position(fz_context *ctx, pdf_document *doc, pdf_annot *
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &rect));
 
 	flags = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
-	flags |= (F_NoZoom|F_NoRotate);
+	flags |= (PDF_ANNOT_IS_NO_ZOOM|PDF_ANNOT_IS_NO_ROTATE);
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_F, pdf_new_int(ctx, doc, flags));
 }
 
@@ -372,6 +372,7 @@ const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot)
 
 const char *pdf_annot_date(fz_context *ctx, pdf_annot *annot)
 {
+	// TODO: PDF_NAME_M
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_CreationDate));
 }
 

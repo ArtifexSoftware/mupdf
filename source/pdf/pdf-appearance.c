@@ -1534,7 +1534,7 @@ void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_a
 
 	switch (type)
 	{
-		case FZ_ANNOT_HIGHLIGHT:
+		case PDF_ANNOT_HIGHLIGHT:
 			color[0] = 1.0;
 			color[1] = 1.0;
 			color[2] = 0.0;
@@ -1542,7 +1542,7 @@ void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_a
 			line_thickness = 1.0;
 			line_height = 0.5;
 			break;
-		case FZ_ANNOT_UNDERLINE:
+		case PDF_ANNOT_UNDERLINE:
 			color[0] = 0.0;
 			color[1] = 0.0;
 			color[2] = 1.0;
@@ -1550,7 +1550,7 @@ void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_a
 			line_thickness = LINE_THICKNESS;
 			line_height = UNDERLINE_HEIGHT;
 			break;
-		case FZ_ANNOT_STRIKEOUT:
+		case PDF_ANNOT_STRIKE_OUT:
 			color[0] = 1.0;
 			color[1] = 0.0;
 			color[2] = 0.0;
@@ -2458,7 +2458,7 @@ void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 		fz_annot_type type = pdf_annot_type(ctx, annot);
 		switch (type)
 		{
-		case FZ_ANNOT_WIDGET:
+		case PDF_ANNOT_WIDGET:
 			switch (pdf_field_type(ctx, doc, obj))
 			{
 			case PDF_WIDGET_TYPE_TEXT:
@@ -2506,18 +2506,18 @@ void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 				break;
 			}
 			break;
-		case FZ_ANNOT_TEXT:
+		case PDF_ANNOT_TEXT:
 			pdf_update_text_annot_appearance(ctx, doc, annot);
 			break;
-		case FZ_ANNOT_FREETEXT:
+		case PDF_ANNOT_FREE_TEXT:
 			pdf_update_free_text_annot_appearance(ctx, doc, annot);
 			break;
-		case FZ_ANNOT_STRIKEOUT:
-		case FZ_ANNOT_UNDERLINE:
-		case FZ_ANNOT_HIGHLIGHT:
+		case PDF_ANNOT_STRIKE_OUT:
+		case PDF_ANNOT_UNDERLINE:
+		case PDF_ANNOT_HIGHLIGHT:
 			pdf_update_text_markup_appearance(ctx, doc, annot, type);
 			break;
-		case FZ_ANNOT_INK:
+		case PDF_ANNOT_INK:
 			pdf_update_ink_appearance(ctx, doc, annot);
 			break;
 		default:

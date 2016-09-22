@@ -695,15 +695,15 @@ static void saveDoc(const char *current_path, fz_document *doc)
 			switch (barmode)
 			{
 				case BARMODE_HIGHLIGHT:
-					[view saveSelectionAsMarkup:FZ_ANNOT_HIGHLIGHT];
+					[view saveSelectionAsMarkup:PDF_ANNOT_HIGHLIGHT];
 					break;
 
 				case BARMODE_UNDERLINE:
-					[view saveSelectionAsMarkup:FZ_ANNOT_UNDERLINE];
+					[view saveSelectionAsMarkup:PDF_ANNOT_UNDERLINE];
 					break;
 
 				case BARMODE_STRIKE:
-					[view saveSelectionAsMarkup:FZ_ANNOT_STRIKEOUT];
+					[view saveSelectionAsMarkup:PDF_ANNOT_STRIKEOUT];
 					break;
 
 				case BARMODE_INK:

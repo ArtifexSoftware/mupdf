@@ -434,55 +434,55 @@ fz_annot_type pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 	pdf_obj *obj = annot->obj;
 	pdf_obj *subtype = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
 	if (pdf_name_eq(ctx, PDF_NAME_Text, subtype))
-		return FZ_ANNOT_TEXT;
+		return PDF_ANNOT_TEXT;
 	else if (pdf_name_eq(ctx, PDF_NAME_Link, subtype))
-		return FZ_ANNOT_LINK;
+		return PDF_ANNOT_LINK;
 	else if (pdf_name_eq(ctx, PDF_NAME_FreeText, subtype))
-		return FZ_ANNOT_FREETEXT;
+		return PDF_ANNOT_FREE_TEXT;
 	else if (pdf_name_eq(ctx, PDF_NAME_Line, subtype))
-		return FZ_ANNOT_LINE;
+		return PDF_ANNOT_LINE;
 	else if (pdf_name_eq(ctx, PDF_NAME_Square, subtype))
-		return FZ_ANNOT_SQUARE;
+		return PDF_ANNOT_SQUARE;
 	else if (pdf_name_eq(ctx, PDF_NAME_Circle, subtype))
-		return FZ_ANNOT_CIRCLE;
+		return PDF_ANNOT_CIRCLE;
 	else if (pdf_name_eq(ctx, PDF_NAME_Polygon, subtype))
-		return FZ_ANNOT_POLYGON;
+		return PDF_ANNOT_POLYGON;
 	else if (pdf_name_eq(ctx, PDF_NAME_PolyLine, subtype))
-		return FZ_ANNOT_POLYLINE;
+		return PDF_ANNOT_POLY_LINE;
 	else if (pdf_name_eq(ctx, PDF_NAME_Highlight, subtype))
-		return FZ_ANNOT_HIGHLIGHT;
+		return PDF_ANNOT_HIGHLIGHT;
 	else if (pdf_name_eq(ctx, PDF_NAME_Underline, subtype))
-		return FZ_ANNOT_UNDERLINE;
+		return PDF_ANNOT_UNDERLINE;
 	else if (pdf_name_eq(ctx, PDF_NAME_Squiggly, subtype))
-		return FZ_ANNOT_SQUIGGLY;
+		return PDF_ANNOT_SQUIGGLY;
 	else if (pdf_name_eq(ctx, PDF_NAME_StrikeOut, subtype))
-		return FZ_ANNOT_STRIKEOUT;
+		return PDF_ANNOT_STRIKE_OUT;
 	else if (pdf_name_eq(ctx, PDF_NAME_Stamp, subtype))
-		return FZ_ANNOT_STAMP;
+		return PDF_ANNOT_STAMP;
 	else if (pdf_name_eq(ctx, PDF_NAME_Caret, subtype))
-		return FZ_ANNOT_CARET;
+		return PDF_ANNOT_CARET;
 	else if (pdf_name_eq(ctx, PDF_NAME_Ink, subtype))
-		return FZ_ANNOT_INK;
+		return PDF_ANNOT_INK;
 	else if (pdf_name_eq(ctx, PDF_NAME_Popup, subtype))
-		return FZ_ANNOT_POPUP;
+		return PDF_ANNOT_POPUP;
 	else if (pdf_name_eq(ctx, PDF_NAME_FileAttachment, subtype))
-		return FZ_ANNOT_FILEATTACHMENT;
+		return PDF_ANNOT_FILE_ATTACHMENT;
 	else if (pdf_name_eq(ctx, PDF_NAME_Sound, subtype))
-		return FZ_ANNOT_SOUND;
+		return PDF_ANNOT_SOUND;
 	else if (pdf_name_eq(ctx, PDF_NAME_Movie, subtype))
-		return FZ_ANNOT_MOVIE;
+		return PDF_ANNOT_MOVIE;
 	else if (pdf_name_eq(ctx, PDF_NAME_Widget, subtype))
-		return FZ_ANNOT_WIDGET;
+		return PDF_ANNOT_WIDGET;
 	else if (pdf_name_eq(ctx, PDF_NAME_Screen, subtype))
-		return FZ_ANNOT_SCREEN;
+		return PDF_ANNOT_SCREEN;
 	else if (pdf_name_eq(ctx, PDF_NAME_PrinterMark, subtype))
-		return FZ_ANNOT_PRINTERMARK;
+		return PDF_ANNOT_PRINTER_MARK;
 	else if (pdf_name_eq(ctx, PDF_NAME_TrapNet, subtype))
-		return FZ_ANNOT_TRAPNET;
+		return PDF_ANNOT_TRAP_NET;
 	else if (pdf_name_eq(ctx, PDF_NAME_Watermark, subtype))
-		return FZ_ANNOT_WATERMARK;
+		return PDF_ANNOT_WATERMARK;
 	else if (pdf_name_eq(ctx, PDF_NAME_3D, subtype))
-		return FZ_ANNOT_3D;
+		return PDF_ANNOT_3D;
 	else
 		return -1;
 }

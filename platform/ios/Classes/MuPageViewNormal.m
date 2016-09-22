@@ -168,7 +168,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 
 	switch (type)
 	{
-		case FZ_ANNOT_HIGHLIGHT:
+		case PDF_ANNOT_HIGHLIGHT:
 			color[0] = 1.0;
 			color[1] = 1.0;
 			color[2] = 0.0;
@@ -176,7 +176,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 			line_thickness = 1.0;
 			line_height = 0.5;
 			break;
-		case FZ_ANNOT_UNDERLINE:
+		case PDF_ANNOT_UNDERLINE:
 			color[0] = 0.0;
 			color[1] = 0.0;
 			color[2] = 1.0;
@@ -184,7 +184,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 			line_thickness = LINE_THICKNESS;
 			line_height = UNDERLINE_HEIGHT;
 			break;
-		case FZ_ANNOT_STRIKEOUT:
+		case PDF_ANNOT_STRIKEOUT:
 			color[0] = 1.0;
 			color[1] = 0.0;
 			color[2] = 0.0;
@@ -283,7 +283,7 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 			}
 		}
 
-		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, FZ_ANNOT_INK);
+		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, PDF_ANNOT_INK);
 		pdf_set_ink_annot_list(ctx, idoc, annot, pts, counts, n, color, INK_THICKNESS);
 	}
 	fz_always(ctx)
@@ -1360,7 +1360,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 	for (i = 0; i < annotations.count; i++)
 	{
 		MuAnnotation *annot = annotations[i];
-		if (annot.type != FZ_ANNOT_WIDGET && CGRectContainsPoint(annot.rect, ipt))
+		if (annot.type != PDF_ANNOT_WIDGET && CGRectContainsPoint(annot.rect, ipt))
 		{
 			[self selectAnnotation:i];
 			return [[[MuTapResultAnnotation alloc] initWithAnnotation:annot] autorelease];
