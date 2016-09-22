@@ -201,7 +201,7 @@ my_getline(FILE *file)
 		*d++ = (char)c;
 		c = fgetc(file);
 	}
-	while (c >= 32 && space--);
+	while (c >= 32 && --space);
 
 	/* If we ran out of space, skip the rest of the line */
 	if (space == 0)
