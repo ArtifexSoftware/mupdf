@@ -770,72 +770,33 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 
 	private String getEmbeddedProfileName()
 	{
-		PDFDocument doc = mDoc.toPDFDocument();
-		if (doc == null)
-			return null;
-		PDFObject obj = doc.getTrailer();
-		if (obj == null)
-			return null;
-		obj = obj.get("Root");
-		if (obj == null)
-			return null;
-		PDFObject outputIntents = obj.get("OutputIntents");
+		PDFObject outputIntents = mDoc.toPDFDocument().getTrailer().get("Root").get("OutputIntents");
 		if (outputIntents == null)
 			return null;
 
 		int length = outputIntents.size();
 		int i;
 
-		for (i = 0 ; i < length; i++)
-		{
+		for (i = 0 ; i < length; i++) {
 			PDFObject intent = outputIntents.get(i);
 
-			if (intent == null || !intent.isDictionary())
-				continue;
-
-			/* FIXME: Getting a name as a ByteString is horrible */
-			obj = intent.get("S");
-			if (obj == null)
-				continue;
-			byte name[] = obj.toByteString();
-			if (name == null || name.length != 9)
-				continue;
-			if (name[0] != 'G' || name[1] != 'T' || name[2] != 'S' || name[3] != '_' ||
-				name[4] != 'P' || name[5] != 'D' || name[6] != 'F' || name[7] != 'X' || name[8] != 0)
+			String name = intent.get("S").asName();
+			if (!name.equals("GTS_PDFX"))
 				continue;
 
 			/* We can't use the embedded profile if it's not CMYK based. */
-			obj = intent.get("DestOutputProfile");
-			if (obj == null)
-				continue;
-			obj = obj.get("N");
-			if (obj == null)
-				continue;
-			if (obj.toInteger() != 4)
+			if (intent.get("DestOutputProfile").get("N").asInteger() != 4)
 				continue;
 
-			String id;
-			obj = intent.get("Info");
-			if (obj != null)
-			{
-				id = obj.toString();
-				if (id != null)
-					return id;
-			}
-			obj = intent.get("OutputConditionIdentifier");
-			if (obj != null)
-			{
-				id = obj.toString();
-				if (id != null)
-					return id;
-			}
-			obj = intent.get("OutputCondition");
-			if (obj != null)
-			{
-				id = obj.toString();
-				if (id != null)
-					return id;
-			}
+			PDFObject id = intent.get("Info");
+			if (id.isString())
+				return id.asString();
+			id = intent.get("OutputConditionIdentifier");
+			if (id.isString())
+				return id.asString();
+			id = intent.get("OutputCondition");
+			if (id.isString())
+				return id.asString();
 		}
 		return null;
 	}

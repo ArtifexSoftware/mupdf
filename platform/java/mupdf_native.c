@@ -117,6 +117,7 @@ static jfieldID fid_Path_pointer;
 static jfieldID fid_PDFDocument_pointer;
 static jfieldID fid_PDFGraftMap_pointer;
 static jfieldID fid_PDFObject_pointer;
+static jfieldID fid_PDFObject_Null;
 static jfieldID fid_Pixmap_pointer;
 static jfieldID fid_Rect_x0;
 static jfieldID fid_Rect_x1;
@@ -309,6 +310,22 @@ static jfieldID get_field(int *failed, JNIEnv *env, const char *field, const cha
 	return fid;
 }
 
+static jfieldID get_static_field(int *failed, JNIEnv *env, const char *field, const char *sig)
+{
+	jfieldID fid;
+
+	if (*failed || !current_class) return NULL;
+
+	fid = (*env)->GetStaticFieldID(env, current_class, field, sig);
+	if (fid == 0)
+	{
+		LOGI("Failed to get static field for %s %s %s", current_class_name, field, sig);
+		*failed = 1;
+	}
+
+	return fid;
+}
+
 static jmethodID get_method(int *failed, JNIEnv *env, const char *method, const char *sig)
 {
 	jmethodID mid;
@@ -449,6 +466,7 @@ static int find_fids(JNIEnv *env)
 
 	cls_PDFObject = get_class(&err, env, PKG"PDFObject");
 	fid_PDFObject_pointer = get_field(&err, env, "pointer", "J");
+	fid_PDFObject_Null = get_static_field(&err, env, "Null", "L"PKG"PDFObject;");
 	mid_PDFObject_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_Pixmap = get_class(&err, env, PKG"Pixmap");
@@ -997,8 +1015,10 @@ static inline jobject to_PDFDocument_safe(fz_context *ctx, JNIEnv *env, pdf_docu
 
 static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_obj *obj)
 {
-	if (!ctx || !obj || !pdf) return NULL;
+	if (!ctx || !pdf) return NULL;
 
+	if (obj == NULL)
+		return (*env)->GetStaticObjectField(env, cls_PDFObject, fid_PDFObject_Null);
 	pdf_keep_obj(ctx, obj);
 	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
 }
@@ -6254,6 +6274,17 @@ FUN(PDFObject_finalize)(JNIEnv *env, jobject self)
 	pdf_drop_obj(ctx, obj);
 }
 
+JNIEXPORT jlong JNICALL
+FUN(PDFObject_newNull)(JNIEnv *env, jclass cls)
+{
+	fz_context *ctx = get_context(env);
+
+	if (!ctx) return 0;
+
+	/* Not nice to pass doc as NULL, but it is unused */
+	return jlong_cast(pdf_new_null(ctx, NULL));
+}
+
 JNIEXPORT jint JNICALL
 FUN(PDFObject_toIndirect)(JNIEnv *env, jobject self)
 {
@@ -6705,7 +6736,6 @@ FUN(PDFObject_resolve)(JNIEnv *env, jobject self)
 	pdf_obj *ind = NULL;
 
 	if (!ctx || !obj) return NULL;
-	if (!obj) { jni_throw_arg(env, "object must not be null"); return NULL; }
 
 	fz_try(ctx)
 		ind = pdf_resolve_indirect(ctx, obj);
@@ -6748,21 +6778,21 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
 	pdf_obj *val = NULL;
 
 	if (!ctx || !dict) return NULL;
-	if (jname)
-	{
-		name = (*env)->GetStringUTFChars(env, jname, NULL);
-		if (!name) return NULL;
-	}
 
-	fz_try(ctx)
-		val = pdf_dict_gets(ctx, dict, name);
-	fz_always(ctx)
-		if (name)
-			(*env)->ReleaseStringUTFChars(env, jname, name);
-	fz_catch(ctx)
+	if (!jname)
+		name = (*env)->GetStringUTFChars(env, jname, NULL);
+
+	if (name)
 	{
-		jni_rethrow(env, ctx);
-		return NULL;
+		fz_try(ctx)
+			val = pdf_dict_gets(ctx, dict, name);
+		fz_always(ctx)
+			(*env)->ReleaseStringUTFChars(env, jname, name);
+		fz_catch(ctx)
+		{
+			jni_rethrow(env, ctx);
+			return NULL;
+		}
 	}
 
 	return to_PDFObject_safe(ctx, env, self, val);
@@ -7232,7 +7262,7 @@ FUN(PDFObject_deleteDictionaryPDFObject)(JNIEnv *env, jobject self, jobject jnam
 }
 
 JNIEXPORT jboolean JNICALL
-FUN(PDFObject_toBoolean)(JNIEnv *env, jobject self)
+FUN(PDFObject_asBoolean)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
@@ -7252,7 +7282,7 @@ FUN(PDFObject_toBoolean)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jint JNICALL
-FUN(PDFObject_toInteger)(JNIEnv *env, jobject self)
+FUN(PDFObject_asInteger)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
@@ -7272,7 +7302,7 @@ FUN(PDFObject_toInteger)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jfloat JNICALL
-FUN(PDFObject_toFloat)(JNIEnv *env, jobject self)
+FUN(PDFObject_asFloat)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
@@ -7291,34 +7321,108 @@ FUN(PDFObject_toFloat)(JNIEnv *env, jobject self)
 	return f;
 }
 
-JNIEXPORT jobject JNICALL
-FUN(PDFObject_toByteString)(JNIEnv *env, jobject self)
+JNIEXPORT jstring JNICALL
+FUN(PDFObject_asString)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
 	const char *str = NULL;
-	jobject jbs = NULL;
-	jbyte *bs = NULL;
 
 	if (!ctx || !obj) return NULL;
 
 	fz_try(ctx)
-		if (pdf_is_name(ctx, obj))
-			str = pdf_to_name(ctx, obj);
-		else
-			str = pdf_to_str_buf(ctx, obj);
+		str = pdf_to_str_buf(ctx, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	jbs = (*env)->NewByteArray(env, strlen(str) + 1);
+	return (*env)->NewStringUTF(env, str);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFObject_asByteString)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	const char *str = NULL;
+	jobject jbs = NULL;
+	jbyte *bs = NULL;
+	int len;
+
+	if (!ctx || !obj) return NULL;
+
+	fz_try(ctx)
+	{
+		str = pdf_to_str_buf(ctx, obj);
+		len = pdf_to_str_len(ctx, obj);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	jbs = (*env)->NewByteArray(env, len);
 	if (!jbs) return NULL;
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) return NULL;
 
-	memcpy(bs, str, strlen(str) + 1);
+	memcpy(bs, str, len);
+
+	(*env)->ReleaseByteArrayElements(env, jbs, bs, 0);
+
+	return jbs;
+}
+
+JNIEXPORT jstring JNICALL
+FUN(PDFObject_asName)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	const char *str = NULL;
+
+	if (!ctx || !obj) return NULL;
+
+	fz_try(ctx)
+		str = pdf_to_name(ctx, obj);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return (*env)->NewStringUTF(env, str);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFObject_asByteName)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	const char *str = NULL;
+	jobject jbs = NULL;
+	jbyte *bs = NULL;
+	int len;
+
+	if (!ctx || !obj) return NULL;
+
+	fz_try(ctx)
+		str = pdf_to_name(ctx, obj);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	len = strlen(str);
+	jbs = (*env)->NewByteArray(env, len);
+	if (!jbs) return NULL;
+	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
+	if (!bs) return NULL;
+
+	memcpy(bs, str, len);
 
 	(*env)->ReleaseByteArrayElements(env, jbs, bs, 0);
 
@@ -7460,7 +7564,7 @@ JNIEXPORT jstring JNICALL
 FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
 {
 	fz_context *ctx = get_context(env);
-	pdf_obj *obj = from_PDFObject(env, self);
+	pdf_obj *obj = from_PDFObject_safe(env, self);
 	jstring string = NULL;
 	char *s = NULL;
 	int n = 0;

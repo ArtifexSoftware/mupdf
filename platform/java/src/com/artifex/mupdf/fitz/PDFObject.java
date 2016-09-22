@@ -19,6 +19,8 @@ public class PDFObject
 		pointer = p;
 	}
 
+	private static native long newNull();
+
 	public native boolean isIndirect();
 	public native boolean isNull();
 	public native boolean isBoolean();
@@ -31,11 +33,15 @@ public class PDFObject
 	public native boolean isDictionary();
 	public native boolean isStream();
 
-	public native boolean toBoolean();
-	public native int toInteger();
-	public native float toFloat();
-	public native byte[] toByteString();
-	public native int toIndirect();
+	public native boolean asBoolean();
+	public native int asInteger();
+	public native float asFloat();
+	public native int asIndirect();
+	public native String asName();
+	public native byte[] asByteName();
+	public native String asString();
+	public native byte[] asByteString();
+
 	public native String toString(boolean tight);
 
 	public String toString() {
@@ -201,4 +207,6 @@ public class PDFObject
 	public void push(PDFObject obj) {
 		pushPDFObject(obj);
 	}
+
+	public static final PDFObject Null = new PDFObject(newNull());
 }

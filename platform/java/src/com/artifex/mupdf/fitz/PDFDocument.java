@@ -42,7 +42,7 @@ public class PDFDocument
 	public native void deleteObject(int i);
 
 	public void deleteObject(PDFObject obj) {
-		deleteObject(obj.toIndirect());
+		deleteObject(obj.asIndirect());
 	}
 
 	public native PDFGraftMap newPDFGraftMap();
