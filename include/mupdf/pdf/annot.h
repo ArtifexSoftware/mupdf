@@ -30,6 +30,9 @@ typedef enum
 	PDF_ANNOT_3D
 } fz_annot_type;
 
+const char *pdf_string_from_annot_type(fz_annot_type type);
+int pdf_annot_type_from_string(const char *subtype);
+
 enum
 {
 	PDF_ANNOT_IS_INVISIBLE = 1 << (1-1),
@@ -68,7 +71,7 @@ fz_rect *pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
 /*
 	pdf_annot_type: Return the type of an annotation
 */
-fz_annot_type pdf_annot_type(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_type(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_run_annot: Interpret an annotation and render it on a device.
@@ -124,26 +127,48 @@ pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
 */
 void pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot);
 
-/*
-	pdf_set_markup_annot_quadpoints: set the quadpoints for a text-markup annotation.
-*/
-void pdf_set_markup_annot_quadpoints(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *qp, int n);
+int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
+float pdf_annot_border(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
+void pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4]);
 
-/*
-	pdf_set_ink_annot_list: set the details of an ink annotation. All the points of the multiple arcs
-	are carried in a single array, with the counts for each arc held in a secondary array.
-*/
-void pdf_set_ink_annot_list(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *pts, int *counts, int ncount, float color[3], float thickness);
+int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int i, float qp[8]);
+
+int pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i);
+void pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k, float v[2]);
+
+void pdf_set_annot_flags(fz_context *ctx, pdf_annot *annot, int flags);
+void pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect);
+void pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float width);
+void pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
+void pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4]);
+void pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float *v);
+void pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *count, const float *v);
+
+void pdf_set_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int start_style, int end_style);
+void pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v);
+void pdf_set_annot_icon_name(fz_context *ctx, pdf_annot *annot, const char *name);
+void pdf_set_annot_is_open(fz_context *ctx, pdf_annot *annot, int is_open);
+
+void pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int *start_style, int *end_style);
+const char *pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_is_open(fz_context *ctx, pdf_annot *annot);
+
+int pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot);
+void pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, float v[2]);
 
 /*
 	pdf_set_text_annot_position: set the position on page for a text (sticky note) annotation.
 */
-void pdf_set_text_annot_position(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point pt);
+void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt);
 
 /*
 	pdf_set_annot_contents: set the contents of an annotation.
 */
-void pdf_set_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, char *text);
+void pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text);
 
 /*
 	pdf_annot_contents: return the contents of an annotation.
@@ -158,6 +183,8 @@ const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot);
 /*
 	pdf_annot_author: return the date of an annotation.
 */
+// TODO: creation date
+// TODO: modification date
 const char *pdf_annot_date(fz_context *ctx, pdf_annot *annot);
 
 /*
@@ -169,7 +196,7 @@ pdf_obj *pdf_annot_irt(fz_context *ctx, pdf_annot *annot);
 	pdf_set_free_text_details: set the position, text, font and color for a free text annotation.
 	Only base 14 fonts are supported and are specified by name.
 */
-void pdf_set_free_text_details(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3]);
+void pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3]);
 
 /*
 	pdf_new_annot: Internal function for creating a new pdf annotation.

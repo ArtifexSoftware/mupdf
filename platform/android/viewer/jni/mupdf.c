@@ -1541,7 +1541,7 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 	jclass pt_cls;
 	jfieldID x_fid, y_fid;
 	int i, n;
-	fz_point *pts = NULL;
+	float *pts = NULL;
 	float color[3];
 	float alpha;
 	float line_height;
@@ -1598,19 +1598,22 @@ JNI_FN(MuPDFCore_addMarkupAnnotationInternal)(JNIEnv * env, jobject thiz, jobjec
 
 		n = (*env)->GetArrayLength(env, points);
 
-		pts = fz_malloc_array(ctx, n, sizeof(fz_point));
+		pts = fz_malloc_array(ctx, n * 2, sizeof(float));
 
 		for (i = 0; i < n; i++)
 		{
+			fz_point pt;
 			jobject opt = (*env)->GetObjectArrayElement(env, points, i);
-			pts[i].x = opt ? (*env)->GetFloatField(env, opt, x_fid) : 0.0f;
-			pts[i].y = opt ? (*env)->GetFloatField(env, opt, y_fid) : 0.0f;
-			fz_transform_point(&pts[i], &ctm);
+			pt.x = opt ? (*env)->GetFloatField(env, opt, x_fid) : 0.0f;
+			pt.y = opt ? (*env)->GetFloatField(env, opt, y_fid) : 0.0f;
+			fz_transform_point(&pt, &ctm);
+			pts[i*2+0] = pt.x;
+			pts[i*2+1] = pt.y;
 		}
 
-		annot = (fz_annot *)pdf_create_annot(ctx, idoc, (pdf_page *)pc->page, type);
+		annot = (fz_annot *)pdf_create_annot(ctx, (pdf_page *)pc->page, type);
 
-		pdf_set_markup_annot_quadpoints(ctx, idoc, (pdf_annot *)annot, pts, n);
+		pdf_set_annot_quad_points(ctx, (pdf_annot *)annot, n / 4, pts);
 		pdf_set_markup_appearance(ctx, idoc, (pdf_annot *)annot, color, alpha, line_thickness, line_height);
 
 		dump_annotation_display_lists(glo);
@@ -1640,10 +1643,10 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 	jclass pt_cls;
 	jfieldID x_fid, y_fid;
 	int i, j, k, n;
-	fz_point *pts = NULL;
+	float *pts = NULL;
 	int *counts = NULL;
 	int total = 0;
-	float color[3];
+	float color[4];
 
 	if (idoc == NULL)
 		return;
@@ -1651,12 +1654,13 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 	color[0] = 1.0;
 	color[1] = 0.0;
 	color[2] = 0.0;
+	color[3] = 0.0;
 
 	fz_var(pts);
 	fz_var(counts);
 	fz_try(ctx)
 	{
-		fz_annot *annot;
+		pdf_annot *annot;
 		fz_matrix ctm;
 
 		float zoom = glo->resolution / 72;
@@ -1682,7 +1686,7 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 			total += count;
 		}
 
-		pts = fz_malloc_array(ctx, total, sizeof(fz_point));
+		pts = fz_malloc_array(ctx, total * 2, sizeof(float));
 
 		k = 0;
 		for (i = 0; i < n; i++)
@@ -1692,20 +1696,23 @@ JNI_FN(MuPDFCore_addInkAnnotationInternal)(JNIEnv * env, jobject thiz, jobjectAr
 
 			for (j = 0; j < count; j++)
 			{
-				jobject pt = (*env)->GetObjectArrayElement(env, arc, j);
-
-				pts[k].x = pt ? (*env)->GetFloatField(env, pt, x_fid) : 0.0f;
-				pts[k].y = pt ? (*env)->GetFloatField(env, pt, y_fid) : 0.0f;
-				(*env)->DeleteLocalRef(env, pt);
-				fz_transform_point(&pts[k], &ctm);
-				k++;
+				jobject jpt = (*env)->GetObjectArrayElement(env, arc, j);
+				fz_point pt;
+				pt.x = jpt ? (*env)->GetFloatField(env, jpt, x_fid) : 0.0f;
+				pt.y = jpt ? (*env)->GetFloatField(env, jpt, y_fid) : 0.0f;
+				(*env)->DeleteLocalRef(env, jpt);
+				fz_transform_point(&pt, &ctm);
+				pts[k++] = pt.x;
+				pts[k++] = pt.y;
 			}
 			(*env)->DeleteLocalRef(env, arc);
 		}
 
-		annot = (fz_annot *)pdf_create_annot(ctx, idoc, (pdf_page *)pc->page, PDF_ANNOT_INK);
+		annot = pdf_create_annot(ctx, (pdf_page *)pc->page, PDF_ANNOT_INK);
 
-		pdf_set_ink_annot_list(ctx, idoc, (pdf_annot *)annot, pts, counts, n, color, INK_THICKNESS);
+		pdf_set_annot_border(ctx, annot, INK_THICKNESS);
+		pdf_set_annot_color(ctx, annot, 3, color);
+		pdf_set_annot_ink_list(ctx, annot, n, counts, pts);
 
 		dump_annotation_display_lists(glo);
 	}

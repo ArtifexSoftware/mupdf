@@ -203,7 +203,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 		int i;
 		pdf_annot *annot;
 
-		quadpts = fz_malloc_array(ctx, (int)rects.count * 4, sizeof(fz_point));
+		quadpts = fz_malloc_array(ctx, (int)rects.count * 8, sizeof(float));
 		for (i = 0; i < rects.count; i++)
 		{
 			CGRect rect = [rects[i] CGRectValue];
@@ -211,18 +211,18 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 			float bot = top + rect.size.height;
 			float left = rect.origin.x;
 			float right = left + rect.size.width;
-			quadpts[i*4].x = left;
-			quadpts[i*4].y = bot;
-			quadpts[i*4+1].x = right;
-			quadpts[i*4+1].y = bot;
-			quadpts[i*4+2].x = right;
-			quadpts[i*4+2].y = top;
-			quadpts[i*4+3].x = left;
-			quadpts[i*4+3].y = top;
+			quadpts[i*8+0] = left;
+			quadpts[i*8+1] = bot;
+			quadpts[i*8+2] = right;
+			quadpts[i*8+3] = bot;
+			quadpts[i*8+4] = right;
+			quadpts[i*8+5] = top;
+			quadpts[i*8+6] = left;
+			quadpts[i*8+7] = top;
 		}
 
 		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, type);
-		pdf_set_markup_annot_quadpoints(ctx, idoc, annot, quadpts, (int)rects.count*4);
+		pdf_set_annot_quad_points(ctx, idoc, annot, rects.count, quadpts);
 		pdf_set_markup_appearance(ctx, idoc, annot, color, alpha, line_thickness, line_height);
 	}
 	fz_always(ctx)
@@ -238,10 +238,10 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 {
 	pdf_document *idoc;
-	fz_point *pts = NULL;
+	float *pts = NULL;
 	int *counts = NULL;
 	int total;
-	float color[3] = {1.0, 0.0, 0.0};
+	float color[4] = {1.0, 0.0, 0.0, 0.0};
 
 	idoc = pdf_specifics(ctx, doc);
 	if (!idoc)
@@ -266,7 +266,7 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 			total += (int)curve.count;
 		}
 
-		pts = fz_malloc_array(ctx, total, sizeof(fz_point));
+		pts = fz_malloc_array(ctx, total * 2, sizeof(float));
 
 		k = 0;
 		for (i = 0; i < n; i++)
@@ -277,14 +277,16 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 			for (j = 0; j < count; j++)
 			{
 				CGPoint pt = [curve[j] CGPointValue];
-				pts[k].x = pt.x;
-				pts[k].y = pt.y;
-				k++;
+				pts[k++] = pt.x;
+				pts[k++] = pt.y;
 			}
 		}
 
 		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, PDF_ANNOT_INK);
-		pdf_set_ink_annot_list(ctx, idoc, annot, pts, counts, n, color, INK_THICKNESS);
+
+		pdf_set_annot_border(ctx, annot, INK_THICKNESS);
+		pdf_set_annot_color(ctx, annot, 3, color);
+		pdf_set_annot_ink_list(ctx, annot, ncount, counts, pts);
 	}
 	fz_always(ctx)
 	{

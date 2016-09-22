@@ -23,6 +23,7 @@ Ascent
 B
 BBox
 BC
+BE
 BG
 BM
 BPC
@@ -38,6 +39,7 @@ BitsPerSample
 BlackIs1
 BleedBox
 Blinds
+Border
 Bounds
 Box
 Bt
@@ -167,6 +169,7 @@ H
 Height
 Highlight
 I
+IC
 ICCBased
 ID
 IM

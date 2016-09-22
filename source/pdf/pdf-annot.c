@@ -429,64 +429,6 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm)
 	fz_pre_scale(fz_translate(annot_ctm, x, y), w, h);
 }
 
-fz_annot_type pdf_annot_type(fz_context *ctx, pdf_annot *annot)
-{
-	pdf_obj *obj = annot->obj;
-	pdf_obj *subtype = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
-	if (pdf_name_eq(ctx, PDF_NAME_Text, subtype))
-		return PDF_ANNOT_TEXT;
-	else if (pdf_name_eq(ctx, PDF_NAME_Link, subtype))
-		return PDF_ANNOT_LINK;
-	else if (pdf_name_eq(ctx, PDF_NAME_FreeText, subtype))
-		return PDF_ANNOT_FREE_TEXT;
-	else if (pdf_name_eq(ctx, PDF_NAME_Line, subtype))
-		return PDF_ANNOT_LINE;
-	else if (pdf_name_eq(ctx, PDF_NAME_Square, subtype))
-		return PDF_ANNOT_SQUARE;
-	else if (pdf_name_eq(ctx, PDF_NAME_Circle, subtype))
-		return PDF_ANNOT_CIRCLE;
-	else if (pdf_name_eq(ctx, PDF_NAME_Polygon, subtype))
-		return PDF_ANNOT_POLYGON;
-	else if (pdf_name_eq(ctx, PDF_NAME_PolyLine, subtype))
-		return PDF_ANNOT_POLY_LINE;
-	else if (pdf_name_eq(ctx, PDF_NAME_Highlight, subtype))
-		return PDF_ANNOT_HIGHLIGHT;
-	else if (pdf_name_eq(ctx, PDF_NAME_Underline, subtype))
-		return PDF_ANNOT_UNDERLINE;
-	else if (pdf_name_eq(ctx, PDF_NAME_Squiggly, subtype))
-		return PDF_ANNOT_SQUIGGLY;
-	else if (pdf_name_eq(ctx, PDF_NAME_StrikeOut, subtype))
-		return PDF_ANNOT_STRIKE_OUT;
-	else if (pdf_name_eq(ctx, PDF_NAME_Stamp, subtype))
-		return PDF_ANNOT_STAMP;
-	else if (pdf_name_eq(ctx, PDF_NAME_Caret, subtype))
-		return PDF_ANNOT_CARET;
-	else if (pdf_name_eq(ctx, PDF_NAME_Ink, subtype))
-		return PDF_ANNOT_INK;
-	else if (pdf_name_eq(ctx, PDF_NAME_Popup, subtype))
-		return PDF_ANNOT_POPUP;
-	else if (pdf_name_eq(ctx, PDF_NAME_FileAttachment, subtype))
-		return PDF_ANNOT_FILE_ATTACHMENT;
-	else if (pdf_name_eq(ctx, PDF_NAME_Sound, subtype))
-		return PDF_ANNOT_SOUND;
-	else if (pdf_name_eq(ctx, PDF_NAME_Movie, subtype))
-		return PDF_ANNOT_MOVIE;
-	else if (pdf_name_eq(ctx, PDF_NAME_Widget, subtype))
-		return PDF_ANNOT_WIDGET;
-	else if (pdf_name_eq(ctx, PDF_NAME_Screen, subtype))
-		return PDF_ANNOT_SCREEN;
-	else if (pdf_name_eq(ctx, PDF_NAME_PrinterMark, subtype))
-		return PDF_ANNOT_PRINTER_MARK;
-	else if (pdf_name_eq(ctx, PDF_NAME_TrapNet, subtype))
-		return PDF_ANNOT_TRAP_NET;
-	else if (pdf_name_eq(ctx, PDF_NAME_Watermark, subtype))
-		return PDF_ANNOT_WATERMARK;
-	else if (pdf_name_eq(ctx, PDF_NAME_3D, subtype))
-		return PDF_ANNOT_3D;
-	else
-		return -1;
-}
-
 pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot = fz_new_annot(ctx, sizeof(pdf_annot));
