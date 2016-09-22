@@ -61,7 +61,7 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 		mPath = path;
 
 		//  get the starting page
-		int startPage = getIntent().getIntExtra("startingPage", 0);
+		final int startingPage = getIntent().getIntExtra("startingPage", 0);
 
 		//  set up UI
 		setContentView(R.layout.activity_proof_view);
@@ -100,11 +100,18 @@ public class ProofActivity extends Activity implements View.OnClickListener, Doc
 
 				spinner = createAndShowWaitSpinner(activity);
 
-				//  Go!
-				mWaitingForIdle = true;
-				mDoc = new Document(path);
-				mDocView.start(mDoc);
-				mDocView.setIdleRenderListener(activity);
+				mDocView.post(new Runnable() {
+					@Override
+					public void run()
+					{
+						//  Go!
+						mWaitingForIdle = true;
+						mDoc = new Document(path);
+						mDocView.start(mDoc);
+						mDocView.setIdleRenderListener(activity);
+						mDocView.setCurrentPage(startingPage);
+					}
+				});
 			}
 		});
 	}

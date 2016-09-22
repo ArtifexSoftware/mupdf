@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.net.Uri;
@@ -845,6 +846,12 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			{
 				//  Cancel
 				dialog.dismiss();
+
+				//  remember the display profile selected
+				SharedPreferences sharedPref = activity.getPreferences(Context.MODE_PRIVATE);
+				SharedPreferences.Editor editor = sharedPref.edit();
+				editor.putInt("displayProfileSelected", sp2.getSelectedItemPosition());
+				editor.commit();
 			}
 		});
 
@@ -855,10 +862,22 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			{
 				//  OK
 				dialog.dismiss();
+
+				//  remember the display profile selected
+				SharedPreferences sharedPref = activity.getPreferences(Context.MODE_PRIVATE);
+				SharedPreferences.Editor editor = sharedPref.edit();
+				editor.putInt("displayProfileSelected", sp2.getSelectedItemPosition());
+				editor.commit();
+
 				doProof(sp1.getSelectedItemPosition(), sp2.getSelectedItemPosition(), sp3.getSelectedItemPosition());
 
 			}
 		});
+
+		//  choose the last-selected display profile.
+		SharedPreferences sharedPref = activity.getPreferences(Context.MODE_PRIVATE);
+		int selected = sharedPref.getInt("displayProfileSelected", 0);
+		sp2.setSelection(selected);
 
 		dialog.show();
 	}
@@ -930,12 +949,12 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		String proofFile = mDocView.getDoc().makeProof(mDocView.getDoc().getPath(), printProfilePath, displayProfilePath, resolution);
 
 		Uri uri = Uri.parse("file://" + proofFile);
-		Intent intent = new Intent((Activity)getContext(), ProofActivity.class);
+		Intent intent = new Intent(getContext(), ProofActivity.class);
 		intent.setAction(Intent.ACTION_VIEW);
 		intent.setData(uri);
 		// add the current page so it can be found when the activity is running
 		intent.putExtra("startingPage", thePage);
-		((Activity)getContext()).startActivity(intent);
+		(getContext()).startActivity(intent);
 	}
 
 	private String extractProfileAsset(String profile)
@@ -943,7 +962,7 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		try
 		{
 			InputStream inStream = getContext().getAssets().open(profile);
-			String tempfile = getContext().getExternalCacheDir() + "/shared/" + UUID.randomUUID() + ".profile";
+			String tempfile = getContext().getExternalCacheDir() + "/shared/" + profile;
 			new File(tempfile).mkdirs();
 			Utilities.deleteFile(tempfile);
 
