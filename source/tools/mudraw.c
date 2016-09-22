@@ -1372,20 +1372,20 @@ int mudraw_main(int argc, char **argv)
 		case 'o': output = fz_optarg; break;
 		case 'F': format = fz_optarg; break;
 
-		case 'R': rotation = atof(fz_optarg); break;
-		case 'r': resolution = atof(fz_optarg); res_specified = 1; break;
-		case 'w': width = atof(fz_optarg); break;
-		case 'h': height = atof(fz_optarg); break;
+		case 'R': rotation = fz_atof(fz_optarg); break;
+		case 'r': resolution = fz_atof(fz_optarg); res_specified = 1; break;
+		case 'w': width = fz_atof(fz_optarg); break;
+		case 'h': height = fz_atof(fz_optarg); break;
 		case 'f': fit = 1; break;
 		case 'B': bandheight = atoi(fz_optarg); break;
 
 		case 'c': out_cs = parse_colorspace(fz_optarg); break;
-		case 'G': gamma_value = atof(fz_optarg); break;
+		case 'G': gamma_value = fz_atof(fz_optarg); break;
 		case 'I': invert++; break;
 
-		case 'W': layout_w = atof(fz_optarg); break;
-		case 'H': layout_h = atof(fz_optarg); break;
-		case 'S': layout_em = atof(fz_optarg); break;
+		case 'W': layout_w = fz_atof(fz_optarg); break;
+		case 'H': layout_h = fz_atof(fz_optarg); break;
+		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layout_css = fz_optarg; break;
 
 		case 's':

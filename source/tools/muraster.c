@@ -1595,15 +1595,15 @@ int main(int argc, char **argv)
 
 		case 'R': rotation = read_rotation(fz_optarg); break;
 		case 'r': read_resolution(fz_optarg); break;
-		case 'w': width = atof(fz_optarg); break;
-		case 'h': height = atof(fz_optarg); break;
+		case 'w': width = fz_atof(fz_optarg); break;
+		case 'h': height = fz_atof(fz_optarg); break;
 		case 'f': fit = 1; break;
 		case 'B': min_band_height = atoi(fz_optarg); break;
 		case 'M': max_band_memory = atoi(fz_optarg); break;
 
-		case 'W': layout_w = atof(fz_optarg); break;
-		case 'H': layout_h = atof(fz_optarg); break;
-		case 'S': layout_em = atof(fz_optarg); break;
+		case 'W': layout_w = fz_atof(fz_optarg); break;
+		case 'H': layout_h = fz_atof(fz_optarg); break;
+		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layoutput_css = fz_optarg; break;
 
 		case 's':

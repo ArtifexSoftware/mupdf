@@ -93,9 +93,9 @@ int muconvert_main(int argc, char **argv)
 
 		case 'p': password = fz_optarg; break;
 		case 'A': alphabits = atoi(fz_optarg); break;
-		case 'W': layout_w = atof(fz_optarg); break;
-		case 'H': layout_h = atof(fz_optarg); break;
-		case 'S': layout_em = atof(fz_optarg); break;
+		case 'W': layout_w = fz_atof(fz_optarg); break;
+		case 'H': layout_h = fz_atof(fz_optarg); break;
+		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layout_css = fz_optarg; break;
 
 		case 'o': output = fz_optarg; break;
