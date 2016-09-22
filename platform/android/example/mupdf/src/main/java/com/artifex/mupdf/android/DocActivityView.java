@@ -17,6 +17,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -38,6 +39,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeListener, View.OnClickListener, DocView.SelectionChangeListener
@@ -80,6 +83,8 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 	private ImageButton mLineThicknessButton;
 
 	private ImageButton mProofButton;
+
+	private String mEmbeddedProfile = null;
 
 	public DocActivityView(Context context)
 	{
@@ -810,10 +815,6 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 			return;
 		}
 
-
-
-
-
 		//  show a dialog to collect the resolution and profiles
 		final Activity activity = (Activity)getContext();
 
@@ -821,11 +822,21 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		dialog.setContentView(R.layout.proof_dialog);
 
-		final String embeddedProfile = getEmbeddedProfileName();
-
 		final Spinner sp1 = (Spinner)(dialog.findViewById(R.id.print_profile_spinner));
 		final Spinner sp2 = (Spinner)(dialog.findViewById(R.id.display_profile_spinner));
 		final Spinner sp3 = (Spinner)(dialog.findViewById(R.id.resolution_spinner));
+
+		mEmbeddedProfile = getEmbeddedProfileName();
+		if (mEmbeddedProfile!=null && !mEmbeddedProfile.isEmpty())
+		{
+			//  if the doc has an embedded profile, add it to the beginning of the list of print profiles.
+			String[] baseList = getResources().getStringArray(R.array.proof_print_profiles);
+			ArrayList<String> list = new ArrayList<String>(Arrays.asList(baseList));
+			list.add(0, "Output Intent: " + mEmbeddedProfile);
+			ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<String>(activity, android.R.layout.simple_spinner_item, list);
+			spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+			sp1.setAdapter(spinnerAdapter);
+		}
 
 		dialog.findViewById(R.id.cancel_button).setOnClickListener(new OnClickListener()
 		{
@@ -889,12 +900,26 @@ public class DocActivityView extends FrameLayout implements TabHost.OnTabChangeL
 		String resolutionString = resolutions[resolutionIndex];
 		int resolution = Integer.parseInt(resolutionString);
 
-		//  get the print profile as a temp file
+		//  get the print profile
+		String printProfilePath;
 		String[] printProfiles = getResources().getStringArray(R.array.proof_print_profile_files);
-		String printProfileFile = printProfiles[printProfileIndex];
-		String printProfilePath   = extractProfileAsset("profiles/CMYK/" + printProfileFile);
+		if (mEmbeddedProfile!=null && !mEmbeddedProfile.isEmpty())
+		{
+			if (printProfileIndex==0)
+			{
+				printProfilePath = "<EMBEDDED>";
+			}
+			else
+			{
+				printProfilePath   = extractProfileAsset("profiles/CMYK/" + printProfiles[printProfileIndex-1]);
+			}
+		}
+		else
+		{
+			printProfilePath   = extractProfileAsset("profiles/CMYK/" + printProfiles[printProfileIndex]);
+		}
 
-		//  get the display profile as a temp file
+		//  get the display profile
 		String[] displayProfiles = getResources().getStringArray(R.array.proof_display_profile_files);
 		String displayProfileFile = displayProfiles[displayProfileIndex];
 		String displayProfilePath = extractProfileAsset("profiles/RGB/"  + displayProfileFile);
