@@ -1265,10 +1265,13 @@ pdf_dict_geta(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *abbrev)
 	return pdf_dict_get(ctx, obj, abbrev);
 }
 
-void
-pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
+static void
+pdf_dict_get_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val, pdf_obj **old_val)
 {
 	int i;
+
+	if (old_val)
+		*old_val = NULL;
 
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
@@ -1295,7 +1298,10 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 		{
 			pdf_obj *d = DICT(obj)->items[i].v;
 			DICT(obj)->items[i].v = pdf_keep_obj(ctx, val);
-			pdf_drop_obj(ctx, d);
+			if (old_val)
+				*old_val = d;
+			else
+				pdf_drop_obj(ctx, d);
 		}
 	}
 	else
@@ -1316,10 +1322,27 @@ pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 }
 
 void
+pdf_dict_put(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
+{
+	pdf_dict_get_put(ctx, obj, key, val, NULL);
+}
+
+void
 pdf_dict_put_drop(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val)
 {
 	fz_try(ctx)
-		pdf_dict_put(ctx, obj, key, val);
+		pdf_dict_get_put(ctx, obj, key, val, NULL);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, val);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+pdf_dict_get_put_drop(fz_context *ctx, pdf_obj *obj, pdf_obj *key, pdf_obj *val, pdf_obj **old_val)
+{
+	fz_try(ctx)
+		pdf_dict_get_put(ctx, obj, key, val, old_val);
 	fz_always(ctx)
 		pdf_drop_obj(ctx, val);
 	fz_catch(ctx)

@@ -269,6 +269,10 @@ struct pdf_document_s
 		fz_hash_table *images;
 		fz_hash_table *fonts;
 	} resources;
+
+	int orphans_max;
+	int orphans_count;
+	pdf_obj **orphans;
 };
 
 /*
