@@ -36,9 +36,7 @@
 extern GSDLLEXPORT int GSDLLAPI gsapi_new_instance(void **, void *);
 extern GSDLLEXPORT int GSDLLAPI gsapi_init_with_args(void *, int, char *argv[]);
 extern GSDLLEXPORT void GSDLLAPI gsapi_delete_instance(void *);
-#ifdef GS_API_NULL_STDIO
 extern GSDLLEXPORT int GSDLLAPI gsapi_set_stdio(void *, int (GSDLLCALL *)(void *, char *, int), int (GSDLLCALL *)(void *, const char *, int), int (GSDLLCALL *)(void *, const char *, int));
-#endif /* GS_API_NULL_STDIO */
 #endif /* HAVE_IAPI_H */
 #endif /* USE_GS_API */
 
@@ -518,19 +516,49 @@ fz_system(fz_context *ctx, const char *cmd)
 }
 #endif
 
-#ifdef GS_API_NULL_STDIO
 static int GSDLLCALL
 gsdll_stdout(void *instance, const char *str, int len)
 {
+#ifndef GS_API_NULL_STDIO
+	int remain = len;
+	char text[32];
+
+	while (remain)
+	{
+		int l = remain;
+		if (l > sizeof(text)-1)
+			l = sizeof(text)-1;
+		memcpy(text, str, l);
+		text[l] = 0;
+		fprintf(stdout, "%s", text);
+		remain -= l;
+		str += l;
+	}
+#endif
 	return len;
 }
 
 static int GSDLLCALL
 gsdll_stderr(void *instance, const char *str, int len)
 {
+#ifndef GS_API_NULL_STDIO
+	int remain = len;
+	char text[32];
+
+	while (remain)
+	{
+		int l = remain;
+		if (l > sizeof(text)-1)
+			l = sizeof(text)-1;
+		memcpy(text, str, l);
+		text[l] = 0;
+		fprintf(stderr, "%s", text);
+		remain -= l;
+		str += l;
+	}
+#endif
 	return len;
 }
-#endif
 
 static void
 generate_page(fz_context *ctx, gprf_page *page)
@@ -609,9 +637,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 		code = gsapi_new_instance(&instance, ctx);
 		if (code < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "GS startup failed: %d", code);
-#ifdef GS_API_NULL_STDIO
 		gsapi_set_stdio(instance, NULL, gsdll_stdout, gsdll_stderr);
-#endif
 #ifndef NDEBUG
 		{
 			int i;
