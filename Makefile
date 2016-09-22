@@ -392,7 +392,7 @@ tarball:
 java:
 	$(MAKE) -C platform/java
 
-tags: $(shell find include source platform thirdparty -name '*.[ch]' -or -name '*.cc' -or -name '*.hh')
+tags: $(shell find include source platform thirdparty -name '*.[ch]' -or -name '*.cc' -or -name '*.hh' -or -name '*.java')
 	$(TAGS_CMD)
 
 cscope.files: $(shell find include source platform -name '*.[ch]')
