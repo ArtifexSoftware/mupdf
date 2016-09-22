@@ -170,8 +170,6 @@ MuPDF can open many document types (PDF, XPS, CBZ, EPUB, FB2 and a handful of im
 <dd>Returns true if the password matches.
 <dt>Document#getMetaData(key)
 <dd>Return various meta data information. The common keys are: "format", "encryption", "info:Author", and "info:Title".
-<dt>Document#toPDF()
-<dd>Returns a PDFDocument (see below) or null if the document is not a PDF.
 <dt>Document#layout(pageWidth, pageHeight, fontSize)
 <dd>Layout a reflowable document (EPUB, FB2, or XHTML) to fit the specified page and font size.
 <dt>Document#countPages()
@@ -182,6 +180,8 @@ MuPDF can open many document types (PDF, XPS, CBZ, EPUB, FB2 and a handful of im
 <dd>Returns an array with the outline (table of contents).
 In the array is an object for each heading with the property 'title', and a property 'page' containing the page number.
 If the object has a 'down' property, it contains an array with all the sub-headings for that entry.
+<dt>Document#isPDF()
+<dd>Returns true if the document is a PDF document.
 </dl>
 
 <dl>
@@ -207,8 +207,8 @@ If alpha is true, the page will be drawn on a transparent background, otherwise 
 <dd>Return an array of all the links on the page.
 Each link is an object with a 'bounds' property, and either a 'page' or 'uri' property,
 depending on whether it's an internal or external link.
-<dt>Page#toPDF()
-<dd>Returns the PDFObject/PDFPage for the page, if the document is a PDF file.
+<dt>Page#isPDF()
+<dd>Returns true if the page is from a PDF document.
 </dl>
 
 <dl>
@@ -590,16 +590,14 @@ PDFDocument and PDFObject
 <p>
 With MuPDF it is also possible to create, edit and manipulate PDF documents
 using low level access to the objects and streams contained in a PDF file.
+A PDFDocument object is also a Document object. You can test a Document object
+to see if it is safe to use as a PDFDocument by calling document.isPDF().
 
 <dl>
 <dt>new PDFDocument()
 <dd>Create a new empty PDF document.
 <dt>new PDFDocument(fileName)
 <dd>Load a PDF document from file.
-<dt>Document#toPDF()
-<dd>Get access to the raw PDFDocument from a Document; returns null if the document is not a PDF.
-<dt>PDFDocument#toDocument()
-<dd>Cast the PDF document to a Document.
 <dt>PDFDocument#save(fileName, options)
 <dd>Write the PDF document to file.
 The write options are a string of comma separated options (see the document writer <a href="#pdf-write-options">options</a>).
