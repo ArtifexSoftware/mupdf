@@ -939,6 +939,60 @@ static inline jobject to_Image_safe(fz_context *ctx, JNIEnv *env, fz_image *img)
 	return (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
 }
 
+static unsigned short *pdfenc_to_unicode(fz_context *ctx, const char *src, int srclen, int *dstlen)
+{
+	const unsigned char *srcptr = (const unsigned char *)src;
+	unsigned short *dstptr, *dst;
+	int i;
+
+	if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
+	{
+		dstptr = dst = fz_malloc_array(ctx, (srclen - 2) / 2, sizeof(short));
+		for (i = 2; i + 1 < srclen; i += 2)
+			*dstptr++ = srcptr[i] << 8 | srcptr[i+1];
+	}
+	else if (srclen >= 2 && srcptr[0] == 255 && srcptr[1] == 254)
+	{
+		dstptr = dst = fz_malloc_array(ctx, (srclen - 2) / 2, sizeof(short));
+		for (i = 2; i + 1 < srclen; i += 2)
+			*dstptr++ = srcptr[i] | srcptr[i+1] << 8;
+	}
+	else
+	{
+		dstptr = dst = fz_malloc_array(ctx, srclen, sizeof(short));
+		for (i = 0; i < srclen; i++)
+			*dstptr++ = pdf_doc_encoding[srcptr[i]];
+	}
+
+	*dstlen = dstptr - dst;
+	return dst;
+}
+
+static jstring
+stringlen_to_String(fz_context *ctx, JNIEnv *env, const char *str, int len)
+{
+	unsigned short *conv = NULL;
+	int conv_len;
+	jstring jstr;
+
+	fz_try(ctx)
+		conv = pdfenc_to_unicode(ctx, str, len, &conv_len);
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	jstr = (*env)->NewString(env, conv, conv_len);
+	fz_free(ctx, conv);
+	return jstr;
+}
+
+static jstring
+string_to_String(fz_context *ctx, JNIEnv *env, const char *str)
+{
+	return stringlen_to_String(ctx, env, str, strlen(str));
+}
+
 static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *outline)
 {
 	jobject joutline = NULL;
@@ -967,7 +1021,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *
 
 		if (outline->title)
 		{
-			jtitle = (*env)->NewStringUTF(env, outline->title);
+			jtitle = string_to_String(ctx, env, outline->title);
 			if (!jtitle) return NULL;
 		}
 
@@ -975,7 +1029,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *
 			jpage = outline->dest.ld.gotor.page;
 		else if (outline->dest.kind == FZ_LINK_URI)
 		{
-			juri = (*env)->NewStringUTF(env, outline->dest.ld.uri.uri);
+			juri = string_to_String(ctx, env, outline->dest.ld.uri.uri);
 			if (!juri) return NULL;
 		}
 
@@ -2760,7 +2814,7 @@ FUN(Font_getName)(JNIEnv *env, jobject self)
 
 	if (!ctx || !font) return NULL;
 
-	return (*env)->NewStringUTF(env, font->name);
+	return string_to_String(ctx, env, font->name);
 }
 
 JNIEXPORT jint JNICALL
@@ -4168,7 +4222,7 @@ FUN(Document_getMetaData)(JNIEnv *env, jobject self, jstring jkey)
 		return NULL;
 	}
 
-	return (*env)->NewStringUTF(env, info);
+	return string_to_String(ctx, env, info);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -4301,7 +4355,7 @@ FUN(Page_getSeparation)(JNIEnv *env, jobject self, int sep)
 	/* MuPDF returns RGBA as bytes. Android wants a packed BGRA int. */
 	name = fz_get_separation_on_page(ctx, page, sep, (unsigned int *)(&rgba[0]), &cmyk);
 	bgra = (rgba[0] << 16) | (rgba[1]<<8) | rgba[2] | (rgba[3]<<24);
-	jname = name ? (*env)->NewStringUTF(env, name) : NULL;
+	jname = name ? string_to_String(ctx, env, name) : NULL;
 
 	return (*env)->NewObject(env, cls_Separation, mid_Separation_init, jname, bgra, cmyk);
 }
@@ -4506,7 +4560,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 			page = link->dest.ld.gotor.page;
 		else if (link->dest.kind == FZ_LINK_URI)
 		{
-			juri = (*env)->NewStringUTF(env, link->dest.ld.uri.uri);
+			juri = string_to_String(ctx, env, link->dest.ld.uri.uri);
 			if (!juri) return NULL;
 		}
 
@@ -5393,7 +5447,7 @@ FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jrect)
 		return NULL;
 	}
 
-	jstring = (*env)->NewStringUTF(env, s);
+	jstring = string_to_String(ctx, env, s);
 	fz_free(ctx, s);
 
 	return jstring;
@@ -7327,18 +7381,22 @@ FUN(PDFObject_asString)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
 	const char *str = NULL;
+	int len;
 
 	if (!ctx || !obj) return NULL;
 
 	fz_try(ctx)
+	{
 		str = pdf_to_str_buf(ctx, obj);
+		len = pdf_to_str_len(ctx, obj);
+	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return (*env)->NewStringUTF(env, str);
+	return stringlen_to_String(ctx, env, str, len);
 }
 
 JNIEXPORT jobject JNICALL
@@ -7393,7 +7451,7 @@ FUN(PDFObject_asName)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	return (*env)->NewStringUTF(env, str);
+	return string_to_String(ctx, env, str);
 }
 
 JNIEXPORT jobject JNICALL
@@ -7578,7 +7636,7 @@ FUN(PDFObject_toString)(JNIEnv *env, jobject self, jboolean tight)
 		n = pdf_sprint_obj(ctx, NULL, 0, obj, tight);
 		s = fz_malloc(ctx, n + 1);
 		pdf_sprint_obj(ctx, s, n + 1, obj, tight);
-		string = (*env)->NewStringUTF(env, s);
+		string = string_to_String(ctx, env, s);
 	}
 	fz_always(ctx)
 		fz_free(ctx, s);
