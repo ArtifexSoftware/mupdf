@@ -2768,7 +2768,10 @@ pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
 	fz_try(ctx)
 		pdf_update_stream(ctx, doc, ind, buf, 0);
 	fz_catch(ctx)
+	{
 		pdf_drop_obj(ctx, ind);
+		fz_rethrow(ctx);
+	}
 	return ind;
 }
 
