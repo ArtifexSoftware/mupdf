@@ -1544,6 +1544,7 @@ static void ffi_Document_authenticatePassword(js_State *J)
 
 	js_pushboolean(J, b);
 }
+
 static void ffi_Document_getMetaData(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -3257,7 +3258,8 @@ static void ffi_PDFDocument_newString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	// TODO: convert array of numbers
+	// TODO: convert array of numbers to raw string
+	// TODO: convert to UCS-2 or PDFDocEncoding
 	const char *val = js_tostring(J, 1);
 	pdf_obj *obj;
 	fz_try(ctx)
@@ -3472,7 +3474,7 @@ static void ffi_PDFObject_isIndirect(js_State *J)
 	js_pushboolean(J, b);
 }
 
-static void ffi_PDFObject_toIndirect(js_State *J)
+static void ffi_PDFObject_asIndirect(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
@@ -3482,6 +3484,145 @@ static void ffi_PDFObject_toIndirect(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 	js_pushnumber(J, num);
+}
+
+static void ffi_PDFObject_isNull(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_null(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_isBoolean(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_bool(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_asBoolean(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_to_bool(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_isNumber(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_number(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_asNumber(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	double num;
+	fz_try(ctx)
+		if (pdf_is_int(ctx, obj))
+			num = pdf_to_int(ctx, obj);
+		else
+			num = pdf_to_real(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushnumber(J, num);
+}
+
+static void ffi_PDFObject_isName(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_name(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_asName(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	const char *name;
+	fz_try(ctx)
+		name = pdf_to_name(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushstring(J, name);
+}
+
+static void ffi_PDFObject_isString(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	int b;
+	fz_try(ctx)
+		b = pdf_is_string(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+	js_pushboolean(J, b);
+}
+
+static void ffi_PDFObject_asString(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	char *string;
+
+	fz_try(ctx)
+		string = pdf_to_utf8(ctx, obj);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J)) {
+		fz_free(ctx, string);
+		js_throw(J);
+	}
+	js_pushstring(J, string);
+	fz_free(ctx, string);
+	js_endtry(J);
+}
+
+static void ffi_PDFObject_asByteString(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
+	const char *buf;
+	int i, len;
+
+	fz_try(ctx) {
+		buf = pdf_to_str_buf(ctx, obj);
+		len = pdf_to_str_len(ctx, obj);
+	} fz_catch(ctx)
+		rethrow(J);
+
+	js_newarray(J);
+	for (i = 0; i < len; ++i) {
+		js_pushnumber(J, (unsigned char)buf[i]);
+		js_setindex(J, -2, i);
+	}
 }
 
 static void ffi_PDFObject_isStream(js_State *J)
@@ -4267,17 +4408,27 @@ int murun_main(int argc, char **argv)
 
 	js_newobject(J);
 	{
-		jsB_propfun(J, "PDFObject.get", ffi_PDFObject_get, 0);
-		jsB_propfun(J, "PDFObject.put", ffi_PDFObject_put, 0);
-		jsB_propfun(J, "PDFObject.push", ffi_PDFObject_push, 0);
-		jsB_propfun(J, "PDFObject.delete", ffi_PDFObject_delete, 0);
+		jsB_propfun(J, "PDFObject.get", ffi_PDFObject_get, 1);
+		jsB_propfun(J, "PDFObject.put", ffi_PDFObject_put, 2);
+		jsB_propfun(J, "PDFObject.push", ffi_PDFObject_push, 1);
+		jsB_propfun(J, "PDFObject.delete", ffi_PDFObject_delete, 1);
 		jsB_propfun(J, "PDFObject.resolve", ffi_PDFObject_resolve, 0);
 		jsB_propfun(J, "PDFObject.toString", ffi_PDFObject_toString, 1);
 		jsB_propfun(J, "PDFObject.valueOf", ffi_PDFObject_valueOf, 0);
 		jsB_propfun(J, "PDFObject.isArray", ffi_PDFObject_isArray, 0);
 		jsB_propfun(J, "PDFObject.isDictionary", ffi_PDFObject_isDictionary, 0);
 		jsB_propfun(J, "PDFObject.isIndirect", ffi_PDFObject_isIndirect, 0);
-		jsB_propfun(J, "PDFObject.toIndirect", ffi_PDFObject_toIndirect, 0);
+		jsB_propfun(J, "PDFObject.asIndirect", ffi_PDFObject_asIndirect, 0);
+		jsB_propfun(J, "PDFObject.isNull", ffi_PDFObject_isNull, 0);
+		jsB_propfun(J, "PDFObject.isBoolean", ffi_PDFObject_isBoolean, 0);
+		jsB_propfun(J, "PDFObject.asBoolean", ffi_PDFObject_asBoolean, 0);
+		jsB_propfun(J, "PDFObject.isNumber", ffi_PDFObject_isNumber, 0);
+		jsB_propfun(J, "PDFObject.asNumber", ffi_PDFObject_asNumber, 0);
+		jsB_propfun(J, "PDFObject.isName", ffi_PDFObject_isName, 0);
+		jsB_propfun(J, "PDFObject.asName", ffi_PDFObject_asName, 0);
+		jsB_propfun(J, "PDFObject.isString", ffi_PDFObject_isString, 0);
+		jsB_propfun(J, "PDFObject.asString", ffi_PDFObject_asString, 0);
+		jsB_propfun(J, "PDFObject.asByteString", ffi_PDFObject_asByteString, 0);
 		jsB_propfun(J, "PDFObject.isStream", ffi_PDFObject_isStream, 0);
 		jsB_propfun(J, "PDFObject.readStream", ffi_PDFObject_readStream, 0);
 		jsB_propfun(J, "PDFObject.readRawStream", ffi_PDFObject_readRawStream, 0);
