@@ -57,7 +57,7 @@ rune_from_utf16be(int *out, unsigned char *s, unsigned char *end)
 
 /* Convert Unicode/PdfDocEncoding string into utf-8 */
 char *
-pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
+pdf_to_utf8(fz_context *ctx, pdf_obj *src)
 {
 	fz_buffer *stmbuf = NULL;
 	unsigned char *srcptr;
@@ -167,7 +167,7 @@ pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 
 /* Convert Unicode/PdfDocEncoding string into ucs-2 */
 unsigned short *
-pdf_to_ucs2(fz_context *ctx, pdf_document *doc, pdf_obj *src)
+pdf_to_ucs2(fz_context *ctx, pdf_obj *src)
 {
 	unsigned char *srcptr = (unsigned char *) pdf_to_str_buf(ctx, src);
 	unsigned short *dstptr, *dst;
@@ -228,7 +228,7 @@ pdf_to_ucs2_buf(fz_context *ctx, unsigned short *buffer, pdf_obj *src)
 
 /* Convert UCS-2 string into PdfDocEncoding for authentication */
 char *
-pdf_from_ucs2(fz_context *ctx, pdf_document *doc, unsigned short *src)
+pdf_from_ucs2(fz_context *ctx, unsigned short *src)
 {
 	int i, j, len;
 	char *docstr;
@@ -268,7 +268,7 @@ pdf_from_ucs2(fz_context *ctx, pdf_document *doc, unsigned short *src)
 pdf_obj *
 pdf_to_utf8_name(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 {
-	char *buf = pdf_to_utf8(ctx, doc, src);
+	char *buf = pdf_to_utf8(ctx, src);
 	pdf_obj *dst = pdf_new_name(ctx, doc, buf);
 	fz_free(ctx, buf);
 	return dst;

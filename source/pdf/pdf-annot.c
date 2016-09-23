@@ -242,7 +242,7 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec)
 		return NULL;
 	}
 
-	path = pdf_to_utf8(ctx, doc, filename);
+	path = pdf_to_utf8(ctx, filename);
 #if defined(_WIN32) || defined(_WIN64)
 	if (strcmp(pdf_to_name(ctx, pdf_dict_gets(ctx, file_spec, "FS")), "URL") != 0)
 	{
@@ -284,7 +284,7 @@ pdf_parse_action(fz_context *ctx, pdf_document *doc, pdf_obj *action)
 	{
 		ld.kind = FZ_LINK_URI;
 		ld.ld.uri.is_map = pdf_to_bool(ctx, pdf_dict_get(ctx, action, PDF_NAME_IsMap));
-		ld.ld.uri.uri = pdf_to_utf8(ctx, doc, pdf_dict_get(ctx, action, PDF_NAME_URI));
+		ld.ld.uri.uri = pdf_to_utf8(ctx, pdf_dict_get(ctx, action, PDF_NAME_URI));
 	}
 	else if (pdf_name_eq(ctx, PDF_NAME_Launch, obj))
 	{

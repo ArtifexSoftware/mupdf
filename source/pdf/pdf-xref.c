@@ -2325,7 +2325,7 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 		if (!info)
 			return -1;
 
-		s = pdf_to_utf8(ctx, doc, info);
+		s = pdf_to_utf8(ctx, info);
 		n = (int)fz_strlcpy(buf, s, size);
 		fz_free(ctx, s);
 		return n;

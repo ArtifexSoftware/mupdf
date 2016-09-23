@@ -340,7 +340,7 @@ static void execute_action(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf
 			pdf_obj *js = pdf_dict_get(ctx, a, PDF_NAME_JS);
 			if (js)
 			{
-				char *code = pdf_to_utf8(ctx, doc, js);
+				char *code = pdf_to_utf8(ctx, js);
 				fz_try(ctx)
 				{
 					pdf_js_execute(doc->js, code);

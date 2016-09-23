@@ -136,10 +136,10 @@ int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj);
 int pdf_sprint_obj(fz_context *ctx, char *s, int n, pdf_obj *obj, int tight);
 int pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight);
 
-char *pdf_to_utf8(fz_context *ctx, pdf_document *doc, pdf_obj *src);
-unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_document *doc, pdf_obj *src);
+char *pdf_to_utf8(fz_context *ctx, pdf_obj *src);
+unsigned short *pdf_to_ucs2(fz_context *ctx, pdf_obj *src);
 pdf_obj *pdf_to_utf8_name(fz_context *ctx, pdf_document *doc, pdf_obj *src);
-char *pdf_from_ucs2(fz_context *ctx, pdf_document *doc, unsigned short *str);
+char *pdf_from_ucs2(fz_context *ctx, unsigned short *str);
 void pdf_to_ucs2_buf(fz_context *ctx, unsigned short *buffer, pdf_obj *src);
 
 fz_rect *pdf_to_rect(fz_context *ctx, pdf_obj *array, fz_rect *rect);

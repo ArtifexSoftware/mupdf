@@ -24,7 +24,7 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 			obj = pdf_dict_get(ctx, dict, PDF_NAME_Title);
 			if (obj)
-				node->title = pdf_to_utf8(ctx, doc, obj);
+				node->title = pdf_to_utf8(ctx, obj);
 
 			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME_Dest)) != NULL)
 				node->dest = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, obj);
