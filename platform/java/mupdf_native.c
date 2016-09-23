@@ -6779,7 +6779,7 @@ FUN(PDFObject_getDictionary)(JNIEnv *env, jobject self, jstring jname)
 
 	if (!ctx || !dict) return NULL;
 
-	if (!jname)
+	if (jname)
 		name = (*env)->GetStringUTFChars(env, jname, NULL);
 
 	if (name)
