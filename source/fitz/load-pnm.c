@@ -182,9 +182,9 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 					p = pnm_read_number(ctx, p, e, &v);
 					p = pnm_read_white(ctx, p, e, 0);
 					if (v == 0)
-						*dp = 0x00;
-					else
 						*dp = 0xff;
+					else
+						*dp = 0x00;
 
 					dp++;
 				}
@@ -248,9 +248,9 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 				for (x = 0; x < pnm->width; x++)
 				{
 					if (*p & (1 << (7 - (x & 0x7))))
-						*dp = 0x00;
-					else
 						*dp = 0xff;
+					else
+						*dp = 0x00;
 
 					dp++;
 					if ((x & 0x7) == 7)
