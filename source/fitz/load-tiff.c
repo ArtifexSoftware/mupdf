@@ -171,6 +171,14 @@ fz_decode_tiff_sgilog24(fz_context *ctx, struct tiff *tiff, fz_stream *chain, un
 }
 
 static void
+fz_decode_tiff_thunder(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
+{
+	fz_stream *stm = fz_open_thunder(ctx, chain, w);
+	fz_read(ctx, stm, wp, wlen);
+	fz_drop_stream(ctx, stm);
+}
+
+static void
 fz_decode_tiff_sgilog32(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
 {
 	fz_stream *stm = fz_open_sgilog32(ctx, chain, w);
@@ -517,6 +525,11 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 			break;
 		case 34677:
 			fz_decode_tiff_sgilog24(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+			break;
+		case 32809:
+			if (tiff->bitspersample != 4)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel in thunder encoding");
+			fz_decode_tiff_thunder(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 			break;
 		default:
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);

@@ -34,5 +34,6 @@ void fz_drop_jbig2_globals_imp(fz_context *ctx, fz_storable *globals);
 fz_stream *fz_open_sgilog16(fz_context *ctx, fz_stream *chain, int w);
 fz_stream *fz_open_sgilog24(fz_context *ctx, fz_stream *chain, int w);
 fz_stream *fz_open_sgilog32(fz_context *ctx, fz_stream *chain, int w);
+fz_stream *fz_open_thunder(fz_context *ctx, fz_stream *chain, int w);
 
 #endif
