@@ -503,6 +503,7 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 			fz_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
 			break;
 		case 8:
+		case 32946:
 			fz_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
 			break;
 		case 32773:
@@ -531,7 +532,7 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 	}
 
 	/* Predictor (only for LZW and Flate) */
-	if ((tiff->compression == 5 || tiff->compression == 8) && tiff->predictor == 2)
+	if ((tiff->compression == 5 || tiff->compression == 8 || tiff->compression == 32946) && tiff->predictor == 2)
 	{
 		unsigned char *p = tiff->samples;
 		for (i = 0; i < tiff->imagelength; i++)
