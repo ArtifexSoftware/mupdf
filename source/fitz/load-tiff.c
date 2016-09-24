@@ -414,6 +414,9 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 		/* it's probably a jpeg ... we let jpeg convert to rgb */
 		tiff->colorspace = fz_device_rgb(ctx);
 		break;
+	case 8: /* 1976 CIE L*a*b* */
+		tiff->colorspace = fz_device_lab(ctx);
+		break;
 	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
 		tiff->colorspace = fz_device_gray(ctx);
 		tiff->bitspersample = 8;
