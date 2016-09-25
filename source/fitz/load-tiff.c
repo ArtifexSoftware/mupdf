@@ -862,6 +862,18 @@ fz_decode_tiff_samples(fz_context *ctx, struct tiff *tiff)
 	if (tiff->rowsperstrip > tiff->imagelength)
 		tiff->rowsperstrip = tiff->imagelength;
 
+	/* some creators don't write byte counts for uncompressed images */
+	if (tiff->compression == 1)
+	{
+		if (!tiff->stripbytecounts)
+		{
+			tiff->stripbytecountslen = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
+			tiff->stripbytecounts = fz_malloc_array(ctx, tiff->stripbytecountslen, sizeof(unsigned));
+			for (i = 0; i < tiff->stripbytecountslen; i++)
+				tiff->stripbytecounts[i] = tiff->rowsperstrip * tiff->stride;
+		}
+	}
+
 	if (tiff->rowsperstrip && tiff->stripoffsets && tiff->stripbytecounts)
 		fz_decode_tiff_strips(ctx, tiff);
 	else
