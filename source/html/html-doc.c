@@ -129,9 +129,16 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->set = fz_new_html_font_set(ctx);
 
 	buf = fz_read_all(ctx, file, 0);
-	fz_write_buffer_byte(ctx, buf, 0);
-	doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
-	fz_drop_buffer(ctx, buf);
+
+	fz_try(ctx)
+	{
+		fz_write_buffer_byte(ctx, buf, 0);
+		doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return (fz_document*)doc;
 }

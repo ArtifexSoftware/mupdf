@@ -458,9 +458,13 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 
 	stm = pdf_open_raw_stream_number(ctx, doc, num);
 
-	buf = fz_read_all(ctx, stm, len);
+	fz_try(ctx)
+		buf = fz_read_all(ctx, stm, len);
+	fz_always(ctx)
+		fz_drop_stream(ctx, stm);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
-	fz_drop_stream(ctx, stm);
 	return buf;
 }
 
