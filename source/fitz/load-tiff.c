@@ -5,7 +5,6 @@
  * Baseline TIFF 6.0 plus CMYK, LZW, Flate and JPEG support.
  * Limited bit depths (1,2,4,8).
  * Limited planar configurations (1=chunky).
- * No tiles (easy fix if necessary).
  * TODO: RGBPal images
  */
 
@@ -26,6 +25,14 @@ struct tiff
 	unsigned *stripbytecounts;
 	unsigned stripoffsetslen;
 	unsigned stripbytecountslen;
+
+	/* where we can find the tiles of image data */
+	unsigned tilelength;
+	unsigned tilewidth;
+	unsigned *tileoffsets;
+	unsigned *tilebytecounts;
+	unsigned tileoffsetslen;
+	unsigned tilebytecountslen;
 
 	/* colormap */
 	unsigned *colormap;
@@ -60,6 +67,8 @@ struct tiff
 	/* decoded data */
 	fz_colorspace *colorspace;
 	unsigned char *samples;
+	unsigned char *tile;
+	int tilestride;
 	int stride;
 };
 
@@ -450,6 +459,75 @@ fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsi
 }
 
 static void
+fz_paste_tiff_tile(fz_context *ctx, struct tiff *tiff, unsigned char *tile, unsigned int row, unsigned int col)
+{
+	unsigned int x, y, k;
+
+	for (y = 0; y < tiff->tilelength && row + y < tiff->imagelength; y++)
+	{
+		for (x = 0; x < tiff->tilewidth && col + x < tiff->imagewidth; x++)
+		{
+			for (k = 0; k < tiff->samplesperpixel; k++)
+			{
+				unsigned char *dst, *src;
+
+				dst = tiff->samples;
+				dst += (row + y) * tiff->stride;
+				dst += (((col + x) * tiff->samplesperpixel + k) * tiff->bitspersample + 7) / 8;
+
+				src = tile;
+				src += y * tiff->tilestride;
+				src += ((x * tiff->samplesperpixel + k) * tiff->bitspersample + 7) / 8;
+
+				switch (tiff->bitspersample)
+				{
+				case 1: *dst |= (*src >> (7 - 1 * ((col + x) % 8))) & 0x1; break;
+				case 2: *dst |= (*src >> (6 - 2 * ((col + x) % 4))) & 0x3; break;
+				case 4: *dst |= (*src >> (4 - 4 * ((col + x) % 2))) & 0xf; break;
+				case 8: *dst = *src; break;
+				case 16: dst[0] = src[0]; dst[1] = src[1]; break;
+				}
+			}
+		}
+	}
+}
+
+static void
+fz_decode_tiff_tiles(fz_context *ctx, struct tiff *tiff)
+{
+	unsigned char *wp;
+	unsigned x, y, wlen, tile;
+	unsigned tiles, tilesacross, tilesdown;
+
+	tilesdown = (tiff->imagelength + tiff->tilelength - 1) / tiff->tilelength;
+	tilesacross = (tiff->imagewidth + tiff->tilewidth - 1) / tiff->tilewidth;
+	tiles = tilesacross * tilesdown;
+	if (tiff->tileoffsetslen < tiles || tiff->tilebytecountslen < tiles)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "insufficient tile metadata");
+
+	tiff->tile = fz_malloc_array(ctx, tiff->tilelength, tiff->tilestride);
+
+	wp = tiff->tile;
+	wlen = tiff->tilelength * tiff->tilestride;
+
+	tile = 0;
+	for (x = 0; x < tiff->imagelength; x += tiff->tilelength)
+	{
+		for (y = 0; y < tiff->imagewidth; y += tiff->tilewidth)
+		{
+			unsigned int offset = tiff->tileoffsets[tile];
+			unsigned int rlen = tiff->tilebytecounts[tile];
+			unsigned char *rp = tiff->bp + offset;
+
+			memset(wp, 0x00, wlen);
+			fz_decode_tiff_chunk(ctx, tiff, rp, rlen, wp, wlen);
+			fz_paste_tiff_tile(ctx, tiff, wp, x, y);
+			tile++;
+		}
+	}
+}
+
+static void
 fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned char *wp;
@@ -654,10 +732,23 @@ fz_read_tiff_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		break;
 
 	case TileWidth:
+		fz_read_tiff_tag_value(&tiff->tilewidth, tiff, type, value, 1);
+		break;
+
 	case TileLength:
+		fz_read_tiff_tag_value(&tiff->tilelength, tiff, type, value, 1);
+		break;
+
 	case TileOffsets:
+		tiff->tileoffsets = fz_malloc_array(ctx, count, sizeof(unsigned));
+		fz_read_tiff_tag_value(tiff->tileoffsets, tiff, type, value, count);
+		tiff->tileoffsetslen = count;
+		break;
+
 	case TileByteCounts:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "tiled tiffs not supported");
+		tiff->tilebytecounts = fz_malloc_array(ctx, count, sizeof(unsigned));
+		fz_read_tiff_tag_value(tiff->tilebytecounts, tiff, type, value, count);
+		tiff->tilebytecountslen = count;
 		break;
 
 	default:
@@ -793,6 +884,7 @@ fz_decode_tiff_samples(fz_context *ctx, struct tiff *tiff)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image data is not in chunky format");
 
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
+	tiff->tilestride = (tiff->tilewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 
 	switch (tiff->photometric)
 	{
@@ -865,19 +957,47 @@ fz_decode_tiff_samples(fz_context *ctx, struct tiff *tiff)
 	/* some creators don't write byte counts for uncompressed images */
 	if (tiff->compression == 1)
 	{
-		if (!tiff->stripbytecounts)
+		if (!tiff->tilelength && !tiff->tilewidth && !tiff->stripbytecounts)
 		{
 			tiff->stripbytecountslen = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
 			tiff->stripbytecounts = fz_malloc_array(ctx, tiff->stripbytecountslen, sizeof(unsigned));
 			for (i = 0; i < tiff->stripbytecountslen; i++)
 				tiff->stripbytecounts[i] = tiff->rowsperstrip * tiff->stride;
 		}
+		if (tiff->tilelength && tiff->tilewidth && !tiff->tilebytecounts)
+		{
+			unsigned tilesdown = (tiff->imagelength + tiff->tilelength - 1) / tiff->tilelength;
+			unsigned tilesacross = (tiff->imagewidth + tiff->tilewidth - 1) / tiff->tilewidth;
+			tiff->tilebytecountslen = tilesacross * tilesdown;
+			tiff->tilebytecounts = fz_malloc_array(ctx, tiff->tilebytecountslen, sizeof(unsigned));
+			for (i = 0; i < tiff->tilebytecountslen; i++)
+				tiff->tilebytecounts[i] = tiff->tilelength * tiff->tilestride;
+		}
 	}
 
-	if (tiff->rowsperstrip && tiff->stripoffsets && tiff->stripbytecounts)
+	/* some creators write strip tags when they meant to write tile tags... */
+	if (tiff->tilelength && tiff->tilewidth)
+	{
+		if (!tiff->tileoffsets && !tiff->tileoffsetslen &&
+				tiff->stripoffsets && tiff->stripoffsetslen)
+		{
+			tiff->tileoffsets = tiff->stripoffsets;
+			tiff->tileoffsetslen = tiff->stripoffsetslen;
+		}
+		if (!tiff->tilebytecounts && !tiff->tilebytecountslen &&
+				tiff->stripbytecounts && tiff->stripbytecountslen)
+		{
+			tiff->tilebytecounts = tiff->stripbytecounts;
+			tiff->tilebytecountslen = tiff->stripbytecountslen;
+		}
+	}
+
+	if (tiff->tilelength && tiff->tilewidth && tiff->tileoffsets && tiff->tilebytecounts)
+		fz_decode_tiff_tiles(ctx, tiff);
+	else if (tiff->rowsperstrip && tiff->stripoffsets && tiff->stripbytecounts)
 		fz_decode_tiff_strips(ctx, tiff);
 	else
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image is missing strip data");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image is missing both strip and tile data");
 
 	/* Predictor (only for LZW and Flate) */
 	if ((tiff->compression == 5 || tiff->compression == 8 || tiff->compression == 32946) && tiff->predictor == 2)
@@ -970,6 +1090,7 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 		if (tiff.colormap) fz_free(ctx, tiff.colormap);
 		if (tiff.stripoffsets) fz_free(ctx, tiff.stripoffsets);
 		if (tiff.stripbytecounts) fz_free(ctx, tiff.stripbytecounts);
+		if (tiff.tile) fz_free(ctx, tiff.tile);
 		if (tiff.samples) fz_free(ctx, tiff.samples);
 		if (tiff.profile) fz_free(ctx, tiff.profile);
 	}
