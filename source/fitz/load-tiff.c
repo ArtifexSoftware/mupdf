@@ -24,12 +24,11 @@ struct tiff
 	unsigned rowsperstrip;
 	unsigned *stripoffsets;
 	unsigned *stripbytecounts;
+	unsigned stripoffsetslen;
+	unsigned stripbytecountslen;
 
 	/* colormap */
 	unsigned *colormap;
-
-	unsigned stripoffsetslen;
-	unsigned stripbytecountslen;
 	unsigned colormaplen;
 
 	/* assorted tags */
@@ -368,105 +367,104 @@ fz_expand_tiff_colormap(fz_context *ctx, struct tiff *tiff)
 }
 
 static void
-fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
+fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned int rlen, unsigned char *wp, unsigned int wlen)
 {
 	fz_stream *stm;
+	unsigned i;
+
+	if (rp + rlen > tiff->ep)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "strip extends beyond the end of the file");
+
+	/* the bits are in un-natural order */
+	if (tiff->fillorder == 2)
+		for (i = 0; i < rlen; i++)
+			rp[i] = bitrev[rp[i]];
+
+	/* each decoder will close this */
+	/* FIXME: what if tiff->compression is invalid? what if fz_read() in the strip decoders throws? */
+	stm = fz_open_memory(ctx, rp, rlen);
 
 	/* switch on compression to create a filter */
-	/* feed each strip to the filter */
-	/* read out the data and pack the samples into a pixmap */
+	/* feed each chunk (strip or tile) to the filter */
+	/* read out the data into a buffer */
+	/* the level above packs the chunk's samples into a pixmap */
 
 	/* type 32773 / packbits -- nothing special (same row-padding as PDF) */
 	/* type 2 / ccitt rle -- no EOL, no RTC, rows are byte-aligned */
 	/* type 3 and 4 / g3 and g4 -- each strip starts new section */
 	/* type 5 / lzw -- each strip is handled separately */
 
-	unsigned char *wp;
-	unsigned row;
-	unsigned strip;
-	unsigned i;
-
-	if (!tiff->rowsperstrip || !tiff->stripoffsets || !tiff->stripbytecounts)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no image data in tiff; maybe it is tiled");
-
-	if (tiff->stripoffsetslen < (tiff->imagelength - 1) / tiff->rowsperstrip + 1 ||
-		tiff->stripbytecountslen < (tiff->imagelength - 1) / tiff->rowsperstrip + 1)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "insufficient strip offset data");
-
-	if (tiff->planar != 1)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image data is not in chunky format");
-
-	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2) / (tiff->bitspersample / 8 + 1))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
-
-	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
-
-	switch (tiff->photometric)
+	switch (tiff->compression)
 	{
-	case 0: /* WhiteIsZero -- inverted */
-		tiff->colorspace = fz_device_gray(ctx);
+	case 1:
+		fz_decode_tiff_uncompressed(ctx, tiff, stm, wp, wlen);
 		break;
-	case 1: /* BlackIsZero */
-		tiff->colorspace = fz_device_gray(ctx);
-		break;
-	case 2: /* RGB */
-		tiff->colorspace = fz_device_rgb(ctx);
-		break;
-	case 3: /* RGBPal */
-		tiff->colorspace = fz_device_rgb(ctx);
-		break;
-	case 5: /* CMYK */
-		tiff->colorspace = fz_device_cmyk(ctx);
-		break;
-	case 6: /* YCbCr */
-		/* it's probably a jpeg ... we let jpeg convert to rgb */
-		tiff->colorspace = fz_device_rgb(ctx);
-		break;
-	case 8: /* 1976 CIE L*a*b* */
-		tiff->colorspace = fz_device_lab(ctx);
-		break;
-	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
-		tiff->colorspace = fz_device_gray(ctx);
-		tiff->bitspersample = 8;
-		tiff->stride >>= 1;
-		break;
-	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
-		tiff->colorspace = fz_device_rgb(ctx);
-		tiff->bitspersample = 8;
-		tiff->stride >>= 1;
-		break;
-	default:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown photometric: %d", tiff->photometric);
-	}
-
-	switch (tiff->resolutionunit)
-	{
 	case 2:
-		/* no unit conversion needed */
+		fz_decode_tiff_fax(ctx, tiff, 2, stm, wp, wlen);
 		break;
 	case 3:
-		tiff->xresolution = tiff->xresolution * 254 / 100;
-		tiff->yresolution = tiff->yresolution * 254 / 100;
+		fz_decode_tiff_fax(ctx, tiff, 3, stm, wp, wlen);
+		break;
+	case 4:
+		fz_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
+		break;
+	case 5:
+		fz_decode_tiff_lzw(ctx, tiff, stm, wp, wlen, (rp[0] == 0 && rp[1] & 1));
+		break;
+	case 6:
+		fz_warn(ctx, "deprecated JPEG in TIFF compression not fully supported");
+		/* fall through */
+	case 7:
+		fz_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
+		break;
+	case 8:
+	case 32946:
+		fz_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
+		break;
+	case 32773:
+		fz_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
+		break;
+	case 34676:
+		if (tiff->photometric == 32845)
+			fz_decode_tiff_sgilog32(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+		else
+			fz_decode_tiff_sgilog16(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+		break;
+	case 34677:
+		fz_decode_tiff_sgilog24(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+		break;
+	case 32809:
+		if (tiff->bitspersample != 4)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel in thunder encoding");
+		fz_decode_tiff_thunder(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 		break;
 	default:
-		tiff->xresolution = 96;
-		tiff->yresolution = 96;
-		break;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
 	}
 
-	/* Note xres and yres could be 0 even if unit was set. If so default to 96dpi. */
-	if (tiff->xresolution == 0 || tiff->yresolution == 0)
-	{
-		tiff->xresolution = 96;
-		tiff->yresolution = 96;
-	}
+	/* scramble the bits back into original order */
+	if (tiff->fillorder == 2)
+		for (i = 0; i < rlen; i++)
+			rp[i] = bitrev[rp[i]];
 
-	tiff->samples = fz_malloc_array(ctx, tiff->imagelength, tiff->stride);
-	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
+}
+
+static void
+fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
+{
+	unsigned char *wp;
+	unsigned y;
+	unsigned strip;
+	unsigned strips;
+
+	strips = (tiff->imagelength + tiff->rowsperstrip - 1) / tiff->rowsperstrip;
+	if (tiff->stripoffsetslen < strips || tiff->stripbytecountslen < strips)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "insufficient strip metadata");
+
 	wp = tiff->samples;
 
 	strip = 0;
-	for (row = 0; row < tiff->imagelength; row += tiff->rowsperstrip)
+	for (y = 0; y < tiff->imagelength; y += tiff->rowsperstrip)
 	{
 		unsigned offset = tiff->stripoffsets[strip];
 		unsigned rlen = tiff->stripbytecounts[strip];
@@ -476,113 +474,12 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 		if (wp + wlen > tiff->samples + (unsigned int)(tiff->stride * tiff->imagelength))
 			wlen = tiff->samples + (unsigned int)(tiff->stride * tiff->imagelength) - wp;
 
-		if (rp + rlen > tiff->ep)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "strip extends beyond the end of the file");
+		fz_decode_tiff_chunk(ctx, tiff, rp, rlen, wp, wlen);
 
-		/* the bits are in un-natural order */
-		if (tiff->fillorder == 2)
-			for (i = 0; i < rlen; i++)
-				rp[i] = bitrev[rp[i]];
-
-		/* the strip decoders will close this */
-		stm = fz_open_memory(ctx, rp, rlen);
-
-		switch (tiff->compression)
-		{
-		case 1:
-			fz_decode_tiff_uncompressed(ctx, tiff, stm, wp, wlen);
-			break;
-		case 2:
-			fz_decode_tiff_fax(ctx, tiff, 2, stm, wp, wlen);
-			break;
-		case 3:
-			fz_decode_tiff_fax(ctx, tiff, 3, stm, wp, wlen);
-			break;
-		case 4:
-			fz_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
-			break;
-		case 5:
-			fz_decode_tiff_lzw(ctx, tiff, stm, wp, wlen, (rp[0] == 0 && rp[1] & 1));
-			break;
-		case 6:
-			fz_warn(ctx, "deprecated JPEG in TIFF compression not fully supported");
-			/* fall through */
-		case 7:
-			fz_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
-			break;
-		case 8:
-		case 32946:
-			fz_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
-			break;
-		case 32773:
-			fz_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
-			break;
-		case 34676:
-			if (tiff->photometric == 32845)
-				fz_decode_tiff_sgilog32(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-			else
-				fz_decode_tiff_sgilog16(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-			break;
-		case 34677:
-			fz_decode_tiff_sgilog24(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-			break;
-		case 32809:
-			if (tiff->bitspersample != 4)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel in thunder encoding");
-			fz_decode_tiff_thunder(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-			break;
-		default:
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
-		}
-
-		/* scramble the bits back into original order */
-		if (tiff->fillorder == 2)
-			for (i = 0; i < rlen; i++)
-				rp[i] = bitrev[rp[i]];
-
-		wp += tiff->stride * tiff->rowsperstrip;
+		wp += wlen;
 		strip ++;
 	}
 
-	/* Predictor (only for LZW and Flate) */
-	if ((tiff->compression == 5 || tiff->compression == 8 || tiff->compression == 32946) && tiff->predictor == 2)
-	{
-		unsigned char *p = tiff->samples;
-		for (i = 0; i < tiff->imagelength; i++)
-		{
-			fz_unpredict_tiff(p, tiff->imagewidth, tiff->samplesperpixel, tiff->bitspersample);
-			p += tiff->stride;
-		}
-	}
-
-	/* RGBPal */
-	if (tiff->photometric == 3 && tiff->colormap)
-		fz_expand_tiff_colormap(ctx, tiff);
-
-	/* WhiteIsZero .. invert */
-	if (tiff->photometric == 0)
-	{
-		unsigned char *p = tiff->samples;
-		for (i = 0; i < tiff->imagelength; i++)
-		{
-			fz_invert_tiff(p, tiff->imagewidth, tiff->samplesperpixel, tiff->bitspersample, tiff->extrasamples);
-			p += tiff->stride;
-		}
-	}
-
-	/* Premultiplied transparency */
-	if (tiff->extrasamples == 1)
-	{
-		/* In GhostXPS we undo the premultiplication here; muxps holds
-		 * all our images premultiplied by default, so nothing to do.
-		 */
-	}
-
-	/* Non-premultiplied transparency */
-	if (tiff->extrasamples == 2)
-	{
-		/* Premultiplied files are corrected for elsewhere */
-	}
 }
 
 static inline int readbyte(struct tiff *tiff)
@@ -761,6 +658,7 @@ fz_read_tiff_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 	case TileOffsets:
 	case TileByteCounts:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "tiled tiffs not supported");
+		break;
 
 	default:
 		/* fz_warn(ctx, "unknown tag: %d t=%d n=%d", tag, type, count); */
@@ -883,6 +781,137 @@ fz_decode_tiff_ifd(fz_context *ctx, struct tiff *tiff)
 	}
 }
 
+static void
+fz_decode_tiff_samples(fz_context *ctx, struct tiff *tiff)
+{
+	unsigned i;
+
+	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2) / (tiff->bitspersample / 8 + 1))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
+
+	if (tiff->planar != 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image data is not in chunky format");
+
+	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
+
+	switch (tiff->photometric)
+	{
+	case 0: /* WhiteIsZero -- inverted */
+		tiff->colorspace = fz_device_gray(ctx);
+		break;
+	case 1: /* BlackIsZero */
+		tiff->colorspace = fz_device_gray(ctx);
+		break;
+	case 2: /* RGB */
+		tiff->colorspace = fz_device_rgb(ctx);
+		break;
+	case 3: /* RGBPal */
+		tiff->colorspace = fz_device_rgb(ctx);
+		break;
+	case 5: /* CMYK */
+		tiff->colorspace = fz_device_cmyk(ctx);
+		break;
+	case 6: /* YCbCr */
+		/* it's probably a jpeg ... we let jpeg convert to rgb */
+		tiff->colorspace = fz_device_rgb(ctx);
+		break;
+	case 8: /* 1976 CIE L*a*b* */
+		tiff->colorspace = fz_device_lab(ctx);
+		break;
+	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
+		tiff->colorspace = fz_device_gray(ctx);
+		if (tiff->bitspersample != 8)
+			tiff->bitspersample = 8;
+		tiff->stride >>= 1;
+		break;
+	case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
+		tiff->colorspace = fz_device_rgb(ctx);
+		if (tiff->bitspersample != 8)
+			tiff->bitspersample = 8;
+		tiff->stride >>= 1;
+		break;
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown photometric: %d", tiff->photometric);
+	}
+
+	switch (tiff->resolutionunit)
+	{
+	case 2:
+		/* no unit conversion needed */
+		break;
+	case 3:
+		tiff->xresolution = tiff->xresolution * 254 / 100;
+		tiff->yresolution = tiff->yresolution * 254 / 100;
+		break;
+	default:
+		tiff->xresolution = 96;
+		tiff->yresolution = 96;
+		break;
+	}
+
+	/* Note xres and yres could be 0 even if unit was set. If so default to 96dpi. */
+	if (tiff->xresolution == 0 || tiff->yresolution == 0)
+	{
+		tiff->xresolution = 96;
+		tiff->yresolution = 96;
+	}
+
+	tiff->samples = fz_malloc_array(ctx, tiff->imagelength, tiff->stride);
+	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
+
+	if (tiff->rowsperstrip > tiff->imagelength)
+		tiff->rowsperstrip = tiff->imagelength;
+
+	if (tiff->rowsperstrip && tiff->stripoffsets && tiff->stripbytecounts)
+		fz_decode_tiff_strips(ctx, tiff);
+	else
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image is missing strip data");
+
+	/* Predictor (only for LZW and Flate) */
+	if ((tiff->compression == 5 || tiff->compression == 8 || tiff->compression == 32946) && tiff->predictor == 2)
+	{
+		unsigned char *p = tiff->samples;
+		for (i = 0; i < tiff->imagelength; i++)
+		{
+			fz_unpredict_tiff(p, tiff->imagewidth, tiff->samplesperpixel, tiff->bitspersample);
+			p += tiff->stride;
+		}
+	}
+
+	/* RGBPal */
+	if (tiff->photometric == 3 && tiff->colormap)
+		fz_expand_tiff_colormap(ctx, tiff);
+
+	/* WhiteIsZero .. invert */
+	if (tiff->photometric == 0)
+	{
+		unsigned char *p = tiff->samples;
+		for (i = 0; i < tiff->imagelength; i++)
+		{
+			fz_invert_tiff(p, tiff->imagewidth, tiff->samplesperpixel, tiff->bitspersample, tiff->extrasamples);
+			p += tiff->stride;
+		}
+	}
+
+	/* Premultiplied transparency */
+	if (tiff->extrasamples == 1)
+	{
+		/* In GhostXPS we undo the premultiplication here; muxps holds
+		 * all our images premultiplied by default, so nothing to do.
+		 */
+	}
+
+	/* Non-premultiplied transparency */
+	if (tiff->extrasamples == 2)
+	{
+		/* Premultiplied files are corrected for elsewhere */
+	}
+
+	/* Byte swap 16-bit images to big endian if necessary */
+	if (tiff->bitspersample == 16 && tiff->order == TII)
+		fz_swap_tiff_byte_order(tiff->samples, tiff->imagewidth * tiff->imagelength * tiff->samplesperpixel);
+}
+
 fz_pixmap *
 fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subimage)
 {
@@ -896,17 +925,8 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 		fz_seek_ifd(ctx, &tiff, subimage);
 		fz_decode_tiff_ifd(ctx, &tiff);
 
-		/* Decode the image strips */
-
-		if (tiff.rowsperstrip > tiff.imagelength)
-			tiff.rowsperstrip = tiff.imagelength;
-
-		fz_decode_tiff_strips(ctx, &tiff);
-
-		/* Byte swap 16-bit images to big endian if necessary */
-		if (tiff.bitspersample == 16)
-			if (tiff.order == TII)
-				fz_swap_tiff_byte_order(tiff.samples, tiff.imagewidth * tiff.imagelength * tiff.samplesperpixel);
+		/* Decode the image data */
+		fz_decode_tiff_samples(ctx, &tiff);
 
 		/* Expand into fz_pixmap struct */
 		alpha = tiff.extrasamples != 0;
