@@ -1,3 +1,7 @@
+# Optional thirdparty libraryes
+thirdparty/luratech
+thirdparty/jpegxr
+
 # Generated files:
 build
 generated
