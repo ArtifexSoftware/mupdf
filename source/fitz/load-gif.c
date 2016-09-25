@@ -248,7 +248,8 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 		lzwstm = fz_open_lzwd(ctx, stm, 0, mincodesize + 1, 1, 0);
 
 		uncompressed = fz_read_all(ctx, lzwstm, info->image_width * info->image_height);
-		sp = uncompressed->data;
+		if (uncompressed->len < info->image_width * info->image_height)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in compressed table based image data in gif image");
 
 		if (info->has_lct)
 			ct = info->lct;
@@ -257,6 +258,7 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 		else
 			ct = dct;
 
+		sp = uncompressed->data;
 		if (info->image_interlaced)
 		{
 			for (y = 0; y < info->image_height; y += 8, sp += info->image_width)
