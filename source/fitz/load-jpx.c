@@ -887,6 +887,7 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 	*hp = img->h;
 	*xresp = 72; /* openjpeg does not read the JPEG 2000 resc box */
 	*yresp = 72; /* openjpeg does not read the JPEG 2000 resc box */
+	fz_drop_pixmap(ctx, img);
 }
 
 #endif /* HAVE_LURATECH */
