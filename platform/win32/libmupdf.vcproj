@@ -1273,6 +1273,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\filter-thunder.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\font.c"
 				>
 			</File>
