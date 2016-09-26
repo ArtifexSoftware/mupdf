@@ -489,6 +489,125 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 
 #include <openjpeg.h>
 
+/* OpenJPEG does not provide a safe mechanism to intercept
+ * allocations. In the latest version all allocations go
+ * though opj_malloc etc, but no context is passed around.
+ *
+ * In order to ensure that allocations throughout mupdf
+ * are done consistently, we implement opj_malloc etc as
+ * functions that call down to fz_malloc etc. These
+ * require context variables, so we lock and unlock around
+ * calls to openjpeg. Any attempt to call through
+ * without setting these is detected.
+ *
+ * It is therefore vital that any fz_lock/fz_unlock
+ * handlers are shared between all the fz_contexts in
+ * use at a time.
+ */
+
+/* Potentially we can write different versions
+ * of get_context and set_context for different
+ * threading systems.
+ */
+
+static fz_context *opj_secret = NULL;
+
+static void set_opj_context(fz_context *ctx)
+{
+	opj_secret = ctx;
+}
+
+static fz_context *get_opj_context()
+{
+	return opj_secret;
+}
+
+void opj_lock(fz_context *ctx)
+{
+	fz_lock(ctx, FZ_LOCK_FREETYPE);
+
+	set_opj_context(ctx);
+}
+
+void opj_unlock(fz_context *ctx)
+{
+	set_opj_context(NULL);
+
+	fz_unlock(ctx, FZ_LOCK_FREETYPE);
+}
+
+void *opj_malloc(size_t size)
+{
+	fz_context *ctx = get_opj_context();
+
+	assert(ctx != NULL);
+
+	return fz_malloc_no_throw(ctx, size);
+}
+
+void *opj_calloc(size_t n, size_t size)
+{
+	fz_context *ctx = get_opj_context();
+
+	assert(ctx != NULL);
+
+	return fz_calloc_no_throw(ctx, n, size);
+}
+
+void *opj_realloc(void *ptr, size_t size)
+{
+	fz_context *ctx = get_opj_context();
+
+	assert(ctx != NULL);
+
+	return fz_resize_array_no_throw(ctx, ptr, 1, size);
+}
+
+void opj_free(void *ptr)
+{
+	fz_context *ctx = get_opj_context();
+
+	assert(ctx != NULL);
+
+	fz_free(ctx, ptr);
+}
+
+void * opj_aligned_malloc(size_t size)
+{
+	uint8_t *ptr;
+	int off;
+
+	if (size == 0)
+		return NULL;
+
+	size += 16 + sizeof(uint8_t);
+	ptr = opj_malloc(size);
+	if (ptr == NULL)
+		return NULL;
+	off = 16-(((int)(intptr_t)ptr) & 15);
+	ptr[off-1] = off;
+	return ptr + off;
+}
+
+void opj_aligned_free(void* ptr_)
+{
+	uint8_t *ptr = (uint8_t *)ptr_;
+	uint8_t off;
+	if (ptr == NULL)
+		return;
+
+	off = ptr[-1];
+	opj_free((void *)(((unsigned char *)ptr) - off));
+}
+
+#if 0
+/* UNUSED currently, and moderately tricky, so deferred until required */
+void * opj_aligned_realloc(void *ptr, size_t size)
+{
+	return opj_realloc(ptr, size);
+}
+#endif
+
 static void fz_opj_error_callback(const char *msg, void *client_data)
 {
 	fz_context *ctx = (fz_context *)client_data;
@@ -734,13 +853,34 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 fz_pixmap *
 fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed)
 {
-	return jpx_read_image(ctx, data, size, defcs, indexed, 0);
+	fz_pixmap *pix;
+	fz_try(ctx)
+	{
+		opj_lock(ctx);
+		pix = jpx_read_image(ctx, data, size, defcs, indexed, 0);
+	}
+	fz_always(ctx)
+		opj_unlock(ctx);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return pix;
 }
 
 void
 fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
-	fz_pixmap *img = jpx_read_image(ctx, data, size, NULL, 0, 1);
+	fz_pixmap *img;
+
+	fz_try(ctx)
+	{
+		opj_lock(ctx);
+		img = jpx_read_image(ctx, data, size, NULL, 0, 1);
+	}
+	fz_always(ctx)
+		opj_unlock(ctx);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	*cspacep = fz_keep_colorspace(ctx, img->colorspace);
 	*wp = img->w;

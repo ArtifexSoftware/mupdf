@@ -1088,6 +1088,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\thread.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\thread.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tls_keys.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\thirdparty\openjpeg\src\lib\openjp2\tpix_manager.c"
 				>
 			</File>

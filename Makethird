@@ -397,6 +397,7 @@ OPENJPEG_SRC := \
 	tgt.c \
 	thix_manager.c \
 	tpix_manager.c \
+	thread.c
 
 OPENJPEG_OBJ := $(addprefix $(OPENJPEG_OUT)/, $(OPENJPEG_SRC:%.c=%.o))
 
