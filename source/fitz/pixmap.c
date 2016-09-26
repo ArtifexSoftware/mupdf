@@ -1263,7 +1263,7 @@ int fz_valgrind_pixmap(const fz_pixmap *pix)
 	const unsigned char *p = pix->samples;
 
 	if (pix == NULL)
-		return;
+		return 0;
 
 	total = 0;
 	ww = pix->w;
