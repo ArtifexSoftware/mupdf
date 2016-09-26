@@ -25,7 +25,7 @@ next_thunder(fz_context *ctx, fz_stream *stm, size_t max)
 	unsigned char *ep;
 	int c, v, i, pixels, index;
 
-	if (max > state->len);
+	if (max > state->len)
 		max = state->len;
 
 	ep = p + max;
