@@ -1024,12 +1024,16 @@ fz_decode_tiff_samples(fz_context *ctx, struct tiff *tiff)
 		{
 			tiff->tileoffsets = tiff->stripoffsets;
 			tiff->tileoffsetslen = tiff->stripoffsetslen;
+			tiff->stripoffsets = NULL;
+			tiff->stripoffsetslen = 0;
 		}
 		if (!tiff->tilebytecounts && !tiff->tilebytecountslen &&
 				tiff->stripbytecounts && tiff->stripbytecountslen)
 		{
 			tiff->tilebytecounts = tiff->stripbytecounts;
 			tiff->tilebytecountslen = tiff->stripbytecountslen;
+			tiff->stripbytecounts = NULL;
+			tiff->stripbytecountslen = 0;
 		}
 	}
 
