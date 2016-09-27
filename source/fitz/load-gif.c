@@ -142,6 +142,13 @@ gif_read_lsd(fz_context *ctx, struct info *info, unsigned char *p, unsigned char
 
 	info->width = p[1] << 8 | p[0];
 	info->height = p[3] << 8 | p[2];
+	if (info->width <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
+	if (info->height <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
+	if (info->height > UINT_MAX / info->width / 3 /* components */)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
+
 	info->has_gct = (p[4] >> 7) & 0x1;
 	if (info->has_gct)
 	{

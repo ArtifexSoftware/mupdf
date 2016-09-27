@@ -336,7 +336,7 @@ fz_expand_tiff_colormap(fz_context *ctx, struct tiff *tiff)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "insufficient colormap data");
 
 	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	stride = tiff->imagewidth * (tiff->samplesperpixel + 2);
 
