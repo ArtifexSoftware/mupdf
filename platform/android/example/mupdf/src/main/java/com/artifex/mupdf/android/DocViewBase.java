@@ -477,8 +477,13 @@ public class DocViewBase
 			mScale *= ratio;
 			scaleChildren();
 
-			//  scroll so the left edged is flush to the viewport.
+			//  scroll horizontally so the left edge is flush with the viewport.
 			mXScroll += getScrollX();
+
+			//  scroll vertically to maintain the center.
+			int oldy = mViewport.centerY() - mLastBlockRect.top;
+			int newy = (int) ((float) oldy * ratio);
+			mYScroll -= (newy-oldy);
 
 			requestLayout();
 		}
