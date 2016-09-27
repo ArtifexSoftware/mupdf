@@ -146,7 +146,7 @@ gif_read_lsd(fz_context *ctx, struct info *info, unsigned char *p, unsigned char
 	if (info->has_gct)
 	{
 		info->gct_entries = 1 << ((p[4] & 0x7) + 1);
-		info->gct_background = p[5];
+		info->gct_background = fz_clampi(p[5], 0, info->gct_entries - 1);
 	}
 	info->aspect = p[6];
 
