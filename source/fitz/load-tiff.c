@@ -726,6 +726,8 @@ fz_read_tiff_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		break;
 
 	case ICCProfile:
+		if (tiff->profile)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one ICC profile tag allowed");
 		tiff->profile = fz_malloc(ctx, count);
 		/* ICC profile data type is set to UNDEFINED.
 		 * TBYTE reading not correct in fz_read_tiff_tag_value */
@@ -739,18 +741,24 @@ fz_read_tiff_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		break;
 
 	case StripOffsets:
+		if (tiff->stripoffsets)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one strip offsets tag allowed");
 		tiff->stripoffsets = fz_malloc_array(ctx, count, sizeof(unsigned));
 		fz_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
 		tiff->stripoffsetslen = count;
 		break;
 
 	case StripByteCounts:
+		if (tiff->stripbytecounts)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one strip byte counts tag allowed");
 		tiff->stripbytecounts = fz_malloc_array(ctx, count, sizeof(unsigned));
 		fz_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
 		tiff->stripbytecountslen = count;
 		break;
 
 	case ColorMap:
+		if (tiff->colormap)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one color map allowed");
 		tiff->colormap = fz_malloc_array(ctx, count, sizeof(unsigned));
 		fz_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
 		tiff->colormaplen = count;
@@ -765,12 +773,16 @@ fz_read_tiff_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		break;
 
 	case TileOffsets:
+		if (tiff->tileoffsets)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one tile offsets tag allowed");
 		tiff->tileoffsets = fz_malloc_array(ctx, count, sizeof(unsigned));
 		fz_read_tiff_tag_value(tiff->tileoffsets, tiff, type, value, count);
 		tiff->tileoffsetslen = count;
 		break;
 
 	case TileByteCounts:
+		if (tiff->tileoffsets)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one tile byte counts tag allowed");
 		tiff->tilebytecounts = fz_malloc_array(ctx, count, sizeof(unsigned));
 		fz_read_tiff_tag_value(tiff->tilebytecounts, tiff, type, value, count);
 		tiff->tilebytecountslen = count;
