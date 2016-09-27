@@ -202,7 +202,7 @@ gif_read_lct(fz_context *ctx, struct info *info, unsigned char *p, unsigned char
 }
 
 static void
-gif_read_line(fz_context *ctx, struct info *info, unsigned char *dest, const unsigned char *ct, unsigned int y, unsigned char *sp)
+gif_read_line(fz_context *ctx, struct info *info, unsigned char *dest, int ct_entries, const unsigned char *ct, unsigned int y, unsigned char *sp)
 {
 	unsigned int index = (info->image_top + y) * info->width + info->image_left;
 	unsigned char *dp = &dest[index * 4];
@@ -214,7 +214,7 @@ gif_read_line(fz_context *ctx, struct info *info, unsigned char *dest, const uns
 		{
 			*mp = 0x02;
 			for (k = 0; k < 3; k++)
-				dp[k] = ct[*sp * 3 + k];
+				dp[k] = ct[fz_clampi(*sp, 0, ct_entries - 1) * 3 + k];
 			dp[3] = 255;
 		}
 		else if (*mp == 0x01)
@@ -229,6 +229,7 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 	fz_buffer *compressed = NULL, *uncompressed = NULL;
 	const unsigned char *ct;
 	unsigned char *sp;
+	int ct_entries;
 
 	if (end - p < 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in table based image data in gif image");
@@ -252,27 +253,36 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in compressed table based image data in gif image");
 
 		if (info->has_lct)
+		{
 			ct = info->lct;
+			ct_entries = info->lct_entries;
+		}
 		else if (info->has_gct)
+		{
 			ct = info->gct;
+			ct_entries = info->gct_entries;
+		}
 		else
+		{
 			ct = dct;
+			ct_entries = 256;
+		}
 
 		sp = uncompressed->data;
 		if (info->image_interlaced)
 		{
 			for (y = 0; y < info->image_height; y += 8, sp += info->image_width)
-				gif_read_line(ctx, info, dest, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct_entries, ct, y, sp);
 			for (y = 4; y < info->image_height; y += 8, sp += info->image_width)
-				gif_read_line(ctx, info, dest, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct_entries, ct, y, sp);
 			for (y = 2; y < info->image_height; y += 4, sp += info->image_width)
-				gif_read_line(ctx, info, dest, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct_entries, ct, y, sp);
 			for (y = 1; y < info->image_height; y += 2, sp += info->image_width)
-				gif_read_line(ctx, info, dest, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct_entries, ct, y, sp);
 		}
 		else
 			for (y = 0; y < info->image_height; y++, sp += info->image_width)
-				gif_read_line(ctx, info, dest, ct, y, sp);
+				gif_read_line(ctx, info, dest, ct_entries, ct, y, sp);
 	}
 	fz_always(ctx)
 	{
