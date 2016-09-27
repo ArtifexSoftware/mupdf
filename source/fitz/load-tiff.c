@@ -460,6 +460,7 @@ fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsi
 		size = fz_decode_tiff_thunder(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 		break;
 	default:
+		fz_drop_stream(ctx, stm);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
 	}
 
