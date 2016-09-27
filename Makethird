@@ -370,7 +370,7 @@ endif
 
 # --- OpenJPEG ---
 
-ifneq "$(wildcard $(OPENJPEG_DIR)/CMakeLists.txt)" ""
+ifneq "$(wildcard $(OPENJPEG_DIR)/openjpeg.h)" ""
 
 OPENJPEG_OUT := $(OUT)/openjpeg
 OPENJPEG_SRC := \
