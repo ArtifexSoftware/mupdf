@@ -353,14 +353,19 @@ fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsi
 {
 	fz_stream *stm;
 	unsigned i, size;
+	unsigned char *reversed = NULL;
 
 	if (rp + rlen > tiff->ep)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "strip extends beyond the end of the file");
 
 	/* the bits are in un-natural order */
 	if (tiff->fillorder == 2)
+	{
+		reversed = fz_malloc(ctx, rlen);
 		for (i = 0; i < rlen; i++)
-			rp[i] = bitrev[rp[i]];
+			reversed[i] = bitrev[rp[i]];
+		rp = reversed;
+	}
 
 	fz_try(ctx)
 	{
@@ -430,14 +435,10 @@ fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsi
 	fz_always(ctx)
 	{
 		fz_drop_stream(ctx, stm);
+		fz_free(ctx, reversed);
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-	/* scramble the bits back into original order */
-	if (tiff->fillorder == 2)
-		for (i = 0; i < rlen; i++)
-			rp[i] = bitrev[rp[i]];
 
 	return size;
 }
