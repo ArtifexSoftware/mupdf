@@ -178,8 +178,8 @@ gif_read_id(fz_context *ctx, struct info *info, unsigned char *p, unsigned char 
 
 	info->image_left = p[2] << 8 | p[1];
 	info->image_top = p[4] << 8 | p[3];
-	info->image_width = p[6] << 8 | p[5];
-	info->image_height = p[8] << 8 | p[7];
+	info->image_width = fz_clampi(p[6] << 8 | p[5], 0, info->width - 1);
+	info->image_height = fz_clampi(p[8] << 8 | p[7], 0, info->height - 1);
 	info->has_lct = (p[9] >> 7) & 0x1;
 	info->image_interlaced = (p[9] >> 6) & 0x1;
 
