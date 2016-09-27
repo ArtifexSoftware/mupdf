@@ -619,6 +619,8 @@ fz_read_tiff_bytes(unsigned char *p, struct tiff *tiff, unsigned ofs, unsigned n
 static void
 fz_read_tiff_tag_value(unsigned *p, struct tiff *tiff, unsigned type, unsigned ofs, unsigned n)
 {
+	unsigned den;
+
 	tiff->rp = tiff->bp + ofs;
 	if (tiff->rp > tiff->ep)
 		tiff->rp = tiff->bp;
@@ -629,7 +631,11 @@ fz_read_tiff_tag_value(unsigned *p, struct tiff *tiff, unsigned type, unsigned o
 		{
 		case TRATIONAL:
 			*p = readlong(tiff);
-			*p = *p / readlong(tiff);
+			den = readlong(tiff);
+			if (den)
+				*p = *p / den;
+			else
+				*p = UINT_MAX;
 			p ++;
 			break;
 		case TBYTE: *p++ = readbyte(tiff); break;
