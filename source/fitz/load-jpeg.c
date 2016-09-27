@@ -64,7 +64,7 @@ fz_jpg_mem_term(struct jpeg_decompress_struct *cinfo)
 static void error_exit(j_common_ptr cinfo)
 {
 	char msg[JMSG_LENGTH_MAX];
-	fz_context *ctx = (fz_context *)cinfo->client_data;
+	fz_context *ctx = JZ_CTX_FROM_CINFO(cinfo);
 
 	cinfo->err->format_message(cinfo, msg);
 	fz_throw(ctx, FZ_ERROR_GENERIC, "jpeg error: %s", msg);
