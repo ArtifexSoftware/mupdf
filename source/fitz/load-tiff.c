@@ -1112,6 +1112,8 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 		if (tiff.colormap) fz_free(ctx, tiff.colormap);
 		if (tiff.stripoffsets) fz_free(ctx, tiff.stripoffsets);
 		if (tiff.stripbytecounts) fz_free(ctx, tiff.stripbytecounts);
+		if (tiff.tileoffsets) fz_free(ctx, tiff.tileoffsets);
+		if (tiff.tilebytecounts) fz_free(ctx, tiff.tilebytecounts);
 		if (tiff.tile) fz_free(ctx, tiff.tile);
 		if (tiff.samples) fz_free(ctx, tiff.samples);
 		if (tiff.profile) fz_free(ctx, tiff.profile);
