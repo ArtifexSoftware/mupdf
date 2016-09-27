@@ -533,6 +533,11 @@ fz_decode_tiff_tiles(fz_context *ctx, struct tiff *tiff)
 			unsigned int rlen = tiff->tilebytecounts[tile];
 			unsigned char *rp = tiff->bp + offset;
 
+			if (offset > (unsigned)(tiff->ep - tiff->bp))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile offset %u", offset);
+			if (rlen > (unsigned)(tiff->ep - rp))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile byte count %u", rlen);
+
 			if (fz_decode_tiff_chunk(ctx, tiff, rp, rlen, wp, wlen) != wlen)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "decoded tile is the wrong size");
 
@@ -564,6 +569,11 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 		unsigned wlen = tiff->stride * tiff->rowsperstrip;
 		unsigned char *rp = tiff->bp + offset;
 
+		if (offset > (unsigned)(tiff->ep - tiff->bp))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip offset %u", offset);
+		if (rlen > (unsigned)(tiff->ep - rp))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip byte count %u", rlen);
+
 		if (y + tiff->rowsperstrip >= tiff->imagelength)
 			wlen = tiff->stride * (tiff->imagelength - y);
 
@@ -576,7 +586,6 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 		wp += wlen;
 		strip ++;
 	}
-
 }
 
 static inline int readbyte(struct tiff *tiff)
@@ -609,9 +618,9 @@ static inline unsigned readlong(struct tiff *tiff)
 static void
 fz_read_tiff_bytes(unsigned char *p, struct tiff *tiff, unsigned ofs, unsigned n)
 {
+	if (ofs > (unsigned)(tiff->ep - tiff->bp))
+		ofs = (unsigned)(tiff->ep - tiff->bp);
 	tiff->rp = tiff->bp + ofs;
-	if (tiff->rp > tiff->ep)
-		tiff->rp = tiff->bp;
 
 	while (n--)
 		*p++ = readbyte(tiff);
@@ -622,9 +631,9 @@ fz_read_tiff_tag_value(unsigned *p, struct tiff *tiff, unsigned type, unsigned o
 {
 	unsigned den;
 
+	if (ofs > (unsigned)(tiff->ep - tiff->bp))
+		ofs = (unsigned)(tiff->ep - tiff->bp);
 	tiff->rp = tiff->bp + ofs;
-	if (tiff->rp > tiff->ep)
-		tiff->rp = tiff->bp;
 
 	while (n--)
 	{
@@ -852,11 +861,10 @@ fz_next_ifd(fz_context *ctx, struct tiff *tiff, unsigned offset)
 {
 	unsigned count;
 
-	tiff->rp = tiff->bp + offset;
-
-	if (tiff->rp <= tiff->bp || tiff->rp > tiff->ep)
+	if (offset > (unsigned)(tiff->ep - tiff->bp))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid IFD offset %u", offset);
 
+	tiff->rp = tiff->bp + offset;
 	count = readshort(tiff);
 
 	if (count * 12 > (unsigned)(tiff->ep - tiff->rp))
