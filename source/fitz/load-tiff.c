@@ -147,108 +147,69 @@ static const unsigned char bitrev[256] =
 	0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
 
-static size_t
-fz_decode_tiff_uncompressed(fz_context *ctx, struct tiff *tiff, fz_stream *stm, unsigned char *wp, int wlen)
+static fz_stream *
+fz_open_tiff_fax(fz_context *ctx, struct tiff *tiff, fz_stream *chain, int comp)
 {
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_packbits(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
-{
-	fz_stream *stm = fz_open_rld(ctx, chain);
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_sgilog16(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
-{
-	fz_stream *stm = fz_open_sgilog16(ctx, chain, w);
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_sgilog24(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
-{
-	fz_stream *stm = fz_open_sgilog24(ctx, chain, w);
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_thunder(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
-{
-	fz_stream *stm = fz_open_thunder(ctx, chain, w);
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_sgilog32(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
-{
-	fz_stream *stm = fz_open_sgilog32(ctx, chain, w);
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_lzw(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int old_tiff)
-{
-	fz_stream *stm = fz_open_lzwd(ctx, chain, old_tiff ? 0 : 1, 9, old_tiff ? 1 : 0, old_tiff);
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_flate(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
-{
-	fz_stream *stm = fz_open_flated(ctx, chain, 15);
-	size_t size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
-}
-
-static size_t
-fz_decode_tiff_fax(fz_context *ctx, struct tiff *tiff, int comp, fz_stream *chain, unsigned char *wp, int wlen)
-{
-	fz_stream *stm;
-	size_t size;
 	int black_is_1 = tiff->photometric == 0;
 	int k = comp == 4 ? -1 : 0;
 	int encoded_byte_align = comp == 2;
-	stm = fz_open_faxd(ctx, chain,
+	return fz_open_faxd(ctx, chain,
 			k, 0, encoded_byte_align,
 			tiff->imagewidth, tiff->imagelength, 0, black_is_1);
-	size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
 }
 
-static size_t
-fz_decode_tiff_jpeg(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
+static fz_stream *
+fz_open_tiff_lzw(fz_context *ctx, struct tiff *tiff, fz_stream *chain, int old_tiff)
 {
-	fz_stream *stm;
-	size_t size;
+	return fz_open_lzwd(ctx, chain, old_tiff ? 0 : 1, 9, old_tiff ? 1 : 0, old_tiff);
+}
+
+static fz_stream *
+fz_open_tiff_jpeg(fz_context *ctx, struct tiff *tiff, fz_stream *chain)
+{
 	fz_stream *jpegtables = NULL;
 	int color_transform = -1; /* unset */
 	if (tiff->jpegtables && (int)tiff->jpegtableslen > 0)
 		jpegtables = fz_open_memory(ctx, tiff->jpegtables, tiff->jpegtableslen);
 	if (tiff->photometric == 2 /* RGB */ || tiff->photometric == 3 /* RGBPal */)
 		color_transform = 0;
-	stm = fz_open_dctd(ctx, chain, color_transform, 0, jpegtables);
-	size = fz_read(ctx, stm, wp, wlen);
-	fz_drop_stream(ctx, stm);
-	return size;
+	return fz_open_dctd(ctx, chain, color_transform, 0, jpegtables);
+}
+
+static fz_stream *
+fz_open_tiff_flate(fz_context *ctx, struct tiff *tiff, fz_stream *chain)
+{
+	return fz_open_flated(ctx, chain, 15);
+}
+
+static fz_stream *
+fz_open_tiff_packbits(fz_context *ctx, struct tiff *tiff, fz_stream *chain)
+{
+	return fz_open_rld(ctx, chain);
+}
+
+static fz_stream *
+fz_open_tiff_sgilog32(fz_context *ctx, struct tiff *tiff, fz_stream *chain, int w)
+{
+	return fz_open_sgilog32(ctx, chain, w);
+}
+
+static fz_stream *
+fz_open_tiff_sgilog16(fz_context *ctx, struct tiff *tiff, fz_stream *chain, int w)
+{
+	return fz_open_sgilog16(ctx, chain, w);
+}
+
+static fz_stream *
+fz_open_tiff_sgilog24(fz_context *ctx, struct tiff *tiff, fz_stream *chain, int w)
+{
+	return fz_open_sgilog24(ctx, chain, w);
+}
+
+static fz_stream *
+fz_open_tiff_thunder(fz_context *ctx, struct tiff *tiff, fz_stream *chain, int w)
+{
+	return fz_open_thunder(ctx, chain, w);
 }
 
 static inline int getcomp(unsigned char *line, int x, int bpc)
@@ -401,68 +362,77 @@ fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsi
 		for (i = 0; i < rlen; i++)
 			rp[i] = bitrev[rp[i]];
 
-	/* each decoder will close this */
-	/* FIXME: what if tiff->compression is invalid? what if fz_read() in the strip decoders throws? */
-	stm = fz_open_memory(ctx, rp, rlen);
-
-	/* switch on compression to create a filter */
-	/* feed each chunk (strip or tile) to the filter */
-	/* read out the data into a buffer */
-	/* the level above packs the chunk's samples into a pixmap */
-
-	/* type 32773 / packbits -- nothing special (same row-padding as PDF) */
-	/* type 2 / ccitt rle -- no EOL, no RTC, rows are byte-aligned */
-	/* type 3 and 4 / g3 and g4 -- each strip starts new section */
-	/* type 5 / lzw -- each strip is handled separately */
-
-	switch (tiff->compression)
+	fz_try(ctx)
 	{
-	case 1:
-		size = fz_decode_tiff_uncompressed(ctx, tiff, stm, wp, wlen);
-		break;
-	case 2:
-		size = fz_decode_tiff_fax(ctx, tiff, 2, stm, wp, wlen);
-		break;
-	case 3:
-		size = fz_decode_tiff_fax(ctx, tiff, 3, stm, wp, wlen);
-		break;
-	case 4:
-		size = fz_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
-		break;
-	case 5:
-		size = fz_decode_tiff_lzw(ctx, tiff, stm, wp, wlen, (rp[0] == 0 && rp[1] & 1));
-		break;
-	case 6:
-		fz_warn(ctx, "deprecated JPEG in TIFF compression not fully supported");
-		/* fall through */
-	case 7:
-		size = fz_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
-		break;
-	case 8:
-	case 32946:
-		size = fz_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
-		break;
-	case 32773:
-		size = fz_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
-		break;
-	case 34676:
-		if (tiff->photometric == 32845)
-			size = fz_decode_tiff_sgilog32(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-		else
-			size = fz_decode_tiff_sgilog16(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-		break;
-	case 34677:
-		size = fz_decode_tiff_sgilog24(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-		break;
-	case 32809:
-		if (tiff->bitspersample != 4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel in thunder encoding");
-		size = fz_decode_tiff_thunder(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
-		break;
-	default:
-		fz_drop_stream(ctx, stm);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
+		/* each decoder will close this */
+		stm = fz_open_memory(ctx, rp, rlen);
+
+		/* switch on compression to create a filter */
+		/* feed each chunk (strip or tile) to the filter */
+		/* read out the data into a buffer */
+		/* the level above packs the chunk's samples into a pixmap */
+
+		/* type 32773 / packbits -- nothing special (same row-padding as PDF) */
+		/* type 2 / ccitt rle -- no EOL, no RTC, rows are byte-aligned */
+		/* type 3 and 4 / g3 and g4 -- each strip starts new section */
+		/* type 5 / lzw -- each strip is handled separately */
+
+		switch (tiff->compression)
+		{
+		case 1:
+			/* stm already open and reading uncompressed data */
+			break;
+		case 2:
+			stm = fz_open_tiff_fax(ctx, tiff, stm, 2);
+			break;
+		case 3:
+			stm = fz_open_tiff_fax(ctx, tiff, stm, 3);
+			break;
+		case 4:
+			stm = fz_open_tiff_fax(ctx, tiff, stm, 4);
+			break;
+		case 5:
+			stm = fz_open_tiff_lzw(ctx, tiff, stm, (rp[0] == 0 && rp[1] & 1));
+			break;
+		case 6:
+			fz_warn(ctx, "deprecated JPEG in TIFF compression not fully supported");
+			/* fall through */
+		case 7:
+			stm = fz_open_tiff_jpeg(ctx, tiff, stm);
+			break;
+		case 8:
+		case 32946:
+			stm = fz_open_tiff_flate(ctx, tiff, stm);
+			break;
+		case 32773:
+			stm = fz_open_tiff_packbits(ctx, tiff, stm);
+			break;
+		case 34676:
+			if (tiff->photometric == 32845)
+				stm = fz_open_tiff_sgilog32(ctx, tiff, stm, tiff->imagewidth);
+			else
+				stm = fz_open_tiff_sgilog16(ctx, tiff, stm, tiff->imagewidth);
+			break;
+		case 34677:
+			stm = fz_open_tiff_sgilog24(ctx, tiff, stm, tiff->imagewidth);
+			break;
+		case 32809:
+			if (tiff->bitspersample != 4)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel in thunder encoding");
+			stm = fz_open_tiff_thunder(ctx, tiff, stm, tiff->imagewidth);
+			break;
+		default:
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
+		}
+
+		size = fz_read(ctx, stm, wp, wlen);
 	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, stm);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	/* scramble the bits back into original order */
 	if (tiff->fillorder == 2)
