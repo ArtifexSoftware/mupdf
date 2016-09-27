@@ -147,87 +147,98 @@ static const unsigned char bitrev[256] =
 	0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
 
-static void
+static size_t
 fz_decode_tiff_uncompressed(fz_context *ctx, struct tiff *tiff, fz_stream *stm, unsigned char *wp, int wlen)
 {
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_packbits(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
 {
 	fz_stream *stm = fz_open_rld(ctx, chain);
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_sgilog16(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
 {
 	fz_stream *stm = fz_open_sgilog16(ctx, chain, w);
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_sgilog24(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
 {
 	fz_stream *stm = fz_open_sgilog24(ctx, chain, w);
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_thunder(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
 {
 	fz_stream *stm = fz_open_thunder(ctx, chain, w);
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_sgilog32(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int w)
 {
 	fz_stream *stm = fz_open_sgilog32(ctx, chain, w);
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_lzw(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen, int old_tiff)
 {
 	fz_stream *stm = fz_open_lzwd(ctx, chain, old_tiff ? 0 : 1, 9, old_tiff ? 1 : 0, old_tiff);
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_flate(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
 {
 	fz_stream *stm = fz_open_flated(ctx, chain, 15);
-	fz_read(ctx, stm, wp, wlen);
+	size_t size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_fax(fz_context *ctx, struct tiff *tiff, int comp, fz_stream *chain, unsigned char *wp, int wlen)
 {
 	fz_stream *stm;
+	size_t size;
 	int black_is_1 = tiff->photometric == 0;
 	int k = comp == 4 ? -1 : 0;
 	int encoded_byte_align = comp == 2;
 	stm = fz_open_faxd(ctx, chain,
 			k, 0, encoded_byte_align,
 			tiff->imagewidth, tiff->imagelength, 0, black_is_1);
-	fz_read(ctx, stm, wp, wlen);
+	size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
-static void
+static size_t
 fz_decode_tiff_jpeg(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsigned char *wp, int wlen)
 {
 	fz_stream *stm;
+	size_t size;
 	fz_stream *jpegtables = NULL;
 	int color_transform = -1; /* unset */
 	if (tiff->jpegtables && (int)tiff->jpegtableslen > 0)
@@ -235,8 +246,9 @@ fz_decode_tiff_jpeg(fz_context *ctx, struct tiff *tiff, fz_stream *chain, unsign
 	if (tiff->photometric == 2 /* RGB */ || tiff->photometric == 3 /* RGBPal */)
 		color_transform = 0;
 	stm = fz_open_dctd(ctx, chain, color_transform, 0, jpegtables);
-	fz_read(ctx, stm, wp, wlen);
+	size = fz_read(ctx, stm, wp, wlen);
 	fz_drop_stream(ctx, stm);
+	return size;
 }
 
 static inline int getcomp(unsigned char *line, int x, int bpc)
@@ -375,11 +387,11 @@ fz_expand_tiff_colormap(fz_context *ctx, struct tiff *tiff)
 	tiff->samples = samples;
 }
 
-static void
+static unsigned
 fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned int rlen, unsigned char *wp, unsigned int wlen)
 {
 	fz_stream *stm;
-	unsigned i;
+	unsigned i, size;
 
 	if (rp + rlen > tiff->ep)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "strip extends beyond the end of the file");
@@ -406,46 +418,46 @@ fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsi
 	switch (tiff->compression)
 	{
 	case 1:
-		fz_decode_tiff_uncompressed(ctx, tiff, stm, wp, wlen);
+		size = fz_decode_tiff_uncompressed(ctx, tiff, stm, wp, wlen);
 		break;
 	case 2:
-		fz_decode_tiff_fax(ctx, tiff, 2, stm, wp, wlen);
+		size = fz_decode_tiff_fax(ctx, tiff, 2, stm, wp, wlen);
 		break;
 	case 3:
-		fz_decode_tiff_fax(ctx, tiff, 3, stm, wp, wlen);
+		size = fz_decode_tiff_fax(ctx, tiff, 3, stm, wp, wlen);
 		break;
 	case 4:
-		fz_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
+		size = fz_decode_tiff_fax(ctx, tiff, 4, stm, wp, wlen);
 		break;
 	case 5:
-		fz_decode_tiff_lzw(ctx, tiff, stm, wp, wlen, (rp[0] == 0 && rp[1] & 1));
+		size = fz_decode_tiff_lzw(ctx, tiff, stm, wp, wlen, (rp[0] == 0 && rp[1] & 1));
 		break;
 	case 6:
 		fz_warn(ctx, "deprecated JPEG in TIFF compression not fully supported");
 		/* fall through */
 	case 7:
-		fz_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
+		size = fz_decode_tiff_jpeg(ctx, tiff, stm, wp, wlen);
 		break;
 	case 8:
 	case 32946:
-		fz_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
+		size = fz_decode_tiff_flate(ctx, tiff, stm, wp, wlen);
 		break;
 	case 32773:
-		fz_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
+		size = fz_decode_tiff_packbits(ctx, tiff, stm, wp, wlen);
 		break;
 	case 34676:
 		if (tiff->photometric == 32845)
-			fz_decode_tiff_sgilog32(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+			size = fz_decode_tiff_sgilog32(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 		else
-			fz_decode_tiff_sgilog16(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+			size = fz_decode_tiff_sgilog16(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 		break;
 	case 34677:
-		fz_decode_tiff_sgilog24(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+		size = fz_decode_tiff_sgilog24(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 		break;
 	case 32809:
 		if (tiff->bitspersample != 4)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel in thunder encoding");
-		fz_decode_tiff_thunder(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
+		size = fz_decode_tiff_thunder(ctx, tiff, stm, wp, wlen, tiff->imagewidth);
 		break;
 	default:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
@@ -456,6 +468,7 @@ fz_decode_tiff_chunk(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsi
 		for (i = 0; i < rlen; i++)
 			rp[i] = bitrev[rp[i]];
 
+	return size;
 }
 
 static void
@@ -519,8 +532,9 @@ fz_decode_tiff_tiles(fz_context *ctx, struct tiff *tiff)
 			unsigned int rlen = tiff->tilebytecounts[tile];
 			unsigned char *rp = tiff->bp + offset;
 
-			memset(wp, 0x00, wlen);
-			fz_decode_tiff_chunk(ctx, tiff, rp, rlen, wp, wlen);
+			if (fz_decode_tiff_chunk(ctx, tiff, rp, rlen, wp, wlen) != wlen)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "decoded tile is the wrong size");
+
 			fz_paste_tiff_tile(ctx, tiff, wp, x, y);
 			tile++;
 		}
@@ -549,10 +563,14 @@ fz_decode_tiff_strips(fz_context *ctx, struct tiff *tiff)
 		unsigned wlen = tiff->stride * tiff->rowsperstrip;
 		unsigned char *rp = tiff->bp + offset;
 
-		if (wp + wlen > tiff->samples + (unsigned int)(tiff->stride * tiff->imagelength))
-			wlen = tiff->samples + (unsigned int)(tiff->stride * tiff->imagelength) - wp;
+		if (y + tiff->rowsperstrip >= tiff->imagelength)
+			wlen = tiff->stride * (tiff->imagelength - y);
 
-		fz_decode_tiff_chunk(ctx, tiff, rp, rlen, wp, wlen);
+		if (fz_decode_tiff_chunk(ctx, tiff, rp, rlen, wp, wlen) < wlen)
+		{
+			fz_warn(ctx, "premature end of data in decoded strip");
+			break;
+		}
 
 		wp += wlen;
 		strip ++;
