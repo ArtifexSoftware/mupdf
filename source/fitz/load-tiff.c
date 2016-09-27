@@ -877,6 +877,10 @@ fz_decode_tiff_samples(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned i;
 
+	if (tiff->imagelength <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
+	if (tiff->imagewidth <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
 	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2) / (tiff->bitspersample / 8 + 1))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image dimensions might overflow");
 
