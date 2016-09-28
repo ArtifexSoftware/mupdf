@@ -14,6 +14,25 @@ static unsigned char get1_tab_1p[256][16];
 static unsigned char get1_tab_255[256][8];
 static unsigned char get1_tab_255p[256][16];
 
+/*
+	Bug 697012 shows that the unpacking code can confuse valgrind due
+	to the use of undefined bits in the padding at the end of lines.
+	We unpack from bits to bytes by copying from a lookup table.
+	Valgrind is not capable of understanding that it doesn't matter
+	what the undefined bits are, as the bytes we copy that correspond
+	to the defined bits will always agree regardless of these
+	undefined bits by construction of the table.
+
+	We therefore have a VGMASK macro that explicitly masks off these
+	bits in PACIFY_VALGRIND builds.
+*/
+#ifdef PACIFY_VALGRIND
+static const unsigned char mask[9] = { 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
+#define VGMASK(v,m) (v & mask[(m)])
+#else
+#define VGMASK(v,m) (v)
+#endif
+
 static void
 init_get1_tables(void)
 {
@@ -92,7 +111,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1_tab_1[*sp], w - x);
+				memcpy(dp, get1_tab_1[VGMASK(*sp, w - x)], w - x);
 		}
 
 		else if (n == 1 && depth == 1 && scale == 255 && !pad && !skip)
@@ -105,7 +124,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1_tab_255[*sp], w - x);
+				memcpy(dp, get1_tab_255[VGMASK(*sp, w - x)], w - x);
 		}
 
 		else if (n == 1 && depth == 1 && scale == 1 && pad && !skip)
@@ -118,7 +137,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1_tab_1p[*sp], (w - x) << 1);
+				memcpy(dp, get1_tab_1p[VGMASK(*sp, w - x)], (w - x) << 1);
 		}
 
 		else if (n == 1 && depth == 1 && scale == 255 && pad && !skip)
@@ -131,7 +150,7 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 			}
 			x = x << 3;
 			if (x < w)
-				memcpy(dp, get1_tab_255p[*sp], (w - x) << 1);
+				memcpy(dp, get1_tab_255p[VGMASK(*sp, w - x)], (w - x) << 1);
 		}
 
 		else if (depth == 8 && !pad && !skip)
