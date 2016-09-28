@@ -4,8 +4,8 @@ struct info
 {
 	fz_colorspace *cs;
 	int width, height;
-	int maxval, depth;
-	int alpha;
+	int maxval, bitdepth;
+	int depth, alpha;
 	char *tupletype;
 };
 
@@ -34,6 +34,17 @@ static inline int iseol(int a)
 		return 1;
 	}
 	return 0;
+}
+
+static inline int bitdepth_from_maxval(int maxval)
+{
+	int depth = 0;
+	while (maxval)
+	{
+		maxval >>= 1;
+		depth++;
+	}
+	return depth;
 }
 
 static unsigned char *
@@ -158,9 +169,19 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 		p = pnm_read_white(ctx, p, e, 0);
 		p = pnm_read_number(ctx, p, e, &pnm->maxval);
 		p = pnm_read_white(ctx, p, e, 0);
-		if (pnm->maxval < 0 || pnm->maxval >= 65536)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maximum sample value of out range in pnm image: %d", pnm->maxval);
 	}
+
+	if (pnm->maxval <= 0 || pnm->maxval >= 65536)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "maximum sample value of out range in pnm image: %d", pnm->maxval);
+
+	pnm->bitdepth = bitdepth_from_maxval(pnm->maxval);
+
+	if (pnm->height <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
+	if (pnm->width <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
+	if (pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	if (!onlymeta)
 	{
@@ -227,9 +248,19 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		p = pnm_read_white(ctx, p, e, 0);
 		p = pnm_read_number(ctx, p, e, &pnm->maxval);
 		p = pnm_read_white(ctx, p, e, 1);
-		if (pnm->maxval < 0 || pnm->maxval >= 65536)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maximum sample value of out range in pnm image: %d", pnm->maxval);
 	}
+
+	if (pnm->maxval <= 0 || pnm->maxval >= 65536)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "maximum sample value of out range in pnm image: %d", pnm->maxval);
+
+	pnm->bitdepth = bitdepth_from_maxval(pnm->maxval);
+
+	if (pnm->height <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
+	if (pnm->width <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
+	if (pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	if (!onlymeta)
 	{
@@ -328,6 +359,8 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 {
 	fz_pixmap *img = NULL;
 	int bitmap = 0;
+	int minval = 1;
+	int maxval = 65535;
 
 	p = pam_binary_read_header(ctx, pnm, p, e);
 
@@ -345,63 +378,37 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 
 	if (!strcmp(pnm->tupletype, "BLACKANDWHITE"))
 	{
-		if (pnm->depth != 1)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of range for b/w pnm image");
+		pnm->cs = fz_device_gray(ctx);
+		maxval = 1;
 		if (pnm->maxval == 1)
 			bitmap = 1;
-		else if (pnm->maxval < 2 || pnm->maxval > 65535)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range for grayscale pnm image");
-
-		pnm->cs = fz_device_gray(ctx);
 	}
 	else if (!strcmp(pnm->tupletype, "GRAYSCALE"))
 	{
-		if (pnm->maxval < 2 || pnm->maxval > 65535)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range for grayscale pnm image");
-		if (pnm->depth != 1)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of range for grayscale pnm image");
 		pnm->cs = fz_device_gray(ctx);
+		minval = 2;
 	}
 	else if (!strcmp(pnm->tupletype, "GRAYSCALE_ALPHA"))
 	{
-		if (pnm->maxval < 2 || pnm->maxval > 65535)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range for grayscale pnm image with alpha");
-		if (pnm->depth != 2)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of range for grayscale pnm image with alpha");
 		pnm->cs = fz_device_gray(ctx);
 		pnm->alpha = 1;
+		minval = 2;
 	}
 	else if (!strcmp(pnm->tupletype, "RGB"))
 	{
-		if (pnm->maxval < 1 || pnm->maxval > 65535)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range for rgb pnm image");
-		if (pnm->depth != 3)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of range for rgb pnm image");
 		pnm->cs = fz_device_rgb(ctx);
 	}
 	else if (!strcmp(pnm->tupletype, "RGB_ALPHA"))
 	{
-		if (pnm->maxval < 1 || pnm->maxval > 65535)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range for rgb pnm image with alpha");
-		if (pnm->depth != 4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of range for rgb pnm image with alpha");
 		pnm->cs = fz_device_rgb(ctx);
 		pnm->alpha = 1;
 	}
 	else if (!strcmp(pnm->tupletype, "CMYK"))
 	{
-		if (pnm->maxval < 1 || pnm->maxval > 65535)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range for cmyk pnm image");
-		if (pnm->depth != 4)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of range for cmyk pnm image");
 		pnm->cs = fz_device_cmyk(ctx);
 	}
 	else if (!strcmp(pnm->tupletype, "CMYK_ALPHA"))
 	{
-		if (pnm->maxval < 1 || pnm->maxval > 65535)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range for cmyk pnm image with alpha");
-		if (pnm->depth != 5)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of range for cmyk pnm image with alpha");
 		pnm->cs = fz_device_cmyk(ctx);
 		pnm->alpha = 1;
 	}
@@ -412,6 +419,20 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	}
 
 	fz_free(ctx, pnm->tupletype);
+
+	if (pnm->depth != fz_colorspace_n(ctx, pnm->cs) + pnm->alpha)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of tuple type range");
+	if (pnm->maxval < minval || pnm->maxval > maxval)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "maxval out of range");
+
+	pnm->bitdepth = bitdepth_from_maxval(pnm->maxval);
+
+	if (pnm->height <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
+	if (pnm->width <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
+	if (pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	if (!onlymeta)
 	{
@@ -471,38 +492,32 @@ pnm_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, size_t total
 
 	if (!strcmp(signature, "P1"))
 	{
-		if (!onlymeta)
-			pnm->cs = fz_device_gray(ctx);
+		pnm->cs = fz_device_gray(ctx);
 		return pnm_ascii_read_image(ctx, pnm, p, e, onlymeta, 1);
 	}
 	else if (!strcmp(signature, "P2"))
 	{
-		if (!onlymeta)
-			pnm->cs = fz_device_gray(ctx);
+		pnm->cs = fz_device_gray(ctx);
 		return pnm_ascii_read_image(ctx, pnm, p, e, onlymeta, 0);
 	}
 	else if (!strcmp(signature, "P3"))
 	{
-		if (!onlymeta)
-			pnm->cs = fz_device_rgb(ctx);
+		pnm->cs = fz_device_rgb(ctx);
 		return pnm_ascii_read_image(ctx, pnm, p, e, onlymeta, 0);
 	}
 	else if (!strcmp(signature, "P4"))
 	{
-		if (!onlymeta)
-			pnm->cs = fz_device_gray(ctx);
+		pnm->cs = fz_device_gray(ctx);
 		return pnm_binary_read_image(ctx, pnm, p, e, onlymeta, 1);
 	}
 	else if (!strcmp(signature, "P5"))
 	{
-		if (!onlymeta)
-			pnm->cs = fz_device_gray(ctx);
+		pnm->cs = fz_device_gray(ctx);
 		return pnm_binary_read_image(ctx, pnm, p, e, onlymeta, 0);
 	}
 	else if (!strcmp(signature, "P6"))
 	{
-		if (!onlymeta)
-			pnm->cs = fz_device_rgb(ctx);
+		pnm->cs = fz_device_rgb(ctx);
 		return pnm_binary_read_image(ctx, pnm, p, e, onlymeta, 0);
 	}
 	else if (!strcmp(signature, "P7"))
@@ -517,7 +532,12 @@ fz_load_pnm(fz_context *ctx, unsigned char *p, size_t total)
 	fz_pixmap *img;
 	struct info pnm = { 0 };
 
-	img = pnm_read_image(ctx, &pnm, p, total, 0);
+	fz_try(ctx)
+		img = pnm_read_image(ctx, &pnm, p, total, 0);
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, pnm.cs);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return img;
 }
@@ -527,11 +547,17 @@ fz_load_pnm_info(fz_context *ctx, unsigned char *p, size_t total, int *wp, int *
 {
 	struct info pnm = { 0 };
 
-	pnm_read_image(ctx, &pnm, p, total, 1);
-
-	*cspacep = pnm.cs;
-	*wp = pnm.width;
-	*hp = pnm.height;
-	*xresp = 72;
-	*yresp = 72;
+	fz_try(ctx)
+	{
+		pnm_read_image(ctx, &pnm, p, total, 1);
+		*cspacep = pnm.cs;
+		*wp = pnm.width;
+		*hp = pnm.height;
+		*xresp = 72;
+		*yresp = 72;
+	}
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, pnm.cs);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
