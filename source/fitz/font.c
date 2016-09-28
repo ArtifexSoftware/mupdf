@@ -1110,15 +1110,14 @@ fz_font *
 fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix)
 {
 	fz_font *font;
-	int i;
 
 	font = fz_new_font(ctx, name, 1, 256);
 	fz_try(ctx)
 	{
-		font->t3procs = fz_malloc_array(ctx, 256, sizeof(fz_buffer*));
-		font->t3lists = fz_malloc_array(ctx, 256, sizeof(fz_display_list*));
-		font->t3widths = fz_malloc_array(ctx, 256, sizeof(float));
-		font->t3flags = fz_malloc_array(ctx, 256, sizeof(unsigned short));
+		font->t3procs = fz_calloc(ctx, 256, sizeof(fz_buffer*));
+		font->t3lists = fz_calloc(ctx, 256, sizeof(fz_display_list*));
+		font->t3widths = fz_calloc(ctx, 256, sizeof(float));
+		font->t3flags = fz_calloc(ctx, 256, sizeof(unsigned short));
 	}
 	fz_catch(ctx)
 	{
@@ -1127,13 +1126,6 @@ fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *matrix)
 	}
 
 	font->t3matrix = *matrix;
-	for (i = 0; i < 256; i++)
-	{
-		font->t3procs[i] = NULL;
-		font->t3lists[i] = NULL;
-		font->t3widths[i] = 0;
-		font->t3flags[i] = 0;
-	}
 
 	return font;
 }
