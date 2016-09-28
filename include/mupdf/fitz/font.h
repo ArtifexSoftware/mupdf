@@ -47,11 +47,20 @@ fz_font_flags_t *fz_font_flags(fz_font *font);
 
 typedef struct
 {
-	void *font; /* hb_font for shaping */
-	void (*destroy)(void *); /* Destructor for hb_font */
-} fz_hb_t;
+	void *shaper_handle;
+	void (*destroy)(fz_context *ctx, void *); /* Destructor for shape_handle */
+} fz_shaper_data_t;
 
-fz_hb_t *fz_font_hb(fz_font *font);
+/*
+	fz_shaper_data_t: Retrieve a pointer to the shaper data
+	structure for the given font.
+
+	font: The font to query.
+
+	Returns a pointer to the shaper data structure (or NULL if
+	font is NULL).
+*/
+fz_shaper_data_t *fz_font_shaper_data(fz_font *font);
 
 const char *fz_font_name(fz_font *font);
 void *fz_font_ft_face(fz_font *font);

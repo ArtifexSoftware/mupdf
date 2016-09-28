@@ -158,11 +158,9 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
-	if (font->hb.destroy && font->hb.font)
+	if (font->shaper_data.destroy && font->shaper_data.shaper_handle)
 	{
-		hb_lock(ctx);
-		font->hb.destroy(font->hb.font);
-		hb_unlock(ctx);
+		font->shaper_data.destroy(ctx, font->shaper_data.shaper_handle);
 	}
 	fz_free(ctx, font);
 }
@@ -1580,7 +1578,7 @@ fz_font_flags_t *fz_font_flags(fz_font *font)
 	return font ? &font->flags : NULL;
 }
 
-fz_hb_t *fz_font_hb(fz_font *font)
+fz_shaper_data_t *fz_font_shaper_data(fz_font *font)
 {
-	return font ? &font->hb : NULL;
+	return font ? &font->shaper_data : NULL;
 }

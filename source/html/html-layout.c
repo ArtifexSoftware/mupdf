@@ -837,7 +837,13 @@ static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer
 	walker->next_font = NULL;
 }
 
-typedef void (fz_hb_font_destructor_t)(void *);
+static void
+destroy_hb_shaper_data(fz_context *ctx, void *handle)
+{
+	hb_lock(ctx);
+	hb_font_destroy(handle);
+	hb_unlock(ctx);
+}
 
 static int walk_string(string_walker *walker)
 {
@@ -899,12 +905,12 @@ static int walk_string(string_walker *walker)
 
 		if (!quickshape)
 		{
-			fz_hb_t *hb = fz_font_hb(walker->font);
-			if (hb->font == NULL)
+			fz_shaper_data_t *hb = fz_font_shaper_data(walker->font);
+			if (hb->shaper_handle == NULL)
 			{
 				Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
-				hb->destroy = (fz_hb_font_destructor_t *)hb_font_destroy;
-				hb->font = hb_ft_font_create(face, NULL);
+				hb->destroy = destroy_hb_shaper_data;
+				hb->shaper_handle = hb_ft_font_create(face, NULL);
 				Memento_stopLeaking();
 			}
 
@@ -912,7 +918,7 @@ static int walk_string(string_walker *walker)
 			hb_buffer_guess_segment_properties(walker->hb_buf);
 			Memento_stopLeaking();
 
-			hb_shape(hb->font, walker->hb_buf, NULL, 0);
+			hb_shape(hb->shaper_handle, walker->hb_buf, NULL, 0);
 		}
 
 		walker->glyph_pos = hb_buffer_get_glyph_positions(walker->hb_buf, &walker->glyph_count);

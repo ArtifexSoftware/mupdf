@@ -16,7 +16,7 @@ struct fz_font_s
 	fz_font_flags_t flags;
 
 	void *ft_face; /* has an FT_Face if used */
-	fz_hb_t hb;
+	fz_shaper_data_t shaper_data;
 
 	fz_matrix t3matrix;
 	void *t3resources;
