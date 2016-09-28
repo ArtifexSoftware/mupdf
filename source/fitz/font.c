@@ -379,7 +379,7 @@ static const struct ft_error ft_errors[] =
 #include FT_ERRORS_H
 };
 
-char *ft_error_string(int err)
+const char *ft_error_string(int err)
 {
 	const struct ft_error *e;
 
@@ -408,7 +408,7 @@ fz_keep_freetype(fz_context *ctx)
 	fterr = FT_Init_FreeType(&fct->ftlib);
 	if (fterr)
 	{
-		char *mess = ft_error_string(fterr);
+		const char *mess = ft_error_string(fterr);
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot init freetype: %s", mess);
 	}

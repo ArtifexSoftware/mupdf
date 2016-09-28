@@ -21,7 +21,7 @@ typedef struct fz_font_s fz_font;
  *	Type 3 fonts have callbacks to the interpreter.
  */
 
-char *ft_error_string(int err);
+const char *ft_error_string(int err);
 
 /* common CJK font collections */
 enum { FZ_ADOBE_CNS_1, FZ_ADOBE_GB_1, FZ_ADOBE_JAPAN_1, FZ_ADOBE_KOREA_1 };
