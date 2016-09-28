@@ -169,7 +169,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 				struct shadearg arg;
 				arg.dev = dev;
 				arg.shade = shade;
-				fz_process_mesh(ctx, shade, ctm, prepare_vertex, NULL, &arg);
+				fz_process_shade(ctx, shade, ctm, prepare_vertex, NULL, &arg);
 			}
 		}
 	}

@@ -136,32 +136,34 @@ struct fz_vertex_s
 };
 
 /*
-	fz_mesh_prepare_fn: Callback function type for use with
-	fz_process_mesh.
+	fz_shade_prepare_fn: Callback function type for use with
+	fz_process_shade.
 
-	arg: Opaque pointer from fz_process_mesh caller.
+	arg: Opaque pointer from fz_process_shade caller.
 
 	v: Pointer to a fz_vertex structure to populate.
 
 	c: Pointer to an array of floats to use to populate v.
 */
-typedef void (fz_mesh_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, const float *c);
+typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, const float *c);
 
 /*
-	fz_mesh_process_fn: Callback function type for use with
-	fz_process_mesh.
+	fz_shade_process_fn: Callback function type for use with
+	fz_process_shade.
 
-	arg: Opaque pointer from fz_process_mesh caller.
+	arg: Opaque pointer from fz_process_shade caller.
 
 	av, bv, cv: Pointers to a fz_vertex structure describing
 	the corner locations and colors of a triangle to be
 	filled.
 */
-typedef void (fz_mesh_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv);
+typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex *cv);
 
 /*
-	fz_process_mesh: Process a mesh, using supplied callback
-	functions.
+	fz_process_shade: Process a shade, using supplied callback
+	functions. This decomposes the shading to a mesh (even ones
+	that are not natively meshes, such as linear or radial
+	shadings), and processes triangles from those meshes.
 
 	shade: The shade to process.
 
@@ -178,8 +180,8 @@ typedef void (fz_mesh_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz_
 	process_arg: An opaque argument passed through from caller
 	to callback functions.
 */
-void fz_process_mesh(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
-			fz_mesh_prepare_fn *prepare, fz_mesh_process_fn *process, void *process_arg);
+void fz_process_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
+			fz_shade_prepare_fn *prepare, fz_shade_process_fn *process, void *process_arg);
 
 /*
 	fz_print_shade: Output a textual representation of
