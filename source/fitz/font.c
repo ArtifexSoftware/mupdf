@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include "font-impl.h"
+
 #include <ft2build.h>
 #include "hb.h"
 #include "hb-ft.h"
@@ -37,11 +39,11 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 		fz_strlcpy(font->name, "(null)", sizeof font->name);
 
 	font->ft_face = NULL;
-	font->ft_substitute = 0;
-	font->fake_bold = 0;
-	font->fake_italic = 0;
-	font->force_hinting = 0;
-	font->has_opentype = 0;
+	font->flags.ft_substitute = 0;
+	font->flags.fake_bold = 0;
+	font->flags.fake_italic = 0;
+	font->flags.force_hinting = 0;
+	font->flags.has_opentype = 0;
 
 	font->t3matrix = fz_identity;
 	font->t3resources = NULL;
@@ -59,7 +61,7 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 
 	font->glyph_count = glyph_count;
 
-	font->use_glyph_bbox = !!use_glyph_bbox;
+	font->flags.use_glyph_bbox = !!use_glyph_bbox;
 	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
 	{
 		font->bbox_table = fz_malloc_array(ctx, glyph_count, sizeof(fz_rect));
@@ -156,10 +158,10 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	fz_free(ctx, font->bbox_table);
 	fz_free(ctx, font->width_table);
 	fz_free(ctx, font->advance_cache);
-	if (font->hb_destroy && font->hb_font)
+	if (font->hb.destroy && font->hb.font)
 	{
 		hb_lock(ctx);
-		font->hb_destroy(font->hb_font);
+		font->hb.destroy(font->hb.font);
 		hb_unlock(ctx);
 	}
 	fz_free(ctx, font);
@@ -176,7 +178,7 @@ fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float x
 		font->bbox.y0 = -1;
 		font->bbox.x1 = 2;
 		font->bbox.y1 = 2;
-		font->invalid_bbox = 1;
+		font->flags.invalid_bbox = 1;
 	}
 	else
 	{
@@ -475,23 +477,23 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		(float) face->bbox.xMax / face->units_per_EM,
 		(float) face->bbox.yMax / face->units_per_EM);
 
-	font->is_mono = !!(face->face_flags & FT_FACE_FLAG_FIXED_WIDTH);
-	font->is_serif = 1;
-	font->is_bold = !!(face->style_flags & FT_STYLE_FLAG_BOLD);
-	font->is_italic = !!(face->style_flags & FT_STYLE_FLAG_ITALIC);
+	font->flags.is_mono = !!(face->face_flags & FT_FACE_FLAG_FIXED_WIDTH);
+	font->flags.is_serif = 1;
+	font->flags.is_bold = !!(face->style_flags & FT_STYLE_FLAG_BOLD);
+	font->flags.is_italic = !!(face->style_flags & FT_STYLE_FLAG_ITALIC);
 
 	if (FT_IS_SFNT(face))
 	{
 		os2 = FT_Get_Sfnt_Table(face, FT_SFNT_OS2);
 		if (os2)
-			font->is_serif = !(os2->sFamilyClass & 2048); /* Class 8 is sans-serif */
+			font->flags.is_serif = !(os2->sFamilyClass & 2048); /* Class 8 is sans-serif */
 
 		FT_Sfnt_Table_Info(face, 0, NULL, &n);
 		for (i = 0; i < n; ++i)
 		{
 			FT_Sfnt_Table_Info(face, i, &tag, &size);
 			if (tag == TTAG_GDEF || tag == TTAG_GPOS || tag == TTAG_GSUB)
-				font->has_opentype = 1;
+				font->flags.has_opentype = 1;
 		}
 	}
 
@@ -532,7 +534,7 @@ static fz_matrix *
 fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm)
 {
 	/* Fudge the font matrix to stretch the glyph if we've substituted the font. */
-	if (font->ft_stretch && font->width_table /* && font->wmode == 0 */)
+	if (font->flags.ft_stretch && font->width_table /* && font->wmode == 0 */)
 	{
 		FT_Fixed adv;
 		float subw;
@@ -588,7 +590,7 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->fake_italic)
+	if (font->flags.fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	/*
@@ -633,7 +635,7 @@ do_ft_render_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm
 			goto retry_unhinted;
 		}
 	}
-	else if (font->force_hinting)
+	else if (font->flags.force_hinting)
 	{
 		/*
 		Enable hinting, but keep the huge char size so that
@@ -659,7 +661,7 @@ retry_unhinted:
 		}
 	}
 
-	if (font->fake_bold)
+	if (font->flags.fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * 64);
 		FT_Outline_Translate(&face->glyph->outline, -strength * 32, -strength * 32);
@@ -749,7 +751,7 @@ do_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->fake_italic)
+	if (font->flags.fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	m.xx = local_trm.a * 64; /* should be 65536 */
@@ -907,7 +909,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->fake_italic)
+	if (font->flags.fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	m.xx = local_trm.a * 65536;
@@ -917,7 +919,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	v.x = local_trm.e * 65536;
 	v.y = local_trm.f * 65536;
 
-	if (font->force_hinting)
+	if (font->flags.force_hinting)
 	{
 		ft_flags = FT_LOAD_NO_BITMAP;
 	}
@@ -945,7 +947,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 		return bounds;
 	}
 
-	if (font->fake_bold)
+	if (font->flags.fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * scale);
 		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5 * scale, -strength * 0.5 * scale);
@@ -1047,12 +1049,12 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
 
-	if (font->fake_italic)
+	if (font->flags.fake_italic)
 		fz_pre_shear(&local_trm, SHEAR, 0);
 
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
 
-	if (font->force_hinting)
+	if (font->flags.force_hinting)
 	{
 		ft_flags = FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_TRANSFORM;
 		fterr = FT_Set_Char_Size(face, scale, scale, 72, 72);
@@ -1072,7 +1074,7 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 		return NULL;
 	}
 
-	if (font->fake_bold)
+	if (font->flags.fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * scale);
 		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5 * scale, -strength * 0.5 * scale);
@@ -1205,7 +1207,7 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 		font->bbox_table[gid] = d1_rect;
 		fz_transform_rect(&font->bbox_table[gid], &font->t3matrix);
 
-		if (font->invalid_bbox || !fz_contains_rect(&font->bbox, &d1_rect))
+		if (font->flags.invalid_bbox || !fz_contains_rect(&font->bbox, &d1_rect))
 		{
 			/* Either the font bbox is invalid, or the d1_rect returned is
 			 * incompatible with it. Either way, don't trust the d1 rect
@@ -1352,7 +1354,7 @@ fz_print_font(fz_context *ctx, fz_output *out, fz_font *font)
 	if (font->ft_face)
 	{
 		fz_printf(ctx, out, "\tfreetype face %p\n", font->ft_face);
-		if (font->ft_substitute)
+		if (font->flags.ft_substitute)
 			fz_printf(ctx, out, "\tsubstitute font\n");
 	}
 
@@ -1524,7 +1526,7 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	if (script == 0)
 		script = ucdn_get_script(unicode);
 
-	font = fz_load_fallback_font(ctx, script, language, user_font->is_serif, user_font->is_bold, user_font->is_italic);
+	font = fz_load_fallback_font(ctx, script, language, user_font->flags.is_serif, user_font->flags.is_bold, user_font->flags.is_italic);
 	if (font)
 	{
 		gid = fz_encode_character(ctx, font, unicode);
@@ -1549,4 +1551,36 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	}
 
 	return *out_font = user_font, 0;
+}
+
+const char *fz_font_name(fz_font *font)
+{
+	if (font == NULL || font->name == NULL)
+		return "";
+	return font->name;
+}
+
+fz_buffer **fz_font_t3_procs(fz_font *font)
+{
+	return font ? font->t3procs : NULL;
+}
+
+fz_rect *fz_font_bbox(fz_font *font)
+{
+	return font ? &font->bbox : NULL;
+}
+
+void *fz_font_ft_face(fz_font *font)
+{
+	return font ? font->ft_face : NULL;
+}
+
+fz_font_flags_t *fz_font_flags(fz_font *font)
+{
+	return font ? &font->flags : NULL;
+}
+
+fz_hb_t *fz_font_hb(fz_font *font)
+{
+	return font ? &font->hb : NULL;
 }

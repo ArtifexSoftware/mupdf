@@ -19,7 +19,7 @@ fz_load_html_default_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 		if (!data)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load html font: %s", real_family);
 		set->fonts[idx] = fz_new_font_from_memory(ctx, NULL, data, size, 0, 1);
-		set->fonts[idx]->is_serif = !is_sans;
+		fz_font_flags(set->fonts[idx])->is_serif = !is_sans;
 	}
 	return set->fonts[idx];
 }
@@ -60,10 +60,11 @@ fz_load_html_font(fz_context *ctx, fz_html_font_set *set, const char *family, in
 	if (data)
 	{
 		fz_font *font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
-		if (is_bold && !font->is_bold)
-			font->fake_bold = 1;
-		if (is_italic && !font->is_italic)
-			font->fake_italic = 1;
+		fz_font_flags_t *flags = fz_font_flags(font);
+		if (is_bold && !flags->is_bold)
+			flags->fake_bold = 1;
+		if (is_italic && !flags->is_italic)
+			flags->fake_italic = 1;
 		fz_add_html_font_face(ctx, set, family, is_bold, is_italic, "<builtin>", font);
 		fz_drop_font(ctx, font);
 		return font;

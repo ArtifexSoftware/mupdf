@@ -22,14 +22,14 @@ static inline int unhex(int a)
 int
 xps_count_font_encodings(fz_font *font)
 {
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
 	return face->num_charmaps;
 }
 
 void
 xps_identify_font_encoding(fz_font *font, int idx, int *pid, int *eid)
 {
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
 	*pid = face->charmaps[idx]->platform_id;
 	*eid = face->charmaps[idx]->encoding_id;
 }
@@ -37,14 +37,14 @@ xps_identify_font_encoding(fz_font *font, int idx, int *pid, int *eid)
 void
 xps_select_font_encoding(fz_font *font, int idx)
 {
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
 	FT_Set_Charmap(face, face->charmaps[idx]);
 }
 
 int
 xps_encode_font_char(fz_font *font, int code)
 {
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
 	int gid = FT_Get_Char_Index(face, code);
 	if (gid == 0 && face->charmap && face->charmap->platform_id == 3 && face->charmap->encoding_id == 0)
 		gid = FT_Get_Char_Index(face, 0xF000 | code);
@@ -55,7 +55,7 @@ void
 xps_measure_font_glyph(fz_context *ctx, xps_document *doc, fz_font *font, int gid, xps_glyph_metrics *mtx)
 {
 	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
 	FT_Fixed hadv = 0, vadv = 0;
 
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
@@ -242,10 +242,13 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 
 		if (style_att)
 		{
-			font->fake_bold = !!strstr(style_att, "Bold");
-			font->is_bold = font->fake_bold;
-			font->fake_italic = !!strstr(style_att, "Italic");
-			font->is_italic = font->fake_italic;
+			fz_font_flags_t *flags = fz_font_flags(font);
+			int bold = !!strstr(style_att, "Bold");
+			int italic = !!strstr(style_att, "Italic");
+			flags->fake_bold = bold;
+			flags->is_bold = bold;
+			flags->fake_italic = italic;
+			flags->is_italic = italic;
 		}
 
 		xps_select_best_font_encoding(ctx, doc, font);
@@ -436,7 +439,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 			else
 				advance = mtx.hadv * 100;
 
-			if (font->fake_bold)
+			if (fz_font_flags(font)->fake_bold)
 				advance *= 1.02f;
 
 			if (is && *is)

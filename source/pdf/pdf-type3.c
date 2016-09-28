@@ -1,5 +1,7 @@
 #include "mupdf/pdf.h"
 
+#include "../fitz/font-impl.h"
+
 static void
 pdf_run_glyph_func(fz_context *ctx, void *doc, void *rdb, fz_buffer *contents, fz_device *dev, const fz_matrix *ctm, void *gstate, int nested_depth)
 {
@@ -27,6 +29,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 	int i, k, n;
 	fz_rect bbox;
 	fz_matrix matrix;
+	fz_font *font;
 
 	fz_var(fontdesc);
 
@@ -57,10 +60,11 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_FontBBox);
 		fz_transform_rect(pdf_to_rect(ctx, obj, &bbox), &matrix);
 
-		fontdesc->font = fz_new_type3_font(ctx, buf, &matrix);
+		font = fz_new_type3_font(ctx, buf, &matrix);
+		fontdesc->font = font;
 		fontdesc->size += sizeof(fz_font) + 256 * (sizeof(fz_buffer*) + sizeof(float));
 
-		fz_set_font_bbox(ctx, fontdesc->font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
+		fz_set_font_bbox(ctx, font, bbox.x0, bbox.y0, bbox.x1, bbox.y1);
 
 		/* Encoding */
 
@@ -124,8 +128,8 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		for (i = first; i <= last; i++)
 		{
 			float w = pdf_to_real(ctx, pdf_array_get(ctx, widths, i - first));
-			w = fontdesc->font->t3matrix.a * w * 1000;
-			fontdesc->font->t3widths[i] = w * 0.001f;
+			w = font->t3matrix.a * w * 1000;
+			font->t3widths[i] = w * 0.001f;
 			pdf_add_hmtx(ctx, fontdesc, i, i, w);
 		}
 
@@ -133,17 +137,17 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		/* Resources -- inherit page resources if the font doesn't have its own */
 
-		fontdesc->font->t3freeres = pdf_t3_free_resources;
-		fontdesc->font->t3resources = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
-		if (!fontdesc->font->t3resources)
-			fontdesc->font->t3resources = rdb;
-		if (fontdesc->font->t3resources)
-			pdf_keep_obj(ctx, fontdesc->font->t3resources);
-		if (!fontdesc->font->t3resources)
+		font->t3freeres = pdf_t3_free_resources;
+		font->t3resources = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
+		if (!font->t3resources)
+			font->t3resources = rdb;
+		if (font->t3resources)
+			pdf_keep_obj(ctx, font->t3resources);
+		if (!font->t3resources)
 			fz_warn(ctx, "no resource dictionary for type 3 font!");
 
-		fontdesc->font->t3doc = doc;
-		fontdesc->font->t3run = pdf_run_glyph_func;
+		font->t3doc = doc;
+		font->t3run = pdf_run_glyph_func;
 
 		/* CharProcs */
 
@@ -160,8 +164,8 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 				obj = pdf_dict_gets(ctx, charprocs, estrings[i]);
 				if (pdf_is_stream(ctx, obj))
 				{
-					fontdesc->font->t3procs[i] = pdf_load_stream(ctx, obj);
-					fontdesc->size += fontdesc->font->t3procs[i]->cap;
+					font->t3procs[i] = pdf_load_stream(ctx, obj);
+					fontdesc->size += font->t3procs[i]->cap;
 					fontdesc->size += 0; // TODO: display list size calculation
 				}
 			}
@@ -174,7 +178,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		fz_rethrow(ctx);
 	}
 
-	doc->type3_fonts[doc->num_type3_fonts++] = fz_keep_font(ctx, fontdesc->font);
+	doc->type3_fonts[doc->num_type3_fonts++] = fz_keep_font(ctx, font);
 
 	return fontdesc;
 }

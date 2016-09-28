@@ -1,5 +1,7 @@
 #include "mupdf/pdf.h"
 
+#include "../fitz/font-impl.h"
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H
@@ -208,7 +210,7 @@ static int ft_cid_to_gid(pdf_font_desc *fontdesc, int cid)
 		cid = pdf_lookup_cmap(fontdesc->to_ttf_cmap, cid);
 
 		/* vertical presentation forms */
-		if (fontdesc->font->ft_substitute && fontdesc->wmode)
+		if (fontdesc->font->flags.ft_substitute && fontdesc->wmode)
 		{
 			switch (cid)
 			{
@@ -326,7 +328,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, 
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find builtin font: '%s'", fontname);
 
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
-		fontdesc->font->is_serif = !!strstr(clean_name, "Times");
+		fontdesc->font->flags.is_serif = !!strstr(clean_name, "Times");
 	}
 
 	if (!strcmp(clean_name, "Symbol") || !strcmp(clean_name, "ZapfDingbats"))
@@ -351,17 +353,17 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontnam
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find substitute font");
 
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, 0, 1);
-		fontdesc->font->fake_bold = bold && !fontdesc->font->is_bold;
-		fontdesc->font->fake_italic = italic && !fontdesc->font->is_italic;
+		fontdesc->font->flags.fake_bold = bold && !fontdesc->font->flags.is_bold;
+		fontdesc->font->flags.fake_italic = italic && !fontdesc->font->flags.is_italic;
 
-		fontdesc->font->is_mono = mono;
-		fontdesc->font->is_serif = serif;
-		fontdesc->font->is_bold = bold;
-		fontdesc->font->is_italic = italic;
+		fontdesc->font->flags.is_mono = mono;
+		fontdesc->font->flags.is_serif = serif;
+		fontdesc->font->flags.is_bold = bold;
+		fontdesc->font->flags.is_italic = italic;
 	}
 
-	fontdesc->font->ft_substitute = 1;
-	fontdesc->font->ft_stretch = 1;
+	fontdesc->font->flags.ft_substitute = 1;
+	fontdesc->font->flags.ft_stretch = 1;
 }
 
 static void
@@ -382,8 +384,8 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fon
 		fontdesc->font = fz_new_font_from_memory(ctx, fontname, data, len, index, 0);
 	}
 
-	fontdesc->font->ft_substitute = 1;
-	fontdesc->font->ft_stretch = 0;
+	fontdesc->font->flags.ft_substitute = 1;
+	fontdesc->font->flags.ft_stretch = 0;
 }
 
 static void
@@ -1050,7 +1052,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		/* if font is external, cidtogidmap should not be identity */
 		/* so we map from cid to unicode and then map that through the (3 1) */
 		/* unicode cmap to get a glyph id */
-		else if (fontdesc->font->ft_substitute)
+		else if (fontdesc->font->flags.ft_substitute)
 		{
 			fterr = FT_Select_Charmap(face, ft_encoding_unicode);
 			if (fterr)
@@ -1074,7 +1076,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		 * If we only have a substitute font, that won't work.
 		 * Make a last ditch attempt by using
 		 * the ToUnicode table if it exists to map via the substitute font's cmap. */
-		if (strstr(fontdesc->encoding->cmap_name, "Identity-") && fontdesc->font->ft_substitute)
+		if (strstr(fontdesc->encoding->cmap_name, "Identity-") && fontdesc->font->flags.ft_substitute)
 		{
 			fz_warn(ctx, "non-embedded font using identity encoding: %s", basefont);
 			if (fontdesc->to_unicode && !fontdesc->to_ttf_cmap)
@@ -1265,7 +1267,7 @@ pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *font
 	if (ft_kind(face) == TRUETYPE)
 	{
 		if (FT_IS_TRICKY(face) || is_dynalab(fontdesc->font->name))
-			fontdesc->font->force_hinting = 1;
+			fontdesc->font->flags.force_hinting = 1;
 
 		if (fontdesc->ascent == 0.0f)
 			fontdesc->ascent = 1000.0f * face->ascender / face->units_per_EM;
@@ -1463,7 +1465,7 @@ pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_font *font)
 	fz_var(ref);
 
 	/* Check for substitute fonts */
-	if (font->ft_substitute)
+	if (font->flags.ft_substitute)
 		return NULL;
 
 	fz_try(ctx)

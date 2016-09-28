@@ -274,7 +274,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 	fz_printf(ctx, out, " transform=\"matrix(%g,%g,%g,%g,%g,%g)\"",
 			local_trm.a, local_trm.b, local_trm.c, local_trm.d, local_trm.e, local_trm.f);
 	fz_printf(ctx, out, " font-size=\"%g\"", size);
-	fz_printf(ctx, out, " font-family=\"%s\"", span->font->name);
+	fz_printf(ctx, out, " font-family=\"%s\"", fz_font_name(span->font));
 
 	/* Leading (and repeated) whitespace presents a problem for SVG
 	 * text, so elide it here. */

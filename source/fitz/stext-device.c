@@ -784,7 +784,9 @@ static void
 fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, const fz_matrix *ctm, fz_stext_style *style)
 {
 	fz_font *font = span->font;
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
+	fz_buffer **t3procs = fz_font_t3_procs(font);
+	fz_rect *bbox = fz_font_bbox(font);
 	fz_matrix tm = span->trm;
 	fz_matrix trm;
 	float adv;
@@ -800,26 +802,26 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 
 	if (style->wmode == 0)
 	{
-		if (font->ft_face)
+		if (face)
 		{
 			fz_lock(ctx, FZ_LOCK_FREETYPE);
-			err = FT_Set_Char_Size(font->ft_face, 64, 64, 72, 72);
+			err = FT_Set_Char_Size(face, 64, 64, 72, 72);
 			if (err)
 				fz_warn(ctx, "freetype set character size: %s", ft_error_string(err));
 			ascender = (float)face->ascender / face->units_per_EM;
 			descender = (float)face->descender / face->units_per_EM;
 			fz_unlock(ctx, FZ_LOCK_FREETYPE);
 		}
-		else if (font->t3procs && !fz_is_empty_rect(&font->bbox))
+		else if (t3procs && !fz_is_empty_rect(bbox))
 		{
-			ascender = font->bbox.y1;
-			descender = font->bbox.y0;
+			ascender = bbox->y1;
+			descender = bbox->y0;
 		}
 	}
 	else
 	{
-		ascender = font->bbox.x1;
-		descender = font->bbox.x0;
+		ascender = bbox->x1;
+		descender = bbox->x0;
 	}
 	style->ascender = ascender;
 	style->descender = descender;

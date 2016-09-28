@@ -791,7 +791,7 @@ static int quick_ligature_mov(fz_context *ctx, string_walker *walker, unsigned i
 
 static int quick_ligature(fz_context *ctx, string_walker *walker, unsigned int i)
 {
-	if (walker->glyph_info[i].codepoint == 'f' && i + 1 < walker->glyph_count && !walker->font->is_mono)
+	if (walker->glyph_info[i].codepoint == 'f' && i + 1 < walker->glyph_count && !fz_font_flags(walker->font)->is_mono)
 	{
 		if (walker->glyph_info[i+1].codepoint == 'f')
 		{
@@ -873,13 +873,13 @@ static int walk_string(string_walker *walker)
 
 	/* Disable harfbuzz shaping if script is common or LGC and there are no opentype tables. */
 	quickshape = 0;
-	if (walker->script <= 3 && !walker->rtl && !walker->font->has_opentype)
+	if (walker->script <= 3 && !walker->rtl && !fz_font_flags(walker->font)->has_opentype)
 		quickshape = 1;
 
 	hb_lock(ctx);
 	fz_try(ctx)
 	{
-		face = walker->font->ft_face;
+		face = fz_font_ft_face(walker->font);
 		walker->scale = face->units_per_EM;
 		fterr = FT_Set_Char_Size(face, walker->scale, walker->scale, 72, 72);
 		if (fterr)
@@ -899,11 +899,12 @@ static int walk_string(string_walker *walker)
 
 		if (!quickshape)
 		{
-			if (walker->font->hb_font == NULL)
+			fz_hb_t *hb = fz_font_hb(walker->font);
+			if (hb->font == NULL)
 			{
 				Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
-				walker->font->hb_destroy = (fz_hb_font_destructor_t *)hb_font_destroy;
-				walker->font->hb_font = hb_ft_font_create(face, NULL);
+				hb->destroy = (fz_hb_font_destructor_t *)hb_font_destroy;
+				hb->font = hb_ft_font_create(face, NULL);
 				Memento_stopLeaking();
 			}
 
@@ -911,7 +912,7 @@ static int walk_string(string_walker *walker)
 			hb_buffer_guess_segment_properties(walker->hb_buf);
 			Memento_stopLeaking();
 
-			hb_shape(walker->font->hb_font, walker->hb_buf, NULL, 0);
+			hb_shape(hb->font, walker->hb_buf, NULL, 0);
 		}
 
 		walker->glyph_pos = hb_buffer_get_glyph_positions(walker->hb_buf, &walker->glyph_count);
@@ -1978,7 +1979,7 @@ void
 fz_print_css_style(fz_context *ctx, fz_css_style *style, int boxtype, int n)
 {
 	indent(n); printf("font_size %g%c\n", style->font_size.value, style->font_size.unit);
-	indent(n); printf("font %s\n", style->font ? style->font->name : "NULL");
+	indent(n); printf("font %s\n", style->font ? fz_font_name(style->font) : "NULL");
 	indent(n); printf("width = %g%c;\n", style->width.value, style->width.unit);
 	indent(n); printf("height = %g%c;\n", style->height.value, style->height.unit);
 	if (boxtype == BOX_BLOCK)

@@ -1277,6 +1277,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\font-impl.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\font.c"
 				>
 			</File>

@@ -10,20 +10,22 @@
 
 static int font_is_bold(fz_font *font)
 {
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
 	if (face && (face->style_flags & FT_STYLE_FLAG_BOLD))
 		return 1;
-	if (strstr(font->name, "Bold"))
+	if (strstr(fz_font_name(font), "Bold"))
 		return 1;
 	return 0;
 }
 
 static int font_is_italic(fz_font *font)
 {
-	FT_Face face = font->ft_face;
+	FT_Face face = fz_font_ft_face(font);
+	const char *name;
 	if (face && (face->style_flags & FT_STYLE_FLAG_ITALIC))
 		return 1;
-	if (strstr(font->name, "Italic") || strstr(font->name, "Oblique"))
+	name = fz_font_name(font);
+	if (strstr(name, "Italic") || strstr(name, "Oblique"))
 		return 1;
 	return 0;
 }
@@ -53,8 +55,9 @@ fz_print_style_end(fz_context *ctx, fz_output *out, fz_stext_style *style)
 static void
 fz_print_style(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
-	char *s = strchr(style->font->name, '+');
-	s = s ? s + 1 : style->font->name;
+	const char *name = fz_font_name(style->font);
+	const char *s = strchr(name, '+');
+	s = s ? s + 1 : name;
 	fz_printf(ctx, out, "span.s%d{font-family:\"%s\";font-size:%gpt;",
 		style->id, s, style->size);
 	if (font_is_italic(style->font))
@@ -292,7 +295,7 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 		{
 			fz_stext_block *block = page->blocks[block_n].u.text;
 			fz_stext_line *line;
-			char *s;
+			const char *s;
 
 			fz_printf(ctx, out, "<block bbox=\"%g %g %g %g\">\n",
 				block->bbox.x0, block->bbox.y0, block->bbox.x1, block->bbox.y1);
@@ -304,6 +307,7 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 				for (span = line->first_span; span; span = span->next)
 				{
 					fz_stext_style *style = NULL;
+					const char *name = NULL;
 					int char_num;
 					for (char_num = 0; char_num < span->len; char_num++)
 					{
@@ -315,8 +319,9 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 								fz_printf(ctx, out, "</span>\n");
 							}
 							style = ch->style;
-							s = strchr(style->font->name, '+');
-							s = s ? s + 1 : style->font->name;
+							name = fz_font_name(style->font);
+							s = strchr(name, '+');
+							s = s ? s + 1 : name;
 							fz_printf(ctx, out, "<span bbox=\"%g %g %g %g\" font=\"%s\" size=\"%g\">\n",
 								span->bbox.x0, span->bbox.y0, span->bbox.x1, span->bbox.y1,
 								s, style->size);
