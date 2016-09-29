@@ -1357,6 +1357,8 @@ int main(int argc, char **argv)
 	search_input.q = search_input.p;
 	search_input.end = search_input.p;
 
+	glfwSetErrorCallback(on_error);
+
 	if (!glfwInit()) {
 		fprintf(stderr, "cannot initialize glfw\n");
 		exit(1);
@@ -1365,8 +1367,6 @@ int main(int argc, char **argv)
 	video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 	screen_w = video_mode->width;
 	screen_h = video_mode->height;
-
-	glfwSetErrorCallback(on_error);
 
 	window = glfwCreateWindow(DEFAULT_WINDOW_W, DEFAULT_WINDOW_H, filename, NULL, NULL);
 	if (!window) {
