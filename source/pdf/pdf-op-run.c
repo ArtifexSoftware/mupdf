@@ -1108,6 +1108,7 @@ pdf_set_colorspace(fz_context *ctx, pdf_run_processor *pr, int what, fz_colorspa
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	pdf_material *mat;
+	int n = fz_colorspace_n(ctx, colorspace);
 
 	gstate = pdf_flush_text(ctx, pr);
 
@@ -1126,7 +1127,7 @@ pdf_set_colorspace(fz_context *ctx, pdf_run_processor *pr, int what, fz_colorspa
 	if (pdf_is_tint_colorspace(ctx, colorspace))
 	{
 		int i;
-		for (i = 0; i < colorspace->n; i++)
+		for (i = 0; i < n; i++)
 			mat->v[i] = 1.0f;
 	}
 }
@@ -1136,7 +1137,7 @@ pdf_set_color(fz_context *ctx, pdf_run_processor *pr, int what, float *v)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	pdf_material *mat;
-	int i;
+	int i, n;
 
 	gstate = pdf_flush_text(ctx, pr);
 
@@ -1154,13 +1155,15 @@ pdf_set_color(fz_context *ctx, pdf_run_processor *pr, int what, float *v)
 		}
 		else if (fz_colorspace_is_lab(ctx, mat->colorspace))
 		{
+			n = fz_colorspace_n(ctx, mat->colorspace);
 			/* input is in range (0..100, -128..127, -128..127) not (0..1, 0..1, 0..1) */
-			for (i = 0; i < mat->colorspace->n; i++)
+			for (i = 0; i < n; i++)
 				mat->v[i] = fz_clamp(v[i], i ? -128 : 0, i ? 127 : 100);
 		}
 		else
 		{
-			for (i = 0; i < mat->colorspace->n; i++)
+			n = fz_colorspace_n(ctx, mat->colorspace);
+			for (i = 0; i < n; i++)
 				mat->v[i] = fz_clamp(v[i], 0, 1);
 		}
 		break;
@@ -1486,7 +1489,7 @@ static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_xobject *
 		int cs_n = 1;
 		if (cs)
 		{
-			cs_n = cs->n;
+			cs_n = fz_colorspace_n(ctx, cs);
 			fz_drop_colorspace(ctx, cs);
 		}
 		gstate->softmask_ctm = gstate->ctm;

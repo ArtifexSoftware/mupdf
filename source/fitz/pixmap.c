@@ -33,7 +33,7 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 	if (w < 0 || h < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal dimensions for pixmap %d %d", w, h);
 
-	n = alpha + (colorspace ? colorspace->n : 0);
+	n = alpha + fz_colorspace_n(ctx, colorspace);
 	if (stride < n*w && stride > -n*w)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal stride for pixmap (n=%d w=%d, stride=%d)", n, w, stride);
 	if (samples == NULL && stride < n*w)
@@ -91,7 +91,7 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 fz_pixmap *
 fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h, int alpha)
 {
-	int stride = ((colorspace ? colorspace->n : 0) + alpha) * w;
+	int stride = (fz_colorspace_n(ctx, colorspace) + alpha) * w;
 	return fz_new_pixmap_with_data(ctx, colorspace, w, h, alpha, stride, NULL);
 }
 
@@ -109,7 +109,7 @@ fz_pixmap *
 fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *r, int alpha, unsigned char *samples)
 {
 	int w = r->x1 - r->x0;
-	int stride = ((colorspace ? colorspace->n : 0) + alpha) * w;
+	int stride = (fz_colorspace_n(ctx, colorspace) + alpha) * w;
 	fz_pixmap *pixmap = fz_new_pixmap_with_data(ctx, colorspace, w, r->y1 - r->y0, alpha, stride, samples);
 	pixmap->x = r->x0;
 	pixmap->y = r->y0;
@@ -441,7 +441,7 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 		return;
 
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
-	if (pix->colorspace && pix->colorspace->n == 4)
+	if (fz_colorspace_n(ctx, pix->colorspace) == 4)
 	{
 		clear_cmyk_bitmap(pix->samples, w, h, pix->stride, 255-value, pix->alpha);
 		return;
@@ -611,7 +611,7 @@ fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *dest, int value, con
 	destp = dest->samples + (unsigned int)(destspan * (local_b.y0 - dest->y) + dest->n * (local_b.x0 - dest->x));
 
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
-	if (dest->colorspace && dest->colorspace->n == 4)
+	if (fz_colorspace_n(ctx, dest->colorspace) == 4)
 	{
 		value = 255 - value;
 		do

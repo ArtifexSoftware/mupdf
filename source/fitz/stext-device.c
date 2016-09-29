@@ -942,7 +942,7 @@ fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const f
 	block->image = fz_keep_image(ctx, img);
 	block->cspace = fz_keep_colorspace(ctx, cspace);
 	if (cspace)
-		memcpy(block->colors, color, sizeof(block->colors[0])*cspace->n);
+		memcpy(block->colors, color, sizeof(block->colors[0])*fz_colorspace_n(ctx, cspace));
 	block->mat = *ctm;
 	block->bbox.x0 = 0;
 	block->bbox.y0 = 0;

@@ -192,9 +192,10 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 		}
 		else
 		{
+			int n = fz_colorspace_n(ctx, img->colorspace);
 			for (y = 0; y < pnm->height; y++)
 				for (x = 0; x < pnm->width; x++)
-					for (k = 0; k < img->colorspace->n; k++)
+					for (k = 0; k < n; k++)
 					{
 						int v = 0;
 						p = pnm_read_number(ctx, p, e, &v);
@@ -262,25 +263,26 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		}
 		else
 		{
+			int n = fz_colorspace_n(ctx, img->colorspace);
 			if (pnm->maxval == 255)
 			{
 				for (y = 0; y < pnm->height; y++)
 					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < img->colorspace->n; k++)
+						for (k = 0; k < n; k++)
 							*dp++ = *p++;
 			}
 			else if (pnm->maxval < 256)
 			{
 				for (y = 0; y < pnm->height; y++)
 					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < img->colorspace->n; k++)
+						for (k = 0; k < n; k++)
 							*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
 			}
 			else
 			{
 				for (y = 0; y < pnm->height; y++)
 					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < img->colorspace->n; k++)
+						for (k = 0; k < n; k++)
 						{
 							*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
 							p += 2;
@@ -427,10 +429,11 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	if (!onlymeta)
 	{
 		unsigned char *dp;
-		int x, y, k;
+		int x, y, k, n;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, pnm->alpha);
 		dp = img->samples;
+		n = fz_colorspace_n(ctx, img->colorspace);
 
 		if (bitmap)
 		{
@@ -439,7 +442,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 
 			for (y = 0; y < pnm->height; y++)
 				for (x = 0; x < pnm->width; x++)
-					for (k = 0; k < img->colorspace->n; k++)
+					for (k = 0; k < n; k++)
 					{
 						if (*p)
 							*dp = 0x00;

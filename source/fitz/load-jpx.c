@@ -777,7 +777,7 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 
 	if (defcs)
 	{
-		if (defcs->n == n)
+		if (fz_colorspace_n(ctx, defcs) == n)
 		{
 			colorspace = defcs;
 		}

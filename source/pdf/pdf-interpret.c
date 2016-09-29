@@ -461,7 +461,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 				colorspace = pdf_xobject_colorspace(ctx, xobj);
 				if (colorspace)
 				{
-					colorspace_n = colorspace->n;
+					colorspace_n = fz_colorspace_n(ctx, colorspace);
 					fz_drop_colorspace(ctx, colorspace);
 				}
 

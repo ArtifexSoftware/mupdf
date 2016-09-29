@@ -784,7 +784,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 	image->xres = xres;
 	image->yres = yres;
 	image->bpc = bpc;
-	image->n = (colorspace ? colorspace->n : 1);
+	image->n = (colorspace ? fz_colorspace_n(ctx, colorspace) : 1);
 	image->colorspace = fz_keep_colorspace(ctx, colorspace);
 	image->invert_cmyk_jpeg = 1;
 	image->interpolate = interpolate;

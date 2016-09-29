@@ -179,8 +179,9 @@ prepare_mesh_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input
 		output[0] = input[0] * 255;
 	else
 	{
+		int n = fz_colorspace_n(ctx, dest->colorspace);
 		ptd->cc.convert(ctx, &ptd->cc, output, input);
-		for (i = 0; i < dest->colorspace->n; i++)
+		for (i = 0; i < n; i++)
 			output[i] *= 255;
 	}
 }
@@ -197,7 +198,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 	vertices[2] = (float *)cv;
 
 	dest = ptd->dest;
-	fz_paint_triangle(dest, vertices, 2 + dest->colorspace->n, ptd->bbox);
+	fz_paint_triangle(dest, vertices, 2 + fz_colorspace_n(ctx, dest->colorspace), ptd->bbox);
 }
 
 void
@@ -221,14 +222,15 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		if (shade->use_function)
 		{
 			fz_color_converter cc;
-			n = dest->colorspace ? dest->colorspace->n : 0;
+			int cn = fz_colorspace_n(ctx, shade->colorspace);
+			n = fz_colorspace_n(ctx, dest->colorspace);
 			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace);
 			for (i = 0; i < 256; i++)
 			{
 				cc.convert(ctx, &cc, color, shade->function[i]);
 				for (k = 0; k < n; k++)
 					clut[i][k] = color[k] * 255;
-				clut[i][k] = shade->function[i][shade->colorspace->n] * 255;
+				clut[i][k] = shade->function[i][cn] * 255;
 			}
 			/* We need to use alpha = 1 here, because the shade might not fill
 			 * the bbox. */

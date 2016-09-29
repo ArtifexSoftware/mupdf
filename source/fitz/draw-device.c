@@ -439,7 +439,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	n = model ? model->n : 0;
+	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
 		fz_convert_color(ctx, model, colorfv, colorspace, color);
@@ -507,7 +507,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	n = model ? model->n : 0;
+	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
 		fz_convert_color(ctx, model, colorfv, colorspace, color);
@@ -789,7 +789,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	n = model ? model->n : 0;
+	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
 		fz_convert_color(ctx, model, colorfv, colorspace, color);
@@ -880,7 +880,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	n = model ? model->n : 0;
+	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
 		fz_convert_color(ctx, model, colorfv, colorspace, color);
@@ -1238,7 +1238,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 	{
 		unsigned char *s;
 		int x, y, n, i;
-		n = model ? model->n : 0;
+		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
 			fz_convert_color(ctx, model, colorfv, shade->colorspace, shade->background);
@@ -1586,7 +1586,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 				pixmap = scaled;
 		}
 
-		n = model ? model->n : 0;
+		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
 			fz_convert_color(ctx, model, colorfv, colorspace, color);

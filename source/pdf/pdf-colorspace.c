@@ -1,5 +1,7 @@
 #include "mupdf/pdf.h"
 
+#include "../fitz/colorspace-impl.h"
+
 /* ICCBased */
 
 static fz_colorspace *
@@ -106,11 +108,8 @@ load_separation(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 		sep->base = base;
 		sep->tint = tint;
 
-		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", n);
-		cs->to_rgb = separation_to_rgb;
-		cs->free_data = free_separation;
-		cs->data = sep;
-		cs->size += sizeof(struct separation) + (base ? base->size : 0) + fz_function_size(ctx, tint);
+		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", n, separation_to_rgb, NULL, free_separation, sep,
+			sizeof(struct separation) + (base ? base->size : 0) + fz_function_size(ctx, tint));
 	}
 	fz_catch(ctx)
 	{
@@ -126,7 +125,7 @@ load_separation(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 int
 pdf_is_tint_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	return cs && cs->to_rgb == separation_to_rgb;
+	return fz_colorspace_is(ctx, cs, separation_to_rgb);
 }
 
 /* Indexed */

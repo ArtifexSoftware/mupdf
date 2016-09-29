@@ -241,6 +241,7 @@ pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, cons
 		fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, color);
 		color = rgb;
 		colorspace = fz_device_rgb(ctx);
+		cspace = 3;
 	}
 
 	if (gs->colorspace[stroke] != colorspace)
@@ -249,7 +250,7 @@ pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, cons
 		diff = 1;
 	}
 
-	for (i=0; i < colorspace->n; i++)
+	for (i=0; i < cspace; i++)
 		if (gs->color[stroke][i] != color[i])
 		{
 			gs->color[stroke][i] = color[i];
@@ -564,15 +565,16 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 		group = pdf_new_dict(ctx, doc, 5);
 		fz_try(ctx)
 		{
+			int n = fz_colorspace_n(ctx, colorspace);
 			pdf_dict_put_drop(ctx, group, PDF_NAME_Type, PDF_NAME_Group);
 			pdf_dict_put_drop(ctx, group, PDF_NAME_S, PDF_NAME_Transparency);
 			pdf_dict_put_drop(ctx, group, PDF_NAME_K, pdf_new_bool(ctx, doc, knockout));
 			pdf_dict_put_drop(ctx, group, PDF_NAME_I, pdf_new_bool(ctx, doc, isolated));
-			if (!colorspace)
+			if (n == 0)
 			{}
-			else if (colorspace->n == 1)
+			if (n == 1)
 				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceGray);
-			else if (colorspace->n == 4)
+			else if (n == 4)
 				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceCMYK);
 			else
 				pdf_dict_put_drop(ctx, group, PDF_NAME_CS, PDF_NAME_DeviceRGB);
@@ -907,12 +909,13 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 
 	fz_try(ctx)
 	{
+		int n = fz_colorspace_n(ctx, colorspace);
 		smask = pdf_new_dict(ctx, doc, 4);
 		pdf_dict_put_drop(ctx, smask, PDF_NAME_Type, PDF_NAME_Mask);
 		pdf_dict_put_drop(ctx, smask, PDF_NAME_S, (luminosity ? PDF_NAME_Luminosity : PDF_NAME_Alpha));
 		pdf_dict_put(ctx, smask, PDF_NAME_G, form_ref);
-		color_obj = pdf_new_array(ctx, doc, colorspace->n);
-		for (i = 0; i < colorspace->n; i++)
+		color_obj = pdf_new_array(ctx, doc, n);
+		for (i = 0; i < n; i++)
 			pdf_array_push_drop(ctx, color_obj, pdf_new_real(ctx, doc, color[i]));
 		pdf_dict_put_drop(ctx, smask, PDF_NAME_BC, color_obj);
 		color_obj = NULL;

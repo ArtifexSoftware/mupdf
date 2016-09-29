@@ -84,7 +84,7 @@ fz_process_mesh_type1(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz
 	fz_vertex vs[2][2];
 	fz_vertex *v = vs[0];
 	fz_vertex *vn = vs[1];
-	int n = shade->colorspace->n;
+	int n = fz_colorspace_n(ctx, shade->colorspace);
 	fz_matrix local_ctm;
 
 	fz_concat(&local_ctm, &shade->u.f.matrix, ctm);
@@ -931,7 +931,7 @@ fz_process_mesh(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
 	painter.prepare = prepare;
 	painter.process = process;
 	painter.process_arg = process_arg;
-	painter.ncomp = (shade->use_function > 0 ? 1 : shade->colorspace->n);
+	painter.ncomp = (shade->use_function > 0 ? 1 : fz_colorspace_n(ctx, shade->colorspace));
 
 	if (shade->type == FZ_FUNCTION_BASED)
 		fz_process_mesh_type1(ctx, shade, ctm, &painter);
@@ -1105,7 +1105,7 @@ fz_print_shade(fz_context *ctx, fz_output *out, fz_shade *shade)
 		shade->bbox.x0, shade->bbox.y0,
 		shade->bbox.x1, shade->bbox.y1);
 
-	fz_printf(ctx, out, "\tcolorspace %s\n", shade->colorspace->name);
+	fz_printf(ctx, out, "\tcolorspace %s\n", fz_colorspace_name(ctx, shade->colorspace));
 
 	fz_printf(ctx, out, "\tmatrix [%g %g %g %g %g %g]\n",
 			shade->matrix.a, shade->matrix.b, shade->matrix.c,
@@ -1113,8 +1113,9 @@ fz_print_shade(fz_context *ctx, fz_output *out, fz_shade *shade)
 
 	if (shade->use_background)
 	{
+		int n = fz_colorspace_n(ctx, shade->colorspace);
 		fz_printf(ctx, out, "\tbackground [");
-		for (i = 0; i < shade->colorspace->n; i++)
+		for (i = 0; i < n; i++)
 			fz_printf(ctx, out, "%s%g", i == 0 ? "" : " ", shade->background[i]);
 		fz_printf(ctx, out, "]\n");
 	}

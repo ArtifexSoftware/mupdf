@@ -99,7 +99,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			colorspace = pdf_load_colorspace(ctx, doc, obj);
 			indexed = fz_colorspace_is_indexed(ctx, colorspace);
 
-			n = colorspace->n;
+			n = fz_colorspace_n(ctx, colorspace);
 		}
 		else
 		{
@@ -296,6 +296,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	fz_buffer *buffer = NULL;
 	fz_colorspace *colorspace = image->colorspace;
 	unsigned char digest[16];
+	int n;
 
 	/* If we can maintain compression, do so */
 	cbuffer = fz_compressed_image_buffer(ctx, image);
@@ -370,14 +371,15 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
 			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Width, pdf_new_int(ctx, doc, image->w));
 			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Height, pdf_new_int(ctx, doc, image->h));
+			n = fz_colorspace_n(ctx, colorspace);
 			if (mask)
 			{
 			}
-			else if (!colorspace || colorspace->n == 1)
+			else if (n <= 1)
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
-			else if (colorspace->n == 3)
+			else if (n == 3)
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
-			else if (colorspace->n == 4)
+			else if (n == 4)
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
 			if (!mask)
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));

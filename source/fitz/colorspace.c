@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include "colorspace-impl.h"
+
 #define SLOWCMYK
 
 void
@@ -13,17 +15,17 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int n)
+fz_new_colorspace(fz_context *ctx, char *name, int n, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
-	cs->size = sizeof(fz_colorspace);
+	cs->size = sizeof(fz_colorspace) + size;
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
-	cs->to_rgb = NULL;
-	cs->from_rgb = NULL;
-	cs->free_data = NULL;
-	cs->data = NULL;
+	cs->to_rgb = to_rgb;
+	cs->from_rgb = from_rgb;
+	cs->free_data = destruct;
+	cs->data = data;
 	return cs;
 }
 
@@ -207,6 +209,12 @@ rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
 	lab[2] = rgb[2];
 }
 
+int
+fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs)
+{
+	return (cs && cs->to_rgb == lab_to_rgb);
+}
+
 static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, gray_to_rgb, rgb_to_gray };
 static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, rgb_to_rgb, rgb_to_rgb };
 static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, bgr_to_rgb, rgb_to_bgr };
@@ -325,18 +333,6 @@ fz_set_device_lab(fz_context *ctx, fz_colorspace *cs)
 	fz_drop_colorspace(ctx, ctx->colorspace->lab);
 	ctx->colorspace->lab = fz_keep_colorspace(ctx, cs);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
-}
-
-int
-fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs)
-{
-	return (cs && !strcmp(cs->name, "Indexed"));
-}
-
-int
-fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs)
-{
-	return (cs && !strcmp(cs->name, "Lab"));
 }
 
 /* Fast pixmap color conversions */
@@ -2003,6 +1999,12 @@ free_indexed(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, idx);
 }
 
+int
+fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs)
+{
+	return (cs && cs->to_rgb == indexed_to_rgb);
+}
+
 fz_colorspace *
 fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup)
 {
@@ -2016,11 +2018,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 
 	fz_try(ctx)
 	{
-		cs = fz_new_colorspace(ctx, "Indexed", 1);
-		cs->to_rgb = indexed_to_rgb;
-		cs->free_data = free_indexed;
-		cs->data = idx;
-		cs->size += sizeof(*idx) + (base->n * (idx->high + 1)) + base->size;
+		cs = fz_new_colorspace(ctx, "Indexed", 1, indexed_to_rgb, NULL, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	}
 	fz_catch(ctx)
 	{
@@ -2171,4 +2169,19 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 	}
 	fz_drop_hash(ctx, cc->hash);
 	fz_free(ctx, cc);
+}
+
+int fz_colorspace_is(fz_context *ctx, const fz_colorspace *cs, fz_colorspace_convert_fn *to_rgb)
+{
+	return cs && cs->to_rgb == to_rgb;
+}
+
+int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs)
+{
+	return cs ? cs->n : 0;
+}
+
+const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
+{
+	return cs ? cs->name : "";
 }

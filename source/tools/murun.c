@@ -381,9 +381,10 @@ static void ffi_pushcolorspace(js_State *J, fz_colorspace *colorspace)
 
 static void ffi_pushcolor(js_State *J, fz_colorspace *colorspace, const float *color, float alpha)
 {
+	fz_context *ctx = js_getcontext(J);
 	if (colorspace) {
 		ffi_pushcolorspace(J, colorspace);
-		ffi_pusharray(J, color, colorspace->n);
+		ffi_pusharray(J, color, fz_colorspace_n(ctx, colorspace));
 	} else {
 		js_pushnull(J);
 		js_pushnull(J);
@@ -395,9 +396,10 @@ static struct color ffi_tocolor(js_State *J, int idx)
 {
 	struct color c;
 	int n, i;
+	fz_context *ctx = js_getcontext(J);
 	c.colorspace = js_touserdata(J, idx, "fz_colorspace");
 	if (c.colorspace) {
-		n = c.colorspace->n;
+		n = fz_colorspace_n(ctx, c.colorspace);
 		for (i=0; i < n; ++i) {
 			js_getindex(J, idx + 1, i);
 			c.color[i] = js_tonumber(J, -1);
@@ -862,7 +864,7 @@ js_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lumi
 		js_pushboolean(J, luminosity);
 		if (colorspace) {
 			ffi_pushcolorspace(J, colorspace);
-			ffi_pusharray(J, color, colorspace->n);
+			ffi_pusharray(J, color, fz_colorspace_n(ctx, colorspace));
 		} else {
 			js_pushnull(J);
 			js_pushnull(J);
@@ -1807,13 +1809,15 @@ static void ffi_Annotation_toPixmap(js_State *J)
 static void ffi_ColorSpace_getNumberOfComponents(js_State *J)
 {
 	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
-	js_pushnumber(J, colorspace->n);
+	fz_context *ctx = js_getcontext(J);
+	js_pushnumber(J, fz_colorspace_n(ctx, colorspace));
 }
 
 static void ffi_ColorSpace_toString(js_State *J)
 {
 	fz_colorspace *colorspace = js_touserdata(J, 0, "fz_colorspace");
-	js_pushstring(J, colorspace->name);
+	fz_context *ctx = js_getcontext(J);
+	js_pushstring(J, fz_colorspace_name(ctx, colorspace));
 }
 
 static void ffi_new_Pixmap(js_State *J)

@@ -1145,6 +1145,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\colorspace-impl.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\colorspace.c"
 				>
 			</File>
