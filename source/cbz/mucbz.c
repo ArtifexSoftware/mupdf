@@ -153,14 +153,12 @@ cbz_drop_page(fz_context *ctx, cbz_page *page)
 static cbz_page *
 cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 {
-	unsigned char *data = NULL;
 	cbz_page *page = NULL;
 	fz_buffer *buf = NULL;
 
 	if (number < 0 || number >= doc->page_count)
 		return NULL;
 
-	fz_var(data);
 	fz_var(page);
 
 	if (doc->arch)
@@ -182,7 +180,6 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, data);
 		fz_drop_page(ctx, &page->super);
 		fz_rethrow(ctx);
 	}
