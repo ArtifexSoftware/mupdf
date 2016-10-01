@@ -123,6 +123,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->super.layout = htdoc_layout;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
+	doc->super.lookup_metadata = htdoc_lookup_metadata;
 	doc->super.is_reflowable = 1;
 
 	doc->zip = fz_open_directory(ctx, ".");
