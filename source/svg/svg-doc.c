@@ -124,23 +124,6 @@ svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
-static fz_document *
-svg_open_document(fz_context *ctx, const char *filename)
-{
-	fz_stream *file;
-	fz_document *doc;
-
-	file = fz_open_file(ctx, filename);
-	fz_try(ctx)
-		doc = svg_open_document_with_stream(ctx, file);
-	fz_always(ctx)
-		fz_drop_stream(ctx, file);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return doc;
-}
-
 static int
 svg_recognize(fz_context *ctx, const char *magic)
 {
@@ -193,6 +176,6 @@ fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf)
 fz_document_handler svg_document_handler =
 {
 	&svg_recognize,
-	&svg_open_document,
+	NULL,
 	&svg_open_document_with_stream
 };

@@ -140,24 +140,6 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
-static tiff_document *
-tiff_open_document(fz_context *ctx, const char *filename)
-{
-	fz_stream *file;
-	tiff_document *doc;
-
-	file = fz_open_file(ctx, filename);
-
-	fz_try(ctx)
-		doc = tiff_open_document_with_stream(ctx, file);
-	fz_always(ctx)
-		fz_drop_stream(ctx, file);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return doc;
-}
-
 static int
 tiff_recognize(fz_context *doc, const char *magic)
 {
@@ -178,6 +160,6 @@ tiff_recognize(fz_context *doc, const char *magic)
 fz_document_handler tiff_document_handler =
 {
 	(fz_document_recognize_fn *)&tiff_recognize,
-	(fz_document_open_fn *)&tiff_open_document,
+	(fz_document_open_fn *)NULL,
 	(fz_document_open_with_stream_fn *)&tiff_open_document_with_stream
 };

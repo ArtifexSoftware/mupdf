@@ -220,24 +220,6 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
-static cbz_document *
-cbz_open_document(fz_context *ctx, const char *filename)
-{
-	fz_stream *file;
-	cbz_document *doc;
-
-	file = fz_open_file(ctx, filename);
-
-	fz_try(ctx)
-		doc = cbz_open_document_with_stream(ctx, file);
-	fz_always(ctx)
-		fz_drop_stream(ctx, file);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return doc;
-}
-
 static int
 cbz_recognize(fz_context *ctx, const char *magic)
 {
@@ -260,6 +242,6 @@ cbz_recognize(fz_context *ctx, const char *magic)
 fz_document_handler cbz_document_handler =
 {
 	(fz_document_recognize_fn *)&cbz_recognize,
-	(fz_document_open_fn *)&cbz_open_document,
+	(fz_document_open_fn *)NULL,
 	(fz_document_open_with_stream_fn *)&cbz_open_document_with_stream
 };

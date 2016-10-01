@@ -131,24 +131,6 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *stm)
 	return doc;
 }
 
-static img_document *
-img_open_document(fz_context *ctx, const char *filename)
-{
-	fz_stream *stm;
-	img_document *doc;
-
-	stm = fz_open_file(ctx, filename);
-
-	fz_try(ctx)
-		doc = img_open_document_with_stream(ctx, stm);
-	fz_always(ctx)
-		fz_drop_stream(ctx, stm);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return doc;
-}
-
 static int
 img_recognize(fz_context *doc, const char *magic)
 {
@@ -192,6 +174,6 @@ img_recognize(fz_context *doc, const char *magic)
 fz_document_handler img_document_handler =
 {
 	(fz_document_recognize_fn *)&img_recognize,
-	(fz_document_open_fn *)&img_open_document,
+	(fz_document_open_fn *)NULL,
 	(fz_document_open_with_stream_fn *)&img_open_document_with_stream
 };

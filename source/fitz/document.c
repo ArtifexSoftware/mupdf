@@ -103,6 +103,8 @@ fz_open_document(fz_context *ctx, const char *filename)
 	int i, score;
 	int best_i, best_score;
 	fz_document_handler_context *dc;
+	fz_stream *file;
+	fz_document *doc;
 
 	if (ctx == NULL)
 		return NULL;
@@ -125,10 +127,22 @@ fz_open_document(fz_context *ctx, const char *filename)
 		}
 	}
 
-	if (best_i >= 0)
+	if (best_i < 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: '%s'", filename);
+
+	if (dc->handler[best_i]->open)
 		return dc->handler[best_i]->open(ctx, filename);
 
-	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: '%s'", filename);
+	file = fz_open_file(ctx, filename);
+
+	fz_try(ctx)
+		doc = dc->handler[best_i]->open_with_stream(ctx, file);
+	fz_always(ctx)
+		fz_drop_stream(ctx, file);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return doc;
 }
 
 void *
