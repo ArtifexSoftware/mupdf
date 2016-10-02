@@ -885,7 +885,7 @@ static int walk_string(string_walker *walker)
 	hb_lock(ctx);
 	fz_try(ctx)
 	{
-		face = fz_font_ft_face(walker->font);
+		face = fz_font_ft_face(ctx, walker->font);
 		walker->scale = face->units_per_EM;
 		fterr = FT_Set_Char_Size(face, walker->scale, walker->scale, 72, 72);
 		if (fterr)
@@ -905,7 +905,7 @@ static int walk_string(string_walker *walker)
 
 		if (!quickshape)
 		{
-			fz_shaper_data_t *hb = fz_font_shaper_data(walker->font);
+			fz_shaper_data_t *hb = fz_font_shaper_data(ctx, walker->font);
 			if (hb->shaper_handle == NULL)
 			{
 				Memento_startLeaking(); /* HarfBuzz leaks harmlessly */
@@ -1990,7 +1990,7 @@ void
 fz_print_css_style(fz_context *ctx, fz_css_style *style, int boxtype, int n)
 {
 	indent(n); printf("font_size %g%c\n", style->font_size.value, style->font_size.unit);
-	indent(n); printf("font %s\n", style->font ? fz_font_name(style->font) : "NULL");
+	indent(n); printf("font %s\n", style->font ? fz_font_name(ctx, style->font) : "NULL");
 	indent(n); printf("width = %g%c;\n", style->width.value, style->width.unit);
 	indent(n); printf("height = %g%c;\n", style->height.value, style->height.unit);
 	if (boxtype == BOX_BLOCK)

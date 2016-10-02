@@ -20,31 +20,31 @@ static inline int unhex(int a)
 }
 
 int
-xps_count_font_encodings(fz_font *font)
+xps_count_font_encodings(fz_context *ctx, fz_font *font)
 {
-	FT_Face face = fz_font_ft_face(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
 	return face->num_charmaps;
 }
 
 void
-xps_identify_font_encoding(fz_font *font, int idx, int *pid, int *eid)
+xps_identify_font_encoding(fz_context *ctx, fz_font *font, int idx, int *pid, int *eid)
 {
-	FT_Face face = fz_font_ft_face(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
 	*pid = face->charmaps[idx]->platform_id;
 	*eid = face->charmaps[idx]->encoding_id;
 }
 
 void
-xps_select_font_encoding(fz_font *font, int idx)
+xps_select_font_encoding(fz_context *ctx, fz_font *font, int idx)
 {
-	FT_Face face = fz_font_ft_face(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
 	FT_Set_Charmap(face, face->charmaps[idx]);
 }
 
 int
-xps_encode_font_char(fz_font *font, int code)
+xps_encode_font_char(fz_context *ctx, fz_font *font, int code)
 {
-	FT_Face face = fz_font_ft_face(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
 	int gid = FT_Get_Char_Index(face, code);
 	if (gid == 0 && face->charmap && face->charmap->platform_id == 3 && face->charmap->encoding_id == 0)
 		gid = FT_Get_Char_Index(face, 0xF000 | code);
@@ -55,7 +55,7 @@ void
 xps_measure_font_glyph(fz_context *ctx, xps_document *doc, fz_font *font, int gid, xps_glyph_metrics *mtx)
 {
 	int mask = FT_LOAD_NO_SCALE | FT_LOAD_IGNORE_TRANSFORM;
-	FT_Face face = fz_font_ft_face(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
 	FT_Fixed hadv = 0, vadv = 0;
 
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
@@ -151,15 +151,15 @@ xps_select_best_font_encoding(fz_context *ctx, xps_document *doc, fz_font *font)
 
 	int i, k, n, pid, eid;
 
-	n = xps_count_font_encodings(font);
+	n = xps_count_font_encodings(ctx, font);
 	for (k = 0; xps_cmap_list[k].pid != -1; k++)
 	{
 		for (i = 0; i < n; i++)
 		{
-			xps_identify_font_encoding(font, i, &pid, &eid);
+			xps_identify_font_encoding(ctx, font, i, &pid, &eid);
 			if (pid == xps_cmap_list[k].pid && eid == xps_cmap_list[k].eid)
 			{
-				xps_select_font_encoding(font, i);
+				xps_select_font_encoding(ctx, font, i);
 				return;
 			}
 		}
@@ -429,7 +429,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 				is = xps_parse_glyph_index(is, &glyph_index);
 
 			if (glyph_index == -1)
-				glyph_index = xps_encode_font_char(font, char_code);
+				glyph_index = xps_encode_font_char(ctx, font, char_code);
 
 			xps_measure_font_glyph(ctx, doc, font, glyph_index, &mtx);
 			if (is_sideways)

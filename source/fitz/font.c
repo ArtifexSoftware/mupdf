@@ -1543,22 +1543,22 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	return *out_font = user_font, 0;
 }
 
-const char *fz_font_name(fz_font *font)
+const char *fz_font_name(fz_context *ctx, fz_font *font)
 {
 	return font ? font->name : "";
 }
 
-fz_buffer **fz_font_t3_procs(fz_font *font)
+fz_buffer **fz_font_t3_procs(fz_context *ctx, fz_font *font)
 {
 	return font ? font->t3procs : NULL;
 }
 
-fz_rect *fz_font_bbox(fz_font *font)
+fz_rect *fz_font_bbox(fz_context *ctx, fz_font *font)
 {
 	return font ? &font->bbox : NULL;
 }
 
-void *fz_font_ft_face(fz_font *font)
+void *fz_font_ft_face(fz_context *ctx, fz_font *font)
 {
 	return font ? font->ft_face : NULL;
 }
@@ -1568,7 +1568,7 @@ fz_font_flags_t *fz_font_flags(fz_font *font)
 	return font ? &font->flags : NULL;
 }
 
-fz_shaper_data_t *fz_font_shaper_data(fz_font *font)
+fz_shaper_data_t *fz_font_shaper_data(fz_context *ctx, fz_font *font)
 {
 	return font ? &font->shaper_data : NULL;
 }

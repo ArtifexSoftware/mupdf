@@ -784,9 +784,9 @@ static void
 fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, const fz_matrix *ctm, fz_stext_style *style)
 {
 	fz_font *font = span->font;
-	FT_Face face = fz_font_ft_face(font);
-	fz_buffer **t3procs = fz_font_t3_procs(font);
-	fz_rect *bbox = fz_font_bbox(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
+	fz_buffer **t3procs = fz_font_t3_procs(ctx, font);
+	fz_rect *bbox = fz_font_bbox(ctx, font);
 	fz_matrix tm = span->trm;
 	fz_matrix trm;
 	float adv;

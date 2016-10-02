@@ -30,7 +30,7 @@ typedef struct fz_font_s fz_font;
 	if not a freetype handled font. (Cast to void *
 	to avoid nasty header exposure).
 */
-void *fz_font_ft_face(fz_font *font);
+void *fz_font_ft_face(fz_context *ctx, fz_font *font);
 
 /*
 	fz_font_t3_procs: Retrieve the Type3 procs
@@ -41,7 +41,7 @@ void *fz_font_ft_face(fz_font *font);
 	Returns the t3_procs pointer. Will be NULL for a
 	non type-3 font.
 */
-fz_buffer **fz_font_t3_procs(fz_font *font);
+fz_buffer **fz_font_t3_procs(fz_context *ctx, fz_font *font);
 
 /*
 	ft_error_string: map an FT error number to a
@@ -113,7 +113,7 @@ typedef struct
 	Returns a pointer to the shaper data structure (or NULL if
 	font is NULL).
 */
-fz_shaper_data_t *fz_font_shaper_data(fz_font *font);
+fz_shaper_data_t *fz_font_shaper_data(fz_context *ctx, fz_font *font);
 
 /*
 	fz_font_name: Retrieve a pointer to the name of the font.
@@ -123,7 +123,7 @@ fz_shaper_data_t *fz_font_shaper_data(fz_font *font);
 	Returns a pointer to an internal copy of the font name.
 	Will never be NULL, but may be the empty string.
 */
-const char *fz_font_name(fz_font *font);
+const char *fz_font_name(fz_context *ctx, fz_font *font);
 
 /*
 	fz_font_bbox: Retrieve a pointer to the font bbox.
@@ -133,7 +133,7 @@ const char *fz_font_name(fz_font *font);
 	Returns a pointer to the font bbox (or NULL if the
 	font is NULL).
 */
-fz_rect *fz_font_bbox(fz_font *font);
+fz_rect *fz_font_bbox(fz_context *ctx, fz_font *font);
 
 /*
 	fz_new_font_context: Initialise the font context.

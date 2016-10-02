@@ -141,10 +141,10 @@ struct xps_glyph_metrics_s
 	float hadv, vadv, vorg;
 };
 
-int xps_count_font_encodings(fz_font *font);
-void xps_identify_font_encoding(fz_font *font, int idx, int *pid, int *eid);
-void xps_select_font_encoding(fz_font *font, int idx);
-int xps_encode_font_char(fz_font *font, int key);
+int xps_count_font_encodings(fz_context *ctx, fz_font *font);
+void xps_identify_font_encoding(fz_context *ctx, fz_font *font, int idx, int *pid, int *eid);
+void xps_select_font_encoding(fz_context *ctx, fz_font *font, int idx);
+int xps_encode_font_char(fz_context *ctx, fz_font *font, int key);
 
 void xps_measure_font_glyph(fz_context *ctx, xps_document *doc, fz_font *font, int gid, xps_glyph_metrics *mtx);
 

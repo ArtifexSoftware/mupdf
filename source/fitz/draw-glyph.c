@@ -175,7 +175,7 @@ fz_subpixel_adjust(fz_context *ctx, fz_matrix *ctm, fz_matrix *subpix_ctm, unsig
 fz_glyph *
 fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *stroke, const fz_irect *scissor)
 {
-	if (fz_font_ft_face(font))
+	if (fz_font_ft_face(ctx, font))
 	{
 		fz_matrix subpix_trm;
 		unsigned char qe, qf;
@@ -191,7 +191,7 @@ fz_render_stroked_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm,
 fz_pixmap *
 fz_render_stroked_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm, const fz_matrix *ctm, const fz_stroke_state *stroke, const fz_irect *scissor)
 {
-	if (fz_font_ft_face(font))
+	if (fz_font_ft_face(ctx, font))
 	{
 		fz_matrix subpix_trm;
 		unsigned char qe, qf;
@@ -252,7 +252,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 	int do_cache, locked, caching;
 	fz_glyph_cache_entry *entry;
 	unsigned hash;
-	int is_ft_font = !!fz_font_ft_face(font);
+	int is_ft_font = !!fz_font_ft_face(ctx, font);
 
 	fz_var(locked);
 	fz_var(caching);
@@ -312,7 +312,7 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 		{
 			val = fz_render_ft_glyph(ctx, font, gid, &subpix_ctm, key.aa);
 		}
-		else if (fz_font_t3_procs(font))
+		else if (fz_font_t3_procs(ctx, font))
 		{
 			/* We drop the glyphcache here, and execute the t3
 			 * glyph code. The danger here is that some other
@@ -414,7 +414,7 @@ fz_render_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, 
 	unsigned char qe, qf;
 	fz_matrix subpix_ctm;
 	float size = fz_subpixel_adjust(ctx, ctm, &subpix_ctm, &qe, &qf);
-	int is_ft_font = !!fz_font_ft_face(font);
+	int is_ft_font = !!fz_font_ft_face(ctx, font);
 
 	if (size <= MAX_GLYPH_SIZE)
 	{
@@ -432,7 +432,7 @@ fz_render_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, 
 		{
 			val = fz_render_ft_glyph_pixmap(ctx, font, gid, &subpix_ctm, fz_text_aa_level(ctx));
 		}
-		else if (fz_font_t3_procs(font))
+		else if (fz_font_t3_procs(ctx, font))
 		{
 			val = fz_render_t3_glyph_pixmap(ctx, font, gid, &subpix_ctm, NULL, scissor);
 		}

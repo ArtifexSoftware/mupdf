@@ -926,7 +926,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 
 	/* If we are a type3 font within a type 3 font, or are otherwise
 	 * uncachable, then render direct. */
-	render_direct = (!fz_font_ft_face(fontdesc->font) && pr->nested_depth > 0) || !fz_glyph_cacheable(ctx, fontdesc->font, gid);
+	render_direct = (!fz_font_ft_face(ctx, fontdesc->font) && pr->nested_depth > 0) || !fz_glyph_cacheable(ctx, fontdesc->font, gid);
 
 	/* flush buffered text if rendermode has changed */
 	if (!pr->text || gstate->render != pr->text_mode || render_direct)

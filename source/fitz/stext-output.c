@@ -8,23 +8,23 @@
 
 /* XML, HTML and plain-text output */
 
-static int font_is_bold(fz_font *font)
+static int font_is_bold(fz_context *ctx, fz_font *font)
 {
-	FT_Face face = fz_font_ft_face(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
 	if (face && (face->style_flags & FT_STYLE_FLAG_BOLD))
 		return 1;
-	if (strstr(fz_font_name(font), "Bold"))
+	if (strstr(fz_font_name(ctx, font), "Bold"))
 		return 1;
 	return 0;
 }
 
-static int font_is_italic(fz_font *font)
+static int font_is_italic(fz_context *ctx, fz_font *font)
 {
-	FT_Face face = fz_font_ft_face(font);
+	FT_Face face = fz_font_ft_face(ctx, font);
 	const char *name;
 	if (face && (face->style_flags & FT_STYLE_FLAG_ITALIC))
 		return 1;
-	name = fz_font_name(font);
+	name = fz_font_name(ctx, font);
 	if (strstr(name, "Italic") || strstr(name, "Oblique"))
 		return 1;
 	return 0;
@@ -55,14 +55,14 @@ fz_print_style_end(fz_context *ctx, fz_output *out, fz_stext_style *style)
 static void
 fz_print_style(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
-	const char *name = fz_font_name(style->font);
+	const char *name = fz_font_name(ctx, style->font);
 	const char *s = strchr(name, '+');
 	s = s ? s + 1 : name;
 	fz_printf(ctx, out, "span.s%d{font-family:\"%s\";font-size:%gpt;",
 		style->id, s, style->size);
-	if (font_is_italic(style->font))
+	if (font_is_italic(ctx, style->font))
 		fz_printf(ctx, out, "font-style:italic;");
-	if (font_is_bold(style->font))
+	if (font_is_bold(ctx, style->font))
 		fz_printf(ctx, out, "font-weight:bold;");
 	fz_printf(ctx, out, "}\n");
 }
@@ -319,7 +319,7 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 								fz_printf(ctx, out, "</span>\n");
 							}
 							style = ch->style;
-							name = fz_font_name(style->font);
+							name = fz_font_name(ctx, style->font);
 							s = strchr(name, '+');
 							s = s ? s + 1 : name;
 							fz_printf(ctx, out, "<span bbox=\"%g %g %g %g\" font=\"%s\" size=\"%g\">\n",

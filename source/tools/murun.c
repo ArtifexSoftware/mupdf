@@ -2185,8 +2185,9 @@ static void ffi_new_Font(js_State *J)
 
 static void ffi_Font_getName(js_State *J)
 {
+	fz_context *ctx = js_getcontext(J);
 	fz_font *font = js_touserdata(J, 0, "fz_font");
-	js_pushstring(J, fz_font_name(font));
+	js_pushstring(J, fz_font_name(ctx, font));
 }
 
 static void ffi_Font_encodeCharacter(js_State *J)

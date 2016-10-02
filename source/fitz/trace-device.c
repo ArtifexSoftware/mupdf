@@ -39,7 +39,7 @@ static void
 fz_trace_text_span(fz_context *ctx, fz_output *out, fz_text_span *span)
 {
 	int i;
-	fz_printf(ctx, out, "<span font=\"%s\" wmode=\"%d\"", fz_font_name(span->font), span->wmode);
+	fz_printf(ctx, out, "<span font=\"%s\" wmode=\"%d\"", fz_font_name(ctx, span->font), span->wmode);
 	fz_printf(ctx, out, " trm=\"%g %g %g %g\">\n", span->trm.a, span->trm.b, span->trm.c, span->trm.d);
 	for (i = 0; i < span->len; i++)
 	{

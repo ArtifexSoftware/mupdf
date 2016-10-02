@@ -384,7 +384,7 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font)
 	if (gs->font >= 0 && pdev->cid_fonts[gs->font] == font)
 		return;
 
-	if (fz_font_t3_procs(font))
+	if (fz_font_t3_procs(ctx, font))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support type 3 fonts");
 	if (fz_font_flags(font)->ft_substitute)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pdf device does not support substitute fonts");
@@ -470,7 +470,7 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 		if (fabsf(dx) > 0 || fabsf(dy) > 0)
 			fz_buffer_printf(ctx, gs->buf, "%f %f %f %f %f %f Tm\n", tm.a, tm.b, tm.c, tm.d, tm.e, tm.f);
 
-		if (fz_font_t3_procs(span->font))
+		if (fz_font_t3_procs(ctx, span->font))
 			fz_buffer_printf(ctx, gs->buf, "<%02x> Tj\n", it->gid);
 		else
 			fz_buffer_printf(ctx, gs->buf, "<%04x> Tj\n", it->gid);
