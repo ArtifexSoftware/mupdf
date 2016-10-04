@@ -2186,7 +2186,6 @@ static void
 detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_bidi_direction *bidi_dir, fz_html_flow *flow)
 {
 	fz_html_flow *end = flow;
-	const char *text;
 	bidi_data data;
 
 	while (end)
@@ -2198,7 +2197,8 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 		buffer->len = 0;
 		while (end && (level & 1) == (end->bidi_level & 1))
 		{
-			size_t len;
+			size_t len = 0;
+			const char *text = "";
 			int broken = 0;
 
 			switch (end->type)
@@ -2213,8 +2213,6 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 				break;
 			case FLOW_SHYPHEN:
 			case FLOW_SBREAK:
-				len = 0;
-				text = "";
 				break;
 			case FLOW_BREAK:
 			case FLOW_IMAGE:
