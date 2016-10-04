@@ -635,6 +635,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 	int size;
 	fz_off_t ofs;
 	pdf_obj *trailer = NULL;
+	int n;
 
 	fz_var(trailer);
 
@@ -668,10 +669,24 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		t = fz_tell(ctx, doc->file);
 		if (t < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot tell in file");
-		if (len > (FZ_OFF_MAX - t) / 20)
+
+		/* Spec says xref entries should be 20 bytes, but it's not infrequent
+		 * to see 19, in particular for some PCLm drivers. Cope. */
+		if (len > 0)
+		{
+			n = fz_read(ctx, doc->file, (unsigned char *)buf->scratch, 20);
+			if (n < 19)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "malformed xref table");
+			if (n == 20 && buf->scratch[19] > 32)
+				n = 19;
+		}
+		else
+			n = 20;
+
+		if (len > (FZ_OFF_MAX - t) / n)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref has too many entries");
 
-		fz_seek(ctx, doc->file, t + 20 * len, SEEK_SET);
+		fz_seek(ctx, doc->file, t + n * len, SEEK_SET);
 	}
 
 	fz_try(ctx)
@@ -776,6 +791,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	int c;
 	int xref_len = pdf_xref_size_from_old_trailer(ctx, doc, buf);
 	pdf_xref_entry *table;
+	int carried;
 
 	fz_skip_space(ctx, doc->file);
 	if (fz_skip_string(ctx, doc->file, "xref"))
@@ -811,12 +827,17 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		table = pdf_xref_find_subsection(ctx, doc, ofs, len);
 
+		/* Xref entries SHOULD be 20 bytes long, but we see 19 byte
+		 * ones more frequently than we'd like (e.g. PCLm drivers).
+		 * Cope with this by 'carrying' data forward. */
+		carried = 0;
 		for (i = ofs; i < ofs + len; i++)
 		{
 			pdf_xref_entry *entry = &table[i-ofs];
-			n = fz_read(ctx, file, (unsigned char *) buf->scratch, 20);
-			if (n != 20)
+			n = fz_read(ctx, file, (unsigned char *) buf->scratch + carried, 20-carried);
+			if (n != 20-carried)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected EOF in xref table");
+			n += carried;
 			if (!entry->type)
 			{
 				s = buf->scratch;
@@ -831,8 +852,14 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 				entry->type = s[17];
 				if (s[17] != 'f' && s[17] != 'n' && s[17] != 'o')
 					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: %#x (%d %d R)", s[17], entry->num, entry->gen);
+				/* If the last byte of our buffer isn't an EOL (or space), carry one byte forward */
+				carried = s[19] > 32;
+				if (carried)
+					s[0] = s[19];
 			}
 		}
+		if (carried)
+			fz_unread_byte(ctx, file);
 	}
 
 	tok = pdf_lex(ctx, file, buf);
