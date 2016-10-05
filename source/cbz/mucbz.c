@@ -183,7 +183,7 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 	fz_catch(ctx)
 	{
 		fz_free(ctx, data);
-		cbz_drop_page(ctx, page);
+		fz_drop_page(ctx, &page->super);
 		fz_rethrow(ctx);
 	}
 
