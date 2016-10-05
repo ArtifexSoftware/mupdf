@@ -1721,8 +1721,6 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 
 	fz_scale(&trm, box->em, -box->em);
 
-	text = fz_new_text(ctx);
-
 	line = find_list_mark_anchor(ctx, box);
 	if (line)
 	{
@@ -1752,24 +1750,31 @@ static void draw_list_mark(fz_context *ctx, fz_html *box, float page_top, float 
 		w += fz_advance_glyph(ctx, font, g, 0) * box->em;
 	}
 
-	s = buf;
-	trm.e = box->x - w;
-	trm.f = y;
-	while (*s)
+	text = fz_new_text(ctx);
+
+	fz_try(ctx)
 	{
-		s += fz_chartorune(&c, s);
-		g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, FZ_LANG_UNSET, &font);
-		fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
-		trm.e += fz_advance_glyph(ctx, font, g, 0) * box->em;
+		s = buf;
+		trm.e = box->x - w;
+		trm.f = y;
+		while (*s)
+		{
+			s += fz_chartorune(&c, s);
+			g = fz_encode_character_with_fallback(ctx, box->style.font, c, UCDN_SCRIPT_LATIN, FZ_LANG_UNSET, &font);
+			fz_show_glyph(ctx, text, font, &trm, g, c, 0, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+			trm.e += fz_advance_glyph(ctx, font, g, 0) * box->em;
+		}
+
+		color[0] = box->style.color.r / 255.0f;
+		color[1] = box->style.color.g / 255.0f;
+		color[2] = box->style.color.b / 255.0f;
+
+		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
 	}
-
-	color[0] = box->style.color.r / 255.0f;
-	color[1] = box->style.color.g / 255.0f;
-	color[2] = box->style.color.b / 255.0f;
-
-	fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
-
-	fz_drop_text(ctx, text);
+	fz_always(ctx)
+		fz_drop_text(ctx, text);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void draw_block_box(fz_context *ctx, fz_html *box, float page_top, float page_bot, fz_device *dev, const fz_matrix *ctm, hb_buffer_t *hb_buf)
