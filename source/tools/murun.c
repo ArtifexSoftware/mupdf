@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
+#if FZ_ENABLE_JS
+
 #include "mujs.h"
 
 #define PS1 "> "
@@ -3896,3 +3898,5 @@ int murun_main(int argc, char **argv)
 	fz_drop_context(ctx);
 	return 0;
 }
+
+#endif
