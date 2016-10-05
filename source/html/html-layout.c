@@ -2289,6 +2289,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	g.base_uri = base_uri;
 	g.at_bol = 0;
 	g.emit_white = 0;
+	g.last_brk_cls = UCDN_LINEBREAK_CLASS_OP;
 
 	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
 
