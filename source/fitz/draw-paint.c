@@ -885,8 +885,7 @@ template_span_with_mask_1_general(byte * restrict dp, int da, const byte * restr
 					dp += 1+da;
 					continue;
 				}
-				masa = FZ_COMBINE(sp[1], ma);
-				masa = 255 - masa;
+				masa = FZ_REVERSE_COMBINE(sp[1], ma);
 				masa = FZ_EXPAND(masa);
 				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 				sp++; dp++;
@@ -999,8 +998,7 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 					dp += 3+da;
 					continue;
 				}
-				masa = FZ_COMBINE(sp[3], ma);
-				masa = 255 - masa;
+				masa = FZ_REVERSE_COMBINE(sp[3], ma);
 				masa = FZ_EXPAND(masa);
 				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 				sp++; dp++;
@@ -1092,8 +1090,7 @@ template_span_with_mask_4_general(byte * restrict dp, int da, const byte * restr
 					dp += 4+da;
 					continue;
 				}
-				masa = FZ_COMBINE(sp[4], ma);
-				masa = 255 - masa;
+				masa = FZ_REVERSE_COMBINE(sp[4], ma);
 				masa = FZ_EXPAND(masa);
 				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
 				sp++; dp++;
@@ -1187,8 +1184,7 @@ template_span_with_mask_N_general(byte * restrict dp, int da, const byte * restr
 					dp += n+da;
 					continue;
 				}
-				masa = FZ_COMBINE(sp[n], ma);
-				masa = 255-masa;
+				masa = FZ_REVERSE_COMBINE(sp[n], ma);
 				masa = FZ_EXPAND(masa);
 				while (k--)
 				{
