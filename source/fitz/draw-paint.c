@@ -950,19 +950,42 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 			else
 			{
 				masa = FZ_EXPAND(masa);
-				*dp = *sp + FZ_COMBINE(*dp, masa);
-				sp++; dp++;
-				*dp = *sp + FZ_COMBINE(*dp, masa);
-				sp++; dp++;
-				*dp = *sp + FZ_COMBINE(*dp, masa);
-				sp++; dp++;
-				if (da)
+				if (da && sa)
 				{
-					*dp = (sa ? *sp : 255) + FZ_COMBINE(*dp, masa);
-					dp++;
+					const uint32_t mask = 0x00ff00ff;
+					uint32_t d0 = *(uint32_t *)dp;
+					uint32_t d1 = d0>>8;
+					uint32_t s0 = *(uint32_t *)sp;
+					uint32_t s1 = s0>>8;
+					sp += 4;
+					d0 &= mask;
+					d1 &= mask;
+					s0 &= mask;
+					s1 &= mask;
+					s0 += (d0*masa)>>8;
+					s1 += (d1*masa)>>8;
+					s0 &= mask;
+					s1 &= mask;
+					s0 |= s1<<8;
+					*(uint32_t *)dp = s0;
+					dp += 4;
 				}
-				if (sa)
-					sp++;
+				else
+				{
+					*dp = *sp + FZ_COMBINE(*dp, masa);
+					sp++; dp++;
+					*dp = *sp + FZ_COMBINE(*dp, masa);
+					sp++; dp++;
+					*dp = *sp + FZ_COMBINE(*dp, masa);
+					sp++; dp++;
+					if (da)
+					{
+						*dp = (sa ? *sp : 255) + FZ_COMBINE(*dp, masa);
+						dp++;
+					}
+					if (sa)
+						sp++;
+				}
 			}
 		}
 		else
