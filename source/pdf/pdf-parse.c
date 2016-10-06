@@ -55,13 +55,35 @@ rune_from_utf16be(int *out, unsigned char *s, unsigned char *end)
 	return 1;
 }
 
+static size_t
+skip_language_code_utf16be(unsigned char *s, size_t n, size_t i)
+{
+	/* skip language escape codes */
+	if (i + 6 <= n && s[i+0] == 0 && s[i+1] == 27 && s[i+4] == 0 && s[i+5] == 27)
+		return 6;
+	else if (i + 8 <= n && s[i+0] == 0 && s[i+1] == 27 && s[i+6] == 0 && s[i+7] == 27)
+		return 8;
+	return 0;
+}
+
+static size_t
+skip_language_code_utf8(unsigned char *s, size_t n, size_t i)
+{
+	/* skip language escape codes */
+	if (i + 3 <= n && s[i] == 27 && s[i+3])
+		return 3;
+	else if (i + 5 <= n && s[i] == 27 && s[i+5] == 27)
+		return 5;
+	return 0;
+}
+
 char *
 pdf_to_utf8_imp(fz_context *ctx, unsigned char *srcptr, size_t srclen)
 {
 	char *dstptr, *dst;
 	size_t dstlen = 0;
 	int ucs;
-	size_t i;
+	size_t i, n;
 
 	/* UTF-16BE */
 	if (srclen >= 2 && srcptr[0] == 254 && srcptr[1] == 255)
@@ -69,19 +91,9 @@ pdf_to_utf8_imp(fz_context *ctx, unsigned char *srcptr, size_t srclen)
 		i = 2;
 		while (i + 2 <= srclen)
 		{
-			/* skip language escape codes */
-			if (i + 6 <= srclen &&
-					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
-					srcptr[i+4] == 0 && srcptr[i+5] == 27)
-			{
-				i += 6;
-			}
-			else if (i + 8 <= srclen &&
-					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
-					srcptr[i+6] == 0 && srcptr[i+7] == 27)
-			{
-				i += 8;
-			}
+			n = skip_language_code_utf16be(srcptr, srclen, i);
+			if (n)
+				i += n;
 			else
 			{
 				i += rune_from_utf16be(&ucs, srcptr + i, srcptr + srclen);
@@ -94,24 +106,43 @@ pdf_to_utf8_imp(fz_context *ctx, unsigned char *srcptr, size_t srclen)
 		i = 2;
 		while (i + 2 <= srclen)
 		{
-			/* skip language escape codes */
-			if (i + 6 <= srclen &&
-					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
-					srcptr[i+4] == 0 && srcptr[i+5] == 27)
-			{
-				i += 6;
-			}
-			else if (i + 8 <= srclen &&
-					srcptr[i+0] == 0 && srcptr[i+1] == 27 &&
-					srcptr[i+6] == 0 && srcptr[i+7] == 27)
-			{
-				i += 8;
-			}
+			n = skip_language_code_utf16be(srcptr, srclen, i);
+			if (n)
+				i += n;
 			else
 			{
 				i += rune_from_utf16be(&ucs, srcptr + i, srcptr + srclen);
 				dstptr += fz_runetochar(dstptr, ucs);
 			}
+		}
+	}
+
+	/* UTF-8 */
+	else if (srclen >= 3 && srcptr[0] == 239 && srcptr[1] == 187 && srcptr[2] == 191)
+	{
+		i = 3;
+		while (i < srclen)
+		{
+			n = skip_language_code_utf8(srcptr, srclen, i);
+			if (n)
+				i += n;
+			else
+			{
+				i += 1;
+				dstlen += 1;
+			}
+		}
+
+		dstptr = dst = fz_malloc(ctx, dstlen + 1);
+
+		i = 3;
+		while (i < srclen)
+		{
+			n = skip_language_code_utf8(srcptr, srclen, i);
+			if (n)
+				i += n;
+			else
+				*dstptr++ = srcptr[i++];
 		}
 	}
 
