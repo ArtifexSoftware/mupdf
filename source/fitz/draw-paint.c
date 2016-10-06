@@ -847,7 +847,7 @@ template_span_with_mask_1_general(byte * restrict dp, int da, const byte * restr
 		int masa;
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
-		if (ma == 0)
+		if (ma == 0 || (sa && sp[1] == 0))
 		{
 			dp += 1 + da;
 			sp += 1 + sa;
@@ -915,7 +915,7 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 		int masa;
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
-		if (ma == 0)
+		if (ma == 0 || (sa && sp[3] == 0))
 		{
 			dp += 3 + da;
 			sp += 3 + sa;
@@ -1008,7 +1008,7 @@ template_span_with_mask_4_general(byte * restrict dp, int da, const byte * restr
 		int masa;
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
-		if (ma == 0)
+		if (ma == 0 || (sa && sp[4] == 0))
 		{
 			dp += 4 + da;
 			sp += 4 + sa;
@@ -1097,7 +1097,7 @@ template_span_with_mask_N_general(byte * restrict dp, int da, const byte * restr
 	{
 		int ma = *mp++;
 		ma = FZ_EXPAND(ma);
-		if (ma == 0)
+		if (ma == 0 || (sa && sp[n] == 0))
 		{
 			dp += n + da;
 			sp += n + sa;
