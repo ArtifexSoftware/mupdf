@@ -106,6 +106,7 @@ LOCAL_SRC_FILES := \
 	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/tcd.c \
 	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/tgt.c \
 	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/thix_manager.c \
+	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/thread.c \
 	$(MY_ROOT)/thirdparty/openjpeg/src/lib/openjp2/tpix_manager.c \
 	$(MY_ROOT)/thirdparty/jpeg/jaricom.c \
 	$(MY_ROOT)/thirdparty/jpeg/jcomapi.c \
