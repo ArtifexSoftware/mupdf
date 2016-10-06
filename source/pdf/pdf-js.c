@@ -646,7 +646,7 @@ static void pdf_js_load_document_level(pdf_js *js)
 		{
 			pdf_obj *fragment = pdf_dict_get_val(ctx, javascript, i);
 			pdf_obj *code = pdf_dict_get(ctx, fragment, PDF_NAME_JS);
-			char *codebuf = pdf_to_utf8(ctx, code);
+			char *codebuf = pdf_load_stream_or_string_as_utf8(ctx, code);
 			pdf_js_execute(js, codebuf);
 			fz_free(ctx, codebuf);
 		}
