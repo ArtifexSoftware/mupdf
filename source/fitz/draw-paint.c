@@ -879,6 +879,12 @@ template_span_with_mask_1_general(byte * restrict dp, int da, const byte * restr
 		{
 			if (sa)
 			{
+				if (sp[1] == 0)
+				{
+					sp += 2;
+					dp += 1+da;
+					continue;
+				}
 				masa = FZ_COMBINE(sp[1], ma);
 				masa = 255 - masa;
 				masa = FZ_EXPAND(masa);
@@ -964,6 +970,12 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 			/* FIXME: There is potential for SWAR optimisation here */
 			if (sa)
 			{
+				if (sp[3] == 0)
+				{
+					sp += 4;
+					dp += 3+da;
+					continue;
+				}
 				masa = FZ_COMBINE(sp[3], ma);
 				masa = 255 - masa;
 				masa = FZ_EXPAND(masa);
@@ -1051,6 +1063,12 @@ template_span_with_mask_4_general(byte * restrict dp, int da, const byte * restr
 		{
 			if (sa)
 			{
+				if (sp[4] == 0)
+				{
+					sp += 5;
+					dp += 4+da;
+					continue;
+				}
 				masa = FZ_COMBINE(sp[4], ma);
 				masa = 255 - masa;
 				masa = FZ_EXPAND(masa);
@@ -1140,6 +1158,12 @@ template_span_with_mask_N_general(byte * restrict dp, int da, const byte * restr
 			if (sa)
 			{
 				int masa;
+				if (sp[n] == 0)
+				{
+					sp += n+1;
+					dp += n+da;
+					continue;
+				}
 				masa = FZ_COMBINE(sp[n], ma);
 				masa = 255-masa;
 				masa = FZ_EXPAND(masa);
