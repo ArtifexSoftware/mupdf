@@ -144,7 +144,7 @@ jxr_unpack_sample(fz_context *ctx, struct info *info, jxr_image_t image, int *sp
 		return;
 	}
 
-	comps = fz_mini(info->cspace->n, jxr_get_IMAGE_CHANNELS(image));
+	comps = fz_mini(fz_colorspace_n(ctx, info->cspace), jxr_get_IMAGE_CHANNELS(image));
 	alpha = jxr_get_ALPHACHANNEL_FLAG(image);
 	bpc = jxr_get_CONTAINER_BPC(image);
 
@@ -214,24 +214,25 @@ jxr_decode_block(jxr_image_t image, int mx, int my, int *data)
 	struct info *info = jxr_get_user_data(image);
 	fz_context *ctx = info->ctx;
 	unsigned char *p;
-	int x, y;
+	int x, y, n1;
 
 	mx *= 16;
 	my *= 16;
 
+	n1 = fz_colorspace_n(ctx, info->cspace) + 1;
 	for (y = 0; y < 16; y++)
 	{
 		if ((my + y) >= info->height)
 			return;
 
-		p = info->samples + (my + y) * info->stride + mx * (info->cspace->n + 1);
+		p = info->samples + (my + y) * info->stride + mx * n1;
 
 		for (x = 0; x < 16; x++)
 		{
 			if ((mx + x) < info->width)
 			{
 				jxr_unpack_sample(ctx, info, image, data, p);
-				p += info->cspace->n + 1;
+				p += n1;
 			}
 
 			data += jxr_get_IMAGE_CHANNELS(image) + jxr_get_ALPHACHANNEL_FLAG(image);
@@ -246,24 +247,25 @@ jxr_decode_block_alpha(jxr_image_t image, int mx, int my, int *data)
 	struct info *info = jxr_get_user_data(image);
 	fz_context *ctx = info->ctx;
 	unsigned char *p;
-	int x, y;
+	int x, y, n;
 
 	mx *= 16;
 	my *= 16;
 
+	n = fz_colorspace_n(ctx, n);
 	for (y = 0; y < 16; y++)
 	{
 		if ((my + y) >= info->height)
 			return;
 
-		p = info->samples + (my + y) * info->stride + mx * (info->cspace->n + 1);
+		p = info->samples + (my + y) * info->stride + mx * (n + 1);
 
 		for (x = 0; x < 16; x++)
 		{
 			if ((mx + x) < info->width)
 			{
-				jxr_unpack_alpha_sample(ctx, info, image, data, p + info->cspace->n);
-				p += info->cspace->n + 1;
+				jxr_unpack_alpha_sample(ctx, info, image, data, n);
+				p += n + 1;
 			}
 
 			data++;
@@ -310,7 +312,7 @@ jxr_read_image(fz_context *ctx, unsigned char *data, int size, struct info *info
 		else if (info->comps >= 4)
 			info->cspace = fz_device_cmyk(ctx);
 
-		info->stride = info->width * (info->cspace->n + 1);
+		info->stride = info->width * (fz_colorspace_n(ctx, info->cspace) + 1);
 
 		if (!only_metadata)
 		{
@@ -402,7 +404,7 @@ fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 		image->xres = info.xres;
 		image->yres = info.yres;
 
-		fz_unpack_tile(ctx, image, info.samples, info.cspace->n + 1, 8, info.stride, 0);
+		fz_unpack_tile(ctx, image, info.samples, fz_colorspace_n(ctx, info->cspace) + 1, 8, info.stride, 0);
 
 		if (info.has_alpha && !info.has_premul)
 		{
