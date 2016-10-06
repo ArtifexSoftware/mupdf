@@ -1000,18 +1000,33 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 				}
 				masa = FZ_REVERSE_COMBINE(sp[3], ma);
 				masa = FZ_EXPAND(masa);
-				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-				sp++; dp++;
-				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-				sp++; dp++;
-				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-				sp++; dp++;
 				if (da)
 				{
-					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-					dp++;
+					const uint32_t mask = 0x00ff00ff;
+					uint32_t d0 = *(uint32_t *)dp;
+					uint32_t d1 = d0>>8;
+					uint32_t s0 = *(uint32_t *)sp;
+					uint32_t s1 = s0>>8;
+					sp += 4;
+					d0 &= mask;
+					d1 &= mask;
+					s0 &= mask;
+					s1 &= mask;
+					d0 = (((s0 * ma)>>8) & mask) + (((d0 * masa)>>8) & mask);
+					d1 = (((s1 * ma)>>8) & mask) + (((d1 * masa)>>8) & mask);
+					d0 |= d1<<8;
+					*(uint32_t *)dp = d0;
+					dp += 4;
 				}
-				sp++;
+				else
+				{
+					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
+					sp++; dp++;
+					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
+					sp++; dp++;
+					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
+					sp+=2; dp++;
+				}
 			}
 			else
 			{
