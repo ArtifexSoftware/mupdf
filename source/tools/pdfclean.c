@@ -19,6 +19,7 @@ static void usage(void)
 		"\t-g\tgarbage collect unused objects\n"
 		"\t-gg\tin addition to -g compact xref table\n"
 		"\t-ggg\tin addition to -gg merge duplicate objects\n"
+		"\t-gggg\tin addition to -ggg check streams for duplication\n"
 		"\t-l\tlinearize PDF\n"
 		"\t-a\tascii hex encode binary streams\n"
 		"\t-d\tdecompress streams\n"
