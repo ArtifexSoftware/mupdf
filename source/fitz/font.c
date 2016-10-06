@@ -1545,9 +1545,7 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 
 const char *fz_font_name(fz_font *font)
 {
-	if (font == NULL || font->name == NULL)
-		return "";
-	return font->name;
+	return font ? font->name : "";
 }
 
 fz_buffer **fz_font_t3_procs(fz_font *font)
