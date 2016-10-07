@@ -911,7 +911,6 @@ template_span_with_mask_1_general(byte * restrict dp, int da, const byte * restr
 	while (--w);
 }
 
-/* FIXME: There is potential for SWAR optimisation here */
 static inline void
 template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
@@ -987,17 +986,15 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 				}
 			}
 		}
-		else
+		else if (sa)
 		{
-			/* FIXME: There is potential for SWAR optimisation here */
-			if (sa)
+			if (sp[3] == 0)
 			{
-				if (sp[3] == 0)
-				{
-					sp += 4;
-					dp += 3+da;
-					continue;
-				}
+				sp += 4;
+				dp += 3+da;
+			}
+			else
+			{
 				masa = FZ_REVERSE_COMBINE(sp[3], ma);
 				masa = FZ_EXPAND(masa);
 				if (da)
@@ -1012,9 +1009,9 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 					d1 &= mask;
 					s0 &= mask;
 					s1 &= mask;
-					d0 = (((s0 * ma)>>8) & mask) + (((d0 * masa)>>8) & mask);
-					d1 = (((s1 * ma)>>8) & mask) + (((d1 * masa)>>8) & mask);
-					d0 |= d1<<8;
+					d0 = ((s0 * ma + d0 * masa)>>8) & mask;
+					d1 = (s1 * ma + d1 * masa) & ~mask;
+					d0 |= d1;
 					*(uint32_t *)dp = d0;
 					dp += 4;
 				}
@@ -1028,26 +1025,25 @@ template_span_with_mask_3_general(byte * restrict dp, int da, const byte * restr
 					sp+=2; dp++;
 				}
 			}
-			else
+		}
+		else
+		{
+			*dp = FZ_BLEND(*sp, *dp, ma);
+			sp++; dp++;
+			*dp = FZ_BLEND(*sp, *dp, ma);
+			sp++; dp++;
+			*dp = FZ_BLEND(*sp, *dp, ma);
+			sp++; dp++;
+			if (da)
 			{
-				*dp = FZ_BLEND(*sp, *dp, ma);
-				sp++; dp++;
-				*dp = FZ_BLEND(*sp, *dp, ma);
-				sp++; dp++;
-				*dp = FZ_BLEND(*sp, *dp, ma);
-				sp++; dp++;
-				if (da)
-				{
-					*dp = FZ_BLEND(255, *dp, ma);
-					dp++;
-				}
+				*dp = FZ_BLEND(255, *dp, ma);
+				dp++;
 			}
 		}
 	}
 	while (--w);
 }
 
-/* FIXME: There is potential for SWAR optimisation here */
 static inline void
 template_span_with_mask_4_general(byte * restrict dp, int da, const byte * restrict sp, int sa, const byte * restrict mp, int w)
 {
@@ -1066,33 +1062,63 @@ template_span_with_mask_4_general(byte * restrict dp, int da, const byte * restr
 			masa = (sa ? 255 - sp[4] : 0);
 			if (masa == 0)
 			{
-				*dp++ = *sp++;
-				*dp++ = *sp++;
-				*dp++ = *sp++;
-				*dp++ = *sp++;
-				if (da)
-					*dp++ = (sa ? *sp : 255);
-				if (sa)
-					sp++;
+				if (!da && !sa)
+				{
+					*(uint32_t *)dp = *(uint32_t *)sp;
+					dp += 4;
+					sp += 4;
+				}
+				else
+				{
+					*dp++ = *sp++;
+					*dp++ = *sp++;
+					*dp++ = *sp++;
+					*dp++ = *sp++;
+					if (da)
+						*dp++ = (sa ? *sp : 255);
+					if (sa)
+						sp++;
+				}
 			}
 			else
 			{
 				masa = FZ_EXPAND(masa);
-				*dp = *sp + FZ_COMBINE(*dp, masa);
-				sp++; dp++;
-				*dp = *sp + FZ_COMBINE(*dp, masa);
-				sp++; dp++;
-				*dp = *sp + FZ_COMBINE(*dp, masa);
-				sp++; dp++;
-				*dp = *sp + FZ_COMBINE(*dp, masa);
-				sp++; dp++;
-				if (da)
+				if (!da && !sa)
 				{
-					*dp = (sa ? *sp : 255) + FZ_COMBINE(*dp, masa);
-					dp++;
+					const uint32_t mask = 0x00ff00ff;
+					uint32_t d0 = *(uint32_t *)dp;
+					uint32_t d1 = d0>>8;
+					uint32_t s1 = *(uint32_t *)sp;
+					uint32_t s0 = s1<<8;
+					sp += 4;
+					d0 &= mask;
+					d1 &= mask;
+					s0 &= ~mask;
+					s1 &= ~mask;
+					d0 = ((s0 + d0 * masa)>>8) & mask;
+					d1 =  (s1 + d1 * masa) & ~mask;
+					d0 |= d1;
+					*(uint32_t *)dp = d0;
+					dp += 4;
 				}
-				if (sa)
-					sp++;
+				else
+				{
+					*dp = *sp + FZ_COMBINE(*dp, masa);
+					sp++; dp++;
+					*dp = *sp + FZ_COMBINE(*dp, masa);
+					sp++; dp++;
+					*dp = *sp + FZ_COMBINE(*dp, masa);
+					sp++; dp++;
+					*dp = *sp + FZ_COMBINE(*dp, masa);
+					sp++; dp++;
+					if (da)
+					{
+						*dp = (sa ? *sp : 255) + FZ_COMBINE(*dp, masa);
+						dp++;
+					}
+					if (sa)
+						sp++;
+				}
 			}
 		}
 		else
@@ -1103,24 +1129,45 @@ template_span_with_mask_4_general(byte * restrict dp, int da, const byte * restr
 				{
 					sp += 5;
 					dp += 4+da;
-					continue;
 				}
-				masa = FZ_REVERSE_COMBINE(sp[4], ma);
-				masa = FZ_EXPAND(masa);
-				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-				sp++; dp++;
-				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-				sp++; dp++;
-				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-				sp++; dp++;
-				*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-				sp++; dp++;
-				if (da)
+				else
 				{
+					masa = FZ_REVERSE_COMBINE(sp[4], ma);
+					masa = FZ_EXPAND(masa);
 					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
-					dp++;
+					sp++; dp++;
+					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
+					sp++; dp++;
+					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
+					sp++; dp++;
+					*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
+					sp++; dp++;
+					if (da)
+					{
+						*dp = FZ_COMBINE2(*sp, ma, *dp, masa);
+						dp++;
+					}
+					sp++;
 				}
-				sp++;
+			}
+			else if (!da)
+			{
+				const uint32_t mask = 0x00ff00ff;
+				uint32_t d0 = *(uint32_t *)dp;
+				uint32_t d1 = d0 & ~mask;
+				uint32_t s0 = *(uint32_t *)sp;
+				uint32_t s1 = s0>>8;
+				sp += 4;
+				d0 &= mask;
+				s0 &= mask;
+				s1 &= mask;
+				s0 -= d0;
+				s1 -= d1>>8;
+				d0 = (((d0<<8) + s0 * ma)>>8) & mask;
+				d1 =  (d1 + s1 * ma) & ~mask;
+				d0 |= d1;
+				*(uint32_t *)dp = d0;
+				dp += 4;
 			}
 			else
 			{
