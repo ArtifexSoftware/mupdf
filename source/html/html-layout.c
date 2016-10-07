@@ -2182,8 +2182,8 @@ static void fragment_cb(const uint32_t *fragment,
 	}
 }
 
-static void
-detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_bidi_direction *bidi_dir, fz_html_flow *flow)
+static fz_bidi_direction
+detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_bidi_direction bidi_dir, fz_html_flow *flow)
 {
 	fz_html_flow *end = flow;
 	bidi_data data;
@@ -2249,8 +2249,9 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 		data.pool = pool;
 		data.flow = flow;
 		data.buffer = buffer;
-		fz_bidi_fragment_text(ctx, buffer->data, buffer->len, bidi_dir, &fragment_cb, &data, 0 /* Flags */);
+		fz_bidi_fragment_text(ctx, buffer->data, buffer->len, &bidi_dir, &fragment_cb, &data, 0 /* Flags */);
 	}
+	return bidi_dir;
 }
 
 static void
@@ -2259,7 +2260,7 @@ detect_box_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_ht
 	while (box)
 	{
 		if (box->flow_head)
-			detect_flow_directionality(ctx, pool, buffer, &box->markup_dir, box->flow_head);
+			box->markup_dir = detect_flow_directionality(ctx, pool, buffer, box->markup_dir, box->flow_head);
 		detect_box_directionality(ctx, pool, buffer, box->down);
 		box = box->next;
 	}

@@ -183,7 +183,10 @@ enum
 
 struct fz_html_s
 {
-	int type;
+	unsigned int type : 2;
+	unsigned int is_first_flow : 1; /* for text-indent */
+	unsigned int markup_dir : 2;
+	unsigned int list_item : 27;
 	float x, y, w, h; /* content */
 	float padding[4];
 	float margin[4];
@@ -191,10 +194,7 @@ struct fz_html_s
 	float em;
 	fz_html *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
-	fz_bidi_direction markup_dir;
 	fz_css_style style;
-	int list_item;
-	int is_first_flow; /* for text-indent */
 	fz_pool *pool; /* pool allocator for this html tree (only set for root block) */
 };
 
