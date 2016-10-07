@@ -196,6 +196,7 @@ fz_has_permission(fz_context *ctx, fz_document *doc, fz_permission p)
 fz_outline *
 fz_load_outline(fz_context *ctx, fz_document *doc)
 {
+	fz_ensure_layout(ctx, doc);
 	if (doc && doc->load_outline)
 		return doc->load_outline(ctx, doc);
 	return NULL;
