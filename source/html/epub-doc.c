@@ -240,10 +240,11 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 static fz_outline *
 epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base_uri)
 {
-	fz_outline *outline, *head, *tail;
 	char path[2048], *s;
+	fz_outline *outline, *head, **tailp;
 
 	head = NULL;
+	tailp = &head;
 
 	node = fz_xml_find_down(node, "navPoint");
 	while (node)
@@ -261,17 +262,13 @@ epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base
 			if (s)
 				*s = 0;
 
-			outline = fz_new_outline(ctx);
+			*tailp = outline = fz_new_outline(ctx);
+			tailp = &(*tailp)->next;
 			outline->title = fz_strdup(ctx, text);
 			outline->dest.kind = FZ_LINK_GOTO;
 			outline->dest.ld.gotor.dest = fz_strdup(ctx, path);
 			outline->dest.ld.gotor.page = 0; /* computed in epub_layout */
 			outline->down = epub_parse_ncx_imp(ctx, doc, node, base_uri);
-
-			if (!head)
-				head = tail = outline;
-			else
-				tail = tail->next = outline;
 		}
 		node = fz_xml_find_next(node, "navPoint");
 	}
@@ -320,7 +317,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	const char *full_path;
 	const char *version;
 	char ncx[2048], s[2048];
-	epub_chapter *head, *tail;
+	epub_chapter **tailp;
 
 	if (fz_has_archive_entry(ctx, zip, "META-INF/rights.xml"))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "EPUB is locked by DRM");
@@ -370,21 +367,18 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 		epub_parse_ncx(ctx, doc, ncx);
 	}
 
-	head = tail = NULL;
+	doc->spine = NULL;
+	tailp = &doc->spine;
 	itemref = fz_xml_find_down(spine, "itemref");
 	while (itemref)
 	{
 		if (path_from_idref(s, manifest, base_uri, fz_xml_att(itemref, "idref"), sizeof s))
 		{
-			if (!head)
-				head = tail = epub_parse_chapter(ctx, doc, s);
-			else
-				tail = tail->next = epub_parse_chapter(ctx, doc, s);
+			*tailp = epub_parse_chapter(ctx, doc, s);
+			tailp = &(*tailp)->next;
 		}
 		itemref = fz_xml_find_next(itemref, "itemref");
 	}
-
-	doc->spine = head;
 
 	fz_drop_xml(ctx, container_xml);
 	fz_drop_xml(ctx, content_opf);
