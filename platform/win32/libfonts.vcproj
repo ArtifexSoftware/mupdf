@@ -1085,6 +1085,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\generated\NotoSerifDevanagari-Regular.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\generated\NotoSerifGeorgian-Regular.c"
 			>
 		</File>
