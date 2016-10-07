@@ -233,10 +233,11 @@ static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *fl
 	return new_flow;
 }
 
-static void flush_space(fz_context *ctx, fz_pool *pool, fz_html *flow, fz_html *inline_box, int lang, struct genstate *g)
+static void flush_space(fz_context *ctx, fz_html *flow, fz_html *inline_box, int lang, struct genstate *g)
 {
 	static const char *space = " ";
 	int bsp = inline_box->style.white_space & WS_ALLOW_BREAK_SPACE;
+	fz_pool *pool = g->pool;
 	if (g->emit_white)
 	{
 		if (!g->at_bol)
@@ -286,10 +287,10 @@ static const char *pairbrk[29] =
 	"_^^%%%^^^_______%%__^^^_____%", /* RI regional indicator */
 };
 
-static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const char *text, int lang, struct genstate *g)
+static void generate_text(fz_context *ctx, fz_html *box, const char *text, int lang, struct genstate *g)
 {
 	fz_html *flow;
-
+	fz_pool *pool = g->pool;
 	int collapse = box->style.white_space & WS_COLLAPSE;
 	int bsp = box->style.white_space & WS_ALLOW_BREAK_SPACE;
 	int bnl = box->style.white_space & WS_FORCE_BREAK_NEWLINE;
@@ -339,7 +340,7 @@ static void generate_text(fz_context *ctx, fz_pool *pool, fz_html *box, const ch
 			const char *prev, *mark = text;
 			int c;
 
-			flush_space(ctx, pool, flow, box, lang, g);
+			flush_space(ctx, flow, box, lang, g);
 
 			if (g->at_bol)
 				g->last_brk_cls = UCDN_LINEBREAK_CLASS_WJ;
@@ -424,21 +425,23 @@ static fz_image *load_html_image(fz_context *ctx, fz_archive *zip, const char *b
 	return img;
 }
 
-static void generate_anchor(fz_context *ctx, fz_pool *pool, fz_html *box, const char *id, struct genstate *g)
+static void generate_anchor(fz_context *ctx, fz_html *box, const char *id, struct genstate *g)
 {
+	fz_pool *pool = g->pool;
 	fz_html *flow = box;
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
 	add_flow_anchor(ctx, pool, flow, box, id);
 }
 
-static void generate_image(fz_context *ctx, fz_pool *pool, fz_html *box, fz_image *img, struct genstate *g)
+static void generate_image(fz_context *ctx, fz_html *box, fz_image *img, struct genstate *g)
 {
 	fz_html *flow = box;
+	fz_pool *pool = g->pool;
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
 
-	flush_space(ctx, pool, flow, box, 0, g);
+	flush_space(ctx, flow, box, 0, g);
 
 	if (!img)
 	{
@@ -568,7 +571,7 @@ static fz_html *insert_break_box(fz_context *ctx, fz_html *box, fz_html *top)
 	return top;
 }
 
-static void insert_inline_box(fz_context *ctx, fz_pool *pool, fz_html *box, fz_html *top, int markup_dir, struct genstate *g)
+static void insert_inline_box(fz_context *ctx, fz_html *box, fz_html *top, int markup_dir, struct genstate *g)
 {
 	if (top->type == BOX_BLOCK)
 	{
@@ -578,7 +581,7 @@ static void insert_inline_box(fz_context *ctx, fz_pool *pool, fz_html *box, fz_h
 		}
 		else
 		{
-			fz_html *flow = new_box(ctx, pool, markup_dir);
+			fz_html *flow = new_box(ctx, g->pool, markup_dir);
 			flow->is_first_flow = !top->last;
 			insert_box(ctx, flow, BOX_FLOW, top);
 			insert_box(ctx, box, BOX_INLINE, flow);
@@ -640,8 +643,8 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 				{
 					box = new_box(ctx, g->pool, markup_dir);
 					fz_apply_css_style(ctx, g->set, &box->style, &match);
-					insert_inline_box(ctx, g->pool, box, top, markup_dir, g);
-					generate_image(ctx, g->pool, box, load_html_image(ctx, g->zip, g->base_uri, src), g);
+					insert_inline_box(ctx, box, top, markup_dir, g);
+					generate_image(ctx, box, load_html_image(ctx, g->zip, g->base_uri, src), g);
 				}
 			}
 
@@ -659,15 +662,15 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 						top = insert_block_box(ctx, box, top);
 						imgbox = new_box(ctx, g->pool, markup_dir);
 						fz_apply_css_style(ctx, g->set, &imgbox->style, &match);
-						insert_inline_box(ctx, g->pool, imgbox, box, markup_dir, g);
-						generate_image(ctx, g->pool, imgbox, fz_keep_image(ctx, img), g);
+						insert_inline_box(ctx, imgbox, box, markup_dir, g);
+						generate_image(ctx, imgbox, fz_keep_image(ctx, img), g);
 					}
 					else if (display == DIS_INLINE)
 					{
 						box = new_box(ctx, g->pool, markup_dir);
 						fz_apply_css_style(ctx, g->set, &box->style, &match);
-						insert_inline_box(ctx, g->pool, box, top, markup_dir, g);
-						generate_image(ctx, g->pool, box, fz_keep_image(ctx, img), g);
+						insert_inline_box(ctx, box, top, markup_dir, g);
+						generate_image(ctx, box, fz_keep_image(ctx, img), g);
 					}
 				}
 			}
@@ -709,7 +712,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 				}
 				else if (display == DIS_INLINE)
 				{
-					insert_inline_box(ctx, g->pool, box, top, child_dir, g);
+					insert_inline_box(ctx, box, top, child_dir, g);
 				}
 				else
 				{
@@ -751,16 +754,16 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 				{
 					/* Create anonymous inline box, with the same style as the top block box. */
 					box = new_box(ctx, g->pool, markup_dir);
-					insert_inline_box(ctx, g->pool, box, top, markup_dir, g);
+					insert_inline_box(ctx, box, top, markup_dir, g);
 					box->style = top->style;
 					/* Make sure not to recursively multiply font sizes. */
 					box->style.font_size.value = 1;
 					box->style.font_size.unit = N_SCALE;
-					generate_text(ctx, g->pool, box, text, markup_lang, g);
+					generate_text(ctx, box, text, markup_lang, g);
 				}
 				else
 				{
-					generate_text(ctx, g->pool, top, text, markup_lang, g);
+					generate_text(ctx, top, text, markup_lang, g);
 				}
 			}
 		}
