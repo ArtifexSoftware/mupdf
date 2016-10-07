@@ -1269,10 +1269,10 @@ fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, 
 	style->color = color_from_property(match, "color", black);
 	style->background_color = color_from_property(match, "background-color", transparent);
 
-	style->border_style[0] = border_style_from_property(match, "border-top-style");
-	style->border_style[1] = border_style_from_property(match, "border-right-style");
-	style->border_style[2] = border_style_from_property(match, "border-bottom-style");
-	style->border_style[3] = border_style_from_property(match, "border-left-style");
+	style->border_style_0 = border_style_from_property(match, "border-top-style");
+	style->border_style_1 = border_style_from_property(match, "border-right-style");
+	style->border_style_2 = border_style_from_property(match, "border-bottom-style");
+	style->border_style_3 = border_style_from_property(match, "border-left-style");
 
 	style->border_color[0] = color_from_property(match, "border-top-color", style->color);
 	style->border_color[1] = color_from_property(match, "border-right-color", style->color);

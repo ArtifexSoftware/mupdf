@@ -1338,10 +1338,10 @@ static float layout_block(fz_context *ctx, fz_html *box, fz_html *top, float pag
 	padding[2] = fz_from_css_number(style->padding[2], em, top->w);
 	padding[3] = fz_from_css_number(style->padding[3], em, top->w);
 
-	border[0] = style->border_style[0] ? fz_from_css_number(style->border_width[0], em, top->w) : 0;
-	border[1] = style->border_style[1] ? fz_from_css_number(style->border_width[1], em, top->w) : 0;
-	border[2] = style->border_style[2] ? fz_from_css_number(style->border_width[2], em, top->w) : 0;
-	border[3] = style->border_style[3] ? fz_from_css_number(style->border_width[3], em, top->w) : 0;
+	border[0] = style->border_style_0 ? fz_from_css_number(style->border_width[0], em, top->w) : 0;
+	border[1] = style->border_style_1 ? fz_from_css_number(style->border_width[1], em, top->w) : 0;
+	border[2] = style->border_style_2 ? fz_from_css_number(style->border_width[2], em, top->w) : 0;
+	border[3] = style->border_style_3 ? fz_from_css_number(style->border_width[3], em, top->w) : 0;
 
 	/* TODO: remove 'vertical' margin adjustments across automatic page breaks */
 
@@ -2008,8 +2008,8 @@ fz_print_css_style(fz_context *ctx, fz_css_style *style, int boxtype, int n)
 		printf("%g%c ", style->border_width[2].value, style->border_width[2].unit);
 		printf("%g%c\n", style->border_width[3].value, style->border_width[3].unit);
 		indent(n); printf("border_style %d %d %d %d\n",
-				style->border_style[0], style->border_style[1],
-				style->border_style[2], style->border_style[3]);
+				style->border_style_0, style->border_style_1,
+				style->border_style_2, style->border_style_3);
 		indent(n); printf("text_indent %g%c\n", style->text_indent.value, style->text_indent.unit);
 		indent(n); printf("white_space %d\n", style->white_space);
 		indent(n); printf("text_align %d\n", style->text_align);
