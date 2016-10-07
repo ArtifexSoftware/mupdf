@@ -205,7 +205,8 @@ enum
 	FLOW_BREAK = 2,
 	FLOW_IMAGE = 3,
 	FLOW_SBREAK = 4,
-	FLOW_SHYPHEN = 5
+	FLOW_SHYPHEN = 5,
+	FLOW_ANCHOR = 6
 };
 
 struct fz_html_flow_s

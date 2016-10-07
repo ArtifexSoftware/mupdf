@@ -198,6 +198,14 @@ static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html
 	flow->content.image = fz_keep_image(ctx, img);
 }
 
+static void add_flow_anchor(fz_context *ctx, fz_pool *pool, fz_html *top, fz_html *inline_box, const char *anchor)
+{
+	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_ANCHOR);
+	size_t len = strlen(anchor)+1;
+	flow->content.text = fz_pool_alloc(ctx, pool, len);
+	memcpy(flow->content.text, anchor, len);
+}
+
 static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
 {
 	fz_html_flow *new_flow;
@@ -414,6 +422,14 @@ static fz_image *load_html_image(fz_context *ctx, fz_archive *zip, const char *b
 		fz_warn(ctx, "html: cannot load image src='%s'", src);
 
 	return img;
+}
+
+static void generate_anchor(fz_context *ctx, fz_pool *pool, fz_html *box, const char *id, struct genstate *g)
+{
+	fz_html *flow = box;
+	while (flow->type != BOX_FLOW)
+		flow = flow->up;
+	add_flow_anchor(ctx, pool, flow, box, id);
 }
 
 static void generate_image(fz_context *ctx, fz_pool *pool, fz_html *box, fz_image *img, struct genstate *g)
@@ -658,7 +674,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 
 			else if (display != DIS_NONE)
 			{
-				const char *dir, *lang;
+				const char *dir, *lang, *id;
 				int child_dir = markup_dir;
 				int child_lang = markup_lang;
 
@@ -699,6 +715,17 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html *top,
 				{
 					fz_warn(ctx, "unknown box display type");
 					insert_box(ctx, box, BOX_BLOCK, top);
+				}
+
+				if (!strcmp(tag, "a"))
+				{
+					id = fz_xml_att(node, "id");
+					if (id)
+					{
+						/* We don't need to create a box here, because since <a> tags are inline
+						 * the DIS_INLINE case * above should already have done it for us. */
+						generate_anchor(ctx, box, id, g);
+					}
 				}
 
 				if (fz_xml_down(node))
@@ -2032,6 +2059,7 @@ fz_print_html_flow(fz_context *ctx, fz_html_flow *flow, fz_html_flow *end)
 		case FLOW_SHYPHEN: printf("[-]"); break;
 		case FLOW_BREAK: printf("[!]"); break;
 		case FLOW_IMAGE: printf("<img>"); break;
+		case FLOW_ANCHOR: printf("<a id='%s'>", flow->content.text); break;
 		}
 		flow = flow->next;
 	}
