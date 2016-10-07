@@ -34,6 +34,35 @@ struct epub_page_s
 	int number;
 };
 
+static int
+find_anchor_flow(fz_html_flow *flow, const char *anchor, float page_h, int *page)
+{
+	while (flow)
+	{
+		if (flow->type == FLOW_ANCHOR && !strcmp(anchor, flow->content.text))
+		{
+			*page += (int)(flow->y / page_h);
+			return 1;
+		}
+		flow = flow->next;
+	}
+	return 0;
+}
+
+static int
+find_anchor(fz_html *box, const char *anchor, float page_h, int *page)
+{
+	while (box)
+	{
+		if (box->flow_head && find_anchor_flow(box->flow_head, anchor, page_h, page))
+			return 1;
+		if (box->down && find_anchor(box->down, anchor, page_h, page))
+			return 1;
+		box = box->next;
+	}
+	return 0;
+}
+
 static void
 epub_update_link_dests(fz_context *ctx, epub_document *doc, fz_outline *node)
 {
@@ -43,13 +72,24 @@ epub_update_link_dests(fz_context *ctx, epub_document *doc, fz_outline *node)
 	{
 		if (node->dest.kind == FZ_LINK_GOTO)
 		{
+			const char *dest = node->dest.ld.gotor.dest;
+			const char *s = strchr(dest, '#');
+			int n = s ? s - dest : strlen(dest);
+			if (s && s[1] == 0)
+				s = NULL;
+
 			for (ch = doc->spine; ch; ch = ch->next)
 			{
-				if (!strcmp(ch->path, node->dest.ld.gotor.dest))
+				if (strncmp(ch->path, dest, n) || ch->path[n] != 0)
+					continue;
+				node->dest.ld.gotor.page = ch->start;
+				if (s)
 				{
-					node->dest.ld.gotor.page = ch->start;
-					break;
+					/* Search for a matching fragment */
+					if (find_anchor(ch->box, s+1, ch->page_h, &node->dest.ld.gotor.page))
+						continue;
 				}
+				break;
 			}
 		}
 		epub_update_link_dests(ctx, doc, node->down);
@@ -240,7 +280,7 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 static fz_outline *
 epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base_uri)
 {
-	char path[2048], *s;
+	char path[2048];
 	fz_outline *outline, *head, **tailp;
 
 	head = NULL;
@@ -258,9 +298,6 @@ epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base
 			fz_strlcat(path, content, sizeof path);
 			fz_urldecode(path);
 			fz_cleanname(path);
-			s = strchr(path, '#');
-			if (s)
-				*s = 0;
 
 			*tailp = outline = fz_new_outline(ctx);
 			tailp = &(*tailp)->next;
