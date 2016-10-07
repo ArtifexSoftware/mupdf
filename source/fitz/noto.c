@@ -208,7 +208,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 	case UCDN_SCRIPT_CANADIAN_ABORIGINAL: Noto(SansCanadianAboriginal);
 	case UCDN_SCRIPT_CHAM: Noto(SansCham);
 	case UCDN_SCRIPT_CHEROKEE: Noto(SansCherokee);
-	case UCDN_SCRIPT_DEVANAGARI: Noto(SansDevanagari);
+	case UCDN_SCRIPT_DEVANAGARI: Noto2(SansDevanagari, SerifDevanagari);
 	case UCDN_SCRIPT_ETHIOPIC: Noto(SansEthiopic);
 	case UCDN_SCRIPT_GEORGIAN: Noto2(SansGeorgian, SerifGeorgian);
 	case UCDN_SCRIPT_GUJARATI: Noto2(SansGujarati, SerifGujarati);

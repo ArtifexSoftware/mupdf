@@ -151,6 +151,7 @@ if not exist generated/NotoSansYi-Regular.c fontdump.exe generated/NotoSansYi-Re
 if not exist generated/NotoSerif-Regular.c fontdump.exe generated/NotoSerif-Regular.c resources/fonts/noto/NotoSerif-Regular.ttf
 if not exist generated/NotoSerifArmenian-Regular.c fontdump.exe generated/NotoSerifArmenian-Regular.c resources/fonts/noto/NotoSerifArmenian-Regular.ttf
 if not exist generated/NotoSerifBengali-Regular.c fontdump.exe generated/NotoSerifBengali-Regular.c resources/fonts/noto/NotoSerifBengali-Regular.ttf
+if not exist generated/NotoSerifDevanagari-Regular.c fontdump.exe generated/NotoSerifDevanagari-Regular.c resources/fonts/noto/NotoSerifDevanagari-Regular.ttf
 if not exist generated/NotoSerifGeorgian-Regular.c fontdump.exe generated/NotoSerifGeorgian-Regular.c resources/fonts/noto/NotoSerifGeorgian-Regular.ttf
 if not exist generated/NotoSerifGujarati-Regular.c fontdump.exe generated/NotoSerifGujarati-Regular.c resources/fonts/noto/NotoSerifGujarati-Regular.ttf
 if not exist generated/NotoSerifKannada-Regular.c fontdump.exe generated/NotoSerifKannada-Regular.c resources/fonts/noto/NotoSerifKannada-Regular.ttf
