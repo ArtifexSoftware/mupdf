@@ -1601,7 +1601,7 @@ fz_java_device_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, i
 	jobject jpath = to_Path(ctx, env, path);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
 	jobject jctm = to_Matrix(ctx, env, ctm);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? cs->n : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillPath, jpath, (jboolean)even_odd, jctm, jcs, jcolor, alpha);
 	if ((*env)->ExceptionCheck(env))
@@ -1617,7 +1617,7 @@ fz_java_device_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path,
 	jobject jstate = to_StrokeState(ctx, env, state);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
 	jobject jctm = to_Matrix(ctx, env, ctm);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? cs->n : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_strokePath, jpath, jstate, jctm, jcs, jcolor, alpha);
 	if ((*env)->ExceptionCheck(env))
@@ -1659,7 +1659,7 @@ fz_java_device_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	jobject jtext = to_Text(ctx, env, text);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? cs->n : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillText, jtext, jctm, jcs, jcolor, alpha);
 	if ((*env)->ExceptionCheck(env))
@@ -1675,7 +1675,7 @@ fz_java_device_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text,
 	jobject jstate = to_StrokeState(ctx, env, state);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? cs->n : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_strokeText, jtext, jstate, jctm, jcs, jcolor, alpha);
 	if ((*env)->ExceptionCheck(env))
@@ -1756,7 +1756,7 @@ fz_java_device_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, c
 	jobject jimg = to_Image(ctx, env, img);
 	jobject jctm = to_Matrix(ctx, env, ctm);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? cs->n : FZ_MAX_COLORS);
+	jfloatArray jcolor = to_jfloatArray(ctx, env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillImageMask, jimg, jctm, jcs, jcolor, alpha);
 	if ((*env)->ExceptionCheck(env))
@@ -1794,7 +1794,7 @@ fz_java_device_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, 
 	JNIEnv *env = jdev->env;
 	jobject jrect = to_Rect(ctx, env, rect);
 	jobject jcs = to_ColorSpace(ctx, env, cs);
-	jfloatArray jbc = to_jfloatArray(ctx, env, bc, cs ? cs->n : FZ_MAX_COLORS);
+	jfloatArray jbc = to_jfloatArray(ctx, env, bc, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS);
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_beginMask, jrect, (jint)luminosity, jcs, jbc);
 	if ((*env)->ExceptionCheck(env))
@@ -2060,7 +2060,7 @@ FUN(NativeDevice_fillPath)(JNIEnv *env, jobject self, jobject jpath, jboolean ev
 
 	if (!ctx || !dev) return;
 	if (!path) { jni_throw_arg(env, "path must not be null"); return; }
-	if (!from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor)) return;
+	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -2086,7 +2086,7 @@ FUN(NativeDevice_strokePath)(JNIEnv *env, jobject self, jobject jpath, jobject j
 	if (!ctx || !dev) return;
 	if (!path) { jni_throw_arg(env, "path must not be null"); return; }
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
-	if (!from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor)) return;
+	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -2154,7 +2154,7 @@ FUN(NativeDevice_fillText)(JNIEnv *env, jobject self, jobject jtext, jobject jct
 
 	if (!ctx || !dev) return;
 	if (!text) { jni_throw_arg(env, "text must not be null"); return; }
-	if (!from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor)) return;
+	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -2180,7 +2180,7 @@ FUN(NativeDevice_strokeText)(JNIEnv *env, jobject self, jobject jtext, jobject j
 	if (!ctx || !dev) return;
 	if (!text) { jni_throw_arg(env, "text must not be null"); return; }
 	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
-	if (!from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor)) return;
+	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -2311,7 +2311,7 @@ FUN(NativeDevice_fillImageMask)(JNIEnv *env, jobject self, jobject jimg, jobject
 
 	if (!ctx || !dev) return;
 	if (!img) { jni_throw_arg(env, "image must not be null"); return; }
-	if (!from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor)) return;
+	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -2372,7 +2372,7 @@ FUN(NativeDevice_beginMask)(JNIEnv *env, jobject self, jobject jrect, jboolean l
 	NativeDeviceInfo *info;
 
 	if (!ctx || !dev) return;
-	if (!from_jfloatArray(env, color, cs ? cs->n : FZ_MAX_COLORS, jcolor)) return;
+	if (!from_jfloatArray(env, color, cs ? fz_colorspace_n(ctx, cs) : FZ_MAX_COLORS, jcolor)) return;
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
@@ -2720,8 +2720,10 @@ FUN(ColorSpace_finalize)(JNIEnv *env, jobject self)
 JNIEXPORT jint JNICALL
 FUN(ColorSpace_getNumberOfComponents)(JNIEnv *env, jobject self)
 {
+	fz_context *ctx = get_context(env);
 	fz_colorspace *cs = from_ColorSpace(env, self);
-	return cs ? cs->n : 0;
+	if (!ctx) return 0;
+	return fz_colorspace_n(ctx, cs);
 }
 
 JNIEXPORT jlong JNICALL
@@ -2814,7 +2816,7 @@ FUN(Font_getName)(JNIEnv *env, jobject self)
 
 	if (!ctx || !font) return NULL;
 
-	return string_to_String(ctx, env, font->name);
+	return string_to_String(ctx, env, fz_font_name(ctx, font));
 }
 
 JNIEXPORT jint JNICALL
