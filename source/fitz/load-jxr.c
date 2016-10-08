@@ -252,7 +252,7 @@ jxr_decode_block_alpha(jxr_image_t image, int mx, int my, int *data)
 	mx *= 16;
 	my *= 16;
 
-	n = fz_colorspace_n(ctx, n);
+	n = fz_colorspace_n(ctx, info->cspace);
 	for (y = 0; y < 16; y++)
 	{
 		if ((my + y) >= info->height)
@@ -264,7 +264,7 @@ jxr_decode_block_alpha(jxr_image_t image, int mx, int my, int *data)
 		{
 			if ((mx + x) < info->width)
 			{
-				jxr_unpack_alpha_sample(ctx, info, image, data, n);
+				jxr_unpack_alpha_sample(ctx, info, image, data, p + n);
 				p += n + 1;
 			}
 
@@ -404,7 +404,7 @@ fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 		image->xres = info.xres;
 		image->yres = info.yres;
 
-		fz_unpack_tile(ctx, image, info.samples, fz_colorspace_n(ctx, info->cspace) + 1, 8, info.stride, 0);
+		fz_unpack_tile(ctx, image, info.samples, fz_colorspace_n(ctx, info.cspace) + 1, 8, info.stride, 0);
 
 		if (info.has_alpha && !info.has_premul)
 		{

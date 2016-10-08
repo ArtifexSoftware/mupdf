@@ -364,13 +364,13 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 		if (defcs)
 		{
-			if (defcs->n == state->nchans)
+			if (fz_colorspace_n(ctx, defcs) == state->nchans)
 			{
 				state->cs = defcs;
 			}
 			else
 			{
-				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", state->nchans, defcs->n, defcs->name);
+				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", state->nchans, fz_colorspace_n(ctx, defcs), fz_colorspace_name(ctx, defcs));
 				defcs = NULL;
 			}
 		}
