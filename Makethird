@@ -730,3 +730,10 @@ ifeq "$(HAVE_X11)" "yes"
 X11_CFLAGS := $(SYS_X11_CFLAGS)
 X11_LIBS := $(SYS_X11_LIBS)
 endif
+
+# --- OpenSSL ---
+
+ifeq "$(HAVE_OPENSSL)" "yes"
+OPENSSL_CFLAGS := $(SYS_OPENSSL_CFLAGS)
+OPENSSL_LIBS := $(SYS_OPENSSL_LIBS)
+endif
