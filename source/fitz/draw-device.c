@@ -2255,7 +2255,7 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	float xstep, ystep;
 	fz_matrix ttm, ctm, shapectm;
 	fz_irect area, scissor, tile_bbox;
-	fz_rect scissor_tmp, tile_tmp, tile_rect;
+	fz_rect scissor_tmp, tile_tmp;
 	int x0, y0, x1, y1, x, y, extra_x, extra_y;
 	fz_draw_state *state;
 	tile_record *tile;
