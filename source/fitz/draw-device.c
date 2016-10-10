@@ -2254,9 +2254,9 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	float xstep, ystep;
 	fz_matrix ttm, ctm, shapectm;
-	fz_irect area, scissor;
-	fz_rect scissor_tmp;
-	int x0, y0, x1, y1, x, y;
+	fz_irect area, scissor, tile_bbox;
+	fz_rect scissor_tmp, tile_tmp, tile_rect;
+	int x0, y0, x1, y1, x, y, extra_x, extra_y;
 	fz_draw_state *state;
 	tile_record *tile;
 	tile_key *key;
@@ -2280,22 +2280,29 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	fz_transform_rect(fz_expand_rect(&scissor_tmp, 1), fz_invert_matrix(&ttm, &ctm));
 	fz_intersect_irect(&area, fz_irect_from_rect(&scissor, &scissor_tmp));
 
+	tile_bbox.x0 = state[1].dest->x;
+	tile_bbox.y0 = state[1].dest->y;
+	tile_bbox.x1 = state[1].dest->w + tile_bbox.x0;
+	tile_bbox.y1 = state[1].dest->h + tile_bbox.y0;
+	fz_rect_from_irect(&tile_tmp, &tile_bbox);
+	fz_transform_rect(fz_expand_rect(&tile_tmp, 1), &ttm);
+
 	/* FIXME: area is a bbox, so FP not appropriate here */
 	/* In PDF files xstep/ystep can be smaller than view (the area of a
 	 * single tile) (see fts_15_1506.pdf for an example). This means that
 	 * we have to bias the left hand/bottom edge calculations by the
 	 * difference between the step and the width/height of the tile. */
 	/* scissor, xstep and area are all in pattern space. */
-	x0 = xstep - scissor.x1 + scissor.x0;
-	if (x0 > 0)
-		x0 = 0;
-	y0 = ystep - scissor.y1 + scissor.y0;
-	if (y0 > 0)
-		y0 = 0;
-	x0 = floorf((area.x0 + x0) / xstep);
-	y0 = floorf((area.y0 + y0) / ystep);
-	x1 = ceilf(area.x1 / xstep);
-	y1 = ceilf(area.y1 / ystep);
+	extra_x = tile_tmp.x1 - tile_tmp.x0 - xstep;
+	if (extra_x < 0)
+		extra_x = 0;
+	extra_y = tile_tmp.y1 - tile_tmp.y0 - ystep;
+	if (extra_y < 0)
+		extra_y = 0;
+	x0 = floorf((area.x0 - tile_tmp.x0 - extra_x) / xstep);
+	y0 = floorf((area.y0 - tile_tmp.y0 - extra_y) / ystep);
+	x1 = ceilf((area.x1 - tile_tmp.x0 + extra_x) / xstep);
+	y1 = ceilf((area.y1 - tile_tmp.y0 + extra_y) / ystep);
 
 	ctm.e = state[1].dest->x;
 	ctm.f = state[1].dest->y;
@@ -2324,6 +2331,7 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 			fz_pre_translate(&ttm, x * xstep, y * ystep);
 			state[1].dest->x = ttm.e;
 			state[1].dest->y = ttm.f;
+			/* Check for overflow due to float -> int conversions */
 			if (state[1].dest->x > 0 && state[1].dest->x + state[1].dest->w < 0)
 				continue;
 			if (state[1].dest->y > 0 && state[1].dest->y + state[1].dest->h < 0)
