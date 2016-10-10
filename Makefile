@@ -40,6 +40,10 @@ CFLAGS += $(OPENSSL_CFLAGS)
 CFLAGS += $(ZLIB_CFLAGS)
 CFLAGS += $(LURATECH_CFLAGS)
 
+# Disable viewer text input until such time as it's implemented
+# on linux.
+CFLAGS += -DDISABLE_TEXT_INPUT
+
 # --- Commands ---
 
 ifneq "$(verbose)" "yes"
