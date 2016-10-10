@@ -23,7 +23,7 @@ struct epub_chapter_s
 	int start;
 	float page_w, page_h, em;
 	float page_margin[4];
-	fz_html *box;
+	fz_html *html;
 	epub_chapter *next;
 };
 
@@ -50,7 +50,7 @@ find_anchor_flow(fz_html_flow *flow, const char *anchor, float page_h, int *page
 }
 
 static int
-find_anchor(fz_html *box, const char *anchor, float page_h, int *page)
+find_anchor(fz_html_box *box, const char *anchor, float page_h, int *page)
 {
 	while (box)
 	{
@@ -86,7 +86,7 @@ epub_update_link_dests(fz_context *ctx, epub_document *doc, fz_outline *node)
 				if (s)
 				{
 					/* Search for a matching fragment */
-					if (find_anchor(ch->box, s+1, ch->page_h, &node->dest.ld.gotor.page))
+					if (find_anchor(ch->html->root, s+1, ch->page_h, &node->dest.ld.gotor.page))
 						continue;
 				}
 				break;
@@ -108,14 +108,14 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 	{
 		ch->start = count;
 		ch->em = em;
-		ch->page_margin[T] = fz_from_css_number(ch->box->style.margin[T], em, em);
-		ch->page_margin[B] = fz_from_css_number(ch->box->style.margin[B], em, em);
-		ch->page_margin[L] = fz_from_css_number(ch->box->style.margin[L], em, em);
-		ch->page_margin[R] = fz_from_css_number(ch->box->style.margin[R], em, em);
+		ch->page_margin[T] = fz_from_css_number(ch->html->root->style.margin[T], em, em);
+		ch->page_margin[B] = fz_from_css_number(ch->html->root->style.margin[B], em, em);
+		ch->page_margin[L] = fz_from_css_number(ch->html->root->style.margin[L], em, em);
+		ch->page_margin[R] = fz_from_css_number(ch->html->root->style.margin[R], em, em);
 		ch->page_w = w - ch->page_margin[L] - ch->page_margin[R];
 		ch->page_h = h - ch->page_margin[T] - ch->page_margin[B];
-		fz_layout_html(ctx, ch->box, ch->page_w, ch->page_h, ch->em);
-		count += ceilf(ch->box->h / ch->page_h);
+		fz_layout_html(ctx, ch->html, ch->page_w, ch->page_h, ch->em);
+		count += ceilf(ch->html->root->h / ch->page_h);
 	}
 
 	epub_update_link_dests(ctx, doc, doc->outline);
@@ -128,7 +128,7 @@ epub_count_pages(fz_context *ctx, fz_document *doc_)
 	epub_chapter *ch;
 	int count = 0;
 	for (ch = doc->spine; ch; ch = ch->next)
-		count += ceilf(ch->box->h / ch->page_h);
+		count += ceilf(ch->html->root->h / ch->page_h);
 	return count;
 }
 
@@ -148,7 +148,7 @@ epub_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 
 	for (ch = doc->spine; ch; ch = ch->next)
 	{
-		int cn = ceilf(ch->box->h / ch->page_h);
+		int cn = ceilf(ch->html->root->h / ch->page_h);
 		if (n < count + cn)
 		{
 			bbox->x0 = 0;
@@ -176,11 +176,11 @@ epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 
 	for (ch = doc->spine; ch; ch = ch->next)
 	{
-		int cn = ceilf(ch->box->h / ch->page_h);
+		int cn = ceilf(ch->html->root->h / ch->page_h);
 		if (n < count + cn)
 		{
 			fz_pre_translate(&local_ctm, ch->page_margin[L], ch->page_margin[T]);
-			fz_draw_html(ctx, dev, &local_ctm, ch->box, (n-count) * ch->page_h, (n-count+1) * ch->page_h);
+			fz_draw_html(ctx, dev, &local_ctm, ch->html, (n-count) * ch->page_h, (n-count+1) * ch->page_h);
 			break;
 		}
 		count += cn;
@@ -209,7 +209,7 @@ epub_drop_document(fz_context *ctx, fz_document *doc_)
 	while (ch)
 	{
 		next = ch->next;
-		fz_drop_html(ctx, ch->box);
+		fz_drop_html(ctx, ch->html);
 		fz_free(ctx, ch->path);
 		fz_free(ctx, ch);
 		ch = next;
@@ -268,7 +268,7 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 
 	ch = fz_malloc_struct(ctx, epub_chapter);
 	ch->path = fz_strdup(ctx, path);
-	ch->box = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx));
+	ch->html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx));
 	ch->next = NULL;
 
 	fz_drop_buffer(ctx, buf);

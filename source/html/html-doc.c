@@ -12,7 +12,7 @@ struct html_document_s
 	fz_html_font_set *set;
 	float page_w, page_h, em;
 	float page_margin[4];
-	fz_html *box;
+	fz_html *html;
 };
 
 struct html_page_s
@@ -27,7 +27,7 @@ htdoc_drop_document(fz_context *ctx, fz_document *doc_)
 {
 	html_document *doc = (html_document*)doc_;
 	fz_drop_archive(ctx, doc->zip);
-	fz_drop_html(ctx, doc->box);
+	fz_drop_html(ctx, doc->html);
 	fz_drop_html_font_set(ctx, doc->set);
 }
 
@@ -35,7 +35,7 @@ static int
 htdoc_count_pages(fz_context *ctx, fz_document *doc_)
 {
 	html_document *doc = (html_document*)doc_;
-	int count = ceilf(doc->box->h / doc->page_h);
+	int count = ceilf(doc->html->root->h / doc->page_h);
 	return count;
 }
 
@@ -44,19 +44,19 @@ htdoc_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 {
 	html_document *doc = (html_document*)doc_;
 
-	if (doc->box)
+	if (doc->html && doc->html->root)
 	{
-		doc->page_margin[T] = fz_from_css_number(doc->box->style.margin[T], em, em);
-		doc->page_margin[B] = fz_from_css_number(doc->box->style.margin[B], em, em);
-		doc->page_margin[L] = fz_from_css_number(doc->box->style.margin[L], em, em);
-		doc->page_margin[R] = fz_from_css_number(doc->box->style.margin[R], em, em);
+		doc->page_margin[T] = fz_from_css_number(doc->html->root->style.margin[T], em, em);
+		doc->page_margin[B] = fz_from_css_number(doc->html->root->style.margin[B], em, em);
+		doc->page_margin[L] = fz_from_css_number(doc->html->root->style.margin[L], em, em);
+		doc->page_margin[R] = fz_from_css_number(doc->html->root->style.margin[R], em, em);
 	}
 
 	doc->page_w = w - doc->page_margin[L] - doc->page_margin[R];
 	doc->page_h = h - doc->page_margin[T] - doc->page_margin[B];
 	doc->em = em;
 
-	fz_layout_html(ctx, doc->box, doc->page_w, doc->page_h, doc->em);
+	fz_layout_html(ctx, doc->html, doc->page_w, doc->page_h, doc->em);
 }
 
 static void
@@ -86,7 +86,7 @@ htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix 
 
 	fz_pre_translate(&local_ctm, doc->page_margin[L], doc->page_margin[T]);
 
-	fz_draw_html(ctx, dev, &local_ctm, doc->box, n * doc->page_h, (n+1) * doc->page_h);
+	fz_draw_html(ctx, dev, &local_ctm, doc->html, n * doc->page_h, (n+1) * doc->page_h);
 }
 
 static fz_page *
@@ -133,7 +133,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	fz_try(ctx)
 	{
 		fz_write_buffer_byte(ctx, buf, 0);
-		doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
+		doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
@@ -168,7 +168,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	fz_try(ctx)
 	{
 		fz_write_buffer_byte(ctx, buf, 0);
-		doc->box = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
+		doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);

@@ -6,6 +6,7 @@
 typedef struct fz_html_font_face_s fz_html_font_face;
 typedef struct fz_html_font_set_s fz_html_font_set;
 typedef struct fz_html_s fz_html;
+typedef struct fz_html_box_s fz_html_box;
 typedef struct fz_html_flow_s fz_html_flow;
 
 typedef struct fz_css_rule_s fz_css_rule;
@@ -183,6 +184,12 @@ enum
 
 struct fz_html_s
 {
+	fz_pool *pool; /* pool allocator for this html tree */
+	fz_html_box *root;
+};
+
+struct fz_html_box_s
+{
 	unsigned int type : 2;
 	unsigned int is_first_flow : 1; /* for text-indent */
 	unsigned int markup_dir : 2;
@@ -192,10 +199,9 @@ struct fz_html_s
 	float margin[4];
 	float border[4];
 	float em;
-	fz_html *up, *down, *last, *next;
+	fz_html_box *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
 	fz_css_style style;
-	fz_pool *pool; /* pool allocator for this html tree (only set for root block) */
 };
 
 enum
@@ -230,7 +236,7 @@ struct fz_html_flow_s
 	unsigned int markup_lang : 15;
 
 	float x, y, w, h;
-	fz_html *box; /* for style and em */
+	fz_html_box *box; /* for style and em */
 	union {
 		char *text;
 		fz_image *image;
@@ -261,8 +267,8 @@ void fz_drop_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 void fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_rule *css);
 
 fz_html *fz_parse_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css);
-void fz_layout_html(fz_context *ctx, fz_html *box, float w, float h, float em);
-void fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *box, float page_top, float page_bot);
-void fz_drop_html(fz_context *ctx, fz_html *box);
+void fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em);
+void fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *html, float page_top, float page_bot);
+void fz_drop_html(fz_context *ctx, fz_html *html);
 
 #endif
