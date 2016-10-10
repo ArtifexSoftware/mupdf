@@ -95,6 +95,7 @@ struct fz_image_s
 	unsigned int imagemask:1;
 	unsigned int interpolate:1;
 	unsigned int use_colorkey:1;
+	unsigned int use_decode:1;
 	unsigned int invert_cmyk_jpeg:1;
 	unsigned int decoded:1;
 	unsigned int scalable:1;

@@ -231,22 +231,16 @@ fz_decode_tile(fz_context *ctx, fz_pixmap *pix, const float *decode)
 	int stride = pix->stride - pix->w * pix->n;
 	int len;
 	int n = fz_maxi(1, pix->n - pix->alpha);
-	int needed;
 	int k;
 	int h;
 
-	needed = 0;
 	for (k = 0; k < n; k++)
 	{
 		int min = decode[k * 2] * 255;
 		int max = decode[k * 2 + 1] * 255;
 		add[k] = min;
 		mul[k] = max - min;
-		needed |= min != 0 || max != 255;
 	}
-
-	if (!needed)
-		return;
 
 	h = pix->h;
 	while (h--)

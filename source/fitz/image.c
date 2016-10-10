@@ -342,7 +342,7 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 			fz_drop_pixmap(ctx, tile);
 			tile = conv;
 		}
-		else
+		else if (image->use_decode)
 		{
 			fz_decode_tile(ctx, tile, image->decode);
 		}
@@ -770,6 +770,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 		fz_image_get_size_fn *get_size, fz_drop_image_fn *drop)
 {
 	fz_image *image;
+	int i;
 
 	assert(mask == NULL || mask->mask == NULL);
 	assert(size >= sizeof(fz_image));
@@ -792,18 +793,27 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 	image->use_colorkey = (colorkey != NULL);
 	if (colorkey)
 		memcpy(image->colorkey, colorkey, sizeof(int)*image->n*2);
+	image->use_decode = 0;
 	if (decode)
+	{
 		memcpy(image->decode, decode, sizeof(float)*image->n*2);
+	}
 	else
 	{
 		float maxval = fz_colorspace_is_indexed(ctx, colorspace) ? (1 << bpc) - 1 : 1;
-		int i;
 		for (i = 0; i < image->n; i++)
 		{
 			image->decode[2*i] = 0;
 			image->decode[2*i+1] = maxval;
 		}
 	}
+	for (i = 0; i < image->n; i++)
+	{
+		if (image->decode[i * 2] * 255 != 0 || image->decode[i * 2 + 1] * 255 != 255)
+			break;
+	}
+	if (i != image->n)
+		image->use_decode = 1;
 	image->mask = mask;
 
 	return image;
