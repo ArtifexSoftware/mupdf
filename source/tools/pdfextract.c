@@ -60,12 +60,37 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int rgb)
 	fz_drop_pixmap(ctx, converted);
 }
 
+static void
+writejpeg(fz_context *ctx, const unsigned char *data, size_t len, const char *file)
+{
+	char buf[1024];
+	fz_output *out = NULL;
+
+	fz_var(out);
+
+	snprintf(buf, sizeof(buf), "%s.jpg", file);
+
+	fz_try(ctx)
+	{
+		out = fz_new_output_with_path(ctx, buf, 0);
+		fz_write(ctx, out, data, len);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_output(ctx, out);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
 static void saveimage(int num)
 {
 	fz_image *image = NULL;
 	fz_pixmap *pix = NULL;
 	pdf_obj *ref;
 	char buf[32];
+	fz_compressed_buffer *cbuf;
+	int type;
 
 	ref = pdf_new_indirect(ctx, doc, num, 0);
 
@@ -74,11 +99,26 @@ static void saveimage(int num)
 
 	fz_try(ctx)
 	{
-		/* TODO: detect DCTD and save as jpeg */
 		image = pdf_load_image(ctx, doc, ref);
-		pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
+		cbuf = fz_compressed_image_buffer(ctx, image);
 		snprintf(buf, sizeof(buf), "img-%04d", num);
-		writepixmap(ctx, pix, buf, dorgb);
+		type = cbuf == NULL ? FZ_IMAGE_UNKNOWN : cbuf->params.type;
+		if (image->use_colorkey)
+			type = FZ_IMAGE_UNKNOWN;
+		if (image->use_decode)
+			type = FZ_IMAGE_UNKNOWN;
+		if (image->mask)
+			type = FZ_IMAGE_UNKNOWN;
+		switch (type)
+		{
+		case FZ_IMAGE_JPEG:
+			snprintf(buf, sizeof(buf), "img-%04d", num);
+			writejpeg(ctx, cbuf->buffer->data, cbuf->buffer->len, buf);
+			break;
+		default:
+			pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
+			writepixmap(ctx, pix, buf, dorgb);
+		}
 	}
 	fz_always(ctx)
 	{
