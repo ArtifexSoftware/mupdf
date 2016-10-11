@@ -606,13 +606,17 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 		}
 
 		xobj = pdf_dict_get(ctx, rsrc, PDF_NAME_XObject);
-		if (show & XOBJS && xobj)
+		if (show & (IMAGES|XOBJS) && xobj)
 		{
 			int n;
 
-			gatherimages(ctx, glo, page, pageref, xobj);
-			gatherforms(ctx, glo, page, pageref, xobj);
-			gatherpsobjs(ctx, glo, page, pageref, xobj);
+			if (show & IMAGES)
+				gatherimages(ctx, glo, page, pageref, xobj);
+			if (show & XOBJS)
+			{
+				gatherforms(ctx, glo, page, pageref, xobj);
+				gatherpsobjs(ctx, glo, page, pageref, xobj);
+			}
 			n = pdf_dict_len(ctx, xobj);
 			for (i = 0; i < n; i++)
 			{
