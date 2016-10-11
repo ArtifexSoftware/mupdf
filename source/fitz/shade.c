@@ -1056,8 +1056,7 @@ fz_drop_shade_imp(fz_context *ctx, fz_storable *shade_)
 {
 	fz_shade *shade = (fz_shade *)shade_;
 
-	if (shade->colorspace)
-		fz_drop_colorspace(ctx, shade->colorspace);
+	fz_drop_colorspace(ctx, shade->colorspace);
 	if (shade->type == FZ_FUNCTION_BASED)
 		fz_free(ctx, shade->u.f.fn_vals);
 	fz_drop_compressed_buffer(ctx, shade->buffer);

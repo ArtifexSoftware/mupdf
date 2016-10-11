@@ -507,10 +507,8 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 	if (page == NULL)
 		return;
 
-	if (page->links)
-		fz_drop_link(ctx, page->links);
-	if (page->annots)
-		pdf_drop_annots(ctx, page->annots);
+	fz_drop_link(ctx, page->links);
+	pdf_drop_annots(ctx, page->annots);
 
 	/* doc->focus, when not NULL, refers to one of
 	 * the annotations and must be NULLed when the

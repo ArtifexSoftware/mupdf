@@ -416,8 +416,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 	fz_always(ctx)
 	{
 		for (i = 0; i < funcs; i++)
-			if (func[i])
-				fz_drop_function(ctx, func[i]);
+			fz_drop_function(ctx, func[i]);
 	}
 	fz_catch(ctx)
 	{

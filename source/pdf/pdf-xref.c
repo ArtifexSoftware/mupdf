@@ -1605,26 +1605,21 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 		 * glyph cache at this point. */
 		fz_purge_glyph_cache(ctx);
 
-		if (doc->js)
-			pdf_drop_js(ctx, doc->js);
+		pdf_drop_js(ctx, doc->js);
 
 		pdf_drop_xref_sections(ctx, doc);
 		fz_free(ctx, doc->xref_index);
 
-		if (doc->focus_obj)
-			pdf_drop_obj(ctx, doc->focus_obj);
-		if (doc->file)
-			fz_drop_stream(ctx, doc->file);
-		if (doc->crypt)
-			pdf_drop_crypt(ctx, doc->crypt);
+		pdf_drop_obj(ctx, doc->focus_obj);
+		fz_drop_stream(ctx, doc->file);
+		pdf_drop_crypt(ctx, doc->crypt);
 
 		pdf_drop_obj(ctx, doc->linear_obj);
 		if (doc->linear_page_refs)
 		{
 			for (i=0; i < doc->page_count; i++)
-			{
 				pdf_drop_obj(ctx, doc->linear_page_refs[i]);
-			}
+
 			fz_free(ctx, doc->linear_page_refs);
 		}
 		fz_free(ctx, doc->hint_page);
@@ -1648,9 +1643,8 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 		pdf_drop_resource_tables(ctx, doc);
 
 		for (i = 0; i < doc->orphans_count; i++)
-		{
 			pdf_drop_obj(ctx, doc->orphans[i]);
-		}
+
 		fz_free(ctx, doc->orphans);
 	}
 	fz_always(ctx)

@@ -975,8 +975,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 	}
 
-	if (list)
-		fz_drop_display_list(ctx, list);
+	fz_drop_display_list(ctx, list);
 
 	if (!output_append)
 		file_level_trailers(ctx);

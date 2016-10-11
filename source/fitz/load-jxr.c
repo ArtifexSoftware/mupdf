@@ -422,10 +422,8 @@ fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 	}
 	fz_always(ctx)
 	{
-		if (info.samples)
-			fz_free(ctx, info.samples);
-		if (info.cspace)
-			fz_drop_colorspace(ctx, info.cspace);
+		fz_free(ctx, info.samples);
+		fz_drop_colorspace(ctx, info.cspace);
 	}
 	fz_catch(ctx)
 	{

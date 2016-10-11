@@ -32,8 +32,7 @@
 		{
 			if (self)
 			{
-				if (doc != NULL)
-					fz_drop_document(ctx, doc);
+				fz_drop_document(ctx, doc);
 				[self release];
 				self = nil;
 			}

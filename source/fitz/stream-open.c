@@ -191,8 +191,7 @@ static void seek_buffer(fz_context *ctx, fz_stream *stm, fz_off_t offset, int wh
 static void close_buffer(fz_context *ctx, void *state_)
 {
 	fz_buffer *state = (fz_buffer *)state_;
-	if (state)
-		fz_drop_buffer(ctx, state);
+	fz_drop_buffer(ctx, state);
 }
 
 fz_stream *

@@ -386,8 +386,7 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, const 
 static void
 pdf_drop_annot_imp(fz_context *ctx, pdf_annot *annot)
 {
-	if (annot->ap)
-		pdf_drop_xobject(ctx, annot->ap);
+	pdf_drop_xobject(ctx, annot->ap);
 	pdf_drop_obj(ctx, annot->obj);
 }
 

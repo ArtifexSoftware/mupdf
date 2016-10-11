@@ -1996,8 +1996,7 @@ static void
 free_indexed(fz_context *ctx, fz_colorspace *cs)
 {
 	struct indexed *idx = cs->data;
-	if (idx->base)
-		fz_drop_colorspace(ctx, idx->base);
+	fz_drop_colorspace(ctx, idx->base);
 	fz_free(ctx, idx->lookup);
 	fz_free(ctx, idx);
 }
@@ -2167,8 +2166,7 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 	for (i = 0; i < n; i++)
 	{
 		void *v = fz_hash_get_val(ctx, cc->hash, i);
-		if (v)
-			fz_free(ctx, v);
+		fz_free(ctx, v);
 	}
 	fz_drop_hash(ctx, cc->hash);
 	fz_free(ctx, cc);

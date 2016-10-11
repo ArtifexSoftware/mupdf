@@ -710,8 +710,7 @@ void pdf_enable_js(fz_context *ctx, pdf_document *doc)
 
 void pdf_disable_js(fz_context *ctx, pdf_document *doc)
 {
-	if (doc->js)
-		pdf_drop_js(ctx, doc->js);
+	pdf_drop_js(ctx, doc->js);
 	doc->js = NULL;
 }
 

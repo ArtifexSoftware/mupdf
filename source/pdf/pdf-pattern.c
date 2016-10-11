@@ -16,10 +16,8 @@ static void
 pdf_drop_pattern_imp(fz_context *ctx, fz_storable *pat_)
 {
 	pdf_pattern *pat = (pdf_pattern *)pat_;
-	if (pat->resources)
-		pdf_drop_obj(ctx, pat->resources);
-	if (pat->contents)
-		pdf_drop_obj(ctx, pat->contents);
+	pdf_drop_obj(ctx, pat->resources);
+	pdf_drop_obj(ctx, pat->contents);
 	fz_free(ctx, pat);
 }
 

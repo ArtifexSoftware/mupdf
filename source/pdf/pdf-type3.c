@@ -173,8 +173,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 	}
 	fz_catch(ctx)
 	{
-		if (fontdesc)
-			pdf_drop_font(ctx, fontdesc);
+		pdf_drop_font(ctx, fontdesc);
 		fz_rethrow(ctx);
 	}
 

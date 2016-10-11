@@ -899,8 +899,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		fz_rect_from_irect(&bounds, &ibounds);
 
 		/* Draw */
-		if (app->image)
-			fz_drop_pixmap(app->ctx, app->image);
+		fz_drop_pixmap(app->ctx, app->image);
 		if (app->grayscale)
 			colorspace = fz_device_gray(app->ctx);
 		else

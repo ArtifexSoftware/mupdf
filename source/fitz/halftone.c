@@ -515,7 +515,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	unsigned char *ht_line = NULL;
 	unsigned char *o, *p;
 	int w, h, x, y, n, pstride, ostride, lcm, i;
-	fz_halftone *ht_orig = ht;
+	fz_halftone *ht_ = NULL;
 	threshold_fn *thresh;
 
 	if (!pix)
@@ -542,9 +542,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	}
 
 	if (ht == NULL)
-	{
-		ht = fz_default_halftone(ctx, n);
-	}
+		ht_ = ht = fz_default_halftone(ctx, n);
 
 	/* Find the minimum length for the halftone line. This
 	 * is the LCM of the halftone lengths and 8. (We need a
@@ -583,8 +581,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	}
 	fz_always(ctx)
 	{
-		if (!ht_orig)
-			fz_drop_halftone(ctx, ht);
+		fz_drop_halftone(ctx, ht_);
 		fz_free(ctx, ht_line);
 	}
 	fz_catch(ctx)

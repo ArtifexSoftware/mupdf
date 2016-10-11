@@ -145,10 +145,8 @@ xps_drop_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *d
 	while (dict)
 	{
 		next = dict->next;
-		if (dict->base_xml)
-			fz_drop_xml(ctx, dict->base_xml);
-		if (dict->base_uri)
-			fz_free(ctx, dict->base_uri);
+		fz_drop_xml(ctx, dict->base_xml);
+		fz_free(ctx, dict->base_uri);
 		fz_free(ctx, dict);
 		dict = next;
 	}

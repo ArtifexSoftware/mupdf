@@ -101,8 +101,7 @@ free_resources(fz_context *ctx, fz_font *font)
 	if (font->t3procs)
 	{
 		for (i = 0; i < 256; i++)
-			if (font->t3procs[i])
-				fz_drop_buffer(ctx, font->t3procs[i]);
+			fz_drop_buffer(ctx, font->t3procs[i]);
 	}
 	fz_free(ctx, font->t3procs);
 	font->t3procs = NULL;
@@ -133,8 +132,7 @@ fz_drop_font(fz_context *ctx, fz_font *font)
 	{
 		free_resources(ctx, font);
 		for (i = 0; i < 256; i++)
-			if (font->t3lists[i])
-				fz_drop_display_list(ctx, font->t3lists[i]);
+			fz_drop_display_list(ctx, font->t3lists[i]);
 		fz_free(ctx, font->t3procs);
 		fz_free(ctx, font->t3lists);
 		fz_free(ctx, font->t3widths);

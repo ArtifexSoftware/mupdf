@@ -240,12 +240,9 @@ pdf_keep_material(fz_context *ctx, pdf_material *mat)
 static pdf_material *
 pdf_drop_material(fz_context *ctx, pdf_material *mat)
 {
-	if (mat->colorspace)
-		fz_drop_colorspace(ctx, mat->colorspace);
-	if (mat->pattern)
-		pdf_drop_pattern(ctx, mat->pattern);
-	if (mat->shade)
-		fz_drop_shade(ctx, mat->shade);
+	fz_drop_colorspace(ctx, mat->colorspace);
+	pdf_drop_pattern(ctx, mat->pattern);
+	fz_drop_shade(ctx, mat->shade);
 	return mat;
 }
 
@@ -272,8 +269,7 @@ pdf_unset_pattern(fz_context *ctx, pdf_run_processor *pr, int what)
 	mat = what == PDF_FILL ? &gs->fill : &gs->stroke;
 	if (mat->kind == PDF_MAT_PATTERN)
 	{
-		if (mat->pattern)
-			pdf_drop_pattern(ctx, mat->pattern);
+		pdf_drop_pattern(ctx, mat->pattern);
 		mat->pattern = NULL;
 		mat->kind = PDF_MAT_COLOR;
 	}
@@ -298,12 +294,9 @@ pdf_drop_gstate(fz_context *ctx, pdf_gstate *gs)
 {
 	pdf_drop_material(ctx, &gs->stroke);
 	pdf_drop_material(ctx, &gs->fill);
-	if (gs->font)
-		pdf_drop_font(ctx, gs->font);
-	if (gs->softmask)
-		pdf_drop_xobject(ctx, gs->softmask);
-	if (gs->softmask_resources)
-		pdf_drop_obj(ctx, gs->softmask_resources);
+	pdf_drop_font(ctx, gs->font);
+	pdf_drop_xobject(ctx, gs->softmask);
+	pdf_drop_obj(ctx, gs->softmask_resources);
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 }
 
@@ -1184,8 +1177,7 @@ pdf_set_shade(fz_context *ctx, pdf_run_processor *pr, int what, fz_shade *shade)
 
 	mat = what == PDF_FILL ? &gs->fill : &gs->stroke;
 
-	if (mat->shade)
-		fz_drop_shade(ctx, mat->shade);
+	fz_drop_shade(ctx, mat->shade);
 
 	mat->kind = PDF_MAT_SHADE;
 	mat->shade = fz_keep_shade(ctx, shade);
@@ -1203,14 +1195,12 @@ pdf_set_pattern(fz_context *ctx, pdf_run_processor *pr, int what, pdf_pattern *p
 
 	mat = what == PDF_FILL ? &gs->fill : &gs->stroke;
 
-	if (mat->pattern)
-		pdf_drop_pattern(ctx, mat->pattern);
+	pdf_drop_pattern(ctx, mat->pattern);
+	mat->pattern = NULL;
 
 	mat->kind = PDF_MAT_PATTERN;
 	if (pat)
 		mat->pattern = pdf_keep_pattern(ctx, pat);
-	else
-		mat->pattern = NULL;
 
 	if (v)
 		pdf_set_color(ctx, pr, what, v);
@@ -1701,8 +1691,7 @@ static void pdf_run_Tf(fz_context *ctx, pdf_processor *proc, const char *name, p
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	if (gstate->font)
-		pdf_drop_font(ctx, gstate->font);
+	pdf_drop_font(ctx, gstate->font);
 	gstate->font = pdf_keep_font(ctx, font);
 	gstate->size = size;
 }
@@ -2015,10 +2004,8 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 
 	pdf_drop_material(ctx, &pr->gstate[0].fill);
 	pdf_drop_material(ctx, &pr->gstate[0].stroke);
-	if (pr->gstate[0].font)
-		pdf_drop_font(ctx, pr->gstate[0].font);
-	if (pr->gstate[0].softmask)
-		pdf_drop_xobject(ctx, pr->gstate[0].softmask);
+	pdf_drop_font(ctx, pr->gstate[0].font);
+	pdf_drop_xobject(ctx, pr->gstate[0].softmask);
 	fz_drop_stroke_state(ctx, pr->gstate[0].stroke_state);
 
 	while (pr->gstate[0].clip_depth--)

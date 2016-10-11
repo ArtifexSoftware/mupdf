@@ -357,8 +357,7 @@ struct pdf_signer_s
 
 void pdf_drop_designated_name(fz_context *ctx, pdf_designated_name *dn)
 {
-	if (dn)
-		fz_free(ctx, dn);
+	fz_free(ctx, dn);
 }
 
 static void add_from_bags(X509 **pX509, EVP_PKEY **pPkey, STACK_OF(PKCS12_SAFEBAG) *bags, const char *pw);

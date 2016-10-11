@@ -473,14 +473,10 @@ pdf_drop_font_imp(fz_context *ctx, fz_storable *fontdesc_)
 {
 	pdf_font_desc *fontdesc = (pdf_font_desc *)fontdesc_;
 
-	if (fontdesc->font)
-		fz_drop_font(ctx, fontdesc->font);
-	if (fontdesc->encoding)
-		pdf_drop_cmap(ctx, fontdesc->encoding);
-	if (fontdesc->to_ttf_cmap)
-		pdf_drop_cmap(ctx, fontdesc->to_ttf_cmap);
-	if (fontdesc->to_unicode)
-		pdf_drop_cmap(ctx, fontdesc->to_unicode);
+	fz_drop_font(ctx, fontdesc->font);
+	pdf_drop_cmap(ctx, fontdesc->encoding);
+	pdf_drop_cmap(ctx, fontdesc->to_ttf_cmap);
+	pdf_drop_cmap(ctx, fontdesc->to_unicode);
 	fz_free(ctx, fontdesc->cid_to_gid);
 	fz_free(ctx, fontdesc->cid_to_ucs);
 	fz_free(ctx, fontdesc->hmtx);
