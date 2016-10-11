@@ -1263,8 +1263,6 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 	int cs_n = 1;
 	fz_colorspace *cs;
 
-	if (list == NULL)
-		return;
 	while (node != node_end)
 	{
 		fz_display_node n = *node;

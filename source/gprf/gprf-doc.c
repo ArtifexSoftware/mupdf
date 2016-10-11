@@ -895,8 +895,6 @@ gprf_close_document(fz_context *ctx, fz_document *doc_)
 {
 	gprf_document *doc = (gprf_document*)doc_;
 
-	if (doc == NULL)
-		return;
 	fz_free(ctx, doc->page_dims);
 	fz_free(ctx, doc->pdf_filename);
 	fz_free(ctx, doc->gprf_filename);

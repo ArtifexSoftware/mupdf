@@ -417,8 +417,6 @@ xps_bound_page(fz_context *ctx, xps_page *page, fz_rect *bounds)
 static void
 xps_drop_page_imp(fz_context *ctx, xps_page *page)
 {
-	if (page == NULL)
-		return;
 	fz_drop_document(ctx, &page->doc->super);
 	fz_drop_xml(ctx, page->root);
 }

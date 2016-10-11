@@ -144,8 +144,6 @@ cbz_run_page(fz_context *ctx, cbz_page *page, fz_device *dev, const fz_matrix *c
 static void
 cbz_drop_page(fz_context *ctx, cbz_page *page)
 {
-	if (!page)
-		return;
 	fz_drop_image(ctx, page->image);
 }
 

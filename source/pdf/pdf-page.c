@@ -504,9 +504,6 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
 	pdf_document *doc = page->doc;
 
-	if (page == NULL)
-		return;
-
 	fz_drop_link(ctx, page->links);
 	pdf_drop_annots(ctx, page->annots);
 

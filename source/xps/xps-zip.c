@@ -198,9 +198,6 @@ xps_drop_document(fz_context *ctx, xps_document *doc)
 {
 	xps_font_cache *font, *next;
 
-	if (!doc)
-		return;
-
 	if (doc->zip)
 		fz_drop_archive(ctx, doc->zip);
 

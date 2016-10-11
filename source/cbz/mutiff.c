@@ -49,8 +49,6 @@ tiff_run_page(fz_context *ctx, tiff_page *page, fz_device *dev, const fz_matrix 
 static void
 tiff_drop_page(fz_context *ctx, tiff_page *page)
 {
-	if (!page)
-		return;
 	fz_drop_image(ctx, page->image);
 }
 

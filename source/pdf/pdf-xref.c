@@ -1593,9 +1593,6 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 {
 	int i;
 
-	if (!doc)
-		return;
-
 	fz_try(ctx)
 	{
 		fz_defer_reap_start(ctx);

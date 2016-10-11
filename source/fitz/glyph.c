@@ -18,9 +18,6 @@ static void
 fz_drop_glyph_imp(fz_context *ctx, fz_storable *glyph_)
 {
 	fz_glyph *glyph = (fz_glyph *)glyph_;
-
-	if (glyph == NULL)
-		return;
 	fz_drop_pixmap(ctx, glyph->pixmap);
 	fz_free(ctx, glyph);
 }
