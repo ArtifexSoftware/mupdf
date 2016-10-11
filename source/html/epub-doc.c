@@ -463,7 +463,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	}
 	fz_catch(ctx)
 	{
-		epub_drop_document(ctx, (fz_document*)doc);
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
 

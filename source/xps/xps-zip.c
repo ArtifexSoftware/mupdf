@@ -134,7 +134,7 @@ xps_open_document_with_directory(fz_context *ctx, const char *directory)
 	}
 	fz_catch(ctx)
 	{
-		xps_drop_document(ctx, doc);
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
 
@@ -156,7 +156,7 @@ xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		xps_drop_document(ctx, doc);
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
 

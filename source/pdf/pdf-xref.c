@@ -2373,7 +2373,7 @@ pdf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_document_imp(ctx, doc);
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
 	return doc;
@@ -2400,7 +2400,7 @@ pdf_open_document(fz_context *ctx, const char *filename)
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_document_imp(ctx, doc);
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
 	return doc;
