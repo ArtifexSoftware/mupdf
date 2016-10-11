@@ -139,7 +139,7 @@ gprf_drop_page_imp(fz_context *ctx, fz_page *page_)
 	gprf_document *doc = page->doc;
 	int i;
 
-	fz_drop_document(ctx, (fz_document *)doc);
+	fz_drop_document(ctx, &doc->super);
 	if (page->tiles)
 	{
 		for (i = 0; i < page->num_tiles; i++)
@@ -883,7 +883,7 @@ gprf_load_page(fz_context *ctx, fz_document *doc_, int number)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_page(ctx, (fz_page *)page);
+		fz_drop_page(ctx, &page->super);
 		fz_rethrow(ctx);
 	}
 

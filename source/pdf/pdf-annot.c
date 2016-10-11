@@ -397,7 +397,7 @@ pdf_drop_annots(fz_context *ctx, pdf_annot *annot)
 	while (annot)
 	{
 		pdf_annot *next = annot->next;
-		fz_drop_annot(ctx, (fz_annot*)annot);
+		fz_drop_annot(ctx, &annot->super);
 		annot = next;
 	}
 }

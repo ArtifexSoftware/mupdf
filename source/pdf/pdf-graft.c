@@ -41,7 +41,7 @@ pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map)
 {
 	if (fz_drop_imp(ctx, map, &map->refs))
 	{
-		fz_drop_document(ctx, (fz_document*)map->src);
+		fz_drop_document(ctx, &map->src->super);
 		fz_free(ctx, map->dst_from_src);
 		fz_free(ctx, map);
 	}

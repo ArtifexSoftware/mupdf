@@ -5631,7 +5631,7 @@ FUN(PDFDocument_finalize)(JNIEnv *env, jobject self)
 
 	if (!ctx || !pdf) return;
 
-	fz_drop_document(ctx, (fz_document *) pdf);
+	fz_drop_document(ctx, &pdf->super);
 }
 
 JNIEXPORT jint JNICALL

@@ -183,7 +183,7 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	 * removing it here may break files if multiple pages use the same annot. */
 
 	/* And free it. */
-	fz_drop_annot(ctx, (fz_annot*)annot);
+	fz_drop_annot(ctx, &annot->super);
 
 	doc->dirty = 1;
 }
