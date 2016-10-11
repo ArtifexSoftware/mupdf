@@ -257,7 +257,10 @@ void fz_drop_colorspace_context(fz_context *ctx)
 	if (!ctx)
 		return;
 	if (fz_drop_imp(ctx, ctx->colorspace, &ctx->colorspace->ctx_refs))
+	{
 		fz_free(ctx, ctx->colorspace);
+		ctx->colorspace = NULL;
+	}
 }
 
 fz_colorspace *

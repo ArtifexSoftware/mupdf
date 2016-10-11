@@ -661,7 +661,7 @@ fz_keep_store_context(fz_context *ctx)
 void
 fz_drop_store_context(fz_context *ctx)
 {
-	if (ctx == NULL || ctx->store == NULL)
+	if (!ctx)
 		return;
 	if (fz_drop_imp(ctx, ctx->store, &ctx->store->refs))
 	{

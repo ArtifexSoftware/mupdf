@@ -235,21 +235,23 @@ fz_keep_font_context(fz_context *ctx)
 
 void fz_drop_font_context(fz_context *ctx)
 {
-	int i;
-
 	if (!ctx)
 		return;
 
-	for (i = 0; i < nelem(ctx->font->fallback); ++i)
-	{
-		fz_drop_font(ctx, ctx->font->fallback[i].serif);
-		fz_drop_font(ctx, ctx->font->fallback[i].sans);
-	}
-	fz_drop_font(ctx, ctx->font->symbol);
-	fz_drop_font(ctx, ctx->font->emoji);
-
 	if (fz_drop_imp(ctx, ctx->font, &ctx->font->ctx_refs))
+	{
+		int i;
+
+		for (i = 0; i < nelem(ctx->font->fallback); ++i)
+		{
+			fz_drop_font(ctx, ctx->font->fallback[i].serif);
+			fz_drop_font(ctx, ctx->font->fallback[i].sans);
+		}
+		fz_drop_font(ctx, ctx->font->symbol);
+		fz_drop_font(ctx, ctx->font->emoji);
 		fz_free(ctx, ctx->font);
+		ctx->font = NULL;
+	}
 }
 
 void fz_install_load_system_font_funcs(fz_context *ctx, fz_load_system_font_func f, fz_load_system_cjk_font_func f_cjk)

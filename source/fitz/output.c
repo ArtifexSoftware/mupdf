@@ -45,7 +45,7 @@ fz_keep_output_context(fz_context *ctx)
 void
 fz_drop_output_context(fz_context *ctx)
 {
-	if (!ctx || !ctx->output)
+	if (!ctx)
 		return;
 
 	if (fz_drop_imp(ctx, ctx->output, &ctx->output->refs))

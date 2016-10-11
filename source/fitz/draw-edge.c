@@ -53,6 +53,8 @@ void fz_copy_aa_context(fz_context *dst, fz_context *src)
 
 void fz_drop_aa_context(fz_context *ctx)
 {
+	if (!ctx)
+		return;
 #ifndef AA_BITS
 	fz_free(ctx, ctx->aa);
 	ctx->aa = NULL;

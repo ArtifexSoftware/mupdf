@@ -31,7 +31,7 @@ fz_document_handler_context *fz_keep_document_handler_context(fz_context *ctx)
 
 void fz_drop_document_handler_context(fz_context *ctx)
 {
-	if (!ctx || !ctx->handler)
+	if (!ctx)
 		return;
 
 	if (fz_drop_imp(ctx, ctx->handler, &ctx->handler->refs))
