@@ -908,8 +908,6 @@ gprf_close_document(fz_context *ctx, fz_document *doc_)
 	fz_free(ctx, doc->gprf_filename);
 	fz_free(ctx, doc->print_profile);
 	fz_free(ctx, doc->display_profile);
-
-	fz_free(ctx, doc);
 }
 
 static int

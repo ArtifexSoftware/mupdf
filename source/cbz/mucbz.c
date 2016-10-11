@@ -105,7 +105,6 @@ cbz_drop_document(fz_context *ctx, cbz_document *doc)
 {
 	fz_drop_archive(ctx, doc->arch);
 	fz_free(ctx, (char **)doc->page);
-	fz_free(ctx, doc);
 }
 
 static int

@@ -217,7 +217,6 @@ xps_drop_document(fz_context *ctx, xps_document *doc)
 	xps_drop_page_list(ctx, doc);
 
 	fz_free(ctx, doc->start_part);
-	fz_free(ctx, doc);
 }
 
 static int

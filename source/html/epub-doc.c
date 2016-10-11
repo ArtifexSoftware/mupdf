@@ -219,7 +219,6 @@ epub_drop_document(fz_context *ctx, fz_document *doc_)
 	fz_drop_outline(ctx, doc->outline);
 	fz_free(ctx, doc->dc_title);
 	fz_free(ctx, doc->dc_creator);
-	fz_free(ctx, doc);
 }
 
 static const char *

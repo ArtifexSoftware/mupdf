@@ -14,7 +14,6 @@ svg_drop_document(fz_context *ctx, fz_document *doc_)
 	svg_document *doc = (svg_document*)doc_;
 	fz_drop_tree(ctx, doc->idmap, NULL);
 	fz_drop_xml(ctx, doc->root);
-	fz_free(ctx, doc);
 }
 
 static int

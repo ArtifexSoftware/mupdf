@@ -21,7 +21,6 @@ static void
 img_drop_document(fz_context *ctx, img_document *doc)
 {
 	fz_drop_image(ctx, doc->image);
-	fz_free(ctx, doc);
 }
 
 static int

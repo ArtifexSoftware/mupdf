@@ -163,8 +163,11 @@ void
 fz_drop_document(fz_context *ctx, fz_document *doc)
 {
 	if (fz_drop_imp(ctx, doc, &doc->refs))
+	{
 		if (doc->drop_document)
 			doc->drop_document(ctx, doc);
+		fz_free(ctx, doc);
+	}
 }
 
 static void

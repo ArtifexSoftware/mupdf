@@ -111,7 +111,6 @@ static void
 tiff_drop_document(fz_context *ctx, tiff_document *doc)
 {
 	fz_drop_buffer(ctx, doc->buffer);
-	fz_free(ctx, doc);
 }
 
 static tiff_document *
