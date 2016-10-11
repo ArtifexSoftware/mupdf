@@ -3,10 +3,15 @@
 /*
  * Write pixmap to PNM file (without alpha channel)
  */
-
-void
-fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha)
+static void
+pnm_write_header(fz_context *ctx, fz_band_writer *writer)
 {
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+	int n = writer->n;
+	int alpha = writer->alpha;
+
 	n -= alpha;
 	if (n != 1 && n != 3)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
@@ -19,18 +24,20 @@ fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 	fz_printf(ctx, out, "255\n");
 }
 
-void
-fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band_start, int bandheight, unsigned char *p)
+static void
+pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *p)
 {
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+	int n = writer->n;
+	int alpha = writer->alpha;
 	char buffer[2*3*4*5*6]; /* Buffer must be a multiple of 2 and 3 at least. */
 	int len;
 	int end = band_start + bandheight;
 
 	if (n-alpha != 1 && n-alpha != 3)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
-
-	if (!out)
-		return;
 
 	if (end > h)
 		end = h;
@@ -96,29 +103,63 @@ fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alph
 	}
 }
 
+fz_band_writer *fz_new_pnm_band_writer(fz_context *ctx, fz_output *out)
+{
+	fz_band_writer *writer = fz_new_band_writer(ctx, fz_band_writer, out);
+
+	writer->header = pnm_write_header;
+	writer->band = pnm_write_band;
+
+	return writer;
+}
+
 void
 fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
-	fz_write_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
-	fz_write_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples);
+	fz_band_writer *writer = fz_new_pnm_band_writer(ctx, out);
+	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
+	fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
+	fz_write_trailer(ctx, writer);
+	fz_drop_band_writer(ctx, writer);
 }
 
 void
 fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 {
+	fz_band_writer *writer = NULL;
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
-	fz_write_pnm_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
-	fz_write_pnm_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples);
-	fz_drop_output(ctx, out);
+
+	fz_var(writer);
+
+	fz_try(ctx)
+	{
+		writer = fz_new_pnm_band_writer(ctx, out);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
+		fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		fz_write_trailer(ctx, writer);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_band_writer(ctx, writer);
+		fz_drop_output(ctx, out);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /*
  * Write pixmap to PAM file (with or without alpha channel)
  */
 
-void
-fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha)
+static void
+pam_write_header(fz_context *ctx, fz_band_writer *writer)
 {
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+	int n = writer->n;
+	int alpha = writer->alpha;
+
 	fz_printf(ctx, out, "P7\n");
 	fz_printf(ctx, out, "WIDTH %d\n", w);
 	fz_printf(ctx, out, "HEIGHT %d\n", h);
@@ -137,14 +178,15 @@ fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 	fz_printf(ctx, out, "ENDHDR\n");
 }
 
-void
-fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band_start, int bandheight, unsigned char *sp)
+static void
+pam_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *sp)
 {
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+	int n = writer->n;
 	int y;
 	int end = band_start + bandheight;
-
-	if (!out)
-		return;
 
 	if (end > h)
 		end = h;
@@ -157,24 +199,46 @@ fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alph
 	}
 }
 
+fz_band_writer *fz_new_pam_band_writer(fz_context *ctx, fz_output *out)
+{
+	fz_band_writer *writer = fz_new_band_writer(ctx, fz_band_writer, out);
+
+	writer->header = pam_write_header;
+	writer->band = pam_write_band;
+
+	return writer;
+}
+
 void
 fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
-	fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
-	fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples);
+	fz_band_writer *writer = fz_new_pam_band_writer(ctx, out);
+	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
+	fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
+	fz_write_trailer(ctx, writer);
+	fz_drop_band_writer(ctx, writer);
 }
 
 void
 fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 {
+	fz_band_writer *writer = NULL;
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
+
+	fz_var(writer);
+
 	fz_try(ctx)
 	{
-		fz_write_pam_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
-		fz_write_pam_band(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		writer = fz_new_pam_band_writer(ctx, out);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
+		fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		fz_write_trailer(ctx, writer);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_band_writer(ctx, writer);
 		fz_drop_output(ctx, out);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }

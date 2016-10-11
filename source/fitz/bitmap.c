@@ -303,72 +303,81 @@ fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit)
 	memset(bit->samples, 0, bit->stride * bit->h);
 }
 
-void
-fz_write_pbm_header(fz_context *ctx, fz_output *out, int w, int h)
+static void
+pbm_write_header(fz_context *ctx, fz_band_writer *writer)
 {
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+
 	fz_printf(ctx, out, "P4\n%d %d\n", w, h);
 }
 
-void
-fz_write_pkm_header(fz_context *ctx, fz_output *out, int w, int h)
+static void
+pkm_write_header(fz_context *ctx, fz_band_writer *writer)
 {
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+
 	fz_printf(ctx, out, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
 }
 
 void
 fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 {
-	fz_write_pbm_header(ctx, out, bitmap->w, bitmap->h);
+	fz_band_writer *writer = fz_new_pbm_band_writer(ctx, out);
 
-	fz_write_pbm_band(ctx, out, bitmap);
+	fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, 0, 0, 1);
+	fz_write_band(ctx, writer, bitmap->stride, 0, bitmap->h, bitmap->samples);
+	fz_write_trailer(ctx, writer);
+	fz_drop_band_writer(ctx, writer);
 }
 
 void
 fz_write_bitmap_as_pkm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 {
-	fz_write_pkm_header(ctx, out, bitmap->w, bitmap->h);
+	fz_band_writer *writer = fz_new_pkm_band_writer(ctx, out);
 
-	fz_write_pkm_band(ctx, out, bitmap);
+	fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, 0, 0, 1);
+	fz_write_band(ctx, writer, bitmap->stride, 0, bitmap->h, bitmap->samples);
+	fz_write_trailer(ctx, writer);
+	fz_drop_band_writer(ctx, writer);
 }
 
-void
-fz_write_pbm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
+static void
+pbm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *p)
 {
-	unsigned char *p;
-	int h, bytestride;
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+	int n = writer->n;
+	int bytestride;
 
-	if (bitmap->n != 1)
+	if (n != 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too many color components in bitmap");
 
-	if (!out)
-		return;
-
-	p = bitmap->samples;
-	h = bitmap->h;
-	bytestride = (bitmap->w + 7) >> 3;
+	bytestride = (w + 7) >> 3;
 	while (h--)
 	{
 		fz_write(ctx, out, p, bytestride);
-		p += bitmap->stride;
+		p += stride;
 	}
 }
 
-void
-fz_write_pkm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
+static void
+pkm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *p)
 {
-	unsigned char *p;
-	int w, h, bytestride;
+	fz_output *out = writer->out;
+	int w = writer->w;
+	int h = writer->h;
+	int n = writer->n;
+	int bytestride;
 
-	if (bitmap->n != 4)
+	if (n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "wrong number of color components in bitmap");
 
-	if (!out)
-		return;
-
-	p = bitmap->samples;
-	h = bitmap->h;
-	w = bitmap->w;
-	bytestride = bitmap->stride - (w>>1);
+	bytestride = stride - (w>>1);
 	while (h--)
 	{
 		int ww = w-1;
@@ -381,6 +390,27 @@ fz_write_pkm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 			fz_write(ctx, out, &pkm[8 * *p], 4);
 		p += bytestride;
 	}
+}
+
+fz_band_writer *fz_new_pbm_band_writer(fz_context *ctx, fz_output *out)
+{
+	fz_band_writer *writer = fz_new_band_writer(ctx, fz_band_writer, out);
+
+	writer->header = pbm_write_header;
+	writer->band = pbm_write_band;
+
+	return writer;
+}
+
+
+fz_band_writer *fz_new_pkm_band_writer(fz_context *ctx, fz_output *out)
+{
+	fz_band_writer *writer = fz_new_band_writer(ctx, fz_band_writer, out);
+
+	writer->header = pkm_write_header;
+	writer->band = pkm_write_band;
+
+	return writer;
 }
 
 void

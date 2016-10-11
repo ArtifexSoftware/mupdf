@@ -30,18 +30,20 @@ void
 fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
-	fz_png_output_context *poc = NULL;
+	fz_band_writer *writer = NULL;
 
-	fz_var(poc);
+	fz_var(writer);
 
 	fz_try(ctx)
 	{
-		poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
-		fz_write_png_band(ctx, out, poc, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		writer = fz_new_png_band_writer(ctx, out);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 1);
+		fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		fz_write_trailer(ctx, writer);
 	}
 	fz_always(ctx)
 	{
-		fz_write_png_trailer(ctx, out, poc);
+		fz_drop_band_writer(ctx, writer);
 		fz_drop_output(ctx, out);
 	}
 	fz_catch(ctx)
@@ -53,20 +55,22 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 void
 fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap)
 {
-	fz_png_output_context *poc;
+	fz_band_writer *writer;
 
 	if (!out)
 		return;
 
-	poc = fz_write_png_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha);
+	writer = fz_new_png_band_writer(ctx, out);
 
 	fz_try(ctx)
 	{
-		fz_write_png_band(ctx, out, poc, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 1);
+		fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		fz_write_trailer(ctx, writer);
 	}
 	fz_always(ctx)
 	{
-		fz_write_png_trailer(ctx, out, poc);
+		fz_drop_band_writer(ctx, writer);
 	}
 	fz_catch(ctx)
 	{
@@ -74,28 +78,27 @@ fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap)
 	}
 }
 
-struct fz_png_output_context_s
+typedef struct png_band_writer_s
 {
+	fz_band_writer super;
 	unsigned char *udata;
 	unsigned char *cdata;
 	uLong usize, csize;
 	z_stream stream;
-	int w;
-	int h;
-	int n;
-	int alpha;
-};
+} png_band_writer;
 
-fz_png_output_context *
-fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha)
+static void
+png_write_header(fz_context *ctx, fz_band_writer *writer_)
 {
+	png_band_writer *writer = (png_band_writer *)(void *)writer_;
+	fz_output *out = writer->super.out;
+	int w = writer->super.w;
+	int h = writer->super.h;
+	int n = writer->super.n;
+	int alpha = writer->super.alpha;
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	unsigned char head[13];
 	int color;
-	fz_png_output_context *poc;
-
-	if (!out)
-		return NULL;
 
 	/* Treat alpha only as greyscale */
 	if (n == 1 && alpha)
@@ -109,12 +112,6 @@ fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as png");
 	}
 
-	poc = fz_malloc_struct(ctx, fz_png_output_context);
-	poc->w = w;
-	poc->h = h;
-	poc->n = n;
-	poc->alpha = alpha;
-
 	big32(head+0, w);
 	big32(head+4, h);
 	head[8] = 8; /* depth */
@@ -125,55 +122,42 @@ fz_write_png_header(fz_context *ctx, fz_output *out, int w, int h, int n, int al
 
 	fz_write(ctx, out, pngsig, 8);
 	putchunk(ctx, out, "IHDR", head, 13);
-
-	return poc;
 }
 
-void
-fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, int stride, int band_start, int bandheight, unsigned char *sp)
+static void
+png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int bandheight, const unsigned char *sp)
 {
+	png_band_writer *writer = (png_band_writer *)(void *)writer_;
+	fz_output *out = writer->super.out;
 	unsigned char *dp;
 	int y, x, k, err, finalband;
 	int w, h, n;
 
-	if (!out || !sp || !poc)
-		return;
-
-	w = poc->w;
-	h = poc->h;
-	n = poc->n;
+	w = writer->super.w;
+	h = writer->super.h;
+	n = writer->super.n;
 
 	finalband = (band_start+bandheight >= h);
 	if (finalband)
 		bandheight = h - band_start;
 
-	if (poc->udata == NULL)
+	if (writer->udata == NULL)
 	{
-		poc->usize = (w * n + 1) * bandheight;
+		writer->usize = (w * n + 1) * bandheight;
 		/* Sadly the bound returned by compressBound is just for a
 		 * single usize chunk; if you compress a sequence of them
 		 * the buffering can result in you suddenly getting a block
 		 * larger than compressBound outputted in one go, even if you
 		 * take all the data out each time. */
-		poc->csize = compressBound(poc->usize);
-		fz_try(ctx)
-		{
-			poc->udata = fz_malloc(ctx, poc->usize);
-			poc->cdata = fz_malloc(ctx, poc->csize);
-		}
-		fz_catch(ctx)
-		{
-			fz_free(ctx, poc->udata);
-			poc->udata = NULL;
-			poc->cdata = NULL;
-			fz_rethrow(ctx);
-		}
-		err = deflateInit(&poc->stream, Z_DEFAULT_COMPRESSION);
+		writer->csize = compressBound(writer->usize);
+		writer->udata = fz_malloc(ctx, writer->usize);
+		writer->cdata = fz_malloc(ctx, writer->csize);
+		err = deflateInit(&writer->stream, Z_DEFAULT_COMPRESSION);
 		if (err != Z_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 	}
 
-	dp = poc->udata;
+	dp = writer->udata;
 	stride -= w*n;
 	for (y = 0; y < bandheight; y++)
 	{
@@ -193,50 +177,66 @@ fz_write_png_band(fz_context *ctx, fz_output *out, fz_png_output_context *poc, i
 		sp += stride;
 	}
 
-	poc->stream.next_in = (Bytef*)poc->udata;
-	poc->stream.avail_in = (uInt)(dp - poc->udata);
+	writer->stream.next_in = (Bytef*)writer->udata;
+	writer->stream.avail_in = (uInt)(dp - writer->udata);
 	do
 	{
-		poc->stream.next_out = poc->cdata;
-		poc->stream.avail_out = (uInt)poc->csize;
+		writer->stream.next_out = writer->cdata;
+		writer->stream.avail_out = (uInt)writer->csize;
 
 		if (!finalband)
 		{
-			err = deflate(&poc->stream, Z_NO_FLUSH);
+			err = deflate(&writer->stream, Z_NO_FLUSH);
 			if (err != Z_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 		}
 		else
 		{
-			err = deflate(&poc->stream, Z_FINISH);
+			err = deflate(&writer->stream, Z_FINISH);
 			if (err != Z_STREAM_END)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 		}
 
-		if (poc->stream.next_out != poc->cdata)
-			putchunk(ctx, out, "IDAT", poc->cdata, poc->stream.next_out - poc->cdata);
+		if (writer->stream.next_out != writer->cdata)
+			putchunk(ctx, out, "IDAT", writer->cdata, writer->stream.next_out - writer->cdata);
 	}
-	while (poc->stream.avail_out == 0);
+	while (writer->stream.avail_out == 0);
 }
 
-void
-fz_write_png_trailer(fz_context *ctx, fz_output *out, fz_png_output_context *poc)
+static void
+png_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 {
+	png_band_writer *writer = (png_band_writer *)(void *)writer_;
+	fz_output *out = writer->super.out;
 	unsigned char block[1];
 	int err;
 
-	if (!out || !poc)
-		return;
-
-	err = deflateEnd(&poc->stream);
+	err = deflateEnd(&writer->stream);
 	if (err != Z_OK)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 
-	fz_free(ctx, poc->cdata);
-	fz_free(ctx, poc->udata);
-	fz_free(ctx, poc);
-
 	putchunk(ctx, out, "IEND", block, 0);
+}
+
+static void
+png_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
+{
+	png_band_writer *writer = (png_band_writer *)(void *)writer_;
+
+	fz_free(ctx, writer->cdata);
+	fz_free(ctx, writer->udata);
+}
+
+fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out)
+{
+	png_band_writer *writer = fz_new_band_writer(ctx, png_band_writer, out);
+
+	writer->super.header = png_write_header;
+	writer->super.band = png_write_band;
+	writer->super.trailer = png_write_trailer;
+	writer->super.drop = png_drop_band_writer;
+
+	return &writer->super;
 }
 
 /* We use an auxiliary function to do pixmap_as_png, as it can enable us to

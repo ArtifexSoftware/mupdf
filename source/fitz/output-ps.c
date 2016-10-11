@@ -2,14 +2,15 @@
 
 #include <zlib.h>
 
-struct fz_ps_output_context_s
+typedef struct ps_band_writer_s
 {
+	fz_band_writer super;
 	z_stream stream;
 	int input_size;
 	unsigned char *input;
 	int output_size;
 	unsigned char *output;
-};
+} ps_band_writer;
 
 void
 fz_write_ps_file_header(fz_context *ctx, fz_output *out)
@@ -39,20 +40,35 @@ void fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages)
 	fz_printf(ctx, out, "%%%%Trailer\n%%%%Pages: %d\n%%%%EOF\n", pages);
 }
 
-fz_ps_output_context *fz_write_ps_header(fz_context *ctx, fz_output *out, int w, int h, int n, int xres, int yres, int pagenum)
+static void
+ps_write_header(fz_context *ctx, fz_band_writer *writer_)
 {
+	ps_band_writer *writer = (ps_band_writer *)writer_;
+	fz_output *out = writer->super.out;
+	int w = writer->super.w;
+	int h = writer->super.h;
+	int n = writer->super.n;
+	int alpha = writer->super.alpha;
+	int xres = writer->super.xres;
+	int yres = writer->super.yres;
+	int pagenum = writer->super.pagenum;
 	int w_points = (w * 72 + (xres>>1)) / xres;
 	int h_points = (h * 72 + (yres>>1)) / yres;
 	float sx = w/(float)w_points;
 	float sy = h/(float)h_points;
-	fz_ps_output_context *psoc;
 	int err;
 
-	psoc = fz_malloc_struct(ctx, fz_ps_output_context);
-	err = deflateInit(&psoc->stream, Z_DEFAULT_COMPRESSION);
+	if (alpha != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Postscript output cannot have alpha");
+
+	writer->super.w = w;
+	writer->super.h = h;
+	writer->super.n = n;
+
+	err = deflateInit(&writer->stream, Z_DEFAULT_COMPRESSION);
 	if (err != Z_OK)
 	{
-		fz_free(ctx, psoc);
+		fz_free(ctx, writer);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 	}
 
@@ -90,49 +106,54 @@ fz_ps_output_context *fz_write_ps_header(fz_context *ctx, fz_output *out, int w,
 		">>\n"
 		"image\n"
 		, w, h, sx, sy, h);
-
-	return psoc;
 }
 
-void fz_write_ps_trailer(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc)
+static void
+ps_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 {
-	if (psoc)
-	{
-		int err;
+	ps_band_writer *writer = (ps_band_writer *)writer_;
+	fz_output *out = writer->super.out;
+	int err;
 
-		psoc->stream.next_in = NULL;
-		psoc->stream.avail_in = 0;
-		psoc->stream.next_out = (Bytef*)psoc->output;
-		psoc->stream.avail_out = (uInt)psoc->output_size;
+	writer->stream.next_in = NULL;
+	writer->stream.avail_in = 0;
+	writer->stream.next_out = (Bytef*)writer->output;
+	writer->stream.avail_out = (uInt)writer->output_size;
 
-		err = deflate(&psoc->stream, Z_FINISH);
-		if (err != Z_STREAM_END)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
+	err = deflate(&writer->stream, Z_FINISH);
+	if (err != Z_STREAM_END)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 
-		fz_write(ctx, out, psoc->output, psoc->output_size - psoc->stream.avail_out);
-		fz_free(ctx, psoc->input);
-		fz_free(ctx, psoc->output);
-		fz_free(ctx, psoc);
-	}
+	fz_write(ctx, out, writer->output, writer->output_size - writer->stream.avail_out);
 	fz_printf(ctx, out, "\nshowpage\n%%%%PageTrailer\n%%%%EndPageTrailer\n\n");
+}
 
+static void
+ps_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
+{
+	ps_band_writer *writer = (ps_band_writer *)writer_;
+
+	fz_free(ctx, writer->input);
+	fz_free(ctx, writer->output);
 }
 
 void fz_write_pixmap_as_ps(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap)
 {
-	fz_ps_output_context *psoc;
+	fz_band_writer *writer;
 
 	fz_write_ps_file_header(ctx, out);
 
-	psoc = fz_write_ps_header(ctx, out, pixmap->w, pixmap->h, pixmap->n, pixmap->xres, pixmap->yres, 1);
+	writer = fz_new_ps_band_writer(ctx, out);
 
 	fz_try(ctx)
 	{
-		fz_write_ps_band(ctx, out, psoc, pixmap->w, pixmap->h, pixmap->n, pixmap->stride, 0, 0, pixmap->samples);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 1);
+		fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
+		fz_write_trailer(ctx, writer);
 	}
 	fz_always(ctx)
 	{
-		fz_write_ps_trailer(ctx, out, psoc);
+		fz_drop_band_writer(ctx, writer);
 	}
 	fz_catch(ctx)
 	{
@@ -153,8 +174,14 @@ void fz_save_pixmap_as_ps(fz_context *ctx, fz_pixmap *pixmap, char *filename, in
 		fz_rethrow(ctx);
 }
 
-void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int stride, int band_start, int bandheight, unsigned char *samples)
+static void
+ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int bandheight, const unsigned char *samples)
 {
+	ps_band_writer *writer = (ps_band_writer *)writer_;
+	fz_output *out = writer->super.out;
+	int w = writer->super.w;
+	int h = writer->super.h;
+	int n = writer->super.n;
 	int x, y, i, err;
 	int required_input;
 	int required_output;
@@ -164,25 +191,25 @@ void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *pso
 		bandheight = h - band_start;
 
 	required_input = w*(n-1)*bandheight;
-	required_output = (int)deflateBound(&psoc->stream, required_input);
+	required_output = (int)deflateBound(&writer->stream, required_input);
 
-	if (psoc->input == NULL || psoc->input_size < required_input)
+	if (writer->input == NULL || writer->input_size < required_input)
 	{
-		fz_free(ctx, psoc->input);
-		psoc->input = NULL;
-		psoc->input = fz_malloc(ctx, required_input);
-		psoc->input_size = required_input;
+		fz_free(ctx, writer->input);
+		writer->input = NULL;
+		writer->input = fz_malloc(ctx, required_input);
+		writer->input_size = required_input;
 	}
 
-	if (psoc->output == NULL || psoc->output_size < required_output)
+	if (writer->output == NULL || writer->output_size < required_output)
 	{
-		fz_free(ctx, psoc->output);
-		psoc->output = NULL;
-		psoc->output = fz_malloc(ctx, required_output);
-		psoc->output_size = required_output;
+		fz_free(ctx, writer->output);
+		writer->output = NULL;
+		writer->output = fz_malloc(ctx, required_output);
+		writer->output_size = required_output;
 	}
 
-	o = psoc->input;
+	o = writer->input;
 	for (y = 0; y < bandheight; y++)
 	{
 		for (x = 0; x < w; x++)
@@ -194,14 +221,26 @@ void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *pso
 		samples += stride - w*n;
 	}
 
-	psoc->stream.next_in = (Bytef*)psoc->input;
-	psoc->stream.avail_in = required_input;
-	psoc->stream.next_out = (Bytef*)psoc->output;
-	psoc->stream.avail_out = (uInt)psoc->output_size;
+	writer->stream.next_in = (Bytef*)writer->input;
+	writer->stream.avail_in = required_input;
+	writer->stream.next_out = (Bytef*)writer->output;
+	writer->stream.avail_out = (uInt)writer->output_size;
 
-	err = deflate(&psoc->stream, Z_NO_FLUSH);
+	err = deflate(&writer->stream, Z_NO_FLUSH);
 	if (err != Z_OK)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 
-	fz_write(ctx, out, psoc->output, psoc->output_size - psoc->stream.avail_out);
+	fz_write(ctx, out, writer->output, writer->output_size - writer->stream.avail_out);
+}
+
+fz_band_writer *fz_new_ps_band_writer(fz_context *ctx, fz_output *out)
+{
+	fz_band_writer *writer = fz_new_band_writer(ctx, fz_band_writer, out);
+
+	writer->header = ps_write_header;
+	writer->band = ps_write_band;
+	writer->trailer = ps_write_trailer;
+	writer->drop = ps_drop_band_writer;
+
+	return writer;
 }

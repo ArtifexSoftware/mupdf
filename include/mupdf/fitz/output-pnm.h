@@ -13,8 +13,8 @@
 void fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename);
 
 void fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
-void fz_write_pnm_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha);
-void fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band_start, int bandheight, unsigned char *p);
+
+fz_band_writer *fz_new_pnm_band_writer(fz_context *ctx, fz_output *out);
 
 /*
 	fz_save_pixmap_as_pam: Save a pixmap as a PAM image file.
@@ -22,8 +22,8 @@ void fz_write_pnm_band(fz_context *ctx, fz_output *out, int w, int h, int n, int
 void fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename);
 
 void fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap);
-void fz_write_pam_header(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha);
-void fz_write_pam_band(fz_context *ctx, fz_output *out, int w, int h, int n, int alpha, int stride, int band_start, int bandheight, unsigned char *sp);
+
+fz_band_writer *fz_new_pam_band_writer(fz_context *ctx, fz_output *out);
 
 /*
 	fz_save_bitmap_as_pbm: Save a bitmap as a PBM image file.
@@ -32,9 +32,7 @@ void fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename);
 
 void fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
 
-void fz_write_pbm_header(fz_context *ctx, fz_output *out, int w, int h);
-
-void fz_write_pbm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
+fz_band_writer *fz_new_pbm_band_writer(fz_context *ctx, fz_output *out);
 
 /*
 	fz_save_bitmap_as_pkm: Save a 4bpp cmyk bitmap as a PAM image file.
@@ -43,8 +41,6 @@ void fz_save_bitmap_as_pkm(fz_context *ctx, fz_bitmap *bitmap, char *filename);
 
 void fz_write_bitmap_as_pkm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
 
-void fz_write_pkm_header(fz_context *ctx, fz_output *out, int w, int h);
-
-void fz_write_pkm_band(fz_context *ctx, fz_output *out, fz_bitmap *bitmap);
+fz_band_writer *fz_new_pkm_band_writer(fz_context *ctx, fz_output *out);
 
 #endif

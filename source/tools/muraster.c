@@ -604,6 +604,12 @@ typedef struct render_details
 	 * will start at the maximum value, and may drop to 0
 	 * if we have problems with memory. */
 	int num_workers;
+
+	/* The band writer to output the page */
+	fz_band_writer *bander;
+
+	/* Number of components in image */
+	int n;
 } render_details;
 
 enum
@@ -784,6 +790,7 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 			pix = fz_new_pixmap_with_bbox(ctx, colorspace, &ibounds, 0);
 			fz_set_pixmap_resolution(ctx, pix, x_resolution, y_resolution);
 		}
+		fz_write_header(ctx, render->bander, pix->w, total_height, pix->n, pix->alpha, pix->xres, pix->yres, pagenum);
 
 		for (band = 0; band < bands; band++)
 		{
@@ -818,22 +825,9 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 			{
 				/* If we get any errors while outputting the bands, retrying won't help. */
 				errors_are_fatal = 1;
-				if (output_format == OUT_PGM || output_format == OUT_PPM)
-					fz_write_pnm_band(ctx, out, pix->w, total_height, pix->n, pix->alpha, pix->stride, band_start, draw_height, pix->samples);
-				else if (output_format == OUT_PAM)
-					fz_write_pam_band(ctx, out, pix->w, total_height, pix->n, pix->alpha, pix->stride, band_start, draw_height, pix->samples);
-				else if (output_format == OUT_PBM)
-				{
-					fz_write_pbm_band(ctx, out, bit);
-					fz_drop_bitmap(ctx, bit);
-					bit = NULL;
-				}
-				else if (output_format == OUT_PKM)
-				{
-					fz_write_pkm_band(ctx, out, bit);
-					fz_drop_bitmap(ctx, bit);
-					bit = NULL;
-				}
+				fz_write_band(ctx, render->bander, bit ? bit->stride : pix->stride, band_start, draw_height, bit ? bit->samples : pix->samples);
+				fz_drop_bitmap(ctx, bit);
+				bit = NULL;
 				errors_are_fatal = 0;
 			}
 
@@ -899,14 +893,7 @@ static int try_render_page(fz_context *ctx, int pagenum, fz_cookie *cookie, int 
 		{
 			int w = render->ibounds.x1 - render->ibounds.x0;
 			int h = render->ibounds.y1 - render->ibounds.y0;
-			if (output_format == OUT_PGM || output_format == OUT_PPM)
-				fz_write_pnm_header(ctx, out, w, h, output_format == OUT_PGM ? 1 : 3, 0);
-			else if (output_format == OUT_PAM)
-				fz_write_pam_header(ctx, out, w, h, 4, 0);
-			else if (output_format == OUT_PBM)
-				fz_write_pbm_header(ctx, out, w, h);
-			else if (output_format == OUT_PKM)
-				fz_write_pkm_header(ctx, out, w, h);
+			fz_write_header(ctx, render->bander, w, h, render->n, 0, 0, 0, 0);
 		}
 		fz_catch(ctx)
 		{
@@ -960,6 +947,7 @@ static int try_render_page(fz_context *ctx, int pagenum, fz_cookie *cookie, int 
 
 	fz_drop_page(ctx, render->page);
 	fz_drop_display_list(ctx, render->list);
+	fz_drop_band_writer(ctx, render->bander);
 
 	if (showtime)
 	{
@@ -1175,6 +1163,27 @@ initialise_banding(fz_context *ctx, render_details *render, int color)
 
 	render->band_height_multiple = reps;
 	render->bands_rendered = 0;
+
+	if (output_format == OUT_PGM || output_format == OUT_PPM)
+	{
+		render->bander = fz_new_pnm_band_writer(ctx, out);
+		render->n = OUT_PGM ? 1 : 3;
+	}
+	else if (output_format == OUT_PAM)
+	{
+		render->bander = fz_new_pam_band_writer(ctx, out);
+		render->n = 4;
+	}
+	else if (output_format == OUT_PBM)
+	{
+		render->bander = fz_new_pbm_band_writer(ctx, out);
+		render->n = 1;
+	}
+	else if (output_format == OUT_PKM)
+	{
+		render->bander = fz_new_pkm_band_writer(ctx, out);
+		render->n = 4;
+	}
 }
 
 static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)

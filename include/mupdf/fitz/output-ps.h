@@ -6,8 +6,6 @@
 #include "mupdf/fitz/output.h"
 #include "mupdf/fitz/pixmap.h"
 
-typedef struct fz_ps_output_context_s fz_ps_output_context;
-
 /*
 	PS (image) output
 */
@@ -17,11 +15,7 @@ void fz_save_pixmap_as_ps(fz_context *ctx, fz_pixmap *pixmap, char *filename, in
 
 void fz_write_ps_file_header(fz_context *ctx, fz_output *out);
 
-fz_ps_output_context *fz_write_ps_header(fz_context *ctx, fz_output *out, int w, int h, int n, int xres, int yres, int pagenum);
-
-void fz_write_ps_band(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc, int w, int h, int n, int stride, int band_start, int bandheight, unsigned char *samples);
-
-void fz_write_ps_trailer(fz_context *ctx, fz_output *out, fz_ps_output_context *psoc);
+fz_band_writer *fz_new_ps_band_writer(fz_context *ctx, fz_output *out);
 
 void fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages);
 

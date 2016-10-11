@@ -292,3 +292,51 @@ fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
+
+fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_output *out)
+{
+	fz_band_writer *writer = fz_calloc(ctx, size, 1);
+
+	assert(size >= sizeof(*writer));
+
+	writer->out = out;
+
+	return writer;
+}
+
+void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum)
+{
+	if (writer == NULL || writer->band == NULL)
+		return;
+	writer->w = w;
+	writer->h = h;
+	writer->n = n;
+	writer->alpha = alpha;
+	writer->xres = xres;
+	writer->yres = yres;
+	writer->pagenum = pagenum;
+	writer->header(ctx, writer);
+}
+
+void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *samples)
+{
+	if (writer == NULL || writer->band == NULL)
+		return;
+	writer->band(ctx, writer, stride, band_start, band_height, samples);
+}
+
+void fz_write_trailer(fz_context *ctx, fz_band_writer *writer)
+{
+	if (writer == NULL || writer->trailer == NULL)
+		return;
+	writer->trailer(ctx, writer);
+}
+
+void fz_drop_band_writer(fz_context *ctx, fz_band_writer *writer)
+{
+	if (writer == NULL)
+		return;
+	if (writer->drop != NULL)
+		writer->drop(ctx, writer);
+	fz_free(ctx, writer);
+}
