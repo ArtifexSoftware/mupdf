@@ -89,7 +89,7 @@ pdf_find_image_resource(fz_context *ctx, pdf_document *doc, fz_image *item, unsi
 }
 
 pdf_obj *
-pdf_insert_image_resource(fz_context *ctx, pdf_document *doc, unsigned char digest[15], pdf_obj *obj)
+pdf_insert_image_resource(fz_context *ctx, pdf_document *doc, unsigned char digest[16], pdf_obj *obj)
 {
 	pdf_obj *res = fz_hash_insert(ctx, doc->resources.images, digest, obj);
 	if (res)
@@ -121,7 +121,7 @@ pdf_find_font_resource(fz_context *ctx, pdf_document *doc, fz_buffer *item, unsi
 }
 
 pdf_obj *
-pdf_insert_font_resource(fz_context *ctx, pdf_document *doc, unsigned char digest[15], pdf_obj *obj)
+pdf_insert_font_resource(fz_context *ctx, pdf_document *doc, unsigned char digest[16], pdf_obj *obj)
 {
 	pdf_obj *res = fz_hash_insert(ctx, doc->resources.fonts, digest, obj);
 	if (res)
