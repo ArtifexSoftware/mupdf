@@ -34,7 +34,7 @@ public class ReaderView
 	private static final int GAP               = 20;
 
 	private static final float MIN_SCALE        = 1.0f;
-	private static final float MAX_SCALE        = 5.0f;
+	private static final float MAX_SCALE        = 64.0f;
 	private static final float REFLOW_SCALE_FACTOR = 0.5f;
 
 	private static final boolean HORIZONTAL_SCROLLING = true;
