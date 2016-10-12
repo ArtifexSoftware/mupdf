@@ -1022,7 +1022,9 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 	if (value->type == CSS_HASH)
 	{
 		int r, g, b;
-		size_t n = strlen(value->data);
+		size_t n;
+hex_color:
+		n = strlen(value->data);
 		if (n == 3)
 		{
 			r = tohex(value->data[0]) * 16 + tohex(value->data[0]);
@@ -1093,7 +1095,7 @@ color_from_value(fz_css_value *value, fz_css_color initial)
 			return make_color(0xC0, 0xC0, 0xC0, 255);
 		if (!strcmp(value->data, "gray"))
 			return make_color(0x80, 0x80, 0x80, 255);
-		return make_color(0, 0, 0, 255);
+		goto hex_color; /* last ditch attempt: maybe it's a #XXXXXX color without the # */
 	}
 	return initial;
 }
