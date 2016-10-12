@@ -1114,22 +1114,26 @@ static inline void cached_cmyk_conv(unsigned char *restrict const pr, unsigned c
 	}
 	else if (k == 0 && c == 0 && m == 0 && y == 0)
 	{
-		*pr = *pg = *pb = 255;
 		*C = 0;
 		*M = 0;
 		*Y = 0;
 		*K = 0;
+		*pr = *pg = *pb = 255;
 	}
 	else if (k == 255)
 	{
-		*pr = *pg = *pb = 0;
 		*C = 0;
 		*M = 0;
 		*Y = 0;
 		*K = 255;
+		*pr = *pg = *pb = 0;
 	}
 	else
 	{
+		*C = c;
+		*M = m;
+		*Y = y;
+		*K = k;
 		c += c>>7;
 		m += m>>7;
 		y += y>>7;
@@ -1221,10 +1225,6 @@ static inline void cached_cmyk_conv(unsigned char *restrict const pr, unsigned c
 		*pr = r>>23;
 		*pg = g>>23;
 		*pb = b>>23;
-		*C = c;
-		*M = m;
-		*Y = y;
-		*K = k;
 	}
 #else
 	*pr = 255 - (unsigned char)fz_mini(c + k, 255);
