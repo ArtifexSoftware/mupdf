@@ -292,9 +292,7 @@ fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image)
 	fz_var(buf);
 
 	fz_try(ctx)
-		buf = png_from_pixmap(ctx, pix, 0);
-	fz_always(ctx)
-		fz_drop_pixmap(ctx, pix);
+		buf = png_from_pixmap(ctx, pix, 1);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 	return buf;
