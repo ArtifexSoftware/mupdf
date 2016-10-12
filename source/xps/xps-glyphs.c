@@ -298,21 +298,13 @@ static inline int is_real_num_char(int c)
 static char *
 xps_parse_real_num(char *s, float *number, int *override)
 {
-	char buf[64];
-	char *p = buf;
-	while (is_real_num_char(*s))
-		*p++ = *s++;
-	*p = 0;
-	if (buf[0])
-	{
-		*override = 1;
-		*number = fz_atof(buf);
-	}
-	else
-	{
-		*override = 0;
-	}
-	return s;
+	char *tail;
+	float v;
+	v = fz_strtof(s, &tail);
+	*override = tail != s;
+	if (*override)
+		*number = v;
+	return tail;
 }
 
 static char *
