@@ -289,12 +289,6 @@ xps_parse_digits(char *s, int *digit)
 	return s;
 }
 
-static inline int is_real_num_char(int c)
-{
-	return (c >= '0' && c <= '9') ||
-		c == 'e' || c == 'E' || c == '+' || c == '-' || c == '.';
-}
-
 static char *
 xps_parse_real_num(char *s, float *number, int *override)
 {
