@@ -666,7 +666,7 @@ static void usage(void)
 		"\t-w -\tprintable width (in inches) (default: " stringify(PAPER_WIDTH) ")\n"
 		"\t-h -\tprintable height (in inches) (default: " stringify(PAPER_HEIGHT) "\n"
 		"\t-f\tfit file to page if too large\n"
-		"\t-B -\tminimum bandheight (e.g. 32)\n"
+		"\t-B -\tminimum band height (e.g. 32)\n"
 		"\t-M -\tmax bandmemory (e.g. 655360)\n"
 #if MURASTER_THREADS != 0
 		"\t-T -\tnumber of threads to use for rendering\n"

@@ -509,7 +509,7 @@ static int gcd(int u, int v)
 	while (1);
 }
 
-fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start, int bandheight)
+fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start, int band_height)
 {
 	fz_bitmap *out = NULL;
 	unsigned char *ht_line = NULL;

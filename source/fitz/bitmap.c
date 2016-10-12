@@ -346,7 +346,7 @@ fz_write_bitmap_as_pkm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 }
 
 static void
-pbm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *p)
+pbm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *p)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
@@ -366,7 +366,7 @@ pbm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 }
 
 static void
-pkm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *p)
+pkm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *p)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;

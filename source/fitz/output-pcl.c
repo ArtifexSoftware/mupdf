@@ -771,7 +771,7 @@ color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_)
 }
 
 static void
-color_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int bandheight, const unsigned char *sp)
+color_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int band_height, const unsigned char *sp)
 {
 	color_pcl_band_writer *writer = (color_pcl_band_writer *)writer_;
 	fz_output *out = writer->super.out;
@@ -791,18 +791,18 @@ color_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int b
 	comp = writer->compbuf;
 	seed_valid = writer->seed_valid;
 
-	if (band_start+bandheight >= h)
-		bandheight = h - band_start;
+	if (band_start+band_height >= h)
+		band_height = h - band_start;
 
 	y = 0;
-	while (y < bandheight)
+	while (y < band_height)
 	{
 		/* Skip over multiple blank lines */
 		int blanks;
 		do
 		{
 			blanks = 0;
-			while (blanks < 32767 && y < bandheight)
+			while (blanks < 32767 && y < band_height)
 			{
 				if (!line_is_blank(curr, sp, w))
 					break;
@@ -826,7 +826,7 @@ color_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int b
 		}
 		while (blanks == 32767);
 
-		if (y == bandheight)
+		if (y == band_height)
 			break;
 
 		/* So, at least 1 more line to copy, and it's in curr */
@@ -1132,7 +1132,7 @@ mono_pcl_write_header(fz_context *ctx, fz_band_writer *writer_)
 }
 
 static void
-mono_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int ss, int band_start, int bandheight, const unsigned char *data)
+mono_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int ss, int band_start, int band_height, const unsigned char *data)
 {
 	mono_pcl_band_writer *writer = (mono_pcl_band_writer *)writer_;
 	fz_output *out = writer->super.out;

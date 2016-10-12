@@ -366,7 +366,7 @@ static int alphabits_graphics = 8;
 static int out_cs = CS_UNSET;
 static float gamma_value = 1;
 static int invert = 0;
-static int bandheight = 0;
+static int band_height = 0;
 static int lowmemory = 0;
 
 static int errored = 0;
@@ -425,7 +425,7 @@ static void usage(void)
 		"\t-w -\twidth (in pixels) (maximum width if -r is specified)\n"
 		"\t-h -\theight (in pixels) (maximum height if -r is specified)\n"
 		"\t-f -\tfit width and/or height exactly; ignore original aspect ratio\n"
-		"\t-B -\tmaximum bandheight (pgm, ppm, pam, png output only)\n"
+		"\t-B -\tmaximum band_height (pgm, ppm, pam, png output only)\n"
 #ifdef MUDRAW_THREADS
 		"\t-T -\tnumber of threads to use for rendering (banded mode only)\n"
 #endif
@@ -567,7 +567,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 			fz_unmultiply_pixmap(ctx, pix);
 
 		if ((output_format == OUT_PCL && out_cs == CS_MONO) || (output_format == OUT_PBM) || (output_format == OUT_PKM))
-			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band_start, bandheight);
+			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band_start, band_height);
 	}
 	fz_catch(ctx)
 	{
@@ -833,15 +833,15 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			int totalheight = ibounds.y1 - ibounds.y0;
 			int drawheight = totalheight;
 
-			if (bandheight != 0)
+			if (band_height != 0)
 			{
 				/* Banded rendering; we'll only render to a
 				 * given height at a time. */
-				drawheight = bandheight;
-				if (totalheight > bandheight)
-					band_ibounds.y1 = band_ibounds.y0 + bandheight;
-				bands = (totalheight + bandheight-1)/bandheight;
-				tbounds.y1 = tbounds.y0 + bandheight + 2;
+				drawheight = band_height;
+				if (totalheight > band_height)
+					band_ibounds.y1 = band_ibounds.y0 + band_height;
+				bands = (totalheight + band_height-1)/band_height;
+				tbounds.y1 = tbounds.y0 + band_height + 2;
 				DEBUG_THREADS(("Using %d Bands\n", bands));
 			}
 
@@ -907,12 +907,12 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					cookie->errors += w->cookie.errors;
 				}
 				else
-					drawband(ctx, page, list, &ctm, &tbounds, cookie, band * bandheight, pix, &bit);
+					drawband(ctx, page, list, &ctm, &tbounds, cookie, band * band_height, pix, &bit);
 
 				if (output)
 				{
 					if (bander)
-						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, band * bandheight, drawheight, bit ? bit->samples : pix->samples);
+						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, band * band_height, drawheight, bit ? bit->samples : pix->samples);
 					else if (output_format == OUT_PWG)
 						fz_write_pixmap_as_pwg(ctx, out, pix, NULL);
 					else if (output_format == OUT_TGA)
@@ -1271,7 +1271,7 @@ static THREAD_RETURN_TYPE worker_thread(void *arg)
 		SEMAPHORE_WAIT(me->start);
 		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, me->band));
 		if (me->band >= 0)
-			drawband(me->ctx, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band * bandheight, me->pix, &me->bit);
+			drawband(me->ctx, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band * band_height, me->pix, &me->bit);
 		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, me->band));
 		SEMAPHORE_TRIGGER(me->stop);
 	}
@@ -1336,7 +1336,7 @@ int mudraw_main(int argc, char **argv)
 		case 'w': width = fz_atof(fz_optarg); break;
 		case 'h': height = fz_atof(fz_optarg); break;
 		case 'f': fit = 1; break;
-		case 'B': bandheight = atoi(fz_optarg); break;
+		case 'B': band_height = atoi(fz_optarg); break;
 
 		case 'c': out_cs = parse_colorspace(fz_optarg); break;
 		case 'G': gamma_value = fz_atof(fz_optarg); break;
@@ -1393,7 +1393,7 @@ int mudraw_main(int argc, char **argv)
 			exit(1);
 		}
 
-		if (bandheight == 0)
+		if (band_height == 0)
 		{
 			fprintf(stderr, "Using multiple threads without banding is pointless\n");
 		}
@@ -1448,7 +1448,7 @@ int mudraw_main(int argc, char **argv)
 	}
 
 	/* Determine output type */
-	if (bandheight < 0)
+	if (band_height < 0)
 	{
 		fprintf(stderr, "Bandheight must be > 0\n");
 		exit(1);
@@ -1491,7 +1491,7 @@ int mudraw_main(int argc, char **argv)
 		}
 	}
 
-	if (bandheight)
+	if (band_height)
 	{
 		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PS)
 		{

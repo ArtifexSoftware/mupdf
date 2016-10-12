@@ -25,7 +25,7 @@ pnm_write_header(fz_context *ctx, fz_band_writer *writer)
 }
 
 static void
-pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *p)
+pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *p)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
@@ -34,7 +34,7 @@ pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 	int alpha = writer->alpha;
 	char buffer[2*3*4*5*6]; /* Buffer must be a multiple of 2 and 3 at least. */
 	int len;
-	int end = band_start + bandheight;
+	int end = band_start + band_height;
 
 	if (n-alpha != 1 && n-alpha != 3)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
@@ -179,14 +179,14 @@ pam_write_header(fz_context *ctx, fz_band_writer *writer)
 }
 
 static void
-pam_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int bandheight, const unsigned char *sp)
+pam_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *sp)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
 	int h = writer->h;
 	int n = writer->n;
 	int y;
-	int end = band_start + bandheight;
+	int end = band_start + band_height;
 
 	if (end > h)
 		end = h;

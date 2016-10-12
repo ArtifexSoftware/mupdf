@@ -125,7 +125,7 @@ png_write_header(fz_context *ctx, fz_band_writer *writer_)
 }
 
 static void
-png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int bandheight, const unsigned char *sp)
+png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int band_height, const unsigned char *sp)
 {
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
@@ -137,13 +137,13 @@ png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 	h = writer->super.h;
 	n = writer->super.n;
 
-	finalband = (band_start+bandheight >= h);
+	finalband = (band_start+band_height >= h);
 	if (finalband)
-		bandheight = h - band_start;
+		band_height = h - band_start;
 
 	if (writer->udata == NULL)
 	{
-		writer->usize = (w * n + 1) * bandheight;
+		writer->usize = (w * n + 1) * band_height;
 		/* Sadly the bound returned by compressBound is just for a
 		 * single usize chunk; if you compress a sequence of them
 		 * the buffering can result in you suddenly getting a block
@@ -159,7 +159,7 @@ png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 
 	dp = writer->udata;
 	stride -= w*n;
-	for (y = 0; y < bandheight; y++)
+	for (y = 0; y < band_height; y++)
 	{
 		*dp++ = 1; /* sub prediction filter */
 		for (x = 0; x < w; x++)
