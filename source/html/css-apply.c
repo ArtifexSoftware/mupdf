@@ -626,7 +626,7 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css *css, fz_xml *node)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
-	fz_css_property *prop, *head, *tail;
+	fz_css_property *prop;
 	const char *s;
 
 	for (rule = css->rule; rule; rule = rule->next)
@@ -649,11 +649,10 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css *css, fz_xml *node)
 	{
 		fz_try(ctx)
 		{
-			head = tail = prop = fz_parse_css_properties(ctx, css->pool, s);
+			prop = fz_parse_css_properties(ctx, css->pool, s);
 			while (prop)
 			{
 				add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
-				tail = prop;
 				prop = prop->next;
 			}
 			/* We can "leak" the property here, since it is freed along with the pool allocator. */
