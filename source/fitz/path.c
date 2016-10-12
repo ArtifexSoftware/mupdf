@@ -1547,7 +1547,7 @@ fz_clone_path(fz_context *ctx, fz_path *path)
 
 	assert(ctx != NULL);
 
-	if (ctx == NULL || path == NULL)
+	if (path == NULL)
 		return NULL;
 
 	new_path = fz_malloc_struct(ctx, fz_path);

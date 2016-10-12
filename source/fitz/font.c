@@ -110,7 +110,7 @@ free_resources(fz_context *ctx, fz_font *font)
 
 void fz_decouple_type3_font(fz_context *ctx, fz_font *font, void *t3doc)
 {
-	if (!ctx || !font || !t3doc || font->t3doc == NULL)
+	if (!font || !t3doc || font->t3doc == NULL)
 		return;
 
 	if (font->t3doc != t3doc)

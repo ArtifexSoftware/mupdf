@@ -88,18 +88,12 @@ fz_new_gprf_file(fz_context *ctx, char *filename)
 static gprf_file *
 fz_keep_gprf_file(fz_context *ctx, gprf_file *file)
 {
-	if (!ctx || !file)
-		return NULL;
-
 	return fz_keep_imp(ctx, file, &file->refs);
 }
 
 static void
 fz_drop_gprf_file(fz_context *ctx, gprf_file *file)
 {
-	if (!ctx || !file)
-		return;
-
 	if (fz_drop_imp(ctx, file, &file->refs))
 	{
 		unlink(file->filename);

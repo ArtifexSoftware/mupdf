@@ -2341,7 +2341,7 @@ JNI_FN(MuPDFCore_getFocusedWidgetTypeInternal)(JNIEnv * env, jobject thiz)
 	pdf_document *idoc = pdf_specifics(ctx, glo->doc);
 	pdf_widget *focus;
 
-	if (ctx, idoc == NULL)
+	if (ctx == NULL || idoc == NULL)
 		return NONE;
 
 	focus = pdf_focused_widget(ctx, idoc);
@@ -2376,7 +2376,7 @@ JNI_FN(MuPDFCore_getFocusedWidgetSignatureState)(JNIEnv * env, jobject thiz)
 	pdf_document *idoc = pdf_specifics(ctx, glo->doc);
 	pdf_widget *focus;
 
-	if (ctx, idoc == NULL)
+	if (ctx == NULL || idoc == NULL)
 		return Signature_NoSupport;
 
 	focus = pdf_focused_widget(ctx, idoc);

@@ -22,17 +22,11 @@ fz_separations *fz_new_separations(fz_context *ctx)
 
 fz_separations *fz_keep_separations(fz_context *ctx, fz_separations *sep)
 {
-	if (!ctx || !sep)
-		return NULL;
-
 	return fz_keep_imp(ctx, sep, &sep->refs);
 }
 
 void fz_drop_separations(fz_context *ctx, fz_separations *sep)
 {
-	if (!ctx || !sep)
-		return;
-
 	if (fz_drop_imp(ctx, sep, &sep->refs))
 	{
 		int i;
@@ -46,12 +40,12 @@ void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint3
 {
 	int n;
 
-	if (!ctx || !sep)
-		return;
+	if (!sep)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can't add to non-existent separations");
 
 	n = sep->num_separations;
 	if (n == FZ_MAX_SEPARATIONS)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Too many separations");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too many separations");
 
 	sep->name[n] = fz_strdup(ctx, name);
 	sep->equiv_rgb[n] = rgb;
@@ -64,10 +58,8 @@ void fz_control_separation(fz_context *ctx, fz_separations *sep, int separation,
 {
 	int bit;
 
-	if (!ctx || !sep)
-		return;
-	if (separation < 0 || separation >= sep->num_separations)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't disable non-existent separation");
+	if (!sep || separation < 0 || separation >= sep->num_separations)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can't control non-existent separation");
 
 	bit = 1<<(separation & 31);
 	separation >>= 5;
@@ -97,10 +89,8 @@ int fz_separation_disabled(fz_context *ctx, fz_separations *sep, int separation)
 {
 	int bit;
 
-	if (!ctx || !sep)
-		return 0;
-	if (separation < 0 || separation >= sep->num_separations)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't access non-existent separation");
+	if (!sep || separation < 0 || separation >= sep->num_separations)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can't disable non-existent separation");
 
 	bit = 1<<(separation & 31);
 	separation >>= 5;
@@ -112,7 +102,7 @@ int fz_separations_all_enabled(fz_context *ctx, fz_separations *sep)
 {
 	int i;
 
-	if (!ctx || !sep)
+	if (!sep)
 		return 1;
 
 	for (i = 0; i < (FZ_MAX_SEPARATIONS + 31) / 32; i++)
@@ -124,11 +114,8 @@ int fz_separations_all_enabled(fz_context *ctx, fz_separations *sep)
 
 const char *fz_get_separation(fz_context *ctx, fz_separations *sep, int separation, uint32_t *rgb, uint32_t *cmyk)
 {
-	if (!ctx || !sep)
-		return NULL;
-
-	if (separation < 0 || separation >= sep->num_separations)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't access non-existent separation");
+	if (!sep || separation < 0 || separation >= sep->num_separations)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can't access non-existent separation");
 
 	if (rgb)
 		*rgb = sep->equiv_rgb[separation];
@@ -140,8 +127,7 @@ const char *fz_get_separation(fz_context *ctx, fz_separations *sep, int separati
 
 int fz_count_separations(fz_context *ctx, fz_separations *sep)
 {
-	if (!ctx || !sep)
+	if (!sep)
 		return 0;
-
 	return sep->num_separations;
 }

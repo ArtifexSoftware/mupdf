@@ -749,8 +749,6 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 	fz_store *store;
 	size_t max;
 
-	if (ctx == NULL)
-		return 0;
 	store = ctx->store;
 	if (store == NULL)
 		return 0;
@@ -808,9 +806,6 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 	fz_store *store;
 	size_t new_size;
 
-	if (ctx == NULL)
-		return 0;
-
 	if (percent >= 100)
 		return 1;
 
@@ -841,8 +836,6 @@ void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_stor
 	fz_store *store;
 	fz_item *item, *prev, *remove;
 
-	if (ctx == NULL)
-		return;
 	store = ctx->store;
 	if (store == NULL)
 		return;
@@ -908,7 +901,7 @@ void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_stor
 
 void fz_defer_reap_start(fz_context *ctx)
 {
-	if (ctx == NULL || ctx->store == NULL)
+	if (ctx->store == NULL)
 		return;
 
 	fz_lock(ctx, FZ_LOCK_REAP);
@@ -920,7 +913,7 @@ void fz_defer_reap_end(fz_context *ctx)
 {
 	int reap;
 
-	if (ctx == NULL || ctx->store == NULL)
+	if (ctx->store == NULL)
 		return;
 
 	fz_lock(ctx, FZ_LOCK_ALLOC);

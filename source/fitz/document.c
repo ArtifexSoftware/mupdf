@@ -46,7 +46,7 @@ void fz_register_document_handler(fz_context *ctx, const fz_document_handler *ha
 	fz_document_handler_context *dc;
 	int i;
 
-	if (!ctx || !handler)
+	if (!handler)
 		return;
 
 	dc = ctx->handler;
@@ -70,8 +70,6 @@ fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stre
 	int best_i, best_score;
 	fz_document_handler_context *dc;
 
-	if (ctx == NULL)
-		return NULL;
 	if (magic == NULL || stream == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
 
@@ -106,8 +104,6 @@ fz_open_document(fz_context *ctx, const char *filename)
 	fz_stream *file;
 	fz_document *doc;
 
-	if (ctx == NULL)
-		return NULL;
 	if (filename == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
 
@@ -429,34 +425,29 @@ fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, 
 
 int fz_count_separations_on_page(fz_context *ctx, fz_page *page)
 {
-	if (ctx == NULL || page == NULL || page->count_separations == NULL)
-		return 0;
-
-	return page->count_separations(ctx, page);
+	if (page && page->count_separations)
+		return page->count_separations(ctx, page);
+	return 0;
 }
 
 void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int disable)
 {
-	if (ctx == NULL || page == NULL || page->control_separation == NULL)
-		return;
-
-	page->control_separation(ctx, page, sep, disable);
+	if (page && page->control_separation)
+		page->control_separation(ctx, page, sep, disable);
 }
 
 int fz_separation_disabled_on_page (fz_context *ctx, fz_page *page, int sep)
 {
-	if (ctx == NULL || page == NULL || page->separation_disabled == NULL)
-		return 0;
-	return page->separation_disabled(ctx, page, sep);
+	if (page && page->separation_disabled)
+		return page->separation_disabled(ctx, page, sep);
+	return 0;
 }
 
 const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk)
 {
-	if (ctx == NULL || page == NULL || page->get_separation == NULL)
-	{
-		*rgba = 0;
-		*cmyk = 0;
-		return NULL;
-	}
-	return page->get_separation(ctx, page, sep, rgba, cmyk);
+	if (page && page->get_separation)
+		return page->get_separation(ctx, page, sep, rgba, cmyk);
+	*rgba = 0;
+	*cmyk = 0;
+	return NULL;
 }
