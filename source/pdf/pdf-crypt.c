@@ -272,6 +272,9 @@ pdf_new_crypt(fz_context *ctx, pdf_obj *dict, pdf_obj *id)
 void
 pdf_drop_crypt(fz_context *ctx, pdf_crypt *crypt)
 {
+	if (!crypt)
+		return;
+
 	pdf_drop_obj(ctx, crypt->id);
 	pdf_drop_obj(ctx, crypt->cf);
 	fz_free(ctx, crypt);
