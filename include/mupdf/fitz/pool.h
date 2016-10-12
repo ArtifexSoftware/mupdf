@@ -21,6 +21,7 @@ struct fz_pool_node_s
 
 fz_pool *fz_new_pool(fz_context *ctx);
 void *fz_pool_alloc(fz_context *ctx, fz_pool *pool, size_t size);
+char *fz_pool_strdup(fz_context *ctx, fz_pool *pool, const char *s);
 void fz_drop_pool(fz_context *ctx, fz_pool *pool);
 
 #endif

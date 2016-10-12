@@ -622,14 +622,14 @@ sort_properties(fz_css_match *match)
 }
 
 void
-fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *node)
+fz_match_css(fz_context *ctx, fz_css_match *match, fz_css *css, fz_xml *node)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
 	fz_css_property *prop, *head, *tail;
 	const char *s;
 
-	for (rule = css; rule; rule = rule->next)
+	for (rule = css->rule; rule; rule = rule->next)
 	{
 		sel = rule->selector;
 		while (sel)
@@ -649,16 +649,14 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *nod
 	{
 		fz_try(ctx)
 		{
-			head = tail = prop = fz_parse_css_properties(ctx, s);
+			head = tail = prop = fz_parse_css_properties(ctx, css->pool, s);
 			while (prop)
 			{
 				add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
 				tail = prop;
 				prop = prop->next;
 			}
-			if (tail)
-				tail->next = css->garbage;
-			css->garbage = head;
+			/* We can "leak" the property here, since it is freed along with the pool allocator. */
 		}
 		fz_catch(ctx)
 		{
@@ -670,13 +668,13 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *css, fz_xml *nod
 }
 
 void
-fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_rule *css)
+fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
 	fz_css_property *prop;
 
-	for (rule = css; rule; rule = rule->next)
+	for (rule = css->rule; rule; rule = rule->next)
 	{
 		sel = rule->selector;
 		while (sel)
@@ -761,12 +759,12 @@ fz_add_css_font_face(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, co
 }
 
 void
-fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_rule *css)
+fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css *css)
 {
 	fz_css_rule *rule;
 	fz_css_selector *sel;
 
-	for (rule = css; rule; rule = rule->next)
+	for (rule = css->rule; rule; rule = rule->next)
 	{
 		sel = rule->selector;
 		while (sel)

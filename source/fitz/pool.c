@@ -31,6 +31,14 @@ void *fz_pool_alloc(fz_context *ctx, fz_pool *pool, size_t size)
 	return ptr;
 }
 
+char *fz_pool_strdup(fz_context *ctx, fz_pool *pool, const char *s)
+{
+	size_t n = strlen(s) + 1;
+	char *p = fz_pool_alloc(ctx, pool, n);
+	memcpy(p, s, n);
+	return p;
+}
+
 void fz_drop_pool(fz_context *ctx, fz_pool *pool)
 {
 	fz_pool_node *node = pool->head;

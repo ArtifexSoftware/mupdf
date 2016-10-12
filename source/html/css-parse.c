@@ -3,6 +3,7 @@
 struct lexbuf
 {
 	fz_context *ctx;
+	fz_pool *pool;
 	const unsigned char *s;
 	const char *file;
 	int line;
@@ -20,20 +21,45 @@ FZ_NORETURN static void fz_css_error(struct lexbuf *buf, const char *msg)
 	fz_throw(buf->ctx, FZ_ERROR_SYNTAX, "css syntax error: %s (%s:%d)", msg, buf->file, buf->line);
 }
 
-static fz_css_rule *fz_new_css_rule(fz_context *ctx, fz_css_selector *selector, fz_css_property *declaration)
+fz_css *fz_new_css(fz_context *ctx)
 {
-	fz_css_rule *rule = fz_malloc_struct(ctx, fz_css_rule);
+	fz_pool *pool = fz_new_pool(ctx);
+	fz_css *css;
+
+	fz_try(ctx)
+	{
+		css = fz_pool_alloc(ctx, pool, sizeof *css);
+		css->pool = pool;
+		css->rule = NULL;
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pool(ctx, pool);
+		fz_rethrow(ctx);
+	}
+
+	return css;
+}
+
+void fz_drop_css(fz_context *ctx, fz_css *css)
+{
+	if (css)
+		fz_drop_pool(ctx, css->pool);
+}
+
+static fz_css_rule *fz_new_css_rule(fz_context *ctx, fz_pool *pool, fz_css_selector *selector, fz_css_property *declaration)
+{
+	fz_css_rule *rule = fz_pool_alloc(ctx, pool, sizeof *rule);
 	rule->selector = selector;
 	rule->declaration = declaration;
-	rule->garbage = NULL;
 	rule->next = NULL;
 	return rule;
 }
 
-static fz_css_selector *fz_new_css_selector(fz_context *ctx, const char *name)
+static fz_css_selector *fz_new_css_selector(fz_context *ctx, fz_pool *pool, const char *name)
 {
-	fz_css_selector *sel = fz_malloc_struct(ctx, fz_css_selector);
-	sel->name = name ? fz_strdup(ctx, name) : NULL;
+	fz_css_selector *sel = fz_pool_alloc(ctx, pool, sizeof *sel);
+	sel->name = name ? fz_pool_strdup(ctx, pool, name) : NULL;
 	sel->combine = 0;
 	sel->cond = NULL;
 	sel->left = NULL;
@@ -42,20 +68,20 @@ static fz_css_selector *fz_new_css_selector(fz_context *ctx, const char *name)
 	return sel;
 }
 
-static fz_css_condition *fz_new_css_condition(fz_context *ctx, int type, const char *key, const char *val)
+static fz_css_condition *fz_new_css_condition(fz_context *ctx, fz_pool *pool, int type, const char *key, const char *val)
 {
-	fz_css_condition *cond = fz_malloc_struct(ctx, fz_css_condition);
+	fz_css_condition *cond = fz_pool_alloc(ctx, pool, sizeof *cond);
 	cond->type = type;
-	cond->key = key ? fz_strdup(ctx, key) : NULL;
-	cond->val = val ? fz_strdup(ctx, val) : NULL;
+	cond->key = key ? fz_pool_strdup(ctx, pool, key) : NULL;
+	cond->val = val ? fz_pool_strdup(ctx, pool, val) : NULL;
 	cond->next = NULL;
 	return cond;
 }
 
-static fz_css_property *fz_new_css_property(fz_context *ctx, const char *name, fz_css_value *value, int spec)
+static fz_css_property *fz_new_css_property(fz_context *ctx, fz_pool *pool, const char *name, fz_css_value *value, int spec)
 {
-	fz_css_property *prop = fz_malloc_struct(ctx, fz_css_property);
-	prop->name = fz_strdup(ctx, name);
+	fz_css_property *prop = fz_pool_alloc(ctx, pool, sizeof *prop);
+	prop->name = fz_pool_strdup(ctx, pool, name);
 	prop->value = value;
 	prop->spec = spec;
 	prop->important = 0;
@@ -63,9 +89,9 @@ static fz_css_property *fz_new_css_property(fz_context *ctx, const char *name, f
 	return prop;
 }
 
-static fz_css_value *fz_new_css_value_x(fz_context *ctx, int type)
+static fz_css_value *fz_new_css_value_x(fz_context *ctx, fz_pool *pool, int type)
 {
-	fz_css_value *val = fz_malloc_struct(ctx, fz_css_value);
+	fz_css_value *val = fz_pool_alloc(ctx, pool, sizeof *val);
 	val->type = type;
 	val->data = NULL;
 	val->args = NULL;
@@ -73,77 +99,14 @@ static fz_css_value *fz_new_css_value_x(fz_context *ctx, int type)
 	return val;
 }
 
-static fz_css_value *fz_new_css_value(fz_context *ctx, int type, const char *data)
+static fz_css_value *fz_new_css_value(fz_context *ctx, fz_pool *pool, int type, const char *data)
 {
-	fz_css_value *val = fz_malloc_struct(ctx, fz_css_value);
+	fz_css_value *val = fz_pool_alloc(ctx, pool, sizeof *val);
 	val->type = type;
-	val->data = fz_strdup(ctx, data);
+	val->data = fz_pool_strdup(ctx, pool, data);
 	val->args = NULL;
 	val->next = NULL;
 	return val;
-}
-
-static void fz_drop_css_value(fz_context *ctx, fz_css_value *val)
-{
-	while (val)
-	{
-		fz_css_value *next = val->next;
-		fz_drop_css_value(ctx, val->args);
-		fz_free(ctx, val->data);
-		fz_free(ctx, val);
-		val = next;
-	}
-}
-
-static void fz_drop_css_condition(fz_context *ctx, fz_css_condition *cond)
-{
-	while (cond)
-	{
-		fz_css_condition *next = cond->next;
-		fz_free(ctx, cond->key);
-		fz_free(ctx, cond->val);
-		fz_free(ctx, cond);
-		cond = next;
-	}
-}
-
-static void fz_drop_css_selector(fz_context *ctx, fz_css_selector *sel)
-{
-	while (sel)
-	{
-		fz_css_selector *next = sel->next;
-		fz_free(ctx, sel->name);
-		fz_drop_css_condition(ctx, sel->cond);
-		fz_drop_css_selector(ctx, sel->left);
-		fz_drop_css_selector(ctx, sel->right);
-		fz_free(ctx, sel);
-		sel = next;
-	}
-}
-
-static void fz_drop_css_property(fz_context *ctx, fz_css_property *prop)
-{
-	while (prop)
-	{
-		fz_css_property *next = prop->next;
-		fz_free(ctx, prop->name);
-		fz_drop_css_value(ctx, prop->value);
-		fz_free(ctx, prop);
-		prop = next;
-	}
-}
-
-void fz_drop_css(fz_context *ctx, fz_css_rule *rule)
-{
-	while (rule)
-	{
-		fz_css_rule *next = rule->next;
-		fz_drop_css_selector(ctx, rule->selector);
-		fz_drop_css_property(ctx, rule->declaration);
-		fz_drop_css_property(ctx, rule->garbage);
-		fz_free(ctx, rule);
-		rule = next;
-	}
 }
 
 static void css_lex_next(struct lexbuf *buf)
@@ -153,9 +116,10 @@ static void css_lex_next(struct lexbuf *buf)
 		++buf->line;
 }
 
-static void css_lex_init(fz_context *ctx, struct lexbuf *buf, const char *s, const char *file)
+static void css_lex_init(fz_context *ctx, struct lexbuf *buf, fz_pool *pool, const char *s, const char *file)
 {
 	buf->ctx = ctx;
+	buf->pool = pool;
 	buf->s = (const unsigned char *)s;
 	buf->c = 0;
 	buf->file = file;
@@ -517,14 +481,14 @@ static fz_css_value *parse_term(struct lexbuf *buf)
 			fz_css_error(buf, "expected number");
 		if (sign < 0)
 		{
-			v = fz_new_css_value_x(buf->ctx, buf->lookahead);
-			v->data = fz_malloc(buf->ctx, strlen(buf->string) + 2);
+			v = fz_new_css_value_x(buf->ctx, buf->pool, buf->lookahead);
+			v->data = fz_pool_alloc(buf->ctx, buf->pool, strlen(buf->string) + 2);
 			v->data[0] = '-';
 			strcpy(v->data + 1, buf->string);
 		}
 		else
 		{
-			v = fz_new_css_value(buf->ctx, buf->lookahead, buf->string);
+			v = fz_new_css_value(buf->ctx, buf->pool, buf->lookahead, buf->string);
 		}
 		next(buf);
 		white(buf);
@@ -533,7 +497,7 @@ static fz_css_value *parse_term(struct lexbuf *buf)
 
 	if (buf->lookahead == CSS_KEYWORD)
 	{
-		v = fz_new_css_value(buf->ctx, CSS_KEYWORD, buf->string);
+		v = fz_new_css_value(buf->ctx, buf->pool, CSS_KEYWORD, buf->string);
 		next(buf);
 		if (accept(buf, '('))
 		{
@@ -554,7 +518,7 @@ static fz_css_value *parse_term(struct lexbuf *buf)
 	case CSS_NUMBER:
 	case CSS_LENGTH:
 	case CSS_PERCENT:
-		v = fz_new_css_value(buf->ctx, buf->lookahead, buf->string);
+		v = fz_new_css_value(buf->ctx, buf->pool, buf->lookahead, buf->string);
 		next(buf);
 		white(buf);
 		return v;
@@ -575,13 +539,13 @@ static fz_css_value *parse_expr(struct lexbuf *buf)
 		if (accept(buf, ','))
 		{
 			white(buf);
-			tail = tail->next = fz_new_css_value(buf->ctx, ',', ",");
+			tail = tail->next = fz_new_css_value(buf->ctx, buf->pool, ',', ",");
 			tail = tail->next = parse_term(buf);
 		}
 		else if (accept(buf, '/'))
 		{
 			white(buf);
-			tail = tail->next = fz_new_css_value(buf->ctx, '/', "/");
+			tail = tail->next = fz_new_css_value(buf->ctx, buf->pool, '/', "/");
 			tail = tail->next = parse_term(buf);
 		}
 		else
@@ -599,7 +563,7 @@ static fz_css_property *parse_declaration(struct lexbuf *buf)
 
 	if (buf->lookahead != CSS_KEYWORD)
 		fz_css_error(buf, "expected keyword in property");
-	p = fz_new_css_property(buf->ctx, buf->string, NULL, 0);
+	p = fz_new_css_property(buf->ctx, buf->pool, buf->string, NULL, 0);
 	next(buf);
 
 	white(buf);
@@ -652,7 +616,7 @@ static char *parse_attrib_value(struct lexbuf *buf)
 
 	if (buf->lookahead == CSS_KEYWORD || buf->lookahead == CSS_STRING)
 	{
-		s = fz_strdup(buf->ctx, buf->string);
+		s = fz_pool_strdup(buf->ctx, buf->pool, buf->string);
 		next(buf);
 		white(buf);
 		return s;
@@ -670,7 +634,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 		accept(buf, ':'); /* swallow css3 :: syntax and pretend it's a normal pseudo-class */
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_css_error(buf, "expected keyword after ':'");
-		c = fz_new_css_condition(buf->ctx, ':', "pseudo", buf->string);
+		c = fz_new_css_condition(buf->ctx, buf->pool, ':', "pseudo", buf->string);
 		next(buf);
 		if (accept(buf, '('))
 		{
@@ -686,7 +650,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 	{
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_css_error(buf, "expected keyword after '.'");
-		c = fz_new_css_condition(buf->ctx, '.', "class", buf->string);
+		c = fz_new_css_condition(buf->ctx, buf->pool, '.', "class", buf->string);
 		next(buf);
 		return c;
 	}
@@ -697,7 +661,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 
 		if (buf->lookahead != CSS_KEYWORD)
 			fz_css_error(buf, "expected keyword after '['");
-		c = fz_new_css_condition(buf->ctx, '[', buf->string, NULL);
+		c = fz_new_css_condition(buf->ctx, buf->pool, '[', buf->string, NULL);
 		next(buf);
 
 		white(buf);
@@ -727,7 +691,7 @@ static fz_css_condition *parse_condition(struct lexbuf *buf)
 
 	if (buf->lookahead == CSS_HASH)
 	{
-		c = fz_new_css_condition(buf->ctx, '#', "id", buf->string);
+		c = fz_new_css_condition(buf->ctx, buf->pool, '#', "id", buf->string);
 		next(buf);
 		return c;
 	}
@@ -753,14 +717,14 @@ static fz_css_selector *parse_simple_selector(struct lexbuf *buf)
 
 	if (accept(buf, '*'))
 	{
-		s = fz_new_css_selector(buf->ctx, NULL);
+		s = fz_new_css_selector(buf->ctx, buf->pool, NULL);
 		if (iscond(buf->lookahead))
 			s->cond = parse_condition_list(buf);
 		return s;
 	}
 	else if (buf->lookahead == CSS_KEYWORD)
 	{
-		s = fz_new_css_selector(buf->ctx, buf->string);
+		s = fz_new_css_selector(buf->ctx, buf->pool, buf->string);
 		next(buf);
 		if (iscond(buf->lookahead))
 			s->cond = parse_condition_list(buf);
@@ -768,7 +732,7 @@ static fz_css_selector *parse_simple_selector(struct lexbuf *buf)
 	}
 	else if (iscond(buf->lookahead))
 	{
-		s = fz_new_css_selector(buf->ctx, NULL);
+		s = fz_new_css_selector(buf->ctx, buf->pool, NULL);
 		s->cond = parse_condition_list(buf);
 		return s;
 	}
@@ -781,7 +745,7 @@ static fz_css_selector *parse_combinator(struct lexbuf *buf, int c, fz_css_selec
 	fz_css_selector *sel, *b;
 	white(buf);
 	b = parse_simple_selector(buf);
-	sel = fz_new_css_selector(buf->ctx, NULL);
+	sel = fz_new_css_selector(buf->ctx, buf->pool, NULL);
 	sel->combine = c;
 	sel->left = a;
 	sel->right = b;
@@ -856,7 +820,7 @@ static fz_css_rule *parse_ruleset(struct lexbuf *buf)
 		return NULL;
 	}
 
-	return fz_new_css_rule(buf->ctx, s, p);
+	return fz_new_css_rule(buf->ctx, buf->pool, s, p);
 }
 
 static fz_css_rule *parse_at_page(struct lexbuf *buf)
@@ -875,8 +839,8 @@ static fz_css_rule *parse_at_page(struct lexbuf *buf)
 	expect(buf, '}');
 	white(buf);
 
-	s = fz_new_css_selector(buf->ctx, "@page");
-	return fz_new_css_rule(buf->ctx, s, p);
+	s = fz_new_css_selector(buf->ctx, buf->pool, "@page");
+	return fz_new_css_rule(buf->ctx, buf->pool, s, p);
 }
 
 static fz_css_rule *parse_at_font_face(struct lexbuf *buf)
@@ -890,8 +854,8 @@ static fz_css_rule *parse_at_font_face(struct lexbuf *buf)
 	expect(buf, '}');
 	white(buf);
 
-	s = fz_new_css_selector(buf->ctx, "@font-face");
-	return fz_new_css_rule(buf->ctx, s, p);
+	s = fz_new_css_selector(buf->ctx, buf->pool, "@font-face");
+	return fz_new_css_rule(buf->ctx, buf->pool, s, p);
 }
 
 static void parse_at_rule(struct lexbuf *buf)
@@ -979,18 +943,18 @@ static fz_css_rule *parse_stylesheet(struct lexbuf *buf, fz_css_rule *chain)
 	return chain ? chain : tail;
 }
 
-fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source)
+fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const char *source)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, source, "<inline>");
+	css_lex_init(ctx, &buf, pool, source, "<inline>");
 	next(&buf);
 	return parse_declaration_list(&buf);
 }
 
-fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file)
+void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file)
 {
 	struct lexbuf buf;
-	css_lex_init(ctx, &buf, source, file);
+	css_lex_init(ctx, &buf, css->pool, source, file);
 	next(&buf);
-	return parse_stylesheet(&buf, chain);
+	css->rule = parse_stylesheet(&buf, css->rule);
 }

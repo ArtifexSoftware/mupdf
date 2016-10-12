@@ -9,6 +9,7 @@ typedef struct fz_html_s fz_html;
 typedef struct fz_html_box_s fz_html_box;
 typedef struct fz_html_flow_s fz_html_flow;
 
+typedef struct fz_css_s fz_css;
 typedef struct fz_css_rule_s fz_css_rule;
 typedef struct fz_css_match_prop_s fz_css_match_prop;
 typedef struct fz_css_match_s fz_css_match;
@@ -48,11 +49,16 @@ enum
 	CSS_URI,
 };
 
+struct fz_css_s
+{
+	fz_pool *pool;
+	fz_css_rule *rule;
+};
+
 struct fz_css_rule_s
 {
 	fz_css_selector *selector;
 	fz_css_property *declaration;
-	fz_css_property *garbage; /* for freeing inline style attributes at the end */
 	fz_css_rule *next;
 };
 
@@ -244,12 +250,13 @@ struct fz_html_flow_s
 	fz_html_flow *next;
 };
 
-fz_css_rule *fz_parse_css(fz_context *ctx, fz_css_rule *chain, const char *source, const char *file);
-fz_css_property *fz_parse_css_properties(fz_context *ctx, const char *source);
-void fz_drop_css(fz_context *ctx, fz_css_rule *rule);
+fz_css *fz_new_css(fz_context *ctx);
+void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file);
+fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const char *source);
+void fz_drop_css(fz_context *ctx, fz_css *css);
 
-void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css_rule *rule, fz_xml *node);
-void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css_rule *css);
+void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css *css, fz_xml *node);
+void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);
 
 int fz_get_css_match_display(fz_css_match *node);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);
@@ -264,7 +271,7 @@ void fz_add_html_font_face(fz_context *ctx, fz_html_font_set *set,
 fz_font *fz_load_html_font(fz_context *ctx, fz_html_font_set *set, const char *family, int is_bold, int is_italic);
 void fz_drop_html_font_set(fz_context *ctx, fz_html_font_set *htx);
 
-void fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css_rule *css);
+void fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_css *css);
 
 fz_html *fz_parse_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css);
 void fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em);
