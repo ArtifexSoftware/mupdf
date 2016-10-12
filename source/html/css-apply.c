@@ -913,6 +913,14 @@ number_from_value(fz_css_value *value, float initial, int initial_unit)
 		if (p[0] == 'p' && p[1] == 'x')
 			return make_number(x, N_LENGTH);
 
+		/* FIXME: 'rem' should be 'em' of root element. This is a bad approximation. */
+		if (p[0] == 'r' && p[1] == 'e' && p[2] == 'm')
+			return make_number(x * 16, N_LENGTH);
+
+		/* FIXME: 'ch' should be width of '0' character. This is an approximation. */
+		if (p[0] == 'c' && p[1] == 'h')
+			return make_number(x / 2, N_LENGTH);
+
 		return make_number(x, N_LENGTH);
 	}
 
