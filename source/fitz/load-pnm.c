@@ -9,8 +9,6 @@ struct info
 	char *tupletype;
 };
 
-/* TODO: parse PAM */
-
 static inline int iswhiteeol(int a)
 {
 	switch (a) {
@@ -168,33 +166,32 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 	{
 		unsigned char *dp;
 		int x, y, k;
+		int w, h, n;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, 0);
 		dp = img->samples;
 
+		w = img->w;
+		h = img->h;
+		n = img->n;
+
 		if (bitmap)
 		{
-			for (y = 0; y < pnm->height; y++)
+			for (y = 0; y < h; y++)
 			{
-				for (x = 0; x < pnm->width; x++)
+				for (x = 0; x < w; x++)
 				{
 					int v = 0;
 					p = pnm_read_number(ctx, p, e, &v);
 					p = pnm_read_white(ctx, p, e, 0);
-					if (v == 0)
-						*dp = 0xff;
-					else
-						*dp = 0x00;
-
-					dp++;
+					*dp++ = v ? 0x00 : 0xff;
 				}
 			}
 		}
 		else
 		{
-			int n = fz_colorspace_n(ctx, img->colorspace);
-			for (y = 0; y < pnm->height; y++)
-				for (x = 0; x < pnm->width; x++)
+			for (y = 0; y < h; y++)
+				for (x = 0; x < w; x++)
 					for (k = 0; k < n; k++)
 					{
 						int v = 0;
@@ -238,58 +235,48 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	{
 		unsigned char *dp;
 		int x, y, k;
+		int w, h, n;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, 0);
 		dp = img->samples;
 
-		if (bitmap)
-		{
-			for (y = 0; y < pnm->height; y++)
-			{
-				for (x = 0; x < pnm->width; x++)
-				{
-					if (*p & (1 << (7 - (x & 0x7))))
-						*dp = 0xff;
-					else
-						*dp = 0x00;
+		w = img->w;
+		h = img->h;
+		n = img->n;
 
-					dp++;
+		if (pnm->maxval == 255)
+			memcpy(dp, p, w * h * n);
+		else if (bitmap)
+		{
+			for (y = 0; y < h; y++)
+			{
+				for (x = 0; x < w; x++)
+				{
+					*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0xff : 0x00;
 					if ((x & 0x7) == 7)
 						p++;
 				}
-				if (pnm->width & 0x7)
+				if (w & 0x7)
 					p++;
 			}
 		}
+		else if (pnm->maxval < 255)
+		{
+			for (y = 0; y < h; y++)
+				for (x = 0; x < w; x++)
+					for (k = 0; k < n; k++)
+						*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
+		}
 		else
 		{
-			int n = fz_colorspace_n(ctx, img->colorspace);
-			if (pnm->maxval == 255)
-			{
-				for (y = 0; y < pnm->height; y++)
-					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < n; k++)
-							*dp++ = *p++;
-			}
-			else if (pnm->maxval < 256)
-			{
-				for (y = 0; y < pnm->height; y++)
-					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < n; k++)
-							*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
-			}
-			else
-			{
-				for (y = 0; y < pnm->height; y++)
-					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < n; k++)
-						{
-							*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
-							p += 2;
-						}
-			}
+			for (y = 0; y < h; y++)
+				for (x = 0; x < w; x++)
+					for (k = 0; k < n; k++)
+					{
+						*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
+						p += 2;
+					}
 		}
-
 	}
 
 	return img;
@@ -429,64 +416,44 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	if (!onlymeta)
 	{
 		unsigned char *dp;
-		int x, y, k, n;
+		int x, y, k;
+		int w, h, n;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, pnm->alpha);
 		dp = img->samples;
-		n = fz_colorspace_n(ctx, img->colorspace);
 
-		if (bitmap)
+		w = img->w;
+		h = img->h;
+		n = img->n;
+
+		if (e - p < w * h * n * (pnm->maxval < 256 ? 1 : 2))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
+
+		if (pnm->maxval == 255)
+			memcpy(dp, p, w * h * n);
+		else if (bitmap)
 		{
-			if (e - p < pnm->height * pnm->width * img->n)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
-
-			for (y = 0; y < pnm->height; y++)
-				for (x = 0; x < pnm->width; x++)
+			for (y = 0; y < h; y++)
+				for (x = 0; x < w; x++)
 					for (k = 0; k < n; k++)
-					{
-						if (*p)
-							*dp = 0x00;
-						else
-							*dp = 0xff;
-						dp++;
-						p++;
-					}
+						*dp++ = *p++ ? 0x00 : 0xff;
+		}
+		else if (pnm->maxval < 255)
+		{
+			for (y = 0; y < h; y++)
+				for (x = 0; x < w; x++)
+					for (k = 0; k < n; k++)
+						*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
 		}
 		else
 		{
-			if (pnm->maxval == 255)
-			{
-				if (e - p < pnm->height * pnm->width * img->n)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
-
-				for (y = 0; y < pnm->height; y++)
-					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < img->n; k++)
-							*dp++ = *p++;
-			}
-			else if (pnm->maxval < 256)
-			{
-				if (e - p < pnm->height * pnm->width * img->n)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
-
-				for (y = 0; y < pnm->height; y++)
-					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < img->n; k++)
-							*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
-			}
-			else
-			{
-				if (e - p < pnm->height * pnm->width * img->n * 2)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
-
-				for (y = 0; y < pnm->height; y++)
-					for (x = 0; x < pnm->width; x++)
-						for (k = 0; k < img->n; k++)
-						{
-							*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
-							p += 2;
-						}
-			}
+			for (y = 0; y < h; y++)
+				for (x = 0; x < w; x++)
+					for (k = 0; k < n; k++)
+					{
+						*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
+						p += 2;
+					}
 		}
 	}
 
