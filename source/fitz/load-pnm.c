@@ -512,7 +512,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 			for (y = 0; y < h; y++)
 				for (x = 0; x < w; x++)
 					for (k = 0; k < n; k++)
-						*dp++ = *p++ ? 0x00 : 0xff;
+						*dp++ = *p++ ? 0xff : 0x00;
 		}
 		else if (pnm->maxval < 255)
 		{
