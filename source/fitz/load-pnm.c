@@ -4,6 +4,7 @@ enum
 {
 	PAM_UNKNOWN = 0,
 	PAM_BW,
+	PAM_BWA,
 	PAM_GRAY,
 	PAM_GRAYA,
 	PAM_RGB,
@@ -152,6 +153,7 @@ pnm_read_tupletype(fz_context *ctx, unsigned char *p, unsigned char *e, int *tup
 	const struct { int len; char *str; int type; } tupletypes[] =
 	{
 		{13, "BLACKANDWHITE", PAM_BW},
+		{19, "BLACKANDWHITE_ALPHA", PAM_BWA},
 		{9, "GRAYSCALE", PAM_GRAY},
 		{15, "GRAYSCALE_ALPHA", PAM_GRAYA},
 		{3, "RGB", PAM_RGB},
@@ -431,7 +433,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		switch (pnm->depth)
 		{
 		case 1: pnm->tupletype = pnm->maxval == 1 ? PAM_BW : PAM_GRAY; break;
-		case 2: pnm->tupletype = PAM_GRAYA; break;
+		case 2: pnm->tupletype = pnm->maxval == 1 ? PAM_BWA : PAM_GRAYA; break;
 		case 3: pnm->tupletype = PAM_RGB; break;
 		case 4: pnm->tupletype = PAM_CMYK; break;
 		case 5: pnm->tupletype = PAM_CMYKA; break;
@@ -443,14 +445,20 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		pnm->tupletype = PAM_GRAY;
 	else if (pnm->tupletype == PAM_GRAY && pnm->maxval == 1)
 		pnm->tupletype = PAM_BW;
+	else if (pnm->tupletype == PAM_BWA && pnm->maxval > 1)
+		pnm->tupletype = PAM_GRAYA;
+	else if (pnm->tupletype == PAM_GRAYA && pnm->maxval == 1)
+		pnm->tupletype = PAM_BWA;
 
 	switch (pnm->tupletype)
 	{
+	case PAM_BWA:
+		pnm->alpha = 1;
+		/* fallthrough */
 	case PAM_BW:
 		pnm->cs = fz_device_gray(ctx);
 		maxval = 1;
-		if (pnm->maxval == 1)
-			bitmap = 1;
+		bitmap = 1;
 		break;
 	case PAM_GRAYA:
 		pnm->alpha = 1;
