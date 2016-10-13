@@ -500,7 +500,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	if (!onlymeta)
 	{
 		unsigned char *dp;
-		int x, y, k;
+		int x, y, k, packed = 0;
 		int w, h, n;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, pnm->alpha);
@@ -510,11 +510,33 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		h = img->h;
 		n = img->n;
 
-		if (e - p < w * h * n * (pnm->maxval < 256 ? 1 : 2))
+		if (pnm->maxval == 1 && e - p < w * h * n)
+		{
+			if (e - p < w * h * n / 8)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
+			packed = 1;
+		}
+		else if (e - p < w * h * n * (pnm->maxval < 256 ? 1 : 2))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
 
 		if (pnm->maxval == 255)
 			memcpy(dp, p, w * h * n);
+		else if (bitmap && packed)
+		{
+			/* some encoders incorrectly pack bits into bytes and inverts the image */
+			for (y = 0; y < h; y++)
+				for (x = 0; x < w; x++)
+				{
+					for (k = 0; k < n; k++)
+					{
+						*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0x00 : 0xff;
+						if ((x & 0x7) == 7)
+							p++;
+					}
+					if (w & 0x7)
+						p++;
+				}
+		}
 		else if (bitmap)
 		{
 			for (y = 0; y < h; y++)
