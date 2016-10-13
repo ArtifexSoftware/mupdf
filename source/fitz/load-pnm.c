@@ -430,7 +430,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	if (pnm->tupletype == PAM_UNKNOWN)
 		switch (pnm->depth)
 		{
-		case 1: pnm->tupletype = PAM_BW; break;
+		case 1: pnm->tupletype = pnm->maxval == 1 ? PAM_BW : PAM_GRAY; break;
 		case 2: pnm->tupletype = PAM_GRAYA; break;
 		case 3: pnm->tupletype = PAM_RGB; break;
 		case 4: pnm->tupletype = PAM_CMYK; break;
@@ -438,6 +438,11 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		default:
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot guess tuple type based on depth in pnm image");
 		}
+
+	if (pnm->tupletype == PAM_BW && pnm->maxval > 1)
+		pnm->tupletype = PAM_GRAY;
+	else if (pnm->tupletype == PAM_GRAY && pnm->maxval == 1)
+		pnm->tupletype = PAM_BW;
 
 	switch (pnm->tupletype)
 	{
