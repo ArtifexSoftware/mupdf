@@ -354,7 +354,7 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 			{
 				for (x = 0; x < w; x++)
 				{
-					*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0xff : 0x00;
+					*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0x00 : 0xff;
 					if ((x & 0x7) == 7)
 						p++;
 				}
