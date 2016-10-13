@@ -1,5 +1,16 @@
 #include "mupdf/fitz.h"
 
+enum
+{
+	TOKEN_UNKNOWN = 0,
+	TOKEN_WIDTH,
+	TOKEN_HEIGHT,
+	TOKEN_DEPTH,
+	TOKEN_MAXVAL,
+	TOKEN_TUPLTYPE,
+	TOKEN_ENDHDR,
+};
+
 struct info
 {
 	fz_colorspace *cs;
@@ -140,6 +151,39 @@ pnm_read_string(fz_context *ctx, unsigned char *p, unsigned char *e, char **out)
 	(*out)[p - s] = '\0';
 
 	return p;
+}
+
+static unsigned char *
+pnm_read_token(fz_context *ctx, unsigned char *p, unsigned char *e, int *token)
+{
+	const struct { int len; char *str; int type; } tokens[] =
+	{
+		{5, "WIDTH", TOKEN_WIDTH},
+		{6, "HEIGHT", TOKEN_HEIGHT},
+		{5, "DEPTH", TOKEN_DEPTH},
+		{6, "MAXVAL", TOKEN_MAXVAL},
+		{8, "TUPLTYPE", TOKEN_TUPLTYPE},
+		{6, "ENDHDR", TOKEN_ENDHDR},
+	};
+	unsigned char *s;
+	int i, len;
+
+	if (e - p < 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse header token in pnm image");
+
+	s = p;
+	while (!iswhiteeol(*p))
+		p++;
+	len = p - s;
+
+	for (i = 0; i < nelem(tokens); i++)
+		if (len == tokens[i].len && !strncmp((char *) s, tokens[i].str, len))
+		{
+			*token = tokens[i].type;
+			return p;
+		}
+
+	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown header token in pnm image");
 }
 
 static int
@@ -316,40 +360,32 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 static unsigned char *
 pam_binary_read_header(fz_context *ctx, struct info *pnm, unsigned char *p, unsigned char *e)
 {
-	char *token = fz_strdup(ctx, "");
+	int token = TOKEN_UNKNOWN;
 
 	fz_try(ctx)
 	{
-		while (p < e && strcmp(token, "ENDHDR"))
+		while (p < e && token != TOKEN_ENDHDR)
 		{
-			fz_free(ctx, token);
-			p = pnm_read_string(ctx, p, e, &token);
+			p = pnm_read_token(ctx, p, e, &token);
 			p = pnm_read_white(ctx, p, e, 0);
-			if (!strcmp(token, "WIDTH"))
-				p = pnm_read_number(ctx, p, e, &pnm->width);
-			else if (!strcmp(token, "HEIGHT"))
-				p = pnm_read_number(ctx, p, e, &pnm->height);
-			else if (!strcmp(token, "DEPTH"))
-				p = pnm_read_number(ctx, p, e, &pnm->depth);
-			else if (!strcmp(token, "MAXVAL"))
-				p = pnm_read_number(ctx, p, e, &pnm->maxval);
-			else if (!strcmp(token, "TUPLTYPE"))
-				p = pnm_read_string(ctx, p, e, &pnm->tupletype);
-			else if (strcmp(token, "ENDHDR"))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "unknown header token in pnm image");
+			switch (token)
+			{
+			case TOKEN_WIDTH: p = pnm_read_number(ctx, p, e, &pnm->width); break;
+			case TOKEN_HEIGHT: p = pnm_read_number(ctx, p, e, &pnm->height); break;
+			case TOKEN_DEPTH: p = pnm_read_number(ctx, p, e, &pnm->depth); break;
+			case TOKEN_MAXVAL: p = pnm_read_number(ctx, p, e, &pnm->maxval); break;
+			case TOKEN_TUPLTYPE: p = pnm_read_string(ctx, p, e, &pnm->tupletype); break;
+			case TOKEN_ENDHDR: break;
+			default:
+				   fz_throw(ctx, FZ_ERROR_GENERIC, "unknown header token in pnm image");
+			}
 
-			if (strcmp(token, "ENDHDR"))
+			if (token != TOKEN_ENDHDR)
 				p = pnm_read_white(ctx, p, e, 0);
 		}
 	}
-	fz_always(ctx)
-	{
-		fz_free(ctx, token);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 
 	return p;
 }
