@@ -2,6 +2,18 @@
 
 enum
 {
+	PAM_UNKNOWN = 0,
+	PAM_BW,
+	PAM_GRAY,
+	PAM_GRAYA,
+	PAM_RGB,
+	PAM_RGBA,
+	PAM_CMYK,
+	PAM_CMYKA,
+};
+
+enum
+{
 	TOKEN_UNKNOWN = 0,
 	TOKEN_WIDTH,
 	TOKEN_HEIGHT,
@@ -17,7 +29,7 @@ struct info
 	int width, height;
 	int maxval, bitdepth;
 	int depth, alpha;
-	char *tupletype;
+	int tupletype;
 };
 
 static inline int iswhiteeol(int a)
@@ -135,22 +147,37 @@ pnm_read_number(fz_context *ctx, unsigned char *p, unsigned char *e, int *number
 }
 
 static unsigned char *
-pnm_read_string(fz_context *ctx, unsigned char *p, unsigned char *e, char **out)
+pnm_read_tupletype(fz_context *ctx, unsigned char *p, unsigned char *e, int *tupletype)
 {
+	const struct { int len; char *str; int type; } tupletypes[] =
+	{
+		{13, "BLACKANDWHITE", PAM_BW},
+		{9, "GRAYSCALE", PAM_GRAY},
+		{15, "GRAYSCALE_ALPHA", PAM_GRAYA},
+		{3, "RGB", PAM_RGB},
+		{9, "RGB_ALPHA", PAM_RGBA},
+		{4, "CMYK", PAM_CMYK},
+		{10, "CMYK_ALPHA", PAM_CMYKA},
+	};
 	unsigned char *s;
+	int i, len;
 
 	if (e - p < 1)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse string in pnm image");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse tuple type in pnm image");
 
 	s = p;
 	while (!iswhiteeol(*p))
 		p++;
+	len = p - s;
 
-	*out = fz_malloc(ctx, p - s + 1);
-	memcpy(*out, s, p - s);
-	(*out)[p - s] = '\0';
+	for (i = 0; i < nelem(tupletypes); i++)
+		if (len == tupletypes[i].len && !strncmp((char *) s, tupletypes[i].str, len))
+		{
+			*tupletype = tupletypes[i].type;
+			return p;
+		}
 
-	return p;
+	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown tuple type in pnm image");
 }
 
 static unsigned char *
@@ -374,7 +401,7 @@ pam_binary_read_header(fz_context *ctx, struct info *pnm, unsigned char *p, unsi
 			case TOKEN_HEIGHT: p = pnm_read_number(ctx, p, e, &pnm->height); break;
 			case TOKEN_DEPTH: p = pnm_read_number(ctx, p, e, &pnm->depth); break;
 			case TOKEN_MAXVAL: p = pnm_read_number(ctx, p, e, &pnm->maxval); break;
-			case TOKEN_TUPLTYPE: p = pnm_read_string(ctx, p, e, &pnm->tupletype); break;
+			case TOKEN_TUPLTYPE: p = pnm_read_tupletype(ctx, p, e, &pnm->tupletype); break;
 			case TOKEN_ENDHDR: break;
 			default:
 				   fz_throw(ctx, FZ_ERROR_GENERIC, "unknown header token in pnm image");
@@ -400,61 +427,48 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 
 	p = pam_binary_read_header(ctx, pnm, p, e);
 
-	if (pnm->tupletype == NULL)
+	if (pnm->tupletype == PAM_UNKNOWN)
 		switch (pnm->depth)
 		{
-		case 1: pnm->tupletype = fz_strdup(ctx, "BLACKANDWHITE"); break;
-		case 2: pnm->tupletype = fz_strdup(ctx, "GRAYSCALE_ALPHA"); break;
-		case 3: pnm->tupletype = fz_strdup(ctx, "RGB"); break;
-		case 4: pnm->tupletype = fz_strdup(ctx, "CMYK"); break;
-		case 5: pnm->tupletype = fz_strdup(ctx, "CMYK_ALPHA"); break;
+		case 1: pnm->tupletype = PAM_BW; break;
+		case 2: pnm->tupletype = PAM_GRAYA; break;
+		case 3: pnm->tupletype = PAM_RGB; break;
+		case 4: pnm->tupletype = PAM_CMYK; break;
+		case 5: pnm->tupletype = PAM_CMYKA; break;
 		default:
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot guess tupletype based on depth in pnm image");
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot guess tuple type based on depth in pnm image");
 		}
 
-	if (!strcmp(pnm->tupletype, "BLACKANDWHITE"))
+	switch (pnm->tupletype)
 	{
+	case PAM_BW:
 		pnm->cs = fz_device_gray(ctx);
 		maxval = 1;
 		if (pnm->maxval == 1)
 			bitmap = 1;
-	}
-	else if (!strcmp(pnm->tupletype, "GRAYSCALE"))
-	{
+		break;
+	case PAM_GRAYA:
+		pnm->alpha = 1;
+		/* fallthrough */
+	case PAM_GRAY:
 		pnm->cs = fz_device_gray(ctx);
 		minval = 2;
-	}
-	else if (!strcmp(pnm->tupletype, "GRAYSCALE_ALPHA"))
-	{
-		pnm->cs = fz_device_gray(ctx);
+		break;
+	case PAM_RGBA:
 		pnm->alpha = 1;
-		minval = 2;
-	}
-	else if (!strcmp(pnm->tupletype, "RGB"))
-	{
+		/* fallthrough */
+	case PAM_RGB:
 		pnm->cs = fz_device_rgb(ctx);
-	}
-	else if (!strcmp(pnm->tupletype, "RGB_ALPHA"))
-	{
-		pnm->cs = fz_device_rgb(ctx);
+		break;
+	case PAM_CMYKA:
 		pnm->alpha = 1;
-	}
-	else if (!strcmp(pnm->tupletype, "CMYK"))
-	{
+		/* fallthrough */
+	case PAM_CMYK:
 		pnm->cs = fz_device_cmyk(ctx);
+		break;
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported tuple type");
 	}
-	else if (!strcmp(pnm->tupletype, "CMYK_ALPHA"))
-	{
-		pnm->cs = fz_device_cmyk(ctx);
-		pnm->alpha = 1;
-	}
-	else
-	{
-		fz_free(ctx, pnm->tupletype);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported tupletype");
-	}
-
-	fz_free(ctx, pnm->tupletype);
 
 	if (pnm->depth != fz_colorspace_n(ctx, pnm->cs) + pnm->alpha)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "depth out of tuple type range");
