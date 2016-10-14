@@ -1,4 +1,5 @@
-#include "mupdf/svg.h"
+#include "mupdf/fitz.h"
+#include "svg-imp.h"
 
 /* Color keywords (white, blue, fuchsia)
  * System color keywords (ActiveBorder, ButtonFace -- need to find reasonable defaults)

@@ -1,4 +1,5 @@
-#include "mupdf/svg.h"
+#include "mupdf/fitz.h"
+#include "svg-imp.h"
 
 typedef struct svg_page_s svg_page;
 

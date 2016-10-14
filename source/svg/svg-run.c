@@ -1,4 +1,5 @@
-#include "mupdf/svg.h"
+#include "mupdf/fitz.h"
+#include "svg-imp.h"
 
 /* default page size */
 #define DEF_WIDTH 12
