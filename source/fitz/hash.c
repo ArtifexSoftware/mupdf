@@ -96,6 +96,9 @@ fz_hash_get_val(fz_context *ctx, fz_hash_table *table, int idx)
 void
 fz_drop_hash(fz_context *ctx, fz_hash_table *table)
 {
+	if (!table)
+		return;
+
 	fz_free(ctx, table->ents);
 	fz_free(ctx, table);
 }

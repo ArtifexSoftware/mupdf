@@ -82,6 +82,9 @@ fz_close_document_writer(fz_context *ctx, fz_document_writer *wri)
 void
 fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 {
+	if (!wri)
+		return;
+
 	if (wri->close_writer)
 		fz_warn(ctx, "dropping unclosed document writer");
 	if (wri->drop_writer)

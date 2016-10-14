@@ -3,6 +3,9 @@
 void
 fz_drop_link_dest(fz_context *ctx, fz_link_dest *dest)
 {
+	if (!dest)
+		return;
+
 	switch (dest->kind)
 	{
 	case FZ_LINK_NONE:

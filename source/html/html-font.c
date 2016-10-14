@@ -86,6 +86,9 @@ void fz_drop_html_font_set(fz_context *ctx, fz_html_font_set *set)
 	fz_html_font_face *font, *next;
 	int i;
 
+	if (!set)
+		return;
+
 	font = set->custom;
 	while (font)
 	{

@@ -41,7 +41,12 @@ char *fz_pool_strdup(fz_context *ctx, fz_pool *pool, const char *s)
 
 void fz_drop_pool(fz_context *ctx, fz_pool *pool)
 {
-	fz_pool_node *node = pool->head;
+	fz_pool_node *node;
+
+	if (!pool)
+		return;
+
+	node = pool->head;
 	while (node)
 	{
 		fz_pool_node *next = node->next;

@@ -376,6 +376,9 @@ fz_drop_image_imp(fz_context *ctx, fz_storable *image_)
 void
 fz_drop_image_base(fz_context *ctx, fz_image *image)
 {
+	if (!image)
+		return;
+
 	fz_drop_colorspace(ctx, image->colorspace);
 	fz_drop_image(ctx, image->mask);
 	fz_free(ctx, image);

@@ -87,6 +87,8 @@ fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 void
 fz_drop_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 {
+	if (!zip)
+		return;
 	if (!zip->closed)
 		fz_warn(ctx, "dropping unclosed zip writer");
 	fz_drop_output(ctx, zip->output);

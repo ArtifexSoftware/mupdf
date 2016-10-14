@@ -147,6 +147,9 @@ res_table_free(fz_context *ctx, fz_hash_table *hash)
 void
 pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc)
 {
-	res_table_free(ctx, doc->resources.fonts);
-	res_table_free(ctx, doc->resources.images);
+	if (doc)
+	{
+		res_table_free(ctx, doc->resources.fonts);
+		res_table_free(ctx, doc->resources.images);
+	}
 }
