@@ -891,31 +891,31 @@ number_from_value(fz_css_value *value, float initial, int initial_unit)
 	{
 		float x = fz_css_strtof(value->data, &p);
 
-		if (p[0] == 'e' && p[1] == 'm')
+		if (p[0] == 'e' && p[1] == 'm' && p[2] == 0)
 			return make_number(x, N_SCALE);
-		if (p[0] == 'e' && p[1] == 'x')
+		if (p[0] == 'e' && p[1] == 'x' && p[2] == 0)
 			return make_number(x / 2, N_SCALE);
 
-		if (p[0] == 'i' && p[1] == 'n')
+		if (p[0] == 'i' && p[1] == 'n' && p[2] == 0)
 			return make_number(x * 72, N_LENGTH);
-		if (p[0] == 'c' && p[1] == 'm')
+		if (p[0] == 'c' && p[1] == 'm' && p[2] == 0)
 			return make_number(x * 7200 / 254, N_LENGTH);
-		if (p[0] == 'm' && p[1] == 'm')
+		if (p[0] == 'm' && p[1] == 'm' && p[2] == 0)
 			return make_number(x * 720 / 254, N_LENGTH);
-		if (p[0] == 'p' && p[1] == 'c')
+		if (p[0] == 'p' && p[1] == 'c' && p[2] == 0)
 			return make_number(x * 12, N_LENGTH);
 
-		if (p[0] == 'p' && p[1] == 't')
+		if (p[0] == 'p' && p[1] == 't' && p[2] == 0)
 			return make_number(x, N_LENGTH);
-		if (p[0] == 'p' && p[1] == 'x')
+		if (p[0] == 'p' && p[1] == 'x' && p[2] == 0)
 			return make_number(x, N_LENGTH);
 
 		/* FIXME: 'rem' should be 'em' of root element. This is a bad approximation. */
-		if (p[0] == 'r' && p[1] == 'e' && p[2] == 'm')
+		if (p[0] == 'r' && p[1] == 'e' && p[2] == 'm' && p[3] == 0)
 			return make_number(x * 16, N_LENGTH);
 
 		/* FIXME: 'ch' should be width of '0' character. This is an approximation. */
-		if (p[0] == 'c' && p[1] == 'h')
+		if (p[0] == 'c' && p[1] == 'h' && p[2] == 0)
 			return make_number(x / 2, N_LENGTH);
 
 		return make_number(x, N_LENGTH);
