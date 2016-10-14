@@ -50,13 +50,13 @@ find_anchor_flow(fz_html_flow *flow, const char *anchor, float page_h, int *page
 }
 
 static int
-find_anchor(fz_html_box *box, const char *anchor, float page_h, int *page)
+find_anchor_box(fz_html_box *box, const char *anchor, float page_h, int *page)
 {
 	while (box)
 	{
 		if (box->flow_head && find_anchor_flow(box->flow_head, anchor, page_h, page))
 			return 1;
-		if (box->down && find_anchor(box->down, anchor, page_h, page))
+		if (box->down && find_anchor_box(box->down, anchor, page_h, page))
 			return 1;
 		box = box->next;
 	}
@@ -64,35 +64,41 @@ find_anchor(fz_html_box *box, const char *anchor, float page_h, int *page)
 }
 
 static void
-epub_update_link_dests(fz_context *ctx, epub_document *doc, fz_outline *node)
+resolve_link_dest(fz_context *ctx, epub_document *doc, fz_link_dest *ld)
 {
 	epub_chapter *ch;
 
+	if (ld->kind == FZ_LINK_GOTO)
+	{
+		const char *dest = ld->ld.gotor.dest;
+		const char *s = strchr(dest, '#');
+		int n = s ? s - dest : strlen(dest);
+		if (s && s[1] == 0)
+			s = NULL;
+
+		for (ch = doc->spine; ch; ch = ch->next)
+		{
+			if (strncmp(ch->path, dest, n) || ch->path[n] != 0)
+				continue;
+			ld->ld.gotor.page = ch->start;
+			if (s)
+			{
+				/* Search for a matching fragment */
+				if (find_anchor_box(ch->html->root, s+1, ch->page_h, &ld->ld.gotor.page))
+					continue;
+			}
+			break;
+		}
+	}
+}
+
+static void
+epub_update_outline(fz_context *ctx, epub_document *doc, fz_outline *node)
+{
 	while (node)
 	{
-		if (node->dest.kind == FZ_LINK_GOTO)
-		{
-			const char *dest = node->dest.ld.gotor.dest;
-			const char *s = strchr(dest, '#');
-			int n = s ? s - dest : strlen(dest);
-			if (s && s[1] == 0)
-				s = NULL;
-
-			for (ch = doc->spine; ch; ch = ch->next)
-			{
-				if (strncmp(ch->path, dest, n) || ch->path[n] != 0)
-					continue;
-				node->dest.ld.gotor.page = ch->start;
-				if (s)
-				{
-					/* Search for a matching fragment */
-					if (find_anchor(ch->html->root, s+1, ch->page_h, &node->dest.ld.gotor.page))
-						continue;
-				}
-				break;
-			}
-		}
-		epub_update_link_dests(ctx, doc, node->down);
+		resolve_link_dest(ctx, doc, &node->dest);
+		epub_update_outline(ctx, doc, node->down);
 		node = node->next;
 	}
 }
@@ -118,7 +124,7 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 		count += ceilf(ch->html->root->h / ch->page_h);
 	}
 
-	epub_update_link_dests(ctx, doc, doc->outline);
+	epub_update_outline(ctx, doc, doc->outline);
 }
 
 static int
@@ -187,6 +193,41 @@ epub_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 	}
 }
 
+static fz_link *
+epub_load_links(fz_context *ctx, fz_page *page_)
+{
+	epub_page *page = (epub_page*)page_;
+	epub_document *doc = page->doc;
+	epub_chapter *ch;
+	int n = page->number;
+	int count = 0;
+	fz_link *head, *link;
+
+	for (ch = doc->spine; ch; ch = ch->next)
+	{
+		int cn = ceilf(ch->html->root->h / ch->page_h);
+		if (n < count + cn)
+		{
+			head = fz_load_html_links(ctx, ch->html, n - count, ch->page_h, ch->path);
+			for (link = head; link; link = link->next)
+			{
+				/* Adjust for page margins */
+				link->rect.x0 += ch->page_margin[L];
+				link->rect.x1 += ch->page_margin[L];
+				link->rect.y0 += ch->page_margin[T];
+				link->rect.y1 += ch->page_margin[T];
+
+				/* Resolve local links */
+				resolve_link_dest(ctx, doc, &link->dest);
+			}
+			return head;
+		}
+		count += cn;
+	}
+
+	return NULL;
+}
+
 static fz_page *
 epub_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
@@ -194,6 +235,7 @@ epub_load_page(fz_context *ctx, fz_document *doc_, int number)
 	epub_page *page = fz_new_page(ctx, sizeof *page);
 	page->super.bound_page = epub_bound_page;
 	page->super.run_page_contents = epub_run_page;
+	page->super.load_links = epub_load_links;
 	page->super.drop_page = epub_drop_page;
 	page->doc = doc;
 	page->number = number;

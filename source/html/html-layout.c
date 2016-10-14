@@ -680,7 +680,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 
 			else if (display != DIS_NONE)
 			{
-				const char *dir, *lang, *id;
+				const char *dir, *lang, *id, *href;
 				int child_dir = markup_dir;
 				int child_lang = markup_lang;
 
@@ -716,22 +716,21 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 				else if (display == DIS_INLINE)
 				{
 					insert_inline_box(ctx, box, top, child_dir, g);
+					if (!strcmp(tag, "a"))
+					{
+						id = fz_xml_att(node, "id");
+						if (id)
+							generate_anchor(ctx, box, id, g);
+						href = fz_xml_att(node, "href");
+						if (href)
+							box->a_href = fz_pool_strdup(ctx, g->pool, href);
+					}
+
 				}
 				else
 				{
 					fz_warn(ctx, "unknown box display type");
 					insert_box(ctx, box, BOX_BLOCK, top);
-				}
-
-				if (!strcmp(tag, "a"))
-				{
-					id = fz_xml_att(node, "id");
-					if (id)
-					{
-						/* We don't need to create a box here, because since <a> tags are inline
-						 * the DIS_INLINE case * above should already have done it for us. */
-						generate_anchor(ctx, box, id, g);
-					}
 				}
 
 				if (fz_xml_down(node))
@@ -1885,6 +1884,113 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 	}
 }
 
+static int is_internal_uri(const char *uri)
+{
+	while (*uri >= 'a' && *uri <= 'z')
+		++uri;
+	if (uri[0] == ':' && uri[1] == '/' && uri[2] == '/')
+		return 0;
+	return 1;
+}
+
+static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *head, int page, int page_h, const char *dir, const char *file)
+{
+	fz_link *link;
+	fz_html_flow *next;
+	char path[2048];
+	fz_rect bbox;
+	fz_link_dest dest;
+	char *href;
+	float w;
+
+	while (flow)
+	{
+		href = flow->box->a_href;
+		next = flow->next;
+		if (href && (int)(flow->y / page_h) == page)
+		{
+			/* Coalesce contiguous flow boxes into one link node */
+			w = flow->w;
+			while (next &&
+					next->y == flow->y &&
+					next->h == flow->h &&
+					next->box->a_href &&
+					!strcmp(href, next->box->a_href))
+			{
+				w += next->w;
+				next = next->next;
+			}
+
+			bbox.x0 = flow->x;
+			bbox.y0 = flow->y - page * page_h;
+			bbox.x1 = bbox.x0 + w;
+			bbox.y1 = bbox.y0 + flow->h;
+			if (flow->type != FLOW_IMAGE)
+			{
+				/* flow->y is the baseline, adjust bbox appropriately */
+				bbox.y0 -= 0.8 * flow->h;
+				bbox.y1 -= 0.8 * flow->h;
+			}
+
+			if (is_internal_uri(href))
+			{
+				if (href[0] == '#')
+				{
+					fz_strlcpy(path, file, sizeof path);
+					fz_strlcat(path, href, sizeof path);
+				}
+				else
+				{
+					fz_strlcpy(path, dir, sizeof path);
+					fz_strlcat(path, "/", sizeof path);
+					fz_strlcat(path, href, sizeof path);
+				}
+				fz_urldecode(path);
+				fz_cleanname(path);
+
+				memset(&dest, 0, sizeof dest);
+				dest.kind = FZ_LINK_GOTO;
+				dest.ld.gotor.dest = fz_strdup(ctx, path);
+				dest.ld.gotor.page = 0; /* computed in epub_load_links */
+			}
+			else
+			{
+				memset(&dest, 0, sizeof dest);
+				dest.kind = FZ_LINK_URI;
+				dest.ld.uri.uri = fz_strdup(ctx, href);
+				dest.ld.uri.is_map = 0;
+			}
+
+			link = fz_new_link(ctx, &bbox, dest);
+			link->next = head;
+			head = link;
+		}
+		flow = next;
+	}
+	return head;
+}
+
+static fz_link *load_link_box(fz_context *ctx, fz_html_box *box, fz_link *head, int page, int page_h, const char *dir, const char *file)
+{
+	while (box)
+	{
+		if (box->flow_head)
+			head = load_link_flow(ctx, box->flow_head, head, page, page_h, dir, file);
+		if (box->down)
+			head = load_link_box(ctx, box->down, head, page, page_h, dir, file);
+		box = box->next;
+	}
+	return head;
+}
+
+fz_link *
+fz_load_html_links(fz_context *ctx, fz_html *html, int page, int page_h, const char *file)
+{
+	char dir[2048];
+	fz_dirname(dir, file, sizeof dir);
+	return load_link_box(ctx, html->root, NULL, page, page_h, dir, file);
+}
+
 static char *concat_text(fz_context *ctx, fz_xml *root)
 {
 	fz_xml *node;
@@ -2084,6 +2190,9 @@ fz_print_html_box(fz_context *ctx, fz_html_box *box, int pstyle, int level)
 
 		if (box->list_item)
 			printf(" list=%d", box->list_item);
+
+		if (box->a_href)
+			printf(" href='%s'", box->a_href);
 
 		if (box->down || box->flow_head)
 			printf(" {\n");
