@@ -1409,12 +1409,12 @@ int main(int argc, char **argv)
 		}
 	}
 
+	fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+
 	outline = fz_load_outline(ctx, doc);
 	pdf = pdf_specifics(ctx, doc);
 	if (pdf)
 		pdf_enable_js(ctx, pdf);
-
-	fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
 
 	render_page();
 	update_title();
