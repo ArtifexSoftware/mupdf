@@ -1,4 +1,5 @@
-#include "mupdf/xps.h"
+#include "mupdf/fitz.h"
+#include "xps-imp.h"
 
 static fz_image *
 xps_load_image(fz_context *ctx, xps_document *doc, xps_part *part)

@@ -1,4 +1,5 @@
-#include "mupdf/xps.h"
+#include "mupdf/fitz.h"
+#include "xps-imp.h"
 
 #define REL_START_PART \
 	"http://schemas.microsoft.com/xps/2005/06/fixedrepresentation"
@@ -405,7 +406,7 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 	return root;
 }
 
-fz_rect *
+static fz_rect *
 xps_bound_page(fz_context *ctx, xps_page *page, fz_rect *bounds)
 {
 	bounds->x0 = bounds->y0 = 0;

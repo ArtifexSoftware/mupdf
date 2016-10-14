@@ -5,6 +5,7 @@
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/font.h"
 #include "mupdf/fitz/path.h"
+#include "mupdf/fitz/bidi.h"
 
 /*
  * Text buffer.

@@ -1,7 +1,5 @@
-#ifndef MUPDF_XPS_H
-#define MUPDF_XPS_H
-
-#include "mupdf/fitz.h"
+#ifndef MUPDF_XPS_IMP_H
+#define MUPDF_XPS_IMP_H
 
 typedef struct xps_document_s xps_document;
 typedef struct xps_page_s xps_page;
@@ -32,23 +30,11 @@ xps_document *xps_open_document(fz_context *ctx, const char *filename);
 */
 xps_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
-/*
-	xps_drop_document: Closes and frees an opened document.
-
-	The resource store in the context associated with xps_document
-	is emptied.
-
-	Does not throw exceptions.
-*/
-void xps_drop_document(fz_context *ctx, xps_document *doc);
-
 int xps_count_pages(fz_context *ctx, xps_document *doc);
 xps_page *xps_load_page(fz_context *ctx, xps_document *doc, int number);
 fz_outline *xps_load_outline(fz_context *ctx, xps_document *doc);
 void xps_run_page(fz_context *ctx, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 fz_link *xps_load_links(fz_context *ctx, xps_page *page);
-
-/* xps-internal.h */
 
 /*
  * Memory, and string functions.

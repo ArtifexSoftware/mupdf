@@ -1,4 +1,5 @@
-#include "mupdf/xps.h"
+#include "mupdf/fitz.h"
+#include "xps-imp.h"
 
 static void xps_init_document(fz_context *ctx, xps_document *doc);
 
@@ -193,7 +194,7 @@ xps_open_document(fz_context *ctx, const char *filename)
 	return doc;
 }
 
-void
+static void
 xps_drop_document(fz_context *ctx, xps_document *doc)
 {
 	xps_font_cache *font, *next;
