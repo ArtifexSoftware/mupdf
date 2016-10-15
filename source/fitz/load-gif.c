@@ -185,8 +185,8 @@ gif_read_id(fz_context *ctx, struct info *info, unsigned char *p, unsigned char 
 
 	info->image_left = p[2] << 8 | p[1];
 	info->image_top = p[4] << 8 | p[3];
-	info->image_width = fz_clampi(p[6] << 8 | p[5], 0, info->width - 1);
-	info->image_height = fz_clampi(p[8] << 8 | p[7], 0, info->height - 1);
+	info->image_width = p[6] << 8 | p[5];
+	info->image_height = p[8] << 8 | p[7];
 	info->has_lct = (p[9] >> 7) & 0x1;
 	info->image_interlaced = (p[9] >> 6) & 0x1;
 
@@ -258,7 +258,7 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 		stm = fz_open_buffer(ctx, compressed);
 		lzwstm = fz_open_lzwd(ctx, stm, 0, mincodesize + 1, 1, 0);
 
-		uncompressed = fz_read_all(ctx, lzwstm, info->image_width * info->image_height);
+		uncompressed = fz_read_all(ctx, lzwstm, 0);
 		if (uncompressed->len < info->image_width * info->image_height)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in compressed table based image data in gif image");
 
