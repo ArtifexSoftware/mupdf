@@ -246,6 +246,13 @@ gif_read_tbid(fz_context *ctx, struct info *info, unsigned char *dest, unsigned 
 
 	mincodesize = *p;
 
+	/* if there is no overlap, avoid pasting image data, just consume it */
+	if (info->image_top >= info->height || info->image_left >= info->width)
+	{
+		p = gif_read_subblocks(ctx, info, p + 1, end, NULL);
+		return p;
+	}
+
 	fz_var(compressed);
 	fz_var(lzwstm);
 	fz_var(uncompressed);
