@@ -1700,6 +1700,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 					break;
 
 				case PDF_WIDGET_TYPE_SIGNATURE:
+					if (state == -1)
 					{
 						char ebuf[256];
 
