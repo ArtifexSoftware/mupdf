@@ -216,7 +216,10 @@ gif_read_line(fz_context *ctx, struct info *info, unsigned char *dest, int ct_en
 	unsigned char *mp = &info->mask[index];
 	unsigned int x, k;
 
-	for (x = 0; x < info->image_width; x++, sp++, mp++, dp += 4)
+	if (info->image_top + y >= info->height)
+		return;
+
+	for (x = 0; x < info->image_width && info->image_left + x < info->width; x++, sp++, mp++, dp += 4)
 		if (!info->has_transparency || *sp != info->transparent)
 		{
 			*mp = 0x02;
