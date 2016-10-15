@@ -108,7 +108,7 @@ enum
 #define TileByteCounts 325
 #define ExtraSamples 338
 #define JPEGTables 347
-#define YCbCrSubSampling 520
+#define YCbCrSubSampling 530
 #define ICCProfile 34675
 
 static const unsigned char bitrev[256] =
@@ -425,6 +425,133 @@ tiff_paste_tile(fz_context *ctx, struct tiff *tiff, unsigned char *tile, unsigne
 }
 
 static void
+tiff_paste_subsampled_tile(fz_context *ctx, struct tiff *tiff, unsigned char *tile, unsigned len, unsigned tw, unsigned th, unsigned col, unsigned row)
+{
+	/*
+	This explains how the samples are laid out in tiff data, the spec example is non-obvious.
+	The y, cb, cr indicies follow the spec, i.e. y17 is the y sample at row 1, column 7.
+	All indicies start at 0.
+
+	hexlookup = (horizontalsubsampling & 0xf) << 4 | (verticalsubsampling & 0xf)
+
+	0x11	y00 cb00 cr00	0x21	y00 y01 cb00 cr00	0x41	y00 y01 y02 y03 cb00 cr00
+		y01 cb01 cr01		y10 y11 cb01 cr01		y04 y05 y06 y07 cb01 cr01
+		....			...				...
+		y10 cb10 cr10		y20 y21 cb10 cr10		y10 y11 y12 y13 cb10 cr10
+		y11 cb11 cr11		y30 y31 cb11 cr11		y14 y15 y16 y17 cb11 cr11
+
+	0x12	y00		0x22	y00 y01			0x42	y00 y01 y02 y03
+		y10 cb00 cr00		y10 y11 cb00 cr00		y10 y11 y12 y13 cb00 cr00
+		y01			y02 y03				y04 y05 y06 y07
+		y11 cb01 cr01		y12 y13 cb01 cr01		y14 y15 y16 y17 cb01 cr01
+		....			...				...
+		y20			y20 y21				y20 y21 y22 y23
+		y30 cb10 cr10		y30 y31 cb10 cr10		y30 y31 y32 y33 cb10 cr10
+		y21			y22 y23				y24 y25 y26 y27
+		y31 cb11 cr11		y32 y33 cb11 cr11		y34 y35 y36 y37 cb11 cr11
+
+	0x14	y00		0x24	y00 y01			0x44	y00 y01 y02 y03
+		y10			y10 y11				y10 y11 y12 y13
+		y20			y20 y21				y20 y21 y22 y23
+		y30 cb00 cr00		y30 y31 cb00 cr00		y30 y31 y32 y33 cb00 cr00
+		y01			y02 y03				y04 y05 y06 y07
+		y11			y12 y13				y14 y15 y16 y17
+		y21			y22 y23				y24 y25 y26 y27
+		y31 cb01 cr01		y32 y33 cb01 cr01		y34 y35 y36 y37 cb01 cr01
+		....			...				...
+		y40			y40 y41				y40 y41 y42 y43
+		y50			y50 y51				y50 y51 y52 y53
+		y60			y60 y61				y60 y61 y62 y63
+		y70 cb10 cr10		y70 y71 cb10 cr10		y70 y71 y72 y73 cb10 cr10
+		y41			y42 y43				y44 y45 y46 y47
+		y51			y52 y53				y54 y55 y56 y57
+		y61			y62 y63				y64 y65 y66 y67
+		y71 cb11 cr11		y72 y73 cb11 cr11		y74 y75 y76 y77 cb11 cr11
+	*/
+
+	unsigned char *src = tile;
+	unsigned char *dst;
+	int x, y, w, h; /* coordinates and dimensions of entire image */
+	int sx, sy, sw, sh; /* coordinates and dimensions of a single subsample region, i.e. max 4 x 4 samples */
+	int k;
+	int offsets[4 * 4 * 3]; /* for a pixel position, these point to all pixel components in a subsample region */
+	int *offset = offsets;
+
+	assert(tiff->samplesperpixel == 3);
+	assert(tiff->bitspersample == 8);
+
+	w = tiff->imagewidth;
+	h = tiff->imagelength;
+
+	sx = 0;
+	sy = 0;
+	sw = tiff->ycbcrsubsamp[0];
+	sh = tiff->ycbcrsubsamp[1];
+
+	for (k = 0; k < 3; k++)
+		for (y = 0; y < sh; y++)
+			for (x = 0; x < sw; x++)
+				*offset++ = k + y * tiff->stride + x * 3;
+
+	offset = offsets;
+	x = col;
+	y = row;
+	k = 0;
+
+	dst = &tiff->samples[row * tiff->stride + col * 3];
+
+	while (src < tile + len)
+	{
+		if (k == 0)
+		{ /* put all Y samples for a subsample region at the correct image pixel */
+			if (y + sy < h && y + sy < row + th && x + sx < w && x + sx < col + tw)
+				dst[*offset] = *src;
+			offset++;
+
+			if (++sx >= sw)
+			{
+				sx = 0;
+				if (++sy >= sh)
+				{
+					sy = 0;
+					k++;
+				}
+			}
+		}
+		else
+		{ /* put all Cb/Cr samples for a subsample region at the correct image pixel */
+			for (sy = 0; sy < sh; sy++)
+				for (sx = 0; sx < sw; sx++)
+				{
+					if (y + sy < h && y + sy < row + th && x + sx < w && x + sx < col + tw)
+						dst[*offset] = *src;
+					offset++;
+				}
+
+			if (++k >= 3)
+			{ /* we're done with this subsample region, on to the next one */
+				k = sx = sy = 0;
+				offset = offsets;
+
+				dst += sw * 3;
+
+				x += sw;
+				if (x >= col + tw)
+				{
+					dst -= (x - (col + tw)) * 3;
+					dst += (sh - 1) * w * 3;
+					dst += col * 3;
+					x = col;
+					y += sh;
+				}
+			}
+		}
+
+		src++;
+	}
+}
+
+static void
 tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned char *data;
@@ -437,28 +564,63 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 	if (tiff->tileoffsetslen < tiles || tiff->tilebytecountslen < tiles)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "insufficient tile metadata");
 
-	wlen = tiff->tilelength * tiff->tilestride;
-	data = tiff->data = fz_malloc(ctx, wlen);
-
-	tile = 0;
-	for (x = 0; x < tiff->imagelength; x += tiff->tilelength)
+	/* JPEG can handle subsampling on its own */
+	if (tiff->photometric == 6 && tiff->compression != 6 && tiff->compression != 7)
 	{
-		for (y = 0; y < tiff->imagewidth; y += tiff->tilewidth)
+		/* regardless of how this is subsampled, a tile is never larger */
+		if (tiff->tilelength >= tiff->ycbcrsubsamp[1])
+			wlen = tiff->tilestride * tiff->tilelength;
+		else
+			wlen = tiff->tilestride * tiff->ycbcrsubsamp[1];
+
+		data = tiff->data = fz_malloc(ctx, wlen);
+
+		tile = 0;
+		for (x = 0; x < tiff->imagelength; x += tiff->tilelength)
 		{
-			unsigned int offset = tiff->tileoffsets[tile];
-			unsigned int rlen = tiff->tilebytecounts[tile];
-			unsigned char *rp = tiff->bp + offset;
+			for (y = 0; y < tiff->imagewidth; y += tiff->tilewidth)
+			{
+				unsigned int offset = tiff->tileoffsets[tile];
+				unsigned int rlen = tiff->tilebytecounts[tile];
+				unsigned char *rp = tiff->bp + offset;
+				int decoded;
 
-			if (offset > (unsigned)(tiff->ep - tiff->bp))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile offset %u", offset);
-			if (rlen > (unsigned)(tiff->ep - rp))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile byte count %u", rlen);
+				if (offset > (unsigned)(tiff->ep - tiff->bp))
+					fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile offset %u", offset);
+				if (rlen > (unsigned)(tiff->ep - rp))
+					fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile byte count %u", rlen);
 
-			if (tiff_decode_data(ctx, tiff, rp, rlen, data, wlen) != wlen)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "decoded tile is the wrong size");
+				decoded = tiff_decode_data(ctx, tiff, rp, rlen, data, wlen);
+				tiff_paste_subsampled_tile(ctx, tiff, data, decoded, tiff->tilewidth, tiff->tilelength, x, y);
+				tile++;
+			}
+		}
+	}
+	else
+	{
+		wlen = tiff->tilelength * tiff->tilestride;
+		data = tiff->data = fz_malloc(ctx, wlen);
 
-			tiff_paste_tile(ctx, tiff, data, x, y);
-			tile++;
+		tile = 0;
+		for (x = 0; x < tiff->imagelength; x += tiff->tilelength)
+		{
+			for (y = 0; y < tiff->imagewidth; y += tiff->tilewidth)
+			{
+				unsigned int offset = tiff->tileoffsets[tile];
+				unsigned int rlen = tiff->tilebytecounts[tile];
+				unsigned char *rp = tiff->bp + offset;
+
+				if (offset > (unsigned)(tiff->ep - tiff->bp))
+					fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile offset %u", offset);
+				if (rlen > (unsigned)(tiff->ep - rp))
+					fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile byte count %u", rlen);
+
+				if (tiff_decode_data(ctx, tiff, rp, rlen, data, wlen) != wlen)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "decoded tile is the wrong size");
+
+				tiff_paste_tile(ctx, tiff, data, x, y);
+				tile++;
+			}
 		}
 	}
 }
@@ -477,30 +639,67 @@ tiff_decode_strips(fz_context *ctx, struct tiff *tiff)
 
 	data = tiff->samples;
 
-	strip = 0;
-	for (y = 0; y < tiff->imagelength; y += tiff->rowsperstrip)
+	/* JPEG can handle subsampling on its own */
+	if (tiff->photometric == 6 && tiff->compression != 6 && tiff->compression != 7)
 	{
-		unsigned offset = tiff->stripoffsets[strip];
-		unsigned rlen = tiff->stripbytecounts[strip];
-		unsigned wlen = tiff->stride * tiff->rowsperstrip;
-		unsigned char *rp = tiff->bp + offset;
+		unsigned wlen;
+		unsigned rowsperstrip;
 
-		if (offset > (unsigned)(tiff->ep - tiff->bp))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip offset %u", offset);
-		if (rlen > (unsigned)(tiff->ep - rp))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip byte count %u", rlen);
+		/* regardless of how this is subsampled, a strip is never taller */
+		if (tiff->rowsperstrip >= tiff->ycbcrsubsamp[1])
+			rowsperstrip = tiff->rowsperstrip;
+		else
+			rowsperstrip = tiff->ycbcrsubsamp[1];
 
-		if (y + tiff->rowsperstrip >= tiff->imagelength)
-			wlen = tiff->stride * (tiff->imagelength - y);
+		wlen = rowsperstrip * tiff->stride;
+		data = tiff->data = fz_malloc(ctx, wlen);
 
-		if (tiff_decode_data(ctx, tiff, rp, rlen, data, wlen) < wlen)
+		strip = 0;
+		for (y = 0; y < tiff->imagelength; y += rowsperstrip)
 		{
-			fz_warn(ctx, "premature end of data in decoded strip");
-			break;
-		}
+			unsigned offset = tiff->stripoffsets[strip];
+			unsigned rlen = tiff->stripbytecounts[strip];
+			unsigned char *rp = tiff->bp + offset;
+			int decoded;
 
-		data += wlen;
-		strip ++;
+			if (offset > (unsigned)(tiff->ep - tiff->bp))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip offset %u", offset);
+			if (rlen > (unsigned)(tiff->ep - rp))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip byte count %u", rlen);
+
+			decoded = tiff_decode_data(ctx, tiff, rp, rlen, data, wlen);
+			tiff_paste_subsampled_tile(ctx, tiff, data, decoded, tiff->imagewidth, tiff->rowsperstrip, 0, y);
+			strip++;
+		}
+	}
+	else
+	{
+		strip = 0;
+		for (y = 0; y < tiff->imagelength; y += tiff->rowsperstrip)
+		{
+			unsigned offset = tiff->stripoffsets[strip];
+			unsigned rlen = tiff->stripbytecounts[strip];
+			unsigned wlen = tiff->stride * tiff->rowsperstrip;
+			unsigned char *rp = tiff->bp + offset;
+
+			if (offset > (unsigned)(tiff->ep - tiff->bp))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip offset %u", offset);
+			if (rlen > (unsigned)(tiff->ep - rp))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip byte count %u", rlen);
+
+			/* if imagelength is not a multiple of rowsperstrip, adjust the expectation of the size of the decoded data */
+			if (y + tiff->rowsperstrip >= tiff->imagelength)
+				wlen = tiff->stride * (tiff->imagelength - y);
+
+			if (tiff_decode_data(ctx, tiff, rp, rlen, data, wlen) < wlen)
+			{
+				fz_warn(ctx, "premature end of data in decoded strip");
+				break;
+			}
+
+			data += wlen;
+			strip ++;
+		}
 	}
 }
 
@@ -834,6 +1033,28 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 }
 
 static void
+tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
+{
+	int x, y;
+
+	for (y = 0; y < tiff->imagelength; y++)
+	{
+		unsigned char * row = &tiff->samples[tiff->stride * y];
+		for (x = 0; x < tiff->imagewidth; x++)
+		{
+			int ycc[3];
+			ycc[0] = row[x * 3 + 0];
+			ycc[1] = row[x * 3 + 1] - 128;
+			ycc[2] = row[x * 3 + 2] - 128;
+
+			row[x * 3 + 0] = fz_clampi((double)ycc[0] + 1.402 * ycc[2], 0, 255);
+			row[x * 3 + 1] = fz_clampi((double)ycc[0] - 0.34413 * ycc[1] - 0.71414 * ycc[2], 0, 255);
+			row[x * 3 + 2] = fz_clampi((double)ycc[0] + 1.772 * ycc[1], 0, 255);
+		}
+	}
+}
+
+static void
 tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned i;
@@ -842,11 +1063,20 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
 	if (tiff->imagewidth <= 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
+
 	if (tiff->imagelength > UINT_MAX / tiff->imagewidth / (tiff->samplesperpixel + 2) / (tiff->bitspersample / 8 + 1))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	if (tiff->planar != 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image data is not in chunky format");
+
+	if (tiff->photometric == 6)
+	{
+		if (tiff->samplesperpixel != 3)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel when subsampling");
+		if (tiff->bitspersample != 8)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported bits per sample when subsampling");
+	}
 
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
 	tiff->tilestride = (tiff->tilewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
@@ -978,6 +1208,10 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 			p += tiff->stride;
 		}
 	}
+
+	/* YCbCr -> RGB, but JPEG already has done this conversion  */
+	if (tiff->photometric == 6 && tiff->compression != 6 && tiff->compression != 7)
+		tiff_ycc_to_rgb(ctx, tiff);
 
 	/* RGBPal */
 	if (tiff->photometric == 3 && tiff->colormap)
