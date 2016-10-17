@@ -417,10 +417,6 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 					pdf_dict_put_drop(ctx, imobj, PDF_NAME_DamagedRowsBeforeError, pdf_new_int(ctx, doc, cp->u.fax.damaged_rows_before_error));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_CCITTFaxDecode);
 				break;
-			case FZ_IMAGE_JBIG2:
-				/* FIXME - jbig2globals */
-				cp->type = FZ_IMAGE_UNKNOWN;
-				break;
 			case FZ_IMAGE_FLATE:
 				if (cp->u.flate.columns)
 					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.flate.columns));

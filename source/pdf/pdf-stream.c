@@ -534,7 +534,6 @@ can_reuse_buffer(fz_context *ctx, pdf_xref_entry *entry, fz_compression_params *
 	build_compression_params(ctx, f, p, params);
 
 	return (params->type == FZ_IMAGE_RAW) ? 0 : 1;
-
 }
 
 static fz_buffer *
