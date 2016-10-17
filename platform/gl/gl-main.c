@@ -142,6 +142,13 @@ static int zoom_out(int oldres)
 #define MAXRES (zoom_list[nelem(zoom_list)-1])
 #define DEFRES 96
 
+static char filename[2048];
+static char *password = "";
+static float layout_w = DEFAULT_LAYOUT_W;
+static float layout_h = DEFAULT_LAYOUT_H;
+static float layout_em = DEFAULT_LAYOUT_EM;
+static char *layout_css = NULL;
+
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
 static fz_page *page = NULL;
@@ -731,6 +738,34 @@ static void shrinkwrap(void)
 	glfwSetWindowSize(window, w, h);
 }
 
+static void reload(void)
+{
+	fz_drop_outline(ctx, outline);
+	fz_drop_document(ctx, doc);
+
+	doc = fz_open_document(ctx, filename);
+	if (fz_needs_password(ctx, doc))
+	{
+		if (!fz_authenticate_password(ctx, doc, password))
+		{
+			fprintf(stderr, "Invalid password.\n");
+			exit(1);
+		}
+	}
+
+	fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+
+	outline = fz_load_outline(ctx, doc);
+	pdf = pdf_specifics(ctx, doc);
+	if (pdf)
+		pdf_enable_js(ctx, pdf);
+
+	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
+
+	render_page();
+	update_title();
+}
+
 static void toggle_outline(void)
 {
 	if (outline)
@@ -887,6 +922,7 @@ static void do_app(void)
 			break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
+		case 'r': reload(); break;
 		case 'o': toggle_outline(); break;
 		case 'W': auto_zoom_w(); break;
 		case 'H': auto_zoom_h(); break;
@@ -1306,12 +1342,6 @@ int main(int argc, char **argv)
 #endif
 {
 	const GLFWvidmode *video_mode;
-	char filename[2048];
-	char *password = "";
-	float layout_w = DEFAULT_LAYOUT_W;
-	float layout_h = DEFAULT_LAYOUT_H;
-	float layout_em = DEFAULT_LAYOUT_EM;
-	char *layout_css = NULL;
 	int c;
 
 	while ((c = fz_getopt(argc, argv, "p:r:W:H:S:U:")) != -1)
@@ -1399,25 +1429,8 @@ int main(int argc, char **argv)
 
 	ui_init_fonts(ctx, ui.fontsize);
 
-	doc = fz_open_document(ctx, filename);
-	if (fz_needs_password(ctx, doc))
-	{
-		if (!fz_authenticate_password(ctx, doc, password))
-		{
-			fprintf(stderr, "Invalid password.\n");
-			exit(1);
-		}
-	}
+	reload();
 
-	fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
-
-	outline = fz_load_outline(ctx, doc);
-	pdf = pdf_specifics(ctx, doc);
-	if (pdf)
-		pdf_enable_js(ctx, pdf);
-
-	render_page();
-	update_title();
 	shrinkwrap();
 
 	glfwSetFramebufferSizeCallback(window, on_reshape);
