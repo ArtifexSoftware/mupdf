@@ -2343,6 +2343,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	doc->super.authenticate_password = (fz_document_authenticate_password_fn *)pdf_authenticate_password;
 	doc->super.has_permission = (fz_document_has_permission_fn *)pdf_has_permission;
 	doc->super.load_outline = (fz_document_load_outline_fn *)pdf_load_outline;
+	doc->super.resolve_link = (fz_document_resolve_link_fn *)pdf_resolve_link;
 	doc->super.count_pages = (fz_document_count_pages_fn *)pdf_count_pages;
 	doc->super.load_page = (fz_document_load_page_fn *)pdf_load_page;
 	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)pdf_lookup_metadata;

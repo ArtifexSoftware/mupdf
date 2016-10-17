@@ -1,19 +1,15 @@
 #include "mupdf/pdf.h"
 
 static pdf_obj *
-resolve_dest_rec(fz_context *ctx, pdf_document *doc, pdf_obj *dest, fz_link_kind kind, int depth)
+resolve_dest_rec(fz_context *ctx, pdf_document *doc, pdf_obj *dest, int depth)
 {
 	if (depth > 10) /* Arbitrary to avoid infinite recursion */
 		return NULL;
 
 	if (pdf_is_name(ctx, dest) || pdf_is_string(ctx, dest))
 	{
-		if (kind == FZ_LINK_GOTO)
-		{
-			dest = pdf_lookup_dest(ctx, doc, dest);
-			dest = resolve_dest_rec(ctx, doc, dest, kind, depth+1);
-		}
-
+		dest = pdf_lookup_dest(ctx, doc, dest);
+		dest = resolve_dest_rec(ctx, doc, dest, depth+1);
 		return dest;
 	}
 
@@ -25,7 +21,7 @@ resolve_dest_rec(fz_context *ctx, pdf_document *doc, pdf_obj *dest, fz_link_kind
 	else if (pdf_is_dict(ctx, dest))
 	{
 		dest = pdf_dict_get(ctx, dest, PDF_NAME_D);
-		return resolve_dest_rec(ctx, doc, dest, kind, depth+1);
+		return resolve_dest_rec(ctx, doc, dest, depth+1);
 	}
 
 	else if (pdf_is_indirect(ctx, dest))
@@ -35,193 +31,63 @@ resolve_dest_rec(fz_context *ctx, pdf_document *doc, pdf_obj *dest, fz_link_kind
 }
 
 static pdf_obj *
-resolve_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest, fz_link_kind kind)
+resolve_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 {
-	return resolve_dest_rec(ctx, doc, dest, kind, 0);
+	return resolve_dest_rec(ctx, doc, dest, 0);
 }
 
-fz_link_dest
-pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, fz_link_kind kind, pdf_obj *dest)
+char *
+pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 {
-	fz_link_dest ld;
 	pdf_obj *obj;
+	char buf[40];
+	char *ld;
 
-	int l_from_2 = 0;
-	int b_from_3 = 0;
-	int r_from_4 = 0;
-	int t_from_5 = 0;
-	int t_from_3 = 0;
-	int t_from_2 = 0;
-	int z_from_4 = 0;
-
-	ld.kind = kind;
-	ld.ld.gotor.flags = 0;
-	ld.ld.gotor.lt.x = 0;
-	ld.ld.gotor.lt.y = 0;
-	ld.ld.gotor.rb.x = 0;
-	ld.ld.gotor.rb.y = 0;
-	ld.ld.gotor.page = -1;
-	ld.ld.gotor.dest = NULL;
-
-	dest = resolve_dest(ctx, doc, dest, kind);
+	dest = resolve_dest(ctx, doc, dest);
 	if (dest == NULL)
 	{
 		fz_warn(ctx, "undefined link destination");
-		return ld;
+		return NULL;
 	}
 
 	if (pdf_is_name(ctx, dest))
 	{
-		ld.ld.gotor.dest = pdf_to_name(ctx, dest);
-		return ld;
+		ld = pdf_to_name(ctx, dest);
+		return fz_strdup(ctx, ld);
 	}
 	else if (pdf_is_string(ctx, dest))
 	{
-		ld.ld.gotor.dest = pdf_to_str_buf(ctx, dest);
-		return ld;
+		ld = pdf_to_str_buf(ctx, dest);
+		return fz_strdup(ctx, ld);
 	}
 
 	obj = pdf_array_get(ctx, dest, 0);
 	if (pdf_is_int(ctx, obj))
-		ld.ld.gotor.page = pdf_to_int(ctx, obj);
+	{
+		sprintf(buf, "#%d", pdf_to_int(ctx, obj) + 1);
+		return fz_strdup(ctx, buf);
+	}
 	else
 	{
-		fz_try(ctx)
+		int page = pdf_lookup_page_number(ctx, doc, obj);
+		if (page >= 0)
 		{
-			ld.ld.gotor.page = pdf_lookup_page_number(ctx, doc, obj);
-		}
-		fz_catch(ctx)
-		{
-			ld.kind = FZ_LINK_NONE;
-			return ld;
+			sprintf(buf, "#%d", page + 1);
+			return fz_strdup(ctx, buf);
 		}
 	}
 
-	obj = pdf_array_get(ctx, dest, 1);
-	if (!pdf_is_name(ctx, obj))
-		return ld;
-
-	if (pdf_name_eq(ctx, PDF_NAME_XYZ, obj))
-	{
-		l_from_2 = t_from_3 = z_from_4 = 1;
-		ld.ld.gotor.flags |= fz_link_flag_r_is_zoom;
-	}
-	else if ((pdf_name_eq(ctx, PDF_NAME_Fit, obj)) || (pdf_name_eq(ctx, PDF_NAME_FitB, obj)))
-	{
-		ld.ld.gotor.flags |= fz_link_flag_fit_h;
-		ld.ld.gotor.flags |= fz_link_flag_fit_v;
-	}
-	else if ((pdf_name_eq(ctx, PDF_NAME_FitH, obj)) || (pdf_name_eq(ctx, PDF_NAME_FitBH, obj)))
-	{
-		t_from_2 = 1;
-		ld.ld.gotor.flags |= fz_link_flag_fit_h;
-	}
-	else if ((pdf_name_eq(ctx, PDF_NAME_FitV, obj)) || (pdf_name_eq(ctx, PDF_NAME_FitBV, obj)))
-	{
-		l_from_2 = 1;
-		ld.ld.gotor.flags |= fz_link_flag_fit_v;
-	}
-	else if (pdf_name_eq(ctx, PDF_NAME_FitR, obj))
-	{
-		l_from_2 = b_from_3 = r_from_4 = t_from_5 = 1;
-		ld.ld.gotor.flags |= fz_link_flag_fit_h;
-		ld.ld.gotor.flags |= fz_link_flag_fit_v;
-	}
-
-	if (l_from_2)
-	{
-		obj = pdf_array_get(ctx, dest, 2);
-		if (pdf_is_int(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_l_valid;
-			ld.ld.gotor.lt.x = pdf_to_int(ctx, obj);
-		}
-		else if (pdf_is_real(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_l_valid;
-			ld.ld.gotor.lt.x = pdf_to_real(ctx, obj);
-		}
-	}
-	if (b_from_3)
-	{
-		obj = pdf_array_get(ctx, dest, 3);
-		if (pdf_is_int(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_b_valid;
-			ld.ld.gotor.rb.y = pdf_to_int(ctx, obj);
-		}
-		else if (pdf_is_real(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_b_valid;
-			ld.ld.gotor.rb.y = pdf_to_real(ctx, obj);
-		}
-	}
-	if (r_from_4)
-	{
-		obj = pdf_array_get(ctx, dest, 4);
-		if (pdf_is_int(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.ld.gotor.rb.x = pdf_to_int(ctx, obj);
-		}
-		else if (pdf_is_real(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.ld.gotor.rb.x = pdf_to_real(ctx, obj);
-		}
-	}
-	if (t_from_5 || t_from_3 || t_from_2)
-	{
-		if (t_from_5)
-			obj = pdf_array_get(ctx, dest, 5);
-		else if (t_from_3)
-			obj = pdf_array_get(ctx, dest, 3);
-		else
-			obj = pdf_array_get(ctx, dest, 2);
-		if (pdf_is_int(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_t_valid;
-			ld.ld.gotor.lt.y = pdf_to_int(ctx, obj);
-		}
-		else if (pdf_is_real(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_t_valid;
-			ld.ld.gotor.lt.y = pdf_to_real(ctx, obj);
-		}
-	}
-	if (z_from_4)
-	{
-		obj = pdf_array_get(ctx, dest, 4);
-		if (pdf_is_int(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.ld.gotor.rb.x = pdf_to_int(ctx, obj);
-		}
-		else if (pdf_is_real(ctx, obj))
-		{
-			ld.ld.gotor.flags |= fz_link_flag_r_valid;
-			ld.ld.gotor.rb.x = pdf_to_real(ctx, obj);
-		}
-	}
-
-	/* Duplicate the values out for the sake of stupid clients */
-	if ((ld.ld.gotor.flags & (fz_link_flag_l_valid | fz_link_flag_r_valid)) == fz_link_flag_l_valid)
-		ld.ld.gotor.rb.x = ld.ld.gotor.lt.x;
-	if ((ld.ld.gotor.flags & (fz_link_flag_l_valid | fz_link_flag_r_valid | fz_link_flag_r_is_zoom)) == fz_link_flag_r_valid)
-		ld.ld.gotor.lt.x = ld.ld.gotor.rb.x;
-	if ((ld.ld.gotor.flags & (fz_link_flag_t_valid | fz_link_flag_b_valid)) == fz_link_flag_t_valid)
-		ld.ld.gotor.rb.y = ld.ld.gotor.lt.y;
-	if ((ld.ld.gotor.flags & (fz_link_flag_t_valid | fz_link_flag_b_valid)) == fz_link_flag_b_valid)
-		ld.ld.gotor.lt.y = ld.ld.gotor.rb.y;
-
-	return ld;
+	return NULL;
 }
 
 char *
-pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec)
+pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_obj *dest)
 {
 	pdf_obj *filename=NULL;
 	char *path = NULL;
+	char *uri = NULL;
+	char buf[256];
+	size_t n;
 
 	if (pdf_is_string(ctx, file_spec))
 		filename = file_spec;
@@ -260,54 +126,56 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec)
 		}
 	}
 #endif
-	return path;
+
+	if (pdf_is_array(ctx, dest))
+		fz_snprintf(buf, sizeof buf, "#%d", pdf_to_int(ctx, pdf_array_get(ctx, dest, 0)) + 1);
+	else if (pdf_is_name(ctx, dest))
+		fz_snprintf(buf, sizeof buf, "#%s", pdf_to_name(ctx, dest));
+	else if (pdf_is_stream(ctx, dest))
+		fz_snprintf(buf, sizeof buf, "#%s", pdf_to_str_buf(ctx, dest));
+	else
+		buf[0] = 0;
+
+	n = 7 + strlen(path) + strlen(buf) + 1;
+	uri = fz_malloc(ctx, n);
+	fz_strlcpy(uri, "file://", n);
+	fz_strlcat(uri, path, n);
+	fz_strlcat(uri, buf, n);
+	fz_free(ctx, path);
+	return uri;
 }
 
-fz_link_dest
-pdf_parse_action(fz_context *ctx, pdf_document *doc, pdf_obj *action)
+char *
+pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action)
 {
-	fz_link_dest ld;
 	pdf_obj *obj, *dest, *file_spec;
 
-	ld.kind = FZ_LINK_NONE;
-
 	if (!action)
-		return ld;
+		return NULL;
 
 	obj = pdf_dict_get(ctx, action, PDF_NAME_S);
 	if (pdf_name_eq(ctx, PDF_NAME_GoTo, obj))
 	{
 		dest = pdf_dict_get(ctx, action, PDF_NAME_D);
-		ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, dest);
+		return pdf_parse_link_dest(ctx, doc, dest);
 	}
 	else if (pdf_name_eq(ctx, PDF_NAME_URI, obj))
 	{
-		ld.kind = FZ_LINK_URI;
-		ld.ld.uri.is_map = pdf_to_bool(ctx, pdf_dict_get(ctx, action, PDF_NAME_IsMap));
-		ld.ld.uri.uri = pdf_to_utf8(ctx, pdf_dict_get(ctx, action, PDF_NAME_URI));
+		return pdf_to_utf8(ctx, pdf_dict_get(ctx, action, PDF_NAME_URI));
 	}
 	else if (pdf_name_eq(ctx, PDF_NAME_Launch, obj))
 	{
-		ld.kind = FZ_LINK_LAUNCH;
 		file_spec = pdf_dict_get(ctx, action, PDF_NAME_F);
-		ld.ld.launch.file_spec = pdf_parse_file_spec(ctx, doc, file_spec);
-		ld.ld.launch.new_window = pdf_to_int(ctx, pdf_dict_get(ctx, action, PDF_NAME_NewWindow));
-		ld.ld.launch.is_uri = pdf_name_eq(ctx, PDF_NAME_URL, pdf_dict_get(ctx, file_spec, PDF_NAME_FS));
-	}
-	else if (pdf_name_eq(ctx, PDF_NAME_Named, obj))
-	{
-		ld.kind = FZ_LINK_NAMED;
-		ld.ld.named.named = fz_strdup(ctx, pdf_to_name(ctx, pdf_dict_get(ctx, action, PDF_NAME_N)));
+		return pdf_parse_file_spec(ctx, doc, file_spec, NULL);
 	}
 	else if (pdf_name_eq(ctx, PDF_NAME_GoToR, obj))
 	{
 		dest = pdf_dict_get(ctx, action, PDF_NAME_D);
 		file_spec = pdf_dict_get(ctx, action, PDF_NAME_F);
-		ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTOR, dest);
-		ld.ld.gotor.file_spec = pdf_parse_file_spec(ctx, doc, file_spec);
-		ld.ld.gotor.new_window = pdf_to_int(ctx, pdf_dict_get(ctx, action, PDF_NAME_NewWindow));
+		return pdf_parse_file_spec(ctx, doc, file_spec, dest);
 	}
-	return ld;
+
+	return NULL;
 }
 
 static fz_link *
@@ -316,31 +184,34 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix
 	pdf_obj *action;
 	pdf_obj *obj;
 	fz_rect bbox;
-	fz_link_dest ld;
+	char *uri;
+	fz_link *link;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_Rect);
-	if (obj)
-		pdf_to_rect(ctx, obj, &bbox);
-	else
-		bbox = fz_empty_rect;
+	if (!obj)
+		return NULL;
 
+	pdf_to_rect(ctx, obj, &bbox);
 	fz_transform_rect(&bbox, page_ctm);
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_Dest);
 	if (obj)
-		ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, obj);
+		uri = pdf_parse_link_dest(ctx, doc, obj);
 	else
 	{
 		action = pdf_dict_get(ctx, dict, PDF_NAME_A);
 		/* fall back to additional action button's down/up action */
 		if (!action)
 			action = pdf_dict_geta(ctx, pdf_dict_get(ctx, dict, PDF_NAME_AA), PDF_NAME_U, PDF_NAME_D);
-
-		ld = pdf_parse_action(ctx, doc, action);
+		uri = pdf_parse_link_action(ctx, doc, action);
 	}
-	if (ld.kind == FZ_LINK_NONE)
+
+	if (!uri)
 		return NULL;
-	return fz_new_link(ctx, &bbox, ld);
+
+	link = fz_new_link(ctx, &bbox, doc, uri);
+	fz_free(ctx, uri);
+	return link;
 }
 
 fz_link *
@@ -381,6 +252,15 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, const 
 	}
 
 	return head;
+}
+
+int
+pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri)
+{
+	if (uri && uri[0] == '#')
+		return fz_atoi(uri + 1) - 1;
+	fz_warn(ctx, "unknown link uri '%s'", uri);
+	return -1;
 }
 
 static void

@@ -993,7 +993,7 @@ string_to_String(fz_context *ctx, JNIEnv *env, const char *str)
 	return stringlen_to_String(ctx, env, str, strlen(str));
 }
 
-static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *outline)
+static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document *doc, fz_outline *outline)
 {
 	jobject joutline = NULL;
 	jobject jarr = NULL;
@@ -1025,17 +1025,17 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_outline *
 			if (!jtitle) return NULL;
 		}
 
-		if (outline->dest.kind == FZ_LINK_GOTO)
-			jpage = outline->dest.ld.gotor.page;
-		else if (outline->dest.kind == FZ_LINK_URI)
+		if (fz_is_external_link(ctx, outline->uri))
 		{
-			juri = string_to_String(ctx, env, outline->dest.ld.uri.uri);
+			juri = string_to_String(ctx, env, outline->uri);
 			if (!juri) return NULL;
 		}
+		else
+			jpage = fz_resolve_link(ctx, doc, outline->uri);
 
 		if (outline->down)
 		{
-			jdown = to_Outline_safe(ctx, env, outline->down);
+			jdown = to_Outline_safe(ctx, env, doc, outline->down);
 			if (!jdown) return NULL;
 		}
 
@@ -4265,7 +4265,7 @@ FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 
 	if (outline)
 	{
-		joutline = to_Outline_safe(ctx, env, outline);
+		joutline = to_Outline_safe(ctx, env, doc, outline);
 		if (!joutline)
 			jni_throw(env, FZ_ERROR_GENERIC, "loadOutline failed");
 		fz_drop_outline(ctx, outline);
@@ -4558,13 +4558,13 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 		jbounds = to_Rect_safe(ctx, env, &link->rect);
 		if (!jbounds) return NULL;
 
-		if (link->dest.kind == FZ_LINK_GOTO)
-			page = link->dest.ld.gotor.page;
-		else if (link->dest.kind == FZ_LINK_URI)
+		if (fz_is_external_link(ctx, link->uri))
 		{
-			juri = string_to_String(ctx, env, link->dest.ld.uri.uri);
+			juri = string_to_String(ctx, env, link->uri);
 			if (!juri) return NULL;
 		}
+		else
+			page = fz_resolve_link(ctx, link->doc, link->uri);
 
 		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
 		(*env)->DeleteLocalRef(env, jbounds);

@@ -63,41 +63,40 @@ find_anchor_box(fz_html_box *box, const char *anchor, float page_h, int *page)
 	return 0;
 }
 
-static void
-resolve_link_dest(fz_context *ctx, epub_document *doc, fz_link_dest *ld)
+static int
+epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 {
+	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
+	int page = -1;
 
-	if (ld->kind == FZ_LINK_GOTO)
+	const char *s = strchr(dest, '#');
+	int n = s ? s - dest : strlen(dest);
+	if (s && s[1] == 0)
+		s = NULL;
+
+	for (ch = doc->spine; ch; ch = ch->next)
 	{
-		const char *dest = ld->ld.gotor.dest;
-		const char *s = strchr(dest, '#');
-		int n = s ? s - dest : strlen(dest);
-		if (s && s[1] == 0)
-			s = NULL;
-
-		for (ch = doc->spine; ch; ch = ch->next)
+		if (!strncmp(ch->path, dest, n) && ch->path[n] == 0)
 		{
-			if (strncmp(ch->path, dest, n) || ch->path[n] != 0)
-				continue;
-			ld->ld.gotor.page = ch->start;
+			page = ch->start;
 			if (s)
 			{
 				/* Search for a matching fragment */
-				if (find_anchor_box(ch->html->root, s+1, ch->page_h, &ld->ld.gotor.page))
-					continue;
+				find_anchor_box(ch->html->root, s+1, ch->page_h, &page);
 			}
-			break;
 		}
 	}
+
+	return page;
 }
 
 static void
-epub_update_outline(fz_context *ctx, epub_document *doc, fz_outline *node)
+epub_update_outline(fz_context *ctx, fz_document *doc, fz_outline *node)
 {
 	while (node)
 	{
-		resolve_link_dest(ctx, doc, &node->dest);
+		node->page = epub_resolve_link(ctx, doc, node->uri);
 		epub_update_outline(ctx, doc, node->down);
 		node = node->next;
 	}
@@ -124,7 +123,7 @@ epub_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 		count += ceilf(ch->html->root->h / ch->page_h);
 	}
 
-	epub_update_outline(ctx, doc, doc->outline);
+	epub_update_outline(ctx, doc_, doc->outline);
 }
 
 static int
@@ -211,14 +210,13 @@ epub_load_links(fz_context *ctx, fz_page *page_)
 			head = fz_load_html_links(ctx, ch->html, n - count, ch->page_h, ch->path);
 			for (link = head; link; link = link->next)
 			{
+				link->doc = doc;
+
 				/* Adjust for page margins */
 				link->rect.x0 += ch->page_margin[L];
 				link->rect.x1 += ch->page_margin[L];
 				link->rect.y0 += ch->page_margin[T];
 				link->rect.y1 += ch->page_margin[T];
-
-				/* Resolve local links */
-				resolve_link_dest(ctx, doc, &link->dest);
 			}
 			return head;
 		}
@@ -343,9 +341,8 @@ epub_parse_ncx_imp(fz_context *ctx, epub_document *doc, fz_xml *node, char *base
 			*tailp = outline = fz_new_outline(ctx);
 			tailp = &(*tailp)->next;
 			outline->title = fz_strdup(ctx, text);
-			outline->dest.kind = FZ_LINK_GOTO;
-			outline->dest.ld.gotor.dest = fz_strdup(ctx, path);
-			outline->dest.ld.gotor.page = 0; /* computed in epub_layout */
+			outline->uri = fz_strdup(ctx, path);
+			outline->page = -1;
 			outline->down = epub_parse_ncx_imp(ctx, doc, node, base_uri);
 		}
 		node = fz_xml_find_next(node, "navPoint");
@@ -494,6 +491,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	doc->super.drop_document = epub_drop_document;
 	doc->super.layout = epub_layout;
 	doc->super.load_outline = epub_load_outline;
+	doc->super.resolve_link = epub_resolve_link;
 	doc->super.count_pages = epub_count_pages;
 	doc->super.load_page = epub_load_page;
 	doc->super.lookup_metadata = epub_lookup_metadata;

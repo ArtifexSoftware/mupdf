@@ -464,10 +464,9 @@ static int do_outline_imp(fz_outline *node, int end, int x0, int x1, int x, int 
 
 	while (node)
 	{
-		if (node->dest.kind == FZ_LINK_GOTO)
+		p = node->page;
+		if (p >= 0)
 		{
-			p = node->dest.ld.gotor.page;
-
 			if (ui.x >= x0 && ui.x < x1 && ui.y >= y + h && ui.y < y + h + ui.lineheight)
 			{
 				ui.hot = node;
@@ -480,9 +479,9 @@ static int do_outline_imp(fz_outline *node, int end, int x0, int x1, int x, int 
 			}
 
 			n = end;
-			if (node->next && node->next->dest.kind == FZ_LINK_GOTO)
+			if (node->next && node->next->page >= 0)
 			{
-				n = node->next->dest.ld.gotor.page;
+				n = node->next->page;
 			}
 			if (currentpage == p || (currentpage > p && currentpage < n))
 			{
@@ -587,10 +586,10 @@ static void do_links(fz_link *link, int xofs, int yofs)
 		{
 			if (ui.hot == link)
 			{
-				if (link->dest.kind == FZ_LINK_GOTO)
-					jump_to_page(link->dest.ld.gotor.page);
-				else if (link->dest.kind == FZ_LINK_URI)
-					open_browser(link->dest.ld.uri.uri);
+				if (fz_is_external_link(ctx, link->uri))
+					open_browser(link->uri);
+				else
+					jump_to_page(fz_resolve_link(ctx, doc, link->uri));
 			}
 			ui_needs_update = 1;
 		}

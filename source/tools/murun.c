@@ -1601,14 +1601,17 @@ static void to_outline(js_State *J, fz_outline *outline)
 			js_pushundefined(J);
 		js_setproperty(J, -2, "title");
 
-		if (outline->dest.kind == FZ_LINK_GOTO) {
-			js_pushnumber(J, outline->dest.ld.gotor.page);
-			js_setproperty(J, -2, "page");
-		}
-		if (outline->dest.kind == FZ_LINK_URI) {
-			js_pushstring(J, outline->dest.ld.uri.uri);
-			js_setproperty(J, -2, "uri");
-		}
+		if (outline->uri)
+			js_pushstring(J, outline->uri);
+		else
+			js_pushundefined(J);
+		js_setproperty(J, -2, "uri");
+
+		if (outline->page >= 0)
+			js_pushnumber(J, outline->page);
+		else
+			js_pushundefined(J);
+		js_setproperty(J, -2, "page");
 
 		if (outline->down) {
 			to_outline(J, outline->down);
@@ -1821,14 +1824,8 @@ static void ffi_Page_getLinks(js_State *J)
 		ffi_pushrect(J, link->rect);
 		js_setproperty(J, -2, "bounds");
 
-		if (link->dest.kind == FZ_LINK_GOTO) {
-			js_pushnumber(J, link->dest.ld.gotor.page);
-			js_setproperty(J, -2, "page");
-		}
-		if (link->dest.kind == FZ_LINK_URI) {
-			js_pushstring(J, link->dest.ld.uri.uri);
-			js_setproperty(J, -2, "uri");
-		}
+		js_pushstring(J, link->uri);
+		js_setproperty(J, -2, "uri");
 
 		js_setindex(J, -2, i++);
 	}

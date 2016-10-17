@@ -10,23 +10,7 @@ xps_load_links_in_element(fz_context *ctx, xps_document *doc, const fz_matrix *c
 static void
 xps_add_link(fz_context *ctx, xps_document *doc, const fz_rect *area, char *base_uri, char *target_uri, fz_link **head)
 {
-	fz_link_dest dest;
-	fz_link *link;
-
-	memset(&dest, 0, sizeof dest);
-
-	if (xps_url_is_remote(ctx, doc, target_uri))
-	{
-		dest.kind = FZ_LINK_URI;
-		dest.ld.uri.uri = fz_strdup(ctx, target_uri);
-	}
-	else
-	{
-		dest.kind = FZ_LINK_GOTO;
-		dest.ld.gotor.page = xps_lookup_link_target(ctx, doc, target_uri);
-	}
-
-	link = fz_new_link(ctx, area, dest);
+	fz_link *link = fz_new_link(ctx, area, doc, target_uri);
 	link->next = *head;
 	*head = link;
 }

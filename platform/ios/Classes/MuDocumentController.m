@@ -28,15 +28,12 @@ static void flattenOutline(NSMutableArray *titles, NSMutableArray *pages, fz_out
 	indent[level * 4] = 0;
 	while (outline)
 	{
-		if (outline->dest.kind == FZ_LINK_GOTO)
+		int page = outline->page;
+		if (page >= 0 && outline->title)
 		{
-			int page = outline->dest.ld.gotor.page;
-			if (page >= 0 && outline->title)
-			{
-				NSString *title = @(outline->title);
-				[titles addObject: [NSString stringWithFormat: @"%s%@", indent, title]];
-				[pages addObject: @(page)];
-			}
+			NSString *title = @(outline->title);
+			[titles addObject: [NSString stringWithFormat: @"%s%@", indent, title]];
+			[pages addObject: @(page)];
 		}
 		flattenOutline(titles, pages, outline->down, level + 1);
 		outline = outline->next;

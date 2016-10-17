@@ -204,7 +204,7 @@ int
 pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name)
 {
 	pdf_obj *needle, *dest;
-	fz_link_dest ld;
+	char *uri;
 
 	needle = pdf_new_string(ctx, doc, name, strlen(name));
 	fz_try(ctx)
@@ -214,8 +214,8 @@ pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	ld = pdf_parse_link_dest(ctx, doc, FZ_LINK_GOTO, dest);
-	return ld.ld.gotor.page;
+	uri = pdf_parse_link_dest(ctx, doc, dest);
+	return pdf_resolve_link(ctx, doc, uri);
 }
 
 static pdf_obj *

@@ -1902,7 +1902,7 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 	fz_html_flow *next;
 	char path[2048];
 	fz_rect bbox;
-	fz_link_dest dest;
+	char *dest;
 	char *href;
 	float end;
 
@@ -1951,20 +1951,14 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 				fz_urldecode(path);
 				fz_cleanname(path);
 
-				memset(&dest, 0, sizeof dest);
-				dest.kind = FZ_LINK_GOTO;
-				dest.ld.gotor.dest = fz_strdup(ctx, path);
-				dest.ld.gotor.page = 0; /* computed in epub_load_links */
+				dest = path;
 			}
 			else
 			{
-				memset(&dest, 0, sizeof dest);
-				dest.kind = FZ_LINK_URI;
-				dest.ld.uri.uri = fz_strdup(ctx, href);
-				dest.ld.uri.is_map = 0;
+				dest = href;
 			}
 
-			link = fz_new_link(ctx, &bbox, dest);
+			link = fz_new_link(ctx, &bbox, NULL, dest);
 			link->next = head;
 			head = link;
 		}

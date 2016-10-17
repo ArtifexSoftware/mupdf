@@ -1116,9 +1116,7 @@ countOutlineItems(fz_outline *outline)
 
 	while (outline)
 	{
-		if (outline->dest.kind == FZ_LINK_GOTO
-				&& outline->dest.ld.gotor.page >= 0
-				&& outline->title)
+		if (outline->page >= 0 && outline->title)
 			count++;
 
 		count += countOutlineItems(outline->down);
@@ -1133,21 +1131,18 @@ fillInOutlineItems(JNIEnv * env, jclass olClass, jmethodID ctor, jobjectArray ar
 {
 	while (outline)
 	{
-		if (outline->dest.kind == FZ_LINK_GOTO)
+		int page = outline->page;
+		if (page >= 0 && outline->title)
 		{
-			int page = outline->dest.ld.gotor.page;
-			if (page >= 0 && outline->title)
-			{
-				jobject ol;
-				jstring title = (*env)->NewStringUTF(env, outline->title);
-				if (title == NULL) return -1;
-				ol = (*env)->NewObject(env, olClass, ctor, level, title, page);
-				if (ol == NULL) return -1;
-				(*env)->SetObjectArrayElement(env, arr, pos, ol);
-				(*env)->DeleteLocalRef(env, ol);
-				(*env)->DeleteLocalRef(env, title);
-				pos++;
-			}
+			jobject ol;
+			jstring title = (*env)->NewStringUTF(env, outline->title);
+			if (title == NULL) return -1;
+			ol = (*env)->NewObject(env, olClass, ctor, level, title, page);
+			if (ol == NULL) return -1;
+			(*env)->SetObjectArrayElement(env, arr, pos, ol);
+			(*env)->DeleteLocalRef(env, ol);
+			(*env)->DeleteLocalRef(env, title);
+			pos++;
 		}
 		pos = fillInOutlineItems(env, olClass, ctor, arr, pos, outline->down, level+1);
 		if (pos < 0) return -1;
@@ -1857,13 +1852,8 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 	count = 0;
 	for (link = list; link; link = link->next)
 	{
-		switch (link->dest.kind)
-		{
-		case FZ_LINK_GOTO:
-		case FZ_LINK_GOTOR:
-		case FZ_LINK_URI:
+		if (link->uri)
 			count++ ;
-		}
 	}
 
 	arr = (*env)->NewObjectArray(env, count, linkInfoClass, NULL);
@@ -1879,36 +1869,18 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 		fz_rect rect = link->rect;
 		fz_transform_rect(&rect, &ctm);
 
-		switch (link->dest.kind)
-		{
-		case FZ_LINK_GOTO:
+		if (!fz_is_external_link(ctx, link->uri))
 		{
 			linkInfo = (*env)->NewObject(env, linkInfoInternalClass, ctorInternal,
 					(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1,
-					link->dest.ld.gotor.page);
-			break;
+					fz_resolve_link(ctx, link->doc, link->uri));
 		}
-
-		case FZ_LINK_GOTOR:
+		else
 		{
-			jstring juri = (*env)->NewStringUTF(env, link->dest.ld.gotor.file_spec);
-			linkInfo = (*env)->NewObject(env, linkInfoRemoteClass, ctorRemote,
-					(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1,
-					juri, link->dest.ld.gotor.page, link->dest.ld.gotor.new_window ? JNI_TRUE : JNI_FALSE);
-			break;
-		}
-
-		case FZ_LINK_URI:
-		{
-			jstring juri = (*env)->NewStringUTF(env, link->dest.ld.uri.uri);
+			jstring juri = (*env)->NewStringUTF(env, link->uri);
 			linkInfo = (*env)->NewObject(env, linkInfoExternalClass, ctorExternal,
 					(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1,
 					juri);
-			break;
-		}
-
-		default:
-			continue;
 		}
 
 		if (linkInfo == NULL)

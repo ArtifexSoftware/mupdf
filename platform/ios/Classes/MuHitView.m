@@ -44,14 +44,19 @@
 		pageSize = CGSizeMake(100,100);
 
 		while (link && hitCount < nelem(hitRects)) {
-			if (link->dest.kind == FZ_LINK_GOTO || link->dest.kind == FZ_LINK_URI) {
+			if (link->uri) {
 				fz_rect bbox = link->rect;
 				hitRects[hitCount].origin.x = bbox.x0;
 				hitRects[hitCount].origin.y = bbox.y0;
 				hitRects[hitCount].size.width = bbox.x1 - bbox.x0;
 				hitRects[hitCount].size.height = bbox.y1 - bbox.y0;
-				linkPage[hitCount] = link->dest.kind == FZ_LINK_GOTO ? link->dest.ld.gotor.page : -1;
-				linkUrl[hitCount] = link->dest.kind == FZ_LINK_URI ? strdup(link->dest.ld.uri.uri) : nil;
+				if (fz_is_external_link(ctx, link->uri)) {
+					linkPage[hitCount] = -1;
+					linkUrl[hitCount] = strdup(link->uri);
+				} else {
+					linkPage[hitCount] = fz_resolve_link(ctx, doc, link->uri);
+					linkUrl[hitCount] = nil;
+				}
 				hitCount++;
 			}
 			link = link->next;

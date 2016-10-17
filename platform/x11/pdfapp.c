@@ -1737,10 +1737,10 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		wincursor(app, HAND);
 		if (btn == 1 && state == 1 && !processed)
 		{
-			if (link->dest.kind == FZ_LINK_URI)
-				pdfapp_gotouri(app, link->dest.ld.uri.uri);
-			else if (link->dest.kind == FZ_LINK_GOTO)
-				pdfapp_gotopage(app, link->dest.ld.gotor.page + 1);
+			if (fz_is_external_link(ctx, link->uri))
+				pdfapp_gotouri(app, link->uri);
+			else
+				pdfapp_gotopage(app, fz_resolve_link(ctx, app->doc, link->uri) + 1);
 			return;
 		}
 	}
