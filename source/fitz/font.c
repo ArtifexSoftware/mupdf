@@ -1284,7 +1284,7 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 	{
 		fz_try(ctx)
 		{
-			result = fz_alpha_from_gray(ctx, glyph, 0);
+			result = fz_alpha_from_gray(ctx, glyph);
 		}
 		fz_always(ctx)
 		{

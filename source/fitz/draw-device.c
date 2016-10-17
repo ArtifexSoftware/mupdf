@@ -159,7 +159,6 @@ struct fz_draw_state_s {
 	fz_pixmap *mask;
 	fz_pixmap *shape;
 	int blendmode;
-	int luminosity;
 	int id;
 	float alpha;
 	fz_matrix ctm;
@@ -1850,10 +1849,8 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top-1, "Mask begin");
-		printf("%s\n", luminosity ? "(luminosity)" : "");
 #endif
 		state[1].scissor = bbox;
-		state[1].luminosity = luminosity;
 	}
 	fz_catch(ctx)
 	{
@@ -1867,7 +1864,6 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_pixmap *temp, *dest;
 	fz_irect bbox;
-	int luminosity;
 	fz_draw_state *state;
 
 	if (dev->top == 0)
@@ -1877,8 +1873,6 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 	}
 	state = &dev->stack[dev->top-1];
 	STACK_CONVERT("(mask)");
-	/* pop soft mask buffer */
-	luminosity = state[1].luminosity;
 
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top-1, "Mask -> Clip: ");
@@ -1889,7 +1883,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 	fz_try(ctx)
 	{
 		/* convert to alpha mask */
-		temp = fz_alpha_from_gray(ctx, state[1].dest, luminosity);
+		temp = fz_alpha_from_gray(ctx, state[1].dest);
 		if (state[1].mask != state[0].mask)
 			fz_drop_pixmap(ctx, state[1].mask);
 		state[1].mask = temp;

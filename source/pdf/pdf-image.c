@@ -51,7 +51,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 					fz_drop_pixmap(ctx, tile);
 					tile = gray;
 				}
-				mask_pixmap = fz_alpha_from_gray(ctx, tile, 1);
+				mask_pixmap = fz_alpha_from_gray(ctx, tile);
 				fz_drop_pixmap(ctx, tile);
 				fz_set_pixmap_image_tile(ctx, cimg, mask_pixmap);
 			}

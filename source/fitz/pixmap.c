@@ -707,7 +707,7 @@ fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix)
 }
 
 fz_pixmap *
-fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray, int luminosity)
+fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray)
 {
 	fz_pixmap *alpha;
 	unsigned char *sp, *dp;
