@@ -290,11 +290,9 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 {
 	fz_pixmap *pixmap = NULL;
 	pdf_obj *imobj = NULL;
-	pdf_obj *imref = NULL;
-	fz_compressed_buffer *cbuffer = NULL;
-	fz_compression_params *cp = NULL;
 	fz_buffer *buffer = NULL;
-	fz_colorspace *colorspace = image->colorspace;
+	pdf_obj *imref = NULL;
+	fz_compressed_buffer *cbuffer;
 	unsigned char digest[16];
 	int n;
 
@@ -306,88 +304,24 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	fz_var(imobj);
 	fz_var(imref);
 
+	/* Check if the same image already exists in this doc. */
+	imref = pdf_find_image_resource(ctx, doc, image, digest);
+	if (imref)
+		return imref;
+
 	fz_try(ctx)
 	{
-		/* Before we add this image as a resource check if the same image
-		 * already exists in our resources for this doc.  If yes, then
-		 * hand back that reference */
-		imref = pdf_find_image_resource(ctx, doc, image, digest);
-		if (imref == NULL)
+		imobj = pdf_new_dict(ctx, doc, 3);
+		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
+		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
+
+		if (cbuffer)
 		{
-			if (cbuffer != NULL && cbuffer->params.type != FZ_IMAGE_PNG && cbuffer->params.type != FZ_IMAGE_TIFF)
-			{
-				buffer = fz_keep_buffer(ctx, cbuffer->buffer);
-				cp = &cbuffer->params;
-			}
-			else
-			{
-				unsigned int size;
-				int n, h;
-				unsigned char *d, *s;
-
-				/* Currently, set to maintain resolution; should we consider
-				 * subsampling here according to desired output res? */
-				pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
-				colorspace = pixmap->colorspace; /* May be different to image->colorspace! */
-				n = (pixmap->n == 1 ? 1 : pixmap->n - pixmap->alpha);
-				s = pixmap->samples;
-				h = image->h;
-				size = image->w * n;
-				buffer = fz_new_buffer(ctx, size * h);
-				buffer->len = size * h;
-				d = buffer->data;
-				if (pixmap->alpha == 0 || n == 1)
-				{
-					while (h--)
-					{
-						memcpy(d, s, size);
-						d += size;
-						s += pixmap->stride;
-					}
-				}
-				else
-				{
-					/* Need to remove the alpha plane */
-					/* TODO: extract alpha plane to a soft mask */
-					int pad = pixmap->stride - pixmap->w * pixmap->n;
-					while (h--)
-					{
-						unsigned int size2 = size;
-						int mod = n;
-						while (size2--)
-						{
-							*d++ = *s++;
-							mod--;
-							if (mod == 0)
-								s++, mod = n;
-						}
-						s += pad;
-					}
-				}
-			}
-
-			imobj = pdf_new_dict(ctx, doc, 3);
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Width, pdf_new_int(ctx, doc, image->w));
-			pdf_dict_put_drop(ctx, imobj, PDF_NAME_Height, pdf_new_int(ctx, doc, image->h));
-			n = fz_colorspace_n(ctx, colorspace);
-			if (mask)
-			{
-			}
-			else if (n <= 1)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
-			else if (n == 3)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
-			else if (n == 4)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
-			if (!mask)
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
+			fz_compression_params *cp = &cbuffer->params;
 			switch (cp ? cp->type : FZ_IMAGE_UNKNOWN)
 			{
-			case FZ_IMAGE_UNKNOWN: /* Unknown also means raw */
 			default:
-				break;
+				goto raw_or_unknown_compression;
 			case FZ_IMAGE_JPEG:
 				if (cp->u.jpeg.color_transform != -1)
 					pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorTransform, pdf_new_int(ctx, doc, cp->u.jpeg.color_transform));
@@ -442,27 +376,95 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_RunLengthDecode);
 				break;
 			}
-			if (mask)
-			{
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ImageMask, pdf_new_bool(ctx, doc, 1));
-			}
-			if (image->mask)
-			{
-				pdf_dict_put_drop(ctx, imobj, PDF_NAME_SMask, pdf_add_image(ctx, doc, image->mask, 0));
-			}
-
-			imref = pdf_add_object(ctx, doc, imobj);
-			pdf_update_stream(ctx, doc, imref, buffer, 1);
-
-			/* Add ref to our image resource hash table. */
-			imref = pdf_insert_image_resource(ctx, doc, digest, imref);
+			buffer = fz_keep_buffer(ctx, cbuffer->buffer);
 		}
+		else
+		{
+			unsigned int size;
+			int n, h;
+			unsigned char *d, *s;
+
+raw_or_unknown_compression:
+			/* Currently, set to maintain resolution; should we consider
+			 * subsampling here according to desired output res? */
+			pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
+			n = (pixmap->n == 1 ? 1 : pixmap->n - pixmap->alpha);
+			s = pixmap->samples;
+			h = image->h;
+			size = image->w * n;
+			buffer = fz_new_buffer(ctx, size * h);
+			buffer->len = size * h;
+			d = buffer->data;
+			if (pixmap->alpha == 0 || n == 1)
+			{
+				while (h--)
+				{
+					memcpy(d, s, size);
+					d += size;
+					s += pixmap->stride;
+				}
+			}
+			else
+			{
+				/* Need to remove the alpha plane */
+				/* TODO: extract alpha plane to a soft mask */
+				int pad = pixmap->stride - pixmap->w * pixmap->n;
+				while (h--)
+				{
+					unsigned int size2 = size;
+					int mod = n;
+					while (size2--)
+					{
+						*d++ = *s++;
+						mod--;
+						if (mod == 0)
+							s++, mod = n;
+					}
+					s += pad;
+				}
+			}
+		}
+
+		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Width, pdf_new_int(ctx, doc, pixmap ? pixmap->w : image->w));
+		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Height, pdf_new_int(ctx, doc, pixmap ? pixmap->h : image->h));
+
+		if (mask)
+		{
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME_ImageMask, pdf_new_bool(ctx, doc, 1));
+		}
+		else
+		{
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
+
+			n = fz_colorspace_n(ctx, pixmap ? pixmap->colorspace : image->colorspace);
+			if (n <= 1)
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceGray);
+			else if (n == 3)
+				// TODO: Lab colorspace?
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceRGB);
+			else if (n == 4)
+				pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorSpace, PDF_NAME_DeviceCMYK);
+			else
+				// TODO: convert to RGB!
+				fz_throw(ctx, FZ_ERROR_GENERIC, "only Gray, RGB, and CMYK colorspaces supported");
+		}
+
+		if (image->mask)
+		{
+			pdf_dict_put_drop(ctx, imobj, PDF_NAME_SMask, pdf_add_image(ctx, doc, image->mask, 0));
+		}
+
+		imref = pdf_add_object(ctx, doc, imobj);
+		pdf_update_stream(ctx, doc, imref, buffer, 1);
+
+		/* Add ref to our image resource hash table. */
+		imref = pdf_insert_image_resource(ctx, doc, digest, imref);
 	}
 	fz_always(ctx)
 	{
+		fz_drop_pixmap(ctx, pixmap);
 		fz_drop_buffer(ctx, buffer);
 		pdf_drop_obj(ctx, imobj);
-		fz_drop_pixmap(ctx, pixmap);
 	}
 	fz_catch(ctx)
 	{
