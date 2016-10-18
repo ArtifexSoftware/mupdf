@@ -1598,14 +1598,13 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 
 		fz_paint_image_with_color(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, colorbv, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
 
-		if (scaled)
-			fz_drop_pixmap(ctx, scaled);
 
 		if (state->blendmode & FZ_BLEND_KNOCKOUT)
 			fz_knockout_end(ctx, dev);
 	}
 	fz_always(ctx)
 	{
+		fz_drop_pixmap(ctx, scaled);
 		fz_drop_pixmap(ctx, orig_pixmap);
 	}
 	fz_catch(ctx)
