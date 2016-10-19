@@ -1604,6 +1604,14 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFObject_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    newNull
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_PDFObject_newNull
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    isIndirect
  * Signature: ()Z
  */
@@ -1692,42 +1700,66 @@ JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_isStream
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    toBoolean
+ * Method:    asBoolean
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_toBoolean
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asBoolean
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    toInteger
+ * Method:    asInteger
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFObject_toInteger
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asInteger
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    toFloat
+ * Method:    asFloat
  * Signature: ()F
  */
-JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFObject_toFloat
+JNIEXPORT jfloat JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asFloat
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    toByteString
- * Signature: ()[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_PDFObject_toByteString
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    toIndirect
+ * Method:    asIndirect
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFObject_toIndirect
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asIndirect
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    asName
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asName
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    asByteName
+ * Signature: ()[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asByteName
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    asString
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asString
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFObject
+ * Method:    asByteString
+ * Signature: ()[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asByteString
   (JNIEnv *, jobject);
 
 /*
