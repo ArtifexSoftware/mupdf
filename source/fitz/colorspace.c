@@ -1,6 +1,6 @@
 #include "mupdf/fitz.h"
 
-#include "colorspace-impl.h"
+#include "colorspace-imp.h"
 
 #define SLOWCMYK
 

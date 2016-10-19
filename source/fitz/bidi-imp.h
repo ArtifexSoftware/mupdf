@@ -22,8 +22,6 @@
     ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE SOFTWARE.
 */
 
-#include "mupdf/fitz.h"
-
 /* Bidirectional Character Types
  * as defined by the Unicode Bidirectional Algorithm Table 3-7.
  * The list of bidirectional character types here is not grouped the

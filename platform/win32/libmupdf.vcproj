@@ -1145,7 +1145,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\colorspace-impl.h"
+				RelativePath="..\..\source\fitz\colorspace-imp.h"
 				>
 			</File>
 			<File
@@ -1281,7 +1281,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\font-impl.h"
+				RelativePath="..\..\source\fitz\font-imp.h"
 				>
 			</File>
 			<File

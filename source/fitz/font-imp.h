@@ -1,11 +1,5 @@
-#ifndef MUPDF_FITZ_FONT_IMPL_H
-#define MUPDF_FITZ_FONT_IMPL_H
-
-#include "mupdf/fitz/font.h"
-
-/* forward declaration for circular dependency */
-struct fz_device_s;
-struct fz_display_list_s;
+#ifndef MUPDF_FITZ_FONT_IMP_H
+#define MUPDF_FITZ_FONT_IMP_H
 
 struct fz_font_s
 {

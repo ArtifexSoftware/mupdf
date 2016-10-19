@@ -1,6 +1,6 @@
 #include "mupdf/fitz.h"
 
-#include "font-impl.h"
+#include "font-imp.h"
 
 #include <ft2build.h>
 #include "hb.h"

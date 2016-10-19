@@ -4,7 +4,7 @@
 
 // Bidi include file
 #include "mupdf/fitz.h"
-#include "bidi-impl.h"
+#include "bidi-imp.h"
 
 #ifndef TRUE
 #define TRUE (1)

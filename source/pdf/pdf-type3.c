@@ -1,6 +1,6 @@
 #include "mupdf/pdf.h"
 
-#include "../fitz/font-impl.h"
+#include "../fitz/font-imp.h"
 
 static void
 pdf_run_glyph_func(fz_context *ctx, void *doc, void *rdb, fz_buffer *contents, fz_device *dev, const fz_matrix *ctm, void *gstate, int nested_depth)

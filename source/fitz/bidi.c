@@ -35,7 +35,7 @@
  */
 
 #include "mupdf/fitz.h"
-#include "bidi-impl.h" /* standard bidi code interface */
+#include "bidi-imp.h" /* standard bidi code interface */
 
 /*
  * Macros...
