@@ -207,7 +207,7 @@ struct fz_html_box_s
 	float em;
 	fz_html_box *up, *down, *last, *next;
 	fz_html_flow *flow_head, **flow_tail;
-	char *a_href;
+	char *id, *href;
 	fz_css_style style;
 };
 

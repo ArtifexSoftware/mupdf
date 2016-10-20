@@ -198,12 +198,9 @@ static void add_flow_image(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_
 	flow->content.image = fz_keep_image(ctx, img);
 }
 
-static void add_flow_anchor(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box, const char *anchor)
+static void add_flow_anchor(fz_context *ctx, fz_pool *pool, fz_html_box *top, fz_html_box *inline_box)
 {
-	fz_html_flow *flow = add_flow(ctx, pool, top, inline_box, FLOW_ANCHOR);
-	size_t len = strlen(anchor)+1;
-	flow->content.text = fz_pool_alloc(ctx, pool, len);
-	memcpy(flow->content.text, anchor, len);
+	(void)add_flow(ctx, pool, top, inline_box, FLOW_ANCHOR);
 }
 
 static fz_html_flow *split_flow(fz_context *ctx, fz_pool *pool, fz_html_flow *flow, size_t offset)
@@ -425,13 +422,13 @@ static fz_image *load_html_image(fz_context *ctx, fz_archive *zip, const char *b
 	return img;
 }
 
-static void generate_anchor(fz_context *ctx, fz_html_box *box, const char *id, struct genstate *g)
+static void generate_anchor(fz_context *ctx, fz_html_box *box, struct genstate *g)
 {
 	fz_pool *pool = g->pool;
 	fz_html_box *flow = box;
 	while (flow->type != BOX_FLOW)
 		flow = flow->up;
-	add_flow_anchor(ctx, pool, flow, box, id);
+	add_flow_anchor(ctx, pool, flow, box);
 }
 
 static void generate_image(fz_context *ctx, fz_html_box *box, fz_image *img, struct genstate *g)
@@ -704,6 +701,10 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 				box = new_box(ctx, g->pool, child_dir);
 				fz_apply_css_style(ctx, g->set, &box->style, &match);
 
+				id = fz_xml_att(node, "id");
+				if (id)
+					box->id = fz_pool_strdup(ctx, g->pool, id);
+
 				if (display == DIS_BLOCK || display == DIS_INLINE_BLOCK)
 				{
 					top = insert_block_box(ctx, box, top);
@@ -716,14 +717,13 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 				else if (display == DIS_INLINE)
 				{
 					insert_inline_box(ctx, box, top, child_dir, g);
+					if (id)
+						generate_anchor(ctx, box, g);
 					if (tag[0]=='a' && tag[1]==0)
 					{
-						id = fz_xml_att(node, "id");
-						if (id)
-							generate_anchor(ctx, box, id, g);
 						href = fz_xml_att(node, "href");
 						if (href)
-							box->a_href = fz_pool_strdup(ctx, g->pool, href);
+							box->href = fz_pool_strdup(ctx, g->pool, href);
 					}
 
 				}
@@ -1206,6 +1206,7 @@ static void layout_flow_inline(fz_context *ctx, fz_html_box *box, fz_html_box *t
 {
 	while (box)
 	{
+		box->y = top->y;
 		box->em = fz_from_css_number(box->style.font_size, top->em, top->em);
 		if (box->down)
 			layout_flow_inline(ctx, box->down, box);
@@ -1908,7 +1909,7 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 
 	while (flow)
 	{
-		href = flow->box->a_href;
+		href = flow->box->href;
 		next = flow->next;
 		if (href && (int)(flow->y / page_h) == page)
 		{
@@ -1917,8 +1918,8 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 			while (next &&
 					next->y == flow->y &&
 					next->h == flow->h &&
-					next->box->a_href &&
-					!strcmp(href, next->box->a_href))
+					next->box->href &&
+					!strcmp(href, next->box->href))
 			{
 				end = next->x + next->w;
 				next = next->next;
@@ -2187,9 +2188,10 @@ fz_print_html_box(fz_context *ctx, fz_html_box *box, int pstyle, int level)
 
 		if (box->list_item)
 			printf(" list=%d", box->list_item);
-
-		if (box->a_href)
-			printf(" href='%s'", box->a_href);
+		if (box->id)
+			printf(" id='%s'", box->id);
+		if (box->href)
+			printf(" href='%s'", box->href);
 
 		if (box->down || box->flow_head)
 			printf(" {\n");
@@ -2301,7 +2303,8 @@ static void fragment_cb(const uint32_t *fragment,
 			len = 1;
 
 		}
-		else if (data->flow->type == FLOW_BREAK || data->flow->type == FLOW_SBREAK || data->flow->type == FLOW_SHYPHEN)
+		else if (data->flow->type == FLOW_BREAK || data->flow->type == FLOW_SBREAK ||
+				data->flow->type == FLOW_SHYPHEN || data->flow->type == FLOW_ANCHOR)
 		{
 			len = 0;
 		}

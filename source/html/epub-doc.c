@@ -35,32 +35,40 @@ struct epub_page_s
 };
 
 static int
-find_anchor_flow(fz_html_flow *flow, const char *anchor, float page_h, int *page)
+find_anchor_flow(fz_html_flow *flow, const char *anchor, float page_h)
 {
 	while (flow)
 	{
-		if (flow->type == FLOW_ANCHOR && !strcmp(anchor, flow->content.text))
-		{
-			*page += (int)(flow->y / page_h);
-			return 1;
-		}
+		if (flow->box->id && !strcmp(anchor, flow->box->id))
+			return flow->y / page_h;
 		flow = flow->next;
 	}
-	return 0;
+	return -1;
 }
 
 static int
-find_anchor_box(fz_html_box *box, const char *anchor, float page_h, int *page)
+find_anchor_box(fz_html_box *box, const char *anchor, float page_h)
 {
+	int page;
 	while (box)
 	{
-		if (box->flow_head && find_anchor_flow(box->flow_head, anchor, page_h, page))
-			return 1;
-		if (box->down && find_anchor_box(box->down, anchor, page_h, page))
-			return 1;
+		if (box->id && !strcmp(anchor, box->id))
+			return box->y / page_h;
+		if (box->type == BOX_FLOW)
+		{
+			page = find_anchor_flow(box->flow_head, anchor, page_h);
+			if (page >= 0)
+				return page;
+		}
+		else
+		{
+			page = find_anchor_box(box->down, anchor, page_h);
+			if (page >= 0)
+				return page;
+		}
 		box = box->next;
 	}
-	return 0;
+	return -1;
 }
 
 static int
@@ -79,16 +87,18 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 	{
 		if (!strncmp(ch->path, dest, n) && ch->path[n] == 0)
 		{
-			page = ch->start;
 			if (s)
 			{
 				/* Search for a matching fragment */
-				find_anchor_box(ch->html->root, s+1, ch->page_h, &page);
+				page = find_anchor_box(ch->html->root, s+1, ch->page_h);
+				if (page >= 0)
+					return ch->start + page;
 			}
+			return ch->start;
 		}
 	}
 
-	return page;
+	return -1;
 }
 
 static void
