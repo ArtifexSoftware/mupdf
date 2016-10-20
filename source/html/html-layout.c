@@ -621,7 +621,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 
 			display = fz_get_css_match_display(&match);
 
-			if (!strcmp(tag, "br"))
+			if (tag[0]=='b' && tag[1]=='r' && tag[2]==0)
 			{
 				if (top->type == BOX_INLINE)
 				{
@@ -639,7 +639,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 				g->at_bol = 1;
 			}
 
-			else if (!strcmp(tag, "img"))
+			else if (tag[0]=='i' && tag[1]=='m' && tag[2]=='g' && tag[3]==0)
 			{
 				const char *src = fz_xml_att(node, "src");
 				if (src)
@@ -651,7 +651,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 				}
 			}
 
-			else if (g->is_fb2 && !strcmp(tag, "image"))
+			else if (g->is_fb2 && tag[0]=='i' && tag[1]=='m' && tag[2]=='a' && tag[3]=='g' && tag[4]=='e' && tag[5]==0)
 			{
 				const char *src = fz_xml_att(node, "l:href");
 				if (src && src[0] == '#')
@@ -716,7 +716,7 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 				else if (display == DIS_INLINE)
 				{
 					insert_inline_box(ctx, box, top, child_dir, g);
-					if (!strcmp(tag, "a"))
+					if (tag[0]=='a' && tag[1]==0)
 					{
 						id = fz_xml_att(node, "id");
 						if (id)
