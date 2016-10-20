@@ -1169,7 +1169,10 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 		if (node->type == FLOW_IMAGE)
 			node->y = y + baseline - node->h;
 		else
+		{
 			node->y = y + baseline + va;
+			node->h = node->box->em;
+		}
 	}
 
 	fz_free(ctx, reorder);
