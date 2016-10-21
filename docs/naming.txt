@@ -7,6 +7,8 @@ Functions should be named according to one of the following schemes:
 	get_noun_attribute -- when the 'noun_attribute' name conflicts with a type
 	set_noun_attribute
 
+	noun_from_noun -- convert from one type to another (avoid noun_to_noun)
+
 Prefixes are mandatory for exported functions, macros, enums, globals and types.
 
 	fz for common code
@@ -20,7 +22,7 @@ These words are reserved for reference counting schemes:
 
 	new, find, load, open, keep -- return objects that you are responsible for freeing.
 
-	drop, free, close -- relinquish ownership of the object passed in.
+	drop -- relinquish ownership of the object passed in.
 
 When searching for an object or value, the name used depends on whether
 returning the value is passing ownership:
