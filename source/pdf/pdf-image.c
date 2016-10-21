@@ -3,6 +3,32 @@
 static fz_image *pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask);
 
 static fz_image *
+pdf_load_jpx_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cstm, int forcemask)
+{
+	fz_image *image = pdf_load_jpx(ctx, doc, dict, forcemask);
+
+	if (forcemask)
+	{
+		fz_pixmap_image *cimg = (fz_pixmap_image *)image;
+		fz_pixmap *mask_pixmap;
+		fz_pixmap *tile = fz_pixmap_image_tile(ctx, cimg);
+
+		if (tile->n != 1)
+		{
+			fz_pixmap *gray = fz_convert_pixmap(ctx, tile, fz_device_gray(ctx), 0);
+			fz_drop_pixmap(ctx, tile);
+			tile = gray;
+		}
+
+		mask_pixmap = fz_alpha_from_gray(ctx, tile);
+		fz_drop_pixmap(ctx, tile);
+		fz_set_pixmap_image_tile(ctx, cimg, mask_pixmap);
+	}
+
+	return image;
+}
+
+static fz_image *
 pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cstm, int forcemask)
 {
 	fz_stream *stm = NULL;
@@ -23,6 +49,10 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 	int i;
 	fz_compressed_buffer *buffer;
 
+	/* special case for JPEG2000 images */
+	if (pdf_is_jpx_image(ctx, dict))
+		return pdf_load_jpx_imp(ctx, doc, rdb, dict, cstm, forcemask);
+
 	fz_var(stm);
 	fz_var(mask);
 	fz_var(image);
@@ -30,32 +60,6 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 
 	fz_try(ctx)
 	{
-		/* special case for JPEG2000 images */
-		if (pdf_is_jpx_image(ctx, dict))
-		{
-			image = pdf_load_jpx(ctx, doc, dict, forcemask);
-
-			if (forcemask)
-			{
-				fz_pixmap_image *cimg = (fz_pixmap_image *)image;
-				fz_pixmap *mask_pixmap;
-				fz_pixmap *tile = fz_pixmap_image_tile(ctx, cimg);
-				if (tile->n != 1)
-				{
-					fz_pixmap *gray;
-					if (tile->n != 2)
-						fz_warn(ctx, "soft mask should be grayscale");
-					gray = fz_convert_pixmap(ctx, tile, fz_device_gray(ctx), 0);
-					fz_drop_pixmap(ctx, tile);
-					tile = gray;
-				}
-				mask_pixmap = fz_alpha_from_gray(ctx, tile);
-				fz_drop_pixmap(ctx, tile);
-				fz_set_pixmap_image_tile(ctx, cimg, mask_pixmap);
-			}
-			break; /* Out of fz_try */
-		}
-
 		w = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Width, PDF_NAME_W));
 		h = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Height, PDF_NAME_H));
 		bpc = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_BitsPerComponent, PDF_NAME_BPC));
