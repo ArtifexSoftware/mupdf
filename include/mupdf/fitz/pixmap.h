@@ -346,6 +346,12 @@ void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode
 void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, size_t stride, int scale);
 
 /*
+	fz_lookup_pixmap_converter: Color convert a pixmap.
+*/
+typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp);
+fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
+
+/*
 	fz_md5_pixmap: Return the md5 digest for a pixmap
 */
 void fz_md5_pixmap(fz_context *ctx, fz_pixmap *pixmap, unsigned char digest[16]);
