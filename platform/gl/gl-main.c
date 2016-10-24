@@ -193,7 +193,7 @@ static int search_dir = 1;
 static int search_page = -1;
 static int search_hit_page = -1;
 static int search_hit_count = 0;
-static fz_rect search_hit_bbox[500];
+static fz_rect search_hit_bbox[5000];
 
 static unsigned int next_power_of_two(unsigned int n)
 {
