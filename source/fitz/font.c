@@ -1190,7 +1190,16 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 	d1_rect = dev->d1_rect;
 	fz_drop_device(ctx, dev);
 	dev = NULL;
-	if (font->t3flags[gid] & FZ_DEVFLAG_BBOX_DEFINED)
+	if (fz_display_list_is_empty(ctx, font->t3lists[gid]))
+	{
+		/* If empty, no need for a huge bbox, especially as the logic
+		 * in the 'else if' can make it huge. */
+		font->bbox_table[gid].x0 = font->bbox.x0;
+		font->bbox_table[gid].y0 = font->bbox.y0;
+		font->bbox_table[gid].x1 = font->bbox.x0 + .00001;
+		font->bbox_table[gid].y1 = font->bbox.y0 + .00001;
+	}
+	else if (font->t3flags[gid] & FZ_DEVFLAG_BBOX_DEFINED)
 	{
 		assert(font->bbox_table != NULL);
 		assert(font->glyph_count > gid);

@@ -107,4 +107,13 @@ fz_rect *fz_bound_display_list(fz_context *ctx, fz_display_list *list, fz_rect *
 */
 fz_image *fz_new_image_from_display_list(fz_context *ctx, float w, float h, fz_display_list *list);
 
+/*
+	Check for a display list being empty
+
+	list: The list to check.
+
+	Returns true if empty, false otherwise.
+*/
+int fz_display_list_is_empty(fz_context *ctx, const fz_display_list *list);
+
 #endif

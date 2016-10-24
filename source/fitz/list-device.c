@@ -1380,6 +1380,11 @@ fz_bound_display_list(fz_context *ctx, fz_display_list *list, fz_rect *bounds)
 	return bounds;
 }
 
+int fz_display_list_is_empty(fz_context *ctx, const fz_display_list *list)
+{
+	return !list || list->len == 0;
+}
+
 void
 fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, const fz_matrix *top_ctm, const fz_rect *scissor, fz_cookie *cookie)
 {
