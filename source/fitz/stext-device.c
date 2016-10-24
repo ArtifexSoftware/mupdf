@@ -699,21 +699,23 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 	printf("%c%c append=%d space=%d size=%g spacing=%g base_offset=%g\n", dev->lastchar, c, can_append, add_space, size, spacing, base_offset);
 #endif
 
-	if (can_append == 0)
+	/* Start a new span */
+	if (!can_append)
 	{
-		/* Start a new span */
 		add_span_to_soup(ctx, dev->spans, dev->cur_span);
 		dev->cur_span = NULL;
 		dev->cur_span = fz_new_stext_span(ctx, &p, wmode, trm);
 		dev->cur_span->spacing = 0;
 	}
+
+	/* Add synthetic space */
 	if (add_space)
 	{
-		r.x = - 0.2f;
-		r.y = 0;
-		fz_transform_point(&r, trm);
-		add_char_to_span(ctx, dev->cur_span, ' ', &p, &r, style);
+		/* We know we always have a cur_span here */
+		r = dev->cur_span->max;
+		add_char_to_span(ctx, dev->cur_span, ' ', &r, &p, style);
 	}
+
 no_glyph:
 	add_char_to_span(ctx, dev->cur_span, c, &p, &q, style);
 	dev->lastchar = c;
