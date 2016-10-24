@@ -774,8 +774,8 @@ fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, 
 		case 0x200A: /* hair space */
 		case 0x202F: /* narrow no-break space */
 		case 0x205F: /* medium mathematical space */
-		case 0x3000: /* ideographic spac */
-			fz_add_stext_char_imp(ctx, dev, style, ' ', glyph, trm, adv, wmode);
+		case 0x3000: /* ideographic space */
+			c = ' ';
 		}
 
 	fz_add_stext_char_imp(ctx, dev, style, c, glyph, trm, adv, wmode);
