@@ -547,8 +547,8 @@ int fz_contains_rect(const fz_rect *a, const fz_rect *b)
 		return 1;
 	if (fz_is_empty_rect(a))
 		return 0;
-	return ((a->x0 > b->x0) ||
-		(a->y0 > b->y0) ||
-		(a->x1 < b->x1) ||
-		(a->y1 < b->y1));
+	return ((a->x0 <= b->x0) &&
+		(a->y0 <= b->y0) &&
+		(a->x1 >= b->x1) &&
+		(a->y1 >= b->y1));
 }
