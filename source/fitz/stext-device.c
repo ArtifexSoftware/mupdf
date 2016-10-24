@@ -626,7 +626,12 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 	}
 
 	if (glyph < 0)
+	{
+		/* Don't reset 'pen' to start of no-glyph characters in cluster */
+		if (dev->cur_span)
+			q = dev->cur_span->max;
 		goto no_glyph;
+	}
 
 	if (dev->cur_span == NULL ||
 		trm->a != dev->cur_span->transform.a || trm->b != dev->cur_span->transform.b ||
