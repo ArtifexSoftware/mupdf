@@ -3,7 +3,7 @@
 /* Extract text into an unsorted span soup. */
 
 #define LINE_DIST 0.9f
-#define SPACE_DIST 0.2f
+#define SPACE_DIST 0.15f
 #define SPACE_MAX_DIST 0.8f
 #define PARAGRAPH_DIST 0.5f
 
@@ -671,11 +671,10 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 		base_offset = -ndir.y * delta.x + ndir.x * delta.y;
 
 		spacing /= size * SPACE_DIST;
-		spacing = fabsf(spacing);
 		if (fabsf(base_offset) < size * 0.1)
 		{
 			/* Only a small amount off the baseline - we'll take this */
-			if (spacing < 1.0)
+			if (fabsf(spacing) < 1.0)
 			{
 				/* Motion is in line, and small. */
 			}
