@@ -144,12 +144,12 @@ public abstract class PageView extends ViewGroup {
 	private void reinit() {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
-			mDrawEntire.cancelAndWait();
+			mDrawEntire.cancel();
 			mDrawEntire = null;
 		}
 
 		if (mDrawPatch != null) {
-			mDrawPatch.cancelAndWait();
+			mDrawPatch.cancel();
 			mDrawPatch = null;
 		}
 
@@ -229,7 +229,7 @@ public abstract class PageView extends ViewGroup {
 	public void setPage(int page, PointF size) {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
-			mDrawEntire.cancelAndWait();
+			mDrawEntire.cancel();
 			mDrawEntire = null;
 		}
 
@@ -603,7 +603,7 @@ public abstract class PageView extends ViewGroup {
 
 			// Stop the drawing of previous patch if still going
 			if (mDrawPatch != null) {
-				mDrawPatch.cancelAndWait();
+				mDrawPatch.cancel();
 				mDrawPatch = null;
 			}
 
@@ -647,12 +647,12 @@ public abstract class PageView extends ViewGroup {
 	public void update() {
 		// Cancel pending render task
 		if (mDrawEntire != null) {
-			mDrawEntire.cancelAndWait();
+			mDrawEntire.cancel();
 			mDrawEntire = null;
 		}
 
 		if (mDrawPatch != null) {
-			mDrawPatch.cancelAndWait();
+			mDrawPatch.cancel();
 			mDrawPatch = null;
 		}
 
@@ -673,7 +673,7 @@ public abstract class PageView extends ViewGroup {
 	public void removeHq() {
 			// Stop the drawing of the patch if still going
 			if (mDrawPatch != null) {
-				mDrawPatch.cancelAndWait();
+				mDrawPatch.cancel();
 				mDrawPatch = null;
 			}
 

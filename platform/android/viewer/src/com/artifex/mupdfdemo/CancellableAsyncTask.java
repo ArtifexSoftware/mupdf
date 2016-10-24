@@ -46,10 +46,16 @@ public class CancellableAsyncTask<Params, Result>
 						CancellableAsyncTask.this.onPostExecute(result);
 						task.doCleanup();
 					}
+
+					@Override
+					protected void onCancelled(Result result)
+					{
+						task.doCleanup();
+					}
 				};
 	}
 
-	public void cancelAndWait()
+	public void cancel()
 	{
 		this.asyncTask.cancel(true);
 		ourTask.doCancel();
@@ -67,8 +73,6 @@ public class CancellableAsyncTask<Params, Result>
 		catch (CancellationException e)
 		{
 		}
-
-		ourTask.doCleanup();
 	}
 
 	public void execute(Params ... params)
