@@ -135,7 +135,8 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, f
 
 	hit_count = 0;
 	len = textlen_stext(ctx, text);
-	for (pos = 0; pos < len; pos++)
+	pos = 0;
+	while (pos < len)
 	{
 		n = match_stext(ctx, text, needle, pos);
 		if (n)
@@ -161,6 +162,11 @@ fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, f
 			}
 			if (!fz_is_empty_rect(&linebox) && hit_count < hit_max)
 				hit_bbox[hit_count++] = linebox;
+			pos += n;
+		}
+		else
+		{
+			pos += 1;
 		}
 	}
 
