@@ -30,8 +30,14 @@ struct fz_stext_device_s
 	span_soup *spans;
 	fz_stext_span *cur_span;
 	int lastchar;
-	int options;
+	int flags;
 };
+
+const char *fz_stext_options_usage =
+	"Structured text output options:\n"
+	"\tpreserve-ligatures: do not expand all ligatures into constituent characters\n"
+	"\tpreserve-whitespace: do not convert all whitespace characters into spaces\n"
+	"\n";
 
 static fz_rect *
 add_point_to_rect(fz_rect *a, const fz_point *p)
@@ -728,7 +734,7 @@ fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, 
 	if (c == -1)
 		return;
 
-	if (!(dev->options & FZ_STEXT_PRESERVE_LIGATURES))
+	if (!(dev->flags & FZ_STEXT_PRESERVE_LIGATURES))
 		switch (c)
 		{
 		case 0xFB00: /* ff */
@@ -760,7 +766,7 @@ fz_add_stext_char(fz_context *ctx, fz_stext_device *dev, fz_stext_style *style, 
 			return;
 		}
 
-	if (!(dev->options & FZ_STEXT_PRESERVE_WHITESPACE))
+	if (!(dev->flags & FZ_STEXT_PRESERVE_WHITESPACE))
 		switch (c)
 		{
 		case 0x0009: /* tab */
@@ -1074,8 +1080,23 @@ fz_stext_drop_device(fz_context *ctx, fz_device *dev)
 	tdev->spans = NULL;
 }
 
+fz_stext_options *
+fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string)
+{
+	const char *val;
+
+	memset(opts, 0, sizeof *opts);
+
+	if (fz_has_option(ctx, string, "preserve-ligatures", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_PRESERVE_LIGATURES;
+	if (fz_has_option(ctx, string, "preserve-whitespace", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_PRESERVE_WHITESPACE;
+
+	return opts;
+}
+
 fz_device *
-fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, int options)
+fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, const fz_stext_options *opts)
 {
 	fz_stext_device *dev = fz_new_device(ctx, sizeof *dev);
 
@@ -1097,7 +1118,8 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page,
 	dev->spans = NULL;
 	dev->cur_span = NULL;
 	dev->lastchar = ' ';
-	dev->options = options;
+	if (opts)
+		dev->flags = opts->flags;
 
 	return (fz_device*)dev;
 }

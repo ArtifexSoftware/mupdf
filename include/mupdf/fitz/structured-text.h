@@ -201,6 +201,8 @@ struct fz_char_and_box_s
 	fz_rect bbox;
 };
 
+extern const char *fz_stext_options_usage;
+
 fz_char_and_box *fz_stext_char_at(fz_context *ctx, fz_char_and_box *cab, fz_stext_page *page, int idx);
 
 /*
@@ -286,6 +288,20 @@ int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect, f
 char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect);
 
 /*
+	struct fz_stext_options: Options for creating a pixmap and draw device.
+*/
+typedef struct fz_stext_options_s fz_stext_options;
+
+struct fz_stext_options_s
+{
+	int flags;
+};
+/*
+	fz_parse_stext_options: Parse stext device options from a comma separated key-value string.
+*/
+fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *string);
+
+/*
 	fz_new_stext_device: Create a device to extract the text on a page.
 
 	Gather and sort the text on a page into spans of uniform style,
@@ -302,10 +318,8 @@ char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect);
 	containing data already (for example when merging multiple pages,
 	or watermarking).
 
-	options: Mask of heuristic options to activate. If 0 is given the
-	default is to activate both FZ_STEXT_PRESERVE_LIGATURES and
-	FZ_STEXT_PRESERVE_WHITESPACE.
+	options: Options to configure the stext device.
 */
-fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, int options);
+fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, const fz_stext_options *options);
 
 #endif

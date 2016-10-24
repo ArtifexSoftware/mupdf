@@ -265,7 +265,7 @@ fz_new_pixmap_from_page_number(fz_context *ctx, fz_document *doc, int number, co
 }
 
 fz_stext_page *
-fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_stext_sheet *sheet, int options)
+fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_stext_sheet *sheet, const fz_stext_options *options)
 {
 	fz_stext_page *text;
 	fz_device *dev;
@@ -295,7 +295,7 @@ fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_s
 }
 
 fz_stext_page *
-fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *sheet, int options)
+fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *sheet, const fz_stext_options *options)
 {
 	fz_stext_page *text;
 	fz_device *dev;
@@ -325,7 +325,7 @@ fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *shee
 }
 
 fz_stext_page *
-fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_stext_sheet *sheet, int options)
+fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_stext_sheet *sheet, const fz_stext_options *options)
 {
 	fz_page *page;
 	fz_stext_page *text;
@@ -478,7 +478,7 @@ fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text, const fz_rec
 }
 
 fz_buffer *
-fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_rect *sel, int crlf, int options)
+fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_rect *sel, int crlf, const fz_stext_options *options)
 {
 	fz_stext_sheet *sheet;
 	fz_stext_page *text;
@@ -499,7 +499,7 @@ fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 }
 
 fz_buffer *
-fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int crlf, int options)
+fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int crlf, const fz_stext_options *options)
 {
 	fz_stext_sheet *sheet;
 	fz_stext_page *text;
@@ -520,7 +520,7 @@ fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int 
 }
 
 fz_buffer *
-fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_rect *sel, int crlf, int options)
+fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_rect *sel, int crlf, const fz_stext_options *options)
 {
 	fz_page *page;
 	fz_buffer *buf;

@@ -38,9 +38,9 @@ fz_pixmap *fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_m
 /*
 	fz_new_stext_page_from_page: Extract structured text from a page. The sheet must not be NULL.
 */
-fz_stext_page *fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *sheet, int options);
-fz_stext_page *fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_stext_sheet *sheet, int options);
-fz_stext_page *fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_stext_sheet *sheet, int options);
+fz_stext_page *fz_new_stext_page_from_page(fz_context *ctx, fz_page *page, fz_stext_sheet *sheet, const fz_stext_options *options);
+fz_stext_page *fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number, fz_stext_sheet *sheet, const fz_stext_options *options);
+fz_stext_page *fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_list *list, fz_stext_sheet *sheet, const fz_stext_options *options);
 
 /*
 	fz_new_buffer_from_stext_page: Convert structured text into plain text, cropped by the selection rectangle.
@@ -48,9 +48,9 @@ fz_stext_page *fz_new_stext_page_from_display_list(fz_context *ctx, fz_display_l
 	otherwise '\n'.
 */
 fz_buffer *fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text, const fz_rect *sel, int crlf);
-fz_buffer *fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int crlf, int options);
-fz_buffer *fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_rect *sel, int crlf, int options);
-fz_buffer *fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_rect *sel, int crlf, int options);
+fz_buffer *fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int crlf, const fz_stext_options *options);
+fz_buffer *fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_rect *sel, int crlf, const fz_stext_options *options);
+fz_buffer *fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_rect *sel, int crlf, const fz_stext_options *options);
 
 /*
 	fz_search_page: Search for the 'needle' text on the page.

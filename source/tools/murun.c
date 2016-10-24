@@ -1734,15 +1734,17 @@ static void ffi_Page_toStructuredText(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
-	int options = js_tointeger(J, 1);
+	const char *options = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	fz_stext_sheet *sheet = NULL;
+	fz_stext_options so;
 	fz_stext_page *text;
 
 	fz_var(sheet);
 
 	fz_try(ctx) {
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_page(ctx, page, sheet, options);
+		fz_parse_stext_options(ctx, &so, options);
+		text = fz_new_stext_page_from_page(ctx, page, sheet, &so);
 	}
 	fz_always(ctx)
 		fz_drop_stext_sheet(ctx, sheet);
@@ -2573,15 +2575,17 @@ static void ffi_DisplayList_toStructuredText(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
-	int options = js_tointeger(J, 1);
+	const char *options = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	fz_stext_sheet *sheet = NULL;
+	fz_stext_options so;
 	fz_stext_page *text;
 
 	fz_var(sheet);
 
 	fz_try(ctx) {
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_display_list(ctx, list, sheet, options);
+		fz_parse_stext_options(ctx, &so, options);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet, &so);
 	}
 	fz_always(ctx)
 		fz_drop_stext_sheet(ctx, sheet);
