@@ -711,6 +711,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 	}
 no_glyph:
 	add_char_to_span(ctx, dev->cur_span, c, &p, &q, style);
+	dev->lastchar = c;
 }
 
 static void
@@ -844,8 +845,6 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 			adv = 0;
 
 		fz_add_stext_char(ctx, dev, style, span->items[i].ucs, span->items[i].gid, &trm, adv, span->wmode);
-
-		dev->lastchar = span->items[i].ucs;
 	}
 }
 
