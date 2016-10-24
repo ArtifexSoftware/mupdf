@@ -1072,7 +1072,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page,
 {
 	fz_stext_device *dev = fz_new_device(ctx, sizeof *dev);
 
-	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE | FZ_STEXT_PRESERVE_LIGATURES | FZ_STEXT_PRESERVE_WHITESPACE;
+	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
 
 	dev->super.close_device = fz_stext_close_device;
 	dev->super.drop_device = fz_stext_drop_device;
@@ -1090,7 +1090,7 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page,
 	dev->spans = NULL;
 	dev->cur_span = NULL;
 	dev->lastchar = ' ';
-	dev->options = options ? options : FZ_STEXT_PRESERVE_LIGATURES | FZ_STEXT_PRESERVE_WHITESPACE;
+	dev->options = options;
 
 	return (fz_device*)dev;
 }
