@@ -931,7 +931,7 @@ tiff_swap_byte_order(unsigned char *buf, int n)
 }
 
 static void
-tiff_decode_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, size_t len)
+tiff_read_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, size_t len)
 {
 	unsigned version;
 
@@ -1011,7 +1011,7 @@ tiff_seek_ifd(fz_context *ctx, struct tiff *tiff, int subimage)
 }
 
 static void
-tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
+tiff_read_ifd(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned offset;
 	unsigned count;
@@ -1055,7 +1055,7 @@ tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
 }
 
 static void
-tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
+tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned i;
 
@@ -1143,9 +1143,6 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 		tiff->yresolution = 96;
 	}
 
-	tiff->samples = fz_malloc_array(ctx, tiff->imagelength, tiff->stride);
-	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
-
 	if (tiff->rowsperstrip > tiff->imagelength)
 		tiff->rowsperstrip = tiff->imagelength;
 
@@ -1190,6 +1187,15 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 			tiff->stripbytecountslen = 0;
 		}
 	}
+}
+
+static void
+tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
+{
+	unsigned i;
+
+	tiff->samples = fz_malloc_array(ctx, tiff->imagelength, tiff->stride);
+	memset(tiff->samples, 0x55, tiff->imagelength * tiff->stride);
 
 	if (tiff->tilelength && tiff->tilewidth && tiff->tileoffsets && tiff->tilebytecounts)
 		tiff_decode_tiles(ctx, tiff);
@@ -1256,11 +1262,12 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 
 	fz_try(ctx)
 	{
-		tiff_decode_header(ctx, &tiff, buf, len);
+		tiff_read_header(ctx, &tiff, buf, len);
 		tiff_seek_ifd(ctx, &tiff, subimage);
-		tiff_decode_ifd(ctx, &tiff);
+		tiff_read_ifd(ctx, &tiff);
 
 		/* Decode the image data */
+		tiff_decode_ifd(ctx, &tiff);
 		tiff_decode_samples(ctx, &tiff);
 
 		/* Expand into fz_pixmap struct */
@@ -1331,8 +1338,10 @@ fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, size_t len, int 
 
 	fz_try(ctx)
 	{
-		tiff_decode_header(ctx, &tiff, buf, len);
+		tiff_read_header(ctx, &tiff, buf, len);
 		tiff_seek_ifd(ctx, &tiff, subimage);
+		tiff_read_ifd(ctx, &tiff);
+
 		tiff_decode_ifd(ctx, &tiff);
 
 		*wp = tiff.imagewidth;
@@ -1369,7 +1378,7 @@ fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, size_t len)
 	unsigned subimage_count = 0;
 	struct tiff tiff = { 0 };
 
-	tiff_decode_header(ctx, &tiff, buf, len);
+	tiff_read_header(ctx, &tiff, buf, len);
 
 	offset = tiff.ifd_offset;
 
