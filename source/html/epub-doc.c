@@ -35,48 +35,10 @@ struct epub_page_s
 };
 
 static int
-find_anchor_flow(fz_html_flow *flow, const char *anchor, float page_h)
-{
-	while (flow)
-	{
-		if (flow->box->id && !strcmp(anchor, flow->box->id))
-			return flow->y / page_h;
-		flow = flow->next;
-	}
-	return -1;
-}
-
-static int
-find_anchor_box(fz_html_box *box, const char *anchor, float page_h)
-{
-	int page;
-	while (box)
-	{
-		if (box->id && !strcmp(anchor, box->id))
-			return box->y / page_h;
-		if (box->type == BOX_FLOW)
-		{
-			page = find_anchor_flow(box->flow_head, anchor, page_h);
-			if (page >= 0)
-				return page;
-		}
-		else
-		{
-			page = find_anchor_box(box->down, anchor, page_h);
-			if (page >= 0)
-				return page;
-		}
-		box = box->next;
-	}
-	return -1;
-}
-
-static int
 epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 {
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
-	int page = -1;
 
 	const char *s = strchr(dest, '#');
 	int n = s ? s - dest : strlen(dest);
@@ -90,9 +52,9 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 			if (s)
 			{
 				/* Search for a matching fragment */
-				page = find_anchor_box(ch->html->root, s+1, ch->page_h);
-				if (page >= 0)
-					return ch->start + page;
+				float y = fz_find_html_target(ctx, ch->html, s+1);
+				if (y >= 0)
+					return ch->start + y / ch->page_h;
 			}
 			return ch->start;
 		}

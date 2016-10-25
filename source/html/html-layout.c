@@ -651,6 +651,8 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 			else if (g->is_fb2 && tag[0]=='i' && tag[1]=='m' && tag[2]=='a' && tag[3]=='g' && tag[4]=='e' && tag[5]==0)
 			{
 				const char *src = fz_xml_att(node, "l:href");
+				if (!src)
+					src = fz_xml_att(node, "xlink:href");
 				if (src && src[0] == '#')
 				{
 					fz_image *img = fz_tree_lookup(ctx, g->images, src+1);
@@ -721,7 +723,14 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 						generate_anchor(ctx, box, g);
 					if (tag[0]=='a' && tag[1]==0)
 					{
-						href = fz_xml_att(node, "href");
+						if (g->is_fb2)
+						{
+							href = fz_xml_att(node, "l:href");
+							if (!href)
+								href = fz_xml_att(node, "xlink:href");
+						}
+						else
+							href = fz_xml_att(node, g->is_fb2 ? "l:href" : "href");
 						if (href)
 							box->href = fz_pool_strdup(ctx, g->pool, href);
 					}
@@ -1987,6 +1996,66 @@ fz_load_html_links(fz_context *ctx, fz_html *html, int page, int page_h, const c
 	char dir[2048];
 	fz_dirname(dir, file, sizeof dir);
 	return load_link_box(ctx, html->root, NULL, page, page_h, dir, file);
+}
+
+static fz_html_flow *
+find_first_content(fz_html_box *box)
+{
+	while (box)
+	{
+		if (box->type == BOX_FLOW)
+			return box->flow_head;
+		box = box->down;
+	}
+	return NULL;
+}
+
+static float
+find_flow_target(fz_html_flow *flow, const char *id)
+{
+	while (flow)
+	{
+		if (flow->box->id && !strcmp(id, flow->box->id))
+			return flow->y;
+		flow = flow->next;
+	}
+	return -1;
+}
+
+static float
+find_box_target(fz_html_box *box, const char *id)
+{
+	float y;
+	while (box)
+	{
+		if (box->id && !strcmp(id, box->id))
+		{
+			fz_html_flow *flow = find_first_content(box);
+			if (flow)
+				return flow->y;
+			return box->y;
+		}
+		if (box->type == BOX_FLOW)
+		{
+			y = find_flow_target(box->flow_head, id);
+			if (y >= 0)
+				return y;
+		}
+		else
+		{
+			y = find_box_target(box->down, id);
+			if (y >= 0)
+				return y;
+		}
+		box = box->next;
+	}
+	return -1;
+}
+
+float
+fz_find_html_target(fz_context *ctx, fz_html *html, const char *id)
+{
+	return find_box_target(html->root, id);
 }
 
 static char *concat_text(fz_context *ctx, fz_xml *root)

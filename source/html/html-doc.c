@@ -32,6 +32,22 @@ htdoc_drop_document(fz_context *ctx, fz_document *doc_)
 }
 
 static int
+htdoc_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
+{
+	html_document *doc = (html_document*)doc_;
+
+	const char *s = strchr(dest, '#');
+	if (s && s[1] != 0)
+	{
+		float y = fz_find_html_target(ctx, doc->html, s+1);
+		if (y >= 0)
+			return y / doc->page_h;
+	}
+
+	return -1;
+}
+
+static int
 htdoc_count_pages(fz_context *ctx, fz_document *doc_)
 {
 	html_document *doc = (html_document*)doc_;
@@ -89,6 +105,27 @@ htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix 
 	fz_draw_html(ctx, dev, &local_ctm, doc->html, n * doc->page_h, (n+1) * doc->page_h);
 }
 
+static fz_link *
+htdoc_load_links(fz_context *ctx, fz_page *page_)
+{
+	html_page *page = (html_page*)page_;
+	html_document *doc = page->doc;
+	fz_link *head, *link;
+
+	head = fz_load_html_links(ctx, doc->html, page->number, doc->page_h, "");
+	for (link = head; link; link = link->next)
+	{
+		link->doc = doc;
+
+		/* Adjust for page margins */
+		link->rect.x0 += doc->page_margin[L];
+		link->rect.x1 += doc->page_margin[L];
+		link->rect.y0 += doc->page_margin[T];
+		link->rect.y1 += doc->page_margin[T];
+	}
+	return head;
+}
+
 static fz_page *
 htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
@@ -96,6 +133,7 @@ htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 	html_page *page = fz_new_page(ctx, sizeof *page);
 	page->super.bound_page = htdoc_bound_page;
 	page->super.run_page_contents = htdoc_run_page;
+	page->super.load_links = htdoc_load_links;
 	page->super.drop_page = htdoc_drop_page;
 	page->doc = doc;
 	page->number = number;
@@ -120,6 +158,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	doc->super.drop_document = htdoc_drop_document;
 	doc->super.layout = htdoc_layout;
+	doc->super.resolve_link = htdoc_resolve_link;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
 	doc->super.lookup_metadata = htdoc_lookup_metadata;
@@ -155,6 +194,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	doc = fz_new_document(ctx, html_document);
 	doc->super.drop_document = htdoc_drop_document;
 	doc->super.layout = htdoc_layout;
+	doc->super.resolve_link = htdoc_resolve_link;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
 	doc->super.lookup_metadata = htdoc_lookup_metadata;
