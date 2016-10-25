@@ -13,12 +13,6 @@ const char *fz_draw_options_usage =
 	"\talpha: render pages with alpha channel and transparent background\n"
 	"\n";
 
-static int opteq(const char *a, const char *b)
-{
-	size_t n = strlen(b);
-	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
-}
-
 fz_draw_options *
 fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 {
@@ -48,17 +42,17 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 		opts->height = fz_atoi(val);
 	if (fz_has_option(ctx, args, "colorspace", &val))
 	{
-		if (opteq(val, "gray") || opteq(val, "grey"))
+		if (fz_option_eq(val, "gray") || fz_option_eq(val, "grey"))
 			opts->colorspace = fz_device_gray(ctx);
-		else if (opteq(val, "rgb"))
+		else if (fz_option_eq(val, "rgb"))
 			opts->colorspace = fz_device_rgb(ctx);
-		else if (opteq(val, "cmyk"))
+		else if (fz_option_eq(val, "cmyk"))
 			opts->colorspace = fz_device_cmyk(ctx);
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown colorspace in options");
 	}
 	if (fz_has_option(ctx, args, "alpha", &val))
-		opts->alpha = opteq(val, "yes");
+		opts->alpha = fz_option_eq(val, "yes");
 
 	/* Sanity check values */
 	if (opts->x_resolution <= 0) opts->x_resolution = 96;
