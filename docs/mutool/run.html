@@ -704,7 +704,7 @@ are numbered objects.
 <dl>
 <dt>PDFObject#isIndirect()
 <dd>Is the object an indirect reference.
-<dt>PDFObject#toIndirect()
+<dt>PDFObject#asIndirect()
 <dd>Return the object number the indirect reference points to.
 <dt>PDFObject#isStream()
 <dd>True if the object is an indirect reference pointing to a stream.
@@ -720,6 +720,33 @@ This will update the Length, Filter and DecodeParms automatically.
 <dt>PDFObject#writeRawStream(buffer)
 <dd>Update the raw, uncompressed, contents of the stream the indirect reference points to.
 This will update the Length automatically, but leave the Filter and DecodeParms untouched.
+</dl>
+
+<p>
+Primitive PDF objects such as booleans, names, and numbers can usually be treated like JavaScript values.
+When that is not sufficient use these functions:
+
+<dl>
+<dt>PDFObject#isNull()
+<dd>Is the object the 'null' object?
+<dt>PDFObject#isBoolean()
+<dd>Is the object a boolean?
+<dt>PDFObject#asBoolean()
+<dd>Get the boolean primitive value.
+<dt>PDFObject#isNumber()
+<dd>Is the object a number?
+<dt>PDFObject#asNumber()
+<dd>Get the number primitive value.
+<dt>PDFObject#isName()
+<dd>Is the object a name?
+<dt>PDFObject#asName()
+<dd>Get the name as a string.
+<dt>PDFObject#isString()
+<dd>Is the object a string?
+<dt>PDFObject#asString()
+<dd>Convert a "text string" to a javascript unicode string.
+<dt>PDFObject#asByteString()
+<dd>Convert a string to an array of byte values.
 </dl>
 
 <h3>
