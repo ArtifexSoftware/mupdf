@@ -1525,6 +1525,16 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	if (script == 0)
 		script = ucdn_get_script(unicode);
 
+	/* Fix for ideographic/halfwidth/fullwidth punctuation forms. */
+	if ((unicode >= 0x3000 && unicode <= 0x303F) || (unicode >= 0xFF00 && unicode <= 0xFFEF))
+	{
+		if (script != UCDN_SCRIPT_HANGUL &&
+				script != UCDN_SCRIPT_HIRAGANA &&
+				script != UCDN_SCRIPT_KATAKANA &&
+				script != UCDN_SCRIPT_BOPOMOFO)
+			script = UCDN_SCRIPT_HAN;
+	}
+
 	font = fz_load_fallback_font(ctx, script, language, user_font->flags.is_serif, user_font->flags.is_bold, user_font->flags.is_italic);
 	if (font)
 	{
