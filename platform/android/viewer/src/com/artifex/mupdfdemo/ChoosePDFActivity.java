@@ -107,6 +107,8 @@ public class ChoosePDFActivity extends ListActivity {
 								return true;
 							if (fname.endsWith(".epub"))
 								return true;
+							if (fname.endsWith(".fb2"))
+								return true;
 							if (fname.endsWith(".png"))
 								return true;
 							if (fname.endsWith(".jpe"))
