@@ -1256,9 +1256,11 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 fz_pixmap *
 fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subimage)
 {
-	fz_pixmap *image;
+	fz_pixmap *image = NULL;
 	struct tiff tiff = { 0 };
 	int alpha;
+
+	fz_var(image);
 
 	fz_try(ctx)
 	{
@@ -1308,17 +1310,18 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 	fz_always(ctx)
 	{
 		/* Clean up scratch memory */
-		if (tiff.colormap) fz_free(ctx, tiff.colormap);
-		if (tiff.stripoffsets) fz_free(ctx, tiff.stripoffsets);
-		if (tiff.stripbytecounts) fz_free(ctx, tiff.stripbytecounts);
-		if (tiff.tileoffsets) fz_free(ctx, tiff.tileoffsets);
-		if (tiff.tilebytecounts) fz_free(ctx, tiff.tilebytecounts);
-		if (tiff.data) fz_free(ctx, tiff.data);
-		if (tiff.samples) fz_free(ctx, tiff.samples);
-		if (tiff.profile) fz_free(ctx, tiff.profile);
+		fz_free(ctx, tiff.colormap);
+		fz_free(ctx, tiff.stripoffsets);
+		fz_free(ctx, tiff.stripbytecounts);
+		fz_free(ctx, tiff.tileoffsets);
+		fz_free(ctx, tiff.tilebytecounts);
+		fz_free(ctx, tiff.data);
+		fz_free(ctx, tiff.samples);
+		fz_free(ctx, tiff.profile);
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_pixmap(ctx, image);
 		fz_rethrow(ctx);
 	}
 
