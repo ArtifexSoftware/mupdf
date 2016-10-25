@@ -1904,7 +1904,7 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 	fz_rect bbox;
 	fz_link_dest dest;
 	char *href;
-	float w;
+	float end;
 
 	while (flow)
 	{
@@ -1913,20 +1913,20 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 		if (href && (int)(flow->y / page_h) == page)
 		{
 			/* Coalesce contiguous flow boxes into one link node */
-			w = flow->w;
+			end = flow->x + flow->w;
 			while (next &&
 					next->y == flow->y &&
 					next->h == flow->h &&
 					next->box->a_href &&
 					!strcmp(href, next->box->a_href))
 			{
-				w += next->w;
+				end = next->x + next->w;
 				next = next->next;
 			}
 
 			bbox.x0 = flow->x;
 			bbox.y0 = flow->y - page * page_h;
-			bbox.x1 = bbox.x0 + w;
+			bbox.x1 = end;
 			bbox.y1 = bbox.y0 + flow->h;
 			if (flow->type != FLOW_IMAGE)
 			{
