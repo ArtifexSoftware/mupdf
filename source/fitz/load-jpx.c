@@ -423,6 +423,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 			if (state->pix->alpha && ! (state->palette && !state->expand_indexed))
 			{
+				/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 				if (state->pix->n == 5)
 				{
 					fz_pixmap *tmp = fz_new_pixmap(ctx, fz_device_rgb(ctx), state->pix->w, state->pix->h, 1);
@@ -909,6 +910,7 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 
 		if (a)
 		{
+			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 			if (n == 4)
 			{
 				fz_pixmap *tmp = fz_new_pixmap(ctx, fz_device_rgb(ctx), w, h, 1);

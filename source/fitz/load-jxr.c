@@ -408,6 +408,7 @@ fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 
 		if (info.has_alpha && !info.has_premul)
 		{
+			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 			if (info.comps >= 4)
 			{
 				fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), image->w, image->h, 1);
