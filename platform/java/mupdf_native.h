@@ -478,10 +478,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DisplayList_toPixmap
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
  * Method:    toStructuredText
- * Signature: (I)Lcom/artifex/mupdf/fitz/StructuredText;
+ * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/StructuredText;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DisplayList_toStructuredText
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_DisplayList
@@ -2120,10 +2120,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toDisplayList
 /*
  * Class:     com_artifex_mupdf_fitz_Page
  * Method:    toStructuredText
- * Signature: (I)Lcom/artifex/mupdf/fitz/StructuredText;
+ * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/StructuredText;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_toStructuredText
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page

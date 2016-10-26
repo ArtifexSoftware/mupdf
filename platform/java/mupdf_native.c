@@ -4636,24 +4636,36 @@ FUN(Page_toDisplayList)(JNIEnv *env, jobject self, jboolean no_annotations)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(Page_toStructuredText)(JNIEnv *env, jobject self, jint joptions)
+FUN(Page_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
 	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text = NULL;
+	const char *options= NULL;
+	fz_stext_options opts;
 
 	if (!ctx || !page) return NULL;
+
+	if (joptions)
+	{
+		options = (*env)->GetStringUTFChars(env, joptions, NULL);
+		if (!options) return NULL;
+	}
 
 	fz_var(sheet);
 
 	fz_try(ctx)
 	{
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_page(ctx, page, sheet, joptions);
+		fz_parse_stext_options(ctx, &opts, options);
+		text = fz_new_stext_page_from_page(ctx, page, sheet, &opts);
 	}
 	fz_always(ctx)
+	{
 		fz_drop_stext_sheet(ctx, sheet);
+		(*env)->ReleaseStringUTFChars(env, joptions, options);
+	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -4691,7 +4703,7 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		ctm = fz_identity;
 		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text, 0);
+		dev = fz_new_stext_device(ctx, sheet, text, NULL);
 		fz_run_page(ctx, page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
 
@@ -4869,24 +4881,36 @@ FUN(DisplayList_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, 
 }
 
 JNIEXPORT jobject JNICALL
-FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self, jint joptions)
+FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
 	fz_display_list *list = from_DisplayList(env, self);
 	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text = NULL;
+	const char *options= NULL;
+	fz_stext_options opts;
 
 	if (!ctx || !list) return NULL;
+
+	if (joptions)
+	{
+		options = (*env)->GetStringUTFChars(env, joptions, NULL);
+		if (!options) return NULL;
+	}
 
 	fz_var(sheet);
 
 	fz_try(ctx)
 	{
 		sheet = fz_new_stext_sheet(ctx);
-		text = fz_new_stext_page_from_display_list(ctx, list, sheet, joptions);
+		fz_parse_stext_options(ctx, &opts, options);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet, &opts);
 	}
 	fz_always(ctx)
+	{
 		fz_drop_stext_sheet(ctx, sheet);
+		(*env)->ReleaseStringUTFChars(env, joptions, options);
+	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -4909,7 +4933,7 @@ FUN(DisplayList_search)(JNIEnv *env, jobject self, jstring jneedle)
 	if (!jneedle) { jni_throw_arg(env, "needle must not be null"); return NULL; }
 
 	needle = (*env)->GetStringUTFChars(env, jneedle, NULL);
-	if (!needle) return 0;
+	if (!needle) return NULL;
 
 	fz_try(ctx)
 		n = fz_search_display_list(ctx, list, needle, hits, nelem(hits));

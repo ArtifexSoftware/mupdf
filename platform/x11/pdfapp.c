@@ -868,7 +868,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 		if (app->page_list || app->annotations_list)
 		{
-			tdev = fz_new_stext_device(app->ctx, app->page_sheet, app->page_text, 0);
+			tdev = fz_new_stext_device(app->ctx, app->page_sheet, app->page_text, NULL);
 			pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
 			fz_close_device(app->ctx, tdev);
 			fz_drop_device(app->ctx, tdev);

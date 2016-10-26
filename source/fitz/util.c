@@ -350,7 +350,7 @@ fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needl
 	sheet = fz_new_stext_sheet(ctx);
 	fz_try(ctx)
 	{
-		text = fz_new_stext_page_from_display_list(ctx, list, sheet, 0);
+		text = fz_new_stext_page_from_display_list(ctx, list, sheet, NULL);
 		count = fz_search_stext_page(ctx, text, needle, hit_bbox, hit_max);
 	}
 	fz_always(ctx)
@@ -371,7 +371,7 @@ fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_rect *hit_
 	sheet = fz_new_stext_sheet(ctx);
 	fz_try(ctx)
 	{
-		text = fz_new_stext_page_from_page(ctx, page, sheet, 0);
+		text = fz_new_stext_page_from_page(ctx, page, sheet, NULL);
 		count = fz_search_stext_page(ctx, text, needle, hit_bbox, hit_max);
 	}
 	fz_always(ctx)

@@ -362,9 +362,9 @@ static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs)
 	fz_transform_rect(&page_sel, &page_inv_ctm);
 
 #ifdef _WIN32
-	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 1, 0);
+	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 1, NULL);
 #else
-	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 0, 0);
+	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 0, NULL);
 #endif
 	fz_write_buffer_rune(ctx, buf, 0);
 	glfwSetClipboardString(window, (char*)buf->data);
