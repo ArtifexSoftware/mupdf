@@ -3194,7 +3194,7 @@ static void ffi_PDFDocument_save(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	const char *filename = js_tostring(J, 1);
-	const char *options = js_isdefined(J, 2) ? js_tostring(J, 2) : NULL;
+	const char *options = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	pdf_write_options pwo;
 
 	fz_try(ctx) {
