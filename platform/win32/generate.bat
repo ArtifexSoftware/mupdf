@@ -162,7 +162,8 @@ if not exist generated/NotoSerifTamil-Regular.c fontdump.exe generated/NotoSerif
 if not exist generated/NotoSerifTelugu-Regular.c fontdump.exe generated/NotoSerifTelugu-Regular.c resources/fonts/noto/NotoSerifTelugu-Regular.ttf
 if not exist generated/NotoSerifThai-Regular.c fontdump.exe generated/NotoSerifThai-Regular.c resources/fonts/noto/NotoSerifThai-Regular.ttf
 
-del cmapdump.obj fontdump.obj cquote.obj bin2hex.obj cmapdump.exe fontdump.exe cquote.exe bin2hex.exe
+del namedump.obj cmapdump.obj fontdump.obj cquote.obj bin2hex.obj
+del namedump.exe cmapdump.exe fontdump.exe cquote.exe bin2hex.exe
 
 goto fin
 
