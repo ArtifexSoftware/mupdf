@@ -68,8 +68,15 @@ public class DocViewBase
 	private static final int MOVING_UP = 3;
 	private static final int MOVING_DOWN = 4;
 
-	private static final float MIN_FLING_VELOCITY = 1500.0f;
-	private static final long FLING_THROTTLE_TIME = 20;
+	private static final float MIN_FLING_VELOCITY  = 750.0f;
+	private static final float MAX_FLING_VELOCITY  = 16000.0f;
+	private static final long  FLING_THROTTLE_TIME = 10;
+
+	private static final int MIN_FLING_TIME = 400;
+	private static final int MAX_FLING_TIME = 1000;
+
+	private static final float MIN_FLING_FACTOR = 0.333f;
+	private static final float MAX_FLING_FACTOR = 1.0f;
 
 	private Scroller mScroller;
 	private Stepper mStepper;
@@ -208,7 +215,6 @@ public class DocViewBase
 
 	public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY)
 	{
-
 		//  not while we're scaling
 		if (mScaling)
 			return true;
@@ -218,28 +224,21 @@ public class DocViewBase
 			return true;
 
 		//  must be really flinging
-		float vel = Math.max(Math.abs(velocityX), Math.abs(velocityY));
-		if (vel < MIN_FLING_VELOCITY)
+		float vel = Math.max(Math.abs(velocityX),Math.abs(velocityY));
+		if (vel<MIN_FLING_VELOCITY)
 			return false;
-
-		//  what direction?
-		int direction = directionOfTravel(velocityX, velocityY);
 
 		mFlingStartTime = System.currentTimeMillis();
 
-		switch (direction)
-		{
-			case MOVING_DOWN:
-				smoothScrollBy(0, getHeight() / 2);
-				break;
+		//  adjust the distance and the time based on fling velocity
+		float ratio =(Math.abs(velocityY)-MIN_FLING_VELOCITY)/(MAX_FLING_VELOCITY-MIN_FLING_VELOCITY);
+		float dy = getHeight()*MIN_FLING_FACTOR + ratio*getHeight()*(MAX_FLING_FACTOR-MIN_FLING_FACTOR);
+		float dt = MIN_FLING_TIME + ratio*(MAX_FLING_TIME-MIN_FLING_TIME);
 
-			case MOVING_UP:
-				smoothScrollBy(0, -getHeight() / 2);
-				break;
-
-			default:
-				break;
-		}
+		if (velocityY<0)
+			smoothScrollBy(0, -(int)dy, (int)dt);
+		else
+			smoothScrollBy(0, (int)dy, (int)dt);
 
 		return true;
 	}
@@ -247,16 +246,6 @@ public class DocViewBase
 	public void setScale(float val)
 	{
 		mScale = val;
-	}
-
-	private static int directionOfTravel(float vx, float vy)
-	{
-		if (Math.abs(vx) > 2 * Math.abs(vy))
-			return (vx > 0) ? MOVING_RIGHT : MOVING_LEFT;
-		else if (Math.abs(vy) > 2 * Math.abs(vx))
-			return (vy > 0) ? MOVING_DOWN : MOVING_UP;
-		else
-			return MOVING_DIAGONALLY;
 	}
 
 	public void onLongPress(MotionEvent e)
