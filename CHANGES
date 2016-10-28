@@ -1,8 +1,38 @@
-List of changes since MuPDF 1.9
+List of changes in MuPDF 1.10
 
 * Headline changes:
 	* FictionBook (FB2) e-book support.
 	* Simple SVG parser (a small subset of SVG only).
+	* mutool convert: a new document conversion tool and interface.
+	* Multi-threaded rendering in mudraw.
+	* Luratech decoders for JBIG2 and JPEG2000 (commercial releases only).
+	* Optional JPEG-XR support (not included by default for security reasons).
+	* Updated base 14 fonts from URW.
+	* New CJK font with language specific variants.
+	* Hyperlink support in EPUB.
+
+* Reduced memory use:
+	* New tool muraster: example printer driver with limited RAM usage and automatic banding.
+	* Alpha channel is now optional in pixmaps.
+	* More aggressive purging of cached objects.
+	* Partial image decoding for lower memory use when banding.
+
+* Reduced code size when building with a subset of features:
+	* Reduced default set of built-in CMap tables to the minimum required.
+	* FZ_ENABLE_PDF, _XPS, _JS, to disable features at compile time.
+	* Function level linking.
+
+* Interface changes and cleanups:
+	* Dropped pdf object generation numbers from public interfaces.
+	* Simplified PDF page, xobject, and annotation internals.
+	* Closing and freeing devices and writers are now separate steps.
+	* Improved PDF annotation editing interface (still a work in progress).
+	* Document writer interface.
+	* Banded image writer interface.
+
+* Mobile viewers:
+	* New JNI interfaces to match capabilities of 'mutool run' javascript.
+	* New android and desktop java examples using new JNI interface.
 
 List of changes in MuPDF 1.9
 
