@@ -447,8 +447,7 @@ public class DocPageView extends View implements Callback
 		mSelection = new ArrayList<>();
 
 		//  get structured text and the block structure
-		int options = 0;  //  what should these be?
-		StructuredText structuredText = getPage().toStructuredText(options);
+		StructuredText structuredText = getPage().toStructuredText();
 		StructuredText.TextBlock textBlocks[] = structuredText.getBlocks();
 
 		for (StructuredText.TextBlock block : textBlocks)
@@ -597,8 +596,7 @@ public class DocPageView extends View implements Callback
 		Point pPage = screenToPage(p.x, p.y);
 
 		//  get structured text and the block structure
-		int options = 0;  //  what should these be?
-		StructuredText structuredText = getPage().toStructuredText(options);
+		StructuredText structuredText = getPage().toStructuredText();
 		StructuredText.TextBlock textBlocks[] = structuredText.getBlocks();
 
 		StructuredText.TextBlock block = blockContainingPoint(textBlocks, pPage);
