@@ -933,89 +933,85 @@ fz_new_image_from_data(fz_context *ctx, unsigned char *data, size_t len)
 fz_image *
 fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 {
-	fz_compressed_buffer *bc = NULL;
+	fz_compressed_buffer *bc;
 	int w, h, xres, yres;
 	fz_colorspace *cspace = NULL;
 	size_t len = buffer->len;
 	unsigned char *buf = buffer->data;
 	fz_image *image;
+	int type;
 
-	fz_var(bc);
+	if (len < 8)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
+
 	fz_var(cspace);
 
 	fz_try(ctx)
 	{
-		if (len < 8)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
-
-		bc = fz_malloc_struct(ctx, fz_compressed_buffer);
-		bc->buffer = fz_keep_buffer(ctx, buffer);
-
 		if (buf[0] == 'P' && buf[1] >= '1' && buf[1] <= '7')
 		{
-			bc->params.type = FZ_IMAGE_PNM;
+			type = FZ_IMAGE_PNM;
 			fz_load_pnm_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (buf[0] == 0xff && buf[1] == 0x4f)
 		{
-			bc->params.type = FZ_IMAGE_JPX;
+			type = FZ_IMAGE_JPX;
 			fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0x00 && buf[3] == 0x0c && buf[4] == 0x6a && buf[5] == 0x50 && buf[6] == 0x20 && buf[7] == 0x20)
 		{
-			bc->params.type = FZ_IMAGE_JPX;
+			type = FZ_IMAGE_JPX;
 			fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (buf[0] == 0xff && buf[1] == 0xd8)
 		{
-			bc->params.type = FZ_IMAGE_JPEG;
-			bc->params.u.jpeg.color_transform = -1;
+			type = FZ_IMAGE_JPEG;
 			fz_load_jpeg_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
 		{
-			bc->params.type = FZ_IMAGE_PNG;
+			type = FZ_IMAGE_PNG;
 			fz_load_png_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 0xBC)
 		{
-			bc->params.type = FZ_IMAGE_JXR;
+			type = FZ_IMAGE_JXR;
 			fz_load_jxr_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 42 && buf[3] == 0)
 		{
-			bc->params.type = FZ_IMAGE_TIFF;
+			type = FZ_IMAGE_TIFF;
 			fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (buf[0] == 'M' && buf[1] == 'M' && buf[2] == 0 && buf[3] == 42)
 		{
-			bc->params.type = FZ_IMAGE_TIFF;
+			type = FZ_IMAGE_TIFF;
 			fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (memcmp(buf, "GIF", 3) == 0)
 		{
-			bc->params.type = FZ_IMAGE_GIF;
+			type = FZ_IMAGE_GIF;
 			fz_load_gif_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else if (memcmp(buf, "BM", 2) == 0)
 		{
-			bc->params.type = FZ_IMAGE_BMP;
+			type = FZ_IMAGE_BMP;
 			fz_load_bmp_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
 		}
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
 
+		bc = fz_malloc_struct(ctx, fz_compressed_buffer);
+		bc->buffer = fz_keep_buffer(ctx, buffer);
+		bc->params.type = type;
+		if (type == FZ_IMAGE_JPEG)
+			bc->params.u.jpeg.color_transform = -1;
 		image = fz_new_image_from_compressed_buffer(ctx, w, h, 8, cspace, xres, yres, 0, 0, NULL, NULL, bc, NULL);
 	}
 	fz_always(ctx)
-	{
 		fz_drop_colorspace(ctx, cspace);
-	}
 	fz_catch(ctx)
-	{
-		fz_drop_compressed_buffer(ctx, bc);
 		fz_rethrow(ctx);
-	}
 
 	return image;
 }
