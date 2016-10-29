@@ -852,6 +852,9 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 			}
 		}
 
+		if (jpx->color_space == OPJ_CLRSPC_SYCC && n == 3 && a == 0)
+			jpx_ycc_to_rgb(ctx, img, 1, 1);
+
 		if (a)
 		{
 			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
@@ -864,9 +867,6 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 			fz_premultiply_pixmap(ctx, img);
 		}
 	}
-
-	if (jpx->color_space == OPJ_CLRSPC_SYCC && n == 3 && a == 0)
-		jpx_ycc_to_rgb(ctx, img, 1, 1);
 
 	opj_image_destroy(jpx);
 
