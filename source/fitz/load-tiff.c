@@ -1357,11 +1357,11 @@ fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, size_t len, int 
 	fz_always(ctx)
 	{
 		/* Clean up scratch memory */
-		if (tiff.colormap) fz_free(ctx, tiff.colormap);
-		if (tiff.stripoffsets) fz_free(ctx, tiff.stripoffsets);
-		if (tiff.stripbytecounts) fz_free(ctx, tiff.stripbytecounts);
-		if (tiff.samples) fz_free(ctx, tiff.samples);
-		if (tiff.profile) fz_free(ctx, tiff.profile);
+		fz_free(ctx, tiff.colormap);
+		fz_free(ctx, tiff.stripoffsets);
+		fz_free(ctx, tiff.stripbytecounts);
+		fz_free(ctx, tiff.samples);
+		fz_free(ctx, tiff.profile);
 	}
 	fz_catch(ctx)
 	{
