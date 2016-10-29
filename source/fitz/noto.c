@@ -288,13 +288,16 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 #endif
 
 	/* No fonts available for these scripts: */
-	case UCDN_SCRIPT_BRAILLE: /* no dedicated font; fallback to NotoSansSymbols will cover this */
+	case UCDN_SCRIPT_ADLAM: break;
+	case UCDN_SCRIPT_BRAILLE: break; /* no dedicated font; fallback to NotoSansSymbols will cover this */
 	case UCDN_SCRIPT_CHAKMA: break;
 	case UCDN_SCRIPT_MIAO: break;
+	case UCDN_SCRIPT_NEWA: break;
 #ifndef TOFU_HISTORIC
 	case UCDN_SCRIPT_AHOM: break;
 	case UCDN_SCRIPT_ANATOLIAN_HIEROGLYPHS: break;
 	case UCDN_SCRIPT_BASSA_VAH: break;
+	case UCDN_SCRIPT_BHAIKSUKI: break;
 	case UCDN_SCRIPT_CAUCASIAN_ALBANIAN: break;
 	case UCDN_SCRIPT_DUPLOYAN: break;
 	case UCDN_SCRIPT_ELBASAN: break;
@@ -305,6 +308,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 	case UCDN_SCRIPT_LINEAR_A: break;
 	case UCDN_SCRIPT_MAHAJANI: break;
 	case UCDN_SCRIPT_MANICHAEAN: break;
+	case UCDN_SCRIPT_MARCHEN: break;
 	case UCDN_SCRIPT_MENDE_KIKAKUI: break;
 	case UCDN_SCRIPT_MEROITIC_CURSIVE: break;
 	case UCDN_SCRIPT_MEROITIC_HIEROGLYPHS: break;
@@ -315,6 +319,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 	case UCDN_SCRIPT_OLD_HUNGARIAN: break;
 	case UCDN_SCRIPT_OLD_NORTH_ARABIAN: break;
 	case UCDN_SCRIPT_OLD_PERMIC: break;
+	case UCDN_SCRIPT_OSAGE: break;
 	case UCDN_SCRIPT_PAHAWH_HMONG: break;
 	case UCDN_SCRIPT_PALMYRENE: break;
 	case UCDN_SCRIPT_PAU_CIN_HAU: break;
@@ -324,6 +329,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 	case UCDN_SCRIPT_SIGNWRITING: break;
 	case UCDN_SCRIPT_SORA_SOMPENG: break;
 	case UCDN_SCRIPT_TAKRI: break;
+	case UCDN_SCRIPT_TANGUT: break;
 	case UCDN_SCRIPT_TIRHUTA: break;
 	case UCDN_SCRIPT_WARANG_CITI: break;
 #endif

@@ -22,7 +22,6 @@ typedef struct {
 	unsigned char bidi_class;
 	unsigned char mirrored;
 	unsigned char east_asian_width;
-	unsigned char normalization_check;
 	unsigned char script;
 	unsigned char linebreak_class;
 } UCDRecord;
@@ -30,6 +29,11 @@ typedef struct {
 typedef struct {
 	unsigned short from, to;
 } MirrorPair;
+
+typedef struct {
+	unsigned short from, to;
+	unsigned char type;
+} BracketPair;
 
 typedef struct {
 	unsigned int start;
@@ -56,11 +60,11 @@ static const UCDRecord *get_ucd_record(uint32_t code)
 	if (code >= 0x110000)
 		index = 0;
 	else {
-		index = index0[code >> (SHIFT1+SHIFT2)] << SHIFT1;
+		index  = index0[code >> (SHIFT1+SHIFT2)] << SHIFT1;
 		offset = (code >> SHIFT2) & ((1<<SHIFT1) - 1);
-		index = index1[index + offset] << SHIFT2;
+		index  = index1[index + offset] << SHIFT2;
 		offset = code & ((1<<SHIFT2) - 1);
-		index = index2[index + offset];
+		index  = index2[index + offset];
 	}
 
 	return &ucd_records[index];
@@ -73,12 +77,12 @@ static const unsigned short *get_decomp_record(uint32_t code)
 	if (code >= 0x110000)
 		index = 0;
 	else {
-		index = decomp_index0[code >> (DECOMP_SHIFT1+DECOMP_SHIFT2)]
+		index  = decomp_index0[code >> (DECOMP_SHIFT1+DECOMP_SHIFT2)]
 			<< DECOMP_SHIFT1;
 		offset = (code >> DECOMP_SHIFT2) & ((1<<DECOMP_SHIFT1) - 1);
-		index = decomp_index1[index + offset] << DECOMP_SHIFT2;
+		index  = decomp_index1[index + offset] << DECOMP_SHIFT2;
 		offset = code & ((1<<DECOMP_SHIFT2) - 1);
-		index = decomp_index2[index + offset];
+		index  = decomp_index2[index + offset];
 	}
 
 	return &decomp_data[index];
@@ -105,6 +109,24 @@ static int compare_mp(const void *a, const void *b)
 	MirrorPair *mpa = (MirrorPair *)a;
 	MirrorPair *mpb = (MirrorPair *)b;
 	return mpa->from - mpb->from;
+}
+
+static int compare_bp(const void *a, const void *b)
+{
+	BracketPair *bpa = (BracketPair *)a;
+	BracketPair *bpb = (BracketPair *)b;
+	return bpa->from - bpb->from;
+}
+
+static BracketPair *search_bp(uint32_t code)
+{
+	BracketPair bp = {0,0,2};
+	BracketPair *res;
+
+	bp.from = code;
+	res = (BracketPair *) bsearch(&bp, bracket_pairs, BIDI_BRACKET_LEN,
+			sizeof(BracketPair), compare_bp);
+	return res;
 }
 
 static int hangul_pair_decompose(uint32_t code, uint32_t *a, uint32_t *b)
@@ -228,9 +250,10 @@ int ucdn_get_resolved_linebreak_class(uint32_t code)
 
 		case UCDN_LINEBREAK_CLASS_NL:
 			return UCDN_LINEBREAK_CLASS_BK;
-	}
 
-	return record->linebreak_class;
+		default:
+			return record->linebreak_class;
+	}
 }
 
 uint32_t ucdn_mirror(uint32_t code)
@@ -242,13 +265,31 @@ uint32_t ucdn_mirror(uint32_t code)
 		return code;
 
 	mp.from = code;
-	res = bsearch(&mp, mirror_pairs, BIDI_MIRROR_LEN, sizeof(MirrorPair),
-			compare_mp);
+	res = (MirrorPair *) bsearch(&mp, mirror_pairs, BIDI_MIRROR_LEN,
+			sizeof(MirrorPair), compare_mp);
 
 	if (res == NULL)
 		return code;
 	else
 		return res->to;
+}
+
+uint32_t ucdn_paired_bracket(uint32_t code)
+{
+	BracketPair *res = search_bp(code);
+	if (res == NULL)
+		return code;
+	else
+		return res->to;
+}
+
+int ucdn_paired_bracket_type(uint32_t code)
+{
+	BracketPair *res = search_bp(code);
+	if (res == NULL)
+		return UCDN_BIDI_PAIRED_BRACKET_TYPE_NONE;
+	else
+		return res->type;
 }
 
 int ucdn_decompose(uint32_t code, uint32_t *a, uint32_t *b)
@@ -289,11 +330,11 @@ int ucdn_compose(uint32_t *code, uint32_t a, uint32_t b)
 		return 0;
 
 	indexi = l * TOTAL_LAST + r;
-	index = comp_index0[indexi >> (COMP_SHIFT1+COMP_SHIFT2)] << COMP_SHIFT1;
+	index  = comp_index0[indexi >> (COMP_SHIFT1+COMP_SHIFT2)] << COMP_SHIFT1;
 	offset = (indexi >> COMP_SHIFT2) & ((1<<COMP_SHIFT1) - 1);
-	index = comp_index1[index + offset] << COMP_SHIFT2;
+	index  = comp_index1[index + offset] << COMP_SHIFT2;
 	offset = indexi & ((1<<COMP_SHIFT2) - 1);
-	*code = comp_data[index + offset];
+	*code  = comp_data[index + offset];
 
 	return *code != 0;
 }
