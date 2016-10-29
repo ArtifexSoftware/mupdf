@@ -1,10 +1,11 @@
 #include "mupdf/fitz.h"
 
+typedef struct fz_jpxd_s fz_jpxd;
+typedef struct stream_block_s stream_block;
+
 #ifdef HAVE_LURATECH
 
 #include <lwf_jp2.h>
-
-typedef struct fz_jpxd_s fz_jpxd;
 
 struct fz_jpxd_s
 {
@@ -13,8 +14,6 @@ struct fz_jpxd_s
 	fz_pixmap *pix;
 	JP2_Palette_Params *palette;
 	JP2_Colorspace colorspace;
-	unsigned char *data;
-	size_t size;
 	JP2_Property_Value width;
 	JP2_Property_Value height;
 	fz_colorspace *cs;
@@ -29,6 +28,12 @@ struct fz_jpxd_s
 	JP2_Property_Value *vstep;
 	JP2_Property_Value *bpss;
 	JP2_Property_Value *signs;
+};
+
+struct stream_block_s
+{
+	unsigned char *data;
+	size_t size;
 };
 
 static void * JP2_Callback_Conv
@@ -51,13 +56,13 @@ jpx_read(unsigned char *pucData,
 		unsigned long ulPos, unsigned long ulSize,
 		JP2_Callback_Param param)
 {
-	fz_jpxd *state = (fz_jpxd *) param;
+	stream_block *sb = (stream_block *) param;
 
-	if (ulPos >= state->size)
+	if (ulPos >= sb->size)
 		return 0;
 
-	ulSize = (unsigned long)fz_minz(ulSize, state->size - ulPos);
-	memcpy(pucData, &state->data[ulPos], ulSize);
+	ulSize = (unsigned long)fz_minz(ulSize, sb->size - ulPos);
+	memcpy(pucData, &sb->data[ulPos], ulSize);
 	return ulSize;
 }
 
@@ -230,18 +235,20 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	JP2_Error err;
 	int colors, alphas, prealphas;
 	JP2_Property_Value k;
+	stream_block sb;
 
 	memset(state, 0x00, sizeof (fz_jpxd));
 	state->ctx = ctx;
-	state->data = data;
-	state->size = size;
+
+	sb.data = data;
+	sb.size = size;
 
 	fz_try(ctx)
 	{
 		err = JP2_Decompress_Start(&state->doc,
 				jpx_alloc, (JP2_Callback_Param) state,
 				jpx_free, (JP2_Callback_Param) state,
-				jpx_read, (JP2_Callback_Param) state);
+				jpx_read, (JP2_Callback_Param) &sb);
 		if (err != cJP2_Error_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open image: %d", (int) err);
 
@@ -483,6 +490,13 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 
 #include <openjpeg.h>
 
+struct stream_block_s
+{
+	unsigned char *data;
+	OPJ_SIZE_T size;
+	OPJ_SIZE_T pos;
+};
+
 /* OpenJPEG does not provide a safe mechanism to intercept
  * allocations. In the latest version all allocations go
  * though opj_malloc etc, but no context is passed around.
@@ -618,13 +632,6 @@ static void fz_opj_info_callback(const char *msg, void *client_data)
 {
 	/* fz_warn("openjpeg info: %s", msg); */
 }
-
-typedef struct stream_block_s
-{
-	unsigned char *data;
-	OPJ_SIZE_T size;
-	OPJ_SIZE_T pos;
-} stream_block;
 
 static OPJ_SIZE_T fz_opj_stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_data)
 {
