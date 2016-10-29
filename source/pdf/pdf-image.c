@@ -31,7 +31,6 @@ pdf_load_jpx_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict
 static fz_image *
 pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict, fz_stream *cstm, int forcemask)
 {
-	fz_stream *stm = NULL;
 	fz_image *image = NULL;
 	pdf_obj *obj, *res;
 
@@ -53,40 +52,39 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 	if (pdf_is_jpx_image(ctx, dict))
 		return pdf_load_jpx_imp(ctx, doc, rdb, dict, cstm, forcemask);
 
-	fz_var(stm);
+	w = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Width, PDF_NAME_W));
+	h = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Height, PDF_NAME_H));
+	bpc = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_BitsPerComponent, PDF_NAME_BPC));
+	if (bpc == 0)
+		bpc = 8;
+	imagemask = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_ImageMask, PDF_NAME_IM));
+	interpolate = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Interpolate, PDF_NAME_I));
+
+	indexed = 0;
+	use_colorkey = 0;
+
+	if (imagemask)
+		bpc = 1;
+
+	if (w <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image width is zero (or less)");
+	if (h <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image height is zero (or less)");
+	if (bpc <= 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is zero (or less)");
+	if (bpc > 16)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is too large: %d", bpc);
+	if (w > (1 << 16))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image is too wide");
+	if (h > (1 << 16))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "image is too high");
+
 	fz_var(mask);
 	fz_var(image);
 	fz_var(colorspace);
 
 	fz_try(ctx)
 	{
-		w = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Width, PDF_NAME_W));
-		h = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Height, PDF_NAME_H));
-		bpc = pdf_to_int(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_BitsPerComponent, PDF_NAME_BPC));
-		if (bpc == 0)
-			bpc = 8;
-		imagemask = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_ImageMask, PDF_NAME_IM));
-		interpolate = pdf_to_bool(ctx, pdf_dict_geta(ctx, dict, PDF_NAME_Interpolate, PDF_NAME_I));
-
-		indexed = 0;
-		use_colorkey = 0;
-
-		if (imagemask)
-			bpc = 1;
-
-		if (w <= 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image width is zero (or less)");
-		if (h <= 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image height is zero (or less)");
-		if (bpc <= 0)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is zero (or less)");
-		if (bpc > 16)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image depth is too large: %d", bpc);
-		if (w > (1 << 16))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image is too wide");
-		if (h > (1 << 16))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "image is too high");
-
 		obj = pdf_dict_geta(ctx, dict, PDF_NAME_ColorSpace, PDF_NAME_CS);
 		if (obj && !imagemask && !forcemask)
 		{
