@@ -568,20 +568,20 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 			if (img->n > 4)
 			{
 				fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), img->w, img->h, 1);
+
 				rgb->xres = img->xres;
 				rgb->yres = img->yres;
 
 				fz_try(ctx)
-				{
 					fz_convert_pixmap(ctx, rgb, img);
-					fz_drop_pixmap(ctx, img);
-					img = rgb;
-					rgb = NULL;
-				}
-				fz_always(ctx)
-					fz_drop_pixmap(ctx, rgb);
 				fz_catch(ctx)
+				{
+					fz_drop_pixmap(ctx, rgb);
 					fz_rethrow(ctx);
+				}
+
+				fz_drop_pixmap(ctx, img);
+				img = rgb;
 			}
 
 			fz_premultiply_pixmap(ctx, img);
