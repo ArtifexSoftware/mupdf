@@ -457,6 +457,15 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 
 #include <openjpeg.h>
 
+struct fz_jpxd_s
+{
+	int width;
+	int height;
+	fz_colorspace *cs;
+	int xres;
+	int yres;
+};
+
 struct stream_block_s
 {
 	unsigned char *data;
@@ -648,14 +657,13 @@ l2subfactor(fz_context *ctx, unsigned int max_w, unsigned int w)
 }
 
 static fz_pixmap *
-jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
+jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
 {
 	fz_pixmap *img;
 	opj_dparameters_t params;
 	opj_codec_t *codec;
 	opj_image_t *jpx;
 	opj_stream_t *stream;
-	fz_colorspace *colorspace;
 	unsigned char *p;
 	OPJ_CODEC_FORMAT format;
 	int a, n, w, h, depth, sgnd;
@@ -737,7 +745,7 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 	{
 		if (fz_colorspace_n(ctx, defcs) == n)
 		{
-			colorspace = defcs;
+			state->cs = defcs;
 		}
 		else
 		{
@@ -750,9 +758,9 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 	{
 		switch (n)
 		{
-		case 1: colorspace = fz_device_gray(ctx); break;
-		case 3: colorspace = fz_device_rgb(ctx); break;
-		case 4: colorspace = fz_device_cmyk(ctx); break;
+		case 1: state->cs = fz_device_gray(ctx); break;
+		case 3: state->cs = fz_device_rgb(ctx); break;
+		case 4: state->cs = fz_device_cmyk(ctx); break;
 		default: fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components: %d", n);
 		}
 	}
@@ -785,20 +793,20 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 			upsample_required = 1;
 	}
 
-	w = (int)max_w;
-	h = (int)max_h;
+	state->width = w = (int)max_w;
+	state->height = h = (int)max_h;
+	state->xres = 72; /* openjpeg does not read the JPEG 2000 resc box */
+	state->yres = 72; /* openjpeg does not read the JPEG 2000 resc box */
 
-	fz_try(ctx)
-	{
-		img = fz_new_pixmap(ctx, colorspace, w, h, a);
-	}
-	fz_catch(ctx)
+	if (onlymeta)
 	{
 		opj_image_destroy(jpx);
-		fz_rethrow(ctx);
+		return NULL;
 	}
 
-	if (!onlymeta)
+	img = fz_new_pixmap(ctx, state->cs, w, h, a);
+
+	fz_try(ctx)
 	{
 		p = img->samples;
 		if (upsample_required)
@@ -867,8 +875,13 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 			fz_premultiply_pixmap(ctx, img);
 		}
 	}
-
-	opj_image_destroy(jpx);
+	fz_always(ctx)
+		opj_image_destroy(jpx);
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, img);
+		fz_rethrow(ctx);
+	}
 
 	return img;
 }
@@ -876,11 +889,13 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 fz_pixmap *
 fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed)
 {
+	fz_jpxd state = { 0 };
 	fz_pixmap *pix;
+
 	fz_try(ctx)
 	{
 		opj_lock(ctx);
-		pix = jpx_read_image(ctx, data, size, defcs, indexed, 0);
+		pix = jpx_read_image(ctx, &state, data, size, defcs, indexed, 0);
 	}
 	fz_always(ctx)
 		opj_unlock(ctx);
@@ -893,24 +908,23 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *de
 void
 fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
-	fz_pixmap *img;
+	fz_jpxd state = { 0 };
 
 	fz_try(ctx)
 	{
 		opj_lock(ctx);
-		img = jpx_read_image(ctx, data, size, NULL, 0, 1);
+		jpx_read_image(ctx, &state, data, size, NULL, 0, 1);
 	}
 	fz_always(ctx)
 		opj_unlock(ctx);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	*cspacep = fz_keep_colorspace(ctx, img->colorspace);
-	*wp = img->w;
-	*hp = img->h;
-	*xresp = 72; /* openjpeg does not read the JPEG 2000 resc box */
-	*yresp = 72; /* openjpeg does not read the JPEG 2000 resc box */
-	fz_drop_pixmap(ctx, img);
+	*cspacep = state.cs;
+	*wp = state.width;
+	*hp = state.height;
+	*xresp = state.xres;
+	*yresp = state.yres;
 }
 
 #endif /* HAVE_LURATECH */
