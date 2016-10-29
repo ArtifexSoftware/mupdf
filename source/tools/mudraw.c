@@ -1042,10 +1042,30 @@ static void drawrange(fz_context *ctx, fz_document *doc, const char *range)
 	{
 		if (spage < epage)
 			for (page = spage; page <= epage; page++)
-				drawpage(ctx, doc, page);
+			{
+				fz_try(ctx)
+					drawpage(ctx, doc, page);
+				fz_catch(ctx)
+				{
+					if (ignore_errors)
+						fz_warn(ctx, "ignoring error on page %d in '%s'", page, filename);
+					else
+						fz_rethrow(ctx);
+				}
+			}
 		else
 			for (page = spage; page >= epage; page--)
-				drawpage(ctx, doc, page);
+			{
+				fz_try(ctx)
+					drawpage(ctx, doc, page);
+				fz_catch(ctx)
+				{
+					if (ignore_errors)
+						fz_warn(ctx, "ignoring error on page %d in '%s'", page, filename);
+					else
+						fz_rethrow(ctx);
+				}
+			}
 	}
 }
 
