@@ -109,8 +109,9 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 	fz_jpxd *state = (fz_jpxd *) param;
 	JP2_Property_Value hstep, vstep;
 	unsigned char *row;
-	int x, y, w, h, n, i;
+	int w, h, n, entires, expand;
 	JP2_Property_Value x, y, i, bps, sign;
+	JP2_Property_Value k;
 
 	w = state->pix->w;
 	h = state->pix->h;
@@ -125,106 +126,66 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 	bps = state->bpss[sComponent];
 	sign = state->signs[sComponent];
 
+	palette = state->palette ? state->palette->ppulPalette : NULL;
+	entries = state->palette ? state->palette->ulEntries : 1;
+	expand = state->expand_indexed;
+
 	row = state->pix->samples +
 		state->pix->stride * ulRow * vstep +
 		n * ulStart * hstep +
 		sComponent;
 
-	if (state->palette)
+	for (y = 0; ulRow * vstep + y < (JP2_Property_Value)h && y < vstep; y++)
 	{
-		for (y = 0; ulRow * vstep + y < (JP2_Property_value)h && y < vstep; y++)
+		unsigned char *p = row;
+
+		for (i = 0; i < ulNum; i++)
 		{
-			unsigned char *p = row;
-
-			for (i = 0; i < ulNum; i++)
+			for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)w && x < hstep; x++)
 			{
-				for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)w && x < hstep; x++)
+				if (palette)
 				{
-					unsigned char v = fz_clampi(pucData[i], 0, state->palette->ulEntries - 1);
+						unsigned char v = fz_clampi(pucData[i], 0, entries - 1);
 
-					if (state->expand_indexed)
-					{
-						int k;
-						for (k = 0; k < n; k++)
-							p[k] = state->palette->ppulPalette[k][v];
-						p += n;
-					}
-					else
-					{
-						*p = v;
-						p++;
-					}
+						if (expand)
+						{
+							for (k = 0; k < n; k++)
+								p[k] = palette[k][v];
+						}
+						else
+							*p = v;
 				}
-			}
-
-			row += state->pix->stride;
-		}
-	}
-	else
-	{
-		if (bps > 8)
-		{
-			for (y = 0; ulRow * vstep + y < (JP2_Property_Value)h && y < vstep; y++)
-			{
-				unsigned char *p = row;
-
-				for (i = 0; i < ulNum; i++)
+				else
 				{
-					for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)w && x < hstep; x++)
+					if (bps > 8)
 					{
 						unsigned int v = (pucData[2 * i + 1] << 8) | pucData[2 * i + 0];
 						v &= (1 << bps) - 1;
 						v -= sign;
 						*p = v >> (bps - 8);
-						p += n;
 					}
-				}
-
-				row += state->pix->stride;
-			}
-		}
-		else if (bps == 8)
-		{
-			for (y = 0; ulRow * vstep + y < (JP2_Property_Value)h && y < vstep; y++)
-			{
-				unsigned char *p = row;
-
-				for (i = 0; i < ulNum; i++)
-				{
-					for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)w && x < hstep; x++)
+					else if (bps == 8)
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << bps) - 1;
 						v -= sign;
 						*p = v;
-						p += n;
 					}
-				}
-
-				row += state->pix->stride;
-			}
-		}
-		else
-		{
-			for (y = 0; ulRow * vstep + y < (JP2_Property_Value)h && y < vstep; y++)
-			{
-				unsigned char *p = row;
-
-				for (i = 0; i < ulNum; i++)
-				{
-					for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)w && x < hstep; x++)
+					else
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << bps) - 1;
 						v -= sign;
 						*p = v << (8 - bps);
-						p += n;
 					}
+
 				}
 
-				row += state->pix->stride;
+				p += n;
 			}
 		}
+
+		row += state->pix->stride;
 	}
 
 	return cJP2_Error_OK;
