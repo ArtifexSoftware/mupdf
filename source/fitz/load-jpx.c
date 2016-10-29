@@ -3,6 +3,37 @@
 typedef struct fz_jpxd_s fz_jpxd;
 typedef struct stream_block_s stream_block;
 
+static void
+jpx_ycc_to_rgb(fz_context *ctx, fz_pixmap *pix, int cbsign, int crsign)
+{
+	int w = pix->w;
+	int h = pix->h;
+	int stride = pix->stride;
+	int x, y;
+
+	for (y = 0; y < h; y++)
+	{
+		unsigned char * row = &pix->samples[stride * y];
+		for (x = 0; x < w; x++)
+		{
+			int ycc[3];
+			ycc[0] = row[x * 3 + 0];
+			ycc[1] = row[x * 3 + 1];
+			ycc[2] = row[x * 3 + 2];
+
+			/* conciously skip Y */
+			if (cbsign)
+				ycc[1] -= 128;
+			if (crsign)
+				ycc[2] -= 128;
+
+			row[x * 3 + 0] = fz_clampi((double)ycc[0] + 1.402 * ycc[2], 0, 255);
+			row[x * 3 + 1] = fz_clampi((double)ycc[0] - 0.34413 * ycc[1] - 0.71414 * ycc[2], 0, 255);
+			row[x * 3 + 2] = fz_clampi((double)ycc[0] + 1.772 * ycc[1], 0, 255);
+		}
+	}
+}
+
 #ifdef HAVE_LURATECH
 
 #include <lwf_jp2.h>
@@ -204,35 +235,6 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 	return cJP2_Error_OK;
 }
 
-static void
-jpx_ycc_to_rgb(fz_context *ctx, fz_jpxd *state)
-{
-	JP2_Property_Value x, y;
-
-	for (y = 0; y < state->height; y++)
-	{
-		unsigned char * row = &state->pix->samples[state->pix->stride * y];
-		for (x = 0; x < state->width; x++)
-		{
-			int ycc[3];
-			ycc[0] = row[x * 3 + 0];
-			ycc[1] = row[x * 3 + 1];
-			ycc[2] = row[x * 3 + 2];
-
-			/* conciously skip Y */
-			if (!state->signs[1])
-				ycc[1] -= 128;
-			if (!state->signs[2])
-				ycc[2] -= 128;
-
-			row[x * 3 + 0] = fz_clampi((double)ycc[0] + 1.402 * ycc[2], 0, 255);
-			row[x * 3 + 1] = fz_clampi((double)ycc[0] - 0.34413 * ycc[1] - 0.71414 * ycc[2], 0, 255);
-			row[x * 3 + 2] = fz_clampi((double)ycc[0] + 1.772 * ycc[1], 0, 255);
-		}
-	}
-
-}
-
 static fz_pixmap *
 jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
 {
@@ -417,7 +419,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot decode image: %d", (int) err);
 
 			if (colorspace == cJP2_Colorspace_RGB_YCCa)
-				jpx_ycc_to_rgb(ctx, state);
+				jpx_ycc_to_rgb(ctx, state->pix, !state->signs[1], !state->signs[2]);
 
 			if (state->pix->alpha && ! (HAS_PALETTE(colorspace) && !state->expand_indexed))
 			{
@@ -669,29 +671,6 @@ l2subfactor(fz_context *ctx, unsigned int max_w, unsigned int w)
 	return i;
 }
 
-static void
-jpx_ycc_to_rgb(fz_context *ctx, fz_pixmap *pix)
-{
-	int x, y;
-
-	for (y = 0; y < pix->h; y++)
-	{
-		unsigned char * row = &pix->samples[pix->stride * y];
-		for (x = 0; x < pix->w; x++)
-		{
-			int ycc[3];
-			ycc[0] = row[x * 3 + 0];
-			ycc[1] = row[x * 3 + 1] - 128;
-			ycc[2] = row[x * 3 + 2] - 128;
-
-			row[x * 3 + 0] = fz_clampi((double)ycc[0] + 1.402 * ycc[2], 0, 255);
-			row[x * 3 + 1] = fz_clampi((double)ycc[0] - 0.34413 * ycc[1] - 0.71414 * ycc[2], 0, 255);
-			row[x * 3 + 2] = fz_clampi((double)ycc[0] + 1.772 * ycc[1], 0, 255);
-		}
-	}
-
-}
-
 static fz_pixmap *
 jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
 {
@@ -911,7 +890,7 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 	}
 
 	if (jpx->color_space == OPJ_CLRSPC_SYCC && n == 3 && a == 0)
-		jpx_ycc_to_rgb(ctx, img);
+		jpx_ycc_to_rgb(ctx, img, 1, 1);
 
 	opj_image_destroy(jpx);
 
