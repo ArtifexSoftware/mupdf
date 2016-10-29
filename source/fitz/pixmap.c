@@ -89,7 +89,9 @@ fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h
 fz_pixmap *
 fz_new_pixmap(fz_context *ctx, fz_colorspace *colorspace, int w, int h, int alpha)
 {
-	int stride = (fz_colorspace_n(ctx, colorspace) + alpha) * w;
+	int stride;
+	if (!colorspace) alpha = 1;
+	stride = (fz_colorspace_n(ctx, colorspace) + alpha) * w;
 	return fz_new_pixmap_with_data(ctx, colorspace, w, h, alpha, stride, NULL);
 }
 
@@ -107,7 +109,9 @@ fz_pixmap *
 fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *r, int alpha, unsigned char *samples)
 {
 	int w = r->x1 - r->x0;
-	int stride = (fz_colorspace_n(ctx, colorspace) + alpha) * w;
+	int stride;
+	if (!colorspace) alpha = 1;
+	stride = (fz_colorspace_n(ctx, colorspace) + alpha) * w;
 	fz_pixmap *pixmap = fz_new_pixmap_with_data(ctx, colorspace, w, r->y1 - r->y0, alpha, stride, samples);
 	pixmap->x = r->x0;
 	pixmap->y = r->y0;
