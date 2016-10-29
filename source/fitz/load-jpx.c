@@ -767,7 +767,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 	max_w = jpx->comps[0].w;
 	max_h = jpx->comps[0].h;
-	for (k = 1; k < (int)jpx->numcomps; k++)
+	for (k = 1; k < n + a; k++)
 	{
 		if (max_w < jpx->comps[k].w)
 			max_w = jpx->comps[k].w;
@@ -785,7 +785,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		}
 	}
 
-	for (k = 0; k < (int)jpx->numcomps; k++)
+	for (k = 0; k < n + a; k++)
 	{
 		sub_w[k] = l2subfactor(ctx, max_w, jpx->comps[k].w);
 		sub_h[k] = l2subfactor(ctx, max_h, jpx->comps[k].h);
