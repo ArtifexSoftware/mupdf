@@ -162,8 +162,6 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 	}
 	else
 	{
-		unsigned int signedoffset = sign ? 1 << (bps - 1) : 0;
-
 		if (bps > 8)
 		{
 			for (y = 0; ulRow * vstep + y < (JP2_Property_Value)h && y < vstep; y++)
@@ -176,7 +174,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 					{
 						unsigned int v = (pucData[2 * i + 1] << 8) | pucData[2 * i + 0];
 						v &= (1 << bps) - 1;
-						v -= signedoffset;
+						v -= sign;
 						*p = v >> (bps - 8);
 						p += n;
 					}
@@ -197,7 +195,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << bps) - 1;
-						v -= signedoffset;
+						v -= sign;
 						*p = v;
 						p += n;
 					}
@@ -218,7 +216,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << bps) - 1;
-						v -= signedoffset;
+						v -= sign;
 						*p = v << (8 - bps);
 						p += n;
 					}
@@ -321,6 +319,8 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 				heights[k] = state->height;
 				state->bpss[k] = state->palette->pucBitsPerSample[k];
 				state->signs[k] = state->palette->pucSignedSample[k];
+				if (state->signs[k])
+					state->signs[k] = 1 << (state->bpss[k] - 1);
 			}
 		}
 		else
