@@ -43,19 +43,9 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 				if (tile->n != 1)
 				{
 					fz_pixmap *gray;
-					fz_irect bbox;
 					if (tile->n != 2)
 						fz_warn(ctx, "soft mask should be grayscale");
-					gray = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), fz_pixmap_bbox(ctx, tile, &bbox), 0);
-
-					fz_try(ctx)
-						fz_convert_pixmap(ctx, gray, tile);
-					fz_catch(ctx)
-					{
-						fz_drop_pixmap(ctx, gray);
-						fz_rethrow(ctx);
-					}
-
+					gray = fz_convert_pixmap(ctx, tile, fz_device_gray(ctx), 0);
 					fz_drop_pixmap(ctx, tile);
 					tile = gray;
 				}

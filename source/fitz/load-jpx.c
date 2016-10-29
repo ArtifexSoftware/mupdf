@@ -427,16 +427,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 				/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 				if (state->pix->n == 5)
 				{
-					fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), state->pix->w, state->pix->h, 1);
-
-					fz_try(ctx)
-						fz_convert_pixmap(ctx, rgb, state->pix);
-					fz_catch(ctx)
-					{
-						fz_drop_pixmap(ctx, rgb);
-						fz_rethrow(ctx);
-					}
-
+					fz_pixmap *rgb = fz_convert_pixmap(ctx, state->pix, fz_device_rgb(ctx), 1);
 					fz_drop_pixmap(ctx, state->pix);
 					state->pix = rgb;
 				}
@@ -922,16 +913,7 @@ jpx_read_image(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace 
 			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 			if (n == 4)
 			{
-				fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), w, h, 1);
-
-				fz_try(ctx)
-					fz_convert_pixmap(ctx, rgb, img);
-				fz_catch(ctx)
-				{
-					fz_drop_pixmap(ctx, rgb);
-					fz_rethrow(ctx);
-				}
-
+				fz_pixmap *rgb = fz_convert_pixmap(ctx, img, fz_device_rgb(ctx), 1);
 				fz_drop_pixmap(ctx, img);
 				img = rgb;
 			}

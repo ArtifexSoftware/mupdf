@@ -1235,10 +1235,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix local_ctm = concat(in_ctm, &dev->transform);
-	fz_pixmap *converted = NULL;
-	fz_pixmap *scaled = NULL;
 	fz_pixmap *pixmap;
-	fz_pixmap *orig_pixmap;
 	int after;
 	int dx, dy;
 	fz_draw_state *state = &dev->stack[dev->top];
@@ -1248,8 +1245,6 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	fz_irect src_area;
 
 	fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
-
-	fz_var(scaled);
 
 	if (image->w == 0 || image->h == 0)
 		return;
@@ -1290,11 +1285,12 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	}
 
 	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
-	orig_pixmap = pixmap;
 
 	/* convert images with more components (cmyk->rgb) before scaling */
 	/* convert images with fewer components (gray->rgb) after scaling */
 	/* convert images with expensive colorspace transforms after scaling */
+
+	fz_var(pixmap);
 
 	fz_try(ctx)
 	{
@@ -1307,17 +1303,15 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 		if (pixmap->colorspace != model && !after)
 		{
-			fz_irect bbox;
-			fz_pixmap_bbox(ctx, pixmap, &bbox);
-			converted = fz_new_pixmap_with_bbox(ctx, model, &bbox, (model ? pixmap->alpha : 1));
-			fz_convert_pixmap(ctx, converted, pixmap);
+			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, 1);
+			fz_drop_pixmap(ctx, pixmap);
 			pixmap = converted;
 		}
 
 		if (!(devp->hints & FZ_DONT_INTERPOLATE_IMAGES) && ctx->tuning->image_scale(ctx->tuning->image_scale_arg, dx, dy, pixmap->w, pixmap->h))
 		{
 			int gridfit = alpha == 1.0f && !(dev->flags & FZ_DRAWDEV_FLAGS_TYPE3);
-			scaled = fz_transform_pixmap(ctx, dev, pixmap, &local_ctm, state->dest->x, state->dest->y, dx, dy, gridfit, &clip);
+			fz_pixmap *scaled = fz_transform_pixmap(ctx, dev, pixmap, &local_ctm, state->dest->x, state->dest->y, dx, dy, gridfit, &clip);
 			if (!scaled)
 			{
 				if (dx < 1)
@@ -1327,7 +1321,10 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 				scaled = fz_scale_pixmap_cached(ctx, pixmap, pixmap->x, pixmap->y, dx, dy, NULL, dev->cache_x, dev->cache_y);
 			}
 			if (scaled)
+			{
+				fz_drop_pixmap(ctx, pixmap);
 				pixmap = scaled;
+			}
 		}
 
 		if (pixmap->colorspace != model)
@@ -1341,10 +1338,8 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			else
 #endif
 			{
-				fz_irect bbox;
-				fz_pixmap_bbox(ctx, pixmap, &bbox);
-				converted = fz_new_pixmap_with_bbox(ctx, model, &bbox, pixmap->alpha);
-				fz_convert_pixmap(ctx, converted, pixmap);
+				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, 1);
+				fz_drop_pixmap(ctx, pixmap);
 				pixmap = converted;
 			}
 		}
@@ -1355,15 +1350,9 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			fz_knockout_end(ctx, dev);
 	}
 	fz_always(ctx)
-	{
-		fz_drop_pixmap(ctx, scaled);
-		fz_drop_pixmap(ctx, converted);
-		fz_drop_pixmap(ctx, orig_pixmap);
-	}
+		fz_drop_pixmap(ctx, pixmap);
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 }
 
 static void
@@ -1376,7 +1365,6 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	float colorfv[FZ_MAX_COLORS];
 	fz_pixmap *scaled = NULL;
 	fz_pixmap *pixmap;
-	fz_pixmap *orig_pixmap;
 	int dx, dy;
 	int i, n;
 	fz_draw_state *state = &dev->stack[dev->top];
@@ -1430,7 +1418,8 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	}
 
 	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
-	orig_pixmap = pixmap;
+
+	fz_var(pixmap);
 
 	fz_try(ctx)
 	{
@@ -1450,7 +1439,10 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 				scaled = fz_scale_pixmap_cached(ctx, pixmap, pixmap->x, pixmap->y, dx, dy, NULL, dev->cache_x, dev->cache_y);
 			}
 			if (scaled)
+			{
+				fz_drop_pixmap(ctx, pixmap);
 				pixmap = scaled;
+			}
 		}
 
 		n = fz_colorspace_n(ctx, model);
@@ -1471,14 +1463,9 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 			fz_knockout_end(ctx, dev);
 	}
 	fz_always(ctx)
-	{
-		fz_drop_pixmap(ctx, scaled);
-		fz_drop_pixmap(ctx, orig_pixmap);
-	}
+		fz_drop_pixmap(ctx, pixmap);
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 }
 
 static void
@@ -1492,7 +1479,6 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_pixmap *shape = NULL;
 	fz_pixmap *scaled = NULL;
 	fz_pixmap *pixmap = NULL;
-	fz_pixmap *orig_pixmap = NULL;
 	int dx, dy;
 	fz_draw_state *state = push_stack(ctx, dev);
 	fz_colorspace *model = state->dest->colorspace;
@@ -1502,12 +1488,6 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	STACK_PUSHED("clip image mask");
 	fz_pixmap_bbox(ctx, state->dest, &clip);
 	fz_intersect_irect(&clip, &state->scissor);
-
-	fz_var(mask);
-	fz_var(dest);
-	fz_var(shape);
-	fz_var(pixmap);
-	fz_var(orig_pixmap);
 
 	if (image->w == 0 || image->h == 0)
 	{
@@ -1534,11 +1514,15 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
 	}
 
+	pixmap = fz_get_pixmap_from_image(ctx, image, NULL, &local_ctm, &dx, &dy);
+
+	fz_var(mask);
+	fz_var(dest);
+	fz_var(shape);
+	fz_var(pixmap);
+
 	fz_try(ctx)
 	{
-		pixmap = fz_get_pixmap_from_image(ctx, image, NULL, &local_ctm, &dx, &dy);
-		orig_pixmap = pixmap;
-
 		state[1].mask = mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
 		fz_clear_pixmap(ctx, mask);
 
@@ -1573,7 +1557,10 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 				scaled = fz_scale_pixmap_cached(ctx, pixmap, pixmap->x, pixmap->y, dx, dy, NULL, dev->cache_x, dev->cache_y);
 			}
 			if (scaled)
+			{
+				fz_drop_pixmap(ctx, pixmap);
 				pixmap = scaled;
+			}
 		}
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top, "");
@@ -1592,14 +1579,9 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 #endif
 	}
 	fz_always(ctx)
-	{
-		fz_drop_pixmap(ctx, scaled);
-		fz_drop_pixmap(ctx, orig_pixmap);
-	}
+		fz_drop_pixmap(ctx, pixmap);
 	fz_catch(ctx)
-	{
 		emergency_pop_stack(ctx, dev, state);
-	}
 }
 
 static void

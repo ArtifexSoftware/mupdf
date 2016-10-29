@@ -860,6 +860,36 @@ fz_pixmap_size(fz_context *ctx, fz_pixmap * pix)
 }
 
 fz_pixmap *
+fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, int keep_alpha)
+{
+	fz_pixmap *cvt;
+
+	if (!ds && !keep_alpha)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot both throw away and keep alpha");
+
+	cvt = fz_new_pixmap(ctx, ds, pix->w, pix->h, keep_alpha && pix->alpha);
+
+	cvt->xres = pix->xres;
+	cvt->yres = pix->yres;
+	cvt->x = pix->x;
+	cvt->y = pix->y;
+	cvt->interpolate = pix->interpolate;
+
+	fz_try(ctx)
+	{
+		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, ds, pix->colorspace);
+		pc(ctx, cvt, pix);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, cvt);
+		fz_rethrow(ctx);
+	}
+
+	return cvt;
+}
+
+fz_pixmap *
 fz_new_pixmap_from_8bpp_data(fz_context *ctx, int x, int y, int w, int h, unsigned char *sp, int span)
 {
 	fz_pixmap *pixmap = fz_new_pixmap(ctx, NULL, w, h, 1);

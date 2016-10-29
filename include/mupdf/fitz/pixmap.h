@@ -262,14 +262,18 @@ void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
 void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	fz_convert_pixmap: Convert from one pixmap to another (assumed to be
-	the same size, but possibly with a different colorspace).
+	fz_convert_pixmap: Convert an existing pixmap to a desired
+	colorspace. Other properties of the pixmap, such as resolution
+	and position are are copied to the converted pixmap.
 
-	dst: the source pixmap.
+	pix: The pixmap to convert.
 
-	src: the destination pixmap.
+	cs: Desired colorspace, may be NULL to denote alpha-only.
+
+	keep_alpha: If 0 any alpha component is removed, otherwise
+	alpha is kept if present in the pixmap.
 */
-void fz_convert_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src);
+fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *src, int keep_alpha);
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a

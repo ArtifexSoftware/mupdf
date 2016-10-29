@@ -1769,19 +1769,6 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 	else return fz_std_conv_pixmap;
 }
 
-void
-fz_convert_pixmap(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp)
-{
-	fz_colorspace *ss = sp->colorspace;
-	fz_colorspace *ds = dp->colorspace;
-	fz_pixmap_converter *converter;
-
-	dp->interpolate = sp->interpolate;
-
-	converter = fz_lookup_pixmap_converter(ctx, ds, ss);
-	converter(ctx, dp, sp);
-}
-
 /* Convert a single color */
 
 static void

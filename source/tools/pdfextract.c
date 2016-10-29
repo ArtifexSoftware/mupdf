@@ -38,9 +38,7 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int dorgb)
 
 	if (dorgb && pix->colorspace && pix->colorspace != fz_device_rgb(ctx))
 	{
-		fz_irect bbox;
-		rgb = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), fz_pixmap_bbox(ctx, pix, &bbox), pix->alpha);
-		fz_convert_pixmap(ctx, rgb, pix);
+		rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), 1);
 		pix = rgb;
 	}
 
