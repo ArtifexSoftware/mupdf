@@ -7,6 +7,11 @@ typedef struct stream_block_s stream_block;
 
 #include <lwf_jp2.h>
 
+#define MAX_COLORS 4
+#define MAX_ALPHAS 1
+#define MAX_COMPONENTS (MAX_COLORS + MAX_ALPHAS)
+
+
 struct fz_jpxd_s
 {
 	JP2_Decomp_Handle doc;
@@ -21,12 +26,12 @@ struct fz_jpxd_s
 	unsigned long yres;
 
 	JP2_Property_Value nchans;
-	JP2_Property_Value *widths;
-	JP2_Property_Value *heights;
-	JP2_Property_Value *hstep;
-	JP2_Property_Value *vstep;
-	JP2_Property_Value *bpss;
-	JP2_Property_Value *signs;
+	JP2_Property_Value widths[MAX_COMPONENTS];
+	JP2_Property_Value heights[MAX_COMPONENTS];
+	JP2_Property_Value hstep[MAX_COMPONENTS];
+	JP2_Property_Value vstep[MAX_COMPONENTS];
+	JP2_Property_Value bpss[MAX_COMPONENTS];
+	JP2_Property_Value signs[MAX_COMPONENTS];
 };
 
 struct stream_block_s
@@ -296,17 +301,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 		if (prealphas> 0)
 			alphas = prealphas;
-		colors = fz_clampi(colors, 0, 4);
-		alphas = fz_clampi(alphas, 0, 1);
+		colors = fz_clampi(colors, 0, MAX_COLORS);
+		alphas = fz_clampi(alphas, 0, MAX_ALPHAS);
 
 		state->nchans = colors + alphas;
-
-		state->widths = fz_malloc(ctx, state->nchans * sizeof (JP2_Property_Value));
-		state->heights = fz_malloc(ctx, state->nchans * sizeof (JP2_Property_Value));
-		state->hstep = fz_malloc(ctx, state->nchans * sizeof (JP2_Property_Value));
-		state->vstep = fz_malloc(ctx, state->nchans * sizeof (JP2_Property_Value));
-		state->bpss = fz_malloc(ctx, state->nchans * sizeof (JP2_Property_Value));
-		state->signs = fz_malloc(ctx, state->nchans * sizeof (JP2_Property_Value));
 
 		if (state->palette)
 		{
@@ -436,15 +434,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		}
 	}
 	fz_always(ctx)
-	{
 		JP2_Decompress_End(state->doc);
-		fz_free(ctx, state->signs);
-		fz_free(ctx, state->widths);
-		fz_free(ctx, state->heights);
-		fz_free(ctx, state->hstep);
-		fz_free(ctx, state->vstep);
-		fz_free(ctx, state->bpss);
-	}
 	fz_catch(ctx)
 	{
 		fz_drop_pixmap(ctx, state->pix);
