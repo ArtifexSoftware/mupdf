@@ -21,20 +21,14 @@ typedef struct stream_block_s stream_block;
 
 struct fz_jpxd_s
 {
-	JP2_Decomp_Handle doc;
 	fz_pixmap *pix;
 	JP2_Palette_Params *palette;
-	JP2_Colorspace colorspace;
 	JP2_Property_Value width;
 	JP2_Property_Value height;
 	fz_colorspace *cs;
 	int expand_indexed;
 	unsigned long xres;
 	unsigned long yres;
-
-	JP2_Property_Value nchans;
-	JP2_Property_Value widths[MAX_COMPONENTS];
-	JP2_Property_Value heights[MAX_COMPONENTS];
 	JP2_Property_Value hstep[MAX_COMPONENTS];
 	JP2_Property_Value vstep[MAX_COMPONENTS];
 	JP2_Property_Value bpss[MAX_COMPONENTS];
@@ -242,10 +236,15 @@ jpx_ycc_to_rgb(fz_context *ctx, fz_jpxd *state)
 static fz_pixmap *
 jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
 {
+	JP2_Decomp_Handle doc;
 	JP2_Channel_Def_Params *chans = NULL;
 	JP2_Error err;
 	int colors, alphas, prealphas;
 	JP2_Property_Value k;
+	JP2_Colorspace colorspace;
+	JP2_Property_Value nchans;
+	JP2_Property_Value widths[MAX_COMPONENTS];
+	JP2_Property_Value heights[MAX_COMPONENTS];
 	stream_block sb;
 
 	memset(state, 0x00, sizeof (fz_jpxd));
@@ -255,7 +254,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 	fz_try(ctx)
 	{
-		err = JP2_Decompress_Start(&state->doc,
+		err = JP2_Decompress_Start(&doc,
 				jpx_alloc, (JP2_Callback_Param) ctx,
 				jpx_free, (JP2_Callback_Param) ctx,
 				jpx_read, (JP2_Callback_Param) &sb);
@@ -263,18 +262,18 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open image: %d", (int) err);
 
 #if defined(JP2_LICENSE_NUM_1) && defined(JP2_LICENSE_NUM_2)
-		err = JP2_Document_SetLicense(state->doc, JP2_LICENSE_NUM_1, JP2_LICENSE_NUM_2);
+		err = JP2_Document_SetLicense(doc, JP2_LICENSE_NUM_1, JP2_LICENSE_NUM_2);
 		if (err != cJP2_Error_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot set license: %d", (int) err);
 #endif
 
-		err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Extern_Colorspace, (unsigned long *) &state->colorspace, -1, -1);
+		err = JP2_Decompress_GetProp(doc, cJP2_Prop_Extern_Colorspace, (unsigned long *) &colorspace, -1, -1);
 		if (err != cJP2_Error_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get colorspace: %d", (int) err);
 
-		if (HAS_PALETTE(state->colorspace))
+		if (HAS_PALETTE(colorspace))
 		{
-			err = JP2_Decompress_GetPalette(state->doc, &state->palette);
+			err = JP2_Decompress_GetPalette(doc, &state->palette);
 			if (err != cJP2_Error_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get indexed palette: %d", (int) err);
 
@@ -284,14 +283,14 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 					fz_throw(ctx, FZ_ERROR_GENERIC, "signed palette compoments not yet supported");
 		}
 
-		err = JP2_Decompress_GetChannelDefs(state->doc, &chans, &state->nchans);
+		err = JP2_Decompress_GetChannelDefs(doc, &chans, &nchans);
 		if (err != cJP2_Error_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get channel definitions: %d", (int) err);
 
 		colors = 0;
 		alphas = 0;
 		prealphas = 0;
-		for (k = 0; k < state->nchans; k++)
+		for (k = 0; k < nchans; k++)
 		{
 			switch (chans[k].ulType)
 			{
@@ -306,54 +305,54 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		colors = fz_clampi(colors, 0, MAX_COLORS);
 		alphas = fz_clampi(alphas, 0, MAX_ALPHAS);
 
-		state->nchans = colors + alphas;
+		nchans = colors + alphas;
 
-		if (HAS_PALETTE(state->colorspace))
+		if (HAS_PALETTE(colorspace))
 		{
-			err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Width, &state->width, -1, 0);
+			err = JP2_Decompress_GetProp(doc, cJP2_Prop_Width, &state->width, -1, 0);
 			if (err != cJP2_Error_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get width for palette indicies: %d", (int) err);
-			err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Height, &state->height, -1, 0);
+			err = JP2_Decompress_GetProp(doc, cJP2_Prop_Height, &state->height, -1, 0);
 			if (err != cJP2_Error_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get height for palette indicies: %d", (int) err);
 
-			for (k = 0; k < state->nchans; k++)
+			for (k = 0; k < nchans; k++)
 			{
-				state->widths[k] = state->width;
-				state->heights[k] = state->height;
+				widths[k] = state->width;
+				heights[k] = state->height;
 				state->bpss[k] = state->palette->pucBitsPerSample[k];
 				state->signs[k] = state->palette->pucSignedSample[k];
 			}
 		}
 		else
 		{
-			for (k = 0; k < state->nchans; k++)
+			for (k = 0; k < nchans; k++)
 			{
-				err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Width, &state->widths[k], -1, k);
+				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Width, &widths[k], -1, k);
 				if (err != cJP2_Error_OK)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get width for component %ld: %d", k, (int) err);
-				err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Height, &state->heights[k], -1, k);
+				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Height, &heights[k], -1, k);
 				if (err != cJP2_Error_OK)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get height for component %ld: %d", k, (int) err);
-				err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Bits_Per_Sample, &state->bpss[k], -1, k);
+				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Bits_Per_Sample, &state->bpss[k], -1, k);
 				if (err != cJP2_Error_OK)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get bits per sample for component %ld: %d", k, (int) err);
-				err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Signed_Samples, &state->signs[k], -1, k);
+				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Signed_Samples, &state->signs[k], -1, k);
 				if (err != cJP2_Error_OK)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get signed for component %ld: %d", k, (int) err);
 
-				state->width = fz_maxi(state->width, state->widths[k]);
-				state->height = fz_maxi(state->height, state->heights[k]);
+				state->width = fz_maxi(state->width, widths[k]);
+				state->height = fz_maxi(state->height, heights[k]);
 			}
 		}
 
-		for (k = 0; k < state->nchans; k++)
+		for (k = 0; k < nchans; k++)
 		{
-			state->hstep[k] = (state->width + (state->widths[k] - 1)) / state->widths[k];
-			state->vstep[k] = (state->height + (state->heights[k] - 1)) / state->heights[k];
+			state->hstep[k] = (state->width + (widths[k] - 1)) / widths[k];
+			state->vstep[k] = (state->height + (heights[k] - 1)) / heights[k];
 		}
 
-		err = JP2_Decompress_GetResolution(state->doc, &state->yres, &state->xres, NULL,
+		err = JP2_Decompress_GetResolution(doc, &state->yres, &state->xres, NULL,
 				cJP2_Resolution_Dots_Per_Inch, cJP2_Resolution_Capture);
 		if (err != cJP2_Error_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get resolution: %d", (int) err);
@@ -363,13 +362,13 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 		if (defcs)
 		{
-			if (fz_colorspace_n(ctx, defcs) == state->nchans)
+			if (fz_colorspace_n(ctx, defcs) == nchans)
 			{
 				state->cs = defcs;
 			}
 			else
 			{
-				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", state->nchans, fz_colorspace_n(ctx, defcs), fz_colorspace_name(ctx, defcs));
+				fz_warn(ctx, "jpx file (%lu) and dict colorspace (%d, %s) do not match", nchans, fz_colorspace_n(ctx, defcs), fz_colorspace_name(ctx, defcs));
 				defcs = NULL;
 			}
 		}
@@ -379,7 +378,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 			switch (colors)
 			{
 			case 4: state->cs = fz_device_cmyk(ctx); break;
-			case 3: if (state->colorspace == cJP2_Colorspace_CIE_LABa)
+			case 3: if (colorspace == cJP2_Colorspace_CIE_LABa)
 					state->cs = fz_device_lab(ctx);
 				else
 					state->cs = fz_device_rgb(ctx);
@@ -394,11 +393,11 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 					break;
 				}
 				/* fallthrough */
-			default: fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components: %lu", state->nchans);
+			default: fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components: %lu", nchans);
 			}
 		}
 
-		if (HAS_PALETTE(state->colorspace) && !fz_colorspace_is_indexed(ctx, state->cs))
+		if (HAS_PALETTE(colorspace) && !fz_colorspace_is_indexed(ctx, state->cs))
 			state->expand_indexed = 1;
 
 		if (!onlymeta)
@@ -406,21 +405,21 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 			state->pix = fz_new_pixmap(ctx, state->cs, state->width, state->height, alphas);
 			fz_clear_pixmap_with_value(ctx, state->pix, 0);
 
-			err = JP2_Decompress_SetProp(state->doc, cJP2_Prop_Output_Parameter, (JP2_Property_Value) state);
+			err = JP2_Decompress_SetProp(doc, cJP2_Prop_Output_Parameter, (JP2_Property_Value) state);
 			if (err != cJP2_Error_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot set write callback userdata: %d", (int) err);
-			err = JP2_Decompress_SetProp(state->doc, cJP2_Prop_Output_Function, (JP2_Property_Value) jpx_write);
+			err = JP2_Decompress_SetProp(doc, cJP2_Prop_Output_Function, (JP2_Property_Value) jpx_write);
 			if (err != cJP2_Error_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot set write callback: %d", (int) err);
 
-			err = JP2_Decompress_Image(state->doc);
+			err = JP2_Decompress_Image(doc);
 			if (err != cJP2_Error_OK)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot decode image: %d", (int) err);
 
-			if (state->colorspace == cJP2_Colorspace_RGB_YCCa)
+			if (colorspace == cJP2_Colorspace_RGB_YCCa)
 				jpx_ycc_to_rgb(ctx, state);
 
-			if (state->pix->alpha && ! (HAS_PALETTE(state->colorspace) && !state->expand_indexed))
+			if (state->pix->alpha && ! (HAS_PALETTE(colorspace) && !state->expand_indexed))
 			{
 				/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 				if (state->pix->n == 5)
@@ -436,7 +435,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		}
 	}
 	fz_always(ctx)
-		JP2_Decompress_End(state->doc);
+		JP2_Decompress_End(doc);
 	fz_catch(ctx)
 	{
 		fz_drop_pixmap(ctx, state->pix);
