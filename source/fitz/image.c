@@ -743,26 +743,17 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 {
 	fz_pixmap_image *image;
 
-	assert(mask == NULL || mask->mask == NULL);
+	image = (fz_pixmap_image *)
+			fz_new_image(ctx, pixmap->w, pixmap->h, 8, pixmap->colorspace,
+					pixmap->xres, pixmap->yres, 0, 0,
+					NULL, NULL, mask,
+					sizeof(fz_pixmap_image),
+					pixmap_image_get_pixmap,
+					pixmap_image_get_size,
+					drop_pixmap_image);
+	image->tile = fz_keep_pixmap(ctx, pixmap);
+	image->super.decoded = 1;
 
-	fz_try(ctx)
-	{
-		image = (fz_pixmap_image *)
-				fz_new_image(ctx, pixmap->w, pixmap->h, 8, pixmap->colorspace,
-						pixmap->xres, pixmap->yres, 0, 0,
-						NULL, NULL, mask,
-						sizeof(fz_pixmap_image),
-						pixmap_image_get_pixmap,
-						pixmap_image_get_size,
-						drop_pixmap_image);
-		image->tile = fz_keep_pixmap(ctx, pixmap);
-		image->super.decoded = 1;
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_image(ctx, mask);
-		fz_rethrow(ctx);
-	}
 	return &image->super;
 }
 
@@ -817,7 +808,7 @@ fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 	}
 	if (i != image->n)
 		image->use_decode = 1;
-	image->mask = mask;
+	image->mask = fz_keep_image(ctx, mask);
 
 	return image;
 }

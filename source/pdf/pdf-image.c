@@ -260,9 +260,10 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 	}
 	fz_always(ctx)
 	{
+		fz_drop_image(ctx, mask);
+		fz_drop_pixmap(ctx, pix);
 		fz_drop_colorspace(ctx, colorspace);
 		fz_drop_buffer(ctx, buf);
-		fz_drop_pixmap(ctx, pix);
 	}
 	fz_catch(ctx)
 	{
