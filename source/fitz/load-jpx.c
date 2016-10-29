@@ -223,13 +223,6 @@ jpx_ycc_to_rgb(fz_context *ctx, fz_jpxd *state)
 
 }
 
-struct indexed
-{
-	fz_colorspace *base;
-	int high;
-	unsigned char *lookup;
-};
-
 static fz_pixmap *
 jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
 {
