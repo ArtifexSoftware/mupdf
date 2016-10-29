@@ -10,7 +10,6 @@ typedef struct stream_block_s stream_block;
 struct fz_jpxd_s
 {
 	JP2_Decomp_Handle doc;
-	fz_context *ctx;
 	fz_pixmap *pix;
 	JP2_Palette_Params *palette;
 	JP2_Colorspace colorspace;
@@ -39,15 +38,15 @@ struct stream_block_s
 static void * JP2_Callback_Conv
 jpx_alloc(long size, JP2_Callback_Param param)
 {
-	fz_jpxd *state = (fz_jpxd *) param;
-	return fz_malloc(state->ctx, size);
+	fz_context *ctx = (fz_context *) param;
+	return fz_malloc(ctx, size);
 }
 
 static JP2_Error JP2_Callback_Conv
 jpx_free(void *ptr, JP2_Callback_Param param)
 {
-	fz_jpxd *state = (fz_jpxd *) param;
-	fz_free(state->ctx, ptr);
+	fz_context *ctx = (fz_context *) param;
+	fz_free(ctx, ptr);
 	return cJP2_Error_OK;
 }
 
@@ -238,7 +237,6 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	stream_block sb;
 
 	memset(state, 0x00, sizeof (fz_jpxd));
-	state->ctx = ctx;
 
 	sb.data = data;
 	sb.size = size;
@@ -246,8 +244,8 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	fz_try(ctx)
 	{
 		err = JP2_Decompress_Start(&state->doc,
-				jpx_alloc, (JP2_Callback_Param) state,
-				jpx_free, (JP2_Callback_Param) state,
+				jpx_alloc, (JP2_Callback_Param) ctx,
+				jpx_free, (JP2_Callback_Param) ctx,
 				jpx_read, (JP2_Callback_Param) &sb);
 		if (err != cJP2_Error_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open image: %d", (int) err);
