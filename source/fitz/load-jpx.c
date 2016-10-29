@@ -435,7 +435,6 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 				if (alphas > 0 && prealphas == 0)
 					fz_premultiply_pixmap(ctx, state->pix);
 			}
-
 		}
 	}
 	fz_always(ctx)
@@ -450,6 +449,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_pixmap(ctx, state->pix);
 		fz_rethrow(ctx);
 	}
 
