@@ -11,6 +11,13 @@ typedef struct stream_block_s stream_block;
 #define MAX_ALPHAS 1
 #define MAX_COMPONENTS (MAX_COLORS + MAX_ALPHAS)
 
+#define HAS_PALETTE(cs) ( \
+	(cs) == cJP2_Colorspace_Palette_Gray || \
+	(cs) == cJP2_Colorspace_Palette_RGBa || \
+	(cs) == cJP2_Colorspace_Palette_RGB_YCCa || \
+	(cs) == cJP2_Colorspace_Palette_CIE_LABa || \
+	(cs) == cJP2_Colorspace_Palette_ICCa || \
+	(cs) == cJP2_Colorspace_Palette_CMYKa)
 
 struct fz_jpxd_s
 {
@@ -265,12 +272,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		if (err != cJP2_Error_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get colorspace: %d", (int) err);
 
-		if (state->colorspace == cJP2_Colorspace_Palette_Gray ||
-				state->colorspace == cJP2_Colorspace_Palette_RGBa ||
-				state->colorspace == cJP2_Colorspace_Palette_RGB_YCCa ||
-				state->colorspace == cJP2_Colorspace_Palette_CIE_LABa ||
-				state->colorspace == cJP2_Colorspace_Palette_ICCa ||
-				state->colorspace == cJP2_Colorspace_Palette_CMYKa)
+		if (HAS_PALETTE(state->colorspace))
 		{
 			err = JP2_Decompress_GetPalette(state->doc, &state->palette);
 			if (err != cJP2_Error_OK)
@@ -306,7 +308,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 		state->nchans = colors + alphas;
 
-		if (state->palette)
+		if (HAS_PALETTE(state->colorspace))
 		{
 			err = JP2_Decompress_GetProp(state->doc, cJP2_Prop_Width, &state->width, -1, 0);
 			if (err != cJP2_Error_OK)
@@ -396,7 +398,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 			}
 		}
 
-		if (state->palette && !fz_colorspace_is_indexed(ctx, state->cs))
+		if (HAS_PALETTE(state->colorspace) && !fz_colorspace_is_indexed(ctx, state->cs))
 			state->expand_indexed = 1;
 
 		if (!onlymeta)
@@ -418,7 +420,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 			if (state->colorspace == cJP2_Colorspace_RGB_YCCa)
 				jpx_ycc_to_rgb(ctx, state);
 
-			if (state->pix->alpha && ! (state->palette && !state->expand_indexed))
+			if (state->pix->alpha && ! (HAS_PALETTE(state->colorspace) && !state->expand_indexed))
 			{
 				/* CMYK is a subtractive colorspace, we want additive for premul alpha */
 				if (state->pix->n == 5)
