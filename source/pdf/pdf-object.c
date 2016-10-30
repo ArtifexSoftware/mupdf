@@ -708,8 +708,12 @@ pdf_array_put(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 void
 pdf_array_put_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 {
-	pdf_array_put(ctx, obj, i, item);
-	pdf_drop_obj(ctx, item);
+	fz_try(ctx)
+		pdf_array_put(ctx, obj, i, item);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, item);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 void
@@ -1042,26 +1046,31 @@ pdf_dict_get_val(fz_context *ctx, pdf_obj *obj, int i)
 }
 
 void
-pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *val)
+pdf_dict_put_val(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *val)
 {
 	RESOLVE(obj);
 	if (!OBJ_IS_DICT(obj))
-	{
-		pdf_drop_obj(ctx, val);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not a dict (%s)", pdf_objkindstr(obj));
-	}
+	/* FIXME: Should probably extend the dict here */
 	if (i < 0 || i >= DICT(obj)->len)
-	{
-		/* FIXME: Should probably extend the dict here */
-		pdf_drop_obj(ctx, val);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
-	}
 
 	if (!val)
 		val = PDF_OBJ_NULL;
 
 	pdf_drop_obj(ctx, DICT(obj)->items[i].v);
-	DICT(obj)->items[i].v = val;
+	DICT(obj)->items[i].v = pdf_keep_obj(ctx, val);
+}
+
+void
+pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *val)
+{
+	fz_try(ctx)
+		pdf_dict_put_val(ctx, obj, i, val);
+	fz_always(ctx)
+		pdf_drop_obj(ctx, val);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /* Returns 0 <= i < len for key found. Returns -1-len < i <= -1 for key
