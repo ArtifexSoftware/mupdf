@@ -1869,11 +1869,11 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 		fz_rect rect = link->rect;
 		fz_transform_rect(&rect, &ctm);
 
-		if (!fz_is_external_link(ctx, link->uri))
+		if (!fz_is_external_link(glo->ctx, link->uri))
 		{
 			linkInfo = (*env)->NewObject(env, linkInfoInternalClass, ctorInternal,
 					(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1,
-					fz_resolve_link(ctx, link->doc, link->uri));
+					fz_resolve_link(glo->ctx, link->doc, link->uri));
 		}
 		else
 		{
