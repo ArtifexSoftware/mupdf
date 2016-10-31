@@ -1288,9 +1288,10 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 			{
 				fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), image->w, image->h, 1);
 
+				fz_var(rgb);
+
 				fz_try(ctx)
 				{
-					fz_pixmap *rgb = fz_new_pixmap(ctx, fz_device_rgb(ctx), image->w, image->h, 1);
 					fz_convert_pixmap(ctx, rgb, image);
 					rgb->xres = image->xres;
 					rgb->yres = image->yres;
