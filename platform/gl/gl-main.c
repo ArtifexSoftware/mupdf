@@ -1318,7 +1318,11 @@ static void on_display(GLFWwindow *window)
 
 static void on_error(int error, const char *msg)
 {
+#ifdef _WIN32
+	MessageBoxA(NULL, msg, "MuPDF GLFW Error", MB_ICONERROR);
+#else
 	fprintf(stderr, "gl error %d: %s\n", error, msg);
+#endif
 }
 
 static void usage(const char *argv0)
