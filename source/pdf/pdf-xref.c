@@ -1968,7 +1968,7 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 		expected--;
 	if (expected != num)
 		DEBUGMESS((ctx, "object %d is unhinted, will search forward from %d", expected, num));
-	if (expected == 0)	/* No hints found, just bale */
+	if (expected == 0)	/* No hints found, just bail */
 		return 0;
 
 	curr_pos = fz_tell(ctx, doc->file);
@@ -2005,8 +2005,8 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 				doc->hint_obj_offsets[found+1] = offset;
 				while (doc->hint_obj_offsets[expected] == 0 && expected > 0)
 					expected--;
-				if (expected == 0)	/* No hints found, just bale */
-					return 0;
+				if (expected == 0)	/* No hints found, we give up */
+					break;
 			}
 		}
 		while (found != num);
@@ -2023,7 +2023,7 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 		doc->hint_obj_offsets[expected] = 0;
 		fz_rethrow(ctx);
 	}
-	return 1;
+	return expected != 0;
 }
 
 pdf_xref_entry *
