@@ -2660,7 +2660,7 @@ FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitm
 }
 
 JNIEXPORT jlong JNICALL
-FUN(Image_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong jmask)
+FUN(AndroidImage_newImageFromBitmap)(JNIEnv *env, jobject self, jobject jbitmap, jlong jmask)
 {
 	fz_context *ctx = get_context(env);
 	fz_image *mask = CAST(fz_image *, jmask);
