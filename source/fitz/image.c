@@ -575,11 +575,13 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	if (image->scalable)
 	{
 		/* If the image is scalable, we always want to re-render and never cache. */
-		fz_irect subarea_copy = *subarea;
+		fz_irect subarea_copy;
+		if (subarea)
+			subarea_copy = *subarea;
 		l2factor_remaining = 0;
 		if (dw) *dw = w;
 		if (dh) *dh = h;
-		return image->get_pixmap(ctx, image, &subarea_copy, image->w, image->h, &l2factor_remaining);
+		return image->get_pixmap(ctx, image, subarea ? &subarea_copy : NULL, image->w, image->h, &l2factor_remaining);
 	}
 
 	/* Clamp requested image size, since we never want to magnify images here. */
