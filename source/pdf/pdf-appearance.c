@@ -1816,7 +1816,7 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 			color[2] = 0.0f;
 		}
 
-		width = pdf_to_real(ctx, pdf_dict_get(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_BS), PDF_NAME_W));
+		width = pdf_annot_border(ctx, annot);
 		if (width == 0.0f)
 			width = 1.0f;
 
