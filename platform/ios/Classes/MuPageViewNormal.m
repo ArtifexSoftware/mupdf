@@ -929,23 +929,29 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 		return;
 	dispatch_async(queue, ^{
 		if (!cancel) {
-			printf("render page %d\n", number);
-			[self ensureDisplaylists];
-			CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
-			CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * scale.width, pageSize.height * scale.height}};
-			image_pix = renderPixmap(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
-			CGDataProviderRelease(imageData);
-			imageData = CreateWrappedPixmap(image_pix);
-			UIImage *image = newImageWithPixmap(image_pix, imageData);
-			widgetRects = enumerateWidgetRects(doc, page);
-			[self loadAnnotations];
-			dispatch_async(dispatch_get_main_queue(), ^{
-				[self displayImage: image];
-				[image release];
-			});
+			[self renderPage];
 		} else {
 			printf("cancel page %d\n", number);
 		}
+	});
+}
+
+- (void) renderPage
+{
+	printf("render page %d\n", number);
+	[self ensureDisplaylists];
+	CGSize scale = fitPageToScreen(pageSize, self.bounds.size);
+	CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * scale.width, pageSize.height * scale.height}};
+	image_pix = renderPixmap(doc, page_list, annot_list, pageSize, self.bounds.size, rect, 1.0);
+	CGDataProviderRelease(imageData);
+	imageData = CreateWrappedPixmap(image_pix);
+	UIImage *image = newImageWithPixmap(image_pix, imageData);
+	widgetRects = enumerateWidgetRects(doc, page);
+	[self loadAnnotations];
+	dispatch_async(dispatch_get_main_queue(), ^{
+		[self displayImage: image];
+		[image release];
+		[imageView setNeedsDisplay];
 	});
 }
 
@@ -1199,17 +1205,13 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			if (isValid)
 				tileView.image = timage;
 			[timage release];
+			[tileView setNeedsDisplay];
 		});
 	}
-	CGSize fscale = fitPageToScreen(pageSize, self.bounds.size);
-	CGRect rect = (CGRect){{0.0, 0.0},{pageSize.width * fscale.width, pageSize.height * fscale.height}};
-	updatePixmap(doc, page_list, annot_list, image_pix, rlist, pageSize, self.bounds.size, rect, 1.0);
 	drop_list(rlist);
-	UIImage *image = newImageWithPixmap(image_pix, imageData);
-	dispatch_async(dispatch_get_main_queue(), ^{
-		imageView.image = image;
-		[image release];
-	});
+
+	//  re-render the full-page image
+	[self renderPage];
 }
 
 - (void) update
@@ -1381,7 +1383,7 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 				int changed = [self passTapToPage:ipt];
 				if (changed)
 					dispatch_async(dispatch_get_main_queue(), ^{
-						[updater update];
+						[self update];
 					});
 			});
 			return [[[MuTapResultWidget alloc] init] autorelease];
