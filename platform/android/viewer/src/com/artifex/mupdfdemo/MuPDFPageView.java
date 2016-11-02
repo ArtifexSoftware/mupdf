@@ -611,7 +611,7 @@ public class MuPDFPageView extends PageView implements MuPDFView {
 		mLoadAnnotations = new AsyncTask<Void,Void,Annotation[]> () {
 			@Override
 			protected Annotation[] doInBackground(Void... params) {
-				return mCore.getAnnoations(mPageNumber);
+				return mCore.getAnnotations(mPageNumber);
 			}
 
 			@Override

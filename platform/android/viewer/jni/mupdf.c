@@ -796,6 +796,7 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
 			}
 		}
+
 		if (pc->annot_list == NULL)
 		{
 			fz_annot *annot;
@@ -813,14 +814,14 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Render aborted");
 			}
 		}
+
 		bbox.x0 = patchX;
 		bbox.y0 = patchY;
 		bbox.x1 = patchX + patchW;
 		bbox.y1 = patchY + patchH;
 		pixbbox = bbox;
 		pixbbox.x1 = pixbbox.x0 + info.width;
-		/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to
-		 * match the pixels data */
+		/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to match the pixels data */
 		pix = fz_new_pixmap_with_bbox_and_data(ctx, glo->colorspace, &pixbbox, 1, pixels);
 		if (pc->page_list == NULL && pc->annot_list == NULL)
 		{
@@ -833,13 +834,13 @@ JNI_FN(MuPDFCore_drawPage)(JNIEnv *env, jobject thiz, jobject bitmap,
 		fz_scale(&ctm, zoom, zoom);
 		rect = pc->media_box;
 		fz_round_rect(&bbox, fz_transform_rect(&rect, &ctm));
-		/* Now, adjust ctm so that it would give the correct page width
-		 * heights. */
+		/* Now, adjust ctm so that it would give the correct page width heights. */
 		xscale = (float)pageW/(float)(bbox.x1-bbox.x0);
 		yscale = (float)pageH/(float)(bbox.y1-bbox.y0);
 		fz_concat(&ctm, &ctm, fz_scale(&scale, xscale, yscale));
 		rect = pc->media_box;
 		fz_transform_rect(&rect, &ctm);
+
 		dev = fz_new_draw_device(ctx, NULL, pix);
 #ifdef TIME_DISPLAY_LIST
 		{
