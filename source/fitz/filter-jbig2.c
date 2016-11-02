@@ -18,8 +18,8 @@ struct fz_jbig2d_s
 	fz_context *ctx;
 	fz_jbig2_globals *gctx;
 	JB2_Handle_Document doc;
-	ulong width;
-	ulong height;
+	unsigned long width;
+	unsigned long height;
 	int stride;
 	fz_buffer *input;
 	unsigned char *output;
