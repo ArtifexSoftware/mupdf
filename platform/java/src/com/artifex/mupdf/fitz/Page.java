@@ -35,6 +35,10 @@ public class Page
 	public native DisplayList toDisplayList(boolean no_annotations);
 	public native StructuredText toStructuredText(String options);
 
+	public StructuredText toStructuredText() {
+		return toStructuredText(null);
+	}
+
 	public native Rect[] search(String needle);
 
 	public native byte[] textAsHtml();
