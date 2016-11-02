@@ -156,7 +156,7 @@ static NSArray *enumerateWords(fz_document *doc, fz_page *page)
 static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *rects)
 {
 	pdf_document *idoc;
-	fz_point *quadpts = NULL;
+	float *quadpts = NULL;
 	float color[3];
 	float alpha;
 	float line_height;
@@ -184,7 +184,7 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 			line_thickness = LINE_THICKNESS;
 			line_height = UNDERLINE_HEIGHT;
 			break;
-		case PDF_ANNOT_STRIKEOUT:
+		case PDF_ANNOT_STRIKE_OUT:
 			color[0] = 1.0;
 			color[1] = 0.0;
 			color[2] = 0.0;
@@ -221,8 +221,8 @@ static void addMarkupAnnot(fz_document *doc, fz_page *page, int type, NSArray *r
 			quadpts[i*8+7] = top;
 		}
 
-		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, type);
-		pdf_set_annot_quad_points(ctx, idoc, annot, rects.count, quadpts);
+		annot = pdf_create_annot(ctx, (pdf_page *)page, type);
+		pdf_set_annot_quad_points(ctx, annot, rects.count, quadpts);
 		pdf_set_markup_appearance(ctx, idoc, annot, color, alpha, line_thickness, line_height);
 	}
 	fz_always(ctx)
@@ -282,11 +282,11 @@ static void addInkAnnot(fz_document *doc, fz_page *page, NSArray *curves)
 			}
 		}
 
-		annot = pdf_create_annot(ctx, idoc, (pdf_page *)page, PDF_ANNOT_INK);
+		annot = pdf_create_annot(ctx, (pdf_page *)page, PDF_ANNOT_INK);
 
 		pdf_set_annot_border(ctx, annot, INK_THICKNESS);
 		pdf_set_annot_color(ctx, annot, 3, color);
-		pdf_set_annot_ink_list(ctx, annot, ncount, counts, pts);
+		pdf_set_annot_ink_list(ctx, annot, n, counts, pts);
 	}
 	fz_always(ctx)
 	{
@@ -313,7 +313,7 @@ static void deleteAnnotation(fz_document *doc, fz_page *page, int index)
 			annot = fz_next_annot(ctx, annot);
 
 		if (annot)
-			pdf_delete_annot(ctx, idoc, (pdf_page *)page, (pdf_annot *)annot);
+			pdf_delete_annot(ctx, (pdf_page *)page, (pdf_annot *)annot);
 	}
 	fz_catch(ctx)
 	{
@@ -411,7 +411,7 @@ static fz_display_list *create_annot_list(fz_document *doc, fz_page *page)
 		pdf_document *idoc = pdf_specifics(ctx, doc);
 
 		if (idoc)
-			pdf_update_page(ctx, idoc, (pdf_page *)page);
+			pdf_update_page(ctx, (pdf_page *)page);
 		list = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, list);
 		for (annot = fz_first_annot(ctx, page); annot; annot = fz_next_annot(ctx, annot))
@@ -462,9 +462,10 @@ static fz_pixmap *renderPixmap(fz_document *doc, fz_display_list *page_list, fz_
 		pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox, 1);
 		fz_clear_pixmap_with_value(ctx, pix, 255);
 
-		dev = fz_new_draw_device(ctx, &ctm, pix);
-		fz_run_display_list(ctx, page_list, dev, &fz_identity, &rect, NULL);
-		fz_run_display_list(ctx, annot_list, dev, &fz_identity, &rect, NULL);
+		dev = fz_new_draw_device(ctx, NULL, pix);
+		fz_run_display_list(ctx, page_list, dev, &ctm, &rect, NULL);
+		fz_run_display_list(ctx, annot_list, dev, &ctm, &rect, NULL);
+
 		fz_close_device(ctx, dev);
 	}
 	fz_always(ctx)
@@ -508,7 +509,7 @@ static rect_list *updatePage(fz_document *doc, fz_page *page)
 		pdf_document *idoc = pdf_specifics(ctx, doc);
 		if (idoc)
 		{
-			pdf_page *page = (pdf_page*)page;
+			pdf_page *ppage = (pdf_page*)page;
 			pdf_annot *pannot;
 
 			pdf_update_page(ctx, (pdf_page *)page);
@@ -570,9 +571,10 @@ static void updatePixmap(fz_document *doc, fz_display_list *page_list, fz_displa
 			if (!fz_is_empty_irect(&abox))
 			{
 				fz_clear_pixmap_rect_with_value(ctx, pixmap, 255, &abox);
-				dev = fz_new_draw_device_with_bbox(ctx, &ctm, pixmap, &abox);
-				fz_run_display_list(ctx, page_list, dev, &fz_identity, &arect, NULL);
-				fz_run_display_list(ctx, annot_list, dev, &fz_identity, &arect, NULL);
+				dev = fz_new_draw_device_with_bbox(ctx, NULL, pixmap, &abox);
+				fz_run_display_list(ctx, page_list, dev, &ctm, &arect, NULL);
+				fz_run_display_list(ctx, annot_list, dev, &ctm, &arect, NULL);
+
 				fz_close_device(ctx, dev);
 				fz_drop_device(ctx, dev);
 				dev = NULL;

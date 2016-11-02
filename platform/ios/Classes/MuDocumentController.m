@@ -700,7 +700,7 @@ static void saveDoc(const char *current_path, fz_document *doc)
 					break;
 
 				case BARMODE_STRIKE:
-					[view saveSelectionAsMarkup:PDF_ANNOT_STRIKEOUT];
+					[view saveSelectionAsMarkup:PDF_ANNOT_STRIKE_OUT];
 					break;
 
 				case BARMODE_INK:
