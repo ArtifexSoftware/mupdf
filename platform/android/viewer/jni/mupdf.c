@@ -678,15 +678,18 @@ static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *ido
 		if (pannot->changed)
 		{
 			fz_annot *annot = (fz_annot*)pannot;
+			fz_rect bounds;
+			rect_node *node;
 
-			/* FIXME: We bound the annot twice here */
-			rect_node *node = fz_malloc_struct(ctx, rect_node);
-			fz_bound_annot(ctx, annot, &node->rect);
+			fz_bound_annot(ctx, annot, &bounds);
+
+			node = fz_malloc_struct(ctx, rect_node);
+			node->rect = bounds;
 			node->next = pc->changed_rects;
 			pc->changed_rects = node;
 
 			node = fz_malloc_struct(ctx, rect_node);
-			fz_bound_annot(ctx, annot, &node->rect);
+			node->rect = bounds;
 			node->next = pc->hq_changed_rects;
 			pc->hq_changed_rects = node;
 
@@ -699,18 +702,21 @@ static void update_changed_rects_all_page(globals *glo, page_cache *pc, pdf_docu
 {
 	fz_context *ctx = glo->ctx;
 	fz_page *page = pc->page;
+	fz_rect bounds;
 	rect_node *node;
+
+	fz_bound_page(ctx, page, &node->rect);
 
 	drop_changed_rects(ctx, &pc->hq_changed_rects);
 	drop_changed_rects(ctx, &pc->changed_rects);
 
 	node = fz_malloc_struct(ctx, rect_node);
-	fz_bound_page(ctx, page, &node->rect);
+	node->rect = bounds;
 	node->next = pc->changed_rects;
 	pc->changed_rects = node;
 
 	node = fz_malloc_struct(ctx, rect_node);
-	fz_bound_page(ctx, page, &node->rect);
+	node->rect = bounds;
 	node->next = pc->hq_changed_rects;
 	pc->hq_changed_rects = node;
 }
