@@ -2,7 +2,7 @@ package com.artifex.mupdf.fitz;
 
 public class Image
 {
-	private long pointer;
+	protected long pointer;
 
 	protected native void finalize();
 
@@ -14,7 +14,7 @@ public class Image
 	private native long newNativeFromPixmap(Pixmap pixmap);
 	private native long newNativeFromFile(String filename);
 
-	private Image(long p) {
+	protected Image(long p) {
 		pointer = p;
 	}
 
