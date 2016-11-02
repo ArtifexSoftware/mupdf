@@ -689,8 +689,30 @@ static void update_changed_rects(globals *glo, page_cache *pc, pdf_document *ido
 			fz_bound_annot(ctx, annot, &node->rect);
 			node->next = pc->hq_changed_rects;
 			pc->hq_changed_rects = node;
+
+			pannot->changed = 0;
 		}
 	}
+}
+
+static void update_changed_rects_all_page(globals *glo, page_cache *pc, pdf_document *idoc)
+{
+	fz_context *ctx = glo->ctx;
+	fz_page *page = pc->page;
+	rect_node *node;
+
+	drop_changed_rects(ctx, &pc->hq_changed_rects);
+	drop_changed_rects(ctx, &pc->changed_rects);
+
+	node = fz_malloc_struct(ctx, rect_node);
+	fz_bound_page(ctx, page, &node->rect);
+	node->next = pc->changed_rects;
+	pc->changed_rects = node;
+
+	node = fz_malloc_struct(ctx, rect_node);
+	fz_bound_page(ctx, page, &node->rect);
+	node->next = pc->hq_changed_rects;
+	pc->hq_changed_rects = node;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -1749,6 +1771,7 @@ JNI_FN(MuPDFCore_deleteAnnotationInternal)(JNIEnv * env, jobject thiz, int annot
 		if (annot)
 		{
 			pdf_delete_annot(ctx, (pdf_page *)pc->page, (pdf_annot *)annot);
+			update_changed_rects_all_page(glo, pc, idoc);
 			dump_annotation_display_lists(glo);
 		}
 	}
