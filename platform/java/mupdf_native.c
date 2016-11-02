@@ -4664,7 +4664,8 @@ FUN(Page_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 	fz_always(ctx)
 	{
 		fz_drop_stext_sheet(ctx, sheet);
-		(*env)->ReleaseStringUTFChars(env, joptions, options);
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
 	}
 	fz_catch(ctx)
 	{
@@ -4909,7 +4910,8 @@ FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 	fz_always(ctx)
 	{
 		fz_drop_stext_sheet(ctx, sheet);
-		(*env)->ReleaseStringUTFChars(env, joptions, options);
+		if (options)
+			(*env)->ReleaseStringUTFChars(env, joptions, options);
 	}
 	fz_catch(ctx)
 	{
