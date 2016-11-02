@@ -39,8 +39,8 @@ next_null(fz_context *ctx, fz_stream *stm, size_t max)
 		return EOF;
 	state->chain->rp += n;
 	state->remain -= n;
-	state->offset += n;
-	stm->pos += n;
+	state->offset += (fz_off_t)n;
+	stm->pos += (fz_off_t)n;
 	return *stm->rp++;
 }
 
@@ -104,7 +104,7 @@ next_concat(fz_context *ctx, fz_stream *stm, size_t max)
 		{
 			stm->rp = state->chain[state->current]->rp;
 			stm->wp = state->chain[state->current]->wp;
-			stm->pos += n;
+			stm->pos += (fz_off_t)n;
 			return *stm->rp++;
 		}
 		else
@@ -576,7 +576,7 @@ next_arc4(fz_context *ctx, fz_stream *stm, size_t max)
 	stm->wp = state->buffer + n;
 	fz_arc4_encrypt(&state->arc4, stm->rp, state->chain->rp, n);
 	state->chain->rp += n;
-	stm->pos += n;
+	stm->pos += (fz_off_t)n;
 
 	return *stm->rp++;
 }

@@ -1083,6 +1083,7 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	fz_buffer *fzbuf = NULL;
 	char *da = pdf_to_str_buf(ctx, pdf_get_inheritable(ctx, doc, field, PDF_NAME_DA));
 	unsigned char *buf;
+	int ilen;
 	size_t len;
 	pdf_obj *daobj = NULL;
 
@@ -1093,13 +1094,13 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	fz_var(daobj);
 	fz_try(ctx)
 	{
-		size_t i;
+		int i;
 
 		pdf_parse_da(ctx, da, &di);
 		di.col_size = pdf_array_len(ctx, col);
 
-		len = fz_mini(di.col_size, (int)nelem(di.col));
-		for (i = 0; i < len; i++)
+		ilen = fz_mini(di.col_size, (int)nelem(di.col));
+		for (i = 0; i < ilen; i++)
 			di.col[i] = pdf_to_real(ctx, pdf_array_get(ctx, col, i));
 
 		fzbuf = fz_new_buffer(ctx, 0);

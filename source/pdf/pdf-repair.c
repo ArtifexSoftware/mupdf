@@ -346,7 +346,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 			{
 				if (memcmp(&buf->scratch[j], "%PDF", 4) == 0)
 				{
-					fz_seek(ctx, doc->file, j + 8, 0); /* skip "%PDF-X.Y" */
+					fz_seek(ctx, doc->file, (fz_off_t)(j + 8), 0); /* skip "%PDF-X.Y" */
 					break;
 				}
 			}

@@ -193,7 +193,7 @@ static fz_off_t
 buffer_tell(fz_context *ctx, void *opaque)
 {
 	fz_buffer *buffer = opaque;
-	return buffer->len;
+	return (fz_off_t)buffer->len;
 }
 
 static void

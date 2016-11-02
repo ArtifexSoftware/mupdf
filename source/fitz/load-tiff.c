@@ -377,7 +377,7 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
 		}
 
-		size = fz_read(ctx, stm, wp, wlen);
+		size = (unsigned)fz_read(ctx, stm, wp, wlen);
 	}
 	fz_always(ctx)
 	{
@@ -471,8 +471,8 @@ tiff_paste_subsampled_tile(fz_context *ctx, struct tiff *tiff, unsigned char *ti
 
 	unsigned char *src = tile;
 	unsigned char *dst;
-	int x, y, w, h; /* coordinates and dimensions of entire image */
-	int sx, sy, sw, sh; /* coordinates and dimensions of a single subsample region, i.e. max 4 x 4 samples */
+	unsigned x, y, w, h; /* coordinates and dimensions of entire image */
+	unsigned sx, sy, sw, sh; /* coordinates and dimensions of a single subsample region, i.e. max 4 x 4 samples */
 	int k;
 	int offsets[4 * 4 * 3]; /* for a pixel position, these point to all pixel components in a subsample region */
 	int *offset = offsets;
@@ -583,7 +583,7 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 				unsigned int offset = tiff->tileoffsets[tile];
 				unsigned int rlen = tiff->tilebytecounts[tile];
 				unsigned char *rp = tiff->bp + offset;
-				int decoded;
+				unsigned decoded;
 
 				if (offset > (unsigned)(tiff->ep - tiff->bp))
 					fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile offset %u", offset);
@@ -1035,7 +1035,7 @@ tiff_read_ifd(fz_context *ctx, struct tiff *tiff)
 static void
 tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
 {
-	int x, y;
+	unsigned x, y;
 
 	for (y = 0; y < tiff->imagelength; y++)
 	{

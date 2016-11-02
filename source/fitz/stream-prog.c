@@ -43,7 +43,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, size_t len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = ps->buffer + stm->pos;
 	stm->wp = ps->buffer + stm->pos + n;
-	stm->pos += n;
+	stm->pos += (fz_off_t)n;
 	if (n == 0)
 		return EOF;
 	return *stm->rp++;

@@ -253,7 +253,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
-	if (pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	if (!onlymeta)
@@ -332,7 +332,7 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
-	if (pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	if (!onlymeta)
@@ -494,7 +494,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image height must be > 0");
 	if (pnm->width <= 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image width must be > 0");
-	if (pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
+	if ((unsigned int)pnm->height > UINT_MAX / pnm->width / fz_colorspace_n(ctx, pnm->cs) / (pnm->bitdepth / 8 + 1))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "image too large");
 
 	if (!onlymeta)

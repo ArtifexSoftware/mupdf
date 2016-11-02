@@ -232,7 +232,7 @@ static void ensure_zip_entries(fz_context *ctx, fz_zip_archive *zip)
 
 	while (back < maxback)
 	{
-		fz_seek(ctx, file, size - back, 0);
+		fz_seek(ctx, file, (fz_off_t)(size - back), 0);
 		n = fz_read(ctx, file, buf, sizeof buf);
 		if (n < 4)
 			break;

@@ -938,7 +938,7 @@ static int walk_string(string_walker *walker)
 		if (walker->language)
 		{
 			fz_string_from_text_language(lang, walker->language);
-			hb_buffer_set_language(walker->hb_buf, hb_language_from_string(lang, strlen(lang)));
+			hb_buffer_set_language(walker->hb_buf, hb_language_from_string(lang, (int)strlen(lang)));
 		}
 		/* hb_buffer_set_cluster_level(hb_buf, HB_BUFFER_CLUSTER_LEVEL_CHARACTERS); */
 

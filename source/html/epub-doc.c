@@ -41,7 +41,7 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 	epub_chapter *ch;
 
 	const char *s = strchr(dest, '#');
-	int n = s ? s - dest : strlen(dest);
+	size_t n = s ? s - dest : strlen(dest);
 	if (s && s[1] == 0)
 		s = NULL;
 

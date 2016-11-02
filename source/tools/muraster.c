@@ -558,7 +558,7 @@ static int alphabits_text = 8;
 static int alphabits_graphics = 8;
 
 static int min_band_height;
-static int max_band_memory;
+static size_t max_band_memory;
 int band_height;
 
 static int errored = 0;
@@ -1143,7 +1143,7 @@ initialise_banding(fz_context *ctx, render_details *render, int color)
 
 	w = render->ibounds.x1 - render->ibounds.x0;
 	min_band_mem = bpp * w * min_band_height;
-	reps = max_band_memory / min_band_mem;
+	reps = (int)(max_band_memory / min_band_mem);
 	if (reps < 1)
 		reps = 1;
 

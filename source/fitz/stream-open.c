@@ -78,7 +78,7 @@ static int next_file(fz_context *ctx, fz_stream *stm, size_t n)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = state->buffer;
 	stm->wp = state->buffer + n;
-	stm->pos += n;
+	stm->pos += (fz_off_t)n;
 
 	if (n == 0)
 		return EOF;
@@ -206,7 +206,7 @@ fz_open_buffer(fz_context *ctx, fz_buffer *buf)
 	stm->rp = buf->data;
 	stm->wp = buf->data + buf->len;
 
-	stm->pos = buf->len;
+	stm->pos = (fz_off_t)buf->len;
 
 	return stm;
 }
@@ -222,7 +222,7 @@ fz_open_memory(fz_context *ctx, unsigned char *data, size_t len)
 	stm->rp = data;
 	stm->wp = data + len;
 
-	stm->pos = len;
+	stm->pos = (fz_off_t)len;
 
 	return stm;
 }
