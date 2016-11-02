@@ -448,6 +448,7 @@ pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_m
 	pdf_obj *pageobj = page->obj;
 	pdf_obj *obj;
 	fz_rect mediabox, cropbox, realbox, pagebox;
+	fz_matrix tmp;
 	float userunit = 1;
 	int rotate;
 
@@ -492,11 +493,18 @@ pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_m
 
 	/* Compute transform from fitz' page space (upper left page origin, y descending, 72 dpi)
 	 * to PDF user space (arbitary page origin, y ascending, UserUnit dpi). */
-	fz_rotate(page_ctm, -rotate);
+
+	/* Make left-handed and scale by UserUnit */
+	fz_scale(page_ctm, userunit, -userunit);
+
+	/* Rotate */
+	fz_pre_rotate(page_ctm, -rotate);
+
+	/* Translate page origin to 0,0 */
 	realbox = *page_mediabox;
 	fz_transform_rect(&realbox, page_ctm);
-	fz_pre_translate(page_ctm, -realbox.x0, -realbox.y1);
-	fz_post_scale(page_ctm, userunit, -userunit);
+	fz_translate(&tmp, -realbox.x0, -realbox.y0);
+	fz_concat(page_ctm, page_ctm, &tmp);
 }
 
 static void
