@@ -5541,6 +5541,7 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 
 		for (l = 0; l < block->len; l++)
 		{
+			int len = 0;
 			//  make a line
 			line = &block->lines[l];
 			jline = (*env)->NewObject(env, cls_TextLine, mid_TextLine_init, self);
@@ -5554,7 +5555,6 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 			(*env)->DeleteLocalRef(env, jrect);
 
 			//  count the spans
-			int len = 0;
 			for (span = line->first_span; span; span = span->next)
 				len++;
 
