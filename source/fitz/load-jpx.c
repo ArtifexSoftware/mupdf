@@ -14,7 +14,7 @@ struct fz_jpxd_s
 	JP2_Palette_Params *palette;
 	JP2_Colorspace colorspace;
 	unsigned char *data;
-	int size;
+	size_t size;
 	JP2_Property_Value width;
 	JP2_Property_Value height;
 	fz_colorspace *cs;
@@ -56,7 +56,7 @@ jpx_read(unsigned char *pucData,
 	if (ulPos >= state->size)
 		return 0;
 
-	ulSize = fz_mini(ulSize, state->size - ulPos);
+	ulSize = (unsigned long)fz_minz(ulSize, state->size - ulPos);
 	memcpy(pucData, &state->data[ulPos], ulSize);
 	return ulSize;
 }
@@ -68,9 +68,9 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 	fz_jpxd *state = (fz_jpxd *) param;
 	JP2_Property_Value hstep, vstep;
 	unsigned char *row;
-	int x, y, i;
+	JP2_Property_Value x, y, i;
 
-	if (ulRow >= state->pix->h || ulStart >= state->pix->w || sComponent >= state->pix->n)
+	if (ulRow >= (unsigned long)state->pix->h || ulStart >= (unsigned long)state->pix->w || sComponent >= state->pix->n)
 		return cJP2_Error_OK;
 
 	ulNum = fz_mini(ulNum, state->pix->w - ulStart);
@@ -85,13 +85,13 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 			state->pix->n * ulStart * hstep +
 			sComponent;
 
-		for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
+		for (y = 0; ulRow * vstep + y < (JP2_Property_Value)state->pix->h && y < vstep; y++)
 		{
 			unsigned char *p = row;
 
 			for (i = 0; i < ulNum; i++)
 			{
-				for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
+				for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)state->pix->w && x < hstep; x++)
 				{
 					unsigned char v = fz_clampi(pucData[i], 0, state->palette->ulEntries - 1);
 
@@ -128,13 +128,13 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 
 		if (state->bpss[sComponent] > 8)
 		{
-			for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
+			for (y = 0; ulRow * vstep + y < (JP2_Property_Value)state->pix->h && y < vstep; y++)
 			{
 				unsigned char *p = row;
 
 				for (i = 0; i < ulNum; i++)
 				{
-					for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
+					for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)state->pix->w && x < hstep; x++)
 					{
 						unsigned int v = (pucData[2 * i + 1] << 8) | pucData[2 * i + 0];
 						v &= (1 << state->bpss[sComponent]) - 1;
@@ -149,13 +149,13 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 		}
 		else if (state->bpss[sComponent] == 8)
 		{
-			for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
+			for (y = 0; ulRow * vstep + y < (JP2_Property_Value)state->pix->h && y < vstep; y++)
 			{
 				unsigned char *p = row;
 
 				for (i = 0; i < ulNum; i++)
 				{
-					for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
+					for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)state->pix->w && x < hstep; x++)
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << state->bpss[sComponent]) - 1;
@@ -170,13 +170,13 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 		}
 		else
 		{
-			for (y = 0; ulRow * vstep + y < state->pix->h && y < vstep; y++)
+			for (y = 0; ulRow * vstep + y < (JP2_Property_Value)state->pix->h && y < vstep; y++)
 			{
 				unsigned char *p = row;
 
 				for (i = 0; i < ulNum; i++)
 				{
-					for (x = 0; (ulStart + i) * hstep + x < state->pix->w && x < hstep; x++)
+					for (x = 0; (ulStart + i) * hstep + x < (JP2_Property_Value)state->pix->w && x < hstep; x++)
 					{
 						unsigned int v = pucData[i];
 						v &= (1 << state->bpss[sComponent]) - 1;
@@ -197,7 +197,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 static void
 jpx_ycc_to_rgb(fz_context *ctx, fz_jpxd *state)
 {
-	int x, y;
+	JP2_Property_Value x, y;
 
 	for (y = 0; y < state->height; y++)
 	{
@@ -235,7 +235,8 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 {
 	JP2_Channel_Def_Params *chans = NULL;
 	JP2_Error err;
-	int k, colors, alphas, prealphas;
+	int colors, alphas, prealphas;
+	JP2_Property_Value k;
 
 	memset(state, 0x00, sizeof (fz_jpxd));
 	state->ctx = ctx;
