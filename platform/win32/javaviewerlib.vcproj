@@ -20,8 +20,8 @@
 	<Configurations>
 		<Configuration
 			Name="DebugJava|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			>
@@ -96,7 +96,7 @@
 		</Configuration>
 		<Configuration
 			Name="DebugJava|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="1"
@@ -141,7 +141,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="17"
@@ -173,7 +173,7 @@
 		</Configuration>
 		<Configuration
 			Name="ReleaseJava|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="1"
@@ -249,8 +249,8 @@
 		</Configuration>
 		<Configuration
 			Name="ReleaseJava|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
@@ -336,11 +336,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\java\src\com\artifex\mupdf\fitz\BufferInputStream.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Buffer.java"
 				>
 			</File>
 			<File
-				RelativePath="..\java\src\com\artifex\mupdf\fitz\Buffer.java"
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\BufferInputStream.java"
 				>
 			</File>
 			<File

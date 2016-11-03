@@ -21,7 +21,7 @@
 		<Configuration
 			Name="DebugJava|Win32"
 			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="0"
 			>
 			<Tool
@@ -40,7 +40,7 @@
 		</Configuration>
 		<Configuration
 			Name="DebugJava|x64"
-			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="0"
 			>
@@ -61,13 +61,13 @@
 		<Configuration
 			Name="ReleaseJava|Win32"
 			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="0"
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine=""
-				ReBuildCommandLine=""
+				BuildCommandLine="cd ..\java &amp;&amp; winmake.bat $(PlatformName)\$(ConfigurationName)"
+				ReBuildCommandLine="cd ..\java &amp;&amp; winmake.bat $(PlatformName)\$(ConfigurationName)"
 				CleanCommandLine=""
 				Output="javaviewer.exe"
 				PreprocessorDefinitions="WIN32;NDEBUG"
@@ -81,7 +81,7 @@
 		<Configuration
 			Name="ReleaseJava|x64"
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="0"
 			>
 			<Tool
