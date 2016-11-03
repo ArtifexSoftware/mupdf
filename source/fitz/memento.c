@@ -26,6 +26,9 @@
 
 #define COMPILING_MEMENTO_C
 
+/* SHUT UP, MSVC. I KNOW WHAT I AM DOING. */
+#define _CRT_SECURE_NO_WARNINGS
+
 /* We have some GS specific tweaks; more for the GS build environment than
  * anything else. */
 /* #define MEMENTO_GS_HACKS */
@@ -897,7 +900,7 @@ typedef struct BlkCheckData {
     int preCorrupt;
     int postCorrupt;
     int freeCorrupt;
-    int index;
+    size_t index;
 } BlkCheckData;
 
 #ifndef MEMENTO_LEAKONLY
@@ -964,7 +967,7 @@ post_corrupt:
 
 static int Memento_Internal_checkFreedBlock(Memento_BlkHeader *b, void *arg)
 {
-    int            i;
+    size_t         i;
     unsigned char *p;
     BlkCheckData  *data = (BlkCheckData *)arg;
 
@@ -1157,7 +1160,7 @@ static void blockDisplay(Memento_BlkHeader *b, int n)
 static int Memento_listBlock(Memento_BlkHeader *b,
                              void              *arg)
 {
-    int *counts = (int *)arg;
+    size_t *counts = (size_t *)arg;
     blockDisplay(b, 0);
     counts[0]++;
     counts[1]+= b->rawsize;
@@ -1191,7 +1194,8 @@ static int ptrcmp(const void *a_, const void *b_)
 static
 int Memento_listBlocksNested(void)
 {
-    int count, size, i;
+    int count;
+    size_t size, i;
     Memento_BlkHeader *b, *prev;
     void **blocks, *minptr, *maxptr;
     intptr_t mask;
@@ -1232,7 +1236,7 @@ int Memento_listBlocksNested(void)
     /* Now, calculate tree */
     for (b = memento.used.head; b; b = b->next) {
         char *p = MEMBLK_TOBLK(b);
-        int end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
+        size_t end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
         for (i = MEMENTO_SEARCH_SKIP; i < end; i += sizeof(void *)) {
             void *q = *(void **)(&p[i]);
             void **r;
@@ -1281,7 +1285,7 @@ int Memento_listBlocksNested(void)
             doNestedDisplay(b, 0);
     }
     fprintf(stderr, " Total number of blocks = %d\n", count);
-    fprintf(stderr, " Total size of blocks = %d\n", size);
+    fprintf(stderr, " Total size of blocks = %d\n", (int)size);
 
     MEMENTO_UNDERLYING_FREE(blocks);
 
@@ -1306,12 +1310,12 @@ void Memento_listBlocks(void)
     fprintf(stderr, "Allocated blocks:\n");
     if (Memento_listBlocksNested())
     {
-        int counts[2];
+        size_t counts[2];
         counts[0] = 0;
         counts[1] = 0;
         Memento_appBlocks(&memento.used, Memento_listBlock, &counts[0]);
-        fprintf(stderr, " Total number of blocks = %d\n", counts[0]);
-        fprintf(stderr, " Total size of blocks = %d\n", counts[1]);
+        fprintf(stderr, " Total number of blocks = %d\n", (int)counts[0]);
+        fprintf(stderr, " Total size of blocks = %d\n", (int)counts[1]);
     }
 }
 
@@ -2161,7 +2165,7 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
         fprintf(stderr, "  ");
         showBlock(memblk, ' ');
         if (data->freeCorrupt) {
-            fprintf(stderr, " index %d (address 0x%p) onwards", data->index,
+            fprintf(stderr, " index %d (address 0x%p) onwards", (int)data->index,
                     &((char *)MEMBLK_TOBLK(memblk))[data->index]);
             if (data->preCorrupt) {
                 fprintf(stderr, "+ preguard");
