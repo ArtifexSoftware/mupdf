@@ -86,24 +86,24 @@ static JB2_Size_T JB2_Callback
 jbig2_read(unsigned char *buf, JB2_Size_T offset, JB2_Size_T size, void *userdata)
 {
 	fz_jbig2d *state = userdata;
-	int available;
+	size_t available;
 
 	/* globals data */
 	if (state->gctx && offset < state->gctx->buf->len)
 	{
-		available = fz_mini(state->gctx->buf->len - offset, size);
+		available = fz_minz(state->gctx->buf->len - offset, size);
 		memcpy(buf, state->gctx->buf->data + offset, available);
-		return available;
+		return (JB2_Size_T)available;
 	}
 
 	/* image data */
 	if (state->gctx)
-		offset -= state->gctx->buf->len;
+		offset -= (JB2_Size_T)state->gctx->buf->len;
 	if (state->input->len <= offset)
 		return 0;
-	available = fz_mini(state->input->len - offset, size);
+	available = fz_minz(state->input->len - offset, size);
 	memcpy(buf, state->input->data + offset, available);
-	return available;
+	return (JB2_Size_T)available;
 }
 
 static JB2_Error JB2_Callback
