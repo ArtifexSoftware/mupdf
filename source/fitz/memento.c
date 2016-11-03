@@ -42,6 +42,7 @@ int atexit(void (*)(void));
 #include "mupdf/memento.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #endif
 #ifndef _MSC_VER
 #include <stdint.h>
@@ -1544,7 +1545,7 @@ void Memento_info(void *addr)
 /* stashed_map[j] = i means that file descriptor i-1 was duplicated to j */
 int stashed_map[OPEN_MAX];
 
-static void Memento_signal(void)
+static void Memento_signal(int signal)
 {
     fprintf(stderr, "SEGV after Memory squeezing @ %d\n", memento.squeezeAt);
 
@@ -1633,7 +1634,7 @@ static int squeeze(void)
 #else
 #include <signal.h>
 
-static void Memento_signal(void)
+static void Memento_signal(int signum)
 {
     memento.segv = 1;
     /* If we just return from this function the SEGV will be unhandled, and
