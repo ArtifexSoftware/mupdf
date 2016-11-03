@@ -909,7 +909,7 @@ static int
 gprf_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
-		return fz_snprintf(buf, size, "GPROOF");
+		return (int)fz_snprintf(buf, size, "GPROOF");
 
 	return -1;
 }
