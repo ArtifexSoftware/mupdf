@@ -973,15 +973,14 @@ static int Memento_Internal_checkFreedBlock(Memento_BlkHeader *b, void *arg)
     BlkCheckData  *data = (BlkCheckData *)arg;
 
     p = MEMBLK_TOBLK(b); /* p will always be aligned */
-    i = b->rawsize - 4;
+    i = b->rawsize;
     /* Attempt to speed this up by checking an (aligned) int at a time */
-    while (i >= 0) {
+    while (i >= 4) {
         if (*(MEMENTO_UINT32 *)p != MEMENTO_FREEFILL_UINT32)
             goto mismatch;
         p += 4;
         i -= 4;
     }
-    i += 4;
     if (i & 2) {
         if (*(MEMENTO_UINT16 *)p != MEMENTO_FREEFILL_UINT16)
             goto mismatch;
