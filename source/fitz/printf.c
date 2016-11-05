@@ -197,6 +197,9 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 					fmt--;
 				}
 				break;
+			case 't':
+				length = sizeof(ptrdiff_t) * 8;
+				break;
 			case 'z':
 				length = sizeof(size_t) * 8;
 				break;
