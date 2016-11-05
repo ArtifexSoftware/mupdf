@@ -192,7 +192,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 }
 
 static fz_pixmap *
-jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
+jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
 {
 	JP2_Decomp_Handle doc;
 	JP2_Channel_Def_Params *chans = NULL;
@@ -424,11 +424,11 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 }
 
 fz_pixmap *
-fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed)
+fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs)
 {
 	fz_jpxd state = { 0 };
 
-	return jpx_read_image(ctx, &state, data, size, defcs, indexed, 0);
+	return jpx_read_image(ctx, &state, data, size, defcs, 0);
 }
 
 void
@@ -436,7 +436,7 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 {
 	fz_jpxd state = { 0 };
 
-	jpx_read_image(ctx, &state, data, size, NULL, 0, 1);
+	jpx_read_image(ctx, &state, data, size, NULL, 1);
 
 	*cspacep = state.cs;
 	*wp = state.width;
@@ -657,7 +657,7 @@ l2subfactor(fz_context *ctx, unsigned int max_w, unsigned int w)
 }
 
 static fz_pixmap *
-jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed, int onlymeta)
+jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
 {
 	fz_pixmap *img;
 	opj_dparameters_t params;
@@ -684,7 +684,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		format = OPJ_CODEC_JP2;
 
 	opj_set_default_decoder_parameters(&params);
-	if (indexed)
+	if (fz_colorspace_is_indexed(ctx, defcs))
 		params.flags |= OPJ_DPARAMETERS_IGNORE_PCLR_CMAP_CDEF_FLAG;
 
 	codec = opj_create_decompress(format);
@@ -887,7 +887,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 }
 
 fz_pixmap *
-fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs, int indexed)
+fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs)
 {
 	fz_jpxd state = { 0 };
 	fz_pixmap *pix;
@@ -895,7 +895,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *de
 	fz_try(ctx)
 	{
 		opj_lock(ctx);
-		pix = jpx_read_image(ctx, &state, data, size, defcs, indexed, 0);
+		pix = jpx_read_image(ctx, &state, data, size, defcs, 0);
 	}
 	fz_always(ctx)
 		opj_unlock(ctx);
@@ -913,7 +913,7 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 	fz_try(ctx)
 	{
 		opj_lock(ctx);
-		jpx_read_image(ctx, &state, data, size, NULL, 0, 1);
+		jpx_read_image(ctx, &state, data, size, NULL, 1);
 	}
 	fz_always(ctx)
 		opj_unlock(ctx);

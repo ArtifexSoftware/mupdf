@@ -214,7 +214,6 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 	fz_colorspace *colorspace = NULL;
 	fz_pixmap *pix = NULL;
 	pdf_obj *obj;
-	int indexed = 0;
 	fz_image *mask = NULL;
 	fz_image *img = NULL;
 
@@ -233,13 +232,10 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_ColorSpace);
 		if (obj)
-		{
 			colorspace = pdf_load_colorspace(ctx, doc, obj);
-			indexed = fz_colorspace_is_indexed(ctx, colorspace);
-		}
 
 		len = fz_buffer_storage(ctx, buf, &data);
-		pix = fz_load_jpx(ctx, data, len, colorspace, indexed);
+		pix = fz_load_jpx(ctx, data, len, colorspace);
 
 		obj = pdf_dict_geta(ctx, dict, PDF_NAME_SMask, PDF_NAME_Mask);
 		if (pdf_is_dict(ctx, obj))
@@ -251,7 +247,7 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 		}
 
 		obj = pdf_dict_geta(ctx, dict, PDF_NAME_Decode, PDF_NAME_D);
-		if (obj && !indexed)
+		if (obj && !fz_colorspace_is_indexed(ctx, colorspace))
 		{
 			float decode[FZ_MAX_COLORS * 2];
 			int i;
