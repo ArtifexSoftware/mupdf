@@ -348,11 +348,6 @@ fz_page *fz_keep_page(fz_context *ctx, fz_page *page);
 void fz_drop_page(fz_context *ctx, fz_page *page);
 
 /*
-	fz_new_annot: Create and initialize an annotation struct.
-*/
-void *fz_new_annot(fz_context *ctx, int size);
-
-/*
 	fz_page_presentation: Get the presentation details for a given page.
 
 	transition: A pointer to a transition struct to fill out.
