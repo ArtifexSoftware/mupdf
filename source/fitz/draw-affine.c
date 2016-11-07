@@ -1048,9 +1048,9 @@ fz_paint_affine_lerp(int da, int sa, int fa, int fb, int n, int alpha)
 {
 	switch(n)
 	{
-		case 0:
-			if (!da)
-				return NULL;
+	case 0:
+		if (da)
+		{
 			if (sa)
 			{
 				if (alpha == 255)
@@ -1065,150 +1065,169 @@ fz_paint_affine_lerp(int da, int sa, int fa, int fb, int n, int alpha)
 				else if (alpha > 0)
 					return paint_affine_lerp_da_alpha_0;
 			}
+		}
 		break;
-		case 1:
-			if (sa)
-#if FZ_PLOTTERS_G
-				if (da)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_sa_1;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_sa_alpha_1;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_sa_1;
-					else if (alpha > 0)
-						return paint_affine_lerp_sa_alpha_1;
-				}
-#else
-				goto fallback;
-#endif /* FZ_PLOTTERS_H */
-			else
-				if (da)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_1;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_alpha_1;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_1;
-					else if (alpha > 0)
-						return paint_affine_lerp_alpha_1;
-				}
-			break;
-#if FZ_PLOTTERS_RGB
-		case 3:
-			if (da)
-				if (sa)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_sa_3;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_sa_alpha_3;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_3;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_alpha_3;
-				}
-			else
-				if (sa)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_sa_3;
-					else if (alpha > 0)
-						return paint_affine_lerp_sa_alpha_3;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_3;
-					else if (alpha > 0)
-						return paint_affine_lerp_alpha_3;
-				}
-			break;
-#endif /* FZ_PLOTTERS_RGB */
-#if FZ_PLOTTERS_CMYK
-		case 4:
-			if (da)
-				if (sa)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_sa_4;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_sa_alpha_4;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_4;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_alpha_4;
-				}
-			else
-				if (sa)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_sa_4;
-					else if (alpha > 0)
-						return paint_affine_lerp_sa_alpha_4;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_4;
-					else if (alpha > 0)
-						return paint_affine_lerp_alpha_4;
-				}
-			break;
-#endif /* FZ_PLOTTERS_CMYK */
-		default:
+
+	case 1:
+		if (sa)
 		{
+#if FZ_PLOTTERS_G
+			if (da)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_sa_1;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_sa_alpha_1;
+			}
+			else
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_sa_1;
+				else if (alpha > 0)
+					return paint_affine_lerp_sa_alpha_1;
+			}
+#else
+			goto fallback;
+#endif /* FZ_PLOTTERS_H */
+		}
+		else
+		{
+			if (da)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_1;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_alpha_1;
+			}
+			else
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_1;
+				else if (alpha > 0)
+					return paint_affine_lerp_alpha_1;
+			}
+		}
+		break;
+
+#if FZ_PLOTTERS_RGB
+	case 3:
+		if (da)
+		{
+			if (sa)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_sa_3;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_sa_alpha_3;
+			}
+			else
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_3;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_alpha_3;
+			}
+		}
+		else
+		{
+			if (sa)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_sa_3;
+				else if (alpha > 0)
+					return paint_affine_lerp_sa_alpha_3;
+			}
+			else
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_3;
+				else if (alpha > 0)
+					return paint_affine_lerp_alpha_3;
+			}
+		}
+		break;
+#endif /* FZ_PLOTTERS_RGB */
+
+#if FZ_PLOTTERS_CMYK
+	case 4:
+		if (da)
+		{
+			if (sa)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_sa_4;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_sa_alpha_4;
+			}
+			else
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_4;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_alpha_4;
+			}
+		}
+		else
+		{
+			if (sa)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_sa_4;
+				else if (alpha > 0)
+					return paint_affine_lerp_sa_alpha_4;
+			}
+			else
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_4;
+				else if (alpha > 0)
+					return paint_affine_lerp_alpha_4;
+			}
+		}
+		break;
+#endif /* FZ_PLOTTERS_CMYK */
+
 #if !FZ_PLOTTERS_G
 fallback:
 #endif /* FZ_PLOTTERS_G */
+	default:
 #if FZ_PLOTTERS_N
-			if (da)
-				if (sa)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_sa_N;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_sa_alpha_N;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_da_N;
-					else if (alpha > 0)
-						return paint_affine_lerp_da_alpha_N;
-				}
+		if (da)
+		{
+			if (sa)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_sa_N;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_sa_alpha_N;
+			}
 			else
-				if (sa)
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_sa_N;
-					else if (alpha > 0)
-						return paint_affine_lerp_sa_alpha_N;
-				}
-				else
-				{
-					if (alpha == 255)
-						return paint_affine_lerp_N;
-					else if (alpha > 0)
-						return paint_affine_lerp_alpha_N;
-				}
-#endif /* FZ_PLOTTERS_G */
-			break;
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_da_N;
+				else if (alpha > 0)
+					return paint_affine_lerp_da_alpha_N;
+			}
 		}
+		else
+		{
+			if (sa)
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_sa_N;
+				else if (alpha > 0)
+					return paint_affine_lerp_sa_alpha_N;
+			}
+			else
+			{
+				if (alpha == 255)
+					return paint_affine_lerp_N;
+				else if (alpha > 0)
+					return paint_affine_lerp_alpha_N;
+			}
+		}
+#endif /* FZ_PLOTTERS_N */
+		break;
 	}
 	return NULL;
 }
@@ -2082,7 +2101,9 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 	{
 	case 0:
 		if (da)
+		{
 			if (sa)
+			{
 				if (alpha == 255)
 				{
 					if (fa == 0)
@@ -2101,9 +2122,9 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 					else
 						return paint_affine_near_da_sa_alpha_0;
 				}
-				else
-					return NULL;
+			}
 			else
+			{
 				if (alpha == 255)
 				{
 					if (fa == 0)
@@ -2122,12 +2143,13 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 					else
 						return paint_affine_near_da_alpha_0;
 				}
-				else
-					return NULL;
-		else
-			return NULL;
+			}
+		}
+		break;
+
 	case 1:
 		if (sa)
+		{
 #if FZ_PLOTTERS_G
 			if (da)
 			{
@@ -2174,7 +2196,9 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 #else
 			goto fallback;
 #endif /* FZ_PLOTTERS_G */
+		}
 		else
+		{
 			if (da)
 			{
 				if (alpha == 255)
@@ -2217,10 +2241,13 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 						return paint_affine_near_alpha_1;
 				}
 			}
-			break;
+		}
+		break;
+
 #if FZ_PLOTTERS_RGB
 	case 3:
 		if (da)
+		{
 			if (sa)
 			{
 				if (alpha == 255)
@@ -2263,7 +2290,9 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 						return paint_affine_near_da_alpha_3;
 				}
 			}
+		}
 		else
+		{
 			if (sa)
 			{
 				if (alpha == 255)
@@ -2306,11 +2335,14 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 						return paint_affine_near_alpha_3;
 				}
 			}
-#endif /* FZ_PLOTTERS_RGB */
+		}
 		break;
+#endif /* FZ_PLOTTERS_RGB */
+
 #if FZ_PLOTTERS_CMYK
 	case 4:
 		if (da)
+		{
 			if (sa)
 			{
 				if (alpha == 255)
@@ -2353,7 +2385,9 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 						return paint_affine_near_da_alpha_4;
 				}
 			}
+		}
 		else
+		{
 			if (sa)
 			{
 				if (alpha == 255)
@@ -2396,15 +2430,17 @@ fz_paint_affine_near(int da, int sa, int fa, int fb, int n, int alpha)
 						return paint_affine_near_alpha_4;
 				}
 			}
-#endif /* FZ_PLOTTERS_CMYK */
+		}
 		break;
-	default:
-	{
+#endif /* FZ_PLOTTERS_CMYK */
+
 #if !FZ_PLOTTERS_G
 fallback:
 #endif /* FZ_PLOTTERS_G */
+	default:
 #if FZ_PLOTTERS_N
 		if (da)
+		{
 			if (sa)
 			{
 				if (alpha == 255)
@@ -2447,7 +2483,9 @@ fallback:
 						return paint_affine_near_da_alpha_N;
 				}
 			}
+		}
 		else
+		{
 			if (sa)
 			{
 				if (alpha == 255)
@@ -2490,9 +2528,9 @@ fallback:
 						return paint_affine_near_alpha_N;
 				}
 			}
+		}
 #endif /* FZ_PLOTTERS_N */
 		break;
-	}
 	}
 	return NULL;
 }
