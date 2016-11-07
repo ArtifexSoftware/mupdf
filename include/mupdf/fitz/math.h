@@ -19,11 +19,6 @@ static inline int fz_mul255(int a, int b)
  * to give a single value in the same range as A was. */
 #define FZ_COMBINE(A,B) (((A)*(B))>>8)
 
-/* Combine values A (in the 0..255 range) and B (in the 0..256 range),
- * then reverse it within that range to give a single value in the
- * 0..256 range. */
-#define FZ_REVERSE_COMBINE(A,B) ((0xFF00 - (A)*(B))>>8)
-
 /* Combine values A and C (in the same (any) range) and B and D (in the
  * 0..256 range), to give a single value in the same range as A and C were. */
 #define FZ_COMBINE2(A,B,C,D) (((A) * (B) + (C) * (D))>>8)

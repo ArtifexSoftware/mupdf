@@ -590,15 +590,8 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	{
 		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
-		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
-		 * we have a choice. We can either create the new destination WITH alpha, or
-		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in future. */
 		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
-		if (state[0].dest->alpha)
-			fz_clear_pixmap(ctx, state[1].dest);
-		else
-			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox);
+		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox);
 		if (state[1].shape)
 		{
 			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
@@ -1895,10 +1888,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 		/* create new dest scratch buffer */
 		fz_pixmap_bbox(ctx, temp, &bbox);
 		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->alpha);
-		if (state->dest->alpha)
-			fz_clear_pixmap(ctx, dest);
-		else
-			fz_copy_pixmap_rect(ctx, dest, state->dest, &bbox);
+		fz_copy_pixmap_rect(ctx, dest, state->dest, &bbox);
 
 		/* push soft mask as clip mask */
 		state[1].dest = dest;
