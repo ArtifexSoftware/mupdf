@@ -1,132 +1,6 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
-const char *fz_draw_options_usage =
-	"Common raster format output options:\n"
-	"\trotate=N: rotate rendered pages N degrees counterclockwise\n"
-	"\tresolution=N: set both X and Y resolution of rendered pages in pixels per inch\n"
-	"\tx-resolution=N: X resolution of rendered pages in pixels per inch\n"
-	"\ty-resolution=N: Y resolution of rendered pages in pixels per inch\n"
-	"\twidth=N: render pages to fit N pixels wide (ignore resolution option)\n"
-	"\theight=N: render pages to fit N pixels tall (ignore resolution option)\n"
-	"\tcolorspace=(gray|rgb|cmyk): render using specified colorspace\n"
-	"\talpha: render pages with alpha channel and transparent background\n"
-	"\n";
-
-fz_draw_options *
-fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
-{
-	const char *val;
-
-	memset(opts, 0, sizeof *opts);
-
-	opts->x_resolution = 96;
-	opts->y_resolution = 96;
-	opts->rotate = 0;
-	opts->width = 0;
-	opts->height = 0;
-	opts->colorspace = fz_device_rgb(ctx);
-	opts->alpha = 0;
-
-	if (fz_has_option(ctx, args, "rotate", &val))
-		opts->rotate = fz_atoi(val);
-	if (fz_has_option(ctx, args, "resolution", &val))
-		opts->x_resolution = opts->y_resolution = fz_atoi(val);
-	if (fz_has_option(ctx, args, "x-resolution", &val))
-		opts->x_resolution = fz_atoi(val);
-	if (fz_has_option(ctx, args, "y-resolution", &val))
-		opts->y_resolution = fz_atoi(val);
-	if (fz_has_option(ctx, args, "width", &val))
-		opts->width = fz_atoi(val);
-	if (fz_has_option(ctx, args, "height", &val))
-		opts->height = fz_atoi(val);
-	if (fz_has_option(ctx, args, "colorspace", &val))
-	{
-		if (fz_option_eq(val, "gray") || fz_option_eq(val, "grey"))
-			opts->colorspace = fz_device_gray(ctx);
-		else if (fz_option_eq(val, "rgb"))
-			opts->colorspace = fz_device_rgb(ctx);
-		else if (fz_option_eq(val, "cmyk"))
-			opts->colorspace = fz_device_cmyk(ctx);
-		else
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown colorspace in options");
-	}
-	if (fz_has_option(ctx, args, "alpha", &val))
-		opts->alpha = fz_option_eq(val, "yes");
-
-	/* Sanity check values */
-	if (opts->x_resolution <= 0) opts->x_resolution = 96;
-	if (opts->y_resolution <= 0) opts->y_resolution = 96;
-	if (opts->width < 0) opts->width = 0;
-	if (opts->height < 0) opts->height = 0;
-
-	return opts;
-}
-
-fz_device *
-fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, const fz_rect *mediabox, fz_pixmap **pixmap)
-{
-	float x_zoom = opts->x_resolution / 72.0f;
-	float y_zoom = opts->y_resolution / 72.0f;
-	int w = opts->width;
-	int h = opts->height;
-	fz_rect bounds;
-	fz_irect ibounds;
-	fz_matrix transform;
-	fz_device *dev;
-
-	fz_pre_rotate(fz_scale(&transform, x_zoom, y_zoom), opts->rotate);
-	bounds = *mediabox;
-	fz_round_rect(&ibounds, fz_transform_rect(&bounds, &transform));
-
-	/* If width or height are set, we may need to adjust the transform */
-	if (w || h)
-	{
-		float scalex = 1;
-		float scaley = 1;
-		if (w != 0)
-			scalex = w / (bounds.x1 - bounds.x0);
-		if (h != 0)
-			scaley = h / (bounds.y1 - bounds.y0);
-		if (scalex != scaley)
-		{
-			if (w == 0)
-				scalex = scaley;
-			else if (h == 0)
-				scaley = scalex;
-			else if (scalex > scaley)
-				scalex = scaley;
-			else
-				scaley = scalex;
-		}
-		if (scalex != 1 || scaley != 1)
-		{
-			fz_pre_scale(&transform, scalex, scaley);
-			bounds = *mediabox;
-			fz_round_rect(&ibounds, fz_transform_rect(&bounds, &transform));
-		}
-	}
-
-	*pixmap = fz_new_pixmap_with_bbox(ctx, opts->colorspace, &ibounds, opts->alpha);
-	fz_try(ctx)
-	{
-		fz_set_pixmap_resolution(ctx, *pixmap, opts->x_resolution, opts->y_resolution);
-		if (opts->alpha)
-			fz_clear_pixmap(ctx, *pixmap);
-		else
-			fz_clear_pixmap_with_value(ctx, *pixmap, 255);
-
-		dev = fz_new_draw_device(ctx, &transform, *pixmap);
-	}
-	fz_catch(ctx)
-	{
-		fz_drop_pixmap(ctx, *pixmap);
-		*pixmap = NULL;
-		fz_rethrow(ctx);
-	}
-	return dev;
-}
-
 #define STACK_SIZE 96
 
 /* Enable the following to attempt to support knockout and/or isolated
@@ -2537,4 +2411,130 @@ fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor,
 	fz_drop_gel(ctx, gel);
 
 	return bbox;
+}
+
+const char *fz_draw_options_usage =
+	"Common raster format output options:\n"
+	"\trotate=N: rotate rendered pages N degrees counterclockwise\n"
+	"\tresolution=N: set both X and Y resolution of rendered pages in pixels per inch\n"
+	"\tx-resolution=N: X resolution of rendered pages in pixels per inch\n"
+	"\ty-resolution=N: Y resolution of rendered pages in pixels per inch\n"
+	"\twidth=N: render pages to fit N pixels wide (ignore resolution option)\n"
+	"\theight=N: render pages to fit N pixels tall (ignore resolution option)\n"
+	"\tcolorspace=(gray|rgb|cmyk): render using specified colorspace\n"
+	"\talpha: render pages with alpha channel and transparent background\n"
+	"\n";
+
+fz_draw_options *
+fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
+{
+	const char *val;
+
+	memset(opts, 0, sizeof *opts);
+
+	opts->x_resolution = 96;
+	opts->y_resolution = 96;
+	opts->rotate = 0;
+	opts->width = 0;
+	opts->height = 0;
+	opts->colorspace = fz_device_rgb(ctx);
+	opts->alpha = 0;
+
+	if (fz_has_option(ctx, args, "rotate", &val))
+		opts->rotate = fz_atoi(val);
+	if (fz_has_option(ctx, args, "resolution", &val))
+		opts->x_resolution = opts->y_resolution = fz_atoi(val);
+	if (fz_has_option(ctx, args, "x-resolution", &val))
+		opts->x_resolution = fz_atoi(val);
+	if (fz_has_option(ctx, args, "y-resolution", &val))
+		opts->y_resolution = fz_atoi(val);
+	if (fz_has_option(ctx, args, "width", &val))
+		opts->width = fz_atoi(val);
+	if (fz_has_option(ctx, args, "height", &val))
+		opts->height = fz_atoi(val);
+	if (fz_has_option(ctx, args, "colorspace", &val))
+	{
+		if (fz_option_eq(val, "gray") || fz_option_eq(val, "grey"))
+			opts->colorspace = fz_device_gray(ctx);
+		else if (fz_option_eq(val, "rgb"))
+			opts->colorspace = fz_device_rgb(ctx);
+		else if (fz_option_eq(val, "cmyk"))
+			opts->colorspace = fz_device_cmyk(ctx);
+		else
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown colorspace in options");
+	}
+	if (fz_has_option(ctx, args, "alpha", &val))
+		opts->alpha = fz_option_eq(val, "yes");
+
+	/* Sanity check values */
+	if (opts->x_resolution <= 0) opts->x_resolution = 96;
+	if (opts->y_resolution <= 0) opts->y_resolution = 96;
+	if (opts->width < 0) opts->width = 0;
+	if (opts->height < 0) opts->height = 0;
+
+	return opts;
+}
+
+fz_device *
+fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, const fz_rect *mediabox, fz_pixmap **pixmap)
+{
+	float x_zoom = opts->x_resolution / 72.0f;
+	float y_zoom = opts->y_resolution / 72.0f;
+	int w = opts->width;
+	int h = opts->height;
+	fz_rect bounds;
+	fz_irect ibounds;
+	fz_matrix transform;
+	fz_device *dev;
+
+	fz_pre_rotate(fz_scale(&transform, x_zoom, y_zoom), opts->rotate);
+	bounds = *mediabox;
+	fz_round_rect(&ibounds, fz_transform_rect(&bounds, &transform));
+
+	/* If width or height are set, we may need to adjust the transform */
+	if (w || h)
+	{
+		float scalex = 1;
+		float scaley = 1;
+		if (w != 0)
+			scalex = w / (bounds.x1 - bounds.x0);
+		if (h != 0)
+			scaley = h / (bounds.y1 - bounds.y0);
+		if (scalex != scaley)
+		{
+			if (w == 0)
+				scalex = scaley;
+			else if (h == 0)
+				scaley = scalex;
+			else if (scalex > scaley)
+				scalex = scaley;
+			else
+				scaley = scalex;
+		}
+		if (scalex != 1 || scaley != 1)
+		{
+			fz_pre_scale(&transform, scalex, scaley);
+			bounds = *mediabox;
+			fz_round_rect(&ibounds, fz_transform_rect(&bounds, &transform));
+		}
+	}
+
+	*pixmap = fz_new_pixmap_with_bbox(ctx, opts->colorspace, &ibounds, opts->alpha);
+	fz_try(ctx)
+	{
+		fz_set_pixmap_resolution(ctx, *pixmap, opts->x_resolution, opts->y_resolution);
+		if (opts->alpha)
+			fz_clear_pixmap(ctx, *pixmap);
+		else
+			fz_clear_pixmap_with_value(ctx, *pixmap, 255);
+
+		dev = fz_new_draw_device(ctx, &transform, *pixmap);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_pixmap(ctx, *pixmap);
+		*pixmap = NULL;
+		fz_rethrow(ctx);
+	}
+	return dev;
 }
