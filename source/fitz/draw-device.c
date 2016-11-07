@@ -189,7 +189,7 @@ static void fz_dump_blend(fz_context *ctx, fz_pixmap *pix, const char *s)
 		printf("%s%02d", s, group_dump_count);
 	group_dump_count++;
 
-	fz_save_pixmap_as_png(ctx, pix, name, (pix->n > 1));
+	fz_save_pixmap_as_png(ctx, pix, name);
 }
 
 static void dump_spaces(int x, const char *s)
@@ -1841,7 +1841,7 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 		}
 
 #ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Mask begin");
+		dump_spaces(dev->top-1, "Mask begin\n");
 #endif
 		state[1].scissor = bbox;
 	}
