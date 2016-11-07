@@ -465,8 +465,14 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 					fz_drop_colorspace(ctx, colorspace);
 				}
 
+				/* Default background color is black. */
 				for (k = 0; k < colorspace_n; k++)
 					softmask_bc[k] = 0;
+				/* Which in CMYK means not all zeros! This should really be
+				 * a test for subtractive color spaces, but this will have
+				 * to do for now. */
+				if (colorspace == fz_device_cmyk(ctx))
+					softmask_bc[3] = 1.0;
 
 				bc = pdf_dict_get(ctx, obj, PDF_NAME_BC);
 				if (pdf_is_array(ctx, bc))
