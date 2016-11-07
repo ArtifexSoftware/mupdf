@@ -416,7 +416,7 @@ release:
 debug:
 	$(MAKE) build=debug
 
-android:
+android: generate
 	$(MAKE) -C platform/android/viewer
 
 .PHONY: all clean nuke install third libs apps generate

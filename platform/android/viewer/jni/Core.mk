@@ -11,7 +11,7 @@ include $(CLEAR_VARS)
 
 MY_ROOT := ../../..
 
-LOCAL_CFLAGS += -Wall -Wno-maybe-uninitialized
+LOCAL_CFLAGS += -Wall -Wno-uninitialized
 
 ifeq ($(TARGET_ARCH),arm)
 LOCAL_CFLAGS += -DARCH_ARM -DARCH_THUMB -DARCH_ARM_CAN_LOAD_UNALIGNED

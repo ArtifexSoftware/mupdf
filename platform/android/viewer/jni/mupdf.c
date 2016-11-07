@@ -368,7 +368,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 typedef struct buffer_state_s
 {
 	globals *globals;
-	char buffer[4096];
+	jbyte buffer[4096];
 }
 buffer_state;
 
@@ -391,7 +391,7 @@ static int bufferStreamNext(fz_context *ctx, fz_stream *stream, size_t max)
 	(*env)->GetByteArrayRegion(env, array, stream->pos, len, bs->buffer);
 	(*env)->DeleteLocalRef(env, array);
 
-	stream->rp = bs->buffer;
+	stream->rp = (unsigned char *)bs->buffer;
 	stream->wp = stream->rp + len;
 	stream->pos += len;
 	if (len == 0)
@@ -1530,7 +1530,7 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		bArray = (*env)->NewByteArray(env, buf->len);
 		if (bArray == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to make byteArray");
-		(*env)->SetByteArrayRegion(env, bArray, 0, buf->len, buf->data);
+		(*env)->SetByteArrayRegion(env, bArray, 0, buf->len, (const jbyte *)buf->data);
 
 	}
 	fz_always(ctx)
@@ -2386,7 +2386,7 @@ JNI_FN(MuPDFCore_getFocusedWidgetSignatureState)(JNIEnv * env, jobject thiz)
 	if (focus == NULL)
 		return Signature_NoSupport;
 
-	if (!pdf_signatures_supported())
+	if (!pdf_signatures_supported(ctx))
 		return Signature_NoSupport;
 
 	return pdf_dict_get(ctx, ((pdf_annot *)focus)->obj, PDF_NAME_V) ? Signature_Signed : Signature_Unsigned;
