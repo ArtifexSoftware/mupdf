@@ -379,6 +379,8 @@ static int files = 0;
 static int num_workers = 0;
 static worker_t *workers;
 
+static const char *layer_config = NULL;
+
 static struct {
 	int active;
 	int started;
@@ -447,6 +449,10 @@ static void usage(void)
 		"\t-i\tignore errors\n"
 		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
 		"\t-P\tparallel interpretation/rendering\n"
+		"\n"
+		"\t-y l\tList the layer configs to stderr\n"
+		"\t-y -\tSelect layer config (by number)\n"
+		"\t-y -{,-}*\tSelect layer config (by number), and toggle the listed entries\n"
 		"\n"
 		"\tpages\tcomma separated list of page numbers and ranges\n"
 		);
@@ -1307,6 +1313,108 @@ static THREAD_RETURN_TYPE bgprint_worker(void *arg)
 }
 #endif
 
+static inline int iswhite(int ch)
+{
+	return
+		ch == '\000' || ch == '\011' || ch == '\012' ||
+		ch == '\014' || ch == '\015' || ch == '\040';
+}
+
+
+static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc)
+{
+	pdf_document *pdoc = pdf_specifics(ctx, doc);
+	int config;
+	int n, j;
+	pdf_layer_config info;
+
+	if (!pdoc)
+	{
+		fz_warn(ctx, "Only PDF files have layers");
+		return;
+	}
+
+	while (iswhite(*lc))
+		lc++;
+
+	if (*lc == 0 || *lc == 'l')
+	{
+		int num_configs = pdf_count_layer_configs(ctx, pdoc);
+
+		fprintf(stderr, "Layer configs:\n");
+		for (config = 0; config < num_configs; config++)
+		{
+			fprintf(stderr, " %s%d:", config < 10 ? " " : "", config);
+			pdf_layer_config_info(ctx, pdoc, config, &info);
+			if (info.name)
+				fprintf(stderr, " Name=\"%s\"", info.name);
+			if (info.creator)
+				fprintf(stderr, " Creator=\"%s\"", info.creator);
+			fprintf(stderr, "\n");
+		}
+		return;
+	}
+
+	if (*lc < '0' || *lc > '9')
+	{
+		fprintf(stderr, "-y expects a comma separated list of numbers, or 'l' to list layer configs\n");
+		return;
+	}
+	config = fz_atoi(lc);
+	pdf_select_layer_config(ctx, pdoc, config);
+
+	/* Make any alterations to the state required */
+	while (1)
+	{
+		int i;
+
+		while (*lc >= '0' && *lc <= '9')
+			lc++;
+		while (iswhite(*lc))
+			lc++;
+		if (*lc != ',')
+			break;
+		lc++;
+		while (iswhite(*lc))
+			lc++;
+		i = fz_atoi(lc);
+
+		pdf_toggle_layer_config_ui(ctx, pdoc, i);
+	}
+
+	/* Now list the final state of the config */
+	fprintf(stderr, "Layer Config %d:\n", config);
+	pdf_layer_config_info(ctx, pdoc, config, &info);
+	if (info.name)
+		fprintf(stderr, " Name=\"%s\"", info.name);
+	if (info.creator)
+		fprintf(stderr, " Creator=\"%s\"", info.creator);
+	fprintf(stderr, "\n");
+	n = pdf_count_layer_config_ui(ctx, pdoc);
+	for (j = 0; j < n; j++)
+	{
+		pdf_layer_config_ui ui;
+
+		pdf_layer_config_ui_info(ctx, pdoc, j, &ui);
+		fprintf(stderr, "%s%d: ", j < 10 ? " " : "", j);
+		while (ui.depth > 0)
+		{
+			ui.depth--;
+			fprintf(stderr, "  ");
+		}
+		if (ui.type == PDF_LAYER_UI_CHECKBOX)
+			fprintf(stderr, " [%c] ", ui.selected ? 'x' : ' ');
+		else if (ui.type == PDF_LAYER_UI_RADIOBOX)
+			fprintf(stderr, " (%c) ", ui.selected ? 'x' : ' ');
+		if (ui.text)
+			fprintf(stderr, "%s", ui.text);
+		if (ui.type != PDF_LAYER_UI_LABEL && ui.locked)
+			fprintf(stderr, " <locked>");
+		fprintf(stderr, "\n");
+	}
+}
+
+
 #ifdef MUDRAW_STANDALONE
 int main(int argc, char **argv)
 #else
@@ -1321,7 +1429,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:LvPl:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:LvPl:y:")) != -1)
 	{
 		switch (c)
 		{
@@ -1379,6 +1487,8 @@ int mudraw_main(int argc, char **argv)
 #endif
 		case 'L': lowmemory = 1; break;
 		case 'P': bgprint.active = 1; break;
+
+		case 'y': layer_config = fz_optarg; break;
 
 		case 'v': fprintf(stderr, "mudraw version %s\n", FZ_VERSION); return 1;
 		}
@@ -1610,6 +1720,9 @@ int mudraw_main(int argc, char **argv)
 				}
 
 				fz_layout_document(ctx, doc, layout_w, layout_h, layout_em);
+
+				if (layer_config)
+					apply_layer_config(ctx, doc, layer_config);
 
 				if (output_format == OUT_GPROOF)
 				{
