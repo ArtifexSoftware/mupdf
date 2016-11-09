@@ -2624,9 +2624,13 @@ pdf_add_object_drop(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 }
 
 pdf_obj *
-pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf)
+pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj)
 {
-	pdf_obj *ind = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 4));
+	pdf_obj *ind;
+	if (!obj)
+		ind = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 4));
+	else
+		ind = pdf_add_object(ctx, doc, obj);
 	fz_try(ctx)
 		pdf_update_stream(ctx, doc, ind, buf, 0);
 	fz_catch(ctx)

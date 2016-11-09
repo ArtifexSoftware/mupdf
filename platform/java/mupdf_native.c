@@ -6057,7 +6057,7 @@ FUN(PDFDocument_addStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
 	if (!jbuf) { jni_throw_arg(env, "buffer must not be null"); return NULL; }
 
 	fz_try(ctx)
-		ind = pdf_add_stream(ctx, pdf, buf);
+		ind = pdf_add_stream(ctx, pdf, buf, NULL);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -6093,7 +6093,7 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf)
 		memcpy(data, sbuf, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
 		data = NULL;
-		ind = pdf_add_stream(ctx, pdf, buf);
+		ind = pdf_add_stream(ctx, pdf, buf, NULL);
 	}
 	fz_always(ctx)
 	{

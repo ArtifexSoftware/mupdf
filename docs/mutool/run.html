@@ -642,8 +642,8 @@ Do NOT mix and match objects from one document with another document!
 <dl>
 <dt>PDFDocument#addObject(obj)
 <dd>Add 'obj' to the PDF as a numbered object, and return an indirect reference to it.
-<dt>PDFDocument#addStream(buffer)
-<dd>Create a stream object with the contents of 'buffer', add it to the PDF, and return an indirect reference to it.
+<dt>PDFDocument#addStream(buffer, object)
+<dd>Create a stream object with the contents of 'buffer', add it to the PDF, and return an indirect reference to it. If object is defined, it will be used as the stream object dictionary.
 <dt>PDFDocument#newNull()
 <dt>PDFDocument#newBoolean(boolean)
 <dt>PDFDocument#newInteger(number)

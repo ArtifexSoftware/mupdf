@@ -3055,14 +3055,16 @@ static void ffi_PDFDocument_addStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	fz_buffer *buf = ffi_tobuffer(J, 1);
+	fz_buffer *buf = ffi_tobuffer(J, 1); /* FIXME: leak if ffi_toobj throws */
+	pdf_obj *obj = js_iscoercible(J, 2) ? ffi_toobj(J, pdf, 2) : NULL;
 	pdf_obj *ind;
 
 	fz_try(ctx)
-		ind = pdf_add_stream(ctx, pdf, buf);
-	fz_always(ctx)
+		ind = pdf_add_stream(ctx, pdf, buf, obj);
+	fz_always(ctx) {
 		fz_drop_buffer(ctx, buf);
-	fz_catch(ctx)
+		pdf_drop_obj(ctx, obj);
+	} fz_catch(ctx)
 		rethrow(J);
 
 	ffi_pushobj(J, ind);

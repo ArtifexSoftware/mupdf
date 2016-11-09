@@ -27,7 +27,7 @@ void pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *ref, fz_buff
 
 pdf_obj *pdf_add_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 pdf_obj *pdf_add_object_drop(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
-pdf_obj *pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf);
+pdf_obj *pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj);
 
 /*
  * xref and object / stream api
