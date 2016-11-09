@@ -22,6 +22,10 @@
 #define GSDLLAPI
 #endif
 
+#ifndef GSDLLCALL
+#define GSDLLCALL
+#endif
+
 /*
 	We can either rely on the official iapi.h from ghostscript
 	(which is not supplied in the MuPDF source), or we can use
@@ -38,10 +42,6 @@ extern GSDLLEXPORT void GSDLLAPI gsapi_delete_instance(void *);
 extern GSDLLEXPORT int GSDLLAPI gsapi_set_stdio(void *, int (GSDLLCALL *)(void *, char *, int), int (GSDLLCALL *)(void *, const char *, int), int (GSDLLCALL *)(void *, const char *, int));
 #endif /* HAVE_IAPI_H */
 #endif /* USE_GS_API */
-
-#ifndef GSDLLCALL
-#define GSDLLCALL
-#endif
 
 typedef struct gprf_document_s gprf_document;
 typedef struct gprf_chapter_s gprf_chapter;
