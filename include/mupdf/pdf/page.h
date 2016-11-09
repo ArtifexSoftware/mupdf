@@ -65,7 +65,7 @@ fz_rect *pdf_bound_page(fz_context *ctx, pdf_page *page, fz_rect *);
 void pdf_run_page(fz_context *ctx, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
 
 /*
-	pdf_run_page: Interpret a loaded page and render it on a device.
+	pdf_run_page_with_usage: Interpret a loaded page and render it on a device.
 
 	page: A page loaded by pdf_load_page.
 
@@ -74,10 +74,13 @@ void pdf_run_page(fz_context *ctx, pdf_page *page, fz_device *dev, const fz_matr
 	ctm: A transformation matrix applied to the objects on the page,
 	e.g. to scale or rotate the page contents as desired.
 
+	usage: The 'usage' for displaying the file (typically
+	'View', 'Print' or 'Export'). NULL means 'View'.
+
 	cookie: A pointer to an optional fz_cookie structure that can be used
 	to track progress, collect errors etc.
 */
-void pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie);
+void pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie);
 
 /*
 	pdf_run_page_contents: Interpret a loaded page and render it on a device.

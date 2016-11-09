@@ -1,4 +1,4 @@
-#include "mupdf/pdf.h"
+#include "pdf-imp.h"
 #include "mupdf/fitz/document.h"
 
 #undef DEBUG_PROGESSIVE_ADVANCE
@@ -241,7 +241,7 @@ pdf_xref_entry *pdf_get_populating_xref_entry(fz_context *ctx, pdf_document *doc
  * xref. */
 pdf_xref_entry *pdf_get_xref_entry(fz_context *ctx, pdf_document *doc, int i)
 {
-	pdf_xref *xref;
+	pdf_xref *xref = NULL;
 	pdf_xref_subsec *sub;
 	int j;
 
@@ -1277,161 +1277,6 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 	}
 }
 
-void
-pdf_ocg_set_config(fz_context *ctx, pdf_document *doc, int config)
-{
-	int i, j, len, len2;
-	pdf_ocg_descriptor *desc = doc->ocg;
-	pdf_obj *obj, *cobj;
-	pdf_obj *name;
-
-	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root), PDF_NAME_OCProperties);
-	if (!obj)
-	{
-		if (config == 0)
-			return;
-		else
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Unknown OCG config (None known!)");
-	}
-	if (config == 0)
-	{
-		cobj = pdf_dict_get(ctx, obj, PDF_NAME_D);
-		if (!cobj)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "No default OCG config");
-	}
-	else
-	{
-		cobj = pdf_array_get(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Configs), config);
-		if (!cobj)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "Illegal OCG config");
-	}
-
-	pdf_drop_obj(ctx, desc->intent);
-	desc->intent = pdf_dict_get(ctx, cobj, PDF_NAME_Intent);
-	if (desc->intent)
-		pdf_keep_obj(ctx, desc->intent);
-
-	len = desc->len;
-	name = pdf_dict_get(ctx, cobj, PDF_NAME_BaseState);
-	if (pdf_name_eq(ctx, name, PDF_NAME_Unchanged))
-	{
-		/* Do nothing */
-	}
-	else if (pdf_name_eq(ctx, name, PDF_NAME_OFF))
-	{
-		for (i = 0; i < len; i++)
-		{
-			desc->ocgs[i].state = 0;
-		}
-	}
-	else /* Default to ON */
-	{
-		for (i = 0; i < len; i++)
-		{
-			desc->ocgs[i].state = 1;
-		}
-	}
-
-	obj = pdf_dict_get(ctx, cobj, PDF_NAME_ON);
-	len2 = pdf_array_len(ctx, obj);
-	for (i = 0; i < len2; i++)
-	{
-		pdf_obj *o = pdf_array_get(ctx, obj, i);
-		int n = pdf_to_num(ctx, o);
-		for (j=0; j < len; j++)
-		{
-			if (desc->ocgs[j].num == n)
-			{
-				desc->ocgs[j].state = 1;
-				break;
-			}
-		}
-	}
-
-	obj = pdf_dict_get(ctx, cobj, PDF_NAME_OFF);
-	len2 = pdf_array_len(ctx, obj);
-	for (i = 0; i < len2; i++)
-	{
-		pdf_obj *o = pdf_array_get(ctx, obj, i);
-		int n = pdf_to_num(ctx, o);
-		for (j=0; j < len; j++)
-		{
-			if (desc->ocgs[j].num == n)
-			{
-				desc->ocgs[j].state = 0;
-				break;
-			}
-		}
-	}
-
-	/* FIXME: Should make 'num configs' available in the descriptor. */
-	/* FIXME: Should copy out 'Intent' here into the descriptor, and remove
-	 * csi->intent in favour of that. */
-	/* FIXME: Should copy 'AS' into the descriptor, and visibility
-	 * decisions should respect it. */
-	/* FIXME: Make 'Order' available via the descriptor (when we have an
-	 * app that needs it) */
-	/* FIXME: Make 'ListMode' available via the descriptor (when we have
-	 * an app that needs it) */
-	/* FIXME: Make 'RBGroups' available via the descriptor (when we have
-	 * an app that needs it) */
-	/* FIXME: Make 'Locked' available via the descriptor (when we have
-	 * an app that needs it) */
-}
-
-static void
-pdf_read_ocg(fz_context *ctx, pdf_document *doc)
-{
-	pdf_obj *obj, *ocg;
-	int len, i;
-	pdf_ocg_descriptor *desc;
-
-	fz_var(desc);
-
-	obj = pdf_dict_get(ctx, pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root), PDF_NAME_OCProperties);
-	if (!obj)
-		return;
-	ocg = pdf_dict_get(ctx, obj, PDF_NAME_OCGs);
-	if (!ocg || !pdf_is_array(ctx, ocg))
-		/* Not ever supposed to happen, but live with it. */
-		return;
-	len = pdf_array_len(ctx, ocg);
-	fz_try(ctx)
-	{
-		desc = fz_malloc_struct(ctx, pdf_ocg_descriptor);
-		desc->len = len;
-		desc->ocgs = fz_calloc(ctx, len, sizeof(*desc->ocgs));
-		desc->intent = NULL;
-		for (i=0; i < len; i++)
-		{
-			pdf_obj *o = pdf_array_get(ctx, ocg, i);
-			desc->ocgs[i].num = pdf_to_num(ctx, o);
-			desc->ocgs[i].state = 1;
-		}
-		doc->ocg = desc;
-	}
-	fz_catch(ctx)
-	{
-		if (desc)
-			fz_free(ctx, desc->ocgs);
-		fz_free(ctx, desc);
-		fz_rethrow(ctx);
-	}
-
-	pdf_ocg_set_config(ctx, doc, 0);
-}
-
-static void
-pdf_drop_ocg(fz_context *ctx, pdf_ocg_descriptor *desc)
-{
-	if (!desc)
-		return;
-
-	pdf_drop_obj(ctx, desc->intent);
-	fz_free(ctx, desc->ocgs);
-	fz_free(ctx, desc);
-}
-
 /*
  * Initialize and load xref tables.
  * If password is not null, try to decrypt.
@@ -1631,7 +1476,7 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 		}
 		fz_free(ctx, doc->type3_fonts);
 
-		pdf_drop_ocg(ctx, doc->ocg);
+		pdf_drop_ocg(ctx, doc);
 
 		pdf_empty_store(ctx, doc);
 

@@ -214,6 +214,7 @@ Limits
 Line
 Linearized
 Link
+Locked
 Luminosity
 M
 MK
@@ -249,6 +250,7 @@ Of
 Off
 OpenType
 Opt
+Order
 Ordering
 Outlines
 P
@@ -275,6 +277,7 @@ Push
 Q
 QuadPoints
 R
+RBGroups
 RGB
 RI
 RL

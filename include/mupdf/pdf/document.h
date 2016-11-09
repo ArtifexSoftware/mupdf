@@ -119,20 +119,125 @@ int pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, cha
 
 fz_outline *pdf_load_outline(fz_context *ctx, pdf_document *doc);
 
-typedef struct pdf_ocg_entry_s pdf_ocg_entry;
+/*
+	pdf_count_layer_configs: Get the number of layer
+	configurations defined in this document.
 
-struct pdf_ocg_entry_s
-{
-	int num;
-	int state;
-};
+	doc: The document in question.
+*/
+int pdf_count_layer_configs(fz_context *ctx, pdf_document *doc);
 
-struct pdf_ocg_descriptor_s
+typedef struct
 {
-	int len;
-	pdf_ocg_entry *ocgs;
-	pdf_obj *intent;
-};
+	const char *name;
+	const char *creator;
+} pdf_layer_config;
+
+/*
+	pdf_layer_config_info: Fetch the name (and
+	optionally creator) of the given layer config.
+
+	doc: The document in question.
+
+	config_num: A value in the 0..n-1 range, where n is the
+	value returned from pdf_count_layer_configs.
+
+	info: Pointer to structure to fill in. Pointers within
+	this structure may be set to NULL if no information is
+	available.
+*/
+void pdf_layer_config_info(fz_context *ctx, pdf_document *doc, int config_num, pdf_layer_config *info);
+
+/*
+	pdf_select_layer_config: Set the current configuration.
+	This updates the visibility of the optional content groups
+	within the document.
+
+	doc: The document in question.
+
+	config_num: A value in the 0..n-1 range, where n is the
+	value returned from pdf_count_layer_configs.
+*/
+void pdf_select_layer_config(fz_context *ctx, pdf_document *doc, int config_num);
+
+/*
+	pdf_count_layer_config_ui: Returns the number of entries in the
+	'UI' for this layer configuration.
+
+	doc: The document in question.
+*/
+int pdf_count_layer_config_ui(fz_context *ctx, pdf_document *doc);
+
+/*
+	pdf_select_layer_ui: Select a checkbox/radiobox
+	within the 'UI' for this layer configuration.
+
+	Selecting a UI entry that is a radiobox may disable
+	other UI entries.
+
+	doc: The document in question.
+
+	ui: A value in the 0..m-1 range, where m is the value
+	returned by pdf_count_layer_config_ui.
+*/
+void pdf_select_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui);
+
+/*
+	pdf_deselect_layer_ui: Select a checkbox/radiobox
+	within the 'UI' for this layer configuration.
+
+	doc: The document in question.
+
+	ui: A value in the 0..m-1 range, where m is the value
+	returned by pdf_count_layer_config_ui.
+*/
+void pdf_deselect_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui);
+
+/*
+	pdf_toggle_layer_config_ui: Toggle a checkbox/radiobox
+	within the 'UI' for this layer configuration.
+
+	Toggling a UI entry that is a radiobox may disable
+	other UI entries.
+
+	doc: The document in question.
+
+	ui: A value in the 0..m-1 range, where m is the value
+	returned by pdf_count_layer_config_ui.
+*/
+void pdf_toggle_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui);
+
+typedef enum
+{
+	PDF_LAYER_UI_LABEL = 0,
+	PDF_LAYER_UI_CHECKBOX = 1,
+	PDF_LAYER_UI_RADIOBOX = 2
+} pdf_layer_config_ui_type;
+
+typedef struct
+{
+	const char *text;
+	int depth;
+	pdf_layer_config_ui_type type;
+	int selected;
+	int locked;
+} pdf_layer_config_ui;
+
+/*
+	pdf_layer_config_ui_info: Get the info for a given
+	entry in the layer config ui.
+
+	doc: The document in question.
+
+	ui: A value in the 0..m-1 range, where m is the value
+	returned by pdf_count_layer_config_ui.
+
+	info: Pointer to a structure to fill in with information
+	about the requested ui entry.
+*/
+void pdf_layer_config_ui_info(fz_context *ctx, pdf_document *doc, int ui, pdf_layer_config_ui *info);
+
+int pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const char *usage, pdf_obj *ocg);
 
 /*
 	pdf_update_page: update a page for the sake of changes caused by a call

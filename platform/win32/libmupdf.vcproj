@@ -2031,6 +2031,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-imp.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-interpret-imp.h"
 				>
 			</File>
@@ -2044,6 +2048,10 @@
 			</File>
 			<File
 				RelativePath="..\..\source\pdf\pdf-js.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\source\pdf\pdf-layer.c"
 				>
 			</File>
 			<File

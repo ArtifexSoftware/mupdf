@@ -2018,11 +2018,11 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 }
 
 pdf_processor *
-pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, const char *event, pdf_gstate *gstate, int nested)
+pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, const char *usage, pdf_gstate *gstate, int nested)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
-		proc->super.event = event;
+		proc->super.usage = usage;
 
 		proc->super.drop_processor = pdf_drop_run_processor;
 

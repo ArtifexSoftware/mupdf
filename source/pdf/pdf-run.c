@@ -1,7 +1,7 @@
 #include "mupdf/pdf.h"
 
 static void
-pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
+pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
 {
 	fz_matrix local_ctm, page_ctm;
 	fz_rect mediabox;
@@ -10,7 +10,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
 	fz_concat(&local_ctm, &page_ctm, ctm);
 
-	proc = pdf_new_run_processor(ctx, dev, &local_ctm, event, NULL, 0);
+	proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
 	fz_try(ctx)
 		pdf_process_annot(ctx, proc, doc, page, annot, cookie);
 	fz_always(ctx)
@@ -19,7 +19,8 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 		fz_rethrow(ctx);
 }
 
-static void pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
+static void
+pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
 {
 	fz_matrix local_ctm, page_ctm;
 	pdf_obj *resources;
@@ -36,7 +37,7 @@ static void pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc,
 	if (page->transparency)
 		fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), 1, 0, 0, 1);
 
-	proc = pdf_new_run_processor(ctx, dev, &local_ctm, event, NULL, 0);
+	proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
 	fz_try(ctx)
 		pdf_process_contents(ctx, proc, doc, resources, contents, cookie);
 	fz_always(ctx)
@@ -100,7 +101,8 @@ void pdf_run_annot(fz_context *ctx, pdf_annot *annot, fz_device *dev, const fz_m
 		fz_throw(ctx, FZ_ERROR_TRYLATER, "incomplete rendering");
 }
 
-static void pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
+static void
+pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
 {
 	pdf_annot *annot;
 
@@ -122,12 +124,12 @@ static void pdf_run_page_annots_with_usage(fz_context *ctx, pdf_document *doc, p
 			cookie->progress++;
 		}
 
-		pdf_run_annot_with_usage(ctx, doc, page, annot, dev, ctm, event, cookie);
+		pdf_run_annot_with_usage(ctx, doc, page, annot, dev, ctm, usage, cookie);
 	}
 }
 
 void
-pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, char *event, fz_cookie *cookie)
+pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_device *dev, const fz_matrix *ctm, const char *usage, fz_cookie *cookie)
 {
 	int nocache = !!(dev->hints & FZ_NO_CACHE);
 
@@ -135,8 +137,8 @@ pdf_run_page_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_d
 		pdf_mark_xref(ctx, doc);
 	fz_try(ctx)
 	{
-		pdf_run_page_contents_with_usage(ctx, doc, page, dev, ctm, event, cookie);
-		pdf_run_page_annots_with_usage(ctx, doc, page, dev, ctm, event, cookie);
+		pdf_run_page_contents_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
+		pdf_run_page_annots_with_usage(ctx, doc, page, dev, ctm, usage, cookie);
 	}
 	fz_always(ctx)
 	{
