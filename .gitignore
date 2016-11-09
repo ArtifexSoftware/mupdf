@@ -9,11 +9,14 @@ include/mupdf/pdf/name-table.h
 source/pdf/pdf-name-table.h
 tags
 cscope.*
+platform/android/bin
+platform/android/.idea
 
 # Editor and file browser turds:
 *~
 .*.swp
 .DS_Store
+\#*\#
 
 # Editor settings:
 .vimrc
@@ -29,6 +32,15 @@ cscope.*
 *.xhtml
 *.css
 *.svg
+*.pam
+*.pbm
+*.pgm
+*.ppm
+*.png
+*.jpg
+*.jpeg
+*.pcl
+*.ps
 
 # Temporary and build files:
 *.class
@@ -36,6 +48,9 @@ cscope.*
 *.o
 *.so
 DerivedData
+*.zip
+*.apk
+*.dll
 
 platform/win32/*.user
 platform/win32/*.ncb
