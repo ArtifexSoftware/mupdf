@@ -345,6 +345,7 @@ static float layout_w = 450;
 static float layout_h = 600;
 static float layout_em = 12;
 static char *layout_css = NULL;
+static float min_line_width = 0.0f;
 
 static int showfeatures = 0;
 static int showtime = 0;
@@ -441,6 +442,7 @@ static void usage(void)
 		"\n"
 		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
 		"\t-A -/-\tnumber of bits of antialiasing (0 to 8) (graphics, text)\n"
+		"\t-l -\tminimum stroked line width (in pixels)\n"
 		"\t-D\tdisable use of display list\n"
 		"\t-i\tignore errors\n"
 		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
@@ -1319,7 +1321,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:LvP")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:LvPl:")) != -1)
 	{
 		switch (c)
 		{
@@ -1365,6 +1367,7 @@ int mudraw_main(int argc, char **argv)
 			break;
 		}
 		case 'D': uselist = 0; break;
+		case 'l': min_line_width = fz_atof(fz_optarg); break;
 		case 'i': ignore_errors = 1; break;
 
 		case 'T':
@@ -1416,6 +1419,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_set_text_aa_level(ctx, alphabits_text);
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
+	fz_set_graphics_min_line_width(ctx, min_line_width);
 
 	if (bgprint.active)
 	{
