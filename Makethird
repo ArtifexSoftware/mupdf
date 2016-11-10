@@ -676,6 +676,37 @@ ifneq "$(wildcard $(GLFW_DIR)/README.md)" ""
 
 GLFW_LIB := $(OUT)/libglfw.a
 GLFW_OUT := $(OUT)/glfw
+
+ifeq "$(OS)" "MACOS"
+
+GLFW_SRC := \
+	cocoa_init.m \
+	cocoa_monitor.m \
+	cocoa_window.m \
+	context.c \
+	init.c \
+	input.c \
+	iokit_joystick.m \
+	mach_time.m \
+	monitor.c \
+	nsgl_context.m \
+	posix_tls.c \
+	window.c
+
+$(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.m | $(GLFW_OUT)
+	$(CC_CMD) -D_GLFW_COCOA -D_GLFW_NSGL -D_GLFW_USE_MENUBAR -D_GLFW_USE_RETINA -D_GLFW_USE_OPENGL -Wno-deprecated-declarations
+$(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.c | $(GLFW_OUT)
+	$(CC_CMD) -D_GLFW_COCOA -D_GLFW_NSGL -D_GLFW_USE_MENUBAR -D_GLFW_USE_RETINA -D_GLFW_USE_OPENGL
+
+GLFW_OBJ := $(addprefix $(GLFW_OUT)/, $(GLFW_SRC))
+GLFW_OBJ := $(GLFW_OBJ:%.c=%.o)
+GLFW_OBJ := $(GLFW_OBJ:%.m=%.o)
+
+$(GLFW_LIB): $(GLFW_OBJ)
+GLFW_LIBS := -framework OpenGL -framework IOKit -framework CoreVideo -framework Cocoa
+
+else
+
 GLFW_SRC := \
 	context.c \
 	glx_context.c \
@@ -689,7 +720,18 @@ GLFW_SRC := \
 	x11_init.c \
 	x11_monitor.c \
 	x11_window.c \
-	xkb_unicode.c \
+	xkb_unicode.c
+
+$(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.c | $(GLFW_OUT)
+	$(CC_CMD) -D_GLFW_X11 -D_GLFW_GLX -D_GLFW_USE_OPENGL -D_GLFW_HAS_GLXGETPROCADDRESS
+$(GLFW_LIB): $(addprefix $(GLFW_OUT)/, $(GLFW_SRC:%.c=%.o))
+GLFW_LIBS := -lGL -lX11 -lXcursor -lXrandr -lXinerama -lpthread
+
+endif
+
+GLFW_CFLAGS := -I$(GLFW_DIR)/include
+$(GLFW_OUT):
+	$(MKDIR_CMD)
 
 GLFW_SRC_UNUSED := \
 	egl_context.c \
@@ -707,15 +749,6 @@ GLFW_SRC_UNUSED := \
 	wl_init.c \
 	wl_monitor.c \
 	wl_window.c \
-
-$(GLFW_LIB): $(addprefix $(GLFW_OUT)/, $(GLFW_SRC:%.c=%.o))
-$(GLFW_OUT):
-	$(MKDIR_CMD)
-$(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.c | $(GLFW_OUT)
-	$(CC_CMD) -D_GLFW_X11 -D_GLFW_GLX -D_GLFW_USE_OPENGL -D_GLFW_HAS_GLXGETPROCADDRESS
-
-GLFW_CFLAGS := -I$(GLFW_DIR)/include
-GLFW_LIBS := -lGL -lX11 -lXcursor -lXrandr -lXinerama -lpthread
 
 HAVE_GLFW := yes
 
