@@ -323,6 +323,22 @@ int fz_graphics_aa_level(fz_context *ctx);
 void fz_set_graphics_aa_level(fz_context *ctx, int bits);
 
 /*
+	fz_graphics_min_line_width: Get the minimum line width to be
+	used for stroked lines.
+
+	min_line_width: The minimum line width to use (in pixels).
+*/
+float fz_graphics_min_line_width(fz_context *ctx);
+
+/*
+	fz_set_graphics_min_line_width: Set the minimum line width to be
+	used for stroked lines.
+
+	min_line_width: The minimum line width to use (in pixels).
+*/
+void fz_set_graphics_min_line_width(fz_context *ctx, float min_line_width);
+
+/*
 	fz_user_css: Get the user stylesheet source text.
 */
 const char *fz_user_css(fz_context *ctx);

@@ -23,6 +23,7 @@ struct fz_aa_context_s
 	int scale;
 	int bits;
 	int text_bits;
+	float min_line_width;
 };
 
 void fz_new_aa_context(fz_context *ctx)
@@ -203,6 +204,24 @@ fz_set_graphics_aa_level(fz_context *ctx, int level)
 #else
 	set_gfx_level(ctx, level);
 #endif
+}
+
+void
+fz_set_graphics_min_line_width(fz_context *ctx, float min_line_width)
+{
+	if (!ctx || !ctx->aa)
+		return;
+
+	ctx->aa->min_line_width = min_line_width;
+}
+
+float
+fz_graphics_min_line_width(fz_context *ctx)
+{
+	if (!ctx || !ctx->aa)
+		return 0;
+
+	return ctx->aa->min_line_width;
 }
 
 /*
