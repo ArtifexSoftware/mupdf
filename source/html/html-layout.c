@@ -2117,8 +2117,7 @@ html_load_css(fz_context *ctx, fz_archive *zip, const char *base_uri, fz_css *cs
 						fz_try(ctx)
 						{
 							buf = fz_read_archive_entry(ctx, zip, path);
-							fz_write_buffer_byte(ctx, buf, 0);
-							fz_parse_css(ctx, css, (char*)buf->data, path);
+							fz_parse_css(ctx, css, fz_string_from_buffer(ctx, buf), path);
 						}
 						fz_always(ctx)
 							fz_drop_buffer(ctx, buf);
@@ -2500,6 +2499,8 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 {
 	fz_xml *xml;
 	fz_html *html;
+	unsigned char *data;
+	size_t len = fz_buffer_storage(ctx, buf, &data);
 
 	fz_css_match match;
 	struct genstate g;
@@ -2512,7 +2513,7 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 	g.emit_white = 0;
 	g.last_brk_cls = UCDN_LINEBREAK_CLASS_OP;
 
-	xml = fz_parse_xml(ctx, buf->data, buf->len, 1);
+	xml = fz_parse_xml(ctx, data, len, 1);
 
 	g.css = fz_new_css(ctx);
 	fz_try(ctx)

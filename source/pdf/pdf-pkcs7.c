@@ -749,7 +749,7 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 			if (dn->c)
 				fz_buffer_printf(ctx, fzbuf, ", c=%s", dn->c);
 
-			(void)fz_buffer_storage(ctx, fzbuf, (unsigned char **) &dn_str);
+			dn_str = fz_string_from_buffer(ctx, fzbuf);
 			pdf_set_signature_appearance(ctx, doc, (pdf_annot *)widget, dn->cn, dn_str, NULL);
 		}
 	}

@@ -688,14 +688,16 @@ static int ffi_buffer_has(js_State *J, void *buf_, const char *key)
 {
 	fz_buffer *buf = buf_;
 	int idx;
+	unsigned char *data;
+	size_t len = fz_buffer_storage(js_getcontext(J), buf, &data);
 	if (is_number(key, &idx)) {
-		if (idx < 0 || (size_t)idx >= buf->len)
+		if (idx < 0 || (size_t)idx >= len)
 			js_rangeerror(J, "index out of bounds");
-		js_pushnumber(J, buf->data[idx]);
+		js_pushnumber(J, data[idx]);
 		return 1;
 	}
 	if (!strcmp(key, "length")) {
-		js_pushnumber(J, buf->len);
+		js_pushnumber(J, len);
 		return 1;
 	}
 	return 0;
@@ -705,10 +707,12 @@ static int ffi_buffer_put(js_State *J, void *buf_, const char *key)
 {
 	fz_buffer *buf = buf_;
 	int idx;
+	unsigned char *data;
+	size_t len = fz_buffer_storage(js_getcontext(J), buf, &data);
 	if (is_number(key, &idx)) {
-		if (idx < 0 || (size_t)idx >= buf->len)
+		if (idx < 0 || (size_t)idx >= len)
 			js_rangeerror(J, "index out of bounds");
-		buf->data[idx] = js_tonumber(J, -1);
+		data[idx] = js_tonumber(J, -1);
 		return 1;
 	}
 	if (!strcmp(key, "length"))

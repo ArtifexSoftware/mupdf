@@ -38,14 +38,13 @@ void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 */
 size_t fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **data);
 
-struct fz_buffer_s
-{
-	int refs;
-	unsigned char *data;
-	size_t cap, len;
-	int unused_bits;
-	int shared;
-};
+/*
+	fz_string_from_buffer: Ensure that a buffers data ends in a
+	0 byte, and return a pointer to it.
+
+	Returns pointer to data.
+*/
+const char *fz_string_from_buffer(fz_context *ctx, fz_buffer *buf);
 
 /*
 	fz_new_buffer: Create a new buffer.
@@ -142,5 +141,21 @@ void fz_buffer_print_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *
 	fz_md5_buffer: create MD5 digest of buffer contents.
 */
 void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16]);
+
+/*
+	fz_buffer_extract: Take ownership of buffer contents.
+	Performs the same task as fz_buffer_storage, but ownership of
+	the data buffer returns with this call. The buffer is left
+	empty.
+
+	Note: Bad things may happen if this is called on a buffer with
+	multiple references that is being used from multiple threads.
+
+	data: Pointer to place to retrieve data pointer.
+
+	Returns length of stream.
+*/
+size_t fz_buffer_extract(fz_context *ctx, fz_buffer *buf, unsigned char **data);
+
 
 #endif

@@ -165,7 +165,8 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 				if (pdf_is_stream(ctx, obj))
 				{
 					font->t3procs[i] = pdf_load_stream(ctx, obj);
-					fontdesc->size += font->t3procs[i]->cap;
+					fz_trim_buffer(ctx, font->t3procs[i]);
+					fontdesc->size += fz_buffer_storage(ctx, font->t3procs[i], NULL);
 					fontdesc->size += 0; // TODO: display list size calculation
 				}
 			}

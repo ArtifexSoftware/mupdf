@@ -112,9 +112,13 @@ static void saveimage(int num)
 		switch (type)
 		{
 		case FZ_IMAGE_JPEG:
+		{
+			unsigned char *data;
+			size_t len = fz_buffer_storage(ctx, cbuf->buffer, &data);
 			snprintf(buf, sizeof(buf), "img-%04d", num);
-			writejpeg(ctx, cbuf->buffer->data, cbuf->buffer->len, buf);
+			writejpeg(ctx, data, len, buf);
 			break;
+		}
 		default:
 			pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, 0, 0);
 			writepixmap(ctx, pix, buf, dorgb);

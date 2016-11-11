@@ -548,6 +548,8 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 	fz_compressed_buffer *cbuf;
 	fz_buffer *buf;
 	int i;
+	unsigned char *data;
+	size_t len;
 
 	if (img == NULL)
 		return;
@@ -662,12 +664,13 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 	}
 
 	fz_printf(ctx, out, "ID\n");
+	len = fz_buffer_storage(ctx, buf, &data);
 	if (ahx)
 	{
 		size_t z;
-		for (z = 0; z < buf->len; ++z)
+		for (z = 0; z < len; ++z)
 		{
-			int c = buf->data[z];
+			int c = data[z];
 			fz_putc(ctx, out, "0123456789abcdef"[(c >> 4) & 0xf]);
 			fz_putc(ctx, out, "0123456789abcdef"[c & 0xf]);
 			if ((z & 31) == 31)
@@ -677,7 +680,7 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 	}
 	else
 	{
-		fz_write(ctx, out, buf->data, buf->len);
+		fz_write(ctx, out, data, len);
 	}
 	fz_printf(ctx, out, "\nEI\n");
 }

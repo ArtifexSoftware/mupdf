@@ -397,7 +397,7 @@ typedef struct text_splitter_s
 	float unscaled_width;
 	float fontsize;
 	float lineheight;
-	char *text;
+	const char *text;
 	int done;
 	float x_orig;
 	float y_orig;
@@ -409,7 +409,7 @@ typedef struct text_splitter_s
 	int retry;
 } text_splitter;
 
-static void text_splitter_init(text_splitter *splitter, font_info *info, char *text, float width, float height, int variable)
+static void text_splitter_init(text_splitter *splitter, font_info *info, const char *text, float width, float height, int variable)
 {
 	float fontsize = info->da_rec.font_size;
 
@@ -442,7 +442,7 @@ static void text_splitter_start_line(text_splitter *splitter)
 
 static int text_splitter_layout(fz_context *ctx, text_splitter *splitter)
 {
-	char *text;
+	const char *text;
 	float room;
 	float stride;
 	size_t count;
@@ -1899,7 +1899,7 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	}
 }
 
-static void add_text(fz_context *ctx, font_info *font_rec, fz_text *text, char *str, size_t str_len, const fz_matrix *tm_)
+static void add_text(fz_context *ctx, font_info *font_rec, fz_text *text, const char *str, size_t str_len, const fz_matrix *tm_)
 {
 	fz_font *font = font_rec->font->font;
 	fz_matrix tm = *tm_;
@@ -1940,7 +1940,7 @@ static fz_text *layout_text(fz_context *ctx, font_info *font_rec, char *str, flo
 	return text;
 }
 
-static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rect *bounds)
+static fz_text *fit_text(fz_context *ctx, font_info *font_rec, const char *str, fz_rect *bounds)
 {
 	float width = bounds->x1 - bounds->x0;
 	float height = bounds->y1 - bounds->y0;
@@ -1989,7 +1989,7 @@ static fz_text *fit_text(fz_context *ctx, font_info *font_rec, char *str, fz_rec
 					if (splitter.text[splitter.text_start] != ' ')
 					{
 						float dx, dy;
-						char *word = str+splitter.text_start;
+						const char *word = str+splitter.text_start;
 						size_t wordlen = splitter.text_end-splitter.text_start;
 
 						text_splitter_move(&splitter, -line, &dx, &dy);
@@ -2374,7 +2374,6 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		fz_rect annot_rect;
 		fz_rect logo_bounds;
 		fz_matrix logo_tm;
-		unsigned char *bufstr;
 		fz_rect rect;
 
 		pdf_to_rect(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Rect), &annot_rect);
@@ -2415,10 +2414,9 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		fz_buffer_printf(ctx, fzbuf, "\nDN: %s", dn);
 		if (date)
 			fz_buffer_printf(ctx, fzbuf, "\nDate: %s", date);
-		(void)fz_buffer_storage(ctx, fzbuf, &bufstr);
 		rect = annot_rect;
 		rect.x0 = (rect.x0 + rect.x1)/2.0f;
-		text = fit_text(ctx, &font_rec, (char *)bufstr, &rect);
+		text = fit_text(ctx, &font_rec, fz_string_from_buffer(ctx, fzbuf), &rect);
 		fz_fill_text(ctx, dev, text, &page_ctm, cs, font_rec.da_rec.col, 1.0f);
 
 		fz_close_device(ctx, dev);

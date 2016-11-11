@@ -68,7 +68,10 @@ tiff_load_page(fz_context *ctx, tiff_document *doc, int number)
 
 	fz_try(ctx)
 	{
-		pixmap = fz_load_tiff_subimage(ctx, doc->buffer->data, doc->buffer->len, number);
+		size_t len;
+		unsigned char *data;
+		len = fz_buffer_storage(ctx, doc->buffer, &data);
+		pixmap = fz_load_tiff_subimage(ctx, data, len, number);
 		image = fz_new_image_from_pixmap(ctx, pixmap, NULL);
 
 		page = fz_new_page(ctx, sizeof *page);
@@ -125,8 +128,11 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	fz_try(ctx)
 	{
+		size_t len;
+		unsigned char *data;
 		doc->buffer = fz_read_all(ctx, file, 1024);
-		doc->page_count = fz_load_tiff_subimage_count(ctx, doc->buffer->data, doc->buffer->len);
+		len = fz_buffer_storage(ctx, doc->buffer, &data);
+		doc->page_count = fz_load_tiff_subimage_count(ctx, data, len);
 	}
 	fz_catch(ctx)
 	{

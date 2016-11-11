@@ -226,6 +226,9 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 	/* FIXME: We can't handle decode arrays for indexed images currently */
 	fz_try(ctx)
 	{
+		unsigned char *data;
+		size_t len;
+
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_ColorSpace);
 		if (obj)
 		{
@@ -233,7 +236,8 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 			indexed = fz_colorspace_is_indexed(ctx, colorspace);
 		}
 
-		pix = fz_load_jpx(ctx, buf->data, buf->len, colorspace, indexed);
+		len = fz_buffer_storage(ctx, buf, &data);
+		pix = fz_load_jpx(ctx, data, len, colorspace, indexed);
 
 		obj = pdf_dict_geta(ctx, dict, PDF_NAME_SMask, PDF_NAME_Mask);
 		if (pdf_is_dict(ctx, obj))
@@ -392,9 +396,8 @@ raw_or_unknown_compression:
 			s = pixmap->samples;
 			h = image->h;
 			size = image->w * n;
-			buffer = fz_new_buffer(ctx, size * h);
-			buffer->len = size * h;
-			d = buffer->data;
+			d = fz_malloc(ctx, size * h);
+			buffer = fz_new_buffer_from_data(ctx, d, size * h);
 			if (pixmap->alpha == 0 || n == 1)
 			{
 				while (h--)

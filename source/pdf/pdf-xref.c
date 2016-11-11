@@ -2119,7 +2119,7 @@ pdf_update_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj, fz_buffer *n
 	fz_drop_buffer(ctx, x->stm_buf);
 	x->stm_buf = fz_keep_buffer(ctx, newbuf);
 
-	pdf_dict_puts_drop(ctx, obj, "Length", pdf_new_int(ctx, doc, (int)newbuf->len));
+	pdf_dict_puts_drop(ctx, obj, "Length", pdf_new_int(ctx, doc, (int)fz_buffer_storage(ctx, newbuf, NULL)));
 	if (!compressed)
 	{
 		pdf_dict_dels(ctx, obj, "Filter");

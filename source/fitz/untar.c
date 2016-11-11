@@ -1,4 +1,4 @@
-#include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 typedef struct tar_entry_s tar_entry;
 typedef struct fz_tar_archive_s fz_tar_archive;

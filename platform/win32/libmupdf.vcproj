@@ -1659,6 +1659,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\fitz-imp.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\font-imp.h"
 				>
 			</File>

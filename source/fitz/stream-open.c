@@ -1,4 +1,4 @@
-#include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 int
 fz_file_exists(fz_context *ctx, const char *path)

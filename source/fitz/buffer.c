@@ -1,4 +1,4 @@
-#include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 fz_buffer *
 fz_new_buffer(fz_context *ctx, size_t size)
@@ -30,12 +30,20 @@ fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, size_t size)
 {
 	fz_buffer *b;
 
-	b = fz_malloc_struct(ctx, fz_buffer);
-	b->refs = 1;
-	b->data = data;
-	b->cap = size;
-	b->len = size;
-	b->unused_bits = 0;
+	fz_try(ctx)
+	{
+		b = fz_malloc_struct(ctx, fz_buffer);
+		b->refs = 1;
+		b->data = data;
+		b->cap = size;
+		b->len = size;
+		b->unused_bits = 0;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, data);
+		fz_rethrow(ctx);
+	}
 
 	return b;
 }
@@ -150,6 +158,32 @@ fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
 	if (datap)
 		*datap = (buf ? buf->data : NULL);
 	return (buf ? buf->len : 0);
+}
+
+const char *
+fz_string_from_buffer(fz_context *ctx, fz_buffer *buf)
+{
+	if (!buf)
+		return "";
+
+	if (buf->data[buf->len-1] != 0)
+		fz_write_buffer_byte(ctx, buf, 0);
+
+	return (const char *)buf->data;
+}
+
+size_t
+fz_buffer_extract(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
+{
+	size_t len = buf ? buf->len : 0;
+	*datap = (buf ? buf->data : NULL);
+
+	if (buf)
+	{
+		buf->data = NULL;
+		buf->len = 0;
+	}
+	return len;
 }
 
 void

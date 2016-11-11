@@ -1,4 +1,4 @@
-#include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 #define SUBSCRIPT_OFFSET 0.2f
 #define SUPERSCRIPT_OFFSET -0.2f

@@ -280,7 +280,7 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 
 	fz_write_buffer_byte(ctx, buffer, 0);
 
-	s = (char*)buffer->data;
-	fz_free(ctx, buffer);
+	fz_buffer_extract(ctx, buffer, &s);
+	fz_drop_buffer(ctx, buffer);
 	return s;
 }

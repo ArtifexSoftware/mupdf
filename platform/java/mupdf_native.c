@@ -4688,6 +4688,8 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 	jbyteArray arr = NULL;
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
+	unsigned char *data;
+	size_t len;
 
 	if (!ctx || !page) return NULL;
 
@@ -4744,9 +4746,10 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	arr = (*env)->NewByteArray(env, (jsize)buf->len);
+	len = fz_buffer_storage(ctx, buf, &data);
+	arr = (*env)->NewByteArray(env, (jsize)len);
 	if (!arr) return NULL;
-	(*env)->SetByteArrayRegion(env, arr, 0, (jsize)buf->len, (jbyte *) buf->data);
+	(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (jbyte *)data);
 	if ((*env)->ExceptionCheck(env)) return NULL;
 
 	return arr;
@@ -4990,7 +4993,7 @@ FUN(Buffer_getLength)(JNIEnv *env, jobject self)
 
 	if (!ctx || !buf) return -1;
 
-	return (jint)buf->len;
+	return (jint)fz_buffer_storage(ctx, buf, NULL);
 }
 
 JNIEXPORT jint JNICALL
@@ -4999,14 +5002,17 @@ FUN(Buffer_readByte)(JNIEnv *env, jobject self, jint jat)
 	fz_context *ctx = get_context(env);
 	fz_buffer *buf = from_Buffer(env, self);
 	size_t at = (size_t) jat;
+	size_t len;
+	unsigned char *data;
 
 	if (!ctx || !buf) return -1;
 	if (jat < 0) { jni_throw_oob(env, "at is negative"); return -1; }
 
-	if (at >= buf->len)
+	len = fz_buffer_storage(ctx, buf, &data);
+	if (at >= len)
 		return -1;
 
-	return buf->data[at];
+	return data[at];
 }
 
 JNIEXPORT jint JNICALL
@@ -5016,18 +5022,20 @@ FUN(Buffer_readBytes)(JNIEnv *env, jobject self, jint jat, jobject jbs)
 	fz_buffer *buf = from_Buffer(env, self);
 	size_t at = (size_t) jat;
 	jbyte *bs = NULL;
-	size_t len = 0;
+	size_t len;
 	size_t remaining_input = 0;
 	size_t remaining_output = 0;
+	unsigned char *data;
 
 	if (!ctx || !buf) return -1;
 	if (jat < 0) { jni_throw_oob(env, "at is negative"); return -1; }
 	if (!jbs) { jni_throw_arg(env, "buffer must not be null"); return -1; }
 
-	if (at >= buf->len)
+	len = fz_buffer_storage(ctx, buf, &data);
+	if (at >= len)
 		return -1;
 
-	remaining_input = buf->len - at;
+	remaining_input = len - at;
 	remaining_output = (*env)->GetArrayLength(env, jbs);
 	len = fz_minz(0, remaining_output);
 	len = fz_minz(len, remaining_input);
@@ -5035,7 +5043,7 @@ FUN(Buffer_readBytes)(JNIEnv *env, jobject self, jint jat, jobject jbs)
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) { jni_throw_io(env, "cannot get bytes to read"); return -1; }
 
-	memcpy(bs, &buf->data[at], len);
+	memcpy(bs, &data[at], len);
 	(*env)->ReleaseByteArrayElements(env, jbs, bs, 0);
 
 	return (jint)len;
@@ -5051,6 +5059,8 @@ FUN(Buffer_readBytesInto)(JNIEnv *env, jobject self, jint jat, jobject jbs, jint
 	size_t off = (size_t) joff;
 	size_t len = (size_t) jlen;
 	size_t bslen = 0;
+	size_t blen;
+	unsigned char *data;
 
 	if (!ctx || !buf) return -1;
 	if (jat < 0) { jni_throw_oob(env, "at is negative"); return -1; }
@@ -5061,15 +5071,16 @@ FUN(Buffer_readBytesInto)(JNIEnv *env, jobject self, jint jat, jobject jbs, jint
 	bslen = (*env)->GetArrayLength(env, jbs);
 	if (len > bslen - off) { jni_throw_oob(env, "offset + length is outside of buffer"); return -1; }
 
-	if (at >= buf->len)
+	blen = fz_buffer_storage(ctx, buf, &data);
+	if (at >= blen)
 		return -1;
 
-	len = fz_minz(len, buf->len - at);
+	len = fz_minz(len, blen - at);
 
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) { jni_throw_io(env, "cannot get bytes to read"); return -1; }
 
-	memcpy(&bs[off], &buf->data[at], len);
+	memcpy(&bs[off], &data[at], len);
 	(*env)->ReleaseByteArrayElements(env, jbs, bs, 0);
 
 	return (jint)len;
@@ -6621,12 +6632,15 @@ FUN(PDFObject_readStream)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		buf = pdf_load_stream(ctx, obj);
+		size_t len;
+		unsigned char *data;
 
-		arr = (*env)->NewByteArray(env, (jsize)buf->len);
+		buf = pdf_load_stream(ctx, obj);
+		len = fz_buffer_storage(ctx, buf, &data);
+		arr = (*env)->NewByteArray(env, (jsize)len);
 		if (arr)
 		{
-			(*env)->SetByteArrayRegion(env, arr, 0, (jsize)buf->len, (signed char *) &buf->data[0]);
+			(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (signed char *) &data[0]);
 			if ((*env)->ExceptionCheck(env))
 				arr = NULL;
 		}
@@ -6656,12 +6670,15 @@ FUN(PDFObject_readRawStream)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 	{
-		buf = pdf_load_raw_stream(ctx, obj);
+		unsigned char *data;
+		size_t len;
 
-		arr = (*env)->NewByteArray(env, (jsize)buf->len);
+		buf = pdf_load_raw_stream(ctx, obj);
+		len = fz_buffer_storage(ctx, buf, &data);
+		arr = (*env)->NewByteArray(env, (jsize)len);
 		if (arr)
 		{
-			(*env)->SetByteArrayRegion(env, arr, 0, (jsize)buf->len, (signed char *) &buf->data[0]);
+			(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (signed char *) &data[0]);
 			if ((*env)->ExceptionCheck(env))
 				arr = NULL;
 		}

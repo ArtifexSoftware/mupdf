@@ -124,9 +124,11 @@ static const char *clean_font_name(const char *fontname)
 static int is_builtin_font(fz_context *ctx, fz_font *font)
 {
 	int size;
+	unsigned char *data;
 	if (!font->buffer)
 		return 0;
-	return fz_lookup_base14_font(ctx, clean_font_name(font->name), &size) == (char*)font->buffer->data;
+	fz_buffer_storage(ctx, font->buffer, &data);
+	return fz_lookup_base14_font(ctx, clean_font_name(font->name), &size) == (char*)data;
 }
 
 /*
@@ -448,7 +450,7 @@ pdf_load_embedded_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontde
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	fontdesc->size += buf->len;
+	fontdesc->size += fz_buffer_storage(ctx, buf, NULL);
 	fontdesc->is_embedded = 1;
 }
 
@@ -1032,15 +1034,17 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		if (pdf_is_indirect(ctx, cidtogidmap))
 		{
 			fz_buffer *buf;
-			size_t z;
+			size_t z, len;
+			unsigned char *data;
 
 			buf = pdf_load_stream(ctx, cidtogidmap);
 
-			fontdesc->cid_to_gid_len = (buf->len) / 2;
+			len = fz_buffer_storage(ctx, buf, &data);
+			fontdesc->cid_to_gid_len = len / 2;
 			fontdesc->cid_to_gid = fz_malloc_array(ctx, fontdesc->cid_to_gid_len, sizeof(unsigned short));
 			fontdesc->size += fontdesc->cid_to_gid_len * sizeof(unsigned short);
 			for (z = 0; z < fontdesc->cid_to_gid_len; z++)
-				fontdesc->cid_to_gid[z] = (buf->data[z * 2] << 8) + buf->data[z * 2 + 1];
+				fontdesc->cid_to_gid[z] = (data[z * 2] << 8) + data[z * 2 + 1];
 
 			fz_drop_buffer(ctx, buf);
 		}
@@ -1466,13 +1470,14 @@ pdf_add_font_file(fz_context *ctx, pdf_document *doc, fz_font *font)
 
 	fz_try(ctx)
 	{
+		size_t len = fz_buffer_storage(ctx, buf, NULL);
 		obj = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length1, pdf_new_int(ctx, doc, (int)buf->len));
+		pdf_dict_put_drop(ctx, obj, PDF_NAME_Length1, pdf_new_int(ctx, doc, (int)len));
 		switch (ft_font_file_kind(font->ft_face))
 		{
 		case 1:
 			/* TODO: these may not be the correct values, but I doubt it matters */
-			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length2, pdf_new_int(ctx, doc, (int)buf->len));
+			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length2, pdf_new_int(ctx, doc, (int)len));
 			pdf_dict_put_drop(ctx, obj, PDF_NAME_Length3, pdf_new_int(ctx, doc, 0));
 			break;
 		case 2:
