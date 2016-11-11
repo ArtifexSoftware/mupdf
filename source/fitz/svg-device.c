@@ -1,4 +1,5 @@
 #include "fitz-imp.h"
+#include "glyph-cache-imp.h"
 
 typedef struct svg_device_s svg_device;
 

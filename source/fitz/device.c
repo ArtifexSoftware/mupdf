@@ -1,4 +1,4 @@
-#include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 void *
 fz_new_device(fz_context *ctx, int size)

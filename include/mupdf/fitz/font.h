@@ -136,29 +136,6 @@ const char *fz_font_name(fz_context *ctx, fz_font *font);
 fz_rect *fz_font_bbox(fz_context *ctx, fz_font *font);
 
 /*
-	fz_new_font_context: Initialise the font context.
-
-	For internal use only.
-*/
-void fz_new_font_context(fz_context *ctx);
-
-/*
-	fz_keep_font_context: Increment the ref count for
-	the current font context.
-
-	For internal use only.
-*/
-fz_font_context *fz_keep_font_context(fz_context *ctx);
-
-/*
-	fz_drop_font_context: Drop the ref count for the
-	current font context.
-
-	For internal use only.
-*/
-void fz_drop_font_context(fz_context *ctx);
-
-/*
 	fz_load_system_font_func: Type for user supplied system
 	font loading hook.
 

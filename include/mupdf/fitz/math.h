@@ -3,7 +3,9 @@
 
 #include "mupdf/fitz/system.h"
 
-/* Multiply scaled two integers in the 0..255 range */
+/*
+	Multiply scaled two integers in the 0..255 range
+*/
 static inline int fz_mul255(int a, int b)
 {
 	/* see Jim Blinn's book "Dirty Pixels" for how this works */
@@ -12,25 +14,38 @@ static inline int fz_mul255(int a, int b)
 	return x >> 8;
 }
 
-/* Expand a value A from the 0...255 range to the 0..256 range */
+/*
+	Expand a value A from the 0...255 range to the 0..256 range
+*/
 #define FZ_EXPAND(A) ((A)+((A)>>7))
 
-/* Combine values A (in any range) and B (in the 0..256 range),
- * to give a single value in the same range as A was. */
+/*
+	Combine values A (in any range) and B (in the 0..256 range),
+	to give a single value in the same range as A was.
+*/
 #define FZ_COMBINE(A,B) (((A)*(B))>>8)
 
-/* Combine values A and C (in the same (any) range) and B and D (in the
- * 0..256 range), to give a single value in the same range as A and C were. */
+/*
+	Combine values A and C (in the same (any) range) and B and D (in
+	the 0..256 range), to give a single value in the same range as A
+	and C were.
+*/
 #define FZ_COMBINE2(A,B,C,D) (((A) * (B) + (C) * (D))>>8)
 
-/* Blend SRC and DST (in the same range) together according to
- * AMOUNT (in the 0...256 range). */
+/*
+	Blend SRC and DST (in the same range) together according to
+	AMOUNT (in the 0...256 range).
+*/
 #define FZ_BLEND(SRC, DST, AMOUNT) ((((SRC)-(DST))*(AMOUNT) + ((DST)<<8))>>8)
 
-/* Range checking atof */
+/*
+	Range checking atof
+*/
 float fz_atof(const char *s);
 
-/* atoi that copes with NULL */
+/*
+	atoi that copes with NULL
+*/
 int fz_atoi(const char *s);
 
 fz_off_t fz_atoo(const char *s);

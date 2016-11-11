@@ -160,10 +160,6 @@ char *fz_tempfilename(fz_context *ctx, const char *base, const char *hint);
 */
 void fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename);
 
-void fz_new_output_context(fz_context *ctx);
-void fz_drop_output_context(fz_context *ctx);
-fz_output_context *fz_keep_output_context(fz_context *ctx);
-
 /*
 	fz_band_writer
 */

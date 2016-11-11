@@ -1687,6 +1687,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\glyph-cache-imp.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\glyph.c"
 				>
 			</File>
@@ -2346,10 +2350,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\fitz\meta.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\mupdf\fitz\outline.h"
 					>
 				</File>
@@ -2443,10 +2443,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\ucdn.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\mupdf\fitz\unzip.h"
 					>
 				</File>
 				<File

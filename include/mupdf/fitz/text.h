@@ -8,16 +8,16 @@
 #include "mupdf/fitz/bidi.h"
 
 /*
- * Text buffer.
- *
- * The trm field contains the a, b, c and d coefficients.
- * The e and f coefficients come from the individual elements,
- * together they form the transform matrix for the glyph.
- *
- * Glyphs are referenced by glyph ID.
- * The Unicode text equivalent is kept in a separate array
- * with indexes into the glyph array.
- */
+	Text buffer.
+
+	The trm field contains the a, b, c and d coefficients.
+	The e and f coefficients come from the individual elements,
+	together they form the transform matrix for the glyph.
+
+	Glyphs are referenced by glyph ID.
+	The Unicode text equivalent is kept in a separate array
+	with indexes into the glyph array.
+*/
 
 typedef struct fz_text_s fz_text;
 typedef struct fz_text_span_s fz_text_span;

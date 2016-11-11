@@ -24,6 +24,10 @@ enum
 	FZ_FN_MAXM = FZ_MAX_COLORS
 };
 
+/*
+	Structure definition is public so other classes can
+	derive from it. Do not access the members directly.
+*/
 struct fz_function_s
 {
 	fz_storable storable;

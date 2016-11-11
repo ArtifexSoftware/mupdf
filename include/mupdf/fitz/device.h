@@ -77,25 +77,6 @@ char *fz_blendmode_name(int blendmode);
 
 typedef struct fz_device_container_stack_s fz_device_container_stack;
 
-struct fz_device_container_stack_s
-{
-	fz_rect scissor;
-	int flags;
-	int user;
-};
-
-enum
-{
-	fz_device_container_stack_is_clip_path = 1,
-	fz_device_container_stack_is_clip_stroke_path = 2,
-	fz_device_container_stack_is_clip_text = 4,
-	fz_device_container_stack_is_clip_stroke_text = 8,
-	fz_device_container_stack_is_clip_image_mask = 16,
-	fz_device_container_stack_in_mask = 32,
-	fz_device_container_stack_is_mask = 64,
-	fz_device_container_stack_is_group = 128,
-};
-
 struct fz_device_s
 {
 	int refs;

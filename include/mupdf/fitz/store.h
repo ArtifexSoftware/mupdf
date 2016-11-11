@@ -110,9 +110,7 @@ void fz_drop_key_storable_key(fz_context *, const fz_key_storable *);
 	reap passes together, using fz_defer_reap_start/fz_defer_reap_end
 	to bracket a region in which many may be triggered.
 */
-typedef struct fz_store_hash_s fz_store_hash;
-
-struct fz_store_hash_s
+typedef struct fz_store_hash_s
 {
 	fz_store_drop_fn *drop;
 	union
@@ -134,11 +132,9 @@ struct fz_store_hash_s
 			float m[4];
 		} im;
 	} u;
-};
+} fz_store_hash;
 
-typedef struct fz_store_type_s fz_store_type;
-
-struct fz_store_type_s
+typedef struct fz_store_type_s
 {
 	int (*make_hash_key)(fz_context *ctx, fz_store_hash *, void *);
 	void *(*keep_key)(fz_context *,void *);
@@ -146,7 +142,7 @@ struct fz_store_type_s
 	int (*cmp_key)(fz_context *ctx, void *, void *);
 	void (*print)(fz_context *ctx, fz_output *out, void *);
 	int (*needs_reap)(fz_context *ctx, void *);
-};
+} fz_store_type;
 
 /*
 	fz_store_new_context: Create a new store inside the context

@@ -1,4 +1,5 @@
-#include "mupdf/fitz.h"
+#include "fitz-imp.h"
+#include "glyph-cache-imp.h"
 #include "draw-imp.h"
 
 #define STACK_SIZE 96

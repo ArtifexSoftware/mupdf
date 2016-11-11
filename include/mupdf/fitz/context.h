@@ -555,29 +555,6 @@ struct fz_warn_context_s
 	int count;
 };
 
-fz_context *fz_clone_context_internal(fz_context *ctx);
-
-void fz_new_aa_context(fz_context *ctx);
-void fz_drop_aa_context(fz_context *ctx);
-void fz_copy_aa_context(fz_context *dst, fz_context *src);
-
-void fz_new_document_handler_context(fz_context *ctx);
-void fz_drop_document_handler_context(fz_context *ctx);
-fz_document_handler_context *fz_keep_document_handler_context(fz_context *ctx);
-
-/* Tuning context implementation details */
-struct fz_tuning_context_s
-{
-	int refs;
-	fz_tune_image_decode_fn *image_decode;
-	void *image_decode_arg;
-	fz_tune_image_scale_fn *image_scale;
-	void *image_scale_arg;
-};
-
-fz_tune_image_decode_fn fz_default_image_decode;
-fz_tune_image_scale_fn fz_default_image_scale;
-
 /* Default allocator */
 extern fz_alloc_context fz_alloc_default;
 

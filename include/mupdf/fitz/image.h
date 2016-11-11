@@ -86,6 +86,10 @@ fz_pixmap *fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compr
 fz_pixmap *fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha);
 size_t fz_image_size(fz_context *ctx, fz_image *im);
 
+/*
+	Structure is public to allow other structures to
+	be derived from it. Do not access members directly.
+*/
 struct fz_image_s
 {
 	fz_key_storable key_storable;

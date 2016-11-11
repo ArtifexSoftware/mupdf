@@ -30,7 +30,14 @@ int fz_pixmap_width(fz_context *ctx, fz_pixmap *pix);
 */
 int fz_pixmap_height(fz_context *ctx, fz_pixmap *pix);
 
+/*
+	fz_pixmap_x: Return the x value of the pixmap in pixels.
+*/
 int fz_pixmap_x(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_pixmap_y: Return the y value of the pixmap in pixels.
+*/
 int fz_pixmap_y(fz_context *ctx, fz_pixmap *pix);
 
 /*

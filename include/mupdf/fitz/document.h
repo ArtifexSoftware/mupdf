@@ -55,6 +55,10 @@ typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_rect *(fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot, fz_rect *rect);
 typedef void (fz_annot_run_fn)(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
 
+/*
+	Structure definition is public so other classes can
+	derive from it. Do not access the members directly.
+*/
 struct fz_annot_s
 {
 	int refs;
@@ -64,6 +68,10 @@ struct fz_annot_s
 	fz_annot_next_fn *next_annot;
 };
 
+/*
+	Structure definition is public so other classes can
+	derive from it. Do not access the members directly.
+*/
 struct fz_page_s
 {
 	int refs;
@@ -79,6 +87,10 @@ struct fz_page_s
 	fz_page_get_separation_fn *get_separation;
 };
 
+/*
+	Structure definition is public so other classes can
+	derive from it. Do not access the members directly.
+*/
 struct fz_document_s
 {
 	int refs;

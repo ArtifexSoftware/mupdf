@@ -24,9 +24,11 @@ enum
 	FZ_MESH_TYPE7 = 7
 };
 
-typedef struct fz_shade_s fz_shade;
-
-struct fz_shade_s
+/*
+	Structure is public to allow derived classes. Do not
+	access the members directly.
+*/
+typedef struct fz_shade_s
 {
 	fz_storable storable;
 
@@ -70,7 +72,7 @@ struct fz_shade_s
 	} u;
 
 	fz_compressed_buffer *buffer;
-};
+} fz_shade;
 
 /*
 	fz_keep_shade: Add a reference to an fz_shade.
