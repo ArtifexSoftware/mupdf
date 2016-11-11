@@ -237,7 +237,11 @@ typedef struct
 */
 void pdf_layer_config_ui_info(fz_context *ctx, pdf_document *doc, int ui, pdf_layer_config_ui *info);
 
-int pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const char *usage, pdf_obj *ocg);
+/*
+	pdf_set_layer_config_as_default: Write the current layer
+	config back into the document as the default state.
+*/
+void pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc);
 
 /*
 	pdf_update_page: update a page for the sake of changes caused by a call

@@ -156,8 +156,12 @@ load_ui(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *ocprops, pdf_obj *oc
 
 	/* Count the number of entries */
 	order = pdf_dict_get(ctx, occg, PDF_NAME_Order);
+	if (!order)
+		order = pdf_dict_getp(ctx, ocprops, "D/Order");
 	count = count_entries(ctx, order);
 	rbgroups = pdf_dict_get(ctx, occg, PDF_NAME_RBGroups);
+	if (!rbgroups)
+		rbgroups = pdf_dict_getp(ctx, ocprops, "D/RBGroups");
 	locked = pdf_dict_get(ctx, occg, PDF_NAME_Locked);
 
 	desc->num_ui_entries = count;
@@ -401,7 +405,7 @@ void pdf_toggle_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
 	doc->ocg->ocgs[entry->ocg].state = !selected;
 }
 
-void pdf_deselect_layer_ui(fz_context *ctx, pdf_document *doc, int ui)
+void pdf_deselect_layer_config_ui(fz_context *ctx, pdf_document *doc, int ui)
 {
 	pdf_ocg_ui *entry;
 
@@ -712,4 +716,69 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 	}
 
 	pdf_select_layer_config(ctx, doc, 0);
+}
+
+void
+pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *ocprops, *d, *order, *on, *configs, *rbgroups;
+	int k;
+
+	if (doc == NULL || doc->ocg == NULL)
+		return;
+
+	ocprops = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/OCProperties");
+	if (!ocprops)
+		return;
+
+	/* All files with OCGs are required to have a D entry */
+	d = pdf_dict_get(ctx, ocprops, PDF_NAME_D);
+	if (d == NULL)
+		return;
+
+	pdf_dict_put(ctx, d, PDF_NAME_BaseState, PDF_NAME_OFF);
+
+	/* We are about to delete RBGroups and Order, from D. These are
+	 * both the underlying defaults for other configs, so copy the
+	 * current values out to any config that doesn't have one
+	 * already. */
+	order = pdf_dict_get(ctx, d, PDF_NAME_Order);
+	rbgroups = pdf_dict_get(ctx, d, PDF_NAME_RBGroups);
+	configs = pdf_dict_get(ctx, ocprops, PDF_NAME_Configs);
+	if (configs)
+	{
+		int len = pdf_array_len(ctx, configs);
+		for (k=0; k < len; k++)
+		{
+			pdf_obj *config = pdf_array_get(ctx, configs, k);
+
+			if (order && !pdf_dict_get(ctx, config, PDF_NAME_Order))
+				pdf_dict_put(ctx, config, PDF_NAME_Order, order);
+			if (rbgroups && !pdf_dict_get(ctx, config, PDF_NAME_RBGroups))
+				pdf_dict_put(ctx, config, PDF_NAME_RBGroups, rbgroups);
+		}
+	}
+
+	/* Offer all the layers in the UI */
+	order = pdf_new_array(ctx, doc, 4);
+	on = pdf_new_array(ctx, doc, 4);
+	for (k = 0; k < doc->ocg->len; k++)
+	{
+		pdf_ocg_entry *s = &doc->ocg->ocgs[k];
+
+		pdf_array_push(ctx, order, s->obj);
+		if (s->state)
+			pdf_array_push(ctx, on, s->obj);
+	}
+	pdf_dict_put(ctx, d, PDF_NAME_Order, order);
+	pdf_dict_put(ctx, d, PDF_NAME_ON, on);
+	pdf_dict_del(ctx, d, PDF_NAME_OFF);
+	pdf_dict_del(ctx, d, PDF_NAME_AS);
+	pdf_dict_put(ctx, d, PDF_NAME_Intent, PDF_NAME_View);
+	pdf_dict_del(ctx, d, PDF_NAME_Name);
+	pdf_dict_del(ctx, d, PDF_NAME_Creator);
+	pdf_dict_del(ctx, d, PDF_NAME_RBGroups);
+	pdf_dict_del(ctx, d, PDF_NAME_Locked);
+
+	pdf_dict_del(ctx, ocprops, PDF_NAME_Configs);
 }
