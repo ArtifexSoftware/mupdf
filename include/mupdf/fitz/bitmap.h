@@ -44,7 +44,7 @@ typedef struct fz_halftone_s fz_halftone;
 	fz_new_bitmap_from_pixmap: Make a bitmap from a pixmap and a halftone.
 
 	pix: The pixmap to generate from. Currently must be a single color
-	component + alpha (where the alpha is assumed to be solid).
+	component with no alpha.
 
 	ht: The halftone to use. NULL implies the default halftone.
 
@@ -53,7 +53,23 @@ typedef struct fz_halftone_s fz_halftone;
 */
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht);
 
-fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start, int band_height);
+/*
+	fz_new_bitmap_from_pixmap_band: Make a bitmap from a pixmap and a
+	halftone, allowing for the position of the pixmap within an
+	overall banded rendering.
+
+	pix: The pixmap to generate from. Currently must be a single color
+	component with no alpha.
+
+	ht: The halftone to use. NULL implies the default halftone.
+
+	band_start: Vertical offset within the overall banded rendering
+	(in pixels)
+
+	Returns the resultant bitmap. Throws exceptions in the case of
+	failure to allocate.
+*/
+fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start);
 
 struct fz_bitmap_s
 {
@@ -63,20 +79,41 @@ struct fz_bitmap_s
 	unsigned char *samples;
 };
 
+/*
+	fz_new_bitmap: Create a new bitmap.
+
+	w, h: Width and Height for the bitmap
+
+	n: Number of color components (assumed to be a divisor of 8)
+
+	xres, yres: X and Y resolutions (in pixels per inch).
+
+	Returns pointer to created bitmap structure. The bitmap
+	data is uninitialised.
+*/
 fz_bitmap *fz_new_bitmap(fz_context *ctx, int w, int h, int n, int xres, int yres);
 
+/*
+	fz_bitmap_details: Retrieve details of a given bitmap.
+
+	bitmap: The bitmap to query.
+
+	w: Pointer to storage to retrieve width (or NULL).
+
+	h: Pointer to storage to retrieve height (or NULL).
+
+	n: Pointer to storage to retrieve number of color components (or NULL).
+
+	stride: Pointer to storage to retrieve bitmap stride (or NULL).
+*/
 void fz_bitmap_details(fz_bitmap *bitmap, int *w, int *h, int *n, int *stride);
 
+/*
+	fz_clear_bitmap: Clear a previously created bitmap.
+
+	bit: The bitmap to clear.
+*/
 void fz_clear_bitmap(fz_context *ctx, fz_bitmap *bit);
-
-struct fz_halftone_s
-{
-	int refs;
-	int n;
-	fz_pixmap *comp[1];
-};
-
-fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
 
 /*
 	fz_default_halftone: Create a 'default' halftone structure
@@ -90,7 +127,16 @@ fz_halftone *fz_new_halftone(fz_context *ctx, int num_comps);
 */
 fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps);
 
-void fz_drop_halftone(fz_context *ctx, fz_halftone *half);
+/*
+	fz_keep_halftone: Take an additional reference to a
+	halftone.
+*/
 fz_halftone *fz_keep_halftone(fz_context *ctx, fz_halftone *half);
+
+/*
+	fz_drop_halftone: Drop a reference to a halftone. If the
+	reference count reaches zero, ht will be destroyed.
+*/
+void fz_drop_halftone(fz_context *ctx, fz_halftone *ht);
 
 #endif

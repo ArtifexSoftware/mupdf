@@ -1,6 +1,13 @@
 #include "mupdf/fitz.h"
 
-fz_halftone *
+struct fz_halftone_s
+{
+	int refs;
+	int n;
+	fz_pixmap *comp[1];
+};
+
+static fz_halftone *
 fz_new_halftone(fz_context *ctx, int comps)
 {
 	fz_halftone *ht;
@@ -490,7 +497,7 @@ static void do_threshold_4(const unsigned char * restrict ht_line, const unsigne
 
 fz_bitmap *fz_new_bitmap_from_pixmap(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht)
 {
-	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0, 0);
+	return fz_new_bitmap_from_pixmap_band(ctx, pix, ht, 0);
 }
 
 /* TAOCP, vol 2, p337 */
@@ -509,7 +516,7 @@ static int gcd(int u, int v)
 	while (1);
 }
 
-fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start, int band_height)
+fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_halftone *ht, int band_start)
 {
 	fz_bitmap *out = NULL;
 	unsigned char *ht_line = NULL;

@@ -722,7 +722,7 @@ static int drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const
 		dev = NULL;
 
 		if ((output_format == OUT_PBM) || (output_format == OUT_PKM))
-			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band_start, band_height);
+			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band_start);
 	}
 	fz_catch(ctx)
 	{

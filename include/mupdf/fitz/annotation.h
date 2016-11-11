@@ -11,7 +11,15 @@
 */
 void *fz_new_annot(fz_context *ctx, int size);
 
+/*
+	fz_keep_annot: Take a new reference to an annotation.
+*/
 fz_annot *fz_keep_annot(fz_context *ctx, fz_annot *annot);
+
+/*
+	fz_drop_annot: Drop a reference to an annotation. If the
+	reference count reaches zero, annot will be destroyed.
+*/
 void fz_drop_annot(fz_context *ctx, fz_annot *annot);
 
 /*
