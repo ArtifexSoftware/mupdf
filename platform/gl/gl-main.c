@@ -588,9 +588,11 @@ static void do_links(fz_link *link, int xofs, int yofs)
 				if (fz_is_external_link(ctx, link->uri))
 					open_browser(link->uri);
 				else
+				{
 					jump_to_page(fz_resolve_link(ctx, doc, link->uri, NULL, NULL));
+					ui_needs_update = 1;
+				}
 			}
-			ui_needs_update = 1;
 		}
 
 		link = link->next;
