@@ -34,7 +34,7 @@ xps_parse_document_outline(fz_context *ctx, xps_document *doc, fz_xml *root)
 			entry = fz_new_outline(ctx);
 			entry->title = fz_strdup(ctx, description);
 			entry->uri = fz_strdup(ctx, target);
-			entry->page = xps_lookup_link_target(ctx, doc, target);
+			entry->page = xps_lookup_link_target(ctx, doc, target, NULL, NULL);
 			entry->down = NULL;
 			entry->next = NULL;
 

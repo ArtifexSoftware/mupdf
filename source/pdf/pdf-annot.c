@@ -40,8 +40,10 @@ char *
 pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 {
 	pdf_obj *obj;
-	char buf[40];
+	char buf[256];
 	char *ld;
+	int page;
+	int x, y;
 
 	dest = resolve_dest(ctx, doc, dest);
 	if (dest == NULL)
@@ -63,18 +65,34 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 
 	obj = pdf_array_get(ctx, dest, 0);
 	if (pdf_is_int(ctx, obj))
-	{
-		sprintf(buf, "#%d", pdf_to_int(ctx, obj) + 1);
-		return fz_strdup(ctx, buf);
-	}
+		page = pdf_to_int(ctx, obj);
 	else
+		page = pdf_lookup_page_number(ctx, doc, obj);
+
+	x = y = 0;
+	obj = pdf_array_get(ctx, dest, 1);
+	if (pdf_name_eq(ctx, obj, PDF_NAME_XYZ))
 	{
-		int page = pdf_lookup_page_number(ctx, doc, obj);
-		if (page >= 0)
-		{
-			sprintf(buf, "#%d", page + 1);
-			return fz_strdup(ctx, buf);
-		}
+		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
+		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 3));
+	}
+	else if (pdf_name_eq(ctx, obj, PDF_NAME_FitR))
+	{
+		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
+		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 5));
+	}
+	else if (pdf_name_eq(ctx, obj, PDF_NAME_FitH) || pdf_name_eq(ctx, obj, PDF_NAME_FitBH))
+		y = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
+	else if (pdf_name_eq(ctx, obj, PDF_NAME_FitV) || pdf_name_eq(ctx, obj, PDF_NAME_FitBV))
+		x = pdf_to_int(ctx, pdf_array_get(ctx, dest, 2));
+
+	if (page >= 0)
+	{
+		if (x != 0 || y != 0)
+			fz_snprintf(buf, sizeof buf, "#%d,%d,%d", page + 1, x, y);
+		else
+			fz_snprintf(buf, sizeof buf, "#%d", page + 1);
+		return fz_strdup(ctx, buf);
 	}
 
 	return NULL;
@@ -255,10 +273,33 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, const 
 }
 
 int
-pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri)
+pdf_resolve_link(fz_context *ctx, pdf_document *doc, const char *uri, float *xp, float *yp)
 {
 	if (uri && uri[0] == '#')
-		return fz_atoi(uri + 1) - 1;
+	{
+		int page = fz_atoi(uri + 1) - 1;
+		if (xp || yp)
+		{
+			const char *x = strchr(uri, ',');
+			const char *y = strrchr(uri, ',');
+			if (x && y)
+			{
+				pdf_obj *obj;
+				fz_matrix ctm;
+				fz_point p;
+
+				p.x = x ? fz_atoi(x + 1) : 0;
+				p.y = y ? fz_atoi(y + 1) : 0;
+				obj = pdf_lookup_page_obj(ctx, doc, page);
+				pdf_page_obj_transform(ctx, obj, NULL, &ctm);
+				fz_transform_point(&p, &ctm);
+
+				if (xp) *xp = p.x;
+				if (yp) *yp = p.y;
+			}
+		}
+		return page;
+	}
 	fz_warn(ctx, "unknown link uri '%s'", uri);
 	return -1;
 }

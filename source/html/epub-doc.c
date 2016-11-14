@@ -35,7 +35,7 @@ struct epub_page_s
 };
 
 static int
-epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
+epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest, float *xp, float *yp)
 {
 	epub_document *doc = (epub_document*)doc_;
 	epub_chapter *ch;
@@ -54,7 +54,11 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
 				/* Search for a matching fragment */
 				float y = fz_find_html_target(ctx, ch->html, s+1);
 				if (y >= 0)
-					return ch->start + y / ch->page_h;
+				{
+					int page = y / ch->page_h;
+					if (yp) *yp = y - page * ch->page_h;
+					return ch->start + page;
+				}
 			}
 			return ch->start;
 		}
@@ -68,7 +72,7 @@ epub_update_outline(fz_context *ctx, fz_document *doc, fz_outline *node)
 {
 	while (node)
 	{
-		node->page = epub_resolve_link(ctx, doc, node->uri);
+		node->page = epub_resolve_link(ctx, doc, node->uri, NULL, NULL);
 		epub_update_outline(ctx, doc, node->down);
 		node = node->next;
 	}

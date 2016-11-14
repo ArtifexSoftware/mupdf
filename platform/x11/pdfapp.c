@@ -1740,7 +1740,7 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			if (fz_is_external_link(ctx, link->uri))
 				pdfapp_gotouri(app, link->uri);
 			else
-				pdfapp_gotopage(app, fz_resolve_link(ctx, app->doc, link->uri) + 1);
+				pdfapp_gotopage(app, fz_resolve_link(ctx, app->doc, link->uri, NULL, NULL) + 1);
 			return;
 		}
 	}

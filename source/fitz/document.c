@@ -216,11 +216,13 @@ fz_load_outline(fz_context *ctx, fz_document *doc)
 }
 
 int
-fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri)
+fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp)
 {
 	fz_ensure_layout(ctx, doc);
+	if (xp) *xp = 0;
+	if (yp) *yp = 0;
 	if (doc && doc->resolve_link)
-		return doc->resolve_link(ctx, doc, uri);
+		return doc->resolve_link(ctx, doc, uri, xp, yp);
 	return -1;
 }
 

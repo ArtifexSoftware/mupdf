@@ -32,7 +32,7 @@ typedef int (fz_document_authenticate_password_fn)(fz_context *ctx, fz_document 
 typedef int (fz_document_has_permission_fn)(fz_context *ctx, fz_document *doc, fz_permission permission);
 typedef fz_outline *(fz_document_load_outline_fn)(fz_context *ctx, fz_document *doc);
 typedef void (fz_document_layout_fn)(fz_context *ctx, fz_document *doc, float w, float h, float em);
-typedef int (fz_document_resolve_link_fn)(fz_context *ctx, fz_document *doc, const char *uri);
+typedef int (fz_document_resolve_link_fn)(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
 typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc);
 typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int number);
 typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
@@ -214,9 +214,11 @@ int fz_count_pages(fz_context *ctx, fz_document *doc);
 /*
 	fz_resolve_link: Resolve an internal link to a page number.
 
+	xp, yp: Pointer to store coordinate of destination on the page.
+
 	Returns -1 if the URI cannot be resolved.
 */
-int fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri);
+int fz_resolve_link(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
 
 /*
 	fz_load_page: Load a page.

@@ -1903,7 +1903,7 @@ JNI_FN(MuPDFCore_getPageLinksInternal)(JNIEnv * env, jobject thiz, int pageNumbe
 		{
 			linkInfo = (*env)->NewObject(env, linkInfoInternalClass, ctorInternal,
 					(float)rect.x0, (float)rect.y0, (float)rect.x1, (float)rect.y1,
-					fz_resolve_link(glo->ctx, link->doc, link->uri));
+					fz_resolve_link(glo->ctx, link->doc, link->uri, NULL, NULL));
 		}
 		else
 		{

@@ -105,7 +105,7 @@ void xps_read_page_list(fz_context *ctx, xps_document *doc);
 void xps_print_page_list(fz_context *ctx, xps_document *doc);
 void xps_drop_page_list(fz_context *ctx, xps_document *doc);
 
-int xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri);
+int xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri, float *xp, float *yp);
 
 /*
  * Images, fonts, and colorspaces.

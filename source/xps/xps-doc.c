@@ -124,7 +124,7 @@ xps_add_link_target(fz_context *ctx, xps_document *doc, char *name)
 }
 
 int
-xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri)
+xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri, float *xp, float *yp)
 {
 	xps_target *target;
 	char *needle = strrchr(target_uri, '#');

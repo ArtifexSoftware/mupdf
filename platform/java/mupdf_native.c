@@ -1031,7 +1031,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 			if (!juri) return NULL;
 		}
 		else
-			jpage = fz_resolve_link(ctx, doc, outline->uri);
+			jpage = fz_resolve_link(ctx, doc, outline->uri, NULL, NULL);
 
 		if (outline->down)
 		{
@@ -4564,7 +4564,7 @@ FUN(Page_getLinks)(JNIEnv *env, jobject self)
 			if (!juri) return NULL;
 		}
 		else
-			page = fz_resolve_link(ctx, link->doc, link->uri);
+			page = fz_resolve_link(ctx, link->doc, link->uri, NULL, NULL);
 
 		jlink = (*env)->NewObject(env, cls_Link, mid_Link_init, jbounds, page, juri);
 		(*env)->DeleteLocalRef(env, jbounds);

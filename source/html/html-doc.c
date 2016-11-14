@@ -32,16 +32,19 @@ htdoc_drop_document(fz_context *ctx, fz_document *doc_)
 }
 
 static int
-htdoc_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest)
+htdoc_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest, float *xp, float *yp)
 {
 	html_document *doc = (html_document*)doc_;
-
 	const char *s = strchr(dest, '#');
 	if (s && s[1] != 0)
 	{
 		float y = fz_find_html_target(ctx, doc->html, s+1);
 		if (y >= 0)
-			return y / doc->page_h;
+		{
+			int page = y / doc->page_h;
+			if (yp) *yp = y - page * doc->page_h;
+			return page;
+		}
 	}
 
 	return -1;

@@ -215,7 +215,7 @@ pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name)
 		fz_rethrow(ctx);
 
 	uri = pdf_parse_link_dest(ctx, doc, dest);
-	return pdf_resolve_link(ctx, doc, uri);
+	return pdf_resolve_link(ctx, doc, uri, NULL, NULL);
 }
 
 static pdf_obj *
@@ -443,9 +443,8 @@ pdf_page_contents(fz_context *ctx, pdf_page *page)
 }
 
 void
-pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_matrix *page_ctm)
+pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox, fz_matrix *page_ctm)
 {
-	pdf_obj *pageobj = page->obj;
 	pdf_obj *obj;
 	fz_rect mediabox, cropbox, realbox, pagebox;
 	fz_matrix tmp;
@@ -505,6 +504,12 @@ pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_m
 	fz_transform_rect(&realbox, page_ctm);
 	fz_translate(&tmp, -realbox.x0, -realbox.y0);
 	fz_concat(page_ctm, page_ctm, &tmp);
+}
+
+void
+pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_matrix *page_ctm)
+{
+	return pdf_page_obj_transform(ctx, page->obj, page_mediabox, page_ctm);
 }
 
 static void
