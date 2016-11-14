@@ -167,8 +167,11 @@ svg_dev_stroke_state(fz_context *ctx, svg_device *sdev, const fz_stroke_state *s
 	exp = fz_matrix_expansion(ctm);
 	if (exp == 0)
 		exp = 1;
+	exp = stroke_state->linewidth/exp;
+	if (exp < 1)
+		exp = 1;
 
-	fz_printf(ctx, out, " stroke-width=\"%g\"", stroke_state->linewidth/exp);
+	fz_printf(ctx, out, " stroke-width=\"%g\"", exp);
 	fz_printf(ctx, out, " stroke-linecap=\"%s\"",
 		(stroke_state->start_cap == FZ_LINECAP_SQUARE ? "square" :
 			(stroke_state->start_cap == FZ_LINECAP_ROUND ? "round" : "butt")));
