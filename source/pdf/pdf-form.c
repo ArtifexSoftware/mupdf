@@ -596,11 +596,18 @@ int pdf_pass_event(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf_ui_ev
 				break;
 	}
 
+	/* Skip hidden annotations. */
 	if (annot)
 	{
 		int f = pdf_to_int(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_F));
-
 		if (f & (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_NO_VIEW))
+			annot = NULL;
+	}
+
+	/* Skip Link annotations. */
+	if (annot)
+	{
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Subtype), PDF_NAME_Link))
 			annot = NULL;
 	}
 
