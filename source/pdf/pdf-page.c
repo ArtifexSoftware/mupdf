@@ -509,7 +509,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 void
 pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_matrix *page_ctm)
 {
-	return pdf_page_obj_transform(ctx, page->obj, page_mediabox, page_ctm);
+	pdf_page_obj_transform(ctx, page->obj, page_mediabox, page_ctm);
 }
 
 static void
