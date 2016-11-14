@@ -179,7 +179,18 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action)
 	}
 	else if (pdf_name_eq(ctx, PDF_NAME_URI, obj))
 	{
-		return pdf_to_utf8(ctx, pdf_dict_get(ctx, action, PDF_NAME_URI));
+		/* URI entries are ASCII strings */
+		const char *uri = pdf_to_str_buf(ctx, pdf_dict_get(ctx, action, PDF_NAME_URI));
+		if (!fz_is_external_link(ctx, uri))
+		{
+			pdf_obj *uri_base_obj = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/URI/Base");
+			const char *uri_base = uri_base_obj ? pdf_to_str_buf(ctx, uri_base_obj) : "file://";
+			char *new_uri = fz_malloc(ctx, strlen(uri_base) + strlen(uri) + 1);
+			strcpy(new_uri, uri_base);
+			strcat(new_uri, uri);
+			return new_uri;
+		}
+		return fz_strdup(ctx, uri);
 	}
 	else if (pdf_name_eq(ctx, PDF_NAME_Launch, obj))
 	{
@@ -204,6 +215,10 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix
 	fz_rect bbox;
 	char *uri;
 	fz_link *link;
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Subtype);
+	if (!pdf_name_eq(ctx, obj, PDF_NAME_Link))
+		return NULL;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_Rect);
 	if (!obj)

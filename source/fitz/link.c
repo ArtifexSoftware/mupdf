@@ -46,5 +46,5 @@ fz_is_external_link(fz_context *ctx, const char *uri)
 {
 	while (*uri >= 'a' && *uri <= 'z')
 		++uri;
-	return uri[0] == ':' && uri[1] == '/' && uri[2] == '/';
+	return uri[0] == ':';
 }
