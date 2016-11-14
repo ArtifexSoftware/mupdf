@@ -440,6 +440,8 @@ stream_close(fz_context *ctx, void *state_)
 	pthread_mutex_destroy(&state->mutex);
 #endif
 
+	curl_easy_cleanup(state->handle);
+
 	fz_free(ctx, state->buffer);
 	fz_free(ctx, state->map);
 	fz_free(ctx, state);
