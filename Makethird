@@ -539,99 +539,51 @@ ifneq "$(wildcard $(CURL_DIR)/README)" ""
 CURL_LIB := $(OUT)/libcurl.a
 CURL_OUT := $(OUT)/curl
 CURL_SRC := \
-	amigaos.c \
-	asyn-ares.c \
-	asyn-thread.c \
 	base64.c \
 	conncache.c \
 	connect.c \
 	content_encoding.c \
-	cookie.c \
 	curl_addrinfo.c \
-	curl_fnmatch.c \
-	curl_gethostname.c \
-	curl_gssapi.c \
-	curl_memrchr.c \
-	curl_multibyte.c \
-	curl_ntlm_core.c \
-	curl_ntlm_wb.c \
-	curl_rtmp.c \
-	curl_sasl.c \
-	curl_sspi.c \
-	curl_threads.c \
-	dict.c \
 	dotdot.c \
 	easy.c \
 	escape.c \
-	file.c \
 	fileinfo.c \
 	formdata.c \
-	ftp.c \
-	ftplistparser.c \
 	getenv.c \
 	getinfo.c \
-	gopher.c \
 	hash.c \
-	hmac.c \
-	hostasyn.c \
 	hostcheck.c \
-	hostip.c \
 	hostip4.c \
-	hostip6.c \
+	hostip.c \
 	hostsyn.c \
 	http.c \
 	http_chunks.c \
-	http_digest.c \
-	http_negotiate.c \
-	http_proxy.c \
-	idn_win32.c \
 	if2ip.c \
-	imap.c \
-	inet_ntop.c \
-	inet_pton.c \
-	krb5.c \
-	ldap.c \
 	llist.c \
-	md4.c \
-	md5.c \
-	memdebug.c \
 	mprintf.c \
 	multi.c \
 	netrc.c \
-	non-ascii.c \
 	nonblock.c \
-	openldap.c \
+	openssl.c \
 	parsedate.c \
-	pingpong.c \
 	pipeline.c \
-	pop3.c \
 	progress.c \
-	rtsp.c \
-	security.c \
 	select.c \
 	sendf.c \
 	share.c \
 	slist.c \
-	smtp.c \
-	socks.c \
-	socks_gssapi.c \
 	speedcheck.c \
 	splay.c \
-	ssh.c \
 	strcase.c \
 	strdup.c \
 	strerror.c \
-	strtok.c \
-	strtoofft.c \
-	telnet.c \
-	tftp.c \
 	timeval.c \
 	transfer.c \
 	url.c \
 	version.c \
 	vtls.c \
 	warnless.c \
-	wildcard.c \
+	wildcard.c
 
 $(CURL_LIB): $(addprefix $(CURL_OUT)/, $(CURL_SRC:%.c=%.o))
 
