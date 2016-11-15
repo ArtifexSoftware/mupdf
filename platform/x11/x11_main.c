@@ -176,14 +176,8 @@ char *winpassword(pdfapp_t *app, char *filename)
 
 char *wintextinput(pdfapp_t *app, char *inittext, int retry)
 {
-	static char buf[256];
-
-	if (retry)
-		return NULL;
-
-	printf("> [%s] ", inittext);
-	fgets(buf, sizeof buf, stdin);
-	return buf;
+	/* We don't support text input on the x11 viewer */
+	return NULL;
 }
 
 int winchoiceinput(pdfapp_t *app, int nopts, char *opts[], int *nvals, char *vals[])

@@ -1639,7 +1639,6 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 			{
 				switch (pdf_widget_type(ctx, widget))
 				{
-#ifdef DISABLE_TEXT_INPUT
 				case PDF_WIDGET_TYPE_TEXT:
 					{
 						char *text = pdf_text_widget_text(ctx, idoc, widget);
@@ -1657,7 +1656,6 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 						pdfapp_updatepage(app);
 					}
 					break;
-#endif
 				case PDF_WIDGET_TYPE_LISTBOX:
 				case PDF_WIDGET_TYPE_COMBOBOX:
 					{
