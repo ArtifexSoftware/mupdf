@@ -1906,19 +1906,43 @@ static int is_internal_uri(const char *uri)
 	return 1;
 }
 
+static const char *box_href(fz_html_box *box)
+{
+	while (box)
+	{
+		const char *href = box->href;
+		if (href)
+			return href;
+		box = box->up;
+	}
+	return NULL;
+}
+
+static int has_same_href(fz_html_box *box, const char *old_href)
+{
+	while (box)
+	{
+		const char *href = box->href;
+		if (href)
+			return !strcmp(old_href, href);
+		box = box->up;
+	}
+	return 0;
+}
+
 static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *head, int page, int page_h, const char *dir, const char *file)
 {
 	fz_link *link;
 	fz_html_flow *next;
 	char path[2048];
 	fz_rect bbox;
-	char *dest;
-	char *href;
+	const char *dest;
+	const char *href;
 	float end;
 
 	while (flow)
 	{
-		href = flow->box->href;
+		href = box_href(flow->box);
 		next = flow->next;
 		if (href && (int)(flow->y / page_h) == page)
 		{
@@ -1927,8 +1951,7 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 			while (next &&
 					next->y == flow->y &&
 					next->h == flow->h &&
-					next->box->href &&
-					!strcmp(href, next->box->href))
+					has_same_href(next->box, href))
 			{
 				end = next->x + next->w;
 				next = next->next;
