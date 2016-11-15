@@ -15,9 +15,11 @@ JAVA_CFLAGS := \
 	-I /usr/lib/jvm/java-7-openjdk-i386/include/linux \
 	-I /usr/lib/jvm/java-7-openjdk-amd64/include \
 	-I /usr/lib/jvm/java-7-openjdk-amd64/include/linux \
-	$(shell pkg-config --cflags freetype2)
+	$(shell pkg-config --cflags freetype2) \
+	$(shell pkg-config --cflags libcrypto)
 JAVA_LIBS := \
 	$(shell pkg-config --libs freetype2) \
+	$(shell pkg-config --libs libcrypto) \
 	-lz
 endif
 
