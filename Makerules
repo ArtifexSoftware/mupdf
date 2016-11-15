@@ -76,13 +76,13 @@ else ifeq "$(OS)" "MACOS"
 HAVE_X11 ?= no
 HAVE_PTHREADS ?= yes
 
-# Mac OS X deprecated openssl, so the default is to not include it.
-HAVE_OPENSSL ?= no
-SYS_OPENSSL_CFLAGS =
-SYS_OPENSSL_LIBS =
-ifeq "$(HAVE_OPENSSL)" "yes"
-SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL
-SYS_OPENSSL_LIBS = -lcrypto
+# Mac OS X deprecated libcrypto, so the default is to not include it.
+HAVE_LIBCRYTO ?= no
+SYS_LIBCRYPTO_CFLAGS =
+SYS_LIBCRYPTO_LIBS =
+ifeq "$(HAVE_LIBCRYPTO)" "yes"
+SYS_LIBCRYPTO_CFLAGS = -DHAVE_LIBCRYPTO
+SYS_LIBCRYPTO_LIBS = -lcrypto
 endif
 
 SYS_CURL_DEPS = -lpthread
@@ -108,9 +108,9 @@ else ifeq "$(OS)" "Linux"
 HAVE_PTHREADS ?= yes
 
 ifeq "$(shell pkg-config --exists libcrypto && echo yes)" "yes"
-HAVE_OPENSSL = yes
-SYS_OPENSSL_CFLAGS = -DHAVE_OPENSSL $(shell pkg-config --cflags libcrypto)
-SYS_OPENSSL_LIBS = $(shell pkg-config --libs libcrypto)
+HAVE_LIBCRYPTO = yes
+SYS_LIBCRYPTO_CFLAGS = -DHAVE_LIBCRYPTO $(shell pkg-config --cflags libcrypto)
+SYS_LIBCRYPTO_LIBS = $(shell pkg-config --libs libcrypto)
 endif
 
 ifeq "$(shell pkg-config --exists libcurl && echo yes)" "yes"

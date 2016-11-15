@@ -35,8 +35,8 @@ LOCAL_CFLAGS += -DFZ_ENABLE_GPRF
 endif
 
 LOCAL_LDLIBS := -lm -llog -ljnigraphics
-ifdef SSL_BUILD
-LOCAL_LDLIBS += -L$(MUPDF_ROOT)/thirdparty/openssl/android -lcrypto -lssl
+ifdef CRYPTO_BUILD
+LOCAL_LDLIBS += -L$(MUPDF_ROOT)/thirdparty/openssl/android -lcrypto
 endif
 
 include $(BUILD_SHARED_LIBRARY)

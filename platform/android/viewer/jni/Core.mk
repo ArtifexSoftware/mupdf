@@ -26,8 +26,8 @@ LOCAL_CFLAGS += -DAA_BITS=8
 ifdef MEMENTO
 LOCAL_CFLAGS += -DMEMENTO -DMEMENTO_LEAKONLY
 endif
-ifdef SSL_BUILD
-LOCAL_CFLAGS += -DHAVE_OPENSSL
+ifdef CRYPTO_BUILD
+LOCAL_CFLAGS += -DHAVE_LIBCRYPTO
 endif
 
 LOCAL_C_INCLUDES := \
@@ -54,7 +54,7 @@ LOCAL_C_INCLUDES := \
 ifdef V8_BUILD
 LOCAL_C_INCLUDES += $(MY_ROOT)/thirdparty/$(V8)/include
 endif
-ifdef SSL_BUILD
+ifdef CRYPTO_BUILD
 LOCAL_C_INCLUDES += $(MY_ROOT)/thirdparty/openssl/include
 endif
 

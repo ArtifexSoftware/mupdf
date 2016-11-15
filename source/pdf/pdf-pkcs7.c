@@ -1,6 +1,6 @@
 #include "mupdf/pdf.h" // TODO: move this file to pdf module
 
-#ifdef HAVE_OPENSSL
+#ifdef HAVE_LIBCRYPTO
 
 #include "openssl/err.h"
 #include "openssl/bio.h"
@@ -770,7 +770,7 @@ int pdf_signatures_supported(fz_context *ctx)
 	return 1;
 }
 
-#else /* HAVE_OPENSSL */
+#else /* HAVE_LIBCRYPTO */
 
 int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, char *file, char *ebuf, int ebufsize)
 {
@@ -800,4 +800,4 @@ int pdf_signatures_supported(fz_context *ctx)
 	return 0;
 }
 
-#endif /* HAVE_OPENSSL */
+#endif /* HAVE_LIBCRYPTO */
