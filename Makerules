@@ -117,8 +117,13 @@ ifeq "$(shell pkg-config --exists libcurl && echo yes)" "yes"
 HAVE_CURL = yes
 SYS_CURL_CFLAGS = $(shell pkg-config --cflags libcurl)
 SYS_CURL_LIBS = $(shell pkg-config --libs libcurl)
+ifeq "$(shell pkg-config --exists openssl && echo yes)" "yes"
+HAVE_OPENSSL_SSL = yes
+SYS_CURL_CFLAGS += $(shell pkg-config --cflags openssl)
+SYS_CURL_DEPS += $(shell pkg-config --libs openssl)
 endif
-SYS_CURL_DEPS = -lpthread -lrt
+endif
+SYS_CURL_DEPS += -lpthread -lrt
 
 ifeq "$(shell pkg-config --exists x11 xext && echo yes)" "yes"
 HAVE_X11 = yes
