@@ -1483,6 +1483,8 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 	jbyteArray bArray = NULL;
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
+	size_t len;
+	unsigned char *data;
 
 	fz_var(sheet);
 	fz_var(text);
@@ -1527,10 +1529,11 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		fz_drop_output(ctx, out);
 		out = NULL;
 
-		bArray = (*env)->NewByteArray(env, buf->len);
+		len = fz_buffer_storage(ctx, buf, &data);
+		bArray = (*env)->NewByteArray(env, len);
 		if (bArray == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to make byteArray");
-		(*env)->SetByteArrayRegion(env, bArray, 0, buf->len, (const jbyte *)buf->data);
+		(*env)->SetByteArrayRegion(env, bArray, 0, len, (const jbyte *)data);
 
 	}
 	fz_always(ctx)
