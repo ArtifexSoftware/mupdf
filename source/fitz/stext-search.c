@@ -231,7 +231,7 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 	fz_buffer *buffer;
 	fz_rect hitbox;
 	int c, i, block_num, seen = 0;
-	char *s;
+	unsigned char *s;
 
 	float x0 = rect.x0;
 	float x1 = rect.x1;
@@ -280,7 +280,7 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 
 	fz_write_buffer_byte(ctx, buffer, 0);
 
-	fz_buffer_extract(ctx, buffer, (unsigned char **)&s);
+	fz_buffer_extract(ctx, buffer, &s);
 	fz_drop_buffer(ctx, buffer);
-	return s;
+	return (char*)s;
 }
