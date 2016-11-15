@@ -19,7 +19,7 @@ LOCAL_C_INCLUDES := \
 	$(MUPDF_ROOT)/source/pdf \
 	$(MUPDF_ROOT)/platform/java
 LOCAL_CFLAGS := -DHAVE_ANDROID
-LOCAL_MODULE := mupdf_java
+LOCAL_MODULE := mupdf_java32
 
 LOCAL_SRC_FILES := \
 	mupdf.c \

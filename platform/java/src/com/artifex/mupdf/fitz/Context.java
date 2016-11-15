@@ -15,10 +15,22 @@ public class Context
 	public static void init() {
 		if (!inited) {
 			inited = true;
-			System.loadLibrary("mupdf_java");
+			System.loadLibrary(getLibraryName());
 			if (initNative() < 0)
 				throw new RuntimeException("cannot initialize mupdf library");
 		}
+	}
+
+	private static String getLibraryName(void) {
+		/* Mac OS always uses 64bit DLLs for any JDK 1.7 or above */
+		if (System.getProperty("os.name").toLowerCase().contains("mac os")) {
+			return "mupdf_java64";
+		}
+		String val = System.getProperty("sun.arch.data.model");
+		if (val != null && val.equals("32")) {
+			return "mupdf_java32"
+		}
+		return "mupdf_java64";
 	}
 
 	static { init(); }

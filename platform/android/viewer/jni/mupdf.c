@@ -290,7 +290,7 @@ JNI_FN(MuPDFCore_openFile)(JNIEnv * env, jobject thiz, jstring jfilename)
 	jclass clazz;
 
 #ifdef NDK_PROFILER
-	monstartup("libmupdf_java.so");
+	monstartup("libmupdf_java32.so");
 #endif
 
 	clazz = (*env)->GetObjectClass(env, thiz);
@@ -441,7 +441,7 @@ JNI_FN(MuPDFCore_openBuffer)(JNIEnv * env, jobject thiz, jstring jmagic)
 	const char *magic;
 
 #ifdef NDK_PROFILER
-	monstartup("libmupdf_java.so");
+	monstartup("libmupdf_java32.so");
 #endif
 
 	clazz = (*env)->GetObjectClass(env, thiz);

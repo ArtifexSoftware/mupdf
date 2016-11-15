@@ -11,7 +11,7 @@ mupdf/platform/android/example - build instructions
 4.  copy the resulting .so file:
 
 	mkdir -p ../example/mupdf/libs/armeabi-v7a
-	rm -f ../example/mupdf/libs/armeabi-v7a/libmupdf_java.so
+	rm -f ../example/mupdf/libs/armeabi-v7a/libmupdf_java32.so
 	cp ./libs/armeabi-v7a/libmupdf_java.so ../example/mupdf/libs/armeabi-v7a/
 
 5.  Open the example in Android Studio
