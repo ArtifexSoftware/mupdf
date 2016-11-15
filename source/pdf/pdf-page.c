@@ -214,8 +214,16 @@ pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	uri = pdf_parse_link_dest(ctx, doc, dest);
-	return pdf_resolve_link(ctx, doc, uri, NULL, NULL);
+	if (dest)
+	{
+		uri = pdf_parse_link_dest(ctx, doc, dest);
+		return pdf_resolve_link(ctx, doc, uri, NULL, NULL);
+	}
+
+	if (!strncmp(name, "page=", 5))
+		return fz_atoi(name + 5) - 1;
+
+	return fz_atoi(name) - 1;
 }
 
 static pdf_obj *
