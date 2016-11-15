@@ -3055,7 +3055,7 @@ static void ffi_PDFDocument_addObject(js_State *J)
 	ffi_pushobj(J, ind);
 }
 
-static void ffi_PDFDocument_addStream(js_State *J)
+static void ffi_PDFDocument_addStream_imp(js_State *J, int compressed)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
@@ -3064,7 +3064,7 @@ static void ffi_PDFDocument_addStream(js_State *J)
 	pdf_obj *ind;
 
 	fz_try(ctx)
-		ind = pdf_add_stream(ctx, pdf, buf, obj);
+		ind = pdf_add_stream(ctx, pdf, buf, obj, compressed);
 	fz_always(ctx) {
 		fz_drop_buffer(ctx, buf);
 		pdf_drop_obj(ctx, obj);
@@ -3072,6 +3072,16 @@ static void ffi_PDFDocument_addStream(js_State *J)
 		rethrow(J);
 
 	ffi_pushobj(J, ind);
+}
+
+static void ffi_PDFDocument_addStream(js_State *J)
+{
+	ffi_PDFDocument_addStream_imp(J, 0);
+}
+
+static void ffi_PDFDocument_addRawStream(js_State *J)
+{
+	ffi_PDFDocument_addStream_imp(J, 1);
 }
 
 static void ffi_PDFDocument_addImage(js_State *J)
@@ -4358,7 +4368,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.createObject", ffi_PDFDocument_createObject, 0);
 		jsB_propfun(J, "PDFDocument.deleteObject", ffi_PDFDocument_deleteObject, 1);
 		jsB_propfun(J, "PDFDocument.addObject", ffi_PDFDocument_addObject, 1);
-		jsB_propfun(J, "PDFDocument.addStream", ffi_PDFDocument_addStream, 1);
+		jsB_propfun(J, "PDFDocument.addStream", ffi_PDFDocument_addStream, 2);
+		jsB_propfun(J, "PDFDocument.addRawStream", ffi_PDFDocument_addRawStream, 2);
 		jsB_propfun(J, "PDFDocument.addSimpleFont", ffi_PDFDocument_addSimpleFont, 1);
 		jsB_propfun(J, "PDFDocument.addFont", ffi_PDFDocument_addFont, 1);
 		jsB_propfun(J, "PDFDocument.addImage", ffi_PDFDocument_addImage, 1);

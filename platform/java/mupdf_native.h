@@ -1471,18 +1471,18 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_graftObject
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    addStreamBuffer
- * Signature: (Lcom/artifex/mupdf/fitz/Buffer;)Lcom/artifex/mupdf/fitz/PDFObject;
+ * Signature: (Lcom/artifex/mupdf/fitz/Buffer;Ljava/lang/Object;Z)Lcom/artifex/mupdf/fitz/PDFObject;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addStreamBuffer
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jobject, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    addStreamString
- * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/PDFObject;
+ * Signature: (Ljava/lang/String;Ljava/lang/Object;Z)Lcom/artifex/mupdf/fitz/PDFObject;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_addStreamString
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jobject, jboolean);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument

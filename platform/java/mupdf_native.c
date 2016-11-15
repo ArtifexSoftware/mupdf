@@ -6057,10 +6057,11 @@ FUN(PDFDocument_graftObject)(JNIEnv *env, jobject self, jobject jsrc, jobject jo
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFDocument_addStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
+FUN(PDFDocument_addStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf, jobject jobj, jboolean compressed)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
+	pdf_obj *obj = from_PDFObject(env, jobj);
 	fz_buffer *buf = from_Buffer(env, jbuf);
 	pdf_obj *ind = NULL;
 
@@ -6068,7 +6069,7 @@ FUN(PDFDocument_addStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
 	if (!jbuf) { jni_throw_arg(env, "buffer must not be null"); return NULL; }
 
 	fz_try(ctx)
-		ind = pdf_add_stream(ctx, pdf, buf, NULL);
+		ind = pdf_add_stream(ctx, pdf, buf, obj, compressed);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -6079,10 +6080,11 @@ FUN(PDFDocument_addStreamBuffer)(JNIEnv *env, jobject self, jobject jbuf)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf)
+FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf, jobject jobj, jboolean compressed)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
+	pdf_obj *obj = from_PDFObject(env, jobj);
 	fz_buffer *buf = NULL;
 	const char *sbuf = NULL;
 	unsigned char *data = NULL;
@@ -6104,7 +6106,7 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf)
 		memcpy(data, sbuf, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
 		data = NULL;
-		ind = pdf_add_stream(ctx, pdf, buf, NULL);
+		ind = pdf_add_stream(ctx, pdf, buf, obj, compressed);
 	}
 	fz_always(ctx)
 	{

@@ -2624,7 +2624,7 @@ pdf_add_object_drop(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 }
 
 pdf_obj *
-pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj)
+pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj, int compressed)
 {
 	pdf_obj *ind;
 	if (!obj)
@@ -2632,7 +2632,7 @@ pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj)
 	else
 		ind = pdf_add_object(ctx, doc, obj);
 	fz_try(ctx)
-		pdf_update_stream(ctx, doc, ind, buf, 0);
+		pdf_update_stream(ctx, doc, ind, buf, compressed);
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, ind);

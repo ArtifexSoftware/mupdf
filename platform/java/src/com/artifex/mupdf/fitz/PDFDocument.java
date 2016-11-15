@@ -48,15 +48,39 @@ public class PDFDocument
 	public native PDFGraftMap newPDFGraftMap();
 	public native PDFObject graftObject(PDFDocument src, PDFObject obj, PDFGraftMap map);
 
-	private native PDFObject addStreamBuffer(Buffer buf);
-	private native PDFObject addStreamString(String str);
+	private native PDFObject addStreamBuffer(Buffer buf, Object obj, boolean compressed);
+	private native PDFObject addStreamString(String str, Object obj, boolean compressed);
+
+	public PDFObject addRawStream(Buffer buf, Object obj) {
+		return addStreamBuffer(buf, obj, true);
+	}
+
+	public PDFObject addStream(Buffer buf, Object obj) {
+		return addStreamBuffer(buf, obj, false);
+	}
+
+	public PDFObject addRawStream(String str, Object obj) {
+		return addStreamString(str, obj, true);
+	}
+
+	public PDFObject addStream(String str, Object obj) {
+		return addStreamString(str, obj, false);
+	}
+
+	public PDFObject addRawStream(Buffer buf) {
+		return addStreamBuffer(buf, null, true);
+	}
 
 	public PDFObject addStream(Buffer buf) {
-		return addStreamBuffer(buf);
+		return addStreamBuffer(buf, null, false);
+	}
+
+	public PDFObject addRawStream(String str) {
+		return addStreamString(str, null, true);
 	}
 
 	public PDFObject addStream(String str) {
-		return addStreamString(str);
+		return addStreamString(str, null, false);
 	}
 
 	private native PDFObject addPageBuffer(Rect mediabox, int rotate, PDFObject resources, Buffer contents);
