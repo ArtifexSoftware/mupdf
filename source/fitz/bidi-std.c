@@ -367,8 +367,7 @@ void set_deferred_level_run(fz_bidi_level *pval, size_t cval, size_t iStart, fz_
 			or at the end of the input text.
 
 ------------------------------------------------------------------------*/
-#if 0
-static int resolve_paragraphs(fz_bidi_chartype *types, int cch)
+int fz_bidi_resolve_paragraphs(fz_bidi_chartype *types, int cch)
 {
 	int ich;
 
@@ -381,6 +380,7 @@ static int resolve_paragraphs(fz_bidi_chartype *types, int cch)
 	return ich;
 }
 
+#if 0
 /*------------------------------------------------------------------------
 	Function: base_level
 

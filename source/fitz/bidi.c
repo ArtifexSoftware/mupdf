@@ -414,9 +414,12 @@ create_levels(fz_context *ctx,
 		int resolveWhiteSpace,
 		int flags)
 {
-	fz_bidi_level *levels;
+	fz_bidi_level *levels , *plevels;
 	fz_bidi_chartype *types = NULL;
+	fz_bidi_chartype *ptypes;
 	fz_bidi_level baseLevel;
+	const uint32_t *ptext;
+	size_t plen, remaining;
 
 	levels = fz_malloc(ctx, len * sizeof(*levels));
 
@@ -463,18 +466,33 @@ create_levels(fz_context *ctx,
 		 */
 		classify_quoted_blocks(text, types, len);
 
-		/* Work out the levels and character types... */
-		(void)fz_bidi_resolve_explicit(baseLevel, BDI_N, types, levels, len, 0);
-		fz_bidi_resolve_weak(ctx, baseLevel, types, levels, len);
-		fz_bidi_resolve_neutrals(baseLevel,types, levels, len);
-		fz_bidi_resolve_implicit(types, levels, len);
-
-		classify_characters(text, types, len, BIDI_CLASSIFY_WHITE_SPACE);
-
-		if (resolveWhiteSpace)
+		/* Work one paragraph at a time. */
+		plevels = levels;
+		ptypes = types;
+		ptext = text;
+		remaining = len;
+		while (remaining)
 		{
-			/* resolve whitespace */
-			fz_bidi_resolve_whitespace(baseLevel, types, levels, len);
+			plen = fz_bidi_resolve_paragraphs(ptypes, remaining);
+
+			/* Work out the levels and character types... */
+			(void)fz_bidi_resolve_explicit(baseLevel, BDI_N, ptypes, plevels, plen, 0);
+			fz_bidi_resolve_weak(ctx, baseLevel, ptypes, plevels, plen);
+			fz_bidi_resolve_neutrals(baseLevel, ptypes, plevels, plen);
+			fz_bidi_resolve_implicit(ptypes, plevels, plen);
+
+			classify_characters(ptext, ptypes, plen, BIDI_CLASSIFY_WHITE_SPACE);
+
+			if (resolveWhiteSpace)
+			{
+				/* resolve whitespace */
+				fz_bidi_resolve_whitespace(baseLevel, ptypes, plevels, plen);
+			}
+
+			plevels += plen;
+			ptypes += plen;
+			ptext += plen;
+			remaining -= plen;
 		}
 
 		/* The levels buffer now has odd and even numbers indicating
