@@ -201,10 +201,13 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 }
 
 int
-pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name)
+pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name, float *xp, float *yp)
 {
 	pdf_obj *needle, *dest;
 	char *uri;
+
+	if (xp) *xp = 0;
+	if (yp) *yp = 0;
 
 	needle = pdf_new_string(ctx, doc, name, strlen(name));
 	fz_try(ctx)
@@ -217,7 +220,7 @@ pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name)
 	if (dest)
 	{
 		uri = pdf_parse_link_dest(ctx, doc, dest);
-		return pdf_resolve_link(ctx, doc, uri, NULL, NULL);
+		return pdf_resolve_link(ctx, doc, uri, xp, yp);
 	}
 
 	if (!strncmp(name, "page=", 5))

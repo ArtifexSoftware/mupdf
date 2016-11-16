@@ -9,9 +9,9 @@ pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
 	pdf_lookup_anchor: Find the page number of a named destination.
 
 	For use with looking up the destination page of a fragment
-	identifier in hyperlinks: foo.pdf#bar.
+	identifier in hyperlinks: foo.pdf#bar or foo.pdf#page=5.
 */
-int pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name);
+int pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name, float *xp, float *yp);
 
 /*
 	pdf_flatten_inheritable_page_items: Make page self sufficient.
