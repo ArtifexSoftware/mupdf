@@ -20,42 +20,24 @@
 
 #if CJK_CMAPS
 
-#include "gen_cmap_gb.h"
-#include "gen_cmap_cns.h"
-#include "gen_cmap_japan.h"
-#include "gen_cmap_korea.h"
+#include "gen_cmap_cjk.h"
 
 struct table { const char *name; pdf_cmap *cmap; };
 
-static const struct table table_unicode[] =
+static const struct table table_cjk[] =
 {
+	{"83pv-RKSJ-H",&cmap_83pv_RKSJ_H},
+	{"90msp-RKSJ-H",&cmap_90msp_RKSJ_H},
+	{"90msp-RKSJ-V",&cmap_90msp_RKSJ_V},
+	{"90ms-RKSJ-H",&cmap_90ms_RKSJ_H},
+	{"90ms-RKSJ-V",&cmap_90ms_RKSJ_V},
+	{"90pv-RKSJ-H",&cmap_90pv_RKSJ_H},
+	{"Add-RKSJ-H",&cmap_Add_RKSJ_H},
+	{"Add-RKSJ-V",&cmap_Add_RKSJ_V},
 	{"Adobe-CNS1-UCS2",&cmap_Adobe_CNS1_UCS2},
 	{"Adobe-GB1-UCS2",&cmap_Adobe_GB1_UCS2},
 	{"Adobe-Japan1-UCS2",&cmap_Adobe_Japan1_UCS2},
 	{"Adobe-Korea1-UCS2",&cmap_Adobe_Korea1_UCS2},
-};
-
-static const struct table table_gb[] =
-{
-	{"GB-EUC-H",&cmap_GB_EUC_H},
-	{"GB-EUC-V",&cmap_GB_EUC_V},
-	{"GBK-EUC-H",&cmap_GBK_EUC_H},
-	{"GBK-EUC-V",&cmap_GBK_EUC_V},
-	{"GBK2K-H",&cmap_GBK2K_H},
-	{"GBK2K-V",&cmap_GBK2K_V},
-	{"GBKp-EUC-H",&cmap_GBKp_EUC_H},
-	{"GBKp-EUC-V",&cmap_GBKp_EUC_V},
-	{"GBpc-EUC-H",&cmap_GBpc_EUC_H},
-	{"GBpc-EUC-V",&cmap_GBpc_EUC_V},
-	{"UniGB-UCS2-H",&cmap_UniGB_UCS2_H},
-	{"UniGB-UCS2-V",&cmap_UniGB_UCS2_V},
-	{"UniGB-UTF16-H",&cmap_UniGB_UTF16_H},
-	{"UniGB-UTF16-V",&cmap_UniGB_UTF16_V},
-	{"UniGB-X",&cmap_UniGB_X},
-};
-
-static const struct table table_cns[] =
-{
 	{"B5pc-H",&cmap_B5pc_H},
 	{"B5pc-V",&cmap_B5pc_V},
 	{"CNS-EUC-H",&cmap_CNS_EUC_H},
@@ -64,43 +46,23 @@ static const struct table table_cns[] =
 	{"ETen-B5-V",&cmap_ETen_B5_V},
 	{"ETenms-B5-H",&cmap_ETenms_B5_H},
 	{"ETenms-B5-V",&cmap_ETenms_B5_V},
-	{"HKscs-B5-H",&cmap_HKscs_B5_H},
-	{"HKscs-B5-V",&cmap_HKscs_B5_V},
-	{"UniCNS-UCS2-H",&cmap_UniCNS_UCS2_H},
-	{"UniCNS-UCS2-V",&cmap_UniCNS_UCS2_V},
-	{"UniCNS-UTF16-H",&cmap_UniCNS_UTF16_H},
-	{"UniCNS-UTF16-V",&cmap_UniCNS_UTF16_V},
-	{"UniCNS-X",&cmap_UniCNS_X},
-};
-
-static const struct table table_japan[] =
-{
-	{"83pv-RKSJ-H",&cmap_83pv_RKSJ_H},
-	{"90ms-RKSJ-H",&cmap_90ms_RKSJ_H},
-	{"90ms-RKSJ-V",&cmap_90ms_RKSJ_V},
-	{"90msp-RKSJ-H",&cmap_90msp_RKSJ_H},
-	{"90msp-RKSJ-V",&cmap_90msp_RKSJ_V},
-	{"90pv-RKSJ-H",&cmap_90pv_RKSJ_H},
-	{"Add-RKSJ-H",&cmap_Add_RKSJ_H},
-	{"Add-RKSJ-V",&cmap_Add_RKSJ_V},
 	{"EUC-H",&cmap_EUC_H},
 	{"EUC-V",&cmap_EUC_V},
 	{"Ext-RKSJ-H",&cmap_Ext_RKSJ_H},
 	{"Ext-RKSJ-V",&cmap_Ext_RKSJ_V},
+	{"GB-EUC-H",&cmap_GB_EUC_H},
+	{"GB-EUC-V",&cmap_GB_EUC_V},
+	{"GBK2K-H",&cmap_GBK2K_H},
+	{"GBK2K-V",&cmap_GBK2K_V},
+	{"GBK-EUC-H",&cmap_GBK_EUC_H},
+	{"GBK-EUC-V",&cmap_GBK_EUC_V},
+	{"GBKp-EUC-H",&cmap_GBKp_EUC_H},
+	{"GBKp-EUC-V",&cmap_GBKp_EUC_V},
+	{"GBpc-EUC-H",&cmap_GBpc_EUC_H},
+	{"GBpc-EUC-V",&cmap_GBpc_EUC_V},
 	{"H",&cmap_H},
-	{"UniJIS-UCS2-H",&cmap_UniJIS_UCS2_H},
-	{"UniJIS-UCS2-HW-H",&cmap_UniJIS_UCS2_HW_H},
-	{"UniJIS-UCS2-HW-V",&cmap_UniJIS_UCS2_HW_V},
-	{"UniJIS-UCS2-V",&cmap_UniJIS_UCS2_V},
-	{"UniJIS-UTF16-H",&cmap_UniJIS_UTF16_H},
-	{"UniJIS-UTF16-V",&cmap_UniJIS_UTF16_V},
-	{"UniJIS-X",&cmap_UniJIS_X},
-	{"UniJIS-X16",&cmap_UniJIS_X16},
-	{"V",&cmap_V},
-};
-
-static const struct table table_korea[] =
-{
+	{"HKscs-B5-H",&cmap_HKscs_B5_H},
+	{"HKscs-B5-V",&cmap_HKscs_B5_V},
 	{"KSC-EUC-H",&cmap_KSC_EUC_H},
 	{"KSC-EUC-V",&cmap_KSC_EUC_V},
 	{"KSCms-UHC-H",&cmap_KSCms_UHC_H},
@@ -108,14 +70,34 @@ static const struct table table_korea[] =
 	{"KSCms-UHC-HW-V",&cmap_KSCms_UHC_HW_V},
 	{"KSCms-UHC-V",&cmap_KSCms_UHC_V},
 	{"KSCpc-EUC-H",&cmap_KSCpc_EUC_H},
+	{"UniCNS-UCS2-H",&cmap_UniCNS_UCS2_H},
+	{"UniCNS-UCS2-V",&cmap_UniCNS_UCS2_V},
+	{"UniCNS-UTF16-H",&cmap_UniCNS_UTF16_H},
+	{"UniCNS-UTF16-V",&cmap_UniCNS_UTF16_V},
+	{"UniCNS-X",&cmap_UniCNS_X},
+	{"UniGB-UCS2-H",&cmap_UniGB_UCS2_H},
+	{"UniGB-UCS2-V",&cmap_UniGB_UCS2_V},
+	{"UniGB-UTF16-H",&cmap_UniGB_UTF16_H},
+	{"UniGB-UTF16-V",&cmap_UniGB_UTF16_V},
+	{"UniGB-X",&cmap_UniGB_X},
+	{"UniJIS-UCS2-H",&cmap_UniJIS_UCS2_H},
+	{"UniJIS-UCS2-HW-H",&cmap_UniJIS_UCS2_HW_H},
+	{"UniJIS-UCS2-HW-V",&cmap_UniJIS_UCS2_HW_V},
+	{"UniJIS-UCS2-V",&cmap_UniJIS_UCS2_V},
+	{"UniJIS-UTF16-H",&cmap_UniJIS_UTF16_H},
+	{"UniJIS-UTF16-V",&cmap_UniJIS_UTF16_V},
+	{"UniJIS-X16",&cmap_UniJIS_X16},
+	{"UniJIS-X",&cmap_UniJIS_X},
 	{"UniKS-UCS2-H",&cmap_UniKS_UCS2_H},
 	{"UniKS-UCS2-V",&cmap_UniKS_UCS2_V},
 	{"UniKS-UTF16-H",&cmap_UniKS_UTF16_H},
 	{"UniKS-UTF16-V",&cmap_UniKS_UTF16_V},
 	{"UniKS-X",&cmap_UniKS_X},
+	{"V",&cmap_V},
 };
 
 #if EXTRA_CMAPS
+#include "gen_cmap_extra.h"
 static const struct table table_extra[] =
 {
 	{"78-EUC-H",&cmap_78_EUC_H},
@@ -202,6 +184,7 @@ static const struct table table_extra[] =
 #endif
 
 #if UTF8_CMAPS
+#include "gen_cmap_utf8.h"
 static const struct table table_utf8[] =
 {
 	{"UniCNS-UTF8-H",&cmap_UniCNS_UTF8_H},
@@ -220,6 +203,7 @@ static const struct table table_utf8[] =
 #endif
 
 #if UTF32_CMAPS
+#include "gen_cmap_utf32.h"
 static const struct table table_utf32[] =
 {
 	{"UniCNS-UTF32-H",&cmap_UniCNS_UTF32_H},
@@ -262,11 +246,7 @@ pdf_cmap *
 pdf_load_builtin_cmap(fz_context *ctx, const char *name)
 {
 	pdf_cmap *cmap = NULL;
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_unicode, nelem(table_unicode)-1, name);
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_gb, nelem(table_gb)-1, name);
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_cns, nelem(table_cns)-1, name);
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_japan, nelem(table_japan)-1, name);
-	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_korea, nelem(table_korea)-1, name);
+	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_cjk, nelem(table_cjk)-1, name);
 #if EXTRA_CMAPS
 	if (!cmap) cmap = pdf_load_builtin_cmap_imp(table_extra, nelem(table_extra)-1, name);
 #endif

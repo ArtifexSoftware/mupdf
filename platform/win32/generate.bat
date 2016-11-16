@@ -21,10 +21,10 @@ if not exist cmapdump.exe goto usage
 if not exist cquote.exe goto usage
 if not exist bin2hex.exe goto usage
 
-if not exist generated/gen_cmap_cns.h cmapdump.exe generated/gen_cmap_cns.h resources\cmaps\cns\*
-if not exist generated/gen_cmap_gb.h cmapdump.exe generated/gen_cmap_gb.h resources\cmaps\gb\*
-if not exist generated/gen_cmap_japan.h cmapdump.exe generated/gen_cmap_japan.h resources\cmaps\japan\*
-if not exist generated/gen_cmap_korea.h cmapdump.exe generated/gen_cmap_korea.h resources\cmaps\korea\*
+if not exist generated/gen_cmap_cjk.h cmapdump.exe generated/gen_cmap_cjk.h resources\cmaps\cjk\*
+if not exist generated/gen_cmap_extra.h cmapdump.exe generated/gen_cmap_extra.h resources\cmaps\extra\*
+if not exist generated/gen_cmap_utf8.h cmapdump.exe generated/gen_cmap_utf8.h resources\cmaps\utf8\*
+if not exist generated/gen_cmap_utf32.h cmapdump.exe generated/gen_cmap_utf32.h resources\cmaps\utf32\*
 
 if not exist generated/gen_adobe_ca.h bin2hex.exe generated/gen_adobe_ca.h resources/certs/AdobeCA.p7c
 if not exist generated/gen_js_util.h cquote.exe generated/gen_js_util.h source/pdf/pdf-js-util.js

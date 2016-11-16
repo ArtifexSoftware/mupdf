@@ -210,21 +210,21 @@ NAMEDUMP := $(OUT)/namedump
 CQUOTE := $(OUT)/cquote
 BIN2HEX := $(OUT)/bin2hex
 
-CMAP_CNS_SRC := $(wildcard resources/cmaps/cns/*)
-CMAP_GB_SRC := $(wildcard resources/cmaps/gb/*)
-CMAP_JAPAN_SRC := $(wildcard resources/cmaps/japan/*)
-CMAP_KOREA_SRC := $(wildcard resources/cmaps/korea/*)
+CMAP_CJK_SRC := $(wildcard resources/cmaps/cjk/*)
+CMAP_EXTRA_SRC := $(wildcard resources/cmaps/extra/*)
+CMAP_UTF8_SRC := $(wildcard resources/cmaps/utf8/*)
+CMAP_UTF32_SRC := $(wildcard resources/cmaps/utf32/*)
 
-$(GEN)/gen_cmap_cns.h : $(CMAP_CNS_SRC)
-	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_CNS_SRC)
-$(GEN)/gen_cmap_gb.h : $(CMAP_GB_SRC)
-	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_GB_SRC)
-$(GEN)/gen_cmap_japan.h : $(CMAP_JAPAN_SRC)
-	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_JAPAN_SRC)
-$(GEN)/gen_cmap_korea.h : $(CMAP_KOREA_SRC)
-	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_KOREA_SRC)
+$(GEN)/gen_cmap_cjk.h : $(CMAP_CJK_SRC)
+	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_CJK_SRC)
+$(GEN)/gen_cmap_extra.h : $(CMAP_EXTRA_SRC)
+	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_EXTRA_SRC)
+$(GEN)/gen_cmap_utf8.h : $(CMAP_UTF8_SRC)
+	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_UTF8_SRC)
+$(GEN)/gen_cmap_utf32.h : $(CMAP_UTF32_SRC)
+	$(QUIET_GEN) $(CMAPDUMP) $@ $(CMAP_UTF32_SRC)
 
-CMAP_GEN := $(addprefix $(GEN)/, gen_cmap_cns.h gen_cmap_gb.h gen_cmap_japan.h gen_cmap_korea.h)
+CMAP_GEN := $(addprefix $(GEN)/, gen_cmap_cjk.h gen_cmap_extra.h gen_cmap_utf8.h gen_cmap_utf32.h)
 
 include/mupdf/pdf.h : include/mupdf/pdf/name-table.h
 NAME_GEN := include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
