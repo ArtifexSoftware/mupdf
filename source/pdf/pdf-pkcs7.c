@@ -720,7 +720,7 @@ void pdf_sign_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 
 	fz_try(ctx)
 	{
-		char *dn_str;
+		const char *dn_str;
 		pdf_obj *wobj = ((pdf_annot *)widget)->obj;
 		fz_rect rect = fz_empty_rect;
 

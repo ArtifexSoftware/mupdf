@@ -2342,7 +2342,7 @@ static void insert_signature_appearance_layers(fz_context *ctx, pdf_document *do
 /* MuPDF blue */
 static float logo_color[3] = {(float)0x25/(float)0xFF, (float)0x72/(float)0xFF, (float)0xAC/(float)0xFF};
 
-void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, char *name, char *dn, char *date)
+void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot, char *name, const char *dn, char *date)
 {
 	pdf_obj *obj = annot->obj;
 	pdf_obj *dr = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_AcroForm, PDF_NAME_DR, NULL);
