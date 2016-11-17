@@ -282,7 +282,7 @@ static int ui_input_key(struct input *input)
 
 int ui_input(int x0, int y0, int x1, int y1, struct input *input)
 {
-	float px, qx, ex;
+	float px, qx;
 	char *p, *q;
 	int state;
 
@@ -321,7 +321,6 @@ int ui_input(int x0, int y0, int x1, int y1, struct input *input)
 
 	px = x0 + 2 + measure_string_part(input->text, p);
 	qx = px + measure_string_part(p, q);
-	ex = qx + measure_string_part(q, input->end);
 
 	if (ui.focus)
 	{
