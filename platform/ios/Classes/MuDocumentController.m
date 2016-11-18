@@ -272,7 +272,11 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 	// Set up the buttons on the navigation and search bar
 
-	fz_outline *outlineRoot = fz_load_outline(ctx, doc);
+	fz_outline *outlineRoot;
+	fz_try(ctx)
+		outlineRoot = fz_load_outline(ctx, doc);
+	fz_catch(ctx)
+		outlineRoot = NULL;
 	if (outlineRoot)
 	{
 		//  only show the outline button if there is an outline
@@ -471,7 +475,11 @@ static void saveDoc(const char *current_path, fz_document *doc)
 - (void) onShowOutline: (id)sender
 {
 	//  rebuild the outline in case the layout has changed
-	fz_outline *root = fz_load_outline(ctx, doc);
+	fz_outline *root;
+	fz_try(ctx)
+		root = fz_load_outline(ctx, doc);
+	fz_catch(ctx)
+		root = NULL;
 	if (root)
 	{
 		NSMutableArray *titles = [[NSMutableArray alloc] init];

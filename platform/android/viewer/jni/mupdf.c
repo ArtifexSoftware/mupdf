@@ -1212,7 +1212,11 @@ JNI_FN(MuPDFCore_hasOutlineInternal)(JNIEnv * env, jobject thiz)
 {
 	globals *glo = get_globals(env, thiz);
 	fz_context *ctx = glo->ctx;
-	fz_outline *outline = fz_load_outline(ctx, glo->doc);
+	fz_outline *outline;
+	fz_try(ctx)
+		outline = fz_load_outline(ctx, glo->doc);
+	fz_catch(ctx)
+		outline = NULL;
 
 	fz_drop_outline(glo->ctx, outline);
 	return (outline == NULL) ? JNI_FALSE : JNI_TRUE;
@@ -1236,7 +1240,10 @@ JNI_FN(MuPDFCore_getOutlineInternal)(JNIEnv * env, jobject thiz)
 	ctor = (*env)->GetMethodID(env, olClass, "<init>", "(ILjava/lang/String;I)V");
 	if (ctor == NULL) return NULL;
 
-	outline = fz_load_outline(ctx, glo->doc);
+	fz_try(ctx)
+		outline = fz_load_outline(ctx, glo->doc);
+	fz_catch(ctx)
+		outline = NULL;
 	nItems = countOutlineItems(outline);
 
 	arr = (*env)->NewObjectArray(env,

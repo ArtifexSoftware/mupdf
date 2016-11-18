@@ -67,7 +67,12 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 	if (pdf_is_int(ctx, obj))
 		page = pdf_to_int(ctx, obj);
 	else
-		page = pdf_lookup_page_number(ctx, doc, obj);
+	{
+		fz_try(ctx)
+			page = pdf_lookup_page_number(ctx, doc, obj);
+		fz_catch(ctx)
+			page = -1;
+	}
 
 	x = y = 0;
 	obj = pdf_array_get(ctx, dest, 1);

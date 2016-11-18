@@ -407,12 +407,9 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 			}
 			fz_catch(ctx)
 			{
+				app->outline = NULL;
 				if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
-				{
 					app->outline_deferred = PDFAPP_OUTLINE_DEFERRED;
-				}
-				else
-					fz_rethrow(ctx);
 			}
 			break;
 		}
@@ -818,13 +815,9 @@ void pdfapp_reloadpage(pdfapp_t *app)
 	if (app->outline_deferred == PDFAPP_OUTLINE_LOAD_NOW)
 	{
 		fz_try(app->ctx)
-		{
 			app->outline = fz_load_outline(app->ctx, app->doc);
-		}
 		fz_catch(app->ctx)
-		{
-			/* Ignore any error now */
-		}
+			app->outline = NULL;
 		app->outline_deferred = 0;
 	}
 	pdfapp_showpage(app, 1, 1, 1, 0, 0);
