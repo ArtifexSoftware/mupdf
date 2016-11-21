@@ -35,6 +35,7 @@ struct fz_style_context_s
 {
 	int refs;
 	char *user_css;
+	int use_document_css;
 };
 
 static void fz_new_style_context(fz_context *ctx)
@@ -44,6 +45,7 @@ static void fz_new_style_context(fz_context *ctx)
 		ctx->style = fz_malloc_struct(ctx, fz_style_context);
 		ctx->style->refs = 1;
 		ctx->style->user_css = NULL;
+		ctx->style->use_document_css = 1;
 	}
 }
 
@@ -63,6 +65,16 @@ static void fz_drop_style_context(fz_context *ctx)
 		fz_free(ctx, ctx->style->user_css);
 		fz_free(ctx, ctx->style);
 	}
+}
+
+void fz_set_use_document_css(fz_context *ctx, int use)
+{
+	ctx->style->use_document_css = use;
+}
+
+int fz_use_document_css(fz_context *ctx)
+{
+	return ctx->style->use_document_css;
 }
 
 void fz_set_user_css(fz_context *ctx, const char *user_css)

@@ -349,6 +349,16 @@ const char *fz_user_css(fz_context *ctx);
 void fz_set_user_css(fz_context *ctx, const char *text);
 
 /*
+	fz_use_document_css: Return whether to respect document styles in HTML and EPUB.
+*/
+int fz_use_document_css(fz_context *ctx);
+
+/*
+	fz_set_use_document_css: Toggle whether to respect document styles in HTML and EPUB.
+*/
+void fz_set_use_document_css(fz_context *ctx, int use);
+
+/*
 	Locking functions
 
 	MuPDF is kept deliberately free of any knowledge of particular

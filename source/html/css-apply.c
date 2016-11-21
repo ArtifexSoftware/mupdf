@@ -644,22 +644,25 @@ fz_match_css(fz_context *ctx, fz_css_match *match, fz_css *css, fz_xml *node)
 		}
 	}
 
-	s = fz_xml_att(node, "style");
-	if (s)
+	if (fz_use_document_css(ctx))
 	{
-		fz_try(ctx)
+		s = fz_xml_att(node, "style");
+		if (s)
 		{
-			prop = fz_parse_css_properties(ctx, css->pool, s);
-			while (prop)
+			fz_try(ctx)
 			{
-				add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
-				prop = prop->next;
+				prop = fz_parse_css_properties(ctx, css->pool, s);
+				while (prop)
+				{
+					add_property(match, prop->name, prop->value, INLINE_SPECIFICITY);
+					prop = prop->next;
+				}
+				/* We can "leak" the property here, since it is freed along with the pool allocator. */
 			}
-			/* We can "leak" the property here, since it is freed along with the pool allocator. */
-		}
-		fz_catch(ctx)
-		{
-			fz_warn(ctx, "ignoring style attribute");
+			fz_catch(ctx)
+			{
+				fz_warn(ctx, "ignoring style attribute");
+			}
 		}
 	}
 
