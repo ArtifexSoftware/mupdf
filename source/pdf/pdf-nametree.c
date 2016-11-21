@@ -29,8 +29,12 @@ pdf_lookup_name_imp(fz_context *ctx, pdf_obj *node, pdf_obj *needle)
 
 				if (pdf_mark_obj(ctx, node))
 					break;
-				obj = pdf_lookup_name_imp(ctx, kid, needle);
-				pdf_unmark_obj(ctx, node);
+				fz_try(ctx)
+					obj = pdf_lookup_name_imp(ctx, kid, needle);
+				fz_always(ctx)
+					pdf_unmark_obj(ctx, node);
+				fz_catch(ctx)
+					fz_rethrow(ctx);
 				return obj;
 			}
 		}
@@ -114,10 +118,16 @@ pdf_load_name_tree_imp(fz_context *ctx, pdf_obj *dict, pdf_document *doc, pdf_ob
 
 	if (kids && !pdf_mark_obj(ctx, node))
 	{
-		int len = pdf_array_len(ctx, kids);
-		for (i = 0; i < len; i++)
-			pdf_load_name_tree_imp(ctx, dict, doc, pdf_array_get(ctx, kids, i));
-		pdf_unmark_obj(ctx, node);
+		fz_try(ctx)
+		{
+			int len = pdf_array_len(ctx, kids);
+			for (i = 0; i < len; i++)
+				pdf_load_name_tree_imp(ctx, dict, doc, pdf_array_get(ctx, kids, i));
+		}
+		fz_always(ctx)
+			pdf_unmark_obj(ctx, node);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 
 	if (names)

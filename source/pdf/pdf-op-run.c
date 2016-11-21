@@ -1230,10 +1230,6 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
 		return;
 
-	pdf_xobject_bbox(ctx, xobj, &xobj_bbox);
-	pdf_xobject_matrix(ctx, xobj, &xobj_matrix);
-	transparency = pdf_xobject_transparency(ctx, xobj);
-
 	fz_var(cleanup_state);
 	fz_var(gstate);
 	fz_var(oldtop);
@@ -1247,6 +1243,10 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 
 		gstate = pr->gstate + pr->gtop;
 		oldtop = pr->gtop;
+
+		pdf_xobject_bbox(ctx, xobj, &xobj_bbox);
+		pdf_xobject_matrix(ctx, xobj, &xobj_matrix);
+		transparency = pdf_xobject_transparency(ctx, xobj);
 
 		/* apply xobject's transform matrix */
 		fz_concat(&local_transform, &xobj_matrix, &local_transform);
