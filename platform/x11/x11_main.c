@@ -814,6 +814,7 @@ static void usage(void)
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
 	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
+	fprintf(stderr, "\t-X\tdisable document styles for EPUB layout\n");
 	exit(1);
 }
 
@@ -844,7 +845,7 @@ int main(int argc, char **argv)
 
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getopt(argc, argv, "p:r:A:C:W:H:S:U:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:A:C:W:H:S:U:X")) != -1)
 	{
 		switch (c)
 		{
@@ -862,6 +863,7 @@ int main(int argc, char **argv)
 		case 'H': gapp.layout_h = fz_atof(fz_optarg); break;
 		case 'S': gapp.layout_em = fz_atof(fz_optarg); break;
 		case 'U': gapp.layout_css = fz_optarg; break;
+		case 'X': gapp.layout_use_doc_css = 0; break;
 		default: usage();
 		}
 	}

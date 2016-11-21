@@ -353,7 +353,8 @@ static int fit = 0;
 static float layout_w = 450;
 static float layout_h = 600;
 static float layout_em = 12;
-static char *layoutput_css = NULL;
+static char *layout_css = NULL;
+static int layout_use_doc_css = 1;
 
 static int showtime = 0;
 static size_t memtrace_current = 0;
@@ -485,6 +486,7 @@ static void usage(void)
 		"\t-H -\tpage height for EPUB layout\n"
 		"\t-S -\tfont size for EPUB layout\n"
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
+		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
 		"\t-A -\tnumber of bits of antialiasing (0 to 8)\n"
 		"\t-A -/-\tnumber of bits of antialiasing (0 to 8) (graphics, text)\n"
@@ -1398,7 +1400,7 @@ int main(int argc, char **argv)
 	x_resolution = X_RESOLUTION;
 	y_resolution = Y_RESOLUTION;
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:M:s:A:iW:H:S:T:U:vP")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:M:s:A:iW:H:S:T:U:XvP")) != -1)
 	{
 		switch (c)
 		{
@@ -1420,7 +1422,8 @@ int main(int argc, char **argv)
 		case 'W': layout_w = fz_atof(fz_optarg); break;
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
-		case 'U': layoutput_css = fz_optarg; break;
+		case 'U': layout_css = fz_optarg; break;
+		case 'X': layout_use_doc_css = 0; break;
 
 		case 's':
 			if (strchr(fz_optarg, 't')) ++showtime;
@@ -1527,12 +1530,14 @@ int main(int argc, char **argv)
 	}
 #endif /* DISABLE_MUTHREADS */
 
-	if (layoutput_css)
+	if (layout_css)
 	{
-		fz_buffer *buf = fz_read_file(ctx, layoutput_css);
+		fz_buffer *buf = fz_read_file(ctx, layout_css);
 		fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
 		fz_drop_buffer(ctx, buf);
 	}
+
+	fz_set_use_document_css(ctx, layout_use_doc_css);
 
 	output_format = suffix_table[0].format;
 	output_cs = suffix_table[0].cs;

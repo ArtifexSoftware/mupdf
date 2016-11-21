@@ -201,6 +201,7 @@ static float layout_w = 450;
 static float layout_h = 600;
 static float layout_em = 12;
 static char *layout_css = NULL;
+static int layout_use_doc_css = 1;
 static float min_line_width = 0.0f;
 
 static int showfeatures = 0;
@@ -293,6 +294,7 @@ static void usage(void)
 		"\t-H -\tpage height for EPUB layout\n"
 		"\t-S -\tfont size for EPUB layout\n"
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
+		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
 		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha)\n"
 		"\t-G -\tapply gamma correction\n"
@@ -1284,7 +1286,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:LvPl:y:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:XLvPl:y:")) != -1)
 	{
 		switch (c)
 		{
@@ -1310,6 +1312,7 @@ int mudraw_main(int argc, char **argv)
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layout_css = fz_optarg; break;
+		case 'X': layout_use_doc_css = 0; break;
 
 		case 's':
 			if (strchr(fz_optarg, 't')) ++showtime;
@@ -1436,6 +1439,8 @@ int mudraw_main(int argc, char **argv)
 		fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
 		fz_drop_buffer(ctx, buf);
 	}
+
+	fz_set_use_document_css(ctx, layout_use_doc_css);
 
 	/* Determine output type */
 	if (band_height < 0)

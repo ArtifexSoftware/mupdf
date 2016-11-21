@@ -148,6 +148,7 @@ static float layout_w = DEFAULT_LAYOUT_W;
 static float layout_h = DEFAULT_LAYOUT_H;
 static float layout_em = DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
+static int layout_use_doc_css = 1;
 
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
@@ -1340,6 +1341,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
 	fprintf(stderr, "\t-U -\tuser style sheet for EPUB layout\n");
+	fprintf(stderr, "\t-X\tdisable document styles for EPUB layout\n");
 	exit(1);
 }
 
@@ -1352,7 +1354,7 @@ int main(int argc, char **argv)
 	const GLFWvidmode *video_mode;
 	int c;
 
-	while ((c = fz_getopt(argc, argv, "p:r:W:H:S:U:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:W:H:S:U:X")) != -1)
 	{
 		switch (c)
 		{
@@ -1363,6 +1365,7 @@ int main(int argc, char **argv)
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layout_css = fz_optarg; break;
+		case 'X': layout_use_doc_css = 0; break;
 		}
 	}
 
@@ -1423,6 +1426,8 @@ int main(int argc, char **argv)
 		fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
 		fz_drop_buffer(ctx, buf);
 	}
+
+	fz_set_use_document_css(ctx, layout_use_doc_css);
 
 	has_ARB_texture_non_power_of_two = glfwExtensionSupported("GL_ARB_texture_non_power_of_two");
 	if (!has_ARB_texture_non_power_of_two)

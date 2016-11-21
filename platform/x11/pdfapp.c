@@ -119,6 +119,8 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->layout_w = 450;
 	app->layout_h = 600;
 	app->layout_em = 12;
+	app->layout_css = NULL;
+	app->layout_use_doc_css = 1;
 
 	app->transition.duration = 0.25;
 	app->transition.type = FZ_TRANSITION_FADE;
@@ -285,6 +287,8 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 			fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
 			fz_drop_buffer(ctx, buf);
 		}
+
+		fz_set_use_document_css(ctx, app->layout_use_doc_css);
 
 #ifdef HAVE_CURL
 		if (!strncmp(filename, "http://", 7) || !strncmp(filename, "https://", 8))

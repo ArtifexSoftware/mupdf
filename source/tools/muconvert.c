@@ -11,6 +11,7 @@ static float layout_w = 450;
 static float layout_h = 600;
 static float layout_em = 12;
 static char *layout_css = NULL;
+static int layout_use_doc_css = 1;
 
 /* output options */
 static const char *output = NULL;
@@ -34,6 +35,7 @@ static void usage(void)
 		"\t-H -\tpage height for EPUB layout\n"
 		"\t-S -\tfont size for EPUB layout\n"
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
+		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
@@ -86,7 +88,7 @@ int muconvert_main(int argc, char **argv)
 {
 	int i, c;
 
-	while ((c = fz_getopt(argc, argv, "p:A:W:H:S:U:o:F:O:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:A:W:H:S:U:Xo:F:O:")) != -1)
 	{
 		switch (c)
 		{
@@ -98,6 +100,7 @@ int muconvert_main(int argc, char **argv)
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layout_css = fz_optarg; break;
+		case 'X': layout_use_doc_css = 0; break;
 
 		case 'o': output = fz_optarg; break;
 		case 'F': format = fz_optarg; break;
@@ -134,6 +137,8 @@ int muconvert_main(int argc, char **argv)
 		fz_set_user_css(ctx, fz_string_from_buffer(ctx, buf));
 		fz_drop_buffer(ctx, buf);
 	}
+
+	fz_set_use_document_css(ctx, layout_use_doc_css);
 
 	/* Open the output document. */
 	fz_try(ctx)

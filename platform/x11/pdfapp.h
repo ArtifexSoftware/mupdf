@@ -58,6 +58,7 @@ struct pdfapp_s
 	float layout_h;
 	float layout_em;
 	char *layout_css;
+	int layout_use_doc_css;
 
 	int pagecount;
 
