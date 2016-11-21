@@ -5,18 +5,7 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h" /* for pdf output */
 
-#ifdef _MSC_VER
-#include <winsock2.h>
-#include <windows.h>
-#define MUDRAW_THREADS 1
-#else
-#include <sys/time.h>
-#ifdef HAVE_PTHREADS
-#define MUDRAW_THREADS 2
-#include <pthread.h>
-#include <semaphore.h>
-#endif
-#endif
+#include "mupdf/helpers/mu-threads.h"
 
 /* Enable for helpful threading debug */
 /* #define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0) */
@@ -131,144 +120,18 @@ static const format_cs_table_t format_cs_table[] =
 	a multi-threaded option. In the absence, of such, we degrade
 	nicely.
 */
-#ifdef MUDRAW_THREADS
-#if MUDRAW_THREADS == 1
+#ifndef DISABLE_MUTHREADS
 
-/* Windows threads */
-#define SEMAPHORE HANDLE
-#define SEMAPHORE_INIT(A) do { A = CreateSemaphore(NULL, 0, 1, NULL); } while (0)
-#define SEMAPHORE_FIN(A) do { CloseHandle(A); } while (0)
-#define SEMAPHORE_TRIGGER(A) do { (void)ReleaseSemaphore(A, 1, NULL); } while (0)
-#define SEMAPHORE_WAIT(A) do { (void)WaitForSingleObject(A, INFINITE); } while (0)
-#define THREAD HANDLE
-#define THREAD_INIT(A,B,C) do { A = CreateThread(NULL, 0, B, C, 0, NULL); } while (0)
-#define THREAD_FIN(A) do { CloseHandle(A); } while (0)
-#define THREAD_RETURN_TYPE DWORD WINAPI
-#define THREAD_RETURN() return 0
-#define MUTEX CRITICAL_SECTION
-#define MUTEX_INIT(A) do { InitializeCriticalSection(&A); } while (0)
-#define MUTEX_FIN(A) do { DeleteCriticalSection(&A); } while (0)
-#define MUTEX_LOCK(A) do { EnterCriticalSection(&A); } while (0)
-#define MUTEX_UNLOCK(A) do { LeaveCriticalSection(&A); } while (0)
-
-#elif MUDRAW_THREADS == 2
-
-/*
-	PThreads - without working unnamed semaphores.
-
-	Neither ios nor OSX supports unnamed semaphores.
-	Named semaphores are a pain to use, so we implement
-	our own semaphores using condition variables and
-	mutexes.
-*/
-
-typedef struct
-{
-	int count;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
-} my_semaphore_t;
-
-int
-my_semaphore_open(my_semaphore_t *sem)
-{
-	int scode;
-
-	sem->count = 0;
-	scode = pthread_mutex_init(&sem->mutex, NULL);
-	if (scode == 0)
-	{
-		scode = pthread_cond_init(&sem->cond, NULL);
-		if (scode)
-			pthread_mutex_destroy(&sem->mutex);
-	}
-	if (scode)
-		memset(sem, 0, sizeof(*sem));
-	return scode;
-}
-
-int
-my_semaphore_close(my_semaphore_t *sem)
-{
-	int scode, scode2;
-
-	scode = pthread_cond_destroy(&sem->cond);
-	scode2 = pthread_mutex_destroy(&sem->mutex);
-	if (scode == 0)
-		scode = scode2;
-	return scode;
-}
-
-int
-my_semaphore_wait(my_semaphore_t *sem)
-{
-	int scode, scode2;
-
-	scode = pthread_mutex_lock(&sem->mutex);
-	if (scode)
-		return scode;
-	while (sem->count == 0) {
-		scode = pthread_cond_wait(&sem->cond, &sem->mutex);
-		if (scode)
-			break;
-	}
-	if (scode == 0)
-		--sem->count;
-	scode2 = pthread_mutex_unlock(&sem->mutex);
-	if (scode == 0)
-		scode = scode2;
-	return scode;
-}
-
-int
-my_semaphore_signal(my_semaphore_t * sem)
-{
-	int scode, scode2;
-
-	scode = pthread_mutex_lock(&sem->mutex);
-	if (scode)
-		return scode;
-	if (sem->count++ == 0)
-		scode = pthread_cond_signal(&sem->cond);
-	scode2 = pthread_mutex_unlock(&sem->mutex);
-	if (scode == 0)
-		scode = scode2;
-	return scode;
-}
-
-#define SEMAPHORE my_semaphore_t
-#define SEMAPHORE_INIT(A) do { (void)my_semaphore_open(&A); } while (0)
-#define SEMAPHORE_FIN(A) do { (void)my_semaphore_close(&A); } while (0)
-#define SEMAPHORE_TRIGGER(A) do { (void)my_semaphore_signal(&A); } while (0)
-#define SEMAPHORE_WAIT(A) do { (void)my_semaphore_wait(&A); } while (0)
-#define THREAD pthread_t
-#define THREAD_INIT(A,B,C) do { (void)pthread_create(&A, NULL, B, C); } while (0)
-#define THREAD_FIN(A) do { void *res; (void)pthread_join(A, &res); } while (0)
-#define THREAD_RETURN_TYPE void *
-#define THREAD_RETURN() return NULL
-#define MUTEX pthread_mutex_t
-#define MUTEX_INIT(A) do { (void)pthread_mutex_init(&A, NULL); } while (0)
-#define MUTEX_FIN(A) do { (void)pthread_mutex_destroy(&A); } while (0)
-#define MUTEX_LOCK(A) do { (void)pthread_mutex_lock(&A); } while (0)
-#define MUTEX_UNLOCK(A) do { (void)pthread_mutex_unlock(&A); } while (0)
-
-#else
-#error Unknown MUDRAW_THREADS setting
-#endif
-
-#define LOCKS_INIT() init_mudraw_locks()
-#define LOCKS_FIN() fin_mudraw_locks()
-
-static MUTEX mutexes[FZ_LOCK_MAX];
+static mu_mutex mutexes[FZ_LOCK_MAX];
 
 static void mudraw_lock(void *user, int lock)
 {
-	MUTEX_LOCK(mutexes[lock]);
+	mu_lock_mutex(&mutexes[lock]);
 }
 
 static void mudraw_unlock(void *user, int lock)
 {
-	MUTEX_UNLOCK(mutexes[lock]);
+	mu_unlock_mutex(&mutexes[lock]);
 }
 
 static fz_locks_context mudraw_locks =
@@ -276,37 +139,30 @@ static fz_locks_context mudraw_locks =
 	NULL, mudraw_lock, mudraw_unlock
 };
 
-static fz_locks_context *init_mudraw_locks(void)
-{
-	int i;
-
-	for (i = 0; i < FZ_LOCK_MAX; i++)
-		MUTEX_INIT(mutexes[i]);
-
-	return &mudraw_locks;
-}
-
 static void fin_mudraw_locks(void)
 {
 	int i;
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
-		MUTEX_FIN(mutexes[i]);
+		mu_destroy_mutex(&mutexes[i]);
 }
 
-#else
+static fz_locks_context *init_mudraw_locks(void)
+{
+	int i;
+	int failed = 0;
 
-/* Null Threads implementation */
-#define SEMAPHORE int
-#define THREAD int
-#define SEMAPHORE_INIT(A) do { A = 0; } while (0)
-#define SEMAPHORE_FIN(A) do { A = 0; } while (0)
-#define SEMAPHORE_TRIGGER(A) do { A = 0; } while (0)
-#define SEMAPHORE_WAIT(A) do { A = 0; } while (0)
-#define THREAD_INIT(A,B,C) do { A = 0; (void)C; } while (0)
-#define THREAD_FIN(A) do { A = 0; } while (0)
-#define LOCKS_INIT() NULL
-#define LOCKS_FIN() do { } while (0)
+	for (i = 0; i < FZ_LOCK_MAX; i++)
+		failed |= mu_create_mutex(&mutexes[i]);
+
+	if (failed)
+	{
+		fin_mudraw_locks();
+		return NULL;
+	}
+
+	return &mudraw_locks;
+}
 
 #endif
 
@@ -320,9 +176,9 @@ typedef struct worker_t {
 	fz_pixmap *pix;
 	fz_bitmap *bit;
 	fz_cookie cookie;
-	SEMAPHORE start;
-	SEMAPHORE stop;
-	THREAD thread;
+	mu_semaphore start;
+	mu_semaphore stop;
+	mu_thread thread;
 } worker_t;
 
 static char *output = NULL;
@@ -385,9 +241,9 @@ static struct {
 	int active;
 	int started;
 	fz_context *ctx;
-	THREAD thread;
-	SEMAPHORE start;
-	SEMAPHORE stop;
+	mu_thread thread;
+	mu_semaphore start;
+	mu_semaphore stop;
 	int pagenum;
 	char *filename;
 	fz_display_list *list;
@@ -865,7 +721,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
 					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
-					SEMAPHORE_TRIGGER(workers[band].start);
+					mu_trigger_semaphore(&workers[band].start);
 					ctm.f -= drawheight;
 				}
 				pix = workers[0].pix;
@@ -908,7 +764,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				{
 					worker_t *w = &workers[band % num_workers];
 					DEBUG_THREADS(("Waiting for worker %d to complete band %d\n", w->num, band));
-					SEMAPHORE_WAIT(w->stop);
+					mu_wait_semaphore(&w->stop);
 					pix = w->pix;
 					bit = w->bit;
 					w->bit = NULL;
@@ -937,7 +793,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					w->tbounds = tbounds;
 					memset(&w->cookie, 0, sizeof(fz_cookie));
 					DEBUG_THREADS(("Triggering worker %d for band %d\n", w->num, w->band));
-					SEMAPHORE_TRIGGER(w->start);
+					mu_trigger_semaphore(&w->start);
 				}
 				ctm.f -= drawheight;
 			}
@@ -1059,7 +915,7 @@ static void bgprint_flush(void)
 	if (!bgprint.active || !bgprint.started)
 		return;
 
-	SEMAPHORE_WAIT(bgprint.stop);
+	mu_wait_semaphore(&bgprint.stop);
 	bgprint.started = 0;
 }
 
@@ -1165,7 +1021,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		bgprint.filename = filename;
 		bgprint.pagenum = pagenum;
 		bgprint.interptime = start;
-		SEMAPHORE_TRIGGER(bgprint.start);
+		mu_trigger_semaphore(&bgprint.start);
 	}
 	else
 	{
@@ -1267,26 +1123,25 @@ trace_realloc(void *arg, void *p_, size_t size)
 	return &p[1];
 }
 
-#ifdef MUDRAW_THREADS
-static THREAD_RETURN_TYPE worker_thread(void *arg)
+#ifndef DISABLE_MUTHREADS
+static void worker_thread(void *arg)
 {
 	worker_t *me = (worker_t *)arg;
 
 	do
 	{
 		DEBUG_THREADS(("Worker %d waiting\n", me->num));
-		SEMAPHORE_WAIT(me->start);
+		mu_wait_semaphore(&me->start);
 		DEBUG_THREADS(("Worker %d woken for band %d\n", me->num, me->band));
 		if (me->band >= 0)
 			drawband(me->ctx, NULL, me->list, &me->ctm, &me->tbounds, &me->cookie, me->band * band_height, me->pix, &me->bit);
 		DEBUG_THREADS(("Worker %d completed band %d\n", me->num, me->band));
-		SEMAPHORE_TRIGGER(me->stop);
+		mu_trigger_semaphore(&me->stop);
 	}
 	while (me->band >= 0);
-	THREAD_RETURN();
 }
 
-static THREAD_RETURN_TYPE bgprint_worker(void *arg)
+static void bgprint_worker(void *arg)
 {
 	fz_cookie cookie = { 0 };
 	int pagenum;
@@ -1296,7 +1151,7 @@ static THREAD_RETURN_TYPE bgprint_worker(void *arg)
 	do
 	{
 		DEBUG_THREADS(("BGPrint waiting\n"));
-		SEMAPHORE_WAIT(bgprint.start);
+		mu_wait_semaphore(&bgprint.start);
 		pagenum = bgprint.pagenum;
 		DEBUG_THREADS(("BGPrint woken for pagenum %d\n", pagenum));
 		if (pagenum >= 0)
@@ -1306,10 +1161,9 @@ static THREAD_RETURN_TYPE bgprint_worker(void *arg)
 			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1);
 		}
 		DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
-		SEMAPHORE_TRIGGER(bgprint.stop);
+		mu_trigger_semaphore(&bgprint.stop);
 	}
 	while (pagenum >= 0);
-	THREAD_RETURN();
 }
 #endif
 
@@ -1426,6 +1280,7 @@ int mudraw_main(int argc, char **argv)
 	int c, i;
 	fz_context *ctx;
 	fz_alloc_context alloc_ctx = { NULL, trace_malloc, trace_realloc, trace_free };
+	fz_locks_context *locks = NULL;
 
 	fz_var(doc);
 
@@ -1479,7 +1334,7 @@ int mudraw_main(int argc, char **argv)
 		case 'i': ignore_errors = 1; break;
 
 		case 'T':
-#ifdef MUDRAW_THREADS
+#ifndef DISABLE_MUTHREADS
 			num_workers = atoi(fz_optarg); break;
 #else
 			fprintf(stderr, "Threads not enabled in this build\n");
@@ -1520,7 +1375,16 @@ int mudraw_main(int argc, char **argv)
 		}
 	}
 
-	ctx = fz_new_context((showmemory == 0 ? NULL : &alloc_ctx), LOCKS_INIT(), (lowmemory ? 1 : FZ_STORE_DEFAULT));
+#ifndef DISABLE_MUTHREADS
+	locks = init_mudraw_locks();
+	if (locks == NULL)
+	{
+		fprintf(stderr, "mutex initialisation failed\n");
+		exit(1);
+	}
+#endif
+
+	ctx = fz_new_context((showmemory == 0 ? NULL : &alloc_ctx), locks, (lowmemory ? 1 : FZ_STORE_DEFAULT));
 	if (!ctx)
 	{
 		fprintf(stderr, "cannot initialise context\n");
@@ -1531,26 +1395,40 @@ int mudraw_main(int argc, char **argv)
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
 	fz_set_graphics_min_line_width(ctx, min_line_width);
 
+#ifndef DISABLE_MUTHREADS
 	if (bgprint.active)
 	{
+		int fail = 0;
 		bgprint.ctx = fz_clone_context(ctx);
-		SEMAPHORE_INIT(bgprint.start);
-		SEMAPHORE_INIT(bgprint.stop);
-		THREAD_INIT(bgprint.thread, bgprint_worker, NULL);
+		fail |= mu_create_semaphore(&bgprint.start);
+		fail |= mu_create_semaphore(&bgprint.stop);
+		fail |= mu_create_thread(&bgprint.thread, bgprint_worker, NULL);
+		if (fail)
+		{
+			fprintf(stderr, "bgprint startup failed\n");
+			exit(1);
+		}
 	}
 
 	if (num_workers > 0)
 	{
+		int fail = 0;
 		workers = fz_calloc(ctx, num_workers, sizeof(*workers));
 		for (i = 0; i < num_workers; i++)
 		{
 			workers[i].ctx = fz_clone_context(ctx);
 			workers[i].num = i;
-			SEMAPHORE_INIT(workers[i].start);
-			SEMAPHORE_INIT(workers[i].stop);
-			THREAD_INIT(workers[i].thread, worker_thread, &workers[i]);
+			fail |= mu_create_semaphore(&workers[i].start);
+			fail |= mu_create_semaphore(&workers[i].stop);
+			fail |= mu_create_thread(&workers[i].thread, worker_thread, &workers[i]);
+		}
+		if (fail)
+		{
+			fprintf(stderr, "worker startup failed\n");
+			exit(1);
 		}
 	}
+#endif /* DISABLE_MUTHREADS */
 
 	if (layout_css)
 	{
@@ -1813,16 +1691,17 @@ int mudraw_main(int argc, char **argv)
 		}
 	}
 
+#ifndef DISABLE_MUTHREADS
 	if (num_workers > 0)
 	{
 		for (i = 0; i < num_workers; i++)
 		{
 			workers[i].band = -1;
-			SEMAPHORE_TRIGGER(workers[i].start);
-			SEMAPHORE_WAIT(workers[i].stop);
-			SEMAPHORE_FIN(workers[i].start);
-			SEMAPHORE_FIN(workers[i].stop);
-			THREAD_FIN(workers[i].thread);
+			mu_trigger_semaphore(&workers[i].start);
+			mu_wait_semaphore(&workers[i].stop);
+			mu_destroy_semaphore(&workers[i].start);
+			mu_destroy_semaphore(&workers[i].stop);
+			mu_destroy_thread(&workers[i].thread);
 			fz_drop_context(workers[i].ctx);
 		}
 		fz_free(ctx, workers);
@@ -1831,16 +1710,20 @@ int mudraw_main(int argc, char **argv)
 	if (bgprint.active)
 	{
 		bgprint.pagenum = -1;
-		SEMAPHORE_TRIGGER(bgprint.start);
-		SEMAPHORE_WAIT(bgprint.stop);
-		SEMAPHORE_FIN(bgprint.start);
-		SEMAPHORE_FIN(bgprint.stop);
-		THREAD_FIN(bgprint.thread);
+		mu_trigger_semaphore(&bgprint.start);
+		mu_wait_semaphore(&bgprint.stop);
+		mu_destroy_semaphore(&bgprint.start);
+		mu_destroy_semaphore(&bgprint.stop);
+		mu_destroy_thread(&bgprint.thread);
 		fz_drop_context(bgprint.ctx);
 	}
+#endif /* DISABLE_MUTHREADS */
 
 	fz_drop_context(ctx);
-	LOCKS_FIN();
+
+#ifndef DISABLE_MUTHREADS
+	fin_mudraw_locks();
+#endif /* DISABLE_MUTHREADS */
 
 	if (showmemory)
 	{

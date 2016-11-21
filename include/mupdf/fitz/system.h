@@ -81,6 +81,11 @@
 #define fz_jmp_buf jmp_buf
 #endif
 
+#ifndef _MSC_VER
+/* For gettimeofday */
+#include <sys/time.h>
+#endif
+
 #ifdef _MSC_VER /* Microsoft Visual C */
 
 /* MSVC up to VS2012 */
