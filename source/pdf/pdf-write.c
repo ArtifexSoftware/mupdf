@@ -1670,6 +1670,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		tmp = hexbuf(ctx, data, len);
 		fz_drop_buffer(ctx, buf);
 		buf = tmp;
+		len = fz_buffer_storage(ctx, buf, &data);
 
 		addhexfilter(ctx, doc, obj);
 	}
@@ -1734,6 +1735,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 		tmp = hexbuf(ctx, data, len);
 		fz_drop_buffer(ctx, buf);
 		buf = tmp;
+		len = fz_buffer_storage(ctx, buf, &data);
 
 		addhexfilter(ctx, doc, obj);
 	}
