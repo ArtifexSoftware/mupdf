@@ -1388,6 +1388,18 @@ static void ffi_readFile(js_State *J)
 	ffi_pushbuffer(J, buf);
 }
 
+static void ffi_setUserCSS(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	const char *user_css = js_tostring(J, 1);
+	int use_doc_css = js_iscoercible(J, 2) ? js_toboolean(J, 2) : 1;
+	fz_try(ctx) {
+		fz_set_user_css(ctx, user_css);
+		fz_set_use_document_css(ctx, use_doc_css);
+	} fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_new_Buffer(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4494,7 +4506,7 @@ int murun_main(int argc, char **argv)
 		js_getregistry(J, "DeviceCMYK");
 		js_defproperty(J, -2, "DeviceCMYK", JS_DONTENUM | JS_READONLY | JS_DONTCONF);
 
-		// Set user CSS
+		jsB_propfun(J, "setUserCSS", ffi_setUserCSS, 2);
 	}
 
 	/* re-implement matrix math in javascript */
