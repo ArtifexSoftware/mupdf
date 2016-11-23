@@ -73,7 +73,8 @@ ALL_DIR += $(OUT)/cbz
 ALL_DIR += $(OUT)/html
 ALL_DIR += $(OUT)/gprf
 ALL_DIR += $(OUT)/tools
-ALL_DIR += $(OUT)/helper
+ALL_DIR += $(OUT)/helpers
+ALL_DIR += $(OUT)/helpers/mu-threads
 ALL_DIR += $(OUT)/platform/x11
 ALL_DIR += $(OUT)/platform/x11/curl
 ALL_DIR += $(OUT)/platform/gl
@@ -83,7 +84,7 @@ FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
 PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
 SVG_HDR := include/mupdf/svg.h
 HTML_HDR := include/mupdf/html.h
-THREAD_HDR := include/mupdf/helper/mu-threads.h
+THREAD_HDR := include/mupdf/helpers/mu-threads.h
 
 FITZ_SRC := $(wildcard source/fitz/*.c)
 PDF_SRC := $(wildcard source/pdf/*.c)
@@ -92,7 +93,7 @@ SVG_SRC := $(wildcard source/svg/*.c)
 CBZ_SRC := $(wildcard source/cbz/*.c)
 HTML_SRC := $(wildcard source/html/*.c)
 GPRF_SRC := $(wildcard source/gprf/*.c)
-THREAD_SRC := source/helper/mu-threads.c
+THREAD_SRC := $(wildcard source/helpers/mu-threads/*.c)
 
 FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
 PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h

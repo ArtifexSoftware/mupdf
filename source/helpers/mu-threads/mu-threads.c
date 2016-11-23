@@ -245,7 +245,7 @@ int mu_create_thread(mu_thread *th, mu_thread_fn *fn, void *arg)
 
 void mu_destroy_thread(mu_thread *th)
 {
-	const static mu_thread empty = { 0 };
+	const static mu_thread empty; /* static objects are always initialized to zero */
 
 	if (memcmp(th, &empty, sizeof(empty)) == 0)
 		return;
@@ -261,9 +261,11 @@ int mu_create_mutex(mu_mutex *mutex)
 
 void mu_destroy_mutex(mu_mutex *mutex)
 {
-	const static mu_mutex empty = { 0 };
+	const static mu_mutex empty; /* static objects are always initialized to zero */
+
 	if (memcmp(mutex, &empty, sizeof(empty)) == 0)
 		return;
+
 	(void)pthread_mutex_destroy(&mutex->mutex);
 	*mutex = empty;
 }
