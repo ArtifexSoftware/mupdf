@@ -20,6 +20,7 @@ int pdfshow_main(int argc, char *argv[]);
 int pdfpages_main(int argc, char *argv[]);
 int pdfcreate_main(int argc, char *argv[]);
 int pdfmerge_main(int argc, char *argv[]);
+int pdfportfolio_main(int argc, char *argv[]);
 
 static struct {
 	int (*func)(int argc, char *argv[]);
@@ -40,6 +41,7 @@ static struct {
 	{ pdfshow_main, "show", "show internal pdf objects" },
 	{ pdfcreate_main, "create", "create pdf document" },
 	{ pdfmerge_main, "merge", "merge pages from multiple pdf sources into a new pdf" },
+	{ pdfportfolio_main, "portfolio", "manipulate PDF portfolios" },
 #endif
 };
 

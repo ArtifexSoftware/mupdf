@@ -54,6 +54,7 @@ CCF
 CCITTFaxDecode
 CF
 CFM
+CI
 CIDFontType0
 CIDFontType0C
 CIDFontType2
@@ -70,6 +71,7 @@ Catalog
 Ch
 CharProcs
 Circle
+Collection
 ColorSpace
 ColorTransform
 Colors
@@ -88,6 +90,7 @@ DA
 DC
 DCT
 DCTDecode
+DL
 DOS
 DP
 DR
@@ -98,6 +101,7 @@ DamagedRowsBeforeError
 Decode
 DecodeParms
 Default
+Desc
 DescendantFonts
 Descent
 Design
@@ -114,7 +118,9 @@ Dm
 Domain
 Dur
 E
+EF
 EarlyChange
+EmbeddedFiles
 Encode
 EncodedByteAlign
 Encoding
@@ -134,6 +140,7 @@ Fade
 Ff
 Fields
 FileAttachment
+Filespec
 Filter
 First
 FirstChar
@@ -229,6 +236,7 @@ Matte
 MaxLen
 MediaBox
 MissingWidth
+ModDate
 Movie
 N
 Name
@@ -262,6 +270,7 @@ Page
 PageMode
 Pages
 PaintType
+Params
 Parent
 Pattern
 PatternType
@@ -296,6 +305,7 @@ RunLengthDecode
 S
 SMask
 SMaskInData
+Schema
 Screen
 Separation
 Shading

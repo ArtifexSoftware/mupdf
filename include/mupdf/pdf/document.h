@@ -6,6 +6,7 @@ typedef struct pdf_lexbuf_large_s pdf_lexbuf_large;
 typedef struct pdf_xref_s pdf_xref;
 typedef struct pdf_crypt_s pdf_crypt;
 typedef struct pdf_ocg_descriptor_s pdf_ocg_descriptor;
+typedef struct pdf_portfolio_s pdf_portfolio;
 
 typedef struct pdf_page_s pdf_page;
 typedef struct pdf_annot_s pdf_annot;
@@ -244,6 +245,261 @@ void pdf_layer_config_ui_info(fz_context *ctx, pdf_document *doc, int ui, pdf_la
 void pdf_set_layer_config_as_default(fz_context *ctx, pdf_document *doc);
 
 /*
+	PDF portfolios (or collections) are embedded files. They can
+	be thought of as tables of information, with an embedded
+	file per row. For instance a PDF portfolio of an email box might
+	contain:
+
+			From	To	Cc	Date
+	message1.pdf	...	...	...	...
+	message2.pdf	...	...	...	...
+
+	etc. The details of the 'column headings' are known as the Schema.
+	This includes the order to use for the headings.
+
+	Each row in the table is a portfolio (or collection) entry.
+*/
+
+/*
+	pdf_count_portfolio_schema: Get the number of entries in the
+	portfolio schema used in this document.
+
+	doc: The document in question.
+*/
+int pdf_count_portfolio_schema(fz_context *ctx, pdf_document *doc);
+
+typedef enum
+{
+	PDF_SCHEMA_NUMBER,
+	PDF_SCHEMA_SIZE,
+	PDF_SCHEMA_TEXT,
+	PDF_SCHEMA_DATE,
+	PDF_SCHEMA_DESC,
+	PDF_SCHEMA_MODDATE,
+	PDF_SCHEMA_CREATIONDATE,
+	PDF_SCHEMA_FILENAME,
+	PDF_SCHEMA_UNKNOWN
+} pdf_portfolio_schema_type;
+
+typedef struct
+{
+	pdf_portfolio_schema_type type;
+	int visible;
+	int editable;
+	pdf_obj *name;
+} pdf_portfolio_schema;
+
+/*
+	pdf_portfolio_schema_info: Fetch information about a given
+	portfolio schema entry.
+
+	doc: The document in question.
+
+	entry: A value in the 0..n-1 range, where n is the
+	value returned from pdf_count_portfolio_schema.
+
+	info: Pointer to structure to fill in. Pointers within
+	this structure may be set to NULL if no information is
+	available.
+*/
+void pdf_portfolio_schema_info(fz_context *ctx, pdf_document *doc, int entry, pdf_portfolio_schema *info);
+
+/*
+	pdf_reorder_portfolio_schema: Reorder the portfolio schema.
+
+	doc: The document in question.
+
+	entry: A value in the 0..n-1 range, where n is the
+	value returned from pdf_count_portfolio_schema - the
+	position of the entry to move.
+
+	new_pos: A value in the 0..n-1 range, where n is the
+	value returned from pdf_count_portfolio_schema - the
+	position to move the entry to.
+*/
+void pdf_reorder_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, int new_pos);
+
+/*
+	pdf_rename_portfolio_schema: rename a given portfolio
+	schema entry.
+
+	doc: The document in question.
+
+	entry: The entry to renumber.
+
+	name: The new name for the portfolio schema
+
+	name_len: The byte length of the name.
+*/
+void pdf_rename_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, const char *name, int name_len);
+
+/*
+	pdf_delete_portfolio_schema: delete a given portfolio
+	schema entry.
+
+	doc: The document in question.
+
+	entry: The entry to delete.
+*/
+void pdf_delete_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry);
+
+/*
+	pdf_add_portfolio_schema: Add a new portfolio schema
+	entry.
+
+	doc: The document in question.
+
+	entry: The point in the ordering at which to insert the new
+	schema entry.
+
+	info: Details of the schema entry.
+*/
+void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, const pdf_portfolio_schema *info);
+
+/*
+	pdf_count_portfolio_entries: Get the number of portfolio entries
+	in this document.
+
+	doc: The document in question.
+*/
+int pdf_count_portfolio_entries(fz_context *ctx, pdf_document *doc);
+
+/*
+	pdf_portfolio_entry: Create a buffer containing
+	a decoded portfolio entry.
+
+	doc: The document in question.
+
+	entry: A value in the 0..m-1 range, where m is the
+	value returned from pdf_count_portfolio_entries.
+
+	Returns a buffer containing the decoded portfolio
+	entry. Ownership of the buffer passes to the caller.
+*/
+fz_buffer *pdf_portfolio_entry(fz_context *ctx, pdf_document *doc, int entry);
+
+/*
+	pdf_portfolio_entry_obj_name: Retrieve the object and
+	name of a given portfolio entry.
+
+	doc: The document in question.
+
+	entry: A value in the 0..m-1 range, where m is the
+	value returned from pdf_count_portfolio_entries.
+
+	name: Pointer to a place to store the pointer to the
+	object representing the name. This is a borrowed
+	reference - do not drop it.
+
+	Returns a pointer to the pdf_object representing the
+	object. This is a borrowed reference - do not drop
+	it.
+*/
+pdf_obj *pdf_portfolio_entry_obj_name(fz_context *ctx, pdf_document *doc, int entry, pdf_obj **name);
+
+/*
+	pdf_portfolio_entry_obj: Retrieve the object
+	representing a given portfolio entry.
+
+	doc: The document in question.
+
+	entry: A value in the 0..m-1 range, where m is the
+	value returned from pdf_count_portfolio_entries.
+
+	Returns a pointer to the pdf_object representing the
+	object. This is a borrowed reference - do not drop
+	it.
+*/
+pdf_obj *pdf_portfolio_entry_obj(fz_context *ctx, pdf_document *doc, int entry);
+
+/*
+	pdf_portfolio_entry_name: Retrieve the name of
+	a given portfolio entry.
+
+	doc: The document in question.
+
+	entry: A value in the 0..m-1 range, where m is the
+	value returned from pdf_count_portfolio_entries.
+
+	name: Pointer to a place to store the pointer to the
+	object representing the name. This is a borrowed
+	reference - do not drop it.
+
+	Returns a pointer to the pdf_object representing the
+	name of the entry. This is a borrowed reference - do not drop
+	it.
+*/
+pdf_obj *pdf_portfolio_entry_name(fz_context *ctx, pdf_document *doc, int entry);
+
+/*
+	pdf_portfolio_entry_info: Fetch information about a given
+	portfolio entry.
+
+	doc: The document in question.
+
+	entry: A value in the 0..m-1 range, where m is the
+	value returned from pdf_count_portfolio_entries.
+
+	info: Pointer to structure to fill in. Pointers within
+	this structure may be set to NULL if no information is
+	available.
+*/
+pdf_obj *pdf_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry, int schema_entry);
+
+/*
+	pdf_add_portfolio_entry: Add a new portfolio entry.
+
+	doc: The document in question.
+
+	name: The name to use for this entry (as used in the
+	PDF name tree for the collection).
+
+	name_len: The byte length of name.
+
+	desc: The description to use for this entry (as used
+	in the 'Desc' entry in the Collection entry).
+
+	desc_len: The byte length of desc.
+
+	filename: The filename to use for this entry (as used
+	in the 'F' entry in the collection entry).
+
+	filename_len: The byte length of filename.
+
+	unifilename: The filename to use for this entry (as used
+	in the 'UF' entry in the collection entry).
+
+	unifilename_len: The byte length of unifilename.
+
+	buf: The buffer containing the embedded file to add.
+
+	Returns the entry number for this new entry.
+*/
+int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
+				const char *name, int name_len,
+				const char *desc, int desc_len,
+				const char *filename, int filename_len,
+				const char *unifile, int unifile_len, fz_buffer *buf);
+
+/*
+	pdf_set_portfolio_entry_info: Set part of the entry
+	information for a given portfolio entry.
+
+	doc: The document in question.
+
+	entry: The portfolio entry to set information for.
+	In the range 0..m-1, where m is the value returned
+	from pdf_count_portfolio_entries.
+
+	schema_entry: Which schema entry to set (in the
+	range 0..n-1, where n is the value returned from
+	pdf_count_portfolio_schema.
+
+	data: The value to set.
+*/
+void pdf_set_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry, int schema_entry, pdf_obj *data);
+
+/*
 	pdf_update_page: update a page for the sake of changes caused by a call
 	to pdf_pass_event. pdf_update_page regenerates any appearance streams that
 	are out of date, checks for cases where different appearance streams
@@ -292,6 +548,7 @@ struct pdf_document_s
 	fz_off_t file_size;
 	pdf_crypt *crypt;
 	pdf_ocg_descriptor *ocg;
+	pdf_portfolio *portfolio;
 	pdf_hotspot hotspot;
 
 	int max_xref_len;

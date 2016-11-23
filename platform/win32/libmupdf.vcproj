@@ -2111,6 +2111,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\pdf\pdf-portfolio.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\pdf\pdf-repair.c"
 				>
 			</File>
@@ -2423,6 +2427,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\system.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\text-shaper.h"
 					>
 				</File>
 				<File
