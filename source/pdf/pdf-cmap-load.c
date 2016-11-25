@@ -52,7 +52,8 @@ pdf_load_embedded_cmap(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj)
 		}
 		else if (pdf_is_indirect(ctx, obj))
 		{
-			pdf_mark_obj(ctx, obj);
+			if (pdf_mark_obj(ctx, obj))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "recursive CMap");
 			fz_try(ctx)
 				usecmap = pdf_load_embedded_cmap(ctx, doc, obj);
 			fz_always(ctx)

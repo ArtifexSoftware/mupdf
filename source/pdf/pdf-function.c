@@ -1220,7 +1220,8 @@ load_stitching_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_
 
 	fz_try(ctx)
 	{
-		pdf_mark_obj(ctx, obj);
+		if (pdf_mark_obj(ctx, obj))
+			fz_throw(ctx, FZ_ERROR_GENERIC, "recursive function");
 		k = pdf_array_len(ctx, obj);
 
 		func->u.st.funcs = fz_malloc_array(ctx, k, sizeof(fz_function*));

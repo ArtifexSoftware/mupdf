@@ -259,7 +259,8 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 				fz_colorspace *cs;
 				fz_try(ctx)
 				{
-					pdf_mark_obj(ctx, obj);
+					if (pdf_mark_obj(ctx, obj))
+						fz_throw(ctx, FZ_ERROR_GENERIC, "recursive colorspace");
 					if (pdf_name_eq(ctx, name, PDF_NAME_ICCBased))
 						cs = load_icc_based(ctx, doc, pdf_array_get(ctx, obj, 1));
 
