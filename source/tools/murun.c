@@ -2929,10 +2929,7 @@ static int ffi_pdf_obj_put(js_State *J, void *obj, const char *key)
 
 	if (is_number(key, &idx)) {
 		fz_try(ctx)
-			if (idx == pdf_array_len(ctx, obj))
-				pdf_array_push(ctx, obj, val);
-			else
-				pdf_array_put(ctx, obj, idx, val);
+			pdf_array_put(ctx, obj, idx, val);
 		fz_always(ctx)
 			pdf_drop_obj(ctx, val);
 		fz_catch(ctx)

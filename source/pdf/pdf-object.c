@@ -694,7 +694,12 @@ pdf_array_put(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *item)
 	RESOLVE(obj);
 	if (!OBJ_IS_ARRAY(obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not an array (%s)", pdf_objkindstr(obj));
-	if (i < 0 || i >= ARRAY(obj)->len)
+	if (i == ARRAY(obj)->len)
+	{
+		pdf_array_push(ctx, obj, item);
+		return;
+	}
+	if (i < 0 || i > ARRAY(obj)->len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
 
 	if (!item)
