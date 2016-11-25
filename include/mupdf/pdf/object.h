@@ -101,7 +101,7 @@ int pdf_array_contains(fz_context *ctx, pdf_obj *array, pdf_obj *obj);
 int pdf_dict_len(fz_context *ctx, pdf_obj *dict);
 pdf_obj *pdf_dict_get_key(fz_context *ctx, pdf_obj *dict, int idx);
 pdf_obj *pdf_dict_get_val(fz_context *ctx, pdf_obj *dict, int idx);
-void pdf_dict_put_val_drop(fz_context *ctx, pdf_obj *obj, int i, pdf_obj *new_obj);
+void pdf_dict_put_val_null(fz_context *ctx, pdf_obj *obj, int idx);
 pdf_obj *pdf_dict_get(fz_context *ctx, pdf_obj *dict, pdf_obj *key);
 pdf_obj *pdf_dict_getp(fz_context *ctx, pdf_obj *dict, const char *path);
 pdf_obj *pdf_dict_getl(fz_context *ctx, pdf_obj *dict, ...);

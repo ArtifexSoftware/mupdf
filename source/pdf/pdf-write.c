@@ -608,7 +608,7 @@ static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pd
 		{
 			DEBUGGING_MARKING(indent(); printf("DICT[%d/%d] = %s\n", i, n, pdf_to_name(ctx, pdf_dict_get_key(ctx, obj, i))));
 			if (markobj(ctx, doc, opts, pdf_dict_get_val(ctx, obj, i)))
-				pdf_dict_put_val_drop(ctx, obj, i, pdf_new_null(ctx, doc));
+				pdf_dict_put_val_null(ctx, obj, i);
 		}
 	}
 
