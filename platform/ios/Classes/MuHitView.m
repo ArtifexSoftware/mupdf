@@ -54,7 +54,7 @@
 					linkPage[hitCount] = -1;
 					linkUrl[hitCount] = strdup(link->uri);
 				} else {
-					linkPage[hitCount] = fz_resolve_link(ctx, doc, link->uri);
+					linkPage[hitCount] = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
 					linkUrl[hitCount] = nil;
 				}
 				hitCount++;
