@@ -12,6 +12,8 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 	fz_buffer *buf = NULL;
 	fz_output *out = NULL;
 	fz_rect mediabox;
+	size_t len;
+	unsigned char *data;
 
 	fz_var(page);
 	fz_var(sheet);
@@ -55,7 +57,8 @@ NSString *textAsHtml(fz_document *doc, int pageNum)
 
 		out = NULL;
 
-		str = [[[NSString alloc] initWithBytes:buf->data length:buf->len encoding:NSUTF8StringEncoding] autorelease];
+		len = fz_buffer_storage(ctx, buf, &data);
+		str = [[[NSString alloc] initWithBytes:data length:len encoding:NSUTF8StringEncoding] autorelease];
 	}
 	fz_always(ctx)
 	{
