@@ -25,6 +25,7 @@ int search_page(fz_document *doc, int number, char *needle, fz_cookie *cookie)
 	fz_stext_page *text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
 	fz_device *dev = fz_new_stext_device(ctx, sheet, text, NULL);
 	fz_run_page(ctx, page, dev, &fz_identity, cookie);
+	fz_close_device(ctx, dev);
 	fz_drop_device(ctx, dev);
 
 	hit_count = fz_search_stext_page(ctx, text, needle, hit_bbox, nelem(hit_bbox));
