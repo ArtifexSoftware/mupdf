@@ -954,41 +954,47 @@ pdfinfo_info(fz_context *ctx, fz_output *out, char *filename, char *password, in
 	glo.ctx = ctx;
 
 	state = NO_FILE_OPENED;
-	while (argidx < argc)
+
+	fz_try(ctx)
 	{
-		if (state == NO_FILE_OPENED || !fz_is_page_range(ctx, argv[argidx]))
+		while (argidx < argc)
 		{
-			if (state == NO_INFO_GATHERED)
+			if (state == NO_FILE_OPENED || !fz_is_page_range(ctx, argv[argidx]))
 			{
-				showinfo(ctx, &glo, filename, show, "1-N");
+				if (state == NO_INFO_GATHERED)
+				{
+					showinfo(ctx, &glo, filename, show, "1-N");
+				}
+
+				closexref(ctx, &glo);
+
+				filename = argv[argidx];
+				fz_printf(ctx, out, "%s:\n", filename);
+				glo.doc = pdf_open_document(glo.ctx, filename);
+				if (pdf_needs_password(ctx, glo.doc))
+					if (!pdf_authenticate_password(ctx, glo.doc, password))
+						fz_throw(glo.ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
+				glo.pagecount = pdf_count_pages(ctx, glo.doc);
+
+				showglobalinfo(ctx, &glo);
+				state = NO_INFO_GATHERED;
+			}
+			else
+			{
+				showinfo(ctx, &glo, filename, show, argv[argidx]);
+				state = INFO_SHOWN;
 			}
 
-			closexref(ctx, &glo);
-
-			filename = argv[argidx];
-			fz_printf(ctx, out, "%s:\n", filename);
-			glo.doc = pdf_open_document(glo.ctx, filename);
-			if (pdf_needs_password(ctx, glo.doc))
-				if (!pdf_authenticate_password(ctx, glo.doc, password))
-					fz_throw(glo.ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
-			glo.pagecount = pdf_count_pages(ctx, glo.doc);
-
-			showglobalinfo(ctx, &glo);
-			state = NO_INFO_GATHERED;
-		}
-		else
-		{
-			showinfo(ctx, &glo, filename, show, argv[argidx]);
-			state = INFO_SHOWN;
+			argidx++;
 		}
 
-		argidx++;
+		if (state == NO_INFO_GATHERED)
+			showinfo(ctx, &glo, filename, show, "1-N");
 	}
-
-	if (state == NO_INFO_GATHERED)
-		showinfo(ctx, &glo, filename, show, "1-N");
-
-	closexref(ctx, &glo);
+	fz_always(ctx)
+		closexref(ctx, &glo);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 int pdfinfo_main(int argc, char **argv)
