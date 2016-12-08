@@ -125,8 +125,6 @@ void fz_show_glyph(fz_context *ctx, fz_text *text, fz_font *font, const fz_matri
 	trm: The transform to use. Will be updated according
 	to the advance of the string on exit.
 
-	glyph: The glyph id to add.
-
 	s: The utf-8 string to add.
 
 	wmode: 1 for vertical mode, 0 for horizontal.
