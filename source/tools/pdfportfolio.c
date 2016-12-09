@@ -197,6 +197,7 @@ int pdfportfolio_main(int argc, char **argv)
 	char *infile;
 	int exit_code = 0;
 	int do_save = 0;
+	int has_old_file = 0;
 	int c;
 
 	while ((c = fz_getopt(argc, argv, "p:o:O:")) != -1)
@@ -230,6 +231,7 @@ int pdfportfolio_main(int argc, char **argv)
 		if (pdf_needs_password(ctx, doc))
 			if (!pdf_authenticate_password(ctx, doc, password))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", infile);
+		has_old_file = 1;
 	}
 	else
 	{
@@ -299,6 +301,8 @@ int pdfportfolio_main(int argc, char **argv)
 	{
 		pdf_write_options opts;
 		pdf_parse_write_options(ctx, &opts, outopts);
+		if (has_old_file && infile == outfile)
+			 opts.do_incremental = 1;
 		pdf_save_document(ctx, doc, outfile, &opts);
 	}
 
