@@ -147,7 +147,7 @@ int pdfcreate_main(int argc, char **argv)
 {
 	pdf_write_options opts = { 0 };
 	char *output = "out.pdf";
-	char *flags = "z";
+	char *flags = "compress";
 	int i, c;
 
 	while ((c = fz_getopt(argc, argv, "o:O:")) != -1)
