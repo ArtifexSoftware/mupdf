@@ -797,6 +797,7 @@ pdf_array_delete(fz_context *ctx, pdf_obj *obj, int i)
 	if (i < 0 || i >= ARRAY(obj)->len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
 
+	prepare_object_for_alteration(ctx, obj, NULL);
 	pdf_drop_obj(ctx, ARRAY(obj)->items[i]);
 	ARRAY(obj)->items[i] = 0;
 	ARRAY(obj)->len--;
@@ -1059,6 +1060,7 @@ pdf_dict_put_val_null(fz_context *ctx, pdf_obj *obj, int idx)
 	if (idx < 0 || idx >= DICT(obj)->len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "index out of bounds");
 
+	prepare_object_for_alteration(ctx, obj, NULL);
 	pdf_drop_obj(ctx, DICT(obj)->items[idx].v);
 	DICT(obj)->items[idx].v = PDF_OBJ_NULL;
 }
