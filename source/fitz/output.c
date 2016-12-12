@@ -163,7 +163,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	/* Ensure we create a brand new file. We don't want to clobber our old file. */
 	if (!append)
 	{
-		if (remove(filename) < 0)
+		if (fz_remove(filename) < 0)
 			if (errno != ENOENT)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
 	}

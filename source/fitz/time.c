@@ -105,6 +105,25 @@ fz_fopen_utf8(const char *name, const char *mode)
 	return file;
 }
 
+int
+fz_remove_utf8(const char *name)
+{
+	wchar_t *wname;
+	int n;
+
+	wname = fz_wchar_from_utf8(name);
+	if (wname == NULL)
+	{
+		errno = ENOMEM;
+		return -1;
+	}
+
+	n = _wremove(wname);
+
+	free(wname);
+	return n;
+}
+
 char **
 fz_argv_from_wargv(int argc, wchar_t **wargv)
 {

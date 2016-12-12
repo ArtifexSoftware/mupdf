@@ -156,14 +156,15 @@ static int msvc_snprintf(char *str, size_t size, const char *fmt, ...)
 
 #define hypotf _hypotf
 
-FILE *fz_fopen_utf8(const char *name, const char *mode);
-
 #define fz_fopen fz_fopen_utf8
+#define fz_remove fz_remove_utf8
 
 char *fz_utf8_from_wchar(const wchar_t *s);
 wchar_t *fz_wchar_from_utf8(const char *s);
 
 FILE *fz_fopen_utf8(const char *name, const char *mode);
+int fz_remove_utf8(const char *name);
+
 char **fz_argv_from_wargv(int argc, wchar_t **wargv);
 void fz_free_argv(int argc, char **argv);
 
@@ -201,6 +202,9 @@ typedef int64_t fz_off_t;
 #else
 #ifndef fz_fopen
 #define fz_fopen fopen
+#endif
+#ifndef fz_remove
+#define fz_remove remove
 #endif
 #define fz_fseek fseek
 #define fz_ftell ftell
