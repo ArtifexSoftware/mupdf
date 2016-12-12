@@ -1,4 +1,4 @@
-#include "mupdf/pdf.h"
+#include "pdf-imp.h"
 
 #include <zlib.h>
 

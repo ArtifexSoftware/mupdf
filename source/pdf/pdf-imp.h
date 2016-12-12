@@ -3,6 +3,12 @@
 
 #include "mupdf/pdf.h"
 
+/* Private object functions. */
+
+void pdf_dict_put_val_null(fz_context *ctx, pdf_obj *obj, int idx);
+
+/* Private OCG functions. */
+
 void pdf_read_ocg(fz_context *ctx, pdf_document *doc);
 void pdf_drop_ocg(fz_context *ctx, pdf_document *doc);
 
