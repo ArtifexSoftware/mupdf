@@ -174,11 +174,6 @@ pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot)
 	if (i >= 0)
 		pdf_array_delete(ctx, annot_arr, i);
 
-	if (pdf_is_indirect(ctx, annot_arr))
-		pdf_update_object(ctx, doc, pdf_to_num(ctx, annot_arr), annot_arr);
-	else
-		pdf_dict_put(ctx, page->obj, PDF_NAME_Annots, annot_arr);
-
 	/* The garbage collection pass when saving will remove the annot object,
 	 * removing it here may break files if multiple pages use the same annot. */
 
