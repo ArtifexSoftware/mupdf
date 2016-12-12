@@ -160,6 +160,14 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	if (!strcmp(filename, "/dev/null") || !fz_strcasecmp(filename, "nul:"))
 		return NULL;
 
+	/* Ensure we create a brand new file. We don't want to clobber our old file. */
+	if (!append)
+	{
+		if (remove(filename) < 0)
+			if (errno != ENOENT)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
+	}
+
 	file = fz_fopen(filename, append ? "ab" : "wb");
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
