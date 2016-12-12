@@ -3066,6 +3066,8 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 	if (!in_opts)
 		in_opts = &opts_defaults;
 
+	if (in_opts->do_incremental && !doc->file)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes on a new document");
 	if (in_opts->do_incremental && doc->repair_attempted)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes on a repaired file");
 	if (in_opts->do_incremental && in_opts->do_garbage)
