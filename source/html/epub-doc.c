@@ -59,6 +59,7 @@ epub_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest, float *x
 					if (yp) *yp = y - page * ch->page_h;
 					return ch->start + page;
 				}
+				return -1;
 			}
 			return ch->start;
 		}

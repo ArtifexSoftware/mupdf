@@ -590,7 +590,11 @@ static void do_links(fz_link *link, int xofs, int yofs)
 					open_browser(link->uri);
 				else
 				{
-					jump_to_page(fz_resolve_link(ctx, doc, link->uri, NULL, NULL));
+					int p = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
+					if (p >= 0)
+						jump_to_page(p);
+					else
+						fz_warn(ctx, "cannot find link destination '%s'", link->uri);
 					ui_needs_update = 1;
 				}
 			}
