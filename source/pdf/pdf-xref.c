@@ -1968,6 +1968,7 @@ object_updated:
 			{
 				pdf_repair_xref(ctx, doc);
 				pdf_prime_xref_index(ctx, doc);
+				pdf_repair_obj_stms(ctx, doc);
 			}
 			fz_catch(ctx)
 			{
