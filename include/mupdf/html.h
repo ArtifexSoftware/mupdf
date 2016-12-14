@@ -191,6 +191,8 @@ enum
 struct fz_html_s
 {
 	fz_pool *pool; /* pool allocator for this html tree */
+	float page_w, page_h;
+	float page_margin[4];
 	fz_html_box *root;
 };
 
@@ -276,10 +278,10 @@ void fz_add_css_font_faces(fz_context *ctx, fz_html_font_set *set, fz_archive *z
 
 fz_html *fz_parse_html(fz_context *ctx, fz_html_font_set *htx, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css);
 void fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em);
-void fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *html, float page_top, float page_bot);
+void fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *html, int page);
 
 float fz_find_html_target(fz_context *ctx, fz_html *html, const char *id);
-fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, int page_h, const char *base_uri);
+fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *base_uri);
 void fz_drop_html(fz_context *ctx, fz_html *html);
 
 #endif

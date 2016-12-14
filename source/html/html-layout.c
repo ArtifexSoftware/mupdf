@@ -1865,23 +1865,25 @@ static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, fl
 }
 
 void
-fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *html, float page_top, float page_bot)
+fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *html, int page)
 {
 	fz_matrix local_ctm = *ctm;
 	hb_buffer_t *hb_buf = NULL;
 	int unlocked = 0;
+	float page_top = page * html->page_h;
+	float page_bot = (page + 1) * html->page_h;
 
 	fz_var(hb_buf);
 	fz_var(unlocked);
 
-	hb_lock(ctx);
+	fz_pre_translate(&local_ctm, html->page_margin[L], html->page_margin[T] - page_top);
 
+	hb_lock(ctx);
 	fz_try(ctx)
 	{
 		hb_buf = hb_buffer_create();
 		hb_unlock(ctx);
 		unlocked = 1;
-		fz_pre_translate(&local_ctm, 0, -page_top);
 		draw_block_box(ctx, html->root, page_top, page_bot, dev, &local_ctm, hb_buf);
 	}
 	fz_always(ctx)
@@ -2014,11 +2016,24 @@ static fz_link *load_link_box(fz_context *ctx, fz_html_box *box, fz_link *head, 
 }
 
 fz_link *
-fz_load_html_links(fz_context *ctx, fz_html *html, int page, int page_h, const char *file)
+fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *file)
 {
+	fz_link *link, *head;
 	char dir[2048];
 	fz_dirname(dir, file, sizeof dir);
-	return load_link_box(ctx, html->root, NULL, page, page_h, dir, file);
+
+	head = load_link_box(ctx, html->root, NULL, page, html->page_h, dir, file);
+
+	for (link = head; link; link = link->next)
+	{
+		/* Adjust for page margins */
+		link->rect.x0 += html->page_margin[L];
+		link->rect.x1 += html->page_margin[L];
+		link->rect.y0 += html->page_margin[T];
+		link->rect.y1 += html->page_margin[T];
+	}
+
+	return head;
 }
 
 static fz_html_flow *
@@ -2328,6 +2343,14 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 	fz_var(hb_buf);
 	fz_var(unlocked);
 
+	html->page_margin[T] = fz_from_css_number(html->root->style.margin[T], em, em);
+	html->page_margin[B] = fz_from_css_number(html->root->style.margin[B], em, em);
+	html->page_margin[L] = fz_from_css_number(html->root->style.margin[L], em, em);
+	html->page_margin[R] = fz_from_css_number(html->root->style.margin[R], em, em);
+
+	html->page_w = w - html->page_margin[L] - html->page_margin[R];
+	html->page_h = h - html->page_margin[T] - html->page_margin[B];
+
 	hb_lock(ctx);
 
 	fz_try(ctx)
@@ -2337,12 +2360,12 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 		hb_unlock(ctx);
 
 		box->em = em;
-		box->w = w;
+		box->w = html->page_w;
 		box->h = 0;
 
 		if (box->down)
 		{
-			layout_block(ctx, box->down, box, h, 0, hb_buf);
+			layout_block(ctx, box->down, box, html->page_h, 0, hb_buf);
 			box->h = box->down->h;
 		}
 	}

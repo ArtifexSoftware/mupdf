@@ -10,8 +10,6 @@ struct html_document_s
 	fz_document super;
 	fz_archive *zip;
 	fz_html_font_set *set;
-	float page_w, page_h, em;
-	float page_margin[4];
 	fz_html *html;
 };
 
@@ -41,8 +39,8 @@ htdoc_resolve_link(fz_context *ctx, fz_document *doc_, const char *dest, float *
 		float y = fz_find_html_target(ctx, doc->html, s+1);
 		if (y >= 0)
 		{
-			int page = y / doc->page_h;
-			if (yp) *yp = y - page * doc->page_h;
+			int page = y / doc->html->page_h;
+			if (yp) *yp = y - page * doc->html->page_h;
 			return page;
 		}
 	}
@@ -54,7 +52,7 @@ static int
 htdoc_count_pages(fz_context *ctx, fz_document *doc_)
 {
 	html_document *doc = (html_document*)doc_;
-	int count = ceilf(doc->html->root->h / doc->page_h);
+	int count = ceilf(doc->html->root->h / doc->html->page_h);
 	return count;
 }
 
@@ -63,19 +61,7 @@ htdoc_layout(fz_context *ctx, fz_document *doc_, float w, float h, float em)
 {
 	html_document *doc = (html_document*)doc_;
 
-	if (doc->html && doc->html->root)
-	{
-		doc->page_margin[T] = fz_from_css_number(doc->html->root->style.margin[T], em, em);
-		doc->page_margin[B] = fz_from_css_number(doc->html->root->style.margin[B], em, em);
-		doc->page_margin[L] = fz_from_css_number(doc->html->root->style.margin[L], em, em);
-		doc->page_margin[R] = fz_from_css_number(doc->html->root->style.margin[R], em, em);
-	}
-
-	doc->page_w = w - doc->page_margin[L] - doc->page_margin[R];
-	doc->page_h = h - doc->page_margin[T] - doc->page_margin[B];
-	doc->em = em;
-
-	fz_layout_html(ctx, doc->html, doc->page_w, doc->page_h, doc->em);
+	fz_layout_html(ctx, doc->html, w, h, em);
 }
 
 static void
@@ -90,8 +76,8 @@ htdoc_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 	html_document *doc = page->doc;
 	bbox->x0 = 0;
 	bbox->y0 = 0;
-	bbox->x1 = doc->page_w + doc->page_margin[L] + doc->page_margin[R];
-	bbox->y1 = doc->page_h + doc->page_margin[T] + doc->page_margin[B];
+	bbox->x1 = doc->html->page_w + doc->html->page_margin[L] + doc->html->page_margin[R];
+	bbox->y1 = doc->html->page_h + doc->html->page_margin[T] + doc->html->page_margin[B];
 	return bbox;
 }
 
@@ -100,12 +86,7 @@ htdoc_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix 
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
-	fz_matrix local_ctm = *ctm;
-	int n = page->number;
-
-	fz_pre_translate(&local_ctm, doc->page_margin[L], doc->page_margin[T]);
-
-	fz_draw_html(ctx, dev, &local_ctm, doc->html, n * doc->page_h, (n+1) * doc->page_h);
+	fz_draw_html(ctx, dev, ctm, doc->html, page->number);
 }
 
 static fz_link *
@@ -113,20 +94,7 @@ htdoc_load_links(fz_context *ctx, fz_page *page_)
 {
 	html_page *page = (html_page*)page_;
 	html_document *doc = page->doc;
-	fz_link *head, *link;
-
-	head = fz_load_html_links(ctx, doc->html, page->number, doc->page_h, "");
-	for (link = head; link; link = link->next)
-	{
-		link->doc = doc;
-
-		/* Adjust for page margins */
-		link->rect.x0 += doc->page_margin[L];
-		link->rect.x1 += doc->page_margin[L];
-		link->rect.y0 += doc->page_margin[T];
-		link->rect.y1 += doc->page_margin[T];
-	}
-	return head;
+	return fz_load_html_links(ctx, doc->html, page->number, "");
 }
 
 static fz_page *
