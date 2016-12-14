@@ -343,42 +343,52 @@ fz_new_stext_page_from_page_number(fz_context *ctx, fz_document *doc, int number
 int
 fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_rect *hit_bbox, int hit_max)
 {
-	fz_stext_sheet *sheet;
-	fz_stext_page *text;
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text = NULL;
 	int count;
 
-	sheet = fz_new_stext_sheet(ctx);
+	fz_var(sheet);
+	fz_var(text);
+
 	fz_try(ctx)
 	{
+		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page_from_display_list(ctx, list, sheet, NULL);
 		count = fz_search_stext_page(ctx, text, needle, hit_bbox, hit_max);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_stext_page(ctx, text);
 		fz_drop_stext_sheet(ctx, sheet);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-	fz_drop_stext_page(ctx, text);
 	return count;
 }
 
 int
 fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_rect *hit_bbox, int hit_max)
 {
-	fz_stext_sheet *sheet;
-	fz_stext_page *text;
+	fz_stext_sheet *sheet = NULL;
+	fz_stext_page *text = NULL;
 	int count;
 
-	sheet = fz_new_stext_sheet(ctx);
+	fz_var(sheet);
+	fz_var(text);
+
 	fz_try(ctx)
 	{
+		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page_from_page(ctx, page, sheet, NULL);
 		count = fz_search_stext_page(ctx, text, needle, hit_bbox, hit_max);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_stext_page(ctx, text);
 		fz_drop_stext_sheet(ctx, sheet);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-	fz_drop_stext_page(ctx, text);
 	return count;
 }
 
