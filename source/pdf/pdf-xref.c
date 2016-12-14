@@ -20,14 +20,14 @@ static inline int iswhite(int ch)
  * xref tables
  */
 
-static void pdf_drop_xref_sections(fz_context *ctx, pdf_document *doc)
+static void pdf_drop_xref_sections_imp(fz_context *ctx, pdf_document *doc, pdf_xref *xref_sections, int num_xref_sections)
 {
 	pdf_unsaved_sig *usig;
 	int x, e;
 
-	for (x = 0; x < doc->num_xref_sections; x++)
+	for (x = 0; x < num_xref_sections; x++)
 	{
-		pdf_xref *xref = &doc->xref_sections[x];
+		pdf_xref *xref = &xref_sections[x];
 		pdf_xref_subsec *sub = xref->subsec;
 
 		while (sub != NULL)
@@ -60,7 +60,16 @@ static void pdf_drop_xref_sections(fz_context *ctx, pdf_document *doc)
 		}
 	}
 
-	fz_free(ctx, doc->xref_sections);
+	fz_free(ctx, xref_sections);
+}
+
+static void pdf_drop_xref_sections(fz_context *ctx, pdf_document *doc)
+{
+	pdf_drop_xref_sections_imp(ctx, doc, doc->saved_xref_sections, doc->saved_num_xref_sections);
+	pdf_drop_xref_sections_imp(ctx, doc, doc->xref_sections, doc->num_xref_sections);
+
+	doc->saved_xref_sections = NULL;
+	doc->saved_num_xref_sections = 0;
 	doc->xref_sections = NULL;
 	doc->num_xref_sections = 0;
 	doc->num_incremental_sections = 0;
@@ -534,6 +543,36 @@ void pdf_replace_xref(fz_context *ctx, pdf_document *doc, pdf_xref_entry *entrie
 		pdf_drop_obj(ctx, trailer);
 		fz_rethrow(ctx);
 	}
+}
+
+void pdf_forget_xref(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
+
+	if (doc->saved_xref_sections)
+		pdf_drop_xref_sections_imp(ctx, doc, doc->saved_xref_sections, doc->saved_num_xref_sections);
+
+	doc->saved_xref_sections = doc->xref_sections;
+	doc->saved_num_xref_sections = doc->num_xref_sections;
+
+	doc->startxref = 0;
+	doc->num_xref_sections = 0;
+	doc->num_incremental_sections = 0;
+	doc->xref_base = 0;
+	doc->disallow_new_increments = 0;
+
+	fz_try(ctx)
+	{
+		pdf_get_populating_xref_entry(ctx, doc, 0);
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, trailer);
+		fz_rethrow(ctx);
+	}
+
+	/* Set the trailer of the final xref section. */
+	doc->xref_sections[0].trailer = trailer;
 }
 
 /*
@@ -2664,6 +2703,7 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		doc->xref_base = 0;
 		doc->disallow_new_increments = 0;
 		pdf_get_populating_xref_entry(ctx, doc, 0);
+
 		trailer = pdf_new_dict(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, 3));
 		o = root = pdf_new_dict(ctx, doc, 2);
@@ -2678,6 +2718,7 @@ pdf_document *pdf_create_document(fz_context *ctx)
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Count, pdf_new_int(ctx, doc, 0));
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, pdf_new_array(ctx, doc, 1));
+
 		/* Set the trailer of the final xref section. */
 		doc->xref_sections[0].trailer = trailer;
 	}

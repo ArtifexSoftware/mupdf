@@ -7,6 +7,8 @@
 
 void pdf_dict_put_val_null(fz_context *ctx, pdf_obj *obj, int idx);
 
+void pdf_forget_xref(fz_context *ctx, pdf_document *doc);
+
 /* Private OCG functions. */
 
 void pdf_read_ocg(fz_context *ctx, pdf_document *doc);
