@@ -1869,12 +1869,18 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 {
 	fz_matrix local_ctm = *ctm;
 	hb_buffer_t *hb_buf = NULL;
+	fz_html_box *box;
 	int unlocked = 0;
 	float page_top = page * html->page_h;
 	float page_bot = (page + 1) * html->page_h;
 
 	fz_var(hb_buf);
 	fz_var(unlocked);
+
+	draw_rect(ctx, dev, ctm, html->root->style.background_color,
+			0, 0,
+			html->page_w + html->page_margin[L] + html->page_margin[R],
+			html->page_h + html->page_margin[T] + html->page_margin[B]);
 
 	fz_pre_translate(&local_ctm, html->page_margin[L], html->page_margin[T] - page_top);
 
@@ -1884,7 +1890,9 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 		hb_buf = hb_buffer_create();
 		hb_unlock(ctx);
 		unlocked = 1;
-		draw_block_box(ctx, html->root, page_top, page_bot, dev, &local_ctm, hb_buf);
+
+		for (box = html->root->down; box; box = box->next)
+			draw_block_box(ctx, box, page_top, page_bot, dev, &local_ctm, hb_buf);
 	}
 	fz_always(ctx)
 	{
