@@ -38,6 +38,8 @@
  */
 
 #include <stddef.h> /* For size_t */
+#include "mupdf/fitz.h" /* For fz_context/fz_document/fz_page */
+
 
 /** Error type returned from most MuOffice functions
  *
@@ -323,6 +325,24 @@ MuError MuOfficeLib_loadDocument(MuOfficeLib              *mu,
 
 
 /**
+ * Perform MuPDF native operations on a given MuOfficeLib
+ * instance.
+ *
+ * The function is called with an fz_context value that can
+ * be safely used (i.e. the context is cloned/dropped
+ * appropriately around the call). The function should signal
+ * errors by fz_throw-ing.
+ *
+ * @param mu           the MuOfficeLib instance.
+ * @param fn           the function to call to run the operations.
+ * @param arg          Opaque data pointer.
+ *
+ * @return             error indication - 0 for success
+ */
+MuError MuOfficeLib_run(MuOfficeLib *mu, void (*fn)(fz_context *ctx, void *arg), void *arg);
+
+
+/**
  * Provide the password for a document
  *
  * This function should be called to provide a password with a document
@@ -430,6 +450,33 @@ MuError MuOfficeDoc_getPage(	MuOfficeDoc          *doc,
 
 
 /**
+ * Perform MuPDF native operations on a given document.
+ *
+ * The function is called with fz_context and fz_document
+ * values that can be safely used (i.e. the context is
+ * cloned/dropped appropriately around the function, and
+ * locking is used to ensure that no other threads are
+ * simultaneously using the document). Functions can
+ * signal errors by fz_throw-ing.
+ *
+ * Due to the locking, it is best to ensure that as little
+ * time is taken here as possible (i.e. if you fetch some
+ * data and then spend a long time processing it, it is
+ * probably best to fetch the data using MuOfficeDoc_run
+ * and then process it outside). This avoids potentially
+ * blocking the UI.
+ *
+ * @param doc          the document object.
+ * @param fn           the function to call with fz_context/fz_document
+ *                     values.
+ * @param arg          Opaque data pointer.
+ *
+ * @return             error indication - 0 for success
+ */
+MuError MuOfficeDoc_run(MuOfficeDoc *doc, void (*fn)(fz_context *ctx, fz_document *doc, void *arg), void *arg);
+
+
+/**
  * Destroy a page object
  *
  * Note this does not delete or remove the page from the document.
@@ -498,6 +545,33 @@ MuError MuOfficePage_getSizeForZoom(	MuOfficePage *page,
 					float         zoom,
 					int          *pWidth,
 					int          *pHeight);
+
+
+/**
+ * Perform MuPDF native operations on a given page.
+ *
+ * The function is called with fz_context and fz_page
+ * values that can be safely used (i.e. the context is
+ * cloned/dropped appropriately around the function, and
+ * locking is used to ensure that no other threads are
+ * simultaneously using the document). Functions can
+ * signal errors by fz_throw-ing.
+ *
+ * Due to the locking, it is best to ensure that as little
+ * time is taken here as possible (i.e. if you fetch some
+ * data and then spend a long time processing it, it is
+ * probably best to fetch the data using MuOfficePage_run
+ * and then process it outside). This avoids potentially
+ * blocking the UI.
+ *
+ * @param page         the page object.
+ * @param fn           the function to call with fz_context/fz_document
+ *                     values.
+ * @param arg          Opaque data pointer.
+ *
+ * @return             error indication - 0 for success
+ */
+MuError MuOfficePage_run(MuOfficePage *page, void (*fn)(fz_context *ctx, fz_page *page, void *arg), void *arg);
 
 
 /**
