@@ -61,7 +61,7 @@ void mu_unlock_mutex(mu_mutex *mutex)
 int mu_create_semaphore(mu_semaphore *sem)
 {
 	sem->handle = CreateSemaphore(NULL, 0, 1, NULL);
-	return (sem->handle != NULL);
+	return (sem->handle == NULL);
 }
 
 void mu_destroy_semaphore(mu_semaphore *sem)
@@ -103,7 +103,7 @@ int mu_create_thread(mu_thread *th, mu_thread_fn *fn, void *arg)
 	th->arg = arg;
 	th->handle = CreateThread(NULL, 0, thread_starter, th, 0, NULL);
 
-	return (th->handle != NULL);
+	return (th->handle == NULL);
 }
 
 void mu_destroy_thread(mu_thread *th)
