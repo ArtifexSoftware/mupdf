@@ -104,98 +104,91 @@ static void muoffice_lock(void *user, int lock);
 
 static void muoffice_unlock(void *user, int lock);
 
-static fz_locks_context muoffice_locks =
+struct MuOfficeLib_s
 {
-	/* void *user; */
-	NULL,
-
-	/* void (*lock)(void *user, int lock); */
-	muoffice_lock,
-
-	/* void (*unlock)(void *user, int lock); */
-	muoffice_unlock
+	fz_context *ctx;
+	mu_mutex mutexes[FZ_LOCK_MAX];
+	fz_locks_context locks;
 };
-
-#define LOCKS_INIT() init_muoffice_locks()
-#define LOCKS_FIN() fin_muoffice_locks()
-
-static mu_mutex mutexes[FZ_LOCK_MAX];
 
 static void muoffice_lock(void *user, int lock)
 {
-	mu_lock_mutex(&mutexes[lock]);
+	MuOfficeLib *mu = (MuOfficeLib *)user;
+
+	mu_lock_mutex(&mu->mutexes[lock]);
 }
 
 static void muoffice_unlock(void *user, int lock)
 {
-	mu_unlock_mutex(&mutexes[lock]);
+	MuOfficeLib *mu = (MuOfficeLib *)user;
+
+	mu_unlock_mutex(&mu->mutexes[lock]);
 }
 
-static void fin_muoffice_locks(void)
+static void fin_muoffice_locks(MuOfficeLib *mu)
 {
 	int i;
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
-		mu_destroy_mutex(&mutexes[i]);
+		mu_destroy_mutex(&mu->mutexes[i]);
 }
 
-static fz_locks_context *init_muoffice_locks(void)
+static fz_locks_context *init_muoffice_locks(MuOfficeLib *mu)
 {
 	int i;
 	int failed = 0;
 
 	for (i = 0; i < FZ_LOCK_MAX; i++)
-		failed |= mu_create_mutex(&mutexes[i]);
+		failed |= mu_create_mutex(&mu->mutexes[i]);
 
 	if (failed)
 	{
-		fin_muoffice_locks();
+		fin_muoffice_locks(mu);
 		return NULL;
 	}
 
-	return &muoffice_locks;
-}
+	mu->locks.user = mu;
+	mu->locks.lock = muoffice_lock;
+	mu->locks.unlock = muoffice_unlock;
 
-struct MuOfficeLib_s
-{
-	fz_context *ctx;
-};
+	return &mu->locks;
+}
 
 
 MuError MuOfficeLib_create(MuOfficeLib **pMu)
 {
-	MuOfficeLib *inst;
+	MuOfficeLib *mu;
 	fz_locks_context *locks;
 
 	if (pMu == NULL)
 		return MuOfficeDocErrorType_IllegalArgument;
 
-	locks = init_muoffice_locks();
-	if (locks == NULL)
+	mu = Pal_Mem_calloc(1, sizeof(MuOfficeLib));
+	if (mu == NULL)
 		return MuOfficeDocErrorType_OutOfMemory;
 
-	inst = Pal_Mem_calloc(1, sizeof(MuOfficeLib));
-	if (inst == NULL)
+	locks = init_muoffice_locks(mu);
+	if (locks == NULL)
 		goto Fail;
 
-	inst->ctx = fz_new_context(&muoffice_alloc, locks, FZ_STORE_DEFAULT);
-	if (inst->ctx == NULL)
+	mu->ctx = fz_new_context(&muoffice_alloc, locks, FZ_STORE_DEFAULT);
+	if (mu->ctx == NULL)
 		goto Fail;
 
-	fz_try(inst->ctx)
-		fz_register_document_handlers(inst->ctx);
-	fz_catch(inst->ctx)
+	fz_try(mu->ctx)
+		fz_register_document_handlers(mu->ctx);
+	fz_catch(mu->ctx)
 		goto Fail;
 
-	*pMu = inst;
+	*pMu = mu;
 
 	return MuOfficeDocErrorType_NoError;
 
 Fail:
-	if (inst)
+	if (mu)
 	{
-		fin_muoffice_locks();
-		Pal_Mem_free(inst);
+		fin_muoffice_locks(mu);
+		Pal_Mem_free(mu);
 	}
 	return MuOfficeDocErrorType_OutOfMemory;
 }
@@ -203,16 +196,17 @@ Fail:
 /**
  * Destroy a MuOfficeLib instance
  *
- * @param so  the instance to destroy
+ * @param mu  the instance to destroy
  */
-void MuOfficeLib_destroy(MuOfficeLib *so)
+void MuOfficeLib_destroy(MuOfficeLib *mu)
 {
-	if (so == NULL)
+	if (mu == NULL)
 		return;
 
-	fz_drop_context(so->ctx);
+	fz_drop_context(mu->ctx);
+	fin_muoffice_locks(mu);
 
-	Pal_Mem_free(so);
+	Pal_Mem_free(mu);
 }
 
 /**
