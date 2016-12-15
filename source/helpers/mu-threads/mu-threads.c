@@ -113,6 +113,7 @@ void mu_destroy_thread(mu_thread *th)
 	/* We can't sensibly handle this failing */
 	(void)WaitForSingleObject(th->handle, INFINITE);
 	(void)CloseHandle(th->handle);
+	th->handle = NULL;
 }
 
 int mu_create_mutex(mu_mutex *mutex)
