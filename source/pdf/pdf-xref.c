@@ -139,7 +139,7 @@ pdf_obj *pdf_trailer(fz_context *ctx, pdf_document *doc)
 	/* Return the document's final trailer */
 	pdf_xref *xref = &doc->xref_sections[0];
 
-	return xref->trailer;
+	return xref ? xref->trailer : NULL;
 }
 
 void pdf_set_populating_xref_trailer(fz_context *ctx, pdf_document *doc, pdf_obj *trailer)
