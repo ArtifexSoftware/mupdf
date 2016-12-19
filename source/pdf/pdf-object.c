@@ -1584,7 +1584,7 @@ void
 pdf_sort_dict(fz_context *ctx, pdf_obj *obj)
 {
 	RESOLVE(obj);
-	if (OBJ_IS_DICT(obj))
+	if (!OBJ_IS_DICT(obj))
 		return;
 	if (!(obj->flags & PDF_FLAGS_SORTED))
 	{
