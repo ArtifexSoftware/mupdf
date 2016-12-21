@@ -394,7 +394,9 @@ fz_pixmap *
 fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 {
 	struct info info = { 0 };
-	fz_pixmap *image;
+	fz_pixmap *image = NULL;
+
+	fz_var(image);
 
 	jxr_read_image(ctx, data, size, &info, 0);
 
@@ -405,18 +407,10 @@ fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 
 	fz_try(ctx)
 	{
-
 		fz_unpack_tile(ctx, image, info.samples, fz_colorspace_n(ctx, info.cspace) + 1, 8, info.stride, 0);
-
 		if (info.has_alpha && !info.has_premul)
 		{
-			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
-			if (info.comps >= 4)
-			{
-				fz_pixmap *rgb = fz_convert_pixmap(ctx, image, fz_device_rgb(ctx), 1);
-				fz_drop_pixmap(ctx, image);
-				image = rgb;
-			}
+			image = fz_ensure_pixmap_is_additive(ctx, image);
 			fz_premultiply_pixmap(ctx, image);
 		}
 	}

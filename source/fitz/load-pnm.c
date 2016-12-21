@@ -427,6 +427,8 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	int minval = 1;
 	int maxval = 65535;
 
+	fz_var(img);
+
 	p = pam_binary_read_header(ctx, pnm, p, e);
 
 	if (pnm->tupletype == PAM_UNKNOWN)
@@ -504,75 +506,76 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		int w, h, n;
 
 		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, pnm->alpha);
-		dp = img->samples;
-
-		w = img->w;
-		h = img->h;
-		n = img->n;
-
-		if (pnm->maxval == 1 && e - p < w * h * n)
+		fz_try(ctx)
 		{
-			if (e - p < w * h * n / 8)
+			dp = img->samples;
+
+			w = img->w;
+			h = img->h;
+			n = img->n;
+
+			if (pnm->maxval == 1 && e - p < w * h * n)
+			{
+				if (e - p < w * h * n / 8)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
+				packed = 1;
+			}
+			else if (e - p < w * h * n * (pnm->maxval < 256 ? 1 : 2))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
-			packed = 1;
-		}
-		else if (e - p < w * h * n * (pnm->maxval < 256 ? 1 : 2))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "truncated image");
 
-		if (pnm->maxval == 255)
-			memcpy(dp, p, w * h * n);
-		else if (bitmap && packed)
-		{
-			/* some encoders incorrectly pack bits into bytes and inverts the image */
-			for (y = 0; y < h; y++)
-				for (x = 0; x < w; x++)
-				{
-					for (k = 0; k < n; k++)
+			if (pnm->maxval == 255)
+				memcpy(dp, p, w * h * n);
+			else if (bitmap && packed)
+			{
+				/* some encoders incorrectly pack bits into bytes and inverts the image */
+				for (y = 0; y < h; y++)
+					for (x = 0; x < w; x++)
 					{
-						*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0x00 : 0xff;
-						if ((x & 0x7) == 7)
+						for (k = 0; k < n; k++)
+						{
+							*dp++ = (*p & (1 << (7 - (x & 0x7)))) ? 0x00 : 0xff;
+							if ((x & 0x7) == 7)
+								p++;
+						}
+						if (w & 0x7)
 							p++;
 					}
-					if (w & 0x7)
-						p++;
-				}
-		}
-		else if (bitmap)
-		{
-			for (y = 0; y < h; y++)
-				for (x = 0; x < w; x++)
-					for (k = 0; k < n; k++)
-						*dp++ = *p++ ? 0xff : 0x00;
-		}
-		else if (pnm->maxval < 255)
-		{
-			for (y = 0; y < h; y++)
-				for (x = 0; x < w; x++)
-					for (k = 0; k < n; k++)
-						*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
-		}
-		else
-		{
-			for (y = 0; y < h; y++)
-				for (x = 0; x < w; x++)
-					for (k = 0; k < n; k++)
-					{
-						*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
-						p += 2;
-					}
-		}
-
-		if (pnm->alpha)
-		{
-			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
-			if (img->n > 4)
+			}
+			else if (bitmap)
 			{
-				fz_pixmap *rgb = fz_convert_pixmap(ctx, img, fz_device_rgb(ctx), 1);
-				fz_drop_pixmap(ctx, img);
-				img = rgb;
+				for (y = 0; y < h; y++)
+					for (x = 0; x < w; x++)
+						for (k = 0; k < n; k++)
+							*dp++ = *p++ ? 0xff : 0x00;
+			}
+			else if (pnm->maxval < 255)
+			{
+				for (y = 0; y < h; y++)
+					for (x = 0; x < w; x++)
+						for (k = 0; k < n; k++)
+							*dp++ = map_color(ctx, *p++, pnm->maxval, 255);
+			}
+			else
+			{
+				for (y = 0; y < h; y++)
+					for (x = 0; x < w; x++)
+						for (k = 0; k < n; k++)
+						{
+							*dp++ = map_color(ctx, (p[0] << 8) | p[1], pnm->maxval, 255);
+							p += 2;
+						}
 			}
 
-			fz_premultiply_pixmap(ctx, img);
+			if (pnm->alpha)
+			{
+				img = fz_ensure_pixmap_is_additive(ctx, img);
+				fz_premultiply_pixmap(ctx, img);
+			}
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_pixmap(ctx, img);
+			fz_rethrow(ctx);
 		}
 	}
 

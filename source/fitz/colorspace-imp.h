@@ -7,6 +7,7 @@ struct fz_colorspace_s
 	size_t size;
 	char name[16];
 	int n;
+	int is_subtractive;
 	fz_colorspace_convert_fn *to_rgb;
 	fz_colorspace_convert_fn *from_rgb;
 	fz_colorspace_destruct_fn *free_data;

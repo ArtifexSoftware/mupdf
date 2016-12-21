@@ -15,13 +15,14 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int n, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, char *name, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
 	cs->size = sizeof(fz_colorspace) + size;
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
+	cs->is_subtractive = is_subtractive;
 	cs->to_rgb = to_rgb;
 	cs->from_rgb = from_rgb;
 	cs->free_data = destruct;
@@ -215,11 +216,17 @@ fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs)
 	return (cs && cs->to_rgb == lab_to_rgb);
 }
 
-static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, gray_to_rgb, rgb_to_gray };
-static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, rgb_to_rgb, rgb_to_rgb };
-static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, bgr_to_rgb, rgb_to_bgr };
-static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, cmyk_to_rgb, rgb_to_cmyk };
-static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, lab_to_rgb, rgb_to_lab };
+int
+fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
+{
+	return (cs && cs->is_subtractive);
+}
+
+static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, gray_to_rgb, rgb_to_gray };
+static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb };
+static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr };
+static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk };
+static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab };
 
 static fz_colorspace *fz_default_gray = &k_default_gray;
 static fz_colorspace *fz_default_rgb = &k_default_rgb;
@@ -2011,7 +2018,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 
 	fz_try(ctx)
 	{
-		cs = fz_new_colorspace(ctx, "Indexed", 1, indexed_to_rgb, NULL, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 1, 0, indexed_to_rgb, NULL, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	}
 	fz_catch(ctx)
 	{

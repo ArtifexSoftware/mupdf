@@ -400,16 +400,11 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 		if (state->pix->alpha && ! (HAS_PALETTE(colorspace) && !state->expand_indexed))
 		{
-			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
-			if (state->pix->n == 5)
-			{
-				fz_pixmap *rgb = fz_convert_pixmap(ctx, state->pix, fz_device_rgb(ctx), 1);
-				fz_drop_pixmap(ctx, state->pix);
-				state->pix = rgb;
-			}
-
 			if (alphas > 0 && prealphas == 0)
+			{
+				state->pix = fz_ensure_pixmap_is_additive(ctx, state->pix);
 				fz_premultiply_pixmap(ctx, state->pix);
+			}
 		}
 	}
 	fz_always(ctx)
@@ -674,6 +669,8 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	int sub_h[FZ_MAX_COLORS];
 	int upsample_required = 0;
 
+	fz_var(img);
+
 	if (size < 2)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "not enough data to determine image format");
 
@@ -865,13 +862,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 
 		if (a)
 		{
-			/* CMYK is a subtractive colorspace, we want additive for premul alpha */
-			if (n == 4)
-			{
-				fz_pixmap *rgb = fz_convert_pixmap(ctx, img, fz_device_rgb(ctx), 1);
-				fz_drop_pixmap(ctx, img);
-				img = rgb;
-			}
+			img = fz_ensure_pixmap_is_additive(ctx, img);
 			fz_premultiply_pixmap(ctx, img);
 		}
 	}
