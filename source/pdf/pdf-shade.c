@@ -252,7 +252,6 @@ pdf_load_mesh_params(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 static void
 pdf_load_type4_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_obj *dict, int funcs, fz_function **func)
 {
-
 	pdf_load_mesh_params(ctx, doc, shade, dict);
 
 	if (funcs > 0)
@@ -264,7 +263,6 @@ pdf_load_type4_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 static void
 pdf_load_type5_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_obj *dict, int funcs, fz_function **func)
 {
-
 	pdf_load_mesh_params(ctx, doc, shade, dict);
 
 	if (funcs > 0)
@@ -278,7 +276,6 @@ pdf_load_type5_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 static void
 pdf_load_type6_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_obj *dict, int funcs, fz_function **func)
 {
-
 	pdf_load_mesh_params(ctx, doc, shade, dict);
 
 	if (funcs > 0)
@@ -290,7 +287,6 @@ pdf_load_type6_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_ob
 static void
 pdf_load_type7_shade(fz_context *ctx, pdf_document *doc, fz_shade *shade, pdf_obj *dict, int funcs, fz_function **func)
 {
-
 	pdf_load_mesh_params(ctx, doc, shade, dict);
 
 	if (funcs > 0)

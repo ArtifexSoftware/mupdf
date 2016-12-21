@@ -89,5 +89,4 @@ void fz_new_output_context(fz_context *ctx);
 void fz_drop_output_context(fz_context *ctx);
 fz_output_context *fz_keep_output_context(fz_context *ctx);
 
-
 #endif

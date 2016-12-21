@@ -130,7 +130,6 @@ static void saveimage(int num)
 	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
 }
 
 static void savefont(pdf_obj *dict, int num)

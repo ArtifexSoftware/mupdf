@@ -79,7 +79,6 @@ pdf_count_layer_configs(fz_context *ctx, pdf_document *doc)
 	return doc->ocg->num_configs;
 }
 
-
 static int
 count_entries(fz_context *ctx, pdf_obj *obj)
 {

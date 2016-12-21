@@ -523,7 +523,6 @@ pdf_objcmp(fz_context *ctx, pdf_obj *a, pdf_obj *b)
 				return 1;
 		}
 		return 0;
-
 	}
 	return 1;
 }

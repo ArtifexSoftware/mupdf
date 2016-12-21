@@ -138,7 +138,6 @@ pdf_print_ps_stack(fz_context *ctx, fz_output *out, ps_stack *st)
 	}
 
 	fz_printf(ctx, out, "\n");
-
 }
 
 static void

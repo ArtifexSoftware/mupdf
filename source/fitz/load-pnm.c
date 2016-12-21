@@ -111,7 +111,6 @@ pnm_read_white(fz_context *ctx, unsigned char *p, unsigned char *e, int single_l
 			if (p < e && iseol(*p))
 				p++;
 		}
-
 	}
 
 	return p;
@@ -295,7 +294,6 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 						*dp++ = map_color(ctx, v, pnm->maxval, 255);
 					}
 		}
-
 	}
 
 	return img;

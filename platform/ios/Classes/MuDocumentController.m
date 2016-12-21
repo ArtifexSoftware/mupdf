@@ -692,7 +692,6 @@ static void saveDoc(const char *current_path, fz_document *doc)
 
 - (void) onTick: (id)sender
 {
-
 	for (UIView<MuPageView> *view in canvas.subviews)
 	{
 		if (view.number == current)

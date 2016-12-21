@@ -385,7 +385,6 @@ fz_render_glyph(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, fz_colo
 #endif
 					drop_glyph_cache_entry(ctx, cache->lru_tail);
 				}
-
 			}
 		}
 unlock_and_return_val:

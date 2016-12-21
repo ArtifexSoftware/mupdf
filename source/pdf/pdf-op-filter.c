@@ -1122,7 +1122,6 @@ pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 pdf_processor *
 pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_document *doc, pdf_obj *old_rdb, pdf_obj *new_rdb)
 {
-
 	pdf_filter_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
 		proc->super.drop_processor = pdf_drop_filter_processor;

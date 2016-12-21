@@ -1196,7 +1196,6 @@ static inline int iswhite(int ch)
 		ch == '\014' || ch == '\015' || ch == '\040';
 }
 
-
 static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc)
 {
 	pdf_document *pdoc = pdf_specifics(ctx, doc);
@@ -1289,7 +1288,6 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 		fprintf(stderr, "\n");
 	}
 }
-
 
 #ifdef MUDRAW_STANDALONE
 int main(int argc, char **argv)

@@ -508,7 +508,6 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				num = 0;
 				gen = 0;
 			}
-
 		}
 
 		if (listlen == 0)

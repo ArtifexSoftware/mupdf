@@ -157,5 +157,4 @@ void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16])
 */
 size_t fz_buffer_extract(fz_context *ctx, fz_buffer *buf, unsigned char **data);
 
-
 #endif

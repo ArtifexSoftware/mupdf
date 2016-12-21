@@ -287,7 +287,6 @@ void render_page(void)
 			break;
 		}
 	}
-
 }
 
 static void push_history(void)

@@ -165,7 +165,6 @@ static fz_locks_context *init_muoffice_locks(MuOfficeLib *mu)
 	return &mu->locks;
 }
 
-
 MuError MuOfficeLib_create(MuOfficeLib **pMu)
 {
 	MuOfficeLib *mu;
@@ -219,7 +218,6 @@ void MuOfficeLib_destroy(MuOfficeLib *mu)
 
 	Pal_Mem_free(mu);
 }
-
 
 /**
  * Perform MuPDF native operations on a given MuOfficeLib
@@ -486,7 +484,6 @@ int MuOfficeDoc_providePassword(MuOfficeDoc *doc, const char *password)
 	return MuError_OK;
 }
 
-
 /**
  * Return the type of an open document
  *
@@ -499,7 +496,6 @@ MuOfficeDocType MuOfficeDoc_docType(MuOfficeDoc *doc)
 	return /* FIXME */MuOfficeDocType_PDF;
 }
 
-
 static void
 ensure_doc_loaded(MuOfficeDoc *doc)
 {
@@ -508,7 +504,6 @@ ensure_doc_loaded(MuOfficeDoc *doc)
 
 	mu_destroy_thread(&doc->thread);
 }
-
 
 /**
  * Return the number of pages of a document
@@ -553,7 +548,6 @@ MuError MuOfficeDoc_getNumPages(MuOfficeDoc *doc, int *pNumPages)
 	return err;
 }
 
-
 /**
  * Determine if the document has been modified
  *
@@ -586,7 +580,6 @@ int MuOfficeDoc_hasBeenModified(MuOfficeDoc *doc)
 	return modified;
 }
 
-
 /**
  * Start a save operation
  *
@@ -605,7 +598,6 @@ MuError MuOfficeDoc_save(	MuOfficeDoc          *doc,
 	return MuError_NotImplemented; /* FIXME */
 }
 
-
 /**
  * Stop a document loading. The document is not destroyed, but
  * no further content will be read from the file.
@@ -623,7 +615,6 @@ void MuOfficeDoc_abortLoad(MuOfficeDoc *doc)
 	doc->aborted = 1;
 	mu_trigger_semaphore(&doc->password_sem);
 }
-
 
 /**
  * Destroy a MuOfficeDoc object. Loading of the document is shutdown
@@ -703,7 +694,6 @@ MuError MuOfficeDoc_getPage(	MuOfficeDoc          *doc,
 	return err;
 }
 
-
 /**
  * Perform MuPDF native operations on a given document.
  *
@@ -758,7 +748,6 @@ MuError MuOfficeDoc_run(MuOfficeDoc *doc, void (*fn)(fz_context *ctx, fz_documen
 	return err;
 }
 
-
 /**
  * Destroy a page object
  *
@@ -788,7 +777,6 @@ void MuOfficePage_destroy(MuOfficePage *page)
 	fz_drop_display_list(doc->ctx, page->list);
 	fz_free(doc->ctx, page);
 }
-
 
 /**
  * Get the size of a page in pixels
@@ -829,7 +817,6 @@ MuError MuOfficePage_getSize(	MuOfficePage *page,
 
 	return MuError_OK;
 }
-
 
 /**
  * Return the zoom factors necessary to render at to a given
@@ -873,7 +860,6 @@ MuError MuOfficePage_calculateZoom(	MuOfficePage *page,
 
 	return MuError_OK;
 }
-
 
 /**
  * Get the size of a page in pixels for a specified zoom factor
@@ -1055,7 +1041,6 @@ fail:
 
 	fz_drop_context(ctx);
 }
-
 
 /**
  * Schedule the rendering of an area of document page to

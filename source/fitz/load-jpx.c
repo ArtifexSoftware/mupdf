@@ -178,7 +178,6 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 						v -= sign;
 						*p = v << (8 - bps);
 					}
-
 				}
 
 				p += n;

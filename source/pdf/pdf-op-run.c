@@ -530,7 +530,6 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 
 	if (!image->colorspace)
 	{
-
 		switch (gstate->fill.kind)
 		{
 		case PDF_MAT_NONE:

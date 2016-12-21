@@ -1541,7 +1541,6 @@ JNI_FN(MuPDFCore_textAsHtml)(JNIEnv * env, jobject thiz)
 		if (bArray == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to make byteArray");
 		(*env)->SetByteArrayRegion(env, bArray, 0, len, (const jbyte *)data);
-
 	}
 	fz_always(ctx)
 	{

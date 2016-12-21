@@ -166,7 +166,6 @@ do_reap(fz_context *ctx)
 		item->type->drop_key(ctx, item->key);
 		fz_free(ctx, item);
 	}
-
 }
 
 void fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)

@@ -402,7 +402,6 @@ fz_band_writer *fz_new_pbm_band_writer(fz_context *ctx, fz_output *out)
 	return writer;
 }
 
-
 fz_band_writer *fz_new_pkm_band_writer(fz_context *ctx, fz_output *out)
 {
 	fz_band_writer *writer = fz_new_band_writer(ctx, fz_band_writer, out);

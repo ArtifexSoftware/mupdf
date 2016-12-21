@@ -694,7 +694,6 @@ int pdf_check_signature(fz_context *ctx, pdf_document *doc, pdf_widget *widget, 
 			res = 0;
 			fz_strlcpy(ebuf, "Not signed", ebufsize);
 		}
-
 	}
 	fz_always(ctx)
 	{

@@ -399,7 +399,6 @@ static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
 		x = stm->bits & ((1 << n) - 1);
 		stm->avail -= n;
 		stm->bits = stm->bits >> n;
-
 	}
 	else
 	{
@@ -412,7 +411,6 @@ static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
 
 		while (n > 8)
 		{
-
 			x = (fz_read_byte(ctx, stm) << used) | x;
 			n -= 8;
 			used += 8;

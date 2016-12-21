@@ -4730,7 +4730,6 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		fz_printf(ctx, out, "<style>\n");
 		fz_print_stext_sheet(ctx, out, sheet);
 		fz_printf(ctx, out, "</style>\n</html>\n");
-
 	}
 	fz_always(ctx)
 	{
@@ -5163,7 +5162,6 @@ FUN(Buffer_writeBytesFrom)(JNIEnv *env, jobject self, jobject jbs, jint joff, ji
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
-
 
 JNIEXPORT void JNICALL
 FUN(Buffer_writeBuffer)(JNIEnv *env, jobject self, jobject jbuf)
@@ -5611,7 +5609,6 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 
 					//  add this char's bbox to the containing span's bbox
 					fz_union_rect(&sbbox, &bbox);
-
 				}
 
 				//  set the span's bbox
@@ -5656,7 +5653,6 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 
 	return barr;
 }
-
 
 /* PDFDocument interface */
 
@@ -6122,7 +6118,6 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf, jobjec
 
 	return to_PDFObject_safe_own(ctx, env, self, ind);
 }
-
 
 JNIEXPORT jobject JNICALL
 FUN(PDFDocument_addPageBuffer)(JNIEnv *env, jobject self, jobject jmediabox, jint rotate, jobject jresources, jobject jcontents)
@@ -6827,7 +6822,6 @@ FUN(PDFObject_writeRawStreamString)(JNIEnv *env, jobject self, jstring jstr)
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
-
 
 JNIEXPORT jobject JNICALL
 FUN(PDFObject_resolve)(JNIEnv *env, jobject self)

@@ -1194,7 +1194,6 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 
 	switch (c)
 	{
-
 	case 'q':
 		winclose(app);
 		break;
@@ -1506,7 +1505,6 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			pdfapp_search_in_direction(app, &panto, 1);
 		loadpage = 0;
 		break;
-
 	}
 
 	if (c < '0' || c > '9')
@@ -1886,7 +1884,6 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 		app->selr.y1 = fz_maxi(app->sely, y) - app->pany + irect.y0;
 		winrepaint(app);
 	}
-
 }
 
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)

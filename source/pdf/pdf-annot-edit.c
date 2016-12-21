@@ -358,7 +358,6 @@ pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const flo
 	pdf_set_annot_color_imp(ctx, annot, PDF_NAME_IC, n, color);
 }
 
-
 int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);

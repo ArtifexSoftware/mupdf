@@ -734,7 +734,6 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 						if (href)
 							box->href = fz_pool_strdup(ctx, g->pool, href);
 					}
-
 				}
 				else
 				{
@@ -2423,7 +2422,6 @@ static void fragment_cb(const uint32_t *fragment,
 		if (data->flow->type == FLOW_SPACE)
 		{
 			len = 1;
-
 		}
 		else if (data->flow->type == FLOW_BREAK || data->flow->type == FLOW_SBREAK ||
 				data->flow->type == FLOW_SHYPHEN || data->flow->type == FLOW_ANCHOR)

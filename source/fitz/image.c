@@ -500,7 +500,6 @@ pixmap_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea, in
 	 * a pointer to the original 'tile'.
 	 */
 	return fz_keep_pixmap(ctx, image->tile); /* That's all we can give you! */
-
 }
 
 static void

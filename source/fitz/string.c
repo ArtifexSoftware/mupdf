@@ -183,7 +183,6 @@ fz_format_output_path(fz_context *ctx, char *path, size_t size, const char *fmt,
 	while (i > 0)
 		path[n++] = num[--i];
 	fz_strlcpy(path + n, p, size - n);
-
 }
 
 #define SEP(x) ((x)=='/' || (x) == 0)

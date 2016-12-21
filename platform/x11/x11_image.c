@@ -211,7 +211,6 @@ make_colormap(void)
 static void
 select_mode(void)
 {
-
 	int byteorder;
 	int byterev;
 	unsigned long rm, gm, bm;

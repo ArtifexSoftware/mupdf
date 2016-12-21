@@ -1812,7 +1812,6 @@ pdf_obj_read(fz_context *ctx, pdf_document *doc, fz_off_t *offset, int *nump, pd
 static void
 pdf_load_hinted_page(fz_context *ctx, pdf_document *doc, int pagenum)
 {
-
 	if (!doc->hints_loaded || !doc->linear_page_refs)
 		return;
 
@@ -1836,7 +1835,6 @@ pdf_load_hinted_page(fz_context *ctx, pdf_document *doc, int pagenum)
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		/* Silently swallow the error and proceed as normal */
 	}
-
 }
 
 static int

@@ -979,7 +979,6 @@ svg_dev_end_mask(fz_context *ctx, fz_device *dev)
 	fz_printf(ctx, out, "\"/></mask>\n");
 	out = end_def(ctx, sdev);
 	fz_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", mask);
-
 }
 
 static void

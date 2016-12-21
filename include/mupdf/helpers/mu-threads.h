@@ -168,7 +168,6 @@ void mu_lock_mutex(mu_mutex *mutex);
 */
 void mu_unlock_mutex(mu_mutex *mutex);
 
-
 /*
 	Everything under this point is implementation specific.
 	Only people looking to extend the capabilities of this

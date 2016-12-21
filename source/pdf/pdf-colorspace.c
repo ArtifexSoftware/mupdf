@@ -203,7 +203,6 @@ load_indexed(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 static fz_colorspace *
 pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-
 	if (pdf_obj_marked(ctx, obj))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Recursion in colorspace definition");
 

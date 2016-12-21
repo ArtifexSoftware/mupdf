@@ -2097,9 +2097,7 @@ typedef struct fz_cached_color_converter
 {
 	fz_color_converter base;
 	fz_hash_table *hash;
-
-}
-fz_cached_color_converter;
+} fz_cached_color_converter;
 
 static void fz_cached_color_convert(fz_context *ctx, fz_color_converter *cc_, float *ds, const float *ss)
 {

@@ -145,7 +145,6 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 		for (i = 0; i < stroke_state->dash_len; i++)
 			fz_buffer_printf(ctx, gs->buf, "%c%f", (i == 0 ? '[' : ' '), stroke_state->dash_list[i]);
 		fz_buffer_printf(ctx, gs->buf, "]%f d\n", stroke_state->dash_phase);
-
 	}
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 	gs->stroke_state = fz_keep_stroke_state(ctx, stroke_state);

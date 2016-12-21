@@ -650,8 +650,6 @@ gatherresourceinfo(fz_context *ctx, globals *glo, int page, pdf_obj *rsrc, int s
 		pdf_unmark_obj(ctx, rsrc);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
-
-
 }
 
 static void
