@@ -59,22 +59,20 @@ fz_is_directory(fz_context *ctx, const char *path)
 fz_archive *
 fz_open_directory(fz_context *ctx, const char *path)
 {
-	fz_directory *dir = NULL;
+	fz_directory *dir;
 
-	fz_var(dir);
+	if (!fz_is_directory(ctx, path))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "'%s' is not a directory", path);
+
+	dir = fz_new_archive(ctx, NULL, fz_directory);
+	dir->super.format = "dir";
+	dir->super.has_entry = has_dir_entry;
+	dir->super.read_entry = read_dir_entry;
+	dir->super.open_entry = open_dir_entry;
+	dir->super.drop_archive = drop_directory;
 
 	fz_try(ctx)
 	{
-		if (!fz_is_directory(ctx, path))
-			fz_throw(ctx, FZ_ERROR_GENERIC, "'%s' is not a directory", path);
-
-		dir = fz_new_archive(ctx, NULL, fz_directory);
-		dir->super.format = "dir";
-		dir->super.has_entry = has_dir_entry;
-		dir->super.read_entry = read_dir_entry;
-		dir->super.open_entry = open_dir_entry;
-		dir->super.drop_archive = drop_directory;
-
 		dir->path = fz_strdup(ctx, path);
 	}
 	fz_catch(ctx)

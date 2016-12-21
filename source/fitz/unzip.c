@@ -410,18 +410,16 @@ fz_open_zip_archive_with_stream(fz_context *ctx, fz_stream *file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize zip archive");
 
 	zip = fz_new_archive(ctx, file, fz_zip_archive);
+	zip->super.format = "zip";
+	zip->super.count_entries = count_zip_entries;
+	zip->super.list_entry = list_zip_entry;
+	zip->super.has_entry = has_zip_entry;
+	zip->super.read_entry = read_zip_entry;
+	zip->super.open_entry = open_zip_entry;
+	zip->super.drop_archive = drop_zip_archive;
 
 	fz_try(ctx)
 	{
-
-		zip->super.format = "zip";
-		zip->super.count_entries = count_zip_entries;
-		zip->super.list_entry = list_zip_entry;
-		zip->super.has_entry = has_zip_entry;
-		zip->super.read_entry = read_zip_entry;
-		zip->super.open_entry = open_zip_entry;
-		zip->super.drop_archive = drop_zip_archive;
-
 		ensure_zip_entries(ctx, zip);
 	}
 	fz_catch(ctx)
