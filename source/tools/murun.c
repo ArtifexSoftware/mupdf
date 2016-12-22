@@ -20,9 +20,7 @@ static void *alloc(void *actx, void *ptr, int n)
 		fz_free(ctx, ptr);
 		return NULL;
 	}
-	if (ptr)
-		return fz_resize_array(ctx, ptr, n, 1);
-	return fz_malloc_array(ctx, n, 1);
+	return fz_resize_array_no_throw(ctx, ptr, n, 1);
 }
 
 static int eval_print(js_State *J, const char *source)

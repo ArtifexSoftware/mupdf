@@ -589,9 +589,7 @@ static void *pdf_js_alloc(void *actx, void *ptr, int n)
 		fz_free(ctx, ptr);
 		return NULL;
 	}
-	if (ptr)
-		return fz_resize_array(ctx, ptr, n, 1);
-	return fz_malloc_array(ctx, n, 1);
+	return fz_resize_array_no_throw(ctx, ptr, n, 1);
 }
 
 static pdf_js *pdf_new_js(fz_context *ctx, pdf_document *doc)
