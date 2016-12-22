@@ -147,13 +147,10 @@ void pdfapp_invert(pdfapp_t *app, const fz_rect *rect)
 
 void pdfapp_reloadfile(pdfapp_t *app)
 {
-	fz_context *ctx = app->ctx;
-	char *filename = app->docpath;
-
-	app->docpath = NULL;
+	char filename[PATH_MAX];
+	fz_strlcpy(filename, app->docpath, PATH_MAX);
 	pdfapp_close(app);
 	pdfapp_open(app, filename, 1);
-	fz_free(ctx, filename);
 }
 
 static void event_cb(fz_context *ctx, pdf_document *doc, pdf_doc_event *event, void *data)
