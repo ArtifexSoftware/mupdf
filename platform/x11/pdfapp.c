@@ -233,20 +233,22 @@ static int make_fake_doc(pdfapp_t *app)
 	fz_context *ctx = app->ctx;
 	pdf_document *pdf = NULL;
 	fz_buffer *contents = NULL;
+	pdf_obj *page_obj = NULL;
+
+	fz_var(contents);
+	fz_var(page_obj);
 
 	fz_try(ctx)
 	{
 		fz_rect mediabox = { 0, 0, app->winw, app->winh };
-		pdf_obj *page_obj;
 		int i;
 
-		contents = fz_new_buffer(ctx, 100);
 		pdf = pdf_create_document(ctx);
 
-		app->doc = (fz_document*)pdf;
 
-		fz_buffer_printf(ctx, contents, "1 0 0 rg %f w 0 0 m %f %f l 0 %f m %f 0 l\n",
-			fz_min(mediabox.x1, mediabox.y1) / 4,
+		contents = fz_new_buffer(ctx, 100);
+		fz_buffer_printf(ctx, contents, "1 0 0 RG %f w 0 0 m %f %f l 0 %f m %f 0 l s\n",
+			fz_min(mediabox.x1, mediabox.y1) / 20,
 			mediabox.x1, mediabox.y1,
 			mediabox.y1, mediabox.x1);
 
@@ -256,16 +258,19 @@ static int make_fake_doc(pdfapp_t *app)
 		page_obj = pdf_add_page(ctx, pdf, &mediabox, 0, NULL, contents);
 		for (i = 0; i < app->pagecount; i++)
 			pdf_insert_page(ctx, pdf, -1, page_obj);
-		pdf_drop_obj(ctx, page_obj);
 	}
 	fz_always(ctx)
 	{
+		pdf_drop_obj(ctx, page_obj);
 		fz_drop_buffer(ctx, contents);
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow(ctx);
+		fz_drop_document(ctx, (fz_document *) pdf);
+		return 1;
 	}
+
+	app->doc = (fz_document*)pdf;
 	return 0;
 }
 
