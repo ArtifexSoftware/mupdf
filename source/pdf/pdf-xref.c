@@ -2128,6 +2128,12 @@ pdf_update_object(fz_context *ctx, pdf_document *doc, int num, pdf_obj *newobj)
 		return;
 	}
 
+	if (!newobj)
+	{
+		pdf_delete_object(ctx, doc, num);
+		return;
+	}
+
 	x = pdf_get_incremental_xref_entry(ctx, doc, num);
 
 	pdf_drop_obj(ctx, x->obj);
