@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#if FZ_ENABLE_JPX
+
 typedef struct fz_jpxd_s fz_jpxd;
 typedef struct stream_block_s stream_block;
 
@@ -918,3 +920,19 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 }
 
 #endif /* HAVE_LURATECH */
+
+#else /* FZ_ENABLE_JPX */
+
+fz_pixmap *
+fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs)
+{
+	fz_throw(ctx, FZ_ERROR_GENERIC, "JPX support disabled");
+}
+
+void
+fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+{
+	fz_throw(ctx, FZ_ERROR_GENERIC, "JPX support disabled");
+}
+
+#endif

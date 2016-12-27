@@ -30,6 +30,14 @@
 /* #define FZ_ENABLE_GPRF 1 */
 
 /*
+	Choose whether to enable JPEG2000 decoding.
+	By default, it is enabled, but due to frequent security
+	issues with the third party libraries we support disabling
+	it with this flag.
+*/
+/* #define FZ_ENABLE_JPX 1 */
+
+/*
 	Choose whether to enable JavaScript.
 	By default JavaScript is enabled both for mutool and PDF interactivity.
 */
@@ -130,6 +138,10 @@
 #ifndef FZ_ENABLE_GPRF
 #define FZ_ENABLE_GPRF 0
 #endif /* FZ_ENABLE_GPRF */
+
+#ifndef FZ_ENABLE_JPX
+#define FZ_ENABLE_JPX 1
+#endif /* FZ_ENABLE_JPX */
 
 #ifndef FZ_ENABLE_JS
 #define FZ_ENABLE_JS 1
