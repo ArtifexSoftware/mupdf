@@ -12,7 +12,10 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 
 	proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
 	fz_try(ctx)
+	{
 		pdf_process_annot(ctx, proc, doc, page, annot, cookie);
+		pdf_close_processor(ctx, proc);
+	}
 	fz_always(ctx)
 		pdf_drop_processor(ctx, proc);
 	fz_catch(ctx)
@@ -39,7 +42,10 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 
 	proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
 	fz_try(ctx)
+	{
 		pdf_process_contents(ctx, proc, doc, resources, contents, cookie);
+		pdf_close_processor(ctx, proc);
+	}
 	fz_always(ctx)
 		pdf_drop_processor(ctx, proc);
 	fz_catch(ctx)
@@ -170,7 +176,10 @@ pdf_run_glyph(fz_context *ctx, pdf_document *doc, pdf_obj *resources, fz_buffer 
 
 	proc = pdf_new_run_processor(ctx, dev, ctm, "View", gstate, nested_depth+1);
 	fz_try(ctx)
+	{
 		pdf_process_glyph(ctx, proc, doc, resources, contents);
+		pdf_close_processor(ctx, proc);
+	}
 	fz_always(ctx)
 		pdf_drop_processor(ctx, proc);
 	fz_catch(ctx)

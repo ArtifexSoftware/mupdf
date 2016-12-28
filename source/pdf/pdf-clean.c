@@ -34,6 +34,8 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, orig_res, res);
 
 		pdf_process_contents(ctx, proc_filter, doc, orig_res, obj, cookie);
+		pdf_close_processor(ctx, proc_filter);
+		pdf_close_processor(ctx, proc_buffer);
 
 		pdf_update_stream(ctx, doc, obj, buffer, 0);
 
@@ -94,6 +96,8 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 				proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, orig_res, res);
 
 				pdf_process_contents(ctx, proc_filter, doc, orig_res, val, cookie);
+				pdf_close_processor(ctx, proc_filter);
+				pdf_close_processor(ctx, proc_buffer);
 
 				pdf_update_stream(ctx, doc, val, buffer, 0);
 			}
@@ -159,6 +163,8 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, doc, resources, res);
 
 		pdf_process_contents(ctx, proc_filter, doc, resources, contents, cookie);
+		pdf_close_processor(ctx, proc_filter);
+		pdf_close_processor(ctx, proc_buffer);
 
 		/* Deal with page content stream. */
 
