@@ -593,7 +593,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *d
 
 	if (s[0] == 0xFE && s[1] == 0xFF) {
 		s += 2;
-		dst = d = fz_malloc(doc, n * 2);
+		dst = d = fz_malloc(doc, n * FZ_UTFMAX);
 		while (s + 1 < e) {
 			c = s[0] << 8 | s[1];
 			d += fz_runetochar(d, c);
@@ -606,7 +606,7 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *d
 
 	if (s[0] == 0xFF && s[1] == 0xFE) {
 		s += 2;
-		dst = d = fz_malloc(doc, n * 2);
+		dst = d = fz_malloc(doc, n * FZ_UTFMAX);
 		while (s + 1 < e) {
 			c = s[0] | s[1] << 8;
 			d += fz_runetochar(d, c);
