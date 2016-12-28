@@ -278,9 +278,8 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 		}
 	}
 
-	fz_write_buffer_byte(ctx, buffer, 0);
-
-	fz_buffer_extract(ctx, buffer, &s);
+	fz_terminate_buffer(ctx, buffer);
+	fz_buffer_extract(ctx, buffer, &s); /* take over the data */
 	fz_drop_buffer(ctx, buffer);
 	return (char*)s;
 }

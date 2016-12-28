@@ -152,6 +152,15 @@ fz_trim_buffer(fz_context *ctx, fz_buffer *buf)
 		fz_resize_buffer(ctx, buf, buf->len);
 }
 
+void
+fz_terminate_buffer(fz_context *ctx, fz_buffer *buf)
+{
+	/* ensure that there is a zero-byte after the end of the data */
+	if (buf->len + 1 > buf->cap)
+		fz_grow_buffer(ctx, buf);
+	buf->data[buf->len] = 0;
+}
+
 size_t
 fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **datap)
 {
@@ -165,10 +174,7 @@ fz_string_from_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	if (!buf)
 		return "";
-
-	if (buf->data[buf->len-1] != 0)
-		fz_write_buffer_byte(ctx, buf, 0);
-
+	fz_terminate_buffer(ctx, buf);
 	return (const char *)buf->data;
 }
 

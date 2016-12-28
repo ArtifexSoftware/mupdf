@@ -138,6 +138,14 @@ size_t fz_buffer_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va
 void fz_buffer_print_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
 
 /*
+	fz_terminate_buffer: zero-terminate buffer in order to use as a C string.
+
+	This byte is invisible and does not affect the length of the buffer as returned by fz_buffer_storage.
+	The zero byte is written *after* the data, and subsequent writes will overwrite the terminating byte.
+*/
+void fz_terminate_buffer(fz_context *ctx, fz_buffer *buf);
+
+/*
 	fz_md5_buffer: create MD5 digest of buffer contents.
 */
 void fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16]);

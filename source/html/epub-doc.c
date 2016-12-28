@@ -256,7 +256,6 @@ epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 	fz_dirname(base_uri, path, sizeof base_uri);
 
 	buf = fz_read_archive_entry(ctx, zip, path);
-	fz_write_buffer_byte(ctx, buf, 0);
 
 	ch = fz_malloc_struct(ctx, epub_chapter);
 	ch->path = fz_strdup(ctx, path);
@@ -316,7 +315,7 @@ epub_parse_ncx(fz_context *ctx, epub_document *doc, const char *path)
 	fz_dirname(base_uri, path, sizeof base_uri);
 
 	buf = fz_read_archive_entry(ctx, zip, path);
-	fz_write_buffer_byte(ctx, buf, 0);
+	fz_terminate_buffer(ctx, buf);
 	len = fz_buffer_storage(ctx, buf, &data);
 	ncx = fz_parse_xml(ctx, data, len, 0);
 	fz_drop_buffer(ctx, buf);
@@ -359,7 +358,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	/* parse META-INF/container.xml to find OPF */
 
 	buf = fz_read_archive_entry(ctx, zip, "META-INF/container.xml");
-	fz_write_buffer_byte(ctx, buf, 0);
+	fz_terminate_buffer(ctx, buf);
 	len = fz_buffer_storage(ctx, buf, &data);
 	container_xml = fz_parse_xml(ctx, data, len, 0);
 	fz_drop_buffer(ctx, buf);
@@ -376,7 +375,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	/* parse OPF to find NCX and spine */
 
 	buf = fz_read_archive_entry(ctx, zip, full_path);
-	fz_write_buffer_byte(ctx, buf, 0);
+	fz_terminate_buffer(ctx, buf);
 	len = fz_buffer_storage(ctx, buf, &data);
 	content_opf = fz_parse_xml(ctx, data, len, 0);
 	fz_drop_buffer(ctx, buf);

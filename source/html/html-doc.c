@@ -139,12 +139,8 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	doc->set = fz_new_html_font_set(ctx);
 
 	buf = fz_read_all(ctx, file, 0);
-
 	fz_try(ctx)
-	{
-		fz_write_buffer_byte(ctx, buf, 0);
 		doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
-	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
@@ -175,12 +171,8 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	doc->set = fz_new_html_font_set(ctx);
 
 	buf = fz_read_file(ctx, filename);
-
 	fz_try(ctx)
-	{
-		fz_write_buffer_byte(ctx, buf, 0);
 		doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
-	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)

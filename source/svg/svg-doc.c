@@ -91,6 +91,7 @@ svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 	size_t len;
 	unsigned char *data;
 
+	fz_terminate_buffer(ctx, buf);
 	len = fz_buffer_storage(ctx, buf, &data);
 	root = fz_parse_xml(ctx, data, len, 0);
 
@@ -115,10 +116,7 @@ svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	buf = fz_read_all(ctx, file, 0);
 	fz_try(ctx)
-	{
-		fz_write_buffer_byte(ctx, buf, 0);
 		doc = svg_open_document_with_buffer(ctx, buf);
-	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)

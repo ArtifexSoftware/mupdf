@@ -92,11 +92,8 @@ xps_read_part(fz_context *ctx, xps_document *doc, char *partname)
 		}
 	}
 
-	fz_write_buffer_byte(ctx, buf, 0); /* zero-terminate */
-
-	/* take over the data */
-	/* size doesn't include the added zero-terminator */
-	size = fz_buffer_extract(ctx, buf, &data) - 1;
+	fz_terminate_buffer(ctx, buf); /* zero-terminate */
+	size = fz_buffer_extract(ctx, buf, &data); /* take over the data ('size' excludes the zero terminator) */
 	fz_drop_buffer(ctx, buf);
 
 	return xps_new_part(ctx, doc, partname, data, size);
