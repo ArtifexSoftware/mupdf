@@ -78,7 +78,6 @@ typedef size_t (fz_image_get_size_fn)(fz_context *, fz_image *);
 fz_image *fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_image *mask, int size, fz_image_get_pixmap_fn *get, fz_image_get_size_fn *get_size, fz_drop_image_fn *drop);
 fz_image *fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_compressed_buffer *buffer, fz_image *mask);
 fz_image *fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask);
-fz_image *fz_new_image_from_data(fz_context *ctx, unsigned char *data, size_t len);
 fz_image *fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer);
 fz_image *fz_new_image_from_file(fz_context *ctx, const char *path);
 void fz_drop_image_imp(fz_context *ctx, fz_storable *image);

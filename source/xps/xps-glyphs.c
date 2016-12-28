@@ -98,10 +98,13 @@ xps_deobfuscate_font_resource(fz_context *ctx, xps_document *doc, xps_part *part
 {
 	unsigned char buf[33];
 	unsigned char key[16];
+	unsigned char *data;
+	size_t size;
 	char *p;
 	int i;
 
-	if (part->size < 32)
+	size = fz_buffer_storage(ctx, part->data, &data);
+	if (size < 32)
 	{
 		fz_warn(ctx, "insufficient data for font deobfuscation");
 		return;
@@ -129,8 +132,8 @@ xps_deobfuscate_font_resource(fz_context *ctx, xps_document *doc, xps_part *part
 
 	for (i = 0; i < 16; i++)
 	{
-		part->data[i] ^= key[15-i];
-		part->data[i+16] ^= key[15-i];
+		data[i] ^= key[15-i];
+		data[i+16] ^= key[15-i];
 	}
 }
 
@@ -224,14 +227,10 @@ xps_lookup_font(fz_context *ctx, xps_document *doc, char *base_uri, char *font_u
 
 		fz_try(ctx)
 		{
-			buf = fz_new_buffer_from_data(ctx, part->data, part->size);
-			/* part->data is now owned by buf */
-			part->data = NULL;
-			font = fz_new_font_from_buffer(ctx, NULL, buf, subfontid, 1);
+			font = fz_new_font_from_buffer(ctx, NULL, part->data, subfontid, 1);
 		}
 		fz_always(ctx)
 		{
-			fz_drop_buffer(ctx, buf);
 			xps_drop_part(ctx, doc, part);
 		}
 		fz_catch(ctx)

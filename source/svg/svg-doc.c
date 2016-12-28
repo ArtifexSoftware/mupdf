@@ -88,12 +88,8 @@ svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 {
 	svg_document *doc;
 	fz_xml *root;
-	size_t len;
-	unsigned char *data;
 
-	fz_terminate_buffer(ctx, buf);
-	len = fz_buffer_storage(ctx, buf, &data);
-	root = fz_parse_xml(ctx, data, len, 0);
+	root = fz_parse_xml(ctx, buf, 0);
 
 	doc = fz_new_document(ctx, svg_document);
 	doc->super.drop_document = svg_drop_document;

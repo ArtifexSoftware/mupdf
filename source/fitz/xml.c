@@ -626,14 +626,18 @@ static char *convert_to_utf8(fz_context *doc, unsigned char *s, size_t n, int *d
 }
 
 fz_xml *
-fz_parse_xml(fz_context *ctx, unsigned char *s, size_t n, int preserve_white)
+fz_parse_xml(fz_context *ctx, fz_buffer *buf, int preserve_white)
 {
 	struct parser parser;
 	fz_xml root, *node;
 	char *p, *error;
 	int dofree;
+	unsigned char *s;
+	size_t n;
 
-	/* s is already null-terminated (see xps_new_part) */
+	/* ensure we are zero-terminated */
+	fz_terminate_buffer(ctx, buf);
+	n = fz_buffer_storage(ctx, buf, &s);
 
 	memset(&root, 0, sizeof(root));
 	parser.head = &root;

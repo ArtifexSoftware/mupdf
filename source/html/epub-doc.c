@@ -309,15 +309,11 @@ epub_parse_ncx(fz_context *ctx, epub_document *doc, const char *path)
 	fz_buffer *buf;
 	fz_xml *ncx;
 	char base_uri[2048];
-	unsigned char *data;
-	size_t len;
 
 	fz_dirname(base_uri, path, sizeof base_uri);
 
 	buf = fz_read_archive_entry(ctx, zip, path);
-	fz_terminate_buffer(ctx, buf);
-	len = fz_buffer_storage(ctx, buf, &data);
-	ncx = fz_parse_xml(ctx, data, len, 0);
+	ncx = fz_parse_xml(ctx, buf, 0);
 	fz_drop_buffer(ctx, buf);
 
 	doc->outline = epub_parse_ncx_imp(ctx, doc, fz_xml_find_down(ncx, "navMap"), base_uri);
@@ -347,8 +343,6 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	const char *version;
 	char ncx[2048], s[2048];
 	epub_chapter **tailp;
-	size_t len;
-	unsigned char *data;
 
 	if (fz_has_archive_entry(ctx, zip, "META-INF/rights.xml"))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "EPUB is locked by DRM");
@@ -358,9 +352,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	/* parse META-INF/container.xml to find OPF */
 
 	buf = fz_read_archive_entry(ctx, zip, "META-INF/container.xml");
-	fz_terminate_buffer(ctx, buf);
-	len = fz_buffer_storage(ctx, buf, &data);
-	container_xml = fz_parse_xml(ctx, data, len, 0);
+	container_xml = fz_parse_xml(ctx, buf, 0);
 	fz_drop_buffer(ctx, buf);
 
 	container = fz_xml_find(container_xml, "container");
@@ -375,9 +367,7 @@ epub_parse_header(fz_context *ctx, epub_document *doc)
 	/* parse OPF to find NCX and spine */
 
 	buf = fz_read_archive_entry(ctx, zip, full_path);
-	fz_terminate_buffer(ctx, buf);
-	len = fz_buffer_storage(ctx, buf, &data);
-	content_opf = fz_parse_xml(ctx, data, len, 0);
+	content_opf = fz_parse_xml(ctx, buf, 0);
 	fz_drop_buffer(ctx, buf);
 
 	package = fz_xml_find(content_opf, "package");

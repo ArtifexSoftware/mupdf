@@ -54,8 +54,7 @@ typedef struct xps_part_s xps_part;
 struct xps_part_s
 {
 	char *name;
-	size_t size;
-	unsigned char *data;
+	fz_buffer *data;
 };
 
 int xps_has_part(fz_context *ctx, xps_document *doc, char *partname);

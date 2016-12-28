@@ -893,34 +893,6 @@ void fz_set_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *image, fz_pixmap
 }
 
 fz_image *
-fz_new_image_from_data(fz_context *ctx, unsigned char *data, size_t len)
-{
-	fz_buffer *buffer = NULL;
-	fz_image *image;
-
-	fz_var(buffer);
-	fz_var(data);
-
-	fz_try(ctx)
-	{
-		buffer = fz_new_buffer_from_data(ctx, data, len);
-		data = NULL;
-		image = fz_new_image_from_buffer(ctx, buffer);
-	}
-	fz_always(ctx)
-	{
-		fz_drop_buffer(ctx, buffer);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, data);
-		fz_rethrow(ctx);
-	}
-
-	return image;
-}
-
-fz_image *
 fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 {
 	fz_compressed_buffer *bc;

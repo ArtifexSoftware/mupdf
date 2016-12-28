@@ -67,7 +67,7 @@ xps_parse_remote_resource_dictionary(fz_context *ctx, xps_document *doc, char *b
 	part = xps_read_part(ctx, doc, part_name);
 	fz_try(ctx)
 	{
-		xml = fz_parse_xml(ctx, part->data, part->size, 0);
+		xml = fz_parse_xml(ctx, part->data, 0);
 	}
 	fz_always(ctx)
 	{
