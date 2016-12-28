@@ -42,7 +42,6 @@ fz_link *xps_load_links(fz_context *ctx, xps_page *page);
 
 int xps_strcasecmp(char *a, char *b);
 void xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri, char *path, int output_size);
-int xps_url_is_remote(fz_context *ctx, xps_document *doc, char *path);
 char *xps_parse_point(fz_context *ctx, xps_document *doc, char *s_in, float *x, float *y);
 
 /*

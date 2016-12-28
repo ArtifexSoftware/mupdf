@@ -385,12 +385,6 @@ void pdf_set_str_len(fz_context *ctx, pdf_obj *obj, int newlen)
 	STRING(obj)->len = newlen;
 }
 
-pdf_obj *pdf_to_dict(fz_context *ctx, pdf_obj *obj)
-{
-	RESOLVE(obj);
-	return (obj >= PDF_OBJ__LIMIT && obj->kind == PDF_DICT ? obj : NULL);
-}
-
 int pdf_to_num(fz_context *ctx, pdf_obj *obj)
 {
 	if (!OBJ_IS_INDIRECT(obj))

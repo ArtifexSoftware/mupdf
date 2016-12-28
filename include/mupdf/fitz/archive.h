@@ -135,7 +135,7 @@ int fz_is_tar_archive(fz_context *ctx, fz_stream *file);
 fz_archive *fz_open_tar_archive(fz_context *ctx, const char *filename);
 
 /*
-	fz_open_tar_archive: Open a tar archive stream.
+	fz_open_tar_archive_with_stream: Open a tar archive stream.
 
 	Open an archive using a seekable stream object rather than
 	opening a file or directory on disk.

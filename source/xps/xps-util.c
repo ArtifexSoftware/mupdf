@@ -156,9 +156,3 @@ xps_resolve_url(fz_context *ctx, xps_document *doc, char *output, char *base_uri
 	}
 	clean_path(output);
 }
-
-int
-xps_url_is_remote(fz_context *ctx, xps_document *doc, char *path)
-{
-	return path != skip_authority(skip_scheme(path));
-}

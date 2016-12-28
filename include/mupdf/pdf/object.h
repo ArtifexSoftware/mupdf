@@ -81,7 +81,6 @@ fz_off_t pdf_to_offset(fz_context *ctx, pdf_obj *obj);
 float pdf_to_real(fz_context *ctx, pdf_obj *obj);
 char *pdf_to_name(fz_context *ctx, pdf_obj *obj);
 char *pdf_to_str_buf(fz_context *ctx, pdf_obj *obj);
-pdf_obj *pdf_to_dict(fz_context *ctx, pdf_obj *obj);
 int pdf_to_str_len(fz_context *ctx, pdf_obj *obj);
 int pdf_to_num(fz_context *ctx, pdf_obj *obj);
 int pdf_to_gen(fz_context *ctx, pdf_obj *obj);

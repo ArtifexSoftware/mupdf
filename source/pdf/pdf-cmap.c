@@ -148,17 +148,6 @@ add_mrange(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *out, int len)
 }
 
 /*
- * Add a range-to-table mapping.
- */
-void
-pdf_map_range_to_table(fz_context *ctx, pdf_cmap *cmap, unsigned int low, int *table, int len)
-{
-	int i;
-	for (i = 0; i < len; i++)
-		add_range(ctx, cmap, low + i, low + i, table[i]);
-}
-
-/*
  * Add a range of contiguous one-to-one mappings (ie 1..5 maps to 21..25)
  */
 void
