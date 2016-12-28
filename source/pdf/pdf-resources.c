@@ -76,7 +76,7 @@ pdf_find_image_resource(fz_context *ctx, pdf_document *doc, fz_image *item, unsi
 
 	if (!doc->resources.images)
 	{
-		doc->resources.images = fz_new_hash_table(ctx, 4096, 16, -1);
+		doc->resources.images = fz_new_hash_table(ctx, 4096, 16, -1, (fz_hash_table_drop_fn)pdf_drop_obj);
 		pdf_preload_image_resources(ctx, doc);
 	}
 
@@ -110,7 +110,7 @@ pdf_find_font_resource(fz_context *ctx, pdf_document *doc, fz_buffer *item, unsi
 	pdf_obj *res;
 
 	if (!doc->resources.fonts)
-		doc->resources.fonts = fz_new_hash_table(ctx, 4096, 16, -1);
+		doc->resources.fonts = fz_new_hash_table(ctx, 4096, 16, -1, (fz_hash_table_drop_fn)pdf_drop_obj);
 
 	/* Create md5 and see if we have the item in our table */
 	fz_md5_buffer(ctx, item, digest);
@@ -131,25 +131,12 @@ pdf_insert_font_resource(fz_context *ctx, pdf_document *doc, unsigned char diges
 	return res;
 }
 
-static void
-res_table_free(fz_context *ctx, fz_hash_table *hash)
-{
-	int i, n;
-	if (hash)
-	{
-		n = fz_hash_len(ctx, hash);
-		for (i = 0; i < n; i++)
-			pdf_drop_obj(ctx, fz_hash_get_val(ctx, hash, i));
-		fz_drop_hash(ctx, hash);
-	}
-}
-
 void
 pdf_drop_resource_tables(fz_context *ctx, pdf_document *doc)
 {
 	if (doc)
 	{
-		res_table_free(ctx, doc->resources.fonts);
-		res_table_free(ctx, doc->resources.images);
+		fz_drop_hash_table(ctx, doc->resources.fonts);
+		fz_drop_hash_table(ctx, doc->resources.images);
 	}
 }

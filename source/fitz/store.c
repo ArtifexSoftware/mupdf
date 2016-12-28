@@ -42,7 +42,7 @@ fz_new_store_context(fz_context *ctx, size_t max)
 	store = fz_malloc_struct(ctx, fz_store);
 	fz_try(ctx)
 	{
-		store->hash = fz_new_hash_table(ctx, 4096, sizeof(fz_store_hash), FZ_LOCK_ALLOC);
+		store->hash = fz_new_hash_table(ctx, 4096, sizeof(fz_store_hash), FZ_LOCK_ALLOC, NULL);
 	}
 	fz_catch(ctx)
 	{
@@ -396,7 +396,6 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, fz_store_
 	fz_store *store = ctx->store;
 	fz_store_hash hash = { NULL };
 	int use_hash = 0;
-	unsigned pos;
 
 	if (!store)
 		return NULL;
@@ -444,7 +443,7 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, fz_store_
 		fz_try(ctx)
 		{
 			/* May drop and retake the lock */
-			existing = fz_hash_insert_with_pos(ctx, store->hash, &hash, item, &pos);
+			existing = fz_hash_insert(ctx, store->hash, &hash, item);
 		}
 		fz_catch(ctx)
 		{
@@ -468,9 +467,11 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, fz_store_
 			return existing->val;
 		}
 	}
+
 	/* Now bump the ref */
 	if (val->refs > 0)
 		val->refs++;
+
 	/* If we haven't got an infinite store, check for space within it */
 	if (store->max != FZ_STORE_UNLIMITED)
 	{
@@ -665,7 +666,7 @@ fz_drop_store_context(fz_context *ctx)
 	if (fz_drop_imp(ctx, ctx->store, &ctx->store->refs))
 	{
 		fz_empty_store(ctx);
-		fz_drop_hash(ctx, ctx->store->hash);
+		fz_drop_hash_table(ctx, ctx->store->hash);
 		fz_free(ctx, ctx->store);
 		ctx->store = NULL;
 	}

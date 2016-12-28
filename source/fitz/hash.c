@@ -23,6 +23,7 @@ struct fz_hash_table_s
 	int size;
 	int load;
 	int lock; /* -1 or the lock used to protect this hash table */
+	fz_hash_table_drop_fn drop_val;
 	fz_hash_entry *ents;
 };
 
@@ -43,7 +44,7 @@ static unsigned hash(const unsigned char *s, int len)
 }
 
 fz_hash_table *
-fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock)
+fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock, fz_hash_table_drop_fn drop_val)
 {
 	fz_hash_table *table;
 
@@ -54,6 +55,7 @@ fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock)
 	table->size = initialsize;
 	table->load = 0;
 	table->lock = lock;
+	table->drop_val = drop_val;
 	fz_try(ctx)
 	{
 		table->ents = fz_malloc_array(ctx, table->size, sizeof(fz_hash_entry));
@@ -69,42 +71,28 @@ fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock)
 }
 
 void
-fz_empty_hash(fz_context *ctx, fz_hash_table *table)
-{
-	table->load = 0;
-	memset(table->ents, 0, sizeof(fz_hash_entry) * table->size);
-}
-
-int
-fz_hash_len(fz_context *ctx, fz_hash_table *table)
-{
-	return table->size;
-}
-
-void *
-fz_hash_get_key(fz_context *ctx, fz_hash_table *table, int idx)
-{
-	return table->ents[idx].key;
-}
-
-void *
-fz_hash_get_val(fz_context *ctx, fz_hash_table *table, int idx)
-{
-	return table->ents[idx].val;
-}
-
-void
-fz_drop_hash(fz_context *ctx, fz_hash_table *table)
+fz_drop_hash_table(fz_context *ctx, fz_hash_table *table)
 {
 	if (!table)
 		return;
+
+	if (table->drop_val)
+	{
+		int i, n = table->size;
+		for (i = 0; i < n; ++i)
+		{
+			void *v = table->ents[i].val;
+			if (v)
+				table->drop_val(ctx, v);
+		}
+	}
 
 	fz_free(ctx, table->ents);
 	fz_free(ctx, table);
 }
 
 static void *
-do_hash_insert(fz_context *ctx, fz_hash_table *table, const void *key, void *val, unsigned *pos_ptr)
+do_hash_insert(fz_context *ctx, fz_hash_table *table, const void *key, void *val)
 {
 	fz_hash_entry *ents;
 	unsigned size;
@@ -124,19 +112,13 @@ do_hash_insert(fz_context *ctx, fz_hash_table *table, const void *key, void *val
 			memcpy(ents[pos].key, key, table->keylen);
 			ents[pos].val = val;
 			table->load ++;
-			if (pos_ptr)
-				*pos_ptr = pos;
 			return NULL;
 		}
 
 		if (memcmp(key, ents[pos].key, table->keylen) == 0)
 		{
-			/* This is legal, but should happen rarely in the non
-			 * pos_ptr case. */
-			if (pos_ptr)
-				*pos_ptr = pos;
-			else
-				fz_warn(ctx, "assert: overwrite hash slot");
+			/* This is legal, but should happen rarely. */
+			fz_warn(ctx, "assert: overwrite hash slot");
 			return ents[pos].val;
 		}
 
@@ -190,7 +172,7 @@ fz_resize_hash(fz_context *ctx, fz_hash_table *table, int newsize)
 	{
 		if (oldents[i].val)
 		{
-			do_hash_insert(ctx, table, oldents[i].key, oldents[i].val, NULL);
+			do_hash_insert(ctx, table, oldents[i].key, oldents[i].val);
 		}
 	}
 
@@ -227,22 +209,8 @@ void *
 fz_hash_insert(fz_context *ctx, fz_hash_table *table, const void *key, void *val)
 {
 	if (table->load > table->size * 8 / 10)
-	{
 		fz_resize_hash(ctx, table, table->size * 2);
-	}
-
-	return do_hash_insert(ctx, table, key, val, NULL);
-}
-
-void *
-fz_hash_insert_with_pos(fz_context *ctx, fz_hash_table *table, const void *key, void *val, unsigned *pos)
-{
-	if (table->load > table->size * 8 / 10)
-	{
-		fz_resize_hash(ctx, table, table->size * 2);
-	}
-
-	return do_hash_insert(ctx, table, key, val, pos);
+	return do_hash_insert(ctx, table, key, val);
 }
 
 static void
@@ -309,22 +277,6 @@ fz_hash_remove(fz_context *ctx, fz_hash_table *table, const void *key)
 		if (pos == size)
 			pos = 0;
 	}
-}
-
-void
-fz_hash_remove_fast(fz_context *ctx, fz_hash_table *table, const void *key, unsigned pos)
-{
-	fz_hash_entry *ents = table->ents;
-
-	if (ents[pos].val == NULL || memcmp(key, ents[pos].key, table->keylen) != 0)
-	{
-		/* The value isn't there, or the key didn't match! The table
-		 * must have been rebuilt (or the contents moved) in the
-		 * meantime. Do the removal the slow way. */
-		fz_hash_remove(ctx, table, key);
-	}
-	else
-		do_removal(ctx, table, key, pos);
 }
 
 void

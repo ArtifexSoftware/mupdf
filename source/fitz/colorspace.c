@@ -1641,7 +1641,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		fz_color_converter cc;
 
 		fz_lookup_color_converter(ctx, &cc, ds, ss);
-		lookup = fz_new_hash_table(ctx, 509, srcn, -1);
+		lookup = fz_new_hash_table(ctx, 509, srcn, -1, NULL);
 
 		while (h--)
 		{
@@ -1692,7 +1692,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 			s += s_line_inc;
 		}
 
-		fz_drop_hash(ctx, lookup);
+		fz_drop_hash_table(ctx, lookup);
 	}
 }
 
@@ -2133,7 +2133,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 	fz_try(ctx)
 	{
 		fz_lookup_color_converter(ctx, &cached->base, ds, ss);
-		cached->hash = fz_new_hash_table(ctx, 256, n * sizeof(float), -1);
+		cached->hash = fz_new_hash_table(ctx, 256, n * sizeof(float), -1, fz_free);
 		cc->convert = fz_cached_color_convert;
 		cc->ds = ds;
 		cc->ss = ss;
@@ -2141,7 +2141,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_hash(ctx, cached->hash);
+		fz_drop_hash_table(ctx, cached->hash);
 		fz_rethrow(ctx);
 	}
 }
@@ -2149,22 +2149,13 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 {
 	fz_cached_color_converter *cc;
-	int i, n;
-
 	if (cc_ == NULL)
 		return;
 	cc = cc_->opaque;
 	if (cc == NULL)
 		return;
 	cc_->opaque = NULL;
-
-	n = fz_hash_len(ctx, cc->hash);
-	for (i = 0; i < n; i++)
-	{
-		void *v = fz_hash_get_val(ctx, cc->hash, i);
-		fz_free(ctx, v);
-	}
-	fz_drop_hash(ctx, cc->hash);
+	fz_drop_hash_table(ctx, cc->hash);
 	fz_free(ctx, cc);
 }
 
