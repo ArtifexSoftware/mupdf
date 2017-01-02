@@ -173,10 +173,10 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 	fz_always(ctx)
 	{
 		fz_drop_colorspace(ctx, colorspace);
+		fz_drop_image(ctx, mask);
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_image(ctx, mask);
 		fz_drop_image(ctx, image);
 		fz_rethrow(ctx);
 	}
