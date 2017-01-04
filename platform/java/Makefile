@@ -28,10 +28,10 @@ default: $(MUPDF_JAVA) libmupdf.jar
 MUPDF_CORE := ../../build/java/libmupdf.a ../../build/java/libmupdfthird.a
 ifeq "$(OS)" "Linux"
 $(MUPDF_CORE) :
-	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC FREETYPE_DIR=/foo ZLIB_DIR=/foo build=release libs
+	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC FREETYPE_DIR=/foo ZLIB_DIR=/foo libs
 else
 $(MUPDF_CORE) :
-	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC build=release libs
+	$(MAKE) -C ../.. OUT=build/java XCFLAGS=-fPIC libs
 endif
 
 LIBRARY_JAVA_SOURCES := $(sort $(wildcard src/com/artifex/mupdf/fitz/*.java))
