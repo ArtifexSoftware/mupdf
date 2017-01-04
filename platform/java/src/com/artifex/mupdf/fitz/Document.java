@@ -53,6 +53,10 @@ public class Document
 
 	public native PDFDocument toPDFDocument();
 
+	public boolean isPDF() {
+		return toPDFDocument() != null;
+	}
+
 	public String makeProof (String currentPath, String printProfile, String displayProfile, int resolution)
 	{
 		String proofFile = proofNative( currentPath,  printProfile,  displayProfile,  resolution);

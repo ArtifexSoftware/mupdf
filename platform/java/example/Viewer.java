@@ -2,112 +2,253 @@ package example;
 
 import com.artifex.mupdf.fitz.*;
 
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.*;
+
 import java.io.File;
-
-import java.awt.Frame;
-import java.awt.Label;
-import java.awt.Button;
-import java.awt.Panel;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.ActionEvent;
-import java.awt.GraphicsEnvironment;
-import java.awt.GraphicsDevice;
-import java.awt.Toolkit;
-
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.JOptionPane;
+import java.io.FilenameFilter;
 import java.lang.reflect.Field;
+import java.util.Vector;
 
-public class Viewer extends Frame implements WindowListener, ActionListener
+public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener
 {
 	protected Document doc;
-	protected Panel toolbar;
-	protected PageCanvas pageCanvas;
-	protected Label pageLabel;
-	protected Button firstButton, prevButton, nextButton, lastButton, zoomInButton, zoomOutButton, fontIncButton, fontDecButton, toggleAnnotsButton;
-	protected int pageCount;
-	protected int pageNumber;
-	protected int layoutWidth;
-	protected int layoutHeight;
-	protected int layoutEm;
 
-	private float retinaScale;
+	protected ScrollPane pageScroll;
+	protected Panel pageHolder;
+	protected ImageCanvas pageCanvas;
+
+	protected Button firstButton, prevButton, nextButton, lastButton;
+	protected TextField pageField;
+	protected Label pageLabel;
+	protected Button zoomInButton, zoomOutButton;
+	protected Choice zoomChoice;
+	protected Button fontIncButton, fontDecButton;
+	protected Label fontSizeLabel;
+
+	protected List outlineList;
+	protected Vector flatOutline;
+
+	protected int pageCount;
+	protected int pageNumber = 0;
+	protected int zoomLevel = 5;
+	protected int layoutWidth = 450;
+	protected int layoutHeight = 600;
+	protected int layoutEm = 12;
+	protected float pixelScale;
+
+	protected static final int zoomList[] = {
+		18, 24, 36, 54, 72, 96, 120, 144, 180, 216, 288
+	};
+
+	protected static BufferedImage imageFromPixmap(Pixmap pixmap) {
+		int w = pixmap.getWidth();
+		int h = pixmap.getHeight();
+		BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
+		image.setRGB(0, 0, w, h, pixmap.getPixels(), 0, w);
+		return image;
+	}
+
+	protected static BufferedImage imageFromPage(Page page, Matrix ctm) {
+		Rect bbox = page.getBounds().transform(ctm);
+		Pixmap pixmap = new Pixmap(ColorSpace.DeviceBGR, bbox, true);
+		pixmap.clear(255);
+
+		DrawDevice dev = new DrawDevice(pixmap);
+		page.run(dev, ctm, null);
+		dev.close();
+		dev.destroy();
+
+		BufferedImage image = imageFromPixmap(pixmap);
+		pixmap.destroy();
+		return image;
+	}
+
+	protected static void messageBox(Frame owner, String title, String message) {
+		final Dialog box = new Dialog(owner, title, true);
+		box.add(new Label(message), BorderLayout.CENTER);
+		Panel buttonPane = new Panel(new FlowLayout());
+		Button okayButton = new Button("Okay");
+		okayButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				box.setVisible(false);
+			}
+		});
+		buttonPane.add(okayButton);
+		box.add(buttonPane, BorderLayout.SOUTH);
+		box.pack();
+		box.setVisible(true);
+		box.dispose();
+	}
+
+	protected class ImageCanvas extends Canvas
+	{
+		protected BufferedImage image;
+
+		public void setImage(BufferedImage image_) {
+			image = image_;
+			repaint();
+		}
+
+		public Dimension getPreferredSize() {
+			return new Dimension(image.getWidth(), image.getHeight());
+		}
+
+		public void paint(Graphics g) {
+			float imageScale = 1 / pixelScale;
+			final Graphics2D g2d = (Graphics2D)g.create(0, 0, image.getWidth(), image.getHeight());
+			g2d.scale(imageScale, imageScale);
+			g2d.drawImage(image, 0, 0, null);
+			g2d.dispose();
+		}
+
+		public Dimension getMinimumSize() { return getPreferredSize(); }
+		public Dimension getMaximumSize() { return getPreferredSize(); }
+		public void update(Graphics g) { paint(g); }
+	}
 
 	public Viewer(Document doc_) {
-		super("MuPDF");
-
-		retinaScale = getRetinaScale();
-
 		this.doc = doc_;
 
-		pageCount = doc.countPages();
-		pageNumber = 0;
-
-		layoutWidth = 1200;
-		layoutHeight = 800;
-		layoutEm = 12;
-
-		setSize(layoutWidth, layoutHeight + 100);
+		pixelScale = getRetinaScale();
 		setTitle("MuPDF: " + doc.getMetaData(Document.META_INFO_TITLE));
+		doc.layout(layoutWidth, layoutHeight, layoutEm);
+		pageCount = doc.countPages();
 
-		toolbar = new Panel();
-		toolbar.setLayout(new FlowLayout(FlowLayout.LEFT));
-		firstButton = new Button("|<");
-		firstButton.addActionListener(this);
-		prevButton = new Button("<");
-		prevButton.addActionListener(this);
-		nextButton = new Button(">");
-		nextButton.addActionListener(this);
-		lastButton = new Button(">|");
-		lastButton.addActionListener(this);
-		zoomInButton = new Button("+");
-		zoomInButton.addActionListener(this);
-		zoomOutButton = new Button("-");
-		zoomOutButton.addActionListener(this);
+		Panel rightPanel = new Panel(new BorderLayout());
+		{
+			Panel toolpane = new Panel(new GridBagLayout());
+			{
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.HORIZONTAL;
+				c.anchor = GridBagConstraints.WEST;
 
-		toggleAnnotsButton = new Button("toggle annots");
-		toggleAnnotsButton.addActionListener(this);
+				Panel toolbar = new Panel(new FlowLayout(FlowLayout.LEFT));
+				{
+					firstButton = new Button("|<");
+					firstButton.addActionListener(this);
+					prevButton = new Button("<");
+					prevButton.addActionListener(this);
+					nextButton = new Button(">");
+					nextButton.addActionListener(this);
+					lastButton = new Button(">|");
+					lastButton.addActionListener(this);
+					pageField = new TextField(4);
+					pageField.addActionListener(this);
+					pageLabel = new Label("/ " + pageCount);
 
-		if (doc.isReflowable()) {
-			fontIncButton = new Button("FONT");
-			fontIncButton.addActionListener(this);
-			fontDecButton = new Button("font");
-			fontDecButton.addActionListener(this);
+					toolbar.add(firstButton);
+					toolbar.add(prevButton);
+					toolbar.add(pageField);
+					toolbar.add(pageLabel);
+					toolbar.add(nextButton);
+					toolbar.add(lastButton);
+				}
+				c.gridy = 0;
+				toolpane.add(toolbar, c);
+
+				toolbar = new Panel(new FlowLayout(FlowLayout.LEFT));
+				{
+					zoomOutButton = new Button("Zoom-");
+					zoomOutButton.addActionListener(this);
+					zoomInButton = new Button("Zoom+");
+					zoomInButton.addActionListener(this);
+
+					zoomChoice = new Choice();
+					for (int i = 0; i < zoomList.length; ++i)
+						zoomChoice.add(String.valueOf(zoomList[i]));
+					zoomChoice.select(zoomLevel);
+					zoomChoice.addItemListener(this);
+
+					toolbar.add(zoomOutButton);
+					toolbar.add(zoomChoice);
+					toolbar.add(zoomInButton);
+				}
+				c.gridy += 1;
+				toolpane.add(toolbar, c);
+
+				if (doc.isReflowable()) {
+					toolbar = new Panel(new FlowLayout(FlowLayout.LEFT));
+					{
+						fontDecButton = new Button("Font-");
+						fontDecButton.addActionListener(this);
+						fontIncButton = new Button("Font+");
+						fontIncButton.addActionListener(this);
+						fontSizeLabel = new Label(String.valueOf(layoutEm));
+
+						toolbar.add(fontDecButton);
+						toolbar.add(fontSizeLabel);
+						toolbar.add(fontIncButton);
+					}
+					c.gridy += 1;
+					toolpane.add(toolbar, c);
+				}
+			}
+			rightPanel.add(toolpane, BorderLayout.NORTH);
+
+			outlineList = new List();
+			outlineList.addItemListener(this);
+			rightPanel.add(outlineList, BorderLayout.CENTER);
 		}
+		this.add(rightPanel, BorderLayout.EAST);
 
-		pageLabel = new Label();
-
-		toolbar.add(firstButton);
-		toolbar.add(prevButton);
-		toolbar.add(nextButton);
-		toolbar.add(lastButton);
-		toolbar.add(zoomInButton);
-		toolbar.add(zoomOutButton);
-		toolbar.add(toggleAnnotsButton);
-		if (doc.isReflowable()) {
-			toolbar.add(fontIncButton);
-			toolbar.add(fontDecButton);
+		pageScroll = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
+		{
+			pageHolder = new Panel(new GridBagLayout());
+			{
+				pageHolder.setBackground(Color.gray);
+				pageCanvas = new ImageCanvas();
+				pageHolder.add(pageCanvas);
+			}
+			pageScroll.add(pageHolder);
 		}
-		toolbar.add(pageLabel);
-
-		add(toolbar, BorderLayout.NORTH);
+		this.add(pageScroll, BorderLayout.CENTER);
 
 		addWindowListener(this);
 
-		stuff();
+		updateOutline();
+		updatePageCanvas();
+
+		pack();
 	}
 
-	public void stuff() {
-		pageLabel.setText("Page " + (pageNumber + 1) + " / " + pageCount);
-		if (pageCanvas != null)
-			remove(pageCanvas);
-		pageCanvas = new PageCanvas(doc.loadPage(pageNumber), retinaScale);
-		add(pageCanvas, BorderLayout.CENTER);
+	protected void addOutline(Outline[] outline, String indent) {
+		for (int i = 0; i < outline.length; ++i) {
+			Outline node = outline[i];
+			if (node.title != null) {
+				flatOutline.add(node);
+				outlineList.add(indent + node.title);
+			}
+			if (node.down != null)
+				addOutline(node.down, indent + "    ");
+		}
+	}
+
+	protected void updateOutline() {
+		Outline[] outline = doc.loadOutline();
+		outlineList.removeAll();
+		if (outline != null) {
+			flatOutline = new Vector();
+			addOutline(outline, "");
+			outlineList.setVisible(true);
+		} else  {
+			outlineList.setVisible(false);
+		}
+	}
+
+	protected void updatePageCanvas() {
+		pageField.setText(String.valueOf(pageNumber + 1));
+
+		Matrix ctm = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
+		BufferedImage image = imageFromPage(doc.loadPage(pageNumber), ctm);
+		pageCanvas.setImage(image);
+
+		Dimension size = pageHolder.getPreferredSize();
+		size.width += 40;
+		size.height += 40;
+		pageScroll.setPreferredSize(size);
+		pageCanvas.invalidate();
 		validate();
 	}
 
@@ -115,6 +256,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 		Object source = event.getSource();
 		int oldPageNumber = pageNumber;
 		int oldLayoutEm = layoutEm;
+		int oldZoomLevel = zoomLevel;
 
 		if (source == firstButton)
 			pageNumber = 0;
@@ -133,36 +275,78 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 			if (pageNumber >= pageCount)
 				pageNumber = pageCount - 1;
 		}
-		if (doc.isReflowable() && source == fontIncButton) {
-			layoutEm = layoutEm + 1;
-		}
-		if (doc.isReflowable() && source == fontDecButton) {
-			layoutEm = layoutEm - 1;
+
+		if (source == pageField) {
+			pageNumber = Integer.parseInt(pageField.getText()) - 1;
+			if (pageNumber < 0)
+				pageNumber = 0;
+			if (pageNumber >= pageCount)
+				pageNumber = pageCount - 1;
+			pageField.setText(String.valueOf(pageNumber));
 		}
 
-		if (source == zoomInButton) {
-			pageCanvas.zoomIn();
+		if (source == fontIncButton && doc.isReflowable()) {
+			layoutEm += 1;
+			if (layoutEm > 36)
+				layoutEm = 36;
+			fontSizeLabel.setText(String.valueOf(layoutEm));
+		}
+
+		if (source == fontDecButton && doc.isReflowable()) {
+			layoutEm -= 1;
+			if (layoutEm < 6)
+				layoutEm = 6;
+			fontSizeLabel.setText(String.valueOf(layoutEm));
 		}
 
 		if (source == zoomOutButton) {
-			pageCanvas.zoomOut();
+			zoomLevel -= 1;
+			if (zoomLevel < 0)
+				zoomLevel = 0;
+			zoomChoice.select(zoomLevel);
 		}
 
-		if (layoutEm != oldLayoutEm)
+		if (source == zoomInButton) {
+			zoomLevel += 1;
+			if (zoomLevel >= zoomList.length)
+				zoomLevel = zoomList.length - 1;
+			zoomChoice.select(zoomLevel);
+		}
+
+		if (layoutEm != oldLayoutEm) {
+			float oldPos = (pageNumber + 0.5f) / (float)pageCount;
 			doc.layout(layoutWidth, layoutHeight, layoutEm);
-
-		if (source == toggleAnnotsButton) {
-			pageCanvas.toggleAnnots();
+			updateOutline();
+			pageCount = doc.countPages();
+			pageLabel.setText("/ " + pageCount);
+			pageNumber = (int)(oldPos * pageCount);
 		}
 
-		if (pageNumber != oldPageNumber || layoutEm != oldLayoutEm)
-			stuff();
+		if (zoomLevel != oldZoomLevel || pageNumber != oldPageNumber || layoutEm != oldLayoutEm)
+			updatePageCanvas();
 	}
 
-	public void windowClosing(WindowEvent event) {
-		System.exit(0);
+	public void itemStateChanged(ItemEvent event) {
+		Object source = event.getSource();
+		if (source == zoomChoice) {
+			int oldZoomLevel = zoomLevel;
+			zoomLevel = zoomChoice.getSelectedIndex();
+			if (zoomLevel != oldZoomLevel)
+				updatePageCanvas();
+		}
+		if (source == outlineList) {
+			int i = outlineList.getSelectedIndex();
+			Outline node = (Outline)flatOutline.elementAt(i);
+			if (node.page >= 0) {
+				if (node.page != pageNumber) {
+					pageNumber = node.page;
+					updatePageCanvas();
+				}
+			}
+		}
 	}
 
+	public void windowClosing(WindowEvent event) { System.exit(0); }
 	public void windowActivated(WindowEvent event) { }
 	public void windowDeactivated(WindowEvent event) { }
 	public void windowIconified(WindowEvent event) { }
@@ -170,108 +354,50 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 	public void windowOpened(WindowEvent event) { }
 	public void windowClosed(WindowEvent event) { }
 
-	public static void main(String[] args)
-	{
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setDialogTitle("Choose a file to open");
-		fileChooser.setFileFilter(new FileFilter()
-		{
-			public String getDescription()
-			{
-				return "Supported files (*.pdf, *,xps, *.jpg, *.jpeg, *.png, *.epub, *.cbz, *.cbr, *.epub)";
-			}
+	public static void main(String[] args) {
+		File selectedFile;
 
-			public boolean accept(File f)
-			{
-				if (f.isDirectory())
-					return true;
-
-				String filename = f.getName().toLowerCase();
-				if (filename.endsWith(".pdf"))
-					return true;
-				if (filename.endsWith(".xps"))
-					return true;
-				if (filename.endsWith(".jpg"))
-					return true;
-				if (filename.endsWith(".jpeg"))
-					return true;
-				if (filename.endsWith(".png"))
-					return true;
-				if (filename.endsWith(".epub"))
-					return true;
-				if (filename.endsWith(".cbz"))
-					return true;
-				if (filename.endsWith(".cbr"))
-					return true;
-				if (filename.endsWith(".epub"))
-					return true;
-
-				return false;
-			}
-		});
-
-		while (true)
-		{
-			try
-			{
-				// get a file to open
-				int result = fileChooser.showOpenDialog(null);
-				if (result == JFileChooser.APPROVE_OPTION)
-				{
-					// user selects a file
-					File selectedFile = fileChooser.getSelectedFile();
-					if (selectedFile != null)
-					{
-						Document doc = new Document(selectedFile.getAbsolutePath());
-						if (doc != null)
-						{
-							Viewer app = new Viewer(doc);
-							if (app != null)
-							{
-								app.setVisible(true);
-								return;
-							}
-							else
-							{
-								infoBox("Cannot create Viewer for "+selectedFile.getAbsolutePath(),"Error");
-							}
-						}
-						else
-						{
-							infoBox("Cannot open "+selectedFile.getAbsolutePath(),"Error");
-						}
-					}
-					else
-					{
-						infoBox("Selected file not found.","Error");
-					}
+		if (args.length <= 0) {
+			FileDialog fileDialog = new FileDialog((Frame)null, "MuPDF Open File", FileDialog.LOAD);
+			fileDialog.setDirectory(System.getProperty("user.dir"));
+			fileDialog.setFilenameFilter(new FilenameFilter() {
+				public boolean accept(File dir, String name) {
+					if (name.endsWith(".pdf")) return true;
+					if (name.endsWith(".xps")) return true;
+					if (name.endsWith(".oxps")) return true;
+					if (name.endsWith(".cbt")) return true;
+					if (name.endsWith(".cbz")) return true;
+					if (name.endsWith(".epub")) return true;
+					if (name.endsWith(".fb2")) return true;
+					if (name.endsWith(".xhtml")) return true;
+					return false;
 				}
-				else
-				{
-					infoBox("File selection cancelled.","Error");
-					return;
-				}
+			});
+			fileDialog.setVisible(true);
+			if (fileDialog.getFile() == null)
+				System.exit(0);
+			selectedFile = new File(fileDialog.getDirectory(), fileDialog.getFile());
+			fileDialog.dispose();
+		} else {
+			selectedFile = new File(args[0]);
+		}
 
-			}
-			catch (Exception e)
-			{
-				infoBox("Exception: "+e.getMessage(),"Error");
-			}
+		try {
+			Document doc = new Document(selectedFile.getAbsolutePath());
+			Viewer app = new Viewer(doc);
+			app.setVisible(true);
+			return;
+		} catch (Exception e) {
+			messageBox(null, "MuPDF Error", "Cannot open \"" + selectedFile + "\": " + e.getMessage() + ".");
+			System.exit(1);
 		}
 	}
 
-	private static void infoBox(String infoMessage, String titleBar)
-	{
-		JOptionPane.showMessageDialog(null, infoMessage, "InfoBox: " + titleBar, JOptionPane.INFORMATION_MESSAGE);
-	}
-
-	public float getRetinaScale()
-	{
+	public float getRetinaScale() {
 		// first try Oracle's VM (we should also test for 1.7.0_40 or higher)
 		final String vendor = System.getProperty("java.vm.vendor");
 		boolean isOracle = vendor != null && vendor.toLowerCase().contains("Oracle".toLowerCase());
-		if (isOracle)
-		{
+		if (isOracle) {
 			GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
 			final GraphicsDevice device = env.getDefaultScreenDevice();
 			try {
@@ -297,5 +423,4 @@ public class Viewer extends Frame implements WindowListener, ActionListener
 
 		return 1.0f;
 	}
-
 }
