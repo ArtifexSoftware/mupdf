@@ -1250,6 +1250,7 @@ static void layout_flow(fz_context *ctx, fz_html_box *box, fz_html_box *top, flo
 
 	for (node = box->flow_head; node; node = node->next)
 	{
+		node->breaks_line = 0; /* reset line breaks from previous layout */
 		if (node->type == FLOW_IMAGE)
 		{
 			float w = 0, h = 0;
