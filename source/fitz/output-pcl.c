@@ -416,14 +416,14 @@ pcl_header(fz_context *ctx, fz_output *out, fz_pcl_options *pcl, int num_copies,
 	}
 
 	/* Put out per-page initialization. */
-	/* in duplex mode the sheet is already in process, so there are some
+	/* In duplex mode the sheet is already in process, so there are some
 	 * commands which must not be sent to the printer for the 2nd page,
-	 * as this commands will cause the printer to eject the sheet with
-	 * only the 1st page printed. This commands are:
+	 * as these commands will cause the printer to eject the sheet with
+	 * only the 1st page printed. These commands are:
 	 * \033&l%dA (setting paper size)
 	 * \033&l%dH (setting paper tray)
-	 * in simplex mode we set this parameters for each page,
-	 * in duplex mode we set this parameters for each odd page
+	 * in simplex mode we set these parameters for each page,
+	 * in duplex mode we set these parameters for each odd page
 	 */
 
 	if ((pcl->features & PCL_HAS_DUPLEX) && pcl->duplex_set && pcl->duplex)
@@ -599,7 +599,7 @@ static void guess_paper_size(fz_pcl_options *pcl, int w, int h, int xres, int yr
 	pcl->orientation = rotated;
 }
 
-/* Copy a line, removing the alpha, returning true if it line
+/* Copy a line, removing the alpha, returning true if the line
  * was blank. */
 static int
 line_is_blank(unsigned char *dst, const unsigned char *sp, int w)

@@ -281,7 +281,7 @@ is_list_entry(fz_stext_line *line, fz_stext_span *span, int *char_num_ptr)
 
 #ifdef SPOT_LINE_NUMBERS
 	/* Is the entire first span a number? Or does it start with a number
-	 * followed by ) or : ? Allow to involve single latin chars too. */
+	 * followed by ) or : ? Allowed to involve single latin chars too. */
 	if (is_number(chr->c) || is_latin_char(chr->c))
 	{
 		int cn = char_num;

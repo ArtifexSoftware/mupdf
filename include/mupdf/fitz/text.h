@@ -72,7 +72,7 @@ struct fz_text_s
 fz_text *fz_new_text(fz_context *ctx);
 
 /*
-	fz_keep_text: Add a reference to an fz_text.
+	fz_keep_text: Add a reference to a fz_text.
 
 	text: text object to keep a reference to.
 
@@ -82,7 +82,7 @@ fz_text *fz_keep_text(fz_context *ctx, const fz_text *text);
 
 /*
 	fz_drop_text: Drop a reference to the object, freeing
-	if if is the last one.
+	if it is the last one.
 
 	text: Object to drop the reference to.
 */

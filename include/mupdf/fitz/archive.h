@@ -93,7 +93,7 @@ const char *fz_list_archive_entry(fz_context *ctx, fz_archive *arch, int idx);
 	If named entry does not exist 0 will be returned, if it does
 	exist 1 is returned.
 
-	nane: Entry name to look for, this must be an exact match to
+	name: Entry name to look for, this must be an exact match to
 	the entry name in the archive.
 */
 int fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
@@ -101,7 +101,7 @@ int fz_has_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 /*
 	fz_open_archive_entry: Opens an archive entry as a stream.
 
-	nane: Entry name to look for, this must be an exact match to
+	name: Entry name to look for, this must be an exact match to
 	the entry name in the archive.
 */
 fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
@@ -110,14 +110,14 @@ fz_stream *fz_open_archive_entry(fz_context *ctx, fz_archive *arch, const char *
 	fz_read_archive_entry: Reads all bytes in an archive entry
 	into a buffer.
 
-	nane: Entry name to look for, this must be an exact match to
+	name: Entry name to look for, this must be an exact match to
 	the entry name in the archive.
 */
 
 fz_buffer *fz_read_archive_entry(fz_context *ctx, fz_archive *arch, const char *name);
 
 /*
-	fz_is_tar_archive: Detect if stream object is a tar achive.
+	fz_is_tar_archive: Detect if stream object is a tar achieve.
 
 	Assumes that the stream object is seekable.
 */
@@ -147,7 +147,7 @@ fz_archive *fz_open_tar_archive(fz_context *ctx, const char *filename);
 fz_archive *fz_open_tar_archive_with_stream(fz_context *ctx, fz_stream *file);
 
 /*
-	fz_is_zip_archive: Detect if stream object is a zip achive.
+	fz_is_zip_archive: Detect if stream object is a zip archive.
 
 	Assumes that the stream object is seekable.
 */

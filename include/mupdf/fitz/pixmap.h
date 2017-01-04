@@ -41,7 +41,7 @@ int fz_pixmap_x(fz_context *ctx, fz_pixmap *pix);
 int fz_pixmap_y(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	fz_new_pixmap: Create a new pixmap, with it's origin at (0,0)
+	fz_new_pixmap: Create a new pixmap, with its origin at (0,0)
 
 	cs: The colorspace to use for the pixmap, or NULL for an alpha
 	plane/mask.
@@ -79,7 +79,7 @@ fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h, int a
 fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *bbox, int alpha);
 
 /*
-	fz_new_pixmap_with_data: Create a new pixmap, with it's origin at
+	fz_new_pixmap_with_data: Create a new pixmap, with its origin at
 	(0,0) using the supplied data block.
 
 	cs: The colorspace to use for the pixmap, or NULL for an alpha
@@ -271,7 +271,7 @@ fz_pixmap *fz_ensure_pixmap_is_additive(fz_context *ctx, fz_pixmap *pix);
 /*
 	fz_convert_pixmap: Convert an existing pixmap to a desired
 	colorspace. Other properties of the pixmap, such as resolution
-	and position are are copied to the converted pixmap.
+	and position are copied to the converted pixmap.
 
 	pix: The pixmap to convert.
 
@@ -318,7 +318,7 @@ fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *src
 
 	free_samples: Is zero when an application has provided its own
 	buffer for pixel data through fz_new_pixmap_with_bbox_and_data.
-	If non-zero the buffer will be freed along with the the pixmap.
+	If non-zero the buffer will be freed along with the pixmap.
 */
 struct fz_pixmap_s
 {

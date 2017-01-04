@@ -59,7 +59,7 @@
  *    it last passed a check for correctness.
  *
  *    If you rerun, and call Memento_paranoidAt(int event); with this number
- *    the the code will wait until it reaches that event and then start
+ *    the code will wait until it reaches that event and then start
  *    checking the heap after every allocation event. Assuming it is a
  *    deterministic failure, you should then find out where in your program
  *    the error is occurring (between event x-1 and event x).

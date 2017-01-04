@@ -30,7 +30,7 @@
  *
  * The other mode of use is for plain executables that might wish to
  * (say) generate images of all the pages of a document. This can
- * be acheived, without use of callbacks, using the few synchronous
+ * be achieved, without use of callbacks, using the few synchronous
  * calls. E.g., MuOfficeDoc_getNumPages will wait for background document
  * loading to complete before returning the total number of pages and
  * MuOfficeRender_destroy will wait for background rendering to complete
@@ -236,7 +236,7 @@ MuOfficeSaveResult;
 /**
  * Callback function used to monitor save operations.
  *
- * @param cookie        the data pointer that was oringinally passed to
+ * @param cookie        the data pointer that was originally passed to
  *                      MuOfficeDoc_save.
  * @param result        the result of the save operation
  */
@@ -261,7 +261,7 @@ MuError MuOfficeLib_create(MuOfficeLib **pMu);
 void MuOfficeLib_destroy(MuOfficeLib *mu);
 
 /**
- * Find the type of a file given it's filename extension.
+ * Find the type of a file given its filename extension.
  *
  * @param path      path to the file (in utf8)
  *
@@ -315,7 +315,7 @@ MuError MuOfficeLib_loadDocument(MuOfficeLib              *mu,
  * Perform MuPDF native operations on a given MuOfficeLib
  * instance.
  *
- * The function is called with an fz_context value that can
+ * The function is called with a fz_context value that can
  * be safely used (i.e. the context is cloned/dropped
  * appropriately around the call). The function should signal
  * errors by fz_throw-ing.
@@ -355,7 +355,7 @@ MuOfficeDocType MuOfficeDoc_docType(MuOfficeDoc *doc);
  * Return the number of pages of a document
  *
  * This function waits for document loading to complete before returning
- * the result. It may block the calling thread for a signficant period of
+ * the result. It may block the calling thread for a significant period of
  * time. To avoid blocking, this call should be avoided in favour of using
  * the MuOfficeLib_loadDocument callbacks to monitor loading.
  *
@@ -588,7 +588,7 @@ MuError MuOfficePage_render(	MuOfficePage             *page,
  * render.
  *
  * This call is intended to support an app dealing with a user quickly
- * flicking through document pages. A render may be sheduled but, before
+ * flicking through document pages. A render may be scheduled but, before
  * completion, be found not to be needed. In that case the bitmap will
  * need to be reused, which requires any existing render to be aborted.
  * The call to MuOfficeRender_destroy will cut short the render and

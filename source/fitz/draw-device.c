@@ -540,7 +540,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in future. */
+		 * may want to revisit this decision in the future. */
 		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
@@ -843,7 +843,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in future. */
+		 * may want to revisit this decision in the future. */
 		dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, dest);
@@ -968,7 +968,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in future. */
+		 * may want to revisit this decision in the future. */
 		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
@@ -1254,7 +1254,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	 * the destination device to the source pixels. */
 	if (fz_try_invert_matrix(&inverse, &local_ctm))
 	{
-		/* Not invertible. Could just bale? Use the whole image
+		/* Not invertible. Could just bail? Use the whole image
 		 * for now. */
 		src_area.x0 = 0;
 		src_area.x1 = image->w;
@@ -1387,7 +1387,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	 * the destination device to the source pixels. */
 	if (fz_try_invert_matrix(&inverse, &local_ctm))
 	{
-		/* Not invertible. Could just bale? Use the whole image
+		/* Not invertible. Could just bail? Use the whole image
 		 * for now. */
 		src_area.x0 = 0;
 		src_area.x1 = image->w;
@@ -1528,7 +1528,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
-		 * may want to revisit this decision in future. */
+		 * may want to revisit this decision in the future. */
 		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);

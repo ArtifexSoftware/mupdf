@@ -237,7 +237,7 @@ pdf_to_ucs2(fz_context *ctx, pdf_obj *src)
 	return dst;
 }
 
-/* allow to convert to UCS-2 without the need for an fz_context */
+/* allow conversion to UCS-2 without the need for a fz_context */
 /* (buffer must be at least (fz_to_str_len(src) + 1) * 2 bytes in size) */
 void
 pdf_to_ucs2_buf(fz_context *ctx, unsigned short *buffer, pdf_obj *src)

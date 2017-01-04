@@ -134,11 +134,11 @@ int fz_packed_path_size(const fz_path *path);
 	fz_pack_path: Pack a path into the given block.
 	To minimise the size of paths, this function allows them to be
 	packed into a buffer with other information. Paths can be used
-	interchangably regardless of how they are packed.
+	interchangeably regardless of how they are packed.
 
 	pack: Pointer to a block of data to pack the path into. Should
 	be aligned by the caller to the same alignment as required for
-	an fz_path pointer.
+	a fz_path pointer.
 
 	max: The number of bytes available in the block.
 	If max < sizeof(fz_path) then an exception will
@@ -151,7 +151,7 @@ int fz_packed_path_size(const fz_path *path);
 
 	Returns the number of bytes within the block used. Callers can
 	access the packed path data by casting the value of pack on
-	entry to be an fz_path *.
+	entry to be a fz_path *.
 
 	Throws exceptions on failure to allocate, or if
 	max < sizeof(fz_path).

@@ -96,7 +96,7 @@ pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 void pdf_drop_document(fz_context *ctx, pdf_document *doc);
 
 /*
-	pdf_specifics: down-cast an fz_document to a pdf_document.
+	pdf_specifics: down-cast a fz_document to a pdf_document.
 	Returns NULL if underlying document is not PDF
 */
 pdf_document *pdf_specifics(fz_context *ctx, fz_document *doc);
@@ -750,7 +750,7 @@ void pdf_delete_page_range(fz_context *ctx, pdf_document *doc, int start, int en
 	on a document have completed, this will tidy up
 	the document. For now this is restricted to
 	rebalancing the page tree, but may be extended
-	in future.
+	in the future.
 */
 void pdf_finish_edit(fz_context *ctx, pdf_document *doc);
 
@@ -761,7 +761,7 @@ typedef struct pdf_write_options_s pdf_write_options;
 /*
 	In calls to fz_save_document, the following options structure can be used
 	to control aspects of the writing process. This structure may grow
-	in future, and should be zero-filled to allow forwards compatibility.
+	in the future, and should be zero-filled to allow forwards compatibility.
 */
 struct pdf_write_options_s
 {

@@ -19,7 +19,7 @@ using MuPDF should use the error handling strategies described below.
 Common function arguments
 =========================
 
-Most functions in MuPDFs interface take a context argument.
+Most functions in MuPDF's interface take a context argument.
 
 A context contains global state used by MuPDF inside functions when
 parsing or rendering pages of the document. It contains for example:
@@ -101,7 +101,7 @@ The macro based nature of this system has 3 main limitations:
 	in fz_try throwing an exception may become undefined as part
 	of the process of throwing that exception.
 
-	As a way of mitigating this problem, we provide an fz_var()
+	As a way of mitigating this problem, we provide a fz_var()
 	macro that tells the compiler to ensure that that variable is
 	not unset by the act of throwing the exception.
 

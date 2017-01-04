@@ -502,7 +502,7 @@ pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox
 		rotate = 0;
 
 	/* Compute transform from fitz' page space (upper left page origin, y descending, 72 dpi)
-	 * to PDF user space (arbitary page origin, y ascending, UserUnit dpi). */
+	 * to PDF user space (arbitrary page origin, y ascending, UserUnit dpi). */
 
 	/* Make left-handed and scale by UserUnit */
 	fz_scale(page_ctm, userunit, -userunit);

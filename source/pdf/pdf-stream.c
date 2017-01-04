@@ -513,7 +513,7 @@ can_reuse_buffer(fz_context *ctx, pdf_xref_entry *entry, fz_compression_params *
 	{
 		int len = pdf_array_len(ctx, f);
 
-		/* Empty array of filters. It's uncompressed. We can cope. */
+		/* Empty array of filters. Its uncompressed. We can cope. */
 		if (len == 0)
 			return 1;
 		/* 1 filter is the most we can hope to cope with - if more,*/

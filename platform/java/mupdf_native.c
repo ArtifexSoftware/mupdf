@@ -2515,7 +2515,7 @@ newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject o
 	clip.y1 -= pageY0;
 
 	/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to
-	 * match the pixels data */
+	 * match the pixel's data */
 	pixbbox = clip;
 	pixbbox.x1 = pixbbox.x0 + width;
 

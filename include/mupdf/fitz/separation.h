@@ -5,7 +5,7 @@
 #include "mupdf/fitz/context.h"
 
 /*
-	An fz_separation structure holds details of a set of separations
+	A fz_separation structure holds details of a set of separations
 	(such as might be used on within a page of the document).
 
 	The app might control the separations by enabling/disabling them,

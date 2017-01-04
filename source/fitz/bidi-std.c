@@ -57,7 +57,7 @@
 	only bidi.h and bidi.cpp are needed.
 
 	The Win32 version is provided as a dialog procedure. To use as a
-	standalone program compile with the the lbmain.cpp file. If all you
+	standalone program compile with the lbmain.cpp file. If all you
 	need is the ability to run the code "as is", you can instead download
 	the unibook utility from http://uincode.org/unibook/ which contains
 	the bidi demo compiled from this source file.

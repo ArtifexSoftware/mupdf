@@ -13,7 +13,7 @@ void pdf_empty_store(fz_context *ctx, pdf_document *doc);
  * Structures used for managing resource locations and avoiding multiple
  * occurrences when resources are added to the document. The search for existing
  * resources will be performed when we are first trying to add an item. Object
- * refs are stored in an fz_hash_table structure using a hash of the md5 sum of
+ * refs are stored in a fz_hash_table structure using a hash of the md5 sum of
  * the data, enabling rapid lookup.
  */
 

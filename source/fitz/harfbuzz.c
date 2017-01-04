@@ -32,7 +32,7 @@
  * call down to fz_malloc/realloc/calloc/free. These
  * require context variables, so we get our hb_lock
  * and unlock to set these. Any attempt to call through
- * without setting these is detected.
+ * without setting these will be detected.
  *
  * It is therefore vital that any fz_lock/fz_unlock
  * handlers are shared between all the fz_contexts in

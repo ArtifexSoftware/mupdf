@@ -2496,7 +2496,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		/* Don't try to load hints again */
 		doc->hints_loaded = 1;
-		/* We won't use the linearized object any more. */
+		/* We won't use the linearized object anymore. */
 		doc->file_reading_linearly = 0;
 		/* Any other error becomes a TRYLATER */
 		fz_throw(ctx, FZ_ERROR_TRYLATER, "malformed hints object");

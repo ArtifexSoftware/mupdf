@@ -34,7 +34,7 @@ typedef struct fz_stext_page_s fz_stext_page;
 	constituent parts, e.g. the ligature ffi is expanded into three
 	separate characters f, f and i.
 
-	FZ_STEXT_PRESERVE_WHITESPACE: If this option is actived whitespace
+	FZ_STEXT_PRESERVE_WHITESPACE: If this option is activated whitespace
 	is passed through to the application in its original form. If this
 	option is deactivated any type of horizontal whitespace (including
 	horizontal tabs) will be replaced with space characters of variable

@@ -246,7 +246,7 @@ page_objects_sort(fz_context *ctx, page_objects *po)
 			/* If both are in the page_objects, pick the larger one */
 			if (k < i-1 && po->object[k] < po->object[k+1])
 				k++;
-			/* If j is bigger than k (i.e. both of it's children),
+			/* If j is bigger than k (i.e. both of its children),
 			 * we're done */
 			if (po->object[j] > po->object[k])
 				break;
@@ -411,7 +411,7 @@ heap_sort(int *list, int n, const int *val, int (*ge)(int, int))
 			/* If both are in the page_objects, pick the larger one */
 			if (k < i-1 && ge(val[list[k+1]], val[list[k]]))
 				k++;
-			/* If j is bigger than k (i.e. both of it's children),
+			/* If j is bigger than k (i.e. both of its children),
 			 * we're done */
 			if (ge(val[list[j]], val[list[k]]))
 				break;
@@ -1610,7 +1610,7 @@ static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, size_t n)
 	size_t cap;
 
 	if (n != (size_t)longN)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Buffer to large to deflate");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Buffer too large to deflate");
 
 	cap = compressBound(longN);
 	data = fz_malloc(ctx, cap);
@@ -3041,7 +3041,7 @@ void pdf_write_document(fz_context *ctx, pdf_document *doc, fz_output *out, pdf_
 	if (in_opts->do_incremental && in_opts->do_linear)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't do incremental writes with linearisation");
 	if (pdf_has_unsaved_sigs(ctx, doc))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't write pdf that has unsaved sigs to an fz_output!");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Can't write pdf that has unsaved sigs to a fz_output!");
 
 	prepare_for_save(ctx, doc, in_opts);
 

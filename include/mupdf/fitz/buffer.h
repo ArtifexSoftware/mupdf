@@ -39,7 +39,7 @@ void fz_drop_buffer(fz_context *ctx, fz_buffer *buf);
 size_t fz_buffer_storage(fz_context *ctx, fz_buffer *buf, unsigned char **data);
 
 /*
-	fz_string_from_buffer: Ensure that a buffers data ends in a
+	fz_string_from_buffer: Ensure that a buffer's data ends in a
 	0 byte, and return a pointer to it.
 
 	Returns pointer to data.

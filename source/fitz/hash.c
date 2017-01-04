@@ -3,7 +3,7 @@
 /*
 Simple hashtable with open addressing linear probe.
 Unlike text book examples, removing entries works
-correctly in this implementation, so it wont start
+correctly in this implementation, so it won't start
 exhibiting bad behaviour if entries are inserted
 and removed frequently.
 */
@@ -117,7 +117,7 @@ do_hash_insert(fz_context *ctx, fz_hash_table *table, const void *key, void *val
 
 		if (memcmp(key, ents[pos].key, table->keylen) == 0)
 		{
-			/* This is legal, but should happen rarely. */
+			/* This is legal, but should rarely happen. */
 			fz_warn(ctx, "assert: overwrite hash slot");
 			return ents[pos].val;
 		}

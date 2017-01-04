@@ -10,7 +10,7 @@
  * Only supports banding.
  * Supports auto fallback to grey if possible.
  * Supports threading.
- * Suports fallback in low memory cases.
+ * Supports fallback in low memory cases.
  */
 
 /*

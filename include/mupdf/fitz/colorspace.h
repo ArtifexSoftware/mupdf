@@ -8,7 +8,7 @@
 enum { FZ_MAX_COLORS = 32 };
 
 /*
-	An fz_colorspace object represents an abstract colorspace. While
+	A fz_colorspace object represents an abstract colorspace. While
 	this should be treated as a black box by callers of the library at
 	this stage, know that it encapsulates knowledge of how to convert
 	colors to and from the colorspace, any lookup tables generated, the

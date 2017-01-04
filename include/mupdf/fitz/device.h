@@ -19,7 +19,7 @@
 		The list device stores them in a list to play back later.
 		The text device performs text extraction and searching.
 		The bbox device calculates the bounding box for the page.
-	Other devices can (and will) be written in future.
+	Other devices can (and will) be written in the future.
 */
 typedef struct fz_device_s fz_device;
 
@@ -156,7 +156,7 @@ void *fz_new_device(fz_context *ctx, int size);
 void fz_close_device(fz_context *ctx, fz_device *dev);
 
 /*
-	fz_drop_device: Free a devices of any type and its resources.
+	fz_drop_device: Free a device of any type and its resources.
 	Don't forget to call fz_close_device before dropping the device, or you may get incomplete output!
 */
 void fz_drop_device(fz_context *ctx, fz_device *dev);
@@ -206,7 +206,7 @@ typedef struct fz_cookie_s fz_cookie;
 /*
 	Provide two-way communication between application and library.
 	Intended for multi-threaded applications where one thread is
-	rendering pages and another thread wants read progress
+	rendering pages and another thread wants to read progress
 	feedback or abort a job that takes a long time to finish. The
 	communication is unsynchronized without locking.
 
@@ -216,7 +216,7 @@ typedef struct fz_cookie_s fz_cookie;
 	which will cause the rendering to finish soon. This field is
 	checked periodically when the page is rendered, but exactly
 	when is not known, therefore there is no upper bound on
-	exactly when the the rendering will abort. If the application
+	exactly when the rendering will abort. If the application
 	did not provide a set of locks to fz_new_context, it must also
 	await the completion of fz_run_page before issuing another
 	call to fz_run_page. Note that once the application has set
@@ -294,7 +294,7 @@ fz_device *fz_new_bbox_device(fz_context *ctx, fz_rect *rectp);
 	If set, then the test device can both test and pass through to
 	an underlying device (like, say, the display list device). This
 	means that a display list can be created and at the end we'll
-	know if it's color or not.
+	know if it's colored or not.
 
 	In the absence of a passthrough device, the device will throw
 	an exception to stop page interpretation when color is found.

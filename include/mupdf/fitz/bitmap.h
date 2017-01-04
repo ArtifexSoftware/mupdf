@@ -36,7 +36,7 @@ void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 	threshold tile is a pixmap, possibly of varying sizes and phases.
 	Currently, we only provide one 'default' halftone tile for operating
 	on 1 component plus alpha pixmaps (where the alpha is ignored). This
-	is signified by an fz_halftone pointer to NULL.
+	is signified by a fz_halftone pointer to NULL.
 */
 typedef struct fz_halftone_s fz_halftone;
 

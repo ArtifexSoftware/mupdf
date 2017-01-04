@@ -152,7 +152,7 @@ struct fz_rect_s
 };
 
 /*
-	fz_rect_min: get the minimum point from a rectangle as an fz_point.
+	fz_rect_min: get the minimum point from a rectangle as a fz_point.
 */
 static inline fz_point *fz_rect_min(fz_rect *f)
 {
@@ -160,7 +160,7 @@ static inline fz_point *fz_rect_min(fz_rect *f)
 }
 
 /*
-	fz_rect_max: get the maximum point from a rectangle as an fz_point.
+	fz_rect_max: get the maximum point from a rectangle as a fz_point.
 */
 static inline fz_point *fz_rect_max(fz_rect *f)
 {
@@ -247,7 +247,7 @@ fz_is_infinite_irect(const fz_irect *r)
 }
 
 /*
-	fz_matrix is a a row-major 3x3 matrix used for representing
+	fz_matrix is a row-major 3x3 matrix used for representing
 	transformations of coordinates throughout MuPDF.
 
 	Since all points reside in a two-dimensional space, one vector

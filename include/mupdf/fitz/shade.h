@@ -75,7 +75,7 @@ typedef struct fz_shade_s
 } fz_shade;
 
 /*
-	fz_keep_shade: Add a reference to an fz_shade.
+	fz_keep_shade: Add a reference to a fz_shade.
 
 	shade: The reference to keep.
 
@@ -84,7 +84,7 @@ typedef struct fz_shade_s
 fz_shade *fz_keep_shade(fz_context *ctx, fz_shade *shade);
 
 /*
-	fz_drop_shade: Drop a reference to an fz_shade.
+	fz_drop_shade: Drop a reference to a fz_shade.
 
 	shade: The reference to drop. If this is the last
 	reference, shade will be destroyed.
@@ -145,7 +145,7 @@ struct fz_vertex_s
 
 	v: Pointer to a fz_vertex structure to populate.
 
-	c: Pointer to an array of floats to use to populate v.
+	c: Pointer to an array of floats used to populate v.
 */
 typedef void (fz_shade_prepare_fn)(fz_context *ctx, void *arg, fz_vertex *v, const float *c);
 
@@ -173,7 +173,7 @@ typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz
 
 	prepare: Callback function to 'prepare' each vertex.
 	This function is passed an array of floats, and populates
-	an fz_vertex structure.
+	a fz_vertex structure.
 
 	process: This function is passed 3 pointers to vertex
 	structures, and actually performs the processing (typically

@@ -38,7 +38,7 @@ typedef enum fz_display_command_e
  *
  *	cmd:	What type of node this is.
  *
- *	size:	The number of sizeof(fz_display_node) bytes that this nodes
+ *	size:	The number of sizeof(fz_display_node) bytes that this node's
  *		data occupies. (i.e. &node[node->size] = the next node in the
  *		chain; 0 for end of list).
  *

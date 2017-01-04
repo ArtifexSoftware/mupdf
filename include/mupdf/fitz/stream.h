@@ -74,7 +74,7 @@ fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, size_t len);
 	fz_open_buffer: Open a buffer as a stream.
 
 	buf: The buffer to open. Ownership of the buffer is NOT passed in
-	(this function takes it's own reference).
+	(this function takes its own reference).
 
 	Returns pointer to newly created stream. May throw exceptions on
 	failure to allocate.
@@ -191,7 +191,7 @@ int64_t fz_read_int64_le(fz_context *ctx, fz_stream *stm);
 
 /*
 	fz_read_string: Read a null terminated string from the stream into
-	the a buffer of a given length. The buffer will be null terminated.
+	a buffer of a given length. The buffer will be null terminated.
 	Throws on failure (including the failure to fit the entire string
 	including the terminator into the buffer).
 */

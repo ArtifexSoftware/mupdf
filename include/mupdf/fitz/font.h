@@ -59,7 +59,7 @@ enum { FZ_ADOBE_CNS_1, FZ_ADOBE_GB_1, FZ_ADOBE_JAPAN_1, FZ_ADOBE_KOREA_1 };
 
 /*
 	fz_font_flags_t: Every fz_font carries a set of flags
-	within it, in an fz_font_flags_t structure.
+	within it, in a fz_font_flags_t structure.
 */
 typedef struct
 {
@@ -379,7 +379,7 @@ fz_font *fz_new_font_from_memory(fz_context *ctx, const char *name, const char *
 
 /*
 	fz_new_font_from_buffer: Create a new font from a font
-	file in an fz_buffer.
+	file in a fz_buffer.
 
 	name: Name of font (leave NULL to use name from font).
 
@@ -444,7 +444,7 @@ void fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, fl
 
 	trm: The matrix to apply to the glyph before bounding.
 
-	r: Pointer to an fz_rect to use for storage.
+	r: Pointer to a fz_rect to use for storage.
 
 	Returns r, after filling it in with the bounds of the given glyph.
 */

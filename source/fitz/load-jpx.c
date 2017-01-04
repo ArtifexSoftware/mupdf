@@ -23,7 +23,7 @@ jpx_ycc_to_rgb(fz_context *ctx, fz_pixmap *pix, int cbsign, int crsign)
 			ycc[1] = row[x * 3 + 1];
 			ycc[2] = row[x * 3 + 2];
 
-			/* conciously skip Y */
+			/* consciously skip Y */
 			if (cbsign)
 				ycc[1] -= 128;
 			if (crsign)
@@ -478,7 +478,7 @@ struct stream_block_s
  * functions that call down to fz_malloc etc. These
  * require context variables, so we lock and unlock around
  * calls to openjpeg. Any attempt to call through
- * without setting these is detected.
+ * without setting these will be detected.
  *
  * It is therefore vital that any fz_lock/fz_unlock
  * handlers are shared between all the fz_contexts in
