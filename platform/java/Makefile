@@ -9,12 +9,12 @@ else
 
 BITS := $(shell getconf LONG_BIT)
 
+JAVA_HOME ?= /usr/lib/jvm/default-java
+
 MUPDF_JAVA := libmupdf_java$(BITS).so
 JAVA_CFLAGS := \
-	-I /usr/lib/jvm/java-7-openjdk-i386/include \
-	-I /usr/lib/jvm/java-7-openjdk-i386/include/linux \
-	-I /usr/lib/jvm/java-7-openjdk-amd64/include \
-	-I /usr/lib/jvm/java-7-openjdk-amd64/include/linux \
+	-I $(JAVA_HOME)/include \
+	-I $(JAVA_HOME)/include/linux \
 	$(shell pkg-config --cflags freetype2) \
 	$(shell pkg-config --cflags libcrypto)
 JAVA_LIBS := \
