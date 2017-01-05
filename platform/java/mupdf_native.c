@@ -961,7 +961,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 	while (outline)
 	{
 		jstring jtitle = NULL;
-		jint jpage = 0;
+		jint jpage = -1;
 		jstring juri = NULL;
 		jobject jdown = NULL;
 
@@ -971,13 +971,16 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 			if (!jtitle) return NULL;
 		}
 
-		if (fz_is_external_link(ctx, outline->uri))
+		if (outline->uri)
 		{
-			juri = (*env)->NewStringUTF(env, outline->uri);
-			if (!juri) return NULL;
+			if (fz_is_external_link(ctx, outline->uri))
+			{
+				juri = (*env)->NewStringUTF(env, outline->uri);
+				if (!juri) return NULL;
+			}
+			else
+				jpage = fz_resolve_link(ctx, doc, outline->uri, NULL, NULL);
 		}
-		else
-			jpage = fz_resolve_link(ctx, doc, outline->uri, NULL, NULL);
 
 		if (outline->down)
 		{
