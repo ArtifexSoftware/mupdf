@@ -110,9 +110,10 @@ fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, con
 {
 	int w = r->x1 - r->x0;
 	int stride;
+	fz_pixmap *pixmap;
 	if (!colorspace) alpha = 1;
 	stride = (fz_colorspace_n(ctx, colorspace) + alpha) * w;
-	fz_pixmap *pixmap = fz_new_pixmap_with_data(ctx, colorspace, w, r->y1 - r->y0, alpha, stride, samples);
+	pixmap = fz_new_pixmap_with_data(ctx, colorspace, w, r->y1 - r->y0, alpha, stride, samples);
 	pixmap->x = r->x0;
 	pixmap->y = r->y0;
 	return pixmap;
