@@ -39,6 +39,9 @@ pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 	if (n-alpha != 1 && n-alpha != 3)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
 
+	if (!out)
+		return;
+
 	if (end > h)
 		end = h;
 	end -= band_start;
@@ -78,6 +81,9 @@ pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 				break;
 			}
 			case 3:
+				fz_write(ctx, out, p, num_written*3);
+				p += num_written*3;
+				break;
 			case 4:
 			{
 				char *o = buffer;
@@ -187,6 +193,9 @@ pam_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 	int n = writer->n;
 	int y;
 	int end = band_start + band_height;
+
+	if (!out)
+		return;
 
 	if (end > h)
 		end = h;

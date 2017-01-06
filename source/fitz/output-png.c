@@ -133,6 +133,9 @@ png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 	int y, x, k, err, finalband;
 	int w, h, n;
 
+	if (!out)
+		return;
+
 	w = writer->super.w;
 	h = writer->super.h;
 	n = writer->super.n;

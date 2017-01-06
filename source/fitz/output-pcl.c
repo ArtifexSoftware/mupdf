@@ -782,6 +782,9 @@ color_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int b
 	unsigned char *curr;
 	unsigned char *comp;
 
+	if (!out)
+		return;
+
 	ds = w * 3;
 	ss = w * 4;
 
@@ -1148,6 +1151,9 @@ mono_pcl_write_band(fz_context *ctx, fz_band_writer *writer_, int ss, int band_s
 	unsigned char *mode3buf = NULL;
 	int out_count;
 	const fz_pcl_options *pcl;
+
+	if (!out)
+		return;
 
 	num_blank_lines = writer->num_blank_lines;
 	rmask = ~0 << (-w & 7);

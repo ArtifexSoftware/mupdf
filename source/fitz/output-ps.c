@@ -187,6 +187,9 @@ ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_sta
 	int required_output;
 	unsigned char *o;
 
+	if (!out)
+		return;
+
 	if (band_start+band_height >= h)
 		band_height = h - band_start;
 
