@@ -38,14 +38,16 @@ LIBRARY_JAVA_SOURCES := $(sort $(wildcard src/com/artifex/mupdf/fitz/*.java))
 LIBRARY_JAVA_OBJECTS := $(LIBRARY_JAVA_SOURCES:%.java=%.class)
 LIBRARY_JAVA_CLASSES := $(subst src/com/artifex/mupdf/fitz/,com.artifex.mupdf.fitz.,$(LIBRARY_JAVA_SOURCES:%.java=%))
 
+JAVAC_FLAGS := $(JAVAC_XFLAGS) -source 1.7 -target 1.7
+
 $(LIBRARY_JAVA_OBJECTS) : $(LIBRARY_JAVA_SOURCES)
-	javac -source 1.7 -target 1.7 $^
+	javac $(JAVAC_FLAGS) $^
 
 EXAMPLE_JAVA_SOURCES := $(sort $(wildcard example/*.java))
 EXAMPLE_JAVA_OBJECTS := $(EXAMPLE_JAVA_SOURCES:%.java=%.class)
 
 $(EXAMPLE_JAVA_OBJECTS) : $(EXAMPLE_JAVA_SOURCES)
-	javac -source 1.7 -target 1.7  -classpath .:src $^
+	javac $(JAVAC_FLAGS) -classpath .:src $^
 
 libmupdf.jar : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
