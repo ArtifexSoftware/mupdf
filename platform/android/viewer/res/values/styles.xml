@@ -1,5 +1,0 @@
-<resources>
-	<style name="AppBaseTheme" parent="@android:style/Theme.NoTitleBar.Fullscreen">
-		<item name="android:windowBackground">@drawable/tiled_background</item>
-	</style>
-</resources>
