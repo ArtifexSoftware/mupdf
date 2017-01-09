@@ -353,12 +353,17 @@ pbm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 	int h = writer->h;
 	int n = writer->n;
 	int bytestride;
+	int end = band_start + band_height;
 
 	if (n != 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too many color components in bitmap");
 
+	if (end > h)
+		end = h;
+	end -= band_start;
+
 	bytestride = (w + 7) >> 3;
-	while (h--)
+	while (end--)
 	{
 		fz_write(ctx, out, p, bytestride);
 		p += stride;
@@ -373,12 +378,17 @@ pkm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 	int h = writer->h;
 	int n = writer->n;
 	int bytestride;
+	int end = band_start + band_height;
 
 	if (n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "wrong number of color components in bitmap");
 
+	if (end > h)
+		end = h;
+	end -= band_start;
+
 	bytestride = stride - (w>>1);
-	while (h--)
+	while (end--)
 	{
 		int ww = w-1;
 		while (ww > 0)
