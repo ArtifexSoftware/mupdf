@@ -27,7 +27,7 @@
 				ReBuildCommandLine="del /q ..\..\generated ..\..\include\mupdf\pdf\name-table.h ..\..\source\pdf\pdf-name-table.h &amp;&amp; generate.bat"
 				CleanCommandLine="del /q ..\..\generated ..\..\include\mupdf\pdf\name-table.h ..\..\source\pdf\pdf-name-table.h"
 				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;USE_OUTPUT_DEBUG_STRING"
+				PreprocessorDefinitions="WIN32;_DEBUG"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""

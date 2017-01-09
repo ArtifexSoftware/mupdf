@@ -1,7 +1,10 @@
 #include "mupdf/fitz.h"
 
-#ifdef USE_OUTPUT_DEBUG_STRING
+#ifdef _MSC_VER
+#ifndef NDEBUG
+#define USE_OUTPUT_DEBUG_STRING
 #include <windows.h>
+#endif
 #endif
 
 /* Warning context */
