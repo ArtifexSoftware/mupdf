@@ -831,7 +831,7 @@ void Memento_breakpoint(void)
 {
     /* A handy externally visible function for breakpointing */
 #if 0 /* Enable this to force automatic breakpointing */
-#ifdef DEBUG
+#ifndef NDEBUG
 #ifdef _MSC_VER
     __asm int 3;
 #endif

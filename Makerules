@@ -22,7 +22,7 @@ LDREMOVEUNREACH = -Wl,--gc-sections
 endif
 
 ifeq "$(build)" "debug"
-CFLAGS += -pipe -g -DDEBUG
+CFLAGS += -pipe -g
 LDFLAGS += -g
 else ifeq "$(build)" "release"
 CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer
@@ -31,19 +31,19 @@ else ifeq "$(build)" "small"
 CFLAGS += -pipe -Os -DNDEBUG -fomit-frame-pointer
 LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq "$(build)" "sanitize"
-CFLAGS += -pipe -g -DDEBUG -fsanitize=address -fno-omit-frame-pointer
+CFLAGS += -pipe -g -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS += -fsanitize=address
 else ifeq "$(build)" "profile"
 CFLAGS += -pipe -O2 -DNDEBUG -pg
 LDFLAGS += -pg
 else ifeq "$(build)" "coverage"
-CFLAGS += -pipe -g -DDEBUG -pg -fprofile-arcs -ftest-coverage
+CFLAGS += -pipe -g -pg -fprofile-arcs -ftest-coverage
 LIBS += -lgcov
 else ifeq "$(build)" "native"
 CFLAGS += -pipe -O2 -DNDEBUG -fomit-frame-pointer -march=native -mfpmath=sse
 LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq "$(build)" "memento"
-CFLAGS += -pipe -g -DMEMENTO -DDEBUG
+CFLAGS += -pipe -g -DMEMENTO
 LDFLAGS += -g -d -rdynamic
 ifeq "$(HAVE_LIBDL)" "yes"
 CFLAGS += -DHAVE_LIBDL

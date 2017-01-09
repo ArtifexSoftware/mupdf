@@ -571,7 +571,7 @@ extern fz_alloc_context fz_alloc_default;
 /* Default locks */
 extern fz_locks_context fz_locks_default;
 
-#if defined(MEMENTO) || defined(DEBUG)
+#if defined(MEMENTO) || !defined(NDEBUG)
 #define FITZ_DEBUG_LOCKING
 #endif
 

@@ -225,7 +225,7 @@ typedef int fz_off_t;
 #ifdef __ANDROID__
 #include <android/log.h>
 int fz_android_fprintf(FILE *file, const char *fmt, ...);
-#ifdef DEBUG
+#ifndef NDEBUG
 /* Capture fprintf for stdout/stderr to the android logging
  * stream. Only do this in debug builds as this implies a
  * delay */
