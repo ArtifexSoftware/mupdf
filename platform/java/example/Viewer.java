@@ -346,7 +346,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 	}
 
-	public void windowClosing(WindowEvent event) { System.exit(0); }
+	public void windowClosing(WindowEvent event) { dispose(); }
 	public void windowActivated(WindowEvent event) { }
 	public void windowDeactivated(WindowEvent event) { }
 	public void windowIconified(WindowEvent event) { }
