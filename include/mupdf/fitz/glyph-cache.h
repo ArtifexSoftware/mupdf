@@ -2,7 +2,7 @@
 #define MUPDF_FITZ_GLYPH_CACHE_H
 
 #include "mupdf/fitz/context.h"
-#include "mupdf/fitz/math.h"
+#include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/font.h"
 #include "mupdf/fitz/pixmap.h"
 

@@ -4,7 +4,7 @@
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
 #include "mupdf/fitz/buffer.h"
-#include "mupdf/fitz/string.h"
+#include "mupdf/fitz/string-util.h"
 
 /*
 	Generic output streams - generalise between outputting to a file,

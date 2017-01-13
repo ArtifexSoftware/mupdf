@@ -3,7 +3,7 @@
 
 #include "mupdf/fitz/version.h"
 #include "mupdf/fitz/system.h"
-#include "mupdf/fitz/math.h"
+#include "mupdf/fitz/geometry.h"
 
 /*
 	Contexts

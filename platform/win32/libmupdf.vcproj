@@ -2332,6 +2332,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\fitz\geometry.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\fitz\getopt.h"
 					>
 				</File>
@@ -2353,10 +2357,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\link.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\mupdf\fitz\math.h"
 					>
 				</File>
 				<File
@@ -2424,7 +2424,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\fitz\string.h"
+					RelativePath="..\..\include\mupdf\fitz\string-util.h"
 					>
 				</File>
 				<File

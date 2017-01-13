@@ -3,7 +3,7 @@
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
-#include "mupdf/fitz/math.h"
+#include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/font.h"
 #include "mupdf/fitz/colorspace.h"
 #include "mupdf/fitz/image.h"
