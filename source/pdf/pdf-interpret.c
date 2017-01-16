@@ -853,16 +853,16 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 					case PDF_TOK_EOF:
 						break;
 					case PDF_TOK_KEYWORD:
-						if (!strcmp(buf->scratch, "Tw") || !strcmp(buf->scratch, "Tc"))
+						if (buf->scratch[0] == 'T' && (buf->scratch[1] == 'w' || buf->scratch[1] == 'c') && buf->scratch[2] == 0)
 						{
-							int l = pdf_array_len(ctx, csi->obj);
-							if (l > 0)
+							int n = pdf_array_len(ctx, csi->obj);
+							if (n > 0)
 							{
-								pdf_obj *o = pdf_array_get(ctx, csi->obj, l-1);
+								pdf_obj *o = pdf_array_get(ctx, csi->obj, n-1);
 								if (pdf_is_number(ctx, o))
 								{
 									csi->stack[0] = pdf_to_real(ctx, o);
-									pdf_array_delete(ctx, csi->obj, l-1);
+									pdf_array_delete(ctx, csi->obj, n-1);
 									if (pdf_process_keyword(ctx, proc, csi, stm, buf->scratch) == 0)
 										break;
 								}
@@ -995,7 +995,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 			}
 			if (!ignoring_errors)
 			{
-				fz_warn(ctx, "Ignoring errors during rendering");
+				fz_warn(ctx, "ignoring errors during rendering");
 				ignoring_errors = 1;
 			}
 			/* If we do catch an error, then reset ourselves to a
