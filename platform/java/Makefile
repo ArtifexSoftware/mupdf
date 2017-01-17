@@ -64,8 +64,11 @@ mupdf_native.o : mupdf_native.c mupdf_native.h $(MUPDF_CORE)
 $(MUPDF_JAVA) : mupdf_native.o $(MUPDF_CORE)
 	$(CC) -shared -o $(MUPDF_JAVA) $^ $(JAVA_LIBS)
 
-viewer: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
+run: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
 	LD_LIBRARY_PATH=. java -classpath .:src example.Viewer
+
+gdb: $(MUPDF_JAVA) $(EXAMPLE_JAVA_OBJECTS)
+	LD_LIBRARY_PATH=. gdb --args java -classpath .:src example.Viewer
 
 clean:
 	rm -f src/com/artifex/mupdf/fitz/*.class
