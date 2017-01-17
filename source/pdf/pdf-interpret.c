@@ -1,5 +1,8 @@
 #include "pdf-imp.h"
 
+/* Maximum number of errors before aborting */
+#define MAX_SYNTAX_ERRORS 100
+
 void *
 pdf_new_processor(fz_context *ctx, int size)
 {
@@ -127,7 +130,7 @@ parse_inline_image(fz_context *ctx, pdf_csi *csi, fz_stream *stm)
 			}
 		} while (ch != EOF);
 		if (!found)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error after inline image");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "syntax error after inline image");
 	}
 	fz_always(ctx)
 	{
@@ -239,7 +242,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 
 			group = pdf_dict_get(ctx, obj, PDF_NAME_G);
 			if (!group)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot load softmask xobject (%d 0 R)", pdf_to_num(ctx, obj));
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot load softmask xobject (%d 0 R)", pdf_to_num(ctx, obj));
 			xobj = pdf_load_xobject(ctx, csi->doc, group);
 
 			fz_try(ctx)
@@ -302,10 +305,10 @@ pdf_process_Do(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 
 	xres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_XObject);
 	if (!xres)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find XObject dictionary");
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find XObject dictionary");
 	xobj = pdf_dict_gets(ctx, xres, csi->name);
 	if (!xobj)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find XObject resource '%s'", csi->name);
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find XObject resource '%s'", csi->name);
 	subtype = pdf_dict_get(ctx, xobj, PDF_NAME_Subtype);
 	if (pdf_name_eq(ctx, subtype, PDF_NAME_Form))
 	{
@@ -314,7 +317,7 @@ pdf_process_Do(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 			subtype = st;
 	}
 	if (!pdf_is_name(ctx, subtype))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no XObject subtype specified");
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "no XObject subtype specified");
 
 	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->usage, pdf_dict_get(ctx, xobj, PDF_NAME_OC)))
 		return;
@@ -382,10 +385,10 @@ pdf_process_CS(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 			pdf_obj *csres, *csobj;
 			csres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_ColorSpace);
 			if (!csres)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ColorSpace dictionary");
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find ColorSpace dictionary");
 			csobj = pdf_dict_gets(ctx, csres, csi->name);
 			if (!csobj)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ColorSpace resource '%s'", csi->name);
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find ColorSpace resource '%s'", csi->name);
 			cs = pdf_load_colorspace(ctx, csi->doc, csobj);
 		}
 
@@ -412,10 +415,10 @@ pdf_process_SC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 
 		patres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_Pattern);
 		if (!patres)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Pattern dictionary");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find Pattern dictionary");
 		patobj = pdf_dict_gets(ctx, patres, csi->name);
 		if (!patobj)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Pattern resource '%s'", csi->name);
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find Pattern resource '%s'", csi->name);
 
 		type = pdf_dict_get(ctx, patobj, PDF_NAME_PatternType);
 
@@ -459,7 +462,7 @@ pdf_process_SC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 
 		else
 		{
-			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown pattern type: %d", pdf_to_int(ctx, type));
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "unknown pattern type: %d", pdf_to_int(ctx, type));
 		}
 	}
 
@@ -566,7 +569,7 @@ pdf_process_end(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 #define B(a,b) (a | b << 8)
 #define C(a,b,c) (a | b << 8 | c << 16)
 
-static int
+static void
 pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream *stm, char *word)
 {
 	float *s = csi->stack;
@@ -588,10 +591,7 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 	{
 	default:
 		if (!csi->xbalance)
-		{
-			fz_warn(ctx, "unknown keyword: '%s'", word);
-			return 1;
-		}
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "unknown keyword: '%s'", word);
 		break;
 
 	/* general graphics state */
@@ -608,10 +608,10 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 			pdf_obj *gsres, *gsobj;
 			gsres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_ExtGState);
 			if (!gsres)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ExtGState dictionary");
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find ExtGState dictionary");
 			gsobj = pdf_dict_gets(ctx, gsres, csi->name);
 			if (!gsobj)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find ExtGState resource '%s'", csi->name);
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find ExtGState resource '%s'", csi->name);
 			if (proc->op_gs_begin)
 				proc->op_gs_begin(ctx, proc, csi->name, gsobj);
 			pdf_process_extgstate(ctx, proc, csi, gsobj);
@@ -669,10 +669,10 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 			pdf_font_desc *font;
 			fontres = pdf_dict_get(ctx, csi->rdb, PDF_NAME_Font);
 			if (!fontres)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Font dictionary");
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find Font dictionary");
 			fontobj = pdf_dict_gets(ctx, fontres, csi->name);
 			if (!fontobj)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Font resource '%s'", csi->name);
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find Font resource '%s'", csi->name);
 			font = load_font_or_hail_mary(ctx, csi->doc, csi->rdb, fontobj, 0, csi->cookie);
 			fz_try(ctx)
 				proc->op_Tf(ctx, proc, csi->name, font, s[0]);
@@ -761,10 +761,10 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 			fz_shade *shade;
 			shaderes = pdf_dict_get(ctx, csi->rdb, PDF_NAME_Shading);
 			if (!shaderes)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Shading dictionary");
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find Shading dictionary");
 			shadeobj = pdf_dict_gets(ctx, shaderes, csi->name);
 			if (!shadeobj)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find Shading resource '%s'", csi->name);
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find Shading resource '%s'", csi->name);
 			shade = pdf_load_shading(ctx, csi->doc, shadeobj);
 			fz_try(ctx)
 				proc->op_sh(ctx, proc, csi->name, shade);
@@ -788,8 +788,6 @@ pdf_process_keyword(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_strea
 	case B('B','X'): ++csi->xbalance; if (proc->op_BX) proc->op_BX(ctx, proc); break;
 	case B('E','X'): --csi->xbalance; if (proc->op_EX) proc->op_EX(ctx, proc); break;
 	}
-
-	return 0;
 }
 
 static void
@@ -801,7 +799,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 
 	pdf_token tok = PDF_TOK_ERROR;
 	int in_text_array = 0;
-	int ignoring_errors = 0;
+	int syntax_errors = 0;
 
 	/* make sure we have a clean slate if we come here from flush_text */
 	pdf_clear_stack(ctx, csi);
@@ -863,14 +861,13 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 								{
 									csi->stack[0] = pdf_to_real(ctx, o);
 									pdf_array_delete(ctx, csi->obj, n-1);
-									if (pdf_process_keyword(ctx, proc, csi, stm, buf->scratch) == 0)
-										break;
+									pdf_process_keyword(ctx, proc, csi, stm, buf->scratch);
 								}
 							}
 						}
 						/* Deliberate Fallthrough! */
 					default:
-						fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in array");
+						fz_throw(ctx, FZ_ERROR_SYNTAX, "syntax error in array");
 					}
 				}
 				else switch (tok)
@@ -923,7 +920,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 						csi->top ++;
 					}
 					else
-						fz_throw(ctx, FZ_ERROR_GENERIC, "stack overflow");
+						fz_throw(ctx, FZ_ERROR_SYNTAX, "stack overflow");
 					break;
 
 				case PDF_TOK_REAL:
@@ -932,7 +929,7 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 						csi->top ++;
 					}
 					else
-						fz_throw(ctx, FZ_ERROR_GENERIC, "stack overflow");
+						fz_throw(ctx, FZ_ERROR_SYNTAX, "stack overflow");
 					break;
 
 				case PDF_TOK_STRING:
@@ -953,15 +950,12 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 					break;
 
 				case PDF_TOK_KEYWORD:
-					if (pdf_process_keyword(ctx, proc, csi, stm, buf->scratch))
-					{
-						tok = PDF_TOK_EOF;
-					}
+					pdf_process_keyword(ctx, proc, csi, stm, buf->scratch);
 					pdf_clear_stack(ctx, csi);
 					break;
 
 				default:
-					fz_throw(ctx, FZ_ERROR_GENERIC, "syntax error in content stream");
+					fz_throw(ctx, FZ_ERROR_SYNTAX, "syntax error in content stream");
 				}
 			}
 			while (tok != PDF_TOK_EOF);
@@ -972,34 +966,55 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 		}
 		fz_catch(ctx)
 		{
-			int caught;
+			int caught = fz_caught(ctx);
 
-			if (!cookie)
+			if (cookie)
 			{
-				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-			}
-			else if ((caught = fz_caught(ctx)) == FZ_ERROR_TRYLATER)
-			{
-				if (cookie->incomplete_ok)
-					cookie->incomplete++;
-				else
+				if (caught == FZ_ERROR_TRYLATER)
+				{
+					if (cookie->incomplete_ok)
+						cookie->incomplete++;
+					else
+						fz_rethrow(ctx);
+				}
+				else if (caught == FZ_ERROR_ABORT)
+				{
 					fz_rethrow(ctx);
-			}
-			else if (caught == FZ_ERROR_ABORT)
-			{
-				fz_rethrow(ctx);
+				}
+				else if (caught == FZ_ERROR_SYNTAX)
+				{
+					cookie->errors++;
+					if (++syntax_errors >= MAX_SYNTAX_ERRORS)
+					{
+						fz_warn(ctx, "too many syntax errors; ignoring rest of page");
+						tok = PDF_TOK_EOF;
+					}
+				}
+				else
+				{
+					cookie->errors++;
+					fz_rethrow(ctx);
+				}
 			}
 			else
 			{
-				cookie->errors++;
+				if (caught == FZ_ERROR_TRYLATER)
+					fz_rethrow(ctx);
+				else if (caught == FZ_ERROR_ABORT)
+					fz_rethrow(ctx);
+				else if (caught == FZ_ERROR_SYNTAX)
+				{
+					if (++syntax_errors >= MAX_SYNTAX_ERRORS)
+					{
+						fz_warn(ctx, "too many syntax errors; ignoring rest of page");
+						tok = PDF_TOK_EOF;
+					}
+				}
+				else
+					fz_rethrow(ctx);
 			}
-			if (!ignoring_errors)
-			{
-				fz_warn(ctx, "ignoring errors during rendering");
-				ignoring_errors = 1;
-			}
-			/* If we do catch an error, then reset ourselves to a
-			 * base lexing state */
+
+			/* If we do catch an error, then reset ourselves to a base lexing state */
 			in_text_array = 0;
 		}
 	}
