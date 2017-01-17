@@ -14,6 +14,13 @@
 #endif
 #endif
 
+/* Turn on valgrind pacification in debug builds. */
+#ifndef NDEBUG
+#ifndef PACIFY_VALGRIND
+#define PACIFY_VALGRIND
+#endif
+#endif
+
 /*
 	Include the standard libc headers.
 */

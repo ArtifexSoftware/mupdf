@@ -30,6 +30,9 @@ LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq "$(build)" "small"
 CFLAGS += -pipe -Os -DNDEBUG -fomit-frame-pointer
 LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
+else ifeq "$(build)" "valgrind"
+CFLAGS += -pipe -O2 -DNDEBUG -DPACIFY_VALGRIND -fno-omit-frame-pointer
+LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq "$(build)" "sanitize"
 CFLAGS += -pipe -g -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS += -fsanitize=address
