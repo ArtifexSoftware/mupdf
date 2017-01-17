@@ -117,7 +117,6 @@ static boolean fill_input_buffer_dct(j_decompress_ptr cinfo)
 	}
 	fz_catch(ctx)
 	{
-		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		return 0;
 	}
 	src->next_input_byte = curr_stm->rp;
