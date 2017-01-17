@@ -835,6 +835,7 @@ int main(int argc, char **argv)
 	struct timeval now;
 	struct timeval *timeout;
 	struct timeval tmo_advance_delay;
+	int bps = 0;
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -845,7 +846,7 @@ int main(int argc, char **argv)
 
 	pdfapp_init(ctx, &gapp);
 
-	while ((c = fz_getopt(argc, argv, "p:r:A:C:W:H:S:U:X")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:A:C:W:H:S:U:Xb:")) != -1)
 	{
 		switch (c)
 		{
@@ -864,6 +865,7 @@ int main(int argc, char **argv)
 		case 'S': gapp.layout_em = fz_atof(fz_optarg); break;
 		case 'U': gapp.layout_css = fz_optarg; break;
 		case 'X': gapp.layout_use_doc_css = 0; break;
+		case 'b': bps = (fz_optarg && *fz_optarg) ? fz_atoi(fz_optarg) : 4096; break;
 		default: usage();
 		}
 	}
@@ -895,7 +897,10 @@ int main(int argc, char **argv)
 	tmo_at.tv_usec = 0;
 	timeout = NULL;
 
-	pdfapp_open(&gapp, filename, 0);
+	if (bps)
+		pdfapp_open_progressive(&gapp, filename, 0, bps);
+	else
+		pdfapp_open(&gapp, filename, 0);
 
 	FD_ZERO(&fds);
 
