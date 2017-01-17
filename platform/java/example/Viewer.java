@@ -11,13 +11,14 @@ import java.io.FilenameFilter;
 import java.lang.reflect.Field;
 import java.util.Vector;
 
-public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener
+public class Viewer extends Frame implements WindowListener, ActionListener, ItemListener, TextListener
 {
 	protected Document doc;
 
 	protected ScrollPane pageScroll;
 	protected Panel pageHolder;
 	protected ImageCanvas pageCanvas;
+	protected Matrix pageCTM;
 
 	protected Button firstButton, prevButton, nextButton, lastButton;
 	protected TextField pageField;
@@ -27,8 +28,13 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected Button fontIncButton, fontDecButton;
 	protected Label fontSizeLabel;
 
+	protected TextField searchField;
+	protected Button searchPrevButton, searchNextButton;
+	protected int searchHitPage = -1;
+	protected Rect searchHits[];
+
 	protected List outlineList;
-	protected Vector flatOutline;
+	protected Vector<Outline> flatOutline;
 
 	protected int pageCount;
 	protected int pageNumber = 0;
@@ -100,6 +106,15 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			final Graphics2D g2d = (Graphics2D)g.create(0, 0, image.getWidth(), image.getHeight());
 			g2d.scale(imageScale, imageScale);
 			g2d.drawImage(image, 0, 0, null);
+
+			if (searchHitPage == pageNumber && searchHits != null && searchHits.length > 0) {
+				g2d.setColor(new Color(1, 0, 0, 0.4f));
+				for (int i = 0; i < searchHits.length; ++i) {
+					Rect hit = new Rect(searchHits[i]).transform(pageCTM);
+					g2d.fillRect((int)hit.x0, (int)hit.y0, (int)(hit.x1-hit.x0), (int)(hit.y1-hit.y0));
+				}
+			}
+
 			g2d.dispose();
 		}
 
@@ -184,6 +199,24 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 					c.gridy += 1;
 					toolpane.add(toolbar, c);
 				}
+
+				toolbar = new Panel(new FlowLayout(FlowLayout.LEFT));
+				{
+					searchField = new TextField(20);
+					searchField.addActionListener(this);
+					searchField.addTextListener(this);
+					searchPrevButton = new Button("<");
+					searchPrevButton.addActionListener(this);
+					searchNextButton = new Button(">");
+					searchNextButton.addActionListener(this);
+
+					toolbar.add(searchField);
+					toolbar.add(searchPrevButton);
+					toolbar.add(searchNextButton);
+				}
+				c.gridy += 1;
+				toolpane.add(toolbar, c);
+
 			}
 			rightPanel.add(toolpane, BorderLayout.NORTH);
 
@@ -229,7 +262,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		Outline[] outline = doc.loadOutline();
 		outlineList.removeAll();
 		if (outline != null) {
-			flatOutline = new Vector();
+			flatOutline = new Vector<Outline>();
 			addOutline(outline, "");
 			outlineList.setVisible(true);
 		} else  {
@@ -240,8 +273,8 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 	protected void updatePageCanvas() {
 		pageField.setText(String.valueOf(pageNumber + 1));
 
-		Matrix ctm = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
-		BufferedImage image = imageFromPage(doc.loadPage(pageNumber), ctm);
+		pageCTM = new Matrix().scale(zoomList[zoomLevel] / 72.0f * pixelScale);
+		BufferedImage image = imageFromPage(doc.loadPage(pageNumber), pageCTM);
 		pageCanvas.setImage(image);
 
 		Dimension size = pageHolder.getPreferredSize();
@@ -252,11 +285,40 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		validate();
 	}
 
+	protected void doSearch(int direction) {
+		int searchPage;
+		if (searchHitPage == -1)
+			searchPage = pageNumber;
+		else
+			searchPage = pageNumber + direction;
+		searchHitPage = -1;
+		String needle = searchField.getText();
+		while (searchPage >= 0 && searchPage < pageCount) {
+			Page page = doc.loadPage(searchPage);
+			searchHits = page.search(needle);
+			page.destroy();
+			if (searchHits != null && searchHits.length > 0) {
+				searchHitPage = searchPage;
+				pageNumber = searchPage;
+				break;
+			}
+			searchPage += direction;
+		}
+	}
+
+	public void textValueChanged(TextEvent event) {
+		Object source = event.getSource();
+		if (source == searchField) {
+			searchHitPage = -1;
+		}
+	}
+
 	public void actionPerformed(ActionEvent event) {
 		Object source = event.getSource();
 		int oldPageNumber = pageNumber;
 		int oldLayoutEm = layoutEm;
 		int oldZoomLevel = zoomLevel;
+		Rect[] oldSearchHits = searchHits;
 
 		if (source == firstButton)
 			pageNumber = 0;
@@ -284,6 +346,13 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 				pageNumber = pageCount - 1;
 			pageField.setText(String.valueOf(pageNumber));
 		}
+
+		if (source == searchField)
+			doSearch(1);
+		if (source == searchNextButton)
+			doSearch(1);
+		if (source == searchPrevButton)
+			doSearch(-1);
 
 		if (source == fontIncButton && doc.isReflowable()) {
 			layoutEm += 1;
@@ -322,7 +391,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			pageNumber = (int)(oldPos * pageCount);
 		}
 
-		if (zoomLevel != oldZoomLevel || pageNumber != oldPageNumber || layoutEm != oldLayoutEm)
+		if (zoomLevel != oldZoomLevel || pageNumber != oldPageNumber || layoutEm != oldLayoutEm || searchHits != oldSearchHits)
 			updatePageCanvas();
 	}
 
