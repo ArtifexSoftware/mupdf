@@ -35,6 +35,11 @@ static inline int iswhite(int ch)
 		ch == '\040';
 }
 
+static inline int isprint(int ch)
+{
+	return ch >= ' ' && ch <= '~';
+}
+
 static inline int unhex(int ch)
 {
 	if (ch >= '0' && ch <= '9') return ch - '0';
@@ -439,8 +444,13 @@ pdf_token_from_keyword(char *key)
 	case 'x':
 		if (!strcmp(key, "xref")) return PDF_TOK_XREF;
 		break;
-	default:
-		break;
+	}
+
+	while (*key)
+	{
+		if (!isprint(*key))
+			return PDF_TOK_ERROR;
+		++key;
 	}
 
 	return PDF_TOK_KEYWORD;
