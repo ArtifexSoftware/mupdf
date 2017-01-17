@@ -127,7 +127,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=" "
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				IgnoreAllDefaultLibraries="true"
 			/>
 			<Tool
@@ -256,7 +256,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=" "
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				IgnoreAllDefaultLibraries="true"
 			/>
 			<Tool
@@ -383,7 +383,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=" "
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				IgnoreAllDefaultLibraries="true"
 			/>
 			<Tool
