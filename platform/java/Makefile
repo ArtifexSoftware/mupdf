@@ -57,7 +57,7 @@ mupdf_native.h : $(LIBRARY_JAVA_OBJECTS)
 	rm -f $@
 	javah -classpath .:src -o $@ $(LIBRARY_JAVA_CLASSES)
 
-mupdf_native.o : mupdf_native.c mupdf_native.h
+mupdf_native.o : mupdf_native.c mupdf_native.h $(MUPDF_CORE)
 	$(CC) -g -o $@ -c $< -fPIC -Wall -Wextra -Wno-unused-parameter -I ../../include \
 		$(JAVA_CFLAGS)
 
