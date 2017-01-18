@@ -16,12 +16,12 @@ public class Context
 		if (!inited) {
 			inited = true;
 			try {
-				System.loadLibrary("mupdf_java64");
+				System.loadLibrary("mupdf_java");
 			} catch (UnsatisfiedLinkError e) {
 				try {
-					System.loadLibrary("mupdf_java32");
+					System.loadLibrary("mupdf_java64");
 				} catch (UnsatisfiedLinkError ee) {
-					System.loadLibrary("mupdf_java");
+					System.loadLibrary("mupdf_java32");
 				}
 			}
 			if (initNative() < 0)

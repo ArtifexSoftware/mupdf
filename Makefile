@@ -422,6 +422,10 @@ debug:
 	$(MAKE) build=debug
 
 android: generate
-	$(MAKE) -C platform/android/viewer
+	ndk-build -j8 \
+		APP_BUILD_SCRIPT=platform/java/Android.mk \
+		APP_PROJECT_PATH=build/android \
+		APP_PLATFORM=android-16 \
+		APP_OPTIM=$(build)
 
 .PHONY: all clean nuke install third libs apps generate

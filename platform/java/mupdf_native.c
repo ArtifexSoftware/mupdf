@@ -3917,7 +3917,6 @@ JNIEXPORT jstring JNICALL
 FUN(Document_proofNative)(JNIEnv *env, jobject self, jstring jCurrentPath, jstring jPrintProfile, jstring jDisplayProfile, jint inResolution)
 {
 #ifdef FZ_ENABLE_GPRF
-
 	fz_context *ctx = get_context(env);
 	fz_document *doc = from_Document(env, self);
 	char *tmp;
