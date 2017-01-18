@@ -2,6 +2,7 @@
 
 OS ?= $(shell uname)
 OS := $(OS:MINGW%=MINGW)
+OS := $(OS:MSYS%=MINGW)
 OS := $(OS:Windows_NT=MINGW)
 OS := $(OS:Darwin=MACOS)
 
