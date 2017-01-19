@@ -192,7 +192,7 @@ cbz_lookup_metadata(fz_context *ctx, cbz_document *doc, const char *key, char *b
 	return -1;
 }
 
-static cbz_document *
+static fz_document *
 cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	cbz_document *doc;
@@ -214,7 +214,7 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
-	return doc;
+	return &doc->super;
 }
 
 static int
@@ -238,7 +238,7 @@ cbz_recognize(fz_context *ctx, const char *magic)
 
 fz_document_handler cbz_document_handler =
 {
-	(fz_document_recognize_fn *)&cbz_recognize,
-	(fz_document_open_fn *)NULL,
-	(fz_document_open_with_stream_fn *)&cbz_open_document_with_stream
+	cbz_recognize,
+	NULL,
+	cbz_open_document_with_stream
 };

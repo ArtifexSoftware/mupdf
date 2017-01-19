@@ -2756,9 +2756,9 @@ pdf_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler pdf_document_handler =
 {
-	(fz_document_recognize_fn *)&pdf_recognize,
-	(fz_document_open_fn *)&pdf_open_document,
-	(fz_document_open_with_stream_fn *)&pdf_open_document_with_stream
+	pdf_recognize,
+	(fz_document_open_fn *) pdf_open_document,
+	(fz_document_open_with_stream_fn *) pdf_open_document_with_stream
 };
 
 void pdf_mark_xref(fz_context *ctx, pdf_document *doc)

@@ -532,7 +532,7 @@ epub_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler epub_document_handler =
 {
-	&epub_recognize,
-	&epub_open_document,
-	&epub_open_document_with_stream
+	epub_recognize,
+	epub_open_document,
+	epub_open_document_with_stream
 };

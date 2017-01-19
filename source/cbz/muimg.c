@@ -103,7 +103,7 @@ img_new_document(fz_context *ctx, fz_image *image)
 	return doc;
 }
 
-static img_document *
+static fz_document *
 img_open_document_with_stream(fz_context *ctx, fz_stream *stm)
 {
 	fz_buffer *buffer = NULL;
@@ -127,7 +127,7 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *stm)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	return doc;
+	return &doc->super;
 }
 
 static int
@@ -172,7 +172,7 @@ img_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler img_document_handler =
 {
-	(fz_document_recognize_fn *)&img_recognize,
-	(fz_document_open_fn *)NULL,
-	(fz_document_open_with_stream_fn *)&img_open_document_with_stream
+	img_recognize,
+	NULL,
+	img_open_document_with_stream
 };

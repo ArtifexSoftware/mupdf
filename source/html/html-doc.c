@@ -160,7 +160,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	return (fz_document*)doc;
+	return &doc->super;
 }
 
 static fz_document *
@@ -216,7 +216,7 @@ htdoc_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler html_document_handler =
 {
-	&htdoc_recognize,
-	&htdoc_open_document,
-	&htdoc_open_document_with_stream
+	htdoc_recognize,
+	htdoc_open_document,
+	htdoc_open_document_with_stream
 };

@@ -172,7 +172,7 @@ fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf)
 
 fz_document_handler svg_document_handler =
 {
-	&svg_recognize,
+	svg_recognize,
 	NULL,
-	&svg_open_document_with_stream
+	svg_open_document_with_stream
 };

@@ -114,7 +114,7 @@ tiff_drop_document(fz_context *ctx, tiff_document *doc)
 	fz_drop_buffer(ctx, doc->buffer);
 }
 
-static tiff_document *
+static fz_document *
 tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	tiff_document *doc;
@@ -140,7 +140,7 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 		fz_rethrow(ctx);
 	}
 
-	return doc;
+	return &doc->super;
 }
 
 static int
@@ -162,7 +162,7 @@ tiff_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler tiff_document_handler =
 {
-	(fz_document_recognize_fn *)&tiff_recognize,
-	(fz_document_open_fn *)NULL,
-	(fz_document_open_with_stream_fn *)&tiff_open_document_with_stream
+	tiff_recognize,
+	NULL,
+	tiff_open_document_with_stream
 };

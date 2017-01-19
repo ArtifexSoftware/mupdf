@@ -484,7 +484,7 @@ xps_recognize(fz_context *ctx, const char *magic)
 
 fz_document_handler xps_document_handler =
 {
-	(fz_document_recognize_fn *)&xps_recognize,
-	(fz_document_open_fn *)&xps_open_document,
-	(fz_document_open_with_stream_fn *)&xps_open_document_with_stream
+	xps_recognize,
+	(fz_document_open_fn *) xps_open_document,
+	(fz_document_open_with_stream_fn *) xps_open_document_with_stream
 };

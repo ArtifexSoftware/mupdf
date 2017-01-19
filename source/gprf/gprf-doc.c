@@ -1004,8 +1004,8 @@ gprf_recognize(fz_context *doc, const char *magic)
 
 fz_document_handler gprf_document_handler =
 {
-	&gprf_recognize,
-	&gprf_open_document,
-	&gprf_open_document_with_stream
+	gprf_recognize,
+	gprf_open_document,
+	gprf_open_document_with_stream
 };
 #endif
