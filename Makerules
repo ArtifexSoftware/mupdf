@@ -17,9 +17,9 @@ CFLAGS += -ffunction-sections -fdata-sections
 endif
 
 ifeq "$(OS)" "MACOS"
-LDREMOVEUNREACH = -Wl,-dead_strip
+LDREMOVEUNREACH := -Wl,-dead_strip
 else
-LDREMOVEUNREACH = -Wl,--gc-sections
+LDREMOVEUNREACH := -Wl,--gc-sections
 endif
 
 ifeq "$(build)" "debug"
@@ -67,9 +67,9 @@ endif
 # Windows (MINGW) build doesn't use system libraries.
 ifeq "$(OS)" "MINGW"
 
-WINDRES = windres
+WINDRES := windres
 HAVE_X11 ?= no
-HAVE_WIN32 = yes
+HAVE_WIN32 := yes
 CC=gcc
 # Add flags required for Harfbuzz because of missing strdup
 CFLAGS+= -U__STRICT_ANSI__
@@ -85,26 +85,26 @@ HAVE_LIBCRYTO ?= no
 SYS_LIBCRYPTO_CFLAGS =
 SYS_LIBCRYPTO_LIBS =
 ifeq "$(HAVE_LIBCRYPTO)" "yes"
-SYS_LIBCRYPTO_CFLAGS = -DHAVE_LIBCRYPTO
-SYS_LIBCRYPTO_LIBS = -lcrypto
+SYS_LIBCRYPTO_CFLAGS := -DHAVE_LIBCRYPTO
+SYS_LIBCRYPTO_LIBS := -lcrypto
 endif
 
-SYS_CURL_DEPS = -lpthread
+SYS_CURL_DEPS := -lpthread
 
-SYS_X11_CFLAGS = -I/usr/X11R6/include
-SYS_X11_LIBS = -L/usr/X11R6/lib -lX11 -lXext
+SYS_X11_CFLAGS := -I/usr/X11R6/include
+SYS_X11_LIBS := -L/usr/X11R6/lib -lX11 -lXext
 
-SYS_FREETYPE_CFLAGS = $(shell freetype-config --cflags)
-SYS_FREETYPE_LIBS = $(shell freetype-config --libs)
-SYS_OPENJPEG_LIBS = -lopenjpeg
-SYS_JBIG2DEC_LIBS = -ljbig2dec
-SYS_JPEG_LIBS = -ljpeg
-SYS_ZLIB_LIBS = -lz
+SYS_FREETYPE_CFLAGS := $(shell freetype-config --cflags)
+SYS_FREETYPE_LIBS := $(shell freetype-config --libs)
+SYS_OPENJPEG_LIBS := -lopenjpeg
+SYS_JBIG2DEC_LIBS := -ljbig2dec
+SYS_JPEG_LIBS := -ljpeg
+SYS_ZLIB_LIBS := -lz
 
-CC = xcrun cc
-AR = xcrun ar
-LD = xcrun ld
-RANLIB_CMD = xcrun ranlib $@
+CC := xcrun cc
+AR := xcrun ar
+LD := xcrun ld
+RANLIB_CMD := xcrun ranlib $@
 
 # Linux uses pkg-config for system libraries.
 else ifeq "$(OS)" "Linux"
@@ -112,17 +112,17 @@ else ifeq "$(OS)" "Linux"
 HAVE_PTHREADS ?= yes
 
 ifeq "$(shell pkg-config --exists 'libcrypto <= 1.0.1t' && echo yes)" "yes"
-HAVE_LIBCRYPTO = yes
-SYS_LIBCRYPTO_CFLAGS = -DHAVE_LIBCRYPTO $(shell pkg-config --cflags libcrypto)
-SYS_LIBCRYPTO_LIBS = $(shell pkg-config --libs libcrypto)
+HAVE_LIBCRYPTO := yes
+SYS_LIBCRYPTO_CFLAGS := -DHAVE_LIBCRYPTO $(shell pkg-config --cflags libcrypto)
+SYS_LIBCRYPTO_LIBS := $(shell pkg-config --libs libcrypto)
 endif
 
 ifeq "$(shell pkg-config --exists libcurl && echo yes)" "yes"
-HAVE_CURL = yes
-SYS_CURL_CFLAGS = $(shell pkg-config --cflags libcurl)
-SYS_CURL_LIBS = $(shell pkg-config --libs libcurl)
+HAVE_CURL := yes
+SYS_CURL_CFLAGS := $(shell pkg-config --cflags libcurl)
+SYS_CURL_LIBS := $(shell pkg-config --libs libcurl)
 ifeq "$(shell pkg-config --exists openssl && echo yes)" "yes"
-HAVE_OPENSSL_SSL = yes
+HAVE_OPENSSL_SSL := yes
 SYS_CURL_CFLAGS += $(shell pkg-config --cflags openssl)
 SYS_CURL_DEPS += $(shell pkg-config --libs openssl)
 endif
@@ -130,29 +130,29 @@ endif
 SYS_CURL_DEPS += -lpthread -lrt
 
 ifeq "$(shell pkg-config --exists x11 xext && echo yes)" "yes"
-HAVE_X11 = yes
-SYS_X11_CFLAGS = $(shell pkg-config --cflags x11 xext)
-SYS_X11_LIBS = $(shell pkg-config --libs x11 xext)
+HAVE_X11 := yes
+SYS_X11_CFLAGS := $(shell pkg-config --cflags x11 xext)
+SYS_X11_LIBS := $(shell pkg-config --libs x11 xext)
 endif
 
 ifeq "$(shell pkg-config --exists harfbuzz && echo yes)" "yes"
-SYS_HARFBUZZ_CFLAGS = $(shell pkg-config --cflags harfbuzz)
-SYS_HARFBUZZ_LIBS = $(shell pkg-config --libs harfbuzz)
+SYS_HARFBUZZ_CFLAGS := $(shell pkg-config --cflags harfbuzz)
+SYS_HARFBUZZ_LIBS := $(shell pkg-config --libs harfbuzz)
 endif
 
 ifeq "$(shell pkg-config --exists freetype2 && echo yes)" "yes"
-SYS_FREETYPE_CFLAGS = $(shell pkg-config --cflags freetype2)
-SYS_FREETYPE_LIBS = $(shell pkg-config --libs freetype2)
+SYS_FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
+SYS_FREETYPE_LIBS := $(shell pkg-config --libs freetype2)
 endif
 
 ifeq "$(shell pkg-config --exists libopenjp2 && echo yes)" "yes"
-SYS_OPENJPEG_CFLAGS = $(shell pkg-config --cflags libopenjp2)
-SYS_OPENJPEG_LIBS = $(shell pkg-config --libs libopenjp2)
+SYS_OPENJPEG_CFLAGS := $(shell pkg-config --cflags libopenjp2)
+SYS_OPENJPEG_LIBS := $(shell pkg-config --libs libopenjp2)
 endif
 
-SYS_JBIG2DEC_LIBS = -ljbig2dec
-SYS_JPEG_LIBS = -ljpeg
-SYS_ZLIB_LIBS = -lz
+SYS_JBIG2DEC_LIBS := -ljbig2dec
+SYS_JPEG_LIBS := -ljpeg
+SYS_ZLIB_LIBS := -lz
 
 endif
 
