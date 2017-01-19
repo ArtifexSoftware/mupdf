@@ -4210,6 +4210,31 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
 }
 
 JNIEXPORT jboolean JNICALL
+FUN(Document_recognize)(JNIEnv *env, jclass self, jstring jmagic)
+{
+	fz_context *ctx = get_context(env);
+	const char *magic = NULL;
+	jboolean recognized;
+
+	if (!ctx) return JNI_FALSE;
+	if (jmagic)
+	{
+		magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
+		if (!magic) return JNI_FALSE;
+	}
+
+	fz_try(ctx)
+		recognized = fz_recognize_document(ctx, magic) != NULL;
+	fz_always(ctx)
+		if (magic)
+			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+
+	return recognized;
+}
+
+JNIEXPORT jboolean JNICALL
 FUN(Document_needsPassword)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);

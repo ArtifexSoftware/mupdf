@@ -63,7 +63,7 @@ void fz_register_document_handler(fz_context *ctx, const fz_document_handler *ha
 	dc->handler[dc->count++] = handler;
 }
 
-static const fz_document_handler *
+const fz_document_handler *
 fz_recognize_document(fz_context *ctx, const char *magic)
 {
 	fz_document_handler_context *dc;

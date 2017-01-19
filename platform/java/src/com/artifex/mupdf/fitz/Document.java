@@ -38,6 +38,8 @@ public class Document
 		return openNativeWithBuffer(buffer, magic);
 	}
 
+	public static native boolean recognize(String magic);
+
 	public native boolean needsPassword();
 	public native boolean authenticatePassword(String password);
 

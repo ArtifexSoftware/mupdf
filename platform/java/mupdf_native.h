@@ -619,6 +619,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithBuf
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    recognize
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_recognize
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    needsPassword
  * Signature: ()Z
  */

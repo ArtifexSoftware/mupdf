@@ -431,15 +431,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 			fileDialog.setDirectory(System.getProperty("user.dir"));
 			fileDialog.setFilenameFilter(new FilenameFilter() {
 				public boolean accept(File dir, String name) {
-					if (name.endsWith(".pdf")) return true;
-					if (name.endsWith(".xps")) return true;
-					if (name.endsWith(".oxps")) return true;
-					if (name.endsWith(".cbt")) return true;
-					if (name.endsWith(".cbz")) return true;
-					if (name.endsWith(".epub")) return true;
-					if (name.endsWith(".fb2")) return true;
-					if (name.endsWith(".xhtml")) return true;
-					return false;
+					return Document.recognize(name);
 				}
 			});
 			fileDialog.setVisible(true);
