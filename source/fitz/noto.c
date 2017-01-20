@@ -13,11 +13,12 @@
 	Define TOFU_CJK_EXT to skip DroidSansFallbackFull (and the above).
 	Define TOFU_CJK to skip DroidSansFallback (and the above).
 
+	Define TOFU_NOTO to skip ALL non-CJK noto fonts.
 	Define TOFU_EMOJI to skip emoji font.
 	Define TOFU_HISTORIC to skip ancient/historic scripts.
 	Define TOFU_SYMBOL to skip symbol font.
-	Define TOFU_SIL to skip the SIL fonts.
 
+	Define TOFU_SIL to skip the SIL fonts (warning: makes EPUB documents ugly).
 	Define TOFU_BASE14 to skip the Base 14 fonts (warning: makes PDF unusable).
 */
 
@@ -34,10 +35,14 @@
 #endif
 
 #ifdef TOFU
+#define TOFU_NOTO
+#define TOFU_SIL
+#endif
+
+#ifdef TOFU_NOTO
 #define TOFU_EMOJI
 #define TOFU_HISTORIC
 #define TOFU_SYMBOL
-#define TOFU_SIL
 #endif
 
 #define RETURN(NAME) \
@@ -113,7 +118,7 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 				CharisSIL_BI_cff)
 	}
 #endif
-#ifndef TOFU
+#ifndef TOFU_NOTO
 	if (!strcmp(name, "Noto Serif")) {
 		RETURN(NotoSerif_Regular_ttf);
 	}
@@ -190,7 +195,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 		case FZ_LANG_zh_Hans: return fz_lookup_cjk_font(ctx, FZ_ADOBE_GB_1, serif, 0, size, NULL);
 		}
 
-#ifndef TOFU
+#ifndef TOFU_NOTO
 	case UCDN_SCRIPT_LATIN: Noto2(Sans, Serif);
 	case UCDN_SCRIPT_GREEK: Noto2(Sans, Serif);
 	case UCDN_SCRIPT_CYRILLIC: Noto2(Sans, Serif);
