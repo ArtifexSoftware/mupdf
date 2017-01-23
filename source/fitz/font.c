@@ -310,7 +310,7 @@ fz_font *fz_load_system_fallback_font(fz_context *ctx, int script, int language,
 
 fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic)
 {
-	fz_font *font;
+	fz_font **fontp;
 	const char *data;
 	int index;
 	int size;
@@ -338,30 +338,22 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 	}
 
 	if (serif)
+		fontp = &ctx->font->fallback[index].serif;
+	else
+		fontp = &ctx->font->fallback[index].sans;
+
+	if (!*fontp)
 	{
-		if (ctx->font->fallback[index].serif)
-			return ctx->font->fallback[index].serif;
-		data = fz_lookup_noto_font(ctx, script, language, 1, &size);
-		if (data)
+		*fontp = fz_load_system_fallback_font(ctx, script, language, serif, bold, italic);
+		if (!*fontp)
 		{
-			ctx->font->fallback[index].serif = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
-			return ctx->font->fallback[index].serif;
+			data = fz_lookup_noto_font(ctx, script, language, 0, &size);
+			if (data)
+				*fontp = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
 		}
 	}
 
-	if (ctx->font->fallback[index].sans)
-		return ctx->font->fallback[index].sans;
-
-	font = fz_load_system_fallback_font(ctx, script, language, serif, bold, italic);
-	if (!font)
-	{
-		data = fz_lookup_noto_font(ctx, script, language, 0, &size);
-		if (data)
-			font = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
-	}
-	if (font)
-		ctx->font->fallback[index].sans = font;
-	return font;
+	return *fontp;
 }
 
 fz_font *fz_load_fallback_symbol_font(fz_context *ctx)
