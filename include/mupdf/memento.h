@@ -1,4 +1,4 @@
-/* Copyright (C) 2009-2017 Artifex Software, Inc.
+/* Copyright (C) 2009-2018 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -7,8 +7,8 @@
    This software is distributed under license and may not be copied, modified
    or distributed except as expressly authorized under the terms of that
    license. Refer to licensing information at http://www.artifex.com
-   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+   or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
+   Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
 /* Memento: A library to aid debugging of memory leaks/heap corruption.
@@ -161,9 +161,9 @@
 
 #ifndef MEMENTO_H
 
-#define MEMENTO_H
+#include <stdlib.h>
 
-#include <stddef.h> /* for size_t */
+#define MEMENTO_H
 
 #ifndef MEMENTO_UNDERLYING_MALLOC
 #define MEMENTO_UNDERLYING_MALLOC malloc
@@ -236,7 +236,11 @@ int Memento_checkIntPointerOrNull(void *blk);
 void Memento_startLeaking(void);
 void Memento_stopLeaking(void);
 
+int Memento_sequence(void);
+
 void Memento_fin(void);
+
+void Memento_bt(void);
 
 #ifdef MEMENTO
 
@@ -293,6 +297,8 @@ void Memento_fin(void);
 #define Memento_startLeaking()             do {} while (0)
 #define Memento_stopLeaking()              do {} while (0)
 #define Memento_fin()                      do {} while (0)
+#define Memento_bt()                       do {} while (0)
+#define Memento_sequence()                 (0)
 
 #endif /* MEMENTO */
 
