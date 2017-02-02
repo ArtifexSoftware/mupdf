@@ -49,6 +49,9 @@ public class Document
 	public native boolean isReflowable();
 	public native void layout(float width, float height, float em);
 
+	public native long makeBookmark(int page);
+	public native int findBookmark(long mark);
+
 	public native boolean isUnencryptedPDF();
 
 	public native PDFDocument toPDFDocument();

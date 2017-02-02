@@ -182,6 +182,20 @@ fz_is_document_reflowable(fz_context *ctx, fz_document *doc)
 	return doc ? doc->is_reflowable : 0;
 }
 
+fz_bookmark fz_make_bookmark(fz_context *ctx, fz_document *doc, int page)
+{
+	if (doc && doc->make_bookmark)
+		return doc->make_bookmark(ctx, doc, page);
+	return (fz_bookmark)page;
+}
+
+int fz_lookup_bookmark(fz_context *ctx, fz_document *doc, fz_bookmark mark)
+{
+	if (doc && doc->lookup_bookmark)
+		return doc->lookup_bookmark(ctx, doc, mark);
+	return (int)mark;
+}
+
 int
 fz_needs_password(fz_context *ctx, fz_document *doc)
 {

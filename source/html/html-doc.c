@@ -97,6 +97,20 @@ htdoc_load_links(fz_context *ctx, fz_page *page_)
 	return fz_load_html_links(ctx, doc->html, page->number, "");
 }
 
+static fz_bookmark
+htdoc_make_bookmark(fz_context *ctx, fz_document *doc_, int page)
+{
+	html_document *doc = (html_document*)doc_;
+	return fz_make_html_bookmark(ctx, doc->html, page);
+}
+
+static int
+htdoc_lookup_bookmark(fz_context *ctx, fz_document *doc_, fz_bookmark mark)
+{
+	html_document *doc = (html_document*)doc_;
+	return fz_lookup_html_bookmark(ctx, doc->html, mark);
+}
+
 static fz_page *
 htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
@@ -111,7 +125,7 @@ htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 	return (fz_page*)page;
 }
 
-int
+static int
 htdoc_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
@@ -162,6 +176,8 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	doc->super.drop_document = htdoc_drop_document;
 	doc->super.layout = htdoc_layout;
 	doc->super.resolve_link = htdoc_resolve_link;
+	doc->super.make_bookmark = htdoc_make_bookmark;
+	doc->super.lookup_bookmark = htdoc_lookup_bookmark;
 	doc->super.count_pages = htdoc_count_pages;
 	doc->super.load_page = htdoc_load_page;
 	doc->super.lookup_metadata = htdoc_lookup_metadata;

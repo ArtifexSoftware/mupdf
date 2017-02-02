@@ -683,6 +683,22 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Document_layout
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    makeBookmark
+ * Signature: (I)J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Document_makeBookmark
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
+ * Method:    findBookmark
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_findBookmark
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Document
  * Method:    isUnencryptedPDF
  * Signature: ()Z
  */

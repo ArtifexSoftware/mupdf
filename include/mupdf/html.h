@@ -283,5 +283,7 @@ void fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html
 float fz_find_html_target(fz_context *ctx, fz_html *html, const char *id);
 fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *base_uri);
 void fz_drop_html(fz_context *ctx, fz_html *html);
+fz_bookmark fz_make_html_bookmark(fz_context *ctx, fz_html *html, int page);
+int fz_lookup_html_bookmark(fz_context *ctx, fz_html *html, fz_bookmark mark);
 
 #endif

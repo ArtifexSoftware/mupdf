@@ -4222,6 +4222,42 @@ FUN(Document_loadOutline)(JNIEnv *env, jobject self)
 	return joutline;
 }
 
+JNIEXPORT jlong JNICALL
+FUN(Document_makeBookmark)(JNIEnv *env, jobject self, jint page)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+	fz_bookmark mark = 0;
+
+	fz_try(ctx)
+		mark = fz_make_bookmark(ctx, doc, page);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return mark;
+}
+
+JNIEXPORT jint JNICALL
+FUN(Document_findBookmark)(JNIEnv *env, jobject self, jlong mark)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = from_Document(env, self);
+	int page = -1;
+
+	fz_try(ctx)
+		page = fz_lookup_bookmark(ctx, doc, mark);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return -1;
+	}
+
+	return page;
+}
+
 JNIEXPORT jobject JNICALL
 FUN(Document_toPDFDocument)(JNIEnv *env, jobject self)
 {

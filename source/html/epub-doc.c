@@ -178,6 +178,39 @@ epub_load_links(fz_context *ctx, fz_page *page_)
 	return NULL;
 }
 
+static fz_bookmark
+epub_make_bookmark(fz_context *ctx, fz_document *doc_, int n)
+{
+	epub_document *doc = (epub_document*)doc_;
+	epub_chapter *ch;
+	int count = 0;
+
+	for (ch = doc->spine; ch; ch = ch->next)
+	{
+		int cn = ceilf(ch->html->root->h / ch->html->page_h);
+		if (n < count + cn)
+			return fz_make_html_bookmark(ctx, ch->html, n - count);
+		count += cn;
+	}
+
+	return 0;
+}
+
+static int
+epub_lookup_bookmark(fz_context *ctx, fz_document *doc_, fz_bookmark mark)
+{
+	epub_document *doc = (epub_document*)doc_;
+	epub_chapter *ch;
+
+	for (ch = doc->spine; ch; ch = ch->next)
+	{
+		int p = fz_lookup_html_bookmark(ctx, ch->html, mark);
+		if (p != -1)
+			return ch->start + p;
+	}
+	return -1;
+}
+
 static fz_page *
 epub_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
@@ -440,6 +473,8 @@ epub_init(fz_context *ctx, fz_archive *zip)
 	doc->super.layout = epub_layout;
 	doc->super.load_outline = epub_load_outline;
 	doc->super.resolve_link = epub_resolve_link;
+	doc->super.make_bookmark = epub_make_bookmark;
+	doc->super.lookup_bookmark = epub_lookup_bookmark;
 	doc->super.count_pages = epub_count_pages;
 	doc->super.load_page = epub_load_page;
 	doc->super.lookup_metadata = epub_lookup_metadata;

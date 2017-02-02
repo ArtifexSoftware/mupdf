@@ -2101,6 +2101,91 @@ fz_find_html_target(fz_context *ctx, fz_html *html, const char *id)
 	return find_box_target(html->root, id);
 }
 
+static fz_html_flow *
+make_flow_bookmark(fz_context *ctx, fz_html_flow *flow, float y)
+{
+	while (flow)
+	{
+		if (flow->y >= y)
+			return flow;
+		flow = flow->next;
+	}
+	return NULL;
+}
+
+static fz_html_flow *
+make_box_bookmark(fz_context *ctx, fz_html_box *box, float y)
+{
+	fz_html_flow *mark;
+	while (box)
+	{
+		if (box->type == BOX_FLOW)
+		{
+			if (box->y >= y)
+			{
+				mark = make_flow_bookmark(ctx, box->flow_head, y);
+				if (mark)
+					return mark;
+			}
+		}
+		else
+		{
+			mark = make_box_bookmark(ctx, box->down, y);
+			if (mark)
+				return mark;
+		}
+		box = box->next;
+	}
+	return NULL;
+}
+
+fz_bookmark
+fz_make_html_bookmark(fz_context *ctx, fz_html *html, int page)
+{
+	return (fz_bookmark)make_box_bookmark(ctx, html->root, page * html->page_h);
+}
+
+static int
+lookup_flow_bookmark(fz_context *ctx, fz_html_flow *flow, fz_html_flow *mark)
+{
+	while (flow)
+	{
+		if (flow == mark)
+			return 1;
+		flow = flow->next;
+	}
+	return 0;
+}
+
+static int
+lookup_box_bookmark(fz_context *ctx, fz_html_box *box, fz_html_flow *mark)
+{
+	while (box)
+	{
+		if (box->type == BOX_FLOW)
+		{
+			if (lookup_flow_bookmark(ctx, box->flow_head, mark))
+				return 1;
+		}
+		else
+		{
+			if (lookup_box_bookmark(ctx, box->down, mark))
+				return 1;
+		}
+		box = box->next;
+	}
+	return 0;
+}
+
+int
+fz_lookup_html_bookmark(fz_context *ctx, fz_html *html, fz_bookmark mark)
+{
+	fz_html_flow *flow = (fz_html_flow*)mark;
+	if (flow && lookup_box_bookmark(ctx, html->root, flow))
+		return (int)(flow->y / html->page_h);
+	return -1;
+}
+
 static char *concat_text(fz_context *ctx, fz_xml *root)
 {
 	fz_xml *node;
