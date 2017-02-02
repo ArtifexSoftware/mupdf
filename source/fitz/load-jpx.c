@@ -445,7 +445,9 @@ fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int
 
 #define OPJ_STATIC
 #define OPJ_HAVE_INTTYPES_H
+#if !defined(_WIN32) && !defined(_WIN64)
 #define OPJ_HAVE_STDINT_H
+#endif
 #define USE_JPIP
 
 #include <openjpeg.h>
