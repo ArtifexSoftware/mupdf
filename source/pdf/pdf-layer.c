@@ -324,6 +324,7 @@ pdf_drop_ocg(fz_context *ctx, pdf_document *doc)
 	if (!desc)
 		return;
 
+	drop_ui(ctx, desc);
 	pdf_drop_obj(ctx, desc->intent);
 	for (i = 0; i < desc->len; i++)
 		pdf_drop_obj(ctx, desc->ocgs[i].obj);
