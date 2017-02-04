@@ -578,7 +578,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		char buf[512];
 		fz_output *out;
 
-		if (!strcmp(output, "-"))
+		if (!output || !strcmp(output, "-"))
 			out = fz_stdout(ctx);
 		else
 		{
