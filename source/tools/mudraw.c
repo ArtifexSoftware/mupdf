@@ -1192,14 +1192,14 @@ static void bgprint_worker(void *arg)
 static inline int iswhite(int ch)
 {
 	return
-		ch == '\000' || ch == '\011' || ch == '\012' ||
+		ch == '\011' || ch == '\012' ||
 		ch == '\014' || ch == '\015' || ch == '\040';
 }
 
 static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc)
 {
 	pdf_document *pdoc = pdf_specifics(ctx, doc);
-	int config;
+	int config = -1;
 	int n, j;
 	pdf_layer_config info;
 
@@ -1230,31 +1230,36 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 		return;
 	}
 
-	if (*lc < '0' || *lc > '9')
-	{
-		fprintf(stderr, "-y expects a comma separated list of numbers, or 'l' to list layer configs\n");
-		return;
-	}
-	config = fz_atoi(lc);
-	pdf_select_layer_config(ctx, pdoc, config);
-
-	/* Make any alterations to the state required */
-	while (1)
+	while (*lc)
 	{
 		int i;
+
+		if (*lc < '0' || *lc > '9')
+		{
+			fprintf(stderr, "cannot find number expected for -y\n");
+			return;
+		}
+		i = fz_atoi(lc);
+		pdf_select_layer_config(ctx, pdoc, i);
+
+		if (config < 0)
+			config = i;
 
 		while (*lc >= '0' && *lc <= '9')
 			lc++;
 		while (iswhite(*lc))
 			lc++;
-		if (*lc != ',')
-			break;
-		lc++;
-		while (iswhite(*lc))
+		if (*lc == ',')
+		{
 			lc++;
-		i = fz_atoi(lc);
-
-		pdf_toggle_layer_config_ui(ctx, pdoc, i);
+			while (iswhite(*lc))
+				lc++;
+		}
+		else if (*lc)
+		{
+			fprintf(stderr, "cannot find comma expected for -y\n");
+			return;
+		}
 	}
 
 	/* Now list the final state of the config */
