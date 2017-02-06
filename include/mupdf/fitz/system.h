@@ -226,7 +226,7 @@ typedef int fz_off_t;
 
 /* Portable way to format a size_t */
 #if defined(_WIN64)
-#define FMT_zu "%Iu"
+#define FMT_zu "%llu"
 #elif defined(_WIN32)
 #define FMT_zu "%u"
 #else
