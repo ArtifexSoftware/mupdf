@@ -171,7 +171,7 @@ epub_load_links(fz_context *ctx, fz_page *page_)
 	{
 		int cn = ceilf(ch->html->root->h / ch->html->page_h);
 		if (n < count + cn)
-			return fz_load_html_links(ctx, ch->html, n - count, ch->path);
+			return fz_load_html_links(ctx, ch->html, n - count, ch->path, doc);
 		count += cn;
 	}
 

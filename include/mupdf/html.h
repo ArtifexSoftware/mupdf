@@ -281,7 +281,7 @@ void fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em);
 void fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *html, int page);
 
 float fz_find_html_target(fz_context *ctx, fz_html *html, const char *id);
-fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *base_uri);
+fz_link *fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *base_uri, void *doc);
 void fz_drop_html(fz_context *ctx, fz_html *html);
 fz_bookmark fz_make_html_bookmark(fz_context *ctx, fz_html *html, int page);
 int fz_lookup_html_bookmark(fz_context *ctx, fz_html *html, fz_bookmark mark);

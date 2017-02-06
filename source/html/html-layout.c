@@ -2021,7 +2021,7 @@ static fz_link *load_link_box(fz_context *ctx, fz_html_box *box, fz_link *head, 
 }
 
 fz_link *
-fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *file)
+fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *file, void *doc)
 {
 	fz_link *link, *head;
 	char dir[2048];
@@ -2036,6 +2036,9 @@ fz_load_html_links(fz_context *ctx, fz_html *html, int page, const char *file)
 		link->rect.x1 += html->page_margin[L];
 		link->rect.y0 += html->page_margin[T];
 		link->rect.y1 += html->page_margin[T];
+
+		/* Set document pointer */
+		link->doc = doc;
 	}
 
 	return head;
