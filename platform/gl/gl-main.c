@@ -948,14 +948,14 @@ static void do_app(void)
 		case '-': currentzoom = zoom_out(currentzoom); break;
 		case '[': currentrotate += 90; break;
 		case ']': currentrotate -= 90; break;
-		case 'l': showlinks = !showlinks; break;
+		case 'L': showlinks = !showlinks; break;
 		case 'i': showinfo = !showinfo; break;
 		case '/': search_dir = 1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
 		case '?': search_dir = -1; showsearch = 1; search_input.p = search_input.text; search_input.q = search_input.end; break;
-		case KEY_UP: scroll_y -= 10; break;
-		case KEY_DOWN: scroll_y += 10; break;
-		case KEY_LEFT: scroll_x -= 10; break;
-		case KEY_RIGHT: scroll_x += 10; break;
+		case 'k': case KEY_UP: scroll_y -= 10; break;
+		case 'j': case KEY_DOWN: scroll_y += 10; break;
+		case 'h': case KEY_LEFT: scroll_x -= 10; break;
+		case 'l': case KEY_RIGHT: scroll_x += 10; break;
 		}
 
 		if (ui.key >= '0' && ui.key <= '9')
