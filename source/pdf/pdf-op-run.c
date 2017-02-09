@@ -1213,6 +1213,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = NULL;
 	int oldtop = 0;
+	int oldbot = -1;
 	fz_matrix local_transform = *transform;
 	softmask_save softmask = { NULL };
 	int gparent_save;
@@ -1232,16 +1233,17 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	fz_var(cleanup_state);
 	fz_var(gstate);
 	fz_var(oldtop);
+	fz_var(oldbot);
 
 	gparent_save = pr->gparent;
 	pr->gparent = pr->gtop;
+	oldtop = pr->gtop;
 
 	fz_try(ctx)
 	{
 		pdf_gsave(ctx, pr);
 
 		gstate = pr->gstate + pr->gtop;
-		oldtop = pr->gtop;
 
 		pdf_xobject_bbox(ctx, xobj, &xobj_bbox);
 		pdf_xobject_matrix(ctx, xobj, &xobj_matrix);
@@ -1302,12 +1304,25 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 
 		doc = pdf_get_bound_document(ctx, xobj->obj);
 
+		oldbot = pr->gbot;
+		pr->gbot = pr->gtop;
+
 		pdf_process_contents(ctx, (pdf_processor*)pr, doc, resources, xobj->obj, NULL);
 	}
 	fz_always(ctx)
 	{
+		/* Undo any gstate mismatches due to the pdf_process_contents call */
+		if (oldbot != -1)
+		{
+			while (pr->gtop > pr->gbot)
+			{
+				pdf_grestore(ctx, pr);
+			}
+			pr->gbot = oldbot;
+		}
+
 		if (cleanup_state >= 3)
-			pdf_grestore(ctx, pr); /* Remove the clippath */
+			pdf_grestore(ctx, pr); /* Remove the state we pushed for the clippath */
 
 		/* wrap up transparency stacks */
 		if (transparency)
@@ -1341,13 +1356,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		pr->gstate[pr->gparent].ctm = gparent_save_ctm;
 		pr->gparent = gparent_save;
 
-		if (gstate)
-		{
-			while (oldtop < pr->gtop)
-				pdf_grestore(ctx, pr);
-
+		while (oldtop < pr->gtop)
 			pdf_grestore(ctx, pr);
-		}
 
 		pdf_unmark_obj(ctx, xobj->obj);
 	}
