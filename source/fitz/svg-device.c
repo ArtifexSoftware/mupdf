@@ -1,12 +1,6 @@
 #include "fitz-imp.h"
 #include "glyph-cache-imp.h"
 
-#ifdef SVG_TEXT_AS_TEXT
-#define SVG_TEXT_ALPHA(A) A
-#else
-#define SVG_TEXT_ALPHA(A) 0
-#endif
-
 typedef struct svg_device_s svg_device;
 
 typedef struct tile_s tile;
@@ -46,6 +40,8 @@ struct image_s
 struct svg_device_s
 {
 	fz_device super;
+
+	int text_as_text;
 
 	fz_output *out;
 	fz_output *out_store;
@@ -598,19 +594,23 @@ svg_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 	font *fnt;
 	fz_text_span *span;
 
-	for (span = text->head; span; span = span->next)
+	if (sdev->text_as_text)
 	{
-		fz_printf(ctx, out, "<text");
-		svg_dev_fill_color(ctx, sdev, colorspace, color, SVG_TEXT_ALPHA(alpha));
-		svg_dev_text_span(ctx, sdev, ctm, span);
+		for (span = text->head; span; span = span->next)
+		{
+			fz_printf(ctx, out, "<text");
+			svg_dev_fill_color(ctx, sdev, colorspace, color, alpha);
+			svg_dev_text_span(ctx, sdev, ctm, span);
+		}
 	}
-#ifndef SVG_TEXT_AS_TEXT
-	for (span = text->head; span; span = span->next)
+	else
 	{
-		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
-		svg_dev_text_span_as_paths_fill(ctx, dev, span, ctm, colorspace, color, alpha, fnt);
+		for (span = text->head; span; span = span->next)
+		{
+			fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
+			svg_dev_text_span_as_paths_fill(ctx, dev, span, ctm, colorspace, color, alpha, fnt);
+		}
 	}
-#endif
 }
 
 static void
@@ -622,19 +622,23 @@ svg_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 	font *fnt;
 	fz_text_span *span;
 
-	for (span = text->head; span; span = span->next)
+	if (sdev->text_as_text)
 	{
-		fz_printf(ctx, out, "<text");
-		svg_dev_fill_color(ctx, sdev, colorspace, color, SVG_TEXT_ALPHA(alpha));
-		svg_dev_text_span(ctx, sdev, ctm, span);
+		for (span = text->head; span; span = span->next)
+		{
+			fz_printf(ctx, out, "<text");
+			svg_dev_fill_color(ctx, sdev, colorspace, color, alpha);
+			svg_dev_text_span(ctx, sdev, ctm, span);
+		}
 	}
-#ifndef SVG_TEXT_AS_TEXT
-	for (span = text->head; span; span = span->next)
+	else
 	{
-		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
-		svg_dev_text_span_as_paths_stroke(ctx, dev, span, stroke, ctm, colorspace, color, alpha, fnt);
+		for (span = text->head; span; span = span->next)
+		{
+			fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
+			svg_dev_text_span_as_paths_stroke(ctx, dev, span, stroke, ctm, colorspace, color, alpha, fnt);
+		}
 	}
-#endif
 }
 
 static void
@@ -652,21 +656,26 @@ svg_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 	fz_bound_text(ctx, text, NULL, ctm, &bounds);
 
 	out = start_def(ctx, sdev);
-	fz_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n",
-		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
-	for (span = text->head; span; span = span->next)
+	fz_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
+			num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
+	fz_printf(ctx, out, " maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n");
+	if (sdev->text_as_text)
 	{
-		fz_printf(ctx, out, "<text");
-		svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), white, SVG_TEXT_ALPHA(1));
-		svg_dev_text_span(ctx, sdev, ctm, span);
+		for (span = text->head; span; span = span->next)
+		{
+			fz_printf(ctx, out, "<text");
+			svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), white, 1);
+			svg_dev_text_span(ctx, sdev, ctm, span);
+		}
 	}
-#ifndef SVG_TEXT_AS_TEXT
-	for (span = text->head; span; span = span->next)
+	else
 	{
-		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
-		svg_dev_text_span_as_paths_fill(ctx, dev, span, ctm, fz_device_rgb(ctx), white, 1.0f, fnt);
+		for (span = text->head; span; span = span->next)
+		{
+			fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
+			svg_dev_text_span_as_paths_fill(ctx, dev, span, ctm, fz_device_rgb(ctx), white, 1.0f, fnt);
+		}
 	}
-#endif
 	fz_printf(ctx, out, "</mask>\n");
 	out = end_def(ctx, sdev);
 	fz_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", num);
@@ -687,22 +696,27 @@ svg_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, c
 	fz_bound_text(ctx, text, NULL, ctm, &bounds);
 
 	out = start_def(ctx, sdev);
-	fz_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n",
+	fz_printf(ctx, out, "<mask id=\"ma%d\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\"",
 		num, bounds.x0, bounds.y0, bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
-	for (span = text->head; span; span = span->next)
+	fz_printf(ctx, out, " maskUnits=\"userSpaceOnUse\" maskContentUnits=\"userSpaceOnUse\">\n");
+	if (sdev->text_as_text)
 	{
-		fz_printf(ctx, out, "<text");
-		svg_dev_stroke_state(ctx, sdev, stroke, &fz_identity);
-		svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, SVG_TEXT_ALPHA(1));
-		svg_dev_text_span(ctx, sdev, ctm, span);
+		for (span = text->head; span; span = span->next)
+		{
+			fz_printf(ctx, out, "<text");
+			svg_dev_stroke_state(ctx, sdev, stroke, &fz_identity);
+			svg_dev_stroke_color(ctx, sdev, fz_device_rgb(ctx), white, 1);
+			svg_dev_text_span(ctx, sdev, ctm, span);
+		}
 	}
-#ifndef SVG_TEXT_AS_TEXT
-	for (span = text->head; span; span = span->next)
+	else
 	{
-		fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
-		svg_dev_text_span_as_paths_stroke(ctx, dev, span, stroke, ctm, fz_device_rgb(ctx), white, 1.0f, fnt);
+		for (span = text->head; span; span = span->next)
+		{
+			fnt = svg_dev_text_span_as_paths_defs(ctx, dev, span, ctm);
+			svg_dev_text_span_as_paths_stroke(ctx, dev, span, stroke, ctm, fz_device_rgb(ctx), white, 1.0f, fnt);
+		}
 	}
-#endif
 	fz_printf(ctx, out, "</mask>\n");
 	out = end_def(ctx, sdev);
 	fz_printf(ctx, out, "<g mask=\"url(#ma%d)\">\n", num);
@@ -717,11 +731,14 @@ svg_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 
 	float black[3] = { 0, 0, 0};
 
-	for (span = text->head; span; span = span->next)
+	if (sdev->text_as_text)
 	{
-		fz_printf(ctx, out, "<text");
-		svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), black, 0.0f);
-		svg_dev_text_span(ctx, sdev, ctm, span);
+		for (span = text->head; span; span = span->next)
+		{
+			fz_printf(ctx, out, "<text");
+			svg_dev_fill_color(ctx, sdev, fz_device_rgb(ctx), black, 0.0f);
+			svg_dev_text_span(ctx, sdev, ctm, span);
+		}
 	}
 }
 
@@ -1158,7 +1175,7 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 	fz_free(ctx, sdev->images);
 }
 
-fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height)
+fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format)
 {
 	svg_device *dev = fz_new_device(ctx, sizeof *dev);
 
@@ -1196,6 +1213,7 @@ fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, 
 	dev->out = out;
 	dev->out_store = out;
 	dev->id = 0;
+	dev->text_as_text = (text_format == FZ_SVG_TEXT_AS_TEXT);
 
 	fz_printf(ctx, out, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
 	fz_printf(ctx, out, "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n");
