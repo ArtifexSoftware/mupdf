@@ -124,7 +124,7 @@ public class TraceDevice extends Device implements PathWalker, TextWalker
 	}
 
 	public static void main(String[] args) {
-		Document doc = new Document("pdfref17.pdf");
+		Document doc = Document.openDocument("pdfref17.pdf");
 		Page page = doc.loadPage(1144);
 		TraceDevice dev = new TraceDevice();
 		page.run(dev, new Matrix());

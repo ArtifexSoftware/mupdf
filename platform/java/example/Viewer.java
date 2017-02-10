@@ -452,7 +452,7 @@ public class Viewer extends Frame implements WindowListener, ActionListener, Ite
 		}
 
 		try {
-			Document doc = new Document(selectedFile.getAbsolutePath());
+			Document doc = Document.openDocument(selectedFile.getAbsolutePath());
 			Viewer app = new Viewer(doc);
 			app.setVisible(true);
 			return;

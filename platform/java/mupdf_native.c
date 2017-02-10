@@ -911,14 +911,6 @@ static inline jobject to_ColorSpace_safe(fz_context *ctx, JNIEnv *env, fz_colors
 	return jcs;
 }
 
-static inline jobject to_Document_safe(fz_context *ctx, JNIEnv *env, fz_document *doc)
-{
-	if (!ctx || !doc) return NULL;
-
-	fz_keep_document(ctx, doc);
-	return (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
-}
-
 static inline jobject to_Font_safe(fz_context *ctx, JNIEnv *env, fz_font *font)
 {
 	jobject jfont;
@@ -1008,14 +1000,6 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 	return jarr;
 }
 
-static inline jobject to_PDFDocument_safe(fz_context *ctx, JNIEnv *env, pdf_document *pdf)
-{
-	if (!ctx || !pdf) return NULL;
-
-	fz_keep_document(ctx, (fz_document *) pdf);
-	return (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
-}
-
 static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_obj *obj)
 {
 	if (!ctx || !pdf) return NULL;
@@ -1065,6 +1049,32 @@ static inline jobjectArray to_jRectArray_safe(fz_context *ctx, JNIEnv *env, cons
 }
 
 /* Conversion functions: C to Java. Take ownership of fitz object. None of these throw fitz exceptions. */
+
+static inline jobject to_Document_safe_own(fz_context *ctx, JNIEnv *env, fz_document *doc)
+{
+	jobject obj;
+
+	if (!ctx || !doc) return NULL;
+
+	obj = (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
+	if (!obj)
+		fz_drop_document(ctx, doc);
+
+	return obj;
+}
+
+static inline jobject to_PDFDocument_safe_own(fz_context *ctx, JNIEnv *env, pdf_document *pdf)
+{
+	jobject obj;
+
+	if (!ctx || !pdf) return NULL;
+
+	obj = (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
+	if (!obj)
+		fz_drop_document(ctx, (fz_document*)pdf);
+
+	return obj;
+}
 
 static inline jobject to_Device_safe_own(fz_context *ctx, JNIEnv *env, fz_device *device)
 {
@@ -3996,11 +4006,12 @@ FUN(Document_finalize)(JNIEnv *env, jobject self)
 	Memento_fin();
 }
 
-JNIEXPORT jlong JNICALL
-FUN(Document_newNativeWithPath)(JNIEnv *env, jobject self, jstring jfilename)
+JNIEXPORT jobject JNICALL
+FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
+	pdf_document *pdf = NULL;
 	const char *filename = NULL;
 
 	if (!ctx) return 0;
@@ -4011,17 +4022,24 @@ FUN(Document_newNativeWithPath)(JNIEnv *env, jobject self, jstring jfilename)
 	}
 
 	fz_try(ctx)
+	{
 		doc = fz_open_document(ctx, filename);
+		pdf = pdf_document_from_fz_document(ctx, doc);
+	}
 	fz_always(ctx)
+	{
 		if (filename)
 			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return 0;
 	}
 
-	return jlong_cast(doc);
+	if (pdf)
+		return to_PDFDocument_safe_own(ctx, env, pdf);
+	return to_Document_safe_own(ctx, env, doc);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -4256,26 +4274,6 @@ FUN(Document_findBookmark)(JNIEnv *env, jobject self, jlong mark)
 	}
 
 	return page;
-}
-
-JNIEXPORT jobject JNICALL
-FUN(Document_toPDFDocument)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_document *doc = from_Document(env, self);
-	pdf_document *pdf = NULL;
-
-	if (!ctx || !doc) return NULL;
-
-	fz_try(ctx)
-		pdf = pdf_specifics(ctx, doc);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	return to_PDFDocument_safe(ctx, env, pdf);
 }
 
 /* Page interface */
@@ -5640,6 +5638,25 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 
 /* PDFDocument interface */
 
+JNIEXPORT jlong JNICALL
+FUN(PDFDocument_newNative)(JNIEnv *env, jclass cls)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *doc = NULL;
+
+	if (!ctx) return 0;
+
+	fz_try(ctx)
+		doc = pdf_create_document(ctx);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return jlong_cast(doc);
+}
+
 JNIEXPORT void JNICALL
 FUN(PDFDocument_finalize)(JNIEnv *env, jobject self)
 {
@@ -5863,37 +5880,6 @@ FUN(PDFDocument_newDictionary)(JNIEnv *env, jobject self)
 	}
 
 	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
-}
-
-JNIEXPORT jobject JNICALL
-FUN(PDFDocument_toDocument)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_document *pdf = from_PDFDocument(env, self);
-
-	if (!ctx || !pdf) return NULL;
-
-	return to_Document_safe(ctx, env, (fz_document *) pdf);
-}
-
-JNIEXPORT jint JNICALL
-FUN(PDFDocument_countPages)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_document *pdf = from_PDFDocument(env, self);
-	int count = 0;
-
-	if (!ctx || !pdf) return 0;
-
-	fz_try(ctx)
-		count = pdf_count_pages(ctx, pdf);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return 0;
-	}
-
-	return count;
 }
 
 JNIEXPORT jobject JNICALL

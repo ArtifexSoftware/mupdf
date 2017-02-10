@@ -603,19 +603,19 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Document_finalize
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
- * Method:    newNativeWithPath
- * Signature: (Ljava/lang/String;)J
+ * Method:    openNativeWithPath
+ * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/Document;
  */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Document_newNativeWithPath
-  (JNIEnv *, jobject, jstring);
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithPath
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
- * Method:    newNativeWithBuffer
- * Signature: ([BLjava/lang/String;)J
+ * Method:    openNativeWithBuffer
+ * Signature: ([BLjava/lang/String;)Lcom/artifex/mupdf/fitz/Document;
  */
-JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Document_newNativeWithBuffer
-  (JNIEnv *, jobject, jbyteArray, jstring);
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_openNativeWithBuffer
+  (JNIEnv *, jclass, jbyteArray, jstring);
 
 /*
  * Class:     com_artifex_mupdf_fitz_Document
@@ -703,14 +703,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Document_findBookmark
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Document_isUnencryptedPDF
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Document
- * Method:    toPDFDocument
- * Signature: ()Lcom/artifex/mupdf/fitz/PDFDocument;
- */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Document_toPDFDocument
   (JNIEnv *, jobject);
 
 /*
@@ -1326,27 +1318,11 @@ extern "C" {
 #endif
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    finalize
- * Signature: ()V
+ * Method:    newNative
+ * Signature: ()J
  */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_finalize
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    toDocument
- * Signature: ()Lcom/artifex/mupdf/fitz/Document;
- */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_toDocument
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFDocument
- * Method:    countPages
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_countPages
-  (JNIEnv *, jobject);
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_newNative
+  (JNIEnv *, jclass);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
