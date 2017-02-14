@@ -180,6 +180,7 @@ static int showoutline = 0;
 static int showlinks = 0;
 static int showsearch = 0;
 static int showinfo = 0;
+static int showhelp = 0;
 
 static int history_count = 0;
 static int history[256];
@@ -869,7 +870,7 @@ static void do_app(void)
 		quit();
 
 	if (ui.down || ui.middle || ui.right || ui.key)
-		showinfo = 0;
+		showinfo = showhelp = 0;
 
 	if (!ui.focus && ui.key)
 	{
@@ -956,6 +957,7 @@ static void do_app(void)
 		case 'j': case KEY_DOWN: scroll_y += 10; break;
 		case 'h': case KEY_LEFT: scroll_x -= 10; break;
 		case 'l': case KEY_RIGHT: scroll_x += 10; break;
+		case KEY_F1: showhelp = !showhelp; break;
 		}
 
 		if (ui.key >= '0' && ui.key <= '9')
@@ -1037,6 +1039,68 @@ static void do_info(void)
 			fz_strlcat(buf, "none", sizeof buf);
 		y = do_info_line(x, y, "Permissions", buf);
 	}
+}
+
+static int do_help_line(int x, int y, char *label, char *text)
+{
+	ui_draw_string(ctx, x, y, label);
+	ui_draw_string(ctx, x+100, y, text);
+	return y + ui.lineheight;
+}
+
+static void do_help(void)
+{
+	int x = canvas_x + 4 * ui.lineheight;
+	int y = canvas_y + 4 * ui.lineheight;
+	int w = canvas_w - 8 * ui.lineheight;
+	int h = 34 * ui.lineheight;
+
+	glBegin(GL_TRIANGLE_STRIP);
+	{
+		glColor4f(0.9f, 0.9f, 0.9f, 1.0f);
+		glVertex2f(x, y);
+		glVertex2f(x, y + h);
+		glVertex2f(x + w, y);
+		glVertex2f(x + w, y + h);
+	}
+	glEnd();
+
+	x += ui.lineheight;
+	y += ui.lineheight + ui.baseline;
+
+	glColor4f(0, 0, 0, 1);
+	y = do_help_line(x, y, "MuPDF", FZ_VERSION);
+	y += ui.lineheight;
+	y = do_help_line(x, y, "q", "quit");
+	y = do_help_line(x, y, "r", "reload file");
+	y = do_help_line(x, y, "f", "fullscreen window");
+	y = do_help_line(x, y, "w", "shrink wrap window");
+	y = do_help_line(x, y, "i", "show document information");
+	y = do_help_line(x, y, "o", "show/hide outline");
+	y = do_help_line(x, y, "L", "show/hide links");
+	y += ui.lineheight;
+	y = do_help_line(x, y, "b", "smart move backward");
+	y = do_help_line(x, y, "Space", "smart move forward");
+	y = do_help_line(x, y, ", or PgUp", "go backward");
+	y = do_help_line(x, y, ". or PgDn", "go forward");
+	y = do_help_line(x, y, "<", "go backward 10 pages");
+	y = do_help_line(x, y, ">", "go forward 10 pages");
+	y = do_help_line(x, y, "N g", "go to page N");
+	y = do_help_line(x, y, "G", "go to last page");
+	y += ui.lineheight;
+	y = do_help_line(x, y, "t", "go backward in history");
+	y = do_help_line(x, y, "T", "go forward in history");
+	y = do_help_line(x, y, "N m", "save location in bookmark N");
+	y = do_help_line(x, y, "N t", "go to bookmark N");
+	y = do_help_line(x, y, "/ or ?", "search for text");
+	y = do_help_line(x, y, "n or N", "repeat search");
+	y += ui.lineheight;
+	y = do_help_line(x, y, "[ or ]", "rotate left or right");
+	y = do_help_line(x, y, "+ or -", "zoom in or out");
+	y = do_help_line(x, y, "W or H", "fit to width or height");
+	y = do_help_line(x, y, "Z", "fit to page");
+	y = do_help_line(x, y, "z", "reset zoom");
+	y = do_help_line(x, y, "N z", "set zoom to N");
 }
 
 static void do_canvas(void)
@@ -1179,6 +1243,8 @@ static void run_main_loop(void)
 
 	if (showinfo)
 		do_info();
+	else if (showhelp)
+		do_help();
 
 	if (showoutline)
 		do_outline(outline, canvas_x);
