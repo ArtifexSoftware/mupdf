@@ -1932,15 +1932,14 @@ struct NativeDeviceInfo
 
 	/* Conceptually, we support drawing onto a 'plane' of pixels.
 	 * The plane is width/height in size. The page is positioned on this
-	 * at pageX0,pageY0 -> pageX1,PageY1. We want to redraw the given patch
-	 * of this.
+	 * at xOffset,yOffset. We want to redraw the given patch of this.
 	 *
 	 * The samples pointer in pixmap is updated on every lock/unlock, to
 	 * cope with the object moving in memory.
 	 */
 	fz_pixmap *pixmap;
-	int pageX0;
-	int pageY0;
+	int xOffset;
+	int yOffset;
 	int width;
 };
 
@@ -2488,67 +2487,48 @@ FUN(DisplayListDevice_newNative)(JNIEnv *env, jclass self, jobject jlist)
 #ifdef HAVE_ANDROID
 
 static jlong
-newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject obj, jint width, jint height, NativeDeviceLockFn *lock, NativeDeviceUnlockFn *unlock, jint pageX0, jint pageY0, jint pageX1, jint pageY1, jint patchX0, jint patchY0, jint patchX1, jint patchY1)
+newNativeAndroidDrawDevice(JNIEnv *env, jobject self, fz_context *ctx, jobject obj, jint width, jint height, NativeDeviceLockFn *lock, NativeDeviceUnlockFn *unlock, jint xOrigin, jint yOrigin, jint patchX0, jint patchY0, jint patchX1, jint patchY1)
 {
 	fz_device *device = NULL;
 	fz_pixmap *pixmap = NULL;
 	unsigned char dummy;
 	NativeDeviceInfo *ninfo = NULL;
-	fz_irect clip, pixbbox;
+	fz_irect bbox;
 
 	if (!ctx) return 0;
 
-//	LOGI("DrawDeviceNative: bitmap=%d,%d page=%d,%d->%d,%d patch=%d,%d->%d,%d", width, height, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
-	/* Sanitise patch w.r.t page. */
-	if (patchX0 < pageX0)
-		patchX0 = pageX0;
-	if (patchY0 < pageY0)
-		patchY0 = pageY0;
-	if (patchX1 > pageX1)
-		patchX1 = pageX1;
-	if (patchY1 > pageY1)
-		patchY1 = pageY1;
+	/* Ensure patch fits inside bitmap. */
+	if (patchX0 < 0) patchX0 = 0;
+	if (patchY0 < 0) patchY0 = 0;
+	if (patchX1 > width) patchX1 = width;
+	if (patchY1 > height) patchY1 = height;
 
-	clip.x0 = patchX0;
-	clip.y0 = patchY0;
-	clip.x1 = patchX1;
-	clip.y1 = patchY1;
-
-	/* Check for sanity. */
-	//LOGI("clip = %d,%d->%d,%d", clip.x0, clip.y0, clip.x1, clip.y1);
-	if (clip.x0 < 0 || clip.y0 < 0 || clip.x1 > width || clip.y1 > height)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "patch would draw out of bounds!");
-
-	clip.x0 -= pageX0;
-	clip.y0 -= pageY0;
-	clip.x1 -= pageX0;
-	clip.y1 -= pageY0;
-
-	/* pixmaps cannot handle right-edge padding, so the bbox must be expanded to
-	 * match the pixel's data */
-	pixbbox = clip;
-	pixbbox.x1 = pixbbox.x0 + width;
+	bbox.x0 = xOrigin + patchX0;
+	bbox.y0 = yOrigin + patchY0;
+	bbox.x1 = xOrigin + patchX1;
+	bbox.y1 = yOrigin + patchY1;
 
 	fz_var(pixmap);
 	fz_var(ninfo);
 
 	fz_try(ctx)
 	{
-		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), &pixbbox, 1, &dummy);
+		pixmap = fz_new_pixmap_with_bbox_and_data(ctx, fz_device_rgb(ctx), &bbox, 1, &dummy);
+		pixmap->stride = width * sizeof(int32_t);
 		ninfo = fz_malloc(ctx, sizeof(*ninfo));
 		ninfo->pixmap = pixmap;
 		ninfo->lock = lock;
 		ninfo->unlock = unlock;
-		ninfo->pageX0 = patchX0;
-		ninfo->pageY0 = patchY0;
+		ninfo->xOffset = patchX0;
+		ninfo->yOffset = patchY0;
 		ninfo->width = width;
 		ninfo->object = obj;
 		(*env)->SetLongField(env, self, fid_NativeDevice_nativeInfo, jlong_cast(ninfo));
 		(*env)->SetObjectField(env, self, fid_NativeDevice_nativeResource, obj);
 		lockNativeDevice(env,self);
-		fz_clear_pixmap_rect_with_value(ctx, pixmap, 0xff, &clip);
+		fz_clear_pixmap_with_value(ctx, pixmap, 0xff);
 		unlockNativeDevice(env,ninfo);
-		device = fz_new_draw_device_with_bbox(ctx, NULL, pixmap, &clip);
+		device = fz_new_draw_device(ctx, NULL, pixmap);
 	}
 	fz_catch(ctx)
 	{
@@ -2575,7 +2555,7 @@ static void androidDrawDevice_lock(JNIEnv *env, NativeDeviceInfo *info)
 	}
 
 	/* Now offset pixels to allow for the page offsets */
-	pixels += sizeof(int32_t) * (info->pageX0 + info->width * info->pageY0);
+	pixels += sizeof(int32_t) * (info->xOffset + info->width * info->yOffset);
 
 	info->pixmap->samples = pixels;
 }
@@ -2590,7 +2570,7 @@ static void androidDrawDevice_unlock(JNIEnv *env, NativeDeviceInfo *info)
 }
 
 JNIEXPORT jlong JNICALL
-FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitmap, jint pageX0, jint pageY0, jint pageX1, jint pageY1, jint patchX0, jint patchY0, jint patchX1, jint patchY1)
+FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitmap, jint xOrigin, jint yOrigin, jint pX0, jint pY0, jint pX1, jint pY1)
 {
 	fz_context *ctx = get_context(env);
 	AndroidBitmapInfo info;
@@ -2608,7 +2588,7 @@ FUN(android_AndroidDrawDevice_newNative)(JNIEnv *env, jclass self, jobject jbitm
 		jni_throw(env, FZ_ERROR_GENERIC, "new DrawDevice failed as bitmap width != stride");
 
 	fz_try(ctx)
-		device = newNativeAndroidDrawDevice(env, self, ctx, jbitmap, info.width, info.height, androidDrawDevice_lock, androidDrawDevice_unlock, pageX0, pageY0, pageX1, pageY1, patchX0, patchY0, patchX1, patchY1);
+		device = newNativeAndroidDrawDevice(env, self, ctx, jbitmap, info.width, info.height, androidDrawDevice_lock, androidDrawDevice_unlock, xOrigin, yOrigin, pX0, pY0, pX1, pY1);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
