@@ -39,7 +39,7 @@ static void usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\tcbz, pdf, png\n"
+		"\t\tcbz, pdf, png, svg\n"
 		"\t-O -\tcomma separated list of options for output format\n"
 		"\n"
 		"\tpages\tcomma separated list of page ranges (N=last page)\n"
@@ -52,6 +52,7 @@ static void usage(void)
 #if FZ_ENABLE_PDF
 	fputs(fz_pdf_write_options_usage, stderr);
 #endif
+	fputs(fz_svg_write_options_usage, stderr);
 	exit(1);
 }
 

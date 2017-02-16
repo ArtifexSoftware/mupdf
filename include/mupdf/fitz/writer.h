@@ -28,11 +28,13 @@ void fz_close_document_writer(fz_context *ctx, fz_document_writer *wri);
 void fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri);
 
 fz_document_writer *fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options);
-fz_document_writer *fz_new_png_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_png_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_svg_writer(fz_context *ctx, const char *path, const char *options);
 
 extern const char *fz_cbz_write_options_usage;
-extern const char *fz_png_write_options_usage;
 extern const char *fz_pdf_write_options_usage;
+extern const char *fz_png_write_options_usage;
+extern const char *fz_svg_write_options_usage;
 
 #endif

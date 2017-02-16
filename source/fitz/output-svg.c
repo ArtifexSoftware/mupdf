@@ -1,0 +1,87 @@
+#include "mupdf/fitz.h"
+
+typedef struct fz_svg_writer_s fz_svg_writer;
+
+struct fz_svg_writer_s
+{
+	fz_document_writer super;
+	char *path;
+	int count;
+	fz_output *out;
+	int text_format;
+};
+
+const char *fz_svg_write_options_usage =
+	"SVG output options:\n"
+	"\ttext=text: Emit text as <text> elements (inaccurate fonts).\n"
+	"\ttext=path: Emit text as <path> elements (accurate fonts).\n"
+	"\n"
+	;
+
+static fz_device *
+svg_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+{
+	fz_svg_writer *wri = (fz_svg_writer*)wri_;
+	char path[PATH_MAX];
+
+	float w = mediabox->x1 - mediabox->x0;
+	float h = mediabox->y1 - mediabox->y0;
+
+	wri->count += 1;
+
+	fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
+	wri->out = fz_new_output_with_path(ctx, path, 0);
+	return fz_new_svg_device(ctx, wri->out, w, h, wri->text_format);
+}
+
+static void
+svg_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
+{
+	fz_svg_writer *wri = (fz_svg_writer*)wri_;
+
+	fz_close_device(ctx, dev);
+	fz_drop_device(ctx, dev);
+	fz_drop_output(ctx, wri->out);
+	wri->out = NULL;
+}
+
+static void
+svg_drop_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_svg_writer *wri = (fz_svg_writer*)wri_;
+	fz_drop_output(ctx, wri->out);
+	fz_free(ctx, wri->path);
+}
+
+fz_document_writer *
+fz_new_svg_writer(fz_context *ctx, const char *path, const char *args)
+{
+	fz_svg_writer *wri;
+	const char *val;
+
+	wri = fz_malloc_struct(ctx, fz_svg_writer);
+	wri->super.begin_page = svg_begin_page;
+	wri->super.end_page = svg_end_page;
+	wri->super.drop_writer = svg_drop_writer;
+
+	wri->text_format = FZ_SVG_TEXT_AS_PATH;
+
+	fz_try(ctx)
+	{
+		if (fz_has_option(ctx, args, "text", &val))
+		{
+			if (fz_option_eq(val, "text"))
+				wri->text_format = FZ_SVG_TEXT_AS_TEXT;
+			else if (fz_option_eq(val, "path"))
+				wri->text_format = FZ_SVG_TEXT_AS_PATH;
+		}
+		wri->path = fz_strdup(ctx, path ? path : "out-%04d.svg");
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, wri);
+		fz_rethrow(ctx);
+	}
+
+	return (fz_document_writer*)wri;
+}

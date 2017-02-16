@@ -1805,6 +1805,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\output-svg.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\output-tga.c"
 				>
 			</File>

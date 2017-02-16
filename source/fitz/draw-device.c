@@ -2404,7 +2404,7 @@ fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor,
 const char *fz_draw_options_usage =
 	"Common raster format output options:\n"
 	"\trotate=N: rotate rendered pages N degrees counterclockwise\n"
-	"\tresolution=N: set both X and Y resolution of rendered pages in pixels per inch\n"
+	"\tresolution=N: set both X and Y resolution in pixels per inch\n"
 	"\tx-resolution=N: X resolution of rendered pages in pixels per inch\n"
 	"\ty-resolution=N: Y resolution of rendered pages in pixels per inch\n"
 	"\twidth=N: render pages to fit N pixels wide (ignore resolution option)\n"

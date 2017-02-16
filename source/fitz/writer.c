@@ -61,12 +61,14 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 
 	if (!fz_strcasecmp(format, "cbz"))
 		return fz_new_cbz_writer(ctx, path, options);
-	if (!fz_strcasecmp(format, "png"))
-		return fz_new_png_writer(ctx, path, options);
 #if FZ_ENABLE_PDF
 	if (!fz_strcasecmp(format, "pdf"))
 		return fz_new_pdf_writer(ctx, path, options);
 #endif
+	if (!fz_strcasecmp(format, "png"))
+		return fz_new_png_writer(ctx, path, options);
+	if (!fz_strcasecmp(format, "svg"))
+		return fz_new_svg_writer(ctx, path, options);
 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown output document format: %s", format);
 }
