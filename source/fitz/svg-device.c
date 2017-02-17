@@ -310,7 +310,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 			break;
 	}
 
-	fz_printf(ctx, out, " x=");
+	fz_printf(ctx, out, " x=\"");
 	was_wspace = 0;
 	for (i=start; i < span->len; i++)
 	{
@@ -323,9 +323,11 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 		p.x = it->x;
 		p.y = it->y;
 		fz_transform_point(&p, &inverse);
-		fz_printf(ctx, out, "%c%g", i == start ? '\"' : ' ', p.x);
+		if (i > start)
+			fz_putc(ctx, out, ' ');
+		fz_printf(ctx, out, "%g", p.x);
 	}
-	fz_printf(ctx, out, "\" y=");
+	fz_printf(ctx, out, "\" y=\"");
 	was_wspace = 0;
 	for (i=start; i < span->len; i++)
 	{
@@ -338,7 +340,9 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 		p.x = it->x;
 		p.y = it->y;
 		fz_transform_point(&p, &inverse);
-		fz_printf(ctx, out, "%c%g", i == start ? '\"' : ' ', p.y);
+		if (i > start)
+			fz_putc(ctx, out, ' ');
+		fz_printf(ctx, out, "%g", p.y);
 	}
 	fz_printf(ctx, out, "\">\n");
 	was_wspace = 0;
