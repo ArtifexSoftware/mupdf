@@ -126,6 +126,26 @@ fz_shaper_data_t *fz_font_shaper_data(fz_context *ctx, fz_font *font);
 const char *fz_font_name(fz_context *ctx, fz_font *font);
 
 /*
+	fz_font_is_bold: Returns true if the font is bold.
+*/
+int fz_font_is_bold(fz_context *ctx, fz_font *font);
+
+/*
+	fz_font_is_italic: Returns true if the font is italic.
+*/
+int fz_font_is_italic(fz_context *ctx, fz_font *font);
+
+/*
+	fz_font_is_serif: Returns true if the font is serif.
+*/
+int fz_font_is_serif(fz_context *ctx, fz_font *font);
+
+/*
+	fz_font_is_monospaced: Returns true if the font is monospaced.
+*/
+int fz_font_is_monospaced(fz_context *ctx, fz_font *font);
+
+/*
 	fz_font_bbox: Retrieve a pointer to the font bbox.
 
 	font: The font to query.

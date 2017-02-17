@@ -256,6 +256,17 @@ is_xml_wspace(int c)
 }
 
 static void
+svg_font_family(fz_context *ctx, char buf[], int size, const char *name)
+{
+	/* Remove "ABCDEF+" prefix and "-Bold" suffix. */
+	char *p = strchr(name, '+');
+	if (p) fz_strlcpy(buf, p+1, size);
+	else fz_strlcpy(buf, name, size);
+	p = strrchr(buf, '-');
+	if (p) *p = 0;
+}
+
+static void
 svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_text_span *span)
 {
 	fz_output *out = sdev->out;
@@ -265,6 +276,8 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 	fz_matrix local_trm;
 	float size;
 	int start, is_wspace, was_wspace;
+	char font_family[100];
+	int is_bold, is_italic;
 
 	/* Rely on the fact that trm.{e,f} == 0 */
 	size = fz_matrix_expansion(&span->trm);
@@ -277,10 +290,16 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 	fz_invert_matrix(&inverse, &local_trm);
 	fz_concat(&local_trm, &local_trm, ctm);
 
+	svg_font_family(ctx, font_family, sizeof font_family, fz_font_name(ctx, span->font));
+	is_bold = fz_font_is_bold(ctx, span->font);
+	is_italic = fz_font_is_italic(ctx, span->font);
+
 	fz_printf(ctx, out, " transform=\"matrix(%g,%g,%g,%g,%g,%g)\"",
 			local_trm.a, local_trm.b, local_trm.c, local_trm.d, local_trm.e, local_trm.f);
 	fz_printf(ctx, out, " font-size=\"%g\"", size);
-	fz_printf(ctx, out, " font-family=\"%s\"", fz_font_name(ctx, span->font));
+	fz_printf(ctx, out, " font-family=\"%s\"", font_family);
+	if (is_bold) fz_printf(ctx, out, " font-weight=\"bold\"");
+	if (is_italic) fz_printf(ctx, out, " font-style=\"italic\"");
 
 	/* Leading (and repeated) whitespace presents a problem for SVG
 	 * text, so elide it here. */

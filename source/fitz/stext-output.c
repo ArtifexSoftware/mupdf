@@ -8,28 +8,6 @@
 
 /* XML, HTML and plain-text output */
 
-static int font_is_bold(fz_context *ctx, fz_font *font)
-{
-	FT_Face face = fz_font_ft_face(ctx, font);
-	if (face && (face->style_flags & FT_STYLE_FLAG_BOLD))
-		return 1;
-	if (strstr(fz_font_name(ctx, font), "Bold"))
-		return 1;
-	return 0;
-}
-
-static int font_is_italic(fz_context *ctx, fz_font *font)
-{
-	FT_Face face = fz_font_ft_face(ctx, font);
-	const char *name;
-	if (face && (face->style_flags & FT_STYLE_FLAG_ITALIC))
-		return 1;
-	name = fz_font_name(ctx, font);
-	if (strstr(name, "Italic") || strstr(name, "Oblique"))
-		return 1;
-	return 0;
-}
-
 static void
 fz_print_style_begin(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
@@ -60,9 +38,9 @@ fz_print_style(fz_context *ctx, fz_output *out, fz_stext_style *style)
 	s = s ? s + 1 : name;
 	fz_printf(ctx, out, "span.s%d{font-family:\"%s\";font-size:%gpt;",
 		style->id, s, style->size);
-	if (font_is_italic(ctx, style->font))
+	if (fz_font_is_italic(ctx, style->font))
 		fz_printf(ctx, out, "font-style:italic;");
-	if (font_is_bold(ctx, style->font))
+	if (fz_font_is_bold(ctx, style->font))
 		fz_printf(ctx, out, "font-weight:bold;");
 	fz_printf(ctx, out, "}\n");
 }

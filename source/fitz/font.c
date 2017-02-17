@@ -1570,6 +1570,26 @@ fz_encode_character_with_fallback(fz_context *ctx, fz_font *user_font, int unico
 	return *out_font = user_font, 0;
 }
 
+int fz_font_is_bold(fz_context *ctx, fz_font *font)
+{
+	return font ? font->flags.is_bold : 0;
+}
+
+int fz_font_is_italic(fz_context *ctx, fz_font *font)
+{
+	return font ? font->flags.is_italic : 0;
+}
+
+int fz_font_is_serif(fz_context *ctx, fz_font *font)
+{
+	return font ? font->flags.is_serif : 0;
+}
+
+int fz_font_is_monospaced(fz_context *ctx, fz_font *font)
+{
+	return font ? font->flags.is_mono : 0;
+}
+
 const char *fz_font_name(fz_context *ctx, fz_font *font)
 {
 	return font ? font->name : "";
