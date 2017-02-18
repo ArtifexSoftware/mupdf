@@ -714,25 +714,24 @@ static void do_forms(float xofs, float yofs)
 
 static void toggle_fullscreen(void)
 {
-#if 0
-	static int oldw = 100, oldh = 100, oldx = 0, oldy = 0;
-
+	GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+	static int win_x = 0, win_y = 0;
+	static int win_w = 100, win_h = 100;
+	static int win_rr = 60;
 	if (!isfullscreen)
 	{
-		oldw = glutGet(GLUT_WINDOW_WIDTH);
-		oldh = glutGet(GLUT_WINDOW_HEIGHT);
-		oldx = glutGet(GLUT_WINDOW_X);
-		oldy = glutGet(GLUT_WINDOW_Y);
-		glutFullScreen();
+		glfwGetWindowPos(window, &win_x, &win_y);
+		glfwGetWindowSize(window, &win_w, &win_h);
+		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+		win_rr = mode->refreshRate;
+		glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 		isfullscreen = 1;
 	}
 	else
 	{
-		glutPositionWindow(oldx, oldy);
-		glutReshapeWindow(oldw, oldh);
+		glfwSetWindowMonitor(window, NULL, win_x, win_y, win_w, win_h, win_rr);
 		isfullscreen = 0;
 	}
-#endif
 }
 
 static void shrinkwrap(void)
