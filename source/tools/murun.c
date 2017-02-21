@@ -3939,7 +3939,7 @@ static void ffi_PDFAnnotation_setColor(js_State *J)
 	if (n != 0 && n != 1 && n != 3 && n != 4)
 		js_error(J, "color must be 0, 1, 3, or 4 components");
 	for (i = 0; i < n; ++i) {
-		js_getindex(J, 1, 0);
+		js_getindex(J, 1, i);
 		color[i] = js_tonumber(J, -1);
 		js_pop(J, 1);
 	}
