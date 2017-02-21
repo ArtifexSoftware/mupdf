@@ -4227,7 +4227,8 @@ FUN(Document_authenticatePassword)(JNIEnv *env, jobject self, jstring jpassword)
 	int okay = 0;
 
 	if (!ctx || !doc) return JNI_FALSE;
-	if (password)
+
+	if (jpassword)
 	{
 		password = (*env)->GetStringUTFChars(env, jpassword, NULL);
 		if (!password) return JNI_FALSE;
