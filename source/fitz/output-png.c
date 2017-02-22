@@ -2,10 +2,6 @@
 
 #include <zlib.h>
 
-#ifndef PATH_MAX
-#define PATH_MAX (1024)
-#endif
-
 static inline void big32(unsigned char *buf, unsigned int v)
 {
 	buf[0] = (v >> 24) & 0xff;

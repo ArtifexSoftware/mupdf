@@ -37,10 +37,6 @@ static int justcopied = 0;
 
 static pdfapp_t gapp;
 
-#ifndef PATH_MAX
-#define PATH_MAX (1024)
-#endif
-
 static wchar_t wbuf[PATH_MAX];
 static char filename[PATH_MAX];
 

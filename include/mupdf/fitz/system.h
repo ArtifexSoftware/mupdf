@@ -119,6 +119,10 @@ static __inline int signbit(double x)
 #define va_copy_end(a) va_end(a)
 #endif
 
+#ifndef PATH_MAX
+#define PATH_MAX (1024)
+#endif
+
 typedef signed char int8_t;
 typedef short int int16_t;
 typedef int int32_t;
