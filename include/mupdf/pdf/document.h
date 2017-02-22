@@ -113,6 +113,18 @@ pdf_page *pdf_page_from_fz_page(fz_context *ctx, fz_page *ptr);
 pdf_annot *pdf_annot_from_fz_annot(fz_context *ctx, fz_annot *ptr);
 
 int pdf_needs_password(fz_context *ctx, pdf_document *doc);
+
+/*
+	pdf_authenticate_password: Attempt to authenticate a
+	password.
+
+	Returns 0 for failure, non-zero for success.
+
+	In the non-zero case:
+		bit 0 set => no password required
+		bit 1 set => user password authenticated
+		bit 2 set => owner password authenticated
+*/
 int pdf_authenticate_password(fz_context *ctx, pdf_document *doc, const char *pw);
 
 int pdf_has_permission(fz_context *ctx, pdf_document *doc, fz_permission p);

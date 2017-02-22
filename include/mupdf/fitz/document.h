@@ -195,6 +195,15 @@ int fz_needs_password(fz_context *ctx, fz_document *doc);
 	specifications do not specify any particular text encoding, so
 	neither do we.
 
+	Returns 0 for failure to authenticate, non-zero for success.
+
+	For PDF documents, further information can be given by examining
+	the bits in the return code.
+
+		Bit 0 => No password required
+		Bit 1 => User password authenticated
+		Bit 2 => Owner password authenticated
+
 	Does not throw exceptions.
 */
 int fz_authenticate_password(fz_context *ctx, fz_document *doc, const char *password);
