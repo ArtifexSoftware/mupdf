@@ -11,7 +11,7 @@ public class Annotation
 		pointer = 0;
 	}
 
-	private Annotation(long p) {
+	protected Annotation(long p) {
 		pointer = p;
 	}
 

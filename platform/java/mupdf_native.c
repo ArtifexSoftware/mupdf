@@ -49,7 +49,7 @@ static inline jlong jlong_cast(const void *p)
 
 /* All the cached classes/mids/fids we need. */
 
-static jclass cls_Annot;
+static jclass cls_Annotation;
 static jclass cls_Buffer;
 static jclass cls_ColorSpace;
 static jclass cls_Cookie;
@@ -72,7 +72,9 @@ static jclass cls_OutOfMemoryError;
 static jclass cls_Page;
 static jclass cls_Path;
 static jclass cls_PathWalker;
+static jclass cls_PDFAnnotation;
 static jclass cls_PDFDocument;
+static jclass cls_PDFPage;
 static jclass cls_PDFGraftMap;
 static jclass cls_PDFObject;
 static jclass cls_Pixmap;
@@ -91,7 +93,7 @@ static jclass cls_TextSpan;
 static jclass cls_TextWalker;
 static jclass cls_TryLaterException;
 
-static jfieldID fid_Annot_pointer;
+static jfieldID fid_Annotation_pointer;
 static jfieldID fid_Buffer_pointer;
 static jfieldID fid_ColorSpace_pointer;
 static jfieldID fid_Cookie_pointer;
@@ -114,7 +116,9 @@ static jfieldID fid_NativeDevice_nativeInfo;
 static jfieldID fid_NativeDevice_nativeResource;
 static jfieldID fid_Page_pointer;
 static jfieldID fid_Path_pointer;
+static jfieldID fid_PDFAnnotation_pointer;
 static jfieldID fid_PDFDocument_pointer;
+static jfieldID fid_PDFPage_pointer;
 static jfieldID fid_PDFGraftMap_pointer;
 static jfieldID fid_PDFObject_pointer;
 static jfieldID fid_PDFObject_Null;
@@ -136,7 +140,7 @@ static jfieldID fid_Text_pointer;
 static jfieldID fid_TextSpan_bbox;
 static jfieldID fid_TextSpan_chars;
 
-static jmethodID mid_Annot_init;
+static jmethodID mid_Annotation_init;
 static jmethodID mid_ColorSpace_fromPointer;
 static jmethodID mid_ColorSpace_init;
 static jmethodID mid_Device_beginGroup;
@@ -174,7 +178,9 @@ static jmethodID mid_PathWalker_closePath;
 static jmethodID mid_PathWalker_curveTo;
 static jmethodID mid_PathWalker_lineTo;
 static jmethodID mid_PathWalker_moveTo;
+static jmethodID mid_PDFAnnotation_init;
 static jmethodID mid_PDFDocument_init;
+static jmethodID mid_PDFPage_init;
 static jmethodID mid_PDFGraftMap_init;
 static jmethodID mid_PDFObject_init;
 static jmethodID mid_Pixmap_init;
@@ -362,9 +368,9 @@ static int find_fids(JNIEnv *env)
 {
 	int err = 0;
 
-	cls_Annot = get_class(&err, env, PKG"Annotation");
-	fid_Annot_pointer = get_field(&err, env, "pointer", "J");
-	mid_Annot_init = get_method(&err, env, "<init>", "(J)V");
+	cls_Annotation = get_class(&err, env, PKG"Annotation");
+	fid_Annotation_pointer = get_field(&err, env, "pointer", "J");
+	mid_Annotation_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_Buffer = get_class(&err, env, PKG"Buffer");
 	fid_Buffer_pointer = get_field(&err, env, "pointer", "J");
@@ -456,6 +462,10 @@ static int find_fids(JNIEnv *env)
 	mid_PathWalker_curveTo = get_method(&err, env, "curveTo", "(FFFFFF)V");
 	mid_PathWalker_closePath = get_method(&err, env, "closePath", "()V");
 
+	cls_PDFAnnotation = get_class(&err, env, PKG"PDFAnnotation");
+	fid_PDFAnnotation_pointer = get_field(&err, env, "pointer", "J");
+	mid_PDFAnnotation_init = get_method(&err, env, "<init>", "(J)V");
+
 	cls_PDFDocument = get_class(&err, env, PKG"PDFDocument");
 	fid_PDFDocument_pointer = get_field(&err, env, "pointer", "J");
 	mid_PDFDocument_init = get_method(&err, env, "<init>", "(J)V");
@@ -468,6 +478,10 @@ static int find_fids(JNIEnv *env)
 	fid_PDFObject_pointer = get_field(&err, env, "pointer", "J");
 	fid_PDFObject_Null = get_static_field(&err, env, "Null", "L"PKG"PDFObject;");
 	mid_PDFObject_init = get_method(&err, env, "<init>", "(J)V");
+
+	cls_PDFPage = get_class(&err, env, PKG"PDFPage");
+	fid_PDFPage_pointer = get_field(&err, env, "pointer", "J");
+	mid_PDFPage_init = get_method(&err, env, "<init>", "(J)V");
 
 	cls_Pixmap = get_class(&err, env, PKG"Pixmap");
 	fid_Pixmap_pointer = get_field(&err, env, "pointer", "J");
@@ -545,7 +559,7 @@ static int find_fids(JNIEnv *env)
 
 static void lose_fids(JNIEnv *env)
 {
-	(*env)->DeleteGlobalRef(env, cls_Annot);
+	(*env)->DeleteGlobalRef(env, cls_Annotation);
 	(*env)->DeleteGlobalRef(env, cls_Buffer);
 	(*env)->DeleteGlobalRef(env, cls_ColorSpace);
 	(*env)->DeleteGlobalRef(env, cls_Cookie);
@@ -568,7 +582,9 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Page);
 	(*env)->DeleteGlobalRef(env, cls_Path);
 	(*env)->DeleteGlobalRef(env, cls_PathWalker);
+	(*env)->DeleteGlobalRef(env, cls_PDFAnnotation);
 	(*env)->DeleteGlobalRef(env, cls_PDFDocument);
+	(*env)->DeleteGlobalRef(env, cls_PDFPage);
 	(*env)->DeleteGlobalRef(env, cls_PDFGraftMap);
 	(*env)->DeleteGlobalRef(env, cls_PDFObject);
 	(*env)->DeleteGlobalRef(env, cls_Pixmap);
@@ -934,11 +950,17 @@ FUN(Context_gprfSupportedNative)(JNIEnv * env, jclass class)
 static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *annot)
 {
 	jobject jannot;
+	pdf_annot *pannot;
 
 	if (!ctx || !annot) return NULL;
 
 	fz_keep_annot(ctx, annot);
-	jannot = (*env)->NewObject(env, cls_Annot, mid_Annot_init, jlong_cast(annot));
+
+	pannot = pdf_annot_from_fz_annot(ctx, annot);
+	if (pannot)
+		jannot = (*env)->NewObject(env, cls_PDFAnnotation, mid_PDFAnnotation_init, jlong_cast(annot));
+	else
+		jannot = (*env)->NewObject(env, cls_Annotation, mid_Annotation_init, jlong_cast(annot));
 	if (!jannot)
 		fz_throw_java(ctx, env);
 
@@ -1229,25 +1251,17 @@ static inline jobjectArray to_jRectArray_safe(fz_context *ctx, JNIEnv *env, cons
 static inline jobject to_Document_safe_own(fz_context *ctx, JNIEnv *env, fz_document *doc)
 {
 	jobject obj;
+	pdf_document *pdf;
 
 	if (!ctx || !doc) return NULL;
 
-	obj = (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
+	pdf = pdf_document_from_fz_document(ctx, doc);
+	if (pdf)
+		obj = (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
+	else
+		obj = (*env)->NewObject(env, cls_Document, mid_Document_init, jlong_cast(doc));
 	if (!obj)
 		fz_drop_document(ctx, doc);
-
-	return obj;
-}
-
-static inline jobject to_PDFDocument_safe_own(fz_context *ctx, JNIEnv *env, pdf_document *pdf)
-{
-	jobject obj;
-
-	if (!ctx || !pdf) return NULL;
-
-	obj = (*env)->NewObject(env, cls_PDFDocument, mid_PDFDocument_init, jlong_cast(pdf));
-	if (!obj)
-		fz_drop_document(ctx, (fz_document*)pdf);
 
 	return obj;
 }
@@ -1281,10 +1295,15 @@ static inline jobject to_DisplayList_safe_own(fz_context *ctx, JNIEnv *env, fz_d
 static inline jobject to_Page_safe_own(fz_context *ctx, JNIEnv *env, fz_page *page)
 {
 	jobject jobj;
+	pdf_page *ppage;
 
 	if (!ctx || !page) return NULL;
 
-	jobj = (*env)->NewObject(env, cls_Page, mid_Page_init, jlong_cast(page));
+	ppage = pdf_page_from_fz_page(ctx, page);
+	if (ppage)
+		jobj = (*env)->NewObject(env, cls_PDFPage, mid_PDFPage_init, jlong_cast(page));
+	else
+		jobj = (*env)->NewObject(env, cls_Page, mid_Page_init, jlong_cast(page));
 	if (!jobj)
 		fz_drop_page(ctx, page);
 
@@ -1349,7 +1368,7 @@ static inline fz_annot *from_Annotation(JNIEnv *env, jobject jobj)
 {
 	fz_annot *annot;
 	if (!jobj) return NULL;
-	annot = CAST(fz_annot *, (*env)->GetLongField(env, jobj, fid_Annot_pointer));
+	annot = CAST(fz_annot *, (*env)->GetLongField(env, jobj, fid_Annotation_pointer));
 	if (!annot) jni_throw_null(env, "cannot use already destroyed Annotation");
 	return annot;
 }
@@ -1583,7 +1602,7 @@ static inline fz_rect from_Rect(JNIEnv *env, jobject jrect)
 static inline fz_annot *from_Annotation_safe(JNIEnv *env, jobject jobj)
 {
 	if (!jobj) return NULL;
-	return CAST(fz_annot *, (*env)->GetLongField(env, jobj, fid_Annot_pointer));
+	return CAST(fz_annot *, (*env)->GetLongField(env, jobj, fid_Annotation_pointer));
 }
 
 static inline fz_buffer *from_Buffer_safe(JNIEnv *env, jobject jobj)
@@ -4167,7 +4186,6 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
 {
 	fz_context *ctx = get_context(env);
 	fz_document *doc = NULL;
-	pdf_document *pdf = NULL;
 	const char *filename = NULL;
 
 	if (!ctx) return 0;
@@ -4178,23 +4196,16 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
 	}
 
 	fz_try(ctx)
-	{
 		doc = fz_open_document(ctx, filename);
-		pdf = pdf_document_from_fz_document(ctx, doc);
-	}
 	fz_always(ctx)
-	{
 		if (filename)
 			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
-	}
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return 0;
 	}
 
-	if (pdf)
-		return to_PDFDocument_safe_own(ctx, env, pdf);
 	return to_Document_safe_own(ctx, env, doc);
 }
 
@@ -4620,7 +4631,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 		return NULL;
 
 	/* now run through actually creating the annotation objects */
-	jannots = (*env)->NewObjectArray(env, annot_count, cls_Annot, NULL);
+	jannots = (*env)->NewObjectArray(env, annot_count, cls_Annotation, NULL);
 	if (!jannots) return NULL;
 
 	annot = annots;
