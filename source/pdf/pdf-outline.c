@@ -69,12 +69,21 @@ fz_outline *
 pdf_load_outline(fz_context *ctx, pdf_document *doc)
 {
 	pdf_obj *root, *obj, *first;
+	fz_outline *outline = NULL;
 
-	root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
-	obj = pdf_dict_get(ctx, root, PDF_NAME_Outlines);
-	first = pdf_dict_get(ctx, obj, PDF_NAME_First);
-	if (first)
-		return pdf_load_outline_imp(ctx, doc, first);
+	pdf_load_page_tree(ctx, doc); /* cache page tree for fast link destination lookups */
+	fz_try(ctx)
+	{
+		root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+		obj = pdf_dict_get(ctx, root, PDF_NAME_Outlines);
+		first = pdf_dict_get(ctx, obj, PDF_NAME_First);
+		if (first)
+			outline = pdf_load_outline_imp(ctx, doc, first);
+	}
+	fz_always(ctx)
+		pdf_drop_page_tree(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
-	return NULL;
+	return outline;
 }

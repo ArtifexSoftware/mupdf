@@ -4,11 +4,87 @@ int
 pdf_count_pages(fz_context *ctx, pdf_document *doc)
 {
 	if (doc->page_count == 0)
-	{
-		pdf_obj *count = pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count");
-		doc->page_count = pdf_to_int(ctx, count);
-	}
+		doc->page_count = pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count"));
 	return doc->page_count;
+}
+
+static int
+pdf_load_page_tree_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int idx)
+{
+	pdf_obj *type = pdf_dict_get(ctx, node, PDF_NAME_Type);
+	if (pdf_name_eq(ctx, type, PDF_NAME_Pages))
+	{
+		pdf_obj *kids = pdf_dict_get(ctx, node, PDF_NAME_Kids);
+		int count = pdf_to_int(ctx, pdf_dict_get(ctx, node, PDF_NAME_Count));
+		int i, n = pdf_array_len(ctx, kids);
+
+		/* if Kids length is same as Count, all children must be page objects */
+		if (n == count)
+		{
+			for (i = 0; i < n; ++i)
+			{
+				if (idx >= doc->page_count)
+					fz_throw(ctx, FZ_ERROR_GENERIC, "too many kids in page tree");
+				doc->rev_page_map[idx].page = idx;
+				doc->rev_page_map[idx].object = pdf_to_num(ctx, pdf_array_get(ctx, kids, i));
+				++idx;
+			}
+		}
+
+		/* else Kids may contain intermediate nodes */
+		else
+		{
+			if (pdf_mark_obj(ctx, node))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in page tree");
+			fz_try(ctx)
+				for (i = 0; i < n; ++i)
+					idx = pdf_load_page_tree_imp(ctx, doc, pdf_array_get(ctx, kids, i), idx);
+			fz_always(ctx)
+				pdf_unmark_obj(ctx, node);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
+		}
+	}
+	else if (pdf_name_eq(ctx, type, PDF_NAME_Page))
+	{
+		if (idx >= doc->page_count)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "too many kids in page tree");
+		doc->rev_page_map[idx].page = idx;
+		doc->rev_page_map[idx].object = pdf_to_num(ctx, node);
+		++idx;
+	}
+	else
+	{
+		fz_throw(ctx, FZ_ERROR_GENERIC, "non-page object in page tree");
+	}
+	return idx;
+}
+
+static int
+cmp_rev_page_map(const void *va, const void *vb)
+{
+	const pdf_rev_page_map *a = va;
+	const pdf_rev_page_map *b = vb;
+	return a->object - b->object;
+}
+
+void
+pdf_load_page_tree(fz_context *ctx, pdf_document *doc)
+{
+	if (!doc->rev_page_map)
+	{
+		int n = pdf_count_pages(ctx, doc);
+		doc->rev_page_map = fz_malloc_array(ctx, n, sizeof *doc->rev_page_map);
+		pdf_load_page_tree_imp(ctx, doc, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages"), 0);
+		qsort(doc->rev_page_map, n, sizeof *doc->rev_page_map, cmp_rev_page_map);
+	}
+}
+
+void
+pdf_drop_page_tree(fz_context *ctx, pdf_document *doc)
+{
+	fz_free(ctx, doc->rev_page_map);
+	doc->rev_page_map = NULL;
 }
 
 enum
@@ -40,7 +116,7 @@ pdf_lookup_page_loc_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int *
 			len = pdf_array_len(ctx, kids);
 
 			if (len == 0)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Malformed pages tree");
+				fz_throw(ctx, FZ_ERROR_GENERIC, "malformed page tree");
 
 			/* Every node we need to unmark goes into the stack */
 			if (stack_len == stack_max)
@@ -158,8 +234,8 @@ pdf_count_pages_before_kid(fz_context *ctx, pdf_document *doc, pdf_obj *parent, 
 	fz_throw(ctx, FZ_ERROR_GENERIC, "kid not found in parent's kids array");
 }
 
-int
-pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *node)
+static int
+pdf_lookup_page_number_slow(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 {
 	int needle = pdf_to_num(ctx, node);
 	int total = 0;
@@ -198,6 +274,34 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *node)
 	}
 
 	return total;
+}
+
+static int
+pdf_lookup_page_number_fast(fz_context *ctx, pdf_document *doc, int needle)
+{
+	int l = 0;
+	int r = doc->page_count - 1;
+	while (l <= r)
+	{
+		int m = (l + r) >> 1;
+		int c = needle - doc->rev_page_map[m].object;
+		if (c < 0)
+			r = m - 1;
+		else if (c > 0)
+			l = m + 1;
+		else
+			return doc->rev_page_map[m].page;
+	}
+	return -1;
+}
+
+int
+pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *page)
+{
+	if (doc->rev_page_map)
+		return pdf_lookup_page_number_fast(ctx, doc, pdf_to_num(ctx, page));
+	else
+		return pdf_lookup_page_number_slow(ctx, doc, page);
 }
 
 int

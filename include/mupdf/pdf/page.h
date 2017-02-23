@@ -4,6 +4,8 @@
 int pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *pageobj);
 int pdf_count_pages(fz_context *ctx, pdf_document *doc);
 pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
+void pdf_load_page_tree(fz_context *ctx, pdf_document *doc);
+void pdf_drop_page_tree(fz_context *ctx, pdf_document *doc);
 
 /*
 	pdf_lookup_anchor: Find the page number of a named destination.

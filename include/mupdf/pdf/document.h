@@ -549,6 +549,13 @@ struct pdf_unsaved_sig_s
 	pdf_unsaved_sig *next;
 };
 
+typedef struct pdf_rev_page_map_s pdf_rev_page_map;
+struct pdf_rev_page_map_s
+{
+	int page;
+	int object;
+};
+
 struct pdf_document_s
 {
 	fz_document super;
@@ -576,6 +583,7 @@ struct pdf_document_s
 	int has_xref_streams;
 
 	int page_count;
+	pdf_rev_page_map *rev_page_map;
 
 	int repair_attempted;
 
