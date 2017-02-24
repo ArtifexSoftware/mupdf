@@ -1937,7 +1937,7 @@ static int has_same_href(fz_html_box *box, const char *old_href)
 	return 0;
 }
 
-static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *head, int page, int page_h, const char *dir, const char *file)
+static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *head, int page, float page_h, const char *dir, const char *file)
 {
 	fz_link *link;
 	fz_html_flow *next;
@@ -2007,7 +2007,7 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 	return head;
 }
 
-static fz_link *load_link_box(fz_context *ctx, fz_html_box *box, fz_link *head, int page, int page_h, const char *dir, const char *file)
+static fz_link *load_link_box(fz_context *ctx, fz_html_box *box, fz_link *head, int page, float page_h, const char *dir, const char *file)
 {
 	while (box)
 	{
