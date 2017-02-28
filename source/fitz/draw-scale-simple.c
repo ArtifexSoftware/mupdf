@@ -1294,7 +1294,7 @@ scale_single_row(unsigned char * restrict dst, int dstride, const unsigned char 
 		tmp[j] = 128;
 	if (weights->flip)
 	{
-		dst += (weights->count-1)*n;
+		dst += (weights->count-1)*nf;
 		for (i=weights->count; i > 0; i--)
 		{
 			min = *contrib++;
