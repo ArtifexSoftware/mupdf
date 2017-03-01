@@ -1549,7 +1549,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 			trm.c = 0;
 			trm.d = -node->box->em;
 			trm.e = x;
-			trm.f = y;
+			trm.f = y - page_top;
 
 			s = get_node_text(ctx, node);
 			init_string_walker(ctx, &walker, hb_buf, node->bidi_level & 1, style->font, node->script, node->markup_lang, s);
@@ -1584,7 +1584,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 						if (walker.glyph_info[i].cluster == k)
 						{
 							trm.e = x + walker.glyph_pos[i].x_offset * node_scale;
-							trm.f = y - walker.glyph_pos[i].y_offset * node_scale;
+							trm.f = y - walker.glyph_pos[i].y_offset * node_scale - page_top;
 							fz_show_glyph(ctx, text, walker.font, &trm,
 									walker.glyph_info[i].codepoint, c,
 									0, node->bidi_level, box->markup_dir, node->markup_lang);
@@ -1635,7 +1635,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 	}
 }
 
-static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_css_color color, float x0, float y0, float x1, float y1)
+static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, float page_top, fz_css_color color, float x0, float y0, float x1, float y1)
 {
 	if (color.a > 0)
 	{
@@ -1643,10 +1643,10 @@ static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_
 
 		fz_path *path = fz_new_path(ctx);
 
-		fz_moveto(ctx, path, x0, y0);
-		fz_lineto(ctx, path, x1, y0);
-		fz_lineto(ctx, path, x1, y1);
-		fz_lineto(ctx, path, x0, y1);
+		fz_moveto(ctx, path, x0, y0 - page_top);
+		fz_lineto(ctx, path, x1, y0 - page_top);
+		fz_lineto(ctx, path, x1, y1 - page_top);
+		fz_lineto(ctx, path, x0, y1 - page_top);
 		fz_closepath(ctx, path);
 
 		rgb[0] = color.r / 255.0f;
@@ -1798,7 +1798,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 	{
 		s = buf;
 		trm.e = box->x - w;
-		trm.f = y;
+		trm.f = y - page_top;
 		while (*s)
 		{
 			s += fz_chartorune(&c, s);
@@ -1836,16 +1836,16 @@ static void draw_block_box(fz_context *ctx, fz_html_box *box, float page_top, fl
 
 	if (box->style.visibility == V_VISIBLE)
 	{
-		draw_rect(ctx, dev, ctm, box->style.background_color, x0, y0, x1, y1);
+		draw_rect(ctx, dev, ctm, page_top, box->style.background_color, x0, y0, x1, y1);
 
 		if (border[T] > 0)
-			draw_rect(ctx, dev, ctm, box->style.border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
+			draw_rect(ctx, dev, ctm, page_top, box->style.border_color[T], x0 - border[L], y0 - border[T], x1 + border[R], y0);
 		if (border[B] > 0)
-			draw_rect(ctx, dev, ctm, box->style.border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
+			draw_rect(ctx, dev, ctm, page_top, box->style.border_color[B], x0 - border[L], y1, x1 + border[R], y1 + border[B]);
 		if (border[L] > 0)
-			draw_rect(ctx, dev, ctm, box->style.border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
+			draw_rect(ctx, dev, ctm, page_top, box->style.border_color[L], x0 - border[L], y0 - border[T], x0, y1 + border[B]);
 		if (border[R] > 0)
-			draw_rect(ctx, dev, ctm, box->style.border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
+			draw_rect(ctx, dev, ctm, page_top, box->style.border_color[R], x1, y0 - border[T], x1 + border[R], y1 + border[B]);
 
 		if (box->list_item)
 			draw_list_mark(ctx, box, page_top, page_bot, dev, ctm, box->list_item);
@@ -1874,12 +1874,12 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 	fz_var(hb_buf);
 	fz_var(unlocked);
 
-	draw_rect(ctx, dev, ctm, html->root->style.background_color,
+	draw_rect(ctx, dev, ctm, 0, html->root->style.background_color,
 			0, 0,
 			html->page_w + html->page_margin[L] + html->page_margin[R],
 			html->page_h + html->page_margin[T] + html->page_margin[B]);
 
-	fz_pre_translate(&local_ctm, html->page_margin[L], html->page_margin[T] - page_top);
+	fz_pre_translate(&local_ctm, html->page_margin[L], html->page_margin[T]);
 
 	hb_lock(ctx);
 	fz_try(ctx)
