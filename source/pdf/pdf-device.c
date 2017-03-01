@@ -18,22 +18,16 @@ struct gstate_s
 	fz_buffer *buf;
 	void (*on_pop)(fz_context*,pdf_device*,void *);
 	void *on_pop_arg;
+
 	/* The graphics state proper */
+	fz_matrix ctm;
 	fz_colorspace *colorspace[2];
 	float color[2][4];
-	fz_matrix ctm;
-	fz_stroke_state *stroke_state;
 	float alpha[2];
+	fz_stroke_state *stroke_state;
 	int font;
-	float font_size;
-	float char_spacing;
-	float word_spacing;
-	float horizontal_scaling;
-	float leading;
 	int text_rendering_mode;
-	float rise;
 	int knockout;
-	fz_matrix tm;
 };
 
 /* The image digest information, object reference, as well as indirect reference
@@ -442,8 +436,10 @@ static void
 pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 {
 	gstate *gs = CURRENT_GSTATE(pdev);
-	fz_matrix tm;
-	float dx, dy, adv;
+	fz_matrix tm, inv_tm;
+	fz_point d;
+	float adv;
+	int dx, dy;
 	int i;
 
 	if (span->len == 0)
@@ -453,7 +449,9 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 	tm.e = span->items[0].x;
 	tm.f = span->items[0].y;
 
-	fz_buffer_printf(ctx, gs->buf, "%f %f %f %f %f %f Tm\n", tm.a, tm.b, tm.c, tm.d, tm.e, tm.f);
+	fz_invert_matrix(&inv_tm, &tm);
+
+	fz_buffer_printf(ctx, gs->buf, "%M Tm\n[<", &tm);
 
 	for (i = 0; i < span->len; ++i)
 	{
@@ -461,18 +459,30 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 		if (it->gid < 0)
 			continue;
 
-		dx = it->x - tm.e;
-		dy = it->y - tm.f;
+		/* transform difference from expected pen position into font units. */
+		d.x = it->x - tm.e;
+		d.y = it->y - tm.f;
+		fz_transform_vector(&d, &inv_tm);
+		dx = (int)(d.x * 1000 + (d.x < 0 ? -0.5f : 0.5f));
+		dy = (int)(d.y * 1000 + (d.y < 0 ? -0.5f : 0.5f));
+
 		tm.e = it->x;
 		tm.f = it->y;
 
-		if (fabsf(dx) > 0 || fabsf(dy) > 0)
-			fz_buffer_printf(ctx, gs->buf, "%f %f %f %f %f %f Tm\n", tm.a, tm.b, tm.c, tm.d, tm.e, tm.f);
+		if (dx != 0 || dy != 0)
+		{
+			if (span->wmode == 0 && dy == 0)
+				fz_buffer_printf(ctx, gs->buf, ">%d<", -dx);
+			else if (span->wmode == 1 && dx == 0)
+				fz_buffer_printf(ctx, gs->buf, ">%d<", -dy);
+			else
+				fz_buffer_printf(ctx, gs->buf, ">]TJ\n%M Tm\n[<", &tm);
+		}
 
 		if (fz_font_t3_procs(ctx, span->font))
-			fz_buffer_printf(ctx, gs->buf, "<%02x> Tj\n", it->gid);
+			fz_buffer_printf(ctx, gs->buf, "%02x", it->gid);
 		else
-			fz_buffer_printf(ctx, gs->buf, "<%04x> Tj\n", it->gid);
+			fz_buffer_printf(ctx, gs->buf, "%04x", it->gid);
 
 		adv = fz_advance_glyph(ctx, span->font, it->gid, span->wmode);
 		if (span->wmode == 0)
@@ -480,6 +490,8 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 		else
 			fz_pre_translate(&tm, 0, adv);
 	}
+
+	fz_buffer_printf(ctx, gs->buf, ">]TJ\n");
 }
 
 static void
@@ -501,12 +513,6 @@ pdf_dev_begin_text(fz_context *ctx, pdf_device *pdev, const fz_matrix *tm, int t
 	{
 		gstate *gs = CURRENT_GSTATE(pdev);
 		fz_buffer_printf(ctx, gs->buf, "BT\n");
-		gs->tm.a = 1;
-		gs->tm.b = 0;
-		gs->tm.c = 0;
-		gs->tm.d = 1;
-		gs->tm.e = 0;
-		gs->tm.f = 0;
 		pdev->in_text = 1;
 	}
 }
@@ -1123,7 +1129,6 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matri
 		dev->gstates[0].alpha[0] = 1.0;
 		dev->gstates[0].alpha[1] = 1.0;
 		dev->gstates[0].font = -1;
-		dev->gstates[0].horizontal_scaling = 100;
 		dev->num_gstates = 1;
 		dev->max_gstates = 1;
 
