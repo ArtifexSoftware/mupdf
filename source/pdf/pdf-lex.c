@@ -35,7 +35,7 @@ static inline int iswhite(int ch)
 		ch == '\040';
 }
 
-static inline int isprint(int ch)
+static inline int fz_isprint(int ch)
 {
 	return ch >= ' ' && ch <= '~';
 }
@@ -448,7 +448,7 @@ pdf_token_from_keyword(char *key)
 
 	while (*key)
 	{
-		if (!isprint(*key))
+		if (!fz_isprint(*key))
 			return PDF_TOK_ERROR;
 		++key;
 	}
