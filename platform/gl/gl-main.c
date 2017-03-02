@@ -150,6 +150,7 @@ static float layout_em = DEFAULT_LAYOUT_EM;
 static char *layout_css = NULL;
 static int layout_use_doc_css = 1;
 
+static const char *fix_title = "MuPDFGL";
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
 static fz_page *page = NULL;
@@ -1478,7 +1479,7 @@ int main(int argc, char **argv)
 	screen_w = video_mode->width;
 	screen_h = video_mode->height;
 
-	window = glfwCreateWindow(DEFAULT_WINDOW_W, DEFAULT_WINDOW_H, filename, NULL, NULL);
+	window = glfwCreateWindow(DEFAULT_WINDOW_W, DEFAULT_WINDOW_H, fix_title, NULL, NULL);
 	if (!window) {
 		fprintf(stderr, "cannot create glfw window\n");
 		exit(1);
