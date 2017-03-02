@@ -247,15 +247,6 @@ svg_dev_stroke_color(fz_context *ctx, svg_device *sdev, fz_colorspace *colorspac
 		fz_printf(ctx, out, " stroke-opacity=\"%g\"", alpha);
 }
 
-static inline int
-is_xml_wspace(int c)
-{
-	return (c == 9 || /* TAB */
-		c == 0x0a || /* HT */
-		c == 0x0b || /* LF */
-		c == 0x20);
-}
-
 static void
 svg_font_family(fz_context *ctx, char buf[], int size, const char *name)
 {
@@ -271,96 +262,92 @@ static void
 svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_text_span *span)
 {
 	fz_output *out = sdev->out;
-
-	int i;
-	fz_matrix inverse;
-	fz_matrix local_trm;
-	float size;
-	int start, is_wspace, was_wspace;
 	char font_family[100];
 	int is_bold, is_italic;
+	fz_matrix tm, inv_tm, final_tm;
+	fz_point p;
+	float font_size;
+	fz_text_item *it;
+	int i, c;
 
-	/* Rely on the fact that trm.{e,f} == 0 */
-	size = fz_matrix_expansion(&span->trm);
-	local_trm.a = span->trm.a / size;
-	local_trm.b = span->trm.b / size;
-	local_trm.c = -span->trm.c / size;
-	local_trm.d = -span->trm.d / size;
-	local_trm.e = 0;
-	local_trm.f = 0;
-	fz_invert_matrix(&inverse, &local_trm);
-	fz_concat(&local_trm, &local_trm, ctm);
+	if (span->len == 0)
+	{
+		fz_printf(ctx, out, "/>\n");
+		return;
+	}
+
+	tm = span->trm;
+	font_size = fz_matrix_expansion(&tm);
+	final_tm.a = tm.a / font_size;
+	final_tm.b = tm.b / font_size;
+	final_tm.c = -tm.c / font_size;
+	final_tm.d = -tm.d / font_size;
+	final_tm.e = 0;
+	final_tm.f = 0;
+	fz_invert_matrix(&inv_tm, &final_tm);
+	fz_concat(&final_tm, &final_tm, ctm);
+
+	tm.e = span->items[0].x;
+	tm.f = span->items[0].y;
 
 	svg_font_family(ctx, font_family, sizeof font_family, fz_font_name(ctx, span->font));
 	is_bold = fz_font_is_bold(ctx, span->font);
 	is_italic = fz_font_is_italic(ctx, span->font);
 
-	fz_printf(ctx, out, " transform=\"matrix(%g,%g,%g,%g,%g,%g)\"",
-			local_trm.a, local_trm.b, local_trm.c, local_trm.d, local_trm.e, local_trm.f);
-	fz_printf(ctx, out, " font-size=\"%g\"", size);
+	fz_printf(ctx, out, " xml:space=\"preserve\"");
+	fz_printf(ctx, out, " transform=\"matrix(%M)\"", &final_tm);
+	fz_printf(ctx, out, " font-size=\"%g\"", font_size);
 	fz_printf(ctx, out, " font-family=\"%s\"", font_family);
 	if (is_bold) fz_printf(ctx, out, " font-weight=\"bold\"");
 	if (is_italic) fz_printf(ctx, out, " font-style=\"italic\"");
+	if (span->wmode != 0) fz_printf(ctx, out, " writing-mode=\"tb\"");
 
-	/* Leading (and repeated) whitespace presents a problem for SVG
-	 * text, so elide it here. */
-	for (start=0; start < span->len; start++)
+	fz_puts(ctx, out, " x=\"");
+	for (i=0; i < span->len; ++i)
 	{
-		fz_text_item *it = &span->items[start];
-		if (!is_xml_wspace(it->ucs))
-			break;
+		it = &span->items[i];
+		if (it->ucs >= 0)
+		{
+			p.x = it->x;
+			p.y = it->y;
+			fz_transform_point(&p, &inv_tm);
+			if (i > 0)
+				fz_putc(ctx, out, ' ');
+			fz_printf(ctx, out, "%g", p.x);
+		}
 	}
+	fz_putc(ctx, out, '"');
 
-	fz_printf(ctx, out, " x=\"");
-	was_wspace = 0;
-	for (i=start; i < span->len; i++)
+	fz_puts(ctx, out, " y=\"");
+	for (i=0; i < span->len; ++i)
 	{
-		fz_text_item *it = &span->items[i];
-		fz_point p;
-		is_wspace = is_xml_wspace(it->ucs);
-		if (is_wspace && was_wspace)
-			continue;
-		was_wspace = is_wspace;
-		p.x = it->x;
-		p.y = it->y;
-		fz_transform_point(&p, &inverse);
-		if (i > start)
-			fz_putc(ctx, out, ' ');
-		fz_printf(ctx, out, "%g", p.x);
+		it = &span->items[i];
+		if (it->ucs >= 0)
+		{
+			p.x = it->x;
+			p.y = it->y;
+			fz_transform_point(&p, &inv_tm);
+			if (i > 0)
+				fz_putc(ctx, out, ' ');
+			fz_printf(ctx, out, "%g", p.y);
+		}
 	}
-	fz_printf(ctx, out, "\" y=\"");
-	was_wspace = 0;
-	for (i=start; i < span->len; i++)
+	fz_putc(ctx, out, '"');
+
+	fz_putc(ctx, out, '>');
+	for (i=0; i < span->len; ++i)
 	{
-		fz_text_item *it = &span->items[i];
-		fz_point p;
-		is_wspace = is_xml_wspace(it->ucs);
-		if (is_wspace && was_wspace)
-			continue;
-		was_wspace = is_wspace;
-		p.x = it->x;
-		p.y = it->y;
-		fz_transform_point(&p, &inverse);
-		if (i > start)
-			fz_putc(ctx, out, ' ');
-		fz_printf(ctx, out, "%g", p.y);
+		it = &span->items[i];
+		if (it->ucs >= 0)
+		{
+			c = it->ucs;
+			if (c >= 32 && c <= 127 && c != '<' && c != '&' && c != '>')
+				fz_putc(ctx, out, c);
+			else
+				fz_printf(ctx, out, "&#x%04x;", c);
+		}
 	}
-	fz_printf(ctx, out, "\">\n");
-	was_wspace = 0;
-	for (i=start; i < span->len; i++)
-	{
-		fz_text_item *it = &span->items[i];
-		int c = it->ucs;
-		is_wspace = is_xml_wspace(c);
-		if (is_wspace && was_wspace)
-			continue;
-		was_wspace = is_wspace;
-		if (c >= 32 && c <= 127 && c != '<' && c != '&')
-			fz_printf(ctx, out, "%c", c);
-		else
-			fz_printf(ctx, out, "&#x%04x;", c);
-	}
-	fz_printf(ctx, out, "\n</text>\n");
+	fz_printf(ctx, out, "</text>\n");
 }
 
 static font *
