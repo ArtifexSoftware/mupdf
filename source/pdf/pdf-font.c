@@ -178,9 +178,9 @@ static int ft_char_index(FT_Face face, int cid)
 	return gid;
 }
 
-static int ft_name_index(FT_Face face, char *name)
+static int ft_name_index(FT_Face face, const char *name)
 {
-	int code = FT_Get_Name_Index(face, name);
+	int code = FT_Get_Name_Index(face, (char*)name);
 	if (code == 0)
 	{
 		int unicode = pdf_lookup_agl(name);
@@ -300,9 +300,32 @@ static int ft_width(fz_context *ctx, pdf_font_desc *fontdesc, int cid)
 	return adv * 1000 / ((FT_Face)fontdesc->font->ft_face)->units_per_EM;
 }
 
-static int lookup_mre_code(char *name)
+static const struct { int code; const char *name; } mre_diff_table[] =
+{
+	{ 173, "notequal" },
+	{ 176, "infinity" },
+	{ 178, "lessequal" },
+	{ 179, "greaterequal" },
+	{ 182, "partialdiff" },
+	{ 183, "summation" },
+	{ 184, "product" },
+	{ 185, "pi" },
+	{ 186, "integral" },
+	{ 189, "Omega" },
+	{ 195, "radical" },
+	{ 197, "approxequal" },
+	{ 198, "Delta" },
+	{ 215, "lozenge" },
+	{ 219, "Euro" },
+	{ 240, "apple" },
+};
+
+static int lookup_mre_code(const char *name)
 {
 	int i;
+	for (i = 0; i < nelem(mre_diff_table); ++i)
+		if (!strcmp(name, mre_diff_table[i].name))
+			return mre_diff_table[i].code;
 	for (i = 0; i < 256; i++)
 		if (pdf_mac_roman[i] && !strcmp(name, pdf_mac_roman[i]))
 			return i;
@@ -557,7 +580,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 	int kind;
 	int glyph;
 
-	char *estrings[256];
+	const char *estrings[256];
 	char ebuffer[256][32];
 	int i, k, n;
 	int fterr;

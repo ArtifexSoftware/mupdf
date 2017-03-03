@@ -18,8 +18,8 @@ enum
 	PDF_FD_FORCE_BOLD = 1 << 18
 };
 
-void pdf_load_encoding(char **estrings, char *encoding);
-int pdf_lookup_agl(char *name);
+void pdf_load_encoding(const char **estrings, char *encoding);
+int pdf_lookup_agl(const char *name);
 const char **pdf_lookup_agl_duplicates(int ucs);
 
 extern const unsigned short pdf_doc_encoding[256];
@@ -99,7 +99,7 @@ void pdf_end_vmtx(fz_context *ctx, pdf_font_desc *font);
 pdf_hmtx pdf_lookup_hmtx(fz_context *ctx, pdf_font_desc *font, int cid);
 pdf_vmtx pdf_lookup_vmtx(fz_context *ctx, pdf_font_desc *font, int cid);
 
-void pdf_load_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *font, char **strings, char *collection, pdf_obj *cmapstm);
+void pdf_load_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *font, const char **strings, char *collection, pdf_obj *cmapstm);
 
 int pdf_font_cid_to_gid(fz_context *ctx, pdf_font_desc *fontdesc, int cid);
 

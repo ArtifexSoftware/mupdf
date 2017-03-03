@@ -57,7 +57,7 @@ pdf_remap_cmap(fz_context *ctx, pdf_cmap *gid_from_cpt, pdf_cmap *ucs_from_cpt)
 
 void
 pdf_load_to_unicode(fz_context *ctx, pdf_document *doc, pdf_font_desc *font,
-	char **strings, char *collection, pdf_obj *cmapstm)
+	const char **strings, char *collection, pdf_obj *cmapstm)
 {
 	unsigned int cpt;
 

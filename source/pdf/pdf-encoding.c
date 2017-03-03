@@ -4,19 +4,19 @@
 #include "pdf-glyphlist.h"
 
 void
-pdf_load_encoding(char **estrings, char *encoding)
+pdf_load_encoding(const char **estrings, char *encoding)
 {
-	char **bstrings = NULL;
+	const char * const *bstrings = NULL;
 	int i;
 
 	if (!strcmp(encoding, "StandardEncoding"))
-		bstrings = (char**) pdf_standard;
+		bstrings = pdf_standard;
 	if (!strcmp(encoding, "MacRomanEncoding"))
-		bstrings = (char**) pdf_mac_roman;
+		bstrings = pdf_mac_roman;
 	if (!strcmp(encoding, "MacExpertEncoding"))
-		bstrings = (char**) pdf_mac_expert;
+		bstrings = pdf_mac_expert;
 	if (!strcmp(encoding, "WinAnsiEncoding"))
-		bstrings = (char**) pdf_win_ansi;
+		bstrings = pdf_win_ansi;
 
 	if (bstrings)
 		for (i = 0; i < 256; i++)
@@ -24,7 +24,7 @@ pdf_load_encoding(char **estrings, char *encoding)
 }
 
 int
-pdf_lookup_agl(char *name)
+pdf_lookup_agl(const char *name)
 {
 	char buf[64];
 	char *p;

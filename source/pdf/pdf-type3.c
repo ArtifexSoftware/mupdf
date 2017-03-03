@@ -19,7 +19,7 @@ pdf_font_desc *
 pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict)
 {
 	char buf[256];
-	char *estrings[256];
+	const char *estrings[256];
 	pdf_font_desc *fontdesc = NULL;
 	pdf_obj *encoding;
 	pdf_obj *widths;
