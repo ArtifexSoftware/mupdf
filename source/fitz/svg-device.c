@@ -258,6 +258,48 @@ svg_font_family(fz_context *ctx, char buf[], int size, const char *name)
 	if (p) *p = 0;
 }
 
+static int
+find_first_char(fz_context *ctx, const fz_text_span *span, int i)
+{
+	for (; i < span->len; ++i)
+		if (span->items[i].ucs >= 0)
+			return i;
+	return i;
+}
+
+static int
+find_next_line_break(fz_context *ctx, const fz_text_span *span, const fz_matrix *inv_tm, int i)
+{
+	fz_point p, old_p;
+
+	old_p.x = span->items[i].x;
+	old_p.y = span->items[i].y;
+	fz_transform_point(&old_p, inv_tm);
+
+	for (++i; i < span->len; ++i)
+	{
+		if (span->items[i].ucs >= 0)
+		{
+			p.x = span->items[i].x;
+			p.y = span->items[i].y;
+			fz_transform_point(&p, inv_tm);
+			if (span->wmode == 0)
+			{
+				if (p.y != old_p.y)
+					return i;
+			}
+			else
+			{
+				if (p.x != old_p.x)
+					return i;
+			}
+			old_p = p;
+		}
+	}
+
+	return i;
+}
+
 static void
 svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_text_span *span)
 {
@@ -268,7 +310,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 	fz_point p;
 	float font_size;
 	fz_text_item *it;
-	int i, c;
+	int start, end, i;
 
 	if (span->len == 0)
 	{
@@ -302,51 +344,49 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 	if (is_italic) fz_printf(ctx, out, " font-style=\"italic\"");
 	if (span->wmode != 0) fz_printf(ctx, out, " writing-mode=\"tb\"");
 
-	fz_puts(ctx, out, " x=\"");
-	for (i=0; i < span->len; ++i)
-	{
-		it = &span->items[i];
-		if (it->ucs >= 0)
-		{
-			p.x = it->x;
-			p.y = it->y;
-			fz_transform_point(&p, &inv_tm);
-			if (i > 0)
-				fz_putc(ctx, out, ' ');
-			fz_printf(ctx, out, "%g", p.x);
-		}
-	}
-	fz_putc(ctx, out, '"');
-
-	fz_puts(ctx, out, " y=\"");
-	for (i=0; i < span->len; ++i)
-	{
-		it = &span->items[i];
-		if (it->ucs >= 0)
-		{
-			p.x = it->x;
-			p.y = it->y;
-			fz_transform_point(&p, &inv_tm);
-			if (i > 0)
-				fz_putc(ctx, out, ' ');
-			fz_printf(ctx, out, "%g", p.y);
-		}
-	}
-	fz_putc(ctx, out, '"');
-
 	fz_putc(ctx, out, '>');
-	for (i=0; i < span->len; ++i)
+
+	start = find_first_char(ctx, span, 0);
+	while (start < span->len)
 	{
-		it = &span->items[i];
-		if (it->ucs >= 0)
+		end = find_next_line_break(ctx, span, &inv_tm, start);
+
+		p.x = span->items[start].x;
+		p.y = span->items[start].y;
+		fz_transform_point(&p, &inv_tm);
+		if (span->wmode == 0)
+			fz_printf(ctx, out, "<tspan y=\"%g\" x=\"%g", p.y, p.x);
+		else
+			fz_printf(ctx, out, "<tspan x=\"%g\" y=\"%g", p.x, p.y);
+		for (i = start + 1; i < end; ++i)
 		{
-			c = it->ucs;
-			if (c >= 32 && c <= 127 && c != '<' && c != '&' && c != '>')
-				fz_putc(ctx, out, c);
-			else
-				fz_printf(ctx, out, "&#x%04x;", c);
+			it = &span->items[i];
+			if (it->ucs >= 0)
+			{
+				p.x = it->x;
+				p.y = it->y;
+				fz_transform_point(&p, &inv_tm);
+				fz_printf(ctx, out, " %g", span->wmode == 0 ? p.x : p.y);
+			}
 		}
+		fz_printf(ctx, out, "\">");
+		for (i = start; i < end; ++i)
+		{
+			it = &span->items[i];
+			if (it->ucs >= 0)
+			{
+				int c = it->ucs;
+				if (c >= 32 && c <= 127 && c != '<' && c != '&' && c != '>')
+					fz_putc(ctx, out, c);
+				else
+					fz_printf(ctx, out, "&#x%04x;", c);
+			}
+		}
+		fz_printf(ctx, out, "</tspan>");
+
+		start = find_first_char(ctx, span, end);
 	}
+
 	fz_printf(ctx, out, "</text>\n");
 }
 
