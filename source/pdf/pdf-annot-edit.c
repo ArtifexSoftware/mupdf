@@ -62,7 +62,7 @@ int pdf_annot_type_from_string(const char *subtype)
 	if (!strcmp("TrapNet", subtype)) return PDF_ANNOT_TRAP_NET;
 	if (!strcmp("Watermark", subtype)) return PDF_ANNOT_WATERMARK;
 	if (!strcmp("3D", subtype)) return PDF_ANNOT_3D;
-	return -1;
+	return PDF_ANNOT_UNKNOWN;
 }
 
 pdf_annot *

@@ -30,6 +30,7 @@ public class PDFAnnotation extends Annotation
 	public static final int TYPE_TRAP_NET = 22;
 	public static final int TYPE_WATERMARK = 23;
 	public static final int TYPE_3D = 24;
+	public static final int TYPE_UNKNOWN = -1;
 
 	public native int getType();
 	public native int getFlags();

@@ -27,7 +27,8 @@ typedef enum
 	PDF_ANNOT_PRINTER_MARK,
 	PDF_ANNOT_TRAP_NET,
 	PDF_ANNOT_WATERMARK,
-	PDF_ANNOT_3D
+	PDF_ANNOT_3D,
+	PDF_ANNOT_UNKNOWN = -1
 } fz_annot_type;
 
 const char *pdf_string_from_annot_type(fz_annot_type type);
