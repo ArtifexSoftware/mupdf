@@ -565,6 +565,54 @@ pdf_new_font_desc(fz_context *ctx)
  * Simple fonts (Type1 and TrueType)
  */
 
+static FT_CharMap
+select_type1_cmap(FT_Face face)
+{
+	int i;
+	for (i = 0; i < face->num_charmaps; i++)
+		if (face->charmaps[i]->platform_id == 7)
+			return face->charmaps[i];
+	if (face->num_charmaps > 0)
+		return face->charmaps[0];
+	return NULL;
+}
+
+static FT_CharMap
+select_truetype_cmap(FT_Face face, int symbolic)
+{
+	int i;
+
+	/* First look for a Microsoft symbolic cmap, if applicable */
+	if (symbolic)
+	{
+		for (i = 0; i < face->num_charmaps; i++)
+			if (face->charmaps[i]->platform_id == 3 && face->charmaps[i]->encoding_id == 0)
+				return face->charmaps[i];
+	}
+
+	/* Then look for a Microsoft Unicode cmap */
+	for (i = 0; i < face->num_charmaps; i++)
+		if (face->charmaps[i]->platform_id == 3 && face->charmaps[i]->encoding_id == 1)
+			return face->charmaps[i];
+
+	/* Finally look for an Apple MacRoman cmap */
+	for (i = 0; i < face->num_charmaps; i++)
+		if (face->charmaps[i]->platform_id == 1 && face->charmaps[i]->encoding_id == 0)
+			return face->charmaps[i];
+
+	if (face->num_charmaps > 0)
+		return face->charmaps[0];
+	return NULL;
+}
+
+static FT_CharMap
+select_unknown_cmap(FT_Face face)
+{
+	if (face->num_charmaps > 0)
+		return face->charmaps[0];
+	return NULL;
+}
+
 static pdf_font_desc *
 pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, char *basefont)
 {
@@ -640,31 +688,12 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 
 		symbolic = fontdesc->flags & 4;
 
-		if (face->num_charmaps > 0)
-			cmap = face->charmaps[0];
+		if (kind == TYPE1)
+			cmap = select_type1_cmap(face);
+		else if (kind == TRUETYPE)
+			cmap = select_truetype_cmap(face, symbolic);
 		else
-			cmap = NULL;
-
-		for (i = 0; i < face->num_charmaps; i++)
-		{
-			FT_CharMap test = face->charmaps[i];
-
-			if (kind == TYPE1)
-			{
-				if (test->platform_id == 7)
-					cmap = test;
-			}
-
-			if (kind == TRUETYPE)
-			{
-				if (test->platform_id == 1 && test->encoding_id == 0)
-					cmap = test;
-				if (test->platform_id == 3 && test->encoding_id == 1)
-					cmap = test;
-				if (symbolic && test->platform_id == 3 && test->encoding_id == 0)
-					cmap = test;
-			}
-		}
+			cmap = select_unknown_cmap(face);
 
 		if (cmap)
 		{
