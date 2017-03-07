@@ -191,6 +191,9 @@ $(OUT)/%.o : source/%.c | $(ALL_DIR)
 $(OUT)/%.o : source/%.cpp | $(ALL_DIR)
 	$(CXX_CMD)
 
+$(OUT)/helpers/%.o : source/helpers/%.c | $(ALL_DIR)
+	$(CC_CMD) $(PTHREAD_CFLAGS) -DHAVE_PTHREAD
+
 $(OUT)/%.o : scripts/%.c | $(OUT)
 	$(CC_CMD)
 
@@ -275,13 +278,13 @@ $(MUTOOL_OBJ): $(FITZ_HDR) $(PDF_HDR)
 MUTOOL_LIB = $(OUT)/libmutools.a
 $(MUTOOL_LIB) : $(MUTOOL_OBJ)
 $(MUTOOL) : $(MUTOOL_LIB) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
-	$(LINK_CMD)
+	$(LINK_CMD) $(PTHREAD_LIBS)
 
 MURASTER := $(OUT)/muraster
 MURASTER_OBJ := $(addprefix $(OUT)/tools/, muraster.o)
 $(MURASTER_OBJ): $(FITZ_HDR)
 $(MURASTER) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
-	$(LINK_CMD)
+	$(LINK_CMD) $(PTHREAD_LIBS)
 
 MJSGEN := $(OUT)/mjsgen
 MJSGEN_OBJ := $(addprefix $(OUT)/tools/, mjsgen.o)

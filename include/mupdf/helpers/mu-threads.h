@@ -25,7 +25,7 @@
 #if !defined(DISABLE_MUTHREADS)
 #if defined(_WIN32) || defined(_WIN64)
 #define MU_THREAD_IMPL_TYPE 1
-#elif defined(HAVE_PTHREADS)
+#elif defined(HAVE_PTHREAD)
 #define MU_THREAD_IMPL_TYPE 2
 #else
 #define DISABLE_MUTHREADS

@@ -78,12 +78,15 @@ CFLAGS+= -U__STRICT_ANSI__
 else ifeq "$(OS)" "MACOS"
 
 HAVE_X11 ?= no
-HAVE_PTHREADS ?= yes
+
+HAVE_PTHREAD := yes
+SYS_PTHREAD_CFLAGS :=
+SYS_PTHREAD_LIBS := -lpthread
 
 # Mac OS X deprecated libcrypto, so the default is to not include it.
-HAVE_LIBCRYTO ?= no
-SYS_LIBCRYPTO_CFLAGS =
-SYS_LIBCRYPTO_LIBS =
+HAVE_LIBCRYTO := no
+SYS_LIBCRYPTO_CFLAGS :=
+SYS_LIBCRYPTO_LIBS :=
 ifeq "$(HAVE_LIBCRYPTO)" "yes"
 SYS_LIBCRYPTO_CFLAGS := -DHAVE_LIBCRYPTO
 SYS_LIBCRYPTO_LIBS := -lcrypto
@@ -109,7 +112,9 @@ RANLIB_CMD := xcrun ranlib $@
 # Linux uses pkg-config for system libraries.
 else ifeq "$(OS)" "Linux"
 
-HAVE_PTHREADS ?= yes
+HAVE_PTHREAD := yes
+SYS_PTHREAD_CFLAGS :=
+SYS_PTHREAD_LIBS := -lpthread
 
 ifeq "$(shell pkg-config --exists 'libcrypto <= 1.0.1t' && echo yes)" "yes"
 HAVE_LIBCRYPTO := yes
@@ -175,7 +180,9 @@ LD = arm-none-linux-gnueabi-gcc
 AR = arm-none-linux-gnueabi-ar
 CFLAGS += -O3 -mfpu=neon -mcpu=cortex-a8 -mfloat-abi=softfp -ftree-vectorize -ffast-math -fsingle-precision-constant
 CROSSCOMPILE=yes
-HAVE_PTHREADS ?= yes
+HAVE_PTHREAD := yes
+SYS_PTHREAD_CFLAGS :=
+SYS_PTHREAD_LIBS := -lpthread
 endif
 
 ifeq "$(OS)" "webos-pre-cross"
@@ -271,9 +278,4 @@ endif
 ifeq "$(CROSSCOMPILE)" "yes"
 HAVE_X11 ?= no
 HAVE_GLFW ?= no
-endif
-
-ifeq "$(HAVE_PTHREADS)" "yes"
-CFLAGS += -DHAVE_PTHREADS
-LIBS += -lpthread
 endif
