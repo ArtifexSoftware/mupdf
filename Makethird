@@ -622,6 +622,7 @@ GLFW_OUT := $(OUT)/glfw
 ifeq "$(OS)" "MACOS"
 
 GLFW_SRC := \
+	cocoa_time.c \
 	cocoa_init.m \
 	cocoa_monitor.m \
 	cocoa_window.m \
@@ -633,12 +634,13 @@ GLFW_SRC := \
 	monitor.c \
 	nsgl_context.m \
 	posix_tls.c \
+	vulkan.c \
 	window.c
 
 $(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.m | $(GLFW_OUT)
-	$(CC_CMD) -D_GLFW_COCOA -D_GLFW_NSGL -D_GLFW_USE_MENUBAR -D_GLFW_USE_RETINA -D_GLFW_USE_OPENGL -Wno-deprecated-declarations
+	$(CC_CMD) -D_GLFW_COCOA -D_GLFW_USE_MENUBAR -D_GLFW_USE_RETINA -Wno-deprecated-declarations
 $(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.c | $(GLFW_OUT)
-	$(CC_CMD) -D_GLFW_COCOA -D_GLFW_NSGL -D_GLFW_USE_MENUBAR -D_GLFW_USE_RETINA -D_GLFW_USE_OPENGL
+	$(CC_CMD) -D_GLFW_COCOA -D_GLFW_USE_MENUBAR -D_GLFW_USE_RETINA
 
 GLFW_OBJ := $(addprefix $(GLFW_OUT)/, $(GLFW_SRC))
 GLFW_OBJ := $(GLFW_OBJ:%.c=%.o)
@@ -651,6 +653,7 @@ else
 
 GLFW_SRC := \
 	context.c \
+	egl_context.c \
 	glx_context.c \
 	init.c \
 	input.c \
@@ -658,6 +661,7 @@ GLFW_SRC := \
 	monitor.c \
 	posix_time.c \
 	posix_tls.c \
+	vulkan.c \
 	window.c \
 	x11_init.c \
 	x11_monitor.c \
@@ -665,9 +669,9 @@ GLFW_SRC := \
 	xkb_unicode.c
 
 $(GLFW_OUT)/%.o: $(GLFW_DIR)/src/%.c | $(GLFW_OUT)
-	$(CC_CMD) -D_GLFW_X11 -D_GLFW_GLX -D_GLFW_USE_OPENGL -D_GLFW_HAS_GLXGETPROCADDRESS
+	$(CC_CMD) -D_GLFW_X11
 $(GLFW_LIB): $(addprefix $(GLFW_OUT)/, $(GLFW_SRC:%.c=%.o))
-GLFW_LIBS := -lGL -lX11 -lXcursor -lXrandr -lXinerama -lpthread
+GLFW_LIBS := -lGL -ldl -lX11 -lXcursor -lXrandr -lXinerama -lpthread
 
 endif
 
@@ -676,18 +680,16 @@ $(GLFW_OUT):
 	$(MKDIR_CMD)
 
 GLFW_SRC_UNUSED := \
-	egl_context.c \
-	mach_time.c \
 	mir_init.c \
 	mir_monitor.c \
 	mir_window.c \
+	wgl_context.c \
 	win32_init.c \
+	win32_joystick.c \
 	win32_monitor.c \
 	win32_time.c \
 	win32_tls.c \
 	win32_window.c \
-	winmm_joystick.c \
-	wgl_context.c \
 	wl_init.c \
 	wl_monitor.c \
 	wl_window.c \
