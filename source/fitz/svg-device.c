@@ -363,9 +363,20 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 			it = &span->items[i];
 			if (it->ucs >= 0)
 			{
-				p.x = it->x;
-				p.y = it->y;
-				fz_transform_point(&p, &inv_tm);
+				if (it->gid >= 0)
+				{
+					p.x = it->x;
+					p.y = it->y;
+					fz_transform_point(&p, &inv_tm);
+				}
+				else
+				{
+					/* we have no glyph (such as in a ligature) -- advance a bit */
+					if (span->wmode == 0)
+						p.x += font_size * 0.3f;
+					else
+						p.y += font_size;
+				}
 				fz_printf(ctx, out, " %g", span->wmode == 0 ? p.x : p.y);
 			}
 		}
