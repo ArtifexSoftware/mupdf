@@ -112,15 +112,7 @@ fz_open_file_ptr(fz_context *ctx, FILE *file)
 	fz_file_stream *state = fz_malloc_struct(ctx, fz_file_stream);
 	state->file = file;
 
-	fz_try(ctx)
-	{
-		stm = fz_new_stream(ctx, state, next_file, close_file);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_rethrow(ctx);
-	}
+	stm = fz_new_stream(ctx, state, next_file, close_file);
 	stm->seek = seek_file;
 
 	return stm;

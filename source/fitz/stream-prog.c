@@ -122,15 +122,7 @@ fz_open_file_ptr_progressive(fz_context *ctx, FILE *file, int bps)
 	state->length = fz_ftell(state->file);
 	fz_fseek(state->file, 0, SEEK_SET);
 
-	fz_try(ctx)
-	{
-		stm = fz_new_stream(ctx, state, next_prog, close_prog);
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, state);
-		fz_rethrow(ctx);
-	}
+	stm = fz_new_stream(ctx, state, next_prog, close_prog);
 	stm->seek = seek_prog;
 	stm->meta = meta_prog;
 
