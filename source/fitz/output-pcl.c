@@ -688,9 +688,8 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 	writer = fz_new_color_pcl_band_writer(ctx, out, pcl);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 1);
-		fz_write_band(ctx, writer, pixmap->stride, 0, 0, pixmap->samples);
-		fz_write_trailer(ctx, writer);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
 		fz_drop_band_writer(ctx, writer);
@@ -1080,8 +1079,7 @@ fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap,
 	fz_try(ctx)
 	{
 		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, bitmap->xres, bitmap->yres, 0);
-		fz_write_band(ctx, writer, bitmap->stride, 0, bitmap->h, bitmap->samples);
-		fz_write_trailer(ctx, writer);
+		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
 	}
 	fz_always(ctx)
 		fz_drop_band_writer(ctx, writer);

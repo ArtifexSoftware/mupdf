@@ -757,7 +757,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 						bander = fz_new_color_pcl_band_writer(ctx, out, NULL);
 				}
 				if (bander)
-					fz_write_header(ctx, bander, pix->w, totalheight, pix->n, pix->alpha, pix->xres, pix->yres, ++output_pagenum);
+					fz_write_header(ctx, bander, pix->w, totalheight, pix->n, pix->alpha, pix->xres, pix->yres, output_pagenum++);
 			}
 
 			for (band = 0; band < bands; band++)
@@ -778,7 +778,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				if (output)
 				{
 					if (bander)
-						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, band * band_height, drawheight, bit ? bit->samples : pix->samples);
+						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, drawheight, bit ? bit->samples : pix->samples);
 					else if (output_format == OUT_PWG)
 						fz_write_pixmap_as_pwg(ctx, out, pix, NULL);
 					else if (output_format == OUT_TGA)
@@ -810,13 +810,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				fprintf(stderr, " ");
 				for (i = 0; i < 16; i++)
 					fprintf(stderr, "%02x", digest[i]);
-			}
-
-			/* Any page level trailers go here */
-			if (output)
-			{
-				if (bander)
-					fz_write_trailer(ctx, bander);
 			}
 		}
 		fz_always(ctx)

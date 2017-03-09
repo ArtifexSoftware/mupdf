@@ -342,21 +342,28 @@ void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int 
 	writer->xres = xres;
 	writer->yres = yres;
 	writer->pagenum = pagenum;
+	writer->line = 0;
 	writer->header(ctx, writer);
 }
 
-void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *samples)
+void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_height, const unsigned char *samples)
 {
 	if (writer == NULL || writer->band == NULL)
 		return;
-	writer->band(ctx, writer, stride, band_start, band_height, samples);
-}
-
-void fz_write_trailer(fz_context *ctx, fz_band_writer *writer)
-{
-	if (writer == NULL || writer->trailer == NULL)
-		return;
-	writer->trailer(ctx, writer);
+	if (writer->line + band_height > writer->h)
+		band_height = writer->h - writer->line;
+	if (band_height < 0) {
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Too much band data!");
+	}
+	if (band_height > 0) {
+		writer->band(ctx, writer, stride, writer->line, band_height, samples);
+		writer->line += band_height;
+	}
+	if (writer->line == writer->h && writer->trailer) {
+		writer->trailer(ctx, writer);
+		/* Protect against more band_height == 0 calls */
+		writer->line++;
+	}
 }
 
 void fz_drop_band_writer(fz_context *ctx, fz_band_writer *writer)

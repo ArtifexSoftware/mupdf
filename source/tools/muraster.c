@@ -635,7 +635,7 @@ static int dodrawpage(fz_context *ctx, int pagenum, fz_cookie *cookie, render_de
 			{
 				/* If we get any errors while outputting the bands, retrying won't help. */
 				errors_are_fatal = 1;
-				fz_write_band(ctx, render->bander, bit ? bit->stride : pix->stride, band_start, draw_height, bit ? bit->samples : pix->samples);
+				fz_write_band(ctx, render->bander, bit ? bit->stride : pix->stride, draw_height, bit ? bit->samples : pix->samples);
 				errors_are_fatal = 0;
 			}
 			fz_drop_bitmap(ctx, bit);

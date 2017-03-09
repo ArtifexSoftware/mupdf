@@ -339,13 +339,46 @@ struct fz_band_writer_s
 	int xres;
 	int yres;
 	int pagenum;
+	int line;
 };
 
 fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_output *out);
 #define fz_new_band_writer(C,M,O) ((M *)Memento_label(fz_new_band_writer_of_size(ctx, sizeof(M), O), #M))
+
+/*
+	fz_write_header: Cause a band writer to write the header for
+	a banded image with the given properties/dimensions etc. This
+	also configures the bandwriter for the format of the data to be
+	passed in future calls.
+
+	w, h: Width and Height of the entire page.
+
+	n: Number of components (including alphas).
+
+	alpha: Number of alpha components.
+
+	xres, yres: X and Y resolutions in dpi.
+
+	pagenum: Page number
+
+	Throws exception if incompatible data format.
+*/
 void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum);
-void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *samples);
-void fz_write_trailer(fz_context *ctx, fz_band_writer *writer);
+
+/*
+	fz_write_band: Cause a band writer to write the next band
+	of data for an image.
+
+	stride: The byte offset from the first byte of the data
+	for a pixel to the first byte of the data for the same pixel
+	on the row below.
+
+	band_height: The number of lines in this band.
+
+	samples: Pointer to first byte of the data.
+*/
+void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_height, const unsigned char *samples);
+
 void fz_drop_band_writer(fz_context *ctx, fz_band_writer *writer);
 
 #endif

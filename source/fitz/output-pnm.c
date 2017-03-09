@@ -123,9 +123,8 @@ void
 fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
 	fz_band_writer *writer = fz_new_pnm_band_writer(ctx, out);
-	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
-	fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
-	fz_write_trailer(ctx, writer);
+	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+	fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	fz_drop_band_writer(ctx, writer);
 }
 
@@ -140,9 +139,8 @@ fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_pnm_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
-		fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
-		fz_write_trailer(ctx, writer);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
 	{
@@ -222,9 +220,8 @@ void
 fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
 	fz_band_writer *writer = fz_new_pam_band_writer(ctx, out);
-	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
-	fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
-	fz_write_trailer(ctx, writer);
+	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+	fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	fz_drop_band_writer(ctx, writer);
 }
 
@@ -239,9 +236,8 @@ fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_pam_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 1);
-		fz_write_band(ctx, writer, pixmap->stride, 0, pixmap->h, pixmap->samples);
-		fz_write_trailer(ctx, writer);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
 	{
