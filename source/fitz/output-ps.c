@@ -80,13 +80,13 @@ ps_write_header(fz_context *ctx, fz_band_writer *writer_)
 	fz_printf(ctx, out, "/DataFile currentfile /FlateDecode filter def\n\n");
 	switch(n)
 	{
-	case 2:
+	case 1:
 		fz_printf(ctx, out, "/DeviceGray setcolorspace\n");
 		break;
-	case 4:
+	case 3:
 		fz_printf(ctx, out, "/DeviceRGB setcolorspace\n");
 		break;
-	case 5:
+	case 4:
 		fz_printf(ctx, out, "/DeviceCMYK setcolorspace\n");
 		break;
 	default:
@@ -192,7 +192,7 @@ ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_sta
 	if (band_start+band_height >= h)
 		band_height = h - band_start;
 
-	required_input = w*(n-1)*band_height;
+	required_input = w*n*band_height;
 	required_output = (int)deflateBound(&writer->stream, required_input);
 
 	if (writer->input == NULL || writer->input_size < required_input)
@@ -216,9 +216,8 @@ ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_sta
 	{
 		for (x = 0; x < w; x++)
 		{
-			for (i = n-1; i > 0; i--)
+			for (i = n; i > 0; i--)
 				*o++ = *samples++;
-			samples++;
 		}
 		samples += stride - w*n;
 	}
@@ -237,12 +236,12 @@ ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_sta
 
 fz_band_writer *fz_new_ps_band_writer(fz_context *ctx, fz_output *out)
 {
-	fz_band_writer *writer = fz_new_band_writer(ctx, fz_band_writer, out);
+	ps_band_writer *writer = fz_new_band_writer(ctx, ps_band_writer, out);
 
-	writer->header = ps_write_header;
-	writer->band = ps_write_band;
-	writer->trailer = ps_write_trailer;
-	writer->drop = ps_drop_band_writer;
+	writer->super.header = ps_write_header;
+	writer->super.band = ps_write_band;
+	writer->super.trailer = ps_write_trailer;
+	writer->super.drop = ps_drop_band_writer;
 
-	return writer;
+	return &writer->super;
 }
