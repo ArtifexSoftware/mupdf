@@ -12,54 +12,170 @@
 */
 typedef struct fz_output_s fz_output;
 
+/*
+	fz_output_write_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called
+	whenever data is written to the output.
+
+	state: The state for the output stream.
+
+	data: a pointer to a buffer of data to write.
+
+	n: The number of bytes of data to write.
+*/
+typedef void (fz_output_write_fn)(fz_context *ctx, void *state, const void *data, size_t n);
+
+/*
+	fz_output_seek_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called when
+	fz_seek_output is requested.
+
+	state: The output stream state to seek within.
+
+	offset, whence: as defined for fs_seek_output.
+*/
+typedef void (fz_output_seek_fn)(fz_context *ctx, void *state, fz_off_t offset, int whence);
+
+/*
+	fz_output_tell_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called when
+	fz_tell_output is requested.
+
+	state: The output stream state to report on.
+
+	Returns the offset within the output stream.
+*/
+typedef fz_off_t (fz_output_tell_fn)(fz_context *ctx, void *state);
+
+/*
+	fz_output_close_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called
+	when the output stream is closed, to release the stream specific
+	state information.
+
+	state: The output stream state to release.
+*/
+typedef void (fz_output_close_fn)(fz_context *ctx, void *state);
+
 struct fz_output_s
 {
-	void *opaque;
-	void (*write)(fz_context *, void *opaque, const void *, size_t n);
-	void (*seek)(fz_context *, void *opaque, fz_off_t off, int whence);
-	fz_off_t (*tell)(fz_context *, void *opaque);
-	void (*close)(fz_context *, void *opaque);
+	void *state;
+	fz_output_write_fn *write;
+	fz_output_seek_fn *seek;
+	fz_output_tell_fn *tell;
+	fz_output_close_fn *close;
 };
 
 /*
-	fz_new_output_with_file: Open an output stream that writes to a FILE *.
-	fz_new_output_with_path: Open an output stream that writes to a file.
-	fz_new_output_with_buffer: Open an output stream that writes into a buffer.
+	fz_new_output: Create a new output object with the given
+	internal state and function pointers.
+
+	state: Internal state (opaque to everything but implementation).
+
+	write: Function to output a given buffer.
+
+	close: Cleanup function to destroy state when output closed.
+	May permissibly be null.
 */
-fz_output *fz_new_output_with_file_ptr(fz_context *, FILE *, int close);
-fz_output *fz_new_output_with_path(fz_context *, const char *filename, int append);
-fz_output *fz_new_output_with_buffer(fz_context *, fz_buffer *);
+fz_output *fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close);
 
 /*
-	fz_stdout: The standard out output stream.
-	fz_stderr: The standard error output stream.
-	fz_set_stdout: Replace default standard output stream with a new stream.
-	fz_set_stderr: Replace default standard error stream with a new stream.
+	fz_new_output_with_file: Open an output stream that writes to a
+	FILE *.
+
+	file: The file to write to.
+
+	close: non-zero if we should close the file when the fz_output
+	is closed.
 */
-fz_output *fz_stdout(fz_context *);
-fz_output *fz_stderr(fz_context *);
+fz_output *fz_new_output_with_file_ptr(fz_context *ctx, FILE *file, int close);
+
+/*
+	fz_new_output_with_path: Open an output stream that writes to a
+	given path.
+
+	filename: The filename to write to (specified in UTF-8).
+
+	append: non-zero if we should append to the file, rather than
+	overwriting it.
+*/
+fz_output *fz_new_output_with_path(fz_context *, const char *filename, int append);
+
+/*
+	fz_new_output_with_buffer: Open an output stream that appends
+	to a buffer.
+
+	buf: The buffer to append to.
+*/
+fz_output *fz_new_output_with_buffer(fz_context *ctx, fz_buffer *buf);
+
+/*
+	fz_stdout: The standard out output stream. By default
+	this stream writes to stdout. This may be overridden
+	using fz_set_stdout.
+*/
+fz_output *fz_stdout(fz_context *ctx);
+
+/*
+	fz_stderr: The standard error output stream. By default
+	this stream writes to stderr. This may be overridden
+	using fz_set_stderr.
+*/
+fz_output *fz_stderr(fz_context *ctx);
+
+/*
+	fz_set_stdout: Replace default standard output stream
+	with a given stream.
+
+	out: The new stream to use.
+*/
 void fz_set_stdout(fz_context *ctx, fz_output *out);
+
+/*
+	fz_set_stderr: Replace default standard error stream
+	with a given stream.
+
+	err: The new stream to use.
+*/
 void fz_set_stderr(fz_context *ctx, fz_output *err);
 
 /*
-	fz_write: fwrite equivalent for output streams.
 	fz_printf: fprintf equivalent for output streams. See fz_snprintf.
-	fz_vprintf: vfprintf equivalent for output streams. See fz_vsnprintf.
-	fz_puts: fputs equivalent for output streams.
-	fz_putc: fputc equivalent for output streams.
-	fz_putrune: fputrune equivalent for output streams.
 */
 void fz_printf(fz_context *ctx, fz_output *out, const char *fmt, ...);
+
+/*
+	fz_vprintf: vfprintf equivalent for output streams. See fz_vsnprintf.
+*/
 void fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list ap);
-#define fz_puts(C,O,S) fz_write(C, O, (S), strlen(S))
+
+/*
+	fz_putc: fputc equivalent for output streams.
+*/
 #define fz_putc(C,O,B) fz_write_byte(C, O, B)
+
+/*
+	fz_puts: fputs equivalent for output streams.
+*/
+#define fz_puts(C,O,S) fz_write(C, O, (S), strlen(S))
+
+/*
+	fz_putrune: fz_putc equivalent for utf-8 output.
+*/
 #define fz_putrune(C,O,R) fz_write_rune(C, O, R)
 
 /*
-	fz_seek_output: Seek to the specified file position. Throw an error on unseekable outputs.
-	fz_tell_output: Return the current file position. Throw an error on unseekable outputs.
+	fz_seek_output: Seek to the specified file position. See fseek
+	for arguments.
+
+	Throw an error on unseekable outputs.
 */
 void fz_seek_output(fz_context *ctx, fz_output *out, fz_off_t off, int whence);
+
+/*
+	fz_tell_output: Return the current file position. Throw an error
+	on untellable outputs.
+*/
 fz_off_t fz_tell_output(fz_context *ctx, fz_output *out);
 
 /*
@@ -68,22 +184,24 @@ fz_off_t fz_tell_output(fz_context *ctx, fz_output *out);
 void fz_drop_output(fz_context *, fz_output *);
 
 /*
-	fz_write: Write data to output.
-*/
+	fz_write: Write data to output. Designed to parallel
+	fwrite.
 
+	out: Output stream to write to.
+
+	data: Pointer to data to write.
+
+	size: Length of data to write.
+*/
 static inline void fz_write(fz_context *ctx, fz_output *out, const void *data, size_t size)
 {
 	if (out)
-		out->write(ctx, out->opaque, data, size);
+		out->write(ctx, out->state, data, size);
 }
 
 /*
-	fz_write_int32be: Write a big-endian 32-bit binary integer.
-	fz_write_int32le: Write a little-endian 32-bit binary integer.
-	fz_write_byte: Write a single byte.
-	fz_write_rune: Write a UTF-8 encoded unicode character.
+	fz_write_int32_be: Write a big-endian 32-bit binary integer.
 */
-
 static inline void fz_write_int32_be(fz_context *ctx, fz_output *out, int x)
 {
 	char data[4];
@@ -96,6 +214,9 @@ static inline void fz_write_int32_be(fz_context *ctx, fz_output *out, int x)
 	fz_write(ctx, out, data, 4);
 }
 
+/*
+	fz_write_int32_le: Write a little-endian 32-bit binary integer.
+*/
 static inline void fz_write_int32_le(fz_context *ctx, fz_output *out, int x)
 {
 	char data[4];
@@ -108,6 +229,22 @@ static inline void fz_write_int32_le(fz_context *ctx, fz_output *out, int x)
 	fz_write(ctx, out, data, 4);
 }
 
+/*
+	fz_write_int16_be: Write a big-endian 16-bit binary integer.
+*/
+static inline void fz_write_int16_be(fz_context *ctx, fz_output *out, int x)
+{
+	char data[2];
+
+	data[0] = x>>8;
+	data[1] = x;
+
+	fz_write(ctx, out, data, 2);
+}
+
+/*
+	fz_write_int16_le: Write a little-endian 16-bit binary integer.
+*/
 static inline void fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
 {
 	char data[2];
@@ -118,11 +255,25 @@ static inline void fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
 	fz_write(ctx, out, data, 2);
 }
 
+/*
+	fz_write_byte: Write a single byte.
+
+	out: stream to write to.
+
+	x: value to write
+*/
 static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
 {
 	fz_write(ctx, out, &x, 1);
 }
 
+/*
+	fz_write_rune: Write a UTF-8 encoded unicode character.
+
+	out: stream to write to.
+
+	x: value to write
+*/
 static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 {
 	char data[10];
@@ -142,6 +293,10 @@ static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 	%Z{d,u,x} indicates that the value is a fz_off_t.
 */
 size_t fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args);
+
+/*
+	fz_snprintf: The non va_list equivalent of fz_vsnprintf.
+*/
 size_t fz_snprintf(char *buffer, size_t space, const char *fmt, ...);
 
 /*

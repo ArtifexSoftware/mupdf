@@ -6,21 +6,45 @@
 
 static inline void tga_put_pixel(fz_context *ctx, fz_output *out, unsigned char *data, int n, int is_bgr)
 {
-	if (n >= 3 && !is_bgr)
+	switch(n)
 	{
-		fz_putc(ctx, out, data[2]);
+	case 4: /* RGBA or BGRA */
+		if (!is_bgr) {
+			fz_putc(ctx, out, data[2]);
+			fz_putc(ctx, out, data[1]);
+			fz_putc(ctx, out, data[0]);
+		} else {
+			fz_putc(ctx, out, data[0]);
+			fz_putc(ctx, out, data[1]);
+			fz_putc(ctx, out, data[2]);
+		}
+		fz_putc(ctx, out, data[3]);
+		break;
+	case 3: /* RGB or BGR */
+		if (!is_bgr) {
+			fz_putc(ctx, out, data[2]);
+			fz_putc(ctx, out, data[1]);
+			fz_putc(ctx, out, data[0]);
+		} else {
+			fz_putc(ctx, out, data[0]);
+			fz_putc(ctx, out, data[1]);
+			fz_putc(ctx, out, data[2]);
+		}
+		fz_putc(ctx, out, 255);
+		break;
+	case 2: /* GA */
+		fz_putc(ctx, out, data[0]);
+		fz_putc(ctx, out, data[0]);
+		fz_putc(ctx, out, data[0]);
 		fz_putc(ctx, out, data[1]);
+		break;
+	case 1: /* GA */
 		fz_putc(ctx, out, data[0]);
-		if (n == 4)
-			fz_putc(ctx, out, data[3]);
-		return;
+		fz_putc(ctx, out, data[0]);
+		fz_putc(ctx, out, data[0]);
+		fz_putc(ctx, out, 255);
+		break;
 	}
-	if (n == 2)
-	{
-		fz_putc(ctx, out, data[0]);
-		fz_putc(ctx, out, data[0]);
-	}
-	fz_write(ctx, out, data, n);
 }
 
 void
