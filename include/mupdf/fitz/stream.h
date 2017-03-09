@@ -203,11 +203,71 @@ enum
 	FZ_STREAM_META_LENGTH = 2
 };
 
+/*
+	fz_stream_meta: Perform a meta call on a stream (typically to
+	request meta information about a stream).
+
+	stm: The stream to query.
+
+	key: The meta request identifier.
+
+	size: Meta request specific parameter - typically the size of
+	the data block pointed to by ptr.
+
+	ptr: Meta request specific parameter - typically a pointer to
+	a block of data to be filled in.
+
+	Returns -1 if this stream does not support this meta operation,
+	or a meta operation specific return value.
+*/
 int fz_stream_meta(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
 
+/*
+	fz_stream_next_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called
+	whenever data is required, and the current buffer is empty.
+
+	stm: The stream to operate on.
+
+	max: a hint as to the maximum number of bytes that the caller
+	needs to be ready immediately. Can safely be ignored.
+
+	Returns -1 if there is no more data in the stream. Otherwise,
+	the function should find its internal state using stm->state,
+	refill its buffer, update stm->rp and stm->wp to point to the
+	start and end of the new data respectively, and then
+	"return *stm->rp++".
+*/
 typedef int (fz_stream_next_fn)(fz_context *ctx, fz_stream *stm, size_t max);
+
+/*
+	fz_stream_close_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called
+	when the stream is closed, to release the stream specific
+	state information.
+
+	state: The stream state to release.
+*/
 typedef void (fz_stream_close_fn)(fz_context *ctx, void *state);
+
+/*
+	fz_stream_seek_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called when
+	fz_seek is requested, and the arguments are as defined for
+	fz_seek.
+
+	The stream can find it's private state in stm->state.
+*/
 typedef void (fz_stream_seek_fn)(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence);
+
+/*
+	fz_stream_meta_fn: A function type for use when implementing
+	fz_streams. The supplied function of this type is called when
+	fz_meta is requested, and the arguments are as defined for
+	fz_meta.
+
+	The stream can find it's private state in stm->state.
+*/
 typedef int (fz_stream_meta_fn)(fz_context *ctx, fz_stream *stm, int key, int size, void *ptr);
 
 struct fz_stream_s
@@ -229,6 +289,8 @@ struct fz_stream_s
 /*
 	fz_new_stream: Create a new stream object with the given
 	internal state and function pointers.
+
+	state: Internal state (opaque to everything but implementation).
 
 	next: Should provide the next set of bytes (up to max) of stream
 	data. Return the number of bytes read, or EOF when there is no
@@ -307,6 +369,14 @@ static inline size_t fz_available(fz_context *ctx, fz_stream *stm, size_t max)
 	return stm->wp - stm->rp;
 }
 
+/*
+	fz_read_byte: Read the next byte from a stream.
+
+	stm: The stream t read from.
+
+	Returns -1 for end of stream, or the next byte. May
+	throw exceptions.
+*/
 static inline int fz_read_byte(fz_context *ctx, fz_stream *stm)
 {
 	int c = EOF;
@@ -329,6 +399,13 @@ static inline int fz_read_byte(fz_context *ctx, fz_stream *stm)
 	return c;
 }
 
+/*
+	fz_peek_byte: Peek at the next byte in a stream.
+
+	stm: The stream to peek at.
+
+	Returns -1 for EOF, or the next byte that will be read.
+*/
 static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 {
 	int c;
@@ -342,6 +419,13 @@ static inline int fz_peek_byte(fz_context *ctx, fz_stream *stm)
 	return c;
 }
 
+/*
+	fz_unread_byte: Unread the single last byte successfully
+	read from a stream. Do not call this without having
+	successfully read a byte.
+
+	stm: The stream to operate upon.
+*/
 static inline void fz_unread_byte(fz_context *ctx FZ_UNUSED, fz_stream *stm)
 {
 	stm->rp--;
@@ -358,6 +442,17 @@ static inline int fz_is_eof(fz_context *ctx, fz_stream *stm)
 	return 0;
 }
 
+/*
+	fz_read_bits: Read the next n bits from a stream (assumed to
+	be packed most significant bit first).
+
+	stm: The stream to read from.
+
+	n: The number of bits to read, between 1 and 8*sizeof(int)
+	inclusive.
+
+	Returns -1 for EOF, or the required number of bits.
+*/
 static inline unsigned int fz_read_bits(fz_context *ctx, fz_stream *stm, int n)
 {
 	int x;
@@ -390,6 +485,17 @@ static inline unsigned int fz_read_bits(fz_context *ctx, fz_stream *stm, int n)
 	return x;
 }
 
+/*
+	fz_read_rbits: Read the next n bits from a stream (assumed to
+	be packed least significant bit first).
+
+	stm: The stream to read from.
+
+	n: The number of bits to read, between 1 and 8*sizeof(int)
+	inclusive.
+
+	Returns (unsigned int)-1 for EOF, or the required number of bits.
+*/
 static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
 {
 	int x;
@@ -428,6 +534,11 @@ static inline unsigned int fz_read_rbits(fz_context *ctx, fz_stream *stm, int n)
 	return x;
 }
 
+/*
+	fz_sync_bits: Called after reading bits to tell the stream
+	that we are about to return to reading bytewise. Resyncs
+	the stream to whole byte boundaries.
+*/
 static inline void fz_sync_bits(fz_context *ctx FZ_UNUSED, fz_stream *stm)
 {
 	stm->avail = 0;
