@@ -636,6 +636,12 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_bound_page(ctx, page, &bounds);
 		zoom = resolution / 72;
 		fz_pre_scale(fz_rotate(&ctm, rotation), zoom, zoom);
+
+		if (output_format == OUT_TGA)
+		{
+			fz_pre_scale(fz_pre_translate(&ctm, 0, -height), 1, -1);
+		}
+
 		tbounds = bounds;
 		fz_round_rect(&ibounds, fz_transform_rect(&tbounds, &ctm));
 
@@ -749,6 +755,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					bander = fz_new_pkm_band_writer(ctx, out);
 				else if (output_format == OUT_PS)
 					bander = fz_new_ps_band_writer(ctx, out);
+				else if (output_format == OUT_TGA)
+					bander = fz_new_tga_band_writer(ctx, out, colorspace == fz_device_bgr(ctx));
 				else if (output_format == OUT_PCL)
 				{
 					if (out_cs == CS_MONO)
@@ -781,8 +789,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, drawheight, bit ? bit->samples : pix->samples);
 					else if (output_format == OUT_PWG)
 						fz_write_pixmap_as_pwg(ctx, out, pix, NULL);
-					else if (output_format == OUT_TGA)
-						fz_write_pixmap_as_tga(ctx, out, pix);
 					fz_drop_bitmap(ctx, bit);
 					bit = NULL;
 				}
