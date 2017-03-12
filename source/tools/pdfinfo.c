@@ -178,23 +178,23 @@ showglobalinfo(fz_context *ctx, globals *glo)
 	fz_output *out = glo->out;
 	pdf_document *doc = glo->doc;
 
-	fz_printf(ctx, out, "\nPDF-%d.%d\n", doc->version / 10, doc->version % 10);
+	fz_write_printf(ctx, out, "\nPDF-%d.%d\n", doc->version / 10, doc->version % 10);
 
 	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info);
 	if (obj)
 	{
-		fz_printf(ctx, out, "Info object (%d 0 R):\n", pdf_to_num(ctx, obj));
+		fz_write_printf(ctx, out, "Info object (%d 0 R):\n", pdf_to_num(ctx, obj));
 		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
 	}
 
 	obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt);
 	if (obj)
 	{
-		fz_printf(ctx, out, "\nEncryption object (%d 0 R):\n", pdf_to_num(ctx, obj));
+		fz_write_printf(ctx, out, "\nEncryption object (%d 0 R):\n", pdf_to_num(ctx, obj));
 		pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, obj), 1);
 	}
 
-	fz_printf(ctx, out, "\nPages: %d\n\n", glo->pagecount);
+	fz_write_printf(ctx, out, "\nPages: %d\n\n", glo->pagecount);
 }
 
 static void
@@ -680,10 +680,10 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 
 	if (show & DIMENSIONS && glo->dims > 0)
 	{
-		fz_printf(ctx, out, "Mediaboxes (%d):\n", glo->dims);
+		fz_write_printf(ctx, out, "Mediaboxes (%d):\n", glo->dims);
 		for (i = 0; i < glo->dims; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT_zu "[ %g %g %g %g ]\n",
+			fz_write_printf(ctx, out, PAGE_FMT_zu "[ %g %g %g %g ]\n",
 				glo->dim[i].page,
 				pdf_to_num(ctx, glo->dim[i].pageref),
 				glo->dim[i].u.dim.bbox->x0,
@@ -691,15 +691,15 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 				glo->dim[i].u.dim.bbox->x1,
 				glo->dim[i].u.dim.bbox->y1);
 		}
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 	}
 
 	if (show & FONTS && glo->fonts > 0)
 	{
-		fz_printf(ctx, out, "Fonts (%d):\n", glo->fonts);
+		fz_write_printf(ctx, out, "Fonts (%d):\n", glo->fonts);
 		for (i = 0; i < glo->fonts; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT_zu "%s '%s' %s%s(%d 0 R)\n",
+			fz_write_printf(ctx, out, PAGE_FMT_zu "%s '%s' %s%s(%d 0 R)\n",
 				glo->font[i].page,
 				pdf_to_num(ctx, glo->font[i].pageref),
 				pdf_to_name(ctx, glo->font[i].u.font.subtype),
@@ -708,18 +708,18 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 				glo->font[i].u.font.encoding ? " " : "",
 				pdf_to_num(ctx, glo->font[i].u.font.obj));
 		}
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 	}
 
 	if (show & IMAGES && glo->images > 0)
 	{
-		fz_printf(ctx, out, "Images (%d):\n", glo->images);
+		fz_write_printf(ctx, out, "Images (%d):\n", glo->images);
 		for (i = 0; i < glo->images; i++)
 		{
 			char *cs = NULL;
 			char *altcs = NULL;
 
-			fz_printf(ctx, out, PAGE_FMT_zu "[ ",
+			fz_write_printf(ctx, out, PAGE_FMT_zu "[ ",
 				glo->image[i].page,
 				pdf_to_num(ctx, glo->image[i].pageref));
 
@@ -734,7 +734,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 					if (strstr(filter, "Decode"))
 						*(strstr(filter, "Decode")) = '\0';
 
-					fz_printf(ctx, out, "%s%s",
+					fz_write_printf(ctx, out, "%s%s",
 						filter,
 						j == pdf_array_len(ctx, glo->image[i].u.image.filter) - 1 ? "" : " ");
 					fz_free(ctx, filter);
@@ -748,11 +748,11 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 				if (strstr(filter, "Decode"))
 					*(strstr(filter, "Decode")) = '\0';
 
-				fz_printf(ctx, out, "%s", filter);
+				fz_write_printf(ctx, out, "%s", filter);
 				fz_free(ctx, filter);
 			}
 			else
-				fz_printf(ctx, out, "Raw");
+				fz_write_printf(ctx, out, "Raw");
 
 			if (glo->image[i].u.image.cs)
 			{
@@ -793,7 +793,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 					fz_strlcpy(altcs, "Sep", 4);
 			}
 
-			fz_printf(ctx, out, " ] %dx%d %dbpc %s%s%s (%d 0 R)\n",
+			fz_write_printf(ctx, out, " ] %dx%d %dbpc %s%s%s (%d 0 R)\n",
 				pdf_to_int(ctx, glo->image[i].u.image.width),
 				pdf_to_int(ctx, glo->image[i].u.image.height),
 				glo->image[i].u.image.bpc ? pdf_to_int(ctx, glo->image[i].u.image.bpc) : 1,
@@ -805,12 +805,12 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 			fz_free(ctx, cs);
 			fz_free(ctx, altcs);
 		}
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 	}
 
 	if (show & SHADINGS && glo->shadings > 0)
 	{
-		fz_printf(ctx, out, "Shading patterns (%d):\n", glo->shadings);
+		fz_write_printf(ctx, out, "Shading patterns (%d):\n", glo->shadings);
 		for (i = 0; i < glo->shadings; i++)
 		{
 			char *shadingtype[] =
@@ -825,18 +825,18 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 				"Tensor patch",
 			};
 
-			fz_printf(ctx, out, PAGE_FMT_zu "%s (%d 0 R)\n",
+			fz_write_printf(ctx, out, PAGE_FMT_zu "%s (%d 0 R)\n",
 				glo->shading[i].page,
 				pdf_to_num(ctx, glo->shading[i].pageref),
 				shadingtype[pdf_to_int(ctx, glo->shading[i].u.shading.type)],
 				pdf_to_num(ctx, glo->shading[i].u.shading.obj));
 		}
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 	}
 
 	if (show & PATTERNS && glo->patterns > 0)
 	{
-		fz_printf(ctx, out, "Patterns (%d):\n", glo->patterns);
+		fz_write_printf(ctx, out, "Patterns (%d):\n", glo->patterns);
 		for (i = 0; i < glo->patterns; i++)
 		{
 			if (pdf_to_int(ctx, glo->pattern[i].u.pattern.type) == 1)
@@ -855,7 +855,7 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 					"Constant/fast tiling",
 				};
 
-				fz_printf(ctx, out, PAGE_FMT_zu "Tiling %s %s (%d 0 R)\n",
+				fz_write_printf(ctx, out, PAGE_FMT_zu "Tiling %s %s (%d 0 R)\n",
 						glo->pattern[i].page,
 						pdf_to_num(ctx, glo->pattern[i].pageref),
 						painttype[pdf_to_int(ctx, glo->pattern[i].u.pattern.paint)],
@@ -864,22 +864,22 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 			}
 			else
 			{
-				fz_printf(ctx, out, PAGE_FMT_zu "Shading %d 0 R (%d 0 R)\n",
+				fz_write_printf(ctx, out, PAGE_FMT_zu "Shading %d 0 R (%d 0 R)\n",
 						glo->pattern[i].page,
 						pdf_to_num(ctx, glo->pattern[i].pageref),
 						pdf_to_num(ctx, glo->pattern[i].u.pattern.shading),
 						pdf_to_num(ctx, glo->pattern[i].u.pattern.obj));
 			}
 		}
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 	}
 
 	if (show & XOBJS && glo->forms > 0)
 	{
-		fz_printf(ctx, out, "Form xobjects (%d):\n", glo->forms);
+		fz_write_printf(ctx, out, "Form xobjects (%d):\n", glo->forms);
 		for (i = 0; i < glo->forms; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT_zu "Form%s%s%s%s (%d 0 R)\n",
+			fz_write_printf(ctx, out, PAGE_FMT_zu "Form%s%s%s%s (%d 0 R)\n",
 				glo->form[i].page,
 				pdf_to_num(ctx, glo->form[i].pageref),
 				glo->form[i].u.form.groupsubtype ? " " : "",
@@ -888,20 +888,20 @@ printinfo(fz_context *ctx, globals *glo, char *filename, int show, int page)
 				glo->form[i].u.form.reference ? " Reference" : "",
 				pdf_to_num(ctx, glo->form[i].u.form.obj));
 		}
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 	}
 
 	if (show & XOBJS && glo->psobjs > 0)
 	{
-		fz_printf(ctx, out, "Postscript xobjects (%d):\n", glo->psobjs);
+		fz_write_printf(ctx, out, "Postscript xobjects (%d):\n", glo->psobjs);
 		for (i = 0; i < glo->psobjs; i++)
 		{
-			fz_printf(ctx, out, PAGE_FMT_zu "(%d 0 R)\n",
+			fz_write_printf(ctx, out, PAGE_FMT_zu "(%d 0 R)\n",
 				glo->psobj[i].page,
 				pdf_to_num(ctx, glo->psobj[i].pageref),
 				pdf_to_num(ctx, glo->psobj[i].u.form.obj));
 		}
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 	}
 }
 
@@ -923,15 +923,15 @@ showinfo(fz_context *ctx, globals *glo, char *filename, int show, const char *pa
 	while ((pagelist = fz_parse_page_range(ctx, pagelist, &spage, &epage, pagecount)))
 	{
 		if (allpages)
-			fz_printf(ctx, out, "Retrieving info from pages %d-%d...\n", spage, epage);
+			fz_write_printf(ctx, out, "Retrieving info from pages %d-%d...\n", spage, epage);
 		for (page = spage; page <= epage; page++)
 		{
 			gatherpageinfo(ctx, glo, page, show);
 			if (!allpages)
 			{
-				fz_printf(ctx, out, "Page %d:\n", page);
+				fz_write_printf(ctx, out, "Page %d:\n", page);
 				printinfo(ctx, glo, filename, show, page);
-				fz_printf(ctx, out, "\n");
+				fz_write_printf(ctx, out, "\n");
 				clearinfo(ctx, glo);
 			}
 		}
@@ -967,7 +967,7 @@ pdfinfo_info(fz_context *ctx, fz_output *out, char *filename, char *password, in
 				closexref(ctx, &glo);
 
 				filename = argv[argidx];
-				fz_printf(ctx, out, "%s:\n", filename);
+				fz_write_printf(ctx, out, "%s:\n", filename);
 				glo.doc = pdf_open_document(glo.ctx, filename);
 				if (pdf_needs_password(ctx, glo.doc))
 					if (!pdf_authenticate_password(ctx, glo.doc, password))

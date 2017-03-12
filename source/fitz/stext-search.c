@@ -255,7 +255,7 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 			{
 				if (seen)
 				{
-					fz_write_buffer_byte(ctx, buffer, '\n');
+					fz_append_byte(ctx, buffer, '\n');
 				}
 
 				seen = 0;
@@ -268,7 +268,7 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 						c = 0xFFFD;
 					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
 					{
-						fz_write_buffer_rune(ctx, buffer, c);
+						fz_append_rune(ctx, buffer, c);
 						seen = 1;
 					}
 				}

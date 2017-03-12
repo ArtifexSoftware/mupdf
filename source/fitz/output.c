@@ -206,7 +206,7 @@ static void
 buffer_write(fz_context *ctx, void *opaque, const void *data, size_t len)
 {
 	fz_buffer *buffer = opaque;
-	fz_write_buffer(ctx, buffer, data, len);
+	fz_append_data(ctx, buffer, data, len);
 }
 
 static void
@@ -267,7 +267,7 @@ fz_tell_output(fz_context *ctx, fz_output *out)
 }
 
 void
-fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list old_args)
+fz_write_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list old_args)
 {
 	char buffer[256], *p = buffer;
 	size_t len;
@@ -299,12 +299,12 @@ fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list old_args)
 }
 
 void
-fz_printf(fz_context *ctx, fz_output *out, const char *fmt, ...)
+fz_write_printf(fz_context *ctx, fz_output *out, const char *fmt, ...)
 {
 	va_list args;
 	if (!out) return;
 	va_start(args, fmt);
-	fz_vprintf(ctx, out, fmt, args);
+	fz_write_vprintf(ctx, out, fmt, args);
 	va_end(args);
 }
 
@@ -313,7 +313,7 @@ fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
-		fz_write(ctx, out, buf->data, buf->len);
+		fz_write_data(ctx, out, buf->data, buf->len);
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)

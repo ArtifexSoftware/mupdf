@@ -49,9 +49,9 @@ fz_save_gproof(fz_context *ctx, const char *pdf_file, fz_document *doc, const ch
 		}
 
 		/* Filenames */
-		fz_write(ctx, out, pdf_file, strlen(pdf_file)+1);
-		fz_write(ctx, out, print_profile, strlen(print_profile) + 1);
-		fz_write(ctx, out, display_profile, strlen(display_profile) + 1);
+		fz_write_data(ctx, out, pdf_file, strlen(pdf_file)+1);
+		fz_write_data(ctx, out, print_profile, strlen(print_profile) + 1);
+		fz_write_data(ctx, out, display_profile, strlen(display_profile) + 1);
 	}
 	fz_always(ctx)
 	{

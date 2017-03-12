@@ -107,7 +107,7 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 		return;
 	if (!gs->stroke_state || gs->stroke_state->linewidth != stroke_state->linewidth)
 	{
-		fz_buffer_printf(ctx, gs->buf, "%f w\n", stroke_state->linewidth);
+		fz_append_printf(ctx, gs->buf, "%f w\n", stroke_state->linewidth);
 	}
 	if (!gs->stroke_state || gs->stroke_state->start_cap != stroke_state->start_cap)
 	{
@@ -115,18 +115,18 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 		/* FIXME: Triangle caps aren't supported in pdf */
 		if (cap == FZ_LINECAP_TRIANGLE)
 			cap = FZ_LINECAP_BUTT;
-		fz_buffer_printf(ctx, gs->buf, "%d J\n", cap);
+		fz_append_printf(ctx, gs->buf, "%d J\n", cap);
 	}
 	if (!gs->stroke_state || gs->stroke_state->linejoin != stroke_state->linejoin)
 	{
 		int join = stroke_state->linejoin;
 		if (join == FZ_LINEJOIN_MITER_XPS)
 			join = FZ_LINEJOIN_MITER;
-		fz_buffer_printf(ctx, gs->buf, "%d j\n", join);
+		fz_append_printf(ctx, gs->buf, "%d j\n", join);
 	}
 	if (!gs->stroke_state || gs->stroke_state->miterlimit != stroke_state->miterlimit)
 	{
-		fz_buffer_printf(ctx, gs->buf, "%f M\n", stroke_state->miterlimit);
+		fz_append_printf(ctx, gs->buf, "%f M\n", stroke_state->miterlimit);
 	}
 	if (gs->stroke_state == NULL && stroke_state->dash_len == 0)
 	{}
@@ -135,10 +135,14 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 	{
 		int i;
 		if (stroke_state->dash_len == 0)
-			fz_buffer_printf(ctx, gs->buf, "[");
+			fz_append_byte(ctx, gs->buf, '[');
 		for (i = 0; i < stroke_state->dash_len; i++)
-			fz_buffer_printf(ctx, gs->buf, "%c%f", (i == 0 ? '[' : ' '), stroke_state->dash_list[i]);
-		fz_buffer_printf(ctx, gs->buf, "]%f d\n", stroke_state->dash_phase);
+		{
+			if (i > 0)
+				fz_append_byte(ctx, gs->buf, ' ');
+			fz_append_printf(ctx, gs->buf, "%f", stroke_state->dash_list[i]);
+		}
+		fz_append_printf(ctx, gs->buf, "]%f d\n", stroke_state->dash_phase);
 	}
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 	gs->stroke_state = fz_keep_stroke_state(ctx, stroke_state);
@@ -154,32 +158,28 @@ static void
 pdf_dev_path_moveto(fz_context *ctx, void *arg, float x, float y)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-
-	fz_buffer_printf(ctx, buf, "%f %f m\n", x, y);
+	fz_append_printf(ctx, buf, "%f %f m\n", x, y);
 }
 
 static void
 pdf_dev_path_lineto(fz_context *ctx, void *arg, float x, float y)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-
-	fz_buffer_printf(ctx, buf, "%f %f l\n", x, y);
+	fz_append_printf(ctx, buf, "%f %f l\n", x, y);
 }
 
 static void
 pdf_dev_path_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-
-	fz_buffer_printf(ctx, buf, "%f %f %f %f %f %f c\n", x1, y1, x2, y2, x3, y3);
+	fz_append_printf(ctx, buf, "%f %f %f %f %f %f c\n", x1, y1, x2, y2, x3, y3);
 }
 
 static void
 pdf_dev_path_close(fz_context *ctx, void *arg)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-
-	fz_buffer_printf(ctx, buf, "h\n");
+	fz_append_printf(ctx, buf, "h\n");
 }
 
 static const fz_path_walker pdf_dev_path_proc =
@@ -209,7 +209,7 @@ pdf_dev_ctm(fz_context *ctx, pdf_device *pdev, const fz_matrix *ctm)
 	fz_invert_matrix(&inverse, &gs->ctm);
 	fz_concat(&inverse, ctm, &inverse);
 	gs->ctm = *ctm;
-	fz_buffer_printf(ctx, gs->buf, "%M cm\n", &inverse);
+	fz_append_printf(ctx, gs->buf, "%M cm\n", &inverse);
 }
 
 static void
@@ -256,22 +256,22 @@ pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, cons
 	switch (cspace + stroke*8)
 	{
 		case 1:
-			fz_buffer_printf(ctx, gs->buf, "%f g\n", color[0]);
+			fz_append_printf(ctx, gs->buf, "%f g\n", color[0]);
 			break;
 		case 3:
-			fz_buffer_printf(ctx, gs->buf, "%f %f %f rg\n", color[0], color[1], color[2]);
+			fz_append_printf(ctx, gs->buf, "%f %f %f rg\n", color[0], color[1], color[2]);
 			break;
 		case 4:
-			fz_buffer_printf(ctx, gs->buf, "%f %f %f %f k\n", color[0], color[1], color[2], color[3]);
+			fz_append_printf(ctx, gs->buf, "%f %f %f %f k\n", color[0], color[1], color[2], color[3]);
 			break;
 		case 1+8:
-			fz_buffer_printf(ctx, gs->buf, "%f G\n", color[0]);
+			fz_append_printf(ctx, gs->buf, "%f G\n", color[0]);
 			break;
 		case 3+8:
-			fz_buffer_printf(ctx, gs->buf, "%f %f %f RG\n", color[0], color[1], color[2]);
+			fz_append_printf(ctx, gs->buf, "%f %f %f RG\n", color[0], color[1], color[2]);
 			break;
 		case 4+8:
-			fz_buffer_printf(ctx, gs->buf, "%f %f %f %f K\n", color[0], color[1], color[2], color[3]);
+			fz_append_printf(ctx, gs->buf, "%f %f %f %f K\n", color[0], color[1], color[2], color[3]);
 			break;
 	}
 }
@@ -331,7 +331,7 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 		}
 		pdev->num_alphas++;
 	}
-	fz_buffer_printf(ctx, gs->buf, "/Alp%d gs\n", i);
+	fz_append_printf(ctx, gs->buf, "/Alp%d gs\n", i);
 }
 
 static int
@@ -386,7 +386,7 @@ pdf_dev_font(fz_context *ctx, pdf_device *pdev, fz_font *font)
 
 	gs->font = pdf_dev_add_font_res(ctx, pdev, font);
 
-	fz_buffer_printf(ctx, gs->buf, "/F%d 1 Tf\n", gs->font);
+	fz_append_printf(ctx, gs->buf, "/F%d 1 Tf\n", gs->font);
 }
 
 static void
@@ -407,7 +407,7 @@ pdf_dev_push_new_buf(fz_context *ctx, pdf_device *pdev, fz_buffer *buf, void (*o
 		fz_keep_buffer(ctx, pdev->gstates[pdev->num_gstates].buf);
 	pdev->gstates[pdev->num_gstates].on_pop = on_pop;
 	pdev->gstates[pdev->num_gstates].on_pop_arg = on_pop_arg;
-	fz_buffer_printf(ctx, pdev->gstates[pdev->num_gstates].buf, "q\n");
+	fz_append_string(ctx, pdev->gstates[pdev->num_gstates].buf, "q\n");
 	pdev->num_gstates++;
 }
 
@@ -423,7 +423,7 @@ pdf_dev_pop(fz_context *ctx, pdf_device *pdev)
 	gstate *gs = CURRENT_GSTATE(pdev);
 	void *arg = gs->on_pop_arg;
 
-	fz_buffer_printf(ctx, gs->buf, "Q\n");
+	fz_append_string(ctx, gs->buf, "Q\n");
 	if (gs->on_pop)
 		gs->on_pop(ctx, pdev, arg);
 	pdev->num_gstates--;
@@ -451,7 +451,7 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 
 	fz_invert_matrix(&inv_tm, &tm);
 
-	fz_buffer_printf(ctx, gs->buf, "%M Tm\n[<", &tm);
+	fz_append_printf(ctx, gs->buf, "%M Tm\n[<", &tm);
 
 	for (i = 0; i < span->len; ++i)
 	{
@@ -472,17 +472,17 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 		if (dx != 0 || dy != 0)
 		{
 			if (span->wmode == 0 && dy == 0)
-				fz_buffer_printf(ctx, gs->buf, ">%d<", -dx);
+				fz_append_printf(ctx, gs->buf, ">%d<", -dx);
 			else if (span->wmode == 1 && dx == 0)
-				fz_buffer_printf(ctx, gs->buf, ">%d<", -dy);
+				fz_append_printf(ctx, gs->buf, ">%d<", -dy);
 			else
-				fz_buffer_printf(ctx, gs->buf, ">]TJ\n%M Tm\n[<", &tm);
+				fz_append_printf(ctx, gs->buf, ">]TJ\n%M Tm\n[<", &tm);
 		}
 
 		if (fz_font_t3_procs(ctx, span->font))
-			fz_buffer_printf(ctx, gs->buf, "%02x", it->gid);
+			fz_append_printf(ctx, gs->buf, "%02x", it->gid);
 		else
-			fz_buffer_printf(ctx, gs->buf, "%04x", it->gid);
+			fz_append_printf(ctx, gs->buf, "%04x", it->gid);
 
 		adv = fz_advance_glyph(ctx, span->font, it->gid, span->wmode);
 		if (span->wmode == 0)
@@ -491,7 +491,7 @@ pdf_dev_text_span(fz_context *ctx, pdf_device *pdev, fz_text_span *span)
 			fz_pre_translate(&tm, 0, adv);
 	}
 
-	fz_buffer_printf(ctx, gs->buf, ">]TJ\n");
+	fz_append_string(ctx, gs->buf, ">]TJ\n");
 }
 
 static void
@@ -502,7 +502,7 @@ pdf_dev_trm(fz_context *ctx, pdf_device *pdev, int trm)
 	if (gs->text_rendering_mode == trm)
 		return;
 	gs->text_rendering_mode = trm;
-	fz_buffer_printf(ctx, gs->buf, "%d Tr\n", trm);
+	fz_append_printf(ctx, gs->buf, "%d Tr\n", trm);
 }
 
 static void
@@ -512,7 +512,7 @@ pdf_dev_begin_text(fz_context *ctx, pdf_device *pdev, const fz_matrix *tm, int t
 	if (!pdev->in_text)
 	{
 		gstate *gs = CURRENT_GSTATE(pdev);
-		fz_buffer_printf(ctx, gs->buf, "BT\n");
+		fz_append_string(ctx, gs->buf, "BT\n");
 		pdev->in_text = 1;
 	}
 }
@@ -525,7 +525,7 @@ pdf_dev_end_text(fz_context *ctx, pdf_device *pdev)
 	if (!pdev->in_text)
 		return;
 	pdev->in_text = 0;
-	fz_buffer_printf(ctx, gs->buf, "ET\n");
+	fz_append_string(ctx, gs->buf, "ET\n");
 }
 
 static int
@@ -640,7 +640,7 @@ pdf_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 	pdf_dev_color(ctx, pdev, colorspace, color, 0);
 	pdf_dev_ctm(ctx, pdev, ctm);
 	pdf_dev_path(ctx, pdev, path);
-	fz_buffer_printf(ctx, gs->buf, (even_odd ? "f*\n" : "f\n"));
+	fz_append_string(ctx, gs->buf, (even_odd ? "f*\n" : "f\n"));
 }
 
 static void
@@ -656,7 +656,7 @@ pdf_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 	pdf_dev_ctm(ctx, pdev, ctm);
 	pdf_dev_stroke_state(ctx, pdev, stroke);
 	pdf_dev_path(ctx, pdev, path);
-	fz_buffer_printf(ctx, gs->buf, "S\n");
+	fz_append_string(ctx, gs->buf, "S\n");
 }
 
 static void
@@ -670,7 +670,7 @@ pdf_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 	pdf_dev_ctm(ctx, pdev, ctm);
 	pdf_dev_path(ctx, pdev, path);
 	gs = CURRENT_GSTATE(pdev);
-	fz_buffer_printf(ctx, gs->buf, (even_odd ? "W* n\n" : "W n\n"));
+	fz_append_string(ctx, gs->buf, (even_odd ? "W* n\n" : "W n\n"));
 }
 
 static void
@@ -688,7 +688,7 @@ pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 	pdf_dev_ctm(ctx, pdev, ctm);
 	pdf_dev_path(ctx, pdev, path);
 	gs = CURRENT_GSTATE(pdev);
-	fz_buffer_printf(ctx, gs->buf, "W n\n");
+	fz_append_string(ctx, gs->buf, "W n\n");
 }
 
 static void
@@ -823,7 +823,7 @@ pdf_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 	fz_pre_scale(&local_ctm, 1, -1);
 	fz_pre_translate(&local_ctm, 0, -1);
 	pdf_dev_ctm(ctx, pdev, &local_ctm);
-	fz_buffer_printf(ctx, gs->buf, "/Img%d Do\n", pdf_to_num(ctx, im_res));
+	fz_append_printf(ctx, gs->buf, "/Img%d Do\n", pdf_to_num(ctx, im_res));
 
 	/* Possibly add to page resources */
 	pdf_dev_add_image_res(ctx, dev, im_res);
@@ -855,7 +855,7 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 		fz_warn(ctx, "pdf_add_image: problem adding image resource");
 		return;
 	}
-	fz_buffer_printf(ctx, gs->buf, "q\n");
+	fz_append_string(ctx, gs->buf, "q\n");
 	pdf_dev_alpha(ctx, pdev, alpha, 0);
 	pdf_dev_color(ctx, pdev, colorspace, color, 0);
 
@@ -863,7 +863,7 @@ pdf_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 	fz_pre_scale(&local_ctm, 1, -1);
 	fz_pre_translate(&local_ctm, 0, -1);
 	pdf_dev_ctm(ctx, pdev, &local_ctm);
-	fz_buffer_printf(ctx, gs->buf, "/Img%d Do Q\n", pdf_to_num(ctx, im_res));
+	fz_append_printf(ctx, gs->buf, "/Img%d Do Q\n", pdf_to_num(ctx, im_res));
 
 	/* Possibly add to page resources */
 	pdf_dev_add_image_res(ctx, dev, im_res);
@@ -937,7 +937,7 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 			pdf_drop_obj(ctx, egs_ref);
 		}
 		gs = CURRENT_GSTATE(pdev);
-		fz_buffer_printf(ctx, gs->buf, "/SM%d gs\n", pdev->num_smasks-1);
+		fz_append_printf(ctx, gs->buf, "/SM%d gs\n", pdev->num_smasks-1);
 	}
 	fz_always(ctx)
 	{
@@ -966,13 +966,13 @@ pdf_dev_end_mask(fz_context *ctx, fz_device *dev)
 
 	/* Here we do part of the pop, but not all of it. */
 	pdf_dev_end_text(ctx, pdev);
-	fz_buffer_printf(ctx, buf, "Q\n");
+	fz_append_string(ctx, buf, "Q\n");
 	pdf_update_stream(ctx, doc, form_ref, buf, 0);
 	fz_drop_buffer(ctx, buf);
 	gs->buf = fz_keep_buffer(ctx, gs[-1].buf);
 	gs->on_pop_arg = NULL;
 	pdf_drop_obj(ctx, form_ref);
-	fz_buffer_printf(ctx, gs->buf, "q\n");
+	fz_append_string(ctx, gs->buf, "q\n");
 }
 
 static void
@@ -1006,7 +1006,7 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int is
 
 	/* Add the call to this group */
 	gs = CURRENT_GSTATE(pdev);
-	fz_buffer_printf(ctx, gs->buf, "/BlendMode%d gs /Fm%d Do\n", blendmode, num);
+	fz_append_printf(ctx, gs->buf, "/BlendMode%d gs /Fm%d Do\n", blendmode, num);
 
 	/* Now, everything we get until the end of group needs to go into a
 	 * new buffer, which will be the stream contents for the form. */
@@ -1133,7 +1133,7 @@ fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matri
 		dev->max_gstates = 1;
 
 		if (topctm != &fz_identity)
-			fz_buffer_printf(ctx, buf, "%M cm\n", topctm);
+			fz_append_printf(ctx, buf, "%M cm\n", topctm);
 	}
 	fz_catch(ctx)
 	{

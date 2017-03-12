@@ -36,7 +36,7 @@ pdf_print_key(fz_context *ctx, fz_output *out, void *key_)
 	pdf_obj *key = (pdf_obj *)key_;
 
 	if (pdf_is_indirect(ctx, key))
-		fz_printf(ctx, out, "(%d 0 R) ", pdf_to_num(ctx, key));
+		fz_write_printf(ctx, out, "(%d 0 R) ", pdf_to_num(ctx, key));
 	else
 		pdf_print_obj(ctx, out, key, 0);
 }

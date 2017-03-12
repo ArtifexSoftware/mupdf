@@ -1674,13 +1674,13 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	pdf_dict_put(ctx, obj, PDF_NAME_Length, newlen);
 	pdf_drop_obj(ctx, newlen);
 
-	fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
+	fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 	pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
-	fz_puts(ctx, opts->out, "\nstream\n");
-	fz_write(ctx, opts->out, data, len);
+	fz_write_string(ctx, opts->out, "\nstream\n");
+	fz_write_data(ctx, opts->out, data, len);
 	if (len > 0 && data[len-1] != '\n')
-		fz_putc(ctx, opts->out, '\n');
-	fz_puts(ctx, opts->out, "endstream\nendobj\n\n");
+		fz_write_byte(ctx, opts->out, '\n');
+	fz_write_string(ctx, opts->out, "endstream\nendobj\n\n");
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
@@ -1739,13 +1739,13 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	pdf_dict_put(ctx, obj, PDF_NAME_Length, newlen);
 	pdf_drop_obj(ctx, newlen);
 
-	fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
+	fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 	pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
-	fz_puts(ctx, opts->out, "\nstream\n");
-	fz_write(ctx, opts->out, data, len);
+	fz_write_string(ctx, opts->out, "\nstream\n");
+	fz_write_data(ctx, opts->out, data, len);
 	if (len > 0 && data[len-1] != '\n')
-		fz_putc(ctx, opts->out, '\n');
-	fz_puts(ctx, opts->out, "endstream\nendobj\n\n");
+		fz_write_byte(ctx, opts->out, '\n');
+	fz_write_string(ctx, opts->out, "endstream\nendobj\n\n");
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
@@ -1827,7 +1827,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 		fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 		if (opts->continue_on_error)
 		{
-			fz_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
+			fz_write_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 			if (opts->errors)
 				(*opts->errors)++;
 			fz_warn(ctx, "%s", fz_caught_message(ctx));
@@ -1858,15 +1858,15 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	entry = pdf_get_xref_entry(ctx, doc, num);
 	if (!pdf_obj_num_is_stream(ctx, doc, num))
 	{
-		fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
+		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
-		fz_puts(ctx, opts->out, "\nendobj\n\n");
+		fz_write_string(ctx, opts->out, "\nendobj\n\n");
 	}
 	else if (entry->stm_ofs < 0 && entry->stm_buf == NULL)
 	{
-		fz_printf(ctx, opts->out, "%d %d obj\n", num, gen);
+		fz_write_printf(ctx, opts->out, "%d %d obj\n", num, gen);
 		pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
-		fz_puts(ctx, opts->out, "\nstream\nendstream\nendobj\n\n");
+		fz_write_string(ctx, opts->out, "\nstream\nendstream\nendobj\n\n");
 	}
 	else
 	{
@@ -1888,7 +1888,7 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
 			if (opts->continue_on_error)
 			{
-				fz_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
+				fz_write_printf(ctx, opts->out, "%d %d obj\nnull\nendobj\n", num, gen);
 				if (opts->errors)
 					(*opts->errors)++;
 				fz_warn(ctx, "%s", fz_caught_message(ctx));
@@ -1908,13 +1908,13 @@ static void writexrefsubsect(fz_context *ctx, pdf_write_state *opts, int from, i
 {
 	int num;
 
-	fz_printf(ctx, opts->out, "%d %d\n", from, to - from);
+	fz_write_printf(ctx, opts->out, "%d %d\n", from, to - from);
 	for (num = from; num < to; num++)
 	{
 		if (opts->use_list[num])
-			fz_printf(ctx, opts->out, "%010Zd %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_write_printf(ctx, opts->out, "%010Zd %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
 		else
-			fz_printf(ctx, opts->out, "%010Zd %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_write_printf(ctx, opts->out, "%010Zd %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
 	}
 }
 
@@ -1924,7 +1924,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 	pdf_obj *obj;
 	pdf_obj *nobj = NULL;
 
-	fz_puts(ctx, opts->out, "xref\n");
+	fz_write_string(ctx, opts->out, "xref\n");
 	opts->first_xref_entry_offset = fz_tell_output(ctx, opts->out);
 
 	if (opts->do_incremental)
@@ -1952,7 +1952,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 		writexrefsubsect(ctx, opts, from, to);
 	}
 
-	fz_puts(ctx, opts->out, "\n");
+	fz_write_string(ctx, opts->out, "\n");
 
 	fz_var(trailer);
 	fz_var(nobj);
@@ -2007,13 +2007,13 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 		fz_rethrow(ctx);
 	}
 
-	fz_puts(ctx, opts->out, "trailer\n");
+	fz_write_string(ctx, opts->out, "trailer\n");
 	pdf_print_obj(ctx, opts->out, trailer, opts->do_tight);
-	fz_puts(ctx, opts->out, "\n");
+	fz_write_string(ctx, opts->out, "\n");
 
 	pdf_drop_obj(ctx, trailer);
 
-	fz_printf(ctx, opts->out, "startxref\n%d\n%%%%EOF\n", startxref);
+	fz_write_printf(ctx, opts->out, "startxref\n%d\n%%%%EOF\n", startxref);
 
 	doc->has_xref_streams = 0;
 }
@@ -2026,12 +2026,12 @@ static void writexrefstreamsubsect(fz_context *ctx, pdf_document *doc, pdf_write
 	pdf_array_push_drop(ctx, index, pdf_new_int(ctx, doc, to - from));
 	for (num = from; num < to; num++)
 	{
-		fz_write_buffer_byte(ctx, fzbuf, opts->use_list[num] ? 1 : 0);
-		fz_write_buffer_byte(ctx, fzbuf, opts->ofs_list[num]>>24);
-		fz_write_buffer_byte(ctx, fzbuf, opts->ofs_list[num]>>16);
-		fz_write_buffer_byte(ctx, fzbuf, opts->ofs_list[num]>>8);
-		fz_write_buffer_byte(ctx, fzbuf, opts->ofs_list[num]);
-		fz_write_buffer_byte(ctx, fzbuf, opts->gen_list[num]);
+		fz_append_byte(ctx, fzbuf, opts->use_list[num] ? 1 : 0);
+		fz_append_byte(ctx, fzbuf, opts->ofs_list[num]>>24);
+		fz_append_byte(ctx, fzbuf, opts->ofs_list[num]>>16);
+		fz_append_byte(ctx, fzbuf, opts->ofs_list[num]>>8);
+		fz_append_byte(ctx, fzbuf, opts->ofs_list[num]);
+		fz_append_byte(ctx, fzbuf, opts->gen_list[num]);
 	}
 }
 
@@ -2137,7 +2137,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
 		writeobject(ctx, doc, opts, num, 0, 0);
-		fz_printf(ctx, opts->out, "startxref\n%Zd\n%%%%EOF\n", startxref);
+		fz_write_printf(ctx, opts->out, "startxref\n%Zd\n%%%%EOF\n", startxref);
 	}
 	fz_always(ctx)
 	{
@@ -2159,7 +2159,7 @@ padto(fz_context *ctx, fz_output *out, fz_off_t target)
 	assert(pos <= target);
 	while (pos < target)
 	{
-		fz_putc(ctx, out, '\n');
+		fz_write_byte(ctx, out, '\n');
 		pos++;
 	}
 }
@@ -2208,8 +2208,8 @@ writeobjects(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int pass
 
 	if (!opts->do_incremental)
 	{
-		fz_printf(ctx, opts->out, "%%PDF-%d.%d\n", doc->version / 10, doc->version % 10);
-		fz_puts(ctx, opts->out, "%%\316\274\341\277\246\n\n");
+		fz_write_printf(ctx, opts->out, "%%PDF-%d.%d\n", doc->version / 10, doc->version % 10);
+		fz_write_string(ctx, opts->out, "%%\316\274\341\277\246\n\n");
 	}
 
 	dowriteobject(ctx, doc, opts, opts->start, pass);
@@ -2362,69 +2362,69 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 
 	/* Table F.3 - Header */
 	/* Header Item 1: Least number of objects in a page */
-	fz_write_buffer_bits(ctx, buf, min_objs_per_page, 32);
+	fz_append_bits(ctx, buf, min_objs_per_page, 32);
 	/* Header Item 2: Location of first pages page object */
-	fz_write_buffer_bits(ctx, buf, opts->ofs_list[pop[0]->page_object_number], 32);
+	fz_append_bits(ctx, buf, opts->ofs_list[pop[0]->page_object_number], 32);
 	/* Header Item 3: Number of bits required to represent the difference
 	 * between the greatest and least number of objects in a page. */
 	objs_per_page_bits = my_log2(max_objs_per_page - min_objs_per_page);
-	fz_write_buffer_bits(ctx, buf, objs_per_page_bits, 16);
+	fz_append_bits(ctx, buf, objs_per_page_bits, 16);
 	/* Header Item 4: Least length of a page. */
-	fz_write_buffer_bits(ctx, buf, min_page_length, 32);
+	fz_append_bits(ctx, buf, min_page_length, 32);
 	/* Header Item 5: Number of bits needed to represent the difference
 	 * between the greatest and least length of a page. */
 	page_len_bits = my_log2(max_page_length - min_page_length);
-	fz_write_buffer_bits(ctx, buf, page_len_bits, 16);
+	fz_append_bits(ctx, buf, page_len_bits, 16);
 	/* Header Item 6: Least offset to start of content stream (Acrobat
 	 * sets this to always be 0) */
-	fz_write_buffer_bits(ctx, buf, 0, 32);
+	fz_append_bits(ctx, buf, 0, 32);
 	/* Header Item 7: Number of bits needed to represent the difference
 	 * between the greatest and least offset to content stream (Acrobat
 	 * sets this to always be 0) */
-	fz_write_buffer_bits(ctx, buf, 0, 16);
+	fz_append_bits(ctx, buf, 0, 16);
 	/* Header Item 8: Least content stream length. (Acrobat
 	 * sets this to always be 0) */
-	fz_write_buffer_bits(ctx, buf, 0, 32);
+	fz_append_bits(ctx, buf, 0, 32);
 	/* Header Item 9: Number of bits needed to represent the difference
 	 * between the greatest and least content stream length (Acrobat
 	 * sets this to always be the same as item 5) */
-	fz_write_buffer_bits(ctx, buf, page_len_bits, 16);
+	fz_append_bits(ctx, buf, page_len_bits, 16);
 	/* Header Item 10: Number of bits needed to represent the greatest
 	 * number of shared object references. */
 	shared_object_bits = my_log2(max_shared_object_refs);
-	fz_write_buffer_bits(ctx, buf, shared_object_bits, 16);
+	fz_append_bits(ctx, buf, shared_object_bits, 16);
 	/* Header Item 11: Number of bits needed to represent the greatest
 	 * shared object identifier. */
 	shared_object_id_bits = my_log2(max_shared_object - min_shared_object + pop[0]->num_shared);
-	fz_write_buffer_bits(ctx, buf, shared_object_id_bits, 16);
+	fz_append_bits(ctx, buf, shared_object_id_bits, 16);
 	/* Header Item 12: Number of bits needed to represent the numerator
 	 * of the fractions. We always send 0. */
-	fz_write_buffer_bits(ctx, buf, 0, 16);
+	fz_append_bits(ctx, buf, 0, 16);
 	/* Header Item 13: Number of bits needed to represent the denominator
 	 * of the fractions. We always send 0. */
-	fz_write_buffer_bits(ctx, buf, 0, 16);
+	fz_append_bits(ctx, buf, 0, 16);
 
 	/* Table F.4 - Page offset hint table (per page) */
 	/* Item 1: A number that, when added to the least number of objects
 	 * on a page, gives the number of objects in the page. */
 	for (i = 0; i < opts->page_count; i++)
 	{
-		fz_write_buffer_bits(ctx, buf, pop[i]->num_objects - min_objs_per_page, objs_per_page_bits);
+		fz_append_bits(ctx, buf, pop[i]->num_objects - min_objs_per_page, objs_per_page_bits);
 	}
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 	/* Item 2: A number that, when added to the least page length, gives
 	 * the length of the page in bytes. */
 	for (i = 0; i < opts->page_count; i++)
 	{
-		fz_write_buffer_bits(ctx, buf, pop[i]->max_ofs - pop[i]->min_ofs - min_page_length, page_len_bits);
+		fz_append_bits(ctx, buf, pop[i]->max_ofs - pop[i]->min_ofs - min_page_length, page_len_bits);
 	}
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 	/* Item 3: The number of shared objects referenced from the page. */
 	for (i = 0; i < opts->page_count; i++)
 	{
-		fz_write_buffer_bits(ctx, buf, pop[i]->num_shared, shared_object_bits);
+		fz_append_bits(ctx, buf, pop[i]->num_shared, shared_object_bits);
 	}
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 	/* Item 4: Shared object id for each shared object ref in every page.
 	 * Spec says "not for page 1", but acrobat does send page 1's - all
 	 * as zeros. */
@@ -2434,12 +2434,12 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		{
 			int o = pop[i]->object[j];
 			if (i == 0 && opts->use_list[o] & USE_PAGE1)
-				fz_write_buffer_bits(ctx, buf, 0 /* o - pop[0]->page_object_number */, shared_object_id_bits);
+				fz_append_bits(ctx, buf, 0 /* o - pop[0]->page_object_number */, shared_object_id_bits);
 			if (i != 0 && opts->use_list[o] & USE_SHARED)
-				fz_write_buffer_bits(ctx, buf, o - min_shared_object + pop[0]->num_shared, shared_object_id_bits);
+				fz_append_bits(ctx, buf, o - min_shared_object + pop[0]->num_shared, shared_object_id_bits);
 		}
 	}
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 	/* Item 5: Numerator of fractional position for each shared object reference. */
 	/* We always send 0 in 0 bits */
 	/* Item 6: A number that, when added to the least offset to the start
@@ -2453,36 +2453,36 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	 */
 	for (i = 0; i < opts->page_count; i++)
 	{
-		fz_write_buffer_bits(ctx, buf, pop[i]->max_ofs - pop[i]->min_ofs - min_page_length, page_len_bits);
+		fz_append_bits(ctx, buf, pop[i]->max_ofs - pop[i]->min_ofs - min_page_length, page_len_bits);
 	}
 
 	/* Pad, and then do shared object hint table */
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 	opts->hints_shared_offset = (int)fz_buffer_storage(ctx, buf, NULL);
 
 	/* Table F.5: */
 	/* Header Item 1: Object number of the first object in the shared
 	 * objects section. */
-	fz_write_buffer_bits(ctx, buf, min_shared_object, 32);
+	fz_append_bits(ctx, buf, min_shared_object, 32);
 	/* Header Item 2: Location of first object in the shared objects
 	 * section. */
-	fz_write_buffer_bits(ctx, buf, opts->ofs_list[min_shared_object], 32);
+	fz_append_bits(ctx, buf, opts->ofs_list[min_shared_object], 32);
 	/* Header Item 3: The number of shared object entries for the first
 	 * page. */
-	fz_write_buffer_bits(ctx, buf, pop[0]->num_shared, 32);
+	fz_append_bits(ctx, buf, pop[0]->num_shared, 32);
 	/* Header Item 4: The number of shared object entries for the shared
 	 * objects section + first page. */
-	fz_write_buffer_bits(ctx, buf, max_shared_object - min_shared_object + pop[0]->num_shared, 32);
+	fz_append_bits(ctx, buf, max_shared_object - min_shared_object + pop[0]->num_shared, 32);
 	/* Header Item 5: The number of bits needed to represent the greatest
 	 * number of objects in a shared object group (Always 0). */
-	fz_write_buffer_bits(ctx, buf, 0, 16);
+	fz_append_bits(ctx, buf, 0, 16);
 	/* Header Item 6: The least length of a shared object group in bytes. */
-	fz_write_buffer_bits(ctx, buf, min_shared_length, 32);
+	fz_append_bits(ctx, buf, min_shared_length, 32);
 	/* Header Item 7: The number of bits required to represent the
 	 * difference between the greatest and least length of a shared object
 	 * group. */
 	shared_length_bits = my_log2(max_shared_length - min_shared_length);
-	fz_write_buffer_bits(ctx, buf, shared_length_bits, 16);
+	fz_append_bits(ctx, buf, shared_length_bits, 16);
 
 	/* Table F.6 */
 	/* Item 1: Shared object group length (page 1 objects) */
@@ -2498,7 +2498,7 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 		else
 			max = opts->ofs_list[1];
 		if (opts->use_list[o] & USE_PAGE1)
-			fz_write_buffer_bits(ctx, buf, max - min - min_shared_length, shared_length_bits);
+			fz_append_bits(ctx, buf, max - min - min_shared_length, shared_length_bits);
 	}
 	/* Item 1: Shared object group length (shared objects) */
 	for (i = min_shared_object; i <= max_shared_object; i++)
@@ -2511,18 +2511,18 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 			max = opts->ofs_list[i+1];
 		else
 			max = opts->ofs_list[1];
-		fz_write_buffer_bits(ctx, buf, max - min - min_shared_length, shared_length_bits);
+		fz_append_bits(ctx, buf, max - min - min_shared_length, shared_length_bits);
 	}
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 
 	/* Item 2: MD5 presence flags */
 	for (i = max_shared_object - min_shared_object + pop[0]->num_shared; i > 0; i--)
 	{
-		fz_write_buffer_bits(ctx, buf, 0, 1);
+		fz_append_bits(ctx, buf, 0, 1);
 	}
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 	/* Item 3: MD5 sums (not present) */
-	fz_write_buffer_pad(ctx, buf);
+	fz_append_bits_pad(ctx, buf);
 	/* Item 4: Number of objects in the group (not present) */
 }
 
@@ -2860,7 +2860,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		if (opts->out)
 		{
 			fz_seek_output(ctx, opts->out, 0, SEEK_END);
-			fz_puts(ctx, opts->out, "\n");
+			fz_write_string(ctx, opts->out, "\n");
 		}
 	}
 

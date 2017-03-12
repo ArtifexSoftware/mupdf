@@ -290,21 +290,21 @@ fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, voi
 {
 	int i, k;
 
-	fz_printf(ctx, out, "cache load %d / %d\n", table->load, table->size);
+	fz_write_printf(ctx, out, "cache load %d / %d\n", table->load, table->size);
 
 	for (i = 0; i < table->size; i++)
 	{
 		if (!table->ents[i].val && !compact)
-			fz_printf(ctx, out, "table %04d: empty\n", i);
+			fz_write_printf(ctx, out, "table %04d: empty\n", i);
 		else if (table->ents[i].val)
 		{
-			fz_printf(ctx, out, "table %04d: key=", i);
+			fz_write_printf(ctx, out, "table %04d: key=", i);
 			for (k = 0; k < MAX_KEY_LEN; k++)
-				fz_printf(ctx, out, "%02x", ((unsigned char*)table->ents[i].key)[k]);
+				fz_write_printf(ctx, out, "%02x", ((unsigned char*)table->ents[i].key)[k]);
 			if (details)
 				details(ctx, out, table->ents[i].val);
 			else
-				fz_printf(ctx, out, " val=$%p\n", table->ents[i].val);
+				fz_write_printf(ctx, out, " val=$%p\n", table->ents[i].val);
 		}
 	}
 }

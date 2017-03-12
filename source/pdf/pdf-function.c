@@ -114,7 +114,7 @@ pdf_print_ps_stack(fz_context *ctx, fz_output *out, ps_stack *st)
 {
 	int i;
 
-	fz_printf(ctx, out, "stack:");
+	fz_write_printf(ctx, out, "stack:");
 
 	for (i = 0; i < st->sp; i++)
 	{
@@ -122,22 +122,22 @@ pdf_print_ps_stack(fz_context *ctx, fz_output *out, ps_stack *st)
 		{
 		case PS_BOOL:
 			if (st->stack[i].u.b)
-				fz_printf(ctx, out, " true");
+				fz_write_printf(ctx, out, " true");
 			else
-				fz_printf(ctx, out, " false");
+				fz_write_printf(ctx, out, " false");
 			break;
 
 		case PS_INT:
-			fz_printf(ctx, out, " %d", st->stack[i].u.i);
+			fz_write_printf(ctx, out, " %d", st->stack[i].u.i);
 			break;
 
 		case PS_REAL:
-			fz_printf(ctx, out, " %g", st->stack[i].u.f);
+			fz_write_printf(ctx, out, " %g", st->stack[i].u.f);
 			break;
 		}
 	}
 
-	fz_printf(ctx, out, "\n");
+	fz_write_printf(ctx, out, "\n");
 }
 
 static void
@@ -1390,12 +1390,12 @@ pdf_debug_indent(fz_context *ctx, fz_output *out, char *prefix, int level, char 
 {
 	int i;
 
-	fz_puts(ctx, out, prefix);
+	fz_write_string(ctx, out, prefix);
 
 	for (i = 0; i < level; i++)
-		fz_putc(ctx, out, '\t');
+		fz_write_byte(ctx, out, '\t');
 
-	fz_puts(ctx, out, suffix);
+	fz_write_string(ctx, out, suffix);
 }
 
 static void
@@ -1510,78 +1510,78 @@ pdf_debug_function_imp(fz_context *ctx, fz_output *out, fz_function *func_, int 
 	}
 
 	pdf_debug_indent(ctx, out, "\n", level, "");
-	fz_printf(ctx, out, "%d input -> %d output\n", func->base.m, func->base.n);
+	fz_write_printf(ctx, out, "%d input -> %d output\n", func->base.m, func->base.n);
 
 	pdf_debug_indent(ctx, out, "", level, "domain ");
 	for (i = 0; i < func->base.m; i++)
-		fz_printf(ctx, out, "%g %g ", func->domain[i][0], func->domain[i][1]);
-	fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "%g %g ", func->domain[i][0], func->domain[i][1]);
+	fz_write_printf(ctx, out, "\n");
 
 	if (func->has_range)
 	{
 		pdf_debug_indent(ctx, out, "", level, "range ");
 		for (i = 0; i < func->base.n; i++)
-			fz_printf(ctx, out, "%g %g ", func->range[i][0], func->range[i][1]);
-		fz_printf(ctx, out, "\n");
+			fz_write_printf(ctx, out, "%g %g ", func->range[i][0], func->range[i][1]);
+		fz_write_printf(ctx, out, "\n");
 	}
 
 	switch (func->type)
 	{
 	case SAMPLE:
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "bps: %d\n", func->u.sa.bps);
+		fz_write_printf(ctx, out, "bps: %d\n", func->u.sa.bps);
 
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "size: [ ");
+		fz_write_printf(ctx, out, "size: [ ");
 		for (i = 0; i < func->base.m; i++)
-			fz_printf(ctx, out, "%d ", func->u.sa.size[i]);
-		fz_printf(ctx, out, "]\n");
+			fz_write_printf(ctx, out, "%d ", func->u.sa.size[i]);
+		fz_write_printf(ctx, out, "]\n");
 
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "encode: [ ");
+		fz_write_printf(ctx, out, "encode: [ ");
 		for (i = 0; i < func->base.m; i++)
-			fz_printf(ctx, out, "%g %g ", func->u.sa.encode[i][0], func->u.sa.encode[i][1]);
-		fz_printf(ctx, out, "]\n");
+			fz_write_printf(ctx, out, "%g %g ", func->u.sa.encode[i][0], func->u.sa.encode[i][1]);
+		fz_write_printf(ctx, out, "]\n");
 
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "decode: [ ");
+		fz_write_printf(ctx, out, "decode: [ ");
 		for (i = 0; i < func->base.m; i++)
-			fz_printf(ctx, out, "%g %g ", func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
-		fz_printf(ctx, out, "]\n");
+			fz_write_printf(ctx, out, "%g %g ", func->u.sa.decode[i][0], func->u.sa.decode[i][1]);
+		fz_write_printf(ctx, out, "]\n");
 		break;
 
 	case EXPONENTIAL:
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "n: %g\n", func->u.e.n);
+		fz_write_printf(ctx, out, "n: %g\n", func->u.e.n);
 
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "c0: [ ");
+		fz_write_printf(ctx, out, "c0: [ ");
 		for (i = 0; i < func->base.n; i++)
-			fz_printf(ctx, out, "%g ", func->u.e.c0[i]);
-		fz_printf(ctx, out, "]\n");
+			fz_write_printf(ctx, out, "%g ", func->u.e.c0[i]);
+		fz_write_printf(ctx, out, "]\n");
 
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "c1: [ ");
+		fz_write_printf(ctx, out, "c1: [ ");
 		for (i = 0; i < func->base.n; i++)
-			fz_printf(ctx, out, "%g ", func->u.e.c1[i]);
-		fz_printf(ctx, out, "]\n");
+			fz_write_printf(ctx, out, "%g ", func->u.e.c1[i]);
+		fz_write_printf(ctx, out, "]\n");
 		break;
 
 	case STITCHING:
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "%d functions\n", func->u.st.k);
+		fz_write_printf(ctx, out, "%d functions\n", func->u.st.k);
 
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "bounds: [ ");
+		fz_write_printf(ctx, out, "bounds: [ ");
 		for (i = 0; i < func->u.st.k - 1; i++)
-			fz_printf(ctx, out, "%g ", func->u.st.bounds[i]);
-		fz_printf(ctx, out, "]\n");
+			fz_write_printf(ctx, out, "%g ", func->u.st.bounds[i]);
+		fz_write_printf(ctx, out, "]\n");
 
 		pdf_debug_indent(ctx, out, "", level, "");
-		fz_printf(ctx, out, "encode: [ ");
+		fz_write_printf(ctx, out, "encode: [ ");
 		for (i = 0; i < func->u.st.k * 2; i++)
-			fz_printf(ctx, out, "%g ", func->u.st.encode[i]);
-		fz_printf(ctx, out, "]\n");
+			fz_write_printf(ctx, out, "%g ", func->u.st.encode[i]);
+		fz_write_printf(ctx, out, "]\n");
 
 		for (i = 0; i < func->u.st.k; i++)
 			pdf_debug_function_imp(ctx, out, func->u.st.funcs[i], level);
@@ -1589,7 +1589,7 @@ pdf_debug_function_imp(fz_context *ctx, fz_output *out, fz_function *func_, int 
 
 	case POSTSCRIPT:
 		pdf_debug_ps_func_code(ctx, out, func->u.p.code, func->u.p.code, level);
-		fz_printf(ctx, out, "\n");
+		fz_write_printf(ctx, out, "\n");
 		break;
 	}
 

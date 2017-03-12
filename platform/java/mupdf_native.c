@@ -4864,22 +4864,22 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 
 		buf = fz_new_buffer(ctx, 256);
 		out = fz_new_output_with_buffer(ctx, buf);
-		fz_printf(ctx, out, "<html>\n");
-		fz_printf(ctx, out, "<style>\n");
-		fz_printf(ctx, out, "body{margin:0;}\n");
-		fz_printf(ctx, out, "div.page{background-color:white;}\n");
-		fz_printf(ctx, out, "div.block{margin:0pt;padding:0pt;}\n");
-		fz_printf(ctx, out, "div.metaline{display:table;width:100%%}\n");
-		fz_printf(ctx, out, "div.line{display:table-row;}\n");
-		fz_printf(ctx, out, "div.cell{display:table-cell;padding-left:0.25em;padding-right:0.25em}\n");
-		//fz_printf(ctx, out, "p{margin:0;padding:0;}\n");
-		fz_printf(ctx, out, "</style>\n");
-		fz_printf(ctx, out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
+		fz_write_printf(ctx, out, "<html>\n");
+		fz_write_printf(ctx, out, "<style>\n");
+		fz_write_printf(ctx, out, "body{margin:0;}\n");
+		fz_write_printf(ctx, out, "div.page{background-color:white;}\n");
+		fz_write_printf(ctx, out, "div.block{margin:0pt;padding:0pt;}\n");
+		fz_write_printf(ctx, out, "div.metaline{display:table;width:100%%}\n");
+		fz_write_printf(ctx, out, "div.line{display:table-row;}\n");
+		fz_write_printf(ctx, out, "div.cell{display:table-cell;padding-left:0.25em;padding-right:0.25em}\n");
+		//fz_write_printf(ctx, out, "p{margin:0;padding:0;}\n");
+		fz_write_printf(ctx, out, "</style>\n");
+		fz_write_printf(ctx, out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
 		fz_print_stext_page_html(ctx, out, text);
-		fz_printf(ctx, out, "</div></body>\n");
-		fz_printf(ctx, out, "<style>\n");
+		fz_write_printf(ctx, out, "</div></body>\n");
+		fz_write_printf(ctx, out, "<style>\n");
 		fz_print_stext_sheet(ctx, out, sheet);
-		fz_printf(ctx, out, "</style>\n</html>\n");
+		fz_write_printf(ctx, out, "</style>\n</html>\n");
 	}
 	fz_always(ctx)
 	{
@@ -5244,7 +5244,7 @@ FUN(Buffer_writeByte)(JNIEnv *env, jobject self, jbyte b)
 	if (!ctx || !buf) return;
 
 	fz_try(ctx)
-		fz_write_buffer_byte(ctx, buf, b);
+		fz_append_byte(ctx, buf, b);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -5265,7 +5265,7 @@ FUN(Buffer_writeBytes)(JNIEnv *env, jobject self, jobject jbs)
 	if (!bs) { jni_throw_io(env, "cannot get bytes to write"); return; }
 
 	fz_try(ctx)
-		fz_write_buffer(ctx, buf, bs, len);
+		fz_append_data(ctx, buf, bs, len);
 	fz_always(ctx)
 		(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
 	fz_catch(ctx)
@@ -5306,7 +5306,7 @@ FUN(Buffer_writeBytesFrom)(JNIEnv *env, jobject self, jobject jbs, jint joff, ji
 	if (!bs) { jni_throw_io(env, "cannot get bytes to write"); return; }
 
 	fz_try(ctx)
-		fz_write_buffer(ctx, buf, &bs[off], len);
+		fz_append_data(ctx, buf, &bs[off], len);
 	fz_always(ctx)
 		(*env)->ReleaseByteArrayElements(env, jbs, bs, JNI_ABORT);
 	fz_catch(ctx)
@@ -5358,8 +5358,8 @@ FUN(Buffer_writeLine)(JNIEnv *env, jobject self, jstring jline)
 
 	fz_try(ctx)
 	{
-		fz_write_buffer(ctx, buf, line, strlen(line));
-		fz_write_buffer_byte(ctx, buf, '\n');
+		fz_append_string(ctx, buf, line);
+		fz_append_byte(ctx, buf, '\n');
 	}
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jline, line);
@@ -5395,8 +5395,8 @@ FUN(Buffer_writeLines)(JNIEnv *env, jobject self, jobject jlines)
 
 		fz_try(ctx)
 		{
-			fz_write_buffer(ctx, buf, line, strlen(line));
-			fz_write_buffer_byte(ctx, buf, '\n');
+			fz_append_string(ctx, buf, line);
+			fz_append_byte(ctx, buf, '\n');
 		}
 		fz_always(ctx)
 			(*env)->ReleaseStringUTFChars(env, jline, line);

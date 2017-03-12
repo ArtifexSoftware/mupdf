@@ -2132,13 +2132,13 @@ int pdf_print_obj(fz_context *ctx, fz_output *out, pdf_obj *obj, int tight)
 	if ((n + 1) < sizeof buf)
 	{
 		pdf_sprint_obj(ctx, buf, sizeof buf, obj, tight);
-		fz_write(ctx, out, buf, n);
+		fz_write_data(ctx, out, buf, n);
 	}
 	else
 	{
 		ptr = fz_malloc(ctx, n + 1);
 		pdf_sprint_obj(ctx, ptr, n + 1, obj, tight);
-		fz_write(ctx, out, ptr, n);
+		fz_write_data(ctx, out, ptr, n);
 		fz_free(ctx, ptr);
 	}
 	return n;

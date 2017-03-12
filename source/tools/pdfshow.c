@@ -25,9 +25,9 @@ static void showtrailer(void)
 {
 	if (!doc)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
-	fz_printf(ctx, out, "trailer\n");
+	fz_write_printf(ctx, out, "trailer\n");
 	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 0);
-	fz_printf(ctx, out, "\n");
+	fz_write_printf(ctx, out, "\n");
 }
 
 static void showencrypt(void)
@@ -39,9 +39,9 @@ static void showencrypt(void)
 	encrypt = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Encrypt);
 	if (!encrypt)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "document not encrypted");
-	fz_printf(ctx, out, "encryption dictionary\n");
+	fz_write_printf(ctx, out, "encryption dictionary\n");
 	pdf_print_obj(ctx, out, pdf_resolve_indirect(ctx, encrypt), 0);
-	fz_printf(ctx, out, "\n");
+	fz_write_printf(ctx, out, "\n");
 }
 
 static void showxref(void)
@@ -49,7 +49,7 @@ static void showxref(void)
 	if (!doc)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no file specified");
 	pdf_print_xref(ctx, doc);
-	fz_printf(ctx, out, "\n");
+	fz_write_printf(ctx, out, "\n");
 }
 
 static void showpagetree(void)
@@ -65,9 +65,9 @@ static void showpagetree(void)
 	for (i = 0; i < count; i++)
 	{
 		ref = pdf_lookup_page_obj(ctx, doc, i);
-		fz_printf(ctx, out, "page %d = %d 0 R\n", i + 1, pdf_to_num(ctx, ref));
+		fz_write_printf(ctx, out, "page %d = %d 0 R\n", i + 1, pdf_to_num(ctx, ref));
 	}
-	fz_printf(ctx, out, "\n");
+	fz_write_printf(ctx, out, "\n");
 }
 
 static void showsafe(unsigned char *buf, size_t n)
@@ -112,7 +112,7 @@ static void showstream(int num)
 		if (n == 0)
 			break;
 		if (showbinary)
-			fz_write(ctx, out, buf, n);
+			fz_write_data(ctx, out, buf, n);
 		else
 			showsafe(buf, n);
 	}
@@ -137,19 +137,19 @@ static void showobject(int num)
 		}
 		else
 		{
-			fz_printf(ctx, out, "%d 0 obj\n", num);
+			fz_write_printf(ctx, out, "%d 0 obj\n", num);
 			pdf_print_obj(ctx, out, obj, 0);
-			fz_printf(ctx, out, "\nstream\n");
+			fz_write_printf(ctx, out, "\nstream\n");
 			showstream(num);
-			fz_printf(ctx, out, "endstream\n");
-			fz_printf(ctx, out, "endobj\n\n");
+			fz_write_printf(ctx, out, "endstream\n");
+			fz_write_printf(ctx, out, "endobj\n\n");
 		}
 	}
 	else
 	{
-		fz_printf(ctx, out, "%d 0 obj\n", num);
+		fz_write_printf(ctx, out, "%d 0 obj\n", num);
 		pdf_print_obj(ctx, out, obj, 0);
-		fz_printf(ctx, out, "\nendobj\n\n");
+		fz_write_printf(ctx, out, "\nendobj\n\n");
 	}
 
 	pdf_drop_obj(ctx, obj);
@@ -178,17 +178,17 @@ static void showgrep(char *filename)
 
 			pdf_sort_dict(ctx, obj);
 
-			fz_printf(ctx, out, "%s:%d: ", filename, i);
+			fz_write_printf(ctx, out, "%s:%d: ", filename, i);
 			pdf_print_obj(ctx, out, obj, 1);
-			fz_printf(ctx, out, "\n");
+			fz_write_printf(ctx, out, "\n");
 
 			pdf_drop_obj(ctx, obj);
 		}
 	}
 
-	fz_printf(ctx, out, "%s:trailer: ", filename);
+	fz_write_printf(ctx, out, "%s:trailer: ", filename);
 	pdf_print_obj(ctx, out, pdf_trailer(ctx, doc), 1);
-	fz_printf(ctx, out, "\n");
+	fz_write_printf(ctx, out, "\n");
 }
 
 static void showoutline(void)

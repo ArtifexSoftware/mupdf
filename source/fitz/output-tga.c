@@ -15,35 +15,35 @@ static inline void tga_put_pixel(fz_context *ctx, fz_output *out, const unsigned
 	{
 	case 4: /* RGBA or BGRA */
 		if (!is_bgr) {
-			fz_putc(ctx, out, data[2]);
-			fz_putc(ctx, out, data[1]);
-			fz_putc(ctx, out, data[0]);
+			fz_write_byte(ctx, out, data[2]);
+			fz_write_byte(ctx, out, data[1]);
+			fz_write_byte(ctx, out, data[0]);
 		} else {
-			fz_putc(ctx, out, data[0]);
-			fz_putc(ctx, out, data[1]);
-			fz_putc(ctx, out, data[2]);
+			fz_write_byte(ctx, out, data[0]);
+			fz_write_byte(ctx, out, data[1]);
+			fz_write_byte(ctx, out, data[2]);
 		}
-		fz_putc(ctx, out, data[3]);
+		fz_write_byte(ctx, out, data[3]);
 		break;
 	case 3: /* RGB or BGR */
 		if (!is_bgr) {
-			fz_putc(ctx, out, data[2]);
-			fz_putc(ctx, out, data[1]);
-			fz_putc(ctx, out, data[0]);
+			fz_write_byte(ctx, out, data[2]);
+			fz_write_byte(ctx, out, data[1]);
+			fz_write_byte(ctx, out, data[0]);
 		} else {
-			fz_putc(ctx, out, data[0]);
-			fz_putc(ctx, out, data[1]);
-			fz_putc(ctx, out, data[2]);
+			fz_write_byte(ctx, out, data[0]);
+			fz_write_byte(ctx, out, data[1]);
+			fz_write_byte(ctx, out, data[2]);
 		}
 		break;
 	case 2: /* GA */
-		fz_putc(ctx, out, data[0]);
-		fz_putc(ctx, out, data[0]);
-		fz_putc(ctx, out, data[0]);
-		fz_putc(ctx, out, data[1]);
+		fz_write_byte(ctx, out, data[0]);
+		fz_write_byte(ctx, out, data[0]);
+		fz_write_byte(ctx, out, data[0]);
+		fz_write_byte(ctx, out, data[1]);
 		break;
 	case 1: /* G */
-		fz_putc(ctx, out, data[0]);
+		fz_write_byte(ctx, out, data[0]);
 		break;
 	}
 }
@@ -97,7 +97,7 @@ tga_write_header(fz_context *ctx, fz_band_writer *writer_)
 	head[16] = d * 8; /* BPP */
 	head[17] = alpha && n > 1 ? 8 : 0; /* Alpha bpp */
 
-	fz_write(ctx, out, head, sizeof(head));
+	fz_write_data(ctx, out, head, sizeof(head));
 }
 
 static void
@@ -121,7 +121,7 @@ tga_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 			for (; i + j < w && j < 128 && !memcmp(line + i * n, line + (i + j) * n, d); j++);
 			if (j > 1)
 			{
-				fz_putc(ctx, out, j - 1 + 128);
+				fz_write_byte(ctx, out, j - 1 + 128);
 				tga_put_pixel(ctx, out, line + i * n, n, is_bgr);
 			}
 			else
@@ -129,7 +129,7 @@ tga_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 				for (; i + j < w && j <= 128 && memcmp(line + (i + j - 1) * n, line + (i + j) * n, d) != 0; j++);
 				if (i + j < w || j > 128)
 					j--;
-				fz_putc(ctx, out, j - 1);
+				fz_write_byte(ctx, out, j - 1);
 				for (; j > 0; j--, i++)
 					tga_put_pixel(ctx, out, line + i * n, n, is_bgr);
 			}
@@ -142,7 +142,7 @@ tga_write_trailer(fz_context *ctx, fz_band_writer *writer)
 {
 	fz_output *out = writer->out;
 
-	fz_write(ctx, out, "\0\0\0\0\0\0\0\0TRUEVISION-XFILE.\0", 26);
+	fz_write_data(ctx, out, "\0\0\0\0\0\0\0\0TRUEVISION-XFILE.\0", 26);
 }
 
 fz_band_writer *fz_new_tga_band_writer(fz_context *ctx, fz_output *out, int is_bgr)

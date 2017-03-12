@@ -677,7 +677,7 @@ static void
 print_item(fz_context *ctx, fz_output *out, void *item_)
 {
 	fz_item *item = (fz_item *)item_;
-	fz_printf(ctx, out, " val=%p item=%p\n", item->val, item);
+	fz_write_printf(ctx, out, " val=%p item=%p\n", item->val, item);
 }
 
 void
@@ -686,24 +686,24 @@ fz_print_store_locked(fz_context *ctx, fz_output *out)
 	fz_item *item, *next;
 	fz_store *store = ctx->store;
 
-	fz_printf(ctx, out, "-- resource store contents --\n");
+	fz_write_printf(ctx, out, "-- resource store contents --\n");
 
 	for (item = store->head; item; item = next)
 	{
 		next = item->next;
 		if (next)
 			next->val->refs++;
-		fz_printf(ctx, out, "store[*][refs=%d][size=%d] ", item->val->refs, item->size);
+		fz_write_printf(ctx, out, "store[*][refs=%d][size=%d] ", item->val->refs, item->size);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 		item->type->print(ctx, out, item->key);
-		fz_printf(ctx, out, " = %p\n", item->val);
+		fz_write_printf(ctx, out, " = %p\n", item->val);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (next)
 			next->val->refs--;
 	}
-	fz_printf(ctx, out, "-- resource store hash contents --\n");
+	fz_write_printf(ctx, out, "-- resource store hash contents --\n");
 	fz_print_hash_details(ctx, out, store->hash, print_item, 1);
-	fz_printf(ctx, out, "-- end --\n");
+	fz_write_printf(ctx, out, "-- end --\n");
 }
 
 void

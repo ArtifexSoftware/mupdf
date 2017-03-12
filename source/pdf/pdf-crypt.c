@@ -1035,22 +1035,22 @@ pdf_print_crypt(fz_context *ctx, fz_output *out, pdf_crypt *crypt)
 {
 	int i;
 
-	fz_printf(ctx, out, "crypt {\n");
+	fz_write_printf(ctx, out, "crypt {\n");
 
-	fz_printf(ctx, out, "\tv=%d length=%d\n", crypt->v, crypt->length);
-	fz_printf(ctx, out, "\tstmf method=%d length=%d\n", crypt->stmf.method, crypt->stmf.length);
-	fz_printf(ctx, out, "\tstrf method=%d length=%d\n", crypt->strf.method, crypt->strf.length);
-	fz_printf(ctx, out, "\tr=%d\n", crypt->r);
+	fz_write_printf(ctx, out, "\tv=%d length=%d\n", crypt->v, crypt->length);
+	fz_write_printf(ctx, out, "\tstmf method=%d length=%d\n", crypt->stmf.method, crypt->stmf.length);
+	fz_write_printf(ctx, out, "\tstrf method=%d length=%d\n", crypt->strf.method, crypt->strf.length);
+	fz_write_printf(ctx, out, "\tr=%d\n", crypt->r);
 
-	fz_printf(ctx, out, "\to=<");
+	fz_write_printf(ctx, out, "\to=<");
 	for (i = 0; i < 32; i++)
-		fz_printf(ctx, out, "%02X", crypt->o[i]);
-	fz_printf(ctx, out, ">\n");
+		fz_write_printf(ctx, out, "%02X", crypt->o[i]);
+	fz_write_printf(ctx, out, ">\n");
 
-	fz_printf(ctx, out, "\tu=<");
+	fz_write_printf(ctx, out, "\tu=<");
 	for (i = 0; i < 32; i++)
-		fz_printf(ctx, out, "%02X", crypt->u[i]);
-	fz_printf(ctx, out, ">\n");
+		fz_write_printf(ctx, out, "%02X", crypt->u[i]);
+	fz_write_printf(ctx, out, ">\n");
 
-	fz_printf(ctx, out, "}\n");
+	fz_write_printf(ctx, out, "}\n");
 }

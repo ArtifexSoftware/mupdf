@@ -27,24 +27,24 @@ fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buf
 	sum = crc32(0, NULL, 0);
 	sum = crc32(sum, buf->data, (uInt)buf->len);
 
-	fz_write_buffer_int32_le(ctx, zip->central, ZIP_CENTRAL_DIRECTORY_SIG);
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* version made by: MS-DOS */
-	fz_write_buffer_int16_le(ctx, zip->central, 20); /* version to extract: 2.0 */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* general purpose bit flag */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* compression method: store */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* TODO: last mod file time */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* TODO: last mod file date */
-	fz_write_buffer_int32_le(ctx, zip->central, sum); /* crc-32 */
-	fz_write_buffer_int32_le(ctx, zip->central, (int)buf->len); /* csize */
-	fz_write_buffer_int32_le(ctx, zip->central, (int)buf->len); /* usize */
-	fz_write_buffer_int16_le(ctx, zip->central, (int)strlen(name)); /* file name length */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* extra field length */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* file comment length */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* disk number start */
-	fz_write_buffer_int16_le(ctx, zip->central, 0); /* internal file attributes */
-	fz_write_buffer_int32_le(ctx, zip->central, 0); /* external file attributes */
-	fz_write_buffer_int32_le(ctx, zip->central, offset); /* relative offset of local header */
-	fz_write_buffer(ctx, zip->central, name, strlen(name));
+	fz_append_int32_le(ctx, zip->central, ZIP_CENTRAL_DIRECTORY_SIG);
+	fz_append_int16_le(ctx, zip->central, 0); /* version made by: MS-DOS */
+	fz_append_int16_le(ctx, zip->central, 20); /* version to extract: 2.0 */
+	fz_append_int16_le(ctx, zip->central, 0); /* general purpose bit flag */
+	fz_append_int16_le(ctx, zip->central, 0); /* compression method: store */
+	fz_append_int16_le(ctx, zip->central, 0); /* TODO: last mod file time */
+	fz_append_int16_le(ctx, zip->central, 0); /* TODO: last mod file date */
+	fz_append_int32_le(ctx, zip->central, sum); /* crc-32 */
+	fz_append_int32_le(ctx, zip->central, (int)buf->len); /* csize */
+	fz_append_int32_le(ctx, zip->central, (int)buf->len); /* usize */
+	fz_append_int16_le(ctx, zip->central, (int)strlen(name)); /* file name length */
+	fz_append_int16_le(ctx, zip->central, 0); /* extra field length */
+	fz_append_int16_le(ctx, zip->central, 0); /* file comment length */
+	fz_append_int16_le(ctx, zip->central, 0); /* disk number start */
+	fz_append_int16_le(ctx, zip->central, 0); /* internal file attributes */
+	fz_append_int32_le(ctx, zip->central, 0); /* external file attributes */
+	fz_append_int32_le(ctx, zip->central, offset); /* relative offset of local header */
+	fz_append_string(ctx, zip->central, name);
 
 	fz_write_int32_le(ctx, zip->output, ZIP_LOCAL_FILE_SIG);
 	fz_write_int16_le(ctx, zip->output, 20); /* version to extract: 2.0 */
@@ -57,8 +57,8 @@ fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buf
 	fz_write_int32_le(ctx, zip->output, (int)buf->len); /* usize */
 	fz_write_int16_le(ctx, zip->output, (int)strlen(name)); /* file name length */
 	fz_write_int16_le(ctx, zip->output, 0); /* extra field length */
-	fz_write(ctx, zip->output, name, strlen(name));
-	fz_write(ctx, zip->output, buf->data, buf->len);
+	fz_write_data(ctx, zip->output, name, strlen(name));
+	fz_write_data(ctx, zip->output, buf->data, buf->len);
 
 	++zip->count;
 }
@@ -68,7 +68,7 @@ fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 {
 	fz_off_t offset = fz_tell_output(ctx, zip->output);
 
-	fz_write(ctx, zip->output, zip->central->data, zip->central->len);
+	fz_write_data(ctx, zip->output, zip->central->data, zip->central->len);
 
 	fz_write_int32_le(ctx, zip->output, ZIP_END_OF_CENTRAL_DIRECTORY_SIG);
 	fz_write_int16_le(ctx, zip->output, 0); /* number of this disk */
@@ -79,7 +79,7 @@ fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 	fz_write_int32_le(ctx, zip->output, (int)offset); /* offset of the central directory */
 	fz_write_int16_le(ctx, zip->output, 5); /* zip file comment length */
 
-	fz_write(ctx, zip->output, "MuPDF", 5);
+	fz_write_data(ctx, zip->output, "MuPDF", 5);
 
 	zip->closed = 1;
 }

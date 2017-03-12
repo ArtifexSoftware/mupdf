@@ -33,16 +33,16 @@ fz_debug_outline_xml_imp(fz_context *ctx, fz_output *out, fz_outline *outline, i
 {
 	while (outline)
 	{
-		fz_printf(ctx, out, "<outline title=%q uri=\"%s\"", outline->title, outline->uri);
+		fz_write_printf(ctx, out, "<outline title=%q uri=\"%s\"", outline->title, outline->uri);
 		if (outline->down)
 		{
-			fz_printf(ctx, out, ">\n");
+			fz_write_printf(ctx, out, ">\n");
 			fz_debug_outline_xml_imp(ctx, out, outline->down, level + 1);
-			fz_printf(ctx, out, "</outline>\n");
+			fz_write_printf(ctx, out, "</outline>\n");
 		}
 		else
 		{
-			fz_printf(ctx, out, " />\n");
+			fz_write_printf(ctx, out, " />\n");
 		}
 		outline = outline->next;
 	}
@@ -61,8 +61,8 @@ fz_print_outline_imp(fz_context *ctx, fz_output *out, fz_outline *outline, int l
 	while (outline)
 	{
 		for (i = 0; i < level; i++)
-			fz_printf(ctx, out, "\t");
-		fz_printf(ctx, out, "%s\t%s\n", outline->title, outline->uri);
+			fz_write_printf(ctx, out, "\t");
+		fz_write_printf(ctx, out, "%s\t%s\n", outline->title, outline->uri);
 		if (outline->down)
 			fz_print_outline_imp(ctx, out, outline->down, level + 1);
 		outline = outline->next;

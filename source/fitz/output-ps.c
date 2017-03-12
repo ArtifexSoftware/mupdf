@@ -15,7 +15,7 @@ typedef struct ps_band_writer_s
 void
 fz_write_ps_file_header(fz_context *ctx, fz_output *out)
 {
-	fz_printf(ctx, out,
+	fz_write_printf(ctx, out,
 		"%%!PS-Adobe-3.0\n"
 		//"%%%%BoundingBox: 0 0 612 792\n"
 		//"%%%%HiResBoundingBox: 0 0 612 792\n"
@@ -37,7 +37,7 @@ fz_write_ps_file_header(fz_context *ctx, fz_output *out)
 
 void fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages)
 {
-	fz_printf(ctx, out, "%%%%Trailer\n%%%%Pages: %d\n%%%%EOF\n", pages);
+	fz_write_printf(ctx, out, "%%%%Trailer\n%%%%Pages: %d\n%%%%EOF\n", pages);
 }
 
 static void
@@ -72,27 +72,27 @@ ps_write_header(fz_context *ctx, fz_band_writer *writer_)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 	}
 
-	fz_printf(ctx, out, "%%%%Page: %d %d\n", pagenum, pagenum);
-	fz_printf(ctx, out, "%%%%PageBoundingBox: 0 0 %d %d\n", w_points, h_points);
-	fz_printf(ctx, out, "%%%%BeginPageSetup\n");
-	fz_printf(ctx, out, "<</PageSize [%d %d]>> setpagedevice\n", w_points, h_points);
-	fz_printf(ctx, out, "%%%%EndPageSetup\n\n");
-	fz_printf(ctx, out, "/DataFile currentfile /FlateDecode filter def\n\n");
+	fz_write_printf(ctx, out, "%%%%Page: %d %d\n", pagenum, pagenum);
+	fz_write_printf(ctx, out, "%%%%PageBoundingBox: 0 0 %d %d\n", w_points, h_points);
+	fz_write_printf(ctx, out, "%%%%BeginPageSetup\n");
+	fz_write_printf(ctx, out, "<</PageSize [%d %d]>> setpagedevice\n", w_points, h_points);
+	fz_write_printf(ctx, out, "%%%%EndPageSetup\n\n");
+	fz_write_printf(ctx, out, "/DataFile currentfile /FlateDecode filter def\n\n");
 	switch(n)
 	{
 	case 1:
-		fz_printf(ctx, out, "/DeviceGray setcolorspace\n");
+		fz_write_printf(ctx, out, "/DeviceGray setcolorspace\n");
 		break;
 	case 3:
-		fz_printf(ctx, out, "/DeviceRGB setcolorspace\n");
+		fz_write_printf(ctx, out, "/DeviceRGB setcolorspace\n");
 		break;
 	case 4:
-		fz_printf(ctx, out, "/DeviceCMYK setcolorspace\n");
+		fz_write_printf(ctx, out, "/DeviceCMYK setcolorspace\n");
 		break;
 	default:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Unexpected colorspace for ps output");
 	}
-	fz_printf(ctx, out,
+	fz_write_printf(ctx, out,
 		"<<\n"
 		"/ImageType 1\n"
 		"/Width %d\n"
@@ -125,7 +125,7 @@ ps_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 
 	fz_write(ctx, out, writer->output, writer->output_size - writer->stream.avail_out);
-	fz_printf(ctx, out, "\nshowpage\n%%%%PageTrailer\n%%%%EndPageTrailer\n\n");
+	fz_write_printf(ctx, out, "\nshowpage\n%%%%PageTrailer\n%%%%EndPageTrailer\n\n");
 }
 
 static void
@@ -231,7 +231,7 @@ ps_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_sta
 	if (err != Z_OK)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
 
-	fz_write(ctx, out, writer->output, writer->output_size - writer->stream.avail_out);
+	fz_write_data(ctx, out, writer->output, writer->output_size - writer->stream.avail_out);
 }
 
 fz_band_writer *fz_new_ps_band_writer(fz_context *ctx, fz_output *out)

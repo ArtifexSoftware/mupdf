@@ -253,6 +253,8 @@ static const suffix_t suffix_table[] =
 #endif
 };
 
+#ifndef DISABLE_MUTHREADS
+
 static mu_mutex mutexes[FZ_LOCK_MAX];
 
 static void muraster_lock(void *user, int lock)
@@ -294,6 +296,8 @@ static fz_locks_context *init_muraster_locks(void)
 
 	return &muraster_locks;
 }
+
+#endif
 
 #ifdef MURASTER_CONFIG_RENDER_THREADS
 #define NUM_RENDER_THREADS MURASTER_CONFIG_RENDER_THREADS
@@ -1384,7 +1388,7 @@ int main(int argc, char **argv)
 {
 	char *password = "";
 	fz_document *doc = NULL;
-	int i, c;
+	int c;
 	fz_context *ctx;
 	fz_alloc_context alloc_ctx = { NULL, trace_malloc, trace_realloc, trace_free };
 	fz_locks_context *locks = NULL;

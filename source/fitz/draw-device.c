@@ -1950,7 +1950,7 @@ static void
 fz_print_tile(fz_context *ctx, fz_output *out, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
-	fz_printf(ctx, out, "(tile id=%x, ctm=%g %g %g %g) ", key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
+	fz_write_printf(ctx, out, "(tile id=%x, ctm=%g %g %g %g) ", key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
 }
 
 static fz_store_type fz_tile_store_type =

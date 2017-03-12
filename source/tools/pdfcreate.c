@@ -129,8 +129,8 @@ static void create_page(char *input)
 		}
 		else
 		{
-			fz_write_buffer(ctx, contents, line, strlen(line));
-			fz_write_buffer_byte(ctx, contents, '\n');
+			fz_append_string(ctx, contents, line);
+			fz_append_byte(ctx, contents, '\n');
 		}
 	}
 	fz_drop_stream(ctx, stm);

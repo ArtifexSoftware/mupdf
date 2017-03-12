@@ -110,7 +110,7 @@ gif_read_subblocks(fz_context *ctx, struct info *info, unsigned char *p, unsigne
 			if (end - p < len)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "premature end in data subblock in gif image");
 			if (buf)
-				fz_write_buffer(ctx, buf, p, len);
+				fz_append_data(ctx, buf, p, len);
 			p += len;
 		}
 	} while (len > 0);

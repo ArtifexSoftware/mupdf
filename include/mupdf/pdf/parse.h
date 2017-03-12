@@ -32,8 +32,8 @@ pdf_obj *pdf_parse_stm_obj(fz_context *ctx, pdf_document *doc, fz_stream *f, pdf
 pdf_obj *pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc, fz_stream *f, pdf_lexbuf *buf, int *num, int *gen, fz_off_t *stm_ofs, int *try_repair);
 
 /*
-	pdf_print_token: print a lexed token to a buffer, growing if necessary
+	pdf_append_token: print a lexed token to a buffer, growing if necessary
 */
-void pdf_print_token(fz_context *ctx, fz_buffer *buf, int tok, pdf_lexbuf *lex);
+void pdf_append_token(fz_context *ctx, fz_buffer *buf, int tok, pdf_lexbuf *lex);
 
 #endif

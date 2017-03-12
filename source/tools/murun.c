@@ -1416,7 +1416,7 @@ static void ffi_Buffer_writeByte(js_State *J)
 	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
 	unsigned char val = js_tonumber(J, 1);
 	fz_try(ctx)
-		fz_write_buffer_byte(ctx, buf, val);
+		fz_append_byte(ctx, buf, val);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -1427,7 +1427,7 @@ static void ffi_Buffer_writeRune(js_State *J)
 	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
 	int val = js_tonumber(J, 1);
 	fz_try(ctx)
-		fz_write_buffer_rune(ctx, buf, val);
+		fz_append_rune(ctx, buf, val);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -1442,8 +1442,8 @@ static void ffi_Buffer_write(js_State *J)
 		const char *s = js_tostring(J, i);
 		fz_try(ctx) {
 			if (i > 1)
-				fz_write_buffer_byte(ctx, buf, ' ');
-			fz_write_buffer(ctx, buf, s, strlen(s));
+				fz_append_byte(ctx, buf, ' ');
+			fz_append_string(ctx, buf, s);
 		} fz_catch(ctx)
 			rethrow(J);
 	}
@@ -1455,7 +1455,7 @@ static void ffi_Buffer_writeLine(js_State *J)
 	fz_buffer *buf = js_touserdata(J, 0, "fz_buffer");
 	ffi_Buffer_write(J);
 	fz_try(ctx)
-		fz_write_buffer_byte(ctx, buf, '\n');
+		fz_append_byte(ctx, buf, '\n');
 	fz_catch(ctx)
 		rethrow(J);
 }

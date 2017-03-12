@@ -464,11 +464,11 @@ fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text, const fz_rec
 							if (need_newline)
 							{
 								if (crlf)
-									fz_write_buffer_rune(ctx, buf, '\r');
-								fz_write_buffer_rune(ctx, buf, '\n');
+									fz_append_byte(ctx, buf, '\r');
+								fz_append_byte(ctx, buf, '\n');
 								need_newline = 0;
 							}
-							fz_write_buffer_rune(ctx, buf, c);
+							fz_append_rune(ctx, buf, c);
 						}
 					}
 				}

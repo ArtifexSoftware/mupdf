@@ -71,7 +71,7 @@ writejpeg(fz_context *ctx, const unsigned char *data, size_t len, const char *fi
 	fz_try(ctx)
 	{
 		out = fz_new_output_with_path(ctx, buf, 0);
-		fz_write(ctx, out, data, len);
+		fz_write_data(ctx, out, data, len);
 	}
 	fz_always(ctx)
 	{
@@ -195,7 +195,7 @@ static void savefont(pdf_obj *dict, int num)
 		printf("extracting font %s\n", namebuf);
 		out = fz_new_output_with_path(ctx, namebuf, 0);
 		fz_try(ctx)
-			fz_write(ctx, out, data, len);
+			fz_write_data(ctx, out, data, len);
 		fz_always(ctx)
 			fz_drop_output(ctx, out);
 		fz_catch(ctx)

@@ -11,7 +11,7 @@ fz_write_pwg_file_header(fz_context *ctx, fz_output *out)
 	static const unsigned char pwgsig[4] = { 'R', 'a', 'S', '2' };
 
 	/* Sync word */
-	fz_write(ctx, out, pwgsig, 4);
+	fz_write_data(ctx, out, pwgsig, 4);
 }
 
 static void
@@ -22,10 +22,10 @@ pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
 	int i;
 
 	/* Page Header: */
-	fz_write(ctx, out, pwg ? pwg->media_class : zero, 64);
-	fz_write(ctx, out, pwg ? pwg->media_color : zero, 64);
-	fz_write(ctx, out, pwg ? pwg->media_type : zero, 64);
-	fz_write(ctx, out, pwg ? pwg->output_type : zero, 64);
+	fz_write_data(ctx, out, pwg ? pwg->media_class : zero, 64);
+	fz_write_data(ctx, out, pwg ? pwg->media_color : zero, 64);
+	fz_write_data(ctx, out, pwg ? pwg->media_type : zero, 64);
+	fz_write_data(ctx, out, pwg ? pwg->output_type : zero, 64);
 	fz_write_int32_be(ctx, out, pwg ? pwg->advance_distance : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->advance_media : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->collate : 0);
@@ -36,14 +36,14 @@ pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
 	/* CUPS format says that 284->300 are supposed to be the bbox of the
 	 * page in points. PWG says 'Reserved'. */
 	for (i=284; i < 300; i += 4)
-		fz_write(ctx, out, zero, 4);
+		fz_write_data(ctx, out, zero, 4);
 	fz_write_int32_be(ctx, out, pwg ? pwg->insert_sheet : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->jog : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->leading_edge : 0);
 	/* CUPS format says that 312->320 are supposed to be the margins of
 	 * the lower left hand edge of page in points. PWG says 'Reserved'. */
 	for (i=312; i < 320; i += 4)
-		fz_write(ctx, out, zero, 4);
+		fz_write_data(ctx, out, zero, 4);
 	fz_write_int32_be(ctx, out, pwg ? pwg->manual_feed : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->media_position : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->media_weight : 0);
@@ -78,7 +78,7 @@ pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
 	fz_write_int32_be(ctx, out, pwg ? pwg->row_step : 0);
 	fz_write_int32_be(ctx, out, bpp <= 8 ? 1 : (bpp>>8)); /* Num Colors */
 	for (i=424; i < 452; i += 4)
-		fz_write(ctx, out, zero, 4);
+		fz_write_data(ctx, out, zero, 4);
 	fz_write_int32_be(ctx, out, 1); /* TotalPageCount */
 	fz_write_int32_be(ctx, out, 1); /* CrossFeedTransform */
 	fz_write_int32_be(ctx, out, 1); /* FeedTransform */
@@ -87,9 +87,9 @@ pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
 	fz_write_int32_be(ctx, out, w); /* ImageBoxRight */
 	fz_write_int32_be(ctx, out, h); /* ImageBoxBottom */
 	for (i=480; i < 1668; i += 4)
-		fz_write(ctx, out, zero, 4);
-	fz_write(ctx, out, pwg ? pwg->rendering_intent : zero, 64);
-	fz_write(ctx, out, pwg ? pwg->page_size_name : zero, 64);
+		fz_write_data(ctx, out, zero, 4);
+	fz_write_data(ctx, out, pwg ? pwg->rendering_intent : zero, 64);
+	fz_write_data(ctx, out, pwg ? pwg->page_size_name : zero, 64);
 }
 
 void
@@ -235,14 +235,14 @@ pwg_write_mono_band(fz_context *ctx, fz_band_writer *writer_, int stride, int ba
 						break;
 				}
 				fz_write_byte(ctx, out, xrep-1);
-				fz_write(ctx, out, sp, 1);
+				fz_write_data(ctx, out, sp, 1);
 				sp += xrep;
 				x += xrep;
 			}
 			else
 			{
 				fz_write_byte(ctx, out, 257-d);
-				fz_write(ctx, out, sp, d);
+				fz_write_data(ctx, out, sp, d);
 				sp += d;
 				x += d;
 			}
@@ -338,7 +338,7 @@ pwg_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 						break;
 				}
 				fz_write_byte(ctx, out, xrep-1);
-				fz_write(ctx, out, sp, n);
+				fz_write_data(ctx, out, sp, n);
 				sp += n*xrep;
 				x += xrep;
 			}
@@ -348,7 +348,7 @@ pwg_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 				x += d;
 				while (d > 0)
 				{
-					fz_write(ctx, out, sp, n);
+					fz_write_data(ctx, out, sp, n);
 					sp += n;
 					d--;
 				}

@@ -615,47 +615,45 @@ pdf_lex_no_string(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf)
 	}
 }
 
-void pdf_print_token(fz_context *ctx, fz_buffer *fzbuf, int tok, pdf_lexbuf *buf)
+void pdf_append_token(fz_context *ctx, fz_buffer *fzbuf, int tok, pdf_lexbuf *buf)
 {
 	switch (tok)
 	{
 	case PDF_TOK_NAME:
-		fz_buffer_printf(ctx, fzbuf, "/%s", buf->scratch);
+		fz_append_printf(ctx, fzbuf, "/%s", buf->scratch);
 		break;
 	case PDF_TOK_STRING:
 		if (buf->len >= buf->size)
 			pdf_lexbuf_grow(ctx, buf);
 		buf->scratch[buf->len] = 0;
-		fz_buffer_print_pdf_string(ctx, fzbuf, buf->scratch);
+		fz_append_pdf_string(ctx, fzbuf, buf->scratch);
 		break;
 	case PDF_TOK_OPEN_DICT:
-		fz_buffer_printf(ctx, fzbuf, "<<");
+		fz_append_string(ctx, fzbuf, "<<");
 		break;
 	case PDF_TOK_CLOSE_DICT:
-		fz_buffer_printf(ctx, fzbuf, ">>");
+		fz_append_string(ctx, fzbuf, ">>");
 		break;
 	case PDF_TOK_OPEN_ARRAY:
-		fz_buffer_printf(ctx, fzbuf, "[");
+		fz_append_byte(ctx, fzbuf, '[');
 		break;
 	case PDF_TOK_CLOSE_ARRAY:
-		fz_buffer_printf(ctx, fzbuf, "]");
+		fz_append_byte(ctx, fzbuf, ']');
 		break;
 	case PDF_TOK_OPEN_BRACE:
-		fz_buffer_printf(ctx, fzbuf, "{");
+		fz_append_byte(ctx, fzbuf, '{');
 		break;
 	case PDF_TOK_CLOSE_BRACE:
-		fz_buffer_printf(ctx, fzbuf, "}");
+		fz_append_byte(ctx, fzbuf, '}');
 		break;
 	case PDF_TOK_INT:
-		fz_buffer_printf(ctx, fzbuf, "%d", buf->i);
+		fz_append_printf(ctx, fzbuf, "%d", buf->i);
 		break;
 	case PDF_TOK_REAL:
-		{
-			fz_buffer_printf(ctx, fzbuf, "%g", buf->f);
-		}
+		fz_append_printf(ctx, fzbuf, "%g", buf->f);
 		break;
 	default:
-		fz_buffer_printf(ctx, fzbuf, "%s", buf->scratch);
+		fz_append_data(ctx, fzbuf, buf->scratch, buf->len);
 		break;
 	}
 }

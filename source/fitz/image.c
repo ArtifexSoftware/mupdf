@@ -85,7 +85,7 @@ static void
 fz_print_image_key(fz_context *ctx, fz_output *out, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
-	fz_printf(ctx, out, "(image %d x %d sf=%d) ", key->image->w, key->image->h, key->l2factor);
+	fz_write_printf(ctx, out, "(image %d x %d sf=%d) ", key->image->w, key->image->h, key->l2factor);
 }
 
 static int

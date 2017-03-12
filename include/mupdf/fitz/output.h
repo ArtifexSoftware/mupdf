@@ -140,41 +140,28 @@ void fz_set_stdout(fz_context *ctx, fz_output *out);
 void fz_set_stderr(fz_context *ctx, fz_output *err);
 
 /*
-	fz_printf: fprintf equivalent for output streams. See fz_snprintf.
+	fz_write_printf: Format and write data to an output stream.
+	See fz_vsnprintf for formatting details.
 */
-void fz_printf(fz_context *ctx, fz_output *out, const char *fmt, ...);
+void fz_write_printf(fz_context *ctx, fz_output *out, const char *fmt, ...);
 
 /*
-	fz_vprintf: vfprintf equivalent for output streams. See fz_vsnprintf.
+	fz_write_vprintf: va_list version of fz_write_printf.
 */
-void fz_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list ap);
+void fz_write_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list ap);
 
 /*
-	fz_putc: fputc equivalent for output streams.
-*/
-#define fz_putc(C,O,B) fz_write_byte(C, O, B)
-
-/*
-	fz_puts: fputs equivalent for output streams.
-*/
-#define fz_puts(C,O,S) fz_write(C, O, (S), strlen(S))
-
-/*
-	fz_putrune: fz_putc equivalent for utf-8 output.
-*/
-#define fz_putrune(C,O,R) fz_write_rune(C, O, R)
-
-/*
-	fz_seek_output: Seek to the specified file position. See fseek
-	for arguments.
+	fz_seek_output: Seek to the specified file position.
+	See fseek for arguments.
 
 	Throw an error on unseekable outputs.
 */
 void fz_seek_output(fz_context *ctx, fz_output *out, fz_off_t off, int whence);
 
 /*
-	fz_tell_output: Return the current file position. Throw an error
-	on untellable outputs.
+	fz_tell_output: Return the current file position.
+
+	Throw an error on untellable outputs.
 */
 fz_off_t fz_tell_output(fz_context *ctx, fz_output *out);
 
@@ -184,19 +171,24 @@ fz_off_t fz_tell_output(fz_context *ctx, fz_output *out);
 void fz_drop_output(fz_context *, fz_output *);
 
 /*
-	fz_write: Write data to output. Designed to parallel
-	fwrite.
-
-	out: Output stream to write to.
+	fz_write_data: Write data to output.
 
 	data: Pointer to data to write.
-
-	size: Length of data to write.
+	size: Size of data to write in bytes.
 */
-static inline void fz_write(fz_context *ctx, fz_output *out, const void *data, size_t size)
+static inline void fz_write_data(fz_context *ctx, fz_output *out, const void *data, size_t size)
 {
 	if (out)
 		out->write(ctx, out->state, data, size);
+}
+
+/*
+	fz_write_string: Write a string. Does not write zero terminator.
+*/
+static inline void fz_write_string(fz_context *ctx, fz_output *out, const char *s)
+{
+	if (out)
+		out->write(ctx, out->state, s, strlen(s));
 }
 
 /*
@@ -261,10 +253,6 @@ static inline void fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
 
 /*
 	fz_write_byte: Write a single byte.
-
-	out: stream to write to.
-
-	x: value to write
 */
 static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
 {
@@ -274,10 +262,6 @@ static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char 
 
 /*
 	fz_write_rune: Write a UTF-8 encoded unicode character.
-
-	out: stream to write to.
-
-	x: value to write
 */
 static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 {

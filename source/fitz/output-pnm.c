@@ -17,11 +17,11 @@ pnm_write_header(fz_context *ctx, fz_band_writer *writer)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
 
 	if (n == 1)
-		fz_printf(ctx, out, "P5\n");
+		fz_write_printf(ctx, out, "P5\n");
 	if (n == 3)
-		fz_printf(ctx, out, "P6\n");
-	fz_printf(ctx, out, "%d %d\n", w, h);
-	fz_printf(ctx, out, "255\n");
+		fz_write_printf(ctx, out, "P6\n");
+	fz_write_printf(ctx, out, "%d %d\n", w, h);
+	fz_write_printf(ctx, out, "255\n");
 }
 
 static void
@@ -61,7 +61,7 @@ pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 			{
 			case 1:
 				/* No collation required */
-				fz_write(ctx, out, p, num_written);
+				fz_write_data(ctx, out, p, num_written);
 				p += num_written;
 				break;
 			case 2:
@@ -77,11 +77,11 @@ pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 					*o++ = *p;
 					p += 2;
 				}
-				fz_write(ctx, out, buffer, num_written);
+				fz_write_data(ctx, out, buffer, num_written);
 				break;
 			}
 			case 3:
-				fz_write(ctx, out, p, num_written*3);
+				fz_write_data(ctx, out, p, num_written*3);
 				p += num_written*3;
 				break;
 			case 4:
@@ -99,7 +99,7 @@ pnm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 					*o++ = p[2];
 					p += n;
 				}
-				fz_write(ctx, out, buffer, num_written * 3);
+				fz_write_data(ctx, out, buffer, num_written * 3);
 				break;
 			}
 			}
@@ -164,22 +164,22 @@ pam_write_header(fz_context *ctx, fz_band_writer *writer)
 	int n = writer->n;
 	int alpha = writer->alpha;
 
-	fz_printf(ctx, out, "P7\n");
-	fz_printf(ctx, out, "WIDTH %d\n", w);
-	fz_printf(ctx, out, "HEIGHT %d\n", h);
-	fz_printf(ctx, out, "DEPTH %d\n", n);
-	fz_printf(ctx, out, "MAXVAL 255\n");
+	fz_write_printf(ctx, out, "P7\n");
+	fz_write_printf(ctx, out, "WIDTH %d\n", w);
+	fz_write_printf(ctx, out, "HEIGHT %d\n", h);
+	fz_write_printf(ctx, out, "DEPTH %d\n", n);
+	fz_write_printf(ctx, out, "MAXVAL 255\n");
 
 	n -= alpha;
 
-	if (n == 0 && alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
-	else if (n == 1 && !alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
-	else if (n == 1 && alpha) fz_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
-	else if (n == 3 && !alpha) fz_printf(ctx, out, "TUPLTYPE RGB\n");
-	else if (n == 3 && alpha) fz_printf(ctx, out, "TUPLTYPE RGB_ALPHA\n");
-	else if (n == 4 && !alpha) fz_printf(ctx, out, "TUPLTYPE CMYK\n");
-	else if (n == 5) fz_printf(ctx, out, "TUPLTYPE CMYK_ALPHA\n");
-	fz_printf(ctx, out, "ENDHDR\n");
+	if (n == 0 && alpha) fz_write_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
+	else if (n == 1 && !alpha) fz_write_printf(ctx, out, "TUPLTYPE GRAYSCALE\n");
+	else if (n == 1 && alpha) fz_write_printf(ctx, out, "TUPLTYPE GRAYSCALE_ALPHA\n");
+	else if (n == 3 && !alpha) fz_write_printf(ctx, out, "TUPLTYPE RGB\n");
+	else if (n == 3 && alpha) fz_write_printf(ctx, out, "TUPLTYPE RGB_ALPHA\n");
+	else if (n == 4 && !alpha) fz_write_printf(ctx, out, "TUPLTYPE CMYK\n");
+	else if (n == 5) fz_write_printf(ctx, out, "TUPLTYPE CMYK_ALPHA\n");
+	fz_write_printf(ctx, out, "ENDHDR\n");
 }
 
 static void
@@ -201,7 +201,7 @@ pam_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 
 	for (y = 0; y < end; y++)
 	{
-		fz_write(ctx, out, sp, w * n);
+		fz_write_data(ctx, out, sp, w * n);
 		sp += stride;
 	}
 }

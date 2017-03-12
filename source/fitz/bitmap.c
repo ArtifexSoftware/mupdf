@@ -310,7 +310,7 @@ pbm_write_header(fz_context *ctx, fz_band_writer *writer)
 	int w = writer->w;
 	int h = writer->h;
 
-	fz_printf(ctx, out, "P4\n%d %d\n", w, h);
+	fz_write_printf(ctx, out, "P4\n%d %d\n", w, h);
 }
 
 static void
@@ -320,7 +320,7 @@ pkm_write_header(fz_context *ctx, fz_band_writer *writer)
 	int w = writer->w;
 	int h = writer->h;
 
-	fz_printf(ctx, out, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
+	fz_write_printf(ctx, out, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
 }
 
 void
@@ -363,7 +363,7 @@ pbm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 	bytestride = (w + 7) >> 3;
 	while (end--)
 	{
-		fz_write(ctx, out, p, bytestride);
+		fz_write_data(ctx, out, p, bytestride);
 		p += stride;
 	}
 }
@@ -391,11 +391,11 @@ pkm_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_sta
 		int ww = w-1;
 		while (ww > 0)
 		{
-			fz_write(ctx, out, &pkm[8 * *p++], 8);
+			fz_write_data(ctx, out, &pkm[8 * *p++], 8);
 			ww -= 2;
 		}
 		if (ww == 0)
-			fz_write(ctx, out, &pkm[8 * *p], 4);
+			fz_write_data(ctx, out, &pkm[8 * *p], 4);
 		p += bytestride;
 	}
 }

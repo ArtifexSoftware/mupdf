@@ -203,24 +203,24 @@ static void get_text_widget_info(fz_context *ctx, pdf_document *doc, pdf_obj *wi
 void pdf_fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, pdf_da_info *di)
 {
 	if (di->font_name != NULL && di->font_size != 0)
-		fz_buffer_printf(ctx, fzbuf, "/%s %d Tf", di->font_name, di->font_size);
+		fz_append_printf(ctx, fzbuf, "/%s %d Tf", di->font_name, di->font_size);
 
 	switch (di->col_size)
 	{
 	case 1:
-		fz_buffer_printf(ctx, fzbuf, " %f g", di->col[0]);
+		fz_append_printf(ctx, fzbuf, " %f g", di->col[0]);
 		break;
 
 	case 3:
-		fz_buffer_printf(ctx, fzbuf, " %f %f %f rg", di->col[0], di->col[1], di->col[2]);
+		fz_append_printf(ctx, fzbuf, " %f %f %f rg", di->col[0], di->col[1], di->col[2]);
 		break;
 
 	case 4:
-		fz_buffer_printf(ctx, fzbuf, " %f %f %f %f k", di->col[0], di->col[1], di->col[2], di->col[3]);
+		fz_append_printf(ctx, fzbuf, " %f %f %f %f k", di->col[0], di->col[1], di->col[2], di->col[3]);
 		break;
 
 	default:
-		fz_buffer_printf(ctx, fzbuf, " 0 g");
+		fz_append_string(ctx, fzbuf, " 0 g");
 		break;
 	}
 }
@@ -242,17 +242,17 @@ static void fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, i
 	switch (pdf_array_len(ctx, arr))
 	{
 	case 1:
-		fz_buffer_printf(ctx, fzbuf, stroke?"%f G\n":"%f g\n",
+		fz_append_printf(ctx, fzbuf, stroke?"%f G\n":"%f g\n",
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 0)) + adj);
 		break;
 	case 3:
-		fz_buffer_printf(ctx, fzbuf, stroke?"%f %f %f RG\n":"%f %f %f rg\n",
+		fz_append_printf(ctx, fzbuf, stroke?"%f %f %f RG\n":"%f %f %f rg\n",
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 0)) + adj,
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 1)) + adj,
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 2)) + adj);
 		break;
 	case 4:
-		fz_buffer_printf(ctx, fzbuf, stroke?"%f %f %f %f K\n":"%f %f %f %f k\n",
+		fz_append_printf(ctx, fzbuf, stroke?"%f %f %f %f K\n":"%f %f %f %f k\n",
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 0)),
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 1)),
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 2)),
@@ -266,63 +266,63 @@ static void fzbuf_print_rect_fill(fz_context *ctx, fz_buffer *fzbuf, const fz_re
 {
 	if (clip)
 	{
-		fz_buffer_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
-		fz_buffer_printf(ctx, fzbuf, fmt_W);
+		fz_append_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
+		fz_append_printf(ctx, fzbuf, fmt_W);
 	}
 	if (col_size > 0)
 	{
 		switch (col_size)
 		{
 		case 1:
-			fz_buffer_printf(ctx, fzbuf, "%f g\n", col[0]);
+			fz_append_printf(ctx, fzbuf, "%f g\n", col[0]);
 			break;
 		case 3:
-			fz_buffer_printf(ctx, fzbuf, "%f %f %f rg\n", col[0], col[1], col[2]);
+			fz_append_printf(ctx, fzbuf, "%f %f %f rg\n", col[0], col[1], col[2]);
 			break;
 		case 4:
-			fz_buffer_printf(ctx, fzbuf, "%f %f %f %f k\n", col[0], col[1], col[2], col[3]);
+			fz_append_printf(ctx, fzbuf, "%f %f %f %f k\n", col[0], col[1], col[2], col[3]);
 			break;
 		default:
 			break;
 		}
 	}
 	if (tm)
-		fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
+		fz_append_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
 
-	fz_buffer_printf(ctx, fzbuf, fmt_re, rect->x0, rect->y0, rect->x1 - rect->x0, rect->y1 - rect->y0);
-	fz_buffer_printf(ctx, fzbuf, fmt_f);
+	fz_append_printf(ctx, fzbuf, fmt_re, rect->x0, rect->y0, rect->x1 - rect->x0, rect->y1 - rect->y0);
+	fz_append_printf(ctx, fzbuf, fmt_f);
 }
 
 static void fzbuf_print_text(fz_context *ctx, fz_buffer *fzbuf, const fz_rect *clip, pdf_obj *col, font_info *font_rec, const fz_matrix *tm, char *text)
 {
-	fz_buffer_printf(ctx, fzbuf, fmt_q);
+	fz_append_printf(ctx, fzbuf, fmt_q);
 	if (clip)
 	{
-		fz_buffer_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
-		fz_buffer_printf(ctx, fzbuf, fmt_W);
+		fz_append_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
+		fz_append_printf(ctx, fzbuf, fmt_W);
 		if (col)
 		{
 			fzbuf_print_color(ctx, fzbuf, col, 0, 0.0);
-			fz_buffer_printf(ctx, fzbuf, fmt_f);
+			fz_append_printf(ctx, fzbuf, fmt_f);
 		}
 		else
 		{
-			fz_buffer_printf(ctx, fzbuf, fmt_n);
+			fz_append_printf(ctx, fzbuf, fmt_n);
 		}
 	}
 
-	fz_buffer_printf(ctx, fzbuf, fmt_BT);
+	fz_append_printf(ctx, fzbuf, fmt_BT);
 
 	pdf_fzbuf_print_da(ctx, fzbuf, &font_rec->da_rec);
 
-	fz_buffer_printf(ctx, fzbuf, "\n");
+	fz_append_printf(ctx, fzbuf, "\n");
 	if (tm)
-		fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
+		fz_append_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
 
-	fz_buffer_print_pdf_string(ctx, fzbuf, text);
-	fz_buffer_printf(ctx, fzbuf, fmt_Tj);
-	fz_buffer_printf(ctx, fzbuf, fmt_ET);
-	fz_buffer_printf(ctx, fzbuf, fmt_Q);
+	fz_append_pdf_string(ctx, fzbuf, text);
+	fz_append_printf(ctx, fzbuf, fmt_Tj);
+	fz_append_printf(ctx, fzbuf, fmt_ET);
+	fz_append_printf(ctx, fzbuf, fmt_Q);
 }
 
 static fz_buffer *create_text_buffer(fz_context *ctx, const fz_rect *clip, text_widget_info *info, const fz_matrix *tm, char *text)
@@ -331,9 +331,9 @@ static fz_buffer *create_text_buffer(fz_context *ctx, const fz_rect *clip, text_
 
 	fz_try(ctx)
 	{
-		fz_buffer_printf(ctx, fzbuf, fmt_Tx_BMC);
+		fz_append_printf(ctx, fzbuf, fmt_Tx_BMC);
 		fzbuf_print_text(ctx, fzbuf, clip, info->col, &info->font_rec, tm, text);
-		fz_buffer_printf(ctx, fzbuf, fmt_EMC);
+		fz_append_printf(ctx, fzbuf, fmt_EMC);
 	}
 	fz_catch(ctx)
 	{
@@ -558,53 +558,53 @@ static void text_splitter_retry(text_splitter *splitter)
 
 static void fzbuf_print_text_start1(fz_context *ctx, fz_buffer *fzbuf, const fz_rect *clip, pdf_obj *col)
 {
-	fz_buffer_printf(ctx, fzbuf, fmt_Tx_BMC);
-	fz_buffer_printf(ctx, fzbuf, fmt_q);
+	fz_append_printf(ctx, fzbuf, fmt_Tx_BMC);
+	fz_append_printf(ctx, fzbuf, fmt_q);
 
 	if (clip)
 	{
-		fz_buffer_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
-		fz_buffer_printf(ctx, fzbuf, fmt_W);
+		fz_append_printf(ctx, fzbuf, fmt_re, clip->x0, clip->y0, clip->x1 - clip->x0, clip->y1 - clip->y0);
+		fz_append_printf(ctx, fzbuf, fmt_W);
 		if (col)
 		{
 			fzbuf_print_color(ctx, fzbuf, col, 0, 0.0);
-			fz_buffer_printf(ctx, fzbuf, fmt_f);
+			fz_append_printf(ctx, fzbuf, fmt_f);
 		}
 		else
 		{
-			fz_buffer_printf(ctx, fzbuf, fmt_n);
+			fz_append_printf(ctx, fzbuf, fmt_n);
 		}
 	}
 }
 
 static void fzbuf_print_text_start2(fz_context *ctx, fz_buffer *fzbuf, font_info *font, const fz_matrix *tm)
 {
-	fz_buffer_printf(ctx, fzbuf, fmt_BT);
+	fz_append_printf(ctx, fzbuf, fmt_BT);
 
 	pdf_fzbuf_print_da(ctx, fzbuf, &font->da_rec);
-	fz_buffer_printf(ctx, fzbuf, "\n");
+	fz_append_printf(ctx, fzbuf, "\n");
 
-	fz_buffer_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
+	fz_append_printf(ctx, fzbuf, fmt_Tm, tm->a, tm->b, tm->c, tm->d, tm->e, tm->f);
 }
 
 static void fzbuf_print_text_end(fz_context *ctx, fz_buffer *fzbuf)
 {
-	fz_buffer_printf(ctx, fzbuf, fmt_ET);
-	fz_buffer_printf(ctx, fzbuf, fmt_Q);
-	fz_buffer_printf(ctx, fzbuf, fmt_EMC);
+	fz_append_printf(ctx, fzbuf, fmt_ET);
+	fz_append_printf(ctx, fzbuf, fmt_Q);
+	fz_append_printf(ctx, fzbuf, fmt_EMC);
 }
 
 static void fzbuf_print_text_word(fz_context *ctx, fz_buffer *fzbuf, float x, float y, char *text, size_t count)
 {
 	size_t i;
 
-	fz_buffer_printf(ctx, fzbuf, fmt_Td, x, y);
-	fz_buffer_printf(ctx, fzbuf, "(");
+	fz_append_printf(ctx, fzbuf, fmt_Td, x, y);
+	fz_append_printf(ctx, fzbuf, "(");
 
 	for (i = 0; i < count; i++)
-		fz_buffer_printf(ctx, fzbuf, "%c", text[i]);
+		fz_append_printf(ctx, fzbuf, "%c", text[i]);
 
-	fz_buffer_printf(ctx, fzbuf, ") Tj\n");
+	fz_append_printf(ctx, fzbuf, ") Tj\n");
 }
 
 static fz_buffer *create_text_appearance(fz_context *ctx, pdf_document *doc, const fz_rect *bbox, const fz_matrix *oldtm, text_widget_info *info, char *text)
@@ -1051,9 +1051,9 @@ static void update_marked_content(fz_context *ctx, pdf_document *doc, pdf_xobjec
 			if (first)
 				first = 0;
 			else
-				fz_buffer_printf(ctx, newbuf, " ");
+				fz_append_printf(ctx, newbuf, " ");
 
-			pdf_print_token(ctx, newbuf, tok, &lbuf);
+			pdf_append_token(ctx, newbuf, tok, &lbuf);
 			if (tok == PDF_TOK_KEYWORD && !strcmp(lbuf.scratch, "BMC"))
 				break;
 		}
@@ -1070,8 +1070,8 @@ static void update_marked_content(fz_context *ctx, pdf_document *doc, pdf_xobjec
 		/* Copy the replacement appearance stream to newbuf */
 		for (tok = pdf_lex(ctx, str_inner, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(ctx, str_inner, &lbuf))
 		{
-			fz_buffer_printf(ctx, newbuf, " ");
-			pdf_print_token(ctx, newbuf, tok, &lbuf);
+			fz_append_printf(ctx, newbuf, " ");
+			pdf_append_token(ctx, newbuf, tok, &lbuf);
 		}
 
 		if (bmc_found)
@@ -1086,8 +1086,8 @@ static void update_marked_content(fz_context *ctx, pdf_document *doc, pdf_xobjec
 			/* Copy the rest of the existing appearance stream to newbuf */
 			for (tok = pdf_lex(ctx, str_outer, &lbuf); tok != PDF_TOK_EOF; tok = pdf_lex(ctx, str_outer, &lbuf))
 			{
-				fz_buffer_printf(ctx, newbuf, " ");
-				pdf_print_token(ctx, newbuf, tok, &lbuf);
+				fz_append_printf(ctx, newbuf, " ");
+				pdf_append_token(ctx, newbuf, tok, &lbuf);
 			}
 		}
 
@@ -1445,9 +1445,9 @@ void pdf_update_pushbutton_appearance(fz_context *ctx, pdf_document *doc, pdf_ob
 		if (pdf_is_array(ctx, tobj))
 		{
 			fzbuf_print_color(ctx, fzbuf, tobj, 0, 0.0);
-			fz_buffer_printf(ctx, fzbuf, fmt_re,
+			fz_append_printf(ctx, fzbuf, fmt_re,
 				rect.x0, rect.y0, rect.x1, rect.y1);
-			fz_buffer_printf(ctx, fzbuf, fmt_f);
+			fz_append_printf(ctx, fzbuf, fmt_f);
 		}
 		bstyle = get_border_style(ctx, obj);
 		bwidth = get_border_width(ctx, obj);
@@ -1457,38 +1457,38 @@ void pdf_update_pushbutton_appearance(fz_context *ctx, pdf_document *doc, pdf_ob
 			btotal += bwidth;
 
 			if (bstyle == BS_Beveled)
-				fz_buffer_printf(ctx, fzbuf, fmt_g, 1.0);
+				fz_append_printf(ctx, fzbuf, fmt_g, 1.0);
 			else
-				fz_buffer_printf(ctx, fzbuf, fmt_g, 0.33);
-			fz_buffer_printf(ctx, fzbuf, fmt_m, bwidth, bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, bwidth, rect.y1 - bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - bwidth, rect.y1 - bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, rect.y1 - 2 * bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, 2 * bwidth, rect.y1 - 2 * bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, 2 * bwidth, 2 * bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_f);
+				fz_append_printf(ctx, fzbuf, fmt_g, 0.33);
+			fz_append_printf(ctx, fzbuf, fmt_m, bwidth, bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, bwidth, rect.y1 - bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, rect.x1 - bwidth, rect.y1 - bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, rect.y1 - 2 * bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, 2 * bwidth, rect.y1 - 2 * bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, 2 * bwidth, 2 * bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_f);
 			if (bstyle == BS_Beveled)
 				fzbuf_print_color(ctx, fzbuf, tobj, 0, -0.25);
 			else
-				fz_buffer_printf(ctx, fzbuf, fmt_g, 0.66);
-			fz_buffer_printf(ctx, fzbuf, fmt_m, rect.x1 - bwidth, rect.y1 - bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - bwidth, bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, bwidth, bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, 2 * bwidth, 2 * bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, 2 * bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, rect.y1 - 2 * bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_f);
+				fz_append_printf(ctx, fzbuf, fmt_g, 0.66);
+			fz_append_printf(ctx, fzbuf, fmt_m, rect.x1 - bwidth, rect.y1 - bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, rect.x1 - bwidth, bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, bwidth, bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, 2 * bwidth, 2 * bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, 2 * bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_l, rect.x1 - 2 * bwidth, rect.y1 - 2 * bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_f);
 		}
 
 		tobj = pdf_dict_getl(ctx, obj, PDF_NAME_MK, PDF_NAME_BC, NULL);
 		if (tobj)
 		{
 			fzbuf_print_color(ctx, fzbuf, tobj, 1, 0.0);
-			fz_buffer_printf(ctx, fzbuf, fmt_w, bwidth);
-			fz_buffer_printf(ctx, fzbuf, fmt_re,
+			fz_append_printf(ctx, fzbuf, fmt_w, bwidth);
+			fz_append_printf(ctx, fzbuf, fmt_re,
 				bwidth/2, bwidth/2,
 				rect.x1 -bwidth/2, rect.y1 - bwidth/2);
-			fz_buffer_printf(ctx, fzbuf, fmt_s);
+			fz_append_printf(ctx, fzbuf, fmt_s);
 		}
 
 		tobj = pdf_dict_getl(ctx, obj, PDF_NAME_MK, PDF_NAME_CA, NULL);
@@ -2305,7 +2305,7 @@ static void insert_signature_appearance_layers(fz_context *ctx, pdf_document *do
 
 		pdf_dict_putl(ctx, main_ap, frm, PDF_NAME_Resources, PDF_NAME_XObject, PDF_NAME_FRM, NULL);
 		fzbuf = fz_new_buffer(ctx, 8);
-		fz_buffer_printf(ctx, fzbuf, "/FRM Do");
+		fz_append_printf(ctx, fzbuf, "/FRM Do");
 		pdf_update_stream(ctx, doc, main_ap, fzbuf, 0);
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
@@ -2313,13 +2313,13 @@ static void insert_signature_appearance_layers(fz_context *ctx, pdf_document *do
 		pdf_dict_putl(ctx, frm, n0, PDF_NAME_Resources, PDF_NAME_XObject, PDF_NAME_n0, NULL);
 		pdf_dict_putl(ctx, frm, ap, PDF_NAME_Resources, PDF_NAME_XObject, PDF_NAME_n2, NULL);
 		fzbuf = fz_new_buffer(ctx, 8);
-		fz_buffer_printf(ctx, fzbuf, "q 1 0 0 1 0 0 cm /n0 Do Q q 1 0 0 1 0 0 cm /n2 Do Q");
+		fz_append_printf(ctx, fzbuf, "q 1 0 0 1 0 0 cm /n0 Do Q q 1 0 0 1 0 0 cm /n2 Do Q");
 		pdf_update_stream(ctx, doc, frm, fzbuf, 0);
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
 
 		fzbuf = fz_new_buffer(ctx, 8);
-		fz_buffer_printf(ctx, fzbuf, "%% DSBlank");
+		fz_append_printf(ctx, fzbuf, "%% DSBlank");
 		pdf_update_stream(ctx, doc, n0, fzbuf, 0);
 		fz_drop_buffer(ctx, fzbuf);
 		fzbuf = NULL;
@@ -2410,10 +2410,10 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 
 		/* Display the distinguished name in the right-hand half */
 		fzbuf = fz_new_buffer(ctx, 256);
-		fz_buffer_printf(ctx, fzbuf, "Digitally signed by %s", name);
-		fz_buffer_printf(ctx, fzbuf, "\nDN: %s", dn);
+		fz_append_printf(ctx, fzbuf, "Digitally signed by %s", name);
+		fz_append_printf(ctx, fzbuf, "\nDN: %s", dn);
 		if (date)
-			fz_buffer_printf(ctx, fzbuf, "\nDate: %s", date);
+			fz_append_printf(ctx, fzbuf, "\nDate: %s", date);
 		rect = annot_rect;
 		rect.x0 = (rect.x0 + rect.x1)/2.0f;
 		text = fit_text(ctx, &font_rec, fz_string_from_buffer(ctx, fzbuf), &rect);

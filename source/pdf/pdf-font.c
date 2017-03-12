@@ -960,7 +960,7 @@ hail_mary_cmp_key(fz_context *ctx, void *k0, void *k1)
 static void
 hail_mary_print_key(fz_context *ctx, fz_output *out, void *key_)
 {
-	fz_printf(ctx, out, "hail mary ");
+	fz_write_printf(ctx, out, "hail mary ");
 }
 
 static fz_store_type hail_mary_store_type =
@@ -1436,30 +1436,30 @@ pdf_print_font(fz_context *ctx, fz_output *out, pdf_font_desc *fontdesc)
 {
 	int i;
 
-	fz_printf(ctx, out, "fontdesc {\n");
+	fz_write_printf(ctx, out, "fontdesc {\n");
 
 	if (fontdesc->font->ft_face)
-		fz_printf(ctx, out, "\tfreetype font\n");
+		fz_write_printf(ctx, out, "\tfreetype font\n");
 	if (fontdesc->font->t3procs)
-		fz_printf(ctx, out, "\ttype3 font\n");
+		fz_write_printf(ctx, out, "\ttype3 font\n");
 
-	fz_printf(ctx, out, "\twmode %d\n", fontdesc->wmode);
-	fz_printf(ctx, out, "\tDW %d\n", fontdesc->dhmtx.w);
+	fz_write_printf(ctx, out, "\twmode %d\n", fontdesc->wmode);
+	fz_write_printf(ctx, out, "\tDW %d\n", fontdesc->dhmtx.w);
 
-	fz_printf(ctx, out, "\tW {\n");
+	fz_write_printf(ctx, out, "\tW {\n");
 	for (i = 0; i < fontdesc->hmtx_len; i++)
-		fz_printf(ctx, out, "\t\t<%04x> <%04x> %d\n",
+		fz_write_printf(ctx, out, "\t\t<%04x> <%04x> %d\n",
 			fontdesc->hmtx[i].lo, fontdesc->hmtx[i].hi, fontdesc->hmtx[i].w);
-	fz_printf(ctx, out, "\t}\n");
+	fz_write_printf(ctx, out, "\t}\n");
 
 	if (fontdesc->wmode)
 	{
-		fz_printf(ctx, out, "\tDW2 [%d %d]\n", fontdesc->dvmtx.y, fontdesc->dvmtx.w);
-		fz_printf(ctx, out, "\tW2 {\n");
+		fz_write_printf(ctx, out, "\tDW2 [%d %d]\n", fontdesc->dvmtx.y, fontdesc->dvmtx.w);
+		fz_write_printf(ctx, out, "\tW2 {\n");
 		for (i = 0; i < fontdesc->vmtx_len; i++)
-			fz_printf(ctx, out, "\t\t<%04x> <%04x> %d %d %d\n", fontdesc->vmtx[i].lo, fontdesc->vmtx[i].hi,
+			fz_write_printf(ctx, out, "\t\t<%04x> <%04x> %d %d %d\n", fontdesc->vmtx[i].lo, fontdesc->vmtx[i].hi,
 				fontdesc->vmtx[i].x, fontdesc->vmtx[i].y, fontdesc->vmtx[i].w);
-		fz_printf(ctx, out, "\t}\n");
+		fz_write_printf(ctx, out, "\t}\n");
 	}
 }
 
@@ -1935,15 +1935,15 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 	fz_try(ctx)
 	{
 		/* Header boiler plate */
-		fz_buffer_printf(ctx, buf, "/CIDInit /ProcSet findresource begin\n");
-		fz_buffer_printf(ctx, buf, "12 dict begin\n");
-		fz_buffer_printf(ctx, buf, "begincmap\n");
-		fz_buffer_printf(ctx, buf, "/CIDSystemInfo <</Registry(Adobe)/Ordering(UCS)/Supplement 0>> def\n");
-		fz_buffer_printf(ctx, buf, "/CMapName /Adobe-Identity-UCS def\n");
-		fz_buffer_printf(ctx, buf, "/CMapType 2 def\n");
-		fz_buffer_printf(ctx, buf, "1 begincodespacerange\n");
-		fz_buffer_printf(ctx, buf, "<0000> <FFFF>\n");
-		fz_buffer_printf(ctx, buf, "endcodespacerange\n");
+		fz_append_string(ctx, buf, "/CIDInit /ProcSet findresource begin\n");
+		fz_append_string(ctx, buf, "12 dict begin\n");
+		fz_append_string(ctx, buf, "begincmap\n");
+		fz_append_string(ctx, buf, "/CIDSystemInfo <</Registry(Adobe)/Ordering(UCS)/Supplement 0>> def\n");
+		fz_append_string(ctx, buf, "/CMapName /Adobe-Identity-UCS def\n");
+		fz_append_string(ctx, buf, "/CMapType 2 def\n");
+		fz_append_string(ctx, buf, "1 begincodespacerange\n");
+		fz_append_string(ctx, buf, "<0000> <FFFF>\n");
+		fz_append_string(ctx, buf, "endcodespacerange\n");
 
 		/* Note to have a valid CMap, the number of entries in table set can
 		 * not exceed 100, so we have to break into multiple tables. Also, note
@@ -1957,11 +1957,11 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 			int count = 0;
 			if (num_seq > 100)
 			{
-				fz_buffer_printf(ctx, buf, "100 beginbfrange\n");
+				fz_append_string(ctx, buf, "100 beginbfrange\n");
 				num_seq -= 100;
 			}
 			else
-				fz_buffer_printf(ctx, buf, "%d beginbfrange\n", num_seq);
+				fz_append_printf(ctx, buf, "%d beginbfrange\n", num_seq);
 			for (k = 0; k < face->num_glyphs; k += n)
 			{
 				n = next_range(table, face->num_glyphs, k);
@@ -1969,21 +1969,21 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 				{
 					if (count == 100)
 					{
-						fz_buffer_printf(ctx, buf, "endbfrange\n");
+						fz_append_string(ctx, buf, "endbfrange\n");
 						if (num_seq > 100)
 						{
-							fz_buffer_printf(ctx, buf, "100 beginbfrange\n");
+							fz_append_string(ctx, buf, "100 beginbfrange\n");
 							num_seq -= 100;
 						}
 						else
-							fz_buffer_printf(ctx, buf, "%d beginbfrange\n", num_seq);
+							fz_append_printf(ctx, buf, "%d beginbfrange\n", num_seq);
 						count = 0;
 					}
-					fz_buffer_printf(ctx, buf, "<%04x> <%04x> <%04x>\n", k, k+n-1, table[k]);
+					fz_append_printf(ctx, buf, "<%04x> <%04x> <%04x>\n", k, k+n-1, table[k]);
 					++count;
 				}
 			}
-			fz_buffer_printf(ctx, buf, "endbfrange\n");
+			fz_append_string(ctx, buf, "endbfrange\n");
 		}
 
 		/* Then the singles */
@@ -1992,11 +1992,11 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 			int count = 0;
 			if (num_chr > 100)
 			{
-				fz_buffer_printf(ctx, buf, "100 beginbfchar\n");
+				fz_append_string(ctx, buf, "100 beginbfchar\n");
 				num_chr -= 100;
 			}
 			else
-				fz_buffer_printf(ctx, buf, "%d beginbfchar\n", num_chr);
+				fz_append_printf(ctx, buf, "%d beginbfchar\n", num_chr);
 			for (k = 0; k < face->num_glyphs; k += n)
 			{
 				n = next_range(table, face->num_glyphs, k);
@@ -2004,27 +2004,27 @@ pdf_add_to_unicode(fz_context *ctx, pdf_document *doc, fz_font *font)
 				{
 					if (count == 100)
 					{
-						fz_buffer_printf(ctx, buf, "endbfchar\n");
+						fz_append_string(ctx, buf, "endbfchar\n");
 						if (num_chr > 100)
 						{
-							fz_buffer_printf(ctx, buf, "100 beginbfchar\n");
+							fz_append_string(ctx, buf, "100 beginbfchar\n");
 							num_chr -= 100;
 						}
 						else
-							fz_buffer_printf(ctx, buf, "%d beginbfchar\n", num_chr);
+							fz_append_printf(ctx, buf, "%d beginbfchar\n", num_chr);
 						count = 0;
 					}
-					fz_buffer_printf(ctx, buf, "<%04x> <%04x>\n", k, table[k]);
+					fz_append_printf(ctx, buf, "<%04x> <%04x>\n", k, table[k]);
 					++count;
 				}
 			}
-			fz_buffer_printf(ctx, buf, "endbfchar\n");
+			fz_append_string(ctx, buf, "endbfchar\n");
 		}
 
 		/* Trailer boiler plate */
-		fz_buffer_printf(ctx, buf, "endcmap\n");
-		fz_buffer_printf(ctx, buf, "CMapName currentdict /CMap defineresource pop\n");
-		fz_buffer_printf(ctx, buf, "end\nend\n");
+		fz_append_string(ctx, buf, "endcmap\n");
+		fz_append_string(ctx, buf, "CMapName currentdict /CMap defineresource pop\n");
+		fz_append_string(ctx, buf, "end\nend\n");
 
 		fobj = pdf_new_dict(ctx, doc, 3);
 		fref = pdf_add_object(ctx, doc, fobj);

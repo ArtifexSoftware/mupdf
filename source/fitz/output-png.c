@@ -14,8 +14,8 @@ static void putchunk(fz_context *ctx, fz_output *out, char *tag, unsigned char *
 {
 	unsigned int sum;
 	fz_write_int32_be(ctx, out, size);
-	fz_write(ctx, out, tag, 4);
-	fz_write(ctx, out, data, size);
+	fz_write_data(ctx, out, tag, 4);
+	fz_write_data(ctx, out, data, size);
 	sum = crc32(0, NULL, 0);
 	sum = crc32(sum, (unsigned char*)tag, 4);
 	sum = crc32(sum, data, size);
@@ -114,7 +114,7 @@ png_write_header(fz_context *ctx, fz_band_writer *writer_)
 	head[11] = 0; /* filter */
 	head[12] = 0; /* interlace */
 
-	fz_write(ctx, out, pngsig, 8);
+	fz_write_data(ctx, out, pngsig, 8);
 	putchunk(ctx, out, "IHDR", head, 13);
 }
 
