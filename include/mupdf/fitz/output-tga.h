@@ -3,6 +3,8 @@
 
 #include "mupdf/fitz/system.h"
 #include "mupdf/fitz/context.h"
+#include "mupdf/fitz/output.h"
+#include "mupdf/fitz/band-writer.h"
 #include "mupdf/fitz/pixmap.h"
 
 /*

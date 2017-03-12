@@ -60,6 +60,7 @@ extern "C" {
 
 /* Output formats */
 #include "mupdf/fitz/writer.h"
+#include "mupdf/fitz/band-writer.h"
 #include "mupdf/fitz/output-pnm.h"
 #include "mupdf/fitz/output-png.h"
 #include "mupdf/fitz/output-pwg.h"
