@@ -155,6 +155,11 @@ SYS_OPENJPEG_CFLAGS := $(shell pkg-config --cflags libopenjp2)
 SYS_OPENJPEG_LIBS := $(shell pkg-config --libs libopenjp2)
 endif
 
+ifeq "$(shell pkg-config --exists lcms2 && echo yes)" "yes"
+SYS_LCMS2_CFLAGS := $(shell pkg-config --cflags lcms2)
+SYS_LCMS2_LIBS := $(shell pkg-config --libs lcms2)
+endif
+
 SYS_JBIG2DEC_LIBS := -ljbig2dec
 SYS_LIBJPEG_LIBS := -ljpeg
 SYS_ZLIB_LIBS := -lz

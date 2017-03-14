@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				AdditionalIncludeDirectories="..\..\thirdparty\lcms2\include;..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;USE_JPIP=1;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT;hb_malloc_impl=hb_malloc;hb_calloc_impl=hb_calloc;hb_realloc_impl=hb_realloc;hb_free_impl=hb_free"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -167,7 +167,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				AdditionalIncludeDirectories="..\..\thirdparty\lcms2\include;..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;USE_JPIP=1;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT;hb_malloc_impl=hb_malloc;hb_calloc_impl=hb_calloc;hb_realloc_impl=hb_realloc;hb_free_impl=hb_free"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -290,7 +290,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				AdditionalIncludeDirectories="..\..\thirdparty\lcms2\include;..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;USE_JPIP=1;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;MEMENTO=1;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT;hb_malloc_impl=hb_malloc;hb_calloc_impl=hb_calloc;hb_realloc_impl=hb_realloc;hb_free_impl=hb_free"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -413,7 +413,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				AdditionalIncludeDirectories="..\..\thirdparty\lcms2\include;..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;USE_JPIP=1;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT;hb_malloc_impl=hb_malloc;hb_calloc_impl=hb_calloc;hb_realloc_impl=hb_realloc;hb_free_impl=hb_free"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -538,7 +538,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
+				AdditionalIncludeDirectories="..\..\thirdparty\lcms2\include;..\..\scripts\freetype;..\..\scripts\libjpeg;..\..\thirdparty\jbig2dec;..\..\thirdparty\libjpeg;..\..\thirdparty\openjpeg\src\lib\openjp2;..\..\thirdparty\zlib;..\..\thirdparty\freetype\include;..\..\thirdparty\freetype\include\freetype;..\..\include\"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;FT2_BUILD_LIBRARY;OPJ_STATIC;USE_JPIP=1;FT_CONFIG_MODULES_H=\&quot;slimftmodules.h\&quot;;FT_CONFIG_OPTIONS_H=\&quot;slimftoptions.h\&quot;;verbose=-1;JBIG_EXTERNAL_MEMENTO_H=\&quot;memento.h\&quot;;HAVE_OT;HAVE_UCDN;HB_NO_MT;hb_malloc_impl=hb_malloc;hb_calloc_impl=hb_calloc;hb_realloc_impl=hb_realloc;hb_free_impl=hb_free"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -1751,6 +1751,126 @@
 					>
 				</File>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="lcms2"
+			>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsalpha.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmscam02.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmscgats.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmscnvrt.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmserr.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsgamma.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsgmt.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmshalf.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsintrp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsio0.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsio1.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmslut.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsmd5.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsmtrx.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsnamed.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsopt.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmspack.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmspcs.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsplugin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsps2.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmssamp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmssm.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmstypes.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsvirt.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmswtpnt.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\cmsxform.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\include\lcms2.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\src\lcms2_internal.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\include\lcms2_plugin.h"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

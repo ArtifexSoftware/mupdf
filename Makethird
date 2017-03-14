@@ -10,6 +10,7 @@ FREETYPE_DIR := thirdparty/freetype
 HARFBUZZ_DIR := thirdparty/harfbuzz
 JBIG2DEC_DIR := thirdparty/jbig2dec
 JPEGXR_DIR := thirdparty/jpegxr
+LCMS2_DIR := thirdparty/lcms2
 LIBJPEG_DIR := thirdparty/libjpeg
 LURATECH_DIR := thirdparty/luratech
 MUJS_DIR := thirdparty/mujs
@@ -530,6 +531,52 @@ ZLIB_CFLAGS := -I$(ZLIB_DIR)
 else
 ZLIB_CFLAGS := $(SYS_ZLIB_CFLAGS)
 ZLIB_LIBS := $(SYS_ZLIB_LIBS)
+endif
+
+# --- LCMS2 ---
+
+ifneq "$(wildcard $(LCMS2_DIR)/INSTALL)" ""
+
+LCMS2_OUT := $(OUT)/lcms2
+LCMS2_SRC := \
+	cmsalpha.c \
+	cmscam02.c \
+	cmscgats.c \
+	cmscnvrt.c \
+	cmserr.c \
+	cmsgamma.c \
+	cmsgmt.c \
+	cmshalf.c \
+	cmsintrp.c \
+	cmsio0.c \
+	cmsio1.c \
+	cmslut.c \
+	cmsmd5.c \
+	cmsmtrx.c \
+	cmsnamed.c \
+	cmsopt.c \
+	cmspack.c \
+	cmspcs.c \
+	cmsplugin.c \
+	cmsps2.c \
+	cmssamp.c \
+	cmssm.c \
+	cmstypes.c \
+	cmsvirt.c \
+	cmswtpnt.c \
+	cmsxform.c \
+
+LCMS2_OBJ := $(addprefix $(LCMS2_OUT)/, $(LCMS2_SRC:%.c=%.o))
+
+$(LCMS2_OUT):
+	$(MKDIR_CMD)
+$(LCMS2_OUT)/%.o: $(LCMS2_DIR)/src/%.c | $(LCMS2_OUT)
+	$(CC_CMD) -I$(LCMS2_DIR)/include
+
+LCMS2_CFLAGS := -I$(LCMS2_DIR)/include
+else
+LCMS2_CFLAGS := $(SYS_LCMS2_CFLAGS)
+LCMS2_LIBS := $(SYS_LCMS2_LIBS)
 endif
 
 # --- cURL ---
