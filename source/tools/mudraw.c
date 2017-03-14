@@ -376,6 +376,9 @@ file_level_headers(fz_context *ctx)
 
 	if (output_format == OUT_PS)
 		fz_write_ps_file_header(ctx, out);
+
+	if (output_format == OUT_PWG)
+		fz_write_pwg_file_header(ctx, out);
 }
 
 static void
@@ -432,7 +435,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 		if (pix->alpha)
 			fz_unmultiply_pixmap(ctx, pix);
 
-		if ((output_format == OUT_PCL && out_cs == CS_MONO) || (output_format == OUT_PBM) || (output_format == OUT_PKM))
+		if (((output_format == OUT_PCL || output_format == OUT_PWG) && out_cs == CS_MONO) || (output_format == OUT_PBM) || (output_format == OUT_PKM))
 			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band_start);
 	}
 	fz_catch(ctx)
@@ -757,6 +760,13 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					bander = fz_new_ps_band_writer(ctx, out);
 				else if (output_format == OUT_TGA)
 					bander = fz_new_tga_band_writer(ctx, out, colorspace == fz_device_bgr(ctx));
+				else if (output_format == OUT_PWG)
+				{
+					if (out_cs == CS_MONO)
+						bander = fz_new_mono_pwg_band_writer(ctx, out, NULL);
+					else
+						bander = fz_new_pwg_band_writer(ctx, out, NULL);
+				}
 				else if (output_format == OUT_PCL)
 				{
 					if (out_cs == CS_MONO)
@@ -787,8 +797,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				{
 					if (bander)
 						fz_write_band(ctx, bander, bit ? bit->stride : pix->stride, drawheight, bit ? bit->samples : pix->samples);
-					else if (output_format == OUT_PWG)
-						fz_write_pixmap_as_pwg(ctx, out, pix, NULL);
 					fz_drop_bitmap(ctx, bit);
 					bit = NULL;
 				}

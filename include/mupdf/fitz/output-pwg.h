@@ -88,7 +88,7 @@ void fz_write_bitmap_as_pwg(fz_context *ctx, fz_output *out, const fz_bitmap *bi
 /*
 	Output the file header to a pwg stream, ready for pages to follow it.
 */
-void fz_write_pwg_header(fz_context *ctx, fz_output *out);
+void fz_write_pwg_file_header(fz_context *ctx, fz_output *out);
 
 /*
 	Output a page to a pwg stream to follow a header, or other pages.
@@ -99,5 +99,17 @@ void fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixma
 	Output a bitmap page to a pwg stream to follow a header, or other pages.
 */
 void fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg);
+
+/*
+	fz_new_mono_pwg_band_writer: Generate a new band writer for
+	PWG format images.
+*/
+fz_band_writer *fz_new_mono_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg);
+
+/*
+	fz_new_pwg_band_writer: Generate a new band writer for
+	contone PWG format images.
+*/
+fz_band_writer *fz_new_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg);
 
 #endif

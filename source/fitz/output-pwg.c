@@ -1,7 +1,12 @@
 #include "mupdf/fitz.h"
 
+typedef struct {
+	fz_band_writer super;
+	fz_pwg_options pwg;
+} pwg_band_writer;
+
 void
-fz_write_pwg_header(fz_context *ctx, fz_output *out)
+fz_write_pwg_file_header(fz_context *ctx, fz_output *out)
 {
 	static const unsigned char pwgsig[4] = { 'R', 'a', 'S', '2' };
 
@@ -10,7 +15,7 @@ fz_write_pwg_header(fz_context *ctx, fz_output *out)
 }
 
 static void
-fz_write_pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
+pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg,
 		int xres, int yres, int w, int h, int bpp)
 {
 	static const char zero[64] = { 0 };
@@ -71,7 +76,7 @@ fz_write_pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *
 	fz_write_int32_be(ctx, out, pwg ? pwg->row_count : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->row_feed : 0);
 	fz_write_int32_be(ctx, out, pwg ? pwg->row_step : 0);
-	fz_write_int32_be(ctx, out, bpp <= 8 ? 1 : 3); /* Num Colors */
+	fz_write_int32_be(ctx, out, bpp <= 8 ? 1 : (bpp>>8)); /* Num Colors */
 	for (i=424; i < 452; i += 4)
 		fz_write(ctx, out, zero, 4);
 	fz_write_int32_be(ctx, out, 1); /* TotalPageCount */
@@ -90,118 +95,115 @@ fz_write_pwg_page_header(fz_context *ctx, fz_output *out, const fz_pwg_options *
 void
 fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
 {
-	unsigned char *sp;
-	int y, x, sn, dn, ss, ss2;
+	fz_band_writer *writer = fz_new_pwg_band_writer(ctx, out, pwg);
 
-	if (!out || !pixmap)
-		return;
-
-	if (pixmap->alpha != 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot write pwg with alpha");
-	sn = pixmap->n;
-	if (sn != 1 && sn != 3 && sn != 4)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale, rgb or cmyk to write as pwg");
-
-	dn = pixmap->n;
-
-	fz_write_pwg_page_header(ctx, out, pwg, pixmap->xres, pixmap->yres, pixmap->w, pixmap->h, dn*8);
-
-	/* Now output the actual bitmap, using a packbits like compression */
-	sp = pixmap->samples;
-	ss = pixmap->w * sn;
-	ss2 = pixmap->stride;
-	y = 0;
-	while (y < pixmap->h)
+	fz_try(ctx)
 	{
-		int yrep;
-
-		assert(sp == pixmap->samples + y * ss2);
-
-		/* Count the number of times this line is repeated */
-		for (yrep = 1; yrep < 256 && y+yrep < pixmap->h; yrep++)
-		{
-			if (memcmp(sp, sp + yrep * ss2, ss) != 0)
-				break;
-		}
-		fz_write_byte(ctx, out, yrep-1);
-
-		/* Encode the line */
-		x = 0;
-		while (x < pixmap->w)
-		{
-			int d;
-
-			assert(sp == pixmap->samples + y * ss2 + x * sn);
-
-			/* How far do we have to look to find a repeated value? */
-			for (d = 1; d < 128 && x+d < pixmap->w; d++)
-			{
-				if (memcmp(sp + (d-1)*sn, sp + d*sn, sn) == 0)
-					break;
-			}
-			if (d == 1)
-			{
-				int xrep;
-
-				/* We immediately have a repeat (or we've hit
-				 * the end of the line). Count the number of
-				 * times this value is repeated. */
-				for (xrep = 1; xrep < 128 && x+xrep < pixmap->w; xrep++)
-				{
-					if (memcmp(sp, sp + xrep*sn, sn) != 0)
-						break;
-				}
-				fz_write_byte(ctx, out, xrep-1);
-				fz_write(ctx, out, sp, dn);
-				sp += sn*xrep;
-				x += xrep;
-			}
-			else
-			{
-				fz_write_byte(ctx, out, 257-d);
-				x += d;
-				while (d > 0)
-				{
-					fz_write(ctx, out, sp, dn);
-					sp += sn;
-					d--;
-				}
-			}
-		}
-
-		/* Move to the next line */
-		sp += ss2*(yrep-1);
-		y += yrep;
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
+	fz_always(ctx)
+		fz_drop_band_writer(ctx, writer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 void
 fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg)
 {
-	unsigned char *sp;
-	int y, x, ss;
+	fz_band_writer *writer = fz_new_mono_pwg_band_writer(ctx, out, pwg);
+
+	fz_try(ctx)
+	{
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, bitmap->n, 0, bitmap->xres, bitmap->yres, 0);
+		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
+	}
+	fz_always(ctx)
+		fz_drop_band_writer(ctx, writer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+fz_write_pixmap_as_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
+{
+	fz_write_pwg_file_header(ctx, out);
+	fz_write_pixmap_as_pwg_page(ctx, out, pixmap, pwg);
+}
+
+void
+fz_write_bitmap_as_pwg(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg)
+{
+	fz_write_pwg_file_header(ctx, out);
+	fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
+}
+
+void
+fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg)
+{
+	fz_output *out = fz_new_output_with_path(ctx, filename, append);
+	fz_try(ctx)
+	{
+		if (!append)
+			fz_write_pwg_file_header(ctx, out);
+		fz_write_pixmap_as_pwg_page(ctx, out, pixmap, pwg);
+	}
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg)
+{
+	fz_output *out = fz_new_output_with_path(ctx, filename, append);
+	fz_try(ctx)
+	{
+		if (!append)
+			fz_write_pwg_file_header(ctx, out);
+		fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
+	}
+	fz_always(ctx)
+		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static void
+pwg_write_mono_header(fz_context *ctx, fz_band_writer *writer_)
+{
+	pwg_band_writer *writer = (pwg_band_writer *)writer_;
+
+	pwg_page_header(ctx, writer->super.out, &writer->pwg,
+		writer->super.xres, writer->super.yres, writer->super.w, writer->super.h, 1);
+}
+
+static void
+pwg_write_mono_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int band_height, const unsigned char *samples)
+{
+	pwg_band_writer *writer = (pwg_band_writer *)writer_;
+	fz_output *out = writer->super.out;
+	int w = writer->super.w;
+	int h = writer->super.h;
+	const unsigned char *sp;
+	int y, x;
 	int byte_width;
 
-	if (!out || !bitmap)
-		return;
-
-	fz_write_pwg_page_header(ctx, out, pwg, bitmap->xres, bitmap->yres, bitmap->w, bitmap->h, 1);
-
 	/* Now output the actual bitmap, using a packbits like compression */
-	sp = bitmap->samples;
-	ss = bitmap->stride;
-	byte_width = (bitmap->w+7)/8;
+	sp = samples;
+	byte_width = (w+7)/8;
 	y = 0;
-	while (y < bitmap->h)
+	while (y < band_height)
 	{
 		int yrep;
 
-		assert(sp == bitmap->samples + y * ss);
+		assert(sp == samples + y * stride);
 
 		/* Count the number of times this line is repeated */
-		for (yrep = 1; yrep < 256 && y+yrep < bitmap->h; yrep++)
+		for (yrep = 1; yrep < 256 && y+yrep < h; yrep++)
 		{
-			if (memcmp(sp, sp + yrep * ss, byte_width) != 0)
+			if (memcmp(sp, sp + yrep * stride, byte_width) != 0)
 				break;
 		}
 		fz_write_byte(ctx, out, yrep-1);
@@ -212,7 +214,7 @@ fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bi
 		{
 			int d;
 
-			assert(sp == bitmap->samples + y * ss + x);
+			assert(sp == samples + y * stride + x);
 
 			/* How far do we have to look to find a repeated value? */
 			for (d = 1; d < 128 && x+d < byte_width; d++)
@@ -247,53 +249,128 @@ fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bi
 		}
 
 		/* Move to the next line */
-		sp += ss*yrep - byte_width;
+		sp += stride*yrep - byte_width;
 		y += yrep;
 	}
 }
 
-void
-fz_write_pixmap_as_pwg(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap, const fz_pwg_options *pwg)
+fz_band_writer *fz_new_mono_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg)
 {
-	fz_write_pwg_header(ctx, out);
-	fz_write_pixmap_as_pwg_page(ctx, out, pixmap, pwg);
+	pwg_band_writer *writer = fz_new_band_writer(ctx, pwg_band_writer, out);
+
+	writer->super.header = pwg_write_mono_header;
+	writer->super.band = pwg_write_mono_band;
+	if (pwg)
+		writer->pwg = *pwg;
+	else
+		memset(&writer->pwg, 0, sizeof(writer->pwg));
+
+	return &writer->super;
 }
 
-void
-fz_write_bitmap_as_pwg(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pwg_options *pwg)
+static void
+pwg_write_header(fz_context *ctx, fz_band_writer *writer_)
 {
-	fz_write_pwg_header(ctx, out);
-	fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
+	pwg_band_writer *writer = (pwg_band_writer *)writer_;
+	int n = writer->super.n;
+
+	if (writer->super.alpha != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "PWG band writer cannot cope with alpha");
+	if (n != 1 && n != 3 && n != 4)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale, rgb or cmyk to write as pwg");
+
+	pwg_page_header(ctx, writer->super.out, &writer->pwg,
+			writer->super.xres, writer->super.yres, writer->super.w, writer->super.h, n*8);
 }
 
-void
-fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int append, const fz_pwg_options *pwg)
+static void
+pwg_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int band_height, const unsigned char *samples)
 {
-	fz_output *out = fz_new_output_with_path(ctx, filename, append);
-	fz_try(ctx)
+	pwg_band_writer *writer = (pwg_band_writer *)writer_;
+	fz_output *out = writer->super.out;
+	int w = writer->super.w;
+	int h = writer->super.h;
+	const unsigned char *sp = samples;
+	int n = writer->super.n;
+	int ss = w * n;
+	int y, x;
+
+	/* Now output the actual bitmap, using a packbits like compression */
+	y = 0;
+	while (y < h)
 	{
-		if (!append)
-			fz_write_pwg_header(ctx, out);
-		fz_write_pixmap_as_pwg_page(ctx, out, pixmap, pwg);
+		int yrep;
+
+		assert(sp == samples + y * stride);
+
+		/* Count the number of times this line is repeated */
+		for (yrep = 1; yrep < 256 && y+yrep < h; yrep++)
+		{
+			if (memcmp(sp, sp + yrep * stride, ss) != 0)
+				break;
+		}
+		fz_write_byte(ctx, out, yrep-1);
+
+		/* Encode the line */
+		x = 0;
+		while (x < w)
+		{
+			int d;
+
+			assert(sp == samples + y * stride + x * n);
+
+			/* How far do we have to look to find a repeated value? */
+			for (d = 1; d < 128 && x+d < w; d++)
+			{
+				if (memcmp(sp + (d-1)*n, sp + d*n, n) == 0)
+					break;
+			}
+			if (d == 1)
+			{
+				int xrep;
+
+				/* We immediately have a repeat (or we've hit
+				 * the end of the line). Count the number of
+				 * times this value is repeated. */
+				for (xrep = 1; xrep < 128 && x+xrep < w; xrep++)
+				{
+					if (memcmp(sp, sp + xrep*n, n) != 0)
+						break;
+				}
+				fz_write_byte(ctx, out, xrep-1);
+				fz_write(ctx, out, sp, n);
+				sp += n*xrep;
+				x += xrep;
+			}
+			else
+			{
+				fz_write_byte(ctx, out, 257-d);
+				x += d;
+				while (d > 0)
+				{
+					fz_write(ctx, out, sp, n);
+					sp += n;
+					d--;
+				}
+			}
+		}
+
+		/* Move to the next line */
+		sp += stride*(yrep-1);
+		y += yrep;
 	}
-	fz_always(ctx)
-		fz_drop_output(ctx, out);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
 }
 
-void
-fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int append, const fz_pwg_options *pwg)
+fz_band_writer *fz_new_pwg_band_writer(fz_context *ctx, fz_output *out, const fz_pwg_options *pwg)
 {
-	fz_output *out = fz_new_output_with_path(ctx, filename, append);
-	fz_try(ctx)
-	{
-		if (!append)
-			fz_write_pwg_header(ctx, out);
-		fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
-	}
-	fz_always(ctx)
-		fz_drop_output(ctx, out);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	pwg_band_writer *writer = fz_new_band_writer(ctx, pwg_band_writer, out);
+
+	writer->super.header = pwg_write_header;
+	writer->super.band = pwg_write_band;
+	if (pwg)
+		writer->pwg = *pwg;
+	else
+		memset(&writer->pwg, 0, sizeof(writer->pwg));
+
+	return &writer->super;
 }
