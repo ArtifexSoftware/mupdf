@@ -41,7 +41,7 @@ void fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages)
 }
 
 static void
-ps_write_header(fz_context *ctx, fz_band_writer *writer_)
+ps_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
 {
 	ps_band_writer *writer = (ps_band_writer *)writer_;
 	fz_output *out = writer->super.out;
@@ -147,7 +147,7 @@ void fz_write_pixmap_as_ps(fz_context *ctx, fz_output *out, const fz_pixmap *pix
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)

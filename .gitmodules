@@ -25,3 +25,6 @@
 [submodule "thirdparty/curl"]
 	path = thirdparty/curl
 	url = ../thirdparty-curl.git
+[submodule "thirdparty/lcms2"]
+	path = thirdparty/lcms2
+	url = ../thirdparty-lcms2.git

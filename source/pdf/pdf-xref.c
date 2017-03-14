@@ -1540,6 +1540,8 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 
 	pdf_drop_resource_tables(ctx, doc);
 
+	fz_drop_colorspace(ctx, doc->oi);
+
 	for (i = 0; i < doc->orphans_count; i++)
 		pdf_drop_obj(ctx, doc->orphans[i]);
 
@@ -2230,6 +2232,7 @@ pdf_new_document(fz_context *ctx, fz_stream *file)
 	pdf_document *doc = fz_new_derived_document(ctx, pdf_document);
 
 	doc->super.drop_document = (fz_document_drop_fn*)pdf_drop_document_imp;
+	doc->super.get_output_intent = (fz_document_output_intent_fn*)pdf_document_output_intent;
 	doc->super.needs_password = (fz_document_needs_password_fn*)pdf_needs_password;
 	doc->super.authenticate_password = (fz_document_authenticate_password_fn*)pdf_authenticate_password;
 	doc->super.has_permission = (fz_document_has_permission_fn*)pdf_has_permission;

@@ -23,7 +23,7 @@ xps_paint_image_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, 
 	xs = image->w * 96 / image->xres;
 	ys = image->h * 96 / image->yres;
 	fz_pre_scale(&local_ctm, xs, ys);
-	fz_fill_image(ctx, doc->dev, image, &local_ctm, doc->opacity[doc->opacity_top]);
+	fz_fill_image(ctx, doc->dev, image, &local_ctm, doc->opacity[doc->opacity_top], fz_default_color_params(ctx));
 }
 
 static void

@@ -4,7 +4,7 @@
  * Write pixmap to PNM file (without alpha channel)
  */
 static void
-pnm_write_header(fz_context *ctx, fz_band_writer *writer)
+pnm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *cs)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
@@ -123,7 +123,7 @@ void
 fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
 	fz_band_writer *writer = fz_new_pnm_band_writer(ctx, out);
-	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
 	fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	fz_drop_band_writer(ctx, writer);
 }
@@ -139,7 +139,7 @@ fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_pnm_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -156,7 +156,7 @@ fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
  */
 
 static void
-pam_write_header(fz_context *ctx, fz_band_writer *writer)
+pam_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *cs)
 {
 	fz_output *out = writer->out;
 	int w = writer->w;
@@ -220,7 +220,7 @@ void
 fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 {
 	fz_band_writer *writer = fz_new_pam_band_writer(ctx, out);
-	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+	fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
 	fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	fz_drop_band_writer(ctx, writer);
 }
@@ -236,7 +236,7 @@ fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_pam_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)

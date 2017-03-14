@@ -827,7 +827,7 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 			local.e = x * scale;
 			local.f = y * scale;
 			fz_concat(&local, &local, ctm);
-			fz_fill_image(ctx, dev, page->tiles[i++], &local, 1.0f);
+			fz_fill_image(ctx, dev, page->tiles[i++], &local, 1.0f, NULL);
 		}
 	}
 	fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);

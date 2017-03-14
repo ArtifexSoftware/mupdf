@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="libfonts"
+	Name="libresources"
 	ProjectGUID="{52DCAB29-C8EE-4422-954C-29AFA6B33E22}"
-	RootNamespace="libfonts"
+	RootNamespace="libresources"
 	>
 	<Platforms>
 		<Platform
@@ -654,6 +654,10 @@
 		</File>
 		<File
 			RelativePath="..\..\generated\StandardSymbolsPS.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\icc-profiles.c"
 			>
 		</File>
 	</Files>

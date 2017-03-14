@@ -57,7 +57,7 @@ img_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *c
 	w = image->w * DPI / xres;
 	h = image->h * DPI / yres;
 	fz_pre_scale(&local_ctm, w, h);
-	fz_fill_image(ctx, dev, image, &local_ctm, 1);
+	fz_fill_image(ctx, dev, image, &local_ctm, 1, NULL);
 }
 
 static void

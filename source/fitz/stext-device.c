@@ -867,7 +867,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 
 static void
 fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -881,7 +881,7 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const f
 
 static void
 fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -934,7 +934,7 @@ fz_stext_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const
 
 static void
 fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm,
-		fz_colorspace *cspace, const float *color, float alpha)
+		fz_colorspace *cspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_page *page = tdev->page;
@@ -969,9 +969,9 @@ fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const f
 }
 
 static void
-fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, float alpha)
+fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
 {
-	fz_stext_fill_image_mask(ctx, dev, img, ctm, NULL, NULL, alpha);
+	fz_stext_fill_image_mask(ctx, dev, img, ctm, NULL, NULL, alpha, color_params);
 }
 
 static int

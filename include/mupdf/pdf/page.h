@@ -170,6 +170,11 @@ void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 fz_transition *pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transition *transition, float *duration);
 
 /*
+	Load default colorspaces for a page.
+*/
+fz_default_colorspaces *pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page);
+
+/*
  * Page tree, pages and related objects
  */
 

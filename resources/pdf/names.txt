@@ -38,6 +38,7 @@ BitsPerCoordinate
 BitsPerFlag
 BitsPerSample
 BlackIs1
+BlackPoint
 BleedBox
 Blinds
 Border
@@ -103,11 +104,15 @@ DamagedRowsBeforeError
 Decode
 DecodeParms
 Default
+DefaultCMYK
+DefaultGray
+DefaultRGB
 Desc
 DescendantFonts
 Descent
 Design
 Dest
+DestOutputProfile
 Dests
 DeviceCMYK
 DeviceGray
@@ -174,6 +179,7 @@ Function
 FunctionType
 Functions
 G
+Gamma
 Glitter
 GoTo
 GoToR
@@ -262,6 +268,8 @@ OCProperties
 OE
 OFF
 ON
+OP
+OPM
 ObjStm
 Of
 Off
@@ -272,6 +280,7 @@ Opt
 Order
 Ordering
 Outlines
+OutputIntents
 P
 PDF
 PS
@@ -371,6 +380,7 @@ Uncover
 Underline
 Unix
 Usage
+UseBlackPtComp
 UseCMap
 UseOutlines
 UserUnit
@@ -385,6 +395,7 @@ W
 W2
 WMode
 Watermark
+WhitePoint
 Widget
 Width
 Widths
@@ -402,3 +413,4 @@ ca
 n0
 n1
 n2
+op

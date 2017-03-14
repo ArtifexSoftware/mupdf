@@ -69,7 +69,7 @@ fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, -pixmap->stride, pixmap->h, pixmap->samples + pixmap->stride * (pixmap->h-1));
 	}
 	fz_always(ctx)
@@ -79,7 +79,7 @@ fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 }
 
 static void
-tga_write_header(fz_context *ctx, fz_band_writer *writer_)
+tga_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
 {
 	tga_band_writer *writer = (tga_band_writer *)writer_;
 	fz_output *out = writer->super.out;

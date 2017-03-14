@@ -18,7 +18,7 @@ pdf_load_jpx_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *dict
 
 		if (tile->n != 1)
 		{
-			fz_pixmap *gray = fz_convert_pixmap(ctx, tile, fz_device_gray(ctx), 0);
+			fz_pixmap *gray = fz_convert_pixmap(ctx, tile, fz_device_gray(ctx), NULL, NULL, fz_default_color_params(ctx), 0);
 			fz_drop_pixmap(ctx, tile);
 			tile = gray;
 		}

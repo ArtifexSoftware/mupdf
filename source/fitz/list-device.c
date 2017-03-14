@@ -30,7 +30,8 @@ typedef enum fz_display_command_e
 	FZ_CMD_END_GROUP,
 	FZ_CMD_BEGIN_TILE,
 	FZ_CMD_END_TILE,
-	FZ_CMD_RENDER_FLAGS
+	FZ_CMD_RENDER_FLAGS,
+	FZ_CMD_DEFAULT_COLORSPACES
 } fz_display_command;
 
 /* The display list is a list of nodes.
@@ -132,6 +133,7 @@ struct fz_list_device_s
 	fz_matrix ctm;
 	fz_stroke_state *stroke;
 	fz_colorspace *colorspace;
+	fz_color_params *color_params;
 	float color[FZ_MAX_COLORS];
 	fz_rect rect;
 
@@ -144,6 +146,8 @@ struct fz_list_device_s
 };
 
 enum { ISOLATED = 1, KNOCKOUT = 2 };
+enum { OPM = 1, OP = 2, BP = 3, RI = 4};
+
 
 #define SIZE_IN_NODES(t) \
 	((t + sizeof(fz_display_node) - 1) / sizeof(fz_display_node))
@@ -530,38 +534,38 @@ fz_append_display_node(
 		switch(node.cs)
 		{
 		case CS_GRAY_0:
-			writer->colorspace = fz_device_gray(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			writer->color[0] = 0;
 			break;
 		case CS_GRAY_1:
-			writer->colorspace = fz_device_gray(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			writer->color[0] = 1;
 			break;
 		case CS_RGB_0:
 			writer->color[0] = 0;
 			writer->color[1] = 0;
 			writer->color[2] = 0;
-			writer->colorspace = fz_device_rgb(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			break;
 		case CS_RGB_1:
 			writer->color[0] = 1;
 			writer->color[1] = 1;
 			writer->color[2] = 1;
-			writer->colorspace = fz_device_rgb(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			break;
 		case CS_CMYK_0:
 			writer->color[0] = 0;
 			writer->color[1] = 0;
 			writer->color[2] = 0;
 			writer->color[3] = 0;
-			writer->colorspace = fz_device_cmyk(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			break;
 		case CS_CMYK_1:
 			writer->color[0] = 0;
 			writer->color[1] = 0;
 			writer->color[2] = 0;
 			writer->color[3] = 1;
-			writer->colorspace = fz_device_cmyk(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			break;
 		default:
 		{
@@ -628,9 +632,35 @@ fz_append_display_node(
 	list->len += size;
 }
 
+/* Pack ri, op, opm, bp into flags upper bits, even/odd in lower bit */
+static int
+fz_pack_color_params(const fz_color_params *color_params)
+{
+	int flags = 0;
+
+	if (color_params == NULL)
+		return 0;
+
+	flags = color_params->ri << RI;  /* 2 bits */
+	flags = flags | (color_params->bp << BP);
+	flags = flags | (color_params->op << OP);
+	flags = flags | (color_params->opm << OPM);
+	return flags;
+}
+
+/* unpack ri, op, opm, bp from flags, even/odd in lower bit */
+static void
+fz_unpack_color_params(fz_color_params *color_params, int flags)
+{
+	color_params->ri = (flags >> RI) & 3;
+	color_params->bp = (flags >> BP) & 1;
+	color_params->op = (flags >> OP) & 1;
+	color_params->opm = (flags >> OPM) & 1;
+}
+
 static void
 fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_rect rect;
 
@@ -639,7 +669,7 @@ fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 		ctx,
 		dev,
 		FZ_CMD_FILL_PATH,
-		even_odd, /* flags */
+		even_odd | fz_pack_color_params(color_params), /* flags */
 		&rect,
 		path, /* path */
 		color,
@@ -653,7 +683,7 @@ fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 static void
 fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_rect rect;
 
@@ -662,7 +692,7 @@ fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 		ctx,
 		dev,
 		FZ_CMD_STROKE_PATH,
-		0, /* flags */
+		fz_pack_color_params(color_params), /* flags */
 		&rect,
 		path, /* path */
 		color,
@@ -724,7 +754,7 @@ fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 
 static void
 fz_list_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -736,7 +766,7 @@ fz_list_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 			ctx,
 			dev,
 			FZ_CMD_FILL_TEXT,
-			0, /* flags */
+			fz_pack_color_params(color_params), /* flags */
 			&rect,
 			NULL, /* path */
 			color, /* color */
@@ -756,7 +786,7 @@ fz_list_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 
 static void
 fz_list_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -768,7 +798,7 @@ fz_list_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 			ctx,
 			dev,
 			FZ_CMD_STROKE_TEXT,
-			0, /* flags */
+			fz_pack_color_params(color_params), /* flags */
 			&rect,
 			NULL, /* path */
 			color, /* color */
@@ -903,7 +933,7 @@ fz_list_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
 {
 	fz_shade *shade2 = fz_keep_shade(ctx, shade);
 	fz_rect rect;
@@ -915,7 +945,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 			ctx,
 			dev,
 			FZ_CMD_FILL_SHADE,
-			0, /* flags */
+			fz_pack_color_params(color_params), /* flags */
 			&rect,
 			NULL, /* path */
 			NULL, /* color */
@@ -934,7 +964,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
+fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect = fz_unit_rect;
@@ -946,7 +976,7 @@ fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 			ctx,
 			dev,
 			FZ_CMD_FILL_IMAGE,
-			0, /* flags */
+			fz_pack_color_params(color_params), /* flags */
 			&rect,
 			NULL, /* path */
 			NULL, /* color */
@@ -966,7 +996,7 @@ fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 
 static void
 fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect = fz_unit_rect;
@@ -978,7 +1008,7 @@ fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 			ctx,
 			dev,
 			FZ_CMD_FILL_IMAGE_MASK,
-			0, /* flags */
+			fz_pack_color_params(color_params), /* flags */
 			&rect,
 			NULL, /* path */
 			color,
@@ -1030,13 +1060,13 @@ fz_list_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 }
 
 static void
-fz_list_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, fz_colorspace *colorspace, const float *color)
+fz_list_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int luminosity, fz_colorspace *colorspace, const float *color, const fz_color_params *color_params)
 {
 	fz_append_display_node(
 		ctx,
 		dev,
 		FZ_CMD_BEGIN_MASK,
-		luminosity, /* flags */
+		(!!luminosity) | fz_pack_color_params(color_params), /* flags */
 		rect,
 		NULL, /* path */
 		color,
@@ -1198,6 +1228,27 @@ fz_list_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
 }
 
 static void
+fz_list_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspaces *default_cs)
+{
+	fz_default_colorspaces *default_cs2 = fz_keep_default_colorspaces(ctx, default_cs);
+
+	fz_append_display_node(
+		ctx,
+		dev,
+		FZ_CMD_DEFAULT_COLORSPACES,
+		0, /* flags */
+		NULL,
+		NULL, /* path */
+		NULL, /* color */
+		NULL, /* colorspace */
+		NULL, /* alpha */
+		NULL, /* ctm */
+		NULL, /* stroke */
+		&default_cs2, /* private_data */
+		sizeof(default_cs2)); /* private_data_len */
+}
+
+static void
 fz_list_drop_device(fz_context *ctx, fz_device *dev)
 {
 	fz_list_device *writer = (fz_list_device *)dev;
@@ -1241,6 +1292,7 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 	dev->super.end_tile = fz_list_end_tile;
 
 	dev->super.render_flags = fz_list_render_flags;
+	dev->super.set_default_colorspaces = fz_list_set_default_colorspaces;
 
 	dev->super.drop_device = fz_list_drop_device;
 
@@ -1342,8 +1394,10 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 		case FZ_CMD_CLIP_IMAGE_MASK:
 			fz_drop_image(ctx, *(fz_image **)node);
 			break;
+		case FZ_CMD_DEFAULT_COLORSPACES:
+			fz_drop_default_colorspaces(ctx, *(fz_default_colorspaces **)node);
+			break;
 		}
-
 		node = next;
 	}
 	fz_free(ctx, list->list);
@@ -1405,6 +1459,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 	fz_stroke_state *stroke = NULL;
 	float color[FZ_MAX_COLORS] = { 0 };
 	fz_colorspace *colorspace = fz_device_gray(ctx);
+	fz_color_params color_params;
 	fz_rect rect = { 0 };
 
 	/* Transformed versions of graphic state entries */
@@ -1422,6 +1477,8 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 		cookie->progress_max = list->len;
 		cookie->progress = 0;
 	}
+
+	color_params = *fz_default_color_params(ctx);
 
 	node = list->list;
 	node_end = &list->list[list->len];
@@ -1455,34 +1512,34 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			{
 			default:
 			case CS_GRAY_0:
-				colorspace = fz_device_gray(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 				color[0] = 0.0f;
 				break;
 			case CS_GRAY_1:
-				colorspace = fz_device_gray(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 				color[0] = 1.0f;
 				break;
 			case CS_RGB_0:
-				colorspace = fz_device_rgb(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 				color[0] = 0.0f;
 				color[1] = 0.0f;
 				color[2] = 0.0f;
 				break;
 			case CS_RGB_1:
-				colorspace = fz_device_rgb(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 				color[0] = 1.0f;
 				color[1] = 1.0f;
 				color[2] = 1.0f;
 				break;
 			case CS_CMYK_0:
-				colorspace = fz_device_cmyk(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 				color[0] = 0.0f;
 				color[1] = 0.0f;
 				color[2] = 0.0f;
 				color[3] = 0.0f;
 				break;
 			case CS_CMYK_1:
-				colorspace = fz_device_cmyk(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 				color[0] = 0.0f;
 				color[1] = 0.0f;
 				color[2] = 0.0f;
@@ -1572,7 +1629,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 
 		if (tiled ||
 			n.cmd == FZ_CMD_BEGIN_TILE || n.cmd == FZ_CMD_END_TILE ||
-			n.cmd == FZ_CMD_RENDER_FLAGS)
+			n.cmd == FZ_CMD_RENDER_FLAGS || n.cmd == FZ_CMD_DEFAULT_COLORSPACES)
 		{
 			empty = 0;
 		}
@@ -1619,10 +1676,12 @@ visible:
 			switch (n.cmd)
 			{
 			case FZ_CMD_FILL_PATH:
-				fz_fill_path(ctx, dev, path, n.flags, &trans_ctm, colorspace, color, alpha);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_fill_path(ctx, dev, path, n.flags & 1, &trans_ctm, colorspace, color, alpha, &color_params);
 				break;
 			case FZ_CMD_STROKE_PATH:
-				fz_stroke_path(ctx, dev, path, stroke, &trans_ctm, colorspace, color, alpha);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_stroke_path(ctx, dev, path, stroke, &trans_ctm, colorspace, color, alpha, &color_params);
 				break;
 			case FZ_CMD_CLIP_PATH:
 				fz_clip_path(ctx, dev, path, n.flags, &trans_ctm, &trans_rect);
@@ -1631,10 +1690,12 @@ visible:
 				fz_clip_stroke_path(ctx, dev, path, stroke, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_FILL_TEXT:
-				fz_fill_text(ctx, dev, *(fz_text **)node, &trans_ctm, colorspace, color, alpha);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_fill_text(ctx, dev, *(fz_text **)node, &trans_ctm, colorspace, color, alpha, &color_params);
 				break;
 			case FZ_CMD_STROKE_TEXT:
-				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, color, alpha);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, color, alpha, &color_params);
 				break;
 			case FZ_CMD_CLIP_TEXT:
 				fz_clip_text(ctx, dev, *(fz_text **)node, &trans_ctm, &trans_rect);
@@ -1646,13 +1707,16 @@ visible:
 				fz_ignore_text(ctx, dev, *(fz_text **)node, &trans_ctm);
 				break;
 			case FZ_CMD_FILL_SHADE:
-				fz_fill_shade(ctx, dev, *(fz_shade **)node, &trans_ctm, alpha);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_fill_shade(ctx, dev, *(fz_shade **)node, &trans_ctm, alpha, &color_params);
 				break;
 			case FZ_CMD_FILL_IMAGE:
-				fz_fill_image(ctx, dev, *(fz_image **)node, &trans_ctm, alpha);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_fill_image(ctx, dev, *(fz_image **)node, &trans_ctm, alpha, &color_params);
 				break;
 			case FZ_CMD_FILL_IMAGE_MASK:
-				fz_fill_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, colorspace, color, alpha);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_fill_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, colorspace, color, alpha, &color_params);
 				break;
 			case FZ_CMD_CLIP_IMAGE_MASK:
 				fz_clip_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, &trans_rect);
@@ -1661,7 +1725,8 @@ visible:
 				fz_pop_clip(ctx, dev);
 				break;
 			case FZ_CMD_BEGIN_MASK:
-				fz_begin_mask(ctx, dev, &trans_rect, n.flags, colorspace, color);
+				fz_unpack_color_params(&color_params, n.flags);
+				fz_begin_mask(ctx, dev, &trans_rect, n.flags, colorspace, color, &color_params);
 				break;
 			case FZ_CMD_END_MASK:
 				fz_end_mask(ctx, dev);
@@ -1693,6 +1758,9 @@ visible:
 					fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);
 				else if (n.flags == 1)
 					fz_render_flags(ctx, dev, FZ_DEVFLAG_GRIDFIT_AS_TILED, 0);
+				break;
+			case FZ_CMD_DEFAULT_COLORSPACES:
+				fz_set_default_colorspaces(ctx, dev, *(fz_default_colorspaces **)node);
 				break;
 			}
 		}

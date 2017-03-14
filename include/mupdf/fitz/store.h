@@ -123,20 +123,30 @@ typedef struct fz_store_hash_s
 		{
 			const void *ptr;
 			int i;
-		} pi;
+		} pi; /* 8 or 12 bytes */
 		struct
 		{
 			const void *ptr;
 			int i;
 			fz_irect r;
-		} pir;
+		} pir; /* 24 or 28 bytes */
 		struct
 		{
 			int id;
 			float m[4];
-		} im;
+		} im; /* 20 bytes */
+		struct
+		{
+			unsigned char src_md5[16];
+			unsigned char dst_md5[16];
+			uint8_t ri;
+			uint8_t bp;
+			uint8_t depth;
+			uint8_t alpha;
+			uint8_t proof;
+		} link; /* 36 bytes */
 	} u;
-} fz_store_hash;
+} fz_store_hash; /* 40 or 44 bytes */
 
 typedef struct fz_store_type_s
 {

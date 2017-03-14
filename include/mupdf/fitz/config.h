@@ -75,6 +75,9 @@
 /* To skip the SIL fonts, enable: */
 /* #define TOFU_SIL */
 
+/* To skip the ICC profiles, enable: */
+/* #define NO_ICC */
+
 /* To skip the Base14 fonts, enable: */
 /* #define TOFU_BASE14 */
 /* (You probably really don't want to do that except for measurement purposes!) */

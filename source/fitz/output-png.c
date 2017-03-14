@@ -33,7 +33,7 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_png_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -59,7 +59,7 @@ fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap)
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -82,7 +82,59 @@ typedef struct png_band_writer_s
 } png_band_writer;
 
 static void
-png_write_header(fz_context *ctx, fz_band_writer *writer_)
+png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
+{
+	fz_output *out = writer->super.out;
+	int size;
+	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
+	unsigned char *data;
+	unsigned char *chunk, *pos, *cdata;
+	uLong bound;
+	uLongf csize;
+	uLong long_size;
+	int t;
+
+	long_size = (uLong)fz_buffer_storage(ctx, buffer, &data);
+
+	if (!data)
+		return;
+
+	/* Deflate the profile */
+	bound = compressBound(long_size);
+	cdata = fz_malloc(ctx, bound);
+	csize = (uLongf)bound;
+	t = compress(cdata, &csize, data, long_size);
+	if (t != Z_OK)
+	{
+		fz_free(ctx, cdata);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot deflate icc buffer");
+	}
+	size = csize + strlen("MuPDF Profile") + 2;
+
+	fz_var(cdata);
+
+	fz_try(ctx)
+	{
+		chunk = fz_calloc(ctx, size, 1);
+		pos = chunk;
+		memcpy(chunk, "MuPDF Profile", strlen("MuPDF Profile"));
+		pos += strlen("MuPDF Profile") + 2;
+		memcpy(pos, cdata, csize);
+		putchunk(ctx, out, "iCCP", chunk, size);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, cdata);
+		fz_free(ctx, chunk);
+	}
+	fz_catch(ctx)
+	{
+		/* Nothing */
+	}
+}
+
+static void
+png_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
 {
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
@@ -116,6 +168,8 @@ png_write_header(fz_context *ctx, fz_band_writer *writer_)
 
 	fz_write_data(ctx, out, pngsig, 8);
 	putchunk(ctx, out, "IHDR", head, 13);
+
+	png_write_icc(ctx, writer, cs);
 }
 
 static void
@@ -240,7 +294,7 @@ fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out)
  * drop pix early in the case where we have to convert, potentially saving
  * us having to have 2 copies of the pixmap and a buffer open at once. */
 static fz_buffer *
-png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
+png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_params, int drop)
 {
 	fz_buffer *buf = NULL;
 	fz_output *out;
@@ -253,11 +307,14 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 	if (pix->w == 0 || pix->h == 0)
 		return NULL;
 
+	if (color_params == NULL)
+		color_params = fz_default_color_params(ctx);
+
 	fz_try(ctx)
 	{
 		if (pix->colorspace && pix->colorspace != fz_device_gray(ctx) && pix->colorspace != fz_device_rgb(ctx))
 		{
-			pix2 = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), 1);
+			pix2 = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, color_params, 1);
 			if (drop)
 				fz_drop_pixmap(ctx, pix);
 			pix = pix2;
@@ -280,22 +337,20 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 }
 
 fz_buffer *
-fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image)
+fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, const fz_color_params *color_params)
 {
 	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
-	fz_buffer *buf = NULL;
-
-	fz_var(buf);
+	fz_buffer *buf;
 
 	fz_try(ctx)
-		buf = png_from_pixmap(ctx, pix, 1);
+		buf = png_from_pixmap(ctx, pix, color_params, 1);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 	return buf;
 }
 
 fz_buffer *
-fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pix)
+fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_params)
 {
-	return png_from_pixmap(ctx, pix, 0);
+	return png_from_pixmap(ctx, pix, color_params, 0);
 }

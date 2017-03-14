@@ -40,6 +40,7 @@ extern "C" {
 #include "mupdf/fitz/path.h"
 #include "mupdf/fitz/text.h"
 #include "mupdf/fitz/separation.h"
+#include "mupdf/fitz/color-management.h"
 
 #include "mupdf/fitz/device.h"
 #include "mupdf/fitz/display-list.h"

@@ -352,6 +352,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\ColorParams.java"
+				>
+			</File>
+			<File
 				RelativePath="..\java\src\com\artifex\mupdf\fitz\ColorSpace.java"
 				>
 			</File>

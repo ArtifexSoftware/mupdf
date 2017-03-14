@@ -21,6 +21,7 @@ LIBS += $(FREETYPE_LIBS)
 LIBS += $(HARFBUZZ_LIBS)
 LIBS += $(JBIG2DEC_LIBS)
 LIBS += $(JPEGXR_LIB)
+LIBS += $(LCMS2_LIBS)
 LIBS += $(LIBCRYPTO_LIBS)
 LIBS += $(LIBJPEG_LIBS)
 LIBS += $(LURATECH_LIBS)
@@ -32,6 +33,7 @@ CFLAGS += $(FREETYPE_CFLAGS)
 CFLAGS += $(HARFBUZZ_CFLAGS)
 CFLAGS += $(JBIG2DEC_CFLAGS)
 CFLAGS += $(JPEGXR_CFLAGS)
+CFLAGS += $(LCMS2_CFLAGS)
 CFLAGS += $(LIBCRYPTO_CFLAGS)
 CFLAGS += $(LIBJPEG_CFLAGS)
 CFLAGS += $(LURATECH_CFLAGS)
@@ -218,6 +220,22 @@ endif
 
 generate: $(FONT_GEN)
 
+# --- Generated ICC profiles ---
+
+ICC_BIN := resources/icc/gray.icc resources/icc/rgb.icc resources/icc/cmyk.icc resources/icc/lab.icc
+ICC_GEN := generated/icc-profiles.c
+ICC_OBJ := $(ICC_GEN:%.c=$(OUT)/%.o)
+
+$(ICC_OBJ) : $(ICC_GEN)
+$(ICC_GEN) : $(ICC_BIN) | generated
+	$(QUIET_GEN) $(HEXDUMP_EXE) $@ $(ICC_BIN)
+
+ifneq "$(CROSSCOMPILE)" "yes"
+$(ICC_GEN) : $(HEXDUMP_EXE)
+endif
+
+generate: $(ICC_GEN)
+
 # --- Generated CMap files ---
 
 CMAPDUMP_EXE := $(OUT)/scripts/cmapdump.exe
@@ -303,7 +321,8 @@ MUPDF_OBJ := \
 	$(SVG_OBJ) \
 	$(CBZ_OBJ) \
 	$(HTML_OBJ) \
-	$(GPRF_OBJ)
+	$(GPRF_OBJ) \
+	$(ICC_OBJ)
 
 THIRD_OBJ := \
 	$(FREETYPE_OBJ) \
@@ -314,7 +333,8 @@ THIRD_OBJ := \
 	$(LURATECH_OBJ) \
 	$(MUJS_OBJ) \
 	$(OPENJPEG_OBJ) \
-	$(ZLIB_OBJ)
+	$(ZLIB_OBJ) \
+	$(LCMS2_OBJ)
 
 THREAD_OBJ := $(THREAD_OBJ)
 

@@ -40,7 +40,7 @@ cbz_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 
 	fz_snprintf(name, sizeof name, "p%04d.png", wri->count);
 
-	buffer = fz_new_buffer_from_pixmap_as_png(ctx, wri->pixmap);
+	buffer = fz_new_buffer_from_pixmap_as_png(ctx, wri->pixmap, NULL);
 	fz_try(ctx)
 		fz_write_zip_entry(ctx, wri->zip, name, buffer, 0);
 	fz_always(ctx)
