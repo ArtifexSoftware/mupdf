@@ -4,16 +4,14 @@ static const char *fz_hex_digits = "0123456789abcdef";
 
 struct fmtbuf
 {
-	char *p;
-	size_t s;
-	size_t n;
+	fz_context *ctx;
+	void *user;
+	void (*emit)(fz_context *ctx, void *user, int c);
 };
 
-static void fmtputc(struct fmtbuf *out, int c)
+static inline void fmtputc(struct fmtbuf *out, int c)
 {
-	if (out->n < out->s)
-		out->p[out->n] = c;
-	++(out->n);
+	out->emit(out->ctx, out->user, c);
 }
 
 /*
@@ -151,29 +149,31 @@ static void fmtquote(struct fmtbuf *out, const char *s, int sq, int eq)
 	fmtputc(out, eq);
 }
 
-size_t
-fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
+void
+fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args)
 {
 	struct fmtbuf out;
+	int c, i, n, z;
 	fz_matrix *m;
 	fz_rect *r;
 	fz_point *p;
-	int c, i, n, z;
 	int64_t i64;
 	double f;
 	char *s;
 	size_t length;
 
-	out.p = buffer;
-	out.s = space;
-	out.n = 0;
+	out.ctx = ctx;
+	out.user = user;
+	out.emit = emit;
 
 	while ((c = *fmt++) != 0)
 	{
-		if (c == '%') {
+		if (c == '%')
+		{
 			c = *fmt++;
 			if (c == 0)
 				break;
+
 			z = 1;
 			if (c == '0' && fmt[0] && fmt[1]) {
 				z = *fmt++ - '0';
@@ -184,6 +184,7 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 					c = *fmt++;
 				}
 			}
+
 			/* Check for lengths */
 			length = 0;
 			switch (c) {
@@ -213,6 +214,7 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 				if (c == 0)
 					break; /* Can't warn :( */
 			}
+
 			switch (c) {
 			default:
 				fmtputc(&out, '%');
@@ -326,22 +328,56 @@ fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
 				fmtquote(&out, s, '(', ')');
 				break;
 			}
-		} else {
+		}
+		else
+		{
 			fmtputc(&out, c);
 		}
 	}
+}
 
-	fmtputc(&out, 0);
+struct snprintf_buffer
+{
+	char *p;
+	size_t s, n;
+};
+
+static void snprintf_emit(fz_context *ctx, void *out_, int c)
+{
+	struct snprintf_buffer *out = out_;
+	if (out->n < out->s)
+		out->p[out->n] = c;
+	++(out->n);
+}
+
+size_t
+fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args)
+{
+	struct snprintf_buffer out;
+	out.p = buffer;
+	out.s = space;
+	out.n = 0;
+
+	/* Note: using a NULL context is safe here */
+	fz_format_string(NULL, &out, snprintf_emit, fmt, args);
+	snprintf_emit(NULL, &out, 0);
 	return out.n - 1;
 }
 
 size_t
 fz_snprintf(char *buffer, size_t space, const char *fmt, ...)
 {
-	size_t n;
 	va_list ap;
+	struct snprintf_buffer out;
+	out.p = buffer;
+	out.s = space;
+	out.n = 0;
+
 	va_start(ap, fmt);
-	n = fz_vsnprintf(buffer, space, fmt, ap);
+	/* Note: using a NULL context is safe here */
+	fz_format_string(NULL, &out, snprintf_emit, fmt, ap);
+	snprintf_emit(NULL, &out, 0);
 	va_end(ap);
-	return n;
+
+	return out.n - 1;
 }

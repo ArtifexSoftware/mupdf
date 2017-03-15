@@ -271,7 +271,8 @@ static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 }
 
 /*
-	fz_vsnprintf: Our customised vsnprintf routine. Takes %c, %d, %o, %s, %u, %x, as usual.
+	fz_format_string: Our customised 'printf'-like string formatter.
+	Takes %c, %d, %o, %s, %u, %x, as usual.
 	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03o, %04x, etc).
 	%g output in "as short as possible hopefully lossless non-exponent" form,
 	see fz_ftoa for specifics.
@@ -282,6 +283,15 @@ static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 	%ll{d,u,x} indicates that the values are 64bit.
 	%z{d,u,x} indicates that the value is a size_t.
 	%Z{d,u,x} indicates that the value is a fz_off_t.
+
+	user: An opaque pointer that is passed to the emit function.
+	emit: A function pointer called to emit output bytes as the string is being formatted.
+*/
+void
+fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void *user, int c), const char *fmt, va_list args);
+
+/*
+	fz_vsnprintf: A vsnprintf work-alike, using our custom formatter.
 */
 size_t fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args);
 

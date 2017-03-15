@@ -331,45 +331,24 @@ fz_append_bits_pad(fz_context *ctx, fz_buffer *buf)
 	buf->unused_bits = 0;
 }
 
-size_t
-fz_append_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...)
+static void fz_append_emit(fz_context *ctx, void *buffer, int c)
 {
-	size_t ret;
-	va_list args;
-	va_start(args, fmt);
-	ret = fz_append_vprintf(ctx, buffer, fmt, args);
-	va_end(args);
-	return ret;
+	fz_append_byte(ctx, buffer, c);
 }
 
-size_t
-fz_append_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list old_args)
+void
+fz_append_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...)
 {
-	size_t slack;
-	size_t len;
 	va_list args;
+	va_start(args, fmt);
+	fz_format_string(ctx, buffer, fz_append_emit, fmt, args);
+	va_end(args);
+}
 
-	slack = buffer->cap - buffer->len;
-	va_copy(args, old_args);
-	len = fz_vsnprintf((char *)buffer->data + buffer->len, slack, fmt, args);
-	va_copy_end(args);
-
-	/* len is the number of characters in the formatted string (not including
-	 * the terminating zero), so if (len > slack) the string was truncated. */
-	if (len > slack)
-	{
-		/* Grow the buffer and retry */
-		fz_ensure_buffer(ctx, buffer, buffer->len + len);
-		slack = buffer->cap - buffer->len;
-
-		va_copy(args, old_args);
-		len = fz_vsnprintf((char *)buffer->data + buffer->len, slack, fmt, args);
-		va_copy_end(args);
-	}
-
-	buffer->len += len;
-
-	return len;
+void
+fz_append_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list args)
+{
+	fz_format_string(ctx, buffer, fz_append_emit, fmt, args);
 }
 
 void

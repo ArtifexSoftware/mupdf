@@ -112,8 +112,8 @@ void fz_append_int32_le(fz_context *ctx, fz_buffer *buf, int x);
 void fz_append_int16_le(fz_context *ctx, fz_buffer *buf, int x);
 void fz_append_bits(fz_context *ctx, fz_buffer *buf, int value, int count);
 void fz_append_bits_pad(fz_context *ctx, fz_buffer *buf);
-size_t fz_append_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...);
-size_t fz_append_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list args);
+void fz_append_printf(fz_context *ctx, fz_buffer *buffer, const char *fmt, ...);
+void fz_append_vprintf(fz_context *ctx, fz_buffer *buffer, const char *fmt, va_list args);
 void fz_append_pdf_string(fz_context *ctx, fz_buffer *buffer, const char *text);
 
 /*
