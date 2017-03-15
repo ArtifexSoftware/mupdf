@@ -296,6 +296,17 @@ find_next_line_break(fz_context *ctx, const fz_text_span *span, const fz_matrix 
 	return i;
 }
 
+static float
+svg_cluster_advance(fz_context *ctx, const fz_text_span *span, int i, int end)
+{
+	int n = 1;
+	while (i + n < end && span->items[i + n].gid == -1)
+		++n;
+	if (n > 1)
+		return fz_advance_glyph(ctx, span->font, span->items[i].gid, span->wmode) / n;
+	return 0; /* this value is never used (since n==1) */
+}
+
 static void
 svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const fz_text_span *span)
 {
@@ -307,6 +318,7 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 	float font_size;
 	fz_text_item *it;
 	int start, end, i;
+	float cluster_advance = 0;
 
 	if (span->len == 0)
 	{
@@ -350,6 +362,8 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 		p.x = span->items[start].x;
 		p.y = span->items[start].y;
 		fz_transform_point(&p, &inv_tm);
+		if (span->items[start].gid >= 0)
+			cluster_advance = svg_cluster_advance(ctx, span, start, end);
 		if (span->wmode == 0)
 			fz_printf(ctx, out, "<tspan y=\"%g\" x=\"%g", p.y, p.x);
 		else
@@ -357,6 +371,8 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 		for (i = start + 1; i < end; ++i)
 		{
 			it = &span->items[i];
+			if (it->gid >= 0)
+				cluster_advance = svg_cluster_advance(ctx, span, i, end);
 			if (it->ucs >= 0)
 			{
 				if (it->gid >= 0)
@@ -369,9 +385,9 @@ svg_dev_text_span(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm, const
 				{
 					/* we have no glyph (such as in a ligature) -- advance a bit */
 					if (span->wmode == 0)
-						p.x += font_size * 0.3f;
+						p.x += font_size * cluster_advance;
 					else
-						p.y += font_size;
+						p.y += font_size * cluster_advance;
 				}
 				fz_printf(ctx, out, " %g", span->wmode == 0 ? p.x : p.y);
 			}
