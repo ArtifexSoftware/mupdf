@@ -1309,7 +1309,7 @@ int mudraw_main(int argc, char **argv)
 {
 	char *password = "";
 	fz_document *doc = NULL;
-	int c, i;
+	int c;
 	fz_context *ctx;
 	fz_alloc_context alloc_ctx = { NULL, trace_malloc, trace_realloc, trace_free };
 	fz_locks_context *locks = NULL;
