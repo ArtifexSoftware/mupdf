@@ -656,6 +656,22 @@
 			RelativePath="..\..\generated\StandardSymbolsPS.c"
 			>
 		</File>
+		<File
+			RelativePath="..\..\generated\icc-gray.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\icc-rgb.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\icc-cmyk.c"
+			>
+		</File>
+		<File
+			RelativePath="..\..\generated\icc-lab.c"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
