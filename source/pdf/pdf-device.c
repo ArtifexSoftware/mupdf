@@ -107,7 +107,7 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 		return;
 	if (!gs->stroke_state || gs->stroke_state->linewidth != stroke_state->linewidth)
 	{
-		fz_append_printf(ctx, gs->buf, "%f w\n", stroke_state->linewidth);
+		fz_append_printf(ctx, gs->buf, "%g w\n", stroke_state->linewidth);
 	}
 	if (!gs->stroke_state || gs->stroke_state->start_cap != stroke_state->start_cap)
 	{
@@ -126,7 +126,7 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 	}
 	if (!gs->stroke_state || gs->stroke_state->miterlimit != stroke_state->miterlimit)
 	{
-		fz_append_printf(ctx, gs->buf, "%f M\n", stroke_state->miterlimit);
+		fz_append_printf(ctx, gs->buf, "%g M\n", stroke_state->miterlimit);
 	}
 	if (gs->stroke_state == NULL && stroke_state->dash_len == 0)
 	{}
@@ -140,9 +140,9 @@ pdf_dev_stroke_state(fz_context *ctx, pdf_device *pdev, const fz_stroke_state *s
 		{
 			if (i > 0)
 				fz_append_byte(ctx, gs->buf, ' ');
-			fz_append_printf(ctx, gs->buf, "%f", stroke_state->dash_list[i]);
+			fz_append_printf(ctx, gs->buf, "%g", stroke_state->dash_list[i]);
 		}
-		fz_append_printf(ctx, gs->buf, "]%f d\n", stroke_state->dash_phase);
+		fz_append_printf(ctx, gs->buf, "]%g d\n", stroke_state->dash_phase);
 	}
 	fz_drop_stroke_state(ctx, gs->stroke_state);
 	gs->stroke_state = fz_keep_stroke_state(ctx, stroke_state);
@@ -158,28 +158,28 @@ static void
 pdf_dev_path_moveto(fz_context *ctx, void *arg, float x, float y)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-	fz_append_printf(ctx, buf, "%f %f m\n", x, y);
+	fz_append_printf(ctx, buf, "%g %g m\n", x, y);
 }
 
 static void
 pdf_dev_path_lineto(fz_context *ctx, void *arg, float x, float y)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-	fz_append_printf(ctx, buf, "%f %f l\n", x, y);
+	fz_append_printf(ctx, buf, "%g %g l\n", x, y);
 }
 
 static void
 pdf_dev_path_curveto(fz_context *ctx, void *arg, float x1, float y1, float x2, float y2, float x3, float y3)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-	fz_append_printf(ctx, buf, "%f %f %f %f %f %f c\n", x1, y1, x2, y2, x3, y3);
+	fz_append_printf(ctx, buf, "%g %g %g %g %g %g c\n", x1, y1, x2, y2, x3, y3);
 }
 
 static void
 pdf_dev_path_close(fz_context *ctx, void *arg)
 {
 	fz_buffer *buf = (fz_buffer *)arg;
-	fz_append_printf(ctx, buf, "h\n");
+	fz_append_string(ctx, buf, "h\n");
 }
 
 static const fz_path_walker pdf_dev_path_proc =
@@ -256,22 +256,22 @@ pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, cons
 	switch (cspace + stroke*8)
 	{
 		case 1:
-			fz_append_printf(ctx, gs->buf, "%f g\n", color[0]);
+			fz_append_printf(ctx, gs->buf, "%g g\n", color[0]);
 			break;
 		case 3:
-			fz_append_printf(ctx, gs->buf, "%f %f %f rg\n", color[0], color[1], color[2]);
+			fz_append_printf(ctx, gs->buf, "%g %g %g rg\n", color[0], color[1], color[2]);
 			break;
 		case 4:
-			fz_append_printf(ctx, gs->buf, "%f %f %f %f k\n", color[0], color[1], color[2], color[3]);
+			fz_append_printf(ctx, gs->buf, "%g %g %g %g k\n", color[0], color[1], color[2], color[3]);
 			break;
 		case 1+8:
-			fz_append_printf(ctx, gs->buf, "%f G\n", color[0]);
+			fz_append_printf(ctx, gs->buf, "%g G\n", color[0]);
 			break;
 		case 3+8:
-			fz_append_printf(ctx, gs->buf, "%f %f %f RG\n", color[0], color[1], color[2]);
+			fz_append_printf(ctx, gs->buf, "%g %g %g RG\n", color[0], color[1], color[2]);
 			break;
 		case 4+8:
-			fz_append_printf(ctx, gs->buf, "%f %f %f %f K\n", color[0], color[1], color[2], color[3]);
+			fz_append_printf(ctx, gs->buf, "%g %g %g %g K\n", color[0], color[1], color[2], color[3]);
 			break;
 	}
 }

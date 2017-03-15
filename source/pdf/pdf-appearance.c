@@ -47,20 +47,20 @@ typedef struct text_widget_info_s
 	int max_len;
 } text_widget_info;
 
-static const char *fmt_re = "%f %f %f %f re\n";
+static const char *fmt_re = "%g %g %g %g re\n";
 static const char *fmt_f = "f\n";
 static const char *fmt_s = "s\n";
-static const char *fmt_g = "%f g\n";
-static const char *fmt_m = "%f %f m\n";
-static const char *fmt_l = "%f %f l\n";
-static const char *fmt_w = "%f w\n";
+static const char *fmt_g = "%g g\n";
+static const char *fmt_m = "%g %g m\n";
+static const char *fmt_l = "%g %g l\n";
+static const char *fmt_w = "%g w\n";
 static const char *fmt_Tx_BMC = "/Tx BMC\n";
 static const char *fmt_q = "q\n";
 static const char *fmt_W = "W\n";
 static const char *fmt_n = "n\n";
 static const char *fmt_BT = "BT\n";
-static const char *fmt_Tm = "%f %f %f %f %f %f Tm\n";
-static const char *fmt_Td = "%f %f Td\n";
+static const char *fmt_Tm = "%g %g %g %g %g %g Tm\n";
+static const char *fmt_Td = "%g %g Td\n";
 static const char *fmt_Tj = " Tj\n";
 static const char *fmt_ET = "ET\n";
 static const char *fmt_Q = "Q\n";
@@ -208,15 +208,15 @@ void pdf_fzbuf_print_da(fz_context *ctx, fz_buffer *fzbuf, pdf_da_info *di)
 	switch (di->col_size)
 	{
 	case 1:
-		fz_append_printf(ctx, fzbuf, " %f g", di->col[0]);
+		fz_append_printf(ctx, fzbuf, " %g g", di->col[0]);
 		break;
 
 	case 3:
-		fz_append_printf(ctx, fzbuf, " %f %f %f rg", di->col[0], di->col[1], di->col[2]);
+		fz_append_printf(ctx, fzbuf, " %g %g %g rg", di->col[0], di->col[1], di->col[2]);
 		break;
 
 	case 4:
-		fz_append_printf(ctx, fzbuf, " %f %f %f %f k", di->col[0], di->col[1], di->col[2], di->col[3]);
+		fz_append_printf(ctx, fzbuf, " %g %g %g %g k", di->col[0], di->col[1], di->col[2], di->col[3]);
 		break;
 
 	default:
@@ -242,17 +242,17 @@ static void fzbuf_print_color(fz_context *ctx, fz_buffer *fzbuf, pdf_obj *arr, i
 	switch (pdf_array_len(ctx, arr))
 	{
 	case 1:
-		fz_append_printf(ctx, fzbuf, stroke?"%f G\n":"%f g\n",
+		fz_append_printf(ctx, fzbuf, stroke?"%g G\n":"%g g\n",
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 0)) + adj);
 		break;
 	case 3:
-		fz_append_printf(ctx, fzbuf, stroke?"%f %f %f RG\n":"%f %f %f rg\n",
+		fz_append_printf(ctx, fzbuf, stroke?"%g %g %g RG\n":"%g %g %g rg\n",
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 0)) + adj,
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 1)) + adj,
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 2)) + adj);
 		break;
 	case 4:
-		fz_append_printf(ctx, fzbuf, stroke?"%f %f %f %f K\n":"%f %f %f %f k\n",
+		fz_append_printf(ctx, fzbuf, stroke?"%g %g %g %g K\n":"%g %g %g %g k\n",
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 0)),
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 1)),
 			pdf_to_real(ctx, pdf_array_get(ctx, arr, 2)),
@@ -274,13 +274,13 @@ static void fzbuf_print_rect_fill(fz_context *ctx, fz_buffer *fzbuf, const fz_re
 		switch (col_size)
 		{
 		case 1:
-			fz_append_printf(ctx, fzbuf, "%f g\n", col[0]);
+			fz_append_printf(ctx, fzbuf, "%g g\n", col[0]);
 			break;
 		case 3:
-			fz_append_printf(ctx, fzbuf, "%f %f %f rg\n", col[0], col[1], col[2]);
+			fz_append_printf(ctx, fzbuf, "%g %g %g rg\n", col[0], col[1], col[2]);
 			break;
 		case 4:
-			fz_append_printf(ctx, fzbuf, "%f %f %f %f k\n", col[0], col[1], col[2], col[3]);
+			fz_append_printf(ctx, fzbuf, "%g %g %g %g k\n", col[0], col[1], col[2], col[3]);
 			break;
 		default:
 			break;

@@ -736,7 +736,7 @@ color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_)
 
 	/* Raster presentation */
 	/* Print in orientation of the logical page */
-	fz_write_printf(ctx, out, "\033&r0F");
+	fz_write_string(ctx, out, "\033&r0F");
 
 	/* Set color mode */
 	fz_write_data(ctx, out, "\033*v6W"
@@ -762,11 +762,11 @@ color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_)
 
 	/* start raster graphics */
 	/* 0 = start at default left graphics margin */
-	fz_write_printf(ctx, out, "\033*r0A");
+	fz_write_string(ctx, out, "\033*r0A");
 
 	/* Now output the actual bitmap */
 	/* Adaptive Compression */
-	fz_write_printf(ctx, out, "\033*b5M");
+	fz_write_string(ctx, out, "\033*b5M");
 }
 
 static void
@@ -921,7 +921,7 @@ color_pcl_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 	}
 
 	/* End Raster Graphics */
-	fz_write_printf(ctx, out, "\033*rC");
+	fz_write_string(ctx, out, "\033*rC");
 }
 
 static void

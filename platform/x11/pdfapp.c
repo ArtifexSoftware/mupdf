@@ -247,7 +247,7 @@ static int make_fake_doc(pdfapp_t *app)
 
 
 		contents = fz_new_buffer(ctx, 100);
-		fz_append_printf(ctx, contents, "1 0 0 RG %f w 0 0 m %f %f l 0 %f m %f 0 l s\n",
+		fz_append_printf(ctx, contents, "1 0 0 RG %g w 0 0 m %g %g l 0 %g m %g 0 l s\n",
 			fz_min(mediabox.x1, mediabox.y1) / 20,
 			mediabox.x1, mediabox.y1,
 			mediabox.y1, mediabox.x1);

@@ -273,8 +273,9 @@ static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 /*
 	fz_vsnprintf: Our customised vsnprintf routine. Takes %c, %d, %o, %s, %u, %x, as usual.
 	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03o, %04x, etc).
-	%f and %g both output in "as short as possible hopefully lossless non-exponent" form,
+	%g output in "as short as possible hopefully lossless non-exponent" form,
 	see fz_ftoa for specifics.
+	%f and %e output as usual.
 	%C outputs a utf8 encoded int.
 	%M outputs a fz_matrix*. %R outputs a fz_rect*. %P outputs a fz_point*.
 	%q and %( output escaped strings in C/PDF syntax.
