@@ -211,7 +211,8 @@ static inline void fz_write_int32_be(fz_context *ctx, fz_output *out, int x)
 	data[2] = x>>8;
 	data[3] = x;
 
-	fz_write(ctx, out, data, 4);
+	if (out)
+		out->write(ctx, out->state, data, 4);
 }
 
 /*
@@ -226,7 +227,8 @@ static inline void fz_write_int32_le(fz_context *ctx, fz_output *out, int x)
 	data[2] = x>>16;
 	data[3] = x>>24;
 
-	fz_write(ctx, out, data, 4);
+	if (out)
+		out->write(ctx, out->state, data, 4);
 }
 
 /*
@@ -239,7 +241,8 @@ static inline void fz_write_int16_be(fz_context *ctx, fz_output *out, int x)
 	data[0] = x>>8;
 	data[1] = x;
 
-	fz_write(ctx, out, data, 2);
+	if (out)
+		out->write(ctx, out->state, data, 2);
 }
 
 /*
@@ -252,7 +255,8 @@ static inline void fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
 	data[0] = x;
 	data[1] = x>>8;
 
-	fz_write(ctx, out, data, 2);
+	if (out)
+		out->write(ctx, out->state, data, 2);
 }
 
 /*
@@ -264,7 +268,8 @@ static inline void fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
 */
 static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
 {
-	fz_write(ctx, out, &x, 1);
+	if (out)
+		out->write(ctx, out->state, &x, 1);
 }
 
 /*
@@ -277,7 +282,8 @@ static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char 
 static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 {
 	char data[10];
-	fz_write(ctx, out, data, fz_runetochar(data, rune));
+	if (out)
+		out->write(ctx, out->state, data, fz_runetochar(data, rune));
 }
 
 /*
