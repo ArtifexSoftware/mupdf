@@ -301,6 +301,11 @@ size_t fz_vsnprintf(char *buffer, size_t space, const char *fmt, va_list args);
 size_t fz_snprintf(char *buffer, size_t space, const char *fmt, ...);
 
 /*
+	fz_asprintf: Print to allocated string.
+*/
+char *fz_asprintf(fz_context *ctx, const char *fmt, ...);
+
+/*
 	fz_tempfilename: Get a temporary filename based upon 'base'.
 
 	'hint' is the path of a file (normally the existing document file)

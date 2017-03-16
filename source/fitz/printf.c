@@ -462,3 +462,19 @@ fz_snprintf(char *buffer, size_t space, const char *fmt, ...)
 
 	return out.n - 1;
 }
+
+char *
+fz_asprintf(fz_context *ctx, const char *fmt, ...)
+{
+	int len;
+	char *mem;
+	va_list ap;
+	va_start(ap, fmt);
+	len = fz_vsnprintf(NULL, 0, fmt, ap);
+	va_end(ap);
+	mem = fz_malloc(ctx, len+1);
+	va_start(ap, fmt);
+	fz_vsnprintf(mem, len+1, fmt, ap);
+	va_end(ap);
+	return mem;
+}
