@@ -47,29 +47,29 @@
 
 #define RETURN(NAME) \
 	do { \
-	extern const int fz_font_ ## NAME ## _size; \
-	extern const char fz_font_ ## NAME []; \
-	return *size = fz_font_ ## NAME ## _size, fz_font_ ## NAME; \
+	extern const int fz_resources_fonts_ ## NAME ## _size; \
+	extern const char fz_resources_fonts_ ## NAME []; \
+	return *size = fz_resources_fonts_ ## NAME ## _size, fz_resources_fonts_ ## NAME; \
 	} while (0)
 
 const char *
 fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 {
 #ifndef TOFU_BASE14
-	if (!strcmp(name, "Courier")) RETURN(NimbusMonoPS_Regular_cff);
-	if (!strcmp(name, "Courier-Oblique")) RETURN(NimbusMonoPS_Italic_cff);
-	if (!strcmp(name, "Courier-Bold")) RETURN(NimbusMonoPS_Bold_cff);
-	if (!strcmp(name, "Courier-BoldOblique")) RETURN(NimbusMonoPS_BoldItalic_cff);
-	if (!strcmp(name, "Helvetica")) RETURN(NimbusSans_Regular_cff);
-	if (!strcmp(name, "Helvetica-Oblique")) RETURN(NimbusSans_Oblique_cff);
-	if (!strcmp(name, "Helvetica-Bold")) RETURN(NimbusSans_Bold_cff);
-	if (!strcmp(name, "Helvetica-BoldOblique")) RETURN(NimbusSans_BoldOblique_cff);
-	if (!strcmp(name, "Times-Roman")) RETURN(NimbusRoman_Regular_cff);
-	if (!strcmp(name, "Times-Italic")) RETURN(NimbusRoman_Italic_cff);
-	if (!strcmp(name, "Times-Bold")) RETURN(NimbusRoman_Bold_cff);
-	if (!strcmp(name, "Times-BoldItalic")) RETURN(NimbusRoman_BoldItalic_cff);
-	if (!strcmp(name, "Symbol")) RETURN(StandardSymbolsPS_cff);
-	if (!strcmp(name, "ZapfDingbats")) RETURN(Dingbats_cff);
+	if (!strcmp(name, "Courier")) RETURN(urw_NimbusMonoPS_Regular_cff);
+	if (!strcmp(name, "Courier-Oblique")) RETURN(urw_NimbusMonoPS_Italic_cff);
+	if (!strcmp(name, "Courier-Bold")) RETURN(urw_NimbusMonoPS_Bold_cff);
+	if (!strcmp(name, "Courier-BoldOblique")) RETURN(urw_NimbusMonoPS_BoldItalic_cff);
+	if (!strcmp(name, "Helvetica")) RETURN(urw_NimbusSans_Regular_cff);
+	if (!strcmp(name, "Helvetica-Oblique")) RETURN(urw_NimbusSans_Oblique_cff);
+	if (!strcmp(name, "Helvetica-Bold")) RETURN(urw_NimbusSans_Bold_cff);
+	if (!strcmp(name, "Helvetica-BoldOblique")) RETURN(urw_NimbusSans_BoldOblique_cff);
+	if (!strcmp(name, "Times-Roman")) RETURN(urw_NimbusRoman_Regular_cff);
+	if (!strcmp(name, "Times-Italic")) RETURN(urw_NimbusRoman_Italic_cff);
+	if (!strcmp(name, "Times-Bold")) RETURN(urw_NimbusRoman_Bold_cff);
+	if (!strcmp(name, "Times-BoldItalic")) RETURN(urw_NimbusRoman_BoldItalic_cff);
+	if (!strcmp(name, "Symbol")) RETURN(urw_StandardSymbolsPS_cff);
+	if (!strcmp(name, "ZapfDingbats")) RETURN(urw_Dingbats_cff);
 #endif
 	return *size = 0, NULL;
 }
@@ -86,49 +86,49 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 {
 #ifndef TOFU_BASE14
 	if (!strcmp(name, "Courier")) {
-		FAMILY(NimbusMonoPS_Regular_cff,
-				NimbusMonoPS_Italic_cff,
-				NimbusMonoPS_Bold_cff,
-				NimbusMonoPS_BoldItalic_cff)
+		FAMILY(urw_NimbusMonoPS_Regular_cff,
+				urw_NimbusMonoPS_Italic_cff,
+				urw_NimbusMonoPS_Bold_cff,
+				urw_NimbusMonoPS_BoldItalic_cff)
 	}
 	if (!strcmp(name, "Helvetica") || !strcmp(name, "Arial")) {
-		FAMILY(NimbusSans_Regular_cff,
-				NimbusSans_Oblique_cff,
-				NimbusSans_Bold_cff,
-				NimbusSans_BoldOblique_cff)
+		FAMILY(urw_NimbusSans_Regular_cff,
+				urw_NimbusSans_Oblique_cff,
+				urw_NimbusSans_Bold_cff,
+				urw_NimbusSans_BoldOblique_cff)
 	}
 	if (!strcmp(name, "Times") || !strcmp(name, "Times Roman") || !strcmp(name, "Times New Roman")) {
-		FAMILY(NimbusRoman_Regular_cff,
-				NimbusRoman_Italic_cff,
-				NimbusRoman_Bold_cff,
-				NimbusRoman_BoldItalic_cff)
+		FAMILY(urw_NimbusRoman_Regular_cff,
+				urw_NimbusRoman_Italic_cff,
+				urw_NimbusRoman_Bold_cff,
+				urw_NimbusRoman_BoldItalic_cff)
 	}
 	if (!strcmp(name, "Dingbats") || !strcmp(name, "Zapf Dingbats")) {
-		RETURN(Dingbats_cff);
+		RETURN(urw_Dingbats_cff);
 	}
 	if (!strcmp(name, "Symbol")) {
-		RETURN(StandardSymbolsPS_cff);
+		RETURN(urw_StandardSymbolsPS_cff);
 	}
 #endif
 #ifndef TOFU_SIL
 	if (!strcmp(name, "Charis SIL")) {
-		FAMILY(CharisSIL_R_cff,
-				CharisSIL_I_cff,
-				CharisSIL_B_cff,
-				CharisSIL_BI_cff)
+		FAMILY(sil_CharisSIL_R_cff,
+				sil_CharisSIL_I_cff,
+				sil_CharisSIL_B_cff,
+				sil_CharisSIL_BI_cff)
 	}
 #endif
 #ifndef TOFU_NOTO
 	if (!strcmp(name, "Noto Serif")) {
-		RETURN(NotoSerif_Regular_ttf);
+		RETURN(noto_NotoSerif_Regular_ttf);
 	}
 	if (!strcmp(name, "Noto Sans")) {
-		RETURN(NotoSans_Regular_ttf);
+		RETURN(noto_NotoSans_Regular_ttf);
 	}
 #endif
 #ifndef TOFU_EMOJI
 	if (!strcmp(name, "Emoji") || !strcmp(name, "Noto Emoji")) {
-		RETURN(NotoEmoji_Regular_ttf);
+		RETURN(noto_NotoEmoji_Regular_ttf);
 	}
 #endif
 	return *size = 0, NULL;
@@ -142,27 +142,27 @@ fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *siz
 #ifndef TOFU_CJK_EXT
 #ifndef TOFU_CJK_LANG
 	switch (registry) {
-	case FZ_ADOBE_JAPAN_1: RETURN(SourceHanSansJP_Regular_otf);
-	case FZ_ADOBE_KOREA_1: RETURN(SourceHanSansKR_Regular_otf);
+	case FZ_ADOBE_JAPAN_1: RETURN(han_SourceHanSansJP_Regular_otf);
+	case FZ_ADOBE_KOREA_1: RETURN(han_SourceHanSansKR_Regular_otf);
 	default:
-	case FZ_ADOBE_GB_1: RETURN(SourceHanSansCN_Regular_otf);
-	case FZ_ADOBE_CNS_1: RETURN(SourceHanSansTW_Regular_otf);
+	case FZ_ADOBE_GB_1: RETURN(han_SourceHanSansCN_Regular_otf);
+	case FZ_ADOBE_CNS_1: RETURN(han_SourceHanSansTW_Regular_otf);
 	}
 #else
-	RETURN(DroidSansFallbackFull_ttf);
+	RETURN(droid_DroidSansFallbackFull_ttf);
 #endif
 #else
-	RETURN(DroidSansFallback_ttf);
+	RETURN(droid_DroidSansFallback_ttf);
 #endif
 #else
 	return *size = 0, NULL;
 #endif
 }
 
-#define Noto(SANS) RETURN(Noto ## SANS ## _Regular_ttf)
+#define Noto(SANS) RETURN(noto_Noto ## SANS ## _Regular_ttf)
 
 #define Noto2(SANS,SERIF) \
-	if (serif) { RETURN(Noto ## SERIF ## _Regular_ttf); } else { RETURN(Noto ## SANS ## _Regular_ttf); }
+	if (serif) { RETURN(noto_Noto ## SERIF ## _Regular_ttf); } else { RETURN(noto_Noto ## SANS ## _Regular_ttf); }
 
 const char *
 fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *size)
@@ -349,7 +349,7 @@ const char *
 fz_lookup_noto_symbol_font(fz_context *ctx, int *size)
 {
 #ifndef TOFU_SYMBOL
-	RETURN(NotoSansSymbols_Regular_ttf);
+	RETURN(noto_NotoSansSymbols_Regular_ttf);
 #else
 	return *size = 0, NULL;
 #endif
@@ -359,7 +359,7 @@ const char *
 fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 {
 #ifndef TOFU_EMOJI
-	RETURN(NotoEmoji_Regular_ttf);
+	RETURN(noto_NotoEmoji_Regular_ttf);
 #else
 	return *size = 0, NULL;
 #endif

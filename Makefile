@@ -40,6 +40,21 @@ CFLAGS += $(MUJS_CFLAGS)
 CFLAGS += $(OPENJPEG_CFLAGS)
 CFLAGS += $(ZLIB_CFLAGS)
 
+ALL_DIR := $(OUT)/fitz
+ALL_DIR += $(OUT)/pdf
+ALL_DIR += $(OUT)/xps
+ALL_DIR += $(OUT)/svg
+ALL_DIR += $(OUT)/cbz
+ALL_DIR += $(OUT)/html
+ALL_DIR += $(OUT)/gprf
+ALL_DIR += $(OUT)/tools
+ALL_DIR += $(OUT)/helpers
+ALL_DIR += $(OUT)/helpers/mu-threads
+ALL_DIR += $(OUT)/platform/x11
+ALL_DIR += $(OUT)/platform/x11/curl
+ALL_DIR += $(OUT)/platform/gl
+ALL_DIR += $(OUT)/fonts
+
 # --- Commands ---
 
 ifneq "$(verbose)" "yes"
@@ -62,115 +77,6 @@ MKDIR_CMD = $(QUIET_MKDIR) mkdir -p $@
 RM_CMD = $(QUIET_RM) rm -f $@
 TAGS_CMD = $(QUIET_TAGS) ctags $^
 WINDRES_CMD = $(QUIET_WINDRES) $(WINDRES) $< $@
-
-# --- File lists ---
-
-ALL_DIR := $(OUT)/fitz
-ALL_DIR += $(OUT)/pdf
-ALL_DIR += $(OUT)/xps
-ALL_DIR += $(OUT)/svg
-ALL_DIR += $(OUT)/cbz
-ALL_DIR += $(OUT)/html
-ALL_DIR += $(OUT)/gprf
-ALL_DIR += $(OUT)/tools
-ALL_DIR += $(OUT)/helpers
-ALL_DIR += $(OUT)/helpers/mu-threads
-ALL_DIR += $(OUT)/platform/x11
-ALL_DIR += $(OUT)/platform/x11/curl
-ALL_DIR += $(OUT)/platform/gl
-ALL_DIR += $(OUT)/fonts
-
-FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
-PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
-SVG_HDR := include/mupdf/svg.h
-HTML_HDR := include/mupdf/html.h
-THREAD_HDR := include/mupdf/helpers/mu-threads.h
-
-FITZ_SRC := $(wildcard source/fitz/*.c)
-PDF_SRC := $(wildcard source/pdf/*.c)
-XPS_SRC := $(wildcard source/xps/*.c)
-SVG_SRC := $(wildcard source/svg/*.c)
-CBZ_SRC := $(wildcard source/cbz/*.c)
-HTML_SRC := $(wildcard source/html/*.c)
-GPRF_SRC := $(wildcard source/gprf/*.c)
-THREAD_SRC := $(wildcard source/helpers/mu-threads/*.c)
-
-FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
-PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h
-XPS_SRC_HDR := $(wildcard source/xps/*.h)
-SVG_SRC_HDR := $(wildcard source/svg/*.h)
-HTML_SRC_HDR := $(wildcard source/html/*.h)
-GPRF_SRC_HDR := $(wildcard source/gprf/*.h)
-
-FITZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(FITZ_SRC))))
-PDF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(PDF_SRC))))
-XPS_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(XPS_SRC))))
-SVG_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(SVG_SRC))))
-CBZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(CBZ_SRC))))
-HTML_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(HTML_SRC))))
-GPRF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(GPRF_SRC))))
-THREAD_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(THREAD_SRC))))
-
-$(FITZ_OBJ) : $(FITZ_HDR) $(FITZ_SRC_HDR)
-$(PDF_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PDF_SRC_HDR)
-$(XPS_OBJ) : $(FITZ_HDR) $(XPS_SRC_HDR)
-$(SVG_OBJ) : $(FITZ_HDR) $(SVG_HDR) $(SVG_SRC_HDR)
-$(CBZ_OBJ) : $(FITZ_HDR)
-$(HTML_OBJ) : $(FITZ_HDR) $(HTML_HDR) $(HTML_SRC_HDR)
-$(GPRF_OBJ) : $(FITZ_HDR) $(GPRF_HDR) $(GPRF_SRC_HDR)
-$(THREAD_OBJ) : $(THREAD_HDR)
-
-# --- Generated embedded font files ---
-
-FONT_BIN_DROID := $(wildcard resources/fonts/droid/*.ttf)
-FONT_BIN_NOTO := $(wildcard resources/fonts/noto/*.ttf)
-FONT_BIN_HAN := $(wildcard resources/fonts/han/*.otf)
-FONT_BIN_URW := $(wildcard resources/fonts/urw/*.cff)
-FONT_BIN_SIL := $(wildcard resources/fonts/sil/*.cff)
-
-FONT_GEN_DROID := $(subst resources/fonts/droid/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_DROID))))
-FONT_GEN_NOTO := $(subst resources/fonts/noto/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_NOTO))))
-FONT_GEN_HAN := $(subst resources/fonts/han/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_HAN))))
-FONT_GEN_URW := $(subst resources/fonts/urw/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_URW))))
-FONT_GEN_SIL := $(subst resources/fonts/sil/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_SIL))))
-
-FONT_BIN := $(FONT_BIN_DROID) $(FONT_BIN_NOTO) $(FONT_BIN_HAN) $(FONT_BIN_URW) $(FONT_BIN_SIL)
-FONT_GEN := $(FONT_GEN_DROID) $(FONT_GEN_NOTO) $(FONT_GEN_HAN) $(FONT_GEN_URW) $(FONT_GEN_SIL)
-FONT_OBJ := $(subst $(GEN)/, $(OUT)/fonts/, $(addsuffix .o, $(basename $(FONT_GEN))))
-
-$(GEN)/%.c : resources/fonts/droid/%.ttf $(FONTDUMP)
-	$(QUIET_GEN) $(FONTDUMP) $@ $<
-$(GEN)/%.c : resources/fonts/noto/%.ttf $(FONTDUMP)
-	$(QUIET_GEN) $(FONTDUMP) $@ $<
-$(GEN)/%.c : resources/fonts/han/%.otf $(FONTDUMP)
-	$(QUIET_GEN) $(FONTDUMP) $@ $<
-$(GEN)/%.c : resources/fonts/urw/%.cff $(FONTDUMP)
-	$(QUIET_GEN) $(FONTDUMP) $@ $<
-$(GEN)/%.c : resources/fonts/sil/%.cff $(FONTDUMP)
-	$(QUIET_GEN) $(FONTDUMP) $@ $<
-
-$(FONT_OBJ) : $(FONT_GEN)
-$(FONT_GEN_DROID) : $(FONT_BIN_DROID)
-$(FONT_GEN_NOTO) : $(FONT_BIN_NOTO)
-$(FONT_GEN_HAN) : $(FONT_BIN_HAN)
-$(FONT_GEN_URW) : $(FONT_BIN_URW)
-$(FONT_GEN_SIL) : $(FONT_BIN_SIL)
-
-# --- Library ---
-
-MUPDF_LIB = $(OUT)/libmupdf.a
-THIRD_LIB = $(OUT)/libmupdfthird.a
-THREAD_LIB = $(OUT)/libmuthreads.a
-
-MUPDF_OBJ := $(FITZ_OBJ) $(FONT_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(SVG_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
-THIRD_OBJ := $(FREETYPE_OBJ) $(HARFBUZZ_OBJ) $(JBIG2DEC_OBJ) $(JPEG_OBJ) $(JPEGXR_OBJ) $(LURATECH_OBJ) $(MUJS_OBJ) $(OPENJPEG_OBJ) $(ZLIB_OBJ)
-THREAD_OBJ := $(THREAD_OBJ)
-
-$(MUPDF_LIB) : $(MUPDF_OBJ)
-$(THIRD_LIB) : $(THIRD_OBJ)
-$(THREAD_LIB) : $(THREAD_OBJ)
-
-INSTALL_LIBS := $(MUPDF_LIB) $(THIRD_LIB)
 
 # --- Rules ---
 
@@ -214,13 +120,125 @@ $(OUT)/platform/gl/%.o : platform/gl/%.c | $(ALL_DIR)
 
 .PRECIOUS : $(OUT)/%.o # Keep intermediates from chained rules
 
-# --- Generated CMap and JavaScript files ---
+# --- File lists ---
+
+FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
+PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
+SVG_HDR := include/mupdf/svg.h
+HTML_HDR := include/mupdf/html.h
+THREAD_HDR := include/mupdf/helpers/mu-threads.h
+
+FITZ_SRC := $(wildcard source/fitz/*.c)
+PDF_SRC := $(wildcard source/pdf/*.c)
+XPS_SRC := $(wildcard source/xps/*.c)
+SVG_SRC := $(wildcard source/svg/*.c)
+CBZ_SRC := $(wildcard source/cbz/*.c)
+HTML_SRC := $(wildcard source/html/*.c)
+GPRF_SRC := $(wildcard source/gprf/*.c)
+THREAD_SRC := $(wildcard source/helpers/mu-threads/*.c)
+
+FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
+PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h
+XPS_SRC_HDR := $(wildcard source/xps/*.h)
+SVG_SRC_HDR := $(wildcard source/svg/*.h)
+HTML_SRC_HDR := $(wildcard source/html/*.h)
+GPRF_SRC_HDR := $(wildcard source/gprf/*.h)
+
+FITZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(FITZ_SRC))))
+PDF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(PDF_SRC))))
+XPS_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(XPS_SRC))))
+SVG_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(SVG_SRC))))
+CBZ_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(CBZ_SRC))))
+HTML_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(HTML_SRC))))
+GPRF_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(GPRF_SRC))))
+THREAD_OBJ := $(subst source/, $(OUT)/, $(addsuffix .o, $(basename $(THREAD_SRC))))
+
+$(FITZ_OBJ) : $(FITZ_HDR) $(FITZ_SRC_HDR)
+$(PDF_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PDF_SRC_HDR)
+$(XPS_OBJ) : $(FITZ_HDR) $(XPS_SRC_HDR)
+$(SVG_OBJ) : $(FITZ_HDR) $(SVG_HDR) $(SVG_SRC_HDR)
+$(CBZ_OBJ) : $(FITZ_HDR)
+$(HTML_OBJ) : $(FITZ_HDR) $(HTML_HDR) $(HTML_SRC_HDR)
+$(GPRF_OBJ) : $(FITZ_HDR) $(GPRF_HDR) $(GPRF_SRC_HDR)
+$(THREAD_OBJ) : $(THREAD_HDR)
+
+# --- Generated embedded font files ---
+
+HEXDUMP := $(OUT)/hexdump
+
+FONT_BIN_DROID := $(wildcard resources/fonts/droid/*.ttf)
+FONT_BIN_NOTO := $(wildcard resources/fonts/noto/*.ttf)
+FONT_BIN_HAN := $(wildcard resources/fonts/han/*.otf)
+FONT_BIN_URW := $(wildcard resources/fonts/urw/*.cff)
+FONT_BIN_SIL := $(wildcard resources/fonts/sil/*.cff)
+
+FONT_GEN_DROID := $(subst resources/fonts/droid/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_DROID))))
+FONT_GEN_NOTO := $(subst resources/fonts/noto/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_NOTO))))
+FONT_GEN_HAN := $(subst resources/fonts/han/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_HAN))))
+FONT_GEN_URW := $(subst resources/fonts/urw/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_URW))))
+FONT_GEN_SIL := $(subst resources/fonts/sil/, $(GEN)/, $(addsuffix .c, $(basename $(FONT_BIN_SIL))))
+
+FONT_BIN := $(FONT_BIN_DROID) $(FONT_BIN_NOTO) $(FONT_BIN_HAN) $(FONT_BIN_URW) $(FONT_BIN_SIL)
+FONT_GEN := $(FONT_GEN_DROID) $(FONT_GEN_NOTO) $(FONT_GEN_HAN) $(FONT_GEN_URW) $(FONT_GEN_SIL)
+FONT_OBJ := $(subst $(GEN)/, $(OUT)/fonts/, $(addsuffix .o, $(basename $(FONT_GEN))))
+
+$(GEN)/%.c : resources/fonts/droid/%.ttf $(HEXDUMP)
+	$(QUIET_GEN) $(HEXDUMP) $@ $<
+$(GEN)/%.c : resources/fonts/noto/%.ttf $(HEXDUMP)
+	$(QUIET_GEN) $(HEXDUMP) $@ $<
+$(GEN)/%.c : resources/fonts/han/%.otf $(HEXDUMP)
+	$(QUIET_GEN) $(HEXDUMP) $@ $<
+$(GEN)/%.c : resources/fonts/urw/%.cff $(HEXDUMP)
+	$(QUIET_GEN) $(HEXDUMP) $@ $<
+$(GEN)/%.c : resources/fonts/sil/%.cff $(HEXDUMP)
+	$(QUIET_GEN) $(HEXDUMP) $@ $<
+
+$(FONT_OBJ) : $(FONT_GEN)
+$(FONT_GEN_DROID) : $(FONT_BIN_DROID)
+$(FONT_GEN_NOTO) : $(FONT_BIN_NOTO)
+$(FONT_GEN_HAN) : $(FONT_BIN_HAN)
+$(FONT_GEN_URW) : $(FONT_BIN_URW)
+$(FONT_GEN_SIL) : $(FONT_BIN_SIL)
+
+ifneq "$(CROSSCOMPILE)" "yes"
+$(FONT_GEN) : $(HEXDUMP) | $(GEN)
+endif
+
+generate: $(FONT_GEN)
+
+# --- Generated embedded certificate files ---
+
+ADOBECA_SRC := resources/certs/AdobeCA.p7c
+ADOBECA_GEN := $(GEN)/gen_adobe_ca.h
+$(ADOBECA_GEN) : $(ADOBECA_SRC)
+	$(QUIET_GEN) $(HEXDUMP) $@ $(ADOBECA_SRC)
+
+ifneq "$(CROSSCOMPILE)" "yes"
+$(ADOBECA_GEN) : $(HEXDUMP) | $(GEN)
+endif
+
+$(OUT)/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
+
+generate: $(ADOBECA_GEN)
+
+# --- Generated embedded javascript files ---
+
+JAVASCRIPT_SRC := source/pdf/pdf-js-util.js
+JAVASCRIPT_GEN := $(GEN)/gen_js_util.h
+$(JAVASCRIPT_GEN) : $(JAVASCRIPT_SRC)
+	$(QUIET_GEN) $(HEXDUMP) $@ $(JAVASCRIPT_SRC)
+
+ifneq "$(CROSSCOMPILE)" "yes"
+$(JAVASCRIPT_GEN) : $(HEXDUMP) | $(GEN)
+endif
+
+$(OUT)/pdf/pdf-js.o : $(JAVASCRIPT_GEN)
+
+generate: $(JAVASCRIPT_GEN)
+
+# --- Generated CMap files ---
 
 CMAPDUMP := $(OUT)/cmapdump
-FONTDUMP := $(OUT)/fontdump
-NAMEDUMP := $(OUT)/namedump
-CQUOTE := $(OUT)/cquote
-BIN2HEX := $(OUT)/bin2hex
 
 CMAP_CJK_SRC := $(wildcard resources/cmaps/cjk/*)
 CMAP_EXTRA_SRC := $(wildcard resources/cmaps/extra/*)
@@ -238,36 +256,66 @@ $(GEN)/gen_cmap_utf32.h : $(CMAP_UTF32_SRC)
 
 CMAP_GEN := $(addprefix $(GEN)/, gen_cmap_cjk.h gen_cmap_extra.h gen_cmap_utf8.h gen_cmap_utf32.h)
 
+ifneq "$(CROSSCOMPILE)" "yes"
+$(CMAP_GEN) : $(CMAPDUMP) | $(GEN)
+endif
+
+$(OUT)/cmapdump.o : \
+	include/mupdf/pdf/cmap.h \
+	source/pdf/pdf-name-table.h \
+	source/fitz/context.c \
+	source/fitz/error.c \
+	source/fitz/memory.c \
+	source/fitz/output.c \
+	source/fitz/string.c \
+	source/fitz/buffer.c \
+	source/fitz/stream-open.c \
+	source/fitz/stream-read.c \
+	source/fitz/strtod.c \
+	source/fitz/strtof.c \
+	source/fitz/ftoa.c \
+	source/fitz/printf.c \
+	source/fitz/time.c \
+	source/pdf/pdf-lex.c \
+	source/pdf/pdf-cmap.c \
+	source/pdf/pdf-cmap-parse.c \
+
+$(OUT)/pdf/pdf-cmap-table.o : $(CMAP_GEN)
+
+generate: $(CMAP_GEN)
+
+# --- Generated PDF name tables ---
+
+NAMEDUMP := $(OUT)/namedump
+
 include/mupdf/pdf.h : include/mupdf/pdf/name-table.h
 NAME_GEN := include/mupdf/pdf/name-table.h source/pdf/pdf-name-table.h
 $(NAME_GEN) : resources/pdf/names.txt
 	$(QUIET_GEN) $(NAMEDUMP) resources/pdf/names.txt $(NAME_GEN)
 
-JAVASCRIPT_SRC := source/pdf/pdf-js-util.js
-JAVASCRIPT_GEN := $(GEN)/gen_js_util.h
-$(JAVASCRIPT_GEN) : $(JAVASCRIPT_SRC)
-	$(QUIET_GEN) $(CQUOTE) $@ $(JAVASCRIPT_SRC)
-
-ADOBECA_SRC := resources/certs/AdobeCA.p7c
-ADOBECA_GEN := $(GEN)/gen_adobe_ca.h
-$(ADOBECA_GEN) : $(ADOBECA_SRC)
-	$(QUIET_GEN) $(BIN2HEX) $@ $(ADOBECA_SRC)
-
 ifneq "$(CROSSCOMPILE)" "yes"
-$(CMAP_GEN) : $(CMAPDUMP) | $(GEN)
-$(FONT_GEN) : $(FONTDUMP) | $(GEN)
-$(NAME_GEN) : $(NAMEDUMP) | $(GEN)
-$(JAVASCRIPT_GEN) : $(CQUOTE) | $(GEN)
-$(ADOBECA_GEN) : $(BIN2HEX) | $(GEN)
+$(NAME_GEN) : $(NAMEDUMP)
 endif
 
-generate: $(CMAP_GEN) $(FONT_GEN) $(JAVASCRIPT_GEN) $(ADOBECA_GEN) $(NAME_GEN)
-
-$(OUT)/pdf/pdf-cmap-table.o : $(CMAP_GEN)
-$(OUT)/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
-$(OUT)/pdf/pdf-js.o : $(JAVASCRIPT_GEN)
 $(OUT)/pdf/pdf-object.o : source/pdf/pdf-name-table.h
-$(OUT)/cmapdump.o : include/mupdf/pdf/cmap.h source/fitz/context.c source/fitz/error.c source/fitz/memory.c source/fitz/output.c source/fitz/string.c source/fitz/buffer.c source/fitz/stream-open.c source/fitz/stream-read.c source/fitz/strtod.c source/fitz/strtof.c source/fitz/ftoa.c source/fitz/printf.c source/fitz/time.c source/pdf/pdf-lex.c source/pdf/pdf-cmap.c source/pdf/pdf-cmap-parse.c source/pdf/pdf-name-table.h
+
+generate: $(NAME_GEN)
+
+# --- Library ---
+
+MUPDF_LIB = $(OUT)/libmupdf.a
+THIRD_LIB = $(OUT)/libmupdfthird.a
+THREAD_LIB = $(OUT)/libmuthreads.a
+
+MUPDF_OBJ := $(FITZ_OBJ) $(FONT_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(SVG_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
+THIRD_OBJ := $(FREETYPE_OBJ) $(HARFBUZZ_OBJ) $(JBIG2DEC_OBJ) $(JPEG_OBJ) $(JPEGXR_OBJ) $(LURATECH_OBJ) $(MUJS_OBJ) $(OPENJPEG_OBJ) $(ZLIB_OBJ)
+THREAD_OBJ := $(THREAD_OBJ)
+
+$(MUPDF_LIB) : $(MUPDF_OBJ)
+$(THIRD_LIB) : $(THIRD_OBJ)
+$(THREAD_LIB) : $(THREAD_OBJ)
+
+INSTALL_LIBS := $(MUPDF_LIB) $(THIRD_LIB)
 
 # --- Tools and Apps ---
 

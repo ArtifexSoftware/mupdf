@@ -1,4 +1,4 @@
-/* fontdump.c -- an "xxd -i" workalike for dumping binary fonts as source code */
+/* hexdump.c -- an "xxd -i" workalike for dumping binary files as source code */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,21 +29,21 @@ main(int argc, char **argv)
 {
 	FILE *fo;
 	FILE *fi;
-	char fontname[256];
+	char filename[256];
 	char *basename;
 	char *p;
 	int i, size;
 
 	if (argc < 3)
 	{
-		fprintf(stderr, "usage: fontdump output.c input.dat\n");
+		fprintf(stderr, "usage: hexdump output.c input.dat\n");
 		return 1;
 	}
 
 	fo = fopen(argv[1], "wb");
 	if (!fo)
 	{
-		fprintf(stderr, "fontdump: could not open output file '%s'\n", argv[1]);
+		fprintf(stderr, "hexdump: could not open output file '%s'\n", argv[1]);
 		return 1;
 	}
 
@@ -61,7 +61,7 @@ main(int argc, char **argv)
 		if (!fi)
 		{
 			fclose(fo);
-			fprintf(stderr, "fontdump: could not open input file '%s'\n", argv[i]);
+			fprintf(stderr, "hexdump: could not open input file '%s'\n", argv[i]);
 			return 1;
 		}
 
@@ -73,16 +73,16 @@ main(int argc, char **argv)
 		else
 			basename = argv[i];
 
-		if (strlen(basename) >= sizeof(fontname))
+		if (strlen(basename) >= sizeof(filename))
 		{
 			fclose(fi);
 			fclose(fo);
-			fprintf(stderr, "fontdump: filename '%s' too long\n", basename);
+			fprintf(stderr, "hexdump: filename '%s' too long\n", basename);
 			return 1;
 		}
 
-		strcpy(fontname, basename);
-		for (p = fontname; *p; ++p)
+		strcpy(filename, argv[i]);
+		for (p = filename; *p; ++p)
 		{
 			if (*p == '/' || *p == '.' || *p == '\\' || *p == '-')
 				*p = '_';
@@ -93,19 +93,20 @@ main(int argc, char **argv)
 		fseek(fi, 0, SEEK_SET);
 
 		fprintf(fo, "\n#ifdef HAVE_INCBIN\n");
-		fprintf(fo, "const int fz_font_%s_size = %d;\n", fontname, size);
+		fprintf(fo, "const int fz_%s_size = %d;\n", filename, size);
+		fprintf(fo, "extern const char fz_%s[];\n", filename);
 		fprintf(fo, "asm(\".section .rodata\");\n");
-		fprintf(fo, "asm(\".global fz_font_%s\");\n", fontname);
-		fprintf(fo, "asm(\".type fz_font_%s STT_OBJECT\");\n", fontname);
-		fprintf(fo, "asm(\".size fz_font_%s, %d\");\n", fontname, size);
+		fprintf(fo, "asm(\".global fz_%s\");\n", filename);
+		fprintf(fo, "asm(\".type fz_%s STT_OBJECT\");\n", filename);
+		fprintf(fo, "asm(\".size fz_%s, %d\");\n", filename, size);
 		fprintf(fo, "asm(\".balign 64\");\n");
-		fprintf(fo, "asm(\"fz_font_%s:\");\n", fontname);
+		fprintf(fo, "asm(\"fz_%s:\");\n", filename);
 		fprintf(fo, "asm(\".incbin \\\"%s\\\"\");\n", argv[i]);
 		fprintf(fo, "#else\n");
-		fprintf(fo, "const int fz_font_%s_size = %d;\n", fontname, size);
-		fprintf(fo, "const char fz_font_%s[] = {\n", fontname);
+		fprintf(fo, "const int fz_%s_size = %d;\n", filename, size);
+		fprintf(fo, "const char fz_%s[] = {\n", filename);
 		hexdump(fo, fi);
-		fprintf(fo, "};\n");
+		fprintf(fo, "0};\n"); /* zero-terminate so we can hexdump text files into C strings */
 		fprintf(fo, "#endif\n");
 
 		fclose(fi);
@@ -113,7 +114,7 @@ main(int argc, char **argv)
 
 	if (fclose(fo))
 	{
-		fprintf(stderr, "fontdump: could not close output file '%s'\n", argv[1]);
+		fprintf(stderr, "hexdump: could not close output file '%s'\n", argv[1]);
 		return 1;
 	}
 

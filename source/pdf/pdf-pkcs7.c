@@ -256,10 +256,7 @@ exit:
 	return res;
 }
 
-static unsigned char adobe_ca[] =
-{
 #include "gen_adobe_ca.h"
-};
 
 static int verify_sig(char *sig, int sig_len, char *file, int (*byte_range)[2], int byte_range_len, char *ebuf, int ebufsize)
 {
@@ -292,7 +289,7 @@ static int verify_sig(char *sig, int sig_len, char *file, int (*byte_range)[2], 
 	BIO_set_segments(bsegs, byte_range, byte_range_len);
 
 	/* Find the certificates in the pk7 file */
-	bcert = BIO_new_mem_buf(adobe_ca, sizeof(adobe_ca));
+	bcert = BIO_new_mem_buf((void*)fz_resources_certs_AdobeCA_p7c, fz_resources_certs_AdobeCA_p7c_size);
 	pk7cert = d2i_PKCS7_bio(bcert, NULL);
 	if (pk7cert == NULL)
 		goto exit;
