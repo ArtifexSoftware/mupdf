@@ -242,6 +242,7 @@ struct fz_colorspace_context_s
 {
 	int ctx_refs;
 	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;
+	void *cmm;
 };
 
 void fz_new_colorspace_context(fz_context *ctx)
@@ -253,6 +254,7 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace->bgr = fz_default_bgr;
 	ctx->colorspace->cmyk = fz_default_cmyk;
 	ctx->colorspace->lab = fz_default_lab;
+	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
 }
 
 fz_colorspace_context *
@@ -2176,4 +2178,19 @@ int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs)
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs ? cs->name : "";
+}
+
+void *
+fz_get_cmm_ctx(fz_context *ctx)
+{
+	if (ctx->colorspace != NULL)
+		return ctx->colorspace->cmm;
+	return NULL;
+}
+
+void
+fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx)
+{
+	if (ctx->colorspace != NULL)
+		ctx->colorspace->cmm = cmm_ctx;
 }

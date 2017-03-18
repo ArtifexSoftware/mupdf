@@ -17,6 +17,29 @@ enum { FZ_MAX_COLORS = 32 };
 typedef struct fz_colorspace_s fz_colorspace;
 
 /*
+	A fz_iccprofile object encapusulates details about the icc profile. It
+	also includes the profile handle provided by the cmm and as such is used
+	in the creation of links between color spaces.
+*/
+typedef struct fz_iccprofile_s fz_iccprofile;
+
+/*
+	A fz_icclink object encapusulates details about the link between profiles.
+*/
+typedef struct fz_icclink_s fz_icclink;
+
+/*
+	A fz_rendering_param object describes the settings to use when creating a link.
+*/
+typedef struct fz_rendering_param_s fz_rendering_param;
+
+/*
+	A fz_color_bufferdesc object describes how the data input data to the cmm
+	is organized and how we would like the output data from the cmm organized.
+*/
+typedef struct fz_color_bufferdesc_s fz_color_bufferdesc;
+
+/*
 	fz_colorspace_is_indexed: Return true, iff a given colorspace is
 	indexed.
 */
@@ -114,5 +137,11 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
+
+/*
+	icc methods
+*/
+void * fz_get_cmm_ctx(fz_context *ctx);
+void fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx);
 
 #endif
