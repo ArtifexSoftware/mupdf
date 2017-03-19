@@ -27,17 +27,86 @@ typedef enum
 }
 fz_permission;
 
+/*
+	fz_document_drop_fn: Type for a function to be called when
+	the reference count for the fz_document drops to 0. The
+	implementation should release any resources held by the
+	document. The actual document pointer will be freed by the
+	caller.
+*/
 typedef void (fz_document_drop_fn)(fz_context *ctx, fz_document *doc);
+
+/*
+	fz_document_needs_password_fn: Type for a function to be
+	called to enquire whether the document needs a password
+	or not. See fz_needs_password for more information.
+*/
 typedef int (fz_document_needs_password_fn)(fz_context *ctx, fz_document *doc);
+
+/*
+	fz_document_authenticate_password_fn: Type for a function to be
+	called to attempt to authenticate a password. See
+	fz_authenticate_password for more information.
+*/
 typedef int (fz_document_authenticate_password_fn)(fz_context *ctx, fz_document *doc, const char *password);
+
+/*
+	fz_document_has_permission_fn: Type for a function to be
+	called to see if a document grants a certain permission. See
+	fz_document_has_permission for more information.
+*/
 typedef int (fz_document_has_permission_fn)(fz_context *ctx, fz_document *doc, fz_permission permission);
+
+/*
+	fz_document_load_outline_fn: Type for a function to be called to
+	load the outlines for a document. See fz_document_load_outline
+	for more information.
+*/
 typedef fz_outline *(fz_document_load_outline_fn)(fz_context *ctx, fz_document *doc);
+
+/*
+	fz_document_layout_fn: Type for a function to be called to lay
+	out a document. See fz_layout_document for more information.
+*/
 typedef void (fz_document_layout_fn)(fz_context *ctx, fz_document *doc, float w, float h, float em);
+
+/*
+	fz_document_resolve_link_fn: Type for a function to be called to
+	resolve an internal link to a page number. See fz_resolve_link
+	for more information.
+*/
 typedef int (fz_document_resolve_link_fn)(fz_context *ctx, fz_document *doc, const char *uri, float *xp, float *yp);
+
+/*
+	fz_document_count_pages_fn: Type for a function to be called to
+	count the number of pages in a document. See fz_count_pages for
+	more information.
+*/
 typedef int (fz_document_count_pages_fn)(fz_context *ctx, fz_document *doc);
+
+/*
+	fz_document_load_page_fn: Type for a function to load a given
+	page from a document. See fz_load_page for more information.
+*/
 typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, int number);
+
+/*
+	fz_document_lookup_metadata_fn: Type for a function to query
+	a documents metadata. See fz_lookup_metadata for more
+	information.
+*/
 typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
+
+/*
+	fz_document_make_bookmark_fn: Type for a function to make
+	a bookmark. See fz_make_bookmark for more information.
+*/
 typedef fz_bookmark (fz_document_make_bookmark_fn)(fz_context *ctx, fz_document *doc, int page);
+
+/*
+	fz_document_lookup_bookmark_fn: Type for a function to lookup
+	a bookmark. See fz_lookup_bookmark for more information.
+*/
 typedef int (fz_document_lookup_bookmark_fn)(fz_context *ctx, fz_document *doc, fz_bookmark mark);
 
 typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
@@ -92,7 +161,9 @@ struct fz_page_s
 
 /*
 	Structure definition is public so other classes can
-	derive from it. Do not access the members directly.
+	derive from it. Callers shoud not access the members
+	directly, though implementations will need initialize
+	functions directly.
 */
 struct fz_document_s
 {
@@ -113,8 +184,38 @@ struct fz_document_s
 	int is_reflowable;
 };
 
+/*
+	fz_document_open_fn: Function type to open a document from a
+	file.
+
+	filename: file to open
+
+	Pointer to opened document. Throws exception in case of error.
+*/
 typedef fz_document *(fz_document_open_fn)(fz_context *ctx, const char *filename);
+
+/*
+	fz_document_open_with_stream_fn: Function type to open a
+	document from a file.
+
+	stream: fz_stream to read document data from. Must be
+	seekable for formats that require it.
+
+	Pointer to opened document. Throws exception in case of error.
+*/
 typedef fz_document *(fz_document_open_with_stream_fn)(fz_context *ctx, fz_stream *stream);
+
+/*
+	fz_document_recognize_fn: Recognize a document type from
+	a magic string.
+
+	magic: string to recognise - typically a filename or mime
+	type.
+
+	Returns a number between 0 (not recognized) and 100
+	(fully recognized) based on how certain the recognizer
+	is that this is of the required type.
+*/
 typedef int (fz_document_recognize_fn)(fz_context *ctx, const char *magic);
 
 struct fz_document_handler_s
@@ -124,8 +225,19 @@ struct fz_document_handler_s
 	fz_document_open_with_stream_fn *open_with_stream;
 };
 
+/*
+	fz_register_document_handler: Register a handler
+	for a document type.
+
+	handler: The handler to register.
+*/
 void fz_register_document_handler(fz_context *ctx, const fz_document_handler *handler);
 
+/*
+	fz_register_document_handler: Register handlers
+	for all the standard document types supported in
+	this build.
+*/
 void fz_register_document_handlers(fz_context *ctx);
 
 /*
@@ -136,9 +248,7 @@ void fz_register_document_handlers(fz_context *ctx);
 	documents (without actually changing the file contents).
 
 	The returned fz_document is used when calling most other
-	document related functions. Note that it wraps the context, so
-	those functions implicitly can access the global state in
-	context.
+	document related functions.
 
 	filename: a path to a file as it would be given to open(2).
 */

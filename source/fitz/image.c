@@ -742,14 +742,12 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 {
 	fz_pixmap_image *image;
 
-	image = (fz_pixmap_image *)
-			fz_new_image(ctx, pixmap->w, pixmap->h, 8, pixmap->colorspace,
-					pixmap->xres, pixmap->yres, 0, 0,
-					NULL, NULL, mask,
-					sizeof(fz_pixmap_image),
-					pixmap_image_get_pixmap,
-					pixmap_image_get_size,
-					drop_pixmap_image);
+	image = fz_new_image(ctx, pixmap->w, pixmap->h, 8, pixmap->colorspace,
+				pixmap->xres, pixmap->yres, 0, 0,
+				NULL, NULL, mask, fz_pixmap_image,
+				pixmap_image_get_pixmap,
+				pixmap_image_get_size,
+				drop_pixmap_image);
 	image->tile = fz_keep_pixmap(ctx, pixmap);
 	image->super.decoded = 1;
 
@@ -757,7 +755,7 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 }
 
 fz_image *
-fz_new_image(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
+fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 		int xres, int yres, int interpolate, int imagemask, float *decode,
 		int *colorkey, fz_image *mask, int size, fz_image_get_pixmap_fn *get,
 		fz_image_get_size_fn *get_size, fz_drop_image_fn *drop)
@@ -833,15 +831,13 @@ fz_new_image_from_compressed_buffer(fz_context *ctx, int w, int h,
 
 	fz_try(ctx)
 	{
-		image = (fz_compressed_image *)
-				fz_new_image(ctx, w, h, bpc,
-						colorspace, xres, yres,
-						interpolate, imagemask, decode,
-						colorkey, mask,
-						sizeof(fz_compressed_image),
-						compressed_image_get_pixmap,
-						compressed_image_get_size,
-						drop_compressed_image);
+		image = fz_new_image(ctx, w, h, bpc,
+					colorspace, xres, yres,
+					interpolate, imagemask, decode,
+					colorkey, mask, fz_compressed_image,
+					compressed_image_get_pixmap,
+					compressed_image_get_size,
+					drop_compressed_image);
 		image->buffer = buffer;
 	}
 	fz_catch(ctx)
@@ -1115,10 +1111,9 @@ fz_image *fz_new_image_from_display_list(fz_context *ctx, float w, float h, fz_d
 	iw = w * SCALABLE_IMAGE_DPI / 72;
 	ih = h * SCALABLE_IMAGE_DPI / 72;
 
-	image = (fz_display_list_image *)
-		fz_new_image(ctx, iw, ih, 8, fz_device_rgb(ctx),
+	image = fz_new_image(ctx, iw, ih, 8, fz_device_rgb(ctx),
 				SCALABLE_IMAGE_DPI, SCALABLE_IMAGE_DPI, 0, 0,
-				NULL, NULL, NULL, sizeof(fz_display_list_image),
+				NULL, NULL, NULL, fz_display_list_image,
 				display_list_image_get_pixmap,
 				display_list_image_get_size,
 				drop_display_list_image);
