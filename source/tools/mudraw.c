@@ -1445,6 +1445,7 @@ int mudraw_main(int argc, char **argv)
 
 	if (num_workers > 0)
 	{
+		int i;
 		int fail = 0;
 		workers = fz_calloc(ctx, num_workers, sizeof(*workers));
 		for (i = 0; i < num_workers; i++)
@@ -1730,6 +1731,7 @@ int mudraw_main(int argc, char **argv)
 #ifndef DISABLE_MUTHREADS
 	if (num_workers > 0)
 	{
+		int i;
 		for (i = 0; i < num_workers; i++)
 		{
 			workers[i].band = -1;
