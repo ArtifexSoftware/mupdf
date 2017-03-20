@@ -14,4 +14,37 @@ struct fz_colorspace_s
 	void *data;
 };
 
+struct fz_iccprofile_s
+{
+	int num_devcomp;
+	fz_buffer *buffer;
+	void *cmm_handle;
+};
+
+struct fz_icclink_s
+{
+	int num_in;
+	int num_out;
+	void *cmm_handle;
+};
+
+struct fz_rendering_param_s
+{
+	int rendering_intent;
+	int black_point;
+};
+
+struct fz_color_bufferdesc_s
+{
+	unsigned char num_chan;
+	unsigned char bytes;
+	int endian;
+	int alpha;
+	int planar;
+	int plane_stride;
+	int row_stride;
+	int num_rows;
+	int pixels_per_row;
+};
+
 #endif

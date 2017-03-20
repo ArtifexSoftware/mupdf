@@ -143,5 +143,5 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 */
 void * fz_get_cmm_ctx(fz_context *ctx);
 void fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx);
-
+fz_colorspace * fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf);
 #endif

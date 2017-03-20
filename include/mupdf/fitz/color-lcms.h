@@ -14,7 +14,6 @@ enum
 	fz_colorspace_is_lab: Return true, iff a given colorspace is
 	lab.
 */
-int fz_cmm_num_channels(fz_iccprofile *profile);
 int fz_cmm_avoid_white_fix_flag();
 void fz_cmm_transform_color_buffer(fz_context *ctx, fz_icclink *link, fz_color_bufferdesc *in_desc, fz_color_bufferdesc *out_desc, void *input, void *output);
 void fz_cmm_transform_color(fz_icclink *link, void *inputcolor, void *outputcolor, int num_bytes);

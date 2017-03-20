@@ -1,7 +1,7 @@
 #include "mupdf/fitz.h"
 #include "lcms2.h"
 #include "lcms2_plugin.h"
-#include "icc-imp.h"
+#include "colorspace-imp.h"
 #include "mupdf/fitz/color-lcms.h"
 
 #define LCMS_BYTES_MASK 0x7
@@ -58,8 +58,8 @@ static cmsPluginMemHandler fz_cmm_memhandler =
 	NULL,
 };
 
-int
-fz_cmm_num_channels(fz_iccprofile *profile)
+static int
+fz_cmm_num_devcomps(fz_iccprofile *profile)
 {
 	return cmsChannelsOf(cmsGetColorSpace(profile->cmm_handle));
 }
@@ -277,9 +277,14 @@ void
 fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 {
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
+	size_t size;
+	unsigned char *data;
 
 	cmsSetLogErrorHandlerTHR(cmm_ctx, fz_cmm_error);
-	profile->cmm_handle = cmsOpenProfileFromMemTHR(cmm_ctx, profile->buffer, profile->buffer_size);
+	size = fz_buffer_storage(ctx, profile->buffer, &data);
+	profile->cmm_handle = cmsOpenProfileFromMemTHR(cmm_ctx, data, size);
+	if (profile->cmm_handle != NULL)
+		profile->num_devcomp = fz_cmm_num_devcomps(profile);
 }
 
 void

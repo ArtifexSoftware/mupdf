@@ -2194,3 +2194,49 @@ fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx)
 	if (ctx->colorspace != NULL)
 		ctx->colorspace->cmm = cmm_ctx;
 }
+
+static void
+free_icc(fz_context *ctx, fz_colorspace *cs)
+{
+	fz_iccprofile *profile = cs->data;
+	fz_drop_buffer(ctx, profile->buffer);
+	fz_cmm_free_profile(profile);
+	fz_free(ctx, profile);
+}
+
+fz_colorspace *
+fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf)
+{
+	fz_colorspace *cs = NULL;
+	fz_iccprofile *profile;
+
+	fz_try(ctx)
+	{
+		profile = fz_malloc_struct(ctx, fz_iccprofile);
+		profile->buffer = buf;
+		fz_cmm_new_profile(ctx, profile);
+
+		/* Check if profile was valid and is correct type */
+		if (profile->cmm_handle == NULL || num != profile->num_devcomp)
+		{
+			if (profile->cmm_handle)
+				fz_cmm_free_profile(profile);
+		}
+		else
+		{
+			fz_keep_buffer(ctx, buf);
+			cs = fz_new_colorspace(ctx, "icc", 1, 0, NULL, NULL, free_icc, profile, sizeof(profile));
+		}
+	}
+	fz_catch(ctx)
+	{
+		if (profile != NULL)
+		{
+			fz_drop_buffer(ctx, profile->buffer);
+			fz_cmm_free_profile(profile);
+			fz_free(ctx, profile);
+		}
+		fz_rethrow(ctx);
+	}
+	return cs;
+}

@@ -6,36 +6,39 @@
 #include <string.h>
 
 /* ICCBased */
-
 static fz_colorspace *
 load_icc_based(fz_context *ctx, pdf_obj *dict)
 {
 	int n;
 	pdf_obj *obj;
+	fz_buffer *buffer = NULL;
+	fz_colorspace *cs = NULL;
 
 	n = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_N));
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
 
-	if (obj)
+	fz_try(ctx)
 	{
-		fz_colorspace *cs_alt = NULL;
+		buffer = pdf_load_stream(ctx, dict);
+		cs = fz_new_icc_colorspace(ctx, n, buffer);
 
-		fz_try(ctx)
+		/* Use alternate if ICC not invalid */
+		if (cs == NULL)
 		{
-			cs_alt = pdf_load_colorspace(ctx, obj);
-			if (cs_alt->n != n)
+			obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
+			if (obj)
 			{
-				fz_drop_colorspace(ctx, cs_alt);
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased /Alternate colorspace must have %d components", n);
+				cs = pdf_load_colorspace(ctx, obj);
+				if (cs->n != n)
+				{
+					fz_drop_colorspace(ctx, cs);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "ICCBased /Alternate colorspace must have %d components", n);
+				}
 			}
 		}
-		fz_catch(ctx)
-		{
-			cs_alt = NULL;
-		}
-
-		if (cs_alt)
-			return cs_alt;
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_buffer(ctx, buffer);
 	}
 
 	switch (n)
