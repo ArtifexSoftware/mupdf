@@ -109,7 +109,12 @@ static fz_store_type fz_image_store_type =
 void
 fz_drop_image(fz_context *ctx, fz_image *image)
 {
-	fz_drop_key_storable(ctx, &image->key_storable);
+	if (fz_drop_key_storable(ctx, &image->key_storable))
+	{
+		fz_drop_colorspace(ctx, image->colorspace);
+		fz_drop_image(ctx, image->mask);
+		fz_free(ctx, image);
+	}
 }
 
 static void
@@ -373,17 +378,6 @@ fz_drop_image_imp(fz_context *ctx, fz_storable *image_)
 	image->drop_image(ctx, image);
 }
 
-void
-fz_drop_image_base(fz_context *ctx, fz_image *image)
-{
-	if (!image)
-		return;
-
-	fz_drop_colorspace(ctx, image->colorspace);
-	fz_drop_image(ctx, image->mask);
-	fz_free(ctx, image);
-}
-
 static void
 drop_compressed_image(fz_context *ctx, fz_image *image_)
 {
@@ -391,7 +385,6 @@ drop_compressed_image(fz_context *ctx, fz_image *image_)
 
 	fz_drop_pixmap(ctx, image->tile);
 	fz_drop_compressed_buffer(ctx, image->buffer);
-	fz_drop_image_base(ctx, &image->super);
 }
 
 static void
@@ -400,7 +393,6 @@ drop_pixmap_image(fz_context *ctx, fz_image *image_)
 	fz_pixmap_image *image = (fz_pixmap_image *)image_;
 
 	fz_drop_pixmap(ctx, image->tile);
-	fz_drop_image_base(ctx, &image->super);
 }
 
 static fz_pixmap *
@@ -1089,7 +1081,6 @@ static void drop_display_list_image(fz_context *ctx, fz_image *image_)
 	if (image == NULL)
 		return;
 	fz_drop_display_list(ctx, image->list);
-	fz_drop_image_base(ctx, &image->super);
 }
 
 static size_t

@@ -56,7 +56,7 @@ void *fz_keep_storable(fz_context *, const fz_storable *);
 void fz_drop_storable(fz_context *, const fz_storable *);
 
 void *fz_keep_key_storable(fz_context *, const fz_key_storable *);
-void fz_drop_key_storable(fz_context *, const fz_key_storable *);
+int fz_drop_key_storable(fz_context *, const fz_key_storable *);
 
 void *fz_keep_key_storable_key(fz_context *, const fz_key_storable *);
 void fz_drop_key_storable_key(fz_context *, const fz_key_storable *);

@@ -168,7 +168,7 @@ do_reap(fz_context *ctx)
 	}
 }
 
-void fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
+int fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 {
 	/* Explicitly drop const to allow us to use const
 	 * sanely throughout the code. */
@@ -177,7 +177,7 @@ void fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 	int unlock = 1;
 
 	if (s == NULL)
-		return;
+		return 0;
 
 	if (s->storable.refs > 0)
 		(void)Memento_dropRef(s);
@@ -211,6 +211,7 @@ void fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 	 */
 	if (drop)
 		s->storable.drop(ctx, &s->storable);
+	return drop;
 }
 
 void *fz_keep_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
