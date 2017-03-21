@@ -4,7 +4,7 @@
 	Version="8.00"
 	Name="libfonts"
 	ProjectGUID="{52DCAB29-C8EE-4422-954C-29AFA6B33E22}"
-	RootNamespace="libfonts"
+	RootNamespace="libresources"
 	>
 	<Platforms>
 		<Platform
@@ -657,19 +657,19 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\icc-gray.c"
+			RelativePath="..\..\generated\gray-icc.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\icc-rgb.c"
+			RelativePath="..\..\generated\rgb-icc.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\icc-cmyk.c"
+			RelativePath="..\..\generated\cmyk-icc.c"
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\icc-lab.c"
+			RelativePath="..\..\generated\lab-icc.c"
 			>
 		</File>
 	</Files>
