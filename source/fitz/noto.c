@@ -367,3 +367,15 @@ fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 	return *size = 0, NULL;
 #endif
 }
+
+const char *
+fz_lookup_icc(fz_context *ctx, const char *name, int *size)
+{
+#ifndef NO_ICC
+	if (!strcmp(name, "gray-icc")) RETURN(gray_icc);
+	if (!strcmp(name, "rgb-icc")) RETURN(rgb_icc);
+	if (!strcmp(name, "cmyk-icc")) RETURN(cmyk_icc);
+	if (!strcmp(name, "lab-icc")) RETURN(lab_icc);
+#endif
+	return *size = 0, NULL;
+}

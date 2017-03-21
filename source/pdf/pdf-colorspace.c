@@ -19,7 +19,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 	fz_try(ctx)
 	{
 		buffer = pdf_load_stream(ctx, dict);
-		cs = fz_new_icc_colorspace(ctx, n, buffer);
+		cs = fz_new_icc_colorspace(ctx, n, buffer, NULL);
 
 		/* Use alternate if ICC not invalid */
 		if (cs == NULL)

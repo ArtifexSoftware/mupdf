@@ -96,18 +96,24 @@ static const cs_name_t cs_name_table[] =
 	{ "cmyk", CS_CMYK },
 	{ "cmyka", CS_CMYK_ALPHA },
 	{ "cmykalpha", CS_CMYK_ALPHA },
+	{ "iccgray", CS_GRAYICC },
+	{ "iccgrayalpha", CS_GRAYICC_ALPHA },
+	{ "iccrgb", CS_RGBICC },
+	{ "iccrgbalpha", CS_RGBICC_ALPHA },
+	{ "icccmyk", CS_CMYKICC },
+	{ "icccmykalpha", CS_CMYKICC_ALPHA },
 };
 
 typedef struct
 {
 	int format;
 	int default_cs;
-	int permitted_cs[6];
+	int permitted_cs[8];
 } format_cs_table_t;
 
 static const format_cs_table_t format_cs_table[] =
 {
-	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_GRAYICC, CS_GRAYICC_ALPHA, CS_RGBICC, CS_RGBICCALPHA } },
+	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_GRAYICC, CS_GRAYICC_ALPHA, CS_RGBICC, CS_RGBICC_ALPHA } },
 	{ OUT_PPM, CS_RGB, { CS_GRAY, CS_RGB } },
 	{ OUT_PNM, CS_GRAY, { CS_GRAY, CS_RGB } },
 	{ OUT_PAM, CS_RGB_ALPHA, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
@@ -316,7 +322,7 @@ static void usage(void)
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
 		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
-		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha)\n"
+		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha, iccgray, iccgrayalpha, iccrgb, iccrgba, icccmyk, icccmykalpha)\n"
 		"\t-G -\tapply gamma correction\n"
 		"\t-I\tinvert colors\n"
 		"\n"
@@ -1604,6 +1610,21 @@ int mudraw_main(int argc, char **argv)
 	case CS_CMYK_ALPHA:
 		colorspace = fz_device_cmyk(ctx);
 		alpha = (out_cs == CS_CMYK_ALPHA);
+		break;
+	case CS_GRAYICC:
+	case CS_GRAYICC_ALPHA:
+		colorspace = fz_new_icc_colorspace(ctx, 1, NULL, "gray-icc");
+		alpha = (out_cs == CS_GRAYICC_ALPHA);
+		break;
+	case CS_RGBICC:
+	case CS_RGBICC_ALPHA:
+		colorspace = fz_new_icc_colorspace(ctx, 3, NULL, "rgb-icc");
+		alpha = (out_cs == CS_RGBICC_ALPHA);
+		break;
+	case CS_CMYKICC:
+	case CS_CMYKICC_ALPHA:
+		colorspace = fz_new_icc_colorspace(ctx, 4, NULL, "cmyk-icc");
+		alpha = (out_cs == CS_CMYKICC_ALPHA);
 		break;
 	default:
 		fprintf(stderr, "Unknown colorspace!\n");

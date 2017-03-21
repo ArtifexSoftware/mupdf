@@ -18,6 +18,8 @@ struct fz_iccprofile_s
 {
 	int num_devcomp;
 	fz_buffer *buffer;
+	unsigned char *res_buffer;
+	size_t res_size;
 	void *cmm_handle;
 };
 

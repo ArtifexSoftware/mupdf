@@ -266,6 +266,18 @@ const char *fz_lookup_builtin_font(fz_context *ctx, const char *name, int bold, 
 */
 const char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
 
+/* ToDo:  Share fz_lookup_builtin_font and fz_lookup_icc?  Check with Tor */
+/*
+fz_lookup_icc: Search for icc profile
+
+name: The name of the profile desired (gray-icc, rgb-icc, cmyk-icc or lab-icc).
+
+len: Pointer to a place to receive the length of the discovered
+
+Returns a pointer to the icc file data, or NULL if not present.
+*/
+const char *fz_lookup_icc(fz_context *ctx, const char *name, int *len);
+
 /*
 	fz_lookup_cjk_font: Search the builtin cjk fonts for a match.
 	Whether a font is present or not will depend on the

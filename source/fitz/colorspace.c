@@ -2205,7 +2205,7 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 }
 
 fz_colorspace *
-fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf)
+fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name)
 {
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
@@ -2214,6 +2214,8 @@ fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf)
 	{
 		profile = fz_malloc_struct(ctx, fz_iccprofile);
 		profile->buffer = buf;
+		if (name != NULL)
+			profile->res_buffer = fz_lookup_icc(ctx, name, &profile->res_size);
 		fz_cmm_new_profile(ctx, profile);
 
 		/* Check if profile was valid and is correct type */
@@ -2225,7 +2227,7 @@ fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf)
 		else
 		{
 			fz_keep_buffer(ctx, buf);
-			cs = fz_new_colorspace(ctx, "icc", 1, 0, NULL, NULL, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, "icc", num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
 		}
 	}
 	fz_catch(ctx)
