@@ -392,9 +392,12 @@ fz_page *fz_load_page(fz_context *ctx, fz_document *doc, int number);
 fz_link *fz_load_links(fz_context *ctx, fz_page *page);
 
 /*
-	fz_new_page: Create and initialize a page struct.
+	fz_new_page_of_size: Create and initialize a page struct.
 */
-void *fz_new_page(fz_context *ctx, int size);
+fz_page *fz_new_page_of_size(fz_context *ctx, int size);
+
+#define fz_new_page(CTX,TYPE) \
+	((TYPE *)Memento_label(fz_new_page_of_size(CTX,sizeof(TYPE)),#TYPE))
 
 /*
 	fz_bound_page: Determine the size of a page at 72 dpi.

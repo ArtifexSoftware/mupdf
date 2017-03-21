@@ -649,7 +649,7 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 static pdf_page *
 pdf_new_page(fz_context *ctx, pdf_document *doc)
 {
-	pdf_page *page = fz_new_page(ctx, sizeof(*page));
+	pdf_page *page = fz_new_page(ctx, pdf_page);
 
 	page->doc = (pdf_document*) fz_keep_document(ctx, &doc->super);
 

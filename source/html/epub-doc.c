@@ -215,7 +215,7 @@ static fz_page *
 epub_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
 	epub_document *doc = (epub_document*)doc_;
-	epub_page *page = fz_new_page(ctx, sizeof *page);
+	epub_page *page = fz_new_page(ctx, epub_page);
 	page->super.bound_page = epub_bound_page;
 	page->super.run_page_contents = epub_run_page;
 	page->super.load_links = epub_load_links;

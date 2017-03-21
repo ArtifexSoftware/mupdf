@@ -410,8 +410,8 @@ fz_drop_annot(fz_context *ctx, fz_annot *annot)
 	}
 }
 
-void *
-fz_new_page(fz_context *ctx, int size)
+fz_page *
+fz_new_page_of_size(fz_context *ctx, int size)
 {
 	fz_page *page = Memento_label(fz_calloc(ctx, 1, size), "fz_page");
 	page->refs = 1;

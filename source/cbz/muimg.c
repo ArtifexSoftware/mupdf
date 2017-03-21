@@ -69,7 +69,7 @@ img_load_page(fz_context *ctx, img_document *doc, int number)
 	if (number != 0)
 		return NULL;
 
-	page = fz_new_page(ctx, sizeof *page);
+	page = fz_new_page(ctx, img_page);
 
 	page->super.bound_page = (fz_page_bound_page_fn *)img_bound_page;
 	page->super.run_page_contents = (fz_page_run_page_contents_fn *)img_run_page;

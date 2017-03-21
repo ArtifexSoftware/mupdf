@@ -864,7 +864,7 @@ static fz_page *
 gprf_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
 	gprf_document *doc = (gprf_document*)doc_;
-	gprf_page *page = fz_new_page(ctx, sizeof *page);
+	gprf_page *page = fz_new_page(ctx, gprf_page);
 
 	fz_try(ctx)
 	{

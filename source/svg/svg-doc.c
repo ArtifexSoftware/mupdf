@@ -61,7 +61,7 @@ svg_load_page(fz_context *ctx, fz_document *doc_, int number)
 	if (number != 0)
 		return NULL;
 
-	page = fz_new_page(ctx, sizeof *page);
+	page = fz_new_page(ctx, svg_page);
 	page->super.bound_page = svg_bound_page;
 	page->super.run_page_contents = svg_run_page;
 	page->super.drop_page = svg_drop_page;
