@@ -9,12 +9,12 @@
 FREETYPE_DIR := thirdparty/freetype
 HARFBUZZ_DIR := thirdparty/harfbuzz
 JBIG2DEC_DIR := thirdparty/jbig2dec
-LIBJPEG_DIR := thirdparty/jpeg
+JPEGXR_DIR := thirdparty/jpegxr
+LIBJPEG_DIR := thirdparty/libjpeg
+LURATECH_DIR := thirdparty/luratech
 MUJS_DIR := thirdparty/mujs
 OPENJPEG_DIR := thirdparty/openjpeg/src/lib/openjp2
 ZLIB_DIR := thirdparty/zlib
-LURATECH_DIR := thirdparty/luratech
-JPEGXR_DIR := thirdparty/jpegxr
 
 CURL_DIR := thirdparty/curl
 GLFW_DIR := thirdparty/glfw
@@ -458,7 +458,7 @@ $(LIBJPEG_OUT):
 $(LIBJPEG_OUT)/%.o: $(LIBJPEG_DIR)/%.c | $(LIBJPEG_OUT)
 	$(CC_CMD) -Dmain=xxxmain
 
-LIBJPEG_CFLAGS := -Iscripts/jpeg -I$(LIBJPEG_DIR)
+LIBJPEG_CFLAGS := -Iscripts/libjpeg -I$(LIBJPEG_DIR)
 else
 LIBJPEG_CFLAGS := $(SYS_LIBJPEG_CFLAGS) -DSHARE_JPEG
 LIBJPEG_LIBS := $(SYS_LIBJPEG_LIBS)

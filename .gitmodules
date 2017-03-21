@@ -11,7 +11,7 @@
 	path = thirdparty/harfbuzz
 	url = ../thirdparty-harfbuzz.git
 [submodule "thirdparty/jpeg"]
-	path = thirdparty/jpeg
+	path = thirdparty/libjpeg
 	url = ../thirdparty-libjpeg.git
 [submodule "thirdparty/openjpeg"]
 	path = thirdparty/openjpeg
