@@ -9,7 +9,7 @@
 FREETYPE_DIR := thirdparty/freetype
 HARFBUZZ_DIR := thirdparty/harfbuzz
 JBIG2DEC_DIR := thirdparty/jbig2dec
-JPEG_DIR := thirdparty/jpeg
+LIBJPEG_DIR := thirdparty/jpeg
 MUJS_DIR := thirdparty/mujs
 OPENJPEG_DIR := thirdparty/openjpeg/src/lib/openjp2
 ZLIB_DIR := thirdparty/zlib
@@ -23,7 +23,7 @@ GLFW_DIR := thirdparty/glfw
 
 ifneq "$(wildcard $(MUJS_DIR)/README)" ""
 
-MUJS_OUT := $(OUT)/mujs
+MUJS_OUT := $(OUT)/thirdparty/mujs
 MUJS_SRC := one.c
 
 MUJS_OBJ := $(addprefix $(MUJS_OUT)/, $(MUJS_SRC:%.c=%.o))
@@ -47,7 +47,7 @@ endif
 
 ifneq "$(wildcard $(FREETYPE_DIR)/README)" ""
 
-FREETYPE_OUT := $(OUT)/freetype
+FREETYPE_OUT := $(OUT)/thirdparty/freetype
 FREETYPE_SRC := \
 	ftbase.c \
 	ftbbox.c \
@@ -114,7 +114,7 @@ endif
 
 ifneq "$(wildcard $(HARFBUZZ_DIR)/README)" ""
 
-HARFBUZZ_OUT := $(OUT)/harfbuzz
+HARFBUZZ_OUT := $(OUT)/thirdparty/harfbuzz
 HARFBUZZ_SRC := \
 	hb-blob.cc \
 	hb-buffer.cc \
@@ -178,7 +178,7 @@ endif
 
 ifneq "$(wildcard $(LURATECH_DIR)/ldf_jb2)$(wildcard $(LURATECH_DIR)/lwf_jp2)" ""
 
-LURATECH_OUT := $(OUT)/luratech
+LURATECH_OUT := $(OUT)/thirdparty/luratech
 LURATECH_SRC := \
 	jb2_adt_cache.c \
 	jb2_adt_decoder_halftone_region.c \
@@ -337,7 +337,7 @@ else # --- LURATECH ---
 
 ifneq "$(wildcard $(JBIG2DEC_DIR)/README)" ""
 
-JBIG2DEC_OUT := $(OUT)/jbig2dec
+JBIG2DEC_OUT := $(OUT)/thirdparty/jbig2dec
 JBIG2DEC_SRC := \
 	jbig2.c \
 	jbig2_arith.c \
@@ -372,7 +372,7 @@ endif
 
 ifneq "$(wildcard $(OPENJPEG_DIR)/openjpeg.h)" ""
 
-OPENJPEG_OUT := $(OUT)/openjpeg
+OPENJPEG_OUT := $(OUT)/thirdparty/openjpeg
 OPENJPEG_SRC := \
 	bio.c \
 	cidx_manager.c \
@@ -416,10 +416,10 @@ endif # --- LURATECH ---
 
 # --- JPEG library from IJG ---
 
-ifneq "$(wildcard $(JPEG_DIR)/README)" ""
+ifneq "$(wildcard $(LIBJPEG_DIR)/README)" ""
 
-JPEG_OUT := $(OUT)/jpeg
-JPEG_SRC := \
+LIBJPEG_OUT := $(OUT)/thirdparty/libjpeg
+LIBJPEG_SRC := \
 	jaricom.c \
 	jcomapi.c \
 	jdapimin.c \
@@ -451,24 +451,24 @@ JPEG_SRC := \
 	jquant2.c \
 	jutils.c \
 
-JPEG_OBJ := $(addprefix $(JPEG_OUT)/, $(JPEG_SRC:%.c=%.o))
+LIBJPEG_OBJ := $(addprefix $(LIBJPEG_OUT)/, $(LIBJPEG_SRC:%.c=%.o))
 
-$(JPEG_OUT):
+$(LIBJPEG_OUT):
 	$(MKDIR_CMD)
-$(JPEG_OUT)/%.o: $(JPEG_DIR)/%.c | $(JPEG_OUT)
+$(LIBJPEG_OUT)/%.o: $(LIBJPEG_DIR)/%.c | $(LIBJPEG_OUT)
 	$(CC_CMD) -Dmain=xxxmain
 
-JPEG_CFLAGS := -Iscripts/jpeg -I$(JPEG_DIR)
+LIBJPEG_CFLAGS := -Iscripts/jpeg -I$(LIBJPEG_DIR)
 else
-JPEG_CFLAGS := $(SYS_JPEG_CFLAGS) -DSHARE_JPEG
-JPEG_LIBS := $(SYS_JPEG_LIBS)
+LIBJPEG_CFLAGS := $(SYS_LIBJPEG_CFLAGS) -DSHARE_JPEG
+LIBJPEG_LIBS := $(SYS_LIBJPEG_LIBS)
 endif
 
 # --- jpegxr ---
 
 ifneq "$(wildcard $(JPEGXR_DIR)/T835E.pdf)" ""
 
-JPEGXR_OUT := $(OUT)/jpegxr
+JPEGXR_OUT := $(OUT)/thirdparty/jpegxr
 JPEGXR_SRC := \
 	algo.c \
 	api.c \
@@ -502,7 +502,7 @@ endif
 
 ifneq "$(wildcard $(ZLIB_DIR)/README)" ""
 
-ZLIB_OUT := $(OUT)/zlib
+ZLIB_OUT := $(OUT)/thirdparty/zlib
 ZLIB_SRC := \
 	adler32.c \
 	compress.c \
@@ -537,7 +537,7 @@ endif
 ifneq "$(wildcard $(CURL_DIR)/README)" ""
 
 CURL_LIB := $(OUT)/libcurl.a
-CURL_OUT := $(OUT)/curl
+CURL_OUT := $(OUT)/thirdparty/curl
 CURL_SRC := \
 	base64.c \
 	conncache.c \
@@ -617,7 +617,7 @@ endif
 ifneq "$(wildcard $(GLFW_DIR)/README.md)" ""
 
 GLFW_LIB := $(OUT)/libglfw.a
-GLFW_OUT := $(OUT)/glfw
+GLFW_OUT := $(OUT)/thirdparty/glfw
 
 ifeq "$(OS)" "MACOS"
 
