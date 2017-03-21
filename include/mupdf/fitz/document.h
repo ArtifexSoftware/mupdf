@@ -109,17 +109,74 @@ typedef fz_bookmark (fz_document_make_bookmark_fn)(fz_context *ctx, fz_document 
 */
 typedef int (fz_document_lookup_bookmark_fn)(fz_context *ctx, fz_document *doc, fz_bookmark mark);
 
-typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
-typedef fz_rect *(fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_rect *);
-typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+/*
+	fz_page_drop_page_fn: Type for a function to release all the
+	resources held by a page. Called automatically when the
+	reference count for that page reaches zero.
+*/
 typedef void (fz_page_drop_page_fn)(fz_context *ctx, fz_page *page);
-typedef fz_transition *(fz_page_page_presentation_fn)(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
 
+/*
+	fz_page_bound_page_fn: Type for a function to return the
+	bounding box of a page. See fz_bound_page for more
+	information.
+*/
+typedef fz_rect *(fz_page_bound_page_fn)(fz_context *ctx, fz_page *page, fz_rect *);
+
+/*
+	fz_page_run_page_contents_fn: Type for a function to run the
+	contents of a page. See fz_run_page_contents for more
+	information.
+*/
+typedef void (fz_page_run_page_contents_fn)(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *transform, fz_cookie *cookie);
+
+/*
+	fz_page_load_links_fn: Type for a function to load the links
+	from a page. See fz_load_links for more information.
+*/
+typedef fz_link *(fz_page_load_links_fn)(fz_context *ctx, fz_page *page);
+
+/*
+	fz_page_first_annot_fn: Type for a function to load the
+	annotations from a page. See fz_first_annot for more
+	information.
+*/
 typedef fz_annot *(fz_page_first_annot_fn)(fz_context *ctx, fz_page *page);
 
+/*
+	fz_page_page_presentation_fn: Type for a function to
+	obtain the details of how this page should be presented when
+	in presentation mode. See fz_page_presentation for more
+	information.
+*/
+typedef fz_transition *(fz_page_page_presentation_fn)(fz_context *ctx, fz_page *page, fz_transition *transition, float *duration);
+
+/*
+	fz_page_control_separation: Type for a function to enable/
+	disable separations on a page. See fz_control_separation for
+	more information.
+*/
 typedef void (fz_page_control_separation_fn)(fz_context *ctx, fz_page *page, int separation, int disable);
+
+/*
+	fz_page_separation_disabled_fn: Type for a function to detect
+	whether a given separation is enabled or disabled on a page.
+	See fz_separation_disabled for more information.
+*/
 typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int separation);
+
+/*
+	fz_page_count_separations_fn: Type for a function to count
+	the number of separations on a page. See fz_count_separations
+	for more information.
+*/
 typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
+
+/*
+	fz_page_get_separation_fn: Type for a function to retrieve
+	details of a separation on a page. See fz_get_separation
+	for more information.
+*/
 typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
 
 typedef void (fz_annot_drop_fn)(fz_context *ctx, fz_annot *annot);
