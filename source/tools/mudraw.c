@@ -1613,17 +1613,17 @@ int mudraw_main(int argc, char **argv)
 		break;
 	case CS_GRAYICC:
 	case CS_GRAYICC_ALPHA:
-		colorspace = fz_new_icc_colorspace(ctx, 1, NULL, "gray-icc");
+		colorspace = fz_new_icc_colorspace(ctx, 1, -1, NULL, "gray-icc");
 		alpha = (out_cs == CS_GRAYICC_ALPHA);
 		break;
 	case CS_RGBICC:
 	case CS_RGBICC_ALPHA:
-		colorspace = fz_new_icc_colorspace(ctx, 3, NULL, "rgb-icc");
+		colorspace = fz_new_icc_colorspace(ctx, 3, -1, NULL, "rgb-icc");
 		alpha = (out_cs == CS_RGBICC_ALPHA);
 		break;
 	case CS_CMYKICC:
 	case CS_CMYKICC_ALPHA:
-		colorspace = fz_new_icc_colorspace(ctx, 4, NULL, "cmyk-icc");
+		colorspace = fz_new_icc_colorspace(ctx, 4, -1, NULL, "cmyk-icc");
 		alpha = (out_cs == CS_CMYKICC_ALPHA);
 		break;
 	default:

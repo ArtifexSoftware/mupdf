@@ -19,10 +19,10 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
-	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
+	FZ_INIT_STORABLE(cs, storable, fz_drop_colorspace_imp);
 	cs->size = sizeof(fz_colorspace) + size;
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
@@ -249,12 +249,21 @@ void fz_new_colorspace_context(fz_context *ctx)
 {
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
 	ctx->colorspace->ctx_refs = 1;
+#ifdef NO_ICC
 	ctx->colorspace->gray = fz_default_gray;
 	ctx->colorspace->rgb = fz_default_rgb;
 	ctx->colorspace->bgr = fz_default_bgr;
 	ctx->colorspace->cmyk = fz_default_cmyk;
 	ctx->colorspace->lab = fz_default_lab;
+	ctx->colorspace->cmm = NULL;
+#else
+	ctx->colorspace->gray = fz_new_icc_colorspace(ctx, -1, 1, NULL, "gray-icc");
+	ctx->colorspace->rgb = fz_new_icc_colorspace(ctx, -1, 3, NULL, "rgb-icc");
+	ctx->colorspace->bgr = ctx->colorspace->rgb;
+	ctx->colorspace->cmyk = fz_new_icc_colorspace(ctx, -1, 4, NULL, "cmyk-icc");
+	ctx->colorspace->lab = fz_new_icc_colorspace(ctx, -1, 3, NULL, "lab-icc");
 	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
+#endif
 }
 
 fz_colorspace_context *
@@ -2024,7 +2033,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 
 	fz_try(ctx)
 	{
-		cs = fz_new_colorspace(ctx, "Indexed", 1, 0, indexed_to_rgb, NULL, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 1, 1, 0, indexed_to_rgb, NULL, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	}
 	fz_catch(ctx)
 	{
@@ -2205,7 +2214,7 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 }
 
 fz_colorspace *
-fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name)
+fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name)
 {
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
@@ -2227,7 +2236,7 @@ fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name
 		else
 		{
 			fz_keep_buffer(ctx, buf);
-			cs = fz_new_colorspace(ctx, "icc", num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
 		}
 	}
 	fz_catch(ctx)
