@@ -43,6 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -168,6 +169,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL;MEMENTO"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -293,6 +295,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -414,6 +417,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\thirdparty\glfw\src\egl_context.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\glfw\src\egl_context.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\thirdparty\glfw\src\init.c"
 				>
 			</File>
@@ -430,6 +441,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\thirdparty\glfw\src\vulkan.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\thirdparty\glfw\src\wgl_context.c"
 				>
 			</File>
@@ -439,6 +454,14 @@
 			</File>
 			<File
 				RelativePath="..\..\thirdparty\glfw\src\win32_init.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\glfw\src\win32_joystick.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\glfw\src\win32_joystick.h"
 				>
 			</File>
 			<File
@@ -467,14 +490,6 @@
 			</File>
 			<File
 				RelativePath="..\..\thirdparty\glfw\src\window.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\thirdparty\glfw\src\winmm_joystick.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\thirdparty\glfw\src\winmm_joystick.h"
 				>
 			</File>
 		</Filter>

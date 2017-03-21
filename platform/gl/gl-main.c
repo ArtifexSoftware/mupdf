@@ -720,9 +720,9 @@ static void toggle_fullscreen(void)
 	static int win_rr = 60;
 	if (!isfullscreen)
 	{
+		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 		glfwGetWindowPos(window, &win_x, &win_y);
 		glfwGetWindowSize(window, &win_w, &win_h);
-		const GLFWvidmode *mode = glfwGetVideoMode(monitor);
 		win_rr = mode->refreshRate;
 		glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 		isfullscreen = 1;
