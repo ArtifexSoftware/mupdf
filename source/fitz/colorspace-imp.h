@@ -26,6 +26,7 @@ struct fz_iccprofile_s
 
 struct fz_icclink_s
 {
+	fz_storable storable;
 	int num_in;
 	int num_out;
 	int is_identity;
@@ -34,8 +35,8 @@ struct fz_icclink_s
 
 struct fz_rendering_param_s
 {
-	int rendering_intent;
-	int black_point;
+	int intent;
+	int bp;
 };
 
 #endif

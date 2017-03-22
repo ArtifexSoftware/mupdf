@@ -55,22 +55,85 @@ fz_drop_colorspace(fz_context *ctx, fz_colorspace *cs)
 }
 
 /* icc links */
+
+typedef struct fz_link_key_s fz_link_key;
+
+struct fz_link_key_s {
+	int refs;
+	unsigned char src_md5[16];
+	unsigned char dst_md5[16];
+	fz_rendering_param rend;
+};
+
+static void *
+fz_keep_link_key(fz_context *ctx, void *key_)
+{
+	fz_link_key *key = (fz_link_key *)key_;
+	return fz_keep_imp(ctx, key, &key->refs);
+}
+
+static void
+fz_drop_link_key(fz_context *ctx, void *key_)
+{
+	fz_link_key *key = (fz_link_key *)key_;
+	if (fz_drop_imp(ctx, key, &key->refs))
+		fz_free(ctx, key);
+}
+
+static int
+fz_cmp_link_key(fz_context *ctx, void *k0_, void *k1_)
+{
+	fz_link_key *k0 = (fz_link_key *)k0_;
+	fz_link_key *k1 = (fz_link_key *)k1_;
+	return k0->rend.bp == k1->rend.bp && k0->rend.intent == k1->rend.intent && memcmp(k0->dst_md5, k1->dst_md5, 16) == 0 && memcmp(k0->src_md5, k1->src_md5, 16);
+}
+
+static void
+fz_print_link_key(fz_context *ctx, fz_output *out, void *key_)
+{
+	fz_link_key *key = (fz_link_key *)key_;
+	fz_printf(ctx, out, "(link src_md5 [%d %d %d %d] dst_md5 [%d %d %d %d]) ", key->src_md5[0], key->src_md5[1], key->src_md5[2], key->src_md5[3], key->dst_md5[0], key->dst_md5[1], key->dst_md5[2], key->dst_md5[3]);
+}
+
+static int
+fz_make_hash_link_key(fz_context *ctx, fz_store_hash *hash, void *key_)
+{
+	fz_link_key *key = (fz_link_key *)key_;
+	memcpy(hash->u.link.dst_md5, key->dst_md5, 16);
+	memcpy(hash->u.link.src_md5, key->src_md5, 16);
+	hash->u.link.intent = key->rend.intent;
+	hash->u.link.bp = key->rend.bp;
+	return 1;
+}
+
+static fz_store_type fz_link_store_type =
+{
+	fz_make_hash_link_key,
+	fz_keep_link_key,
+	fz_drop_link_key,
+	fz_cmp_link_key,
+	fz_print_link_key,
+};
+
+static void
+fz_drop_link_imp(fz_context *ctx, fz_storable *storable)
+{
+	fz_icclink *link = (fz_icclink *)storable;
+	fz_cmm_free_link(link);
+	fz_free(ctx, link);
+}
+
 static fz_icclink *
-fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src)
+fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rendering_param *rend)
 {
 	fz_icclink *link;
-	fz_rendering_param rend;
 	fz_iccprofile *src_icc = src->data;
-	fz_iccprofile *des_icc = dst->data;
-
-	/* Place holder for now. ToDo */
-	rend.black_point = 1;
-	rend.rendering_intent = 1;
+	fz_iccprofile *dst_icc = dst->data;
 
 	link = fz_malloc_struct(ctx, fz_icclink);
 	link->num_in = src_icc->num_devcomp;
-	link->num_out = des_icc->num_devcomp;
-	if (memcmp(src_icc->md5, des_icc->md5, 16) == 0)
+	link->num_out = dst_icc->num_devcomp;
+	if (memcmp(src_icc->md5, dst_icc->md5, 16) == 0)
 	{
 		link->is_identity = 1;
 		return link;
@@ -78,35 +141,43 @@ fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src)
 	else
 		link->is_identity = 0;
 
-	fz_cmm_new_link(ctx, link, &rend, 0, des_icc, src_icc);
+	fz_cmm_new_link(ctx, link, rend, 0, dst_icc, src_icc);
 
 	if (link->cmm_handle == NULL)
 	{
 		fz_free(ctx, link);
 		link = NULL;
 	}
+	else
+		FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
+
 	return link;
 }
 
 static fz_icclink *
-fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src)
+fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rendering_param *rend)
 {
 	fz_icclink *link;
+	fz_iccprofile *src_icc = src->data;
+	fz_iccprofile *dst_icc = dst->data;
 
 	/* Check the storable to see if we have a copy */
-	/* ToDo */
+	fz_link_key key;
+	memcpy(&key.dst_md5, dst_icc->md5, 16);
+	memcpy(&key.src_md5, src_icc->md5, 16);
+	key.rend.intent = rend->intent;
+	key.rend.bp = rend->bp;
+	link = fz_find_item(ctx, fz_drop_link_imp, &key, &fz_link_store_type);
+	if (link)
+		return link;
 
-	/* Not found so create a new one */
-	link = fz_new_icc_link(ctx, dst, src);
-
-	/* Add to storables */
-	/* ToDo */
-
+	/* Not found so create a new one. */
+	link = fz_new_icc_link(ctx, dst, src, rend);
+	fz_store_item(ctx, &key, link, sizeof(fz_icclink), &fz_link_store_type);
 	return link;
 }
 
 /* Device colorspace definitions */
-
 static void gray_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *gray, float *rgb)
 {
 	rgb[0] = gray[0];
@@ -1589,11 +1660,14 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	fz_icclink *link;
 	int i;
 	unsigned char *inputpos, *outputpos;
+	fz_rendering_param rend;
 
 	inputpos = src->samples;
 	outputpos = dst->samples;
+	rend.bp = 1;
+	rend.intent = 1;
 
-	link = fz_get_icc_link(ctx, dsts, srcs);
+	link = fz_get_icc_link(ctx, dsts, srcs, &rend);
 	if (link != NULL)
 	{
 		if (link->is_identity)
@@ -1899,8 +1973,11 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	int i;
 	unsigned short dstv_s[FZ_MAX_COLORS];
 	unsigned short srcv_s[FZ_MAX_COLORS];
+	fz_rendering_param rend;
 
-	link = fz_get_icc_link(ctx, dsts, srcs);
+	rend.bp = 1;
+	rend.intent = 1;
+	link = fz_get_icc_link(ctx, dsts, srcs, &rend);
 	if (link != NULL)
 	{
 		if (link->is_identity)

@@ -155,11 +155,11 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_rendering_param *rend, int
 	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | BYTES_SH(2));
 
 	/* flags */
-	if (rend->black_point)
+	if (rend->bp)
 		flag |= cmsFLAGS_BLACKPOINTCOMPENSATION;
 
 	/* create */
-	link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->rendering_intent, flag);
+	link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->intent, flag);
 }
 
 void

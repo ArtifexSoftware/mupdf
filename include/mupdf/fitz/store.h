@@ -135,6 +135,13 @@ typedef struct fz_store_hash_s
 			int id;
 			float m[4];
 		} im;
+		struct
+		{
+			unsigned char src_md5[16];
+			unsigned char dst_md5[16];
+			int intent;
+			int bp;
+		} link;
 	} u;
 } fz_store_hash;
 
