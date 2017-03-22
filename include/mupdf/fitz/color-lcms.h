@@ -10,14 +10,10 @@ enum
 	FZ_INTENT_ABSOLUTE = 3
 };
 
-/*
-	fz_colorspace_is_lab: Return true, iff a given colorspace is
-	lab.
-*/
 int fz_cmm_avoid_white_fix_flag();
-void fz_cmm_transform_color_buffer(fz_context *ctx, fz_icclink *link, fz_color_bufferdesc *in_desc, fz_color_bufferdesc *out_desc, void *input, void *output);
-void fz_cmm_transform_color(fz_icclink *link, const void *inputcolor, void *outputcolor, int num_bytes);
-void fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_iccprofile *src, fz_iccprofile *des, fz_rendering_param *rend, int cmm_flags);
+void fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);
+void fz_cmm_transform_color(fz_icclink *link, int num_bytes, const void *dst, void *src);
+void fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_rendering_param *rend, int cmm_flags, fz_iccprofile *dst, fz_iccprofile *src);
 void fz_cmm_free_link(fz_icclink *link);
 void * fz_cmm_new_ctx(fz_context *ctx);
 void fz_cmm_free_ctx(void *cmm_ctx);

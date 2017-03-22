@@ -34,12 +34,6 @@ typedef struct fz_icclink_s fz_icclink;
 typedef struct fz_rendering_param_s fz_rendering_param;
 
 /*
-	A fz_color_bufferdesc object describes how the data input data to the cmm
-	is organized and how we would like the output data from the cmm organized.
-*/
-typedef struct fz_color_bufferdesc_s fz_color_bufferdesc;
-
-/*
 	fz_colorspace_is_indexed: Return true, iff a given colorspace is
 	indexed.
 */

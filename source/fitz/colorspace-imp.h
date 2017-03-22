@@ -37,17 +37,4 @@ struct fz_rendering_param_s
 	int black_point;
 };
 
-struct fz_color_bufferdesc_s
-{
-	unsigned char num_chan;
-	unsigned char bytes;
-	int endian;
-	int alpha;
-	int planar;
-	int plane_stride;
-	int row_stride;
-	int num_rows;
-	int pixels_per_row;
-};
-
 #endif
