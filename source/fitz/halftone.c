@@ -528,7 +528,8 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 	if (!pix)
 		return NULL;
 
-	assert(pix->alpha == 0);
+	if (pix->alpha != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap may not have alpha channel to convert to bitmap");
 
 	fz_var(ht_line);
 	fz_var(out);
@@ -544,7 +545,7 @@ fz_bitmap *fz_new_bitmap_from_pixmap_band(fz_context *ctx, fz_pixmap *pix, fz_ha
 		thresh = &do_threshold_4;
 		break;
 	default:
-		assert(!"Unsupported number of components");
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or CMYK to convert to bitmap");
 		return NULL;
 	}
 

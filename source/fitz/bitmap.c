@@ -326,21 +326,41 @@ pkm_write_header(fz_context *ctx, fz_band_writer *writer)
 void
 fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 {
-	fz_band_writer *writer = fz_new_pbm_band_writer(ctx, out);
+	fz_band_writer *writer;
 
-	fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, 0, 0, 0);
-	fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
-	fz_drop_band_writer(ctx, writer);
+	if (bitmap->n != 1)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "bitmap must be monochrome to save as PBM");
+
+	writer = fz_new_pbm_band_writer(ctx, out);
+	fz_try(ctx)
+	{
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, 0, 0, 0);
+		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
+	}
+	fz_always(ctx)
+		fz_drop_band_writer(ctx, writer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 void
 fz_write_bitmap_as_pkm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 {
-	fz_band_writer *writer = fz_new_pkm_band_writer(ctx, out);
+	fz_band_writer *writer;
 
-	fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, 0, 0, 0);
-	fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
-	fz_drop_band_writer(ctx, writer);
+	if (bitmap->n != 4)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "bitmap must be CMYK to save as PKM");
+
+	writer = fz_new_pkm_band_writer(ctx, out);
+	fz_try(ctx)
+	{
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 4, 0, 0, 0, 0);
+		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
+	}
+	fz_always(ctx)
+		fz_drop_band_writer(ctx, writer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void
@@ -421,7 +441,7 @@ fz_band_writer *fz_new_pkm_band_writer(fz_context *ctx, fz_output *out)
 }
 
 void
-fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
+fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
@@ -433,13 +453,37 @@ fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
 }
 
 void
-fz_save_bitmap_as_pkm(fz_context *ctx, fz_bitmap *bitmap, char *filename)
+fz_save_bitmap_as_pkm(fz_context *ctx, fz_bitmap *bitmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
 		fz_write_bitmap_as_pkm(ctx, out, bitmap);
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+fz_save_pixmap_as_pbm(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
+{
+	fz_bitmap *bitmap = fz_new_bitmap_from_pixmap(ctx, pixmap, NULL);
+	fz_try(ctx)
+		fz_save_bitmap_as_pbm(ctx, bitmap, filename);
+	fz_always(ctx)
+		fz_drop_bitmap(ctx, bitmap);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+void
+fz_save_pixmap_as_pkm(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
+{
+	fz_bitmap *bitmap = fz_new_bitmap_from_pixmap(ctx, pixmap, NULL);
+	fz_try(ctx)
+		fz_save_bitmap_as_pkm(ctx, bitmap, filename);
+	fz_always(ctx)
+		fz_drop_bitmap(ctx, bitmap);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }

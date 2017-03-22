@@ -129,7 +129,7 @@ fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 }
 
 void
-fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, char *filename)
+fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 {
 	fz_band_writer *writer = NULL;
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
@@ -226,7 +226,7 @@ fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 }
 
 void
-fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, char *filename)
+fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 {
 	fz_band_writer *writer = NULL;
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);

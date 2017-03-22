@@ -87,3 +87,82 @@ fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 
 	return (fz_document_writer*)wri;
 }
+
+/* generic image file output writer */
+
+typedef struct fz_pixmap_writer_s fz_pixmap_writer;
+
+struct fz_pixmap_writer_s
+{
+	fz_document_writer super;
+	fz_draw_options options;
+	fz_pixmap *pixmap;
+	void (*save)(fz_context *ctx, fz_pixmap *pix, const char *filename);
+	int count;
+	char *path;
+};
+
+static fz_device *
+pixmap_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+{
+	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
+	return fz_new_draw_device_with_options(ctx, &wri->options, mediabox, &wri->pixmap);
+}
+
+static void
+pixmap_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
+{
+	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
+	char path[PATH_MAX];
+
+	fz_close_device(ctx, dev);
+	fz_drop_device(ctx, dev);
+
+	wri->count += 1;
+
+	fz_format_output_path(ctx, path, sizeof path, wri->path, wri->count);
+	wri->save(ctx, wri->pixmap, path);
+	fz_drop_pixmap(ctx, wri->pixmap);
+	wri->pixmap = NULL;
+}
+
+static void
+pixmap_drop_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
+	fz_drop_pixmap(ctx, wri->pixmap);
+	fz_free(ctx, wri->path);
+}
+
+fz_document_writer *
+fz_new_pixmap_writer(fz_context *ctx, const char *path, const char *options,
+	const char *default_path, int n,
+	void (*save)(fz_context *ctx, fz_pixmap *pix, const char *filename))
+{
+	fz_pixmap_writer *wri;
+
+	wri = fz_malloc_struct(ctx, fz_pixmap_writer);
+	wri->super.begin_page = pixmap_begin_page;
+	wri->super.end_page = pixmap_end_page;
+	wri->super.drop_writer = pixmap_drop_writer;
+
+	fz_try(ctx)
+	{
+		fz_parse_draw_options(ctx, &wri->options, options);
+		wri->path = fz_strdup(ctx, path ? path : default_path);
+		wri->save = save;
+		switch (n)
+		{
+		case 1: wri->options.colorspace = fz_device_gray(ctx); break;
+		case 3: wri->options.colorspace = fz_device_rgb(ctx); break;
+		case 4: wri->options.colorspace = fz_device_cmyk(ctx); break;
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, wri);
+		fz_rethrow(ctx);
+	}
+
+	return (fz_document_writer*)wri;
+}
