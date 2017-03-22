@@ -20,6 +20,7 @@ struct fz_iccprofile_s
 	fz_buffer *buffer;
 	unsigned char *res_buffer;
 	size_t res_size;
+	unsigned char md5[16];
 	void *cmm_handle;
 };
 
@@ -27,8 +28,8 @@ struct fz_icclink_s
 {
 	int num_in;
 	int num_out;
-	void *cmm_handle;
 	int is_identity;
+	void *cmm_handle;
 };
 
 struct fz_rendering_param_s

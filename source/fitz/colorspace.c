@@ -55,7 +55,6 @@ fz_drop_colorspace(fz_context *ctx, fz_colorspace *cs)
 }
 
 /* icc links */
-
 static fz_icclink *
 fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src)
 {
@@ -69,6 +68,16 @@ fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src)
 	rend.rendering_intent = 1;
 
 	link = fz_malloc_struct(ctx, fz_icclink);
+	link->num_in = src_icc->num_devcomp;
+	link->num_out = des_icc->num_devcomp;
+	if (memcmp(src_icc->md5, des_icc->md5, 16) == 0)
+	{
+		link->is_identity = 1;
+		return link;
+	}
+	else
+		link->is_identity = 0;
+
 	fz_cmm_new_link(ctx, link, &rend, 0, des_icc, src_icc);
 
 	if (link->cmm_handle == NULL)
@@ -2334,6 +2343,30 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, profile);
 }
 
+static void
+fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
+{
+	fz_md5 md5;
+	unsigned char *s;
+	size_t size;
+
+	fz_md5_init(&md5);
+	if (profile)
+	{
+		if (profile->res_buffer != NULL)
+		{
+			s = profile->res_buffer;
+			size = profile->res_size;
+		}
+		else
+		{
+			size = fz_buffer_storage(ctx, profile->buffer, &s);
+		}
+		fz_md5_update(&md5, s, size);
+		fz_md5_final(&md5, profile->md5);
+	}
+}
+
 fz_colorspace *
 fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name)
 {
@@ -2352,13 +2385,17 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		if (profile->cmm_handle == NULL || num != profile->num_devcomp)
 		{
 			if (profile->cmm_handle)
+			{
 				fz_cmm_free_profile(profile);
+				return NULL;
+			}
 		}
 		else
 		{
 			fz_keep_buffer(ctx, buf);
-			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
+			fz_md5_icc(ctx, profile);
 		}
+		cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
 	}
 	fz_catch(ctx)
 	{
