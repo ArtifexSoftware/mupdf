@@ -8,6 +8,14 @@
 
 #define SLOWCMYK
 
+static int
+fz_colorspace_is_icc(fz_colorspace *cs)
+{
+	if (strncmp(cs->name, "icc", 3) == 0)
+		return 1;
+	return 0;
+}
+
 void
 fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 {
@@ -44,6 +52,48 @@ void
 fz_drop_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_drop_storable(ctx, &cs->storable);
+}
+
+/* icc links */
+
+static fz_icclink *
+fz_new_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *des)
+{
+	fz_icclink *link;
+	fz_rendering_param rend;
+	fz_iccprofile *src_icc = src->data;
+	fz_iccprofile *des_icc = des->data;
+
+	/* Place holder for now. ToDo */
+	rend.black_point = 1;
+	rend.rendering_intent = 1;
+
+	link = fz_malloc_struct(ctx, fz_icclink);
+	fz_cmm_new_link(ctx, link, src_icc, des_icc, &rend, 0);
+
+	if (link->cmm_handle == NULL)
+	{
+		fz_free(ctx, link);
+		link = NULL;
+	}
+	return link;
+}
+
+static fz_icclink *
+fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *des)
+{
+	fz_icclink *link;
+
+	/* Check the storable to see if we have a copy */
+	/* ToDo */
+
+	/* Not found so create a new one */
+	link = fz_new_icc_link(ctx, src, des);
+
+	/* Add to storables */
+	/* ToDo */
+
+	return link;
 }
 
 /* Device colorspace definitions */
@@ -1791,8 +1841,40 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 	else return fz_std_conv_pixmap;
 }
 
-/* Convert a single color */
+/*
+	Single color conversion with ICC profiles. ToDo: Check if it makes sense
+	to use lcms float link here or to do the conversion to short and back
+	*/
+static void
+icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
+{
+	fz_colorspace *srcs = cc->ss;
+	fz_colorspace *dsts = cc->ds;
+	fz_icclink *link;
+	int i;
+	unsigned short dstv_s[FZ_MAX_COLORS];
+	unsigned short srcv_s[FZ_MAX_COLORS];
 
+	link = fz_get_icc_link(ctx, srcs, dsts);
+	if (link != NULL)
+	{
+		if (link->is_identity)
+		{
+			for (i = 0; i < srcs->n; i++)
+				dstv[i] = srcv[i];
+		}
+		else
+		{
+			for (i = 0; i < srcs->n; i++)
+				srcv_s[i] = srcv[i] * 65535;
+			fz_cmm_transform_color(link, srcv_s, dstv_s, 2);
+			for (i = 0; i < dsts->n; i++)
+				dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
+		}
+	}
+}
+
+/* Convert a single color */
 static void
 std_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
 {
@@ -1970,7 +2052,10 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 		else
 			cc->convert = std_conv_color;
 	}
-
+	else if (fz_colorspace_is_icc(ss) && fz_colorspace_is_icc(ds))
+	{
+		cc->convert = icc_conv_color;
+	}
 	else
 		cc->convert = std_conv_color;
 }

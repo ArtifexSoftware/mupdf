@@ -28,6 +28,7 @@ struct fz_icclink_s
 	int num_in;
 	int num_out;
 	void *cmm_handle;
+	int is_identity;
 };
 
 struct fz_rendering_param_s

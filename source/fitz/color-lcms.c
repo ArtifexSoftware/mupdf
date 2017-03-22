@@ -194,7 +194,7 @@ fz_cmm_transform_color_buffer(fz_context *ctx, fz_icclink *link, fz_color_buffer
 
 /* Transform a single color. */
 void
-fz_cmm_transform_color(fz_icclink *link, void *inputcolor, void *outputcolor, int num_bytes)
+fz_cmm_transform_color(fz_icclink *link, const void *inputcolor, void *outputcolor, int num_bytes)
 {
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM) link->cmm_handle;
 	cmsUInt32Number dwInputFormat, dwOutputFormat;
