@@ -82,6 +82,8 @@ static void fmtuint32(struct fmtbuf *out, unsigned int a, int s, int z, int w, i
 	int i;
 
 	i = 0;
+	if (a == 0)
+		buf[i++] = '0';
 	while (a) {
 		buf[i++] = fz_hex_digits[a % base];
 		a /= base;
@@ -100,6 +102,8 @@ static void fmtuint64(struct fmtbuf *out, uint64_t a, int s, int z, int w, int b
 	int i;
 
 	i = 0;
+	if (a == 0)
+		buf[i++] = '0';
 	while (a) {
 		buf[i++] = fz_hex_digits[a % base];
 		a /= base;
