@@ -111,7 +111,7 @@ fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pi
 
 /* Transform a single color. */
 void
-fz_cmm_transform_color(fz_icclink *link, int num_bytes, const void *dst, void *src)
+fz_cmm_transform_color(fz_icclink *link, int num_bytes, void *dst, const void *src)
 {
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM) link->cmm_handle;
 	cmsUInt32Number dwInputFormat, dwOutputFormat;

@@ -2,13 +2,6 @@
 #define MUPDF_FITZ_COLORLCMS_H
 
 #include "colorspace.h"
-enum
-{
-	FZ_INTENT_PERCEPTUAL = 0,
-	FZ_INTENT_COLORIMETRIC = 1,
-	FZ_INTENT_SATURATION = 2,
-	FZ_INTENT_ABSOLUTE = 3
-};
 
 int fz_cmm_avoid_white_fix_flag();
 void fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);

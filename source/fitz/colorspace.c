@@ -8,6 +8,31 @@
 
 #define SLOWCMYK
 
+/* Same order as needed by lcms */
+static const char *fz_intent_names[] =
+{
+	"Perceptual",
+	"RelativeColorimetric",
+	"Saturation",
+	"AbsoluteColorimetric",
+};
+
+int fz_lookup_rendering_intent(const char *name)
+{
+	int i;
+	for (i = 0; i < nelem(fz_intent_names); i++)
+		if (!strcmp(name, fz_intent_names[i]))
+			return i;
+	return FZ_RI_RELATIVECOLORIMETRIC;
+}
+
+char *fz_rendering_intent_name(int ri)
+{
+	if (ri >= 0 && ri < nelem(fz_intent_names))
+		return (char*)fz_intent_names[ri];
+	return "RelativeColorimetric";
+}
+
 static int
 fz_colorspace_is_icc(fz_colorspace *cs)
 {
@@ -139,16 +164,17 @@ fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rend
 	link = fz_malloc_struct(ctx, fz_icclink);
 	link->num_in = src_icc->num_devcomp;
 	link->num_out = dst_icc->num_devcomp;
-	if (memcmp(src_icc->md5, dst_icc->md5, 16) == 0)
+	if (memcmp(src_icc->md5, dst_icc->md5, 16) == 0 && rend->intent == FZ_RI_RELATIVECOLORIMETRIC)
 	{
 		link->is_identity = 1;
+		FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
 		return link;
 	}
 	else
 		link->is_identity = 0;
 
+	/* Does not throw.  Simply returns NULL if an issue */
 	fz_cmm_new_link(ctx, link, rend, 0, dst_icc, src_icc);
-
 	if (link->cmm_handle == NULL)
 	{
 		fz_free(ctx, link);
@@ -166,20 +192,44 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rend
 	fz_icclink *link;
 	fz_iccprofile *src_icc = src->data;
 	fz_iccprofile *dst_icc = dst->data;
+	fz_link_key *key;
+	fz_icclink *new_link;
 
-	/* Check the storable to see if we have a copy */
-	fz_link_key key;
-	memcpy(&key.dst_md5, dst_icc->md5, 16);
-	memcpy(&key.src_md5, src_icc->md5, 16);
-	key.rend.intent = rend->intent;
-	key.rend.bp = rend->bp;
-	link = fz_find_item(ctx, fz_drop_link_imp, &key, &fz_link_store_type);
-	if (link)
-		return link;
+	fz_var(link);
+	fz_var(key);
 
-	/* Not found so create a new one. */
-	link = fz_new_icc_link(ctx, dst, src, rend);
-	fz_store_item(ctx, &key, link, sizeof(fz_icclink), &fz_link_store_type);
+	fz_try(ctx)
+	{
+		/* Check the storable to see if we have a copy */
+		key = fz_malloc_struct(ctx, fz_link_key);
+		key->refs = 1;
+		memcpy(&key->dst_md5, dst_icc->md5, 16);
+		memcpy(&key->src_md5, src_icc->md5, 16);
+		key->rend.intent = rend->intent;
+		key->rend.bp = rend->bp;
+		link = fz_find_item(ctx, fz_drop_link_imp, key, &fz_link_store_type);
+
+		/* Not found.  Make new one add to store */
+		if (link == NULL)
+		{
+			link = fz_new_icc_link(ctx, dst, src, rend);
+			new_link = fz_store_item(ctx, key, link, sizeof(fz_icclink), &fz_link_store_type);
+			if (new_link != NULL)
+			{
+				/* Found one while adding! Perhaps from another thread? */
+				fz_drop_icclink(ctx, link);
+				link = new_link;
+			}
+		}
+	}
+	fz_always(ctx)
+	{
+		fz_drop_link_key(ctx, key);
+	}
+	fz_catch(ctx)
+	{
+		/* Nothing to do. */
+	}
 	return link;
 }
 

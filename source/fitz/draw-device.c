@@ -37,6 +37,7 @@ struct fz_draw_state_s {
 	fz_matrix ctm;
 	float xstep, ystep;
 	fz_irect area;
+	int ri;
 };
 
 struct fz_draw_device_s
@@ -2333,6 +2334,7 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 	dev->stack[0].scissor.y0 = dest->y;
 	dev->stack[0].scissor.x1 = dest->x + dest->w;
 	dev->stack[0].scissor.y1 = dest->y + dest->h;
+	dev->stack[0].ri = 0;
 
 	fz_try(ctx)
 	{

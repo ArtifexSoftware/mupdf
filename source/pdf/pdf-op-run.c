@@ -69,6 +69,9 @@ struct pdf_gstate_s
 	fz_matrix softmask_ctm;
 	float softmask_bc[FZ_MAX_COLORS];
 	int luminosity;
+
+	/* color related */
+	int ri;
 };
 
 struct pdf_run_processor_s
@@ -1435,6 +1438,9 @@ static void pdf_run_d(fz_context *ctx, pdf_processor *proc, pdf_obj *array, floa
 
 static void pdf_run_ri(fz_context *ctx, pdf_processor *proc, const char *intent)
 {
+	pdf_run_processor *pr = (pdf_run_processor *)proc;
+	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
+	gstate->ri = fz_lookup_rendering_intent(intent);
 }
 
 static void pdf_run_i(fz_context *ctx, pdf_processor *proc, float flatness)

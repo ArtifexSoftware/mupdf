@@ -7,6 +7,18 @@
 
 enum { FZ_MAX_COLORS = 32 };
 
+enum
+{
+	/* Same order as needed by lcms */
+	FZ_RI_PERCEPTUAL,
+	FZ_RI_RELATIVECOLORIMETRIC,
+	FZ_RI_SATURATION,
+	FZ_RI_ABSOLUTECOLORIMETRIC,
+};
+
+int fz_lookup_rendering_intent(const char *name);
+char *fz_rendering_intent_name(int ri);
+
 /*
 	A fz_colorspace object represents an abstract colorspace. While
 	this should be treated as a black box by callers of the library at
