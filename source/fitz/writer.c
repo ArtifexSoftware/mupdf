@@ -48,6 +48,19 @@ fz_option_eq(const char *a, const char *b)
 	return !strncmp(a, b, n) && (a[n] == ',' || a[n] == 0);
 }
 
+fz_document_writer *fz_new_writer_of_size(fz_context *ctx, size_t size, fz_document_writer_begin_page_fn *begin_page,
+	fz_document_writer_end_page_fn *end_page, fz_document_writer_close_writer_fn *close, fz_document_writer_drop_writer_fn *drop)
+{
+	fz_document_writer *wri = Memento_label(fz_calloc(ctx, 1, size), "fz_document_writer");
+
+	wri->begin_page = begin_page;
+	wri->end_page = end_page;
+	wri->close_writer = close;
+	wri->drop_writer = drop;
+
+	return wri;
+}
+
 fz_document_writer *
 fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options)
 {

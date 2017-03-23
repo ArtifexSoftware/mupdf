@@ -3273,13 +3273,7 @@ pdf_writer_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 fz_document_writer *
 fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options)
 {
-	pdf_writer *wri;
-
-	wri = fz_malloc_struct(ctx, pdf_writer);
-	wri->super.begin_page = pdf_writer_begin_page;
-	wri->super.end_page = pdf_writer_end_page;
-	wri->super.close_writer = pdf_writer_close_writer;
-	wri->super.drop_writer = pdf_writer_drop_writer;
+	pdf_writer *wri = fz_new_writer(ctx, pdf_writer, pdf_writer_begin_page, pdf_writer_end_page, pdf_writer_close_writer, pdf_writer_drop_writer);
 
 	fz_try(ctx)
 	{

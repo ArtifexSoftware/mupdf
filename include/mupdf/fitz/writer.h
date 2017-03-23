@@ -9,18 +9,30 @@
 
 typedef struct fz_document_writer_s fz_document_writer;
 
+typedef fz_device *(fz_document_writer_begin_page_fn)(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox);
+typedef void (fz_document_writer_end_page_fn)(fz_context *ctx, fz_document_writer *wri, fz_device *dev);
+typedef void (fz_document_writer_close_writer_fn)(fz_context *ctx, fz_document_writer *wri);
+typedef void (fz_document_writer_drop_writer_fn)(fz_context *ctx, fz_document_writer *wri);
+
 struct fz_document_writer_s
 {
-	fz_device *(*begin_page)(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox);
-	void (*end_page)(fz_context *ctx, fz_document_writer *wri, fz_device *dev);
-	void (*close_writer)(fz_context *ctx, fz_document_writer *wri);
-	void (*drop_writer)(fz_context *ctx, fz_document_writer *wri);
+	fz_document_writer_begin_page_fn *begin_page;
+	fz_document_writer_end_page_fn *end_page;
+	fz_document_writer_close_writer_fn *close_writer;
+	fz_document_writer_drop_writer_fn *drop_writer;
 };
+
+fz_document_writer *fz_new_writer_of_size(fz_context *ctx, size_t size, fz_document_writer_begin_page_fn *begin_page,
+	fz_document_writer_end_page_fn *end_page, fz_document_writer_close_writer_fn *close, fz_document_writer_drop_writer_fn *drop);
+
+#define fz_new_writer(CTX,TYPE,BEGIN_PAGE,END_PAGE,CLOSE,DROP) \
+	((TYPE *)Memento_label(fz_new_writer_of_size(CTX,sizeof(TYPE),BEGIN_PAGE,END_PAGE,CLOSE,DROP),#TYPE))
 
 int fz_has_option(fz_context *ctx, const char *opts, const char *key, const char **val);
 int fz_option_eq(const char *a, const char *b);
 
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
+
 
 fz_device *fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox);
 void fz_end_page(fz_context *ctx, fz_document_writer *wri, fz_device *dev);

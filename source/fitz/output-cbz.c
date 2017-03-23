@@ -66,13 +66,7 @@ cbz_drop_writer(fz_context *ctx, fz_document_writer *wri_)
 fz_document_writer *
 fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options)
 {
-	fz_cbz_writer *wri;
-
-	wri = fz_malloc_struct(ctx, fz_cbz_writer);
-	wri->super.begin_page = cbz_begin_page;
-	wri->super.end_page = cbz_end_page;
-	wri->super.close_writer = cbz_close_writer;
-	wri->super.drop_writer = cbz_drop_writer;
+	fz_cbz_writer *wri = fz_new_writer(ctx, fz_cbz_writer, cbz_begin_page, cbz_end_page, cbz_close_writer, cbz_drop_writer);
 
 	fz_try(ctx)
 	{
@@ -139,12 +133,7 @@ fz_new_pixmap_writer(fz_context *ctx, const char *path, const char *options,
 	const char *default_path, int n,
 	void (*save)(fz_context *ctx, fz_pixmap *pix, const char *filename))
 {
-	fz_pixmap_writer *wri;
-
-	wri = fz_malloc_struct(ctx, fz_pixmap_writer);
-	wri->super.begin_page = pixmap_begin_page;
-	wri->super.end_page = pixmap_end_page;
-	wri->super.drop_writer = pixmap_drop_writer;
+	fz_pixmap_writer *wri = fz_new_writer(ctx, fz_pixmap_writer, pixmap_begin_page, pixmap_end_page, NULL, pixmap_drop_writer);
 
 	fz_try(ctx)
 	{
