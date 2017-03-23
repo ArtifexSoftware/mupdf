@@ -123,6 +123,12 @@ fz_drop_link_imp(fz_context *ctx, fz_storable *storable)
 	fz_free(ctx, link);
 }
 
+static void
+fz_drop_icclink(fz_context *ctx, fz_icclink *link)
+{
+	fz_drop_storable(ctx, &link->storable);
+}
+
 static fz_icclink *
 fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rendering_param *rend)
 {
@@ -1683,6 +1689,7 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		{
 			fz_cmm_transform_pixmap(ctx, link, dst, src);
 		}
+		fz_drop_icclink(ctx, link);
 	}
 }
 
@@ -1993,6 +2000,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 			for (i = 0; i < dsts->n; i++)
 				dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
 		}
+		fz_drop_icclink(ctx, link);
 	}
 }
 
