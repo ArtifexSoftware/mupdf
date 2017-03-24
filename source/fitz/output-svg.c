@@ -59,7 +59,7 @@ fz_document_writer *
 fz_new_svg_writer(fz_context *ctx, const char *path, const char *args)
 {
 	const char *val;
-	fz_svg_writer *wri = fz_new_writer(ctx, fz_svg_writer, svg_begin_page, svg_end_page, NULL, svg_drop_writer);
+	fz_svg_writer *wri = fz_new_derived_document_writer(ctx, fz_svg_writer, svg_begin_page, svg_end_page, NULL, svg_drop_writer);
 
 	wri->text_format = FZ_SVG_TEXT_AS_PATH;
 	wri->reuse_images = 1;

@@ -2228,7 +2228,7 @@ pdf_lookup_metadata(fz_context *ctx, pdf_document *doc, const char *key, char *b
 static pdf_document *
 pdf_new_document(fz_context *ctx, fz_stream *file)
 {
-	pdf_document *doc = fz_new_document(ctx, pdf_document);
+	pdf_document *doc = fz_new_derived_document(ctx, pdf_document);
 
 	doc->super.drop_document = (fz_document_drop_fn *)pdf_drop_document_imp;
 	doc->super.needs_password = (fz_document_needs_password_fn *)pdf_needs_password;

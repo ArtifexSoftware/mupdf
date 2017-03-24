@@ -439,7 +439,7 @@ xps_load_page(fz_context *ctx, xps_document *doc, int number)
 			root = xps_load_fixed_page(ctx, doc, fix);
 			fz_try(ctx)
 			{
-				page = fz_new_page(ctx, xps_page);
+				page = fz_new_derived_page(ctx, xps_page);
 				page->super.load_links = (fz_page_load_links_fn *)xps_load_links;
 				page->super.bound_page = (fz_page_bound_page_fn *)xps_bound_page;
 				page->super.run_page_contents = (fz_page_run_page_contents_fn *)xps_run_page;

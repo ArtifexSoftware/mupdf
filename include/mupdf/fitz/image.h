@@ -149,7 +149,7 @@ typedef size_t (fz_image_get_size_fn)(fz_context *, fz_image *);
 */
 fz_image *fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace, int xres, int yres, int interpolate, int imagemask, float *decode, int *colorkey, fz_image *mask, int size, fz_image_get_pixmap_fn *get, fz_image_get_size_fn *get_size, fz_drop_image_fn *drop);
 
-#define fz_new_image(CTX,W,H,B,CS,X,Y,I,IM,D,C,M,T,G,S,Z) \
+#define fz_new_derived_image(CTX,W,H,B,CS,X,Y,I,IM,D,C,M,T,G,S,Z) \
 	((T*)Memento_label(fz_new_image_of_size(CTX,W,H,B,CS,X,Y,I,IM,D,C,M,sizeof(T),G,S,Z),#T))
 
 /*

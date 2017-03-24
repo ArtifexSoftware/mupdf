@@ -215,7 +215,7 @@ static fz_page *
 epub_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
 	epub_document *doc = (epub_document*)doc_;
-	epub_page *page = fz_new_page(ctx, epub_page);
+	epub_page *page = fz_new_derived_page(ctx, epub_page);
 	page->super.bound_page = epub_bound_page;
 	page->super.run_page_contents = epub_run_page;
 	page->super.load_links = epub_load_links;
@@ -465,7 +465,7 @@ epub_init(fz_context *ctx, fz_archive *zip)
 {
 	epub_document *doc;
 
-	doc = fz_new_document(ctx, epub_document);
+	doc = fz_new_derived_document(ctx, epub_document);
 	doc->zip = zip;
 	doc->set = fz_new_html_font_set(ctx);
 

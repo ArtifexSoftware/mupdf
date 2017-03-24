@@ -115,7 +115,7 @@ static fz_page *
 htdoc_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
 	html_document *doc = (html_document*)doc_;
-	html_page *page = fz_new_page(ctx, html_page);
+	html_page *page = fz_new_derived_page(ctx, html_page);
 	page->super.bound_page = htdoc_bound_page;
 	page->super.run_page_contents = htdoc_run_page;
 	page->super.load_links = htdoc_load_links;
@@ -139,7 +139,7 @@ htdoc_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	html_document *doc;
 	fz_buffer *buf;
 
-	doc = fz_new_document(ctx, html_document);
+	doc = fz_new_derived_document(ctx, html_document);
 
 	doc->super.drop_document = htdoc_drop_document;
 	doc->super.layout = htdoc_layout;
@@ -172,7 +172,7 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 
 	fz_dirname(dirname, filename, sizeof dirname);
 
-	doc = fz_new_document(ctx, html_document);
+	doc = fz_new_derived_document(ctx, html_document);
 	doc->super.drop_document = htdoc_drop_document;
 	doc->super.layout = htdoc_layout;
 	doc->super.resolve_link = htdoc_resolve_link;

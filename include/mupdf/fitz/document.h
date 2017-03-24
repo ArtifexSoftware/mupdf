@@ -326,7 +326,7 @@ fz_document *fz_open_document_with_stream(fz_context *ctx, const char *magic, fz
 */
 void *fz_new_document_of_size(fz_context *ctx, int size);
 
-#define fz_new_document(C,M) ((M*)Memento_label(fz_new_document_of_size(C, sizeof(M)), #M))
+#define fz_new_derived_document(C,M) ((M*)Memento_label(fz_new_document_of_size(C, sizeof(M)), #M))
 
 /*
 	fz_keep_document: Keep a reference to an open document.
@@ -453,7 +453,7 @@ fz_link *fz_load_links(fz_context *ctx, fz_page *page);
 */
 fz_page *fz_new_page_of_size(fz_context *ctx, int size);
 
-#define fz_new_page(CTX,TYPE) \
+#define fz_new_derived_page(CTX,TYPE) \
 	((TYPE *)Memento_label(fz_new_page_of_size(CTX,sizeof(TYPE)),#TYPE))
 
 /*

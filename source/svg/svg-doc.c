@@ -61,7 +61,7 @@ svg_load_page(fz_context *ctx, fz_document *doc_, int number)
 	if (number != 0)
 		return NULL;
 
-	page = fz_new_page(ctx, svg_page);
+	page = fz_new_derived_page(ctx, svg_page);
 	page->super.bound_page = svg_bound_page;
 	page->super.run_page_contents = svg_run_page;
 	page->super.drop_page = svg_drop_page;
@@ -91,7 +91,7 @@ svg_open_document_with_buffer(fz_context *ctx, fz_buffer *buf)
 
 	root = fz_parse_xml(ctx, buf, 0);
 
-	doc = fz_new_document(ctx, svg_document);
+	doc = fz_new_derived_document(ctx, svg_document);
 	doc->super.drop_document = svg_drop_document;
 	doc->super.count_pages = svg_count_pages;
 	doc->super.load_page = svg_load_page;
