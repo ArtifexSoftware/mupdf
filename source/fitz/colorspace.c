@@ -149,7 +149,7 @@ static void
 fz_print_link_key(fz_context *ctx, fz_output *out, void *key_)
 {
 	fz_link_key *key = (fz_link_key *)key_;
-	fz_printf(ctx, out, "(link src_md5 [%d %d %d %d] dst_md5 [%d %d %d %d]) ", key->src_md5[0], key->src_md5[1], key->src_md5[2], key->src_md5[3], key->dst_md5[0], key->dst_md5[1], key->dst_md5[2], key->dst_md5[3]);
+	fz_write_printf(ctx, out, "(link src_md5 [%d %d %d %d] dst_md5 [%d %d %d %d]) ", key->src_md5[0], key->src_md5[1], key->src_md5[2], key->src_md5[3], key->dst_md5[0], key->dst_md5[1], key->dst_md5[2], key->dst_md5[3]);
 }
 
 static int
@@ -477,7 +477,7 @@ void fz_new_colorspace_context(fz_context *ctx)
 #else
 	ctx->colorspace->gray = fz_new_icc_colorspace(ctx, -1, 1, NULL, "gray-icc");
 	ctx->colorspace->rgb = fz_new_icc_colorspace(ctx, -1, 3, NULL, "rgb-icc");
-	ctx->colorspace->bgr = ctx->colorspace->rgb;
+	ctx->colorspace->bgr = ctx->colorspace->rgb; /* TODO: must swizzle R and B components */
 	ctx->colorspace->cmyk = fz_new_icc_colorspace(ctx, -1, 4, NULL, "cmyk-icc");
 	ctx->colorspace->lab = fz_new_icc_colorspace(ctx, -1, 3, NULL, "lab-icc");
 	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
@@ -2514,7 +2514,7 @@ static void
 fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
 {
 	fz_md5 md5;
-	unsigned char *s;
+	const char *s;
 	size_t size;
 
 	fz_md5_init(&md5);
@@ -2527,9 +2527,9 @@ fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
 		}
 		else
 		{
-			size = fz_buffer_storage(ctx, profile->buffer, &s);
+			size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
 		}
-		fz_md5_update(&md5, s, size);
+		fz_md5_update(&md5, (const unsigned char *)s, size);
 		fz_md5_final(&md5, profile->md5);
 	}
 }

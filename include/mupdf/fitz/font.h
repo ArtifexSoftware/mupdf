@@ -276,7 +276,7 @@ len: Pointer to a place to receive the length of the discovered
 
 Returns a pointer to the icc file data, or NULL if not present.
 */
-const char *fz_lookup_icc(fz_context *ctx, const char *name, int *len);
+const char *fz_lookup_icc(fz_context *ctx, const char *name, size_t *len);
 
 /*
 	fz_lookup_cjk_font: Search the builtin cjk fonts for a match.
