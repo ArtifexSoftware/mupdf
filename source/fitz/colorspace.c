@@ -8,6 +8,38 @@
 
 #define SLOWCMYK
 
+const char *
+fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
+{
+#ifndef NO_ICC
+	if (!strcmp(name, "gray-icc")) {
+		extern const int fz_resources_icc_gray_icc_size;
+		extern const char fz_resources_icc_gray_icc[];
+		*size = fz_resources_icc_gray_icc_size;
+		return fz_resources_icc_gray_icc;
+	}
+	if (!strcmp(name, "rgb-icc")) {
+		extern const int fz_resources_icc_rgb_icc_size;
+		extern const char fz_resources_icc_rgb_icc[];
+		*size = fz_resources_icc_rgb_icc_size;
+		return fz_resources_icc_rgb_icc;
+	}
+	if (!strcmp(name, "cmyk-icc")) {
+		extern const int fz_resources_icc_cmyk_icc_size;
+		extern const char fz_resources_icc_cmyk_icc[];
+		*size = fz_resources_icc_cmyk_icc_size;
+		return fz_resources_icc_cmyk_icc;
+	}
+	if (!strcmp(name, "lab-icc")) {
+		extern const int fz_resources_icc_lab_icc_size;
+		extern const char fz_resources_icc_lab_icc[];
+		*size = fz_resources_icc_lab_icc_size;
+		return fz_resources_icc_lab_icc;
+	}
+#endif
+	return *size = 0, NULL;
+}
+
 /* Same order as needed by lcms */
 static const char *fz_intent_names[] =
 {
