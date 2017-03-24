@@ -39,7 +39,6 @@ struct fz_storable_s {
 struct fz_key_storable_s {
 	fz_storable storable;
 	short store_key_refs;
-	unsigned short needs_reaping;
 };
 
 #define FZ_INIT_STORABLE(S_,RC,DROP) \
@@ -49,7 +48,7 @@ struct fz_key_storable_s {
 
 #define FZ_INIT_KEY_STORABLE(KS_,RC,DROP) \
 	do { fz_key_storable *KS = &(KS_)->key_storable; KS->store_key_refs = 0;\
-	KS->needs_reaping = 0; FZ_INIT_STORABLE(KS,RC,DROP); \
+	FZ_INIT_STORABLE(KS,RC,DROP); \
 	} while (0)
 
 void *fz_keep_storable(fz_context *, const fz_storable *);

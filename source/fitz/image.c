@@ -92,8 +92,9 @@ static int
 fz_needs_reap_image_key(fz_context *ctx, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
+	fz_key_storable *ks = &key->image->key_storable;
 
-	return (key->image->key_storable.needs_reaping);
+	return (ks->store_key_refs == ks->storable.refs);
 }
 
 static const fz_store_type fz_image_store_type =
