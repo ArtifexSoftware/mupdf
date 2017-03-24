@@ -180,7 +180,7 @@ fz_store *fz_keep_store_context(fz_context *ctx);
 
 	type: Functions used to manipulate the key.
 */
-void *fz_store_item(fz_context *ctx, void *key, void *val, size_t itemsize, fz_store_type *type);
+void *fz_store_item(fz_context *ctx, void *key, void *val, size_t itemsize, const fz_store_type *type);
 
 /*
 	fz_find_item: Find an item within the store.
@@ -195,7 +195,7 @@ void *fz_store_item(fz_context *ctx, void *key, void *val, size_t itemsize, fz_s
 	Returns NULL for not found, otherwise returns a pointer to the value
 	indexed by key to which a reference has been taken.
 */
-void *fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *type);
+void *fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type);
 
 /*
 	fz_remove_item: Remove an item from the store.
@@ -209,7 +209,7 @@ void *fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_
 
 	type: Functions used to manipulate the key.
 */
-void fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *type);
+void fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type);
 
 /*
 	fz_empty_store: Evict everything from the store.
@@ -243,7 +243,7 @@ int fz_shrink_store(fz_context *ctx, unsigned int percent);
 
 typedef int (fz_store_filter_fn)(fz_context *ctx, void *arg, void *key);
 
-void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_store_type *type);
+void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const fz_store_type *type);
 
 /*
 	fz_print_store: Dump the contents of the store for debugging.

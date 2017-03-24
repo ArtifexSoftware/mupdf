@@ -96,7 +96,7 @@ fz_needs_reap_image_key(fz_context *ctx, void *key_)
 	return (key->image->key_storable.needs_reaping);
 }
 
-static fz_store_type fz_image_store_type =
+static const fz_store_type fz_image_store_type =
 {
 	fz_make_hash_image_key,
 	fz_keep_image_key,

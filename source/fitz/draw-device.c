@@ -1953,7 +1953,7 @@ fz_print_tile(fz_context *ctx, fz_output *out, void *key_)
 	fz_write_printf(ctx, out, "(tile id=%x, ctm=%g %g %g %g) ", key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
 }
 
-static fz_store_type fz_tile_store_type =
+static const fz_store_type fz_tile_store_type =
 {
 	fz_make_hash_tile_key,
 	fz_keep_tile_key,

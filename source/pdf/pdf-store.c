@@ -41,7 +41,7 @@ pdf_print_key(fz_context *ctx, fz_output *out, void *key_)
 		pdf_print_obj(ctx, out, key, 0);
 }
 
-static fz_store_type pdf_obj_store_type =
+static const fz_store_type pdf_obj_store_type =
 {
 	pdf_make_hash_key,
 	pdf_keep_key,

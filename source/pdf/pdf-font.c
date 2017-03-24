@@ -963,7 +963,9 @@ hail_mary_print_key(fz_context *ctx, fz_output *out, void *key_)
 	fz_write_printf(ctx, out, "hail mary ");
 }
 
-static fz_store_type hail_mary_store_type =
+static int hail_mary_store_key; /* Dummy */
+
+static const fz_store_type hail_mary_store_type =
 {
 	hail_mary_make_hash_key,
 	hail_mary_keep_key,
@@ -978,7 +980,7 @@ pdf_load_hail_mary_font(fz_context *ctx, pdf_document *doc)
 	pdf_font_desc *fontdesc;
 	pdf_font_desc *existing;
 
-	if ((fontdesc = fz_find_item(ctx, pdf_drop_font_imp, &hail_mary_store_type, &hail_mary_store_type)) != NULL)
+	if ((fontdesc = fz_find_item(ctx, pdf_drop_font_imp, &hail_mary_store_key, &hail_mary_store_type)) != NULL)
 	{
 		return fontdesc;
 	}
@@ -986,7 +988,7 @@ pdf_load_hail_mary_font(fz_context *ctx, pdf_document *doc)
 	/* FIXME: Get someone with a clue about fonts to fix this */
 	fontdesc = pdf_load_simple_font_by_name(ctx, doc, NULL, "Helvetica");
 
-	existing = fz_store_item(ctx, &hail_mary_store_type, fontdesc, fontdesc->size, &hail_mary_store_type);
+	existing = fz_store_item(ctx, &hail_mary_store_key, fontdesc, fontdesc->size, &hail_mary_store_type);
 	assert(existing == NULL);
 	(void)existing; /* Silence warning in release builds */
 

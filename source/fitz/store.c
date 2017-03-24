@@ -10,7 +10,7 @@ struct fz_item_s
 	fz_item *next;
 	fz_item *prev;
 	fz_store *store;
-	fz_store_type *type;
+	const fz_store_type *type;
 };
 
 struct fz_store_s
@@ -389,7 +389,7 @@ touch(fz_store *store, fz_item *item)
 }
 
 void *
-fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, fz_store_type *type)
+fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_store_type *type)
 {
 	fz_item *item = NULL;
 	size_t size;
@@ -525,7 +525,7 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, fz_store_
 }
 
 void *
-fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *type)
+fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type)
 {
 	fz_item *item;
 	fz_store *store = ctx->store;
@@ -578,7 +578,7 @@ fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *
 }
 
 void
-fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, fz_store_type *type)
+fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_type *type)
 {
 	fz_item *item;
 	fz_store *store = ctx->store;
@@ -832,7 +832,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 	return success;
 }
 
-void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, fz_store_type *type)
+void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const fz_store_type *type)
 {
 	fz_store *store;
 	fz_item *item, *prev, *remove;
