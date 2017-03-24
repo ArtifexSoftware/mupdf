@@ -220,6 +220,17 @@ endif
 
 generate: $(FONT_GEN)
 
+# --- Generated ICC profiles ---
+
+ICC_BIN := $(wildcard resources/icc/*.icc)
+ICC_GEN := $(subst resources/icc/, generated/, $(addsuffix .c, $(basename $(ICC_BIN))))
+ICC_OBJ := $(ICC_GEN:%.c=$(OUT)/%.o)
+
+generated/%.c : resources/icc/%.icc $(HEXDUMP_EXE) | generated
+	$(QUIET_GEN) $(HEXDUMP_EXE) $@ $<
+
+generate: $(ICC_GEN)
+
 # --- Generated CMap files ---
 
 CMAPDUMP_EXE := $(OUT)/scripts/cmapdump.exe
