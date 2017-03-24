@@ -33,6 +33,21 @@ int fz_option_eq(const char *a, const char *b);
 
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
 
+fz_document_writer *fz_new_png_pixmap_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_tga_pixmap_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_pam_pixmap_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_pnm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_pgm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_ppm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_pbm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_pkm_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 
 fz_device *fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox);
 void fz_end_page(fz_context *ctx, fz_document_writer *wri, fz_device *dev);
