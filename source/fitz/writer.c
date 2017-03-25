@@ -165,11 +165,20 @@ fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 fz_device *
 fz_begin_page(fz_context *ctx, fz_document_writer *wri, const fz_rect *mediabox)
 {
-	return wri->begin_page(ctx, wri, mediabox);
+	if (!wri)
+		return NULL;
+	wri->dev = wri->begin_page(ctx, wri, mediabox);
+	return wri->dev;
 }
 
 void
-fz_end_page(fz_context *ctx, fz_document_writer *wri, fz_device *dev)
+fz_end_page(fz_context *ctx, fz_document_writer *wri)
 {
+	fz_device *dev;
+
+	if (!wri)
+		return;
+	dev = wri->dev;
+	wri->dev = NULL;
 	wri->end_page(ctx, wri, dev);
 }

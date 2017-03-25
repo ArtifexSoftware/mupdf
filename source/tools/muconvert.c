@@ -66,7 +66,7 @@ static void runpage(int number)
 	fz_bound_page(ctx, page, &mediabox);
 	dev = fz_begin_page(ctx, out, &mediabox);
 	fz_run_page(ctx, page, dev, &fz_identity, NULL);
-	fz_end_page(ctx, out, dev);
+	fz_end_page(ctx, out);
 	fz_drop_page(ctx, page);
 }
 

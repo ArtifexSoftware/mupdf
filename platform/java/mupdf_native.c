@@ -5521,17 +5521,15 @@ FUN(DocumentWriter_beginPage)(JNIEnv *env, jobject self, jobject jmediabox)
 }
 
 JNIEXPORT void JNICALL
-FUN(DocumentWriter_endPage)(JNIEnv *env, jobject self, jobject jdev)
+FUN(DocumentWriter_endPage)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_document_writer *wri = from_DocumentWriter(env, self);
-	fz_device *device = from_Device(env, jdev);
 
 	if (!ctx || !wri) return;
-	if (!device) { jni_throw_arg(env, "device must not be null"); return; }
 
 	fz_try(ctx)
-		fz_end_page(ctx, wri, device);
+		fz_end_page(ctx, wri);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }

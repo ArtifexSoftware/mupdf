@@ -2755,9 +2755,8 @@ static void ffi_DocumentWriter_endPage(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_document_writer *wri = js_touserdata(J, 0, "fz_document_writer");
-	fz_device *device = js_touserdata(J, 1, "fz_device");
 	fz_try(ctx)
-		fz_end_page(ctx, wri, device);
+		fz_end_page(ctx, wri);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -4360,8 +4359,8 @@ int murun_main(int argc, char **argv)
 	js_newobject(J);
 	{
 		jsB_propfun(J, "DocumentWriter.beginPage", ffi_DocumentWriter_beginPage, 1);
-		jsB_propfun(J, "DocumentWriter.endPage", ffi_DocumentWriter_endPage, 1);
-		jsB_propfun(J, "DocumentWriter.close", ffi_DocumentWriter_close, 1);
+		jsB_propfun(J, "DocumentWriter.endPage", ffi_DocumentWriter_endPage, 0);
+		jsB_propfun(J, "DocumentWriter.close", ffi_DocumentWriter_close, 0);
 	}
 	js_setregistry(J, "fz_document_writer");
 
