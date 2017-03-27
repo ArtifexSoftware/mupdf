@@ -193,7 +193,7 @@ fz_open_tar_archive_with_stream(fz_context *ctx, fz_stream *file)
 	if (!fz_is_tar_archive(ctx, file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize tar archive");
 
-	tar = fz_new_archive(ctx, file, fz_tar_archive);
+	tar = fz_new_derived_archive(ctx, file, fz_tar_archive);
 	tar->super.format = "tar";
 	tar->super.count_entries = count_tar_entries;
 	tar->super.list_entry = list_tar_entry;

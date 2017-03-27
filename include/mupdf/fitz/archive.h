@@ -25,7 +25,9 @@ struct fz_archive_s
 	fz_new_archive: Create and initialize an archive struct.
 */
 fz_archive *fz_new_archive_of_size(fz_context *ctx, fz_stream *file, int size);
-#define fz_new_archive(C,F,M) ((M*)Memento_label(fz_new_archive_of_size(C, F, sizeof(M)), #M))
+
+#define fz_new_derived_archive(C,F,M) \
+	((M*)Memento_label(fz_new_archive_of_size(C, F, sizeof(M)), #M))
 
 /*
 	fz_open_archive: Open a zip or tar archive

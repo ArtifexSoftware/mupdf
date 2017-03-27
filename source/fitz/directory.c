@@ -64,7 +64,7 @@ fz_open_directory(fz_context *ctx, const char *path)
 	if (!fz_is_directory(ctx, path))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "'%s' is not a directory", path);
 
-	dir = fz_new_archive(ctx, NULL, fz_directory);
+	dir = fz_new_derived_archive(ctx, NULL, fz_directory);
 	dir->super.format = "dir";
 	dir->super.has_entry = has_dir_entry;
 	dir->super.read_entry = read_dir_entry;

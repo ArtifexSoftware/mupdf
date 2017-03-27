@@ -409,7 +409,7 @@ fz_open_zip_archive_with_stream(fz_context *ctx, fz_stream *file)
 	if (!fz_is_zip_archive(ctx, file))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize zip archive");
 
-	zip = fz_new_archive(ctx, file, fz_zip_archive);
+	zip = fz_new_derived_archive(ctx, file, fz_zip_archive);
 	zip->super.format = "zip";
 	zip->super.count_entries = count_zip_entries;
 	zip->super.list_entry = list_zip_entry;
