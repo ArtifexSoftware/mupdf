@@ -371,7 +371,7 @@ pdf_annot_transform(fz_context *ctx, pdf_annot *annot, fz_matrix *annot_ctm)
 
 pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page)
 {
-	pdf_annot *annot = fz_new_annot(ctx, sizeof(pdf_annot));
+	pdf_annot *annot = fz_new_derived_annot(ctx, pdf_annot);
 
 	annot->super.drop_annot = (fz_annot_drop_fn*)pdf_drop_annot_imp;
 	annot->super.bound_annot = (fz_annot_bound_fn*)pdf_bound_annot;
