@@ -217,28 +217,29 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return &doc->super;
 }
 
-static int
-cbz_recognize(fz_context *ctx, const char *magic)
+static const char *cbz_extensions[] =
 {
-	char *ext = strrchr(magic, '.');
-	if ((ext && !fz_strcasecmp(ext, ".cbz")) || !strcmp(magic, "cbz") ||
-			!strcmp(magic, "application/x-cbz"))
-		return 100;
-	if ((ext && !fz_strcasecmp(ext, ".zip")) || !strcmp(magic, "zip") ||
-			!strcmp(magic, "application/zip"))
-		return 100;
-	if ((ext && !fz_strcasecmp(ext, ".tar")) || !strcmp(magic, "tar") ||
-			!strcmp(magic, "application/x-tar"))
-		return 100;
-	if ((ext && !fz_strcasecmp(ext, ".cbt")) || !strcmp(magic, "cbt") ||
-			!strcmp(magic, "application/x-cbt"))
-		return 100;
-	return 0;
-}
+	"cbt",
+	"cbz",
+	"tar",
+	"zip",
+	NULL
+};
+
+static const char *cbz_mimetypes[] =
+{
+	"application/x-cbt",
+	"application/x-cbz",
+	"application/x-tar",
+	"application/zip",
+	NULL
+};
 
 fz_document_handler cbz_document_handler =
 {
-	cbz_recognize,
 	NULL,
-	cbz_open_document_with_stream
+	NULL,
+	cbz_open_document_with_stream,
+	cbz_extensions,
+	cbz_mimetypes
 };

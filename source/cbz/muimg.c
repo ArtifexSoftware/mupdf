@@ -130,49 +130,53 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *stm)
 	return &doc->super;
 }
 
-static int
-img_recognize(fz_context *doc, const char *magic)
+static const char *img_extensions[] =
 {
-	char *ext = strrchr(magic, '.');
+	"bmp",
+	"gif",
+	"hdp",
+	"j2k",
+	"jfif",
+	"jfif-tbnl",
+	"jp2",
+	"jpe",
+	"jpeg",
+	"jpg",
+	"jpx",
+	"jxr",
+	"pam",
+	"pbm",
+	"pgm",
+	"png",
+	"pnm",
+	"ppm",
+	"wdp",
+	NULL
+};
 
-	if (ext)
-	{
-		if (!fz_strcasecmp(ext, ".png") || !fz_strcasecmp(ext, ".jpg") ||
-			!fz_strcasecmp(ext, ".jpeg") || !fz_strcasecmp(ext, ".jfif") ||
-			!fz_strcasecmp(ext, ".jfif-tbnl") || !fz_strcasecmp(ext, ".jpe") ||
-			!fz_strcasecmp(ext, ".gif") || !fz_strcasecmp(ext, ".bmp") ||
-			!fz_strcasecmp(ext, ".jpx") || !fz_strcasecmp(ext, ".jp2") ||
-			!fz_strcasecmp(ext, ".j2k") || !fz_strcasecmp(ext, ".wdp") ||
-			!fz_strcasecmp(ext, ".hdp") || !fz_strcasecmp(ext, ".jxr") ||
-			!fz_strcasecmp(ext, ".pbm") || !fz_strcasecmp(ext, ".pgm") ||
-			!fz_strcasecmp(ext, ".ppm") || !fz_strcasecmp(ext, ".pam") ||
-			!fz_strcasecmp(ext, ".pnm"))
-			return 100;
-	}
-	if (!strcmp(magic, "png") || !strcmp(magic, "image/png") ||
-		!strcmp(magic, "jpg") || !strcmp(magic, "image/jpeg") ||
-		!strcmp(magic, "jpeg") || !strcmp(magic, "image/pjpeg") ||
-		!strcmp(magic, "jpe") || !strcmp(magic, "jfif") ||
-		!strcmp(magic, "gif") || !strcmp(magic, "image/gif") ||
-		!strcmp(magic, "bmp") || !strcmp(magic, "image/bmp") ||
-		!strcmp(magic, "jpx") || !strcmp(magic, "image/jpx") ||
-		!strcmp(magic, "jp2") || !strcmp(magic, "image/jp2") ||
-		!strcmp(magic, "j2k") || !strcmp(magic, "wdp") ||
-		!strcmp(magic, "hdp") || !strcmp(magic, "image/vnd.ms-photo") ||
-		!strcmp(magic, "jxr") || !strcmp(magic, "image/jxr") ||
-		!strcmp(magic, "pbm") || !strcmp(magic, "image/x-portable-bitmap") ||
-		!strcmp(magic, "pgm") || !strcmp(magic, "image/x-portable-greymap") ||
-		!strcmp(magic, "ppm") || !strcmp(magic, "image/x-portable-pixmap") ||
-		!strcmp(magic, "pam") || !strcmp(magic, "image/x-portable-arbitrarymap") ||
-		!strcmp(magic, "pnm"))
-		return 100;
-
-	return 0;
-}
+static const char *img_mimetypes[] =
+{
+	"image/bmp",
+	"image/gif",
+	"image/jp2",
+	"image/jpeg",
+	"image/jpx",
+	"image/jxr",
+	"image/pjpeg",
+	"image/png",
+	"image/vnd.ms-photo",
+	"image/x-portable-arbitrarymap",
+	"image/x-portable-bitmap",
+	"image/x-portable-greymap",
+	"image/x-portable-pixmap",
+	NULL
+};
 
 fz_document_handler img_document_handler =
 {
-	img_recognize,
 	NULL,
-	img_open_document_with_stream
+	NULL,
+	img_open_document_with_stream,
+	img_extensions,
+	img_mimetypes
 };

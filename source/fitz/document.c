@@ -63,59 +63,51 @@ void fz_register_document_handler(fz_context *ctx, const fz_document_handler *ha
 	dc->handler[dc->count++] = handler;
 }
 
-fz_document *
-fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
+static const fz_document_handler *
+fz_recognize_document(fz_context *ctx, const char *magic)
 {
-	int i, score;
-	int best_i, best_score;
 	fz_document_handler_context *dc;
-
-	if (magic == NULL || stream == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
+	int i, best_score, best_i;
+	const char *ext, *needle;
 
 	dc = ctx->handler;
 	if (dc->count == 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "No document handlers registered");
 
-	best_i = -1;
+	ext = strrchr(magic, '.');
+	if (ext)
+		needle = ext + 1;
+	else
+		needle = magic;
+
 	best_score = 0;
+	best_i = -1;
+
 	for (i = 0; i < dc->count; i++)
 	{
-		score = dc->handler[i]->recognize(ctx, magic);
-		if (best_score < score)
+		int score = 0;
+		const char **entry;
+
+		if (dc->handler[i]->recognize)
+			score = dc->handler[i]->recognize(ctx, magic);
+
+		if (!ext)
 		{
-			best_score = score;
-			best_i = i;
+			for (entry = &dc->handler[i]->mimetypes[0]; *entry; entry++)
+				if (!fz_strcasecmp(needle, *entry) && score < 100)
+				{
+					score = 100;
+					break;
+				}
 		}
-	}
 
-	if (best_i >= 0)
-		return dc->handler[best_i]->open_with_stream(ctx, stream);
+		for (entry = &dc->handler[i]->extensions[0]; *entry; entry++)
+			if (!fz_strcasecmp(needle, *entry) && score < 100)
+			{
+				score = 100;
+				break;
+			}
 
-	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file type: %s", magic);
-}
-
-fz_document *
-fz_open_document(fz_context *ctx, const char *filename)
-{
-	int i, score;
-	int best_i, best_score;
-	fz_document_handler_context *dc;
-	fz_stream *file;
-	fz_document *doc;
-
-	if (filename == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
-
-	dc = ctx->handler;
-	if (dc->count == 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "No document handlers registered");
-
-	best_i = -1;
-	best_score = 0;
-	for (i = 0; i < dc->count; i++)
-	{
-		score = dc->handler[i]->recognize(ctx, filename);
 		if (best_score < score)
 		{
 			best_score = score;
@@ -124,15 +116,48 @@ fz_open_document(fz_context *ctx, const char *filename)
 	}
 
 	if (best_i < 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: '%s'", filename);
+		return NULL;
 
-	if (dc->handler[best_i]->open)
-		return dc->handler[best_i]->open(ctx, filename);
+	return dc->handler[best_i];
+}
+
+
+fz_document *
+fz_open_document_with_stream(fz_context *ctx, const char *magic, fz_stream *stream)
+{
+	const fz_document_handler *handler;
+
+	if (magic == NULL || stream == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
+
+	handler = fz_recognize_document(ctx, magic);
+	if (!handler)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file type: %s", magic);
+
+	return handler->open_with_stream(ctx, stream);
+}
+
+fz_document *
+fz_open_document(fz_context *ctx, const char *filename)
+{
+	const fz_document_handler *handler;
+	fz_stream *file;
+	fz_document *doc;
+
+	if (filename == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");
+
+	handler = fz_recognize_document(ctx, filename);
+	if (!handler)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot find document handler for file: %s", filename);
+
+	if (handler->open)
+		return handler->open(ctx, filename);
 
 	file = fz_open_file(ctx, filename);
 
 	fz_try(ctx)
-		doc = dc->handler[best_i]->open_with_stream(ctx, file);
+		doc = handler->open_with_stream(ctx, file);
 	fz_always(ctx)
 		fz_drop_stream(ctx, file);
 	fz_catch(ctx)

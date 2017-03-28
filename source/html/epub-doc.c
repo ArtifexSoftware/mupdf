@@ -519,20 +519,28 @@ epub_open_document(fz_context *ctx, const char *filename)
 static int
 epub_recognize(fz_context *doc, const char *magic)
 {
-	char *ext = strrchr(magic, '.');
-	if (ext)
-		if (!fz_strcasecmp(ext, ".epub"))
-			return 100;
 	if (strstr(magic, "META-INF/container.xml") || strstr(magic, "META-INF\\container.xml"))
 		return 200;
-	if (!strcmp(magic, "application/epub+zip"))
-		return 100;
 	return 0;
 }
+
+static const char *epub_extensions[] =
+{
+	"epub",
+	NULL
+};
+
+static const char *epub_mimetypes[] =
+{
+	"application/epub+zip",
+	NULL
+};
 
 fz_document_handler epub_document_handler =
 {
 	epub_recognize,
 	epub_open_document,
-	epub_open_document_with_stream
+	epub_open_document_with_stream,
+	epub_extensions,
+	epub_mimetypes
 };

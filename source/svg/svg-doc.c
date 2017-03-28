@@ -121,16 +121,6 @@ svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return doc;
 }
 
-static int
-svg_recognize(fz_context *ctx, const char *magic)
-{
-	char *ext = strrchr(magic, '.');
-	if (ext && !fz_strcasecmp(ext, ".svg"))
-		return 100;
-	if (!strcmp(magic, "svg") || !strcmp(magic, "image/svg+xml"))
-		return 100;
-	return 0;
-}
 
 fz_display_list *
 fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, float *w, float *h)
@@ -170,9 +160,23 @@ fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf)
 	return image;
 }
 
+static const char *svg_extensions[] =
+{
+	"svg",
+	NULL
+};
+
+static const char *svg_mimetypes[] =
+{
+	"image/svg+xml",
+	NULL
+};
+
 fz_document_handler svg_document_handler =
 {
-	svg_recognize,
 	NULL,
-	svg_open_document_with_stream
+	NULL,
+	svg_open_document_with_stream,
+	svg_extensions,
+	svg_mimetypes
 };

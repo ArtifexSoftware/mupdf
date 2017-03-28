@@ -990,22 +990,24 @@ gprf_open_document(fz_context *ctx, const char *filename)
 	return doc;
 }
 
-static int
-gprf_recognize(fz_context *doc, const char *magic)
+static const char *gprf_extensions[] =
 {
-	char *ext = strrchr(magic, '.');
-	if (ext)
-		if (!fz_strcasecmp(ext, ".gproof"))
-			return 100;
-	if (!strcmp(magic, "application/ghostproof"))
-		return 100;
-	return 0;
-}
+	"gproof",
+	NULL
+};
+
+static const char *gprf_mimetypes[] =
+{
+	"application/x-ghostproof",
+	NULL
+};
 
 fz_document_handler gprf_document_handler =
 {
-	gprf_recognize,
+	NULL,
 	gprf_open_document,
-	gprf_open_document_with_stream
+	gprf_open_document_with_stream,
+	gprf_extensions,
+	gprf_mimetypes
 };
 #endif

@@ -465,26 +465,31 @@ xps_load_page(fz_context *ctx, xps_document *doc, int number)
 static int
 xps_recognize(fz_context *ctx, const char *magic)
 {
-	char *ext = strrchr(magic, '.');
-
-	if (ext)
-	{
-		if (!fz_strcasecmp(ext, ".xps") || !fz_strcasecmp(ext, ".oxps"))
-			return 100;
-	}
 	if (strstr(magic, "/_rels/.rels") || strstr(magic, "\\_rels\\.rels"))
-		return 100;
-	if (!strcmp(magic, "xps") || !strcmp(magic, "oxps") ||
-		!strcmp(magic, "application/vnd.ms-xpsdocument") ||
-		!strcmp(magic, "application/xps") ||
-		!strcmp(magic, "application/oxps"))
 		return 100;
 	return 0;
 }
+
+static const char *xps_extensions[] =
+{
+	"oxps",
+	"xps",
+	NULL
+};
+
+static const char *xps_mimetypes[] =
+{
+	"application/oxps",
+	"application/vnd.ms-xpsdocument",
+	"application/xps",
+	NULL
+};
 
 fz_document_handler xps_document_handler =
 {
 	xps_recognize,
 	(fz_document_open_fn *) xps_open_document,
-	(fz_document_open_with_stream_fn *) xps_open_document_with_stream
+	(fz_document_open_with_stream_fn *) xps_open_document_with_stream,
+	xps_extensions,
+	xps_mimetypes
 };

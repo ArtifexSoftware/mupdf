@@ -197,26 +197,30 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	return (fz_document*)doc;
 }
 
-static int
-htdoc_recognize(fz_context *doc, const char *magic)
+static const char *htdoc_extensions[] =
 {
-	char *ext = strrchr(magic, '.');
+	"fb2",
+	"htm",
+	"html",
+	"xhtml",
+	"xml",
+	NULL
+};
 
-	if (ext)
-	{
-		if (!fz_strcasecmp(ext, ".xml") || !fz_strcasecmp(ext, ".xhtml") ||
-				!fz_strcasecmp(ext, ".html") || !fz_strcasecmp(ext, ".htm") ||
-				!fz_strcasecmp(ext, ".fb2"))
-			return 100;
-	}
-	if (!strcmp(magic, "application/html+xml") || !strcmp(magic, "application/xml") || !strcmp(magic, "text/xml"))
-		return 100;
-	return 0;
-}
+static const char *htdoc_mimetypes[] =
+{
+	"application/html+xml",
+	"application/x-fictionbook",
+	"application/xml",
+	"text/xml",
+	NULL
+};
 
 fz_document_handler html_document_handler =
 {
-	htdoc_recognize,
+	NULL,
 	htdoc_open_document,
-	htdoc_open_document_with_stream
+	htdoc_open_document_with_stream,
+	htdoc_extensions,
+	htdoc_mimetypes
 };

@@ -280,6 +280,8 @@ struct fz_document_handler_s
 	fz_document_recognize_fn *recognize;
 	fz_document_open_fn *open;
 	fz_document_open_with_stream_fn *open_with_stream;
+	const char **extensions;
+	const char **mimetypes;
 };
 
 /*

@@ -2738,27 +2738,25 @@ pdf_document *pdf_create_document(fz_context *ctx)
 	return doc;
 }
 
-int
-pdf_recognize(fz_context *doc, const char *magic)
+static const char *pdf_extensions[] =
 {
-	char *ext = strrchr(magic, '.');
+	"pdf",
+	NULL
+};
 
-	if (ext)
-	{
-		if (!fz_strcasecmp(ext, ".pdf"))
-			return 100;
-	}
-	if (!strcmp(magic, "pdf") || !strcmp(magic, "application/pdf"))
-		return 100;
-
-	return 1;
-}
+static const char *pdf_mimetypes[] =
+{
+	"application/pdf",
+	NULL
+};
 
 fz_document_handler pdf_document_handler =
 {
-	pdf_recognize,
+	NULL,
 	(fz_document_open_fn *) pdf_open_document,
-	(fz_document_open_with_stream_fn *) pdf_open_document_with_stream
+	(fz_document_open_with_stream_fn *) pdf_open_document_with_stream,
+	pdf_extensions,
+	pdf_mimetypes
 };
 
 void pdf_mark_xref(fz_context *ctx, pdf_document *doc)

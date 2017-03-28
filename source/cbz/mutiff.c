@@ -143,26 +143,25 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	return &doc->super;
 }
 
-static int
-tiff_recognize(fz_context *doc, const char *magic)
+static const char *tiff_extensions[] =
 {
-	char *ext = strrchr(magic, '.');
+	"tif",
+	"tiff",
+	NULL
+};
 
-	if (ext)
-	{
-		if (!fz_strcasecmp(ext, ".tiff") || !fz_strcasecmp(ext, ".tif"))
-			return 100;
-	}
-	if (!strcmp(magic, "tif") || !strcmp(magic, "image/tiff") ||
-		!strcmp(magic, "tiff") || !strcmp(magic, "image/x-tiff"))
-		return 100;
-
-	return 0;
-}
+static const char *tiff_mimetypes[] =
+{
+	"image/tiff",
+	"image/x-tiff",
+	NULL
+};
 
 fz_document_handler tiff_document_handler =
 {
-	tiff_recognize,
 	NULL,
-	tiff_open_document_with_stream
+	NULL,
+	tiff_open_document_with_stream,
+	tiff_extensions,
+	tiff_mimetypes
 };
