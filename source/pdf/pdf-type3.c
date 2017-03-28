@@ -74,7 +74,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		encoding = pdf_dict_get(ctx, dict, PDF_NAME_Encoding);
 		if (!encoding)
 		{
-			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing Encoding");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "Type3 font missing Encoding");
 		}
 
 		if (pdf_is_name(ctx, encoding))
@@ -122,7 +122,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		widths = pdf_dict_get(ctx, dict, PDF_NAME_Widths);
 		if (!widths)
 		{
-			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing Widths");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "Type3 font missing Widths");
 		}
 
 		for (i = first; i <= last; i++)
@@ -154,7 +154,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		charprocs = pdf_dict_get(ctx, dict, PDF_NAME_CharProcs);
 		if (!charprocs)
 		{
-			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: Type3 font missing CharProcs");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "Type3 font missing CharProcs");
 		}
 
 		for (i = 0; i < 256; i++)

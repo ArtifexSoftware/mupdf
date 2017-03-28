@@ -1029,7 +1029,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
 			cidinfo = pdf_dict_get(ctx, dict, PDF_NAME_CIDSystemInfo);
 			if (!cidinfo)
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cid font is missing info");
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "cid font is missing info");
 
 			obj = pdf_dict_get(ctx, cidinfo, PDF_NAME_Registry);
 			tmplen = fz_mini(sizeof tmpstr - 1, pdf_to_str_len(ctx, obj));
@@ -1063,7 +1063,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 		}
 		else
 		{
-			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: font missing encoding");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "font missing encoding");
 		}
 
 		/* Load font file */
@@ -1077,7 +1077,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 
 		descriptor = pdf_dict_get(ctx, dict, PDF_NAME_FontDescriptor);
 		if (!descriptor)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: missing font descriptor");
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "missing font descriptor");
 		pdf_load_font_descriptor(ctx, doc, fontdesc, descriptor, collection, basefont, 1);
 
 		face = fontdesc->font->ft_face;
@@ -1250,7 +1250,7 @@ pdf_load_type0_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	dfonts = pdf_dict_get(ctx, dict, PDF_NAME_DescendantFonts);
 	if (!dfonts)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cid font is missing descendant fonts");
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "cid font is missing descendant fonts");
 
 	dfont = pdf_array_get(ctx, dfonts, 0);
 
@@ -1262,7 +1262,7 @@ pdf_load_type0_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		return load_cid_font(ctx, doc, dfont, encoding, to_unicode);
 	if (pdf_is_name(ctx, subtype) && pdf_name_eq(ctx, subtype, PDF_NAME_CIDFontType2))
 		return load_cid_font(ctx, doc, dfont, encoding, to_unicode);
-	fz_throw(ctx, FZ_ERROR_GENERIC, "syntaxerror: unknown cid font type");
+	fz_throw(ctx, FZ_ERROR_SYNTAX, "unknown cid font type");
 }
 
 /*
