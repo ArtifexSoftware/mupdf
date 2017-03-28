@@ -993,7 +993,8 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 				else
 				{
 					cookie->errors++;
-					fz_rethrow(ctx);
+					fz_warn(ctx, "unrecoverable error; ignoring rest of page");
+					tok = PDF_TOK_EOF;
 				}
 			}
 			else
@@ -1011,7 +1012,10 @@ pdf_process_stream(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, fz_stream
 					}
 				}
 				else
-					fz_rethrow(ctx);
+				{
+					fz_warn(ctx, "unrecoverable error; ignoring rest of page");
+					tok = PDF_TOK_EOF;
+				}
 			}
 
 			/* If we do catch an error, then reset ourselves to a base lexing state */
