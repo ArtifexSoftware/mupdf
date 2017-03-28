@@ -144,10 +144,26 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 
+/* Public to allow use in icc creation */
+typedef struct fz_cal_color_s fz_cal_color;
+
+struct fz_cal_color_s {
+	float wp[3];
+	float bp[3];
+	float gamma[3];
+	float matrix[9];
+	int n;
+	fz_iccprofile *profile;
+};
+
+
 /*
 	icc methods
 */
 void * fz_get_cmm_ctx(fz_context *ctx);
 void fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx);
 fz_colorspace * fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name);
+fz_colorspace * fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
+int fz_create_icc_from_cal(fz_context *ctx, unsigned char **buffer, fz_cal_color *cal);
+
 #endif

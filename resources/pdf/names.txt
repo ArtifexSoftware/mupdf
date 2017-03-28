@@ -38,6 +38,7 @@ BitsPerCoordinate
 BitsPerFlag
 BitsPerSample
 BlackIs1
+BlackPoint
 BleedBox
 Blinds
 Border
@@ -174,6 +175,7 @@ Function
 FunctionType
 Functions
 G
+Gamma
 Glitter
 GoTo
 GoToR
@@ -385,6 +387,7 @@ W
 W2
 WMode
 Watermark
+WhitePoint
 Widget
 Width
 Widths

@@ -66,6 +66,14 @@ char *fz_rendering_intent_name(int ri)
 }
 
 static int
+fz_colorspace_is_cal(fz_colorspace *cs)
+{
+	if (strncmp(cs->name, "pdf-cal", 7) == 0)
+		return 1;
+	return 0;
+}
+
+static int
 fz_colorspace_is_icc(fz_colorspace *cs)
 {
 	if (strncmp(cs->name, "icc", 3) == 0)
@@ -190,8 +198,19 @@ static fz_icclink *
 fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rendering_param *rend)
 {
 	fz_icclink *link;
-	fz_iccprofile *src_icc = src->data;
 	fz_iccprofile *dst_icc = dst->data;
+	fz_iccprofile *src_icc;
+	fz_cal_color *cal;
+
+	if (fz_colorspace_is_icc(src))
+		src_icc = src->data;
+	else
+	{
+		cal = src->data;
+		src_icc = cal->profile;
+		if (src_icc->cmm_handle == NULL)
+			fz_cmm_new_profile(ctx, src_icc);
+	}
 
 	link = fz_malloc_struct(ctx, fz_icclink);
 	link->num_in = src_icc->num_devcomp;
@@ -263,6 +282,56 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rend
 		/* Nothing to do. */
 	}
 	return link;
+}
+
+static void
+fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
+{
+	fz_md5 md5;
+	const char *s;
+	size_t size;
+
+	fz_md5_init(&md5);
+	if (profile)
+	{
+		if (profile->res_buffer != NULL)
+		{
+			s = profile->res_buffer;
+			size = profile->res_size;
+		}
+		else
+		{
+			size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
+		}
+		fz_md5_update(&md5, (const unsigned char *)s, size);
+		fz_md5_final(&md5, profile->md5);
+	}
+}
+
+/* Create icc profile from calrgb, calgray values */
+static void
+fz_icc_from_cal(fz_context *ctx, fz_colorspace *cs)
+{
+	fz_cal_color *cal_data = cs->data;
+	fz_iccprofile *profile;
+
+	if (cal_data->profile != NULL)
+		return;
+	profile = fz_malloc_struct(ctx, fz_iccprofile);
+
+	fz_var(profile);
+
+	fz_try(ctx)
+	{
+		profile->res_size = fz_create_icc_from_cal(ctx, &(profile->res_buffer), cal_data);
+		fz_md5_icc(ctx, profile);
+		cal_data->profile = profile;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, profile);
+		fz_rethrow(ctx);
+	}
 }
 
 /* Device colorspace definitions */
@@ -2041,11 +2110,12 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 		else return fz_std_conv_pixmap;
 	}
 
-	else if (fz_colorspace_is_icc(ss) && fz_colorspace_is_icc(ds))
+	else if ((fz_colorspace_is_icc(ss) || fz_colorspace_is_cal(ss)) && fz_colorspace_is_icc(ds))
 	{
+		if (fz_colorspace_is_cal(ss))
+			fz_icc_from_cal(ctx, ss);
 		return fz_icc_conv_pixmap;
 	}
-
 	else return fz_std_conv_pixmap;
 }
 
@@ -2264,8 +2334,10 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 		else
 			cc->convert = std_conv_color;
 	}
-	else if (fz_colorspace_is_icc(ss) && fz_colorspace_is_icc(ds))
+	else if ((fz_colorspace_is_icc(ss) || fz_colorspace_is_cal(ss)) && fz_colorspace_is_icc(ds))
 	{
+		if (fz_colorspace_is_cal(ss))
+			fz_icc_from_cal(ctx, ss);
 		cc->convert = icc_conv_color;
 	}
 	else
@@ -2510,30 +2582,6 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, profile);
 }
 
-static void
-fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
-{
-	fz_md5 md5;
-	const char *s;
-	size_t size;
-
-	fz_md5_init(&md5);
-	if (profile)
-	{
-		if (profile->res_buffer != NULL)
-		{
-			s = profile->res_buffer;
-			size = profile->res_size;
-		}
-		else
-		{
-			size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
-		}
-		fz_md5_update(&md5, (const unsigned char *)s, size);
-		fz_md5_final(&md5, profile->md5);
-	}
-}
-
 fz_colorspace *
 fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name)
 {
@@ -2552,17 +2600,14 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		if (profile->cmm_handle == NULL || num != profile->num_devcomp)
 		{
 			if (profile->cmm_handle)
-			{
 				fz_cmm_free_profile(profile);
-				return NULL;
-			}
 		}
 		else
 		{
 			fz_keep_buffer(ctx, buf);
 			fz_md5_icc(ctx, profile);
+			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
 		}
-		cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
 	}
 	fz_catch(ctx)
 	{
@@ -2572,6 +2617,46 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 			fz_cmm_free_profile(profile);
 			fz_free(ctx, profile);
 		}
+		fz_rethrow(ctx);
+	}
+	return cs;
+}
+
+static void
+free_cal(fz_context *ctx, fz_colorspace *cs)
+{
+	fz_cal_color *cal_data = cs->data;
+	if (cal_data->profile != NULL)
+	{
+		fz_free(ctx, cal_data->profile->res_buffer);
+		fz_cmm_free_profile(cal_data->profile);
+		fz_free(ctx, cal_data->profile);
+	}
+	fz_free(ctx, cal_data);
+}
+
+/* Profile created if needed during draw command. */
+fz_colorspace *
+fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix)
+{
+	fz_colorspace *cs = NULL;
+	int num = (matrix == NULL ? 1 : 3);
+	fz_cal_color *cal_data = fz_malloc_struct(ctx, fz_cal_color);
+
+	memcpy(&cal_data->bp, bp, sizeof(float) * 3);
+	memcpy(&cal_data->wp, wp, sizeof(float) * 3);
+	memcpy(&cal_data->gamma, gamma, sizeof(float) * num);
+	if (matrix != NULL)
+		memcpy(&cal_data->matrix, matrix, sizeof(float) * 9);
+	cal_data->n = num;
+
+	fz_try(ctx)
+	{
+		cs = fz_new_colorspace(ctx, "pdf-cal", 1, num, 0, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, cal_data);
 		fz_rethrow(ctx);
 	}
 	return cs;

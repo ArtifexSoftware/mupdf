@@ -204,6 +204,121 @@ load_indexed(fz_context *ctx, pdf_obj *array)
 	return cs;
 }
 
+/* If an issue returns -1, else returns 0 */
+static int
+pdf_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float *gamma)
+{
+	pdf_obj *obj;
+	pdf_obj *objv;
+	int i;
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_WhitePoint);
+	if (pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 3)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			objv = pdf_array_get(ctx, obj, i);
+			if (!pdf_is_number(ctx, objv))
+				return -1;
+			wp[i] = pdf_to_real(ctx, objv);
+		}
+		if (wp[1] != 1)
+			return -1;
+	}
+	else
+		return -1;
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_BlackPoint);
+	if (pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 3)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			objv = pdf_array_get(ctx, obj, i);
+			if (!pdf_is_number(ctx, objv))
+			{
+				return -1;
+			}
+			bp[i] = pdf_to_real(ctx, objv);
+			fz_clamp(bp[i], 0, 1);
+		}
+	}
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Gamma);
+	if (pdf_is_number(ctx, obj))
+	{
+		*gamma = pdf_to_real(ctx, objv);
+		if (*gamma < 0 || *gamma == 0)
+			return -1;
+	}
+	else if (pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 3)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			objv = pdf_array_get(ctx, obj, i);
+			if (!pdf_is_number(ctx, objv))
+				return -1;
+			gamma[i] = pdf_to_real(ctx, objv);
+		}
+	}
+	return 0;
+}
+
+/* Create an ICC color space from calgray dictionary */
+static fz_colorspace *
+pdf_icc_from_calgray(fz_context *ctx, pdf_obj *dict)
+{
+	float wp[3];
+	float bp[3] = { 0 };
+	float gamma = 1.0;
+	fz_colorspace *cs;
+
+	if (dict == NULL)
+		return fz_device_gray(ctx);
+
+	if (pdf_cal_common(ctx, dict, wp, bp, &gamma) == 0)
+	{
+		cs = fz_new_cal_colorspace(ctx, wp, bp, &gamma, NULL);
+		if (cs != NULL)
+			return cs;
+	}
+	return fz_device_gray(ctx);
+}
+
+/* Create an ICC color space from calrgb dictionary */
+static fz_colorspace *
+pdf_icc_from_calrgb(fz_context *ctx, pdf_obj *dict)
+{
+	pdf_obj *obj, *objv;
+	float matrix[9] = { 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0 };
+	float wp[3];
+	float bp[3] = { 0 };
+	float gamma[3] = { 1.0, 1.0, 1.0 };
+	fz_colorspace *cs;
+	int i;
+
+	if (dict == NULL)
+		return fz_device_rgb(ctx);
+
+	if (pdf_cal_common(ctx, dict, wp, bp, gamma) == 0)
+	{
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_Matrix);
+		if (obj && pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 9)
+		{
+			for (i = 0; i < 9; i++)
+			{
+				objv = pdf_array_get(ctx, obj, i);
+				if (!pdf_is_number(ctx, objv))
+					return fz_device_rgb(ctx);
+				matrix[i] = pdf_to_real(ctx, objv);
+			}
+			cs = fz_new_cal_colorspace(ctx, wp, bp, gamma, matrix);
+			if (cs != NULL)
+				return cs;
+		}
+	}
+	return fz_device_rgb(ctx);
+}
+
 /* Parse and create colorspace from PDF object */
 
 static fz_colorspace *
@@ -252,9 +367,9 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceCMYK))
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
-				return fz_device_gray(ctx);
+				return pdf_icc_from_calgray(ctx, pdf_array_get(ctx, obj, 1));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
-				return fz_device_rgb(ctx);
+				return pdf_icc_from_calrgb(ctx, pdf_array_get(ctx, obj, 1));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalCMYK))
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_Lab))
