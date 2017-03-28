@@ -5338,7 +5338,7 @@ FUN(Buffer_writeRune)(JNIEnv *env, jobject self, jint rune)
 	if (!ctx || !buf) return;
 
 	fz_try(ctx)
-		fz_write_buffer_rune(ctx, buf, rune);
+		fz_append_rune(ctx, buf, rune);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }

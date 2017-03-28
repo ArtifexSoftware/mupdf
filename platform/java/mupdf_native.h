@@ -751,10 +751,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_beingPage
 /*
  * Class:     com_artifex_mupdf_fitz_DocumentWriter
  * Method:    endPage
- * Signature: (Lcom/artifex/mupdf/fitz/Device;)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_endPage
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_DocumentWriter
@@ -1366,6 +1366,8 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFAnnotation_TYPE_WATERMARK 23L
 #undef com_artifex_mupdf_fitz_PDFAnnotation_TYPE_3D
 #define com_artifex_mupdf_fitz_PDFAnnotation_TYPE_3D 24L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_TYPE_UNKNOWN
+#define com_artifex_mupdf_fitz_PDFAnnotation_TYPE_UNKNOWN -1L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    getType
