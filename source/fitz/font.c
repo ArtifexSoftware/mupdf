@@ -347,7 +347,7 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 		*fontp = fz_load_system_fallback_font(ctx, script, language, serif, bold, italic);
 		if (!*fontp)
 		{
-			data = fz_lookup_noto_font(ctx, script, language, 0, &size);
+			data = fz_lookup_noto_font(ctx, script, language, serif, &size);
 			if (data)
 				*fontp = fz_new_font_from_memory(ctx, NULL, data, size, 0, 0);
 		}
