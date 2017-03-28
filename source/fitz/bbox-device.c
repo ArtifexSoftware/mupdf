@@ -189,7 +189,7 @@ fz_bbox_drop_device(fz_context *ctx, fz_device *dev)
 fz_device *
 fz_new_bbox_device(fz_context *ctx, fz_rect *result)
 {
-	fz_bbox_device *dev = fz_new_device(ctx, sizeof *dev);
+	fz_bbox_device *dev = fz_new_derived_device(ctx, fz_bbox_device);
 
 	dev->super.drop_device = fz_bbox_drop_device;
 

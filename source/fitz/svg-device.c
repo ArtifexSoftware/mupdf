@@ -1255,7 +1255,7 @@ svg_dev_drop_device(fz_context *ctx, fz_device *dev)
 
 fz_device *fz_new_svg_device(fz_context *ctx, fz_output *out, float page_width, float page_height, int text_format, int reuse_images)
 {
-	svg_device *dev = fz_new_device(ctx, sizeof *dev);
+	svg_device *dev = fz_new_derived_device(ctx, svg_device);
 
 	dev->super.close_device = svg_dev_close_device;
 	dev->super.drop_device = svg_dev_drop_device;

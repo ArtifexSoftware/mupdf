@@ -1073,7 +1073,7 @@ js_dev_end_tile(fz_context *ctx, fz_device *dev)
 
 static fz_device *new_js_device(fz_context *ctx, js_State *J)
 {
-	js_device *dev = fz_new_device(ctx, sizeof *dev);
+	js_device *dev = fz_new_derived_device(ctx, js_device);
 
 	dev->super.fill_path = js_dev_fill_path;
 	dev->super.stroke_path = js_dev_stroke_path;

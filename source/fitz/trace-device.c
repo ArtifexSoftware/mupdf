@@ -350,7 +350,7 @@ fz_trace_end_tile(fz_context *ctx, fz_device *dev)
 
 fz_device *fz_new_trace_device(fz_context *ctx, fz_output *out)
 {
-	fz_trace_device *dev = fz_new_device(ctx, sizeof *dev);
+	fz_trace_device *dev = fz_new_derived_device(ctx, fz_trace_device);
 
 	dev->super.fill_path = fz_trace_fill_path;
 	dev->super.stroke_path = fz_trace_stroke_path;

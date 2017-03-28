@@ -2294,7 +2294,7 @@ fz_draw_render_flags(fz_context *ctx, fz_device *devp, int set, int clear)
 fz_device *
 fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 {
-	fz_draw_device *dev = fz_new_device(ctx, sizeof *dev);
+	fz_draw_device *dev = fz_new_derived_device(ctx, fz_draw_device);
 
 	dev->super.drop_device = fz_draw_drop_device;
 

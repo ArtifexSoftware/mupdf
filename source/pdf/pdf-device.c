@@ -1081,7 +1081,7 @@ pdf_dev_drop_device(fz_context *ctx, fz_device *dev)
 
 fz_device *pdf_new_pdf_device(fz_context *ctx, pdf_document *doc, const fz_matrix *topctm, const fz_rect *mediabox, pdf_obj *resources, fz_buffer *buf)
 {
-	pdf_device *dev = fz_new_device(ctx, sizeof *dev);
+	pdf_device *dev = fz_new_derived_device(ctx, pdf_device);
 
 	dev->super.close_device = pdf_dev_close_device;
 	dev->super.drop_device = pdf_dev_drop_device;

@@ -462,7 +462,7 @@ fz_test_end_tile(fz_context *ctx, fz_device *dev_)
 fz_device *
 fz_new_test_device(fz_context *ctx, int *is_color, float threshold, int options, fz_device *passthrough)
 {
-	fz_test_device *dev = fz_new_device(ctx, sizeof *dev);
+	fz_test_device *dev = fz_new_derived_device(ctx, fz_test_device);
 
 	dev->super.fill_path = fz_test_fill_path;
 	dev->super.stroke_path = fz_test_stroke_path;

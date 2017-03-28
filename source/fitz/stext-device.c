@@ -1097,7 +1097,7 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 fz_device *
 fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, const fz_stext_options *opts)
 {
-	fz_stext_device *dev = fz_new_device(ctx, sizeof *dev);
+	fz_stext_device *dev = fz_new_derived_device(ctx, fz_stext_device);
 
 	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
 
