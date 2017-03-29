@@ -630,7 +630,7 @@ fz_append_display_node(
 
 static void
 fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_rect rect;
 
@@ -653,7 +653,7 @@ fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 static void
 fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_rect rect;
 
@@ -724,7 +724,7 @@ fz_list_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 
 static void
 fz_list_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -756,7 +756,7 @@ fz_list_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 
 static void
 fz_list_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_rect rect;
 	fz_text *cloned_text = fz_keep_text(ctx, text);
@@ -1619,10 +1619,10 @@ visible:
 			switch (n.cmd)
 			{
 			case FZ_CMD_FILL_PATH:
-				fz_fill_path(ctx, dev, path, n.flags, &trans_ctm, colorspace, color, alpha);
+				fz_fill_path(ctx, dev, path, n.flags, &trans_ctm, colorspace, NULL, color, alpha);
 				break;
 			case FZ_CMD_STROKE_PATH:
-				fz_stroke_path(ctx, dev, path, stroke, &trans_ctm, colorspace, color, alpha);
+				fz_stroke_path(ctx, dev, path, stroke, &trans_ctm, colorspace, NULL, color, alpha);
 				break;
 			case FZ_CMD_CLIP_PATH:
 				fz_clip_path(ctx, dev, path, n.flags, &trans_ctm, &trans_rect);
@@ -1631,10 +1631,10 @@ visible:
 				fz_clip_stroke_path(ctx, dev, path, stroke, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_FILL_TEXT:
-				fz_fill_text(ctx, dev, *(fz_text **)node, &trans_ctm, colorspace, color, alpha);
+				fz_fill_text(ctx, dev, *(fz_text **)node, &trans_ctm, colorspace, NULL, color, alpha);
 				break;
 			case FZ_CMD_STROKE_TEXT:
-				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, color, alpha);
+				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, NULL, color, alpha);
 				break;
 			case FZ_CMD_CLIP_TEXT:
 				fz_clip_text(ctx, dev, *(fz_text **)node, &trans_ctm, &trans_rect);

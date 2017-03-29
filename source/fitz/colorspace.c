@@ -127,7 +127,7 @@ struct fz_link_key_s {
 	int refs;
 	unsigned char src_md5[16];
 	unsigned char dst_md5[16];
-	fz_rendering_param rend;
+	fz_color_params rend;
 };
 
 static void *
@@ -195,7 +195,7 @@ fz_drop_icclink(fz_context *ctx, fz_icclink *link)
 }
 
 static fz_icclink *
-fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rendering_param *rend)
+fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend)
 {
 	fz_icclink *link;
 	fz_iccprofile *dst_icc = dst->data;
@@ -238,7 +238,7 @@ fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rend
 }
 
 static fz_icclink *
-fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_rendering_param *rend)
+fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend)
 {
 	fz_icclink *link;
 	fz_iccprofile *src_icc = src->data;
@@ -1817,7 +1817,7 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	fz_icclink *link;
 	int i;
 	unsigned char *inputpos, *outputpos;
-	fz_rendering_param rend;
+	fz_color_params rend;
 
 	inputpos = src->samples;
 	outputpos = dst->samples;
@@ -2132,7 +2132,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	int i;
 	unsigned short dstv_s[FZ_MAX_COLORS];
 	unsigned short srcv_s[FZ_MAX_COLORS];
-	fz_rendering_param rend;
+	fz_color_params rend;
 
 	rend.bp = 1;
 	rend.intent = 1;

@@ -109,22 +109,22 @@ pop_clip_stack(fz_context *ctx, fz_device *dev)
 
 void
 fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_path)
-		dev->fill_path(ctx, dev, path, even_odd, ctm, colorspace, color, alpha);
+		dev->fill_path(ctx, dev, path, even_odd, ctm, colorspace, cs_params, color, alpha);
 }
 
 void
 fz_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->stroke_path)
-		dev->stroke_path(ctx, dev, path, stroke, ctm, colorspace, color, alpha);
+		dev->stroke_path(ctx, dev, path, stroke, ctm, colorspace, cs_params, color, alpha);
 }
 
 void
@@ -195,22 +195,22 @@ fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 void
 fz_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_text)
-		dev->fill_text(ctx, dev, text, ctm, colorspace, color, alpha);
+		dev->fill_text(ctx, dev, text, ctm, colorspace, cs_params, color, alpha);
 }
 
 void
 fz_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->stroke_text)
-		dev->stroke_text(ctx, dev, text, stroke, ctm, colorspace, color, alpha);
+		dev->stroke_text(ctx, dev, text, stroke, ctm, colorspace, cs_params, color, alpha);
 }
 
 void

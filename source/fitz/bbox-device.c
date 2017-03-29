@@ -37,7 +37,7 @@ fz_bbox_add_rect(fz_context *ctx, fz_device *dev, const fz_rect *rect, int clip)
 
 static void
 fz_bbox_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_path(ctx, path, NULL, ctm, &r), 0);
@@ -45,7 +45,7 @@ fz_bbox_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 static void
 fz_bbox_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_path(ctx, path, stroke, ctm, &r), 0);
@@ -53,7 +53,7 @@ fz_bbox_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 static void
 fz_bbox_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, NULL, ctm, &r), 0);
@@ -61,7 +61,7 @@ fz_bbox_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 
 static void
 fz_bbox_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_rect r;
 	fz_bbox_add_rect(ctx, dev, fz_bound_text(ctx, text, stroke, ctm, &r), 0);

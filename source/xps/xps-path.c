@@ -1002,7 +1002,7 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 		xps_set_color(ctx, doc, colorspace, samples);
 
 		fz_fill_path(ctx, dev, path, fill_rule == 0, &local_ctm,
-			doc->colorspace, doc->color, doc->alpha);
+			doc->colorspace, NULL, doc->color, doc->alpha);
 	}
 
 	if (fill_tag)
@@ -1020,7 +1020,7 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 		xps_set_color(ctx, doc, colorspace, samples);
 
 		fz_stroke_path(ctx, dev, stroke_path, stroke, &local_ctm,
-			doc->colorspace, doc->color, doc->alpha);
+			doc->colorspace, NULL, doc->color, doc->alpha);
 	}
 
 	if (stroke_tag)

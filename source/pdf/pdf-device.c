@@ -631,7 +631,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 
 static void
 pdf_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs = CURRENT_GSTATE(pdev);
@@ -646,7 +646,7 @@ pdf_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 
 static void
 pdf_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	gstate *gs = CURRENT_GSTATE(pdev);
@@ -694,7 +694,7 @@ pdf_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, c
 
 static void
 pdf_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-		fz_colorspace *colorspace, const float *color, float alpha)
+		fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;
@@ -713,7 +713,7 @@ pdf_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 
 static void
 pdf_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-		fz_colorspace *colorspace, const float *color, float alpha)
+		fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	fz_text_span *span;

@@ -867,7 +867,7 @@ fz_stext_extract(fz_context *ctx, fz_stext_device *dev, fz_text_span *span, cons
 
 static void
 fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;
@@ -881,7 +881,7 @@ fz_stext_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const f
 
 static void
 fz_stext_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_stext_device *tdev = (fz_stext_device*)dev;
 	fz_stext_style *style;

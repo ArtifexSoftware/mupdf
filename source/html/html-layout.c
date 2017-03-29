@@ -1536,7 +1536,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 			{
 				if (text)
 				{
-					fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), prev_color, 1);
+					fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), NULL, prev_color, 1);
 					fz_drop_text(ctx, text);
 					text = NULL;
 				}
@@ -1623,7 +1623,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 		{
 			if (text)
 			{
-				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+				fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), NULL, color, 1);
 				fz_drop_text(ctx, text);
 				text = NULL;
 			}
@@ -1639,7 +1639,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 
 	if (text)
 	{
-		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), NULL, color, 1);
 		fz_drop_text(ctx, text);
 		text = NULL;
 	}
@@ -1663,7 +1663,7 @@ static void draw_rect(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, flo
 		rgb[1] = color.g / 255.0f;
 		rgb[2] = color.b / 255.0f;
 
-		fz_fill_path(ctx, dev, path, 0, ctm, fz_device_rgb(ctx), rgb, color.a / 255.0f);
+		fz_fill_path(ctx, dev, path, 0, ctm, fz_device_rgb(ctx), NULL, rgb, color.a / 255.0f);
 
 		fz_drop_path(ctx, path);
 	}
@@ -1821,7 +1821,7 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 		color[1] = box->style.color.g / 255.0f;
 		color[2] = box->style.color.b / 255.0f;
 
-		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), color, 1);
+		fz_fill_text(ctx, dev, text, ctm, fz_device_rgb(ctx), NULL, color, 1);
 	}
 	fz_always(ctx)
 		fz_drop_text(ctx, text);

@@ -62,7 +62,7 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 
 static void
 fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -72,12 +72,12 @@ fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int eve
 			fz_test_color(ctx, dev, colorspace, color);
 	}
 	if (dev->passthrough)
-		fz_fill_path(ctx, dev->passthrough, path, even_odd, ctm, colorspace, color, alpha);
+		fz_fill_path(ctx, dev->passthrough, path, even_odd, ctm, colorspace, cs_param, color, alpha);
 }
 
 static void
 fz_test_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -87,12 +87,12 @@ fz_test_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const
 			fz_test_color(ctx, dev, colorspace, color);
 	}
 	if (dev->passthrough)
-		fz_stroke_path(ctx, dev->passthrough, path, stroke, ctm, colorspace, color, alpha);
+		fz_stroke_path(ctx, dev->passthrough, path, stroke, ctm, colorspace, cs_param, color, alpha);
 }
 
 static void
 fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -102,12 +102,12 @@ fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const f
 			fz_test_color(ctx, dev, colorspace, color);
 	}
 	if (dev->passthrough)
-		fz_fill_text(ctx, dev->passthrough, text, ctm, colorspace, color, alpha);
+		fz_fill_text(ctx, dev->passthrough, text, ctm, colorspace, cs_param, color, alpha);
 }
 
 static void
 fz_test_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -117,7 +117,7 @@ fz_test_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const
 			fz_test_color(ctx, dev, colorspace, color);
 	}
 	if (dev->passthrough)
-		fz_stroke_text(ctx, dev->passthrough, text, stroke, ctm, colorspace, color, alpha);
+		fz_stroke_text(ctx, dev->passthrough, text, stroke, ctm, colorspace, cs_param, color, alpha);
 }
 
 struct shadearg

@@ -33,10 +33,12 @@ struct fz_icclink_s
 	void *cmm_handle;
 };
 
-struct fz_rendering_param_s
+struct fz_color_params_s
 {
 	int intent;
 	int bp;
+	int op;
+	int opm;
 };
 
 #endif

@@ -37,7 +37,6 @@ struct fz_draw_state_s {
 	fz_matrix ctm;
 	float xstep, ystep;
 	fz_irect area;
-	int ri;
 };
 
 struct fz_draw_device_s
@@ -282,7 +281,7 @@ static inline fz_matrix concat(const fz_matrix *one, const fz_matrix *two)
 
 static void
 fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int even_odd, const fz_matrix *in_ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
@@ -337,7 +336,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 
 static void
 fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *in_ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
@@ -627,7 +626,7 @@ draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_glyph *glyph,
 
 static void
 fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_matrix *in_ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
@@ -701,7 +700,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 				fz_path *path = fz_outline_glyph(ctx, span->font, gid, &tm);
 				if (path)
 				{
-					fz_draw_fill_path(ctx, devp, path, 0, in_ctm, colorspace, color, alpha);
+					fz_draw_fill_path(ctx, devp, path, 0, in_ctm, colorspace, NULL, color, alpha);
 					fz_drop_path(ctx, path);
 				}
 				else
@@ -718,7 +717,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 
 static void
 fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *in_ctm, fz_colorspace *colorspace,
+	const fz_matrix *in_ctm, fz_colorspace *colorspace, fz_color_params *cs_param,
 	const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
@@ -780,7 +779,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 				fz_path *path = fz_outline_glyph(ctx, span->font, gid, &tm);
 				if (path)
 				{
-					fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, colorspace, color, alpha);
+					fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, colorspace, NULL, color, alpha);
 					fz_drop_path(ctx, path);
 				}
 				else
@@ -894,7 +893,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 							state[1].mask = NULL;
 							fz_try(ctx)
 							{
-								fz_draw_fill_path(ctx, devp, path, 0, in_ctm, fz_device_gray(ctx), &white, 1);
+								fz_draw_fill_path(ctx, devp, path, 0, in_ctm, fz_device_gray(ctx), NULL, &white, 1);
 							}
 							fz_always(ctx)
 							{
@@ -1017,7 +1016,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 							state[0].mask = NULL;
 							fz_try(ctx)
 							{
-								fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, fz_device_gray(ctx), &white, 1);
+								fz_draw_stroke_path(ctx, devp, path, stroke, in_ctm, fz_device_gray(ctx), NULL, &white, 1);
 							}
 							fz_always(ctx)
 							{
@@ -2334,7 +2333,6 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 	dev->stack[0].scissor.y0 = dest->y;
 	dev->stack[0].scissor.x1 = dest->x + dest->w;
 	dev->stack[0].scissor.y1 = dest->y + dest->h;
-	dev->stack[0].ri = 0;
 
 	fz_try(ctx)
 	{

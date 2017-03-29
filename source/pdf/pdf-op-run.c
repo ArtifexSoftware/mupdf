@@ -649,7 +649,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				break;
 			case PDF_MAT_COLOR:
 				fz_fill_path(ctx, pr->dev, path, even_odd, &gstate->ctm,
-					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
+					gstate->fill.colorspace, NULL, gstate->fill.v, gstate->fill.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
@@ -679,7 +679,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				break;
 			case PDF_MAT_COLOR:
 				fz_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm,
-					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
+					gstate->stroke.colorspace, NULL, gstate->stroke.v, gstate->stroke.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
@@ -797,7 +797,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				break;
 			case PDF_MAT_COLOR:
 				fz_fill_text(ctx, pr->dev, text, &gstate->ctm,
-					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha);
+					gstate->fill.colorspace, NULL, gstate->fill.v, gstate->fill.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
@@ -827,7 +827,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				break;
 			case PDF_MAT_COLOR:
 				fz_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm,
-					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha);
+					gstate->stroke.colorspace, NULL, gstate->stroke.v, gstate->stroke.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)

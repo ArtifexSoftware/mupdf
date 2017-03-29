@@ -263,9 +263,8 @@ pdf_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float *gamm
 	return 0;
 }
 
-/* Create an ICC color space from calgray dictionary */
 static fz_colorspace *
-pdf_icc_from_calgray(fz_context *ctx, pdf_obj *dict)
+pdf_calgray(fz_context *ctx, pdf_obj *dict)
 {
 	float wp[3];
 	float bp[3] = { 0 };
@@ -284,9 +283,8 @@ pdf_icc_from_calgray(fz_context *ctx, pdf_obj *dict)
 	return fz_device_gray(ctx);
 }
 
-/* Create an ICC color space from calrgb dictionary */
 static fz_colorspace *
-pdf_icc_from_calrgb(fz_context *ctx, pdf_obj *dict)
+pdf_calrgb(fz_context *ctx, pdf_obj *dict)
 {
 	pdf_obj *obj, *objv;
 	float matrix[9] = { 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0 };
@@ -367,9 +365,9 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceCMYK))
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
-				return pdf_icc_from_calgray(ctx, pdf_array_get(ctx, obj, 1));
+				return pdf_calgray(ctx, pdf_array_get(ctx, obj, 1));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
-				return pdf_icc_from_calrgb(ctx, pdf_array_get(ctx, obj, 1));
+				return pdf_calrgb(ctx, pdf_array_get(ctx, obj, 1));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalCMYK))
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_Lab))

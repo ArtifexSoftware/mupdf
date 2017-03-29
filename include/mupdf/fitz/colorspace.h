@@ -41,9 +41,9 @@ typedef struct fz_iccprofile_s fz_iccprofile;
 typedef struct fz_icclink_s fz_icclink;
 
 /*
-	A fz_rendering_param object describes the settings to use when creating a link.
+	A fz_color_params object describes color related settings.
 */
-typedef struct fz_rendering_param_s fz_rendering_param;
+typedef struct fz_color_params_s fz_color_params;
 
 /*
 	fz_colorspace_is_indexed: Return true, iff a given colorspace is
