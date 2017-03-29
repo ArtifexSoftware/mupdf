@@ -1,3 +1,19 @@
+List of changes in MuPDF 1.11
+
+* This is primarily a bug fix release.
+
+* Split Android and iOS viewers into separate projects:
+	* mupdf-viewer-ios.git has the iOS viewer.
+	* mupdf-viewer-android-old.git has the Android viewer.
+	* mupdf-viewer-android-nui.git has a new advanced Android viewer.
+	* mupdf-viewer-android-mini.git has a new minimalist Android viewer.
+
+* PDF portfolio support with command line tool "mutool portfolio".
+* Add callbacks to load fallback fonts from the system.
+* Use system fonts in Android to reduce install size.
+* Flag to disable publisher styles in EPUB layout.
+* Improved SVG output.
+
 List of changes in MuPDF 1.10
 
 * Headline changes:
