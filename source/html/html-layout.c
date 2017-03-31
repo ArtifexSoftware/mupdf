@@ -790,8 +790,9 @@ generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, float max_h)
 {
 	float xs = 1, ys = 1, s = 1;
-	float image_w = node->content.image->w * 72.0f / node->content.image->xres;
-	float image_h = node->content.image->h * 72.0f / node->content.image->yres;
+	/* NOTE: We ignore the image DPI here, since most images in EPUB files have bogus values. */
+	float image_w = node->content.image->w * 72 / 96;
+	float image_h = node->content.image->h * 72 / 96;
 	node->x = 0;
 	node->y = 0;
 	if (image_w > max_w)
