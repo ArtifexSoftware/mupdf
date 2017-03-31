@@ -49,7 +49,8 @@ static const char *fz_intent_names[] =
 	"AbsoluteColorimetric",
 };
 
-int fz_lookup_rendering_intent(const char *name)
+int
+fz_lookup_rendering_intent(const char *name)
 {
 	int i;
 	for (i = 0; i < nelem(fz_intent_names); i++)
@@ -58,11 +59,21 @@ int fz_lookup_rendering_intent(const char *name)
 	return FZ_RI_RELATIVECOLORIMETRIC;
 }
 
-char *fz_rendering_intent_name(int ri)
+char *
+fz_rendering_intent_name(int ri)
 {
 	if (ri >= 0 && ri < nelem(fz_intent_names))
 		return (char*)fz_intent_names[ri];
 	return "RelativeColorimetric";
+}
+
+void
+fz_color_param_init(fz_color_params *cs_param)
+{
+	cs_param->bp = 1;
+	cs_param->ri = FZ_RI_RELATIVECOLORIMETRIC;
+	cs_param->op = 0;
+	cs_param->opm = 0;
 }
 
 static int
@@ -150,7 +161,7 @@ fz_cmp_link_key(fz_context *ctx, void *k0_, void *k1_)
 {
 	fz_link_key *k0 = (fz_link_key *)k0_;
 	fz_link_key *k1 = (fz_link_key *)k1_;
-	return k0->rend.bp == k1->rend.bp && k0->rend.intent == k1->rend.intent && memcmp(k0->dst_md5, k1->dst_md5, 16) == 0 && memcmp(k0->src_md5, k1->src_md5, 16);
+	return k0->rend.bp == k1->rend.bp && k0->rend.ri == k1->rend.ri && memcmp(k0->dst_md5, k1->dst_md5, 16) == 0 && memcmp(k0->src_md5, k1->src_md5, 16);
 }
 
 static void
@@ -166,7 +177,7 @@ fz_make_hash_link_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 	fz_link_key *key = (fz_link_key *)key_;
 	memcpy(hash->u.link.dst_md5, key->dst_md5, 16);
 	memcpy(hash->u.link.src_md5, key->src_md5, 16);
-	hash->u.link.intent = key->rend.intent;
+	hash->u.link.ri = key->rend.ri;
 	hash->u.link.bp = key->rend.bp;
 	return 1;
 }
@@ -215,7 +226,7 @@ fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_colo
 	link = fz_malloc_struct(ctx, fz_icclink);
 	link->num_in = src_icc->num_devcomp;
 	link->num_out = dst_icc->num_devcomp;
-	if (memcmp(src_icc->md5, dst_icc->md5, 16) == 0 && rend->intent == FZ_RI_RELATIVECOLORIMETRIC)
+	if (memcmp(src_icc->md5, dst_icc->md5, 16) == 0 && rend->ri == FZ_RI_RELATIVECOLORIMETRIC)
 	{
 		link->is_identity = 1;
 		FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
@@ -256,7 +267,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_colo
 		key->refs = 1;
 		memcpy(&key->dst_md5, dst_icc->md5, 16);
 		memcpy(&key->src_md5, src_icc->md5, 16);
-		key->rend.intent = rend->intent;
+		key->rend.ri = rend->ri;
 		key->rend.bp = rend->bp;
 		link = fz_find_item(ctx, fz_drop_link_imp, key, &fz_link_store_type);
 
@@ -518,17 +529,21 @@ static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceR
 static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr };
 static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk };
 static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab };
+static fz_color_params k_default_color_params = { FZ_RI_RELATIVECOLORIMETRIC, 1, 0, 0 };
+
 
 static fz_colorspace *fz_default_gray = &k_default_gray;
 static fz_colorspace *fz_default_rgb = &k_default_rgb;
 static fz_colorspace *fz_default_bgr = &k_default_bgr;
 static fz_colorspace *fz_default_cmyk = &k_default_cmyk;
 static fz_colorspace *fz_default_lab = &k_default_lab;
+static fz_color_params *fz_default_color_params = &k_default_color_params;
 
 struct fz_colorspace_context_s
 {
 	int ctx_refs;
 	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;
+	fz_color_params *params;
 	void *cmm;
 };
 
@@ -536,6 +551,7 @@ void fz_new_colorspace_context(fz_context *ctx)
 {
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
 	ctx->colorspace->ctx_refs = 1;
+	ctx->colorspace->params = fz_default_color_params;
 #ifdef NO_ICC
 	ctx->colorspace->gray = fz_default_gray;
 	ctx->colorspace->rgb = fz_default_rgb;
@@ -600,6 +616,12 @@ fz_colorspace *
 fz_device_lab(fz_context *ctx)
 {
 	return ctx->colorspace->lab;
+}
+
+fz_color_params *
+fz_cs_params(fz_context *ctx)
+{
+	return ctx->colorspace->params;
 }
 
 void
@@ -1822,7 +1844,7 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	inputpos = src->samples;
 	outputpos = dst->samples;
 	rend.bp = 1;
-	rend.intent = 1;
+	rend.ri = 1;
 
 	link = fz_get_icc_link(ctx, dsts, srcs, &rend);
 	if (link != NULL)
@@ -1885,7 +1907,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	{
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss);
+		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
 		while (h--)
 		{
 			size_t ww = w;
@@ -1913,7 +1935,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	{
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss);
+		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
 		while (h--)
 		{
 			size_t ww = w;
@@ -1941,7 +1963,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		unsigned char lookup[FZ_MAX_COLORS * 256];
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss);
+		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
 		for (i = 0; i < 256; i++)
 		{
 			srcv[0] = i / 255.0f;
@@ -1977,7 +1999,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 		unsigned char *dold;
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss);
+		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
 		lookup = fz_new_hash_table(ctx, 509, srcn, -1, NULL);
 
 		while (h--)
@@ -2128,15 +2150,14 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 {
 	fz_colorspace *srcs = cc->ss;
 	fz_colorspace *dsts = cc->ds;
+	fz_color_params *rend = cc->params;
+
 	fz_icclink *link;
 	int i;
 	unsigned short dstv_s[FZ_MAX_COLORS];
 	unsigned short srcv_s[FZ_MAX_COLORS];
-	fz_color_params rend;
 
-	rend.bp = 1;
-	rend.intent = 1;
-	link = fz_get_icc_link(ctx, dsts, srcs, &rend);
+	link = fz_get_icc_link(ctx, dsts, srcs, rend);
 	if (link != NULL)
 	{
 		if (link->is_identity)
@@ -2285,10 +2306,11 @@ cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 #endif
 }
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss)
+void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params)
 {
 	cc->ds = ds;
 	cc->ss = ss;
+	cc->params = params;
 	if (ss == fz_default_gray)
 	{
 		if ((ds == fz_default_rgb) || (ds == fz_default_bgr))
@@ -2345,10 +2367,10 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 }
 
 void
-fz_convert_color(fz_context *ctx, fz_colorspace *ds, float *dv, fz_colorspace *ss, const float *sv)
+fz_convert_color(fz_context *ctx, fz_color_params *params, fz_colorspace *ds, float *dv, fz_colorspace *ss, const float *sv)
 {
 	fz_color_converter cc;
-	fz_lookup_color_converter(ctx, &cc, ds, ss);
+	fz_lookup_color_converter(ctx, &cc, ds, ss, params);
 	cc.convert(ctx, &cc, dv, sv);
 }
 
@@ -2509,18 +2531,19 @@ static void fz_cached_color_convert(fz_context *ctx, fz_color_converter *cc_, fl
 	}
 }
 
-void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss)
+void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params)
 {
 	int n = ss->n;
 	fz_cached_color_converter *cached = fz_malloc_struct(ctx, fz_cached_color_converter);
 
 	fz_try(ctx)
 	{
-		fz_lookup_color_converter(ctx, &cached->base, ds, ss);
+		fz_lookup_color_converter(ctx, &cached->base, ds, ss, params);
 		cached->hash = fz_new_hash_table(ctx, 256, n * sizeof(float), -1, fz_free);
 		cc->convert = fz_cached_color_convert;
 		cc->ds = ds;
 		cc->ss = ss;
+		cc->params = params;
 		cc->opaque = cached;
 	}
 	fz_catch(ctx)

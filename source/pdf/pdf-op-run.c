@@ -71,7 +71,7 @@ struct pdf_gstate_s
 	int luminosity;
 
 	/* color related */
-	int ri;
+	fz_color_params cs_param;
 };
 
 struct pdf_run_processor_s
@@ -649,7 +649,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				break;
 			case PDF_MAT_COLOR:
 				fz_fill_path(ctx, pr->dev, path, even_odd, &gstate->ctm,
-					gstate->fill.colorspace, NULL, gstate->fill.v, gstate->fill.alpha);
+					gstate->fill.colorspace, &gstate->cs_param, gstate->fill.v, gstate->fill.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
@@ -679,7 +679,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				break;
 			case PDF_MAT_COLOR:
 				fz_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm,
-					gstate->stroke.colorspace, NULL, gstate->stroke.v, gstate->stroke.alpha);
+					gstate->stroke.colorspace, &gstate->cs_param, gstate->stroke.v, gstate->stroke.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
@@ -797,7 +797,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				break;
 			case PDF_MAT_COLOR:
 				fz_fill_text(ctx, pr->dev, text, &gstate->ctm,
-					gstate->fill.colorspace, NULL, gstate->fill.v, gstate->fill.alpha);
+					gstate->fill.colorspace, &gstate->cs_param, gstate->fill.v, gstate->fill.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
@@ -827,7 +827,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				break;
 			case PDF_MAT_COLOR:
 				fz_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm,
-					gstate->stroke.colorspace, NULL, gstate->stroke.v, gstate->stroke.alpha);
+					gstate->stroke.colorspace, &gstate->cs_param, gstate->stroke.v, gstate->stroke.alpha);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
@@ -1088,6 +1088,8 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->softmask_resources = NULL;
 	gs->softmask_ctm = fz_identity;
 	gs->luminosity = 0;
+
+	fz_color_param_init(&gs->cs_param);
 }
 
 static void
@@ -1440,7 +1442,7 @@ static void pdf_run_ri(fz_context *ctx, pdf_processor *proc, const char *intent)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
-	gstate->ri = fz_lookup_rendering_intent(intent);
+	gstate->cs_param.ri = fz_lookup_rendering_intent(intent);
 }
 
 static void pdf_run_i(fz_context *ctx, pdf_processor *proc, float flatness)

@@ -41,13 +41,8 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 		fz_drop_buffer(ctx, buffer);
 	}
 
-	switch (n)
-	{
-	case 1: return fz_device_gray(ctx);
-	case 3: return fz_device_rgb(ctx);
-	case 4: return fz_device_cmyk(ctx);
-	}
-
+	if (n == 1 || n == 3 || n == 4)
+		return cs;
 	fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
 }
 
@@ -67,7 +62,7 @@ separation_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float 
 	struct separation *sep = cs->data;
 	float alt[FZ_MAX_COLORS];
 	pdf_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
-	fz_convert_color(ctx, fz_device_rgb(ctx), rgb, sep->base, alt);
+	fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, sep->base, alt);
 }
 
 static void

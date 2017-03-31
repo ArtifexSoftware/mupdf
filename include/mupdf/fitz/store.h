@@ -139,7 +139,7 @@ typedef struct fz_store_hash_s
 		{
 			unsigned char src_md5[16];
 			unsigned char dst_md5[16];
-			int intent;
+			int ri;
 			int bp;
 		} link;
 	} u;

@@ -227,7 +227,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 			fz_color_converter cc;
 			int cn = fz_colorspace_n(ctx, shade->colorspace);
 			n = fz_colorspace_n(ctx, dest->colorspace);
-			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace);
+			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace, fz_cs_params(ctx));
 			for (i = 0; i < 256; i++)
 			{
 				cc.convert(ctx, &cc, color, shade->function[i]);
@@ -250,7 +250,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		ptd.shade = shade;
 		ptd.bbox = bbox;
 
-		fz_init_cached_color_converter(ctx, &ptd.cc, temp->colorspace, shade->colorspace);
+		fz_init_cached_color_converter(ctx, &ptd.cc, temp->colorspace, shade->colorspace, fz_cs_params(ctx));
 		fz_process_shade(ctx, shade, &local_ctm, prepare_mesh_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)

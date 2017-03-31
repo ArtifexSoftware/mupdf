@@ -159,7 +159,7 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cm
 		flag |= cmsFLAGS_BLACKPOINTCOMPENSATION;
 
 	/* create */
-	link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->intent, flag);
+	link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->ri, flag);
 }
 
 void

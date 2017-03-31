@@ -16,6 +16,17 @@ enum
 	FZ_RI_ABSOLUTECOLORIMETRIC,
 };
 
+typedef struct fz_color_params_s fz_color_params;
+
+struct fz_color_params_s
+{
+	int ri;
+	int bp;
+	int op;
+	int opm;
+};
+
+
 int fz_lookup_rendering_intent(const char *name);
 char *fz_rendering_intent_name(int ri);
 
@@ -39,11 +50,6 @@ typedef struct fz_iccprofile_s fz_iccprofile;
 	A fz_icclink object encapusulates details about the link between profiles.
 */
 typedef struct fz_icclink_s fz_icclink;
-
-/*
-	A fz_color_params object describes color related settings.
-*/
-typedef struct fz_color_params_s fz_color_params;
 
 /*
 	fz_colorspace_is_indexed: Return true, iff a given colorspace is
@@ -90,6 +96,11 @@ fz_colorspace *fz_device_cmyk(fz_context *ctx);
 fz_colorspace *fz_device_lab(fz_context *ctx);
 
 /*
+fz_cs_params: Get default color params for general color conversion.
+*/
+fz_color_params *fz_cs_params(fz_context *ctx);
+
+/*
 	fz_set_device_gray: Set colorspace representing device specific gray.
 */
 void fz_set_device_gray(fz_context *ctx, fz_colorspace *cs);
@@ -123,7 +134,7 @@ int fz_colorspace_is(fz_context *ctx, const fz_colorspace *cs, fz_colorspace_con
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
 
-void fz_convert_color(fz_context *ctx, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, const float *srcv);
+void fz_convert_color(fz_context *ctx, fz_color_params *params, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, const float *srcv);
 
 typedef struct fz_color_converter_s fz_color_converter;
 
@@ -136,12 +147,12 @@ struct fz_color_converter_s
 	void (*convert)(fz_context *, fz_color_converter *, float *, const float *);
 	fz_colorspace *ds;
 	fz_colorspace *ss;
+	fz_color_params *params;
 	void *opaque;
 };
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss);
-
-void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss);
+void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params);
+void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 
 /* Public to allow use in icc creation */
@@ -156,7 +167,6 @@ struct fz_cal_color_s {
 	fz_iccprofile *profile;
 };
 
-
 /*
 	icc methods
 */
@@ -165,5 +175,7 @@ void fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx);
 fz_colorspace * fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name);
 fz_colorspace * fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
 int fz_create_icc_from_cal(fz_context *ctx, unsigned char **buffer, fz_cal_color *cal);
+
+void fz_color_param_init(fz_color_params *cs_param);
 
 #endif

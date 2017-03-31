@@ -207,7 +207,7 @@ svg_hex_color(fz_context *ctx, fz_colorspace *colorspace, const float *color)
 
 	if (colorspace != fz_device_rgb(ctx))
 	{
-		fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, color);
+		fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, colorspace, color);
 		color = rgb;
 	}
 

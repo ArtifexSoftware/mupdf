@@ -132,6 +132,7 @@ struct fz_list_device_s
 	fz_matrix ctm;
 	fz_stroke_state *stroke;
 	fz_colorspace *colorspace;
+	fz_color_params *cs_params;
 	float color[FZ_MAX_COLORS];
 	fz_rect rect;
 
@@ -144,6 +145,8 @@ struct fz_list_device_s
 };
 
 enum { ISOLATED = 1, KNOCKOUT = 2 };
+enum { OPM = 1, OP = 2, BP = 3, RI = 4};
+
 
 #define SIZE_IN_NODES(t) \
 	((t + sizeof(fz_display_node) - 1) / sizeof(fz_display_node))
@@ -628,6 +631,32 @@ fz_append_display_node(
 	list->len += size;
 }
 
+/* Pack ri, op, opm, bp into flags upper bits, even/odd in lower bit */
+static int
+fz_cs_params_pack(fz_color_params *cs_params)
+{
+	int flags = 0;
+
+	if (cs_params == NULL)
+		return 0;
+
+	flags = cs_params->ri << RI;  /* 2 bits */
+	flags = flags | (cs_params->bp << BP);
+	flags = flags | (cs_params->op << OP);
+	flags = flags | (cs_params->opm << OPM);
+	return flags;
+}
+
+/* unpack ri, op, opm, bp from flags, even/odd in lower bit */
+static void
+fz_cs_params_unpack(fz_color_params *cs_params, int flags)
+{
+	cs_params->ri = (flags >> RI) & 3;
+	cs_params->bp = (flags >> BP) & 1;
+	cs_params->op = (flags >> OP) & 1;
+	cs_params->opm = (flags >> OPM) & 1;
+}
+
 static void
 fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
 	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
@@ -639,7 +668,7 @@ fz_list_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even
 		ctx,
 		dev,
 		FZ_CMD_FILL_PATH,
-		even_odd, /* flags */
+		even_odd | fz_cs_params_pack(cs_param), /* flags */
 		&rect,
 		path, /* path */
 		color,
@@ -662,7 +691,7 @@ fz_list_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 		ctx,
 		dev,
 		FZ_CMD_STROKE_PATH,
-		0, /* flags */
+		fz_cs_params_pack(cs_param), /* flags */
 		&rect,
 		path, /* path */
 		color,
@@ -736,7 +765,7 @@ fz_list_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz
 			ctx,
 			dev,
 			FZ_CMD_FILL_TEXT,
-			0, /* flags */
+			fz_cs_params_pack(cs_param), /* flags */
 			&rect,
 			NULL, /* path */
 			color, /* color */
@@ -768,7 +797,7 @@ fz_list_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 			ctx,
 			dev,
 			FZ_CMD_STROKE_TEXT,
-			0, /* flags */
+			fz_cs_params_pack(cs_param), /* flags */
 			&rect,
 			NULL, /* path */
 			color, /* color */
@@ -1405,6 +1434,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 	fz_stroke_state *stroke = NULL;
 	float color[FZ_MAX_COLORS] = { 0 };
 	fz_colorspace *colorspace = fz_device_gray(ctx);
+	fz_color_params cs_params;
 	fz_rect rect = { 0 };
 
 	/* Transformed versions of graphic state entries */
@@ -1619,10 +1649,12 @@ visible:
 			switch (n.cmd)
 			{
 			case FZ_CMD_FILL_PATH:
-				fz_fill_path(ctx, dev, path, n.flags, &trans_ctm, colorspace, NULL, color, alpha);
+				fz_cs_params_unpack(&cs_params, n.flags);
+				fz_fill_path(ctx, dev, path, n.flags & 1, &trans_ctm, colorspace, &cs_params, color, alpha);
 				break;
 			case FZ_CMD_STROKE_PATH:
-				fz_stroke_path(ctx, dev, path, stroke, &trans_ctm, colorspace, NULL, color, alpha);
+				fz_cs_params_unpack(&cs_params, n.flags);
+				fz_stroke_path(ctx, dev, path, stroke, &trans_ctm, colorspace, &cs_params, color, alpha);
 				break;
 			case FZ_CMD_CLIP_PATH:
 				fz_clip_path(ctx, dev, path, n.flags, &trans_ctm, &trans_rect);
@@ -1631,10 +1663,12 @@ visible:
 				fz_clip_stroke_path(ctx, dev, path, stroke, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_FILL_TEXT:
-				fz_fill_text(ctx, dev, *(fz_text **)node, &trans_ctm, colorspace, NULL, color, alpha);
+				fz_cs_params_unpack(&cs_params, n.flags);
+				fz_fill_text(ctx, dev, *(fz_text **)node, &trans_ctm, colorspace, &cs_params, color, alpha);
 				break;
 			case FZ_CMD_STROKE_TEXT:
-				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, NULL, color, alpha);
+				fz_cs_params_unpack(&cs_params, n.flags);
+				fz_stroke_text(ctx, dev, *(fz_text **)node, stroke, &trans_ctm, colorspace, &cs_params, color, alpha);
 				break;
 			case FZ_CMD_CLIP_TEXT:
 				fz_clip_text(ctx, dev, *(fz_text **)node, &trans_ctm, &trans_rect);

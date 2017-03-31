@@ -312,7 +312,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_param, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -374,7 +374,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_param, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -647,7 +647,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_param, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -738,7 +738,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_param, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -1096,7 +1096,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, model, colorfv, shade->colorspace, shade->background);
+			fz_convert_color(ctx, fz_cs_params(ctx), model, colorfv, shade->colorspace, shade->background);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}
@@ -1436,7 +1436,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, model, colorfv, colorspace, color);
+			fz_convert_color(ctx, fz_cs_params(ctx), model, colorfv, colorspace, color);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}
@@ -1671,7 +1671,7 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 			float bc;
 			if (!colorspace)
 				colorspace = fz_device_gray(ctx);
-			fz_convert_color(ctx, fz_device_gray(ctx), &bc, colorspace, colorfv);
+			fz_convert_color(ctx, fz_cs_params(ctx), fz_device_gray(ctx), &bc, colorspace, colorfv);
 			fz_clear_pixmap_with_value(ctx, dest, bc * 255);
 			if (shape)
 				fz_clear_pixmap_with_value(ctx, shape, 255);

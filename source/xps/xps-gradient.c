@@ -68,7 +68,7 @@ xps_parse_gradient_stops(fz_context *ctx, xps_document *doc, char *base_uri, fz_
 
 				xps_parse_color(ctx, doc, base_uri, color, &colorspace, sample);
 
-				fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, sample + 1);
+				fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, colorspace, sample + 1);
 
 				stops[count].r = rgb[0];
 				stops[count].g = rgb[1];

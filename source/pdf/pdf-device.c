@@ -232,7 +232,7 @@ pdf_dev_color(fz_context *ctx, pdf_device *pdev, fz_colorspace *colorspace, cons
 	if (cspace == 0)
 	{
 		/* If it's an unknown colorspace, fallback to rgb */
-		fz_convert_color(ctx, fz_device_rgb(ctx), rgb, colorspace, color);
+		fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, colorspace, color);
 		color = rgb;
 		colorspace = fz_device_rgb(ctx);
 		cspace = 3;
