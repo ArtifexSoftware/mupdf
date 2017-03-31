@@ -1034,7 +1034,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	}
 	else
 	{
-		fprintf(stderr, "page %s %d%s", filename, pagenum, showmd5 || showtime || showfeatures ? "" : "\n");
+		fprintf(stderr, "page %s %d", filename, pagenum);
 		dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0);
 	}
 }
