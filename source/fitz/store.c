@@ -94,7 +94,7 @@ void *fz_keep_key_storable(fz_context *ctx, const fz_key_storable *sc)
 
 /*
 	Entered with FZ_LOCK_ALLOC and FZ_LOCK_REAP held.
-	Drops FZ_LOCK_ALLOC.
+	Drops FZ_LOCK_ALLOC and FZ_LOCK_REAP.
 */
 static void
 do_reap(fz_context *ctx)
@@ -152,6 +152,7 @@ do_reap(fz_context *ctx)
 		remove = item;
 	}
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	fz_unlock(ctx, FZ_LOCK_REAP);
 
 	/* Now drop the remove chain */
 	for (item = remove; item != NULL; item = remove)
@@ -189,13 +190,15 @@ int fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 		{
 			fz_lock(ctx, FZ_LOCK_REAP);
 			if (ctx->store->defer_reap_count > 0)
+			{
 				ctx->store->needs_reaping = 1;
+				fz_unlock(ctx, FZ_LOCK_REAP);
+			}
 			else
 			{
 				do_reap(ctx);
 				unlock = 0;
 			}
-			fz_unlock(ctx, FZ_LOCK_REAP);
 		}
 	}
 	else
@@ -489,7 +492,8 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 				do_reap(ctx); /* Drops alloc lock */
 				relock = 1;
 			}
-			fz_unlock(ctx, FZ_LOCK_REAP);
+			else
+				fz_unlock(ctx, FZ_LOCK_REAP);
 			if (relock)
 				fz_lock(ctx, FZ_LOCK_ALLOC);
 			size = store->size + itemsize;
@@ -922,8 +926,10 @@ void fz_defer_reap_end(fz_context *ctx)
 	--ctx->store->defer_reap_count;
 	reap = ctx->store->defer_reap_count == 0 && ctx->store->needs_reaping;
 	if (reap)
-		do_reap(ctx); /* Drops FZ_LOCK_ALLOC */
-	fz_unlock(ctx, FZ_LOCK_REAP);
-	if (!reap)
+		do_reap(ctx); /* Drops FZ_LOCK_ALLOC and FZ_LOCK_REAP*/
+	else
+	{
+		fz_unlock(ctx, FZ_LOCK_REAP);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
+	}
 }
