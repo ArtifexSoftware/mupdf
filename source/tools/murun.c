@@ -3993,7 +3993,7 @@ static void ffi_PDFAnnotation_setQuadPoints(js_State *J)
 		js_getindex(J, 1, i);
 		for (k = 0; k < 8; ++k) {
 			js_getindex(J, -1, k);
-			qp[n * 8 + k] = js_tonumber(J, -1);
+			qp[i * 8 + k] = js_tonumber(J, -1);
 			js_pop(J, 1);
 		}
 		js_pop(J, 1);
