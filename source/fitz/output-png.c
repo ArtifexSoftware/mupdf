@@ -257,7 +257,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, int drop)
 	{
 		if (pix->colorspace && pix->colorspace != fz_device_gray(ctx) && pix->colorspace != fz_device_rgb(ctx))
 		{
-			pix2 = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), 1);
+			pix2 = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), fz_cs_params(ctx), 1);
 			if (drop)
 				fz_drop_pixmap(ctx, pix);
 			pix = pix2;

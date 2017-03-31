@@ -177,7 +177,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 }
 
 static void
-fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_matrix *ctm, float alpha)
+fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -336,7 +336,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 		break;
 	}
 	if (dev->passthrough)
-		fz_fill_image(ctx, dev->passthrough, image, ctm, alpha);
+		fz_fill_image(ctx, dev->passthrough, image, ctm, cs_params, alpha);
 }
 
 static void

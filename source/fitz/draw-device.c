@@ -1219,7 +1219,7 @@ fz_default_image_scale(void *arg, int dst_w, int dst_h, int src_w, int src_h)
 }
 
 static void
-fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *in_ctm, float alpha)
+fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *in_ctm, fz_color_params *cs_params, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix local_ctm = concat(in_ctm, &dev->transform);
@@ -1291,7 +1291,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 		if (pixmap->colorspace != model && !after)
 		{
-			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, 1);
+			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, cs_params, 1);
 			fz_drop_pixmap(ctx, pixmap);
 			pixmap = converted;
 		}
@@ -1326,7 +1326,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			else
 #endif
 			{
-				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, 1);
+				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, cs_params, 1);
 				fz_drop_pixmap(ctx, pixmap);
 				pixmap = converted;
 			}

@@ -963,7 +963,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
+fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, fz_color_params *cs_param, float alpha)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect = fz_unit_rect;
@@ -975,7 +975,7 @@ fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 			ctx,
 			dev,
 			FZ_CMD_FILL_IMAGE,
-			0, /* flags */
+			fz_cs_params_pack(cs_param), /* flags */
 			&rect,
 			NULL, /* path */
 			NULL, /* color */
@@ -1683,7 +1683,8 @@ visible:
 				fz_fill_shade(ctx, dev, *(fz_shade **)node, &trans_ctm, alpha);
 				break;
 			case FZ_CMD_FILL_IMAGE:
-				fz_fill_image(ctx, dev, *(fz_image **)node, &trans_ctm, alpha);
+				fz_cs_params_unpack(&cs_params, n.flags);
+				fz_fill_image(ctx, dev, *(fz_image **)node, &trans_ctm, &cs_params, alpha);
 				break;
 			case FZ_CMD_FILL_IMAGE_MASK:
 				fz_fill_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, colorspace, color, alpha);

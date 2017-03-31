@@ -277,10 +277,12 @@ fz_pixmap *fz_ensure_pixmap_is_additive(fz_context *ctx, fz_pixmap *pix);
 
 	cs: Desired colorspace, may be NULL to denote alpha-only.
 
+	cs_params: Parameters that may be used in conversion (e.g. ri)
+
 	keep_alpha: If 0 any alpha component is removed, otherwise
 	alpha is kept if present in the pixmap.
 */
-fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *src, int keep_alpha);
+fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *src, fz_color_params *cs_params, int keep_alpha);
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a
@@ -359,7 +361,7 @@ void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict sr
 /*
 	fz_lookup_pixmap_converter: Color convert a pixmap.
 */
-typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp);
+typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_color_params *cs_param);
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
 
 /*

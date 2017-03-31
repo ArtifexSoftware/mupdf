@@ -1310,7 +1310,7 @@ static void ffi_Device_fillImage(js_State *J)
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 	float alpha = js_tonumber(J, 3);
 	fz_try(ctx)
-		fz_fill_image(ctx, dev, image, &ctm, alpha);
+		fz_fill_image(ctx, dev, image, &ctm, fz_cs_params(ctx), alpha);
 	fz_catch(ctx)
 		rethrow(J);
 }

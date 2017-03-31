@@ -565,7 +565,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 	}
 	else
 	{
-		fz_fill_image(ctx, pr->dev, image, &image_ctm, gstate->fill.alpha);
+		fz_fill_image(ctx, pr->dev, image, &image_ctm, &gstate->cs_param, gstate->fill.alpha);
 	}
 
 	if (image->mask)

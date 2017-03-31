@@ -314,12 +314,12 @@ fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix 
 }
 
 void
-fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
+fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_image)
-		dev->fill_image(ctx, dev, image, ctm, alpha);
+		dev->fill_image(ctx, dev, image, ctm, cs_params, alpha);
 }
 
 void
