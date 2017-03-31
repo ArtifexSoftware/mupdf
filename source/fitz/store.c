@@ -238,7 +238,7 @@ void *fz_keep_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 	return s;
 }
 
-void fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
+int fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 {
 	/* Explicitly drop const to allow us to use const
 	 * sanely throughout the code. */
@@ -264,6 +264,7 @@ void fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 	 */
 	if (drop)
 		s->storable.drop(ctx, &s->storable);
+	return drop;
 }
 
 static void

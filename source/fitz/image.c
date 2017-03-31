@@ -42,7 +42,8 @@ fz_keep_image_store_key(fz_context *ctx, fz_image *image)
 void
 fz_drop_image_store_key(fz_context *ctx, fz_image *image)
 {
-	fz_drop_key_storable_key(ctx, &image->key_storable);
+	if (fz_drop_key_storable_key(ctx, &image->key_storable))
+		fz_free(ctx, image);
 }
 
 static int

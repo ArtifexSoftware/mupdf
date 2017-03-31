@@ -58,7 +58,7 @@ void *fz_keep_key_storable(fz_context *, const fz_key_storable *);
 int fz_drop_key_storable(fz_context *, const fz_key_storable *);
 
 void *fz_keep_key_storable_key(fz_context *, const fz_key_storable *);
-void fz_drop_key_storable_key(fz_context *, const fz_key_storable *);
+int fz_drop_key_storable_key(fz_context *, const fz_key_storable *);
 
 static inline int fz_key_storable_needs_reaping(fz_context *ctx, const fz_key_storable *ks)
 {
