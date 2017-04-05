@@ -111,9 +111,10 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 	fz_jpxd *state = (fz_jpxd *) param;
 	JP2_Property_Value hstep, vstep;
 	unsigned char *row;
-	int w, h, n, entires, expand;
+	int w, h, n, entries, expand;
 	JP2_Property_Value x, y, i, bps, sign;
 	JP2_Property_Value k;
+	unsigned long **palette;
 
 	w = state->pix->w;
 	h = state->pix->h;
@@ -376,10 +377,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 			{
 				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Bits_Per_Sample, &state->bpss[k], -1, k);
 				if (err != cJP2_Error_OK)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get bits per sample for compomment %d: %d", k, (int) err);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get bits per sample for component %ld: %d", k, (int) err);
 				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Signed_Samples, &state->signs[k], -1, k);
 				if (err != cJP2_Error_OK)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get signed for compomment %d: %d", k, (int) err);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get signed for component %ld: %d", k, (int) err);
 			}
 			if (state->signs[k])
 				state->signs[k] = 1 << (state->bpss[k] - 1);
