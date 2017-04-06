@@ -227,7 +227,7 @@ pdf_show_shade(fz_context *ctx, pdf_run_processor *pr, fz_shade *shd)
 
 	/* FIXME: The gstate->ctm in the next line may be wrong; maybe
 	 * it should be the parent gstates ctm? */
-	fz_fill_shade(ctx, pr->dev, shd, &gstate->ctm, gstate->fill.alpha);
+	fz_fill_shade(ctx, pr->dev, shd, &gstate->ctm, &gstate->cs_param, gstate->fill.alpha);
 
 	pdf_end_group(ctx, pr, &softmask);
 }
@@ -557,7 +557,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 			if (gstate->fill.shade)
 			{
 				fz_clip_image_mask(ctx, pr->dev, image, &image_ctm, &bbox);
-				fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
+				fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, &gstate->cs_param, gstate->fill.alpha);
 				fz_pop_clip(ctx, pr->dev);
 			}
 			break;
@@ -664,7 +664,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				{
 					fz_clip_path(ctx, pr->dev, path, even_odd, &gstate->ctm, &bbox);
 					/* The cluster and page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm. */
-					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
+					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, &gstate->cs_param, gstate->fill.alpha);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -693,7 +693,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				if (gstate->stroke.shade)
 				{
 					fz_clip_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm, &bbox);
-					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha);
+					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, &gstate->cs_param, gstate->stroke.alpha);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -812,7 +812,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				{
 					fz_clip_text(ctx, pr->dev, text, &gstate->ctm, &tb);
 					/* Page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm */
-					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha);
+					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, &gstate->cs_param, gstate->fill.alpha);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -841,7 +841,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				if (gstate->stroke.shade)
 				{
 					fz_clip_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm, &tb);
-					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha);
+					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, &gstate->cs_param, gstate->stroke.alpha);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -1149,12 +1149,12 @@ pdf_set_color(fz_context *ctx, pdf_run_processor *pr, int what, float *v)
 	case PDF_MAT_PATTERN:
 	case PDF_MAT_COLOR:
 		/* ICC Colorspaces would be handled here too, if we handled them */
-		if (fz_colorspace_is_indexed(ctx, mat->colorspace))
+		if (fz_colorspace_is(mat->colorspace, "Indexed"))
 		{
 			mat->v[0] = fz_clamp(v[0], 0, 1) / 255;
 			break;
 		}
-		else if (fz_colorspace_is_lab(ctx, mat->colorspace))
+		else if (fz_colorspace_is(mat->colorspace, "Lab") || fz_colorspace_is(mat->colorspace, "Lab-icc"))
 		{
 			n = fz_colorspace_n(ctx, mat->colorspace);
 			/* input is in range (0..100, -128..127, -128..127) not (0..1, 0..1, 0..1) */

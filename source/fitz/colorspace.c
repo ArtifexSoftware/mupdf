@@ -76,22 +76,6 @@ fz_color_param_init(fz_color_params *cs_param)
 	cs_param->opm = 0;
 }
 
-static int
-fz_colorspace_is_cal(fz_colorspace *cs)
-{
-	if (strncmp(cs->name, "pdf-cal", 7) == 0)
-		return 1;
-	return 0;
-}
-
-static int
-fz_colorspace_is_icc(fz_colorspace *cs)
-{
-	if (strncmp(cs->name, "icc", 3) == 0)
-		return 1;
-	return 0;
-}
-
 void
 fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 {
@@ -103,7 +87,7 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_cs_fn *base, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_STORABLE(cs, storable, fz_drop_colorspace_imp);
@@ -111,8 +95,9 @@ fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtr
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
 	cs->is_subtractive = is_subtractive;
-	cs->to_rgb = to_rgb;
-	cs->from_rgb = from_rgb;
+	cs->to_ccs = to_rgb;
+	cs->from_ccs = from_rgb;
+	cs->get_base = base;
 	cs->free_data = destruct;
 	cs->data = data;
 	return cs;
@@ -205,28 +190,46 @@ fz_drop_icclink(fz_context *ctx, fz_icclink *link)
 	fz_drop_storable(ctx, &link->storable);
 }
 
+static fz_iccprofile *
+get_base_icc(fz_context *ctx, fz_colorspace *cs)
+{
+	if (cs && cs->get_base)
+	{
+		fz_colorspace *base = cs->get_base(cs);
+
+		if (base)
+			if (fz_colorspace_is(base, "icc"))
+				return base->data;
+			else if (fz_colorspace_is(base, "pdf-cal"))
+			{
+				fz_cal_color *cal;
+				fz_iccprofile *cal_icc;
+
+				cal = base->data;
+				cal_icc = cal->profile;
+				if (cal_icc->cmm_handle == NULL)
+					fz_cmm_new_profile(ctx, cal_icc);
+				return cal_icc;
+			}
+			else
+				return get_base_icc(ctx, base);
+		else
+			return NULL;
+
+	}
+	else
+		return NULL;
+}
+
 static fz_icclink *
-fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend)
+fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_color_params *rend)
 {
 	fz_icclink *link;
-	fz_iccprofile *dst_icc = dst->data;
-	fz_iccprofile *src_icc;
-	fz_cal_color *cal;
-
-	if (fz_colorspace_is_icc(src))
-		src_icc = src->data;
-	else
-	{
-		cal = src->data;
-		src_icc = cal->profile;
-		if (src_icc->cmm_handle == NULL)
-			fz_cmm_new_profile(ctx, src_icc);
-	}
 
 	link = fz_malloc_struct(ctx, fz_icclink);
-	link->num_in = src_icc->num_devcomp;
-	link->num_out = dst_icc->num_devcomp;
-	if (memcmp(src_icc->md5, dst_icc->md5, 16) == 0 && rend->ri == FZ_RI_RELATIVECOLORIMETRIC)
+	link->num_in = src->num_devcomp;
+	link->num_out = dst->num_devcomp;
+	if (memcmp(src->md5, dst->md5, 16) == 0 && rend->ri == FZ_RI_RELATIVECOLORIMETRIC)
 	{
 		link->is_identity = 1;
 		FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
@@ -236,7 +239,7 @@ fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_colo
 		link->is_identity = 0;
 
 	/* Does not throw.  Simply returns NULL if an issue */
-	fz_cmm_new_link(ctx, link, rend, 0, dst_icc, src_icc);
+	fz_cmm_new_link(ctx, link, rend, 0, dst, src);
 	if (link->cmm_handle == NULL)
 	{
 		fz_free(ctx, link);
@@ -249,13 +252,32 @@ fz_new_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_colo
 }
 
 static fz_icclink *
-fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend)
+fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend, int *src_n)
 {
 	fz_icclink *link;
-	fz_iccprofile *src_icc = src->data;
+	fz_iccprofile *src_icc = NULL;
 	fz_iccprofile *dst_icc = dst->data;
 	fz_link_key *key;
 	fz_icclink *new_link;
+
+	if (fz_colorspace_is(src, "icc"))
+		src_icc = src->data;
+	else if (fz_colorspace_is(src, "pdf-cal"))
+	{
+		fz_cal_color *cal;
+
+		cal = src->data;
+		src_icc = cal->profile;
+		if (src_icc->cmm_handle == NULL)
+			fz_cmm_new_profile(ctx, src_icc);
+	}
+	else
+		src_icc = get_base_icc(ctx, src);
+
+	if (src_icc == NULL)
+		return NULL;
+
+	*src_n = src_icc->num_devcomp;
 
 	fz_var(link);
 	fz_var(key);
@@ -274,7 +296,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_colo
 		/* Not found.  Make new one add to store */
 		if (link == NULL)
 		{
-			link = fz_new_icc_link(ctx, dst, src, rend);
+			link = fz_new_icc_link(ctx, dst_icc, src_icc, rend);
 			new_link = fz_store_item(ctx, key, link, sizeof(fz_icclink), &fz_link_store_type);
 			if (new_link != NULL)
 			{
@@ -513,22 +535,16 @@ rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
 }
 
 int
-fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs)
-{
-	return (cs && cs->to_rgb == lab_to_rgb);
-}
-
-int
 fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
 {
 	return (cs && cs->is_subtractive);
 }
 
-static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, gray_to_rgb, rgb_to_gray };
-static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb };
-static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr };
-static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk };
-static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab };
+static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, gray_to_rgb, rgb_to_gray, NULL };
+static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb, NULL };
+static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr, NULL };
+static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk, NULL };
+static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab, NULL };
 static fz_color_params k_default_color_params = { FZ_RI_RELATIVECOLORIMETRIC, 1, 0, 0 };
 
 
@@ -830,7 +846,7 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	}
 }
 
-static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
+static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_params *cs_param)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -902,7 +918,7 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	}
 }
 
-static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
+static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_params *cs_param)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -974,7 +990,7 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
 	}
 }
 
-static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src)
+static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_params *cs_param)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1839,11 +1855,12 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_par
 	fz_icclink *link;
 	int i;
 	unsigned char *inputpos, *outputpos;
+	int src_n;
 
 	inputpos = src->samples;
 	outputpos = dst->samples;
 
-	link = fz_get_icc_link(ctx, dsts, srcs, cs_params);
+	link = fz_get_icc_link(ctx, dsts, srcs, cs_params, &src_n);
 	if (link != NULL)
 	{
 		if (link->is_identity)
@@ -1900,7 +1917,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_par
 	}
 
 	/* Special case for Lab colorspace (scaling of components to float) */
-	if (!strcmp(ss->name, "Lab") && srcn == 3)
+	if ((fz_colorspace_is(ss, "Lab") || fz_colorspace_is(ss, "Lab-icc")) && srcn == 3)
 	{
 		fz_color_converter cc;
 
@@ -2092,6 +2109,14 @@ static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	}
 }
 
+/* Used for testing all color managed source color spaces.  If it is icc, cal or
+ * has a base space that is managed */
+static int
+fz_source_colorspace_cm(fz_colorspace *cs)
+{
+	return fz_colorspace_is(cs, "icc") || fz_colorspace_is(cs, "pdf-cal") || fz_colorspace_base_is(cs, "icc") || fz_colorspace_base_is(cs, "pdf-cal");
+}
+
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss)
 {
 	if (ds == NULL)
@@ -2129,9 +2154,9 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 		else return fz_std_conv_pixmap;
 	}
 
-	else if ((fz_colorspace_is_icc(ss) || fz_colorspace_is_cal(ss)) && fz_colorspace_is_icc(ds))
+	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is(ds, "icc"))
 	{
-		if (fz_colorspace_is_cal(ss))
+		if (fz_colorspace_is(ss, "pdf-cal"))
 			fz_icc_from_cal(ctx, ss);
 		return fz_icc_conv_pixmap;
 	}
@@ -2148,23 +2173,24 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	fz_colorspace *srcs = cc->ss;
 	fz_colorspace *dsts = cc->ds;
 	fz_color_params *rend = cc->params;
+	int src_n;
 
 	fz_icclink *link;
 	int i;
 	unsigned short dstv_s[FZ_MAX_COLORS];
 	unsigned short srcv_s[FZ_MAX_COLORS];
 
-	link = fz_get_icc_link(ctx, dsts, srcs, rend);
+	link = fz_get_icc_link(ctx, dsts, srcs, rend, &src_n);
 	if (link != NULL)
 	{
 		if (link->is_identity)
 		{
-			for (i = 0; i < srcs->n; i++)
+			for (i = 0; i < src_n; i++)
 				dstv[i] = srcv[i];
 		}
 		else
 		{
-			for (i = 0; i < srcs->n; i++)
+			for (i = 0; i < src_n; i++)
 				srcv_s[i] = srcv[i] * 65535;
 			fz_cmm_transform_color(link, 2, dstv_s, srcv_s);
 			for (i = 0; i < dsts->n; i++)
@@ -2172,6 +2198,18 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 		}
 		fz_drop_icclink(ctx, link);
 	}
+}
+
+/* Single ICC color conversion but for DeviceN, Sep and Indexed spaces.
+ * Does premapping to get to ICC */
+static void
+icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
+{
+	fz_colorspace *srcs = cc->ss;
+	float src_map[FZ_MAX_COLORS];
+
+	srcs->to_ccs(ctx, srcs, srcv, src_map);
+	icc_conv_color(ctx, cc, dstv, src_map);
 }
 
 /* Convert a single color */
@@ -2190,9 +2228,9 @@ std_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 
 	if (srcs != dsts)
 	{
-		assert(srcs->to_rgb && dsts->from_rgb);
-		srcs->to_rgb(ctx, srcs, srcv, rgb);
-		dsts->from_rgb(ctx, dsts, rgb, dstv);
+		assert(srcs->to_ccs && dsts->from_ccs);
+		srcs->to_ccs(ctx, srcs, srcv, rgb);
+		dsts->from_ccs(ctx, dsts, rgb, dstv);
 		for (i = 0; i < dsts->n; i++)
 			dstv[i] = fz_clamp(dstv[i], 0, 1);
 	}
@@ -2353,11 +2391,14 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 		else
 			cc->convert = std_conv_color;
 	}
-	else if ((fz_colorspace_is_icc(ss) || fz_colorspace_is_cal(ss)) && fz_colorspace_is_icc(ds))
+	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is(ds, "icc"))
 	{
-		if (fz_colorspace_is_cal(ss))
+		if (fz_colorspace_is(ss, "pdf-cal"))
 			fz_icc_from_cal(ctx, ss);
-		cc->convert = icc_conv_color;
+		if (fz_colorspace_is(ss, "icc") || fz_colorspace_is(ss, "pdf-cal"))
+			cc->convert = icc_conv_color;
+		else
+			cc->convert = icc_base_conv_color;
 	}
 	else
 		cc->convert = std_conv_color;
@@ -2390,7 +2431,7 @@ indexed_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rg
 	i = fz_clampi(i, 0, idx->high);
 	for (k = 0; k < idx->base->n; k++)
 		alt[k] = idx->lookup[i * idx->base->n + k] / 255.0f;
-	idx->base->to_rgb(ctx, idx->base, alt, rgb);
+	idx->base->to_ccs(ctx, idx->base, alt, rgb);
 }
 
 static void
@@ -2402,10 +2443,12 @@ free_indexed(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, idx);
 }
 
-int
-fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs)
+static fz_colorspace *
+base_indexed(fz_colorspace *cs)
 {
-	return (cs && cs->to_rgb == indexed_to_rgb);
+	struct indexed *idx = cs->data;
+
+	return idx->base;
 }
 
 fz_colorspace *
@@ -2421,7 +2464,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 
 	fz_try(ctx)
 	{
-		cs = fz_new_colorspace(ctx, "Indexed", 1, 1, 0, indexed_to_rgb, NULL, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 1, 1, 0, indexed_to_rgb, NULL, base_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	}
 	fz_catch(ctx)
 	{
@@ -2443,7 +2486,7 @@ fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha)
 	fz_irect bbox;
 	int s_line_inc, d_line_inc;
 
-	assert(src->colorspace->to_rgb == indexed_to_rgb);
+	assert(src->colorspace->to_ccs == indexed_to_rgb);
 	assert(src->n == 1 + alpha);
 
 	idx = src->colorspace->data;
@@ -2563,9 +2606,14 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 	fz_free(ctx, cc);
 }
 
-int fz_colorspace_is(fz_context *ctx, const fz_colorspace *cs, fz_colorspace_convert_fn *to_rgb)
+int fz_colorspace_base_is(const fz_colorspace *cs, const char* name)
 {
-	return cs && cs->to_rgb == to_rgb;
+	return cs && cs->get_base && fz_colorspace_is(cs->get_base(cs), name);
+}
+
+int fz_colorspace_is(const fz_colorspace *cs, const char* name)
+{
+	return cs && strncmp(name, cs->name, sizeof(cs->name)) == 0;
 }
 
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs)
@@ -2626,7 +2674,7 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		{
 			fz_keep_buffer(ctx, buf);
 			fz_md5_icc(ctx, profile);
-			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, NULL, free_icc, profile, sizeof(profile));
 		}
 	}
 	fz_catch(ctx)
@@ -2672,7 +2720,7 @@ fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float
 
 	fz_try(ctx)
 	{
-		cs = fz_new_colorspace(ctx, "pdf-cal", 1, num, 0, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
+		cs = fz_new_colorspace(ctx, "pdf-cal", 1, num, 0, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
 	}
 	fz_catch(ctx)
 	{

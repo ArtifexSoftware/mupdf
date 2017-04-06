@@ -1050,7 +1050,7 @@ fz_draw_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const 
 }
 
 static void
-fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_matrix *in_ctm, float alpha)
+fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_matrix *in_ctm, fz_color_params *cs_params, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
@@ -1127,7 +1127,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		}
 	}
 
-	fz_paint_shade(ctx, shade, &ctm, dest, &bbox);
+	fz_paint_shade(ctx, shade, &ctm, dest, cs_params, &bbox);
 	if (shape)
 		fz_clear_pixmap_rect_with_value(ctx, shape, 255, &bbox);
 

@@ -305,12 +305,12 @@ fz_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 void
-fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_shade)
-		dev->fill_shade(ctx, dev, shade, ctm, alpha);
+		dev->fill_shade(ctx, dev, shade, ctm, cs_params, alpha);
 }
 
 void

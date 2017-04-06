@@ -46,10 +46,6 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 	fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
 }
 
-/* Lab */
-
-/* Separation and DeviceN */
-
 struct separation
 {
 	fz_colorspace *base;
@@ -66,12 +62,27 @@ separation_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float 
 }
 
 static void
+separation_to_icc(fz_context *ctx, fz_colorspace *cs, const float *color, float *alt)
+{
+	struct separation *sep = cs->data;
+	fz_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
+}
+
+static void
 free_separation(fz_context *ctx, fz_colorspace *cs)
 {
 	struct separation *sep = cs->data;
 	fz_drop_colorspace(ctx, sep->base);
 	pdf_drop_function(ctx, sep->tint);
 	fz_free(ctx, sep);
+}
+
+static fz_colorspace *
+base_separation(fz_colorspace *cs)
+{
+	struct separation *sep = cs->data;
+
+	return sep->base;
 }
 
 static fz_colorspace *
@@ -109,7 +120,8 @@ load_separation(fz_context *ctx, pdf_obj *array)
 		sep->base = base;
 		sep->tint = tint;
 
-		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 1, n, 1, separation_to_rgb, NULL, free_separation, sep,
+		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 1, n, 1,
+			separation_to_icc, NULL, base_separation, free_separation, sep,
 			sizeof(struct separation) + (base ? base->size : 0) + pdf_function_size(ctx, tint));
 	}
 	fz_catch(ctx)
@@ -126,7 +138,7 @@ load_separation(fz_context *ctx, pdf_obj *array)
 int
 pdf_is_tint_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	return fz_colorspace_is(ctx, cs, separation_to_rgb);
+	return fz_colorspace_is(cs, "Separation") || fz_colorspace_is(cs, "DeviceN");
 }
 
 /* Indexed */

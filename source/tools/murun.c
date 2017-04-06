@@ -1297,7 +1297,7 @@ static void ffi_Device_fillShade(js_State *J)
 	fz_matrix ctm = ffi_tomatrix(J, 2);
 	float alpha = js_tonumber(J, 3);
 	fz_try(ctx)
-		fz_fill_shade(ctx, dev, shade, &ctm, alpha);
+		fz_fill_shade(ctx, dev, shade, &ctm, fz_cs_params(ctx), alpha);
 	fz_catch(ctx)
 		rethrow(J);
 }

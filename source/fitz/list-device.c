@@ -932,7 +932,7 @@ fz_list_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
 {
 	fz_shade *shade2 = fz_keep_shade(ctx, shade);
 	fz_rect rect;
@@ -944,7 +944,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 			ctx,
 			dev,
 			FZ_CMD_FILL_SHADE,
-			0, /* flags */
+			fz_cs_params_pack(cs_params), /* flags */
 			&rect,
 			NULL, /* path */
 			NULL, /* color */
@@ -963,7 +963,7 @@ fz_list_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 }
 
 static void
-fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, fz_color_params *cs_param, float alpha)
+fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
 {
 	fz_image *image2 = fz_keep_image(ctx, image);
 	fz_rect rect = fz_unit_rect;
@@ -975,7 +975,7 @@ fz_list_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 			ctx,
 			dev,
 			FZ_CMD_FILL_IMAGE,
-			fz_cs_params_pack(cs_param), /* flags */
+			fz_cs_params_pack(cs_params), /* flags */
 			&rect,
 			NULL, /* path */
 			NULL, /* color */
@@ -1680,7 +1680,8 @@ visible:
 				fz_ignore_text(ctx, dev, *(fz_text **)node, &trans_ctm);
 				break;
 			case FZ_CMD_FILL_SHADE:
-				fz_fill_shade(ctx, dev, *(fz_shade **)node, &trans_ctm, alpha);
+				fz_cs_params_unpack(&cs_params, n.flags);
+				fz_fill_shade(ctx, dev, *(fz_shade **)node, &trans_ctm, &cs_params, alpha);
 				break;
 			case FZ_CMD_FILL_IMAGE:
 				fz_cs_params_unpack(&cs_params, n.flags);

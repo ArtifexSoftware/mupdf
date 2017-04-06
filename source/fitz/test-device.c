@@ -137,7 +137,7 @@ prepare_vertex(fz_context *ctx, void *arg_, fz_vertex *v, const float *color)
 }
 
 static void
-fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_matrix *ctm, float alpha)
+fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -173,7 +173,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 		}
 	}
 	if (dev->passthrough)
-		fz_fill_shade(ctx, dev->passthrough, shade, ctm, alpha);
+		fz_fill_shade(ctx, dev->passthrough, shade, ctm, cs_params, alpha);
 }
 
 static void

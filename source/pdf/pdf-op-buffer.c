@@ -577,7 +577,7 @@ pdf_out_BI(fz_context *ctx, pdf_processor *proc, fz_image *img)
 		fz_write_string(ctx, out, "/CS/RGB\n");
 	else if (img->colorspace == fz_device_cmyk(ctx))
 		fz_write_string(ctx, out, "/CS/CMYK\n");
-	else if (fz_colorspace_is_indexed(ctx, img->colorspace))
+	else if (fz_colorspace_is(img->colorspace, "Indexed"))
 		fz_write_string(ctx, out, "/CS/I\n");
 	if (img->interpolate)
 		fz_write_string(ctx, out, "/I true\n");

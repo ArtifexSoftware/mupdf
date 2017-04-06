@@ -52,18 +52,6 @@ typedef struct fz_iccprofile_s fz_iccprofile;
 typedef struct fz_icclink_s fz_icclink;
 
 /*
-	fz_colorspace_is_indexed: Return true, iff a given colorspace is
-	indexed.
-*/
-int fz_colorspace_is_indexed(fz_context *ctx, fz_colorspace *cs);
-
-/*
-	fz_colorspace_is_lab: Return true, iff a given colorspace is
-	lab.
-*/
-int fz_colorspace_is_lab(fz_context *ctx, fz_colorspace *cs);
-
-/*
 	fz_colorspace_is_subtractive: Return true if a colorspace is subtractive.
 
 	True for CMYK, Separation and DeviceN colorspaces.
@@ -124,13 +112,17 @@ typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, cons
 
 typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
 
-fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
+typedef fz_colorspace* (fz_colorspace_base_cs_fn)(fz_colorspace *cs);
+
+
+fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_cs_fn *base, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
 fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
-int fz_colorspace_is(fz_context *ctx, const fz_colorspace *cs, fz_colorspace_convert_fn *to_rgb);
+int fz_colorspace_base_is(const fz_colorspace *cs, const char *name);
+int fz_colorspace_is(const fz_colorspace *cs, const char *name);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
 

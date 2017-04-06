@@ -205,7 +205,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_irect *bbox)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, fz_color_params *cs_params, const fz_irect *bbox)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -227,7 +227,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 			fz_color_converter cc;
 			int cn = fz_colorspace_n(ctx, shade->colorspace);
 			n = fz_colorspace_n(ctx, dest->colorspace);
-			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace, fz_cs_params(ctx));
+			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace, cs_params);
 			for (i = 0; i < 256; i++)
 			{
 				cc.convert(ctx, &cc, color, shade->function[i]);

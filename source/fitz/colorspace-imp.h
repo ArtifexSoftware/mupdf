@@ -8,9 +8,10 @@ struct fz_colorspace_s
 	char name[16];
 	int n;
 	int is_subtractive;
-	fz_colorspace_convert_fn *to_rgb;
-	fz_colorspace_convert_fn *from_rgb;
+	fz_colorspace_convert_fn *to_ccs;
+	fz_colorspace_convert_fn *from_ccs;
 	fz_colorspace_destruct_fn *free_data;
+	fz_colorspace_base_cs_fn *get_base;
 	void *data;
 };
 
