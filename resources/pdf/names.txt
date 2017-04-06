@@ -144,6 +144,7 @@ Filespec
 Filter
 First
 FirstChar
+FirstPage
 Fit
 FitB
 FitBH
@@ -214,6 +215,7 @@ LZWDecode
 Lab
 Last
 LastChar
+LastPage
 Launch
 Length
 Length1
@@ -244,6 +246,7 @@ Named
 Names
 NewWindow
 Next
+NextPage
 None
 Normal
 O
@@ -279,6 +282,7 @@ Polygon
 Popup
 Predictor
 Prev
+PrevPage
 Print
 PrinterMark
 ProcSet

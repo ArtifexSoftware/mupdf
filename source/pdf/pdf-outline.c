@@ -29,7 +29,7 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 			if ((obj = pdf_dict_get(ctx, dict, PDF_NAME_Dest)) != NULL)
 				node->uri = pdf_parse_link_dest(ctx, doc, obj);
 			else if ((obj = pdf_dict_get(ctx, dict, PDF_NAME_A)) != NULL)
-				node->uri = pdf_parse_link_action(ctx, doc, obj);
+				node->uri = pdf_parse_link_action(ctx, doc, obj, -1);
 			else
 				node->uri = NULL;
 

@@ -169,7 +169,7 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 }
 
 char *
-pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action)
+pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action, int pagenum)
 {
 	pdf_obj *obj, *dest, *file_spec;
 
@@ -208,12 +208,35 @@ pdf_parse_link_action(fz_context *ctx, pdf_document *doc, pdf_obj *action)
 		file_spec = pdf_dict_get(ctx, action, PDF_NAME_F);
 		return pdf_parse_file_spec(ctx, doc, file_spec, dest);
 	}
+	else if (pdf_name_eq(ctx, PDF_NAME_Named, obj))
+	{
+		dest = pdf_dict_get(ctx, action, PDF_NAME_N);
+
+		if (pdf_name_eq(ctx, PDF_NAME_FirstPage, dest))
+			pagenum = 0;
+		else if (pdf_name_eq(ctx, PDF_NAME_LastPage, dest))
+			pagenum = pdf_count_pages(ctx, doc) - 1;
+		else if (pdf_name_eq(ctx, PDF_NAME_PrevPage, dest) && pagenum >= 0)
+		{
+			if (pagenum > 0)
+				pagenum--;
+		}
+		else if (pdf_name_eq(ctx, PDF_NAME_NextPage, dest) && pagenum >= 0)
+		{
+			if (pagenum < pdf_count_pages(ctx, doc) - 1)
+				pagenum++;
+		}
+		else
+			return NULL;
+
+		return fz_asprintf(ctx, "#%d", pagenum + 1);
+	}
 
 	return NULL;
 }
 
 static fz_link *
-pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix *page_ctm)
+pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, const fz_matrix *page_ctm)
 {
 	pdf_obj *action;
 	pdf_obj *obj;
@@ -241,7 +264,7 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix
 		/* fall back to additional action button's down/up action */
 		if (!action)
 			action = pdf_dict_geta(ctx, pdf_dict_get(ctx, dict, PDF_NAME_AA), PDF_NAME_U, PDF_NAME_D);
-		uri = pdf_parse_link_action(ctx, doc, action);
+		uri = pdf_parse_link_action(ctx, doc, action, pagenum);
 	}
 
 	if (!uri)
@@ -253,7 +276,7 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const fz_matrix
 }
 
 fz_link *
-pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, const fz_matrix *page_ctm)
+pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, int pagenum, const fz_matrix *page_ctm)
 {
 	fz_link *link, *head, *tail;
 	pdf_obj *obj;
@@ -269,7 +292,7 @@ pdf_load_link_annots(fz_context *ctx, pdf_document *doc, pdf_obj *annots, const 
 		fz_try(ctx)
 		{
 			obj = pdf_array_get(ctx, annots, i);
-			link = pdf_load_link(ctx, doc, obj, page_ctm);
+			link = pdf_load_link(ctx, doc, obj, pagenum, page_ctm);
 		}
 		fz_catch(ctx)
 		{
