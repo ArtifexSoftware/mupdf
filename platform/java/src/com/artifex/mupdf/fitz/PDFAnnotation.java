@@ -32,9 +32,20 @@ public class PDFAnnotation extends Annotation
 	public static final int TYPE_3D = 24;
 	public static final int TYPE_UNKNOWN = -1;
 
+	public static final int LINE_ENDING_NONE = 0;
+	public static final int LINE_ENDING_SQUARE = 1;
+	public static final int LINE_ENDING_CIRCLE = 2;
+	public static final int LINE_ENDING_DIAMOND = 3;
+	public static final int LINE_ENDING_OPENARROW = 4;
+	public static final int LINE_ENDING_CLOSEDARROW = 5;
+	public static final int LINE_ENDING_BUTT = 6;
+	public static final int LINE_ENDING_ROPENARR = 7;
+	public static final int LINE_ENDING_RCLOSEDARROW = 8;
+	public static final int LINE_ENDING_SLASH = 9;
+
 	public native int getType();
 	public native int getFlags();
-	public native int setFlags(int flags);
+	public native void setFlags(int flags);
 	public native String getContents();
 	public native void setContents(String contents);
 	public native Rect getRect();
@@ -48,11 +59,14 @@ public class PDFAnnotation extends Annotation
 
 	public native int[] getLineEndingStyles();
 	public native void setLineEndingStyles(int startStyle, int endStyle);
+	public void setLineEndingStyles(int[] styles) {
+		setLineEndingStyles(styles[0], styles[1]);
+	}
 
 	public native float[] getVertices();
 	public native void setVertices(float[] vertices);
-	public native float[] getQuadPoints();
-	public native void setQuadPoints(float[] quadPoints);
+	public native float[][] getQuadPoints();
+	public native void setQuadPoints(float[][] quadPoints);
 	public native float[][] getInkList();
 	public native void setInkList(float[][] inkList);
 

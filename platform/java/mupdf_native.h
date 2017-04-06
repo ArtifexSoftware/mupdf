@@ -1352,6 +1352,26 @@ extern "C" {
 #define com_artifex_mupdf_fitz_PDFAnnotation_TYPE_3D 24L
 #undef com_artifex_mupdf_fitz_PDFAnnotation_TYPE_UNKNOWN
 #define com_artifex_mupdf_fitz_PDFAnnotation_TYPE_UNKNOWN -1L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_NONE
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_NONE 0L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SQUARE
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SQUARE 1L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CIRCLE
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CIRCLE 2L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_DIAMOND
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_DIAMOND 3L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_OPENARROW
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_OPENARROW 4L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CLOSEDARROW
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_CLOSEDARROW 5L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_BUTT
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_BUTT 6L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_ROPENARR
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_ROPENARR 7L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_RCLOSEDARROW
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_RCLOSEDARROW 8L
+#undef com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SLASH
+#define com_artifex_mupdf_fitz_PDFAnnotation_LINE_ENDING_SLASH 9L
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    getType
@@ -1371,9 +1391,9 @@ JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getFlags
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    setFlags
- * Signature: (I)I
+ * Signature: (I)V
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setFlags
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setFlags
   (JNIEnv *, jobject, jint);
 
 /*
@@ -1491,18 +1511,18 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setVertices
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    getQuadPoints
- * Signature: ()[F
+ * Signature: ()[[F
  */
-JNIEXPORT jfloatArray JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getQuadPoints
+JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getQuadPoints
   (JNIEnv *, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    setQuadPoints
- * Signature: ([F)V
+ * Signature: ([[F)V
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setQuadPoints
-  (JNIEnv *, jobject, jfloatArray);
+  (JNIEnv *, jobject, jobjectArray);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
