@@ -154,7 +154,7 @@ pdf_parse_file_spec(fz_context *ctx, pdf_document *doc, pdf_obj *file_spec, pdf_
 		fz_snprintf(buf, sizeof buf, "#page=%d", pdf_to_int(ctx, pdf_array_get(ctx, dest, 0)) + 1);
 	else if (pdf_is_name(ctx, dest))
 		fz_snprintf(buf, sizeof buf, "#%s", pdf_to_name(ctx, dest));
-	else if (pdf_is_stream(ctx, dest))
+	else if (pdf_is_string(ctx, dest))
 		fz_snprintf(buf, sizeof buf, "#%s", pdf_to_str_buf(ctx, dest));
 	else
 		buf[0] = 0;
