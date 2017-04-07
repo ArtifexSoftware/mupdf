@@ -2527,7 +2527,7 @@ fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha)
 	fz_irect bbox;
 	int s_line_inc, d_line_inc;
 
-	assert(src->colorspace->to_ccs == indexed_to_rgb);
+	assert(src->colorspace->to_ccs == indexed_to_rgb || src->colorspace->to_ccs == indexed_to_alt);
 	assert(src->n == 1 + alpha);
 
 	idx = src->colorspace->data;
