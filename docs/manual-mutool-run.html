@@ -2,16 +2,26 @@
 <html>
 <head>
 <title>mutool run: reference</title>
-<style>
-body{margin:2em;max-width:50em;line-height:1.4em}
-dl,pre{margin-left:2em;}
-</style>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
+
 <body>
 
-<h1>
-MuPDF from JavaScript
-</h1>
+<header>
+<h1>Calling MuPDF from JavaScript</h1>
+</header>
+
+<nav>
+<a href="http://mupdf.com/index.html">ABOUT</a>
+<a href="http://mupdf.com/news.html">NEWS</a>
+<a href="index.html">DOCUMENTATION</a>
+<a href="http://mupdf.com/downloads/">DOWNLOAD</a>
+<a href="http://git.ghostscript.com/?p=mupdf.git;a=summary">SOURCE</a>
+<a href="https://bugs.ghostscript.com/">BUGS</a>
+</nav>
+
+<article>
 
 <p>
 The 'mutool run' command executes a JavaScript program, which has access to most of the features of the MuPDF library.
@@ -97,8 +107,6 @@ only store bytes.
 <dd>Create a new empty buffer.
 <dt>readFile(fileName)
 <dd>Create a new buffer with the contents of a file.
-<dt>setUserCSS(userStylesheet, usePublisherStyles)
-<dd>Set user styles and whether to use publisher styles when laying out reflowable documents.
 <dt>Buffer#length
 <dd>The number of bytes in the buffer.
 <dt>Buffer#[n]
@@ -144,7 +152,7 @@ This matrix is represented in JavaScript as <code>[a,b,c,d,e,f]</code>.
 <dt>Translate(tx, ty)
 <dd>Return a translation matrix, short hand for <code>[1,0,0,1,tx,ty]</code>.
 <dt>Concat(a, b)
-<dd>Concatenate matrixes a and b. Bear in mind that matrix multiplication is not commutative.
+<dd>Concatenate matrices a and b. Bear in mind that matrix multiplication is not commutative.
 </dl>
 
 <p>
@@ -184,6 +192,11 @@ In the array is an object for each heading with the property 'title', and a prop
 If the object has a 'down' property, it contains an array with all the sub-headings for that entry.
 <dt>Document#isPDF()
 <dd>Returns true if the document is a PDF document.
+</dl>
+
+<dl>
+<dt>setUserCSS(userStylesheet, usePublisherStyles)
+<dd>Set user styles and whether to use publisher styles when laying out reflowable documents.
 </dl>
 
 <dl>
@@ -274,7 +287,7 @@ tiles of a page.
 <dt>new Pixmap(colorspace, bounds, alpha)
 <dd>Create a new pixmap. The pixel data is <b>not</b> initialized; and will contain garbage.
 <dt>Pixmap#clear(value)
-<dd>Clear the pixels to the specifed value. Pass 255 for white, or undefined for transparent.
+<dd>Clear the pixels to the specified value. Pass 255 for white, or undefined for transparent.
 <dt>Pixmap#bound()
 <dd>Return the pixmap bounds.
 <dt>Pixmap#getWidth()
@@ -646,6 +659,10 @@ Do NOT mix and match objects from one document with another document!
 <dd>Add 'obj' to the PDF as a numbered object, and return an indirect reference to it.
 <dt>PDFDocument#addStream(buffer, object)
 <dd>Create a stream object with the contents of 'buffer', add it to the PDF, and return an indirect reference to it. If object is defined, it will be used as the stream object dictionary.
+<dt>PDFDocument#addRawStream(buffer, object)
+<dd>Create a stream object with the contents of 'buffer', add it to the PDF, and return an indirect reference to it.
+If object is defined, it will be used as the stream object dictionary.
+The buffer must contain already compressed data that matches the Filter and DecodeParms.
 <dt>PDFDocument#newNull()
 <dt>PDFDocument#newBoolean(boolean)
 <dt>PDFDocument#newInteger(number)
@@ -720,7 +737,8 @@ are numbered objects.
 <dd>Update the contents of the stream the indirect reference points to.
 This will update the Length, Filter and DecodeParms automatically.
 <dt>PDFObject#writeRawStream(buffer)
-<dd>Update the raw, uncompressed, contents of the stream the indirect reference points to.
+<dd>Update the contents of the stream the indirect reference points to.
+The buffer must contain already compressed data that matches the Filter and DecodeParms.
 This will update the Length automatically, but leave the Filter and DecodeParms untouched.
 </dl>
 
@@ -824,7 +842,12 @@ There are several areas in MuPDF that still need bindings to access from JavaScr
 <li>DocumentWriter
 </ul>
 
-<p>
-Copyright &copy; 2017 Artifex Software
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2006-2017 Artifex Software Inc.
+</footer>
 
 </body>
+</html>

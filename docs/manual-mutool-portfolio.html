@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>mutool portfolio</title>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+<header>
+<h1>mutool portfolio</h1>
+</header>
+
+<nav>
+<a href="http://mupdf.com/index.html">ABOUT</a>
+<a href="http://mupdf.com/news.html">NEWS</a>
+<a href="index.html">DOCUMENTATION</a>
+<a href="http://mupdf.com/downloads/">DOWNLOAD</a>
+<a href="http://git.ghostscript.com/?p=mupdf.git;a=summary">SOURCE</a>
+<a href="https://bugs.ghostscript.com/">BUGS</a>
+</nav>
+
+<article>
+
+<p>
+The portfolio tool can list files in, extract files from, and add files to PDF portfolios.
+
+<pre>
+mutool portfolio [options] portfolio.pdf [actions]
+</pre>
+
+<p>
+Options are:
+
+<dl>
+<dt> -p password
+<dd> password
+<dt> -o filename
+<dd> output (defaults to input file)
+<dt> -O options
+<dd> PDF output options (see <a href="manual-mutool-create.html">mutool create</a>)
+</dl>
+
+<p>
+Actions are:
+
+<dl>
+<dt> t
+<dd> Display a table listing the contents of the portfolio.
+<dt> x <i>N file</i>
+<dd> Extract <i>Nth</i> entry to <i>file</i>.
+<dt> a <i>file name</i>
+<dd> Add contents of <i>file</i> as an entry named <i>name</i>.
+</dl>
+
+<p>
+For safety, only use ASCII characters in entry names for now.
+
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2006-2017 Artifex Software Inc.
+</footer>
+
+</body>
+</html>

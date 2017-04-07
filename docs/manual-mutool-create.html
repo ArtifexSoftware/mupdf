@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>mutool create</title>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+<header>
+<h1>mutool create</h1>
+</header>
+
+<nav>
+<a href="http://mupdf.com/index.html">ABOUT</a>
+<a href="http://mupdf.com/news.html">NEWS</a>
+<a href="index.html">DOCUMENTATION</a>
+<a href="http://mupdf.com/downloads/">DOWNLOAD</a>
+<a href="http://git.ghostscript.com/?p=mupdf.git;a=summary">SOURCE</a>
+<a href="https://bugs.ghostscript.com/">BUGS</a>
+</nav>
+
+<article>
+
+<p>
+The create command creates a new PDF file with the contents created
+from one or more input files containing graphics commands.
+
+<pre>
+mutool create [-o output.pdf] [-O options] page1.txt [page2.txt ...]
+</pre>
+
+<p>
+If no output file is specified, it will write the created PDF to "out.pdf" in the current directory.
+
+<p>
+The -O argument is a comma separated list of options for writing the PDF file:
+
+<dl>
+<dt> decompress
+<dd> Decompress all object streams.
+
+<dt> compress
+<dd> Compress all object streams.
+
+<dt> compress-fonts
+<dd> Compress object streams for embedded fonts.
+
+<dt> compress-images
+<dd> Compress object streams for images.
+
+<dt> ascii
+<dd> Encode object streams using ASCII hex encoding.
+
+<dt> pretty
+<dd> Pretty-print objects with indentation.
+
+<dt> linearize
+<dd> Optimize document for progressive loading in viewers.
+
+<dt> sanitize
+<dd> Clean up graphics command in content streams.
+
+<dt> garbage[=compact|deduplicate]
+<dd> Garbage collect unused objects. With compact the cross-reference
+table will also be compacted. With deduplicate duplicate objects
+will also be recombined.
+</dl>
+
+<p>
+A page is created for each input file, with the contents of the
+file copied into the content stream. Special comments in the
+input files are parsed to define the page dimensions and font
+and image resources:
+
+<pre>
+%%MediaBox 0 0 500 800
+%%Rotate 90
+%%Font Tm Times-Roman
+%%Font Fn0 path/to/font/file.ttf
+%%Image Im0 path/to/image.png
+</pre>
+
+<p>
+An example input file:
+
+<pre>
+%%MediaBox 0 0 595 842
+%%Font F0 Times-Roman
+%%Image I0 logo/mupdf-simplified-logo.png
+
+% Draw an image.
+q
+480 0 0 480 50 250 cm
+/I0 Do
+Q
+
+% Draw a triangle.
+q
+1 0 0 rg
+50 50 m
+100 200 l
+200 50 l
+f
+Q
+
+% Show some text.
+q
+0 0 1 rg
+BT
+/F0 24 Tf
+50 760 Td
+(Hello, world!) Tj
+ET
+Q
+</pre>
+
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2006-2017 Artifex Software Inc.
+</footer>
+
+</body>
+</html>

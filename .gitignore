@@ -27,14 +27,11 @@ cscope.*
 *.xps
 *.epub
 *.fb2
-*.xhtml
-*.css
 *.svg
 *.pam
 *.pbm
 *.pgm
 *.ppm
-*.png
 *.jpg
 *.jpeg
 *.pcl

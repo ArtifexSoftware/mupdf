@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>How to build the MuPDF viewer for Android</title>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+<header>
+<h1>How to build the MuPDF viewer for Android</h1>
+</header>
+
+<nav>
+<a href="http://mupdf.com/index.html">ABOUT</a>
+<a href="http://mupdf.com/news.html">NEWS</a>
+<a href="index.html">DOCUMENTATION</a>
+<a href="http://mupdf.com/downloads/">DOWNLOAD</a>
+<a href="http://git.ghostscript.com/?p=mupdf.git;a=summary">SOURCE</a>
+<a href="https://bugs.ghostscript.com/">BUGS</a>
+</nav>
+
+<article>
+
+<h2>Prerequisites</h2>
+
+<p>
+You need a working Android development environment, consisting of the Android
+SDK and the Android NDK. The easiest way is to use Android Studio to download
+and install the SDK and NDK. Make sure that the Android/Sdk/tools and
+Android/Sdk/ndk-bundle directories are on your path.
+
+<p>
+You also need Oracle's Java JDK (OpenJDK is not compatible with Android).
+You also need the Apache Ant build system.
+You also need Git, GNU Make, and a C compiler.
+
+<p>
+If everything is working, you should be able to run these commands
+from the command line:
+
+<blockquote>
+	Android SDK tools: android, emulator, and adb.<br>
+	Android NDK tools: ndk-build.<br>
+	Oracle Java JDK 8: java, and javac.<br>
+	Apache Ant: ant.<br>
+	Git: git.<br>
+	GNU Make: make, or gmake.<br>
+	C compiler: cc, gcc, or clang.
+</blockquote>
+
+<h2>Building</h2>
+
+<p>
+Download the project using Git (and don't forget the --recursive flag):
+
+<pre>
+$ git clone --recursive git://git.ghostscript.com/mupdf-android-viewer-mini.git
+</pre>
+
+If all tools have been installed as per the prerequisites, build the app
+using make:
+
+<pre>
+$ make
+</pre>
+
+The makefile will take care of setting up the android project and
+configuration files. This is of course assuming that you have set
+up the pre-requisites properly.
+
+<h2>Running</h2>
+
+<p>
+To run the app in the android emulator, first you'll need to set up an
+"Android Virtual Device" for the emulator. Run "android avd" and create
+a new device. You can also use Android Studio to set up a virtual device.
+Use the x86 ABI for best emulator performance.
+
+<p>
+Then launch the emulator, or connect a device with USB debugging enabled:
+
+<pre>
+$ emulator -avd MyVirtualDevice &
+</pre>
+
+<p>
+Then copy some test files to the device:
+
+<pre>
+$ adb push file.pdf /mnt/sdcard/Download
+</pre>
+
+<p>
+Then install the app on the device:
+
+<pre>
+$ make install
+</pre>
+
+<p>
+In order to build, install, and launch the app in one step:
+
+<pre>
+$ make run
+</pre>
+
+<p>
+To see the error and debugging message log:
+
+<pre>
+$ adb logcat
+</pre>
+
+<h2>Release</h2>
+
+<p>
+To release you <b>MUST</b> first change the package name.
+Do <b>NOT</b> use the com.artifex domain for your custom app!
+
+<pre>
+$ mv src/com/artifex src/com/YourCompanyName
+</pre>
+
+<p>
+Change all references to com.artifex.mupdf.mini into
+com.YourCompanyName.mupdf.mini in the Java source files and XML resources.
+
+<p>
+In order to sign a release build, you will need to create a key and a key store.
+
+<pre>
+$ keytool -genkey -v -keystore android.keystore -alias MyKey \
+    -validity 3650 -keysize 2048 -keyalg RSA
+</pre>
+
+<p>
+Then add the following entries to local.properties:
+
+<pre>
+key.store=android.keystore
+key.store.password=<i>your keystore password</i>
+key.alias=MyKey
+key.alias.password=<i>your key password</i>
+</pre>
+
+<p>
+If your keystore has been set up properly, you can now build a release APK.
+
+<pre>
+$ make release
+</pre>
+
+<p>
+Good Luck!
+
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2006-2017 Artifex Software Inc.
+</footer>
+
+</body>
+</html>

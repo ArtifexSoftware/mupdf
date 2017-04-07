@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>mutool show</title>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+<header>
+<h1>mutool show</h1>
+</header>
+
+<nav>
+<a href="http://mupdf.com/index.html">ABOUT</a>
+<a href="http://mupdf.com/news.html">NEWS</a>
+<a href="index.html">DOCUMENTATION</a>
+<a href="http://mupdf.com/downloads/">DOWNLOAD</a>
+<a href="http://git.ghostscript.com/?p=mupdf.git;a=summary">SOURCE</a>
+<a href="https://bugs.ghostscript.com/">BUGS</a>
+</nav>
+
+<article>
+
+<p>
+The show command will print the specified objects and streams to
+stdout.  Streams are decoded and non-printable characters are
+represented with a period by default.
+
+<pre>
+mutool show [options] file.pdf [object numbers ...]
+</pre>
+
+<p>
+Options:
+
+<dl>
+<dt> -p password
+<dd> Use the specified password if the file is encrypted.
+<dt> -o file
+<dd> Write output to file instead of stdout.
+<dt> -b
+<dd> Print streams as binary data and omit the object header.
+<dt> -e
+<dd> Print streams in their original encoded (or compressed) form.
+</dl>
+
+<p>
+Specify objects by number, or use one of the following special names:
+
+<dl>
+<dt> 'xref' or 'x'
+<dd> Print the cross reference table.
+<dt> 'trailer' or 't'
+<dd> Print the trailer dictionary.
+<dt> 'encrypt' or 'e'
+<dd> Print the encryption dictionary.
+<dt> 'pagetree' or 'p'
+<dd> List the object numbers for every page.
+<dt> 'grep' or 'g'
+<dd> Print all the objects in the file in a compact one-line format
+suitable for piping to grep.
+<dt> 'outline' or 'o'
+<dd> Print the outline (table of contents).
+</dl>
+
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2006-2017 Artifex Software Inc.
+</footer>
+
+</body>
+</html>
