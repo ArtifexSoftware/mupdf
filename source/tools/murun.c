@@ -3947,6 +3947,42 @@ static void ffi_PDFAnnotation_setColor(js_State *J)
 		rethrow(J);
 }
 
+static void ffi_PDFAnnotation_getInteriorColor(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int i, n;
+	float color[4];
+	fz_try(ctx)
+		pdf_annot_interior_color(ctx, annot, &n, color);
+	fz_catch(ctx)
+		rethrow(J);
+	js_newarray(J);
+	for (i = 0; i < n; ++i) {
+		js_pushnumber(J, color[i]);
+		js_setindex(J, -2, i);
+	}
+}
+
+static void ffi_PDFAnnotation_setInteriorColor(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	int i, n = js_getlength(J, 1);
+	float color[4];
+	if (n != 0 && n != 1 && n != 3 && n != 4)
+		js_error(J, "color must be 0, 1, 3, or 4 components");
+	for (i = 0; i < n; ++i) {
+		js_getindex(J, 1, i);
+		color[i] = js_tonumber(J, -1);
+		js_pop(J, 1);
+	}
+	fz_try(ctx)
+		pdf_set_annot_interior_color(ctx, annot, n, color);
+	fz_catch(ctx)
+		rethrow(J);
+}
+
 static void ffi_PDFAnnotation_getQuadPoints(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
@@ -4417,6 +4453,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setBorder", ffi_PDFAnnotation_setBorder, 1);
 		jsB_propfun(J, "PDFAnnotation.getColor", ffi_PDFAnnotation_getColor, 0);
 		jsB_propfun(J, "PDFAnnotation.setColor", ffi_PDFAnnotation_setColor, 1);
+		jsB_propfun(J, "PDFAnnotation.getInteriorColor", ffi_PDFAnnotation_getInteriorColor, 0);
+		jsB_propfun(J, "PDFAnnotation.setInteriorColor", ffi_PDFAnnotation_setInteriorColor, 1);
 		jsB_propfun(J, "PDFAnnotation.getQuadPoints", ffi_PDFAnnotation_getQuadPoints, 0);
 		jsB_propfun(J, "PDFAnnotation.setQuadPoints", ffi_PDFAnnotation_setQuadPoints, 1);
 		jsB_propfun(J, "PDFAnnotation.getInkList", ffi_PDFAnnotation_getInkList, 0);
