@@ -3805,7 +3805,6 @@ static void ffi_PDFPage_deleteAnnotation(js_State *J)
 		pdf_delete_annot(ctx, page, annot);
 	fz_catch(ctx)
 		rethrow(J);
-	ffi_pushannot(J, (fz_annot*)annot);
 }
 
 static void ffi_PDFAnnotation_getType(js_State *J)
