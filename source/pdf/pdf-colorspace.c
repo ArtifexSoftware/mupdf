@@ -53,19 +53,19 @@ struct separation
 };
 
 static void
+separation_to_alt(fz_context *ctx, fz_colorspace *cs, const float *color, float *alt)
+{
+	struct separation *sep = cs->data;
+	pdf_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
+}
+
+static void
 separation_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rgb)
 {
 	struct separation *sep = cs->data;
 	float alt[FZ_MAX_COLORS];
-	pdf_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
-	fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, sep->base, alt);
-}
-
-static void
-separation_to_icc(fz_context *ctx, fz_colorspace *cs, const float *color, float *alt)
-{
-	struct separation *sep = cs->data;
 	fz_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
+	fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, sep->base, alt);
 }
 
 static void
@@ -121,7 +121,7 @@ load_separation(fz_context *ctx, pdf_obj *array)
 		sep->tint = tint;
 
 		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 1, n, 1,
-			separation_to_icc, NULL, base_separation, free_separation, sep,
+			fz_colorspace_is(fz_device_rgb(ctx), "icc") ? separation_to_alt : separation_to_rgb, NULL, base_separation, NULL, free_separation, sep,
 			sizeof(struct separation) + (base ? base->size : 0) + pdf_function_size(ctx, tint));
 	}
 	fz_catch(ctx)

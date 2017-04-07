@@ -114,8 +114,9 @@ typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
 
 typedef fz_colorspace* (fz_colorspace_base_cs_fn)(fz_colorspace *cs);
 
+typedef void (fz_colorspace_clamp_fn)(const fz_colorspace *cs, const float *src, float *dst);
 
-fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_cs_fn *base, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
+fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_cs_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
 fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
@@ -125,7 +126,7 @@ int fz_colorspace_base_is(const fz_colorspace *cs, const char *name);
 int fz_colorspace_is(const fz_colorspace *cs, const char *name);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
-
+void fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out);
 void fz_convert_color(fz_context *ctx, fz_color_params *params, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, const float *srcv);
 
 typedef struct fz_color_converter_s fz_color_converter;

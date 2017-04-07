@@ -86,8 +86,17 @@ fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 	fz_free(ctx, cs);
 }
 
+static void
+clamp_default(const fz_colorspace *cs, const float *src, float *dst)
+{
+	int i;
+
+	for (i = 0; i < cs->n; i++)
+		dst[i] = fz_clamp(src[i], 0, 1);
+}
+
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_cs_fn *base, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_cs_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_STORABLE(cs, storable, fz_drop_colorspace_imp);
@@ -98,6 +107,12 @@ fz_new_colorspace(fz_context *ctx, char *name, int storable, int n, int is_subtr
 	cs->to_ccs = to_rgb;
 	cs->from_ccs = from_rgb;
 	cs->get_base = base;
+
+	if (clamp != NULL)
+		cs->clamp = clamp;
+	else
+		cs->clamp = clamp_default;
+
 	cs->free_data = destruct;
 	cs->data = data;
 	return cs;
@@ -534,19 +549,28 @@ rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
 	lab[2] = rgb[2];
 }
 
+/* This could be different for a, b */
+static void
+clamp_lab(fz_colorspace *cs, const float *src, float *dst)
+{
+	int i;
+
+	for (i = 0; i < 3; i++)
+		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
+}
+
 int
 fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
 {
 	return (cs && cs->is_subtractive);
 }
 
-static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, gray_to_rgb, rgb_to_gray, NULL };
-static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb, NULL };
-static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr, NULL };
-static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk, NULL };
-static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab, NULL };
+static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, gray_to_rgb, rgb_to_gray, NULL, NULL, NULL, NULL };
+static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb, NULL, NULL, NULL, NULL };
+static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr, NULL, NULL, NULL, NULL };
+static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk, NULL, NULL, NULL, NULL };
+static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL};
 static fz_color_params k_default_color_params = { FZ_RI_RELATIVECOLORIMETRIC, 1, 0, 0 };
-
 
 static fz_colorspace *fz_default_gray = &k_default_gray;
 static fz_colorspace *fz_default_rgb = &k_default_rgb;
@@ -2422,15 +2446,24 @@ struct indexed
 };
 
 static void
-indexed_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rgb)
+indexed_to_alt(fz_context *ctx, fz_colorspace *cs, const float *color, float *alt)
 {
 	struct indexed *idx = cs->data;
-	float alt[FZ_MAX_COLORS];
 	int i, k;
+
 	i = color[0] * 255;
 	i = fz_clampi(i, 0, idx->high);
 	for (k = 0; k < idx->base->n; k++)
 		alt[k] = idx->lookup[i * idx->base->n + k] / 255.0f;
+}
+
+static void
+indexed_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rgb)
+{
+	float alt[FZ_MAX_COLORS];
+	struct indexed *idx = cs->data;
+
+	indexed_to_alt(ctx, cs, color, alt);
 	idx->base->to_ccs(ctx, idx->base, alt, rgb);
 }
 
@@ -2451,6 +2484,14 @@ base_indexed(fz_colorspace *cs)
 	return idx->base;
 }
 
+static void
+clamp_indexed(const fz_colorspace *cs, float *in, float *out)
+{
+	struct indexed *idx = cs->data;
+
+	*out = fz_clamp(*in, 0, idx->high) / 255.0; /* To do, avoid 255 divide */
+}
+
 fz_colorspace *
 fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup)
 {
@@ -2464,7 +2505,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 
 	fz_try(ctx)
 	{
-		cs = fz_new_colorspace(ctx, "Indexed", 1, 1, 0, indexed_to_rgb, NULL, base_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 1, 1, 0, fz_colorspace_is(fz_device_rgb(ctx), "icc") ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	}
 	fz_catch(ctx)
 	{
@@ -2650,6 +2691,27 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, profile);
 }
 
+/* This could be different for a* b* */
+static void
+clamp_lab_icc(const fz_colorspace *cs, const float *src, float *dst)
+{
+	int i;
+
+	for (i = 0; i < 3; i++)
+		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
+}
+
+/* Embedded icc profiles could have different range */
+static void
+clamp_default_icc(const fz_colorspace *cs, const float *src, float *dst)
+{
+	int i;
+	fz_iccprofile *profile = cs->data;
+
+	for (i = 0; i < profile->num_devcomp; i++)
+		dst[i] = fz_clamp(src[i], 0, 1);
+}
+
 fz_colorspace *
 fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name)
 {
@@ -2674,7 +2736,7 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		{
 			fz_keep_buffer(ctx, buf);
 			fz_md5_icc(ctx, profile);
-			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, NULL, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, NULL, clamp_default_icc, free_icc, profile, sizeof(profile));
 		}
 	}
 	fz_catch(ctx)
@@ -2720,7 +2782,7 @@ fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float
 
 	fz_try(ctx)
 	{
-		cs = fz_new_colorspace(ctx, "pdf-cal", 1, num, 0, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
+		cs = fz_new_colorspace(ctx, "pdf-cal", 1, num, 0, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
 	}
 	fz_catch(ctx)
 	{
@@ -2728,4 +2790,10 @@ fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float
 		fz_rethrow(ctx);
 	}
 	return cs;
+}
+
+void
+fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out)
+{
+	cs->clamp(cs, in, out);
 }
