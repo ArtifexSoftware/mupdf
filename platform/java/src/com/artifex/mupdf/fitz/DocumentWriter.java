@@ -21,7 +21,7 @@ public class DocumentWriter
 		pointer = newNativeDocumentWriter(filename, format, options);
 	}
 
-	public native Device beingPage(Rect mediabox);
+	public native Device beginPage(Rect mediabox);
 	public native void endPage();
 	public native void close();
 }

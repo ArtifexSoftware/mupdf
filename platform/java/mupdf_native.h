@@ -750,10 +750,10 @@ JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_newNativeDocu
 
 /*
  * Class:     com_artifex_mupdf_fitz_DocumentWriter
- * Method:    beingPage
+ * Method:    beginPage
  * Signature: (Lcom/artifex/mupdf/fitz/Rect;)Lcom/artifex/mupdf/fitz/Device;
  */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_beingPage
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_DocumentWriter_beginPage
   (JNIEnv *, jobject, jobject);
 
 /*
