@@ -4000,12 +4000,10 @@ static void ffi_PDFAnnotation_setQuadPoints(js_State *J)
 
 	fz_try(ctx)
 		pdf_set_annot_quad_points(ctx, annot, n, qp);
-	fz_catch(ctx) {
+	fz_always(ctx)
 		fz_free(ctx, qp);
+	fz_catch(ctx)
 		rethrow(J);
-	}
-
-	fz_free(ctx, qp);
 }
 
 static void ffi_PDFAnnotation_getInkList(js_State *J)
@@ -4089,14 +4087,12 @@ static void ffi_PDFAnnotation_setInkList(js_State *J)
 
 	fz_try(ctx)
 		pdf_set_annot_ink_list(ctx, annot, n, counts, points);
-	fz_catch(ctx) {
+	fz_always(ctx) {
 		fz_free(ctx, counts);
 		fz_free(ctx, points);
-		rethrow(J);
 	}
-
-	fz_free(ctx, counts);
-	fz_free(ctx, points);
+	fz_catch(ctx)
+		rethrow(J);
 }
 
 static void ffi_PDFAnnotation_updateAppearance(js_State *J)
