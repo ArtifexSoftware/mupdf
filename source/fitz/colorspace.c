@@ -1904,6 +1904,71 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_par
 	}
 }
 
+/* For DeviceN and Separation CS, where we require an alternate tint tranform
+ * prior to the application of an icc profile. Note index expansion
+ * occurred in fz_decomp_image_from_stream so no need to worry about that */
+static void
+icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_params *cs_params)
+{
+	fz_colorspace *srcs = src->colorspace;
+	fz_colorspace *dsts = dst->colorspace;
+	fz_colorspace *base_cs = srcs->get_base(srcs);
+	fz_icclink *link;
+	int i;
+	unsigned char *inputpos, *outputpos;
+	int src_n;
+	fz_pixmap *base;
+	fz_irect bbox;
+	int h, len, k;
+	float src_f[FZ_MAX_COLORS], des_f[FZ_MAX_COLORS];
+	int stride_src = src->stride - src->w * src->n;
+	int stride_base;
+
+	base = fz_new_pixmap_with_bbox(ctx, base_cs, fz_pixmap_bbox(ctx, src, &bbox), src->alpha);
+	stride_base = base->stride - base->w * base->n;
+
+	inputpos = src->samples;
+	outputpos = base->samples;
+
+	h = src->h;
+	while (h--)
+	{
+		len = src->w;
+		while (len--)
+		{
+			for (i = 0; i < src->n; i++)
+				src_f[i] = (float) inputpos[i] / 255.0;
+
+			srcs->to_ccs(ctx, srcs, src_f, des_f);
+
+			for (i = 0; i < base->n; i++)
+				outputpos[i] = fz_clamp(des_f[i] * 255, 0, 255);
+
+			outputpos += base->n;
+			inputpos += src->n;
+		}
+		outputpos += stride_base;
+		inputpos += stride_src;
+	}
+
+	fz_var(base);
+
+	fz_try(ctx)
+	{
+		if (fz_colorspace_is(base_cs, "pdf-cal"))
+			fz_icc_from_cal(ctx, base_cs);
+		fz_icc_conv_pixmap(ctx, dst, base, cs_params);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_pixmap(ctx, base);
+	}
+	fz_catch(ctx)
+	{
+		/* nothing */
+	}
+}
+
 static void
 fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_params *cs_params)
 {
@@ -2182,7 +2247,10 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 	{
 		if (fz_colorspace_is(ss, "pdf-cal"))
 			fz_icc_from_cal(ctx, ss);
-		return fz_icc_conv_pixmap;
+		if (fz_colorspace_is(ss, "icc") || fz_colorspace_is(ss, "pdf-cal"))
+			return fz_icc_conv_pixmap;
+		else
+			return icc_base_conv_pixmap;
 	}
 	else return fz_std_conv_pixmap;
 }
