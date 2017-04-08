@@ -30,6 +30,8 @@ public class Rect
 		this(r.x0, r.y0, r.x1, r.y1);
 	}
 
+	public native void adjustForStroke(StrokeState state, Matrix ctm);
+
 	public String toString()
 	{
 		return "[" + x0 + " " + y0 + " " + x1 + " " + y1 + "]";

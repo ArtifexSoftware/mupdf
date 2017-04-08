@@ -3098,6 +3098,27 @@ FUN(Pixmap_clearWithValue)(JNIEnv *env, jobject self, jint value)
 		jni_rethrow(env, ctx);
 }
 
+JNIEXPORT void JNICALL
+FUN(Pixmap_saveAsPNG)(JNIEnv *env, jobject self, jstring jfilename)
+{
+	fz_context *ctx = get_context(env);
+	fz_pixmap *pixmap = from_Pixmap(env, self);
+	const char *filename = "null";
+
+	if (!ctx) return;
+	if (!jfilename) { jni_throw_arg(env, "filename must not be null"); return; }
+
+	filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+	if (!filename) return;
+
+	fz_try(ctx)
+		fz_save_pixmap_as_png(ctx, pixmap, filename);
+	fz_always(ctx)
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
 JNIEXPORT jint JNICALL
 FUN(Pixmap_getX)(JNIEnv *env, jobject self)
 {
@@ -3531,6 +3552,33 @@ FUN(Path_walk)(JNIEnv *env, jobject self, jobject obj)
 		jni_rethrow(env, ctx);
 }
 
+/* Rect interface */
+
+JNIEXPORT void JNICALL
+FUN(Rect_adjustForStroke)(JNIEnv *env, jobject self, jobject jstroke, jobject jctm)
+{
+	fz_context *ctx = get_context(env);
+	fz_rect rect = from_Rect(env, self);
+	fz_stroke_state *stroke = from_StrokeState(env, jstroke);
+	fz_matrix ctm = from_Matrix(env, jctm);
+
+	if (!ctx) return;
+	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return; }
+
+	fz_try(ctx)
+		fz_adjust_rect_for_stroke(ctx, &rect, stroke, &ctm);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return;
+	}
+
+	(*env)->SetFloatField(env, self, fid_Rect_x0, rect.x0);
+	(*env)->SetFloatField(env, self, fid_Rect_x1, rect.x1);
+	(*env)->SetFloatField(env, self, fid_Rect_y0, rect.y0);
+	(*env)->SetFloatField(env, self, fid_Rect_y1, rect.y1);
+}
+
 /* StrokeState interface */
 
 JNIEXPORT void JNICALL
@@ -3637,7 +3685,6 @@ FUN(StrokeState_getDashes)(JNIEnv *env, jobject self)
 	jfloatArray arr;
 
 	if (!ctx || !stroke) return NULL;
-	if (!stroke) { jni_throw_arg(env, "stroke must not be null"); return NULL; }
 
 	if (stroke->dash_len == 0)
 		return NULL; /* there are no dashes, so return NULL instead of empty array */
@@ -3694,6 +3741,27 @@ FUN(Text_newNative)(JNIEnv *env, jobject self)
 
 	fz_try(ctx)
 		text = fz_new_text(ctx);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return jlong_cast(text);
+}
+
+JNIEXPORT jlong JNICALL
+FUN(Text_cloneNative)(JNIEnv *env, jobject self, jobject jold)
+{
+	fz_context *ctx = get_context(env);
+	fz_text *old = from_Text(env, jold);
+	fz_text *text = NULL;
+
+	if (!ctx) return 0;
+	if (!old) { jni_throw_arg(env, "old must not be null"); return 0; }
+
+	fz_try(ctx)
+		text = fz_clone_text(ctx, old);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -4249,12 +4317,63 @@ FUN(Document_openNativeWithPath)(JNIEnv *env, jclass cls, jstring jfilename)
 	return to_Document_safe_own(ctx, env, doc);
 }
 
+JNIEXPORT jobject JNICALL
+FUN(Document_openNativeWithBuffer)(JNIEnv *env, jclass cls, jobject jbuffer, jstring jmagic)
+{
+	fz_context *ctx = get_context(env);
+	fz_document *doc = NULL;
+	const char *magic = NULL;
+	fz_stream *stream = NULL;
+	int n;
+	jbyte *buffer = NULL;
+	fz_buffer *buf = NULL;
+
+	if (!ctx) return NULL;
+	if (!jmagic) { jni_throw_arg(env, "magic must not be null"); return NULL; }
+
+	magic = (*env)->GetStringUTFChars(env, jmagic, NULL);
+	if (!magic) return NULL;
+
+	n = (*env)->GetArrayLength(env, jbuffer);
+
+	buffer = (*env)->GetByteArrayElements(env, jbuffer, NULL);
+	if (!buffer) {
+		if (magic)
+			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+		jni_throw_io(env, "cannot get bytes to read");
+		return NULL;
+	}
+
+	fz_try(ctx)
+	{
+		buf = fz_new_buffer(ctx, n);
+		fz_append_data(ctx, buf, buffer, n);
+		stream = fz_open_buffer(ctx, buf);
+		doc = fz_open_document_with_stream(ctx, magic, stream);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_stream(ctx, stream);
+		fz_drop_buffer(ctx, buf);
+		(*env)->ReleaseByteArrayElements(env, jbuffer, buffer, 0);
+		if (magic)
+			(*env)->ReleaseStringUTFChars(env, jmagic, magic);
+	}
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_Document_safe_own(ctx, env, doc);
+}
+
 JNIEXPORT jboolean JNICALL
 FUN(Document_recognize)(JNIEnv *env, jclass self, jstring jmagic)
 {
 	fz_context *ctx = get_context(env);
 	const char *magic = NULL;
-	jboolean recognized;
+	jboolean recognized = JNI_FALSE;
 
 	if (!ctx) return JNI_FALSE;
 	if (jmagic)
@@ -7619,6 +7738,26 @@ FUN(PDFObject_asFloat)(JNIEnv *env, jobject self)
 	}
 
 	return f;
+}
+
+JNIEXPORT jint JNICALL
+FUN(PDFObject_asIndirect)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, self);
+	int ind = 0;
+
+	if (!ctx || !obj) return 0;
+
+	fz_try(ctx)
+		ind = pdf_to_num(ctx, obj);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return ind;
 }
 
 JNIEXPORT jstring JNICALL

@@ -2750,6 +2750,14 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*
+ * Class:     com_artifex_mupdf_fitz_Rect
+ * Method:    adjustForStroke
+ * Signature: (Lcom/artifex/mupdf/fitz/StrokeState;Lcom/artifex/mupdf/fitz/Matrix;)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Rect_adjustForStroke
+  (JNIEnv *, jobject, jobject, jobject);
+
 #ifdef __cplusplus
 }
 #endif
@@ -2833,14 +2841,6 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_StrokeState_finalize
  */
 JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_StrokeState_newNative
   (JNIEnv *, jobject, jint, jint, jint, jint, jfloat, jfloat, jfloat, jfloatArray);
-
-/*
- * Class:     com_artifex_mupdf_fitz_StrokeState
- * Method:    adjustRectForStroke
- * Signature: (Lcom/artifex/mupdf/fitz/Rect;Lcom/artifex/mupdf/fitz/Matrix;)V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_StrokeState_adjustRectForStroke
-  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_StrokeState
