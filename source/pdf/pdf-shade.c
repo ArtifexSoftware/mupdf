@@ -333,7 +333,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_ColorSpace);
 		if (!obj)
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "shading colorspace is missing");
-		shade->colorspace = pdf_load_colorspace(ctx, doc, obj);
+		shade->colorspace = pdf_load_colorspace(ctx, obj);
 		n = fz_colorspace_n(ctx, shade->colorspace);
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_Background);
@@ -359,7 +359,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 				in = 1;
 			out = n;
 
-			func[0] = pdf_load_function(ctx, doc, obj, in, out);
+			func[0] = pdf_load_function(ctx, obj, in, out);
 			if (!func[0])
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot load shading function (%d 0 R)", pdf_to_num(ctx, obj));
 		}
@@ -385,7 +385,7 @@ pdf_load_shading_dict(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const f
 
 			for (i = 0; i < funcs; i++)
 			{
-				func[i] = pdf_load_function(ctx, doc, pdf_array_get(ctx, obj, i), in, out);
+				func[i] = pdf_load_function(ctx, pdf_array_get(ctx, obj, i), in, out);
 				if (!func[i])
 					fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot load shading function (%d 0 R)", pdf_to_num(ctx, obj));
 			}

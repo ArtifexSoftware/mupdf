@@ -99,7 +99,7 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 					obj = res;
 			}
 
-			colorspace = pdf_load_colorspace(ctx, doc, obj);
+			colorspace = pdf_load_colorspace(ctx, obj);
 			indexed = fz_colorspace_is_indexed(ctx, colorspace);
 
 			n = fz_colorspace_n(ctx, colorspace);
@@ -233,7 +233,7 @@ pdf_load_jpx(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int forcemask)
 
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_ColorSpace);
 		if (obj)
-			colorspace = pdf_load_colorspace(ctx, doc, obj);
+			colorspace = pdf_load_colorspace(ctx, obj);
 
 		len = fz_buffer_storage(ctx, buf, &data);
 		pix = fz_load_jpx(ctx, data, len, colorspace);

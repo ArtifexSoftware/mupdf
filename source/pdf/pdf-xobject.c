@@ -83,7 +83,7 @@ pdf_xobject_colorspace(fz_context *ctx, pdf_xobject *xobj)
 		{
 			fz_colorspace *colorspace = NULL;
 			fz_try(ctx)
-				colorspace = pdf_load_colorspace(ctx, pdf_get_bound_document(ctx, xobj->obj), cs);
+				colorspace = pdf_load_colorspace(ctx, cs);
 			fz_catch(ctx)
 				fz_warn(ctx, "cannot load xobject colorspace");
 			return colorspace;

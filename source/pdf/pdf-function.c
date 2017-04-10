@@ -864,7 +864,7 @@ parse_code(fz_context *ctx, pdf_function *func, fz_stream *stream, int *codeptr,
 }
 
 static void
-load_postscript_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj *dict)
+load_postscript_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 {
 	fz_stream *stream = NULL;
 	int codeptr;
@@ -937,7 +937,7 @@ eval_postscript_func(fz_context *ctx, pdf_function *func, const float *in, float
 #define MAX_SAMPLE_FUNCTION_SIZE (100 << 20)
 
 static void
-load_sample_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj *dict)
+load_sample_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 {
 	fz_stream *stream;
 	pdf_obj *obj;
@@ -1145,7 +1145,7 @@ eval_sample_func(fz_context *ctx, pdf_function *func, const float *in, float *ou
  */
 
 static void
-load_exponential_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj *dict)
+load_exponential_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 {
 	pdf_obj *obj;
 	int i;
@@ -1230,7 +1230,7 @@ eval_exponential_func(fz_context *ctx, pdf_function *func, float in, float *out)
  */
 
 static void
-load_stitching_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_obj *dict)
+load_stitching_func(fz_context *ctx, pdf_function *func, pdf_obj *dict)
 {
 	pdf_function **funcs;
 	pdf_obj *obj;
@@ -1263,7 +1263,7 @@ load_stitching_func(fz_context *ctx, pdf_document *doc, pdf_function *func, pdf_
 		for (i = 0; i < k; i++)
 		{
 			sub = pdf_array_get(ctx, obj, i);
-			funcs[i] = pdf_load_function(ctx, doc, sub, 1, func->n);
+			funcs[i] = pdf_load_function(ctx, sub, 1, func->n);
 
 			func->size += pdf_function_size(ctx, funcs[i]);
 			func->u.st.k ++;
@@ -1442,7 +1442,7 @@ pdf_eval_function(fz_context *ctx, pdf_function *func, const float *in, int inle
 }
 
 pdf_function *
-pdf_load_function(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int in, int out)
+pdf_load_function(fz_context *ctx, pdf_obj *dict, int in, int out)
 {
 	pdf_function *func;
 	pdf_obj *obj;
@@ -1498,19 +1498,19 @@ pdf_load_function(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int in, int
 		switch (func->type)
 		{
 		case SAMPLE:
-			load_sample_func(ctx, doc, func, dict);
+			load_sample_func(ctx, func, dict);
 			break;
 
 		case EXPONENTIAL:
-			load_exponential_func(ctx, doc, func, dict);
+			load_exponential_func(ctx, func, dict);
 			break;
 
 		case STITCHING:
-			load_stitching_func(ctx, doc, func, dict);
+			load_stitching_func(ctx, func, dict);
 			break;
 
 		case POSTSCRIPT:
-			load_postscript_func(ctx, doc, func, dict);
+			load_postscript_func(ctx, func, dict);
 			break;
 
 		default:

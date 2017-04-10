@@ -8,7 +8,7 @@
 /* ICCBased */
 
 static fz_colorspace *
-load_icc_based(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
+load_icc_based(fz_context *ctx, pdf_obj *dict)
 {
 	int n;
 	pdf_obj *obj;
@@ -22,7 +22,7 @@ load_icc_based(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 		fz_try(ctx)
 		{
-			cs_alt = pdf_load_colorspace(ctx, doc, obj);
+			cs_alt = pdf_load_colorspace(ctx, obj);
 			if (cs_alt->n != n)
 			{
 				fz_drop_colorspace(ctx, cs_alt);
@@ -77,7 +77,7 @@ free_separation(fz_context *ctx, fz_colorspace *cs)
 }
 
 static fz_colorspace *
-load_separation(fz_context *ctx, pdf_document *doc, pdf_obj *array)
+load_separation(fz_context *ctx, pdf_obj *array)
 {
 	fz_colorspace *cs;
 	struct separation *sep = NULL;
@@ -99,11 +99,11 @@ load_separation(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 	if (n > FZ_MAX_COLORS)
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "too many components in colorspace");
 
-	base = pdf_load_colorspace(ctx, doc, baseobj);
+	base = pdf_load_colorspace(ctx, baseobj);
 
 	fz_try(ctx)
 	{
-		tint = pdf_load_function(ctx, doc, tintobj, n, base->n);
+		tint = pdf_load_function(ctx, tintobj, n, base->n);
 		/* RJW: fz_drop_colorspace(ctx, base);
 		 * "cannot load tint function (%d 0 R)", pdf_to_num(ctx, tintobj) */
 
@@ -134,7 +134,7 @@ pdf_is_tint_colorspace(fz_context *ctx, fz_colorspace *cs)
 /* Indexed */
 
 static fz_colorspace *
-load_indexed(fz_context *ctx, pdf_document *doc, pdf_obj *array)
+load_indexed(fz_context *ctx, pdf_obj *array)
 {
 	pdf_obj *baseobj = pdf_array_get(ctx, array, 1);
 	pdf_obj *highobj = pdf_array_get(ctx, array, 2);
@@ -149,7 +149,7 @@ load_indexed(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 
 	fz_try(ctx)
 	{
-		base = pdf_load_colorspace(ctx, doc, baseobj);
+		base = pdf_load_colorspace(ctx, baseobj);
 
 		high = pdf_to_int(ctx, highobj);
 		high = fz_clampi(high, 0, 255);
@@ -204,7 +204,7 @@ load_indexed(fz_context *ctx, pdf_document *doc, pdf_obj *array)
 /* Parse and create colorspace from PDF object */
 
 static fz_colorspace *
-pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 {
 	if (pdf_obj_marked(ctx, obj))
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "recursion in colorspace definition");
@@ -264,18 +264,18 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 					if (pdf_mark_obj(ctx, obj))
 						fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive colorspace");
 					if (pdf_name_eq(ctx, name, PDF_NAME_ICCBased))
-						cs = load_icc_based(ctx, doc, pdf_array_get(ctx, obj, 1));
+						cs = load_icc_based(ctx, pdf_array_get(ctx, obj, 1));
 
 					else if (pdf_name_eq(ctx, name, PDF_NAME_Indexed))
-						cs = load_indexed(ctx, doc, obj);
+						cs = load_indexed(ctx, obj);
 					else if (pdf_name_eq(ctx, name, PDF_NAME_I))
-						cs = load_indexed(ctx, doc, obj);
+						cs = load_indexed(ctx, obj);
 
 					else if (pdf_name_eq(ctx, name, PDF_NAME_Separation))
-						cs = load_separation(ctx, doc, obj);
+						cs = load_separation(ctx, obj);
 
 					else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceN))
-						cs = load_separation(ctx, doc, obj);
+						cs = load_separation(ctx, obj);
 					else if (pdf_name_eq(ctx, name, PDF_NAME_Pattern))
 					{
 						pdf_obj *pobj;
@@ -287,7 +287,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 							break;
 						}
 
-						cs = pdf_load_colorspace(ctx, doc, pobj);
+						cs = pdf_load_colorspace(ctx, pobj);
 					}
 					else
 						fz_throw(ctx, FZ_ERROR_SYNTAX, "unknown colorspace %s", pdf_to_name(ctx, name));
@@ -309,7 +309,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 }
 
 fz_colorspace *
-pdf_load_colorspace(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
+pdf_load_colorspace(fz_context *ctx, pdf_obj *obj)
 {
 	fz_colorspace *cs;
 
@@ -318,7 +318,7 @@ pdf_load_colorspace(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 		return cs;
 	}
 
-	cs = pdf_load_colorspace_imp(ctx, doc, obj);
+	cs = pdf_load_colorspace_imp(ctx, obj);
 
 	pdf_store_item(ctx, obj, cs, cs->size);
 

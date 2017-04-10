@@ -393,7 +393,7 @@ pdf_process_CS(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, int stroke)
 			csobj = pdf_dict_gets(ctx, csres, csi->name);
 			if (!csobj)
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot find ColorSpace resource '%s'", csi->name);
-			cs = pdf_load_colorspace(ctx, csi->doc, csobj);
+			cs = pdf_load_colorspace(ctx, csobj);
 		}
 
 		fz_try(ctx)
