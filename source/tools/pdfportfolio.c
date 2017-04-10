@@ -10,15 +10,15 @@ static fz_context *ctx = NULL;
 static void usage(void)
 {
 	fprintf(stderr, "usage: mutool portfolio [options] portfolio.pdf [actions]\n");
-	fprintf(stderr, "\tOptions are:\n");
+	fprintf(stderr, "\nOptions are:\n");
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-o -\toutput (defaults to input file)\n");
 	fprintf(stderr, "\t-O -\tPDF output options (see mutool create)\n");
-	fprintf(stderr, "Actions are:\n");
-	fprintf(stderr, "\tt\tlist embedded files\n");
-	fprintf(stderr, "\tx N <filename>\n\t\textract Nth embedded file as <filename>\n");
-	fprintf(stderr, "\ta <filename> <entry>\n\t\tembed contents of <filename> named as <entry>\n");
-	fprintf(stderr, "\nFor safety, keep all filenames as 7 bit clean for now.\n");
+	fprintf(stderr, "\nActions are:\n");
+	fprintf(stderr, "\tt\tdisplay a table listing the contents of the portfolio\n");
+	fprintf(stderr, "\tx N <file>\n\t\textract Nth entry to <file>\n");
+	fprintf(stderr, "\ta <file> <name>\n\t\tadd contents of <file> as an entry named <name>\n");
+	fprintf(stderr, "\nFor safety, only use ASCII characters in entry names for now.\n");
 	exit(1);
 }
 

@@ -10,8 +10,8 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"usage: mutool create [-o output.pdf] [-O options] page.txt [page2.txt ...]\n"
-		"\t-o\tname of PDF file to create\n"
-		"\t-O\tcomma separated list of output options\n"
+		"\t-o -\tname of PDF file to create\n"
+		"\t-O -\tcomma separated list of output options\n"
 		"\tpage.txt\tcontent stream with annotations for creating resources\n\n"
 		"Content stream special commands:\n"
 		"\t%%%%MediaBox LLX LLY URX URY\n"
@@ -19,7 +19,7 @@ static void usage(void)
 		"\t%%%%Font Name Filename (or base 14 font name)\n"
 		"\t%%%%Image Name Filename\n\n"
 		);
-	fprintf(stderr, "%s\n", fz_pdf_write_options_usage);
+	fputs(fz_pdf_write_options_usage, stderr);
 	exit(1);
 }
 
