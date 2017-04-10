@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>How to build the MuPDF library for Android</title>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+<header>
+<h1>How to build the MuPDF library for Android</h1>
+</header>
+
+<nav>
+<a href="http://mupdf.com/index.html">ABOUT</a>
+<a href="http://mupdf.com/news.html">NEWS</a>
+<a href="index.html">DOCUMENTATION</a>
+<a href="http://mupdf.com/downloads/">DOWNLOAD</a>
+<a href="http://git.ghostscript.com/?p=mupdf.git;a=summary">SOURCE</a>
+<a href="https://bugs.ghostscript.com/">BUGS</a>
+</nav>
+
+<article>
+
+<p>
+The MuPDF library in Android is based on JNI to access the native C library
+through a layer of Java classes. The MuPDF Java library provides platform
+independent (i.e. both Android and desktop Java) low level access to MuPDF
+functionality.
+
+<p>
+The MuPDF Java library does not provide any Android specific components
+or widgets -- build those yourself or use one of the example viewers as
+a start!
+
+<p>
+In order to use the MuPDF library in Android, you must thus add two components
+to your build system: the JNI library, and the Java library.
+
+<h2>Setting up the MuPDF subproject</h2>
+
+<p>
+Set up your Android project as you wish, and then add the mupdf repository
+as a directory somewhere in your project. If you're using git, you can
+use a submodule:
+
+<pre>
+$ git submodule add git://git.ghostscript.com/mupdf.git libmupdf
+$ cd libmupdf
+$ git submodule update --init
+</pre>
+
+<p>
+You can also unpack a release tarball archive in your source directory.
+
+<p>
+We'll assume you name the mupdf project directory 'libmupdf'.
+
+<p>
+Use your host compiler to run the 'generate' step in the mupdf project:
+
+<pre>
+$ make -C libmupdf generate
+</pre>
+
+<h2>Adding the JNI library</h2>
+
+<p>
+Add an NDK-build step to your project, using the Android.mk file from mupdf.
+
+<p>
+If compiling manually, set the appropriate variables yourself:
+
+<pre>
+$ ndk-build \
+	APP_BUILD_SCRIPT=libmupdf/platform/java/Android.mk \
+	APP_PROJECT_PATH=. \
+	APP_PLATFORM=android-16 \
+	APP_OPTIM=debug \
+	APP_ABI=x86
+</pre>
+
+<p>
+If using gradle, add an externalNativeBuild section in the android section
+in the build.gradle file:
+
+<pre>
+android {
+	externalNativeBuild {
+		ndkBuild {
+			path 'libmupdf/platform/java/Android.mk'
+		}
+	}
+}
+</pre>
+
+<h2>Adding the Java library</h2>
+
+<p>
+You'll also need to include the Java classes that bind to the JNI library.
+
+<p>
+If you're using ant, add the 'libmupdf/platform/java/src' directory
+to the list of source directories. For example, set the variables in
+an ant.properties file:
+
+<pre>
+source.dir=src;libmupdf/platform/java/src
+java.source=1.7
+java.target=1.7
+</pre>
+
+<p>
+If using gradle, add the 'libmupdf/platform/java/src' directory
+to the list of source directories in the build.gradle file:
+
+<pre>
+android {
+	sourceSets {
+		main {
+			java {
+				srcDirs = [ "src/main/java", "libmupdf/platform/java/src" ]
+			}
+		}
+	}
+}
+</pre>
+
+</article>
+
+<footer>
+<a href="http://artifex.com"><img src="artifex-logo.png" align="right"></a>
+Copyright &copy; 2006-2017 Artifex Software Inc.
+</footer>
+
+</body>
+</html>
