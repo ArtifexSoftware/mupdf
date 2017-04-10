@@ -15,22 +15,20 @@ var font = pdf.addObject({
 })
 
 // Create and add an image resource:
-// Allocate a slot for a new object and get a reference to it.
-var image = pdf.createObject()
-// Write a dictionary object into the slot.
-image.writeObject({
-	Type: "XObject",
-	Subtype: "Image",
-	Width: 4,
-	Height: 2,
-	BitsPerComponent: 8,
-	ColorSpace: "DeviceGray",
-	// The compression filter to be used:
-	Filter: "ASCIIHexDecode",
-})
-// Write raw stream data into the slot; hex encoded
-// to match the Filter entry in the dictionary.
-image.writeRawStream("004488CCEEBB7733>")
+var image = pdf.addRawStream(
+	// The raw stream contents, hex encoded to match the Filter entry:
+	"004488CCEEBB7733>",
+	// The image object dictionary:
+	{
+		Type: "XObject",
+		Subtype: "Image",
+		Width: 4,
+		Height: 2,
+		BitsPerComponent: 8,
+		ColorSpace: "DeviceGray",
+		Filter: "ASCIIHexDecode",
+	}
+);
 
 // Create resource dictionary.
 var resources = pdf.addObject({
