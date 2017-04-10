@@ -144,6 +144,7 @@ static int zoom_out(int oldres)
 
 static char filename[2048];
 static char *password = "";
+static char *anchor = NULL;
 static float layout_w = DEFAULT_LAYOUT_W;
 static float layout_h = DEFAULT_LAYOUT_H;
 static float layout_em = DEFAULT_LAYOUT_EM;
@@ -767,7 +768,17 @@ static void reload(void)
 
 	pdf = pdf_specifics(ctx, doc);
 	if (pdf)
+	{
 		pdf_enable_js(ctx, pdf);
+		if (anchor)
+			currentpage = pdf_lookup_anchor(ctx, pdf, anchor, NULL, NULL);
+	}
+	else
+	{
+		if (anchor)
+			currentpage = fz_atoi(anchor) - 1;
+	}
+	anchor = NULL;
 
 	currentpage = fz_clampi(currentpage, 0, fz_count_pages(ctx, doc) - 1);
 
@@ -1440,7 +1451,7 @@ int main(int argc, char **argv)
 
 	if (fz_optind < argc)
 	{
-		fz_strlcpy(filename, argv[fz_optind], sizeof filename);
+		fz_strlcpy(filename, argv[fz_optind++], sizeof filename);
 	}
 	else
 	{
@@ -1452,6 +1463,9 @@ int main(int argc, char **argv)
 		usage(argv[0]);
 #endif
 	}
+
+	if (fz_optind < argc)
+		anchor = argv[fz_optind++];
 
 	title = strrchr(filename, '/');
 	if (!title)
