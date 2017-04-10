@@ -88,26 +88,6 @@ fz_cs_params: Get default color params for general color conversion.
 */
 fz_color_params *fz_cs_params(fz_context *ctx);
 
-/*
-	fz_set_device_gray: Set colorspace representing device specific gray.
-*/
-void fz_set_device_gray(fz_context *ctx, fz_colorspace *cs);
-
-/*
-	fz_set_device_rgb: Set colorspace representing device specific rgb.
-*/
-void fz_set_device_rgb(fz_context *ctx, fz_colorspace *cs);
-
-/*
-	fz_set_device_bgr: Set colorspace representing device specific bgr.
-*/
-void fz_set_device_bgr(fz_context *ctx, fz_colorspace *cs);
-
-/*
-	fz_set_device_cmyk: Set colorspace representing device specific CMYK.
-*/
-void fz_set_device_cmyk(fz_context *ctx, fz_colorspace *cs);
-
 typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, const float *src, float *dst);
 
 typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
