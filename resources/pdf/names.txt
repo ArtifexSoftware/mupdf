@@ -104,6 +104,9 @@ DamagedRowsBeforeError
 Decode
 DecodeParms
 Default
+DefaultCMYK
+DefaultGray
+DefaultRGB
 Desc
 DescendantFonts
 Descent
