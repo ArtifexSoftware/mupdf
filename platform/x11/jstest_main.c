@@ -402,7 +402,7 @@ main(int argc, char *argv[])
 				}
 				else
 				{
-					fprintf(stderr, "Unmatched: %s\n", line);
+					fprintf(stderr, "Ignoring line without script statement.\n");
 				}
 			}
 			while (!feof(script));
