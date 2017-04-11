@@ -346,7 +346,7 @@ main(int argc, char *argv[])
 				}
 				else if (match(&line, "OPEN"))
 				{
-					char path[1024];
+					char path[LONGLINE];
 					if (file_open)
 						pdfapp_close(&gapp);
 					if (prefix)
