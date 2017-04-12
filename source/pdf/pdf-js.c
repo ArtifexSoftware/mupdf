@@ -549,7 +549,7 @@ static void declare_dom(pdf_js *js)
 	js_setglobal(J, "MuPDF_Doc"); /* for pdf-util.js use */
 }
 
-#include "gen_js_util.h"
+extern const char fz_source_pdf_pdf_js_util_js[];
 
 static void preload_helpers(pdf_js *js)
 {

@@ -75,7 +75,8 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	fprintf(fo, "/* This is an automatically generated file. Do not edit. */\n");
+	fprintf(fo, "/* This is an automatically generated file. Do not edit. */\n\n");
+	fprintf(fo, "#include \"mupdf/pdf.h\"\n");
 
 	for (i = 2; i < argc; i++)
 	{
@@ -148,7 +149,7 @@ main(int argc, char **argv)
 			fprintf(fo, "\n};\n\n");
 		}
 
-		fprintf(fo, "static pdf_cmap cmap_%s = {\n", name);
+		fprintf(fo, "pdf_cmap pdf_cmap_%s = {\n", name);
 		fprintf(fo, "\t{-1, pdf_drop_cmap_imp}, ");
 		fprintf(fo, "\"%s\", ", cmap->cmap_name);
 		fprintf(fo, "\"%s\", 0, ", cmap->usecmap_name);

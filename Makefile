@@ -229,20 +229,29 @@ CMAP_EXTRA_SRC := $(wildcard resources/cmaps/extra/*)
 CMAP_UTF8_SRC := $(wildcard resources/cmaps/utf8/*)
 CMAP_UTF32_SRC := $(wildcard resources/cmaps/utf32/*)
 
-generated/gen_cmap_cjk.h : $(CMAP_CJK_SRC) | generated
+CMAP_GEN := \
+	generated/pdf-cmap-cjk.c \
+	generated/pdf-cmap-extra.c \
+	generated/pdf-cmap-utf8.c \
+	generated/pdf-cmap-utf32.c
+CMAP_OBJ := $(CMAP_GEN:%.c=$(OUT)/%.o)
+
+generated/pdf-cmap-cjk.c : $(CMAP_CJK_SRC) | generated
 	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_CJK_SRC)
-generated/gen_cmap_extra.h : $(CMAP_EXTRA_SRC) | generated
+generated/pdf-cmap-extra.c : $(CMAP_EXTRA_SRC) | generated
 	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_EXTRA_SRC)
-generated/gen_cmap_utf8.h : $(CMAP_UTF8_SRC) | generated
+generated/pdf-cmap-utf8.c : $(CMAP_UTF8_SRC) | generated
 	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_UTF8_SRC)
-generated/gen_cmap_utf32.h : $(CMAP_UTF32_SRC) | generated
+generated/pdf-cmap-utf32.c : $(CMAP_UTF32_SRC) | generated
 	$(QUIET_GEN) $(CMAPDUMP_EXE) $@ $(CMAP_UTF32_SRC)
 
-CMAP_GEN := $(addprefix generated/, gen_cmap_cjk.h gen_cmap_extra.h gen_cmap_utf8.h gen_cmap_utf32.h)
+$(CMAP_OBJ) : $(CMAP_GEN)
 
 ifneq "$(CROSSCOMPILE)" "yes"
 $(CMAP_GEN) : $(CMAPDUMP_EXE)
 endif
+
+generate: $(CMAP_GEN)
 
 $(OUT)/scripts/cmapdump.o : \
 	$(NAME_GEN) \
@@ -264,29 +273,12 @@ $(OUT)/scripts/cmapdump.o : \
 	source/pdf/pdf-cmap.c \
 	source/pdf/pdf-cmap-parse.c \
 
-$(OUT)/source/pdf/pdf-cmap-table.o : $(CMAP_GEN)
-
-generate: $(CMAP_GEN)
-
-# --- Generated embedded certificate files ---
-
-ADOBECA_SRC := resources/certs/AdobeCA.p7c
-ADOBECA_GEN := generated/gen_adobe_ca.h
-$(ADOBECA_GEN) : $(ADOBECA_SRC) | generated
-	$(QUIET_GEN) $(HEXDUMP_EXE) $@ $(ADOBECA_SRC)
-
-ifneq "$(CROSSCOMPILE)" "yes"
-$(ADOBECA_GEN) : $(HEXDUMP_EXE)
-endif
-
-$(OUT)/source/pdf/pdf-pkcs7.o : $(ADOBECA_GEN)
-
-generate: $(ADOBECA_GEN)
-
 # --- Generated embedded javascript files ---
 
 JAVASCRIPT_SRC := source/pdf/pdf-js-util.js
-JAVASCRIPT_GEN := generated/gen_js_util.h
+JAVASCRIPT_GEN := generated/pdf-js-util.c
+JAVASCRIPT_OBJ := $(JAVASCRIPT_GEN:%.c=$(OUT)/%.o)
+
 $(JAVASCRIPT_GEN) : $(JAVASCRIPT_SRC) | generated
 	$(QUIET_GEN) $(HEXDUMP_EXE) $@ $(JAVASCRIPT_SRC)
 
@@ -294,7 +286,7 @@ ifneq "$(CROSSCOMPILE)" "yes"
 $(JAVASCRIPT_GEN) : $(HEXDUMP_EXE)
 endif
 
-$(OUT)/source/pdf/pdf-js.o : $(JAVASCRIPT_GEN)
+$(JAVASCRIPT_OBJ) : $(JAVASCRIPT_GEN)
 
 generate: $(JAVASCRIPT_GEN)
 
@@ -304,7 +296,7 @@ MUPDF_LIB = $(OUT)/libmupdf.a
 THIRD_LIB = $(OUT)/libmupdfthird.a
 THREAD_LIB = $(OUT)/libmuthreads.a
 
-MUPDF_OBJ := $(FITZ_OBJ) $(FONT_OBJ) $(PDF_OBJ) $(XPS_OBJ) $(SVG_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
+MUPDF_OBJ := $(FITZ_OBJ) $(PDF_OBJ) $(CMAP_OBJ) $(FONT_OBJ) $(JAVASCRIPT_OBJ) $(XPS_OBJ) $(SVG_OBJ) $(CBZ_OBJ) $(HTML_OBJ) $(GPRF_OBJ)
 THIRD_OBJ := $(FREETYPE_OBJ) $(HARFBUZZ_OBJ) $(JBIG2DEC_OBJ) $(LIBJPEG_OBJ) $(JPEGXR_OBJ) $(LURATECH_OBJ) $(MUJS_OBJ) $(OPENJPEG_OBJ) $(ZLIB_OBJ)
 THREAD_OBJ := $(THREAD_OBJ)
 

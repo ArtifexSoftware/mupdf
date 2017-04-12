@@ -17,13 +17,12 @@ cl /nologo -Iinclude scripts/cmapdump.c setargv.obj
 if not exist hexdump.exe goto usage
 if not exist cmapdump.exe goto usage
 
-if not exist generated/gen_cmap_cjk.h cmapdump.exe generated/gen_cmap_cjk.h resources\cmaps\cjk\*
-if not exist generated/gen_cmap_extra.h cmapdump.exe generated/gen_cmap_extra.h resources\cmaps\extra\*
-if not exist generated/gen_cmap_utf8.h cmapdump.exe generated/gen_cmap_utf8.h resources\cmaps\utf8\*
-if not exist generated/gen_cmap_utf32.h cmapdump.exe generated/gen_cmap_utf32.h resources\cmaps\utf32\*
+if not exist generated/pdf-cmap-cjk.c cmapdump.exe generated/pdf-cmap-cjk.c resources\cmaps\cjk\*
+if not exist generated/pdf-cmap-extra.c cmapdump.exe generated/pdf-cmap-extra.c resources\cmaps\extra\*
+if not exist generated/pdf-cmap-utf8.c cmapdump.exe generated/pdf-cmap-utf8.c resources\cmaps\utf8\*
+if not exist generated/pdf-cmap-utf32.c cmapdump.exe generated/pdf-cmap-utf32.c resources\cmaps\utf32\*
 
-if not exist generated/gen_adobe_ca.h hexdump.exe generated/gen_adobe_ca.h resources/certs/AdobeCA.p7c
-if not exist generated/gen_js_util.h hexdump.exe generated/gen_js_util.h source/pdf/pdf-js-util.js
+if not exist generated/pdf-js-util.c hexdump.exe generated/pdf-js-util.c source/pdf/pdf-js-util.js
 
 if not exist generated/DroidSansFallback.c hexdump.exe generated/DroidSansFallback.c resources/fonts/droid/DroidSansFallback.ttf
 if not exist generated/DroidSansFallbackFull.c hexdump.exe generated/DroidSansFallbackFull.c resources/fonts/droid/DroidSansFallbackFull.ttf
