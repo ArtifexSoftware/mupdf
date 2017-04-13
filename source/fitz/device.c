@@ -61,6 +61,7 @@ fz_drop_device(fz_context *ctx, fz_device *dev)
 		if (dev->drop_device)
 			dev->drop_device(ctx, dev);
 		fz_free(ctx, dev->container);
+		fz_drop_default_cs(ctx, dev->default_cs);
 		fz_free(ctx, dev);
 	}
 }
@@ -512,4 +513,11 @@ fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
 {
 	if (dev->render_flags)
 		dev->render_flags(ctx, dev, set, clear);
+}
+
+void
+fz_set_default_colorspace(fz_context *ctx, fz_device *dev, fz_page_default_cs *default_cs)
+{
+	fz_drop_default_cs(ctx, dev->default_cs);
+	dev->default_cs = fz_keep_default_cs(ctx, default_cs);
 }

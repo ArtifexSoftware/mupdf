@@ -61,6 +61,10 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, cons
 	pdf_document *doc = page->doc;
 	int nocache;
 
+	/* Set default cs in device if needed */
+	if (page->default_cs != NULL && dev->set_default_cs != NULL)
+		dev->set_default_cs(ctx, dev, page->default_cs);
+
 	nocache = !!(dev->hints & FZ_NO_CACHE);
 	if (nocache)
 		pdf_mark_xref(ctx, doc);

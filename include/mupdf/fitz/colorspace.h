@@ -52,6 +52,11 @@ typedef struct fz_iccprofile_s fz_iccprofile;
 typedef struct fz_icclink_s fz_icclink;
 
 /*
+	Used to communicate any document internal page specific default color spaces
+*/
+typedef struct fz_page_default_cs_s fz_page_default_cs;
+
+/*
 	fz_colorspace_is_subtractive: Return true if a colorspace is subtractive.
 
 	True for CMYK, Separation and DeviceN colorspaces.
@@ -150,5 +155,20 @@ fz_colorspace * fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, flo
 int fz_create_icc_from_cal(fz_context *ctx, unsigned char **buffer, fz_cal_color *cal);
 
 void fz_color_param_init(fz_color_params *cs_param);
+
+/* Default cs */
+fz_page_default_cs *fz_new_default_cs(fz_context *ctx);
+fz_page_default_cs* fz_keep_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
+void fz_drop_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
+void fz_init_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
+
+/* Do we want to make fz_page_default_cs public and get rid of these? */
+void fz_set_default_gray(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
+void fz_set_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
+void fz_set_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
+
+fz_colorspace *fz_get_default_gray(fz_context *ctx, fz_page_default_cs *default_cs);
+fz_colorspace *fz_get_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs);
+fz_colorspace *fz_get_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs);
 
 #endif

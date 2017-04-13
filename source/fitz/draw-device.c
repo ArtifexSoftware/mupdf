@@ -2320,6 +2320,8 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 
 	dev->super.render_flags = fz_draw_render_flags;
 
+	dev->super.set_default_cs = fz_set_default_colorspace;
+
 	dev->transform = transform ? *transform : fz_identity;
 	dev->flags = 0;
 	dev->top = 0;

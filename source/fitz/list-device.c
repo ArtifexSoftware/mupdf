@@ -30,7 +30,8 @@ typedef enum fz_display_command_e
 	FZ_CMD_END_GROUP,
 	FZ_CMD_BEGIN_TILE,
 	FZ_CMD_END_TILE,
-	FZ_CMD_RENDER_FLAGS
+	FZ_CMD_RENDER_FLAGS,
+	FZ_CMD_DEFAULT_COLORSPACE
 } fz_display_command;
 
 /* The display list is a list of nodes.
@@ -1227,6 +1228,27 @@ fz_list_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
 }
 
 static void
+fz_list_set_default_colorspace(fz_context *ctx, fz_device *dev, fz_page_default_cs *default_cs)
+{
+	fz_page_default_cs *default_cs2 = fz_keep_default_cs(ctx, default_cs);
+
+	fz_append_display_node(
+		ctx,
+		dev,
+		FZ_CMD_DEFAULT_COLORSPACE,
+		0, /* flags */
+		NULL,
+		NULL, /* path */
+		NULL, /* color */
+		NULL, /* colorspace */
+		NULL, /* alpha */
+		NULL, /* ctm */
+		NULL, /* stroke */
+		&default_cs2, /* private_data */
+		sizeof(default_cs2)); /* private_data_len */
+}
+
+static void
 fz_list_drop_device(fz_context *ctx, fz_device *dev)
 {
 	fz_list_device *writer = (fz_list_device *)dev;
@@ -1270,6 +1292,8 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 	dev->super.end_tile = fz_list_end_tile;
 
 	dev->super.render_flags = fz_list_render_flags;
+
+	dev->super.set_default_cs = fz_list_set_default_colorspace;
 
 	dev->super.drop_device = fz_list_drop_device;
 
@@ -1371,8 +1395,10 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 		case FZ_CMD_CLIP_IMAGE_MASK:
 			fz_drop_image(ctx, *(fz_image **)node);
 			break;
+		case FZ_CMD_DEFAULT_COLORSPACE:
+			fz_drop_default_cs(ctx, *(fz_page_default_cs **)node);
+			break;
 		}
-
 		node = next;
 	}
 	fz_free(ctx, list->list);
@@ -1602,7 +1628,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 
 		if (tiled ||
 			n.cmd == FZ_CMD_BEGIN_TILE || n.cmd == FZ_CMD_END_TILE ||
-			n.cmd == FZ_CMD_RENDER_FLAGS)
+			n.cmd == FZ_CMD_RENDER_FLAGS || n.cmd == FZ_CMD_DEFAULT_COLORSPACE)
 		{
 			empty = 0;
 		}
@@ -1729,6 +1755,9 @@ visible:
 					fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);
 				else if (n.flags == 1)
 					fz_render_flags(ctx, dev, FZ_DEVFLAG_GRIDFIT_AS_TILED, 0);
+				break;
+			case FZ_CMD_DEFAULT_COLORSPACE:
+				fz_set_default_colorspace(ctx, dev, *(fz_page_default_cs **)node);
 				break;
 			}
 		}

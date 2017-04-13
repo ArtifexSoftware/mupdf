@@ -35,4 +35,12 @@ struct fz_icclink_s
 	void *cmm_handle;
 };
 
+struct fz_page_default_cs_s
+{
+	int refs;
+	fz_colorspace *gray;
+	fz_colorspace *rgb;
+	fz_colorspace *cmyk;
+};
+
 #endif

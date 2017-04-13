@@ -1868,13 +1868,11 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_p
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *dsts = dst->colorspace;
 	fz_colorspace *base_cs = srcs->get_base(srcs);
-	fz_icclink *link;
 	int i;
 	unsigned char *inputpos, *outputpos;
-	int src_n;
 	fz_pixmap *base;
 	fz_irect bbox;
-	int h, len, k;
+	int h, len;
 	float src_f[FZ_MAX_COLORS], des_f[FZ_MAX_COLORS];
 	int stride_src = src->stride - src->w * src->n;
 	int stride_base;
@@ -2819,4 +2817,92 @@ void
 fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out)
 {
 	cs->clamp(cs, in, out);
+}
+
+/* Default CS. To handle the page specific default settings that PDF can do in
+ * its page resource dictionary  */
+void
+fz_set_default_gray(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs)
+{
+	fz_drop_colorspace(ctx, default_cs->gray);
+	default_cs->gray = cs;
+}
+
+void
+fz_set_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs)
+{
+	fz_drop_colorspace(ctx, default_cs->gray);
+	default_cs->rgb = cs;
+}
+
+void
+fz_set_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs)
+{
+	fz_drop_colorspace(ctx, default_cs->gray);
+	default_cs->cmyk = cs;
+}
+
+fz_colorspace *
+fz_get_default_gray(fz_context *ctx, fz_page_default_cs *default_cs)
+{
+	if (default_cs)
+		return default_cs->gray;
+	else
+		return NULL;
+}
+
+fz_colorspace *
+fz_get_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs)
+{
+	if (default_cs)
+		return default_cs->rgb;
+	else
+		return NULL;
+}
+
+fz_colorspace *
+fz_get_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs)
+{
+	if (default_cs)
+		return default_cs->cmyk;
+	else
+		return NULL;
+}
+
+/* Set any that were not set by the document settings */
+void
+fz_init_default_cs(fz_context *ctx, fz_page_default_cs *default_cs)
+{
+	if (!default_cs->gray)
+		default_cs->gray = fz_device_gray(ctx);
+	if (!default_cs->rgb)
+		default_cs->rgb = fz_device_rgb(ctx);
+	if (!default_cs->cmyk)
+		default_cs->cmyk = fz_device_cmyk(ctx);
+}
+
+fz_page_default_cs*
+fz_new_default_cs(fz_context *ctx)
+{
+	fz_page_default_cs *default_cs = fz_malloc_struct(ctx, fz_page_default_cs);
+	default_cs->refs = 1;
+	return default_cs;
+}
+
+fz_page_default_cs*
+fz_keep_default_cs(fz_context *ctx, fz_page_default_cs *default_cs)
+{
+	return fz_keep_imp(ctx, default_cs, &default_cs->refs);
+}
+
+void
+fz_drop_default_cs(fz_context *ctx, fz_page_default_cs *default_cs)
+{
+	if (fz_drop_imp(ctx, default_cs, &default_cs->refs))
+	{
+		fz_drop_colorspace(ctx, default_cs->gray);
+		fz_drop_colorspace(ctx, default_cs->rgb);
+		fz_drop_colorspace(ctx, default_cs->cmyk);
+		fz_free(ctx, default_cs);
+	}
 }

@@ -114,6 +114,8 @@ struct fz_device_s
 
 	void (*render_flags)(fz_context *, fz_device *, int set, int clear);
 
+	void (*set_default_cs)(fz_context *, fz_device *, fz_page_default_cs *);
+
 	fz_rect d1_rect;
 
 	int error_depth;
@@ -122,6 +124,8 @@ struct fz_device_s
 	int container_len;
 	int container_cap;
 	fz_device_container_stack *container;
+
+	fz_page_default_cs *default_cs;
 };
 
 void fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_params, const float *color, float alpha);
@@ -146,7 +150,7 @@ void fz_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const f
 int fz_begin_tile_id(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id);
 void fz_end_tile(fz_context *ctx, fz_device *dev);
 void fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear);
-
+void fz_set_default_colorspace(fz_context *ctx, fz_device *dev, fz_page_default_cs *default_cs);
 fz_device *fz_new_device_of_size(fz_context *ctx, int size);
 
 #define fz_new_derived_device(CTX, TYPE) \

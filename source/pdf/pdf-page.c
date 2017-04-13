@@ -637,6 +637,7 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
 	pdf_document *doc = page->doc;
 
+	fz_drop_default_cs(ctx, page->default_cs);
 	fz_drop_link(ctx, page->links);
 	pdf_drop_annots(ctx, page->annots);
 
@@ -672,8 +673,47 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->annots = NULL;
 	page->annot_tailp = &page->annots;
 	page->incomplete = 0;
+	page->default_cs = NULL;
 
 	return page;
+}
+
+static void
+pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
+{
+	pdf_obj *obj;
+	pdf_obj *cs_obj;
+
+	if (res)
+	{
+		page->default_cs = fz_new_default_cs(ctx);
+
+		fz_var(page->default_cs);
+
+		fz_try(ctx)
+		{
+			obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
+			if (obj)
+			{
+				cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultGray);
+				if (cs_obj)
+					fz_set_default_gray(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
+
+				cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultRGB);
+				if (cs_obj)
+					fz_set_default_rgb(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
+
+				cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultCMYK);
+				if (cs_obj)
+					fz_set_default_cmyk(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
+			}
+			fz_init_default_cs(ctx, page->default_cs);
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_default_cs(ctx, page->default_cs);
+		}
+	}
 }
 
 pdf_page *
@@ -682,6 +722,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	pdf_page *page;
 	pdf_annot *annot;
 	pdf_obj *pageobj, *obj;
+	pdf_obj *resources;
 
 	if (doc->file_reading_linearly)
 	{
@@ -694,6 +735,13 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 
 	page = pdf_new_page(ctx, doc);
 	page->obj = pdf_keep_obj(ctx, pageobj);
+
+	resources = pdf_page_resources(ctx, page);
+
+	/* If we are doing color management check for internal default color spaces */
+	/* Photoshop is notorious for doing this in it's PDF creation */
+	if (fz_colorspace_is(fz_device_rgb(ctx), "icc"))
+		pdf_set_default_cs(ctx, resources, page);
 
 	/* Pre-load annotations and links */
 	fz_try(ctx)
@@ -723,7 +771,6 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	/* Scan for transparency */
 	fz_try(ctx)
 	{
-		pdf_obj *resources = pdf_page_resources(ctx, page);
 		if (pdf_resources_use_blending(ctx, resources))
 			page->transparency = 1;
 		else if (pdf_name_eq(ctx, pdf_dict_getp(ctx, pageobj, "Group/S"), PDF_NAME_Transparency))
