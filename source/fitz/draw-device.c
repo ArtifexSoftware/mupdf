@@ -295,8 +295,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
-	fz_reset_gel(ctx, gel, &state->scissor);
-	fz_flatten_fill_path(ctx, gel, path, &ctm, flatness);
+	fz_flatten_fill_path(ctx, gel, path, &ctm, flatness, &state->scissor);
 
 	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
 
@@ -320,8 +319,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_scan_convert(ctx, gel, even_odd, &bbox, state->dest, colorbv);
 	if (state->shape)
 	{
-		fz_reset_gel(ctx, gel, &state->scissor);
-		fz_flatten_fill_path(ctx, gel, path, &ctm, flatness);
+		fz_flatten_fill_path(ctx, gel, path, &ctm, flatness, &state->scissor);
 
 		colorbv[0] = alpha * 255;
 		fz_scan_convert(ctx, gel, even_odd, &bbox, state->shape, colorbv);
@@ -361,11 +359,10 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
-	fz_reset_gel(ctx, gel, &state->scissor);
 	if (stroke->dash_len > 0)
-		fz_flatten_dash_path(ctx, gel, path, stroke, &ctm, flatness, linewidth);
+		fz_flatten_dash_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
 	else
-		fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth);
+		fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
 
 	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
 
@@ -396,11 +393,10 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_scan_convert(ctx, gel, 0, &bbox, state->dest, colorbv);
 	if (state->shape)
 	{
-		fz_reset_gel(ctx, gel, &state->scissor);
 		if (stroke->dash_len > 0)
-			fz_flatten_dash_path(ctx, gel, path, stroke, &ctm, flatness, linewidth);
+			fz_flatten_dash_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
 		else
-			fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth);
+			fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
 
 		colorbv[0] = 255;
 		fz_scan_convert(ctx, gel, 0, &bbox, state->shape, colorbv);
@@ -433,8 +429,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
-	fz_reset_gel(ctx, gel, &state->scissor);
-	fz_flatten_fill_path(ctx, gel, path, &ctm, flatness);
+	fz_flatten_fill_path(ctx, gel, path, &ctm, flatness, &state->scissor);
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip path");
@@ -508,11 +503,10 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
-	fz_reset_gel(ctx, gel, &state->scissor);
 	if (stroke->dash_len > 0)
-		fz_flatten_dash_path(ctx, gel, path, stroke, &ctm, flatness, linewidth);
+		fz_flatten_dash_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
 	else
-		fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth);
+		fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip stroke");
@@ -2379,16 +2373,13 @@ fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor,
 {
 	fz_gel *gel = fz_new_gel(ctx);
 
-	fz_reset_gel(ctx, gel, scissor);
 	if (stroke)
-	{
 		if (stroke->dash_len > 0)
-			fz_flatten_dash_path(ctx, gel, path, stroke, ctm, flatness, linewidth);
+			fz_flatten_dash_path(ctx, gel, path, stroke, ctm, flatness, linewidth, scissor);
 		else
-			fz_flatten_stroke_path(ctx, gel, path, stroke, ctm, flatness, linewidth);
-	}
+			fz_flatten_stroke_path(ctx, gel, path, stroke, ctm, flatness, linewidth, scissor);
 	else
-		fz_flatten_fill_path(ctx, gel, path, ctm, flatness);
+		fz_flatten_fill_path(ctx, gel, path, ctm, flatness, scissor);
 	fz_bound_gel(ctx, gel, bbox);
 	fz_drop_gel(ctx, gel);
 

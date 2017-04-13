@@ -215,9 +215,11 @@ static const fz_path_walker flatten_proc =
 };
 
 void
-fz_flatten_fill_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_matrix *ctm, float flatness)
+fz_flatten_fill_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_matrix *ctm, float flatness, const fz_irect *scissor)
 {
 	flatten_arg arg;
+
+	fz_reset_gel(ctx, gel, scissor);
 
 	arg.gel = gel;
 	arg.ctm = ctm;
@@ -842,9 +844,11 @@ static const fz_path_walker stroke_proc =
 };
 
 void
-fz_flatten_stroke_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
+fz_flatten_stroke_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth, const fz_irect *scissor)
 {
 	struct sctx s;
+
+	fz_reset_gel(ctx, gel, scissor);
 
 	s.stroke = stroke;
 	s.gel = gel;
@@ -1301,12 +1305,14 @@ static const fz_path_walker dash_proc =
 };
 
 void
-fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
+fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth, const fz_irect *scissor)
 {
 	struct sctx s;
 	float max_expand;
 	int i;
 	fz_matrix inv;
+
+	fz_reset_gel(ctx, gel, scissor);
 
 	s.stroke = stroke;
 	s.gel = gel;
@@ -1346,7 +1352,7 @@ fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz
 	max_expand = fz_matrix_max_expansion(ctm);
 	if (s.dash_total < 0.01f || s.dash_total * max_expand < 0.5f)
 	{
-		fz_flatten_stroke_path(ctx, gel, path, stroke, ctm, flatness, linewidth);
+		fz_flatten_stroke_path(ctx, gel, path, stroke, ctm, flatness, linewidth, scissor);
 		return;
 	}
 
