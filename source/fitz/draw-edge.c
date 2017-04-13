@@ -587,8 +587,8 @@ cmpedge(const void *va, const void *vb)
 	return a->y - b->y;
 }
 
-void
-fz_sort_gel(fz_context *ctx, fz_gel *gel)
+static void
+sort_gel(fz_context *ctx, fz_gel *gel)
 {
 	fz_edge *a = gel->edges;
 	int n = gel->len;
@@ -1159,6 +1159,8 @@ fz_scan_convert(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *clip, 
 
 	if (fz_is_empty_irect(fz_intersect_irect(fz_pixmap_bbox_no_ctx(dst, &local_clip), clip)))
 		return;
+
+	sort_gel(ctx, gel);
 
 	if (fz_aa_bits > 0)
 	{
