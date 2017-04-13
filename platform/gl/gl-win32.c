@@ -16,8 +16,8 @@ void win_install(void)
 	char command_str[2048], argv0[2048];
 	HKEY software, classes, mupdf;
 	HKEY supported_types, shell, open, command;
-	HKEY dotpdf, dotxps, dotcbz, dotepub;
-	HKEY pdf_progids, xps_progids, cbz_progids, epub_progids;
+	HKEY dotpdf, dotxps, dotcbz, dotepub, dotfb2;
+	HKEY pdf_progids, xps_progids, cbz_progids, epub_progids, fb2_progids;
 
 	GetModuleFileNameA(NULL, argv0, sizeof argv0);
 	_snprintf(command_str, sizeof command_str, "\"%s\" \"%%1\"", argv0);
@@ -33,6 +33,7 @@ void win_install(void)
 				SET_VALUE(supported_types, ".xps", "");
 				SET_VALUE(supported_types, ".cbz", "");
 				SET_VALUE(supported_types, ".epub", "");
+				SET_VALUE(supported_types, ".fb2", "");
 			}
 			RegCloseKey(supported_types);
 			OPEN_KEY(mupdf, "shell", &shell);
@@ -52,26 +53,31 @@ void win_install(void)
 		OPEN_KEY(classes, ".xps", &dotxps);
 		OPEN_KEY(classes, ".cbz", &dotcbz);
 		OPEN_KEY(classes, ".epub", &dotepub);
+		OPEN_KEY(classes, ".fb2", &dotfb2);
 		{
 			OPEN_KEY(dotpdf, "OpenWithProgids", &pdf_progids);
 			OPEN_KEY(dotxps, "OpenWithProgids", &xps_progids);
 			OPEN_KEY(dotcbz, "OpenWithProgids", &cbz_progids);
 			OPEN_KEY(dotepub, "OpenWithProgids", &epub_progids);
+			OPEN_KEY(dotfb2, "OpenWithProgids", &fb2_progids);
 			{
 				SET_VALUE(pdf_progids, "MuPDF", "");
 				SET_VALUE(xps_progids, "MuPDF", "");
 				SET_VALUE(cbz_progids, "MuPDF", "");
 				SET_VALUE(epub_progids, "MuPDF", "");
+				SET_VALUE(fb2_progids, "MuPDF", "");
 			}
 			RegCloseKey(pdf_progids);
 			RegCloseKey(xps_progids);
 			RegCloseKey(cbz_progids);
 			RegCloseKey(epub_progids);
+			RegCloseKey(fb2_progids);
 		}
 		RegCloseKey(dotpdf);
 		RegCloseKey(dotxps);
 		RegCloseKey(dotcbz);
 		RegCloseKey(dotepub);
+		RegCloseKey(dotfb2);
 	}
 	RegCloseKey(classes);
 	RegCloseKey(software);
@@ -88,7 +94,7 @@ int win_open_file(char *buf, int len)
 	ofn.lpstrFile = wbuf;
 	ofn.nMaxFile = 2048;
 	ofn.lpstrTitle = L"MuPDF: Open PDF file";
-	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.epub;*.zip;*.png;*.jpeg;*.tiff)\0*.zip;*.cbz;*.xps;*.epub;*.pdf;*.jpe;*.jpg;*.jpeg;*.jfif;*.tif;*.tiff\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0EPUB Files (*.epub)\0*.epub\0Image Files (*.png;*.jpeg;*.tiff)\0*.png;*.jpg;*.jpe;*.jpeg;*.jfif;*.tif;*.tiff\0All Files\0*\0\0";
+	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.epub;*.fb2)\0*.pdf;*.xps;*.cbz;*.epub;*.fb2\0All Files\0*\0\0";
 	ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
 	code = GetOpenFileNameW(&ofn);
 	if (code)
