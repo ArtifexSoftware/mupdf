@@ -53,9 +53,9 @@ static char filename[PATH_MAX];
 void install_app(char *argv0)
 {
 	char buf[512];
-	HKEY software, classes, mupdf, dotpdf, dotxps, dotepub;
+	HKEY software, classes, mupdf, dotpdf, dotxps, dotepub, dotfb2;
 	HKEY shell, open, command, supported_types;
-	HKEY pdf_progids, xps_progids, epub_progids;
+	HKEY pdf_progids, xps_progids, epub_progids, fb2_progids;
 
 	OPEN_KEY(HKEY_CURRENT_USER, "Software", software);
 	OPEN_KEY(software, "Classes", classes);
@@ -65,6 +65,8 @@ void install_app(char *argv0)
 	OPEN_KEY(dotxps, "OpenWithProgids", xps_progids);
 	OPEN_KEY(classes, ".epub", dotepub);
 	OPEN_KEY(dotepub, "OpenWithProgids", epub_progids);
+	OPEN_KEY(classes, ".fb2", dotfb2);
+	OPEN_KEY(dotfb2, "OpenWithProgids", fb2_progids);
 	OPEN_KEY(classes, "MuPDF", mupdf);
 	OPEN_KEY(mupdf, "SupportedTypes", supported_types);
 	OPEN_KEY(mupdf, "shell", shell);
@@ -81,7 +83,9 @@ void install_app(char *argv0)
 	SET_KEY(pdf_progids, "MuPDF", "");
 	SET_KEY(xps_progids, "MuPDF", "");
 	SET_KEY(epub_progids, "MuPDF", "");
+	SET_KEY(fb2_progids, "MuPDF", "");
 
+	RegCloseKey(dotfb2);
 	RegCloseKey(dotepub);
 	RegCloseKey(dotxps);
 	RegCloseKey(dotpdf);
@@ -187,7 +191,7 @@ int winfilename(wchar_t *buf, int len)
 	ofn.nMaxFile = len;
 	ofn.lpstrInitialDir = NULL;
 	ofn.lpstrTitle = L"MuPDF: Open PDF file";
-	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.epub;*.zip;*.png;*.jpeg;*.tiff)\0*.zip;*.cbz;*.xps;*.epub;*.pdf;*.jpe;*.jpg;*.jpeg;*.jfif;*.tif;*.tiff\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0EPUB Files (*.epub)\0*.epub\0Image Files (*.png;*.jpeg;*.tiff)\0*.png;*.jpg;*.jpe;*.jpeg;*.jfif;*.tif;*.tiff\0All Files\0*\0\0";
+	ofn.lpstrFilter = L"Documents (*.pdf;*.xps;*.cbz;*.epub;*.fb2;*.zip;*.png;*.jpeg;*.tiff)\0*.zip;*.cbz;*.xps;*.epub;*.fb2;*.pdf;*.jpe;*.jpg;*.jpeg;*.jfif;*.tif;*.tiff\0PDF Files (*.pdf)\0*.pdf\0XPS Files (*.xps)\0*.xps\0CBZ Files (*.cbz;*.zip)\0*.zip;*.cbz\0EPUB Files (*.epub)\0*.epub\0FictionBook 2 Files (*.fb2)\0*.fb2\0Image Files (*.png;*.jpeg;*.tiff)\0*.png;*.jpg;*.jpe;*.jpeg;*.jfif;*.tif;*.tiff\0All Files\0*\0\0";
 	ofn.Flags = OFN_FILEMUSTEXIST|OFN_HIDEREADONLY;
 	return GetOpenFileNameW(&ofn);
 }
