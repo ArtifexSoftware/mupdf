@@ -843,40 +843,6 @@ static const fz_path_walker stroke_proc =
 	stroke_quadto
 };
 
-void
-fz_flatten_stroke_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth, const fz_irect *scissor)
-{
-	struct sctx s;
-
-	fz_reset_gel(ctx, gel, scissor);
-
-	s.stroke = stroke;
-	s.gel = gel;
-	s.ctm = ctm;
-	s.flatness = flatness;
-
-	s.linejoin = stroke->linejoin;
-	s.linewidth = linewidth * 0.5f; /* hairlines use a different value from the path value */
-	s.miterlimit = stroke->miterlimit;
-	s.sn = 0;
-	s.dot = 0;
-
-	s.dash_list = NULL;
-	s.dash_phase = 0;
-	s.dash_len = 0;
-	s.toggle = 0;
-	s.offset = 0;
-	s.phase = 0;
-
-	s.cap = stroke->start_cap;
-
-	s.cur.x = s.cur.y = 0;
-	s.stroke = stroke;
-
-	fz_walk_path(ctx, path, &stroke_proc, &s);
-	fz_stroke_flush(ctx, &s, stroke->start_cap, stroke->end_cap);
-}
-
 static void
 fz_dash_moveto(fz_context *ctx, struct sctx *s, float x, float y)
 {
@@ -1305,12 +1271,10 @@ static const fz_path_walker dash_proc =
 };
 
 void
-fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth, const fz_irect *scissor)
+fz_flatten_stroke_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth, const fz_irect *scissor)
 {
 	struct sctx s;
-	float max_expand;
-	int i;
-	fz_matrix inv;
+	const fz_path_walker *proc = &stroke_proc;
 
 	fz_reset_gel(ctx, gel, scissor);
 
@@ -1318,45 +1282,51 @@ fz_flatten_dash_path(fz_context *ctx, fz_gel *gel, const fz_path *path, const fz
 	s.gel = gel;
 	s.ctm = ctm;
 	s.flatness = flatness;
-
 	s.linejoin = stroke->linejoin;
-	s.linewidth = linewidth * 0.5f;
+	s.linewidth = linewidth * 0.5f; /* hairlines use a different value from the path value */
 	s.miterlimit = stroke->miterlimit;
 	s.sn = 0;
 	s.dot = 0;
-
-	s.dash_list = stroke->dash_list;
-	s.dash_len = stroke->dash_len;
-
-	s.dash_total = 0;
-	for (i = 0; i < s.dash_len; i++)
-		s.dash_total += s.dash_list[i];
-	if (s.dash_len > 0 && s.dash_total == 0)
-		return;
-
-	s.dash_phase = fmodf(stroke->dash_phase, s.dash_total);
-	s.cap = stroke->start_cap;
 	s.toggle = 0;
 	s.offset = 0;
 	s.phase = 0;
 
-	fz_gel_scissor(ctx, gel, &s.rect);
-	if (fz_try_invert_matrix(&inv, ctm))
-		return;
-	fz_transform_rect(&s.rect, &inv);
-	s.rect.x0 -= linewidth;
-	s.rect.x1 += linewidth;
-	s.rect.y0 -= linewidth;
-	s.rect.y1 += linewidth;
+	s.cap = stroke->start_cap;
 
-	max_expand = fz_matrix_max_expansion(ctm);
-	if (s.dash_total < 0.01f || s.dash_total * max_expand < 0.5f)
+	s.dash_list = NULL;
+	s.dash_len = stroke->dash_len;
+	if (s.dash_len > 0)
 	{
-		fz_flatten_stroke_path(ctx, gel, path, stroke, ctm, flatness, linewidth, scissor);
-		return;
+		int i;
+		fz_matrix inv;
+		float max_expand;
+		const float *list = stroke->dash_list;
+
+		s.dash_total = 0;
+		for (i = 0; i < s.dash_len; i++)
+			s.dash_total += list[i];
+		if (s.dash_total == 0)
+			return;
+
+		fz_gel_scissor(ctx, gel, &s.rect);
+		if (fz_try_invert_matrix(&inv, ctm))
+			return;
+		fz_transform_rect(&s.rect, &inv);
+		s.rect.x0 -= linewidth;
+		s.rect.x1 += linewidth;
+		s.rect.y0 -= linewidth;
+		s.rect.y1 += linewidth;
+
+		max_expand = fz_matrix_max_expansion(ctm);
+		if (s.dash_total >= 0.01f && s.dash_total * max_expand >= 0.5f)
+		{
+			proc = &dash_proc;
+			s.dash_phase = fmodf(stroke->dash_phase, s.dash_total);
+			s.dash_list = list;
+		}
 	}
 
 	s.cur.x = s.cur.y = 0;
-	fz_walk_path(ctx, path, &dash_proc, &s);
+	fz_walk_path(ctx, path, proc, &s);
 	fz_stroke_flush(ctx, &s, s.cap, stroke->end_cap);
 }
