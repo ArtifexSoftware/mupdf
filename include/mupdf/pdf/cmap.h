@@ -24,8 +24,10 @@ struct pdf_xrange_s
 
 struct pdf_mrange_s
 {
-	unsigned int low, len, out[PDF_MRANGE_CAP];
+	unsigned int low, out;
 };
+
+typedef struct cmap_splay_s cmap_splay;
 
 struct pdf_cmap_s
 {
@@ -53,6 +55,13 @@ struct pdf_cmap_s
 
 	int mlen, mcap;
 	pdf_mrange *mranges;
+
+	int dlen, dcap;
+	int *dict;
+
+	int tlen, tcap, ttop;
+	cmap_splay *tree;
+
 };
 
 pdf_cmap *pdf_new_cmap(fz_context *ctx);
@@ -79,7 +88,5 @@ pdf_cmap *pdf_load_cmap(fz_context *ctx, fz_stream *file);
 pdf_cmap *pdf_load_system_cmap(fz_context *ctx, const char *name);
 pdf_cmap *pdf_load_builtin_cmap(fz_context *ctx, const char *name);
 pdf_cmap *pdf_load_embedded_cmap(fz_context *ctx, pdf_document *doc, pdf_obj *ref);
-
-void pdf_print_cmap(fz_context *ctx, fz_output *out, pdf_cmap *cmap);
 
 #endif

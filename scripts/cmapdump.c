@@ -51,7 +51,7 @@ main(int argc, char **argv)
 	FILE *fo;
 	char name[256];
 	char *realname;
-	int i, k, m;
+	int i, k;
 	fz_context *ctx;
 
 	if (argc < 3)
@@ -141,10 +141,19 @@ main(int argc, char **argv)
 			fprintf(fo, "static const pdf_mrange cmap_%s_mranges[] = {", name);
 			for (k = 0; k < cmap->mlen; k++)
 			{
-				fprintf(fo, "\n{%uu,%uu,{", cmap->mranges[k].low, cmap->mranges[k].len);
-				for (m = 0; m < PDF_MRANGE_CAP; ++m)
-					fprintf(fo, "%uu,", cmap->mranges[k].out[m]);
-				fprintf(fo, "}},");
+				fprintf(fo, "\n{%uu,%uu},", cmap->mranges[k].low, cmap->mranges[k].out);
+			}
+			fprintf(fo, "\n};\n\n");
+		}
+
+		if (cmap->dlen > 0)
+		{
+			fprintf(fo, "static const int cmap_%s_dict[] = {", name);
+			for (k = 0; k < cmap->dlen; k++)
+			{
+				if (k % 4 == 0)
+					fprintf(fo, "\n");
+				fprintf(fo, "%uu,", cmap->dict[k]);
 			}
 			fprintf(fo, "\n};\n\n");
 		}
@@ -175,6 +184,10 @@ main(int argc, char **argv)
 			fprintf(fo, "\t0, 0, NULL,\n");
 		if (cmap->mlen)
 			fprintf(fo, "\t%u, %u, (pdf_mrange*) cmap_%s_mranges,\n", cmap->mlen, cmap->mlen, name);
+		else
+			fprintf(fo, "\t0, 0, NULL,\n");
+		if (cmap->dict)
+			fprintf(fo, "\t%u, %u, (int*) cmap_%s_dict,\n", cmap->dlen, cmap->dlen, name);
 		else
 			fprintf(fo, "\t0, 0, NULL,\n");
 
