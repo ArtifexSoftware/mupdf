@@ -40,7 +40,6 @@ endif
 
 LOCAL_C_INCLUDES := \
 	$(MUPDF_PATH)/include \
-	$(MUPDF_PATH)/generated \
 	$(MUPDF_PATH)/scripts/freetype \
 	$(MUPDF_PATH)/scripts/libjpeg \
 	$(MUPDF_PATH)/thirdparty/freetype/include \
