@@ -416,30 +416,6 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Device_finalize
 JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_Device_newNative
   (JNIEnv *, jobject);
 
-/*
- * Class:     com_artifex_mupdf_fitz_Device
- * Method:    getHints
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Device_getHints
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Device
- * Method:    enableDeviceHints
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Device_enableDeviceHints
-  (JNIEnv *, jobject, jint);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Device
- * Method:    disableDeviceHints
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Device_disableDeviceHints
-  (JNIEnv *, jobject, jint);
-
 #ifdef __cplusplus
 }
 #endif

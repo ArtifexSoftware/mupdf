@@ -21,11 +21,6 @@ public class Device
 		pointer = p;
 	}
 
-	/* An accessor for device hints */
-	public native int getHints();
-	public native void enableDeviceHints(int hints);
-	public native void disableDeviceHints(int hints);
-
 	/* To implement your own device in Java, you should define your own
 	 * class that extends Device, and override as many of the following
 	 * functions as is appropriate. For example:
