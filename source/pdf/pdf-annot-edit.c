@@ -65,6 +65,18 @@ int pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 	return PDF_ANNOT_UNKNOWN;
 }
 
+static void check_allowed_subtypes(fz_context *ctx, pdf_annot *annot, pdf_obj *property, pdf_obj **allowed)
+{
+	pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME_Subtype);
+	while (allowed) {
+		if (pdf_name_eq(ctx, subtype, *allowed))
+			return;
+		allowed++;
+	}
+
+	fz_throw(ctx, FZ_ERROR_GENERIC, "%s annotations have no %s property", pdf_to_name(ctx, subtype), pdf_to_name(ctx, property));
+}
+
 pdf_annot *
 pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
 {
@@ -280,106 +292,160 @@ pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float w)
 }
 
 static void
-pdf_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int *n, float color[4])
+pdf_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int *n, float color[4], pdf_obj **allowed)
 {
-	pdf_obj *obj = pdf_dict_get(ctx, annot->obj, key);
-	*n = 0;
-	if (pdf_is_array(ctx, obj))
+	pdf_obj *arr;
+	int len;
+
+	if (allowed)
+		check_allowed_subtypes(ctx, annot, key, allowed);
+
+	arr = pdf_dict_get(ctx, annot->obj, key);
+	len = pdf_array_len(ctx, arr);
+
+	switch (len)
 	{
-		switch (pdf_array_len(ctx, obj))
-		{
-		case 1:
+	case 0:
+		if (n)
+			*n = 0;
+		break;
+	case 1:
+	case 2:
+		if (n)
 			*n = 1;
-			color[0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-			break;
-		case 3:
+		if (color)
+			color[0] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 0));
+		break;
+	case 3:
+		if (n)
 			*n = 3;
-			color[0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-			color[1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
-			color[2] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 2));
-			break;
-		case 4:
-			*n = 4;
-			color[0] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 0));
-			color[1] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 1));
-			color[2] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 2));
-			color[3] = pdf_to_real(ctx, pdf_array_get(ctx, obj, 3));
-			break;
+		if (color)
+		{
+			color[0] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 0));
+			color[1] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 1));
+			color[2] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 2));
 		}
+		break;
+	case 4:
+	default:
+		if (n)
+			*n = 4;
+		if (color)
+		{
+			color[0] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 0));
+			color[1] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 1));
+			color[2] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 2));
+			color[3] = pdf_to_real(ctx, pdf_array_get(ctx, arr, 3));
+		}
+		break;
 	}
 }
 
 static void
-pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4])
+pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4], pdf_obj **allowed)
 {
 	pdf_document *doc = annot->page->doc;
-	pdf_obj *obj;
+	pdf_obj *arr;
+
+	if (allowed)
+		check_allowed_subtypes(ctx, annot, key, allowed);
 	if (n != 0 && n != 1 && n != 3 && n != 4)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color must be 0, 1, 3 or 4 components");
+	if (!color)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "no color given");
 
-	obj = pdf_new_array(ctx, doc, n);
-	switch (n)
+	arr = pdf_new_array(ctx, doc, n);
+	fz_try(ctx)
 	{
-	default:
-	case 0:
-		break;
-	case 1:
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[0]));
-		break;
-	case 3:
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[0]));
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[1]));
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[2]));
-		break;
-	case 4:
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[0]));
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[1]));
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[2]));
-		pdf_array_push_drop(ctx, obj, pdf_new_real(ctx, doc, color[3]));
-		break;
+		switch (n)
+		{
+		case 1:
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[0]), 0);
+			break;
+		case 3:
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[0]), 0);
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[1]), 1);
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[2]), 2);
+			break;
+		case 4:
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[0]), 0);
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[1]), 1);
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[2]), 2);
+			pdf_array_insert_drop(ctx, arr, pdf_new_real(ctx, doc, color[3]), 3);
+			break;
+		}
 	}
-	pdf_dict_put_drop(ctx, annot->obj, key, obj);
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, arr);
+		fz_rethrow(ctx);
+	}
+
+	pdf_dict_put_drop(ctx, annot->obj, key, arr);
 	annot->changed = 1;
 }
 
 void
 pdf_annot_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 {
-	pdf_annot_color_imp(ctx, annot, PDF_NAME_C, n, color);
+	pdf_annot_color_imp(ctx, annot, PDF_NAME_C, n, color, NULL);
 }
 
 void
 pdf_set_annot_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4])
 {
-	pdf_set_annot_color_imp(ctx, annot, PDF_NAME_C, n, color);
+	pdf_set_annot_color_imp(ctx, annot, PDF_NAME_C, n, color, NULL);
 }
+
+static pdf_obj *interior_color_subtypes[] = {
+	PDF_NAME_Circle,
+	PDF_NAME_Line,
+	PDF_NAME_PolyLine,
+	PDF_NAME_Polygon,
+	PDF_NAME_Square,
+	NULL,
+};
 
 void
 pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 {
-	// TODO: check annot type
-	pdf_annot_color_imp(ctx, annot, PDF_NAME_IC, n, color);
+	pdf_annot_color_imp(ctx, annot, PDF_NAME_IC, n, color, interior_color_subtypes);
 }
 
 void
 pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const float color[4])
 {
-	// TODO: check annot type
-	pdf_set_annot_color_imp(ctx, annot, PDF_NAME_IC, n, color);
+	pdf_set_annot_color_imp(ctx, annot, PDF_NAME_IC, n, color, interior_color_subtypes);
 }
+
+static pdf_obj *quad_point_subtypes[] = {
+	PDF_NAME_Highlight,
+	PDF_NAME_Link,
+	PDF_NAME_Squiggly,
+	PDF_NAME_StrikeOut,
+	PDF_NAME_Underline,
+	NULL,
+};
 
 int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_obj *quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);
+	pdf_obj *quad_points;
+	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
+	quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);
 	return pdf_array_len(ctx, quad_points);
 }
 
 void pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
 {
-	pdf_obj *quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);
-	pdf_obj *quad_point = pdf_array_get(ctx, quad_points, idx);
+	pdf_obj *quad_points;
+	pdf_obj *quad_point;
 	fz_matrix page_ctm;
 	int i;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
+
+	quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);
+	quad_point = pdf_array_get(ctx, quad_points, idx);
 
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 
@@ -403,7 +469,9 @@ pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float 
 	fz_point point;
 	int i, k;
 
-	// TODO: check annot type
+	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
+	if (n <= 0 || !v)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid number of quadrilaterals");
 
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 	fz_invert_matrix(&inv_page_ctm, &page_ctm);
@@ -424,33 +492,52 @@ pdf_set_annot_quad_points(fz_context *ctx, pdf_annot *annot, int n, const float 
 	annot->changed = 1;
 }
 
+static pdf_obj *ink_list_subtypes[] = {
+	PDF_NAME_Ink,
+	NULL,
+};
+
 int pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot)
 {
-	pdf_obj *ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
+	pdf_obj *ink_list;
+	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
 	return pdf_array_len(ctx, ink_list);
 }
 
 int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i)
 {
-	pdf_obj *ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
-	pdf_obj *stroke = pdf_array_get(ctx, ink_list, i);
+	pdf_obj *ink_list;
+	pdf_obj *stroke;
+	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
+	stroke = pdf_array_get(ctx, ink_list, i);
 	return pdf_array_len(ctx, stroke);
 }
 
 void pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k, float v[2])
 {
-	pdf_obj *ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
-	pdf_obj *stroke = pdf_array_get(ctx, ink_list, i);
+	pdf_obj *ink_list;
+	pdf_obj *stroke;
 	fz_matrix page_ctm;
-	fz_point point;
+	fz_point point = { 0, 0 };
 
-	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
 
-	point.x = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 0));
-	point.y = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 1));
-	fz_transform_point(&point, &page_ctm);
-	v[0] = point.x;
-	v[1] = point.y;
+	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
+	stroke = pdf_array_get(ctx, ink_list, i);
+
+	if (v)
+	{
+		pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+
+		point.x = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 0));
+		point.y = pdf_to_real(ctx, pdf_array_get(ctx, stroke, k * 2 + 1));
+		fz_transform_point(&point, &page_ctm);
+
+		v[0] = point.x;
+		v[1] = point.y;
+	}
 }
 
 void
@@ -462,8 +549,7 @@ pdf_set_annot_ink_list(fz_context *ctx, pdf_annot *annot, int n, const int *coun
 	fz_point point;
 	int i, k;
 
-	if (pdf_annot_type(ctx, annot) != PDF_ANNOT_INK)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot set InkList on non-ink annotations");
+	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
 
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 	fz_invert_matrix(&inv_page_ctm, &page_ctm);
