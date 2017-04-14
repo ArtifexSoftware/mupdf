@@ -275,14 +275,17 @@ fz_pixmap *fz_ensure_pixmap_is_additive(fz_context *ctx, fz_pixmap *pix);
 
 	pix: The pixmap to convert.
 
-	cs: Desired colorspace, may be NULL to denote alpha-only.
+	default_cs: If NULL pix->colorspace is used. It is possible that the data
+	may need to be interpreted as one of the color spaces in default_cs.
+
+	cs_des: Desired colorspace, may be NULL to denote alpha-only.
 
 	cs_params: Parameters that may be used in conversion (e.g. ri)
 
 	keep_alpha: If 0 any alpha component is removed, otherwise
 	alpha is kept if present in the pixmap.
 */
-fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *src, fz_color_params *cs_params, int keep_alpha);
+fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *cs_des, fz_page_default_cs *default_cs, fz_color_params *cs_params, int keep_alpha);
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a
@@ -359,9 +362,10 @@ void fz_decode_indexed_tile(fz_context *ctx, fz_pixmap *pix, const float *decode
 void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, int n, int depth, size_t stride, int scale);
 
 /*
-	fz_lookup_pixmap_converter: Color convert a pixmap.
+	fz_pixmap_converter: Color convert a pixmap. The passing of default_cs is needed due to the base cs of the image possibly
+	needing to be treated as being in one of the page default color spaces.
 */
-typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_color_params *cs_param);
+typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_page_default_cs *default_cs, fz_color_params *cs_param);
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
 
 /*

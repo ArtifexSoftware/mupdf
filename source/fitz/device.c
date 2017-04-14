@@ -521,3 +521,31 @@ fz_set_default_colorspace(fz_context *ctx, fz_device *dev, fz_page_default_cs *d
 	fz_drop_default_cs(ctx, dev->default_cs);
 	dev->default_cs = fz_keep_default_cs(ctx, default_cs);
 }
+
+/* Logic below assumes that default cs is set to color context cs if there
+ * was not a default in the document for that particular cs
+ */
+fz_colorspace* fz_device_get_cs(fz_context *ctx, fz_device *dev, fz_colorspace *cs)
+{
+	if (dev->default_cs == NULL)
+		return cs;
+
+	switch (fz_colorspace_n(ctx, cs))
+	{
+	case 1:
+		if (cs == fz_device_gray(ctx))
+			return fz_get_default_gray(ctx, dev->default_cs);
+		break;
+	case 3:
+		if (cs == fz_device_rgb(ctx))
+			return fz_device_rgb(ctx, dev->default_cs);
+		break;
+	case 4:
+		if (cs == fz_device_cmyk(ctx))
+			return fz_device_cmyk(ctx, dev->default_cs);
+		break;
+	default:
+		return cs;
+	}
+	return cs;
+}

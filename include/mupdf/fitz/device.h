@@ -152,6 +152,7 @@ void fz_end_tile(fz_context *ctx, fz_device *dev);
 void fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear);
 void fz_set_default_colorspace(fz_context *ctx, fz_device *dev, fz_page_default_cs *default_cs);
 fz_device *fz_new_device_of_size(fz_context *ctx, int size);
+fz_colorspace* fz_device_get_cs(fz_context *ctx, fz_device *dev, fz_colorspace *cs);
 
 #define fz_new_derived_device(CTX, TYPE) \
 	((TYPE *)Memento_label(fz_new_device_of_size(ctx,sizeof(TYPE)),#TYPE))

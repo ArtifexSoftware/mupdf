@@ -281,11 +281,15 @@ static inline fz_matrix concat(const fz_matrix *one, const fz_matrix *two)
 
 static void
 fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int even_odd, const fz_matrix *in_ctm,
-	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
+	fz_colorspace *colorspace_in, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
+	fz_colorspace *colorspace = NULL;
+
+	if (colorspace_in)
+		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -336,11 +340,15 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 
 static void
 fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *in_ctm,
-	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
+	fz_colorspace *colorspace_in, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
+	fz_colorspace *colorspace = NULL;
+
+	if (colorspace_in)
+		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -626,7 +634,7 @@ draw_glyph(unsigned char *colorbv, fz_pixmap *dst, fz_glyph *glyph,
 
 static void
 fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_matrix *in_ctm,
-	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
+	fz_colorspace *colorspace_in, fz_color_params *cs_param, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
@@ -637,6 +645,10 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	float colorfv[FZ_MAX_COLORS];
 	fz_text_span *span;
 	int i, n;
+	fz_colorspace *colorspace = NULL;
+
+	if (colorspace_in)
+		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -717,7 +729,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 
 static void
 fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *in_ctm, fz_colorspace *colorspace, fz_color_params *cs_param,
+	const fz_matrix *in_ctm, fz_colorspace *colorspace_in, fz_color_params *cs_param,
 	const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
@@ -728,6 +740,10 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	float colorfv[FZ_MAX_COLORS];
 	fz_text_span *span;
 	int i, n;
+	fz_colorspace *colorspace = NULL;
+
+	if (colorspace_in)
+		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -1096,7 +1112,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, fz_cs_params(ctx), model, colorfv, shade->colorspace, shade->background);
+			fz_convert_color(ctx, fz_cs_params(ctx), model, colorfv, fz_device_get_cs(ctx, devp, shade->colorspace), shade->background);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}
@@ -1231,6 +1247,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	fz_irect clip;
 	fz_matrix inverse;
 	fz_irect src_area;
+	fz_colorspace *src_cs = fz_device_get_cs(ctx, devp, image->colorspace);
 
 	fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
 
@@ -1286,12 +1303,12 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			state = fz_knockout_begin(ctx, dev);
 
 		after = 0;
-		if (pixmap->colorspace == fz_device_gray(ctx))
+		if (src_cs == fz_device_gray(ctx))
 			after = 1;
 
-		if (pixmap->colorspace != model && !after)
+		if (src_cs != model && !after)
 		{
-			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, cs_params, 1);
+			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, devp->default_cs, cs_params, 1);
 			fz_drop_pixmap(ctx, pixmap);
 			pixmap = converted;
 		}
@@ -1315,18 +1332,18 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			}
 		}
 
-		if (pixmap->colorspace != model)
+		if (src_cs != model)
 		{
 #if FZ_PLOTTERS_RGB
-			if ((pixmap->colorspace == fz_device_gray(ctx) && model == fz_device_rgb(ctx)) ||
-				(pixmap->colorspace == fz_device_gray(ctx) && model == fz_device_bgr(ctx)))
+			if ((src_cs == fz_device_gray(ctx) && model == fz_device_rgb(ctx)) ||
+				(src_cs == fz_device_gray(ctx) && model == fz_device_bgr(ctx)))
 			{
 				/* We have special case rendering code for gray -> rgb/bgr */
 			}
 			else
 #endif
 			{
-				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, cs_params, 1);
+				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, devp->default_cs, cs_params, 1);
 				fz_drop_pixmap(ctx, pixmap);
 				pixmap = converted;
 			}
@@ -1345,7 +1362,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 static void
 fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *in_ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace_in, const float *color, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix local_ctm = concat(in_ctm, &dev->transform);
@@ -1360,6 +1377,10 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_irect clip;
 	fz_matrix inverse;
 	fz_irect src_area;
+	fz_colorspace *colorspace = NULL;
+
+	if (colorspace_in)
+		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -1629,7 +1650,7 @@ fz_draw_pop_clip(fz_context *ctx, fz_device *devp)
 }
 
 static void
-fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int luminosity, fz_colorspace *colorspace, const float *colorfv)
+fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int luminosity, fz_colorspace *colorspace_in, const float *colorfv)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_pixmap *dest;
@@ -1637,6 +1658,10 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 	fz_draw_state *state = push_stack(ctx, dev);
 	fz_pixmap *shape = state->shape;
 	fz_rect trect = *rect;
+	fz_colorspace *colorspace = NULL;
+
+	if (colorspace_in)
+		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 
 	STACK_PUSHED("mask");
 	fz_transform_rect(&trect, &dev->transform);
