@@ -3786,11 +3786,13 @@ static void ffi_PDFPage_createAnnotation(js_State *J)
 	pdf_page *page = js_touserdata(J, 0, "pdf_page");
 	const char *name = js_tostring(J, 1);
 	pdf_annot *annot;
-	int subtype = pdf_annot_type_from_string(name);
-	if (subtype < 0)
-		js_error(J, "unknown PDF annotation subtype: %s", name);
+	int subtype;
+
 	fz_try(ctx)
+	{
+		subtype = pdf_annot_type_from_string(ctx, name);
 		annot = pdf_create_annot(ctx, page, subtype);
+	}
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushannot(J, (fz_annot*)annot);
@@ -3811,12 +3813,16 @@ static void ffi_PDFAnnotation_getType(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	int subtype;
+	int type;
+	const char *subtype;
 	fz_try(ctx)
-		subtype = pdf_annot_type(ctx, annot);
+	{
+		type = pdf_annot_type(ctx, annot);
+		subtype = pdf_string_from_annot_type(ctx, type);
+	}
 	fz_catch(ctx)
 		rethrow(J);
-	js_pushstring(J, pdf_string_from_annot_type(subtype));
+	js_pushstring(J, subtype);
 }
 
 static void ffi_PDFAnnotation_getFlags(js_State *J)
@@ -3934,9 +3940,7 @@ static void ffi_PDFAnnotation_setColor(js_State *J)
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	int i, n = js_getlength(J, 1);
 	float color[4];
-	if (n != 0 && n != 1 && n != 3 && n != 4)
-		js_error(J, "color must be 0, 1, 3, or 4 components");
-	for (i = 0; i < n; ++i) {
+	for (i = 0; i < n && i < 4; ++i) {
 		js_getindex(J, 1, i);
 		color[i] = js_tonumber(J, -1);
 		js_pop(J, 1);
@@ -3970,9 +3974,7 @@ static void ffi_PDFAnnotation_setInteriorColor(js_State *J)
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	int i, n = js_getlength(J, 1);
 	float color[4];
-	if (n != 0 && n != 1 && n != 3 && n != 4)
-		js_error(J, "color must be 0, 1, 3, or 4 components");
-	for (i = 0; i < n; ++i) {
+	for (i = 0; i < n && i < 4; ++i) {
 		js_getindex(J, 1, i);
 		color[i] = js_tonumber(J, -1);
 		js_pop(J, 1);

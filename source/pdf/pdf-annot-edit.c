@@ -2,7 +2,7 @@
 
 #define TEXT_ANNOT_SIZE (25.0)
 
-const char *pdf_string_from_annot_type(fz_annot_type type)
+const char *pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type)
 {
 	switch (type)
 	{
@@ -31,11 +31,11 @@ const char *pdf_string_from_annot_type(fz_annot_type type)
 	case PDF_ANNOT_TRAP_NET: return "TrapNet";
 	case PDF_ANNOT_WATERMARK: return "Watermark";
 	case PDF_ANNOT_3D: return "3D";
-	default: return "Unknown";
+	default: return "UNKNOWN";
 	}
 }
 
-int pdf_annot_type_from_string(const char *subtype)
+int pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 {
 	if (!strcmp("Text", subtype)) return PDF_ANNOT_TEXT;
 	if (!strcmp("Link", subtype)) return PDF_ANNOT_LINK;
@@ -79,8 +79,14 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
 	{
 		int ind_obj_num;
 		fz_rect rect = {0.0, 0.0, 0.0, 0.0};
-		const char *type_str = pdf_string_from_annot_type(type);
-		pdf_obj *annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME_Annots);
+		const char *type_str;
+		pdf_obj *annot_arr;
+
+		type_str = pdf_string_from_annot_type(ctx, type);
+		if (type == PDF_ANNOT_UNKNOWN)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot create unknown annotation");
+
+		annot_arr = pdf_dict_get(ctx, page->obj, PDF_NAME_Annots);
 		if (annot_arr == NULL)
 		{
 			annot_arr = pdf_new_array(ctx, doc, 0);
@@ -188,7 +194,7 @@ pdf_annot_type(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *obj = annot->obj;
 	pdf_obj *subtype = pdf_dict_get(ctx, obj, PDF_NAME_Subtype);
-	return pdf_annot_type_from_string(pdf_to_name(ctx, subtype));
+	return pdf_annot_type_from_string(ctx, pdf_to_name(ctx, subtype));
 }
 
 int
@@ -307,7 +313,11 @@ static void
 pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4])
 {
 	pdf_document *doc = annot->page->doc;
-	pdf_obj *obj = pdf_new_array(ctx, doc, 4);
+	pdf_obj *obj;
+	if (n != 0 && n != 1 && n != 3 && n != 4)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "color must be 0, 1, 3 or 4 components");
+
+	obj = pdf_new_array(ctx, doc, n);
 	switch (n)
 	{
 	default:

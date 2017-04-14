@@ -31,8 +31,8 @@ typedef enum
 	PDF_ANNOT_UNKNOWN = -1
 } fz_annot_type;
 
-const char *pdf_string_from_annot_type(fz_annot_type type);
-int pdf_annot_type_from_string(const char *subtype);
+const char *pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type);
+int pdf_annot_type_from_string(fz_context *ctx, const char *subtype);
 
 enum
 {
