@@ -153,6 +153,7 @@ void fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx);
 fz_colorspace * fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name);
 fz_colorspace * fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
 int fz_create_icc_from_cal(fz_context *ctx, unsigned char **buffer, fz_cal_color *cal);
+unsigned char * fz_get_icc_data(fz_context *ctx, fz_colorspace *cs, int *size);
 
 void fz_color_param_init(fz_color_params *cs_param);
 

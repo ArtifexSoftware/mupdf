@@ -803,7 +803,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 						bander = fz_new_color_pcl_band_writer(ctx, out, NULL);
 				}
 				if (bander)
+				{
 					fz_write_header(ctx, bander, pix->w, totalheight, pix->n, pix->alpha, pix->xres, pix->yres, output_pagenum++);
+					fz_write_icc(ctx, bander, pix->colorspace);
+				}
 			}
 
 			for (band = 0; band < bands; band++)

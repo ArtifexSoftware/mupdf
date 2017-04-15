@@ -407,6 +407,13 @@ void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int 
 	writer->header(ctx, writer);
 }
 
+void fz_write_icc(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs)
+{
+	if (writer == NULL || writer->band == NULL || writer->icc == NULL || cs == NULL)
+		return;
+	writer->icc(ctx, writer, cs);
+}
+
 void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_height, const unsigned char *samples)
 {
 	if (writer == NULL || writer->band == NULL)

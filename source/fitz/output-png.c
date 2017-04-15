@@ -119,6 +119,56 @@ png_write_header(fz_context *ctx, fz_band_writer *writer_)
 }
 
 static void
+png_write_icc(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
+{
+	png_band_writer *writer = (png_band_writer *)(void *)writer_;
+	fz_output *out = writer->super.out;
+	int profile_size, size;
+	unsigned char *data = fz_get_icc_data(ctx, cs, &profile_size);
+	unsigned char *chunk, *pos, *cdata;
+	size_t bound;
+	uLongf csize;
+	uLong long_size = (uLong)profile_size;
+	int t;
+
+	if (!data)
+		return;
+
+	/* Deflate the profile */
+	bound = compressBound(profile_size);
+	cdata = fz_malloc(ctx, bound);
+	csize = (uLongf)bound;
+	t = compress(cdata, &csize, data, long_size);
+	if (t != Z_OK)
+	{
+		fz_free(ctx, cdata);
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot deflate icc buffer");
+	}
+	size = csize + strlen("MuPDF Profile") + 2;
+
+	fz_var(cdata);
+
+	fz_try(ctx)
+	{
+		chunk = fz_calloc(ctx, size, 1);
+		pos = chunk;
+		memcpy(chunk, "MuPDF Profile", strlen("MuPDF Profile"));
+		pos += strlen("MuPDF Profile") + 2;
+		memcpy(pos, cdata, csize);
+		putchunk(ctx, out, "iCCP", chunk, size);
+	}
+	fz_always(ctx)
+	{
+		fz_free(ctx, cdata);
+		fz_free(ctx, chunk);
+	}
+	fz_catch(ctx)
+	{
+		/* Nothing */
+	}
+}
+
+static void
 png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_start, int band_height, const unsigned char *sp)
 {
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
@@ -231,6 +281,7 @@ fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out)
 	writer->super.header = png_write_header;
 	writer->super.band = png_write_band;
 	writer->super.trailer = png_write_trailer;
+	writer->super.icc = png_write_icc;
 	writer->super.drop = png_drop_band_writer;
 
 	return &writer->super;

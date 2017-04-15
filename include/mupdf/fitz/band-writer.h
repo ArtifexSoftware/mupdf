@@ -13,6 +13,7 @@ typedef struct fz_band_writer_s fz_band_writer;
 typedef void (fz_write_header_fn)(fz_context *ctx, fz_band_writer *writer);
 typedef void (fz_write_band_fn)(fz_context *ctx, fz_band_writer *writer, int stride, int band_start, int band_height, const unsigned char *samples);
 typedef void (fz_write_trailer_fn)(fz_context *ctx, fz_band_writer *writer);
+typedef void (fz_write_icc_fn)(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs);
 typedef void (fz_drop_band_writer_fn)(fz_context *ctx, fz_band_writer *writer);
 
 struct fz_band_writer_s
@@ -21,6 +22,7 @@ struct fz_band_writer_s
 	fz_write_header_fn *header;
 	fz_write_band_fn *band;
 	fz_write_trailer_fn *trailer;
+	fz_write_icc_fn *icc;
 	fz_output *out;
 	int w;
 	int h;
@@ -54,6 +56,13 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 	Throws exception if incompatible data format.
 */
 void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum);
+
+
+/*
+	fz_write_icc: Cause a band writer to write the icc profile for
+	a banded image assuming the format supports icc profiles.
+*/
+void fz_write_icc(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs);
 
 /*
 	fz_write_band: Cause a band writer to write the next band
