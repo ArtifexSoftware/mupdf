@@ -4923,7 +4923,7 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 	}
 	fz_catch(ctx)
 	{
-		jni_throw_oom(env, "out of memory in MuPDFCore_textAsHtml");
+		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
