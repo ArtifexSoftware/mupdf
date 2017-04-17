@@ -251,8 +251,11 @@ static void fz_throw_java(fz_context *ctx, JNIEnv *env)
 	jthrowable ex = (*env)->ExceptionOccurred(env);
 	if (ex)
 	{
+		(*env)->ExceptionClear(env);
 		jobject msg = (*env)->CallObjectMethod(env, ex, mid_Object_toString);
-		if (!(*env)->ExceptionCheck(env) && msg)
+		if ((*env)->ExceptionCheck(env))
+			(*env)->ExceptionClear(env);
+		else if (msg)
 		{
 			const char *p = (*env)->GetStringUTFChars(env, msg, NULL);
 			if (p)
