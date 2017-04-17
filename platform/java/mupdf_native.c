@@ -1005,26 +1005,6 @@ FUN(Context_gprfSupportedNative)(JNIEnv * env, jclass class)
 
 /* Conversion functions: C to Java. These all throw fitz exceptions. */
 
-static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *annot)
-{
-	jobject jannot;
-	pdf_annot *pannot;
-
-	if (!ctx || !annot) return NULL;
-
-	fz_keep_annot(ctx, annot);
-
-	pannot = pdf_annot_from_fz_annot(ctx, annot);
-	if (pannot)
-		jannot = (*env)->NewObject(env, cls_PDFAnnotation, mid_PDFAnnotation_init, jlong_cast(annot));
-	else
-		jannot = (*env)->NewObject(env, cls_Annotation, mid_Annotation_init, jlong_cast(annot));
-	if (!jannot)
-		fz_throw_java(ctx, env);
-
-	return jannot;
-}
-
 static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace *cs)
 {
 	jobject jcs;
@@ -1153,6 +1133,24 @@ static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const flo
 }
 
 /* Conversion functions: C to Java. None of these throw fitz exceptions. */
+
+static inline jobject to_Annotation_safe(fz_context *ctx, JNIEnv *env, fz_annot *annot)
+{
+	jobject jannot;
+	pdf_annot *pannot;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_keep_annot(ctx, annot);
+
+	pannot = pdf_annot_from_fz_annot(ctx, annot);
+	if (pannot)
+		jannot = (*env)->NewObject(env, cls_PDFAnnotation, mid_PDFAnnotation_init, jlong_cast(annot));
+	else
+		jannot = (*env)->NewObject(env, cls_Annotation, mid_Annotation_init, jlong_cast(annot));
+
+	return jannot;
+}
 
 static inline jobject to_ColorSpace_safe(fz_context *ctx, JNIEnv *env, fz_colorspace *cs)
 {
@@ -4874,7 +4872,7 @@ FUN(Page_getAnnotations)(JNIEnv *env, jobject self)
 	annot = annots;
 	for (i = 0; annot && i < annot_count; i++)
 	{
-		jobject jannot = to_Annotation(ctx, env, annot);
+		jobject jannot = to_Annotation_safe(ctx, env, annot);
 		if (!jannot) return NULL;
 
 		(*env)->SetObjectArrayElement(env, jannots, i, jannot);
