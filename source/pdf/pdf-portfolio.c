@@ -514,7 +514,7 @@ pdf_obj *pdf_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 		if (ef)
 			obj = pdf_dict_getl(ctx, obj, PDF_NAME_EF, PDF_NAME_F, PDF_NAME_Params, NULL);
 		res = pdf_dict_get(ctx, obj, lookup);
-		if (res == NULL && lookup == PDF_NAME_UF)
+		if (res == NULL && pdf_name_eq(ctx, lookup, PDF_NAME_UF))
 			res = pdf_dict_get(ctx, obj, PDF_NAME_F);
 		return res;
 	}
@@ -715,7 +715,7 @@ void pdf_set_portfolio_entry_info(fz_context *ctx, pdf_document *doc, int entry,
 		if (ef)
 			obj = pdf_dict_getl(ctx, obj, PDF_NAME_EF, PDF_NAME_F, PDF_NAME_Params, NULL);
 		pdf_dict_put(ctx, obj, lookup, data);
-		if (lookup == PDF_NAME_UF)
+		if (pdf_name_eq(ctx, lookup, PDF_NAME_UF))
 			pdf_dict_put(ctx, obj, PDF_NAME_F, data);
 		return;
 	}
