@@ -4525,14 +4525,18 @@ FUN(Page_getSeparation)(JNIEnv *env, jobject self, jint sep)
 	char rgba[4];
 	unsigned int bgra;
 	unsigned int cmyk;
-	jobject jname;
+	jobject jname = NULL;
 
 	if (!ctx || !page) return NULL;
 
 	/* MuPDF returns RGBA as bytes. Android wants a packed BGRA int. */
 	name = fz_get_separation_on_page(ctx, page, sep, (unsigned int *)(&rgba[0]), &cmyk);
 	bgra = (rgba[0] << 16) | (rgba[1]<<8) | rgba[2] | (rgba[3]<<24);
-	jname = name ? (*env)->NewStringUTF(env, name) : NULL;
+	if (name)
+	{
+		jname = (*env)->NewStringUTF(env, name);
+		if (!jname) return NULL;
+	}
 
 	return (*env)->NewObject(env, cls_Separation, mid_Separation_init, jname, bgra, cmyk);
 }
