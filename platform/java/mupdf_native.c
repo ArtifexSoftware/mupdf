@@ -969,112 +969,112 @@ static inline jobject to_Annotation(fz_context *ctx, JNIEnv *env, fz_annot *anno
 
 static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace *cs)
 {
-	jobject jobj;
+	jobject jcs;
 
 	if (!ctx || !cs) return NULL;
 
 	fz_keep_colorspace(ctx, cs);
-	jobj = (*env)->CallStaticObjectMethod(env, cls_ColorSpace, mid_ColorSpace_fromPointer, jlong_cast(cs));
-	if ((*env)->ExceptionCheck(env) || !jobj)
+	jcs = (*env)->CallStaticObjectMethod(env, cls_ColorSpace, mid_ColorSpace_fromPointer, jlong_cast(cs));
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jcs;
 }
 
 static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 {
-	jobject jobj;
+	jobject jimg;
 
 	if (!ctx || !img) return NULL;
 
 	fz_keep_image(ctx, img);
-	jobj = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
-	if (!jobj)
+	jimg = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
+	if (!jimg)
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jimg;
 }
 
 static inline jobject to_Matrix(fz_context *ctx, JNIEnv *env, const fz_matrix *mat)
 {
-	jobject jobj;
+	jobject jctm;
 
 	if (!ctx) return NULL;
 
-	jobj = (*env)->NewObject(env, cls_Matrix, mid_Matrix_init, mat->a, mat->b, mat->c, mat->d, mat->e, mat->f);
-	if (!jobj)
+	jctm = (*env)->NewObject(env, cls_Matrix, mid_Matrix_init, mat->a, mat->b, mat->c, mat->d, mat->e, mat->f);
+	if (!jctm)
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jctm;
 }
 
 static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
 {
-	jobject jobj;
+	jobject jpath;
 
 	if (!ctx || !path) return NULL;
 
 	fz_keep_path(ctx, path);
-	jobj = (*env)->NewObject(env, cls_Path, mid_Path_init, jlong_cast(path));
-	if (!jobj)
+	jpath = (*env)->NewObject(env, cls_Path, mid_Path_init, jlong_cast(path));
+	if (!jpath)
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jpath;
 }
 
 static inline jobject to_Rect(fz_context *ctx, JNIEnv *env, const fz_rect *rect)
 {
-	jobject jobj;
+	jobject jrect;
 
 	if (!ctx) return NULL;
 
-	jobj = (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
-	if (!jobj)
+	jrect = (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
+	if (!jrect)
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jrect;
 }
 
 static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shd)
 {
-	jobject jobj;
+	jobject jshd;
 
 	if (!ctx || !shd) return NULL;
 
 	fz_keep_shade(ctx, shd);
-	jobj = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
-	if (!jobj)
+	jshd = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
+	if (!jshd)
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jshd;
 }
 
 static inline jobject to_StrokeState(fz_context *ctx, JNIEnv *env, const fz_stroke_state *state)
 {
-	jobject jobj;
+	jobject jstate;
 
 	if (!ctx || !state) return NULL;
 
 	fz_keep_stroke_state(ctx, state);
-	jobj = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
-	if (!jobj)
+	jstate = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
+	if (!jstate)
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jstate;
 }
 
 static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
 {
-	jobject jobj;
+	jobject jtext;
 
 	if (!ctx) return NULL;
 
 	fz_keep_text(ctx, text);
-	jobj = (*env)->NewObject(env, cls_Text, mid_Text_init, jlong_cast(text));
-	if (!jobj)
+	jtext = (*env)->NewObject(env, cls_Text, mid_Text_init, jlong_cast(text));
+	if (!jtext)
 		fz_throw_java(ctx, env);
 
-	return jobj;
+	return jtext;
 }
 
 static inline jfloatArray to_jfloatArray(fz_context *ctx, JNIEnv *env, const float *color, jint n)
