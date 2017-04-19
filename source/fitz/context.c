@@ -292,7 +292,11 @@ fz_clone_context_internal(fz_context *ctx)
 	new_ctx->glyph_cache = ctx->glyph_cache;
 	new_ctx->glyph_cache = fz_keep_glyph_cache(new_ctx);
 	new_ctx->colorspace = ctx->colorspace;
+#ifdef NO_ICC
 	new_ctx->colorspace = fz_keep_colorspace_context(new_ctx);
+#else
+	fz_new_colorspace_context(new_ctx);
+#endif
 	new_ctx->font = ctx->font;
 	new_ctx->font = fz_keep_font_context(new_ctx);
 	new_ctx->style = ctx->style;

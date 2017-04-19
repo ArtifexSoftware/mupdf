@@ -587,6 +587,16 @@ struct fz_colorspace_context_s
 	void *cmm;
 };
 
+/* Make sure that the cloned context gets a new cmm context. */
+void fz_new_cmm_ctx(fz_context *ctx)
+{
+#ifdef NO_ICC
+	return;
+#else
+	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
+#endif
+}
+
 void fz_new_colorspace_context(fz_context *ctx)
 {
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
@@ -623,6 +633,7 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		return;
 	if (fz_drop_imp(ctx, ctx->colorspace, &ctx->colorspace->ctx_refs))
 	{
+		fz_cmm_free_ctx(ctx->colorspace->cmm);
 		fz_free(ctx, ctx->colorspace);
 		ctx->colorspace = NULL;
 	}
@@ -2131,7 +2142,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	}
 }
 
-static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_color_params *cs_params)
+static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
 {
 	if (!src->alpha)
 		fz_clear_pixmap_with_value(ctx, dst, 255);

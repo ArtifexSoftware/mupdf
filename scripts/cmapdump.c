@@ -227,6 +227,10 @@ void fz_new_colorspace_context(fz_context *ctx)
 {
 }
 
+void fz_new_cmm_ctx(fz_context *ctx)
+{
+}
+
 void fz_drop_colorspace_context(fz_context *ctx)
 {
 }

@@ -5,6 +5,8 @@
 #include "mupdf/fitz/color-lcms.h"
 
 #define LCMS_BYTES_MASK 0x7
+/* #define DEBUG_LCMS_MEM(A) do { printf A; fflush(stdout); } while (0) */
+#define DEBUG_LCMS_MEM(A) do { } while (0)
 
 static void
 fz_cmm_error(cmsContext id, cmsUInt32Number error_code, const char *error_text)
@@ -16,14 +18,18 @@ fz_cmm_error(cmsContext id, cmsUInt32Number error_code, const char *error_text)
 static void
 *fz_cmm_malloc(cmsContext id, unsigned int size)
 {
+	void *result;
 	fz_context *ctx = (fz_context *)cmsGetContextUserData(id);
-	return fz_malloc_no_throw(ctx, size);
+	result = fz_malloc_no_throw(ctx, size);
+	DEBUG_LCMS_MEM(("Allocation::  mupdf ctx = %p lcms ctx = %p allocation = %p \n", (void*) ctx, (void*) id, (void*) result));
+	return result;
 }
 
 static void
 fz_cmm_free(cmsContext id, void *ptr)
 {
 	fz_context *ctx = (fz_context *)cmsGetContextUserData(id);
+	DEBUG_LCMS_MEM(("Free:: mupdf ctx = %p lcms ctx = %p allocation = %p \n", (void*) ctx, (void*) id, (void*) ptr));
 	fz_free(ctx, ptr);
 }
 
@@ -31,7 +37,7 @@ static void*
 fz_cmm_realloc(cmsContext id, void *ptr, unsigned int size)
 {
 	fz_context *ctx = (fz_context *)cmsGetContextUserData(id);
-
+	DEBUG_LCMS_MEM(("Realloc:: mupdf ctx = %p lcms ctx = %p allocation = %p \n", (void*) ctx, (void*) id, (void*) ptr));
 	if (ptr == 0)
 		return fz_cmm_malloc(id, size);
 	if (size == 0)
@@ -160,13 +166,17 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cm
 
 	/* create */
 	link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->ri, flag);
+	DEBUG_LCMS_MEM(("Create Link:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*) link, (void*) link->cmm_handle, (void*)src->cmm_handle, (void*)dst->cmm_handle));
 }
 
 void
 fz_cmm_free_link(fz_icclink *link)
 {
 	if (link->cmm_handle != NULL)
+	{
+		DEBUG_LCMS_MEM(("Free Link:: link = %p \n", (void*)link->cmm_handle));
 		cmsDeleteTransform(link->cmm_handle);
+	}
 	link->cmm_handle = NULL;
 }
 
@@ -178,6 +188,7 @@ fz_cmm_new_ctx(fz_context *ctx)
 	cmm_ctx = cmsCreateContext((void *)&fz_cmm_memhandler, ctx);
 	if (cmm_ctx == NULL)
 		return NULL;
+	DEBUG_LCMS_MEM(("Context Creation:: mupdf ctx = %p lcms ctx = %p \n", (void*) ctx, (void*) cmm_ctx));
 	cmsSetLogErrorHandlerTHR(cmm_ctx, fz_cmm_error);
 	return cmm_ctx;
 }
@@ -185,6 +196,7 @@ fz_cmm_new_ctx(fz_context *ctx)
 void
 fz_cmm_free_ctx(void *ctx)
 {
+	DEBUG_LCMS_MEM(("Context Destruction:: lcms ctx = %p \n", (void*) ctx));
 	if (ctx == NULL)
 		return;
 	cmsDeleteContext(ctx);
@@ -209,13 +221,16 @@ fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 		profile->num_devcomp = fz_cmm_num_devcomps(profile);
 	else
 		profile->num_devcomp = 0;
-
+	DEBUG_LCMS_MEM(("Create Profile:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)profile, (void*)profile->cmm_handle));
 }
 
 void
 fz_cmm_free_profile(fz_iccprofile *profile)
 {
 	if (profile->cmm_handle != NULL)
+	{
+		DEBUG_LCMS_MEM(("Free Profile:: profile = %p \n", (void*) profile->cmm_handle));
 		cmsCloseProfile(profile->cmm_handle);
+	}
 	profile->cmm_handle = NULL;
 }
