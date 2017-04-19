@@ -527,6 +527,9 @@ fz_set_default_colorspace(fz_context *ctx, fz_device *dev, fz_page_default_cs *d
  */
 fz_colorspace* fz_device_get_cs(fz_context *ctx, fz_device *dev, fz_colorspace *cs)
 {
+	if (cs == NULL)
+		return NULL;
+
 	if (dev->default_cs == NULL)
 		return cs;
 

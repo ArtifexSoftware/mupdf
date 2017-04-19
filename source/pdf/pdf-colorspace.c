@@ -78,7 +78,7 @@ free_separation(fz_context *ctx, fz_colorspace *cs)
 }
 
 static fz_colorspace *
-base_separation(fz_colorspace *cs)
+base_separation(const fz_colorspace *cs)
 {
 	struct separation *sep = cs->data;
 

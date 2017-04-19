@@ -551,7 +551,7 @@ rgb_to_lab(fz_context *ctx, fz_colorspace *cs, const float *rgb, float *lab)
 
 /* This could be different for a, b */
 static void
-clamp_lab(fz_colorspace *cs, const float *src, float *dst)
+clamp_lab(const fz_colorspace *cs, const float *src, float *dst)
 {
 	int i;
 
@@ -2529,7 +2529,7 @@ free_indexed(fz_context *ctx, fz_colorspace *cs)
 }
 
 static fz_colorspace *
-base_indexed(fz_colorspace *cs)
+base_indexed(const fz_colorspace *cs)
 {
 	struct indexed *idx = cs->data;
 
@@ -2537,7 +2537,7 @@ base_indexed(fz_colorspace *cs)
 }
 
 static void
-clamp_indexed(const fz_colorspace *cs, float *in, float *out)
+clamp_indexed(const fz_colorspace *cs, const float *in, float *out)
 {
 	struct indexed *idx = cs->data;
 
@@ -2775,7 +2775,11 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		profile = fz_malloc_struct(ctx, fz_iccprofile);
 		profile->buffer = buf;
 		if (name != NULL)
-			profile->res_buffer = fz_lookup_icc(ctx, name, &profile->res_size);
+		{
+			union {void *v; const void *vu;} u;
+			u.vu = fz_lookup_icc(ctx, name, &profile->res_size);
+			profile->res_buffer = u.v; /* Nasty way to cast away const */
+		}
 		fz_cmm_new_profile(ctx, profile);
 
 		/* Check if profile was valid and is correct type */

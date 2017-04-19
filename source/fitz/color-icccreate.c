@@ -152,7 +152,7 @@ static void
 add_desc_tag(unsigned char *buffer, const char text[], fz_icc_tag tag_list[], int curr_tag)
 {
 	unsigned char *curr_ptr;
-	int len = strlen(text) + 1;
+	int len = strlen(text);
 	int k;
 
 	curr_ptr = buffer;
@@ -160,9 +160,9 @@ add_desc_tag(unsigned char *buffer, const char text[], fz_icc_tag tag_list[], in
 	curr_ptr += 4;
 	memset(curr_ptr, 0, 4);
 	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, len);
+	write_bigendian_4bytes(curr_ptr, len+1);
 	curr_ptr += 4;
-	for (k = 0; k < strlen(text); k++)
+	for (k = 0; k < len; k++)
 		*curr_ptr++ = text[k];
 	memset(curr_ptr, 0, 12 + 67 + 1);
 	memset(curr_ptr, 0, tag_list[curr_tag].byte_padding);
@@ -172,13 +172,14 @@ static void
 add_text_tag(unsigned char *buffer, const char text[], fz_icc_tag tag_list[], int curr_tag)
 {
 	unsigned char *curr_ptr = buffer;
+	int len = strlen(text);
 	int k;
 
 	write_bigendian_4bytes(curr_ptr, icSigTextType);
 	curr_ptr += 4;
 	memset(curr_ptr, 0, 4);
 	curr_ptr += 4;
-	for (k = 0; k < strlen(text); k++)
+	for (k = 0; k < len; k++)
 		*curr_ptr++ = text[k];
 	memset(curr_ptr, 0, 1);
 	memset(curr_ptr, 0, tag_list[curr_tag].byte_padding);  /* padding */

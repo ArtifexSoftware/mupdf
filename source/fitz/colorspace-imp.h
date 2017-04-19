@@ -20,7 +20,7 @@ struct fz_iccprofile_s
 {
 	int num_devcomp;
 	fz_buffer *buffer;
-	const char *res_buffer;
+	char *res_buffer;
 	size_t res_size;
 	unsigned char md5[16];
 	void *cmm_handle;

@@ -97,7 +97,7 @@ typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, cons
 
 typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
 
-typedef fz_colorspace* (fz_colorspace_base_cs_fn)(fz_colorspace *cs);
+typedef fz_colorspace* (fz_colorspace_base_cs_fn)(const fz_colorspace *cs);
 
 typedef void (fz_colorspace_clamp_fn)(const fz_colorspace *cs, const float *src, float *dst);
 

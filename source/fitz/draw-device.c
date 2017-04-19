@@ -286,11 +286,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
-	fz_colorspace *colorspace = NULL;
-
-	if (colorspace_in)
-		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
-
+	fz_colorspace *colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
@@ -345,11 +341,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
-	fz_colorspace *colorspace = NULL;
-
-	if (colorspace_in)
-		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
-
+	fz_colorspace *colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	float linewidth = stroke->linewidth;
