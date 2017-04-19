@@ -538,11 +538,11 @@ fz_colorspace* fz_device_get_cs(fz_context *ctx, fz_device *dev, fz_colorspace *
 		break;
 	case 3:
 		if (cs == fz_device_rgb(ctx))
-			return fz_device_rgb(ctx, dev->default_cs);
+			return fz_get_default_rgb(ctx, dev->default_cs);
 		break;
 	case 4:
 		if (cs == fz_device_cmyk(ctx))
-			return fz_device_cmyk(ctx, dev->default_cs);
+			return fz_get_default_cmyk(ctx, dev->default_cs);
 		break;
 	default:
 		return cs;
