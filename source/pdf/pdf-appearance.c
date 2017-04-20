@@ -1807,15 +1807,6 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 		int n, m, i, j;
 		int empty = 1;
 
-		cs = pdf_to_color(ctx, doc, pdf_dict_get(ctx, annot->obj, PDF_NAME_C), color);
-		if (!cs)
-		{
-			cs = fz_device_rgb(ctx);
-			color[0] = 1.0f;
-			color[1] = 0.0f;
-			color[2] = 0.0f;
-		}
-
 		width = pdf_annot_border(ctx, annot);
 		if (width == 0.0f)
 			width = 1.0f;
@@ -1864,6 +1855,7 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 			fz_lineto(ctx, path, pt_last.x, pt_last.y);
 		}
 
+		cs = pdf_to_color(ctx, doc, pdf_dict_get(ctx, annot->obj, PDF_NAME_C), color);
 		fz_stroke_path(ctx, dev, path, stroke, &page_ctm, cs, color, 1.0f);
 
 		fz_expand_rect(&rect, width);
