@@ -29,6 +29,10 @@ public class Matrix
 		this(1, 0, 0, 1, 0, 0);
 	}
 
+	public Matrix(Matrix copy) {
+		this(copy.a, copy.b, copy.c, copy.d, copy.e, copy.f);
+	}
+
 	public Matrix(Matrix one, Matrix two) {
 		a = one.a * two.a + one.b * two.c;
 		b = one.a * two.b + one.b * two.d;
