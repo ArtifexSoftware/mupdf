@@ -3905,10 +3905,6 @@ FUN(Text_walk)(JNIEnv *env, jobject self, jobject walker)
 	if (text->head == NULL)
 		return; /* text has no spans to walk */
 
-	/* TODO: We reuse the same Matrix object for each call, but should we? */
-	jtrm = (*env)->NewObject(env, cls_Matrix, mid_Matrix_init, 1, 0, 0, 1, 0, 0);
-	if (!jtrm) return;
-
 	for (span = text->head; span; span = span->next)
 	{
 		if (font != span->font)
@@ -3920,23 +3916,21 @@ FUN(Text_walk)(JNIEnv *env, jobject self, jobject walker)
 			if (!jfont) return;
 		}
 
-		(*env)->SetFloatField(env, jtrm, fid_Matrix_a, span->trm.a);
-		(*env)->SetFloatField(env, jtrm, fid_Matrix_b, span->trm.b);
-		(*env)->SetFloatField(env, jtrm, fid_Matrix_c, span->trm.c);
-		(*env)->SetFloatField(env, jtrm, fid_Matrix_d, span->trm.d);
-
 		for (i = 0; i < span->len; ++i)
 		{
-			(*env)->SetFloatField(env, jtrm, fid_Matrix_e, span->items[i].x);
-			(*env)->SetFloatField(env, jtrm, fid_Matrix_f, span->items[i].y);
+			jtrm = (*env)->NewObject(env, cls_Matrix, mid_Matrix_init,
+					span->trm.a, span->trm.b, span->trm.c, span->trm.d,
+					span->items[i].x, span->items[i].y);
+			if (!jtrm) return;
 
 			(*env)->CallVoidMethod(env, walker, mid_TextWalker_showGlyph,
 					jfont, jtrm,
 					(jint)span->items[i].gid,
 					(jint)span->items[i].ucs,
 					(jint)span->wmode);
-
 			if ((*env)->ExceptionCheck(env)) return;
+
+			(*env)->DeleteLocalRef(env, jtrm);
 		}
 	}
 }
