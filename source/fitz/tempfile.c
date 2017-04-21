@@ -7,6 +7,10 @@
  * if required.
  */
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h> /* for tempnam */
+
 /* For now, put temporary files with the hint. */
 #define USE_HINT_FOR_DIR
 

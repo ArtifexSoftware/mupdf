@@ -1,5 +1,9 @@
 #include "fitz-imp.h"
 
+#include <string.h>
+#include <math.h>
+#include <assert.h>
+
 #define SANE_DPI 72.0f
 #define INSANE_DPI 4800.0f
 

@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <assert.h>
+
 /*
 Simple hashtable with open addressing linear probe.
 Unlike text book examples, removing entries works

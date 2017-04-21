@@ -1,4 +1,7 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <string.h>
 
 /* Must be kept in sync with definitions in pdf_util.js */
 enum

@@ -7,6 +7,8 @@
 
 #include "hb.h"
 
+#include <assert.h>
+
 /* Harfbuzz has some major design flaws.
  *
  * It is utterly thread unsafe. It uses statics to hold

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 #include "../source/fitz/context.c"
@@ -76,6 +77,7 @@ main(int argc, char **argv)
 	}
 
 	fprintf(fo, "/* This is an automatically generated file. Do not edit. */\n\n");
+	fprintf(fo, "#include \"mupdf/fitz.h\"\n");
 	fprintf(fo, "#include \"mupdf/pdf.h\"\n");
 
 	for (i = 2; i < argc; i++)

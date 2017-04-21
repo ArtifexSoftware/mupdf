@@ -1,3 +1,4 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 #include "../fitz/font-imp.h"

@@ -1,5 +1,8 @@
 #include "fitz-imp.h"
 
+#include <string.h>
+#include <stdio.h>
+
 typedef struct tar_entry_s tar_entry;
 typedef struct fz_tar_archive_s fz_tar_archive;
 

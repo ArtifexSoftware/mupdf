@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+
 /*
 	Convert IEEE single precision numbers into decimal ASCII strings, while
 	satisfying the following two properties:

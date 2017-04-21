@@ -1,6 +1,11 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <stdlib.h>
+
 #define MAX_STOPS 256
 
 enum { SPREAD_PAD, SPREAD_REPEAT, SPREAD_REFLECT };

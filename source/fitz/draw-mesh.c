@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <assert.h>
+#include <math.h>
+
 enum { MAXN = 2 + FZ_MAX_COLORS };
 
 static void paint_scan(fz_pixmap *restrict pix, int y, int fx0, int fx1, int cx0, int cx1, const int *restrict v0, const int *restrict v1, int n)

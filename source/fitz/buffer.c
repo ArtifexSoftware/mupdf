@@ -1,5 +1,8 @@
 #include "fitz-imp.h"
 
+#include <string.h>
+#include <stdarg.h>
+
 fz_buffer *
 fz_new_buffer(fz_context *ctx, size_t size)
 {

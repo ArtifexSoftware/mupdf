@@ -1,5 +1,9 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+#include <errno.h>
+#include <float.h>
+
 #ifndef INFINITY
 #define INFINITY (DBL_MAX+DBL_MAX)
 #endif

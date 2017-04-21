@@ -1,5 +1,7 @@
 #include "gl-app.h"
 
+#include <string.h>
+
 static void draw_string_part(float x, float y, const char *s, const char *e)
 {
 	int c;

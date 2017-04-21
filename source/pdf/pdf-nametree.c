@@ -1,3 +1,4 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 static pdf_obj *

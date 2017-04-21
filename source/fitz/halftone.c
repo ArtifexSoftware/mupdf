@@ -1,4 +1,7 @@
+#include "mupdf/fitz.h"
 #include "fitz-imp.h"
+
+#include <assert.h>
 
 struct fz_halftone_s
 {

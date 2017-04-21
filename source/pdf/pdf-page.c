@@ -1,4 +1,9 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
 
 int
 pdf_count_pages(fz_context *ctx, pdf_document *doc)

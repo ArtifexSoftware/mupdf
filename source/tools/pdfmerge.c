@@ -4,7 +4,11 @@
  * Simple test bed to work with merging pages from multiple PDFs into a single PDF.
  */
 
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <stdlib.h>
+#include <stdio.h>
 
 static void usage(void)
 {

@@ -1,4 +1,8 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <assert.h>
+#include <string.h>
 
 #undef CHECK_SPLAY
 #undef DUMP_SPLAY

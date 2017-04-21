@@ -2,6 +2,8 @@
 
 #include <zlib.h>
 
+#include <string.h>
+
 typedef struct fz_flate_s fz_flate;
 
 struct fz_flate_s

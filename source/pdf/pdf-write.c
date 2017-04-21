@@ -1,7 +1,13 @@
+#include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 #include "pdf-imp.h"
 
 #include <zlib.h>
 
+#include <assert.h>
+#include <string.h>
+
+#include <stdio.h> /* for debug printing */
 /* #define DEBUG_LINEARIZATION */
 /* #define DEBUG_HEAP_SORT */
 /* #define DEBUG_WRITING */
@@ -2817,7 +2823,7 @@ pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *ar
 		else if (fz_option_eq(val, "deduplicate"))
 			opts->do_garbage = 3;
 		else
-			opts->do_garbage = atoi(val);
+			opts->do_garbage = fz_atoi(val);
 	}
 
 	return opts;

@@ -1,5 +1,9 @@
 #include "fitz-imp.h"
 
+#include <assert.h>
+#include <string.h>
+#include <stdio.h>
+
 struct fz_id_context_s
 {
 	int refs;

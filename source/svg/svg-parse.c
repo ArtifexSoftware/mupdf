@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "svg-imp.h"
 
+#include <string.h>
+#include <math.h>
+
 int svg_is_whitespace_or_comma(int c)
 {
 	 return (c == 0x20) || (c == 0x9) || (c == 0xD) || (c == 0xA) || (c == ',');
@@ -256,12 +259,12 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 			if (nargs != 1)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "wrong number of arguments to skewX(): %d", nargs);
 
-			m.a = 1.0;
-			m.b = 0.0;
-			m.c = tan(args[0] * 0.0174532925);
-			m.d = 1.0;
-			m.e = 0.0;
-			m.f = 0.0;
+			m.a = 1;
+			m.b = 0;
+			m.c = tanf(args[0] * 0.0174532925);
+			m.d = 1;
+			m.e = 0;
+			m.f = 0;
 
 			fz_concat(transform, transform, &m);
 		}
@@ -273,12 +276,12 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 			if (nargs != 1)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "wrong number of arguments to skewY(): %d", nargs);
 
-			m.a = 1.0;
-			m.b = tan(args[0] * 0.0174532925);
-			m.c = 0.0;
-			m.d = 1.0;
-			m.e = 0.0;
-			m.f = 0.0;
+			m.a = 1;
+			m.b = tanf(args[0] * 0.0174532925);
+			m.c = 0;
+			m.d = 1;
+			m.e = 0;
+			m.f = 0;
 
 			fz_concat(transform, transform, &m);
 		}

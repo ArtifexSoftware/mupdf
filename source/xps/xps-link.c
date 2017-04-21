@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <string.h>
+#include <stdlib.h>
+
 /* Quick parsing of document to find links. */
 
 static void

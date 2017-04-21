@@ -11,6 +11,8 @@ SHA-384 and SHA-512 were also taken from Crypto++ and adapted for fitz.
 
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 static inline int isbigendian(void)
 {
 	static const int one = 1;

@@ -14,6 +14,11 @@
 
 #include "gl-app.h"
 
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 #define PADDING 1		/* set to 0 to save some space but disallow arbitrary transforms */
 
 #define MAXGLYPHS 4093	/* prime number for hash table goodness */

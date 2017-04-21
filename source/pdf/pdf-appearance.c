@@ -1,4 +1,8 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <float.h>
+#include <math.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

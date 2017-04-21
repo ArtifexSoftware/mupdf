@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+
 /* TODO: error checking */
 
 #define LZW_CLEAR(lzw)	(1 << ((lzw)->min_bits - 1))

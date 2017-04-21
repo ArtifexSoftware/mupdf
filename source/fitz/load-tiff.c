@@ -1,5 +1,9 @@
 #include "mupdf/fitz.h"
 
+#include <limits.h>
+#include <assert.h>
+#include <string.h>
+
 /*
  * TIFF image loader. Should be enough to support TIFF files in XPS.
  * Baseline TIFF 6.0 plus CMYK, LZW, Flate and JPEG support.

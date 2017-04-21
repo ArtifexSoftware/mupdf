@@ -13,6 +13,11 @@ intermediate results rather than ints.
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <math.h>
+#include <string.h>
+#include <assert.h>
+#include <limits.h>
+
 /* Do we special case handling of single pixel high/wide images? The
  * 'purest' handling is given by not special casing them, but certain
  * files that use such images 'stack' them to give full images. Not

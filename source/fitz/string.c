@@ -1,5 +1,11 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <errno.h>
+#include <math.h>
+#include <float.h>
+#include <stdlib.h>
+
 static inline int
 fz_tolower(int c)
 {

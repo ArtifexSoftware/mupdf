@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <assert.h>
+
 // Thoughts for further optimisations:
 // All paths start with MoveTo. We could probably avoid most cases where
 // we store that. The next thing after a close must be a move.

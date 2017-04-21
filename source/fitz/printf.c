@@ -1,5 +1,10 @@
 #include "mupdf/fitz.h"
 
+#include <float.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+
 static const char *fz_hex_digits = "0123456789abcdef";
 
 struct fmtbuf

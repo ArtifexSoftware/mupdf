@@ -3,7 +3,12 @@
  * Print information about the input pdf.
  */
 
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 enum
 {

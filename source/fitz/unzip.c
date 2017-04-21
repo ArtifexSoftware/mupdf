@@ -2,6 +2,8 @@
 
 #include <zlib.h>
 
+#include <string.h>
+
 #if !defined (INT32_MAX)
 #define INT32_MAX 2147483647L
 #endif

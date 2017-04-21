@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <string.h>
+#include <stdio.h> /* for sscanf */
+
 static inline int unhex(int a)
 {
 	if (a >= 'A' && a <= 'F') return a - 'A' + 0xA;

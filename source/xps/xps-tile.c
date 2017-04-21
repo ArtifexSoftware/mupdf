@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <math.h>
+#include <string.h>
+
 #define TILE
 
 /*

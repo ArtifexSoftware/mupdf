@@ -187,6 +187,7 @@ static inline void fz_write_data(fz_context *ctx, fz_output *out, const void *da
 */
 static inline void fz_write_string(fz_context *ctx, fz_output *out, const char *s)
 {
+	extern size_t strlen(const char *s); /* avoid including string.h in public header */
 	if (out)
 		out->write(ctx, out->state, s, strlen(s));
 }

@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <limits.h>
+
 /* Lifted from ghostscript gdevjlm.h */
 /*
  * The notion that there is such a thing as a "PCL printer" is a fiction: no

@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 fz_text *
 fz_new_text(fz_context *ctx)
 {

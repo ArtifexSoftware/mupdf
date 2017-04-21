@@ -1,5 +1,9 @@
 #include "fitz-imp.h"
 
+#include <string.h>
+#include <errno.h>
+#include <stdio.h>
+
 int
 fz_file_exists(fz_context *ctx, const char *path)
 {

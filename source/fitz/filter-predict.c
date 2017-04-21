@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <limits.h>
+
 /* TODO: check if this works with 16bpp images */
 
 typedef struct fz_predict_s fz_predict;

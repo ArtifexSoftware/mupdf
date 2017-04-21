@@ -2,6 +2,8 @@
 
 #include <zlib.h>
 
+#include <string.h>
+
 struct info
 {
 	unsigned int width, height, depth, n;

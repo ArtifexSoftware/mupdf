@@ -3,7 +3,11 @@
  * Print information about pages of a pdf.
  */
 
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <stdlib.h>
+#include <stdio.h>
 
 static void
 infousage(void)

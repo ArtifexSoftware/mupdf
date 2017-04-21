@@ -1,4 +1,8 @@
+#include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 #include "pdf-imp.h"
+
+#include <string.h>
 
 /* Maximum number of errors before aborting */
 #define MAX_SYNTAX_ERRORS 100

@@ -1,4 +1,7 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <string.h>
 
 static pdf_obj *
 resolve_dest_rec(fz_context *ctx, pdf_document *doc, pdf_obj *dest, int depth)

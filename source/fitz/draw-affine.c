@@ -1,6 +1,10 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <math.h>
+#include <float.h>
+#include <assert.h>
+
 typedef unsigned char byte;
 
 typedef void (paintfn_t)(byte * restrict dp, int da, const byte * restrict sp, int sw, int sh, int ss, int sa, int u, int v, int fa, int fb, int w, int n, int alpha, const byte * restrict color, byte * restrict hp);

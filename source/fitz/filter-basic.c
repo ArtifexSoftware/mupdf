@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 /* Pretend we have a filter that just copies data forever */
 
 fz_stream *

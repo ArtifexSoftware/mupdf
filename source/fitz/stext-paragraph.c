@@ -1,9 +1,14 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+
 /* Assemble span soup into blocks and lines. */
 
 #define MY_EPSILON 0.001f
 
+#include <stdio.h> /* for debug printing */
 #undef DEBUG_LINE_HEIGHTS
 #undef DEBUG_MASKS
 #undef DEBUG_ALIGN

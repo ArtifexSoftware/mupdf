@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <string.h>
+
 static fz_image *
 xps_load_image(fz_context *ctx, xps_document *doc, xps_part *part)
 {

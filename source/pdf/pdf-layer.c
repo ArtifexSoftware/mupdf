@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 #include "pdf-imp.h"
+
+#include <string.h>
 
 /*
 	Notes on OCGs etc.

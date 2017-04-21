@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <string.h>
+#include <assert.h>
+
 /*
 
 The functions in this file implement various flavours of Porter-Duff blending.

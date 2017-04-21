@@ -1,6 +1,10 @@
 #include "mupdf/fitz.h"
 #include "html-imp.h"
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 static const char *inherit_list[] = {
 	"color",
 	"direction",

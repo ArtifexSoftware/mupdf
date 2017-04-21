@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "html-imp.h"
 
+#include <string.h>
+#include <math.h>
+
 enum { T, R, B, L };
 
 typedef struct epub_document_s epub_document;

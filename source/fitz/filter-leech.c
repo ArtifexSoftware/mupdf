@@ -2,6 +2,8 @@
 
 #include <zlib.h>
 
+#include <string.h>
+
 typedef struct fz_leech_s fz_leech;
 
 struct fz_leech_s

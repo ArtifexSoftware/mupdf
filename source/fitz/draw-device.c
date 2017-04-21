@@ -2,6 +2,10 @@
 #include "glyph-cache-imp.h"
 #include "draw-imp.h"
 
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+
 #define STACK_SIZE 96
 
 /* Enable the following to attempt to support knockout and/or isolated
@@ -50,6 +54,9 @@ struct fz_draw_device_s
 };
 
 #ifdef DUMP_GROUP_BLENDS
+
+#include <stdio.h>
+
 static int group_dump_count = 0;
 
 static void fz_dump_blend(fz_context *ctx, fz_pixmap *pix, const char *s)

@@ -9,7 +9,12 @@
  * TODO: linearize document for fast web view
  */
 
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 static void usage(void)
 {

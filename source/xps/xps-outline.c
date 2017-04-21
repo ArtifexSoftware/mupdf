@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <stdlib.h>
+#include <math.h>
+
 /*
  * Parse the document structure / outline parts referenced from fixdoc relationships.
  */

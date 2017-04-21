@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
 
+#include <string.h>
+
 /*
 	Base 14 PDF fonts from URW.
 	Noto fonts from Google.

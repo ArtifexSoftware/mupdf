@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "html-imp.h"
 
+#include <string.h>
+
 static fz_font *
 fz_load_html_default_font(fz_context *ctx, fz_html_font_set *set, const char *family, int is_bold, int is_italic)
 {

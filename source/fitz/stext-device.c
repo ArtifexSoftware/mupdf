@@ -1,6 +1,9 @@
 #include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
 
+#include <math.h>
+#include <float.h>
+
 /* Extract text into an unsorted span soup. */
 
 #define LINE_DIST 0.9f
@@ -8,6 +11,7 @@
 #define SPACE_MAX_DIST 0.8f
 #define PARAGRAPH_DIST 0.5f
 
+#include <stdio.h> /* for debug printing */
 #undef DEBUG_SPANS
 #undef DEBUG_INTERNALS
 #undef DEBUG_LINE_HEIGHTS

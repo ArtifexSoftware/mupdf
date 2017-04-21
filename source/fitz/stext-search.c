@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 static inline int fz_tolower(int c)
 {
 	/* TODO: proper unicode case folding */

@@ -1,5 +1,7 @@
 #include "fitz-imp.h"
 
+#include <string.h>
+
 #define MIN_BOMB (100 << 20)
 
 size_t

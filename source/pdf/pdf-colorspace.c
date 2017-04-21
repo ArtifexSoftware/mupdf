@@ -1,6 +1,9 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 #include "../fitz/colorspace-imp.h"
+
+#include <string.h>
 
 /* ICCBased */
 

@@ -1,8 +1,12 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 #if FZ_ENABLE_JS
 
 #include "mujs.h"
+
+#include <stdarg.h>
+#include <string.h>
 
 struct pdf_js_s
 {

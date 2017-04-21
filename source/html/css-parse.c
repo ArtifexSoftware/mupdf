@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "html-imp.h"
 
+#include <string.h>
+
 struct lexbuf
 {
 	fz_context *ctx;

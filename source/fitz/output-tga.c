@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 /*
  * Write pixmap to TGA file (with or without alpha channel)
  */

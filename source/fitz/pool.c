@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 typedef struct fz_pool_node_s fz_pool_node;
 
 struct fz_pool_s

@@ -7,6 +7,10 @@
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 #include <sys/select.h>
 #include <sys/time.h>
 #include <sys/types.h>

@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <math.h>
+
 typedef struct fz_mesh_processor_s fz_mesh_processor;
 
 struct fz_mesh_processor_s {

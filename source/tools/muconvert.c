@@ -4,6 +4,9 @@
 
 #include "mupdf/fitz.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+
 /* input options */
 static const char *password = "";
 static int alphabits = 8;

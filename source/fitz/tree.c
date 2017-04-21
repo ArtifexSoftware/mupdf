@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 /* AA-tree */
 
 struct fz_tree_s

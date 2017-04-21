@@ -1,6 +1,11 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 #include "pdf-name-table.h"
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef enum pdf_objkind_e
 {

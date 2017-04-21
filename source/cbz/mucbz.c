@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <stdlib.h>
+
 #define DPI 72.0f
 
 typedef struct cbz_document_s cbz_document;

@@ -1,5 +1,8 @@
 #include "fitz-imp.h"
 
+#include <string.h>
+#include <limits.h>
+
 struct info
 {
 	int gif89a;

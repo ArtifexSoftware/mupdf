@@ -1,6 +1,9 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 #include "../fitz/font-imp.h"
+
+#include <assert.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

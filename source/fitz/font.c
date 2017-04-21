@@ -1,11 +1,13 @@
-#include "fitz-imp.h"
+#include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
-
+#include "fitz-imp.h"
 #include "font-imp.h"
 
 #include <ft2build.h>
 #include "hb.h"
 #include "hb-ft.h"
+
+#include <assert.h>
 
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H

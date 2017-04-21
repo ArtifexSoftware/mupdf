@@ -12,6 +12,11 @@
 #include "mupdf/helpers/mu-threads.h"
 #endif
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/time.h> /* for gettimeofday */
+
 /* Enable for helpful threading debug */
 /* #define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0) */
 #define DEBUG_THREADS(A) do { } while (0)

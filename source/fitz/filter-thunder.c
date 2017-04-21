@@ -1,6 +1,4 @@
-#include "mupdf/fitz/system.h"
-#include "mupdf/fitz/context.h"
-#include "mupdf/fitz/stream.h"
+#include "mupdf/fitz.h"
 
 /* 4bit greyscale Thunderscan decoding */
 

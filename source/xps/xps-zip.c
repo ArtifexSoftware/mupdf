@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <string.h>
+
 static void xps_init_document(fz_context *ctx, xps_document *doc);
 
 static xps_part *

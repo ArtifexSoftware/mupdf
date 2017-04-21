@@ -4,6 +4,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
+#include <time.h>
+
 /*
  * Utility object for handling a pdf application / view
  * Takes care of PDF loading and displaying and navigation,

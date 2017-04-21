@@ -1,6 +1,9 @@
 #include "pdfapp.h"
 
+#include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /*
 	A useful bit of bash script to call this is:

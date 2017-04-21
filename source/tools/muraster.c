@@ -139,6 +139,18 @@
 #include "mupdf/fitz.h"
 #include "mupdf/helpers/mu-threads.h"
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#ifdef _MSC_VER
+struct timeval;
+struct timezone;
+int gettimeofday(struct timeval *tv, struct timezone *tz);
+#else
+#include <sys/time.h>
+#endif
+
 /*
 	After this point, we convert the #defines set (or not set)
 	above into sensible values we can work with. Don't edit

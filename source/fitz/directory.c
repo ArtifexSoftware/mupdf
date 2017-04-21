@@ -1,5 +1,13 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <errno.h>
+#include <sys/stat.h>
+
+#ifdef _MSC_VER
+#define stat _stat
+#endif
+
 typedef struct fz_directory_s fz_directory;
 struct fz_directory_s
 {

@@ -1,4 +1,12 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+
+#define DIV_BY_ZERO(a, b, min, max) (((a) < 0) ^ ((b) < 0) ? (min) : (max))
 
 enum
 {
@@ -341,9 +349,9 @@ ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 			{
 			case PS_OP_ABS:
 				if (ps_is_type(st, PS_INT))
-					ps_push_int(st, abs(ps_pop_int(st)));
+					ps_push_int(st, fz_absi(ps_pop_int(st)));
 				else
-					ps_push_real(st, fabsf(ps_pop_real(st)));
+					ps_push_real(st, fz_abs(ps_pop_real(st)));
 				break;
 
 			case PS_OP_ADD:

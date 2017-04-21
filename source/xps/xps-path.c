@@ -1,6 +1,10 @@
 #include "mupdf/fitz.h"
 #include "xps-imp.h"
 
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+
 static char *
 xps_parse_float_array(fz_context *ctx, xps_document *doc, char *s, int num, float *x)
 {

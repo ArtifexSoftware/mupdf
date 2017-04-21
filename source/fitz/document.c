@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 enum
 {
 	FZ_DOCUMENT_HANDLER_MAX = 10

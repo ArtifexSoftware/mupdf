@@ -17,6 +17,8 @@
 #include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
 
+#include <stdlib.h>
+
 typedef struct {
 	unsigned char category;
 	unsigned char combining;

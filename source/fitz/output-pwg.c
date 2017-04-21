@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+#include <string.h>
+
 typedef struct {
 	fz_band_writer super;
 	fz_pwg_options pwg;

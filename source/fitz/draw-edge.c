@@ -1,6 +1,12 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <assert.h>
+
 #define BBOX_MIN -(1<<20)
 #define BBOX_MAX (1<<20)
 

@@ -25,6 +25,8 @@ documentation and/or software.
 
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 /* Constants for MD5Transform routine */
 enum
 {

@@ -1,6 +1,9 @@
 #include "fitz-imp.h"
 #include "glyph-cache-imp.h"
 
+#include <string.h>
+#include <float.h>
+
 typedef struct svg_device_s svg_device;
 
 typedef struct tile_s tile;

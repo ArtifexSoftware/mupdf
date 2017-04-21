@@ -4,6 +4,9 @@
 
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <stdio.h>
+
 #ifdef _MSC_VER
 #define main main_utf8
 #endif

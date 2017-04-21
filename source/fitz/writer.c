@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 /* Return non-null terminated pointers to key/value entries in comma separated
  * option string. A plain key has the default value 'yes'. Use strncmp to compare
  * key/value strings. */

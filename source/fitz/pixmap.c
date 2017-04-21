@@ -1,5 +1,10 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+#include <limits.h>
+#include <string.h>
+#include <math.h>
+
 fz_pixmap *
 fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix)
 {

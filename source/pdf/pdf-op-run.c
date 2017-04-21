@@ -1,4 +1,8 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <string.h>
+#include <math.h>
 
 #define TILE
 

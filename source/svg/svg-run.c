@@ -1,6 +1,10 @@
 #include "mupdf/fitz.h"
 #include "svg-imp.h"
 
+#include <string.h>
+#include <stdio.h> /* for sscanf */
+#include <math.h>
+
 /* default page size */
 #define DEF_WIDTH 12
 #define DEF_HEIGHT 792

@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+#include <limits.h>
+
 /* Fax G3/G4 decoder */
 
 /* TODO: uncompressed */

@@ -2,7 +2,11 @@
  * pdfportfolio -- manipulate embedded files in a PDF
  */
 
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
+
+#include <stdlib.h>
+#include <stdio.h>
 
 static pdf_document *doc = NULL;
 static fz_context *ctx = NULL;

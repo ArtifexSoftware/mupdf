@@ -1,4 +1,10 @@
+#include "mupdf/fitz.h"
 #include "fitz-imp.h"
+
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 struct fz_output_context_s
 {
@@ -304,11 +310,7 @@ fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename)
 fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_output *out)
 {
 	fz_band_writer *writer = fz_calloc(ctx, size, 1);
-
-	assert(size >= sizeof(*writer));
-
 	writer->out = out;
-
 	return writer;
 }
 

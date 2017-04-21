@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <string.h>
+
 /* Unpack image samples and optionally pad pixels with opaque alpha */
 
 #define get1(buf,x) ((buf[x >> 3] >> ( 7 - (x & 7) ) ) & 1 )

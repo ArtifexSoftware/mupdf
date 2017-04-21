@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+#include <string.h>
+
 #if FZ_ENABLE_JPX
 
 typedef struct fz_jpxd_s fz_jpxd;

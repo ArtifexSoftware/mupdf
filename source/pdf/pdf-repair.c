@@ -1,4 +1,8 @@
+#include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 #include "pdf-imp.h"
+
+#include <string.h>
 
 /* Scan file for objects and reconstruct xref table */
 

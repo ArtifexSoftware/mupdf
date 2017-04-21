@@ -2,6 +2,14 @@
 
 #include "mupdf/pdf.h" /* for pdf specifics and forms */
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#ifndef _WIN32
+#include <unistd.h> /* for fork and exec */
+#endif
+
 enum
 {
 	/* Screen furniture: aggregate size of unusable space from title bars, task bars, window borders, etc */

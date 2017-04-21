@@ -1,7 +1,11 @@
+#include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
 #include "pdf-encodings.h"
 #include "pdf-glyphlist.h"
+
+#include <string.h>
+#include <stdlib.h>
 
 void
 pdf_load_encoding(const char **estrings, char *encoding)

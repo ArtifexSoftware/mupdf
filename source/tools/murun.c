@@ -8,6 +8,10 @@
 
 #include "mujs.h"
 
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 #define PS1 "> "
 
 FZ_NORETURN static void rethrow(js_State *J)

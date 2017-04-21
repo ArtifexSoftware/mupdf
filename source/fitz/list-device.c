@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+#include <string.h>
+
 typedef struct fz_display_node_s fz_display_node;
 typedef struct fz_list_device_s fz_list_device;
 

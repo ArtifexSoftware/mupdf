@@ -1,5 +1,11 @@
+#include "mupdf/fitz.h"
+#include "mupdf/pdf.h"
 #include "pdf-imp.h"
-#include "mupdf/fitz/document.h"
+
+#include <assert.h>
+#include <string.h>
+#include <limits.h>
+#include <stdio.h>
 
 #undef DEBUG_PROGESSIVE_ADVANCE
 
