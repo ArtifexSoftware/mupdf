@@ -872,3 +872,8 @@ function AFRange_Validate(lowerCheck, lowerLimit, upperCheck, upperLimit)
 			app.alert(util.printf("The entered value ("+event.value+") must be less than or equal to %s", upperLimit));
 	}
 }
+
+app.plugIns = [];
+app.viewerType = "Reader";
+app.language = "ENU";
+app.viewerVersion = NaN;
