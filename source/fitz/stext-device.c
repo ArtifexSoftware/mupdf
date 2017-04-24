@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "mupdf/ucdn.h"
 
 /* Extract text into an unsorted span soup. */
 

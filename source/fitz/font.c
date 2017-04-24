@@ -1,4 +1,5 @@
 #include "fitz-imp.h"
+#include "mupdf/ucdn.h"
 
 #include "font-imp.h"
 

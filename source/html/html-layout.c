@@ -1,5 +1,7 @@
-#include "mupdf/html.h"
+#include "mupdf/fitz.h"
+#include "mupdf/ucdn.h"
 #include "mupdf/svg.h"
+#include "mupdf/html.h"
 
 #include "hb.h"
 #include "hb-ft.h"

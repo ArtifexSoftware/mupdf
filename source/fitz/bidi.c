@@ -35,6 +35,7 @@
  */
 
 #include "mupdf/fitz.h"
+#include "mupdf/ucdn.h"
 #include "bidi-imp.h" /* standard bidi code interface */
 
 /*

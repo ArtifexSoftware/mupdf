@@ -17,7 +17,6 @@ extern "C" {
 #include "mupdf/fitz/pool.h"
 #include "mupdf/fitz/string-util.h"
 #include "mupdf/fitz/tree.h"
-#include "mupdf/fitz/ucdn.h"
 #include "mupdf/fitz/bidi.h"
 #include "mupdf/fitz/xml.h"
 

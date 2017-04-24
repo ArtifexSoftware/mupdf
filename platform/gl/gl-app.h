@@ -5,6 +5,8 @@ int win_open_file(char *buf, int len);
 #endif
 
 #include "mupdf/fitz.h"
+#include "mupdf/ucdn.h"
+
 #include <GLFW/glfw3.h>
 
 extern fz_context *ctx;

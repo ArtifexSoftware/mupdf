@@ -15,6 +15,7 @@
  */
 
 #include "mupdf/fitz.h"
+#include "mupdf/ucdn.h"
 
 typedef struct {
 	unsigned char category;

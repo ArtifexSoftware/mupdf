@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "mupdf/ucdn.h"
 
 /*
 	Base 14 PDF fonts from URW.
