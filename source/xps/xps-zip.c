@@ -62,7 +62,7 @@ xps_read_part(fz_context *ctx, xps_document *doc, char *partname)
 		seen_last = 0;
 		for (count = 0; !seen_last; ++count)
 		{
-			sprintf(path, "%s/[%d].piece", name, count);
+			fz_snprintf(path, sizeof path, "%s/[%d].piece", name, count);
 			if (fz_has_archive_entry(ctx, zip, path))
 			{
 				tmp = fz_read_archive_entry(ctx, zip, path);
@@ -71,7 +71,7 @@ xps_read_part(fz_context *ctx, xps_document *doc, char *partname)
 			}
 			else
 			{
-				sprintf(path, "%s/[%d].last.piece", name, count);
+				fz_snprintf(path, sizeof path, "%s/[%d].last.piece", name, count);
 				if (fz_has_archive_entry(ctx, zip, path))
 				{
 					tmp = fz_read_archive_entry(ctx, zip, path);
@@ -99,10 +99,10 @@ xps_has_part(fz_context *ctx, xps_document *doc, char *name)
 		name++;
 	if (fz_has_archive_entry(ctx, doc->zip, name))
 		return 1;
-	sprintf(buf, "%s/[0].piece", name);
+	fz_snprintf(buf, sizeof buf, "%s/[0].piece", name);
 	if (fz_has_archive_entry(ctx, doc->zip, buf))
 		return 1;
-	sprintf(buf, "%s/[0].last.piece", name);
+	fz_snprintf(buf, sizeof buf, "%s/[0].last.piece", name);
 	if (fz_has_archive_entry(ctx, doc->zip, buf))
 		return 1;
 	return 0;

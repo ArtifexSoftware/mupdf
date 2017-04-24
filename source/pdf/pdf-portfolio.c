@@ -311,7 +311,7 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 			pdf_drop_obj(ctx, num_name);
 			num_name = NULL;
 			num++;
-			sprintf(str_name, "%d", num);
+			fz_snprintf(str_name, sizeof str_name, "%d", num);
 			num_name = pdf_new_name(ctx, doc, str_name);
 			p = doc->portfolio;
 			for (p = doc->portfolio; p; p = p->next)

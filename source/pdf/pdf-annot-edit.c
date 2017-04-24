@@ -689,7 +689,7 @@ static void find_free_font_name(fz_context *ctx, pdf_obj *fdict, char *buf, int 
 	/* Find a number X such that /FX doesn't occur as a key in fdict */
 	for (i = 0; 1; i++)
 	{
-		snprintf(buf, buf_size, "F%d", i);
+		fz_snprintf(buf, buf_size, "F%d", i);
 
 		if (!pdf_dict_gets(ctx, fdict, buf))
 			break;
