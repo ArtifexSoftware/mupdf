@@ -1765,9 +1765,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (showmemory)
 	{
-		fprintf(stderr, "Total memory use = " FMT_zu " bytes\n", memtrace_total);
-		fprintf(stderr, "Peak memory use = " FMT_zu " bytes\n", memtrace_peak);
-		fprintf(stderr, "Current memory use = " FMT_zu " bytes\n", memtrace_current);
+		fprintf(stderr, "Total memory use = " FZ_FMT_zu " bytes\n", memtrace_total);
+		fprintf(stderr, "Peak memory use = " FZ_FMT_zu " bytes\n", memtrace_peak);
+		fprintf(stderr, "Current memory use = " FZ_FMT_zu " bytes\n", memtrace_current);
 	}
 
 	return (errored != 0);

@@ -720,7 +720,7 @@ void fz_bidi_resolve_weak(fz_context *ctx, fz_bidi_level baselevel, fz_bidi_char
 	for (ich = 0; ich < cch; ich++)
 	{
 		if (pcls[ich] > BDI_BN) {
-			fz_warn(ctx, "error: pcls[" FMT_zu "] > BN (%d)\n", ich, pcls[ich]);
+			fz_warn(ctx, "error: pcls[%zu] > BN (%d)\n", ich, pcls[ich]);
 		}
 
 		// ignore boundary neutrals
