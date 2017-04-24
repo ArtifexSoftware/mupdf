@@ -159,4 +159,8 @@ fz_free_argv(int argc, char **argv)
 	free(argv);
 }
 
+#else
+
+int fz_time_dummy;
+
 #endif /* _WIN32 */

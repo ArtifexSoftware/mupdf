@@ -678,6 +678,7 @@ static void do_search_hits(int xofs, int yofs)
 
 static void do_forms(float xofs, float yofs)
 {
+	static int do_forms_tag = 0;
 	pdf_ui_event event;
 	fz_point p;
 	int i;
@@ -700,13 +701,13 @@ static void do_forms(float xofs, float yofs)
 		if (pdf_pass_event(ctx, pdf, (pdf_page*)page, &event))
 		{
 			if (pdf->focus)
-				ui.active = do_forms;
+				ui.active = &do_forms_tag;
 			pdf_update_page(ctx, (pdf_page*)page);
 			render_page();
 			ui_needs_update = 1;
 		}
 	}
-	else if (ui.active == do_forms && !ui.down)
+	else if (ui.active == &do_forms_tag && !ui.down)
 	{
 		ui.active = NULL;
 		event.etype = PDF_EVENT_TYPE_POINTER;
