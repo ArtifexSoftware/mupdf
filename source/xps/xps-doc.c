@@ -37,28 +37,6 @@ xps_rels_for_part(fz_context *ctx, xps_document *doc, char *buf, char *name, int
  * which parts correspond to actual pages, and the page order.
  */
 
-void
-xps_print_page_list(fz_context *ctx, xps_document *doc)
-{
-	xps_fixdoc *fixdoc = doc->first_fixdoc;
-	xps_fixpage *page = doc->first_page;
-
-	if (doc->start_part)
-		printf("start part %s\n", doc->start_part);
-
-	while (fixdoc)
-	{
-		printf("fixdoc %s\n", fixdoc->name);
-		fixdoc = fixdoc->next;
-	}
-
-	while (page)
-	{
-		printf("page[%d] %s w=%d h=%d\n", page->number, page->name, page->width, page->height);
-		page = page->next;
-	}
-}
-
 static void
 xps_add_fixed_document(fz_context *ctx, xps_document *doc, char *name)
 {

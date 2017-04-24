@@ -21,6 +21,4 @@ fz_tree *fz_tree_insert(fz_context *ctx, fz_tree *root, const char *key, void *v
 
 void fz_drop_tree(fz_context *ctx, fz_tree *node, void (*dropfunc)(fz_context *ctx, void *value));
 
-void fz_debug_tree(fz_context *ctx, fz_tree *root);
-
 #endif

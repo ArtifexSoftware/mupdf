@@ -431,16 +431,4 @@ fz_stroke_state *fz_unshare_stroke_state_with_dash_len(fz_context *ctx, fz_strok
 */
 fz_stroke_state *fz_clone_stroke_state(fz_context *ctx, fz_stroke_state *stroke);
 
-/*
-	fz_print_path: Print a debug representation of a path to
-	a given output stream. Not for use in production builds.
-
-	out: The output stream to print to.
-
-	path: The path to output.
-
-	indent: The amount to indent the output by.
-*/
-void fz_print_path(fz_context *ctx, fz_output *out, fz_path *, int indent);
-
 #endif

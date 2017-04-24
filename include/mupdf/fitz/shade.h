@@ -185,14 +185,4 @@ typedef void (fz_shade_process_fn)(fz_context *ctx, void *arg, fz_vertex *av, fz
 void fz_process_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm,
 			fz_shade_prepare_fn *prepare, fz_shade_process_fn *process, void *process_arg);
 
-/*
-	fz_print_shade: Output a textual representation of
-	a shading.
-
-	out: The stream to output to.
-
-	shade: The shade to dump information about.
-*/
-void fz_print_shade(fz_context *ctx, fz_output *out, fz_shade *shade);
-
 #endif

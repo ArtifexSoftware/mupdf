@@ -154,21 +154,3 @@ xps_drop_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *d
 		dict = next;
 	}
 }
-
-void
-xps_print_resource_dictionary(fz_context *ctx, xps_document *doc, xps_resource *dict)
-{
-	while (dict)
-	{
-		if (dict->base_uri)
-			printf("URI = '%s'\n", dict->base_uri);
-		printf("KEY = '%s' VAL = %p\n", dict->name, dict->data);
-		if (dict->parent)
-		{
-			printf("PARENT = {\n");
-			xps_print_resource_dictionary(ctx, doc, dict->parent);
-			printf("}\n");
-		}
-		dict = dict->next;
-	}
-}

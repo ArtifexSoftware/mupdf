@@ -590,16 +590,6 @@ int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicod
 void fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size);
 
 /*
-	fz_print_font: Output textual information about a font
-	to a given output stream.
-
-	out: The output stream to output to.
-
-	font: The font to output details for.
-*/
-void fz_print_font(fz_context *ctx, fz_output *out, fz_font *font);
-
-/*
 	Internal functions for our Harfbuzz integration
 	to work around the lack of thread safety.
 */
