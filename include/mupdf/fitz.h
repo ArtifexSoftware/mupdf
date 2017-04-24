@@ -35,7 +35,6 @@ extern "C" {
 #include "mupdf/fitz/glyph.h"
 #include "mupdf/fitz/bitmap.h"
 #include "mupdf/fitz/image.h"
-#include "mupdf/fitz/function.h"
 #include "mupdf/fitz/shade.h"
 #include "mupdf/fitz/font.h"
 #include "mupdf/fitz/path.h"
