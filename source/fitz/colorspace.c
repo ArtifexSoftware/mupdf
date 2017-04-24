@@ -2751,6 +2751,9 @@ clamp_lab_icc(const fz_colorspace *cs, const float *src, float *dst)
 
 	for (i = 0; i < 3; i++)
 		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
+	dst[0] = dst[0] / 100.0;
+	dst[1] = (dst[1] + 128.0) / 256;
+	dst[2] = (dst[2] + 128.0) / 256;
 }
 
 /* Embedded icc profiles could have different range */
@@ -2769,6 +2772,7 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 {
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
+	int is_lab = 0;
 
 	fz_try(ctx)
 	{
@@ -2779,6 +2783,7 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 			union {void *v; const void *vu;} u;
 			u.vu = fz_lookup_icc(ctx, name, &profile->res_size);
 			profile->res_buffer = u.v; /* Nasty way to cast away const */
+			is_lab = (strncmp(name, "lab-icc", strlen("lab-icc")) == 0);
 		}
 		fz_cmm_new_profile(ctx, profile);
 
@@ -2792,7 +2797,7 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		{
 			fz_keep_buffer(ctx, buf);
 			fz_md5_icc(ctx, profile);
-			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, NULL, clamp_default_icc, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, "icc", storable, num, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 		}
 	}
 	fz_catch(ctx)
