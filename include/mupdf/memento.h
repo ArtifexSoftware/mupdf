@@ -161,14 +161,9 @@
 
 #ifndef MEMENTO_H
 
-#include <stdlib.h>
-
-#ifdef __ANDROID__
-#define MEMENTO_ANDROID
-#include <stdio.h>
-#endif
-
 #define MEMENTO_H
+
+#include <stddef.h> /* for size_t */
 
 #ifndef MEMENTO_UNDERLYING_MALLOC
 #define MEMENTO_UNDERLYING_MALLOC malloc
