@@ -73,9 +73,9 @@ img_load_page(fz_context *ctx, img_document *doc, int number)
 
 	page = fz_new_derived_page(ctx, img_page);
 
-	page->super.bound_page = (fz_page_bound_page_fn *)img_bound_page;
-	page->super.run_page_contents = (fz_page_run_page_contents_fn *)img_run_page;
-	page->super.drop_page = (fz_page_drop_page_fn *)img_drop_page;
+	page->super.bound_page = (fz_page_bound_page_fn*)img_bound_page;
+	page->super.run_page_contents = (fz_page_run_page_contents_fn*)img_run_page;
+	page->super.drop_page = (fz_page_drop_page_fn*)img_drop_page;
 
 	page->image = fz_keep_image(ctx, doc->image);
 
@@ -95,10 +95,10 @@ img_new_document(fz_context *ctx, fz_image *image)
 {
 	img_document *doc = fz_new_derived_document(ctx, img_document);
 
-	doc->super.drop_document = (fz_document_drop_fn *)img_drop_document;
-	doc->super.count_pages = (fz_document_count_pages_fn *)img_count_pages;
-	doc->super.load_page = (fz_document_load_page_fn *)img_load_page;
-	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)img_lookup_metadata;
+	doc->super.drop_document = (fz_document_drop_fn*)img_drop_document;
+	doc->super.count_pages = (fz_document_count_pages_fn*)img_count_pages;
+	doc->super.load_page = (fz_document_load_page_fn*)img_load_page;
+	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)img_lookup_metadata;
 
 	doc->image = fz_keep_image(ctx, image);
 

@@ -26,7 +26,7 @@ struct fz_hash_table_s
 	int size;
 	int load;
 	int lock; /* -1 or the lock used to protect this hash table */
-	fz_hash_table_drop_fn drop_val;
+	fz_hash_table_drop_fn *drop_val;
 	fz_hash_entry *ents;
 };
 
@@ -47,7 +47,7 @@ static unsigned hash(const unsigned char *s, int len)
 }
 
 fz_hash_table *
-fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock, fz_hash_table_drop_fn drop_val)
+fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock, fz_hash_table_drop_fn *drop_val)
 {
 	fz_hash_table *table;
 
@@ -283,7 +283,7 @@ fz_hash_remove(fz_context *ctx, fz_hash_table *table, const void *key)
 }
 
 void
-fz_hash_for_each(fz_context *ctx, fz_hash_table *table, void *state, fz_hash_table_for_each_fn callback)
+fz_hash_for_each(fz_context *ctx, fz_hash_table *table, void *state, fz_hash_table_for_each_fn *callback)
 {
 	int i;
 	for (i = 0; i < table->size; ++i)

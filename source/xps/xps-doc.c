@@ -421,10 +421,10 @@ xps_load_page(fz_context *ctx, xps_document *doc, int number)
 			fz_try(ctx)
 			{
 				page = fz_new_derived_page(ctx, xps_page);
-				page->super.load_links = (fz_page_load_links_fn *)xps_load_links;
-				page->super.bound_page = (fz_page_bound_page_fn *)xps_bound_page;
-				page->super.run_page_contents = (fz_page_run_page_contents_fn *)xps_run_page;
-				page->super.drop_page = (fz_page_drop_page_fn *)xps_drop_page_imp;
+				page->super.load_links = (fz_page_load_links_fn*)xps_load_links;
+				page->super.bound_page = (fz_page_bound_page_fn*)xps_bound_page;
+				page->super.run_page_contents = (fz_page_run_page_contents_fn*)xps_run_page;
+				page->super.drop_page = (fz_page_drop_page_fn*)xps_drop_page_imp;
 
 				page->doc = (xps_document*) fz_keep_document(ctx, &doc->super);
 				page->fix = fix;
@@ -469,8 +469,8 @@ static const char *xps_mimetypes[] =
 fz_document_handler xps_document_handler =
 {
 	xps_recognize,
-	(fz_document_open_fn *) xps_open_document,
-	(fz_document_open_with_stream_fn *) xps_open_document_with_stream,
+	(fz_document_open_fn*)xps_open_document,
+	(fz_document_open_with_stream_fn*)xps_open_document_with_stream,
 	xps_extensions,
 	xps_mimetypes
 };

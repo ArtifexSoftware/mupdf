@@ -754,8 +754,10 @@ fz_new_image_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, fz_image *mask)
 fz_image *
 fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colorspace,
 		int xres, int yres, int interpolate, int imagemask, float *decode,
-		int *colorkey, fz_image *mask, int size, fz_image_get_pixmap_fn *get,
-		fz_image_get_size_fn *get_size, fz_drop_image_fn *drop)
+		int *colorkey, fz_image *mask, int size,
+		fz_image_get_pixmap_fn *get_pixmap,
+		fz_image_get_size_fn *get_size,
+		fz_drop_image_fn *drop)
 {
 	fz_image *image;
 	int i;
@@ -766,7 +768,7 @@ fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colo
 	image = Memento_label(fz_calloc(ctx, 1, size), "fz_image");
 	FZ_INIT_KEY_STORABLE(image, 1, fz_drop_image_imp);
 	image->drop_image = drop;
-	image->get_pixmap = get;
+	image->get_pixmap = get_pixmap;
 	image->get_size = get_size;
 	image->w = w;
 	image->h = h;

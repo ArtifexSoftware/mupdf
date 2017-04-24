@@ -658,12 +658,12 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 
 	page->doc = (pdf_document*) fz_keep_document(ctx, &doc->super);
 
-	page->super.drop_page = (fz_page_drop_page_fn *)pdf_drop_page_imp;
-	page->super.load_links = (fz_page_load_links_fn *)pdf_load_links;
-	page->super.bound_page = (fz_page_bound_page_fn *)pdf_bound_page;
-	page->super.first_annot = (fz_page_first_annot_fn *)pdf_first_annot;
-	page->super.run_page_contents = (fz_page_run_page_contents_fn *)pdf_run_page_contents;
-	page->super.page_presentation = (fz_page_page_presentation_fn *)pdf_page_presentation;
+	page->super.drop_page = (fz_page_drop_page_fn*)pdf_drop_page_imp;
+	page->super.load_links = (fz_page_load_links_fn*)pdf_load_links;
+	page->super.bound_page = (fz_page_bound_page_fn*)pdf_bound_page;
+	page->super.first_annot = (fz_page_first_annot_fn*)pdf_first_annot;
+	page->super.run_page_contents = (fz_page_run_page_contents_fn*)pdf_run_page_contents;
+	page->super.page_presentation = (fz_page_page_presentation_fn*)pdf_page_presentation;
 
 	page->obj = NULL;
 

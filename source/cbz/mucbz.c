@@ -186,9 +186,9 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 	fz_try(ctx)
 	{
 		page = fz_new_derived_page(ctx, cbz_page);
-		page->super.bound_page = (fz_page_bound_page_fn *)cbz_bound_page;
-		page->super.run_page_contents = (fz_page_run_page_contents_fn *)cbz_run_page;
-		page->super.drop_page = (fz_page_drop_page_fn *)cbz_drop_page;
+		page->super.bound_page = (fz_page_bound_page_fn*)cbz_bound_page;
+		page->super.run_page_contents = (fz_page_run_page_contents_fn*)cbz_run_page;
+		page->super.drop_page = (fz_page_drop_page_fn*)cbz_drop_page;
 		page->image = fz_new_image_from_buffer(ctx, buf);
 	}
 	fz_always(ctx)
@@ -219,10 +219,10 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	doc = fz_new_derived_document(ctx, cbz_document);
 
-	doc->super.drop_document = (fz_document_drop_fn *)cbz_drop_document;
-	doc->super.count_pages = (fz_document_count_pages_fn *)cbz_count_pages;
-	doc->super.load_page = (fz_document_load_page_fn *)cbz_load_page;
-	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn *)cbz_lookup_metadata;
+	doc->super.drop_document = (fz_document_drop_fn*)cbz_drop_document;
+	doc->super.count_pages = (fz_document_count_pages_fn*)cbz_count_pages;
+	doc->super.load_page = (fz_document_load_page_fn*)cbz_load_page;
+	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)cbz_lookup_metadata;
 
 	fz_try(ctx)
 	{

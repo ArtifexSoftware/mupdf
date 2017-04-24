@@ -197,9 +197,9 @@ struct fz_font_context_s
 	int ctx_refs;
 	FT_Library ftlib;
 	int ftlib_refs;
-	fz_load_system_font_fn load_font;
-	fz_load_system_cjk_font_fn load_cjk_font;
-	fz_load_system_fallback_font_fn load_fallback_font;
+	fz_load_system_font_fn *load_font;
+	fz_load_system_cjk_font_fn *load_cjk_font;
+	fz_load_system_fallback_font_fn *load_fallback_font;
 
 	/* Cached fallback fonts */
 	struct { fz_font *serif, *sans; } fallback[256];
@@ -257,9 +257,9 @@ void fz_drop_font_context(fz_context *ctx)
 }
 
 void fz_install_load_system_font_funcs(fz_context *ctx,
-		fz_load_system_font_fn f,
-		fz_load_system_cjk_font_fn f_cjk,
-		fz_load_system_fallback_font_fn f_back)
+		fz_load_system_font_fn *f,
+		fz_load_system_cjk_font_fn *f_cjk,
+		fz_load_system_fallback_font_fn *f_back)
 {
 	ctx->font->load_font = f;
 	ctx->font->load_cjk_font = f_cjk;

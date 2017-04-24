@@ -65,8 +65,11 @@ struct fz_document_writer_s
 	structure's function pointers populated correctly, and the extra
 	space zero initialised.
 */
-fz_document_writer *fz_new_document_writer_of_size(fz_context *ctx, size_t size, fz_document_writer_begin_page_fn *begin_page,
-	fz_document_writer_end_page_fn *end_page, fz_document_writer_close_writer_fn *close, fz_document_writer_drop_writer_fn *drop);
+fz_document_writer *fz_new_document_writer_of_size(fz_context *ctx, size_t size,
+		fz_document_writer_begin_page_fn *begin_page,
+		fz_document_writer_end_page_fn *end_page,
+		fz_document_writer_close_writer_fn *close,
+		fz_document_writer_drop_writer_fn *drop);
 
 #define fz_new_derived_document_writer(CTX,TYPE,BEGIN_PAGE,END_PAGE,CLOSE,DROP) \
 	((TYPE *)Memento_label(fz_new_document_writer_of_size(CTX,sizeof(TYPE),BEGIN_PAGE,END_PAGE,CLOSE,DROP),#TYPE))
