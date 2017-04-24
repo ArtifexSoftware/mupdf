@@ -656,7 +656,7 @@ next_aesd(fz_context *ctx, fz_stream *stm, size_t max)
 		else if (n < 16)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "partial block in aes filter");
 
-		aes_crypt_cbc(&state->aes, AES_DECRYPT, 16, state->iv, state->bp, state->bp);
+		fz_aes_crypt_cbc(&state->aes, FZ_AES_DECRYPT, 16, state->iv, state->bp, state->bp);
 		state->rp = state->bp;
 		state->wp = state->bp + 16;
 
@@ -704,7 +704,7 @@ fz_open_aesd(fz_context *ctx, fz_stream *chain, unsigned char *key, unsigned key
 	{
 		state = fz_malloc_struct(ctx, fz_aesd);
 		state->chain = chain;
-		if (aes_setkey_dec(&state->aes, key, keylen * 8))
+		if (fz_aes_setkey_dec(&state->aes, key, keylen * 8))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", keylen * 8);
 		state->ivcount = 0;
 		state->rp = state->bp;

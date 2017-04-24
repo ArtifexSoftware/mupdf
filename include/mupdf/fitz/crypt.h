@@ -102,8 +102,8 @@ void fz_arc4_encrypt(fz_arc4 *state, unsigned char *dest, const unsigned char *s
 
 typedef struct fz_aes_s fz_aes;
 
-#define AES_DECRYPT 0
-#define AES_ENCRYPT 1
+#define FZ_AES_DECRYPT 0
+#define FZ_AES_ENCRYPT 1
 
 /*
 	Structure definition is public to enable stack
@@ -116,9 +116,9 @@ struct fz_aes_s
 	unsigned long buf[68]; /* unaligned data */
 };
 
-int aes_setkey_enc( fz_aes *ctx, const unsigned char *key, int keysize );
-int aes_setkey_dec( fz_aes *ctx, const unsigned char *key, int keysize );
-void aes_crypt_cbc( fz_aes *ctx, int mode, size_t length,
+int fz_aes_setkey_enc( fz_aes *ctx, const unsigned char *key, int keysize );
+int fz_aes_setkey_dec( fz_aes *ctx, const unsigned char *key, int keysize );
+void fz_aes_crypt_cbc( fz_aes *ctx, int mode, size_t length,
 	unsigned char iv[16],
 	const unsigned char *input,
 	unsigned char *output );

@@ -467,9 +467,9 @@ pdf_compute_encryption_key_r5(fz_context *ctx, pdf_crypt *crypt, unsigned char *
 
 	/* clear password buffer and use it as iv */
 	memset(buffer + 32, 0, sizeof(buffer) - 32);
-	if (aes_setkey_dec(&aes, buffer, crypt->length))
+	if (fz_aes_setkey_dec(&aes, buffer, crypt->length))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", crypt->length);
-	aes_crypt_cbc(&aes, AES_DECRYPT, 32, buffer + 32, ownerkey ? crypt->oe : crypt->ue, crypt->key);
+	fz_aes_crypt_cbc(&aes, FZ_AES_DECRYPT, 32, buffer + 32, ownerkey ? crypt->oe : crypt->ue, crypt->key);
 }
 
 /*
@@ -513,9 +513,9 @@ pdf_compute_hardened_hash_r6(fz_context *ctx, unsigned char *password, size_t pw
 			memcpy(data + j * data_len, data, data_len);
 
 		/* Step 3: encrypt data using data block as key and iv */
-		if (aes_setkey_enc(&aes, block, 128))
+		if (fz_aes_setkey_enc(&aes, block, 128))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", 128);
-		aes_crypt_cbc(&aes, AES_ENCRYPT, data_len * 64, block + 16, data, data);
+		fz_aes_crypt_cbc(&aes, FZ_AES_ENCRYPT, data_len * 64, block + 16, data, data);
 
 		/* Step 4: determine SHA-2 hash size for this round */
 		for (j = 0, sum = 0; j < 16; j++)
@@ -566,10 +566,9 @@ pdf_compute_encryption_key_r6(fz_context *ctx, pdf_crypt *crypt, unsigned char *
 		hash);
 
 	memset(iv, 0, sizeof(iv));
-	if (aes_setkey_dec(&aes, hash, 256))
+	if (fz_aes_setkey_dec(&aes, hash, 256))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=256)");
-	aes_crypt_cbc(&aes, AES_DECRYPT, 32, iv,
-		ownerkey ? crypt->oe : crypt->ue, crypt->key);
+	fz_aes_crypt_cbc(&aes, FZ_AES_DECRYPT, 32, iv, ownerkey ? crypt->oe : crypt->ue, crypt->key);
 }
 
 /*
@@ -948,9 +947,9 @@ pdf_crypt_obj_imp(fz_context *ctx, pdf_crypt *crypt, pdf_obj *obj, unsigned char
 				unsigned char iv[16];
 				fz_aes aes;
 				memcpy(iv, s, 16);
-				if (aes_setkey_dec(&aes, key, keylen * 8))
+				if (fz_aes_setkey_dec(&aes, key, keylen * 8))
 					fz_throw(ctx, FZ_ERROR_GENERIC, "AES key init failed (keylen=%d)", keylen * 8);
-				aes_crypt_cbc(&aes, AES_DECRYPT, n - 16, iv, s + 16, s);
+				fz_aes_crypt_cbc(&aes, FZ_AES_DECRYPT, n - 16, iv, s + 16, s);
 				/* delete space used for iv and padding bytes at end */
 				if (s[n - 17] < 1 || s[n - 17] > 16)
 					fz_warn(ctx, "aes padding out of range");
