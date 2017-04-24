@@ -1,4 +1,5 @@
-#include "mupdf/html.h"
+#include "mupdf/fitz.h"
+#include "html-imp.h"
 
 enum { T, R, B, L };
 

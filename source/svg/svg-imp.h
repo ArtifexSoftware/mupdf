@@ -1,5 +1,5 @@
-#ifndef MUPDF_SVG_IMP_H
-#define MUPDF_SVG_IMP_H
+#ifndef SOURCE_SVG_IMP_H
+#define SOURCE_SVG_IMP_H
 
 typedef struct svg_document_s svg_document;
 
