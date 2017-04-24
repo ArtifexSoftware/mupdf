@@ -121,7 +121,6 @@ $(OUT)/platform/gl/%.o : platform/gl/%.c | $(ALL_DIR)
 
 FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
 PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
-SVG_HDR := include/mupdf/svg.h
 THREAD_HDR := include/mupdf/helpers/mu-threads.h
 
 FITZ_SRC := $(wildcard source/fitz/*.c)

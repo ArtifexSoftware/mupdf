@@ -61,4 +61,14 @@ int fz_search_page(fz_context *ctx, fz_page *page, const char *needle, fz_rect *
 int fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char *needle, fz_rect *hit_bbox, int hit_max);
 int fz_search_display_list(fz_context *ctx, fz_display_list *list, const char *needle, fz_rect *hit_bbox, int hit_max);
 
+/*
+	Parse an SVG document into a display-list.
+*/
+fz_display_list *fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, float *w, float *h);
+
+/*
+	Create a scalable image from an SVG document.
+*/
+fz_image *fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf);
+
 #endif

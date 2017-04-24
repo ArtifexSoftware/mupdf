@@ -1,6 +1,5 @@
 #include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
-#include "mupdf/svg.h"
 #include "html-imp.h"
 
 #include "hb.h"
