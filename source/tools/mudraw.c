@@ -3,9 +3,14 @@
  */
 
 #include "mupdf/fitz.h"
-#include "mupdf/pdf.h" /* for pdf output */
 
+#if FZ_ENABLE_PDF
+#include "mupdf/pdf.h" /* for pdf output */
+#endif
+
+#ifndef DISABLE_MUTHREADS
 #include "mupdf/helpers/mu-threads.h"
+#endif
 
 /* Enable for helpful threading debug */
 /* #define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0) */
@@ -176,9 +181,11 @@ typedef struct worker_t {
 	fz_pixmap *pix;
 	fz_bitmap *bit;
 	fz_cookie cookie;
+#ifndef DISABLE_MUTHREADS
 	mu_semaphore start;
 	mu_semaphore stop;
 	mu_thread thread;
+#endif
 } worker_t;
 
 static char *output = NULL;
@@ -242,9 +249,11 @@ static struct {
 	int active;
 	int started;
 	fz_context *ctx;
+#ifndef DISABLE_MUTHREADS
 	mu_thread thread;
 	mu_semaphore start;
 	mu_semaphore stop;
+#endif
 	int pagenum;
 	char *filename;
 	fz_display_list *list;
@@ -731,8 +740,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].list = list;
 					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
 					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
+#ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
 					mu_trigger_semaphore(&workers[band].start);
+#endif
 					ctm.f -= drawheight;
 				}
 				pix = workers[0].pix;
@@ -783,8 +794,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				if (num_workers > 0)
 				{
 					worker_t *w = &workers[band % num_workers];
+#ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Waiting for worker %d to complete band %d\n", w->num, band));
 					mu_wait_semaphore(&w->stop);
+#endif
 					pix = w->pix;
 					bit = w->bit;
 					w->bit = NULL;
@@ -808,8 +821,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					w->ctm = ctm;
 					w->tbounds = tbounds;
 					memset(&w->cookie, 0, sizeof(fz_cookie));
+#ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Triggering worker %d for band %d\n", w->num, w->band));
 					mu_trigger_semaphore(&w->start);
+#endif
 				}
 				ctm.f -= drawheight;
 			}
@@ -924,7 +939,9 @@ static void bgprint_flush(void)
 	if (!bgprint.active || !bgprint.started)
 		return;
 
+#ifndef DISABLE_MUTHREADS
 	mu_wait_semaphore(&bgprint.stop);
+#endif
 	bgprint.started = 0;
 }
 
@@ -1030,7 +1047,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		bgprint.filename = filename;
 		bgprint.pagenum = pagenum;
 		bgprint.interptime = start;
+#ifndef DISABLE_MUTHREADS
 		mu_trigger_semaphore(&bgprint.start);
+#endif
 	}
 	else
 	{
@@ -1205,6 +1224,7 @@ static inline int iswhite(int ch)
 
 static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc)
 {
+#if FZ_ENABLE_PDF
 	pdf_document *pdoc = pdf_specifics(ctx, doc);
 	int config = -1;
 	int n, j;
@@ -1299,6 +1319,7 @@ static void apply_layer_config(fz_context *ctx, fz_document *doc, const char *lc
 			fprintf(stderr, " <locked>");
 		fprintf(stderr, "\n");
 	}
+#endif
 }
 
 #ifdef MUDRAW_STANDALONE

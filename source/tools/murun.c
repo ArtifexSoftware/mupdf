@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
+
+#if FZ_ENABLE_PDF
 #include "mupdf/pdf.h"
+#endif
 
 #if FZ_ENABLE_JS
 
@@ -98,6 +101,7 @@ static void jsB_write(js_State *J)
 
 static void jsB_read(js_State *J)
 {
+	fz_context *ctx = js_getcontext(J);
 	const char *filename = js_tostring(J, 1);
 	FILE *f;
 	char *s;
@@ -125,7 +129,7 @@ static void jsB_read(js_State *J)
 		js_error(J, "cannot seek in file: '%s'", filename);
 	}
 
-	s = malloc(n + 1);
+	s = fz_malloc(ctx, n + 1);
 	if (!s) {
 		fclose(f);
 		js_error(J, "cannot allocate storage for file contents: '%s'", filename);
@@ -133,14 +137,14 @@ static void jsB_read(js_State *J)
 
 	t = fread(s, 1, n, f);
 	if (t != n) {
-		free(s);
+		fz_free(ctx, s);
 		fclose(f);
 		js_error(J, "cannot read data from file: '%s'", filename);
 	}
 	s[n] = 0;
 
 	js_pushstring(J, s);
-	free(s);
+	fz_free(ctx, s);
 	fclose(f);
 }
 
