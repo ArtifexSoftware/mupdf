@@ -32,8 +32,8 @@ fz_bidi_direction;
 
 typedef enum fz_bidi_flags_e
 {
-	BIDI_CLASSIFY_WHITE_SPACE = 1,
-	BIDI_REPLACE_TAB = 2
+	FZ_BIDI_CLASSIFY_WHITE_SPACE = 1,
+	FZ_BIDI_REPLACE_TAB = 2
 }
 fz_bidi_flags;
 
@@ -50,7 +50,7 @@ fz_bidi_flags;
 				than common or inherited)
 	@param	arg		data from caller of Bidi_fragmentText
 */
-typedef void (fz_bidi_fragment_callback)(const uint32_t *fragment,
+typedef void (fz_bidi_fragment_fn)(const uint32_t *fragment,
 					size_t fragmentLen,
 					int bidiLevel,
 					int script,
@@ -80,7 +80,7 @@ void fz_bidi_fragment_text(fz_context *ctx,
 			const uint32_t *text,
 			size_t textlen,
 			fz_bidi_direction *baseDir,
-			fz_bidi_fragment_callback *callback,
+			fz_bidi_fragment_fn *callback,
 			void *arg,
 			int flags);
 

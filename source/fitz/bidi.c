@@ -176,7 +176,7 @@ split_at_script(const uint32_t *fragment,
 		size_t fragment_len,
 		int level,
 		void *arg,
-		fz_bidi_fragment_callback *callback)
+		fz_bidi_fragment_fn *callback)
 {
 	int script = UCDN_SCRIPT_COMMON;
 	size_t script_start, i;
@@ -224,7 +224,7 @@ classify_characters(const uint32_t *text,
 {
 	size_t i;
 
-	if ((flags & BIDI_CLASSIFY_WHITE_SPACE)!=0)
+	if ((flags & FZ_BIDI_CLASSIFY_WHITE_SPACE)!=0)
 	{
 		for (i = 0; i < len; i++)
 		{
@@ -481,7 +481,7 @@ create_levels(fz_context *ctx,
 			fz_bidi_resolve_neutrals(baseLevel, ptypes, plevels, plen);
 			fz_bidi_resolve_implicit(ptypes, plevels, plen);
 
-			classify_characters(ptext, ptypes, plen, BIDI_CLASSIFY_WHITE_SPACE);
+			classify_characters(ptext, ptypes, plen, FZ_BIDI_CLASSIFY_WHITE_SPACE);
 
 			if (resolveWhiteSpace)
 			{
@@ -529,7 +529,7 @@ void fz_bidi_fragment_text(fz_context *ctx,
 		const uint32_t *text,
 		size_t textlen,
 		fz_bidi_direction *baseDir,
-		fz_bidi_fragment_callback *callback,
+		fz_bidi_fragment_fn *callback,
 		void *arg,
 		int flags)
 {
