@@ -24,7 +24,7 @@ static fz_device *
 svg_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
 {
 	fz_svg_writer *wri = (fz_svg_writer*)wri_;
-	char path[PATH_MAX];
+	char path[FZ_PATH_MAX];
 
 	float w = mediabox->x1 - mediabox->x0;
 	float h = mediabox->y1 - mediabox->y0;

@@ -5,6 +5,8 @@
 #define FZ_LARGEFILE
 #endif
 
+#define FZ_PATH_MAX (2048)
+
 /* The very first decision we need to make is, are we using the 64bit
  * file pointers code. This must happen before the stdio.h include. */
 #ifdef FZ_LARGEFILE
@@ -117,10 +119,6 @@ static __inline int signbit(double x)
 
 #else
 #define va_copy_end(a) va_end(a)
-#endif
-
-#ifndef PATH_MAX
-#define PATH_MAX (1024)
 #endif
 
 typedef signed char int8_t;
