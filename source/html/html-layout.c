@@ -595,11 +595,12 @@ static void insert_inline_box(fz_context *ctx, fz_html_box *box, fz_html_box *to
 	}
 }
 
-static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
+static fz_html_box *
+generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 		fz_css_match *up_match, int list_counter, int markup_dir, int markup_lang, struct genstate *g)
 {
 	fz_css_match match;
-	fz_html_box *box;
+	fz_html_box *box, *last_top;
 	const char *tag;
 	int display;
 
@@ -743,7 +744,9 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 					int child_counter = list_counter;
 					if (!strcmp(tag, "ul") || !strcmp(tag, "ol"))
 						child_counter = 0;
-					generate_boxes(ctx, fz_xml_down(node), box, &match, child_counter, child_dir, child_lang, g);
+					last_top = generate_boxes(ctx, fz_xml_down(node), box, &match, child_counter, child_dir, child_lang, g);
+					if (last_top != box)
+						top = last_top;
 				}
 			}
 		}
@@ -777,6 +780,8 @@ static void generate_boxes(fz_context *ctx, fz_xml *node, fz_html_box *top,
 
 		node = fz_xml_next(node);
 	}
+
+	return top;
 }
 
 static void measure_image(fz_context *ctx, fz_html_flow *node, float max_w, float max_h)
