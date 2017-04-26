@@ -2321,117 +2321,122 @@ load_fb2_images(fz_context *ctx, fz_xml *root)
 	return images;
 }
 
-static void indent(int n)
+static void indent(int level)
 {
-	while (n-- > 0)
+	while (level-- > 0)
 		putchar('\t');
 }
 
-void
-fz_print_css_style(fz_context *ctx, fz_css_style *style, int boxtype, int n)
+static void
+fz_debug_html_flow(fz_context *ctx, fz_html_flow *flow, int level)
 {
-	indent(n); printf("font_size %g%c\n", style->font_size.value, style->font_size.unit);
-	indent(n); printf("font %s\n", style->font ? fz_font_name(ctx, style->font) : "NULL");
-	indent(n); printf("width = %g%c;\n", style->width.value, style->width.unit);
-	indent(n); printf("height = %g%c;\n", style->height.value, style->height.unit);
-	if (boxtype == BOX_BLOCK)
+	fz_html_box *sbox = NULL;
+	while (flow)
 	{
-		indent(n); printf("margin %g%c ", style->margin[0].value, style->margin[0].unit);
-		printf("%g%c ", style->margin[1].value, style->margin[1].unit);
-		printf("%g%c ", style->margin[2].value, style->margin[2].unit);
-		printf("%g%c\n", style->margin[3].value, style->margin[3].unit);
-		indent(n); printf("padding %g%c ", style->padding[0].value, style->padding[0].unit);
-		printf("%g%c ", style->padding[1].value, style->padding[1].unit);
-		printf("%g%c ", style->padding[2].value, style->padding[2].unit);
-		printf("%g%c\n", style->padding[3].value, style->padding[3].unit);
-		indent(n); printf("border_width %g%c ", style->border_width[0].value, style->border_width[0].unit);
-		printf("%g%c ", style->border_width[1].value, style->border_width[1].unit);
-		printf("%g%c ", style->border_width[2].value, style->border_width[2].unit);
-		printf("%g%c\n", style->border_width[3].value, style->border_width[3].unit);
-		indent(n); printf("border_style %d %d %d %d\n",
-				style->border_style_0, style->border_style_1,
-				style->border_style_2, style->border_style_3);
-		indent(n); printf("text_indent %g%c\n", style->text_indent.value, style->text_indent.unit);
-		indent(n); printf("white_space %d\n", style->white_space);
-		indent(n); printf("text_align %d\n", style->text_align);
-		indent(n); printf("list_style_type %d\n", style->list_style_type);
-	}
-	indent(n); printf("line_height %g%c\n", style->line_height.value, style->line_height.unit);
-	indent(n); printf("vertical_align %d\n", style->vertical_align);
-}
-
-void
-fz_print_html_flow(fz_context *ctx, fz_html_flow *flow, fz_html_flow *end)
-{
-	while (flow != end)
-	{
-		switch (flow->type)
-		{
-		case FLOW_WORD: printf("%s", flow->content.text); break;
-		case FLOW_SPACE: printf("[ ]"); break;
-		case FLOW_SBREAK: printf("[%%]"); break;
-		case FLOW_SHYPHEN: printf("[-]"); break;
-		case FLOW_BREAK: printf("[!]"); break;
-		case FLOW_IMAGE: printf("<img>"); break;
-		case FLOW_ANCHOR: printf("<a id='%s'>", flow->content.text); break;
+		if (flow->box != sbox) {
+			if (sbox) {
+				indent(level);
+				printf("}\n");
+			}
+			sbox = flow->box;
+			indent(level);
+			printf("span em=%g font=%s", sbox->em, fz_font_name(ctx, sbox->style.font));
+			if (fz_font_is_serif(ctx, sbox->style.font))
+				printf(" serif");
+			else
+				printf(" sans");
+			if (fz_font_is_monospaced(ctx, sbox->style.font))
+				printf(" monospaced");
+			if (fz_font_is_bold(ctx, sbox->style.font))
+				printf(" bold");
+			if (fz_font_is_italic(ctx, sbox->style.font))
+				printf(" italic");
+			printf("\n");
+			indent(level);
+			printf("{\n");
 		}
+
+		indent(level+1);
+		switch (flow->type) {
+		case FLOW_WORD: printf("word "); break;
+		case FLOW_SPACE: printf("space"); break;
+		case FLOW_SBREAK: printf("sbrk"); break;
+		case FLOW_SHYPHEN: printf("shy"); break;
+		case FLOW_BREAK: printf("break"); break;
+		case FLOW_IMAGE: printf("image"); break;
+		case FLOW_ANCHOR: printf("anchor"); break;
+		}
+		printf(" y=%g x=%g w=%g", flow->y, flow->x, flow->w);
+		if (flow->type == FLOW_IMAGE)
+			printf(" h=%g\n", flow->h);
+		if (flow->type == FLOW_WORD)
+			printf(" text='%s'", flow->content.text);
+		printf("\n");
+		if (flow->breaks_line) {
+			indent(level+1);
+			printf("*\n");
+		}
+
 		flow = flow->next;
 	}
+	indent(level);
+	printf("}\n");
 }
 
 static void
-fz_print_html_box(fz_context *ctx, fz_html_box *box, int pstyle, int level)
+fz_debug_html_box(fz_context *ctx, fz_html_box *box, int level)
 {
 	while (box)
 	{
 		indent(level);
-		switch (box->type)
-		{
+		switch (box->type) {
 		case BOX_BLOCK: printf("block"); break;
 		case BOX_BREAK: printf("break"); break;
 		case BOX_FLOW: printf("flow"); break;
 		case BOX_INLINE: printf("inline"); break;
 		}
 
-		if (box->list_item)
-			printf(" list=%d", box->list_item);
-		if (box->id)
-			printf(" id='%s'", box->id);
-		if (box->href)
-			printf(" href='%s'", box->href);
+		printf(" em=%g x=%g y=%g w=%g h=%g\n", box->em, box->x, box->y, box->w, box->h);
 
-		if (box->down || box->flow_head)
-			printf(" {\n");
-		else
-			printf("\n");
-
-		if (pstyle && !box->flow_head)
-			fz_print_css_style(ctx, &box->style, box->type, level+1);
-
-		fz_print_html_box(ctx, box->down, pstyle, level+1);
-
-		if (box->flow_head)
-		{
+		indent(level);
+		printf("{\n");
+		if (box->type == BOX_BLOCK) {
 			indent(level+1);
-			printf("\"");
-			fz_print_html_flow(ctx, box->flow_head, NULL);
-			printf("\"\n");
+			printf("margin=%g %g %g %g\n", box->margin[0], box->margin[1], box->margin[2], box->margin[3]);
+		}
+		if (box->is_first_flow) {
+			indent(level+1);
+			printf("is-first-flow\n");
+		}
+		if (box->list_item) {
+			indent(level+1);
+			printf("list=%d\n", box->list_item);
+		}
+		if (box->id) {
+			indent(level+1);
+			printf("id=%s\n", box->id);
+		}
+		if (box->href) {
+			indent(level+1);
+			printf("href=%s\n", box->href);
 		}
 
-		if (box->down || box->flow_head)
-		{
-			indent(level);
-			printf("}\n");
-		}
+		if (box->down)
+			fz_debug_html_box(ctx, box->down, level + 1);
+		if (box->flow_head)
+			fz_debug_html_flow(ctx, box->flow_head, level + 1);
+
+		indent(level);
+		printf("}\n");
 
 		box = box->next;
 	}
 }
 
 void
-fz_print_html(fz_context *ctx, fz_html *html, int pstyle)
+fz_debug_html(fz_context *ctx, fz_html_box *box)
 {
-	fz_print_html_box(ctx, html->root, pstyle, 0);
+	fz_debug_html_box(ctx, box, 0);
 }
 
 void
@@ -2481,6 +2486,11 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 	{
 		fz_rethrow(ctx);
 	}
+
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_HTML")))
+		fz_debug_html(ctx, html->root);
+#endif
 }
 
 typedef struct
