@@ -5,7 +5,8 @@
 
 #define TEXT_ANNOT_SIZE (25.0)
 
-const char *pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type)
+const char *
+pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type)
 {
 	switch (type)
 	{
@@ -38,7 +39,8 @@ const char *pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type)
 	}
 }
 
-int pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
+int
+pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 {
 	if (!strcmp("Text", subtype)) return PDF_ANNOT_TEXT;
 	if (!strcmp("Link", subtype)) return PDF_ANNOT_LINK;
@@ -250,12 +252,14 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect)
 	annot->changed = 1;
 }
 
-const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot)
+const char *
+pdf_annot_contents(fz_context *ctx, pdf_annot *annot)
 {
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Contents));
 }
 
-void pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
+void
+pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
 {
 	pdf_document *doc = annot->page->doc;
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Contents, pdf_new_string(ctx, doc, text, strlen(text)));
@@ -402,8 +406,7 @@ pdf_set_annot_border(fz_context *ctx, pdf_annot *annot, float w)
 	annot->changed = 1;
 }
 
-static void
-pdf_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int *n, float color[4], pdf_obj **allowed)
+static void pdf_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int *n, float color[4], pdf_obj **allowed)
 {
 	pdf_obj *arr;
 	int len;
@@ -452,8 +455,7 @@ pdf_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int *n, flo
 	}
 }
 
-static void
-pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4], pdf_obj **allowed)
+static void pdf_set_annot_color_imp(fz_context *ctx, pdf_annot *annot, pdf_obj *key, int n, const float color[4], pdf_obj **allowed)
 {
 	pdf_document *doc = annot->page->doc;
 	pdf_obj *arr;
@@ -538,7 +540,8 @@ static pdf_obj *quad_point_subtypes[] = {
 	NULL,
 };
 
-int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
+int
+pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *quad_points;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
@@ -546,7 +549,8 @@ int pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
 	return pdf_array_len(ctx, quad_points);
 }
 
-void pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
+void
+pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
 {
 	pdf_obj *quad_points;
 	pdf_obj *quad_point;
@@ -608,7 +612,8 @@ static pdf_obj *ink_list_subtypes[] = {
 	NULL,
 };
 
-int pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot)
+int
+pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *ink_list;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
@@ -616,7 +621,8 @@ int pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot)
 	return pdf_array_len(ctx, ink_list);
 }
 
-int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i)
+int
+pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i)
 {
 	pdf_obj *ink_list;
 	pdf_obj *stroke;
@@ -626,7 +632,8 @@ int pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i)
 	return pdf_array_len(ctx, stroke);
 }
 
-void pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k, float v[2])
+void
+pdf_annot_ink_list_stroke_vertex(fz_context *ctx, pdf_annot *annot, int i, int k, float v[2])
 {
 	pdf_obj *ink_list;
 	pdf_obj *stroke;
@@ -699,7 +706,8 @@ static void find_free_font_name(fz_context *ctx, pdf_obj *fdict, char *buf, int 
 	}
 }
 
-void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
+void
+pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 {
 	pdf_document *doc = annot->page->doc;
 	fz_matrix page_ctm, inv_page_ctm;
@@ -722,23 +730,27 @@ void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_F, pdf_new_int(ctx, doc, flags));
 }
 
-const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot)
+const char *
+pdf_annot_author(fz_context *ctx, pdf_annot *annot)
 {
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_T));
 }
 
-const char *pdf_annot_date(fz_context *ctx, pdf_annot *annot)
+const char *
+pdf_annot_date(fz_context *ctx, pdf_annot *annot)
 {
 	// TODO: PDF_NAME_M
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_CreationDate));
 }
 
-pdf_obj *pdf_annot_irt(fz_context *ctx, pdf_annot *annot)
+pdf_obj *
+pdf_annot_irt(fz_context *ctx, pdf_annot *annot)
 {
 	return pdf_dict_get(ctx, annot->obj, PDF_NAME_IRT);
 }
 
-void pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3])
+void
+pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3])
 {
 	pdf_document *doc = annot->page->doc;
 	char nbuf[32];
