@@ -1550,24 +1550,6 @@ pdf_drop_document(fz_context *ctx, pdf_document *doc)
 	fz_drop_document(ctx, &doc->super);
 }
 
-void
-pdf_print_xref(fz_context *ctx, pdf_document *doc)
-{
-	int i;
-	int xref_len = pdf_xref_len(ctx, doc);
-	printf("xref\n0 %d\n", xref_len);
-	for (i = 0; i < xref_len; i++)
-	{
-		pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
-		printf("%05d: %010d %05d %c (stm_ofs=%d; stm_buf=%p)\n", i,
-			(int)entry->ofs,
-			entry->gen,
-			entry->type ? entry->type : '-',
-			(int)entry->stm_ofs,
-			entry->stm_buf);
-	}
-}
-
 /*
  * compressed object streams
  */

@@ -48,6 +48,24 @@ static void showencrypt(void)
 	fz_write_printf(ctx, out, "\n");
 }
 
+void
+pdf_print_xref(fz_context *ctx, pdf_document *doc)
+{
+	int i;
+	int xref_len = pdf_xref_len(ctx, doc);
+	printf("xref\n0 %d\n", xref_len);
+	for (i = 0; i < xref_len; i++)
+	{
+		pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
+		printf("%05d: %010d %05d %c (stm_ofs=%d; stm_buf=%p)\n", i,
+				(int)entry->ofs,
+				entry->gen,
+				entry->type ? entry->type : '-',
+				(int)entry->stm_ofs,
+				entry->stm_buf);
+	}
+}
+
 static void showxref(void)
 {
 	if (!doc)
@@ -195,6 +213,21 @@ static void showgrep(char *filename)
 	fz_write_printf(ctx, out, "\n");
 }
 
+static void
+fz_print_outline(fz_context *ctx, fz_output *out, fz_outline *outline, int level)
+{
+	int i;
+	while (outline)
+	{
+		for (i = 0; i < level; i++)
+			fz_write_printf(ctx, out, "\t");
+		fz_write_printf(ctx, out, "%s\t%s\n", outline->title, outline->uri);
+		if (outline->down)
+			fz_print_outline(ctx, out, outline->down, level + 1);
+		outline = outline->next;
+	}
+}
+
 static void showoutline(void)
 {
 	fz_outline *outline = fz_load_outline(ctx, (fz_document*)doc);
@@ -204,7 +237,7 @@ static void showoutline(void)
 	fz_try(ctx)
 	{
 		out = fz_stdout(ctx);
-		fz_print_outline(ctx, out, outline);
+		fz_print_outline(ctx, out, outline, 0);
 	}
 	fz_always(ctx)
 	{
