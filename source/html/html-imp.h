@@ -255,6 +255,7 @@ fz_css *fz_new_css(fz_context *ctx);
 void fz_parse_css(fz_context *ctx, fz_css *css, const char *source, const char *file);
 fz_css_property *fz_parse_css_properties(fz_context *ctx, fz_pool *pool, const char *source);
 void fz_drop_css(fz_context *ctx, fz_css *css);
+void fz_debug_css(fz_context *ctx, fz_css *css);
 
 void fz_match_css(fz_context *ctx, fz_css_match *match, fz_css *css, fz_xml *node);
 void fz_match_css_at_page(fz_context *ctx, fz_css_match *match, fz_css *css);

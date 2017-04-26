@@ -2699,6 +2699,11 @@ fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const cha
 		fz_warn(ctx, "ignoring styles due to errors: %s", fz_caught_message(ctx));
 	}
 
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_CSS")))
+		fz_debug_css(ctx, g.css);
+#endif
+
 	g.pool = fz_new_pool(ctx);
 	fz_try(ctx)
 	{
