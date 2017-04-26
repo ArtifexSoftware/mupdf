@@ -531,6 +531,70 @@ pdf_set_annot_interior_color(fz_context *ctx, pdf_annot *annot, int n, const flo
 	pdf_set_annot_color_imp(ctx, annot, PDF_NAME_IC, n, color, interior_color_subtypes);
 }
 
+static pdf_obj *vertices_subtypes[] = {
+	PDF_NAME_PolyLine,
+	PDF_NAME_Polygon,
+	NULL,
+};
+
+int
+pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot)
+{
+	pdf_obj *vertices;
+	check_allowed_subtypes(ctx, annot, PDF_NAME_Vertices, vertices_subtypes);
+	vertices = pdf_dict_get(ctx, annot->obj, PDF_NAME_Vertices);
+	return pdf_array_len(ctx, vertices) / 2;
+}
+
+void
+pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, float v[2])
+{
+	pdf_obj *vertices;
+	fz_matrix page_ctm;
+	fz_point point;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_Vertices, vertices_subtypes);
+
+	vertices = pdf_dict_get(ctx, annot->obj, PDF_NAME_Vertices);
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+
+	point.x = pdf_to_real(ctx, pdf_array_get(ctx, vertices, i * 2));
+	point.y = pdf_to_real(ctx, pdf_array_get(ctx, vertices, i * 2 + 1));
+	fz_transform_point(&point, &page_ctm);
+	v[0] = point.x;
+	v[1] = point.y;
+}
+
+void
+pdf_set_annot_vertices(fz_context *ctx, pdf_annot *annot, int n, const float *v)
+{
+	pdf_document *doc = annot->page->doc;
+	fz_matrix page_ctm, inv_page_ctm;
+	pdf_obj *vertices;
+	fz_point point;
+	int i;
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_Vertices, vertices_subtypes);
+	if (n <= 0 || !v)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "invalid number of vertices");
+
+	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
+	fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+	vertices = pdf_new_array(ctx, doc, n * 2);
+	for (i = 0; i < n; ++i)
+	{
+		point.x = v[i * 2];
+		point.y = v[i * 2 + 1];
+		fz_transform_point(&point, &inv_page_ctm);
+		pdf_array_push_drop(ctx, vertices, pdf_new_real(ctx, doc, point.x));
+		pdf_array_push_drop(ctx, vertices, pdf_new_real(ctx, doc, point.y));
+	}
+	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Vertices, vertices);
+	annot->changed = 1;
+}
+
 static pdf_obj *quad_point_subtypes[] = {
 	PDF_NAME_Highlight,
 	PDF_NAME_Link,
