@@ -1613,6 +1613,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\draw-rasterize.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\draw-scale-simple.c"
 				>
 			</File>

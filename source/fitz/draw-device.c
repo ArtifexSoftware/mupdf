@@ -43,7 +43,7 @@ struct fz_draw_device_s
 {
 	fz_device super;
 	fz_matrix transform;
-	fz_gel *gel;
+	fz_rasterizer *rast;
 	int flags;
 	int top;
 	fz_scale_cache *cache_x;
@@ -285,7 +285,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
-	fz_gel *gel = dev->gel;
+	fz_rasterizer *rast = dev->rast;
 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -302,11 +302,8 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
-	fz_flatten_fill_path(ctx, gel, path, &ctm, flatness, &state->scissor);
-
-	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
-
-	if (fz_is_empty_irect(&bbox))
+	fz_intersect_irect(fz_pixmap_bbox_no_ctx(state->dest, &bbox), &state->scissor);
+	if (fz_flatten_fill_path(ctx, rast, path, &ctm, flatness, &bbox, &bbox))
 		return;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
@@ -323,13 +320,14 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 		i = 0;
 	colorbv[i] = alpha * 255;
 
-	fz_scan_convert(ctx, gel, even_odd, &bbox, state->dest, colorbv);
+	fz_convert_rasterizer(ctx, rast, even_odd, state->dest, colorbv);
 	if (state->shape)
 	{
-		fz_flatten_fill_path(ctx, gel, path, &ctm, flatness, &state->scissor);
+		if (!rast->fns.reusable)
+			fz_flatten_fill_path(ctx, rast, path, &ctm, flatness, &bbox, NULL);
 
 		colorbv[0] = alpha * 255;
-		fz_scan_convert(ctx, gel, even_odd, &bbox, state->shape, colorbv);
+		fz_convert_rasterizer(ctx, rast, even_odd, state->shape, colorbv);
 	}
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
@@ -342,7 +340,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
-	fz_gel *gel = dev->gel;
+	fz_rasterizer *rast = dev->rast;
 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -366,11 +364,8 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
-	fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
-
-	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
-
-	if (fz_is_empty_irect(&bbox))
+	fz_intersect_irect(fz_pixmap_bbox_no_ctx(state->dest, &bbox), &state->scissor);
+	if (fz_flatten_stroke_path(ctx, rast, path, stroke, &ctm, flatness, linewidth, &bbox, &bbox))
 		return;
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
@@ -394,13 +389,14 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 		fz_dump_blend(ctx, state->shape, "/");
 	printf("\n");
 #endif
-	fz_scan_convert(ctx, gel, 0, &bbox, state->dest, colorbv);
+	fz_convert_rasterizer(ctx, rast, 0, state->dest, colorbv);
 	if (state->shape)
 	{
-		fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
+		if (!rast->fns.reusable)
+			(void)fz_flatten_stroke_path(ctx, rast, path, stroke, &ctm, flatness, linewidth, &bbox, NULL);
 
 		colorbv[0] = 255;
-		fz_scan_convert(ctx, gel, 0, &bbox, state->shape, colorbv);
+		fz_convert_rasterizer(ctx, rast, 0, state->shape, colorbv);
 	}
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top, "");
@@ -419,33 +415,32 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
-	fz_gel *gel = dev->gel;
+	fz_rasterizer *rast = dev->rast;
 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
+	fz_irect local_scissor;
+	fz_irect *scissor_ptr = &state->scissor;
 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
-
-	fz_flatten_fill_path(ctx, gel, path, &ctm, flatness, &state->scissor);
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip path");
 	model = state->dest->colorspace;
 
-	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
 	if (scissor)
 	{
-		fz_irect bbox2;
 		fz_rect tscissor = *scissor;
 		fz_transform_rect(&tscissor, &dev->transform);
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
+		scissor_ptr = fz_intersect_irect(fz_irect_from_rect(&local_scissor, &tscissor), scissor_ptr);
 	}
+	fz_intersect_irect(fz_pixmap_bbox_no_ctx(state->dest, &bbox), scissor_ptr);
 
-	if (fz_is_empty_irect(&bbox) || fz_is_rect_gel(ctx, gel))
+	if (fz_flatten_fill_path(ctx, rast, path, &ctm, flatness, &bbox, &bbox) || fz_is_rect_rasterizer(ctx, rast))
 	{
 		state[1].scissor = bbox;
 		state[1].mask = NULL;
@@ -467,7 +462,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 			fz_clear_pixmap(ctx, state[1].shape);
 		}
 
-		fz_scan_convert(ctx, gel, even_odd, &bbox, state[1].mask, NULL);
+		fz_convert_rasterizer(ctx, rast, even_odd, state[1].mask, NULL);
 
 		state[1].scissor = bbox;
 #ifdef DUMP_GROUP_BLENDS
@@ -485,7 +480,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
-	fz_gel *gel = dev->gel;
+	fz_rasterizer *rast = dev->rast;
 
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -495,6 +490,8 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	fz_colorspace *model;
 	float aa_level = 2.0f/(fz_graphics_aa_level(ctx)+2);
 	float mlw = fz_graphics_min_line_width(ctx);
+	fz_irect local_scissor;
+	fz_irect *scissor_ptr = &state->scissor;
 
 	if (mlw > aa_level)
 		aa_level = mlw;
@@ -503,19 +500,26 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
 
-	fz_flatten_stroke_path(ctx, gel, path, stroke, &ctm, flatness, linewidth, &state->scissor);
-
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip stroke");
 	model = state->dest->colorspace;
 
-	fz_intersect_irect(fz_bound_gel(ctx, gel, &bbox), &state->scissor);
 	if (scissor)
 	{
-		fz_irect bbox2;
 		fz_rect tscissor = *scissor;
 		fz_transform_rect(&tscissor, &dev->transform);
-		fz_intersect_irect(&bbox, fz_irect_from_rect(&bbox2, &tscissor));
+		scissor_ptr = fz_intersect_irect(fz_irect_from_rect(&local_scissor, &tscissor), scissor_ptr);
+	}
+	fz_intersect_irect(fz_pixmap_bbox_no_ctx(state->dest, &bbox), scissor_ptr);
+
+	if (fz_flatten_stroke_path(ctx, rast, path, stroke, &ctm, flatness, linewidth, &bbox, &bbox))
+	{
+		state[1].scissor = bbox;
+		state[1].mask = NULL;
+#ifdef DUMP_GROUP_BLENDS
+		dump_spaces(dev->top-1, "Clip (stroke, empty) begin\n");
+#endif
+		return;
 	}
 
 	fz_try(ctx)
@@ -537,8 +541,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 			fz_clear_pixmap(ctx, state[1].shape);
 		}
 
-		if (!fz_is_empty_irect(&bbox))
-			fz_scan_convert(ctx, gel, 0, &bbox, state[1].mask, NULL);
+		fz_convert_rasterizer(ctx, rast, 0, state[1].mask, NULL);
 
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
 		state[1].scissor = bbox;
@@ -2247,7 +2250,7 @@ static void
 fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
-	fz_gel *gel = dev->gel;
+	fz_rasterizer *rast = dev->rast;
 
 	/* pop and free the stacks */
 	if (dev->top > 0)
@@ -2271,7 +2274,7 @@ fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 		fz_free(ctx, dev->stack);
 	fz_drop_scale_cache(ctx, dev->cache_x);
 	fz_drop_scale_cache(ctx, dev->cache_y);
-	fz_drop_gel(ctx, gel);
+	fz_drop_rasterizer(ctx, rast);
 }
 
 static void
@@ -2333,7 +2336,7 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 
 	fz_try(ctx)
 	{
-		dev->gel = fz_new_gel(ctx);
+		dev->rast = fz_new_rasterizer(ctx);
 		dev->cache_x = fz_new_scale_cache(ctx);
 		dev->cache_y = fz_new_scale_cache(ctx);
 	}
@@ -2374,14 +2377,13 @@ fz_new_draw_device_type3(fz_context *ctx, const fz_matrix *transform, fz_pixmap 
 fz_irect *
 fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
 {
-	fz_gel *gel = fz_new_gel(ctx);
+	fz_rasterizer *rast = fz_new_rasterizer(ctx);
 
 	if (stroke)
-		fz_flatten_stroke_path(ctx, gel, path, stroke, ctm, flatness, linewidth, scissor);
+		(void)fz_flatten_stroke_path(ctx, rast, path, stroke, ctm, flatness, linewidth, scissor, bbox);
 	else
-		fz_flatten_fill_path(ctx, gel, path, ctm, flatness, scissor);
-	fz_bound_gel(ctx, gel, bbox);
-	fz_drop_gel(ctx, gel);
+		(void)fz_flatten_fill_path(ctx, rast, path, ctm, flatness, scissor, bbox);
+	fz_drop_rasterizer(ctx, rast);
 
 	return bbox;
 }
