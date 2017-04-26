@@ -1,7 +1,7 @@
 #include "mupdf/fitz.h"
 #include "icc34.h"
 
-#define SAVEICCPROFILE 1
+#define SAVEICCPROFILE 0
 #define ICC_HEADER_SIZE 128
 #define ICC_TAG_SIZE 12
 #define ICC_NUMBER_COMMON_TAGS 2
