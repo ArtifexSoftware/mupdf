@@ -140,12 +140,12 @@ typedef struct fz_store_hash_s
 
 typedef struct fz_store_type_s
 {
-	int (*make_hash_key)(fz_context *ctx, fz_store_hash *, void *);
-	void *(*keep_key)(fz_context *,void *);
-	void (*drop_key)(fz_context *,void *);
-	int (*cmp_key)(fz_context *ctx, void *, void *);
-	void (*print)(fz_context *ctx, fz_output *out, void *);
-	int (*needs_reap)(fz_context *ctx, void *);
+	int (*make_hash_key)(fz_context *ctx, fz_store_hash *hash, void *key);
+	void *(*keep_key)(fz_context *ctx, void *key);
+	void (*drop_key)(fz_context *ctx, void *key);
+	int (*cmp_key)(fz_context *ctx, void *a, void *b);
+	void (*format_key)(fz_context *ctx, char *buf, int size, void *key);
+	int (*needs_reap)(fz_context *ctx, void *key);
 } fz_store_type;
 
 /*
@@ -250,10 +250,9 @@ typedef int (fz_store_filter_fn)(fz_context *ctx, void *arg, void *key);
 void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const fz_store_type *type);
 
 /*
-	fz_print_store: Dump the contents of the store for debugging.
+	fz_debug_store: Dump the contents of the store for debugging.
 */
-void fz_print_store(fz_context *ctx, fz_output *out);
-void fz_print_store_locked(fz_context *ctx, fz_output *out);
+void fz_debug_store(fz_context *ctx);
 
 /*
 	fz_defer_reap_start: Increment the defer reap count.

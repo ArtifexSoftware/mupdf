@@ -34,14 +34,13 @@ pdf_cmp_key(fz_context *ctx, void *k0, void *k1)
 }
 
 static void
-pdf_print_key(fz_context *ctx, fz_output *out, void *key_)
+pdf_format_key(fz_context *ctx, char *s, int n, void *key_)
 {
 	pdf_obj *key = (pdf_obj *)key_;
-
 	if (pdf_is_indirect(ctx, key))
-		fz_write_printf(ctx, out, "(%d 0 R) ", pdf_to_num(ctx, key));
+		fz_snprintf(s, n, "(%d 0 R)", pdf_to_num(ctx, key));
 	else
-		pdf_print_obj(ctx, out, key, 0);
+		pdf_sprint_obj(ctx, s, n, key, 1);
 }
 
 static const fz_store_type pdf_obj_store_type =
@@ -50,7 +49,7 @@ static const fz_store_type pdf_obj_store_type =
 	pdf_keep_key,
 	pdf_drop_key,
 	pdf_cmp_key,
-	pdf_print_key,
+	pdf_format_key,
 	NULL
 };
 

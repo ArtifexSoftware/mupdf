@@ -1573,6 +1573,11 @@ int main(int argc, char **argv)
 
 	ui_finish_fonts(ctx);
 
+#ifndef NDEBUG
+	if (fz_atoi(getenv("FZ_DEBUG_STORE")))
+		fz_debug_store(ctx);
+#endif
+
 	fz_drop_link(ctx, links);
 	fz_drop_page(ctx, page);
 	fz_drop_outline(ctx, outline);

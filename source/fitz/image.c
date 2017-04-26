@@ -87,10 +87,10 @@ fz_cmp_image_key(fz_context *ctx, void *k0_, void *k1_)
 }
 
 static void
-fz_print_image_key(fz_context *ctx, fz_output *out, void *key_)
+fz_format_image_key(fz_context *ctx, char *s, int n, void *key_)
 {
 	fz_image_key *key = (fz_image_key *)key_;
-	fz_write_printf(ctx, out, "(image %d x %d sf=%d) ", key->image->w, key->image->h, key->l2factor);
+	fz_snprintf(s, n, "(image %d x %d sf=%d)", key->image->w, key->image->h, key->l2factor);
 }
 
 static int
@@ -107,7 +107,7 @@ static const fz_store_type fz_image_store_type =
 	fz_keep_image_key,
 	fz_drop_image_key,
 	fz_cmp_image_key,
-	fz_print_image_key,
+	fz_format_image_key,
 	fz_needs_reap_image_key
 };
 

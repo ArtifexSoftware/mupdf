@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+#include <stdio.h>
+
 typedef struct fz_item_s fz_item;
 
 struct fz_item_s
@@ -669,43 +672,54 @@ fz_drop_store_context(fz_context *ctx)
 }
 
 static void
-print_item(fz_context *ctx, fz_output *out, void *item_)
+fz_debug_store_item(fz_context *ctx, void *state, void *key_, int keylen, void *item_)
 {
-	fz_item *item = (fz_item *)item_;
-	fz_write_printf(ctx, out, " val=%p item=%p\n", item->val, item);
+	unsigned char *key = key_;
+	fz_item *item = item_;
+	int i;
+	char buf[256];
+	fz_unlock(ctx, FZ_LOCK_ALLOC);
+	item->type->format_key(ctx, buf, sizeof buf, item->key);
+	fz_lock(ctx, FZ_LOCK_ALLOC);
+	printf("hash[");
+	for (i=0; i < keylen; ++i)
+		printf("%02x", key[i]);
+	printf("][refs=%d][size=%d] key=%s val=%p\n", item->val->refs, (int)item->size, buf, item->val);
 }
 
-void
-fz_print_store_locked(fz_context *ctx, fz_output *out)
+static void
+fz_debug_store_locked(fz_context *ctx)
 {
 	fz_item *item, *next;
+	char buf[256];
 	fz_store *store = ctx->store;
 
-	fz_write_printf(ctx, out, "-- resource store contents --\n");
+	printf("-- resource store contents --\n");
 
 	for (item = store->head; item; item = next)
 	{
 		next = item->next;
 		if (next)
 			next->val->refs++;
-		fz_write_printf(ctx, out, "store[*][refs=%d][size=%d] ", item->val->refs, item->size);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
-		item->type->print(ctx, out, item->key);
-		fz_write_printf(ctx, out, " = %p\n", item->val);
+		item->type->format_key(ctx, buf, sizeof buf, item->key);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
+		printf("store[*][refs=%d][size=%d] key=%s val=%p\n",
+				item->val->refs, (int)item->size, buf, item->val);
 		if (next)
 			next->val->refs--;
 	}
-	fz_write_printf(ctx, out, "-- resource store hash contents --\n");
-	fz_print_hash_details(ctx, out, store->hash, print_item, 1);
-	fz_write_printf(ctx, out, "-- end --\n");
+
+	printf("-- resource store hash contents --\n");
+	fz_hash_for_each(ctx, store->hash, NULL, fz_debug_store_item);
+	printf("-- end --\n");
 }
 
 void
-fz_print_store(fz_context *ctx, fz_output *out)
+fz_debug_store(fz_context *ctx)
 {
 	fz_lock(ctx, FZ_LOCK_ALLOC);
-	fz_print_store_locked(ctx, out);
+	fz_debug_store_locked(ctx);
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
@@ -751,7 +765,7 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 
 #ifdef DEBUG_SCAVENGING
 	printf("Scavenging: store=" FZ_FMT_zu " size=" FZ_FMT_zu " phase=%d\n", store->size, size, *phase);
-	fz_print_store_locked(ctx, stderr);
+	fz_debug_store_locked(ctx);
 	Memento_stats();
 #endif
 	do
@@ -779,7 +793,7 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 		{
 #ifdef DEBUG_SCAVENGING
 			printf("scavenged: store=" FZ_FMT_zu "\n", store->size);
-			fz_print_store(ctx, stderr);
+			fz_debug_store(ctx);
 			Memento_stats();
 #endif
 			return 1;
@@ -789,7 +803,7 @@ int fz_store_scavenge(fz_context *ctx, size_t size, int *phase)
 
 #ifdef DEBUG_SCAVENGING
 	printf("scavenging failed\n");
-	fz_print_store(ctx, stderr);
+	fz_debug_store(ctx);
 	Memento_listBlocks();
 #endif
 	return 0;
@@ -810,7 +824,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 		return 0;
 
 #ifdef DEBUG_SCAVENGING
-	fprintf(stderr, "fz_shrink_store: " FZ_FMT_zu "\n", store->size/(1024*1024));
+	printf("fz_shrink_store: " FZ_FMT_zu "\n", store->size/(1024*1024));
 #endif
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 
@@ -821,7 +835,7 @@ fz_shrink_store(fz_context *ctx, unsigned int percent)
 	success = (store->size <= new_size) ? 1 : 0;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 #ifdef DEBUG_SCAVENGING
-	fprintf(stderr, "fz_shrink_store after: " FZ_FMT_zu "\n", store->size/(1024*1024));
+	printf("fz_shrink_store after: " FZ_FMT_zu "\n", store->size/(1024*1024));
 #endif
 
 	return success;

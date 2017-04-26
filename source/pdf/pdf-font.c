@@ -961,9 +961,9 @@ hail_mary_cmp_key(fz_context *ctx, void *k0, void *k1)
 }
 
 static void
-hail_mary_print_key(fz_context *ctx, fz_output *out, void *key_)
+hail_mary_format_key(fz_context *ctx, char *s, int n, void *key_)
 {
-	fz_write_printf(ctx, out, "hail mary ");
+	fz_strlcpy(s, "(hail mary font)", n);
 }
 
 static int hail_mary_store_key; /* Dummy */
@@ -974,7 +974,8 @@ static const fz_store_type hail_mary_store_type =
 	hail_mary_keep_key,
 	hail_mary_drop_key,
 	hail_mary_cmp_key,
-	hail_mary_print_key
+	hail_mary_format_key,
+	NULL
 };
 
 pdf_font_desc *

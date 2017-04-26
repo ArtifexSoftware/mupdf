@@ -283,31 +283,10 @@ fz_hash_remove(fz_context *ctx, fz_hash_table *table, const void *key)
 }
 
 void
-fz_print_hash(fz_context *ctx, fz_output *out, fz_hash_table *table)
+fz_hash_for_each(fz_context *ctx, fz_hash_table *table, void *state, fz_hash_table_for_each_fn callback)
 {
-	fz_print_hash_details(ctx, out, table, NULL, 0);
-}
-
-void
-fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, void (*details)(fz_context*,fz_output*,void*), int compact)
-{
-	int i, k;
-
-	fz_write_printf(ctx, out, "cache load %d / %d\n", table->load, table->size);
-
-	for (i = 0; i < table->size; i++)
-	{
-		if (!table->ents[i].val && !compact)
-			fz_write_printf(ctx, out, "table %04d: empty\n", i);
-		else if (table->ents[i].val)
-		{
-			fz_write_printf(ctx, out, "table %04d: key=", i);
-			for (k = 0; k < MAX_KEY_LEN; k++)
-				fz_write_printf(ctx, out, "%02x", ((unsigned char*)table->ents[i].key)[k]);
-			if (details)
-				details(ctx, out, table->ents[i].val);
-			else
-				fz_write_printf(ctx, out, " val=$%p\n", table->ents[i].val);
-		}
-	}
+	int i;
+	for (i = 0; i < table->size; ++i)
+		if (table->ents[i].val)
+			callback(ctx, state, table->ents[i].key, table->keylen, table->ents[i].val);
 }

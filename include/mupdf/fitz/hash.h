@@ -19,6 +19,7 @@
 
 typedef struct fz_hash_table_s fz_hash_table;
 typedef void (*fz_hash_table_drop_fn)(fz_context *ctx, void *val);
+typedef void (*fz_hash_table_for_each_fn)(fz_context *ctx, void *state, void *key, int keylen, void *val);
 
 fz_hash_table *fz_new_hash_table(fz_context *ctx, int initialsize, int keylen, int lock, fz_hash_table_drop_fn drop_val);
 void fz_drop_hash_table(fz_context *ctx, fz_hash_table *table);
@@ -26,8 +27,6 @@ void fz_drop_hash_table(fz_context *ctx, fz_hash_table *table);
 void *fz_hash_find(fz_context *ctx, fz_hash_table *table, const void *key);
 void *fz_hash_insert(fz_context *ctx, fz_hash_table *table, const void *key, void *val);
 void fz_hash_remove(fz_context *ctx, fz_hash_table *table, const void *key);
-
-void fz_print_hash(fz_context *ctx, fz_output *out, fz_hash_table *table);
-void fz_print_hash_details(fz_context *ctx, fz_output *out, fz_hash_table *table, void (*details)(fz_context*, fz_output*, void*), int compact);
+void fz_hash_for_each(fz_context *ctx, fz_hash_table *table, void *state, fz_hash_table_for_each_fn callback);
 
 #endif

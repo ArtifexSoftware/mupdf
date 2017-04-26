@@ -1899,7 +1899,7 @@ typedef struct
 static int
 fz_make_hash_tile_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 {
-	tile_key *key = (tile_key *)key_;
+	tile_key *key = key_;
 
 	hash->u.im.id = key->id;
 	hash->u.im.m[0] = key->ctm[0];
@@ -1912,14 +1912,14 @@ fz_make_hash_tile_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 static void *
 fz_keep_tile_key(fz_context *ctx, void *key_)
 {
-	tile_key *key = (tile_key *)key_;
+	tile_key *key = key_;
 	return fz_keep_imp(ctx, key, &key->refs);
 }
 
 static void
 fz_drop_tile_key(fz_context *ctx, void *key_)
 {
-	tile_key *key = (tile_key *)key_;
+	tile_key *key = key_;
 	if (fz_drop_imp(ctx, key, &key->refs))
 		fz_free(ctx, key);
 }
@@ -1927,16 +1927,21 @@ fz_drop_tile_key(fz_context *ctx, void *key_)
 static int
 fz_cmp_tile_key(fz_context *ctx, void *k0_, void *k1_)
 {
-	tile_key *k0 = (tile_key *)k0_;
-	tile_key *k1 = (tile_key *)k1_;
-	return k0->id == k1->id && k0->ctm[0] == k1->ctm[0] && k0->ctm[1] == k1->ctm[1] && k0->ctm[2] == k1->ctm[2] && k0->ctm[3] == k1->ctm[3];
+	tile_key *k0 = k0_;
+	tile_key *k1 = k1_;
+	return k0->id == k1->id &&
+		k0->ctm[0] == k1->ctm[0] &&
+		k0->ctm[1] == k1->ctm[1] &&
+		k0->ctm[2] == k1->ctm[2] &&
+		k0->ctm[3] == k1->ctm[3];
 }
 
 static void
-fz_print_tile(fz_context *ctx, fz_output *out, void *key_)
+fz_format_tile_key(fz_context *ctx, char *s, int n, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
-	fz_write_printf(ctx, out, "(tile id=%x, ctm=%g %g %g %g) ", key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
+	fz_snprintf(s, n, "(tile id=%x, ctm=%g %g %g %g)",
+			key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
 }
 
 static const fz_store_type fz_tile_store_type =
@@ -1945,7 +1950,8 @@ static const fz_store_type fz_tile_store_type =
 	fz_keep_tile_key,
 	fz_drop_tile_key,
 	fz_cmp_tile_key,
-	fz_print_tile
+	fz_format_tile_key,
+	NULL
 };
 
 static void
