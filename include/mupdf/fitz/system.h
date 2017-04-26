@@ -94,6 +94,10 @@
 #define fz_jmp_buf jmp_buf
 #endif
 
+/* these constants mirror the corresponding macros in stdio.h */
+#define FZ_SEEK_SET 0
+#define FZ_SEEK_CUR 1
+#define FZ_SEEK_END 2
 #ifndef _MSC_VER
 /* For gettimeofday */
 #include <sys/time.h>

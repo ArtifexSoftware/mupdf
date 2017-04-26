@@ -1,7 +1,7 @@
+#include "mupdf/fitz.h"
 #include "fitz-imp.h"
 
 #include <string.h>
-#include <stdio.h>
 
 typedef struct tar_entry_s tar_entry;
 typedef struct fz_tar_archive_s fz_tar_archive;
@@ -59,7 +59,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 
 	tar->count = 0;
 
-	fz_seek(ctx, file, 0, SEEK_SET);
+	fz_seek(ctx, file, 0, FZ_SEEK_SET);
 
 	while (1)
 	{
