@@ -105,10 +105,11 @@ xps_add_link_target(fz_context *ctx, xps_document *doc, char *name)
 }
 
 int
-xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri, float *xp, float *yp)
+xps_lookup_link_target(fz_context *ctx, fz_document *doc_, const char *target_uri, float *xp, float *yp)
 {
+	xps_document *doc = (xps_document*)doc_;
 	xps_target *target;
-	char *needle = strrchr(target_uri, '#');
+	const char *needle = strrchr(target_uri, '#');
 	needle = needle ? needle + 1 : target_uri;
 	for (target = doc->target; target; target = target->next)
 		if (!strcmp(target->name, needle))
@@ -318,8 +319,9 @@ xps_read_page_list(fz_context *ctx, xps_document *doc)
 }
 
 int
-xps_count_pages(fz_context *ctx, xps_document *doc)
+xps_count_pages(fz_context *ctx, fz_document *doc_)
 {
+	xps_document *doc = (xps_document*)doc_;
 	return doc->page_count;
 }
 
@@ -388,8 +390,9 @@ xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 }
 
 static fz_rect *
-xps_bound_page(fz_context *ctx, xps_page *page, fz_rect *bounds)
+xps_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bounds)
 {
+	xps_page *page = (xps_page*)page_;
 	bounds->x0 = bounds->y0 = 0;
 	bounds->x1 = page->fix->width * 72.0f / 96.0f;
 	bounds->y1 = page->fix->height * 72.0f / 96.0f;
@@ -397,15 +400,17 @@ xps_bound_page(fz_context *ctx, xps_page *page, fz_rect *bounds)
 }
 
 static void
-xps_drop_page_imp(fz_context *ctx, xps_page *page)
+xps_drop_page_imp(fz_context *ctx, fz_page *page_)
 {
+	xps_page *page = (xps_page*)page_;
 	fz_drop_document(ctx, &page->doc->super);
 	fz_drop_xml(ctx, page->root);
 }
 
-xps_page *
-xps_load_page(fz_context *ctx, xps_document *doc, int number)
+fz_page *
+xps_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
+	xps_document *doc = (xps_document*)doc_;
 	xps_page *page = NULL;
 	xps_fixpage *fix;
 	fz_xml *root;
@@ -421,12 +426,12 @@ xps_load_page(fz_context *ctx, xps_document *doc, int number)
 			fz_try(ctx)
 			{
 				page = fz_new_derived_page(ctx, xps_page);
-				page->super.load_links = (fz_page_load_links_fn*)xps_load_links;
-				page->super.bound_page = (fz_page_bound_page_fn*)xps_bound_page;
-				page->super.run_page_contents = (fz_page_run_page_contents_fn*)xps_run_page;
-				page->super.drop_page = (fz_page_drop_page_fn*)xps_drop_page_imp;
+				page->super.load_links = xps_load_links;
+				page->super.bound_page = xps_bound_page;
+				page->super.run_page_contents = xps_run_page;
+				page->super.drop_page = xps_drop_page_imp;
 
-				page->doc = (xps_document*) fz_keep_document(ctx, &doc->super);
+				page->doc = (xps_document*) fz_keep_document(ctx, (fz_document*)doc);
 				page->fix = fix;
 				page->root = root;
 			}
@@ -435,7 +440,7 @@ xps_load_page(fz_context *ctx, xps_document *doc, int number)
 				fz_drop_xml(ctx, root);
 				fz_rethrow(ctx);
 			}
-			return page;
+			return (fz_page*)page;
 		}
 		n ++;
 	}
@@ -469,8 +474,8 @@ static const char *xps_mimetypes[] =
 fz_document_handler xps_document_handler =
 {
 	xps_recognize,
-	(fz_document_open_fn*)xps_open_document,
-	(fz_document_open_with_stream_fn*)xps_open_document_with_stream,
+	xps_open_document,
+	xps_open_document_with_stream,
 	xps_extensions,
 	xps_mimetypes
 };

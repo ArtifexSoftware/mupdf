@@ -110,7 +110,7 @@ xps_has_part(fz_context *ctx, xps_document *doc, char *name)
 	return 0;
 }
 
-static xps_document *
+static fz_document *
 xps_open_document_with_directory(fz_context *ctx, const char *directory)
 {
 	xps_document *doc;
@@ -129,10 +129,10 @@ xps_open_document_with_directory(fz_context *ctx, const char *directory)
 		fz_rethrow(ctx);
 	}
 
-	return doc;
+	return (fz_document*)doc;
 }
 
-xps_document *
+fz_document *
 xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	xps_document *doc;
@@ -151,16 +151,16 @@ xps_open_document_with_stream(fz_context *ctx, fz_stream *file)
 		fz_rethrow(ctx);
 	}
 
-	return doc;
+	return (fz_document*)doc;
 }
 
-xps_document *
+fz_document *
 xps_open_document(fz_context *ctx, const char *filename)
 {
 	char buf[2048];
 	fz_stream *file;
 	char *p;
-	xps_document *doc;
+	fz_document *doc;
 
 	if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
 	{
@@ -181,12 +181,13 @@ xps_open_document(fz_context *ctx, const char *filename)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	return doc;
+	return (fz_document*)doc;
 }
 
 static void
-xps_drop_document(fz_context *ctx, xps_document *doc)
+xps_drop_document(fz_context *ctx, fz_document *doc_)
 {
+	xps_document *doc = (xps_document*)doc_;
 	xps_font_cache *font, *next;
 
 	if (doc->zip)
@@ -208,7 +209,7 @@ xps_drop_document(fz_context *ctx, xps_document *doc)
 }
 
 static int
-xps_lookup_metadata(fz_context *ctx, xps_document *doc, const char *key, char *buf, int size)
+xps_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
 		return (int)fz_strlcpy(buf, "XPS", size);
@@ -219,10 +220,10 @@ static void
 xps_init_document(fz_context *ctx, xps_document *doc)
 {
 	doc->super.refs = 1;
-	doc->super.drop_document = (fz_document_drop_fn*)xps_drop_document;
-	doc->super.load_outline = (fz_document_load_outline_fn*)xps_load_outline;
-	doc->super.resolve_link = (fz_document_resolve_link_fn*)xps_lookup_link_target;
-	doc->super.count_pages = (fz_document_count_pages_fn*)xps_count_pages;
-	doc->super.load_page = (fz_document_load_page_fn*)xps_load_page;
-	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)xps_lookup_metadata;
+	doc->super.drop_document = xps_drop_document;
+	doc->super.load_outline = xps_load_outline;
+	doc->super.resolve_link = xps_lookup_link_target;
+	doc->super.count_pages = xps_count_pages;
+	doc->super.load_page = xps_load_page;
+	doc->super.lookup_metadata = xps_lookup_metadata;
 }

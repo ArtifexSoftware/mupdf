@@ -20,20 +20,22 @@ struct img_document_s
 };
 
 static void
-img_drop_document(fz_context *ctx, img_document *doc)
+img_drop_document(fz_context *ctx, fz_document *doc_)
 {
+	img_document *doc = (img_document*)doc_;
 	fz_drop_image(ctx, doc->image);
 }
 
 static int
-img_count_pages(fz_context *ctx, img_document *doc)
+img_count_pages(fz_context *ctx, fz_document *doc_)
 {
 	return 1;
 }
 
 static fz_rect *
-img_bound_page(fz_context *ctx, img_page *page, fz_rect *bbox)
+img_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 {
+	img_page *page = (img_page*)page_;
 	fz_image *image = page->image;
 	int xres, yres;
 	fz_image_resolution(image, &xres, &yres);
@@ -44,8 +46,9 @@ img_bound_page(fz_context *ctx, img_page *page, fz_rect *bbox)
 }
 
 static void
-img_run_page(fz_context *ctx, img_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+img_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
+	img_page *page = (img_page*)page_;
 	fz_matrix local_ctm = *ctm;
 	fz_image *image = page->image;
 	int xres, yres;
@@ -58,14 +61,16 @@ img_run_page(fz_context *ctx, img_page *page, fz_device *dev, const fz_matrix *c
 }
 
 static void
-img_drop_page(fz_context *ctx, img_page *page)
+img_drop_page(fz_context *ctx, fz_page *page_)
 {
+	img_page *page = (img_page*)page_;
 	fz_drop_image(ctx, page->image);
 }
 
-static img_page *
-img_load_page(fz_context *ctx, img_document *doc, int number)
+static fz_page *
+img_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
+	img_document *doc = (img_document*)doc_;
 	img_page *page;
 
 	if (number != 0)
@@ -73,17 +78,17 @@ img_load_page(fz_context *ctx, img_document *doc, int number)
 
 	page = fz_new_derived_page(ctx, img_page);
 
-	page->super.bound_page = (fz_page_bound_page_fn*)img_bound_page;
-	page->super.run_page_contents = (fz_page_run_page_contents_fn*)img_run_page;
-	page->super.drop_page = (fz_page_drop_page_fn*)img_drop_page;
+	page->super.bound_page = img_bound_page;
+	page->super.run_page_contents = img_run_page;
+	page->super.drop_page = img_drop_page;
 
 	page->image = fz_keep_image(ctx, doc->image);
 
-	return page;
+	return (fz_page*)page;
 }
 
 static int
-img_lookup_metadata(fz_context *ctx, img_document *doc, const char *key, char *buf, int size)
+img_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
 		return (int)fz_strlcpy(buf, "Image", size);
@@ -95,10 +100,10 @@ img_new_document(fz_context *ctx, fz_image *image)
 {
 	img_document *doc = fz_new_derived_document(ctx, img_document);
 
-	doc->super.drop_document = (fz_document_drop_fn*)img_drop_document;
-	doc->super.count_pages = (fz_document_count_pages_fn*)img_count_pages;
-	doc->super.load_page = (fz_document_load_page_fn*)img_load_page;
-	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)img_lookup_metadata;
+	doc->super.drop_document = img_drop_document;
+	doc->super.count_pages = img_count_pages;
+	doc->super.load_page = img_load_page;
+	doc->super.lookup_metadata = img_lookup_metadata;
 
 	doc->image = fz_keep_image(ctx, image);
 
@@ -129,7 +134,7 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *stm)
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	return &doc->super;
+	return (fz_document*)doc;
 }
 
 static const char *img_extensions[] =

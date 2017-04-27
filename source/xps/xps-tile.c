@@ -366,8 +366,9 @@ xps_parse_fixed_page(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, x
 }
 
 void
-xps_run_page(fz_context *ctx, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+xps_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
+	xps_page *page = (xps_page*)page_;
 	xps_document *doc = page->doc;
 	fz_matrix page_ctm = *ctm;
 

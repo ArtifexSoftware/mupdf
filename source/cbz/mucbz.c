@@ -121,21 +121,24 @@ cbz_create_page_list(fz_context *ctx, cbz_document *doc)
 }
 
 static void
-cbz_drop_document(fz_context *ctx, cbz_document *doc)
+cbz_drop_document(fz_context *ctx, fz_document *doc_)
 {
+	cbz_document *doc = (cbz_document*)doc_;
 	fz_drop_archive(ctx, doc->arch);
 	fz_free(ctx, (char **)doc->page);
 }
 
 static int
-cbz_count_pages(fz_context *ctx, cbz_document *doc)
+cbz_count_pages(fz_context *ctx, fz_document *doc_)
 {
+	cbz_document *doc = (cbz_document*)doc_;
 	return doc->page_count;
 }
 
 static fz_rect *
-cbz_bound_page(fz_context *ctx, cbz_page *page, fz_rect *bbox)
+cbz_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 {
+	cbz_page *page = (cbz_page*)page_;
 	fz_image *image = page->image;
 	int xres, yres;
 
@@ -147,8 +150,9 @@ cbz_bound_page(fz_context *ctx, cbz_page *page, fz_rect *bbox)
 }
 
 static void
-cbz_run_page(fz_context *ctx, cbz_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+cbz_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
+	cbz_page *page = (cbz_page*)page_;
 	fz_matrix local_ctm = *ctm;
 	fz_image *image = page->image;
 	int xres, yres;
@@ -162,14 +166,16 @@ cbz_run_page(fz_context *ctx, cbz_page *page, fz_device *dev, const fz_matrix *c
 }
 
 static void
-cbz_drop_page(fz_context *ctx, cbz_page *page)
+cbz_drop_page(fz_context *ctx, fz_page *page_)
 {
+	cbz_page *page = (cbz_page*)page_;
 	fz_drop_image(ctx, page->image);
 }
 
-static cbz_page *
-cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
+static fz_page *
+cbz_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
+	cbz_document *doc = (cbz_document*)doc_;
 	cbz_page *page = NULL;
 	fz_buffer *buf = NULL;
 
@@ -186,9 +192,9 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 	fz_try(ctx)
 	{
 		page = fz_new_derived_page(ctx, cbz_page);
-		page->super.bound_page = (fz_page_bound_page_fn*)cbz_bound_page;
-		page->super.run_page_contents = (fz_page_run_page_contents_fn*)cbz_run_page;
-		page->super.drop_page = (fz_page_drop_page_fn*)cbz_drop_page;
+		page->super.bound_page = cbz_bound_page;
+		page->super.run_page_contents = cbz_run_page;
+		page->super.drop_page = cbz_drop_page;
 		page->image = fz_new_image_from_buffer(ctx, buf);
 	}
 	fz_always(ctx)
@@ -197,16 +203,17 @@ cbz_load_page(fz_context *ctx, cbz_document *doc, int number)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_page(ctx, &page->super);
+		fz_drop_page(ctx, (fz_page*)page);
 		fz_rethrow(ctx);
 	}
 
-	return page;
+	return (fz_page*)page;
 }
 
 static int
-cbz_lookup_metadata(fz_context *ctx, cbz_document *doc, const char *key, char *buf, int size)
+cbz_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
+	cbz_document *doc = (cbz_document*)doc_;
 	if (!strcmp(key, "format"))
 		return (int) fz_strlcpy(buf, fz_archive_format(ctx, doc->arch), size);
 	return -1;
@@ -219,10 +226,10 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	doc = fz_new_derived_document(ctx, cbz_document);
 
-	doc->super.drop_document = (fz_document_drop_fn*)cbz_drop_document;
-	doc->super.count_pages = (fz_document_count_pages_fn*)cbz_count_pages;
-	doc->super.load_page = (fz_document_load_page_fn*)cbz_load_page;
-	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)cbz_lookup_metadata;
+	doc->super.drop_document = cbz_drop_document;
+	doc->super.count_pages = cbz_count_pages;
+	doc->super.load_page = cbz_load_page;
+	doc->super.lookup_metadata = cbz_lookup_metadata;
 
 	fz_try(ctx)
 	{
@@ -231,10 +238,10 @@ cbz_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_document(ctx, &doc->super);
+		fz_drop_document(ctx, (fz_document*)doc);
 		fz_rethrow(ctx);
 	}
-	return &doc->super;
+	return (fz_document*)doc;
 }
 
 static const char *cbz_extensions[] =

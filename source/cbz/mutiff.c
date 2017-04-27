@@ -21,8 +21,9 @@ struct tiff_document_s
 };
 
 static fz_rect *
-tiff_bound_page(fz_context *ctx, tiff_page *page, fz_rect *bbox)
+tiff_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 {
+	tiff_page *page = (tiff_page*)page_;
 	fz_image *image = page->image;
 	int xres, yres;
 
@@ -34,8 +35,9 @@ tiff_bound_page(fz_context *ctx, tiff_page *page, fz_rect *bbox)
 }
 
 static void
-tiff_run_page(fz_context *ctx, tiff_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
+tiff_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
+	tiff_page *page = (tiff_page*)page_;
 	fz_matrix local_ctm = *ctm;
 	fz_image *image = page->image;
 	int xres, yres;
@@ -49,14 +51,16 @@ tiff_run_page(fz_context *ctx, tiff_page *page, fz_device *dev, const fz_matrix 
 }
 
 static void
-tiff_drop_page(fz_context *ctx, tiff_page *page)
+tiff_drop_page(fz_context *ctx, fz_page *page_)
 {
+	tiff_page *page = (tiff_page*)page_;
 	fz_drop_image(ctx, page->image);
 }
 
-static tiff_page *
-tiff_load_page(fz_context *ctx, tiff_document *doc, int number)
+static fz_page *
+tiff_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
+	tiff_document *doc = (tiff_document*)doc_;
 	fz_pixmap *pixmap = NULL;
 	fz_image *image = NULL;
 	tiff_page *page = NULL;
@@ -77,9 +81,9 @@ tiff_load_page(fz_context *ctx, tiff_document *doc, int number)
 		image = fz_new_image_from_pixmap(ctx, pixmap, NULL);
 
 		page = fz_new_derived_page(ctx, tiff_page);
-		page->super.bound_page = (fz_page_bound_page_fn*)tiff_bound_page;
-		page->super.run_page_contents = (fz_page_run_page_contents_fn*)tiff_run_page;
-		page->super.drop_page = (fz_page_drop_page_fn*)tiff_drop_page;
+		page->super.bound_page = tiff_bound_page;
+		page->super.run_page_contents = tiff_run_page;
+		page->super.drop_page = tiff_drop_page;
 		page->image = fz_keep_image(ctx, image);
 	}
 	fz_always(ctx)
@@ -93,17 +97,18 @@ tiff_load_page(fz_context *ctx, tiff_document *doc, int number)
 		fz_rethrow(ctx);
 	}
 
-	return page;
+	return (fz_page*)page;
 }
 
 static int
-tiff_count_pages(fz_context *ctx, tiff_document *doc)
+tiff_count_pages(fz_context *ctx, fz_document *doc_)
 {
+	tiff_document *doc = (tiff_document*)doc_;
 	return doc->page_count;
 }
 
 static int
-tiff_lookup_metadata(fz_context *ctx, tiff_document *doc, const char *key, char *buf, int size)
+tiff_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *buf, int size)
 {
 	if (!strcmp(key, "format"))
 		return (int)fz_strlcpy(buf, "TIFF", size);
@@ -111,8 +116,9 @@ tiff_lookup_metadata(fz_context *ctx, tiff_document *doc, const char *key, char 
 }
 
 static void
-tiff_drop_document(fz_context *ctx, tiff_document *doc)
+tiff_drop_document(fz_context *ctx, fz_document *doc_)
 {
+	tiff_document *doc = (tiff_document*)doc_;
 	fz_drop_buffer(ctx, doc->buffer);
 }
 
@@ -123,10 +129,10 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 
 	doc = fz_new_derived_document(ctx, tiff_document);
 
-	doc->super.drop_document = (fz_document_drop_fn*)tiff_drop_document;
-	doc->super.count_pages = (fz_document_count_pages_fn*)tiff_count_pages;
-	doc->super.load_page = (fz_document_load_page_fn*)tiff_load_page;
-	doc->super.lookup_metadata = (fz_document_lookup_metadata_fn*)tiff_lookup_metadata;
+	doc->super.drop_document = tiff_drop_document;
+	doc->super.count_pages = tiff_count_pages;
+	doc->super.load_page = tiff_load_page;
+	doc->super.lookup_metadata = tiff_lookup_metadata;
 
 	fz_try(ctx)
 	{
@@ -138,11 +144,11 @@ tiff_open_document_with_stream(fz_context *ctx, fz_stream *file)
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_document(ctx, &doc->super);
+		fz_drop_document(ctx, (fz_document*)doc);
 		fz_rethrow(ctx);
 	}
 
-	return &doc->super;
+	return (fz_document*)doc;
 }
 
 static const char *tiff_extensions[] =

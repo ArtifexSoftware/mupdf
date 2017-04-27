@@ -5,36 +5,16 @@ typedef struct xps_document_s xps_document;
 typedef struct xps_page_s xps_page;
 
 /*
-	xps_open_document: Open a document.
-
-	Open a document for reading so the library is able to locate
-	objects and pages inside the file.
-
-	The returned xps_document should be used when calling most
-	other functions. Note that it wraps the context, so those
-	functions implicitly get access to the global state in
-	context.
-
-	filename: a path to a file as it would be given to open(2).
-*/
-xps_document *xps_open_document(fz_context *ctx, const char *filename);
-
-/*
-	xps_open_document_with_stream: Opens a document.
-
-	Same as xps_open_document, but takes a stream instead of a
-	filename to locate the document to open. Increments the
-	reference count of the stream. See fz_open_file,
-	fz_open_file_w or fz_open_fd for opening a stream, and
-	fz_drop_stream for closing an open stream.
-*/
-xps_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
-
-int xps_count_pages(fz_context *ctx, xps_document *doc);
-xps_page *xps_load_page(fz_context *ctx, xps_document *doc, int number);
-fz_outline *xps_load_outline(fz_context *ctx, xps_document *doc);
-void xps_run_page(fz_context *ctx, xps_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
-fz_link *xps_load_links(fz_context *ctx, xps_page *page);
+ * fz_document api functions
+ */
+fz_document *xps_open_document(fz_context *ctx, const char *filename);
+fz_document *xps_open_document_with_stream(fz_context *ctx, fz_stream *file);
+int xps_count_pages(fz_context *ctx, fz_document *doc);
+fz_page *xps_load_page(fz_context *ctx, fz_document *doc, int number);
+fz_outline *xps_load_outline(fz_context *ctx, fz_document *doc);
+void xps_run_page(fz_context *ctx, fz_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie);
+fz_link *xps_load_links(fz_context *ctx, fz_page *page);
+int xps_lookup_link_target(fz_context *ctx, fz_document *doc, const char *target_uri, float *xp, float *yp);
 
 /*
  * Memory, and string functions.
@@ -103,7 +83,6 @@ void xps_read_page_list(fz_context *ctx, xps_document *doc);
 void xps_print_page_list(fz_context *ctx, xps_document *doc);
 void xps_drop_page_list(fz_context *ctx, xps_document *doc);
 
-int xps_lookup_link_target(fz_context *ctx, xps_document *doc, char *target_uri, float *xp, float *yp);
 
 /*
  * Images, fonts, and colorspaces.
