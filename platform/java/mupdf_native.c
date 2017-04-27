@@ -10,6 +10,7 @@
 #endif
 
 #include "mupdf/fitz.h"
+#include "mupdf/ucdn.h"
 #include "mupdf/pdf.h"
 
 #include "mupdf_native.h" /* javah generated prototypes */
