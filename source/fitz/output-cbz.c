@@ -1,5 +1,9 @@
 #include "mupdf/fitz.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 #include <zlib.h>
 
 typedef struct fz_cbz_writer_s fz_cbz_writer;
@@ -107,7 +111,7 @@ static void
 pixmap_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 {
 	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
-	char path[FZ_PATH_MAX];
+	char path[PATH_MAX];
 
 	fz_close_device(ctx, dev);
 	fz_drop_device(ctx, dev);

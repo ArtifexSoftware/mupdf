@@ -5,8 +5,6 @@
 #define FZ_LARGEFILE
 #endif
 
-#define FZ_PATH_MAX (2048)
-
 /* The very first decision we need to make is, are we using the 64bit
  * file pointers code. This must happen before the stdio.h include. */
 #ifdef FZ_LARGEFILE

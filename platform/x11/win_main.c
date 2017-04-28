@@ -17,7 +17,7 @@
 #endif
 
 #ifndef PATH_MAX
-#define PATH_MAX (1024)
+#define PATH_MAX 4096
 #endif
 
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
