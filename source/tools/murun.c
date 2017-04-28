@@ -20,6 +20,11 @@ FZ_NORETURN static void rethrow(js_State *J)
 	js_throw(J);
 }
 
+FZ_NORETURN static void rethrow_as_fz(js_State *J)
+{
+	fz_throw(js_getcontext(J), FZ_ERROR_GENERIC, "%s", js_tostring(J, -1));
+}
+
 static void *alloc(void *actx, void *ptr, int n)
 {
 	fz_context *ctx = actx;
@@ -769,16 +774,18 @@ js_dev_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "fillPath")) {
 		js_copy(J, -2);
 		ffi_pushpath(J, path);
 		js_pushboolean(J, even_odd);
 		ffi_pushmatrix(J, *ctm);
 		ffi_pushcolor(J, colorspace, color, alpha);
-		if (js_pcall(J, 6))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 6);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -786,15 +793,17 @@ js_dev_clip_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_
 	const fz_rect *scissor)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "clipPath")) {
 		js_copy(J, -2);
 		ffi_pushpath(J, path);
 		js_pushboolean(J, even_odd);
 		ffi_pushmatrix(J, *ctm);
-		if (js_pcall(J, 3))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 3);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -803,16 +812,18 @@ js_dev_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path,
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "strokePath")) {
 		js_copy(J, -2);
 		ffi_pushpath(J, path);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
 		ffi_pushcolor(J, colorspace, color, alpha);
-		if (js_pcall(J, 6))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 6);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -820,15 +831,17 @@ js_dev_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, co
 	const fz_matrix *ctm, const fz_rect *scissor)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "clipStrokePath")) {
 		js_copy(J, -2);
 		ffi_pushpath(J, path);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
-		if (js_pcall(J, 3))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 3);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -836,15 +849,17 @@ js_dev_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "fillText")) {
 		js_copy(J, -2);
 		ffi_pushtext(J, text);
 		ffi_pushmatrix(J, *ctm);
 		ffi_pushcolor(J, colorspace, color, alpha);
-		if (js_pcall(J, 5))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 5);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -852,30 +867,34 @@ js_dev_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const f
 	const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "strokeText")) {
 		js_copy(J, -2);
 		ffi_pushtext(J, text);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
 		ffi_pushcolor(J, colorspace, color, alpha);
-		if (js_pcall(J, 6))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 6);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_clip_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "clipText")) {
 		js_copy(J, -2);
 		ffi_pushtext(J, text);
 		ffi_pushmatrix(J, *ctm);
-		if (js_pcall(J, 2))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 2);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -883,59 +902,67 @@ js_dev_clip_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, co
 	const fz_matrix *ctm, const fz_rect *scissor)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "clipStrokeText")) {
 		js_copy(J, -2);
 		ffi_pushtext(J, text);
 		ffi_pushstroke(J, stroke);
 		ffi_pushmatrix(J, *ctm);
-		if (js_pcall(J, 3))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 3);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "ignoreText")) {
 		js_copy(J, -2);
 		ffi_pushtext(J, text);
 		ffi_pushmatrix(J, *ctm);
-		if (js_pcall(J, 2))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 2);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "fillShade")) {
 		js_copy(J, -2);
 		ffi_pushshade(J, shade);
 		ffi_pushmatrix(J, *ctm);
 		js_pushnumber(J, alpha);
-		if (js_pcall(J, 3))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 3);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "fillImage")) {
 		js_copy(J, -2);
 		ffi_pushimage(J, image);
 		ffi_pushmatrix(J, *ctm);
 		js_pushnumber(J, alpha);
-		if (js_pcall(J, 3))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 3);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -943,41 +970,47 @@ js_dev_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const f
 	fz_colorspace *colorspace, const float *color, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "fillImageMask")) {
 		js_copy(J, -2);
 		ffi_pushimage(J, image);
 		ffi_pushmatrix(J, *ctm);
 		ffi_pushcolor(J, colorspace, color, alpha);
-		if (js_pcall(J, 5))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 5);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_rect *scissor)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "clipImageMask")) {
 		js_copy(J, -2);
 		ffi_pushimage(J, image);
 		ffi_pushmatrix(J, *ctm);
-		if (js_pcall(J, 2))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 2);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_pop_clip(fz_context *ctx, fz_device *dev)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "popClip")) {
 		js_copy(J, -2);
-		if (js_pcall(J, 0))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 0);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -985,6 +1018,8 @@ js_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lumi
 	fz_colorspace *colorspace, const float *color)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "beginMask")) {
 		js_copy(J, -2);
 		ffi_pushrect(J, *bbox);
@@ -996,22 +1031,24 @@ js_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lumi
 			js_pushnull(J);
 			js_pushnull(J);
 		}
-		if (js_pcall(J, 4))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 4);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_end_mask(fz_context *ctx, fz_device *dev)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "endMask")) {
 		js_copy(J, -2);
-		if (js_pcall(J, 0))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 0);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
@@ -1019,6 +1056,8 @@ js_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox,
 	int isolated, int knockout, int blendmode, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "beginGroup")) {
 		js_copy(J, -2);
 		ffi_pushrect(J, *bbox);
@@ -1026,22 +1065,24 @@ js_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox,
 		js_pushboolean(J, knockout);
 		js_pushliteral(J, fz_blendmode_name(blendmode));
 		js_pushnumber(J, alpha);
-		if (js_pcall(J, 5))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 5);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void
 js_dev_end_group(fz_context *ctx, fz_device *dev)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "endGroup")) {
 		js_copy(J, -2);
-		if (js_pcall(J, 0))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 0);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static int
@@ -1049,6 +1090,8 @@ js_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz
 	float xstep, float ystep, const fz_matrix *ctm, int id)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "beginTile")) {
 		int n;
 		js_copy(J, -2);
@@ -1058,25 +1101,27 @@ js_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz
 		js_pushnumber(J, ystep);
 		ffi_pushmatrix(J, *ctm);
 		js_pushnumber(J, id);
-		if (js_pcall(J, 6))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 6);
 		n = js_tointeger(J, -1);
 		js_pop(J, 1);
 		return n;
 	}
 	return 0;
+	js_endtry(J);
 }
 
 static void
 js_dev_end_tile(fz_context *ctx, fz_device *dev)
 {
 	js_State *J = ((js_device*)dev)->J;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, -1, "endTile")) {
 		js_copy(J, -2);
-		if (js_pcall(J, 0))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 0);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static fz_device *new_js_device(fz_context *ctx, js_State *J)
@@ -2337,33 +2382,39 @@ static void ffi_new_Path(js_State *J)
 static void ffi_Path_walk_moveTo(fz_context *ctx, void *arg, float x, float y)
 {
 	js_State *J = arg;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, 1, "moveTo")) {
 		js_copy(J, 1);
 		js_pushnumber(J, x);
 		js_pushnumber(J, y);
-		if (js_pcall(J, 2))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 2);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void ffi_Path_walk_lineTo(fz_context *ctx, void *arg, float x, float y)
 {
 	js_State *J = arg;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, 1, "lineTo")) {
 		js_copy(J, 1);
 		js_pushnumber(J, x);
 		js_pushnumber(J, y);
-		if (js_pcall(J, 2))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 2);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void ffi_Path_walk_curveTo(fz_context *ctx, void *arg,
 		float x1, float y1, float x2, float y2, float x3, float y3)
 {
 	js_State *J = arg;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, 1, "curveTo")) {
 		js_copy(J, 1);
 		js_pushnumber(J, x1);
@@ -2372,21 +2423,23 @@ static void ffi_Path_walk_curveTo(fz_context *ctx, void *arg,
 		js_pushnumber(J, y2);
 		js_pushnumber(J, x3);
 		js_pushnumber(J, y3);
-		if (js_pcall(J, 6))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 6);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void ffi_Path_walk_closePath(fz_context *ctx, void *arg)
 {
 	js_State *J = arg;
+	if (js_try(J))
+		rethrow_as_fz(J);
 	if (js_hasproperty(J, 1, "closePath")) {
 		js_copy(J, 1);
-		if (js_pcall(J, 0))
-			fz_warn(ctx, "%s", js_tostring(J, -1));
+		js_call(J, 0);
 		js_pop(J, 1);
 	}
+	js_endtry(J);
 }
 
 static void ffi_Path_walk(js_State *J)
@@ -2400,7 +2453,10 @@ static void ffi_Path_walk(js_State *J)
 		ffi_Path_walk_closePath,
 	};
 
-	fz_walk_path(ctx, path, &walker, J);
+	fz_try(ctx)
+		fz_walk_path(ctx, path, &walker, J);
+	fz_catch(ctx)
+		rethrow(J);
 }
 
 static void ffi_Path_moveTo(js_State *J)
