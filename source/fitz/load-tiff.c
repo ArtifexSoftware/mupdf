@@ -332,7 +332,9 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 		case 3:
 		case 4:
 			stm = fz_open_faxd(ctx, stm,
-					tiff->compression == 4 ? -1 : 0,
+					tiff->compression == 4 ? -1 :
+					tiff->compression == 2 ? 0 :
+					tiff->g3opts & 1,
 					0,
 					tiff->compression == 2,
 					tiff->imagewidth,
