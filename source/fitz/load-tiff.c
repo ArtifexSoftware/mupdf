@@ -937,6 +937,24 @@ tiff_swap_byte_order(unsigned char *buf, int n)
 }
 
 static void
+tiff_scale_lab_samples(fz_context *ctx, unsigned char *buf, int bps, int n)
+{
+	int i;
+	if (bps == 8)
+		for (i = 0; i < n; i++, buf += 3)
+		{
+			buf[1] ^= 128;
+			buf[2] ^= 128;
+		}
+	else if (bps == 16)
+		for (i = 0; i < n; i++, buf += 6)
+		{
+			buf[2] ^= 128;
+			buf[4] ^= 128;
+		}
+}
+
+static void
 tiff_read_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, size_t len)
 {
 	unsigned version;
@@ -1257,6 +1275,13 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 	/* Byte swap 16-bit images to big endian if necessary */
 	if (tiff->bitspersample == 16 && tiff->order == TII)
 		tiff_swap_byte_order(tiff->samples, tiff->imagewidth * tiff->imagelength * tiff->samplesperpixel);
+
+	/* Lab colorspace expects all sample components 0..255.
+	TIFF supplies them as L = 0..255, a/b = -128..127 (for
+	8 bits per sample, -32768..32767 for 16 bits per sample)
+	Scale them to the colorspace's expectations. */
+	if (tiff->photometric == 8 && tiff->samplesperpixel == 3)
+		tiff_scale_lab_samples(ctx, tiff->samples, tiff->bitspersample, tiff->imagewidth * tiff->imagelength);
 }
 
 fz_pixmap *
