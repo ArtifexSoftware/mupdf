@@ -911,7 +911,7 @@ tiff_read_tag(fz_context *ctx, struct tiff *tiff, unsigned offset)
 		break;
 
 	case TileByteCounts:
-		if (tiff->tileoffsets)
+		if (tiff->tilebytecounts)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "at most one tile byte counts tag allowed");
 		tiff->tilebytecounts = fz_malloc_array(ctx, count, sizeof(unsigned));
 		tiff_read_tag_value(tiff->tilebytecounts, tiff, type, value, count);
