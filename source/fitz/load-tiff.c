@@ -340,7 +340,7 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 					tiff->imagewidth,
 					tiff->imagelength,
 					0,
-					tiff->photometric == 0);
+					1);
 			break;
 		case 5:
 			old_tiff = rp[0] == 0 && (rp[1] & 1);
