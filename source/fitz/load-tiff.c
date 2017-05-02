@@ -430,6 +430,8 @@ tiff_paste_tile(fz_context *ctx, struct tiff *tiff, unsigned char *tile, unsigne
 				case 4: *dst |= (*src >> (4 - 4 * ((col + x) % 2))) & 0xf; break;
 				case 8: *dst = *src; break;
 				case 16: dst[0] = src[0]; dst[1] = src[1]; break;
+				case 24: dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; break;
+				case 32: dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3]; break;
 				}
 			}
 		}

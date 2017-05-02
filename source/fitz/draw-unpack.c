@@ -10,6 +10,8 @@
 #define get4(buf,x) ((buf[x >> 1] >> ( ( 1 - (x & 1) ) << 2 ) ) & 15 )
 #define get8(buf,x) (buf[x])
 #define get16(buf,x) (buf[x << 1])
+#define get24(buf,x) (buf[(x << 1) + x])
+#define get32(buf,x) (buf[x << 2])
 
 static unsigned char get1_tab_1[256][8];
 static unsigned char get1_tab_1p[256][16];
@@ -186,6 +188,8 @@ fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict src, in
 					case 4: *dp++ = get4(sp, b) * scale; break;
 					case 8: *dp++ = get8(sp, b); break;
 					case 16: *dp++ = get16(sp, b); break;
+					case 24: *dp++ = get24(sp, b); break;
+					case 32: *dp++ = get32(sp, b); break;
 					}
 					b++;
 				}
