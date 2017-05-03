@@ -15,7 +15,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/time.h> /* for gettimeofday */
+#ifdef _MSC_VER
+struct timeval;
+struct timezone;
+int gettimeofday(struct timeval *tv, struct timezone *tz);
+#else
+#include <sys/time.h>
+#endif
 
 /* Enable for helpful threading debug */
 /* #define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0) */
