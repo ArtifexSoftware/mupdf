@@ -1681,10 +1681,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\function.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\fitz\geometry.c"
 				>
 			</File>
