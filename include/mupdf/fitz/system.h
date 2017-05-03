@@ -11,8 +11,10 @@
  * file pointers code. This must happen before the stdio.h include. */
 #ifdef FZ_LARGEFILE
 /* Set _LARGEFILE64_SOURCE so that we know fopen64 et al will be declared. */
+#ifndef _WIN32
 #ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
+#endif
 #endif
 #endif
 
