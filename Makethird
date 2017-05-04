@@ -622,15 +622,14 @@ GLFW_OUT := $(OUT)/thirdparty/glfw
 ifeq "$(OS)" "MACOS"
 
 GLFW_SRC := \
-	cocoa_time.c \
 	cocoa_init.m \
+	cocoa_joystick.m \
 	cocoa_monitor.m \
+	cocoa_time.c \
 	cocoa_window.m \
 	context.c \
 	init.c \
 	input.c \
-	iokit_joystick.m \
-	mach_time.m \
 	monitor.c \
 	nsgl_context.m \
 	posix_tls.c \

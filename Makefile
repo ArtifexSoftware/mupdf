@@ -91,12 +91,6 @@ $(OUT)/%.a :
 $(OUT)/%.exe: $(OUT)/%.o | $(ALL_DIR)
 	$(LINK_CMD)
 
-$(OUT)/%.o : %.c | $(ALL_DIR)
-	$(CC_CMD)
-
-$(OUT)/%.o : %.cpp | $(ALL_DIR)
-	$(CXX_CMD)
-
 $(OUT)/source/helpers/%.o : source/helpers/%.c | $(ALL_DIR)
 	$(CC_CMD) $(PTHREAD_CFLAGS) -DHAVE_PTHREAD
 
@@ -114,6 +108,12 @@ $(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
 
 $(OUT)/platform/gl/%.o : platform/gl/%.c | $(ALL_DIR)
 	$(CC_CMD) $(GLFW_CFLAGS)
+
+$(OUT)/%.o : %.c | $(ALL_DIR)
+	$(CC_CMD)
+
+$(OUT)/%.o : %.cpp | $(ALL_DIR)
+	$(CXX_CMD)
 
 .PRECIOUS : $(OUT)/%.o # Keep intermediates from chained rules
 

@@ -104,10 +104,10 @@ SYS_JBIG2DEC_LIBS := -ljbig2dec
 SYS_LIBJPEG_LIBS := -ljpeg
 SYS_ZLIB_LIBS := -lz
 
-CC := xcrun cc
-AR := xcrun ar
-LD := xcrun ld
-RANLIB_CMD := xcrun ranlib $@
+CC = xcrun cc
+AR = xcrun ar
+LD = xcrun ld
+RANLIB_CMD = xcrun ranlib $@
 
 # Linux uses pkg-config for system libraries.
 else ifeq "$(OS)" "Linux"
