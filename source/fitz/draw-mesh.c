@@ -288,8 +288,11 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 	}
 	fz_catch(ctx)
 	{
-		fz_drop_pixmap(ctx, conv);
-		fz_drop_pixmap(ctx, temp);
+		if (shade->use_function)
+		{
+			fz_drop_pixmap(ctx, conv);
+			fz_drop_pixmap(ctx, temp);
+		}
 		fz_rethrow(ctx);
 	}
 }
