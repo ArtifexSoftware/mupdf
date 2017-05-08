@@ -46,8 +46,7 @@ fz_keep_image_store_key(fz_context *ctx, fz_image *image)
 void
 fz_drop_image_store_key(fz_context *ctx, fz_image *image)
 {
-	if (fz_drop_key_storable_key(ctx, &image->key_storable))
-		fz_free(ctx, image);
+	fz_drop_key_storable_key(ctx, &image->key_storable);
 }
 
 static int
@@ -114,12 +113,7 @@ static const fz_store_type fz_image_store_type =
 void
 fz_drop_image(fz_context *ctx, fz_image *image)
 {
-	if (fz_drop_key_storable(ctx, &image->key_storable))
-	{
-		fz_drop_colorspace(ctx, image->colorspace);
-		fz_drop_image(ctx, image->mask);
-		fz_free(ctx, image);
-	}
+	fz_drop_key_storable(ctx, &image->key_storable);
 }
 
 static void
@@ -376,11 +370,20 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 }
 
 void
+fz_drop_image_base(fz_context *ctx, fz_image *image)
+{
+	fz_drop_colorspace(ctx, image->colorspace);
+	fz_drop_image(ctx, image->mask);
+	fz_free(ctx, image);
+}
+
+void
 fz_drop_image_imp(fz_context *ctx, fz_storable *image_)
 {
 	fz_image *image = (fz_image *)image_;
 
 	image->drop_image(ctx, image);
+	fz_drop_image_base(ctx, image);
 }
 
 static void

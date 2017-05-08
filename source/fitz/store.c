@@ -170,7 +170,7 @@ do_reap(fz_context *ctx)
 	}
 }
 
-int fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
+void fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 {
 	/* Explicitly drop const to allow us to use const
 	 * sanely throughout the code. */
@@ -179,7 +179,7 @@ int fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 	int unlock = 1;
 
 	if (s == NULL)
-		return 0;
+		return;
 
 	if (s->storable.refs > 0)
 		(void)Memento_dropRef(s);
@@ -213,7 +213,6 @@ int fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 	 */
 	if (drop)
 		s->storable.drop(ctx, &s->storable);
-	return drop;
 }
 
 void *fz_keep_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
@@ -237,7 +236,7 @@ void *fz_keep_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 	return s;
 }
 
-int fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
+void fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 {
 	/* Explicitly drop const to allow us to use const
 	 * sanely throughout the code. */
@@ -245,7 +244,7 @@ int fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 	int drop;
 
 	if (s == NULL)
-		return 0;
+		return;
 
 	if (s->storable.refs > 0)
 		(void)Memento_dropRef(s);
@@ -263,7 +262,6 @@ int fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 	 */
 	if (drop)
 		s->storable.drop(ctx, &s->storable);
-	return drop;
 }
 
 static void
@@ -900,7 +898,7 @@ void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const f
 		remove = item->next;
 
 		/* Drop a reference to the value (freeing if required) */
-		if (item->prev)
+		if (item->prev) /* See above for our abuse of prev here */
 			item->val->drop(ctx, item->val);
 
 		/* Always drops the key and drop the item */

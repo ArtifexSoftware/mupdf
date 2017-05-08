@@ -175,6 +175,7 @@ fz_drop_image_gprf_imp(fz_context *ctx, fz_storable *image_)
 
 	fz_drop_gprf_file(ctx, image->file);
 	fz_drop_separations(ctx, image->separations);
+	fz_drop_image_base(ctx, image->super);
 }
 
 static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32_t m, uint32_t y, uint32_t k)
