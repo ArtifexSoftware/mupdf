@@ -402,7 +402,7 @@ static void paint_solid_color_1_da(byte * restrict dp, int n, int w, const byte 
 static void paint_solid_color_0_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
 {
 	TRACK_FN();
-	template_solid_color_0_da(dp, w, 1);
+	template_solid_color_0_da(dp, w, 256);
 }
 
 #if FZ_PLOTTERS_RGB
