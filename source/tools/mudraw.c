@@ -39,7 +39,7 @@ enum {
 	OUT_GPROOF
 };
 
-enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA, CS_GRAYICC, CS_GRAYICC_ALPHA, CS_RGBICC, CS_RGBICC_ALPHA, CS_CMYKICC, CS_CMYKICC_ALPHA };
+enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA };
 
 typedef struct
 {
@@ -96,12 +96,6 @@ static const cs_name_t cs_name_table[] =
 	{ "cmyk", CS_CMYK },
 	{ "cmyka", CS_CMYK_ALPHA },
 	{ "cmykalpha", CS_CMYK_ALPHA },
-	{ "iccgray", CS_GRAYICC },
-	{ "iccgrayalpha", CS_GRAYICC_ALPHA },
-	{ "iccrgb", CS_RGBICC },
-	{ "iccrgbalpha", CS_RGBICC_ALPHA },
-	{ "icccmyk", CS_CMYKICC },
-	{ "icccmykalpha", CS_CMYKICC_ALPHA },
 };
 
 typedef struct
@@ -113,7 +107,7 @@ typedef struct
 
 static const format_cs_table_t format_cs_table[] =
 {
-	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_GRAYICC, CS_GRAYICC_ALPHA, CS_RGBICC, CS_RGBICC_ALPHA } },
+	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA} },
 	{ OUT_PPM, CS_RGB, { CS_GRAY, CS_RGB } },
 	{ OUT_PNM, CS_GRAY, { CS_GRAY, CS_RGB } },
 	{ OUT_PAM, CS_RGB_ALPHA, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
@@ -1613,21 +1607,6 @@ int mudraw_main(int argc, char **argv)
 	case CS_CMYK_ALPHA:
 		colorspace = fz_device_cmyk(ctx);
 		alpha = (out_cs == CS_CMYK_ALPHA);
-		break;
-	case CS_GRAYICC:
-	case CS_GRAYICC_ALPHA:
-		colorspace = fz_new_icc_colorspace(ctx, -1, 1, NULL, "gray-icc");
-		alpha = (out_cs == CS_GRAYICC_ALPHA);
-		break;
-	case CS_RGBICC:
-	case CS_RGBICC_ALPHA:
-		colorspace = fz_new_icc_colorspace(ctx, -1, 3, NULL, "rgb-icc");
-		alpha = (out_cs == CS_RGBICC_ALPHA);
-		break;
-	case CS_CMYKICC:
-	case CS_CMYKICC_ALPHA:
-		colorspace = fz_new_icc_colorspace(ctx, -1, 4, NULL, "cmyk-icc");
-		alpha = (out_cs == CS_CMYKICC_ALPHA);
 		break;
 	default:
 		fprintf(stderr, "Unknown colorspace!\n");

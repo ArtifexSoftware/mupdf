@@ -597,6 +597,14 @@ void fz_new_cmm_ctx(fz_context *ctx)
 #endif
 }
 
+static void
+fz_drop_icc_colorspace_ctx(fz_context *ctx, fz_colorspace *cs)
+{
+	if (cs->free_data && cs->data)
+		cs->free_data(ctx, cs);
+	fz_free(ctx, cs);
+}
+
 void fz_new_colorspace_context(fz_context *ctx)
 {
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
@@ -610,12 +618,12 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace->lab = fz_default_lab;
 	ctx->colorspace->cmm = NULL;
 #else
+	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
 	ctx->colorspace->gray = fz_new_icc_colorspace(ctx, -1, 1, NULL, "gray-icc");
 	ctx->colorspace->rgb = fz_new_icc_colorspace(ctx, -1, 3, NULL, "rgb-icc");
 	ctx->colorspace->bgr = ctx->colorspace->rgb; /* TODO: must swizzle R and B components */
 	ctx->colorspace->cmyk = fz_new_icc_colorspace(ctx, -1, 4, NULL, "cmyk-icc");
 	ctx->colorspace->lab = fz_new_icc_colorspace(ctx, -1, 3, NULL, "lab-icc");
-	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
 #endif
 }
 
@@ -633,6 +641,12 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		return;
 	if (fz_drop_imp(ctx, ctx->colorspace, &ctx->colorspace->ctx_refs))
 	{
+#ifndef NO_ICC
+		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->gray);
+		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->rgb);
+		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->cmyk);
+		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->lab);
+#endif
 		fz_cmm_free_ctx(ctx->colorspace->cmm);
 		fz_free(ctx, ctx->colorspace);
 		ctx->colorspace = NULL;

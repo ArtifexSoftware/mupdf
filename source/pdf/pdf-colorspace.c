@@ -36,9 +36,12 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 			}
 		}
 	}
-	fz_catch(ctx)
+	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, buffer);
+	}
+	fz_catch(ctx)
+	{
 	}
 
 	if (n == 1 || n == 3 || n == 4)
