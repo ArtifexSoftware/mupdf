@@ -472,7 +472,10 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 
 	/* Now bump the ref */
 	if (val->refs > 0)
+	{
+		(void)Memento_takeRef(val);
 		val->refs++;
+	}
 
 	/* If we haven't got an infinite store, check for space within it */
 	if (store->max != FZ_STORE_UNLIMITED)
