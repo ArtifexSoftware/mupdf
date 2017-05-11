@@ -1593,6 +1593,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\draw-edgebuffer.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\draw-glyph.c"
 				>
 			</File>

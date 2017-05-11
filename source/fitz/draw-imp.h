@@ -316,7 +316,13 @@ void *fz_new_rasterizer_of_size(fz_context *ctx, int size, const fz_rasterizer_f
 
 fz_rasterizer *fz_new_gel(fz_context *ctx);
 
+typedef enum
+{
+	FZ_EDGEBUFFER_ANY_PART_OF_PIXEL,
+	FZ_EDGEBUFFER_CENTER_OF_PIXEL
+} fz_edgebuffer_rule;
 
+fz_rasterizer *fz_new_edgebuffer(fz_context *ctx, fz_edgebuffer_rule rule);
 
 int fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_matrix *ctm, float flatness, const fz_irect *irect, fz_irect *bounds);
 int fz_flatten_stroke_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth, const fz_irect *irect, fz_irect *bounds);

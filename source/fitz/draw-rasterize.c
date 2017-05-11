@@ -241,7 +241,12 @@ void *fz_new_rasterizer_of_size(fz_context *ctx, int size, const fz_rasterizer_f
 
 fz_rasterizer *fz_new_rasterizer(fz_context *ctx)
 {
-	return fz_new_gel(ctx);
+	if (ctx->aa->bits == 10)
+		return fz_new_edgebuffer(ctx, FZ_EDGEBUFFER_ANY_PART_OF_PIXEL);
+	else if (ctx->aa->bits == 9)
+		return fz_new_edgebuffer(ctx, FZ_EDGEBUFFER_CENTER_OF_PIXEL);
+	else
+		return fz_new_gel(ctx);
 }
 
 void fz_convert_rasterizer(fz_context *ctx, fz_rasterizer *r, int eofill, fz_pixmap *pix, unsigned char *colorbv)
