@@ -195,7 +195,7 @@ static void
 fz_drop_link_imp(fz_context *ctx, fz_storable *storable)
 {
 	fz_icclink *link = (fz_icclink *)storable;
-	fz_cmm_free_link(link);
+	fz_cmm_free_link(ctx, link);
 	fz_free(ctx, link);
 }
 
@@ -2282,7 +2282,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 		{
 			for (i = 0; i < src_n; i++)
 				srcv_s[i] = srcv[i] * 65535;
-			fz_cmm_transform_color(link, 2, dstv_s, srcv_s);
+			fz_cmm_transform_color(ctx, link, 2, dstv_s, srcv_s);
 			for (i = 0; i < dsts->n; i++)
 				dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
 		}
@@ -2753,7 +2753,7 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_iccprofile *profile = cs->data;
 	fz_drop_buffer(ctx, profile->buffer);
-	fz_cmm_free_profile(profile);
+	fz_cmm_free_profile(ctx, profile);
 	fz_free(ctx, profile);
 }
 
@@ -2805,7 +2805,7 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		if (profile->cmm_handle == NULL || num != profile->num_devcomp)
 		{
 			if (profile->cmm_handle)
-				fz_cmm_free_profile(profile);
+				fz_cmm_free_profile(ctx, profile);
 		}
 		else
 		{
@@ -2819,7 +2819,7 @@ fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, co
 		if (profile != NULL)
 		{
 			fz_drop_buffer(ctx, profile->buffer);
-			fz_cmm_free_profile(profile);
+			fz_cmm_free_profile(ctx, profile);
 			fz_free(ctx, profile);
 		}
 		fz_rethrow(ctx);
@@ -2859,7 +2859,7 @@ free_cal(fz_context *ctx, fz_colorspace *cs)
 	if (cal_data->profile != NULL)
 	{
 		fz_free(ctx, cal_data->profile->res_buffer);
-		fz_cmm_free_profile(cal_data->profile);
+		fz_cmm_free_profile(ctx, cal_data->profile);
 		fz_free(ctx, cal_data->profile);
 	}
 	fz_free(ctx, cal_data);

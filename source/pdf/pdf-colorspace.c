@@ -67,7 +67,7 @@ separation_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float 
 {
 	struct separation *sep = cs->data;
 	float alt[FZ_MAX_COLORS];
-	fz_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
+	pdf_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
 	fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, sep->base, alt);
 }
 

@@ -65,9 +65,11 @@ static cmsPluginMemHandler fz_cmm_memhandler =
 };
 
 static int
-fz_cmm_num_devcomps(fz_iccprofile *profile)
+fz_cmm_num_devcomps(fz_context *ctx, fz_iccprofile *profile)
 {
-	return cmsChannelsOf(cmsGetColorSpace(profile->cmm_handle));
+	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
+
+	return cmsChannelsOf(cmm_ctx, cmsGetColorSpace(cmm_ctx, profile->cmm_handle));
 }
 
 int
@@ -80,6 +82,7 @@ fz_cmm_avoid_white_fix_flag()
 void
 fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src)
 {
+	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM) link->cmm_handle;
 	cmsUInt32Number dwInputFormat = 0;
 	cmsUInt32Number dwOutputFormat = 0;
@@ -88,28 +91,28 @@ fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pi
 	int k;
 
 	/* check the channels. */
-	cmm_num_src = T_CHANNELS(cmsGetTransformInputFormat(hTransform));
-	cmm_num_des = T_CHANNELS(cmsGetTransformOutputFormat(hTransform));
+	cmm_num_src = T_CHANNELS(cmsGetTransformInputFormat(cmm_ctx, hTransform));
+	cmm_num_des = T_CHANNELS(cmsGetTransformOutputFormat(cmm_ctx, hTransform));
 	if (cmm_num_src != src->n || cmm_num_des != dst->n)
 		return;
 
 	/* Set up the cmm format descriptions */
-	dwInputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformInputFormat(hTransform)));
-	dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformOutputFormat(hTransform)));
+	dwInputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformInputFormat(cmm_ctx, hTransform)));
+	dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformOutputFormat(cmm_ctx, hTransform)));
 	dwInputFormat = dwInputFormat | BYTES_SH(1);
 	dwOutputFormat = dwOutputFormat | BYTES_SH(1);
 	dwInputFormat = dwInputFormat | CHANNELS_SH(cmm_num_src);
 	dwOutputFormat = dwOutputFormat | CHANNELS_SH(cmm_num_des);
 	dwInputFormat = dwInputFormat | EXTRA_SH(src->alpha);
 	dwOutputFormat = dwOutputFormat | EXTRA_SH(dst->alpha);
-	cmsChangeBuffersFormat(hTransform, dwInputFormat, dwOutputFormat);
+	cmsChangeBuffersFormat(cmm_ctx, hTransform, dwInputFormat, dwOutputFormat);
 
 	/* Transform */
 	inputpos = src->samples;
 	outputpos = dst->samples;
 	for (k = 0; k < src->h; k++)
 	{
-		cmsDoTransform(hTransform, inputpos, outputpos, src->w);
+		cmsDoTransform(cmm_ctx, hTransform, inputpos, outputpos, src->w);
 		inputpos += src->stride;
 		outputpos += dst->stride;
 	}
@@ -117,21 +120,22 @@ fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pi
 
 /* Transform a single color. */
 void
-fz_cmm_transform_color(fz_icclink *link, int num_bytes, void *dst, const void *src)
+fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, int num_bytes, void *dst, const void *src)
 {
+	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM) link->cmm_handle;
 	cmsUInt32Number dwInputFormat, dwOutputFormat;
 
-	dwInputFormat = cmsGetTransformInputFormat(hTransform);
-	dwOutputFormat = cmsGetTransformOutputFormat(hTransform);
+	dwInputFormat = cmsGetTransformInputFormat(cmm_ctx, hTransform);
+	dwOutputFormat = cmsGetTransformOutputFormat(cmm_ctx, hTransform);
 	dwInputFormat = (dwInputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
 	dwOutputFormat = (dwOutputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
 
 	/* Change the formatters */
-	cmsChangeBuffersFormat(hTransform, dwInputFormat, dwOutputFormat);
+	cmsChangeBuffersFormat(cmm_ctx, hTransform, dwInputFormat, dwOutputFormat);
 
 	/* Do the conversion */
-	cmsDoTransform(hTransform, src, dst, 1);
+	cmsDoTransform(cmm_ctx, hTransform, src, dst, 1);
 }
 
 void
@@ -145,19 +149,19 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cm
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 
 	/* src */
-	src_cs = cmsGetColorSpace(src->cmm_handle);
-	lcms_src_cs = _cmsLCMScolorSpace(src_cs);
+	src_cs = cmsGetColorSpace(cmm_ctx, src->cmm_handle);
+	lcms_src_cs = _cmsLCMScolorSpace(cmm_ctx, src_cs);
 	if (lcms_src_cs < 0)
 		lcms_src_cs = 0;
-	src_num_chan = cmsChannelsOf(src_cs);
+	src_num_chan = cmsChannelsOf(cmm_ctx, src_cs);
 	src_data_type = (COLORSPACE_SH(lcms_src_cs) | CHANNELS_SH(src_num_chan) | BYTES_SH(2));
 
 	/* dst */
-	des_cs = cmsGetColorSpace(dst->cmm_handle);
-	lcms_des_cs = _cmsLCMScolorSpace(des_cs);
+	des_cs = cmsGetColorSpace(cmm_ctx, dst->cmm_handle);
+	lcms_des_cs = _cmsLCMScolorSpace(cmm_ctx, des_cs);
 	if (lcms_des_cs < 0)
 		lcms_des_cs = 0;
-	des_num_chan = cmsChannelsOf(des_cs);
+	des_num_chan = cmsChannelsOf(cmm_ctx, des_cs);
 	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | BYTES_SH(2));
 
 	/* flags */
@@ -170,12 +174,14 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cm
 }
 
 void
-fz_cmm_free_link(fz_icclink *link)
+fz_cmm_free_link(fz_context *ctx, fz_icclink *link)
 {
+	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
+
 	if (link->cmm_handle != NULL)
 	{
 		DEBUG_LCMS_MEM(("Free Link:: link = %p \n", (void*)link->cmm_handle));
-		cmsDeleteTransform(link->cmm_handle);
+		cmsDeleteTransform(cmm_ctx, link->cmm_handle);
 	}
 	link->cmm_handle = NULL;
 }
@@ -218,19 +224,21 @@ fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 	else
 		profile->cmm_handle = cmsOpenProfileFromMemTHR(cmm_ctx, profile->res_buffer, profile->res_size);
 	if (profile->cmm_handle != NULL)
-		profile->num_devcomp = fz_cmm_num_devcomps(profile);
+		profile->num_devcomp = fz_cmm_num_devcomps(ctx, profile);
 	else
 		profile->num_devcomp = 0;
 	DEBUG_LCMS_MEM(("Create Profile:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)profile, (void*)profile->cmm_handle));
 }
 
 void
-fz_cmm_free_profile(fz_iccprofile *profile)
+fz_cmm_free_profile(fz_context *ctx, fz_iccprofile *profile)
 {
+	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
+
 	if (profile->cmm_handle != NULL)
 	{
 		DEBUG_LCMS_MEM(("Free Profile:: profile = %p \n", (void*) profile->cmm_handle));
-		cmsCloseProfile(profile->cmm_handle);
+		cmsCloseProfile(cmm_ctx, profile->cmm_handle);
 	}
 	profile->cmm_handle = NULL;
 }
