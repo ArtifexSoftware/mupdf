@@ -1874,18 +1874,18 @@ static void ffi_Page_getLinks(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
-	fz_link *link, *n;
+	fz_link *links, *link;
 	int i = 0;
 
 	js_newarray(J);
 
 	fz_try(ctx)
-		link = fz_load_links(ctx, page);
+		links = fz_load_links(ctx, page);
 	fz_catch(ctx)
 		rethrow(J);
 
 	js_newarray(J);
-	for (n = link; n; n = n->next) {
+	for (link = links; link; link = link->next) {
 		js_newobject(J);
 
 		ffi_pushrect(J, link->rect);
@@ -1897,7 +1897,7 @@ static void ffi_Page_getLinks(js_State *J)
 		js_setindex(J, -2, i++);
 	}
 
-	fz_drop_link(ctx, link);
+	fz_drop_link(ctx, links);
 }
 
 static void ffi_Annotation_isPDF(js_State *J)
