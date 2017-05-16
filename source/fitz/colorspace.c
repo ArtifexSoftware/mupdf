@@ -616,7 +616,6 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace->bgr = fz_default_bgr;
 	ctx->colorspace->cmyk = fz_default_cmyk;
 	ctx->colorspace->lab = fz_default_lab;
-	ctx->colorspace->cmm = NULL;
 #else
 	ctx->colorspace->gray = fz_new_icc_colorspace(ctx, -1, 1, NULL, "gray-icc");
 	ctx->colorspace->rgb = fz_new_icc_colorspace(ctx, -1, 3, NULL, "rgb-icc");

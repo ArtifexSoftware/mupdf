@@ -18,9 +18,10 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
+#ifndef NO_ICC
 		buffer = pdf_load_stream(ctx, dict);
 		cs = fz_new_icc_colorspace(ctx, 1, n, buffer, NULL);
-
+#endif
 		/* Use alternate if ICC not invalid */
 		if (cs == NULL)
 		{
@@ -32,6 +33,22 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 				{
 					fz_drop_colorspace(ctx, cs);
 					fz_throw(ctx, FZ_ERROR_GENERIC, "ICCBased /Alternate colorspace must have %d components", n);
+				}
+			}
+			else
+			{
+				switch (n)
+				{
+				case 1:
+					cs = fz_device_gray(ctx);
+					break;
+				case 3:
+					cs = fz_device_rgb(ctx);
+					break;
+				case 4:
+					cs = fz_device_cmyk(ctx);
+					break;
+				default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
 				}
 			}
 		}
@@ -375,9 +392,17 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceCMYK))
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
+#ifdef NO_ICC
+				return fz_device_gray(ctx);
+#else
 				return pdf_calgray(ctx, pdf_array_get(ctx, obj, 1));
+#endif
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
+#ifdef NO_ICC
+				return fz_device_rgb(ctx);
+#else
 				return pdf_calrgb(ctx, pdf_array_get(ctx, obj, 1));
+#endif
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalCMYK))
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_Lab))
