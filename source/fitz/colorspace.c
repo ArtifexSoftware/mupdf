@@ -165,10 +165,11 @@ fz_cmp_link_key(fz_context *ctx, void *k0_, void *k1_)
 }
 
 static void
-fz_print_link_key(fz_context *ctx, fz_output *out, void *key_)
+fz_format_link_key(fz_context *ctx, char *s, int n, void *key_)
 {
 	fz_link_key *key = (fz_link_key *)key_;
-	fz_write_printf(ctx, out, "(link src_md5 [%d %d %d %d] dst_md5 [%d %d %d %d]) ", key->src_md5[0], key->src_md5[1], key->src_md5[2], key->src_md5[3], key->dst_md5[0], key->dst_md5[1], key->dst_md5[2], key->dst_md5[3]);
+	fz_snprintf(s, n, "(link src_md5[%d %d %d %d] dst_md5[%d %d %d %d]) ",
+		key->src_md5[0], key->src_md5[1], key->src_md5[2], key->src_md5[3], key->dst_md5[0], key->dst_md5[1], key->dst_md5[2], key->dst_md5[3]);
 }
 
 static int
@@ -188,7 +189,8 @@ static fz_store_type fz_link_store_type =
 	fz_keep_link_key,
 	fz_drop_link_key,
 	fz_cmp_link_key,
-	fz_print_link_key,
+	fz_format_link_key,
+	NULL
 };
 
 static void
