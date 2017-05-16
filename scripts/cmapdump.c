@@ -223,11 +223,15 @@ fz_font_context *fz_keep_font_context(fz_context *ctx)
 	return NULL;
 }
 
-void fz_new_colorspace_context(fz_context *ctx)
+void fz_new_cmm_context(fz_context *ctx)
 {
 }
 
-void fz_new_cmm_ctx(fz_context *ctx)
+void fz_free_cmm_context(fz_context *ctx)
+{
+}
+
+void fz_new_colorspace_context(fz_context *ctx)
 {
 }
 

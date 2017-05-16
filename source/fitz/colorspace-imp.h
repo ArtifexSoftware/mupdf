@@ -31,6 +31,8 @@ struct fz_icclink_s
 	fz_storable storable;
 	int num_in;
 	int num_out;
+	int depth;
+	int alpha;
 	int is_identity;
 	void *cmm_handle;
 };

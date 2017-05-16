@@ -141,6 +141,8 @@ typedef struct fz_store_hash_s
 			unsigned char dst_md5[16];
 			int ri;
 			int bp;
+			int depth;
+			int alpha;
 		} link;
 	} u;
 } fz_store_hash;

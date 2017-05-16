@@ -16,6 +16,7 @@ typedef struct fz_id_context_s fz_id_context;
 typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_colorspace_context_s fz_colorspace_context;
+typedef struct fz_cmm_context_s fz_cmm_context;
 typedef struct fz_aa_context_s fz_aa_context;
 typedef struct fz_style_context_s fz_style_context;
 typedef struct fz_locks_context_s fz_locks_context;
@@ -118,6 +119,7 @@ struct fz_context_s
 	fz_warn_context *warn;
 	fz_font_context *font;
 	fz_colorspace_context *colorspace;
+	fz_cmm_context *cmm;
 	fz_aa_context *aa;
 	fz_style_context *style;
 	fz_store *store;

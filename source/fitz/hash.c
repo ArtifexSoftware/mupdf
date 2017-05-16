@@ -11,7 +11,7 @@ exhibiting bad behaviour if entries are inserted
 and removed frequently.
 */
 
-enum { MAX_KEY_LEN = 48 };
+enum { MAX_KEY_LEN = 52 };
 typedef struct fz_hash_entry_s fz_hash_entry;
 
 struct fz_hash_entry_s

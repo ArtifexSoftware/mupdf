@@ -139,6 +139,8 @@ struct fz_link_key_s {
 	unsigned char src_md5[16];
 	unsigned char dst_md5[16];
 	fz_color_params rend;
+	int alpha;
+	int depth;
 };
 
 static void *
@@ -161,7 +163,7 @@ fz_cmp_link_key(fz_context *ctx, void *k0_, void *k1_)
 {
 	fz_link_key *k0 = (fz_link_key *)k0_;
 	fz_link_key *k1 = (fz_link_key *)k1_;
-	return k0->rend.bp == k1->rend.bp && k0->rend.ri == k1->rend.ri && memcmp(k0->dst_md5, k1->dst_md5, 16) == 0 && memcmp(k0->src_md5, k1->src_md5, 16);
+	return k0->alpha == k1->alpha && k0->depth == k1->depth && k0->rend.bp == k1->rend.bp && k0->rend.ri == k1->rend.ri && memcmp(k0->dst_md5, k1->dst_md5, 16) == 0 && memcmp(k0->src_md5, k1->src_md5, 16);
 }
 
 static void
@@ -180,6 +182,8 @@ fz_make_hash_link_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 	memcpy(hash->u.link.src_md5, key->src_md5, 16);
 	hash->u.link.ri = key->rend.ri;
 	hash->u.link.bp = key->rend.bp;
+	hash->u.link.alpha = key->alpha;
+	hash->u.link.depth = key->depth;
 	return 1;
 }
 
@@ -239,7 +243,7 @@ get_base_icc(fz_context *ctx, fz_colorspace *cs)
 }
 
 static fz_icclink *
-fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_color_params *rend)
+fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_color_params *rend, int num_bytes, int alpha)
 {
 	fz_icclink *link;
 
@@ -256,7 +260,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_colo
 		link->is_identity = 0;
 
 	/* Does not throw.  Simply returns NULL if an issue */
-	fz_cmm_new_link(ctx, link, rend, 0, dst, src);
+	fz_cmm_new_link(ctx, link, rend, 0, num_bytes, alpha, dst, src);
 	if (link->cmm_handle == NULL)
 	{
 		fz_free(ctx, link);
@@ -269,7 +273,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_colo
 }
 
 static fz_icclink *
-fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend, int *src_n)
+fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend, int num_bytes, int alpha, int *src_n)
 {
 	fz_icclink *link;
 	fz_iccprofile *src_icc = NULL;
@@ -313,7 +317,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_colo
 		/* Not found.  Make new one add to store */
 		if (link == NULL)
 		{
-			link = fz_new_icc_link(ctx, dst_icc, src_icc, rend);
+			link = fz_new_icc_link(ctx, dst_icc, src_icc, rend, num_bytes, alpha);
 			new_link = fz_store_item(ctx, key, link, sizeof(fz_icclink), &fz_link_store_type);
 			if (new_link != NULL)
 			{
@@ -581,23 +585,17 @@ static fz_colorspace *fz_default_cmyk = &k_default_cmyk;
 static fz_colorspace *fz_default_lab = &k_default_lab;
 static fz_color_params *fz_default_color_params = &k_default_color_params;
 
+struct fz_cmm_context_s
+{
+	void *cmm;
+};
+
 struct fz_colorspace_context_s
 {
 	int ctx_refs;
 	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;
 	fz_color_params *params;
-	void *cmm;
 };
-
-/* Make sure that the cloned context gets a new cmm context. */
-void fz_new_cmm_ctx(fz_context *ctx)
-{
-#ifdef NO_ICC
-	return;
-#else
-	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
-#endif
-}
 
 static void
 fz_drop_icc_colorspace_ctx(fz_context *ctx, fz_colorspace *cs)
@@ -620,13 +618,24 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace->lab = fz_default_lab;
 	ctx->colorspace->cmm = NULL;
 #else
-	ctx->colorspace->cmm = fz_cmm_new_ctx(ctx);
 	ctx->colorspace->gray = fz_new_icc_colorspace(ctx, -1, 1, NULL, "gray-icc");
 	ctx->colorspace->rgb = fz_new_icc_colorspace(ctx, -1, 3, NULL, "rgb-icc");
 	ctx->colorspace->bgr = ctx->colorspace->rgb; /* TODO: must swizzle R and B components */
 	ctx->colorspace->cmyk = fz_new_icc_colorspace(ctx, -1, 4, NULL, "cmyk-icc");
 	ctx->colorspace->lab = fz_new_icc_colorspace(ctx, -1, 3, NULL, "lab-icc");
 #endif
+}
+
+void
+fz_new_cmm_context(fz_context *ctx)
+{
+	ctx->cmm = fz_cmm_new_ctx(ctx);
+}
+
+void
+fz_free_cmm_context(fz_context *ctx)
+{
+	fz_cmm_free_ctx(ctx->cmm);
 }
 
 fz_colorspace_context *
@@ -649,7 +658,6 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->cmyk);
 		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->lab);
 #endif
-		fz_cmm_free_ctx(ctx->colorspace->cmm);
 		fz_free(ctx, ctx->colorspace);
 		ctx->colorspace = NULL;
 	}
@@ -1886,7 +1894,7 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	inputpos = src->samples;
 	outputpos = dst->samples;
 
-	link = fz_get_icc_link(ctx, dsts, srcs, cs_params, &src_n);
+	link = fz_get_icc_link(ctx, dsts, srcs, cs_params, 1, 0, &src_n);
 	if (link != NULL)
 	{
 		if (link->is_identity)
@@ -2272,7 +2280,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	unsigned short dstv_s[FZ_MAX_COLORS];
 	unsigned short srcv_s[FZ_MAX_COLORS];
 
-	link = fz_get_icc_link(ctx, dsts, srcs, rend, &src_n);
+	link = fz_get_icc_link(ctx, dsts, srcs, rend, 2, 0, &src_n);
 	if (link != NULL)
 	{
 		if (link->is_identity)
@@ -2739,7 +2747,7 @@ void *
 fz_get_cmm_ctx(fz_context *ctx)
 {
 	if (ctx->colorspace != NULL)
-		return ctx->colorspace->cmm;
+		return ctx->cmm;
 	return NULL;
 }
 
@@ -2747,7 +2755,7 @@ void
 fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx)
 {
 	if (ctx->colorspace != NULL)
-		ctx->colorspace->cmm = cmm_ctx;
+		ctx->cmm = cmm_ctx;
 }
 
 static void

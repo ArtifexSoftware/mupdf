@@ -84,28 +84,16 @@ fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pi
 {
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM) link->cmm_handle;
-	cmsUInt32Number dwInputFormat = 0;
-	cmsUInt32Number dwOutputFormat = 0;
 	int cmm_num_src, cmm_num_des;
 	unsigned char *inputpos, *outputpos;
 	int k;
+	DEBUG_LCMS_MEM(("@@@@@@@ Transform Pixmap Start:: mupdf ctx = %p lcms ctx = %p link = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)link->cmm_handle));
 
 	/* check the channels. */
 	cmm_num_src = T_CHANNELS(cmsGetTransformInputFormat(cmm_ctx, hTransform));
 	cmm_num_des = T_CHANNELS(cmsGetTransformOutputFormat(cmm_ctx, hTransform));
 	if (cmm_num_src != src->n || cmm_num_des != dst->n)
 		return;
-
-	/* Set up the cmm format descriptions */
-	dwInputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformInputFormat(cmm_ctx, hTransform)));
-	dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformOutputFormat(cmm_ctx, hTransform)));
-	dwInputFormat = dwInputFormat | BYTES_SH(1);
-	dwOutputFormat = dwOutputFormat | BYTES_SH(1);
-	dwInputFormat = dwInputFormat | CHANNELS_SH(cmm_num_src);
-	dwOutputFormat = dwOutputFormat | CHANNELS_SH(cmm_num_des);
-	dwInputFormat = dwInputFormat | EXTRA_SH(src->alpha);
-	dwOutputFormat = dwOutputFormat | EXTRA_SH(dst->alpha);
-	cmsChangeBuffersFormat(cmm_ctx, hTransform, dwInputFormat, dwOutputFormat);
 
 	/* Transform */
 	inputpos = src->samples;
@@ -116,6 +104,7 @@ fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pi
 		inputpos += src->stride;
 		outputpos += dst->stride;
 	}
+	DEBUG_LCMS_MEM(("@@@@@@@ Transform Pixmap End:: mupdf ctx = %p lcms ctx = %p link = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)link->cmm_handle));
 }
 
 /* Transform a single color. */
@@ -124,22 +113,13 @@ fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, int num_bytes, void *d
 {
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM) link->cmm_handle;
-	cmsUInt32Number dwInputFormat, dwOutputFormat;
-
-	dwInputFormat = cmsGetTransformInputFormat(cmm_ctx, hTransform);
-	dwOutputFormat = cmsGetTransformOutputFormat(cmm_ctx, hTransform);
-	dwInputFormat = (dwInputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
-	dwOutputFormat = (dwOutputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
-
-	/* Change the formatters */
-	cmsChangeBuffersFormat(cmm_ctx, hTransform, dwInputFormat, dwOutputFormat);
 
 	/* Do the conversion */
 	cmsDoTransform(cmm_ctx, hTransform, src, dst, 1);
 }
 
 void
-fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cmm_flags, fz_iccprofile *dst, fz_iccprofile *src)
+fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, fz_iccprofile *dst, fz_iccprofile *src)
 {
 	cmsUInt32Number src_data_type, des_data_type;
 	cmsColorSpaceSignature src_cs, des_cs;
@@ -148,13 +128,15 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cm
 	unsigned int flag = cmsFLAGS_HIGHRESPRECALC | cmm_flags;
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 
+	DEBUG_LCMS_MEM(("@@@@@@@ Create Link Start:: mupdf ctx = %p lcms ctx = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)src->cmm_handle, (void*)dst->cmm_handle));
 	/* src */
 	src_cs = cmsGetColorSpace(cmm_ctx, src->cmm_handle);
 	lcms_src_cs = _cmsLCMScolorSpace(cmm_ctx, src_cs);
 	if (lcms_src_cs < 0)
 		lcms_src_cs = 0;
 	src_num_chan = cmsChannelsOf(cmm_ctx, src_cs);
-	src_data_type = (COLORSPACE_SH(lcms_src_cs) | CHANNELS_SH(src_num_chan) | BYTES_SH(2));
+	src_data_type = (COLORSPACE_SH(lcms_src_cs) | CHANNELS_SH(src_num_chan) | BYTES_SH(num_bytes));
+	src_data_type = src_data_type | EXTRA_SH(alpha);
 
 	/* dst */
 	des_cs = cmsGetColorSpace(cmm_ctx, dst->cmm_handle);
@@ -162,15 +144,19 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cm
 	if (lcms_des_cs < 0)
 		lcms_des_cs = 0;
 	des_num_chan = cmsChannelsOf(cmm_ctx, des_cs);
-	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | BYTES_SH(2));
+	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | BYTES_SH(num_bytes));
+	des_data_type = des_data_type | EXTRA_SH(alpha);
 
 	/* flags */
 	if (rend->bp)
 		flag |= cmsFLAGS_BLACKPOINTCOMPENSATION;
 
+	link->depth = num_bytes;
+	link->alpha = alpha;
+
 	/* create */
 	link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->ri, flag);
-	DEBUG_LCMS_MEM(("Create Link:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*) link, (void*) link->cmm_handle, (void*)src->cmm_handle, (void*)dst->cmm_handle));
+	DEBUG_LCMS_MEM(("@@@@@@@ Create Link End:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*) link, (void*) link->cmm_handle, (void*)src->cmm_handle, (void*)dst->cmm_handle));
 }
 
 void
@@ -215,6 +201,7 @@ fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 	size_t size;
 	unsigned char *data;
 
+	DEBUG_LCMS_MEM(("@@@@@@@ Create Profile Start:: mupdf ctx = %p lcms ctx = %p \n", (void*)ctx, (void*)cmm_ctx));
 	cmsSetLogErrorHandlerTHR(cmm_ctx, fz_cmm_error);
 	if (profile->buffer != NULL)
 	{
@@ -227,7 +214,7 @@ fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 		profile->num_devcomp = fz_cmm_num_devcomps(ctx, profile);
 	else
 		profile->num_devcomp = 0;
-	DEBUG_LCMS_MEM(("Create Profile:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)profile, (void*)profile->cmm_handle));
+	DEBUG_LCMS_MEM(("@@@@@@@ Create Profile End:: mupdf ctx = %p lcms ctx = %p profile = %p profile_cmm = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)profile, (void*)profile->cmm_handle));
 }
 
 void
