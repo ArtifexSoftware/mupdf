@@ -125,7 +125,7 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cm
 	cmsColorSpaceSignature src_cs, des_cs;
 	int src_num_chan, des_num_chan;
 	int lcms_src_cs, lcms_des_cs;
-	unsigned int flag = cmsFLAGS_HIGHRESPRECALC | cmm_flags;
+	unsigned int flag = cmsFLAGS_LOWRESPRECALC | cmm_flags;
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 
 	DEBUG_LCMS_MEM(("@@@@@@@ Create Link Start:: mupdf ctx = %p lcms ctx = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)src->cmm_handle, (void*)dst->cmm_handle));
