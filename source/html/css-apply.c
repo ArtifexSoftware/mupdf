@@ -973,28 +973,28 @@ border_style_from_property(fz_css_match *match, const char *property)
 }
 
 float
-fz_from_css_number(fz_css_number number, float em, float width)
+fz_from_css_number(fz_css_number number, float em, float percent_value, float auto_value)
 {
 	switch (number.unit) {
 	default:
 	case N_NUMBER: return number.value;
 	case N_LENGTH: return number.value;
 	case N_SCALE: return number.value * em;
-	case N_PERCENT: return number.value * 0.01 * width;
-	case N_AUTO: return width;
+	case N_PERCENT: return number.value * 0.01 * percent_value;
+	case N_AUTO: return auto_value;
 	}
 }
 
 float
-fz_from_css_number_scale(fz_css_number number, float scale, float em, float width)
+fz_from_css_number_scale(fz_css_number number, float scale)
 {
 	switch (number.unit) {
 	default:
 	case N_NUMBER: return number.value * scale;
 	case N_LENGTH: return number.value;
-	case N_SCALE: return number.value * em;
-	case N_PERCENT: return number.value * 0.01 * width;
-	case N_AUTO: return width;
+	case N_SCALE: return number.value * scale;
+	case N_PERCENT: return number.value * 0.01 * scale;
+	case N_AUTO: return scale;
 	}
 }
 
@@ -1054,9 +1054,9 @@ hex_color:
 		vr = value->args;
 		vg = vr && vr->next ? vr->next->next : NULL; /* skip the ',' nodes */
 		vb = vg && vg->next ? vg->next->next : NULL; /* skip the ',' nodes */
-		r = fz_from_css_number(number_from_value(vr, 0, N_NUMBER), 255, 255);
-		g = fz_from_css_number(number_from_value(vg, 0, N_NUMBER), 255, 255);
-		b = fz_from_css_number(number_from_value(vb, 0, N_NUMBER), 255, 255);
+		r = fz_from_css_number(number_from_value(vr, 0, N_NUMBER), 255, 255, 0);
+		g = fz_from_css_number(number_from_value(vg, 0, N_NUMBER), 255, 255, 0);
+		b = fz_from_css_number(number_from_value(vb, 0, N_NUMBER), 255, 255, 0);
 		return make_color(r, g, b, 255);
 	}
 

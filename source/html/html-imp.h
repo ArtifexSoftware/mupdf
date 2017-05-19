@@ -264,8 +264,8 @@ int fz_get_css_match_display(fz_css_match *node);
 void fz_default_css_style(fz_context *ctx, fz_css_style *style);
 void fz_apply_css_style(fz_context *ctx, fz_html_font_set *set, fz_css_style *style, fz_css_match *match);
 
-float fz_from_css_number(fz_css_number, float em, float width);
-float fz_from_css_number_scale(fz_css_number number, float scale, float em, float width);
+float fz_from_css_number(fz_css_number number, float em, float percent_value, float auto_value);
+float fz_from_css_number_scale(fz_css_number number, float scale);
 
 fz_html_font_set *fz_new_html_font_set(fz_context *ctx);
 void fz_add_html_font_face(fz_context *ctx, fz_html_font_set *set,
