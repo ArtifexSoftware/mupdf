@@ -110,6 +110,14 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 
 		pdf_load_to_unicode(ctx, doc, fontdesc, estrings, NULL, pdf_dict_get(ctx, dict, PDF_NAME_ToUnicode));
 
+		/* Use the glyph index as ASCII when we can't figure out a proper encoding */
+		if (fontdesc->cid_to_ucs_len == 256)
+		{
+			for (i = 32; i < 127; ++i)
+				if (fontdesc->cid_to_ucs[i] == 0xFFFD)
+					fontdesc->cid_to_ucs[i] = i;
+		}
+
 		/* Widths */
 
 		pdf_set_default_hmtx(ctx, fontdesc, 0);
