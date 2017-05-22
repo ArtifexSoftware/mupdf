@@ -127,12 +127,11 @@ int fz_runelen(int rune);
 int fz_utflen(const char *s);
 
 /*
-	fz_strtod/fz_strtof: Locale-independent decimal to binary
+	fz_strtof: Locale-independent decimal to binary
 	conversion. On overflow return (-)INFINITY and set errno to ERANGE. On
 	underflow return 0 and set errno to ERANGE. Special inputs (case
 	insensitive): "NAN", "INF" or "INFINITY".
 */
-double fz_strtod(const char *s, char **es);
 float fz_strtof(const char *s, char **es);
 
 /*

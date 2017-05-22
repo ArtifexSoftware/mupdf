@@ -262,7 +262,6 @@ $(OUT)/scripts/cmapdump.o : \
 	source/fitz/buffer.c \
 	source/fitz/stream-open.c \
 	source/fitz/stream-read.c \
-	source/fitz/strtod.c \
 	source/fitz/strtof.c \
 	source/fitz/ftoa.c \
 	source/fitz/printf.c \

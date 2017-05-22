@@ -17,7 +17,7 @@ xps_parse_float_array(fz_context *ctx, xps_document *doc, char *s, int num, floa
 	{
 		while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
 			s++;
-		x[k] = (float)fz_strtod(s, &s);
+		x[k] = fz_strtof(s, &s);
 		while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
 			s++;
 		if (*s == ',')

@@ -69,7 +69,7 @@ svg_parse_length(const char *str, float percent, float font_size)
 	char *end;
 	float val;
 
-	val = (float)fz_strtod(str, &end);
+	val = fz_strtof(str, &end);
 	if (end == str)
 		return 0; /* failed */
 
@@ -100,7 +100,7 @@ svg_parse_angle(const char *str)
 	char *end;
 	float val;
 
-	val = (float)fz_strtod(str, &end);
+	val = fz_strtof(str, &end);
 	if (end == str)
 		return 0; /* failed */
 

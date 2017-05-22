@@ -1877,10 +1877,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\strtod.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\fitz\strtof.c"
 				>
 			</File>
