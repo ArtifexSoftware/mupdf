@@ -2236,6 +2236,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\mupdf\pdf\interpret.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\mupdf\pdf\javascript.h"
 					>
 				</File>
