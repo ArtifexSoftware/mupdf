@@ -93,7 +93,7 @@ fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pi
 	cmm_num_src = T_CHANNELS(cmsGetTransformInputFormat(cmm_ctx, hTransform));
 	cmm_num_des = T_CHANNELS(cmsGetTransformOutputFormat(cmm_ctx, hTransform));
 	if (cmm_num_src != src->n || cmm_num_des != dst->n)
-		return;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Mismatching color setup in cmm pixmap transformation: src: %d vs %d, dst: %d vs %d", cmm_num_src, src->n, cmm_num_des, dst->n);
 
 	/* Transform */
 	inputpos = src->samples;
@@ -179,7 +179,7 @@ fz_cmm_new_ctx(fz_context *ctx)
 
 	cmm_ctx = cmsCreateContext((void *)&fz_cmm_memhandler, ctx);
 	if (cmm_ctx == NULL)
-		return NULL;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "CMM failed to initialize");
 	DEBUG_LCMS_MEM(("Context Creation:: mupdf ctx = %p lcms ctx = %p \n", (void*) ctx, (void*) cmm_ctx));
 	cmsSetLogErrorHandlerTHR(cmm_ctx, fz_cmm_error);
 	return cmm_ctx;
