@@ -123,6 +123,12 @@ struct pdf_processor_s
 	void (*op_BX)(fz_context *ctx, pdf_processor *proc);
 	void (*op_EX)(fz_context *ctx, pdf_processor *proc);
 
+	/* Virtual ones for ExtGState entries */
+	void (*op_OP)(fz_context *ctx, pdf_processor *proc, int b);
+	void (*op_op)(fz_context *ctx, pdf_processor *proc, int b);
+	void (*op_OPM)(fz_context *ctx, pdf_processor *proc, int i);
+	void (*op_UseBlackPtComp)(fz_context *ctx, pdf_processor *proc, pdf_obj *name);
+
 	/* END is used to signify end of stream (finalise and close down) */
 	void (*op_END)(fz_context *ctx, pdf_processor *proc);
 

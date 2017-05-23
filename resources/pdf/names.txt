@@ -267,6 +267,8 @@ OCProperties
 OE
 OFF
 ON
+OP
+OPM
 ObjStm
 Of
 Off
@@ -376,6 +378,7 @@ Uncover
 Underline
 Unix
 Usage
+UseBlackPtComp
 UseCMap
 UseOutlines
 UserUnit
@@ -408,3 +411,4 @@ ca
 n0
 n1
 n2
+op
