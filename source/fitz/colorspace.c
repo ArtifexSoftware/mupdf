@@ -275,7 +275,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_colo
 static fz_icclink *
 fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend, int num_bytes, int alpha, int *src_n)
 {
-	fz_icclink *link;
+	fz_icclink *link = NULL;
 	fz_iccprofile *src_icc = NULL;
 	fz_iccprofile *dst_icc = dst->data;
 	fz_link_key *key;
@@ -1955,8 +1955,6 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_de
 		inputpos += stride_src;
 	}
 
-	fz_var(base);
-
 	fz_try(ctx)
 	{
 		if (fz_colorspace_is(base_cs, "pdf-cal"))
@@ -2794,9 +2792,9 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 	fz_iccprofile *profile;
 	int is_lab = 0;
 
+	profile = fz_malloc_struct(ctx, fz_iccprofile);
 	fz_try(ctx)
 	{
-		profile = fz_malloc_struct(ctx, fz_iccprofile);
 		profile->buffer = buf;
 		if (name != NULL)
 		{

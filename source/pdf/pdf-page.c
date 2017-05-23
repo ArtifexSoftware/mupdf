@@ -688,8 +688,6 @@ pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
 	{
 		page->default_cs = fz_new_default_cs(ctx);
 
-		fz_var(page->default_cs);
-
 		fz_try(ctx)
 		{
 			obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
