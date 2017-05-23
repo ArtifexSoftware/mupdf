@@ -20,10 +20,10 @@ typedef struct fz_color_params_s fz_color_params;
 
 struct fz_color_params_s
 {
-	int ri;
-	int bp;
-	int op;
-	int opm;
+	uint8_t ri;
+	uint8_t bp;
+	uint8_t op;
+	uint8_t opm;
 };
 
 
