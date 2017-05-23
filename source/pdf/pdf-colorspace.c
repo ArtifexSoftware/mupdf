@@ -20,7 +20,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 	{
 #ifndef NO_ICC
 		buffer = pdf_load_stream(ctx, dict);
-		cs = fz_new_icc_colorspace(ctx, 1, n, buffer, NULL);
+		cs = fz_new_icc_colorspace(ctx, 0, n, buffer, NULL);
 #endif
 		/* Use alternate if ICC not invalid */
 		if (cs == NULL)
@@ -140,7 +140,7 @@ load_separation(fz_context *ctx, pdf_obj *array)
 		sep->base = base;
 		sep->tint = tint;
 
-		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 1, n, 1,
+		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 0, n, 1,
 			fz_colorspace_is(fz_device_rgb(ctx), "icc") ? separation_to_alt : separation_to_rgb, NULL, base_separation, NULL, free_separation, sep,
 			sizeof(struct separation) + (base ? base->size : 0) + pdf_function_size(ctx, tint));
 	}
