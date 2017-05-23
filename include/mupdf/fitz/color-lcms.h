@@ -3,7 +3,7 @@
 
 #include "colorspace.h"
 
-int fz_cmm_avoid_white_fix_flag();
+int fz_cmm_avoid_white_fix_flag(void);
 void fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);
 void fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, int num_bytes, void *dst, const void *src);
 void fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, fz_iccprofile *dst, fz_iccprofile *src);
