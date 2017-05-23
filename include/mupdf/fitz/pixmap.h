@@ -280,7 +280,7 @@ fz_pixmap *fz_ensure_pixmap_is_additive(fz_context *ctx, fz_pixmap *pix);
 
 	cs_des: Desired colorspace, may be NULL to denote alpha-only.
 
-	cs_params: Parameters that may be used in conversion (e.g. ri)
+	cs_params: Parameters that may be used in conversion (e.g. ri).
 
 	keep_alpha: If 0 any alpha component is removed, otherwise
 	alpha is kept if present in the pixmap.

@@ -268,13 +268,13 @@ const char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
 
 /* ToDo:  Share fz_lookup_builtin_font and fz_lookup_icc?  Check with Tor */
 /*
-fz_lookup_icc: Search for icc profile
+	fz_lookup_icc: Search for icc profile.
 
-name: The name of the profile desired (gray-icc, rgb-icc, cmyk-icc or lab-icc).
+	name: The name of the profile desired (gray-icc, rgb-icc, cmyk-icc or lab-icc).
 
-len: Pointer to a place to receive the length of the discovered
+	len: Pointer to a place to receive the length of the discovered.
 
-Returns a pointer to the icc file data, or NULL if not present.
+	Returns a pointer to the icc file data, or NULL if not present.
 */
 const char *fz_lookup_icc(fz_context *ctx, const char *name, size_t *len);
 
@@ -284,7 +284,7 @@ const char *fz_lookup_icc(fz_context *ctx, const char *name, size_t *len);
 	configuration in which MuPDF is built.
 
 	registry: The desired registry to lookup in (e.g.
-	FZ_ADOBE_KOREA_1)
+	FZ_ADOBE_KOREA_1).
 
 	serif: 1 if serif desired, 0 otherwise.
 
@@ -305,9 +305,9 @@ const char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmo
 	Whether a font is present or not will depend on the
 	configuration in which MuPDF is built.
 
-	script: The script desired (e.g. UCDN_SCRIPT_KATAKANA)
+	script: The script desired (e.g. UCDN_SCRIPT_KATAKANA).
 
-	lang: The language desired (e.g. FZ_LANG_ja)
+	lang: The language desired (e.g. FZ_LANG_ja).
 
 	serif: 1 if serif desired, 0 otherwise.
 
@@ -348,9 +348,9 @@ const char *fz_lookup_noto_emoji_font(fz_context *ctx, int *len);
 	present or not will depend on the configuration in which
 	MuPDF is built.
 
-	script: The script desired (e.g. UCDN_SCRIPT_KATAKANA)
+	script: The script desired (e.g. UCDN_SCRIPT_KATAKANA).
 
-	language: The language desired (e.g. FZ_LANG_ja)
+	language: The language desired (e.g. FZ_LANG_ja).
 
 	serif: 1 if serif desired, 0 otherwise.
 

@@ -738,8 +738,8 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 
 	resources = pdf_page_resources(ctx, page);
 
-	/* If we are doing color management check for internal default color spaces */
-	/* Photoshop is notorious for doing this in it's PDF creation */
+	/* If we are doing color management check for internal default color spaces. */
+	/* Photoshop is notorious for doing this in its PDF creation. */
 	if (fz_colorspace_is(fz_device_rgb(ctx), "icc"))
 		pdf_set_default_cs(ctx, resources, page);
 

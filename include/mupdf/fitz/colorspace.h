@@ -40,19 +40,19 @@ char *fz_rendering_intent_name(int ri);
 typedef struct fz_colorspace_s fz_colorspace;
 
 /*
-	A fz_iccprofile object encapusulates details about the icc profile. It
+	A fz_iccprofile object encapsulates details about the icc profile. It
 	also includes the profile handle provided by the cmm and as such is used
 	in the creation of links between color spaces.
 */
 typedef struct fz_iccprofile_s fz_iccprofile;
 
 /*
-	A fz_icclink object encapusulates details about the link between profiles.
+	A fz_icclink object encapsulates details about the link between profiles.
 */
 typedef struct fz_icclink_s fz_icclink;
 
 /*
-	Used to communicate any document internal page specific default color spaces
+	Used to communicate any document internal page specific default color spaces.
 */
 typedef struct fz_page_default_cs_s fz_page_default_cs;
 
@@ -89,7 +89,7 @@ fz_colorspace *fz_device_cmyk(fz_context *ctx);
 fz_colorspace *fz_device_lab(fz_context *ctx);
 
 /*
-fz_cs_params: Get default color params for general color conversion.
+	fz_cs_params: Get default color params for general color conversion.
 */
 fz_color_params *fz_cs_params(fz_context *ctx);
 
@@ -97,7 +97,7 @@ typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, cons
 
 typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
 
-typedef fz_colorspace* (fz_colorspace_base_cs_fn)(const fz_colorspace *cs);
+typedef fz_colorspace *(fz_colorspace_base_cs_fn)(const fz_colorspace *cs);
 
 typedef void (fz_colorspace_clamp_fn)(const fz_colorspace *cs, const float *src, float *dst);
 
@@ -148,12 +148,14 @@ struct fz_cal_color_s {
 /*
 	icc methods
 */
-void * fz_get_cmm_ctx(fz_context *ctx);
-void fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx);
-fz_colorspace * fz_new_icc_colorspace(fz_context *ctx, int storable, int num, fz_buffer *buf, const char *name);
-fz_colorspace * fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
+typedef void fz_cmm_context_t;
+
+fz_cmm_context_t *fz_get_cmm_ctx(fz_context *ctx);
+void fz_set_cmm_ctx(fz_context *ctx, fz_cmm_context_t *cmm_ctx);
+fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, const char *name);
+fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
 int fz_create_icc_from_cal(fz_context *ctx, unsigned char **buffer, fz_cal_color *cal);
-unsigned char * fz_get_icc_data(fz_context *ctx, fz_colorspace *cs, int *size);
+unsigned char *fz_get_icc_data(fz_context *ctx, fz_colorspace *cs, int *size);
 
 void fz_color_param_init(fz_color_params *cs_param);
 
