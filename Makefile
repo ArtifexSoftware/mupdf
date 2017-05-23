@@ -229,6 +229,13 @@ ICC_OBJ := $(ICC_GEN:%.c=$(OUT)/%.o)
 generated/%.c : resources/icc/%.icc $(HEXDUMP_EXE) | generated
 	$(QUIET_GEN) $(HEXDUMP_EXE) $@ $<
 
+$(ICC_OBJ) : $(ICC_GEN)
+$(ICC_GEN) : $(ICC_BIN)
+
+ifneq "$(CROSSCOMPILE)" "yes"
+$(ICC_GEN) : $(HEXDUMP_EXE)
+endif
+
 generate: $(ICC_GEN)
 
 # --- Generated CMap files ---
@@ -316,7 +323,8 @@ MUPDF_OBJ := \
 	$(SVG_OBJ) \
 	$(CBZ_OBJ) \
 	$(HTML_OBJ) \
-	$(GPRF_OBJ)
+	$(GPRF_OBJ) \
+	$(ICC_OBJ)
 
 THIRD_OBJ := \
 	$(FREETYPE_OBJ) \
@@ -327,7 +335,8 @@ THIRD_OBJ := \
 	$(LURATECH_OBJ) \
 	$(MUJS_OBJ) \
 	$(OPENJPEG_OBJ) \
-	$(ZLIB_OBJ)
+	$(ZLIB_OBJ) \
+	$(LCMS2_OBJ)
 
 THREAD_OBJ := $(THREAD_OBJ)
 
