@@ -1632,7 +1632,7 @@ static void draw_flow_box(fz_context *ctx, fz_html_box *box, float page_top, flo
 				fz_matrix local_ctm = *ctm;
 				fz_pre_translate(&local_ctm, node->x, node->y - page_top);
 				fz_pre_scale(&local_ctm, node->w, node->h);
-				fz_fill_image(ctx, dev, node->content.image, &local_ctm, fz_cs_params(ctx), 1);
+				fz_fill_image(ctx, dev, node->content.image, &local_ctm, NULL, 1);
 			}
 		}
 	}

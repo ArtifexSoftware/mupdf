@@ -29,7 +29,7 @@ is_rgb_color_u8(int threshold_u8, int r, int g, int b)
 }
 
 static void
-fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, const float *color)
+fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color)
 {
 	if (!*t->is_color && colorspace && colorspace != fz_device_gray(ctx))
 	{
@@ -46,7 +46,7 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 		else
 		{
 			float rgb[3];
-			fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, colorspace, color);
+			fz_convert_color(ctx, cs_params, fz_device_rgb(ctx), rgb, colorspace, color);
 			if (is_rgb_color(t->threshold, rgb[0], rgb[1], rgb[2]))
 			{
 				*t->is_color = 2;
@@ -62,68 +62,73 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 
 static void
 fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
+	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	if (dev->resolved == 0)
+	if (dev->resolved == 0 && alpha != 0.0f)
 	{
-		if (alpha != 0.0f)
-			fz_test_color(ctx, dev, colorspace, color);
+		if (cs_params == NULL)
+			cs_params = fz_cs_params(ctx);
+		fz_test_color(ctx, dev, colorspace, cs_params, color);
 	}
 	if (dev->passthrough)
-		fz_fill_path(ctx, dev->passthrough, path, even_odd, ctm, colorspace, cs_param, color, alpha);
+		fz_fill_path(ctx, dev->passthrough, path, even_odd, ctm, colorspace, cs_params, color, alpha);
 }
 
 static void
 fz_test_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	if (dev->resolved == 0)
+	if (dev->resolved == 0 && alpha != 0.0f)
 	{
-		if (alpha != 0.0f)
-			fz_test_color(ctx, dev, colorspace, color);
+		if (cs_params == NULL)
+			cs_params = fz_cs_params(ctx);
+		fz_test_color(ctx, dev, colorspace, cs_params, color);
 	}
 	if (dev->passthrough)
-		fz_stroke_path(ctx, dev->passthrough, path, stroke, ctm, colorspace, cs_param, color, alpha);
+		fz_stroke_path(ctx, dev->passthrough, path, stroke, ctm, colorspace, cs_params, color, alpha);
 }
 
 static void
 fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
+	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	if (dev->resolved == 0)
+	if (dev->resolved == 0 && alpha != 0.0f)
 	{
-		if (alpha != 0.0f)
-			fz_test_color(ctx, dev, colorspace, color);
+		if (cs_params == NULL)
+			cs_params = fz_cs_params(ctx);
+		fz_test_color(ctx, dev, colorspace, cs_params, color);
 	}
 	if (dev->passthrough)
-		fz_fill_text(ctx, dev->passthrough, text, ctm, colorspace, cs_param, color, alpha);
+		fz_fill_text(ctx, dev->passthrough, text, ctm, colorspace, cs_params, color, alpha);
 }
 
 static void
 fz_test_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const fz_stroke_state *stroke,
-	const fz_matrix *ctm, fz_colorspace *colorspace, fz_color_params *cs_param, const float *color, float alpha)
+	const fz_matrix *ctm, fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	if (dev->resolved == 0)
+	if (dev->resolved == 0 && alpha != 0.0f)
 	{
-		if (alpha != 0.0f)
-			fz_test_color(ctx, dev, colorspace, color);
+		if (cs_params == NULL)
+			cs_params = fz_cs_params(ctx);
+		fz_test_color(ctx, dev, colorspace, cs_params, color);
 	}
 	if (dev->passthrough)
-		fz_stroke_text(ctx, dev->passthrough, text, stroke, ctm, colorspace, cs_param, color, alpha);
+		fz_stroke_text(ctx, dev->passthrough, text, stroke, ctm, colorspace, cs_params, color, alpha);
 }
 
 struct shadearg
 {
 	fz_test_device *dev;
 	fz_shade *shade;
+	const fz_color_params *cs_params;
 };
 
 static void
@@ -133,13 +138,16 @@ prepare_vertex(fz_context *ctx, void *arg_, fz_vertex *v, const float *color)
 	fz_test_device *dev = arg->dev;
 	fz_shade *shade = arg->shade;
 	if (!shade->use_function)
-		fz_test_color(ctx, dev, shade->colorspace, color);
+		fz_test_color(ctx, dev, shade->colorspace, arg->cs_params, color);
 }
 
 static void
-fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
+fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_matrix *ctm, const fz_color_params *cs_params, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
+
+	if (cs_params == NULL)
+		cs_params = fz_cs_params(ctx);
 
 	if (dev->resolved == 0)
 	{
@@ -161,13 +169,14 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 			{
 				int i;
 				for (i = 0; i < 256; i++)
-					fz_test_color(ctx, dev, shade->colorspace, shade->function[i]);
+					fz_test_color(ctx, dev, shade->colorspace, cs_params, shade->function[i]);
 			}
 			else
 			{
 				struct shadearg arg;
 				arg.dev = dev;
 				arg.shade = shade;
+				arg.cs_params = cs_params;
 				fz_process_shade(ctx, shade, ctm, prepare_vertex, NULL, &arg);
 			}
 		}
@@ -177,7 +186,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 }
 
 static void
-fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
+fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_matrix *ctm, const fz_color_params *cs_params, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
@@ -341,17 +350,20 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 
 static void
 fz_test_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const float *color, float alpha)
+	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
+
+	if (cs_params == NULL)
+		cs_params = fz_cs_params(ctx);
 
 	if (dev->resolved == 0)
 	{
 		/* We assume that at least some of the image pixels are non-zero */
-		fz_test_color(ctx, dev, colorspace, color);
+		fz_test_color(ctx, dev, colorspace, cs_params, color);
 	}
 	if (dev->passthrough)
-		fz_fill_image_mask(ctx, dev->passthrough, image, ctm, colorspace, color, alpha);
+		fz_fill_image_mask(ctx, dev->passthrough, image, ctm, colorspace, cs_params, color, alpha);
 }
 
 static void
@@ -411,11 +423,11 @@ fz_test_pop_clip(fz_context *ctx, fz_device *dev_)
 }
 
 static void
-fz_test_begin_mask(fz_context *ctx, fz_device *dev_, const fz_rect *rect, int luminosity, fz_colorspace *cs, const float *bc)
+fz_test_begin_mask(fz_context *ctx, fz_device *dev_, const fz_rect *rect, int luminosity, fz_colorspace *cs, const fz_color_params *cs_params, const float *bc)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_begin_mask(ctx, dev->passthrough, rect, luminosity, cs, bc);
+	fz_begin_mask(ctx, dev->passthrough, rect, luminosity, cs, cs_params, bc);
 }
 
 static void

@@ -68,12 +68,12 @@ fz_rendering_intent_name(int ri)
 }
 
 void
-fz_color_param_init(fz_color_params *cs_param)
+fz_color_param_init(fz_color_params *cs_params)
 {
-	cs_param->bp = 1;
-	cs_param->ri = FZ_RI_RELATIVECOLORIMETRIC;
-	cs_param->op = 0;
-	cs_param->opm = 0;
+	cs_params->bp = 1;
+	cs_params->ri = FZ_RI_RELATIVECOLORIMETRIC;
+	cs_params->op = 0;
+	cs_params->opm = 0;
 }
 
 void
@@ -862,7 +862,7 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	}
 }
 
-static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_param)
+static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -934,7 +934,7 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_param)
+static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1006,7 +1006,7 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_param)
+static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;

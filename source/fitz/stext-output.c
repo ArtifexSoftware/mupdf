@@ -240,7 +240,7 @@ fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
 				break;
 			default:
 				{
-					fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image->image);
+					fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image->image, NULL);
 					fz_write_printf(ctx, out, "image/png;base64,");
 					send_data_base64_stext(ctx, out, buf);
 					fz_drop_buffer(ctx, buf);

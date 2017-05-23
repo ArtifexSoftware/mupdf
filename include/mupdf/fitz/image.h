@@ -26,6 +26,8 @@ typedef struct fz_pixmap_image_s fz_pixmap_image;
 
 	image: The image to retrieve a pixmap from.
 
+	cs_params: The color parameters (or NULL for defaults).
+
 	subarea: The subarea of the image that we actually care about (or NULL
 	to indicate the whole image).
 

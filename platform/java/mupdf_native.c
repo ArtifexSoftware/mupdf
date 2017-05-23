@@ -2512,7 +2512,7 @@ FUN(NativeDevice_fillShade)(JNIEnv *env, jobject self, jobject jshd, jobject jct
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_fill_shade(ctx, dev, shd, &ctm, fz_cs_params(ctx), alpha);
+		fz_fill_shade(ctx, dev, shd, &ctm, NULL /* FIXME */, alpha);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
@@ -2533,7 +2533,7 @@ FUN(NativeDevice_fillImage)(JNIEnv *env, jobject self, jobject jimg, jobject jct
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_fill_image(ctx, dev, img, &ctm, fz_cs_params(ctx), alpha);
+		fz_fill_image(ctx, dev, img, &ctm, NULL /* FIXME */, alpha);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)
