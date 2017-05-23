@@ -350,15 +350,7 @@ fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
 	fz_md5_init(&md5);
 	if (profile)
 	{
-		if (profile->res_buffer != NULL)
-		{
-			s = profile->res_buffer;
-			size = profile->res_size;
-		}
-		else
-		{
-			size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
-		}
+		size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
 		fz_md5_update(&md5, (const unsigned char *)s, size);
 		fz_md5_final(&md5, profile->md5);
 	}
@@ -379,7 +371,10 @@ fz_icc_from_cal(fz_context *ctx, fz_colorspace *cs)
 
 	fz_try(ctx)
 	{
-		profile->res_size = fz_create_icc_from_cal(ctx, &(profile->res_buffer), cal_data);
+		size_t size;
+		unsigned char *data;
+		size = fz_create_icc_from_cal(ctx, &data, cal_data);
+		profile->buffer = fz_new_buffer_from_shared_data(ctx, (char *)data, size);
 		fz_md5_icc(ctx, profile);
 		cal_data->profile = profile;
 	}
@@ -2805,9 +2800,10 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 		profile->buffer = buf;
 		if (name != NULL)
 		{
-			union {void *v; const void *vu;} u;
-			u.vu = fz_lookup_icc(ctx, name, &profile->res_size);
-			profile->res_buffer = u.v; /* Nasty way to cast away const */
+			size_t size;
+			const char *data;
+			data = fz_lookup_icc(ctx, name, &size);
+			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
 			is_lab = (strncmp(name, "lab-icc", strlen("lab-icc")) == 0);
 		}
 		fz_cmm_new_profile(ctx, profile);
@@ -2848,16 +2844,8 @@ fz_get_icc_data(fz_context *ctx, fz_colorspace *cs, int *size)
 		return NULL;
 	if ((profile = cs->data) == NULL)
 		return NULL;
-	if (profile->buffer != NULL)
-	{
-		*size = fz_buffer_storage(ctx, profile->buffer, &data);
-		return data;
-	}
-	else
-	{
-		*size = profile->res_size;
-		return profile->res_buffer;
-	}
+	*size = fz_buffer_storage(ctx, profile->buffer, &data);
+	return data;
 }
 
 static void
@@ -2866,7 +2854,7 @@ free_cal(fz_context *ctx, fz_colorspace *cs)
 	fz_cal_color *cal_data = cs->data;
 	if (cal_data->profile != NULL)
 	{
-		fz_free(ctx, cal_data->profile->res_buffer);
+		fz_drop_buffer(ctx, cal_data->profile->buffer);
 		fz_cmm_free_profile(ctx, cal_data->profile);
 		fz_free(ctx, cal_data->profile);
 	}
