@@ -521,6 +521,7 @@ static inline float fung(float x)
 	return (108.0f / 841.0f) * (x - (4.0f / 29.0f));
 }
 
+#ifdef NO_ICC
 static void
 lab_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *lab, float *rgb)
 {
@@ -561,6 +562,7 @@ clamp_lab(const fz_colorspace *cs, const float *src, float *dst)
 	for (i = 0; i < 3; i++)
 		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
 }
+#endif
 
 int
 fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
@@ -572,14 +574,18 @@ static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "Device
 static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb, clamp_default, NULL, NULL, NULL };
 static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr, clamp_default, NULL, NULL, NULL };
 static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk, clamp_default, NULL, NULL, NULL };
+#ifdef NO_ICC
 static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL};
+#endif
 static fz_color_params k_default_color_params = { FZ_RI_RELATIVECOLORIMETRIC, 1, 0, 0 };
 
 static fz_colorspace *fz_default_gray = &k_default_gray;
 static fz_colorspace *fz_default_rgb = &k_default_rgb;
 static fz_colorspace *fz_default_bgr = &k_default_bgr;
 static fz_colorspace *fz_default_cmyk = &k_default_cmyk;
+#ifdef NO_ICC
 static fz_colorspace *fz_default_lab = &k_default_lab;
+#endif
 static fz_color_params *fz_default_color_params = &k_default_color_params;
 
 struct fz_cmm_context_s
@@ -1917,7 +1923,6 @@ static void
 icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
 {
 	fz_colorspace *srcs = src->colorspace;
-	fz_colorspace *dsts = dst->colorspace;
 	fz_colorspace *base_cs = srcs->get_base(srcs);
 	int i;
 	unsigned char *inputpos, *outputpos;
