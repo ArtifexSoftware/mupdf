@@ -119,7 +119,7 @@ fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, int num_bytes, void *d
 }
 
 void
-fz_cmm_new_link(fz_context *ctx, fz_icclink *link, fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, fz_iccprofile *dst, fz_iccprofile *src)
+fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *dst, const fz_iccprofile *src)
 {
 	cmsUInt32Number src_data_type, des_data_type;
 	cmsColorSpaceSignature src_cs, des_cs;

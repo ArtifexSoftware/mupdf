@@ -112,7 +112,7 @@ int fz_colorspace_is(const fz_colorspace *cs, const char *name);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
 void fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out);
-void fz_convert_color(fz_context *ctx, fz_color_params *params, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, const float *srcv);
+void fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, const float *srcv);
 
 typedef struct fz_color_converter_s fz_color_converter;
 
@@ -125,12 +125,12 @@ struct fz_color_converter_s
 	void (*convert)(fz_context *, fz_color_converter *, float *, const float *);
 	fz_colorspace *ds;
 	fz_colorspace *ss;
-	fz_color_params *params;
+	const fz_color_params *params;
 	void *opaque;
 };
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params);
-void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params);
+void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
+void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 
 /* Public to allow use in icc creation */

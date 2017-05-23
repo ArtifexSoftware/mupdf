@@ -243,7 +243,7 @@ get_base_icc(fz_context *ctx, fz_colorspace *cs)
 }
 
 static fz_icclink *
-fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_color_params *rend, int num_bytes, int alpha)
+fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, const fz_color_params *rend, int num_bytes, int alpha)
 {
 	fz_icclink *link;
 
@@ -273,7 +273,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, fz_colo
 }
 
 static fz_icclink *
-fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_color_params *rend, int num_bytes, int alpha, int *src_n)
+fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const fz_color_params *rend, int num_bytes, int alpha, int *src_n)
 {
 	fz_icclink *link = NULL;
 	fz_iccprofile *src_icc = NULL;
@@ -2266,7 +2266,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 {
 	fz_colorspace *srcs = cc->ss;
 	fz_colorspace *dsts = cc->ds;
-	fz_color_params *rend = cc->params;
+	const fz_color_params *rend = cc->params;
 	int src_n;
 
 	fz_icclink *link;
@@ -2435,7 +2435,7 @@ cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 #endif
 }
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params)
+void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params)
 {
 	cc->ds = ds;
 	cc->ss = ss;
@@ -2499,7 +2499,7 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 }
 
 void
-fz_convert_color(fz_context *ctx, fz_color_params *params, fz_colorspace *ds, float *dv, fz_colorspace *ss, const float *sv)
+fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *ds, float *dv, fz_colorspace *ss, const float *sv)
 {
 	fz_color_converter cc;
 	fz_lookup_color_converter(ctx, &cc, ds, ss, params);
@@ -2682,7 +2682,7 @@ static void fz_cached_color_convert(fz_context *ctx, fz_color_converter *cc_, fl
 	}
 }
 
-void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, fz_color_params *params)
+void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params)
 {
 	int n = ss->n;
 	fz_cached_color_converter *cached = fz_malloc_struct(ctx, fz_cached_color_converter);
