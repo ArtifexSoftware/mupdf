@@ -250,7 +250,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		ptd.shade = shade;
 		ptd.bbox = bbox;
 
-		fz_init_cached_color_converter(ctx, &ptd.cc, temp->colorspace, shade->colorspace, fz_cs_params(ctx));
+		fz_init_cached_color_converter(ctx, &ptd.cc, temp->colorspace, shade->colorspace, cs_params);
 		fz_process_shade(ctx, shade, &local_ctm, prepare_mesh_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)

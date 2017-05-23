@@ -365,7 +365,7 @@ void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict sr
 	fz_pixmap_converter: Color convert a pixmap. The passing of default_cs is needed due to the base cs of the image possibly
 	needing to be treated as being in one of the page default color spaces.
 */
-typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_page_default_cs *default_cs, fz_color_params *cs_param);
+typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_page_default_cs *default_cs, const fz_color_params *cs_param);
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
 
 /*

@@ -1104,7 +1104,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, fz_cs_params(ctx), model, colorfv, fz_device_get_cs(ctx, devp, shade->colorspace), shade->background);
+			fz_convert_color(ctx, cs_params, model, colorfv, fz_device_get_cs(ctx, devp, shade->colorspace), shade->background);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}

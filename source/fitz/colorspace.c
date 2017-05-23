@@ -703,7 +703,7 @@ fz_cs_params(fz_context *ctx)
 
 /* Fast pixmap color conversions */
 
-static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -781,7 +781,7 @@ static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -862,7 +862,7 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	}
 }
 
-static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_param)
+static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_param)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -934,7 +934,7 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_param)
+static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_param)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1006,7 +1006,7 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_param)
+static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_param)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1099,7 +1099,7 @@ static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1192,7 +1192,7 @@ static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1599,7 +1599,7 @@ static inline void cached_cmyk_conv(unsigned char *restrict const pr, unsigned c
 #endif
 }
 
-static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1698,7 +1698,7 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1790,7 +1790,7 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1864,7 +1864,7 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 }
 
 static void
-fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *dsts = dst->colorspace;
@@ -1920,7 +1920,7 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
  * prior to the application of an icc profile. Note index expansion
  * occurred in fz_decomp_image_from_stream so no need to worry about that */
 static void
-icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *base_cs = srcs->get_base(srcs);
@@ -1977,7 +1977,7 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_de
 }
 
 static void
-fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	float srcv[FZ_MAX_COLORS];
 	float dstv[FZ_MAX_COLORS];
@@ -1999,6 +1999,9 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	if ((int)w < 0 || h < 0)
 		return;
 
+	if (cs_params == NULL)
+		cs_params = fz_cs_params(ctx);
+
 	srcn = ss->n;
 	dstn = ds->n;
 
@@ -2017,7 +2020,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	{
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
+		fz_lookup_color_converter(ctx, &cc, ds, ss, cs_params);
 		while (h--)
 		{
 			size_t ww = w;
@@ -2045,7 +2048,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	{
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
+		fz_lookup_color_converter(ctx, &cc, ds, ss, cs_params);
 		while (h--)
 		{
 			size_t ww = w;
@@ -2073,7 +2076,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 		unsigned char lookup[FZ_MAX_COLORS * 256];
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
+		fz_lookup_color_converter(ctx, &cc, ds, ss, cs_params);
 		for (i = 0; i < 256; i++)
 		{
 			srcv[0] = i / 255.0f;
@@ -2109,7 +2112,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 		unsigned char *dold;
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss, fz_cs_params(ctx));
+		fz_lookup_color_converter(ctx, &cc, ds, ss, cs_params);
 		lookup = fz_new_hash_table(ctx, 509, srcn, -1, NULL);
 
 		while (h--)
@@ -2165,7 +2168,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	}
 }
 
-static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, fz_color_params *cs_params)
+static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	if (!src->alpha)
 		fz_clear_pixmap_with_value(ctx, dst, 255);
