@@ -1926,14 +1926,48 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	fz_drop_icclink(ctx, link);
 }
 
+/* Drill down through the base spaces until we get the either a pdf-cal or
+ * an ICC base space.  This is where we want our pixmap to be decoded prior
+ * to application of the link transform */
+static fz_colorspace*
+get_icc_base_space(fz_context *ctx, fz_colorspace *srcs)
+{
+	fz_colorspace *base_cs = srcs->get_base(srcs);
+	if (base_cs == NULL)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Final color space should be icc or pdf-cal or lab");
+
+	if (fz_colorspace_is_icc(base_cs) || fz_colorspace_is_pdf_cal(base_cs) || fz_colorspace_is_lab(base_cs))
+		return base_cs;
+	else
+		return get_icc_base_space(ctx, base_cs);
+}
+
+/* Cope with cases where we have to convert through multiple base spaces before
+ * getting to the final cm color space */
+static void
+convert_to_icc_base(fz_context *ctx, fz_colorspace *srcs, float *src_f, float *des_f)
+{
+	float temp_f[FZ_MAX_COLORS];
+	fz_colorspace *base_cs = srcs->get_base(srcs);
+
+	if (fz_colorspace_is_icc(base_cs) || fz_colorspace_is_pdf_cal(base_cs) || fz_colorspace_is_lab(base_cs))
+		srcs->to_ccs(ctx, srcs, src_f, des_f);
+	else
+	{
+		srcs->to_ccs(ctx, srcs, src_f, temp_f);
+		convert_to_icc_base(ctx, base_cs, temp_f, des_f);
+	}
+}
+
 /* For DeviceN and Separation CS, where we require an alternate tint tranform
- * prior to the application of an icc profile. Note index expansion
- * occurred in fz_decomp_image_from_stream so no need to worry about that */
+ * prior to the application of an icc profile. Also, indexed images have to
+ * be handled.  Realize those can map from index->devn->pdf-cal->icc for
+ * example. */
 static void
 icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_default_cs *default_cs, const fz_color_params *cs_params)
 {
 	fz_colorspace *srcs = src->colorspace;
-	fz_colorspace *base_cs = srcs->get_base(srcs);
+	fz_colorspace *base_cs = get_icc_base_space(ctx, srcs);
 	int i;
 	unsigned char *inputpos, *outputpos;
 	fz_pixmap *base;
@@ -1958,7 +1992,7 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_de
 			for (i = 0; i < src->n; i++)
 				src_f[i] = (float) inputpos[i] / 255.0;
 
-			srcs->to_ccs(ctx, srcs, src_f, des_f);
+			convert_to_icc_base(ctx, srcs, src_f, des_f);
 
 			for (i = 0; i < base->n; i++)
 				outputpos[i] = fz_clamp(des_f[i] * 255, 0, 255);
@@ -2231,7 +2265,7 @@ static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 /* Used for testing all color managed source color spaces.  If it is icc, cal or
  * has a base space that is managed */
 static int
-fz_source_colorspace_cm(fz_colorspace *cs)
+fz_source_colorspace_cm(const fz_colorspace *cs)
 {
 	const fz_colorspace *base;
 	if (fz_colorspace_is_icc(cs))
@@ -2242,6 +2276,9 @@ fz_source_colorspace_cm(fz_colorspace *cs)
 	if (fz_colorspace_is_icc(base))
 		return 1;
 	if (fz_colorspace_is_pdf_cal(base))
+		return 1;
+	/* We have to worry about more deeply nested cases */
+	if (base != NULL && fz_source_colorspace_cm(base))
 		return 1;
 	return 0;
 }
