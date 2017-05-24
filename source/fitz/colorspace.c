@@ -211,6 +211,8 @@ fz_drop_icclink(fz_context *ctx, fz_icclink *link)
 	fz_drop_storable(ctx, &link->storable);
 }
 
+static int fz_colorspace_is_pdf_cal(const fz_colorspace *cs);
+
 static fz_iccprofile *
 get_base_icc(fz_context *ctx, fz_colorspace *cs)
 {
@@ -219,9 +221,9 @@ get_base_icc(fz_context *ctx, fz_colorspace *cs)
 		fz_colorspace *base = cs->get_base(cs);
 
 		if (base)
-			if (fz_colorspace_is(base, "icc"))
+			if (fz_colorspace_is_icc(base))
 				return base->data;
-			else if (fz_colorspace_is(base, "pdf-cal"))
+			else if (fz_colorspace_is_pdf_cal(base))
 			{
 				fz_cal_color *cal;
 				fz_iccprofile *cal_icc;
@@ -281,9 +283,9 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 	fz_link_key *key;
 	fz_icclink *new_link;
 
-	if (fz_colorspace_is(src, "icc"))
+	if (fz_colorspace_is_icc(src))
 		src_icc = src->data;
-	else if (fz_colorspace_is(src, "pdf-cal"))
+	else if (fz_colorspace_is_pdf_cal(src))
 	{
 		fz_cal_color *cal;
 
@@ -563,6 +565,17 @@ clamp_lab(const fz_colorspace *cs, const float *src, float *dst)
 		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
 }
 #endif
+
+static int fz_colorspace_is_lab(const fz_colorspace *cs)
+{
+#ifdef NO_ICC
+	return cs && cs->to_ccs == lab_to_rgb;
+#else
+	return 0;
+#endif
+}
+
+static int fz_colorspace_is_lab_icc(const fz_colorspace *cs);
 
 int
 fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
@@ -1959,7 +1972,7 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_de
 
 	fz_try(ctx)
 	{
-		if (fz_colorspace_is(base_cs, "pdf-cal"))
+		if (fz_colorspace_is_pdf_cal(base_cs))
 			fz_icc_from_cal(ctx, base_cs);
 		fz_icc_conv_pixmap(ctx, dst, base, default_cs, cs_params);
 	}
@@ -2013,7 +2026,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	}
 
 	/* Special case for Lab colorspace (scaling of components to float) */
-	if ((fz_colorspace_is(ss, "Lab") || fz_colorspace_is(ss, "Lab-icc")) && srcn == 3)
+	if ((fz_colorspace_is_lab(ss) || fz_colorspace_is_lab_icc(ss)) && srcn == 3)
 	{
 		fz_color_converter cc;
 
@@ -2210,7 +2223,17 @@ static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 static int
 fz_source_colorspace_cm(fz_colorspace *cs)
 {
-	return fz_colorspace_is(cs, "icc") || fz_colorspace_is(cs, "pdf-cal") || fz_colorspace_base_is(cs, "icc") || fz_colorspace_base_is(cs, "pdf-cal");
+	const fz_colorspace *base;
+	if (fz_colorspace_is_icc(cs))
+		return 1;
+	if (fz_colorspace_is_pdf_cal(cs))
+		return 1;
+	base = fz_colorspace_base(cs);
+	if (fz_colorspace_is_icc(base))
+		return 1;
+	if (fz_colorspace_is_pdf_cal(base))
+		return 1;
+	return 0;
 }
 
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss)
@@ -2250,11 +2273,14 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 		else return fz_std_conv_pixmap;
 	}
 
-	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is(ds, "icc"))
+	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is_icc(ds))
 	{
-		if (fz_colorspace_is(ss, "pdf-cal"))
+		if (fz_colorspace_is_pdf_cal(ss))
+		{
 			fz_icc_from_cal(ctx, ss);
-		if (fz_colorspace_is(ss, "icc") || fz_colorspace_is(ss, "pdf-cal"))
+			return fz_icc_conv_pixmap;
+		}
+		if (fz_colorspace_is_icc(ss))
 			return fz_icc_conv_pixmap;
 		else
 			return icc_base_conv_pixmap;
@@ -2488,11 +2514,14 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 		else
 			cc->convert = std_conv_color;
 	}
-	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is(ds, "icc"))
+	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is_icc(ds))
 	{
-		if (fz_colorspace_is(ss, "pdf-cal"))
+		if (fz_colorspace_is_pdf_cal(ss))
+		{
 			fz_icc_from_cal(ctx, ss);
-		if (fz_colorspace_is(ss, "icc") || fz_colorspace_is(ss, "pdf-cal"))
+			cc->convert = icc_conv_color;
+		}
+		else if (fz_colorspace_is_icc(ss))
 			cc->convert = icc_conv_color;
 		else
 			cc->convert = icc_base_conv_color;
@@ -2565,6 +2594,11 @@ clamp_indexed(const fz_colorspace *cs, const float *in, float *out)
 	*out = fz_clamp(*in, 0, idx->high) / 255.0; /* To do, avoid 255 divide */
 }
 
+int fz_colorspace_is_indexed(const fz_colorspace *cs)
+{
+	return cs && cs->clamp == clamp_indexed;
+}
+
 fz_colorspace *
 fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup)
 {
@@ -2577,9 +2611,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 	idx->high = high;
 
 	fz_try(ctx)
-	{
-		cs = fz_new_colorspace(ctx, "Indexed", 0, 1, 0, fz_colorspace_is(fz_device_rgb(ctx), "icc") ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
-	}
+		cs = fz_new_colorspace(ctx, "Indexed", 0, 1, 0, fz_colorspace_is_icc(fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	fz_catch(ctx)
 	{
 		fz_free(ctx, idx);
@@ -2720,14 +2752,9 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 	fz_free(ctx, cc);
 }
 
-int fz_colorspace_base_is(const fz_colorspace *cs, const char* name)
+const fz_colorspace *fz_colorspace_base(const fz_colorspace *cs)
 {
-	return cs && cs->get_base && fz_colorspace_is(cs->get_base(cs), name);
-}
-
-int fz_colorspace_is(const fz_colorspace *cs, const char* name)
-{
-	return cs && strncmp(name, cs->name, sizeof(cs->name)) == 0;
+	return cs && cs->get_base ? cs->get_base(cs) : NULL;
 }
 
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs)
@@ -2788,6 +2815,16 @@ clamp_default_icc(const fz_colorspace *cs, const float *src, float *dst)
 		dst[i] = fz_clamp(src[i], 0, 1);
 }
 
+int fz_colorspace_is_icc(const fz_colorspace *cs)
+{
+	return cs && cs->free_data == free_icc;
+}
+
+static int fz_colorspace_is_lab_icc(const fz_colorspace *cs)
+{
+	return cs && cs->clamp == clamp_lab_icc;
+}
+
 fz_colorspace *
 fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, const char *name)
 {
@@ -2841,9 +2878,10 @@ fz_get_icc_data(fz_context *ctx, fz_colorspace *cs, int *size)
 	fz_iccprofile *profile;
 	unsigned char *data;
 
-	if (cs == NULL || !fz_colorspace_is(cs, "icc"))
+	if (cs == NULL || !fz_colorspace_is_icc(cs))
 		return NULL;
-	if ((profile = cs->data) == NULL)
+	profile = cs->data;
+	if (profile == NULL)
 		return NULL;
 	*size = fz_buffer_storage(ctx, profile->buffer, &data);
 	return data;
@@ -2860,6 +2898,11 @@ free_cal(fz_context *ctx, fz_colorspace *cs)
 		fz_free(ctx, cal_data->profile);
 	}
 	fz_free(ctx, cal_data);
+}
+
+static int fz_colorspace_is_pdf_cal(const fz_colorspace *cs)
+{
+	return cs && cs->free_data == free_cal;
 }
 
 /* Profile created if needed during draw command. */

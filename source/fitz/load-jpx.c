@@ -353,7 +353,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	{
 		if (HAS_PALETTE(colorspace))
 		{
-			if (!fz_colorspace_is(state->cs, "Indexed"))
+			if (!fz_colorspace_is_indexed(state->cs))
 				state->expand_indexed = 1;
 
 			err = JP2_Decompress_GetPalette(doc, &state->palette);
@@ -686,7 +686,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		format = OPJ_CODEC_JP2;
 
 	opj_set_default_decoder_parameters(&params);
-	if (fz_colorspace_is(defcs, "Indexed"))
+	if (fz_colorspace_is_indexed(defcs))
 		params.flags |= OPJ_DPARAMETERS_IGNORE_PCLR_CMAP_CDEF_FLAG;
 
 	codec = opj_create_decompress(format);

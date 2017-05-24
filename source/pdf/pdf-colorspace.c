@@ -141,7 +141,7 @@ load_separation(fz_context *ctx, pdf_obj *array)
 		sep->tint = tint;
 
 		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 0, n, 1,
-			fz_colorspace_is(fz_device_rgb(ctx), "icc") ? separation_to_alt : separation_to_rgb, NULL, base_separation, NULL, free_separation, sep,
+			fz_colorspace_is_icc(fz_device_rgb(ctx)) ? separation_to_alt : separation_to_rgb, NULL, base_separation, NULL, free_separation, sep,
 			sizeof(struct separation) + (base ? base->size : 0) + pdf_function_size(ctx, tint));
 	}
 	fz_catch(ctx)
@@ -158,7 +158,7 @@ load_separation(fz_context *ctx, pdf_obj *array)
 int
 pdf_is_tint_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	return fz_colorspace_is(cs, "Separation") || fz_colorspace_is(cs, "DeviceN");
+	return cs && cs->free_data == free_separation;
 }
 
 /* Indexed */
@@ -314,7 +314,6 @@ pdf_calrgb(fz_context *ctx, pdf_obj *dict)
 	float wp[3];
 	float bp[3] = { 0 };
 	float gamma[3] = { 1.0, 1.0, 1.0 };
-	fz_colorspace *cs;
 	int i;
 
 	if (dict == NULL)

@@ -463,7 +463,7 @@ compressed_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subarea
 		if (l2factor)
 			native_l2factor -= *l2factor;
 
-		indexed = fz_colorspace_is(image->super.colorspace, "Indexed");
+		indexed = fz_colorspace_is_indexed(image->super.colorspace);
 		can_sub = 1;
 		tile = fz_decomp_image_from_stream(ctx, stm, image, subarea, indexed, native_l2factor);
 
@@ -793,7 +793,7 @@ fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colo
 	}
 	else
 	{
-		float maxval = fz_colorspace_is(colorspace, "Indexed") ? (1 << bpc) - 1 : 1;
+		float maxval = fz_colorspace_is_indexed(colorspace) ? (1 << bpc) - 1 : 1;
 		for (i = 0; i < image->n; i++)
 		{
 			image->decode[2*i] = 0;
