@@ -710,6 +710,8 @@ pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
 		fz_catch(ctx)
 		{
 			fz_drop_default_cs(ctx, page->default_cs);
+			page->default_cs = NULL;
+			fz_rethrow(ctx);
 		}
 	}
 }
@@ -739,7 +741,21 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	/* If we are doing color management check for internal default color spaces. */
 	/* Photoshop is notorious for doing this in its PDF creation. */
 	if (fz_colorspace_is_icc(fz_device_rgb(ctx)))
-		pdf_set_default_cs(ctx, resources, page);
+	{
+		fz_try(ctx)
+		{
+			pdf_set_default_cs(ctx, resources, page);
+		}
+		fz_catch(ctx)
+		{
+			if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+			{
+				fz_drop_page(ctx, &page->super);
+				fz_rethrow(ctx);
+			}
+			page->incomplete |= PDF_PAGE_INCOMPLETE_ANNOTS | PDF_PAGE_INCOMPLETE_CONTENTS;
+		}
+	}
 
 	/* Pre-load annotations and links */
 	fz_try(ctx)
