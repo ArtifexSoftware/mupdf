@@ -107,7 +107,7 @@ fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 
-const fz_colorspace *fz_colorspace_base(const fz_colorspace *cs);
+fz_colorspace *fz_colorspace_base(const fz_colorspace *cs);
 int fz_colorspace_is_icc(const fz_colorspace *cs);
 int fz_colorspace_is_indexed(const fz_colorspace *cs);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
@@ -128,9 +128,12 @@ struct fz_color_converter_s
 	fz_colorspace *ss;
 	const fz_color_params *params;
 	void *opaque;
+	void *link;
+	int n;
 };
 
 void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
+void fz_discard_color_converter(fz_context *ctx, fz_color_converter *cc);
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 

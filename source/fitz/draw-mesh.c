@@ -235,6 +235,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 					clut[i][k] = color[k] * 255;
 				clut[i][k] = shade->function[i][cn] * 255;
 			}
+			fz_discard_color_converter(ctx, &cc);
 			/* We need to use alpha = 1 here, because the shade might not fill
 			 * the bbox. */
 			conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, 1);

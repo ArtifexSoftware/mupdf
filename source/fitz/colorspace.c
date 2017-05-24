@@ -2051,6 +2051,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 			d += d_line_inc;
 			s += s_line_inc;
 		}
+		fz_discard_color_converter(ctx, &cc);
 	}
 
 	/* Brute-force for small images */
@@ -2078,6 +2079,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 			d += d_line_inc;
 			s += s_line_inc;
 		}
+		fz_discard_color_converter(ctx, &cc);
 	}
 
 	/* 1-d lookup table for separation and similar colorspaces */
@@ -2094,6 +2096,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 			for (k = 0; k < dstn; k++)
 				lookup[i * dstn + k] = dstv[k] * 255;
 		}
+		fz_discard_color_converter(ctx, &cc);
 
 		while (h--)
 		{
@@ -2122,57 +2125,64 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 		unsigned char *dold;
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, ds, ss, cs_params);
 		lookup = fz_new_hash_table(ctx, 509, srcn, -1, NULL);
+		fz_lookup_color_converter(ctx, &cc, ds, ss, cs_params);
 
-		while (h--)
+		fz_try(ctx)
 		{
-			size_t ww = w;
-			while (ww--)
+			while (h--)
 			{
-				if (*s == *sold && memcmp(sold,s,srcn) == 0)
+				size_t ww = w;
+				while (ww--)
 				{
-					sold = s;
-					memcpy(d, dold, dstn);
-					d += dstn;
-					s += srcn;
-					if (da)
-						*d++ = (sa ? *s : 255);
-					s += sa;
-				}
-				else
-				{
-					sold = s;
-					dold = d;
-					color = fz_hash_find(ctx, lookup, s);
-					if (color)
+					if (*s == *sold && memcmp(sold,s,srcn) == 0)
 					{
-						memcpy(d, color, dstn);
-						s += srcn;
+						sold = s;
+						memcpy(d, dold, dstn);
 						d += dstn;
-						if (dst->alpha)
+						s += srcn;
+						if (da)
 							*d++ = (sa ? *s : 255);
 						s += sa;
 					}
 					else
 					{
-						for (k = 0; k < srcn; k++)
-							srcv[k] = *s++ / 255.0f;
-						cc.convert(ctx, &cc, dstv, srcv);
-						for (k = 0; k < dstn; k++)
-							*d++ = dstv[k] * 255;
+						sold = s;
+						dold = d;
+						color = fz_hash_find(ctx, lookup, s);
+						if (color)
+						{
+							memcpy(d, color, dstn);
+							s += srcn;
+							d += dstn;
+							if (dst->alpha)
+								*d++ = (sa ? *s : 255);
+							s += sa;
+						}
+						else
+						{
+							for (k = 0; k < srcn; k++)
+								srcv[k] = *s++ / 255.0f;
+							cc.convert(ctx, &cc, dstv, srcv);
+							for (k = 0; k < dstn; k++)
+								*d++ = dstv[k] * 255;
 
-						fz_hash_insert(ctx, lookup, s - srcn, d - dstn);
+							fz_hash_insert(ctx, lookup, s - srcn, d - dstn);
 
-						if (dst->alpha)
-							*d++ = (sa ? *s : 255);
-						s += sa;
+							if (dst->alpha)
+								*d++ = (sa ? *s : 255);
+							s += sa;
+						}
 					}
 				}
+				d += d_line_inc;
+				s += s_line_inc;
 			}
-			d += d_line_inc;
-			s += s_line_inc;
 		}
+		fz_always(ctx)
+			fz_discard_color_converter(ctx, &cc);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 
 		fz_drop_hash_table(ctx, lookup);
 	}
@@ -2298,14 +2308,12 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	fz_colorspace *srcs = cc->ss;
 	fz_colorspace *dsts = cc->ds;
 	const fz_color_params *rend = cc->params;
-	int src_n;
+	int src_n = cc->n;
 
-	fz_icclink *link;
+	fz_icclink *link = (fz_icclink *)cc->link;
 	int i;
 	unsigned short dstv_s[FZ_MAX_COLORS];
 	unsigned short srcv_s[FZ_MAX_COLORS];
-
-	link = fz_get_icc_link(ctx, dsts, srcs, rend, 2, 0, &src_n);
 
 	if (link->is_identity)
 	{
@@ -2320,7 +2328,6 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 		for (i = 0; i < dsts->n; i++)
 			dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
 	}
-	fz_drop_icclink(ctx, link);
 }
 
 /* Single ICC color conversion but for DeviceN, Sep and Indexed spaces.
@@ -2341,6 +2348,7 @@ icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const 
 	 */
 	fz_lookup_color_converter(ctx, &ccbase, cc->ds, base, cc->params);
 	ccbase.convert(ctx, &ccbase, dstv, src_map);
+	fz_discard_color_converter(ctx, &ccbase);
 }
 
 /* Convert a single color */
@@ -2477,6 +2485,7 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 	cc->ds = ds;
 	cc->ss = ss;
 	cc->params = params;
+	cc->link = NULL;
 	if (ss == fz_default_gray)
 	{
 		if ((ds == fz_default_rgb) || (ds == fz_default_bgr))
@@ -2533,9 +2542,21 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 			cc->convert = icc_conv_color;
 		else
 			cc->convert = icc_base_conv_color;
+		if (cc->convert)
+			cc->link = fz_get_icc_link(ctx, ds, ss, params, 2, 0, &cc->n);
 	}
 	else
 		cc->convert = std_conv_color;
+}
+
+void
+fz_discard_color_converter(fz_context *ctx, fz_color_converter *cc)
+{
+	fz_icclink *link = (fz_icclink *)cc->link;
+	if (link)
+		fz_drop_icclink(ctx, link);
+	cc->link = NULL;
+
 }
 
 void
@@ -2544,6 +2565,7 @@ fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *
 	fz_color_converter cc;
 	fz_lookup_color_converter(ctx, &cc, ds, ss, params);
 	cc.convert(ctx, &cc, dv, sv);
+	fz_discard_color_converter(ctx, &cc);
 }
 
 /* Indexed */
@@ -2742,6 +2764,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 	}
 	fz_catch(ctx)
 	{
+		fz_discard_color_converter(ctx, &cached->base);
 		fz_drop_hash_table(ctx, cached->hash);
 		fz_rethrow(ctx);
 	}
@@ -2757,10 +2780,11 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 		return;
 	cc_->opaque = NULL;
 	fz_drop_hash_table(ctx, cc->hash);
+	fz_discard_color_converter(ctx, &cc->base);
 	fz_free(ctx, cc);
 }
 
-const fz_colorspace *fz_colorspace_base(const fz_colorspace *cs)
+fz_colorspace *fz_colorspace_base(const fz_colorspace *cs)
 {
 	return cs && cs->get_base ? cs->get_base(cs) : NULL;
 }
