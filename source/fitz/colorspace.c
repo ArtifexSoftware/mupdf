@@ -312,6 +312,8 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, fz_colo
 		memcpy(&key->src_md5, src_icc->md5, 16);
 		key->rend.ri = rend->ri;
 		key->rend.bp = rend->bp;
+		key->alpha = alpha;
+		key->depth = num_bytes;
 		link = fz_find_item(ctx, fz_drop_link_imp, key, &fz_link_store_type);
 
 		/* Not found.  Make new one add to store */
