@@ -1514,10 +1514,7 @@ static void pdf_run_gs_SMask(fz_context *ctx, pdf_processor *proc, pdf_xobject *
 		fz_colorspace *cs = pdf_xobject_colorspace(ctx, smask);
 		int cs_n = 1;
 		if (cs)
-		{
 			cs_n = fz_colorspace_n(ctx, cs);
-			fz_drop_colorspace(ctx, cs);
-		}
 		gstate->softmask_ctm = gstate->ctm;
 		gstate->softmask = pdf_keep_xobject(ctx, smask);
 		gstate->softmask_resources = pdf_keep_obj(ctx, page_resources);

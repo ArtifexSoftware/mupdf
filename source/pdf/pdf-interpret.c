@@ -273,10 +273,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 			{
 				colorspace = pdf_xobject_colorspace(ctx, xobj);
 				if (colorspace)
-				{
 					colorspace_n = fz_colorspace_n(ctx, colorspace);
-					fz_drop_colorspace(ctx, colorspace);
-				}
 
 				/* Default background color is black. */
 				for (k = 0; k < colorspace_n; k++)
@@ -286,6 +283,7 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 				 * to do for now. */
 				if (colorspace == fz_device_cmyk(ctx))
 					softmask_bc[3] = 1.0f;
+				fz_drop_colorspace(ctx, colorspace);
 
 				bc = pdf_dict_get(ctx, obj, PDF_NAME_BC);
 				if (pdf_is_array(ctx, bc))
