@@ -296,17 +296,13 @@ pdf_calgray(fz_context *ctx, pdf_obj *dict)
 	float wp[3];
 	float bp[3] = { 0 };
 	float gamma = 1.0;
-	fz_colorspace *cs;
 
 	if (dict == NULL)
 		return fz_device_gray(ctx);
 
 	if (pdf_cal_common(ctx, dict, wp, bp, &gamma) == 0)
-	{
-		cs = fz_new_cal_colorspace(ctx, wp, bp, &gamma, NULL);
-		if (cs != NULL)
-			return cs;
-	}
+		return fz_new_cal_colorspace(ctx, wp, bp, &gamma, NULL);
+
 	return fz_device_gray(ctx);
 }
 
@@ -336,9 +332,7 @@ pdf_calrgb(fz_context *ctx, pdf_obj *dict)
 					return fz_device_rgb(ctx);
 				matrix[i] = pdf_to_real(ctx, objv);
 			}
-			cs = fz_new_cal_colorspace(ctx, wp, bp, gamma, matrix);
-			if (cs != NULL)
-				return cs;
+			return fz_new_cal_colorspace(ctx, wp, bp, gamma, matrix);
 		}
 	}
 	return fz_device_rgb(ctx);

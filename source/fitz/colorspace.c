@@ -228,7 +228,7 @@ get_base_icc(fz_context *ctx, fz_colorspace *cs)
 
 				cal = base->data;
 				cal_icc = cal->profile;
-				if (cal_icc->cmm_handle == NULL)
+				if (cal_icc && cal_icc->cmm_handle == NULL)
 					fz_cmm_new_profile(ctx, cal_icc);
 				return cal_icc;
 			}
@@ -296,7 +296,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 		src_icc = get_base_icc(ctx, src);
 
 	if (src_icc == NULL)
-		return NULL;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Profile missing during link creation");
 
 	*src_n = src_icc->num_devcomp;
 
@@ -1897,23 +1897,20 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	outputpos = dst->samples;
 
 	link = fz_get_icc_link(ctx, dsts, srcs, cs_params, 1, 0, &src_n);
-	if (link != NULL)
+
+	if (link->is_identity)
 	{
-		if (link->is_identity)
+		for (i = 0; i < src->h; i++)
 		{
-			for (i = 0; i < src->h; i++)
-			{
-				memcpy(outputpos, inputpos, src->stride);
-				inputpos = inputpos + src->stride;
-				outputpos = outputpos + dst->stride;
-			}
+			memcpy(outputpos, inputpos, src->stride);
+			inputpos = inputpos + src->stride;
+			outputpos = outputpos + dst->stride;
 		}
-		else
-		{
-			fz_cmm_transform_pixmap(ctx, link, dst, src);
-		}
-		fz_drop_icclink(ctx, link);
 	}
+	else
+		fz_cmm_transform_pixmap(ctx, link, dst, src);
+
+	fz_drop_icclink(ctx, link);
 }
 
 /* For DeviceN and Separation CS, where we require an alternate tint tranform
@@ -2283,23 +2280,21 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	unsigned short srcv_s[FZ_MAX_COLORS];
 
 	link = fz_get_icc_link(ctx, dsts, srcs, rend, 2, 0, &src_n);
-	if (link != NULL)
+
+	if (link->is_identity)
 	{
-		if (link->is_identity)
-		{
-			for (i = 0; i < src_n; i++)
-				dstv[i] = srcv[i];
-		}
-		else
-		{
-			for (i = 0; i < src_n; i++)
-				srcv_s[i] = srcv[i] * 65535;
-			fz_cmm_transform_color(ctx, link, 2, dstv_s, srcv_s);
-			for (i = 0; i < dsts->n; i++)
-				dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
-		}
-		fz_drop_icclink(ctx, link);
+		for (i = 0; i < src_n; i++)
+			dstv[i] = srcv[i];
 	}
+	else
+	{
+		for (i = 0; i < src_n; i++)
+			srcv_s[i] = srcv[i] * 65535;
+		fz_cmm_transform_color(ctx, link, 2, dstv_s, srcv_s);
+		for (i = 0; i < dsts->n; i++)
+			dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
+	}
+	fz_drop_icclink(ctx, link);
 }
 
 /* Single ICC color conversion but for DeviceN, Sep and Indexed spaces.
@@ -2883,9 +2878,7 @@ fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float
 	cal_data->n = num;
 
 	fz_try(ctx)
-	{
 		cs = fz_new_colorspace(ctx, "pdf-cal", 0, num, 0, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
-	}
 	fz_catch(ctx)
 	{
 		fz_free(ctx, cal_data);
