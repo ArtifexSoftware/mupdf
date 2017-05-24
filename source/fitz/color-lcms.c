@@ -92,7 +92,7 @@ fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pi
 	/* check the channels. */
 	cmm_num_src = T_CHANNELS(cmsGetTransformInputFormat(cmm_ctx, hTransform));
 	cmm_num_des = T_CHANNELS(cmsGetTransformOutputFormat(cmm_ctx, hTransform));
-	if (cmm_num_src != src->n || cmm_num_des != dst->n)
+	if ((cmm_num_src != (src->n - src->alpha)) || (cmm_num_des != (dst->n - dst->alpha)))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Mismatching color setup in cmm pixmap transformation: src: %d vs %d, dst: %d vs %d", cmm_num_src, src->n, cmm_num_des, dst->n);
 
 	/* Transform */
