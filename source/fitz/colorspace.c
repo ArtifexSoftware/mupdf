@@ -2329,10 +2329,18 @@ static void
 icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
 {
 	fz_colorspace *srcs = cc->ss;
+	fz_colorspace *base = fz_colorspace_base(srcs);
+	fz_color_converter ccbase;
+
 	float src_map[FZ_MAX_COLORS];
 
 	srcs->to_ccs(ctx, srcs, srcv, src_map);
-	icc_conv_color(ctx, cc, dstv, src_map);
+
+	/* At this point we may not be in an icc color space. e.g. we could be in a
+	 * pdf-cal color space.  So, we need to find the next converter.
+	 */
+	fz_lookup_color_converter(ctx, &ccbase, cc->ds, base, cc->params);
+	ccbase.convert(ctx, &ccbase, dstv, src_map);
 }
 
 /* Convert a single color */
