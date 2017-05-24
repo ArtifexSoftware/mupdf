@@ -291,7 +291,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 
 		cal = src->data;
 		src_icc = cal->profile;
-		if (src_icc->cmm_handle == NULL)
+		if (src_icc && src_icc->cmm_handle == NULL)
 			fz_cmm_new_profile(ctx, src_icc);
 	}
 	else
