@@ -64,7 +64,6 @@ fz_new_font(fz_context *ctx, const char *name, int use_glyph_bbox, int glyph_cou
 
 	font->glyph_count = glyph_count;
 
-	font->flags.use_glyph_bbox = !!use_glyph_bbox;
 	if (use_glyph_bbox && glyph_count <= MAX_BBOX_TABLE_SIZE)
 	{
 		font->bbox_table = fz_malloc_array(ctx, glyph_count, sizeof(fz_rect));
@@ -171,12 +170,17 @@ fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float x
 {
 	if (xmin >= xmax || ymin >= ymax)
 	{
-		/* Invalid bbox supplied. It would be prohibitively slow to
-		 * measure the true one, so make one up. */
-		font->bbox.x0 = -1;
-		font->bbox.y0 = -1;
-		font->bbox.x1 = 2;
-		font->bbox.y1 = 2;
+		/* Invalid bbox supplied. */
+		if (font->t3procs)
+		{
+			/* For type3 fonts we use the union of all the glyphs' bboxes. */
+			font->bbox = fz_empty_rect;
+		}
+		else
+		{
+			/* For other fonts it would be prohibitively slow to measure the true one, so make one up. */
+			font->bbox = fz_unit_rect;
+		}
 		font->flags.invalid_bbox = 1;
 	}
 	else
@@ -1168,6 +1172,10 @@ fz_bound_t3_glyph(fz_context *ctx, fz_font *font, int gid)
 	{
 		fz_rethrow(ctx);
 	}
+
+	/* Update font bbox with glyph's computed bbox if the font bbox is invalid */
+	if (font->flags.invalid_bbox)
+		fz_union_rect(&font->bbox, &font->bbox_table[gid]);
 }
 
 void
@@ -1224,6 +1232,11 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 			 * and calculate it from the contents. */
 			fz_bound_t3_glyph(ctx, font, gid);
 		}
+	}
+	else
+	{
+		/* No bbox has been defined for this glyph, so compute it. */
+		fz_bound_t3_glyph(ctx, font, gid);
 	}
 }
 

@@ -75,7 +75,6 @@ typedef struct
 	unsigned int force_hinting : 1; /* force hinting for DynaLab fonts */
 	unsigned int has_opentype : 1; /* has opentype shaping tables */
 	unsigned int invalid_bbox : 1;
-	unsigned int use_glyph_bbox : 1;
 } fz_font_flags_t;
 
 /*
