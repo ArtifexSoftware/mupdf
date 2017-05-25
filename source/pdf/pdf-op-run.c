@@ -1946,22 +1946,19 @@ static void pdf_run_rg(fz_context *ctx, pdf_processor *proc, float r, float g, f
 static void pdf_run_BI(fz_context *ctx, pdf_processor *proc, fz_image *image)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	if ((pr->dev->hints & FZ_IGNORE_IMAGE) == 0)
-		pdf_show_image(ctx, pr, image);
+	pdf_show_image(ctx, pr, image);
 }
 
 static void pdf_run_sh(fz_context *ctx, pdf_processor *proc, const char *name, fz_shade *shade)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	if ((pr->dev->hints & FZ_IGNORE_SHADE) == 0)
-		pdf_show_shade(ctx, pr, shade);
+	pdf_show_shade(ctx, pr, shade);
 }
 
 static void pdf_run_Do_image(fz_context *ctx, pdf_processor *proc, const char *name, fz_image *image)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	if ((pr->dev->hints & FZ_IGNORE_IMAGE) == 0)
-		pdf_show_image(ctx, pr, image);
+	pdf_show_image(ctx, pr, image);
 }
 
 static void pdf_run_Do_form(fz_context *ctx, pdf_processor *proc, const char *name, pdf_xobject *xobj, pdf_obj *page_resources)
@@ -2133,9 +2130,12 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 		proc->super.op_k = pdf_run_k;
 
 		/* shadings, images, xobjects */
-		proc->super.op_BI = pdf_run_BI;
 		proc->super.op_sh = pdf_run_sh;
-		proc->super.op_Do_image = pdf_run_Do_image;
+		if (dev->fill_image || dev->fill_image_mask || dev->clip_image_mask)
+		{
+			proc->super.op_BI = pdf_run_BI;
+			proc->super.op_Do_image = pdf_run_Do_image;
+		}
 		proc->super.op_Do_form = pdf_run_Do_form;
 
 		/* marked content */

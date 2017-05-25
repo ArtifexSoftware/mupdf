@@ -510,16 +510,16 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_try(ctx)
 		{
 			fz_rect mediabox;
+			fz_stext_options stext_options;
 			if (list)
 				fz_bound_display_list(ctx, list, &mediabox);
 			else
 				fz_bound_page(ctx, page, &mediabox);
+			stext_options.flags = (output_format == OUT_HTML) ? FZ_STEXT_PRESERVE_IMAGES : 0;
 			text = fz_new_stext_page(ctx, &mediabox);
-			dev = fz_new_stext_device(ctx, sheet, text, 0);
+			dev = fz_new_stext_device(ctx, sheet, text, &stext_options);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
-			if (output_format == OUT_HTML)
-				fz_disable_device_hints(ctx, dev, FZ_IGNORE_IMAGE);
 			if (list)
 				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, cookie);
 			else

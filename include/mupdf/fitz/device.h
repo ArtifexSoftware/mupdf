@@ -170,11 +170,6 @@ fz_device *fz_keep_device(fz_context *ctx, fz_device *dev);
 	fz_enable_device_hints : Enable hints in a device.
 
 	hints: mask of hints to enable.
-
-	For example: By default the draw device renders shadings. For some
-	purposes (perhaps rendering fast low quality thumbnails) you may want
-	to tell it to ignore shadings. For this you would enable the
-	FZ_IGNORE_SHADE hint.
 */
 void fz_enable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 
@@ -182,22 +177,15 @@ void fz_enable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 	fz_disable_device_hints : Disable hints in a device.
 
 	hints: mask of hints to disable.
-
-	For example: By default the text extraction device ignores images.
-	For some purposes however (such as extracting HTML) you may want to
-	enable the capturing of image data too. For this you would disable
-	the FZ_IGNORE_IMAGE hint.
 */
 void fz_disable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 
 enum
 {
 	/* Hints */
-	FZ_IGNORE_IMAGE = 1,
-	FZ_IGNORE_SHADE = 2,
-	FZ_DONT_INTERPOLATE_IMAGES = 4,
-	FZ_MAINTAIN_CONTAINER_STACK = 8,
-	FZ_NO_CACHE = 16,
+	FZ_DONT_INTERPOLATE_IMAGES = 1,
+	FZ_MAINTAIN_CONTAINER_STACK = 2,
+	FZ_NO_CACHE = 4,
 };
 
 /*

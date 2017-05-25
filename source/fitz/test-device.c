@@ -53,7 +53,6 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 				t->resolved = 1;
 				if (t->passthrough == NULL)
 				{
-					t->super.hints |= FZ_IGNORE_IMAGE;
 					fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
 				}
 			}

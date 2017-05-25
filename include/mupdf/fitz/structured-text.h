@@ -39,11 +39,16 @@ typedef struct fz_stext_page_s fz_stext_page;
 	option is deactivated any type of horizontal whitespace (including
 	horizontal tabs) will be replaced with space characters of variable
 	width.
+
+	FZ_STEXT_PRESERVE_IMAGES: If this option is set, then images will
+	be stored in the structured text structure. The default is to ignore
+	all images.
 */
 enum
 {
 	FZ_STEXT_PRESERVE_LIGATURES = 1,
 	FZ_STEXT_PRESERVE_WHITESPACE = 2,
+	FZ_STEXT_PRESERVE_IMAGES = 4,
 };
 
 /*
@@ -296,6 +301,7 @@ struct fz_stext_options_s
 {
 	int flags;
 };
+
 /*
 	fz_parse_stext_options: Parse stext device options from a comma separated key-value string.
 */

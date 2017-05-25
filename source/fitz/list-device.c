@@ -1646,20 +1646,16 @@ visible:
 				fz_ignore_text(ctx, dev, *(fz_text **)node, &trans_ctm);
 				break;
 			case FZ_CMD_FILL_SHADE:
-				if ((dev->hints & FZ_IGNORE_SHADE) == 0)
-					fz_fill_shade(ctx, dev, *(fz_shade **)node, &trans_ctm, alpha);
+				fz_fill_shade(ctx, dev, *(fz_shade **)node, &trans_ctm, alpha);
 				break;
 			case FZ_CMD_FILL_IMAGE:
-				if ((dev->hints & FZ_IGNORE_IMAGE) == 0)
-					fz_fill_image(ctx, dev, *(fz_image **)node, &trans_ctm, alpha);
+				fz_fill_image(ctx, dev, *(fz_image **)node, &trans_ctm, alpha);
 				break;
 			case FZ_CMD_FILL_IMAGE_MASK:
-				if ((dev->hints & FZ_IGNORE_IMAGE) == 0)
-					fz_fill_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, colorspace, color, alpha);
+				fz_fill_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, colorspace, color, alpha);
 				break;
 			case FZ_CMD_CLIP_IMAGE_MASK:
-				if ((dev->hints & FZ_IGNORE_IMAGE) == 0)
-					fz_clip_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, &trans_rect);
+				fz_clip_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, &trans_rect);
 				break;
 			case FZ_CMD_POP_CLIP:
 				fz_pop_clip(ctx, dev);

@@ -1095,6 +1095,8 @@ fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts, const char *stri
 		opts->flags |= FZ_STEXT_PRESERVE_LIGATURES;
 	if (fz_has_option(ctx, string, "preserve-whitespace", &val) && fz_option_eq(val, "yes"))
 		opts->flags |= FZ_STEXT_PRESERVE_WHITESPACE;
+	if (fz_has_option(ctx, string, "preserve-images", &val) && fz_option_eq(val, "yes"))
+		opts->flags |= FZ_STEXT_PRESERVE_IMAGES;
 
 	return opts;
 }
@@ -1104,8 +1106,6 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page,
 {
 	fz_stext_device *dev = fz_new_derived_device(ctx, fz_stext_device);
 
-	dev->super.hints = FZ_IGNORE_IMAGE | FZ_IGNORE_SHADE;
-
 	dev->super.close_device = fz_stext_close_device;
 	dev->super.drop_device = fz_stext_drop_device;
 
@@ -1114,16 +1114,18 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page,
 	dev->super.clip_text = fz_stext_clip_text;
 	dev->super.clip_stroke_text = fz_stext_clip_stroke_text;
 	dev->super.ignore_text = fz_stext_ignore_text;
-	dev->super.fill_image = fz_stext_fill_image;
-	dev->super.fill_image_mask = fz_stext_fill_image_mask;
+
+	if (opts && (opts->flags & FZ_STEXT_PRESERVE_IMAGES))
+	{
+		dev->super.fill_image = fz_stext_fill_image;
+		dev->super.fill_image_mask = fz_stext_fill_image_mask;
+	}
 
 	dev->sheet = sheet;
 	dev->page = page;
 	dev->spans = NULL;
 	dev->cur_span = NULL;
 	dev->lastchar = ' ';
-	if (opts)
-		dev->flags = opts->flags;
 
 	return (fz_device*)dev;
 }
