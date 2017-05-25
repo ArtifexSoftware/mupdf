@@ -266,10 +266,9 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, const f
 	if (link->cmm_handle == NULL)
 	{
 		fz_free(ctx, link);
-		link = NULL;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "ICC link creation failed");
 	}
-	else
-		FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
+	FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
 
 	return link;
 }
@@ -337,7 +336,9 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 	}
 	fz_catch(ctx)
 	{
-		/* Nothing to do. */
+		/* Ignore any error that came just from the enstoring */
+		if (link == NULL)
+			fz_rethrow(ctx);
 	}
 	return link;
 }
