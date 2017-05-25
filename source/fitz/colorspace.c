@@ -2267,19 +2267,14 @@ static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 static int
 fz_source_colorspace_cm(const fz_colorspace *cs)
 {
-	const fz_colorspace *base;
-	if (fz_colorspace_is_icc(cs))
-		return 1;
-	if (fz_colorspace_is_pdf_cal(cs))
-		return 1;
-	base = fz_colorspace_base(cs);
-	if (fz_colorspace_is_icc(base))
-		return 1;
-	if (fz_colorspace_is_pdf_cal(base))
-		return 1;
-	/* We have to worry about more deeply nested cases */
-	if (base != NULL && fz_source_colorspace_cm(base))
-		return 1;
+	while (cs)
+	{
+		if (fz_colorspace_is_icc(cs))
+			return 1;
+		if (fz_colorspace_is_pdf_cal(cs))
+			return 1;
+		cs = fz_colorspace_base(cs);
+	}
 	return 0;
 }
 
