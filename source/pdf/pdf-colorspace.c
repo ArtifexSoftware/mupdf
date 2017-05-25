@@ -52,6 +52,20 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 				}
 			}
 		}
+		else
+		{
+			/* We need to check if the alternate color space is CIELAB which
+			 * would let us know that we need to apply CIELAB clamping */
+			obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
+			if (obj)
+			{
+				fz_colorspace *cs_alt = pdf_load_colorspace(ctx, obj);
+
+				if (cs_alt == fz_device_lab(ctx))
+					cs->clamp = cs_alt->clamp;
+				fz_drop_colorspace(ctx, cs_alt);
+			}
+		}
 	}
 	fz_always(ctx)
 	{
