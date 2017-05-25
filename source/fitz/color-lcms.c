@@ -151,6 +151,9 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, 
 	if (rend->bp)
 		flag |= cmsFLAGS_BLACKPOINTCOMPENSATION;
 
+	if (alpha)
+		flag |= cmsFLAGS_COPY_ALPHA;
+
 	link->depth = num_bytes;
 	link->alpha = alpha;
 

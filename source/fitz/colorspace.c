@@ -1910,7 +1910,7 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_defa
 	inputpos = src->samples;
 	outputpos = dst->samples;
 
-	link = fz_get_icc_link(ctx, dsts, srcs, cs_params, 1, 0, &src_n);
+	link = fz_get_icc_link(ctx, dsts, srcs, cs_params, 1, dst->alpha, &src_n);
 
 	if (link->is_identity)
 	{
