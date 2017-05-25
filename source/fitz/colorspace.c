@@ -3050,23 +3050,14 @@ fz_get_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs)
 		return NULL;
 }
 
-/* Set any that were not set by the document settings */
-void
-fz_init_default_cs(fz_context *ctx, fz_page_default_cs *default_cs)
-{
-	if (!default_cs->gray)
-		default_cs->gray = fz_device_gray(ctx);
-	if (!default_cs->rgb)
-		default_cs->rgb = fz_device_rgb(ctx);
-	if (!default_cs->cmyk)
-		default_cs->cmyk = fz_device_cmyk(ctx);
-}
-
 fz_page_default_cs*
 fz_new_default_cs(fz_context *ctx)
 {
 	fz_page_default_cs *default_cs = fz_malloc_struct(ctx, fz_page_default_cs);
 	default_cs->refs = 1;
+	default_cs->gray = fz_device_gray(ctx);
+	default_cs->rgb = fz_device_rgb(ctx);
+	default_cs->cmyk = fz_device_cmyk(ctx);
 	return default_cs;
 }
 

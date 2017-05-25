@@ -684,35 +684,38 @@ pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
 	pdf_obj *obj;
 	pdf_obj *cs_obj;
 
-	if (res)
+	obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
+	if (obj)
 	{
 		page->default_cs = fz_new_default_cs(ctx);
 
+		/* The spec says to ignore any colors we can't understand */
 		fz_try(ctx)
 		{
-			obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
-			if (obj)
-			{
-				cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultGray);
-				if (cs_obj)
-					fz_set_default_gray(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
-
-				cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultRGB);
-				if (cs_obj)
-					fz_set_default_rgb(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
-
-				cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultCMYK);
-				if (cs_obj)
-					fz_set_default_cmyk(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
-			}
-			fz_init_default_cs(ctx, page->default_cs);
+			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultGray);
+			if (cs_obj)
+				fz_set_default_gray(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
 		}
 		fz_catch(ctx)
+		{}
+
+		fz_try(ctx)
 		{
-			fz_drop_default_cs(ctx, page->default_cs);
-			page->default_cs = NULL;
-			fz_rethrow(ctx);
+			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultRGB);
+			if (cs_obj)
+				fz_set_default_rgb(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
 		}
+		fz_catch(ctx)
+		{}
+
+		fz_try(ctx)
+		{
+			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultCMYK);
+			if (cs_obj)
+				fz_set_default_cmyk(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
+		}
+		fz_catch(ctx)
+		{}
 	}
 }
 

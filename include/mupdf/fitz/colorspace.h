@@ -167,7 +167,6 @@ void fz_color_param_init(fz_color_params *cs_params);
 fz_page_default_cs *fz_new_default_cs(fz_context *ctx);
 fz_page_default_cs* fz_keep_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
 void fz_drop_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
-void fz_init_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
 
 /* Do we want to make fz_page_default_cs public and get rid of these? */
 void fz_set_default_gray(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);

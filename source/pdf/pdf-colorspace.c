@@ -449,6 +449,16 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 		}
 	}
 
+	/* We have seen files where /DefaultRGB is specified as 1 0 R,
+	 * and 1 0 obj << /Length 3144 /Alternate /DeviceRGB /N 3 >>
+	 * stream ...iccprofile... endstream endobj.
+	 * This *should* be [ /ICCBased 1 0 R ], but Acrobat seems to
+	 * handle it, so do our best. */
+	else if (pdf_is_dict(ctx, obj))
+	{
+		return load_icc_based(ctx, obj);
+	}
+
 	fz_throw(ctx, FZ_ERROR_SYNTAX, "could not parse color space (%d 0 R)", pdf_to_num(ctx, obj));
 }
 
