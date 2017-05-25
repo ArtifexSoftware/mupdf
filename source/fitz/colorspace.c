@@ -273,6 +273,51 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, fz_iccprofile *src, const f
 	return link;
 }
 
+static void
+fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
+{
+	fz_md5 md5;
+	const char *s;
+	size_t size;
+
+	fz_md5_init(&md5);
+	if (profile)
+	{
+		size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
+		fz_md5_update(&md5, (const unsigned char *)s, size);
+	}
+	fz_md5_final(&md5, profile->md5);
+}
+
+/* Create icc profile from calrgb, calgray values */
+static fz_iccprofile *
+fz_icc_from_cal(fz_context *ctx, fz_colorspace *cs)
+{
+	fz_cal_color *cal_data = cs->data;
+	fz_iccprofile *profile;
+
+	if (cal_data->profile != NULL)
+		return cal_data->profile;
+	profile = fz_malloc_struct(ctx, fz_iccprofile);
+
+	fz_try(ctx)
+	{
+		size_t size;
+		unsigned char *data;
+		size = fz_create_icc_from_cal(ctx, &data, cal_data);
+		profile->buffer = fz_new_buffer_from_shared_data(ctx, (char *)data, size);
+		fz_md5_icc(ctx, profile);
+		cal_data->profile = profile;
+	}
+	fz_catch(ctx)
+	{
+		fz_free(ctx, profile);
+		fz_rethrow(ctx);
+	}
+
+	return profile;
+}
+
 static fz_icclink *
 fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const fz_color_params *rend, int num_bytes, int alpha, int *src_n)
 {
@@ -290,8 +335,34 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 
 		cal = src->data;
 		src_icc = cal->profile;
-		if (src_icc && src_icc->cmm_handle == NULL)
+		/* Check if we have any work to do. */
+		if (src_icc == NULL)
+			src_icc = fz_icc_from_cal(ctx, src);
+		if (src_icc->cmm_handle == NULL)
 			fz_cmm_new_profile(ctx, src_icc);
+
+		/* On failure use the default. */
+		if (src_icc->cmm_handle == NULL)
+		{
+			switch (src->n)
+			{
+			case 1:
+				src_icc = fz_device_gray(ctx)->data;
+				break;
+			case 3:
+				src_icc = fz_device_rgb(ctx)->data;
+				break;
+			case 4:
+				src_icc = fz_device_cmyk(ctx)->data;
+				break;
+			default:
+				fz_throw(ctx, FZ_ERROR_GENERIC, "Poorly formed Cal color space");
+			}
+			/* To avoid repeated failures building the pdf-cal color space,
+			 * assign the default profile. */
+			fz_cmm_free_profile(ctx, src_icc);
+			cal->profile = src_icc;
+		}
 	}
 	else
 		src_icc = get_base_icc(ctx, src);
@@ -306,7 +377,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 
 	fz_try(ctx)
 	{
-		/* Check the storable to see if we have a copy */
+		/* Check the storable to see if we have a copy. */
 		key = fz_malloc_struct(ctx, fz_link_key);
 		key->refs = 1;
 		memcpy(&key->dst_md5, dst_icc->md5, 16);
@@ -317,7 +388,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 		key->depth = num_bytes;
 		link = fz_find_item(ctx, fz_drop_link_imp, key, &fz_link_store_type);
 
-		/* Not found.  Make new one add to store */
+		/* Not found.  Make new one add to store. */
 		if (link == NULL)
 		{
 			link = fz_new_icc_link(ctx, dst_icc, src_icc, rend, num_bytes, alpha);
@@ -336,56 +407,11 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *dst, fz_colorspace *src, const f
 	}
 	fz_catch(ctx)
 	{
-		/* Ignore any error that came just from the enstoring */
+		/* Ignore any error that came just from the enstoring. */
 		if (link == NULL)
 			fz_rethrow(ctx);
 	}
 	return link;
-}
-
-static void
-fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
-{
-	fz_md5 md5;
-	const char *s;
-	size_t size;
-
-	fz_md5_init(&md5);
-	if (profile)
-	{
-		size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
-		fz_md5_update(&md5, (const unsigned char *)s, size);
-		fz_md5_final(&md5, profile->md5);
-	}
-}
-
-/* Create icc profile from calrgb, calgray values */
-static void
-fz_icc_from_cal(fz_context *ctx, fz_colorspace *cs)
-{
-	fz_cal_color *cal_data = cs->data;
-	fz_iccprofile *profile;
-
-	if (cal_data->profile != NULL)
-		return;
-	profile = fz_malloc_struct(ctx, fz_iccprofile);
-
-	fz_var(profile);
-
-	fz_try(ctx)
-	{
-		size_t size;
-		unsigned char *data;
-		size = fz_create_icc_from_cal(ctx, &data, cal_data);
-		profile->buffer = fz_new_buffer_from_shared_data(ctx, (char *)data, size);
-		fz_md5_icc(ctx, profile);
-		cal_data->profile = profile;
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, profile);
-		fz_rethrow(ctx);
-	}
 }
 
 /* Device colorspace definitions */
@@ -2007,8 +2033,6 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_de
 
 	fz_try(ctx)
 	{
-		if (fz_colorspace_is_pdf_cal(base_cs))
-			fz_icc_from_cal(ctx, base_cs);
 		fz_icc_conv_pixmap(ctx, dst, base, default_cs, cs_params);
 	}
 	fz_always(ctx)
@@ -2322,11 +2346,7 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 		if (ss_base != NULL && fz_colorspace_is_icc(ds))
 		{
 			if (ss_base == ss)
-			{
-				if (fz_colorspace_is_pdf_cal(ss))
-					fz_icc_from_cal(ctx, ss);
 				return fz_icc_conv_pixmap;
-			}
 			else
 				return icc_base_conv_pixmap;
 		}
@@ -2572,11 +2592,7 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 		if (ss_base != NULL && fz_colorspace_is_icc(ds))
 		{
 			if (ss_base == ss)
-			{
-				if (fz_colorspace_is_pdf_cal(ss))
-					fz_icc_from_cal(ctx, ss);
 				cc->convert = icc_conv_color;
-			}
 			else
 				cc->convert = icc_base_conv_color;
 			cc->link = fz_get_icc_link(ctx, ds, ss_base, params, 2, 0, &cc->n);
