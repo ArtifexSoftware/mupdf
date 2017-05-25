@@ -2264,18 +2264,18 @@ static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 
 /* Used for testing all color managed source color spaces.  If it is icc, cal or
  * has a base space that is managed */
-static int
-fz_source_colorspace_cm(const fz_colorspace *cs)
+static fz_colorspace *
+fz_source_colorspace_cm(fz_colorspace *cs)
 {
 	while (cs)
 	{
 		if (fz_colorspace_is_icc(cs))
-			return 1;
+			return cs;
 		if (fz_colorspace_is_pdf_cal(cs))
-			return 1;
+			return cs;
 		cs = fz_colorspace_base(cs);
 	}
-	return 0;
+	return NULL;
 }
 
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss)
@@ -2315,19 +2315,22 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 		else return fz_std_conv_pixmap;
 	}
 
-	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is_icc(ds))
+	else
 	{
-		if (fz_colorspace_is_pdf_cal(ss))
+		fz_colorspace *ss_base = fz_source_colorspace_cm(ss);
+		if (ss_base != NULL && fz_colorspace_is_icc(ds))
 		{
-			fz_icc_from_cal(ctx, ss);
-			return fz_icc_conv_pixmap;
+			if (ss_base == ss)
+			{
+				if (fz_colorspace_is_pdf_cal(ss))
+					fz_icc_from_cal(ctx, ss);
+				return fz_icc_conv_pixmap;
+			}
+			else
+				return icc_base_conv_pixmap;
 		}
-		if (fz_colorspace_is_icc(ss))
-			return fz_icc_conv_pixmap;
-		else
-			return icc_base_conv_pixmap;
+		else return fz_std_conv_pixmap;
 	}
-	else return fz_std_conv_pixmap;
 }
 
 /*
@@ -2337,9 +2340,7 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 static void
 icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
 {
-	fz_colorspace *srcs = cc->ss;
 	fz_colorspace *dsts = cc->ds;
-	const fz_color_params *rend = cc->params;
 	int src_n = cc->n;
 
 	fz_icclink *link = (fz_icclink *)cc->link;
@@ -2368,19 +2369,21 @@ static void
 icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
 {
 	fz_colorspace *srcs = cc->ss;
-	fz_colorspace *base = fz_colorspace_base(srcs);
-	fz_color_converter ccbase;
 
-	float src_map[FZ_MAX_COLORS];
+	float local_src_map[FZ_MAX_COLORS];
+	float local_src_map2[FZ_MAX_COLORS];
+	float *src_map = local_src_map;
 
-	srcs->to_ccs(ctx, srcs, srcv, src_map);
+	do
+	{
+		srcs->to_ccs(ctx, srcs, srcv, src_map);
+		srcv = src_map;
+		src_map = (src_map == local_src_map ? local_src_map2 : local_src_map);
+		srcs = srcs->get_base(srcs);
+	}
+	while (!fz_colorspace_is_icc(srcs) && !fz_colorspace_is_pdf_cal(srcs));
 
-	/* At this point we may not be in an icc color space. e.g. we could be in a
-	 * pdf-cal color space.  So, we need to find the next converter.
-	 */
-	fz_lookup_color_converter(ctx, &ccbase, cc->ds, base, cc->params);
-	ccbase.convert(ctx, &ccbase, dstv, src_map);
-	fz_discard_color_converter(ctx, &ccbase);
+	icc_conv_color(ctx, cc, dstv, srcv);
 }
 
 /* Convert a single color */
@@ -2516,7 +2519,6 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 {
 	cc->ds = ds;
 	cc->ss = ss;
-	cc->params = params;
 	cc->link = NULL;
 	if (ss == fz_default_gray)
 	{
@@ -2563,22 +2565,24 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 		else
 			cc->convert = std_conv_color;
 	}
-	else if (fz_source_colorspace_cm(ss) && fz_colorspace_is_icc(ds))
-	{
-		if (fz_colorspace_is_pdf_cal(ss))
-		{
-			fz_icc_from_cal(ctx, ss);
-			cc->convert = icc_conv_color;
-		}
-		else if (fz_colorspace_is_icc(ss))
-			cc->convert = icc_conv_color;
-		else
-			cc->convert = icc_base_conv_color;
-		if (cc->convert)
-			cc->link = fz_get_icc_link(ctx, ds, ss, params, 2, 0, &cc->n);
-	}
 	else
-		cc->convert = std_conv_color;
+	{
+		fz_colorspace *ss_base = fz_source_colorspace_cm(ss);
+		if (ss_base != NULL && fz_colorspace_is_icc(ds))
+		{
+			if (ss_base == ss)
+			{
+				if (fz_colorspace_is_pdf_cal(ss))
+					fz_icc_from_cal(ctx, ss);
+				cc->convert = icc_conv_color;
+			}
+			else
+				cc->convert = icc_base_conv_color;
+			cc->link = fz_get_icc_link(ctx, ds, ss_base, params, 2, 0, &cc->n);
+		}
+		else
+			cc->convert = std_conv_color;
+	}
 }
 
 void
@@ -2791,7 +2795,6 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 		cc->convert = fz_cached_color_convert;
 		cc->ds = ds;
 		cc->ss = ss;
-		cc->params = params;
 		cc->opaque = cached;
 	}
 	fz_catch(ctx)

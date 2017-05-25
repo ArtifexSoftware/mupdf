@@ -126,7 +126,6 @@ struct fz_color_converter_s
 	void (*convert)(fz_context *, fz_color_converter *, float *, const float *);
 	fz_colorspace *ds;
 	fz_colorspace *ss;
-	const fz_color_params *params;
 	void *opaque;
 	void *link;
 	int n;
