@@ -167,7 +167,7 @@ const char *fz_caught_message(fz_context *ctx)
 	return ctx->error->message;
 }
 
-void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
+FZ_NORETURN void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 {
 	ctx->error->errcode = code;
 	fz_vsnprintf(ctx->error->message, sizeof ctx->error->message, fmt, ap);
@@ -187,7 +187,7 @@ void fz_vthrow(fz_context *ctx, int code, const char *fmt, va_list ap)
 	throw(ctx);
 }
 
-void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
+FZ_NORETURN void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -195,7 +195,7 @@ void fz_throw(fz_context *ctx, int code, const char *fmt, ...)
 	va_end(ap);
 }
 
-void fz_rethrow(fz_context *ctx)
+FZ_NORETURN void fz_rethrow(fz_context *ctx)
 {
 	assert(ctx && ctx->error && ctx->error->errcode >= FZ_ERROR_NONE);
 	throw(ctx);
