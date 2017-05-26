@@ -2020,9 +2020,10 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_page_de
 				src_f[i] = (float) inputpos[i] / 255.0;
 
 			convert_to_icc_base(ctx, srcs, src_f, des_f);
+			base_cs->clamp(base_cs, des_f, des_f);
 
 			for (i = 0; i < base->n; i++)
-				outputpos[i] = fz_clamp(des_f[i] * 255, 0, 255);
+				outputpos[i] = des_f[i] * 255.0;
 
 			outputpos += base->n;
 			inputpos += src->n;
