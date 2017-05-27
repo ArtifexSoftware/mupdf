@@ -225,46 +225,36 @@ lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 			goto end;
 		case '#':
 		{
-			int d;
-			c = fz_read_byte(ctx, f);
-			switch (c)
+			int hex[2];
+			int i;
+			for (i = 0; i < 2; i++)
 			{
-			case RANGE_0_9:
-				d = (c - '0') << 4;
-				break;
-			case RANGE_a_f:
-				d = (c - 'a' + 10) << 4;
-				break;
-			case RANGE_A_F:
-				d = (c - 'A' + 10) << 4;
-				break;
-			default:
-				fz_unread_byte(ctx, f);
-				/* fallthrough */
-			case EOF:
-				goto end;
+				c = fz_peek_byte(ctx, f);
+				switch (c)
+				{
+				case RANGE_0_9:
+					if (i == 1 && c == '0' && hex[0] == 0)
+						goto illegal;
+					hex[i] = fz_read_byte(ctx, f) - '0';
+					break;
+				case RANGE_a_f:
+					hex[i] = fz_read_byte(ctx, f) - 'a' + 10;
+					break;
+				case RANGE_A_F:
+					hex[i] = fz_read_byte(ctx, f) - 'A' + 10;
+					break;
+				default:
+				case EOF:
+					goto illegal;
+				}
 			}
-			c = fz_read_byte(ctx, f);
-			switch (c)
-			{
-			case RANGE_0_9:
-				c -= '0';
-				break;
-			case RANGE_a_f:
-				c -= 'a' - 10;
-				break;
-			case RANGE_A_F:
-				c -= 'A' - 10;
-				break;
-			default:
-				fz_unread_byte(ctx, f);
-				/* fallthrough */
-			case EOF:
-				*s++ = d;
-				goto end;
-			}
-			*s++ = d + c;
+			*s++ = (hex[0] << 4) + hex[1];
 			break;
+illegal:
+			if (i == 1)
+				fz_unread_byte(ctx, f);
+			*s++ = '#';
+			continue;
 		}
 		default:
 			*s++ = c;
