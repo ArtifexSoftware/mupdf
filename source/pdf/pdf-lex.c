@@ -201,14 +201,20 @@ end:
 }
 
 static void
-lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf)
+lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 {
-	char *s = buf->scratch;
-	int n = buf->size;
+	char *s = lb->scratch;
+	char *e = s + lb->size;
+	int c;
 
-	while (n > 1)
+	while (1)
 	{
-		int c = fz_read_byte(ctx, f);
+		if (s == e)
+		{
+			s += pdf_lexbuf_grow(ctx, lb);
+			e = lb->scratch + lb->size;
+		}
+		c = fz_read_byte(ctx, f);
 		switch (c)
 		{
 		case IS_WHITE:
@@ -255,22 +261,19 @@ lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf)
 				/* fallthrough */
 			case EOF:
 				*s++ = d;
-				n--;
 				goto end;
 			}
 			*s++ = d + c;
-			n--;
 			break;
 		}
 		default:
 			*s++ = c;
-			n--;
 			break;
 		}
 	}
 end:
 	*s = '\0';
-	buf->len = s - buf->scratch;
+	lb->len = s - lb->scratch;
 }
 
 static int
