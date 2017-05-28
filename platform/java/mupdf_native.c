@@ -6290,7 +6290,7 @@ FUN(PDFDocument_findPage)(JNIEnv *env, jobject self, jint jat)
 	if (jat < 0 || jat >= pdf_count_pages(ctx, pdf)) { jni_throw_oob(env, "at is not a valid page"); return NULL; }
 
 	fz_try(ctx)
-		obj = pdf_lookup_page_obj(ctx, pdf, (int)at);
+		obj = pdf_lookup_page_obj(ctx, pdf, at);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -6463,7 +6463,7 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf, jobjec
 
 	fz_try(ctx)
 	{
-		int len = (int)strlen(sbuf);
+		size_t len = strlen(sbuf);
 		data = fz_malloc(ctx, len);
 		memcpy(data, sbuf, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
@@ -6534,7 +6534,7 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 
 	fz_try(ctx)
 	{
-		int len = (int)strlen(scontents);
+		size_t len = strlen(scontents);
 		data = fz_malloc(ctx, len);
 		contents = fz_new_buffer_from_data(ctx, data, len);
 		data = NULL;
@@ -6560,7 +6560,7 @@ FUN(PDFDocument_insertPage)(JNIEnv *env, jobject self, jint jat, jobject jpage)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	int at = (int)jat;
+	int at = jat;
 	pdf_obj *page = from_PDFObject(env, jpage);
 
 	if (!ctx || !pdf) return;
@@ -6578,7 +6578,7 @@ FUN(PDFDocument_deletePage)(JNIEnv *env, jobject self, jint jat)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	int at = (int) jat;
+	int at = jat;
 
 	if (!ctx || !pdf) return;
 	if (jat < 0 || jat >= pdf_count_pages(ctx, pdf)) { jni_throw_oob(env, "at is not a valid page"); return; }
@@ -7115,7 +7115,7 @@ FUN(PDFObject_writeStreamString)(JNIEnv *env, jobject self, jstring jstr)
 
 	fz_try(ctx)
 	{
-		int len = (int)strlen(str);
+		size_t len = strlen(str);
 		data = fz_malloc(ctx, len);
 		memcpy(data, str, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
@@ -7172,7 +7172,7 @@ FUN(PDFObject_writeRawStreamString)(JNIEnv *env, jobject self, jstring jstr)
 
 	fz_try(ctx)
 	{
-		int len = (int)strlen(str);
+		size_t len = strlen(str);
 		data = fz_malloc(ctx, len);
 		memcpy(data, str, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
@@ -7888,7 +7888,7 @@ FUN(PDFObject_asByteName)(JNIEnv *env, jobject self)
 	const char *str = NULL;
 	jobject jbs = NULL;
 	jbyte *bs = NULL;
-	int len;
+	size_t len;
 
 	if (!ctx || !obj) return NULL;
 
@@ -7900,7 +7900,7 @@ FUN(PDFObject_asByteName)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	len = (int)strlen(str);
+	len = strlen(str);
 	jbs = (*env)->NewByteArray(env, len);
 	if (!jbs) return NULL;
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
