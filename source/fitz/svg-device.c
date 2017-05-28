@@ -158,7 +158,7 @@ svg_dev_ctm(fz_context *ctx, svg_device *sdev, const fz_matrix *ctm)
 {
 	fz_output *out = sdev->out;
 
-	if (ctm->a != 1.0 || ctm->b != 0 || ctm->c != 0 || ctm->d != 1.0 || ctm->e != 0 || ctm->f != 0)
+	if (ctm->a != 1.0f || ctm->b != 0 || ctm->c != 0 || ctm->d != 1.0f || ctm->e != 0 || ctm->f != 0)
 	{
 		fz_write_printf(ctx, out, " transform=\"matrix(%g,%g,%g,%g,%g,%g)\"",
 			ctm->a, ctm->b, ctm->c, ctm->d, ctm->e, ctm->f);

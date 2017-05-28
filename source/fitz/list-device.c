@@ -415,9 +415,9 @@ fz_append_display_node(
 	}
 	if (alpha && (*alpha != writer->alpha))
 	{
-		if (*alpha >= 1.0)
+		if (*alpha >= 1.0f)
 			node.alpha = ALPHA_1;
-		else if (*alpha <= 0.0)
+		else if (*alpha <= 0.0f)
 			node.alpha = ALPHA_0;
 		else
 		{

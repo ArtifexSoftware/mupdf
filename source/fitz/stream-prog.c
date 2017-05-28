@@ -29,7 +29,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, size_t len)
 	/* Simulate more data having arrived */
 	if (ps->available < ps->length)
 	{
-		fz_off_t av = (fz_off_t)((double)(clock() - ps->start_time) * ps->bps / (CLOCKS_PER_SEC*8));
+		fz_off_t av = (fz_off_t)((float)(clock() - ps->start_time) * ps->bps / (CLOCKS_PER_SEC*8));
 		if (av > ps->length)
 			av = ps->length;
 		ps->available = av;

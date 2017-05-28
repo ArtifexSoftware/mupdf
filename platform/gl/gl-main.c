@@ -260,8 +260,8 @@ void texture_from_pixmap(struct texture *tex, fz_pixmap *pix)
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w2, h2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, tex->w, tex->h, pix->n == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, pix->samples);
-		tex->s = (float)tex->w / w2;
-		tex->t = (float)tex->h / h2;
+		tex->s = (float) tex->w / w2;
+		tex->t = (float) tex->h / h2;
 	}
 }
 
@@ -811,12 +811,12 @@ static void toggle_outline(void)
 
 static void auto_zoom_w(void)
 {
-	currentzoom = fz_clamp(currentzoom * canvas_w / (float)page_tex.w, MINRES, MAXRES);
+	currentzoom = fz_clamp(currentzoom * canvas_w / page_tex.w, MINRES, MAXRES);
 }
 
 static void auto_zoom_h(void)
 {
-	currentzoom = fz_clamp(currentzoom * canvas_h / (float)page_tex.h, MINRES, MAXRES);
+	currentzoom = fz_clamp(currentzoom * canvas_h / page_tex.h, MINRES, MAXRES);
 }
 
 static void auto_zoom(void)
@@ -1242,7 +1242,7 @@ static void run_main_loop(void)
 		ui.key = ui.mod = 0;
 		ui.down = ui.middle = ui.right = 0;
 
-		while (glfwGetTime() < start_time + 0.2)
+		while (glfwGetTime() < start_time + 0.2f)
 		{
 			search_hit_count = fz_search_page_number(ctx, doc, search_page, search_needle,
 					search_hit_bbox, nelem(search_hit_bbox));

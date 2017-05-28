@@ -3626,7 +3626,7 @@ static void ffi_PDFObject_asNumber(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	double num;
+	float num;
 	fz_try(ctx)
 		if (pdf_is_int(ctx, obj))
 			num = pdf_to_int(ctx, obj);

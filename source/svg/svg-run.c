@@ -109,10 +109,10 @@ svg_run_rect(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *node, c
 		ry = rx;
 	if (ry_att && !rx_att)
 		rx = ry;
-	if (rx > w * 0.5)
-		rx = w * 0.5;
-	if (ry > h * 0.5)
-		ry = h * 0.5;
+	if (rx > w * 0.5f)
+		rx = w * 0.5f;
+	if (ry > h * 0.5f)
+		ry = h * 0.5f;
 
 	if (w <= 0 || h <= 0)
 		return;
@@ -478,15 +478,15 @@ svg_parse_path_data(fz_context *ctx, svg_document *doc, const char *str)
 
 	/* saved control point for smooth curves */
 	int reset_smooth = 1;
-	float smooth_x = 0.0;
-	float smooth_y = 0.0;
+	float smooth_x = 0.0f;
+	float smooth_y = 0.0f;
 
 	cmd = 0;
 	nargs = 0;
 
 	fz_try(ctx)
 	{
-		fz_moveto(ctx, path, 0.0, 0.0); /* for the case of opening 'm' */
+		fz_moveto(ctx, path, 0.0f, 0.0f); /* for the case of opening 'm' */
 
 		while (*str)
 		{
@@ -517,8 +517,8 @@ svg_parse_path_data(fz_context *ctx, svg_document *doc, const char *str)
 
 			if (reset_smooth)
 			{
-				smooth_x = 0.0;
-				smooth_y = 0.0;
+				smooth_x = 0.0f;
+				smooth_y = 0.0f;
 			}
 
 			reset_smooth = 1;
@@ -977,7 +977,7 @@ svg_parse_common(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *st
 	}
 	else
 	{
-		stroke->miterlimit = 4.0;
+		stroke->miterlimit = 4.0f;
 	}
 }
 

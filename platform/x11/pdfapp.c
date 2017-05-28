@@ -128,7 +128,7 @@ void pdfapp_init(fz_context *ctx, pdfapp_t *app)
 	app->layout_css = NULL;
 	app->layout_use_doc_css = 1;
 
-	app->transition.duration = 0.25;
+	app->transition.duration = 0.25f;
 	app->transition.type = FZ_TRANSITION_FADE;
 #if defined(_WIN32) || defined(_WIN64)
 	app->colorspace = fz_device_bgr(ctx);
@@ -1105,7 +1105,7 @@ void pdfapp_onresize(pdfapp_t *app, int w, int h)
 
 void pdfapp_autozoom_vertical(pdfapp_t *app)
 {
-	app->resolution *= (double) app->winh / (double) fz_pixmap_height(app->ctx, app->image);
+	app->resolution *= (float) app->winh / fz_pixmap_height(app->ctx, app->image);
 	if (app->resolution > MAXRES)
 		app->resolution = MAXRES;
 	else if (app->resolution < MINRES)
@@ -1115,7 +1115,7 @@ void pdfapp_autozoom_vertical(pdfapp_t *app)
 
 void pdfapp_autozoom_horizontal(pdfapp_t *app)
 {
-	app->resolution *= (double) app->winw / (double) fz_pixmap_width(app->ctx, app->image);
+	app->resolution *= (float) app->winw / fz_pixmap_width(app->ctx, app->image);
 	if (app->resolution > MAXRES)
 		app->resolution = MAXRES;
 	else if (app->resolution < MINRES)
@@ -1211,7 +1211,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			app->layout_em -= 2;
 			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 			app->pagecount = fz_count_pages(app->ctx, app->doc);
-			app->pageno = app->pagecount * percent + 0.1;
+			app->pageno = app->pagecount * percent + 0.1f;
 			pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		}
 		break;
@@ -1222,7 +1222,7 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			app->layout_em += 2;
 			fz_layout_document(app->ctx, app->doc, app->layout_w, app->layout_h, app->layout_em);
 			app->pagecount = fz_count_pages(app->ctx, app->doc);
-			app->pageno = app->pagecount * percent + 0.1;
+			app->pageno = app->pagecount * percent + 0.1f;
 			pdfapp_showpage(app, 1, 1, 1, 0, 0);
 		}
 		break;

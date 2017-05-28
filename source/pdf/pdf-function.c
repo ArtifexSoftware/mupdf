@@ -231,7 +231,7 @@ ps_push_real(ps_stack *st, float n)
 		{
 			/* Push 1.0, as it's a small known value that won't
 			 * cause a divide by 0. Same reason as in fz_atof. */
-			n = 1.0;
+			n = 1.0f;
 		}
 		st->stack[st->sp].u.f = fz_clamp(n, -FLT_MAX, FLT_MAX);
 		st->sp++;

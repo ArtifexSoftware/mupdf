@@ -1202,7 +1202,7 @@ fz_transform_pixmap(fz_context *ctx, fz_draw_device *dev, const fz_pixmap *image
 	/* Downscale, non rectilinear case */
 	if (dx > 0 && dy > 0)
 	{
-		scaled = fz_scale_pixmap_cached(ctx, image, 0, 0, (float)dx, (float)dy, NULL, dev->cache_x, dev->cache_y);
+		scaled = fz_scale_pixmap_cached(ctx, image, 0, 0, dx, dy, NULL, dev->cache_x, dev->cache_y);
 		return scaled;
 	}
 
@@ -1792,7 +1792,7 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, int i
 			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox);
 		}
 
-		if (blendmode == 0 && alpha == 1.0 && isolated)
+		if (blendmode == 0 && alpha == 1.0f && isolated)
 		{
 			/* We can render direct to any existing shape plane.
 			 * If there isn't one, we don't need to make one. */

@@ -294,9 +294,9 @@ static void dump_lock_times(void)
 		{
 			total += fz_lock_time[i][j];
 		}
-		printf("Lock %d held for %g seconds (%g%%)\n", j, ((double)total)/1000, 100.0*total/prog_time);
+		printf("Lock %d held for %g seconds (%g%%)\n", j, total / 1000.0f, 100.0f*total/prog_time);
 	}
-	printf("Total program time %g seconds\n", ((double)prog_time)/1000);
+	printf("Total program time %g seconds\n", prog_time / 1000.0f);
 }
 
 #endif

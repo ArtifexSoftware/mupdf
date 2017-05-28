@@ -71,13 +71,13 @@
 	MURASTER_CONFIG_WIDTH: The printable page width
 	(in inches)
 */
-/* #define MURASTER_CONFIG_WIDTH 8.27 */
+/* #define MURASTER_CONFIG_WIDTH 8.27f */
 
 /*
 	MURASTER_CONFIG_HEIGHT: The printable page height
 	(in inches)
 */
-/* #define MURASTER_CONFIG_HEIGHT 11.69 */
+/* #define MURASTER_CONFIG_HEIGHT 11.69f */
 
 /*
 	MURASTER_CONFIG_STORE_SIZE: The maximum size to use
@@ -172,13 +172,13 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #ifdef MURASTER_CONFIG_WIDTH
 #define PAPER_WIDTH MURASTER_CONFIG_WIDTH
 #else
-#define PAPER_WIDTH 8.27
+#define PAPER_WIDTH 8.27f
 #endif
 
 #ifdef MURASTER_CONFIG_HEIGHT
 #define PAPER_HEIGHT MURASTER_CONFIG_HEIGHT
 #else
-#define PAPER_HEIGHT 11.69
+#define PAPER_HEIGHT 11.69f
 #endif
 
 #ifdef MURASTER_CONFIG_STORE_SIZE

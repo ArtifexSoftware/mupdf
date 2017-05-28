@@ -980,7 +980,7 @@ fz_from_css_number(fz_css_number number, float em, float percent_value, float au
 	case N_NUMBER: return number.value;
 	case N_LENGTH: return number.value;
 	case N_SCALE: return number.value * em;
-	case N_PERCENT: return number.value * 0.01 * percent_value;
+	case N_PERCENT: return number.value * 0.01f * percent_value;
 	case N_AUTO: return auto_value;
 	}
 }
@@ -993,7 +993,7 @@ fz_from_css_number_scale(fz_css_number number, float scale)
 	case N_NUMBER: return number.value * scale;
 	case N_LENGTH: return number.value;
 	case N_SCALE: return number.value * scale;
-	case N_PERCENT: return number.value * 0.01 * scale;
+	case N_PERCENT: return number.value * 0.01f * scale;
 	case N_AUTO: return scale;
 	}
 }

@@ -180,9 +180,9 @@ svg_parse_color(fz_context *ctx, svg_document *doc, char *str, float *rgb)
 {
 	int i, l, m, r, cmp;
 
-	rgb[0] = 0.0;
-	rgb[1] = 0.0;
-	rgb[2] = 0.0;
+	rgb[0] = 0.0f;
+	rgb[1] = 0.0f;
+	rgb[2] = 0.0f;
 
 	/* Crack hex-coded RGB */
 
@@ -192,17 +192,17 @@ svg_parse_color(fz_context *ctx, svg_document *doc, char *str, float *rgb)
 
 		if (strlen(str) == 3)
 		{
-			rgb[0] = (unhex(str[0]) * 16 + unhex(str[0])) / 255.0;
-			rgb[1] = (unhex(str[1]) * 16 + unhex(str[1])) / 255.0;
-			rgb[2] = (unhex(str[2]) * 16 + unhex(str[2])) / 255.0;
+			rgb[0] = (unhex(str[0]) * 16 + unhex(str[0])) / 255.0f;
+			rgb[1] = (unhex(str[1]) * 16 + unhex(str[1])) / 255.0f;
+			rgb[2] = (unhex(str[2]) * 16 + unhex(str[2])) / 255.0f;
 			return;
 		}
 
 		if (strlen(str) == 6)
 		{
-			rgb[0] = (unhex(str[0]) * 16 + unhex(str[1])) / 255.0;
-			rgb[1] = (unhex(str[2]) * 16 + unhex(str[3])) / 255.0;
-			rgb[2] = (unhex(str[4]) * 16 + unhex(str[5])) / 255.0;
+			rgb[0] = (unhex(str[0]) * 16 + unhex(str[1])) / 255.0f;
+			rgb[1] = (unhex(str[2]) * 16 + unhex(str[3])) / 255.0f;
+			rgb[2] = (unhex(str[4]) * 16 + unhex(str[5])) / 255.0f;
 			return;
 		}
 
@@ -233,11 +233,11 @@ svg_parse_color(fz_context *ctx, svg_document *doc, char *str, float *rgb)
 				if (*str == '%')
 				{
 					str ++;
-					rgb[i] = fz_atof(numberbuf) / 100.0;
+					rgb[i] = fz_atof(numberbuf) / 100.0f;
 				}
 				else
 				{
-					rgb[i] = fz_atof(numberbuf) / 255.0;
+					rgb[i] = fz_atof(numberbuf) / 255.0f;
 				}
 			}
 		}

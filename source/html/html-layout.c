@@ -1044,8 +1044,8 @@ static float measure_line(fz_html_flow *node, fz_html_flow *end, float *baseline
 		}
 		else
 		{
-			float a = node->box->em * 0.8;
-			float d = node->box->em * 0.2;
+			float a = node->box->em * 0.8f;
+			float d = node->box->em * 0.2f;
 			if (a > max_a) max_a = a;
 			if (d > max_d) max_d = d;
 		}
@@ -1171,11 +1171,11 @@ static void layout_line(fz_context *ctx, float indent, float page_w, float line_
 			break;
 		case VA_TOP:
 		case VA_TEXT_TOP:
-			va = -baseline + node->box->em * 0.8;
+			va = -baseline + node->box->em * 0.8f;
 			break;
 		case VA_BOTTOM:
 		case VA_TEXT_BOTTOM:
-			va = -baseline + line_h - node->box->em * 0.2;
+			va = -baseline + line_h - node->box->em * 0.2f;
 			break;
 		}
 
@@ -1781,8 +1781,8 @@ static void draw_list_mark(fz_context *ctx, fz_html_box *box, float page_top, fl
 	else
 	{
 		float h = fz_from_css_number_scale(box->style.line_height, box->em);
-		float a = box->em * 0.8;
-		float d = box->em * 0.2;
+		float a = box->em * 0.8f;
+		float d = box->em * 0.2f;
 		if (a + d > h)
 			h = a + d;
 		y = box->y + a + (h - a - d) / 2;
@@ -1981,8 +1981,8 @@ static fz_link *load_link_flow(fz_context *ctx, fz_html_flow *flow, fz_link *hea
 			if (flow->type != FLOW_IMAGE)
 			{
 				/* flow->y is the baseline, adjust bbox appropriately */
-				bbox.y0 -= 0.8 * flow->h;
-				bbox.y1 -= 0.8 * flow->h;
+				bbox.y0 -= 0.8f * flow->h;
+				bbox.y1 -= 0.8f * flow->h;
 			}
 
 			if (is_internal_uri(href))

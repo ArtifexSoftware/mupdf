@@ -203,7 +203,7 @@ push_span(fz_context *ctx, fz_stext_device *tdev, fz_stext_span *span, int new_l
 	{
 		float size = fz_matrix_expansion(&span->transform);
 		/* So, a new line. Part of the same block or not? */
-		if (distance == 0 || distance > size * 1.5 || distance < -size * PARAGRAPH_DIST || page->len == 0 || prev_not_text)
+		if (distance == 0 || distance > size * 1.5f || distance < -size * PARAGRAPH_DIST || page->len == 0 || prev_not_text)
 		{
 			/* New block */
 			if (page->len == page->cap)
@@ -340,7 +340,7 @@ strain_soup(fz_context *ctx, fz_stext_device *tdev)
 			/* Check if p and q are parallel. If so, then this
 			 * line is parallel with the last one. */
 			dot = p.x * q.x + p.y * q.y;
-			if (fabsf(dot) > 0.9995)
+			if (fabsf(dot) > 0.9995f)
 			{
 				/* If we take the dot product of normalised(p) and
 				 * perp(r), we get the perpendicular distance from
@@ -676,10 +676,10 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_stext_style *sty
 		base_offset = -ndir.y * delta.x + ndir.x * delta.y;
 
 		spacing /= size * SPACE_DIST;
-		if (fabsf(base_offset) < size * 0.1)
+		if (fabsf(base_offset) < size * 0.1f)
 		{
 			/* Only a small amount off the baseline - we'll take this */
-			if (fabsf(spacing) < 1.0)
+			if (fabsf(spacing) < 1.0f)
 			{
 				/* Motion is in line, and small. */
 			}
@@ -942,7 +942,7 @@ fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const f
 
 	/* If the alpha is less than 50% then it's probably a watermark or
 	 * effect or something. Skip it */
-	if (alpha < 0.5)
+	if (alpha < 0.5f)
 		return;
 
 	/* New block */

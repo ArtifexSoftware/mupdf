@@ -1489,7 +1489,7 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, 
 {
 	pdf_hmtx h;
 	size_t i = 0;
-	float x = 0.0;
+	float x = 0.0f;
 
 	while(i < len)
 	{
@@ -1497,7 +1497,7 @@ float pdf_text_stride(fz_context *ctx, pdf_font_desc *fontdesc, float fontsize, 
 
 		h = pdf_lookup_hmtx(ctx, fontdesc, buf[i]);
 
-		span = h.w * fontsize / 1000.0;
+		span = h.w * fontsize / 1000.0f;
 
 		if (x + span > room)
 			break;

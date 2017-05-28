@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#define TEXT_ANNOT_SIZE (25.0)
+#define TEXT_ANNOT_SIZE (25.0f)
 
 const char *
 pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type)
@@ -95,7 +95,7 @@ pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
 	fz_try(ctx)
 	{
 		int ind_obj_num;
-		fz_rect rect = {0.0, 0.0, 0.0, 0.0};
+		fz_rect rect = {0.0f, 0.0f, 0.0f, 0.0f};
 		const char *type_str;
 		pdf_obj *annot_arr;
 

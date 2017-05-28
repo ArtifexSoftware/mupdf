@@ -899,9 +899,9 @@ MuError MuOfficePage_getSizeForZoom(	MuOfficePage *page,
 	h = 90 * (rect.y1 - rect.y0) / 72;
 
 	if (pWidth)
-		*pWidth = (int)(w * zoom + 0.5);
+		*pWidth = (int)(w * zoom + 0.5f);
 	if (pHeight)
-		*pHeight = (int)(h * zoom + 0.5);
+		*pHeight = (int)(h * zoom + 0.5f);
 
 	return MuError_OK;
 }
@@ -1010,8 +1010,8 @@ static void render_worker(void *arg)
 		 * integer width/heights. First calculate the target
 		 * width/height. */
 		fz_bound_page(ctx, render->page->page, &page_bounds);
-		scalex = (int)(90 * render->zoom * (page_bounds.x1 - page_bounds.x0) / 72 + 0.5);
-		scaley = (int)(90 * render->zoom * (page_bounds.y1 - page_bounds.y0) / 72 + 0.5);
+		scalex = (int)(90 * render->zoom * (page_bounds.x1 - page_bounds.x0) / 72 + 0.5f);
+		scaley = (int)(90 * render->zoom * (page_bounds.y1 - page_bounds.y0) / 72 + 0.5f);
 		/* Now calculate the actual scale factors required */
 		scalex /= (page_bounds.x1 - page_bounds.x0);
 		scaley /= (page_bounds.y1 - page_bounds.y0);

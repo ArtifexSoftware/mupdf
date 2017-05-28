@@ -162,8 +162,8 @@ gprf_bound_page(fz_context *ctx, fz_page *page_, fz_rect *bbox)
 	/* BBox is in points, not pixels */
 	bbox->x0 = 0;
 	bbox->y0 = 0;
-	bbox->x1 = 72.0 * page->width / doc->res;
-	bbox->y1 = 72.0 * page->height / doc->res;
+	bbox->x1 = 72.0f * page->width / doc->res;
+	bbox->y1 = 72.0f * page->height / doc->res;
 
 	return bbox;
 }
@@ -215,61 +215,61 @@ static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32
 	cmy = (cm * y)>>16;
 	cmy1 = cm - cmy;
 
-#define CONST16(x) ((int)(x * 65536.0 + 0.5))
+#define CONST16(x) ((int)(x * 65536.0f + 0.5f))
 
 	k += (k>>15); /* Move k to be 0..65536 */
 
 	/* this is a matrix multiplication, unrolled for performance */
 	x = (c1m1y1 * k)>>16;	/* 0 0 0 1 */
 	r = g = b = c1m1y1 - x;	/* 0 0 0 0 */
-	r += (CONST16(0.1373) * x)>>16;
-	g += (CONST16(0.1216) * x)>>16;
-	b += (CONST16(0.1255) * x)>>16;
+	r += (CONST16(0.1373f) * x)>>16;
+	g += (CONST16(0.1216f) * x)>>16;
+	b += (CONST16(0.1255f) * x)>>16;
 
 	x = (c1m1y * k)>>16;	/* 0 0 1 1 */
-	r += (CONST16(0.1098) * x)>>16;
-	g += (CONST16(0.1020) * x)>>16;
+	r += (CONST16(0.1098f) * x)>>16;
+	g += (CONST16(0.1020f) * x)>>16;
 	x = c1m1y - x;		/* 0 0 1 0 */
 	r += x;
-	g += (CONST16(0.9490) * x)>>16;
+	g += (CONST16(0.9490f) * x)>>16;
 
 	x = (c1my1 * k)>>16;	/* 0 1 0 1 */
-	r += (CONST16(0.1412) * x)>>16;
+	r += (CONST16(0.1412f) * x)>>16;
 	x = c1my1 - x;		/* 0 1 0 0 */
-	r += (CONST16(0.9255) * x)>>16;
-	b += (CONST16(0.5490) * x)>>16;
+	r += (CONST16(0.9255f) * x)>>16;
+	b += (CONST16(0.5490f) * x)>>16;
 
 	x = (c1my * k)>>16;	/* 0 1 1 1 */
-	r += (CONST16(0.1333) * x)>>16;
+	r += (CONST16(0.1333f) * x)>>16;
 	x = c1my - x;		/* 0 1 1 0 */
-	r += (CONST16(0.9294) * x)>>16;
-	g += (CONST16(0.1098) * x)>>16;
-	b += (CONST16(0.1412) * x)>>16;
+	r += (CONST16(0.9294f) * x)>>16;
+	g += (CONST16(0.1098f) * x)>>16;
+	b += (CONST16(0.1412f) * x)>>16;
 
 	x = (cm1y1 * k)>>16;	/* 1 0 0 1 */
-	g += (CONST16(0.0588) * x)>>16;
-	b += (CONST16(0.1412) * x)>>16;
+	g += (CONST16(0.0588f) * x)>>16;
+	b += (CONST16(0.1412f) * x)>>16;
 	x = cm1y1 - x;		/* 1 0 0 0 */
-	g += (CONST16(0.6784) * x)>>16;
-	b += (CONST16(0.9373) * x)>>16;
+	g += (CONST16(0.6784f) * x)>>16;
+	b += (CONST16(0.9373f) * x)>>16;
 
 	x = (cm1y * k)>>16;	/* 1 0 1 1 */
-	g += (CONST16(0.0745) * x)>>16;
+	g += (CONST16(0.0745f) * x)>>16;
 	x = cm1y - x;		/* 1 0 1 0 */
-	g += (CONST16(0.6510) * x)>>16;
-	b += (CONST16(0.3137) * x)>>16;
+	g += (CONST16(0.6510f) * x)>>16;
+	b += (CONST16(0.3137f) * x)>>16;
 
 	x = (cmy1 * k)>>16;	/* 1 1 0 1 */
-	b += (CONST16(0.0078) * x)>>16;
+	b += (CONST16(0.0078f) * x)>>16;
 	x = cmy1 - x;		/* 1 1 0 0 */
-	r += (CONST16(0.1804) * x)>>16;
-	g += (CONST16(0.1922) * x)>>16;
-	b += (CONST16(0.5725) * x)>>16;
+	r += (CONST16(0.1804f) * x)>>16;
+	g += (CONST16(0.1922f) * x)>>16;
+	b += (CONST16(0.5725f) * x)>>16;
 
 	x = (cmy * (65536-k))>>16;	/* 1 1 1 0 */
-	r += (CONST16(0.2118) * x)>>16;
-	g += (CONST16(0.2119) * x)>>16;
-	b += (CONST16(0.2235) * x)>>16;
+	r += (CONST16(0.2118f) * x)>>16;
+	g += (CONST16(0.2119f) * x)>>16;
+	b += (CONST16(0.2235f) * x)>>16;
 	/* I have convinced myself that r, g, b cannot have underflowed at
 	 * thus point. I have not convinced myself that they won't have
 	 * overflowed though. */
@@ -814,12 +814,12 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 	i = 0;
 	for (y = 0; y < page->tile_height; y++)
 	{
-		double scale = GPRF_TILESIZE * 72.0 / doc->res;
+		float scale = GPRF_TILESIZE * 72.0f / doc->res;
 		for (x = 0; x < page->tile_width; x++)
 		{
 			fz_matrix local;
-			double scale_x = page->tiles[i]->w * 72.0 / doc->res;
-			double scale_y = page->tiles[i]->h * 72.0 / doc->res;
+			float scale_x = page->tiles[i]->w * 72.0f / doc->res;
+			float scale_y = page->tiles[i]->h * 72.0f / doc->res;
 			local.a = scale_x;
 			local.b = 0;
 			local.c = 0;
@@ -827,7 +827,7 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 			local.e = x * scale;
 			local.f = y * scale;
 			fz_concat(&local, &local, ctm);
-			fz_fill_image(ctx, dev, page->tiles[i++], &local, 1.0);
+			fz_fill_image(ctx, dev, page->tiles[i++], &local, 1.0f);
 		}
 	}
 	fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);

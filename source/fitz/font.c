@@ -557,7 +557,7 @@ fz_adjust_ft_glyph_width(fz_context *ctx, fz_font *font, int gid, fz_matrix *trm
 		FT_Get_Advance(font->ft_face, gid, FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING | FT_LOAD_IGNORE_TRANSFORM, &adv);
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
 
-		realw = (float)adv * 1000 / ((FT_Face)font->ft_face)->units_per_EM;
+		realw = adv * 1000.0f / ((FT_Face)font->ft_face)->units_per_EM;
 		if (gid < font->width_count)
 			subw = font->width_table[gid];
 		else
@@ -916,7 +916,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	// TODO: cache results
 
 	const int scale = face->units_per_EM;
-	const float recip = 1 / (float)scale;
+	const float recip = 1.0f / scale;
 	const float strength = 0.02f;
 	fz_matrix local_trm = fz_identity;
 
@@ -963,7 +963,7 @@ fz_bound_ft_glyph(fz_context *ctx, fz_font *font, int gid)
 	if (font->flags.fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * scale);
-		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5 * scale, -strength * 0.5 * scale);
+		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5f * scale, -strength * 0.5f * scale);
 	}
 
 	FT_Outline_Get_CBox(&face->glyph->outline, &cbox);
@@ -1057,7 +1057,7 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 	int ft_flags;
 
 	const int scale = face->units_per_EM;
-	const float recip = 1 / (float)scale;
+	const float recip = 1.0f / scale;
 	const float strength = 0.02f;
 
 	fz_adjust_ft_glyph_width(ctx, font, gid, &local_trm);
@@ -1090,7 +1090,7 @@ fz_outline_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *tr
 	if (font->flags.fake_bold)
 	{
 		FT_Outline_Embolden(&face->glyph->outline, strength * scale);
-		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5 * scale, -strength * 0.5 * scale);
+		FT_Outline_Translate(&face->glyph->outline, -strength * 0.5f * scale, -strength * 0.5f * scale);
 	}
 
 	cc.path = NULL;

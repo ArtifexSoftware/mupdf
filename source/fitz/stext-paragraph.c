@@ -148,7 +148,7 @@ line_height_for_style(line_heights *lh, fz_stext_style *style)
 		if (lh->lh[i].style == style)
 			return lh->lh[i].height;
 	}
-	return 0.0; /* Never reached */
+	return 0.0f; /* Never reached */
 }
 
 static void
@@ -1161,7 +1161,7 @@ list_entry:
 					if (chr->style != style)
 					{
 						float proper_step = line_height_for_style(lh, chr->style);
-						if (proper_step * 0.95 <= line->distance && line->distance <= proper_step * 1.05)
+						if (proper_step * 0.95f <= line->distance && line->distance <= proper_step * 1.05f)
 						{
 							ok = 1;
 							break;
@@ -1225,7 +1225,7 @@ force_paragraph:
 				fz_point *region_max = &span->max;
 
 				/* Treat adjacent spans as one big region */
-				while (span->next && span->next->spacing < 1.5)
+				while (span->next && span->next->spacing < 1.5f)
 				{
 					span = span->next;
 					region_max = &span->max;
@@ -1310,7 +1310,7 @@ force_paragraph:
 				fz_point *region_max = &span->max;
 
 				/* Treat adjacent spans as one big region */
-				while (span->next && span->next->spacing < 1.5)
+				while (span->next && span->next->spacing < 1.5f)
 				{
 					span = span->next;
 					region_max = &span->max;
@@ -1342,7 +1342,7 @@ force_paragraph:
 #ifdef DEBUG_ALIGN
 				dump_span(span);
 #endif
-				for (sn = span->next; sn && sn->spacing < 1.5; sn = sn->next)
+				for (sn = span->next; sn && sn->spacing < 1.5f; sn = sn->next)
 				{
 					region_max = &sn->max;
 #ifdef DEBUG_ALIGN

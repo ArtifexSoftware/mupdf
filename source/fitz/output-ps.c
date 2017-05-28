@@ -54,8 +54,8 @@ ps_write_header(fz_context *ctx, fz_band_writer *writer_)
 	int pagenum = writer->super.pagenum;
 	int w_points = (w * 72 + (xres>>1)) / xres;
 	int h_points = (h * 72 + (yres>>1)) / yres;
-	float sx = w/(float)w_points;
-	float sy = h/(float)h_points;
+	float sx = (float) w / w_points;
+	float sy = (float) h / h_points;
 	int err;
 
 	if (alpha != 0)

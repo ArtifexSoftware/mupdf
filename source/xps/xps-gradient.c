@@ -312,10 +312,10 @@ xps_draw_radial_gradient(fz_context *ctx, xps_document *doc, const fz_matrix *ct
 	char *radius_x_att = fz_xml_att(root, "RadiusX");
 	char *radius_y_att = fz_xml_att(root, "RadiusY");
 
-	x0 = y0 = 0.0;
-	x1 = y1 = 1.0;
-	xrad = 1.0;
-	yrad = 1.0;
+	x0 = y0 = 0.0f;
+	x1 = y1 = 1.0f;
+	xrad = 1.0f;
+	yrad = 1.0f;
 
 	if (origin_att)
 		xps_parse_point(ctx, doc, origin_att, &x0, &y0);
@@ -335,7 +335,7 @@ xps_draw_radial_gradient(fz_context *ctx, xps_document *doc, const fz_matrix *ct
 		fz_pre_scale(&local_ctm, 1, yrad/xrad);
 	}
 
-	if (yrad != 0.0)
+	if (yrad != 0.0f)
 	{
 		invscale = xrad / yrad;
 		y0 = y0 * invscale;

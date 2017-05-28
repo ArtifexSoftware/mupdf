@@ -75,17 +75,17 @@ svg_parse_length(const char *str, float percent, float font_size)
 
 	if (!strcmp(end, "px")) return val;
 
-	if (!strcmp(end, "pt")) return val * 1.0;
-	if (!strcmp(end, "pc")) return val * 12.0;
-	if (!strcmp(end, "mm")) return val * 2.83464567;
-	if (!strcmp(end, "cm")) return val * 28.3464567;
-	if (!strcmp(end, "in")) return val * 72.0;
+	if (!strcmp(end, "pt")) return val * 1.0f;
+	if (!strcmp(end, "pc")) return val * 12.0f;
+	if (!strcmp(end, "mm")) return val * 2.83464567f;
+	if (!strcmp(end, "cm")) return val * 28.3464567f;
+	if (!strcmp(end, "in")) return val * 72.0f;
 
 	if (!strcmp(end, "em")) return val * font_size;
-	if (!strcmp(end, "ex")) return val * font_size * 0.5;
+	if (!strcmp(end, "ex")) return val * font_size * 0.5f;
 
 	if (!strcmp(end, "%"))
-		return val * percent * 0.01;
+		return val * percent * 0.01f;
 
 	if (end[0] == 0)
 		return val;
@@ -108,7 +108,7 @@ svg_parse_angle(const char *str)
 		return val;
 
 	if (!strcmp(end, "grad"))
-		return val * 0.9;
+		return val * 0.9f;
 
 	if (!strcmp(end, "rad"))
 		return val * FZ_RADIAN;

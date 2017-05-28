@@ -510,12 +510,12 @@ update_ctm_for_subarea(fz_matrix *ctm, const fz_irect *subarea, int w, int h)
 	if (subarea->x0 == 0 && subarea->y0 == 0 && subarea->x1 == w && subarea->y1 == h)
 		return;
 
-	m.a = (subarea->x1 - subarea->x0) / (float)w;
+	m.a = (float) (subarea->x1 - subarea->x0) / w;
 	m.b = 0;
 	m.c = 0;
-	m.d = (subarea->y1 - subarea->y0) / (float)h;
-	m.e = subarea->x0 / (float)w;
-	m.f = subarea->y0 / (float)h;
+	m.d = (float) (subarea->y1 - subarea->y0) / h;
+	m.e = (float) subarea->x0 / w;
+	m.f = (float) subarea->y0 / h;
 	fz_concat(ctm, &m, ctm);
 }
 
@@ -625,8 +625,8 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 	/* Based on that subarea, recalculate the extents */
 	if (ctm)
 	{
-		float frac_w = (key.rect.x1 - key.rect.x0) / (float)image->w;
-		float frac_h = (key.rect.y1 - key.rect.y0) / (float)image->h;
+		float frac_w = (float) (key.rect.x1 - key.rect.x0) / image->w;
+		float frac_h = (float) (key.rect.y1 - key.rect.y0) / image->h;
 		float a = ctm->a * frac_w;
 		float b = ctm->b * frac_h;
 		float c = ctm->c * frac_w;

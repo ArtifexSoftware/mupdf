@@ -132,7 +132,7 @@ fz_luminosity_rgb(unsigned char *rd, unsigned char *gd, unsigned char *bd, int r
 	int delta, scale;
 	int r, g, b, y;
 
-	/* 0.3, 0.59, 0.11 in fixed point */
+	/* 0.3f, 0.59f, 0.11f in fixed point */
 	delta = ((rs - rb) * 77 + (gs - gb) * 151 + (bs - bb) * 28 + 0x80) >> 8;
 	r = rb + delta;
 	g = gb + delta;

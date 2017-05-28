@@ -462,10 +462,10 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 			 * this amount to be smaller than 1/256, we guarantee we won't
 			 * cause problems that will be visible even under our most
 			 * extreme antialiasing. */
-			x0 = floorf(fx0 + 0.001);
-			y0 = floorf(fy0 + 0.001);
-			x1 = ceilf(fx1 - 0.001);
-			y1 = ceilf(fy1 - 0.001);
+			x0 = floorf(fx0 + 0.001f);
+			y0 = floorf(fy0 + 0.001f);
+			x1 = ceilf(fx1 - 0.001f);
+			y1 = ceilf(fy1 - 0.001f);
 			/* The above adjustments cause problems for sufficiently
 			 * large values for xstep/ystep which may be used if the
 			 * pattern is expected to be rendered exactly once. */
