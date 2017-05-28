@@ -180,10 +180,6 @@ static struct {
 	{ 0.023659f,	21,	16268 },
 };
 
-#ifndef	M_LN2
-#define M_LN2		0.69314718055994530942
-#endif
-
 /* SGI Log 16bit (greyscale) */
 
 typedef struct fz_sgilog16_s fz_sgilog16;
@@ -206,7 +202,7 @@ sgilog16val(fz_context *ctx, uint16_t v)
 		Y = 0;
 	else
 	{
-		Y = expf(M_LN2/256 * (Le + .5f) - M_LN2*64);
+		Y = expf(FZ_LN2/256 * (Le + .5f) - FZ_LN2*64);
 		if (v & 0x8000)
 			Y = -Y;
 	}
@@ -401,7 +397,7 @@ sgilog24val(fz_context *ctx, fz_stream *chain, uint8_t *rgb)
 
 	/* decode luminance */
 	p = (luv>>14) & 0x3ff;
-	Y = (p == 0 ? 0 : expf(M_LN2/64*(p+.5f) - M_LN2*12));
+	Y = (p == 0 ? 0 : expf(FZ_LN2/64*(p+.5f) - FZ_LN2*12));
 	if (Y <= 0)
 	{
 		X = Y = Z = 0;
@@ -532,7 +528,7 @@ sgilog32val(fz_context *ctx, uint32_t p, uint8_t *rgb)
 	else
 	{
 		int Le = (p>>16) & 0x7fff;
-		Y = !Le ? 0 : expf(M_LN2/256*(Le+.5f) - M_LN2*64);
+		Y = !Le ? 0 : expf(FZ_LN2/256*(Le+.5f) - FZ_LN2*64);
 		/* decode color */
 		u = (1.f/UVSCALE) * ((p>>8 & 0xff) + .5f);
 		v = (1.f/UVSCALE) * ((p & 0xff) + .5f);

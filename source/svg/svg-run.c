@@ -322,9 +322,9 @@ svg_add_arc_segment(fz_context *ctx, fz_path *path, const fz_matrix *mtx, float 
 	fz_point p;
 
 	while (th1 < th0)
-		th1 += (float)M_PI * 2;
+		th1 += FZ_PI * 2;
 
-	d = (float)M_PI / 180; /* 1-degree precision */
+	d = FZ_PI / 180; /* 1-degree precision */
 
 	if (iscw)
 	{
@@ -336,7 +336,7 @@ svg_add_arc_segment(fz_context *ctx, fz_path *path, const fz_matrix *mtx, float 
 	}
 	else
 	{
-		th0 += (float)M_PI * 2;
+		th0 += FZ_PI * 2;
 		for (t = th0 - d; t > th1 + d/2; t -= d)
 		{
 			fz_transform_point_xy(&p, mtx, cosf(t), sinf(t));
@@ -452,9 +452,9 @@ svg_add_arc(fz_context *ctx, fz_path *path,
 		th1 = angle_between(coord1, coord2);
 		dth = angle_between(coord3, coord4);
 		if (dth < 0 && !is_clockwise)
-			dth += (((float)M_PI / 180) * 360);
+			dth += ((FZ_PI / 180) * 360);
 		if (dth > 0 && is_clockwise)
-			dth -= (((float)M_PI / 180) * 360);
+			dth -= ((FZ_PI / 180) * 360);
 	}
 
 	fz_pre_scale(fz_pre_rotate(fz_translate(&mtx, cx, cy), rotation_angle), rx, ry);

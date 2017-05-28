@@ -201,7 +201,7 @@ fz_paint_annulus(fz_context *ctx, const fz_matrix *ctm,
 	int i;
 
 	theta = atan2f(p1.y - p0.y, p1.x - p0.x);
-	step = (float)M_PI / count;
+	step = FZ_PI / count;
 
 	a = 0;
 	for (i = 1; i <= count; i++)

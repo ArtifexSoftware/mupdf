@@ -128,8 +128,8 @@ fz_rotate(fz_matrix *m, float theta)
 	}
 	else
 	{
-		s = sinf(theta * (float)M_PI / 180);
-		c = cosf(theta * (float)M_PI / 180);
+		s = sinf(theta * FZ_PI / 180);
+		c = cosf(theta * FZ_PI / 180);
 	}
 
 	m->a = c; m->b = s;
@@ -177,8 +177,8 @@ fz_pre_rotate(fz_matrix *m, float theta)
 	}
 	else
 	{
-		float s = sinf(theta * (float)M_PI / 180);
-		float c = cosf(theta * (float)M_PI / 180);
+		float s = sinf(theta * FZ_PI / 180);
+		float c = cosf(theta * FZ_PI / 180);
 		float a = m->a;
 		float b = m->b;
 		m->a = c * a + s * m->c;

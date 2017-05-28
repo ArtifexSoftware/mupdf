@@ -338,20 +338,20 @@ fz_add_arc(fz_context *ctx, sctx *s,
 	int n, i;
 
 	r = fabsf(s->linewidth);
-	theta = 2 * (float)M_SQRT2 * sqrtf(s->flatness / r);
+	theta = 2 * FZ_SQRT2 * sqrtf(s->flatness / r);
 	th0 = atan2f(y0, x0);
 	th1 = atan2f(y1, x1);
 
 	if (r > 0)
 	{
 		if (th0 < th1)
-			th0 += (float)M_PI * 2;
+			th0 += FZ_PI * 2;
 		n = ceilf((th0 - th1) / theta);
 	}
 	else
 	{
 		if (th1 < th0)
-			th1 += (float)M_PI * 2;
+			th1 += FZ_PI * 2;
 		n = ceilf((th1 - th0) / theta);
 	}
 
@@ -549,12 +549,12 @@ fz_add_line_cap(fz_context *ctx, sctx *s, float ax, float ay, float bx, float by
 	case FZ_LINECAP_ROUND:
 	{
 		int i;
-		int n = ceilf((float)M_PI / (2.0f * (float)M_SQRT2 * sqrtf(flatness / linewidth)));
+		int n = ceilf(FZ_PI / (2.0f * FZ_SQRT2 * sqrtf(flatness / linewidth)));
 		float ox = bx - dlx;
 		float oy = by - dly;
 		for (i = 1; i < n; i++)
 		{
-			float theta = (float)M_PI * i / n;
+			float theta = FZ_PI * i / n;
 			float cth = cosf(theta);
 			float sth = sinf(theta);
 			float nx = bx - dlx * cth - dly * sth;
@@ -595,7 +595,7 @@ fz_add_line_dot(fz_context *ctx, sctx *s, float ax, float ay)
 {
 	float flatness = s->flatness;
 	float linewidth = s->linewidth;
-	int n = ceilf((float)M_PI / ((float)M_SQRT2 * sqrtf(flatness / linewidth)));
+	int n = ceilf(FZ_PI / (FZ_SQRT2 * sqrtf(flatness / linewidth)));
 	float ox = ax - linewidth;
 	float oy = ay;
 	int i;
@@ -604,7 +604,7 @@ fz_add_line_dot(fz_context *ctx, sctx *s, float ax, float ay)
 		n = 3;
 	for (i = 1; i < n; i++)
 	{
-		float theta = (float)M_PI * 2 * i / n;
+		float theta = FZ_PI * 2 * i / n;
 		float cth = cosf(theta);
 		float sth = sinf(theta);
 		float nx = ax - cth * linewidth;

@@ -48,13 +48,11 @@
 
 #define nelem(x) (sizeof(x)/sizeof((x)[0]))
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-#ifndef M_SQRT2
-#define M_SQRT2 1.41421356237309504880
-#endif
+#define FZ_PI 3.14159265f
+#define FZ_RADIAN 57.2957795f
+#define FZ_DEGREE 0.017453292f
+#define FZ_SQRT2 1.41421356f
+#define FZ_LN2 0.69314718f
 
 /*
 	Spot architectures where we have optimisations.
@@ -411,19 +409,19 @@ static inline float my_sinf(float x)
 	float x2, xn;
 	int i;
 	/* Map x into the -PI to PI range. We could do this using:
-	 * x = fmodf(x, (float)(2.0 * M_PI));
+	 * x = fmodf(x, (float)(2.0 * FZ_PI));
 	 * but that's C99, and seems to misbehave with negative numbers
 	 * on some platforms. */
-	x -= (float)M_PI;
-	i = x / (float)(2.0f * M_PI);
-	x -= i * (float)(2.0f * M_PI);
+	x -= FZ_PI;
+	i = x / (float)(2.0f * FZ_PI);
+	x -= i * (float)(2.0f * FZ_PI);
 	if (x < 0.0f)
-		x += (float)(2.0f * M_PI);
-	x -= (float)M_PI;
-	if (x <= (float)(-M_PI/2.0))
-		x = -(float)M_PI-x;
-	else if (x >= (float)(M_PI/2.0))
-		x = (float)M_PI-x;
+		x += (float)(2.0f * FZ_PI);
+	x -= FZ_PI;
+	if (x <= (float)(-FZ_PI/2.0))
+		x = -FZ_PI-x;
+	else if (x >= (float)(FZ_PI/2.0))
+		x = FZ_PI-x;
 	x2 = x*x;
 	xn = x*x2/6.0f;
 	x -= xn;
@@ -445,7 +443,7 @@ static inline float my_atan2f(float o, float a)
 		if (a > 0)
 			return 0.0f;
 		else
-			return (float)M_PI;
+			return FZ_PI;
 	}
 	if (o < 0)
 		o = -o, negate = 1;
@@ -461,14 +459,14 @@ static inline float my_atan2f(float o, float a)
 	if (o >= a)
 		r = (float)(M_PI/2.0f) - r;
 	if (flip)
-		r = (float)M_PI - r;
+		r = FZ_PI - r;
 	if (negate)
 		r = -r;
 	return r;
 }
 
 #define sinf(x) my_sinf(x)
-#define cosf(x) my_sinf(((float)(M_PI/2.0f)) + (x))
+#define cosf(x) my_sinf((M_PI / 2.0f) + (x))
 #define atan2f(x,y) my_atan2f((x),(y))
 #endif
 

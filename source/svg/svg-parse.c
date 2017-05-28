@@ -111,7 +111,7 @@ svg_parse_angle(const char *str)
 		return val * 0.9;
 
 	if (!strcmp(end, "rad"))
-		return val * 57.2957795;
+		return val * FZ_RADIAN;
 
 	return val;
 }
@@ -251,7 +251,7 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 
 			m.a = 1;
 			m.b = 0;
-			m.c = tanf(args[0] * 0.0174532925);
+			m.c = tanf(args[0] * FZ_DEGREE);
 			m.d = 1;
 			m.e = 0;
 			m.f = 0;
@@ -267,7 +267,7 @@ svg_parse_transform(fz_context *ctx, svg_document *doc, char *str, fz_matrix *tr
 				fz_throw(ctx, FZ_ERROR_SYNTAX, "wrong number of arguments to skewY(): %d", nargs);
 
 			m.a = 1;
-			m.b = tanf(args[0] * 0.0174532925);
+			m.b = tanf(args[0] * FZ_DEGREE);
 			m.c = 0;
 			m.d = 1;
 			m.e = 0;

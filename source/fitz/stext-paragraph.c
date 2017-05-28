@@ -61,7 +61,7 @@ insert_line_height(line_heights *lh, fz_stext_style *style, float height)
 	for (i=0; i < lh->len; i++)
 	{
 		/* Match if we are within 5% */
-		if (lh->lh[i].style == style && lh->lh[i].height * 0.95 <= height && lh->lh[i].height * 1.05 >= height)
+		if (lh->lh[i].style == style && lh->lh[i].height * 0.95f <= height && lh->lh[i].height * 1.05f >= height)
 		{
 			/* Ensure that the average height is correct */
 			lh->lh[i].height = (lh->lh[i].height * lh->lh[i].count + height) / (lh->lh[i].count+1);

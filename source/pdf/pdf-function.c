@@ -84,8 +84,6 @@ pdf_function_size(fz_context *ctx, pdf_function *func)
 	return (func ? func->size : 0);
 }
 
-#define RADIAN 57.2957795
-
 static inline float lerp(float x, float xmin, float xmax, float ymin, float ymax)
 {
 	if (xmin == xmax)
@@ -383,7 +381,7 @@ ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 			case PS_OP_ATAN:
 				r2 = ps_pop_real(st);
 				r1 = ps_pop_real(st);
-				r1 = atan2f(r1, r2) * RADIAN;
+				r1 = atan2f(r1, r2) * FZ_RADIAN;
 				if (r1 < 0)
 					r1 += 360;
 				ps_push_real(st, r1);
@@ -411,7 +409,7 @@ ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 
 			case PS_OP_COS:
 				r1 = ps_pop_real(st);
-				ps_push_real(st, cosf(r1/RADIAN));
+				ps_push_real(st, cosf(r1/FZ_RADIAN));
 				break;
 
 			case PS_OP_CVI:
@@ -636,7 +634,7 @@ ps_run(fz_context *ctx, psobj *code, ps_stack *st, int pc)
 
 			case PS_OP_SIN:
 				r1 = ps_pop_real(st);
-				ps_push_real(st, sinf(r1/RADIAN));
+				ps_push_real(st, sinf(r1/FZ_RADIAN));
 				break;
 
 			case PS_OP_SQRT:
