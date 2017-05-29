@@ -665,7 +665,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	opj_stream_t *stream;
 	unsigned char *p;
 	OPJ_CODEC_FORMAT format;
-	int a, n, w, h, depth, sgnd;
+	int i, a, n, w, h, depth, sgnd;
 	int x, y, k, v, stride;
 	stream_block sb;
 	unsigned int max_w, max_h;
@@ -732,15 +732,18 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	if (!jpx)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "opj_decode failed");
 
-	n = jpx->numcomps;
 	depth = jpx->comps[0].prec;
 	sgnd = jpx->comps[0].sgnd;
 
-	if (jpx->color_space == OPJ_CLRSPC_SRGB && n == 4) { n = 3; a = 1; }
-	else if (jpx->color_space == OPJ_CLRSPC_SYCC && n == 4) { n = 3; a = 1; }
-	else if (n == 2) { n = 1; a = 1; }
-	else if (n > 4) { n = 4; a = 1; }
-	else { a = 0; }
+	/* Count number of alpha and color channels */
+	n = a = 0;
+	for (i = 0; i < jpx->numcomps; ++i)
+	{
+		if (jpx->comps[i].alpha)
+			++a;
+		else
+			++n;
+	}
 
 	if (defcs)
 	{
@@ -805,6 +808,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		return NULL;
 	}
 
+	a = !!a; /* ignore any superfluous alpha channels */
 	img = fz_new_pixmap(ctx, state->cs, w, h, a);
 
 	fz_try(ctx)
