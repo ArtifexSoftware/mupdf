@@ -123,14 +123,14 @@ FITZ_HDR := include/mupdf/fitz.h $(wildcard include/mupdf/fitz/*.h)
 PDF_HDR := include/mupdf/pdf.h $(wildcard include/mupdf/pdf/*.h)
 THREAD_HDR := include/mupdf/helpers/mu-threads.h
 
-FITZ_SRC := $(wildcard source/fitz/*.c)
-PDF_SRC := $(wildcard source/pdf/*.c)
-XPS_SRC := $(wildcard source/xps/*.c)
-SVG_SRC := $(wildcard source/svg/*.c)
-CBZ_SRC := $(wildcard source/cbz/*.c)
-HTML_SRC := $(wildcard source/html/*.c)
-GPRF_SRC := $(wildcard source/gprf/*.c)
-THREAD_SRC := $(wildcard source/helpers/mu-threads/*.c)
+FITZ_SRC := $(sort $(wildcard source/fitz/*.c))
+PDF_SRC := $(sort $(wildcard source/pdf/*.c))
+XPS_SRC := $(sort $(wildcard source/xps/*.c))
+SVG_SRC := $(sort $(wildcard source/svg/*.c))
+CBZ_SRC := $(sort $(wildcard source/cbz/*.c))
+HTML_SRC := $(sort $(wildcard source/html/*.c))
+GPRF_SRC := $(sort $(wildcard source/gprf/*.c))
+THREAD_SRC := $(sort $(wildcard source/helpers/mu-threads/*.c))
 
 FITZ_SRC_HDR := $(wildcard source/fitz/*.h)
 PDF_SRC_HDR := $(wildcard source/pdf/*.h) source/pdf/pdf-name-table.h
@@ -178,11 +178,11 @@ generate: $(NAME_GEN)
 
 HEXDUMP_EXE := $(OUT)/scripts/hexdump.exe
 
-FONT_BIN_DROID := $(wildcard resources/fonts/droid/*.ttf)
-FONT_BIN_NOTO := $(wildcard resources/fonts/noto/*.ttf)
-FONT_BIN_HAN := $(wildcard resources/fonts/han/*.otf)
-FONT_BIN_URW := $(wildcard resources/fonts/urw/*.cff)
-FONT_BIN_SIL := $(wildcard resources/fonts/sil/*.cff)
+FONT_BIN_DROID := $(sort $(wildcard resources/fonts/droid/*.ttf))
+FONT_BIN_NOTO := $(sort $(wildcard resources/fonts/noto/*.ttf))
+FONT_BIN_HAN := $(sort $(wildcard resources/fonts/han/*.otf))
+FONT_BIN_URW := $(sort $(wildcard resources/fonts/urw/*.cff))
+FONT_BIN_SIL := $(sort $(wildcard resources/fonts/sil/*.cff))
 
 FONT_GEN_DROID := $(subst resources/fonts/droid/, generated/, $(addsuffix .c, $(basename $(FONT_BIN_DROID))))
 FONT_GEN_NOTO := $(subst resources/fonts/noto/, generated/, $(addsuffix .c, $(basename $(FONT_BIN_NOTO))))
@@ -222,10 +222,10 @@ generate: $(FONT_GEN)
 
 CMAPDUMP_EXE := $(OUT)/scripts/cmapdump.exe
 
-CMAP_CJK_SRC := $(wildcard resources/cmaps/cjk/*)
-CMAP_EXTRA_SRC := $(wildcard resources/cmaps/extra/*)
-CMAP_UTF8_SRC := $(wildcard resources/cmaps/utf8/*)
-CMAP_UTF32_SRC := $(wildcard resources/cmaps/utf32/*)
+CMAP_CJK_SRC := $(sort $(wildcard resources/cmaps/cjk/*))
+CMAP_EXTRA_SRC := $(sort $(wildcard resources/cmaps/extra/*))
+CMAP_UTF8_SRC := $(sort $(wildcard resources/cmaps/utf8/*))
+CMAP_UTF32_SRC := $(sort $(wildcard resources/cmaps/utf32/*))
 
 CMAP_GEN := \
 	generated/pdf-cmap-cjk.c \
@@ -328,7 +328,7 @@ INSTALL_LIBS := $(MUPDF_LIB) $(THIRD_LIB)
 
 MUTOOL_EXE := $(OUT)/mutool
 MUTOOL_SRC := source/tools/mutool.c source/tools/muconvert.c source/tools/mudraw.c source/tools/murun.c
-MUTOOL_SRC += $(wildcard source/tools/pdf*.c)
+MUTOOL_SRC += $(sort $(wildcard source/tools/pdf*.c))
 MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
 $(MUTOOL_OBJ) : $(FITZ_HDR) $(PDF_HDR)
 $(MUTOOL_EXE) : $(MUTOOL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
