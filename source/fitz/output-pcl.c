@@ -1067,9 +1067,6 @@ mode3compress(unsigned char *out, const unsigned char *in, unsigned char *prev, 
 	return out - compressed;
 }
 
-void wind(void)
-{}
-
 void
 fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap, const fz_pcl_options *pcl)
 {

@@ -384,7 +384,6 @@ static int alphabits_graphics = 8;
 
 static int min_band_height;
 static size_t max_band_memory;
-int band_height;
 
 static int errored = 0;
 static fz_colorspace *colorspace;
