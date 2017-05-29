@@ -457,7 +457,7 @@ static inline float my_atan2f(float o, float a)
 	s = my_atan_table[(i>>8)+1];
 	r += (s-r)*(i&255)/256.0f;
 	if (o >= a)
-		r = (float)(M_PI/2.0f) - r;
+		r = (float)(FZ_PI/2.0f) - r;
 	if (flip)
 		r = FZ_PI - r;
 	if (negate)
@@ -466,7 +466,7 @@ static inline float my_atan2f(float o, float a)
 }
 
 #define sinf(x) my_sinf(x)
-#define cosf(x) my_sinf((M_PI / 2.0f) + (x))
+#define cosf(x) my_sinf((FZ_PI / 2.0f) + (x))
 #define atan2f(x,y) my_atan2f((x),(y))
 #endif
 
