@@ -500,7 +500,7 @@ static void set_opj_context(fz_context *ctx)
 	opj_secret = ctx;
 }
 
-static fz_context *get_opj_context()
+static fz_context *get_opj_context(void)
 {
 	return opj_secret;
 }

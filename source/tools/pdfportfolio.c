@@ -72,7 +72,7 @@ safe_print_pdf_obj(fz_context *ctx, pdf_obj *obj, const char *dflt)
 }
 
 static void
-pdfportfolio_list()
+pdfportfolio_list(void)
 {
 	/* List files */
 	int m = pdf_count_portfolio_schema(ctx, doc);

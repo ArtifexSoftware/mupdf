@@ -71,7 +71,7 @@ static void set_hb_context(fz_context *ctx)
 	hb_secret = ctx;
 }
 
-static fz_context *get_hb_context()
+static fz_context *get_hb_context(void)
 {
 	return hb_secret;
 }

@@ -348,7 +348,7 @@ void cleanup(pdfapp_t *app)
 	fz_drop_context(ctx);
 }
 
-static int winresolution()
+static int winresolution(void)
 {
 	return DisplayWidth(xdpy, xscr) * 25.4f /
 		DisplayWidthMM(xdpy, xscr) + 0.5f;
