@@ -469,7 +469,6 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 
 		fz_scan_convert(ctx, gel, even_odd, &bbox, state[1].mask, NULL);
 
-		state[1].blendmode |= FZ_BLEND_ISOLATED;
 		state[1].scissor = bbox;
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top-1, "Clip (non-rectangular) begin\n");
