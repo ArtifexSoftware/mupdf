@@ -290,7 +290,7 @@ tiff_expand_colormap(fz_context *ctx, struct tiff *tiff)
 static unsigned
 tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned int rlen, unsigned char *wp, unsigned int wlen)
 {
-	fz_stream *stm;
+	fz_stream *stm = NULL;
 	unsigned i, size;
 	unsigned char *reversed = NULL;
 	fz_stream *jpegtables = NULL;
@@ -307,6 +307,8 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 			reversed[i] = bitrev[rp[i]];
 		rp = reversed;
 	}
+
+	fz_var(stm);
 
 	fz_try(ctx)
 	{
