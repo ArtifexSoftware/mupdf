@@ -450,7 +450,10 @@ install: libs apps
 	install docs/man/*.1 $(DESTDIR)$(mandir)/man1
 
 	install -d $(DESTDIR)$(docdir)
-	install README COPYING CHANGES docs/*.txt $(DESTDIR)$(docdir)
+	install -d $(DESTDIR)$(docdir)/examples
+	install README COPYING CHANGES $(DESTDIR)$(docdir)
+	install docs/*.html docs/*.css docs/*.png $(DESTDIR)$(docdir)
+	install docs/examples/* $(DESTDIR)$(docdir)/examples
 
 tarball:
 	bash scripts/archive.sh
