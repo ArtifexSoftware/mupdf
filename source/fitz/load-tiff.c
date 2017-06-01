@@ -1100,6 +1100,8 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported samples per pixel when subsampling");
 		if (tiff->bitspersample != 8)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported bits per sample when subsampling");
+		if (tiff->ycbcrsubsamp[0] == 0 || tiff->ycbcrsubsamp[1] == 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported subsampling factor");
 	}
 
 	tiff->stride = (tiff->imagewidth * tiff->samplesperpixel * tiff->bitspersample + 7) / 8;
