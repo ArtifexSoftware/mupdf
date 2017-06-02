@@ -84,7 +84,7 @@ int fz_use_document_css(fz_context *ctx)
 void fz_set_user_css(fz_context *ctx, const char *user_css)
 {
 	fz_free(ctx, ctx->style->user_css);
-	ctx->style->user_css = fz_strdup(ctx, user_css);
+	ctx->style->user_css = user_css ? fz_strdup(ctx, user_css) : NULL;
 }
 
 const char *fz_user_css(fz_context *ctx)
