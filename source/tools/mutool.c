@@ -30,21 +30,29 @@ static struct {
 	char *name;
 	char *desc;
 } tools[] = {
+#if FZ_ENABLE_PDF
+	{ pdfclean_main, "clean", "rewrite pdf file" },
+#endif
 	{ muconvert_main, "convert", "convert document" },
+#if FZ_ENABLE_PDF
+	{ pdfcreate_main, "create", "create pdf document" },
+#endif
 	{ mudraw_main, "draw", "convert document" },
+#if FZ_ENABLE_PDF
+	{ pdfextract_main, "extract", "extract font and image resources" },
+#endif
+#if FZ_ENABLE_PDF
+	{ pdfinfo_main, "info", "show information about pdf resources" },
+	{ pdfmerge_main, "merge", "merge pages from multiple pdf sources into a new pdf" },
+	{ pdfpages_main, "pages", "show information about pdf pages" },
+	{ pdfportfolio_main, "portfolio", "manipulate PDF portfolios" },
+	{ pdfposter_main, "poster", "split large page into many tiles" },
+#endif
 #if FZ_ENABLE_JS
 	{ murun_main, "run", "run javascript" },
 #endif
 #if FZ_ENABLE_PDF
-	{ pdfclean_main, "clean", "rewrite pdf file" },
-	{ pdfextract_main, "extract", "extract font and image resources" },
-	{ pdfinfo_main, "info", "show information about pdf resources" },
-	{ pdfpages_main, "pages", "show information about pdf pages" },
-	{ pdfposter_main, "poster", "split large page into many tiles" },
 	{ pdfshow_main, "show", "show internal pdf objects" },
-	{ pdfcreate_main, "create", "create pdf document" },
-	{ pdfmerge_main, "merge", "merge pages from multiple pdf sources into a new pdf" },
-	{ pdfportfolio_main, "portfolio", "manipulate PDF portfolios" },
 #endif
 };
 
