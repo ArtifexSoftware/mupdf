@@ -775,7 +775,7 @@ pdf_drop_output_processor(fz_context *ctx, pdf_processor *proc)
 	fz_drop_output(ctx, out);
 }
 
-static pdf_processor *
+pdf_processor *
 pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
 {
 	pdf_output_processor *proc = pdf_new_processor(ctx, sizeof *proc);

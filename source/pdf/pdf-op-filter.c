@@ -49,7 +49,6 @@ typedef struct pdf_filter_processor_s
 	pdf_processor super;
 	pdf_processor *chain;
 	filter_gstate *gstate;
-	pdf_document *doc;
 	pdf_obj *old_rdb, *new_rdb;
 } pdf_filter_processor;
 
@@ -68,7 +67,7 @@ copy_resource(fz_context *ctx, pdf_filter_processor *p, pdf_obj *key, const char
 		res = pdf_dict_get(ctx, p->new_rdb, key);
 		if (!res)
 		{
-			res = pdf_new_dict(ctx, p->doc, 1);
+			res = pdf_new_dict(ctx, pdf_get_bound_document(ctx, p->new_rdb), 1);
 			pdf_dict_put_drop(ctx, p->new_rdb, key, res);
 		}
 		pdf_dict_putp(ctx, res, name, obj);
@@ -1123,7 +1122,7 @@ pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 }
 
 pdf_processor *
-pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_document *doc, pdf_obj *old_rdb, pdf_obj *new_rdb)
+pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb)
 {
 	pdf_filter_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -1243,7 +1242,6 @@ pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_document *do
 	}
 
 	proc->chain = chain;
-	proc->doc = doc;
 	proc->old_rdb = old_rdb;
 	proc->new_rdb = new_rdb;
 
