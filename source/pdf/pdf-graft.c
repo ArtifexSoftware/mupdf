@@ -23,7 +23,7 @@ pdf_new_graft_map(fz_context *ctx, pdf_document *dst)
 }
 
 pdf_graft_map *
-fz_keep_graft_map(fz_context *ctx, pdf_graft_map *map)
+pdf_keep_graft_map(fz_context *ctx, pdf_graft_map *map)
 {
 	return fz_keep_imp(ctx, map, &map->refs);
 }

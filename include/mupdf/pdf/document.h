@@ -709,6 +709,13 @@ pdf_obj *pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_obj *obj);
 pdf_graft_map *pdf_new_graft_map(fz_context *ctx, pdf_document *dst);
 
 /*
+	pdf_keep_graft_map: Keep a reference to a graft map object.
+
+	Does not throw exceptions.
+*/
+pdf_graft_map *pdf_keep_graft_map(fz_context *ctx, pdf_graft_map *map);
+
+/*
 	pdf_drop_graft_map: Drop a graft map.
 */
 void pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map);
