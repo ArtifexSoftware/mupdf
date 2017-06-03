@@ -41,10 +41,9 @@ If everything is working, you should be able to run these commands
 from the command line:
 
 <blockquote>
-	Android SDK tools: android, emulator, and adb.<br>
+	Android SDK tools: android, emulator, adb and apksigner.<br>
 	Android NDK tools: ndk-build.<br>
-	Oracle Java JDK 8: java, and javac.<br>
-	Apache Ant: ant.<br>
+	Oracle Java JDK 8: java, javac and keytool.<br>
 	Git: git.<br>
 	GNU Make: make, or gmake.<br>
 	C compiler: cc, gcc, or clang.
@@ -59,16 +58,23 @@ Download the project using Git (and don't forget the --recursive flag):
 $ git clone --recursive git://git.ghostscript.com/mupdf-android-viewer-mini.git
 </pre>
 
-If all tools have been installed as per the prerequisites, build the app
-using make:
+<p>
+If all tools have been installed as per the prerequisites, first use your
+host compiler to run the 'generate' step in the mupdf project:
 
 <pre>
-$ make
+$ make -C libmupdf generate
 </pre>
 
-The makefile will take care of setting up the android project and
-configuration files. This is of course assuming that you have set
-up the pre-requisites properly.
+<p>The build the app using the gradle wrapper:
+
+<pre>
+$ ./gradlew assembleDebug
+</pre>
+
+<p>
+You may need to set ANDROID_HOME or add a local.properties configuration
+file to point to where you have installed the Android SDK.
 
 <h2>Running</h2>
 
@@ -96,14 +102,7 @@ $ adb push file.pdf /mnt/sdcard/Download
 Then install the app on the device:
 
 <pre>
-$ make install
-</pre>
-
-<p>
-In order to build, install, and launch the app in one step:
-
-<pre>
-$ make run
+$ ./gradlew installDebug
 </pre>
 
 <p>
@@ -119,37 +118,58 @@ $ adb logcat
 To release you <b>MUST</b> first change the package name.
 Do <b>NOT</b> use the com.artifex domain for your custom app!
 
-<pre>
-$ mv src/com/artifex src/com/YourCompanyName
-</pre>
-
 <p>
 Change all references to com.artifex.mupdf.mini into
 com.YourCompanyName.mupdf.mini in the Java source files and XML resources.
+
+<pre>
+$ git mv src/com/artifex src/com/YourCompanyName
+$ sed -i -e s,artifex,YourCompanyName,g AndroidManifest.xml
+$ sed -i -e "s,package com.artifex,package com.YourCompanyName,g" src/com/YourCompanyName/mupdf/mini/*.java
+$ sed -i -e s,artifex,YourCompanyName,g res/layout/*.xml
+</pre>
 
 <p>
 In order to sign a release build, you will need to create a key and a key store.
 
 <pre>
-$ keytool -genkey -v -keystore android.keystore -alias MyKey \
-    -validity 3650 -keysize 2048 -keyalg RSA
+$ keytool -genkey -v -keystore android.keystore -alias MyKey -validity 3650 -keysize 2048 -keyalg RSA
 </pre>
 
 <p>
-Then add the following entries to local.properties:
+Then add the following entries to gradle.properties:
 
 <pre>
-key.store=android.keystore
-key.store.password=<i>your keystore password</i>
-key.alias=MyKey
-key.alias.password=<i>your key password</i>
+RELEASE_KEY_STORE=android.keystore
+RELEASE_KEY_STORE_PASSWORD=<i>your keystore password</i>
+RELEASE_KEY_ALIAS=MyKey
+RELEASE_KEY_ALIAS_PASSWORD=<i>your key password</i>
 </pre>
 
 <p>
 If your keystore has been set up properly, you can now build a release APK.
 
 <pre>
-$ make release
+$ ./gradlew assembleRelease
+</pre>
+
+<p>
+First verify that the release APK has indeed been signed by the correct key.
+
+<pre>
+apksigner verify --print-certs ./build/outputs/apk/mupdf-x86-debug.apk
+apksigner verify --print-certs ./build/outputs/apk/mupdf-x86-release.apk
+</pre>
+
+<p>
+The debug APK should be signed by <i>Android Debug</i> while the release APK
+ought to be signed with the key you created above.
+
+<p>
+Finally install the release app on the device:
+
+<pre>
+$ ./gradlew installRelease
 </pre>
 
 <p>
