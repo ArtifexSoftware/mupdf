@@ -823,7 +823,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 				{
 					int sh = sub_h[k];
 					int sw = sub_w[k];
-					int yy = (y>>sh) * jpx->comps[k].w;
+					int yy = (y>>sh) * (jpx->comps[k].w >> sw);
 					OPJ_INT32 *data = &jpx->comps[k].data[yy];
 					for (x = 0; x < w; x ++)
 					{
