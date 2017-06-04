@@ -1550,6 +1550,12 @@ pdf_drop_document(fz_context *ctx, pdf_document *doc)
 	fz_drop_document(ctx, &doc->super);
 }
 
+pdf_document *
+pdf_keep_document(fz_context *ctx, pdf_document *doc)
+{
+	return (pdf_document *)fz_keep_document(ctx, &doc->super);
+}
+
 /*
  * compressed object streams
  */

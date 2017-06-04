@@ -96,6 +96,13 @@ pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 void pdf_drop_document(fz_context *ctx, pdf_document *doc);
 
 /*
+	pdf_keep_document: Keep a reference to an open document.
+
+	Does not throw exceptions.
+*/
+pdf_document *pdf_keep_document(fz_context *ctx, pdf_document *doc);
+
+/*
 	pdf_specifics: down-cast a fz_document to a pdf_document.
 	Returns NULL if underlying document is not PDF
 */
