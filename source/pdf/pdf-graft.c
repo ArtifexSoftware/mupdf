@@ -6,27 +6,18 @@ struct pdf_graft_map_s
 	int refs;
 	int len;
 	pdf_document *src;
+	pdf_document *dst;
 	int *dst_from_src;
 };
 
 pdf_graft_map *
-pdf_new_graft_map(fz_context *ctx, pdf_document *src)
+pdf_new_graft_map(fz_context *ctx, pdf_document *dst)
 {
 	pdf_graft_map *map = NULL;
 
 	map = fz_malloc_struct(ctx, pdf_graft_map);
 
-	fz_try(ctx)
-	{
-		map->src = (pdf_document*) fz_keep_document(ctx, (fz_document*)src);
-		map->len = pdf_xref_len(ctx, src);
-		map->dst_from_src = fz_calloc(ctx, map->len, sizeof(int));
-	}
-	fz_catch(ctx)
-	{
-		fz_free(ctx, map);
-		fz_rethrow(ctx);
-	}
+	map->dst = pdf_keep_document(ctx, dst);
 	map->refs = 1;
 	return map;
 }
@@ -42,7 +33,8 @@ pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map)
 {
 	if (fz_drop_imp(ctx, map, &map->refs))
 	{
-		fz_drop_document(ctx, &map->src->super);
+		pdf_drop_document(ctx, map->src);
+		pdf_drop_document(ctx, map->dst);
 		fz_free(ctx, map->dst_from_src);
 		fz_free(ctx, map);
 	}
@@ -50,48 +42,77 @@ pdf_drop_graft_map(fz_context *ctx, pdf_graft_map *map)
 
 /* Graft object from dst to source */
 pdf_obj *
-pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj *obj_ref, pdf_graft_map *map)
+pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_obj *obj)
+{
+	pdf_document *src;
+	pdf_graft_map *map;
+
+	/* Primitive objects are not bound to a document, so can be re-used as is. */
+	src = pdf_get_bound_document(ctx, obj);
+	if (src == NULL)
+		return pdf_keep_obj(ctx, obj);
+
+	map = pdf_new_graft_map(ctx, dst);
+
+	fz_try(ctx)
+		obj = pdf_graft_mapped_object(ctx, map, obj);
+	fz_always(ctx)
+		pdf_drop_graft_map(ctx, map);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return obj;
+}
+
+pdf_obj *
+pdf_graft_mapped_object(fz_context *ctx, pdf_graft_map *map, pdf_obj *obj)
 {
 	pdf_obj *val, *key;
 	pdf_obj *new_obj = NULL;
-	pdf_obj *new_dict = NULL;
-	pdf_obj *new_array = NULL;
+	pdf_obj *new_dict;
+	pdf_obj *new_array;
 	pdf_obj *ref = NULL;
 	fz_buffer *buffer = NULL;
-	pdf_graft_map *drop_map = NULL;
-	pdf_document *bound;
+	pdf_document *src;
 	int new_num, src_num, len, i;
 
 	/* Primitive objects are not bound to a document, so can be re-used as is. */
-	if (!pdf_is_indirect(ctx, obj_ref) && !pdf_is_dict(ctx, obj_ref) && !pdf_is_array(ctx, obj_ref))
-		return pdf_keep_obj(ctx, obj_ref);
+	src = pdf_get_bound_document(ctx, obj);
+	if (!src)
+		return pdf_keep_obj(ctx, obj);
 
-	if (map == NULL)
-		drop_map = map = pdf_new_graft_map(ctx, src);
-	else if (src != map->src)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "graft map does not belong to the source document");
+	if (map->src && src != map->src)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "grafted objects must all belong to the same source document");
 
-	bound = pdf_get_bound_document(ctx, obj_ref);
-	if (bound && bound != src)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "grafted object does not belong to the source document");
-
-	if (pdf_is_indirect(ctx, obj_ref))
+	if (pdf_is_indirect(ctx, obj))
 	{
-		src_num = pdf_to_num(ctx, obj_ref);
+		src_num = pdf_to_num(ctx, obj);
 
-		if (src_num < 1 || src_num >= map->len)
+		if (map->src == NULL)
 		{
-			pdf_drop_graft_map(ctx, drop_map);
-			fz_throw(ctx, FZ_ERROR_GENERIC, "source object number out of range");
+			fz_try(ctx)
+			{
+				map->src = pdf_keep_document(ctx, src);
+				map->len = pdf_xref_len(ctx, src);
+				map->dst_from_src = fz_calloc(ctx, map->len, sizeof(int));
+			}
+			fz_catch(ctx)
+			{
+				pdf_drop_document(ctx, map->src);
+				map->src = NULL;
+				fz_rethrow(ctx);
+			}
 		}
 
-		/* Check if we have done this one.  If yes, then drop map (if allocated)
-		 * and return our indirect ref */
+		if (src_num < 1 || src_num >= map->len)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "source object number out of range");
+
+		/* Check if we have done this one.  If yes, then just
+		 * return our indirect ref */
 		if (map->dst_from_src[src_num] != 0)
 		{
 			int dest_num = map->dst_from_src[src_num];
-			pdf_drop_graft_map(ctx, drop_map);
-			return pdf_new_indirect(ctx, dst, dest_num, 0);
+			return pdf_new_indirect(ctx, map->dst, dest_num, 0);
 		}
 
 		fz_var(buffer);
@@ -101,25 +122,22 @@ pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj 
 		{
 			/* Create new slot for our src object, set the mapping and call again
 			 * using the resolved indirect reference */
-			new_num = pdf_create_object(ctx, dst);
+			new_num = pdf_create_object(ctx, map->dst);
 			map->dst_from_src[src_num] = new_num;
-			new_obj = pdf_graft_object(ctx, dst, src, pdf_resolve_indirect(ctx, obj_ref), map);
+			new_obj = pdf_graft_mapped_object(ctx, map, pdf_resolve_indirect(ctx, obj));
 
 			/* Return a ref to the new_obj making sure to attach any stream */
-			pdf_update_object(ctx, dst, new_num, new_obj);
+			pdf_update_object(ctx, map->dst, new_num, new_obj);
 			pdf_drop_obj(ctx, new_obj);
-			ref = pdf_new_indirect(ctx, dst, new_num, 0);
-			if (pdf_is_stream(ctx, obj_ref))
+			ref = pdf_new_indirect(ctx, map->dst, new_num, 0);
+			if (pdf_is_stream(ctx, obj))
 			{
 				buffer = pdf_load_raw_stream_number(ctx, src, src_num);
-				pdf_update_stream(ctx, dst, ref, buffer, 1);
+				pdf_update_stream(ctx, map->dst, ref, buffer, 1);
 			}
 		}
 		fz_always(ctx)
-		{
 			fz_drop_buffer(ctx, buffer);
-			pdf_drop_graft_map(ctx, drop_map);
-		}
 		fz_catch(ctx)
 		{
 			pdf_drop_obj(ctx, ref);
@@ -127,25 +145,19 @@ pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj 
 		}
 		return ref;
 	}
-	else if (pdf_is_dict(ctx, obj_ref))
+	else if (pdf_is_dict(ctx, obj))
 	{
-		fz_var(new_dict);
+		len = pdf_dict_len(ctx, obj);
+		new_dict = pdf_new_dict(ctx, map->dst, len);
 
 		fz_try(ctx)
 		{
-			len = pdf_dict_len(ctx, obj_ref);
-			new_dict = pdf_new_dict(ctx, dst, len);
-
 			for (i = 0; i < len; i++)
 			{
-				key = pdf_dict_get_key(ctx, obj_ref, i);
-				val = pdf_dict_get_val(ctx, obj_ref, i);
-				pdf_dict_put_drop(ctx, new_dict, key, pdf_graft_object(ctx, dst, src, val, map));
+				key = pdf_dict_get_key(ctx, obj, i);
+				val = pdf_dict_get_val(ctx, obj, i);
+				pdf_dict_put_drop(ctx, new_dict, key, pdf_graft_mapped_object(ctx, map, val));
 			}
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_graft_map(ctx, drop_map);
 		}
 		fz_catch(ctx)
 		{
@@ -154,25 +166,19 @@ pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj 
 		}
 		return new_dict;
 	}
-	else if (pdf_is_array(ctx, obj_ref))
+	else if (pdf_is_array(ctx, obj))
 	{
-		fz_var(new_array);
+		/* Step through the array items handling indirect refs */
+		len = pdf_array_len(ctx, obj);
+		new_array = pdf_new_array(ctx, map->dst, len);
 
 		fz_try(ctx)
 		{
-			/* Step through the array items handling indirect refs */
-			len = pdf_array_len(ctx, obj_ref);
-			new_array = pdf_new_array(ctx, dst, len);
-
 			for (i = 0; i < len; i++)
 			{
-				val = pdf_array_get(ctx, obj_ref, i);
-				pdf_array_push_drop(ctx, new_array, pdf_graft_object(ctx, dst, src, val, map));
+				val = pdf_array_get(ctx, obj, i);
+				pdf_array_push_drop(ctx, new_array, pdf_graft_mapped_object(ctx, map, val));
 			}
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_graft_map(ctx, drop_map);
 		}
 		fz_catch(ctx)
 		{
@@ -183,7 +189,7 @@ pdf_graft_object(fz_context *ctx, pdf_document *dst, pdf_document *src, pdf_obj 
 	}
 	else
 	{
-		pdf_drop_graft_map(ctx, drop_map);
-		return pdf_keep_obj(ctx, obj_ref);;
+		assert("This never happens" == NULL);
+		return NULL;
 	}
 }

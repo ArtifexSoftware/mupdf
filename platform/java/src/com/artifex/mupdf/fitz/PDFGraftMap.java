@@ -11,6 +11,8 @@ public class PDFGraftMap
 		pointer = 0;
 	}
 
+	public native PDFObject graftObject(PDFObject obj);
+
 	private PDFGraftMap(long p) {
 		pointer = p;
 	}

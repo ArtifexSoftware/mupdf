@@ -1722,7 +1722,7 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_deleteObject
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    newPDFGraftMap
- * Signature: ()Lcom/artifex/mupdf/fitz/PDFGraftMap;
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFDocument)Lcom/artifex/mupdf/fitz/PDFGraftMap;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_newPDFGraftMap
   (JNIEnv *, jobject);
@@ -1730,10 +1730,10 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_newPDFGraftMap
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    graftObject
- * Signature: (Lcom/artifex/mupdf/fitz/PDFDocument;Lcom/artifex/mupdf/fitz/PDFObject;Lcom/artifex/mupdf/fitz/PDFGraftMap;)Lcom/artifex/mupdf/fitz/PDFObject;
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFDocument;Lcom/artifex/mupdf/fitz/PDFObject)Lcom/artifex/mupdf/fitz/PDFObject;
  */
 JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_graftObject
-  (JNIEnv *, jobject, jobject, jobject, jobject);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
@@ -1849,6 +1849,14 @@ extern "C" {
  */
 JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFGraftMap_finalize
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFGraftMap
+ * Method:    graftObject
+ * Signature: (Lcom/artifex/mupdf/fitz/PDFGraftMap;Lcom/artifex/mupdf/fitz/PDFObject;)Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFGraftMap_graftObject
+  (JNIEnv *, jobject, jobject, jobject);
 
 #ifdef __cplusplus
 }

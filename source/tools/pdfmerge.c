@@ -56,7 +56,7 @@ static void page_merge(int page_from, int page_to, pdf_graft_map *graft_map)
 		{
 			obj = pdf_dict_get(ctx, page_ref, copy_list[i]);
 			if (obj != NULL)
-				pdf_dict_put_drop(ctx, page_dict, copy_list[i], pdf_graft_object(ctx, doc_des, doc_src, obj, graft_map));
+				pdf_dict_put_drop(ctx, page_dict, copy_list[i], pdf_graft_mapped_object(ctx, graft_map, obj));
 		}
 
 		/* Add the page object to the destination document. */
@@ -81,7 +81,7 @@ static void merge_range(const char *range)
 	pdf_graft_map *graft_map;
 
 	count = pdf_count_pages(ctx, doc_src);
-	graft_map = pdf_new_graft_map(ctx, doc_src);
+	graft_map = pdf_new_graft_map(ctx, doc_des);
 
 	fz_try(ctx)
 	{

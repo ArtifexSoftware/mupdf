@@ -678,11 +678,15 @@ The buffer must contain already compressed data that matches the Filter and Deco
 The following functions can be used to copy objects from one document to another:
 
 <dl>
-<dt>PDFDocument#graftObject(sourceDocument, object, sourceGraftMap)
-<dd>Deep copy an object into the destination document. The graft map may be null, but should be used if you
-are copying several objects from the same source document using multiple calls to graftObject.
+<dt>PDFDocument#graftObject(object)
+<dd>Deep copy an object into the destination document. This function will not remember previously
+copied objects.
+If you are copying several objects from the same source document using multiple calls, you should
+use a graft map instead.
 <dt>PDFDocument#newGraftMap()
 <dd>Create a graft map for the source document, so that objects that have already been copied can be found again.
+<dt>PDFGraftMap#graftObject(object)
+<dd>Use the graft map to copy objects, with the ability to remember previously copied objects.
 </dl>
 
 <p>

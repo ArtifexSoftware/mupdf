@@ -6396,19 +6396,17 @@ FUN(PDFDocument_newPDFGraftMap)(JNIEnv *env, jobject self)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(PDFDocument_graftObject)(JNIEnv *env, jobject self, jobject jsrc, jobject jobj, jobject jmap)
+FUN(PDFDocument_graftObject)(JNIEnv *env, jobject self, jobject jobj)
 {
 	fz_context *ctx = get_context(env);
-	pdf_document *dst = from_PDFDocument(env, self);
-	pdf_document *src = from_PDFDocument(env, jsrc);
 	pdf_obj *obj = from_PDFObject(env, jobj);
-	pdf_graft_map *map = from_PDFGraftMap(env, jmap);
+	pdf_document *dst = from_PDFDocument(env, self);
 
 	if (!ctx || !dst) return NULL;
-	if (!src) { jni_throw_arg(env, "source must not be null"); return NULL; }
+	if (!dst) { jni_throw_arg(env, "dst must not be null"); return NULL; }
 
 	fz_try(ctx)
-		obj = pdf_graft_object(ctx, dst, src, obj, map);
+		obj = pdf_graft_object(ctx, dst, obj);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -8099,6 +8097,27 @@ FUN(PDFGraftMap_finalize)(JNIEnv *env, jobject self)
 	if (!ctx || !map) return;
 
 	pdf_drop_graft_map(ctx, map);
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFGraftMap_graftObject)(JNIEnv *env, jobject self, jobject jobj)
+{
+	fz_context *ctx = get_context(env);
+	pdf_obj *obj = from_PDFObject(env, jobj);
+	pdf_graft_map *map = from_PDFGraftMap(env, self);
+
+	if (!ctx) return NULL;
+	if (!map) { jni_throw_arg(env, "map must not be null"); return NULL; }
+
+	fz_try(ctx)
+		obj = pdf_graft_mapped_object(ctx, map, obj);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	return to_PDFObject_safe_own(ctx, env, self, obj);
 }
 
 /* PDFPage interface */

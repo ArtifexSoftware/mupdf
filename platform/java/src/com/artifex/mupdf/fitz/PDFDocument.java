@@ -40,7 +40,7 @@ public class PDFDocument extends Document
 	}
 
 	public native PDFGraftMap newPDFGraftMap();
-	public native PDFObject graftObject(PDFDocument src, PDFObject obj, PDFGraftMap map);
+	public native PDFObject graftObject(PDFObject obj);
 
 	private native PDFObject addStreamBuffer(Buffer buf, Object obj, boolean compressed);
 	private native PDFObject addStreamString(String str, Object obj, boolean compressed);
