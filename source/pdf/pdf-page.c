@@ -711,7 +711,10 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	fz_catch(ctx)
 	{
 		if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
+		{
+			fz_drop_page(ctx, &page->super);
 			fz_rethrow(ctx);
+		}
 		page->incomplete |= PDF_PAGE_INCOMPLETE_ANNOTS;
 		fz_drop_link(ctx, page->links);
 		page->links = NULL;
