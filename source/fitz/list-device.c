@@ -534,38 +534,38 @@ fz_append_display_node(
 		switch(node.cs)
 		{
 		case CS_GRAY_0:
-			writer->colorspace = fz_device_gray(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			writer->color[0] = 0;
 			break;
 		case CS_GRAY_1:
-			writer->colorspace = fz_device_gray(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			writer->color[0] = 1;
 			break;
 		case CS_RGB_0:
 			writer->color[0] = 0;
 			writer->color[1] = 0;
 			writer->color[2] = 0;
-			writer->colorspace = fz_device_rgb(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			break;
 		case CS_RGB_1:
 			writer->color[0] = 1;
 			writer->color[1] = 1;
 			writer->color[2] = 1;
-			writer->colorspace = fz_device_rgb(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			break;
 		case CS_CMYK_0:
 			writer->color[0] = 0;
 			writer->color[1] = 0;
 			writer->color[2] = 0;
 			writer->color[3] = 0;
-			writer->colorspace = fz_device_cmyk(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			break;
 		case CS_CMYK_1:
 			writer->color[0] = 0;
 			writer->color[1] = 0;
 			writer->color[2] = 0;
 			writer->color[3] = 1;
-			writer->colorspace = fz_device_cmyk(ctx);
+			writer->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			break;
 		default:
 		{
@@ -1513,34 +1513,34 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 			{
 			default:
 			case CS_GRAY_0:
-				colorspace = fz_device_gray(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 				color[0] = 0.0f;
 				break;
 			case CS_GRAY_1:
-				colorspace = fz_device_gray(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 				color[0] = 1.0f;
 				break;
 			case CS_RGB_0:
-				colorspace = fz_device_rgb(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 				color[0] = 0.0f;
 				color[1] = 0.0f;
 				color[2] = 0.0f;
 				break;
 			case CS_RGB_1:
-				colorspace = fz_device_rgb(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 				color[0] = 1.0f;
 				color[1] = 1.0f;
 				color[2] = 1.0f;
 				break;
 			case CS_CMYK_0:
-				colorspace = fz_device_cmyk(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 				color[0] = 0.0f;
 				color[1] = 0.0f;
 				color[2] = 0.0f;
 				color[3] = 0.0f;
 				break;
 			case CS_CMYK_1:
-				colorspace = fz_device_cmyk(ctx);
+				colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 				color[0] = 0.0f;
 				color[1] = 0.0f;
 				color[2] = 0.0f;

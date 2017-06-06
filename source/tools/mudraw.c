@@ -1355,6 +1355,7 @@ int mudraw_main(int argc, char **argv)
 	fz_context *ctx;
 	fz_alloc_context alloc_ctx = { NULL, trace_malloc, trace_realloc, trace_free };
 	fz_locks_context *locks = NULL;
+	fz_colorspace *oi = NULL;
 
 	fz_var(doc);
 
@@ -1670,6 +1671,17 @@ int mudraw_main(int argc, char **argv)
 				files++;
 
 				doc = fz_open_document(ctx, filename);
+
+				/* Once document is open check for output intent colorspace */
+				if (doc->get_output_intent)
+				{
+					oi = doc->get_output_intent(ctx, doc);
+					if (oi != NULL && fz_colorspace_n(ctx, oi) == fz_colorspace_n(ctx, colorspace))
+					{
+						fz_drop_colorspace(ctx, colorspace);
+						colorspace = oi;
+					}
+				}
 
 				if (fz_needs_password(ctx, doc))
 				{

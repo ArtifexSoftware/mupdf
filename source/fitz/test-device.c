@@ -46,7 +46,7 @@ fz_test_color(fz_context *ctx, fz_test_device *t, fz_colorspace *colorspace, con
 		else
 		{
 			float rgb[3];
-			fz_convert_color(ctx, cs_params, fz_device_rgb(ctx), rgb, colorspace, color);
+			fz_convert_color(ctx, cs_params, NULL, fz_device_rgb(ctx), rgb, colorspace, color);
 			if (is_rgb_color(t->threshold, rgb[0], rgb[1], rgb[2]))
 			{
 				*t->is_color = 2;
@@ -240,7 +240,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 				fz_color_converter cc;
 				unsigned int n = (unsigned int)image->n;
 
-				fz_init_cached_color_converter(ctx, &cc, fz_device_rgb(ctx), image->colorspace, cs_params);
+				fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), image->colorspace, cs_params);
 				for (i = 0; i < count; i++)
 				{
 					float cs[FZ_MAX_COLORS];
@@ -308,7 +308,7 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 			fz_color_converter cc;
 			unsigned int n = (unsigned int)pix->n-1;
 
-			fz_init_cached_color_converter(ctx, &cc, fz_device_rgb(ctx), pix->colorspace, cs_params);
+			fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), pix->colorspace, cs_params);
 			while (h--)
 			{
 				for (i = 0; i < count; i++)

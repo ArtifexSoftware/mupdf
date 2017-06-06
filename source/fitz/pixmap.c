@@ -722,7 +722,7 @@ fz_ensure_pixmap_is_additive(fz_context *ctx, fz_pixmap *pix)
 {
 	if (fz_colorspace_is_subtractive(ctx, pix->colorspace))
 	{
-		fz_pixmap *rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL/* FIXME */, 1);
+		fz_pixmap *rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, NULL/* FIXME */, 1);
 		fz_drop_pixmap(ctx, pix);
 		return rgb;
 	}
@@ -881,7 +881,7 @@ fz_pixmap_size(fz_context *ctx, fz_pixmap * pix)
 }
 
 fz_pixmap *
-fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_page_default_cs *default_cs, const fz_color_params *cs_params, int keep_alpha)
+fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorspace *prf, fz_page_default_cs *default_cs, const fz_color_params *cs_params, int keep_alpha)
 {
 	fz_pixmap *cvt;
 
@@ -902,7 +902,7 @@ fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_page_de
 	fz_try(ctx)
 	{
 		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, ds, pix->colorspace);
-		pc(ctx, cvt, pix, default_cs, cs_params);
+		pc(ctx, cvt, pix, prf, default_cs, cs_params);
 	}
 	fz_catch(ctx)
 	{

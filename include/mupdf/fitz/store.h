@@ -143,6 +143,7 @@ typedef struct fz_store_hash_s
 			uint8_t bp;
 			uint8_t depth;
 			uint8_t alpha;
+			uint8_t proof;
 		} link; /* 36 bytes */
 	} u;
 } fz_store_hash; /* 40 or 44 bytes */

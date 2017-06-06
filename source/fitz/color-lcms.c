@@ -119,7 +119,7 @@ fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, int num_bytes, void *d
 }
 
 void
-fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *dst, const fz_iccprofile *src)
+fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *dst)
 {
 	cmsUInt32Number src_data_type, des_data_type;
 	cmsColorSpaceSignature src_cs, des_cs;
@@ -157,9 +157,51 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, 
 	link->depth = num_bytes;
 	link->alpha = alpha;
 
-	/* create */
-	link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->ri, flag);
-	DEBUG_LCMS_MEM(("@@@@@@@ Create Link End:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*) link, (void*) link->cmm_handle, (void*)src->cmm_handle, (void*)dst->cmm_handle));
+	if (prf == NULL)
+	{
+		link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, rend->ri, flag);
+		DEBUG_LCMS_MEM(("@@@@@@@ Create Link End:: mupdf ctx = %p lcms ctx = %p link = %p link_cmm = %p src = %p des = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)link, (void*)link->cmm_handle, (void*)src->cmm_handle, (void*)dst->cmm_handle));
+	}
+	else
+	{
+		/* littleCMS proof creation links don't work properly with the Ghent
+		 * test files. Handle this in a brutish manner.
+		 */
+		if (src == prf)
+		{
+			link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, dst->cmm_handle, des_data_type, INTENT_RELATIVE_COLORIMETRIC, flag);
+		}
+		else if (prf == dst)
+		{
+			link->cmm_handle = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, prf->cmm_handle, des_data_type, rend->ri, flag);
+		}
+		else
+		{
+			cmsHPROFILE src_to_prf_profile;
+			cmsHTRANSFORM src_to_prf_link;
+			cmsColorSpaceSignature prf_cs;
+			int prf_num_chan;
+			int lcms_prf_cs;
+			cmsUInt32Number prf_data_type;
+			cmsHPROFILE hProfiles[3];
+
+			prf_cs = cmsGetColorSpace(cmm_ctx, prf->cmm_handle);
+			lcms_prf_cs = _cmsLCMScolorSpace(cmm_ctx, prf_cs);
+			if (lcms_prf_cs < 0)
+				lcms_prf_cs = 0;
+			prf_num_chan = cmsChannelsOf(cmm_ctx, prf_cs);
+			prf_data_type = (COLORSPACE_SH(lcms_prf_cs) | CHANNELS_SH(prf_num_chan) | BYTES_SH(num_bytes));
+			src_to_prf_link = cmsCreateTransformTHR(cmm_ctx, src->cmm_handle, src_data_type, prf->cmm_handle, prf_data_type, rend->ri, flag);
+			src_to_prf_profile = cmsTransform2DeviceLink(cmm_ctx, src_to_prf_link, 3.4, flag);
+			cmsDeleteTransform(cmm_ctx, src_to_prf_link);
+
+			hProfiles[0] = src_to_prf_profile;
+			hProfiles[1] = prf->cmm_handle;
+			hProfiles[2] = dst->cmm_handle;
+			link->cmm_handle = cmsCreateMultiprofileTransformTHR(cmm_ctx, hProfiles, 3, src_data_type, des_data_type, INTENT_RELATIVE_COLORIMETRIC, flag);
+			cmsCloseProfile(cmm_ctx, src_to_prf_profile);
+		}
+	}
 }
 
 void
@@ -211,7 +253,10 @@ fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 	if (profile->cmm_handle != NULL)
 		profile->num_devcomp = fz_cmm_num_devcomps(ctx, profile);
 	else
+	{
 		profile->num_devcomp = 0;
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Invalid ICC Profile.");
+	}
 	DEBUG_LCMS_MEM(("@@@@@@@ Create Profile End:: mupdf ctx = %p lcms ctx = %p profile = %p profile_cmm = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)profile, (void*)profile->cmm_handle));
 }
 

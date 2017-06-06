@@ -112,6 +112,7 @@ DescendantFonts
 Descent
 Design
 Dest
+DestOutputProfile
 Dests
 DeviceCMYK
 DeviceGray
@@ -279,6 +280,7 @@ Opt
 Order
 Ordering
 Outlines
+OutputIntents
 P
 PDF
 PS

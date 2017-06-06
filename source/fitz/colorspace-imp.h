@@ -41,6 +41,7 @@ struct fz_page_default_cs_s
 	fz_colorspace *gray;
 	fz_colorspace *rgb;
 	fz_colorspace *cmyk;
+	fz_colorspace *oi;
 };
 
 #endif

@@ -748,6 +748,12 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 		fz_try(ctx)
 		{
 			pdf_set_default_cs(ctx, resources, page);
+			if (doc->oi)
+			{
+				if (!page->default_cs)
+					page->default_cs = fz_new_default_cs(ctx);
+				fz_set_default_oi(ctx, page->default_cs, doc->oi);
+			}
 		}
 		fz_catch(ctx)
 		{

@@ -64,6 +64,11 @@ typedef struct fz_page_default_cs_s fz_page_default_cs;
 int fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *pix);
 
 /*
+fz_device_gray: Get colorspace representing device specific gray.
+*/
+void fz_set_oi(fz_context *ctx, fz_colorspace *cs);
+
+/*
 	fz_device_gray: Get colorspace representing device specific gray.
 */
 fz_colorspace *fz_device_gray(fz_context *ctx);
@@ -113,7 +118,7 @@ int fz_colorspace_is_indexed(const fz_colorspace *cs);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
 void fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out);
-void fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *dsts, float *dstv, fz_colorspace *srcs, const float *srcv);
+void fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *intcs, fz_colorspace *dscs, float *dstv, fz_colorspace *srcs, const float *srcv);
 
 typedef struct fz_color_converter_s fz_color_converter;
 
@@ -126,14 +131,15 @@ struct fz_color_converter_s
 	void (*convert)(fz_context *, fz_color_converter *, float *, const float *);
 	fz_colorspace *ds;
 	fz_colorspace *ss;
+	fz_colorspace *is;
 	void *opaque;
 	void *link;
 	int n;
 };
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
+void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_discard_color_converter(fz_context *ctx, fz_color_converter *cc);
-void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
+void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 
 /* Public to allow use in icc creation */
@@ -171,10 +177,12 @@ void fz_drop_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
 void fz_set_default_gray(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
 void fz_set_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
 void fz_set_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
+void fz_set_default_oi(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
 
 fz_colorspace *fz_get_default_gray(fz_context *ctx, fz_page_default_cs *default_cs);
 fz_colorspace *fz_get_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs);
 fz_colorspace *fz_get_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs);
+fz_colorspace *fz_get_outputintent(fz_context *ctx, fz_page_default_cs *default_cs);
 
 #ifdef NO_ICC
 static inline int fz_icc_workflow(fz_context *ctx)

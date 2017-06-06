@@ -207,7 +207,7 @@ svg_hex_color(fz_context *ctx, fz_colorspace *colorspace, const fz_color_params 
 
 	if (colorspace != fz_device_rgb(ctx))
 	{
-		fz_convert_color(ctx, cs_params, fz_device_rgb(ctx), rgb, colorspace, color);
+		fz_convert_color(ctx, cs_params, NULL, fz_device_rgb(ctx), rgb, colorspace, color);
 		color = rgb;
 	}
 
@@ -985,7 +985,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 
 	fz_try(ctx)
 	{
-		fz_paint_shade(ctx, shade, ctm, pix, cs_params, &bbox);
+		fz_paint_shade(ctx, shade, ctm, pix, NULL, cs_params, &bbox);
 		buf = fz_new_buffer_from_pixmap_as_png(ctx, pix, cs_params);
 		if (alpha != 1.0f)
 			fz_write_printf(ctx, out, "<g opacity=\"%g\">\n", alpha);

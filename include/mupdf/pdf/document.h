@@ -576,6 +576,7 @@ struct pdf_document_s
 	pdf_ocg_descriptor *ocg;
 	pdf_portfolio *portfolio;
 	pdf_hotspot hotspot;
+	fz_colorspace *oi;
 
 	int max_xref_len;
 	int num_xref_sections;

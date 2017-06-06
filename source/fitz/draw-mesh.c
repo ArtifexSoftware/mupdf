@@ -205,7 +205,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_color_params *cs_params, const fz_irect *bbox)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, fz_colorspace *prf, const fz_color_params *cs_params, const fz_irect *bbox)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -227,7 +227,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 			fz_color_converter cc;
 			int cn = fz_colorspace_n(ctx, shade->colorspace);
 			n = fz_colorspace_n(ctx, dest->colorspace);
-			fz_lookup_color_converter(ctx, &cc, dest->colorspace, shade->colorspace, cs_params);
+			fz_lookup_color_converter(ctx, &cc, prf, dest->colorspace, shade->colorspace, cs_params);
 			for (i = 0; i < 256; i++)
 			{
 				cc.convert(ctx, &cc, color, shade->function[i]);
@@ -251,7 +251,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		ptd.shade = shade;
 		ptd.bbox = bbox;
 
-		fz_init_cached_color_converter(ctx, &ptd.cc, temp->colorspace, shade->colorspace, cs_params);
+		fz_init_cached_color_converter(ctx, &ptd.cc, NULL, temp->colorspace, shade->colorspace, cs_params);
 		fz_process_shade(ctx, shade, &local_ctm, prepare_mesh_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)

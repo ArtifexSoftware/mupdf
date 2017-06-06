@@ -115,6 +115,7 @@ struct fz_device_s
 	void (*render_flags)(fz_context *, fz_device *, int set, int clear);
 
 	void (*set_default_cs)(fz_context *, fz_device *, fz_page_default_cs *);
+	void (*set_outputintent)(fz_context *, fz_page_default_cs *, fz_colorspace *);
 
 	fz_rect d1_rect;
 

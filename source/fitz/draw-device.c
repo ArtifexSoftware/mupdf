@@ -107,6 +107,22 @@ static void stack_change(fz_context *ctx, fz_draw_device *dev, char *s)
 #define STACK_CONVERT(A) do {} while (0)
 #endif
 
+/* Based upon the existence of a proof color space, and if we happen to be
+ * in a color space that is our target color space or a transparency group
+ * color space decide if we should be using the proof color space at this time */
+static fz_colorspace*
+fz_proof_cs(fz_context *ctx, fz_device *devp)
+{
+	fz_colorspace *prf = fz_get_outputintent(ctx, devp->default_cs);
+	fz_draw_device *dev = (fz_draw_device*)devp;
+	fz_draw_state *state = &dev->stack[dev->top];
+	fz_colorspace *model = state->dest->colorspace;
+
+	if (prf == NULL || model == prf)
+		return NULL;
+	return prf;
+}
+
 static void fz_grow_stack(fz_context *ctx, fz_draw_device *dev)
 {
 	int max = dev->stack_cap * 2;
@@ -287,6 +303,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
 	fz_colorspace *colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
@@ -315,7 +332,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, cs_params, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_params, prf, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -345,6 +362,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
 	fz_colorspace *colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	float linewidth = stroke->linewidth;
@@ -356,6 +374,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
 	float mlw = fz_graphics_min_line_width(ctx);
+
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -380,7 +399,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, cs_params, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_params, prf, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -644,6 +663,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_text_span *span;
 	int i, n;
 	fz_colorspace *colorspace = NULL;
+	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
 		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
@@ -660,7 +680,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, cs_params, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_params, prf, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -742,6 +762,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	fz_text_span *span;
 	int i, n;
 	fz_colorspace *colorspace = NULL;
+	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
 		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
@@ -758,7 +779,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	n = fz_colorspace_n(ctx, model);
 	if (n > 0)
 	{
-		fz_convert_color(ctx, cs_params, model, colorfv, colorspace, color);
+		fz_convert_color(ctx, cs_params, prf, model, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
 	}
@@ -1081,6 +1102,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
+	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	fz_bound_shade(ctx, shade, &ctm, &bounds);
 	scissor = state->scissor;
@@ -1119,7 +1141,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, cs_params, model, colorfv, fz_device_get_cs(ctx, devp, shade->colorspace), shade->background);
+			fz_convert_color(ctx, cs_params, prf, model, colorfv, fz_device_get_cs(ctx, devp, shade->colorspace), shade->background);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}
@@ -1150,7 +1172,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		}
 	}
 
-	fz_paint_shade(ctx, shade, &ctm, dest, cs_params, &bbox);
+	fz_paint_shade(ctx, shade, &ctm, dest, prf, cs_params, &bbox);
 	if (shape)
 		fz_clear_pixmap_rect_with_value(ctx, shape, 255, &bbox);
 
@@ -1255,6 +1277,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	fz_matrix inverse;
 	fz_irect src_area;
 	fz_colorspace *src_cs;
+	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
 
@@ -1316,7 +1339,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 		if (src_cs != model && !after)
 		{
-			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, devp->default_cs, cs_params, 1);
+			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, devp->default_cs, cs_params, 1);
 			fz_drop_pixmap(ctx, pixmap);
 			pixmap = converted;
 		}
@@ -1340,7 +1363,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			}
 		}
 
-		if (src_cs != model)
+		if (src_cs != model && after)
 		{
 #if FZ_PLOTTERS_RGB
 			if ((src_cs == fz_device_gray(ctx) && model == fz_device_rgb(ctx)) ||
@@ -1351,7 +1374,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			else
 #endif
 			{
-				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, devp->default_cs, cs_params, 1);
+				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, devp->default_cs, cs_params, 1);
 				fz_drop_pixmap(ctx, pixmap);
 				pixmap = converted;
 			}
@@ -1386,6 +1409,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_matrix inverse;
 	fz_irect src_area;
 	fz_colorspace *colorspace = NULL;
+	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
 		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
@@ -1468,7 +1492,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, cs_params, model, colorfv, colorspace, color);
+			fz_convert_color(ctx, cs_params, prf, model, colorfv, colorspace, color);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}
@@ -1710,7 +1734,7 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 			float bc;
 			if (!colorspace)
 				colorspace = fz_device_gray(ctx);
-			fz_convert_color(ctx, cs_params, fz_device_gray(ctx), &bc, colorspace, colorfv);
+			fz_convert_color(ctx, cs_params, NULL, fz_device_gray(ctx), &bc, colorspace, colorfv);
 			fz_clear_pixmap_with_value(ctx, dest, bc * 255);
 			if (shape)
 				fz_clear_pixmap_with_value(ctx, shape, 255);
@@ -2360,6 +2384,7 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 	dev->super.render_flags = fz_draw_render_flags;
 
 	dev->super.set_default_cs = fz_set_default_colorspace;
+	dev->super.set_outputintent = fz_set_default_oi;
 
 	dev->transform = transform ? *transform : fz_identity;
 	dev->flags = 0;

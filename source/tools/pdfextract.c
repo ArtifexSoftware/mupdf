@@ -42,7 +42,7 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int dorgb)
 
 	if (dorgb && pix->colorspace && pix->colorspace != fz_device_rgb(ctx))
 	{
-		rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL /* FIXME */, 1);
+		rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, NULL /* FIXME */, 1);
 		pix = rgb;
 	}
 

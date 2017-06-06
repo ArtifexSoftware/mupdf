@@ -7,7 +7,7 @@
 
 /* ICCBased */
 static fz_colorspace *
-load_icc_based(fz_context *ctx, pdf_obj *dict)
+load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 {
 	int n;
 	pdf_obj *obj;
@@ -26,32 +26,50 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 		}
 #endif
 		/* Use alternate if ICC not invalid */
-		if (cs == NULL)
+		if (alt)
 		{
-			obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
-			if (obj)
+			if (cs == NULL)
 			{
-				cs = pdf_load_colorspace(ctx, obj);
-				if (cs->n != n)
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
+				if (obj)
 				{
-					fz_drop_colorspace(ctx, cs);
-					fz_throw(ctx, FZ_ERROR_GENERIC, "ICCBased /Alternate colorspace must have %d components", n);
+					cs = pdf_load_colorspace(ctx, obj);
+					if (cs->n != n)
+					{
+						fz_drop_colorspace(ctx, cs);
+						fz_throw(ctx, FZ_ERROR_GENERIC, "ICCBased /Alternate colorspace must have %d components", n);
+					}
+				}
+				else
+				{
+					switch (n)
+					{
+					case 1:
+						cs = fz_device_gray(ctx);
+						break;
+					case 3:
+						cs = fz_device_rgb(ctx);
+						break;
+					case 4:
+						cs = fz_device_cmyk(ctx);
+						break;
+					default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
+					}
 				}
 			}
 			else
 			{
-				switch (n)
+				/* We need to check if the alternate color space is CIELAB which
+				 * would let us know that we need to apply CIELAB clamping */
+				fz_colorspace *cs_alt = NULL;
+
+				obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
+				if (obj)
 				{
-				case 1:
-					cs = fz_device_gray(ctx);
-					break;
-				case 3:
-					cs = fz_device_rgb(ctx);
-					break;
-				case 4:
-					cs = fz_device_cmyk(ctx);
-					break;
-				default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
+					cs_alt = pdf_load_colorspace(ctx, obj);
+					if (fz_colorspace_is_icc(cs_alt) && cs_alt == fz_device_lab(ctx))
+						cs->clamp = cs_alt->clamp;
+					fz_drop_colorspace(ctx, cs_alt);
 				}
 			}
 		}
@@ -76,6 +94,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict)
 	}
 	fz_catch(ctx)
 	{
+		/* Something went wrong (perhaps invalid ICC profile) */
 	}
 
 	if (n == 1 || n == 3 || n == 4)
@@ -102,7 +121,7 @@ separation_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float 
 	struct separation *sep = cs->data;
 	float alt[FZ_MAX_COLORS];
 	pdf_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
-	fz_convert_color(ctx, fz_cs_params(ctx), fz_device_rgb(ctx), rgb, sep->base, alt);
+	fz_convert_color(ctx, fz_cs_params(ctx), NULL, fz_device_rgb(ctx), rgb, sep->base, alt);
 }
 
 static void
@@ -154,7 +173,7 @@ load_separation(fz_context *ctx, pdf_obj *array)
 		 * "cannot load tint function (%d 0 R)", pdf_to_num(ctx, tintobj) */
 
 		sep = fz_malloc_struct(ctx, struct separation);
-		sep->base = base;
+		sep->base = fz_keep_colorspace(ctx, base);  /* We drop it during the sep free... */
 		sep->tint = tint;
 
 		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 0, n, 1,
@@ -431,7 +450,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 					if (pdf_mark_obj(ctx, obj))
 						fz_throw(ctx, FZ_ERROR_SYNTAX, "recursive colorspace");
 					if (pdf_name_eq(ctx, name, PDF_NAME_ICCBased))
-						cs = load_icc_based(ctx, pdf_array_get(ctx, obj, 1));
+						cs = load_icc_based(ctx, pdf_array_get(ctx, obj, 1), 1);
 
 					else if (pdf_name_eq(ctx, name, PDF_NAME_Indexed))
 						cs = load_indexed(ctx, obj);
@@ -479,7 +498,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 	 * handle it, so do our best. */
 	else if (pdf_is_dict(ctx, obj))
 	{
-		return load_icc_based(ctx, obj);
+		return load_icc_based(ctx, obj, 1);
 	}
 
 	fz_throw(ctx, FZ_ERROR_SYNTAX, "could not parse color space (%d 0 R)", pdf_to_num(ctx, obj));
@@ -500,4 +519,34 @@ pdf_load_colorspace(fz_context *ctx, pdf_obj *obj)
 	pdf_store_item(ctx, obj, cs, cs->size);
 
 	return cs;
+}
+
+fz_colorspace *
+pdf_get_oi(fz_context *ctx, pdf_document *doc)
+{
+	return doc->oi;
+}
+
+fz_colorspace *
+pdf_load_oi(fz_context *ctx, pdf_document *doc)
+{
+	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+	pdf_obj *intents = pdf_dict_get(ctx, root, PDF_NAME_OutputIntents);
+	pdf_obj *intent_dict;
+	pdf_obj *dest_profile;
+
+	/* An array of intents */
+	if (!intents)
+		return NULL;
+
+	/* For now, always just use the first intent. I have never even seen a file
+	 * with multiple intents but it could happen */
+	intent_dict = pdf_array_get(ctx, intents, 0);
+	if (!intent_dict)
+		return NULL;
+	dest_profile = pdf_dict_get(ctx, intent_dict, PDF_NAME_DestOutputProfile);
+	if (!dest_profile)
+		return NULL;
+
+	return load_icc_based(ctx, dest_profile, 0);
 }
