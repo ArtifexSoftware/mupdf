@@ -687,13 +687,13 @@ fz_get_pixmap_from_image(fz_context *ctx, fz_image *image, const fz_irect *subar
 
 	/* Now we try to cache the pixmap. Any failure here will just result
 	 * in us not caching. */
-	fz_var(keyp);
+	keyp = fz_malloc_struct(ctx, fz_image_key);
+	keyp->refs = 1;
+
 	fz_try(ctx)
 	{
 		fz_pixmap *existing_tile;
 
-		keyp = fz_malloc_struct(ctx, fz_image_key);
-		keyp->refs = 1;
 		keyp->image = fz_keep_image_store_key(ctx, image);
 		keyp->l2factor = l2factor;
 		keyp->rect = key.rect;
