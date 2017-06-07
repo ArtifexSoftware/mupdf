@@ -808,11 +808,11 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		return NULL;
 	}
 
-	a = !!a; /* ignore any superfluous alpha channels */
-	img = fz_new_pixmap(ctx, state->cs, w, h, a);
-
 	fz_try(ctx)
 	{
+		a = !!a; /* ignore any superfluous alpha channels */
+		img = fz_new_pixmap(ctx, state->cs, w, h, a);
+
 		p = img->samples;
 		if (upsample_required)
 		{
