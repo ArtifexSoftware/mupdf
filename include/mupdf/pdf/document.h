@@ -90,15 +90,11 @@ pdf_document *pdf_open_document_with_stream(fz_context *ctx, fz_stream *file);
 
 	The resource store in the context associated with pdf_document
 	is emptied.
-
-	Does not throw exceptions.
 */
 void pdf_drop_document(fz_context *ctx, pdf_document *doc);
 
 /*
 	pdf_keep_document: Keep a reference to an open document.
-
-	Does not throw exceptions.
 */
 pdf_document *pdf_keep_document(fz_context *ctx, pdf_document *doc);
 
@@ -711,8 +707,6 @@ pdf_graft_map *pdf_new_graft_map(fz_context *ctx, pdf_document *dst);
 
 /*
 	pdf_keep_graft_map: Keep a reference to a graft map object.
-
-	Does not throw exceptions.
 */
 pdf_graft_map *pdf_keep_graft_map(fz_context *ctx, pdf_graft_map *map);
 

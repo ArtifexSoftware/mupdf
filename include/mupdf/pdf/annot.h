@@ -64,22 +64,16 @@ enum
 
 /*
 	pdf_first_annot: Return the first annotation on a page.
-
-	Does not throw exceptions.
 */
 pdf_annot *pdf_first_annot(fz_context *ctx, pdf_page *page);
 
 /*
 	pdf_next_annot: Return the next annotation on a page.
-
-	Does not throw exceptions.
 */
 pdf_annot *pdf_next_annot(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_bound_annot: Return the rectangle for an annotation on a page.
-
-	Does not throw exceptions.
 */
 fz_rect *pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
 

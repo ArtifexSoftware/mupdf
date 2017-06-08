@@ -42,7 +42,8 @@ typedef void (fz_document_writer_close_writer_fn)(fz_context *ctx, fz_document_w
 	the process to release all the resources owned by the writer.
 
 	Calling drop without having previously called close may leave
-	the file in an inconsistent state.
+	the file in an inconsistent state and the user of the
+	fz_document_writer would need to do any cleanup required.
 */
 typedef void (fz_document_writer_drop_writer_fn)(fz_context *ctx, fz_document_writer *wri);
 

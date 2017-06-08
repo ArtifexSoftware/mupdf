@@ -17,7 +17,7 @@ typedef struct fz_bitmap_s fz_bitmap;
 
 	bit: The bitmap to increment the reference for.
 
-	Returns bit. Does not throw exceptions.
+	Returns bit.
 */
 fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
 
@@ -26,8 +26,6 @@ fz_bitmap *fz_keep_bitmap(fz_context *ctx, fz_bitmap *bit);
 
 	Decrement the reference count for the bitmap. When no
 	references remain the pixmap will be freed.
-
-	Does not throw exceptions.
 */
 void fz_drop_bitmap(fz_context *ctx, fz_bitmap *bit);
 

@@ -105,8 +105,6 @@ enum
 	to force printing of the latest buffered warning and the
 	number of repetitions, for example to make sure that all
 	warnings are printed before exiting an application.
-
-	Does not throw exceptions.
 */
 void fz_flush_warnings(fz_context *ctx);
 
@@ -170,7 +168,7 @@ enum {
 	images. FZ_STORE_UNLIMITED can be used if a hard limit is not
 	desired. Use FZ_STORE_DEFAULT to get a reasonable size.
 
-	Does not throw exceptions, but may return NULL.
+	May return NULL.
 */
 fz_context *fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks, size_t max_store, const char *version);
 
@@ -189,7 +187,7 @@ fz_context *fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_con
 	store, locks and lock/unlock functions. They will each have
 	their own exception stacks though.
 
-	Does not throw exception, but may return NULL.
+	May return NULL.
 */
 fz_context *fz_clone_context(fz_context *ctx);
 
@@ -199,8 +197,6 @@ fz_context *fz_clone_context(fz_context *ctx);
 	The context and all of its global state is freed, and any
 	buffered warnings are flushed (see fz_flush_warnings). If NULL
 	is passed in nothing will happen.
-
-	Does not throw exceptions.
 */
 void fz_drop_context(fz_context *ctx);
 
@@ -209,15 +205,11 @@ void fz_drop_context(fz_context *ctx);
 
 	NULL initially, this field can be set to any opaque value
 	required by the user. It is copied on clones.
-
-	Does not throw exceptions.
 */
 void fz_set_user_context(fz_context *ctx, void *user);
 
 /*
 	fz_user_context: Read the user field from the context.
-
-	Does not throw exceptions.
 */
 void *fz_user_context(fz_context *ctx);
 
@@ -489,8 +481,6 @@ char *fz_strdup(fz_context *ctx, const char *s);
 
 /*
 	fz_free: Frees an allocation.
-
-	Does not throw exceptions.
 */
 void fz_free(fz_context *ctx, void *p);
 

@@ -101,8 +101,6 @@ fz_stream *fz_open_leecher(fz_context *ctx, fz_stream *chain, fz_buffer *buf);
 	Drops a reference for the stream. Once no references remain
 	the stream will be closed, as will any file descriptor the
 	stream is using.
-
-	Does not throw exceptions.
 */
 void fz_drop_stream(fz_context *ctx, fz_stream *stm);
 
@@ -305,8 +303,8 @@ fz_stream *fz_keep_stream(fz_context *ctx, fz_stream *stm);
 
 /*
 	fz_read_best: Attempt to read a stream into a buffer. If truncated
-	is NULL behaves as fz_read_all, otherwise does not throw exceptions
-	in the case of failure, but instead sets a truncated flag.
+	is NULL behaves as fz_read_all, sets a truncated flag in case of
+	error.
 
 	stm: The stream to read from.
 

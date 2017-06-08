@@ -73,7 +73,7 @@ fz_glyph *fz_new_glyph_from_1bpp_data(fz_context *ctx, int x, int y, int w, int 
 
 	pix: The glyph to increment the reference for.
 
-	Returns pix. Does not throw exceptions.
+	Returns pix.
 */
 fz_glyph *fz_keep_glyph(fz_context *ctx, fz_glyph *pix);
 
@@ -82,8 +82,6 @@ fz_glyph *fz_keep_glyph(fz_context *ctx, fz_glyph *pix);
 
 	Decrement the reference count for the glyph. When no
 	references remain the glyph will be freed.
-
-	Does not throw exceptions.
 */
 void fz_drop_glyph(fz_context *ctx, fz_glyph *pix);
 

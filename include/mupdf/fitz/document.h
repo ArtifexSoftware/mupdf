@@ -340,8 +340,6 @@ void *fz_new_document_of_size(fz_context *ctx, int size);
 
 /*
 	fz_keep_document: Keep a reference to an open document.
-
-	Does not throw exceptions.
 */
 fz_document *fz_keep_document(fz_context *ctx, fz_document *doc);
 
@@ -351,16 +349,12 @@ fz_document *fz_keep_document(fz_context *ctx, fz_document *doc);
 	The resource store in the context associated with fz_document
 	is emptied, and any allocations for the document are freed when
 	the last reference is dropped.
-
-	Does not throw exceptions.
 */
 void fz_drop_document(fz_context *ctx, fz_document *doc);
 
 /*
 	fz_needs_password: Check if a document is encrypted with a
 	non-blank password.
-
-	Does not throw exceptions.
 */
 int fz_needs_password(fz_context *ctx, fz_document *doc);
 
@@ -380,8 +374,6 @@ int fz_needs_password(fz_context *ctx, fz_document *doc);
 		Bit 0 => No password required
 		Bit 1 => User password authenticated
 		Bit 2 => Owner password authenticated
-
-	Does not throw exceptions.
 */
 int fz_authenticate_password(fz_context *ctx, fz_document *doc, const char *password);
 
@@ -469,7 +461,6 @@ fz_page *fz_new_page_of_size(fz_context *ctx, int size);
 /*
 	fz_bound_page: Determine the size of a page at 72 dpi.
 
-	Does not throw exceptions.
 */
 fz_rect *fz_bound_page(fz_context *ctx, fz_page *page, fz_rect *rect);
 
@@ -541,15 +532,11 @@ void fz_run_annot(fz_context *ctx, fz_annot *annot, fz_device *dev, const fz_mat
 
 /*
 	fz_keep_page: Keep a reference to a loaded page.
-
-	Does not throw exceptions.
 */
 fz_page *fz_keep_page(fz_context *ctx, fz_page *page);
 
 /*
 	fz_drop_page: Free a loaded page.
-
-	Does not throw exceptions.
 */
 void fz_drop_page(fz_context *ctx, fz_page *page);
 

@@ -139,7 +139,7 @@ fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colo
 
 	pix: The pixmap to increment the reference for.
 
-	Returns pix. Does not throw exceptions.
+	Returns pix.
 */
 fz_pixmap *fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix);
 
@@ -148,29 +148,27 @@ fz_pixmap *fz_keep_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 	Decrement the reference count for the pixmap. When no
 	references remain the pixmap will be freed.
-
-	Does not throw exceptions.
 */
 void fz_drop_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_pixmap_colorspace: Return the colorspace of a pixmap
 
-	Returns colorspace. Does not throw exceptions.
+	Returns colorspace.
 */
 fz_colorspace *fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_pixmap_components: Return the number of components in a pixmap.
 
-	Returns the number of components (including spots and alpha). Does not throw exceptions.
+	Returns the number of components (including spots and alpha).
 */
 int fz_pixmap_components(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_pixmap_colorants: Return the number of colorants in a pixmap.
 
-	Returns the number of colorants (components, less any spots and alpha). Does not throw exceptions.
+	Returns the number of colorants (components, less any spots and alpha).
 */
 int fz_pixmap_colorants(fz_context *ctx, fz_pixmap *pix);
 
@@ -191,7 +189,7 @@ int fz_pixmap_alpha(fz_context *ctx, fz_pixmap *pix);
 /*
 	fz_pixmap_samples: Returns a pointer to the pixel data of a pixmap.
 
-	Returns the pointer. Does not throw exceptions.
+	Returns the pointer.
 */
 unsigned char *fz_pixmap_samples(fz_context *ctx, fz_pixmap *pix);
 
@@ -213,8 +211,6 @@ void fz_set_pixmap_resolution(fz_context *ctx, fz_pixmap *pix, int xres, int yre
 	value: Values in the range 0 to 255 are valid. Each component
 	sample for each pixel in the pixmap will be set to this value,
 	while alpha will always be set to 255 (non-transparent).
-
-	Does not throw exceptions.
 */
 void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
 
@@ -233,8 +229,6 @@ void fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *c
 	while alpha will always be set to 255 (non-transparent).
 
 	r: the rectangle.
-
-	Does not throw exceptions.
 */
 void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value, const fz_irect *r);
 
@@ -243,16 +237,12 @@ void fz_clear_pixmap_rect_with_value(fz_context *ctx, fz_pixmap *pix, int value,
 	all pixels in a pixmap to 0.
 
 	pix: The pixmap to clear.
-
-	Does not throw exceptions.
 */
 void fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_invert_pixmap: Invert all the pixels in a pixmap. All components
 	of all pixels are inverted (except alpha, which is unchanged).
-
-	Does not throw exceptions.
 */
 void fz_invert_pixmap(fz_context *ctx, fz_pixmap *pix);
 
@@ -269,8 +259,6 @@ void fz_tint_pixmap(fz_context *ctx, fz_pixmap *pix, int r, int g, int b);
 	fz_invert_pixmap: Invert all the pixels in a given rectangle of a
 	pixmap. All components of all pixels in the rectangle are inverted
 	(except alpha, which is unchanged).
-
-	Does not throw exceptions.
 */
 void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, const fz_irect *rect);
 
@@ -279,16 +267,12 @@ void fz_invert_pixmap_rect(fz_context *ctx, fz_pixmap *image, const fz_irect *re
 	of all pixels are modified (except alpha, which is unchanged).
 
 	gamma: The gamma value to apply; 1.0 for no change.
-
-	Does not throw exceptions.
 */
 void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
 
 /*
 	fz_unmultiply_pixmap: Convert a pixmap from premultiplied to
 	non-premultiplied format.
-
-	Does not throw exceptions.
 */
 void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 

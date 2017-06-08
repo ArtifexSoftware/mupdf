@@ -55,8 +55,6 @@ fz_link *pdf_load_links(fz_context *ctx, pdf_page *page);
 	into account. The page size is taken to be the crop box if it
 	exists (visible area after cropping), otherwise the media box will
 	be used (possibly including printing marks).
-
-	Does not throw exceptions.
 */
 fz_rect *pdf_bound_page(fz_context *ctx, pdf_page *page, fz_rect *);
 

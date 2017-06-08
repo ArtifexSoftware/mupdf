@@ -283,8 +283,6 @@ static inline fz_matrix *fz_copy_matrix(fz_matrix *restrict m, const fz_matrix *
 	multiplication is not commutative.
 
 	Returns result.
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_concat(fz_matrix *result, const fz_matrix *left, const fz_matrix *right);
 
@@ -300,8 +298,6 @@ fz_matrix *fz_concat(fz_matrix *result, const fz_matrix *left, const fz_matrix *
 	axis.
 
 	Returns m.
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_scale(fz_matrix *m, float sx, float sy);
 
@@ -315,8 +311,6 @@ fz_matrix *fz_scale(fz_matrix *m, float sx, float sy);
 	axis.
 
 	Returns m (updated).
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_pre_scale(fz_matrix *m, float sx, float sy);
 
@@ -330,8 +324,6 @@ fz_matrix *fz_pre_scale(fz_matrix *m, float sx, float sy);
 	axis.
 
 	Returns m (updated).
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_post_scale(fz_matrix *m, float sx, float sy);
 
@@ -346,8 +338,6 @@ fz_matrix *fz_post_scale(fz_matrix *m, float sx, float sy);
 	cause any shearing along the relevant axis.
 
 	Returns m.
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_shear(fz_matrix *m, float sx, float sy);
 
@@ -362,8 +352,6 @@ fz_matrix *fz_shear(fz_matrix *m, float sx, float sy);
 	cause any shearing along the relevant axis.
 
 	Returns m (updated).
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_pre_shear(fz_matrix *m, float sx, float sy);
 
@@ -379,8 +367,6 @@ fz_matrix *fz_pre_shear(fz_matrix *m, float sx, float sy);
 	than zero and greater than 360 are handled as expected.
 
 	Returns m.
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_rotate(fz_matrix *m, float degrees);
 
@@ -396,8 +382,6 @@ fz_matrix *fz_rotate(fz_matrix *m, float degrees);
 	than zero and greater than 360 are handled as expected.
 
 	Returns m (updated).
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_pre_rotate(fz_matrix *m, float degrees);
 
@@ -413,8 +397,6 @@ fz_matrix *fz_pre_rotate(fz_matrix *m, float degrees);
 	relevant axis.
 
 	Returns m.
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_translate(fz_matrix *m, float tx, float ty);
 
@@ -428,8 +410,6 @@ fz_matrix *fz_translate(fz_matrix *m, float tx, float ty);
 	relevant axis.
 
 	Returns m.
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_pre_translate(fz_matrix *m, float tx, float ty);
 
@@ -443,8 +423,6 @@ fz_matrix *fz_pre_translate(fz_matrix *m, float tx, float ty);
 	original matrix is returned instead.
 
 	Returns inverse.
-
-	Does not throw exceptions.
 */
 fz_matrix *fz_invert_matrix(fz_matrix *inverse, const fz_matrix *matrix);
 
@@ -457,8 +435,6 @@ fz_matrix *fz_invert_matrix(fz_matrix *inverse, const fz_matrix *matrix);
 	determinant is equal to zero, can not be inverted.
 
 	Returns 1 if matrix is degenerate (singular), or 0 otherwise.
-
-	Does not throw exceptions.
 */
  int fz_try_invert_matrix(fz_matrix *inverse, const fz_matrix *matrix);
 
@@ -469,8 +445,6 @@ fz_matrix *fz_invert_matrix(fz_matrix *inverse, const fz_matrix *matrix);
 	rotations present are a multiple of 90 degrees. Usually this
 	is used to make sure that axis-aligned rectangles before the
 	transformation are still axis-aligned rectangles afterwards.
-
-	Does not throw exceptions.
 */
 int fz_is_rectilinear(const fz_matrix *m);
 
@@ -489,8 +463,6 @@ float fz_matrix_expansion(const fz_matrix *m); /* sumatrapdf */
 	then the intersection is simply the non-infinite rectangle.
 	Should both rectangles be infinite, then the intersection is
 	also infinite.
-
-	Does not throw exceptions.
 */
 fz_rect *fz_intersect_rect(fz_rect *restrict a, const fz_rect *restrict b);
 
@@ -499,8 +471,6 @@ fz_rect *fz_intersect_rect(fz_rect *restrict a, const fz_rect *restrict b);
 
 	Similar to fz_intersect_rect but operates on two bounding
 	boxes instead of two rectangles.
-
-	Does not throw exceptions.
 */
 fz_irect *fz_intersect_irect(fz_irect *restrict a, const fz_irect *restrict b);
 
@@ -513,8 +483,6 @@ fz_irect *fz_intersect_irect(fz_irect *restrict a, const fz_irect *restrict b);
 	If either rectangle is empty then the union is simply the
 	non-empty rectangle. Should both rectangles be empty, then the
 	union is also empty.
-
-	Does not throw exceptions.
 */
 fz_rect *fz_union_rect(fz_rect *restrict a, const fz_rect *restrict b);
 
@@ -532,8 +500,6 @@ fz_rect *fz_union_rect(fz_rect *restrict a, const fz_rect *restrict b);
 	downwards and to the right.
 
 	Returns bbox (updated).
-
-	Does not throw exceptions.
 */
 
 fz_irect *fz_irect_from_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
@@ -551,8 +517,6 @@ fz_irect *fz_irect_from_rect(fz_irect *restrict bbox, const fz_rect *restrict re
 	can cause whole extra pixels to be added). fz_round_rect
 	allows for a small amount of rounding error when calculating
 	the bbox.
-
-	Does not throw exceptions.
 */
 fz_irect *fz_round_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
 
@@ -567,15 +531,11 @@ fz_irect *fz_round_rect(fz_irect *restrict bbox, const fz_rect *restrict rect);
 	bbox: The bbox to convert.
 
 	Returns rect (updated).
-
-	Does not throw exceptions.
 */
 fz_rect *fz_rect_from_irect(fz_rect *restrict rect, const fz_irect *restrict bbox);
 
 /*
 	fz_expand_rect: Expand a bbox by a given amount in all directions.
-
-	Does not throw exceptions.
 */
 fz_rect *fz_expand_rect(fz_rect *b, float expand);
 
@@ -591,8 +551,6 @@ fz_rect *fz_include_point_in_rect(fz_rect *r, const fz_point *p);
 	fz_translate_irect: Translate bounding box.
 
 	Translate a bbox by a given x and y offset. Allows for overflow.
-
-	Does not throw exceptions.
 */
 fz_irect *fz_translate_irect(fz_irect *a, int xoff, int yoff);
 
@@ -600,8 +558,6 @@ fz_irect *fz_translate_irect(fz_irect *a, int xoff, int yoff);
 	fz_contains_rect: Test rectangle inclusion.
 
 	Return true if a entirely contains b.
-
-	Does not throw exceptions.
 */
 int fz_contains_rect(const fz_rect *a, const fz_rect *b);
 
@@ -615,8 +571,6 @@ int fz_contains_rect(const fz_rect *a, const fz_rect *b);
 	point: Pointer to point to update.
 
 	Returns transform (unchanged).
-
-	Does not throw exceptions.
 */
 fz_point *fz_transform_point(fz_point *restrict point, const fz_matrix *restrict transform);
 fz_point *fz_transform_point_xy(fz_point *restrict point, const fz_matrix *restrict transform, float x, float y);
@@ -629,8 +583,6 @@ fz_point *fz_transform_point_xy(fz_point *restrict point, const fz_matrix *restr
 	translation will be ignored.
 
 	vector: Pointer to vector to update.
-
-	Does not throw exceptions.
 */
 fz_point *fz_transform_vector(fz_point *restrict vector, const fz_matrix *restrict transform);
 
@@ -648,8 +600,6 @@ fz_point *fz_transform_vector(fz_point *restrict vector, const fz_matrix *restri
 	rect: Rectangle to be transformed. The two special cases
 	fz_empty_rect and fz_infinite_rect, may be used but are
 	returned unchanged as expected.
-
-	Does not throw exceptions.
 */
 fz_rect *fz_transform_rect(fz_rect *restrict rect, const fz_matrix *restrict transform);
 

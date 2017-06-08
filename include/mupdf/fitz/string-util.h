@@ -99,7 +99,7 @@ enum { FZ_UTFMAX = 4 };
 
 	str: Pointer to a UTF8 encoded string.
 
-	Returns the number of bytes consumed. Does not throw exceptions.
+	Returns the number of bytes consumed.
 */
 int fz_chartorune(int *rune, const char *str);
 
@@ -110,8 +110,7 @@ int fz_chartorune(int *rune, const char *str);
 
 	rune: Pointer to a 'rune'.
 
-	Returns the number of bytes the rune took to output. Does not throw
-	exceptions.
+	Returns the number of bytes the rune took to output.
 */
 int fz_runetochar(char *str, int rune);
 
