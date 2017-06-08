@@ -254,6 +254,12 @@ static int files = 0;
 static int num_workers = 0;
 static worker_t *workers;
 
+#ifdef NO_ICC
+static int icc_workflow = 0;
+#else
+static int icc_workflow = 1;
+#endif
+
 static const char *layer_config = NULL;
 
 static struct {
@@ -327,6 +333,7 @@ static void usage(void)
 		"\t-i\tignore errors\n"
 		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
 		"\t-P\tparallel interpretation/rendering\n"
+		"\t-N\tdisable ICC workflow (\"N\"o color management)\n"
 		"\n"
 		"\t-y l\tList the layer configs to stderr\n"
 		"\t-y -\tSelect layer config (by number)\n"
@@ -1351,7 +1358,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:XLvPl:y:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:XLvPl:y:N")) != -1)
 	{
 		switch (c)
 		{
@@ -1400,6 +1407,7 @@ int mudraw_main(int argc, char **argv)
 		case 'D': uselist = 0; break;
 		case 'l': min_line_width = fz_atof(fz_optarg); break;
 		case 'i': ignore_errors = 1; break;
+		case 'N': icc_workflow = 0; break;
 
 		case 'T':
 #ifndef DISABLE_MUTHREADS
@@ -1462,6 +1470,7 @@ int mudraw_main(int argc, char **argv)
 	fz_set_text_aa_level(ctx, alphabits_text);
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
 	fz_set_graphics_min_line_width(ctx, min_line_width);
+	fz_set_icc_workflow(ctx, icc_workflow);
 
 #ifndef DISABLE_MUTHREADS
 	if (bgprint.active)

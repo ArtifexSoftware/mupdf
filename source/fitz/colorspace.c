@@ -12,6 +12,8 @@ const char *
 fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
 {
 #ifndef NO_ICC
+	if (!fz_icc_workflow(ctx))
+		return *size = 0, NULL;
 	if (!strcmp(name, "gray-icc")) {
 		extern const int fz_resources_icc_gray_icc_size;
 		extern const char fz_resources_icc_gray_icc[];
@@ -550,7 +552,6 @@ static inline float fung(float x)
 	return (108.0f / 841.0f) * (x - (4.0f / 29.0f));
 }
 
-#ifdef NO_ICC
 static void
 lab_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *lab, float *rgb)
 {
@@ -591,15 +592,10 @@ clamp_lab(const fz_colorspace *cs, const float *src, float *dst)
 	for (i = 0; i < 3; i++)
 		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
 }
-#endif
 
 static int fz_colorspace_is_lab(const fz_colorspace *cs)
 {
-#ifdef NO_ICC
 	return cs && cs->to_ccs == lab_to_rgb;
-#else
-	return 0;
-#endif
 }
 
 static int fz_colorspace_is_lab_icc(const fz_colorspace *cs);
@@ -614,18 +610,14 @@ static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "Device
 static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb, clamp_default, NULL, NULL, NULL };
 static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr, clamp_default, NULL, NULL, NULL };
 static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk, clamp_default, NULL, NULL, NULL };
-#ifdef NO_ICC
 static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL};
-#endif
 static fz_color_params k_default_color_params = { FZ_RI_RELATIVECOLORIMETRIC, 1, 0, 0 };
 
 static fz_colorspace *fz_default_gray = &k_default_gray;
 static fz_colorspace *fz_default_rgb = &k_default_rgb;
 static fz_colorspace *fz_default_bgr = &k_default_bgr;
 static fz_colorspace *fz_default_cmyk = &k_default_cmyk;
-#ifdef NO_ICC
 static fz_colorspace *fz_default_lab = &k_default_lab;
-#endif
 static fz_color_params *fz_default_color_params = &k_default_color_params;
 
 struct fz_cmm_context_s
@@ -636,16 +628,60 @@ struct fz_cmm_context_s
 struct fz_colorspace_context_s
 {
 	int ctx_refs;
+	int icc;
 	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;
 	fz_color_params *params;
 };
 
-static void
-fz_drop_icc_colorspace_ctx(fz_context *ctx, fz_colorspace *cs)
+#ifndef NO_ICC
+int fz_icc_workflow(fz_context *ctx)
 {
-	if (cs->free_data && cs->data)
-		cs->free_data(ctx, cs);
-	fz_free(ctx, cs);
+	return ctx->colorspace && ctx->colorspace->icc;
+}
+#endif
+
+void fz_set_icc_workflow(fz_context *ctx, int icc)
+{
+	fz_colorspace_context *cct;
+
+	if (!ctx)
+		return;
+	cct = ctx->colorspace;
+	if (!cct || cct->icc == icc)
+		return;
+
+#ifdef NO_ICC
+	if (icc)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "ICC workflow not supported in NO_ICC build");
+#endif
+
+	cct->icc = icc;
+	fz_drop_colorspace(ctx, cct->gray);
+	fz_drop_colorspace(ctx, cct->rgb);
+	fz_drop_colorspace(ctx, cct->bgr);
+	fz_drop_colorspace(ctx, cct->cmyk);
+	fz_drop_colorspace(ctx, cct->lab);
+	cct->gray = NULL;
+	cct->rgb = NULL;
+	cct->bgr = NULL;
+	cct->cmyk = NULL;
+	cct->lab = NULL;
+	if (icc)
+	{
+		cct->gray = fz_new_icc_colorspace(ctx, 1, 1, NULL, "gray-icc");
+		cct->rgb = fz_new_icc_colorspace(ctx, 1, 3, NULL, "rgb-icc");
+		cct->bgr = ctx->colorspace->rgb; /* TODO: must swizzle R and B components */
+		cct->cmyk = fz_new_icc_colorspace(ctx, 1, 4, NULL, "cmyk-icc");
+		cct->lab = fz_new_icc_colorspace(ctx, 1, 3, NULL, "lab-icc");
+	}
+	else
+	{
+		cct->gray = fz_default_gray;
+		cct->rgb = fz_default_rgb;
+		cct->bgr = fz_default_bgr;
+		cct->cmyk = fz_default_cmyk;
+		cct->lab = fz_default_lab;
+	}
 }
 
 void fz_new_colorspace_context(fz_context *ctx)
@@ -653,18 +689,11 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
 	ctx->colorspace->ctx_refs = 1;
 	ctx->colorspace->params = fz_default_color_params;
+	ctx->colorspace->icc = -1;
 #ifdef NO_ICC
-	ctx->colorspace->gray = fz_default_gray;
-	ctx->colorspace->rgb = fz_default_rgb;
-	ctx->colorspace->bgr = fz_default_bgr;
-	ctx->colorspace->cmyk = fz_default_cmyk;
-	ctx->colorspace->lab = fz_default_lab;
+	fz_set_icc_workflow(ctx, 0);
 #else
-	ctx->colorspace->gray = fz_new_icc_colorspace(ctx, 1, 1, NULL, "gray-icc");
-	ctx->colorspace->rgb = fz_new_icc_colorspace(ctx, 1, 3, NULL, "rgb-icc");
-	ctx->colorspace->bgr = ctx->colorspace->rgb; /* TODO: must swizzle R and B components */
-	ctx->colorspace->cmyk = fz_new_icc_colorspace(ctx, 1, 4, NULL, "cmyk-icc");
-	ctx->colorspace->lab = fz_new_icc_colorspace(ctx, 1, 3, NULL, "lab-icc");
+	fz_set_icc_workflow(ctx, 1);
 #endif
 }
 
@@ -694,12 +723,11 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		return;
 	if (fz_drop_imp(ctx, ctx->colorspace, &ctx->colorspace->ctx_refs))
 	{
-#ifndef NO_ICC
-		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->gray);
-		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->rgb);
-		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->cmyk);
-		fz_drop_icc_colorspace_ctx(ctx, ctx->colorspace->lab);
-#endif
+		fz_drop_colorspace(ctx, ctx->colorspace->gray);
+		fz_drop_colorspace(ctx, ctx->colorspace->rgb);
+		/* FIXME: bgr */
+		fz_drop_colorspace(ctx, ctx->colorspace->cmyk);
+		fz_drop_colorspace(ctx, ctx->colorspace->lab);
 		fz_free(ctx, ctx->colorspace);
 		ctx->colorspace = NULL;
 	}

@@ -176,4 +176,14 @@ fz_colorspace *fz_get_default_gray(fz_context *ctx, fz_page_default_cs *default_
 fz_colorspace *fz_get_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs);
 fz_colorspace *fz_get_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs);
 
+#ifdef NO_ICC
+static inline int fz_icc_workflow(fz_context *ctx)
+{
+	return 0;
+}
+#else
+int fz_icc_workflow(fz_context *ctx);
+#endif
+void fz_set_icc_workflow(fz_context *ctx, int icc);
+
 #endif
