@@ -1254,7 +1254,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	fz_irect clip;
 	fz_matrix inverse;
 	fz_irect src_area;
-	fz_colorspace *src_cs = fz_device_get_cs(ctx, devp, image->colorspace);
+	fz_colorspace *src_cs;
 
 	fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
 
@@ -1297,6 +1297,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	}
 
 	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
+	src_cs = fz_device_get_cs(ctx, devp, pixmap->colorspace);
 
 	/* convert images with more components (cmyk->rgb) before scaling */
 	/* convert images with fewer components (gray->rgb) after scaling */
