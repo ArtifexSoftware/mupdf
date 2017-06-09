@@ -618,7 +618,7 @@ fz_load_png_info(fz_context *ctx, unsigned char *p, size_t total, int *wp, int *
 
 	png_read_image(ctx, &png, p, total, 1);
 
-	if (png.n == 3 || png.n == 4)
+	if (png.n == 3 || png.n == 4 || png.indexed)
 		*cspacep = fz_device_rgb(ctx);
 	else
 		*cspacep = fz_device_gray(ctx);
