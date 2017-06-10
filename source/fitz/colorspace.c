@@ -2449,6 +2449,7 @@ icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const 
 		srcv = src_map;
 		src_map = (src_map == local_src_map ? local_src_map2 : local_src_map);
 		srcs = srcs->get_base(srcs);
+		srcs->clamp(srcs, srcv, srcv);
 	}
 	while (!fz_colorspace_is_icc(srcs) && !fz_colorspace_is_pdf_cal(srcs));
 
