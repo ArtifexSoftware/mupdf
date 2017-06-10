@@ -1,31 +1,37 @@
-// Multi-threaded rendering of all pages in a document to PNG images.
+/*
+Multi-threaded rendering of all pages in a document to PNG images.
 
-// First look at doc/example.c and make sure you understand it.
-// Then read the multi-threading section in doc/overview.txt,
-// before coming back here to see an example of multi-threading.
+First look at doc/example.c and make sure you understand it.
+Then read the multi-threading section in doc/overview.txt,
+before coming back here to see an example of multi-threading.
 
-// This example will create one main thread for reading pages from the
-// document, and one thread per page for rendering. After rendering
-// the main thread will wait for each rendering thread to complete before
-// writing that thread's rendered image to a PNG image. There is
-// nothing in MuPDF requiring a rendering thread to only render a
-// single page, this is just a design decision taken for this example.
+This example will create one main thread for reading pages from the
+document, and one thread per page for rendering. After rendering
+the main thread will wait for each rendering thread to complete before
+writing that thread's rendered image to a PNG image. There is
+nothing in MuPDF requiring a rendering thread to only render a
+single page, this is just a design decision taken for this example.
 
-// Compile a debug build of mupdf, then compile and run this example:
-//
-// gcc -g -o build/debug/example-mt -Iinclude docs/multi-threaded.c \
-//	build/debug/libmupdf.a \
-//	build/debug/libmupdfthird.a \
-//	-lpthread -lcrypto -lm
-//
-// build/debug/example-mt /path/to/document.pdf
-//
-// Caution! As all pages are rendered simultaneously, please choose a
-// file with just a few pages to avoid stressing your machine too
-// much. Also you may run in to a limitation on the number of threads
-// depending on your environment.
+To build this example in a source tree and render every page as a
+separate PNG, run:
+make examples
+./build/debug/multi-threaded document.pdf
 
-// Include the MuPDF header file, and pthread's header file.
+To build from installed sources, and render the same document, run:
+gcc -I/usr/local/include -o multi-threaded \
+	/usr/local/share/doc/mupdf/examples/multi-threaded.c \
+	/usr/local/lib/libmupdf.a \
+	/usr/local/lib/libmupdfthird.a \
+	-lpthread -lm
+./multi-threaded document.pdf
+
+Caution! As all pages are rendered simultaneously, please choose a
+file with just a few pages to avoid stressing your machine too
+much. Also you may run in to a limitation on the number of threads
+depending on your environment.
+*/
+
+//Include the MuPDF header file, and pthread's header file.
 #include <mupdf/fitz.h>
 #include <pthread.h>
 

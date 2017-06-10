@@ -396,9 +396,9 @@ INSTALL_APPS += $(MUJSTEST_EXE)
 
 examples: $(OUT)/example $(OUT)/multi-threaded
 
-$(OUT)/example: docs/example.c $(MUPDF_LIB) $(THIRD_LIB)
+$(OUT)/example: docs/examples/example.c $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(CFLAGS)
-$(OUT)/multi-threaded: docs/multi-threaded.c $(MUPDF_LIB) $(THIRD_LIB)
+$(OUT)/multi-threaded: docs/examples/multi-threaded.c $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(CFLAGS) -lpthread
 
 # --- Update version string header ---

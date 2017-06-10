@@ -1,16 +1,19 @@
 /*
-	How to use MuPDF to render a single page and print the result as a PPM to stdout.
+How to use MuPDF to render a single page and print the result as
+a PPM to stdout.
 
-	Build the mupdf library using make, then either run 'make examples' or
-	compile the example manually:
+To build this example in a source tree and render first page at
+100% zoom with no rotation, run:
+make examples
+./build/debug/example document.pdf 1 100 0 > page1.ppm
 
-	gcc -Iinclude -o example.exe docs/example.c \
-		build/debug/libmupdf.a \
-		build/debug/libmupdfthird.a
-		-lcrypto \
-		-lm
-
-	./example.exe document.pdf 100 0 1
+To build from installed sources, and render the same document, run:
+gcc -I/usr/local/include -o example \
+	/usr/local/share/doc/mupdf/examples/example.c \
+	/usr/local/lib/libmupdf.a \
+	/usr/local/lib/libmupdfthird.a \
+	-lm
+./example document.pdf 1 100 0 > page1.ppm
 */
 
 #include <mupdf/fitz.h>
