@@ -3078,22 +3078,31 @@ fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float 
 void
 fz_set_default_gray(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs)
 {
-	fz_drop_colorspace(ctx, default_cs->gray);
-	default_cs->gray = fz_keep_colorspace(ctx, cs);
+	if (cs->n == 1)
+	{
+		fz_drop_colorspace(ctx, default_cs->gray);
+		default_cs->gray = fz_keep_colorspace(ctx, cs);
+	}
 }
 
 void
 fz_set_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs)
 {
-	fz_drop_colorspace(ctx, default_cs->rgb);
-	default_cs->rgb = fz_keep_colorspace(ctx, cs);
+	if (cs->n == 3)
+	{
+		fz_drop_colorspace(ctx, default_cs->rgb);
+		default_cs->rgb = fz_keep_colorspace(ctx, cs);
+	}
 }
 
 void
 fz_set_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs)
 {
-	fz_drop_colorspace(ctx, default_cs->cmyk);
-	default_cs->cmyk = fz_keep_colorspace(ctx, cs);
+	if (cs->n == 4)
+	{
+		fz_drop_colorspace(ctx, default_cs->cmyk);
+		default_cs->cmyk = fz_keep_colorspace(ctx, cs);
+	}
 }
 
 void
