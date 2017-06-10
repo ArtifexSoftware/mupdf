@@ -70,27 +70,13 @@ $ make -C libmupdf generate
 Add an NDK-build step to your project, using the Android.mk file from mupdf.
 
 <p>
-If compiling manually, set the appropriate variables yourself:
-
-<pre>
-$ ndk-build \
-	APP_BUILD_SCRIPT=libmupdf/platform/java/Android.mk \
-	APP_PROJECT_PATH=. \
-	APP_PLATFORM=android-16 \
-	APP_OPTIM=debug \
-	APP_ABI=x86
-</pre>
-
-<p>
-If using gradle, add an externalNativeBuild section in the android section
-in the build.gradle file:
+Add an externalNativeBuild section in the android section in the
+build.gradle file:
 
 <pre>
 android {
 	externalNativeBuild {
-		ndkBuild {
-			path 'libmupdf/platform/java/Android.mk'
-		}
+		ndkBuild.path 'libmupdf/platform/java/Android.mk'
 	}
 }
 </pre>
@@ -101,27 +87,14 @@ android {
 You'll also need to include the Java classes that bind to the JNI library.
 
 <p>
-If you're using ant, add the 'libmupdf/platform/java/src' directory
-to the list of source directories. For example, set the variables in
-an ant.properties file:
-
-<pre>
-source.dir=src;libmupdf/platform/java/src
-java.source=1.7
-java.target=1.7
-</pre>
-
-<p>
-If using gradle, add the 'libmupdf/platform/java/src' directory
-to the list of source directories in the build.gradle file:
+Add the 'libmupdf/platform/java/src' directory to the list of source
+directories in the build.gradle file:
 
 <pre>
 android {
 	sourceSets {
 		main {
-			java {
-				srcDirs = [ "src/main/java", "libmupdf/platform/java/src" ]
-			}
+			java.srcDirs 'src/main/java', 'libmupdf/platform/java/src'
 		}
 	}
 }
