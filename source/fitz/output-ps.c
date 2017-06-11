@@ -287,8 +287,12 @@ ps_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_pixmap *pix = wri->pixmap;
 	fz_band_writer *bw;
 
-	fz_close_device(ctx, dev);
-	fz_drop_device(ctx, dev);
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_always(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	bw = fz_new_ps_band_writer(ctx, wri->out);
 	fz_try(ctx)

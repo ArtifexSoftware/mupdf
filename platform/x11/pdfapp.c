@@ -816,9 +816,15 @@ static void pdfapp_updatepage(pdfapp_t *app)
 			fz_rect_from_irect(&bounds, fz_round_rect(&ibounds, &bounds));
 			fz_clear_pixmap_rect_with_value(app->ctx, app->image, 255, &ibounds);
 			idev = fz_new_draw_device_with_bbox(app->ctx, NULL, app->image, &ibounds);
-			pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
-			fz_close_device(app->ctx, idev);
-			fz_drop_device(app->ctx, idev);
+			fz_try(app->ctx)
+			{
+				pdfapp_runpage(app, idev, &ctm, &bounds, NULL);
+				fz_close_device(app->ctx, idev);
+			}
+			fz_always(app->ctx)
+				fz_drop_device(app->ctx, idev);
+			fz_catch(app->ctx)
+				fz_rethrow(app->ctx);
 		}
 	}
 
@@ -841,7 +847,7 @@ void pdfapp_reloadpage(pdfapp_t *app)
 static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repaint, int transition, int searching)
 {
 	char buf[MAX_TITLE];
-	fz_device *idev;
+	fz_device *idev = NULL;
 	fz_device *tdev;
 	fz_colorspace *colorspace;
 	fz_matrix ctm;
@@ -875,9 +881,15 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		if (app->page_list || app->annotations_list)
 		{
 			tdev = fz_new_stext_device(app->ctx, app->page_text, NULL);
-			pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
-			fz_close_device(app->ctx, tdev);
-			fz_drop_device(app->ctx, tdev);
+			fz_try(app->ctx)
+			{
+				pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
+				fz_close_device(app->ctx, tdev);
+			}
+			fz_always(app->ctx)
+				fz_drop_device(app->ctx, tdev);
+			fz_catch(app->ctx)
+				fz_rethrow(app->ctx);
 		}
 	}
 
@@ -913,6 +925,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 		app->image = NULL;
 		fz_var(app->image);
+		fz_var(idev);
 
 		fz_try(app->ctx)
 		{
@@ -923,17 +936,16 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 				idev = fz_new_draw_device(app->ctx, NULL, app->image);
 				pdfapp_runpage(app, idev, &ctm, &bounds, &cookie);
 				fz_close_device(app->ctx, idev);
-				fz_drop_device(app->ctx, idev);
 			}
 			if (app->invert)
 				fz_invert_pixmap(app->ctx, app->image);
 			if (app->tint)
 				fz_tint_pixmap(app->ctx, app->image, app->tint_r, app->tint_g, app->tint_b);
 		}
+		fz_always(app->ctx)
+			fz_drop_device(app->ctx, idev);
 		fz_catch(app->ctx)
-		{
 			cookie.errors++;
-		}
 	}
 
 	if (transition)

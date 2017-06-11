@@ -45,8 +45,13 @@ svg_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 {
 	fz_svg_writer *wri = (fz_svg_writer*)wri_;
 
-	fz_close_device(ctx, dev);
-	fz_drop_device(ctx, dev);
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_always(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 	fz_drop_output(ctx, wri->out);
 	wri->out = NULL;
 }

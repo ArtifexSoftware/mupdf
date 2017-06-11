@@ -161,7 +161,8 @@ void fz_close_device(fz_context *ctx, fz_device *dev);
 
 /*
 	fz_drop_device: Free a device of any type and its resources.
-	Don't forget to call fz_close_device before dropping the device, or you may get incomplete output!
+	Don't forget to call fz_close_device before dropping the device,
+	or you may get incomplete output!
 */
 void fz_drop_device(fz_context *ctx, fz_device *dev);
 

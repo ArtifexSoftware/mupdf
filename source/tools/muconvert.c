@@ -66,14 +66,26 @@ static void runpage(int number)
 {
 	fz_rect mediabox;
 	fz_page *page;
-	fz_device *dev;
+	fz_device *dev = NULL;
 
 	page = fz_load_page(ctx, doc, number - 1);
-	fz_bound_page(ctx, page, &mediabox);
-	dev = fz_begin_page(ctx, out, &mediabox);
-	fz_run_page(ctx, page, dev, &fz_identity, NULL);
-	fz_end_page(ctx, out);
-	fz_drop_page(ctx, page);
+
+	fz_var(dev);
+
+	fz_try(ctx)
+	{
+		fz_bound_page(ctx, page, &mediabox);
+		dev = fz_begin_page(ctx, out, &mediabox);
+		fz_run_page(ctx, page, dev, &fz_identity, NULL);
+	}
+	fz_always(ctx)
+	{
+		if (dev)
+			fz_end_page(ctx, out);
+		fz_drop_page(ctx, page);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 static void runrange(const char *range)

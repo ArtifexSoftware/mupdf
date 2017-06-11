@@ -1074,9 +1074,15 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 
 	fz_clear_pixmap(ctx, pix); /* clear to transparent */
 	dev = fz_new_draw_device(ctx, &ctm, pix);
-	fz_run_display_list(ctx, image->list, dev, &fz_identity, NULL, NULL);
-	fz_close_device(ctx, dev);
-	fz_drop_device(ctx, dev);
+	fz_try(ctx)
+	{
+		fz_run_display_list(ctx, image->list, dev, &fz_identity, NULL, NULL);
+		fz_close_device(ctx, dev);
+	}
+	fz_always(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	/* Never do more subsampling, cos we've already given them the right size */
 	if (l2factor)

@@ -471,8 +471,13 @@ static void
 text_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 {
 	fz_text_writer *wri = (fz_text_writer*)wri_;
-	fz_close_device(ctx, dev);
-	fz_drop_device(ctx, dev);
+
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_always(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	switch (wri->format)
 	{

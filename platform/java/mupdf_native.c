@@ -5101,9 +5101,9 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stext_page(ctx, text);
-		fz_drop_device(ctx, dev);
 		fz_drop_output(ctx, out);
+		fz_drop_device(ctx, dev);
+		fz_drop_stext_page(ctx, text);
 	}
 	fz_catch(ctx)
 	{

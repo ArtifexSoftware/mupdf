@@ -31,8 +31,12 @@ cbz_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_buffer *buffer;
 	char name[40];
 
-	fz_close_device(ctx, dev);
-	fz_drop_device(ctx, dev);
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_always(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	wri->count += 1;
 
@@ -111,8 +115,12 @@ pixmap_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 	fz_pixmap_writer *wri = (fz_pixmap_writer*)wri_;
 	char path[PATH_MAX];
 
-	fz_close_device(ctx, dev);
-	fz_drop_device(ctx, dev);
+	fz_try(ctx)
+		fz_close_device(ctx, dev);
+	fz_always(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	wri->count += 1;
 

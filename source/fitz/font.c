@@ -1274,12 +1274,17 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 			FZ_DEVFLAG_LINEJOIN_UNDEFINED |
 			FZ_DEVFLAG_MITERLIMIT_UNDEFINED |
 			FZ_DEVFLAG_LINEWIDTH_UNDEFINED;
-	font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, &fz_identity, NULL, 0);
-	fz_close_device(ctx, dev);
-	font->t3flags[gid] = dev->flags;
-	d1_rect = dev->d1_rect;
-	fz_drop_device(ctx, dev);
-	dev = NULL;
+	fz_try(ctx)
+	{
+		font->t3run(ctx, font->t3doc, font->t3resources, contents, dev, &fz_identity, NULL, 0);
+		fz_close_device(ctx, dev);
+		font->t3flags[gid] = dev->flags;
+		d1_rect = dev->d1_rect;
+	}
+	fz_always(ctx)
+		fz_drop_device(ctx, dev);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 	if (fz_display_list_is_empty(ctx, font->t3lists[gid]))
 	{
 		/* If empty, no need for a huge bbox, especially as the logic
