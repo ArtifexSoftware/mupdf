@@ -161,6 +161,8 @@ fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri)
 		fz_warn(ctx, "dropping unclosed document writer");
 	if (wri->drop_writer)
 		wri->drop_writer(ctx, wri);
+	if (wri->dev)
+		fz_drop_device(ctx, wri->dev);
 	fz_free(ctx, wri);
 }
 
