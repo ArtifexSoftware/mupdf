@@ -476,32 +476,38 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 					continue;
 				}
 
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
-				if (obj)
+				fz_try(ctx)
 				{
-					pdf_drop_obj(ctx, encrypt);
-					encrypt = pdf_keep_obj(ctx, obj);
+					obj = pdf_dict_get(ctx, dict, PDF_NAME_Encrypt);
+					if (obj)
+					{
+						pdf_drop_obj(ctx, encrypt);
+						encrypt = pdf_keep_obj(ctx, obj);
+					}
+
+					obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
+					if (obj && (!id || !encrypt || pdf_dict_get(ctx, dict, PDF_NAME_Encrypt)))
+					{
+						pdf_drop_obj(ctx, id);
+						id = pdf_keep_obj(ctx, obj);
+					}
+
+					obj = pdf_dict_get(ctx, dict, PDF_NAME_Root);
+					if (obj)
+						add_root(ctx, obj, &roots, &num_roots, &max_roots);
+
+					obj = pdf_dict_get(ctx, dict, PDF_NAME_Info);
+					if (obj)
+					{
+						pdf_drop_obj(ctx, info);
+						info = pdf_keep_obj(ctx, obj);
+					}
 				}
+				fz_always(ctx)
+					pdf_drop_obj(ctx, dict);
+				fz_catch(ctx)
+					fz_rethrow(ctx);
 
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_ID);
-				if (obj && (!id || !encrypt || pdf_dict_get(ctx, dict, PDF_NAME_Encrypt)))
-				{
-					pdf_drop_obj(ctx, id);
-					id = pdf_keep_obj(ctx, obj);
-				}
-
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_Root);
-				if (obj)
-					add_root(ctx, obj, &roots, &num_roots, &max_roots);
-
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_Info);
-				if (obj)
-				{
-					pdf_drop_obj(ctx, info);
-					info = pdf_keep_obj(ctx, obj);
-				}
-
-				pdf_drop_obj(ctx, dict);
 				obj = NULL;
 			}
 
@@ -558,11 +564,17 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				pdf_obj *old_obj = NULL;
 				dict = pdf_load_object(ctx, doc, list[i].num);
 
-				length = pdf_new_int(ctx, doc, list[i].stm_len);
-				pdf_dict_get_put_drop(ctx, dict, PDF_NAME_Length, length, &old_obj);
-				if (old_obj)
-					orphan_object(ctx, doc, old_obj);
-				pdf_drop_obj(ctx, dict);
+				fz_try(ctx)
+				{
+					length = pdf_new_int(ctx, doc, list[i].stm_len);
+					pdf_dict_get_put_drop(ctx, dict, PDF_NAME_Length, length, &old_obj);
+					if (old_obj)
+						orphan_object(ctx, doc, old_obj);
+				}
+				fz_always(ctx)
+					pdf_drop_obj(ctx, dict);
+				fz_catch(ctx)
+					fz_rethrow(ctx);
 			}
 		}
 
