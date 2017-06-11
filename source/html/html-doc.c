@@ -187,16 +187,21 @@ htdoc_open_document(fz_context *ctx, const char *filename)
 	doc->super.lookup_metadata = htdoc_lookup_metadata;
 	doc->super.is_reflowable = 1;
 
-	doc->zip = fz_open_directory(ctx, dirname);
-	doc->set = fz_new_html_font_set(ctx);
-
-	buf = fz_read_file(ctx, filename);
 	fz_try(ctx)
+	{
+		doc->zip = fz_open_directory(ctx, dirname);
+		doc->set = fz_new_html_font_set(ctx);
+
+		buf = fz_read_file(ctx, filename);
 		doc->html = fz_parse_html(ctx, doc->set, doc->zip, ".", buf, fz_user_css(ctx));
+	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buf);
 	fz_catch(ctx)
+	{
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
+	}
 
 	return (fz_document*)doc;
 }
