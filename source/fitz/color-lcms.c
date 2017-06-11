@@ -205,7 +205,7 @@ fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, 
 }
 
 void
-fz_cmm_free_link(fz_context *ctx, fz_icclink *link)
+fz_cmm_drop_link(fz_context *ctx, fz_icclink *link)
 {
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 
@@ -231,7 +231,7 @@ fz_cmm_new_ctx(fz_context *ctx)
 }
 
 void
-fz_cmm_free_ctx(void *ctx)
+fz_cmm_drop_ctx(void *ctx)
 {
 	DEBUG_LCMS_MEM(("Context Destruction:: lcms ctx = %p \n", (void*) ctx));
 	if (ctx == NULL)
@@ -261,7 +261,7 @@ fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 }
 
 void
-fz_cmm_free_profile(fz_context *ctx, fz_iccprofile *profile)
+fz_cmm_drop_profile(fz_context *ctx, fz_iccprofile *profile)
 {
 	cmsContext cmm_ctx = fz_get_cmm_ctx(ctx);
 

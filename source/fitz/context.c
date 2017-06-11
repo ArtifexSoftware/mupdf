@@ -150,7 +150,7 @@ fz_drop_context(fz_context *ctx)
 	fz_drop_id_context(ctx);
 	fz_drop_output_context(ctx);
 #ifndef NO_ICC
-	fz_free_cmm_context(ctx);
+	fz_drop_cmm_context(ctx);
 #endif
 
 	if (ctx->warn)

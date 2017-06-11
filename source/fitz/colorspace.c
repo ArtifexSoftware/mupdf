@@ -208,7 +208,7 @@ static void
 fz_drop_link_imp(fz_context *ctx, fz_storable *storable)
 {
 	fz_icclink *link = (fz_icclink *)storable;
-	fz_cmm_free_link(ctx, link);
+	fz_cmm_drop_link(ctx, link);
 	fz_free(ctx, link);
 }
 
@@ -371,7 +371,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 			}
 			/* To avoid repeated failures building the pdf-cal color space,
 			 * assign the default profile. */
-			fz_cmm_free_profile(ctx, src_icc);
+			fz_cmm_drop_profile(ctx, src_icc);
 			cal->profile = src_icc;
 		}
 	}
@@ -714,9 +714,9 @@ fz_new_cmm_context(fz_context *ctx)
 }
 
 void
-fz_free_cmm_context(fz_context *ctx)
+fz_drop_cmm_context(fz_context *ctx)
 {
-	fz_cmm_free_ctx(ctx->cmm);
+	fz_cmm_drop_ctx(ctx->cmm);
 }
 
 fz_colorspace_context *
@@ -2922,7 +2922,7 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_iccprofile *profile = cs->data;
 	fz_drop_buffer(ctx, profile->buffer);
-	fz_cmm_free_profile(ctx, profile);
+	fz_cmm_drop_profile(ctx, profile);
 	fz_free(ctx, profile);
 }
 
@@ -2986,7 +2986,7 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 		{
 			if (name != NULL)
 				fz_drop_buffer(ctx, profile->buffer);
-			fz_cmm_free_profile(ctx, profile);
+			fz_cmm_drop_profile(ctx, profile);
 			fz_free(ctx, profile);
 		}
 		else
@@ -2999,7 +2999,7 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 	fz_catch(ctx)
 	{
 		fz_drop_buffer(ctx, profile->buffer);
-		fz_cmm_free_profile(ctx, profile);
+		fz_cmm_drop_profile(ctx, profile);
 		fz_free(ctx, profile);
 	}
 	return cs;
@@ -3030,7 +3030,7 @@ free_cal(fz_context *ctx, fz_colorspace *cs)
 	if (cal_data->profile != NULL)
 	{
 		fz_drop_buffer(ctx, cal_data->profile->buffer);
-		fz_cmm_free_profile(ctx, cal_data->profile);
+		fz_cmm_drop_profile(ctx, cal_data->profile);
 		fz_free(ctx, cal_data->profile);
 	}
 	fz_free(ctx, cal_data);
