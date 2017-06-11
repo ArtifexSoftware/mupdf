@@ -273,8 +273,13 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, co
 	if (!uri)
 		return NULL;
 
-	link = fz_new_link(ctx, &bbox, doc, uri);
-	fz_free(ctx, uri);
+	fz_try(ctx)
+		link = fz_new_link(ctx, &bbox, doc, uri);
+	fz_always(ctx)
+		fz_free(ctx, uri);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
 	return link;
 }
 
