@@ -1579,62 +1579,63 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 	pdf_obj *resources;
 	fz_buffer *contents;
 
+	pdf_obj *ap_obj;
+	fz_rect trect = *rect;
+
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 	fz_invert_matrix(&inv_page_ctm, &page_ctm);
+
+	fz_transform_rect(&trect, &inv_page_ctm);
+
+	pdf_dict_put_drop(ctx, obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &trect));
+
+	/* See if there is a current normal appearance */
+	ap_obj = pdf_dict_getl(ctx, obj, PDF_NAME_AP, PDF_NAME_N, NULL);
+	if (!pdf_is_stream(ctx, ap_obj))
+		ap_obj = NULL;
+
+	if (ap_obj == NULL)
+	{
+		ap_obj = pdf_new_xobject(ctx, doc, &trect, &fz_identity);
+		pdf_dict_putl_drop(ctx, obj, ap_obj, PDF_NAME_AP, PDF_NAME_N, NULL);
+	}
+	else
+	{
+		pdf_xref_ensure_incremental_object(ctx, doc, pdf_to_num(ctx, ap_obj));
+		/* Update bounding box and matrix in reused xobject obj */
+		pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_BBox, pdf_new_rect(ctx, doc, &trect));
+		pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_Matrix, pdf_new_matrix(ctx, doc, &fz_identity));
+	}
+
+	resources = pdf_dict_get(ctx, ap_obj, PDF_NAME_Resources);
+
+	contents = fz_new_buffer(ctx, 0);
 
 	fz_var(dev);
 	fz_try(ctx)
 	{
-		pdf_obj *ap_obj;
-		fz_rect trect = *rect;
-
-		fz_transform_rect(&trect, &inv_page_ctm);
-
-		pdf_dict_put_drop(ctx, obj, PDF_NAME_Rect, pdf_new_rect(ctx, doc, &trect));
-
-		/* See if there is a current normal appearance */
-		ap_obj = pdf_dict_getl(ctx, obj, PDF_NAME_AP, PDF_NAME_N, NULL);
-		if (!pdf_is_stream(ctx, ap_obj))
-			ap_obj = NULL;
-
-		if (ap_obj == NULL)
-		{
-			ap_obj = pdf_new_xobject(ctx, doc, &trect, &fz_identity);
-			pdf_dict_putl_drop(ctx, obj, ap_obj, PDF_NAME_AP, PDF_NAME_N, NULL);
-		}
-		else
-		{
-			pdf_xref_ensure_incremental_object(ctx, doc, pdf_to_num(ctx, ap_obj));
-			/* Update bounding box and matrix in reused xobject obj */
-			pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_BBox, pdf_new_rect(ctx, doc, &trect));
-			pdf_dict_put_drop(ctx, ap_obj, PDF_NAME_Matrix, pdf_new_matrix(ctx, doc, &fz_identity));
-		}
-
-		resources = pdf_dict_get(ctx, ap_obj, PDF_NAME_Resources);
-
-		contents = fz_new_buffer(ctx, 0);
-
 		dev = pdf_new_pdf_device(ctx, doc, &fz_identity, &trect, resources, contents);
 		fz_run_display_list(ctx, disp_list, dev, &inv_page_ctm, &fz_infinite_rect, NULL);
 		fz_close_device(ctx, dev);
-
 		pdf_update_stream(ctx, doc, ap_obj, contents, 0);
-		fz_drop_buffer(ctx, contents);
-
-		/* Mark the appearance as changed - required for partial update */
-		xobj = pdf_load_xobject(ctx, doc, ap_obj);
-		if (xobj)
-		{
-			xobj->iteration++;
-			pdf_drop_xobject(ctx, xobj);
-		}
-
-		doc->dirty = 1;
 	}
 	fz_always(ctx)
+	{
 		fz_drop_device(ctx, dev);
+		fz_drop_buffer(ctx, contents);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
+
+	/* Mark the appearance as changed - required for partial update */
+	xobj = pdf_load_xobject(ctx, doc, ap_obj);
+	if (xobj)
+	{
+		xobj->iteration++;
+		pdf_drop_xobject(ctx, xobj);
+	}
+
+	doc->dirty = 1;
 }
 
 static fz_point *
