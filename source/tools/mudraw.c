@@ -202,7 +202,7 @@ typedef struct worker_t {
 } worker_t;
 
 static char *output = NULL;
-fz_output *out = NULL;
+static fz_output *out = NULL;
 static int output_pagenum = 0;
 static int output_append = 0;
 static int output_file_per_page = 0;
