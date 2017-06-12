@@ -197,14 +197,10 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
 	fz_try(ctx)
-	{
 		out = fz_new_output_with_file_ptr(ctx, file, 1);
-	}
 	fz_catch(ctx)
-	{
-		fclose(file);
 		fz_rethrow(ctx);
-	}
+
 	return out;
 }
 
