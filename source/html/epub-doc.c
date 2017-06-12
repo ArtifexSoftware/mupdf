@@ -286,20 +286,34 @@ static epub_chapter *
 epub_parse_chapter(fz_context *ctx, epub_document *doc, const char *path)
 {
 	fz_archive *zip = doc->zip;
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	epub_chapter *ch;
 	char base_uri[2048];
 
 	fz_dirname(base_uri, path, sizeof base_uri);
 
-	buf = fz_read_archive_entry(ctx, zip, path);
-
 	ch = fz_malloc_struct(ctx, epub_chapter);
-	ch->path = fz_strdup(ctx, path);
-	ch->html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx));
+	ch->path = NULL;
+	ch->html = NULL;
 	ch->next = NULL;
 
-	fz_drop_buffer(ctx, buf);
+	fz_var(buf);
+
+	fz_try(ctx)
+	{
+		buf = fz_read_archive_entry(ctx, zip, path);
+		ch->path = fz_strdup(ctx, path);
+		ch->html = fz_parse_html(ctx, doc->set, zip, base_uri, buf, fz_user_css(ctx));
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+	{
+		fz_drop_html(ctx, ch->html);
+		fz_free(ctx, ch->path);
+		fz_free(ctx, ch);
+		fz_rethrow(ctx);
+	}
 
 	return ch;
 }
