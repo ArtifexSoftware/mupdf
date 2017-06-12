@@ -15,6 +15,7 @@
 */
 typedef struct fz_pixmap_s fz_pixmap;
 
+
 /*
 	fz_pixmap_bbox: Return the bounding box for a pixmap.
 */

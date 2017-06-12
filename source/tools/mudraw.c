@@ -255,9 +255,9 @@ static int num_workers = 0;
 static worker_t *workers;
 
 #ifdef NO_ICC
-static int icc_workflow = 0;
+static fz_cmm_engine *icc_engine = NULL;
 #else
-static int icc_workflow = 1;
+static fz_cmm_engine *icc_engine = &fz_cmm_engine_lcms;
 #endif
 
 static const char *layer_config = NULL;
@@ -1408,7 +1408,7 @@ int mudraw_main(int argc, char **argv)
 		case 'D': uselist = 0; break;
 		case 'l': min_line_width = fz_atof(fz_optarg); break;
 		case 'i': ignore_errors = 1; break;
-		case 'N': icc_workflow = 0; break;
+		case 'N': icc_engine = NULL; break;
 
 		case 'T':
 #ifndef DISABLE_MUTHREADS
@@ -1471,7 +1471,7 @@ int mudraw_main(int argc, char **argv)
 	fz_set_text_aa_level(ctx, alphabits_text);
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
 	fz_set_graphics_min_line_width(ctx, min_line_width);
-	fz_set_icc_workflow(ctx, icc_workflow);
+	fz_set_icc_engine(ctx, icc_engine);
 
 #ifndef DISABLE_MUTHREADS
 	if (bgprint.active)

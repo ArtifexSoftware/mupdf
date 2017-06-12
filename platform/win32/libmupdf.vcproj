@@ -2304,7 +2304,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\mupdf\fitz\color-lcms.h"
+					RelativePath="..\..\include\mupdf\fitz\color-management.h"
 					>
 				</File>
 				<File

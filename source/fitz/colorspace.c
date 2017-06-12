@@ -1,6 +1,7 @@
 #include "mupdf/fitz.h"
 
 #include "colorspace-imp.h"
+#include "fitz-imp.h"
 
 #include <assert.h>
 #include <math.h>
@@ -12,7 +13,7 @@ const char *
 fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
 {
 #ifndef NO_ICC
-	if (!fz_icc_workflow(ctx))
+	if (fz_icc_engine(ctx) == NULL)
 		return *size = 0, NULL;
 	if (!strcmp(name, "gray-icc")) {
 		extern const int fz_resources_icc_gray_icc_size;
@@ -630,42 +631,39 @@ static fz_colorspace *fz_default_cmyk = &k_default_cmyk;
 static fz_colorspace *fz_default_lab = &k_default_lab;
 static fz_color_params *fz_default_color_params = &k_default_color_params;
 
-struct fz_cmm_context_s
+const fz_cmm_engine *fz_icc_engine(fz_context *ctx)
 {
-	void *cmm;
-};
-
-struct fz_colorspace_context_s
-{
-	int ctx_refs;
-	int icc;
-	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab, *oi;
-	fz_color_params *params;
-};
-
-#ifndef NO_ICC
-int fz_icc_workflow(fz_context *ctx)
-{
-	return ctx->colorspace && ctx->colorspace->icc;
+	return ctx->colorspace ? ctx->cmm : NULL;
 }
-#endif
 
-void fz_set_icc_workflow(fz_context *ctx, int icc)
+static void
+set_no_icc(fz_colorspace_context *cct)
+{
+	cct->gray = fz_default_gray;
+	cct->rgb = fz_default_rgb;
+	cct->bgr = fz_default_bgr;
+	cct->cmyk = fz_default_cmyk;
+	cct->lab = fz_default_lab;
+}
+
+void fz_set_icc_engine(fz_context *ctx, const fz_cmm_engine *engine)
 {
 	fz_colorspace_context *cct;
 
 	if (!ctx)
 		return;
 	cct = ctx->colorspace;
-	if (!cct || cct->icc == icc)
+	if (!cct)
 		return;
 
 #ifdef NO_ICC
-	if (icc)
+	if (engine)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "ICC workflow not supported in NO_ICC build");
-#endif
+#else
+	if (ctx->cmm == engine)
+		return;
 
-	cct->icc = icc;
+	fz_drop_cmm_context(ctx);
 	fz_drop_colorspace(ctx, cct->gray);
 	fz_drop_colorspace(ctx, cct->rgb);
 	fz_drop_colorspace(ctx, cct->bgr);
@@ -676,7 +674,9 @@ void fz_set_icc_workflow(fz_context *ctx, int icc)
 	cct->bgr = NULL;
 	cct->cmyk = NULL;
 	cct->lab = NULL;
-	if (icc)
+	ctx->cmm = engine;
+	fz_new_cmm_context(ctx);
+	if (engine)
 	{
 		cct->gray = fz_new_icc_colorspace(ctx, 1, 1, NULL, "gray-icc");
 		cct->rgb = fz_new_icc_colorspace(ctx, 1, 3, NULL, "rgb-icc");
@@ -685,13 +685,8 @@ void fz_set_icc_workflow(fz_context *ctx, int icc)
 		cct->lab = fz_new_icc_colorspace(ctx, 1, 3, NULL, "lab-icc");
 	}
 	else
-	{
-		cct->gray = fz_default_gray;
-		cct->rgb = fz_default_rgb;
-		cct->bgr = fz_default_bgr;
-		cct->cmyk = fz_default_cmyk;
-		cct->lab = fz_default_lab;
-	}
+		set_no_icc(cct);
+#endif
 }
 
 void fz_new_colorspace_context(fz_context *ctx)
@@ -699,24 +694,25 @@ void fz_new_colorspace_context(fz_context *ctx)
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
 	ctx->colorspace->ctx_refs = 1;
 	ctx->colorspace->params = fz_default_color_params;
-	ctx->colorspace->icc = -1;
+	set_no_icc(ctx->colorspace);
 #ifdef NO_ICC
-	fz_set_icc_workflow(ctx, 0);
+	fz_set_icc_engine(ctx, NULL);
 #else
-	fz_set_icc_workflow(ctx, 1);
+	fz_set_icc_engine(ctx, &fz_cmm_engine_lcms);
 #endif
 }
 
 void
 fz_new_cmm_context(fz_context *ctx)
 {
-	ctx->cmm = fz_cmm_new_ctx(ctx);
+	ctx->cmm_instance = fz_cmm_new_instance(ctx);
 }
 
 void
 fz_drop_cmm_context(fz_context *ctx)
 {
-	fz_cmm_drop_ctx(ctx->cmm);
+	fz_cmm_drop_instance(ctx);
+	ctx->cmm_instance = NULL;
 }
 
 fz_colorspace_context *
@@ -740,6 +736,7 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		fz_drop_colorspace(ctx, ctx->colorspace->lab);
 		fz_drop_colorspace(ctx, ctx->colorspace->oi);
 		fz_free(ctx, ctx->colorspace);
+		fz_drop_cmm_context(ctx);
 		ctx->colorspace = NULL;
 	}
 }
@@ -2426,7 +2423,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	{
 		for (i = 0; i < src_n; i++)
 			srcv_s[i] = srcv[i] * 65535;
-		fz_cmm_transform_color(ctx, link, 2, dstv_s, srcv_s);
+		fz_cmm_transform_color(ctx, link, dstv_s, srcv_s);
 		for (i = 0; i < dsts->n; i++)
 			dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
 	}
@@ -2902,19 +2899,10 @@ const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
 	return cs ? cs->name : "";
 }
 
-void *
-fz_get_cmm_ctx(fz_context *ctx)
+fz_cmm_instance *
+fz_cmm_get_instance(fz_context *ctx)
 {
-	if (ctx->colorspace != NULL)
-		return ctx->cmm;
-	return NULL;
-}
-
-void
-fz_set_cmm_ctx(fz_context *ctx, void *cmm_ctx)
-{
-	if (ctx->colorspace != NULL)
-		ctx->cmm = cmm_ctx;
+	return ctx->cmm_instance;
 }
 
 static void

@@ -18,13 +18,12 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 
 	fz_try(ctx)
 	{
-#ifndef NO_ICC
-		if (fz_icc_workflow(ctx))
+		if (fz_icc_engine(ctx))
 		{
 			buffer = pdf_load_stream(ctx, dict);
 			cs = fz_new_icc_colorspace(ctx, 0, n, buffer, NULL);
 		}
-#endif
+
 		/* Use alternate if ICC not invalid */
 		if (alt)
 		{
@@ -422,20 +421,16 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
 			{
-#ifndef NO_ICC
-				if (fz_icc_workflow(ctx))
+				if (fz_icc_engine(ctx))
 					return pdf_calgray(ctx, pdf_array_get(ctx, obj, 1));
 				else
-#endif
 					return fz_device_gray(ctx);
 			}
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
 			{
-#ifndef NO_ICC
-				if (fz_icc_workflow(ctx))
+				if (fz_icc_engine(ctx))
 					return pdf_calrgb(ctx, pdf_array_get(ctx, obj, 1));
 				else
-#endif
 					return fz_device_rgb(ctx);
 			}
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalCMYK))

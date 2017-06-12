@@ -146,12 +146,10 @@ fz_drop_context(fz_context *ctx)
 	fz_drop_style_context(ctx);
 	fz_drop_tuning_context(ctx);
 	fz_drop_colorspace_context(ctx);
+	fz_drop_cmm_context(ctx);
 	fz_drop_font_context(ctx);
 	fz_drop_id_context(ctx);
 	fz_drop_output_context(ctx);
-#ifndef NO_ICC
-	fz_drop_cmm_context(ctx);
-#endif
 
 	if (ctx->warn)
 	{
@@ -245,9 +243,7 @@ fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_context *locks,
 		fz_new_output_context(ctx);
 		fz_new_store_context(ctx, max_store);
 		fz_new_glyph_cache_context(ctx);
-#ifndef NO_ICC
 		fz_new_cmm_context(ctx);
-#endif
 		fz_new_colorspace_context(ctx);
 		fz_new_font_context(ctx);
 		fz_new_id_context(ctx);
@@ -297,9 +293,7 @@ fz_clone_context_internal(fz_context *ctx)
 	new_ctx->store = fz_keep_store_context(new_ctx);
 	new_ctx->glyph_cache = ctx->glyph_cache;
 	new_ctx->glyph_cache = fz_keep_glyph_cache(new_ctx);
-#ifndef NO_ICC
 	fz_new_cmm_context(new_ctx);
-#endif
 	new_ctx->colorspace = ctx->colorspace;
 	new_ctx->colorspace = fz_keep_colorspace_context(new_ctx);
 	new_ctx->font = ctx->font;

@@ -157,10 +157,6 @@ struct fz_cal_color_s {
 /*
 	icc methods
 */
-typedef void fz_cmm_context_t;
-
-fz_cmm_context_t *fz_get_cmm_ctx(fz_context *ctx);
-void fz_set_cmm_ctx(fz_context *ctx, fz_cmm_context_t *cmm_ctx);
 fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, const char *name);
 fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
 int fz_create_icc_from_cal(fz_context *ctx, unsigned char **buffer, fz_cal_color *cal);
@@ -183,15 +179,5 @@ fz_colorspace *fz_get_default_gray(fz_context *ctx, fz_page_default_cs *default_
 fz_colorspace *fz_get_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs);
 fz_colorspace *fz_get_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs);
 fz_colorspace *fz_get_outputintent(fz_context *ctx, fz_page_default_cs *default_cs);
-
-#ifdef NO_ICC
-static inline int fz_icc_workflow(fz_context *ctx)
-{
-	return 0;
-}
-#else
-int fz_icc_workflow(fz_context *ctx);
-#endif
-void fz_set_icc_workflow(fz_context *ctx, int icc);
 
 #endif
