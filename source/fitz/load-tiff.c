@@ -290,6 +290,7 @@ tiff_expand_colormap(fz_context *ctx, struct tiff *tiff)
 static unsigned
 tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned int rlen, unsigned char *wp, unsigned int wlen)
 {
+	fz_stream *encstm = NULL;
 	fz_stream *stm = NULL;
 	unsigned i, size;
 	unsigned char *reversed = NULL;
@@ -308,12 +309,13 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 		rp = reversed;
 	}
 
+	fz_var(encstm);
 	fz_var(stm);
 
 	fz_try(ctx)
 	{
 		/* each decoder will close this */
-		stm = fz_open_memory(ctx, rp, rlen);
+		encstm = fz_open_memory(ctx, rp, rlen);
 
 		/* switch on compression to create a filter */
 		/* feed each chunk (strip or tile) to the filter */
@@ -329,11 +331,12 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 		{
 		case 1:
 			/* stm already open and reading uncompressed data */
+			stm = encstm;
 			break;
 		case 2:
 		case 3:
 		case 4:
-			stm = fz_open_faxd(ctx, stm,
+			stm = fz_open_faxd(ctx, encstm,
 					tiff->compression == 4 ? -1 :
 					tiff->compression == 2 ? 0 :
 					tiff->g3opts & 1,
@@ -346,7 +349,7 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 			break;
 		case 5:
 			old_tiff = rp[0] == 0 && (rp[1] & 1);
-			stm = fz_open_lzwd(ctx, stm, old_tiff ? 0 : 1, 9, old_tiff ? 1 : 0, old_tiff);
+			stm = fz_open_lzwd(ctx, encstm, old_tiff ? 0 : 1, 9, old_tiff ? 1 : 0, old_tiff);
 			break;
 		case 6:
 			fz_warn(ctx, "deprecated JPEG in TIFF compression not fully supported");
@@ -355,33 +358,34 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 			if (tiff->jpegtables && (int)tiff->jpegtableslen > 0)
 				jpegtables = fz_open_memory(ctx, tiff->jpegtables, tiff->jpegtableslen);
 
-			stm = fz_open_dctd(ctx, stm,
+			stm = fz_open_dctd(ctx, encstm,
 					tiff->photometric == 2 || tiff->photometric == 3 ? 0 : -1,
 					0,
 					jpegtables);
 			break;
 		case 8:
 		case 32946:
-			stm = fz_open_flated(ctx, stm, 15);
+			stm = fz_open_flated(ctx, encstm, 15);
 			break;
 		case 32773:
-			stm = fz_open_rld(ctx, stm);
+			stm = fz_open_rld(ctx, encstm);
 			break;
 		case 34676:
 			if (tiff->photometric == 32845)
-				stm = fz_open_sgilog32(ctx, stm, tiff->imagewidth);
+				stm = fz_open_sgilog32(ctx, encstm, tiff->imagewidth);
 			else
-				stm = fz_open_sgilog16(ctx, stm, tiff->imagewidth);
+				stm = fz_open_sgilog16(ctx, encstm, tiff->imagewidth);
 			break;
 		case 34677:
-			stm = fz_open_sgilog24(ctx, stm, tiff->imagewidth);
+			stm = fz_open_sgilog24(ctx, encstm, tiff->imagewidth);
 			break;
 		case 32809:
 			if (tiff->bitspersample != 4)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid bits per pixel in thunder encoding");
-			stm = fz_open_thunder(ctx, stm, tiff->imagewidth);
+			stm = fz_open_thunder(ctx, encstm, tiff->imagewidth);
 			break;
 		default:
+			stm = encstm;
 			fz_throw(ctx, FZ_ERROR_GENERIC, "unknown TIFF compression: %d", tiff->compression);
 		}
 
