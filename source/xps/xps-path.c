@@ -968,75 +968,80 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 	if (clip_att || clip_tag)
 		xps_clip(ctx, doc, &local_ctm, dict, clip_att, clip_tag);
 
-	fill_rule = 0;
-	if (data_att)
-		path = xps_parse_abbreviated_geometry(ctx, doc, data_att, &fill_rule);
-	else if (data_tag)
+	fz_try(ctx)
 	{
-		path = xps_parse_path_geometry(ctx, doc, dict, data_tag, 0, &fill_rule);
-		if (stroke_att || stroke_tag)
-			stroke_path = xps_parse_path_geometry(ctx, doc, dict, data_tag, 1, &fill_rule);
-	}
-	if (!stroke_path)
-		stroke_path = path;
-
-	if (stroke_att || stroke_tag)
-	{
-		fz_bound_path(ctx, stroke_path, stroke, &local_ctm, &area);
-		if (stroke_path != path && (fill_att || fill_tag)) {
-			fz_rect bounds;
-			fz_bound_path(ctx, path, NULL, &local_ctm, &bounds);
-			fz_union_rect(&area, &bounds);
+		fill_rule = 0;
+		if (data_att)
+			path = xps_parse_abbreviated_geometry(ctx, doc, data_att, &fill_rule);
+		else if (data_tag)
+		{
+			path = xps_parse_path_geometry(ctx, doc, dict, data_tag, 0, &fill_rule);
+			// /home/sebras/src/jxr/fts_06xx.xps
+			if (stroke_att || stroke_tag)
+				stroke_path = xps_parse_path_geometry(ctx, doc, dict, data_tag, 1, &fill_rule);
 		}
+		if (!stroke_path)
+			stroke_path = path;
+
+		if (stroke_att || stroke_tag)
+		{
+			fz_bound_path(ctx, stroke_path, stroke, &local_ctm, &area);
+			if (stroke_path != path && (fill_att || fill_tag)) {
+				fz_rect bounds;
+				fz_bound_path(ctx, path, NULL, &local_ctm, &bounds);
+				fz_union_rect(&area, &bounds);
+			}
+		}
+		else
+			fz_bound_path(ctx, path, NULL, &local_ctm, &area);
+
+		xps_begin_opacity(ctx, doc, &local_ctm, &area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+
+		if (fill_att)
+		{
+			xps_parse_color(ctx, doc, base_uri, fill_att, &colorspace, samples);
+			if (fill_opacity_att)
+				samples[0] *= fz_atof(fill_opacity_att);
+			xps_set_color(ctx, doc, colorspace, samples);
+			fz_fill_path(ctx, dev, path, fill_rule == 0, &local_ctm,
+				doc->colorspace, doc->color, doc->alpha, NULL);
+		}
+
+		if (fill_tag)
+		{
+			fz_clip_path(ctx, dev, path, fill_rule == 0, &local_ctm, &area);
+			xps_parse_brush(ctx, doc, &local_ctm, &area, fill_uri, dict, fill_tag);
+			fz_pop_clip(ctx, dev);
+		}
+
+		if (stroke_att)
+		{
+			xps_parse_color(ctx, doc, base_uri, stroke_att, &colorspace, samples);
+			if (stroke_opacity_att)
+				samples[0] *= fz_atof(stroke_opacity_att);
+			xps_set_color(ctx, doc, colorspace, samples);
+			fz_stroke_path(ctx, dev, stroke_path, stroke, &local_ctm,
+				doc->colorspace, doc->color, doc->alpha, NULL);
+		}
+
+		if (stroke_tag)
+		{
+			fz_clip_stroke_path(ctx, dev, stroke_path, stroke, &local_ctm, &area);
+			xps_parse_brush(ctx, doc, &local_ctm, &area, stroke_uri, dict, stroke_tag);
+			fz_pop_clip(ctx, dev);
+		}
+
+		xps_end_opacity(ctx, doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
 	}
-	else
-		fz_bound_path(ctx, path, NULL, &local_ctm, &area);
-
-	xps_begin_opacity(ctx, doc, &local_ctm, &area, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-
-	if (fill_att)
+	fz_always(ctx)
 	{
-		xps_parse_color(ctx, doc, base_uri, fill_att, &colorspace, samples);
-		if (fill_opacity_att)
-			samples[0] *= fz_atof(fill_opacity_att);
-		xps_set_color(ctx, doc, colorspace, samples);
-
-		fz_fill_path(ctx, dev, path, fill_rule == 0, &local_ctm,
-			doc->colorspace, doc->color, doc->alpha, NULL);
+		if (stroke_path != path)
+			fz_drop_path(ctx, stroke_path);
+		fz_drop_path(ctx, path);
+		fz_drop_stroke_state(ctx, stroke);
 	}
-
-	if (fill_tag)
-	{
-		fz_clip_path(ctx, dev, path, fill_rule == 0, &local_ctm, &area);
-		xps_parse_brush(ctx, doc, &local_ctm, &area, fill_uri, dict, fill_tag);
-		fz_pop_clip(ctx, dev);
-	}
-
-	if (stroke_att)
-	{
-		xps_parse_color(ctx, doc, base_uri, stroke_att, &colorspace, samples);
-		if (stroke_opacity_att)
-			samples[0] *= fz_atof(stroke_opacity_att);
-		xps_set_color(ctx, doc, colorspace, samples);
-
-		fz_stroke_path(ctx, dev, stroke_path, stroke, &local_ctm,
-			doc->colorspace, doc->color, doc->alpha, NULL);
-	}
-
-	if (stroke_tag)
-	{
-		fz_clip_stroke_path(ctx, dev, stroke_path, stroke, &local_ctm, &area);
-		xps_parse_brush(ctx, doc, &local_ctm, &area, stroke_uri, dict, stroke_tag);
-		fz_pop_clip(ctx, dev);
-	}
-
-	xps_end_opacity(ctx, doc, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-
-	if (stroke_path != path)
-		fz_drop_path(ctx, stroke_path);
-	fz_drop_path(ctx, path);
-	path = NULL;
-	fz_drop_stroke_state(ctx, stroke);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	if (clip_att || clip_tag)
 		fz_pop_clip(ctx, dev);
