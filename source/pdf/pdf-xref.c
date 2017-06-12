@@ -2732,6 +2732,7 @@ pdf_document *pdf_create_document(fz_context *ctx)
 	{
 		pdf_drop_obj(ctx, trailer);
 		pdf_drop_obj(ctx, o);
+		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}
 	return doc;
