@@ -711,9 +711,12 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 		/* Not ever supposed to happen, but live with it. */
 		return;
 	len = pdf_array_len(ctx, ocg);
+
+	desc = fz_malloc_struct(ctx, pdf_ocg_descriptor);
+	desc->ocgs = NULL;
+
 	fz_try(ctx)
 	{
-		desc = fz_malloc_struct(ctx, pdf_ocg_descriptor);
 		desc->num_configs = num_configs;
 		desc->len = len;
 		desc->ocgs = fz_calloc(ctx, len, sizeof(*desc->ocgs));
@@ -728,8 +731,7 @@ pdf_read_ocg(fz_context *ctx, pdf_document *doc)
 	}
 	fz_catch(ctx)
 	{
-		if (desc)
-			fz_free(ctx, desc->ocgs);
+		fz_free(ctx, desc->ocgs);
 		fz_free(ctx, desc);
 		fz_rethrow(ctx);
 	}
