@@ -66,7 +66,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 				if (obj)
 				{
 					cs_alt = pdf_load_colorspace(ctx, obj);
-					if (fz_colorspace_is_icc(cs_alt) && cs_alt == fz_device_lab(ctx))
+					if (fz_colorspace_is_icc(ctx, cs_alt) && cs_alt == fz_device_lab(ctx))
 						cs->clamp = cs_alt->clamp;
 					fz_drop_colorspace(ctx, cs_alt);
 				}
@@ -176,7 +176,7 @@ load_separation(fz_context *ctx, pdf_obj *array)
 		sep->tint = tint;
 
 		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 0, n, 1,
-			fz_colorspace_is_icc(fz_device_rgb(ctx)) ? separation_to_alt : separation_to_rgb, NULL, base_separation, NULL, free_separation, sep,
+			fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? separation_to_alt : separation_to_rgb, NULL, base_separation, NULL, free_separation, sep,
 			sizeof(struct separation) + (base ? base->size : 0) + pdf_function_size(ctx, tint));
 	}
 	fz_catch(ctx)

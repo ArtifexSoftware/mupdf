@@ -219,7 +219,7 @@ fz_drop_icclink(fz_context *ctx, fz_icclink *link)
 	fz_drop_storable(ctx, &link->storable);
 }
 
-static int fz_colorspace_is_pdf_cal(const fz_colorspace *cs);
+static int fz_colorspace_is_pdf_cal(fz_context *ctx, const fz_colorspace *cs);
 
 static fz_iccprofile *
 get_base_icc(fz_context *ctx, fz_colorspace *cs)
@@ -229,9 +229,9 @@ get_base_icc(fz_context *ctx, fz_colorspace *cs)
 		fz_colorspace *base = cs->get_base(cs);
 
 		if (base)
-			if (fz_colorspace_is_icc(base))
+			if (fz_colorspace_is_icc(ctx, base))
 				return base->data;
-			else if (fz_colorspace_is_pdf_cal(base))
+			else if (fz_colorspace_is_pdf_cal(ctx, base))
 			{
 				fz_cal_colorspace *cal;
 				fz_iccprofile *cal_icc;
@@ -339,9 +339,9 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 	if (prf != NULL)
 		prf_icc = prf->data;
 
-	if (fz_colorspace_is_icc(src))
+	if (fz_colorspace_is_icc(ctx, src))
 		src_icc = src->data;
-	else if (fz_colorspace_is_pdf_cal(src))
+	else if (fz_colorspace_is_pdf_cal(ctx, src))
 	{
 		fz_cal_colorspace *cal;
 
@@ -604,12 +604,12 @@ clamp_lab(const fz_colorspace *cs, const float *src, float *dst)
 		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
 }
 
-static int fz_colorspace_is_lab(const fz_colorspace *cs)
+static int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->to_ccs == lab_to_rgb;
 }
 
-static int fz_colorspace_is_lab_icc(const fz_colorspace *cs);
+static int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
 
 int
 fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
@@ -1998,7 +1998,7 @@ get_icc_base_space(fz_context *ctx, fz_colorspace *srcs)
 	if (base_cs == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Final color space should be icc or pdf-cal or lab");
 
-	if (fz_colorspace_is_icc(base_cs) || fz_colorspace_is_pdf_cal(base_cs) || fz_colorspace_is_lab(base_cs))
+	if (fz_colorspace_is_icc(ctx, base_cs) || fz_colorspace_is_pdf_cal(ctx, base_cs) || fz_colorspace_is_lab(ctx, base_cs))
 		return base_cs;
 	else
 		return get_icc_base_space(ctx, base_cs);
@@ -2012,7 +2012,7 @@ convert_to_icc_base(fz_context *ctx, fz_colorspace *srcs, float *src_f, float *d
 	float temp_f[FZ_MAX_COLORS];
 	fz_colorspace *base_cs = srcs->get_base(srcs);
 
-	if (fz_colorspace_is_icc(base_cs) || fz_colorspace_is_pdf_cal(base_cs) || fz_colorspace_is_lab(base_cs))
+	if (fz_colorspace_is_icc(ctx, base_cs) || fz_colorspace_is_pdf_cal(ctx, base_cs) || fz_colorspace_is_lab(ctx, base_cs))
 		srcs->to_ccs(ctx, srcs, src_f, des_f);
 	else
 	{
@@ -2121,7 +2121,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 	}
 
 	/* Special case for Lab colorspace (scaling of components to float) */
-	if ((fz_colorspace_is_lab(ss) || fz_colorspace_is_lab_icc(ss)) && srcn == 3)
+	if ((fz_colorspace_is_lab(ctx, ss) || fz_colorspace_is_lab_icc(ctx, ss)) && srcn == 3)
 	{
 		fz_color_converter cc;
 
@@ -2326,15 +2326,15 @@ static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 /* Used for testing all color managed source color spaces.  If it is icc, cal or
  * has a base space that is managed */
 static fz_colorspace *
-fz_source_colorspace_cm(fz_colorspace *cs)
+fz_source_colorspace_cm(fz_context *ctx, fz_colorspace *cs)
 {
 	while (cs)
 	{
-		if (fz_colorspace_is_icc(cs))
+		if (fz_colorspace_is_icc(ctx, cs))
 			return cs;
-		if (fz_colorspace_is_pdf_cal(cs))
+		if (fz_colorspace_is_pdf_cal(ctx, cs))
 			return cs;
-		cs = fz_colorspace_base(cs);
+		cs = fz_colorspace_base(ctx, cs);
 	}
 	return NULL;
 }
@@ -2378,8 +2378,8 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 
 	else
 	{
-		fz_colorspace *ss_base = fz_source_colorspace_cm(ss);
-		if (ss_base != NULL && fz_colorspace_is_icc(ds))
+		fz_colorspace *ss_base = fz_source_colorspace_cm(ctx, ss);
+		if (ss_base != NULL && fz_colorspace_is_icc(ctx, ds))
 		{
 			if (ss_base == ss)
 				return fz_icc_conv_pixmap;
@@ -2439,7 +2439,7 @@ icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const 
 		srcv = src_map;
 		src_map = (src_map == local_src_map ? local_src_map2 : local_src_map);
 	}
-	while (!fz_colorspace_is_icc(srcs) && !fz_colorspace_is_pdf_cal(srcs));
+	while (!fz_colorspace_is_icc(ctx, srcs) && !fz_colorspace_is_pdf_cal(ctx, srcs));
 
 	icc_conv_color(ctx, cc, dstv, srcv);
 }
@@ -2626,8 +2626,8 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 	}
 	else
 	{
-		fz_colorspace *ss_base = fz_source_colorspace_cm(ss);
-		if (ss_base != NULL && fz_colorspace_is_icc(ds))
+		fz_colorspace *ss_base = fz_source_colorspace_cm(ctx, ss);
+		if (ss_base != NULL && fz_colorspace_is_icc(ctx, ds))
 		{
 			if (ss_base == ss)
 				cc->convert = icc_conv_color;
@@ -2715,7 +2715,7 @@ clamp_indexed(const fz_colorspace *cs, const float *in, float *out)
 	*out = fz_clamp(*in, 0, idx->high) / 255.0; /* To do, avoid 255 divide */
 }
 
-int fz_colorspace_is_indexed(const fz_colorspace *cs)
+int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->clamp == clamp_indexed;
 }
@@ -2732,7 +2732,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 	idx->high = high;
 
 	fz_try(ctx)
-		cs = fz_new_colorspace(ctx, "Indexed", 0, 1, 0, fz_colorspace_is_icc(fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 0, 1, 0, fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	fz_catch(ctx)
 	{
 		fz_free(ctx, idx);
@@ -2875,7 +2875,7 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 	fz_free(ctx, cc);
 }
 
-fz_colorspace *fz_colorspace_base(const fz_colorspace *cs)
+fz_colorspace *fz_colorspace_base(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->get_base ? cs->get_base(cs) : NULL;
 }
@@ -2929,12 +2929,12 @@ clamp_default_icc(const fz_colorspace *cs, const float *src, float *dst)
 		dst[i] = fz_clamp(src[i], 0, 1);
 }
 
-int fz_colorspace_is_icc(const fz_colorspace *cs)
+int fz_colorspace_is_icc(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->free_data == free_icc;
 }
 
-static int fz_colorspace_is_lab_icc(const fz_colorspace *cs)
+static int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->clamp == clamp_lab_icc;
 }
@@ -2993,7 +2993,7 @@ fz_new_icc_data_from_icc_colorspace(fz_context *ctx, fz_colorspace *cs, int *siz
 	fz_iccprofile *profile;
 	unsigned char *data;
 
-	if (cs == NULL || !fz_colorspace_is_icc(cs))
+	if (cs == NULL || !fz_colorspace_is_icc(ctx, cs))
 		return NULL;
 	profile = cs->data;
 	if (profile == NULL)
@@ -3015,7 +3015,7 @@ free_cal(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, cal_data);
 }
 
-static int fz_colorspace_is_pdf_cal(const fz_colorspace *cs)
+static int fz_colorspace_is_pdf_cal(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->free_data == free_cal;
 }
