@@ -665,13 +665,14 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	opj_stream_t *stream;
 	unsigned char *p;
 	OPJ_CODEC_FORMAT format;
-	int i, a, n, w, h, depth, sgnd;
+	int a, n, w, h, depth, sgnd;
 	int x, y, k, v, stride;
 	stream_block sb;
 	unsigned int max_w, max_h;
 	int sub_w[FZ_MAX_COLORS];
 	int sub_h[FZ_MAX_COLORS];
 	int upsample_required = 0;
+	OPJ_UINT32 i;
 
 	fz_var(img);
 
