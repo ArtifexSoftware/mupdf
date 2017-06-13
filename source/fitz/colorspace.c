@@ -734,19 +734,10 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		/* FIXME: bgr */
 		fz_drop_colorspace(ctx, ctx->colorspace->cmyk);
 		fz_drop_colorspace(ctx, ctx->colorspace->lab);
-		fz_drop_colorspace(ctx, ctx->colorspace->oi);
 		fz_free(ctx, ctx->colorspace);
 		fz_drop_cmm_context(ctx);
 		ctx->colorspace = NULL;
 	}
-}
-
-/* Use output intent if it is available */
-void
-fz_set_oi(fz_context *ctx, fz_colorspace *oi)
-{
-	fz_drop_colorspace(ctx, ctx->colorspace->oi);
-	ctx->colorspace->oi = fz_keep_colorspace(ctx, oi);
 }
 
 fz_colorspace *

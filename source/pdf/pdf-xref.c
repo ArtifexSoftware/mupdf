@@ -1478,7 +1478,6 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 
 #ifndef NOICC
 	doc->oi = pdf_load_oi(ctx, doc);
-	fz_set_oi(ctx, doc->oi);
 #endif
 }
 

@@ -64,11 +64,6 @@ typedef struct fz_page_default_cs_s fz_page_default_cs;
 int fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *pix);
 
 /*
-fz_device_gray: Get colorspace representing device specific gray.
-*/
-void fz_set_oi(fz_context *ctx, fz_colorspace *cs);
-
-/*
 	fz_device_gray: Get colorspace representing device specific gray.
 */
 fz_colorspace *fz_device_gray(fz_context *ctx);

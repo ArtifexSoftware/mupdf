@@ -52,7 +52,7 @@ struct fz_page_default_cs_s
 struct fz_colorspace_context_s
 {
 	int ctx_refs;
-	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab, *oi;
+	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;
 	fz_color_params *params;
 };
 
