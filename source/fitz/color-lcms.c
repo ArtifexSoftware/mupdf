@@ -69,6 +69,40 @@ fz_lcms_num_devcomps(cmsContext cmm_ctx, fz_iccprofile *profile)
 	return cmsChannelsOf(cmm_ctx, cmsGetColorSpace(cmm_ctx, profile->cmm_handle));
 }
 
+static void
+fz_lcms_premultiply_row(fz_context *ctx, int n, int w, unsigned char *s)
+{
+	unsigned char a;
+	int k;
+	int n1 = n-1;
+
+	for (; w > 0; w--)
+	{
+		a = s[n1];
+		for (k = 0; k < n1; k++)
+			s[k] = fz_mul255(s[k], a);
+		s += n;
+	}
+}
+
+static void
+fz_unmultiply_row(fz_context *ctx, int n, int w, unsigned char *s, const unsigned char *in)
+{
+	int a, inva;
+	int k;
+	int n1 = n-1;
+
+	for (; w > 0; w--)
+	{
+		a = in[n1];
+		inva = a ? 255 * 256 / a : 0;
+		for (k = 0; k < n1; k++)
+			s[k] = (in[k] * inva) >> 8;
+		s += n;
+		in += n;
+	}
+}
+
 /* Transform pixmap */
 void
 fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src)
@@ -77,24 +111,49 @@ fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap 
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link->cmm_handle;
 	fz_context *ctx = (fz_context *)cmsGetContextUserData(cmm_ctx);
 	int cmm_num_src, cmm_num_des;
-	unsigned char *inputpos, *outputpos;
-	int k;
+	unsigned char *inputpos, *outputpos, *buffer;
+	int ss = src->stride;
+	int ds = dst->stride;
+	int sw = src->w;
+	int dw = dst->w;
+	int sn = src->n;
+	int dn = dst->n;
+	int sa = src->alpha;
+	int da = dst->alpha;
+	int h = src->h;
 	DEBUG_LCMS_MEM(("@@@@@@@ Transform Pixmap Start:: mupdf ctx = %p lcms ctx = %p link = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)link->cmm_handle));
 
 	/* check the channels. */
 	cmm_num_src = T_CHANNELS(cmsGetTransformInputFormat(cmm_ctx, hTransform));
 	cmm_num_des = T_CHANNELS(cmsGetTransformOutputFormat(cmm_ctx, hTransform));
-	if ((cmm_num_src != (src->n - src->alpha)) || (cmm_num_des != (dst->n - dst->alpha)))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Mismatching color setup in cmm pixmap transformation: src: %d vs %d, dst: %d vs %d", cmm_num_src, src->n, cmm_num_des, dst->n);
+	if (cmm_num_src != sn - sa || cmm_num_des != dn - da || sa != da)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Mismatching color setup in cmm pixmap transformation: src: %d vs %d+%d, dst: %d vs %d+%d", cmm_num_src, sn-sa, sa, cmm_num_des, dn-da, da);
 
 	/* Transform */
 	inputpos = src->samples;
 	outputpos = dst->samples;
-	for (k = 0; k < src->h; k++)
+	if (src->alpha)
 	{
-		cmsDoTransform(cmm_ctx, hTransform, inputpos, outputpos, src->w);
-		inputpos += src->stride;
-		outputpos += dst->stride;
+		/* Allow for premultiplied alpha */
+		buffer = fz_malloc(ctx, ss);
+		for (; h > 0; h--)
+		{
+			fz_unmultiply_row(ctx, sn, sw, buffer, inputpos);
+			cmsDoTransform(cmm_ctx, hTransform, inputpos, outputpos, sw);
+			fz_lcms_premultiply_row(ctx, dn, dw, outputpos);
+			inputpos += ss;
+			outputpos += ds;
+		}
+		fz_free(ctx, buffer);
+	}
+	else
+	{
+		for (; h > 0; h--)
+		{
+			cmsDoTransform(cmm_ctx, hTransform, inputpos, outputpos, sw);
+			inputpos += ss;
+			outputpos += ds;
+		}
 	}
 	DEBUG_LCMS_MEM(("@@@@@@@ Transform Pixmap End:: mupdf ctx = %p lcms ctx = %p link = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)link->cmm_handle));
 }
