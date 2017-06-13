@@ -240,7 +240,7 @@ xps_draw_one_radial_gradient(fz_context *ctx, xps_document *doc, const fz_matrix
 	shade->u.l_or_r.coords[1][1] = y1;
 	shade->u.l_or_r.coords[1][2] = r1;
 
-	fz_fill_shade(ctx, dev, shade, ctm, fz_cs_params(ctx), 1);
+	fz_fill_shade(ctx, dev, shade, ctm, 1, fz_cs_params(ctx));
 
 	fz_drop_shade(ctx, shade);
 }
@@ -279,7 +279,7 @@ xps_draw_one_linear_gradient(fz_context *ctx, xps_document *doc, const fz_matrix
 	shade->u.l_or_r.coords[1][1] = y1;
 	shade->u.l_or_r.coords[1][2] = 0;
 
-	fz_fill_shade(ctx, dev, shade, ctm, fz_cs_params(ctx), doc->opacity[doc->opacity_top]);
+	fz_fill_shade(ctx, dev, shade, ctm, doc->opacity[doc->opacity_top], fz_cs_params(ctx));
 
 	fz_drop_shade(ctx, shade);
 }

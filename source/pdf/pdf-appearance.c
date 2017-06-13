@@ -1727,7 +1727,7 @@ void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 				if (stroke)
 				{
 					// assert(path)
-					fz_stroke_path(ctx, dev, path, stroke, &page_ctm, fz_device_rgb(ctx), NULL, color, alpha);
+					fz_stroke_path(ctx, dev, path, stroke, &page_ctm, fz_device_rgb(ctx), color, alpha, NULL);
 					fz_drop_stroke_state(ctx, stroke);
 					stroke = NULL;
 					fz_drop_path(ctx, path);
@@ -1745,7 +1745,7 @@ void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 
 		if (stroke)
 		{
-			fz_stroke_path(ctx, dev, path, stroke, &page_ctm, fz_device_rgb(ctx), NULL, color, alpha);
+			fz_stroke_path(ctx, dev, path, stroke, &page_ctm, fz_device_rgb(ctx), color, alpha, NULL);
 		}
 
 		fz_close_device(ctx, dev);
@@ -1860,7 +1860,7 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 		}
 
 		cs = pdf_to_color(ctx, doc, pdf_dict_get(ctx, annot->obj, PDF_NAME_C), color);
-		fz_stroke_path(ctx, dev, path, stroke, &page_ctm, cs, NULL, color, 1.0f);
+		fz_stroke_path(ctx, dev, path, stroke, &page_ctm, cs, color, 1.0f, NULL);
 
 		fz_expand_rect(&rect, width);
 		/*
@@ -2115,15 +2115,15 @@ void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_an
 		center_rect_within_rect(&bounds, &rect, &tm);
 		fz_concat(&tm, &tm, &page_ctm);
 		cs = fz_device_rgb(ctx);
-		fz_fill_path(ctx, dev, path, 0, &tm, cs, NULL, yellow, 1.0f);
-		fz_stroke_path(ctx, dev, path, stroke, &tm, cs, NULL, black, 1.0f);
+		fz_fill_path(ctx, dev, path, 0, &tm, cs, yellow, 1.0f, NULL);
+		fz_stroke_path(ctx, dev, path, stroke, &tm, cs, black, 1.0f, NULL);
 		fz_drop_path(ctx, path);
 		path = NULL;
 
 		path = fz_new_path(ctx);
 		draw_speech_bubble(ctx, path);
-		fz_fill_path(ctx, dev, path, 0, &tm, cs, NULL, white, 1.0f);
-		fz_stroke_path(ctx, dev, path, stroke, &tm, cs, NULL, black, 1.0f);
+		fz_fill_path(ctx, dev, path, 0, &tm, cs, white, 1.0f, NULL);
+		fz_stroke_path(ctx, dev, path, stroke, &tm, cs, black, 1.0f, NULL);
 
 		fz_close_device(ctx, dev);
 
@@ -2198,7 +2198,7 @@ void pdf_update_free_text_annot_appearance(fz_context *ctx, pdf_document *doc, p
 
 		dlist = fz_new_display_list(ctx, NULL);
 		dev = fz_new_list_device(ctx, dlist);
-		fz_fill_text(ctx, dev, text, &page_ctm, cs, NULL, font_rec.da_rec.col, 1.0f);
+		fz_fill_text(ctx, dev, text, &page_ctm, cs, font_rec.da_rec.col, 1.0f, NULL);
 		fz_close_device(ctx, dev);
 
 		fz_transform_rect(&rect, &page_ctm);
@@ -2384,7 +2384,7 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		center_rect_within_rect(&logo_bounds, &rect, &logo_tm);
 		fz_concat(&logo_tm, &logo_tm, &page_ctm);
 		cs = fz_device_rgb(ctx);
-		fz_fill_path(ctx, dev, path, 0, &logo_tm, cs, NULL, logo_color, 1.0f);
+		fz_fill_path(ctx, dev, path, 0, &logo_tm, cs, logo_color, 1.0f, NULL);
 		fz_drop_colorspace(ctx, cs);
 		cs = NULL;
 
@@ -2400,7 +2400,7 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		/* Display the name in the left-hand half of the form field */
 		rect.x1 = (rect.x0 + rect.x1)/2.0f;
 		text = fit_text(ctx, &font_rec, name, &rect);
-		fz_fill_text(ctx, dev, text, &page_ctm, cs, NULL, font_rec.da_rec.col, 1.0f);
+		fz_fill_text(ctx, dev, text, &page_ctm, cs, font_rec.da_rec.col, 1.0f, NULL);
 		fz_drop_text(ctx, text);
 		text = NULL;
 
@@ -2413,7 +2413,7 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		rect = annot_rect;
 		rect.x0 = (rect.x0 + rect.x1)/2.0f;
 		text = fit_text(ctx, &font_rec, fz_string_from_buffer(ctx, fzbuf), &rect);
-		fz_fill_text(ctx, dev, text, &page_ctm, cs, NULL, font_rec.da_rec.col, 1.0f);
+		fz_fill_text(ctx, dev, text, &page_ctm, cs, font_rec.da_rec.col, 1.0f, NULL);
 
 		fz_close_device(ctx, dev);
 

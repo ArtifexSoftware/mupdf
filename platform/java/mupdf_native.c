@@ -1966,12 +1966,13 @@ fz_java_device_ignore_text(fz_context *ctx, fz_device *dev, const fz_text *text,
 }
 
 static void
-fz_java_device_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shd, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
+fz_java_device_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shd, const fz_matrix *ctm, float alpha, const fz_color_params *cs_params)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
 	jobject jshd = to_Shade(ctx, env, shd);
 	jobject jctm = to_Matrix(ctx, env, ctm);
+	/* FIXME */
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillShade, jshd, jctm, alpha);
 	if ((*env)->ExceptionCheck(env))
@@ -1979,12 +1980,13 @@ fz_java_device_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shd, const 
 }
 
 static void
-fz_java_device_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, fz_color_params *cs_params, float alpha)
+fz_java_device_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, float alpha, const fz_color_params *cs_params)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
 	jobject jimg = to_Image(ctx, env, img);
 	jobject jctm = to_Matrix(ctx, env, ctm);
+	/* FIXME */
 
 	(*env)->CallVoidMethod(env, jdev->self, mid_Device_fillImage, jimg, jctm, alpha);
 	if ((*env)->ExceptionCheck(env))

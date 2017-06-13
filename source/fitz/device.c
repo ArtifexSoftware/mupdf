@@ -110,22 +110,22 @@ pop_clip_stack(fz_context *ctx, fz_device *dev)
 
 void
 fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_path)
-		dev->fill_path(ctx, dev, path, even_odd, ctm, colorspace, cs_params, color, alpha);
+		dev->fill_path(ctx, dev, path, even_odd, ctm, colorspace, color, alpha, cs_params);
 }
 
 void
 fz_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->stroke_path)
-		dev->stroke_path(ctx, dev, path, stroke, ctm, colorspace, cs_params, color, alpha);
+		dev->stroke_path(ctx, dev, path, stroke, ctm, colorspace, color, alpha, cs_params);
 }
 
 void
@@ -196,22 +196,22 @@ fz_clip_stroke_path(fz_context *ctx, fz_device *dev, const fz_path *path, const 
 
 void
 fz_fill_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_text)
-		dev->fill_text(ctx, dev, text, ctm, colorspace, cs_params, color, alpha);
+		dev->fill_text(ctx, dev, text, ctm, colorspace, color, alpha, cs_params);
 }
 
 void
 fz_stroke_text(fz_context *ctx, fz_device *dev, const fz_text *text, const fz_stroke_state *stroke, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->stroke_text)
-		dev->stroke_text(ctx, dev, text, stroke, ctm, colorspace, cs_params, color, alpha);
+		dev->stroke_text(ctx, dev, text, stroke, ctm, colorspace, color, alpha, cs_params);
 }
 
 void
@@ -306,31 +306,31 @@ fz_pop_clip(fz_context *ctx, fz_device *dev)
 }
 
 void
-fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, const fz_color_params *cs_params, float alpha)
+fz_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_shade)
-		dev->fill_shade(ctx, dev, shade, ctm, cs_params, alpha);
+		dev->fill_shade(ctx, dev, shade, ctm, alpha, cs_params);
 }
 
 void
-fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, const fz_color_params *cs_params, float alpha)
+fz_fill_image(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm, float alpha, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_image)
-		dev->fill_image(ctx, dev, image, ctm, cs_params, alpha);
+		dev->fill_image(ctx, dev, image, ctm, alpha, cs_params);
 }
 
 void
 fz_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_matrix *ctm,
-	fz_colorspace *colorspace, const fz_color_params *cs_params, const float *color, float alpha)
+	fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 		return;
 	if (dev->fill_image_mask)
-		dev->fill_image_mask(ctx, dev, image, ctm, colorspace, cs_params, color, alpha);
+		dev->fill_image_mask(ctx, dev, image, ctm, colorspace, color, alpha, cs_params);
 }
 
 void
@@ -367,7 +367,7 @@ fz_clip_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const fz_ma
 }
 
 void
-fz_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *area, int luminosity, fz_colorspace *colorspace, const fz_color_params *cs_params, const float *bc)
+fz_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *area, int luminosity, fz_colorspace *colorspace, const float *bc, const fz_color_params *cs_params)
 {
 	if (dev->error_depth)
 	{
@@ -380,7 +380,7 @@ fz_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *area, int luminosi
 		if (dev->hints & FZ_MAINTAIN_CONTAINER_STACK)
 			push_clip_stack(ctx, dev, area, fz_device_container_stack_in_mask);
 		if (dev->begin_mask)
-			dev->begin_mask(ctx, dev, area, luminosity, colorspace, cs_params, bc);
+			dev->begin_mask(ctx, dev, area, luminosity, colorspace, bc, cs_params);
 	}
 	fz_catch(ctx)
 	{
