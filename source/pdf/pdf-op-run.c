@@ -1426,7 +1426,7 @@ static void pdf_run_ri(fz_context *ctx, pdf_processor *proc, const char *intent)
 	gstate->stroke.color_params.ri = gstate->fill.color_params.ri;
 }
 
-static void pdf_run_OP(fz_context *ctx, pdf_processor *proc, int b)
+static void pdf_run_gs_OP(fz_context *ctx, pdf_processor *proc, int b)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
@@ -1434,14 +1434,14 @@ static void pdf_run_OP(fz_context *ctx, pdf_processor *proc, int b)
 	gstate->fill.color_params.op = b;
 }
 
-static void pdf_run_op(fz_context *ctx, pdf_processor *proc, int b)
+static void pdf_run_gs_op(fz_context *ctx, pdf_processor *proc, int b)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
 	gstate->fill.color_params.op = b;
 }
 
-static void pdf_run_OPM(fz_context *ctx, pdf_processor *proc, int i)
+static void pdf_run_gs_OPM(fz_context *ctx, pdf_processor *proc, int i)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
@@ -1449,7 +1449,7 @@ static void pdf_run_OPM(fz_context *ctx, pdf_processor *proc, int i)
 	gstate->fill.color_params.opm = i;
 }
 
-static void pdf_run_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj *obj)
+static void pdf_run_gs_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj *obj)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
@@ -2169,11 +2169,11 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 		proc->super.op_BX = pdf_run_BX;
 		proc->super.op_EX = pdf_run_EX;
 
-		/* virtual ones */
-		proc->super.op_OP = pdf_run_OP;
-		proc->super.op_op = pdf_run_op;
-		proc->super.op_OPM = pdf_run_OPM;
-		proc->super.op_UseBlackPtComp = pdf_run_UseBlackPtComp;
+		/* extgstate */
+		proc->super.op_gs_OP = pdf_run_gs_OP;
+		proc->super.op_gs_op = pdf_run_gs_op;
+		proc->super.op_gs_OPM = pdf_run_gs_OPM;
+		proc->super.op_gs_UseBlackPtComp = pdf_run_gs_UseBlackPtComp;
 
 		proc->super.op_END = pdf_run_END;
 	}

@@ -389,39 +389,39 @@ pdf_filter_ri(fz_context *ctx, pdf_processor *proc, const char *intent)
 }
 
 static void
-pdf_filter_OP(fz_context *ctx, pdf_processor *proc, int b)
+pdf_filter_gs_OP(fz_context *ctx, pdf_processor *proc, int b)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_OP)
-		p->chain->op_OP(ctx, p->chain, b);
+	if (p->chain->op_gs_OP)
+		p->chain->op_gs_OP(ctx, p->chain, b);
 }
 
 static void
-pdf_filter_op(fz_context *ctx, pdf_processor *proc, int b)
+pdf_filter_gs_op(fz_context *ctx, pdf_processor *proc, int b)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_op)
-		p->chain->op_op(ctx, p->chain, b);
+	if (p->chain->op_gs_op)
+		p->chain->op_gs_op(ctx, p->chain, b);
 }
 
 static void
-pdf_filter_OPM(fz_context *ctx, pdf_processor *proc, int i)
+pdf_filter_gs_OPM(fz_context *ctx, pdf_processor *proc, int i)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_OPM)
-		p->chain->op_OPM(ctx, p->chain, i);
+	if (p->chain->op_gs_OPM)
+		p->chain->op_gs_OPM(ctx, p->chain, i);
 }
 
 static void
-pdf_filter_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj *name)
+pdf_filter_gs_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj *name)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_UseBlackPtComp)
-		p->chain->op_UseBlackPtComp(ctx, p->chain, name);
+	if (p->chain->op_gs_UseBlackPtComp)
+		p->chain->op_gs_UseBlackPtComp(ctx, p->chain, name);
 }
 
 static void
@@ -1274,11 +1274,11 @@ pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_obj *old_rdb
 		proc->super.op_BX = pdf_filter_BX;
 		proc->super.op_EX = pdf_filter_EX;
 
-		/* virtual ones */
-		proc->super.op_OP = pdf_filter_OP;
-		proc->super.op_op = pdf_filter_op;
-		proc->super.op_OPM = pdf_filter_OPM;
-		proc->super.op_UseBlackPtComp = pdf_filter_UseBlackPtComp;
+		/* extgstate */
+		proc->super.op_gs_OP = pdf_filter_gs_OP;
+		proc->super.op_gs_op = pdf_filter_gs_op;
+		proc->super.op_gs_OPM = pdf_filter_gs_OPM;
+		proc->super.op_gs_UseBlackPtComp = pdf_filter_gs_UseBlackPtComp;
 
 		proc->super.op_END = pdf_filter_END;
 	}

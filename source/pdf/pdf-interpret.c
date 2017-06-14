@@ -182,26 +182,6 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 	if (pdf_is_name(ctx, obj) && proc->op_ri)
 		proc->op_ri(ctx, proc, pdf_to_name(ctx, obj));
 
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_OP);
-	if (pdf_is_name(ctx, obj) && proc->op_OP)
-		proc->op_OP(ctx, proc, pdf_to_bool(ctx, obj));
-
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_op);
-	if (pdf_is_name(ctx, obj) && proc->op_op)
-		proc->op_op(ctx, proc, pdf_to_bool(ctx, obj));
-
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_OPM);
-	if (pdf_is_name(ctx, obj) && proc->op_OPM)
-		proc->op_OPM(ctx, proc, pdf_to_int(ctx, obj));
-
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_UseBlackPtComp);
-	if (pdf_is_name(ctx, obj) && proc->op_OPM)
-		proc->op_UseBlackPtComp(ctx, proc, obj);
-
-	obj = pdf_dict_get(ctx, dict, PDF_NAME_RI);
-	if (pdf_is_name(ctx, obj) && proc->op_ri)
-		proc->op_ri(ctx, proc, pdf_to_name(ctx, obj));
-
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_FL);
 	if (pdf_is_number(ctx, obj) && proc->op_i)
 		proc->op_i(ctx, proc, pdf_to_real(ctx, obj));
@@ -219,6 +199,24 @@ pdf_process_extgstate(fz_context *ctx, pdf_processor *proc, pdf_csi *csi, pdf_ob
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 	}
+
+	/* overprint and color management */
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_OP);
+	if (pdf_is_name(ctx, obj) && proc->op_gs_OP)
+		proc->op_gs_OP(ctx, proc, pdf_to_bool(ctx, obj));
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_op);
+	if (pdf_is_name(ctx, obj) && proc->op_gs_op)
+		proc->op_gs_op(ctx, proc, pdf_to_bool(ctx, obj));
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_OPM);
+	if (pdf_is_name(ctx, obj) && proc->op_gs_OPM)
+		proc->op_gs_OPM(ctx, proc, pdf_to_int(ctx, obj));
+
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_UseBlackPtComp);
+	if (pdf_is_name(ctx, obj) && proc->op_gs_UseBlackPtComp)
+		proc->op_gs_UseBlackPtComp(ctx, proc, obj);
 
 	/* transfer functions */
 

@@ -65,22 +65,22 @@ pdf_out_ri(fz_context *ctx, pdf_processor *proc, const char *intent)
 }
 
 static void
-pdf_out_OP(fz_context *ctx, pdf_processor *proc, int b)
+pdf_out_gs_OP(fz_context *ctx, pdf_processor *proc, int b)
 {
 }
 
 static void
-pdf_out_op(fz_context *ctx, pdf_processor *proc, int b)
+pdf_out_gs_op(fz_context *ctx, pdf_processor *proc, int b)
 {
 }
 
 static void
-pdf_out_OPM(fz_context *ctx, pdf_processor *proc, int i)
+pdf_out_gs_OPM(fz_context *ctx, pdf_processor *proc, int i)
 {
 }
 
 static void
-pdf_out_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj *name)
+pdf_out_gs_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj *name)
 {
 }
 
@@ -912,11 +912,11 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
 		proc->super.op_BX = pdf_out_BX;
 		proc->super.op_EX = pdf_out_EX;
 
-		/* virtual ones */
-		proc->super.op_OP = pdf_out_OP;
-		proc->super.op_op = pdf_out_op;
-		proc->super.op_OPM = pdf_out_OPM;
-		proc->super.op_UseBlackPtComp = pdf_out_UseBlackPtComp;
+		/* extgstate */
+		proc->super.op_gs_OP = pdf_out_gs_OP;
+		proc->super.op_gs_op = pdf_out_gs_op;
+		proc->super.op_gs_OPM = pdf_out_gs_OPM;
+		proc->super.op_gs_UseBlackPtComp = pdf_out_gs_UseBlackPtComp;
 	}
 
 	proc->out = out;
