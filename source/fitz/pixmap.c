@@ -881,15 +881,15 @@ fz_pixmap_size(fz_context *ctx, fz_pixmap * pix)
 }
 
 fz_pixmap *
-fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorspace *prf, fz_page_default_cs *default_cs, const fz_color_params *cs_params, int keep_alpha)
+fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorspace *prf, fz_page_default_cs *default_cs, const fz_color_params *color_params, int keep_alpha)
 {
 	fz_pixmap *cvt;
 
 	if (!ds && !keep_alpha)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot both throw away and keep alpha");
 
-	if (cs_params == NULL)
-		cs_params = fz_cs_params(ctx);
+	if (color_params == NULL)
+		color_params = fz_cs_params(ctx);
 
 	cvt = fz_new_pixmap(ctx, ds, pix->w, pix->h, keep_alpha && pix->alpha);
 
@@ -902,7 +902,7 @@ fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorsp
 	fz_try(ctx)
 	{
 		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, ds, pix->colorspace);
-		pc(ctx, cvt, pix, prf, default_cs, cs_params);
+		pc(ctx, cvt, pix, prf, default_cs, color_params);
 	}
 	fz_catch(ctx)
 	{

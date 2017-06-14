@@ -291,7 +291,7 @@ fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out)
  * drop pix early in the case where we have to convert, potentially saving
  * us having to have 2 copies of the pixmap and a buffer open at once. */
 static fz_buffer *
-png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *cs_params, int drop)
+png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_params, int drop)
 {
 	fz_buffer *buf = NULL;
 	fz_output *out;
@@ -304,14 +304,14 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *cs_param
 	if (pix->w == 0 || pix->h == 0)
 		return NULL;
 
-	if (cs_params == NULL)
-		cs_params = fz_cs_params(ctx);
+	if (color_params == NULL)
+		color_params = fz_cs_params(ctx);
 
 	fz_try(ctx)
 	{
 		if (pix->colorspace && pix->colorspace != fz_device_gray(ctx) && pix->colorspace != fz_device_rgb(ctx))
 		{
-			pix2 = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, cs_params, 1);
+			pix2 = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, color_params, 1);
 			if (drop)
 				fz_drop_pixmap(ctx, pix);
 			pix = pix2;
@@ -334,20 +334,20 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *cs_param
 }
 
 fz_buffer *
-fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, const fz_color_params *cs_params)
+fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, const fz_color_params *color_params)
 {
 	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
 	fz_buffer *buf;
 
 	fz_try(ctx)
-		buf = png_from_pixmap(ctx, pix, cs_params, 1);
+		buf = png_from_pixmap(ctx, pix, color_params, 1);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 	return buf;
 }
 
 fz_buffer *
-fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pix, const fz_color_params *cs_params)
+fz_new_buffer_from_pixmap_as_png(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_params)
 {
-	return png_from_pixmap(ctx, pix, cs_params, 0);
+	return png_from_pixmap(ctx, pix, color_params, 0);
 }

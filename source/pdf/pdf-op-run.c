@@ -36,7 +36,7 @@ struct pdf_material_s
 	pdf_pattern *pattern;
 	fz_shade *shade;
 	int gstate_num;
-	fz_color_params cs_params;
+	fz_color_params color_params;
 	float alpha;
 	float v[FZ_MAX_COLORS];
 };
@@ -149,7 +149,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 
 	fz_try(ctx)
 	{
-		fz_begin_mask(ctx, pr->dev, &mask_bbox, gstate->luminosity, mask_colorspace, gstate->softmask_bc, &gstate->fill.cs_params);
+		fz_begin_mask(ctx, pr->dev, &mask_bbox, gstate->luminosity, mask_colorspace, gstate->softmask_bc, &gstate->fill.color_params);
 		pdf_run_xobject(ctx, pr, softmask, save->page_resources, &fz_identity);
 	}
 	fz_always(ctx)
@@ -225,7 +225,7 @@ pdf_show_shade(fz_context *ctx, pdf_run_processor *pr, fz_shade *shd)
 
 	/* FIXME: The gstate->ctm in the next line may be wrong; maybe
 	 * it should be the parent gstates ctm? */
-	fz_fill_shade(ctx, pr->dev, shd, &gstate->ctm, gstate->fill.alpha, &gstate->fill.cs_params);
+	fz_fill_shade(ctx, pr->dev, shd, &gstate->ctm, gstate->fill.alpha, &gstate->fill.color_params);
 
 	pdf_end_group(ctx, pr, &softmask);
 }
@@ -541,7 +541,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 			break;
 		case PDF_MAT_COLOR:
 			fz_fill_image_mask(ctx, pr->dev, image, &image_ctm,
-				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.cs_params);
+				gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.color_params);
 			break;
 		case PDF_MAT_PATTERN:
 			if (gstate->fill.pattern)
@@ -555,7 +555,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 			if (gstate->fill.shade)
 			{
 				fz_clip_image_mask(ctx, pr->dev, image, &image_ctm, &bbox);
-				fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.cs_params);
+				fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.color_params);
 				fz_pop_clip(ctx, pr->dev);
 			}
 			break;
@@ -563,7 +563,7 @@ pdf_show_image(fz_context *ctx, pdf_run_processor *pr, fz_image *image)
 	}
 	else
 	{
-		fz_fill_image(ctx, pr->dev, image, &image_ctm, gstate->fill.alpha, &gstate->fill.cs_params);
+		fz_fill_image(ctx, pr->dev, image, &image_ctm, gstate->fill.alpha, &gstate->fill.color_params);
 	}
 
 	if (image->mask)
@@ -647,7 +647,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				break;
 			case PDF_MAT_COLOR:
 				fz_fill_path(ctx, pr->dev, path, even_odd, &gstate->ctm,
-					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.cs_params);
+					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.color_params);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
@@ -662,7 +662,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				{
 					fz_clip_path(ctx, pr->dev, path, even_odd, &gstate->ctm, &bbox);
 					/* The cluster and page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm. */
-					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.cs_params);
+					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.color_params);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -677,7 +677,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				break;
 			case PDF_MAT_COLOR:
 				fz_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm,
-					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha, &gstate->stroke.cs_params);
+					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha, &gstate->stroke.color_params);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
@@ -691,7 +691,7 @@ pdf_show_path(fz_context *ctx, pdf_run_processor *pr, int doclose, int dofill, i
 				if (gstate->stroke.shade)
 				{
 					fz_clip_stroke_path(ctx, pr->dev, path, gstate->stroke_state, &gstate->ctm, &bbox);
-					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha, &gstate->stroke.cs_params);
+					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha, &gstate->stroke.color_params);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -795,7 +795,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				break;
 			case PDF_MAT_COLOR:
 				fz_fill_text(ctx, pr->dev, text, &gstate->ctm,
-					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.cs_params);
+					gstate->fill.colorspace, gstate->fill.v, gstate->fill.alpha, &gstate->fill.color_params);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->fill.pattern)
@@ -810,7 +810,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				{
 					fz_clip_text(ctx, pr->dev, text, &gstate->ctm, &tb);
 					/* Page 2 of patterns.pdf shows that fz_fill_shade should NOT be called with gstate->ctm */
-					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.cs_params);
+					fz_fill_shade(ctx, pr->dev, gstate->fill.shade, &pr->gstate[gstate->fill.gstate_num].ctm, gstate->fill.alpha, &gstate->fill.color_params);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -825,7 +825,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				break;
 			case PDF_MAT_COLOR:
 				fz_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm,
-					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha, &gstate->stroke.cs_params);
+					gstate->stroke.colorspace, gstate->stroke.v, gstate->stroke.alpha, &gstate->stroke.color_params);
 				break;
 			case PDF_MAT_PATTERN:
 				if (gstate->stroke.pattern)
@@ -839,7 +839,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 				if (gstate->stroke.shade)
 				{
 					fz_clip_stroke_text(ctx, pr->dev, text, gstate->stroke_state, &gstate->ctm, &tb);
-					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha, &gstate->stroke.cs_params);
+					fz_fill_shade(ctx, pr->dev, gstate->stroke.shade, &pr->gstate[gstate->stroke.gstate_num].ctm, gstate->stroke.alpha, &gstate->stroke.color_params);
 					fz_pop_clip(ctx, pr->dev);
 				}
 				break;
@@ -1087,8 +1087,8 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->softmask_ctm = fz_identity;
 	gs->luminosity = 0;
 
-	fz_color_param_init(&gs->fill.cs_params);
-	fz_color_param_init(&gs->stroke.cs_params);
+	fz_color_param_init(&gs->fill.color_params);
+	fz_color_param_init(&gs->stroke.color_params);
 }
 
 static void
@@ -1422,31 +1422,31 @@ static void pdf_run_ri(fz_context *ctx, pdf_processor *proc, const char *intent)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
-	gstate->fill.cs_params.ri = fz_lookup_rendering_intent(intent);
-	gstate->stroke.cs_params.ri = gstate->fill.cs_params.ri;
+	gstate->fill.color_params.ri = fz_lookup_rendering_intent(intent);
+	gstate->stroke.color_params.ri = gstate->fill.color_params.ri;
 }
 
 static void pdf_run_OP(fz_context *ctx, pdf_processor *proc, int b)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
-	gstate->stroke.cs_params.op = b;
-	gstate->fill.cs_params.op = b;
+	gstate->stroke.color_params.op = b;
+	gstate->fill.color_params.op = b;
 }
 
 static void pdf_run_op(fz_context *ctx, pdf_processor *proc, int b)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
-	gstate->fill.cs_params.op = b;
+	gstate->fill.color_params.op = b;
 }
 
 static void pdf_run_OPM(fz_context *ctx, pdf_processor *proc, int i)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pdf_flush_text(ctx, pr);
-	gstate->stroke.cs_params.opm = i;
-	gstate->fill.cs_params.opm = i;
+	gstate->stroke.color_params.opm = i;
+	gstate->fill.color_params.opm = i;
 }
 
 static void pdf_run_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj *obj)
@@ -1456,8 +1456,8 @@ static void pdf_run_UseBlackPtComp(fz_context *ctx, pdf_processor *proc, pdf_obj
 	int on = pdf_name_eq(ctx, obj, PDF_NAME_ON);
 	/* The spec says that "ON" means on, "OFF" means "Off", and
 	 * "Default" or anything else means "Meh, do what you want." */
-	gstate->stroke.cs_params.bp = on;
-	gstate->fill.cs_params.bp = on;
+	gstate->stroke.color_params.bp = on;
+	gstate->fill.color_params.bp = on;
 }
 
 static void pdf_run_i(fz_context *ctx, pdf_processor *proc, float flatness)
