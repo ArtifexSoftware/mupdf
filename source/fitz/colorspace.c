@@ -3114,7 +3114,7 @@ fz_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs)
 	if (default_cs)
 		return default_cs->gray;
 	else
-		return NULL;
+		return fz_device_gray(ctx);
 }
 
 fz_colorspace *
@@ -3123,7 +3123,7 @@ fz_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs)
 	if (default_cs)
 		return default_cs->rgb;
 	else
-		return NULL;
+		return fz_device_rgb(ctx);
 }
 
 fz_colorspace *
@@ -3132,7 +3132,7 @@ fz_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs)
 	if (default_cs)
 		return default_cs->cmyk;
 	else
-		return NULL;
+		return fz_device_cmyk(ctx);
 }
 
 fz_colorspace *
