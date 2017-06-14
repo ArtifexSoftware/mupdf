@@ -686,7 +686,7 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 
 	/* If we are doing color management check for internal default color spaces. */
 	/* Photoshop is notorious for doing this in its PDF creation. */
-	if (!fz_colorspace_is_icc(fz_device_rgb(ctx)))
+	if (!fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)))
 		return NULL;
 
 	default_cs = fz_new_default_colorspaces(ctx);
