@@ -624,12 +624,12 @@ static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "Device
 static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL};
 static fz_color_params k_default_color_params = { FZ_RI_RELATIVECOLORIMETRIC, 1, 0, 0 };
 
-static fz_colorspace *fz_default_gray = &k_default_gray;
-static fz_colorspace *fz_default_rgb = &k_default_rgb;
-static fz_colorspace *fz_default_bgr = &k_default_bgr;
-static fz_colorspace *fz_default_cmyk = &k_default_cmyk;
-static fz_colorspace *fz_default_lab = &k_default_lab;
-static fz_color_params *fz_default_color_params = &k_default_color_params;
+static fz_colorspace *default_gray = &k_default_gray;
+static fz_colorspace *default_rgb = &k_default_rgb;
+static fz_colorspace *default_bgr = &k_default_bgr;
+static fz_colorspace *default_cmyk = &k_default_cmyk;
+static fz_colorspace *default_lab = &k_default_lab;
+static fz_color_params *default_color_params = &k_default_color_params;
 
 const fz_cmm_engine *fz_icc_engine(fz_context *ctx)
 {
@@ -639,11 +639,11 @@ const fz_cmm_engine *fz_icc_engine(fz_context *ctx)
 static void
 set_no_icc(fz_colorspace_context *cct)
 {
-	cct->gray = fz_default_gray;
-	cct->rgb = fz_default_rgb;
-	cct->bgr = fz_default_bgr;
-	cct->cmyk = fz_default_cmyk;
-	cct->lab = fz_default_lab;
+	cct->gray = default_gray;
+	cct->rgb = default_rgb;
+	cct->bgr = default_bgr;
+	cct->cmyk = default_cmyk;
+	cct->lab = default_lab;
 }
 
 void fz_set_icc_engine(fz_context *ctx, const fz_cmm_engine *engine)
@@ -693,7 +693,7 @@ void fz_new_colorspace_context(fz_context *ctx)
 {
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
 	ctx->colorspace->ctx_refs = 1;
-	ctx->colorspace->params = fz_default_color_params;
+	ctx->colorspace->params = default_color_params;
 	set_no_icc(ctx->colorspace);
 #ifdef NO_ICC
 	fz_set_icc_engine(ctx, NULL);
@@ -2344,35 +2344,35 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 	if (ds == NULL)
 		return fast_any_to_alpha;
 
-	if (ss == fz_default_gray)
+	if (ss == default_gray)
 	{
-		if (ds == fz_default_rgb) return fast_gray_to_rgb;
-		else if (ds == fz_default_bgr) return fast_gray_to_rgb; /* bgr == rgb here */
-		else if (ds == fz_default_cmyk) return fast_gray_to_cmyk;
+		if (ds == default_rgb) return fast_gray_to_rgb;
+		else if (ds == default_bgr) return fast_gray_to_rgb; /* bgr == rgb here */
+		else if (ds == default_cmyk) return fast_gray_to_cmyk;
 		else return fz_std_conv_pixmap;
 	}
 
-	else if (ss == fz_default_rgb)
+	else if (ss == default_rgb)
 	{
-		if (ds == fz_default_gray) return fast_rgb_to_gray;
-		else if (ds == fz_default_bgr) return fast_rgb_to_bgr;
-		else if (ds == fz_default_cmyk) return fast_rgb_to_cmyk;
+		if (ds == default_gray) return fast_rgb_to_gray;
+		else if (ds == default_bgr) return fast_rgb_to_bgr;
+		else if (ds == default_cmyk) return fast_rgb_to_cmyk;
 		else return fz_std_conv_pixmap;
 	}
 
-	else if (ss == fz_default_bgr)
+	else if (ss == default_bgr)
 	{
-		if (ds == fz_default_gray) return fast_bgr_to_gray;
-		else if (ds == fz_default_rgb) return fast_rgb_to_bgr; /* bgr = rgb here */
-		else if (ds == fz_default_cmyk) return fast_bgr_to_cmyk;
+		if (ds == default_gray) return fast_bgr_to_gray;
+		else if (ds == default_rgb) return fast_rgb_to_bgr; /* bgr = rgb here */
+		else if (ds == default_cmyk) return fast_bgr_to_cmyk;
 		else return fz_std_conv_pixmap;
 	}
 
-	else if (ss == fz_default_cmyk)
+	else if (ss == default_cmyk)
 	{
-		if (ds == fz_default_gray) return fast_cmyk_to_gray;
-		else if (ds == fz_default_bgr) return fast_cmyk_to_bgr;
-		else if (ds == fz_default_rgb) return fast_cmyk_to_rgb;
+		if (ds == default_gray) return fast_cmyk_to_gray;
+		else if (ds == default_bgr) return fast_cmyk_to_bgr;
+		else if (ds == default_rgb) return fast_cmyk_to_rgb;
 		else return fz_std_conv_pixmap;
 	}
 
@@ -2579,47 +2579,47 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 	cc->ss = ss;
 	cc->is = is;
 	cc->link = NULL;
-	if (ss == fz_default_gray)
+	if (ss == default_gray)
 	{
-		if ((ds == fz_default_rgb) || (ds == fz_default_bgr))
+		if ((ds == default_rgb) || (ds == default_bgr))
 			cc->convert = g2rgb;
-		else if (ds == fz_default_cmyk)
+		else if (ds == default_cmyk)
 			cc->convert = g2cmyk;
 		else
 			cc->convert = std_conv_color;
 	}
 
-	else if (ss == fz_default_rgb)
+	else if (ss == default_rgb)
 	{
-		if (ds == fz_default_gray)
+		if (ds == default_gray)
 			cc->convert = rgb2g;
-		else if (ds == fz_default_bgr)
+		else if (ds == default_bgr)
 			cc->convert = rgb2bgr;
-		else if (ds == fz_default_cmyk)
+		else if (ds == default_cmyk)
 			cc->convert = rgb2cmyk;
 		else
 			cc->convert = std_conv_color;
 	}
 
-	else if (ss == fz_default_bgr)
+	else if (ss == default_bgr)
 	{
-		if (ds == fz_default_gray)
+		if (ds == default_gray)
 			cc->convert = bgr2g;
-		else if (ds == fz_default_rgb)
+		else if (ds == default_rgb)
 			cc->convert = rgb2bgr;
-		else if (ds == fz_default_cmyk)
+		else if (ds == default_cmyk)
 			cc->convert = bgr2cmyk;
 		else
 			cc->convert = std_conv_color;
 	}
 
-	else if (ss == fz_default_cmyk)
+	else if (ss == default_cmyk)
 	{
-		if (ds == fz_default_gray)
+		if (ds == default_gray)
 			cc->convert = cmyk2g;
-		else if (ds == fz_default_rgb)
+		else if (ds == default_rgb)
 			cc->convert = cmyk2rgb;
-		else if (ds == fz_default_bgr)
+		else if (ds == default_bgr)
 			cc->convert = cmyk2bgr;
 		else
 			cc->convert = std_conv_color;
