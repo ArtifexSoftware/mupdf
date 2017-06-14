@@ -69,7 +69,7 @@ fz_test_fill_path(fz_context *ctx, fz_device *dev_, const fz_path *path, int eve
 	if (dev->resolved == 0 && alpha != 0.0f)
 	{
 		if (color_params == NULL)
-			color_params = fz_cs_params(ctx);
+			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
 	}
 	if (dev->passthrough)
@@ -85,7 +85,7 @@ fz_test_stroke_path(fz_context *ctx, fz_device *dev_, const fz_path *path, const
 	if (dev->resolved == 0 && alpha != 0.0f)
 	{
 		if (color_params == NULL)
-			color_params = fz_cs_params(ctx);
+			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
 	}
 	if (dev->passthrough)
@@ -101,7 +101,7 @@ fz_test_fill_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const f
 	if (dev->resolved == 0 && alpha != 0.0f)
 	{
 		if (color_params == NULL)
-			color_params = fz_cs_params(ctx);
+			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
 	}
 	if (dev->passthrough)
@@ -117,7 +117,7 @@ fz_test_stroke_text(fz_context *ctx, fz_device *dev_, const fz_text *text, const
 	if (dev->resolved == 0 && alpha != 0.0f)
 	{
 		if (color_params == NULL)
-			color_params = fz_cs_params(ctx);
+			color_params = fz_default_color_params(ctx);
 		fz_test_color(ctx, dev, colorspace, color, color_params);
 	}
 	if (dev->passthrough)
@@ -147,7 +147,7 @@ fz_test_fill_shade(fz_context *ctx, fz_device *dev_, fz_shade *shade, const fz_m
 	fz_test_device *dev = (fz_test_device*)dev_;
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (dev->resolved == 0)
 	{
@@ -355,7 +355,7 @@ fz_test_fill_image_mask(fz_context *ctx, fz_device *dev_, fz_image *image, const
 	fz_test_device *dev = (fz_test_device*)dev_;
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (dev->resolved == 0)
 	{

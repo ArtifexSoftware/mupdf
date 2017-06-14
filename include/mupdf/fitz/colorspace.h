@@ -11,9 +11,9 @@ enum
 {
 	/* Same order as needed by lcms */
 	FZ_RI_PERCEPTUAL,
-	FZ_RI_RELATIVECOLORIMETRIC,
+	FZ_RI_RELATIVE_COLORIMETRIC,
 	FZ_RI_SATURATION,
-	FZ_RI_ABSOLUTECOLORIMETRIC,
+	FZ_RI_ABSOLUTE_COLORIMETRIC,
 };
 
 typedef struct fz_color_params_s fz_color_params;
@@ -54,7 +54,7 @@ typedef struct fz_icclink_s fz_icclink;
 /*
 	Used to communicate any document internal page specific default color spaces.
 */
-typedef struct fz_page_default_cs_s fz_page_default_cs;
+typedef struct fz_default_colorspaces_s fz_default_colorspaces;
 
 /*
 	fz_colorspace_is_subtractive: Return true if a colorspace is subtractive.
@@ -89,19 +89,19 @@ fz_colorspace *fz_device_cmyk(fz_context *ctx);
 fz_colorspace *fz_device_lab(fz_context *ctx);
 
 /*
-	fz_cs_params: Get default color params for general color conversion.
+	fz_default_color_params: Get default color params for general color conversion.
 */
-fz_color_params *fz_cs_params(fz_context *ctx);
+fz_color_params *fz_default_color_params(fz_context *ctx);
 
 typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, const float *src, float *dst);
 
 typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
 
-typedef fz_colorspace *(fz_colorspace_base_cs_fn)(const fz_colorspace *cs);
+typedef fz_colorspace *(fz_colorspace_base_fn)(const fz_colorspace *cs);
 
 typedef void (fz_colorspace_clamp_fn)(const fz_colorspace *cs, const float *src, float *dst);
 
-fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int is_static, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_cs_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
+fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int is_static, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
 fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
@@ -138,9 +138,9 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 
 /* Public to allow use in icc creation */
-typedef struct fz_cal_color_s fz_cal_color;
+typedef struct fz_cal_colorspace_s fz_cal_colorspace;
 
-struct fz_cal_color_s {
+struct fz_cal_colorspace_s {
 	float wp[3];
 	float bp[3];
 	float gamma[3];
@@ -154,25 +154,25 @@ struct fz_cal_color_s {
 */
 fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, const char *name);
 fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
-int fz_create_icc_from_cal(fz_context *ctx, unsigned char **buffer, fz_cal_color *cal);
-unsigned char *fz_get_icc_data(fz_context *ctx, fz_colorspace *cs, int *size);
+int fz_new_icc_data_from_cal_colorspace(fz_context *ctx, unsigned char **buffer, fz_cal_colorspace *cal);
+unsigned char *fz_new_icc_data_from_icc_colorspace(fz_context *ctx, fz_colorspace *cs, int *size);
 
-void fz_color_param_init(fz_color_params *color_params);
+void fz_init_color_params(fz_color_params *color_params);
 
 /* Default cs */
-fz_page_default_cs *fz_new_default_cs(fz_context *ctx);
-fz_page_default_cs* fz_keep_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
-void fz_drop_default_cs(fz_context *ctx, fz_page_default_cs *default_cs);
+fz_default_colorspaces *fz_new_default_colorspaces(fz_context *ctx);
+fz_default_colorspaces* fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
+void fz_drop_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
 
-/* Do we want to make fz_page_default_cs public and get rid of these? */
-void fz_set_default_gray(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
-void fz_set_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
-void fz_set_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
-void fz_set_default_oi(fz_context *ctx, fz_page_default_cs *default_cs, fz_colorspace *cs);
+/* Do we want to make fz_default_colorspaces public and get rid of these? */
+void fz_set_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
+void fz_set_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
+void fz_set_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
+void fz_set_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
 
-fz_colorspace *fz_get_default_gray(fz_context *ctx, fz_page_default_cs *default_cs);
-fz_colorspace *fz_get_default_rgb(fz_context *ctx, fz_page_default_cs *default_cs);
-fz_colorspace *fz_get_default_cmyk(fz_context *ctx, fz_page_default_cs *default_cs);
-fz_colorspace *fz_get_outputintent(fz_context *ctx, fz_page_default_cs *default_cs);
+fz_colorspace *fz_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs);
+fz_colorspace *fz_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs);
+fz_colorspace *fz_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs);
+fz_colorspace *fz_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs);
 
 #endif

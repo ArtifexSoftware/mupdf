@@ -37,9 +37,9 @@ fz_permission;
 typedef void (fz_document_drop_fn)(fz_context *ctx, fz_document *doc);
 
 /*
-	fz_document_oi_fn: Return output intent color space if it exists
+	fz_document_output_intent_fn: Return output intent color space if it exists
 */
-typedef fz_colorspace* (fz_document_oi_fn)(fz_context *ctx, fz_document *doc);
+typedef fz_colorspace* (fz_document_output_intent_fn)(fz_context *ctx, fz_document *doc);
 
 
 /*
@@ -232,7 +232,7 @@ struct fz_document_s
 {
 	int refs;
 	fz_document_drop_fn *drop_document;
-	fz_document_oi_fn *get_output_intent;
+	fz_document_output_intent_fn *get_output_intent;
 	fz_document_needs_password_fn *needs_password;
 	fz_document_authenticate_password_fn *authenticate_password;
 	fz_document_has_permission_fn *has_permission;

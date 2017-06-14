@@ -16,7 +16,7 @@ struct fz_colorspace_s
 	fz_colorspace_convert_fn *to_ccs;
 	fz_colorspace_convert_fn *from_ccs;
 	fz_colorspace_clamp_fn *clamp;
-	fz_colorspace_base_cs_fn *get_base;
+	fz_colorspace_base_fn *get_base;
 	fz_colorspace_destruct_fn *free_data;
 	void *data;
 };
@@ -40,7 +40,7 @@ struct fz_icclink_s
 	void *cmm_handle;
 };
 
-struct fz_page_default_cs_s
+struct fz_default_colorspaces_s
 {
 	int refs;
 	fz_colorspace *gray;

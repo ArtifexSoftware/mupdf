@@ -1471,7 +1471,7 @@ int mudraw_main(int argc, char **argv)
 	fz_set_text_aa_level(ctx, alphabits_text);
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
 	fz_set_graphics_min_line_width(ctx, min_line_width);
-	fz_set_icc_engine(ctx, icc_engine);
+	fz_set_cmm_engine(ctx, icc_engine);
 
 #ifndef DISABLE_MUTHREADS
 	if (bgprint.active)

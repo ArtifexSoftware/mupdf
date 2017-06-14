@@ -113,7 +113,7 @@ static void stack_change(fz_context *ctx, fz_draw_device *dev, char *s)
 static fz_colorspace*
 fz_proof_cs(fz_context *ctx, fz_device *devp)
 {
-	fz_colorspace *prf = fz_get_outputintent(ctx, devp->default_cs);
+	fz_colorspace *prf = fz_default_output_intent(ctx, devp->default_cs);
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
@@ -302,7 +302,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
-	fz_colorspace *colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+	fz_colorspace *colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -317,7 +317,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
@@ -361,7 +361,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
-	fz_colorspace *colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+	fz_colorspace *colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -380,7 +380,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (mlw > aa_level)
 		aa_level = mlw;
@@ -666,13 +666,13 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
-		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
@@ -764,13 +764,13 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
-		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
@@ -1111,7 +1111,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		return;
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
@@ -1140,7 +1140,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, color_params, prf, model, colorfv, fz_device_get_cs(ctx, devp, shade->colorspace), shade->background);
+			fz_convert_color(ctx, color_params, prf, model, colorfv, fz_default_colorspace(ctx, devp, shade->colorspace), shade->background);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}
@@ -1319,7 +1319,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	}
 
 	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
-	src_cs = fz_device_get_cs(ctx, devp, pixmap->colorspace);
+	src_cs = fz_default_colorspace(ctx, devp, pixmap->colorspace);
 
 	/* convert images with more components (cmyk->rgb) before scaling */
 	/* convert images with fewer components (gray->rgb) after scaling */
@@ -1411,10 +1411,10 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
-		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -1695,10 +1695,10 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 	fz_colorspace *colorspace = NULL;
 
 	if (colorspace_in)
-		colorspace = fz_device_get_cs(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	STACK_PUSHED("mask");
 	fz_transform_rect(&trect, &dev->transform);
@@ -2382,8 +2382,8 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 
 	dev->super.render_flags = fz_draw_render_flags;
 
-	dev->super.set_default_cs = fz_set_default_colorspace;
-	dev->super.set_outputintent = fz_set_default_oi;
+	dev->super.set_default_cs = fz_set_default_colorspaces;
+	dev->super.set_outputintent = fz_set_default_output_intent;
 
 	dev->transform = transform ? *transform : fz_identity;
 	dev->flags = 0;

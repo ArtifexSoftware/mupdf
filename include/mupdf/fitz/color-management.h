@@ -87,14 +87,14 @@ struct fz_cmm_engine_s {
 };
 
 /*
-	fz_icc_engine: Read details of the current color
+	fz_get_cmm_engine: Read details of the current color
 	management engine. If NULL, we are working without
 	color management.
 */
-const fz_cmm_engine *fz_icc_engine(fz_context *ctx);
+const fz_cmm_engine *fz_get_cmm_engine(fz_context *ctx);
 
 /*
-	fz_set_icc_engine: Set the color management engine to
+	fz_set_cmm_engine: Set the color management engine to
 	be used. This should only ever be called on the "base"
 	context before cloning it, and before opening any files.
 
@@ -107,7 +107,7 @@ const fz_cmm_engine *fz_icc_engine(fz_context *ctx);
 	different sets of fz_contexts should theoretically be
 	possible.
 */
-void fz_set_icc_engine(fz_context *ctx, const fz_cmm_engine *engine);
+void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine);
 
 /*
 	Currently we only provide a single color management

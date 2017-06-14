@@ -380,7 +380,7 @@ gsicc_create_compute_cam(float white_src[], float *cam)
 
 /* Create ICC profile from PDF calGray and calRGB definitions */
 int
-fz_create_icc_from_cal(fz_context *ctx, unsigned char **buff, fz_cal_color *cal)
+fz_new_icc_data_from_cal_colorspace(fz_context *ctx, unsigned char **buff, fz_cal_colorspace *cal)
 {
 	fz_icc_tag *tag_list;
 	icProfile iccprofile;

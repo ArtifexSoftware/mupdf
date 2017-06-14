@@ -124,7 +124,7 @@ png_write_icc(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
 	int profile_size, size;
-	unsigned char *data = fz_get_icc_data(ctx, cs, &profile_size);
+	unsigned char *data = fz_new_icc_data_from_icc_colorspace(ctx, cs, &profile_size);
 	unsigned char *chunk, *pos, *cdata;
 	size_t bound;
 	uLongf csize;
@@ -305,7 +305,7 @@ png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_pa
 		return NULL;
 
 	if (color_params == NULL)
-		color_params = fz_cs_params(ctx);
+		color_params = fz_default_color_params(ctx);
 
 	fz_try(ctx)
 	{

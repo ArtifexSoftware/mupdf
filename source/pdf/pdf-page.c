@@ -637,7 +637,7 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
 	pdf_document *doc = page->doc;
 
-	fz_drop_default_cs(ctx, page->default_cs);
+	fz_drop_default_colorspaces(ctx, page->default_cs);
 	fz_drop_link(ctx, page->links);
 	pdf_drop_annots(ctx, page->annots);
 
@@ -687,7 +687,7 @@ pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
 	obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
 	if (obj)
 	{
-		page->default_cs = fz_new_default_cs(ctx);
+		page->default_cs = fz_new_default_colorspaces(ctx);
 
 		/* The spec says to ignore any colors we can't understand */
 		fz_try(ctx)
@@ -751,8 +751,8 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 			if (doc->oi)
 			{
 				if (!page->default_cs)
-					page->default_cs = fz_new_default_cs(ctx);
-				fz_set_default_oi(ctx, page->default_cs, doc->oi);
+					page->default_cs = fz_new_default_colorspaces(ctx);
+				fz_set_default_output_intent(ctx, page->default_cs, doc->oi);
 			}
 		}
 		fz_catch(ctx)

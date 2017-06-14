@@ -68,7 +68,7 @@ xps_parse_gradient_stops(fz_context *ctx, xps_document *doc, char *base_uri, fz_
 
 				xps_parse_color(ctx, doc, base_uri, color, &colorspace, sample);
 
-				fz_convert_color(ctx, fz_cs_params(ctx), NULL, fz_device_rgb(ctx), rgb, colorspace, sample + 1);
+				fz_convert_color(ctx, fz_default_color_params(ctx), NULL, fz_device_rgb(ctx), rgb, colorspace, sample + 1);
 
 				stops[count].r = rgb[0];
 				stops[count].g = rgb[1];
@@ -240,7 +240,7 @@ xps_draw_one_radial_gradient(fz_context *ctx, xps_document *doc, const fz_matrix
 	shade->u.l_or_r.coords[1][1] = y1;
 	shade->u.l_or_r.coords[1][2] = r1;
 
-	fz_fill_shade(ctx, dev, shade, ctm, 1, fz_cs_params(ctx));
+	fz_fill_shade(ctx, dev, shade, ctm, 1, fz_default_color_params(ctx));
 
 	fz_drop_shade(ctx, shade);
 }
@@ -279,7 +279,7 @@ xps_draw_one_linear_gradient(fz_context *ctx, xps_document *doc, const fz_matrix
 	shade->u.l_or_r.coords[1][1] = y1;
 	shade->u.l_or_r.coords[1][2] = 0;
 
-	fz_fill_shade(ctx, dev, shade, ctm, doc->opacity[doc->opacity_top], fz_cs_params(ctx));
+	fz_fill_shade(ctx, dev, shade, ctm, doc->opacity[doc->opacity_top], fz_default_color_params(ctx));
 
 	fz_drop_shade(ctx, shade);
 }

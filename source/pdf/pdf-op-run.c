@@ -1087,8 +1087,8 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->softmask_ctm = fz_identity;
 	gs->luminosity = 0;
 
-	fz_color_param_init(&gs->fill.color_params);
-	fz_color_param_init(&gs->stroke.color_params);
+	fz_init_color_params(&gs->fill.color_params);
+	fz_init_color_params(&gs->stroke.color_params);
 }
 
 static void

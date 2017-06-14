@@ -18,7 +18,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 
 	fz_try(ctx)
 	{
-		if (fz_icc_engine(ctx))
+		if (fz_get_cmm_engine(ctx))
 		{
 			buffer = pdf_load_stream(ctx, dict);
 			cs = fz_new_icc_colorspace(ctx, 0, n, buffer, NULL);
@@ -120,7 +120,7 @@ separation_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float 
 	struct separation *sep = cs->data;
 	float alt[FZ_MAX_COLORS];
 	pdf_eval_function(ctx, sep->tint, color, cs->n, alt, sep->base->n);
-	fz_convert_color(ctx, fz_cs_params(ctx), NULL, fz_device_rgb(ctx), rgb, sep->base, alt);
+	fz_convert_color(ctx, fz_default_color_params(ctx), NULL, fz_device_rgb(ctx), rgb, sep->base, alt);
 }
 
 static void
@@ -421,14 +421,14 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 				return fz_device_cmyk(ctx);
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
 			{
-				if (fz_icc_engine(ctx))
+				if (fz_get_cmm_engine(ctx))
 					return pdf_calgray(ctx, pdf_array_get(ctx, obj, 1));
 				else
 					return fz_device_gray(ctx);
 			}
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
 			{
-				if (fz_icc_engine(ctx))
+				if (fz_get_cmm_engine(ctx))
 					return pdf_calrgb(ctx, pdf_array_get(ctx, obj, 1));
 				else
 					return fz_device_rgb(ctx);
@@ -517,13 +517,13 @@ pdf_load_colorspace(fz_context *ctx, pdf_obj *obj)
 }
 
 fz_colorspace *
-pdf_get_oi(fz_context *ctx, pdf_document *doc)
+pdf_document_output_intent(fz_context *ctx, pdf_document *doc)
 {
 	return doc->oi;
 }
 
 fz_colorspace *
-pdf_load_oi(fz_context *ctx, pdf_document *doc)
+pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
 {
 	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
 	pdf_obj *intents = pdf_dict_get(ctx, root, PDF_NAME_OutputIntents);

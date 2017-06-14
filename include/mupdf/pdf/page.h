@@ -185,7 +185,7 @@ struct pdf_page_s
 	fz_link *links;
 	pdf_annot *annots, **annot_tailp;
 
-	fz_page_default_cs *default_cs;
+	fz_default_colorspaces *default_cs;
 };
 
 enum
