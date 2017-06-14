@@ -299,8 +299,9 @@ static void fz_throw_java(fz_context *ctx, JNIEnv *env)
 	jthrowable ex = (*env)->ExceptionOccurred(env);
 	if (ex)
 	{
+		jobject msg;
 		(*env)->ExceptionClear(env);
-		jobject msg = (*env)->CallObjectMethod(env, ex, mid_Object_toString);
+		msg = (*env)->CallObjectMethod(env, ex, mid_Object_toString);
 		if ((*env)->ExceptionCheck(env))
 			(*env)->ExceptionClear(env);
 		else if (msg)
@@ -6283,14 +6284,13 @@ FUN(PDFDocument_findPage)(JNIEnv *env, jobject self, jint jat)
 {
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
-	size_t at = (size_t) jat;
 	pdf_obj *obj = NULL;
 
 	if (!ctx || !pdf) return NULL;
 	if (jat < 0 || jat >= pdf_count_pages(ctx, pdf)) { jni_throw_oob(env, "at is not a valid page"); return NULL; }
 
 	fz_try(ctx)
-		obj = pdf_lookup_page_obj(ctx, pdf, at);
+		obj = pdf_lookup_page_obj(ctx, pdf, jat);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -7899,7 +7899,7 @@ FUN(PDFObject_asByteName)(JNIEnv *env, jobject self)
 	}
 
 	len = strlen(str);
-	jbs = (*env)->NewByteArray(env, len);
+	jbs = (*env)->NewByteArray(env, (jsize)len);
 	if (!jbs) return NULL;
 	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
 	if (!bs) return NULL;
