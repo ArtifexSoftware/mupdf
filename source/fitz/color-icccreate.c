@@ -449,6 +449,7 @@ fz_new_icc_data_from_cal_colorspace(fz_context *ctx, unsigned char **buff, fz_ca
 	fz_catch(ctx)
 	{
 		fz_free(ctx, tag_list);
+		fz_rethrow(ctx);
 	}
 	curr_ptr = profile;
 
