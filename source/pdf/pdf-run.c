@@ -59,7 +59,10 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, const fz_matrix *ctm, fz_cookie *cookie)
 {
 	pdf_document *doc = page->doc;
+	fz_default_colorspaces *default_cs;
 	int nocache;
+
+	default_cs = pdf_load_default_colorspaces(ctx, doc, page);
 
 	nocache = !!(dev->hints & FZ_NO_CACHE);
 	if (nocache)
@@ -67,12 +70,13 @@ void pdf_run_page_contents(fz_context *ctx, pdf_page *page, fz_device *dev, cons
 
 	fz_try(ctx)
 	{
-		if (page->default_cs)
-			fz_set_default_colorspaces(ctx, dev, page->default_cs);
+		if (default_cs)
+			fz_set_default_colorspaces(ctx, dev, default_cs);
 		pdf_run_page_contents_with_usage(ctx, doc, page, dev, ctm, "View", cookie);
 	}
 	fz_always(ctx)
 	{
+		fz_drop_default_colorspaces(ctx, default_cs);
 		if (nocache)
 			pdf_clear_xref_to_mark(ctx, doc);
 	}

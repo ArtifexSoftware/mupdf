@@ -637,7 +637,6 @@ pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
 	pdf_document *doc = page->doc;
 
-	fz_drop_default_colorspaces(ctx, page->default_cs);
 	fz_drop_link(ctx, page->links);
 	pdf_drop_annots(ctx, page->annots);
 
@@ -673,28 +672,35 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->annots = NULL;
 	page->annot_tailp = &page->annots;
 	page->incomplete = 0;
-	page->default_cs = NULL;
 
 	return page;
 }
 
-static void
-pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
+fz_default_colorspaces *
+pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 {
+	pdf_obj *res;
 	pdf_obj *obj;
 	pdf_obj *cs_obj;
+	fz_default_colorspaces *default_cs;
 
+	/* If we are doing color management check for internal default color spaces. */
+	/* Photoshop is notorious for doing this in its PDF creation. */
+	if (!fz_colorspace_is_icc(fz_device_rgb(ctx)))
+		return NULL;
+
+	default_cs = fz_new_default_colorspaces(ctx);
+
+	res = pdf_dict_get(ctx, PDF_NAME_Resources, page->obj);
 	obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
 	if (obj)
 	{
-		page->default_cs = fz_new_default_colorspaces(ctx);
-
 		/* The spec says to ignore any colors we can't understand */
 		fz_try(ctx)
 		{
 			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultGray);
 			if (cs_obj)
-				fz_set_default_gray(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
+				fz_set_default_gray(ctx, default_cs, pdf_load_colorspace(ctx, cs_obj));
 		}
 		fz_catch(ctx)
 		{}
@@ -703,7 +709,7 @@ pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
 		{
 			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultRGB);
 			if (cs_obj)
-				fz_set_default_rgb(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
+				fz_set_default_rgb(ctx, default_cs, pdf_load_colorspace(ctx, cs_obj));
 		}
 		fz_catch(ctx)
 		{}
@@ -712,11 +718,16 @@ pdf_set_default_cs(fz_context *ctx, pdf_obj *res, pdf_page *page)
 		{
 			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultCMYK);
 			if (cs_obj)
-				fz_set_default_cmyk(ctx, page->default_cs, pdf_load_colorspace(ctx, cs_obj));
+				fz_set_default_cmyk(ctx, default_cs, pdf_load_colorspace(ctx, cs_obj));
 		}
 		fz_catch(ctx)
 		{}
 	}
+
+	if (doc->oi)
+		fz_set_default_output_intent(ctx, default_cs, doc->oi);
+
+	return default_cs;
 }
 
 pdf_page *
@@ -740,31 +751,6 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	page->obj = pdf_keep_obj(ctx, pageobj);
 
 	resources = pdf_page_resources(ctx, page);
-
-	/* If we are doing color management check for internal default color spaces. */
-	/* Photoshop is notorious for doing this in its PDF creation. */
-	if (fz_colorspace_is_icc(fz_device_rgb(ctx)))
-	{
-		fz_try(ctx)
-		{
-			pdf_set_default_cs(ctx, resources, page);
-			if (doc->oi)
-			{
-				if (!page->default_cs)
-					page->default_cs = fz_new_default_colorspaces(ctx);
-				fz_set_default_output_intent(ctx, page->default_cs, doc->oi);
-			}
-		}
-		fz_catch(ctx)
-		{
-			if (fz_caught(ctx) != FZ_ERROR_TRYLATER)
-			{
-				fz_drop_page(ctx, &page->super);
-				fz_rethrow(ctx);
-			}
-			page->incomplete |= PDF_PAGE_INCOMPLETE_ANNOTS | PDF_PAGE_INCOMPLETE_CONTENTS;
-		}
-	}
 
 	/* Pre-load annotations and links */
 	fz_try(ctx)
