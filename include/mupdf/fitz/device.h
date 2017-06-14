@@ -113,9 +113,7 @@ struct fz_device_s
 	void (*end_tile)(fz_context *, fz_device *);
 
 	void (*render_flags)(fz_context *, fz_device *, int set, int clear);
-
-	void (*set_default_cs)(fz_context *, fz_device *, fz_default_colorspaces *);
-	void (*set_outputintent)(fz_context *, fz_default_colorspaces *, fz_colorspace *);
+	void (*set_default_colorspaces)(fz_context *, fz_device *, fz_default_colorspaces *);
 
 	fz_rect d1_rect;
 
@@ -125,8 +123,6 @@ struct fz_device_s
 	int container_len;
 	int container_cap;
 	fz_device_container_stack *container;
-
-	fz_default_colorspaces *default_cs;
 };
 
 void fz_fill_path(fz_context *ctx, fz_device *dev, const fz_path *path, int even_odd, const fz_matrix *ctm, fz_colorspace *colorspace, const float *color, float alpha, const fz_color_params *color_params);
@@ -153,7 +149,6 @@ void fz_end_tile(fz_context *ctx, fz_device *dev);
 void fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear);
 void fz_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspaces *default_cs);
 fz_device *fz_new_device_of_size(fz_context *ctx, int size);
-fz_colorspace* fz_default_colorspace(fz_context *ctx, fz_device *dev, fz_colorspace *cs);
 
 #define fz_new_derived_device(CTX, TYPE) \
 	((TYPE *)Memento_label(fz_new_device_of_size(ctx,sizeof(TYPE)),#TYPE))

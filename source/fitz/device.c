@@ -61,7 +61,6 @@ fz_drop_device(fz_context *ctx, fz_device *dev)
 		if (dev->drop_device)
 			dev->drop_device(ctx, dev);
 		fz_free(ctx, dev->container);
-		fz_drop_default_colorspaces(ctx, dev->default_cs);
 		fz_free(ctx, dev);
 	}
 }
@@ -518,37 +517,6 @@ fz_render_flags(fz_context *ctx, fz_device *dev, int set, int clear)
 void
 fz_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspaces *default_cs)
 {
-	fz_drop_default_colorspaces(ctx, dev->default_cs);
-	dev->default_cs = fz_keep_default_colorspaces(ctx, default_cs);
-}
-
-/* Logic below assumes that default cs is set to color context cs if there
- * was not a default in the document for that particular cs
- */
-fz_colorspace* fz_default_colorspace(fz_context *ctx, fz_device *dev, fz_colorspace *cs)
-{
-	if (cs == NULL)
-		return NULL;
-
-	if (dev->default_cs == NULL)
-		return cs;
-
-	switch (fz_colorspace_n(ctx, cs))
-	{
-	case 1:
-		if (cs == fz_device_gray(ctx))
-			return fz_default_gray(ctx, dev->default_cs);
-		break;
-	case 3:
-		if (cs == fz_device_rgb(ctx))
-			return fz_default_rgb(ctx, dev->default_cs);
-		break;
-	case 4:
-		if (cs == fz_device_cmyk(ctx))
-			return fz_default_cmyk(ctx, dev->default_cs);
-		break;
-	default:
-		return cs;
-	}
-	return cs;
+	if (dev->set_default_colorspaces)
+		dev->set_default_colorspaces(ctx, dev, default_cs);
 }

@@ -44,6 +44,7 @@ struct fz_draw_device_s
 	fz_device super;
 	fz_matrix transform;
 	fz_rasterizer *rast;
+	fz_default_colorspaces *default_cs;
 	int flags;
 	int top;
 	fz_scale_cache *cache_x;
@@ -110,17 +111,45 @@ static void stack_change(fz_context *ctx, fz_draw_device *dev, char *s)
 /* Based upon the existence of a proof color space, and if we happen to be
  * in a color space that is our target color space or a transparency group
  * color space decide if we should be using the proof color space at this time */
-static fz_colorspace*
+static fz_colorspace *
 fz_proof_cs(fz_context *ctx, fz_device *devp)
 {
-	fz_colorspace *prf = fz_default_output_intent(ctx, devp->default_cs);
 	fz_draw_device *dev = (fz_draw_device*)devp;
+	fz_colorspace *prf = fz_default_output_intent(ctx, dev->default_cs);
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
 
 	if (prf == NULL || model == prf)
 		return NULL;
 	return prf;
+}
+
+/* Logic below assumes that default cs is set to color context cs if there
+ * was not a default in the document for that particular cs
+ */
+static fz_colorspace *fz_default_colorspace(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs)
+{
+	if (cs == NULL)
+		return NULL;
+	if (default_cs == NULL)
+		return cs;
+
+	switch (fz_colorspace_n(ctx, cs))
+	{
+	case 1:
+		if (cs == fz_device_gray(ctx))
+			return fz_default_gray(ctx, default_cs);
+		break;
+	case 3:
+		if (cs == fz_device_rgb(ctx))
+			return fz_default_rgb(ctx, default_cs);
+		break;
+	case 4:
+		if (cs == fz_device_cmyk(ctx))
+			return fz_default_cmyk(ctx, default_cs);
+		break;
+	}
+	return cs;
 }
 
 static void fz_grow_stack(fz_context *ctx, fz_draw_device *dev)
@@ -302,7 +331,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
-	fz_colorspace *colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
+	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -361,7 +390,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
-	fz_colorspace *colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
+	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
@@ -666,7 +695,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
-		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -764,7 +793,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
-		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -1140,7 +1169,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		n = fz_colorspace_n(ctx, model);
 		if (n > 0)
 		{
-			fz_convert_color(ctx, color_params, prf, model, colorfv, fz_default_colorspace(ctx, devp, shade->colorspace), shade->background);
+			fz_convert_color(ctx, color_params, prf, model, colorfv, fz_default_colorspace(ctx, dev->default_cs, shade->colorspace), shade->background);
 			for (i = 0; i < n; i++)
 				colorbv[i] = colorfv[i] * 255;
 		}
@@ -1319,7 +1348,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	}
 
 	pixmap = fz_get_pixmap_from_image(ctx, image, &src_area, &local_ctm, &dx, &dy);
-	src_cs = fz_default_colorspace(ctx, devp, pixmap->colorspace);
+	src_cs = fz_default_colorspace(ctx, dev->default_cs, pixmap->colorspace);
 
 	/* convert images with more components (cmyk->rgb) before scaling */
 	/* convert images with fewer components (gray->rgb) after scaling */
@@ -1338,7 +1367,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 		if (src_cs != model && !after)
 		{
-			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, devp->default_cs, color_params, 1);
+			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
 			fz_drop_pixmap(ctx, pixmap);
 			pixmap = converted;
 		}
@@ -1373,7 +1402,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			else
 #endif
 			{
-				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, devp->default_cs, color_params, 1);
+				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
 				fz_drop_pixmap(ctx, pixmap);
 				pixmap = converted;
 			}
@@ -1411,7 +1440,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
 
 	if (colorspace_in)
-		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 
 	if (color_params == NULL)
 		color_params = fz_default_color_params(ctx);
@@ -1695,7 +1724,7 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 	fz_colorspace *colorspace = NULL;
 
 	if (colorspace_in)
-		colorspace = fz_default_colorspace(ctx, devp, colorspace_in);
+		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
 
 	if (color_params == NULL)
 		color_params = fz_default_color_params(ctx);
@@ -2309,10 +2338,27 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 }
 
 static void
+fz_draw_render_flags(fz_context *ctx, fz_device *devp, int set, int clear)
+{
+	fz_draw_device *dev = (fz_draw_device*)devp;
+	dev->flags = (dev->flags | set ) & ~clear;
+}
+
+static void
+fz_draw_set_default_colorspaces(fz_context *ctx, fz_device *devp, fz_default_colorspaces *default_cs)
+{
+	fz_draw_device *dev = (fz_draw_device*)devp;
+	fz_drop_default_colorspaces(ctx, dev->default_cs);
+	dev->default_cs = fz_keep_default_colorspaces(ctx, default_cs);
+}
+
+static void
 fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_rasterizer *rast = dev->rast;
+
+	fz_drop_default_colorspaces(ctx, dev->default_cs);
 
 	/* pop and free the stacks */
 	if (dev->top > 0)
@@ -2337,14 +2383,6 @@ fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 	fz_drop_scale_cache(ctx, dev->cache_x);
 	fz_drop_scale_cache(ctx, dev->cache_y);
 	fz_drop_rasterizer(ctx, rast);
-}
-
-static void
-fz_draw_render_flags(fz_context *ctx, fz_device *devp, int set, int clear)
-{
-	fz_draw_device *dev = (fz_draw_device*)devp;
-
-	dev->flags = (dev->flags | set ) & ~clear;
 }
 
 fz_device *
@@ -2381,9 +2419,7 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 	dev->super.end_tile = fz_draw_end_tile;
 
 	dev->super.render_flags = fz_draw_render_flags;
-
-	dev->super.set_default_cs = fz_set_default_colorspaces;
-	dev->super.set_outputintent = fz_set_default_output_intent;
+	dev->super.set_default_colorspaces = fz_draw_set_default_colorspaces;
 
 	dev->transform = transform ? *transform : fz_identity;
 	dev->flags = 0;
