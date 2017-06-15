@@ -35,25 +35,19 @@ save_profile(unsigned char *buffer, char filename[], int buffer_size)
 
 	sprintf(full_file_name, "%d)Profile_%s.icc", icc_debug_index, filename);
 	fid = fopen(full_file_name, "wb");
+	fwrite(buffer, 1, buffer_size, fid);
 	fclose(fid);
 	icc_debug_index++;
 }
 #endif
 
 static void
-write_bigendian_2bytes(unsigned char *curr_ptr, unsigned short input)
+fz_append_byte_n(fz_context *ctx, fz_buffer *buf, int c, int n)
 {
-	*curr_ptr++ = (0xff & (input >> 8));
-	*curr_ptr++ = (0xff & input);
-}
+	int k;
 
-static void
-write_bigendian_4bytes(unsigned char *curr_ptr, int input)
-{
-	*curr_ptr++ = (0xff & (input >> 24));
-	*curr_ptr++ = (0xff & (input >> 16));
-	*curr_ptr++ = (0xff & (input >> 8));
-	*curr_ptr++ = (0xff & input);
+	for (k = 0; k < n; k++)
+		fz_append_byte(ctx, buf, c);
 }
 
 static int
@@ -63,7 +57,7 @@ get_padding(int x)
 }
 
 static void
-setdatetime(icDateTimeNumber *datetime)
+setdatetime(fz_context *ctx, icDateTimeNumber *datetime)
 {
 	datetime->day = 0;
 	datetime->hours = 0;
@@ -74,53 +68,41 @@ setdatetime(icDateTimeNumber *datetime)
 }
 
 static void
-add_gammadata(unsigned char *input_ptr, unsigned short gamma, icTagTypeSignature curveType)
+add_gammadata(fz_context *ctx, fz_buffer *buf, unsigned short gamma, icTagTypeSignature curveType)
 {
-	unsigned char *curr_ptr;
-
-	curr_ptr = input_ptr;
-	write_bigendian_4bytes(curr_ptr, curveType);
-	curr_ptr += 4;
-	memset(curr_ptr, 0, 4);
-	curr_ptr += 4;
+	fz_append_int32_be(ctx, buf, curveType);
+	fz_append_byte_n(ctx, buf, 0, 4);
 
 	/* one entry for gamma */
-	write_bigendian_4bytes(curr_ptr, 1);
-	curr_ptr += 4;
+	fz_append_int32_be(ctx, buf, 1);
 
 	/* The encode (8frac8) gamma, with padding */
-	write_bigendian_2bytes(curr_ptr, gamma);
-	curr_ptr += 2;
+	fz_append_int16_be(ctx, buf, gamma);
 
 	/* pad two bytes */
-	memset(curr_ptr, 0, 2);
+	fz_append_byte_n(ctx, buf, 0, 2);
 }
 
 static unsigned short
-float2u8Fixed8(float number_in)
+float2u8Fixed8(fz_context *ctx, float number_in)
 {
 	return (unsigned short)(number_in * 256);
 }
 
 static void
-add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[])
+add_xyzdata(fz_context *ctx, fz_buffer *buf, icS15Fixed16Number temp_XYZ[])
 {
 	int j;
-	unsigned char *curr_ptr = input_ptr;
 
-	write_bigendian_4bytes(curr_ptr, icSigXYZType);
-	curr_ptr += 4;
-	memset(curr_ptr, 0, 4);
-	curr_ptr += 4;
+	fz_append_int32_be(ctx, buf, icSigXYZType);
+	fz_append_byte_n(ctx, buf, 0, 4);
+
 	for (j = 0; j < 3; j++)
-	{
-		write_bigendian_4bytes(curr_ptr, temp_XYZ[j]);
-		curr_ptr += 4;
-	}
+		fz_append_int32_be(ctx, buf, temp_XYZ[j]);
 }
 
 static icS15Fixed16Number
-double2XYZtype(float number_in)
+double2XYZtype(fz_context *ctx, float number_in)
 {
 	short s;
 	unsigned short m;
@@ -133,70 +115,56 @@ double2XYZtype(float number_in)
 }
 
 static void
-get_D50(icS15Fixed16Number XYZ[])
+get_D50(fz_context *ctx, icS15Fixed16Number XYZ[])
 {
-	XYZ[0] = double2XYZtype(D50_X);
-	XYZ[1] = double2XYZtype(D50_Y);
-	XYZ[2] = double2XYZtype(D50_Z);
+	XYZ[0] = double2XYZtype(ctx, D50_X);
+	XYZ[1] = double2XYZtype(ctx, D50_Y);
+	XYZ[2] = double2XYZtype(ctx, D50_Z);
 }
 
 static void
-get_XYZ_doubletr(icS15Fixed16Number XYZ[], float vector[])
+get_XYZ_doubletr(fz_context *ctx, icS15Fixed16Number XYZ[], float vector[])
 {
-	XYZ[0] = double2XYZtype(vector[0]);
-	XYZ[1] = double2XYZtype(vector[1]);
-	XYZ[2] = double2XYZtype(vector[2]);
+	XYZ[0] = double2XYZtype(ctx, vector[0]);
+	XYZ[1] = double2XYZtype(ctx, vector[1]);
+	XYZ[2] = double2XYZtype(ctx, vector[2]);
 }
 
 static void
-add_desc_tag(unsigned char *buffer, const char text[], fz_icc_tag tag_list[], int curr_tag)
+add_desc_tag(fz_context *ctx, fz_buffer *buf, const char text[], fz_icc_tag tag_list[], int curr_tag)
 {
-	unsigned char *curr_ptr;
 	int len = strlen(text);
-	int k;
 
-	curr_ptr = buffer;
-	write_bigendian_4bytes(curr_ptr, icSigTextDescriptionType);
-	curr_ptr += 4;
-	memset(curr_ptr, 0, 4);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, len+1);
-	curr_ptr += 4;
-	for (k = 0; k < len; k++)
-		*curr_ptr++ = text[k];
-	memset(curr_ptr, 0, 12 + 67 + 1);
-	memset(curr_ptr, 0, tag_list[curr_tag].byte_padding);
+	fz_append_int32_be(ctx, buf, icSigTextDescriptionType);
+	fz_append_byte_n(ctx, buf, 0, 4);
+	fz_append_int32_be(ctx, buf, len + 1);
+	fz_append_string(ctx, buf, text);
+	/* 1 + 4 + 4 + 2 + 1 + 67 */
+	fz_append_byte_n(ctx, buf, 0, 79);
+	fz_append_byte_n(ctx, buf, 0, tag_list[curr_tag].byte_padding);
 }
 
 static void
-add_text_tag(unsigned char *buffer, const char text[], fz_icc_tag tag_list[], int curr_tag)
+add_text_tag(fz_context *ctx, fz_buffer *buf, const char text[], fz_icc_tag tag_list[], int curr_tag)
 {
-	unsigned char *curr_ptr = buffer;
 	int len = strlen(text);
-	int k;
 
-	write_bigendian_4bytes(curr_ptr, icSigTextType);
-	curr_ptr += 4;
-	memset(curr_ptr, 0, 4);
-	curr_ptr += 4;
-	for (k = 0; k < len; k++)
-		*curr_ptr++ = text[k];
-	memset(curr_ptr, 0, 1);
-	memset(curr_ptr, 0, tag_list[curr_tag].byte_padding);  /* padding */
+	fz_append_int32_be(ctx, buf, icSigTextType);
+	fz_append_byte_n(ctx, buf, 0, 4);
+	fz_append_string(ctx, buf, text);
+	fz_append_byte(ctx, buf, 0);
+	fz_append_byte_n(ctx, buf, 0, tag_list[curr_tag].byte_padding);
 }
 
 static void
-add_common_tag_data(unsigned char *buffer, fz_icc_tag tag_list[])
+add_common_tag_data(fz_context *ctx, fz_buffer *buf, fz_icc_tag tag_list[])
 {
-	unsigned char *curr_ptr = buffer;
-
-	add_desc_tag(curr_ptr, desc_name, tag_list, 0);
-	curr_ptr += tag_list[0].size;
-	add_text_tag(curr_ptr, copy_right, tag_list, 1);
+	add_desc_tag(ctx, buf, desc_name, tag_list, 0);
+	add_text_tag(ctx, buf, copy_right, tag_list, 1);
 }
 
 static void
-init_common_tags(fz_icc_tag tag_list[], int num_tags, int *last_tag)
+init_common_tags(fz_context *ctx, fz_icc_tag tag_list[], int num_tags, int *last_tag)
 {
 	int curr_tag, temp_size;
 
@@ -208,66 +176,47 @@ init_common_tags(fz_icc_tag tag_list[], int num_tags, int *last_tag)
 	tag_list[curr_tag].offset = ICC_HEADER_SIZE + num_tags * ICC_TAG_SIZE + 4;
 	tag_list[curr_tag].sig = icSigProfileDescriptionTag;
 
-	/* temp_size = DATATYPE_SIZE + 4 + strlen(desc_name) + 1 + 4 + 4 + 3 + 67; */
-	temp_size = 2 * strlen(desc_name) + 28;
+	/* temp_size = DATATYPE_SIZE + 4 (zeros) + 4 (len) + strlen(desc_name) + 1 (null) + 4 + 4 + 2 + 1 + 67 + bytepad; */
+	temp_size = strlen(desc_name) + 91;
 
-	/* +1 for NULL + 4 + 4 for unicode + 3 + 67 script code */
 	tag_list[curr_tag].byte_padding = get_padding(temp_size);
 	tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
 	curr_tag++;
 	tag_list[curr_tag].offset = tag_list[curr_tag - 1].offset + tag_list[curr_tag - 1].size;
 	tag_list[curr_tag].sig = icSigCopyrightTag;
 
-	/* temp_size = DATATYPE_SIZE + strlen(copy_right) + 1; */
-	temp_size = 2 * strlen(copy_right) + 28;
+	/* temp_size = DATATYPE_SIZE + 4 (zeros) + strlen(copy_right) + 1 (null); */
+	temp_size = strlen(copy_right) + 9;
 	tag_list[curr_tag].byte_padding = get_padding(temp_size);
 	tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
 	*last_tag = curr_tag;
 }
 
 static void
-copy_header(unsigned char *buffer, icHeader *header)
+copy_header(fz_context *ctx, fz_buffer *buffer, icHeader *header)
 {
-	unsigned char *curr_ptr;
-
-	curr_ptr = buffer;
-	write_bigendian_4bytes(curr_ptr, header->size);
-	curr_ptr += 4;
-	memset(curr_ptr, 0, 4);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, header->version);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, header->deviceClass);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, header->colorSpace);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, header->pcs);
-	curr_ptr += 4;
-
-	/* Date and time */
-	memset(curr_ptr, 0, 12);
-	curr_ptr += 12;
-	write_bigendian_4bytes(curr_ptr, header->magic);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, header->platform);
-	curr_ptr += 4;
-	memset(curr_ptr, 0, 24);
-	curr_ptr += 24;
-	write_bigendian_4bytes(curr_ptr, header->illuminant.X);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, header->illuminant.Y);
-	curr_ptr += 4;
-	write_bigendian_4bytes(curr_ptr, header->illuminant.Z);
-	curr_ptr += 4;
-	memset(curr_ptr, 0, 48);
+	fz_append_int32_be(ctx, buffer, header->size);
+	fz_append_byte_n(ctx, buffer, 0, 4);
+	fz_append_int32_be(ctx, buffer, header->version);
+	fz_append_int32_be(ctx, buffer, header->deviceClass);
+	fz_append_int32_be(ctx, buffer, header->colorSpace);
+	fz_append_int32_be(ctx, buffer, header->pcs);
+	fz_append_byte_n(ctx, buffer, 0, 12);
+	fz_append_int32_be(ctx, buffer, header->magic);
+	fz_append_int32_be(ctx, buffer, header->platform);
+	fz_append_byte_n(ctx, buffer, 0, 24);
+	fz_append_int32_be(ctx, buffer, header->illuminant.X);
+	fz_append_int32_be(ctx, buffer, header->illuminant.Y);
+	fz_append_int32_be(ctx, buffer, header->illuminant.Z);
+	fz_append_byte_n(ctx, buffer, 0, 48);
 }
 
 static void
-setheader_common(icHeader *header)
+setheader_common(fz_context *ctx, icHeader *header)
 {
 	header->cmmId = 0;
-	header->version = 0x04200000;
-	setdatetime(&(header->date));
+	header->version = 0x02200000;
+	setdatetime(ctx, &(header->date));
 	header->magic = icMagicNumber;
 	header->platform = icSigMacintosh;
 	header->flags = 0;
@@ -276,35 +225,29 @@ setheader_common(icHeader *header)
 	header->attributes[0] = 0;
 	header->attributes[1] = 0;
 	header->renderingIntent = 3;
-	header->illuminant.X = double2XYZtype((float) 0.9642);
-	header->illuminant.Y = double2XYZtype((float) 1.0);
-	header->illuminant.Z = double2XYZtype((float) 0.8249);
+	header->illuminant.X = double2XYZtype(ctx, (float) 0.9642);
+	header->illuminant.Y = double2XYZtype(ctx, (float) 1.0);
+	header->illuminant.Z = double2XYZtype(ctx, (float) 0.8249);
 	header->creator = 0;
 	memset(header->reserved, 0, 44);
 }
 
 static void
-copy_tagtable(unsigned char *buffer, fz_icc_tag *tag_list, int num_tags)
+copy_tagtable(fz_context *ctx, fz_buffer *buf, fz_icc_tag *tag_list, int num_tags)
 {
 	int k;
-	unsigned char *curr_ptr;
 
-	curr_ptr = buffer;
-	write_bigendian_4bytes(curr_ptr, num_tags);
-	curr_ptr += 4;
+	fz_append_int32_be(ctx, buf, num_tags);
 	for (k = 0; k < num_tags; k++)
 	{
-		write_bigendian_4bytes(curr_ptr, tag_list[k].sig);
-		curr_ptr += 4;
-		write_bigendian_4bytes(curr_ptr, tag_list[k].offset);
-		curr_ptr += 4;
-		write_bigendian_4bytes(curr_ptr, tag_list[k].size);
-		curr_ptr += 4;
+		fz_append_int32_be(ctx, buf, tag_list[k].sig);
+		fz_append_int32_be(ctx, buf, tag_list[k].offset);
+		fz_append_int32_be(ctx, buf, tag_list[k].size);
 	}
 }
 
 static void
-init_tag(fz_icc_tag tag_list[], int *last_tag, icTagSignature tagsig, int datasize)
+init_tag(fz_context *ctx, fz_icc_tag tag_list[], int *last_tag, icTagSignature tagsig, int datasize)
 {
 	int curr_tag = (*last_tag) + 1;
 
@@ -316,7 +259,7 @@ init_tag(fz_icc_tag tag_list[], int *last_tag, icTagSignature tagsig, int datasi
 }
 
 static void
-matrixmult(float leftmatrix[], int nlrow, int nlcol, float rightmatrix[], int nrrow, int nrcol, float result[])
+matrixmult(fz_context *ctx, float leftmatrix[], int nlrow, int nlcol, float rightmatrix[], int nrrow, int nrcol, float result[])
 {
 	float *curr_row;
 	int k, l, j, ncols, nrows;
@@ -341,7 +284,7 @@ matrixmult(float leftmatrix[], int nlrow, int nlcol, float rightmatrix[], int nr
 }
 
 static void
-apply_adaption(float matrix[], float in[], float out[])
+apply_adaption(fz_context *ctx, float matrix[], float in[], float out[])
 {
 	out[0] = matrix[0] * in[0] + matrix[1] * in[1] + matrix[2] * in[2];
 	out[1] = matrix[3] * in[0] + matrix[4] * in[1] + matrix[5] * in[2];
@@ -353,7 +296,7 @@ apply_adaption(float matrix[], float in[], float out[])
 	D50 white point
 */
 static void
-gsicc_create_compute_cam(float white_src[], float *cam)
+gsicc_create_compute_cam(fz_context *ctx, float white_src[], float *cam)
 {
 	float cat02matrix[] = { 0.7328f, 0.4296f, -0.1624f, -0.7036f, 1.6975f, 0.0061f, 0.003f, 0.0136f, 0.9834f };
 	float cat02matrixinv[] = { 1.0961f, -0.2789f, 0.1827f, 0.4544f, 0.4735f, 0.0721f, -0.0096f, -0.0057f, 1.0153f };
@@ -363,8 +306,8 @@ gsicc_create_compute_cam(float white_src[], float *cam)
 	int k;
 	float d50[3] = { D50_X, D50_Y, D50_Z };
 
-	matrixmult(cat02matrix, 3, 3, white_src, 3, 1, lms_wp_src);
-	matrixmult(cat02matrix, 3, 3, d50, 3, 1, lms_wp_des);
+	matrixmult(ctx, cat02matrix, 3, 3, white_src, 3, 1, lms_wp_src);
+	matrixmult(ctx, cat02matrix, 3, 3, d50, 3, 1, lms_wp_des);
 	memset(&(vonkries_diag[0]), 0, sizeof(float) * 9);
 
 	for (k = 0; k < 3; k++)
@@ -374,22 +317,22 @@ gsicc_create_compute_cam(float white_src[], float *cam)
 		else
 			vonkries_diag[k * 3 + k] = 1;
 	}
-	matrixmult(&(vonkries_diag[0]), 3, 3, cat02matrix, 3, 3, temp_matrix);
-	matrixmult(&(cat02matrixinv[0]), 3, 3, temp_matrix, 3, 3, cam);
+	matrixmult(ctx, &(vonkries_diag[0]), 3, 3, cat02matrix, 3, 3, temp_matrix);
+	matrixmult(ctx, &(cat02matrixinv[0]), 3, 3, temp_matrix, 3, 3, cam);
 }
 
 /* Create ICC profile from PDF calGray and calRGB definitions */
-int
-fz_new_icc_data_from_cal_colorspace(fz_context *ctx, unsigned char **buff, fz_cal_colorspace *cal)
+fz_buffer *
+fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal)
 {
 	fz_icc_tag *tag_list;
 	icProfile iccprofile;
 	icHeader *header = &(iccprofile.header);
-	unsigned char *profile;
-	int profile_size, k;
+	fz_buffer *profile;
+	size_t profile_size;
+	int k;
 	int num_tags;
 	unsigned short encode_gamma;
-	unsigned char *curr_ptr;
 	int last_tag;
 	icS15Fixed16Number temp_XYZ[3];
 	int tag_location;
@@ -398,9 +341,13 @@ fz_new_icc_data_from_cal_colorspace(fz_context *ctx, unsigned char **buff, fz_ca
 	float cat02[9];
 	float black_adapt[3];
 	int n = cal->n;
+#if SAVEICCPROFILE
+	unsigned char *data;
+	size_t data_size;
+#endif
 
 	/* common */
-	setheader_common(header);
+	setheader_common(ctx, header);
 	header->pcs = icSigXYZData;
 	profile_size = ICC_HEADER_SIZE;
 	header->deviceClass = icSigInputClass;
@@ -423,54 +370,47 @@ fz_new_icc_data_from_cal_colorspace(fz_context *ctx, unsigned char **buff, fz_ca
 	profile_size += ICC_TAG_SIZE * num_tags;
 	profile_size += 4; /* number of tags.... */
 	last_tag = -1;
-	init_common_tags(tag_list, num_tags, &last_tag);
+	init_common_tags(ctx, tag_list, num_tags, &last_tag);
 	if (n == 3)
 	{
-		init_tag(tag_list, &last_tag, icSigRedColorantTag, ICC_XYZPT_SIZE);
-		init_tag(tag_list, &last_tag, icSigGreenColorantTag, ICC_XYZPT_SIZE);
-		init_tag(tag_list, &last_tag, icSigBlueColorantTag, ICC_XYZPT_SIZE);
+		init_tag(ctx, tag_list, &last_tag, icSigRedColorantTag, ICC_XYZPT_SIZE);
+		init_tag(ctx, tag_list, &last_tag, icSigGreenColorantTag, ICC_XYZPT_SIZE);
+		init_tag(ctx, tag_list, &last_tag, icSigBlueColorantTag, ICC_XYZPT_SIZE);
 	}
-	init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, ICC_XYZPT_SIZE);
-	init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, ICC_XYZPT_SIZE);
+	init_tag(ctx, tag_list, &last_tag, icSigMediaWhitePointTag, ICC_XYZPT_SIZE);
+	init_tag(ctx, tag_list, &last_tag, icSigMediaBlackPointTag, ICC_XYZPT_SIZE);
 
 	/* 4 for count, 2 for gamma, Extra 2 bytes for 4 byte alignment requirement */
 	trc_tag_size = 8;
 	for (k = 0; k < n; k++)
-		init_tag(tag_list, &last_tag, TRC_Tags[k], trc_tag_size);
+		init_tag(ctx, tag_list, &last_tag, TRC_Tags[k], trc_tag_size);
 	for (k = 0; k < num_tags; k++)
 		profile_size += tag_list[k].size;
 
 	/* Allocate buffer */
-	fz_var(tag_list);
 	fz_try(ctx)
 	{
-		profile = fz_malloc(ctx, profile_size);
+		profile = fz_new_buffer(ctx, profile_size);
 	}
 	fz_catch(ctx)
 	{
 		fz_free(ctx, tag_list);
 		fz_rethrow(ctx);
 	}
-	curr_ptr = profile;
 
 	/* Header */
-	header->size = profile_size;
-	copy_header(curr_ptr, header);
-	curr_ptr += ICC_HEADER_SIZE;
+	header->size = (icUInt32Number)profile_size;
+	copy_header(ctx, profile, header);
 
 	/* Tag table */
-	copy_tagtable(curr_ptr, tag_list, num_tags);
-	curr_ptr += ICC_TAG_SIZE * num_tags;
-	curr_ptr += 4;
+	copy_tagtable(ctx, profile, tag_list, num_tags);
 
 	/* Common tags */
-	add_common_tag_data(curr_ptr, tag_list);
-	for (k = 0; k < ICC_NUMBER_COMMON_TAGS; k++)
-		curr_ptr += tag_list[k].size;
+	add_common_tag_data(ctx, profile, tag_list);
 	tag_location = ICC_NUMBER_COMMON_TAGS;
 
 	/* Get the cat02 matrix */
-	gsicc_create_compute_cam(cal->wp, cat02);
+	gsicc_create_compute_cam(ctx, cal->wp, cat02);
 
 	/* The matrix */
 	if (n == 3)
@@ -480,44 +420,40 @@ fz_new_icc_data_from_cal_colorspace(fz_context *ctx, unsigned char **buff, fz_ca
 		for (k = 0; k < 3; k++)
 		{
 			/* Apply the cat02 matrix to the primaries */
-			apply_adaption(cat02, &(cal->matrix[k * 3]), &(primary[0]));
-			get_XYZ_doubletr(temp_XYZ, &(primary[0]));
-			add_xyzdata(curr_ptr, temp_XYZ);
-			curr_ptr += tag_list[tag_location].size;
+			apply_adaption(ctx, cat02, &(cal->matrix[k * 3]), &(primary[0]));
+			get_XYZ_doubletr(ctx, temp_XYZ, &(primary[0]));
+			add_xyzdata(ctx, profile, temp_XYZ);
 			tag_location++;
 		}
 	}
 
 	/* White and black points. WP is D50 */
-	get_D50(temp_XYZ);
-	add_xyzdata(curr_ptr, temp_XYZ);
-	curr_ptr += tag_list[tag_location].size;
+	get_D50(ctx, temp_XYZ);
+	add_xyzdata(ctx, profile, temp_XYZ);
 	tag_location++;
 
 	/* Black point. Apply cat02*/
-	apply_adaption(cat02, cal->bp, &(black_adapt[0]));
-	get_XYZ_doubletr(temp_XYZ, &(black_adapt[0]));
-	add_xyzdata(curr_ptr, temp_XYZ);
-	curr_ptr += tag_list[tag_location].size;
+	apply_adaption(ctx, cat02, cal->bp, &(black_adapt[0]));
+	get_XYZ_doubletr(ctx, temp_XYZ, &(black_adapt[0]));
+	add_xyzdata(ctx, profile, temp_XYZ);
 	tag_location++;
 
 	/* Gamma */
 	for (k = 0; k < n; k++)
 	{
-		encode_gamma = float2u8Fixed8(cal->gamma[k]);
-		add_gammadata(curr_ptr, encode_gamma, icSigCurveType);
-		curr_ptr += tag_list[tag_location].size;
+		encode_gamma = float2u8Fixed8(ctx, cal->gamma[k]);
+		add_gammadata(ctx, profile, encode_gamma, icSigCurveType);
 		tag_location++;
 	}
 
 	fz_free(ctx, tag_list);
-	*buff = profile;
 
 #if SAVEICCPROFILE
+	data_size = fz_buffer_storage(ctx, profile, &data);
 	if (n == 3)
-		save_profile(profile, "calRGB", profile_size);
+		save_profile(data, "calRGB", data_size);
 	else
-		save_profile(profile, "calGray", profile_size);
+		save_profile(data, "calGray", data_size);
 #endif
-	return profile_size;
+	return profile;
 }

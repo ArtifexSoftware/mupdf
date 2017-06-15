@@ -306,10 +306,7 @@ fz_icc_from_cal(fz_context *ctx, fz_colorspace *cs)
 
 	fz_try(ctx)
 	{
-		size_t size;
-		unsigned char *data;
-		size = fz_new_icc_data_from_cal_colorspace(ctx, &data, cal_data);
-		profile->buffer = fz_new_buffer_from_shared_data(ctx, (char *)data, size);
+		profile->buffer = fz_new_icc_data_from_cal_colorspace(ctx, cal_data);
 		fz_md5_icc(ctx, profile);
 		cal_data->profile = profile;
 	}
