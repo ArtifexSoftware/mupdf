@@ -30,7 +30,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 enum {
 	OUT_NONE,
 	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
-	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS,
+	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS, OUT_PSD,
 	OUT_TEXT, OUT_HTML, OUT_STEXT,
 	OUT_TRACE, OUT_SVG,
 #if FZ_ENABLE_PDF
@@ -59,10 +59,11 @@ static const suffix_t suffix_table[] =
 	{ ".svg", OUT_SVG },
 	{ ".pwg", OUT_PWG },
 	{ ".pcl", OUT_PCL },
-	{ ".ps", OUT_PS },
 #if FZ_ENABLE_PDF
 	{ ".pdf", OUT_PDF },
 #endif
+	{ ".psd", OUT_PSD },
+	{ ".ps", OUT_PS },
 	{ ".tga", OUT_TGA },
 
 	{ ".txt", OUT_TEXT },
@@ -117,6 +118,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_PCL, CS_MONO, { CS_MONO, CS_RGB } },
 	{ OUT_PS, CS_RGB, { CS_GRAY, CS_RGB, CS_CMYK } },
+	{ OUT_PSD, CS_CMYK, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
 	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
 
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
@@ -787,6 +789,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					bander = fz_new_pkm_band_writer(ctx, out);
 				else if (output_format == OUT_PS)
 					bander = fz_new_ps_band_writer(ctx, out);
+				else if (output_format == OUT_PSD)
+					bander = fz_new_psd_band_writer(ctx, out);
 				else if (output_format == OUT_TGA)
 					bander = fz_new_tga_band_writer(ctx, out, colorspace == fz_device_bgr(ctx));
 				else if (output_format == OUT_PWG)
@@ -1563,9 +1567,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (band_height)
 	{
-		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PS)
+		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PS && output_format != OUT_PSD)
 		{
-			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM, PCL, PS and PNG outputs\n");
+			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM, PCL, PS, PSD and PNG outputs\n");
 			exit(1);
 		}
 		if (showmd5)

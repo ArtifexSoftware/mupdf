@@ -1813,6 +1813,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\output-psd.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\output-pwg.c"
 				>
 			</File>
@@ -2397,6 +2401,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\output-ps.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\output-psd.h"
 					>
 				</File>
 				<File
