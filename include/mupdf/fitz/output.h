@@ -176,100 +176,42 @@ void fz_drop_output(fz_context *, fz_output *);
 	data: Pointer to data to write.
 	size: Size of data to write in bytes.
 */
-static inline void fz_write_data(fz_context *ctx, fz_output *out, const void *data, size_t size)
-{
-	if (out)
-		out->write(ctx, out->state, data, size);
-}
+void fz_write_data(fz_context *ctx, fz_output *out, const void *data, size_t size);
 
 /*
 	fz_write_string: Write a string. Does not write zero terminator.
 */
-static inline void fz_write_string(fz_context *ctx, fz_output *out, const char *s)
-{
-	extern size_t strlen(const char *s); /* avoid including string.h in public header */
-	if (out)
-		out->write(ctx, out->state, s, strlen(s));
-}
+void fz_write_string(fz_context *ctx, fz_output *out, const char *s);
 
 /*
 	fz_write_int32_be: Write a big-endian 32-bit binary integer.
 */
-static inline void fz_write_int32_be(fz_context *ctx, fz_output *out, int x)
-{
-	char data[4];
-
-	data[0] = x>>24;
-	data[1] = x>>16;
-	data[2] = x>>8;
-	data[3] = x;
-
-	if (out)
-		out->write(ctx, out->state, data, 4);
-}
+void fz_write_int32_be(fz_context *ctx, fz_output *out, int x);
 
 /*
 	fz_write_int32_le: Write a little-endian 32-bit binary integer.
 */
-static inline void fz_write_int32_le(fz_context *ctx, fz_output *out, int x)
-{
-	char data[4];
-
-	data[0] = x;
-	data[1] = x>>8;
-	data[2] = x>>16;
-	data[3] = x>>24;
-
-	if (out)
-		out->write(ctx, out->state, data, 4);
-}
+void fz_write_int32_le(fz_context *ctx, fz_output *out, int x);
 
 /*
 	fz_write_int16_be: Write a big-endian 16-bit binary integer.
 */
-static inline void fz_write_int16_be(fz_context *ctx, fz_output *out, int x)
-{
-	char data[2];
-
-	data[0] = x>>8;
-	data[1] = x;
-
-	if (out)
-		out->write(ctx, out->state, data, 2);
-}
+void fz_write_int16_be(fz_context *ctx, fz_output *out, int x);
 
 /*
 	fz_write_int16_le: Write a little-endian 16-bit binary integer.
 */
-static inline void fz_write_int16_le(fz_context *ctx, fz_output *out, int x)
-{
-	char data[2];
-
-	data[0] = x;
-	data[1] = x>>8;
-
-	if (out)
-		out->write(ctx, out->state, data, 2);
-}
+void fz_write_int16_le(fz_context *ctx, fz_output *out, int x);
 
 /*
 	fz_write_byte: Write a single byte.
 */
-static inline void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x)
-{
-	if (out)
-		out->write(ctx, out->state, &x, 1);
-}
+void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
 
 /*
 	fz_write_rune: Write a UTF-8 encoded unicode character.
 */
-static inline void fz_write_rune(fz_context *ctx, fz_output *out, int rune)
-{
-	char data[10];
-	if (out)
-		out->write(ctx, out->state, data, fz_runetochar(data, rune));
-}
+void fz_write_rune(fz_context *ctx, fz_output *out, int rune);
 
 /*
 	fz_format_string: Our customised 'printf'-like string formatter.
