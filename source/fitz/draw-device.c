@@ -399,10 +399,10 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	float colorfv[FZ_MAX_COLORS];
 	fz_irect bbox;
 	int i, n;
-	float aa_level = 2.0f/(fz_graphics_aa_level(ctx)+2);
+	float aa_level = 2.0f/(fz_rasterizer_graphics_aa_level(rast)+2);
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
-	float mlw = fz_graphics_min_line_width(ctx);
+	float mlw = fz_rasterizer_graphics_min_line_width(rast);
 
 
 	if (colorspace == NULL && model != NULL)
@@ -542,8 +542,8 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	fz_irect bbox;
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model;
-	float aa_level = 2.0f/(fz_graphics_aa_level(ctx)+2);
-	float mlw = fz_graphics_min_line_width(ctx);
+	float aa_level = 2.0f/(fz_rasterizer_graphics_aa_level(rast)+2);
+	float mlw = fz_rasterizer_graphics_min_line_width(rast);
 	fz_irect local_scissor;
 	fz_irect *scissor_ptr = &state->scissor;
 
@@ -693,6 +693,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	int i, n;
 	fz_colorspace *colorspace = NULL;
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
+	fz_rasterizer *rast = dev->rast;
 
 	if (colorspace_in)
 		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
@@ -736,7 +737,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 			tm.f = span->items[i].y;
 			fz_concat(&trm, &tm, &ctm);
 
-			glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor, state->dest->alpha);
+			glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor, state->dest->alpha, fz_rasterizer_text_aa_level(rast));
 			if (glyph)
 			{
 				fz_pixmap *pixmap = glyph->pixmap;
@@ -791,6 +792,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	int i, n;
 	fz_colorspace *colorspace = NULL;
 	fz_colorspace *prf = fz_proof_cs(ctx, devp);
+	int aa = fz_rasterizer_text_aa_level(dev->rast);
 
 	if (colorspace_in)
 		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
@@ -833,7 +835,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 			tm.f = span->items[i].y;
 			fz_concat(&trm, &tm, &ctm);
 
-			glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, &ctm, stroke, &state->scissor);
+			glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, &ctm, stroke, &state->scissor, aa);
 			if (glyph)
 			{
 				int x = (int)trm.e;
@@ -877,6 +879,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_colorspace *model;
 	fz_text_span *span;
 	fz_rect rect;
+	fz_rasterizer *rast = dev->rast;
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip text");
@@ -939,7 +942,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 					tm.f = span->items[i].y;
 					fz_concat(&trm, &tm, &ctm);
 
-					glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor, state[1].dest->alpha);
+					glyph = fz_render_glyph(ctx, span->font, gid, &trm, model, &state->scissor, state[1].dest->alpha, fz_rasterizer_text_aa_level(rast));
 					if (glyph)
 					{
 						int x = (int)trm.e;
@@ -1005,6 +1008,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 	fz_colorspace *model = state->dest->colorspace;
 	fz_text_span *span;
 	fz_rect rect;
+	int aa = fz_rasterizer_text_aa_level(dev->rast);
 
 	STACK_PUSHED("clip stroke text");
 	/* make the mask the exact size needed */
@@ -1061,7 +1065,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 					tm.f = span->items[i].y;
 					fz_concat(&trm, &tm, &ctm);
 
-					glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, &ctm, stroke, &state->scissor);
+					glyph = fz_render_stroked_glyph(ctx, span->font, gid, &trm, &ctm, stroke, &state->scissor, aa);
 					if (glyph)
 					{
 						int x = (int)trm.e;
@@ -2386,7 +2390,7 @@ fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 }
 
 fz_device *
-fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
+new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, const fz_aa_context *aa)
 {
 	fz_draw_device *dev = fz_new_derived_device(ctx, fz_draw_device);
 
@@ -2437,7 +2441,7 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 
 	fz_try(ctx)
 	{
-		dev->rast = fz_new_rasterizer(ctx);
+		dev->rast = fz_new_rasterizer(ctx, aa);
 		dev->cache_x = fz_new_scale_cache(ctx);
 		dev->cache_y = fz_new_scale_cache(ctx);
 	}
@@ -2448,6 +2452,12 @@ fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 	}
 
 	return (fz_device*)dev;
+}
+
+fz_device *
+fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
+{
+	return new_draw_device(ctx, transform, dest, NULL);
 }
 
 fz_device *
@@ -2478,7 +2488,7 @@ fz_new_draw_device_type3(fz_context *ctx, const fz_matrix *transform, fz_pixmap 
 fz_irect *
 fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor, const fz_path *path, const fz_stroke_state *stroke, const fz_matrix *ctm, float flatness, float linewidth)
 {
-	fz_rasterizer *rast = fz_new_rasterizer(ctx);
+	fz_rasterizer *rast = fz_new_rasterizer(ctx, NULL);
 
 	if (stroke)
 		(void)fz_flatten_stroke_path(ctx, rast, path, stroke, ctm, flatness, linewidth, scissor, bbox);
@@ -2499,7 +2509,23 @@ const char *fz_draw_options_usage =
 	"\theight=N: render pages to fit N pixels tall (ignore resolution option)\n"
 	"\tcolorspace=(gray|rgb|cmyk): render using specified colorspace\n"
 	"\talpha: render pages with alpha channel and transparent background\n"
+	"\tgraphics=(aaN|cop|app): set the rasterizer to use\n"
+	"\ttext=(aaN|cop|app): set the rasterizer to use for text\n"
+	"\t\taaN=antialias with N bits (0 to 8)\n"
+	"\t\tcop=center of pixel\n"
+	"\t\tapp=any part of pixel\n"
 	"\n";
+
+static int parse_aa_opts(const char *val)
+{
+	if (fz_option_eq(val, "cop"))
+		return 9;
+	if (fz_option_eq(val, "app"))
+		return 10;
+	if (val[0] == 'a' && val[1] == 'a' && val[2] >= '0' && val[2] <= '9')
+		return  fz_clampi(fz_atoi(&val[2]), 0, 8);
+	return 8;
+}
 
 fz_draw_options *
 fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
@@ -2515,6 +2541,8 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 	opts->height = 0;
 	opts->colorspace = fz_device_rgb(ctx);
 	opts->alpha = 0;
+	opts->graphics = fz_aa_level(ctx);
+	opts->text = fz_text_aa_level(ctx);
 
 	if (fz_has_option(ctx, args, "rotate", &val))
 		opts->rotate = fz_atoi(val);
@@ -2541,6 +2569,10 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 	}
 	if (fz_has_option(ctx, args, "alpha", &val))
 		opts->alpha = fz_option_eq(val, "yes");
+	if (fz_has_option(ctx, args, "graphics", &val))
+		opts->text = opts->graphics = parse_aa_opts(val);
+	if (fz_has_option(ctx, args, "text", &val))
+		opts->text = parse_aa_opts(val);
 
 	/* Sanity check values */
 	if (opts->x_resolution <= 0) opts->x_resolution = 96;
@@ -2562,6 +2594,10 @@ fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, co
 	fz_irect ibounds;
 	fz_matrix transform;
 	fz_device *dev;
+	fz_aa_context aa = *ctx->aa;
+
+	fz_set_rasterizer_graphics_aa_level(ctx, &aa, opts->graphics);
+	fz_set_rasterizer_text_aa_level(ctx, &aa, opts->text);
 
 	fz_pre_rotate(fz_scale(&transform, x_zoom, y_zoom), opts->rotate);
 	bounds = *mediabox;

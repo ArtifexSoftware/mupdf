@@ -349,6 +349,8 @@ struct fz_draw_options_s
 	int height;
 	fz_colorspace *colorspace;
 	int alpha;
+	int graphics;
+	int text;
 };
 
 extern const char *fz_draw_options_usage;

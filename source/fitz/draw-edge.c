@@ -149,8 +149,8 @@ fz_insert_gel(fz_context *ctx, fz_rasterizer *ras, float fx0, float fy0, float f
 {
 	int x0, y0, x1, y1;
 	int d, v;
-	const int hscale = fz_aa_hscale;
-	const int vscale = fz_aa_vscale;
+	const int hscale = fz_rasterizer_aa_hscale(ras);
+	const int vscale = fz_rasterizer_aa_vscale(ras);
 
 	fx0 = floorf(fx0 * hscale);
 	fx1 = floorf(fx1 * hscale);
@@ -213,8 +213,8 @@ static void
 fz_insert_gel_rect(fz_context *ctx, fz_rasterizer *ras, float fx0, float fy0, float fx1, float fy1)
 {
 	int x0, y0, x1, y1;
-	const int hscale = fz_aa_hscale;
-	const int vscale = fz_aa_vscale;
+	const int hscale = fz_rasterizer_aa_hscale(ras);
+	const int vscale = fz_rasterizer_aa_vscale(ras);
 
 	if (fx0 <= fx1)
 	{
@@ -445,11 +445,11 @@ advance_active(fz_context *ctx, fz_gel *gel, int inc)
  */
 
 static inline void
-add_span_aa(fz_context *ctx, int *list, int x0, int x1, int xofs, int h)
+add_span_aa(fz_context *ctx, fz_gel *gel, int *list, int x0, int x1, int xofs, int h)
 {
 	int x0pix, x0sub;
 	int x1pix, x1sub;
-	const int hscale = fz_aa_hscale;
+	const int hscale = fz_rasterizer_aa_hscale(&gel->super);
 
 	if (x0 == x1)
 		return;
@@ -493,7 +493,7 @@ non_zero_winding_aa(fz_context *ctx, fz_gel *gel, int *list, int xofs, int h)
 		if (!winding && (winding + gel->active[i]->ydir))
 			x = gel->active[i]->x;
 		if (winding && !(winding + gel->active[i]->ydir))
-			add_span_aa(ctx, list, x, gel->active[i]->x, xofs, h);
+			add_span_aa(ctx, gel, list, x, gel->active[i]->x, xofs, h);
 		winding += gel->active[i]->ydir;
 	}
 }
@@ -510,7 +510,7 @@ even_odd_aa(fz_context *ctx, fz_gel *gel, int *list, int xofs, int h)
 		if (!even)
 			x = gel->active[i]->x;
 		else
-			add_span_aa(ctx, list, x, gel->active[i]->x, xofs, h);
+			add_span_aa(ctx, gel, list, x, gel->active[i]->x, xofs, h);
 		even = !even;
 	}
 }
@@ -548,8 +548,8 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 	int y, e;
 	int yd, yc;
 	int height, h0, rh;
-	const int hscale = fz_aa_hscale;
-	const int vscale = fz_aa_vscale;
+	const int hscale = fz_rasterizer_aa_hscale(&gel->super);
+	const int vscale = fz_rasterizer_aa_vscale(&gel->super);
 
 	int xmin = fz_idiv(gel->super.bbox.x0, hscale);
 	int xmax = fz_idiv_up(gel->super.bbox.x1, hscale);

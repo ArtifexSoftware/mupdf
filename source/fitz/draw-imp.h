@@ -26,6 +26,10 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_aa_vscale 15
 #define fz_aa_bits 8
 #define fz_aa_text_bits 8
+#define fz_rasterizer_aa_hscale(ras) 17
+#define fz_rasterizer_aa_vscale(ras) 15
+#define fz_rasterizer_aa_bits(ras) 8
+#define fz_rasterizer_aa_text_bits(ras) 8
 
 #elif AA_BITS > 4
 #define AA_SCALE(s, x) ((x * 255) >> 6)
@@ -33,6 +37,10 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_aa_vscale 8
 #define fz_aa_bits 6
 #define fz_aa_text_bits 6
+#define fz_rasterizer_aa_hscale(ras) 8
+#define fz_rasterizer_aa_vscale(ras) 8
+#define fz_rasterizer_aa_bits(ras) 6
+#define fz_rasterizer_aa_text_bits(ras) 6
 
 #elif AA_BITS > 2
 #define AA_SCALE(s, x) (x * 17)
@@ -40,6 +48,11 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_aa_vscale 3
 #define fz_aa_bits 4
 #define fz_aa_text_bits 4
+#define fz_rasterizer_aa_hscale(ras) 5
+#define fz_rasterizer_aa_vscale(ras) 3
+#define fz_rasterizer_aa_bits(ras) 4
+#define fz_rasterizer_aa_text_bits(ras) 4
+
 
 #elif AA_BITS > 0
 #define AA_SCALE(s, x) ((x * 255) >> 2)
@@ -47,6 +60,10 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_aa_vscale 2
 #define fz_aa_bits 2
 #define fz_aa_text_bits 2
+#define fz_rasterizer_aa_hscale(ras) 2
+#define fz_rasterizer_aa_vscale(ras) 2
+#define fz_rasterizer_aa_bits(ras) 2
+#define fz_rasterizer_aa_text_bits(ras) 2
 
 #else
 #define AA_SCALE(s, x) (x * 255)
@@ -54,6 +71,10 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_aa_vscale 1
 #define fz_aa_bits 0
 #define fz_aa_text_bits 0
+#define fz_rasterizer_aa_hscale(ras) 1
+#define fz_rasterizer_aa_vscale(ras) 1
+#define fz_rasterizer_aa_bits(ras) 0
+#define fz_rasterizer_aa_text_bits(ras) 0
 
 #endif
 #else
@@ -64,6 +85,10 @@ static inline int fz_idiv_up(int a, int b)
 #define fz_aa_scale (ctx->aa->scale)
 #define fz_aa_bits (ctx->aa->bits)
 #define fz_aa_text_bits (ctx->aa->text_bits)
+#define fz_rasterizer_aa_hscale(ras) ((ras)->aa.hscale)
+#define fz_rasterizer_aa_vscale(ras) ((ras)->aa.vscale)
+#define fz_rasterizer_aa_bits(ras) ((ras)->aa.bits)
+#define fz_rasterizer_aa_text_bits(ras) ((ras)->aa.text_bits)
 
 #endif
 
@@ -115,6 +140,7 @@ typedef struct
 struct fz_rasterizer_s
 {
 	fz_rasterizer_fns fns;
+	fz_aa_context aa;
 	fz_irect clip; /* Specified clip rectangle */
 	fz_irect bbox; /* Measured bbox of path while stroking/filling */
 };
@@ -182,8 +208,10 @@ struct fz_rasterizer_s
 
 	A single rasterizer instance can be used to scan convert many
 	things.
+
+	aa: The antialiasing settings to use (or NULL).
 */
-fz_rasterizer *fz_new_rasterizer(fz_context *ctx);
+fz_rasterizer *fz_new_rasterizer(fz_context *ctx, const fz_aa_context *aa);
 
 /*
 	fz_drop_rasterizer: Dispose of a rasterizer once
@@ -313,6 +341,56 @@ void *fz_new_rasterizer_of_size(fz_context *ctx, int size, const fz_rasterizer_f
 
 #define fz_new_derived_rasterizer(C,M,F) \
 	((M*)Memento_label(fz_new_rasterizer_of_size(C, sizeof(M), F), #M))
+
+/*
+	fz_rasterizer_text_aa_level: Get the number of bits of
+	antialiasing we are using for text in a given rasterizer.
+	Between 0 and 8.
+*/
+int fz_rasterizer_text_aa_level(fz_rasterizer *ras);
+
+/*
+	fz_set_rasterizer_text_aa_level: Set the number of bits of
+	antialiasing we should use for text in a given configuration.
+
+	bits: The number of bits of antialiasing to use (values are clamped
+	to within the 0 to 8 range).
+*/
+void fz_set_rasterizer_text_aa_level(fz_context *ctx, fz_aa_context *aa, int bits);
+
+/*
+	fz_rasterizer_graphics_aa_level: Get the number of bits of
+	antialiasing we are using for graphics in a given rasterizer.
+
+	Between 0 and 8.
+*/
+int fz_rasterizer_graphics_aa_level(fz_rasterizer *ras);
+
+/*
+	fz_set_rasterizer_graphics_aa_level: Set the number of bits of
+	antialiasing we should use for graphics in a given rasterizer.
+
+	bits: The number of bits of antialiasing to use (values are clamped
+	to within the 0 to 8 range).
+*/
+void fz_set_rasterizer_graphics_aa_level(fz_context *ctx, fz_aa_context *aa, int bits);
+
+/*
+	fz_rasterizer_graphics_min_line_width: Get the minimum line
+	width to be used for stroked lines in a given rasterizer.
+
+	min_line_width: The minimum line width to use (in pixels).
+*/
+float fz_rasterizer_graphics_min_line_width(fz_rasterizer *ras);
+
+/*
+	fz_set_rasterizer_graphics_min_line_width: Set the minimum line
+	width to be used for stroked lines in a given configuration.
+
+	min_line_width: The minimum line width to use (in pixels).
+*/
+void fz_set_rasterizer_graphics_min_line_width(fz_context *ctx, fz_aa_context *aa, float min_line_width);
+
 
 fz_rasterizer *fz_new_gel(fz_context *ctx);
 
