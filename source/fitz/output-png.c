@@ -125,10 +125,11 @@ png_write_icc(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 {
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
-	int profile_size, size;
+	size_t profile_size;
+	int size;
 	unsigned char *data = fz_new_icc_data_from_icc_colorspace(ctx, cs, &profile_size);
 	unsigned char *chunk, *pos, *cdata;
-	size_t bound;
+	uLong bound;
 	uLongf csize;
 	uLong long_size = (uLong)profile_size;
 	int t;
@@ -137,7 +138,7 @@ png_write_icc(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 		return;
 
 	/* Deflate the profile */
-	bound = compressBound(profile_size);
+	bound = compressBound(long_size);
 	cdata = fz_malloc(ctx, bound);
 	csize = (uLongf)bound;
 	t = compress(cdata, &csize, data, long_size);

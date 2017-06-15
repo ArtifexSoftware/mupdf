@@ -2988,7 +2988,7 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
  * data for output formats.
  */
 unsigned char *
-fz_new_icc_data_from_icc_colorspace(fz_context *ctx, fz_colorspace *cs, int *size)
+fz_new_icc_data_from_icc_colorspace(fz_context *ctx, fz_colorspace *cs, size_t *size)
 {
 	fz_iccprofile *profile;
 	unsigned char *data;
