@@ -1280,7 +1280,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 
 	if (fz_optind < argc)
 	{
-		strcpy(filename, argv[fz_optind]);
+		strcpy(filename, argv[fz_optind++]);
 	}
 	else
 	{
@@ -1290,6 +1290,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShow
 		if (code == 0)
 			winerror(&gapp, "cannot convert filename to utf-8");
 	}
+
+	if (fz_optind < argc)
+		gapp.pageno = atoi(argv[fz_optind++]);
 
 	if (bps)
 		pdfapp_open_progressive(&gapp, filename, 0, bps);
