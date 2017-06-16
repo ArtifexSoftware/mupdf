@@ -99,14 +99,16 @@ static inline void fz_cmm_drop_instance(fz_context *ctx)
 		ctx->cmm->drop_instance(ctx->cmm_instance);
 }
 
-static inline void fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
+static inline int fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
 {
 	ctx->cmm->new_profile(ctx->cmm_instance, profile);
+	return profile->cmm_handle == NULL;
 }
 
 static inline void fz_cmm_drop_profile(fz_context *ctx, fz_iccprofile *profile)
 {
-	ctx->cmm->drop_profile(ctx->cmm_instance, profile);
+	if (profile && profile->cmm_handle != NULL)
+		ctx->cmm->drop_profile(ctx->cmm_instance, profile);
 }
 
 #endif

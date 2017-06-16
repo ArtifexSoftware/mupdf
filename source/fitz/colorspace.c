@@ -242,8 +242,8 @@ get_base_icc(fz_context *ctx, fz_colorspace *cs)
 
 	cal = base->data;
 	cal_icc = cal->profile;
-	if (cal_icc && cal_icc->cmm_handle == NULL)
-		fz_cmm_new_profile(ctx, cal_icc);
+	if (cal_icc && cal_icc->cmm_handle == NULL && fz_cmm_new_profile(ctx, cal_icc))
+		return NULL;
 
 	return cal_icc;
 }
@@ -343,30 +343,30 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 		/* Check if we have any work to do. */
 		if (src_icc == NULL)
 			src_icc = fz_icc_from_cal(ctx, src);
-		if (src_icc->cmm_handle == NULL)
-			fz_cmm_new_profile(ctx, src_icc);
-
-		/* On failure use the default. */
-		if (src_icc->cmm_handle == NULL)
+		if (src_icc->cmm_handle == NULL && fz_cmm_new_profile(ctx, src_icc))
 		{
-			switch (src->n)
+			/* The CMM failed to make a profile. Use the default. */
+			if (src_icc->cmm_handle == NULL)
 			{
-			case 1:
-				src_icc = fz_device_gray(ctx)->data;
-				break;
-			case 3:
-				src_icc = fz_device_rgb(ctx)->data;
-				break;
-			case 4:
-				src_icc = fz_device_cmyk(ctx)->data;
-				break;
-			default:
-				fz_throw(ctx, FZ_ERROR_GENERIC, "Poorly formed Cal color space");
+				switch (src->n)
+				{
+				case 1:
+					src_icc = fz_device_gray(ctx)->data;
+					break;
+				case 3:
+					src_icc = fz_device_rgb(ctx)->data;
+					break;
+				case 4:
+					src_icc = fz_device_cmyk(ctx)->data;
+					break;
+				default:
+					fz_throw(ctx, FZ_ERROR_GENERIC, "Poorly formed Cal color space");
+				}
+				/* To avoid repeated failures building the pdf-cal color space,
+				 * assign the default profile. */
+				fz_cmm_drop_profile(ctx, src_icc);
+				cal->profile = src_icc;
 			}
-			/* To avoid repeated failures building the pdf-cal color space,
-			 * assign the default profile. */
-			fz_cmm_drop_profile(ctx, src_icc);
-			cal->profile = src_icc;
 		}
 	}
 	else
@@ -2947,10 +2947,8 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
 			is_lab = (strncmp(name, "lab-icc", strlen("lab-icc")) == 0);
 		}
-		fz_cmm_new_profile(ctx, profile);
-
 		/* Check if correct type */
-		if (num != profile->num_devcomp)
+		if (fz_cmm_new_profile(ctx, profile) || num != profile->num_devcomp)
 		{
 			if (name != NULL)
 				fz_drop_buffer(ctx, profile->buffer);
