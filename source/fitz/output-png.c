@@ -33,8 +33,7 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_png_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
-		fz_write_icc(ctx, writer, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -60,8 +59,7 @@ fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap)
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
-		fz_write_icc(ctx, writer, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -84,46 +82,8 @@ typedef struct png_band_writer_s
 } png_band_writer;
 
 static void
-png_write_header(fz_context *ctx, fz_band_writer *writer_)
+png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
 {
-	png_band_writer *writer = (png_band_writer *)(void *)writer_;
-	fz_output *out = writer->super.out;
-	int w = writer->super.w;
-	int h = writer->super.h;
-	int n = writer->super.n;
-	int alpha = writer->super.alpha;
-	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
-	unsigned char head[13];
-	int color;
-
-	/* Treat alpha only as greyscale */
-	if (n == 1 && alpha)
-		alpha = 0;
-
-	switch (n - alpha)
-	{
-	case 1: color = (alpha ? 4 : 0); break; /* 0 = Greyscale, 4 = Greyscale + Alpha */
-	case 3: color = (alpha ? 6 : 2); break; /* 2 = RGB, 6 = RGBA */
-	default:
-		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as png");
-	}
-
-	big32(head+0, w);
-	big32(head+4, h);
-	head[8] = 8; /* depth */
-	head[9] = color;
-	head[10] = 0; /* compression */
-	head[11] = 0; /* filter */
-	head[12] = 0; /* interlace */
-
-	fz_write_data(ctx, out, pngsig, 8);
-	putchunk(ctx, out, "IHDR", head, 13);
-}
-
-static void
-png_write_icc(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
-{
-	png_band_writer *writer = (png_band_writer *)(void *)writer_;
 	fz_output *out = writer->super.out;
 	size_t profile_size;
 	int size;
@@ -169,6 +129,45 @@ png_write_icc(fz_context *ctx, fz_band_writer *writer_, fz_colorspace *cs)
 	{
 		/* Nothing */
 	}
+}
+
+static void
+png_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
+{
+	png_band_writer *writer = (png_band_writer *)(void *)writer_;
+	fz_output *out = writer->super.out;
+	int w = writer->super.w;
+	int h = writer->super.h;
+	int n = writer->super.n;
+	int alpha = writer->super.alpha;
+	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
+	unsigned char head[13];
+	int color;
+
+	/* Treat alpha only as greyscale */
+	if (n == 1 && alpha)
+		alpha = 0;
+
+	switch (n - alpha)
+	{
+	case 1: color = (alpha ? 4 : 0); break; /* 0 = Greyscale, 4 = Greyscale + Alpha */
+	case 3: color = (alpha ? 6 : 2); break; /* 2 = RGB, 6 = RGBA */
+	default:
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as png");
+	}
+
+	big32(head+0, w);
+	big32(head+4, h);
+	head[8] = 8; /* depth */
+	head[9] = color;
+	head[10] = 0; /* compression */
+	head[11] = 0; /* filter */
+	head[12] = 0; /* interlace */
+
+	fz_write_data(ctx, out, pngsig, 8);
+	putchunk(ctx, out, "IHDR", head, 13);
+
+	png_write_icc(ctx, writer, cs);
 }
 
 static void
@@ -284,7 +283,6 @@ fz_band_writer *fz_new_png_band_writer(fz_context *ctx, fz_output *out)
 	writer->super.header = png_write_header;
 	writer->super.band = png_write_band;
 	writer->super.trailer = png_write_trailer;
-	writer->super.icc = png_write_icc;
 	writer->super.drop = png_drop_band_writer;
 
 	return &writer->super;

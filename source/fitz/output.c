@@ -392,7 +392,7 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 	return writer;
 }
 
-void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum)
+void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, const fz_colorspace *cs)
 {
 	if (writer == NULL || writer->band == NULL)
 		return;
@@ -404,14 +404,7 @@ void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int 
 	writer->yres = yres;
 	writer->pagenum = pagenum;
 	writer->line = 0;
-	writer->header(ctx, writer);
-}
-
-void fz_write_icc(fz_context *ctx, fz_band_writer *writer, fz_colorspace *cs)
-{
-	if (writer == NULL || writer->band == NULL || writer->icc == NULL || cs == NULL)
-		return;
-	writer->icc(ctx, writer, cs);
+	writer->header(ctx, writer, cs);
 }
 
 void fz_write_band(fz_context *ctx, fz_band_writer *writer, int stride, int band_height, const unsigned char *samples)

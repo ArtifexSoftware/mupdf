@@ -102,7 +102,7 @@ fz_write_pixmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_pixmap *pi
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -118,7 +118,7 @@ fz_write_bitmap_as_pwg_page(fz_context *ctx, fz_output *out, const fz_bitmap *bi
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, bitmap->w, bitmap->h, bitmap->n, 0, bitmap->xres, bitmap->yres, 0);
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, bitmap->n, 0, bitmap->xres, bitmap->yres, 0, NULL);
 		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
 	}
 	fz_always(ctx)
@@ -174,7 +174,7 @@ fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int ap
 }
 
 static void
-pwg_write_mono_header(fz_context *ctx, fz_band_writer *writer_)
+pwg_write_mono_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
 {
 	pwg_band_writer *writer = (pwg_band_writer *)writer_;
 
@@ -272,7 +272,7 @@ fz_band_writer *fz_new_mono_pwg_band_writer(fz_context *ctx, fz_output *out, con
 }
 
 static void
-pwg_write_header(fz_context *ctx, fz_band_writer *writer_)
+pwg_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
 {
 	pwg_band_writer *writer = (pwg_band_writer *)writer_;
 	int n = writer->super.n;

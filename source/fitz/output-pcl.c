@@ -691,7 +691,7 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 	writer = fz_new_color_pcl_band_writer(ctx, out, pcl);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -713,7 +713,7 @@ typedef struct color_pcl_band_writer_s
 } color_pcl_band_writer;
 
 static void
-color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_)
+color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
 {
 	color_pcl_band_writer *writer = (color_pcl_band_writer *)writer_;
 	fz_output *out = writer->super.out;
@@ -1078,7 +1078,7 @@ fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap,
 	writer = fz_new_mono_pcl_band_writer(ctx, out, pcl);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, bitmap->xres, bitmap->yres, 0);
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, bitmap->xres, bitmap->yres, 0, NULL);
 		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
 	}
 	fz_always(ctx)
@@ -1099,7 +1099,7 @@ typedef struct mono_pcl_band_writer_s
 } mono_pcl_band_writer;
 
 static void
-mono_pcl_write_header(fz_context *ctx, fz_band_writer *writer_)
+mono_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *cs)
 {
 	mono_pcl_band_writer *writer = (mono_pcl_band_writer *)writer_;
 	fz_output *out = writer->super.out;
