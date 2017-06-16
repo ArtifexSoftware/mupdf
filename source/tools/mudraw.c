@@ -102,12 +102,12 @@ typedef struct
 {
 	int format;
 	int default_cs;
-	int permitted_cs[8];
+	int permitted_cs[6];
 } format_cs_table_t;
 
 static const format_cs_table_t format_cs_table[] =
 {
-	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA} },
+	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
 	{ OUT_PPM, CS_RGB, { CS_GRAY, CS_RGB } },
 	{ OUT_PNM, CS_GRAY, { CS_GRAY, CS_RGB } },
 	{ OUT_PAM, CS_RGB_ALPHA, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
@@ -322,7 +322,7 @@ static void usage(void)
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
 		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
-		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha, iccgray, iccgrayalpha, iccrgb, iccrgba, icccmyk, icccmykalpha)\n"
+		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha)\n"
 		"\t-G -\tapply gamma correction\n"
 		"\t-I\tinvert colors\n"
 		"\n"
