@@ -224,32 +224,28 @@ static int fz_colorspace_is_pdf_cal(fz_context *ctx, const fz_colorspace *cs);
 static fz_iccprofile *
 get_base_icc(fz_context *ctx, fz_colorspace *cs)
 {
-	if (cs && cs->get_base)
-	{
-		fz_colorspace *base = cs->get_base(cs);
+	fz_colorspace *base;
+	fz_cal_colorspace *cal;
+	fz_iccprofile *cal_icc;
 
-		if (base)
-			if (fz_colorspace_is_icc(ctx, base))
-				return base->data;
-			else if (fz_colorspace_is_pdf_cal(ctx, base))
-			{
-				fz_cal_colorspace *cal;
-				fz_iccprofile *cal_icc;
-
-				cal = base->data;
-				cal_icc = cal->profile;
-				if (cal_icc && cal_icc->cmm_handle == NULL)
-					fz_cmm_new_profile(ctx, cal_icc);
-				return cal_icc;
-			}
-			else
-				return get_base_icc(ctx, base);
-		else
-			return NULL;
-
-	}
-	else
+	if (!cs || !cs->get_base)
 		return NULL;
+
+	base = cs->get_base(cs);
+	if (base == NULL)
+		return NULL;
+
+	if (fz_colorspace_is_icc(ctx, base))
+		return base->data;
+	if (!fz_colorspace_is_pdf_cal(ctx, base))
+		return get_base_icc(ctx, base);
+
+	cal = base->data;
+	cal_icc = cal->profile;
+	if (cal_icc && cal_icc->cmm_handle == NULL)
+		fz_cmm_new_profile(ctx, cal_icc);
+
+	return cal_icc;
 }
 
 static fz_icclink *
