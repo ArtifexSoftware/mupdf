@@ -736,7 +736,6 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	pdf_page *page;
 	pdf_annot *annot;
 	pdf_obj *pageobj, *obj;
-	pdf_obj *resources;
 
 	if (doc->file_reading_linearly)
 	{
@@ -749,8 +748,6 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 
 	page = pdf_new_page(ctx, doc);
 	page->obj = pdf_keep_obj(ctx, pageobj);
-
-	resources = pdf_page_resources(ctx, page);
 
 	/* Pre-load annotations and links */
 	fz_try(ctx)
@@ -780,6 +777,7 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 	/* Scan for transparency */
 	fz_try(ctx)
 	{
+		pdf_obj *resources = pdf_page_resources(ctx, page);
 		if (pdf_resources_use_blending(ctx, resources))
 			page->transparency = 1;
 		else if (pdf_name_eq(ctx, pdf_dict_getp(ctx, pageobj, "Group/S"), PDF_NAME_Transparency))
