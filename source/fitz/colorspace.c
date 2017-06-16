@@ -2988,16 +2988,16 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
  * data for output formats.
  */
 unsigned char *
-fz_new_icc_data_from_icc_colorspace(fz_context *ctx, fz_colorspace *cs, size_t *size)
+fz_new_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs, size_t *size)
 {
 	fz_iccprofile *profile;
 	unsigned char *data;
 
 	if (cs == NULL || !fz_colorspace_is_icc(ctx, cs))
-		return NULL;
+		return *size = 0, NULL;
 	profile = cs->data;
 	if (profile == NULL)
-		return NULL;
+		return *size = 0, NULL;
 	*size = fz_buffer_storage(ctx, profile->buffer, &data);
 	return data;
 }
