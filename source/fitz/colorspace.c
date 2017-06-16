@@ -2036,11 +2036,14 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorsp
 	fz_irect bbox;
 	int h, len;
 	float src_f[FZ_MAX_COLORS], des_f[FZ_MAX_COLORS];
-	int stride_src = src->stride - src->w * src->n;
+	int sn = src->n;
+	int stride_src = src->stride - src->w * sn;
 	int stride_base;
+	int bn;
 
 	base = fz_new_pixmap_with_bbox(ctx, base_cs, fz_pixmap_bbox(ctx, src, &bbox), src->alpha);
-	stride_base = base->stride - base->w * base->n;
+	bn = base->n;
+	stride_base = base->stride - base->w * bn;
 
 	inputpos = src->samples;
 	outputpos = base->samples;
@@ -2051,34 +2054,28 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorsp
 		len = src->w;
 		while (len--)
 		{
-			for (i = 0; i < src->n; i++)
+			for (i = 0; i < sn; i++)
 				src_f[i] = (float) inputpos[i] / 255.0;
 
 			convert_to_icc_base(ctx, srcs, src_f, des_f);
 			base_cs->clamp(base_cs, des_f, des_f);
 
-			for (i = 0; i < base->n; i++)
+			for (i = 0; i < bn; i++)
 				outputpos[i] = des_f[i] * 255.0;
 
-			outputpos += base->n;
-			inputpos += src->n;
+			outputpos += bn;
+			inputpos += sn;
 		}
 		outputpos += stride_base;
 		inputpos += stride_src;
 	}
 
 	fz_try(ctx)
-	{
 		fz_icc_conv_pixmap(ctx, dst, base, prf, default_cs, color_params);
-	}
 	fz_always(ctx)
-	{
 		fz_drop_pixmap(ctx, base);
-	}
 	fz_catch(ctx)
-	{
-		/* nothing */
-	}
+		fz_rethrow(ctx);
 }
 
 static void
@@ -2399,6 +2396,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 {
 	fz_colorspace *dsts = cc->ds;
 	int src_n = cc->n;
+	int dst_n = dsts->n;
 
 	fz_icclink *link = (fz_icclink *)cc->link;
 	int i;
@@ -2415,7 +2413,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 		for (i = 0; i < src_n; i++)
 			srcv_s[i] = srcv[i] * 65535;
 		fz_cmm_transform_color(ctx, link, dstv_s, srcv_s);
-		for (i = 0; i < dsts->n; i++)
+		for (i = 0; i < dst_n; i++)
 			dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
 	}
 }
@@ -2673,11 +2671,12 @@ indexed_to_alt(fz_context *ctx, fz_colorspace *cs, const float *color, float *al
 {
 	struct indexed *idx = cs->data;
 	int i, k;
+	int n = idx->base->n;
 
 	i = color[0] * 255;
 	i = fz_clampi(i, 0, idx->high);
-	for (k = 0; k < idx->base->n; k++)
-		alt[k] = idx->lookup[i * idx->base->n + k] / 255.0f;
+	for (k = 0; k < n; k++)
+		alt[k] = idx->lookup[i * n + k] / 255.0f;
 }
 
 static void
@@ -2857,6 +2856,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 	{
 		fz_discard_color_converter(ctx, &cached->base);
 		fz_drop_hash_table(ctx, cached->hash);
+		fz_free(ctx, cached);
 		fz_rethrow(ctx);
 	}
 }
@@ -2909,13 +2909,9 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 static void
 clamp_lab_icc(const fz_colorspace *cs, const float *src, float *dst)
 {
-	int i;
-
-	for (i = 0; i < 3; i++)
-		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
-	dst[0] = dst[0] / 100.0;
-	dst[1] = (dst[1] + 128.0) / 256;
-	dst[2] = (dst[2] + 128.0) / 256;
+	dst[0] = (fz_clamp(src[0], 0, 100)) / 100.0;
+	dst[1] = (fz_clamp(src[1], -128, 127) + 128.0) / 256;
+	dst[2] = (fz_clamp(src[2], -128, 127) + 128.0) / 256;
 }
 
 /* Embedded icc profiles could have different range */
@@ -3144,7 +3140,7 @@ fz_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs)
 		return NULL;
 }
 
-fz_default_colorspaces*
+fz_default_colorspaces *
 fz_new_default_colorspaces(fz_context *ctx)
 {
 	fz_default_colorspaces *default_cs = fz_malloc_struct(ctx, fz_default_colorspaces);
@@ -3156,7 +3152,7 @@ fz_new_default_colorspaces(fz_context *ctx)
 	return default_cs;
 }
 
-fz_default_colorspaces*
+fz_default_colorspaces *
 fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs)
 {
 	return fz_keep_imp(ctx, default_cs, &default_cs->refs);
@@ -3166,9 +3162,7 @@ void
 fz_drop_outputintent(fz_context *ctx, fz_default_colorspaces *default_cs)
 {
 	if (default_cs)
-	{
 		fz_drop_colorspace(ctx, default_cs->oi);
-	}
 }
 
 void
