@@ -256,7 +256,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *src, fz_iccprofile *prf, fz_iccp
 	link = fz_malloc_struct(ctx, fz_icclink);
 	link->num_in = src->num_devcomp;
 	link->num_out = dst->num_devcomp;
-	if (memcmp(src->md5, dst->md5, 16) == 0 && rend->ri == FZ_RI_RELATIVE_COLORIMETRIC)
+	if (memcmp(src->md5, dst->md5, 16) == 0 && rend->ri == FZ_RI_RELATIVE_COLORIMETRIC && prf == NULL)
 	{
 		link->is_identity = 1;
 		FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
