@@ -14,6 +14,8 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 	fz_buffer *buffer = NULL;
 	fz_colorspace *cs = NULL;
 
+	fz_var(cs);
+
 	n = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_N));
 
 	fz_try(ctx)
@@ -88,9 +90,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 		}
 	}
 	fz_always(ctx)
-	{
 		fz_drop_buffer(ctx, buffer);
-	}
 	fz_catch(ctx)
 	{
 		/* Something went wrong (perhaps invalid ICC profile) */
@@ -297,9 +297,7 @@ pdf_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float *gamm
 		{
 			objv = pdf_array_get(ctx, obj, i);
 			if (!pdf_is_number(ctx, objv))
-			{
 				return -1;
-			}
 			bp[i] = pdf_to_real(ctx, objv);
 			fz_clamp(bp[i], 0, 1);
 		}
@@ -529,6 +527,7 @@ pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
 	pdf_obj *intents = pdf_dict_get(ctx, root, PDF_NAME_OutputIntents);
 	pdf_obj *intent_dict;
 	pdf_obj *dest_profile;
+	fz_colorspace *cs = NULL;
 
 	/* An array of intents */
 	if (!intents)
@@ -543,5 +542,15 @@ pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
 	if (!dest_profile)
 		return NULL;
 
-	return load_icc_based(ctx, dest_profile, 0);
+	fz_var(cs);
+
+	fz_try(ctx)
+		cs = load_icc_based(ctx, dest_profile, 0);
+	fz_catch(ctx)
+	{
+		/* Swallow the error */
+		fz_warn(ctx, "Attempt to read Output Intent failed");
+	}
+
+	return cs;
 }
