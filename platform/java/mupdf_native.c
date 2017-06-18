@@ -6490,7 +6490,6 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf, jobjec
 	sbuf = (*env)->GetStringUTFChars(env, jbuf, NULL);
 	if (!sbuf) return NULL;
 
-	fz_var(data);
 	fz_var(buf);
 
 	fz_try(ctx)
@@ -6499,13 +6498,11 @@ FUN(PDFDocument_addStreamString)(JNIEnv *env, jobject self, jstring jbuf, jobjec
 		data = fz_malloc(ctx, len);
 		memcpy(data, sbuf, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
-		data = NULL;
 		ind = pdf_add_stream(ctx, pdf, buf, obj, compressed);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, buf);
-		fz_free(ctx, data);
 		(*env)->ReleaseStringUTFChars(env, jbuf, sbuf);
 	}
 	fz_catch(ctx)
@@ -6561,7 +6558,6 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 	scontents = (*env)->GetStringUTFChars(env, jcontents, NULL);
 	if (!scontents) return NULL;
 
-	fz_var(data);
 	fz_var(contents);
 
 	fz_try(ctx)
@@ -6569,13 +6565,11 @@ FUN(PDFDocument_addPageString)(JNIEnv *env, jobject self, jobject jmediabox, jin
 		size_t len = strlen(scontents);
 		data = fz_malloc(ctx, len);
 		contents = fz_new_buffer_from_data(ctx, data, len);
-		data = NULL;
 		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, contents);
-		fz_free(ctx, data);
 		(*env)->ReleaseStringUTFChars(env, jcontents, scontents);
 	}
 	fz_catch(ctx)
@@ -7142,7 +7136,6 @@ FUN(PDFObject_writeStreamString)(JNIEnv *env, jobject self, jstring jstr)
 	str = (*env)->GetStringUTFChars(env, jstr, NULL);
 	if (!str) return;
 
-	fz_var(data);
 	fz_var(buf);
 
 	fz_try(ctx)
@@ -7151,13 +7144,11 @@ FUN(PDFObject_writeStreamString)(JNIEnv *env, jobject self, jstring jstr)
 		data = fz_malloc(ctx, len);
 		memcpy(data, str, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
-		data = NULL;
 		pdf_update_stream(ctx, pdf, obj, buf, 0);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, buf);
-		fz_free(ctx, data);
 		(*env)->ReleaseStringUTFChars(env, jstr, str);
 	}
 	fz_catch(ctx)
@@ -7199,7 +7190,6 @@ FUN(PDFObject_writeRawStreamString)(JNIEnv *env, jobject self, jstring jstr)
 	str = (*env)->GetStringUTFChars(env, jstr, NULL);
 	if (!str) return;
 
-	fz_var(data);
 	fz_var(buf);
 
 	fz_try(ctx)
@@ -7208,13 +7198,11 @@ FUN(PDFObject_writeRawStreamString)(JNIEnv *env, jobject self, jstring jstr)
 		data = fz_malloc(ctx, len);
 		memcpy(data, str, len);
 		buf = fz_new_buffer_from_data(ctx, data, len);
-		data = NULL;
 		pdf_update_stream(ctx, pdf, obj, buf, 1);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_buffer(ctx, buf);
-		fz_free(ctx, data);
 		(*env)->ReleaseStringUTFChars(env, jstr, str);
 	}
 	fz_catch(ctx)
