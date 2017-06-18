@@ -204,15 +204,17 @@ static void
 lex_name(fz_context *ctx, fz_stream *f, pdf_lexbuf *lb)
 {
 	char *s = lb->scratch;
-	char *e = s + lb->size;
+	char *e = s + fz_mini(127, lb->size);
 	int c;
 
 	while (1)
 	{
 		if (s == e)
 		{
+			if (e - lb->scratch >= 127)
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "name too long");
 			s += pdf_lexbuf_grow(ctx, lb);
-			e = lb->scratch + lb->size;
+			e = lb->scratch + fz_mini(127, lb->size);
 		}
 		c = fz_read_byte(ctx, f);
 		switch (c)
