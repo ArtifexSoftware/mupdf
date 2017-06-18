@@ -1715,12 +1715,13 @@ int mudraw_main(int argc, char **argv)
 			}
 			fz_catch(ctx)
 			{
+				fz_drop_document(ctx, doc);
+				doc = NULL;
+
 				if (!ignore_errors)
 					fz_rethrow(ctx);
 
 				bgprint_flush();
-				fz_drop_document(ctx, doc);
-				doc = NULL;
 				fz_warn(ctx, "ignoring error in '%s'", filename);
 			}
 		}
