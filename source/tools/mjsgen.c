@@ -101,20 +101,20 @@ static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
 	int needshot = 0;
 
 	if (inter)
-		widget = pdf_first_widget(inter, (pdf_page *)page);
+		widget = pdf_first_widget(ctx, inter, (pdf_page *)page);
 
 	if (widget)
 	{
 		fprintf(mujstest_file, "GOTO %d\n", pagenum);
 		needshot = 1;
 	}
-	for (;widget; widget = pdf_next_widget(widget))
+	for (;widget; widget = pdf_next_widget(ctx, widget))
 	{
 		fz_rect rect;
 		int w, h, len;
-		int type = pdf_widget_get_type(widget);
+		int type = pdf_widget_type(ctx, widget);
 
-		pdf_bound_widget(widget, &rect);
+		pdf_bound_widget(ctx, widget, &rect);
 		w = (rect.x1 - rect.x0);
 		h = (rect.y1 - rect.y0);
 		++mujstest_count;
@@ -134,8 +134,8 @@ static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
 			break;
 		case PDF_WIDGET_TYPE_TEXT:
 		{
-			int maxlen = pdf_text_widget_max_len(inter, widget);
-			int texttype = pdf_text_widget_content_type(inter, widget);
+			int maxlen = pdf_text_widget_max_len(ctx, inter, widget);
+			int texttype = pdf_text_widget_content_type(ctx, inter, widget);
 
 			/* If height is low, assume a single row, and base
 			 * the width off that. */
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
 	fz_context *ctx;
 	int c;
 
-	fz_var(ctx, doc);
+	fz_var(doc);
 
 	while ((c = fz_getopt(argc, argv, "p:")) != -1)
 	{
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 	{
 		doc = fz_open_document(ctx, filename);
 
-		if (fz_needs_password(doc))
+		if (fz_needs_password(ctx, doc))
 		{
 			if (!fz_authenticate_password(ctx, doc, password))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
