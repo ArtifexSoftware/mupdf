@@ -55,12 +55,6 @@ static char lorem[] =
 "pulvinar at. Proin sed arcu vel odio tempus lobortis sed posuere ipsum. Ut "
 "feugiat pellentesque tortor nec ornare.\n";
 
-static char *filename;
-fz_output *out = NULL;
-
-static char *mujstest_filename = NULL;
-static FILE *mujstest_file = NULL;
-static int mujstest_count = 0;
 
 static void usage(void)
 {
@@ -93,19 +87,20 @@ static void escape_string(FILE *out, int len, const char *string)
 	}
 }
 
-static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
+static void processpage(fz_context *ctx, FILE *output, fz_document *doc, int pagenum)
 {
 	fz_page *page = fz_load_page(ctx, doc, pagenum - 1);
 	pdf_document *inter = pdf_specifics(ctx, doc);
 	pdf_widget *widget = NULL;
 	int needshot = 0;
+	int count = 0;
 
 	if (inter)
 		widget = pdf_first_widget(ctx, inter, (pdf_page *)page);
 
 	if (widget)
 	{
-		fprintf(mujstest_file, "GOTO %d\n", pagenum);
+		fprintf(output, "GOTO %d\n", pagenum);
 		needshot = 1;
 	}
 	for (;widget; widget = pdf_next_widget(ctx, widget))
@@ -117,20 +112,20 @@ static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
 		pdf_bound_widget(ctx, widget, &rect);
 		w = (rect.x1 - rect.x0);
 		h = (rect.y1 - rect.y0);
-		++mujstest_count;
+		++count;
 		switch (type)
 		{
 		default:
-			fprintf(mujstest_file, "%% UNKNOWN %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(output, "%% UNKNOWN %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 			break;
 		case PDF_WIDGET_TYPE_PUSHBUTTON:
-			fprintf(mujstest_file, "%% PUSHBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(output, "%% PUSHBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 			break;
 		case PDF_WIDGET_TYPE_CHECKBOX:
-			fprintf(mujstest_file, "%% CHECKBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(output, "%% CHECKBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 			break;
 		case PDF_WIDGET_TYPE_RADIOBUTTON:
-			fprintf(mujstest_file, "%% RADIOBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(output, "%% RADIOBUTTON %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 			break;
 		case PDF_WIDGET_TYPE_TEXT:
 		{
@@ -160,69 +155,99 @@ static void processpage(fz_context *ctx, fz_document *doc, int pagenum)
 				len = 2;
 			if (len > maxlen)
 				len = maxlen;
-			fprintf(mujstest_file, "%% TEXT %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(output, "%% TEXT %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 			switch (texttype)
 			{
 			default:
 			case PDF_WIDGET_CONTENT_UNRESTRAINED:
-				fprintf(mujstest_file, "TEXT %d ", mujstest_count);
-				escape_string(mujstest_file, len-3, lorem);
-				fprintf(mujstest_file, "\n");
+				fprintf(output, "TEXT %d ", count);
+				escape_string(output, len-3, lorem);
+				fprintf(output, "\n");
 				break;
 			case PDF_WIDGET_CONTENT_NUMBER:
-				fprintf(mujstest_file, "TEXT %d\n", mujstest_count);
+				fprintf(output, "TEXT %d\n", count);
 				break;
 			case PDF_WIDGET_CONTENT_SPECIAL:
 #ifdef __MINGW32__
-				fprintf(mujstest_file, "TEXT %I64d\n", 46702919800LL + mujstest_count);
+				fprintf(output, "TEXT %I64d\n", 46702919800LL + count);
 #else
-				fprintf(mujstest_file, "TEXT %lld\n", 46702919800LL + mujstest_count);
+				fprintf(output, "TEXT %lld\n", 46702919800LL + count);
 #endif
 				break;
 			case PDF_WIDGET_CONTENT_DATE:
-				fprintf(mujstest_file, "TEXT Jun %d 1979\n", 1 + ((13 + mujstest_count) % 30));
+				fprintf(output, "TEXT Jun %d 1979\n", 1 + ((13 + count) % 30));
 				break;
 			case PDF_WIDGET_CONTENT_TIME:
-				++mujstest_count;
-				fprintf(mujstest_file, "TEXT %02d:%02d\n", ((mujstest_count/60) % 24), mujstest_count % 60);
+				++count;
+				fprintf(output, "TEXT %02d:%02d\n", ((count/60) % 24), count % 60);
 				break;
 			}
 			break;
 		}
 		case PDF_WIDGET_TYPE_LISTBOX:
-			fprintf(mujstest_file, "%% LISTBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(output, "%% LISTBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 			break;
 		case PDF_WIDGET_TYPE_COMBOBOX:
-			fprintf(mujstest_file, "%% COMBOBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
+			fprintf(output, "%% COMBOBOX %0.2f %0.2f %0.2f %0.2f\n", rect.x0, rect.y0, rect.x1, rect.y1);
 			break;
 		}
-		fprintf(mujstest_file, "CLICK %0.2f %0.2f\n", (rect.x0+rect.x1)/2, (rect.y0+rect.y1)/2);
+		fprintf(output, "CLICK %0.2f %0.2f\n", (rect.x0+rect.x1)/2, (rect.y0+rect.y1)/2);
 	}
 
 	fz_flush_warnings(ctx);
 
-	if (mujstest_file && needshot)
+	if (output && needshot)
 	{
-		fprintf(mujstest_file, "SCREENSHOT\n");
+		fprintf(output, "SCREENSHOT\n");
 	}
 }
 
-static void processpages(fz_context *ctx, fz_document *doc)
+static void processpages(fz_context *ctx, FILE *output, fz_document *doc)
 {
 	int page, pagecount;
 	pagecount = fz_count_pages(ctx, doc);
 	for (page = 1; page <= pagecount; ++page)
-		processpage(ctx, doc, page);
+		processpage(ctx, output, doc, page);
+}
+
+static void processscript(fz_context *ctx, FILE *output, char *filename, char *password)
+{
+	fz_document *doc = NULL;
+
+	fz_var(doc);
+
+	fz_try(ctx)
+	{
+		fz_register_document_handlers(ctx);
+
+		doc = fz_open_document(ctx, filename);
+
+		if (fz_needs_password(ctx, doc))
+		{
+			if (!fz_authenticate_password(ctx, doc, password))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
+			fprintf(output, "PASSWORD %s\n", password);
+		}
+
+		fprintf(output, "OPEN %s\n", filename);
+
+		processpages(ctx, output, doc);
+	}
+	fz_always(ctx)
+		fz_drop_document(ctx, doc);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 int main(int argc, char **argv)
 {
 	char *password = "";
-	fz_document *doc = NULL;
 	fz_context *ctx;
 	int c;
-
-	fz_var(doc);
+	static char *filename;
+	int exitcode = 0;
+	char *mujstest_filename = NULL;
+	FILE *output = NULL;
 
 	while ((c = fz_getopt(argc, argv, "p:")) != -1)
 	{
@@ -240,9 +265,9 @@ int main(int argc, char **argv)
 	mujstest_filename = argv[fz_optind+1];
 
 	if (strcmp(mujstest_filename, "-") == 0)
-		mujstest_file = stdout;
+		output = stdout;
 	else
-		mujstest_file = fopen(mujstest_filename, "wb");
+		output = fopen(mujstest_filename, "wb");
 
 	ctx = fz_new_context(NULL, NULL, FZ_STORE_DEFAULT);
 	if (!ctx)
@@ -251,34 +276,23 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	fz_register_document_handlers(ctx);
-
 	fz_try(ctx)
-	{
-		doc = fz_open_document(ctx, filename);
-
-		if (fz_needs_password(ctx, doc))
-		{
-			if (!fz_authenticate_password(ctx, doc, password))
-				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot authenticate password: %s", filename);
-			fprintf(mujstest_file, "PASSWORD %s\n", password);
-		}
-
-		fprintf(mujstest_file, "OPEN %s\n", filename);
-
-		processpages(ctx, doc);
-
-		fz_drop_document(ctx, doc);
-	}
+		processscript(ctx, output, filename, password);
 	fz_catch(ctx)
 	{
 		fprintf(stderr, "mjsgen: cannot process document: %s\n", filename);
+		exitcode = 1;
+	}
+
+	fz_drop_context(ctx);
+
+	if (fclose(output))
+	{
+		fprintf(stderr, "mjsgen: could not close output file '%s'\n", mujstest_filename);
 		return 1;
 	}
 
-	fclose(mujstest_file);
-	fz_drop_context(ctx);
-	return 0;
+	return exitcode;
 }
 
 #ifdef _MSC_VER
