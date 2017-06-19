@@ -690,8 +690,7 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		return NULL;
 
 	default_cs = fz_new_default_colorspaces(ctx);
-
-	res = pdf_dict_get(ctx, PDF_NAME_Resources, page->obj);
+	res = pdf_page_resources(ctx, page);
 	obj = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
 	if (obj)
 	{
