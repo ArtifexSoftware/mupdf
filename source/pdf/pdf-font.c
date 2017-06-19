@@ -53,7 +53,7 @@ static const char *base_font_names[][10] =
 	{ "ZapfDingbats", NULL }
 };
 
-const char *
+const unsigned char *
 pdf_lookup_substitute_font(fz_context *ctx, int mono, int serif, int bold, int italic, int *len)
 {
 	if (mono) {
@@ -132,7 +132,7 @@ static int is_builtin_font(fz_context *ctx, fz_font *font)
 	if (!font->buffer)
 		return 0;
 	fz_buffer_storage(ctx, font->buffer, &data);
-	return fz_lookup_base14_font(ctx, clean_font_name(font->name), &size) == (char*)data;
+	return fz_lookup_base14_font(ctx, clean_font_name(font->name), &size) == data;
 }
 
 /*
@@ -349,7 +349,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *font
 	fontdesc->font = fz_load_system_font(ctx, fontname, 0, 0, !has_descriptor);
 	if (!fontdesc->font)
 	{
-		const char *data;
+		const unsigned char *data;
 		int len;
 
 		data = fz_lookup_base14_font(ctx, clean_name, &len);
@@ -374,7 +374,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *f
 	fontdesc->font = fz_load_system_font(ctx, fontname, bold, italic, 0);
 	if (!fontdesc->font)
 	{
-		const char *data;
+		const unsigned char *data;
 		int len;
 
 		data = pdf_lookup_substitute_font(ctx, mono, serif, bold, italic, &len);
@@ -401,7 +401,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, const cha
 	fontdesc->font = fz_load_system_cjk_font(ctx, fontname, ros, serif);
 	if (!fontdesc->font)
 	{
-		const char *data;
+		const unsigned char *data;
 		int len;
 		int index;
 

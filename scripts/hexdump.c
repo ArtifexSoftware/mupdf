@@ -107,7 +107,7 @@ main(int argc, char **argv)
 		fseek(fi, 0, SEEK_SET);
 
 		fprintf(fo, "const int fz_%s_size = %d;\n", filename, size + zero);
-		fprintf(fo, "const char fz_%s[] =", filename);
+		fprintf(fo, "const unsigned char fz_%s[] =", filename);
 		fprintf(fo, string ? "\n" : " {\n");
 		hexdump(fo, fi);
 		if (!zero)

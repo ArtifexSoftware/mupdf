@@ -250,7 +250,7 @@ fz_font *fz_load_system_cjk_font(fz_context *ctx, const char *name, int ros, int
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const char *fz_lookup_builtin_font(fz_context *ctx, const char *name, int bold, int italic, int *len);
+const unsigned char *fz_lookup_builtin_font(fz_context *ctx, const char *name, int bold, int italic, int *len);
 
 /*
 	fz_lookup_base14_font: Search the builtin base14 fonts for a match.
@@ -264,7 +264,7 @@ const char *fz_lookup_builtin_font(fz_context *ctx, const char *name, int bold, 
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
+const unsigned char *fz_lookup_base14_font(fz_context *ctx, const char *name, int *len);
 
 /* ToDo:  Share fz_lookup_builtin_font and fz_lookup_icc?  Check with Tor */
 /*
@@ -298,7 +298,7 @@ const unsigned char *fz_lookup_icc(fz_context *ctx, const char *name, size_t *le
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *len, int *index);
+const unsigned char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *len, int *index);
 
 /*
 	fz_lookup_noto_font: Search the builtin noto fonts for a match.
@@ -316,7 +316,7 @@ const char *fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmo
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int serif, int *len);
+const unsigned char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int serif, int *len);
 
 /*
 	fz_lookup_noto_symbol_font: Search the builtin noto fonts
@@ -328,7 +328,7 @@ const char *fz_lookup_noto_font(fz_context *ctx, int script, int lang, int serif
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const char *fz_lookup_noto_symbol_font(fz_context *ctx, int *len);
+const unsigned char *fz_lookup_noto_symbol_font(fz_context *ctx, int *len);
 
 /*
 	fz_lookup_noto_emoji_font: Search the builtin noto fonts
@@ -340,7 +340,7 @@ const char *fz_lookup_noto_symbol_font(fz_context *ctx, int *len);
 
 	Returns a pointer to the font file data, or NULL if not present.
 */
-const char *fz_lookup_noto_emoji_font(fz_context *ctx, int *len);
+const unsigned char *fz_lookup_noto_emoji_font(fz_context *ctx, int *len);
 
 /*
 	fz_load_fallback_font: Try to load a fallback font for the
@@ -408,7 +408,7 @@ fz_font *fz_new_type3_font(fz_context *ctx, const char *name, const fz_matrix *m
 
 	Returns new font handle, or throws exception on error.
 */
-fz_font *fz_new_font_from_memory(fz_context *ctx, const char *name, const char *data, int len, int index, int use_glyph_bbox);
+fz_font *fz_new_font_from_memory(fz_context *ctx, const char *name, const unsigned char *data, int len, int index, int use_glyph_bbox);
 
 /*
 	fz_new_font_from_buffer: Create a new font from a font

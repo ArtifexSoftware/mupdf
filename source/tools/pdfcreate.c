@@ -33,7 +33,7 @@ static pdf_document *doc = NULL;
 
 static void add_font_res(pdf_obj *resources, char *name, char *path)
 {
-	const char *data;
+	const unsigned char *data;
 	int size;
 	fz_font *font;
 	pdf_obj *subres, *ref;

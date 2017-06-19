@@ -66,7 +66,7 @@ fz_buffer *fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, size_t 
 /*
 	fz_new_buffer_from_shared_data: Like fz_new_buffer, but does not take ownership.
 */
-fz_buffer *fz_new_buffer_from_shared_data(fz_context *ctx, const char *data, size_t size);
+fz_buffer *fz_new_buffer_from_shared_data(fz_context *ctx, const unsigned char *data, size_t size);
 
 /*
 	fz_new_buffer_from_base64: Create a new buffer with data decoded from a base64 input string.

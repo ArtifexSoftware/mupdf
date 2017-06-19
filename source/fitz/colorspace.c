@@ -2992,7 +2992,7 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 			size_t size;
 			const unsigned char *data;
 			data = fz_lookup_icc(ctx, name, &size);
-			profile->buffer = fz_new_buffer_from_shared_data(ctx, (const char *)data, size);
+			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
 			is_lab = (strcmp(name, "lab-icc") == 0);
 			profile->bgr = (strcmp(name, "bgr-icc") == 0);
 		}

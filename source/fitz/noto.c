@@ -51,11 +51,11 @@
 #define RETURN(NAME) \
 	do { \
 	extern const int fz_resources_fonts_ ## NAME ## _size; \
-	extern const char fz_resources_fonts_ ## NAME []; \
+	extern const unsigned char fz_resources_fonts_ ## NAME []; \
 	return *size = fz_resources_fonts_ ## NAME ## _size, fz_resources_fonts_ ## NAME; \
 	} while (0)
 
-const char *
+const unsigned char *
 fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 {
 #ifndef TOFU_BASE14
@@ -84,7 +84,7 @@ fz_lookup_base14_font(fz_context *ctx, const char *name, int *size)
 		if (!is_italic) RETURN(B); else RETURN(BI); \
 	}
 
-const char *
+const unsigned char *
 fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_italic, int *size)
 {
 #ifndef TOFU_BASE14
@@ -137,7 +137,7 @@ fz_lookup_builtin_font(fz_context *ctx, const char *name, int is_bold, int is_it
 	return *size = 0, NULL;
 }
 
-const char *
+const unsigned char *
 fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *size, int *index)
 {
 	if (index) *index = 0;
@@ -167,7 +167,7 @@ fz_lookup_cjk_font(fz_context *ctx, int registry, int serif, int wmode, int *siz
 #define Noto2(SANS,SERIF) \
 	if (serif) { RETURN(noto_Noto ## SERIF ## _Regular_ttf); } else { RETURN(noto_Noto ## SANS ## _Regular_ttf); }
 
-const char *
+const unsigned char *
 fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *size)
 {
 	/* TODO: Noto(SansSyriacEstrangela); */
@@ -348,7 +348,7 @@ fz_lookup_noto_font(fz_context *ctx, int script, int language, int serif, int *s
 	return *size = 0, NULL;
 }
 
-const char *
+const unsigned char *
 fz_lookup_noto_symbol_font(fz_context *ctx, int *size)
 {
 #ifndef TOFU_SYMBOL
@@ -358,7 +358,7 @@ fz_lookup_noto_symbol_font(fz_context *ctx, int *size)
 #endif
 }
 
-const char *
+const unsigned char *
 fz_lookup_noto_emoji_font(fz_context *ctx, int *size)
 {
 #ifndef TOFU_EMOJI

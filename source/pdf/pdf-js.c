@@ -562,7 +562,7 @@ static void declare_dom(pdf_js *js)
 	js_setglobal(J, "MuPDF_Doc"); /* for pdf-util.js use */
 }
 
-extern const char fz_source_pdf_pdf_js_util_js[];
+extern const unsigned char fz_source_pdf_pdf_js_util_js[];
 
 static void preload_helpers(pdf_js *js)
 {
@@ -582,7 +582,7 @@ static void preload_helpers(pdf_js *js)
 	);
 #endif
 
-	js_dostring(js->imp, fz_source_pdf_pdf_js_util_js);
+	js_dostring(js->imp, (const char *)fz_source_pdf_pdf_js_util_js);
 }
 
 void pdf_drop_js(fz_context *ctx, pdf_js *js)

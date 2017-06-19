@@ -13,7 +13,7 @@ fz_load_html_default_font(fz_context *ctx, fz_html_font_set *set, const char *fa
 	int idx = (is_mono ? 8 : is_sans ? 4 : 0) + is_bold * 2 + is_italic;
 	if (!set->fonts[idx])
 	{
-		const char *data;
+		const unsigned char *data;
 		int size;
 
 		data = fz_lookup_builtin_font(ctx, real_family, is_bold, is_italic, &size);
@@ -46,7 +46,7 @@ fz_font *
 fz_load_html_font(fz_context *ctx, fz_html_font_set *set, const char *family, int is_bold, int is_italic)
 {
 	fz_html_font_face *custom;
-	const char *data;
+	const unsigned char *data;
 	int size;
 
 	for (custom = set->custom; custom; custom = custom->next)

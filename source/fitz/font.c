@@ -317,7 +317,7 @@ fz_font *fz_load_system_fallback_font(fz_context *ctx, int script, int language,
 fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int serif, int bold, int italic)
 {
 	fz_font **fontp;
-	const char *data;
+	const unsigned char *data;
 	int index;
 	int size;
 
@@ -364,7 +364,7 @@ fz_font *fz_load_fallback_font(fz_context *ctx, int script, int language, int se
 
 fz_font *fz_load_fallback_symbol_font(fz_context *ctx)
 {
-	const char *data;
+	const unsigned char *data;
 	int size;
 	if (!ctx->font->symbol)
 	{
@@ -377,7 +377,7 @@ fz_font *fz_load_fallback_symbol_font(fz_context *ctx)
 
 fz_font *fz_load_fallback_emoji_font(fz_context *ctx)
 {
-	const char *data;
+	const unsigned char *data;
 	int size;
 	if (!ctx->font->emoji)
 	{
@@ -515,7 +515,7 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 }
 
 fz_font *
-fz_new_font_from_memory(fz_context *ctx, const char *name, const char *data, int len, int index, int use_glyph_bbox)
+fz_new_font_from_memory(fz_context *ctx, const char *name, const unsigned char *data, int len, int index, int use_glyph_bbox)
 {
 	fz_buffer *buffer = fz_new_buffer_from_shared_data(ctx, data, len);
 	fz_font *font;

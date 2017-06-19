@@ -244,7 +244,7 @@ int pdfportfolio_main(int argc, char **argv)
 		/* add a blank page */
 		{
 			const char *template = "BT /Tm 16 Tf 50 434 TD (This is a portfolio document.) Tj ET\n";
-			const char *data;
+			const unsigned char *data;
 			int size;
 			fz_font *font;
 			pdf_obj *font_obj, *page_obj;
@@ -260,7 +260,7 @@ int pdfportfolio_main(int argc, char **argv)
 			resources = pdf_add_object_drop(ctx, doc, pdf_new_dict(ctx, doc, 1));
 			pdf_dict_putp_drop(ctx, resources, "Font/Tm", font_obj);
 
-			contents = fz_new_buffer_from_shared_data(ctx, template, strlen(template));
+			contents = fz_new_buffer_from_shared_data(ctx, (const unsigned char *)template, strlen(template));
 
 			page_obj = pdf_add_page(ctx, doc, &mediabox, 0, resources, contents);
 			pdf_insert_page(ctx, doc, -1, page_obj);
