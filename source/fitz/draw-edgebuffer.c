@@ -685,23 +685,10 @@ static inline int dirn_flip(int d)
 	return d < 0 ? d : d^1;
 }
 
-static inline int dirns_set(int d0, int d1)
-{
-	return d0 != DIRN_UNSET || d1 != DIRN_UNSET;
-}
-
 static inline int dirns_merge(int d0, int d1)
 {
 	if (d0 == DIRN_UNSET)
 		return d1;
-	assert(dirns_match(d0, d1));
-	return d0;
-}
-
-static inline int dirns_merge_opposed(int d0, int d1)
-{
-	if (d0 == DIRN_UNSET)
-		return d1 == DIRN_UP ? DIRN_DOWN : DIRN_UP;
 	assert(dirns_match(d0, d1));
 	return d0;
 }
