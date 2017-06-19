@@ -147,8 +147,6 @@ add_desc_tag(fz_context *ctx, fz_buffer *buf, const char text[], fz_icc_tag tag_
 static void
 add_text_tag(fz_context *ctx, fz_buffer *buf, const char text[], fz_icc_tag tag_list[], int curr_tag)
 {
-	int len = strlen(text);
-
 	fz_append_int32_be(ctx, buf, icSigTextType);
 	fz_append_byte_n(ctx, buf, 0, 4);
 	fz_append_string(ctx, buf, text);
