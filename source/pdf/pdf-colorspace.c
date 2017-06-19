@@ -13,8 +13,44 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 	pdf_obj *obj;
 	fz_buffer *buffer = NULL;
 	fz_colorspace *cs = NULL;
+	fz_colorspace *cs_alt = NULL;
+	fz_colorspace_clamp_fn *alt_lab_clamping = NULL;
 
 	fz_var(cs);
+	fz_var(cs_alt);
+	fz_var(buffer);
+
+	/*
+		alt => "If ICC unreadable/unsupported, then return the
+		alternate instead".
+
+		Regardless of whether alt is set or not, we DO read the
+		alternate space, because we need to know whether it's a
+		LAB space or not to affect our clamping. We just might
+		not return it.
+	*/
+	fz_try(ctx)
+	{
+		obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
+		if (obj)
+		{
+			cs_alt = pdf_load_colorspace(ctx, obj);
+			if (fz_colorspace_is_icc(ctx, cs_alt) && cs_alt == fz_device_lab(ctx))
+				alt_lab_clamping = cs_alt->clamp;
+		}
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_colorspace(ctx, cs_alt);
+		cs_alt = NULL;
+	}
+
+	/* If we're not going to be allowed to return it, drop it! */
+	if (!alt)
+	{
+		fz_drop_colorspace(ctx, cs_alt);
+		cs_alt = NULL;
+	}
 
 	n = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_N));
 
@@ -25,80 +61,62 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 			buffer = pdf_load_stream(ctx, dict);
 			cs = fz_new_icc_colorspace(ctx, 0, n, buffer, NULL);
 		}
-
-		/* Use alternate if ICC not invalid */
-		if (alt)
-		{
-			if (cs == NULL)
-			{
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
-				if (obj)
-				{
-					cs = pdf_load_colorspace(ctx, obj);
-					if (cs->n != n)
-					{
-						fz_drop_colorspace(ctx, cs);
-						fz_throw(ctx, FZ_ERROR_GENERIC, "ICCBased /Alternate colorspace must have %d components", n);
-					}
-				}
-				else
-				{
-					switch (n)
-					{
-					case 1:
-						cs = fz_device_gray(ctx);
-						break;
-					case 3:
-						cs = fz_device_rgb(ctx);
-						break;
-					case 4:
-						cs = fz_device_cmyk(ctx);
-						break;
-					default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
-					}
-				}
-			}
-			else
-			{
-				/* We need to check if the alternate color space is CIELAB which
-				 * would let us know that we need to apply CIELAB clamping */
-				fz_colorspace *cs_alt = NULL;
-
-				obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
-				if (obj)
-				{
-					cs_alt = pdf_load_colorspace(ctx, obj);
-					if (fz_colorspace_is_icc(ctx, cs_alt) && cs_alt == fz_device_lab(ctx))
-						cs->clamp = cs_alt->clamp;
-					fz_drop_colorspace(ctx, cs_alt);
-				}
-			}
-		}
-		else
-		{
-			/* We need to check if the alternate color space is CIELAB which
-			 * would let us know that we need to apply CIELAB clamping */
-			obj = pdf_dict_get(ctx, dict, PDF_NAME_Alternate);
-			if (obj)
-			{
-				fz_colorspace *cs_alt = pdf_load_colorspace(ctx, obj);
-
-				if (cs_alt == fz_device_lab(ctx))
-					cs->clamp = cs_alt->clamp;
-				fz_drop_colorspace(ctx, cs_alt);
-			}
-		}
 	}
 	fz_always(ctx)
 		fz_drop_buffer(ctx, buffer);
 	fz_catch(ctx)
 	{
-		/* Something went wrong (perhaps invalid ICC profile) */
+		if (!alt)
+			fz_rethrow(ctx);
 	}
 
-	if (n == 1 || n == 3 || n == 4)
+	if (cs)
+	{
+		if (n != 1 && n != 3 && n != 4)
+		{
+			fz_drop_colorspace(ctx, cs);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Based must have 1, 3 or 4 components");
+		}
+
+		/* Override the clamping if the alternate was LAB */
+		if (alt_lab_clamping)
+			cs->clamp = alt_lab_clamping;
+		fz_drop_colorspace(ctx, cs_alt);
 		return cs;
-	fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
+	}
+
+	/* Failed to load the ICC profile - either because it was broken,
+	 * or because we aren't in an ICC workflow. If we aren't allowed
+	 * to return the alternate, then that's all she wrote. */
+	if (!alt)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Unable to read ICC workflow");
+
+	/* If we have an alternate we are allowed to use, return that. */
+	if (cs_alt)
+	{
+		if (n != 1 && n != 3 && n != 4)
+		{
+			fz_drop_colorspace(ctx, cs_alt);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Based must have 1, 3 or 4 components");
+		}
+		return cs_alt;
+	}
+
+	switch (n)
+	{
+	case 1:
+		cs = fz_device_gray(ctx);
+		break;
+	case 3:
+		cs = fz_device_rgb(ctx);
+		break;
+	case 4:
+		cs = fz_device_cmyk(ctx);
+		break;
+	default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
+	}
+
+	return cs;
 }
 
 struct separation
