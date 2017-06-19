@@ -175,7 +175,7 @@ pdf_obj *
 pdf_new_name(fz_context *ctx, pdf_document *doc, const char *str)
 {
 	pdf_obj_name *obj;
-	char **stdname;
+	const char **stdname;
 
 	stdname = bsearch(str, &PDF_NAMES[1], PDF_OBJ_ENUM_NAME__LIMIT-1, sizeof(char *), namecmp);
 	if (stdname != NULL)
@@ -339,7 +339,7 @@ float pdf_to_real(fz_context *ctx, pdf_obj *obj)
 	return 0;
 }
 
-char *pdf_to_name(fz_context *ctx, pdf_obj *obj)
+const char *pdf_to_name(fz_context *ctx, pdf_obj *obj)
 {
 	RESOLVE(obj);
 	if (!OBJ_IS_NAME(obj))

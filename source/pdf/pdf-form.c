@@ -884,8 +884,7 @@ int pdf_field_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, cons
 
 char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 {
-	char *bs = pdf_to_name(ctx, pdf_dict_getl(ctx, field, PDF_NAME_BS, PDF_NAME_S, NULL));
-
+	const char *bs = pdf_to_name(ctx, pdf_dict_getl(ctx, field, PDF_NAME_BS, PDF_NAME_S, NULL));
 	switch (*bs)
 	{
 	case 'S': return "Solid";
@@ -894,7 +893,6 @@ char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 	case 'I': return "Inset";
 	case 'U': return "Underline";
 	}
-
 	return "Solid";
 }
 

@@ -144,7 +144,7 @@ static void savefont(pdf_obj *dict, int num)
 	pdf_obj *obj;
 	char *ext = "";
 	fz_output *out;
-	char *fontname = "font";
+	const char *fontname = "font";
 	size_t len;
 	unsigned char *data;
 

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 void
-pdf_load_encoding(const char **estrings, char *encoding)
+pdf_load_encoding(const char **estrings, const char *encoding)
 {
 	const char * const *bstrings = NULL;
 	int i;

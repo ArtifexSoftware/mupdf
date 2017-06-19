@@ -35,7 +35,7 @@ load_portfolio(fz_context *ctx, pdf_document *doc)
 		int editable = eo ? pdf_to_bool(ctx, eo) : 0;
 		pdf_obj *vo = pdf_dict_get(ctx, v, PDF_NAME_V);
 		int visible = vo ? pdf_to_bool(ctx, vo) : 1;
-		char *subtype = pdf_to_name(ctx, pdf_dict_get(ctx, v, PDF_NAME_Subtype));
+		const char *subtype = pdf_to_name(ctx, pdf_dict_get(ctx, v, PDF_NAME_Subtype));
 		pdf_obj *name = pdf_dict_get(ctx, v, PDF_NAME_N);
 		pdf_portfolio *p = fz_malloc_struct(ctx, pdf_portfolio);
 		p->key = pdf_keep_obj(ctx, k);

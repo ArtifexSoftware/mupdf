@@ -19,7 +19,8 @@
 #define FT_SFNT_HEAD ft_sfnt_head
 #endif
 
-static void pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *dict, char *collection, char *basefont, int iscidfont);
+static void pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *dict,
+	const char *collection, const char *basefont, int iscidfont);
 
 static const char *base_font_names[][10] =
 {
@@ -340,7 +341,7 @@ static int lookup_mre_code(const char *name)
  */
 
 static void
-pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, int has_descriptor)
+pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *fontname, int has_descriptor)
 {
 	FT_Face face;
 	const char *clean_name = clean_font_name(fontname);
@@ -368,7 +369,7 @@ pdf_load_builtin_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, 
 }
 
 static void
-pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, int mono, int serif, int bold, int italic)
+pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *fontname, int mono, int serif, int bold, int italic)
 {
 	fontdesc->font = fz_load_system_font(ctx, fontname, bold, italic, 0);
 	if (!fontdesc->font)
@@ -395,7 +396,7 @@ pdf_load_substitute_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontnam
 }
 
 static void
-pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, int ros, int serif)
+pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *fontname, int ros, int serif)
 {
 	fontdesc->font = fz_load_system_cjk_font(ctx, fontname, ros, serif);
 	if (!fontdesc->font)
@@ -417,7 +418,7 @@ pdf_load_substitute_cjk_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fon
 }
 
 static void
-pdf_load_system_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, char *collection)
+pdf_load_system_font(fz_context *ctx, pdf_font_desc *fontdesc, const char *fontname, const char *collection)
 {
 	int bold = 0;
 	int italic = 0;
@@ -464,7 +465,7 @@ pdf_load_system_font(fz_context *ctx, pdf_font_desc *fontdesc, char *fontname, c
 }
 
 static void
-pdf_load_embedded_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, char *fontname, pdf_obj *stmref)
+pdf_load_embedded_font(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, const char *fontname, pdf_obj *stmref)
 {
 	fz_buffer *buf;
 
@@ -617,7 +618,7 @@ select_unknown_cmap(FT_Face face)
 }
 
 static pdf_font_desc *
-pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, char *basefont)
+pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, const char *basefont)
 {
 	pdf_obj *descriptor;
 	pdf_obj *encoding;
@@ -930,8 +931,7 @@ pdf_load_simple_font_by_name(fz_context *ctx, pdf_document *doc, pdf_obj *dict, 
 static pdf_font_desc *
 pdf_load_simple_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
-	char *basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME_BaseFont));
-
+	const char *basefont = pdf_to_name(ctx, pdf_dict_get(ctx, dict, PDF_NAME_BaseFont));
 	return pdf_load_simple_font_by_name(ctx, doc, dict, basefont);
 }
 
@@ -1012,7 +1012,7 @@ load_cid_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict, pdf_obj *encodi
 	pdf_cmap *cmap;
 	FT_Face face;
 	char collection[256];
-	char *basefont;
+	const char *basefont;
 	int i, k, fterr;
 	pdf_obj *cidtogidmap;
 	pdf_obj *obj;
@@ -1274,10 +1274,11 @@ pdf_load_type0_font(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
  */
 
 static void
-pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *dict, char *collection, char *basefont, int iscidfont)
+pdf_load_font_descriptor(fz_context *ctx, pdf_document *doc, pdf_font_desc *fontdesc, pdf_obj *dict,
+	const char *collection, const char *basefont, int iscidfont)
 {
 	pdf_obj *obj1, *obj2, *obj3, *obj;
-	char *fontname;
+	const char *fontname;
 	FT_Face face;
 
 	/* Prefer BaseFont; don't bother with FontName */

@@ -1757,7 +1757,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	pdf_drop_obj(ctx, obj);
 }
 
-static int is_image_filter(char *s)
+static int is_image_filter(const char *s)
 {
 	if (!strcmp(s, "CCITTFaxDecode") || !strcmp(s, "CCF") ||
 		!strcmp(s, "DCTDecode") || !strcmp(s, "DCT") ||

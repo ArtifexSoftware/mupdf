@@ -473,7 +473,7 @@ pdf_layer_config_ui_info(fz_context *ctx, pdf_document *doc, int ui, pdf_layer_c
 }
 
 static int
-ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, char *name)
+ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, const char *name)
 {
 	int i, len;
 
@@ -486,7 +486,7 @@ ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, char *name)
 
 	if (pdf_is_name(ctx, desc->intent))
 	{
-		char *intent = pdf_to_name(ctx, desc->intent);
+		const char *intent = pdf_to_name(ctx, desc->intent);
 		if (strcmp(intent, "All") == 0)
 			return 1;
 		return (strcmp(intent, name) == 0);
@@ -497,7 +497,7 @@ ocg_intents_include(fz_context *ctx, pdf_ocg_descriptor *desc, char *name)
 	len = pdf_array_len(ctx, desc->intent);
 	for (i=0; i < len; i++)
 	{
-		char *intent = pdf_to_name(ctx, pdf_array_get(ctx, desc->intent, i));
+		const char *intent = pdf_to_name(ctx, pdf_array_get(ctx, desc->intent, i));
 		if (strcmp(intent, "All") == 0)
 			return 1;
 		if (strcmp(intent, name) == 0)

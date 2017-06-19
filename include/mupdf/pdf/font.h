@@ -18,7 +18,7 @@ enum
 	PDF_FD_FORCE_BOLD = 1 << 18
 };
 
-void pdf_load_encoding(const char **estrings, char *encoding);
+void pdf_load_encoding(const char **estrings, const char *encoding);
 int pdf_lookup_agl(const char *name);
 const char **pdf_lookup_agl_duplicates(int ucs);
 

@@ -44,7 +44,7 @@ pdf_parse_link_dest(fz_context *ctx, pdf_document *doc, pdf_obj *dest)
 {
 	pdf_obj *obj;
 	char buf[256];
-	char *ld;
+	const char *ld;
 	int page;
 	int x, y;
 

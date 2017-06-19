@@ -1464,7 +1464,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 
 	fz_try(ctx)
 	{
-		char *version_str;
+		const char *version_str;
 		obj = pdf_dict_getl(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, PDF_NAME_Version, NULL);
 		version_str = pdf_to_name(ctx, obj);
 		if (*version_str)
