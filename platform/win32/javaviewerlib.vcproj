@@ -460,6 +460,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\java\src\com\artifex\mupdf\fitz\Separations.java"
+				>
+			</File>
+			<File
 				RelativePath="..\java\src\com\artifex\mupdf\fitz\Shade.java"
 				>
 			</File>

@@ -483,31 +483,10 @@ fz_page_presentation(fz_context *ctx, fz_page *page, fz_transition *transition, 
 	return NULL;
 }
 
-int fz_count_separations_on_page(fz_context *ctx, fz_page *page)
+fz_separations *
+fz_page_separations(fz_context *ctx, fz_page *page)
 {
-	if (page && page->count_separations)
-		return page->count_separations(ctx, page);
-	return 0;
-}
-
-void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int disable)
-{
-	if (page && page->control_separation)
-		page->control_separation(ctx, page, sep, disable);
-}
-
-int fz_separation_disabled_on_page (fz_context *ctx, fz_page *page, int sep)
-{
-	if (page && page->separation_disabled)
-		return page->separation_disabled(ctx, page, sep);
-	return 0;
-}
-
-const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk)
-{
-	if (page && page->get_separation)
-		return page->get_separation(ctx, page, sep, rgba, cmyk);
-	*rgba = 0;
-	*cmyk = 0;
+	if (page && page->separations)
+		return page->separations(ctx, page);
 	return NULL;
 }

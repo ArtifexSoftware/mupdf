@@ -8,6 +8,7 @@
 #include "mupdf/fitz/transition.h"
 #include "mupdf/fitz/link.h"
 #include "mupdf/fitz/outline.h"
+#include "mupdf/fitz/separation.h"
 
 /*
 	Document interface
@@ -171,18 +172,11 @@ typedef void (fz_page_control_separation_fn)(fz_context *ctx, fz_page *page, int
 typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int separation);
 
 /*
-	fz_page_count_separations_fn: Type for a function to count
-	the number of separations on a page. See fz_count_separations
+	fz_page_separations_fn: Type for a function to retrieve
+	details of separations on a page. See fz_get_separations
 	for more information.
 */
-typedef int (fz_page_count_separations_fn)(fz_context *ctx, fz_page *page);
-
-/*
-	fz_page_get_separation_fn: Type for a function to retrieve
-	details of a separation on a page. See fz_get_separation
-	for more information.
-*/
-typedef const char *(fz_page_get_separation_fn)(fz_context *ctx, fz_page *page, int separation, uint32_t *rgb, uint32_t *cmyk);
+typedef fz_separations *(fz_page_separations_fn)(fz_context *ctx, fz_page *page);
 
 typedef void (fz_annot_drop_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
@@ -217,8 +211,7 @@ struct fz_page_s
 	fz_page_page_presentation_fn *page_presentation;
 	fz_page_control_separation_fn *control_separation;
 	fz_page_separation_disabled_fn *separation_disabled;
-	fz_page_count_separations_fn *count_separations;
-	fz_page_get_separation_fn *get_separation;
+	fz_page_separations_fn *separations;
 };
 
 /*
@@ -620,31 +613,14 @@ int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char 
 fz_colorspace *fz_document_output_intent(fz_context *ctx, fz_document *doc);
 
 /*
-	Get the number of separations on a page (including CMYK). This will
-	be 0, unless the format specifically supports separations (such as
-	gproof files).
-*/
-int fz_count_separations_on_page(fz_context *ctx, fz_page *page);
+	fz_page_separations: Get the separations details for a page.
+	This will be NULL, unless the format specifically supports
+	separations (such as gproof, or PDF files). May be NULL even
+	so, if there are no separations on a page.
 
-/*
-	Enable/Disable a given separation on a given page. This will only
-	affect future renderings of pages from a format that supports
-	separations (such as gproof files).
+	Returns a reference that must be dropped.
 */
-void fz_control_separation_on_page(fz_context *ctx, fz_page *page, int sep, int disable);
-
-/*
-	Returns whether a given separation on a given page is disabled. This will only
-	work from a format that supports separations (such as gproof files).
- */
-int fz_separation_disabled_on_page (fz_context *ctx, fz_page *, int sep);
-
-/*
-	Get the name and equivalent RGBA, CMYK colors of a given separation
-	on a given page. This will only work for formats that support
-	gproof files.
-*/
-const char *fz_get_separation_on_page(fz_context *ctx, fz_page *page, int sep, uint32_t *rgba, uint32_t *cmyk);
+fz_separations *fz_page_separations(fz_context *ctx, fz_page *page);
 
 /*
 	fz_save_gproof: Given a currently open document, create a

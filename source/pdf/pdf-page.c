@@ -638,6 +638,54 @@ pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_m
 	pdf_page_obj_transform(ctx, page->obj, page_mediabox, page_ctm);
 }
 
+fz_separations *
+pdf_page_separations(fz_context *ctx, pdf_page *page)
+{
+	pdf_obj *res = pdf_page_resources(ctx, page);
+	fz_separations *seps = NULL;
+	int i, len;
+
+	res = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
+	if (!res)
+		return NULL;
+
+	fz_var(seps);
+	fz_var(i);
+
+	len = pdf_dict_len(ctx, res);
+
+	i = 0;
+	while (i < len)
+	{
+		fz_try(ctx)
+		{
+			do
+			{
+				pdf_obj *obj;
+				i++;
+				obj = pdf_dict_get_val(ctx, res, i-1);
+
+				if (pdf_name_eq(ctx, pdf_array_get(ctx, obj, 0), PDF_NAME_Separation))
+				{
+					uint32_t rgba = 0; /* FIXME */
+					uint32_t cmyk = 0; /* FIXME */
+					const char *name = pdf_to_name(ctx, pdf_array_get(ctx, obj, 1));
+					if (!seps)
+						seps = fz_new_separations(ctx, 0);
+					fz_add_separation(ctx, seps, rgba, cmyk, name);
+				}
+			}
+			while (i < len);
+		}
+		fz_catch(ctx)
+		{
+			/* Don't die because a single separation failed to load */
+		}
+	}
+
+	return seps;
+}
+
 static void
 pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
@@ -670,6 +718,7 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->super.first_annot = (fz_page_first_annot_fn*)pdf_first_annot;
 	page->super.run_page_contents = (fz_page_run_page_contents_fn*)pdf_run_page_contents;
 	page->super.page_presentation = (fz_page_page_presentation_fn*)pdf_page_presentation;
+	page->super.separations = (fz_page_separations_fn *)pdf_page_separations;
 
 	page->obj = NULL;
 

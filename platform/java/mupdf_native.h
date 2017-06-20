@@ -1418,27 +1418,11 @@ JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_Page_textAsHtml
 
 /*
  * Class:     com_artifex_mupdf_fitz_Page
- * Method:    countSeparations
- * Signature: ()I
+ * Method:    getSeparations
+ * Signature: ()Lcom/artifex/mupdf/fitz/Separations;
  */
-JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Page_countSeparations
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_getSeparations
   (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Page
- * Method:    getSeparation
- * Signature: (I)Lcom/artifex/mupdf/fitz/Separation;
- */
-JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Page_getSeparation
-  (JNIEnv *, jobject, jint);
-
-/*
- * Class:     com_artifex_mupdf_fitz_Page
- * Method:    enableSeparation
- * Signature: (IZ)V
- */
-JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Page_enableSeparation
-  (JNIEnv *, jobject, jint, jboolean);
 
 #ifdef __cplusplus
 }
@@ -2836,6 +2820,65 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_artifex_mupdf_fitz_Separations */
+
+#ifndef _Included_com_artifex_mupdf_fitz_Separations
+#define _Included_com_artifex_mupdf_fitz_Separations
+#ifdef __cplusplus
+extern "C" {
+#endif
+/*
+ * Class:     com_artifex_mupdf_fitz_Separations
+ * Method:    finalize
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_Separations_finalize
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Separations
+ * Method:    getNumberOfSeparations
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_artifex_mupdf_fitz_Separations_getNumberOfSeparations
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Separations
+ * Method:    getSeparation
+ * Signature: (I)Lcom/artifex/mupdf/fitz/Separation;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_Separations_getSeparation
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Separations
+ * Method:    areSeparationsControllable
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Separations_areSeparationsControllable
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Separations
+ * Method:    disableSeparation
+ * Signature: (IZ)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Separations_disableSeparation
+  (JNIEnv *, jobject, jint, jboolean);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_Separations
+ * Method:    isSeparationDisabled
+ * Signature: (I)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_artifex_mupdf_fitz_Separations_isSeparationDisabled
+  (JNIEnv *, jobject, jint);
+
 #ifdef __cplusplus
 }
 #endif

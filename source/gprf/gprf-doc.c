@@ -175,7 +175,7 @@ fz_drop_image_gprf_imp(fz_context *ctx, fz_storable *image_)
 
 	fz_drop_gprf_file(ctx, image->file);
 	fz_drop_separations(ctx, image->separations);
-	fz_drop_image_base(ctx, image->super);
+	fz_drop_image_base(ctx, &image->super);
 }
 
 static inline unsigned char *cmyk_to_rgba(unsigned char *out, uint32_t c, uint32_t m, uint32_t y, uint32_t k)
@@ -511,8 +511,7 @@ fz_system(fz_context *ctx, const char *cmd)
 	if (ret != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "child process reported error %d", ret);
 }
-#endif
-
+#else
 static int GSDLLCALL
 gsdll_stdout(void *instance, const char *str, int len)
 {
@@ -556,6 +555,7 @@ gsdll_stderr(void *instance, const char *str, int len)
 #endif
 	return len;
 }
+#endif
 
 static void
 generate_page(fz_context *ctx, gprf_page *page)
@@ -737,7 +737,7 @@ read_tiles(fz_context *ctx, gprf_page *page)
 
 		/* Skip to the separations */
 		fz_seek(ctx, file, 64, SEEK_SET);
-		page->separations = fz_new_separations(ctx);
+		page->separations = fz_new_separations(ctx, 1);
 		for (i = 0; i < num_seps; i++)
 		{
 			char blatter[4096];
@@ -861,24 +861,29 @@ static const char *gprf_get_separation(fz_context *ctx, fz_page *page_, int sep,
 	return fz_get_separation(ctx, page->separations, sep, rgba, cmyk);
 }
 
+static fz_separations *
+gprf_separations(fz_context *ctx, fz_page *page_)
+{
+	gprf_page *page = (gprf_page *)page_;
+
+	return fz_keep_separations(ctx, page->separations);
+}
+
 static fz_page *
 gprf_load_page(fz_context *ctx, fz_document *doc_, int number)
 {
 	gprf_document *doc = (gprf_document*)doc_;
-	gprf_page *page = fz_new_page(ctx, gprf_page);
+	gprf_page *page = fz_new_derived_page(ctx, gprf_page);
 
 	fz_try(ctx)
 	{
 		page->super.bound_page = gprf_bound_page;
 		page->super.run_page_contents = gprf_run_page;
 		page->super.drop_page = gprf_drop_page_imp;
-		page->super.count_separations = gprf_count_separations;
-		page->super.control_separation = gprf_control_separation;
-		page->super.separation_disabled = gprf_separation_disabled;
-		page->super.get_separation = gprf_get_separation;
+		page->super.separations = gprf_separations;
 		page->doc = (gprf_document *)fz_keep_document(ctx, &doc->super);
 		page->number = number;
-		page->separations = fz_new_separations(ctx);
+		page->separations = fz_new_separations(ctx, 1);
 		page->width = doc->page_dims[number].w;
 		page->height = doc->page_dims[number].h;
 		page->tile_width = (page->width + GPRF_TILESIZE-1)/GPRF_TILESIZE;
@@ -919,7 +924,7 @@ gprf_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	gprf_document *doc;
 
-	doc = fz_new_document(ctx, gprf_document);
+	doc = fz_new_derived_document(ctx, gprf_document);
 	doc->super.drop_document = gprf_close_document;
 	doc->super.count_pages = gprf_count_pages;
 	doc->super.load_page = gprf_load_page;

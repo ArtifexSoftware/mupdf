@@ -4,18 +4,20 @@ struct fz_separations_s
 {
 	int refs;
 	int num_separations;
+	int controllable;
 	uint32_t disabled[(FZ_MAX_SEPARATIONS + 31) / 32];
 	uint32_t equiv_rgb[FZ_MAX_SEPARATIONS];
 	uint32_t equiv_cmyk[FZ_MAX_SEPARATIONS];
 	char *name[FZ_MAX_SEPARATIONS];
 };
 
-fz_separations *fz_new_separations(fz_context *ctx)
+fz_separations *fz_new_separations(fz_context *ctx, int controllable)
 {
 	fz_separations *sep;
 
 	sep = fz_malloc_struct(ctx, fz_separations);
 	sep->refs = 1;
+	sep->controllable = controllable;
 
 	return sep;
 }
@@ -36,7 +38,7 @@ void fz_drop_separations(fz_context *ctx, fz_separations *sep)
 	}
 }
 
-void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint32_t cmyk, char *name)
+void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint32_t cmyk, const char *name)
 {
 	int n;
 
@@ -54,12 +56,20 @@ void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint3
 	sep->num_separations++;
 }
 
+int fz_separations_controllable(fz_context *ctx, fz_separations *sep)
+{
+	return (!sep || sep->controllable);
+}
+
 void fz_control_separation(fz_context *ctx, fz_separations *sep, int separation, int disable)
 {
 	int bit;
 
 	if (!sep || separation < 0 || separation >= sep->num_separations)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "can't control non-existent separation");
+
+	if (!sep->controllable)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can't control separations on this page");
 
 	bit = 1<<(separation & 31);
 	separation >>= 5;

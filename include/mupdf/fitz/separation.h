@@ -20,16 +20,16 @@ enum
 typedef struct fz_separations_s fz_separations;
 
 /* Create a new separations structure (initially empty) */
-fz_separations *fz_new_separations(fz_context *ctx);
+fz_separations *fz_new_separations(fz_context *ctx, int controllable);
 
-/* Add a reference */
+/* Keep a reference */
 fz_separations *fz_keep_separations(fz_context *ctx, fz_separations *sep);
 
 /* Drop a reference */
 void fz_drop_separations(fz_context *ctx, fz_separations *sep);
 
 /* Add a separation (RGBA and CYMK equivalents, null terminated name) */
-void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgba, uint32_t cmyk, char *name);
+void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgba, uint32_t cmyk, const char *name);
 
 /* Enable or disable a given separation */
 void fz_control_separation(fz_context *ctx, fz_separations *sep, int separation, int disable);
@@ -45,5 +45,8 @@ const char *fz_get_separation(fz_context *ctx, fz_separations *sep, int separati
 
 /* Count the number of separations */
 int fz_count_separations(fz_context *ctx, fz_separations *sep);
+
+/* Find out if separations are controllable. */
+int fz_separations_controllable(fz_context *ctx, fz_separations *seps);
 
 #endif
