@@ -110,6 +110,7 @@ void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 fz_colorspace *fz_colorspace_base(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_icc(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
+int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);

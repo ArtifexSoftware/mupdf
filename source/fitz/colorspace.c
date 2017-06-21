@@ -219,8 +219,6 @@ fz_drop_icclink(fz_context *ctx, fz_icclink *link)
 	fz_drop_storable(ctx, &link->storable);
 }
 
-static int fz_colorspace_is_pdf_cal(fz_context *ctx, const fz_colorspace *cs);
-
 static fz_iccprofile *
 get_base_icc_profile(fz_context *ctx, fz_colorspace *cs)
 {
@@ -237,7 +235,7 @@ get_base_icc_profile(fz_context *ctx, fz_colorspace *cs)
 
 	if (fz_colorspace_is_icc(ctx, base))
 		return base->data;
-	if (!fz_colorspace_is_pdf_cal(ctx, base))
+	if (!fz_colorspace_is_cal(ctx, base))
 		return get_base_icc_profile(ctx, base);
 
 	cal = base->data;
@@ -334,7 +332,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 
 	if (fz_colorspace_is_icc(ctx, src))
 		src_icc = src->data;
-	else if (fz_colorspace_is_pdf_cal(ctx, src))
+	else if (fz_colorspace_is_cal(ctx, src))
 	{
 		fz_cal_colorspace *cal;
 
@@ -1991,7 +1989,7 @@ get_base_icc_space(fz_context *ctx, fz_colorspace *srcs)
 		if (srcs == NULL)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Final color space should be icc or pdf-cal or lab");
 
-		if (fz_colorspace_is_icc(ctx, srcs) || fz_colorspace_is_pdf_cal(ctx, srcs) || fz_colorspace_is_lab(ctx, srcs))
+		if (fz_colorspace_is_icc(ctx, srcs) || fz_colorspace_is_cal(ctx, srcs) || fz_colorspace_is_lab(ctx, srcs))
 			return srcs;
 	}
 }
@@ -2004,7 +2002,7 @@ convert_to_icc_base(fz_context *ctx, fz_colorspace *srcs, float *src_f, float *d
 	float temp_f[FZ_MAX_COLORS];
 	fz_colorspace *base_cs = srcs->get_base(srcs);
 
-	if (fz_colorspace_is_icc(ctx, base_cs) || fz_colorspace_is_pdf_cal(ctx, base_cs) || fz_colorspace_is_lab(ctx, base_cs))
+	if (fz_colorspace_is_icc(ctx, base_cs) || fz_colorspace_is_cal(ctx, base_cs) || fz_colorspace_is_lab(ctx, base_cs))
 		srcs->to_ccs(ctx, srcs, src_f, des_f);
 	else
 	{
@@ -2321,7 +2319,7 @@ fz_source_colorspace_cm(fz_context *ctx, fz_colorspace *cs)
 	{
 		if (fz_colorspace_is_icc(ctx, cs))
 			return cs;
-		if (fz_colorspace_is_pdf_cal(ctx, cs))
+		if (fz_colorspace_is_cal(ctx, cs))
 			return cs;
 		cs = fz_colorspace_base(ctx, cs);
 	}
@@ -2429,7 +2427,7 @@ icc_base_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const 
 		srcv = src_map;
 		src_map = (src_map == local_src_map ? local_src_map2 : local_src_map);
 	}
-	while (!fz_colorspace_is_icc(ctx, srcs) && !fz_colorspace_is_pdf_cal(ctx, srcs));
+	while (!fz_colorspace_is_icc(ctx, srcs) && !fz_colorspace_is_cal(ctx, srcs));
 
 	icc_conv_color(ctx, cc, dstv, srcv);
 }
@@ -2995,7 +2993,7 @@ free_cal(fz_context *ctx, fz_colorspace *cs)
 	fz_free(ctx, cal_data);
 }
 
-static int fz_colorspace_is_pdf_cal(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->free_data == free_cal;
 }
