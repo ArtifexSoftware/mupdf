@@ -167,9 +167,12 @@ fz_cmp_link_key(fz_context *ctx, void *k0_, void *k1_)
 {
 	fz_link_key *k0 = (fz_link_key *)k0_;
 	fz_link_key *k1 = (fz_link_key *)k1_;
-	return k0->proof == k1->proof && k0->alpha == k1->alpha &&
-		k0->depth == k1->depth && k0->rend.bp == k1->rend.bp &&
-		k0->rend.ri == k1->rend.ri && memcmp(k0->dst_md5, k1->dst_md5, 16) == 0 &&
+	return k0->proof == k1->proof &&
+		k0->alpha == k1->alpha &&
+		k0->depth == k1->depth &&
+		k0->rend.bp == k1->rend.bp &&
+		k0->rend.ri == k1->rend.ri &&
+		memcmp(k0->dst_md5, k1->dst_md5, 16) == 0 &&
 		memcmp(k0->src_md5, k1->src_md5, 16);
 }
 
@@ -2380,10 +2383,9 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 	}
 }
 
-/*
-	Single color conversion with ICC profiles. ToDo: Check if it makes sense
-	to use lcms float link here or to do the conversion to short and back
-	*/
+/* Single color conversion with ICC profiles. ToDo: Check if it makes sense
+ * to use lcms float link here or to do the conversion to short and back.
+ */
 static void
 icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float *srcv)
 {
