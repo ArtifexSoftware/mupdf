@@ -34,6 +34,7 @@ struct fz_colorspace_s
 struct fz_iccprofile_s
 {
 	int num_devcomp;
+	int bgr;
 	fz_buffer *buffer;
 	unsigned char md5[16];
 	void *cmm_handle;

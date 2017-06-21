@@ -80,7 +80,7 @@ fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
 		*size = fz_resources_icc_gray_icc_size;
 		return fz_resources_icc_gray_icc;
 	}
-	if (!strcmp(name, "rgb-icc")) {
+	if (!strcmp(name, "rgb-icc") || !strcmp(name, "bgr-icc")) {
 		extern const int fz_resources_icc_rgb_icc_size;
 		extern const char fz_resources_icc_rgb_icc[];
 		*size = fz_resources_icc_rgb_icc_size;
@@ -734,7 +734,7 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	{
 		cct->gray = fz_new_icc_colorspace(ctx, 1, 1, NULL, "gray-icc");
 		cct->rgb = fz_new_icc_colorspace(ctx, 1, 3, NULL, "rgb-icc");
-		cct->bgr = ctx->colorspace->rgb; /* TODO: must swizzle R and B components */
+		cct->bgr = fz_new_icc_colorspace(ctx, 1, 3, NULL, "bgr-icc");
 		cct->cmyk = fz_new_icc_colorspace(ctx, 1, 4, NULL, "cmyk-icc");
 		cct->lab = fz_new_icc_colorspace(ctx, 1, 3, NULL, "lab-icc");
 	}
@@ -3000,7 +3000,8 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 			const char *data;
 			data = fz_lookup_icc(ctx, name, &size);
 			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
-			is_lab = (strncmp(name, "lab-icc", strlen("lab-icc")) == 0);
+			is_lab = (strcmp(name, "lab-icc") == 0);
+			profile->bgr = (strcmp(name, "bgr-icc") == 0);
 		}
 		/* Create profile handle and check if correct type */
 		if (fz_cmm_init_profile(ctx, profile) || num != profile->num_devcomp)
