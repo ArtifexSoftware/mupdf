@@ -291,19 +291,17 @@ pdf_load_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float 
 	int i;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_WhitePoint);
-	if (pdf_array_len(ctx, obj) == 3)
-	{
-		for (i = 0; i < 3; i++)
-		{
-			wp[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
-			if (wp[i] < 0)
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint numbers must be positive");
-		}
-		if (wp[1] != 1)
-			fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint Yw must be 1.0");
-	}
-	else
+	if (pdf_array_len(ctx, obj) != 3)
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint must be a 3-element array");
+
+	for (i = 0; i < 3; i++)
+	{
+		wp[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+		if (wp[i] < 0)
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint numbers must be positive");
+	}
+	if (wp[1] != 1)
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint Yw must be 1.0");
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_BlackPoint);
 	if (pdf_array_len(ctx, obj) == 3)
