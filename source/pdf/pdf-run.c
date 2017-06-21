@@ -7,6 +7,11 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 	fz_matrix local_ctm, page_ctm;
 	fz_rect mediabox;
 	pdf_processor *proc;
+	fz_default_colorspaces *default_cs;
+
+	default_cs = pdf_load_default_colorspaces(ctx, doc, page);
+	if (default_cs)
+		fz_set_default_colorspaces(ctx, dev, default_cs);
 
 	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
 	fz_concat(&local_ctm, &page_ctm, ctm);
