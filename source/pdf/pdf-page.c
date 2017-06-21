@@ -683,6 +683,7 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 	pdf_obj *obj;
 	pdf_obj *cs_obj;
 	fz_default_colorspaces *default_cs;
+	fz_colorspace *oi;
 
 	/* If we are doing color management check for internal default color spaces. */
 	/* Photoshop is notorious for doing this in its PDF creation. */
@@ -723,8 +724,9 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		{}
 	}
 
-	if (doc->oi)
-		fz_set_default_output_intent(ctx, default_cs, doc->oi);
+	oi = pdf_document_output_intent(ctx, doc);
+	if (oi)
+		fz_set_default_output_intent(ctx, default_cs, oi);
 
 	return default_cs;
 }
