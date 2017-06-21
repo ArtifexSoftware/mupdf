@@ -35,7 +35,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 		if (obj)
 		{
 			cs_alt = pdf_load_colorspace(ctx, obj);
-			if (fz_colorspace_is_icc(ctx, cs_alt) && cs_alt == fz_device_lab(ctx))
+			if (fz_colorspace_is_lab_icc(ctx, cs_alt))
 				alt_lab_clamping = cs_alt->clamp;
 		}
 	}

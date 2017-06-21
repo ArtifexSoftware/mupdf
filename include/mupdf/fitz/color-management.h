@@ -18,12 +18,6 @@
 */
 
 /*
-	fz_cmm_get_instance: Get the cmm instance bound to this
-	context.
-*/
-fz_cmm_instance *fz_cmm_get_instance(fz_context *ctx);
-
-/*
 	fz_cmm_new_instance_fn: Create a new instance of the color
 	management engine, tied to the given context.
 */

@@ -1008,7 +1008,7 @@ fz_list_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *image, const 
 			ctx,
 			dev,
 			FZ_CMD_FILL_IMAGE_MASK,
-			0, /* flags */
+			fz_pack_color_params(color_params), /* flags */
 			&rect,
 			NULL, /* path */
 			color,
@@ -1066,7 +1066,7 @@ fz_list_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *rect, int lum
 		ctx,
 		dev,
 		FZ_CMD_BEGIN_MASK,
-		luminosity, /* flags */
+		(!!luminosity) | fz_pack_color_params(color_params), /* flags */
 		rect,
 		NULL, /* path */
 		color,
@@ -1715,6 +1715,7 @@ visible:
 				fz_fill_image(ctx, dev, *(fz_image **)node, &trans_ctm, alpha, &color_params);
 				break;
 			case FZ_CMD_FILL_IMAGE_MASK:
+				fz_unpack_color_params(&color_params, n.flags);
 				fz_fill_image_mask(ctx, dev, *(fz_image **)node, &trans_ctm, colorspace, color, alpha, &color_params);
 				break;
 			case FZ_CMD_CLIP_IMAGE_MASK:
@@ -1724,6 +1725,7 @@ visible:
 				fz_pop_clip(ctx, dev);
 				break;
 			case FZ_CMD_BEGIN_MASK:
+				fz_unpack_color_params(&color_params, n.flags);
 				fz_begin_mask(ctx, dev, &trans_rect, n.flags, colorspace, color, &color_params);
 				break;
 			case FZ_CMD_END_MASK:

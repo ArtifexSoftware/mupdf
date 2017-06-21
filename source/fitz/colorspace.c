@@ -602,8 +602,6 @@ static int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs)
 	return cs && cs->to_ccs == lab_to_rgb;
 }
 
-static int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
-
 int
 fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
 {
@@ -2883,12 +2881,6 @@ const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
 	return cs ? cs->name : "";
 }
 
-fz_cmm_instance *
-fz_cmm_get_instance(fz_context *ctx)
-{
-	return ctx->cmm_instance;
-}
-
 static void
 free_icc(fz_context *ctx, fz_colorspace *cs)
 {
@@ -2923,7 +2915,7 @@ int fz_colorspace_is_icc(fz_context *ctx, const fz_colorspace *cs)
 	return cs && cs->free_data == free_icc;
 }
 
-static int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->clamp == clamp_lab_icc;
 }
@@ -3147,13 +3139,6 @@ fz_default_colorspaces *
 fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs)
 {
 	return fz_keep_imp(ctx, default_cs, &default_cs->refs);
-}
-
-void
-fz_drop_outputintent(fz_context *ctx, fz_default_colorspaces *default_cs)
-{
-	if (default_cs)
-		fz_drop_colorspace(ctx, default_cs->oi);
 }
 
 void

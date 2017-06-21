@@ -165,7 +165,6 @@ fz_lcms_transform_color(fz_cmm_instance *instance, fz_icclink *link, unsigned sh
 	cmsContext cmm_ctx = (cmsContext)instance;
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM) link->cmm_handle;
 
-	/* Do the conversion */
 	cmsDoTransform(cmm_ctx, hTransform, src, dst, 1);
 }
 

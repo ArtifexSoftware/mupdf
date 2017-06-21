@@ -110,7 +110,7 @@ double2XYZtype(fz_context *ctx, float number_in)
 	if (number_in < 0)
 		number_in = 0;
 	s = (short)number_in;
-	m = (unsigned short)((number_in - s) * 65536.0);
+	m = (unsigned short)((number_in - s) * 65536);
 	return (icS15Fixed16Number) ((s << 16) | m);
 }
 
