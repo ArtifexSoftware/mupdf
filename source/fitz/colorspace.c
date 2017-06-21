@@ -278,17 +278,8 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *src, fz_iccprofile *prf, fz_iccp
 static void
 fz_md5_icc(fz_context *ctx, fz_iccprofile *profile)
 {
-	fz_md5 md5;
-	const char *s;
-	size_t size;
-
-	fz_md5_init(&md5);
 	if (profile)
-	{
-		size = fz_buffer_storage(ctx, profile->buffer, (unsigned char **)&s);
-		fz_md5_update(&md5, (const unsigned char *)s, size);
-	}
-	fz_md5_final(&md5, profile->md5);
+		fz_md5_buffer(ctx, profile->buffer, profile->md5);
 }
 
 /* Create icc profile from calrgb, calgray values */
