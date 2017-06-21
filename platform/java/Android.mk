@@ -46,6 +46,7 @@ LOCAL_C_INCLUDES := \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src \
 	$(MUPDF_PATH)/thirdparty/jbig2dec \
 	$(MUPDF_PATH)/thirdparty/libjpeg \
+	$(MUPDF_PATH)/thirdparty/lcms2/include \
 	$(MUPDF_PATH)/thirdparty/mujs \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2 \
 	$(MUPDF_PATH)/thirdparty/zlib \
@@ -83,6 +84,7 @@ LOCAL_C_INCLUDES := \
 	$(MUPDF_PATH)/thirdparty/harfbuzz/src \
 	$(MUPDF_PATH)/thirdparty/jbig2dec \
 	$(MUPDF_PATH)/thirdparty/libjpeg \
+	$(MUPDF_PATH)/thirdparty/lcms2/include \
 	$(MUPDF_PATH)/thirdparty/mujs \
 	$(MUPDF_PATH)/thirdparty/openjpeg/src/lib/openjp2 \
 	$(MUPDF_PATH)/thirdparty/zlib \
@@ -210,6 +212,34 @@ LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/libjpeg/jquant1.c \
 	$(MUPDF_PATH)/thirdparty/libjpeg/jquant2.c \
 	$(MUPDF_PATH)/thirdparty/libjpeg/jutils.c \
+
+LOCAL_SRC_FILES += \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsalpha.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmscam02.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmscgats.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmscnvrt.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmserr.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsgamma.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsgmt.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmshalf.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsintrp.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsio0.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsio1.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmslut.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsmd5.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsmtrx.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsnamed.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsopt.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmspack.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmspcs.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsplugin.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsps2.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmssamp.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmssm.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmstypes.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsvirt.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmswtpnt.c \
+	$(MUPDF_PATH)/thirdparty/lcms2/src/cmsxform.c
 
 LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/mujs/one.c \
