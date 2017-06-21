@@ -824,7 +824,7 @@ fz_device_lab(fz_context *ctx)
 	return ctx->colorspace->lab;
 }
 
-fz_color_params *
+const fz_color_params *
 fz_default_color_params(fz_context *ctx)
 {
 	return ctx->colorspace->params;

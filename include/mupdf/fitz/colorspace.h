@@ -91,7 +91,7 @@ fz_colorspace *fz_device_lab(fz_context *ctx);
 /*
 	fz_default_color_params: Get default color params for general color conversion.
 */
-fz_color_params *fz_default_color_params(fz_context *ctx);
+const fz_color_params *fz_default_color_params(fz_context *ctx);
 
 typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, const float *src, float *dst);
 
