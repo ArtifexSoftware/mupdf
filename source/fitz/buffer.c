@@ -451,7 +451,8 @@ fz_md5_buffer(fz_context *ctx, fz_buffer *buffer, unsigned char digest[16])
 {
 	fz_md5 state;
 	fz_md5_init(&state);
-	fz_md5_update(&state, buffer->data, buffer->len);
+	if (buffer)
+		fz_md5_update(&state, buffer->data, buffer->len);
 	fz_md5_final(&state, digest);
 }
 
