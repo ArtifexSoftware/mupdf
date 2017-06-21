@@ -28,15 +28,11 @@ struct fz_icc_tag_s
 
 #if SAVEICCPROFILE
 static void
-save_profile(unsigned char *buffer, char filename[], int buffer_size)
+save_profile(fz_context *ctx, fz_buffer *buf, const char *name)
 {
 	char full_file_name[50];
-	FILE *fid;
-
-	sprintf(full_file_name, "%d)Profile_%s.icc", icc_debug_index, filename);
-	fid = fopen(full_file_name, "wb");
-	fwrite(buffer, 1, buffer_size, fid);
-	fclose(fid);
+	fz_snprintf(full_file_name, sizeof full_file_name, "profile%d-%s.icc", icc_debug_index, name);
+	fz_save_buffer(ctx, buf, full_file_name);
 	icc_debug_index++;
 }
 #endif
@@ -339,10 +335,6 @@ fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal)
 	float cat02[9];
 	float black_adapt[3];
 	int n = cal->n;
-#if SAVEICCPROFILE
-	unsigned char *data;
-	size_t data_size;
-#endif
 
 	/* common */
 	setheader_common(ctx, header);
@@ -447,11 +439,10 @@ fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal)
 	fz_free(ctx, tag_list);
 
 #if SAVEICCPROFILE
-	data_size = fz_buffer_storage(ctx, profile, &data);
 	if (n == 3)
-		save_profile(data, "calRGB", data_size);
+		save_profile(ctx, profile, "calRGB");
 	else
-		save_profile(data, "calGray", data_size);
+		save_profile(ctx, profile, "calGray");
 #endif
 	return profile;
 }
