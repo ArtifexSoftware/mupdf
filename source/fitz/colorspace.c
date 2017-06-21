@@ -68,7 +68,7 @@ void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile)
 
 #define SLOWCMYK
 
-const char *
+const unsigned char *
 fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
 {
 #ifndef NO_ICC
@@ -76,25 +76,25 @@ fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
 		return *size = 0, NULL;
 	if (!strcmp(name, "gray-icc")) {
 		extern const int fz_resources_icc_gray_icc_size;
-		extern const char fz_resources_icc_gray_icc[];
+		extern const unsigned char fz_resources_icc_gray_icc[];
 		*size = fz_resources_icc_gray_icc_size;
 		return fz_resources_icc_gray_icc;
 	}
 	if (!strcmp(name, "rgb-icc") || !strcmp(name, "bgr-icc")) {
 		extern const int fz_resources_icc_rgb_icc_size;
-		extern const char fz_resources_icc_rgb_icc[];
+		extern const unsigned char fz_resources_icc_rgb_icc[];
 		*size = fz_resources_icc_rgb_icc_size;
 		return fz_resources_icc_rgb_icc;
 	}
 	if (!strcmp(name, "cmyk-icc")) {
 		extern const int fz_resources_icc_cmyk_icc_size;
-		extern const char fz_resources_icc_cmyk_icc[];
+		extern const unsigned char fz_resources_icc_cmyk_icc[];
 		*size = fz_resources_icc_cmyk_icc_size;
 		return fz_resources_icc_cmyk_icc;
 	}
 	if (!strcmp(name, "lab-icc")) {
 		extern const int fz_resources_icc_lab_icc_size;
-		extern const char fz_resources_icc_lab_icc[];
+		extern const unsigned char fz_resources_icc_lab_icc[];
 		*size = fz_resources_icc_lab_icc_size;
 		return fz_resources_icc_lab_icc;
 	}
@@ -2997,7 +2997,7 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 		if (name != NULL)
 		{
 			size_t size;
-			const char *data;
+			const unsigned char *data;
 			data = fz_lookup_icc(ctx, name, &size);
 			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
 			is_lab = (strcmp(name, "lab-icc") == 0);
