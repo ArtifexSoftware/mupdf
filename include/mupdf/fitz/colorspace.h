@@ -157,7 +157,7 @@ struct fz_cal_colorspace_s {
 fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, const char *name);
 fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
 fz_buffer *fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal);
-unsigned char *fz_new_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs, size_t *size);
+fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs);
 
 void fz_init_color_params(fz_color_params *color_params);
 

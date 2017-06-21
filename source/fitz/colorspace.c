@@ -3029,19 +3029,17 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 /* Gets the icc data from a color space. Used in the writing out of the icc
  * data for output formats.
  */
-unsigned char *
-fz_new_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs, size_t *size)
+fz_buffer *
+fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs)
 {
 	fz_iccprofile *profile;
-	unsigned char *data;
 
 	if (cs == NULL || !fz_colorspace_is_icc(ctx, cs))
-		return *size = 0, NULL;
+		return NULL;
 	profile = cs->data;
-	if (profile == NULL)
-		return *size = 0, NULL;
-	*size = fz_buffer_storage(ctx, profile->buffer, &data);
-	return data;
+	if (!profile)
+		return NULL;
+	return profile->buffer;
 }
 
 static void

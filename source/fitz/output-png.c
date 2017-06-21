@@ -85,14 +85,16 @@ static void
 png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
 {
 	fz_output *out = writer->super.out;
-	size_t profile_size;
 	int size;
-	unsigned char *data = fz_new_icc_data_from_icc_colorspace(ctx, cs, &profile_size);
+	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
+	unsigned char *data;
 	unsigned char *chunk, *pos, *cdata;
 	uLong bound;
 	uLongf csize;
-	uLong long_size = (uLong)profile_size;
+	uLong long_size;
 	int t;
+
+	long_size = (uLong)fz_buffer_storage(ctx, buffer, &data);
 
 	if (!data)
 		return;
