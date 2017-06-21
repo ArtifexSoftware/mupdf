@@ -158,7 +158,7 @@ clamp_default(const fz_colorspace *cs, const float *src, float *dst)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int is_static, int n, int is_subtractive, fz_colorspace_convert_fn *to_rgb, fz_colorspace_convert_fn *from_rgb, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, char *name, int is_static, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_STORABLE(cs, is_static ? -1 : 1, fz_drop_colorspace_imp);
@@ -166,8 +166,8 @@ fz_new_colorspace(fz_context *ctx, char *name, int is_static, int n, int is_subt
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
 	cs->is_subtractive = is_subtractive;
-	cs->to_ccs = to_rgb;
-	cs->from_ccs = from_rgb;
+	cs->to_ccs = to_ccs;
+	cs->from_ccs = from_ccs;
 	cs->get_base = base;
 
 	if (clamp != NULL)
