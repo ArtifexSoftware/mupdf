@@ -133,8 +133,8 @@ struct fz_color_converter_s
 	int n;
 };
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
-void fz_discard_color_converter(fz_context *ctx, fz_color_converter *cc);
+void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
+void fz_drop_color_converter(fz_context *ctx, fz_color_converter *cc);
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);
 

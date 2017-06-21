@@ -2113,7 +2113,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 	{
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, NULL, ds, ss, color_params);
+		fz_find_color_converter(ctx, &cc, NULL, ds, ss, color_params);
 		while (h--)
 		{
 			size_t ww = w;
@@ -2134,7 +2134,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 			d += d_line_inc;
 			s += s_line_inc;
 		}
-		fz_discard_color_converter(ctx, &cc);
+		fz_drop_color_converter(ctx, &cc);
 	}
 
 	/* Brute-force for small images */
@@ -2142,7 +2142,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 	{
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, NULL, ds, ss, color_params);
+		fz_find_color_converter(ctx, &cc, NULL, ds, ss, color_params);
 		while (h--)
 		{
 			size_t ww = w;
@@ -2162,7 +2162,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 			d += d_line_inc;
 			s += s_line_inc;
 		}
-		fz_discard_color_converter(ctx, &cc);
+		fz_drop_color_converter(ctx, &cc);
 	}
 
 	/* 1-d lookup table for separation and similar colorspaces */
@@ -2171,7 +2171,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 		unsigned char lookup[FZ_MAX_COLORS * 256];
 		fz_color_converter cc;
 
-		fz_lookup_color_converter(ctx, &cc, NULL, ds, ss, color_params);
+		fz_find_color_converter(ctx, &cc, NULL, ds, ss, color_params);
 		for (i = 0; i < 256; i++)
 		{
 			srcv[0] = i / 255.0f;
@@ -2179,7 +2179,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 			for (k = 0; k < dstn; k++)
 				lookup[i * dstn + k] = dstv[k] * 255;
 		}
-		fz_discard_color_converter(ctx, &cc);
+		fz_drop_color_converter(ctx, &cc);
 
 		while (h--)
 		{
@@ -2209,7 +2209,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 		fz_color_converter cc;
 
 		lookup = fz_new_hash_table(ctx, 509, srcn, -1, NULL);
-		fz_lookup_color_converter(ctx, &cc, NULL, ds, ss, color_params);
+		fz_find_color_converter(ctx, &cc, NULL, ds, ss, color_params);
 
 		fz_try(ctx)
 		{
@@ -2263,7 +2263,7 @@ fz_std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
 			}
 		}
 		fz_always(ctx)
-			fz_discard_color_converter(ctx, &cc);
+			fz_drop_color_converter(ctx, &cc);
 		fz_catch(ctx)
 			fz_rethrow(ctx);
 
@@ -2562,7 +2562,7 @@ cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 #endif
 }
 
-void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params)
+void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params)
 {
 	cc->ds = ds;
 	cc->ss = ss;
@@ -2630,7 +2630,7 @@ void fz_lookup_color_converter(fz_context *ctx, fz_color_converter *cc, fz_color
 }
 
 void
-fz_discard_color_converter(fz_context *ctx, fz_color_converter *cc)
+fz_drop_color_converter(fz_context *ctx, fz_color_converter *cc)
 {
 	fz_icclink *link = (fz_icclink *)cc->link;
 	if (link)
@@ -2643,9 +2643,9 @@ void
 fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *is, fz_colorspace *ds, float *dv, fz_colorspace *ss, const float *sv)
 {
 	fz_color_converter cc;
-	fz_lookup_color_converter(ctx, &cc, is, ds, ss, params);
+	fz_find_color_converter(ctx, &cc, is, ds, ss, params);
 	cc.convert(ctx, &cc, dv, sv);
-	fz_discard_color_converter(ctx, &cc);
+	fz_drop_color_converter(ctx, &cc);
 }
 
 /* Indexed */
@@ -2835,7 +2835,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 
 	fz_try(ctx)
 	{
-		fz_lookup_color_converter(ctx, &cached->base, is, ds, ss, params);
+		fz_find_color_converter(ctx, &cached->base, is, ds, ss, params);
 		cached->hash = fz_new_hash_table(ctx, 256, n * sizeof(float), -1, fz_free);
 		cc->convert = fz_cached_color_convert;
 		cc->ds = ds;
@@ -2845,7 +2845,7 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 	}
 	fz_catch(ctx)
 	{
-		fz_discard_color_converter(ctx, &cached->base);
+		fz_drop_color_converter(ctx, &cached->base);
 		fz_drop_hash_table(ctx, cached->hash);
 		fz_free(ctx, cached);
 		fz_rethrow(ctx);
@@ -2862,7 +2862,7 @@ void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc_)
 		return;
 	cc_->opaque = NULL;
 	fz_drop_hash_table(ctx, cc->hash);
-	fz_discard_color_converter(ctx, &cc->base);
+	fz_drop_color_converter(ctx, &cc->base);
 	fz_free(ctx, cc);
 }
 
