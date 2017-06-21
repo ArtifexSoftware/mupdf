@@ -43,14 +43,14 @@ typedef void (fz_cmm_transform_pixmap_fn)(fz_cmm_instance *ctx, fz_icclink *link
 typedef void (fz_cmm_transform_color_fn)(fz_cmm_instance *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src);
 
 /*
-	fz_cmm_new_link_fn: Create a new link between icc profiles.
+	fz_cmm_init_link_fn: Create a new link between icc profiles.
 */
-typedef void (fz_cmm_new_link_fn)(fz_cmm_instance *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des);
+typedef void (fz_cmm_init_link_fn)(fz_cmm_instance *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des);
 
 /*
-	fz_cmm_drop_link_fn: Drop a link.
+	fz_cmm_fin_link_fn: Drop a link.
 */
-typedef void (fz_cmm_drop_link_fn)(fz_cmm_instance *ctx, fz_icclink *link);
+typedef void (fz_cmm_fin_link_fn)(fz_cmm_instance *ctx, fz_icclink *link);
 
 /*
 	fz_cmm_init_profile_fn: Create the cmm specific data for the given
@@ -73,8 +73,8 @@ struct fz_cmm_engine_s {
 	fz_cmm_drop_instance_fn *drop_instance;
 	fz_cmm_transform_pixmap_fn *transform_pixmap;
 	fz_cmm_transform_color_fn *transform_color;
-	fz_cmm_new_link_fn *new_link;
-	fz_cmm_drop_link_fn *drop_link;
+	fz_cmm_init_link_fn *init_link;
+	fz_cmm_fin_link_fn *fin_link;
 	fz_cmm_init_profile_fn *init_profile;
 	fz_cmm_fin_profile_fn *fin_profile;
 	int avoid_white_fix_flag;

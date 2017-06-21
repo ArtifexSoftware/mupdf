@@ -28,15 +28,15 @@ fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, c
 }
 
 void
-fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des)
+fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des)
 {
-	ctx->colorspace->cmm->new_link(ctx->cmm_instance, link, rend, cmm_flags, num_bytes, alpha, src, prf, des);
+	ctx->colorspace->cmm->init_link(ctx->cmm_instance, link, rend, cmm_flags, num_bytes, alpha, src, prf, des);
 }
 
 void
-fz_cmm_drop_link(fz_context *ctx, fz_icclink *link)
+fz_cmm_fin_link(fz_context *ctx, fz_icclink *link)
 {
-	ctx->colorspace->cmm->drop_link(ctx->cmm_instance, link);
+	ctx->colorspace->cmm->fin_link(ctx->cmm_instance, link);
 }
 
 fz_cmm_instance *fz_cmm_new_instance(fz_context *ctx)
@@ -282,7 +282,7 @@ static void
 fz_drop_link_imp(fz_context *ctx, fz_storable *storable)
 {
 	fz_icclink *link = (fz_icclink *)storable;
-	fz_cmm_drop_link(ctx, link);
+	fz_cmm_fin_link(ctx, link);
 	fz_free(ctx, link);
 }
 
@@ -338,7 +338,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *src, fz_iccprofile *prf, fz_iccp
 		link->is_identity = 0;
 
 	/* Does not throw.  Simply returns NULL if an issue */
-	fz_cmm_new_link(ctx, link, rend, 0, num_bytes, alpha, src, prf, dst);
+	fz_cmm_init_link(ctx, link, rend, 0, num_bytes, alpha, src, prf, dst);
 	if (link->cmm_handle == NULL)
 	{
 		fz_free(ctx, link);
