@@ -1475,10 +1475,6 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 		}
 	}
 	fz_catch(ctx) { }
-
-#ifndef NOICC
-	doc->oi = pdf_load_output_intent(ctx, doc);
-#endif
 }
 
 static void

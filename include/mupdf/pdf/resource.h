@@ -38,7 +38,6 @@ pdf_function *pdf_load_function(fz_context *ctx, pdf_obj *ref, int in, int out);
 fz_colorspace *pdf_document_output_intent(fz_context *ctx, pdf_document *doc);
 fz_colorspace *pdf_load_colorspace(fz_context *ctx, pdf_obj *obj);
 int pdf_is_tint_colorspace(fz_context *ctx, fz_colorspace *cs);
-fz_colorspace *pdf_load_output_intent(fz_context *ctx, pdf_document *doc);
 
 fz_shade *pdf_load_shading(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 

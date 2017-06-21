@@ -1672,13 +1672,13 @@ int mudraw_main(int argc, char **argv)
 				doc = fz_open_document(ctx, filename);
 
 				/* Once document is open check for output intent colorspace */
-				if (doc->get_output_intent)
+				oi = fz_document_output_intent(ctx, doc);
+				if (oi)
 				{
-					oi = doc->get_output_intent(ctx, doc);
-					if (oi != NULL && fz_colorspace_n(ctx, oi) == fz_colorspace_n(ctx, colorspace))
+					if (fz_colorspace_n(ctx, oi) == fz_colorspace_n(ctx, colorspace))
 					{
 						fz_drop_colorspace(ctx, colorspace);
-						colorspace = oi;
+						colorspace = fz_keep_colorspace(ctx, oi);
 					}
 				}
 

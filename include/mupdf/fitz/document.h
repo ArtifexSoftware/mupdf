@@ -37,12 +37,6 @@ fz_permission;
 typedef void (fz_document_drop_fn)(fz_context *ctx, fz_document *doc);
 
 /*
-	fz_document_output_intent_fn: Return output intent color space if it exists
-*/
-typedef fz_colorspace* (fz_document_output_intent_fn)(fz_context *ctx, fz_document *doc);
-
-
-/*
 	fz_document_needs_password_fn: Type for a function to be
 	called to enquire whether the document needs a password
 	or not. See fz_needs_password for more information.
@@ -102,6 +96,11 @@ typedef fz_page *(fz_document_load_page_fn)(fz_context *ctx, fz_document *doc, i
 	information.
 */
 typedef int (fz_document_lookup_metadata_fn)(fz_context *ctx, fz_document *doc, const char *key, char *buf, int size);
+
+/*
+	fz_document_output_intent_fn: Return output intent color space if it exists
+*/
+typedef fz_colorspace* (fz_document_output_intent_fn)(fz_context *ctx, fz_document *doc);
 
 /*
 	fz_document_make_bookmark_fn: Type for a function to make
@@ -232,7 +231,6 @@ struct fz_document_s
 {
 	int refs;
 	fz_document_drop_fn *drop_document;
-	fz_document_output_intent_fn *get_output_intent;
 	fz_document_needs_password_fn *needs_password;
 	fz_document_authenticate_password_fn *authenticate_password;
 	fz_document_has_permission_fn *has_permission;
@@ -244,6 +242,7 @@ struct fz_document_s
 	fz_document_count_pages_fn *count_pages;
 	fz_document_load_page_fn *load_page;
 	fz_document_lookup_metadata_fn *lookup_metadata;
+	fz_document_output_intent_fn *get_output_intent;
 	int did_layout;
 	int is_reflowable;
 };
@@ -614,6 +613,11 @@ int fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char 
 
 #define FZ_META_INFO_AUTHOR "info:Author"
 #define FZ_META_INFO_TITLE "info:Title"
+
+/*
+	Find the output intent colorspace if the document has defined one.
+*/
+fz_colorspace *fz_document_output_intent(fz_context *ctx, fz_document *doc);
 
 /*
 	Get the number of separations on a page (including CMYK). This will

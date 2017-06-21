@@ -528,13 +528,7 @@ pdf_load_colorspace(fz_context *ctx, pdf_obj *obj)
 	return cs;
 }
 
-fz_colorspace *
-pdf_document_output_intent(fz_context *ctx, pdf_document *doc)
-{
-	return doc->oi;
-}
-
-fz_colorspace *
+static fz_colorspace *
 pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
 {
 	pdf_obj *root = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
@@ -567,4 +561,14 @@ pdf_load_output_intent(fz_context *ctx, pdf_document *doc)
 	}
 
 	return cs;
+}
+
+fz_colorspace *
+pdf_document_output_intent(fz_context *ctx, pdf_document *doc)
+{
+#ifndef NOICC
+	if (!doc->oi)
+		doc->oi = pdf_load_output_intent(ctx, doc);
+#endif
+	return doc->oi;
 }

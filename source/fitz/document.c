@@ -296,6 +296,14 @@ fz_lookup_metadata(fz_context *ctx, fz_document *doc, const char *key, char *buf
 	return -1;
 }
 
+fz_colorspace *
+fz_document_output_intent(fz_context *ctx, fz_document *doc)
+{
+	if (doc && doc->get_output_intent)
+		return doc->get_output_intent(ctx, doc);
+	return NULL;
+}
+
 fz_page *
 fz_load_page(fz_context *ctx, fz_document *doc, int number)
 {
