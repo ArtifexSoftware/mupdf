@@ -120,7 +120,6 @@ struct fz_context_s
 	fz_warn_context *warn;
 	fz_font_context *font;
 	fz_colorspace_context *colorspace;
-	const fz_cmm_engine *cmm;
 	fz_cmm_instance *cmm_instance;
 	fz_aa_context *aa;
 	fz_style_context *style;

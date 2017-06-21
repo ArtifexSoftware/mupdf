@@ -624,7 +624,7 @@ static fz_color_params *default_color_params = &k_default_color_params;
 
 const fz_cmm_engine *fz_get_cmm_engine(fz_context *ctx)
 {
-	return ctx->colorspace ? ctx->cmm : NULL;
+	return ctx->colorspace ? ctx->colorspace->cmm : NULL;
 }
 
 static void
@@ -651,7 +651,7 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	if (engine)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "ICC workflow not supported in NO_ICC build");
 #else
-	if (ctx->cmm == engine)
+	if (cct->cmm == engine)
 		return;
 
 	fz_drop_cmm_context(ctx);
@@ -665,7 +665,7 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	cct->bgr = NULL;
 	cct->cmyk = NULL;
 	cct->lab = NULL;
-	ctx->cmm = engine;
+	cct->cmm = engine;
 	fz_new_cmm_context(ctx);
 	if (engine)
 	{
@@ -725,8 +725,8 @@ void fz_drop_colorspace_context(fz_context *ctx)
 		/* FIXME: bgr */
 		fz_drop_colorspace(ctx, ctx->colorspace->cmyk);
 		fz_drop_colorspace(ctx, ctx->colorspace->lab);
-		fz_free(ctx, ctx->colorspace);
 		fz_drop_cmm_context(ctx);
+		fz_free(ctx, ctx->colorspace);
 		ctx->colorspace = NULL;
 	}
 }
