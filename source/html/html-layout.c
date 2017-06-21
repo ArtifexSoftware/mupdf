@@ -885,9 +885,9 @@ static void init_string_walker(fz_context *ctx, string_walker *walker, hb_buffer
 static void
 destroy_hb_shaper_data(fz_context *ctx, void *handle)
 {
-	hb_lock(ctx);
+	fz_hb_lock(ctx);
 	hb_font_destroy(handle);
-	hb_unlock(ctx);
+	fz_hb_unlock(ctx);
 }
 
 static int walk_string(string_walker *walker)
@@ -927,7 +927,7 @@ static int walk_string(string_walker *walker)
 	if (walker->script <= 3 && !walker->rtl && !fz_font_flags(walker->font)->has_opentype)
 		quickshape = 1;
 
-	hb_lock(ctx);
+	fz_hb_lock(ctx);
 	fz_try(ctx)
 	{
 		face = fz_font_ft_face(ctx, walker->font);
@@ -971,7 +971,7 @@ static int walk_string(string_walker *walker)
 	}
 	fz_always(ctx)
 	{
-		hb_unlock(ctx);
+		fz_hb_unlock(ctx);
 	}
 	fz_catch(ctx)
 	{
@@ -1891,11 +1891,11 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 
 	fz_pre_translate(&local_ctm, html->page_margin[L], html->page_margin[T]);
 
-	hb_lock(ctx);
+	fz_hb_lock(ctx);
 	fz_try(ctx)
 	{
 		hb_buf = hb_buffer_create();
-		hb_unlock(ctx);
+		fz_hb_unlock(ctx);
 		unlocked = 1;
 
 		for (box = html->root->down; box; box = box->next)
@@ -1904,9 +1904,9 @@ fz_draw_html(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, fz_html *htm
 	fz_always(ctx)
 	{
 		if (unlocked)
-			hb_lock(ctx);
+			fz_hb_lock(ctx);
 		hb_buffer_destroy(hb_buf);
-		hb_unlock(ctx);
+		fz_hb_unlock(ctx);
 	}
 	fz_catch(ctx)
 	{
@@ -2471,13 +2471,13 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 	html->page_w = w - html->page_margin[L] - html->page_margin[R];
 	html->page_h = h - html->page_margin[T] - html->page_margin[B];
 
-	hb_lock(ctx);
+	fz_hb_lock(ctx);
 
 	fz_try(ctx)
 	{
 		hb_buf = hb_buffer_create();
 		unlocked = 1;
-		hb_unlock(ctx);
+		fz_hb_unlock(ctx);
 
 		box->em = em;
 		box->w = html->page_w;
@@ -2492,9 +2492,9 @@ fz_layout_html(fz_context *ctx, fz_html *html, float w, float h, float em)
 	fz_always(ctx)
 	{
 		if (unlocked)
-			hb_lock(ctx);
+			fz_hb_lock(ctx);
 		hb_buffer_destroy(hb_buf);
-		hb_unlock(ctx);
+		fz_hb_unlock(ctx);
 	}
 	fz_catch(ctx)
 	{

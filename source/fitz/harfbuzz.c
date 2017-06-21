@@ -9,14 +9,31 @@
 
 #include <assert.h>
 
-/* Harfbuzz has some major design flaws.
+/* Harfbuzz has some major design flaws (for our usage
+ * at least).
  *
- * It is utterly thread unsafe. It uses statics to hold
- * structures in, meaning that if it is ever called from
- * more than one thread at a time, access to such
- * structures can race. We work around this by imposing
- * a lock on our calls to harfbuzz (we reuse the freetype
- * lock).
+ * By default it uses malloc and free as the underlying
+ * allocators. Thus in its default form we cannot get
+ * a record (much less control) over how much allocation
+ * is done.
+ *
+ * Harfbuzz does allow build options to control where
+ * malloc and free go - in particular we point them at
+ * fz_hb_malloc and fz_hb_free in our implementation.
+ * Unfortunately, this has problems too.
+ *
+ * Firstly, there is no mechanism for getting a context
+ * through the call. Most other libraries allow us to
+ * pass a "void *" value in, and have it passed through
+ * to arrive unchanged at the allocator functions.
+ *
+ * Without this rudimentary functionality, we are forced
+ * to serialise all access to Harfbuzz.
+ *
+ * By taking a mutex around all calls to Harfbuzz, we
+ * can use a static of our own to get a fz_context safely
+ * through to the allocators. This obviously costs us
+ * performance in the multi-threaded case.
  *
  * This does not protect us against the possibility of
  * other people calling harfbuzz; for instance, if we
@@ -30,9 +47,9 @@
  *
  * In order to ensure that allocations throughout mupdf
  * are done consistently, we get harfbuzz to call our
- * own hb_malloc/realloc/calloc/free functions that
+ * own fz_hb_malloc/realloc/calloc/free functions that
  * call down to fz_malloc/realloc/calloc/free. These
- * require context variables, so we get our hb_lock
+ * require context variables, so we get our fz_hb_lock
  * and unlock to set these. Any attempt to call through
  * without setting these will be detected.
  *
@@ -40,12 +57,31 @@
  * handlers are shared between all the fz_contexts in
  * use at a time.
  *
- * Finally, harfbuzz stores various malloced structures
- * in statics. These can either be left to leak on
- * closedown, or (if HAVE_ATEXIT is defined), they will
- * be freed using various 'atexit' callbacks. Unfortunately
- * this won't reset the fz_context value, so the allocators
- * can't free them correctly.
+ * Secondly, Harfbuzz allocates some 'internal' memory
+ * on the first call, and leaves this linked from static
+ * variables. By default, this data is never freed back.
+ * This means it is impossible to clear the library back
+ * to a default state. Memory debugging will always show
+ * Harfbuzz as having leaked a set amount of memory.
+ *
+ * There is a mechanism in Harfbuzz for freeing these
+ * blocks - that of building with HAVE_ATEXIT. This
+ * causes the blocks to be freed back on exit, but a)
+ * this doesn't reset the fz_context value, so we can't
+ * free them correctly, and b) any fz_context value it
+ * did keep would already have been closed down due to
+ * the program exit.
+ *
+ * In addition, because of these everlasting blocks, we
+ * cannot safely call Harfbuzz after we close down any
+ * allocator that Harfbuzz has been using (because
+ * Harfbuzz may still be holding pointers to data within
+ * that allocators managed space).
+ *
+ * There is nothing we can do about the leaking blocks
+ * except to add some hacks to our memory debugging
+ * library to allow it to suppress the blocks that
+ * harfbuzz leaks.
  *
  * Consequently, we leave them to leak, and warn Memento
  * about this.
@@ -64,33 +100,33 @@
  * problems that for now, we'll just forbid it.
  */
 
-static fz_context *hb_secret = NULL;
+static fz_context *fz_hb_secret = NULL;
 
 static void set_hb_context(fz_context *ctx)
 {
-	hb_secret = ctx;
+	fz_hb_secret = ctx;
 }
 
 static fz_context *get_hb_context(void)
 {
-	return hb_secret;
+	return fz_hb_secret;
 }
 
-void hb_lock(fz_context *ctx)
+void fz_hb_lock(fz_context *ctx)
 {
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
 
 	set_hb_context(ctx);
 }
 
-void hb_unlock(fz_context *ctx)
+void fz_hb_unlock(fz_context *ctx)
 {
 	set_hb_context(NULL);
 
 	fz_unlock(ctx, FZ_LOCK_FREETYPE);
 }
 
-void *hb_malloc(size_t size)
+void *fz_hb_malloc(size_t size)
 {
 	fz_context *ctx = get_hb_context();
 
@@ -99,7 +135,7 @@ void *hb_malloc(size_t size)
 	return fz_malloc_no_throw(ctx, size);
 }
 
-void *hb_calloc(size_t n, size_t size)
+void *fz_hb_calloc(size_t n, size_t size)
 {
 	fz_context *ctx = get_hb_context();
 
@@ -108,7 +144,7 @@ void *hb_calloc(size_t n, size_t size)
 	return fz_calloc_no_throw(ctx, n, size);
 }
 
-void *hb_realloc(void *ptr, size_t size)
+void *fz_hb_realloc(void *ptr, size_t size)
 {
 	fz_context *ctx = get_hb_context();
 
@@ -117,7 +153,7 @@ void *hb_realloc(void *ptr, size_t size)
 	return fz_resize_array_no_throw(ctx, ptr, 1, size);
 }
 
-void hb_free(void *ptr)
+void fz_hb_free(void *ptr)
 {
 	fz_context *ctx = get_hb_context();
 

@@ -606,16 +606,16 @@ void fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int
 */
 
 /*
-	hb_lock: Lock against Harfbuzz being called
+	fz_hb_lock: Lock against Harfbuzz being called
 	simultaneously in several threads. This reuses
 	FZ_LOCK_FREETYPE.
 */
-void hb_lock(fz_context *ctx);
+void fz_hb_lock(fz_context *ctx);
 
 /*
-	hb_unlock: Unlock after a Harfbuzz call. This reuses
+	fz_hb_unlock: Unlock after a Harfbuzz call. This reuses
 	FZ_LOCK_FREETYPE.
 */
-void hb_unlock(fz_context *ctx);
+void fz_hb_unlock(fz_context *ctx);
 
 #endif
