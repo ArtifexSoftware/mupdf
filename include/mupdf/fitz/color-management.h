@@ -53,16 +53,16 @@ typedef void (fz_cmm_new_link_fn)(fz_cmm_instance *ctx, fz_icclink *link, const 
 typedef void (fz_cmm_drop_link_fn)(fz_cmm_instance *ctx, fz_icclink *link);
 
 /*
-	fz_cmm_new_profile_fn: Create the cmm specific data for the given
+	fz_cmm_init_profile_fn: Create the cmm specific data for the given
 	profile. The cmm handle is stored to profile->cmm_handle.
 */
-typedef void (fz_cmm_new_profile_fn)(fz_cmm_instance *ctx, fz_iccprofile *profile);
+typedef void (fz_cmm_init_profile_fn)(fz_cmm_instance *ctx, fz_iccprofile *profile);
 
 /*
-	fz_cmm_drop_profile_fn: Drop the cmm specific data for the given
+	fz_cmm_fin_profile_fn: Drop the cmm specific data for the given
 	profile.
 */
-typedef void (fz_cmm_drop_profile_fn)(fz_cmm_instance *ctx, fz_iccprofile *profile);
+typedef void (fz_cmm_fin_profile_fn)(fz_cmm_instance *ctx, fz_iccprofile *profile);
 
 /*
 	Encapsulate details for a given color management engine into a single
@@ -75,8 +75,8 @@ struct fz_cmm_engine_s {
 	fz_cmm_transform_color_fn *transform_color;
 	fz_cmm_new_link_fn *new_link;
 	fz_cmm_drop_link_fn *drop_link;
-	fz_cmm_new_profile_fn *new_profile;
-	fz_cmm_drop_profile_fn *drop_profile;
+	fz_cmm_init_profile_fn *init_profile;
+	fz_cmm_fin_profile_fn *fin_profile;
 	int avoid_white_fix_flag;
 };
 

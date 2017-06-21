@@ -100,16 +100,18 @@ static inline void fz_cmm_drop_instance(fz_context *ctx)
 		ctx->colorspace->cmm->drop_instance(ctx->cmm_instance);
 }
 
-static inline int fz_cmm_new_profile(fz_context *ctx, fz_iccprofile *profile)
+static inline int fz_cmm_init_profile(fz_context *ctx, fz_iccprofile *profile)
 {
-	ctx->colorspace->cmm->new_profile(ctx->cmm_instance, profile);
+	if (!ctx || !ctx->colorspace || !ctx->colorspace->cmm)
+		return 1;
+	ctx->colorspace->cmm->init_profile(ctx->cmm_instance, profile);
 	return profile->cmm_handle == NULL;
 }
 
-static inline void fz_cmm_drop_profile(fz_context *ctx, fz_iccprofile *profile)
+static inline void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile)
 {
 	if (profile && profile->cmm_handle != NULL)
-		ctx->colorspace->cmm->drop_profile(ctx->cmm_instance, profile);
+		ctx->colorspace->cmm->fin_profile(ctx->cmm_instance, profile);
 }
 
 #endif

@@ -251,8 +251,9 @@ get_base_icc_profile(fz_context *ctx, fz_colorspace *cs)
 
 	cal = base->data;
 	cal_icc = cal->profile;
-	if (cal_icc && cal_icc->cmm_handle == NULL && fz_cmm_new_profile(ctx, cal_icc))
-		return NULL;
+	if (cal_icc)
+		if (cal_icc->cmm_handle == NULL && fz_cmm_init_profile(ctx, cal_icc))
+			return NULL;
 
 	return cal_icc;
 }
@@ -343,7 +344,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 		/* Check if we have any work to do. */
 		if (src_icc == NULL)
 			src_icc = fz_icc_from_cal(ctx, src);
-		if (src_icc->cmm_handle == NULL && fz_cmm_new_profile(ctx, src_icc))
+		if (src_icc->cmm_handle == NULL && fz_cmm_init_profile(ctx, src_icc))
 		{
 			/* The CMM failed to make a profile. Use the default. */
 			if (src_icc->cmm_handle == NULL)
@@ -364,7 +365,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 				}
 				/* To avoid repeated failures building the pdf-cal color space,
 				 * assign the default profile. */
-				fz_cmm_drop_profile(ctx, src_icc);
+				fz_cmm_fin_profile(ctx, src_icc);
 				cal->profile = src_icc;
 			}
 		}
@@ -2887,7 +2888,7 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_iccprofile *profile = cs->data;
 	fz_drop_buffer(ctx, profile->buffer);
-	fz_cmm_drop_profile(ctx, profile);
+	fz_cmm_fin_profile(ctx, profile);
 	fz_free(ctx, profile);
 }
 
@@ -2940,12 +2941,12 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
 			is_lab = (strncmp(name, "lab-icc", strlen("lab-icc")) == 0);
 		}
-		/* Check if correct type */
-		if (fz_cmm_new_profile(ctx, profile) || num != profile->num_devcomp)
+		/* Create profile handle and check if correct type */
+		if (fz_cmm_init_profile(ctx, profile) || num != profile->num_devcomp)
 		{
 			if (name != NULL)
 				fz_drop_buffer(ctx, profile->buffer);
-			fz_cmm_drop_profile(ctx, profile);
+			fz_cmm_fin_profile(ctx, profile);
 			fz_free(ctx, profile);
 		}
 		else
@@ -2958,7 +2959,7 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 	fz_catch(ctx)
 	{
 		fz_drop_buffer(ctx, profile->buffer);
-		fz_cmm_drop_profile(ctx, profile);
+		fz_cmm_fin_profile(ctx, profile);
 		fz_free(ctx, profile);
 	}
 	return cs;
@@ -2989,7 +2990,7 @@ free_cal(fz_context *ctx, fz_colorspace *cs)
 	if (cal_data->profile != NULL)
 	{
 		fz_drop_buffer(ctx, cal_data->profile->buffer);
-		fz_cmm_drop_profile(ctx, cal_data->profile);
+		fz_cmm_fin_profile(ctx, cal_data->profile);
 		fz_free(ctx, cal_data->profile);
 	}
 	fz_free(ctx, cal_data);
