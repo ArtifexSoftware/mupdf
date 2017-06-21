@@ -971,7 +971,7 @@ fz_stext_fill_image_mask(fz_context *ctx, fz_device *dev, fz_image *img, const f
 static void
 fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
 {
-	fz_stext_fill_image_mask(ctx, dev, img, ctm, NULL, NULL, alpha, NULL);
+	fz_stext_fill_image_mask(ctx, dev, img, ctm, NULL, NULL, alpha, color_params);
 }
 
 static int

@@ -258,7 +258,6 @@ struct fz_image_s
 	int xres; /* As given in the image, not necessarily as rendered */
 	int yres; /* As given in the image, not necessarily as rendered */
 	fz_colorspace *colorspace;
-	fz_color_params *color_params;
 	fz_drop_image_fn *drop_image;
 	fz_image_get_pixmap_fn *get_pixmap;
 	fz_image_get_size_fn *get_size;
