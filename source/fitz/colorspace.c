@@ -222,7 +222,7 @@ fz_drop_icclink(fz_context *ctx, fz_icclink *link)
 static int fz_colorspace_is_pdf_cal(fz_context *ctx, const fz_colorspace *cs);
 
 static fz_iccprofile *
-get_base_icc(fz_context *ctx, fz_colorspace *cs)
+get_base_icc_profile(fz_context *ctx, fz_colorspace *cs)
 {
 	fz_colorspace *base;
 	fz_cal_colorspace *cal;
@@ -238,7 +238,7 @@ get_base_icc(fz_context *ctx, fz_colorspace *cs)
 	if (fz_colorspace_is_icc(ctx, base))
 		return base->data;
 	if (!fz_colorspace_is_pdf_cal(ctx, base))
-		return get_base_icc(ctx, base);
+		return get_base_icc_profile(ctx, base);
 
 	cal = base->data;
 	cal_icc = cal->profile;
@@ -370,7 +370,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 		}
 	}
 	else
-		src_icc = get_base_icc(ctx, src);
+		src_icc = get_base_icc_profile(ctx, src);
 
 	if (src_icc == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Profile missing during link creation");
@@ -1983,16 +1983,17 @@ fz_icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspac
  * an ICC base space.  This is where we want our pixmap to be decoded prior
  * to application of the link transform */
 static fz_colorspace*
-get_icc_base_space(fz_context *ctx, fz_colorspace *srcs)
+get_base_icc_space(fz_context *ctx, fz_colorspace *srcs)
 {
-	fz_colorspace *base_cs = srcs->get_base(srcs);
-	if (base_cs == NULL)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Final color space should be icc or pdf-cal or lab");
+	while (1)
+	{
+		srcs = srcs->get_base(srcs);
+		if (srcs == NULL)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Final color space should be icc or pdf-cal or lab");
 
-	if (fz_colorspace_is_icc(ctx, base_cs) || fz_colorspace_is_pdf_cal(ctx, base_cs) || fz_colorspace_is_lab(ctx, base_cs))
-		return base_cs;
-	else
-		return get_icc_base_space(ctx, base_cs);
+		if (fz_colorspace_is_icc(ctx, srcs) || fz_colorspace_is_pdf_cal(ctx, srcs) || fz_colorspace_is_lab(ctx, srcs))
+			return srcs;
+	}
 }
 
 /* Cope with cases where we have to convert through multiple base spaces before
@@ -2020,7 +2021,7 @@ static void
 icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	fz_colorspace *srcs = src->colorspace;
-	fz_colorspace *base_cs = get_icc_base_space(ctx, srcs);
+	fz_colorspace *base_cs = get_base_icc_space(ctx, srcs);
 	int i;
 	unsigned char *inputpos, *outputpos;
 	fz_pixmap *base;
