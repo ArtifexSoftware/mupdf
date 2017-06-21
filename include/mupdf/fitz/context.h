@@ -17,7 +17,7 @@ typedef struct fz_warn_context_s fz_warn_context;
 typedef struct fz_font_context_s fz_font_context;
 typedef struct fz_colorspace_context_s fz_colorspace_context;
 typedef struct fz_cmm_engine_s fz_cmm_engine;
-typedef void fz_cmm_instance;
+typedef struct fz_cmm_instance_s fz_cmm_instance;
 typedef struct fz_aa_context_s fz_aa_context;
 typedef struct fz_style_context_s fz_style_context;
 typedef struct fz_locks_context_s fz_locks_context;

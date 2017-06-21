@@ -276,7 +276,7 @@ fz_lcms_new_instance(fz_context *ctx)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "CMM failed to initialize");
 	DEBUG_LCMS_MEM(("Context Creation:: mupdf ctx = %p lcms ctx = %p \n", (void*) ctx, (void*) cmm_ctx));
 	cmsSetLogErrorHandlerTHR(cmm_ctx, fz_lcms_error);
-	return cmm_ctx;
+	return (fz_cmm_instance *)cmm_ctx;
 }
 
 static void
@@ -285,7 +285,7 @@ fz_lcms_drop_instance(fz_cmm_instance *instance)
 	DEBUG_LCMS_MEM(("Context Destruction:: lcms ctx = %p \n", (void*)instance));
 	if (instance == NULL)
 		return;
-	cmsDeleteContext(instance);
+	cmsDeleteContext((cmsContext)instance);
 }
 
 static void
