@@ -157,10 +157,7 @@ if not exist generated/NotoSerifTamil-Regular.c hexdump.exe generated/NotoSerifT
 if not exist generated/NotoSerifTelugu-Regular.c hexdump.exe generated/NotoSerifTelugu-Regular.c resources/fonts/noto/NotoSerifTelugu-Regular.ttf
 if not exist generated/NotoSerifThai-Regular.c hexdump.exe generated/NotoSerifThai-Regular.c resources/fonts/noto/NotoSerifThai-Regular.ttf
 
-if not exist generated/gray-icc.c hexdump.exe generated/gray-icc.c resources/icc/gray.icc
-if not exist generated/rgb-icc.c hexdump.exe generated/rgb-icc.c resources/icc/rgb.icc
-if not exist generated/cmyk-icc.c hexdump.exe generated/cmyk-icc.c resources/icc/cmyk.icc
-if not exist generated/lab-icc.c hexdump.exe generated/lab-icc.c resources/icc/lab.icc
+if not exist generated/icc-profiles.c hexdump.exe generated/icc-profiles.c resources/icc/gray.icc resources/icc/rgb.icc resources/icc/cmyk.icc resources/icc/lab.icc
 
 del namedump.obj cmapdump.obj hexdump.obj
 del namedump.exe cmapdump.exe hexdump.exe

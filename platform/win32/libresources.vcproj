@@ -657,19 +657,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\generated\gray-icc.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\generated\rgb-icc.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\generated\cmyk-icc.c"
-			>
-		</File>
-		<File
-			RelativePath="..\..\generated\lab-icc.c"
+			RelativePath="..\..\generated\icc-profiles.c"
 			>
 		</File>
 	</Files>
