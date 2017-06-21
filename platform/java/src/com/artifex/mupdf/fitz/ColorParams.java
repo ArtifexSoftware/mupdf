@@ -12,10 +12,8 @@ public final class ColorParams
 	public static final int OP = 64;
 	public static final int OPM = 128;
 
-	public static RenderingIntent RI(int flags)
-	{
-		switch (flags>>3)
-		{
+	public static RenderingIntent RI(int flags) {
+		switch (flags>>3) {
 			default:
 			case 0: return RenderingIntent.PERCEPTUAL;
 			case 1: return RenderingIntent.RELATIVE_COLORIMETRIC;
@@ -24,18 +22,30 @@ public final class ColorParams
 		}
 	}
 
-	public static boolean BP(int flags)
-	{
+	public static boolean BP(int flags) {
 		return (flags & BP) != 0;
 	}
 
-	public static boolean OP(int flags)
-	{
+	public static boolean OP(int flags) {
 		return (flags & OP) != 0;
 	}
 
-	public static boolean OPM(int flags)
-	{
+	public static boolean OPM(int flags) {
 		return (flags & OPM) != 0;
+	}
+
+	public static int pack(RenderingIntent ri, boolean bp, boolean op, boolean opm) {
+		int flags;
+		switch (ri) {
+		default:
+		case PERCEPTUAL: flags = 0; break;
+		case RELATIVE_COLORIMETRIC: flags = 1; break;
+		case SATURATION: flags = 2; break;
+		case ABSOLUTE_COLORIMETRIC: flags = 3; break;
+		}
+		if (bp) flags |= BP;
+		if (op) flags |= OP;
+		if (opm) flags |= OPM;
+		return flags;
 	}
 }
