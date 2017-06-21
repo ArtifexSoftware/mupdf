@@ -284,108 +284,104 @@ load_indexed(fz_context *ctx, pdf_obj *array)
 	return cs;
 }
 
-/* If an issue returns -1, else returns 0 */
-static int
-pdf_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float *gamma)
+static void
+pdf_load_cal_common(fz_context *ctx, pdf_obj *dict, float *wp, float *bp, float *gamma)
 {
 	pdf_obj *obj;
-	pdf_obj *objv;
 	int i;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_WhitePoint);
-	if (pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 3)
+	if (pdf_array_len(ctx, obj) == 3)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			objv = pdf_array_get(ctx, obj, i);
-			if (!pdf_is_number(ctx, objv))
-				return -1;
-			wp[i] = pdf_to_real(ctx, objv);
+			wp[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+			if (wp[i] < 0)
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint numbers must be positive");
 		}
 		if (wp[1] != 1)
-			return -1;
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint Yw must be 1.0");
 	}
 	else
-		return -1;
+		fz_throw(ctx, FZ_ERROR_SYNTAX, "WhitePoint must be a 3-element array");
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_BlackPoint);
-	if (pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 3)
+	if (pdf_array_len(ctx, obj) == 3)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			objv = pdf_array_get(ctx, obj, i);
-			if (!pdf_is_number(ctx, objv))
-				return -1;
-			bp[i] = pdf_to_real(ctx, objv);
-			fz_clamp(bp[i], 0, 1);
+			bp[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+			if (bp[i] < 0)
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "BlackPoint numbers must be positive");
 		}
 	}
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_Gamma);
 	if (pdf_is_number(ctx, obj))
 	{
-		*gamma = pdf_to_real(ctx, objv);
-		if (*gamma < 0 || *gamma == 0)
-			return -1;
+		gamma[0] = pdf_to_real(ctx, obj);
+		gamma[1] = gamma[2];
+		if (gamma[0] <= 0)
+			fz_throw(ctx, FZ_ERROR_SYNTAX, "Gamma must be greater than zero");
 	}
-	else if (pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 3)
+	else if (pdf_array_len(ctx, obj) == 3)
 	{
 		for (i = 0; i < 3; i++)
 		{
-			objv = pdf_array_get(ctx, obj, i);
-			if (!pdf_is_number(ctx, objv))
-				return -1;
-			gamma[i] = pdf_to_real(ctx, objv);
+			gamma[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
+			if (gamma[i] <= 0)
+				fz_throw(ctx, FZ_ERROR_SYNTAX, "Gamma must be greater than zero");
 		}
 	}
-	return 0;
 }
 
 static fz_colorspace *
-pdf_calgray(fz_context *ctx, pdf_obj *dict)
+pdf_load_cal_gray(fz_context *ctx, pdf_obj *dict)
 {
 	float wp[3];
-	float bp[3] = { 0 };
-	float gamma = 1.0;
+	float bp[3] = { 0, 0, 0 };
+	float gamma[3] = { 1, 1, 1 };
 
 	if (dict == NULL)
 		return fz_device_gray(ctx);
 
-	if (pdf_cal_common(ctx, dict, wp, bp, &gamma) == 0)
-		return fz_new_cal_colorspace(ctx, wp, bp, &gamma, NULL);
-
-	return fz_device_gray(ctx);
+	fz_try(ctx)
+	{
+		pdf_load_cal_common(ctx, dict, wp, bp, gamma);
+		gamma[2] = gamma[1] = gamma[0];
+	}
+	fz_catch(ctx)
+		return fz_device_gray(ctx);
+	return fz_new_cal_colorspace(ctx, wp, bp, gamma, NULL);
 }
 
 static fz_colorspace *
-pdf_calrgb(fz_context *ctx, pdf_obj *dict)
+pdf_load_cal_rgb(fz_context *ctx, pdf_obj *dict)
 {
-	pdf_obj *obj, *objv;
-	float matrix[9] = { 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0 };
+	pdf_obj *obj;
+	float matrix[9] = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
 	float wp[3];
-	float bp[3] = { 0 };
-	float gamma[3] = { 1.0, 1.0, 1.0 };
+	float bp[3] = { 0, 0, 0 };
+	float gamma[3] = { 1, 1, 1 };
 	int i;
 
 	if (dict == NULL)
 		return fz_device_rgb(ctx);
 
-	if (pdf_cal_common(ctx, dict, wp, bp, gamma) == 0)
+	fz_try(ctx)
 	{
+		pdf_load_cal_common(ctx, dict, wp, bp, gamma);
+
 		obj = pdf_dict_get(ctx, dict, PDF_NAME_Matrix);
-		if (obj && pdf_is_array(ctx, obj) && pdf_array_len(ctx, obj) == 9)
+		if (pdf_array_len(ctx, obj) == 9)
 		{
 			for (i = 0; i < 9; i++)
-			{
-				objv = pdf_array_get(ctx, obj, i);
-				if (!pdf_is_number(ctx, objv))
-					return fz_device_rgb(ctx);
-				matrix[i] = pdf_to_real(ctx, objv);
-			}
-			return fz_new_cal_colorspace(ctx, wp, bp, gamma, matrix);
+				matrix[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
 		}
 	}
-	return fz_device_rgb(ctx);
+	fz_catch(ctx)
+		return fz_device_rgb(ctx);
+	return fz_new_cal_colorspace(ctx, wp, bp, gamma, matrix);
 }
 
 /* Parse and create colorspace from PDF object */
@@ -438,14 +434,14 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
 			{
 				if (fz_get_cmm_engine(ctx))
-					return pdf_calgray(ctx, pdf_array_get(ctx, obj, 1));
+					return pdf_load_cal_gray(ctx, pdf_array_get(ctx, obj, 1));
 				else
 					return fz_device_gray(ctx);
 			}
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
 			{
 				if (fz_get_cmm_engine(ctx))
-					return pdf_calrgb(ctx, pdf_array_get(ctx, obj, 1));
+					return pdf_load_cal_rgb(ctx, pdf_array_get(ctx, obj, 1));
 				else
 					return fz_device_rgb(ctx);
 			}
