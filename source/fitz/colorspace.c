@@ -7,6 +7,65 @@
 #include <math.h>
 #include <string.h>
 
+/* CMM module */
+
+int
+fz_cmm_avoid_white_fix_flag(fz_context *ctx)
+{
+	return ctx && ctx->colorspace && ctx->colorspace->cmm ? ctx->colorspace->cmm->avoid_white_fix_flag : 0;
+}
+
+void
+fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src)
+{
+	ctx->colorspace->cmm->transform_pixmap(ctx->cmm_instance, link, dst, src);
+}
+
+void
+fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src)
+{
+	ctx->colorspace->cmm->transform_color(ctx->cmm_instance, link, dst, src);
+}
+
+void
+fz_cmm_new_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des)
+{
+	ctx->colorspace->cmm->new_link(ctx->cmm_instance, link, rend, cmm_flags, num_bytes, alpha, src, prf, des);
+}
+
+void
+fz_cmm_drop_link(fz_context *ctx, fz_icclink *link)
+{
+	ctx->colorspace->cmm->drop_link(ctx->cmm_instance, link);
+}
+
+fz_cmm_instance *fz_cmm_new_instance(fz_context *ctx)
+{
+	if (!ctx || !ctx->colorspace || !ctx->colorspace->cmm)
+		return NULL;
+	return ctx->colorspace->cmm->new_instance(ctx);
+}
+
+void fz_cmm_drop_instance(fz_context *ctx)
+{
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm)
+		ctx->colorspace->cmm->drop_instance(ctx->cmm_instance);
+}
+
+int fz_cmm_init_profile(fz_context *ctx, fz_iccprofile *profile)
+{
+	if (!ctx || !ctx->colorspace || !ctx->colorspace->cmm)
+		return 1;
+	ctx->colorspace->cmm->init_profile(ctx->cmm_instance, profile);
+	return profile->cmm_handle == NULL;
+}
+
+void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile)
+{
+	if (profile && profile->cmm_handle != NULL)
+		ctx->colorspace->cmm->fin_profile(ctx->cmm_instance, profile);
+}
+
 #define SLOWCMYK
 
 const char *
