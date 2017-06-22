@@ -65,7 +65,6 @@ struct fz_colorspace_context_s
 	int ctx_refs;
 	const fz_cmm_engine *cmm;
 	fz_colorspace *gray, *rgb, *bgr, *cmyk, *lab;
-	fz_color_params *params;
 };
 
 #endif

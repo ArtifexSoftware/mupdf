@@ -159,8 +159,6 @@ fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, floa
 fz_buffer *fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal);
 fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs);
 
-void fz_init_color_params(fz_color_params *color_params);
-
 /* Default cs */
 fz_default_colorspaces *fz_new_default_colorspaces(fz_context *ctx);
 fz_default_colorspaces* fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);

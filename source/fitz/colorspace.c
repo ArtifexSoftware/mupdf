@@ -130,15 +130,6 @@ fz_rendering_intent_name(int ri)
 }
 
 void
-fz_init_color_params(fz_color_params *color_params)
-{
-	color_params->bp = 1;
-	color_params->ri = FZ_RI_RELATIVE_COLORIMETRIC;
-	color_params->op = 0;
-	color_params->opm = 0;
-}
-
-void
 fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 {
 	fz_colorspace *cs = (fz_colorspace *)cs_;
@@ -747,7 +738,6 @@ void fz_new_colorspace_context(fz_context *ctx)
 {
 	ctx->colorspace = fz_malloc_struct(ctx, fz_colorspace_context);
 	ctx->colorspace->ctx_refs = 1;
-	ctx->colorspace->params = default_color_params;
 	set_no_icc(ctx->colorspace);
 #ifdef NO_ICC
 	fz_set_cmm_engine(ctx, NULL);
@@ -827,7 +817,7 @@ fz_device_lab(fz_context *ctx)
 const fz_color_params *
 fz_default_color_params(fz_context *ctx)
 {
-	return ctx->colorspace->params;
+	return default_color_params;
 }
 
 /* Fast pixmap color conversions */
