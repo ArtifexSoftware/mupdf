@@ -3013,6 +3013,10 @@ fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name
 			fz_keep_buffer(ctx, buf);
 			fz_md5_icc(ctx, profile);
 			cs = fz_new_colorspace(ctx, "icc", num, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
+
+			/* This is a bit of a handwave, but should be safe for our cases */
+			if (profile->num_devcomp == 4)
+				cs->is_subtractive = 1;
 		}
 	}
 	fz_catch(ctx)
