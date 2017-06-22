@@ -13,7 +13,7 @@ void fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_color_params *
 void fz_cmm_fin_link(fz_context *ctx, fz_icclink *link);
 fz_cmm_instance *fz_cmm_new_instance(fz_context *ctx);
 void fz_cmm_drop_instance(fz_context *ctx);
-int fz_cmm_init_profile(fz_context *ctx, fz_iccprofile *profile);
+void fz_cmm_init_profile(fz_context *ctx, fz_iccprofile *profile);
 void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile);
 
 struct fz_colorspace_s

@@ -12,58 +12,63 @@
 int
 fz_cmm_avoid_white_fix_flag(fz_context *ctx)
 {
-	return ctx && ctx->colorspace && ctx->colorspace->cmm ? ctx->colorspace->cmm->avoid_white_fix_flag : 0;
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
+		return ctx->colorspace->cmm->avoid_white_fix_flag;
+	return 0;
 }
 
 void
 fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src)
 {
-	ctx->colorspace->cmm->transform_pixmap(ctx->cmm_instance, link, dst, src);
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
+		ctx->colorspace->cmm->transform_pixmap(ctx->cmm_instance, link, dst, src);
 }
 
 void
 fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src)
 {
-	ctx->colorspace->cmm->transform_color(ctx->cmm_instance, link, dst, src);
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
+		ctx->colorspace->cmm->transform_color(ctx->cmm_instance, link, dst, src);
 }
 
 void
 fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des)
 {
-	ctx->colorspace->cmm->init_link(ctx->cmm_instance, link, rend, cmm_flags, num_bytes, alpha, src, prf, des);
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
+		ctx->colorspace->cmm->init_link(ctx->cmm_instance, link, rend, cmm_flags, num_bytes, alpha, src, prf, des);
 }
 
 void
 fz_cmm_fin_link(fz_context *ctx, fz_icclink *link)
 {
-	ctx->colorspace->cmm->fin_link(ctx->cmm_instance, link);
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
+		ctx->colorspace->cmm->fin_link(ctx->cmm_instance, link);
 }
 
 fz_cmm_instance *fz_cmm_new_instance(fz_context *ctx)
 {
-	if (!ctx || !ctx->colorspace || !ctx->colorspace->cmm)
-		return NULL;
-	return ctx->colorspace->cmm->new_instance(ctx);
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm)
+		return ctx->colorspace->cmm->new_instance(ctx);
+	return NULL;
 }
 
 void fz_cmm_drop_instance(fz_context *ctx)
 {
-	if (ctx && ctx->colorspace && ctx->colorspace->cmm)
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
 		ctx->colorspace->cmm->drop_instance(ctx->cmm_instance);
 }
 
-int fz_cmm_init_profile(fz_context *ctx, fz_iccprofile *profile)
+void fz_cmm_init_profile(fz_context *ctx, fz_iccprofile *profile)
 {
-	if (!ctx || !ctx->colorspace || !ctx->colorspace->cmm)
-		return 1;
-	ctx->colorspace->cmm->init_profile(ctx->cmm_instance, profile);
-	return profile->cmm_handle == NULL;
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
+		ctx->colorspace->cmm->init_profile(ctx->cmm_instance, profile);
 }
 
 void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile)
 {
-	if (profile && profile->cmm_handle != NULL)
-		ctx->colorspace->cmm->fin_profile(ctx->cmm_instance, profile);
+	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
+		if (profile && profile->cmm_handle != NULL)
+			ctx->colorspace->cmm->fin_profile(ctx->cmm_instance, profile);
 }
 
 #define SLOWCMYK
@@ -304,9 +309,8 @@ get_base_icc_profile(fz_context *ctx, fz_colorspace *cs)
 
 	cal = base->data;
 	cal_icc = cal->profile;
-	if (cal_icc)
-		if (cal_icc->cmm_handle == NULL && fz_cmm_init_profile(ctx, cal_icc))
-			return NULL;
+	if (cal_icc && cal_icc->cmm_handle == NULL)
+		fz_cmm_init_profile(ctx, cal_icc);
 
 	return cal_icc;
 }
@@ -314,28 +318,25 @@ get_base_icc_profile(fz_context *ctx, fz_colorspace *cs)
 static fz_icclink *
 fz_new_icc_link(fz_context *ctx, fz_iccprofile *src, fz_iccprofile *prf, fz_iccprofile *dst, const fz_color_params *rend, int num_bytes, int alpha)
 {
-	fz_icclink *link;
+	fz_icclink *link = fz_malloc_struct(ctx, fz_icclink);
+	FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
 
-	link = fz_malloc_struct(ctx, fz_icclink);
 	link->num_in = src->num_devcomp;
 	link->num_out = dst->num_devcomp;
+
 	if (memcmp(src->md5, dst->md5, 16) == 0 && rend->ri == FZ_RI_RELATIVE_COLORIMETRIC && prf == NULL)
 	{
 		link->is_identity = 1;
-		FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
 		return link;
 	}
-	else
-		link->is_identity = 0;
 
-	/* Does not throw.  Simply returns NULL if an issue */
-	fz_cmm_init_link(ctx, link, rend, 0, num_bytes, alpha, src, prf, dst);
-	if (link->cmm_handle == NULL)
+	fz_try(ctx)
+		fz_cmm_init_link(ctx, link, rend, 0, num_bytes, alpha, src, prf, dst);
+	fz_catch(ctx)
 	{
 		fz_free(ctx, link);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "ICC link creation failed");
+		fz_rethrow(ctx);
 	}
-	FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
 
 	return link;
 }
@@ -397,8 +398,10 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 		/* Check if we have any work to do. */
 		if (src_icc == NULL)
 			src_icc = fz_icc_from_cal(ctx, src);
-		if (src_icc->cmm_handle == NULL && fz_cmm_init_profile(ctx, src_icc))
+		if (src_icc->cmm_handle == NULL)
 		{
+			fz_cmm_init_profile(ctx, src_icc);
+
 			/* The CMM failed to make a profile. Use the default. */
 			if (src_icc->cmm_handle == NULL)
 			{
@@ -2993,8 +2996,11 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 			is_lab = (strcmp(name, "lab-icc") == 0);
 			profile->bgr = (strcmp(name, "bgr-icc") == 0);
 		}
-		/* Create profile handle and check if correct type */
-		if (fz_cmm_init_profile(ctx, profile) || num != profile->num_devcomp)
+
+		fz_cmm_init_profile(ctx, profile);
+
+		/* Check if correct type */
+		if (num != profile->num_devcomp)
 		{
 			if (name != NULL)
 				fz_drop_buffer(ctx, profile->buffer);
