@@ -16,7 +16,7 @@ We take the following as definitions:
 
 The general PorterDuff blending equation is:
 
-	Blend Z = X op Y	cz = Fx.cx + Fy. cy	where Fx and Fy depend on op
+	Blend Z = X op Y	cz = Fx.cx + Fy.cy	where Fx and Fy depend on op
 
 The two operations we use in this file are: '(X in Y) over Z' and
 'S over Z'. The definitions of the 'over' and 'in' operations are as
@@ -59,7 +59,7 @@ Non Pre-multiplied case:
 	Cr.ar	= Fs.Cs.as + Fz.Cz.az	(where Fs = 1, Fz = 1-as)
 		= Cs.as	+ (1-as).Cz.az
 		= Cx.ax.ay + Cz.az.(1-ax.ay)
-	Cr	= (Cx.ax.ay + Cz.az.(1-ax.ay))/(ax.ay + az.(1-ax-ay))
+	Cr	= (Cx.ax.ay + Cz.az.(1-ax.ay))/(ax.ay + az.(1-ax.ay))
 
 Much more complex, it seems. However, if we could restrict ourselves to
 the case where we were always plotting onto an opaque background (i.e.
