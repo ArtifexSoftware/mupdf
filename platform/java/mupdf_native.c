@@ -2689,7 +2689,7 @@ FUN(NativeDevice_beginGroup)(JNIEnv *env, jobject self, jobject jrect, jboolean 
 
 	info = lockNativeDevice(env, self);
 	fz_try(ctx)
-		fz_begin_group(ctx, dev, &rect, isolated, knockout, blendmode, alpha);
+		fz_begin_group(ctx, dev, &rect, NULL, isolated, knockout, blendmode, alpha);
 	fz_always(ctx)
 		unlockNativeDevice(env, info);
 	fz_catch(ctx)

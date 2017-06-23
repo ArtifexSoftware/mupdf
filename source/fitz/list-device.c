@@ -1098,29 +1098,40 @@ fz_list_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_list_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, int isolated, int knockout, int blendmode, float alpha)
+fz_list_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, fz_colorspace *colorspace, int isolated, int knockout, int blendmode, float alpha)
 {
 	int flags;
+
+	colorspace = fz_keep_colorspace(ctx, colorspace);
 
 	flags = (blendmode<<2);
 	if (isolated)
 		flags |= ISOLATED;
 	if (knockout)
 		flags |= KNOCKOUT;
-	fz_append_display_node(
-		ctx,
-		dev,
-		FZ_CMD_BEGIN_GROUP,
-		flags,
-		rect,
-		NULL, /* path */
-		NULL, /* color */
-		NULL, /* colorspace */
-		&alpha, /* alpha */
-		NULL, /* ctm */
-		NULL, /* stroke */
-		NULL, /* private_data */
-		0); /* private_data_len */
+
+	fz_try(ctx)
+	{
+		fz_append_display_node(
+			ctx,
+			dev,
+			FZ_CMD_BEGIN_GROUP,
+			flags,
+			rect,
+			NULL, /* path */
+			NULL, /* color */
+			NULL, /* colorspace */
+			&alpha, /* alpha */
+			NULL, /* ctm */
+			NULL, /* stroke */
+			&colorspace, /* private_data */
+			sizeof(colorspace)); /* private_data_len */
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_colorspace(ctx, colorspace);
+		fz_rethrow(ctx);
+	}
 }
 
 static void
@@ -1393,6 +1404,9 @@ fz_drop_display_list_imp(fz_context *ctx, fz_storable *list_)
 		case FZ_CMD_FILL_IMAGE_MASK:
 		case FZ_CMD_CLIP_IMAGE_MASK:
 			fz_drop_image(ctx, *(fz_image **)node);
+			break;
+		case FZ_CMD_BEGIN_GROUP:
+			fz_drop_colorspace(ctx, *(fz_colorspace **)node);
 			break;
 		case FZ_CMD_DEFAULT_COLORSPACES:
 			fz_drop_default_colorspaces(ctx, *(fz_default_colorspaces **)node);
@@ -1732,7 +1746,7 @@ visible:
 				fz_end_mask(ctx, dev);
 				break;
 			case FZ_CMD_BEGIN_GROUP:
-				fz_begin_group(ctx, dev, &trans_rect, (n.flags & ISOLATED) != 0, (n.flags & KNOCKOUT) != 0, (n.flags>>2), alpha);
+				fz_begin_group(ctx, dev, &trans_rect, *(fz_colorspace **)node, (n.flags & ISOLATED) != 0, (n.flags & KNOCKOUT) != 0, (n.flags>>2), alpha);
 				break;
 			case FZ_CMD_END_GROUP:
 				fz_end_group(ctx, dev);

@@ -562,6 +562,12 @@ pdf_page_contents(fz_context *ctx, pdf_page *page)
 	return pdf_dict_get(ctx, page->obj, PDF_NAME_Contents);
 }
 
+pdf_obj *
+pdf_page_group(fz_context *ctx, pdf_page *page)
+{
+	return pdf_dict_get(ctx, page->obj, PDF_NAME_Group);
+}
+
 void
 pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_mediabox, fz_matrix *page_ctm)
 {

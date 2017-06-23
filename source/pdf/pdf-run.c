@@ -51,7 +51,27 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 	contents = pdf_page_contents(ctx, page);
 
 	if (page->transparency)
-		fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), 1, 0, 0, 1);
+	{
+		fz_colorspace *colorspace = NULL;
+		pdf_obj *group = pdf_page_group(ctx, page);
+
+		if (group)
+		{
+			pdf_obj *cs = pdf_dict_get(ctx, group, PDF_NAME_CS);
+			if (cs)
+			{
+				fz_try(ctx)
+				{
+					colorspace = pdf_load_colorspace(ctx, cs);
+				}
+				fz_catch(ctx)
+				{
+					colorspace = NULL;
+				}
+			}
+		}
+		fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), colorspace, 1, 0, 0, 1);
+	}
 
 	proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
 	fz_try(ctx)

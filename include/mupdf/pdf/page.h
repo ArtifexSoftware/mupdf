@@ -39,6 +39,7 @@ void pdf_page_obj_transform(fz_context *ctx, pdf_obj *pageobj, fz_rect *page_med
 void pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *mediabox, fz_matrix *ctm);
 pdf_obj *pdf_page_resources(fz_context *ctx, pdf_page *page);
 pdf_obj *pdf_page_contents(fz_context *ctx, pdf_page *page);
+pdf_obj *pdf_page_group(fz_context *ctx, pdf_page *page);
 
 fz_link *pdf_load_links(fz_context *ctx, pdf_page *page);
 

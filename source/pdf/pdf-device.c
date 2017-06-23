@@ -977,7 +977,7 @@ pdf_dev_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int isolated, int knockout, int blendmode, float alpha)
+pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	pdf_device *pdev = (pdf_device*)dev;
 	pdf_document *doc = pdev->doc;
@@ -987,7 +987,7 @@ pdf_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int is
 
 	pdf_dev_end_text(ctx, pdev);
 
-	num = pdf_dev_new_form(ctx, &form_ref, pdev, bbox, isolated, knockout, alpha, NULL);
+	num = pdf_dev_new_form(ctx, &form_ref, pdev, bbox, isolated, knockout, alpha, cs);
 
 	/* Do we have an appropriate blending extgstate already? */
 	{

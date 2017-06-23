@@ -416,7 +416,7 @@ fz_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 void
-fz_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *area, int isolated, int knockout, int blendmode, float alpha)
+fz_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *area, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	if (dev->error_depth)
 	{
@@ -429,7 +429,7 @@ fz_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *area, int isolate
 		if (dev->hints & FZ_MAINTAIN_CONTAINER_STACK)
 			push_clip_stack(ctx, dev, area, fz_device_container_stack_is_group);
 		if (dev->begin_group)
-			dev->begin_group(ctx, dev, area, isolated, knockout, blendmode, alpha);
+			dev->begin_group(ctx, dev, area, cs, isolated, knockout, blendmode, alpha);
 	}
 	fz_catch(ctx)
 	{

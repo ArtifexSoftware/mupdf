@@ -151,7 +151,7 @@ fz_bbox_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_bbox_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, int isolated, int knockout, int blendmode, float alpha)
+fz_bbox_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_bbox_add_rect(ctx, dev, rect, 1);
 }

@@ -324,7 +324,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *src, fz_iccprofile *prf, fz_iccp
 	link->num_in = src->num_devcomp;
 	link->num_out = dst->num_devcomp;
 
-	if (memcmp(src->md5, dst->md5, 16) == 0 && rend->ri == FZ_RI_RELATIVE_COLORIMETRIC && prf == NULL)
+	if (memcmp(src->md5, dst->md5, 16) == 0 && prf == NULL)
 	{
 		link->is_identity = 1;
 		return link;

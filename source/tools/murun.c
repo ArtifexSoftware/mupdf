@@ -1067,7 +1067,7 @@ js_dev_end_mask(fz_context *ctx, fz_device *dev)
 
 static void
 js_dev_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox,
-	int isolated, int knockout, int blendmode, float alpha)
+	fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	js_State *J = ((js_device*)dev)->J;
 	if (js_try(J))
@@ -1404,7 +1404,7 @@ static void ffi_Device_beginGroup(js_State *J)
 	int blendmode = fz_lookup_blendmode(js_tostring(J, 4));
 	float alpha = js_tonumber(J, 5);
 	fz_try(ctx)
-		fz_begin_group(ctx, dev, &area, isolated, knockout, blendmode, alpha);
+		fz_begin_group(ctx, dev, &area, NULL, isolated, knockout, blendmode, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 }

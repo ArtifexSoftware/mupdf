@@ -313,7 +313,7 @@ fz_trace_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_trace_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int isolated, int knockout, int blendmode, float alpha)
+fz_trace_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *bbox, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
 	fz_write_printf(ctx, out, "<group bbox=\"%g %g %g %g\" isolated=\"%d\" knockout=\"%d\" blendmode=\"%s\" alpha=\"%g\">\n",

@@ -1854,7 +1854,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 }
 
 static void
-fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, int isolated, int knockout, int blendmode, float alpha)
+fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_irect bbox;
@@ -1862,6 +1862,9 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, int i
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_colorspace *model = state->dest->colorspace;
 	fz_rect trect = *rect;
+
+	if (cs != NULL)
+		model = fz_default_colorspace(ctx, dev->default_cs, cs);
 
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		fz_knockout_begin(ctx, dev);
@@ -1952,6 +1955,13 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 	if (state[1].blendmode & FZ_BLEND_KNOCKOUT)
 		printf(" (knockout)");
 #endif
+	if (state[0].dest->colorspace != state[1].dest->colorspace)
+	{
+		fz_pixmap *converted = fz_convert_pixmap(ctx, state[1].dest, state[0].dest->colorspace, NULL, dev->default_cs, fz_default_color_params(ctx), 1);
+		fz_drop_pixmap(ctx, state[1].dest);
+		state[1].dest = converted;
+	}
+
 	if ((blendmode == 0) && (state[0].shape == state[1].shape))
 		fz_paint_pixmap(state[0].dest, state[1].dest, alpha * 255);
 	else

@@ -439,11 +439,11 @@ fz_test_end_mask(fz_context *ctx, fz_device *dev_)
 }
 
 static void
-fz_test_begin_group(fz_context *ctx, fz_device *dev_, const fz_rect *rect, int isolated, int knockout, int blendmode, float alpha)
+fz_test_begin_group(fz_context *ctx, fz_device *dev_, const fz_rect *rect, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_test_device *dev = (fz_test_device*)dev_;
 
-	fz_begin_group(ctx, dev->passthrough, rect, isolated, knockout, blendmode, alpha);
+	fz_begin_group(ctx, dev->passthrough, rect, cs, isolated, knockout, blendmode, alpha);
 }
 
 static void
