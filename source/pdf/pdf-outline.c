@@ -4,7 +4,7 @@
 static fz_outline *
 pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 {
-	fz_outline *node, **prev, *first;
+	fz_outline *node, **prev, *first = NULL;
 	pdf_obj *obj;
 	pdf_obj *odict = dict;
 
@@ -13,7 +13,6 @@ pdf_load_outline_imp(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 
 	fz_try(ctx)
 	{
-		first = NULL;
 		prev = &first;
 		while (dict && pdf_is_dict(ctx, dict))
 		{

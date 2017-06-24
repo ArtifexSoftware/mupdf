@@ -1400,7 +1400,7 @@ int pdf_signature_widget_contents(fz_context *ctx, pdf_document *doc, pdf_widget
 
 void pdf_signature_set_value(fz_context *ctx, pdf_document *doc, pdf_obj *field, pdf_signer *signer)
 {
-	pdf_obj *v;
+	pdf_obj *v = NULL;
 	pdf_obj *indv;
 	int vnum;
 	pdf_obj *byte_range;

@@ -2308,8 +2308,8 @@ load_fb2_images(fz_context *ctx, fz_xml *root)
 	for (binary = fz_xml_find_down(fictionbook, "binary"); binary; binary = fz_xml_find_next(binary, "binary"))
 	{
 		const char *id = fz_xml_att(binary, "id");
-		char *b64;
-		fz_buffer *buf;
+		char *b64 = NULL;
+		fz_buffer *buf = NULL;
 		fz_image *img;
 
 		fz_var(b64);

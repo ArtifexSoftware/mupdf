@@ -658,7 +658,7 @@ l2subfactor(fz_context *ctx, unsigned int max_w, unsigned int w)
 static fz_pixmap *
 jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
 {
-	fz_pixmap *img;
+	fz_pixmap *img = NULL;
 	opj_dparameters_t params;
 	opj_codec_t *codec;
 	opj_image_t *jpx;

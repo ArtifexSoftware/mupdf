@@ -381,7 +381,7 @@ fz_get_icc_link(fz_context *ctx, fz_colorspace *src, fz_colorspace *prf, fz_colo
 	fz_iccprofile *src_icc = NULL;
 	fz_iccprofile *dst_icc = dst->data;
 	fz_iccprofile *prf_icc = NULL;
-	fz_link_key *key;
+	fz_link_key *key = NULL;
 	fz_icclink *new_link;
 
 	if (prf != NULL)

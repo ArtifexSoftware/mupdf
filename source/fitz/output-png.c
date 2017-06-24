@@ -306,7 +306,7 @@ static fz_buffer *
 png_from_pixmap(fz_context *ctx, fz_pixmap *pix, const fz_color_params *color_params, int drop)
 {
 	fz_buffer *buf = NULL;
-	fz_output *out;
+	fz_output *out = NULL;
 	fz_pixmap *pix2 = NULL;
 
 	fz_var(buf);

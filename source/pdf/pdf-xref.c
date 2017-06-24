@@ -2553,7 +2553,7 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 {
 	pdf_lexbuf *buf = &doc->lexbuf.base;
 	int curr_pos;
-	pdf_obj *page;
+	pdf_obj *page = NULL;
 
 	pdf_load_hinted_page(ctx, doc, pagenum);
 
@@ -2581,7 +2581,6 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 		do
 		{
 			int num;
-			page = NULL;
 			eof = pdf_obj_read(ctx, doc, &doc->linear_pos, &num, &page);
 			pdf_drop_obj(ctx, page);
 			page = NULL;
