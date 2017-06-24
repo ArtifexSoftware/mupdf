@@ -428,6 +428,8 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 				app->outline = NULL;
 				if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
 					app->outline_deferred = PDFAPP_OUTLINE_DEFERRED;
+				else
+					pdfapp_warn(app, "failed to load outline");
 			}
 			break;
 		}
