@@ -67,10 +67,7 @@ ps_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *c
 
 	err = deflateInit(&writer->stream, Z_DEFAULT_COMPRESSION);
 	if (err != Z_OK)
-	{
-		fz_free(ctx, writer);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
-	}
 
 	fz_write_printf(ctx, out, "%%%%Page: %d %d\n", pagenum, pagenum);
 	fz_write_printf(ctx, out, "%%%%PageBoundingBox: 0 0 %d %d\n", w_points, h_points);
