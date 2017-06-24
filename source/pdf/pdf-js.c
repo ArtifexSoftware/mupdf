@@ -635,7 +635,7 @@ static pdf_js *pdf_new_js(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx)
 	{
 		pdf_drop_js(ctx, js);
-		js = NULL;
+		fz_rethrow(ctx);
 	}
 
 	return js;
