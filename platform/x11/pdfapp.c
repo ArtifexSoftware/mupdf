@@ -284,6 +284,7 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 {
 	fz_context *ctx = app->ctx;
 	char *password = "";
+	pdf_document *idoc;
 
 	fz_try(ctx)
 	{
@@ -356,17 +357,22 @@ void pdfapp_open_progressive(pdfapp_t *app, char *filename, int reload, int bps)
 			pdfapp_error(app, "cannot open document");
 	}
 
-	fz_try(ctx)
+	idoc = pdf_specifics(app->ctx, app->doc);
+	if (idoc)
 	{
-		pdf_document *idoc;
-
-		idoc = pdf_specifics(app->ctx, app->doc);
-
-		if (idoc)
+		fz_try(ctx)
 		{
 			pdf_enable_js(ctx, idoc);
 			pdf_set_doc_event_callback(ctx, idoc, event_cb, app);
 		}
+		fz_catch(ctx)
+		{
+			pdfapp_error(app, "cannot load javascript embedded in document");
+		}
+	}
+
+	fz_try(ctx)
+	{
 
 		if (fz_needs_password(app->ctx, app->doc))
 		{
