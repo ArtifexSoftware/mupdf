@@ -27,7 +27,7 @@ static void
 pdf_preload_image_resources(fz_context *ctx, pdf_document *doc)
 {
 	int len, k;
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	pdf_obj *type;
 	pdf_obj *res = NULL;
 	fz_image *image = NULL;
