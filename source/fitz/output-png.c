@@ -79,6 +79,7 @@ typedef struct png_band_writer_s
 	unsigned char *cdata;
 	uLong usize, csize;
 	z_stream stream;
+	int stream_ended;
 } png_band_writer;
 
 static void
@@ -262,6 +263,7 @@ png_write_trailer(fz_context *ctx, fz_band_writer *writer_)
 	unsigned char block[1];
 	int err;
 
+	writer->stream_ended = 1;
 	err = deflateEnd(&writer->stream);
 	if (err != Z_OK)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
@@ -273,6 +275,13 @@ static void
 png_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 {
 	png_band_writer *writer = (png_band_writer *)(void *)writer_;
+
+	if (!writer->stream_ended)
+	{
+		int err = deflateEnd(&writer->stream);
+		if (err != Z_OK)
+			fz_warn(ctx, "ignoring compression error %d", err);
+	}
 
 	fz_free(ctx, writer->cdata);
 	fz_free(ctx, writer->udata);
