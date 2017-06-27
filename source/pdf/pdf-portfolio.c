@@ -288,7 +288,7 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 	pdf_portfolio **pp;
 	pdf_portfolio *p;
 	pdf_obj *s;
-	pdf_obj *sc;
+	pdf_obj *sc = NULL;
 	int num;
 	char str_name[32];
 	pdf_obj *num_name = NULL;
@@ -300,6 +300,7 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 		load_portfolio(ctx, doc);
 
 	fz_var(num_name);
+	fz_var(sc);
 
 	pp = &doc->portfolio;
 	while (*pp && entry > 0)
@@ -350,7 +351,10 @@ void pdf_add_portfolio_schema(fz_context *ctx, pdf_document *doc, int entry, con
 		}
 	}
 	fz_always(ctx)
+	{
 		pdf_drop_obj(ctx, num_name);
+		pdf_drop_obj(ctx, sc);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
