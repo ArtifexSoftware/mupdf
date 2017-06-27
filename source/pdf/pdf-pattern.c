@@ -46,6 +46,7 @@ pdf_load_pattern(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 	pat->document = doc;
 	pat->resources = NULL;
 	pat->contents = NULL;
+	pat->id = pdf_to_num(ctx, dict);
 
 	fz_try(ctx)
 	{

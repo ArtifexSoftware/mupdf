@@ -360,6 +360,7 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 	int x0, y0, x1, y1;
 	float fx0, fy0, fx1, fy1;
 	fz_rect local_area;
+	int id;
 
 	pdf_gsave(ctx, pr);
 	gstate = pr->gstate + pr->gtop;
@@ -383,11 +384,13 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 			pdf_keep_material(ctx, &gstate->stroke);
 			gstate->fill = gstate->stroke;
 		}
+		id = 0; /* don't cache uncolored patterns, since we colorize them when drawing */
 	}
 	else
 	{
 		// TODO: unset only the current fill/stroke or both?
 		pdf_unset_pattern(ctx, pr, what);
+		id = pat->id;
 	}
 
 	/* don't apply soft masks to objects in the pattern as well */
@@ -437,21 +440,24 @@ pdf_show_pattern(fz_context *ctx, pdf_run_processor *pr, pdf_pattern *pat, pdf_g
 		if (0)
 #endif
 		{
-			fz_begin_tile(ctx, pr->dev, &local_area, &pat->bbox, pat->xstep, pat->ystep, &ptm);
-			gstate->ctm = ptm;
-			pdf_gsave(ctx, pr);
-			fz_try(ctx)
+			int cached = fz_begin_tile_id(ctx, pr->dev, &local_area, &pat->bbox, pat->xstep, pat->ystep, &ptm, id);
+			if (cached)
 			{
-				pdf_process_contents(ctx, (pdf_processor*)pr, pat->document, pat->resources, pat->contents, NULL);
-			}
-			fz_always(ctx)
-			{
-				pdf_grestore(ctx, pr);
 				fz_end_tile(ctx, pr->dev);
 			}
-			fz_catch(ctx)
+			else
 			{
-				fz_rethrow(ctx);
+				gstate->ctm = ptm;
+				pdf_gsave(ctx, pr);
+				fz_try(ctx)
+					pdf_process_contents(ctx, (pdf_processor*)pr, pat->document, pat->resources, pat->contents, NULL);
+				fz_always(ctx)
+				{
+					pdf_grestore(ctx, pr);
+					fz_end_tile(ctx, pr->dev);
+				}
+				fz_catch(ctx)
+					fz_rethrow(ctx);
 			}
 		}
 		else

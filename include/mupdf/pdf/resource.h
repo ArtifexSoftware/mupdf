@@ -65,6 +65,7 @@ struct pdf_pattern_s
 	pdf_document *document;
 	pdf_obj *resources;
 	pdf_obj *contents;
+	int id; /* unique ID for caching rendered tiles */
 };
 
 pdf_pattern *pdf_load_pattern(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
