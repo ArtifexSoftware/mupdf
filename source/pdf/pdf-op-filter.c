@@ -1287,12 +1287,20 @@ pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_obj *old_rdb
 	proc->old_rdb = old_rdb;
 	proc->new_rdb = new_rdb;
 
-	proc->gstate = fz_malloc_struct(ctx, filter_gstate);
-	proc->gstate->ctm = fz_identity;
-	proc->gstate->current_ctm = fz_identity;
+	fz_try(ctx)
+	{
+		proc->gstate = fz_malloc_struct(ctx, filter_gstate);
+		proc->gstate->ctm = fz_identity;
+		proc->gstate->current_ctm = fz_identity;
 
-	proc->gstate->stroke = proc->gstate->stroke;
-	proc->gstate->current_stroke = proc->gstate->stroke;
+		proc->gstate->stroke = proc->gstate->stroke;
+		proc->gstate->current_stroke = proc->gstate->stroke;
+	}
+	fz_catch(ctx)
+	{
+		pdf_drop_processor(ctx, (pdf_processor *) proc);
+		fz_rethrow(ctx);
+	}
 
 	return (pdf_processor*)proc;
 }
