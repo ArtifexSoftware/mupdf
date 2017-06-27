@@ -1422,9 +1422,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 					if (pdf_name_eq(ctx, obj, PDF_NAME_Catalog))
 					{
 						nobj = pdf_new_indirect(ctx, doc, i, 0);
-						pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, nobj);
-						pdf_drop_obj(ctx, nobj);
-						nobj = NULL;
+						pdf_dict_put_drop(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root, nobj);
 					}
 				}
 
@@ -1433,9 +1431,7 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 					if (pdf_dict_get(ctx, dict, PDF_NAME_Creator) || pdf_dict_get(ctx, dict, PDF_NAME_Producer))
 					{
 						nobj = pdf_new_indirect(ctx, doc, i, 0);
-						pdf_dict_put(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info, nobj);
-						pdf_drop_obj(ctx, nobj);
-						nobj = NULL;
+						pdf_dict_put_drop(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info, nobj);
 					}
 				}
 
@@ -1451,7 +1447,6 @@ pdf_init_document(fz_context *ctx, pdf_document *doc)
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, dict);
-		pdf_drop_obj(ctx, nobj);
 		fz_rethrow(ctx);
 	}
 
@@ -2694,12 +2689,10 @@ pdf_add_stream(fz_context *ctx, pdf_document *doc, fz_buffer *buf, pdf_obj *obj,
 pdf_document *pdf_create_document(fz_context *ctx)
 {
 	pdf_document *doc;
-	pdf_obj *o = NULL;
 	pdf_obj *root;
 	pdf_obj *pages;
 	pdf_obj *trailer = NULL;
 
-	fz_var(o);
 	fz_var(trailer);
 
 	doc = pdf_new_document(ctx, NULL);
@@ -2716,15 +2709,11 @@ pdf_document *pdf_create_document(fz_context *ctx)
 
 		trailer = pdf_new_dict(ctx, doc, 2);
 		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, 3));
-		o = root = pdf_new_dict(ctx, doc, 2);
-		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Root, pdf_add_object(ctx, doc, o));
-		pdf_drop_obj(ctx, o);
-		o = NULL;
+		root = pdf_new_dict(ctx, doc, 2);
+		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Root, pdf_add_object_drop(ctx, doc, root));
 		pdf_dict_put_drop(ctx, root, PDF_NAME_Type, PDF_NAME_Catalog);
-		o = pages = pdf_new_dict(ctx, doc, 3);
-		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pdf_add_object(ctx, doc, o));
-		pdf_drop_obj(ctx, o);
-		o = NULL;
+		pages = pdf_new_dict(ctx, doc, 3);
+		pdf_dict_put_drop(ctx, root, PDF_NAME_Pages, pdf_add_object_drop(ctx, doc, pages));
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Type, PDF_NAME_Pages);
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Count, pdf_new_int(ctx, doc, 0));
 		pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, pdf_new_array(ctx, doc, 1));
@@ -2735,7 +2724,6 @@ pdf_document *pdf_create_document(fz_context *ctx)
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, trailer);
-		pdf_drop_obj(ctx, o);
 		fz_drop_document(ctx, &doc->super);
 		fz_rethrow(ctx);
 	}

@@ -54,7 +54,7 @@ static void pdf_field_mark_dirty(fz_context *ctx, pdf_document *doc, pdf_obj *fi
 
 static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj, const char *text)
 {
-	pdf_obj *sobj = NULL;
+	pdf_obj *sobj;
 	pdf_obj *grp;
 
 	if (!text)
@@ -66,20 +66,8 @@ static void update_field_value(fz_context *ctx, pdf_document *doc, pdf_obj *obj,
 	if (grp)
 		obj = grp;
 
-	fz_var(sobj);
-	fz_try(ctx)
-	{
-		sobj = pdf_new_string(ctx, doc, text, strlen(text));
-		pdf_dict_put(ctx, obj, PDF_NAME_V, sobj);
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(ctx, sobj);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+	sobj = pdf_new_string(ctx, doc, text, strlen(text));
+	pdf_dict_put_drop(ctx, obj, PDF_NAME_V, sobj);
 
 	pdf_field_mark_dirty(ctx, doc, obj);
 }
@@ -163,18 +151,7 @@ static void reset_form_field(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 				else
 					leafv = PDF_NAME_Off;
 
-				fz_try(ctx)
-				{
-					pdf_dict_put(ctx, field, PDF_NAME_AS, leafv);
-				}
-				fz_always(ctx)
-				{
-					pdf_drop_obj(ctx, leafv);
-				}
-				fz_catch(ctx)
-				{
-					fz_rethrow(ctx);
-				}
+				pdf_dict_put_drop(ctx, field, PDF_NAME_AS, leafv);
 			}
 			break;
 
@@ -554,23 +531,8 @@ static void toggle_check_box(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 
 	if (val && grp)
 	{
-		pdf_obj *v = NULL;
-
-		fz_var(v);
-		fz_try(ctx)
-		{
-			v = pdf_new_string(ctx, doc, val, strlen(val));
-			pdf_dict_put(ctx, grp, PDF_NAME_V, v);
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_obj(ctx, v);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
-
+		pdf_obj *v = pdf_new_string(ctx, doc, val, strlen(val));
+		pdf_dict_put_drop(ctx, grp, PDF_NAME_V, v);
 		recalculate(ctx, doc);
 	}
 }
@@ -825,26 +787,13 @@ static void update_checkbox_selector(fz_context *ctx, pdf_document *doc, pdf_obj
 	else
 	{
 		pdf_obj *n = pdf_dict_getp(ctx, field, "AP/N");
-		pdf_obj *oval = NULL;
+		pdf_obj *oval;
 
-		fz_var(oval);
-		fz_try(ctx)
-		{
-			if (pdf_dict_gets(ctx, n, val))
-				oval = pdf_new_name(ctx, doc, val);
-			else
-				oval = PDF_NAME_Off;
-
-			pdf_dict_put(ctx, field, PDF_NAME_AS, oval);
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_obj(ctx, oval);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
+		if (pdf_dict_gets(ctx, n, val))
+			oval = pdf_new_name(ctx, doc, val);
+		else
+			oval = PDF_NAME_Off;
+		pdf_dict_put_drop(ctx, field, PDF_NAME_AS, oval);
 	}
 }
 
@@ -898,7 +847,7 @@ char *pdf_field_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field)
 
 void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
-	pdf_obj *val = NULL;
+	pdf_obj *val;
 
 	if (!strcmp(text, "Solid"))
 		val = PDF_NAME_S;
@@ -913,40 +862,17 @@ void pdf_field_set_border_style(fz_context *ctx, pdf_document *doc, pdf_obj *fie
 	else
 		return;
 
-	fz_try(ctx)
-	{
-		pdf_dict_putl(ctx, field, val, PDF_NAME_BS, PDF_NAME_S, NULL);
-		pdf_field_mark_dirty(ctx, doc, field);
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(ctx, val);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
-	}
+	pdf_dict_putl_drop(ctx, field, val, PDF_NAME_BS, PDF_NAME_S, NULL);
+	pdf_field_mark_dirty(ctx, doc, field);
 }
 
 void pdf_field_set_button_caption(fz_context *ctx, pdf_document *doc, pdf_obj *field, const char *text)
 {
-	pdf_obj *val = pdf_new_string(ctx, doc, text, strlen(text));
-
-	fz_try(ctx)
+	if (pdf_field_type(ctx, doc, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
 	{
-		if (pdf_field_type(ctx, doc, field) == PDF_WIDGET_TYPE_PUSHBUTTON)
-		{
-			pdf_dict_putl(ctx, field, val, PDF_NAME_MK, PDF_NAME_CA, NULL);
-			pdf_field_mark_dirty(ctx, doc, field);
-		}
-	}
-	fz_always(ctx)
-	{
-		pdf_drop_obj(ctx, val);
-	}
-	fz_catch(ctx)
-	{
-		fz_rethrow(ctx);
+		pdf_obj *val = pdf_new_string(ctx, doc, text, strlen(text));
+		pdf_dict_putl_drop(ctx, field, val, PDF_NAME_MK, PDF_NAME_CA, NULL);
+		pdf_field_mark_dirty(ctx, doc, field);
 	}
 }
 
@@ -1035,7 +961,7 @@ void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, i
 	{
 		int mask = (PDF_ANNOT_IS_HIDDEN|PDF_ANNOT_IS_PRINT|PDF_ANNOT_IS_NO_VIEW);
 		int f = pdf_to_int(ctx, pdf_dict_get(ctx, field, PDF_NAME_F)) & ~mask;
-		pdf_obj *fo = NULL;
+		pdf_obj *fo;
 
 		switch (d)
 		{
@@ -1052,20 +978,8 @@ void pdf_field_set_display(fz_context *ctx, pdf_document *doc, pdf_obj *field, i
 			break;
 		}
 
-		fz_var(fo);
-		fz_try(ctx)
-		{
-			fo = pdf_new_int(ctx, doc, f);
-			pdf_dict_put(ctx, field, PDF_NAME_F, fo);
-		}
-		fz_always(ctx)
-		{
-			pdf_drop_obj(ctx, fo);
-		}
-		fz_catch(ctx)
-		{
-			fz_rethrow(ctx);
-		}
+		fo = pdf_new_int(ctx, doc, f);
+		pdf_dict_put_drop(ctx, field, PDF_NAME_F, fo);
 	}
 	else
 	{
@@ -1093,13 +1007,12 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 	unsigned char *buf;
 	int ilen;
 	size_t len;
-	pdf_obj *daobj = NULL;
+	pdf_obj *daobj;
 
 	memset(&di, 0, sizeof(di));
 
 	fz_var(fzbuf);
 	fz_var(di);
-	fz_var(daobj);
 	fz_try(ctx)
 	{
 		int i;
@@ -1115,14 +1028,13 @@ void pdf_field_set_text_color(fz_context *ctx, pdf_document *doc, pdf_obj *field
 		pdf_fzbuf_print_da(ctx, fzbuf, &di);
 		len = fz_buffer_storage(ctx, fzbuf, &buf);
 		daobj = pdf_new_string(ctx, doc, (char *)buf, len);
-		pdf_dict_put(ctx, field, PDF_NAME_DA, daobj);
+		pdf_dict_put_drop(ctx, field, PDF_NAME_DA, daobj);
 		pdf_field_mark_dirty(ctx, doc, field);
 	}
 	fz_always(ctx)
 	{
 		pdf_da_info_fin(ctx, &di);
 		fz_drop_buffer(ctx, fzbuf);
-		pdf_drop_obj(ctx, daobj);
 	}
 	fz_catch(ctx)
 	{
@@ -1324,14 +1236,13 @@ int pdf_choice_widget_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, 
 void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget *tw, int n, char *opts[])
 {
 	pdf_annot *annot = (pdf_annot *)tw;
-	pdf_obj *optarr = NULL, *opt = NULL;
+	pdf_obj *optarr = NULL, *opt;
 	int i;
 
 	if (!annot)
 		return;
 
 	fz_var(optarr);
-	fz_var(opt);
 	fz_try(ctx)
 	{
 		if (n != 1)
@@ -1341,19 +1252,15 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 			for (i = 0; i < n; i++)
 			{
 				opt = pdf_new_string(ctx, doc, opts[i], strlen(opts[i]));
-				pdf_array_push(ctx, optarr, opt);
-				pdf_drop_obj(ctx, opt);
-				opt = NULL;
+				pdf_array_push_drop(ctx, optarr, opt);
 			}
 
-			pdf_dict_put(ctx, annot->obj, PDF_NAME_V, optarr);
-			pdf_drop_obj(ctx, optarr);
+			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_V, optarr);
 		}
 		else
 		{
 			opt = pdf_new_string(ctx, doc, opts[0], strlen(opts[0]));
-			pdf_dict_put(ctx, annot->obj, PDF_NAME_V, opt);
-			pdf_drop_obj(ctx, opt);
+			pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_V, opt);
 		}
 
 		/* FIXME: when n > 1, we should be regenerating the indexes */
@@ -1366,7 +1273,6 @@ void pdf_choice_widget_set_value(fz_context *ctx, pdf_document *doc, pdf_widget 
 	fz_catch(ctx)
 	{
 		pdf_drop_obj(ctx, optarr);
-		pdf_drop_obj(ctx, opt);
 		fz_rethrow(ctx);
 	}
 }

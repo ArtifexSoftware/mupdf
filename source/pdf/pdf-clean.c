@@ -7,14 +7,13 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 	pdf_processor *proc_buffer = NULL;
 	pdf_processor *proc_filter = NULL;
 	pdf_obj *res = NULL;
-	pdf_obj *ref = NULL;
+	pdf_obj *ref;
 	fz_buffer *buffer;
 
 	if (!obj)
 		return;
 
 	fz_var(res);
-	fz_var(ref);
 	fz_var(proc_buffer);
 	fz_var(proc_filter);
 
@@ -43,7 +42,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 		if (own_res)
 		{
 			ref = pdf_add_object(ctx, doc, res);
-			pdf_dict_put(ctx, obj, PDF_NAME_Resources, ref);
+			pdf_dict_put_drop(ctx, obj, PDF_NAME_Resources, ref);
 		}
 	}
 	fz_always(ctx)
@@ -52,7 +51,6 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 		pdf_drop_processor(ctx, proc_buffer);
 		fz_drop_buffer(ctx, buffer);
 		pdf_drop_obj(ctx, res);
-		pdf_drop_obj(ctx, ref);
 	}
 	fz_catch(ctx)
 	{
@@ -66,12 +64,11 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 	pdf_processor *proc_buffer = NULL;
 	pdf_processor *proc_filter = NULL;
 	pdf_obj *res = NULL;
-	pdf_obj *ref = NULL;
+	pdf_obj *ref;
 	pdf_obj *charprocs;
 	int i, l;
 
 	fz_var(res);
-	fz_var(ref);
 	fz_var(proc_buffer);
 	fz_var(proc_filter);
 
@@ -118,12 +115,11 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 		pdf_dict_put(ctx, res, PDF_NAME_ProcSet, pdf_dict_get(ctx, orig_res, PDF_NAME_ProcSet));
 
 		ref = pdf_add_object(ctx, doc, res);
-		pdf_dict_put(ctx, obj, PDF_NAME_Resources, ref);
+		pdf_dict_put_drop(ctx, obj, PDF_NAME_Resources, ref);
 	}
 	fz_always(ctx)
 	{
 		pdf_drop_obj(ctx, res);
-		pdf_drop_obj(ctx, ref);
 	}
 	fz_catch(ctx)
 	{

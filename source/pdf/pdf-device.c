@@ -295,10 +295,7 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 
 	if (i == pdev->num_alphas)
 	{
-		pdf_obj *o;
-		pdf_obj *ref = NULL;
-
-		fz_var(ref);
+		pdf_obj *o, *ref;
 
 		/* No. Need to make a new one */
 		if (pdev->num_alphas == pdev->max_alphas)
@@ -317,14 +314,13 @@ pdf_dev_alpha(fz_context *ctx, pdf_device *pdev, float alpha, int stroke)
 		{
 			char text[32];
 			pdf_dict_put_drop(ctx, o, (stroke ? PDF_NAME_CA : PDF_NAME_ca), pdf_new_real(ctx, doc, alpha));
-			ref = pdf_add_object(ctx, doc, o);
 			fz_snprintf(text, sizeof(text), "ExtGState/Alp%d", i);
-			pdf_dict_putp(ctx, pdev->resources, text, ref);
+			ref = pdf_add_object(ctx, doc, o);
+			pdf_dict_putp_drop(ctx, pdev->resources, text, ref);
 		}
 		fz_always(ctx)
 		{
 			pdf_drop_obj(ctx, o);
-			pdf_drop_obj(ctx, ref);
 		}
 		fz_catch(ctx)
 		{
@@ -929,13 +925,12 @@ pdf_dev_begin_mask(fz_context *ctx, fz_device *dev, const fz_rect *bbox, int lum
 		egs = pdf_new_dict(ctx, doc, 5);
 		pdf_dict_put_drop(ctx, egs, PDF_NAME_Type, PDF_NAME_ExtGState);
 		pdf_dict_put_drop(ctx, egs, PDF_NAME_SMask, pdf_add_object(ctx, doc, smask));
-		egs_ref = pdf_add_object(ctx, doc, egs);
 
 		{
 			char text[32];
 			fz_snprintf(text, sizeof(text), "ExtGState/SM%d", pdev->num_smasks++);
-			pdf_dict_putp(ctx, pdev->resources, text, egs_ref);
-			pdf_drop_obj(ctx, egs_ref);
+			egs_ref = pdf_add_object(ctx, doc, egs);
+			pdf_dict_putp_drop(ctx, pdev->resources, text, egs_ref);
 		}
 		gs = CURRENT_GSTATE(pdev);
 		fz_append_printf(ctx, gs->buf, "/SM%d gs\n", pdev->num_smasks-1);

@@ -830,38 +830,19 @@ pdf_array_find(fz_context *ctx, pdf_obj *arr, pdf_obj *obj)
 
 pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, const fz_rect *rect)
 {
-	pdf_obj *arr = NULL;
-	pdf_obj *item = NULL;
+	pdf_obj *arr;
 
-	fz_var(arr);
-	fz_var(item);
+	arr = pdf_new_array(ctx, doc, 4);
+
 	fz_try(ctx)
 	{
-		arr = pdf_new_array(ctx, doc, 4);
-
-		item = pdf_new_real(ctx, doc, rect->x0);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, rect->y0);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, rect->x1);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, rect->y1);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->x0));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->y0));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->x1));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, rect->y1));
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_obj(ctx, item);
 		pdf_drop_obj(ctx, arr);
 		fz_rethrow(ctx);
 	}
@@ -871,48 +852,21 @@ pdf_obj *pdf_new_rect(fz_context *ctx, pdf_document *doc, const fz_rect *rect)
 
 pdf_obj *pdf_new_matrix(fz_context *ctx, pdf_document *doc, const fz_matrix *mtx)
 {
-	pdf_obj *arr = NULL;
-	pdf_obj *item = NULL;
+	pdf_obj *arr;
 
-	fz_var(arr);
-	fz_var(item);
+	arr = pdf_new_array(ctx, doc, 6);
+
 	fz_try(ctx)
 	{
-		arr = pdf_new_array(ctx, doc, 6);
-
-		item = pdf_new_real(ctx, doc, mtx->a);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, mtx->b);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, mtx->c);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, mtx->d);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, mtx->e);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
-
-		item = pdf_new_real(ctx, doc, mtx->f);
-		pdf_array_push(ctx, arr, item);
-		pdf_drop_obj(ctx, item);
-		item = NULL;
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->a));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->b));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->c));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->d));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->e));
+		pdf_array_push_drop(ctx, arr, pdf_new_real(ctx, doc, mtx->f));
 	}
 	fz_catch(ctx)
 	{
-		pdf_drop_obj(ctx, item);
 		pdf_drop_obj(ctx, arr);
 		fz_rethrow(ctx);
 	}
@@ -1608,8 +1562,7 @@ pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj)
 		for (i = 0; i < n; i++)
 		{
 			pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_dict_get_val(ctx, obj, i));
-			pdf_dict_put(ctx, dict, pdf_dict_get_key(ctx, obj, i), obj_copy);
-			pdf_drop_obj(ctx, obj_copy);
+			pdf_dict_put_drop(ctx, dict, pdf_dict_get_key(ctx, obj, i), obj_copy);
 		}
 
 		return dict;
@@ -1624,8 +1577,7 @@ pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj)
 		for (i = 0; i < n; i++)
 		{
 			pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_array_get(ctx, obj, i));
-			pdf_array_push(ctx, arr, obj_copy);
-			pdf_drop_obj(ctx, obj_copy);
+			pdf_array_push_drop(ctx, arr, obj_copy);
 		}
 
 		return arr;
