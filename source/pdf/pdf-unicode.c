@@ -32,28 +32,36 @@ pdf_remap_cmap(fz_context *ctx, pdf_cmap *gid_from_cpt, pdf_cmap *ucs_from_cpt)
 
 	ucs_from_gid = pdf_new_cmap(ctx);
 
-	if (gid_from_cpt->usecmap)
-		ucs_from_gid->usecmap = pdf_remap_cmap(ctx, gid_from_cpt->usecmap, ucs_from_cpt);
-
-	for (i = 0; i < gid_from_cpt->rlen; ++i)
+	fz_try(ctx)
 	{
-		a = gid_from_cpt->ranges[i].low;
-		b = gid_from_cpt->ranges[i].high;
-		x = gid_from_cpt->ranges[i].out;
-		pdf_remap_cmap_range(ctx, ucs_from_gid, a, x, b - a, ucs_from_cpt);
-	}
+		if (gid_from_cpt->usecmap)
+			ucs_from_gid->usecmap = pdf_remap_cmap(ctx, gid_from_cpt->usecmap, ucs_from_cpt);
 
-	for (i = 0; i < gid_from_cpt->xlen; ++i)
+		for (i = 0; i < gid_from_cpt->rlen; ++i)
+		{
+			a = gid_from_cpt->ranges[i].low;
+			b = gid_from_cpt->ranges[i].high;
+			x = gid_from_cpt->ranges[i].out;
+			pdf_remap_cmap_range(ctx, ucs_from_gid, a, x, b - a, ucs_from_cpt);
+		}
+
+		for (i = 0; i < gid_from_cpt->xlen; ++i)
+		{
+			a = gid_from_cpt->xranges[i].low;
+			b = gid_from_cpt->xranges[i].high;
+			x = gid_from_cpt->xranges[i].out;
+			pdf_remap_cmap_range(ctx, ucs_from_gid, a, x, b - a, ucs_from_cpt);
+		}
+
+		/* Font encoding CMaps don't have one-to-many mappings, so we can ignore the mranges. */
+
+		pdf_sort_cmap(ctx, ucs_from_gid);
+	}
+	fz_catch(ctx)
 	{
-		a = gid_from_cpt->xranges[i].low;
-		b = gid_from_cpt->xranges[i].high;
-		x = gid_from_cpt->xranges[i].out;
-		pdf_remap_cmap_range(ctx, ucs_from_gid, a, x, b - a, ucs_from_cpt);
+		pdf_drop_cmap(ctx, ucs_from_gid);
+		fz_rethrow(ctx);
 	}
-
-	/* Font encoding CMaps don't have one-to-many mappings, so we can ignore the mranges. */
-
-	pdf_sort_cmap(ctx, ucs_from_gid);
 
 	return ucs_from_gid;
 }
