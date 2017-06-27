@@ -859,8 +859,12 @@ static void renumberobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 			if (pdf_is_indirect(ctx, obj))
 			{
 				obj = pdf_new_indirect(ctx, doc, to, 0);
-				pdf_update_object(ctx, doc, num, obj);
-				pdf_drop_obj(ctx, obj);
+				fz_try(ctx)
+					pdf_update_object(ctx, doc, num, obj);
+				fz_always(ctx)
+					pdf_drop_obj(ctx, obj);
+				fz_catch(ctx)
+					fz_rethrow(ctx);
 			}
 			else
 			{
