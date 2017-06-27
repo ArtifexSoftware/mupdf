@@ -589,6 +589,7 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 	fz_off_t stm_ofs;
 	pdf_token tok;
 	fz_off_t a, b;
+	int read_next_token = 1;
 
 	fz_var(obj);
 
@@ -644,9 +645,10 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 		if (tok == PDF_TOK_STREAM || tok == PDF_TOK_ENDOBJ)
 		{
 			obj = pdf_new_int_offset(ctx, doc, a);
-			goto skip;
+			read_next_token = 0;
+			break;
 		}
-		if (tok == PDF_TOK_INT)
+		else if (tok == PDF_TOK_INT)
 		{
 			b = buf->i;
 			tok = pdf_lex(ctx, file, buf);
@@ -660,7 +662,8 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 
 	case PDF_TOK_ENDOBJ:
 		obj = pdf_new_null(ctx, doc);
-		goto skip;
+		read_next_token = 0;
+		break;
 
 	default:
 		fz_throw(ctx, FZ_ERROR_SYNTAX, "syntax error in object (%d %d R)", num, gen);
@@ -668,7 +671,33 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 
 	fz_try(ctx)
 	{
-		tok = pdf_lex(ctx, file, buf);
+		if (read_next_token)
+			tok = pdf_lex(ctx, file, buf);
+
+		if (tok == PDF_TOK_STREAM)
+		{
+			int c = fz_read_byte(ctx, file);
+			while (c == ' ')
+				c = fz_read_byte(ctx, file);
+			if (c == '\r')
+			{
+				c = fz_peek_byte(ctx, file);
+				if (c != '\n')
+					fz_warn(ctx, "line feed missing after stream begin marker (%d %d R)", num, gen);
+				else
+					fz_read_byte(ctx, file);
+			}
+			stm_ofs = fz_tell(ctx, file);
+		}
+		else if (tok == PDF_TOK_ENDOBJ)
+		{
+			stm_ofs = 0;
+		}
+		else
+		{
+			fz_warn(ctx, "expected 'endobj' or 'stream' keyword (%d %d R)", num, gen);
+			stm_ofs = 0;
+		}
 	}
 	fz_catch(ctx)
 	{
@@ -676,34 +705,9 @@ pdf_parse_ind_obj(fz_context *ctx, pdf_document *doc,
 		fz_rethrow(ctx);
 	}
 
-skip:
-	if (tok == PDF_TOK_STREAM)
-	{
-		int c = fz_read_byte(ctx, file);
-		while (c == ' ')
-			c = fz_read_byte(ctx, file);
-		if (c == '\r')
-		{
-			c = fz_peek_byte(ctx, file);
-			if (c != '\n')
-				fz_warn(ctx, "line feed missing after stream begin marker (%d %d R)", num, gen);
-			else
-				fz_read_byte(ctx, file);
-		}
-		stm_ofs = fz_tell(ctx, file);
-	}
-	else if (tok == PDF_TOK_ENDOBJ)
-	{
-		stm_ofs = 0;
-	}
-	else
-	{
-		fz_warn(ctx, "expected 'endobj' or 'stream' keyword (%d %d R)", num, gen);
-		stm_ofs = 0;
-	}
-
 	if (onum) *onum = num;
 	if (ogen) *ogen = gen;
 	if (ostmofs) *ostmofs = stm_ofs;
+
 	return obj;
 }
