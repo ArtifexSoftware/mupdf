@@ -98,6 +98,7 @@ fz_lcms_unmultiply_row(fz_context *ctx, int n, int w, unsigned char *s, const un
 		inva = a ? 255 * 256 / a : 0;
 		for (k = 0; k < n1; k++)
 			s[k] = (in[k] * inva) >> 8;
+		s[n1] = a;
 		s += n;
 		in += n;
 	}
@@ -139,7 +140,7 @@ fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap 
 		for (; h > 0; h--)
 		{
 			fz_lcms_unmultiply_row(ctx, sn, sw, buffer, inputpos);
-			cmsDoTransform(cmm_ctx, hTransform, inputpos, outputpos, sw);
+			cmsDoTransform(cmm_ctx, hTransform, buffer, outputpos, sw);
 			fz_lcms_premultiply_row(ctx, dn, dw, outputpos);
 			inputpos += ss;
 			outputpos += ds;
