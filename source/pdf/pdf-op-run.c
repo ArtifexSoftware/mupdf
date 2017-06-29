@@ -1057,7 +1057,7 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->stroke_state = fz_new_stroke_state(ctx);
 
 	gs->stroke.kind = PDF_MAT_COLOR;
-	gs->stroke.colorspace = fz_device_gray(ctx); /* No fz_keep_colorspace as static */
+	gs->stroke.colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 	gs->stroke.v[0] = 0;
 	gs->stroke.pattern = NULL;
 	gs->stroke.shade = NULL;
@@ -1065,7 +1065,7 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->stroke.gstate_num = -1;
 
 	gs->fill.kind = PDF_MAT_COLOR;
-	gs->fill.colorspace = fz_device_gray(ctx); /* No fz_keep_colorspace as static */
+	gs->fill.colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 	gs->fill.v[0] = 0;
 	gs->fill.pattern = NULL;
 	gs->fill.shade = NULL;

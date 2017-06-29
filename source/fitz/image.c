@@ -895,7 +895,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 {
 	fz_compressed_buffer *bc;
 	int w, h, xres, yres;
-	fz_colorspace *cspace = NULL;
+	fz_colorspace *cspace;
 	size_t len = buffer->len;
 	unsigned char *buf = buffer->data;
 	fz_image *image;
@@ -904,7 +904,7 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	if (len < 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
 
-	fz_var(cspace);
+	/* Note: cspace is only ever a borrowed reference here */
 
 	fz_try(ctx)
 	{
@@ -968,8 +968,6 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 			bc->params.u.jpeg.color_transform = -1;
 		image = fz_new_image_from_compressed_buffer(ctx, w, h, 8, cspace, xres, yres, 0, 0, NULL, NULL, bc, NULL);
 	}
-	fz_always(ctx)
-		fz_drop_colorspace(ctx, cspace);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 

@@ -222,7 +222,7 @@ xps_draw_one_radial_gradient(fz_context *ctx, xps_document *doc, const fz_matrix
 	/* TODO: this (and the stuff in pdf_shade) should move to res_shade.c */
 	shade = fz_malloc_struct(ctx, fz_shade);
 	FZ_INIT_STORABLE(shade, 1, fz_drop_shade_imp);
-	shade->colorspace = fz_device_rgb(ctx);
+	shade->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 	shade->bbox = fz_infinite_rect;
 	shade->matrix = fz_identity;
 	shade->use_background = 0;
@@ -261,7 +261,7 @@ xps_draw_one_linear_gradient(fz_context *ctx, xps_document *doc, const fz_matrix
 	/* TODO: this (and the stuff in pdf_shade) should move to res_shade.c */
 	shade = fz_malloc_struct(ctx, fz_shade);
 	FZ_INIT_STORABLE(shade, 1, fz_drop_shade_imp);
-	shade->colorspace = fz_device_rgb(ctx);
+	shade->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 	shade->bbox = fz_infinite_rect;
 	shade->matrix = fz_identity;
 	shade->use_background = 0;

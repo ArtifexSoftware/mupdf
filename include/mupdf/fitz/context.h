@@ -612,11 +612,13 @@ fz_keep_imp(fz_context *ctx, void *p, int *refs)
 {
 	if (p)
 	{
-		if (*refs > 0)
-			(void)Memento_takeRef(p);
+		(void)Memento_checkIntPointerOrNull(refs);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (*refs > 0)
+		{
+			(void)Memento_takeRef(p);
 			++*refs;
+		}
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 	}
 	return p;
@@ -627,11 +629,13 @@ fz_keep_imp8(fz_context *ctx, void *p, int8_t *refs)
 {
 	if (p)
 	{
-		if (*refs > 0)
-			(void)Memento_takeRef(p);
+		(void)Memento_checkBytePointerOrNull(refs);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (*refs > 0)
+		{
+			(void)Memento_takeRef(p);
 			++*refs;
+		}
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 	}
 	return p;
@@ -642,11 +646,13 @@ fz_keep_imp16(fz_context *ctx, void *p, int16_t *refs)
 {
 	if (p)
 	{
-		if (*refs > 0)
-			(void)Memento_takeRef(p);
+		(void)Memento_checkShortPointerOrNull(refs);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (*refs > 0)
+		{
+			(void)Memento_takeRef(p);
 			++*refs;
+		}
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 	}
 	return p;
@@ -658,11 +664,13 @@ fz_drop_imp(fz_context *ctx, void *p, int *refs)
 	if (p)
 	{
 		int drop;
-		if (*refs > 0)
-			(void)Memento_dropRef(p);
+		(void)Memento_checkIntPointerOrNull(refs);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (*refs > 0)
+		{
+			(void)Memento_dropIntRef(p);
 			drop = --*refs == 0;
+		}
 		else
 			drop = 0;
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -677,11 +685,13 @@ fz_drop_imp8(fz_context *ctx, void *p, int8_t *refs)
 	if (p)
 	{
 		int drop;
-		if (*refs > 0)
-			(void)Memento_dropRef(p);
+		(void)Memento_checkBytePointerOrNull(refs);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (*refs > 0)
+		{
+			(void)Memento_dropByteRef(p);
 			drop = --*refs == 0;
+		}
 		else
 			drop = 0;
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -696,11 +706,13 @@ fz_drop_imp16(fz_context *ctx, void *p, int16_t *refs)
 	if (p)
 	{
 		int drop;
-		if (*refs > 0)
-			(void)Memento_dropRef(p);
+		(void)Memento_checkShortPointerOrNull(refs);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		if (*refs > 0)
+		{
+			(void)Memento_dropShortRef(p);
 			drop = --*refs == 0;
+		}
 		else
 			drop = 0;
 		fz_unlock(ctx, FZ_LOCK_ALLOC);

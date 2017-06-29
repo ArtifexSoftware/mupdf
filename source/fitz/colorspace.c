@@ -154,10 +154,10 @@ clamp_default(const fz_colorspace *cs, const float *src, float *dst)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int is_static, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, char *name, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
-	FZ_INIT_STORABLE(cs, is_static ? -1 : 1, fz_drop_colorspace_imp);
+	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
 	cs->size = sizeof(fz_colorspace) + size;
 	fz_strlcpy(cs->name, name, sizeof cs->name);
 	cs->n = n;
@@ -726,11 +726,11 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	fz_new_cmm_context(ctx);
 	if (engine)
 	{
-		cct->gray = fz_new_icc_colorspace(ctx, 1, 1, NULL, "gray-icc");
-		cct->rgb = fz_new_icc_colorspace(ctx, 1, 3, NULL, "rgb-icc");
-		cct->bgr = fz_new_icc_colorspace(ctx, 1, 3, NULL, "bgr-icc");
-		cct->cmyk = fz_new_icc_colorspace(ctx, 1, 4, NULL, "cmyk-icc");
-		cct->lab = fz_new_icc_colorspace(ctx, 1, 3, NULL, "lab-icc");
+		cct->gray = fz_new_icc_colorspace(ctx, 1, NULL, "gray-icc");
+		cct->rgb = fz_new_icc_colorspace(ctx, 3, NULL, "rgb-icc");
+		cct->bgr = fz_new_icc_colorspace(ctx, 3, NULL, "bgr-icc");
+		cct->cmyk = fz_new_icc_colorspace(ctx, 4, NULL, "cmyk-icc");
+		cct->lab = fz_new_icc_colorspace(ctx, 3, NULL, "lab-icc");
 	}
 	else
 		set_no_icc(cct);
@@ -778,7 +778,7 @@ void fz_drop_colorspace_context(fz_context *ctx)
 	{
 		fz_drop_colorspace(ctx, ctx->colorspace->gray);
 		fz_drop_colorspace(ctx, ctx->colorspace->rgb);
-		/* FIXME: bgr */
+		fz_drop_colorspace(ctx, ctx->colorspace->bgr);
 		fz_drop_colorspace(ctx, ctx->colorspace->cmyk);
 		fz_drop_colorspace(ctx, ctx->colorspace->lab);
 		fz_drop_cmm_context(ctx);
@@ -2774,11 +2774,11 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 
 	idx = fz_malloc_struct(ctx, struct indexed);
 	idx->lookup = lookup;
-	idx->base = base;
+	idx->base = fz_keep_colorspace(ctx, base);
 	idx->high = high;
 
 	fz_try(ctx)
-		cs = fz_new_colorspace(ctx, "Indexed", 0, 1, 0, fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 1, 0, fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	fz_catch(ctx)
 	{
 		fz_free(ctx, idx);
@@ -2978,7 +2978,7 @@ int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs)
 }
 
 fz_colorspace *
-fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, const char *name)
+fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name)
 {
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
@@ -3012,7 +3012,7 @@ fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, c
 		{
 			fz_keep_buffer(ctx, buf);
 			fz_md5_icc(ctx, profile);
-			cs = fz_new_colorspace(ctx, "icc", is_static, num, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, "icc", num, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 		}
 	}
 	fz_catch(ctx)
@@ -3074,7 +3074,7 @@ fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float
 	cal_data->n = num;
 
 	fz_try(ctx)
-		cs = fz_new_colorspace(ctx, "pdf-cal", 0, num, 0, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
+		cs = fz_new_colorspace(ctx, "pdf-cal", num, 0, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
 	fz_catch(ctx)
 	{
 		fz_free(ctx, cal_data);

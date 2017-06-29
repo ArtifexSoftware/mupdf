@@ -1768,6 +1768,7 @@ void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	}
 }
 
+/* Returns borrowed colorspace reference */
 static fz_colorspace *pdf_to_color(fz_context *ctx, pdf_document *doc, pdf_obj *col, float color[4])
 {
 	fz_colorspace *cs;
@@ -1884,7 +1885,6 @@ void pdf_update_ink_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 	}
 	fz_always(ctx)
 	{
-		fz_drop_colorspace(ctx, cs);
 		fz_drop_device(ctx, dev);
 		fz_drop_stroke_state(ctx, stroke);
 		fz_drop_path(ctx, path);
@@ -2115,7 +2115,7 @@ void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_an
 		fz_expand_rect(&bounds, outline_thickness);
 		center_rect_within_rect(&bounds, &rect, &tm);
 		fz_concat(&tm, &tm, &page_ctm);
-		cs = fz_device_rgb(ctx);
+		cs = fz_device_rgb(ctx); /* Borrowed reference */
 		fz_fill_path(ctx, dev, path, 0, &tm, cs, yellow, 1.0f, NULL);
 		fz_stroke_path(ctx, dev, path, stroke, &tm, cs, black, 1.0f, NULL);
 		fz_drop_path(ctx, path);
@@ -2142,7 +2142,6 @@ void pdf_update_text_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_an
 		fz_drop_display_list(ctx, dlist);
 		fz_drop_stroke_state(ctx, stroke);
 		fz_drop_path(ctx, path);
-		fz_drop_colorspace(ctx, cs);
 	}
 	fz_catch(ctx)
 	{
@@ -2384,10 +2383,8 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		fz_bound_path(ctx, path, NULL, &fz_identity, &logo_bounds);
 		center_rect_within_rect(&logo_bounds, &rect, &logo_tm);
 		fz_concat(&logo_tm, &logo_tm, &page_ctm);
-		cs = fz_device_rgb(ctx);
+		cs = fz_device_rgb(ctx); /* Borrowed reference */
 		fz_fill_path(ctx, dev, path, 0, &logo_tm, cs, logo_color, 1.0f, NULL);
-		fz_drop_colorspace(ctx, cs);
-		cs = NULL;
 
 		get_font_info(ctx, doc, dr, da, &font_rec);
 
@@ -2436,7 +2433,6 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 		font_info_fin(ctx, &font_rec);
 		fz_drop_path(ctx, path);
 		fz_drop_text(ctx, text);
-		fz_drop_colorspace(ctx, cs);
 		fz_drop_buffer(ctx, fzbuf);
 	}
 	fz_catch(ctx)

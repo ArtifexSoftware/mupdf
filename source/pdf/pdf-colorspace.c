@@ -59,7 +59,7 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 		if (fz_get_cmm_engine(ctx))
 		{
 			buffer = pdf_load_stream(ctx, dict);
-			cs = fz_new_icc_colorspace(ctx, 0, n, buffer, NULL);
+			cs = fz_new_icc_colorspace(ctx, n, buffer, NULL);
 		}
 	}
 	fz_always(ctx)
@@ -105,13 +105,13 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 	switch (n)
 	{
 	case 1:
-		cs = fz_device_gray(ctx);
+		cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		break;
 	case 3:
-		cs = fz_device_rgb(ctx);
+		cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		break;
 	case 4:
-		cs = fz_device_cmyk(ctx);
+		cs = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 		break;
 	default: fz_throw(ctx, FZ_ERROR_SYNTAX, "ICCBased must have 1, 3 or 4 components");
 	}
@@ -193,13 +193,14 @@ load_separation(fz_context *ctx, pdf_obj *array)
 		sep->base = fz_keep_colorspace(ctx, base);  /* We drop it during the sep free... */
 		sep->tint = tint;
 
-		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", 0, n, 1,
+		cs = fz_new_colorspace(ctx, n == 1 ? "Separation" : "DeviceN", n, 1,
 			fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? separation_to_alt : separation_to_rgb, NULL, base_separation, NULL, free_separation, sep,
 			sizeof(struct separation) + (base ? base->size : 0) + pdf_function_size(ctx, tint));
 	}
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, base);
 	fz_catch(ctx)
 	{
-		fz_drop_colorspace(ctx, base);
 		pdf_drop_function(ctx, tint);
 		fz_free(ctx, sep);
 		fz_rethrow(ctx);
@@ -274,9 +275,10 @@ load_indexed(fz_context *ctx, pdf_obj *array)
 
 		cs = fz_new_indexed_colorspace(ctx, base, high, lookup);
 	}
+	fz_always(ctx)
+		fz_drop_colorspace(ctx, base);
 	fz_catch(ctx)
 	{
-		fz_drop_colorspace(ctx, base);
 		fz_free(ctx, lookup);
 		fz_rethrow(ctx);
 	}
@@ -341,7 +343,7 @@ pdf_load_cal_gray(fz_context *ctx, pdf_obj *dict)
 	float gamma[3] = { 1, 1, 1 };
 
 	if (dict == NULL)
-		return fz_device_gray(ctx);
+		return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 
 	fz_try(ctx)
 	{
@@ -349,7 +351,7 @@ pdf_load_cal_gray(fz_context *ctx, pdf_obj *dict)
 		gamma[2] = gamma[1] = gamma[0];
 	}
 	fz_catch(ctx)
-		return fz_device_gray(ctx);
+		return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 	return fz_new_cal_colorspace(ctx, wp, bp, gamma, NULL);
 }
 
@@ -364,7 +366,7 @@ pdf_load_cal_rgb(fz_context *ctx, pdf_obj *dict)
 	int i;
 
 	if (dict == NULL)
-		return fz_device_rgb(ctx);
+		return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 
 	fz_try(ctx)
 	{
@@ -378,7 +380,7 @@ pdf_load_cal_rgb(fz_context *ctx, pdf_obj *dict)
 		}
 	}
 	fz_catch(ctx)
-		return fz_device_rgb(ctx);
+		return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 	return fz_new_cal_colorspace(ctx, wp, bp, gamma, matrix);
 }
 
@@ -393,19 +395,19 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 	if (pdf_is_name(ctx, obj))
 	{
 		if (pdf_name_eq(ctx, obj, PDF_NAME_Pattern))
-			return fz_device_gray(ctx);
+			return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		else if (pdf_name_eq(ctx, obj, PDF_NAME_G))
-			return fz_device_gray(ctx);
+			return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		else if (pdf_name_eq(ctx, obj, PDF_NAME_RGB))
-			return fz_device_rgb(ctx);
+			return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		else if (pdf_name_eq(ctx, obj, PDF_NAME_CMYK))
-			return fz_device_cmyk(ctx);
+			return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 		else if (pdf_name_eq(ctx, obj, PDF_NAME_DeviceGray))
-			return fz_device_gray(ctx);
+			return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 		else if (pdf_name_eq(ctx, obj, PDF_NAME_DeviceRGB))
-			return fz_device_rgb(ctx);
+			return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 		else if (pdf_name_eq(ctx, obj, PDF_NAME_DeviceCMYK))
-			return fz_device_cmyk(ctx);
+			return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 		else
 			fz_throw(ctx, FZ_ERROR_SYNTAX, "unknown colorspace: %s", pdf_to_name(ctx, obj));
 	}
@@ -418,35 +420,35 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 		{
 			/* load base colorspace instead */
 			if (pdf_name_eq(ctx, name, PDF_NAME_G))
-				return fz_device_gray(ctx);
+				return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_RGB))
-				return fz_device_rgb(ctx);
+				return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CMYK))
-				return fz_device_cmyk(ctx);
+				return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceGray))
-				return fz_device_gray(ctx);
+				return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceRGB))
-				return fz_device_rgb(ctx);
+				return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_DeviceCMYK))
-				return fz_device_cmyk(ctx);
+				return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalGray))
 			{
 				if (fz_get_cmm_engine(ctx))
 					return pdf_load_cal_gray(ctx, pdf_array_get(ctx, obj, 1));
 				else
-					return fz_device_gray(ctx);
+					return fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			}
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalRGB))
 			{
 				if (fz_get_cmm_engine(ctx))
 					return pdf_load_cal_rgb(ctx, pdf_array_get(ctx, obj, 1));
 				else
-					return fz_device_rgb(ctx);
+					return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			}
 			else if (pdf_name_eq(ctx, name, PDF_NAME_CalCMYK))
-				return fz_device_cmyk(ctx);
+				return fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			else if (pdf_name_eq(ctx, name, PDF_NAME_Lab))
-				return fz_device_lab(ctx);
+				return fz_keep_colorspace(ctx, fz_device_lab(ctx));
 			else
 			{
 				fz_colorspace *cs;
@@ -474,7 +476,7 @@ pdf_load_colorspace_imp(fz_context *ctx, pdf_obj *obj)
 						pobj = pdf_array_get(ctx, obj, 1);
 						if (!pobj)
 						{
-							cs = fz_device_gray(ctx);
+							cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 							break;
 						}
 

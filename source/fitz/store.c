@@ -147,6 +147,8 @@ do_reap(fz_context *ctx)
 		}
 
 		/* Store whether to drop this value or not in 'prev' */
+		if (item->val->refs > 0)
+			(void)Memento_dropRef(item->val);
 		item->prev = (item->val->refs > 0 && --item->val->refs == 0) ? item : NULL;
 
 		/* Store it in our removal chain - just singly linked */
@@ -181,11 +183,10 @@ void fz_drop_key_storable(fz_context *ctx, const fz_key_storable *sc)
 	if (s == NULL)
 		return;
 
-	if (s->storable.refs > 0)
-		(void)Memento_dropRef(s);
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	if (s->storable.refs > 0)
 	{
+		(void)Memento_dropRef(s);
 		drop = --s->storable.refs == 0;
 		if (!drop && s->storable.refs == s->store_key_refs)
 		{
@@ -224,11 +225,10 @@ void *fz_keep_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 	if (s == NULL)
 		return NULL;
 
-	if (s->storable.refs > 0)
-		(void)Memento_takeRef(s);
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	if (s->storable.refs > 0)
 	{
+		(void)Memento_takeRef(s);
 		++s->storable.refs;
 		++s->store_key_refs;
 	}
@@ -246,10 +246,9 @@ void fz_drop_key_storable_key(fz_context *ctx, const fz_key_storable *sc)
 	if (s == NULL)
 		return;
 
-	if (s->storable.refs > 0)
-		(void)Memento_dropRef(s);
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	assert(s->store_key_refs > 0 && s->storable.refs >= s->store_key_refs);
+	(void)Memento_dropRef(s);
 	drop = --s->storable.refs == 0;
 	--s->store_key_refs;
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
@@ -282,6 +281,8 @@ evict(fz_context *ctx, fz_item *item)
 		store->head = item->next;
 
 	/* Drop a reference to the value (freeing if required) */
+	if (item->val->refs > 0)
+		(void)Memento_dropRef(item->val);
 	drop = (item->val->refs > 0 && --item->val->refs == 0);
 
 	/* Remove from the hash table */
@@ -347,14 +348,20 @@ ensure_space(fz_context *ctx, size_t tofree)
 			 * not be cached. */
 			count += item->size;
 			if (prev)
+			{
+				(void)Memento_takeRef(prev->val);
 				prev->val->refs++;
+			}
 			evict(ctx, item); /* Drops then retakes lock */
 			/* So the store has 1 reference to prev, as do we, so
 			 * no other evict process can have thrown prev away in
 			 * the meantime. So we are safe to just decrement its
 			 * reference count here. */
 			if (prev)
+			{
+				(void)Memento_dropRef(prev->val);
 				--prev->val->refs;
+			}
 
 			if (count >= tofree)
 				return count;
@@ -462,7 +469,10 @@ fz_store_item(fz_context *ctx, void *key, void *val_, size_t itemsize, const fz_
 			 * to the existing one, and drop our current one. */
 			touch(store, existing);
 			if (existing->val->refs > 0)
+			{
+				(void)Memento_takeRef(existing->val);
 				existing->val->refs++;
+			}
 			fz_unlock(ctx, FZ_LOCK_ALLOC);
 			fz_free(ctx, item);
 			type->drop_key(ctx, key);
@@ -567,7 +577,10 @@ fz_find_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_store_
 		touch(store, item);
 		/* And bump the refcount before returning */
 		if (item->val->refs > 0)
+		{
+			(void)Memento_takeRef(item->val);
 			item->val->refs++;
+		}
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 		return (void *)item->val;
 	}
@@ -622,6 +635,8 @@ fz_remove_item(fz_context *ctx, fz_store_drop_fn *drop, void *key, const fz_stor
 			else
 				store->head = item->next;
 		}
+		if (item->val->refs > 0)
+			(void)Memento_dropRef(item->val);
 		dodrop = (item->val->refs > 0 && --item->val->refs == 0);
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 		if (dodrop)
@@ -701,14 +716,20 @@ fz_debug_store_locked(fz_context *ctx)
 	{
 		next = item->next;
 		if (next)
+		{
+			(void)Memento_takeRef(next->val);
 			next->val->refs++;
+		}
 		fz_unlock(ctx, FZ_LOCK_ALLOC);
 		item->type->format_key(ctx, buf, sizeof buf, item->key);
 		fz_lock(ctx, FZ_LOCK_ALLOC);
 		printf("store[*][refs=%d][size=%d] key=%s val=%p\n",
 				item->val->refs, (int)item->size, buf, item->val);
 		if (next)
+		{
+			(void)Memento_dropRef(next->val);
 			next->val->refs--;
+		}
 	}
 
 	printf("-- resource store hash contents --\n");
@@ -887,6 +908,8 @@ void fz_filter_store(fz_context *ctx, fz_store_filter_fn *fn, void *arg, const f
 		}
 
 		/* Store whether to drop this value or not in 'prev' */
+		if (item->val->refs > 0)
+			(void)Memento_dropRef(item->val);
 		item->prev = (item->val->refs > 0 && --item->val->refs == 0) ? item : NULL;
 
 		/* Store it in our removal chain - just singly linked */

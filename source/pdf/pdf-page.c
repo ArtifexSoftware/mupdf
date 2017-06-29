@@ -700,7 +700,11 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		{
 			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultGray);
 			if (cs_obj)
-				fz_set_default_gray(ctx, default_cs, pdf_load_colorspace(ctx, cs_obj));
+			{
+				fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
+				fz_set_default_gray(ctx, default_cs, cs);
+				fz_drop_colorspace(ctx, cs);
+			}
 		}
 		fz_catch(ctx)
 		{}
@@ -709,7 +713,11 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		{
 			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultRGB);
 			if (cs_obj)
-				fz_set_default_rgb(ctx, default_cs, pdf_load_colorspace(ctx, cs_obj));
+			{
+				fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
+				fz_set_default_rgb(ctx, default_cs, cs);
+				fz_drop_colorspace(ctx, cs);
+			}
 		}
 		fz_catch(ctx)
 		{}
@@ -718,7 +726,11 @@ pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page)
 		{
 			cs_obj = pdf_dict_get(ctx, obj, PDF_NAME_DefaultCMYK);
 			if (cs_obj)
-				fz_set_default_cmyk(ctx, default_cs, pdf_load_colorspace(ctx, cs_obj));
+			{
+				fz_colorspace *cs = pdf_load_colorspace(ctx, cs_obj);
+				fz_set_default_cmyk(ctx, default_cs, cs);
+				fz_drop_colorspace(ctx, cs);
+			}
 		}
 		fz_catch(ctx)
 		{}

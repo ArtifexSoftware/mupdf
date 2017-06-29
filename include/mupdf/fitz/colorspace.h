@@ -101,7 +101,7 @@ typedef fz_colorspace *(fz_colorspace_base_fn)(const fz_colorspace *cs);
 
 typedef void (fz_colorspace_clamp_fn)(const fz_colorspace *cs, const float *src, float *dst);
 
-fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int is_static, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
+fz_colorspace *fz_new_colorspace(fz_context *ctx, char *name, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
 fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
@@ -154,7 +154,7 @@ struct fz_cal_colorspace_s {
 /*
 	icc methods
 */
-fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, int is_static, int num, fz_buffer *buf, const char *name);
+fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name);
 fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix);
 fz_buffer *fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal);
 fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs);

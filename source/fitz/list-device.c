@@ -1301,7 +1301,7 @@ fz_new_list_device(fz_context *ctx, fz_display_list *list)
 	dev->alpha = 1.0f;
 	dev->ctm = fz_identity;
 	dev->stroke = NULL;
-	dev->colorspace = fz_device_gray(ctx);
+	dev->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 	memset(dev->color, 0, sizeof(float)*FZ_MAX_COLORS);
 	dev->top = 0;
 	dev->tiled = 0;
@@ -1458,7 +1458,7 @@ fz_run_display_list(fz_context *ctx, fz_display_list *list, fz_device *dev, cons
 	fz_matrix ctm = fz_identity;
 	fz_stroke_state *stroke = NULL;
 	float color[FZ_MAX_COLORS] = { 0 };
-	fz_colorspace *colorspace = fz_device_gray(ctx);
+	fz_colorspace *colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 	fz_color_params color_params;
 	fz_rect rect = { 0 };
 

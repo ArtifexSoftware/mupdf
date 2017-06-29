@@ -12,6 +12,7 @@ pdf_run_annot_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *page, pdf
 	default_cs = pdf_load_default_colorspaces(ctx, doc, page);
 	if (default_cs)
 		fz_set_default_colorspaces(ctx, dev, default_cs);
+	fz_drop_default_colorspaces(ctx, default_cs);
 
 	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
 	fz_concat(&local_ctm, &page_ctm, ctm);
@@ -41,6 +42,7 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 	default_cs = pdf_load_default_colorspaces(ctx, doc, page);
 	if (default_cs)
 		fz_set_default_colorspaces(ctx, dev, default_cs);
+	fz_drop_default_colorspaces(ctx, default_cs);
 
 	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
 	fz_concat(&local_ctm, &page_ctm, ctm);
