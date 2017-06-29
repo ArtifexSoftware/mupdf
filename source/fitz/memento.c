@@ -1869,33 +1869,49 @@ static void do_reference(Memento_BlkHeader *blk, int event)
 #endif /* MEMENTO_DETAILS */
 }
 
-void *Memento_takeRef(void *blk)
+static void *do_takeRef(void *blk)
 {
     if (blk)
         do_reference(safe_find_block(blk), Memento_EventType_takeRef);
     return blk;
 }
 
-void *Memento_dropRef(void *blk)
+void *Memento_takeRef(void *blk)
+{
+    if (Memento_event()) Memento_breakpoint();
+
+    return do_takeRef(blk);
+}
+
+static void *do_dropRef(void *blk)
 {
     if (blk)
         do_reference(safe_find_block(blk), Memento_EventType_dropRef);
     return blk;
 }
 
+void *Memento_dropRef(void *blk)
+{
+    if (Memento_event()) Memento_breakpoint();
+
+    return do_dropRef(blk);
+}
+
 void *Memento_adjustRef(void *blk, int adjust)
 {
+    if (Memento_event()) Memento_breakpoint();
+
     if (blk == NULL)
         return NULL;
 
     while (adjust > 0)
     {
-        Memento_takeRef(blk);
+        do_takeRef(blk);
         adjust--;
     }
     while (adjust < 0)
     {
-        Memento_dropRef(blk);
+        do_dropRef(blk);
         adjust++;
     }
 
