@@ -321,3 +321,17 @@ int fz_default_image_scale(void *arg, int w, int h, int src_w, int src_h)
 {
 	return 0;
 }
+
+fz_separations *fz_keep_separations(fz_context *ctx, fz_separations *seps)
+{
+	return NULL;
+}
+
+void fz_drop_separations(fz_context *ctx, fz_separations *seps)
+{
+}
+
+int fz_count_active_separations(fz_context *ctx, const fz_separations *seps)
+{
+	return 0;
+}

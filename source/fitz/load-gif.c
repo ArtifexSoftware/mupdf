@@ -433,7 +433,7 @@ gif_read_image(fz_context *ctx, struct info *info, unsigned char *p, size_t tota
 	if (only_metadata)
 		return NULL;
 
-	pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), info->width, info->height, 1);
+	pix = fz_new_pixmap(ctx, fz_device_rgb(ctx), info->width, info->height, NULL, 1);
 
 	fz_try(ctx)
 	{

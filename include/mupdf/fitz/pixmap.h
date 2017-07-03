@@ -6,6 +6,7 @@
 #include "mupdf/fitz/geometry.h"
 #include "mupdf/fitz/store.h"
 #include "mupdf/fitz/colorspace.h"
+#include "mupdf/fitz/separation.h"
 
 /*
 	Pixmaps represent a set of pixels for a 2 dimensional region of a
@@ -51,12 +52,14 @@ int fz_pixmap_y(fz_context *ctx, fz_pixmap *pix);
 
 	h: The height of the pixmap (in pixels)
 
+	seps: Details of separations.
+
 	alpha: 0 for no alpha, 1 for alpha.
 
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h, int alpha);
+fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h, fz_separations *seps, int alpha);
 
 /*
 	fz_new_pixmap_with_bbox: Create a pixmap of a given size,
@@ -72,12 +75,14 @@ fz_pixmap *fz_new_pixmap(fz_context *ctx, fz_colorspace *cs, int w, int h, int a
 
 	bbox: Bounding box specifying location/size of created pixmap.
 
+	seps: Details of separations.
+
 	alpha: 0 for no alpha, 1 for alpha.
 
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *bbox, int alpha);
+fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *bbox, fz_separations *seps, int alpha);
 
 /*
 	fz_new_pixmap_with_data: Create a new pixmap, with its origin at
@@ -90,6 +95,8 @@ fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, c
 
 	h: The height of the pixmap (in pixels)
 
+	seps: Details of separations.
+
 	alpha: 0 for no alpha, 1 for alpha.
 
 	stride: The byte offset from the pixel data in a row to the pixel
@@ -100,7 +107,7 @@ fz_pixmap *fz_new_pixmap_with_bbox(fz_context *ctx, fz_colorspace *colorspace, c
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, int alpha, int stride, unsigned char *samples);
+fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, int w, int h, fz_separations *seps, int alpha, int stride, unsigned char *samples);
 
 /*
 	fz_new_pixmap_with_bbox_and_data: Create a pixmap of a given size,
@@ -114,14 +121,18 @@ fz_pixmap *fz_new_pixmap_with_data(fz_context *ctx, fz_colorspace *colorspace, i
 	colorspace: Colorspace format used for the created pixmap. The
 	pixmap will keep a reference to the colorspace.
 
-	bbox: Bounding box specifying location/size of created pixmap.
+	rect: Bounding box specifying location/size of created pixmap.
+
+	seps: Details of separations.
+
+	alpha: Number of alpha planes (0 or 1).
 
 	samples: The data block to keep the samples in.
 
 	Returns a pointer to the new pixmap. Throws exception on failure to
 	allocate.
 */
-fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *rect, int alpha, unsigned char *samples);
+fz_pixmap *fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, const fz_irect *rect, fz_separations *seps, int alpha, unsigned char *samples);
 
 /*
 	fz_keep_pixmap: Take a reference to a pixmap.
@@ -152,16 +163,30 @@ fz_colorspace *fz_pixmap_colorspace(fz_context *ctx, fz_pixmap *pix);
 /*
 	fz_pixmap_components: Return the number of components in a pixmap.
 
-	Returns the number of components (including alpha). Does not throw exceptions.
+	Returns the number of components (including spots and alpha). Does not throw exceptions.
 */
 int fz_pixmap_components(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	fz_pixmap_components: Return the number of components in a pixmap.
+	fz_pixmap_colorants: Return the number of colorants in a pixmap.
 
-	Returns the number of colorants (components, less any alpha). Does not throw exceptions.
+	Returns the number of colorants (components, less any spots and alpha). Does not throw exceptions.
 */
 int fz_pixmap_colorants(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_pixmap_spots: Return the number of spots in a pixmap.
+
+	Returns the number of spots (components, less colorants and alpha). Does not throw exceptions.
+*/
+int fz_pixmap_spots(fz_context *ctx, fz_pixmap *pix);
+
+/*
+	fz_pixmap_alpha: Return the number of alpha planes in a pixmap.
+
+	Returns the number of alphas. Does not throw exceptions.
+*/
+int fz_pixmap_alpha(fz_context *ctx, fz_pixmap *pix);
 
 /*
 	fz_pixmap_samples: Returns a pointer to the pixel data of a pixmap.
@@ -293,19 +318,25 @@ fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *cs_
 
 	w, h: The width and height of the region in pixels.
 
-	n: The number of color components in the image. Includes
-	a separate alpha channel if alpha is set. For mask images
-	n=1, for greyscale (plus alpha) images n=2, for rgb (plus
-	alpha) images n=4.
+	n: The number of color components in the image.
+		n = num composite colors + num spots + num alphas
+
+	s: The number of spot channels in the image.
+
+	alpha: 0 for no alpha, 1 for alpha present.
+
+	flags: flag bits.
+		Bit 0: If set, draw the image with linear interpolation.
+		Bit 1: If set, free the samples buffer when the pixmap
+		is destroyed.
+		Bit 2: If set, all separations are enabled (ignore the
+		fields in the seps structure).
 
 	stride: The byte offset from the data for any given pixel
 	to the data for the same pixel on the row below.
 
-	alpha: 0 for no alpha, 1 for alpha present.
-
-	interpolate: A boolean flag set to non-zero if the image
-	will be drawn using linear interpolation, or set to zero if
-	image will be using nearest neighbour sampling.
+	seps: NULL, or a pointer to a separations structure. If NULL,
+	s should be 0.
 
 	xres, yres: Image resolution in dpi. Default is 96 dpi.
 
@@ -316,22 +347,26 @@ fz_pixmap *fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *cs_
 	the components are stored. The first n bytes are components 0 to n-1
 	for the pixel at (x,y). Each successive n bytes gives another pixel
 	in scanline order. Subsequent scanlines follow on with no padding.
-
-	free_samples: Is zero when an application has provided its own
-	buffer for pixel data through fz_new_pixmap_with_bbox_and_data.
-	If non-zero the buffer will be freed along with the pixmap.
 */
 struct fz_pixmap_s
 {
 	fz_storable storable;
-	int x, y, w, h, n;
+	int x, y, w, h;
+	unsigned char n;
+	unsigned char s;
+	unsigned char alpha;
+	unsigned char flags;
 	ptrdiff_t stride;
-	int alpha;
-	int interpolate;
+	fz_separations *seps;
 	int xres, yres;
 	fz_colorspace *colorspace;
 	unsigned char *samples;
-	int free_samples;
+};
+
+enum
+{
+	FZ_PIXMAP_FLAG_INTERPOLATE = 1,
+	FZ_PIXMAP_FLAG_FREE_SAMPLES = 2,
 };
 
 void fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix);

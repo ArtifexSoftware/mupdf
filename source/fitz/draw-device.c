@@ -215,7 +215,7 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 
 	fz_pixmap_bbox(ctx, state->dest, &bbox);
 	fz_intersect_irect(&bbox, &state->scissor);
-	dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->alpha || isolated);
+	dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->seps, state->dest->alpha || isolated);
 
 	if (isolated)
 	{
@@ -246,7 +246,7 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 	}
 	else
 	{
-		shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+		shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 		fz_clear_pixmap(ctx, shape);
 	}
 #ifdef DUMP_GROUP_BLENDS
@@ -506,13 +506,13 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 
 	fz_try(ctx)
 	{
-		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
-		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
+		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->seps, state[0].dest->alpha);
 		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state[1].shape)
 		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, state[1].shape);
 		}
 
@@ -578,20 +578,20 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 
 	fz_try(ctx)
 	{
-		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
 		 * may want to revisit this decision in the future. */
-		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
+		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->seps, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
 		else
 			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state->shape)
 		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, state[1].shape);
 		}
 
@@ -898,20 +898,20 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 
 	fz_try(ctx)
 	{
-		mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+		mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 		fz_clear_pixmap(ctx, mask);
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
 		 * may want to revisit this decision in the future. */
-		dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
+		dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->seps, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, dest);
 		else
 			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox, dev->default_cs);
 		if (state->shape)
 		{
-			shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, shape);
 		}
 		else
@@ -1024,20 +1024,20 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 
 	fz_try(ctx)
 	{
-		state[1].mask = mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+		state[1].mask = mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 		fz_clear_pixmap(ctx, mask);
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
 		 * may want to revisit this decision in the future. */
-		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
+		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->seps, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
 		else
 			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state->shape)
 		{
-			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, shape);
 		}
 		else
@@ -1154,14 +1154,14 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 
 	if (alpha < 1)
 	{
-		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->alpha);
+		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->seps, state->dest->alpha);
 		if (state->dest->alpha)
 			fz_clear_pixmap(ctx, dest);
 		else
 			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox, dev->default_cs);
 		if (shape)
 		{
-			shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, shape);
 		}
 	}
@@ -1590,21 +1590,21 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 
 	fz_try(ctx)
 	{
-		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
 
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
 		 * may want to revisit this decision in the future. */
-		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
+		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->seps, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
 		else
 			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state[0].shape)
 		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, state[1].shape);
 		}
 
@@ -1738,9 +1738,9 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 		 * If !luminosity, then we generate a mask from the alpha value of the shapes.
 		 */
 		if (luminosity)
-			state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), &bbox, 0);
+			state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), &bbox, NULL, 0);
 		else
-			state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 		if (state->shape)
 		{
 			/* FIXME: If we ever want to support AIS true, then
@@ -1823,7 +1823,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 
 		/* create new dest scratch buffer */
 		fz_pixmap_bbox(ctx, temp, &bbox);
-		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->alpha);
+		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->seps, state->dest->alpha);
 		fz_copy_pixmap_rect(ctx, dest, state->dest, &bbox, dev->default_cs);
 
 		/* push soft mask as clip mask */
@@ -1833,7 +1833,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 		 * clip mask when we pop. So create a new shape now. */
 		if (state[0].shape)
 		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, state[1].shape);
 		}
 		state[1].scissor = bbox;
@@ -1872,7 +1872,7 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_co
 		isolated = 1;
 #endif
 
-		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha || isolated);
+		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->seps, state[0].dest->alpha || isolated);
 
 		if (isolated)
 		{
@@ -1891,7 +1891,7 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_co
 		}
 		else
 		{
-			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, state[1].shape);
 		}
 
@@ -2149,12 +2149,12 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, const fz_rect *area, const 
 	fz_try(ctx)
 	{
 		/* Patterns can be transparent, so we need to have an alpha here. */
-		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, 1);
+		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->seps, 1);
 		fz_clear_pixmap(ctx, dest);
 		shape = state[0].shape;
 		if (shape)
 		{
-			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
 			fz_clear_pixmap(ctx, shape);
 		}
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
@@ -2632,7 +2632,7 @@ fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, co
 		}
 	}
 
-	*pixmap = fz_new_pixmap_with_bbox(ctx, opts->colorspace, &ibounds, opts->alpha);
+	*pixmap = fz_new_pixmap_with_bbox(ctx, opts->colorspace, &ibounds, NULL/* FIXME */, opts->alpha);
 	fz_try(ctx)
 	{
 		fz_set_pixmap_resolution(ctx, *pixmap, opts->x_resolution, opts->y_resolution);

@@ -502,7 +502,7 @@ png_read_image(fz_context *ctx, struct info *info, unsigned char *p, size_t tota
 static fz_pixmap *
 png_expand_palette(fz_context *ctx, struct info *info, fz_pixmap *src)
 {
-	fz_pixmap *dst = fz_new_pixmap(ctx, fz_device_rgb(ctx), src->w, src->h, 1);
+	fz_pixmap *dst = fz_new_pixmap(ctx, fz_device_rgb(ctx), src->w, src->h, NULL, 1);
 	unsigned char *sp = src->samples;
 	unsigned char *dp = dst->samples;
 	unsigned int x, y;
@@ -574,7 +574,7 @@ fz_load_png(fz_context *ctx, unsigned char *p, size_t total)
 
 	fz_try(ctx)
 	{
-		image = fz_new_pixmap(ctx, colorspace, png.width, png.height, 1);
+		image = fz_new_pixmap(ctx, colorspace, png.width, png.height, NULL, 1);
 	}
 	fz_catch(ctx)
 	{

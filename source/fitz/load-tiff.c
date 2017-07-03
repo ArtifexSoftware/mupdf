@@ -1313,7 +1313,7 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 
 		/* Expand into fz_pixmap struct */
 		alpha = tiff.extrasamples != 0;
-		image = fz_new_pixmap(ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength, alpha);
+		image = fz_new_pixmap(ctx, tiff.colorspace, tiff.imagewidth, tiff.imagelength, NULL, alpha);
 		image->xres = tiff.xresolution;
 		image->yres = tiff.yresolution;
 

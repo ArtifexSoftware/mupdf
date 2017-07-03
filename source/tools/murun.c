@@ -2024,7 +2024,7 @@ static void ffi_new_Pixmap(js_State *J)
 	fz_pixmap *pixmap;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, &bounds, alpha);
+		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, &bounds, 0, alpha);
 	fz_catch(ctx)
 		rethrow(J);
 

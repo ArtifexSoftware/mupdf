@@ -1001,6 +1001,7 @@ static void render_worker(void *arg)
 						fz_device_rgb(ctx),
 						render->area.renderArea.width,
 						render->area.renderArea.height,
+						NULL,
 						1,
 						render->bitmap->lineSkip,
 						((unsigned char *)render->bitmap->memptr) +

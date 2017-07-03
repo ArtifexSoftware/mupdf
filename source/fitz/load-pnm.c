@@ -264,7 +264,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 		int x, y, k;
 		int w, h, n;
 
-		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, 0);
+		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, NULL, 0);
 		dp = img->samples;
 
 		w = img->w;
@@ -342,7 +342,7 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		int x, y, k;
 		int w, h, n;
 
-		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, 0);
+		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, NULL, 0);
 		dp = img->samples;
 
 		w = img->w;
@@ -506,7 +506,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 		int x, y, k, packed = 0;
 		int w, h, n;
 
-		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, pnm->alpha);
+		img = fz_new_pixmap(ctx, pnm->cs, pnm->width, pnm->height, NULL, pnm->alpha);
 		fz_try(ctx)
 		{
 			dp = img->samples;

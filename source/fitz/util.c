@@ -114,7 +114,7 @@ fz_new_pixmap_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else
@@ -151,7 +151,7 @@ fz_new_pixmap_from_page_contents(fz_context *ctx, fz_page *page, const fz_matrix
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else
@@ -188,7 +188,7 @@ fz_new_pixmap_from_annot(fz_context *ctx, fz_annot *annot, const fz_matrix *ctm,
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else
@@ -225,7 +225,7 @@ fz_new_pixmap_from_page(fz_context *ctx, fz_page *page, const fz_matrix *ctm, fz
 	fz_transform_rect(&rect, ctm);
 	fz_round_rect(&irect, &rect);
 
-	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, alpha);
+	pix = fz_new_pixmap_with_bbox(ctx, cs, &irect, 0, alpha);
 	if (alpha)
 		fz_clear_pixmap(ctx, pix);
 	else

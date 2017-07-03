@@ -1,11 +1,17 @@
 #include "mupdf/fitz.h"
 
+enum
+{
+	FZ_SEPARATION_DISABLED_RENDER = 3
+};
+
+
 struct fz_separations_s
 {
 	int refs;
 	int num_separations;
 	int controllable;
-	uint32_t disabled[(FZ_MAX_SEPARATIONS + 31) / 32];
+	uint32_t state[(2*FZ_MAX_SEPARATIONS + 31) / 32];
 	uint32_t equiv_rgb[FZ_MAX_SEPARATIONS];
 	uint32_t equiv_cmyk[FZ_MAX_SEPARATIONS];
 	char *name[FZ_MAX_SEPARATIONS];
@@ -56,59 +62,65 @@ void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint3
 	sep->num_separations++;
 }
 
-int fz_separations_controllable(fz_context *ctx, fz_separations *sep)
+int fz_separations_controllable(fz_context *ctx, const fz_separations *sep)
 {
 	return (!sep || sep->controllable);
 }
 
-void fz_control_separation(fz_context *ctx, fz_separations *sep, int separation, int disable)
+void fz_set_separation_behavior(fz_context *ctx, fz_separations *sep, int separation, fz_separation_behavior beh)
 {
-	int bit;
+	int shift;
+	fz_separation_behavior old;
 
 	if (!sep || separation < 0 || separation >= sep->num_separations)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "can't control non-existent separation");
 
-	if (!sep->controllable)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "can't control separations on this page");
+	if (beh == FZ_SEPARATION_DISABLED && !sep->controllable)
+		beh = FZ_SEPARATION_DISABLED_RENDER;
 
-	bit = 1<<(separation & 31);
-	separation >>= 5;
+	shift = ((2*separation) & 31);
+	separation >>= 4;
 
-	if (disable)
-	{
-		/* If it's already disabled, great */
-		if (sep->disabled[separation] & bit)
-			return;
+	old = (sep->state[separation]>>shift) & 3;
 
-		sep->disabled[separation] |= bit;
-	}
-	else
-	{
-		/* If it's already enabled, great */
-		if ((sep->disabled[separation] & bit) == 0)
-			return;
+	if (old == (fz_separation_behavior)FZ_SEPARATION_DISABLED_RENDER)
+		old = FZ_SEPARATION_DISABLED;
 
-		sep->disabled[separation] &= ~bit;
-	}
+	/* If no change, great */
+	if (old == beh)
+		return;
+
+	sep->state[separation] = (sep->state[separation] & ~(3<<shift)) | (beh<<shift);
+
 	/* FIXME: Could only empty images from the store, or maybe only
 	 * images that depend on separations. */
 	fz_empty_store(ctx);
 }
 
-int fz_separation_disabled(fz_context *ctx, fz_separations *sep, int separation)
+static inline fz_separation_behavior
+sep_state(const fz_separations *sep, int i)
 {
-	int bit;
+	return (fz_separation_behavior)((sep->state[i>>5]>>((2*i) & 31)) & 3);
+}
 
+fz_separation_behavior fz_separation_current_behavior_internal(fz_context *ctx, const fz_separations *sep, int separation)
+{
 	if (!sep || separation < 0 || separation >= sep->num_separations)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "can't disable non-existent separation");
 
-	bit = 1<<(separation & 31);
-	separation >>= 5;
-
-	return ((sep->disabled[separation] & bit) != 0);
+	return sep_state(sep, separation);
 }
 
-int fz_separations_all_enabled(fz_context *ctx, fz_separations *sep)
+fz_separation_behavior fz_separation_current_behavior(fz_context *ctx, const fz_separations *sep, int separation)
+{
+	int beh = fz_separation_current_behavior_internal(ctx, sep, separation);
+
+	if (beh == FZ_SEPARATION_DISABLED_RENDER)
+		return FZ_SEPARATION_DISABLED;
+	return beh;
+}
+
+int fz_separations_all_composite(fz_context *ctx, const fz_separations *sep)
 {
 	int i;
 
@@ -116,13 +128,13 @@ int fz_separations_all_enabled(fz_context *ctx, fz_separations *sep)
 		return 1;
 
 	for (i = 0; i < (FZ_MAX_SEPARATIONS + 31) / 32; i++)
-		if (sep->disabled[i] != 0)
+		if (sep->state[i] != FZ_SEPARATION_COMPOSITE)
 			return 0;
 
 	return 1;
 }
 
-const char *fz_get_separation(fz_context *ctx, fz_separations *sep, int separation, uint32_t *rgb, uint32_t *cmyk)
+const char *fz_get_separation(fz_context *ctx, const fz_separations *sep, int separation, uint32_t *rgb, uint32_t *cmyk)
 {
 	if (!sep || separation < 0 || separation >= sep->num_separations)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "can't access non-existent separation");
@@ -135,9 +147,23 @@ const char *fz_get_separation(fz_context *ctx, fz_separations *sep, int separati
 	return sep->name[separation];
 }
 
-int fz_count_separations(fz_context *ctx, fz_separations *sep)
+int fz_count_separations(fz_context *ctx, const fz_separations *sep)
 {
 	if (!sep)
 		return 0;
 	return sep->num_separations;
+}
+
+int fz_count_active_separations(fz_context *ctx, const fz_separations *sep)
+{
+	int i, n, c;
+
+	if (!sep)
+		return 0;
+	n = sep->num_separations;
+	c = 0;
+	for (i = 0; i < n; i++)
+		if (sep_state(sep, i) == FZ_SEPARATION_SPOT)
+			c++;
+	return c;
 }

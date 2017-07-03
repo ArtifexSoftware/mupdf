@@ -400,7 +400,7 @@ fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 
 	jxr_read_image(ctx, data, size, &info, 0);
 
-	image = fz_new_pixmap(ctx, info.cspace, info.width, info.height, 1);
+	image = fz_new_pixmap(ctx, info.cspace, info.width, info.height, NULL, 1);
 
 	image->xres = info.xres;
 	image->yres = info.yres;

@@ -2088,7 +2088,7 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorsp
 	int stride_base;
 	int bn;
 
-	base = fz_new_pixmap_with_bbox(ctx, base_cs, fz_pixmap_bbox(ctx, src, &bbox), src->alpha);
+	base = fz_new_pixmap_with_bbox(ctx, base_cs, fz_pixmap_bbox(ctx, src, &bbox), src->seps, src->alpha);
 	bn = base->n;
 	stride_base = base->stride - base->w * bn;
 
@@ -2806,7 +2806,7 @@ fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha)
 	lookup = idx->lookup;
 	n = idx->base->n;
 
-	dst = fz_new_pixmap_with_bbox(ctx, idx->base, fz_pixmap_bbox(ctx, src, &bbox), alpha);
+	dst = fz_new_pixmap_with_bbox(ctx, idx->base, fz_pixmap_bbox(ctx, src, &bbox), src->seps, alpha);
 	s = src->samples;
 	d = dst->samples;
 	s_line_inc = src->stride - src->w * src->n;
@@ -2846,7 +2846,10 @@ fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha)
 		}
 	}
 
-	dst->interpolate = src->interpolate;
+	if (src->flags & FZ_PIXMAP_FLAG_INTERPOLATE)
+		dst->flags |= FZ_PIXMAP_FLAG_INTERPOLATE;
+	else
+		dst->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
 	return dst;
 }

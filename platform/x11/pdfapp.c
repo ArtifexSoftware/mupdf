@@ -922,7 +922,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 
 		fz_try(app->ctx)
 		{
-			app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, 1);
+			app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, NULL, 1);
 			fz_clear_pixmap_with_value(app->ctx, app->image, 255);
 			if (app->page_list || app->annotations_list)
 			{
@@ -950,7 +950,7 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 			colorspace = fz_device_gray(app->ctx);
 		else
 			colorspace = app->colorspace;
-		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, 1);
+		app->image = fz_new_pixmap_with_bbox(app->ctx, colorspace, &ibounds, NULL, 1);
 		app->duration = 0;
 		fz_page_presentation(app->ctx, app->page, &app->transition, &app->duration);
 		if (app->duration == 0)

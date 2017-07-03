@@ -76,7 +76,7 @@ fz_halftone *fz_default_halftone(fz_context *ctx, int num_comps)
 	{
 		int i;
 		for (i = 0; i < num_comps; i++)
-			ht->comp[i] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, 1, 16, mono_ht);
+			ht->comp[i] = fz_new_pixmap_with_data(ctx, NULL, 16, 16, NULL, 1, 16, mono_ht);
 	}
 	fz_catch(ctx)
 	{

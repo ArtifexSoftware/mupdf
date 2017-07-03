@@ -1292,7 +1292,7 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 	fz_intersect_irect(&bbox, scissor);
 
 	/* Glyphs must always have alpha */
-	glyph = fz_new_pixmap_with_bbox(ctx, model, &bbox, 1);
+	glyph = fz_new_pixmap_with_bbox(ctx, model, &bbox, NULL/* FIXME */, 1);
 
 	fz_var(dev);
 	fz_try(ctx)

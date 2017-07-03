@@ -224,6 +224,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 
 		if (shade->use_function)
 		{
+			/* FIXME */
 			fz_color_converter cc;
 			int cn = fz_colorspace_n(ctx, shade->colorspace);
 			n = fz_colorspace_n(ctx, dest->colorspace);
@@ -238,8 +239,8 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 			fz_drop_color_converter(ctx, &cc);
 			/* We need to use alpha = 1 here, because the shade might not fill
 			 * the bbox. */
-			conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, 1);
-			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, 1);
+			conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, NULL, 1);
+			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, NULL, 1);
 			fz_clear_pixmap(ctx, temp);
 		}
 		else

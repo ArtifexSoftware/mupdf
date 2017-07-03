@@ -264,8 +264,11 @@ fz_decomp_image_from_stream(fz_context *ctx, fz_stream *stm, fz_compressed_image
 		int alpha = (image->colorspace == NULL);
 		if (image->use_colorkey)
 			alpha = 1;
-		tile = fz_new_pixmap(ctx, image->colorspace, w, h, alpha);
-		tile->interpolate = image->interpolate;
+		tile = fz_new_pixmap(ctx, image->colorspace, w, h, NULL, alpha);
+		if (image->interpolate & FZ_PIXMAP_FLAG_INTERPOLATE)
+			tile->flags |= FZ_PIXMAP_FLAG_INTERPOLATE;
+		else
+			tile->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
 		stride = (w * image->n * image->bpc + 7) / 8;
 
@@ -1055,13 +1058,13 @@ display_list_image_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *subar
 		int r = (subarea->x1 * w + image->super.w - 1) / image->super.w;
 		int b = (subarea->y1 * h + image->super.h - 1) / image->super.h;
 
-		pix = fz_new_pixmap(ctx, image->super.colorspace, r-l, b-t, 0);
+		pix = fz_new_pixmap(ctx, image->super.colorspace, r-l, b-t, NULL, 0);
 		pix->x = l;
 		pix->y = t;
 	}
 	else
 	{
-		pix = fz_new_pixmap(ctx, image->super.colorspace, w, h, 0);
+		pix = fz_new_pixmap(ctx, image->super.colorspace, w, h, NULL, 0);
 	}
 
 	/* If we render the display list into pix with the image matrix, we'll get a unit

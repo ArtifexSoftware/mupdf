@@ -269,7 +269,7 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, size_t rlen)
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "bad number of components in jpeg: %d", cinfo.num_components);
 
-		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height, 0);
+		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height, NULL, 0);
 
 		if (extract_exif_resolution(cinfo.marker_list, &image->xres, &image->yres))
 			/* XPS prefers EXIF resolution to JFIF density */;

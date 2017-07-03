@@ -1711,7 +1711,7 @@ fz_scale_pixmap_cached(fz_context *ctx, const fz_pixmap *src, float x, float y, 
 #endif /* SINGLE_PIXEL_SPECIALS */
 			contrib_rows = make_weights(ctx, src->h, y, h, filter, 1, dst_h_int, patch.y0, patch.y1, src->n, flip_y, cache_y);
 
-		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0, src->alpha || forcealpha);
+		output = fz_new_pixmap(ctx, src->colorspace, patch.x1 - patch.x0, patch.y1 - patch.y0, src->seps, src->alpha || forcealpha);
 	}
 	fz_catch(ctx)
 	{

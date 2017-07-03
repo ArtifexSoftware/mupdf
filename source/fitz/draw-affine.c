@@ -3223,7 +3223,7 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 		dolerp = lerp_allowed;
 
 	/* except when we shouldn't, at large magnifications */
-	if (!img->interpolate)
+	if (!(img->flags & FZ_PIXMAP_FLAG_INTERPOLATE))
 	{
 		if (sqrtf(local_ctm.a * local_ctm.a + local_ctm.b * local_ctm.b) > img->w * 2)
 			dolerp = 0;

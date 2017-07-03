@@ -329,7 +329,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 	/* The file contains RGB + up to FZ_MAX_SEPARATIONS. Hence the
 	 * "3 + FZ_MAX_SEPARATIONS" usage in all the arrays below. */
 	fz_image_gprf *image = (fz_image_gprf *)image_;
-	fz_pixmap *pix = fz_new_pixmap(ctx, image->super.colorspace, image->super.w, image->super.h, 1);
+	fz_pixmap *pix = fz_new_pixmap(ctx, image->super.colorspace, image->super.w, image->super.h, NULL, 1);
 	fz_stream *file[3 + FZ_MAX_SEPARATIONS] = { NULL };
 	int read_sep[3 + FZ_MAX_SEPARATIONS] = { 0 };
 	int num_seps, i, j, n;
@@ -365,7 +365,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 		{
 			for (i = 3; i < num_seps; i++)
 			{
-				read_sep[i] = !fz_separation_disabled(ctx, image->separations, i-3);
+				read_sep[i] = !FZ_SEPARATION_DISABLED(ctx, image->separations, i-3);
 				if (read_sep[i])
 				{
 					uint32_t rgb, cmyk;
@@ -851,7 +851,7 @@ static int gprf_separation_disabled(fz_context *ctx, fz_page *page_, int sep)
 {
 	gprf_page *page = (gprf_page *)page_;
 
-	return fz_separation_disabled(ctx, page->separations, sep);
+	return FZ_SEPARATION_DISABLED(ctx, page->separations, sep);
 }
 
 static const char *gprf_get_separation(fz_context *ctx, fz_page *page_, int sep, uint32_t *rgba, uint32_t*cmyk)

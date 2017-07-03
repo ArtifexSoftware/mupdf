@@ -774,7 +774,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].tbounds = tbounds;
 					memset(&workers[band].cookie, 0, sizeof(fz_cookie));
 					workers[band].list = list;
-					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
+					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, NULL, alpha);
 					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
 #ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
@@ -786,7 +786,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 			else
 			{
-				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, alpha);
+				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, NULL, alpha);
 				fz_set_pixmap_resolution(ctx, pix, resolution, resolution);
 			}
 

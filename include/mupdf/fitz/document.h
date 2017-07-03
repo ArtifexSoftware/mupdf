@@ -167,7 +167,7 @@ typedef void (fz_page_control_separation_fn)(fz_context *ctx, fz_page *page, int
 /*
 	fz_page_separation_disabled_fn: Type for a function to detect
 	whether a given separation is enabled or disabled on a page.
-	See fz_separation_disabled for more information.
+	See FZ_SEPARATION_DISABLED for more information.
 */
 typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int separation);
 
