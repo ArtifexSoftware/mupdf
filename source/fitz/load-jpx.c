@@ -651,7 +651,7 @@ l2subfactor(fz_context *ctx, unsigned int max_w, unsigned int w)
 	for (i = 0; max_w != 0 && w != max_w; i++)
 		max_w >>= 1;
 	if (max_w == 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "image components are of incompatible dimensions");
+		return -1;
 	return i;
 }
 
@@ -766,7 +766,11 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 		case 1: state->cs = fz_device_gray(ctx); break;
 		case 3: state->cs = fz_device_rgb(ctx); break;
 		case 4: state->cs = fz_device_cmyk(ctx); break;
-		default: fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components: %d", n);
+		default:
+			{
+				opj_image_destroy(jpx);
+				fz_throw(ctx, FZ_ERROR_GENERIC, "unsupported number of components: %d", n);
+			}
 		}
 	}
 
@@ -794,6 +798,11 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 	{
 		sub_w[k] = l2subfactor(ctx, max_w, jpx->comps[k].w);
 		sub_h[k] = l2subfactor(ctx, max_h, jpx->comps[k].h);
+		if (sub_w[k] == -1 || sub_h[k] == -1)
+		{
+			opj_image_destroy(jpx);
+			fz_throw(ctx, FZ_ERROR_GENERIC, "image components are of incompatible dimensions");
+		}
 		if (sub_w[k] != 0 || sub_h[k] != 0)
 			upsample_required = 1;
 	}
