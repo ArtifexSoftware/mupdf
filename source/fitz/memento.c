@@ -57,6 +57,26 @@ int atexit(void (*)(void));
 #include <stdio.h>
 #endif
 
+#define UB(x) ((intptr_t)((x) & 0xFF))
+#define B2I(x) (UB(x) | (UB(x)<<8) | (UB(x)<<16) | (UB(x)<<24))
+#define B2P(x) ((void *)(B2I(x) | ((B2I(x)<<16)<<16)))
+#define MEMENTO_PREFILL_UBYTE ((unsigned char)(MEMENTO_PREFILL))
+#define MEMENTO_PREFILL_USHORT (((unsigned short)MEMENTO_PREFILL_UBYTE) | (((unsigned short)MEMENTO_PREFILL_UBYTE)<<8))
+#define MEMENTO_PREFILL_UINT (((unsigned int)MEMENTO_PREFILL_USHORT) | (((unsigned int)MEMENTO_PREFILL_USHORT)<<16))
+#define MEMENTO_PREFILL_PTR (void *)(((uintptr_t)MEMENTO_PREFILL_UINT) | ((((uintptr_t)MEMENTO_PREFILL_UINT)<<16)<<16))
+#define MEMENTO_POSTFILL_UBYTE ((unsigned char)(MEMENTO_POSTFILL))
+#define MEMENTO_POSTFILL_USHORT (((unsigned short)MEMENTO_POSTFILL_UBYTE) | (((unsigned short)MEMENTO_POSTFILL_UBYTE)<<8))
+#define MEMENTO_POSTFILL_UINT (((unsigned int)MEMENTO_POSTFILL_USHORT) | (((unsigned int)MEMENTO_POSTFILL_USHORT)<<16))
+#define MEMENTO_POSTFILL_PTR (void *)(((uintptr_t)MEMENTO_POSTFILL_UINT) | ((((uintptr_t)MEMENTO_POSTFILL_UINT)<<16)<<16))
+#define MEMENTO_ALLOCFILL_UBYTE ((unsigned char)(MEMENTO_ALLOCFILL))
+#define MEMENTO_ALLOCFILL_USHORT (((unsigned short)MEMENTO_ALLOCFILL_UBYTE) | (((unsigned short)MEMENTO_ALLOCFILL_UBYTE)<<8))
+#define MEMENTO_ALLOCFILL_UINT (((unsigned int)MEMENTO_ALLOCFILL_USHORT) | (((unsigned int)MEMENTO_ALLOCFILL_USHORT)<<16))
+#define MEMENTO_ALLOCFILL_PTR (void *)(((uintptr_t)MEMENTO_ALLOCFILL_UINT) | ((((uintptr_t)MEMENTO_ALLOCFILL_UINT)<<16)<<16))
+#define MEMENTO_FREEFILL_UBYTE ((unsigned char)(MEMENTO_FREEFILL))
+#define MEMENTO_FREEFILL_USHORT (((unsigned short)MEMENTO_FREEFILL_UBYTE) | (((unsigned short)MEMENTO_FREEFILL_UBYTE)<<8))
+#define MEMENTO_FREEFILL_UINT (((unsigned int)MEMENTO_FREEFILL_USHORT) | (((unsigned int)MEMENTO_FREEFILL_USHORT)<<16))
+#define MEMENTO_FREEFILL_PTR (void *)(((uintptr_t)MEMENTO_FREEFILL_UINT) | ((((uintptr_t)MEMENTO_FREEFILL_UINT)<<16)<<16))
+
 #ifdef MEMENTO
 
 #ifndef MEMENTO_CPP_EXTRAS_ONLY
@@ -798,6 +818,18 @@ static void Memento_showStacktrace(void **stack, int numberOfFrames)
 {
 }
 #endif /* MEMENTO_STACKTRACE_METHOD */
+
+void Memento_backtrace()
+{
+#ifdef MEMENTO_STACKTRACE_METHOD
+    void *stack[MEMENTO_BACKTRACE_MAX];
+    int count;
+    int skip;
+
+    count = Memento_getStacktrace(stack, &skip);
+    Memento_showStacktrace(&stack[skip], count - skip);
+#endif
+}
 
 #ifdef MEMENTO_DETAILS
 static void Memento_storeDetails(Memento_BlkHeader *head, int type)
@@ -1869,6 +1901,116 @@ static void do_reference(Memento_BlkHeader *blk, int event)
 #endif /* MEMENTO_DETAILS */
 }
 
+int Memento_checkPointerOrNull(void *blk)
+{
+	if (blk == NULL)
+		return 0;
+	if (blk == MEMENTO_PREFILL_PTR)
+		fprintf(stderr, "Prefill value found as pointer - buffer underrun?\n");
+	else if (blk == MEMENTO_POSTFILL_PTR)
+		fprintf(stderr, "Postfill value found as pointer - buffer overrun?\n");
+	else if (blk == MEMENTO_ALLOCFILL_PTR)
+		fprintf(stderr, "Allocfill value found as pointer - use of uninitialised value?\n");
+	else if (blk == MEMENTO_FREEFILL_PTR)
+		fprintf(stderr, "Allocfill value found as pointer - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_backtrace();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	return 1;
+}
+
+int Memento_checkBytePointerOrNull(void *blk)
+{
+	unsigned char i;
+	if (blk == NULL)
+		return 0;
+	Memento_checkPointerOrNull(blk);
+
+	i = *(unsigned int *)blk;
+
+	if (i == MEMENTO_PREFILL_UBYTE)
+		fprintf(stderr, "Prefill value found - buffer underrun?\n");
+	else if (i == MEMENTO_POSTFILL_UBYTE)
+		fprintf(stderr, "Postfill value found - buffer overrun?\n");
+	else if (i == MEMENTO_ALLOCFILL_UBYTE)
+		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+	else if (i == MEMENTO_FREEFILL_UBYTE)
+		fprintf(stderr, "Allocfill value found - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_backtrace();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	Memento_breakpoint();
+	return 1;
+}
+
+int Memento_checkShortPointerOrNull(void *blk)
+{
+	unsigned short i;
+	if (blk == NULL)
+		return 0;
+	Memento_checkPointerOrNull(blk);
+
+	i = *(unsigned short *)blk;
+
+	if (i == MEMENTO_PREFILL_USHORT)
+		fprintf(stderr, "Prefill value found - buffer underrun?\n");
+	else if (i == MEMENTO_POSTFILL_USHORT)
+		fprintf(stderr, "Postfill value found - buffer overrun?\n");
+	else if (i == MEMENTO_ALLOCFILL_USHORT)
+		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+	else if (i == MEMENTO_FREEFILL_USHORT)
+		fprintf(stderr, "Allocfill value found - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_backtrace();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	Memento_breakpoint();
+	return 1;
+}
+
+int Memento_checkIntPointerOrNull(void *blk)
+{
+	unsigned int i;
+	if (blk == NULL)
+		return 0;
+	Memento_checkPointerOrNull(blk);
+
+	i = *(unsigned int *)blk;
+
+	if (i == MEMENTO_PREFILL_UINT)
+		fprintf(stderr, "Prefill value found - buffer underrun?\n");
+	else if (i == MEMENTO_POSTFILL_UINT)
+		fprintf(stderr, "Postfill value found - buffer overrun?\n");
+	else if (i == MEMENTO_ALLOCFILL_UINT)
+		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+	else if (i == MEMENTO_FREEFILL_UINT)
+		fprintf(stderr, "Allocfill value found - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_backtrace();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	Memento_breakpoint();
+	return 1;
+}
+
 static void *do_takeRef(void *blk)
 {
     if (blk)
@@ -1876,9 +2018,32 @@ static void *do_takeRef(void *blk)
     return blk;
 }
 
+void *Memento_takeByteRef(void *blk)
+{
+    (void)Memento_checkBytePointerOrNull(blk);
+
+    return Memento_takeRef(blk);
+}
+
+void *Memento_takeShortRef(void *blk)
+{
+    (void)Memento_checkShortPointerOrNull(blk);
+
+    return Memento_takeRef(blk);
+}
+
+void *Memento_takeIntRef(void *blk)
+{
+    (void)Memento_checkIntPointerOrNull(blk);
+
+    return Memento_takeRef(blk);
+}
+
 void *Memento_takeRef(void *blk)
 {
     if (Memento_event()) Memento_breakpoint();
+
+    Memento_checkIntPointerOrNull(blk);
 
     return do_takeRef(blk);
 }
@@ -1888,6 +2053,27 @@ static void *do_dropRef(void *blk)
     if (blk)
         do_reference(safe_find_block(blk), Memento_EventType_dropRef);
     return blk;
+}
+
+void *Memento_dropByteRef(void *blk)
+{
+    Memento_checkBytePointerOrNull(blk);
+
+    return Memento_dropRef(blk);
+}
+
+void *Memento_dropShortRef(void *blk)
+{
+    Memento_checkShortPointerOrNull(blk);
+
+    return Memento_dropRef(blk);
+}
+
+void *Memento_dropIntRef(void *blk)
+{
+    Memento_checkIntPointerOrNull(blk);
+
+    return Memento_dropRef(blk);
 }
 
 void *Memento_dropRef(void *blk)
