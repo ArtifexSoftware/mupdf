@@ -122,7 +122,10 @@ xps_parse_image_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, 
 		return;
 	}
 
-	xps_parse_tiling_brush(ctx, doc, ctm, area, base_uri, dict, root, xps_paint_image_brush, image);
-
-	fz_drop_image(ctx, image);
+	fz_try(ctx)
+		xps_parse_tiling_brush(ctx, doc, ctm, area, base_uri, dict, root, xps_paint_image_brush, image);
+	fz_always(ctx)
+		fz_drop_image(ctx, image);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
