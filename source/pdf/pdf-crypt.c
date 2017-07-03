@@ -1011,7 +1011,7 @@ pdf_open_crypt_imp(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, pdf_cryp
 	if (stmf->method == PDF_CRYPT_AESV2 || stmf->method == PDF_CRYPT_AESV3)
 		return fz_open_aesd(ctx, chain, key, len);
 
-	return fz_open_copy(ctx, chain);
+	return chain;
 }
 
 fz_stream *
