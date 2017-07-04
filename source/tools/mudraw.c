@@ -434,6 +434,8 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 {
 	fz_device *dev = NULL;
 
+	fz_var(dev);
+
 	*bit = NULL;
 
 	fz_try(ctx)
