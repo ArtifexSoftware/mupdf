@@ -533,10 +533,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_try(ctx)
 		{
 			fz_stext_options stext_options;
-			if (list)
-				fz_bound_display_list(ctx, list, &mediabox);
-			else
-				fz_bound_page(ctx, page, &mediabox);
+
 			stext_options.flags = (output_format == OUT_HTML) ? FZ_STEXT_PRESERVE_IMAGES : 0;
 			text = fz_new_stext_page(ctx, &mediabox);
 			dev = fz_new_stext_device(ctx, sheet, text, &stext_options);
