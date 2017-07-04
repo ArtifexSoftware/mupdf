@@ -481,7 +481,20 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	fz_rect mediabox;
 	fz_device *dev = NULL;
 
-	fz_bound_page(ctx, page, &mediabox);
+	fz_var(dev);
+
+	fz_try(ctx)
+	{
+		if (list)
+			fz_bound_display_list(ctx, list, &mediabox);
+		else
+			fz_bound_page(ctx, page, &mediabox);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_page(ctx, page);
+		fz_rethrow(ctx);
+	}
 
 	if (output_format == OUT_TRACE)
 	{
@@ -502,7 +515,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_always(ctx)
 		{
 			fz_drop_device(ctx, dev);
-			dev = NULL;
 		}
 		fz_catch(ctx)
 		{
@@ -520,7 +532,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 		fz_try(ctx)
 		{
-			fz_rect mediabox;
 			fz_stext_options stext_options;
 			if (list)
 				fz_bound_display_list(ctx, list, &mediabox);
@@ -556,7 +567,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_always(ctx)
 		{
 			fz_drop_device(ctx, dev);
-			dev = NULL;
 			fz_drop_stext_page(ctx, text);
 		}
 		fz_catch(ctx)
@@ -570,19 +580,24 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 #if FZ_ENABLE_PDF
 	else if (output_format == OUT_PDF)
 	{
-		fz_buffer *contents;
-		pdf_obj *resources;
+		fz_buffer *contents = NULL;
+		pdf_obj *resources = NULL;
 
-		dev = pdf_page_write(ctx, pdfout, &mediabox, &resources, &contents);
+		fz_var(contents);
+		fz_var(resources);
+
 		fz_try(ctx)
 		{
 			pdf_obj *page_obj;
 
+			dev = pdf_page_write(ctx, pdfout, &mediabox, &resources, &contents);
 			if (list)
 				fz_run_display_list(ctx, list, dev, &fz_identity, NULL, cookie);
 			else
 				fz_run_page(ctx, page, dev, &fz_identity, cookie);
 			fz_close_device(ctx, dev);
+			fz_drop_device(ctx, dev);
+			dev = NULL;
 
 			page_obj = pdf_add_page(ctx, pdfout, &mediabox, rotation, resources, contents);
 			pdf_insert_page(ctx, pdfout, -1, page_obj);
@@ -593,7 +608,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			pdf_drop_obj(ctx, resources);
 			fz_drop_buffer(ctx, contents);
 			fz_drop_device(ctx, dev);
-			dev = NULL;
 		}
 		fz_catch(ctx)
 		{
@@ -608,26 +622,27 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	{
 		float zoom;
 		fz_matrix ctm;
-		fz_rect bounds, tbounds;
+		fz_rect tbounds;
 		char buf[512];
-		fz_output *out;
+		fz_output *out = NULL;
 
-		if (!output || !strcmp(output, "-"))
-			out = fz_stdout(ctx);
-		else
-		{
-			sprintf(buf, output, pagenum);
-			out = fz_new_output_with_path(ctx, buf, 0);
-		}
+		fz_var(out);
 
-		fz_bound_page(ctx, page, &bounds);
 		zoom = resolution / 72;
 		fz_pre_rotate(fz_scale(&ctm, zoom, zoom), rotation);
-		tbounds = bounds;
+		tbounds = mediabox;
 		fz_transform_rect(&tbounds, &ctm);
 
 		fz_try(ctx)
 		{
+			if (!output || !strcmp(output, "-"))
+				out = fz_stdout(ctx);
+			else
+			{
+				sprintf(buf, output, pagenum);
+				out = fz_new_output_with_path(ctx, buf, 0);
+			}
+
 			dev = fz_new_svg_device(ctx, out, tbounds.x1-tbounds.x0, tbounds.y1-tbounds.y0, FZ_SVG_TEXT_AS_PATH, 1);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
@@ -636,13 +651,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else
 				fz_run_page(ctx, page, dev, &ctm, cookie);
 			fz_close_device(ctx, dev);
-			fz_drop_device(ctx, dev);
-			dev = NULL;
 		}
 		fz_always(ctx)
 		{
 			fz_drop_device(ctx, dev);
-			dev = NULL;
 			fz_drop_output(ctx, out);
 		}
 		fz_catch(ctx)
@@ -656,7 +668,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	{
 		float zoom;
 		fz_matrix ctm;
-		fz_rect bounds, tbounds;
+		fz_rect tbounds;
 		fz_irect ibounds;
 		fz_pixmap *pix = NULL;
 		int w, h;
@@ -667,7 +679,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_var(bander);
 		fz_var(bit);
 
-		fz_bound_page(ctx, page, &bounds);
 		zoom = resolution / 72;
 		fz_pre_scale(fz_rotate(&ctm, rotation), zoom, zoom);
 
@@ -676,7 +687,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			fz_pre_scale(fz_pre_translate(&ctm, 0, -height), 1, -1);
 		}
 
-		tbounds = bounds;
+		tbounds = mediabox;
 		fz_round_rect(&ibounds, fz_transform_rect(&tbounds, &ctm));
 
 		/* Make local copies of our width/height */
@@ -726,7 +737,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 			fz_scale(&scale_mat, scalex, scaley);
 			fz_concat(&ctm, &ctm, &scale_mat);
-			tbounds = bounds;
+			tbounds = mediabox;
 			fz_transform_rect(&tbounds, &ctm);
 		}
 		fz_round_rect(&ibounds, &tbounds);
@@ -945,14 +956,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	fprintf(stderr, "\n");
 
 	if (lowmemory)
-	{
 		fz_empty_store(ctx);
-	}
 
 	if (showmemory)
-	{
 		fz_dump_glyph_cache_stats(ctx);
-	}
 
 	fz_flush_warnings(ctx);
 
