@@ -1,6 +1,6 @@
 #include "mupdf/fitz.h"
-#include "lcms2.h"
-#include "lcms2_plugin.h"
+#include "lcms2art.h"
+#include "lcms2art_plugin.h"
 #include "colorspace-imp.h"
 
 #define LCMS_BYTES_MASK 0x7
@@ -51,7 +51,7 @@ static cmsPluginMemHandler fz_lcms_memhandler =
 {
 	{
 		cmsPluginMagicNumber,
-		2000,
+		LCMS_VERSION,
 		cmsPluginMemHandlerSig,
 		NULL
 	},
