@@ -70,7 +70,7 @@ fz_lcms_num_devcomps(cmsContext cmm_ctx, fz_iccprofile *profile)
 }
 
 static void
-fz_lcms_premultiply_row(fz_context *ctx, int n, int w, unsigned char *s)
+fz_lcms_premultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s)
 {
 	unsigned char a;
 	int k;
@@ -79,14 +79,14 @@ fz_lcms_premultiply_row(fz_context *ctx, int n, int w, unsigned char *s)
 	for (; w > 0; w--)
 	{
 		a = s[n1];
-		for (k = 0; k < n1; k++)
+		for (k = 0; k < c; k++)
 			s[k] = fz_mul255(s[k], a);
 		s += n;
 	}
 }
 
 static void
-fz_lcms_unmultiply_row(fz_context *ctx, int n, int w, unsigned char *s, const unsigned char *in)
+fz_lcms_unmultiply_row(fz_context *ctx, int n, int c, int w, unsigned char *s, const unsigned char *in)
 {
 	int a, inva;
 	int k;
@@ -96,8 +96,10 @@ fz_lcms_unmultiply_row(fz_context *ctx, int n, int w, unsigned char *s, const un
 	{
 		a = in[n1];
 		inva = a ? 255 * 256 / a : 0;
-		for (k = 0; k < n1; k++)
+		for (k = 0; k < c; k++)
 			s[k] = (in[k] * inva) >> 8;
+		for (;k < n1; k++)
+			s[k] = in[k];
 		s[n1] = a;
 		s += n;
 		in += n;
@@ -111,7 +113,7 @@ fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap 
 	cmsContext cmm_ctx = (cmsContext)instance;
 	fz_context *ctx = (fz_context *)cmsGetContextUserData(cmm_ctx);
 	cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link->cmm_handle;
-	int cmm_num_src, cmm_num_des;
+	int cmm_num_src, cmm_num_des, cmm_extras;
 	unsigned char *inputpos, *outputpos, *buffer;
 	int ss = src->stride;
 	int ds = dst->stride;
@@ -121,27 +123,35 @@ fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap 
 	int dn = dst->n;
 	int sa = src->alpha;
 	int da = dst->alpha;
+	int ssp = src->s;
+	int dsp = dst->s;
+	int sc = sn - ssp - sa;
+	int dc = dn - dsp - da;
 	int h = src->h;
+	cmsUInt32Number src_format, dst_format;
 	DEBUG_LCMS_MEM(("@@@@@@@ Transform Pixmap Start:: mupdf ctx = %p lcms ctx = %p link = %p \n", (void*)ctx, (void*)cmm_ctx, (void*)link->cmm_handle));
 
 	/* check the channels. */
-	cmm_num_src = T_CHANNELS(cmsGetTransformInputFormat(cmm_ctx, hTransform));
-	cmm_num_des = T_CHANNELS(cmsGetTransformOutputFormat(cmm_ctx, hTransform));
-	if (cmm_num_src != sn - sa || cmm_num_des != dn - da || sa != da)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Mismatching color setup in cmm pixmap transformation: src: %d vs %d+%d, dst: %d vs %d+%d", cmm_num_src, sn-sa, sa, cmm_num_des, dn-da, da);
+	src_format = cmsGetTransformInputFormat(cmm_ctx, hTransform);
+	dst_format = cmsGetTransformOutputFormat(cmm_ctx, hTransform);
+	cmm_num_src = T_CHANNELS(src_format);
+	cmm_num_des = T_CHANNELS(dst_format);
+	cmm_extras = T_EXTRA(src_format);
+	if (cmm_num_src != sc || cmm_num_des != dc || cmm_extras != ssp+sa || sa != da || ssp != dsp)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Mismatching color setup in cmm pixmap transformation: src: %d vs %d+%d+%d, dst: %d vs %d+%d+%d", cmm_num_src, sc, ssp, sa, cmm_num_des, dc, dsp, da);
 
 	/* Transform */
 	inputpos = src->samples;
 	outputpos = dst->samples;
-	if (src->alpha)
+	if (sa)
 	{
 		/* Allow for premultiplied alpha */
 		buffer = fz_malloc(ctx, ss);
 		for (; h > 0; h--)
 		{
-			fz_lcms_unmultiply_row(ctx, sn, sw, buffer, inputpos);
+			fz_lcms_unmultiply_row(ctx, sn, sc, sw, buffer, inputpos);
 			cmsDoTransform(cmm_ctx, hTransform, buffer, outputpos, sw);
-			fz_lcms_premultiply_row(ctx, dn, dw, outputpos);
+			fz_lcms_premultiply_row(ctx, dn, dc, dw, outputpos);
 			inputpos += ss;
 			outputpos += ds;
 		}
@@ -170,7 +180,7 @@ fz_lcms_transform_color(fz_cmm_instance *instance, fz_icclink *link, unsigned sh
 }
 
 void
-fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *dst)
+fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int extras, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *dst)
 {
 	cmsContext cmm_ctx = (cmsContext)instance;
 	fz_context *ctx = (fz_context *)cmsGetContextUserData(cmm_ctx);
@@ -189,7 +199,7 @@ fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_color_pa
 	if (lcms_src_cs < 0)
 		lcms_src_cs = 0;
 	src_num_chan = cmsChannelsOf(cmm_ctx, src_cs);
-	src_data_type = (COLORSPACE_SH(lcms_src_cs) | CHANNELS_SH(src_num_chan) | DOSWAP_SH(src->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(alpha));
+	src_data_type = (COLORSPACE_SH(lcms_src_cs) | CHANNELS_SH(src_num_chan) | DOSWAP_SH(src->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(extras));
 
 	/* dst */
 	des_cs = cmsGetColorSpace(cmm_ctx, dst->cmm_handle);
@@ -197,17 +207,17 @@ fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_color_pa
 	if (lcms_des_cs < 0)
 		lcms_des_cs = 0;
 	des_num_chan = cmsChannelsOf(cmm_ctx, des_cs);
-	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | DOSWAP_SH(dst->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(alpha));
+	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | DOSWAP_SH(dst->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(extras));
 
 	/* flags */
 	if (rend->bp)
 		flag |= cmsFLAGS_BLACKPOINTCOMPENSATION;
 
-	if (alpha)
+	if (extras)
 		flag |= cmsFLAGS_COPY_ALPHA;
 
 	link->depth = num_bytes;
-	link->alpha = alpha;
+	link->extras = extras;
 
 	if (prf == NULL)
 	{

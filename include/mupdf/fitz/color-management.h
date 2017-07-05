@@ -45,7 +45,7 @@ typedef void (fz_cmm_transform_color_fn)(fz_cmm_instance *ctx, fz_icclink *link,
 /*
 	fz_cmm_init_link_fn: Create a new link between icc profiles.
 */
-typedef void (fz_cmm_init_link_fn)(fz_cmm_instance *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int alpha, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des);
+typedef void (fz_cmm_init_link_fn)(fz_cmm_instance *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int extras, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des);
 
 /*
 	fz_cmm_fin_link_fn: Drop a link.
