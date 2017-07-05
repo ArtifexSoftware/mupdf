@@ -139,8 +139,7 @@ typedef struct fz_store_hash_s
 		{
 			unsigned char src_md5[16];
 			unsigned char dst_md5[16];
-			uint8_t ri;
-			uint8_t bp;
+			uint8_t ri_bp;
 			uint8_t depth;
 			uint8_t alpha;
 			uint8_t proof;
