@@ -138,9 +138,12 @@ void
 fz_drop_colorspace_imp(fz_context *ctx, fz_storable *cs_)
 {
 	fz_colorspace *cs = (fz_colorspace *)cs_;
+	int i;
 
 	if (cs->free_data && cs->data)
 		cs->free_data(ctx, cs);
+	for (i = 0; i < FZ_MAX_COLORS; i++)
+		fz_free(ctx, cs->colorant[i]);
 	fz_free(ctx, cs);
 }
 
@@ -154,7 +157,7 @@ clamp_default(const fz_colorspace *cs, const float *src, float *dst)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, int is_device_n, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
@@ -162,6 +165,7 @@ fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, 
 	fz_strlcpy(cs->name, name ? name : "UNKNOWN", sizeof cs->name);
 	cs->n = n;
 	cs->is_subtractive = is_subtractive;
+	cs->is_device_n = is_device_n;
 	cs->to_ccs = to_ccs;
 	cs->from_ccs = from_ccs;
 	cs->get_base = base;
@@ -659,16 +663,16 @@ static int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs)
 }
 
 int
-fz_colorspace_is_subtractive(fz_context *ctx, fz_colorspace *cs)
+fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs)
 {
 	return (cs && cs->is_subtractive);
 }
 
-static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, gray_to_rgb, rgb_to_gray, clamp_default, NULL, NULL, NULL };
-static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, rgb_to_rgb, rgb_to_rgb, clamp_default, NULL, NULL, NULL };
-static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, bgr_to_rgb, rgb_to_bgr, clamp_default, NULL, NULL, NULL };
-static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, cmyk_to_rgb, rgb_to_cmyk, clamp_default, NULL, NULL, NULL };
-static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL};
+static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, 0, gray_to_rgb, rgb_to_gray, clamp_default, NULL, NULL, NULL, { "Gray" } };
+static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, 0, rgb_to_rgb, rgb_to_rgb, clamp_default, NULL, NULL, NULL, { "Red", "Green", "Blue" } };
+static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, 0, bgr_to_rgb, rgb_to_bgr, clamp_default, NULL, NULL, NULL, { "Blue", "Green", "Red" }  };
+static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, 0, cmyk_to_rgb, rgb_to_cmyk, clamp_default, NULL, NULL, NULL, { "Cyan", "Magenta", "Yellow", "Black" } };
+static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL, { "L*", "a*", "b*" } };
 static fz_color_params k_default_color_params = { FZ_RI_RELATIVE_COLORIMETRIC, 1, 0, 0 };
 
 static fz_colorspace *default_gray = &k_default_gray;
@@ -3156,7 +3160,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 	idx->high = high;
 
 	fz_try(ctx)
-		cs = fz_new_colorspace(ctx, "Indexed", 1, 0, fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 1, 0, 0, fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	fz_catch(ctx)
 	{
 		fz_free(ctx, idx);
@@ -3394,7 +3398,7 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 		else
 		{
 			fz_md5_icc(ctx, profile);
-			cs = fz_new_colorspace(ctx, name, num, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, name, num, 0, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 
 			/* This is a bit of a handwave, but should be safe for our cases */
 			if (profile->num_devcomp == 4)
@@ -3460,7 +3464,7 @@ fz_new_cal_colorspace(fz_context *ctx, const char *name, float *wp, float *bp, f
 	cal_data->n = num;
 
 	fz_try(ctx)
-		cs = fz_new_colorspace(ctx, "pdf-cal", num, 0, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
+		cs = fz_new_colorspace(ctx, "pdf-cal", num, 0, 0, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
 	fz_catch(ctx)
 	{
 		fz_free(ctx, cal_data);
@@ -3597,4 +3601,32 @@ fz_drop_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs)
 		fz_drop_colorspace(ctx, default_cs->oi);
 		fz_free(ctx, default_cs);
 	}
+}
+
+void fz_colorspace_name_colorant(fz_context *ctx, fz_colorspace *cs, int i, const char *name)
+{
+	if (!cs)
+		return;
+
+	if (i < 0 || i >= cs->n)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Attempt to name out of range colorant");
+
+	fz_free(ctx, cs->colorant[i]);
+	cs->colorant[i] = NULL;
+	if (name)
+		cs->colorant[i] = fz_strdup(ctx, name);
+
+}
+
+const char *fz_colorspace_colorant(fz_context *ctx, const fz_colorspace *cs, int i)
+{
+	if (!cs || i < 0 || i >= cs->n)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Colorant out of range");
+
+	return cs->colorant[i];
+}
+
+int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs)
+{
+	return (cs && cs->is_device_n);
 }

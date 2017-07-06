@@ -27,14 +27,16 @@ struct fz_colorspace_s
 	fz_storable storable;
 	size_t size;
 	char name[24];
-	int n;
-	int is_subtractive;
+	unsigned char n;
+	unsigned char is_subtractive;
+	unsigned char is_device_n;
 	fz_colorspace_convert_fn *to_ccs;
 	fz_colorspace_convert_fn *from_ccs;
 	fz_colorspace_clamp_fn *clamp;
 	fz_colorspace_base_fn *get_base;
 	fz_colorspace_destruct_fn *free_data;
 	void *data;
+	char *colorant[FZ_MAX_COLORS];
 };
 
 struct fz_iccprofile_s
