@@ -30,9 +30,6 @@ pdf_load_embedded_cmap(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj)
 	fz_var(cmap);
 	fz_var(usecmap);
 
-	if (pdf_obj_marked(ctx, stmobj))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Recursion in embedded cmap");
-
 	if ((cmap = pdf_find_item(ctx, pdf_drop_cmap_imp, stmobj)) != NULL)
 		return cmap;
 
