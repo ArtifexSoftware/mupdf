@@ -64,4 +64,12 @@ int fz_separations_controllable(fz_context *ctx, const fz_separations *seps);
 /* Return the number of active separations. */
 int fz_count_active_separations(fz_context *ctx, const fz_separations *seps);
 
+/* If the separations selection is unsuitable for overprint,
+ * clone it to produce one that is, otherwise return NULL. */
+fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separations *seps);
+
+/* Convert a color given in terms of one colorspace,
+ * to a color in terms of another colorspace/separations. */
+void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_params, const fz_colorspace *dst_cs, const fz_separations *dst_sep, float *dst_color, const fz_colorspace *src_cs, const float *src_color);
+
 #endif

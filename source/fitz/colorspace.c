@@ -32,10 +32,10 @@ fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, c
 }
 
 void
-fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int extras, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des)
+fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_iccprofile *dst, int dst_extras, const fz_iccprofile *src, int src_extras, const fz_iccprofile *prf, const fz_color_params *rend, int cmm_flags, int num_bytes, int copy_spots)
 {
 	if (ctx && ctx->colorspace && ctx->colorspace->cmm && ctx->cmm_instance)
-		ctx->colorspace->cmm->init_link(ctx->cmm_instance, link, rend, cmm_flags, num_bytes, extras, src, prf, des);
+		ctx->colorspace->cmm->init_link(ctx->cmm_instance, link, dst, dst_extras, src, src_extras, prf, rend, cmm_flags, num_bytes, copy_spots);
 }
 
 void
@@ -201,7 +201,9 @@ struct fz_link_key_s {
 	unsigned char src_md5[16];
 	unsigned char dst_md5[16];
 	fz_color_params rend;
-	int extras;
+	int src_extras;
+	int dst_extras;
+	int copy_spots;
 	int depth;
 	int proof;
 };
@@ -227,7 +229,9 @@ fz_cmp_link_key(fz_context *ctx, void *k0_, void *k1_)
 	fz_link_key *k0 = (fz_link_key *)k0_;
 	fz_link_key *k1 = (fz_link_key *)k1_;
 	return k0->proof == k1->proof &&
-		k0->extras == k1->extras &&
+		k0->src_extras == k1->src_extras &&
+		k0->dst_extras == k1->dst_extras &&
+		k0->copy_spots == k1->copy_spots &&
 		k0->depth == k1->depth &&
 		k0->rend.bp == k1->rend.bp &&
 		k0->rend.ri == k1->rend.ri &&
@@ -260,10 +264,13 @@ fz_make_hash_link_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 	fz_link_key *key = (fz_link_key *)key_;
 	memcpy(hash->u.link.dst_md5, key->dst_md5, 16);
 	memcpy(hash->u.link.src_md5, key->src_md5, 16);
-	hash->u.link.ri_bp = (key->rend.ri<<1) | key->rend.bp;
-	hash->u.link.extras = key->extras;
-	hash->u.link.depth = key->depth;
+	hash->u.link.ri = key->rend.ri;
+	hash->u.link.bp = key->rend.bp;
+	hash->u.link.src_extras = key->src_extras;
+	hash->u.link.dst_extras = key->dst_extras;
+	hash->u.link.bpp16 = key->depth == 2;
 	hash->u.link.proof = key->proof;
+	hash->u.link.copy_spots = key->copy_spots;
 	return 1;
 }
 
@@ -319,13 +326,10 @@ get_base_icc_profile(fz_context *ctx, const fz_colorspace *cs)
 }
 
 static fz_icclink *
-fz_new_icc_link(fz_context *ctx, fz_iccprofile *src, fz_iccprofile *prf, fz_iccprofile *dst, const fz_color_params *rend, int num_bytes, int extras)
+fz_new_icc_link(fz_context *ctx, fz_iccprofile *dst, int dst_extras, fz_iccprofile *src, int src_extras, fz_iccprofile *prf, const fz_color_params *rend, int num_bytes, int copy_extras)
 {
 	fz_icclink *link = fz_malloc_struct(ctx, fz_icclink);
 	FZ_INIT_STORABLE(link, 1, fz_drop_link_imp);
-
-	link->num_in = src->num_devcomp;
-	link->num_out = dst->num_devcomp;
 
 	if (memcmp(src->md5, dst->md5, 16) == 0 && prf == NULL)
 	{
@@ -334,7 +338,7 @@ fz_new_icc_link(fz_context *ctx, fz_iccprofile *src, fz_iccprofile *prf, fz_iccp
 	}
 
 	fz_try(ctx)
-		fz_cmm_init_link(ctx, link, rend, 0, num_bytes, extras, src, prf, dst);
+		fz_cmm_init_link(ctx, link, dst, dst_extras, src, src_extras, prf, rend, 0, num_bytes, copy_extras);
 	fz_catch(ctx)
 	{
 		fz_free(ctx, link);
@@ -378,7 +382,7 @@ fz_icc_from_cal(fz_context *ctx, const fz_colorspace *cs)
 }
 
 static fz_icclink *
-fz_get_icc_link(fz_context *ctx, const fz_colorspace *src, const fz_colorspace *prf, const fz_colorspace *dst, const fz_color_params *rend, int num_bytes, int extras, int *src_n)
+fz_get_icc_link(fz_context *ctx, const fz_colorspace *dst, int dst_extras, const fz_colorspace *src, int src_extras, const fz_colorspace *prf, const fz_color_params *rend, int num_bytes, int copy_spots, int *src_n)
 {
 	fz_icclink *link = NULL;
 	fz_iccprofile *src_icc = NULL;
@@ -386,6 +390,8 @@ fz_get_icc_link(fz_context *ctx, const fz_colorspace *src, const fz_colorspace *
 	fz_iccprofile *prf_icc = NULL;
 	fz_link_key *key = NULL;
 	fz_icclink *new_link;
+
+	assert(!copy_spots || src_extras == dst_extras);
 
 	if (prf != NULL)
 		prf_icc = prf->data;
@@ -440,6 +446,9 @@ fz_get_icc_link(fz_context *ctx, const fz_colorspace *src, const fz_colorspace *
 	fz_var(link);
 	fz_var(key);
 
+	if (rend == NULL)
+		rend = fz_default_color_params(ctx);
+
 	fz_try(ctx)
 	{
 		/* Check the storable to see if we have a copy. */
@@ -449,15 +458,17 @@ fz_get_icc_link(fz_context *ctx, const fz_colorspace *src, const fz_colorspace *
 		memcpy(&key->src_md5, src_icc->md5, 16);
 		key->rend.ri = rend->ri;
 		key->rend.bp = rend->bp;
-		key->extras = extras;
+		key->src_extras = src_extras;
+		key->dst_extras = dst_extras;
 		key->depth = num_bytes;
 		key->proof = (prf_icc != NULL);
+		key->copy_spots = copy_spots;
 		link = fz_find_item(ctx, fz_drop_link_imp, key, &fz_link_store_type);
 
 		/* Not found.  Make new one add to store. */
 		if (link == NULL)
 		{
-			link = fz_new_icc_link(ctx, src_icc, prf_icc, dst_icc, rend, num_bytes, extras);
+			link = fz_new_icc_link(ctx, dst_icc, dst_extras, src_icc, src_extras, prf_icc, rend, num_bytes, copy_spots);
 			new_link = fz_store_item(ctx, key, link, sizeof(fz_icclink), &fz_link_store_type);
 			if (new_link != NULL)
 			{
@@ -828,21 +839,23 @@ fz_default_color_params(fz_context *ctx)
 
 /* Fast pixmap color conversions */
 
-static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 3);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 1);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 3 + ds + da || src->n != 1 + ss + sa || ss != ds || (!da && sa))
+	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -917,7 +930,7 @@ static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		int i;
@@ -940,23 +953,44 @@ static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				d[0] = s[0];
+				d[1] = s[0];
+				d[2] = s[0];
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 4);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 1);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 4 + ds + da || src->n != 1 + ss + sa || ss != ds || (!da && sa))
+	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -1034,7 +1068,7 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		int i;
@@ -1058,23 +1092,45 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				d[0] = 0;
+				d[1] = 0;
+				d[2] = 0;
+				d[3] = s[0];
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 1);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 1 + ds + da || src->n != 3 + ss + sa || ss != ds || (!da && sa))
+	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -1143,7 +1199,7 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		int i;
@@ -1164,23 +1220,42 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				d[0] = ((s[0]+1) * 77 + (s[1]+1) * 150 + (s[2]+1) * 28) >> 8;
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 1);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 1 + ds + da || src->n != 3 + ss + sa || ss != ds || (!da && sa))
+	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -1251,7 +1326,7 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		while (h--)
@@ -1272,23 +1347,43 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		/* Slower, spots capable version */
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				d[0] = ((s[0]+1) * 28 + (s[1]+1) * 150 + (s[2]+1) * 77) >> 8;
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 4);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 4 + ds + da || src->n != 3 + ss + sa || ss != ds || (!da && sa))
+	if ((copy_spots || ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -1378,7 +1473,7 @@ static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		while (h--)
@@ -1406,23 +1501,49 @@ static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				unsigned char c = s[0];
+				unsigned char m = s[1];
+				unsigned char y = s[2];
+				unsigned char k = (unsigned char)(255 - fz_maxi(c, fz_maxi(m, y)));
+				d[0] = c + k;
+				d[1] = m + k;
+				d[2] = y + k;
+				d[3] = 255 - k;
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 4);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 4 + ds + da || src->n != 3 + ss + sa || ss != ds || (!da && sa))
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -1512,7 +1633,7 @@ static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		while (h--)
@@ -1540,23 +1661,49 @@ static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				unsigned char c = s[2];
+				unsigned char m = s[1];
+				unsigned char y = s[0];
+				unsigned char k = (unsigned char)(255 - fz_maxi(c, fz_maxi(m, y)));
+				d[0] = c + k;
+				d[1] = m + k;
+				d[2] = y + k;
+				d[3] = 255 - k;
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 1);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 4);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 1 + ds + da || src->n != 4 + ss + sa || ss != ds || (!da && sa))
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -1634,7 +1781,7 @@ static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		while (h--)
@@ -1653,6 +1800,26 @@ static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 					*d++ = *s++;
 				if (da)
 					*d++ = sa ? *s++ : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
+	else
+	{
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				unsigned char c = fz_mul255(255 - s[0], 77);
+				unsigned char m = fz_mul255(255 - s[1], 150);
+				unsigned char y = fz_mul255(255 - s[2], 28);
+				d[0] = (unsigned char)fz_maxi(s[3] - c - m - y, 0);
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
 			}
 			d += d_line_inc;
 			s += s_line_inc;
@@ -1987,23 +2154,25 @@ static inline void cached_cmyk_conv(unsigned char *restrict const pr, unsigned c
 #endif
 }
 
-static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 3);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 4);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 	unsigned int C,M,Y,K;
 	unsigned char r,g,b;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 3 + ds + da || src->n != 4 + ss + sa || ss != ds || (!da && sa))
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -2033,13 +2202,13 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		{
 			if (sa)
 			{
-	#ifdef ARCH_ARM
+#ifdef ARCH_ARM
 				if (h == 1)
 				{
 					fast_cmyk_to_rgb_ARM(d, s, w);
 					return;
 				}
-	#endif
+#endif
 				while (h--)
 				{
 					size_t ww = w;
@@ -2096,7 +2265,7 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		while (h--)
@@ -2120,25 +2289,48 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		/* Slower, spots capable version */
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
+				d[0] = r;
+				d[1] = g;
+				d[2] = b;
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 3);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 4);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 	unsigned int C,M,Y,K;
 	unsigned char r,g,b;
 
 	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 3 + ds + da || src->n != 4 + ss + sa || ss != ds || (!da && sa))
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -2227,7 +2419,7 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		while (h--)
@@ -2251,23 +2443,46 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		/* Slower, spots capable version */
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				cached_cmyk_conv(&r, &g, &b, &C, &M, &Y, &K, s[0], s[1], s[2], s[3]);
+				d[0] = b;
+				d[1] = g;
+				d[2] = r;
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
-static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
 	size_t w = src->w;
 	int h = src->h;
+	int sn = src->n;
 	int ss = src->s;
 	int sa = src->alpha;
+	int dn = dst->n;
 	int ds = dst->s;
 	int da = dst->alpha;
-	ptrdiff_t d_line_inc = dst->stride - w * (da + ds + 3);
-	ptrdiff_t s_line_inc = src->stride - w * (sa + ss + 3);
+	ptrdiff_t d_line_inc = dst->stride - w * dn;
+	ptrdiff_t s_line_inc = src->stride - w * sn;
 
-	/* Spots must match, and we can never drop alpha (but we can invent it) */
-	if (dst->n != 3 + ds + da || src->n != 3 + ss + sa || ss != ds || (!da && sa))
+	/* If copying spots, they must match, and we can never drop alpha (but we can invent it) */
+	if ((copy_spots && ss != ds) || (!da && sa))
 	{
 		assert("This should never happen" == NULL);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot convert between incompatible pixmaps");
@@ -2336,7 +2551,7 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 			}
 		}
 	}
-	else
+	else if (copy_spots)
 	{
 		/* Slower, spots capable version */
 		while (h--)
@@ -2359,10 +2574,29 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 			s += s_line_inc;
 		}
 	}
+	else
+	{
+		while (h--)
+		{
+			size_t ww = w;
+			while (ww--)
+			{
+				d[0] = s[2];
+				d[1] = s[1];
+				d[2] = s[0];
+				s += sn;
+				d += dn;
+				if (da)
+					d[-1] = sa ? s[-1] : 255;
+			}
+			d += d_line_inc;
+			s += s_line_inc;
+		}
+	}
 }
 
 static void
-icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *dsts = dst->colorspace;
@@ -2394,7 +2628,7 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	inputpos = src->samples;
 	outputpos = dst->samples;
 
-	link = fz_get_icc_link(ctx, srcs, prf, dsts, color_params, 1, dst->alpha, &src_n);
+	link = fz_get_icc_link(ctx, dsts, dst->s + dst->alpha, srcs, src->s + src->alpha, prf, color_params, 1, copy_spots, &src_n);
 
 	if (link->is_identity)
 	{
@@ -2450,7 +2684,7 @@ convert_to_icc_base(fz_context *ctx, fz_colorspace *srcs, float *src_f, float *d
  * be handled.  Realize those can map from index->devn->pdf-cal->icc for
  * example. */
 static void
-icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *base_cs = get_base_icc_space(ctx, srcs);
@@ -2501,7 +2735,7 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorsp
 	}
 
 	fz_try(ctx)
-		icc_conv_pixmap(ctx, dst, base, prf, default_cs, color_params);
+		icc_conv_pixmap(ctx, dst, base, prf, default_cs, color_params, copy_spots);
 	fz_always(ctx)
 		fz_drop_pixmap(ctx, base);
 	fz_catch(ctx)
@@ -2509,7 +2743,7 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorsp
 }
 
 static void
-std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
 	float srcv[FZ_MAX_COLORS];
 	float dstv[FZ_MAX_COLORS];
@@ -2710,8 +2944,10 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	}
 }
 
-static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots)
 {
+	assert(copy_spots && dst->s == 0 && src->s == 0);
+
 	if (!src->alpha)
 		fz_clear_pixmap_with_value(ctx, dst, 255);
 	else
@@ -3060,7 +3296,7 @@ void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_c
 				cc->convert = icc_conv_color;
 			else
 				cc->convert = icc_base_conv_color;
-			cc->link = fz_get_icc_link(ctx, ss_base, is, ds, params, 2, 0, &cc->n);
+			cc->link = fz_get_icc_link(ctx, ds, 0, ss_base, 0, is, params, 2, 0, &cc->n);
 		}
 		else
 			cc->convert = std_conv_color;

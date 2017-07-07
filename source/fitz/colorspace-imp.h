@@ -15,7 +15,7 @@
 int fz_cmm_avoid_white_fix_flag(fz_context *ctx);
 void fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);
 void fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src);
-void fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int extras, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *des);
+void fz_cmm_init_link(fz_context *ctx, fz_icclink *link, const fz_iccprofile *dst, int dst_extras, const fz_iccprofile *src, int src_extras, const fz_iccprofile *prf, const fz_color_params *rend, int cmm_flags, int num_bytes, int copy_spots);
 void fz_cmm_fin_link(fz_context *ctx, fz_icclink *link);
 fz_cmm_instance *fz_cmm_new_instance(fz_context *ctx);
 void fz_cmm_drop_instance(fz_context *ctx);
@@ -51,10 +51,10 @@ struct fz_iccprofile_s
 struct fz_icclink_s
 {
 	fz_storable storable;
-	int num_in;
-	int num_out;
 	int depth;
-	int extras;
+	int src_extras;
+	int dst_extras;
+	int copy_spots;
 	int is_identity;
 	void *cmm_handle;
 };

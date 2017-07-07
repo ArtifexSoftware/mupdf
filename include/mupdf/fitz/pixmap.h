@@ -401,7 +401,7 @@ void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict sr
 	fz_pixmap_converter: Color convert a pixmap. The passing of default_cs is needed due to the base cs of the image possibly
 	needing to be treated as being in one of the page default color spaces.
 */
-typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params);
+typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params, int copy_spots);
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
 
 /*
@@ -417,5 +417,13 @@ int fz_valgrind_pixmap(const fz_pixmap *pix);
 #else
 #define fz_valgrind_pixmap(pix) do {} while (0)
 #endif
+
+/*
+	fz_clone_pixmap_area_with_different_seps: Convert between
+	different separation results.
+*/
+fz_pixmap *fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *seps, fz_colorspace *prf, fz_default_colorspaces *default_cs);
+
+fz_pixmap *fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs);
 
 #endif

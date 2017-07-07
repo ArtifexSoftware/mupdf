@@ -180,7 +180,7 @@ fz_lcms_transform_color(fz_cmm_instance *instance, fz_icclink *link, unsigned sh
 }
 
 void
-fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_color_params *rend, int cmm_flags, int num_bytes, int extras, const fz_iccprofile *src, const fz_iccprofile *prf, const fz_iccprofile *dst)
+fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_iccprofile *dst, int dst_extras, const fz_iccprofile *src, int src_extras, const fz_iccprofile *prf, const fz_color_params *rend, int cmm_flags, int num_bytes, int copy_spots)
 {
 	cmsContext cmm_ctx = (cmsContext)instance;
 	fz_context *ctx = (fz_context *)cmsGetContextUserData(cmm_ctx);
@@ -199,7 +199,7 @@ fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_color_pa
 	if (lcms_src_cs < 0)
 		lcms_src_cs = 0;
 	src_num_chan = cmsChannelsOf(cmm_ctx, src_cs);
-	src_data_type = (COLORSPACE_SH(lcms_src_cs) | CHANNELS_SH(src_num_chan) | DOSWAP_SH(src->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(extras));
+	src_data_type = (COLORSPACE_SH(lcms_src_cs) | CHANNELS_SH(src_num_chan) | DOSWAP_SH(src->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(src_extras));
 
 	/* dst */
 	des_cs = cmsGetColorSpace(cmm_ctx, dst->cmm_handle);
@@ -207,17 +207,19 @@ fz_lcms_init_link(fz_cmm_instance *instance, fz_icclink *link, const fz_color_pa
 	if (lcms_des_cs < 0)
 		lcms_des_cs = 0;
 	des_num_chan = cmsChannelsOf(cmm_ctx, des_cs);
-	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | DOSWAP_SH(dst->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(extras));
+	des_data_type = (COLORSPACE_SH(lcms_des_cs) | CHANNELS_SH(des_num_chan) | DOSWAP_SH(dst->bgr) | BYTES_SH(num_bytes) | EXTRA_SH(dst_extras));
 
 	/* flags */
 	if (rend->bp)
 		flag |= cmsFLAGS_BLACKPOINTCOMPENSATION;
 
-	if (extras)
+	if (copy_spots)
 		flag |= cmsFLAGS_COPY_ALPHA;
 
 	link->depth = num_bytes;
-	link->extras = extras;
+	link->src_extras = src_extras;
+	link->dst_extras = dst_extras;
+	link->copy_spots = copy_spots;
 
 	if (prf == NULL)
 	{

@@ -3356,6 +3356,12 @@ fz_paint_image_with_color(fz_pixmap * restrict dst, const fz_irect * restrict sc
 void
 fz_paint_image(fz_pixmap * restrict dst, const fz_irect * restrict scissor, fz_pixmap * restrict shape, const fz_pixmap * restrict img, const fz_matrix * restrict ctm, int alpha, int lerp_allowed, int as_tiled)
 {
+	// FIXME
+	if (dst->n - dst->alpha != img->n - img->alpha && (dst->n != 3 + dst->alpha || img->n != 1 + img->alpha))
+	{
+		fprintf(stderr, "Skipping image plot - FIXME\n");
+		return;
+	}
 	assert(dst->n - dst->alpha == img->n - img->alpha|| (dst->n == 3 + dst->alpha && img->n == 1 + img->alpha));
 	fz_paint_image_imp(dst, scissor, shape, img, ctm, NULL, alpha, lerp_allowed, as_tiled);
 }

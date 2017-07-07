@@ -599,7 +599,7 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_i
 		fake_src.h = y;
 		fake_src.samples = srcp;
 
-		pc(ctx, dest, &fake_src, NULL, default_cs, fz_default_color_params(ctx));
+		pc(ctx, dest, &fake_src, NULL, default_cs, fz_default_color_params(ctx), 0);
 	}
 }
 
@@ -892,7 +892,7 @@ fz_convert_pixmap(fz_context *ctx, fz_pixmap *pix, fz_colorspace *ds, fz_colorsp
 	fz_try(ctx)
 	{
 		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, ds, pix->colorspace);
-		pc(ctx, cvt, pix, prf, default_cs, color_params);
+		pc(ctx, cvt, pix, prf, default_cs, color_params, 1);
 	}
 	fz_catch(ctx)
 	{
