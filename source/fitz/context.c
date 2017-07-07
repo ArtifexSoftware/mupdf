@@ -293,9 +293,9 @@ fz_clone_context_internal(fz_context *ctx)
 	new_ctx->store = fz_keep_store_context(new_ctx);
 	new_ctx->glyph_cache = ctx->glyph_cache;
 	new_ctx->glyph_cache = fz_keep_glyph_cache(new_ctx);
-	fz_new_cmm_context(new_ctx);
 	new_ctx->colorspace = ctx->colorspace;
 	new_ctx->colorspace = fz_keep_colorspace_context(new_ctx);
+	fz_new_cmm_context(new_ctx);
 	new_ctx->font = ctx->font;
 	new_ctx->font = fz_keep_font_context(new_ctx);
 	new_ctx->style = ctx->style;
