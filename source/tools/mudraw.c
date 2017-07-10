@@ -1079,6 +1079,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		bgprint.interptime = start;
 #ifndef DISABLE_MUTHREADS
 		mu_trigger_semaphore(&bgprint.start);
+#else
+		fz_drop_display_list(ctx, list);
+		fz_drop_page(ctx, page);
 #endif
 	}
 	else
