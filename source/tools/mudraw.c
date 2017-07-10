@@ -316,6 +316,8 @@ static void usage(void)
 		"\t-B -\tmaximum band_height (pgm, ppm, pam, png output only)\n"
 #ifndef DISABLE_MUTHREADS
 		"\t-T -\tnumber of threads to use for rendering (banded mode only)\n"
+#else
+		"\t-T -\tnumber of threads to use for rendering (disabled in this non-threading build)\n"
 #endif
 		"\n"
 		"\t-W -\tpage width for EPUB layout\n"
@@ -334,7 +336,11 @@ static void usage(void)
 		"\t-D\tdisable use of display list\n"
 		"\t-i\tignore errors\n"
 		"\t-L\tlow memory mode (avoid caching, clear objects after each page)\n"
+#ifndef DISABLE_MUTHREADS
 		"\t-P\tparallel interpretation/rendering\n"
+#else
+		"\t-P\tparallel interpretation/rendering (disabled in this non-threading build)\n"
+#endif
 		"\t-N\tdisable ICC workflow (\"N\"o color management)\n"
 		"\n"
 		"\t-y l\tList the layer configs to stderr\n"
@@ -1430,8 +1436,13 @@ int mudraw_main(int argc, char **argv)
 			break;
 #endif
 		case 'L': lowmemory = 1; break;
-		case 'P': bgprint.active = 1; break;
-
+		case 'P':
+#ifndef DISABLE_MUTHREADS
+			bgprint.active = 1; break;
+#else
+			fprintf(stderr, "Threads not enabled in this build\n");
+			break;
+#endif
 		case 'y': layer_config = fz_optarg; break;
 
 		case 'v': fprintf(stderr, "mudraw version %s\n", FZ_VERSION); return 1;
