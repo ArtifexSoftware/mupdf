@@ -763,7 +763,9 @@ endif
 
 # --- pthread ---
 
-#ifeq "$(HAVE_PTHREAD)" "yes"
-PTHREAD_CFLAGS := $(SYS_PTHREAD_CFLAGS)
-PTHREAD_LIBS := $(SYS_PTHREAD_LIBS)
-#endif
+ifneq "$(threading)" "no"
+ifeq "$(HAVE_PTHREAD)" "yes"
+THREADING_CFLAGS := $(SYS_PTHREAD_CFLAGS) -DHAVE_PTHREAD
+THREADING_LIBS := $(SYS_PTHREAD_LIBS)
+endif
+endif

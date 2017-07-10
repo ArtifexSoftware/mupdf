@@ -94,7 +94,10 @@ $(OUT)/%.exe: $(OUT)/%.o | $(ALL_DIR)
 	$(LINK_CMD)
 
 $(OUT)/source/helpers/%.o : source/helpers/%.c | $(ALL_DIR)
-	$(CC_CMD) $(PTHREAD_CFLAGS) -DHAVE_PTHREAD
+	$(CC_CMD) $(THREADING_CFLAGS)
+
+$(OUT)/source/tools/%.o : source/tools/%.c | $(ALL_DIR)
+	$(CC_CMD) $(THREADING_CFLAGS)
 
 $(OUT)/generated/%.o : generated/%.c | $(ALL_DIR)
 	$(CC_CMD) -O0
@@ -352,13 +355,13 @@ MUTOOL_SRC += $(sort $(wildcard source/tools/pdf*.c))
 MUTOOL_OBJ := $(MUTOOL_SRC:%.c=$(OUT)/%.o)
 $(MUTOOL_OBJ) : $(FITZ_HDR) $(PDF_HDR)
 $(MUTOOL_EXE) : $(MUTOOL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
-	$(LINK_CMD) $(PTHREAD_LIBS)
+	$(LINK_CMD) $(THREADING_LIBS)
 
 MURASTER_EXE := $(OUT)/muraster
 MURASTER_OBJ := $(OUT)/source/tools/muraster.o
 $(MURASTER_OBJ) : $(FITZ_HDR)
 $(MURASTER_EXE) : $(MURASTER_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(THREAD_LIB)
-	$(LINK_CMD) $(PTHREAD_LIBS)
+	$(LINK_CMD) $(THREADING_LIBS)
 
 MJSGEN_EXE := $(OUT)/mjsgen
 MJSGEN_OBJ := $(OUT)/source/tools/mjsgen.o

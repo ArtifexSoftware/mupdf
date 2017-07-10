@@ -314,7 +314,7 @@ static void usage(void)
 		"\t-h -\theight (in pixels) (maximum height if -r is specified)\n"
 		"\t-f -\tfit width and/or height exactly; ignore original aspect ratio\n"
 		"\t-B -\tmaximum band_height (pgm, ppm, pam, png output only)\n"
-#ifdef MUDRAW_THREADS
+#ifndef DISABLE_MUTHREADS
 		"\t-T -\tnumber of threads to use for rendering (banded mode only)\n"
 #endif
 		"\n"
