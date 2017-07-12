@@ -392,18 +392,21 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 	return writer;
 }
 
-void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, const fz_colorspace *cs)
+void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, const fz_colorspace *cs, fz_separations *seps)
 {
 	if (writer == NULL || writer->band == NULL)
 		return;
+
 	writer->w = w;
 	writer->h = h;
+	writer->s = fz_count_active_separations(ctx, seps);
 	writer->n = n;
 	writer->alpha = alpha;
 	writer->xres = xres;
 	writer->yres = yres;
 	writer->pagenum = pagenum;
 	writer->line = 0;
+	writer->seps = fz_keep_separations(ctx, seps);
 	writer->header(ctx, writer, cs);
 }
 
@@ -433,5 +436,6 @@ void fz_drop_band_writer(fz_context *ctx, fz_band_writer *writer)
 		return;
 	if (writer->drop != NULL)
 		writer->drop(ctx, writer);
+	fz_drop_separations(ctx, writer->seps);
 	fz_free(ctx, writer);
 }

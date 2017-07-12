@@ -691,7 +691,7 @@ fz_write_pixmap_as_pcl(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap,
 	writer = fz_new_color_pcl_band_writer(ctx, out, pcl);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -723,7 +723,7 @@ color_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colors
 	int xres = writer->super.xres;
 	int yres = writer->super.yres;
 
-	if (n != 4)
+	if (n != 4 || writer->super.s != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be rgb to write as pcl");
 
 	writer->linebuf = fz_malloc(ctx, w * 3 * 2);
@@ -1078,7 +1078,7 @@ fz_write_bitmap_as_pcl(fz_context *ctx, fz_output *out, const fz_bitmap *bitmap,
 	writer = fz_new_mono_pcl_band_writer(ctx, out, pcl);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, bitmap->xres, bitmap->yres, 0, NULL);
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, bitmap->xres, bitmap->yres, 0, NULL, NULL);
 		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
 	}
 	fz_always(ctx)
@@ -1110,6 +1110,9 @@ mono_pcl_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorsp
 	int line_size;
 	int max_mode_2_size;
 	int max_mode_3_size;
+
+	if (writer->super.s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Mono PCL cannot write spot colors");
 
 	line_size = (w + 7)/8;
 	max_mode_2_size = line_size + (line_size/127) + 1;

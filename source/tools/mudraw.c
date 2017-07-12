@@ -825,7 +825,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				}
 				if (bander)
 				{
-					fz_write_header(ctx, bander, pix->w, totalheight, pix->n, pix->alpha, pix->xres, pix->yres, output_pagenum++, pix->colorspace);
+					fz_write_header(ctx, bander, pix->w, totalheight, pix->n, pix->alpha, pix->xres, pix->yres, output_pagenum++, pix->colorspace, pix->seps);
 				}
 			}
 

@@ -12,6 +12,9 @@ pnm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *c
 	int n = writer->n;
 	int alpha = writer->alpha;
 
+	if (writer->s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "PNM writer cannot cope with spot colors");
+
 	n -= alpha;
 	if (n != 1 && n != 3)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale or rgb to write as pnm");
@@ -125,7 +128,7 @@ fz_write_pixmap_as_pnm(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 	fz_band_writer *writer = fz_new_pnm_band_writer(ctx, out);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -145,7 +148,7 @@ fz_save_pixmap_as_pnm(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_pnm_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -169,6 +172,9 @@ pam_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *c
 	int h = writer->h;
 	int n = writer->n;
 	int alpha = writer->alpha;
+
+	if (writer->s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "PAM writer cannot cope with spot colors");
 
 	fz_write_printf(ctx, out, "P7\n");
 	fz_write_printf(ctx, out, "WIDTH %d\n", w);
@@ -228,7 +234,7 @@ fz_write_pixmap_as_pam(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 	fz_band_writer *writer = fz_new_pam_band_writer(ctx, out);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -248,7 +254,7 @@ fz_save_pixmap_as_pam(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_pam_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, 0, 0, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)

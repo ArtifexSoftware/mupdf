@@ -33,7 +33,7 @@ fz_save_pixmap_as_png(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 	fz_try(ctx)
 	{
 		writer = fz_new_png_band_writer(ctx, out);
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -59,7 +59,7 @@ fz_write_pixmap_as_png(fz_context *ctx, fz_output *out, const fz_pixmap *pixmap)
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)
@@ -146,6 +146,9 @@ png_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 	static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
 	unsigned char head[13];
 	int color;
+
+	if (writer->super.s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "PNGs cannot contain spot colors");
 
 	/* Treat alpha only as greyscale */
 	if (n == 1 && alpha)

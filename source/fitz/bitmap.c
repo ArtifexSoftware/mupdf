@@ -312,6 +312,9 @@ pbm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *c
 	int w = writer->w;
 	int h = writer->h;
 
+	if (writer->s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pbms cannot contain spot colors");
+
 	fz_write_printf(ctx, out, "P4\n%d %d\n", w, h);
 }
 
@@ -321,6 +324,9 @@ pkm_write_header(fz_context *ctx, fz_band_writer *writer, const fz_colorspace *c
 	fz_output *out = writer->out;
 	int w = writer->w;
 	int h = writer->h;
+
+	if (writer->s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "pkms cannot contain spot colors");
 
 	fz_write_printf(ctx, out, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
 }
@@ -336,7 +342,7 @@ fz_write_bitmap_as_pbm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 	writer = fz_new_pbm_band_writer(ctx, out);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, 0, 0, 0, NULL);
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 1, 0, 0, 0, 0, NULL, NULL);
 		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
 	}
 	fz_always(ctx)
@@ -356,7 +362,7 @@ fz_write_bitmap_as_pkm(fz_context *ctx, fz_output *out, fz_bitmap *bitmap)
 	writer = fz_new_pkm_band_writer(ctx, out);
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 4, 0, 0, 0, 0, NULL);
+		fz_write_header(ctx, writer, bitmap->w, bitmap->h, 4, 0, 0, 0, 0, NULL, NULL);
 		fz_write_band(ctx, writer, bitmap->stride, bitmap->h, bitmap->samples);
 	}
 	fz_always(ctx)

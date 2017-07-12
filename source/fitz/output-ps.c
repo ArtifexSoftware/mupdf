@@ -59,6 +59,9 @@ ps_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *c
 	float sy = (float) h / h_points;
 	int err;
 
+	if (writer->super.s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Postscript writer cannot cope with spot colors");
+
 	if (alpha != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Postscript output cannot have alpha");
 
@@ -156,7 +159,7 @@ void fz_write_pixmap_as_ps(fz_context *ctx, fz_output *out, const fz_pixmap *pix
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, pixmap->stride, pixmap->h, pixmap->samples);
 	}
 	fz_always(ctx)

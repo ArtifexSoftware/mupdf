@@ -25,11 +25,13 @@ struct fz_band_writer_s
 	int w;
 	int h;
 	int n;
+	int s;
 	int alpha;
 	int xres;
 	int yres;
 	int pagenum;
 	int line;
+	fz_separations *seps;
 };
 
 fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_output *out);
@@ -53,9 +55,11 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 
 	cs: Colorspace (NULL for bitmaps)
 
+	seps: Separation details (or NULL).
+
 	Throws exception if incompatible data format.
 */
-void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, const fz_colorspace *cs);
+void fz_write_header(fz_context *ctx, fz_band_writer *writer, int w, int h, int n, int alpha, int xres, int yres, int pagenum, const fz_colorspace *cs, fz_separations *seps);
 
 /*
 	fz_write_band: Cause a band writer to write the next band

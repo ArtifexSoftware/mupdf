@@ -69,7 +69,7 @@ fz_write_pixmap_as_tga(fz_context *ctx, fz_output *out, fz_pixmap *pixmap)
 
 	fz_try(ctx)
 	{
-		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace);
+		fz_write_header(ctx, writer, pixmap->w, pixmap->h, pixmap->n, pixmap->alpha, pixmap->xres, pixmap->yres, 0, pixmap->colorspace, pixmap->seps);
 		fz_write_band(ctx, writer, -pixmap->stride, pixmap->h, pixmap->samples + pixmap->stride * (pixmap->h-1));
 	}
 	fz_always(ctx)
@@ -90,6 +90,8 @@ tga_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 	unsigned char head[18];
 	int d = (alpha && n > 1) ? 4 : (n == 1 ? 1 : 3);
 
+	if (writer->super.s != 0)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "TGA writer cannot cope with spot colors");
 	if (n-alpha > 1 && n != 3+alpha)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pixmap must be grayscale/rgb/rgba (with or without alpha) to write as tga");
 	memset(head, 0, sizeof(head));
