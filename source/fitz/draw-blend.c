@@ -320,7 +320,43 @@ fz_blend_separable(byte * restrict bp, int bal, const byte * restrict sp, int sa
 	while (--w);
 }
 
-static void
+static inline void
+fz_blend_nonseparable_gray(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n, int w, int blendmode)
+{
+	do
+	{
+		int sa = (sal ? sp[n] : 255);
+		int ba = (bal ? bp[n] : 255);
+		int saba = fz_mul255(sa, ba);
+
+		/* ugh, division to get non-premul components */
+		int invsa = sa ? 255 * 256 / sa : 0;
+		int invba = ba ? 255 * 256 / ba : 0;
+
+		int sg = (sp[0] * invsa) >> 8;
+		int bg = (bp[0] * invba) >> 8;
+
+		switch (blendmode)
+		{
+		default:
+		case FZ_BLEND_HUE:
+		case FZ_BLEND_SATURATION:
+		case FZ_BLEND_COLOR:
+			bp[0] = fz_mul255(bp[n], bg);
+			break;
+		case FZ_BLEND_LUMINOSITY:
+			bp[0] = fz_mul255(bp[n], sg);
+			break;
+		}
+		if (bal)
+			bp[n] = ba + sa - saba;
+
+		sp += n + sal;
+		bp += n + bal;
+	} while (--w);
+}
+
+static inline void
 fz_blend_nonseparable(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n, int w, int blendmode)
 {
 	do
@@ -525,6 +561,66 @@ fz_blend_separable_nonisolated(byte * restrict bp, int bal, const byte * restric
 }
 
 static inline void
+fz_blend_nonseparable_nonisolated_gray(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n, int w, int blendmode, const byte * restrict hp, int alpha)
+{
+	do
+	{
+		int ha = *hp++;
+		int haa = fz_mul255(ha, alpha);
+		if (haa != 0)
+		{
+			int ba = (bal ? bp[n] : 255);
+
+			if (ba == 0)
+			{
+				memcpy(bp, sp, n + (sal && bal));
+				if (bal && !sal)
+					bp[n+1] = 255;
+			}
+			else
+			{
+				int sa = (sal ? sp[n] : 255);
+				int baha = fz_mul255(ba, haa);
+
+				/* Calculate result_alpha */
+				int ra = ba - baha + haa;
+				if (bal)
+					bp[n] = ra;
+				if (ra != 0)
+				{
+					int invha = ha ? 255 * 256 / ha : 0;
+
+					/* ugh, division to get non-premul components */
+					int invsa = sa ? 255 * 256 / sa : 0;
+					int invba = ba ? 255 * 256 / ba : 0;
+
+					int sg = (sp[0] * invsa) >> 8;
+					int bg = (bp[0] * invba) >> 8;
+
+					/* Uncomposite */
+					sg = (((sg - bg)*invha) >> 8) + bg;
+
+					switch (blendmode)
+					{
+					default:
+					case FZ_BLEND_HUE:
+					case FZ_BLEND_SATURATION:
+					case FZ_BLEND_COLOR:
+						bp[0] = fz_mul255(ra, bg);
+						break;
+					case FZ_BLEND_LUMINOSITY:
+						bp[0] = fz_mul255(ra, sg);
+						break;
+					}
+				}
+			}
+		}
+		sp += n + sal;
+		bp += n + bal;
+	} while (--w);
+}
+
+static inline void
 fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n, int w, int blendmode, const byte * restrict hp, int alpha)
 {
 	do
@@ -535,91 +631,101 @@ fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, const byte * rest
 		{
 			int sa = (sal ? sp[n] : 255);
 			int ba = (bal ? bp[n] : 255);
-			int baha = fz_mul255(ba, haa);
 
-			/* Calculate result_alpha */
-			int ra = ba - baha + haa;
-			if (bal)
-				bp[n] = ra;
-			if (ra != 0)
+			if (ba == 0)
 			{
-				/* Because we are a non-isolated group, we
-				 * need to 'uncomposite' before we blend
-				 * (recomposite). We assume that normal
-				 * blending has been done inside the group,
-				 * so: ra.rc = (1-ha).bc + ha.sc
-				 * A bit of rearrangement, and that gives us
-				 * that: sc = (ra.rc - bc)/ha + bc
-				 * Now, the result of the blend was stored in
-				 * src, so: */
-				int invha = ha ? 255 * 256 / ha : 0;
+				memcpy(bp, sp, n + (bal && sal));
+				if (bal && !sal)
+					bp[n] = 255;
+			}
+			else
+			{
+				int baha = fz_mul255(ba, haa);
 
-				unsigned char rr, rg, rb;
+				/* Calculate result_alpha */
+				int ra = ba - baha + haa;
+				if (bal)
+					bp[n] = ra;
 
-				/* ugh, division to get non-premul components */
-				int invsa = sa ? 255 * 256 / sa : 0;
-				int invba = ba ? 255 * 256 / ba : 0;
-
-				int sr = (sp[0] * invsa) >> 8;
-				int sg = (sp[1] * invsa) >> 8;
-				int sb = (sp[2] * invsa) >> 8;
-
-				int br = (bp[0] * invba) >> 8;
-				int bg = (bp[1] * invba) >> 8;
-				int bb = (bp[2] * invba) >> 8;
-
-				/* Uncomposite */
-				sr = (((sr-br)*invha)>>8) + br;
-				sg = (((sg-bg)*invha)>>8) + bg;
-				sb = (((sb-bb)*invha)>>8) + bb;
-
-				switch (blendmode)
+				if (ra != 0)
 				{
-				default:
-				case FZ_BLEND_HUE:
-					fz_hue_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
-					break;
-				case FZ_BLEND_SATURATION:
-					fz_saturation_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
-					break;
-				case FZ_BLEND_COLOR:
-					fz_color_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
-					break;
-				case FZ_BLEND_LUMINOSITY:
-					fz_luminosity_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
-					break;
-				}
+					/* Because we are a non-isolated group, we
+					* need to 'uncomposite' before we blend
+					* (recomposite). We assume that normal
+					* blending has been done inside the group,
+					* so: ra.rc = (1-ha).bc + ha.sc
+					* A bit of rearrangement, and that gives us
+					* that: sc = (ra.rc - bc)/ha + bc
+					* Now, the result of the blend was stored in
+					* src, so: */
+					int invha = ha ? 255 * 256 / ha : 0;
 
-				rr = fz_mul255(255 - haa, bp[0]) + fz_mul255(fz_mul255(255 - ba, sr), haa) + fz_mul255(baha, rr);
-				rg = fz_mul255(255 - haa, bp[1]) + fz_mul255(fz_mul255(255 - ba, sg), haa) + fz_mul255(baha, rg);
-				rb = fz_mul255(255 - haa, bp[2]) + fz_mul255(fz_mul255(255 - ba, sb), haa) + fz_mul255(baha, rb);
-				bp[0] = fz_mul255(ra, rr);
-				bp[1] = fz_mul255(ra, rg);
-				bp[2] = fz_mul255(ra, rb);
+					unsigned char rr, rg, rb;
 
-				/* Black */
-				if (n == 4)
-				{
-					int sk = (sp[3] * invsa) >> 8;
-					int bk = (bp[3] * invba) >> 8;
-					sk = (((sk - bk)*invha) >> 8) + bk;
+					/* ugh, division to get non-premul components */
+					int invsa = sa ? 255 * 256 / sa : 0;
+					int invba = ba ? 255 * 256 / ba : 0;
+
+					int sr = (sp[0] * invsa) >> 8;
+					int sg = (sp[1] * invsa) >> 8;
+					int sb = (sp[2] * invsa) >> 8;
+
+					int br = (bp[0] * invba) >> 8;
+					int bg = (bp[1] * invba) >> 8;
+					int bb = (bp[2] * invba) >> 8;
+
+					/* Uncomposite */
+					sr = (((sr - br)*invha) >> 8) + br;
+					sg = (((sg - bg)*invha) >> 8) + bg;
+					sb = (((sb - bb)*invha) >> 8) + bb;
 
 					switch (blendmode)
 					{
 					default:
 					case FZ_BLEND_HUE:
+						fz_hue_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
+						break;
 					case FZ_BLEND_SATURATION:
+						fz_saturation_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
+						break;
 					case FZ_BLEND_COLOR:
-						bp[3] = fz_mul255(ra, bk);
+						fz_color_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
 						break;
 					case FZ_BLEND_LUMINOSITY:
-						bp[3] = fz_mul255(ra, sk);
+						fz_luminosity_rgb(&rr, &rg, &rb, br, bg, bb, sr, sg, sb);
 						break;
+					}
+
+					rr = fz_mul255(255 - haa, bp[0]) + fz_mul255(fz_mul255(255 - ba, sr), haa) + fz_mul255(baha, rr);
+					rg = fz_mul255(255 - haa, bp[1]) + fz_mul255(fz_mul255(255 - ba, sg), haa) + fz_mul255(baha, rg);
+					rb = fz_mul255(255 - haa, bp[2]) + fz_mul255(fz_mul255(255 - ba, sb), haa) + fz_mul255(baha, rb);
+					bp[0] = fz_mul255(ra, rr);
+					bp[1] = fz_mul255(ra, rg);
+					bp[2] = fz_mul255(ra, rb);
+
+					/* Black */
+					if (n == 4)
+					{
+						int sk = (sp[3] * invsa) >> 8;
+						int bk = (bp[3] * invba) >> 8;
+						sk = (((sk - bk)*invha) >> 8) + bk;
+
+						switch (blendmode)
+						{
+						default:
+						case FZ_BLEND_HUE:
+						case FZ_BLEND_SATURATION:
+						case FZ_BLEND_COLOR:
+							bp[3] = fz_mul255(ra, bk);
+							break;
+						case FZ_BLEND_LUMINOSITY:
+							bp[3] = fz_mul255(ra, sk);
+							break;
+						}
 					}
 				}
 			}
 		}
-
 		sp += n + sal;
 		bp += n + bal;
 	}
@@ -686,14 +792,26 @@ fz_blend_pixmap(fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, i
 			if (blendmode >= FZ_BLEND_HUE)
 				if (da)
 					if (sa)
-						fz_blend_nonseparable_nonisolated(dp, 1, sp, 1, n, w, blendmode, hp, alpha);
+						if (n == 1)
+							fz_blend_nonseparable_nonisolated_gray(dp, 1, sp, 1, n, w, blendmode, hp, alpha);
+						else
+							fz_blend_nonseparable_nonisolated(dp, 1, sp, 1, n, w, blendmode, hp, alpha);
 					else
-						fz_blend_nonseparable_nonisolated(dp, 1, sp, 0, n, w, blendmode, hp, alpha);
+						if (n == 1)
+							fz_blend_nonseparable_nonisolated_gray(dp, 1, sp, 0, n, w, blendmode, hp, alpha);
+						else
+							fz_blend_nonseparable_nonisolated(dp, 1, sp, 0, n, w, blendmode, hp, alpha);
 				else
 					if (sa)
-						fz_blend_nonseparable_nonisolated(dp, 0, sp, 1, n, w, blendmode, hp, alpha);
+						if (n == 1)
+							fz_blend_nonseparable_nonisolated_gray(dp, 0, sp, 1, n, w, blendmode, hp, alpha);
+						else
+							fz_blend_nonseparable_nonisolated(dp, 0, sp, 1, n, w, blendmode, hp, alpha);
 					else
-						fz_blend_nonseparable_nonisolated(dp, 0, sp, 0, n, w, blendmode, hp, alpha);
+						if (n == 1)
+							fz_blend_nonseparable_nonisolated_gray(dp, 0, sp, 0, n, w, blendmode, hp, alpha);
+						else
+							fz_blend_nonseparable_nonisolated(dp, 0, sp, 0, n, w, blendmode, hp, alpha);
 			else
 				if (da)
 					if (sa)
@@ -717,14 +835,26 @@ fz_blend_pixmap(fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, i
 			if (blendmode >= FZ_BLEND_HUE)
 				if (da)
 					if (sa)
-						fz_blend_nonseparable(dp, 1, sp, 1, n,  w, blendmode);
+						if (n == 1)
+							fz_blend_nonseparable_gray(dp, 1, sp, 1, n, w, blendmode);
+						else
+							fz_blend_nonseparable(dp, 1, sp, 1, n, w, blendmode);
 					else
-						fz_blend_nonseparable(dp, 1, sp, 0, n,  w, blendmode);
+						if (n == 1)
+							fz_blend_nonseparable_gray(dp, 1, sp, 0, n,  w, blendmode);
+						else
+							fz_blend_nonseparable(dp, 1, sp, 0, n, w, blendmode);
 				else
 					if (sa)
-						fz_blend_nonseparable(dp, 0, sp, 1, n, w, blendmode);
+						if (n == 1)
+							fz_blend_nonseparable_gray(dp, 0, sp, 1, n, w, blendmode);
+						else
+							fz_blend_nonseparable(dp, 0, sp, 1, n, w, blendmode);
 					else
-						fz_blend_nonseparable(dp, 0, sp, 0, n,  w, blendmode);
+						if (n == 1)
+							fz_blend_nonseparable_gray(dp, 0, sp, 0, n,  w, blendmode);
+						else
+							fz_blend_nonseparable(dp, 0, sp, 0, n, w, blendmode);
 			else
 				if (da)
 					if (sa)
