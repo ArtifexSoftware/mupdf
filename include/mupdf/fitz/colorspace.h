@@ -100,7 +100,7 @@ fz_colorspace *fz_device_lab(fz_context *ctx);
 */
 const fz_color_params *fz_default_color_params(fz_context *ctx);
 
-typedef void (fz_colorspace_convert_fn)(fz_context *ctx, fz_colorspace *cs, const float *src, float *dst);
+typedef void (fz_colorspace_convert_fn)(fz_context *ctx, const fz_colorspace *cs, const float *src, float *dst);
 
 typedef void (fz_colorspace_destruct_fn)(fz_context *ctx, fz_colorspace *cs);
 
@@ -125,7 +125,7 @@ int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_devicen_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
 void fz_clamp_color(fz_context *ctx, const fz_colorspace *cs, const float *in, float *out);
-void fz_convert_color(fz_context *ctx, const fz_color_params *params, fz_colorspace *intcs, fz_colorspace *dscs, float *dstv, fz_colorspace *srcs, const float *srcv);
+void fz_convert_color(fz_context *ctx, const fz_color_params *params, const fz_colorspace *intcs, const fz_colorspace *dscs, float *dstv, const fz_colorspace *srcs, const float *srcv);
 
 typedef struct fz_color_converter_s fz_color_converter;
 
@@ -136,15 +136,15 @@ typedef struct fz_color_converter_s fz_color_converter;
 struct fz_color_converter_s
 {
 	void (*convert)(fz_context *, fz_color_converter *, float *, const float *);
-	fz_colorspace *ds;
-	fz_colorspace *ss;
-	fz_colorspace *is;
+	const fz_colorspace *ds;
+	const fz_colorspace *ss;
+	const fz_colorspace *is;
 	void *opaque;
 	void *link;
 	int n;
 };
 
-void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
+void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_colorspace *is, const fz_colorspace *ds, const fz_colorspace *ss, const fz_color_params *params);
 void fz_drop_color_converter(fz_context *ctx, fz_color_converter *cc);
 void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_colorspace *is, fz_colorspace *ds, fz_colorspace *ss, const fz_color_params *params);
 void fz_fin_cached_color_converter(fz_context *ctx, fz_color_converter *cc);

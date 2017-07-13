@@ -131,14 +131,14 @@ struct devicen
 };
 
 static void
-devicen_to_alt(fz_context *ctx, fz_colorspace *cs, const float *color, float *alt)
+devicen_to_alt(fz_context *ctx, const fz_colorspace *cs, const float *color, float *alt)
 {
 	struct devicen *devn = cs->data;
 	pdf_eval_function(ctx, devn->tint, color, cs->n, alt, devn->base->n);
 }
 
 static void
-devicen_to_rgb(fz_context *ctx, fz_colorspace *cs, const float *color, float *rgb)
+devicen_to_rgb(fz_context *ctx, const fz_colorspace *cs, const float *color, float *rgb)
 {
 	struct devicen *devn = cs->data;
 	float alt[FZ_MAX_COLORS];
