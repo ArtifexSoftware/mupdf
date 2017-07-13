@@ -825,7 +825,7 @@ fz_default_color_params(fz_context *ctx)
 
 /* Fast pixmap color conversions */
 
-static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -903,7 +903,7 @@ static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -984,7 +984,7 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 	}
 }
 
-static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1056,7 +1056,7 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1128,7 +1128,7 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1221,7 +1221,7 @@ static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1314,7 +1314,7 @@ static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1721,7 +1721,7 @@ static inline void cached_cmyk_conv(unsigned char *restrict const pr, unsigned c
 #endif
 }
 
-static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1820,7 +1820,7 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1912,7 +1912,7 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 	}
 }
 
-static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	unsigned char *s = src->samples;
 	unsigned char *d = dst->samples;
@@ -1986,7 +1986,7 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 }
 
 static void
-icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *dsts = dst->colorspace;
@@ -2074,7 +2074,7 @@ convert_to_icc_base(fz_context *ctx, fz_colorspace *srcs, float *src_f, float *d
  * be handled.  Realize those can map from index->devn->pdf-cal->icc for
  * example. */
 static void
-icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	fz_colorspace *srcs = src->colorspace;
 	fz_colorspace *base_cs = get_base_icc_space(ctx, srcs);
@@ -2127,7 +2127,7 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorsp
 }
 
 static void
-std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	float srcv[FZ_MAX_COLORS];
 	float dstv[FZ_MAX_COLORS];
@@ -2328,7 +2328,7 @@ std_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	}
 }
 
-static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params)
+static void fast_any_to_alpha(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params)
 {
 	if (!src->alpha)
 		fz_clear_pixmap_with_value(ctx, dst, 255);
@@ -3152,7 +3152,7 @@ fz_set_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs
 }
 
 fz_colorspace *
-fz_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs)
+fz_default_gray(fz_context *ctx, const fz_default_colorspaces *default_cs)
 {
 	if (default_cs)
 		return default_cs->gray;
@@ -3161,7 +3161,7 @@ fz_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs)
 }
 
 fz_colorspace *
-fz_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs)
+fz_default_rgb(fz_context *ctx, const fz_default_colorspaces *default_cs)
 {
 	if (default_cs)
 		return default_cs->rgb;
@@ -3170,7 +3170,7 @@ fz_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs)
 }
 
 fz_colorspace *
-fz_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs)
+fz_default_cmyk(fz_context *ctx, const fz_default_colorspaces *default_cs)
 {
 	if (default_cs)
 		return default_cs->cmyk;
@@ -3179,7 +3179,7 @@ fz_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs)
 }
 
 fz_colorspace *
-fz_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs)
+fz_default_output_intent(fz_context *ctx, const fz_default_colorspaces *default_cs)
 {
 	if (default_cs)
 		return default_cs->oi;

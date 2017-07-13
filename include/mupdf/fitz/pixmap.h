@@ -336,7 +336,7 @@ struct fz_pixmap_s
 
 void fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix);
 
-void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *r);
+void fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *r, const fz_default_colorspaces *default_cs);
 void fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 fz_pixmap *fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray);
 size_t fz_pixmap_size(fz_context *ctx, fz_pixmap *pix);
@@ -361,7 +361,7 @@ void fz_unpack_tile(fz_context *ctx, fz_pixmap *dst, unsigned char * restrict sr
 	fz_pixmap_converter: Color convert a pixmap. The passing of default_cs is needed due to the base cs of the image possibly
 	needing to be treated as being in one of the page default color spaces.
 */
-typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_colorspace *prf, fz_default_colorspaces *default_cs, const fz_color_params *color_params);
+typedef void (fz_pixmap_converter)(fz_context *ctx, fz_pixmap *dp, fz_pixmap *sp, fz_colorspace *prf, const fz_default_colorspaces *default_cs, const fz_color_params *color_params);
 fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *ds, fz_colorspace *ss);
 
 /*

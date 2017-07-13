@@ -233,7 +233,7 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 				break;
 		}
 		if (prev)
-			fz_copy_pixmap_rect(ctx, dest, prev, &bbox);
+			fz_copy_pixmap_rect(ctx, dest, prev, &bbox, dev->default_cs);
 		else
 			fz_clear_pixmap(ctx, dest);
 	}
@@ -509,7 +509,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
 		fz_clear_pixmap(ctx, state[1].mask);
 		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
-		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox);
+		fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state[1].shape)
 		{
 			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
@@ -588,7 +588,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
 		else
-			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox);
+			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state->shape)
 		{
 			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
@@ -908,7 +908,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, dest);
 		else
-			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox);
+			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox, dev->default_cs);
 		if (state->shape)
 		{
 			shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
@@ -1034,7 +1034,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
 		else
-			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox);
+			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state->shape)
 		{
 			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
@@ -1158,7 +1158,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		if (state->dest->alpha)
 			fz_clear_pixmap(ctx, dest);
 		else
-			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox);
+			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox, dev->default_cs);
 		if (shape)
 		{
 			shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
@@ -1609,7 +1609,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
 		else
-			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox);
+			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
 		if (state->shape)
 		{
 			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
@@ -1833,7 +1833,7 @@ fz_draw_end_mask(fz_context *ctx, fz_device *devp)
 		/* create new dest scratch buffer */
 		fz_pixmap_bbox(ctx, temp, &bbox);
 		dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->alpha);
-		fz_copy_pixmap_rect(ctx, dest, state->dest, &bbox);
+		fz_copy_pixmap_rect(ctx, dest, state->dest, &bbox, dev->default_cs);
 
 		/* push soft mask as clip mask */
 		state[1].dest = dest;
@@ -1889,7 +1889,7 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_co
 		}
 		else
 		{
-			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox);
+			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox, dev->default_cs);
 		}
 
 		if (blendmode == 0 && alpha == 1.0f && isolated)

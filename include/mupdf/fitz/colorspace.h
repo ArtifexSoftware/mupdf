@@ -170,9 +170,9 @@ void fz_set_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs, fz_
 void fz_set_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
 void fz_set_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
 
-fz_colorspace *fz_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs);
-fz_colorspace *fz_default_rgb(fz_context *ctx, fz_default_colorspaces *default_cs);
-fz_colorspace *fz_default_cmyk(fz_context *ctx, fz_default_colorspaces *default_cs);
-fz_colorspace *fz_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs);
+fz_colorspace *fz_default_gray(fz_context *ctx, const fz_default_colorspaces *default_cs);
+fz_colorspace *fz_default_rgb(fz_context *ctx, const fz_default_colorspaces *default_cs);
+fz_colorspace *fz_default_cmyk(fz_context *ctx, const fz_default_colorspaces *default_cs);
+fz_colorspace *fz_default_output_intent(fz_context *ctx, const fz_default_colorspaces *default_cs);
 
 #endif

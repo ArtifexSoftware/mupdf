@@ -492,11 +492,11 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 }
 
 void
-fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *b)
+fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *b, const fz_default_colorspaces *default_cs)
 {
-	const unsigned char *srcp;
+	unsigned char *srcp;
 	unsigned char *destp;
-	int x, y, w, destspan, srcspan;
+	int y, w, destspan, srcspan;
 	fz_irect local_b, bb;
 
 	local_b = *b;
@@ -523,81 +523,18 @@ fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_i
 		}
 		while (--y);
 	}
-	else if (src->n == 2 && dest->n == 4)
-	{
-		/* Copy, and convert from grey+alpha to rgb+alpha */
-		srcspan -= w*2;
-		destspan -= w*4;
-		do
-		{
-			for (x = w; x > 0; x--)
-			{
-				unsigned char v = *srcp++;
-				unsigned char a = *srcp++;
-				*destp++ = v;
-				*destp++ = v;
-				*destp++ = v;
-				*destp++ = a;
-			}
-			srcp += srcspan;
-			destp += destspan;
-		}
-		while (--y);
-	}
-	else if (src->n == 1 + src->alpha && dest->n == 3 + dest->alpha)
-	{
-		assert("FIXME" == NULL);
-	}
-	else if (src->n == 4 && dest->n == 2)
-	{
-		/* Copy, and convert from rgb+alpha to grey+alpha */
-		srcspan -= w*4;
-		destspan -= w*2;
-		do
-		{
-			for (x = w; x > 0; x--)
-			{
-				int v;
-				v = *srcp++;
-				v += *srcp++;
-				v += *srcp++;
-				*destp++ = (unsigned char)((v+1)/3);
-				*destp++ = *srcp++;
-			}
-			srcp += srcspan;
-			destp += destspan;
-		}
-		while (--y);
-	}
-	else if (src->n == 3 + src->alpha && dest->n == 1 + dest->alpha)
-	{
-		assert("FIXME" == NULL);
-	}
 	else
 	{
-		/* FIXME: Crap conversion */
-		int z;
-		int sn = src->n-1;
-		int dn = dest->n-1;
+		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dest->colorspace, src->colorspace);
+		fz_pixmap fake_src = *src;
 
-		srcspan -= w*src->n;
-		destspan -= w*dest->n;
-		do
-		{
-			for (x = w; x > 0; x--)
-			{
-				int v = 0;
-				for (z = sn; z > 0; z--)
-					v += *srcp++;
-				v = (v * dn + (sn>>1)) / sn;
-				for (z = dn; z > 0; z--)
-					*destp++ = (unsigned char)v;
-				*destp++ = *srcp++;
-			}
-			srcp += srcspan;
-			destp += destspan;
-		}
-		while (--y);
+		fake_src.x = local_b.x0;
+		fake_src.y = local_b.y0;
+		fake_src.w = w;
+		fake_src.h = y;
+		fake_src.samples = srcp;
+
+		pc(ctx, dest, &fake_src, NULL, default_cs, fz_default_color_params(ctx));
 	}
 }
 
