@@ -70,6 +70,10 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 				}
 			}
 		}
+		else
+		{
+			colorspace = fz_default_output_intent(ctx, default_cs);
+		}
 		fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), colorspace, 1, 0, 0, 1);
 	}
 
