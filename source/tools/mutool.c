@@ -13,6 +13,7 @@
 
 int muconvert_main(int argc, char *argv[]);
 int mudraw_main(int argc, char *argv[]);
+int mutrace_main(int argc, char *argv[]);
 int murun_main(int argc, char *argv[]);
 
 int pdfclean_main(int argc, char *argv[]);
@@ -38,6 +39,7 @@ static struct {
 	{ pdfcreate_main, "create", "create pdf document" },
 #endif
 	{ mudraw_main, "draw", "convert document" },
+	{ mutrace_main, "trace", "trace device calls" },
 #if FZ_ENABLE_PDF
 	{ pdfextract_main, "extract", "extract font and image resources" },
 #endif

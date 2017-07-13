@@ -332,7 +332,7 @@ static int
 fz_trace_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz_rect *view, float xstep, float ystep, const fz_matrix *ctm, int id)
 {
 	fz_output *out = ((fz_trace_device*)dev)->out;
-	fz_write_printf(ctx, out, "<tile");
+	fz_write_printf(ctx, out, "<tile id=\"%d\"", id);
 	fz_write_printf(ctx, out, " area=\"%g %g %g %g\"", area->x0, area->y0, area->x1, area->y1);
 	fz_write_printf(ctx, out, " view=\"%g %g %g %g\"", view->x0, view->y0, view->x1, view->y1);
 	fz_write_printf(ctx, out, " xstep=\"%g\" ystep=\"%g\"", xstep, ystep);
