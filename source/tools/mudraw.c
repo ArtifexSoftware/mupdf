@@ -45,34 +45,35 @@ typedef struct
 {
 	char *suffix;
 	int format;
+	int spots;
 } suffix_t;
 
 static const suffix_t suffix_table[] =
 {
-	{ ".png", OUT_PNG },
-	{ ".pgm", OUT_PGM },
-	{ ".ppm", OUT_PPM },
-	{ ".pnm", OUT_PNM },
-	{ ".pam", OUT_PAM },
-	{ ".pbm", OUT_PBM },
-	{ ".pkm", OUT_PKM },
-	{ ".svg", OUT_SVG },
-	{ ".pwg", OUT_PWG },
-	{ ".pcl", OUT_PCL },
+	{ ".png", OUT_PNG, 0 },
+	{ ".pgm", OUT_PGM, 0 },
+	{ ".ppm", OUT_PPM, 0 },
+	{ ".pnm", OUT_PNM, 0 },
+	{ ".pam", OUT_PAM, 0 },
+	{ ".pbm", OUT_PBM, 0 },
+	{ ".pkm", OUT_PKM, 0 },
+	{ ".svg", OUT_SVG, 0 },
+	{ ".pwg", OUT_PWG, 0 },
+	{ ".pcl", OUT_PCL, 0 },
 #if FZ_ENABLE_PDF
-	{ ".pdf", OUT_PDF },
+	{ ".pdf", OUT_PDF, 0 },
 #endif
-	{ ".psd", OUT_PSD },
-	{ ".ps", OUT_PS },
-	{ ".tga", OUT_TGA },
+	{ ".psd", OUT_PSD, 1 },
+	{ ".ps", OUT_PS, 0 },
+	{ ".tga", OUT_TGA, 0 },
 
-	{ ".txt", OUT_TEXT },
-	{ ".text", OUT_TEXT },
-	{ ".html", OUT_HTML },
-	{ ".stext", OUT_STEXT },
+	{ ".txt", OUT_TEXT, 0 },
+	{ ".text", OUT_TEXT, 0 },
+	{ ".html", OUT_HTML, 0 },
+	{ ".stext", OUT_STEXT, 0 },
 
-	{ ".trace", OUT_TRACE },
-	{ ".gproof", OUT_GPROOF },
+	{ ".trace", OUT_TRACE, 0 },
+	{ ".gproof", OUT_GPROOF, 0 },
 };
 
 typedef struct
@@ -250,6 +251,7 @@ static int lowmemory = 0;
 static int errored = 0;
 static fz_stext_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
+static int spots = 0;
 static int alpha;
 static char *filename;
 static int files = 0;
@@ -278,6 +280,7 @@ static struct {
 	fz_display_list *list;
 	fz_page *page;
 	int interptime;
+	fz_separations *seps;
 } bgprint;
 
 static struct {
@@ -482,7 +485,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 	}
 }
 
-static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *filename, int bg)
+static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, int pagenum, fz_cookie *cookie, int start, int interptime, char *filename, int bg, fz_separations *seps)
 {
 	fz_rect mediabox;
 	fz_device *dev = NULL;
@@ -498,6 +501,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_separations(ctx, seps);
 		fz_drop_page(ctx, page);
 		fz_rethrow(ctx);
 	}
@@ -525,6 +529,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_catch(ctx)
 		{
 			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
@@ -575,6 +580,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_catch(ctx)
 		{
 			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
@@ -615,6 +621,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_catch(ctx)
 		{
 			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
@@ -663,6 +670,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_catch(ctx)
 		{
 			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
@@ -774,7 +782,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 					workers[band].tbounds = tbounds;
 					memset(&workers[band].cookie, 0, sizeof(fz_cookie));
 					workers[band].list = list;
-					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, NULL, alpha);
+					workers[band].pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, seps, alpha);
 					fz_set_pixmap_resolution(ctx, workers[band].pix, resolution, resolution);
 #ifndef DISABLE_MUTHREADS
 					DEBUG_THREADS(("Worker %d, Pre-triggering band %d\n", band, band));
@@ -786,7 +794,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 			else
 			{
-				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, NULL, alpha);
+				pix = fz_new_pixmap_with_bbox(ctx, colorspace, &band_ibounds, seps, alpha);
 				fz_set_pixmap_resolution(ctx, pix, resolution, resolution);
 			}
 
@@ -898,6 +906,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_catch(ctx)
 		{
 			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
@@ -907,6 +916,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 	if (!output_append)
 		file_level_trailers(ctx);
+
+	fz_drop_separations(ctx, seps);
 
 	fz_drop_page(ctx, page);
 
@@ -990,9 +1001,11 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_cookie cookie = { 0 };
 	int first_page = !output_append;
 	fz_rect bounds;
+	fz_separations *seps = NULL;
 
 	fz_var(list);
 	fz_var(dev);
+	fz_var(seps);
 
 	start = (showtime ? gettime() : 0);
 
@@ -1001,6 +1014,25 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	/* Output any file level (as opposed to page level) headers. */
 	if (first_page)
 		file_level_headers(ctx);
+
+	if (spots)
+	{
+		fz_try(ctx)
+		{
+			seps = fz_page_separations(ctx, page);
+			if (seps)
+			{
+				int i, n = fz_count_separations(ctx, seps);
+				for (i = 0; i < n; i++)
+					fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_SPOT);
+			}
+		}
+		fz_catch(ctx)
+		{
+			fz_drop_page(ctx, page);
+			fz_rethrow(ctx);
+		}
+	}
 
 	if (uselist)
 	{
@@ -1021,6 +1053,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		fz_catch(ctx)
 		{
 			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
 			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
@@ -1053,6 +1086,9 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		}
 		fz_catch(ctx)
 		{
+			fz_drop_display_list(ctx, list);
+			fz_drop_separations(ctx, seps);
+			fz_drop_page(ctx, page);
 			fz_rethrow(ctx);
 		}
 		fprintf(stderr, " %s", iscolor ? "color" : "grayscale");
@@ -1080,6 +1116,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		bgprint.started = 1;
 		bgprint.page = page;
 		bgprint.list = list;
+		bgprint.seps = seps;
 		bgprint.filename = filename;
 		bgprint.pagenum = pagenum;
 		bgprint.interptime = start;
@@ -1093,7 +1130,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	else
 	{
 		fprintf(stderr, "page %s %d", filename, pagenum);
-		dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0);
+		dodrawpage(ctx, page, list, pagenum, &cookie, start, 0, filename, 0, seps);
 	}
 }
 
@@ -1245,7 +1282,7 @@ static void bgprint_worker(void *arg)
 		{
 			int start = gettime();
 			memset(&cookie, 0, sizeof(cookie));
-			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1);
+			dodrawpage(bgprint.ctx, bgprint.page, bgprint.list, pagenum, &cookie, start, bgprint.interptime, bgprint.filename, 1, bgprint.seps);
 		}
 		DEBUG_THREADS(("BGPrint completed page %d\n", pagenum));
 		mu_trigger_semaphore(&bgprint.stop);
@@ -1558,6 +1595,7 @@ int mudraw_main(int argc, char **argv)
 			if (!strcmp(format, suffix_table[i].suffix+1))
 			{
 				output_format = suffix_table[i].format;
+				spots = suffix_table[i].spots;
 				break;
 			}
 		}
@@ -1580,6 +1618,7 @@ int mudraw_main(int argc, char **argv)
 			{
 				suffix = s+1;
 				output_format = suffix_table[i].format;
+				spots = suffix_table[i].spots;
 				i = 0;
 			}
 		}
