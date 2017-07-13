@@ -74,6 +74,9 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
 	unsigned char *data;
 	size_t size = fz_buffer_storage(ctx, buffer, &data);
+	const fz_colorspace *cs_cmyk = cs;
+	if (fz_colorspace_n(ctx, cs) != 4)
+		cs_cmyk = fz_device_cmyk(ctx);
 
 	if (!fz_colorspace_is_subtractive(ctx, cs))
 		writer->num_additive = fz_colorspace_n(ctx, cs);
@@ -110,7 +113,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 	len = 0;
 	for (i = 0; i < s; i++)
 	{
-		const char *name = fz_get_separation(ctx, seps, i, NULL, NULL);
+		const char *name = fz_separation_name(ctx, seps, i);
 		char text[32];
 		size_t len2;
 		if (name == NULL)
@@ -140,7 +143,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 		fz_write_int32_be(ctx, out, (len + 1)&~1);
 		for (i = 0; i < s; i++) {
 			size_t len2;
-			const char *name = fz_get_separation(ctx, seps, i, NULL, NULL);
+			const char *name = fz_separation_name(ctx, seps, i);
 			char text[32];
 			if (name == NULL)
 			{
@@ -164,14 +167,14 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 		fz_write_int16_be(ctx, out, 0); /* PString */
 		fz_write_int32_be(ctx, out, 14 * s); /* Length */
 		for (i = 0; i < s; i++) {
-			uint32_t cmyk;
-			(void)fz_get_separation(ctx, seps, i, NULL, &cmyk);
+			float cmyk[4];
+			fz_separation_equivalent(ctx, seps, i, NULL, cs_cmyk, NULL, cmyk);
 			fz_write_int16_be(ctx, out, 02); /* CMYK */
 			/* PhotoShop stores all component values as if they were additive. */
-			fz_write_int16_be(ctx, out, 257 * (cmyk & 0xFF));/* Cyan */
-			fz_write_int16_be(ctx, out, 257 * ((cmyk>>8) & 0xFF));/* Magenta */
-			fz_write_int16_be(ctx, out, 257 * ((cmyk>>16) & 0xFF));/* Yellow */
-			fz_write_int16_be(ctx, out, 257 * ((cmyk>>24) & 0xFF));/* Black */
+			fz_write_int16_be(ctx, out, 65535 * (1-cmyk[0]));/* Cyan */
+			fz_write_int16_be(ctx, out, 65535 * (1-cmyk[1]));/* Magenta */
+			fz_write_int16_be(ctx, out, 65535 * (1-cmyk[2]));/* Yellow */
+			fz_write_int16_be(ctx, out, 65535 * (1-cmyk[3]));/* Black */
 			fz_write_int16_be(ctx, out, 0); /* Opacity 0 to 100 */
 			fz_write_byte(ctx, out, 2); /* Don't know */
 			fz_write_byte(ctx, out, 0); /* Padding - Always Zero */

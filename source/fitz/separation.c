@@ -12,8 +12,10 @@ struct fz_separations_s
 	int num_separations;
 	int controllable;
 	uint32_t state[(2*FZ_MAX_SEPARATIONS + 31) / 32];
-	uint32_t equiv_rgb[FZ_MAX_SEPARATIONS];
-	uint32_t equiv_cmyk[FZ_MAX_SEPARATIONS];
+	fz_colorspace *cs[FZ_MAX_SEPARATIONS];
+	uint8_t cs_pos[FZ_MAX_SEPARATIONS];
+	uint32_t rgba[FZ_MAX_SEPARATIONS];
+	uint32_t cmyk[FZ_MAX_SEPARATIONS];
 	char *name[FZ_MAX_SEPARATIONS];
 };
 
@@ -39,12 +41,15 @@ void fz_drop_separations(fz_context *ctx, fz_separations *sep)
 	{
 		int i;
 		for (i = 0; i < sep->num_separations; i++)
+		{
 			fz_free(ctx, sep->name[i]);
+			fz_drop_colorspace(ctx, sep->cs[i]);
+		}
 		fz_free(ctx, sep);
 	}
 }
 
-void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint32_t cmyk, const char *name)
+void fz_add_separation(fz_context *ctx, fz_separations *sep, const char *name, fz_colorspace *cs, int colorant)
 {
 	int n;
 
@@ -56,8 +61,26 @@ void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgb, uint3
 		fz_throw(ctx, FZ_ERROR_GENERIC, "too many separations");
 
 	sep->name[n] = fz_strdup(ctx, name);
-	sep->equiv_rgb[n] = rgb;
-	sep->equiv_cmyk[n] = cmyk;
+	sep->cs[n] = fz_keep_colorspace(ctx, cs);
+	sep->cs_pos[n] = colorant;
+
+	sep->num_separations++;
+}
+
+void fz_add_separation_equivalents(fz_context *ctx, fz_separations *sep, uint32_t rgba, uint32_t cmyk, const char *name)
+{
+	int n;
+
+	if (!sep)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "can't add to non-existent separations");
+
+	n = sep->num_separations;
+	if (n == FZ_MAX_SEPARATIONS)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "too many separations");
+
+	sep->name[n] = fz_strdup(ctx, name);
+	sep->rgba[n] = rgba;
+	sep->cmyk[n] = cmyk;
 
 	sep->num_separations++;
 }
@@ -128,21 +151,16 @@ int fz_separations_all_composite(fz_context *ctx, const fz_separations *sep)
 		return 1;
 
 	for (i = 0; i < (FZ_MAX_SEPARATIONS + 31) / 32; i++)
-		if (sep->state[i] != FZ_SEPARATION_COMPOSITE)
+		if (sep_state(sep, i) != FZ_SEPARATION_COMPOSITE)
 			return 0;
 
 	return 1;
 }
 
-const char *fz_get_separation(fz_context *ctx, const fz_separations *sep, int separation, uint32_t *rgb, uint32_t *cmyk)
+const char *fz_separation_name(fz_context *ctx, const fz_separations *sep, int separation)
 {
 	if (!sep || separation < 0 || separation >= sep->num_separations)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "can't access non-existent separation");
-
-	if (rgb)
-		*rgb = sep->equiv_rgb[separation];
-	if (cmyk)
-		*cmyk = sep->equiv_cmyk[separation];
 
 	return sep->name[separation];
 }
@@ -207,8 +225,7 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 				beh = FZ_SEPARATION_SPOT;
 			fz_set_separation_behavior(ctx, clone, j, beh);
 			clone->name[j] = sep->name[i] ? fz_strdup(ctx, sep->name[i]) : NULL;
-			clone->equiv_rgb[j] = sep->equiv_rgb[i];
-			clone->equiv_cmyk[j] = sep->equiv_cmyk[i];
+			clone->cs[j] = fz_keep_colorspace(ctx, sep->cs[i]);
 		}
 	}
 	fz_catch(ctx)
@@ -221,7 +238,7 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 }
 
 fz_pixmap *
-fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *dseps, fz_colorspace *prf, fz_default_colorspaces *default_cs)
+fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *dseps, const fz_color_params *color_params, fz_colorspace *prf, fz_default_colorspaces *default_cs)
 {
 	fz_irect local_bbox;
 	fz_pixmap *dst;
@@ -245,11 +262,11 @@ fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const 
 	else
 		dst->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
-	return fz_copy_pixmap_area_converting_seps(ctx, dst, src, prf, default_cs);
+	return fz_copy_pixmap_area_converting_seps(ctx, dst, src, color_params, prf, default_cs);
 }
 
 fz_pixmap *
-fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *prf, fz_default_colorspaces *default_cs)
+fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, const fz_color_params *color_params, fz_colorspace *prf, fz_default_colorspaces *default_cs)
 {
 	int dw = dst->w;
 	int dh = dst->h;
@@ -360,33 +377,12 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	/* Still need to handle mapping 'lost' spots down to process colors */
 	for (i = 0; i < sseps_n; i++)
 	{
-		uint8_t convert[4];
-		uint32_t c;
+		float convert[FZ_MAX_COLORS];
 
 		if (mapped[i])
 			continue;
 		/* Src spot i is not mapped. We need to convert that down. */
-		switch (dc)
-		{
-		case 1: /* Grey */
-			/* FIXME: Should we hold a grey equivalent in each spot? */
-			c = sseps->equiv_rgb[i];
-			convert[0] = ((c & 0xff) * 77 + ((c>>8) & 0xff) * 150 + ((c>>16) & 0xff) * 28 + 255)>>8;
-			break;
-		case 3: /* RGB */
-			c = sseps->equiv_rgb[i];
-			convert[0] = c;
-			convert[1] = c>>8;
-			convert[2] = c>>16;
-			break;
-		case 4: /* CMYK */
-			c = sseps->equiv_cmyk[i];
-			convert[0] = c;
-			convert[1] = c>>8;
-			convert[2] = c>>16;
-			convert[3] = c>>24;
-			break;
-		}
+		fz_separation_equivalent(ctx, sseps, i, color_params, dst->colorspace, prf, convert);
 
 		{
 			unsigned char *dd = ddata;
@@ -395,11 +391,11 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 			{
 				for (x = dw; x > 0; x--)
 				{
-					unsigned char  v = sd[i];
+					unsigned char v = sd[i];
 					if (v == 0)
 						continue;
 					for (i = 0; i < dc; i++)
-						dd[i] = fz_clampi(dd[i] + fz_mul255(v, convert[i]), 0, 255);
+						dd[i] = fz_clampi(dd[i] + v * convert[i], 0, 255);
 					dd += dn;
 					sd += sn;
 				}
@@ -500,4 +496,34 @@ found_process:
 		for (i = 0; i < dc; i++)
 			dst_color[i] += converted[i];
 	}
+}
+
+void fz_separation_equivalent(fz_context *ctx, const fz_separations *seps, int i, const fz_color_params *color_params, const fz_colorspace *dst_cs, const fz_colorspace *prf, float *convert)
+{
+	float colors[FZ_MAX_COLORS];
+
+	if (!seps->cs[i])
+	{
+		switch (fz_colorspace_n(ctx, dst_cs))
+		{
+		case 3:
+			convert[0] = (seps->rgba[i] & 0xff)/ 255.0f;
+			convert[1] = ((seps->rgba[i]>>8) & 0xff)/ 255.0f;
+			convert[2] = ((seps->rgba[i]>>16) & 0xff)/ 255.0f;
+			convert[3] = ((seps->rgba[i]>>24) & 0xff)/ 255.0f;
+			return;
+		case 4:
+			convert[0] = (seps->cmyk[i] & 0xff)/ 255.0f;
+			convert[1] = ((seps->cmyk[i]>>8) & 0xff)/ 255.0f;
+			convert[2] = ((seps->cmyk[i]>>16) & 0xff)/ 255.0f;
+			convert[3] = ((seps->cmyk[i]>>24) & 0xff)/ 255.0f;
+			return;
+		default:
+			fz_throw(ctx, FZ_ERROR_GENERIC, "Cannot return equivalent in this colorspace");
+		}
+	}
+
+	memset(colors, 0, sizeof(float) * fz_colorspace_n(ctx, seps->cs[i]));
+	colors[seps->cs_pos[i]] = 1;
+	fz_convert_color(ctx, color_params, prf, dst_cs, convert, seps->cs[i], colors);
 }

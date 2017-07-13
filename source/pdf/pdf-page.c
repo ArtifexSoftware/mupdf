@@ -638,42 +638,115 @@ pdf_page_transform(fz_context *ctx, pdf_page *page, fz_rect *page_mediabox, fz_m
 	pdf_page_obj_transform(ctx, page->obj, page_mediabox, page_ctm);
 }
 
-fz_separations *
-pdf_page_separations(fz_context *ctx, pdf_page *page)
+static void
+find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 {
-	pdf_obj *res = pdf_page_resources(ctx, page);
-	fz_separations *seps = NULL;
-	int i, len;
+	int i, n;
+	pdf_obj *nameobj = pdf_array_get(ctx, obj, 0);
 
-	res = pdf_dict_get(ctx, res, PDF_NAME_ColorSpace);
-	if (!res)
-		return NULL;
+	if (pdf_name_eq(ctx, nameobj, PDF_NAME_Separation))
+	{
+		fz_colorspace *cs;
+		const char *name = pdf_to_name(ctx, pdf_array_get(ctx, obj, 1));
 
-	fz_var(seps);
+		/* Skip 'special' colorants. */
+		if (!strcmp(name, "Black") ||
+			!strcmp(name, "Cyan") ||
+			!strcmp(name, "Magenta") ||
+			!strcmp(name, "Yellow") ||
+			!strcmp(name, "All") ||
+			!strcmp(name, "None"))
+			return;
+
+		n = fz_count_separations(ctx, *seps);
+		for (i = 0; i < n; i++)
+		{
+			if (!strcmp(name, fz_separation_name(ctx, *seps, i)))
+				return; /* Got that one already */
+		}
+
+		cs = pdf_load_colorspace(ctx, obj);
+		if (!*seps)
+			*seps = fz_new_separations(ctx, 0);
+		fz_add_separation(ctx, *seps, name, cs, 0);
+		fz_drop_colorspace(ctx, cs);
+	}
+	else if (pdf_name_eq(ctx, nameobj, PDF_NAME_Indexed))
+	{
+		find_seps(ctx, seps, pdf_array_get(ctx, obj, 1));
+	}
+	else if (pdf_name_eq(ctx, nameobj, PDF_NAME_DeviceN))
+	{
+		/* If the separation colorants exists for this DeviceN color space
+		 * add those prior to our search for DeviceN color */
+		pdf_obj *cols = pdf_dict_get(ctx, pdf_array_get(ctx, obj, 4), PDF_NAME_Colorants);
+		int i, n = pdf_dict_len(ctx, cols);
+		for (i = 0; i < n; i++)
+			find_seps(ctx, seps, pdf_dict_get_val(ctx, cols, i));
+	}
+}
+
+static void
+find_devn(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
+{
+	int i, j, n, m;
+	pdf_obj *arr;
+	pdf_obj *nameobj = pdf_array_get(ctx, obj, 0);
+
+	if (!pdf_name_eq(ctx, nameobj, PDF_NAME_DeviceN))
+		return;
+
+	arr = pdf_array_get(ctx, obj, 1);
+	m = pdf_array_len(ctx, arr);
+	for (j = 0; j < m; j++)
+	{
+		fz_colorspace *cs;
+		const char *name = pdf_to_name(ctx, pdf_array_get(ctx, arr, j));
+
+		/* Skip 'special' colorants. */
+		if (!strcmp(name, "Black") ||
+			!strcmp(name, "Cyan") ||
+			!strcmp(name, "Magenta") ||
+			!strcmp(name, "Yellow") ||
+			!strcmp(name, "All") ||
+			!strcmp(name, "None"))
+			continue;
+
+		n = fz_count_separations(ctx, *seps);
+		for (i = 0; i < n; i++)
+		{
+			if (!strcmp(name, fz_separation_name(ctx, *seps, i)))
+				break; /* Got that one already */
+		}
+
+		if (i == n)
+		{
+			cs = pdf_load_colorspace(ctx, obj);
+			if (!*seps)
+				*seps = fz_new_separations(ctx, 0);
+			fz_add_separation(ctx, *seps, name, cs, j);
+			fz_drop_colorspace(ctx, cs);
+		}
+	}
+}
+
+typedef void (res_finder_fn)(fz_context *ctx, fz_separations **seps, pdf_obj *obj);
+
+static void
+search_res(fz_context *ctx, fz_separations **seps, pdf_obj *res, res_finder_fn *fn)
+{
+	int i = 0;
+	int len = pdf_dict_len(ctx, res);
+
 	fz_var(i);
 
-	len = pdf_dict_len(ctx, res);
-
-	i = 0;
 	while (i < len)
 	{
 		fz_try(ctx)
 		{
 			do
 			{
-				pdf_obj *obj;
-				i++;
-				obj = pdf_dict_get_val(ctx, res, i-1);
-
-				if (pdf_name_eq(ctx, pdf_array_get(ctx, obj, 0), PDF_NAME_Separation))
-				{
-					uint32_t rgba = 0; /* FIXME */
-					uint32_t cmyk = 0; /* FIXME */
-					const char *name = pdf_to_name(ctx, pdf_array_get(ctx, obj, 1));
-					if (!seps)
-						seps = fz_new_separations(ctx, 0);
-					fz_add_separation(ctx, seps, rgba, cmyk, name);
-				}
+				fn(ctx, seps, pdf_dict_get_val(ctx, res, i++));
 			}
 			while (i < len);
 		}
@@ -682,6 +755,71 @@ pdf_page_separations(fz_context *ctx, pdf_page *page)
 			/* Don't die because a single separation failed to load */
 		}
 	}
+}
+
+static void
+scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_fn *fn)
+{
+	pdf_obj *forms;
+	pdf_obj *sh;
+	pdf_obj *xo = NULL;
+	int i, len;
+
+	fz_var(xo);
+
+	if (pdf_mark_obj(ctx, res))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in resources");
+
+	fz_try(ctx)
+	{
+		search_res(ctx, seps, pdf_dict_get(ctx, res, PDF_NAME_ColorSpace), fn);
+
+		sh = pdf_dict_get(ctx, res, PDF_NAME_Shading);
+		len = pdf_dict_len(ctx, sh);
+		for (i = 0; i < len; i++)
+			fn(ctx, seps, pdf_dict_get(ctx, pdf_dict_get_val(ctx, sh, i), PDF_NAME_ColorSpace));
+
+		forms = pdf_dict_get(ctx, res, PDF_NAME_XObject);
+		len = pdf_dict_len(ctx, forms);
+
+		/* Recurse on the forms. Throw if we cycle */
+		for (i = 0; i < len; i++)
+		{
+			xo = pdf_dict_get_val(ctx, forms, i++);
+
+			if (pdf_mark_obj(ctx, xo))
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in forms");
+
+			scan_page_seps(ctx, pdf_dict_get(ctx, xo, PDF_NAME_Resources), seps, fn);
+			pdf_unmark_obj(ctx, xo);
+			xo = NULL;
+		}
+	}
+	fz_always(ctx)
+	{
+		pdf_unmark_obj(ctx, xo);
+		pdf_unmark_obj(ctx, res);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+fz_separations *
+pdf_page_separations(fz_context *ctx, pdf_page *page)
+{
+	pdf_obj *res = pdf_page_resources(ctx, page);
+	fz_separations *seps = NULL;
+
+	/* Run through and look for separations first. This is
+	 * because separations are simplest to deal with, and
+	 * because DeviceN may be implemented on top of separations.
+	 */
+	scan_page_seps(ctx, res, &seps, find_seps);
+
+	/* Now run through again, and look for DeviceNs. These may
+	 * have spot colors in that aren't defined in terms of
+	 * separations. */
+	scan_page_seps(ctx, res, &seps, find_devn);
 
 	return seps;
 }

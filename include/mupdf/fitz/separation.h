@@ -40,8 +40,11 @@ fz_separations *fz_keep_separations(fz_context *ctx, fz_separations *sep);
 /* Drop a reference */
 void fz_drop_separations(fz_context *ctx, fz_separations *sep);
 
-/* Add a separation (RGBA and CYMK equivalents, null terminated name) */
-void fz_add_separation(fz_context *ctx, fz_separations *sep, uint32_t rgba, uint32_t cmyk, const char *name);
+/* Add a separation (null terminated name, colorspace) */
+void fz_add_separation(fz_context *ctx, fz_separations *sep, const char *name, fz_colorspace *cs, int cs_channel);
+
+/* Add a separation with equivalents (null terminated name, colorspace) (old, deprecated) */
+void fz_add_separation_equivalents(fz_context *ctx, fz_separations *sep, uint32_t rgba, uint32_t cmyk, const char *name);
 
 /* Control the rendering of a given separation */
 void fz_set_separation_behavior(fz_context *ctx, fz_separations *sep, int separation, fz_separation_behavior behavior);
@@ -52,8 +55,8 @@ fz_separation_behavior fz_separation_current_behavior(fz_context *ctx, const fz_
 /* Quick test for all separations composite (the common case) */
 int fz_separations_all_composite(fz_context *ctx, const fz_separations *sep);
 
-/* Read separation details */
-const char *fz_get_separation(fz_context *ctx, const fz_separations *sep, int separation, uint32_t *rgb, uint32_t *cmyk);
+/* Read separation name */
+const char *fz_separation_name(fz_context *ctx, const fz_separations *sep, int separation);
 
 /* Count the number of separations */
 int fz_count_separations(fz_context *ctx, const fz_separations *sep);
@@ -71,5 +74,8 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 /* Convert a color given in terms of one colorspace,
  * to a color in terms of another colorspace/separations. */
 void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_params, const fz_colorspace *dst_cs, const fz_separations *dst_sep, float *dst_color, const fz_colorspace *src_cs, const float *src_color);
+
+/* Get the equivalent separation color in a given colorspace. */
+void fz_separation_equivalent(fz_context *ctx, const fz_separations *seps, int i, const fz_color_params *color_params, const fz_colorspace *dst_cs, const fz_colorspace *prf, float *convert);
 
 #endif

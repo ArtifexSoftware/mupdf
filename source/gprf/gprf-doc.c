@@ -368,13 +368,13 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 				read_sep[i] = !FZ_SEPARATION_DISABLED(ctx, image->separations, i-3);
 				if (read_sep[i])
 				{
-					uint32_t rgb, cmyk;
+					float cmyk[4];
 
-					(void)fz_get_separation(ctx, image->separations, i - 3, &rgb, &cmyk);
-					equiv[i][0] = (cmyk>> 0) & 0xFF;
-					equiv[i][1] = (cmyk>> 8) & 0xFF;
-					equiv[i][2] = (cmyk>>16) & 0xFF;
-					equiv[i][3] = (cmyk>>24) & 0xFF;
+					(void)fz_separation_equivalent(ctx, image->separations, i - 3, NULL, fz_device_cmyk(ctx), NULL, cmyk);
+					equiv[i][0] = cmyk[0] * 0xFF;
+					equiv[i][1] = cmyk[1] * 0xFF;
+					equiv[i][2] = cmyk[2] * 0xFF;
+					equiv[i][3] = cmyk[3] * 0xFF;
 				}
 			}
 		}
@@ -744,7 +744,7 @@ read_tiles(fz_context *ctx, gprf_page *page)
 			int32_t rgba = fz_read_int32_le(ctx, file);
 			int32_t cmyk = fz_read_int32_le(ctx, file);
 			fz_read_string(ctx, file, blatter, sizeof(blatter));
-			fz_add_separation(ctx, page->separations, rgba, cmyk, blatter);
+			fz_add_separation_equivalents(ctx, page->separations, rgba, cmyk, blatter);
 		}
 
 		/* Seek to the image data */
@@ -852,13 +852,6 @@ static int gprf_separation_disabled(fz_context *ctx, fz_page *page_, int sep)
 	gprf_page *page = (gprf_page *)page_;
 
 	return FZ_SEPARATION_DISABLED(ctx, page->separations, sep);
-}
-
-static const char *gprf_get_separation(fz_context *ctx, fz_page *page_, int sep, uint32_t *rgba, uint32_t*cmyk)
-{
-	gprf_page *page = (gprf_page *)page_;
-
-	return fz_get_separation(ctx, page->separations, sep, rgba, cmyk);
 }
 
 static fz_separations *
