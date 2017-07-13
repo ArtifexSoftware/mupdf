@@ -263,13 +263,6 @@ void fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma);
 void fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix);
 
 /*
-	fz_ensure_pixmap_is_additive: Convert a pixmap in a subtractive colorspace to an additive colorspace.
-
-	Pixmaps with premultiplied alpha must be in an additive colorspace.
-*/
-fz_pixmap *fz_ensure_pixmap_is_additive(fz_context *ctx, fz_pixmap *pix);
-
-/*
 	fz_convert_pixmap: Convert an existing pixmap to a desired
 	colorspace. Other properties of the pixmap, such as resolution
 	and position are copied to the converted pixmap.

@@ -568,10 +568,7 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 			}
 
 			if (pnm->alpha)
-			{
-				img = fz_ensure_pixmap_is_additive(ctx, img);
 				fz_premultiply_pixmap(ctx, img);
-			}
 		}
 		fz_catch(ctx)
 		{

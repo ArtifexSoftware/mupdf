@@ -715,18 +715,6 @@ fz_unmultiply_pixmap(fz_context *ctx, fz_pixmap *pix)
 }
 
 fz_pixmap *
-fz_ensure_pixmap_is_additive(fz_context *ctx, fz_pixmap *pix)
-{
-	if (fz_colorspace_is_subtractive(ctx, pix->colorspace))
-	{
-		fz_pixmap *rgb = fz_convert_pixmap(ctx, pix, fz_device_rgb(ctx), NULL, NULL, NULL/* FIXME */, 1);
-		fz_drop_pixmap(ctx, pix);
-		return rgb;
-	}
-	return pix;
-}
-
-fz_pixmap *
 fz_alpha_from_gray(fz_context *ctx, fz_pixmap *gray)
 {
 	fz_pixmap *alpha;

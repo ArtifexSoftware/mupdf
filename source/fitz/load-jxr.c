@@ -409,10 +409,7 @@ fz_load_jxr(fz_context *ctx, unsigned char *data, size_t size)
 	{
 		fz_unpack_tile(ctx, image, info.samples, fz_colorspace_n(ctx, info.cspace) + 1, 8, info.stride, 0);
 		if (info.has_alpha && !info.has_premul)
-		{
-			image = fz_ensure_pixmap_is_additive(ctx, image);
 			fz_premultiply_pixmap(ctx, image);
-		}
 	}
 	fz_always(ctx)
 	{
