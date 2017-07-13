@@ -1320,11 +1320,9 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 		fz_unpack_tile(ctx, image, tiff.samples, tiff.samplesperpixel, tiff.bitspersample, tiff.stride, 0);
 
 		/* We should only do this on non-pre-multiplied images, but files in the wild are bad */
+		/* TODO: check if any samples are non-premul to detect bad files */
 		if (tiff.extrasamples /* == 2 */)
-		{
-			image = fz_ensure_pixmap_is_additive(ctx, image);
 			fz_premultiply_pixmap(ctx, image);
-		}
 	}
 	fz_always(ctx)
 	{

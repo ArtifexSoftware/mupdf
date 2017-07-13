@@ -676,9 +676,6 @@ fz_premultiply_pixmap(fz_context *ctx, fz_pixmap *pix)
 	if (!pix->alpha)
 		return;
 
-	if (fz_colorspace_is_subtractive(ctx, pix->colorspace))
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot pre-multiply subtractive colors");
-
 	for (y = 0; y < pix->h; y++)
 	{
 		for (x = 0; x < pix->w; x++)
