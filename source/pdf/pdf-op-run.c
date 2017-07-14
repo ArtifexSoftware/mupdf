@@ -1250,6 +1250,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		if (transparency)
 		{
 			fz_rect bbox;
+			int isolated = pdf_xobject_isolated(ctx, xobj);
+
 			bbox = xobj_bbox;
 			fz_transform_rect(&bbox, &gstate->ctm);
 
@@ -1262,8 +1264,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 			 * if it throws an error, we must call fz_end_group. */
 			cleanup_state = 2;
 			fz_begin_group(ctx, pr->dev, &bbox,
-					pdf_xobject_colorspace(ctx, xobj),
-					(is_smask ? 1 : pdf_xobject_isolated(ctx, xobj)),
+					(isolated ? pdf_xobject_colorspace(ctx, xobj) : NULL),
+					(is_smask ? 1 : isolated),
 					pdf_xobject_knockout(ctx, xobj),
 					gstate->blendmode, gstate->fill.alpha);
 
