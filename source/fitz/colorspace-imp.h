@@ -6,6 +6,12 @@
 #include "mupdf/fitz/color-management.h"
 #include "mupdf/fitz/pixmap.h"
 
+#define FZ_ICC_PROFILE_GRAY "DeviceGray-ICCBased"
+#define FZ_ICC_PROFILE_RGB "DeviceRGB-ICCBased"
+#define FZ_ICC_PROFILE_BGR "DeviceBGR-ICCBased"
+#define FZ_ICC_PROFILE_CMYK "DeviceCMYK-ICCBased"
+#define FZ_ICC_PROFILE_LAB "Lab-ICCBased"
+
 int fz_cmm_avoid_white_fix_flag(fz_context *ctx);
 void fz_cmm_transform_pixmap(fz_context *ctx, fz_icclink *link, fz_pixmap *dst, fz_pixmap *src);
 void fz_cmm_transform_color(fz_context *ctx, fz_icclink *link, unsigned short *dst, const unsigned short *src);
@@ -20,7 +26,7 @@ struct fz_colorspace_s
 {
 	fz_storable storable;
 	size_t size;
-	char name[16];
+	char name[24];
 	int n;
 	int is_subtractive;
 	fz_colorspace_convert_fn *to_ccs;

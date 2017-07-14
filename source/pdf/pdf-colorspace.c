@@ -58,8 +58,13 @@ load_icc_based(fz_context *ctx, pdf_obj *dict, int alt)
 	{
 		if (fz_get_cmm_engine(ctx))
 		{
+			const char *name;
+			if (n == 1) name = "ICCBased-Gray";
+			else if (n == 3) name = "ICCBased-RGB";
+			else if (n == 4) name = "ICCBased-CMYK";
+			else name = "ICCBased";
 			buffer = pdf_load_stream(ctx, dict);
-			cs = fz_new_icc_colorspace(ctx, n, buffer, NULL);
+			cs = fz_new_icc_colorspace(ctx, name, n, buffer);
 		}
 	}
 	fz_always(ctx)
@@ -352,7 +357,7 @@ pdf_load_cal_gray(fz_context *ctx, pdf_obj *dict)
 	}
 	fz_catch(ctx)
 		return fz_keep_colorspace(ctx, fz_device_gray(ctx));
-	return fz_new_cal_colorspace(ctx, wp, bp, gamma, NULL);
+	return fz_new_cal_colorspace(ctx, "CalGray", wp, bp, gamma, NULL);
 }
 
 static fz_colorspace *
@@ -381,7 +386,7 @@ pdf_load_cal_rgb(fz_context *ctx, pdf_obj *dict)
 	}
 	fz_catch(ctx)
 		return fz_keep_colorspace(ctx, fz_device_rgb(ctx));
-	return fz_new_cal_colorspace(ctx, wp, bp, gamma, matrix);
+	return fz_new_cal_colorspace(ctx, "CalRGB", wp, bp, gamma, matrix);
 }
 
 /* Parse and create colorspace from PDF object */

@@ -79,25 +79,25 @@ fz_lookup_icc(fz_context *ctx, const char *name, size_t *size)
 #ifndef NO_ICC
 	if (fz_get_cmm_engine(ctx) == NULL)
 		return *size = 0, NULL;
-	if (!strcmp(name, "gray-icc")) {
+	if (!strcmp(name, FZ_ICC_PROFILE_GRAY)) {
 		extern const int fz_resources_icc_gray_icc_size;
 		extern const unsigned char fz_resources_icc_gray_icc[];
 		*size = fz_resources_icc_gray_icc_size;
 		return fz_resources_icc_gray_icc;
 	}
-	if (!strcmp(name, "rgb-icc") || !strcmp(name, "bgr-icc")) {
+	if (!strcmp(name, FZ_ICC_PROFILE_RGB) || !strcmp(name, FZ_ICC_PROFILE_BGR)) {
 		extern const int fz_resources_icc_rgb_icc_size;
 		extern const unsigned char fz_resources_icc_rgb_icc[];
 		*size = fz_resources_icc_rgb_icc_size;
 		return fz_resources_icc_rgb_icc;
 	}
-	if (!strcmp(name, "cmyk-icc")) {
+	if (!strcmp(name, FZ_ICC_PROFILE_CMYK)) {
 		extern const int fz_resources_icc_cmyk_icc_size;
 		extern const unsigned char fz_resources_icc_cmyk_icc[];
 		*size = fz_resources_icc_cmyk_icc_size;
 		return fz_resources_icc_cmyk_icc;
 	}
-	if (!strcmp(name, "lab-icc")) {
+	if (!strcmp(name, FZ_ICC_PROFILE_LAB)) {
 		extern const int fz_resources_icc_lab_icc_size;
 		extern const unsigned char fz_resources_icc_lab_icc[];
 		*size = fz_resources_icc_lab_icc_size;
@@ -154,12 +154,12 @@ clamp_default(const fz_colorspace *cs, const float *src, float *dst)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, char *name, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
 	cs->size = sizeof(fz_colorspace) + size;
-	fz_strlcpy(cs->name, name, sizeof cs->name);
+	fz_strlcpy(cs->name, name ? name : "UNKNOWN", sizeof cs->name);
 	cs->n = n;
 	cs->is_subtractive = is_subtractive;
 	cs->to_ccs = to_ccs;
@@ -726,11 +726,11 @@ void fz_set_cmm_engine(fz_context *ctx, const fz_cmm_engine *engine)
 	fz_new_cmm_context(ctx);
 	if (engine)
 	{
-		cct->gray = fz_new_icc_colorspace(ctx, 1, NULL, "gray-icc");
-		cct->rgb = fz_new_icc_colorspace(ctx, 3, NULL, "rgb-icc");
-		cct->bgr = fz_new_icc_colorspace(ctx, 3, NULL, "bgr-icc");
-		cct->cmyk = fz_new_icc_colorspace(ctx, 4, NULL, "cmyk-icc");
-		cct->lab = fz_new_icc_colorspace(ctx, 3, NULL, "lab-icc");
+		cct->gray = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_GRAY, 1, NULL);
+		cct->rgb = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_RGB, 3, NULL);
+		cct->bgr = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_BGR, 3, NULL);
+		cct->cmyk = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_CMYK, 4, NULL);
+		cct->lab = fz_new_icc_colorspace(ctx, FZ_ICC_PROFILE_LAB, 3, NULL);
 	}
 	else
 		set_no_icc(cct);
@@ -2935,7 +2935,7 @@ int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs)
 
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
 {
-	return cs ? cs->name : "";
+	return cs && cs->name ? cs->name : "";
 }
 
 static void
@@ -2978,7 +2978,7 @@ int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs)
 }
 
 fz_colorspace *
-fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name)
+fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf)
 {
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
@@ -2987,15 +2987,18 @@ fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name
 	profile = fz_malloc_struct(ctx, fz_iccprofile);
 	fz_try(ctx)
 	{
-		profile->buffer = buf;
-		if (name != NULL)
+		if (buf == NULL)
 		{
 			size_t size;
 			const unsigned char *data;
 			data = fz_lookup_icc(ctx, name, &size);
 			profile->buffer = fz_new_buffer_from_shared_data(ctx, data, size);
-			is_lab = (strcmp(name, "lab-icc") == 0);
-			profile->bgr = (strcmp(name, "bgr-icc") == 0);
+			is_lab = (strcmp(name, FZ_ICC_PROFILE_LAB) == 0);
+			profile->bgr = (strcmp(name, FZ_ICC_PROFILE_BGR) == 0);
+		}
+		else
+		{
+			profile->buffer = fz_keep_buffer(ctx, buf);
 		}
 
 		fz_cmm_init_profile(ctx, profile);
@@ -3003,16 +3006,14 @@ fz_new_icc_colorspace(fz_context *ctx, int num, fz_buffer *buf, const char *name
 		/* Check if correct type */
 		if (num != profile->num_devcomp)
 		{
-			if (name != NULL)
-				fz_drop_buffer(ctx, profile->buffer);
+			fz_drop_buffer(ctx, profile->buffer);
 			fz_cmm_fin_profile(ctx, profile);
 			fz_free(ctx, profile);
 		}
 		else
 		{
-			fz_keep_buffer(ctx, buf);
 			fz_md5_icc(ctx, profile);
-			cs = fz_new_colorspace(ctx, "icc", num, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
+			cs = fz_new_colorspace(ctx, name, num, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 
 			/* This is a bit of a handwave, but should be safe for our cases */
 			if (profile->num_devcomp == 4)
@@ -3064,7 +3065,7 @@ int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs)
 
 /* Profile created if needed during draw command. */
 fz_colorspace *
-fz_new_cal_colorspace(fz_context *ctx, float *wp, float *bp, float *gamma, float *matrix)
+fz_new_cal_colorspace(fz_context *ctx, const char *name, float *wp, float *bp, float *gamma, float *matrix)
 {
 	fz_colorspace *cs = NULL;
 	int num = (matrix == NULL ? 1 : 3);
