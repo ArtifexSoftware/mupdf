@@ -296,7 +296,7 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 	if ((blendmode == 0) && (state[0].shape == state[1].shape))
 		fz_paint_pixmap(state[0].dest, state[1].dest, 255);
 	else
-		fz_blend_pixmap(state[0].dest, state[1].dest, 255, blendmode, isolated, state[1].shape);
+		fz_blend_pixmap(ctx, state[0].dest, state[1].dest, 255, blendmode, isolated, state[1].shape);
 
 	/* The following test should not be required, but just occasionally
 	 * errors can cause the stack to get out of sync, and this saves our
@@ -1965,7 +1965,7 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 	if ((blendmode == 0) && (state[0].shape == state[1].shape))
 		fz_paint_pixmap(state[0].dest, state[1].dest, alpha * 255);
 	else
-		fz_blend_pixmap(state[0].dest, state[1].dest, alpha * 255, blendmode, isolated, state[1].shape);
+		fz_blend_pixmap(ctx, state[0].dest, state[1].dest, alpha * 255, blendmode, isolated, state[1].shape);
 
 	/* The following test should not be required, but just occasionally
 	 * errors can cause the stack to get out of sync, and this might save
