@@ -7,6 +7,10 @@
 
 /* PDF 1.4 blend modes. These are slow. */
 
+/* Define PARANOID_PREMULTIPLY to check premultiplied values are
+ * properly in range. */
+#undef PARANOID_PREMULTIPLY
+
 typedef unsigned char byte;
 
 static const char *fz_blendmode_names[] =
@@ -793,6 +797,33 @@ fz_blend_nonseparable_nonisolated(byte * restrict bp, int bal, const byte * rest
 	while (--w);
 }
 
+#ifdef PARANOID_PREMULTIPLY
+static void
+verify_premultiply(fz_context *ctx, const fz_pixmap * restrict dst)
+{
+	unsigned char *dp = dst->samples;
+	int w = dst->w;
+	int h = dst->h;
+	int n = dst->n;
+	int x, y, i;
+	int s = dst->stride - n * w;
+	void (*crash)(void) = NULL;
+
+	for (y = h; y > 0; y--)
+	{
+		for (x = w; x > 0; x--)
+		{
+			int a = dp[n-1];
+			for (i = n-1; i > 0; i--)
+				if (*dp++ > a)
+					crash();
+			dp++;
+		}
+		dp += s;
+	}
+}
+#endif
+
 void
 fz_blend_pixmap(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, int blendmode, int isolated, const fz_pixmap * restrict shape)
 {
@@ -842,6 +873,13 @@ fz_blend_pixmap(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict 
 	sa = src->alpha;
 	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
 	da = dst->alpha;
+
+#ifdef PARANOID_PREMULTIPLY
+	if (sa)
+		verify_premultiply(ctx, src);
+	if (da)
+		verify_premultiply(ctx, dst);
+#endif
 
 	n -= sa;
 	assert(n == dst->n - da);
@@ -950,4 +988,9 @@ fz_blend_pixmap(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict 
 			dp += dst->stride;
 		}
 	}
+
+#ifdef PARANOID_PREMULTIPLY
+	if (da)
+		verify_premultiply(ctx, dst);
+#endif
 }
