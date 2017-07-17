@@ -1645,7 +1645,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		if (state[1].shape)
 			fz_dump_blend(ctx, state[1].shape, "/");
 #endif
-		fz_paint_image(mask, &bbox, state->shape, pixmap, &local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
+		fz_paint_image(mask, &bbox, state[1].shape, pixmap, &local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
 #ifdef DUMP_GROUP_BLENDS
 		fz_dump_blend(ctx, state[1].dest, " to get ");
 		if (state[1].shape)
