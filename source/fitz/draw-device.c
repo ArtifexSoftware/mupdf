@@ -1549,9 +1549,6 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_draw_device *dev = (fz_draw_device*)devp;
 	fz_matrix local_ctm = concat(in_ctm, &dev->transform);
 	fz_irect bbox;
-	fz_pixmap *mask = NULL;
-	fz_pixmap *dest = NULL;
-	fz_pixmap *shape = NULL;
 	fz_pixmap *scaled = NULL;
 	fz_pixmap *pixmap = NULL;
 	int dx, dy;
@@ -1591,29 +1588,24 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 
 	pixmap = fz_get_pixmap_from_image(ctx, image, NULL, &local_ctm, &dx, &dy);
 
-	fz_var(mask);
-	fz_var(dest);
-	fz_var(shape);
-	fz_var(pixmap);
-
 	fz_try(ctx)
 	{
-		state[1].mask = mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
-		fz_clear_pixmap(ctx, mask);
+		state[1].mask = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+		fz_clear_pixmap(ctx, state[1].mask);
 
 		/* When there is no alpha in the current destination (state[0].dest->alpha == 0)
 		 * we have a choice. We can either create the new destination WITH alpha, or
 		 * we can copy the old pixmap contents in. We opt for the latter here, but
 		 * may want to revisit this decision in the future. */
-		state[1].dest = dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
+		state[1].dest = fz_new_pixmap_with_bbox(ctx, model, &bbox, state[0].dest->alpha);
 		if (state[0].dest->alpha)
 			fz_clear_pixmap(ctx, state[1].dest);
 		else
 			fz_copy_pixmap_rect(ctx, state[1].dest, state[0].dest, &bbox, dev->default_cs);
-		if (state->shape)
+		if (state[0].shape)
 		{
-			state[1].shape = shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
-			fz_clear_pixmap(ctx, shape);
+			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, 1);
+			fz_clear_pixmap(ctx, state[1].shape);
 		}
 
 		state[1].blendmode |= FZ_BLEND_ISOLATED;
@@ -1644,7 +1636,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		if (state[1].shape)
 			fz_dump_blend(ctx, "/", state[1].shape);
 #endif
-		fz_paint_image(mask, &bbox, state[1].shape, pixmap, &local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
+		fz_paint_image(state[1].mask, &bbox, state[1].shape, pixmap, &local_ctm, 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED);
 #ifdef DUMP_GROUP_BLENDS
 		fz_dump_blend(ctx, " to get ", state[1].mask);
 		if (state[1].shape)
