@@ -1214,6 +1214,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	fz_matrix xobj_matrix;
 	int transparency;
 	pdf_document *doc;
+	fz_colorspace *cs = NULL;
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
@@ -1223,6 +1224,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	fz_var(gstate);
 	fz_var(oldtop);
 	fz_var(oldbot);
+	fz_var(cs);
 
 	gparent_save = pr->gparent;
 	pr->gparent = pr->gtop;
@@ -1263,8 +1265,10 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 			/* Remember that we tried to call fz_begin_group. Even
 			 * if it throws an error, we must call fz_end_group. */
 			cleanup_state = 2;
+			if (isolated)
+				cs = pdf_xobject_colorspace(ctx, xobj);
 			fz_begin_group(ctx, pr->dev, &bbox,
-					(isolated ? pdf_xobject_colorspace(ctx, xobj) : NULL),
+					cs,
 					(is_smask ? 1 : isolated),
 					pdf_xobject_knockout(ctx, xobj),
 					gstate->blendmode, gstate->fill.alpha);
@@ -1303,6 +1307,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	}
 	fz_always(ctx)
 	{
+		fz_drop_colorspace(ctx, cs);
+
 		/* Undo any gstate mismatches due to the pdf_process_contents call */
 		if (oldbot != -1)
 		{

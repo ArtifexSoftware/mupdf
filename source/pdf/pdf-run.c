@@ -72,9 +72,14 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 		}
 		else
 		{
-			colorspace = fz_default_output_intent(ctx, default_cs);
+			colorspace = fz_keep_colorspace(ctx, fz_default_output_intent(ctx, default_cs));
 		}
-		fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), colorspace, 1, 0, 0, 1);
+		fz_try(ctx)
+			fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), colorspace, 1, 0, 0, 1);
+		fz_always(ctx)
+			fz_drop_colorspace(ctx, colorspace);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 
 	proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
