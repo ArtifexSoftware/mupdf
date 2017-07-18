@@ -2444,7 +2444,9 @@ void pdf_set_signature_appearance(fz_context *ctx, pdf_document *doc, pdf_annot 
 void pdf_update_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *annot)
 {
 	pdf_obj *obj = annot->obj;
-	if (!pdf_dict_get(ctx, obj, PDF_NAME_AP) || pdf_obj_is_dirty(ctx, obj))
+	pdf_obj *ap = pdf_dict_get(ctx, obj, PDF_NAME_AP);
+
+	if (!ap || !pdf_dict_get(ctx, ap, PDF_NAME_N) || pdf_obj_is_dirty(ctx, obj))
 	{
 		fz_annot_type type = pdf_annot_type(ctx, annot);
 		switch (type)
