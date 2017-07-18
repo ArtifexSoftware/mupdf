@@ -63,16 +63,20 @@ static int group_dump_count = 0;
 static void fz_dump_blend(fz_context *ctx, const char *s, fz_pixmap *pix)
 {
 	char name[80];
+	int psd = 0;
 
 	if (!pix)
 		return;
 
-	sprintf(name, "dump%02d.png", group_dump_count);
-	if (s)
-		printf("%s%02d(%p)", s, group_dump_count, pix);
-	group_dump_count++;
+	if (pix->s || fz_colorspace_is_subtractive(ctx, pix->colorspace))
+		psd = 1;
 
-	fz_save_pixmap_as_png(ctx, pix, name);
+	sprintf(name, "dump%02d.%s", group_dump_count, psd ? "psd" : "png");
+	printf("%s%02d%s(%p)", s ? s : "", group_dump_count++, psd ? "(PSD)" : "", pix);
+	if (psd)
+		fz_save_pixmap_as_psd(ctx, pix, name);
+	else
+		fz_save_pixmap_as_png(ctx, pix, name);
 }
 
 static void dump_spaces(int x, const char *s)
