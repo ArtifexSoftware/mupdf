@@ -36,60 +36,54 @@ pdf_run_page_contents_with_usage(fz_context *ctx, pdf_document *doc, pdf_page *p
 	pdf_obj *resources;
 	pdf_obj *contents;
 	fz_rect mediabox;
-	pdf_processor *proc;
+	pdf_processor *proc = NULL;
 	fz_default_colorspaces *default_cs;
+
+	fz_var(proc);
 
 	default_cs = pdf_load_default_colorspaces(ctx, doc, page);
 	if (default_cs)
 		fz_set_default_colorspaces(ctx, dev, default_cs);
-	fz_drop_default_colorspaces(ctx, default_cs);
 
-	pdf_page_transform(ctx, page, &mediabox, &page_ctm);
-	fz_concat(&local_ctm, &page_ctm, ctm);
-
-	resources = pdf_page_resources(ctx, page);
-	contents = pdf_page_contents(ctx, page);
-
-	if (page->transparency)
-	{
-		fz_colorspace *colorspace = NULL;
-		pdf_obj *group = pdf_page_group(ctx, page);
-
-		if (group)
-		{
-			pdf_obj *cs = pdf_dict_get(ctx, group, PDF_NAME_CS);
-			if (cs)
-			{
-				fz_try(ctx)
-				{
-					colorspace = pdf_load_colorspace(ctx, cs);
-				}
-				fz_catch(ctx)
-				{
-					colorspace = NULL;
-				}
-			}
-		}
-		else
-		{
-			colorspace = fz_keep_colorspace(ctx, fz_default_output_intent(ctx, default_cs));
-		}
-		fz_try(ctx)
-			fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), colorspace, 1, 0, 0, 1);
-		fz_always(ctx)
-			fz_drop_colorspace(ctx, colorspace);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
-	}
-
-	proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
 	fz_try(ctx)
 	{
+		pdf_page_transform(ctx, page, &mediabox, &page_ctm);
+		fz_concat(&local_ctm, &page_ctm, ctm);
+
+		resources = pdf_page_resources(ctx, page);
+		contents = pdf_page_contents(ctx, page);
+
+		if (page->transparency)
+		{
+			fz_colorspace *colorspace = NULL;
+			pdf_obj *group = pdf_page_group(ctx, page);
+
+			if (group)
+			{
+				pdf_obj *cs = pdf_dict_get(ctx, group, PDF_NAME_CS);
+				if (cs)
+				{
+					fz_try(ctx)
+						colorspace = pdf_load_colorspace(ctx, cs);
+					fz_catch(ctx)
+						colorspace = NULL;
+				}
+			}
+			else
+				colorspace = fz_keep_colorspace(ctx, fz_default_output_intent(ctx, default_cs));
+
+			fz_begin_group(ctx, dev, fz_transform_rect(&mediabox, &local_ctm), colorspace, 1, 0, 0, 1);
+		}
+
+		proc = pdf_new_run_processor(ctx, dev, &local_ctm, usage, NULL, 0);
 		pdf_process_contents(ctx, proc, doc, resources, contents, cookie);
 		pdf_close_processor(ctx, proc);
 	}
 	fz_always(ctx)
+	{
+		fz_drop_default_colorspaces(ctx, default_cs);
 		pdf_drop_processor(ctx, proc);
+	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
