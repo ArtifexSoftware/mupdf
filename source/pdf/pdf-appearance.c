@@ -1535,6 +1535,7 @@ void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_a
 	float alpha;
 	float line_height;
 	float line_thickness;
+	pdf_obj *annotcolor;
 
 	switch (type)
 	{
@@ -1564,6 +1565,15 @@ void pdf_update_text_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_a
 			break;
 		default:
 			return;
+	}
+
+	annotcolor = pdf_dict_get(ctx, annot->obj, PDF_NAME_C);
+
+	if (pdf_is_array(ctx, annotcolor))
+	{
+		color[0] = pdf_to_int(ctx, pdf_array_get(ctx, annotcolor, 0));
+		color[1] = pdf_to_int(ctx, pdf_array_get(ctx, annotcolor, 1));
+		color[2] = pdf_to_int(ctx, pdf_array_get(ctx, annotcolor, 2));
 	}
 
 	pdf_set_markup_appearance(ctx, doc, annot, color, alpha, line_thickness, line_height);
