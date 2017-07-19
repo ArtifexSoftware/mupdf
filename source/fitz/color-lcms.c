@@ -137,7 +137,7 @@ fz_lcms_transform_pixmap(fz_cmm_instance *instance, fz_icclink *link, fz_pixmap 
 	cmm_num_src = T_CHANNELS(src_format);
 	cmm_num_des = T_CHANNELS(dst_format);
 	cmm_extras = T_EXTRA(src_format);
-	if (cmm_num_src != sc || cmm_num_des != dc || cmm_extras != ssp+sa || sa != da || ssp != dsp)
+	if (cmm_num_src != sc || cmm_num_des != dc || cmm_extras != ssp+sa || sa != da || (link->copy_spots && ssp != dsp))
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Mismatching color setup in cmm pixmap transformation: src: %d vs %d+%d+%d, dst: %d vs %d+%d+%d", cmm_num_src, sc, ssp, sa, cmm_num_des, dc, dsp, da);
 
 	/* Transform */

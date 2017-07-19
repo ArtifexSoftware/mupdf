@@ -1384,6 +1384,8 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 	fz_try(ctx)
 	{
+		int conversion_required = (src_cs != model || state->dest->seps);
+
 		if (state->blendmode & FZ_BLEND_KNOCKOUT)
 			state = fz_knockout_begin(ctx, dev);
 
@@ -1391,9 +1393,15 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 		if (src_cs == fz_device_gray(ctx))
 			after = 1;
 
-		if (src_cs != model && !after)
+		if (conversion_required && !after)
 		{
-			fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
+			fz_pixmap *converted;
+			/* If we have a spotty image, and we are going to spotty output,
+			 * then we can't lose the spots during color conversion. */
+			if (fz_colorspace_is_device_n(ctx, src_cs) && state->dest->seps)
+				converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, prf, dev->default_cs);
+			else
+				converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
 			fz_drop_pixmap(ctx, pixmap);
 			pixmap = converted;
 		}
@@ -1417,18 +1425,23 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			}
 		}
 
-		if (src_cs != model && after)
+		if (conversion_required && after)
 		{
 #if FZ_PLOTTERS_RGB
-			if ((src_cs == fz_device_gray(ctx) && model == fz_device_rgb(ctx)) ||
-				(src_cs == fz_device_gray(ctx) && model == fz_device_bgr(ctx)))
+			if (state->dest->seps == NULL &&
+				((src_cs == fz_device_gray(ctx) && model == fz_device_rgb(ctx)) ||
+				(src_cs == fz_device_gray(ctx) && model == fz_device_bgr(ctx))))
 			{
 				/* We have special case rendering code for gray -> rgb/bgr */
 			}
 			else
 #endif
 			{
-				fz_pixmap *converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
+				fz_pixmap *converted;
+				if (fz_colorspace_is_device_n(ctx, src_cs) && state->dest->seps)
+					converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, prf, dev->default_cs);
+				else
+					converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
 				fz_drop_pixmap(ctx, pixmap);
 				pixmap = converted;
 			}
