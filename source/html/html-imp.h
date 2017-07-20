@@ -200,7 +200,7 @@ struct fz_html_box_s
 	unsigned int is_first_flow : 1; /* for text-indent */
 	unsigned int markup_dir : 2;
 	unsigned int list_item : 27;
-	float x, y, w, h; /* content */
+	float x, y, w, b; /* content */
 	float padding[4];
 	float margin[4];
 	float border[4];

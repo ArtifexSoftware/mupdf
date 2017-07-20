@@ -56,7 +56,7 @@ static int
 htdoc_count_pages(fz_context *ctx, fz_document *doc_)
 {
 	html_document *doc = (html_document*)doc_;
-	int count = ceilf(doc->html->root->h / doc->html->page_h);
+	int count = ceilf(doc->html->root->b / doc->html->page_h);
 	return count;
 }
 
