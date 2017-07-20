@@ -183,9 +183,15 @@ prepare_mesh_vertex(fz_context *ctx, void *arg, fz_vertex *v, const float *input
 	else
 	{
 		int n = fz_colorspace_n(ctx, dest->colorspace);
+		int a = dest->alpha;
+		int m = dest->n - a;
 		ptd->cc.convert(ctx, &ptd->cc, output, input);
 		for (i = 0; i < n; i++)
 			output[i] *= 255;
+		for (; i < m; i++)
+			output[i] = 0;
+		if (a)
+			output[i] = 255;
 	}
 }
 
@@ -201,7 +207,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 	vertices[2] = (float *)cv;
 
 	dest = ptd->dest;
-	fz_paint_triangle(dest, vertices, 2 + fz_colorspace_n(ctx, dest->colorspace), ptd->bbox);
+	fz_paint_triangle(dest, vertices, 2 + dest->n - dest->alpha, ptd->bbox);
 }
 
 void
@@ -224,22 +230,8 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 
 		if (shade->use_function)
 		{
-			/* FIXME */
-			fz_color_converter cc;
-			int cn = fz_colorspace_n(ctx, shade->colorspace);
-			n = fz_colorspace_n(ctx, dest->colorspace);
-			fz_find_color_converter(ctx, &cc, prf, dest->colorspace, shade->colorspace, color_params);
-			for (i = 0; i < 256; i++)
-			{
-				cc.convert(ctx, &cc, color, shade->function[i]);
-				for (k = 0; k < n; k++)
-					clut[i][k] = color[k] * 255;
-				clut[i][k] = shade->function[i][cn] * 255;
-			}
-			fz_drop_color_converter(ctx, &cc);
 			/* We need to use alpha = 1 here, because the shade might not fill
 			 * the bbox. */
-			conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, NULL, 1);
 			temp = fz_new_pixmap_with_bbox(ctx, fz_device_gray(ctx), bbox, NULL, 1);
 			fz_clear_pixmap(ctx, temp);
 		}
@@ -257,35 +249,106 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 
 		if (shade->use_function)
 		{
-			unsigned char *s = temp->samples;
-			unsigned char *d = conv->samples;
-			int da = conv->alpha;
-			int sa = temp->alpha;
-			int hh = temp->h;
-			while (hh--)
+			/* If the shade is defined in a deviceN (or separation,
+			 * which is the same internally to MuPDF) space, then
+			 * we need to render it in deviceN before painting it
+			 * to the destination. If not, we are free to render it
+			 * direct to the target. */
+			if (fz_colorspace_is_device_n(ctx, shade->colorspace))
 			{
-				int len = temp->w;
-				while (len--)
+				/* We've drawn it as greyscale, with the values being
+				 * the input to the function. Now make DevN version
+				 * by mapping that greyscale through the function.
+				 * This seems inefficient, but it's actually required,
+				 * because we need to apply the function lookup POST
+				 * interpolation in the do_paint_tri routines, not
+				 * before it to avoid problems with some test files
+				 * (tests/GhentV3.0/061_Shading_x1a.pdf for example).
+				 */
+				unsigned char *s = temp->samples;
+				unsigned char *d;
+				int hh = temp->h;
+				int n = fz_colorspace_n(ctx, shade->colorspace);
+
+				/* alpha = 1 here for the same reason as earlier */
+				conv = fz_new_pixmap_with_bbox(ctx, shade->colorspace, bbox, NULL, 1);
+				d = conv->samples;
+				while (hh--)
 				{
-					int v = *s++;
-					int a = (da ? clut[v][conv->n - 1] : 255);
-					if (sa)
-						a = fz_mul255(*s++, a);
-					for (k = 0; k < conv->n - da; k++)
-						*d++ = fz_mul255(clut[v][k], a);
-					if (da)
+					int len = temp->w;
+					while (len--)
+					{
+						int v = *s++;
+						int a = *s++;
+						const float *f = shade->function[v];
+						for (k = 0; k < n; k++)
+							*d++ = fz_clampi(255 * f[k], 0, 255);
 						*d++ = a;
+					}
+					d += conv->stride - conv->w * conv->n;
+					s += temp->stride - temp->w * temp->n;
 				}
-				d += conv->stride - conv->w * conv->n;
-				s += temp->stride - temp->w * temp->n;
+				fz_drop_pixmap(ctx, temp);
+				temp = conv;
+
+				/* Now Change from our device_n colorspace into the target colorspace/spots. */
+				conv = fz_clone_pixmap_area_with_different_seps(ctx, temp, NULL, dest->colorspace, dest->seps, color_params, prf, NULL);
+				fz_paint_pixmap(dest, conv, 255);
+				fz_drop_pixmap(ctx, conv);
 			}
-			fz_paint_pixmap(dest, conv, 255);
-			fz_drop_pixmap(ctx, conv);
-			fz_drop_pixmap(ctx, temp);
+			else
+			{
+				unsigned char *s = temp->samples;
+				unsigned char *d;
+				int da;
+				int sa = temp->alpha;
+				int hh = temp->h;
+
+				fz_color_converter cc;
+				int cn = fz_colorspace_n(ctx, shade->colorspace);
+				int m = dest->n - dest->alpha;
+				n = fz_colorspace_n(ctx, dest->colorspace);
+				fz_find_color_converter(ctx, &cc, prf, dest->colorspace, shade->colorspace, color_params);
+				for (i = 0; i < 256; i++)
+				{
+					cc.convert(ctx, &cc, color, shade->function[i]);
+					for (k = 0; k < n; k++)
+						clut[i][k] = color[k] * 255;
+					for (; k < m; k++)
+						clut[i][k] = 0;
+					clut[i][k] = shade->function[i][cn] * 255;
+				}
+				fz_drop_color_converter(ctx, &cc);
+
+				conv = fz_new_pixmap_with_bbox(ctx, dest->colorspace, bbox, dest->seps, 1);
+				d = conv->samples;
+				da = conv->alpha;
+				while (hh--)
+				{
+					int len = temp->w;
+					while (len--)
+					{
+						int v = *s++;
+						int a = (da ? clut[v][conv->n - 1] : 255);
+						if (sa)
+							a = fz_mul255(*s++, a);
+						for (k = 0; k < conv->n - da; k++)
+							*d++ = fz_mul255(clut[v][k], a);
+						if (da)
+							*d++ = a;
+					}
+					d += conv->stride - conv->w * conv->n;
+					s += temp->stride - temp->w * temp->n;
+				}
+				fz_paint_pixmap(dest, conv, 255);
+				fz_drop_pixmap(ctx, conv);
+			}
 		}
 	}
 	fz_always(ctx)
 	{
+		if (temp != dest)
+			fz_drop_pixmap(ctx, temp);
 		fz_fin_cached_color_converter(ctx, &ptd.cc);
 	}
 	fz_catch(ctx)
