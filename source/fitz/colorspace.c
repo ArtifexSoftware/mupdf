@@ -3640,15 +3640,44 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 			fz_drop_buffer(ctx, profile->buffer);
 			fz_cmm_fin_profile(ctx, profile);
 			fz_free(ctx, profile);
+			break;
 		}
-		else
-		{
-			fz_md5_icc(ctx, profile);
-			cs = fz_new_colorspace(ctx, name, num, 0, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 
-			/* This is a bit of a handwave, but should be safe for our cases */
-			if (profile->num_devcomp == 4)
-				cs->is_subtractive = 1;
+		fz_md5_icc(ctx, profile);
+		cs = fz_new_colorspace(ctx, name, num, 0, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
+
+		switch(profile->num_devcomp)
+		{
+		case 1:
+			fz_colorspace_name_colorant(ctx, cs, 0, "Gray");
+			break;
+		case 3:
+			if (is_lab)
+			{
+				fz_colorspace_name_colorant(ctx, cs, 0, "L");
+				fz_colorspace_name_colorant(ctx, cs, 1, "a");
+				fz_colorspace_name_colorant(ctx, cs, 2, "b");
+			}
+			else if (profile->bgr)
+			{
+				fz_colorspace_name_colorant(ctx, cs, 0, "Blue");
+				fz_colorspace_name_colorant(ctx, cs, 1, "Green");
+				fz_colorspace_name_colorant(ctx, cs, 2, "Red");
+			}
+			else
+			{
+				fz_colorspace_name_colorant(ctx, cs, 0, "Red");
+				fz_colorspace_name_colorant(ctx, cs, 1, "Green");
+				fz_colorspace_name_colorant(ctx, cs, 2, "Blue");
+			}
+			break;
+		case 4:
+			fz_colorspace_name_colorant(ctx, cs, 0, "Cyan");
+			fz_colorspace_name_colorant(ctx, cs, 1, "Magenta");
+			fz_colorspace_name_colorant(ctx, cs, 2, "Yellow");
+			fz_colorspace_name_colorant(ctx, cs, 3, "Black");
+			cs->is_subtractive = 1;
+			break;
 		}
 	}
 	fz_catch(ctx)
