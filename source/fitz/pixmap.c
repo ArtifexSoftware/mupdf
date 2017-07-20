@@ -431,7 +431,7 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 		stride *= h;
 		h = 1;
 	}
-	if (pix->alpha)
+	if (pix->alpha || fz_colorspace_is_subtractive(ctx, pix->colorspace))
 	{
 		while (h--)
 		{
@@ -441,7 +441,6 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 	}
 	else
 	{
-		/* FIXME: Not right for CMYK or other subtractive spaces */
 		while (h--)
 		{
 			memset(s, 0xff, (unsigned int)stride);
