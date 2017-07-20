@@ -290,6 +290,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	int x, y, i, j, k;
 	unsigned char mapped[FZ_MAX_COLORS];
 	int unmapped = sseps_n;
+	int device_n = 0;
 
 	assert(da == sa);
 	assert(ss == fz_count_active_separations(ctx, sseps));
@@ -319,30 +320,45 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	}
 	else
 	{
-		fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dst->colorspace, src->colorspace);
+		device_n = fz_colorspace_is_device_n(ctx, src->colorspace);
+		if (device_n)
+			fz_clear_pixmap(ctx, dst);
+		else
+		{
+			fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dst->colorspace, src->colorspace);
 
-		pc(ctx, dst, src, prf, default_cs, NULL, 0);
+			pc(ctx, dst, src, prf, default_cs, NULL, 0);
+		}
 	}
 
 	/* Make a map of what spots go where */
+	for (i = 0; i < sseps_n; i++)
+		mapped[i] = 0;
+
 	for (i = 0, k = 0; i < dseps_n; i++)
 	{
 		const char *name;
+		int state = sep_state(dseps, i);
 
-		if (sep_state(dseps, i) >= FZ_SEPARATION_DISABLED)
+		if (state != FZ_SEPARATION_SPOT)
 			continue;
 		name = dseps->name[i];
+		if (name == NULL)
+			continue;
 		map[k] = -1;
-		mapped[k] = 0;
 		for (j = 0; j < sseps_n; j++)
 		{
-			if (sep_state(sseps, j) >= FZ_SEPARATION_DISABLED)
+			const char *sname;
+			if (mapped[j])
 				continue;
-			if (!strcmp(name, sseps->name[j]))
+			if (sep_state(sseps, j) != FZ_SEPARATION_SPOT)
+				continue;
+			sname = sseps->name[j];
+			if (sname && !strcmp(name, sname))
 			{
 				map[k] = j;
 				unmapped--;
-				mapped[k] = 1;
+				mapped[j] = 1;
 				break;
 			}
 		}
@@ -351,8 +367,10 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	if (sa)
 		map[k] = sseps_n;
 
-	/* Now we need to make d[i] = map[i] < 0 : 255 ? s[map[i]] */
+	/* Now we need to make d[i] = map[i] < 0 : 0 ? s[map[i]] */
 
+	ds += da;
+	if (ds)
 	{
 		unsigned char *dd = ddata + dc;
 		const unsigned char *sd = sdata + sc;
@@ -361,7 +379,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 			for (x = dw; x > 0; x--)
 			{
 				for (i = 0; i < ds; i++)
-					dd[i] = map[i] < 0 ? 255 : sd[map[i]];
+					dd[i] = map[i] < 0 ? 0 : sd[map[i]];
 				dd += dn;
 				sd += sn;
 			}
@@ -370,39 +388,319 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 		}
 	}
 
-	/* If we've handled all the spots, we're done. */
-	if (unmapped == 0)
-		return dst;
-
-	/* Still need to handle mapping 'lost' spots down to process colors */
-	for (i = 0; i < sseps_n; i++)
+	if (unmapped)
 	{
-		float convert[FZ_MAX_COLORS];
-
-		if (mapped[i])
-			continue;
-		/* Src spot i is not mapped. We need to convert that down. */
-		fz_separation_equivalent(ctx, sseps, i, color_params, dst->colorspace, prf, convert);
-
+		/* Still need to handle mapping 'lost' spots down to process colors */
+		for (i = 0; i < sseps_n; i++)
 		{
-			unsigned char *dd = ddata;
-			const unsigned char *sd = sdata + sc;
-			for (y = dh; y > 0; y--)
+			float convert[FZ_MAX_COLORS];
+
+			if (mapped[i])
+				continue;
+			/* Src spot i is not mapped. We need to convert that down. */
+			fz_separation_equivalent(ctx, sseps, i, color_params, dst->colorspace, prf, convert);
+
+			if (fz_colorspace_is_subtractive(ctx, dst->colorspace))
 			{
-				for (x = dw; x > 0; x--)
+				if (fz_colorspace_is_subtractive(ctx, src->colorspace))
 				{
-					unsigned char v = sd[i];
-					if (v == 0)
-						continue;
-					for (i = 0; i < dc; i++)
-						dd[i] = fz_clampi(dd[i] + v * convert[i], 0, 255);
-					dd += dn;
-					sd += sn;
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata + sc;
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							unsigned char v = sd[i];
+							if (v != 0)
+								for (k = 0; k < dc; k++)
+									dd[k] = fz_clampi(dd[k] + v * convert[k], 0, 255);
+							dd += dn;
+							sd += sn;
+						}
+						dd += dstride;
+						sd += sstride;
+					}
 				}
-				dd += dstride;
-				sd += sstride;
+				else
+				{
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata + sc;
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							unsigned char v = 0xff - sd[i];
+							if (v != 0)
+								for (k = 0; k < dc; k++)
+									dd[k] = fz_clampi(dd[k] + v * convert[k], 0, 255);
+							dd += dn;
+							sd += sn;
+						}
+						dd += dstride;
+						sd += sstride;
+					}
+				}
+			}
+			else
+			{
+				if (fz_colorspace_is_subtractive(ctx, src->colorspace))
+				{
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata + sc;
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							unsigned char v = sd[i];
+							if (v != 0)
+								for (k = 0; k < dc; k++)
+									dd[k] = fz_clampi(dd[k] - v * (1-convert[k]), 0, 255);
+							dd += dn;
+							sd += sn;
+						}
+						dd += dstride;
+						sd += sstride;
+					}
+				}
+				else
+				{
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata + sc;
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							unsigned char v = 0xff - sd[i];
+							if (v != 0)
+								for (k = 0; k < dc; k++)
+									dd[k] = fz_clampi(dd[k] - v * (1-convert[k]), 0, 255);
+							dd += dn;
+							sd += sn;
+						}
+						dd += dstride;
+						sd += sstride;
+					}
+				}
 			}
 		}
+	}
+
+	if (device_n)
+	{
+		/* Map the colorants down */
+		int n = fz_colorspace_n(ctx, src->colorspace);
+
+		fz_color_converter cc;
+		fz_find_color_converter(ctx, &cc, prf, dst->colorspace, src->colorspace, color_params);
+
+		fz_try(ctx)
+		{
+			unmapped = 0;
+			for (i = 0; i < n; i++)
+			{
+				const char *name = fz_colorspace_colorant(ctx, src->colorspace, i);
+
+				map[i] = 0;
+
+				if (name)
+				{
+					if (!strcmp(name, "None"))
+						continue;
+					if (!strcmp(name, "All"))
+					{
+						int k, n1 = dn - da;
+						unsigned char *dd = ddata;
+						const unsigned char *sd = sdata + i;
+
+						for (y = dh; y > 0; y--)
+						{
+							for (x = dw; x > 0; x--)
+							{
+								unsigned char v = *sd;
+								sd += sn;
+								for (k = 0; k < n1; k++)
+									dd[k] = v;
+								dd += dn;
+							}
+							dd += dstride;
+							sd += sstride;
+						}
+						continue;
+					}
+					for (j = 0; j < dc; j++)
+					{
+						const char *dname = fz_colorspace_colorant(ctx, dst->colorspace, j);
+						if (dname && !strcmp(name, dname))
+							goto map_device_n_spot;
+					}
+					for (j = 0; j < dseps_n; j++)
+					{
+						const char *dname = dseps->name[j];
+						if (dname && !strcmp(name, dname))
+						{
+							j += dc;
+							goto map_device_n_spot;
+						}
+					}
+				}
+				if (0)
+				{
+					unsigned char *dd;
+					const unsigned char *sd;
+	map_device_n_spot:
+					/* Directly map a devicen colorant to a
+					 * component (either process or spot)
+					 * in the destination. */
+					dd = ddata + j;
+					sd = sdata + i;
+
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							*dd = *sd;
+							dd += dn;
+							sd += sn;
+						}
+						dd += dstride;
+						sd += sstride;
+					}
+				}
+				else
+				{
+					unmapped = 1;
+					map[i] = 1;
+				}
+			}
+			if (unmapped)
+			{
+/* The standard spot mapping algorithm assumes that it's reasonable
+ * to treat the components of deviceN spaces as being orthogonal,
+ * and to add them together at the end. This avoids a color lookup
+ * per pixel. The alternative mapping algorithm looks up each
+ * pixel at a time, and is hence slower. */
+#define ALTERNATIVE_SPOT_MAP
+#ifndef ALTERNATIVE_SPOT_MAP
+				for (i = 0; i < n; i++)
+				{
+					/* Src component i is not mapped. We need to convert that down. */
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata;
+					float convert[FZ_MAX_COLORS];
+					float colors[FZ_MAX_COLORS];
+
+					if (map[i] == 0)
+						continue;
+
+					memset(colors, 0, sizeof(float) * n);
+					colors[i] = 1;
+					cc.convert(ctx, &cc, convert, colors);
+
+					if (fz_colorspace_is_subtractive(ctx, dst->colorspace))
+					{
+						for (y = dh; y > 0; y--)
+						{
+							for (x = dw; x > 0; x--)
+							{
+								unsigned char v = sd[i];
+								if (v != 0)
+								{
+									for (j = 0; j < dc; j++)
+										dd[j] = fz_clampi(dd[j] + v * convert[j], 0, 255);
+								}
+								dd += dn;
+								sd += sn;
+							}
+							dd += dstride;
+							sd += sstride;
+						}
+					}
+					else
+					{
+						for (y = dh; y > 0; y--)
+						{
+							for (x = dw; x > 0; x--)
+							{
+								unsigned char v = sd[i];
+								if (v != 0)
+								{
+									for (j = 0; j < dc; j++)
+										dd[j] = fz_clampi(dd[j] - v * (1-convert[j]), 0, 255);
+								}
+								dd += dn;
+								sd += sn;
+							}
+							dd += dstride;
+							sd += sstride;
+						}
+					}
+				}
+#else
+/* If space is subtractive then treat spots like Adobe does in Photoshop.
+ * Which is to just use an equivalent CMYK value.  If we are in an additive
+ * color space we will need to convert on a pixel-by-pixel basis.
+ */
+				float convert[FZ_MAX_COLORS];
+				float colors[FZ_MAX_COLORS];
+
+				if (fz_colorspace_is_subtractive(ctx, dst->colorspace))
+				{
+					for (i = 0; i < n; i++)
+					{
+						unsigned char *dd = ddata;
+						const unsigned char *sd = sdata;
+
+						if (map[i] == 0)
+							continue;
+
+						memset(colors, 0, sizeof(float) * n);
+						colors[i] = 1;
+						cc.convert(ctx, &cc, convert, colors);
+
+						for (y = dh; y > 0; y--)
+						{
+							for (x = dw; x > 0; x--)
+							{
+								unsigned char v = sd[i];
+								if (v != 0)
+									for (j = 0; j < dc; j++)
+										dd[j] = fz_clampi(dd[j] + v * convert[j], 0, 255);
+								dd += dn;
+								sd += sn;
+							}
+							dd += dstride;
+							sd += sstride;
+						}
+					}
+				}
+				else
+				{
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata;
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							for (j = 0; j < n; j++)
+								colors[j] = map[j] ? sd[j] / 255.0f : 0;
+							cc.convert(ctx, &cc, convert, colors);
+
+							for (j = 0; j < dc; j++)
+								dd[j] = fz_clampi(255 * convert[j], 0, 255);
+							dd += dn;
+							sd += sn;
+						}
+						dd += dstride;
+						sd += sstride;
+					}
+				}
+#endif
+			}
+		}
+		fz_always(ctx)
+			fz_drop_color_converter(ctx, &cc);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
 	}
 
 	return dst;
