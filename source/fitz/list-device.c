@@ -1160,6 +1160,7 @@ struct fz_list_tile_data_s
 	float xstep;
 	float ystep;
 	fz_rect view;
+	int id;
 };
 
 static int
@@ -1170,6 +1171,7 @@ fz_list_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const f
 	tile.xstep = xstep;
 	tile.ystep = ystep;
 	tile.view = *view;
+	tile.id = id;
 	fz_append_display_node(
 		ctx,
 		dev,
@@ -1758,7 +1760,7 @@ visible:
 				fz_rect tile_rect;
 				tiled++;
 				tile_rect = data->view;
-				cached = fz_begin_tile_id(ctx, dev, &rect, &tile_rect, data->xstep, data->ystep, &trans_ctm, n.flags);
+				cached = fz_begin_tile_id(ctx, dev, &rect, &tile_rect, data->xstep, data->ystep, &trans_ctm, data->id);
 				if (cached)
 					tile_skip_depth = 1;
 				break;
