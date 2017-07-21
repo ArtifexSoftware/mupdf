@@ -32,7 +32,7 @@ struct fz_draw_state_s {
 	fz_pixmap *mask;
 	fz_pixmap *shape;
 	int blendmode;
-	int id;
+	int id, encache;
 	float alpha;
 	fz_matrix ctm;
 	float xstep, ystep;
@@ -2138,6 +2138,7 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, const fz_rect *area, const 
 			state[1].xstep = xstep;
 			state[1].ystep = ystep;
 			state[1].id = id;
+			state[1].encache = 0;
 			fz_irect_from_rect(&state[1].area, area);
 			state[1].ctm = ctm;
 #ifdef DUMP_GROUP_BLENDS
@@ -2165,6 +2166,7 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, const fz_rect *area, const 
 		state[1].xstep = xstep;
 		state[1].ystep = ystep;
 		state[1].id = id;
+		state[1].encache = 1;
 		fz_irect_from_rect(&state[1].area, area);
 		state[1].ctm = ctm;
 #ifdef DUMP_GROUP_BLENDS
@@ -2191,8 +2193,6 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	fz_rect scissor_tmp, tile_tmp;
 	int x0, y0, x1, y1, x, y, extra_x, extra_y;
 	fz_draw_state *state;
-	tile_record *tile;
-	tile_key *key;
 
 	if (dev->top == 0)
 	{
@@ -2289,43 +2289,45 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 		state[1].shape->y = shapectm.f;
 	}
 
-	/* Now we try to cache the tiles. Any failure here will just result
-	 * in us not caching. */
-	tile = NULL;
-	key = NULL;
-	fz_var(tile);
-	fz_var(key);
-	fz_try(ctx)
+	/* Now we try to cache the tiles. Any failure here will just result in us not caching. */
+	if (state[1].encache && state[1].id != 0)
 	{
-		tile_record *existing_tile;
-
-		tile = fz_new_tile_record(ctx, state[1].dest, state[1].shape);
-
-		key = fz_malloc_struct(ctx, tile_key);
-		key->refs = 1;
-		key->id = state[1].id;
-		key->ctm[0] = ctm.a;
-		key->ctm[1] = ctm.b;
-		key->ctm[2] = ctm.c;
-		key->ctm[3] = ctm.d;
-		existing_tile = fz_store_item(ctx, key, tile, fz_tile_size(ctx, tile), &fz_tile_store_type);
-		if (existing_tile)
+		tile_record *tile = NULL;
+		tile_key *key = NULL;
+		fz_var(tile);
+		fz_var(key);
+		fz_try(ctx)
 		{
-			/* We already have a tile. This will either have been
-			 * produced by a racing thread, or there is already
-			 * an entry for this one in the store. */
-			fz_drop_tile_record(ctx, tile);
-			tile = existing_tile;
+			tile_record *existing_tile;
+
+			tile = fz_new_tile_record(ctx, state[1].dest, state[1].shape);
+
+			key = fz_malloc_struct(ctx, tile_key);
+			key->refs = 1;
+			key->id = state[1].id;
+			key->ctm[0] = ctm.a;
+			key->ctm[1] = ctm.b;
+			key->ctm[2] = ctm.c;
+			key->ctm[3] = ctm.d;
+			existing_tile = fz_store_item(ctx, key, tile, fz_tile_size(ctx, tile), &fz_tile_store_type);
+			if (existing_tile)
+			{
+				/* We already have a tile. This will either have been
+				 * produced by a racing thread, or there is already
+				 * an entry for this one in the store. */
+				fz_drop_tile_record(ctx, tile);
+				tile = existing_tile;
+			}
 		}
-	}
-	fz_always(ctx)
-	{
-		fz_drop_tile_key(ctx, key);
-		fz_drop_tile_record(ctx, tile);
-	}
-	fz_catch(ctx)
-	{
-		/* Do nothing */
+		fz_always(ctx)
+		{
+			fz_drop_tile_key(ctx, key);
+			fz_drop_tile_record(ctx, tile);
+		}
+		fz_catch(ctx)
+		{
+			/* Do nothing */
+		}
 	}
 
 	/* The following tests should not be required, but just occasionally
