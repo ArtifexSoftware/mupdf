@@ -461,7 +461,7 @@ static void paint_solid_color_N(byte * restrict dp, int n, int w, const byte * r
 static void paint_solid_color_N_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
 {
 	TRACK_FN();
-	template_solid_color_N_general(dp, n, w, color, 1, FZ_EXPAND(color[n]));
+	template_solid_color_N_general(dp, n, w, color, 1, FZ_EXPAND(color[n-1]));
 }
 #endif /* FZ_PLOTTERS_N */
 
