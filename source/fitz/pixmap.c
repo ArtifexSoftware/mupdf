@@ -276,13 +276,32 @@ clear_cmyka_bitmap_ARM(uint32_t *samples, int c, int value)
 #endif
 
 static void
-clear_cmyk_bitmap(unsigned char *samples, int w, int h, int stride, int value, int alpha)
+clear_cmyk_bitmap(unsigned char *samples, int w, int h, int spots, int stride, int value, int alpha)
 {
 	uint32_t *s = (uint32_t *)(void *)samples;
 	uint8_t *t;
 
 	if (w < 0 || h < 0)
 		return;
+
+	if (spots)
+	{
+		int x, i;
+		spots += 4;
+		stride -= w * (spots + alpha);
+		for (; h > 0; h--)
+		{
+			for (x = w; x > 0; x--)
+			{
+				for (i = spots; i > 0; i--)
+					*samples++ = value;
+				if (alpha)
+					*samples++ = 255;
+			}
+			samples += stride;
+		}
+		return;
+	}
 
 	if (alpha)
 	{
@@ -449,6 +468,8 @@ fz_clear_pixmap(fz_context *ctx, fz_pixmap *pix)
 	}
 }
 
+/* This function is horrible, and should be removed from the
+ * API and replaced with a less magic one. */
 void
 fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 {
@@ -464,7 +485,7 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 	/* CMYK needs special handling (and potentially any other subtractive colorspaces) */
 	if (fz_colorspace_n(ctx, pix->colorspace) == 4)
 	{
-		clear_cmyk_bitmap(pix->samples, w, h, pix->stride, 255-value, pix->alpha);
+		clear_cmyk_bitmap(pix->samples, w, h, pix->s, pix->stride, 255-value, pix->alpha);
 		return;
 	}
 
