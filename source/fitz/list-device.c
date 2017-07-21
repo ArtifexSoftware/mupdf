@@ -432,17 +432,17 @@ fz_append_display_node(
 	}
 	if (ctm && (ctm->a != writer->ctm.a || ctm->b != writer->ctm.b || ctm->c != writer->ctm.c || ctm->d != writer->ctm.d || ctm->e != writer->ctm.e || ctm->f != writer->ctm.f))
 	{
-		int flags;
+		int ctm_flags;
 
 		ctm_off = size;
-		flags = CTM_UNCHANGED;
+		ctm_flags = CTM_UNCHANGED;
 		if (ctm->a != writer->ctm.a || ctm->d != writer->ctm.d)
-			flags = CTM_CHANGE_AD, size += SIZE_IN_NODES(2*sizeof(float));
+			ctm_flags = CTM_CHANGE_AD, size += SIZE_IN_NODES(2*sizeof(float));
 		if (ctm->b != writer->ctm.b || ctm->c != writer->ctm.c)
-			flags |= CTM_CHANGE_BC, size += SIZE_IN_NODES(2*sizeof(float));
+			ctm_flags |= CTM_CHANGE_BC, size += SIZE_IN_NODES(2*sizeof(float));
 		if (ctm->e != writer->ctm.e || ctm->f != writer->ctm.f)
-			flags |= CTM_CHANGE_EF, size += SIZE_IN_NODES(2*sizeof(float));
-		node.ctm = flags;
+			ctm_flags |= CTM_CHANGE_EF, size += SIZE_IN_NODES(2*sizeof(float));
+		node.ctm = ctm_flags;
 	}
 	if (stroke && (writer->stroke == NULL || stroke != writer->stroke))
 	{
