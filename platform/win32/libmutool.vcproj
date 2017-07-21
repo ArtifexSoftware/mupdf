@@ -801,6 +801,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\source\tools\mutrace.c"
+			>
+		</File>
+		<File
 			RelativePath="..\..\source\tools\pdfclean.c"
 			>
 		</File>
