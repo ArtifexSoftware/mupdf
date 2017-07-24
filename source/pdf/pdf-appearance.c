@@ -1718,18 +1718,21 @@ void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 
 		for (i = 0; i < n; i += 4)
 		{
-			fz_point pt0 = qp[i];
-			fz_point pt1 = qp[i+1];
+			/* Contrary to the specification, the points within a QuadPoint are NOT ordered
+			 * in a counterclockwise fashion. Experiments with Adobe's implementation
+			 * indicates a cross-wise ordering is intended: ll, lr, ul, ur. */
+			fz_point ll = qp[i];
+			fz_point lr = qp[i+1];
 			fz_point up;
 			float thickness;
 
-			up.x = qp[i+2].x - qp[i+1].x;
-			up.y = qp[i+2].y - qp[i+1].y;
+			up.x = qp[i+2].x - qp[i].x; /* ul - ll vector */
+			up.y = qp[i+2].y - qp[i].y;
 
-			pt0.x += line_height * up.x;
-			pt0.y += line_height * up.y;
-			pt1.x += line_height * up.x;
-			pt1.y += line_height * up.y;
+			ll.x += line_height * up.x;
+			ll.y += line_height * up.y;
+			lr.x += line_height * up.x;
+			lr.y += line_height * up.y;
 
 			thickness = sqrtf(up.x * up.x + up.y * up.y) * line_thickness;
 
@@ -1750,8 +1753,8 @@ void pdf_set_markup_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *an
 				path = fz_new_path(ctx);
 			}
 
-			fz_moveto(ctx, path, pt0.x, pt0.y);
-			fz_lineto(ctx, path, pt1.x, pt1.y);
+			fz_moveto(ctx, path, ll.x, ll.y);
+			fz_lineto(ctx, path, lr.x, lr.y);
 		}
 
 		if (stroke)
