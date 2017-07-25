@@ -308,6 +308,31 @@ template_solid_color_N_256(byte * restrict dp, int n, int w, const byte * restri
 }
 
 static inline void
+template_solid_color_N_256_op(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
+{
+	int k;
+	int n1 = n - da;
+	do
+	{
+		if (fz_overprint_component(eop, 0))
+			dp[0] = color[0];
+		if (n1 > 1)
+			if (fz_overprint_component(eop, 1))
+				dp[1] = color[1];
+		if (n1 > 2)
+			if (fz_overprint_component(eop, 2))
+				dp[2] = color[2];
+		for (k = 3; k < n1; k++)
+			if (fz_overprint_component(eop, k))
+				dp[k] = color[k];
+		if (da)
+			dp[n1] = 255;
+		dp += n;
+	}
+	while (--w);
+}
+
+static inline void
 template_solid_color_N_sa(byte * restrict dp, int n, int w, const byte * restrict color, int da, int sa)
 {
 	int k;
@@ -316,6 +341,23 @@ template_solid_color_N_sa(byte * restrict dp, int n, int w, const byte * restric
 	{
 		for (k = 0; k < n1; k++)
 			dp[k] = FZ_BLEND(color[k], dp[k], sa);
+		if (da)
+			dp[k] = FZ_BLEND(255, dp[k], sa);
+		dp += n;
+	}
+	while (--w);
+}
+
+static inline void
+template_solid_color_N_sa_op(byte * restrict dp, int n, int w, const byte * restrict color, int da, int sa, const fz_overprint * restrict eop)
+{
+	int k;
+	int n1 = n - da;
+	do
+	{
+		for (k = 0; k < n1; k++)
+			if (fz_overprint_component(eop, k))
+				dp[k] = FZ_BLEND(color[k], dp[k], sa);
 		if (da)
 			dp[k] = FZ_BLEND(255, dp[k], sa);
 		dp += n;
@@ -359,6 +401,47 @@ template_solid_color_N_general(byte * restrict dp, int n, int w, const byte * re
 		while (--w);
 	}
 }
+
+static inline void
+template_solid_color_N_general_op(byte * restrict dp, int n, int w, const byte * restrict color, int da, int sa, const fz_overprint * restrict eop)
+{
+	int k;
+	int n1 = n - da;
+	if (sa == 256)
+	{
+		do
+		{
+			if (fz_overprint_component(eop, 0))
+				dp[0] = color[0];
+			if (n1 > 1)
+				if (fz_overprint_component(eop, 1))
+					dp[1] = color[1];
+			if (n1 > 2)
+				if (fz_overprint_component(eop, 2))
+					dp[2] = color[2];
+			for (k = 3; k < n1; k++)
+				if (fz_overprint_component(eop, k))
+					dp[k] = color[k];
+			if (da)
+				dp[n1] = 255;
+			dp += n;
+		}
+		while (--w);
+	}
+	else
+	{
+		do
+		{
+			for (k = 0; k < n1; k++)
+				if (fz_overprint_component(eop, k))
+					dp[k] = FZ_BLEND(color[k], dp[k], sa);
+			if (da)
+				dp[k] = FZ_BLEND(255, dp[k], sa);
+			dp += n;
+		}
+		while (--w);
+	}
+}
 #endif
 
 static inline void
@@ -380,45 +463,45 @@ template_solid_color_0_da(byte * restrict dp, int w, int sa)
 }
 
 #if FZ_PLOTTERS_G
-static void paint_solid_color_1_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_1_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_sa(dp, 1, w, color, 0, FZ_EXPAND(color[1]));
 }
 
-static void paint_solid_color_1(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_1(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_256(dp, 1, w, color, 0);
 }
 
-static void paint_solid_color_1_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_1_da(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_1_da(dp, 2, w, color, 1);
 }
 #endif /* FZ_PLOTTERS_G */
 
-static void paint_solid_color_0_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_0_da(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_0_da(dp, w, 256);
 }
 
 #if FZ_PLOTTERS_RGB
-static void paint_solid_color_3_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_3_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_sa(dp, 3, w, color, 0, FZ_EXPAND(color[3]));
 }
 
-static void paint_solid_color_3(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_3(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_256(dp, 3, w, color, 0);
 }
 
-static void paint_solid_color_3_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_3_da(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_3_da(dp, 4, w, color, 1);
@@ -426,19 +509,19 @@ static void paint_solid_color_3_da(byte * restrict dp, int n, int w, const byte 
 #endif /* FZ_PLOTTERS_RGB */
 
 #if FZ_PLOTTERS_CMYK
-static void paint_solid_color_4_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_4_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_sa(dp, 4, w, color, 0, FZ_EXPAND(color[4]));
 }
 
-static void paint_solid_color_4(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_4(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_256(dp, 4, w, color, 0);
 }
 
-static void paint_solid_color_4_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_4_da(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_4_da(dp, 5, w, color, 1);
@@ -446,28 +529,55 @@ static void paint_solid_color_4_da(byte * restrict dp, int n, int w, const byte 
 #endif /* FZ_PLOTTERS_CMYK */
 
 #if FZ_PLOTTERS_N
-static void paint_solid_color_N_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_N_alpha(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_sa(dp, n, w, color, 0, FZ_EXPAND(color[n]));
 }
 
-static void paint_solid_color_N(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_N(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_256(dp, n, w, color, 0);
 }
 
-static void paint_solid_color_N_da(byte * restrict dp, int n, int w, const byte * restrict color, int da)
+static void paint_solid_color_N_da(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_solid_color_N_general(dp, n, w, color, 1, FZ_EXPAND(color[n-1]));
 }
+
+static void paint_solid_color_N_alpha_op(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
+{
+	TRACK_FN();
+	template_solid_color_N_sa_op(dp, n, w, color, 0, FZ_EXPAND(color[n]), eop);
+}
+
+static void paint_solid_color_N_op(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
+{
+	TRACK_FN();
+	template_solid_color_N_256_op(dp, n, w, color, 0, eop);
+}
+
+static void paint_solid_color_N_da_op(byte * restrict dp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
+{
+	TRACK_FN();
+	template_solid_color_N_general_op(dp, n, w, color, 1, FZ_EXPAND(color[n-1]), eop);
+}
 #endif /* FZ_PLOTTERS_N */
 
 fz_solid_color_painter_t *
-fz_get_solid_color_painter(int n, const byte * restrict color, int da)
+fz_get_solid_color_painter(int n, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
+	if (eop != NULL)
+	{
+		if (da)
+			return paint_solid_color_N_da_op;
+		else if (color[n] == 255)
+			return paint_solid_color_N_op;
+		else
+			return paint_solid_color_N_alpha_op;
+	}
 	switch (n-da)
 	{
 		case 0:
@@ -749,22 +859,85 @@ template_span_with_color_N_general(byte * restrict dp, const byte * restrict mp,
 	}
 }
 
+static inline void
+template_span_with_color_N_general_op(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
+{
+	int k;
+	int n1 = n - da;
+	int sa = FZ_EXPAND(color[n1]);
+	if (sa == 0)
+		return;
+	if (sa == 256)
+	{
+		do
+		{
+			int ma = *mp++;
+			ma = FZ_EXPAND(ma);
+			if (ma == 0)
+			{
+			}
+			else if (ma == 256)
+			{
+				if (n1 > 0)
+					if (fz_overprint_component(eop, 0))
+						dp[0] = color[0];
+				if (n1 > 1)
+					if (fz_overprint_component(eop, 1))
+						dp[1] = color[1];
+				if (n1 > 2)
+					if (fz_overprint_component(eop, 2))
+						dp[2] = color[2];
+				for (k = 3; k < n1; k++)
+					if (fz_overprint_component(eop, k))
+						dp[k] = color[k];
+				if (da)
+					dp[n1] = 255;
+			}
+			else
+			{
+				for (k = 0; k < n1; k++)
+					if (fz_overprint_component(eop, k))
+						dp[k] = FZ_BLEND(color[k], dp[k], ma);
+				if (da)
+					dp[n1] = FZ_BLEND(255, dp[k], ma);
+			}
+			dp += n;
+		}
+		while (--w);
+	}
+	else
+	{
+		do
+		{
+			int ma = *mp++;
+			ma = FZ_COMBINE(FZ_EXPAND(ma), sa);
+			for (k = 0; k < n1; k++)
+				if (fz_overprint_component(eop, k))
+					dp[k] = FZ_BLEND(color[k], dp[k], ma);
+			if (da)
+				dp[k] = FZ_BLEND(255, dp[k], ma);
+			dp += n;
+		}
+		while (--w);
+	}
+}
+
 static void
-paint_span_with_color_0_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_0_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_N_general(dp, mp, 1, w, color, 1);
 }
 
 static void
-paint_span_with_color_1(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_1(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_N_general(dp, mp, 1, w, color, 0);
 }
 
 static void
-paint_span_with_color_1_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_1_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_1_da(dp, mp, 2, w, color, 1);
@@ -772,14 +945,14 @@ paint_span_with_color_1_da(byte * restrict dp, const byte * restrict mp, int n, 
 
 #if FZ_PLOTTERS_RGB
 static void
-paint_span_with_color_3(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_3(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_N_general(dp, mp, 3, w, color, 0);
 }
 
 static void
-paint_span_with_color_3_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_3_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_3_da(dp, mp, 4, w, color, 1);
@@ -788,14 +961,14 @@ paint_span_with_color_3_da(byte * restrict dp, const byte * restrict mp, int n, 
 
 #if FZ_PLOTTERS_CMYK
 static void
-paint_span_with_color_4(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_4(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_N_general(dp, mp, 4, w, color, 0);
 }
 
 static void
-paint_span_with_color_4_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_4_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_4_da(dp, mp, 5, w, color, 1);
@@ -804,23 +977,41 @@ paint_span_with_color_4_da(byte * restrict dp, const byte * restrict mp, int n, 
 
 #if FZ_PLOTTERS_N
 static void
-paint_span_with_color_N(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_N(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_N_general(dp, mp, n, w, color, 0);
 }
 
 static void
-paint_span_with_color_N_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da)
+paint_span_with_color_N_da(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_color_N_general(dp, mp, n, w, color, 1);
 }
+
+static void
+paint_span_with_color_N_op(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
+{
+	TRACK_FN();
+	template_span_with_color_N_general_op(dp, mp, n, w, color, 0, eop);
+}
+
+static void
+paint_span_with_color_N_da_op(byte * restrict dp, const byte * restrict mp, int n, int w, const byte * restrict color, int da, const fz_overprint * restrict eop)
+{
+	TRACK_FN();
+	template_span_with_color_N_general_op(dp, mp, n, w, color, 1, eop);
+}
 #endif /* FZ_PLOTTERS_N */
 
 fz_span_color_painter_t *
-fz_get_span_color_painter(int n, int da, const byte * restrict color)
+fz_get_span_color_painter(int n, int da, const byte * restrict color, const fz_overprint * restrict eop)
 {
+	if (eop != NULL)
+	{
+		return da ? paint_span_with_color_N_da_op : paint_span_with_color_N_op;
+	}
 	switch(n-da)
 	{
 	case 0: return da ? paint_span_with_color_0_da : NULL;
@@ -1012,16 +1203,21 @@ template_span_with_mask_N_general(byte * restrict dp, const byte * restrict sp, 
 		}
 		else if (ma == 256)
 		{
-			int k = n+a;
-			while (k--)
-			{
+			int k;
+			for (k = 0; k < n; k++)
 				*dp++ = *sp++;
-			}
+			if (a)
+				*dp++ = *sp++;
 		}
 		else
 		{
-			int k = n+a;
-			while (k--)
+			int k;
+			for (k = 0; k < n; k++)
+			{
+				*dp = FZ_BLEND(*sp, *dp, ma);
+				sp++; dp++;
+			}
+			if (a)
 			{
 				*dp = FZ_BLEND(*sp, *dp, ma);
 				sp++; dp++;
@@ -1032,21 +1228,21 @@ template_span_with_mask_N_general(byte * restrict dp, const byte * restrict sp, 
 }
 
 static void
-paint_span_with_mask_0_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_0_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_N_general(dp, sp, 1, mp, 0, w);
 }
 
 static void
-paint_span_with_mask_1_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_1_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_1_general(dp, sp, 1, mp, w);
 }
 
 static void
-paint_span_with_mask_1(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_1(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_1_general(dp, sp, 0, mp, w);
@@ -1054,14 +1250,14 @@ paint_span_with_mask_1(byte * restrict dp, const byte * restrict sp, const byte 
 
 #if FZ_PLOTTERS_RGB
 static void
-paint_span_with_mask_3_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_3_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_3_general(dp, sp, 1, mp, w);
 }
 
 static void
-paint_span_with_mask_3(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_3(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_3_general(dp, sp, 0, mp, w);
@@ -1070,14 +1266,14 @@ paint_span_with_mask_3(byte * restrict dp, const byte * restrict sp, const byte 
 
 #if FZ_PLOTTERS_CMYK
 static void
-paint_span_with_mask_4_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_4_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_4_general(dp, sp, 1, mp, w);
 }
 
 static void
-paint_span_with_mask_4(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_4(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_4_general(dp, sp, 0, mp, w);
@@ -1086,21 +1282,21 @@ paint_span_with_mask_4(byte * restrict dp, const byte * restrict sp, const byte 
 
 #if FZ_PLOTTERS_N
 static void
-paint_span_with_mask_N_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_N_a(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_N_general(dp, sp, 1, mp, n, w);
 }
 
 static void
-paint_span_with_mask_N(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a)
+paint_span_with_mask_N(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_with_mask_N_general(dp, sp, 0, mp, n, w);
 }
 #endif /* FZ_PLOTTERS_N */
 
-typedef void (fz_span_mask_painter_t)(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a);
+typedef void (fz_span_mask_painter_t)(byte * restrict dp, const byte * restrict sp, const byte * restrict mp, int w, int n, int a, const fz_overprint * restrict eop);
 
 static fz_span_mask_painter_t *
 fz_get_span_mask_painter(int a, int n)
@@ -1227,10 +1423,37 @@ template_span_N_with_alpha_general(byte * restrict dp, int da, const byte * rest
 	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[n1], alpha) : alpha);
-		int k = n1;
-		while (k--)
+		int k;
+		for (k = 0; k < n1; k++)
 		{
-			*dp = FZ_BLEND(*sp++, *dp, masa);
+			*dp = FZ_BLEND(*sp, *dp, masa);
+			sp++; dp++;
+		}
+		if (da)
+		{
+			*dp = FZ_BLEND((sa ? *sp : 255), *dp, masa);
+			dp++;
+		}
+		if (sa)
+			sp++;
+	}
+	while (--w);
+}
+
+static inline void
+template_span_N_with_alpha_general_op(byte * restrict dp, int da, const byte * restrict sp, int sa, int n1, int w, int alpha, const fz_overprint * restrict eop)
+{
+	if (sa)
+		alpha = FZ_EXPAND(alpha);
+	do
+	{
+		int masa = (sa ? FZ_COMBINE(sp[n1], alpha) : alpha);
+		int k;
+		for (k = 0; k < n1; k++)
+		{
+			if (fz_overprint_component(eop, k))
+				*dp = FZ_BLEND(*sp, *dp, masa);
+			sp++;
 			dp++;
 		}
 		if (da)
@@ -1270,7 +1493,8 @@ template_span_1_general(byte * restrict dp, int da, const byte * restrict sp, in
 			}
 			else
 			{
-				*dp = *sp++ + FZ_COMBINE(*dp, t);
+				*dp = *sp + FZ_COMBINE(*dp, t);
+				sp++;
 				dp++;
 				if (da)
 				{
@@ -1395,10 +1619,58 @@ template_span_N_general(byte * restrict dp, int da, const byte * restrict sp, in
 			t = 256 - t;
 			if (t == 0)
 			{
-				int k = n1;
-				while (k--)
-				{
+				int k;
+				for (k = 0; k < n1; k++)
 					*dp++ = *sp++;
+				if (da)
+					*dp++ = (sa ? *sp : 255);
+				if (sa)
+					sp++;
+			}
+			else
+			{
+				int k;
+				for (k = 0; k < n1; k++)
+				{
+					*dp = *sp + FZ_COMBINE(*dp, t);
+					sp++;
+					dp++;
+				}
+				if (da)
+				{
+					*dp = (sa ? *sp + FZ_COMBINE(*dp, t) : 255);
+					dp++;
+				}
+				if (sa)
+					sp++;
+			}
+		}
+	}
+	while (--w);
+}
+
+static inline void
+template_span_N_general_op(byte * restrict dp, int da, const byte * restrict sp, int sa, int n1, int w, const fz_overprint * restrict eop)
+{
+	do
+	{
+		int t = (sa ? FZ_EXPAND(sp[n1]) : 256);
+		if (t == 0)
+		{
+			dp += n1 + da; sp += n1 + sa;
+		}
+		else
+		{
+			t = 256 - t;
+			if (t == 0)
+			{
+				int k;
+				for (k = 0; k < n1; k++)
+				{
+					if (fz_overprint_component(eop, k))
+						*dp = *sp;
+					dp++;
+					sp++;
 				}
 				if (da)
 					*dp++ = (sa ? *sp : 255);
@@ -1407,10 +1679,12 @@ template_span_N_general(byte * restrict dp, int da, const byte * restrict sp, in
 			}
 			else
 			{
-				int k = n1;
-				while (k--)
+				int k;
+				for (k = 0; k < n1; k++)
 				{
-					*dp = *sp++ + FZ_COMBINE(*dp, t);
+					if (fz_overprint_component(eop, k))
+						*dp = *sp + FZ_COMBINE(*dp, t);
+					sp++;
 					dp++;
 				}
 				if (da)
@@ -1428,7 +1702,7 @@ template_span_N_general(byte * restrict dp, int da, const byte * restrict sp, in
 #endif
 
 static void
-paint_span_0_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_0_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	do
@@ -1442,7 +1716,7 @@ paint_span_0_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa,
 }
 
 static void
-paint_span_0_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_0_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	alpha = FZ_EXPAND(alpha);
@@ -1457,28 +1731,28 @@ paint_span_0_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, i
 }
 
 static void
-paint_span_1_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_general(dp, 0, sp, 1, w);
 }
 
 static void
-paint_span_1_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_with_alpha_general(dp, 0, sp, 1, w, alpha);
 }
 
 static void
-paint_span_1_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_general(dp, 1, sp, 1, w);
 }
 
 static void
-paint_span_1_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_with_alpha_general(dp, 1, sp, 1, w, alpha);
@@ -1486,28 +1760,28 @@ paint_span_1_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, i
 
 #if FZ_PLOTTERS_G
 static void
-paint_span_1_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_general(dp, 1, sp, 0, w);
 }
 
 static void
-paint_span_1_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_with_alpha_general(dp, 1, sp, 0, w, alpha);
 }
 
 static void
-paint_span_1(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_general(dp, 0, sp, 0, w);
 }
 
 static void
-paint_span_1_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_1_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_1_with_alpha_general(dp, 0, sp, 0, w, alpha);
@@ -1516,56 +1790,56 @@ paint_span_1_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa,
 
 #if FZ_PLOTTERS_RGB
 static void
-paint_span_3_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_general(dp, 1, sp, 1, w);
 }
 
 static void
-paint_span_3_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_with_alpha_general(dp, 1, sp, 1, w, alpha);
 }
 
 static void
-paint_span_3_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_general(dp, 1, sp, 0, w);
 }
 
 static void
-paint_span_3_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_with_alpha_general(dp, 1, sp, 0, w, alpha);
 }
 
 static void
-paint_span_3_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_general(dp, 0, sp, 1, w);
 }
 
 static void
-paint_span_3_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_with_alpha_general(dp, 0, sp, 1, w, alpha);
 }
 
 static void
-paint_span_3(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_general(dp, 0, sp, 0, w);
 }
 
 static void
-paint_span_3_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_3_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_3_with_alpha_general(dp, 0, sp, 0, w, alpha);
@@ -1574,56 +1848,56 @@ paint_span_3_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa,
 
 #if FZ_PLOTTERS_CMYK
 static void
-paint_span_4_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_general(dp, 1, sp, 1, w);
 }
 
 static void
-paint_span_4_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_with_alpha_general(dp, 1, sp, 1, w, alpha);
 }
 
 static void
-paint_span_4_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_general(dp, 1, sp, 0, w);
 }
 
 static void
-paint_span_4_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_with_alpha_general(dp, 1, sp, 0, w, alpha);
 }
 
 static void
-paint_span_4_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_general(dp, 0, sp, 1, w);
 }
 
 static void
-paint_span_4_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_with_alpha_general(dp, 0, sp, 1, w, alpha);
 }
 
 static void
-paint_span_4(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_general(dp, 0, sp, 0, w);
 }
 
 static void
-paint_span_4_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_4_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_4_with_alpha_general(dp, 0, sp, 0, w, alpha);
@@ -1632,65 +1906,88 @@ paint_span_4_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa,
 
 #if FZ_PLOTTERS_N
 static void
-paint_span_N_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N_da_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_general(dp, 1, sp, 1, n, w);
 }
 
 static void
-paint_span_N_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_with_alpha_general(dp, 1, sp, 1, n, w, alpha);
 }
 
 static void
-paint_span_N_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N_da(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_general(dp, 1, sp, 0, n, w);
 }
 
 static void
-paint_span_N_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N_da_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_with_alpha_general(dp, 1, sp, 0, n, w, alpha);
 }
 
 static void
-paint_span_N_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N_sa(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_general(dp, 0, sp, 1, n, w);
 }
 
 static void
-paint_span_N_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_with_alpha_general(dp, 0, sp, 1, n, w, alpha);
 }
 
 static void
-paint_span_N(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_general(dp, 0, sp, 0, n, w);
 }
 
 static void
-paint_span_N_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha)
+paint_span_N_alpha(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
 {
 	TRACK_FN();
 	template_span_N_with_alpha_general(dp, 0, sp, 0, n, w, alpha);
 }
+
+static void
+paint_span_N_general_op(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
+{
+	TRACK_FN();
+	template_span_N_general_op(dp, da, sp, sa, n, w, eop);
+}
+
+static void
+paint_span_N_general_alpha_op(byte * restrict dp, int da, const byte * restrict sp, int sa, int n, int w, int alpha, const fz_overprint * restrict eop)
+{
+	TRACK_FN();
+	template_span_N_with_alpha_general_op(dp, da, sp, sa, n, w, alpha, eop);
+}
 #endif /* FZ_PLOTTERS_N */
 
 fz_span_painter_t *
-fz_get_span_painter(int da, int sa, int n, int alpha)
+fz_get_span_painter(int da, int sa, int n, int alpha, const fz_overprint * restrict eop)
 {
+	if (eop != NULL)
+	{
+		if (alpha == 255)
+			return paint_span_N_general_op;
+		else if (alpha > 0)
+			return paint_span_N_general_alpha_op;
+		else
+			return NULL;
+	}
 	switch (n)
 	{
 	case 0:
@@ -1883,14 +2180,14 @@ fz_paint_pixmap_with_bbox(fz_pixmap * restrict dst, const fz_pixmap * restrict s
 	da = dst->alpha;
 
 	n -= sa;
-	fn = fz_get_span_painter(da, sa, n, alpha);
+	fn = fz_get_span_painter(da, sa, n, alpha, 0);
 	assert(fn);
 	if (fn == NULL)
 		return;
 
 	while (h--)
 	{
-		(*fn)(dp, da, sp, sa, n, w, alpha);
+		(*fn)(dp, da, sp, sa, n, w, alpha, 0);
 		sp += src->stride;
 		dp += dst->stride;
 	}
@@ -1934,14 +2231,14 @@ fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int al
 	da = dst->alpha;
 
 	n -= sa;
-	fn = fz_get_span_painter(da, sa, n, alpha);
+	fn = fz_get_span_painter(da, sa, n, alpha, 0);
 	assert(fn);
 	if (fn == NULL)
 		return;
 
 	while (h--)
 	{
-		(*fn)(dp, da, sp, sa, n, w, alpha);
+		(*fn)(dp, da, sp, sa, n, w, alpha, 0);
 		sp += src->stride;
 		dp += dst->stride;
 	}
@@ -1989,7 +2286,7 @@ fz_paint_pixmap_with_mask(fz_pixmap * restrict dst, const fz_pixmap * restrict s
 
 	while (h--)
 	{
-		(*fn)(dp, sp, mp, w, n, sa);
+		(*fn)(dp, sp, mp, w, n, sa, NULL);
 		sp += src->stride;
 		dp += dst->stride;
 		mp += msk->stride;
@@ -2191,11 +2488,35 @@ intermediate_run:
 #include "paint-glyph.h"
 
 #include "paint-glyph.h"
+
+#define ALPHA
+#define EOP
+#include "paint-glyph.h"
+
+#define DA
+#define EOP
+#include "paint-glyph.h"
+
+#define DA
+#define ALPHA
+#define EOP
+#include "paint-glyph.h"
+
+#define EOP
+#include "paint-glyph.h"
 #endif /* FZ_PLOTTERS_N */
 
 static inline void
-fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph *glyph, int w, int h, int skip_x, int skip_y)
+fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph *glyph, int w, int h, int skip_x, int skip_y, const fz_overprint * restrict eop)
 {
+	if (eop != NULL)
+	{
+		if (da)
+			fz_paint_glyph_alpha_N_da_op(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y, eop);
+		else
+			fz_paint_glyph_alpha_N_op(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y, eop);
+		return;
+	}
 	switch (n)
 	{
 	case 1:
@@ -2241,8 +2562,16 @@ fallback:{}
 }
 
 static inline void
-fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y)
+fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y, const fz_overprint * restrict eop)
 {
+	if (eop != NULL)
+	{
+		if (da)
+			fz_paint_glyph_solid_N_da_op(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y, eop);
+		else
+			fz_paint_glyph_solid_N_op(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y, eop);
+		return;
+	}
 	switch (n)
 	{
 	case 1:
@@ -2288,20 +2617,20 @@ fallback:{}
 }
 
 void
-fz_paint_glyph(const unsigned char * restrict colorbv, fz_pixmap * restrict dst, unsigned char * restrict dp, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y)
+fz_paint_glyph(const unsigned char * restrict colorbv, fz_pixmap * restrict dst, unsigned char * restrict dp, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y, const fz_overprint * restrict eop)
 {
 	int n = dst->n - dst->alpha;
 	if (dst->colorspace)
 	{
 		assert(n > 0);
 		if (colorbv[n] == 255)
-			fz_paint_glyph_solid(colorbv, n, dst->stride, dp, dst->alpha, glyph, w, h, skip_x, skip_y);
+			fz_paint_glyph_solid(colorbv, n, dst->stride, dp, dst->alpha, glyph, w, h, skip_x, skip_y, eop);
 		else if (colorbv[n] != 0)
-			fz_paint_glyph_alpha(colorbv, n, dst->stride, dp, dst->alpha, glyph, w, h, skip_x, skip_y);
+			fz_paint_glyph_alpha(colorbv, n, dst->stride, dp, dst->alpha, glyph, w, h, skip_x, skip_y, eop);
 	}
 	else
 	{
-		assert(dst->alpha && dst->n == 1 && dst->colorspace == NULL);
+		assert(dst->alpha && dst->n == 1 && dst->colorspace == NULL && eop == 0);
 		fz_paint_glyph_mask(dst->stride, dp, dst->alpha, glyph, w, h, skip_x, skip_y);
 	}
 }

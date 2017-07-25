@@ -1471,7 +1471,7 @@ static int intcmp(const void *a, const void *b)
 	return *((int*)a) - *((int *)b);
 }
 
-static void fz_convert_edgebuffer(fz_context *ctx, fz_rasterizer *ras, int eofill, const fz_irect *clip, fz_pixmap *pix, unsigned char *color)
+static void fz_convert_edgebuffer(fz_context *ctx, fz_rasterizer *ras, int eofill, const fz_irect *clip, fz_pixmap *pix, unsigned char *color, fz_overprint *eop)
 {
 	fz_edgebuffer *eb = (fz_edgebuffer *)ras;
 	int scanlines = ras->clip.y1 - ras->clip.y0;
@@ -1481,7 +1481,7 @@ static void fz_convert_edgebuffer(fz_context *ctx, fz_rasterizer *ras, int eofil
 	uint8_t *out;
 	fz_solid_color_painter_t *fn;
 
-	fn = fz_get_solid_color_painter(pix->n, color, pix->alpha);
+	fn = fz_get_solid_color_painter(pix->n, color, pix->alpha, eop);
 	assert(fn);
 	if (fn == NULL)
 		return;
@@ -1609,7 +1609,7 @@ static void fz_convert_edgebuffer(fz_context *ctx, fz_rasterizer *ras, int eofil
 				left = 0;
 			right -= left;
 			if (right > 0) {
-				(*fn)(out + left*n, n, right, color, a);
+				(*fn)(out + left*n, n, right, color, a, eop);
 			}
 		}
 		out += pix->stride;
@@ -1626,7 +1626,7 @@ static int edgecmp(const void *a, const void *b)
 	return ((int*)a)[1] - ((int*)b)[1];
 }
 
-static void fz_convert_edgebuffer_app(fz_context *ctx, fz_rasterizer *ras, int eofill, const fz_irect *clip, fz_pixmap *pix, unsigned char *color)
+static void fz_convert_edgebuffer_app(fz_context *ctx, fz_rasterizer *ras, int eofill, const fz_irect *clip, fz_pixmap *pix, unsigned char *color, fz_overprint *eop)
 {
 	fz_edgebuffer *eb = (fz_edgebuffer *)ras;
 	int scanlines = ras->clip.y1 - ras->clip.y0;
@@ -1636,7 +1636,7 @@ static void fz_convert_edgebuffer_app(fz_context *ctx, fz_rasterizer *ras, int e
 	uint8_t *out;
 	fz_solid_color_painter_t *fn;
 
-	fn = fz_get_solid_color_painter(pix->n, color, pix->alpha);
+	fn = fz_get_solid_color_painter(pix->n, color, pix->alpha, eop);
 	assert(fn);
 	if (fn == NULL)
 		return;
@@ -1801,7 +1801,7 @@ static void fz_convert_edgebuffer_app(fz_context *ctx, fz_rasterizer *ras, int e
 				left = 0;
 			right -= left;
 			if (right > 0) {
-				(*fn)(out + left*n, n, right, color, a);
+				(*fn)(out + left*n, n, right, color, a, eop);
 			}
 		}
 		out += pix->stride;

@@ -293,7 +293,7 @@ fz_rasterizer *fz_new_rasterizer(fz_context *ctx, const fz_aa_context *aa)
 	return r;
 }
 
-void fz_convert_rasterizer(fz_context *ctx, fz_rasterizer *r, int eofill, fz_pixmap *pix, unsigned char *colorbv)
+void fz_convert_rasterizer(fz_context *ctx, fz_rasterizer *r, int eofill, fz_pixmap *pix, unsigned char *colorbv, fz_overprint *eop)
 {
 	fz_irect clip, scissor;
 	fz_irect pixmap_clip;
@@ -302,5 +302,5 @@ void fz_convert_rasterizer(fz_context *ctx, fz_rasterizer *r, int eofill, fz_pix
 		return;
 	if (fz_is_empty_irect(fz_intersect_irect(&clip, fz_clip_rasterizer(ctx, r, &scissor))))
 		return;
-	r->fns.convert(ctx, r, eofill, &clip, pix, colorbv);
+	r->fns.convert(ctx, r, eofill, &clip, pix, colorbv, eop);
 }

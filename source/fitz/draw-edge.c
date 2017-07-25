@@ -523,18 +523,18 @@ undelta_aa(fz_context *ctx, unsigned char * restrict out, int * restrict in, int
 }
 
 static inline void
-blit_aa(fz_pixmap *dst, int x, int y, unsigned char *mp, int w, unsigned char *color, void *fn)
+blit_aa(fz_pixmap *dst, int x, int y, unsigned char *mp, int w, unsigned char *color, void *fn, fz_overprint *eop)
 {
 	unsigned char *dp;
 	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
 	if (color)
-		(*(fz_span_color_painter_t *)fn)(dp, mp, dst->n, w, color, dst->alpha);
+		(*(fz_span_color_painter_t *)fn)(dp, mp, dst->n, w, color, dst->alpha, eop);
 	else
-		(*(fz_span_painter_t *)fn)(dp, dst->alpha, mp, 1, 0, w, 255);
+		(*(fz_span_painter_t *)fn)(dp, dst->alpha, mp, 1, 0, w, 255, eop);
 }
 
 static void
-fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, void *painter)
+fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, void *painter, fz_overprint *eop)
 {
 	unsigned char *alphas;
 	int *deltas;
@@ -634,7 +634,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 		if (yc != yd)
 		{
 			undelta_aa(ctx, alphas, deltas, skipx + clipn);
-			blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter);
+			blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 			memset(deltas, 0, (skipx + clipn) * sizeof(int));
 		}
 		yd = yc;
@@ -657,7 +657,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 				else
 					non_zero_winding_aa(ctx, gel, deltas, xofs, rh);
 				undelta_aa(ctx, alphas, deltas, skipx + clipn);
-				blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter);
+				blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 				memset(deltas, 0, (skipx + clipn) * sizeof(int));
 				yd++;
 				if (yd >= clip->y1)
@@ -678,7 +678,7 @@ fz_scan_convert_aa(fz_context *ctx, fz_gel *gel, int eofill, const fz_irect *cli
 				{
 					/* Do any successive whole scanlines - no need
 					 * to recalculate deltas here. */
-					blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter);
+					blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 					yd++;
 					if (yd >= clip->y1)
 						goto clip_ended;
@@ -707,7 +707,7 @@ advance:
 	if (yd < clip->y1)
 	{
 		undelta_aa(ctx, alphas, deltas, skipx + clipn);
-		blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter);
+		blit_aa(dst, xmin + skipx, yd, alphas + skipx, clipn, color, painter, eop);
 	}
 clip_ended:
 	fz_free(ctx, deltas);
@@ -719,7 +719,7 @@ clip_ended:
  */
 
 static inline void
-blit_sharp(int x0, int x1, int y, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn)
+blit_sharp(int x0, int x1, int y, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn, fz_overprint *eop)
 {
 	unsigned char *dp;
 	int da = dst->alpha;
@@ -729,14 +729,14 @@ blit_sharp(int x0, int x1, int y, const fz_irect *clip, fz_pixmap *dst, unsigned
 	{
 		dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x0 - dst->x) * dst->n);
 		if (color)
-			(*fn)(dp, dst->n, x1 - x0, color, da);
+			(*fn)(dp, dst->n, x1 - x0, color, da, eop);
 		else
 			memset(dp, 255, x1-x0);
 	}
 }
 
 static inline void
-non_zero_winding_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn)
+non_zero_winding_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn, fz_overprint *eop)
 {
 	int winding = 0;
 	int x = 0;
@@ -746,13 +746,13 @@ non_zero_winding_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip
 		if (!winding && (winding + gel->active[i]->ydir))
 			x = gel->active[i]->x;
 		if (winding && !(winding + gel->active[i]->ydir))
-			blit_sharp(x, gel->active[i]->x, y, clip, dst, color, fn);
+			blit_sharp(x, gel->active[i]->x, y, clip, dst, color, fn, eop);
 		winding += gel->active[i]->ydir;
 	}
 }
 
 static inline void
-even_odd_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn)
+even_odd_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn, fz_overprint *eop)
 {
 	int even = 0;
 	int x = 0;
@@ -762,7 +762,7 @@ even_odd_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip, fz_pix
 		if (!even)
 			x = gel->active[i]->x;
 		else
-			blit_sharp(x, gel->active[i]->x, y, clip, dst, color, fn);
+			blit_sharp(x, gel->active[i]->x, y, clip, dst, color, fn, eop);
 		even = !even;
 	}
 }
@@ -770,7 +770,7 @@ even_odd_sharp(fz_context *ctx, fz_gel *gel, int y, const fz_irect *clip, fz_pix
 static void
 fz_scan_convert_sharp(fz_context *ctx,
 	fz_gel *gel, int eofill, const fz_irect *clip,
-	fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn)
+	fz_pixmap *dst, unsigned char *color, fz_solid_color_painter_t *fn, fz_overprint *eop)
 {
 	int e = 0;
 	int y = gel->edges[0].y;
@@ -810,9 +810,9 @@ fz_scan_convert_sharp(fz_context *ctx,
 			while (h--)
 			{
 				if (eofill)
-					even_odd_sharp(ctx, gel, y, clip, dst, color, fn);
+					even_odd_sharp(ctx, gel, y, clip, dst, color, fn, eop);
 				else
-					non_zero_winding_sharp(ctx, gel, y, clip, dst, color, fn);
+					non_zero_winding_sharp(ctx, gel, y, clip, dst, color, fn, eop);
 				y++;
 			}
 		}
@@ -824,7 +824,7 @@ fz_scan_convert_sharp(fz_context *ctx,
 }
 
 static void
-fz_convert_gel(fz_context *ctx, fz_rasterizer *rast, int eofill, const fz_irect *clip, fz_pixmap *dst, unsigned char *color)
+fz_convert_gel(fz_context *ctx, fz_rasterizer *rast, int eofill, const fz_irect *clip, fz_pixmap *dst, unsigned char *color, fz_overprint *eop)
 {
 	fz_gel *gel = (fz_gel *)rast;
 
@@ -834,21 +834,21 @@ fz_convert_gel(fz_context *ctx, fz_rasterizer *rast, int eofill, const fz_irect 
 	{
 		void *fn;
 		if (color)
-			fn = (void *)fz_get_span_color_painter(dst->n, dst->alpha, color);
+			fn = (void *)fz_get_span_color_painter(dst->n, dst->alpha, color, eop);
 		else
-			fn = (void *)fz_get_span_painter(dst->alpha, 1, 0, 255);
+			fn = (void *)fz_get_span_painter(dst->alpha, 1, 0, 255, eop);
 		assert(fn);
 		if (fn == NULL)
 			return;
-		fz_scan_convert_aa(ctx, gel, eofill, clip, dst, color, fn);
+		fz_scan_convert_aa(ctx, gel, eofill, clip, dst, color, fn, eop);
 	}
 	else
 	{
-		fz_solid_color_painter_t *fn = fz_get_solid_color_painter(dst->n, color, dst->alpha);
+		fz_solid_color_painter_t *fn = fz_get_solid_color_painter(dst->n, color, dst->alpha, eop);
 		assert(fn);
 		if (fn == NULL)
 			return;
-		fz_scan_convert_sharp(ctx, gel, eofill, clip, dst, color, (fz_solid_color_painter_t *)fn);
+		fz_scan_convert_sharp(ctx, gel, eofill, clip, dst, color, (fz_solid_color_painter_t *)fn, eop);
 	}
 }
 
