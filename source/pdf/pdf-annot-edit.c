@@ -70,16 +70,23 @@ pdf_annot_type_from_string(fz_context *ctx, const char *subtype)
 	return PDF_ANNOT_UNKNOWN;
 }
 
-static void check_allowed_subtypes(fz_context *ctx, pdf_annot *annot, pdf_obj *property, pdf_obj **allowed)
+static int is_allowed_subtype(fz_context *ctx, pdf_annot *annot, pdf_obj *property, pdf_obj **allowed)
 {
 	pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME_Subtype);
-	while (allowed) {
+	while (*allowed) {
 		if (pdf_name_eq(ctx, subtype, *allowed))
-			return;
+			return 1;
 		allowed++;
 	}
 
-	fz_throw(ctx, FZ_ERROR_GENERIC, "%s annotations have no %s property", pdf_to_name(ctx, subtype), pdf_to_name(ctx, property));
+	return 0;
+}
+
+static void check_allowed_subtypes(fz_context *ctx, pdf_annot *annot, pdf_obj *property, pdf_obj **allowed)
+{
+	pdf_obj *subtype = pdf_dict_get(ctx, annot->obj, PDF_NAME_Subtype);
+	if (!is_allowed_subtype(ctx, annot, property, allowed))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "%s annotations have no %s property", pdf_to_name(ctx, subtype), pdf_to_name(ctx, property));
 }
 
 pdf_annot *
@@ -272,6 +279,13 @@ static pdf_obj *open_subtypes[] = {
 	NULL,
 };
 
+
+int
+pdf_annot_has_open(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_Open, open_subtypes);
+}
+
 int
 pdf_annot_is_open(fz_context *ctx, pdf_annot *annot)
 {
@@ -295,6 +309,12 @@ static pdf_obj *icon_name_subtypes[] = {
 	PDF_NAME_Text,
 	NULL,
 };
+
+int
+pdf_annot_has_icon_name(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_Name, icon_name_subtypes);
+}
 
 const char *
 pdf_annot_icon_name(fz_context *ctx, pdf_annot *annot)
@@ -351,6 +371,12 @@ static pdf_obj *line_ending_subtypes[] = {
 	PDF_NAME_Polygon,
 	NULL,
 };
+
+int
+pdf_annot_has_line_ending_styles(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_LE, line_ending_subtypes);
+}
 
 void
 pdf_annot_line_ending_styles(fz_context *ctx, pdf_annot *annot, int *start_style, int *end_style)
@@ -519,6 +545,12 @@ static pdf_obj *interior_color_subtypes[] = {
 	NULL,
 };
 
+int
+pdf_annot_has_interior_color(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_IC, interior_color_subtypes);
+}
+
 void
 pdf_annot_interior_color(fz_context *ctx, pdf_annot *annot, int *n, float color[4])
 {
@@ -536,6 +568,12 @@ static pdf_obj *vertices_subtypes[] = {
 	PDF_NAME_Polygon,
 	NULL,
 };
+
+int
+pdf_annot_has_vertices(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_Vertices, vertices_subtypes);
+}
 
 int
 pdf_annot_vertex_count(fz_context *ctx, pdf_annot *annot)
@@ -603,6 +641,12 @@ static pdf_obj *quad_point_subtypes[] = {
 	PDF_NAME_Underline,
 	NULL,
 };
+
+int
+pdf_annot_has_quad_points(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
+}
 
 int
 pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
@@ -675,6 +719,12 @@ static pdf_obj *ink_list_subtypes[] = {
 	PDF_NAME_Ink,
 	NULL,
 };
+
+int
+pdf_annot_has_ink_list(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
+}
 
 int
 pdf_annot_ink_list_count(fz_context *ctx, pdf_annot *annot)

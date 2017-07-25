@@ -143,6 +143,14 @@ pdf_annot *pdf_create_annot(fz_context *ctx, pdf_page *page, fz_annot_type type)
 */
 void pdf_delete_annot(fz_context *ctx, pdf_page *page, pdf_annot *annot);
 
+int pdf_annot_has_ink_list(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_quad_points(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_vertices(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_interior_color(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_line_ending_styles(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_icon_name(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_open(fz_context *ctx, pdf_annot *annot);
+
 int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
 float pdf_annot_border(fz_context *ctx, pdf_annot *annot);
