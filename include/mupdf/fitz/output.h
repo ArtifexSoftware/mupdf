@@ -214,6 +214,12 @@ void fz_write_byte(fz_context *ctx, fz_output *out, unsigned char x);
 void fz_write_rune(fz_context *ctx, fz_output *out, int rune);
 
 /*
+	fz_write_base64: Write base64 encoded data.
+*/
+void fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, int size, int newline);
+void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, int newline);
+
+/*
 	fz_format_string: Our customised 'printf'-like string formatter.
 	Takes %c, %d, %o, %s, %u, %x, as usual.
 	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03o, %04x, etc).

@@ -53,44 +53,6 @@ fz_print_stext_sheet(fz_context *ctx, fz_output *out, fz_stext_sheet *sheet)
 		fz_print_style(ctx, out, style);
 }
 
-static void
-send_data_base64_stext(fz_context *ctx, fz_output *out, fz_buffer *buffer)
-{
-	size_t i, len;
-	static const char set[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-	len = buffer->len/3;
-	for (i = 0; i < len; i++)
-	{
-		int c = buffer->data[3*i];
-		int d = buffer->data[3*i+1];
-		int e = buffer->data[3*i+2];
-		if ((i & 15) == 0)
-			fz_write_printf(ctx, out, "\n");
-		fz_write_printf(ctx, out, "%c%c%c%c", set[c>>2], set[((c&3)<<4)|(d>>4)], set[((d&15)<<2)|(e>>6)], set[e & 63]);
-	}
-	i *= 3;
-	switch (buffer->len-i)
-	{
-		case 2:
-		{
-			int c = buffer->data[i];
-			int d = buffer->data[i+1];
-			fz_write_printf(ctx, out, "%c%c%c=", set[c>>2], set[((c&3)<<4)|(d>>4)], set[((d&15)<<2)]);
-			break;
-		}
-	case 1:
-		{
-			int c = buffer->data[i];
-			fz_write_printf(ctx, out, "%c%c==", set[c>>2], set[(c&3)<<4]);
-			break;
-		}
-	default:
-	case 0:
-		break;
-	}
-}
-
 void
 fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
@@ -232,17 +194,17 @@ fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
 			{
 			case FZ_IMAGE_JPEG:
 				fz_write_printf(ctx, out, "image/jpeg;base64,");
-				send_data_base64_stext(ctx, out, buffer->buffer);
+				fz_write_base64_buffer(ctx, out, buffer->buffer, 1);
 				break;
 			case FZ_IMAGE_PNG:
 				fz_write_printf(ctx, out, "image/png;base64,");
-				send_data_base64_stext(ctx, out, buffer->buffer);
+				fz_write_base64_buffer(ctx, out, buffer->buffer, 1);
 				break;
 			default:
 				{
 					fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image->image, NULL);
 					fz_write_printf(ctx, out, "image/png;base64,");
-					send_data_base64_stext(ctx, out, buf);
+					fz_write_base64_buffer(ctx, out, buf, 1);
 					fz_drop_buffer(ctx, buf);
 					break;
 				}

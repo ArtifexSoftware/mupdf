@@ -373,6 +373,50 @@ fz_write_rune(fz_context *ctx, fz_output *out, int rune)
 }
 
 void
+fz_write_base64(fz_context *ctx, fz_output *out, const unsigned char *data, int size, int newline)
+{
+	static const char set[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	int i;
+	for (i = 0; i + 3 < size; i += 3)
+	{
+		int c = data[i];
+		int d = data[i+1];
+		int e = data[i+2];
+		if (newline && (i & 15) == 0)
+			fz_write_byte(ctx, out, '\n');
+		fz_write_byte(ctx, out, set[c>>2]);
+		fz_write_byte(ctx, out, set[((c&3)<<4)|(d>>4)]);
+		fz_write_byte(ctx, out, set[((d&15)<<2)|(e>>6)]);
+		fz_write_byte(ctx, out, set[e&63]);
+	}
+	if (size - i == 2)
+	{
+		int c = data[i];
+		int d = data[i+1];
+		fz_write_byte(ctx, out, set[c>>2]);
+		fz_write_byte(ctx, out, set[((c&3)<<4)|(d>>4)]);
+		fz_write_byte(ctx, out, set[((d&15)<<2)]);
+		fz_write_byte(ctx, out, '=');
+	}
+	else if (size - i == 1)
+	{
+		int c = data[i];
+		fz_write_byte(ctx, out, set[c>>2]);
+		fz_write_byte(ctx, out, set[((c&3)<<4)]);
+		fz_write_byte(ctx, out, '=');
+		fz_write_byte(ctx, out, '=');
+	}
+}
+
+void
+fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *buf, int newline)
+{
+	unsigned char *data;
+	size_t size = fz_buffer_storage(ctx, buf, &data);
+	fz_write_base64(ctx, out, data, size, newline);
+}
+
+void
 fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
