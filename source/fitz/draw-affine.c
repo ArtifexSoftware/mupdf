@@ -37,7 +37,7 @@ template_affine_alpha_N_lerp(byte * restrict dp, int da, const byte * restrict s
 
 	do
 	{
-		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
+		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
 		{
 			int ui = u >> 16;
 			int vi = v >> 16;
@@ -77,7 +77,7 @@ template_affine_alpha_g2rgb_lerp(byte * restrict dp, int da, const byte * restri
 {
 	do
 	{
-		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
+		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
 		{
 			int ui = u >> 16;
 			int vi = v >> 16;
@@ -324,7 +324,7 @@ template_affine_N_lerp(byte * restrict dp, int da, const byte * restrict sp, int
 
 	do
 	{
-		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
+		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
 		{
 			int ui = u >> 16;
 			int vi = v >> 16;
@@ -363,7 +363,7 @@ template_affine_solid_g2rgb_lerp(byte * restrict dp, int da, const byte * restri
 {
 	do
 	{
-		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
+		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
 		{
 			int ui = u >> 16;
 			int vi = v >> 16;
@@ -723,7 +723,7 @@ template_affine_color_N_lerp(byte * restrict dp, int da, const byte * restrict s
 
 	do
 	{
-		if (u + 32768 >= 0 && u < sw && v + 32768 >= 0 && v < sh)
+		if (u + 32768 >= 0 && u + 65536 < sw && v + 32768 >= 0 && v + 65536 < sh)
 		{
 			int ui = u >> 16;
 			int vi = v >> 16;
