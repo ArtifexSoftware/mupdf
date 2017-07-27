@@ -1120,8 +1120,8 @@ js_dev_begin_tile(fz_context *ctx, fz_device *dev, const fz_rect *area, const fz
 		js_pop(J, 1);
 		return n;
 	}
-	return 0;
 	js_endtry(J);
+	return 0;
 }
 
 static void
