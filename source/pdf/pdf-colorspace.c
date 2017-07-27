@@ -206,7 +206,7 @@ load_devicen(fz_context *ctx, pdf_obj *array)
 
 		cs = fz_new_colorspace(ctx, colorspace_name, n, 1, 1,
 			fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? devicen_to_alt : devicen_to_rgb, NULL, base_devicen, NULL, free_devicen, devn,
-			sizeof(struct devicen) + (base ? base->size : 0) + pdf_function_size(ctx, tint));
+			sizeof(struct devicen) + base->size + pdf_function_size(ctx, tint));
 
 		devn = NULL;
 		if (pdf_is_array(ctx, nameobj))
