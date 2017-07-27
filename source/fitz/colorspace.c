@@ -157,7 +157,7 @@ clamp_default(const fz_colorspace *cs, const float *src, float *dst)
 }
 
 fz_colorspace *
-fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, int is_device_n, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
+fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, int device_n, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
 	FZ_INIT_KEY_STORABLE(cs, 1, fz_drop_colorspace_imp);
@@ -165,7 +165,7 @@ fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, 
 	fz_strlcpy(cs->name, name ? name : "UNKNOWN", sizeof cs->name);
 	cs->n = n;
 	cs->is_subtractive = is_subtractive;
-	cs->is_device_n = is_device_n;
+	cs->device_n = device_n;
 	cs->to_ccs = to_ccs;
 	cs->from_ccs = from_ccs;
 	cs->get_base = base;
@@ -3412,7 +3412,7 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 	idx->high = high;
 
 	fz_try(ctx)
-		cs = fz_new_colorspace(ctx, "Indexed", 1, 0, 0, fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
+		cs = fz_new_colorspace(ctx, "Indexed", 1, 0, FZ_NOT_DEVICE_N, fz_colorspace_is_icc(ctx, fz_device_rgb(ctx)) ? indexed_to_alt : indexed_to_rgb, NULL, base_indexed, clamp_indexed, free_indexed, idx, sizeof(*idx) + (base->n * (idx->high + 1)) + base->size);
 	fz_catch(ctx)
 	{
 		fz_free(ctx, idx);
@@ -3660,7 +3660,7 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 		}
 
 		fz_md5_icc(ctx, profile);
-		cs = fz_new_colorspace(ctx, name, num, 0, 0, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
+		cs = fz_new_colorspace(ctx, name, num, 0, FZ_NOT_DEVICE_N, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 
 		switch(profile->num_devcomp)
 		{
@@ -3755,7 +3755,7 @@ fz_new_cal_colorspace(fz_context *ctx, const char *name, float *wp, float *bp, f
 	cal_data->n = num;
 
 	fz_try(ctx)
-		cs = fz_new_colorspace(ctx, "pdf-cal", num, 0, 0, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
+		cs = fz_new_colorspace(ctx, "pdf-cal", num, 0, FZ_NOT_DEVICE_N, NULL, NULL, NULL, NULL, free_cal, cal_data, sizeof(cal_data));
 	fz_catch(ctx)
 	{
 		fz_free(ctx, cal_data);
@@ -3905,8 +3905,42 @@ void fz_colorspace_name_colorant(fz_context *ctx, fz_colorspace *cs, int i, cons
 	fz_free(ctx, cs->colorant[i]);
 	cs->colorant[i] = NULL;
 	if (name)
+	{
 		cs->colorant[i] = fz_strdup(ctx, name);
 
+		if (cs->device_n != FZ_NOT_DEVICE_N)
+		{
+			if (i == 0)
+			{
+				if (strcmp(name, "Cyan") == 0 ||
+					strcmp(name, "Magenta") == 0 ||
+					strcmp(name, "Yellow") == 0 ||
+					strcmp(name, "Black") == 0)
+				{
+					cs->device_n = FZ_DEVICE_N_CMYK_ONLY;
+				}
+			}
+			else
+			{
+				if (cs->device_n != FZ_DEVICE_N_WITH_CMYK)
+				{
+					if (strcmp(name, "Cyan") == 0 ||
+						strcmp(name, "Magenta") == 0 ||
+						strcmp(name, "Yellow") == 0 ||
+						strcmp(name, "Black") == 0)
+					{
+						if (cs->device_n == FZ_DEVICE_N_SPOTS_ONLY)
+							cs->device_n = FZ_DEVICE_N_WITH_CMYK;
+					}
+					else
+					{
+						if (cs->device_n == FZ_DEVICE_N_CMYK_ONLY)
+							cs->device_n = FZ_DEVICE_N_WITH_CMYK;
+					}
+				}
+			}
+		}
+	}
 }
 
 const char *fz_colorspace_colorant(fz_context *ctx, const fz_colorspace *cs, int i)
@@ -3919,5 +3953,15 @@ const char *fz_colorspace_colorant(fz_context *ctx, const fz_colorspace *cs, int
 
 int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs)
 {
-	return (cs && cs->is_device_n);
+	return (cs && cs->device_n != FZ_NOT_DEVICE_N);
+}
+
+int fz_colorspace_device_n_info(fz_context *ctx, const fz_colorspace *cs)
+{
+	return (cs == NULL ? 0 : cs->device_n);
+}
+
+int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs)
+{
+	return (cs == NULL ? 0 : cs->device_n == FZ_DEVICE_N_WITH_CMYK || cs->device_n == FZ_DEVICE_N_CMYK_ONLY);
 }

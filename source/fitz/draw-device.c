@@ -328,6 +328,26 @@ static inline fz_matrix concat(const fz_matrix *one, const fz_matrix *two)
 	return ctm;
 }
 
+static int
+colors_supported(fz_context *ctx, fz_colorspace *cs, fz_pixmap *dest)
+{
+	/* Even if we support separations in the destination, if the color space has CMY or K as one of
+	 * its colorants and we are in RGB or Gray we will want to do the tint transform */
+	if (!fz_colorspace_is_subtractive(ctx, dest->colorspace) && fz_colorspace_device_n_has_cmyk(ctx, cs))
+		return 0;
+
+	/* If we have separations then we should support it */
+	if (dest->seps)
+		return 1;
+
+	/* If our destination is CMYK and the source color space is only C, M, Y or K we support it
+	 * even if we have no seps */
+	if (fz_colorspace_is_subtractive(ctx, dest->colorspace) && fz_colorspace_device_n_info(ctx, cs) == FZ_DEVICE_N_CMYK_ONLY)
+		return 1;
+
+	return 0;
+}
+
 static void
 resolve_color(fz_context *ctx, const float *color, fz_colorspace *colorspace, float alpha, const fz_color_params *color_params, unsigned char *colorbv, fz_pixmap *dest, fz_colorspace *prf)
 {
@@ -344,7 +364,7 @@ resolve_color(fz_context *ctx, const float *color, fz_colorspace *colorspace, fl
 
 	if (n == 0)
 		i = 0;
-	else if (fz_colorspace_is_device_n(ctx, colorspace) && dest->seps)
+	else if (fz_colorspace_is_device_n(ctx, colorspace) && colors_supported(ctx, colorspace, dest))
 	{
 		fz_convert_separation_colors(ctx, color_params, dest->colorspace, dest->seps, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)

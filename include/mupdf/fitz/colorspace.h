@@ -16,6 +16,14 @@ enum
 	FZ_RI_ABSOLUTE_COLORIMETRIC,
 };
 
+enum
+{
+	FZ_NOT_DEVICE_N,
+	FZ_DEVICE_N_SPOTS_ONLY,
+	FZ_DEVICE_N_WITH_CMYK,
+	FZ_DEVICE_N_CMYK_ONLY
+};
+
 typedef struct fz_color_params_s fz_color_params;
 
 struct fz_color_params_s
@@ -69,6 +77,17 @@ int fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs);
 	True for Separation and DeviceN colorspaces.
 */
 int fz_colorspace_is_device_n(fz_context *ctx, const fz_colorspace *cs);
+
+/*
+	fz_colorspace_device_n: Return information about device n colorants
+*/
+int fz_colorspace_device_n_info(fz_context *ctx, const fz_colorspace *cs);
+
+/*
+	fz_colorspace_device_n_has_cmyk: Return true if devicen color space has cyan
+	magenta yellow or black as one of its colorants.
+*/
+int fz_colorspace_device_n_has_cmyk(fz_context *ctx, const fz_colorspace *cs);
 
 /*
 	fz_device_gray: Get colorspace representing device specific gray.

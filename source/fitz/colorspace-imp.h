@@ -29,7 +29,7 @@ struct fz_colorspace_s
 	char name[24];
 	unsigned char n;
 	unsigned char is_subtractive;
-	unsigned char is_device_n;
+	unsigned char device_n;
 	fz_colorspace_convert_fn *to_ccs;
 	fz_colorspace_convert_fn *from_ccs;
 	fz_colorspace_clamp_fn *clamp;

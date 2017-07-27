@@ -712,11 +712,11 @@ void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_
 	float remainders[FZ_MAX_COLORS];
 	int remaining = 0;
 
-	assert(dst_cs && dst_seps && src_cs && dst_color && src_color);
+	assert(dst_cs && src_cs && dst_color && src_color);
 	assert(fz_colorspace_is_device_n(ctx, src_cs));
 
 	dc = fz_colorspace_n(ctx, dst_cs);
-	ds = dst_seps->num_separations;
+	ds = (dst_seps == NULL ? 0: dst_seps->num_separations);
 	dn = dc + ds;
 
 	i = 0;
