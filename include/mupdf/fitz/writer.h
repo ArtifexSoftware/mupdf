@@ -83,8 +83,8 @@ int fz_option_eq(const char *a, const char *b);
 
 	path: The document name to write (or NULL for default)
 
-	format: Which format to write (currently cbz, pdf, pam, pbm,
-	pgm, pkm, png, ppm, pnm, svg, tga)
+	format: Which format to write (currently cbz, html, pdf, pam, pbm,
+	pgm, pkm, png, ppm, pnm, svg, text, tga, xhtml)
 
 	options: NULL, or pointer to comma separated string to control
 	file generation.
@@ -94,6 +94,7 @@ fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, co
 fz_document_writer *fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_svg_writer(fz_context *ctx, const char *path, const char *options);
+fz_document_writer *fz_new_text_writer(fz_context *ctx, const char *format, const char *path, const char *options);
 fz_document_writer *fz_new_png_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_tga_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pam_pixmap_writer(fz_context *ctx, const char *path, const char *options);

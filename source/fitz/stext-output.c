@@ -6,220 +6,352 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-/* XML, HTML and plain-text output */
+/* HTML output (visual formatting with preserved layout) */
 
 static void
-fz_print_style_begin(fz_context *ctx, fz_output *out, fz_stext_style *style)
+fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
+	int is_bold = fz_font_is_bold(ctx, style->font);
+	int is_italic = fz_font_is_italic(ctx, style->font);
+	int is_serif = fz_font_is_serif(ctx, style->font);
+	int is_mono = fz_font_is_monospaced(ctx, style->font);
 	int script = style->script;
-	fz_write_printf(ctx, out, "<span class=\"s%d\">", style->id);
+
+	fz_write_printf(ctx, out, "<span style=\"font-family:%s;font-size:%gpt;\">", is_serif ? "serif" : "sans-serif", style->size);
+	if (is_mono)
+		fz_write_string(ctx, out, "<tt>");
+	if (is_bold)
+		fz_write_string(ctx, out, "<b>");
+	if (is_italic)
+		fz_write_string(ctx, out, "<i>");
+
 	while (script-- > 0)
-		fz_write_printf(ctx, out, "<sup>");
+		fz_write_string(ctx, out, "<sup>");
 	while (++script < 0)
-		fz_write_printf(ctx, out, "<sub>");
+		fz_write_string(ctx, out, "<sub>");
 }
 
 static void
-fz_print_style_end(fz_context *ctx, fz_output *out, fz_stext_style *style)
+fz_print_style_end_html(fz_context *ctx, fz_output *out, fz_stext_style *style)
 {
+	int is_mono = fz_font_is_monospaced(ctx, style->font);
+	int is_bold = fz_font_is_bold(ctx, style->font);
+	int is_italic = fz_font_is_italic(ctx, style->font);
 	int script = style->script;
+
 	while (script-- > 0)
-		fz_write_printf(ctx, out, "</sup>");
+		fz_write_string(ctx, out, "</sup>");
 	while (++script < 0)
-		fz_write_printf(ctx, out, "</sub>");
-	fz_write_printf(ctx, out, "</span>");
+		fz_write_string(ctx, out, "</sub>");
+
+	if (is_italic)
+		fz_write_string(ctx, out, "</i>");
+	if (is_bold)
+		fz_write_string(ctx, out, "</b>");
+	if (is_mono)
+		fz_write_string(ctx, out, "</tt>");
+	fz_write_string(ctx, out, "</span>");
 }
 
 static void
-fz_print_style(fz_context *ctx, fz_output *out, fz_stext_style *style)
+fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_image_block *block, int xhtml)
 {
-	const char *name = fz_font_name(ctx, style->font);
-	const char *s = strchr(name, '+');
-	s = s ? s + 1 : name;
-	fz_write_printf(ctx, out, "span.s%d{font-family:\"%s\";font-size:%gpt;",
-		style->id, s, style->size);
-	if (fz_font_is_italic(ctx, style->font))
-		fz_write_printf(ctx, out, "font-style:italic;");
-	if (fz_font_is_bold(ctx, style->font))
-		fz_write_printf(ctx, out, "font-weight:bold;");
-	fz_write_printf(ctx, out, "}\n");
+	fz_compressed_buffer *cbuf;
+	fz_buffer *buf;
+
+	int x = block->bbox.x0;
+	int y = block->bbox.y0;
+	int w = block->bbox.x1 - block->bbox.x0;
+	int h = block->bbox.y1 - block->bbox.y0;
+
+	cbuf = fz_compressed_image_buffer(ctx, block->image);
+
+	if (xhtml)
+		fz_write_printf(ctx, out, "<img width=\"%d\" height=\"%d\" src=\"data:", w, h);
+	else
+		fz_write_printf(ctx, out, "<img style=\"top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"data:", y, x, w, h);
+
+	switch (cbuf == NULL ? FZ_IMAGE_UNKNOWN : cbuf->params.type)
+	{
+	case FZ_IMAGE_JPEG:
+		fz_write_string(ctx, out, "image/jpeg;base64,");
+		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
+		break;
+	case FZ_IMAGE_PNG:
+		fz_write_string(ctx, out, "image/png;base64,");
+		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
+		break;
+	default:
+		buf = fz_new_buffer_from_image_as_png(ctx, block->image, NULL);
+		fz_try(ctx)
+		{
+			fz_write_string(ctx, out, "image/png;base64,");
+			fz_write_base64_buffer(ctx, out, buf, 1);
+		}
+		fz_always(ctx)
+			fz_drop_buffer(ctx, buf);
+		fz_catch(ctx)
+			fz_rethrow(ctx);
+		break;
+	}
+
+	if (xhtml)
+		fz_write_string(ctx, out, "\"/>\n");
+	else
+		fz_write_string(ctx, out, "\">\n");
 }
 
 void
-fz_print_stext_sheet(fz_context *ctx, fz_output *out, fz_stext_sheet *sheet)
+fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *block)
 {
-	fz_stext_style *style;
-	for (style = sheet->style; style; style = style->next)
-		fz_print_style(ctx, out, style);
-}
-
-void
-fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
-{
-	int block_n, line_n, ch_n;
 	fz_stext_style *style = NULL;
 	fz_stext_line *line;
 	fz_stext_span *span;
-	void *last_region = NULL;
+	fz_stext_char *ch;
+	int x, y;
 
-	fz_write_printf(ctx, out, "<div class=\"page\">\n");
+	style = NULL;
 
-	for (block_n = 0; block_n < page->len; block_n++)
+	for (line = block->lines; line < block->lines + block->len; ++line)
 	{
-		switch (page->blocks[block_n].type)
+		for (span = line->first_span; span; span = span->next)
 		{
-		case FZ_PAGE_BLOCK_TEXT:
-		{
-			fz_stext_block * block = page->blocks[block_n].u.text;
-			fz_write_printf(ctx, out, "<div class=\"block\"><p>\n");
-			for (line_n = 0; line_n < block->len; line_n++)
+			if (span == line->first_span || span->spacing > 1)
 			{
-				int lastcol=-1;
-				line = &block->lines[line_n];
-				style = NULL;
-
-				if (line->region != last_region)
+				if (style)
 				{
-					if (last_region)
-						fz_write_printf(ctx, out, "</div>");
-					fz_write_printf(ctx, out, "<div class=\"metaline\">");
-					last_region = line->region;
+					fz_print_style_end_html(ctx, out, style);
+					fz_write_string(ctx, out, "</p>\n");
+					style = NULL;
 				}
-				fz_write_printf(ctx, out, "<div class=\"line\"");
-#ifdef DEBUG_INTERNALS
-				if (line->region)
-					fz_write_printf(ctx, out, " region=\"%x\"", line->region);
-#endif
-				fz_write_printf(ctx, out, ">");
-				for (span = line->first_span; span; span = span->next)
+				x = span->bbox.x0;
+				y = span->bbox.y0;
+				fz_write_printf(ctx, out, "<p style=\"top:%dpt;left:%dpt;\">", y, x);
+			}
+
+			for (ch = span->text; ch < span->text + span->len; ++ch)
+			{
+				if (ch->style != style)
 				{
-					float size = fz_matrix_expansion(&span->transform);
-					float base_offset = span->base_offset / size;
-
-					if (lastcol != span->column)
-					{
-						if (lastcol >= 0)
-						{
-							fz_write_printf(ctx, out, "</div>");
-						}
-						/* If we skipped any columns then output some spacer spans */
-						while (lastcol < span->column-1)
-						{
-							fz_write_printf(ctx, out, "<div class=\"cell\"></div>");
-							lastcol++;
-						}
-						lastcol++;
-						/* Now output the span to contain this entire column */
-						fz_write_printf(ctx, out, "<div class=\"cell\" style=\"");
-						{
-							fz_stext_span *sn;
-							for (sn = span->next; sn; sn = sn->next)
-							{
-								if (sn->column != lastcol)
-									break;
-							}
-							fz_write_printf(ctx, out, "width:%g%%;align:%s", span->column_width, (span->align == 0 ? "left" : (span->align == 1 ? "center" : "right")));
-						}
-						if (span->indent > 1)
-							fz_write_printf(ctx, out, ";padding-left:1em;text-indent:-1em");
-						if (span->indent < -1)
-							fz_write_printf(ctx, out, ";text-indent:1em");
-						fz_write_printf(ctx, out, "\">");
-					}
-#ifdef DEBUG_INTERNALS
-					fz_write_printf(ctx, out, "<span class=\"internal_span\"");
-					if (span->column)
-						fz_write_printf(ctx, out, " col=\"%x\"", span->column);
-					fz_write_printf(ctx, out, ">");
-#endif
-					if (span->spacing >= 1)
-						fz_write_printf(ctx, out, " ");
-					if (base_offset > SUBSCRIPT_OFFSET)
-						fz_write_printf(ctx, out, "<sub>");
-					else if (base_offset < SUPERSCRIPT_OFFSET)
-						fz_write_printf(ctx, out, "<sup>");
-					for (ch_n = 0; ch_n < span->len; ch_n++)
-					{
-						fz_stext_char *ch = &span->text[ch_n];
-						if (style != ch->style)
-						{
-							if (style)
-								fz_print_style_end(ctx, out, style);
-							fz_print_style_begin(ctx, out, ch->style);
-							style = ch->style;
-						}
-
-						if (ch->c == '<')
-							fz_write_printf(ctx, out, "&lt;");
-						else if (ch->c == '>')
-							fz_write_printf(ctx, out, "&gt;");
-						else if (ch->c == '&')
-							fz_write_printf(ctx, out, "&amp;");
-						else if (ch->c >= 32 && ch->c <= 127)
-							fz_write_printf(ctx, out, "%c", ch->c);
-						else
-							fz_write_printf(ctx, out, "&#x%x;", ch->c);
-					}
 					if (style)
-					{
-						fz_print_style_end(ctx, out, style);
-						style = NULL;
-					}
-					if (base_offset > SUBSCRIPT_OFFSET)
-						fz_write_printf(ctx, out, "</sub>");
-					else if (base_offset < SUPERSCRIPT_OFFSET)
-						fz_write_printf(ctx, out, "</sup>");
-#ifdef DEBUG_INTERNALS
-					fz_write_printf(ctx, out, "</span>");
-#endif
+						fz_print_style_end_html(ctx, out, style);
+					style = ch->style;
+					fz_print_style_begin_html(ctx, out, style);
 				}
-				/* Close our floating span */
-				fz_write_printf(ctx, out, "</div>");
-				/* Close the line */
-				fz_write_printf(ctx, out, "</div>");
-				fz_write_printf(ctx, out, "\n");
-			}
-			/* Close the metaline */
-			fz_write_printf(ctx, out, "</div>");
-			last_region = NULL;
-			fz_write_printf(ctx, out, "</p></div>\n");
-			break;
-		}
-		case FZ_PAGE_BLOCK_IMAGE:
-		{
-			fz_image_block *image = page->blocks[block_n].u.image;
-			fz_compressed_buffer *buffer = fz_compressed_image_buffer(ctx, image->image);
-			fz_write_printf(ctx, out, "<img width=%d height=%d src=\"data:", image->image->w, image->image->h);
-			switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
-			{
-			case FZ_IMAGE_JPEG:
-				fz_write_printf(ctx, out, "image/jpeg;base64,");
-				fz_write_base64_buffer(ctx, out, buffer->buffer, 1);
-				break;
-			case FZ_IMAGE_PNG:
-				fz_write_printf(ctx, out, "image/png;base64,");
-				fz_write_base64_buffer(ctx, out, buffer->buffer, 1);
-				break;
-			default:
+
+				switch (ch->c)
 				{
-					fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, image->image, NULL);
-					fz_write_printf(ctx, out, "image/png;base64,");
-					fz_write_base64_buffer(ctx, out, buf, 1);
-					fz_drop_buffer(ctx, buf);
+				default:
+					if (ch->c >= 32 && ch->c <= 127)
+						fz_write_byte(ctx, out, ch->c);
+					else
+						fz_write_printf(ctx, out, "&#x%x;", ch->c);
 					break;
+				case '<': fz_write_string(ctx, out, "&lt;"); break;
+				case '>': fz_write_string(ctx, out, "&gt;"); break;
+				case '&': fz_write_string(ctx, out, "&amp;"); break;
+				case '"': fz_write_string(ctx, out, "&quot;"); break;
+				case '\'': fz_write_string(ctx, out, "&apos;"); break;
 				}
 			}
-			fz_write_printf(ctx, out, "\">\n");
-			break;
 		}
+
+		if (style)
+		{
+			fz_print_style_end_html(ctx, out, style);
+			fz_write_string(ctx, out, "</p>\n");
+			style = NULL;
 		}
 	}
-
-	fz_write_printf(ctx, out, "</div>\n");
 }
 
 void
-fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
+fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page)
+{
+	fz_page_block *block;
+
+	int w = page->mediabox.x1 - page->mediabox.x0;
+	int h = page->mediabox.y1 - page->mediabox.y0;
+
+	fz_write_printf(ctx, out, "<div style=\"width:%dpt;height:%dpt\">\n", w, h);
+
+	for (block = page->blocks; block < page->blocks + page->len; ++block)
+	{
+		if (block->type == FZ_PAGE_BLOCK_IMAGE)
+			fz_print_stext_image_as_html(ctx, out, block->u.image, 0);
+		else if (block->type == FZ_PAGE_BLOCK_TEXT)
+			fz_print_stext_block_as_html(ctx, out, block->u.text);
+	}
+
+	fz_write_string(ctx, out, "</div>\n");
+}
+
+void
+fz_print_stext_header_as_html(fz_context *ctx, fz_output *out)
+{
+	fz_write_string(ctx, out, "<!DOCTYPE html>\n");
+	fz_write_string(ctx, out, "<html>\n");
+	fz_write_string(ctx, out, "<head>\n");
+	fz_write_string(ctx, out, "<style>\n");
+	fz_write_string(ctx, out, "body{background-color:gray}\n");
+	fz_write_string(ctx, out, "div{position:relative;background-color:white;margin:1em auto}\n");
+	fz_write_string(ctx, out, "p{position:absolute;margin:0}\n");
+	fz_write_string(ctx, out, "img{position:absolute}\n");
+	fz_write_string(ctx, out, "</style>\n");
+	fz_write_string(ctx, out, "</head>\n");
+	fz_write_string(ctx, out, "<body>\n");
+}
+
+void
+fz_print_stext_trailer_as_html(fz_context *ctx, fz_output *out)
+{
+	fz_write_string(ctx, out, "</body>\n");
+	fz_write_string(ctx, out, "</html>\n");
+}
+
+/* XHTML output (semantic, little layout, suitable for reflow) */
+
+static void
+fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_stext_style *style)
+{
+	int is_mono = fz_font_is_monospaced(ctx, style->font);
+	int is_bold = fz_font_is_bold(ctx, style->font);
+	int is_italic = fz_font_is_italic(ctx, style->font);
+	int script = style->script;
+
+	if (is_mono)
+		fz_write_string(ctx, out, "<tt>");
+	if (is_bold)
+		fz_write_string(ctx, out, "<b>");
+	if (is_italic)
+		fz_write_string(ctx, out, "<i>");
+
+	while (script-- > 0)
+		fz_write_string(ctx, out, "<sup>");
+	while (++script < 0)
+		fz_write_string(ctx, out, "<sub>");
+}
+
+static void
+fz_print_style_end_xhtml(fz_context *ctx, fz_output *out, fz_stext_style *style)
+{
+	int is_mono = fz_font_is_monospaced(ctx, style->font);
+	int is_bold = fz_font_is_bold(ctx, style->font);
+	int is_italic = fz_font_is_italic(ctx, style->font);
+	int script = style->script;
+
+	while (script-- > 0)
+		fz_write_string(ctx, out, "</sup>");
+	while (++script < 0)
+		fz_write_string(ctx, out, "</sub>");
+
+	if (is_italic)
+		fz_write_string(ctx, out, "</i>");
+	if (is_bold)
+		fz_write_string(ctx, out, "</b>");
+	if (is_mono)
+		fz_write_string(ctx, out, "</tt>");
+}
+
+static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *block)
+{
+	fz_stext_line *line;
+	fz_stext_span *span;
+	fz_stext_char *ch;
+	fz_stext_style *style;
+
+	style = NULL;
+	fz_write_string(ctx, out, "<p>\n");
+
+	for (line = block->lines; line < block->lines + block->len; ++line)
+	{
+		if (line > block->lines)
+			fz_write_string(ctx, out, "<br/>\n");
+		for (span = line->first_span; span; span = span->next)
+		{
+			if (span->spacing > 1)
+				fz_write_byte(ctx, out, ' ');
+
+			for (ch = span->text; ch < span->text + span->len; ++ch)
+			{
+				if (ch->style != style)
+				{
+					if (style)
+						fz_print_style_end_xhtml(ctx, out, style);
+					style = ch->style;
+					fz_print_style_begin_xhtml(ctx, out, style);
+				}
+
+				switch (ch->c)
+				{
+				default:
+					if (ch->c >= 32 && ch->c <= 127)
+						fz_write_byte(ctx, out, ch->c);
+					else
+						fz_write_printf(ctx, out, "&#x%x;", ch->c);
+					break;
+				case '<': fz_write_string(ctx, out, "&lt;"); break;
+				case '>': fz_write_string(ctx, out, "&gt;"); break;
+				case '&': fz_write_string(ctx, out, "&amp;"); break;
+				case '"': fz_write_string(ctx, out, "&quot;"); break;
+				case '\'': fz_write_string(ctx, out, "&apos;"); break;
+				}
+			}
+		}
+	}
+
+	if (style)
+		fz_print_style_end_xhtml(ctx, out, style);
+	fz_write_string(ctx, out, "\n</p>\n");
+}
+
+void
+fz_print_stext_page_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_page *page)
+{
+	fz_page_block *block;
+
+	fz_write_string(ctx, out, "<div>\n");
+
+	for (block = page->blocks; block < page->blocks + page->len; ++block)
+	{
+		if (block->type == FZ_PAGE_BLOCK_IMAGE)
+			fz_print_stext_image_as_html(ctx, out, block->u.image, 1);
+		else if (block->type == FZ_PAGE_BLOCK_TEXT)
+			fz_print_stext_block_as_xhtml(ctx, out, block->u.text);
+	}
+
+	fz_write_string(ctx, out, "</div>\n");
+}
+
+void
+fz_print_stext_header_as_xhtml(fz_context *ctx, fz_output *out)
+{
+	fz_write_string(ctx, out, "<?xml version=\"1.0\"?>\n");
+	fz_write_string(ctx, out, "<!DOCTYPE html");
+	fz_write_string(ctx, out, " PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"");
+	fz_write_string(ctx, out, " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+	fz_write_string(ctx, out, "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n");
+	fz_write_string(ctx, out, "<head>\n");
+	fz_write_string(ctx, out, "<style>\n");
+	fz_write_string(ctx, out, "body{background-color:gray}\n");
+	fz_write_string(ctx, out, "div{background-color:white;margin:1em;padding:1em}\n");
+	fz_write_string(ctx, out, "p{margin:0 0 1em 0}\n");
+	fz_write_string(ctx, out, "</style>\n");
+	fz_write_string(ctx, out, "</head>\n");
+	fz_write_string(ctx, out, "<body>\n");
+}
+
+void
+fz_print_stext_trailer_as_xhtml(fz_context *ctx, fz_output *out)
+{
+	fz_write_string(ctx, out, "</body>\n");
+	fz_write_string(ctx, out, "</html>\n");
+}
+
+/* Detailed XML dump of the entire structured text data */
+
+void
+fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 {
 	int block_n;
 
@@ -256,7 +388,7 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 						{
 							if (style)
 							{
-								fz_write_printf(ctx, out, "</span>\n");
+								fz_write_string(ctx, out, "</span>\n");
 							}
 							style = ch->style;
 							name = fz_font_name(ctx, style->font);
@@ -274,11 +406,11 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 						}
 						switch (ch->c)
 						{
-						case '<': fz_write_printf(ctx, out, "&lt;"); break;
-						case '>': fz_write_printf(ctx, out, "&gt;"); break;
-						case '&': fz_write_printf(ctx, out, "&amp;"); break;
-						case '"': fz_write_printf(ctx, out, "&quot;"); break;
-						case '\'': fz_write_printf(ctx, out, "&apos;"); break;
+						case '<': fz_write_string(ctx, out, "&lt;"); break;
+						case '>': fz_write_string(ctx, out, "&gt;"); break;
+						case '&': fz_write_string(ctx, out, "&amp;"); break;
+						case '"': fz_write_string(ctx, out, "&quot;"); break;
+						case '\'': fz_write_string(ctx, out, "&apos;"); break;
 						default:
 							if (ch->c >= 32 && ch->c <= 127)
 								fz_write_printf(ctx, out, "%c", ch->c);
@@ -286,14 +418,14 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 								fz_write_printf(ctx, out, "&#x%x;", ch->c);
 							break;
 						}
-						fz_write_printf(ctx, out, "\"/>\n");
+						fz_write_string(ctx, out, "\"/>\n");
 					}
 					if (style)
-						fz_write_printf(ctx, out, "</span>\n");
+						fz_write_string(ctx, out, "</span>\n");
 				}
-				fz_write_printf(ctx, out, "</line>\n");
+				fz_write_string(ctx, out, "</line>\n");
 			}
-			fz_write_printf(ctx, out, "</block>\n");
+			fz_write_string(ctx, out, "</block>\n");
 			break;
 		}
 		case FZ_PAGE_BLOCK_IMAGE:
@@ -302,21 +434,21 @@ fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 		}
 	}
 	}
-	fz_write_printf(ctx, out, "</page>\n");
+	fz_write_string(ctx, out, "</page>\n");
 }
 
-void
-fz_print_stext_page(fz_context *ctx, fz_output *out, fz_stext_page *page)
-{
-	int block_n;
+/* Plain text */
 
-	for (block_n = 0; block_n < page->len; block_n++)
+void
+fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page)
+{
+	fz_page_block *pblock;
+
+	for (pblock = page->blocks; pblock < page->blocks + page->len; ++pblock)
 	{
-		switch (page->blocks[block_n].type)
+		if (pblock->type == FZ_PAGE_BLOCK_TEXT)
 		{
-		case FZ_PAGE_BLOCK_TEXT:
-		{
-			fz_stext_block *block = page->blocks[block_n].u.text;
+			fz_stext_block *block = pblock->u.text;
 			fz_stext_line *line;
 			fz_stext_char *ch;
 			char utf[10];
@@ -327,20 +459,157 @@ fz_print_stext_page(fz_context *ctx, fz_output *out, fz_stext_page *page)
 				fz_stext_span *span;
 				for (span = line->first_span; span; span = span->next)
 				{
+					if (span->spacing > 1)
+						fz_write_byte(ctx, out, ' ');
 					for (ch = span->text; ch < span->text + span->len; ch++)
 					{
 						n = fz_runetochar(utf, ch->c);
 						for (i = 0; i < n; i++)
-							fz_write_printf(ctx, out, "%c", utf[i]);
+							fz_write_byte(ctx, out, utf[i]);
 					}
 				}
-				fz_write_printf(ctx, out, "\n");
+				fz_write_string(ctx, out, "\n");
 			}
-			fz_write_printf(ctx, out, "\n");
-			break;
+			fz_write_string(ctx, out, "\n");
 		}
-		case FZ_PAGE_BLOCK_IMAGE:
+	}
+}
+
+/* Text output writer */
+
+enum {
+	FZ_FORMAT_TEXT,
+	FZ_FORMAT_HTML,
+	FZ_FORMAT_XHTML,
+	FZ_FORMAT_STEXT,
+};
+
+typedef struct fz_text_writer_s fz_text_writer;
+
+struct fz_text_writer_s
+{
+	fz_document_writer super;
+	int format;
+	fz_stext_options opts;
+	fz_stext_sheet *sheet;
+	fz_stext_page *page;
+	fz_output *out;
+};
+
+static fz_device *
+text_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+{
+	fz_text_writer *wri = (fz_text_writer*)wri_;
+
+	if (wri->page)
+	{
+		fz_drop_stext_page(ctx, wri->page);
+		wri->page = NULL;
+	}
+
+	wri->page = fz_new_stext_page(ctx, mediabox);
+	return fz_new_stext_device(ctx, wri->sheet, wri->page, &wri->opts);
+}
+
+static void
+text_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
+{
+	fz_text_writer *wri = (fz_text_writer*)wri_;
+	fz_close_device(ctx, dev);
+	fz_drop_device(ctx, dev);
+
+	switch (wri->format)
+	{
+	default:
+	case FZ_FORMAT_TEXT:
+		fz_print_stext_page_as_text(ctx, wri->out, wri->page);
+		break;
+	case FZ_FORMAT_HTML:
+		fz_print_stext_page_as_html(ctx, wri->out, wri->page);
+		break;
+	case FZ_FORMAT_XHTML:
+		fz_print_stext_page_as_xhtml(ctx, wri->out, wri->page);
+		break;
+	case FZ_FORMAT_STEXT:
+		fz_print_stext_page_as_xml(ctx, wri->out, wri->page);
+		break;
+	}
+
+	fz_drop_stext_page(ctx, wri->page);
+	wri->page = NULL;
+}
+
+static void
+text_close_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_text_writer *wri = (fz_text_writer*)wri_;
+	switch (wri->format)
+	{
+	case FZ_FORMAT_HTML:
+		fz_print_stext_trailer_as_html(ctx, wri->out);
+		break;
+	case FZ_FORMAT_XHTML:
+		fz_print_stext_trailer_as_xhtml(ctx, wri->out);
+		break;
+	case FZ_FORMAT_STEXT:
+		fz_write_string(ctx, wri->out, "</document>\n");
+		break;
+	}
+}
+
+static void
+text_drop_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_text_writer *wri = (fz_text_writer*)wri_;
+	fz_drop_stext_page(ctx, wri->page);
+	fz_drop_stext_sheet(ctx, wri->sheet);
+	fz_drop_output(ctx, wri->out);
+}
+
+fz_document_writer *
+fz_new_text_writer(fz_context *ctx, const char *format, const char *path, const char *args)
+{
+	fz_text_writer *wri;
+
+	wri = fz_new_derived_document_writer(ctx, fz_text_writer, text_begin_page, text_end_page, text_close_writer, text_drop_writer);
+	fz_try(ctx)
+	{
+		fz_parse_stext_options(ctx, &wri->opts, args);
+
+		wri->format = FZ_FORMAT_TEXT;
+		if (!strcmp(format, "text"))
+			wri->format = FZ_FORMAT_TEXT;
+		else if (!strcmp(format, "html"))
+			wri->format = FZ_FORMAT_HTML;
+		else if (!strcmp(format, "xhtml"))
+			wri->format = FZ_FORMAT_XHTML;
+		else if (!strcmp(format, "stext"))
+			wri->format = FZ_FORMAT_STEXT;
+
+		wri->sheet = fz_new_stext_sheet(ctx);
+		wri->out = fz_new_output_with_path(ctx, path ? path : "out.txt", 0);
+
+		switch (wri->format)
+		{
+		case FZ_FORMAT_HTML:
+			fz_print_stext_header_as_html(ctx, wri->out);
+			break;
+		case FZ_FORMAT_XHTML:
+			fz_print_stext_header_as_xhtml(ctx, wri->out);
+			break;
+		case FZ_FORMAT_STEXT:
+			fz_write_string(ctx, wri->out, "<?xml version=\"1.0\"?>\n");
+			fz_write_string(ctx, wri->out, "<document>\n");
 			break;
 		}
 	}
+	fz_catch(ctx)
+	{
+		fz_drop_output(ctx, wri->out);
+		fz_drop_stext_sheet(ctx, wri->sheet);
+		fz_free(ctx, wri);
+		fz_rethrow(ctx);
+	}
+
+	return (fz_document_writer*)wri;
 }

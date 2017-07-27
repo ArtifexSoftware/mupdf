@@ -396,18 +396,7 @@ file_level_headers(fz_context *ctx)
 		sheet = fz_new_stext_sheet(ctx);
 
 	if (output_format == OUT_HTML)
-	{
-		fz_write_printf(ctx, out, "<style>\n");
-		fz_write_printf(ctx, out, "body{background-color:gray;margin:12pt;}\n");
-		fz_write_printf(ctx, out, "div.page{background-color:white;margin:6pt;padding:6pt;}\n");
-		fz_write_printf(ctx, out, "div.block{border:1px solid gray;margin:6pt;padding:6pt;}\n");
-		fz_write_printf(ctx, out, "div.metaline{display:table;width:100%%}\n");
-		fz_write_printf(ctx, out, "div.line{display:table-row;padding:6pt}\n");
-		fz_write_printf(ctx, out, "div.cell{display:table-cell;padding-left:6pt;padding-right:6pt}\n");
-		fz_write_printf(ctx, out, "p{margin:0pt;padding:0pt;}\n");
-		fz_write_printf(ctx, out, "</style>\n");
-		fz_write_printf(ctx, out, "<body>\n");
-	}
+		fz_print_stext_header_as_html(ctx, out);
 
 	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 		fz_write_printf(ctx, out, "<document name=\"%s\">\n", filename);
@@ -426,12 +415,7 @@ file_level_trailers(fz_context *ctx)
 		fz_write_printf(ctx, out, "</document>\n");
 
 	if (output_format == OUT_HTML)
-	{
-		fz_write_printf(ctx, out, "</body>\n");
-		fz_write_printf(ctx, out, "<style>\n");
-		fz_print_stext_sheet(ctx, out, sheet);
-		fz_write_printf(ctx, out, "</style>\n");
-	}
+		fz_print_stext_trailer_as_html(ctx, out);
 
 	if (output_format == OUT_PS)
 		fz_write_ps_file_trailer(ctx, out, output_pagenum);
@@ -559,16 +543,16 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			dev = NULL;
 			if (output_format == OUT_STEXT)
 			{
-				fz_print_stext_page_xml(ctx, out, text);
+				fz_print_stext_page_as_xml(ctx, out, text);
 			}
 			else if (output_format == OUT_HTML)
 			{
 				fz_analyze_text(ctx, sheet, text);
-				fz_print_stext_page_html(ctx, out, text);
+				fz_print_stext_page_as_html(ctx, out, text);
 			}
 			else if (output_format == OUT_TEXT)
 			{
-				fz_print_stext_page(ctx, out, text);
+				fz_print_stext_page_as_text(ctx, out, text);
 				fz_write_printf(ctx, out, "\f\n");
 			}
 		}

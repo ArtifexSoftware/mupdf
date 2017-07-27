@@ -453,6 +453,8 @@ fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *text, const fz_rec
 				int saw_text = 0;
 				for (span = line->first_span; span; span = span->next)
 				{
+					if (span->spacing > 1)
+						fz_append_byte(ctx, buf, ' ');
 					for (i = 0; i < span->len; i++)
 					{
 						int c;

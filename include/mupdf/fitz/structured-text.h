@@ -250,24 +250,28 @@ void fz_drop_stext_page(fz_context *ctx, fz_stext_page *page);
 void fz_analyze_text(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page);
 
 /*
-	fz_print_stext_sheet: Output a text sheet to a file as CSS.
+	fz_print_stext_page_as_html: Output a page to a file in HTML (visual) format.
 */
-void fz_print_stext_sheet(fz_context *ctx, fz_output *out, fz_stext_sheet *sheet);
+void fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page);
+void fz_print_stext_header_as_html(fz_context *ctx, fz_output *out);
+void fz_print_stext_trailer_as_html(fz_context *ctx, fz_output *out);
 
 /*
-	fz_print_stext_page_html: Output a page to a file in HTML format.
+	fz_print_stext_page_as_xhtml: Output a page to a file in XHTML (semantic) format.
 */
-void fz_print_stext_page_html(fz_context *ctx, fz_output *out, fz_stext_page *page);
+void fz_print_stext_page_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_page *page);
+void fz_print_stext_header_as_xhtml(fz_context *ctx, fz_output *out);
+void fz_print_stext_trailer_as_xhtml(fz_context *ctx, fz_output *out);
 
 /*
-	fz_print_stext_page_xml: Output a page to a file in XML format.
+	fz_print_stext_page_as_xml: Output a page to a file in XML format.
 */
-void fz_print_stext_page_xml(fz_context *ctx, fz_output *out, fz_stext_page *page);
+void fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page);
 
 /*
-	fz_print_stext_page: Output a page to a file in UTF-8 format.
+	fz_print_stext_page_as_text: Output a page to a file in UTF-8 format.
 */
-void fz_print_stext_page(fz_context *ctx, fz_output *out, fz_stext_page *page);
+void fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page *page);
 
 /*
 	fz_search_stext_page: Search for occurrence of 'needle' in text page.

@@ -140,6 +140,15 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 	if (!fz_strcasecmp(format, "pkm"))
 		return fz_new_pkm_pixmap_writer(ctx, path, options);
 
+	if (!fz_strcasecmp(format, "txt") || !fz_strcasecmp(format, "text"))
+		return fz_new_text_writer(ctx, "text", path, options);
+	if (!fz_strcasecmp(format, "html"))
+		return fz_new_text_writer(ctx, format, path, options);
+	if (!fz_strcasecmp(format, "xhtml"))
+		return fz_new_text_writer(ctx, format, path, options);
+	if (!fz_strcasecmp(format, "stext"))
+		return fz_new_text_writer(ctx, format, path, options);
+
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown output document format: %s", format);
 }
 
