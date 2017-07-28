@@ -342,7 +342,7 @@ colors_supported(fz_context *ctx, fz_colorspace *cs, fz_pixmap *dest)
 
 	/* If our destination is CMYK and the source color space is only C, M, Y or K we support it
 	 * even if we have no seps */
-	if (fz_colorspace_is_subtractive(ctx, dest->colorspace) && fz_colorspace_device_n_info(ctx, cs) == FZ_DEVICE_N_CMYK_ONLY)
+	if (fz_colorspace_is_subtractive(ctx, dest->colorspace) && fz_colorspace_device_n_has_only_cmyk(ctx, cs))
 		return 1;
 
 	return 0;
