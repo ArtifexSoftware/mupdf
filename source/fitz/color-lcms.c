@@ -322,7 +322,7 @@ fz_lcms_init_profile(fz_cmm_instance *instance, fz_iccprofile *profile)
 	DEBUG_LCMS_MEM(("@@@@@@@ Create Profile Start:: mupdf ctx = %p lcms ctx = %p \n", (void*)ctx, (void*)cmm_ctx));
 
 	size = fz_buffer_storage(ctx, profile->buffer, &data);
-	profile->cmm_handle = cmsOpenProfileFromMemTHR(cmm_ctx, data, size);
+	profile->cmm_handle = cmsOpenProfileFromMemTHR(cmm_ctx, data, (cmsUInt32Number)size);
 	if (profile->cmm_handle == NULL)
 	{
 		profile->num_devcomp = 0;
