@@ -2616,6 +2616,13 @@ icc_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorspace *
 	unsigned char *inputpos, *outputpos;
 	int src_n;
 
+	/* Handle DeviceGray->CMYK as K only. See note in Section 6.3 of PDF spec.*/
+	if (fz_colorspace_is_device_gray(ctx, src->colorspace) && fz_colorspace_is_subtractive(ctx, dst->colorspace))
+	{
+		fast_gray_to_cmyk(ctx, dst, src, prf, default_cs, color_params, copy_spots);
+		return;
+	}
+
 	/* Check if we have to do a color space default substitution */
 	if (default_cs)
 	{
@@ -3079,7 +3086,15 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 	unsigned short dstv_s[FZ_MAX_COLORS];
 	unsigned short srcv_s[FZ_MAX_COLORS];
 
-	if (link->is_identity)
+	/* Special case.  Link is NULL if we are doing DeviceGray to CMYK */
+	if (link == NULL)
+	{
+		dstv[0] = 0;
+		dstv[1] = 0;
+		dstv[2] = 0;
+		dstv[3] = 1 - srcv[0];
+	}
+	else if (link->is_identity)
 	{
 		for (i = 0; i < src_n; i++)
 			dstv[i] = srcv[i];
@@ -3311,7 +3326,10 @@ void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_c
 				cc->convert = icc_conv_color;
 			else
 				cc->convert = icc_base_conv_color;
-			cc->link = fz_get_icc_link(ctx, ds, 0, ss_base, 0, is, params, 2, 0, &cc->n);
+
+			/* Special case. Do not set link if we are doing DeviceGray to CMYK */
+			if (!(fz_colorspace_is_device_gray(ctx, ss_base) && fz_colorspace_is_subtractive(ctx, ds)))
+				cc->link = fz_get_icc_link(ctx, ds, 0, ss_base, 0, is, params, 2, 0, &cc->n);
 		}
 		else
 			cc->convert = std_conv_color;
