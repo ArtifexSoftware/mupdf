@@ -3,6 +3,12 @@
 #define FZ_CONFIG_H
 
 /*
+	Enable the following for spot (and hence overprint/overprint
+	simulation) capable rendering. This forces FZ_PLOTTERS_N on.
+*/
+#define FZ_ENABLE_SPOT_RENDERING
+
+/*
 	Choose which plotters we need.
 	By default we build all the plotters in. To avoid building
 	plotters in that aren't needed, define the unwanted
@@ -82,6 +88,11 @@
 /* (You probably really don't want to do that except for measurement purposes!) */
 
 /* ---------- DO NOT EDIT ANYTHING UNDER THIS LINE ---------- */
+
+#ifndef FZ_ENABLE_SPOT_RENDERING
+#undef FZ_PLOTTERS_N
+#define FZ_PLOTTERS_N 1
+#endif /* FZ_ENABLE_SPOT_RENDERING */
 
 #ifndef FZ_PLOTTERS_G
 #define FZ_PLOTTERS_G 1
