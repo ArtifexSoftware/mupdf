@@ -41,6 +41,8 @@ enum {
 
 enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA };
 
+enum { SPOTS_NONE, SPOTS_OVERPRINT_SIM, SPOTS_FULL };
+
 typedef struct
 {
 	char *suffix;
@@ -249,7 +251,7 @@ static int lowmemory = 0;
 
 static int errored = 0;
 static fz_colorspace *colorspace;
-static int spots = 0;
+static int spots = SPOTS_NONE;
 static int alpha;
 static char *filename;
 static int files = 0;
@@ -343,6 +345,15 @@ static void usage(void)
 		"\t-P\tparallel interpretation/rendering (disabled in this non-threading build)\n"
 #endif
 		"\t-N\tdisable ICC workflow (\"N\"o color management)\n"
+		"\t-O -\tControl spot rendering\n"
+		"\t\t 0 = No spot rendering\n"
+#ifdef FZ_ENABLE_SPOT_RENDERING
+		"\t\t 1 = Overprint simulation\n"
+		"\t\t 2 = Full spot rendering\n"
+#else
+		"\t\t 1 = Overprint simulation (Disabled in this build)\n"
+		"\t\t 2 = Full spot rendering (Disabled in this build)\n"
+#endif
 		"\n"
 		"\t-y l\tList the layer configs to stderr\n"
 		"\t-y -\tSelect layer config (by number)\n"
@@ -1005,8 +1016,12 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 			if (seps)
 			{
 				int i, n = fz_count_separations(ctx, seps);
-				for (i = 0; i < n; i++)
-					fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_SPOT);
+				if (spots == SPOTS_FULL)
+					for (i = 0; i < n; i++)
+						fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_SPOT);
+				else
+					for (i = 0; i < n; i++)
+						fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_COMPOSITE);
 			}
 		}
 		fz_catch(ctx)
@@ -1407,7 +1422,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:XLvPl:y:N")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:")) != -1)
 	{
 		switch (c)
 		{
@@ -1434,6 +1449,13 @@ int mudraw_main(int argc, char **argv)
 		case 'S': layout_em = fz_atof(fz_optarg); break;
 		case 'U': layout_css = fz_optarg; break;
 		case 'X': layout_use_doc_css = 0; break;
+
+		case 'O': spots = fz_atof(fz_optarg);
+#ifndef FZ_ENABLE_SPOT_RENDERING
+			fprintf(stderr, "Spot rendering/Overprint/Overprint simulation not enabled in this build\n");
+			spots = SPOTS_NONE;
+#endif
+			break;
 
 		case 's':
 			if (strchr(fz_optarg, 't')) ++showtime;
@@ -1588,7 +1610,11 @@ int mudraw_main(int argc, char **argv)
 			if (!strcmp(format, suffix_table[i].suffix+1))
 			{
 				output_format = suffix_table[i].format;
-				spots = suffix_table[i].spots;
+				if (spots == SPOTS_FULL && suffix_table[i].spots == 0)
+				{
+					fprintf(stderr, "Output format '%s' does not support spot rendering.\nDoing overprint simulation instead.\n", suffix_table[i].suffix+1);
+					spots = SPOTS_OVERPRINT_SIM;
+				}
 				break;
 			}
 		}
@@ -1611,7 +1637,11 @@ int mudraw_main(int argc, char **argv)
 			{
 				suffix = s+1;
 				output_format = suffix_table[i].format;
-				spots = suffix_table[i].spots;
+				if (spots == SPOTS_FULL && suffix_table[i].spots == 0)
+				{
+					fprintf(stderr, "Output format '%s' does not support spot rendering.\nDoing overprint simulation instead.\n", suffix_table[i].suffix+1);
+					spots = SPOTS_OVERPRINT_SIM;
+				}
 				i = 0;
 			}
 		}
