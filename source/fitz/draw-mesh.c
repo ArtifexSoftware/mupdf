@@ -211,7 +211,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, fz_colorspace *prf, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -292,7 +292,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 				temp = conv;
 
 				/* Now Change from our device_n colorspace into the target colorspace/spots. */
-				conv = fz_clone_pixmap_area_with_different_seps(ctx, temp, NULL, dest->colorspace, dest->seps, color_params, prf, NULL);
+				conv = fz_clone_pixmap_area_with_different_seps(ctx, temp, NULL, dest->colorspace, dest->seps, color_params, NULL);
 			}
 			else
 			{
@@ -306,7 +306,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 				int cn = fz_colorspace_n(ctx, shade->colorspace);
 				int m = dest->n - dest->alpha;
 				int n = fz_colorspace_n(ctx, dest->colorspace);
-				fz_find_color_converter(ctx, &cc, prf, dest->colorspace, shade->colorspace, color_params);
+				fz_find_color_converter(ctx, &cc, NULL, dest->colorspace, shade->colorspace, color_params);
 				for (i = 0; i < 256; i++)
 				{
 					cc.convert(ctx, &cc, color, shade->function[i]);

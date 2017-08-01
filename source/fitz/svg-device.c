@@ -921,7 +921,7 @@ svg_dev_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_ma
 
 	fz_try(ctx)
 	{
-		fz_paint_shade(ctx, shade, ctm, pix, NULL, color_params, &bbox, NULL);
+		fz_paint_shade(ctx, shade, ctm, pix, color_params, &bbox, NULL);
 		buf = fz_new_buffer_from_pixmap_as_png(ctx, pix, color_params);
 		if (alpha != 1.0f)
 			fz_write_printf(ctx, out, "<g opacity=\"%g\">\n", alpha);

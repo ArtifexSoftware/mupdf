@@ -238,7 +238,7 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 }
 
 fz_pixmap *
-fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *dseps, const fz_color_params *color_params, fz_colorspace *prf, fz_default_colorspaces *default_cs)
+fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const fz_irect *bbox, fz_colorspace *dcs, fz_separations *dseps, const fz_color_params *color_params, fz_default_colorspaces *default_cs)
 {
 	fz_irect local_bbox;
 	fz_pixmap *dst;
@@ -262,7 +262,7 @@ fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const 
 	else
 		dst->flags &= ~FZ_PIXMAP_FLAG_INTERPOLATE;
 
-	return fz_copy_pixmap_area_converting_seps(ctx, dst, src, color_params, prf, default_cs);
+	return fz_copy_pixmap_area_converting_seps(ctx, dst, src, color_params, NULL, default_cs);
 }
 
 fz_pixmap *

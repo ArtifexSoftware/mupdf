@@ -397,7 +397,7 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, con
 }
 
 static fz_overprint *
-resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspace *colorspace, float alpha, const fz_color_params *color_params, unsigned char *colorbv, fz_pixmap *dest, fz_colorspace *prf)
+resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspace *colorspace, float alpha, const fz_color_params *color_params, unsigned char *colorbv, fz_pixmap *dest)
 {
 	float colorfv[FZ_MAX_COLORS];
 	int i;
@@ -425,7 +425,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 	else
 	{
 		int c = n - dest->s;
-		fz_convert_color(ctx, color_params, prf, dest->colorspace, colorfv, colorspace, color);
+		fz_convert_color(ctx, color_params, NULL, dest->colorspace, colorfv, colorspace, color);
 		for (i = 0; i < c; i++)
 			colorbv[i] = colorfv[i] * 255;
 		for (; i < n; i++)
@@ -452,7 +452,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 }
 
 static fz_draw_state *
-push_group_for_separations(fz_context *ctx, fz_draw_device *dev, const fz_color_params *color_params, fz_colorspace *prf, fz_default_colorspaces *default_cs)
+push_group_for_separations(fz_context *ctx, fz_draw_device *dev, const fz_color_params *color_params, fz_default_colorspaces *default_cs)
 {
 	fz_separations *clone = fz_clone_separations_for_overprint(ctx, dev->stack[0].dest->seps);
 
@@ -468,7 +468,7 @@ push_group_for_separations(fz_context *ctx, fz_draw_device *dev, const fz_color_
 	{
 		dev->stack[1] = dev->stack[0];
 		dev->stack[1].dest = NULL; /* So we are safe to destroy */
-		dev->stack[1].dest = fz_clone_pixmap_area_with_different_seps(ctx, dev->stack[0].dest, &dev->stack[0].scissor, fz_device_cmyk(ctx), clone, color_params, prf, default_cs);
+		dev->stack[1].dest = fz_clone_pixmap_area_with_different_seps(ctx, dev->stack[0].dest, &dev->stack[0].scissor, fz_device_cmyk(ctx), clone, color_params, default_cs);
 		dev->top++;
 	}
 	fz_always(ctx)
@@ -487,7 +487,6 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
 	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
@@ -497,7 +496,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_overprint *eop;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
@@ -509,7 +508,7 @@ fz_draw_fill_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest, prf);
+	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest);
 
 	fz_convert_rasterizer(ctx, rast, even_odd, state->dest, colorbv, eop);
 	if (state->shape)
@@ -533,7 +532,6 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_matrix ctm = concat(in_ctm, &dev->transform);
 	fz_rasterizer *rast = dev->rast;
 	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 	float expansion = fz_matrix_expansion(&ctm);
 	float flatness = 0.3f / expansion;
 	float linewidth = stroke->linewidth;
@@ -546,7 +544,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	fz_overprint *eop;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	if (mlw > aa_level)
 		aa_level = mlw;
@@ -562,7 +560,7 @@ fz_draw_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, const
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest, prf);
+	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest);
 
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top, "");
@@ -608,7 +606,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_irect *scissor_ptr = &state->scissor;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
@@ -679,7 +677,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	fz_irect *scissor_ptr = &state->scissor;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, dev->default_cs);
 
 	if (mlw > aa_level)
 		aa_level = mlw;
@@ -825,13 +823,12 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_text_span *span;
 	int i;
 	fz_colorspace *colorspace = NULL;
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 	fz_rasterizer *rast = dev->rast;
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	if (colorspace_in)
 		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
@@ -845,7 +842,7 @@ fz_draw_fill_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest, prf);
+	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest);
 	shapebv = 255;
 
 	for (span = text->head; span; span = span->next)
@@ -918,13 +915,12 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	fz_text_span *span;
 	int i;
 	fz_colorspace *colorspace = NULL;
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 	int aa = fz_rasterizer_text_aa_level(dev->rast);
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	if (colorspace_in)
 		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
@@ -932,7 +928,7 @@ fz_draw_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, const
 	if (state->blendmode & FZ_BLEND_KNOCKOUT)
 		state = fz_knockout_begin(ctx, dev);
 
-	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest, prf);
+	eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest);
 
 	for (span = text->head; span; span = span->next)
 	{
@@ -999,7 +995,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_rasterizer *rast = dev->rast;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip text");
@@ -1131,7 +1127,7 @@ fz_draw_clip_stroke_text(fz_context *ctx, fz_device *devp, const fz_text *text, 
 	int aa = fz_rasterizer_text_aa_level(dev->rast);
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	STACK_PUSHED("clip stroke text");
 	/* make the mask the exact size needed */
@@ -1255,12 +1251,11 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 	fz_pixmap *dest, *shape;
 	unsigned char colorbv[FZ_MAX_COLORS + 1];
 	fz_draw_state *state = &dev->stack[dev->top];
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	fz_bound_shade(ctx, shade, &ctm, &bounds);
 	scissor = state->scissor;
@@ -1307,7 +1302,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 			cp = &local_cp;
 		}
 
-		eop = resolve_color(ctx, &op, shade->background, fz_default_colorspace(ctx, dev->default_cs, shade->colorspace), alpha, cp, colorbv, state->dest, prf);
+		eop = resolve_color(ctx, &op, shade->background, fz_default_colorspace(ctx, dev->default_cs, shade->colorspace), alpha, cp, colorbv, state->dest);
 
 		n = dest->n;
 		if (eop)
@@ -1356,7 +1351,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 	else
 		eop = NULL;
 
-	fz_paint_shade(ctx, shade, &ctm, dest, prf, color_params, &bbox, eop);
+	fz_paint_shade(ctx, shade, &ctm, dest, color_params, &bbox, eop);
 	if (shape)
 		fz_clear_pixmap_rect_with_value(ctx, shape, 255, &bbox);
 
@@ -1462,7 +1457,6 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	fz_matrix inverse;
 	fz_irect src_area;
 	fz_colorspace *src_cs;
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop = &op;
 
@@ -1470,7 +1464,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 		return;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	model = state->dest->colorspace;
 
@@ -1548,11 +1542,11 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			 * then we can't lose the spots during color conversion. */
 			if (fz_colorspace_is_device_n(ctx, src_cs) && state->dest->seps)
 			{
-				converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, prf, dev->default_cs);
+				converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, dev->default_cs);
 				set_op_from_spaces(ctx, eop, state->dest, src_cs, color_params->opm);
 			}
 			else
-				converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
+				converted = fz_convert_pixmap(ctx, pixmap, model, NULL, dev->default_cs, color_params, 1);
 			fz_drop_pixmap(ctx, pixmap);
 			pixmap = converted;
 		}
@@ -1591,12 +1585,12 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 				fz_pixmap *converted;
 				if (fz_colorspace_is_device_n(ctx, src_cs) && state->dest->seps)
 				{
-					converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, prf, dev->default_cs);
+					converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, dev->default_cs);
 					set_op_from_spaces(ctx, eop, state->dest, src_cs, color_params->opm);
 				}
 				else
 				{
-					converted = fz_convert_pixmap(ctx, pixmap, model, prf, dev->default_cs, color_params, 1);
+					converted = fz_convert_pixmap(ctx, pixmap, model, NULL, dev->default_cs, color_params, 1);
 					if (eop && !fz_colorspace_is_device_n(ctx, pixmap->colorspace) && fz_colorspace_n(ctx, model) == 4)
 					{
 						int i;
@@ -1636,7 +1630,6 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_matrix inverse;
 	fz_irect src_area;
 	fz_colorspace *colorspace = NULL;
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
 
@@ -1644,7 +1637,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 		return;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	if (colorspace_in)
 		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
@@ -1718,7 +1711,7 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 			}
 		}
 
-		eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest, prf);
+		eop = resolve_color(ctx, &op, color, colorspace, alpha, color_params, colorbv, state->dest);
 
 		fz_paint_image_with_color(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, colorbv, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
 
@@ -1746,7 +1739,7 @@ fz_draw_clip_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_rect urect;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	STACK_PUSHED("clip image mask");
 	fz_pixmap_bbox(ctx, state->dest, &clip);
@@ -1910,7 +1903,7 @@ fz_draw_begin_mask(fz_context *ctx, fz_device *devp, const fz_rect *rect, int lu
 	fz_colorspace *colorspace = NULL;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, color_params, fz_proof_cs(ctx, dev), dev->default_cs);
+		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
 
 	if (colorspace_in)
 		colorspace = fz_default_colorspace(ctx, dev->default_cs, colorspace_in);
@@ -2049,7 +2042,7 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_co
 	fz_rect trect = *rect;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	if (cs != NULL)
 		model = fz_default_colorspace(ctx, dev->default_cs, cs);
@@ -2301,7 +2294,7 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, const fz_rect *area, const 
 	fz_rect local_view = *view;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, dev->default_cs);
 
 	/* area, view, xstep, ystep are in pattern space */
 	/* ctm maps from pattern space to device space */
