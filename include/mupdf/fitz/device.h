@@ -181,6 +181,11 @@ void fz_enable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 */
 void fz_disable_device_hints(fz_context *ctx, fz_device *dev, int hints);
 
+/*
+	Find current scissor region as tracked by the device.
+*/
+const fz_rect *fz_device_current_scissor(fz_context *ctx, fz_device *dev);
+
 enum
 {
 	/* Hints */

@@ -526,6 +526,37 @@ fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value)
 }
 
 void
+fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *colorspace, float *color, const fz_color_params *color_params)
+{
+	float colorfv[FZ_MAX_COLORS];
+	unsigned char colorbv[FZ_MAX_COLORS];
+	int i, n, a, s, x, y, w, h;
+
+	n = fz_colorspace_n(ctx, pix->colorspace);
+	a = pix->alpha;
+	s = pix->s;
+	fz_convert_color(ctx, color_params, NULL, pix->colorspace, colorfv, colorspace, color);
+	for (i = 0; i < n; ++i)
+		colorbv[i] = colorfv[i] * 255;
+
+	w = pix->w;
+	h = pix->h;
+	for (y = 0; y < h; ++y)
+	{
+		unsigned char *p = pix->samples + y * pix->stride;
+		for (x = 0; x < w; ++x)
+		{
+			for (i = 0; i < n; ++i)
+				*p++ = colorbv[i];
+			for (i = 0; i < s; ++i)
+				*p++ = 0;
+			if (a)
+				*p++ = 255;
+		}
+	}
+}
+
+void
 fz_copy_pixmap_rect(fz_context *ctx, fz_pixmap *dest, fz_pixmap *src, const fz_irect *b, const fz_default_colorspaces *default_cs)
 {
 	unsigned char *srcp;

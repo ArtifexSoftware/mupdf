@@ -974,6 +974,57 @@ fz_stext_fill_image(fz_context *ctx, fz_device *dev, fz_image *img, const fz_mat
 	fz_stext_fill_image_mask(ctx, dev, img, ctm, NULL, NULL, alpha, color_params);
 }
 
+static fz_image *
+fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm, const fz_color_params *color_params, const fz_rect *scissor)
+{
+	fz_matrix ctm = *in_out_ctm;
+	fz_pixmap *pix;
+	fz_image *img;
+	fz_rect bounds;
+	fz_irect bbox;
+
+	fz_bound_shade(ctx, shade, &ctm, &bounds);
+	fz_intersect_rect(&bounds, scissor);
+	fz_irect_from_rect(&bbox, &bounds);
+
+	pix = fz_new_pixmap_with_bbox(ctx, fz_device_rgb(ctx), &bbox, NULL, !shade->use_background);
+	fz_try(ctx)
+	{
+		if (shade->use_background)
+			fz_fill_pixmap_with_color(ctx, pix, shade->colorspace, shade->background, color_params);
+		else
+			fz_clear_pixmap(ctx, pix);
+		fz_paint_shade(ctx, shade, &ctm, pix, NULL, color_params, &bbox);
+		img = fz_new_image_from_pixmap(ctx, pix, NULL);
+	}
+	fz_always(ctx)
+		fz_drop_pixmap(ctx, pix);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	in_out_ctm->a = pix->w;
+	in_out_ctm->b = 0;
+	in_out_ctm->c = 0;
+	in_out_ctm->d = pix->h;
+	in_out_ctm->e = pix->x;
+	in_out_ctm->f = pix->y;
+	return img;
+}
+
+static void
+fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_matrix *ctm, float alpha, const fz_color_params *color_params)
+{
+	fz_matrix local_ctm = *ctm;
+	const fz_rect *scissor = fz_device_current_scissor(ctx, dev);
+	fz_image *image = fz_new_image_from_shade(ctx, shade, &local_ctm, color_params, scissor);
+	fz_try(ctx)
+		fz_stext_fill_image(ctx, dev, image, &local_ctm, alpha, color_params);
+	fz_always(ctx)
+		fz_drop_image(ctx, image);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
 static int
 direction_from_bidi_class(int bidiclass, int curdir)
 {
@@ -1117,6 +1168,8 @@ fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page,
 
 	if (opts && (opts->flags & FZ_STEXT_PRESERVE_IMAGES))
 	{
+		dev->super.hints |= FZ_MAINTAIN_CONTAINER_STACK;
+		dev->super.fill_shade = fz_stext_fill_shade;
 		dev->super.fill_image = fz_stext_fill_image;
 		dev->super.fill_image_mask = fz_stext_fill_image_mask;
 	}

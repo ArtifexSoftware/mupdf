@@ -219,6 +219,11 @@ void fz_set_pixmap_resolution(fz_context *ctx, fz_pixmap *pix, int xres, int yre
 void fz_clear_pixmap_with_value(fz_context *ctx, fz_pixmap *pix, int value);
 
 /*
+	Fill pixmap with solid color.
+*/
+void fz_fill_pixmap_with_color(fz_context *ctx, fz_pixmap *pix, fz_colorspace *colorspace, float *color, const fz_color_params *color_params);
+
+/*
 	fz_clear_pixmap_with_value: Clears a subrect of a pixmap with the given value.
 
 	pix: The pixmap to clear.

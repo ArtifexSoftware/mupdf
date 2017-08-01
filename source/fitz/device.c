@@ -520,3 +520,11 @@ fz_set_default_colorspaces(fz_context *ctx, fz_device *dev, fz_default_colorspac
 	if (dev->set_default_colorspaces)
 		dev->set_default_colorspaces(ctx, dev, default_cs);
 }
+
+const fz_rect *
+fz_device_current_scissor(fz_context *ctx, fz_device *dev)
+{
+	if (dev->container_len > 0)
+		return &dev->container[dev->container_len-1].scissor;
+	return &fz_infinite_rect;
+}
