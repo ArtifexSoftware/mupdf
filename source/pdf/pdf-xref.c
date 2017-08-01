@@ -862,6 +862,8 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		if (ofs < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "out of range object num in xref: %d", (int)ofs);
+		if (ofs > FZ_OFF_MAX - len)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "xref section object numbers too big");
 
 		/* broken pdfs where size in trailer undershoots entries in xref sections */
 		if (ofs + len > xref_len)
