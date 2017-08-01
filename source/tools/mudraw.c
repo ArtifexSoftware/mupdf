@@ -31,7 +31,7 @@ enum {
 	OUT_NONE,
 	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
 	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS, OUT_PSD,
-	OUT_TEXT, OUT_HTML, OUT_STEXT,
+	OUT_TEXT, OUT_HTML, OUT_XHTML, OUT_STEXT,
 	OUT_TRACE, OUT_SVG,
 #if FZ_ENABLE_PDF
 	OUT_PDF,
@@ -70,6 +70,7 @@ static const suffix_t suffix_table[] =
 	{ ".txt", OUT_TEXT, 0 },
 	{ ".text", OUT_TEXT, 0 },
 	{ ".html", OUT_HTML, 0 },
+	{ ".xhtml", OUT_XHTML, 0 },
 	{ ".stext", OUT_STEXT, 0 },
 
 	{ ".trace", OUT_TRACE, 0 },
@@ -131,6 +132,7 @@ static const format_cs_table_t format_cs_table[] =
 
 	{ OUT_TEXT, CS_RGB, { CS_RGB } },
 	{ OUT_HTML, CS_RGB, { CS_RGB } },
+	{ OUT_XHTML, CS_RGB, { CS_RGB } },
 	{ OUT_STEXT, CS_RGB, { CS_RGB } },
 };
 
@@ -389,11 +391,13 @@ file_level_headers(fz_context *ctx)
 	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 		fz_write_printf(ctx, out, "<?xml version=\"1.0\"?>\n");
 
-	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT)
+	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_XHTML || output_format == OUT_STEXT)
 		sheet = fz_new_stext_sheet(ctx);
 
 	if (output_format == OUT_HTML)
 		fz_print_stext_header_as_html(ctx, out);
+	if (output_format == OUT_XHTML)
+		fz_print_stext_header_as_xhtml(ctx, out);
 
 	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 		fz_write_printf(ctx, out, "<document name=\"%s\">\n", filename);
@@ -413,6 +417,8 @@ file_level_trailers(fz_context *ctx)
 
 	if (output_format == OUT_HTML)
 		fz_print_stext_trailer_as_html(ctx, out);
+	if (output_format == OUT_XHTML)
+		fz_print_stext_trailer_as_xhtml(ctx, out);
 
 	if (output_format == OUT_PS)
 		fz_write_ps_file_trailer(ctx, out, output_pagenum);
@@ -516,7 +522,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 	}
 
-	else if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_STEXT)
+	else if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_XHTML || output_format == OUT_STEXT)
 	{
 		fz_stext_page *text = NULL;
 
@@ -526,7 +532,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		{
 			fz_stext_options stext_options;
 
-			stext_options.flags = (output_format == OUT_HTML) ? FZ_STEXT_PRESERVE_IMAGES : 0;
+			stext_options.flags = (output_format == OUT_HTML || output_format == OUT_XHTML) ? FZ_STEXT_PRESERVE_IMAGES : 0;
 			text = fz_new_stext_page(ctx, &mediabox);
 			dev = fz_new_stext_device(ctx, sheet, text, &stext_options);
 			if (lowmemory)
@@ -546,6 +552,11 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			{
 				fz_analyze_text(ctx, sheet, text);
 				fz_print_stext_page_as_html(ctx, out, text);
+			}
+			else if (output_format == OUT_XHTML)
+			{
+				fz_analyze_text(ctx, sheet, text);
+				fz_print_stext_page_as_xhtml(ctx, out, text);
 			}
 			else if (output_format == OUT_TEXT)
 			{
