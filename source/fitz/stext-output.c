@@ -54,51 +54,16 @@ fz_print_style_end_html(fz_context *ctx, fz_output *out, fz_stext_style *style)
 }
 
 static void
-fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_image_block *block, int xhtml)
+fz_print_stext_image_as_html(fz_context *ctx, fz_output *out, fz_image_block *block)
 {
-	fz_compressed_buffer *cbuf;
-	fz_buffer *buf;
-
 	int x = block->bbox.x0;
 	int y = block->bbox.y0;
 	int w = block->bbox.x1 - block->bbox.x0;
 	int h = block->bbox.y1 - block->bbox.y0;
 
-	cbuf = fz_compressed_image_buffer(ctx, block->image);
-
-	if (xhtml)
-		fz_write_printf(ctx, out, "<img width=\"%d\" height=\"%d\" src=\"data:", w, h);
-	else
-		fz_write_printf(ctx, out, "<img style=\"top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"data:", y, x, w, h);
-
-	switch (cbuf == NULL ? FZ_IMAGE_UNKNOWN : cbuf->params.type)
-	{
-	case FZ_IMAGE_JPEG:
-		fz_write_string(ctx, out, "image/jpeg;base64,");
-		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
-		break;
-	case FZ_IMAGE_PNG:
-		fz_write_string(ctx, out, "image/png;base64,");
-		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
-		break;
-	default:
-		buf = fz_new_buffer_from_image_as_png(ctx, block->image, NULL);
-		fz_try(ctx)
-		{
-			fz_write_string(ctx, out, "image/png;base64,");
-			fz_write_base64_buffer(ctx, out, buf, 1);
-		}
-		fz_always(ctx)
-			fz_drop_buffer(ctx, buf);
-		fz_catch(ctx)
-			fz_rethrow(ctx);
-		break;
-	}
-
-	if (xhtml)
-		fz_write_string(ctx, out, "\"/>\n");
-	else
-		fz_write_string(ctx, out, "\">\n");
+	fz_write_printf(ctx, out, "<img style=\"top:%dpt;left:%dpt;width:%dpt;height:%dpt\" src=\"data:", y, x, w, h);
+	fz_write_image_as_data_uri(ctx, out, block->image);
+	fz_write_string(ctx, out, "\">\n");
 }
 
 void
@@ -178,7 +143,7 @@ fz_print_stext_page_as_html(fz_context *ctx, fz_output *out, fz_stext_page *page
 	for (block = page->blocks; block < page->blocks + page->len; ++block)
 	{
 		if (block->type == FZ_PAGE_BLOCK_IMAGE)
-			fz_print_stext_image_as_html(ctx, out, block->u.image, 0);
+			fz_print_stext_image_as_html(ctx, out, block->u.image);
 		else if (block->type == FZ_PAGE_BLOCK_TEXT)
 			fz_print_stext_block_as_html(ctx, out, block->u.text);
 	}
@@ -210,6 +175,17 @@ fz_print_stext_trailer_as_html(fz_context *ctx, fz_output *out)
 }
 
 /* XHTML output (semantic, little layout, suitable for reflow) */
+
+static void
+fz_print_stext_image_as_xhtml(fz_context *ctx, fz_output *out, fz_image_block *block)
+{
+	int w = block->bbox.x1 - block->bbox.x0;
+	int h = block->bbox.y1 - block->bbox.y0;
+
+	fz_write_printf(ctx, out, "<img width=\"%d\" height=\"%d\" src=\"data:", w, h);
+	fz_write_image_as_data_uri(ctx, out, block->image);
+	fz_write_string(ctx, out, "\"/>\n");
+}
 
 static void
 fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_stext_style *style)
@@ -315,7 +291,7 @@ fz_print_stext_page_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_page *pag
 	for (block = page->blocks; block < page->blocks + page->len; ++block)
 	{
 		if (block->type == FZ_PAGE_BLOCK_IMAGE)
-			fz_print_stext_image_as_html(ctx, out, block->u.image, 1);
+			fz_print_stext_image_as_xhtml(ctx, out, block->u.image);
 		else if (block->type == FZ_PAGE_BLOCK_TEXT)
 			fz_print_stext_block_as_xhtml(ctx, out, block->u.text);
 	}

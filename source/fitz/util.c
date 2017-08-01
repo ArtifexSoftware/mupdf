@@ -548,3 +548,38 @@ fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, co
 		fz_rethrow(ctx);
 	return buf;
 }
+
+void
+fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image)
+{
+	fz_compressed_buffer *cbuf;
+	fz_buffer *buf;
+	int n;
+
+	n = fz_colorspace_n(ctx, image->colorspace);
+	cbuf = fz_compressed_image_buffer(ctx, image);
+
+	if (cbuf && cbuf->params.type == FZ_IMAGE_JPEG && (n == 1 || n == 3))
+	{
+		fz_write_string(ctx, out, "image/jpeg;base64,");
+		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
+		return;
+	}
+	if (cbuf && cbuf->params.type == FZ_IMAGE_PNG)
+	{
+		fz_write_string(ctx, out, "image/png;base64,");
+		fz_write_base64_buffer(ctx, out, cbuf->buffer, 1);
+		return;
+	}
+
+	buf = fz_new_buffer_from_image_as_png(ctx, image, NULL);
+	fz_try(ctx)
+	{
+		fz_write_string(ctx, out, "image/png;base64,");
+		fz_write_base64_buffer(ctx, out, buf, 1);
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buf);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}

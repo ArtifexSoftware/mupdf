@@ -71,4 +71,9 @@ fz_display_list *fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, f
 */
 fz_image *fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf);
 
+/*
+	Write image as a data URI (for HTML and SVG output).
+*/
+void fz_write_image_as_data_uri(fz_context *ctx, fz_output *out, fz_image *image);
+
 #endif

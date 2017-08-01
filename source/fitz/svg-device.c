@@ -828,7 +828,6 @@ static void
 svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_params *color_params)
 {
 	fz_output *out = sdev->out;
-	fz_compressed_buffer *buffer;
 	int i;
 	int id;
 
@@ -859,33 +858,8 @@ svg_send_image(fz_context *ctx, svg_device *sdev, fz_image *img, const fz_color_
 		fz_write_printf(ctx, out, "<symbol id=\"im%d\" viewBox=\"0 0 %d %d\">\n", id, img->w, img->h);
 	}
 
-	fz_write_printf(ctx, out, "<image");
-	buffer = fz_compressed_image_buffer(ctx, img);
-	fz_write_printf(ctx, out, " width=\"%d\" height=\"%d\" xlink:href=\"data:", img->w, img->h);
-	switch (buffer == NULL ? FZ_IMAGE_JPX : buffer->params.type)
-	{
-	case FZ_IMAGE_PNG:
-		fz_write_printf(ctx, out, "image/png;base64,");
-		fz_write_base64_buffer(ctx, out, buffer->buffer, 1);
-		break;
-	case FZ_IMAGE_JPEG:
-		/* SVG cannot cope with CMYK images */
-		if (img->colorspace != fz_device_cmyk(ctx))
-		{
-			fz_write_printf(ctx, out, "image/jpeg;base64,");
-			fz_write_base64_buffer(ctx, out, buffer->buffer, 1);
-			break;
-		}
-		/*@fallthough@*/
-	default:
-		{
-			fz_buffer *buf = fz_new_buffer_from_image_as_png(ctx, img, color_params);
-			fz_write_printf(ctx, out, "image/png;base64,");
-			fz_write_base64_buffer(ctx, out, buf, 1);
-			fz_drop_buffer(ctx, buf);
-			break;
-		}
-	}
+	fz_write_printf(ctx, out, "<image width=\"%d\" height=\"%d\" xlink:href=\"data:", img->w, img->h);
+	fz_write_image_as_data_uri(ctx, out, img);
 	fz_write_printf(ctx, out, "\"/>\n");
 
 	if (sdev->reuse_images)
