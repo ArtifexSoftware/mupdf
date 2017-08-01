@@ -182,9 +182,9 @@ fz_print_stext_image_as_xhtml(fz_context *ctx, fz_output *out, fz_image_block *b
 	int w = block->bbox.x1 - block->bbox.x0;
 	int h = block->bbox.y1 - block->bbox.y0;
 
-	fz_write_printf(ctx, out, "<img width=\"%d\" height=\"%d\" src=\"data:", w, h);
+	fz_write_printf(ctx, out, "<p><img width=\"%d\" height=\"%d\" src=\"data:", w, h);
 	fz_write_image_as_data_uri(ctx, out, block->image);
-	fz_write_string(ctx, out, "\"/>\n");
+	fz_write_string(ctx, out, "\"/></p>\n");
 }
 
 static void
@@ -311,7 +311,6 @@ fz_print_stext_header_as_xhtml(fz_context *ctx, fz_output *out)
 	fz_write_string(ctx, out, "<style>\n");
 	fz_write_string(ctx, out, "body{background-color:gray}\n");
 	fz_write_string(ctx, out, "div{background-color:white;margin:1em;padding:1em}\n");
-	fz_write_string(ctx, out, "p{margin:0 0 1em 0}\n");
 	fz_write_string(ctx, out, "</style>\n");
 	fz_write_string(ctx, out, "</head>\n");
 	fz_write_string(ctx, out, "<body>\n");
