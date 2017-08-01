@@ -1869,10 +1869,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\source\fitz\stext-paragraph.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\source\fitz\stext-search.c"
 				>
 			</File>

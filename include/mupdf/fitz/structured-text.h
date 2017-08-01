@@ -16,15 +16,9 @@
 	(In development - Subject to change in future versions)
 */
 
-typedef struct fz_stext_style_s fz_stext_style;
 typedef struct fz_stext_char_s fz_stext_char;
-typedef struct fz_stext_span_s fz_stext_span;
 typedef struct fz_stext_line_s fz_stext_line;
 typedef struct fz_stext_block_s fz_stext_block;
-typedef struct fz_image_block_s fz_image_block;
-typedef struct fz_page_block_s fz_page_block;
-
-typedef struct fz_stext_sheet_s fz_stext_sheet;
 typedef struct fz_stext_page_s fz_stext_page;
 
 /*
@@ -52,150 +46,58 @@ enum
 };
 
 /*
-	fz_stext_sheet: A text sheet contains a list of distinct text styles
-	used on a page (or a series of pages).
-*/
-struct fz_stext_sheet_s
-{
-	int maxid;
-	fz_stext_style *style;
-};
-
-/*
-	fz_stext_style: A text style contains details of a distinct text style
-	used on a page.
-*/
-struct fz_stext_style_s
-{
-	fz_stext_style *next;
-	int id;
-	fz_font *font;
-	float size;
-	int wmode;
-	int script;
-	/* Ascender and Descender only have the conventional sense in
-	 * horizontal mode; in vertical mode they are rotated too - they are
-	 * the maximum and minimum bounds respectively. */
-	float ascender;
-	float descender;
-	/* etc... */
-};
-
-/*
-	fz_stext_page: A text page is a list of page blocks, together with
-	an overall bounding box.
+	A text page is a list of blocks, together with an overall bounding box.
 */
 struct fz_stext_page_s
 {
+	fz_pool *pool;
 	fz_rect mediabox;
-	int len, cap;
-	fz_page_block *blocks;
-	fz_stext_page *next;
-};
-
-/*
-	fz_page_block: A page block is a typed block pointer.
-*/
-struct fz_page_block_s
-{
-	int type;
-	union
-	{
-		fz_stext_block *text;
-		fz_image_block *image;
-	} u;
+	fz_stext_block *first_block, *last_block;
 };
 
 enum
 {
-	FZ_PAGE_BLOCK_TEXT = 0,
-	FZ_PAGE_BLOCK_IMAGE = 1
+	FZ_STEXT_BLOCK_TEXT = 0,
+	FZ_STEXT_BLOCK_IMAGE = 1
 };
 
 /*
-	fz_stext_block: A text block is a list of lines of text. In typical
-	cases this may correspond to a paragraph or a column of text. A
-	collection of blocks makes up a page.
+	A text block is a list of lines of text, or an image.
 */
 struct fz_stext_block_s
 {
+	int type;
 	fz_rect bbox;
-	int len, cap;
-	fz_stext_line *lines;
+	union {
+		struct { fz_stext_line *first_line, *last_line; } t;
+		struct { fz_matrix transform; fz_image *image; } i;
+	} u;
+	fz_stext_block *next;
 };
 
 /*
-	fz_image_block: An image block is an image, together with the  list of lines of text. In typical
-	cases this may correspond to a paragraph or a column of text. A
-	collection of blocks makes up a page.
-*/
-struct fz_image_block_s
-{
-	fz_rect bbox;
-	fz_matrix mat;
-	fz_image *image;
-	fz_colorspace *cspace;
-	float colors[FZ_MAX_COLORS];
-};
-
-/*
-	fz_stext_line: A text line is a list of text spans, with the same
-	baseline. In typical cases this should correspond (as expected) to
-	complete lines of text. A collection of lines makes up a block.
+	A text line is a list of characters that share a common baseline.
 */
 struct fz_stext_line_s
 {
-	fz_stext_span *first_span, *last_span;
-
-	/* Cached information */
-	float distance; /* Perpendicular distance from previous line */
-	fz_rect bbox;
-	void *region; /* Opaque value for matching line masks */
-};
-
-/*
-	fz_stext_span: A text span is a list of characters that share a common
-	baseline/transformation. In typical cases a single span may be enough
-	to represent a complete line. In cases where the text has big gaps in
-	it (perhaps as it crosses columns or tables), a line may be represented
-	by multiple spans.
-*/
-struct fz_stext_span_s
-{
-	int len, cap;
-	fz_stext_char *text;
-	fz_point min; /* Device space */
-	fz_point max; /* Device space */
 	int wmode; /* 0 for horizontal, 1 for vertical */
-	fz_matrix transform; /* e and f are always 0 here */
-	/* Ascender_max and Descender_min only have the conventional sense in
-	 * horizontal mode; in vertical mode they are rotated too - they are
-	 * the maximum and minimum bounds respectively. */
-	float ascender_max; /* Document space */
-	float descender_min; /* Document space */
-	fz_rect bbox; /* Device space */
-
-	/* Cached information */
-	float base_offset; /* Perpendicular distance from baseline of line */
-	float spacing; /* Distance along baseline from previous span in this line (or 0 if first) */
-	int column; /* If non zero, the column that it's in */
-	float column_width; /* Percentage */
-	int align; /* 0 = left, 1 = centre, 2 = right */
-	float indent; /* The indent position for this column. */
-
-	fz_stext_span *next;
+	fz_rect bbox;
+	fz_stext_char *first_char, *last_char;
+	fz_stext_line *next;
 };
 
 /*
-	fz_stext_char: A text char is a unicode character, the style in which
-	is appears, and the point at which it is positioned. Transform
-	(and hence bbox) information is given by the enclosing span.
+	A text char is a unicode character, the style in which is appears, and
+	the point at which it is positioned.
 */
 struct fz_stext_char_s
 {
-	fz_point p; /* Device space */
-	int c;
-	fz_stext_style *style;
+	int c, rtl;
+	fz_point origin;
+	fz_rect bbox;
+	float size;
+	fz_font *font;
+	fz_stext_char *next;
 };
 
 typedef struct fz_char_and_box_s fz_char_and_box;
@@ -212,42 +114,28 @@ fz_char_and_box *fz_stext_char_at(fz_context *ctx, fz_char_and_box *cab, fz_stex
 
 /*
 	fz_stext_char_bbox: Return the bbox of a text char. Calculated from
-	the supplied enclosing span.
+	the supplied enclosing line.
 
-	bbox: A place to store the bbox
+	bbox: A place to store the bbox.
 
-	span: The enclosing span
+	line: The enclosing line.
 
-	idx: The index of the char within the span
+	ch: The character.
 
-	Returns bbox (updated)
-
-	Does not throw exceptions
+	Returns bbox (updated).
 */
-fz_rect *fz_stext_char_bbox(fz_context *ctx, fz_rect *bbox, fz_stext_span *span, int idx);
-
-/*
-	fz_new_stext_sheet: Create an empty style sheet.
-
-	The style sheet is filled out by the text device, creating
-	one style for each unique font, color, size combination that
-	is used.
-*/
-fz_stext_sheet *fz_new_stext_sheet(fz_context *ctx);
-void fz_drop_stext_sheet(fz_context *ctx, fz_stext_sheet *sheet);
+fz_rect *fz_stext_char_bbox(fz_context *ctx, fz_rect *bbox, fz_stext_line *line, fz_stext_char *ch);
 
 /*
 	fz_new_stext_page: Create an empty text page.
 
-	The text page is filled out by the text device to contain the blocks,
-	lines and spans of text on the page.
+	The text page is filled out by the text device to contain the blocks
+	and lines of text on the page.
 
 	mediabox: optional mediabox information.
 */
 fz_stext_page *fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox);
 void fz_drop_stext_page(fz_context *ctx, fz_stext_page *page);
-
-void fz_analyze_text(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page);
 
 /*
 	fz_print_stext_page_as_html: Output a page to a file in HTML (visual) format.
@@ -314,14 +202,10 @@ fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts
 /*
 	fz_new_stext_device: Create a device to extract the text on a page.
 
-	Gather and sort the text on a page into spans of uniform style,
-	arranged into lines and blocks by reading order. The reading order
-	is determined by various heuristics, so may not be accurate.
+	Gather the text on a page into blocks and lines.
 
-	sheet: The text sheet to which styles should be added. This can
-	either be a newly created (empty) text sheet, or one containing
-	styles from a previous text device. The same sheet cannot be used
-	in multiple threads simultaneously.
+	The reading order is taken from the order the text is drawn in the
+	source file, so may not be accurate.
 
 	page: The text page to which content should be added. This will
 	usually be a newly created (empty) text page, but it can be one
@@ -330,6 +214,6 @@ fz_stext_options *fz_parse_stext_options(fz_context *ctx, fz_stext_options *opts
 
 	options: Options to configure the stext device.
 */
-fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_sheet *sheet, fz_stext_page *page, const fz_stext_options *options);
+fz_device *fz_new_stext_device(fz_context *ctx, fz_stext_page *page, const fz_stext_options *options);
 
 #endif

@@ -248,7 +248,6 @@ static int band_height = 0;
 static int lowmemory = 0;
 
 static int errored = 0;
-static fz_stext_sheet *sheet = NULL;
 static fz_colorspace *colorspace;
 static int spots = 0;
 static int alpha;
@@ -391,9 +390,6 @@ file_level_headers(fz_context *ctx)
 	if (output_format == OUT_STEXT || output_format == OUT_TRACE)
 		fz_write_printf(ctx, out, "<?xml version=\"1.0\"?>\n");
 
-	if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_XHTML || output_format == OUT_STEXT)
-		sheet = fz_new_stext_sheet(ctx);
-
 	if (output_format == OUT_HTML)
 		fz_print_stext_header_as_html(ctx, out);
 	if (output_format == OUT_XHTML)
@@ -422,8 +418,6 @@ file_level_trailers(fz_context *ctx)
 
 	if (output_format == OUT_PS)
 		fz_write_ps_file_trailer(ctx, out, output_pagenum);
-
-	fz_drop_stext_sheet(ctx, sheet);
 }
 
 static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band_start, fz_pixmap *pix, fz_bitmap **bit)
@@ -534,7 +528,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 			stext_options.flags = (output_format == OUT_HTML || output_format == OUT_XHTML) ? FZ_STEXT_PRESERVE_IMAGES : 0;
 			text = fz_new_stext_page(ctx, &mediabox);
-			dev = fz_new_stext_device(ctx, sheet, text, &stext_options);
+			dev = fz_new_stext_device(ctx,  text, &stext_options);
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
@@ -550,12 +544,10 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			}
 			else if (output_format == OUT_HTML)
 			{
-				fz_analyze_text(ctx, sheet, text);
 				fz_print_stext_page_as_html(ctx, out, text);
 			}
 			else if (output_format == OUT_XHTML)
 			{
-				fz_analyze_text(ctx, sheet, text);
 				fz_print_stext_page_as_xhtml(ctx, out, text);
 			}
 			else if (output_format == OUT_TEXT)

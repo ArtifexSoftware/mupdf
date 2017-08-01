@@ -5111,8 +5111,6 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		fz_run_page(ctx, page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
 
-		fz_analyze_text(ctx, sheet, text);
-
 		buf = fz_new_buffer(ctx, 256);
 		out = fz_new_output_with_buffer(ctx, buf);
 		fz_write_printf(ctx, out, "<html>\n");

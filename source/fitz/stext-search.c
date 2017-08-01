@@ -18,30 +18,28 @@ static inline int iswhite(int c)
 
 fz_char_and_box *fz_stext_char_at(fz_context *ctx, fz_char_and_box *cab, fz_stext_page *page, int idx)
 {
-	int block_num;
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
 	int ofs = 0;
 
-	for (block_num = 0; block_num < page->len; block_num++)
+	for (block = page->first_block; block; block = block->next)
 	{
-		fz_stext_block *block;
-		fz_stext_line *line;
-		fz_stext_span *span;
-
-		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
-		block = page->blocks[block_num].u.text;
-		for (line = block->lines; line < block->lines + block->len; line++)
+		for (line = block->u.t.first_line; line; line = line->next)
 		{
-			for (span = line->first_span; span; span = span->next)
+			for (ch = line->first_char; ch; ch = ch->next)
 			{
-				if (idx < ofs + span->len)
+				if (ofs == idx)
 				{
-					cab->c = span->text[idx - ofs].c;
-					fz_stext_char_bbox(ctx, &cab->bbox, span, idx - ofs);
+					cab->c = ch->c;
+					fz_stext_char_bbox(ctx, &cab->bbox, line, ch);
 					return cab;
 				}
-				ofs += span->len;
+				++ofs;
 			}
+
 			/* pseudo-newline */
 			if (idx == ofs)
 			{
@@ -49,7 +47,7 @@ fz_char_and_box *fz_stext_char_at(fz_context *ctx, fz_char_and_box *cab, fz_stex
 				cab->c = ' ';
 				return cab;
 			}
-			ofs++;
+			++ofs;
 		}
 	}
 	cab->bbox = fz_empty_rect;
@@ -73,27 +71,23 @@ static fz_rect *bboxat(fz_context *ctx, fz_stext_page *page, int idx, fz_rect *b
 
 static int textlen_stext(fz_context *ctx, fz_stext_page *page)
 {
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
 	int len = 0;
-	int block_num;
 
-	for (block_num = 0; block_num < page->len; block_num++)
+	for (block = page->first_block; block; block = block->next)
 	{
-		fz_stext_block *block;
-		fz_stext_line *line;
-		fz_stext_span *span;
-
-		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
-		block = page->blocks[block_num].u.text;
-		for (line = block->lines; line < block->lines + block->len; line++)
+		for (line = block->u.t.first_line; line; line = line->next)
 		{
-			for (span = line->first_span; span; span = span->next)
-			{
-				len += span->len;
-			}
-			len++; /* pseudo-newline */
+			for (ch = line->first_char; ch; ch = ch->next)
+				++len;
+			++len; /* pseudo-newline */
 		}
 	}
+
 	return len;
 }
 
@@ -181,8 +175,8 @@ fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect, fz_re
 	fz_rect linebox, charbox;
 	fz_stext_block *block;
 	fz_stext_line *line;
-	fz_stext_span *span;
-	int i, block_num, hit_count;
+	fz_stext_char *ch;
+	int hit_count;
 
 	float x0 = rect.x0;
 	float x1 = rect.x1;
@@ -191,31 +185,27 @@ fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect, fz_re
 
 	hit_count = 0;
 
-	for (block_num = 0; block_num < page->len; block_num++)
+	for (block = page->first_block; block; block = block->next)
 	{
-		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
-		block = page->blocks[block_num].u.text;
-		for (line = block->lines; line < block->lines + block->len; line++)
+		for (line = block->u.t.first_line; line; line = line->next)
 		{
 			linebox = fz_empty_rect;
-			for (span = line->first_span; span; span = span->next)
+			for (ch = line->first_char; ch; ch = ch->next)
 			{
-				for (i = 0; i < span->len; i++)
+				fz_stext_char_bbox(ctx, &charbox, line, ch);
+				if (charbox.x1 >= x0 && charbox.x0 <= x1 && charbox.y1 >= y0 && charbox.y0 <= y1)
 				{
-					fz_stext_char_bbox(ctx, &charbox, span, i);
-					if (charbox.x1 >= x0 && charbox.x0 <= x1 && charbox.y1 >= y0 && charbox.y0 <= y1)
+					if (charbox.y0 != linebox.y0 || fz_abs(charbox.x0 - linebox.x1) > 5)
 					{
-						if (charbox.y0 != linebox.y0 || fz_abs(charbox.x0 - linebox.x1) > 5)
-						{
-							if (!fz_is_empty_rect(&linebox) && hit_count < hit_max)
-								hit_bbox[hit_count++] = linebox;
-							linebox = charbox;
-						}
-						else
-						{
-							fz_union_rect(&linebox, &charbox);
-						}
+						if (!fz_is_empty_rect(&linebox) && hit_count < hit_max)
+							hit_bbox[hit_count++] = linebox;
+						linebox = charbox;
+					}
+					else
+					{
+						fz_union_rect(&linebox, &charbox);
 					}
 				}
 			}
@@ -232,8 +222,11 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 {
 	fz_buffer *buffer;
 	fz_rect hitbox;
-	int c, i, block_num, seen = 0;
+	int c, seen = 0;
 	unsigned char *s;
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
 
 	float x0 = rect.x0;
 	float x1 = rect.x1;
@@ -242,41 +235,33 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect)
 
 	buffer = fz_new_buffer(ctx, 1024);
 
-	for (block_num = 0; block_num < page->len; block_num++)
+	for (block = page->first_block; block; block = block->next)
 	{
-		fz_stext_block *block;
-		fz_stext_line *line;
-		fz_stext_span *span;
-
-		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
-		block = page->blocks[block_num].u.text;
-		for (line = block->lines; line < block->lines + block->len; line++)
+		for (line = block->u.t.first_line; line; line = line->next)
 		{
-			for (span = line->first_span; span; span = span->next)
+			if (seen)
 			{
-				if (seen)
-				{
-					fz_append_byte(ctx, buffer, '\n');
-				}
-
-				seen = 0;
-
-				for (i = 0; i < span->len; i++)
-				{
-					fz_stext_char_bbox(ctx, &hitbox, span, i);
-					c = span->text[i].c;
-					if (c < 32)
-						c = 0xFFFD;
-					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
-					{
-						fz_append_rune(ctx, buffer, c);
-						seen = 1;
-					}
-				}
-
-				seen = (seen && span == line->last_span);
+				fz_append_byte(ctx, buffer, '\n');
 			}
+
+			seen = 0;
+
+			for (ch = line->first_char; ch; ch = ch->next)
+			{
+				fz_stext_char_bbox(ctx, &hitbox, line, ch);
+				c = ch->c;
+				if (c < 32)
+					c = 0xFFFD;
+				if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
+				{
+					fz_append_rune(ctx, buffer, c);
+					seen = 1;
+				}
+			}
+
+			seen = (seen && line == block->u.t.last_line);
 		}
 	}
 

@@ -601,6 +601,12 @@ int fz_encode_character_with_fallback(fz_context *ctx, fz_font *font, int unicod
 void fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size);
 
 /*
+	Get font ascender and descender values.
+*/
+float fz_font_ascender(fz_context *ctx, fz_font *font);
+float fz_font_descender(fz_context *ctx, fz_font *font);
+
+/*
 	Internal functions for our Harfbuzz integration
 	to work around the lack of thread safety.
 */

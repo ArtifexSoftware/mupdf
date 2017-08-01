@@ -193,6 +193,28 @@ fz_set_font_bbox(fz_context *ctx, fz_font *font, float xmin, float ymin, float x
 	}
 }
 
+float fz_font_ascender(fz_context *ctx, fz_font *font)
+{
+	if (font->t3procs)
+		return font->bbox.y1;
+	else
+	{
+		FT_Face face = font->ft_face;
+		return (float)face->ascender / face->units_per_EM;
+	}
+}
+
+float fz_font_descender(fz_context *ctx, fz_font *font)
+{
+	if (font->t3procs)
+		return font->bbox.y0;
+	else
+	{
+		FT_Face face = font->ft_face;
+		return (float)face->descender / face->units_per_EM;
+	}
+}
+
 /*
  * Freetype hooks
  */

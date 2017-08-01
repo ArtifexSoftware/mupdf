@@ -470,9 +470,6 @@ void pdfapp_close(pdfapp_t *app)
 	fz_drop_stext_page(app->ctx, app->page_text);
 	app->page_text = NULL;
 
-	fz_drop_stext_sheet(app->ctx, app->page_sheet);
-	app->page_sheet = NULL;
-
 	fz_drop_link(app->ctx, app->page_links);
 	app->page_links = NULL;
 
@@ -655,14 +652,12 @@ static void pdfapp_loadpage(pdfapp_t *app, int no_cache)
 	fz_drop_display_list(app->ctx, app->page_list);
 	fz_drop_display_list(app->ctx, app->annotations_list);
 	fz_drop_stext_page(app->ctx, app->page_text);
-	fz_drop_stext_sheet(app->ctx, app->page_sheet);
 	fz_drop_link(app->ctx, app->page_links);
 	fz_drop_page(app->ctx, app->page);
 
 	app->page_list = NULL;
 	app->annotations_list = NULL;
 	app->page_text = NULL;
-	app->page_sheet = NULL;
 	app->page_links = NULL;
 	app->page = NULL;
 	app->page_bbox.x0 = 0;
@@ -875,12 +870,11 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		app->hit_count = 0;
 
 		/* Extract text */
-		app->page_sheet = fz_new_stext_sheet(app->ctx);
 		app->page_text = fz_new_stext_page(app->ctx, fz_bound_page(app->ctx, app->page, &mediabox));
 
 		if (app->page_list || app->annotations_list)
 		{
-			tdev = fz_new_stext_device(app->ctx, app->page_sheet, app->page_text, NULL);
+			tdev = fz_new_stext_device(app->ctx, app->page_text, NULL);
 			pdfapp_runpage(app, tdev, &fz_identity, &fz_infinite_rect, &cookie);
 			fz_close_device(app->ctx, tdev);
 			fz_drop_device(app->ctx, tdev);
@@ -1905,8 +1899,10 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	fz_rect hitbox;
 	fz_matrix ctm;
 	fz_stext_page *page = app->page_text;
-	int c, i, p, need_newline;
-	int block_num;
+	int p, need_newline;
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
 
 	int x0 = app->selr.x0;
 	int x1 = app->selr.x1;
@@ -1918,50 +1914,37 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 	p = 0;
 	need_newline = 0;
 
-	for (block_num = 0; block_num < page->len; block_num++)
+	for (block = page->first_block; block; block = block->next)
 	{
-		fz_stext_line *line;
-		fz_stext_block *block;
-		fz_stext_span *span;
-
-		if (page->blocks[block_num].type != FZ_PAGE_BLOCK_TEXT)
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
-		block = page->blocks[block_num].u.text;
 
-		for (line = block->lines; line < block->lines + block->len; line++)
+		for (line = block->u.t.first_line; line; line = line->next)
 		{
 			int saw_text = 0;
-
-			for (span = line->first_span; span; span = span->next)
+			for (ch = line->first_char; ch; ch = ch->next)
 			{
-				for (i = 0; i < span->len; i++)
+				int c = ch->c;
+				fz_stext_char_bbox(app->ctx, &hitbox, line, ch);
+				if (c < 32)
+					c = 0xFFFD;
+				if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
 				{
-					fz_stext_char_bbox(app->ctx, &hitbox, span, i);
-					fz_transform_rect(&hitbox, &ctm);
-					c = span->text[i].c;
-					if (c < 32)
-						c = '?';
-					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
+					saw_text = 1;
+					if (need_newline)
 					{
-						saw_text = 1;
-
-						if (need_newline)
-						{
 #if defined(_WIN32) || defined(_WIN64)
-							if (p < ucslen - 1)
-								ucsbuf[p++] = '\r';
-#endif
-							if (p < ucslen - 1)
-								ucsbuf[p++] = '\n';
-							need_newline = 0;
-						}
-
 						if (p < ucslen - 1)
-							ucsbuf[p++] = c;
+							ucsbuf[p++] = '\r';
+#endif
+						if (p < ucslen - 1)
+							ucsbuf[p++] = '\n';
+						need_newline = 0;
 					}
+					if (p < ucslen - 1)
+						ucsbuf[p++] = c;
 				}
 			}
-
 			if (saw_text)
 				need_newline = 1;
 		}
