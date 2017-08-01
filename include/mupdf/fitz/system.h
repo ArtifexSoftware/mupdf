@@ -205,6 +205,10 @@ void fz_free_argv(int argc, char **argv);
 
 #endif
 
+#ifndef fz_remove
+#define fz_remove remove
+#endif
+
 #ifdef FZ_LARGEFILE
 #ifndef fz_fopen
 #define fz_fopen fopen64
@@ -217,9 +221,6 @@ typedef int64_t fz_off_t;
 #else
 #ifndef fz_fopen
 #define fz_fopen fopen
-#endif
-#ifndef fz_remove
-#define fz_remove remove
 #endif
 #define fz_fseek fseek
 #define fz_ftell ftell
