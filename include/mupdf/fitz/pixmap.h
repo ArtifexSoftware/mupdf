@@ -16,6 +16,7 @@
 */
 typedef struct fz_pixmap_s fz_pixmap;
 
+typedef struct fz_overprint_s fz_overprint;
 
 /*
 	fz_pixmap_bbox: Return the bounding box for a pixmap.

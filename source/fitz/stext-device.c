@@ -603,7 +603,7 @@ fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm,
 			fz_fill_pixmap_with_color(ctx, pix, shade->colorspace, shade->background, color_params);
 		else
 			fz_clear_pixmap(ctx, pix);
-		fz_paint_shade(ctx, shade, &ctm, pix, NULL, color_params, &bbox);
+		fz_paint_shade(ctx, shade, &ctm, pix, NULL, color_params, &bbox, NULL);
 		img = fz_new_image_from_pixmap(ctx, pix, NULL);
 	}
 	fz_always(ctx)

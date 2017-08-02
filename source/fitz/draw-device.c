@@ -1296,17 +1296,43 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 	{
 		unsigned char *s;
 		int x, y, n, i;
+		fz_color_params  local_cp;
+		fz_color_params *cp = NULL;
 
-		eop = resolve_color(ctx, &op, shade->background, fz_default_colorspace(ctx, dev->default_cs, shade->colorspace), alpha, color_params, colorbv, state->dest, prf);
+		/* Disable OPM */
+		if (color_params)
+		{
+			local_cp = *color_params;
+			local_cp.opm = 0;
+			cp = &local_cp;
+		}
+
+		eop = resolve_color(ctx, &op, shade->background, fz_default_colorspace(ctx, dev->default_cs, shade->colorspace), alpha, cp, colorbv, state->dest, prf);
 
 		n = dest->n;
-		for (y = scissor.y0; y < scissor.y1; y++)
+		if (eop)
 		{
-			s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
-			for (x = scissor.x0; x < scissor.x1; x++)
+			for (y = scissor.y0; y < scissor.y1; y++)
 			{
-				for (i = 0; i < n; i++)
-					*s++ = colorbv[i];
+				s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
+				for (x = scissor.x0; x < scissor.x1; x++)
+				{
+					for (i = 0; i < n; i++)
+						if (fz_overprint_component(eop, i))
+							*s++ = colorbv[i];
+				}
+			}
+		}
+		else
+		{
+			for (y = scissor.y0; y < scissor.y1; y++)
+			{
+				s = dest->samples + (unsigned int)((y - dest->y) * dest->stride + (scissor.x0 - dest->x) * n);
+				for (x = scissor.x0; x < scissor.x1; x++)
+				{
+					for (i = 0; i < n; i++)
+						*s++ = colorbv[i];
+				}
 			}
 		}
 		if (shape)
@@ -1322,7 +1348,15 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 		}
 	}
 
-	fz_paint_shade(ctx, shade, &ctm, dest, prf, color_params, &bbox);
+	if (color_params->op)
+	{
+		eop = &op;
+		set_op_from_spaces(ctx, eop, dest, shade->colorspace, 0);
+	}
+	else
+		eop = NULL;
+
+	fz_paint_shade(ctx, shade, &ctm, dest, prf, color_params, &bbox, eop);
 	if (shape)
 		fz_clear_pixmap_rect_with_value(ctx, shape, 255, &bbox);
 

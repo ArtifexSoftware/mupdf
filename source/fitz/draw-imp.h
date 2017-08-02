@@ -110,11 +110,11 @@ struct fz_aa_context_s
 
 /* Overprint bitmap */
 
-typedef struct
+struct fz_overprint_s
 {
 	/* Bit i set -> never alter this color */
 	uint32_t mask[(FZ_MAX_COLORS+31)/32];
-} fz_overprint;
+};
 
 static void inline fz_set_overprint(fz_overprint *op, int i)
 {
@@ -446,6 +446,7 @@ void fz_paint_image_with_color(fz_pixmap * restrict dst, const fz_irect * restri
 void fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha);
 void fz_paint_pixmap_with_mask(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_pixmap * restrict msk);
 void fz_paint_pixmap_with_bbox(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha, fz_irect bbox);
+void fz_paint_pixmap_with_overprint(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_overprint *op);
 
 void fz_blend_pixmap(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, int blendmode, int isolated, const fz_pixmap * restrict shape);
 

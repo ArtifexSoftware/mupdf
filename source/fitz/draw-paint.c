@@ -2257,6 +2257,54 @@ fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int al
 }
 
 void
+fz_paint_pixmap_with_overprint(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_overprint *op)
+{
+	const unsigned char *sp;
+	unsigned char *dp;
+	fz_irect bbox;
+	fz_irect bbox2;
+	int x, y, w, h, n, da, sa;
+	fz_span_painter_t *fn;
+
+	if (dst->n - dst->alpha != src->n - src->alpha)
+	{
+		fprintf(stderr, "fz_paint_pixmap_with_overprint - FIXME\n");
+		return;
+	}
+	assert(dst->n - dst->alpha == src->n - src->alpha);
+
+	fz_pixmap_bbox_no_ctx(dst, &bbox);
+	fz_pixmap_bbox_no_ctx(src, &bbox2);
+	fz_intersect_irect(&bbox, &bbox2);
+
+	x = bbox.x0;
+	y = bbox.y0;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
+	if (w == 0 || h == 0)
+		return;
+
+	n = src->n;
+	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	sa = src->alpha;
+	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	da = dst->alpha;
+
+	n -= sa;
+	fn = fz_get_span_painter(da, sa, n, 255, op);
+	assert(fn);
+	if (fn == NULL)
+		return;
+
+	while (h--)
+	{
+		(*fn)(dp, da, sp, sa, n, w, 255, op);
+		sp += src->stride;
+		dp += dst->stride;
+	}
+}
+
+void
 fz_paint_pixmap_with_mask(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_pixmap * restrict msk)
 {
 	const unsigned char *sp, *mp;

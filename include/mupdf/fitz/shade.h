@@ -132,8 +132,10 @@ fz_rect *fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, 
 
 	bbox: Pointer to a bounding box to limit the rendering
 	of the shade.
+
+	op: NULL, or pointer to overprint bitmap.
 */
-void fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, fz_colorspace *prf, const fz_color_params *color_params, const fz_irect *bbox);
+void fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, fz_colorspace *prf, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op);
 
 /*
  *	Handy routine for processing mesh based shades
