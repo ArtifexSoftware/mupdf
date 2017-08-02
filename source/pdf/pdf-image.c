@@ -115,6 +115,15 @@ pdf_load_image_imp(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *di
 			for (i = 0; i < n * 2; i++)
 				decode[i] = pdf_to_real(ctx, pdf_array_get(ctx, obj, i));
 		}
+		else if (fz_colorspace_is_lab(ctx, colorspace) || fz_colorspace_is_lab_icc(ctx, colorspace))
+		{
+			decode[0] = 0;
+			decode[1] = 100;
+			decode[2] = -128;
+			decode[3] = 127;
+			decode[4] = -128;
+			decode[5] = 127;
+		}
 		else
 		{
 			float maxval = indexed ? (1 << bpc) - 1 : 1;

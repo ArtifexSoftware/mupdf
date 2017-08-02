@@ -679,7 +679,7 @@ clamp_lab(const fz_colorspace *cs, const float *src, float *dst)
 		dst[i] = fz_clamp(src[i], i ? -128 : 0, i ? 127 : 100);
 }
 
-static int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs)
+int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs)
 {
 	return cs && cs->to_ccs == lab_to_rgb;
 }

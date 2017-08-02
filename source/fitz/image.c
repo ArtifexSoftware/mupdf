@@ -803,9 +803,22 @@ fz_new_image_of_size(fz_context *ctx, int w, int h, int bpc, fz_colorspace *colo
 			image->decode[2*i+1] = maxval;
 		}
 	}
+	/* ICC spaces have the default decode arrays pickled into them.
+	 * For most spaces this is fine, because [ 0 1 0 1 0 1 ] is
+	 * idempotent. For Lab, however, we need to adjust it. */
+	if (fz_colorspace_is_lab_icc(ctx, colorspace))
+	{
+		/* Undo the default decode array of [0 100 -128 127 -128 127] */
+		image->decode[0] = image->decode[0]/100.0f;
+		image->decode[1] = image->decode[1]/100.0f;
+		image->decode[2] = (image->decode[2]+128)/255.0f;
+		image->decode[3] = (image->decode[3]+128)/255.0f;
+		image->decode[4] = (image->decode[4]+128)/255.0f;
+		image->decode[5] = (image->decode[5]+128)/255.0f;
+	}
 	for (i = 0; i < image->n; i++)
 	{
-		if (image->decode[i * 2] * 255 != 0 || image->decode[i * 2 + 1] * 255 != 255)
+		if (image->decode[i * 2] != 0 || image->decode[i * 2 + 1] != 1)
 			break;
 	}
 	if (i != image->n)
