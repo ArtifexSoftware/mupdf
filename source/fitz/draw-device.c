@@ -356,6 +356,9 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, con
 	if (!op)
 		return;
 
+	if (!fz_colorspace_is_subtractive(ctx, src) || !fz_colorspace_is_subtractive(ctx, dest->colorspace))
+		return;
+
 	sn = fz_colorspace_n(ctx, src);
 	dn = dest->n - dest->alpha;
 	dc = dn - dest->s;
