@@ -360,22 +360,63 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, con
 	dn = dest->n - dest->alpha;
 	dc = dn - dest->s;
 
-	for (i = 0; i < dc; i++)
+	/* If a source colorant is not mentioned in the destination
+	 * colorants (either process or spots), then it will be mapped
+	 * to process colorants. In this case, the process colorants
+	 * can never be protected.
+	 */
+	for (j = 0; j < sn; j++)
 	{
-		const char *name = fz_colorspace_colorant(ctx, dest->colorspace, i);
-
-		for (j = 0; j < sn; j++)
+		const char *sname = fz_colorspace_colorant(ctx, src, j);
+		if (!sname)
+			continue;
+		if (!strcmp(sname, "All"))
+			break;
+		for (i = 0; i < dc; i++)
 		{
-			const char *sname = fz_colorspace_colorant(ctx, src, j);
-			if (!name || !sname)
+			const char *name = fz_colorspace_colorant(ctx, dest->colorspace, i);
+			if (!name)
 				continue;
 			if (!strcmp(name, sname))
 				break;
-			if (!strcmp(sname, "All"))
+		}
+		if (i != dc)
+			continue;
+		for (; i < dn; i++)
+		{
+			const char *name = fz_separation_name(ctx, dest->seps, i - dc);
+			if (!name)
+				continue;
+			if (!strcmp(name, sname))
 				break;
 		}
-		if (j == sn)
-			fz_set_overprint(op, i);
+		if (i == dn)
+		{
+			/* This source colorant wasn't mentioned */
+			break;
+		}
+	}
+	if (j == sn)
+	{
+		/* We did not find any source colorants that weren't mentioned, so
+		 * process colorants might not be touched... */
+		for (i = 0; i < dc; i++)
+		{
+			const char *name = fz_colorspace_colorant(ctx, dest->colorspace, i);
+
+			for (j = 0; j < sn; j++)
+			{
+				const char *sname = fz_colorspace_colorant(ctx, src, j);
+				if (!name || !sname)
+					continue;
+				if (!strcmp(name, sname))
+					break;
+				if (!strcmp(sname, "All"))
+					break;
+			}
+			if (j == sn)
+				fz_set_overprint(op, i);
+		}
 	}
 	for (i = dc; i < dn; i++)
 	{
@@ -1443,6 +1484,44 @@ fz_default_image_scale(void *arg, int dst_w, int dst_h, int src_w, int src_h)
 	return dst_w < src_w && dst_h < src_h;
 }
 
+static fz_pixmap *
+convert_pixmap_for_painting(fz_context *ctx, fz_pixmap *pixmap, fz_colorspace *model, fz_colorspace *src_cs, fz_pixmap *dest, const fz_color_params *color_params, fz_draw_device *dev, fz_overprint **eop)
+{
+	fz_pixmap *converted;
+
+	if (fz_colorspace_is_device_n(ctx, src_cs) && dest->seps)
+	{
+		converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, dest->seps, color_params, dev->default_cs);
+		set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
+	}
+	else
+	{
+		converted = fz_convert_pixmap(ctx, pixmap, model, NULL, dev->default_cs, color_params, 1);
+		if (*eop)
+		{
+			if (fz_colorspace_n(ctx, model) != 4)
+			{
+				/* Can only overprint to CMYK based spaces */
+				*eop = NULL;
+			}
+			else if (!fz_colorspace_is_device_n(ctx, pixmap->colorspace))
+			{
+				int i;
+				int n = dest->n - dest->alpha;
+				for (i = 4; i < n; i++)
+					fz_set_overprint(*eop, i);
+			}
+			else
+			{
+				set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
+			}
+		}
+	}
+	fz_drop_pixmap(ctx, pixmap);
+
+	return converted;
+}
+
 static void
 fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_matrix *in_ctm, float alpha, const fz_color_params *color_params)
 {
@@ -1536,20 +1615,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			after = 1;
 
 		if (conversion_required && !after)
-		{
-			fz_pixmap *converted;
-			/* If we have a spotty image, and we are going to spotty output,
-			 * then we can't lose the spots during color conversion. */
-			if (fz_colorspace_is_device_n(ctx, src_cs) && state->dest->seps)
-			{
-				converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, dev->default_cs);
-				set_op_from_spaces(ctx, eop, state->dest, src_cs, color_params->opm);
-			}
-			else
-				converted = fz_convert_pixmap(ctx, pixmap, model, NULL, dev->default_cs, color_params, 1);
-			fz_drop_pixmap(ctx, pixmap);
-			pixmap = converted;
-		}
+			pixmap = convert_pixmap_for_painting(ctx, pixmap, model, src_cs, state->dest, color_params, dev, &eop);
 
 		if (!(devp->hints & FZ_DONT_INTERPOLATE_IMAGES) && ctx->tuning->image_scale(ctx->tuning->image_scale_arg, dx, dy, pixmap->w, pixmap->h))
 		{
@@ -1581,27 +1647,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 			}
 			else
 #endif
-			{
-				fz_pixmap *converted;
-				if (fz_colorspace_is_device_n(ctx, src_cs) && state->dest->seps)
-				{
-					converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, state->dest->seps, color_params, dev->default_cs);
-					set_op_from_spaces(ctx, eop, state->dest, src_cs, color_params->opm);
-				}
-				else
-				{
-					converted = fz_convert_pixmap(ctx, pixmap, model, NULL, dev->default_cs, color_params, 1);
-					if (eop && !fz_colorspace_is_device_n(ctx, pixmap->colorspace) && fz_colorspace_n(ctx, model) == 4)
-					{
-						int i;
-						int n = state->dest->n - state->dest->alpha;
-						for (i = 4; i < n; i++)
-							fz_set_overprint(eop, i);
-					}
-				}
-				fz_drop_pixmap(ctx, pixmap);
-				pixmap = converted;
-			}
+				pixmap = convert_pixmap_for_painting(ctx, pixmap, model, src_cs, state->dest, color_params, dev, &eop);
 		}
 
 		fz_paint_image(state->dest, &state->scissor, state->shape, pixmap, &local_ctm, alpha * 255, !(devp->hints & FZ_DONT_INTERPOLATE_IMAGES), devp->flags & FZ_DEVFLAG_GRIDFIT_AS_TILED, eop);
