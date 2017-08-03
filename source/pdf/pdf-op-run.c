@@ -77,6 +77,8 @@ struct pdf_run_processor_s
 	pdf_processor super;
 	fz_device *dev;
 
+	fz_default_colorspaces *default_cs;
+
 	int nested_depth;
 
 	/* path object state */
@@ -948,7 +950,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 		 * attributes, or type 3 glyphs within type3 glyphs). */
 		fz_matrix composed;
 		fz_concat(&composed, &trm, &gstate->ctm);
-		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, &composed, gstate, pr->nested_depth);
+		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, &composed, gstate, pr->nested_depth, pr->default_cs);
 		/* Render text invisibly so that it can still be extracted. */
 		pr->text_mode = 3;
 	}
@@ -1221,6 +1223,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	int transparency = 0;
 	pdf_document *doc;
 	fz_colorspace *cs = NULL;
+	fz_default_colorspaces *saved_def_cs = NULL;
 
 	/* Avoid infinite recursion */
 	if (xobj == NULL || pdf_mark_obj(ctx, xobj->obj))
@@ -1231,6 +1234,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	fz_var(oldtop);
 	fz_var(oldbot);
 	fz_var(cs);
+	fz_var(saved_def_cs);
 
 	gparent_save = pr->gparent;
 	pr->gparent = pr->gtop;
@@ -1304,6 +1308,13 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 		if (!resources)
 			resources = page_resources;
 
+		saved_def_cs = pr->default_cs;
+		pr->default_cs = NULL;
+		pr->default_cs = pdf_update_default_colorspaces(ctx, saved_def_cs, resources);
+
+		if (pr->default_cs != saved_def_cs)
+			fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
+
 		doc = pdf_get_bound_document(ctx, xobj->obj);
 
 		oldbot = pr->gbot;
@@ -1314,6 +1325,21 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	fz_always(ctx)
 	{
 		fz_drop_colorspace(ctx, cs);
+
+		if (saved_def_cs)
+		{
+			fz_drop_default_colorspaces(ctx, pr->default_cs);
+			pr->default_cs = saved_def_cs;
+			fz_try(ctx)
+			{
+				fz_set_default_colorspaces(ctx, pr->dev, pr->default_cs);
+			}
+			fz_catch(ctx)
+			{
+				/* Postpone the problem */
+				strcpy(errmess, fz_caught_message(ctx));
+			}
+		}
 
 		/* Undo any gstate mismatches due to the pdf_process_contents call */
 		if (oldbot != -1)
@@ -1340,6 +1366,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 				fz_catch(ctx)
 				{
 					/* Postpone the problem */
+					if (errmess[0])
+						fz_warn(ctx, errmess);
 					strcpy(errmess, fz_caught_message(ctx));
 				}
 			}
@@ -1352,6 +1380,8 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 				fz_catch(ctx)
 				{
 					/* Postpone the problem */
+					if (errmess[0])
+						fz_warn(ctx, errmess);
 					strcpy(errmess, fz_caught_message(ctx));
 				}
 			}
@@ -2059,11 +2089,13 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 	fz_drop_path(ctx, pr->path);
 	fz_drop_text(ctx, pr->text);
 
+	fz_drop_default_colorspaces(ctx, pr->default_cs);
+
 	fz_free(ctx, pr->gstate);
 }
 
 pdf_processor *
-pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, const char *usage, pdf_gstate *gstate, int nested)
+pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, const char *usage, pdf_gstate *gstate, int nested, fz_default_colorspaces *default_cs)
 {
 	pdf_run_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -2194,6 +2226,8 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 	}
 
 	proc->dev = dev;
+
+	proc->default_cs = fz_keep_default_colorspaces(ctx, default_cs);
 
 	proc->nested_depth = nested;
 

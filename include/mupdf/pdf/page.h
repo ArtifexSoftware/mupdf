@@ -179,6 +179,11 @@ fz_transition *pdf_page_presentation(fz_context *ctx, pdf_page *page, fz_transit
 fz_default_colorspaces *pdf_load_default_colorspaces(fz_context *ctx, pdf_document *doc, pdf_page *page);
 
 /*
+	Update default colorspaces for an xobject.
+*/
+fz_default_colorspaces *pdf_update_default_colorspaces(fz_context *ctx, fz_default_colorspaces *old_cs, pdf_obj *res);
+
+/*
  * Page tree, pages and related objects
  */
 

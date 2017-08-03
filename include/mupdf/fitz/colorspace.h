@@ -204,6 +204,7 @@ fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace 
 fz_default_colorspaces *fz_new_default_colorspaces(fz_context *ctx);
 fz_default_colorspaces* fz_keep_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
 void fz_drop_default_colorspaces(fz_context *ctx, fz_default_colorspaces *default_cs);
+fz_default_colorspaces *fz_clone_default_colorspaces(fz_context *ctx, fz_default_colorspaces *base);
 
 /* Do we want to make fz_default_colorspaces public and get rid of these? */
 void fz_set_default_gray(fz_context *ctx, fz_default_colorspaces *default_cs, fz_colorspace *cs);
