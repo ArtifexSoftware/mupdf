@@ -783,12 +783,13 @@ scan_page_seps(fz_context *ctx, pdf_obj *res, fz_separations **seps, res_finder_
 		/* Recurse on the forms. Throw if we cycle */
 		for (i = 0; i < len; i++)
 		{
-			xo = pdf_dict_get_val(ctx, forms, i++);
+			xo = pdf_dict_get_val(ctx, forms, i);
 
 			if (pdf_mark_obj(ctx, xo))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cycle in forms");
 
 			scan_page_seps(ctx, pdf_dict_get(ctx, xo, PDF_NAME_Resources), seps, fn);
+			fn(ctx, seps, pdf_dict_get(ctx, xo, PDF_NAME_ColorSpace));
 			pdf_unmark_obj(ctx, xo);
 			xo = NULL;
 		}
