@@ -93,7 +93,6 @@ static jclass cls_Text;
 static jclass cls_TextBlock;
 static jclass cls_TextChar;
 static jclass cls_TextLine;
-static jclass cls_TextSpan;
 static jclass cls_TextWalker;
 static jclass cls_TryLaterException;
 
@@ -140,10 +139,8 @@ static jfieldID fid_TextBlock_lines;
 static jfieldID fid_TextChar_bbox;
 static jfieldID fid_TextChar_c;
 static jfieldID fid_TextLine_bbox;
-static jfieldID fid_TextLine_spans;
+static jfieldID fid_TextLine_chars;
 static jfieldID fid_Text_pointer;
-static jfieldID fid_TextSpan_bbox;
-static jfieldID fid_TextSpan_chars;
 
 static jmethodID mid_Annotation_init;
 static jmethodID mid_ColorSpace_fromPointer;
@@ -200,7 +197,6 @@ static jmethodID mid_TextBlock_init;
 static jmethodID mid_TextChar_init;
 static jmethodID mid_Text_init;
 static jmethodID mid_TextLine_init;
-static jmethodID mid_TextSpan_init;
 static jmethodID mid_TextWalker_showGlyph;
 
 #ifdef _WIN32
@@ -588,12 +584,7 @@ static int find_fids(JNIEnv *env)
 	cls_TextLine = get_class(&err, env, PKG"StructuredText$TextLine");
 	mid_TextLine_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
 	fid_TextLine_bbox = get_field(&err, env, "bbox", "L"PKG"Rect;");
-	fid_TextLine_spans = get_field(&err, env, "spans", "[L"PKG"StructuredText$TextSpan;");
-
-	cls_TextSpan = get_class(&err, env, PKG"StructuredText$TextSpan");
-	mid_TextSpan_init = get_method(&err, env, "<init>", "(L"PKG"StructuredText;)V");
-	fid_TextSpan_bbox = get_field(&err, env, "bbox", "L"PKG"Rect;");
-	fid_TextSpan_chars = get_field(&err, env, "chars", "[L"PKG"StructuredText$TextChar;");
+	fid_TextLine_chars = get_field(&err, env, "chars", "[L"PKG"StructuredText$TextChar;");
 
 	cls_TextWalker = get_class(&err, env, PKG"TextWalker");
 	mid_TextWalker_showGlyph = get_method(&err, env, "showGlyph", "(L"PKG"Font;L"PKG"Matrix;IIZ)V");
@@ -664,7 +655,6 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_TextBlock);
 	(*env)->DeleteGlobalRef(env, cls_TextChar);
 	(*env)->DeleteGlobalRef(env, cls_TextLine);
-	(*env)->DeleteGlobalRef(env, cls_TextSpan);
 	(*env)->DeleteGlobalRef(env, cls_TextWalker);
 	(*env)->DeleteGlobalRef(env, cls_TryLaterException);
 }
@@ -5041,7 +5031,6 @@ FUN(Page_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text = NULL;
 	const char *options= NULL;
 	fz_stext_options opts;
@@ -5054,17 +5043,13 @@ FUN(Page_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 		if (!options) return NULL;
 	}
 
-	fz_var(sheet);
-
 	fz_try(ctx)
 	{
-		sheet = fz_new_stext_sheet(ctx);
 		fz_parse_stext_options(ctx, &opts, options);
-		text = fz_new_stext_page_from_page(ctx, page, sheet, &opts);
+		text = fz_new_stext_page_from_page(ctx, page, &opts);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stext_sheet(ctx, sheet);
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
 	}
@@ -5082,7 +5067,6 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_page *page = from_Page(env, self);
-	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text = NULL;
 	fz_device *dev = NULL;
 	fz_matrix ctm;
@@ -5094,7 +5078,6 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 
 	if (!ctx || !page) return NULL;
 
-	fz_var(sheet);
 	fz_var(text);
 	fz_var(dev);
 	fz_var(buf);
@@ -5105,47 +5088,33 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		fz_rect mediabox;
 
 		ctm = fz_identity;
-		sheet = fz_new_stext_sheet(ctx);
 		text = fz_new_stext_page(ctx, fz_bound_page(ctx, page, &mediabox));
-		dev = fz_new_stext_device(ctx, sheet, text, NULL);
+		dev = fz_new_stext_device(ctx, text, NULL);
 		fz_run_page(ctx, page, dev, &ctm, NULL);
 		fz_close_device(ctx, dev);
 
 		buf = fz_new_buffer(ctx, 256);
 		out = fz_new_output_with_buffer(ctx, buf);
-		fz_write_printf(ctx, out, "<html>\n");
-		fz_write_printf(ctx, out, "<style>\n");
-		fz_write_printf(ctx, out, "body{margin:0;}\n");
-		fz_write_printf(ctx, out, "div.page{background-color:white;}\n");
-		fz_write_printf(ctx, out, "div.block{margin:0pt;padding:0pt;}\n");
-		fz_write_printf(ctx, out, "div.metaline{display:table;width:100%%}\n");
-		fz_write_printf(ctx, out, "div.line{display:table-row;}\n");
-		fz_write_printf(ctx, out, "div.cell{display:table-cell;padding-left:0.25em;padding-right:0.25em}\n");
-		//fz_write_printf(ctx, out, "p{margin:0;padding:0;}\n");
-		fz_write_printf(ctx, out, "</style>\n");
-		fz_write_printf(ctx, out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
-		fz_print_stext_page_as_xhtml(ctx, out, text);
-		fz_write_printf(ctx, out, "</div></body>\n");
-		fz_write_printf(ctx, out, "<style>\n");
+		fz_print_stext_header_as_html(ctx, out);
 		fz_print_stext_page_as_html(ctx, out, text);
-		fz_write_printf(ctx, out, "</style>\n</html>\n");
+		fz_print_stext_trailer_as_html(ctx, out);
 	}
 	fz_always(ctx)
 	{
 		fz_drop_stext_page(ctx, text);
-		fz_drop_stext_sheet(ctx, sheet);
 		fz_drop_device(ctx, dev);
 		fz_drop_output(ctx, out);
-		fz_drop_buffer(ctx, buf);
 	}
 	fz_catch(ctx)
 	{
+		fz_drop_buffer(ctx, buf);
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
 	len = fz_buffer_storage(ctx, buf, &data);
 	arr = (*env)->NewByteArray(env, (jsize)len);
+	fz_drop_buffer(ctx, buf);
 	if (!arr) return NULL;
 	(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (jbyte *)data);
 	if ((*env)->ExceptionCheck(env)) return NULL;
@@ -5287,7 +5256,6 @@ FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 {
 	fz_context *ctx = get_context(env);
 	fz_display_list *list = from_DisplayList(env, self);
-	fz_stext_sheet *sheet = NULL;
 	fz_stext_page *text = NULL;
 	const char *options= NULL;
 	fz_stext_options opts;
@@ -5300,17 +5268,13 @@ FUN(DisplayList_toStructuredText)(JNIEnv *env, jobject self, jstring joptions)
 		if (!options) return NULL;
 	}
 
-	fz_var(sheet);
-
 	fz_try(ctx)
 	{
-		sheet = fz_new_stext_sheet(ctx);
 		fz_parse_stext_options(ctx, &opts, options);
-		text = fz_new_stext_page_from_display_list(ctx, list, sheet, &opts);
+		text = fz_new_stext_page_from_display_list(ctx, list, &opts);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_stext_sheet(ctx, sheet);
 		if (options)
 			(*env)->ReleaseStringUTFChars(env, joptions, options);
 	}
@@ -5891,46 +5855,44 @@ JNIEXPORT jobject JNICALL
 FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
-	fz_stext_page *text = from_StructuredText(env, self);
+	fz_stext_page *page = from_StructuredText(env, self);
 
 	jobject barr = NULL;
 	jobject larr = NULL;
-	jobject sarr = NULL;
 	jobject carr = NULL;
 	jobject jrect = NULL;
 
+	int len;
 	int b;
 	int l;
-	int s;
 	int c;
 
 	fz_stext_block *block = NULL;
 	fz_stext_line *line = NULL;
-	fz_stext_span *span = NULL;
+	fz_stext_char *ch = NULL;
 
 	jobject jblock = NULL;
 	jobject jline = NULL;
-	jobject jspan = NULL;
 	jobject jchar = NULL;
 
-	fz_rect sbbox;
-	fz_rect bbox;
-	fz_stext_char *ch = NULL;
+	if (!ctx || !page) return NULL;
 
-	if (!ctx || !text) return NULL;
+	len = 0;
+	for (block = page->first_block; block; block = block->next)
+		if (block->type == FZ_STEXT_BLOCK_TEXT)
+			++len;
 
 	//  create block array
-	barr = (*env)->NewObjectArray(env, text->len, cls_TextBlock, NULL);
+	barr = (*env)->NewObjectArray(env, len, cls_TextBlock, NULL);
 	if (!barr) return NULL;
 
-	for (b = 0; b < text->len; b++)
+	for (b=0, block = page->first_block; block; ++b, block = block->next)
 	{
 		//  only do text blocks
-		if (text->blocks[b].type != FZ_PAGE_BLOCK_TEXT)
+		if (block->type == FZ_STEXT_BLOCK_TEXT)
 			continue;
 
 		//  make a block
-		block = text->blocks[b].u.text;
 		jblock = (*env)->NewObject(env, cls_TextBlock, mid_TextBlock_init, self);
 		if (!jblock) return NULL;
 
@@ -5942,14 +5904,16 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 		(*env)->DeleteLocalRef(env, jrect);
 
 		//  create block's line array
-		larr = (*env)->NewObjectArray(env, block->len, cls_TextLine, NULL);
+		len = 0;
+		for (line = block->u.t.first_line; line; line = line->next)
+			++len;
+
+		larr = (*env)->NewObjectArray(env, len, cls_TextLine, NULL);
 		if (!larr) return NULL;
 
-		for (l = 0; l < block->len; l++)
+		for (l=0, line = block->u.t.first_line; line; ++l, line = line->next)
 		{
-			int len = 0;
 			//  make a line
-			line = &block->lines[l];
 			jline = (*env)->NewObject(env, cls_TextLine, mid_TextLine_init, self);
 			if (!jline) return NULL;
 
@@ -5960,75 +5924,37 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 			(*env)->SetObjectField(env, jline, fid_TextLine_bbox, jrect);
 			(*env)->DeleteLocalRef(env, jrect);
 
-			//  count the spans
-			for (span = line->first_span; span; span = span->next)
+			//  count the chars
+			len = 0;
+			for (ch = line->first_char; ch; ch = ch->next)
 				len++;
 
-			//  create a span array
-			sarr = (*env)->NewObjectArray(env, len, cls_TextSpan, NULL);
-			if (!sarr) return NULL;
+			//  make a char array
+			carr = (*env)->NewObjectArray(env, len, cls_TextChar, NULL);
+			if (!carr) return NULL;
 
-			for (s=0, span = line->first_span; span; s++, span = span->next)
+			for (c=0, ch = line->first_char; ch; ++c, ch = ch->next)
 			{
-				//  create a span
-				jspan = (*env)->NewObject(env, cls_TextSpan, mid_TextSpan_init, self);
-				if (!jspan) return NULL;
+				//  create a char
+				jchar = (*env)->NewObject(env, cls_TextChar, mid_TextChar_init, self);
+				if (!jchar) return NULL;
 
-				//  make a char array
-				carr = (*env)->NewObjectArray(env, span->len, cls_TextChar, NULL);
-				if (!carr) return NULL;
-
-				sbbox = fz_empty_rect;
-				for (c = 0; c < span->len; c++)
-				{
-					ch = &span->text[c];
-
-					//  create a char
-					jchar = (*env)->NewObject(env, cls_TextChar, mid_TextChar_init, self);
-					if (!jchar) return NULL;
-
-					//  set the char's bbox
-					fz_stext_char_bbox(ctx, &bbox, span, c);
-					jrect = to_Rect_safe(ctx, env, &(bbox));
-					if (!jrect) return NULL;
-
-					(*env)->SetObjectField(env, jchar, fid_TextChar_bbox, jrect);
-					(*env)->DeleteLocalRef(env, jrect);
-
-					//  set the char's value
-					(*env)->SetIntField(env, jchar, fid_TextChar_c, ch->c);
-
-					//  add it to the char array
-					(*env)->SetObjectArrayElement(env, carr, c, jchar);
-					if ((*env)->ExceptionCheck(env)) return NULL;
-
-					(*env)->DeleteLocalRef(env, jchar);
-
-					//  add this char's bbox to the containing span's bbox
-					fz_union_rect(&sbbox, &bbox);
-				}
-
-				//  set the span's bbox
-				jrect = to_Rect_safe(ctx, env, &sbbox);
+				//  set the char's bbox
+				jrect = to_Rect_safe(ctx, env, &(ch->bbox));
 				if (!jrect) return NULL;
 
-				(*env)->SetObjectField(env, jspan, fid_TextSpan_bbox, jrect);
+				(*env)->SetObjectField(env, jchar, fid_TextChar_bbox, jrect);
 				(*env)->DeleteLocalRef(env, jrect);
 
-				//  set the span's char array
-				(*env)->SetObjectField(env, jspan, fid_TextSpan_chars, carr);
-				(*env)->DeleteLocalRef(env, carr);
+				//  set the char's value
+				(*env)->SetIntField(env, jchar, fid_TextChar_c, ch->c);
 
-				//  add it to the span array
-				(*env)->SetObjectArrayElement(env, sarr, s, jspan);
+				//  add it to the char array
+				(*env)->SetObjectArrayElement(env, carr, c, jchar);
 				if ((*env)->ExceptionCheck(env)) return NULL;
 
-				(*env)->DeleteLocalRef(env, jspan);
+				(*env)->DeleteLocalRef(env, jchar);
 			}
-
-			//  set the line's span array
-			(*env)->SetObjectField(env, jline, fid_TextLine_spans, sarr);
-			(*env)->DeleteLocalRef(env, sarr);
 
 			//  add to the line array
 			(*env)->SetObjectArrayElement(env, larr, l, jline);

@@ -3077,17 +3077,6 @@ extern "C" {
 }
 #endif
 #endif
-/* Header for class com_artifex_mupdf_fitz_StructuredText_TextSpan */
-
-#ifndef _Included_com_artifex_mupdf_fitz_StructuredText_TextSpan
-#define _Included_com_artifex_mupdf_fitz_StructuredText_TextSpan
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef __cplusplus
-}
-#endif
-#endif
 /* Header for class com_artifex_mupdf_fitz_StructuredText_TextLine */
 
 #ifndef _Included_com_artifex_mupdf_fitz_StructuredText_TextLine

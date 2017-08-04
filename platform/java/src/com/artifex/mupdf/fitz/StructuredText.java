@@ -21,31 +21,20 @@ public class StructuredText
 
 	public native TextBlock[] getBlocks();
 
-	public class TextBlock
-	{
+	public class TextBlock {
 		public TextLine[] lines;
 		public Rect bbox;
 	}
 
-	public class TextLine
-	{
-		public TextSpan[] spans;
-		public Rect bbox;
-	}
-
-	public class TextSpan
-	{
+	public class TextLine {
 		public TextChar[] chars;
 		public Rect bbox;
 	}
 
-	public class TextChar
-	{
+	public class TextChar {
 		public int c;
 		public Rect bbox;
-
-		public boolean isWhitespace()
-		{
+		public boolean isWhitespace() {
 			return Character.isWhitespace(c);
 		}
 	}
