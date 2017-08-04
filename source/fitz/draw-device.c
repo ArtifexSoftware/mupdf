@@ -348,16 +348,16 @@ colors_supported(fz_context *ctx, fz_colorspace *cs, fz_pixmap *dest)
 	return 0;
 }
 
-static void
+static fz_overprint *
 set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, const fz_colorspace *src, int opm)
 {
 	int dn, sn, i, j, dc;
 
 	if (!op)
-		return;
+		return NULL;
 
 	if (!fz_colorspace_is_subtractive(ctx, src) || !fz_colorspace_is_subtractive(ctx, dest->colorspace))
-		return;
+		return NULL;
 
 	sn = fz_colorspace_n(ctx, src);
 	dn = dest->n - dest->alpha;
@@ -438,6 +438,8 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, con
 		if (j == sn)
 			fz_set_overprint(op, i);
 	}
+
+	return op;
 }
 
 static fz_overprint *
@@ -464,7 +466,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 		fz_convert_separation_colors(ctx, color_params, dest->colorspace, dest->seps, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
-		set_op_from_spaces(ctx, op, dest, colorspace, color_params->opm);
+		op = set_op_from_spaces(ctx, op, dest, colorspace, color_params->opm);
 	}
 	else
 	{
@@ -1389,8 +1391,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 
 	if (color_params->op)
 	{
-		eop = &op;
-		set_op_from_spaces(ctx, eop, dest, shade->colorspace, 0);
+		eop = set_op_from_spaces(ctx, &op, dest, shade->colorspace, 0);
 	}
 	else
 		eop = NULL;
@@ -1495,7 +1496,7 @@ convert_pixmap_for_painting(fz_context *ctx, fz_pixmap *pixmap, fz_colorspace *m
 	if (fz_colorspace_is_device_n(ctx, src_cs) && dest->seps)
 	{
 		converted = fz_clone_pixmap_area_with_different_seps(ctx, pixmap, NULL, model, dest->seps, color_params, dev->default_cs);
-		set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
+		*eop = set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
 	}
 	else
 	{
@@ -1516,7 +1517,7 @@ convert_pixmap_for_painting(fz_context *ctx, fz_pixmap *pixmap, fz_colorspace *m
 			}
 			else
 			{
-				set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
+				*eop = set_op_from_spaces(ctx, *eop, dest, src_cs, 0);
 			}
 		}
 	}

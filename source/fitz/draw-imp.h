@@ -126,6 +126,20 @@ static int inline fz_overprint_component(const fz_overprint *op, int i)
 	return ((op->mask[i>>5]>>(i & 31)) & 1) == 0;
 }
 
+static int inline fz_overprint_required(const fz_overprint *op)
+{
+	int i;
+
+	if (op == NULL)
+		return 0;
+
+	for (i = 0; i < (FZ_MAX_COLORS+31)/32; i++)
+		if (op->mask[i] != 0)
+			return 1;
+
+	return 0;
+}
+
 /*
  * Scan converter
  */

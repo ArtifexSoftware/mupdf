@@ -572,7 +572,7 @@ fz_solid_color_painter_t *
 fz_get_solid_color_painter(int n, const byte * restrict color, int da, const fz_overprint * restrict eop)
 {
 #ifdef FZ_ENABLE_SPOT_RENDERING
-	if (eop != NULL)
+	if (fz_overprint_required(eop))
 	{
 		if (da)
 			return paint_solid_color_N_da_op;
@@ -1015,7 +1015,7 @@ fz_span_color_painter_t *
 fz_get_span_color_painter(int n, int da, const byte * restrict color, const fz_overprint * restrict eop)
 {
 #ifdef FZ_ENABLE_SPOT_RENDERING
-	if (eop != NULL)
+	if (fz_overprint_required(eop))
 	{
 		return da ? paint_span_with_color_N_da_op : paint_span_with_color_N_op;
 	}
@@ -1990,7 +1990,7 @@ fz_span_painter_t *
 fz_get_span_painter(int da, int sa, int n, int alpha, const fz_overprint * restrict eop)
 {
 #ifdef FZ_ENABLE_SPOT_RENDERING
-	if (eop != NULL)
+	if (fz_overprint_required(eop))
 	{
 		if (alpha == 255)
 			return paint_span_N_general_op;
@@ -2572,7 +2572,7 @@ static inline void
 fz_paint_glyph_alpha(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph *glyph, int w, int h, int skip_x, int skip_y, const fz_overprint * restrict eop)
 {
 #ifdef FZ_ENABLE_SPOT_RENDERING
-	if (eop != NULL)
+	if (fz_overprint_required(eop))
 	{
 		if (da)
 			fz_paint_glyph_alpha_N_da_op(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y, eop);
@@ -2629,7 +2629,7 @@ static inline void
 fz_paint_glyph_solid(const unsigned char * restrict colorbv, int n, int span, unsigned char * restrict dp, int da, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y, const fz_overprint * restrict eop)
 {
 #ifdef FZ_ENABLE_SPOT_RENDERING
-	if (eop != NULL)
+	if (fz_overprint_required(eop))
 	{
 		if (da)
 			fz_paint_glyph_solid_N_da_op(colorbv, n, span, dp, glyph, w, h, skip_x, skip_y, eop);
