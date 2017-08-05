@@ -12,7 +12,9 @@
 
 #include FT_FREETYPE_H
 #include FT_ADVANCES_H
+#include FT_MODULE_H
 #include FT_STROKER_H
+#include FT_SYSTEM_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_TRUETYPE_TAGS_H
 
@@ -199,6 +201,7 @@ struct fz_font_context_s
 {
 	int ctx_refs;
 	FT_Library ftlib;
+	struct FT_MemoryRec_ ftmemory;
 	int ftlib_refs;
 	fz_load_system_font_fn *load_font;
 	fz_load_system_cjk_font_fn *load_cjk_font;
@@ -221,6 +224,33 @@ struct ft_error
 	char *str;
 };
 
+static void *ft_alloc(FT_Memory memory, long size)
+{
+	fz_context *ctx = (fz_context *) memory->user;
+	return fz_malloc_no_throw(ctx, size);
+}
+
+static void ft_free(FT_Memory memory, void *block)
+{
+	fz_context *ctx = (fz_context *) memory->user;
+	fz_free(ctx, block);
+}
+
+static void *ft_realloc(FT_Memory memory, long cur_size, long new_size, void *block)
+{
+	fz_context *ctx = (fz_context *) memory->user;
+	void *newblock = NULL;
+	if (new_size == 0)
+	{
+		fz_free(ctx, block);
+		return newblock;
+	}
+	if (block == NULL)
+		return ft_alloc(memory, new_size);
+	return fz_resize_array_no_throw(ctx, block, 1, new_size);
+}
+
+
 void fz_new_font_context(fz_context *ctx)
 {
 	ctx->font = fz_malloc_struct(ctx, fz_font_context);
@@ -228,6 +258,10 @@ void fz_new_font_context(fz_context *ctx)
 	ctx->font->ftlib = NULL;
 	ctx->font->ftlib_refs = 0;
 	ctx->font->load_font = NULL;
+	ctx->font->ftmemory.user = ctx;
+	ctx->font->ftmemory.alloc = ft_alloc;
+	ctx->font->ftmemory.free = ft_free;
+	ctx->font->ftmemory.realloc = ft_realloc;
 }
 
 fz_font_context *
@@ -419,7 +453,7 @@ fz_keep_freetype(fz_context *ctx)
 		return;
 	}
 
-	fterr = FT_Init_FreeType(&fct->ftlib);
+	fterr = FT_New_Library(&fct->ftmemory, &fct->ftlib);
 	if (fterr)
 	{
 		const char *mess = ft_error_string(fterr);
@@ -427,10 +461,12 @@ fz_keep_freetype(fz_context *ctx)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot init freetype: %s", mess);
 	}
 
+	FT_Add_Default_Modules(fct->ftlib);
+
 	FT_Library_Version(fct->ftlib, &maj, &min, &pat);
 	if (maj == 2 && min == 1 && pat < 7)
 	{
-		fterr = FT_Done_FreeType(fct->ftlib);
+		fterr = FT_Done_Library(fct->ftlib);
 		if (fterr)
 			fz_warn(ctx, "freetype finalizing: %s", ft_error_string(fterr));
 		fz_unlock(ctx, FZ_LOCK_FREETYPE);
@@ -450,7 +486,7 @@ fz_drop_freetype(fz_context *ctx)
 	fz_lock(ctx, FZ_LOCK_FREETYPE);
 	if (--fct->ftlib_refs == 0)
 	{
-		fterr = FT_Done_FreeType(fct->ftlib);
+		fterr = FT_Done_Library(fct->ftlib);
 		if (fterr)
 			fz_warn(ctx, "freetype finalizing: %s", ft_error_string(fterr));
 		fct->ftlib = NULL;
