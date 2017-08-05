@@ -373,9 +373,6 @@ static char *layout_css = NULL;
 static int layout_use_doc_css = 1;
 
 static int showtime = 0;
-static size_t memtrace_current = 0;
-static size_t memtrace_peak = 0;
-static size_t memtrace_total = 0;
 static int showmemory = 0;
 
 static int ignore_errors = 0;
@@ -1255,9 +1252,17 @@ typedef struct
 #endif
 } trace_header;
 
+typedef struct
+{
+	size_t current;
+	size_t peak;
+	size_t total;
+} trace_info;
+
 static void *
 trace_malloc(void *arg, size_t size)
 {
+	trace_info *info = (trace_info *) arg;
 	trace_header *p;
 	if (size == 0)
 		return NULL;
@@ -1265,27 +1270,29 @@ trace_malloc(void *arg, size_t size)
 	if (p == NULL)
 		return NULL;
 	p[0].size = size;
-	memtrace_current += size;
-	memtrace_total += size;
-	if (memtrace_current > memtrace_peak)
-		memtrace_peak = memtrace_current;
+	info->current += size;
+	info->total += size;
+	if (info->current > info->peak)
+		info->peak = info->current;
 	return (void *)&p[1];
 }
 
 static void
 trace_free(void *arg, void *p_)
 {
+	trace_info *info = (trace_info *) arg;
 	trace_header *p = (trace_header *)p_;
 
 	if (p == NULL)
 		return;
-	memtrace_current -= p[-1].size;
+	info->current -= p[-1].size;
 	free(&p[-1]);
 }
 
 static void *
 trace_realloc(void *arg, void *p_, size_t size)
 {
+	trace_info *info = (trace_info *) arg;
 	trace_header *p = (trace_header *)p_;
 	size_t oldsize;
 
@@ -1300,11 +1307,11 @@ trace_realloc(void *arg, void *p_, size_t size)
 	p = realloc(&p[-1], size + sizeof(trace_header));
 	if (p == NULL)
 		return NULL;
-	memtrace_current += size - oldsize;
+	info->current += size - oldsize;
 	if (size > oldsize)
-		memtrace_total += size - oldsize;
-	if (memtrace_current > memtrace_peak)
-		memtrace_peak = memtrace_current;
+		info->total += size - oldsize;
+	if (info->current > info->peak)
+		info->peak = info->current;
 	p[0].size = size;
 	return &p[1];
 }
@@ -1401,7 +1408,8 @@ int main(int argc, char **argv)
 	fz_document *doc = NULL;
 	int c;
 	fz_context *ctx;
-	fz_alloc_context alloc_ctx = { NULL, trace_malloc, trace_realloc, trace_free };
+	trace_info info = { 0, 0, 0 };
+	fz_alloc_context alloc_ctx = { &info, trace_malloc, trace_realloc, trace_free };
 	fz_locks_context *locks = NULL;
 
 	fz_var(doc);
@@ -1720,9 +1728,9 @@ int main(int argc, char **argv)
 
 	if (showmemory)
 	{
-		fprintf(stderr, "Total memory use = " FZ_FMT_zu " bytes\n", memtrace_total);
-		fprintf(stderr, "Peak memory use = " FZ_FMT_zu " bytes\n", memtrace_peak);
-		fprintf(stderr, "Current memory use = " FZ_FMT_zu " bytes\n", memtrace_current);
+		fprintf(stderr, "Total memory use = " FZ_FMT_zu " bytes\n", info.total);
+		fprintf(stderr, "Peak memory use = " FZ_FMT_zu " bytes\n", info.peak);
+		fprintf(stderr, "Current memory use = " FZ_FMT_zu " bytes\n", info.current);
 	}
 
 	return (errored != 0);
