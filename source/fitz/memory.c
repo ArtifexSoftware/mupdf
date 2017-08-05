@@ -67,6 +67,9 @@ fz_malloc(fz_context *ctx, size_t size)
 void *
 fz_malloc_no_throw(fz_context *ctx, size_t size)
 {
+	if (size == 0)
+		return NULL;
+
 	return do_scavenging_malloc(ctx, size);
 }
 
