@@ -8,8 +8,16 @@
 
 /* HTML output (visual formatting with preserved layout) */
 
+static int
+detect_super_script(fz_stext_line *line, fz_stext_char *ch)
+{
+	if (line->wmode == 0 && line->dir.x == 1 && line->dir.y == 0)
+		return ch->origin.y < line->first_char->origin.y - ch->size * 0.1f;
+	return 0;
+}
+
 static void
-fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float size)
+fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
 {
 	int is_bold = fz_font_is_bold(ctx, font);
 	int is_italic = fz_font_is_italic(ctx, font);
@@ -17,6 +25,8 @@ fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float 
 	int is_mono = fz_font_is_monospaced(ctx, font);
 
 	fz_write_printf(ctx, out, "<span style=\"font-family:%s;font-size:%gpt;\">", is_serif ? "serif" : "sans-serif", size);
+	if (sup)
+		fz_write_string(ctx, out, "<sup>");
 	if (is_mono)
 		fz_write_string(ctx, out, "<tt>");
 	if (is_bold)
@@ -26,7 +36,7 @@ fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float 
 }
 
 static void
-fz_print_style_end_html(fz_context *ctx, fz_output *out, fz_font *font, float size)
+fz_print_style_end_html(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
 {
 	int is_mono = fz_font_is_monospaced(ctx, font);
 	int is_bold = fz_font_is_bold(ctx,font);
@@ -38,6 +48,8 @@ fz_print_style_end_html(fz_context *ctx, fz_output *out, fz_font *font, float si
 		fz_write_string(ctx, out, "</b>");
 	if (is_mono)
 		fz_write_string(ctx, out, "</tt>");
+	if (sup)
+		fz_write_string(ctx, out, "</sup>");
 	fz_write_string(ctx, out, "</span>");
 }
 
@@ -63,6 +75,7 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 
 	fz_font *font = NULL;
 	float size = 0;
+	int sup = 0;
 
 	for (line = block->u.t.first_line; line; line = line->next)
 	{
@@ -74,13 +87,15 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 
 		for (ch = line->first_char; ch; ch = ch->next)
 		{
+			int ch_sup = detect_super_script(line, ch);
 			if (ch->font != font || ch->size != size)
 			{
 				if (font)
-					fz_print_style_end_html(ctx, out, font, size);
+					fz_print_style_end_html(ctx, out, font, size, sup);
 				font = ch->font;
 				size = ch->size;
-				fz_print_style_begin_html(ctx, out, font, size);
+				sup = ch_sup;
+				fz_print_style_begin_html(ctx, out, font, size, sup);
 			}
 
 			switch (ch->c)
@@ -100,7 +115,7 @@ fz_print_stext_block_as_html(fz_context *ctx, fz_output *out, fz_stext_block *bl
 		}
 
 		if (font)
-			fz_print_style_end_html(ctx, out, font, size);
+			fz_print_style_end_html(ctx, out, font, size, sup);
 
 		fz_write_string(ctx, out, "</p>\n");
 	}
@@ -164,12 +179,14 @@ fz_print_stext_image_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *b
 }
 
 static void
-fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float size)
+fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
 {
 	int is_mono = fz_font_is_monospaced(ctx, font);
 	int is_bold = fz_font_is_bold(ctx, font);
 	int is_italic = fz_font_is_italic(ctx, font);
 
+	if (sup)
+		fz_write_string(ctx, out, "<sup>");
 	if (is_mono)
 		fz_write_string(ctx, out, "<tt>");
 	if (is_bold)
@@ -179,7 +196,7 @@ fz_print_style_begin_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float
 }
 
 static void
-fz_print_style_end_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float size)
+fz_print_style_end_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
 {
 	int is_mono = fz_font_is_monospaced(ctx, font);
 	int is_bold = fz_font_is_bold(ctx, font);
@@ -191,6 +208,8 @@ fz_print_style_end_xhtml(fz_context *ctx, fz_output *out, fz_font *font, float s
 		fz_write_string(ctx, out, "</b>");
 	if (is_mono)
 		fz_write_string(ctx, out, "</tt>");
+	if (sup)
+		fz_write_string(ctx, out, "</sup>");
 }
 
 static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_stext_block *block)
@@ -200,6 +219,7 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 
 	fz_font *font = NULL;
 	float size = 0;
+	int sup = 0;
 
 	fz_write_string(ctx, out, "<p>");
 
@@ -209,13 +229,15 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 			fz_write_string(ctx, out, "\n");
 		for (ch = line->first_char; ch; ch = ch->next)
 		{
-			if (ch->font != font || ch->size != size)
+			int ch_sup = detect_super_script(line, ch);
+			if (ch->font != font || ch->size != size || ch_sup != sup)
 			{
 				if (font)
-					fz_print_style_end_xhtml(ctx, out, font, size);
+					fz_print_style_end_xhtml(ctx, out, font, size, sup);
 				font = ch->font;
 				size = ch->size;
-				fz_print_style_begin_xhtml(ctx, out, font, size);
+				sup = ch_sup;
+				fz_print_style_begin_xhtml(ctx, out, font, size, sup);
 			}
 
 			switch (ch->c)
@@ -236,7 +258,7 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 	}
 
 	if (font)
-		fz_print_style_end_xhtml(ctx, out, font, size);
+		fz_print_style_end_xhtml(ctx, out, font, size, sup);
 	fz_write_string(ctx, out, "</p>\n");
 }
 
