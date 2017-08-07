@@ -391,10 +391,6 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 					fmtuint32(&out, i32, s, z, w, 10);
 				}
 				break;
-			case 'o':
-				i32 = va_arg(args, int);
-				fmtint32(&out, i32, s, z, w, 8);
-				break;
 
 			case 's':
 				str = va_arg(args, const char*);

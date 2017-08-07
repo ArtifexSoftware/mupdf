@@ -221,8 +221,8 @@ void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, in
 
 /*
 	fz_format_string: Our customised 'printf'-like string formatter.
-	Takes %c, %d, %o, %s, %u, %x, as usual.
-	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03o, %04x, etc).
+	Takes %c, %d, %s, %u, %x, as usual.
+	Modifiers are not supported except for zero-padding ints (e.g. %02d, %03u, %04x, etc).
 	%g output in "as short as possible hopefully lossless non-exponent" form,
 	see fz_ftoa for specifics.
 	%f and %e output as usual.
