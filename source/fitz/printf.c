@@ -196,29 +196,29 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 	{
 		if (c == '%')
 		{
-			c = *fmt++;
+			s = 0;
+			z = 0;
+
+			/* flags */
+			while ((c = *fmt++) != 0)
+			{
+				/* sign */
+				if (c == '+')
+					s = 1;
+				/* space padding */
+				else if (c == ' ')
+					z = ' ';
+				/* leading zero */
+				else if (c == '0')
+					z = z != ' ' ? '0' : z;
+				/* TODO: '-' to left justify */
+				else
+					break;
+			}
+			if (!z)
+				z = ' ';
 			if (c == 0)
 				break;
-
-			/* sign */
-			s = 0;
-			if (c == '+') {
-				s = 1;
-				c = *fmt++;
-				if (c == 0)
-					break;
-			}
-
-			/* TODO: '-' to left justify */
-
-			/* leading zero */
-			z = ' ';
-			if (c == '0') {
-				z = '0';
-				c = *fmt++;
-				if (c == 0)
-					break;
-			}
 
 			/* width */
 			w = 0;
