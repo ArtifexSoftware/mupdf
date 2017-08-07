@@ -96,7 +96,7 @@ static void fmtuint32(struct fmtbuf *out, unsigned int a, int s, int z, int w, i
 	while (i < w)
 		buf[i++] = z;
 	if (s)
-		fmtputc(out, '+');
+		buf[i++] = s;
 	while (i > 0)
 		fmtputc(out, buf[--i]);
 }
@@ -116,7 +116,7 @@ static void fmtuint64(struct fmtbuf *out, uint64_t a, int s, int z, int w, int b
 	while (i < w)
 		buf[i++] = z;
 	if (s)
-		fmtputc(out, '+');
+		buf[i++] = s;
 	while (i > 0)
 		fmtputc(out, buf[--i]);
 }
@@ -127,11 +127,19 @@ static void fmtint32(struct fmtbuf *out, int value, int s, int z, int w, int bas
 
 	if (value < 0)
 	{
-		fmtputc(out, '-');
+		s = '-';
 		a = -value;
 	}
-	else
+	else if (s)
+	{
+		s = '+';
 		a = value;
+	}
+	else
+	{
+		s = 0;
+		a = value;
+	}
 	fmtuint32(out, a, s, z, w, base);
 }
 
@@ -141,11 +149,19 @@ static void fmtint64(struct fmtbuf *out, int64_t value, int s, int z, int w, int
 
 	if (value < 0)
 	{
-		fmtputc(out, '-');
+		s = '-';
 		a = -value;
 	}
-	else
+	else if (s)
+	{
+		s = '+';
 		a = value;
+	}
+	else
+	{
+		s = 0;
+		a = value;
+	}
 	fmtuint64(out, a, s, z, w, base);
 }
 
