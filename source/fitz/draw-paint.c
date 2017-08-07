@@ -1308,7 +1308,7 @@ template_span_3_general(byte * restrict dp, int da, const byte * restrict sp, in
 					dp[1] = sp[1];
 					dp[2] = sp[2];
 					if (da)
-						dp[3] = (sa ? sp[3] : 255);
+						dp[3] = 255;
 				}
 				dp += 3+da; sp += 3+sa;
 			}
