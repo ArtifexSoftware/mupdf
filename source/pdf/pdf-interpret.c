@@ -510,11 +510,8 @@ resolve_properties(fz_context *ctx, pdf_csi *csi, pdf_obj *obj)
 static void
 pdf_process_BDC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 {
-	pdf_obj *raw = csi->obj;
-	pdf_obj *cooked = resolve_properties(ctx, csi, raw);
-
 	if (proc->op_BDC)
-		proc->op_BDC(ctx, proc, csi->name, raw, cooked);
+		proc->op_BDC(ctx, proc, csi->name, csi->obj, resolve_properties(ctx, csi, csi->obj));
 
 	/* Already hidden, no need to look further */
 	if (proc->hidden > 0)
@@ -527,15 +524,7 @@ pdf_process_BDC(fz_context *ctx, pdf_processor *proc, pdf_csi *csi)
 	if (strcmp(csi->name, "OC"))
 		return;
 
-	/* No Properties array, or name not found, means visible. */
-	if (!cooked)
-		return;
-
-	/* Wrong type of property */
-	if (!pdf_name_eq(ctx, pdf_dict_get(ctx, cooked, PDF_NAME_Type), PDF_NAME_OCG))
-		return;
-
-	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->usage, cooked))
+	if (pdf_is_hidden_ocg(ctx, csi->doc->ocg, csi->rdb, proc->usage, csi->obj))
 		++proc->hidden;
 }
 
