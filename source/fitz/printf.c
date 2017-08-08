@@ -359,12 +359,12 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 				if (bits == 64)
 				{
 					i64 = va_arg(args, int64_t);
-					fmtuint64(&out, i64, s, z, w, 16);
+					fmtuint64(&out, i64, 0, z, w, 16);
 				}
 				else
 				{
 					i32 = va_arg(args, int);
-					fmtuint32(&out, i32, s, z, w, 16);
+					fmtuint32(&out, i32, 0, z, w, 16);
 				}
 				break;
 			case 'd':
@@ -383,12 +383,12 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 				if (bits == 64)
 				{
 					i64 = va_arg(args, int64_t);
-					fmtuint64(&out, i64, s, z, w, 10);
+					fmtuint64(&out, i64, 0, z, w, 10);
 				}
 				else
 				{
 					i32 = va_arg(args, int);
-					fmtuint32(&out, i32, s, z, w, 10);
+					fmtuint32(&out, i32, 0, z, w, 10);
 				}
 				break;
 
