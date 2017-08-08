@@ -897,7 +897,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 				entry->num = (int)i;
 				entry->type = s[17];
 				if (s[17] != 'f' && s[17] != 'n' && s[17] != 'o')
-					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: %#x (%d %d R)", s[17], entry->num, entry->gen);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "unexpected xref type: 0x%x (%d %d R)", s[17], entry->num, entry->gen);
 				/* If the last byte of our buffer isn't an EOL (or space), carry one byte forward */
 				carried = s[19] > 32;
 				if (carried)
