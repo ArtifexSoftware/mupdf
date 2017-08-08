@@ -54,7 +54,7 @@ rune_from_utf16be(int *out, unsigned char *s, unsigned char *end)
 		*out = a;
 		return 2;
 	}
-	*out = 0xFFFD;
+	*out = FZ_REPLACEMENT_CHARACTER;
 	return 1;
 }
 

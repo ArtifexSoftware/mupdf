@@ -378,7 +378,7 @@ xps_parse_glyphs_imp(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 	while ((us && un > 0) || (is && *is))
 	{
-		int char_code = 0xFFFD;
+		int char_code = FZ_REPLACEMENT_CHARACTER;
 		int code_count = 1;
 		int glyph_count = 1;
 

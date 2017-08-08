@@ -432,7 +432,7 @@ fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *page, const fz_rec
 					int c = ch->c;
 					fz_stext_char_bbox(ctx, &hitbox, line, ch);
 					if (c < 32)
-						c = 0xFFFD;
+						c = FZ_REPLACEMENT_CHARACTER;
 					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
 					{
 						saw_text = 1;

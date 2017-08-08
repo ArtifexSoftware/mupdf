@@ -63,7 +63,7 @@ pdf_lookup_agl(const char *name)
 	else if (buf[0] == 'a' && buf[1] != 0 && buf[2] != 0)
 		code = strtol(buf + 1, NULL, 10);
 
-	return (code > 0 && code <= 0x10ffff) ? code : 0xFFFD;
+	return (code > 0 && code <= 0x10ffff) ? code : FZ_REPLACEMENT_CHARACTER;
 }
 
 static const char *empty_dup_list[] = { 0 };

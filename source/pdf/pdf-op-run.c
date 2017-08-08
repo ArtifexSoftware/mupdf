@@ -909,7 +909,7 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 	}
 	if (ucslen == 0 || (ucslen == 1 && ucsbuf[0] == 0))
 	{
-		ucsbuf[0] = 0xFFFD;
+		ucsbuf[0] = FZ_REPLACEMENT_CHARACTER;
 		ucslen = 1;
 	}
 

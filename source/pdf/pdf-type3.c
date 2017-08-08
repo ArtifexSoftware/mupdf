@@ -114,7 +114,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 		if (fontdesc->cid_to_ucs_len == 256)
 		{
 			for (i = 32; i < 127; ++i)
-				if (fontdesc->cid_to_ucs[i] == 0xFFFD)
+				if (fontdesc->cid_to_ucs[i] == FZ_REPLACEMENT_CHARACTER)
 					fontdesc->cid_to_ucs[i] = i;
 		}
 

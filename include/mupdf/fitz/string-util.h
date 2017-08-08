@@ -3,6 +3,9 @@
 
 #include "mupdf/fitz/system.h"
 
+/* The Unicode character used to incoming character whose value is unknown or unrepresentable. */
+#define FZ_REPLACEMENT_CHARACTER 0xFFFD
+
 /*
 	Safe string functions
 */
