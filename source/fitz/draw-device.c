@@ -1299,6 +1299,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 	fz_draw_state *state = &dev->stack[dev->top];
 	fz_overprint op = { { 0 } };
 	fz_overprint *eop;
+	fz_colorspace *colorspace = fz_default_colorspace(ctx, dev->default_cs, shade->colorspace);
 
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
@@ -1348,7 +1349,7 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 			cp = &local_cp;
 		}
 
-		eop = resolve_color(ctx, &op, shade->background, fz_default_colorspace(ctx, dev->default_cs, shade->colorspace), alpha, cp, colorbv, state->dest);
+		eop = resolve_color(ctx, &op, shade->background, colorspace, alpha, cp, colorbv, state->dest);
 
 		n = dest->n;
 		if (eop)
@@ -1391,12 +1392,12 @@ fz_draw_fill_shade(fz_context *ctx, fz_device *devp, fz_shade *shade, const fz_m
 
 	if (color_params->op)
 	{
-		eop = set_op_from_spaces(ctx, &op, dest, shade->colorspace, 0);
+		eop = set_op_from_spaces(ctx, &op, dest, colorspace, 0);
 	}
 	else
 		eop = NULL;
 
-	fz_paint_shade(ctx, shade, &ctm, dest, color_params, &bbox, eop);
+	fz_paint_shade(ctx, shade, colorspace, &ctm, dest, color_params, &bbox, eop);
 	if (shape)
 		fz_clear_pixmap_rect_with_value(ctx, shape, 255, &bbox);
 

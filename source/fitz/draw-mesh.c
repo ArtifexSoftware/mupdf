@@ -211,7 +211,7 @@ do_paint_tri(fz_context *ctx, void *arg, fz_vertex *av, fz_vertex *bv, fz_vertex
 }
 
 void
-fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op)
+fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *colorspace, const fz_matrix *ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op)
 {
 	unsigned char clut[256][FZ_MAX_COLORS];
 	fz_pixmap *temp = NULL;
@@ -223,6 +223,9 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 
 	fz_var(temp);
 	fz_var(conv);
+
+	if (colorspace == NULL)
+		colorspace = shade->colorspace;
 
 	fz_try(ctx)
 	{
@@ -244,7 +247,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 		ptd.shade = shade;
 		ptd.bbox = bbox;
 
-		fz_init_cached_color_converter(ctx, &ptd.cc, NULL, temp->colorspace, shade->colorspace, color_params);
+		fz_init_cached_color_converter(ctx, &ptd.cc, NULL, temp->colorspace, colorspace, color_params);
 		fz_process_shade(ctx, shade, &local_ctm, prepare_mesh_vertex, &do_paint_tri, &ptd);
 
 		if (shade->use_function)
@@ -254,7 +257,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 			 * we need to render it in deviceN before painting it
 			 * to the destination. If not, we are free to render it
 			 * direct to the target. */
-			if (fz_colorspace_is_device_n(ctx, shade->colorspace))
+			if (fz_colorspace_is_device_n(ctx, colorspace))
 			{
 				/* We've drawn it as greyscale, with the values being
 				 * the input to the function. Now make DevN version
@@ -268,10 +271,10 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 				unsigned char *s = temp->samples;
 				unsigned char *d;
 				int hh = temp->h;
-				int n = fz_colorspace_n(ctx, shade->colorspace);
+				int n = fz_colorspace_n(ctx, colorspace);
 
 				/* alpha = 1 here for the same reason as earlier */
-				conv = fz_new_pixmap_with_bbox(ctx, shade->colorspace, bbox, NULL, 1);
+				conv = fz_new_pixmap_with_bbox(ctx, colorspace, bbox, NULL, 1);
 				d = conv->samples;
 				while (hh--)
 				{
@@ -303,10 +306,10 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 				int hh = temp->h;
 
 				fz_color_converter cc;
-				int cn = fz_colorspace_n(ctx, shade->colorspace);
+				int cn = fz_colorspace_n(ctx, colorspace);
 				int m = dest->n - dest->alpha;
 				int n = fz_colorspace_n(ctx, dest->colorspace);
-				fz_find_color_converter(ctx, &cc, NULL, dest->colorspace, shade->colorspace, color_params);
+				fz_find_color_converter(ctx, &cc, NULL, dest->colorspace, colorspace, color_params);
 				for (i = 0; i < 256; i++)
 				{
 					cc.convert(ctx, &cc, color, shade->function[i]);

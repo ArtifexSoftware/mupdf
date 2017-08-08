@@ -122,6 +122,9 @@ fz_rect *fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, 
 
 	shade: The shade to paint.
 
+	override_cs: NULL, or colorspace to override the shades
+	inbuilt colorspace.
+
 	ctm: The transform to apply.
 
 	dest: The pixmap to render into.
@@ -133,7 +136,7 @@ fz_rect *fz_bound_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, 
 
 	op: NULL, or pointer to overprint bitmap.
 */
-void fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op);
+void fz_paint_shade(fz_context *ctx, fz_shade *shade, fz_colorspace *override_cs, const fz_matrix *ctm, fz_pixmap *dest, const fz_color_params *color_params, const fz_irect *bbox, const fz_overprint *op);
 
 /*
  *	Handy routine for processing mesh based shades
