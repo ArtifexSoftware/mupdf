@@ -81,6 +81,7 @@ struct fz_stext_block_s
 struct fz_stext_line_s
 {
 	int wmode; /* 0 for horizontal, 1 for vertical */
+	fz_point dir; /* normalized direction of baseline */
 	fz_rect bbox;
 	fz_stext_char *first_char, *last_char;
 	fz_stext_line *next;

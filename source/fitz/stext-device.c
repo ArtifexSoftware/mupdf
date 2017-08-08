@@ -113,7 +113,7 @@ add_image_block_to_page(fz_context *ctx, fz_stext_page *page, const fz_matrix *c
 }
 
 static fz_stext_line *
-add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, int wmode)
+add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, const fz_point *dir, int wmode)
 {
 	fz_stext_line *line = fz_pool_alloc(ctx, page->pool, sizeof *block->u.t.first_line);
 	if (!block->u.t.first_line)
@@ -124,6 +124,7 @@ add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, i
 		block->u.t.last_line = line;
 	}
 
+	line->dir = *dir;
 	line->wmode = wmode;
 
 	return line;
@@ -229,15 +230,9 @@ direction_from_bidi_class(int bidiclass, int curdir)
 }
 
 static int
-sign_eq(float x, float y)
+vec_dot(const fz_point *a, const fz_point *b)
 {
-	return (x < 0 && y < 0) || (x > 0 && y > 0) || (x == 0 && y == 0);
-}
-
-static int
-mat_sign_eq(const fz_matrix *x, const fz_matrix *y)
-{
-	return sign_eq(x->a, y->a) && sign_eq(x->b, y->b) && sign_eq(x->c, y->c) && sign_eq(x->d, y->d);
+	return a->x * b->x + a->y * b->y;
 }
 
 static void
@@ -320,7 +315,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 		return;
 	}
 
-	if (cur_line == NULL || !mat_sign_eq(trm, &dev->trm) || cur_line->wmode != wmode)
+	if (cur_line == NULL || cur_line->wmode != wmode || vec_dot(&ndir, &cur_line->dir) < 0.999f)
 	{
 		/* If the matrix has changed rotation, or the wmode is different (or if we don't have a line at all),
 		 * then we can't append to the current block/line. */
@@ -330,8 +325,8 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	else
 	{
 		/* Detect fake bold where text is printed twice in the same place. */
-		delta.x = q.x - dev->pen.x;
-		delta.y = q.y - dev->pen.y;
+		delta.x = fabsf(q.x - dev->pen.x);
+		delta.y = fabsf(q.y - dev->pen.y);
 		if (delta.x < FLT_EPSILON && delta.y < FLT_EPSILON && c == dev->lastchar)
 			return;
 
@@ -410,7 +405,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	/* Start a new line */
 	if (new_line || !cur_line)
 	{
-		cur_line = add_line_to_block(ctx, page, cur_block, wmode);
+		cur_line = add_line_to_block(ctx, page, cur_block, &ndir, wmode);
 		dev->start = p;
 	}
 

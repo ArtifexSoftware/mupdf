@@ -311,8 +311,10 @@ fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 				const char *s;
 				fz_rect rect;
 
-				fz_write_printf(ctx, out, "<line bbox=\"%g %g %g %g\">\n",
-						line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1);
+				fz_write_printf(ctx, out, "<line bbox=\"%g %g %g %g\" wmode=\"%d\" dir=\"%g %g\">\n",
+						line->bbox.x0, line->bbox.y0, line->bbox.x1, line->bbox.y1,
+						line->wmode,
+						line->dir.x, line->dir.y);
 
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
