@@ -219,7 +219,7 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 
 	fz_pixmap_bbox(ctx, state->dest, &bbox);
 	fz_intersect_irect(&bbox, &state->scissor);
-	dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->seps, state->dest->alpha || isolated);
+	dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->seps, state->dest->alpha);
 
 	if (isolated)
 	{
@@ -242,24 +242,11 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 			fz_clear_pixmap(ctx, dest);
 	}
 
-	if ((state->blendmode & FZ_BLEND_MODEMASK) == 0 && isolated)
-	{
-		/* We can render direct to any existing shape plane. If there
-		 * isn't one, we don't need to make one. */
-		shape = state->shape;
-	}
-	else
-	{
-		shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
-		fz_clear_pixmap(ctx, shape);
-	}
+	shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
+	fz_clear_pixmap(ctx, shape);
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top-1, "");
-	{
-		char text[80];
-		sprintf(text, "Knockout begin%s: background is ", isolated ? " (isolated)" : "");
-		fz_dump_blend(ctx, text, dest);
-	}
+	fz_dump_blend(ctx, "Knockout begin: background is ", dest);
 	if (shape)
 		fz_dump_blend(ctx, "/", shape);
 	printf("\n");
@@ -267,7 +254,7 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 	state[1].scissor = bbox;
 	state[1].dest = dest;
 	state[1].shape = shape;
-	state[1].blendmode &= ~FZ_BLEND_MODEMASK;
+	state[1].blendmode &= ~(FZ_BLEND_MODEMASK | FZ_BLEND_ISOLATED);
 
 	return &state[1];
 }
