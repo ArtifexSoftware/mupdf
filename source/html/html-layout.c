@@ -2614,9 +2614,13 @@ detect_flow_directionality(fz_context *ctx, fz_pool *pool, uni_buf *buffer, fz_b
 			/* Make sure the buffer is large enough */
 			if (buffer->len + len > buffer->cap)
 			{
-				size_t newcap = buffer->cap * 2;
-				if (newcap == 0)
+				size_t newcap = buffer->cap;
+				if (newcap < 128)
 					newcap = 128; /* Sensible small default */
+
+				while (newcap < buffer->len + len)
+					newcap = (newcap * 3) / 2;
+
 				buffer->data = fz_resize_array(ctx, buffer->data, newcap, sizeof(uint32_t));
 				buffer->cap = newcap;
 			}
