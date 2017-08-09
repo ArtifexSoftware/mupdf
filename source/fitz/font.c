@@ -567,6 +567,20 @@ fz_new_font_from_buffer(fz_context *ctx, const char *name, fz_buffer *buffer, in
 		}
 	}
 
+	if (name)
+	{
+		if (!font->flags.is_bold)
+		{
+			if (strstr(name, "Semibold")) font->flags.is_bold = 1;
+			if (strstr(name, "Bold")) font->flags.is_bold = 1;
+		}
+		if (!font->flags.is_italic)
+		{
+			if (strstr(name, "Italic")) font->flags.is_italic = 1;
+			if (strstr(name, "Oblique")) font->flags.is_italic = 1;
+		}
+	}
+
 	font->buffer = fz_keep_buffer(ctx, buffer);
 
 	return font;
