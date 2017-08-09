@@ -1357,11 +1357,12 @@ template_span_1_with_alpha_general(byte * restrict dp, int da, const byte * rest
 	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[1], alpha) : alpha);
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		int t = FZ_EXPAND(255-masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		dp++; sp++;
 		if (da)
 		{
-			*dp = FZ_BLEND((sa ? *sp : 255), *dp, masa);
+			*dp = masa + FZ_COMBINE(*dp, t);
 			dp++;
 		}
 		if (sa)
@@ -1378,15 +1379,16 @@ template_span_3_with_alpha_general(byte * restrict dp, int da, const byte * rest
 	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[3], alpha) : alpha);
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		int t = FZ_EXPAND(255-masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		sp++; dp++;
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		sp++; dp++;
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		sp++; dp++;
 		if (da)
 		{
-			*dp = FZ_BLEND((sa ? *sp : 255), *dp, masa);
+			*dp = masa + FZ_COMBINE(*dp, t);
 			dp++;
 		}
 		if (sa)
@@ -1403,17 +1405,18 @@ template_span_4_with_alpha_general(byte * restrict dp, int da, const byte * rest
 	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[4], alpha) : alpha);
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		int t = FZ_EXPAND(255-masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		sp++; dp++;
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		sp++; dp++;
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		sp++; dp++;
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 		sp++; dp++;
 		if (da)
 		{
-			*dp = FZ_BLEND((sa ? *sp : 255), *dp, masa);
+			*dp = masa + FZ_COMBINE(*dp, t);
 			dp++;
 		}
 		if (sa)
@@ -1431,15 +1434,16 @@ template_span_N_with_alpha_general(byte * restrict dp, int da, const byte * rest
 	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[n1], alpha) : alpha);
+		int t = FZ_EXPAND(255-masa);
 		int k;
 		for (k = 0; k < n1; k++)
 		{
-			*dp = FZ_BLEND(*sp, *dp, masa);
+			*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 			sp++; dp++;
 		}
 		if (da)
 		{
-			*dp = FZ_BLEND((sa ? *sp : 255), *dp, masa);
+			*dp = masa + FZ_COMBINE(*dp, t);
 			dp++;
 		}
 		if (sa)
@@ -1456,17 +1460,18 @@ template_span_N_with_alpha_general_op(byte * restrict dp, int da, const byte * r
 	do
 	{
 		int masa = (sa ? FZ_COMBINE(sp[n1], alpha) : alpha);
+		int t = FZ_EXPAND(255-masa);
 		int k;
 		for (k = 0; k < n1; k++)
 		{
 			if (fz_overprint_component(eop, k))
-				*dp = FZ_BLEND(*sp, *dp, masa);
+				*dp = FZ_COMBINE(*sp, alpha) + FZ_COMBINE(*dp, t);
 			sp++;
 			dp++;
 		}
 		if (da)
 		{
-			*dp = FZ_BLEND((sa ? *sp : 255), *dp, masa);
+			*dp = masa + FZ_COMBINE(*dp, t);
 			dp++;
 		}
 		if (sa)
@@ -1731,7 +1736,8 @@ paint_span_0_da_sa_alpha(byte * restrict dp, int da, const byte * restrict sp, i
 	do
 	{
 		int masa = FZ_COMBINE(sp[0], alpha);
-		*dp = FZ_BLEND(*sp, *dp, masa);
+		int t = FZ_EXPAND(255-masa);
+		*dp = masa + FZ_COMBINE(*dp, t);
 		dp++;
 		sp++;
 	}
