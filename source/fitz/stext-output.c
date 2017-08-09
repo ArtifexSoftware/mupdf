@@ -16,23 +16,46 @@ detect_super_script(fz_stext_line *line, fz_stext_char *ch)
 	return 0;
 }
 
+static const char *
+font_full_name(fz_context *ctx, fz_font *font)
+{
+	const char *name = fz_font_name(ctx, font);
+	const char *s = strchr(name, '+');
+	return s ? s + 1 : name;
+}
+
+static void
+font_family_name(fz_context *ctx, fz_font *font, char *buf, int size, int is_mono, int is_serif)
+{
+	const char *name = font_full_name(ctx, font);
+	char *s;
+	fz_strlcpy(buf, name, size);
+	s = strrchr(buf, '-');
+	if (s)
+		*s = 0;
+	if (is_mono)
+		fz_strlcat(buf, ",monospace", size);
+	else
+		fz_strlcat(buf, is_serif ? ",serif" : ",sans-serif", size);
+}
+
 static void
 fz_print_style_begin_html(fz_context *ctx, fz_output *out, fz_font *font, float size, int sup)
 {
+	char family[80];
+
 	int is_bold = fz_font_is_bold(ctx, font);
 	int is_italic = fz_font_is_italic(ctx, font);
 	int is_serif = fz_font_is_serif(ctx, font);
 	int is_mono = fz_font_is_monospaced(ctx, font);
 
-	fz_write_printf(ctx, out, "<span style=\"font-family:%s;font-size:%gpt;\">", is_serif ? "serif" : "sans-serif", size);
-	if (sup)
-		fz_write_string(ctx, out, "<sup>");
-	if (is_mono)
-		fz_write_string(ctx, out, "<tt>");
-	if (is_bold)
-		fz_write_string(ctx, out, "<b>");
-	if (is_italic)
-		fz_write_string(ctx, out, "<i>");
+	font_family_name(ctx, font, family, sizeof family, is_mono, is_serif);
+
+	if (sup) fz_write_string(ctx, out, "<sup>");
+	if (is_mono) fz_write_string(ctx, out, "<tt>");
+	if (is_bold) fz_write_string(ctx, out, "<b>");
+	if (is_italic) fz_write_string(ctx, out, "<i>");
+	fz_write_printf(ctx, out, "<span style=\"font-family:%s;font-size:%gpt;\">", family, size);
 }
 
 static void
@@ -42,15 +65,11 @@ fz_print_style_end_html(fz_context *ctx, fz_output *out, fz_font *font, float si
 	int is_bold = fz_font_is_bold(ctx,font);
 	int is_italic = fz_font_is_italic(ctx, font);
 
-	if (is_italic)
-		fz_write_string(ctx, out, "</i>");
-	if (is_bold)
-		fz_write_string(ctx, out, "</b>");
-	if (is_mono)
-		fz_write_string(ctx, out, "</tt>");
-	if (sup)
-		fz_write_string(ctx, out, "</sup>");
 	fz_write_string(ctx, out, "</span>");
+	if (is_italic) fz_write_string(ctx, out, "</i>");
+	if (is_bold) fz_write_string(ctx, out, "</b>");
+	if (is_mono) fz_write_string(ctx, out, "</tt>");
+	if (sup) fz_write_string(ctx, out, "</sup>");
 }
 
 static void
@@ -330,7 +349,6 @@ fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 				fz_font *font = NULL;
 				float size = 0;
 				const char *name = NULL;
-				const char *s;
 				fz_rect rect;
 
 				fz_write_printf(ctx, out, "<line bbox=\"%g %g %g %g\" wmode=\"%d\" dir=\"%g %g\">\n",
@@ -346,10 +364,8 @@ fz_print_stext_page_as_xml(fz_context *ctx, fz_output *out, fz_stext_page *page)
 							fz_write_string(ctx, out, "</font>\n");
 						font = ch->font;
 						size = ch->size;
-						name = fz_font_name(ctx, font);
-						s = strchr(name, '+');
-						s = s ? s + 1 : name;
-						fz_write_printf(ctx, out, "<font name=\"%s\" size=\"%g\">\n", s, size);
+						name = font_full_name(ctx, font);
+						fz_write_printf(ctx, out, "<font name=\"%s\" size=\"%g\">\n", name, size);
 					}
 					fz_stext_char_bbox(ctx, &rect, line, ch);
 					fz_write_printf(ctx, out, "<char bbox=\"%g %g %g %g\" x=\"%g\" y=\"%g\" c=\"",
