@@ -458,6 +458,7 @@ void fz_paint_image(fz_pixmap * restrict dst, const fz_irect * restrict scissor,
 void fz_paint_image_with_color(fz_pixmap * restrict dst, const fz_irect * restrict scissor, fz_pixmap *restrict shape, const fz_pixmap * restrict img, const fz_matrix * restrict ctm, const unsigned char * restrict colorbv, int lerp_allowed, int gridfit_as_tiled, const fz_overprint * restrict eop);
 
 void fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha);
+void fz_paint_pixmap_alpha(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha);
 void fz_paint_pixmap_with_mask(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_pixmap * restrict msk);
 void fz_paint_pixmap_with_bbox(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha, fz_irect bbox);
 void fz_paint_pixmap_with_overprint(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_overprint *op);

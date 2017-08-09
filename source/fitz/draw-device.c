@@ -2119,12 +2119,8 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_co
 			fz_copy_pixmap_rect(ctx, dest, state[0].dest, &bbox, dev->default_cs);
 		}
 
-		if (blendmode == 0 && alpha == 1.0f && isolated)
-		{
-			/* We can render direct to any existing shape plane.
-			 * If there isn't one, we don't need to make one. */
-			state[1].shape = state[0].shape;
-		}
+		if (isolated)
+			state[1].shape = NULL;
 		else
 		{
 			state[1].shape = fz_new_pixmap_with_bbox(ctx, NULL, &bbox, NULL, 1);
@@ -2212,17 +2208,21 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 	else
 		fz_blend_pixmap(ctx, state[0].dest, state[1].dest, alpha * 255, blendmode, isolated, state[1].shape);
 
+	assert(state[0].shape == NULL || state[0].shape != state[1].shape);
+	if (state[0].shape && state[0].shape != state[1].shape)
+	{
+		if (state[1].shape)
+			fz_paint_pixmap(state[0].shape, state[1].shape, alpha * 255);
+		else
+			fz_paint_pixmap_alpha(state[0].shape, state[1].dest, alpha * 255);
+	}
+	fz_drop_pixmap(ctx, state[1].shape);
 	/* The following test should not be required, but just occasionally
 	 * errors can cause the stack to get out of sync, and this might save
 	 * our bacon. */
+	assert(state[0].dest != state[1].dest);
 	if (state[0].dest != state[1].dest)
 		fz_drop_pixmap(ctx, state[1].dest);
-	if (state[0].shape != state[1].shape)
-	{
-		if (state[0].shape)
-			fz_paint_pixmap(state[0].shape, state[1].shape, alpha * 255);
-		fz_drop_pixmap(ctx, state[1].shape);
-	}
 #ifdef DUMP_GROUP_BLENDS
 	fz_dump_blend(ctx, " to get ", state[0].dest);
 	if (state[0].shape)

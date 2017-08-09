@@ -2256,6 +2256,87 @@ fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int al
 	}
 }
 
+static inline void
+paint_span_alpha_solid(byte * restrict dp, const byte * restrict sp, int n, int w)
+{
+	TRACK_FN();
+	sp += n-1;
+	do
+	{
+		int s = *sp;
+		int t = FZ_EXPAND(255 - s);
+		sp += n;
+		*dp = s + FZ_COMBINE(*dp, t);
+		dp ++;
+	}
+	while (--w);
+}
+
+static inline void
+paint_span_alpha_not_solid(byte * restrict dp, const byte * restrict sp, int n, int w, int alpha)
+{
+	TRACK_FN();
+	sp += n-1;
+	alpha = FZ_EXPAND(alpha);
+	do
+	{
+		int masa = FZ_COMBINE(sp[0], alpha);
+		sp += n;
+		*dp = FZ_BLEND(*sp, *dp, masa);
+		dp++;
+	}
+	while (--w);
+}
+
+void
+fz_paint_pixmap_alpha(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha)
+{
+	const unsigned char *sp;
+	unsigned char *dp;
+	fz_irect bbox;
+	fz_irect bbox2;
+	int x, y, w, h, n;
+
+	if (alpha == 0)
+		return;
+
+	assert(dst->n == 1 && dst->alpha == 1 && src->n >= 1 && src->alpha == 1);
+
+	fz_pixmap_bbox_no_ctx(dst, &bbox);
+	fz_pixmap_bbox_no_ctx(src, &bbox2);
+	fz_intersect_irect(&bbox, &bbox2);
+
+	x = bbox.x0;
+	y = bbox.y0;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
+	if (w == 0 || h == 0)
+		return;
+
+	n = src->n;
+	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+
+	if (alpha == 255)
+	{
+		while (h--)
+		{
+			paint_span_alpha_solid(dp, sp, n, w);
+			sp += src->stride;
+			dp += dst->stride;
+		}
+	}
+	else
+	{
+		while (h--)
+		{
+			paint_span_alpha_not_solid(dp, sp, n, w, alpha);
+			sp += src->stride;
+			dp += dst->stride;
+		}
+	}
+}
+
 void
 fz_paint_pixmap_with_overprint(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_overprint *op)
 {
