@@ -28,9 +28,9 @@ struct fz_stext_device_s
 };
 
 const char *fz_stext_options_usage =
-	"Structured text output options:\n"
-	"\tpreserve-ligatures: do not expand all ligatures into constituent characters\n"
-	"\tpreserve-whitespace: do not convert all whitespace characters into spaces\n"
+	"Text output options:\n"
+	"\tpreserve-ligatures: do not expand ligatures into constituent characters\n"
+	"\tpreserve-whitespace: do not convert all whitespace into space characters\n"
 	"\tpreserve-images: keep images in output\n"
 	"\n";
 

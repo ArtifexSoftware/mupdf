@@ -2507,7 +2507,7 @@ fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor,
 }
 
 const char *fz_draw_options_usage =
-	"Common raster format output options:\n"
+	"Raster output options:\n"
 	"\trotate=N: rotate rendered pages N degrees counterclockwise\n"
 	"\tresolution=N: set both X and Y resolution in pixels per inch\n"
 	"\tx-resolution=N: X resolution of rendered pages in pixels per inch\n"
@@ -2565,7 +2565,7 @@ fz_parse_draw_options(fz_context *ctx, fz_draw_options *opts, const char *args)
 		opts->height = fz_atoi(val);
 	if (fz_has_option(ctx, args, "colorspace", &val))
 	{
-		if (fz_option_eq(val, "gray") || fz_option_eq(val, "grey"))
+		if (fz_option_eq(val, "gray") || fz_option_eq(val, "grey") || fz_option_eq(val, "mono"))
 			opts->colorspace = fz_device_gray(ctx);
 		else if (fz_option_eq(val, "rgb"))
 			opts->colorspace = fz_device_rgb(ctx);

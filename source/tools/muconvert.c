@@ -42,16 +42,18 @@ static void usage(void)
 		"\n"
 		"\t-o -\toutput file name (%%d for page number)\n"
 		"\t-F -\toutput format (default inferred from output file name)\n"
-		"\t\t\tpng, pnm, pgm, ppm, pam, tga, pbm, pkm,\n"
-		"\t\t\tpdf, svg, cbz\n"
+		"\t\t\traster: cbz, png, pnm, pgm, ppm, pam, tga, pbm, pkm.\n"
+		"\t\t\tprint-raster: ps, pcl, pwg.\n"
+		"\t\t\tvector: pdf, svg.\n"
+		"\t\t\ttext: html, xhtml, text, stext.\n"
 		"\t-O -\tcomma separated list of options for output format\n"
 		"\n"
 		"\tpages\tcomma separated list of page ranges (N=last page)\n"
 		"\n"
 		);
 	fputs(fz_draw_options_usage, stderr);
+	fputs(fz_pwg_write_options_usage, stderr);
 	fputs(fz_stext_options_usage, stderr);
-	fputs(fz_cbz_write_options_usage, stderr);
 #if FZ_ENABLE_PDF
 	fputs(fz_pdf_write_options_usage, stderr);
 #endif

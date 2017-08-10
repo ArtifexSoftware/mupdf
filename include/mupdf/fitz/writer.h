@@ -91,10 +91,14 @@ int fz_option_eq(const char *a, const char *b);
 */
 fz_document_writer *fz_new_document_writer(fz_context *ctx, const char *path, const char *format, const char *options);
 
-fz_document_writer *fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pdf_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_svg_writer(fz_context *ctx, const char *path, const char *options);
+
 fz_document_writer *fz_new_text_writer(fz_context *ctx, const char *format, const char *path, const char *options);
+
+fz_document_writer *fz_new_pwg_writer(fz_context *ctx, const char *path, const char *options);
+
+fz_document_writer *fz_new_cbz_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_png_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_tga_pixmap_writer(fz_context *ctx, const char *path, const char *options);
 fz_document_writer *fz_new_pam_pixmap_writer(fz_context *ctx, const char *path, const char *options);
@@ -142,8 +146,9 @@ void fz_drop_document_writer(fz_context *ctx, fz_document_writer *wri);
 fz_document_writer *fz_new_pixmap_writer(fz_context *ctx, const char *path, const char *options, const char *default_path, int n,
 	void (*save)(fz_context *ctx, fz_pixmap *pix, const char *filename));
 
-extern const char *fz_cbz_write_options_usage;
 extern const char *fz_pdf_write_options_usage;
 extern const char *fz_svg_write_options_usage;
+
+extern const char *fz_pwg_write_options_usage;
 
 #endif

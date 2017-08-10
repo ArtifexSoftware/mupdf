@@ -17,8 +17,6 @@ struct fz_cbz_writer_s
 	fz_zip_writer *zip;
 };
 
-const char *fz_cbz_write_options_usage = "";
-
 static fz_device *
 cbz_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
 {
