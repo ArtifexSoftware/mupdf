@@ -52,6 +52,7 @@ static void usage(void)
 		"\n"
 		);
 	fputs(fz_draw_options_usage, stderr);
+	fputs(fz_pcl_write_options_usage, stderr);
 	fputs(fz_pwg_write_options_usage, stderr);
 	fputs(fz_stext_options_usage, stderr);
 #if FZ_ENABLE_PDF
