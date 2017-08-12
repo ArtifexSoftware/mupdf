@@ -364,6 +364,8 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 					pdf_dict_put_drop(ctx, dp, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.flate.colors));
 				if (cp->u.flate.predictor)
 					pdf_dict_put_drop(ctx, dp, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.flate.predictor));
+				if (cp->u.flate.bpc)
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, cp->u.flate.bpc));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
 				break;
@@ -376,6 +378,8 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 					pdf_dict_put_drop(ctx, dp, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.lzw.predictor));
 				if (cp->u.lzw.early_change)
 					pdf_dict_put_drop(ctx, dp, PDF_NAME_EarlyChange, pdf_new_int(ctx, doc, cp->u.lzw.early_change));
+				if (cp->u.lzw.bpc)
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, cp->u.lzw.bpc));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_LZWDecode);
 				break;
 			case FZ_IMAGE_RLD:
