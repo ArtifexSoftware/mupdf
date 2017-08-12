@@ -457,7 +457,7 @@ static int find_fids(JNIEnv *env)
 	mid_Device_popClip = get_method(&err, env, "popClip", "()V");
 	mid_Device_beginMask = get_method(&err, env, "beginMask", "(L"PKG"Rect;ZL"PKG"ColorSpace;[F)V");
 	mid_Device_endMask = get_method(&err, env, "endMask", "()V");
-	mid_Device_beginGroup = get_method(&err, env, "beginGroup", "(L"PKG"Rect;ZZIF)V");
+	mid_Device_beginGroup = get_method(&err, env, "beginGroup", "(L"PKG"Rect;L"PKG"ColorSpace;ZZIF)V");
 	mid_Device_endGroup = get_method(&err, env, "endGroup", "()V");
 	mid_Device_beginTile = get_method(&err, env, "beginTile", "(L"PKG"Rect;L"PKG"Rect;FFL"PKG"Matrix;I)I");
 	mid_Device_endTile = get_method(&err, env, "endTile", "()V");
@@ -2112,13 +2112,14 @@ fz_java_device_end_mask(fz_context *ctx, fz_device *dev)
 }
 
 static void
-fz_java_device_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, int isolated, int knockout, int blendmode, float alpha)
+fz_java_device_begin_group(fz_context *ctx, fz_device *dev, const fz_rect *rect, fz_colorspace *cs, int isolated, int knockout, int blendmode, float alpha)
 {
 	fz_java_device *jdev = (fz_java_device *)dev;
 	JNIEnv *env = jdev->env;
 	jobject jrect = to_Rect(ctx, env, rect);
+	jobject jcs = to_ColorSpace(ctx, env, cs);
 
-	(*env)->CallVoidMethod(env, jdev->self, mid_Device_beginGroup, jrect, (jboolean)isolated, (jboolean)knockout, (jint)blendmode, alpha);
+	(*env)->CallVoidMethod(env, jdev->self, mid_Device_beginGroup, jrect, jcs, (jboolean)isolated, (jboolean)knockout, (jint)blendmode, alpha);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 }
@@ -4223,7 +4224,7 @@ FUN(Annotation_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, j
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_annot(ctx, annot, &ctm, cs, NULL, alpha);
+		pixmap = fz_new_pixmap_from_annot(ctx, annot, &ctm, cs, alpha);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -4774,7 +4775,7 @@ FUN(Page_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, jboolea
 	if (!ctx || !page) return NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, cs, NULL, alpha);
+		pixmap = fz_new_pixmap_from_page(ctx, page, &ctm, cs, alpha);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5125,10 +5126,10 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 		//fz_write_printf(ctx, out, "p{margin:0;padding:0;}\n");
 		fz_write_printf(ctx, out, "</style>\n");
 		fz_write_printf(ctx, out, "<body style=\"margin:0\"><div style=\"padding:10px\" id=\"content\">");
-		fz_print_stext_page_html(ctx, out, text);
+		fz_print_stext_page_as_xhtml(ctx, out, text);
 		fz_write_printf(ctx, out, "</div></body>\n");
 		fz_write_printf(ctx, out, "<style>\n");
-		fz_print_stext_sheet(ctx, out, sheet);
+		fz_print_stext_page_as_html(ctx, out, text);
 		fz_write_printf(ctx, out, "</style>\n</html>\n");
 	}
 	fz_always(ctx)
@@ -5273,7 +5274,7 @@ FUN(DisplayList_toPixmap)(JNIEnv *env, jobject self, jobject jctm, jobject jcs, 
 	if (!ctx || !list) return NULL;
 
 	fz_try(ctx)
-		pixmap = fz_new_pixmap_from_display_list(ctx, list, &ctm, cs, NULL, alpha);
+		pixmap = fz_new_pixmap_from_display_list(ctx, list, &ctm, cs, alpha);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -8855,8 +8856,28 @@ FUN(Separations_getNumberOfSeparations)(JNIEnv *env, jobject self)
 	return nSep;
 }
 
+JNIEXPORT jint JNICALL
+FUN(Separations_getSeparationBehavior)(JNIEnv *env, jobject self, jint sep)
+{
+	fz_context *ctx = get_context(env);
+	fz_separations *seps = from_Separations(env, self);
+	jint behavior;
+
+	if (!ctx || !seps) return 0;
+
+	fz_try(ctx)
+		behavior = fz_separation_current_behavior(ctx, seps, sep);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return 0;
+	}
+
+	return behavior;
+}
+
 JNIEXPORT void JNICALL
-FUN(Separations_controlSeparation)(JNIEnv *env, jobject self, jint sep, jboolean disable)
+FUN(Separations_setSeparationBehavior)(JNIEnv *env, jobject self, jint sep, jint behavior)
 {
 	fz_context *ctx = get_context(env);
 	fz_separations *seps = from_Separations(env, self);
@@ -8864,7 +8885,7 @@ FUN(Separations_controlSeparation)(JNIEnv *env, jobject self, jint sep, jboolean
 	if (!ctx || !seps) return;
 
 	fz_try(ctx)
-		fz_control_separation(ctx, seps, sep, disable);
+		fz_set_separation_behavior(ctx, seps, sep, behavior);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }
@@ -8899,9 +8920,17 @@ FUN(Separations_areSeparationsControllable)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	fz_separations *seps = from_Separations(env, self);
-	jobject jname = NULL;
+	jboolean controllable;
 
-	if (!ctx || !seps) return 0;
+	if (!ctx || !seps) return JNI_FALSE;
 
-	return fz_separations_controllable(ctx, seps);
+	fz_try(ctx)
+		controllable = fz_separations_controllable(ctx, seps);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return JNI_FALSE;
+	}
+
+	return controllable;
 }

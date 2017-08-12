@@ -50,7 +50,7 @@ public class Device
 	public void popClip() {}
 	public void beginMask(Rect area, boolean luminosity, ColorSpace cs, float bc[]) {}
 	public void endMask() {}
-	public void beginGroup(Rect area, boolean isolated, boolean knockout, int blendmode, float alpha) {}
+	public void beginGroup(Rect area, ColorSpace cs, boolean isolated, boolean knockout, int blendmode, float alpha) {}
 	public void endGroup() {}
 	public int beginTile(Rect area, Rect view, float xstep, float ystep, Matrix ctm, int id) { return 0; }
 	public void endTile() {}
