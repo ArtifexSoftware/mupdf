@@ -294,6 +294,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 {
 	fz_pixmap *pixmap = NULL;
 	pdf_obj *imobj = NULL;
+	pdf_obj *dp;
 	fz_buffer *buffer = NULL;
 	pdf_obj *imref = NULL;
 	fz_compressed_buffer *cbuffer;
@@ -316,6 +317,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 	fz_try(ctx)
 	{
 		imobj = pdf_new_dict(ctx, doc, 3);
+		pdf_dict_put_drop(ctx, imobj, PDF_NAME_DecodeParms, dp = pdf_new_dict(ctx, doc, 3));
 		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Type, PDF_NAME_XObject);
 		pdf_dict_put_drop(ctx, imobj, PDF_NAME_Subtype, PDF_NAME_Image);
 
@@ -328,58 +330,62 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 				goto raw_or_unknown_compression;
 			case FZ_IMAGE_JPEG:
 				if (cp->u.jpeg.color_transform != -1)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_ColorTransform, pdf_new_int(ctx, doc, cp->u.jpeg.color_transform));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_ColorTransform, pdf_new_int(ctx, doc, cp->u.jpeg.color_transform));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_DCTDecode);
 				break;
 			case FZ_IMAGE_JPX:
 				if (cp->u.jpx.smask_in_data)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_SMaskInData, pdf_new_int(ctx, doc, cp->u.jpx.smask_in_data));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_SMaskInData, pdf_new_int(ctx, doc, cp->u.jpx.smask_in_data));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_JPXDecode);
 				break;
 			case FZ_IMAGE_FAX:
 				if (cp->u.fax.columns)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.fax.columns));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.fax.columns));
 				if (cp->u.fax.rows)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Rows, pdf_new_int(ctx, doc, cp->u.fax.rows));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Rows, pdf_new_int(ctx, doc, cp->u.fax.rows));
 				if (cp->u.fax.k)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_K, pdf_new_int(ctx, doc, cp->u.fax.k));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_K, pdf_new_int(ctx, doc, cp->u.fax.k));
 				if (cp->u.fax.end_of_line)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EndOfLine, pdf_new_int(ctx, doc, cp->u.fax.end_of_line));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_EndOfLine, pdf_new_int(ctx, doc, cp->u.fax.end_of_line));
 				if (cp->u.fax.encoded_byte_align)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EncodedByteAlign, pdf_new_int(ctx, doc, cp->u.fax.encoded_byte_align));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_EncodedByteAlign, pdf_new_int(ctx, doc, cp->u.fax.encoded_byte_align));
 				if (cp->u.fax.end_of_block)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EndOfBlock, pdf_new_int(ctx, doc, cp->u.fax.end_of_block));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_EndOfBlock, pdf_new_int(ctx, doc, cp->u.fax.end_of_block));
 				if (cp->u.fax.black_is_1)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_BlackIs1, pdf_new_int(ctx, doc, cp->u.fax.black_is_1));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_BlackIs1, pdf_new_int(ctx, doc, cp->u.fax.black_is_1));
 				if (cp->u.fax.damaged_rows_before_error)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_DamagedRowsBeforeError, pdf_new_int(ctx, doc, cp->u.fax.damaged_rows_before_error));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_DamagedRowsBeforeError, pdf_new_int(ctx, doc, cp->u.fax.damaged_rows_before_error));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_CCITTFaxDecode);
 				break;
 			case FZ_IMAGE_FLATE:
 				if (cp->u.flate.columns)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.flate.columns));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.flate.columns));
 				if (cp->u.flate.colors)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.flate.colors));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.flate.colors));
 				if (cp->u.flate.predictor)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.flate.predictor));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.flate.predictor));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_FlateDecode);
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_BitsPerComponent, pdf_new_int(ctx, doc, image->bpc));
 				break;
 			case FZ_IMAGE_LZW:
 				if (cp->u.lzw.columns)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.lzw.columns));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Columns, pdf_new_int(ctx, doc, cp->u.lzw.columns));
 				if (cp->u.lzw.colors)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.lzw.colors));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Colors, pdf_new_int(ctx, doc, cp->u.lzw.colors));
 				if (cp->u.lzw.predictor)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.lzw.predictor));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_Predictor, pdf_new_int(ctx, doc, cp->u.lzw.predictor));
 				if (cp->u.lzw.early_change)
-					pdf_dict_put_drop(ctx, imobj, PDF_NAME_EarlyChange, pdf_new_int(ctx, doc, cp->u.lzw.early_change));
+					pdf_dict_put_drop(ctx, dp, PDF_NAME_EarlyChange, pdf_new_int(ctx, doc, cp->u.lzw.early_change));
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_LZWDecode);
 				break;
 			case FZ_IMAGE_RLD:
 				pdf_dict_put_drop(ctx, imobj, PDF_NAME_Filter, PDF_NAME_RunLengthDecode);
 				break;
 			}
+
+			if (!pdf_dict_len(ctx, dp))
+				pdf_dict_del(ctx, imobj, PDF_NAME_DecodeParms);
+
 			buffer = fz_keep_buffer(ctx, cbuffer->buffer);
 		}
 		else
