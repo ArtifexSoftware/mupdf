@@ -3169,6 +3169,16 @@ fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsign
 	return cs;
 }
 
+unsigned char *
+fz_indexed_colorspace_palette(fz_context *ctx, fz_colorspace *cs, int *high)
+{
+	struct indexed *idx = cs->data;
+	if (!fz_colorspace_is_indexed(ctx, cs))
+		fz_throw(ctx, FZ_ERROR_GENERIC, "colorspace not indexed");
+	*high = idx->high;
+	return idx->lookup;
+}
+
 fz_pixmap *
 fz_expand_indexed_pixmap(fz_context *ctx, const fz_pixmap *src, int alpha)
 {
