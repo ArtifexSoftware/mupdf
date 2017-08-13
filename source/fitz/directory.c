@@ -53,11 +53,6 @@ static int has_dir_entry(fz_context *ctx, fz_archive *arch, const char *name)
 	return fz_file_exists(ctx, path);
 }
 
-/* Cope with systems (such as Windows) with no S_ISDIR */
-#ifndef S_ISDIR
-#define S_ISDIR(mode) ((mode) & S_IFDIR)
-#endif
-
 int
 fz_is_directory(fz_context *ctx, const char *path)
 {

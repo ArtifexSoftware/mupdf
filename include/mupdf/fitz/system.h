@@ -229,6 +229,11 @@ typedef int fz_off_t;
 #define fz_atoo_imp atoi
 #endif
 
+/* Cope with systems (such as Windows) with no S_ISDIR */
+#ifndef S_ISDIR
+#define S_ISDIR(mode) ((mode) & S_IFDIR)
+#endif
+
 /* Portable way to format a size_t */
 #if defined(_WIN64)
 #define FZ_FMT_zu "%llu"
