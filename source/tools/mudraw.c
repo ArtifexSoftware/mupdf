@@ -39,7 +39,7 @@ enum {
 	OUT_GPROOF
 };
 
-enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA };
+enum { CS_INVALID, CS_UNSET, CS_MONO, CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA, CS_ICC };
 
 enum { SPOTS_NONE, SPOTS_OVERPRINT_SIM, SPOTS_FULL };
 
@@ -108,12 +108,12 @@ typedef struct
 {
 	int format;
 	int default_cs;
-	int permitted_cs[6];
+	int permitted_cs[7];
 } format_cs_table_t;
 
 static const format_cs_table_t format_cs_table[] =
 {
-	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
+	{ OUT_PNG, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_ICC } },
 	{ OUT_PPM, CS_RGB, { CS_GRAY, CS_RGB } },
 	{ OUT_PNM, CS_GRAY, { CS_GRAY, CS_RGB } },
 	{ OUT_PAM, CS_RGB_ALPHA, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
@@ -124,7 +124,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PCL, CS_MONO, { CS_MONO, CS_RGB } },
 	{ OUT_PCLM, CS_RGB, { CS_RGB, CS_GRAY } },
 	{ OUT_PS, CS_RGB, { CS_GRAY, CS_RGB, CS_CMYK } },
-	{ OUT_PSD, CS_CMYK, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
+	{ OUT_PSD, CS_CMYK, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA, CS_ICC } },
 	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
 
 	{ OUT_TRACE, CS_RGB, { CS_RGB } },
@@ -246,6 +246,7 @@ static int alphabits_text = 8;
 static int alphabits_graphics = 8;
 
 static int out_cs = CS_UNSET;
+static const char *icc_filename = NULL;
 static float gamma_value = 1;
 static int invert = 0;
 static int band_height = 0;
@@ -1193,8 +1194,10 @@ parse_colorspace(const char *name)
 		if (!strcmp(name, cs_name_table[i].name))
 			return cs_name_table[i].colorspace;
 	}
-	fprintf(stderr, "Unknown colorspace \"%s\"\n", name);
-	exit(1);
+
+	/* Assume ICC. We will error out later if not the case. */
+	icc_filename = name;
+	return CS_ICC;
 }
 
 typedef struct
@@ -1718,12 +1721,70 @@ int mudraw_main(int argc, char **argv)
 		colorspace = fz_device_cmyk(ctx);
 		alpha = (out_cs == CS_CMYK_ALPHA);
 		break;
+	case CS_ICC:
+		fz_try(ctx)
+			colorspace = fz_new_icc_colorspace_from_file(ctx, NULL, icc_filename);
+		fz_catch(ctx)
+		{
+			fprintf(stderr, "Invalid ICC destination color space\n");
+			exit(1);
+		}
+		if (colorspace == NULL)
+		{
+			fprintf(stderr, "Invalid ICC destination color space\n");
+			exit(1);
+		}
+		alpha = 0;
+		break;
 	default:
 		fprintf(stderr, "Unknown colorspace!\n");
 		exit(1);
 		break;
 	}
-	colorspace = fz_keep_colorspace(ctx, colorspace);
+
+	if (out_cs != CS_ICC)
+		colorspace = fz_keep_colorspace(ctx, colorspace);
+	else
+	{
+		int i, j, okay;
+
+		/* Check to make sure this icc profile is ok with the output format */
+		okay = 0;
+		for (i = 0; i < nelem(format_cs_table); i++)
+		{
+			if (format_cs_table[i].format == output_format)
+			{
+				for (j = 0; j < nelem(format_cs_table[i].permitted_cs); j++)
+				{
+					switch (format_cs_table[i].permitted_cs[j])
+					{
+					case CS_MONO:
+					case CS_GRAY:
+					case CS_GRAY_ALPHA:
+						if (fz_colorspace_n(ctx, colorspace) == 1)
+							okay = 1;
+						break;
+					case CS_RGB:
+					case CS_RGB_ALPHA:
+						if (fz_colorspace_n(ctx, colorspace) == 3)
+							okay = 1;
+						break;
+					case CS_CMYK:
+					case CS_CMYK_ALPHA:
+						if (fz_colorspace_n(ctx, colorspace) == 4)
+							okay = 1;
+						break;
+					}
+				}
+			}
+		}
+
+		if (!okay)
+		{
+			fprintf(stderr, "ICC profile uses a colorspace that cannot be used for this format\n");
+			exit(1);
+		}
+	}
 
 #if FZ_ENABLE_PDF
 	if (output_format == OUT_PDF)

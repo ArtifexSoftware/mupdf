@@ -3670,8 +3670,8 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 
 		fz_cmm_init_profile(ctx, profile);
 
-		/* Check if correct type */
-		if (num != profile->num_devcomp)
+		/* Check if correct type, if a particular type was expected */
+		if (num != 0 && num != profile->num_devcomp)
 		{
 			fz_drop_buffer(ctx, profile->buffer);
 			fz_cmm_fin_profile(ctx, profile);
@@ -3682,7 +3682,7 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 		fz_md5_icc(ctx, profile);
 		if (profile->num_devcomp == 4)
 			flags |= FZ_CS_SUBTRACTIVE;
-		cs = fz_new_colorspace(ctx, name, num, flags, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
+		cs = fz_new_colorspace(ctx, name, profile->num_devcomp, flags, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 
 		if (profile->num_devcomp == 4)
 		{
