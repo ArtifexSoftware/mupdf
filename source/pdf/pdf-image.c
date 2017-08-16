@@ -402,14 +402,19 @@ raw_or_unknown_compression:
 			/* Currently, set to maintain resolution; should we consider
 			 * subsampling here according to desired output res? */
 			pixmap = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
-			n = (pixmap->n == 1 ? 1 : pixmap->n - pixmap->alpha);
-			s = pixmap->samples;
-			h = image->h;
+			n = pixmap->n - pixmap->alpha - pixmap->s; /* number of colorants */
+			if (n == 0)
+				n = 1; /* treat pixmaps with only alpha or spots as grayscale */
+
 			size = image->w * n;
+			h = image->h;
+			s = pixmap->samples;
 			d = fz_malloc(ctx, size * h);
 			buffer = fz_new_buffer_from_data(ctx, d, size * h);
-			if (pixmap->alpha == 0 || n == 1)
+
+			if (n == pixmap->n)
 			{
+				/* If we use all channels, we can copy the data as is. */
 				while (h--)
 				{
 					memcpy(d, s, size);
@@ -419,21 +424,23 @@ raw_or_unknown_compression:
 			}
 			else
 			{
-				/* Need to remove the alpha plane */
-				/* TODO: extract alpha plane to a soft mask */
-				int pad = pixmap->stride - pixmap->w * pixmap->n;
+				/* Need to remove the alpha and spot planes. */
+				/* TODO: extract alpha plane to a soft mask. */
+				/* TODO: convert spots to colors. */
+
+				int line_skip = pixmap->stride - pixmap->w * pixmap->n;
+				int skip = pixmap->n - n;
 				while (h--)
 				{
-					unsigned int size2 = size;
-					int mod = n;
-					while (size2--)
+					int w = pixmap->w;
+					while (w--)
 					{
-						*d++ = *s++;
-						mod--;
-						if (mod == 0)
-							s++, mod = n;
+						int k;
+						for (k = 0; k < n; ++k)
+							*d++ = *s++;
+						s += skip;
 					}
-					s += pad;
+					s += line_skip;
 				}
 			}
 		}
