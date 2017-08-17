@@ -101,10 +101,10 @@ LOCAL_CPPFLAGS := \
 	-ffunction-sections -fdata-sections \
 	-fno-rtti -fno-exceptions -fvisibility-inlines-hidden --std=c++0x \
 	-DHAVE_OT -DHAVE_UCDN -DHB_NO_MT \
-	-Dhb_malloc_impl=hb_malloc \
-	-Dhb_calloc_impl=hb_calloc \
-	-Dhb_realloc_impl=hb_realloc \
-	-Dhb_free_impl=hb_free \
+	-Dhb_malloc_impl=fz_hb_malloc \
+	-Dhb_calloc_impl=fz_hb_calloc \
+	-Dhb_realloc_impl=fz_hb_realloc \
+	-Dhb_free_impl=fz_hb_free \
 
 LOCAL_SRC_FILES += \
 	$(MUPDF_PATH)/thirdparty/freetype/src/base/ftbase.c \
