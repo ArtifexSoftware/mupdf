@@ -473,6 +473,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 	fz_var(dev);
 
+	if (output_file_per_page)
+		file_level_headers(ctx);
+
 	fz_try(ctx)
 	{
 		if (list)
@@ -898,7 +901,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 
 	fz_drop_display_list(ctx, list);
 
-	if (!output_append)
+	if (output_file_per_page)
 		file_level_trailers(ctx);
 
 	fz_drop_separations(ctx, seps);
@@ -983,7 +986,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	fz_device *dev = NULL;
 	int start;
 	fz_cookie cookie = { 0 };
-	int first_page = !output_append;
 	fz_rect bounds;
 	fz_separations *seps = NULL;
 
@@ -994,10 +996,6 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 	start = (showtime ? gettime() : 0);
 
 	page = fz_load_page(ctx, doc, pagenum - 1);
-
-	/* Output any file level (as opposed to page level) headers. */
-	if (first_page)
-		file_level_headers(ctx);
 
 	if (spots)
 	{
@@ -1704,6 +1702,9 @@ int mudraw_main(int argc, char **argv)
 	else
 		out = fz_stdout(ctx);
 
+	if (!output_file_per_page)
+		file_level_headers(ctx);
+
 	timing.count = 0;
 	timing.total = 0;
 	timing.min = 1 << 30;
@@ -1789,7 +1790,7 @@ int mudraw_main(int argc, char **argv)
 		errored = 1;
 	}
 
-	if (output_append)
+	if (!output_file_per_page)
 		file_level_trailers(ctx);
 
 #if FZ_ENABLE_PDF
