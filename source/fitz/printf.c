@@ -5,6 +5,22 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#ifdef _MSC_VER
+#if _MSC_VER < 1500 /* MSVC 2008 */
+int snprintf(char *s, size_t n, const char *fmt, ...)
+{
+		int r;
+		va_list ap;
+		va_start(ap, fmt);
+		r = vsprintf(s, fmt, ap);
+		va_end(ap);
+		return r;
+}
+#else if _MSC_VER < 1900 /* MSVC 2015 */
+#define snprintf _snprintf
+#endif
+#endif
+
 static const char *fz_hex_digits = "0123456789abcdef";
 
 struct fmtbuf
@@ -290,11 +306,7 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 			bits = 0;
 			if (c == 'l') {
 				c = *fmt++;
-				bits = sizeof(long) * 8;
-				if (c == 'l') {
-					c = *fmt++;
-					bits = 64;
-				}
+				bits = sizeof(int64_t) * 8;
 				if (c == 0)
 					break;
 			}
@@ -307,12 +319,6 @@ fz_format_string(fz_context *ctx, void *user, void (*emit)(fz_context *ctx, void
 			if (c == 'z') {
 				c = *fmt++;
 				bits = sizeof(size_t) * 8;
-				if (c == 0)
-					break;
-			}
-			if (c == 'Z') {
-				c = *fmt++;
-				bits = sizeof(fz_off_t) * 8;
 				if (c == 0)
 					break;
 			}

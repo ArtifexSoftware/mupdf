@@ -13,8 +13,7 @@ typedef struct pdf_obj_s pdf_obj;
 
 pdf_obj *pdf_new_null(fz_context *ctx, pdf_document *doc);
 pdf_obj *pdf_new_bool(fz_context *ctx, pdf_document *doc, int b);
-pdf_obj *pdf_new_int(fz_context *ctx, pdf_document *doc, int i);
-pdf_obj *pdf_new_int_offset(fz_context *ctx, pdf_document *doc, fz_off_t off);
+pdf_obj *pdf_new_int(fz_context *ctx, pdf_document *doc, int64_t i);
 pdf_obj *pdf_new_real(fz_context *ctx, pdf_document *doc, float f);
 pdf_obj *pdf_new_name(fz_context *ctx, pdf_document *doc, const char *str);
 pdf_obj *pdf_new_string(fz_context *ctx, pdf_document *doc, const char *str, size_t len);
@@ -84,7 +83,7 @@ void pdf_clean_obj(fz_context *ctx, pdf_obj *obj);
 /* safe, silent failure, no error reporting on type mismatches */
 int pdf_to_bool(fz_context *ctx, pdf_obj *obj);
 int pdf_to_int(fz_context *ctx, pdf_obj *obj);
-fz_off_t pdf_to_offset(fz_context *ctx, pdf_obj *obj);
+int64_t pdf_to_int64(fz_context *ctx, pdf_obj *obj);
 float pdf_to_real(fz_context *ctx, pdf_obj *obj);
 const char *pdf_to_name(fz_context *ctx, pdf_obj *obj);
 char *pdf_to_str_buf(fz_context *ctx, pdf_obj *obj);
@@ -155,7 +154,6 @@ fz_matrix *pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *mat);
 pdf_document *pdf_get_indirect_document(fz_context *ctx, pdf_obj *obj);
 pdf_document *pdf_get_bound_document(fz_context *ctx, pdf_obj *obj);
 void pdf_set_str_len(fz_context *ctx, pdf_obj *obj, int newlen);
-void pdf_set_int(fz_context *ctx, pdf_obj *obj, int i);
-void pdf_set_int_offset(fz_context *ctx, pdf_obj *obj, fz_off_t i);
+void pdf_set_int(fz_context *ctx, pdf_obj *obj, int64_t i);
 
 #endif

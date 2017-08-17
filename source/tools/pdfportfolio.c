@@ -6,6 +6,7 @@
 #include "mupdf/pdf.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 static pdf_document *doc = NULL;

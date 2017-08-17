@@ -16,7 +16,7 @@ struct null_filter
 {
 	fz_stream *chain;
 	size_t remain;
-	fz_off_t offset;
+	int64_t offset;
 	unsigned char buffer[4096];
 };
 
@@ -41,8 +41,8 @@ next_null(fz_context *ctx, fz_stream *stm, size_t max)
 		return EOF;
 	state->chain->rp += n;
 	state->remain -= n;
-	state->offset += (fz_off_t)n;
-	stm->pos += (fz_off_t)n;
+	state->offset += (int64_t)n;
+	stm->pos += (int64_t)n;
 	return *stm->rp++;
 }
 
@@ -56,7 +56,7 @@ close_null(fz_context *ctx, void *state_)
 }
 
 fz_stream *
-fz_open_null(fz_context *ctx, fz_stream *chain, int len, fz_off_t offset)
+fz_open_null(fz_context *ctx, fz_stream *chain, int len, int64_t offset)
 {
 	struct null_filter *state = NULL;
 
@@ -106,7 +106,7 @@ next_concat(fz_context *ctx, fz_stream *stm, size_t max)
 		{
 			stm->rp = state->chain[state->current]->rp;
 			stm->wp = state->chain[state->current]->wp;
-			stm->pos += (fz_off_t)n;
+			stm->pos += (int64_t)n;
 			return *stm->rp++;
 		}
 		else
@@ -581,7 +581,7 @@ next_arc4(fz_context *ctx, fz_stream *stm, size_t max)
 	stm->wp = state->buffer + n;
 	fz_arc4_encrypt(&state->arc4, stm->rp, state->chain->rp, n);
 	state->chain->rp += n;
-	stm->pos += (fz_off_t)n;
+	stm->pos += (int64_t)n;
 
 	return *stm->rp++;
 }

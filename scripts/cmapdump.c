@@ -3,11 +3,15 @@
 /* We never want to build memento versions of the cmapdump util */
 #undef MEMENTO
 
-/* We never want large file access here */
-#undef FZ_LARGEFILE
-
-#include <stdio.h>
-#include <string.h>
+#ifndef _LARGEFILE64_SOURCE
+#ifdef _MSC_VER
+#if _MSC_VER >= 1400 /* MSVC 8 (Visual Studio 2005) or newer */
+#define _LARGEFILE64_SOURCE
+#endif
+#else
+#define _LARGEFILE64_SOURCE
+#endif
+#endif
 
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
@@ -31,6 +35,9 @@
 #include "../source/pdf/pdf-lex.c"
 #include "../source/pdf/pdf-cmap.c"
 #include "../source/pdf/pdf-cmap-parse.c"
+
+#include <stdio.h>
+#include <string.h>
 
 static void
 clean(char *p)

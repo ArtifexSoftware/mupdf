@@ -32,7 +32,7 @@ static void add_root(fz_context *ctx, pdf_obj *obj, pdf_obj ***roots, int *num_r
 }
 
 int
-pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, fz_off_t *tmpofs, pdf_obj **root)
+pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, int64_t *tmpofs, pdf_obj **root)
 {
 	fz_stream *file = doc->file;
 	pdf_token tok;
@@ -308,7 +308,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 	int num = 0;
 	int gen = 0;
-	fz_off_t tmpofs, stm_ofs, numofs = 0, genofs = 0;
+	int64_t tmpofs, stm_ofs, numofs = 0, genofs = 0;
 	int stm_len;
 	pdf_token tok;
 	int next;
@@ -358,7 +358,7 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 			{
 				if (memcmp(&buf->scratch[j], "%PDF", 4) == 0)
 				{
-					fz_seek(ctx, doc->file, (fz_off_t)(j + 8), 0); /* skip "%PDF-X.Y" */
+					fz_seek(ctx, doc->file, (int64_t)(j + 8), 0); /* skip "%PDF-X.Y" */
 					break;
 				}
 			}

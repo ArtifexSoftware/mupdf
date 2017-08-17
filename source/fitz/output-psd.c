@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 void
 fz_save_pixmap_as_psd(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 {
@@ -118,7 +120,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 		size_t len2;
 		if (name == NULL)
 		{
-			sprintf(text, "Spot%d", i-4);
+			fz_snprintf(text, sizeof text, "Spot%d", i-4);
 			name = text;
 		}
 		len2 = strlen(name);
@@ -147,7 +149,7 @@ psd_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace *
 			char text[32];
 			if (name == NULL)
 			{
-				sprintf(text, "Spot%d", i-4);
+				fz_snprintf(text, sizeof text, "Spot%d", i-4);
 				name = text;
 			}
 			len2 = strlen(name);
@@ -277,9 +279,9 @@ psd_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 			fz_write_data(ctx, out, buffer, b - buffer);
 			b = buffer;
 		}
-		fz_seek_output(ctx, out, plane_inc, FZ_SEEK_CUR);
+		fz_seek_output(ctx, out, plane_inc, SEEK_CUR);
 	}
-	fz_seek_output(ctx, out, w * h * (1-n), FZ_SEEK_CUR);
+	fz_seek_output(ctx, out, w * h * (1-n), SEEK_CUR);
 }
 
 static void

@@ -137,14 +137,14 @@ fz_read_line(fz_context *ctx, fz_stream *stm, char *mem, size_t n)
 	return (s == mem && c == EOF) ? NULL : mem;
 }
 
-fz_off_t
+int64_t
 fz_tell(fz_context *ctx, fz_stream *stm)
 {
 	return stm->pos - (stm->wp - stm->rp);
 }
 
 void
-fz_seek(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence)
+fz_seek(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 {
 	stm->avail = 0; /* Reset bit reading */
 	if (stm->seek)

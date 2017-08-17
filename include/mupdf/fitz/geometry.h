@@ -47,8 +47,7 @@ float fz_atof(const char *s);
 	atoi that copes with NULL
 */
 int fz_atoi(const char *s);
-
-fz_off_t fz_atoo(const char *s);
+int64_t fz_atoi64(const char *s);
 
 /*
 	Some standard math functions, done as static inlines for speed.
@@ -90,7 +89,7 @@ static inline int fz_maxi(int a, int b)
 	return (a > b ? a : b);
 }
 
-static inline fz_off_t fz_maxo(fz_off_t a, fz_off_t b)
+static inline int64_t fz_maxi64(int64_t a, int64_t b)
 {
 	return (a > b ? a : b);
 }

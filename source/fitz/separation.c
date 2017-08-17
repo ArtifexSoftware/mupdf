@@ -1,5 +1,8 @@
 #include "mupdf/fitz.h"
 
+#include <assert.h>
+#include <string.h>
+
 enum
 {
 	FZ_SEPARATION_DISABLED_RENDER = 3

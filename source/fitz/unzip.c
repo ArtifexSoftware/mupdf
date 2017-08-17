@@ -230,7 +230,7 @@ static void ensure_zip_entries(fz_context *ctx, fz_zip_archive *zip)
 	size_t size, back, maxback;
 	size_t i, n;
 
-	fz_seek(ctx, file, 0, FZ_SEEK_END);
+	fz_seek(ctx, file, 0, SEEK_END);
 	size = fz_tell(ctx, file);
 
 	maxback = fz_minz(size, 0xFFFF + sizeof buf);
@@ -238,7 +238,7 @@ static void ensure_zip_entries(fz_context *ctx, fz_zip_archive *zip)
 
 	while (back < maxback)
 	{
-		fz_seek(ctx, file, (fz_off_t)(size - back), 0);
+		fz_seek(ctx, file, (int64_t)(size - back), 0);
 		n = fz_read(ctx, file, buf, sizeof buf);
 		if (n < 4)
 			break;

@@ -1,6 +1,10 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
 #undef DEBUG_SCAN_CONVERTER
 
 /* Define ourselves a 'fixed' type for clarity */

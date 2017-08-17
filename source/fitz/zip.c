@@ -69,7 +69,7 @@ fz_write_zip_entry(fz_context *ctx, fz_zip_writer *zip, const char *name, fz_buf
 void
 fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 {
-	fz_off_t offset = fz_tell_output(ctx, zip->output);
+	int64_t offset = fz_tell_output(ctx, zip->output);
 
 	fz_write_data(ctx, zip->output, zip->central->data, zip->central->len);
 

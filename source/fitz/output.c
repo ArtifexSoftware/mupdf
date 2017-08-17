@@ -1,3 +1,8 @@
+#define _LARGEFILE_SOURCE
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
+
 #include "mupdf/fitz.h"
 #include "fitz-imp.h"
 
@@ -118,19 +123,27 @@ std_write(fz_context *ctx, void *opaque, const void *buffer, size_t count)
 }
 
 static void
-file_seek(fz_context *ctx, void *opaque, fz_off_t off, int whence)
+file_seek(fz_context *ctx, void *opaque, int64_t off, int whence)
 {
 	FILE *file = opaque;
-	int n = fz_fseek(file, off, whence);
+#if defined(_WIN32) || defined(_WIN64)
+	int n = _fseeki64(file, off, whence);
+#else
+	int n = fseeko(file, off, whence);
+#endif
 	if (n < 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fseek: %s", strerror(errno));
 }
 
-static fz_off_t
+static int64_t
 file_tell(fz_context *ctx, void *opaque)
 {
 	FILE *file = opaque;
-	fz_off_t off = fz_ftell(file);
+#if defined(_WIN32) || defined(_WIN64)
+	int64_t off = _ftelli64(file);
+#else
+	int64_t off = ftello(file);
+#endif
 	if (off == -1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot ftell: %s", strerror(errno));
 	return off;
@@ -167,35 +180,41 @@ fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output
 }
 
 fz_output *
-fz_new_output_with_file_ptr(fz_context *ctx, FILE *file, int close)
-{
-	fz_output *out = fz_new_output(ctx, file, file_write, close ? file_close : NULL);
-	out->seek = file_seek;
-	out->tell = file_tell;
-	return out;
-}
-
-fz_output *
 fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 {
 	FILE *file;
+	fz_output *out;
 
 	if (!strcmp(filename, "/dev/null") || !fz_strcasecmp(filename, "nul:"))
 		return NULL;
 
+#if defined(_WIN32) || defined(_WIN64)
 	/* Ensure we create a brand new file. We don't want to clobber our old file. */
 	if (!append)
 	{
-		if (fz_remove(filename) < 0)
+		if (fz_remove_utf8(filename) < 0)
 			if (errno != ENOENT)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
 	}
-
-	file = fz_fopen(filename, append ? "ab" : "wb");
+	file = fz_fopen_utf8(filename, "rb");
+#else
+	/* Ensure we create a brand new file. We don't want to clobber our old file. */
+	if (!append)
+	{
+		if (remove(filename) < 0)
+			if (errno != ENOENT)
+				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot remove file '%s': %s", filename, strerror(errno));
+	}
+	file = fopen(filename, append ? "ab" : "wb");
+#endif
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
-	return fz_new_output_with_file_ptr(ctx, file, 1);
+	out = fz_new_output(ctx, file, file_write, file_close);
+	out->seek = file_seek;
+	out->tell = file_tell;
+
+	return out;
 }
 
 static void
@@ -206,16 +225,16 @@ buffer_write(fz_context *ctx, void *opaque, const void *data, size_t len)
 }
 
 static void
-buffer_seek(fz_context *ctx, void *opaque, fz_off_t off, int whence)
+buffer_seek(fz_context *ctx, void *opaque, int64_t off, int whence)
 {
 	fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek in buffer: %s", strerror(errno));
 }
 
-static fz_off_t
+static int64_t
 buffer_tell(fz_context *ctx, void *opaque)
 {
 	fz_buffer *buffer = opaque;
-	return (fz_off_t)buffer->len;
+	return (int64_t)buffer->len;
 }
 
 static void
@@ -245,7 +264,7 @@ fz_drop_output(fz_context *ctx, fz_output *out)
 }
 
 void
-fz_seek_output(fz_context *ctx, fz_output *out, fz_off_t off, int whence)
+fz_seek_output(fz_context *ctx, fz_output *out, int64_t off, int whence)
 {
 	if (!out) return;
 	if (out->seek == NULL)
@@ -253,7 +272,7 @@ fz_seek_output(fz_context *ctx, fz_output *out, fz_off_t off, int whence)
 	out->seek(ctx, out->state, off, whence);
 }
 
-fz_off_t
+int64_t
 fz_tell_output(fz_context *ctx, fz_output *out)
 {
 	if (!out) return 0;

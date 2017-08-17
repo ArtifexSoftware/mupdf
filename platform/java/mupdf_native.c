@@ -15,6 +15,10 @@
 
 #include "mupdf_native.h" /* javah generated prototypes */
 
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifdef HAVE_ANDROID
 #include <android/log.h>
 #include <android/bitmap.h>

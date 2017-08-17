@@ -1728,9 +1728,9 @@ int main(int argc, char **argv)
 
 	if (showmemory)
 	{
-		fprintf(stderr, "Total memory use = " FZ_FMT_zu " bytes\n", info.total);
-		fprintf(stderr, "Peak memory use = " FZ_FMT_zu " bytes\n", info.peak);
-		fprintf(stderr, "Current memory use = " FZ_FMT_zu " bytes\n", info.current);
+		char buf[100];
+		fz_snprintf(buf, sizeof buf, "Memory use total=%zu peak=%zu current=%zu", info.total, info.peak, info.current);
+		fprintf(stderr, "%s\n", buf);
 	}
 
 	return (errored != 0);

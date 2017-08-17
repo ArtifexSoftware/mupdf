@@ -2,7 +2,6 @@
 
 #include <string.h>
 #include <limits.h>
-#include <zlib.h>
 
 const char *fz_pclm_write_options_usage =
 	"PCLm output options:\n"
@@ -29,7 +28,7 @@ fz_parse_pclm_options(fz_context *ctx, fz_pclm_options *opts, const char *args)
 	}
 	if (fz_has_option(ctx, args, "strip-height", &val))
 	{
-		int i = atoi(val);
+		int i = fz_atoi(val);
 		if (i <= 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "Unsupported PCLm strip height %d (suggest 16)", i);
 		opts->strip_height = i;
@@ -65,7 +64,7 @@ typedef struct pclm_band_writer_s
 
 	int obj_num;
 	int xref_max;
-	fz_off_t *xref;
+	int64_t *xref;
 	int pages;
 	int page_max;
 	int *page_obj;
@@ -77,7 +76,7 @@ typedef struct pclm_band_writer_s
 static int
 new_obj(fz_context *ctx, pclm_band_writer *writer)
 {
-	fz_off_t pos = fz_tell_output(ctx, writer->super.out);
+	int64_t pos = fz_tell_output(ctx, writer->super.out);
 
 	if (writer->obj_num >= writer->xref_max)
 	{
@@ -192,7 +191,7 @@ flush_strip(fz_context *ctx, pclm_band_writer *writer, int fill)
 	/* Buffer is full, compress it and write it. */
 	if (writer->options.compress)
 	{
-		uLongf destLen = writer->complen;
+		size_t destLen = writer->complen;
 		fz_deflate(ctx, writer->compbuf, &destLen, data, len, FZ_DEFLATE_DEFAULT);
 		len = destLen;
 		data = writer->compbuf;
@@ -245,7 +244,7 @@ pclm_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 	/* We actually do the trailer writing in the drop */
 	if (writer->xref_max > 2)
 	{
-		fz_off_t t_pos;
+		int64_t t_pos;
 
 		/* Catalog */
 		writer->xref[1] = fz_tell_output(ctx, out);
@@ -264,7 +263,7 @@ pclm_drop_band_writer(fz_context *ctx, fz_band_writer *writer_)
 		fz_write_printf(ctx, out, "xref\n0 %d\n0000000000 65535 f \n", writer->obj_num);
 		for (i = 1; i < writer->obj_num; i++)
 			fz_write_printf(ctx, out, "%010zd 00000 n \n", writer->xref[i]);
-		fz_write_printf(ctx, out, "trailer\n<<\n/Size %d\n/Root 1 0 R\n>>\nstartxref\n%Zd\n%%%%EOF\n", writer->obj_num, t_pos);
+		fz_write_printf(ctx, out, "trailer\n<<\n/Size %d\n/Root 1 0 R\n>>\nstartxref\n%ld\n%%%%EOF\n", writer->obj_num, t_pos);
 	}
 
 	fz_free(ctx, writer->stripbuf);

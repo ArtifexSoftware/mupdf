@@ -1,5 +1,7 @@
 #include "mupdf/fitz.h"
 
+#include <string.h>
+
 void
 fz_save_gproof(fz_context *ctx, const char *pdf_file, fz_document *doc, const char *filename, int res,
 				const char *print_profile, const char *display_profile)

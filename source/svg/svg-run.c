@@ -1109,8 +1109,7 @@ svg_run_element(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root
 
 	else
 	{
-		/* debug print unrecognized tags */
-		fz_debug_xml(root, 0);
+		/* ignore unrecognized tags */
 	}
 }
 

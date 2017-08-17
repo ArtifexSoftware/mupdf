@@ -67,7 +67,7 @@ struct pdf_write_state_s
 	int do_clean;
 
 	int *use_list;
-	fz_off_t *ofs_list;
+	int64_t *ofs_list;
 	int *gen_list;
 	int *renumber_map;
 	int continue_on_error;
@@ -75,10 +75,10 @@ struct pdf_write_state_s
 	/* The following extras are required for linearization */
 	int *rev_renumber_map;
 	int start;
-	fz_off_t first_xref_offset;
-	fz_off_t main_xref_offset;
-	fz_off_t first_xref_entry_offset;
-	fz_off_t file_len;
+	int64_t first_xref_offset;
+	int64_t main_xref_offset;
+	int64_t first_xref_entry_offset;
+	int64_t file_len;
 	int hints_shared_offset;
 	int hintstream_len;
 	pdf_obj *linear_l;
@@ -1460,13 +1460,13 @@ linearize(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 static void
 update_linearization_params(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
-	fz_off_t offset;
+	int64_t offset;
 	pdf_set_int(ctx, opts->linear_l, opts->file_len);
 	/* Primary hint stream offset (of object, not stream!) */
-	pdf_set_int_offset(ctx, opts->linear_h0, opts->ofs_list[pdf_xref_len(ctx, doc)-1]);
+	pdf_set_int(ctx, opts->linear_h0, opts->ofs_list[pdf_xref_len(ctx, doc)-1]);
 	/* Primary hint stream length (of object, not stream!) */
 	offset = (opts->start == 1 ? opts->main_xref_offset : opts->ofs_list[1] + opts->hintstream_len);
-	pdf_set_int_offset(ctx, opts->linear_h1, offset - opts->ofs_list[pdf_xref_len(ctx, doc)-1]);
+	pdf_set_int(ctx, opts->linear_h1, offset - opts->ofs_list[pdf_xref_len(ctx, doc)-1]);
 	/* Object number of first pages page object (the first object of page 0) */
 	pdf_set_int(ctx, opts->linear_o, opts->page_object_lists->page[0]->object[0]);
 	/* Offset of end of first page (first page is followed by primary
@@ -1474,13 +1474,13 @@ update_linearization_params(fz_context *ctx, pdf_document *doc, pdf_write_state 
 	 * primary hint stream counts as part of the first pages data, I think.
 	 */
 	offset = (opts->start == 1 ? opts->main_xref_offset : opts->ofs_list[1] + opts->hintstream_len);
-	pdf_set_int_offset(ctx, opts->linear_e, offset);
+	pdf_set_int(ctx, opts->linear_e, offset);
 	/* Number of pages in document */
 	pdf_set_int(ctx, opts->linear_n, opts->page_count);
 	/* Offset of first entry in main xref table */
-	pdf_set_int_offset(ctx, opts->linear_t, opts->first_xref_entry_offset + opts->hintstream_len);
+	pdf_set_int(ctx, opts->linear_t, opts->first_xref_entry_offset + opts->hintstream_len);
 	/* Offset of shared objects hint table in the primary hint stream */
-	pdf_set_int_offset(ctx, opts->hints_s, opts->hints_shared_offset);
+	pdf_set_int(ctx, opts->hints_s, opts->hints_shared_offset);
 	/* Primary hint stream length */
 	pdf_set_int(ctx, opts->hints_length, opts->hintstream_len);
 }
@@ -1918,13 +1918,13 @@ static void writexrefsubsect(fz_context *ctx, pdf_write_state *opts, int from, i
 	for (num = from; num < to; num++)
 	{
 		if (opts->use_list[num])
-			fz_write_printf(ctx, opts->out, "%010Zd %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_write_printf(ctx, opts->out, "%010ld %05d n \n", opts->ofs_list[num], opts->gen_list[num]);
 		else
-			fz_write_printf(ctx, opts->out, "%010Zd %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
+			fz_write_printf(ctx, opts->out, "%010ld %05d f \n", opts->ofs_list[num], opts->gen_list[num]);
 	}
 }
 
-static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int from, int to, int first, int main_xref_offset, int startxref)
+static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int from, int to, int first, int64_t main_xref_offset, int64_t startxref)
 {
 	pdf_obj *trailer = NULL;
 	pdf_obj *obj;
@@ -2003,7 +2003,7 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 
 	pdf_drop_obj(ctx, trailer);
 
-	fz_write_printf(ctx, opts->out, "startxref\n%d\n%%%%EOF\n", startxref);
+	fz_write_printf(ctx, opts->out, "startxref\n%ld\n%%%%EOF\n", startxref);
 
 	doc->has_xref_streams = 0;
 }
@@ -2025,7 +2025,7 @@ static void writexrefstreamsubsect(fz_context *ctx, pdf_document *doc, pdf_write
 	}
 }
 
-static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int from, int to, int first, int main_xref_offset, int startxref)
+static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int from, int to, int first, int64_t main_xref_offset, int64_t startxref)
 {
 	int num;
 	pdf_obj *dict = NULL;
@@ -2127,7 +2127,7 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 		pdf_update_stream(ctx, doc, dict, fzbuf, 0);
 
 		writeobject(ctx, doc, opts, num, 0, 0);
-		fz_write_printf(ctx, opts->out, "startxref\n%Zd\n%%%%EOF\n", startxref);
+		fz_write_printf(ctx, opts->out, "startxref\n%ld\n%%%%EOF\n", startxref);
 	}
 	fz_always(ctx)
 	{
@@ -2142,9 +2142,9 @@ static void writexrefstream(fz_context *ctx, pdf_document *doc, pdf_write_state 
 }
 
 static void
-padto(fz_context *ctx, fz_output *out, fz_off_t target)
+padto(fz_context *ctx, fz_output *out, int64_t target)
 {
-	fz_off_t pos = fz_tell_output(ctx, out);
+	int64_t pos = fz_tell_output(ctx, out);
 
 	assert(pos <= target);
 	while (pos < target)
@@ -2218,7 +2218,7 @@ writeobjects(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int pass
 		dowriteobject(ctx, doc, opts, num, pass);
 	if (opts->do_linear && pass == 1)
 	{
-		fz_off_t offset = (opts->start == 1 ? opts->main_xref_offset : opts->ofs_list[1] + opts->hintstream_len);
+		int64_t offset = (opts->start == 1 ? opts->main_xref_offset : opts->ofs_list[1] + opts->hintstream_len);
 		padto(ctx, opts->out, offset);
 	}
 	for (num = 1; num < opts->start; num++)
@@ -2479,7 +2479,7 @@ make_page_offset_hints(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	for (j = 0; j < pop[0]->len; j++)
 	{
 		int o = pop[0]->object[j];
-		fz_off_t min, max;
+		int64_t min, max;
 		min = opts->ofs_list[o];
 		if (o == opts->start-1)
 			max = opts->main_xref_offset;
@@ -2601,7 +2601,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 		{
 			pdf_obj *byte_range;
 
-			f = fz_fopen(filename, "rb+");
+			f = fopen(filename, "rb+");
 			if (!f)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "Failed to open %s to complete signatures", filename);
 
@@ -2610,7 +2610,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 			{
 				char *bstr, *cstr, *fstr;
 				int pnum = pdf_obj_parent_num(ctx, pdf_dict_getl(ctx, usig->field, PDF_NAME_V, PDF_NAME_ByteRange, NULL));
-				fz_fseek(f, opts->ofs_list[pnum], SEEK_SET);
+				fseek(f, opts->ofs_list[pnum], SEEK_SET);
 				(void)fread(buf, 1, sizeof(buf), f);
 				buf[sizeof(buf)-1] = 0;
 
@@ -2653,7 +2653,7 @@ static void complete_signatures(fz_context *ctx, pdf_document *doc, pdf_write_st
 			/* Write the byte range to the file */
 			for (usig = xref->unsaved_sigs; usig; usig = usig->next)
 			{
-				fz_fseek(f, usig->byte_range_start, SEEK_SET);
+				fseek(f, usig->byte_range_start, SEEK_SET);
 				fwrite(buf, 1, usig->byte_range_end - usig->byte_range_start, f);
 			}
 
@@ -2720,7 +2720,7 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 	* 1 to n access rather than 0..n-1, and add space for 2 new
 	* extra entries that may be required for linearization. */
 	opts->use_list = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
-	opts->ofs_list = fz_malloc_array(ctx, xref_len + 3, sizeof(fz_off_t));
+	opts->ofs_list = fz_malloc_array(ctx, xref_len + 3, sizeof(int64_t));
 	opts->gen_list = fz_calloc(ctx, xref_len + 3, sizeof(int));
 	opts->renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
 	opts->rev_renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));

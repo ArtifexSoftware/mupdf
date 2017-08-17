@@ -13,6 +13,8 @@
 #include "mupdf/helpers/mu-threads.h"
 #include "mupdf/memento.h"
 
+#include <assert.h>
+
 enum
 {
 	MuError_OK = 0,

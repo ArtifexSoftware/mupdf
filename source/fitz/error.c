@@ -211,6 +211,7 @@ void fz_rethrow_if(fz_context *ctx, int err)
 /* Android specific code to take fprintf to LOG */
 
 #ifdef __ANDROID__
+#include <unistd.h>
 #include <android/log.h>
 
 #define LOG_TAG "libmupdf"
@@ -220,7 +221,7 @@ static int android_log_fill = 0;
 
 static char android_log_buffer2[4096];
 
-int fz_android_fprintf(FILE *file, const char *fmt, ...)
+int fz_android_fprintf(void *file, const char *fmt, ...)
 {
 	va_list args;
 	char *p, *q;

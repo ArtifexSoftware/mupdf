@@ -53,6 +53,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS := \
 	-ffunction-sections -fdata-sections \
+	-D_FILE_OFFSET_BITS=32 \
 	-DTOFU_NOTO -DTOFU_CJK \
 	-DAA_BITS=8 \
 

@@ -1,6 +1,8 @@
 #include "mupdf/fitz.h"
 #include "draw-imp.h"
 
+#include <string.h>
+
 void fz_new_aa_context(fz_context *ctx)
 {
 #ifndef AA_BITS

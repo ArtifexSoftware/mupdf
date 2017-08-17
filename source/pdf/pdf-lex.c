@@ -645,7 +645,7 @@ void pdf_append_token(fz_context *ctx, fz_buffer *fzbuf, int tok, pdf_lexbuf *bu
 		fz_append_byte(ctx, fzbuf, '}');
 		break;
 	case PDF_TOK_INT:
-		fz_append_printf(ctx, fzbuf, "%d", buf->i);
+		fz_append_printf(ctx, fzbuf, "%ld", buf->i);
 		break;
 	case PDF_TOK_REAL:
 		fz_append_printf(ctx, fzbuf, "%g", buf->f);

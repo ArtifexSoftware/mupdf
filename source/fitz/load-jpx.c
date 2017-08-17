@@ -279,10 +279,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			{
 				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Width, &widths[k], -1, k);
 				if (err != cJP2_Error_OK)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get width for component %ld: %d", k, (int) err);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get width for component %d: %d", (int) k, (int) err);
 				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Height, &heights[k], -1, k);
 				if (err != cJP2_Error_OK)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get height for component %ld: %d", k, (int) err);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get height for component %d: %d", (int) k, (int) err);
 
 				state->width = fz_maxi(state->width, widths[k]);
 				state->height = fz_maxi(state->height, heights[k]);
@@ -380,10 +380,10 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_
 			{
 				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Bits_Per_Sample, &state->bpss[k], -1, k);
 				if (err != cJP2_Error_OK)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get bits per sample for component %ld: %d", k, (int) err);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get bits per sample for component %d: %d", (int) k, (int) err);
 				err = JP2_Decompress_GetProp(doc, cJP2_Prop_Signed_Samples, &state->signs[k], -1, k);
 				if (err != cJP2_Error_OK)
-					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get signed for component %ld: %d", k, (int) err);
+					fz_throw(ctx, FZ_ERROR_GENERIC, "cannot get signed for component %d: %d", (int) k, (int) err);
 			}
 			if (state->signs[k])
 				state->signs[k] = 1 << (state->bpss[k] - 1);

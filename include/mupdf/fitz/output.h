@@ -34,7 +34,7 @@ typedef void (fz_output_write_fn)(fz_context *ctx, void *state, const void *data
 
 	offset, whence: as defined for fs_seek_output.
 */
-typedef void (fz_output_seek_fn)(fz_context *ctx, void *state, fz_off_t offset, int whence);
+typedef void (fz_output_seek_fn)(fz_context *ctx, void *state, int64_t offset, int whence);
 
 /*
 	fz_output_tell_fn: A function type for use when implementing
@@ -45,7 +45,7 @@ typedef void (fz_output_seek_fn)(fz_context *ctx, void *state, fz_off_t offset, 
 
 	Returns the offset within the output stream.
 */
-typedef fz_off_t (fz_output_tell_fn)(fz_context *ctx, void *state);
+typedef int64_t (fz_output_tell_fn)(fz_context *ctx, void *state);
 
 /*
 	fz_output_close_fn: A function type for use when implementing
@@ -78,17 +78,6 @@ struct fz_output_s
 	May permissibly be null.
 */
 fz_output *fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close);
-
-/*
-	fz_new_output_with_file: Open an output stream that writes to a
-	FILE *.
-
-	file: The file to write to.
-
-	close: non-zero if we should close the file when the fz_output
-	is closed.
-*/
-fz_output *fz_new_output_with_file_ptr(fz_context *ctx, FILE *file, int close);
 
 /*
 	fz_new_output_with_path: Open an output stream that writes to a
@@ -156,14 +145,14 @@ void fz_write_vprintf(fz_context *ctx, fz_output *out, const char *fmt, va_list 
 
 	Throw an error on unseekable outputs.
 */
-void fz_seek_output(fz_context *ctx, fz_output *out, fz_off_t off, int whence);
+void fz_seek_output(fz_context *ctx, fz_output *out, int64_t off, int whence);
 
 /*
 	fz_tell_output: Return the current file position.
 
 	Throw an error on untellable outputs.
 */
-fz_off_t fz_tell_output(fz_context *ctx, fz_output *out);
+int64_t fz_tell_output(fz_context *ctx, fz_output *out);
 
 /*
 	fz_drop_output: Close and free an output stream.
@@ -229,9 +218,8 @@ void fz_write_base64_buffer(fz_context *ctx, fz_output *out, fz_buffer *data, in
 	%C outputs a utf8 encoded int.
 	%M outputs a fz_matrix*. %R outputs a fz_rect*. %P outputs a fz_point*.
 	%q and %( output escaped strings in C/PDF syntax.
-	%ll{d,u,x} indicates that the values are 64bit.
+	%l{d,u,x} indicates that the values are int64_t.
 	%z{d,u,x} indicates that the value is a size_t.
-	%Z{d,u,x} indicates that the value is a fz_off_t.
 
 	user: An opaque pointer that is passed to the emit function.
 	emit: A function pointer called to emit output bytes as the string is being formatted.

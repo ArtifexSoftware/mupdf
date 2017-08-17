@@ -83,9 +83,7 @@ In general:
 <li> array sizes, string lengths, and allocations are measured using size_t.
 	size_t is 32bit in 32bit builds, and 64bit on all 64bit builds.
 <li> buffers of data use unsigned chars (or uint8_t).
-<li> Offsets within files/streams are represented using fz_off_t.
-	fz_off_t is 64bits in 64bit builds, or in 32bit builds with FZ_LARGEFILE defined.
-	Otherwise it is a native int (so 32bit in 32bit builds).
+<li> Offsets within files/streams are represented using int64_t.
 </ul>
 
 <p>

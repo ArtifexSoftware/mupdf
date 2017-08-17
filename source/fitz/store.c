@@ -1,6 +1,7 @@
 #include "mupdf/fitz.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 
 typedef struct fz_item_s fz_item;

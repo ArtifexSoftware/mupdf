@@ -5,6 +5,10 @@
 #include "mupdf/fitz.h"
 #include "mupdf/pdf.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 /*
 	A useful bit of bash script to call this to generate mjs files:
 	for f in tests_private/pdf/forms/v1.3/ *.pdf ; do g=${f%.*} ; echo $g ; ./mjsgen $g.pdf $g.mjs ; done

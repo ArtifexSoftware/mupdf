@@ -10,8 +10,8 @@
 typedef struct prog_state
 {
 	FILE *file;
-	fz_off_t length;
-	fz_off_t available;
+	int64_t length;
+	int64_t available;
 	int bps;
 	clock_t start_time;
 	unsigned char buffer[4096];
@@ -29,7 +29,7 @@ static int next_prog(fz_context *ctx, fz_stream *stm, size_t len)
 	/* Simulate more data having arrived */
 	if (ps->available < ps->length)
 	{
-		fz_off_t av = (fz_off_t)((float)(clock() - ps->start_time) * ps->bps / (CLOCKS_PER_SEC*8));
+		int64_t av = (int64_t)((float)(clock() - ps->start_time) * ps->bps / (CLOCKS_PER_SEC*8));
 		if (av > ps->length)
 			av = ps->length;
 		ps->available = av;
@@ -47,13 +47,13 @@ static int next_prog(fz_context *ctx, fz_stream *stm, size_t len)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "read error: %s", strerror(errno));
 	stm->rp = ps->buffer + stm->pos;
 	stm->wp = ps->buffer + stm->pos + n;
-	stm->pos += (fz_off_t)n;
+	stm->pos += (int64_t)n;
 	if (n == 0)
 		return EOF;
 	return *stm->rp++;
 }
 
-static void seek_prog(fz_context *ctx, fz_stream *stm, fz_off_t offset, int whence)
+static void seek_prog(fz_context *ctx, fz_stream *stm, int64_t offset, int whence)
 {
 	prog_state *ps = (prog_state *)stm->state;
 
@@ -83,7 +83,7 @@ static void seek_prog(fz_context *ctx, fz_stream *stm, fz_off_t offset, int when
 			fz_throw(ctx, FZ_ERROR_TRYLATER, "Not enough data to seek to offset yet");
 	}
 
-	if (fz_fseek(ps->file, offset, whence) != 0)
+	if (fseek(ps->file, offset, whence) != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot seek: %s", strerror(errno));
 	stm->pos = offset;
 	stm->wp = stm->rp;
@@ -110,7 +110,7 @@ static int meta_prog(fz_context *ctx, fz_stream *stm, int key, int size, void *p
 	return -1;
 }
 
-fz_stream *
+static fz_stream *
 fz_open_file_ptr_progressive(fz_context *ctx, FILE *file, int bps)
 {
 	fz_stream *stm;
@@ -122,9 +122,9 @@ fz_open_file_ptr_progressive(fz_context *ctx, FILE *file, int bps)
 	state->start_time = clock();
 	state->available = 0;
 
-	fz_fseek(state->file, 0, SEEK_END);
-	state->length = fz_ftell(state->file);
-	fz_fseek(state->file, 0, SEEK_SET);
+	fseek(state->file, 0, SEEK_END);
+	state->length = ftell(state->file);
+	fseek(state->file, 0, SEEK_SET);
 
 	stm = fz_new_stream(ctx, state, next_prog, close_prog);
 	stm->seek = seek_prog;
@@ -138,19 +138,9 @@ fz_open_file_progressive(fz_context *ctx, const char *name, int bps)
 {
 	FILE *f;
 #if defined(_WIN32) || defined(_WIN64)
-	char *s = (char*)name;
-	wchar_t *wname, *d;
-	int c;
-	d = wname = fz_malloc(ctx, (strlen(name)+1) * sizeof(wchar_t));
-	while (*s) {
-		s += fz_chartorune(&c, s);
-		*d++ = c;
-	}
-	*d = 0;
-	f = _wfopen(wname, L"rb");
-	fz_free(ctx, wname);
+	f = fz_fopen_utf8(name, "rb");
 #else
-	f = fz_fopen(name, "rb");
+	f = fopen(name, "rb");
 #endif
 	if (f == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open %s", name);

@@ -45,7 +45,7 @@ typedef struct pdf_obj_num_s
 	pdf_obj super;
 	union
 	{
-		fz_off_t i;
+		int64_t i;
 		float f;
 	} u;
 } pdf_obj_num;
@@ -111,22 +111,10 @@ pdf_new_bool(fz_context *ctx, pdf_document *doc, int b)
 }
 
 pdf_obj *
-pdf_new_int(fz_context *ctx, pdf_document *doc, int i)
+pdf_new_int(fz_context *ctx, pdf_document *doc, int64_t i)
 {
 	pdf_obj_num *obj;
 	obj = Memento_label(fz_malloc(ctx, sizeof(pdf_obj_num)), "pdf_obj(int)");
-	obj->super.refs = 1;
-	obj->super.kind = PDF_INT;
-	obj->super.flags = 0;
-	obj->u.i = i;
-	return &obj->super;
-}
-
-pdf_obj *
-pdf_new_int_offset(fz_context *ctx, pdf_document *doc, fz_off_t i)
-{
-	pdf_obj_num *obj;
-	obj = Memento_label(fz_malloc(ctx, sizeof(pdf_obj_num)), "pdf_obj(offset)");
 	obj->super.refs = 1;
 	obj->super.kind = PDF_INT;
 	obj->super.flags = 0;
@@ -315,7 +303,7 @@ int pdf_to_int(fz_context *ctx, pdf_obj *obj)
 	return 0;
 }
 
-fz_off_t pdf_to_offset(fz_context *ctx, pdf_obj *obj)
+int64_t pdf_to_int64(fz_context *ctx, pdf_obj *obj)
 {
 	RESOLVE(obj);
 	if (obj < PDF_OBJ__LIMIT)
@@ -323,7 +311,7 @@ fz_off_t pdf_to_offset(fz_context *ctx, pdf_obj *obj)
 	if (obj->kind == PDF_INT)
 		return NUM(obj)->u.i;
 	if (obj->kind == PDF_REAL)
-		return (fz_off_t)(NUM(obj)->u.f + 0.5f); /* No roundf in MSVC */
+		return (NUM(obj)->u.f + 0.5f); /* No roundf in MSVC */
 	return 0;
 }
 
@@ -365,14 +353,7 @@ int pdf_to_str_len(fz_context *ctx, pdf_obj *obj)
 	return STRING(obj)->len;
 }
 
-void pdf_set_int(fz_context *ctx, pdf_obj *obj, int i)
-{
-	if (!OBJ_IS_INT(obj))
-		return;
-	NUM(obj)->u.i = i;
-}
-
-void pdf_set_int_offset(fz_context *ctx, pdf_obj *obj, fz_off_t i)
+void pdf_set_int(fz_context *ctx, pdf_obj *obj, int64_t i)
 {
 	if (!OBJ_IS_INT(obj))
 		return;

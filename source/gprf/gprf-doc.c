@@ -123,7 +123,7 @@ struct gprf_page_s
 typedef struct fz_image_gprf_s
 {
 	fz_image super;
-	fz_off_t offset[FZ_MAX_SEPARATIONS+3+1]; /* + RGB + END */
+	int64_t offset[FZ_MAX_SEPARATIONS+3+1]; /* + RGB + END */
 	gprf_file *file;
 	fz_separations *separations;
 } fz_image_gprf;
@@ -476,7 +476,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 }
 
 static fz_image *
-fz_new_gprf_image(fz_context *ctx, gprf_page *page, int imagenum, fz_off_t offsets[], fz_off_t end)
+fz_new_gprf_image(fz_context *ctx, gprf_page *page, int imagenum, int64_t offsets[], int64_t end)
 {
 	fz_image_gprf *image = fz_malloc_struct(ctx, fz_image_gprf);
 	int tile_x = imagenum % page->tile_width;
@@ -509,7 +509,7 @@ fz_new_gprf_image(fz_context *ctx, gprf_page *page, int imagenum, fz_off_t offse
 	image->super.yres = page->doc->res;
 	image->super.mask = NULL;
 	image->file = fz_keep_gprf_file(ctx, page->file);
-	memcpy(image->offset, offsets, sizeof(fz_off_t) * (3+seps));
+	memcpy(image->offset, offsets, sizeof(int64_t) * (3+seps));
 	image->offset[seps+3] = end;
 	image->separations = fz_keep_separations(ctx, page->separations);
 
@@ -762,7 +762,7 @@ read_tiles(fz_context *ctx, gprf_page *page)
 		}
 
 		/* Seek to the image data */
-		fz_seek(ctx, file, (fz_off_t)offset, SEEK_SET);
+		fz_seek(ctx, file, (int64_t)offset, SEEK_SET);
 
 		num_tiles = page->tile_width * page->tile_height;
 		page->tiles = fz_calloc(ctx, num_tiles, sizeof(fz_image *));
@@ -773,16 +773,16 @@ read_tiles(fz_context *ctx, gprf_page *page)
 		{
 			for (x = 0; x < page->tile_width; x++)
 			{
-				fz_off_t offsets[FZ_MAX_SEPARATIONS + 3]; /* SEPARATIONS + RGB */
+				int64_t offsets[FZ_MAX_SEPARATIONS + 3]; /* SEPARATIONS + RGB */
 				int j;
 
 				for (j = 0; j < num_seps+3; j++)
 				{
-					offsets[j] = (fz_off_t)off;
+					offsets[j] = (int64_t)off;
 					off = fz_read_int64_le(ctx, file);
 				}
 
-				page->tiles[i] = fz_new_gprf_image(ctx, page, i, offsets, (fz_off_t)off);
+				page->tiles[i] = fz_new_gprf_image(ctx, page, i, offsets, (int64_t)off);
 				i++;
 			}
 		}

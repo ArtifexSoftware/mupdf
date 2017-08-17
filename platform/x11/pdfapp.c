@@ -520,7 +520,7 @@ static int gen_tmp_file(char *buf, int len)
 	for (i = 0; i < 10000; i++)
 	{
 		FILE *f;
-		snprintf(name, buf+len-name, "tmp%04d", i);
+		sprintf(name, "tmp%04d", i);
 		f = fopen(buf, "r");
 		if (f == NULL)
 			return 1;
@@ -903,9 +903,9 @@ static void pdfapp_showpage(pdfapp_t *app, int loadpage, int drawpage, int repai
 		len = MAX_TITLE-strlen(buf2);
 		if (strlen(app->doctitle) > len)
 		{
-			snprintf(buf, len-3, "%s", app->doctitle);
-			strcat(buf, "...");
-			strcat(buf, buf2);
+			fz_strlcpy(buf, app->doctitle, len-3);
+			fz_strlcat(buf, "...", MAX_TITLE);
+			fz_strlcat(buf, buf2, MAX_TITLE);
 		}
 		else
 			sprintf(buf, "%s%s", app->doctitle, buf2);

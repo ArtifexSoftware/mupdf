@@ -1,21 +1,6 @@
 #ifndef MUPDF_FITZ_SYSTEM_H
 #define MUPDF_FITZ_SYSTEM_H
 
-#if _MSC_VER >= 1400 /* MSVC 8 (Visual Studio 2005) or newer */
-#define FZ_LARGEFILE
-#endif
-
-/* The very first decision we need to make is, are we using the 64bit
- * file pointers code. This must happen before the stdio.h include. */
-#ifdef FZ_LARGEFILE
-/* Set _LARGEFILE64_SOURCE so that we know fopen64 et al will be declared. */
-#ifndef _WIN32
-#ifndef _LARGEFILE64_SOURCE
-#define _LARGEFILE64_SOURCE
-#endif
-#endif
-#endif
-
 /* Turn on valgrind pacification in debug builds. */
 #ifndef NDEBUG
 #ifndef PACIFY_VALGRIND
@@ -27,21 +12,22 @@
 	Include the standard libc headers.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <string.h>
-#include <math.h>
+#include <stddef.h> /* needed for size_t */
+#include <stdarg.h> /* needed for va_list vararg functions */
+#include <setjmp.h> /* needed for the try/catch macros */
 
-#include <assert.h>
-#include <errno.h>
-#include <limits.h> /* INT_MAX & co */
-#include <float.h> /* FLT_EPSILON, FLT_MAX & co */
-#include <fcntl.h> /* O_RDONLY & co */
-#include <time.h>
-
-#include <setjmp.h>
+#if defined(_MSC_VER) && (_MSC_VER < 1700) /* MSVC older than VS2012 */
+typedef signed char int8_t;
+typedef short int int16_t;
+typedef int int32_t;
+typedef __int64 int64_t;
+typedef unsigned char uint8_t;
+typedef unsigned short int uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned __int64 uint64_t;
+#else
+#include <stdint.h> /* needed for int64_t */
+#endif
 
 #include "mupdf/memento.h"
 #include "mupdf/fitz/track-usage.h"
@@ -93,21 +79,23 @@
 #endif
 
 /* these constants mirror the corresponding macros in stdio.h */
-#define FZ_SEEK_SET 0
-#define FZ_SEEK_CUR 1
-#define FZ_SEEK_END 2
-#ifndef _MSC_VER
-/* For gettimeofday */
-#include <sys/time.h>
+#ifndef EOF
+#define EOF (-1)
+#endif
+#ifndef SEEK_SET
+#define SEEK_SET 0
+#endif
+#ifndef SEEK_CUR
+#define SEEK_CUR 1
+#endif
+#ifndef SEEK_END
+#define SEEK_END 2
 #endif
 
 #ifdef _MSC_VER /* Microsoft Visual C */
 
 /* MSVC up to VS2012 */
 #if _MSC_VER < 1800
-#define va_copy(a, oa) do { a=oa; } while (0)
-#define va_copy_end(a) do {} while(0)
-
 static __inline int signbit(double x)
 {
 	union
@@ -118,51 +106,11 @@ static __inline int signbit(double x)
 	u.d = x;
 	return (int)(u.i>>63);
 }
-
-#else
-#define va_copy_end(a) va_end(a)
 #endif
-
-typedef signed char int8_t;
-typedef short int int16_t;
-typedef int int32_t;
-typedef __int64 int64_t;
-
-typedef unsigned char uint8_t;
-typedef unsigned short int uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned __int64 uint64_t;
 
 #pragma warning( disable: 4244 ) /* conversion from X to Y, possible loss of data */
 #pragma warning( disable: 4701 ) /* Potentially uninitialized local variable 'name' used */
 #pragma warning( disable: 4996 ) /* 'function': was declared deprecated */
-
-#include <io.h>
-
-struct timeval;
-struct timezone;
-int gettimeofday(struct timeval *tv, struct timezone *tz);
-
-#if _MSC_VER < 1900 /* MSVC 2015 */
-#define snprintf msvc_snprintf
-#define vsnprintf msvc_vsnprintf
-static int msvc_vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
-{
-	int n;
-	n = _vsnprintf(str, size, fmt, ap);
-	str[size-1] = 0;
-	return n;
-}
-static int msvc_snprintf(char *str, size_t size, const char *fmt, ...)
-{
-	int n;
-	va_list ap;
-	va_start(ap, fmt);
-	n = msvc_vsnprintf(str, size, fmt, ap);
-	va_end(ap);
-	return n;
-}
-#endif
 
 #if _MSC_VER <= 1700 /* MSVC 2012 */
 #define isnan(x) _isnan(x)
@@ -170,63 +118,19 @@ static int msvc_snprintf(char *str, size_t size, const char *fmt, ...)
 #endif
 
 #define hypotf _hypotf
-
-#define fz_fopen fz_fopen_utf8
-#define fz_remove fz_remove_utf8
+#define atoll _atoi64
+#define stat _stat
 
 char *fz_utf8_from_wchar(const wchar_t *s);
 wchar_t *fz_wchar_from_utf8(const char *s);
 
-FILE *fz_fopen_utf8(const char *name, const char *mode);
+/* really a FILE* but we don't want to include stdio.h here */
+void *fz_fopen_utf8(const char *name, const char *mode);
 int fz_remove_utf8(const char *name);
 
 char **fz_argv_from_wargv(int argc, wchar_t **wargv);
 void fz_free_argv(int argc, char **argv);
 
-#define fseeko64 _fseeki64
-#define ftello64 _ftelli64
-#define atoll _atoi64
-
-#include <sys/stat.h>
-
-#define stat _stat
-
-#else /* Unix or close enough */
-
-#include <stdint.h>
-#include <unistd.h>
-#include <sys/stat.h>
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
-#define va_copy_end(a) va_end(a)
-
-#endif
-
-#ifndef fz_remove
-#define fz_remove remove
-#endif
-
-#ifdef FZ_LARGEFILE
-typedef int64_t fz_off_t;
-#define FZ_OFF_MAX 0x7fffffffffffffffLL
-#ifndef fz_fopen
-#define fz_fopen fopen64
-#endif
-#define fz_fseek fseeko64
-#define fz_ftell ftello64
-#define fz_atoo_imp atoll
-#else
-typedef int fz_off_t;
-#define FZ_OFF_MAX INT_MAX
-#ifndef fz_fopen
-#define fz_fopen fopen
-#endif
-#define fz_fseek fseek
-#define fz_ftell ftell
-#define fz_atoo_imp atoi
 #endif
 
 /* Cope with systems (such as Windows) with no S_ISDIR */
@@ -234,18 +138,8 @@ typedef int fz_off_t;
 #define S_ISDIR(mode) ((mode) & S_IFDIR)
 #endif
 
-/* Portable way to format a size_t */
-#if defined(_WIN64)
-#define FZ_FMT_zu "%llu"
-#elif defined(_WIN32)
-#define FZ_FMT_zu "%u"
-#else
-#define FZ_FMT_zu "%zu"
-#endif
-
 #ifdef __ANDROID__
-#include <android/log.h>
-int fz_android_fprintf(FILE *file, const char *fmt, ...);
+int fz_android_fprintf(void *file, const char *fmt, ...);
 #ifndef NDEBUG
 /* Capture fprintf for stdout/stderr to the android logging
  * stream. Only do this in debug builds as this implies a
@@ -333,6 +227,8 @@ extern void __gnu_mcount_nc(void);
 #endif
 
 #ifdef CLUSTER
+/* Include this first so our defines don't clash with the system definitions */
+#include <math.h>
 /*
  * Trig functions
  */

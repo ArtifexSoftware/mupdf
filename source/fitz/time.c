@@ -2,6 +2,8 @@
 
 #include "mupdf/fitz.h"
 
+#include <stdio.h>
+#include <errno.h>
 #include <time.h>
 #include <windows.h>
 
@@ -79,7 +81,7 @@ fz_wchar_from_utf8(const char *s)
 	return r;
 }
 
-FILE *
+void *
 fz_fopen_utf8(const char *name, const char *mode)
 {
 	wchar_t *wname, *wmode;

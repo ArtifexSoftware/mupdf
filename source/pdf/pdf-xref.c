@@ -6,6 +6,12 @@
 #include <limits.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+#ifndef INT64_MAX
+#define INT64_MAX 9223372036854775807i64
+#endif
+#endif
+
 #undef DEBUG_PROGESSIVE_ADVANCE
 
 #ifdef DEBUG_PROGESSIVE_ADVANCE
@@ -588,7 +594,7 @@ pdf_load_version(fz_context *ctx, pdf_document *doc)
 {
 	char buf[20];
 
-	fz_seek(ctx, doc->file, 0, FZ_SEEK_SET);
+	fz_seek(ctx, doc->file, 0, SEEK_SET);
 	fz_read_line(ctx, doc->file, buf, sizeof buf);
 	if (memcmp(buf, "%PDF-", 5) != 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize version marker");
@@ -604,14 +610,14 @@ pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 {
 	unsigned char buf[1024];
 	size_t i, n;
-	fz_off_t t;
+	int64_t t;
 
-	fz_seek(ctx, doc->file, 0, FZ_SEEK_END);
+	fz_seek(ctx, doc->file, 0, SEEK_END);
 
 	doc->file_size = fz_tell(ctx, doc->file);
 
-	t = fz_maxo(0, doc->file_size - (fz_off_t)sizeof buf);
-	fz_seek(ctx, doc->file, t, FZ_SEEK_SET);
+	t = fz_maxi64(0, doc->file_size - (int64_t)sizeof buf);
+	fz_seek(ctx, doc->file, t, SEEK_SET);
 
 	n = fz_read(ctx, doc->file, buf, sizeof buf);
 	if (n < 9)
@@ -628,7 +634,7 @@ pdf_read_start_xref(fz_context *ctx, pdf_document *doc)
 			doc->startxref = 0;
 			while (i < n && buf[i] >= '0' && buf[i] <= '9')
 			{
-				if (doc->startxref >= FZ_OFF_MAX/10)
+				if (doc->startxref >= INT64_MAX/10)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "startxref too large");
 				doc->startxref = doc->startxref * 10 + (buf[i++] - '0');
 			}
@@ -673,13 +679,13 @@ static int fz_skip_string(fz_context *ctx, fz_stream *stm, const char *str)
 static int
 pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 {
-	fz_off_t len;
+	int64_t len;
 	char *s;
-	fz_off_t t;
+	int64_t t;
 	pdf_token tok;
 	int c;
 	int size = 0;
-	fz_off_t ofs;
+	int64_t ofs;
 	pdf_obj *trailer = NULL;
 	size_t n;
 
@@ -704,13 +710,13 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		fz_strsep(&s, " "); /* ignore ofs */
 		if (!s)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid range marker in xref");
-		len = fz_atoo(fz_strsep(&s, " "));
+		len = fz_atoi64(fz_strsep(&s, " "));
 		if (len < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref range marker must be positive");
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
-			fz_seek(ctx, doc->file, -(2 + (int)strlen(s)), FZ_SEEK_CUR);
+			fz_seek(ctx, doc->file, -(2 + (int)strlen(s)), SEEK_CUR);
 
 		t = fz_tell(ctx, doc->file);
 		if (t < 0)
@@ -729,10 +735,10 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		else
 			n = 20;
 
-		if (len > (fz_off_t)((FZ_OFF_MAX - t) / n))
+		if (len > (int64_t)((INT64_MAX - t) / n))
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref has too many entries");
 
-		fz_seek(ctx, doc->file, (fz_off_t)(t + n * len), FZ_SEEK_SET);
+		fz_seek(ctx, doc->file, (int64_t)(t + n * len), SEEK_SET);
 	}
 
 	fz_try(ctx)
@@ -760,13 +766,13 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 		fz_rethrow(ctx);
 	}
 
-	fz_seek(ctx, doc->file, ofs, FZ_SEEK_SET);
+	fz_seek(ctx, doc->file, ofs, SEEK_SET);
 
 	return size;
 }
 
 static pdf_xref_entry *
-pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, fz_off_t ofs, int len)
+pdf_xref_find_subsection(fz_context *ctx, pdf_document *doc, int64_t ofs, int len)
 {
 	pdf_xref *xref = &doc->xref_sections[doc->num_xref_sections-1];
 	pdf_xref_subsec *sub;
@@ -828,12 +834,12 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 {
 	fz_stream *file = doc->file;
 
-	fz_off_t ofs;
+	int64_t ofs;
 	int len;
 	char *s;
 	size_t n;
 	pdf_token tok;
-	fz_off_t i;
+	int64_t i;
 	int c;
 	int xref_len = pdf_xref_size_from_old_trailer(ctx, doc, buf);
 	pdf_xref_entry *table;
@@ -852,19 +858,19 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 
 		fz_read_line(ctx, file, buf->scratch, buf->size);
 		s = buf->scratch;
-		ofs = fz_atoo(fz_strsep(&s, " "));
+		ofs = fz_atoi64(fz_strsep(&s, " "));
 		len = fz_atoi(fz_strsep(&s, " "));
 
 		/* broken pdfs where the section is not on a separate line */
 		if (s && *s != '\0')
 		{
 			fz_warn(ctx, "broken xref section. proceeding anyway.");
-			fz_seek(ctx, file, -(2 + (int)strlen(s)), FZ_SEEK_CUR);
+			fz_seek(ctx, file, -(2 + (int)strlen(s)), SEEK_CUR);
 		}
 
 		if (ofs < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "out of range object num in xref: %d", (int)ofs);
-		if (ofs > FZ_OFF_MAX - len)
+		if (ofs > INT64_MAX - len)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "xref section object numbers too big");
 
 		/* broken pdfs where size in trailer undershoots entries in xref sections */
@@ -894,7 +900,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 				while (*s != '\0' && iswhite(*s))
 					s++;
 
-				entry->ofs = fz_atoo(s);
+				entry->ofs = fz_atoi64(s);
 				entry->gen = fz_atoi(s + 11);
 				entry->num = (int)i;
 				entry->type = s[17];
@@ -922,7 +928,7 @@ pdf_read_old_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 }
 
 static void
-pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, fz_off_t i0, int i1, int w0, int w1, int w2)
+pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, int64_t i0, int i1, int w0, int w1, int w2)
 {
 	pdf_xref_entry *table;
 	int i, n;
@@ -937,7 +943,7 @@ pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, fz
 	{
 		pdf_xref_entry *entry = &table[i-i0];
 		int a = 0;
-		fz_off_t b = 0;
+		int64_t b = 0;
 		int c = 0;
 
 		if (fz_is_eof(ctx, stm))
@@ -972,7 +978,7 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	pdf_obj *index = NULL;
 	pdf_obj *obj = NULL;
 	int gen, num = 0;
-	fz_off_t ofs, stm_ofs;
+	int64_t ofs, stm_ofs;
 	int size, w0, w1, w2;
 	int t;
 
@@ -1059,12 +1065,12 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 }
 
 static pdf_obj *
-pdf_read_xref(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf)
+pdf_read_xref(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf)
 {
 	pdf_obj *trailer;
 	int c;
 
-	fz_seek(ctx, doc->file, ofs, FZ_SEEK_SET);
+	fz_seek(ctx, doc->file, ofs, SEEK_SET);
 
 	while (iswhite(fz_peek_byte(ctx, doc->file)))
 		fz_read_byte(ctx, doc->file);
@@ -1086,15 +1092,15 @@ struct ofs_list_s
 {
 	int max;
 	int len;
-	fz_off_t *list;
+	int64_t *list;
 };
 
-static fz_off_t
-read_xref_section(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf, ofs_list *offsets)
+static int64_t
+read_xref_section(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf, ofs_list *offsets)
 {
 	pdf_obj *trailer = NULL;
-	fz_off_t xrefstmofs = 0;
-	fz_off_t prevofs = 0;
+	int64_t xrefstmofs = 0;
+	int64_t prevofs = 0;
 
 	fz_var(trailer);
 
@@ -1125,7 +1131,7 @@ read_xref_section(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *
 
 		/* FIXME: do we overwrite free entries properly? */
 		/* FIXME: Does this work properly with progression? */
-		xrefstmofs = pdf_to_offset(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_XRefStm));
+		xrefstmofs = pdf_to_int64(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_XRefStm));
 		if (xrefstmofs)
 		{
 			if (xrefstmofs < 0)
@@ -1139,8 +1145,7 @@ read_xref_section(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *
 			pdf_drop_obj(ctx, pdf_read_xref(ctx, doc, xrefstmofs, buf));
 		}
 
-		/* FIXME: pdf_to_offset? */
-		prevofs = pdf_to_offset(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_Prev));
+		prevofs = pdf_to_int64(ctx, pdf_dict_get(ctx, trailer, PDF_NAME_Prev));
 		if (prevofs < 0)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "negative xref stream offset for previous xref stream");
 	}
@@ -1157,7 +1162,7 @@ read_xref_section(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *
 }
 
 static void
-pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, fz_off_t ofs, pdf_lexbuf *buf, int read_previous)
+pdf_read_xref_sections(fz_context *ctx, pdf_document *doc, int64_t ofs, pdf_lexbuf *buf, int read_previous)
 {
 	ofs_list list;
 
@@ -1263,7 +1268,7 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 			/* Read this into a local variable here, because pdf_get_xref_entry
 			 * may solidify the xref, hence invalidating "entry", meaning we
 			 * need a stashed value for the throw. */
-			fz_off_t ofs = entry->ofs;
+			int64_t ofs = entry->ofs;
 			if (ofs <= 0 || ofs >= xref_len || pdf_get_xref_entry(ctx, doc, ofs)->type != 'n')
 				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid reference to an objstm that does not exist: %d (%d 0 R)", (int)ofs, i);
 		}
@@ -1277,7 +1282,7 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 	pdf_obj *hint = NULL;
 	pdf_obj *o;
 	int num, gen, lin, len;
-	fz_off_t stmofs;
+	int64_t stmofs;
 
 	fz_var(dict);
 	fz_var(hint);
@@ -1573,10 +1578,10 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 	fz_stream *stm = NULL;
 	pdf_obj *objstm = NULL;
 	int *numbuf = NULL;
-	fz_off_t *ofsbuf = NULL;
+	int64_t *ofsbuf = NULL;
 
 	pdf_obj *obj;
-	fz_off_t first;
+	int64_t first;
 	int count;
 	int i;
 	pdf_token tok;
@@ -1616,13 +1621,13 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
 			ofsbuf[i] = buf->i;
 		}
 
-		fz_seek(ctx, stm, first, FZ_SEEK_SET);
+		fz_seek(ctx, stm, first, SEEK_SET);
 
 		for (i = 0; i < count; i++)
 		{
 			int xref_len = pdf_xref_len(ctx, doc);
 			pdf_xref_entry *entry;
-			fz_seek(ctx, stm, first + ofsbuf[i], FZ_SEEK_SET);
+			fz_seek(ctx, stm, first + ofsbuf[i], SEEK_SET);
 
 			obj = pdf_parse_stm_obj(ctx, doc, stm, buf);
 
@@ -1683,16 +1688,16 @@ pdf_load_obj_stm(fz_context *ctx, pdf_document *doc, int num, pdf_lexbuf *buf, i
  * object loading
  */
 static int
-pdf_obj_read(fz_context *ctx, pdf_document *doc, fz_off_t *offset, int *nump, pdf_obj **page)
+pdf_obj_read(fz_context *ctx, pdf_document *doc, int64_t *offset, int *nump, pdf_obj **page)
 {
 	pdf_lexbuf *buf = &doc->lexbuf.base;
 	int num, gen, tok;
-	fz_off_t numofs, genofs, stmofs, tmpofs, newtmpofs;
+	int64_t numofs, genofs, stmofs, tmpofs, newtmpofs;
 	int xref_len;
 	pdf_xref_entry *entry;
 
 	numofs = *offset;
-	fz_seek(ctx, doc->file, numofs, FZ_SEEK_SET);
+	fz_seek(ctx, doc->file, numofs, SEEK_SET);
 
 	/* We expect to read 'num' here */
 	tok = pdf_lex(ctx, doc->file, buf);
@@ -1847,7 +1852,7 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 	 * there. */
 	int expected = num;
 	int curr_pos;
-	fz_off_t start, offset;
+	int64_t start, offset;
 
 	while (doc->hint_obj_offsets[expected] == 0 && expected > 0)
 		expected--;
@@ -1898,7 +1903,7 @@ read_hinted_object(fz_context *ctx, pdf_document *doc, int num)
 	}
 	fz_always(ctx)
 	{
-		fz_seek(ctx, doc->file, curr_pos, FZ_SEEK_SET);
+		fz_seek(ctx, doc->file, curr_pos, SEEK_SET);
 	}
 	fz_catch(ctx)
 	{
@@ -1937,7 +1942,7 @@ object_updated:
 	}
 	else if (x->type == 'n')
 	{
-		fz_seek(ctx, doc->file, x->ofs, FZ_SEEK_SET);
+		fz_seek(ctx, doc->file, x->ofs, SEEK_SET);
 
 		fz_try(ctx)
 		{
@@ -2398,7 +2403,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		}
 		/* Skip items 5,6,7 as we don't use them */
 
-		fz_seek(ctx, stream, shared_hint_offset, FZ_SEEK_SET);
+		fz_seek(ctx, stream, shared_hint_offset, SEEK_SET);
 
 		/* Read the shared object hints table: Header first */
 		shared_obj_num = fz_read_bits(ctx, stream, 32);
@@ -2511,16 +2516,16 @@ static void
 pdf_load_hint_object(fz_context *ctx, pdf_document *doc)
 {
 	pdf_lexbuf *buf = &doc->lexbuf.base;
-	fz_off_t curr_pos;
+	int64_t curr_pos;
 
 	curr_pos = fz_tell(ctx, doc->file);
-	fz_seek(ctx, doc->file, doc->hint_object_offset, FZ_SEEK_SET);
+	fz_seek(ctx, doc->file, doc->hint_object_offset, SEEK_SET);
 	fz_try(ctx)
 	{
 		while (1)
 		{
 			pdf_obj *page = NULL;
-			fz_off_t tmpofs;
+			int64_t tmpofs;
 			int num, tok;
 
 			tok = pdf_lex(ctx, doc->file, buf);
@@ -2540,7 +2545,7 @@ pdf_load_hint_object(fz_context *ctx, pdf_document *doc)
 	}
 	fz_always(ctx)
 	{
-		fz_seek(ctx, doc->file, curr_pos, FZ_SEEK_SET);
+		fz_seek(ctx, doc->file, curr_pos, SEEK_SET);
 	}
 	fz_catch(ctx)
 	{
@@ -2601,7 +2606,7 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 	}
 	fz_always(ctx)
 	{
-		fz_seek(ctx, doc->file, curr_pos, FZ_SEEK_SET);
+		fz_seek(ctx, doc->file, curr_pos, SEEK_SET);
 	}
 	fz_catch(ctx)
 	{

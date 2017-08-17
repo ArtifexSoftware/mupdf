@@ -59,7 +59,7 @@ static void ensure_tar_entries(fz_context *ctx, fz_tar_archive *tar)
 
 	tar->count = 0;
 
-	fz_seek(ctx, file, 0, FZ_SEEK_SET);
+	fz_seek(ctx, file, 0, SEEK_SET);
 
 	while (1)
 	{

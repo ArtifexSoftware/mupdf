@@ -2,6 +2,9 @@
 
 #ifdef HAVE_JPEGXR
 
+#include <math.h>
+#include <string.h>
+
 #include <jpegxr.h>
 
 struct info

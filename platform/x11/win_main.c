@@ -12,6 +12,10 @@
 /* Include pdfapp.h *AFTER* the UNICODE defines */
 #include "pdfapp.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL 0x020A
 #endif

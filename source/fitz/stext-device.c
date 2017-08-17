@@ -3,8 +3,7 @@
 
 #include <math.h>
 #include <float.h>
-
-#include <stdio.h> /* for debug printing */
+#include <string.h>
 
 /* Extract text into blocks and lines. */
 

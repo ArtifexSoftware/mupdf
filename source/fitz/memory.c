@@ -98,7 +98,9 @@ fz_malloc_array_no_throw(fz_context *ctx, size_t count, size_t size)
 
 	if (count > SIZE_MAX / size)
 	{
-		fprintf(stderr, "error: malloc of array (" FZ_FMT_zu " x " FZ_FMT_zu " bytes) failed (size_t overflow)", count, size);
+		char buf[100];
+		fz_snprintf(buf, sizeof buf, "error: malloc of array (%zu x %zu bytes) failed (size_t overflow)", count, size);
+		fprintf(stderr, "%s\n", buf);
 		return NULL;
 	}
 
@@ -137,7 +139,9 @@ fz_calloc_no_throw(fz_context *ctx, size_t count, size_t size)
 
 	if (count > SIZE_MAX / size)
 	{
-		fprintf(stderr, "error: calloc (" FZ_FMT_zu " x " FZ_FMT_zu " bytes) failed (size_t overflow)\n", count, size);
+		char buf[100];
+		fz_snprintf(buf, sizeof buf, "error: calloc of array (%zu x %zu bytes) failed (size_t overflow)", count, size);
+		fprintf(stderr, "%s\n", buf);
 		return NULL;
 	}
 
@@ -180,7 +184,9 @@ fz_resize_array_no_throw(fz_context *ctx, void *p, size_t count, size_t size)
 
 	if (count > SIZE_MAX / size)
 	{
-		fprintf(stderr, "error: resize array (" FZ_FMT_zu " x " FZ_FMT_zu " bytes) failed (size_t overflow)\n", count, size);
+		char buf[100];
+		fz_snprintf(buf, sizeof buf, "error: resize array (%zu x %zu bytes) failed (size_t overflow)", count, size);
+		fprintf(stderr, "%s\n", buf);
 		return NULL;
 	}
 

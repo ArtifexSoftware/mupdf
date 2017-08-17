@@ -48,13 +48,13 @@ static void writepixmap(fz_context *ctx, fz_pixmap *pix, char *file, int dorgb)
 
 	if (pix->n - pix->alpha <= 3)
 	{
-		snprintf(buf, sizeof(buf), "%s.png", file);
+		fz_snprintf(buf, sizeof(buf), "%s.png", file);
 		printf("extracting image %s\n", buf);
 		fz_save_pixmap_as_png(ctx, pix, buf);
 	}
 	else
 	{
-		snprintf(buf, sizeof(buf), "%s.pam", file);
+		fz_snprintf(buf, sizeof(buf), "%s.pam", file);
 		printf("extracting image %s\n", buf);
 		fz_save_pixmap_as_pam(ctx, pix, buf);
 	}

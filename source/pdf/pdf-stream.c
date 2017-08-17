@@ -280,7 +280,7 @@ build_filter_chain(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj
  * orig_num and orig_gen are used purely to seed the encryption.
  */
 static fz_stream *
-pdf_open_raw_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *stmobj, int num, int *orig_num, int *orig_gen, fz_off_t offset)
+pdf_open_raw_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *stmobj, int num, int *orig_num, int *orig_gen, int64_t offset)
 {
 	pdf_xref_entry *x = NULL;
 	fz_stream *chain2;
@@ -336,7 +336,7 @@ pdf_open_raw_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_ob
  * to stream length and decrypting.
  */
 static fz_stream *
-pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *chain, pdf_obj *stmobj, int num, fz_off_t offset, fz_compression_params *imparams)
+pdf_open_filter(fz_context *ctx, pdf_document *doc, fz_stream *chain, pdf_obj *stmobj, int num, int64_t offset, fz_compression_params *imparams)
 {
 	pdf_obj *filters;
 	pdf_obj *params;
@@ -382,7 +382,7 @@ pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int 
 {
 	pdf_obj *filters;
 	pdf_obj *params;
-	fz_off_t offset;
+	int64_t offset;
 
 	filters = pdf_dict_geta(ctx, stmobj, PDF_NAME_Filter, PDF_NAME_F);
 	params = pdf_dict_geta(ctx, stmobj, PDF_NAME_DecodeParms, PDF_NAME_DP);
@@ -479,7 +479,7 @@ pdf_open_stream_number(fz_context *ctx, pdf_document *doc, int num)
 }
 
 fz_stream *
-pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj *dict, fz_off_t stm_ofs)
+pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj *dict, int64_t stm_ofs)
 {
 	if (stm_ofs == 0)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "object is not a stream");

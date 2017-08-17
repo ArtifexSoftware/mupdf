@@ -2226,7 +2226,7 @@ fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int al
 
 	if (dst->n - dst->alpha != src->n - src->alpha)
 	{
-		fprintf(stderr, "fz_paint_pixmap - FIXME\n");
+		// fprintf(stderr, "fz_paint_pixmap - FIXME\n");
 		return;
 	}
 	assert(dst->n - dst->alpha == src->n - src->alpha);
@@ -2355,7 +2355,7 @@ fz_paint_pixmap_with_overprint(fz_pixmap * restrict dst, const fz_pixmap * restr
 
 	if (dst->n - dst->alpha != src->n - src->alpha)
 	{
-		fprintf(stderr, "fz_paint_pixmap_with_overprint - FIXME\n");
+		// fprintf(stderr, "fz_paint_pixmap_with_overprint - FIXME\n");
 		return;
 	}
 	assert(dst->n - dst->alpha == src->n - src->alpha);

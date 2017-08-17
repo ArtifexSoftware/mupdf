@@ -2,6 +2,8 @@
 
 #ifdef HAVE_LURATECH
 
+#include <string.h>
+
 #include <ldf_jb2.h>
 
 typedef struct fz_jbig2d_s fz_jbig2d;

@@ -41,8 +41,8 @@ struct pdf_xref_entry_s
 	unsigned char flags;	/* bit 0 = marked */
 	unsigned short gen;	/* generation / objstm index */
 	int num;		/* original object number (for decryption after renumbering) */
-	fz_off_t ofs;		/* file offset / objstm object number */
-	fz_off_t stm_ofs;	/* on-disk stream */
+	int64_t ofs;		/* file offset / objstm object number */
+	int64_t stm_ofs;	/* on-disk stream */
 	fz_buffer *stm_buf;	/* in-memory stream (for updated objects) */
 	pdf_obj *obj;		/* stored/cached object */
 };
@@ -58,7 +58,7 @@ struct pdf_xref_subsec_s
 {
 	pdf_xref_subsec *next;
 	int len;
-	fz_off_t start;
+	int64_t start;
 	pdf_xref_entry *table;
 };
 
@@ -70,7 +70,7 @@ struct pdf_xref_s
 	pdf_obj *pre_repair_trailer;
 	pdf_unsaved_sig *unsaved_sigs;
 	pdf_unsaved_sig **unsaved_sigs_end;
-	fz_off_t end_ofs; /* file offset to end of xref */
+	int64_t end_ofs; /* file offset to end of xref */
 };
 
 pdf_xref_entry *pdf_cache_object(fz_context *ctx, pdf_document *doc, int num);
@@ -92,7 +92,7 @@ fz_stream *pdf_open_stream(fz_context *ctx, pdf_obj *ref);
 fz_stream *pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int length, fz_stream *chain, fz_compression_params *params);
 fz_compressed_buffer *pdf_load_compressed_stream(fz_context *ctx, pdf_document *doc, int num);
 void pdf_load_compressed_inline_image(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int length, fz_stream *cstm, int indexed, fz_compressed_image *image);
-fz_stream *pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj *dict, fz_off_t stm_ofs);
+fz_stream *pdf_open_stream_with_offset(fz_context *ctx, pdf_document *doc, int num, pdf_obj *dict, int64_t stm_ofs);
 fz_stream *pdf_open_compressed_stream(fz_context *ctx, fz_compressed_buffer *);
 fz_stream *pdf_open_contents_stream(fz_context *ctx, pdf_document *doc, pdf_obj *obj);
 fz_buffer *pdf_load_stream_truncated(fz_context *ctx, pdf_document *doc, int num, int *truncated);
@@ -115,7 +115,7 @@ void pdf_mark_xref(fz_context *ctx, pdf_document *doc);
 void pdf_clear_xref(fz_context *ctx, pdf_document *doc);
 void pdf_clear_xref_to_mark(fz_context *ctx, pdf_document *doc);
 
-int pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, fz_off_t *tmpofs, pdf_obj **root);
+int pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, int64_t *stmofsp, int *stmlenp, pdf_obj **encrypt, pdf_obj **id, pdf_obj **page, int64_t *tmpofs, pdf_obj **root);
 
 pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum);
 

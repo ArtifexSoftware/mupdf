@@ -1,5 +1,6 @@
 #include "mupdf/fitz.h"
 
+#include <stdio.h>
 #include <jpeglib.h>
 
 #ifndef SHARE_JPEG
