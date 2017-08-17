@@ -140,6 +140,8 @@ fz_new_document_writer(fz_context *ctx, const char *path, const char *format, co
 	if (!fz_strcasecmp(format, "pkm"))
 		return fz_new_pkm_pixmap_writer(ctx, path, options);
 
+	if (!fz_strcasecmp(format, "ps"))
+		return fz_new_ps_writer(ctx, path, options);
 	if (!fz_strcasecmp(format, "pcl"))
 		return fz_new_pcl_writer(ctx, path, options);
 	if (!fz_strcasecmp(format, "pwg"))

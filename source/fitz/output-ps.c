@@ -36,7 +36,8 @@ fz_write_ps_file_header(fz_context *ctx, fz_output *out)
 		);
 }
 
-void fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages)
+void
+fz_write_ps_file_trailer(fz_context *ctx, fz_output *out, int pages)
 {
 	fz_write_printf(ctx, out, "%%%%Trailer\n%%%%Pages: %d\n%%%%EOF\n", pages);
 }
@@ -256,4 +257,86 @@ fz_band_writer *fz_new_ps_band_writer(fz_context *ctx, fz_output *out)
 	writer->super.drop = ps_drop_band_writer;
 
 	return &writer->super;
+}
+
+/* High-level document writer interface */
+
+typedef struct fz_ps_writer_s fz_ps_writer;
+
+struct fz_ps_writer_s
+{
+	fz_document_writer super;
+	fz_draw_options draw;
+	fz_pixmap *pixmap;
+	fz_output *out;
+	int count;
+};
+
+static fz_device *
+ps_begin_page(fz_context *ctx, fz_document_writer *wri_, const fz_rect *mediabox)
+{
+	fz_ps_writer *wri = (fz_ps_writer*)wri_;
+	wri->count++;
+	return fz_new_draw_device_with_options(ctx, &wri->draw, mediabox, &wri->pixmap);
+}
+
+static void
+ps_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
+{
+	fz_ps_writer *wri = (fz_ps_writer*)wri_;
+	fz_pixmap *pix = wri->pixmap;
+	fz_band_writer *bw;
+
+	fz_close_device(ctx, dev);
+	fz_drop_device(ctx, dev);
+
+	bw = fz_new_ps_band_writer(ctx, wri->out);
+	fz_try(ctx)
+	{
+		fz_write_header(ctx, bw, pix->w, pix->h, pix->n, pix->alpha, pix->xres, pix->yres, 0, pix->colorspace, pix->seps);
+		fz_write_band(ctx, bw, pix->stride, pix->h, pix->samples);
+	}
+	fz_always(ctx)
+		fz_drop_band_writer(ctx, bw);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	fz_drop_pixmap(ctx, wri->pixmap);
+	wri->pixmap = NULL;
+}
+
+static void
+ps_close_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_ps_writer *wri = (fz_ps_writer*)wri_;
+	fz_write_ps_file_trailer(ctx, wri->out, wri->count);
+}
+
+static void
+ps_drop_writer(fz_context *ctx, fz_document_writer *wri_)
+{
+	fz_ps_writer *wri = (fz_ps_writer*)wri_;
+	fz_drop_pixmap(ctx, wri->pixmap);
+	fz_drop_output(ctx, wri->out);
+}
+
+fz_document_writer *
+fz_new_ps_writer(fz_context *ctx, const char *path, const char *options)
+{
+	fz_ps_writer *wri = fz_new_derived_document_writer(ctx, fz_ps_writer, ps_begin_page, ps_end_page, ps_close_writer, ps_drop_writer);
+
+	fz_try(ctx)
+	{
+		fz_parse_draw_options(ctx, &wri->draw, options);
+		wri->out = fz_new_output_with_path(ctx, path ? path : "out.ps", 0);
+		fz_write_ps_file_header(ctx, wri->out);
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_output(ctx, wri->out);
+		fz_free(ctx, wri);
+		fz_rethrow(ctx);
+	}
+
+	return (fz_document_writer*)wri;
 }
