@@ -3330,7 +3330,7 @@ int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs)
 
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs)
 {
-	return cs && cs->name ? cs->name : "";
+	return cs ? cs->name : "";
 }
 
 static void
