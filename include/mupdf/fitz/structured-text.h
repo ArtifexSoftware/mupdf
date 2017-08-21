@@ -62,7 +62,7 @@ enum
 };
 
 /*
-	A text block is a list of lines of text, or an image.
+	A text block is a list of lines of text (typically a paragraph), or an image.
 */
 struct fz_stext_block_s
 {
@@ -72,7 +72,7 @@ struct fz_stext_block_s
 		struct { fz_stext_line *first_line, *last_line; } t;
 		struct { fz_matrix transform; fz_image *image; } i;
 	} u;
-	fz_stext_block *next;
+	fz_stext_block *prev, *next;
 };
 
 /*
@@ -84,7 +84,7 @@ struct fz_stext_line_s
 	fz_point dir; /* normalized direction of baseline */
 	fz_rect bbox;
 	fz_stext_char *first_char, *last_char;
-	fz_stext_line *next;
+	fz_stext_line *prev, *next;
 };
 
 /*

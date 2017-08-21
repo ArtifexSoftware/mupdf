@@ -72,6 +72,7 @@ static fz_stext_block *
 add_block_to_page(fz_context *ctx, fz_stext_page *page)
 {
 	fz_stext_block *block = fz_pool_alloc(ctx, page->pool, sizeof *page->first_block);
+	block->prev = page->last_block;
 	if (!page->first_block)
 		page->first_block = page->last_block = block;
 	else
@@ -109,6 +110,7 @@ static fz_stext_line *
 add_line_to_block(fz_context *ctx, fz_stext_page *page, fz_stext_block *block, const fz_point *dir, int wmode)
 {
 	fz_stext_line *line = fz_pool_alloc(ctx, page->pool, sizeof *block->u.t.first_line);
+	line->prev = block->u.t.last_line;
 	if (!block->u.t.first_line)
 		block->u.t.first_line = block->u.t.last_line = line;
 	else
