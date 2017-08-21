@@ -101,31 +101,10 @@ struct fz_stext_char_s
 	fz_stext_char *next;
 };
 
-typedef struct fz_char_and_box_s fz_char_and_box;
-
-struct fz_char_and_box_s
-{
-	int c;
-	fz_rect bbox;
-};
-
 extern const char *fz_stext_options_usage;
 
-fz_char_and_box *fz_stext_char_at(fz_context *ctx, fz_char_and_box *cab, fz_stext_page *page, int idx);
-
-/*
-	fz_stext_char_bbox: Return the bbox of a text char. Calculated from
-	the supplied enclosing line.
-
-	bbox: A place to store the bbox.
-
-	line: The enclosing line.
-
-	ch: The character.
-
-	Returns bbox (updated).
-*/
-fz_rect *fz_stext_char_bbox(fz_context *ctx, fz_rect *bbox, fz_stext_line *line, fz_stext_char *ch);
+int fz_stext_char_count(fz_context *ctx, fz_stext_page *page);
+const fz_stext_char *fz_stext_char_at(fz_context *ctx, fz_stext_page *page, int idx);
 
 /*
 	fz_new_stext_page: Create an empty text page.
