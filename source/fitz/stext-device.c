@@ -34,13 +34,6 @@ const char *fz_stext_options_usage =
 	"\tpreserve-images: keep images in output\n"
 	"\n";
 
-fz_rect *
-fz_stext_char_bbox(fz_context *ctx, fz_rect *bbox, fz_stext_line *line, fz_stext_char *ch)
-{
-	*bbox = ch->bbox;
-	return bbox;
-}
-
 fz_stext_page *
 fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox)
 {

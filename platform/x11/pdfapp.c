@@ -1896,7 +1896,6 @@ void pdfapp_onmouse(pdfapp_t *app, int x, int y, int btn, int modifiers, int sta
 
 void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 {
-	fz_rect hitbox;
 	fz_matrix ctm;
 	fz_stext_page *page = app->page_text;
 	int p, need_newline;
@@ -1925,10 +1924,9 @@ void pdfapp_oncopy(pdfapp_t *app, unsigned short *ucsbuf, int ucslen)
 			for (ch = line->first_char; ch; ch = ch->next)
 			{
 				int c = ch->c;
-				fz_stext_char_bbox(app->ctx, &hitbox, line, ch);
 				if (c < 32)
 					c = 0xFFFD;
-				if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
+				if (ch->bbox.x1 >= x0 && ch->bbox.x0 <= x1 && ch->bbox.y1 >= y0 && ch->bbox.y0 <= y1)
 				{
 					saw_text = 1;
 					if (need_newline)

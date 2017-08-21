@@ -394,7 +394,6 @@ fz_buffer *
 fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *page, const fz_rect *sel, int crlf)
 {
 	fz_buffer *buf;
-	fz_rect hitbox;
 	float x0, y0, x1, y1;
 	fz_stext_block *block;
 	fz_stext_line *line;
@@ -430,10 +429,9 @@ fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *page, const fz_rec
 				for (ch = line->first_char; ch; ch = ch->next)
 				{
 					int c = ch->c;
-					fz_stext_char_bbox(ctx, &hitbox, line, ch);
 					if (c < 32)
 						c = FZ_REPLACEMENT_CHARACTER;
-					if (hitbox.x1 >= x0 && hitbox.x0 <= x1 && hitbox.y1 >= y0 && hitbox.y0 <= y1)
+					if (ch->bbox.x1 >= x0 && ch->bbox.x0 <= x1 && ch->bbox.y1 >= y0 && ch->bbox.y0 <= y1)
 					{
 						saw_text = 1;
 						if (need_newline)
