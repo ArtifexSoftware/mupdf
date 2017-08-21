@@ -178,16 +178,6 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, cons
 	ch->bbox.y0 = min4(p->y + a.y, q->y + a.y, p->y + d.y, q->y + d.y);
 	ch->bbox.y1 = max4(p->y + a.y, q->y + a.y, p->y + d.y, q->y + d.y);
 
-	if (fz_is_empty_rect(&line->bbox))
-		line->bbox = ch->bbox;
-	else
-	{
-		line->bbox.x0 = fz_min(line->bbox.x0, ch->bbox.x0);
-		line->bbox.y0 = fz_min(line->bbox.y0, ch->bbox.y0);
-		line->bbox.x1 = fz_min(line->bbox.x1, ch->bbox.x1);
-		line->bbox.y1 = fz_min(line->bbox.y1, ch->bbox.y1);
-	}
-
 	return ch;
 }
 
@@ -720,11 +710,20 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 	fz_stext_page *page = tdev->page;
 	fz_stext_block *block;
 	fz_stext_line *line;
+	fz_stext_char *ch;
 
 	for (block = page->first_block; block; block = block->next)
+	{
 		if (block->type == FZ_STEXT_BLOCK_TEXT)
+		{
 			for (line = block->u.t.first_line; line; line = line->next)
+			{
+				for (ch = line->first_char; ch; ch = ch->next)
+					fz_union_rect(&line->bbox, &ch->bbox);
 				fz_union_rect(&block->bbox, &line->bbox);
+			}
+		}
+	}
 
 	/* TODO: smart sorting of blocks and lines in reading order */
 	/* TODO: unicode NFC normalization */
