@@ -2229,7 +2229,7 @@ writeobjects(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int pass
 	if (!opts->do_incremental)
 	{
 		fz_write_printf(ctx, opts->out, "%%PDF-%d.%d\n", doc->version / 10, doc->version % 10);
-		fz_write_string(ctx, opts->out, "%%\316\274\341\277\246\n\n");
+		fz_write_string(ctx, opts->out, "%\xC2\xB5\xC2\xB6\n\n");
 	}
 
 	dowriteobject(ctx, doc, opts, opts->start, pass);
