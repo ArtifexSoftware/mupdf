@@ -1822,6 +1822,14 @@ static int is_font_stream(fz_context *ctx, pdf_obj *obj)
 	return 0;
 }
 
+static int is_xml_metadata(fz_context *ctx, pdf_obj *obj)
+{
+	if (pdf_name_eq(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Type), PDF_NAME_Metadata))
+		if (pdf_name_eq(ctx, pdf_dict_get(ctx, obj, PDF_NAME_Subtype), PDF_NAME_XML))
+			return 1;
+	return 0;
+}
+
 static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, int num, int gen, int skip_xrefs)
 {
 	pdf_xref_entry *entry;
@@ -1888,6 +1896,8 @@ static void writeobject(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 				do_deflate = 1, do_expand = 0;
 			if (opts->do_compress_fonts && is_font_stream(ctx, obj))
 				do_deflate = 1, do_expand = 0;
+			if (is_xml_metadata(ctx, obj))
+				do_deflate = 0, do_expand = 0;
 			if (do_expand)
 				expandstream(ctx, doc, opts, obj, num, gen, do_deflate);
 			else

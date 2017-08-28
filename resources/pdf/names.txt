@@ -247,6 +247,7 @@ Matrix
 Matte
 MaxLen
 MediaBox
+Metadata
 MissingWidth
 ModDate
 Movie
@@ -402,6 +403,7 @@ Widths
 WinAnsiEncoding
 Wipe
 XHeight
+XML
 XObject
 XRef
 XRefStm
