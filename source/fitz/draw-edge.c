@@ -275,9 +275,6 @@ sort_gel(fz_context *ctx, fz_gel *gel)
 	if (n > 10000)
 	{
 		qsort(a, n, sizeof *a, cmpedge);
-#ifdef DUMP_GELS
-		fz_dump_gel(gel);
-#endif
 		return;
 	}
 
@@ -307,10 +304,6 @@ sort_gel(fz_context *ctx, fz_gel *gel)
 		}
 		h /= 3;
 	}
-
-#ifdef DUMP_GELS
-	fz_dump_gel(gel);
-#endif
 }
 
 static int
