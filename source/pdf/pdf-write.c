@@ -1688,9 +1688,7 @@ static void copystream(fz_context *ctx, pdf_document *doc, pdf_write_state *opts
 	pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
 	fz_write_string(ctx, opts->out, "\nstream\n");
 	fz_write_data(ctx, opts->out, data, len);
-	if (len > 0 && data[len-1] != '\n')
-		fz_write_byte(ctx, opts->out, '\n');
-	fz_write_string(ctx, opts->out, "endstream\nendobj\n\n");
+	fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
@@ -1753,9 +1751,7 @@ static void expandstream(fz_context *ctx, pdf_document *doc, pdf_write_state *op
 	pdf_print_obj(ctx, opts->out, obj, opts->do_tight);
 	fz_write_string(ctx, opts->out, "\nstream\n");
 	fz_write_data(ctx, opts->out, data, len);
-	if (len > 0 && data[len-1] != '\n')
-		fz_write_byte(ctx, opts->out, '\n');
-	fz_write_string(ctx, opts->out, "endstream\nendobj\n\n");
+	fz_write_string(ctx, opts->out, "\nendstream\nendobj\n\n");
 
 	fz_drop_buffer(ctx, buf);
 	pdf_drop_obj(ctx, obj);
