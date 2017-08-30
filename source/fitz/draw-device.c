@@ -254,7 +254,15 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 		fz_clear_pixmap(ctx, shape);
 	}
 #ifdef DUMP_GROUP_BLENDS
-	dump_spaces(dev->top-1, "Knockout begin\n");
+	dump_spaces(dev->top-1, "");
+	{
+		char text[80];
+		sprintf(text, "Knockout begin%s: background is ", isolated ? " (isolated)" : "");
+		fz_dump_blend(ctx, text, dest);
+	}
+	if (shape)
+		fz_dump_blend(ctx, "/", shape);
+	printf("\n");
 #endif
 	state[1].scissor = bbox;
 	state[1].dest = dest;
@@ -2138,7 +2146,25 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_co
 
 		state[1].alpha = alpha;
 #ifdef DUMP_GROUP_BLENDS
-		dump_spaces(dev->top-1, "Group begin\n");
+		dump_spaces(dev->top-1, "");
+		{
+			char text[240];
+			char atext[80];
+			char btext[80];
+			if (alpha != 1)
+				sprintf(atext, " (alpha=%g)", alpha);
+			else
+				atext[0] = 0;
+			if (blendmode != 0)
+				sprintf(btext, " (blendmode=%d)", blendmode);
+			else
+				btext[0] = 0;
+			sprintf(text, "Group begin%s%s%s%s: background is ", isolated ? " (isolated)" : "", knockout ? " (knockout)" : "", atext, btext);
+			fz_dump_blend(ctx, text, state[1].dest);
+		}
+		if (state[1].shape)
+			fz_dump_blend(ctx, "/", state[1].shape);
+		printf("\n");
 #endif
 
 		state[1].scissor = bbox;
