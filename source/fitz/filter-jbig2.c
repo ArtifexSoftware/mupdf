@@ -358,7 +358,7 @@ static void *fz_jbig2_alloc(Jbig2Allocator *allocator, size_t size)
 static void fz_jbig2_free(Jbig2Allocator *allocator, void *p)
 {
 	fz_context *ctx = ((struct fz_jbig2_alloc_s *) allocator)->ctx;
-	return fz_free(ctx, p);
+	fz_free(ctx, p);
 }
 
 static void *fz_jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size)
