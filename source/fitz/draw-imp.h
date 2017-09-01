@@ -454,8 +454,8 @@ fz_solid_color_painter_t *fz_get_solid_color_painter(int n, const unsigned char 
 fz_span_painter_t *fz_get_span_painter(int da, int sa, int n, int alpha, const fz_overprint * restrict eop);
 fz_span_color_painter_t *fz_get_span_color_painter(int n, int da, const unsigned char * restrict color, const fz_overprint * restrict eop);
 
-void fz_paint_image(fz_pixmap * restrict dst, const fz_irect * restrict scissor, fz_pixmap * restrict shape, const fz_pixmap * restrict img, const fz_matrix * restrict ctm, int alpha, int lerp_allowed, int gridfit_as_tiled, const fz_overprint * restrict eop);
-void fz_paint_image_with_color(fz_pixmap * restrict dst, const fz_irect * restrict scissor, fz_pixmap *restrict shape, const fz_pixmap * restrict img, const fz_matrix * restrict ctm, const unsigned char * restrict colorbv, int lerp_allowed, int gridfit_as_tiled, const fz_overprint * restrict eop);
+void fz_paint_image(fz_pixmap * restrict dst, const fz_irect * restrict scissor, fz_pixmap * restrict shape, fz_pixmap * restrict group_alpha, const fz_pixmap * restrict img, const fz_matrix * restrict ctm, int alpha, int lerp_allowed, int gridfit_as_tiled, const fz_overprint * restrict eop);
+void fz_paint_image_with_color(fz_pixmap * restrict dst, const fz_irect * restrict scissor, fz_pixmap *restrict shape, fz_pixmap * restrict group_alpha, const fz_pixmap * restrict img, const fz_matrix * restrict ctm, const unsigned char * restrict colorbv, int lerp_allowed, int gridfit_as_tiled, const fz_overprint * restrict eop);
 
 void fz_paint_pixmap(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha);
 void fz_paint_pixmap_alpha(fz_pixmap * restrict dst, const fz_pixmap * restrict src, int alpha);
