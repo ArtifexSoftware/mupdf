@@ -485,6 +485,10 @@ tarball:
 
 # --- Clean and Default ---
 
+WATCH_SRCS := $(shell find include source platform -type f -name '*.[ch]')
+watch:
+	@ while ! inotifywait -q -e modify $(WATCH_SRCS) ; do time -p $(MAKE) ; done
+
 java:
 	$(MAKE) -C platform/java
 
