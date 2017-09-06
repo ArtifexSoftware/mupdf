@@ -57,25 +57,15 @@ void fz_var_imp(void *);
 	attention to the man behind the curtain.
 */
 
-#define fz_try(ctx) \
-	{ \
-		if (fz_push_try(ctx)) { \
-			if (fz_setjmp((ctx)->error->top->buffer) == 0) do \
+void *fz_push_try(fz_context *ctx);
+int fz_do_try(fz_context *ctx);
+int fz_do_always(fz_context *ctx);
+int fz_do_catch(fz_context *ctx);
 
-#define fz_always(ctx) \
-			while (0); \
-		} \
-		if (ctx->error->top->code < 3) { \
-			ctx->error->top->code++; \
-			do \
+#define fz_try(ctx) if (!fz_setjmp(fz_push_try(ctx))) if (fz_do_try(ctx)) do
+#define fz_always(ctx) while (0); if (fz_do_always(ctx)) do
+#define fz_catch(ctx) while (0); if (fz_do_catch(ctx))
 
-#define fz_catch(ctx) \
-			while (0); \
-		} \
-	} \
-	if ((ctx->error->top--)->code > 1)
-
-int fz_push_try(fz_context *ctx);
 FZ_NORETURN void fz_vthrow(fz_context *ctx, int errcode, const char *, va_list ap);
 FZ_NORETURN void fz_throw(fz_context *ctx, int errcode, const char *, ...) FZ_PRINTFLIKE(3,4);
 FZ_NORETURN void fz_rethrow(fz_context *ctx);
