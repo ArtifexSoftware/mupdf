@@ -4519,13 +4519,6 @@ int murun_main(int argc, char **argv)
 	}
 	js_setregistry(J, "pdf_document");
 
-	js_getregistry(J, "pdf_graft_map");
-	js_newobjectx(J);
-	{
-		jsB_propfun(J, "PDFGraftMap.graftObject", ffi_PDFGraftMap_graftObject, 1);
-	}
-	js_setregistry(J, "pdf_graft_map");
-
 	js_getregistry(J, "fz_page");
 	js_newobjectx(J);
 	{
