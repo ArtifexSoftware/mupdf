@@ -1250,3 +1250,103 @@ fz_blend_pixmap(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict 
 		verify_premultiply(ctx, dst);
 #endif
 }
+
+static inline void
+fz_blend_knockout(byte * restrict bp, int bal, const byte * restrict sp, int sal, int n1, int w, const byte * restrict hp)
+{
+	int k;
+	do
+	{
+		int ha = *hp++;
+
+		if (ha != 0)
+		{
+			int sa = (sal ? sp[n1] : 255);
+			int ba = (bal ? bp[n1] : 255);
+			if (ba == 0 && ha == 0xFF)
+			{
+				memcpy(bp, sp, n1);
+				if (bal)
+					bp[n1] = sa;
+			}
+			else
+			{
+				int hasa = fz_mul255(ha, sa);
+				/* ugh, division to get non-premul components */
+				int invsa = sa ? 255 * 256 / sa : 0;
+				int invba = ba ? 255 * 256 / ba : 0;
+				int ra = hasa + fz_mul255(255-ha, ba);
+
+				/* Process colorants + spots */
+				for (k = 0; k < n1; k++)
+				{
+					int sc = (sp[k] * invsa) >> 8;
+					int bc = (bp[k] * invba) >> 8;
+					int rc = fz_mul255(255 - ha, bc) + fz_mul255(ha, sc);
+
+					bp[k] = fz_mul255(ra, rc);
+				}
+
+				if (bal)
+					bp[k] = ra;
+			}
+		}
+		sp += n1 + sal;
+		bp += n1 + bal;
+	}
+	while (--w);
+}
+
+void
+fz_blend_pixmap_knockout(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict src, const fz_pixmap * restrict shape)
+{
+	unsigned char *sp;
+	unsigned char *dp;
+	fz_irect bbox;
+	fz_irect bbox2;
+	int x, y, w, h, n;
+	int da, sa;
+	const unsigned char *hp;
+
+	fz_pixmap_bbox_no_ctx(dst, &bbox);
+	fz_pixmap_bbox_no_ctx(src, &bbox2);
+	fz_intersect_irect(&bbox, &bbox2);
+
+	x = bbox.x0;
+	y = bbox.y0;
+	w = bbox.x1 - bbox.x0;
+	h = bbox.y1 - bbox.y0;
+
+	if (w == 0 || h == 0)
+		return;
+
+	n = src->n;
+	sp = src->samples + (unsigned int)((y - src->y) * src->stride + (x - src->x) * src->n);
+	sa = src->alpha;
+	dp = dst->samples + (unsigned int)((y - dst->y) * dst->stride + (x - dst->x) * dst->n);
+	da = dst->alpha;
+	hp = shape->samples + (unsigned int)((y - shape->y) * shape->stride + (x - shape->x));
+
+#ifdef PARANOID_PREMULTIPLY
+	if (sa)
+		verify_premultiply(ctx, src);
+	if (da)
+		verify_premultiply(ctx, dst);
+#endif
+
+	n -= sa;
+	assert(n == dst->n - da);
+
+	while (h--)
+	{
+		fz_blend_knockout(dp, da, sp, sa, n, w, hp);
+		sp += src->stride;
+		dp += dst->stride;
+		hp += shape->stride;
+	}
+
+#ifdef PARANOID_PREMULTIPLY
+	if (da)
+		verify_premultiply(ctx, dst);
+#endif
+}

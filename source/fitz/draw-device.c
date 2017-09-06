@@ -195,8 +195,9 @@ static void emergency_pop_stack(fz_context *ctx, fz_draw_device *dev, fz_draw_st
 static fz_draw_state *
 fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 {
-	fz_irect bbox;
+	fz_irect bbox, ga_bbox;
 	fz_pixmap *dest, *shape;
+	fz_pixmap *ga = NULL;
 	fz_draw_state *state = &dev->stack[dev->top];
 	int isolated = state->blendmode & FZ_BLEND_ISOLATED;
 
@@ -209,26 +210,47 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 	fz_pixmap_bbox(ctx, state->dest, &bbox);
 	fz_intersect_irect(&bbox, &state->scissor);
 	dest = fz_new_pixmap_with_bbox(ctx, state->dest->colorspace, &bbox, state->dest->seps, state->dest->alpha);
+	if (state[0].group_alpha)
+	{
+		fz_pixmap_bbox(ctx, state->group_alpha, &ga_bbox);
+		fz_intersect_irect(&ga_bbox, &state->scissor);
+		ga = fz_new_pixmap_with_bbox(ctx, state->group_alpha->colorspace, &ga_bbox, state->group_alpha->seps, state->group_alpha->alpha);
+	}
 
 	if (isolated)
 	{
 		fz_clear_pixmap(ctx, dest);
+		if (ga)
+			fz_clear_pixmap(ctx, ga);
 	}
 	else
 	{
 		/* Find the last but one destination to copy */
 		int i = dev->top-1; /* i = the one on entry (i.e. the last one) */
-		fz_pixmap *prev = state->dest;
+		fz_draw_state *prev = state;
 		while (i > 0)
 		{
-			prev = dev->stack[--i].dest;
-			if (prev != state->dest)
+			prev = &dev->stack[--i];
+			if (prev->dest != state->dest)
 				break;
 		}
-		if (prev)
-			fz_copy_pixmap_rect(ctx, dest, prev, &bbox, dev->default_cs);
+		if (prev->dest)
+		{
+			fz_copy_pixmap_rect(ctx, dest, prev->dest, &bbox, dev->default_cs);
+			if (ga)
+			{
+				if (prev->group_alpha)
+					fz_copy_pixmap_rect(ctx, ga, prev->group_alpha, &ga_bbox, dev->default_cs);
+				else
+					fz_clear_pixmap(ctx, ga);
+			}
+		}
 		else
+		{
 			fz_clear_pixmap(ctx, dest);
+			if (ga)
+				fz_clear_pixmap(ctx, ga);
+		}
 	}
 
 	/* Knockout groups (and only knockout groups) rely on shape */
@@ -239,8 +261,11 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 	fz_dump_blend(ctx, "Knockout begin: background is ", dest);
 	if (shape)
 		fz_dump_blend(ctx, "/S=", shape);
+	if (ga)
+		fz_dump_blend(ctx, "/GA=", ga);
 	printf("\n");
 #endif
+	state[1].group_alpha = ga;
 	state[1].scissor = bbox;
 	state[1].dest = dest;
 	state[1].shape = shape;
@@ -252,8 +277,6 @@ fz_knockout_begin(fz_context *ctx, fz_draw_device *dev)
 static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 {
 	fz_draw_state *state;
-	int blendmode;
-	int isolated;
 
 	if (dev->top == 0)
 	{
@@ -265,8 +288,8 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 	if ((state[0].blendmode & FZ_BLEND_KNOCKOUT) == 0)
 		return;
 
-	blendmode = state->blendmode & FZ_BLEND_MODEMASK;
-	isolated = state->blendmode & FZ_BLEND_ISOLATED;
+	assert((state[1].blendmode & FZ_BLEND_ISOLATED) == 0);
+	assert((state[1].blendmode & FZ_BLEND_MODEMASK) == 0);
 
 #ifdef DUMP_GROUP_BLENDS
 	dump_spaces(dev->top, "");
@@ -280,31 +303,31 @@ static void fz_knockout_end(fz_context *ctx, fz_draw_device *dev)
 		fz_dump_blend(ctx, "/S=", state[0].shape);
 	if (state[0].group_alpha)
 		fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
-	if (blendmode != 0)
-		printf(" (blend %d)", blendmode);
-	if (isolated != 0)
+	if ((state->blendmode & FZ_BLEND_MODEMASK) != 0)
+		printf(" (blend %d)", state->blendmode & FZ_BLEND_MODEMASK);
+	if ((state->blendmode & FZ_BLEND_ISOLATED) != 0)
 		printf(" (isolated)");
 	printf(" (knockout)");
 #endif
 	assert(state[1].shape);
-	fz_blend_pixmap(ctx, state[0].dest, state[1].dest, 255, blendmode, 0, state[1].shape);
+	fz_blend_pixmap_knockout(ctx, state[0].dest, state[1].dest, state[1].shape);
 
 	/* The following test should not be required, but just occasionally
 	 * errors can cause the stack to get out of sync, and this saves our
 	 * bacon. */
 	if (state[0].dest != state[1].dest)
 		fz_drop_pixmap(ctx, state[1].dest);
+	if (state[1].group_alpha && state[0].group_alpha != state[1].group_alpha)
+	{
+		if (state[0].group_alpha)
+			fz_blend_pixmap_knockout(ctx, state[0].group_alpha, state[1].group_alpha, state[1].shape);
+		fz_drop_pixmap(ctx, state[1].group_alpha);
+	}
 	if (state[0].shape != state[1].shape)
 	{
 		if (state[0].shape)
 			fz_paint_pixmap(state[0].shape, state[1].shape, 255);
 		fz_drop_pixmap(ctx, state[1].shape);
-	}
-	if (state[0].group_alpha != state[1].group_alpha)
-	{
-		if (state[0].group_alpha)
-			fz_paint_pixmap(state[0].group_alpha, state[1].group_alpha, 255);
-		fz_drop_pixmap(ctx, state[1].group_alpha);
 	}
 #ifdef DUMP_GROUP_BLENDS
 	fz_dump_blend(ctx, " to get ", state[0].dest);
@@ -2260,6 +2283,7 @@ fz_draw_begin_group(fz_context *ctx, fz_device *devp, const fz_rect *rect, fz_co
 			fz_clear_pixmap(ctx, state[1].group_alpha);
 		}
 
+		/* shape is inherited from the previous group */
 		state[1].alpha = alpha;
 #ifdef DUMP_GROUP_BLENDS
 		dump_spaces(dev->top-1, "");
@@ -2349,12 +2373,14 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 
 	if (state[0].shape != state[1].shape)
 	{
+		/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf goes wrong if this
+		 * isn't alpha * 255, as the blend back fails to take account of alpha. */
 		if (state[0].shape)
 		{
 			if (state[1].shape)
-				fz_paint_pixmap(state[0].shape, state[1].shape, 255);
+				fz_paint_pixmap(state[0].shape, state[1].shape, alpha * 255);
 			else
-				fz_paint_pixmap_alpha(state[0].shape, state[1].dest, 255);
+				fz_paint_pixmap_alpha(state[0].shape, state[1].dest, alpha * 255);
 		}
 		fz_drop_pixmap(ctx, state[1].shape);
 	}

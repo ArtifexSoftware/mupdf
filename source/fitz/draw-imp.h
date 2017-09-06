@@ -464,6 +464,7 @@ void fz_paint_pixmap_with_bbox(fz_pixmap * restrict dst, const fz_pixmap * restr
 void fz_paint_pixmap_with_overprint(fz_pixmap * restrict dst, const fz_pixmap * restrict src, const fz_overprint *op);
 
 void fz_blend_pixmap(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict src, int alpha, int blendmode, int isolated, const fz_pixmap * restrict shape);
+void fz_blend_pixmap_knockout(fz_context *ctx, fz_pixmap * restrict dst, fz_pixmap * restrict src, const fz_pixmap * restrict shape);
 
 void fz_paint_glyph(const unsigned char * restrict colorbv, fz_pixmap * restrict dst, unsigned char * restrict dp, const fz_glyph * restrict glyph, int w, int h, int skip_x, int skip_y, const fz_overprint * restrict eop);
 
