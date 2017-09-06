@@ -333,10 +333,6 @@ extern void __gnu_mcount_nc(void);
 #endif
 
 #ifdef CLUSTER
-#define LOCAL_TRIG_FNS
-#endif
-
-#ifdef LOCAL_TRIG_FNS
 /*
  * Trig functions
  */
