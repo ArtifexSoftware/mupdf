@@ -1801,7 +1801,7 @@ int pdf_obj_parent_num(fz_context *ctx, pdf_obj *obj)
 
 pdf_obj *pdf_new_obj_from_str(fz_context *ctx, pdf_document *doc, const char *src)
 {
-	pdf_obj *result;
+	pdf_obj *result = NULL;
 	pdf_lexbuf lexbuf;
 	fz_stream *stream = fz_open_memory(ctx, (unsigned char *)src, strlen(src));
 

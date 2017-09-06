@@ -443,7 +443,7 @@ pdf_load_raw_stream_number(fz_context *ctx, pdf_document *doc, int num)
 	fz_stream *stm;
 	pdf_obj *dict;
 	int len;
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	pdf_xref_entry *x;
 
 	if (num > 0 && num < pdf_xref_len(ctx, doc))

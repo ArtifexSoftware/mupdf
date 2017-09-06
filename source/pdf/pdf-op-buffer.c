@@ -928,7 +928,7 @@ pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahxencode)
 pdf_processor *
 pdf_new_buffer_processor(fz_context *ctx, fz_buffer *buffer, int ahxencode)
 {
-	pdf_processor *proc;
+	pdf_processor *proc = NULL;
 	fz_output *out = fz_new_output_with_buffer(ctx, buffer);
 	fz_try(ctx)
 	{

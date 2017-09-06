@@ -614,7 +614,7 @@ int pdf_add_portfolio_entry(fz_context *ctx, pdf_document *doc,
 				const char *filename, int filename_len,
 				const char *unifile, int unifile_len, fz_buffer *buf)
 {
-	int entry, len;
+	int len, entry = 0;
 	pdf_obj *ef, *f, *params, *s;
 	pdf_obj *key;
 	pdf_obj *val = NULL;

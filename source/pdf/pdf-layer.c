@@ -617,7 +617,7 @@ pdf_is_hidden_ocg(fz_context *ctx, pdf_ocg_descriptor *desc, pdf_obj *rdb, const
 	{
 		/* An Optional Content Membership Dictionary */
 		pdf_obj *name;
-		int combine, on;
+		int combine, on = 0;
 
 		obj = pdf_dict_get(ctx, ocg, PDF_NAME_VE);
 		if (pdf_is_array(ctx, obj)) {

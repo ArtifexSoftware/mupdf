@@ -676,7 +676,7 @@ pdf_xref_size_from_old_trailer(fz_context *ctx, pdf_document *doc, pdf_lexbuf *b
 	fz_off_t t;
 	pdf_token tok;
 	int c;
-	int size;
+	int size = 0;
 	fz_off_t ofs;
 	pdf_obj *trailer = NULL;
 	size_t n;
@@ -969,7 +969,7 @@ pdf_read_new_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	pdf_obj *trailer = NULL;
 	pdf_obj *index = NULL;
 	pdf_obj *obj = NULL;
-	int num, gen;
+	int gen, num = 0;
 	fz_off_t ofs, stm_ofs;
 	int size, w0, w1, w2;
 	int t;
@@ -2663,7 +2663,7 @@ pdf_add_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 pdf_obj *
 pdf_add_object_drop(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 	fz_try(ctx)
 		ind = pdf_add_object(ctx, doc, obj);
 	fz_always(ctx)

@@ -52,7 +52,7 @@ pdf_repair_obj(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf, fz_off_t *st
 
 	if (tok == PDF_TOK_OPEN_DICT)
 	{
-		pdf_obj *dict, *obj;
+		pdf_obj *obj, *dict = NULL;
 
 		fz_try(ctx)
 		{

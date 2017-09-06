@@ -30,7 +30,7 @@ pdf_load_type3_font(fz_context *ctx, pdf_document *doc, pdf_obj *rdb, pdf_obj *d
 	int i, k, n;
 	fz_rect bbox;
 	fz_matrix matrix;
-	fz_font *font;
+	fz_font *font = NULL;
 
 	fz_var(fontdesc);
 

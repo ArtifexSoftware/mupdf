@@ -38,7 +38,7 @@ fz_stext_page *
 fz_new_stext_page(fz_context *ctx, const fz_rect *mediabox)
 {
 	fz_pool *pool = fz_new_pool(ctx);
-	fz_stext_page *page;
+	fz_stext_page *page = NULL;
 	fz_try(ctx)
 	{
 		page = fz_pool_alloc(ctx, pool, sizeof(*page));
@@ -588,7 +588,7 @@ fz_new_image_from_shade(fz_context *ctx, fz_shade *shade, fz_matrix *in_out_ctm,
 {
 	fz_matrix ctm = *in_out_ctm;
 	fz_pixmap *pix;
-	fz_image *img;
+	fz_image *img = NULL;
 	fz_rect bounds;
 	fz_irect bbox;
 

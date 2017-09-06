@@ -61,7 +61,7 @@ xps_parse_remote_resource_dictionary(fz_context *ctx, xps_document *doc, char *b
 	char part_uri[1024];
 	xps_resource *dict;
 	xps_part *part;
-	fz_xml *xml;
+	fz_xml *xml = NULL;
 	char *s;
 
 	/* External resource dictionaries MUST NOT reference other resource dictionaries */

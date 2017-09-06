@@ -160,7 +160,7 @@ xps_open_document(fz_context *ctx, const char *filename)
 	char buf[2048];
 	fz_stream *file;
 	char *p;
-	fz_document *doc;
+	fz_document *doc = NULL;
 
 	if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
 	{

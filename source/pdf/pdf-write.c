@@ -648,7 +648,7 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 		for (other = 1; other < num; other++)
 		{
 			pdf_obj *a, *b;
-			int differ, newnum, streama, streamb;
+			int newnum, streama = 0, streamb = 0, differ = 0;
 
 			if (num == other || !opts->use_list[num] || !opts->use_list[other])
 				continue;

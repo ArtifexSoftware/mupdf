@@ -83,8 +83,8 @@ static fz_outline *
 xps_load_document_structure(fz_context *ctx, xps_document *doc, xps_fixdoc *fixdoc)
 {
 	xps_part *part;
-	fz_xml *root;
-	fz_outline *outline;
+	fz_xml *root = NULL;
+	fz_outline *outline = NULL;
 
 	part = xps_read_part(ctx, doc, fixdoc->outline);
 	fz_try(ctx)
@@ -123,7 +123,7 @@ xps_load_outline(fz_context *ctx, fz_document *doc_)
 {
 	xps_document *doc = (xps_document*)doc_;
 	xps_fixdoc *fixdoc;
-	fz_outline *head = NULL, *tail, *outline;
+	fz_outline *head = NULL, *tail, *outline = NULL;
 
 	for (fixdoc = doc->first_fixdoc; fixdoc; fixdoc = fixdoc->next)
 	{

@@ -892,7 +892,7 @@ fz_pixmap *
 fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs)
 {
 	fz_jpxd state = { 0 };
-	fz_pixmap *pix;
+	fz_pixmap *pix = NULL;
 
 	fz_try(ctx)
 	{

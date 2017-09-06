@@ -16,7 +16,7 @@ fz_file_exists(fz_context *ctx, const char *path)
 fz_stream *
 fz_new_stream(fz_context *ctx, void *state, fz_stream_next_fn *next, fz_stream_close_fn *close)
 {
-	fz_stream *stm;
+	fz_stream *stm = NULL;
 
 	fz_try(ctx)
 	{

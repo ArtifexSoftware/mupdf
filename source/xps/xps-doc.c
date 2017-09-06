@@ -329,7 +329,7 @@ static fz_xml *
 xps_load_fixed_page(fz_context *ctx, xps_document *doc, xps_fixpage *page)
 {
 	xps_part *part;
-	fz_xml *root;
+	fz_xml *root = NULL;
 	char *width_att;
 	char *height_att;
 

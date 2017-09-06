@@ -166,7 +166,7 @@ base_devicen(const fz_colorspace *cs)
 static fz_colorspace *
 load_devicen(fz_context *ctx, pdf_obj *array)
 {
-	fz_colorspace *cs;
+	fz_colorspace *cs = NULL;
 	struct devicen *devn = NULL;
 	pdf_obj *nameobj = pdf_array_get(ctx, array, 1);
 	pdf_obj *baseobj = pdf_array_get(ctx, array, 2);

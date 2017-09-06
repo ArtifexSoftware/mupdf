@@ -2311,7 +2311,7 @@ load_fb2_images(fz_context *ctx, fz_xml *root)
 		const char *id = fz_xml_att(binary, "id");
 		char *b64 = NULL;
 		fz_buffer *buf = NULL;
-		fz_image *img;
+		fz_image *img = NULL;
 
 		fz_var(b64);
 		fz_var(buf);
@@ -2673,7 +2673,7 @@ fz_html *
 fz_parse_html(fz_context *ctx, fz_html_font_set *set, fz_archive *zip, const char *base_uri, fz_buffer *buf, const char *user_css)
 {
 	fz_xml *xml;
-	fz_html *html;
+	fz_html *html = NULL;
 
 	fz_css_match match;
 	struct genstate g;

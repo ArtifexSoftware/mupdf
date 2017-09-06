@@ -312,7 +312,7 @@ pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *page)
 int
 pdf_lookup_anchor(fz_context *ctx, pdf_document *doc, const char *name, float *xp, float *yp)
 {
-	pdf_obj *needle, *dest;
+	pdf_obj *needle, *dest = NULL;
 	char *uri;
 
 	if (xp) *xp = 0;
@@ -342,7 +342,7 @@ static pdf_obj *
 pdf_lookup_inherited_page_item(fz_context *ctx, pdf_obj *node, pdf_obj *key)
 {
 	pdf_obj *node2 = node;
-	pdf_obj *val;
+	pdf_obj *val = NULL;
 
 	/* fz_var(node); Not required as node passed in */
 

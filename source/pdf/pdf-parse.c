@@ -186,7 +186,7 @@ pdf_load_stream_as_utf8(fz_context *ctx, pdf_obj *src)
 	fz_buffer *stmbuf;
 	unsigned char *srcptr;
 	size_t srclen;
-	char *dst;
+	char *dst = NULL;
 
 	stmbuf = pdf_load_stream(ctx, src);
 	srclen = fz_buffer_storage(ctx, stmbuf, &srcptr);

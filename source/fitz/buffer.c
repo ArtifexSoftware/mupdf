@@ -31,7 +31,7 @@ fz_new_buffer(fz_context *ctx, size_t size)
 fz_buffer *
 fz_new_buffer_from_data(fz_context *ctx, unsigned char *data, size_t size)
 {
-	fz_buffer *b;
+	fz_buffer *b = NULL;
 
 	fz_try(ctx)
 	{

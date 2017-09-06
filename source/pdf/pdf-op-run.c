@@ -1218,7 +1218,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 	pdf_obj *resources;
 	fz_rect xobj_bbox;
 	fz_matrix xobj_matrix;
-	int transparency;
+	int transparency = 0;
 	pdf_document *doc;
 	fz_colorspace *cs = NULL;
 

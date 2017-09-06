@@ -115,7 +115,7 @@ img_open_document_with_stream(fz_context *ctx, fz_stream *stm)
 {
 	fz_buffer *buffer = NULL;
 	fz_image *image = NULL;
-	img_document *doc;
+	img_document *doc = NULL;
 
 	fz_var(buffer);
 	fz_var(image);

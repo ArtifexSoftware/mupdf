@@ -245,7 +245,7 @@ pdf_load_link(fz_context *ctx, pdf_document *doc, pdf_obj *dict, int pagenum, co
 	pdf_obj *obj;
 	fz_rect bbox;
 	char *uri;
-	fz_link *link;
+	fz_link *link = NULL;
 
 	obj = pdf_dict_get(ctx, dict, PDF_NAME_Subtype);
 	if (!pdf_name_eq(ctx, obj, PDF_NAME_Link))

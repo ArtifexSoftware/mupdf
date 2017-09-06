@@ -756,7 +756,7 @@ static void ffi_pushbuffer(js_State *J, fz_buffer *buf)
 static fz_buffer *ffi_tobuffer(js_State *J, int idx)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 
 	if (js_isuserdata(J, idx, "fz_buffer"))
 		buf = fz_keep_buffer(ctx, js_touserdata(J, idx, "fz_buffer"));
@@ -1453,7 +1453,7 @@ static void ffi_readFile(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	const char *filename = js_tostring(J, 1);
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	fz_try(ctx)
 		buf = fz_read_file(ctx, filename);
 	fz_catch(ctx)
@@ -1477,7 +1477,7 @@ static void ffi_new_Buffer(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	int n = js_isdefined(J, 1) ? js_tonumber(J, 1) : 0;
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	fz_try(ctx)
 		buf = fz_new_buffer(ctx, n);
 	fz_catch(ctx)
@@ -1561,7 +1561,7 @@ static void ffi_new_Document(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	const char *filename = js_tostring(J, 1);
-	fz_document *doc;
+	fz_document *doc = NULL;
 
 	fz_try(ctx)
 		doc = fz_open_document(ctx, filename);
@@ -1580,7 +1580,7 @@ static void ffi_Document_countPages(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
-	int count;
+	int count = 0;
 
 	fz_try(ctx)
 		count = fz_count_pages(ctx, doc);
@@ -1595,7 +1595,7 @@ static void ffi_Document_loadPage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
 	int number = js_tointeger(J, 1);
-	fz_page *page;
+	fz_page *page = NULL;
 
 	fz_try(ctx)
 		page = fz_load_page(ctx, doc, number);
@@ -1609,7 +1609,7 @@ static void ffi_Document_needsPassword(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
-	int b;
+	int b = 0;
 
 	fz_try(ctx)
 		b = fz_needs_password(ctx, doc);
@@ -1624,7 +1624,7 @@ static void ffi_Document_authenticatePassword(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
 	const char *password = js_tostring(J, 1);
-	int b;
+	int b = 0;
 
 	fz_try(ctx)
 		b = fz_authenticate_password(ctx, doc, password);
@@ -1653,7 +1653,7 @@ static void ffi_Document_isReflowable(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
-	int is_reflowable;
+	int is_reflowable = 0;
 
 	fz_try(ctx)
 		is_reflowable = fz_is_document_reflowable(ctx, doc);
@@ -1716,7 +1716,7 @@ static void ffi_Document_loadOutline(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_document *doc = ffi_todocument(J, 0);
-	fz_outline *outline;
+	fz_outline *outline = NULL;
 
 	fz_try(ctx)
 		outline = fz_load_outline(ctx, doc);
@@ -1786,7 +1786,7 @@ static void ffi_Page_toDisplayList(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
 	int no_annots = js_isdefined(J, 1) ? js_toboolean(J, 1) : 0;
-	fz_display_list *list;
+	fz_display_list *list = NULL;
 
 	fz_try(ctx)
 		if (no_annots)
@@ -1808,7 +1808,7 @@ static void ffi_Page_toPixmap(js_State *J)
 	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
 	int alpha = js_toboolean(J, 3);
 	int no_annots = js_isdefined(J, 4) ? js_toboolean(J, 4) : 0;
-	fz_pixmap *pixmap;
+	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
 		if (no_annots)
@@ -1828,7 +1828,7 @@ static void ffi_Page_toStructuredText(js_State *J)
 	fz_page *page = ffi_topage(J, 0);
 	const char *options = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	fz_stext_options so;
-	fz_stext_page *text;
+	fz_stext_page *text = NULL;
 
 	fz_try(ctx) {
 		fz_parse_stext_options(ctx, &so, options);
@@ -1847,7 +1847,7 @@ static void ffi_Page_search(js_State *J)
 	fz_page *page = ffi_topage(J, 0);
 	const char *needle = js_tostring(J, 1);
 	fz_rect hits[256];
-	int i, n;
+	int i, n = 0;
 
 	fz_try(ctx)
 		n = fz_search_page(ctx, page, needle, hits, nelem(hits));
@@ -1865,7 +1865,7 @@ static void ffi_Page_getAnnotations(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
-	fz_annot *annot;
+	fz_annot *annot = NULL;
 	int i = 0;
 
 	js_newarray(J);
@@ -1890,7 +1890,7 @@ static void ffi_Page_getLinks(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_page *page = ffi_topage(J, 0);
-	fz_link *links, *link;
+	fz_link *link, *links = NULL;
 	int i = 0;
 
 	js_newarray(J);
@@ -1966,7 +1966,7 @@ static void ffi_Annotation_toDisplayList(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_annot *annot = ffi_toannot(J, 0);
-	fz_display_list *list;
+	fz_display_list *list = NULL;
 
 	fz_try(ctx)
 		list = fz_new_display_list_from_annot(ctx, annot);
@@ -1984,7 +1984,7 @@ static void ffi_Annotation_toPixmap(js_State *J)
 	fz_matrix ctm = ffi_tomatrix(J, 1);
 	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
 	int alpha = js_toboolean(J, 3);
-	fz_pixmap *pixmap;
+	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
 		pixmap = fz_new_pixmap_from_annot(ctx, annot, &ctm, colorspace, alpha);
@@ -2015,7 +2015,7 @@ static void ffi_new_Pixmap(js_State *J)
 	fz_colorspace *colorspace = js_touserdata(J, 1, "fz_colorspace");
 	fz_irect bounds = ffi_toirect(J, 2);
 	int alpha = js_toboolean(J, 3);
-	fz_pixmap *pixmap;
+	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
 		pixmap = fz_new_pixmap_with_bbox(ctx, colorspace, &bounds, 0, alpha);
@@ -2303,7 +2303,7 @@ static void ffi_Font_advanceGlyph(js_State *J)
 static void ffi_new_Text(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_text *text;
+	fz_text *text = NULL;
 
 	fz_try(ctx)
 		text = fz_new_text(ctx);
@@ -2384,7 +2384,7 @@ static void ffi_Text_showString(js_State *J)
 static void ffi_new_Path(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
-	fz_path *path;
+	fz_path *path = NULL;
 
 	fz_try(ctx)
 		path = fz_new_path(ctx);
@@ -2606,7 +2606,7 @@ static void ffi_new_DisplayList(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_rect mediabox = js_iscoercible(J, 1) ? ffi_torect(J, 1) : fz_empty_rect;
-	fz_display_list *list;
+	fz_display_list *list = NULL;
 
 	fz_try(ctx)
 		list = fz_new_display_list(ctx, &mediabox);
@@ -2651,7 +2651,7 @@ static void ffi_DisplayList_toPixmap(js_State *J)
 	fz_matrix ctm = ffi_tomatrix(J, 1);
 	fz_colorspace *colorspace = js_touserdata(J, 2, "fz_colorspace");
 	int alpha = js_isdefined(J, 3) ? js_toboolean(J, 3) : 0;
-	fz_pixmap *pixmap;
+	fz_pixmap *pixmap = NULL;
 
 	fz_try(ctx)
 		pixmap = fz_new_pixmap_from_display_list(ctx, list, &ctm, colorspace, alpha);
@@ -2668,7 +2668,7 @@ static void ffi_DisplayList_toStructuredText(js_State *J)
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
 	const char *options = js_iscoercible(J, 1) ? js_tostring(J, 1) : NULL;
 	fz_stext_options so;
-	fz_stext_page *text;
+	fz_stext_page *text = NULL;
 
 	fz_try(ctx) {
 		fz_parse_stext_options(ctx, &so, options);
@@ -2687,7 +2687,7 @@ static void ffi_DisplayList_search(js_State *J)
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
 	const char *needle = js_tostring(J, 1);
 	fz_rect hits[256];
-	int i, n;
+	int i, n = 0;
 
 	fz_try(ctx)
 		n = fz_search_display_list(ctx, list, needle, hits, nelem(hits));
@@ -2707,7 +2707,7 @@ static void ffi_StructuredText_search(js_State *J)
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
 	const char *needle = js_tostring(J, 1);
 	fz_rect hits[256];
-	int i, n;
+	int i, n = 0;
 
 	fz_try(ctx)
 		n = fz_search_stext_page(ctx, text, needle, hits, nelem(hits));
@@ -2727,7 +2727,7 @@ static void ffi_StructuredText_highlight(js_State *J)
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
 	fz_rect rect = ffi_torect(J, 1);
 	fz_rect hits[256];
-	int i, n;
+	int i, n = 0;
 
 	fz_try(ctx)
 		n = fz_highlight_selection(ctx, text, rect, hits, nelem(hits));
@@ -2746,7 +2746,7 @@ static void ffi_StructuredText_copy(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
 	fz_rect rect = ffi_torect(J, 1);
-	char *s;
+	char *s = NULL;
 
 	fz_try(ctx)
 		s = fz_copy_selection(ctx, text, rect);
@@ -2765,7 +2765,7 @@ static void ffi_new_DisplayListDevice(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_display_list *list = js_touserdata(J, 0, "fz_display_list");
-	fz_device *device;
+	fz_device *device = NULL;
 
 	fz_try(ctx)
 		device = fz_new_list_device(ctx, list);
@@ -2781,7 +2781,7 @@ static void ffi_new_DrawDevice(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_matrix transform = ffi_tomatrix(J, 1);
 	fz_pixmap *pixmap = js_touserdata(J, 2, "fz_pixmap");
-	fz_device *device;
+	fz_device *device = NULL;
 
 	fz_try(ctx)
 		device = fz_new_draw_device(ctx, &transform, pixmap);
@@ -2798,7 +2798,7 @@ static void ffi_new_DocumentWriter(js_State *J)
 	const char *filename = js_tostring(J, 1);
 	const char *format = js_iscoercible(J, 2) ? js_tostring(J, 2) : NULL;
 	const char *options = js_iscoercible(J, 3) ? js_tostring(J, 3) : NULL;
-	fz_document_writer *wri;
+	fz_document_writer *wri = NULL;
 
 	fz_try(ctx)
 		wri = fz_new_document_writer(ctx, filename, format, options);
@@ -2814,7 +2814,7 @@ static void ffi_DocumentWriter_beginPage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	fz_document_writer *wri = js_touserdata(J, 0, "fz_document_writer");
 	fz_rect mediabox = ffi_torect(J, 1);
-	fz_device *device;
+	fz_device *device = NULL;
 
 	fz_try(ctx)
 		device = fz_begin_page(ctx, wri, &mediabox);
@@ -2852,7 +2852,7 @@ static void ffi_DocumentWriter_close(js_State *J)
 static pdf_obj *ffi_toobj(js_State *J, pdf_document *pdf, int idx)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 
 	/* make sure index is absolute */
 	if (idx < 0)
@@ -2954,8 +2954,8 @@ static void ffi_pushobj(js_State *J, pdf_obj *obj);
 static int ffi_pdf_obj_has(js_State *J, void *obj, const char *key)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_obj *val;
-	int idx, len;
+	pdf_obj *val = NULL;
+	int idx, len = 0;
 
 	if (!strcmp(key, "length")) {
 		fz_try(ctx)
@@ -2987,7 +2987,7 @@ static int ffi_pdf_obj_has(js_State *J, void *obj, const char *key)
 static int ffi_pdf_obj_put(js_State *J, void *obj, const char *key)
 {
 	fz_context *ctx = js_getcontext(J);
-	pdf_document *pdf;
+	pdf_document *pdf = NULL;
 	pdf_obj *val;
 	int idx;
 
@@ -3069,7 +3069,7 @@ static void ffi_PDFDocument_getTrailer(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *trailer;
+	pdf_obj *trailer = NULL;
 
 	fz_try(ctx)
 		trailer = pdf_trailer(ctx, pdf);
@@ -3083,7 +3083,7 @@ static void ffi_PDFDocument_countObjects(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	int count;
+	int count = 0;
 
 	fz_try(ctx)
 		count = pdf_xref_len(ctx, pdf);
@@ -3097,7 +3097,7 @@ static void ffi_PDFDocument_createObject(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
 		ind = pdf_new_indirect(ctx, pdf, pdf_create_object(ctx, pdf), 0);
@@ -3125,7 +3125,7 @@ static void ffi_PDFDocument_addObject(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	pdf_obj *obj = ffi_toobj(J, pdf, 1);
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
 		ind = pdf_add_object_drop(ctx, pdf, obj);
@@ -3141,7 +3141,7 @@ static void ffi_PDFDocument_addStream_imp(js_State *J, int compressed)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_buffer *buf = ffi_tobuffer(J, 1); /* FIXME: leak if ffi_toobj throws */
 	pdf_obj *obj = js_iscoercible(J, 2) ? ffi_toobj(J, pdf, 2) : NULL;
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
 		ind = pdf_add_stream(ctx, pdf, buf, obj, compressed);
@@ -3169,7 +3169,7 @@ static void ffi_PDFDocument_addImage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_image *image = js_touserdata(J, 1, "fz_image");
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
 		ind = pdf_add_image(ctx, pdf, image, 0);
@@ -3184,7 +3184,7 @@ static void ffi_PDFDocument_addSimpleFont(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_font *font = js_touserdata(J, 1, "fz_font");
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
 		ind = pdf_add_simple_font(ctx, pdf, font);
@@ -3199,7 +3199,7 @@ static void ffi_PDFDocument_addFont(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	fz_font *font = js_touserdata(J, 1, "fz_font");
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
 		ind = pdf_add_cid_font(ctx, pdf, font);
@@ -3217,7 +3217,7 @@ static void ffi_PDFDocument_addPage(js_State *J)
 	int rotate = js_tonumber(J, 2);
 	pdf_obj *resources = ffi_toobj(J, pdf, 3); /* FIXME: leak if ffi_tobuffer throws */
 	fz_buffer *contents = ffi_tobuffer(J, 4);
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 
 	fz_try(ctx)
 		ind = pdf_add_page(ctx, pdf, &mediabox, rotate, resources, contents);
@@ -3261,7 +3261,7 @@ static void ffi_PDFDocument_countPages(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	int count;
+	int count = 0;
 
 	fz_try(ctx)
 		count = pdf_count_pages(ctx, pdf);
@@ -3276,7 +3276,7 @@ static void ffi_PDFDocument_findPage(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int at = js_tonumber(J, 1);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 
 	fz_try(ctx)
 		obj = pdf_lookup_page_obj(ctx, pdf, at);
@@ -3305,7 +3305,7 @@ static void ffi_PDFDocument_newNull(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_null(ctx, pdf);
 	fz_catch(ctx)
@@ -3318,7 +3318,7 @@ static void ffi_PDFDocument_newBoolean(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int val = js_toboolean(J, 1);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_bool(ctx, pdf, val);
 	fz_catch(ctx)
@@ -3331,7 +3331,7 @@ static void ffi_PDFDocument_newInteger(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int val = js_tointeger(J, 1);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_int(ctx, pdf, val);
 	fz_catch(ctx)
@@ -3344,7 +3344,7 @@ static void ffi_PDFDocument_newReal(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	float val = js_tonumber(J, 1);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_real(ctx, pdf, val);
 	fz_catch(ctx)
@@ -3359,7 +3359,7 @@ static void ffi_PDFDocument_newString(js_State *J)
 	// TODO: convert array of numbers to raw string
 	// TODO: convert to UCS-2 or PDFDocEncoding
 	const char *val = js_tostring(J, 1);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_string(ctx, pdf, val, strlen(val));
 	fz_catch(ctx)
@@ -3372,7 +3372,7 @@ static void ffi_PDFDocument_newName(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	const char *val = js_tostring(J, 1);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_name(ctx, pdf, val);
 	fz_catch(ctx)
@@ -3386,7 +3386,7 @@ static void ffi_PDFDocument_newIndirect(js_State *J)
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
 	int num = js_tointeger(J, 1);
 	int gen = js_tointeger(J, 2);
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_indirect(ctx, pdf, num, gen);
 	fz_catch(ctx)
@@ -3398,7 +3398,7 @@ static void ffi_PDFDocument_newArray(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_array(ctx, pdf, 0);
 	fz_catch(ctx)
@@ -3410,7 +3410,7 @@ static void ffi_PDFDocument_newDictionary(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_obj *obj;
+	pdf_obj *obj = NULL;
 	fz_try(ctx)
 		obj = pdf_new_dict(ctx, pdf, 0);
 	fz_catch(ctx)
@@ -3422,7 +3422,7 @@ static void ffi_PDFDocument_newGraftMap(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	pdf_graft_map *map;
+	pdf_graft_map *map = NULL;
 	fz_try(ctx)
 		map = pdf_new_graft_map(ctx, pdf);
 	fz_catch(ctx)
@@ -3496,7 +3496,7 @@ static void ffi_PDFObject_resolve(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	pdf_obj *ind;
+	pdf_obj *ind = NULL;
 	fz_try(ctx)
 		ind = pdf_resolve_indirect(ctx, obj);
 	fz_catch(ctx)
@@ -3509,7 +3509,7 @@ static void ffi_PDFObject_toString(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
 	int tight = js_isdefined(J, 1) ? js_toboolean(J, 1) : 1;
-	char *s;
+	char *s = NULL;
 	int n;
 
 	fz_var(s);
@@ -3552,7 +3552,7 @@ static void ffi_PDFObject_isArray(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_array(ctx, obj);
 	fz_catch(ctx)
@@ -3564,7 +3564,7 @@ static void ffi_PDFObject_isDictionary(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_dict(ctx, obj);
 	fz_catch(ctx)
@@ -3576,7 +3576,7 @@ static void ffi_PDFObject_isIndirect(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_indirect(ctx, obj);
 	fz_catch(ctx)
@@ -3588,7 +3588,7 @@ static void ffi_PDFObject_asIndirect(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int num;
+	int num = 0;
 	fz_try(ctx)
 		num = pdf_to_num(ctx, obj);
 	fz_catch(ctx)
@@ -3600,7 +3600,7 @@ static void ffi_PDFObject_isNull(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_null(ctx, obj);
 	fz_catch(ctx)
@@ -3612,7 +3612,7 @@ static void ffi_PDFObject_isBoolean(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_bool(ctx, obj);
 	fz_catch(ctx)
@@ -3624,7 +3624,7 @@ static void ffi_PDFObject_asBoolean(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_to_bool(ctx, obj);
 	fz_catch(ctx)
@@ -3636,7 +3636,7 @@ static void ffi_PDFObject_isNumber(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_number(ctx, obj);
 	fz_catch(ctx)
@@ -3648,7 +3648,7 @@ static void ffi_PDFObject_asNumber(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	float num;
+	float num = 0;
 	fz_try(ctx)
 		if (pdf_is_int(ctx, obj))
 			num = pdf_to_int(ctx, obj);
@@ -3663,7 +3663,7 @@ static void ffi_PDFObject_isName(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_name(ctx, obj);
 	fz_catch(ctx)
@@ -3675,7 +3675,7 @@ static void ffi_PDFObject_asName(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	const char *name;
+	const char *name = NULL;
 	fz_try(ctx)
 		name = pdf_to_name(ctx, obj);
 	fz_catch(ctx)
@@ -3687,7 +3687,7 @@ static void ffi_PDFObject_isString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_string(ctx, obj);
 	fz_catch(ctx)
@@ -3699,7 +3699,7 @@ static void ffi_PDFObject_asString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	char *string;
+	char *string = NULL;
 
 	fz_try(ctx)
 		string = pdf_to_utf8(ctx, obj);
@@ -3720,7 +3720,7 @@ static void ffi_PDFObject_asByteString(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
 	const char *buf;
-	int i, len;
+	int i, len = 0;
 
 	fz_try(ctx) {
 		buf = pdf_to_str_buf(ctx, obj);
@@ -3739,7 +3739,7 @@ static void ffi_PDFObject_isStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	int b;
+	int b = 0;
 	fz_try(ctx)
 		b = pdf_is_stream(ctx, obj);
 	fz_catch(ctx)
@@ -3751,7 +3751,7 @@ static void ffi_PDFObject_readStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	fz_try(ctx)
 		buf = pdf_load_stream(ctx, obj);
 	fz_catch(ctx)
@@ -3763,7 +3763,7 @@ static void ffi_PDFObject_readRawStream(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	fz_try(ctx)
 		buf = pdf_load_raw_stream(ctx, obj);
 	fz_catch(ctx)
@@ -3815,9 +3815,9 @@ static void ffi_PDFObject_forEach(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_obj *obj = js_touserdata(J, 0, "pdf_obj");
-	pdf_obj *val;
-	const char *key;
-	int i, n;
+	pdf_obj *val = NULL;
+	const char *key = NULL;
+	int i, n = 0;
 
 	fz_try(ctx)
 		obj = pdf_resolve_indirect_chain(ctx, obj);
@@ -3871,7 +3871,7 @@ static void ffi_PDFPage_createAnnotation(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_page *page = js_touserdata(J, 0, "pdf_page");
 	const char *name = js_tostring(J, 1);
-	pdf_annot *annot;
+	pdf_annot *annot = NULL;
 	int subtype;
 
 	fz_try(ctx)
@@ -3900,7 +3900,7 @@ static void ffi_PDFAnnotation_getType(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	int type;
-	const char *subtype;
+	const char *subtype = NULL;
 	fz_try(ctx)
 	{
 		type = pdf_annot_type(ctx, annot);
@@ -3915,7 +3915,7 @@ static void ffi_PDFAnnotation_getFlags(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	int flags;
+	int flags = 0;
 	fz_try(ctx)
 		flags = pdf_annot_flags(ctx, annot);
 	fz_catch(ctx)
@@ -3938,7 +3938,7 @@ static void ffi_PDFAnnotation_getContents(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	const char *contents;
+	const char *contents = NULL;
 	fz_try(ctx)
 		contents = pdf_annot_contents(ctx, annot);
 	fz_catch(ctx)
@@ -3984,7 +3984,7 @@ static void ffi_PDFAnnotation_getBorder(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	float border;
+	float border = 0;
 	fz_try(ctx)
 		border = pdf_annot_border(ctx, annot);
 	fz_catch(ctx)
@@ -4007,7 +4007,7 @@ static void ffi_PDFAnnotation_getColor(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	int i, n;
+	int i, n = 0;
 	float color[4];
 	fz_try(ctx)
 		pdf_annot_color(ctx, annot, &n, color);
@@ -4041,7 +4041,7 @@ static void ffi_PDFAnnotation_getInteriorColor(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	int i, n;
+	int i, n = 0;
 	float color[4];
 	fz_try(ctx)
 		pdf_annot_interior_color(ctx, annot, &n, color);
@@ -4075,8 +4075,8 @@ static void ffi_PDFAnnotation_getQuadPoints(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	float qp[8];
-	int i, k, n;
+	float qp[8] = { 0 };
+	int i, k, n = 0;
 
 	fz_try(ctx)
 		n = pdf_annot_quad_point_count(ctx, annot);
@@ -4102,8 +4102,8 @@ static void ffi_PDFAnnotation_setQuadPoints(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	float *qp;
-	int n, k, i;
+	float *qp = NULL;
+	int k, i, n = 0;
 
 	n = js_getlength(J, 1);
 
@@ -4134,8 +4134,8 @@ static void ffi_PDFAnnotation_getInkList(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	int i, k, n, m;
-	float v[2];
+	int i, k, m = 0, n = 0;
+	float v[2] = { 0 };
 
 	js_newarray(J);
 

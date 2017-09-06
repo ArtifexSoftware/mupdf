@@ -590,7 +590,7 @@ fz_font *
 fz_new_font_from_memory(fz_context *ctx, const char *name, const unsigned char *data, int len, int index, int use_glyph_bbox)
 {
 	fz_buffer *buffer = fz_new_buffer_from_shared_data(ctx, data, len);
-	fz_font *font;
+	fz_font *font = NULL;
 	fz_try(ctx)
 		font = fz_new_font_from_buffer(ctx, name, buffer, index, use_glyph_bbox);
 	fz_always(ctx)
@@ -604,7 +604,7 @@ fz_font *
 fz_new_font_from_file(fz_context *ctx, const char *name, const char *path, int index, int use_glyph_bbox)
 {
 	fz_buffer *buffer = fz_read_file(ctx, path);
-	fz_font *font;
+	fz_font *font = NULL;
 	fz_try(ctx)
 		font = fz_new_font_from_buffer(ctx, name, buffer, index, use_glyph_bbox);
 	fz_always(ctx)
@@ -764,7 +764,7 @@ fz_pixmap *
 fz_render_ft_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, int aa)
 {
 	FT_GlyphSlot slot = do_ft_render_glyph(ctx, font, gid, trm, aa);
-	fz_pixmap *pixmap;
+	fz_pixmap *pixmap = NULL;
 
 	if (slot == NULL)
 	{
@@ -793,7 +793,7 @@ fz_glyph *
 fz_render_ft_glyph(fz_context *ctx, fz_font *font, int gid, const fz_matrix *trm, int aa)
 {
 	FT_GlyphSlot slot = do_ft_render_glyph(ctx, font, gid, trm, aa);
-	fz_glyph *glyph;
+	fz_glyph *glyph = NULL;
 
 	if (slot == NULL)
 	{
@@ -917,7 +917,7 @@ fz_render_ft_stroked_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const
 {
 	FT_Glyph glyph = do_render_ft_stroked_glyph(ctx, font, gid, trm, ctm, state, aa);
 	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
-	fz_pixmap *pixmap;
+	fz_pixmap *pixmap = NULL;
 
 	if (bitmap == NULL)
 	{
@@ -947,7 +947,7 @@ fz_render_ft_stroked_glyph(fz_context *ctx, fz_font *font, int gid, const fz_mat
 {
 	FT_Glyph glyph = do_render_ft_stroked_glyph(ctx, font, gid, trm, ctm, state, aa);
 	FT_BitmapGlyph bitmap = (FT_BitmapGlyph)glyph;
-	fz_glyph *result;
+	fz_glyph *result = NULL;
 
 	if (bitmap == NULL)
 	{
@@ -1333,7 +1333,7 @@ fz_render_t3_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, const fz_matr
 	fz_irect bbox;
 	fz_device *dev = NULL;
 	fz_pixmap *glyph;
-	fz_pixmap *result;
+	fz_pixmap *result = NULL;
 
 	if (gid < 0 || gid > 255)
 		return NULL;

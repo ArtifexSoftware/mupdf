@@ -534,7 +534,7 @@ pdf_dev_new_form(fz_context *ctx, pdf_obj **form_ref, pdf_device *pdev, const fz
 {
 	pdf_document *doc = pdev->doc;
 	int num;
-	pdf_obj *group_ref;
+	pdf_obj *group_ref = NULL;
 	pdf_obj *group;
 	pdf_obj *form;
 

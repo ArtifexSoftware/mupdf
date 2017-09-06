@@ -559,7 +559,7 @@ png_mask_transparency(struct info *info, fz_pixmap *dst)
 fz_pixmap *
 fz_load_png(fz_context *ctx, unsigned char *p, size_t total)
 {
-	fz_pixmap *image;
+	fz_pixmap *image = NULL;
 	fz_colorspace *colorspace;
 	struct info png;
 	int stride;

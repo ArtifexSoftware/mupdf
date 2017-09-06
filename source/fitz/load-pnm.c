@@ -628,7 +628,7 @@ pnm_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, size_t total
 fz_pixmap *
 fz_load_pnm(fz_context *ctx, unsigned char *p, size_t total)
 {
-	fz_pixmap *img;
+	fz_pixmap *img = NULL;
 	struct info pnm = { 0 };
 
 	fz_try(ctx)

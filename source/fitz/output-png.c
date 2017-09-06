@@ -89,7 +89,7 @@ png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
 	int size;
 	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
 	unsigned char *data;
-	unsigned char *chunk, *pos, *cdata;
+	unsigned char *pos, *cdata, *chunk = NULL;
 	uLong bound;
 	uLongf csize;
 	uLong long_size;
@@ -356,7 +356,7 @@ fz_buffer *
 fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, const fz_color_params *color_params)
 {
 	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 
 	fz_try(ctx)
 		buf = png_from_pixmap(ctx, pix, color_params, 1);

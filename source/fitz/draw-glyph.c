@@ -413,7 +413,7 @@ unlock_and_return_val:
 fz_pixmap *
 fz_render_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, const fz_irect *scissor, int aa)
 {
-	fz_pixmap *val;
+	fz_pixmap *val = NULL;
 	unsigned char qe, qf;
 	fz_matrix subpix_ctm;
 	float size = fz_subpixel_adjust(ctx, ctm, &subpix_ctm, &qe, &qf);

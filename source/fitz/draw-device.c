@@ -2600,7 +2600,7 @@ fz_new_draw_device_with_options(fz_context *ctx, const fz_draw_options *opts, co
 	fz_rect bounds;
 	fz_irect ibounds;
 	fz_matrix transform;
-	fz_device *dev;
+	fz_device *dev = NULL;
 	fz_aa_context aa = *ctx->aa;
 
 	fz_set_rasterizer_graphics_aa_level(ctx, &aa, opts->graphics);

@@ -148,7 +148,7 @@ file_close(fz_context *ctx, void *opaque)
 fz_output *
 fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close)
 {
-	fz_output *out;
+	fz_output *out = NULL;
 
 	fz_try(ctx)
 	{

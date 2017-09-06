@@ -144,7 +144,7 @@ fz_open_document(fz_context *ctx, const char *filename)
 {
 	const fz_document_handler *handler;
 	fz_stream *file;
-	fz_document *doc;
+	fz_document *doc = NULL;
 
 	if (filename == NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "no document to open");

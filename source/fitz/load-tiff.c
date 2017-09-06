@@ -292,7 +292,7 @@ tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned
 {
 	fz_stream *encstm = NULL;
 	fz_stream *stm = NULL;
-	unsigned i, size;
+	unsigned i, size = 0;
 	unsigned char *reversed = NULL;
 	fz_stream *jpegtables = NULL;
 	int old_tiff;

@@ -171,7 +171,7 @@ static fz_document *
 htdoc_open_document(fz_context *ctx, const char *filename)
 {
 	char dirname[2048];
-	fz_buffer *buf;
+	fz_buffer *buf = NULL;
 	html_document *doc;
 
 	fz_dirname(dirname, filename, sizeof dirname);

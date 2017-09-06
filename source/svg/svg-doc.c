@@ -108,7 +108,7 @@ static fz_document *
 svg_open_document_with_stream(fz_context *ctx, fz_stream *file)
 {
 	fz_buffer *buf;
-	fz_document *doc;
+	fz_document *doc = NULL;
 
 	buf = fz_read_all(ctx, file, 0);
 	fz_try(ctx)
@@ -126,7 +126,7 @@ fz_display_list *
 fz_new_display_list_from_svg(fz_context *ctx, fz_buffer *buf, float *w, float *h)
 {
 	fz_document *doc;
-	fz_display_list *list;
+	fz_display_list *list = NULL;
 
 	doc = svg_open_document_with_buffer(ctx, buf);
 	fz_try(ctx)
@@ -147,7 +147,7 @@ fz_image *
 fz_new_image_from_svg(fz_context *ctx, fz_buffer *buf)
 {
 	fz_display_list *list;
-	fz_image *image;
+	fz_image *image = NULL;
 	float w, h;
 
 	list = fz_new_display_list_from_svg(ctx, buf, &w, &h);

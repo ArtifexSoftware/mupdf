@@ -1427,7 +1427,7 @@ void pdf_update_combobox_appearance(fz_context *ctx, pdf_document *doc, pdf_obj 
 
 void pdf_update_pushbutton_appearance(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 {
-	fz_rect rect;
+	fz_rect rect = fz_empty_rect;
 	pdf_xobject *form = NULL;
 	fz_buffer *fzbuf = NULL;
 	pdf_obj *tobj = NULL;

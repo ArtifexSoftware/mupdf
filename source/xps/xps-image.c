@@ -93,8 +93,8 @@ void
 xps_parse_image_brush(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, const fz_rect *area,
 	char *base_uri, xps_resource *dict, fz_xml *root)
 {
-	xps_part *part;
-	fz_image *image;
+	xps_part *part = NULL;
+	fz_image *image = NULL;
 
 	fz_try(ctx)
 	{
