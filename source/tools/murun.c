@@ -3512,6 +3512,8 @@ static void ffi_PDFObject_toString(js_State *J)
 	char *s;
 	int n;
 
+	fz_var(s);
+
 	fz_try(ctx) {
 		n = pdf_sprint_obj(ctx, NULL, 0, obj, tight);
 		s = fz_malloc(ctx, n+1);
