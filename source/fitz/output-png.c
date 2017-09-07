@@ -356,13 +356,7 @@ fz_buffer *
 fz_new_buffer_from_image_as_png(fz_context *ctx, fz_image *image, const fz_color_params *color_params)
 {
 	fz_pixmap *pix = fz_get_pixmap_from_image(ctx, image, NULL, NULL, NULL, NULL);
-	fz_buffer *buf = NULL;
-
-	fz_try(ctx)
-		buf = png_from_pixmap(ctx, pix, color_params, 1);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-	return buf;
+	return png_from_pixmap(ctx, pix, color_params, 1);
 }
 
 fz_buffer *

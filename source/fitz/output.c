@@ -178,7 +178,6 @@ fz_new_output_with_file_ptr(fz_context *ctx, FILE *file, int close)
 fz_output *
 fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 {
-	fz_output *out = NULL;
 	FILE *file;
 
 	if (!strcmp(filename, "/dev/null") || !fz_strcasecmp(filename, "nul:"))
@@ -196,12 +195,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
-	fz_try(ctx)
-		out = fz_new_output_with_file_ptr(ctx, file, 1);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return out;
+	return fz_new_output_with_file_ptr(ctx, file, 1);
 }
 
 static void

@@ -429,25 +429,18 @@ fz_render_glyph_pixmap(fz_context *ctx, fz_font *font, int gid, fz_matrix *ctm, 
 			return NULL;
 	}
 
-	fz_try(ctx)
+	if (is_ft_font)
 	{
-		if (is_ft_font)
-		{
-			val = fz_render_ft_glyph_pixmap(ctx, font, gid, &subpix_ctm, aa);
-		}
-		else if (fz_font_t3_procs(ctx, font))
-		{
-			val = fz_render_t3_glyph_pixmap(ctx, font, gid, &subpix_ctm, NULL, scissor, aa);
-		}
-		else
-		{
-			fz_warn(ctx, "assert: uninitialized font structure");
-			val = NULL;
-		}
+		val = fz_render_ft_glyph_pixmap(ctx, font, gid, &subpix_ctm, aa);
 	}
-	fz_catch(ctx)
+	else if (fz_font_t3_procs(ctx, font))
 	{
-		fz_rethrow(ctx);
+		val = fz_render_t3_glyph_pixmap(ctx, font, gid, &subpix_ctm, NULL, scissor, aa);
+	}
+	else
+	{
+		fz_warn(ctx, "assert: uninitialized font structure");
+		val = NULL;
 	}
 
 	return val;

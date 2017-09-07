@@ -392,30 +392,25 @@ pam_binary_read_header(fz_context *ctx, struct info *pnm, unsigned char *p, unsi
 {
 	int token = TOKEN_UNKNOWN;
 
-	fz_try(ctx)
+	while (p < e && token != TOKEN_ENDHDR)
 	{
-		while (p < e && token != TOKEN_ENDHDR)
+		p = pnm_read_token(ctx, p, e, &token);
+		p = pnm_read_white(ctx, p, e, 0);
+		switch (token)
 		{
-			p = pnm_read_token(ctx, p, e, &token);
-			p = pnm_read_white(ctx, p, e, 0);
-			switch (token)
-			{
-			case TOKEN_WIDTH: p = pnm_read_number(ctx, p, e, &pnm->width); break;
-			case TOKEN_HEIGHT: p = pnm_read_number(ctx, p, e, &pnm->height); break;
-			case TOKEN_DEPTH: p = pnm_read_number(ctx, p, e, &pnm->depth); break;
-			case TOKEN_MAXVAL: p = pnm_read_number(ctx, p, e, &pnm->maxval); break;
-			case TOKEN_TUPLTYPE: p = pnm_read_tupletype(ctx, p, e, &pnm->tupletype); break;
-			case TOKEN_ENDHDR: break;
-			default:
-				   fz_throw(ctx, FZ_ERROR_GENERIC, "unknown header token in pnm image");
-			}
-
-			if (token != TOKEN_ENDHDR)
-				p = pnm_read_white(ctx, p, e, 0);
+		case TOKEN_WIDTH: p = pnm_read_number(ctx, p, e, &pnm->width); break;
+		case TOKEN_HEIGHT: p = pnm_read_number(ctx, p, e, &pnm->height); break;
+		case TOKEN_DEPTH: p = pnm_read_number(ctx, p, e, &pnm->depth); break;
+		case TOKEN_MAXVAL: p = pnm_read_number(ctx, p, e, &pnm->maxval); break;
+		case TOKEN_TUPLTYPE: p = pnm_read_tupletype(ctx, p, e, &pnm->tupletype); break;
+		case TOKEN_ENDHDR: break;
+		default:
+			   fz_throw(ctx, FZ_ERROR_GENERIC, "unknown header token in pnm image");
 		}
+
+		if (token != TOKEN_ENDHDR)
+			p = pnm_read_white(ctx, p, e, 0);
 	}
-	fz_catch(ctx)
-		fz_rethrow(ctx);
 
 	return p;
 }

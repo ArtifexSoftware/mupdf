@@ -1968,46 +1968,39 @@ static void writexref(fz_context *ctx, pdf_document *doc, pdf_write_state *opts,
 
 	fz_var(trailer);
 
-	fz_try(ctx)
+	if (opts->do_incremental)
 	{
-		if (opts->do_incremental)
-		{
-			trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
-			pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, pdf_xref_len(ctx, doc)));
-			pdf_dict_put_drop(ctx, trailer, PDF_NAME_Prev, pdf_new_int(ctx, doc, doc->startxref));
-			doc->startxref = startxref;
-		}
-		else
-		{
-			trailer = pdf_new_dict(ctx, doc, 5);
-
-			nobj = pdf_new_int(ctx, doc, to);
-			pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, nobj);
-
-			if (first)
-			{
-				obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info);
-				if (obj)
-					pdf_dict_put(ctx, trailer, PDF_NAME_Info, obj);
-
-				obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
-				if (obj)
-					pdf_dict_put(ctx, trailer, PDF_NAME_Root, obj);
-
-				obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_ID);
-				if (obj)
-					pdf_dict_put(ctx, trailer, PDF_NAME_ID, obj);
-			}
-			if (main_xref_offset != 0)
-			{
-				nobj = pdf_new_int(ctx, doc, main_xref_offset);
-				pdf_dict_put_drop(ctx, trailer, PDF_NAME_Prev, nobj);
-			}
-		}
+		trailer = pdf_keep_obj(ctx, pdf_trailer(ctx, doc));
+		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, pdf_new_int(ctx, doc, pdf_xref_len(ctx, doc)));
+		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Prev, pdf_new_int(ctx, doc, doc->startxref));
+		doc->startxref = startxref;
 	}
-	fz_catch(ctx)
+	else
 	{
-		fz_rethrow(ctx);
+		trailer = pdf_new_dict(ctx, doc, 5);
+
+		nobj = pdf_new_int(ctx, doc, to);
+		pdf_dict_put_drop(ctx, trailer, PDF_NAME_Size, nobj);
+
+		if (first)
+		{
+			obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Info);
+			if (obj)
+				pdf_dict_put(ctx, trailer, PDF_NAME_Info, obj);
+
+			obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_Root);
+			if (obj)
+				pdf_dict_put(ctx, trailer, PDF_NAME_Root, obj);
+
+			obj = pdf_dict_get(ctx, pdf_trailer(ctx, doc), PDF_NAME_ID);
+			if (obj)
+				pdf_dict_put(ctx, trailer, PDF_NAME_ID, obj);
+		}
+		if (main_xref_offset != 0)
+		{
+			nobj = pdf_new_int(ctx, doc, main_xref_offset);
+			pdf_dict_put_drop(ctx, trailer, PDF_NAME_Prev, nobj);
+		}
 	}
 
 	fz_write_string(ctx, opts->out, "trailer\n");
