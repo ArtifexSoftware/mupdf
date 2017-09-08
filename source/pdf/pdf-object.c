@@ -611,8 +611,14 @@ pdf_copy_array(fz_context *ctx, pdf_obj *obj)
 
 	n = pdf_array_len(ctx, obj);
 	arr = pdf_new_array(ctx, doc, n);
-	for (i = 0; i < n; i++)
-		pdf_array_push(ctx, arr, pdf_array_get(ctx, obj, i));
+	fz_try(ctx)
+		for (i = 0; i < n; i++)
+			pdf_array_push(ctx, arr, pdf_array_get(ctx, obj, i));
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, arr);
+		fz_rethrow(ctx);
+	}
 
 	return arr;
 }
@@ -966,8 +972,14 @@ pdf_copy_dict(fz_context *ctx, pdf_obj *obj)
 	doc = DICT(obj)->doc;
 	n = pdf_dict_len(ctx, obj);
 	dict = pdf_new_dict(ctx, doc, n);
-	for (i = 0; i < n; i++)
-		pdf_dict_put(ctx, dict, pdf_dict_get_key(ctx, obj, i), pdf_dict_get_val(ctx, obj, i));
+	fz_try(ctx)
+		for (i = 0; i < n; i++)
+			pdf_dict_put(ctx, dict, pdf_dict_get_key(ctx, obj, i), pdf_dict_get_val(ctx, obj, i));
+	fz_catch(ctx)
+	{
+		pdf_drop_obj(ctx, dict);
+		fz_rethrow(ctx);
+	}
 
 	return dict;
 }
@@ -1559,10 +1571,16 @@ pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj)
 		pdf_obj *dict = pdf_new_dict(ctx, doc, n);
 		int i;
 
-		for (i = 0; i < n; i++)
+		fz_try(ctx)
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_dict_get_val(ctx, obj, i));
+				pdf_dict_put_drop(ctx, dict, pdf_dict_get_key(ctx, obj, i), obj_copy);
+			}
+		fz_catch(ctx)
 		{
-			pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_dict_get_val(ctx, obj, i));
-			pdf_dict_put_drop(ctx, dict, pdf_dict_get_key(ctx, obj, i), obj_copy);
+			pdf_drop_obj(ctx, dict);
+			fz_rethrow(ctx);
 		}
 
 		return dict;
@@ -1574,10 +1592,16 @@ pdf_deep_copy_obj(fz_context *ctx, pdf_obj *obj)
 		pdf_obj *arr = pdf_new_array(ctx, doc, n);
 		int i;
 
-		for (i = 0; i < n; i++)
+		fz_try(ctx)
+			for (i = 0; i < n; i++)
+			{
+				pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_array_get(ctx, obj, i));
+				pdf_array_push_drop(ctx, arr, obj_copy);
+			}
+		fz_catch(ctx)
 		{
-			pdf_obj *obj_copy = pdf_deep_copy_obj(ctx, pdf_array_get(ctx, obj, i));
-			pdf_array_push_drop(ctx, arr, obj_copy);
+			pdf_drop_obj(ctx, arr);
+			fz_rethrow(ctx);
 		}
 
 		return arr;
