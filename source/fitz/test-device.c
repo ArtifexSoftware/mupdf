@@ -241,30 +241,37 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 				unsigned int n = (unsigned int)image->n;
 
 				fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), image->colorspace, color_params);
-				for (i = 0; i < count; i++)
+
+				fz_try(ctx)
 				{
-					float cs[FZ_MAX_COLORS];
-					float ds[FZ_MAX_COLORS];
-
-					for (k = 0; k < n; k++)
-						cs[k] = fz_read_byte(ctx, stream) / 255.0f;
-
-					cc.convert(ctx, &cc, ds, cs);
-
-					if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
+					for (i = 0; i < count; i++)
 					{
-						*dev->is_color = 1;
-						dev->resolved = 1;
-						if (dev->passthrough == NULL)
+						float cs[FZ_MAX_COLORS];
+						float ds[FZ_MAX_COLORS];
+
+						for (k = 0; k < n; k++)
+							cs[k] = fz_read_byte(ctx, stream) / 255.0f;
+
+						cc.convert(ctx, &cc, ds, cs);
+
+						if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
 						{
-							fz_drop_stream(ctx, stream);
-							fz_fin_cached_color_converter(ctx, &cc);
-							fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+							*dev->is_color = 1;
+							dev->resolved = 1;
+							if (dev->passthrough == NULL)
+							{
+								fz_drop_stream(ctx, stream);
+								fz_fin_cached_color_converter(ctx, &cc);
+								fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+							}
+							break;
 						}
-						break;
 					}
 				}
-				fz_fin_cached_color_converter(ctx, &cc);
+				fz_always(ctx)
+					fz_fin_cached_color_converter(ctx, &cc);
+				fz_catch(ctx)
+					fz_rethrow(ctx);
 			}
 			fz_drop_stream(ctx, stream);
 			break;
@@ -309,36 +316,43 @@ fz_test_fill_image(fz_context *ctx, fz_device *dev_, fz_image *image, const fz_m
 			unsigned int n = (unsigned int)pix->n-1;
 
 			fz_init_cached_color_converter(ctx, &cc, NULL, fz_device_rgb(ctx), pix->colorspace, color_params);
-			while (h--)
+
+			fz_try(ctx)
 			{
-				for (i = 0; i < count; i++)
+				while (h--)
 				{
-					float cs[FZ_MAX_COLORS];
-					float ds[FZ_MAX_COLORS];
-
-					for (k = 0; k < n; k++)
-						cs[k] = (*s++) / 255.0f;
-					if (sa && *s++ == 0)
-						continue;
-
-					cc.convert(ctx, &cc, ds, cs);
-
-					if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
+					for (i = 0; i < count; i++)
 					{
-						*dev->is_color = 1;
-						dev->resolved = 1;
-						if (dev->passthrough == NULL)
+						float cs[FZ_MAX_COLORS];
+						float ds[FZ_MAX_COLORS];
+
+						for (k = 0; k < n; k++)
+							cs[k] = (*s++) / 255.0f;
+						if (sa && *s++ == 0)
+							continue;
+
+						cc.convert(ctx, &cc, ds, cs);
+
+						if (is_rgb_color(dev->threshold, ds[0], ds[1], ds[2]))
 						{
-							fz_fin_cached_color_converter(ctx, &cc);
-							fz_drop_pixmap(ctx, pix);
-							fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+							*dev->is_color = 1;
+							dev->resolved = 1;
+							if (dev->passthrough == NULL)
+							{
+								fz_fin_cached_color_converter(ctx, &cc);
+								fz_drop_pixmap(ctx, pix);
+								fz_throw(ctx, FZ_ERROR_ABORT, "Page found as color; stopping interpretation");
+							}
+							break;
 						}
-						break;
 					}
+					s += ss;
 				}
-				s += ss;
 			}
-			fz_fin_cached_color_converter(ctx, &cc);
+			fz_always(ctx)
+				fz_fin_cached_color_converter(ctx, &cc);
+			fz_catch(ctx)
+				fz_rethrow(ctx);
 		}
 
 		fz_drop_pixmap(ctx, pix);
