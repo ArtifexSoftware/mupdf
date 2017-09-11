@@ -17,6 +17,7 @@
 #define MAXRES 1152
 
 typedef struct pdfapp_s pdfapp_t;
+typedef struct mark_s mark_t;
 
 enum { ARROW, HAND, WAIT, CARET };
 
@@ -47,6 +48,14 @@ extern void winadvancetimer(pdfapp_t *, float duration);
 extern void winreplacefile(char *source, char *target);
 extern void wincopyfile(char *source, char *target);
 extern void winreloadpage(pdfapp_t *);
+
+struct mark_s 
+{
+	int rotation;
+	int pageno;
+	int resolution;
+	int panx, pany;
+};
 
 struct pdfapp_s
 {
@@ -96,9 +105,9 @@ struct pdfapp_s
 	int incomplete;
 
 	/* snapback history */
-	int hist[256];
+	mark_t hist[256];
 	int histlen;
-	int marks[10];
+	mark_t marks[10];
 
 	/* window system sizes */
 	int winw, winh;

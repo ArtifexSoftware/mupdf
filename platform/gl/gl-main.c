@@ -192,11 +192,20 @@ static int showsearch = 0;
 static int showinfo = 0;
 static int showhelp = 0;
 
+typedef struct mark_s mark_t;
+struct mark_s 
+{
+	int page;
+	int rotation;
+	int zoom;
+	int scroll_x, scroll_y;
+};
+
 static int history_count = 0;
-static int history[256];
+static mark_t history[256];
 static int future_count = 0;
 static int future[256];
-static int marks[10];
+static mark_t marks[10];
 
 static int search_active = 0;
 static struct input search_input = { { 0 }, 0 };
@@ -206,6 +215,26 @@ static int search_page = -1;
 static int search_hit_page = -1;
 static int search_hit_count = 0;
 static fz_rect search_hit_bbox[5000];
+
+static mark_t create_mark() 
+{
+	mark_t result;
+	result.page = currentpage;
+	result.rotation = currentrotate;
+	result.zoom = currentzoom;
+	result.scroll_x = scroll_x;
+	result.scroll_y = scroll_y;
+	return result;
+}
+
+static void restore_mark(mark_t mark) 
+{
+	currentpage = mark.page;
+	currentrotate = mark.rotation;
+	currentzoom = mark.zoom;
+	scroll_x = mark.scroll_x;
+	scroll_y = mark.scroll_y;
+}
 
 static unsigned int next_power_of_two(unsigned int n)
 {
@@ -305,11 +334,11 @@ static void push_history(void)
 	if (history_count + 1 >= nelem(history))
 	{
 		memmove(history, history + 1, sizeof *history * (nelem(history) - 1));
-		history[history_count] = currentpage;
+		history[history_count] = create_mark();
 	}
 	else
 	{
-		history[history_count++] = currentpage;
+		history[history_count++] = create_mark();
 	}
 }
 
@@ -345,7 +374,7 @@ static void pop_history(void)
 	int here = currentpage;
 	push_future();
 	while (history_count > 0 && currentpage == here)
-		currentpage = history[--history_count];
+		restore_mark(history[--history_count]);
 }
 
 static void pop_future(void)
@@ -931,7 +960,7 @@ static void do_app(void)
 			if (number == 0)
 				push_history();
 			else if (number > 0 && number < nelem(marks))
-				marks[number] = currentpage;
+				marks[number] = create_mark();
 			break;
 		case 't':
 			if (number == 0)
@@ -941,7 +970,9 @@ static void do_app(void)
 			}
 			else if (number > 0 && number < nelem(marks))
 			{
-				jump_to_page(marks[number]);
+				mark_t mark = marks[number];
+				restore_mark(mark);
+				jump_to_page(mark.page);
 			}
 			break;
 		case 'T':
