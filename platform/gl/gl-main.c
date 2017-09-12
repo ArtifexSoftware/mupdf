@@ -899,7 +899,7 @@ static void do_app(void)
 		case KEY_F1: showhelp = !showhelp; break;
 		case 'o': toggle_outline(); break;
 		case 'L': showlinks = !showlinks; break;
-		case 'i': showinfo = !showinfo; break;
+		case 'I': showinfo = !showinfo; break;
 		case 'r': reload(); break;
 		case 'q': quit(); break;
 
@@ -1104,7 +1104,7 @@ static void do_help(void)
 	y = do_help_line(x, y, "MuPDF", FZ_VERSION);
 	y += ui.lineheight;
 	y = do_help_line(x, y, "F1", "show this message");
-	y = do_help_line(x, y, "i", "show document information");
+	y = do_help_line(x, y, "I", "show document information");
 	y = do_help_line(x, y, "o", "show/hide outline");
 	y = do_help_line(x, y, "L", "show/hide links");
 	y = do_help_line(x, y, "r", "reload file");
@@ -1138,6 +1138,13 @@ static void do_help(void)
 	y = do_help_line(x, y, "n or N", "repeat search");
 }
 
+static int need_refresh(void)
+{
+	return oldpage != currentpage
+		|| oldzoom != currentzoom
+		|| oldrotate != currentrotate;
+}
+
 static void do_canvas(void)
 {
 	static int saved_scroll_x = 0;
@@ -1147,7 +1154,7 @@ static void do_canvas(void)
 
 	float x, y;
 
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
+	if (need_refresh())
 	{
 		render_page();
 		update_title();
