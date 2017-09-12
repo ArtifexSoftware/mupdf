@@ -344,8 +344,7 @@ pdf_lookup_inherited_page_item(fz_context *ctx, pdf_obj *node, pdf_obj *key)
 	pdf_obj *node2 = node;
 	pdf_obj *val = NULL;
 
-	/* fz_var(node); Not required as node passed in */
-
+	fz_var(node);
 	fz_try(ctx)
 	{
 		do
