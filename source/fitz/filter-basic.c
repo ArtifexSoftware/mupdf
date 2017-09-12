@@ -162,12 +162,15 @@ fz_open_concat(fz_context *ctx, int len, int pad)
 }
 
 void
-fz_concat_push(fz_context *ctx, fz_stream *concat, fz_stream *chain)
+fz_concat_push_drop(fz_context *ctx, fz_stream *concat, fz_stream *chain)
 {
 	struct concat_filter *state = (struct concat_filter *)concat->state;
 
 	if (state->count == state->max)
+	{
+		fz_drop_stream(ctx, chain);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "Concat filter size exceeded");
+	}
 
 	state->chain[state->count++] = chain;
 }

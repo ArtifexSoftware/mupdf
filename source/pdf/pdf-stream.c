@@ -155,58 +155,82 @@ static fz_stream *
 build_filter(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj *f, pdf_obj *p, int num, int gen, fz_compression_params *params)
 {
 	fz_compression_params local_params;
+	fz_stream *tmp;
 
-	if (params == NULL)
-		params = &local_params;
+	fz_var(chain);
 
-	build_compression_params(ctx, f, p, params);
-
-	/* If we were using params we were passed in, and we successfully
-	 * recognised the image type, we can use the existing filter and
-	 * shortstop here. */
-	if (params != &local_params && params->type != FZ_IMAGE_RAW)
-		return chain;
-
-	if (params->type != FZ_IMAGE_RAW)
-		return fz_open_image_decomp_stream(ctx, chain, params, NULL);
-
-	if (pdf_name_eq(ctx, f, PDF_NAME_ASCIIHexDecode) || pdf_name_eq(ctx, f, PDF_NAME_AHx))
-		return fz_open_ahxd(ctx, chain);
-
-	else if (pdf_name_eq(ctx, f, PDF_NAME_ASCII85Decode) || pdf_name_eq(ctx, f, PDF_NAME_A85))
-		return fz_open_a85d(ctx, chain);
-
-	else if (pdf_name_eq(ctx, f, PDF_NAME_JBIG2Decode))
+	fz_try(ctx)
 	{
-		fz_jbig2_globals *globals = NULL;
-		pdf_obj *obj = pdf_dict_get(ctx, p, PDF_NAME_JBIG2Globals);
-		if (pdf_is_indirect(ctx, obj))
-			globals = pdf_load_jbig2_globals(ctx, doc, obj);
-		/* fz_open_jbig2d takes possession of globals */
-		return fz_open_jbig2d(ctx, chain, globals);
-	}
+		if (params == NULL)
+			params = &local_params;
 
-	else if (pdf_name_eq(ctx, f, PDF_NAME_JPXDecode))
-		return chain; /* JPX decoding is special cased in the image loading code */
+		build_compression_params(ctx, f, p, params);
 
-	else if (pdf_name_eq(ctx, f, PDF_NAME_Crypt))
-	{
-		pdf_obj *name;
+		/* If we were using params we were passed in, and we successfully
+		 * recognised the image type, we can use the existing filter and
+		 * shortstop here. */
+		if (params != &local_params && params->type != FZ_IMAGE_RAW)
+			break; /* nothing to do */
 
-		if (!doc->crypt)
+		else if (params->type != FZ_IMAGE_RAW)
 		{
-			fz_warn(ctx, "crypt filter in unencrypted document");
-			return chain;
+			tmp = chain;
+			chain = NULL;
+			chain = fz_open_image_decomp_stream(ctx, tmp, params, NULL);
 		}
 
-		name = pdf_dict_get(ctx, p, PDF_NAME_Name);
-		if (pdf_is_name(ctx, name))
-			return pdf_open_crypt_with_filter(ctx, chain, doc->crypt, name, num, gen);
+		else if (pdf_name_eq(ctx, f, PDF_NAME_ASCIIHexDecode) || pdf_name_eq(ctx, f, PDF_NAME_AHx))
+		{
+			tmp = chain;
+			chain = NULL;
+			chain = fz_open_ahxd(ctx, tmp);
+		}
 
-		return chain;
+		else if (pdf_name_eq(ctx, f, PDF_NAME_ASCII85Decode) || pdf_name_eq(ctx, f, PDF_NAME_A85))
+		{
+			tmp = chain;
+			chain = NULL;
+			chain = fz_open_a85d(ctx, tmp);
+		}
+
+		else if (pdf_name_eq(ctx, f, PDF_NAME_JBIG2Decode))
+		{
+			fz_jbig2_globals *globals = NULL;
+			pdf_obj *obj = pdf_dict_get(ctx, p, PDF_NAME_JBIG2Globals);
+			if (pdf_is_indirect(ctx, obj))
+				globals = pdf_load_jbig2_globals(ctx, doc, obj);
+			tmp = chain;
+			chain = NULL;
+			chain = fz_open_jbig2d(ctx, tmp, globals);
+		}
+
+		else if (pdf_name_eq(ctx, f, PDF_NAME_JPXDecode))
+			break; /* JPX decoding is special cased in the image loading code */
+
+		else if (pdf_name_eq(ctx, f, PDF_NAME_Crypt))
+		{
+			if (!doc->crypt)
+				fz_warn(ctx, "crypt filter in unencrypted document");
+			else
+			{
+				pdf_obj *name = pdf_dict_get(ctx, p, PDF_NAME_Name);
+				if (pdf_is_name(ctx, name))
+				{
+					tmp = chain;
+					chain = NULL;
+					chain = pdf_open_crypt_with_filter(ctx, tmp, doc->crypt, name, num, gen);
+				}
+			}
+		}
+		else
+			fz_warn(ctx, "unknown filter name (%s)", pdf_to_name(ctx, f));
+	}
+	fz_catch(ctx)
+	{
+		fz_drop_stream(ctx, chain);
+		fz_rethrow(ctx);
 	}
 
-	fz_warn(ctx, "unknown filter name (%s)", pdf_to_name(ctx, f));
 	return chain;
 }
 
@@ -635,14 +659,15 @@ pdf_open_object_array(fz_context *ctx, pdf_document *doc, pdf_obj *list)
 	{
 		pdf_obj *obj = pdf_array_get(ctx, list, i);
 		fz_try(ctx)
-		{
-			fz_concat_push(ctx, stm, pdf_open_stream(ctx, obj));
-		}
+			fz_concat_push_drop(ctx, stm, pdf_open_stream(ctx, obj));
 		fz_catch(ctx)
 		{
-			fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
+			if (fz_caught(ctx) == FZ_ERROR_TRYLATER)
+			{
+				fz_drop_stream(ctx, stm);
+				fz_rethrow(ctx);
+			}
 			fz_warn(ctx, "cannot load content stream part %d/%d", i + 1, n);
-			continue;
 		}
 	}
 

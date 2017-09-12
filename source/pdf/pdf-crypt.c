@@ -1023,12 +1023,26 @@ pdf_open_crypt(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, int num, int
 fz_stream *
 pdf_open_crypt_with_filter(fz_context *ctx, fz_stream *chain, pdf_crypt *crypt, pdf_obj *name, int num, int gen)
 {
-	if (!pdf_name_eq(ctx, name, PDF_NAME_Identity))
+	fz_var(chain);
+
+	fz_try(ctx)
 	{
-		pdf_crypt_filter cf;
-		pdf_parse_crypt_filter(ctx, &cf, crypt, name);
-		return pdf_open_crypt_imp(ctx, chain, crypt, &cf, num, gen);
+		if (!pdf_name_eq(ctx, name, PDF_NAME_Identity))
+		{
+			pdf_crypt_filter cf;
+			fz_stream *tmp;
+			pdf_parse_crypt_filter(ctx, &cf, crypt, name);
+			tmp = chain;
+			chain = NULL;
+			chain = pdf_open_crypt_imp(ctx, tmp, crypt, &cf, num, gen);
+		}
 	}
+	fz_catch(ctx)
+	{
+		fz_drop_stream(ctx, chain);
+		fz_rethrow(ctx);
+	}
+
 	return chain;
 }
 
