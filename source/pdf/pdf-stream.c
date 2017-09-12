@@ -631,7 +631,6 @@ pdf_open_object_array(fz_context *ctx, pdf_document *doc, pdf_obj *list)
 	n = pdf_array_len(ctx, list);
 	stm = fz_open_concat(ctx, n, 1);
 
-	fz_var(i); /* Workaround Mac compiler bug */
 	for (i = 0; i < n; i++)
 	{
 		pdf_obj *obj = pdf_array_get(ctx, list, i);
