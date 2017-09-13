@@ -2580,11 +2580,17 @@ fz_bound_path_accurate(fz_context *ctx, fz_irect *bbox, const fz_irect *scissor,
 {
 	fz_rasterizer *rast = fz_new_rasterizer(ctx, NULL);
 
-	if (stroke)
-		(void)fz_flatten_stroke_path(ctx, rast, path, stroke, ctm, flatness, linewidth, scissor, bbox);
-	else
-		(void)fz_flatten_fill_path(ctx, rast, path, ctm, flatness, scissor, bbox);
-	fz_drop_rasterizer(ctx, rast);
+	fz_try(ctx)
+	{
+		if (stroke)
+			(void)fz_flatten_stroke_path(ctx, rast, path, stroke, ctm, flatness, linewidth, scissor, bbox);
+		else
+			(void)fz_flatten_fill_path(ctx, rast, path, ctm, flatness, scissor, bbox);
+	}
+	fz_always(ctx)
+		fz_drop_rasterizer(ctx, rast);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	return bbox;
 }
