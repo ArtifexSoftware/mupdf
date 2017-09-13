@@ -179,7 +179,7 @@ fz_context *fz_new_context_imp(const fz_alloc_context *alloc, const fz_locks_con
 
 	This function is meant to be used in multi-threaded
 	applications where each thread requires its own context, yet
-	parts of the global state, for example caching, is shared.
+	parts of the global state, for example caching, are shared.
 
 	ctx: Context obtained from fz_new_context to make a copy of.
 	ctx must have had locks and lock/functions setup when created.

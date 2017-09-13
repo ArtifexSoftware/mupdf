@@ -45,7 +45,7 @@ fz_band_writer *fz_new_band_writer_of_size(fz_context *ctx, size_t size, fz_outp
 
 	w, h: Width and Height of the entire page.
 
-	n: Number of components (including alphas).
+	n: Number of components (including spots and alphas).
 
 	alpha: Number of alpha components.
 
