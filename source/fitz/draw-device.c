@@ -536,7 +536,7 @@ push_group_for_separations(fz_context *ctx, fz_draw_device *dev, const fz_color_
 	}
 
 	/* Not needed */
-	if (clone == NULL && dev->proof_cs == NULL)
+	if (clone == NULL && dev->proof_cs == NULL && fz_colorspace_n(ctx, dev->stack[0].dest->colorspace) == 4)
 	{
 		dev->resolve_spots = 0;
 		return &dev->stack[0];

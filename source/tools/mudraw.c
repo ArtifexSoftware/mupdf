@@ -1042,6 +1042,13 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					for (i = 0; i < n; i++)
 						fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_COMPOSITE);
 			}
+			else
+			{
+				/* If we are doing spot rendering (or overprint simulation)
+				 * then we need (at least) an empty sep object to force the
+				 * overprint simulation in the draw device. */
+				seps = fz_new_separations(ctx, 0);
+			}
 		}
 		fz_catch(ctx)
 		{
