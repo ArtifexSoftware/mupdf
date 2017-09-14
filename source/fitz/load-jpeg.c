@@ -236,6 +236,8 @@ fz_load_jpeg(fz_context *ctx, unsigned char *rbuf, size_t rlen)
 
 	fz_try(ctx)
 	{
+		cinfo.mem = NULL;
+		cinfo.global_state = 0;
 		cinfo.client_data = ctx;
 		cinfo.err = jpeg_std_error(&err);
 		err.error_exit = error_exit;
@@ -340,6 +342,8 @@ fz_load_jpeg_info(fz_context *ctx, unsigned char *rbuf, size_t rlen, int *xp, in
 
 	fz_try(ctx)
 	{
+		cinfo.mem = NULL;
+		cinfo.global_state = 0;
 		cinfo.client_data = ctx;
 		cinfo.err = jpeg_std_error(&err);
 		err.error_exit = error_exit;

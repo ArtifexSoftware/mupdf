@@ -169,6 +169,8 @@ next_dctd(fz_context *ctx, fz_stream *stm, size_t max)
 	if (!state->init)
 	{
 		int c;
+
+		cinfo->src = NULL;
 		cinfo->client_data = state;
 		cinfo->err = &state->errmgr;
 		jpeg_std_error(cinfo->err);
