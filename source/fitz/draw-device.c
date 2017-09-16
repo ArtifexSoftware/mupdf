@@ -360,8 +360,35 @@ colors_supported(fz_context *ctx, fz_colorspace *cs, fz_pixmap *dest)
 
 	/* If our destination is CMYK and the source color space is only C, M, Y or K we support it
 	 * even if we have no seps */
-	if (fz_colorspace_is_subtractive(ctx, dest->colorspace) && fz_colorspace_device_n_has_only_cmyk(ctx, cs))
+	if (fz_colorspace_is_subtractive(ctx, dest->colorspace))
+	{
+		int i, n;
+		if (fz_colorspace_device_n_has_only_cmyk(ctx, cs))
+			return 1;
+
+		n = fz_colorspace_n(ctx, cs);
+		for (i = 0; i < n; i++)
+		{
+			const char *name = fz_colorspace_colorant(ctx, cs, i);
+
+			if (!name)
+				return 0;
+			if (!strcmp(name, "All"))
+				continue;
+			if (!strcmp(name, "Cyan"))
+				continue;
+			if (!strcmp(name, "Magenta"))
+				continue;
+			if (!strcmp(name, "Yellow"))
+				continue;
+			if (!strcmp(name, "Black"))
+				continue;
+			if (!strcmp(name, "None"))
+				continue;
+			return 0;
+		}
 		return 1;
+	}
 
 	return 0;
 }
@@ -388,11 +415,13 @@ set_op_from_spaces(fz_context *ctx, fz_overprint *op, const fz_pixmap *dest, con
 	 */
 	for (j = 0; j < sn; j++)
 	{
+		/* Run through the colorants looking for one that isn't mentioned.
+		 * i.e. continue if we we find one, break if not. */
 		const char *sname = fz_colorspace_colorant(ctx, src, j);
 		if (!sname)
-			continue;
-		if (!strcmp(sname, "All"))
 			break;
+		if (!strcmp(sname, "All") || !strcmp(sname, "None"))
+			continue;
 		for (i = 0; i < dc; i++)
 		{
 			const char *name = fz_colorspace_colorant(ctx, dest->colorspace, i);
