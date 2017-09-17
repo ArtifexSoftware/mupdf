@@ -515,7 +515,7 @@ fz_draw_clip_path(fz_context *ctx, fz_device *devp, const fz_path *path, int eve
 	fz_irect *scissor_ptr = &state->scissor;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
 
 	if (flatness < 0.001f)
 		flatness = 0.001f;
@@ -586,7 +586,7 @@ fz_draw_clip_stroke_path(fz_context *ctx, fz_device *devp, const fz_path *path, 
 	fz_irect *scissor_ptr = &state->scissor;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx) /* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
 
 	if (mlw > aa_level)
 		aa_level = mlw;
@@ -902,7 +902,7 @@ fz_draw_clip_text(fz_context *ctx, fz_device *devp, const fz_text *text, const f
 	fz_rasterizer *rast = dev->rast;
 
 	if (dev->top == 0 && dev->resolve_spots)
-		state = push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
+		(void)push_group_for_separations(ctx, dev, fz_default_color_params(ctx)/* FIXME */, fz_proof_cs(ctx, dev), dev->default_cs);
 
 	state = push_stack(ctx, dev);
 	STACK_PUSHED("clip text");
@@ -1323,7 +1323,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	int after;
 	int dx, dy;
 	fz_draw_state *state = &dev->stack[dev->top];
-	fz_colorspace *model = state->dest->colorspace;
+	fz_colorspace *model;
 	fz_irect clip;
 	fz_matrix inverse;
 	fz_irect src_area;
@@ -1332,6 +1332,8 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
+
+	model = state->dest->colorspace;
 
 	fz_intersect_irect(fz_pixmap_bbox(ctx, state->dest, &clip), &state->scissor);
 
