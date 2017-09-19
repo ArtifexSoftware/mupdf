@@ -141,6 +141,9 @@ static void read_zip_dir_imp(fz_context *ctx, fz_zip_archive *zip, int start_off
 		(void) fz_read_int32_le(ctx, file); /* ext file atts */
 		offset = fz_read_int32_le(ctx, file);
 
+		if (namesize < 0 || metasize < 0 || commentsize < 0)
+			fz_throw(ctx, FZ_ERROR_GENERIC, "invalid size in zip entry");
+
 		name = fz_malloc(ctx, namesize + 1);
 		n = fz_read(ctx, file, (unsigned char*)name, namesize);
 		if (n < (size_t)namesize)
