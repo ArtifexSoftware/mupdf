@@ -1015,6 +1015,26 @@ static void pdfapp_gotouri(pdfapp_t *app, char *uri)
 	winopenuri(app, uri);
 }
 
+mark_t pdfapp_mk_mark(pdfapp_t *app) 
+{
+	mark_t result;
+	result.resolution = app->resolution;
+	result.rotation = app->rotate;
+	result.panx = app->panx;
+	result.pany = app->pany;
+	result.pageno = app->pageno;
+	return result;
+}
+
+void pdfapp_restore_mark(pdfapp_t *app, mark_t mark) 
+{
+	app->resolution = mark.resolution;
+	app->rotate = mark.rotation;
+	app->panx = mark.panx;
+	app->pany = mark.pany;
+	app->pageno = mark.pageno;
+}
+
 void pdfapp_gotopage(pdfapp_t *app, int number)
 {
 	app->issearching = 0;
@@ -1030,10 +1050,10 @@ void pdfapp_gotopage(pdfapp_t *app, int number)
 
 	if (app->histlen + 1 == 256)
 	{
-		memmove(app->hist, app->hist + 1, sizeof(int) * 255);
+		memmove(app->hist, app->hist + 1, sizeof(app->hist[0]) * 255);
 		app->histlen --;
 	}
-	app->hist[app->histlen++] = app->pageno;
+	app->hist[app->histlen++] = pdfapp_mk_mark(app);
 	app->pageno = number;
 	pdfapp_showpage(app, 1, 1, 1, 0, 0);
 }
@@ -1385,16 +1405,16 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 		{
 			int idx = atoi(app->number);
 			if (idx >= 0 && idx < nelem(app->marks))
-				app->marks[idx] = app->pageno;
+				app->marks[idx] = pdfapp_mk_mark(app);
 		}
 		else
 		{
 			if (app->histlen + 1 == 256)
 			{
-				memmove(app->hist, app->hist + 1, sizeof(int) * 255);
+				memmove(app->hist, app->hist + 1, sizeof(app->hist[0]) * 255);
 				app->histlen --;
 			}
-			app->hist[app->histlen++] = app->pageno;
+			app->hist[app->histlen++] = pdfapp_mk_mark(app);
 		}
 		break;
 
@@ -1404,11 +1424,17 @@ void pdfapp_onkey(pdfapp_t *app, int c, int modifiers)
 			int idx = atoi(app->number);
 
 			if (idx >= 0 && idx < nelem(app->marks))
-				if (app->marks[idx] > 0)
-					app->pageno = app->marks[idx];
+				if (app->marks[idx].pageno > 0)
+				{
+					pdfapp_restore_mark(app, app->marks[idx]);
+					panto = DONT_PAN;
+				}				
 		}
 		else if (app->histlen > 0)
-			app->pageno = app->hist[--app->histlen];
+		{
+			pdfapp_restore_mark(app,app->hist[--app->histlen]);
+			panto = DONT_PAN;
+		}
 		break;
 
 	case 'p':
