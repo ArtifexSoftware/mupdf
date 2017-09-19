@@ -180,6 +180,7 @@ static int annot_count = 0;
 static int screen_w = 1280, screen_h = 720;
 static int window_w = 1, window_h = 1;
 
+static int oldinvert = 0, currentinvert = 0;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
@@ -283,6 +284,7 @@ void render_page(void)
 	links = fz_load_links(ctx, page);
 
 	pix = fz_new_pixmap_from_page_contents(ctx, page, &page_ctm, fz_device_rgb(ctx), 0);
+	if (currentinvert) fz_invert_pixmap(ctx, pix);
 	texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
 
@@ -899,10 +901,11 @@ static void do_app(void)
 		case KEY_F1: showhelp = !showhelp; break;
 		case 'o': toggle_outline(); break;
 		case 'L': showlinks = !showlinks; break;
-		case 'i': showinfo = !showinfo; break;
+		case 'I': showinfo = !showinfo; break;
 		case 'r': reload(); break;
 		case 'q': quit(); break;
 
+		case 'i': currentinvert ^= 1; break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
 		case 'W': auto_zoom_w(); break;
@@ -1104,12 +1107,13 @@ static void do_help(void)
 	y = do_help_line(x, y, "MuPDF", FZ_VERSION);
 	y += ui.lineheight;
 	y = do_help_line(x, y, "F1", "show this message");
-	y = do_help_line(x, y, "i", "show document information");
+	y = do_help_line(x, y, "I", "show document information");
 	y = do_help_line(x, y, "o", "show/hide outline");
 	y = do_help_line(x, y, "L", "show/hide links");
 	y = do_help_line(x, y, "r", "reload file");
 	y = do_help_line(x, y, "q", "quit");
 	y += ui.lineheight;
+	y = do_help_line(x, y, "i", "toggle inverted color mode");
 	y = do_help_line(x, y, "f", "fullscreen window");
 	y = do_help_line(x, y, "w", "shrink wrap window");
 	y = do_help_line(x, y, "W or H", "fit to width or height");
@@ -1138,6 +1142,14 @@ static void do_help(void)
 	y = do_help_line(x, y, "n or N", "repeat search");
 }
 
+static int need_refresh(void)
+{
+	return oldpage != currentpage
+		|| oldzoom != currentzoom
+		|| oldinvert != currentinvert
+		|| oldrotate != currentrotate;
+}
+
 static void do_canvas(void)
 {
 	static int saved_scroll_x = 0;
@@ -1147,13 +1159,14 @@ static void do_canvas(void)
 
 	float x, y;
 
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
+	if (need_refresh())
 	{
 		render_page();
 		update_title();
 		oldpage = currentpage;
 		oldzoom = currentzoom;
 		oldrotate = currentrotate;
+		oldinvert = currentinvert;
 	}
 
 	if (ui.x >= canvas_x && ui.x < canvas_x + canvas_w && ui.y >= canvas_y && ui.y < canvas_y + canvas_h)
