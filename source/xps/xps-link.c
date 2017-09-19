@@ -91,6 +91,8 @@ xps_load_links_in_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ct
 			bidi_level = atoi(bidi_level_att);
 
 		font = xps_lookup_font(ctx, doc, base_uri, font_uri_att, style_att);
+		if (!font)
+			return;
 		text = xps_parse_glyphs_imp(ctx, doc, &local_ctm, font, fz_atof(font_size_att),
 				fz_atof(origin_x_att), fz_atof(origin_y_att),
 				is_sideways, bidi_level, indices_att, unicode_att);
