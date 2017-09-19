@@ -328,7 +328,7 @@ match_selector(fz_css_selector *sel, fz_xml *node)
 
 	if (sel->name)
 	{
-		if (strcmp(sel->name, fz_xml_tag(node)))
+		if (!fz_xml_is_tag(node, sel->name))
 			return 0;
 	}
 

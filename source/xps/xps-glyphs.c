@@ -592,7 +592,7 @@ xps_parse_glyphs(fz_context *ctx, xps_document *doc, const fz_matrix *ctm,
 
 	/* If it's a solid color brush fill/stroke do a simple fill */
 
-	if (fill_tag && !strcmp(fz_xml_tag(fill_tag), "SolidColorBrush"))
+	if (fz_xml_is_tag(fill_tag, "SolidColorBrush"))
 	{
 		fill_opacity_att = fz_xml_att(fill_tag, "Opacity");
 		fill_att = fz_xml_att(fill_tag, "Color");

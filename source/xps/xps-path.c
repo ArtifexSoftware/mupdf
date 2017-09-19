@@ -879,14 +879,14 @@ xps_parse_path(fz_context *ctx, xps_document *doc, const fz_matrix *ctm, char *b
 	if (!data_att && !data_tag)
 		return;
 
-	if (fill_tag && !strcmp(fz_xml_tag(fill_tag), "SolidColorBrush"))
+	if (fz_xml_is_tag(fill_tag, "SolidColorBrush"))
 	{
 		fill_opacity_att = fz_xml_att(fill_tag, "Opacity");
 		fill_att = fz_xml_att(fill_tag, "Color");
 		fill_tag = NULL;
 	}
 
-	if (stroke_tag && !strcmp(fz_xml_tag(stroke_tag), "SolidColorBrush"))
+	if (fz_xml_is_tag(stroke_tag, "SolidColorBrush"))
 	{
 		stroke_opacity_att = fz_xml_att(stroke_tag, "Opacity");
 		stroke_att = fz_xml_att(stroke_tag, "Color");

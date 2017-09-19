@@ -84,7 +84,7 @@ xps_parse_remote_resource_dictionary(fz_context *ctx, xps_document *doc, char *b
 	if (!xml)
 		return NULL;
 
-	if (strcmp(fz_xml_tag(xml), "ResourceDictionary"))
+	if (!fz_xml_is_tag(xml, "ResourceDictionary"))
 	{
 		fz_drop_xml(ctx, xml);
 		fz_throw(ctx, FZ_ERROR_GENERIC, "expected ResourceDictionary element");

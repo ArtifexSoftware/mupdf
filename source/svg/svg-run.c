@@ -1044,7 +1044,7 @@ svg_run_use(fz_context *ctx, fz_device *dev, svg_document *doc, fz_xml *root, co
 		fz_xml *linked = fz_tree_lookup(ctx, doc->idmap, xlink_href_att + 1);
 		if (linked)
 		{
-			if (!strcmp(fz_xml_tag(linked), "symbol"))
+			if (fz_xml_is_tag(linked, "symbol"))
 				svg_run_use_symbol(ctx, dev, doc, root, linked, &local_state);
 			else
 				svg_run_element(ctx, dev, doc, linked, &local_state);
