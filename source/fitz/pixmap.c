@@ -842,6 +842,8 @@ fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma)
 {
 	unsigned char gamma_map[256];
 	unsigned char *s = pix->samples;
+	int n1 = pix->n - pix->alpha;
+	int n = pix->n;
 	int k, x, y;
 
 	for (k = 0; k < 256; k++)
@@ -851,11 +853,11 @@ fz_gamma_pixmap(fz_context *ctx, fz_pixmap *pix, float gamma)
 	{
 		for (x = 0; x < pix->w; x++)
 		{
-			for (k = 0; k < pix->n - 1; k++)
+			for (k = 0; k < n1; k++)
 				s[k] = gamma_map[s[k]];
-			s += pix->n;
+			s += n;
 		}
-		s += pix->stride - pix->w * pix->n;
+		s += pix->stride - pix->w * n;
 	}
 }
 
