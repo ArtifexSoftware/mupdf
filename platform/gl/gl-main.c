@@ -193,11 +193,17 @@ static int showsearch = 0;
 static int showinfo = 0;
 static int showhelp = 0;
 
+struct mark
+{
+	int page;
+	fz_point scroll;
+};
+
 static int history_count = 0;
-static int history[256];
+static struct mark history[256];
 static int future_count = 0;
-static int future[256];
-static int marks[10];
+static struct mark future[256];
+static struct mark marks[10];
 
 static int search_active = 0;
 static struct input search_input = { { 0 }, 0 };
@@ -306,16 +312,34 @@ void render_page(void)
 	}
 }
 
+static struct mark save_mark()
+{
+	struct mark mark;
+	mark.page = currentpage;
+	mark.scroll.x = scroll_x;
+	mark.scroll.y = scroll_y;
+	fz_transform_point(&mark.scroll, &page_inv_ctm);
+	return mark;
+}
+
+static void restore_mark(struct mark mark)
+{
+	currentpage = mark.page;
+	fz_transform_point(&mark.scroll, &page_ctm);
+	scroll_x = mark.scroll.x;
+	scroll_y = mark.scroll.y;
+}
+
 static void push_history(void)
 {
 	if (history_count + 1 >= nelem(history))
 	{
 		memmove(history, history + 1, sizeof *history * (nelem(history) - 1));
-		history[history_count] = currentpage;
+		history[history_count] = save_mark();
 	}
 	else
 	{
-		history[history_count++] = currentpage;
+		history[history_count++] = save_mark();
 	}
 }
 
@@ -324,11 +348,11 @@ static void push_future(void)
 	if (future_count + 1 >= nelem(future))
 	{
 		memmove(future, future + 1, sizeof *future * (nelem(future) - 1));
-		future[future_count] = currentpage;
+		future[future_count] = save_mark();
 	}
 	else
 	{
-		future[future_count++] = currentpage;
+		future[future_count++] = save_mark();
 	}
 }
 
@@ -364,7 +388,7 @@ static void pop_history(void)
 	int here = currentpage;
 	push_future();
 	while (history_count > 0 && currentpage == here)
-		currentpage = history[--history_count];
+		restore_mark(history[--history_count]);
 }
 
 static void pop_future(void)
@@ -372,7 +396,7 @@ static void pop_future(void)
 	int here = currentpage;
 	push_history();
 	while (future_count > 0 && currentpage == here)
-		currentpage = future[--future_count];
+		restore_mark(future[--future_count]);
 	push_history();
 }
 
@@ -952,7 +976,7 @@ static void do_app(void)
 			if (number == 0)
 				push_history();
 			else if (number > 0 && number < nelem(marks))
-				marks[number] = currentpage;
+				marks[number] = save_mark();
 			break;
 		case 't':
 			if (number == 0)
@@ -962,7 +986,9 @@ static void do_app(void)
 			}
 			else if (number > 0 && number < nelem(marks))
 			{
-				jump_to_page(marks[number]);
+				struct mark mark = marks[number];
+				restore_mark(mark);
+				jump_to_page(mark.page);
 			}
 			break;
 		case 'T':
