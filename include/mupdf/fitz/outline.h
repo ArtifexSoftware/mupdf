@@ -36,6 +36,7 @@ struct fz_outline_s
 	char *title;
 	char *uri;
 	int page;
+	float x, y;
 	fz_outline *next;
 	fz_outline *down;
 	int is_open;

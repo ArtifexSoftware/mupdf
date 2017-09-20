@@ -346,6 +346,19 @@ static void jump_to_page(int newpage)
 	push_history();
 }
 
+static void jump_to_page_xy(int newpage, float x, float y)
+{
+	fz_point p = { x, y };
+	newpage = fz_clampi(newpage, 0, fz_count_pages(ctx, doc) - 1);
+	fz_transform_point(&p, &page_ctm);
+	clear_future();
+	push_history();
+	currentpage = newpage;
+	scroll_x = p.x;
+	scroll_y = p.y;
+	push_history();
+}
+
 static void pop_history(void)
 {
 	int here = currentpage;
@@ -489,7 +502,7 @@ static int do_outline_imp(fz_outline *node, int end, int x0, int x1, int x, int 
 				if (!ui.active && ui.down)
 				{
 					ui.active = node;
-					jump_to_page(p);
+					jump_to_page_xy(p, node->x, node->y);
 					ui_needs_update = 1; /* we changed the current page, so force a redraw */
 				}
 			}
@@ -565,6 +578,7 @@ static void do_links(fz_link *link, int xofs, int yofs)
 {
 	fz_rect r;
 	float x, y;
+	float link_x, link_y;
 
 	x = ui.x;
 	y = ui.y;
@@ -606,9 +620,9 @@ static void do_links(fz_link *link, int xofs, int yofs)
 					open_browser(link->uri);
 				else
 				{
-					int p = fz_resolve_link(ctx, doc, link->uri, NULL, NULL);
+					int p = fz_resolve_link(ctx, doc, link->uri, &link_x, &link_y);
 					if (p >= 0)
-						jump_to_page(p);
+						jump_to_page_xy(p, link_x, link_y);
 					else
 						fz_warn(ctx, "cannot find link destination '%s'", link->uri);
 					ui_needs_update = 1;
