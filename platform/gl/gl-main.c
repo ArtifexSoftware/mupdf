@@ -180,6 +180,7 @@ static int annot_count = 0;
 static int screen_w = 1280, screen_h = 720;
 static int window_w = 1, window_h = 1;
 
+static int oldinvert = 0, currentinvert = 0;
 static int oldpage = 0, currentpage = 0;
 static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
@@ -283,6 +284,11 @@ void render_page(void)
 	links = fz_load_links(ctx, page);
 
 	pix = fz_new_pixmap_from_page_contents(ctx, page, &page_ctm, fz_device_rgb(ctx), 0);
+	if (currentinvert)
+	{
+		fz_invert_pixmap(ctx, pix);
+		fz_gamma_pixmap(ctx, pix, 1 / 1.4f);
+	}
 	texture_from_pixmap(&page_tex, pix);
 	fz_drop_pixmap(ctx, pix);
 
@@ -903,6 +909,7 @@ static void do_app(void)
 		case 'r': reload(); break;
 		case 'q': quit(); break;
 
+		case 'I': currentinvert = !currentinvert; break;
 		case 'f': toggle_fullscreen(); break;
 		case 'w': shrinkwrap(); break;
 		case 'W': auto_zoom_w(); break;
@@ -1085,7 +1092,7 @@ static void do_help(void)
 	int x = canvas_x + 4 * ui.lineheight;
 	int y = canvas_y + 4 * ui.lineheight;
 	int w = canvas_w - 8 * ui.lineheight;
-	int h = 37 * ui.lineheight;
+	int h = 38 * ui.lineheight;
 
 	glBegin(GL_TRIANGLE_STRIP);
 	{
@@ -1110,6 +1117,7 @@ static void do_help(void)
 	y = do_help_line(x, y, "r", "reload file");
 	y = do_help_line(x, y, "q", "quit");
 	y += ui.lineheight;
+	y = do_help_line(x, y, "I", "toggle inverted color mode");
 	y = do_help_line(x, y, "f", "fullscreen window");
 	y = do_help_line(x, y, "w", "shrink wrap window");
 	y = do_help_line(x, y, "W or H", "fit to width or height");
@@ -1147,13 +1155,14 @@ static void do_canvas(void)
 
 	float x, y;
 
-	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate)
+	if (oldpage != currentpage || oldzoom != currentzoom || oldrotate != currentrotate || oldinvert != currentinvert)
 	{
 		render_page();
 		update_title();
 		oldpage = currentpage;
 		oldzoom = currentzoom;
 		oldrotate = currentrotate;
+		oldinvert = currentinvert;
 	}
 
 	if (ui.x >= canvas_x && ui.x < canvas_x + canvas_w && ui.y >= canvas_y && ui.y < canvas_y + canvas_h)
@@ -1441,6 +1450,7 @@ static void usage(const char *argv0)
 	fprintf(stderr, "usage: %s [options] document [page]\n", argv0);
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
+	fprintf(stderr, "\t-I\tinvert colors\n");
 	fprintf(stderr, "\t-W -\tpage width for EPUB layout\n");
 	fprintf(stderr, "\t-H -\tpage height for EPUB layout\n");
 	fprintf(stderr, "\t-S -\tfont size for EPUB layout\n");
@@ -1458,13 +1468,14 @@ int main(int argc, char **argv)
 	const GLFWvidmode *video_mode;
 	int c;
 
-	while ((c = fz_getopt(argc, argv, "p:r:W:H:S:U:X")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:r:IW:H:S:U:X")) != -1)
 	{
 		switch (c)
 		{
 		default: usage(argv[0]); break;
 		case 'p': password = fz_optarg; break;
 		case 'r': currentzoom = fz_atof(fz_optarg); break;
+		case 'I': currentinvert = !currentinvert; break;
 		case 'W': layout_w = fz_atof(fz_optarg); break;
 		case 'H': layout_h = fz_atof(fz_optarg); break;
 		case 'S': layout_em = fz_atof(fz_optarg); break;
