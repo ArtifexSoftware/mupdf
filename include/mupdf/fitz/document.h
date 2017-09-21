@@ -178,6 +178,12 @@ typedef int (fz_page_separation_disabled_fn)(fz_context *ctx, fz_page *page, int
 */
 typedef fz_separations *(fz_page_separations_fn)(fz_context *ctx, fz_page *page);
 
+/*
+	fz_page_uses_overprint_fn: Type for a function to retrieve
+	whether or not a given page uses overprint.
+*/
+typedef int (fz_page_uses_overprint_fn)(fz_context *ctx, fz_page *page);
+
 typedef void (fz_annot_drop_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_annot *(fz_annot_next_fn)(fz_context *ctx, fz_annot *annot);
 typedef fz_rect *(fz_annot_bound_fn)(fz_context *ctx, fz_annot *annot, fz_rect *rect);
@@ -212,6 +218,7 @@ struct fz_page_s
 	fz_page_control_separation_fn *control_separation;
 	fz_page_separation_disabled_fn *separation_disabled;
 	fz_page_separations_fn *separations;
+	fz_page_uses_overprint_fn *overprint;
 };
 
 /*
@@ -608,6 +615,12 @@ fz_colorspace *fz_document_output_intent(fz_context *ctx, fz_document *doc);
 	Returns a reference that must be dropped.
 */
 fz_separations *fz_page_separations(fz_context *ctx, fz_page *page);
+
+/*
+	fz_page_uses_overprint: Find out whether a given page requests
+	overprint.
+*/
+int fz_page_uses_overprint(fz_context *ctx, fz_page *page);
 
 /*
 	fz_save_gproof: Given a currently open document, create a

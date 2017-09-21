@@ -436,7 +436,7 @@ pdf_resources_use_blending(fz_context *ctx, pdf_obj *rdb)
 		return 0;
 
 	/* Have we been here before and remembered an answer? */
-	if (pdf_obj_memo(ctx, rdb, &useBM))
+	if (pdf_obj_memo(ctx, rdb, PDF_FLAGS_MEMO_BM, &useBM))
 		return useBM;
 
 	/* stop on cyclic resource dependencies */
@@ -477,8 +477,92 @@ found:
 		fz_rethrow(ctx);
 	}
 
-	pdf_set_obj_memo(ctx, rdb, useBM);
+	pdf_set_obj_memo(ctx, rdb, PDF_FLAGS_MEMO_BM, useBM);
 	return useBM;
+}
+
+static int pdf_resources_use_overprint(fz_context *ctx, pdf_obj *rdb);
+
+static int
+pdf_extgstate_uses_overprint(fz_context *ctx, pdf_obj *dict)
+{
+	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME_OP);
+	if (obj && pdf_to_bool(ctx, obj))
+		return 1;
+	return 0;
+}
+
+static int
+pdf_pattern_uses_overprint(fz_context *ctx, pdf_obj *dict)
+{
+	pdf_obj *obj;
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
+	if (pdf_resources_use_overprint(ctx, obj))
+		return 1;
+	obj = pdf_dict_get(ctx, dict, PDF_NAME_ExtGState);
+	return pdf_extgstate_uses_overprint(ctx, obj);
+}
+
+static int
+pdf_xobject_uses_overprint(fz_context *ctx, pdf_obj *dict)
+{
+	pdf_obj *obj = pdf_dict_get(ctx, dict, PDF_NAME_Resources);
+	return pdf_resources_use_overprint(ctx, obj);
+}
+
+static int
+pdf_resources_use_overprint(fz_context *ctx, pdf_obj *rdb)
+{
+	pdf_obj *obj;
+	int i, n, useOP = 0;
+
+	if (!rdb)
+		return 0;
+
+	/* Have we been here before and remembered an answer? */
+	if (pdf_obj_memo(ctx, rdb, PDF_FLAGS_MEMO_OP, &useOP))
+		return useOP;
+
+	/* stop on cyclic resource dependencies */
+	if (pdf_mark_obj(ctx, rdb))
+		return 0;
+
+	fz_try(ctx)
+	{
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME_ExtGState);
+		n = pdf_dict_len(ctx, obj);
+		for (i = 0; i < n; i++)
+			if (pdf_extgstate_uses_overprint(ctx, pdf_dict_get_val(ctx, obj, i)))
+				goto found;
+
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME_Pattern);
+		n = pdf_dict_len(ctx, obj);
+		for (i = 0; i < n; i++)
+			if (pdf_pattern_uses_overprint(ctx, pdf_dict_get_val(ctx, obj, i)))
+				goto found;
+
+		obj = pdf_dict_get(ctx, rdb, PDF_NAME_XObject);
+		n = pdf_dict_len(ctx, obj);
+		for (i = 0; i < n; i++)
+			if (pdf_xobject_uses_overprint(ctx, pdf_dict_get_val(ctx, obj, i)))
+				goto found;
+		if (0)
+		{
+found:
+			useOP = 1;
+		}
+	}
+	fz_always(ctx)
+	{
+		pdf_unmark_obj(ctx, rdb);
+	}
+	fz_catch(ctx)
+	{
+		fz_rethrow(ctx);
+	}
+
+	pdf_set_obj_memo(ctx, rdb, PDF_FLAGS_MEMO_OP, useOP);
+	return useOP;
 }
 
 fz_transition *
@@ -823,6 +907,12 @@ pdf_page_separations(fz_context *ctx, pdf_page *page)
 	return seps;
 }
 
+int
+pdf_page_uses_overprint(fz_context *ctx, pdf_page *page)
+{
+	return page ? page->overprint : 0;
+}
+
 static void
 pdf_drop_page_imp(fz_context *ctx, pdf_page *page)
 {
@@ -856,6 +946,7 @@ pdf_new_page(fz_context *ctx, pdf_document *doc)
 	page->super.run_page_contents = (fz_page_run_page_contents_fn*)pdf_run_page_contents;
 	page->super.page_presentation = (fz_page_page_presentation_fn*)pdf_page_presentation;
 	page->super.separations = (fz_page_separations_fn *)pdf_page_separations;
+	page->super.overprint = (fz_page_uses_overprint_fn *)pdf_page_uses_overprint;
 
 	page->obj = NULL;
 
@@ -1009,17 +1100,22 @@ pdf_load_page(fz_context *ctx, pdf_document *doc, int number)
 		page->links = NULL;
 	}
 
-	/* Scan for transparency */
+	/* Scan for transparency and overprint */
 	fz_try(ctx)
 	{
 		pdf_obj *resources = pdf_page_resources(ctx, page);
-		if (pdf_resources_use_blending(ctx, resources))
+		if (pdf_name_eq(ctx, pdf_dict_getp(ctx, pageobj, "Group/S"), PDF_NAME_Transparency))
 			page->transparency = 1;
-		else if (pdf_name_eq(ctx, pdf_dict_getp(ctx, pageobj, "Group/S"), PDF_NAME_Transparency))
+		else if (pdf_resources_use_blending(ctx, resources))
 			page->transparency = 1;
 		for (annot = page->annots; annot && !page->transparency; annot = annot->next)
 			if (annot->ap && pdf_resources_use_blending(ctx, pdf_xobject_resources(ctx, annot->ap)))
 				page->transparency = 1;
+		if (pdf_resources_use_overprint(ctx, resources))
+			page->overprint = 1;
+		for (annot = page->annots; annot && !page->overprint; annot = annot->next)
+			if (annot->ap && pdf_resources_use_overprint(ctx, pdf_xobject_resources(ctx, annot->ap)))
+				page->overprint = 1;
 	}
 	fz_catch(ctx)
 	{

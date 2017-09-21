@@ -28,9 +28,9 @@ enum
 {
 	PDF_FLAGS_MARKED = 1,
 	PDF_FLAGS_SORTED = 2,
-	PDF_FLAGS_MEMO = 4,
-	PDF_FLAGS_MEMO_BOOL = 8,
-	PDF_FLAGS_DIRTY = 16
+	PDF_FLAGS_DIRTY = 4,
+	PDF_FLAGS_MEMO_BASE = 8,
+	PDF_FLAGS_MEMO_BASE_BOOL = 16
 };
 
 struct pdf_obj_s
@@ -1643,26 +1643,28 @@ pdf_unmark_obj(fz_context *ctx, pdf_obj *obj)
 }
 
 void
-pdf_set_obj_memo(fz_context *ctx, pdf_obj *obj, int memo)
+pdf_set_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int memo)
 {
 	if (obj < PDF_OBJ__LIMIT)
 		return;
 
-	obj->flags |= PDF_FLAGS_MEMO;
+	bit <<= 1;
+	obj->flags |= PDF_FLAGS_MEMO_BASE << bit;
 	if (memo)
-		obj->flags |= PDF_FLAGS_MEMO_BOOL;
+		obj->flags |= PDF_FLAGS_MEMO_BASE_BOOL << bit;
 	else
-		obj->flags &= ~PDF_FLAGS_MEMO_BOOL;
+		obj->flags &= ~(PDF_FLAGS_MEMO_BASE_BOOL << bit);
 }
 
 int
-pdf_obj_memo(fz_context *ctx, pdf_obj *obj, int *memo)
+pdf_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int *memo)
 {
 	if (obj < PDF_OBJ__LIMIT)
 		return 0;
-	if (!(obj->flags & PDF_FLAGS_MEMO))
+	bit <<= 1;
+	if (!(obj->flags & (PDF_FLAGS_MEMO_BASE<<bit)))
 		return 0;
-	*memo = !!(obj->flags & PDF_FLAGS_MEMO_BOOL);
+	*memo = !!(obj->flags & (PDF_FLAGS_MEMO_BASE_BOOL<<bit));
 	return 1;
 }
 

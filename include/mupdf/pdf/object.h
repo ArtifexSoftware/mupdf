@@ -66,8 +66,15 @@ void pdf_unmark_obj(fz_context *ctx, pdf_obj *obj);
 /* obj memo functions - allows us to secretly remember "a memo" (a bool) in
  * an object, and to read back whether there was a memo, and if so, what it
  * was. */
-void pdf_set_obj_memo(fz_context *ctx, pdf_obj *obj, int memo);
-int pdf_obj_memo(fz_context *ctx, pdf_obj *obj, int *memo);
+
+enum
+{
+	PDF_FLAGS_MEMO_BM = 0,
+	PDF_FLAGS_MEMO_OP = 1
+};
+
+void pdf_set_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int memo);
+int pdf_obj_memo(fz_context *ctx, pdf_obj *obj, int bit, int *memo);
 
 /* obj dirty bit support. */
 int pdf_obj_is_dirty(fz_context *ctx, pdf_obj *obj);

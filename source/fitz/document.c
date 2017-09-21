@@ -490,3 +490,10 @@ fz_page_separations(fz_context *ctx, fz_page *page)
 		return page->separations(ctx, page);
 	return NULL;
 }
+
+int fz_page_uses_overprint(fz_context *ctx, fz_page *page)
+{
+	if (page && page->overprint)
+		return page->overprint(ctx, page);
+	return 0;
+}

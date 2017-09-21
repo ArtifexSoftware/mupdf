@@ -194,6 +194,7 @@ struct pdf_page_s
 	pdf_obj *obj;
 
 	int transparency;
+	int overprint;
 	int incomplete;
 
 	fz_link *links;

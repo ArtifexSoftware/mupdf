@@ -256,7 +256,12 @@ static int lowmemory = 0;
 
 static int errored = 0;
 static fz_colorspace *colorspace;
+static fz_colorspace *oi = NULL;
+#ifdef FZ_ENABLE_SPOT_RENDERING
+static int spots = SPOTS_OVERPRINT_SIM;
+#else
 static int spots = SPOTS_NONE;
+#endif
 static int alpha;
 static char *filename;
 static int files = 0;
@@ -352,12 +357,14 @@ static void usage(void)
 		"\t-P\tparallel interpretation/rendering (disabled in this non-threading build)\n"
 #endif
 		"\t-N\tdisable ICC workflow (\"N\"o color management)\n"
-		"\t-O -\tControl spot rendering\n"
+		"\t-O -\tControl spot/overprint rendering\n"
 		"\t\t 0 = No spot rendering\n"
 #ifdef FZ_ENABLE_SPOT_RENDERING
-		"\t\t 1 = Overprint simulation\n"
+		"\t\t 0 = No spot rendering\n"
+		"\t\t 1 = Overprint simulation (default)\n"
 		"\t\t 2 = Full spot rendering\n"
 #else
+		"\t\t 0 = No spot rendering (default)\n"
 		"\t\t 1 = Overprint simulation (Disabled in this build)\n"
 		"\t\t 2 = Full spot rendering (Disabled in this build)\n"
 #endif
@@ -1027,7 +1034,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 
 	page = fz_load_page(ctx, doc, pagenum - 1);
 
-	if (spots)
+	if (spots != SPOTS_NONE)
 	{
 		fz_try(ctx)
 		{
@@ -1042,11 +1049,18 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 					for (i = 0; i < n; i++)
 						fz_set_separation_behavior(ctx, seps, i, FZ_SEPARATION_COMPOSITE);
 			}
-			else
+			else if (fz_page_uses_overprint(ctx, page))
 			{
-				/* If we are doing spot rendering (or overprint simulation)
-				 * then we need (at least) an empty sep object to force the
-				 * overprint simulation in the draw device. */
+				/* This page uses overprint, so we need an empty
+				 * sep object to force the overprint simulation on. */
+				seps = fz_new_separations(ctx, 0);
+			}
+			else if (oi && fz_colorspace_n(ctx, oi) != fz_colorspace_n(ctx, colorspace))
+			{
+				/* We have an output intent, and it's incompatible
+				 * with the colorspace our device needs. Force the
+				 * overprint simulation on, because this ensures that
+				 * we 'simulate' the output intent too. */
 				seps = fz_new_separations(ctx, 0);
 			}
 		}
@@ -1446,7 +1460,6 @@ int mudraw_main(int argc, char **argv)
 	trace_info info = { 0, 0, 0 };
 	fz_alloc_context alloc_ctx = { &info, trace_malloc, trace_realloc, trace_free };
 	fz_locks_context *locks = NULL;
-	fz_colorspace *oi = NULL;
 
 	fz_var(doc);
 
