@@ -496,6 +496,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 	int i;
 	int n = dest->n - dest->alpha;
 	fz_colorspace *model = dest->colorspace;
+	int devn;
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -503,12 +504,19 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 	if (color_params == NULL)
 		color_params = fz_default_color_params(ctx);
 
+	devn = fz_colorspace_is_device_n(ctx, colorspace);
+	/* We can only overprint when enabled, and when we are in a subtractive colorspace */
 	if (!color_params || color_params->op == 0 || !fz_colorspace_is_subtractive(ctx, dest->colorspace))
+		op = NULL;
+	/* If we are in a CMYK space (i.e. not a devn one, given we know we are subtractive at this point),
+	 * then we only overprint if it's the same space as the destination. */
+	/* FIXME: Possibly we need a better equivalency test here. */
+	else if (!devn && colorspace != dest->colorspace)
 		op = NULL;
 
 	if (n == 0)
 		i = 0;
-	else if (fz_colorspace_is_device_n(ctx, colorspace) && colors_supported(ctx, colorspace, dest))
+	else if (devn && colors_supported(ctx, colorspace, dest))
 	{
 		fz_convert_separation_colors(ctx, color_params, dest->colorspace, dest->seps, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
