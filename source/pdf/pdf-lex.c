@@ -7,7 +7,7 @@
 	'+':case'-':case'.':case'0':case'1':case'2':case'3':\
 	case'4':case'5':case'6':case'7':case'8':case'9'
 #define IS_WHITE \
-	'\000':case'\011':case'\012':case'\014':case'\015':case'\040'
+	'\x00':case'\x09':case'\x0a':case'\x0c':case'\x0d':case'\x20'
 #define IS_HEX \
 	'0':case'1':case'2':case'3':case'4':case'5':case'6':\
 	case'7':case'8':case'9':case'A':case'B':case'C':\

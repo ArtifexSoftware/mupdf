@@ -285,6 +285,11 @@ orphan_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj)
 	doc->orphans[doc->orphans_count++] = obj;
 }
 
+static int is_white(int c)
+{
+	return c == '\x00' || c == '\x09' || c == '\x0a' || c == '\x0c' || c == '\x0d' || c == '\x20';
+}
+
 void
 pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 {
@@ -373,14 +378,15 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 				fz_throw(ctx, FZ_ERROR_GENERIC, "cannot tell in file");
 
 			fz_try(ctx)
-			{
 				tok = pdf_lex_no_string(ctx, doc->file, buf);
-			}
 			fz_catch(ctx)
 			{
 				fz_rethrow_if(ctx, FZ_ERROR_TRYLATER);
-				fz_warn(ctx, "ignoring the rest of the file");
-				break;
+				fz_warn(ctx, "skipping ahead to next token");
+				do
+					c = fz_read_byte(ctx, doc->file);
+				while (c != EOF && !is_white(c));
+				continue;
 			}
 
 			/* If we have the next token already, then we'll jump
