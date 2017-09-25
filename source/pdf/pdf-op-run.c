@@ -1367,7 +1367,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 				{
 					/* Postpone the problem */
 					if (errmess[0])
-						fz_warn(ctx, errmess);
+						fz_warn(ctx, "%s", errmess);
 					strcpy(errmess, fz_caught_message(ctx));
 				}
 			}
@@ -1381,7 +1381,7 @@ pdf_run_xobject(fz_context *ctx, pdf_run_processor *proc, pdf_xobject *xobj, pdf
 				{
 					/* Postpone the problem */
 					if (errmess[0])
-						fz_warn(ctx, errmess);
+						fz_warn(ctx, "%s", errmess);
 					strcpy(errmess, fz_caught_message(ctx));
 				}
 			}
