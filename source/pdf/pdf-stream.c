@@ -246,6 +246,8 @@ build_filter_chain(fz_context *ctx, fz_stream *chain, pdf_document *doc, pdf_obj
 	pdf_obj *p;
 	int i, n;
 
+	fz_var(chain);
+
 	fz_try(ctx)
 	{
 		n = pdf_array_len(ctx, fs);
