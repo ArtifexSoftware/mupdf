@@ -496,7 +496,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 	int i;
 	int n = dest->n - dest->alpha;
 	fz_colorspace *model = dest->colorspace;
-	int devn;
+	int devn, devgray;
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -505,9 +505,15 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 		color_params = fz_default_color_params(ctx);
 
 	devn = fz_colorspace_is_device_n(ctx, colorspace);
+	devgray = fz_colorspace_is_device_gray(ctx, colorspace);
 	/* We can only overprint when enabled, and when we are in a subtractive colorspace */
 	if (!color_params || color_params->op == 0 || !fz_colorspace_is_subtractive(ctx, dest->colorspace))
 		op = NULL;
+	else if (devgray)
+	{
+		/* Device Gray is additive, but seems to still be counted for overprint
+		 * (see Ghent_V3.0/030_Gray_K_black_OP_x1a.pdf 030.pdf). */
+	}
 	/* If we are in a CMYK space (i.e. not a devn one, given we know we are subtractive at this point),
 	 * then we only overprint if it's the same space as the destination. */
 	/* FIXME: Possibly we need a better equivalency test here. */
@@ -535,15 +541,15 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 	}
 	colorbv[i] = alpha * 255;
 
-	/* If we are overprinting, and we're plotting in cmyk and a given
-	 * color component is zero, then protect that component from being
-	 * written to. */
-	if (op)
+	/* op && !devn => overpinting in cmyk or devicegray. */
+	if (op && !devn)
 	{
-		if (!fz_colorspace_is_device_n(ctx, colorspace))
-			for (i = 4; i < n; i++)
-				fz_set_overprint(op, i);
-		if (color_params->opm == 1 && fz_colorspace_n(ctx, colorspace) == 4)
+		/* We are overprinting, so protect all spots. */
+		for (i = 4; i < n; i++)
+			fz_set_overprint(op, i);
+		/* If OPM, then protect all components for which the color values are zero.
+		 * (but only if we're in devicecmyk). */
+		if (color_params->opm == 1 && colorspace != fz_device_gray(ctx))
 			for (i = 0; i < n; i++)
 				if (colorfv[i] == 0)
 					fz_set_overprint(op, i);
