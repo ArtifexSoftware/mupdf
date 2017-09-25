@@ -3822,16 +3822,25 @@ fz_set_default_output_intent(fz_context *ctx, fz_default_colorspaces *default_cs
 	switch (cs->n)
 	{
 	case 1:
-		fz_drop_colorspace(ctx, default_cs->gray);
-		default_cs->gray = fz_keep_colorspace(ctx, cs);
+		if (default_cs->gray == fz_device_gray(ctx))
+		{
+			fz_drop_colorspace(ctx, default_cs->gray);
+			default_cs->gray = fz_keep_colorspace(ctx, cs);
+		}
 		break;
 	case 3:
-		fz_drop_colorspace(ctx, default_cs->rgb);
-		default_cs->rgb = fz_keep_colorspace(ctx, cs);
+		if (default_cs->rgb == fz_device_rgb(ctx))
+		{
+			fz_drop_colorspace(ctx, default_cs->rgb);
+			default_cs->rgb = fz_keep_colorspace(ctx, cs);
+		}
 		break;
 	case 4:
-		fz_drop_colorspace(ctx, default_cs->cmyk);
-		default_cs->cmyk = fz_keep_colorspace(ctx, cs);
+		if (default_cs->cmyk == fz_device_cmyk(ctx))
+		{
+			fz_drop_colorspace(ctx, default_cs->cmyk);
+			default_cs->cmyk = fz_keep_colorspace(ctx, cs);
+		}
 		break;
 	}
 }
