@@ -35,8 +35,11 @@ else ifeq "$(build)" "valgrind"
 CFLAGS += -pipe -O2 -DNDEBUG -DPACIFY_VALGRIND -fno-omit-frame-pointer
 LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s
 else ifeq "$(build)" "sanitize"
-CFLAGS += -pipe -g -fsanitize=address -fno-omit-frame-pointer
-LDFLAGS += -fsanitize=address
+CFLAGS += -pipe -g -fno-omit-frame-pointer -fsanitize=address
+LDFLAGS += -g -fsanitize=address
+else ifeq "$(build)" "sanitize-release"
+CFLAGS += -pipe -O2 -DNDEBUG -fno-omit-frame-pointer -fsanitize=address
+LDFLAGS += $(LDREMOVEUNREACH) -Wl,-s -fsanitize=address
 else ifeq "$(build)" "profile"
 CFLAGS += -pipe -O2 -DNDEBUG -pg
 LDFLAGS += -pg
