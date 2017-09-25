@@ -195,6 +195,8 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 		return NULL;
 
 	n = sep->num_separations;
+	if (n == 0)
+		return NULL;
 	c = 0;
 	for (i = 0; i < n; i++)
 	{
@@ -203,9 +205,10 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 			c++;
 	}
 
-	/* If no composites, then we are fine to render direct. */
+	/* If no composites, then we don't need to create a new seps object
+	 * with the composite ones enabled, so just reuse our current object. */
 	if (c == 0)
-		return NULL;
+		return fz_keep_separations(ctx, sep);
 
 	/* We need to clone us a separation structure, with all
 	 * the composite separations marked as enabled. */

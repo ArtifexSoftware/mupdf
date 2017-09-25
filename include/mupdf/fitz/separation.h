@@ -67,8 +67,11 @@ int fz_separations_controllable(fz_context *ctx, const fz_separations *seps);
 /* Return the number of active separations. */
 int fz_count_active_separations(fz_context *ctx, const fz_separations *seps);
 
-/* If the separations selection is unsuitable for overprint,
- * clone it to produce one that is, otherwise return NULL. */
+/* Return a separations object with all the spots in the input
+ * separations object that are set to composite, reset to be
+ * enabled. If there ARE no spots in the object, this returns
+ * NULL. If the object already has all its spots enabled, then
+ * just returns another handle on the same object. */
 fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separations *seps);
 
 /* Convert a color given in terms of one colorspace,
