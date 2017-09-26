@@ -13,18 +13,18 @@
 [submodule "thirdparty/jpeg"]
 	path = thirdparty/libjpeg
 	url = ../thirdparty-libjpeg.git
+[submodule "thirdparty/lcms2"]
+	path = thirdparty/lcms2
+	url = ../thirdparty-lcms2.git
 [submodule "thirdparty/openjpeg"]
 	path = thirdparty/openjpeg
 	url = ../thirdparty-openjpeg.git
 [submodule "thirdparty/zlib"]
 	path = thirdparty/zlib
 	url = ../thirdparty-zlib.git
-[submodule "thirdparty/glfw"]
-	path = thirdparty/glfw
-	url = ../thirdparty-glfw.git
 [submodule "thirdparty/curl"]
 	path = thirdparty/curl
 	url = ../thirdparty-curl.git
-[submodule "thirdparty/lcms2"]
-	path = thirdparty/lcms2
-	url = ../thirdparty-lcms2.git
+[submodule "thirdparty/freeglut"]
+	path = thirdparty/freeglut
+	url = ../thirdparty-freeglut.git

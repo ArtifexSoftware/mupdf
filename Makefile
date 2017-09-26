@@ -112,7 +112,7 @@ $(OUT)/platform/x11/curl/%.o : platform/x11/%.c | $(ALL_DIR)
 	$(CC_CMD) $(X11_CFLAGS) $(CURL_CFLAGS) -DHAVE_CURL
 
 $(OUT)/platform/gl/%.o : platform/gl/%.c | $(ALL_DIR)
-	$(CC_CMD) $(GLFW_CFLAGS)
+	$(CC_CMD) $(GLUT_CFLAGS)
 
 $(OUT)/%.o : %.c | $(ALL_DIR)
 	$(CC_CMD)
@@ -392,12 +392,12 @@ $(MUVIEW_X11_CURL_EXE) : $(MUVIEW_X11_CURL_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(CURL
 endif
 endif
 
-ifeq "$(HAVE_GLFW)" "yes"
-MUVIEW_GLFW_EXE := $(OUT)/mupdf-gl
-MUVIEW_GLFW_OBJ := $(addprefix $(OUT)/platform/gl/, gl-font.o gl-input.o gl-main.o)
-$(MUVIEW_GLFW_OBJ) : $(FITZ_HDR) $(PDF_HDR) platform/gl/gl-app.h
-$(MUVIEW_GLFW_EXE) : $(MUVIEW_GLFW_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(GLFW_LIB)
-	$(LINK_CMD) $(GLFW_LIBS)
+ifeq "$(HAVE_GLUT)" "yes"
+MUVIEW_GLUT_EXE := $(OUT)/mupdf-gl
+MUVIEW_GLUT_OBJ := $(addprefix $(OUT)/platform/gl/, gl-font.o gl-input.o gl-main.o)
+$(MUVIEW_GLUT_OBJ) : $(FITZ_HDR) $(PDF_HDR) platform/gl/gl-app.h
+$(MUVIEW_GLUT_EXE) : $(MUVIEW_GLUT_OBJ) $(MUPDF_LIB) $(THIRD_LIB) $(GLUT_LIB)
+	$(LINK_CMD) $(GLUT_LIB) $(GLUT_LIBS)
 endif
 
 ifeq "$(HAVE_WIN32)" "yes"
@@ -408,7 +408,7 @@ $(MUVIEW_WIN32_EXE) : $(MUVIEW_WIN32_OBJ) $(MUPDF_LIB) $(THIRD_LIB)
 	$(LINK_CMD) $(WIN32_LIBS)
 endif
 
-MUVIEW_EXE := $(MUVIEW_X11_EXE) $(MUVIEW_WIN32_EXE) $(MUVIEW_GLFW_EXE)
+MUVIEW_EXE := $(MUVIEW_X11_EXE) $(MUVIEW_WIN32_EXE) $(MUVIEW_GLUT_EXE)
 MUVIEW_CURL_EXE := $(MUVIEW_X11_CURL_EXE) $(MUVIEW_WIN32_CURL_EXE)
 
 INSTALL_APPS := $(MUTOOL_EXE) $(MUVIEW_EXE)
@@ -453,7 +453,7 @@ mandir ?= $(prefix)/share/man
 docdir ?= $(prefix)/share/doc/mupdf
 
 third: $(THIRD_LIB)
-extra: $(CURL_LIB) $(GLFW_LIB)
+extra: $(CURL_LIB) $(GLUT_LIB)
 libs: $(INSTALL_LIBS)
 apps: $(INSTALL_APPS)
 

@@ -112,18 +112,18 @@ static int ui_input_key(struct input *input)
 	switch (ui.key)
 	{
 	case KEY_LEFT:
-		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
+		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
 		{
 			input->q = prev_word(input->q, input->text);
 		}
-		else if (ui.mod == GLFW_MOD_CONTROL)
+		else if (ui.mod == GLUT_ACTIVE_CTRL)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p < input->q ? input->p : input->q;
 			else
 				input->p = input->q = prev_word(input->q, input->text);
 		}
-		else if (ui.mod == GLFW_MOD_SHIFT)
+		else if (ui.mod == GLUT_ACTIVE_SHIFT)
 		{
 			if (input->q > input->text)
 				input->q = prev_char(input->q, input->text);
@@ -137,18 +137,18 @@ static int ui_input_key(struct input *input)
 		}
 		break;
 	case KEY_RIGHT:
-		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
+		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
 		{
 			input->q = next_word(input->q, input->end);
 		}
-		else if (ui.mod == GLFW_MOD_CONTROL)
+		else if (ui.mod == GLUT_ACTIVE_CTRL)
 		{
 			if (input->p != input->q)
 				input->p = input->q = input->p > input->q ? input->p : input->q;
 			else
 				input->p = input->q = next_word(input->q, input->end);
 		}
-		else if (ui.mod == GLFW_MOD_SHIFT)
+		else if (ui.mod == GLUT_ACTIVE_SHIFT)
 		{
 			if (input->q < input->end)
 				input->q = next_char(input->q);
@@ -163,15 +163,15 @@ static int ui_input_key(struct input *input)
 		break;
 	case KEY_UP:
 	case KEY_HOME:
-		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
+		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
 		{
 			input->q = input->text;
 		}
-		else if (ui.mod == GLFW_MOD_CONTROL)
+		else if (ui.mod == GLUT_ACTIVE_CTRL)
 		{
 			input->p = input->q = input->text;
 		}
-		else if (ui.mod == GLFW_MOD_SHIFT)
+		else if (ui.mod == GLUT_ACTIVE_SHIFT)
 		{
 			input->q = input->text;
 		}
@@ -182,15 +182,15 @@ static int ui_input_key(struct input *input)
 		break;
 	case KEY_DOWN:
 	case KEY_END:
-		if (ui.mod == GLFW_MOD_CONTROL + GLFW_MOD_SHIFT)
+		if (ui.mod == GLUT_ACTIVE_CTRL + GLUT_ACTIVE_SHIFT)
 		{
 			input->q = input->end;
 		}
-		else if (ui.mod == GLFW_MOD_CONTROL)
+		else if (ui.mod == GLUT_ACTIVE_CTRL)
 		{
 			input->p = input->q = input->end;
 		}
-		else if (ui.mod == GLFW_MOD_SHIFT)
+		else if (ui.mod == GLUT_ACTIVE_SHIFT)
 		{
 			input->q = input->end;
 		}
@@ -254,20 +254,20 @@ static int ui_input_key(struct input *input)
 			char *q = input->p > input->q ? input->p : input->q;
 			memmove(buf, p, q - p);
 			buf[q-p] = 0;
-			glfwSetClipboardString(window, buf);
+			ui_set_clipboard(buf);
 			if (ui.key == KEY_CTL_X)
 				ui_input_delete_selection(input);
 		}
 		break;
 	case KEY_CTL_V:
 		{
-			const char *buf = glfwGetClipboardString(window);
+			const char *buf = ui_get_clipboard();
 			if (buf)
 				ui_input_paste(input, buf, (int)strlen(buf));
 		}
 		break;
 	default:
-		if (ui.key >= 32)
+		if (ui.key >= 32 && ui.plain)
 		{
 			int cat = ucdn_get_general_category(ui.key);
 			if (ui.key == ' ' || (cat >= UCDN_GENERAL_CATEGORY_LL && cat < UCDN_GENERAL_CATEGORY_ZL))

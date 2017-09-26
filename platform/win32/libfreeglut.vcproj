@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="libglfw"
+	Name="libfreeglut"
 	ProjectGUID="{A1B75D29-9F5C-4A0F-B368-322A10477D0C}"
 	RootNamespace="libglfw"
 	Keyword="Win32Proj"
@@ -23,7 +23,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -43,8 +43,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL"
+				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\admin\src\mupdf\thirdparty\freeglut\include&quot;"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;HAVE_U__INT64;NEED_XPARSEGEOMETRY_IMPL;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -86,7 +86,7 @@
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -107,8 +107,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
-				PreprocessorDefinitions="WIN64;_DEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL"
+				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\admin\src\mupdf\thirdparty\freeglut\include&quot;"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;HAVE_U__INT64;NEED_XPARSEGEOMETRY_IMPL;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -150,7 +150,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -170,8 +170,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL;MEMENTO"
+				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\admin\src\mupdf\thirdparty\freeglut\include&quot;"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;HAVE_U__INT64;NEED_XPARSEGEOMETRY_IMPL;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -213,7 +213,7 @@
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -234,8 +234,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
-				PreprocessorDefinitions="WIN64;_DEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL;MEMENTO"
+				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\admin\src\mupdf\thirdparty\freeglut\include&quot;"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;HAVE_U__INT64;NEED_XPARSEGEOMETRY_IMPL;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -277,7 +277,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -297,8 +297,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL"
+				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\admin\src\mupdf\thirdparty\freeglut\include&quot;"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;HAVE_U__INT64;NEED_XPARSEGEOMETRY_IMPL;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -339,7 +339,7 @@
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
-			CharacterSet="1"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -360,8 +360,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\thirdparty\glfw\deps\mingw"
-				PreprocessorDefinitions="WIN64;NDEBUG;_CRT_SECURE_NO_WARNINGS;_GLFW_WIN32;_GLFW_WGL;_GLFW_USE_OPENGL"
+				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\admin\src\mupdf\thirdparty\freeglut\include&quot;"
+				PreprocessorDefinitions="FREEGLUT_LIB_PRAGMAS=0;FREEGLUT_STATIC;HAVE_U__INT64;NEED_XPARSEGEOMETRY_IMPL;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -401,14 +401,62 @@
 	</References>
 	<Files>
 		<Filter
-			Name="include"
+			Name="mswin"
 			>
 			<File
-				RelativePath="..\..\thirdparty\glfw\include\GLFW\glfw3.h"
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_cursor_mswin.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\include\GLFW\glfw3native.h"
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_display_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_ext_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_gamemode_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_init_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_input_devices_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_internal_mswin.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_joystick_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_main_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_menu_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_spaceball_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_state_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_structure_mswin.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\mswin\fg_window_mswin.c"
 				>
 			</File>
 		</Filter>
@@ -416,83 +464,131 @@
 			Name="src"
 			>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\context.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_callbacks.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\egl_context.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_cursor.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\egl_context.h"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_display.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\init.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_ext.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\input.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_font.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\internal.h"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_font_data.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\monitor.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_gamemode.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\vulkan.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_geometry.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\wgl_context.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_gl2.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\wgl_context.h"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_gl2.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_init.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_init.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_joystick.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_init.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_joystick.h"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_input_devices.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_monitor.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_platform.h"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_joystick.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_time.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_main.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_tls.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_menu.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_tls.h"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_misc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\win32_window.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_overlay.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\glfw\src\window.c"
+				RelativePath="..\..\thirdparty\freeglut\src\fg_spaceball.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_state.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_stroke_mono_roman.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_stroke_roman.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_structure.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_teapot.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_teapot_data.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_version.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_videoresize.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\fg_window.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="util"
+			>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\util\xparsegeometry_repl.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\freeglut\src\util\xparsegeometry_repl.h"
 				>
 			</File>
 		</Filter>

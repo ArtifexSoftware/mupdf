@@ -7,10 +7,9 @@ int win_open_file(char *buf, int len);
 #include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
 
-#include <GLFW/glfw3.h>
+#include <GL/freeglut.h>
 
 extern fz_context *ctx;
-extern GLFWwindow *window;
 
 enum
 {
@@ -57,7 +56,7 @@ struct ui
 	int x, y;
 	int down, middle, right;
 	int scroll_x, scroll_y;
-	int key, mod;
+	int key, mod, plain;
 
 	void *hot, *active, *focus;
 
@@ -67,6 +66,9 @@ struct ui
 };
 
 extern struct ui ui;
+
+void ui_set_clipboard(const char *buf);
+const char *ui_get_clipboard(void);
 
 void ui_init_fonts(fz_context *ctx, float pixelsize);
 void ui_finish_fonts(fz_context *ctx);

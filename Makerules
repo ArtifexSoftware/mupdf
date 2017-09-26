@@ -114,6 +114,10 @@ HAVE_PTHREAD := yes
 SYS_PTHREAD_CFLAGS :=
 SYS_PTHREAD_LIBS := -lpthread
 
+HAVE_GLUT := yes
+SYS_GLUT_CFLAGS :=
+SYS_GLUT_LIBS := -lglut -lGL
+
 ifeq "$(shell pkg-config --exists 'libcrypto <= 1.0.1t' && echo yes)" "yes"
 HAVE_LIBCRYPTO := yes
 SYS_LIBCRYPTO_CFLAGS := -DHAVE_LIBCRYPTO $(shell pkg-config --cflags libcrypto)
@@ -280,5 +284,5 @@ endif
 # TODO: If crosscompiling, why not just call "make libs" instead of this exception?
 ifeq "$(CROSSCOMPILE)" "yes"
 HAVE_X11 ?= no
-HAVE_GLFW ?= no
+HAVE_GLUT ?= no
 endif
