@@ -765,10 +765,7 @@ fz_blend_separable_nonisolated(byte * restrict bp, int bal, const byte * restric
 				if (ra0 != 0)
 					rc += fz_mul255(ra0, bc);
 
-				if (complement)
-					rc = ra - rc;
-
-				bp[k] = rc;
+				bp[k] = ra - rc;
 			}
 			break;
 		}
