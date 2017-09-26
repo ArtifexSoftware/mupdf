@@ -1051,7 +1051,6 @@ verify_premultiply(fz_context *ctx, const fz_pixmap * restrict dst)
 	int n = dst->n;
 	int x, y, i;
 	int s = dst->stride - n * w;
-	void (*crash)(void) = NULL;
 
 	for (y = h; y > 0; y--)
 	{
@@ -1060,7 +1059,7 @@ verify_premultiply(fz_context *ctx, const fz_pixmap * restrict dst)
 			int a = dp[n-1];
 			for (i = n-1; i > 0; i--)
 				if (*dp++ > a)
-					crash();
+					abort();
 			dp++;
 		}
 		dp += s;
