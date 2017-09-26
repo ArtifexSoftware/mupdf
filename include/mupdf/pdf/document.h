@@ -10,7 +10,7 @@ typedef struct pdf_portfolio_s pdf_portfolio;
 
 typedef struct pdf_page_s pdf_page;
 typedef struct pdf_annot_s pdf_annot;
-typedef struct pdf_widget_s pdf_widget;
+typedef struct pdf_annot_s pdf_widget;
 typedef struct pdf_hotspot_s pdf_hotspot;
 typedef struct pdf_js_s pdf_js;
 
