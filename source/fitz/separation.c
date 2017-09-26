@@ -229,6 +229,7 @@ fz_separations *fz_clone_separations_for_overprint(fz_context *ctx, fz_separatio
 			fz_set_separation_behavior(ctx, clone, j, beh);
 			clone->name[j] = sep->name[i] ? fz_strdup(ctx, sep->name[i]) : NULL;
 			clone->cs[j] = fz_keep_colorspace(ctx, sep->cs[i]);
+			clone->cs_pos[j] = sep->cs_pos[i];
 		}
 	}
 	fz_catch(ctx)
