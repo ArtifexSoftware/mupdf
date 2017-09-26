@@ -25,6 +25,7 @@ int pdfpages_main(int argc, char *argv[]);
 int pdfcreate_main(int argc, char *argv[]);
 int pdfmerge_main(int argc, char *argv[]);
 int pdfportfolio_main(int argc, char *argv[]);
+int pdfsign_main(int argc, char *argv[]);
 
 static struct {
 	int (*func)(int argc, char *argv[]);
@@ -49,6 +50,7 @@ static struct {
 	{ pdfpages_main, "pages", "show information about pdf pages" },
 	{ pdfportfolio_main, "portfolio", "manipulate PDF portfolios" },
 	{ pdfposter_main, "poster", "split large page into many tiles" },
+	{ pdfsign_main, "sign", "manipulate PDF digital signatures" },
 #endif
 #if FZ_ENABLE_JS
 	{ murun_main, "run", "run javascript" },
