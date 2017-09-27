@@ -497,6 +497,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 	int n = dest->n - dest->alpha;
 	fz_colorspace *model = dest->colorspace;
 	int devn, devgray;
+	int effective_opm;
 
 	if (colorspace == NULL && model != NULL)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "color destination requires source color");
@@ -504,6 +505,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 	if (color_params == NULL)
 		color_params = fz_default_color_params(ctx);
 
+	effective_opm = color_params->opm;
 	devn = fz_colorspace_is_device_n(ctx, colorspace);
 	devgray = fz_colorspace_is_device_gray(ctx, colorspace);
 	/* We can only overprint when enabled, and when we are in a subtractive colorspace */
@@ -515,10 +517,12 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 		 * (see Ghent_V3.0/030_Gray_K_black_OP_x1a.pdf 030.pdf). */
 	}
 	/* If we are in a CMYK space (i.e. not a devn one, given we know we are subtractive at this point),
-	 * then we only overprint if it's the same space as the destination. */
+	 * then we only adhere to overprint mode if it's the same space as the destination. */
 	/* FIXME: Possibly we need a better equivalency test here. */
 	else if (!devn && colorspace != dest->colorspace)
-		op = NULL;
+	{
+		effective_opm = 0;
+	}
 
 	if (n == 0)
 		i = 0;
@@ -527,7 +531,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 		fz_convert_separation_colors(ctx, color_params, dest->colorspace, dest->seps, colorfv, colorspace, color);
 		for (i = 0; i < n; i++)
 			colorbv[i] = colorfv[i] * 255;
-		op = set_op_from_spaces(ctx, op, dest, colorspace, color_params->opm);
+		op = set_op_from_spaces(ctx, op, dest, colorspace, effective_opm);
 	}
 	else
 	{
@@ -549,7 +553,7 @@ resolve_color(fz_context *ctx, fz_overprint *op, const float *color, fz_colorspa
 			fz_set_overprint(op, i);
 		/* If OPM, then protect all components for which the color values are zero.
 		 * (but only if we're in devicecmyk). */
-		if (color_params->opm == 1 && colorspace != fz_device_gray(ctx))
+		if (effective_opm == 1 && colorspace != fz_device_gray(ctx))
 			for (i = 0; i < n; i++)
 				if (colorfv[i] == 0)
 					fz_set_overprint(op, i);
