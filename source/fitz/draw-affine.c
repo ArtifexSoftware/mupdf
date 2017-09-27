@@ -3387,6 +3387,9 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 	fz_rect rect;
 	int is_rectilinear;
 
+	if (alpha == 0)
+		return;
+
 	/* grid fit the image */
 	fz_gridfit_matrix(as_tiled, &local_ctm);
 

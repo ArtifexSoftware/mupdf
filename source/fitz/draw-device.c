@@ -1330,6 +1330,9 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 	fz_colorspace *src_cs;
 	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 
+	if (alpha == 0)
+		return;
+
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);
 
@@ -1476,6 +1479,9 @@ fz_draw_fill_image_mask(fz_context *ctx, fz_device *devp, fz_image *image, const
 	fz_irect src_area;
 	fz_colorspace *colorspace = NULL;
 	fz_colorspace *prf = fz_proof_cs(ctx, dev);
+
+	if (alpha == 0)
+		return;
 
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, prf, dev->default_cs);

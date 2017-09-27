@@ -1861,6 +1861,9 @@ fz_paint_pixmap_with_bbox(fz_pixmap * restrict dst, const fz_pixmap * restrict s
 
 	assert(dst->n - dst->alpha == src->n - src->alpha);
 
+	if (alpha == 0)
+		return;
+
 	fz_pixmap_bbox_no_ctx(dst, &bbox2);
 	fz_intersect_irect(&bbox, &bbox2);
 	fz_pixmap_bbox_no_ctx(src, &bbox2);
