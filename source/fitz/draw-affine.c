@@ -3476,7 +3476,10 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 	 * plotted. In this case treat it as a greyscale
 	 * input. */
 	if (img->n == sa && color)
+	{
 		sa = 0;
+		sn = 1;
+	}
 
 #if FZ_PLOTTERS_RGB
 	if (dn == 3 && img->n == 1 + sa && !color)
@@ -3507,7 +3510,7 @@ fz_paint_image_imp(fz_pixmap * restrict dst, const fz_irect *scissor, const fz_p
 	}
 	else
 	{
-		assert((!color && sn == dn) || (color && sn == 1));
+		assert((!color && sn == dn) || (color && sn + sa == 1));
 		if (dolerp)
 		{
 			if (color)
