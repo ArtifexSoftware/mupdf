@@ -2430,12 +2430,14 @@ fz_draw_end_group(fz_context *ctx, fz_device *devp)
 	assert(state[0].group_alpha == NULL || state[0].group_alpha != state[1].group_alpha);
 	if (state[0].group_alpha && state[0].group_alpha != state[1].group_alpha)
 	{
-		/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf goes wrong if this
-		 * is 255 * alpha, as an alpha effectively gets applied twice. */
+		/* The 'D' on page 7 of Altona_Technical_v20_x4.pdf uses an isolated group,
+		 * and goes wrong if this is 255 * alpha, as an alpha effectively gets
+		 * applied twice. CATX5233 page 7 uses a non-isolated group, and goes wrong
+		 * if alpha isn't applied here. */
 		if (state[1].group_alpha)
-			fz_paint_pixmap(state[0].group_alpha, state[1].group_alpha, 255);
+			fz_paint_pixmap(state[0].group_alpha, state[1].group_alpha, isolated ? 255 : alpha * 255);
 		else
-			fz_paint_pixmap_alpha(state[0].group_alpha, state[1].dest, 255);
+			fz_paint_pixmap_alpha(state[0].group_alpha, state[1].dest, isolated ? 255 : alpha * 255);
 	}
 	fz_drop_pixmap(ctx, state[1].group_alpha);
 	/* The following test should not be required, but just occasionally
