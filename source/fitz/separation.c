@@ -300,7 +300,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	dstride -= dn * dw;
 	sstride -= sn * dw;
 
-	/* Process colorants first */
+	/* Process colorants (and alpha) first */
 	if (dst->colorspace == src->colorspace && proof_cs == NULL)
 	{
 		/* Simple copy */
@@ -310,10 +310,12 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 		{
 			for (x = dw; x > 0; x--)
 			{
-				for (i = 0; i < dn; i++)
+				for (i = 0; i < dc; i++)
 					dd[i] = sd[i];
 				dd += dn;
 				sd += sn;
+				if (da)
+					dd[-1] = sd[-1];
 			}
 			dd += dstride;
 			sd += sstride;
@@ -323,7 +325,52 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	{
 		device_n = fz_colorspace_is_device_n(ctx, src->colorspace);
 		if (device_n)
-			fz_clear_pixmap(ctx, dst);
+		{
+			if (da)
+			{
+				if (fz_colorspace_is_subtractive(ctx, dst->colorspace))
+				{
+					/* Copy the alpha, set process colors to 0. */
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata;
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							for (i = 0; i < dc; i++)
+								dd[i] = 0;
+							dd += dn;
+							sd += sn;
+							dd[-1] = sd[-1];
+						}
+						dd += dstride;
+						sd += sstride;
+					}
+				}
+				else
+				{
+					/* Copy the alpha, set process colors to full, scaled by alpha - i.e. alpha */
+					unsigned char *dd = ddata;
+					const unsigned char *sd = sdata + sn - 1;
+					for (y = dh; y > 0; y--)
+					{
+						for (x = dw; x > 0; x--)
+						{
+							int a = *sd;
+							for (i = 0; i < dc; i++)
+								dd[i] = a;
+							dd += dn;
+							sd += sn;
+							dd[-1] = a;
+						}
+						dd += dstride;
+						sd += sstride;
+					}
+				}
+			}
+			else
+				fz_clear_pixmap(ctx, dst);
+		}
 		else
 		{
 			fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dst->colorspace, src->colorspace);
@@ -444,6 +491,8 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 			}
 			else
 			{
+				for (k = 0; k < dc; k++)
+					convert[k] = 1-convert[k];
 				if (fz_colorspace_is_subtractive(ctx, src->colorspace))
 				{
 					unsigned char *dd = ddata;
@@ -455,7 +504,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 							unsigned char v = sd[i];
 							if (v != 0)
 								for (k = 0; k < dc; k++)
-									dd[k] = fz_clampi(dd[k] - v * (1-convert[k]), 0, 255);
+									dd[k] = fz_clampi(dd[k] - v * convert[k], 0, 255);
 							dd += dn;
 							sd += sn;
 						}
@@ -474,7 +523,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 							unsigned char v = 0xff - sd[i];
 							if (v != 0)
 								for (k = 0; k < dc; k++)
-									dd[k] = fz_clampi(dd[k] - v * (1-convert[k]), 0, 255);
+									dd[k] = fz_clampi(dd[k] - v * convert[k], 0, 255);
 							dd += dn;
 							sd += sn;
 						}
