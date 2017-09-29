@@ -84,8 +84,6 @@ static jclass cls_Pixmap;
 static jclass cls_Point;
 static jclass cls_Rect;
 static jclass cls_RuntimeException;
-static jclass cls_Separation;
-static jclass cls_Separations;
 static jclass cls_Shade;
 static jclass cls_StrokeState;
 static jclass cls_StructuredText;
@@ -130,7 +128,6 @@ static jfieldID fid_Rect_x0;
 static jfieldID fid_Rect_x1;
 static jfieldID fid_Rect_y0;
 static jfieldID fid_Rect_y1;
-static jfieldID fid_Separations_pointer;
 static jfieldID fid_Shade_pointer;
 static jfieldID fid_StrokeState_pointer;
 static jfieldID fid_StructuredText_pointer;
@@ -189,8 +186,6 @@ static jmethodID mid_Pixmap_init;
 static jmethodID mid_Point_init;
 static jmethodID mid_Rect_init;
 static jmethodID mid_Shade_init;
-static jmethodID mid_Separation_init;
-static jmethodID mid_Separations_init;
 static jmethodID mid_StrokeState_init;
 static jmethodID mid_StructuredText_init;
 static jmethodID mid_TextBlock_init;
@@ -552,13 +547,6 @@ static int find_fids(JNIEnv *env)
 	fid_Shade_pointer = get_field(&err, env, "pointer", "J");
 	mid_Shade_init = get_method(&err, env, "<init>", "(J)V");
 
-	cls_Separation = get_class(&err, env, PKG"Separation");
-	mid_Separation_init = get_method(&err, env, "<init>", "(Ljava/lang/String;II)V");
-
-	cls_Separations = get_class(&err, env, PKG"Separations");
-	fid_Separations_pointer = get_field(&err, env, "pointer", "J");
-	mid_Separations_init = get_method(&err, env, "<init>", "(J)V");
-
 	cls_StrokeState = get_class(&err, env, PKG"StrokeState");
 	fid_StrokeState_pointer = get_field(&err, env, "pointer", "J");
 	mid_StrokeState_init = get_method(&err, env, "<init>", "(J)V");
@@ -646,8 +634,6 @@ static void lose_fids(JNIEnv *env)
 	(*env)->DeleteGlobalRef(env, cls_Point);
 	(*env)->DeleteGlobalRef(env, cls_Rect);
 	(*env)->DeleteGlobalRef(env, cls_RuntimeException);
-	(*env)->DeleteGlobalRef(env, cls_Separation);
-	(*env)->DeleteGlobalRef(env, cls_Separations);
 	(*env)->DeleteGlobalRef(env, cls_Shade);
 	(*env)->DeleteGlobalRef(env, cls_StrokeState);
 	(*env)->DeleteGlobalRef(env, cls_StructuredText);
@@ -1426,19 +1412,6 @@ static inline jobject to_Pixmap_safe_own(fz_context *ctx, JNIEnv *env, fz_pixmap
 	return jobj;
 }
 
-static inline jobject to_Separations_safe_own(fz_context *ctx, JNIEnv *env, fz_separations *seps)
-{
-	jobject jseps;
-
-	if (!ctx || !seps) return NULL;
-
-	jseps = (*env)->NewObject(env, cls_Separations, mid_Separations_init, jlong_cast(seps));
-	if (!jseps)
-		fz_drop_separations(ctx, seps);
-
-	return jseps;
-}
-
 static inline jobject to_StructuredText_safe_own(fz_context *ctx, JNIEnv *env, fz_stext_page *text)
 {
 	jobject jtext;
@@ -1614,15 +1587,6 @@ static inline fz_pixmap *from_Pixmap(JNIEnv *env, jobject jobj)
 	pixmap = CAST(fz_pixmap *, (*env)->GetLongField(env, jobj, fid_Pixmap_pointer));
 	if (!pixmap) jni_throw_null(env, "cannot use already destroyed Pixmap");
 	return pixmap;
-}
-
-static inline fz_separations *from_Separations(JNIEnv *env, jobject jobj)
-{
-	fz_separations *seps;
-	if (!jobj) return NULL;
-	seps = CAST(fz_separations *, (*env)->GetLongField(env, jobj, fid_Separations_pointer));
-	if (!seps) jni_throw_null(env, "cannot use already destroyed Separations");
-	return seps;
 }
 
 static inline fz_shade *from_Shade(JNIEnv *env, jobject jobj)
@@ -4737,20 +4701,6 @@ FUN(Page_finalize)(JNIEnv *env, jobject self)
 	if (!ctx || !page) return;
 
 	fz_drop_page(ctx, page);
-}
-
-JNIEXPORT jobject JNICALL
-FUN(Page_getSeparations)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_page *page = from_Page(env, self);
-	fz_separations *seps;
-
-	if (!ctx || !page) return 0;
-
-	seps = fz_page_separations(ctx, page);
-
-	return to_Separations_safe_own(ctx, env, seps);
 }
 
 JNIEXPORT jobject JNICALL
@@ -8758,103 +8708,4 @@ FUN(PDFAnnotation_setLineEndingStyles)(JNIEnv *env, jobject self, jint start_sty
 		pdf_set_annot_line_ending_styles(ctx, annot, start_style, end_style);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
-}
-
-/* Separations interface */
-
-JNIEXPORT jint JNICALL
-FUN(Separations_getNumberOfSeparations)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_separations *seps = from_Separations(env, self);
-	int nSep;
-
-	fz_try(ctx)
-		nSep = fz_count_separations(ctx, seps);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return 0;
-	}
-
-	return nSep;
-}
-
-JNIEXPORT jint JNICALL
-FUN(Separations_getSeparationBehavior)(JNIEnv *env, jobject self, jint sep)
-{
-	fz_context *ctx = get_context(env);
-	fz_separations *seps = from_Separations(env, self);
-	jint behavior;
-
-	if (!ctx || !seps) return 0;
-
-	fz_try(ctx)
-		behavior = fz_separation_current_behavior(ctx, seps, sep);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return 0;
-	}
-
-	return behavior;
-}
-
-JNIEXPORT void JNICALL
-FUN(Separations_setSeparationBehavior)(JNIEnv *env, jobject self, jint sep, jint behavior)
-{
-	fz_context *ctx = get_context(env);
-	fz_separations *seps = from_Separations(env, self);
-
-	if (!ctx || !seps) return;
-
-	fz_try(ctx)
-		fz_set_separation_behavior(ctx, seps, sep, behavior);
-	fz_catch(ctx)
-		jni_rethrow(env, ctx);
-}
-
-JNIEXPORT jobject JNICALL
-FUN(Separations_getSeparation)(JNIEnv *env, jobject self, jint sep)
-{
-	fz_context *ctx = get_context(env);
-	fz_separations *seps = from_Separations(env, self);
-	const char *name;
-	char rgba[4];
-	unsigned int bgra;
-	unsigned int cmyk;
-	jobject jname = NULL;
-
-	if (!ctx || !seps) return NULL;
-
-	/* MuPDF returns RGBA as bytes. Android wants a packed BGRA int. */
-	name = fz_get_separation(ctx, seps, sep, (unsigned int *)(&rgba[0]), &cmyk);
-	bgra = (rgba[0] << 16) | (rgba[1]<<8) | rgba[2] | (rgba[3]<<24);
-	if (name)
-	{
-		jname = (*env)->NewStringUTF(env, name);
-		if (!jname) return NULL;
-	}
-
-	return (*env)->NewObject(env, cls_Separation, mid_Separation_init, jname, bgra, cmyk);
-}
-
-JNIEXPORT jboolean JNICALL
-FUN(Separations_areSeparationsControllable)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	fz_separations *seps = from_Separations(env, self);
-	jboolean controllable;
-
-	if (!ctx || !seps) return JNI_FALSE;
-
-	fz_try(ctx)
-		controllable = fz_separations_controllable(ctx, seps);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return JNI_FALSE;
-	}
-
-	return controllable;
 }
