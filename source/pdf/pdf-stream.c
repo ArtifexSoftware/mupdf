@@ -380,6 +380,7 @@ pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int 
 {
 	pdf_obj *filters;
 	pdf_obj *params;
+	fz_off_t offset;
 
 	filters = pdf_dict_geta(ctx, stmobj, PDF_NAME_Filter, PDF_NAME_F);
 	params = pdf_dict_geta(ctx, stmobj, PDF_NAME_DecodeParms, PDF_NAME_DP);
@@ -394,7 +395,16 @@ pdf_open_inline_stream(fz_context *ctx, pdf_document *doc, pdf_obj *stmobj, int 
 
 	if (imparams)
 		imparams->type = FZ_IMAGE_RAW;
-	return fz_open_null(ctx, chain, length, fz_tell(ctx, chain));
+
+	fz_try(ctx)
+		offset = fz_tell(ctx, chain);
+	fz_catch(ctx)
+	{
+		fz_drop_stream(ctx, chain);
+		fz_rethrow(ctx);
+	}
+
+	return fz_open_null(ctx, chain, length, offset);
 }
 
 void
