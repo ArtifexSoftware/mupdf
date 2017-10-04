@@ -619,7 +619,6 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 
 		if (roots)
 		{
-			int i;
 			for (i = num_roots-1; i > 0; i--)
 			{
 				if (pdf_is_dict(ctx, roots[i]))
@@ -671,8 +670,6 @@ pdf_repair_xref(fz_context *ctx, pdf_document *doc)
 	}
 	fz_always(ctx)
 	{
-		int i;
-
 		for (i = 0; i < num_roots; i++)
 			pdf_drop_obj(ctx, roots[i]);
 		fz_free(ctx, roots);

@@ -679,7 +679,7 @@ find_seps(fz_context *ctx, fz_separations **seps, pdf_obj *obj)
 		/* If the separation colorants exists for this DeviceN color space
 		 * add those prior to our search for DeviceN color */
 		pdf_obj *cols = pdf_dict_get(ctx, pdf_array_get(ctx, obj, 4), PDF_NAME_Colorants);
-		int i, n = pdf_dict_len(ctx, cols);
+		n = pdf_dict_len(ctx, cols);
 		for (i = 0; i < n; i++)
 			find_seps(ctx, seps, pdf_dict_get_val(ctx, cols, i));
 	}
@@ -1113,7 +1113,7 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 	/* Adjust page counts */
 	while (parent)
 	{
-		int count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME_Count));
+		count = pdf_to_int(ctx, pdf_dict_get(ctx, parent, PDF_NAME_Count));
 		pdf_dict_put_drop(ctx, parent, PDF_NAME_Count, pdf_new_int(ctx, doc, count + 1));
 		parent = pdf_dict_get(ctx, parent, PDF_NAME_Parent);
 	}

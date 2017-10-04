@@ -156,7 +156,7 @@ lex_number(fz_context *ctx, fz_stream *f, pdf_lexbuf *buf, int c)
 
 	while (s < e)
 	{
-		int c = fz_read_byte(ctx, f);
+		c = fz_read_byte(ctx, f);
 		switch (c)
 		{
 		case IS_WHITE:

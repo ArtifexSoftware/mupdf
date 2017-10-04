@@ -395,7 +395,7 @@ pdf_add_image(fz_context *ctx, pdf_document *doc, fz_image *image, int mask)
 		else
 		{
 			unsigned int size;
-			int n, h;
+			int h;
 			unsigned char *d, *s;
 
 raw_or_unknown_compression:

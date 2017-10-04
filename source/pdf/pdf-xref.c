@@ -1246,7 +1246,7 @@ pdf_load_xref(fz_context *ctx, pdf_document *doc, pdf_lexbuf *buf)
 	xref_len = pdf_xref_len(ctx, doc);
 	for (i = 0; i < xref_len; i++)
 	{
-		pdf_xref_entry *entry = pdf_get_xref_entry(ctx, doc, i);
+		entry = pdf_get_xref_entry(ctx, doc, i);
 		if (entry->type == 'n')
 		{
 			/* Special case code: "0000000000 * n" means free,

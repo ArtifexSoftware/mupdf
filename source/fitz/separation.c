@@ -508,7 +508,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 						continue;
 					if (!strcmp(name, "All"))
 					{
-						int k, n1 = dn - da;
+						int n1 = dn - da;
 						unsigned char *dd = ddata;
 						const unsigned char *sd = sdata + i;
 

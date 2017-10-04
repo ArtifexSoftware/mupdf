@@ -218,7 +218,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 	fz_pixmap *conv = NULL;
 	float color[FZ_MAX_COLORS];
 	struct paint_tri_data ptd = { 0 };
-	int i, k, n;
+	int i, k;
 	fz_matrix local_ctm;
 
 	fz_var(temp);
@@ -307,7 +307,7 @@ fz_paint_shade(fz_context *ctx, fz_shade *shade, const fz_matrix *ctm, fz_pixmap
 				fz_color_converter cc;
 				int cn = fz_colorspace_n(ctx, shade->colorspace);
 				int m = dest->n - dest->alpha;
-				n = fz_colorspace_n(ctx, dest->colorspace);
+				int n = fz_colorspace_n(ctx, dest->colorspace);
 				fz_find_color_converter(ctx, &cc, prf, dest->colorspace, shade->colorspace, color_params);
 				for (i = 0; i < 256; i++)
 				{
