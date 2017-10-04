@@ -137,7 +137,7 @@ pnm_read_number(fz_context *ctx, unsigned char *p, unsigned char *e, int *number
 {
 	if (e - p < 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse number in pnm image");
-	if (*p < '0' && *p > '9')
+	if (*p < '0' || *p > '9')
 		fz_throw(ctx, FZ_ERROR_GENERIC, "expected numeric field in pnm image");
 
 	while (p < e && *p >= '0' && *p <= '9')
