@@ -2716,13 +2716,13 @@ icc_base_conv_pixmap(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_colorsp
 		{
 			/* Convert the actual colors */
 			for (i = 0; i < sc; i++)
-				src_f[i] = (float) inputpos[i] / 255.0;
+				src_f[i] = (float) inputpos[i] / 255.0f;
 
 			convert_to_icc_base(ctx, srcs, src_f, des_f);
 			base_cs->clamp(base_cs, des_f, des_f);
 
 			for (j = 0; j < bc; j++)
-				outputpos[j] = des_f[j] * 255.0;
+				outputpos[j] = des_f[j] * 255.0f;
 			/* Copy spots and alphas unchanged */
 			for (; i < sn; i++, j++)
 				outputpos[j] = inputpos[i];
@@ -3079,7 +3079,7 @@ icc_conv_color(fz_context *ctx, fz_color_converter *cc, float *dstv, const float
 			srcv_s[i] = srcv[i] * 65535;
 		fz_cmm_transform_color(ctx, link, dstv_s, srcv_s);
 		for (i = 0; i < dst_n; i++)
-			dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0, 0, 1);
+			dstv[i] = fz_clamp((float) dstv_s[i] / 65535.0f, 0, 1);
 	}
 }
 
@@ -3376,7 +3376,7 @@ clamp_indexed(const fz_colorspace *cs, const float *in, float *out)
 {
 	struct indexed *idx = cs->data;
 
-	*out = fz_clamp(*in, 0, idx->high) / 255.0; /* To do, avoid 255 divide */
+	*out = fz_clamp(*in, 0, idx->high) / 255.0f; /* To do, avoid 255 divide */
 }
 
 int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs)
@@ -3582,9 +3582,9 @@ free_icc(fz_context *ctx, fz_colorspace *cs)
 static void
 clamp_lab_icc(const fz_colorspace *cs, const float *src, float *dst)
 {
-	dst[0] = (fz_clamp(src[0], 0, 100)) / 100.0;
-	dst[1] = (fz_clamp(src[1], -128, 127) + 128.0) / 256;
-	dst[2] = (fz_clamp(src[2], -128, 127) + 128.0) / 256;
+	dst[0] = (fz_clamp(src[0], 0, 100)) / 100.0f;
+	dst[1] = (fz_clamp(src[1], -128, 127) + 128.0f) / 256;
+	dst[2] = (fz_clamp(src[2], -128, 127) + 128.0f) / 256;
 }
 
 /* Embedded icc profiles could have different range */

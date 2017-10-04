@@ -1291,8 +1291,8 @@ fz_prepare_t3_glyph(fz_context *ctx, fz_font *font, int gid, int nested_depth)
 		 * in the 'else if' can make it huge. */
 		font->bbox_table[gid].x0 = font->bbox.x0;
 		font->bbox_table[gid].y0 = font->bbox.y0;
-		font->bbox_table[gid].x1 = font->bbox.x0 + .00001;
-		font->bbox_table[gid].y1 = font->bbox.y0 + .00001;
+		font->bbox_table[gid].x1 = font->bbox.x0 + .00001f;
+		font->bbox_table[gid].y1 = font->bbox.y0 + .00001f;
 	}
 	else if (font->t3flags[gid] & FZ_DEVFLAG_BBOX_DEFINED)
 	{

@@ -332,7 +332,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 			/* LTR or neutral character */
 			if (dev->curdir >= 0)
 			{
-				if (fabs(spacing) < size * SPACE_DIST)
+				if (fabsf(spacing) < size * SPACE_DIST)
 				{
 					/* Motion is in line, and small. */
 					new_line = 0;
