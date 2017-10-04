@@ -681,7 +681,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 				out = fz_stdout(ctx);
 			else
 			{
-				sprintf(buf, output, pagenum);
+				fz_snprintf(buf, sizeof(buf), output, pagenum);
 				out = fz_new_output_with_path(ctx, buf, 0);
 			}
 

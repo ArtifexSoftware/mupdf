@@ -74,7 +74,7 @@ static void fz_dump_blend(fz_context *ctx, const char *s, fz_pixmap *pix)
 	if (pix->s || fz_colorspace_is_subtractive(ctx, pix->colorspace))
 		psd = 1;
 
-	sprintf(name, "dump%02d.%s", group_dump_count, psd ? "psd" : "png");
+	fz_snprintf(name, sizeof(name), "dump%02d.%s", group_dump_count, psd ? "psd" : "png");
 	printf("%s%02d%s(%p)", s ? s : "", group_dump_count++, psd ? "(PSD)" : "", pix);
 	if (psd)
 		fz_save_pixmap_as_psd(ctx, pix, name);

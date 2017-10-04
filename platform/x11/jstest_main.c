@@ -371,7 +371,7 @@ main(int argc, char *argv[])
 				{
 					char text[1024];
 
-					sprintf(text, output, ++shotcount);
+					fz_snprintf(text, sizeof(text), output, ++shotcount);
 					if (strstr(text, ".pgm") || strstr(text, ".ppm") || strstr(text, ".pnm"))
 						fz_save_pixmap_as_pnm(ctx, gapp.image, text);
 					else

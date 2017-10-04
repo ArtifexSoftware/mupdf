@@ -582,7 +582,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 	int len;
 
 	/* put the page file in the same directory as the gproof file */
-	sprintf(nameroot, "gprf_%d_", page->number);
+	fz_snprintf(nameroot, sizeof(nameroot), "gprf_%d_", page->number);
 	filename = fz_tempfilename(ctx, nameroot, doc->gprf_filename);
 
 /*
@@ -601,26 +601,26 @@ generate_page(fz_context *ctx, gprf_page *page)
 	{
 		len = sizeof("-sPostRenderProfile=srgb.icc");
 		disp_profile = (char*)fz_malloc(ctx, len + 1);
-		sprintf(disp_profile, "-sPostRenderProfile=srgb.icc");
+		fz_snprintf(disp_profile, sizeof(disp_profile), "-sPostRenderProfile=srgb.icc");
 	}
 	else
 	{
 		len = sizeof("-sPostRenderProfile=" QUOTE QUOTE); /* with quotes */
 		disp_profile = (char*)fz_malloc(ctx, len + strlen(doc->display_profile) + 1);
-		sprintf(disp_profile, "-sPostRenderProfile=" QUOTE "%s" QUOTE, doc->display_profile);
+		fz_snprintf(disp_profile, sizeof(disp_profile), "-sPostRenderProfile=" QUOTE "%s" QUOTE, doc->display_profile);
 	}
 
 	if (strlen(doc->print_profile) == 0)
 	{
 		len = sizeof("-sOutputICCProfile=default_cmyk.icc");
 		print_profile = (char*)fz_malloc(ctx, len + 1);
-		sprintf(print_profile, "-sOutputICCProfile=default_cmyk.icc");
+		fz_snprintf(print_profile, sizeof(print_profile), "-sOutputICCProfile=default_cmyk.icc");
 	}
 	else if (strcmp(doc->print_profile, "<EMBEDDED>") != 0)
 	{
 		len = sizeof("-sOutputICCProfile=" QUOTE QUOTE); /* with quotes */
 		print_profile = (char*)fz_malloc(ctx, len + strlen(doc->print_profile) + 1);
-		sprintf(print_profile, "-sOutputICCProfile=" QUOTE "%s" QUOTE, doc->print_profile);
+		fz_snprintf(print_profile, sizeof(print_profile), "-sOutputICCProfile=" QUOTE "%s" QUOTE, doc->print_profile);
 	}
 
 	fz_try(ctx)
@@ -644,12 +644,12 @@ generate_page(fz_context *ctx, gprf_page *page)
 		argv[argc++] = "-dFitPage";
 		argv[argc++] = "-o";
 		argv[argc++] = filename;
-		sprintf(arg_fp, "-dFirstPage=%d", page->number+1);
+		fz_snprintf(arg_fp, sizeof(arg_fp), "-dFirstPage=%d", page->number+1);
 		argv[argc++] = arg_fp;
-		sprintf(arg_lp, "-dLastPage=%d", page->number+1);
+		fz_snprintf(arg_lp, sizeof(arg_lp), "-dLastPage=%d", page->number+1);
 		argv[argc++] = arg_lp;
 		argv[argc++] = "-I%rom%Resource/Init/";
-		sprintf(arg_g, "-g%dx%d", page->width, page->height);
+		fz_snprintf(arg_g, sizeof(arg_g), "-g%dx%d", page->width, page->height);
 		argv[argc++] = arg_g;
 		argv[argc++] = doc->pdf_filename;
 		assert(argc <= sizeof(argv)/sizeof(*argv));
@@ -676,7 +676,7 @@ generate_page(fz_context *ctx, gprf_page *page)
 #else
 		char gs_command[1024];
 		/* Invoke gs to convert to a temp file. */
-		sprintf(gs_command, "gswin32c.exe -sDEVICE=gprf %s %s -dFitPage -o \"%s\" -dFirstPage=%d -dLastPage=%d -I%%rom%%Resource/Init/ -g%dx%d \"%s\"",
+		fz_snprintf(gs_command, sizeof(gs_command), "gswin32c.exe -sDEVICE=gprf %s %s -dFitPage -o \"%s\" -dFirstPage=%d -dLastPage=%d -I%%rom%%Resource/Init/ -g%dx%d \"%s\"",
 			print_profile == NULL ? "-dUsePDFX3Profile" : print_profile, disp_profile,
 			filename, page->number+1, page->number+1, page->width, page->height, doc->pdf_filename);
 		fz_system(ctx, gs_command);
