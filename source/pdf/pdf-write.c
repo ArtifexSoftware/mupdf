@@ -322,12 +322,6 @@ order_ge(int ui, int uj)
 		return 1;
 	else if (uj & USE_OTHER_OBJECTS)
 		return 0;
-	/* Put objects not associated with any page (anything
-	 * not touched by the catalogue) before that... */
-	else if (ui == 0)
-		return 1;
-	else if (uj == 0)
-		return 0;
 	/* Put shared objects before that... */
 	else if (ui & USE_SHARED)
 		return 1;
