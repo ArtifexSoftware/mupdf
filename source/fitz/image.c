@@ -893,6 +893,34 @@ void fz_set_pixmap_image_tile(fz_context *ctx, fz_pixmap_image *image, fz_pixmap
 	((fz_pixmap_image *)image)->tile = pix;
 }
 
+int
+fz_recognize_image_format(fz_context *ctx, unsigned char p[8])
+{
+	if (p[0] == 'P' && p[1] >= '1' && p[1] <= '7')
+		return FZ_IMAGE_PNM;
+	if (p[0] == 0xff && p[1] == 0x4f)
+		return FZ_IMAGE_JPX;
+	if (p[0] == 0x00 && p[1] == 0x00 && p[2] == 0x00 && p[3] == 0x0c &&
+			p[4] == 0x6a && p[5] == 0x50 && p[6] == 0x20 && p[7] == 0x20)
+		return FZ_IMAGE_JPX;
+	if (p[0] == 0xff && p[1] == 0xd8)
+		return FZ_IMAGE_JPEG;
+	if (p[0] == 137 && p[1] == 80 && p[2] == 78 && p[3] == 71 &&
+			p[4] == 13 && p[5] == 10 && p[6] == 26 && p[7] == 10)
+		return FZ_IMAGE_PNG;
+	if (p[0] == 'I' && p[1] == 'I' && p[2] == 0xBC)
+		return FZ_IMAGE_JXR;
+	if (p[0] == 'I' && p[1] == 'I' && p[2] == 42 && p[3] == 0)
+		return FZ_IMAGE_TIFF;
+	if (p[0] == 'M' && p[1] == 'M' && p[2] == 0 && p[3] == 42)
+		return FZ_IMAGE_TIFF;
+	if (p[0] == 'G' && p[1] == 'I' && p[2] == 'F')
+		return FZ_IMAGE_GIF;
+	if (p[0] == 'B' && p[1] == 'M')
+		return FZ_IMAGE_BMP;
+	return FZ_IMAGE_UNKNOWN;
+}
+
 fz_image *
 fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 {
@@ -909,58 +937,36 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 
 	/* Note: cspace is only ever a borrowed reference here */
 
-	if (buf[0] == 'P' && buf[1] >= '1' && buf[1] <= '7')
+	type = fz_recognize_image_format(ctx, buf);
+	switch (type)
 	{
-		type = FZ_IMAGE_PNM;
+	case FZ_IMAGE_PNM:
 		fz_load_pnm_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (buf[0] == 0xff && buf[1] == 0x4f)
-	{
-		type = FZ_IMAGE_JPX;
+		break;
+	case FZ_IMAGE_JPX:
 		fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0x00 && buf[3] == 0x0c && buf[4] == 0x6a && buf[5] == 0x50 && buf[6] == 0x20 && buf[7] == 0x20)
-	{
-		type = FZ_IMAGE_JPX;
-		fz_load_jpx_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (buf[0] == 0xff && buf[1] == 0xd8)
-	{
-		type = FZ_IMAGE_JPEG;
+		break;
+	case FZ_IMAGE_JPEG:
 		fz_load_jpeg_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (memcmp(buf, "\211PNG\r\n\032\n", 8) == 0)
-	{
-		type = FZ_IMAGE_PNG;
+		break;
+	case FZ_IMAGE_PNG:
 		fz_load_png_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 0xBC)
-	{
-		type = FZ_IMAGE_JXR;
+		break;
+	case FZ_IMAGE_JXR:
 		fz_load_jxr_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 42 && buf[3] == 0)
-	{
-		type = FZ_IMAGE_TIFF;
+		break;
+	case FZ_IMAGE_TIFF:
 		fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (buf[0] == 'M' && buf[1] == 'M' && buf[2] == 0 && buf[3] == 42)
-	{
-		type = FZ_IMAGE_TIFF;
-		fz_load_tiff_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (memcmp(buf, "GIF", 3) == 0)
-	{
-		type = FZ_IMAGE_GIF;
+		break;
+	case FZ_IMAGE_GIF:
 		fz_load_gif_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else if (memcmp(buf, "BM", 2) == 0)
-	{
-		type = FZ_IMAGE_BMP;
+		break;
+	case FZ_IMAGE_BMP:
 		fz_load_bmp_info(ctx, buf, len, &w, &h, &xres, &yres, &cspace);
-	}
-	else
+		break;
+	default:
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
+	}
 
 	bc = fz_malloc_struct(ctx, fz_compressed_buffer);
 	bc->buffer = fz_keep_buffer(ctx, buffer);

@@ -15,6 +15,8 @@ fz_stream *fz_open_compressed_buffer(fz_context *ctx, fz_compressed_buffer *);
 fz_stream *fz_open_image_decomp_stream_from_buffer(fz_context *ctx, fz_compressed_buffer *, int *l2factor);
 fz_stream *fz_open_image_decomp_stream(fz_context *ctx, fz_stream *, fz_compression_params *, int *l2factor);
 
+int fz_recognize_image_format(fz_context *ctx, unsigned char p[8]);
+
 enum
 {
 	FZ_IMAGE_UNKNOWN = 0,
