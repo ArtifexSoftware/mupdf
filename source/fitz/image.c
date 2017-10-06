@@ -7,7 +7,7 @@
 #define SANE_DPI 72.0f
 #define INSANE_DPI 4800.0f
 
-#define SCALABLE_IMAGE_DPI 600
+#define SCALABLE_IMAGE_DPI 96
 
 struct fz_compressed_image_s
 {
