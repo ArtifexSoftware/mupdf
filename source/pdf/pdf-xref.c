@@ -2732,12 +2732,14 @@ pdf_document *pdf_create_document(fz_context *ctx)
 static const char *pdf_extensions[] =
 {
 	"pdf",
+	"pclm",
 	NULL
 };
 
 static const char *pdf_mimetypes[] =
 {
 	"application/pdf",
+	"application/PCLm",
 	NULL
 };
 

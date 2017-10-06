@@ -31,7 +31,7 @@ enum {
 	OUT_NONE,
 	OUT_PNG, OUT_TGA, OUT_PNM, OUT_PGM, OUT_PPM, OUT_PAM,
 	OUT_PBM, OUT_PKM, OUT_PWG, OUT_PCL, OUT_PS, OUT_PSD,
-	OUT_TEXT, OUT_HTML, OUT_XHTML, OUT_STEXT,
+	OUT_TEXT, OUT_HTML, OUT_XHTML, OUT_STEXT, OUT_PCLM,
 	OUT_TRACE, OUT_SVG,
 #if FZ_ENABLE_PDF
 	OUT_PDF,
@@ -61,6 +61,7 @@ static const suffix_t suffix_table[] =
 	{ ".pkm", OUT_PKM, 0 },
 	{ ".svg", OUT_SVG, 0 },
 	{ ".pwg", OUT_PWG, 0 },
+	{ ".pclm", OUT_PCLM, 0 },
 	{ ".pcl", OUT_PCL, 0 },
 #if FZ_ENABLE_PDF
 	{ ".pdf", OUT_PDF, 0 },
@@ -121,6 +122,7 @@ static const format_cs_table_t format_cs_table[] =
 	{ OUT_PKM, CS_CMYK, { CS_CMYK } },
 	{ OUT_PWG, CS_RGB, { CS_MONO, CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_PCL, CS_MONO, { CS_MONO, CS_RGB } },
+	{ OUT_PCLM, CS_RGB, { CS_RGB, CS_GRAY } },
 	{ OUT_PS, CS_RGB, { CS_GRAY, CS_RGB, CS_CMYK } },
 	{ OUT_PSD, CS_CMYK, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA, CS_CMYK, CS_CMYK_ALPHA } },
 	{ OUT_TGA, CS_RGB, { CS_GRAY, CS_GRAY_ALPHA, CS_RGB, CS_RGB_ALPHA } },
@@ -257,6 +259,7 @@ static char *filename;
 static int files = 0;
 static int num_workers = 0;
 static worker_t *workers;
+static fz_band_writer *bander = NULL;
 
 #ifdef NO_ICC
 static fz_cmm_engine *icc_engine = NULL;
@@ -414,6 +417,14 @@ file_level_headers(fz_context *ctx)
 
 	if (output_format == OUT_PWG)
 		fz_write_pwg_file_header(ctx, out);
+
+	if (output_format == OUT_PCLM)
+	{
+		fz_pclm_options opts = { 0 };
+		fz_parse_pclm_options(ctx, &opts, "compression=flate");
+		bander = fz_new_pclm_band_writer(ctx, out, &opts);
+	}
+
 }
 
 static void
@@ -429,6 +440,10 @@ file_level_trailers(fz_context *ctx)
 
 	if (output_format == OUT_PS)
 		fz_write_ps_file_trailer(ctx, out, output_pagenum);
+
+	if (output_format == OUT_PCLM)
+		fz_drop_band_writer(ctx, bander);
+
 }
 
 static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, const fz_matrix *ctm, const fz_rect *tbounds, fz_cookie *cookie, int band_start, fz_pixmap *pix, fz_bitmap **bit)
@@ -681,7 +696,6 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		fz_irect ibounds;
 		fz_pixmap *pix = NULL;
 		int w, h;
-		fz_band_writer *bander = NULL;
 		fz_bitmap *bit = NULL;
 
 		fz_var(pix);
@@ -889,7 +903,8 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 		}
 		fz_always(ctx)
 		{
-			fz_drop_band_writer(ctx, bander);
+			if (output_format != OUT_PCLM)
+				fz_drop_band_writer(ctx, bander);
 			fz_drop_bitmap(ctx, bit);
 			bit = NULL;
 			if (num_workers > 0)
@@ -1649,9 +1664,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (band_height)
 	{
-		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PS && output_format != OUT_PSD)
+		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PCLM && output_format != OUT_PS && output_format != OUT_PSD)
 		{
-			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM, PCL, PS, PSD and PNG outputs\n");
+			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM, PCL, PCLM, PS, PSD and PNG outputs\n");
 			exit(1);
 		}
 		if (showmd5)

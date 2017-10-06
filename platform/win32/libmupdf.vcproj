@@ -1801,6 +1801,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\output-pclm.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\output-png.c"
 				>
 			</File>
@@ -2385,6 +2389,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\output-pcl.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\output-pclm.h"
 					>
 				</File>
 				<File
