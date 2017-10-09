@@ -1545,6 +1545,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\compress.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\compressed-buffer.c"
 				>
 			</File>
@@ -2313,6 +2317,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\mupdf\fitz\colorspace.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\mupdf\fitz\compress.h"
 					>
 				</File>
 				<File

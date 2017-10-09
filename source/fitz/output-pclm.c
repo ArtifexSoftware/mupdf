@@ -122,7 +122,7 @@ pclm_write_header(fz_context *ctx, fz_band_writer *writer_, const fz_colorspace 
 	fz_free(ctx, writer->stripbuf);
 	fz_free(ctx, writer->compbuf);
 	writer->stripbuf = fz_malloc(ctx, w * sh * n);
-	writer->complen = compressBound(w * sh * n);
+	writer->complen = fz_deflate_bound(ctx, w * sh * n);
 	writer->compbuf = fz_malloc(ctx, writer->complen);
 
 	/* Send the file header on the first page */
@@ -193,9 +193,7 @@ flush_strip(fz_context *ctx, pclm_band_writer *writer, int fill)
 	if (writer->options.compress)
 	{
 		uLongf destLen = writer->complen;
-		int err = compress(writer->compbuf, &destLen, data, (uLongf)len);
-		if (err != Z_OK)
-			fz_throw(ctx, FZ_ERROR_GENERIC, "cannot compress strip: %d", err);
+		fz_deflate(ctx, writer->compbuf, &destLen, data, len, FZ_DEFLATE_DEFAULT);
 		len = destLen;
 		data = writer->compbuf;
 	}

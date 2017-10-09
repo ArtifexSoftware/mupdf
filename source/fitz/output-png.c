@@ -86,33 +86,17 @@ static void
 png_write_icc(fz_context *ctx, png_band_writer *writer, const fz_colorspace *cs)
 {
 	fz_output *out = writer->super.out;
-	int size;
+	size_t size, csize;
 	fz_buffer *buffer = fz_icc_data_from_icc_colorspace(ctx, cs);
-	unsigned char *data;
 	unsigned char *pos, *cdata, *chunk = NULL;
-	uLong bound;
-	uLongf csize;
-	uLong long_size;
-	int t;
-
-	long_size = (uLong)fz_buffer_storage(ctx, buffer, &data);
-
-	if (!data)
-		return;
 
 	/* Deflate the profile */
-	bound = compressBound(long_size);
-	cdata = fz_malloc(ctx, bound);
-	csize = (uLongf)bound;
-	t = compress(cdata, &csize, data, long_size);
-	if (t != Z_OK)
-	{
-		fz_free(ctx, cdata);
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot deflate icc buffer");
-	}
-	size = csize + strlen("MuPDF Profile") + 2;
+	cdata = fz_new_deflated_data_from_buffer(ctx, &csize, buffer, FZ_DEFLATE_DEFAULT);
 
-	fz_var(cdata);
+	if (!cdata)
+		return;
+
+	size = csize + strlen("MuPDF Profile") + 2;
 
 	fz_try(ctx)
 	{

@@ -23,6 +23,7 @@ extern "C" {
 /* I/O */
 #include "mupdf/fitz/buffer.h"
 #include "mupdf/fitz/stream.h"
+#include "mupdf/fitz/compress.h"
 #include "mupdf/fitz/compressed-buffer.h"
 #include "mupdf/fitz/filter.h"
 #include "mupdf/fitz/output.h"
