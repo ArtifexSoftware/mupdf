@@ -4,9 +4,9 @@
 
 #include <string.h>
 
-typedef struct fz_flate_s fz_flate;
+typedef struct fz_inflate_state_s fz_inflate_state;
 
-struct fz_flate_s
+struct fz_inflate_state_s
 {
 	fz_stream *chain;
 	z_stream z;
@@ -26,7 +26,7 @@ static void zfree_flate(void *opaque, void *ptr)
 static int
 next_flated(fz_context *ctx, fz_stream *stm, size_t required)
 {
-	fz_flate *state = stm->state;
+	fz_inflate_state *state = stm->state;
 	fz_stream *chain = state->chain;
 	z_streamp zp = &state->z;
 	int code;
@@ -88,7 +88,7 @@ next_flated(fz_context *ctx, fz_stream *stm, size_t required)
 static void
 close_flated(fz_context *ctx, void *state_)
 {
-	fz_flate *state = (fz_flate *)state_;
+	fz_inflate_state *state = (fz_inflate_state *)state_;
 	int code;
 
 	code = inflateEnd(&state->z);
@@ -102,7 +102,7 @@ close_flated(fz_context *ctx, void *state_)
 fz_stream *
 fz_open_flated(fz_context *ctx, fz_stream *chain, int window_bits)
 {
-	fz_flate *state = NULL;
+	fz_inflate_state *state = NULL;
 	int code = Z_OK;
 
 	fz_var(code);
@@ -110,7 +110,7 @@ fz_open_flated(fz_context *ctx, fz_stream *chain, int window_bits)
 
 	fz_try(ctx)
 	{
-		state = fz_malloc_struct(ctx, fz_flate);
+		state = fz_malloc_struct(ctx, fz_inflate_state);
 		state->chain = chain;
 
 		state->z.zalloc = zalloc_flate;
