@@ -61,12 +61,12 @@ static const unsigned char png_signature[8] =
 	137, 80, 78, 71, 13, 10, 26, 10
 };
 
-static void *zalloc(void *opaque, unsigned int items, unsigned int size)
+static void *zalloc_png(void *opaque, unsigned int items, unsigned int size)
 {
-	return fz_malloc_array(opaque, items, size);
+	return fz_malloc_array_no_throw(opaque, items, size);
 }
 
-static void zfree(void *opaque, void *address)
+static void zfree_png(void *opaque, void *address)
 {
 	fz_free(opaque, address);
 }
@@ -445,8 +445,8 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 
 		info->samples = fz_malloc(ctx, info->size);
 
-		stm.zalloc = zalloc;
-		stm.zfree = zfree;
+		stm.zalloc = zalloc_png;
+		stm.zfree = zfree_png;
 		stm.opaque = ctx;
 
 		stm.next_out = info->samples;

@@ -4,6 +4,16 @@
 
 #include <zlib.h>
 
+static void *zalloc_outpng(void *opaque, unsigned int items, unsigned int size)
+{
+	return fz_malloc_array_no_throw(opaque, items, size);
+}
+
+static void zfree_outpng(void *opaque, void *address)
+{
+	fz_free(opaque, address);
+}
+
 static inline void big32(unsigned char *buf, unsigned int v)
 {
 	buf[0] = (v >> 24) & 0xff;
@@ -194,6 +204,9 @@ png_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 		writer->csize = compressBound(writer->usize);
 		writer->udata = fz_malloc(ctx, writer->usize);
 		writer->cdata = fz_malloc(ctx, writer->csize);
+		writer->stream.opaque = ctx;
+		writer->stream.zalloc = zalloc_outpng;
+		writer->stream.zfree = zfree_outpng;
 		err = deflateInit(&writer->stream, Z_DEFAULT_COMPRESSION);
 		if (err != Z_OK)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "compression error %d", err);
