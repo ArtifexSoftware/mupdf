@@ -763,7 +763,7 @@ static fz_buffer *ffi_tobuffer(js_State *J, int idx)
 	else {
 		const char *str = js_tostring(J, idx);
 		fz_try(ctx)
-			buf = fz_new_buffer_from_shared_data(ctx, (const unsigned char *)str, strlen(str));
+			buf = fz_new_buffer_from_copied_data(ctx, (const unsigned char *)str, strlen(str));
 		fz_catch(ctx)
 			rethrow(J);
 	}
