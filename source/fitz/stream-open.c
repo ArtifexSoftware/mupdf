@@ -208,15 +208,15 @@ fz_open_buffer(fz_context *ctx, fz_buffer *buf)
 }
 
 fz_stream *
-fz_open_memory(fz_context *ctx, unsigned char *data, size_t len)
+fz_open_memory(fz_context *ctx, const unsigned char *data, size_t len)
 {
 	fz_stream *stm;
 
 	stm = fz_new_stream(ctx, NULL, next_buffer, close_buffer);
 	stm->seek = seek_buffer;
 
-	stm->rp = data;
-	stm->wp = data + len;
+	stm->rp = (unsigned char *)data;
+	stm->wp = (unsigned char *)data + len;
 
 	stm->pos = (fz_off_t)len;
 

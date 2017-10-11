@@ -68,7 +68,7 @@ fz_stream *fz_open_file_ptr(fz_context *ctx, FILE *file);
 	Returns pointer to newly created stream. May throw exceptions on
 	failure to allocate.
 */
-fz_stream *fz_open_memory(fz_context *ctx, unsigned char *data, size_t len);
+fz_stream *fz_open_memory(fz_context *ctx, const unsigned char *data, size_t len);
 
 /*
 	fz_open_buffer: Open a buffer as a stream.
