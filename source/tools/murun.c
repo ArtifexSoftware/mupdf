@@ -4359,19 +4359,19 @@ int murun_main(int argc, char **argv)
 	js_setregistry(J, "fz_colorspace");
 	{
 		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_device_gray(ctx), ffi_gc_fz_colorspace);
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_gray(ctx)), ffi_gc_fz_colorspace);
 		js_setregistry(J, "DeviceGray");
 
 		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_device_rgb(ctx), ffi_gc_fz_colorspace);
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_rgb(ctx)), ffi_gc_fz_colorspace);
 		js_setregistry(J, "DeviceRGB");
 
 		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_device_bgr(ctx), ffi_gc_fz_colorspace);
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_bgr(ctx)), ffi_gc_fz_colorspace);
 		js_setregistry(J, "DeviceBGR");
 
 		js_getregistry(J, "fz_colorspace");
-		js_newuserdata(J, "fz_colorspace", fz_device_cmyk(ctx), ffi_gc_fz_colorspace);
+		js_newuserdata(J, "fz_colorspace", fz_keep_colorspace(ctx, fz_device_cmyk(ctx)), ffi_gc_fz_colorspace);
 		js_setregistry(J, "DeviceCMYK");
 	}
 
