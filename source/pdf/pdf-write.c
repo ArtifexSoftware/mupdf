@@ -1527,7 +1527,7 @@ static int isbinarystream(fz_context *ctx, fz_buffer *buf)
 	return 0;
 }
 
-static fz_buffer *hexbuf(fz_context *ctx, unsigned char *p, size_t n)
+static fz_buffer *hexbuf(fz_context *ctx, const unsigned char *p, size_t n)
 {
 	static const char hex[17] = "0123456789abcdef";
 	int x = 0;
@@ -1602,7 +1602,7 @@ static void addhexfilter(fz_context *ctx, pdf_document *doc, pdf_obj *dict)
 		fz_rethrow(ctx);
 }
 
-static fz_buffer *deflatebuf(fz_context *ctx, unsigned char *p, size_t n)
+static fz_buffer *deflatebuf(fz_context *ctx, const unsigned char *p, size_t n)
 {
 	fz_buffer *buf;
 	uLongf csize;

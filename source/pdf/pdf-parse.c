@@ -40,7 +40,7 @@ pdf_to_matrix(fz_context *ctx, pdf_obj *array, fz_matrix *m)
 }
 
 static int
-rune_from_utf16be(int *out, unsigned char *s, unsigned char *end)
+rune_from_utf16be(int *out, const unsigned char *s, const unsigned char *end)
 {
 	if (s + 2 <= end)
 	{
@@ -59,7 +59,7 @@ rune_from_utf16be(int *out, unsigned char *s, unsigned char *end)
 }
 
 static size_t
-skip_language_code_utf16be(unsigned char *s, size_t n, size_t i)
+skip_language_code_utf16be(const unsigned char *s, size_t n, size_t i)
 {
 	/* skip language escape codes */
 	if (i + 6 <= n && s[i+0] == 0 && s[i+1] == 27 && s[i+4] == 0 && s[i+5] == 27)
@@ -70,7 +70,7 @@ skip_language_code_utf16be(unsigned char *s, size_t n, size_t i)
 }
 
 static size_t
-skip_language_code_utf8(unsigned char *s, size_t n, size_t i)
+skip_language_code_utf8(const unsigned char *s, size_t n, size_t i)
 {
 	/* skip language escape codes */
 	if (i + 3 <= n && s[i] == 27 && s[i+3])
@@ -81,7 +81,7 @@ skip_language_code_utf8(unsigned char *s, size_t n, size_t i)
 }
 
 char *
-pdf_to_utf8_imp(fz_context *ctx, unsigned char *srcptr, size_t srclen)
+pdf_to_utf8_imp(fz_context *ctx, const unsigned char *srcptr, size_t srclen)
 {
 	char *dstptr, *dst;
 	size_t dstlen = 0;
