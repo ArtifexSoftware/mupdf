@@ -73,7 +73,7 @@ struct fz_jpxd_s
 
 struct stream_block_s
 {
-	unsigned char *data;
+	const unsigned char *data;
 	size_t size;
 };
 
@@ -197,7 +197,7 @@ jpx_write(unsigned char * pucData, short sComponent, unsigned long ulRow,
 }
 
 static fz_pixmap *
-jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
+jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
 {
 	JP2_Decomp_Handle doc;
 	JP2_Channel_Def_Params *chans = NULL;
@@ -421,7 +421,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 }
 
 fz_pixmap *
-fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs)
+fz_load_jpx(fz_context *ctx, const unsigned char *data, size_t size, fz_colorspace *defcs)
 {
 	fz_jpxd state = { 0 };
 
@@ -429,7 +429,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *de
 }
 
 void
-fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	fz_jpxd state = { 0 };
 
@@ -464,7 +464,7 @@ struct fz_jpxd_s
 
 struct stream_block_s
 {
-	unsigned char *data;
+	const unsigned char *data;
 	OPJ_SIZE_T size;
 	OPJ_SIZE_T pos;
 };
@@ -653,7 +653,7 @@ l2subfactor(fz_context *ctx, unsigned int max_w, unsigned int w)
 }
 
 static fz_pixmap *
-jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
+jpx_read_image(fz_context *ctx, fz_jpxd *state, const unsigned char *data, size_t size, fz_colorspace *defcs, int onlymeta)
 {
 	fz_pixmap *img = NULL;
 	opj_dparameters_t params;
@@ -889,7 +889,7 @@ jpx_read_image(fz_context *ctx, fz_jpxd *state, unsigned char *data, size_t size
 }
 
 fz_pixmap *
-fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *defcs)
+fz_load_jpx(fz_context *ctx, const unsigned char *data, size_t size, fz_colorspace *defcs)
 {
 	fz_jpxd state = { 0 };
 	fz_pixmap *pix = NULL;
@@ -908,7 +908,7 @@ fz_load_jpx(fz_context *ctx, unsigned char *data, size_t size, fz_colorspace *de
 }
 
 void
-fz_load_jpx_info(fz_context *ctx, unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	fz_jpxd state = { 0 };
 

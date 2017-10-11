@@ -74,8 +74,8 @@ static inline int bitdepth_from_maxval(int maxval)
 	return depth;
 }
 
-static unsigned char *
-pnm_read_white(fz_context *ctx, unsigned char *p, unsigned char *e, int single_line)
+static const unsigned char *
+pnm_read_white(fz_context *ctx, const unsigned char *p, const unsigned char *e, int single_line)
 {
 	if (e - p < 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse whitespace in pnm image");
@@ -119,8 +119,8 @@ pnm_read_white(fz_context *ctx, unsigned char *p, unsigned char *e, int single_l
 	return p;
 }
 
-static unsigned char *
-pnm_read_signature(fz_context *ctx, unsigned char *p, unsigned char *e, char *signature)
+static const unsigned char *
+pnm_read_signature(fz_context *ctx, const unsigned char *p, const unsigned char *e, char *signature)
 {
 	if (e - p < 2)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse magic number in pnm image");
@@ -132,8 +132,8 @@ pnm_read_signature(fz_context *ctx, unsigned char *p, unsigned char *e, char *si
 	return p;
 }
 
-static unsigned char *
-pnm_read_number(fz_context *ctx, unsigned char *p, unsigned char *e, int *number)
+static const unsigned char *
+pnm_read_number(fz_context *ctx, const unsigned char *p, const unsigned char *e, int *number)
 {
 	if (e - p < 1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot parse number in pnm image");
@@ -149,8 +149,8 @@ pnm_read_number(fz_context *ctx, unsigned char *p, unsigned char *e, int *number
 	return p;
 }
 
-static unsigned char *
-pnm_read_tupletype(fz_context *ctx, unsigned char *p, unsigned char *e, int *tupletype)
+static const unsigned char *
+pnm_read_tupletype(fz_context *ctx, const unsigned char *p, const unsigned char *e, int *tupletype)
 {
 	const struct { int len; char *str; int type; } tupletypes[] =
 	{
@@ -163,7 +163,7 @@ pnm_read_tupletype(fz_context *ctx, unsigned char *p, unsigned char *e, int *tup
 		{4, "CMYK", PAM_CMYK},
 		{10, "CMYK_ALPHA", PAM_CMYKA},
 	};
-	unsigned char *s;
+	const unsigned char *s;
 	int i, len;
 
 	if (e - p < 1)
@@ -184,8 +184,8 @@ pnm_read_tupletype(fz_context *ctx, unsigned char *p, unsigned char *e, int *tup
 	fz_throw(ctx, FZ_ERROR_GENERIC, "unknown tuple type in pnm image");
 }
 
-static unsigned char *
-pnm_read_token(fz_context *ctx, unsigned char *p, unsigned char *e, int *token)
+static const unsigned char *
+pnm_read_token(fz_context *ctx, const unsigned char *p, const unsigned char *e, int *token)
 {
 	const struct { int len; char *str; int type; } tokens[] =
 	{
@@ -196,7 +196,7 @@ pnm_read_token(fz_context *ctx, unsigned char *p, unsigned char *e, int *token)
 		{8, "TUPLTYPE", TOKEN_TUPLTYPE},
 		{6, "ENDHDR", TOKEN_ENDHDR},
 	};
-	unsigned char *s;
+	const unsigned char *s;
 	int i, len;
 
 	if (e - p < 1)
@@ -225,7 +225,7 @@ map_color(fz_context *ctx, int color, int inmax, int outmax)
 }
 
 static fz_pixmap *
-pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsigned char *e, int onlymeta, int bitmap)
+pnm_ascii_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, const unsigned char *e, int onlymeta, int bitmap)
 {
 	fz_pixmap *img = NULL;
 
@@ -303,7 +303,7 @@ pnm_ascii_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsign
 }
 
 static fz_pixmap *
-pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsigned char *e, int onlymeta, int bitmap)
+pnm_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, const unsigned char *e, int onlymeta, int bitmap)
 {
 	fz_pixmap *img = NULL;
 
@@ -387,8 +387,8 @@ pnm_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 	return img;
 }
 
-static unsigned char *
-pam_binary_read_header(fz_context *ctx, struct info *pnm, unsigned char *p, unsigned char *e)
+static const unsigned char *
+pam_binary_read_header(fz_context *ctx, struct info *pnm, const unsigned char *p, const unsigned char *e)
 {
 	int token = TOKEN_UNKNOWN;
 
@@ -416,7 +416,7 @@ pam_binary_read_header(fz_context *ctx, struct info *pnm, unsigned char *p, unsi
 }
 
 static fz_pixmap *
-pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsigned char *e, int onlymeta)
+pam_binary_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, const unsigned char *e, int onlymeta)
 {
 	fz_pixmap *img = NULL;
 	int bitmap = 0;
@@ -576,9 +576,9 @@ pam_binary_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, unsig
 }
 
 static fz_pixmap *
-pnm_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, size_t total, int onlymeta)
+pnm_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, size_t total, int onlymeta)
 {
-	unsigned char *e = p + total;
+	const unsigned char *e = p + total;
 	char signature[3] = { 0 };
 
 	p = pnm_read_signature(ctx, p, e, signature);
@@ -621,7 +621,7 @@ pnm_read_image(fz_context *ctx, struct info *pnm, unsigned char *p, size_t total
 }
 
 fz_pixmap *
-fz_load_pnm(fz_context *ctx, unsigned char *p, size_t total)
+fz_load_pnm(fz_context *ctx, const unsigned char *p, size_t total)
 {
 	fz_pixmap *img = NULL;
 	struct info pnm = { 0 };
@@ -637,7 +637,7 @@ fz_load_pnm(fz_context *ctx, unsigned char *p, size_t total)
 }
 
 void
-fz_load_pnm_info(fz_context *ctx, unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_pnm_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	struct info pnm = { 0 };
 

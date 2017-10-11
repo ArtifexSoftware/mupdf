@@ -16,12 +16,12 @@ struct info
 	int xres, yres;
 };
 
-static inline unsigned int getuint(unsigned char *p)
+static inline unsigned int getuint(const unsigned char *p)
 {
 	return p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3];
 }
 
-static inline int getcomp(unsigned char *line, int x, int bpc)
+static inline int getcomp(const unsigned char *line, int x, int bpc)
 {
 	switch (bpc)
 	{
@@ -220,7 +220,7 @@ png_deinterlace(fz_context *ctx, struct info *info, unsigned int *passw, unsigne
 }
 
 static void
-png_read_ihdr(fz_context *ctx, struct info *info, unsigned char *p, unsigned int size)
+png_read_ihdr(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size)
 {
 	int color, compression, filter;
 
@@ -281,7 +281,7 @@ png_read_ihdr(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 }
 
 static void
-png_read_plte(fz_context *ctx, struct info *info, unsigned char *p, unsigned int size)
+png_read_plte(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size)
 {
 	int n = size / 3;
 	int i;
@@ -309,7 +309,7 @@ png_read_plte(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 }
 
 static void
-png_read_trns(fz_context *ctx, struct info *info, unsigned char *p, unsigned int size)
+png_read_trns(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size)
 {
 	unsigned int i;
 
@@ -338,11 +338,11 @@ png_read_trns(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 }
 
 static void
-png_read_idat(fz_context *ctx, struct info *info, unsigned char *p, unsigned int size, z_stream *stm)
+png_read_idat(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size, z_stream *stm)
 {
 	int code;
 
-	stm->next_in = p;
+	stm->next_in = (Bytef*)p;
 	stm->avail_in = size;
 
 	code = inflate(stm, Z_SYNC_FLUSH);
@@ -357,7 +357,7 @@ png_read_idat(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 }
 
 static void
-png_read_phys(fz_context *ctx, struct info *info, unsigned char *p, unsigned int size)
+png_read_phys(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size)
 {
 	if (size != 9)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "pHYs chunk is the wrong size");
@@ -369,7 +369,7 @@ png_read_phys(fz_context *ctx, struct info *info, unsigned char *p, unsigned int
 }
 
 static void
-png_read_image(fz_context *ctx, struct info *info, unsigned char *p, size_t total, int only_metadata)
+png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_t total, int only_metadata)
 {
 	unsigned int passw[7], passh[7], passofs[8];
 	unsigned int code, size;
@@ -557,7 +557,7 @@ png_mask_transparency(struct info *info, fz_pixmap *dst)
 }
 
 fz_pixmap *
-fz_load_png(fz_context *ctx, unsigned char *p, size_t total)
+fz_load_png(fz_context *ctx, const unsigned char *p, size_t total)
 {
 	fz_pixmap *image = NULL;
 	fz_colorspace *colorspace;
@@ -615,7 +615,7 @@ fz_load_png(fz_context *ctx, unsigned char *p, size_t total)
 }
 
 void
-fz_load_png_info(fz_context *ctx, unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_png_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	struct info png;
 

@@ -15,7 +15,7 @@
 struct tiff
 {
 	/* "file" */
-	unsigned char *bp, *rp, *ep;
+	const unsigned char *bp, *rp, *ep;
 
 	/* byte order */
 	unsigned order;
@@ -62,7 +62,7 @@ struct tiff
 
 	unsigned ycbcrsubsamp[2];
 
-	unsigned char *jpegtables; /* point into "file" buffer */
+	const unsigned char *jpegtables; /* point into "file" buffer */
 	unsigned jpegtableslen;
 
 	unsigned char *profile;
@@ -288,7 +288,7 @@ tiff_expand_colormap(fz_context *ctx, struct tiff *tiff)
 }
 
 static unsigned
-tiff_decode_data(fz_context *ctx, struct tiff *tiff, unsigned char *rp, unsigned int rlen, unsigned char *wp, unsigned int wlen)
+tiff_decode_data(fz_context *ctx, struct tiff *tiff, const unsigned char *rp, unsigned int rlen, unsigned char *wp, unsigned int wlen)
 {
 	fz_stream *encstm = NULL;
 	fz_stream *stm = NULL;
@@ -596,7 +596,7 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 			{
 				unsigned int offset = tiff->tileoffsets[tile];
 				unsigned int rlen = tiff->tilebytecounts[tile];
-				unsigned char *rp = tiff->bp + offset;
+				const unsigned char *rp = tiff->bp + offset;
 				unsigned decoded;
 
 				if (offset > (unsigned)(tiff->ep - tiff->bp))
@@ -622,7 +622,7 @@ tiff_decode_tiles(fz_context *ctx, struct tiff *tiff)
 			{
 				unsigned int offset = tiff->tileoffsets[tile];
 				unsigned int rlen = tiff->tilebytecounts[tile];
-				unsigned char *rp = tiff->bp + offset;
+				const unsigned char *rp = tiff->bp + offset;
 
 				if (offset > (unsigned)(tiff->ep - tiff->bp))
 					fz_throw(ctx, FZ_ERROR_GENERIC, "invalid tile offset %u", offset);
@@ -673,7 +673,7 @@ tiff_decode_strips(fz_context *ctx, struct tiff *tiff)
 		{
 			unsigned offset = tiff->stripoffsets[strip];
 			unsigned rlen = tiff->stripbytecounts[strip];
-			unsigned char *rp = tiff->bp + offset;
+			const unsigned char *rp = tiff->bp + offset;
 			int decoded;
 
 			if (offset > (unsigned)(tiff->ep - tiff->bp))
@@ -694,7 +694,7 @@ tiff_decode_strips(fz_context *ctx, struct tiff *tiff)
 			unsigned offset = tiff->stripoffsets[strip];
 			unsigned rlen = tiff->stripbytecounts[strip];
 			unsigned wlen = tiff->stride * tiff->rowsperstrip;
-			unsigned char *rp = tiff->bp + offset;
+			const unsigned char *rp = tiff->bp + offset;
 
 			if (offset > (unsigned)(tiff->ep - tiff->bp))
 				fz_throw(ctx, FZ_ERROR_GENERIC, "invalid strip offset %u", offset);
@@ -963,7 +963,7 @@ tiff_scale_lab_samples(fz_context *ctx, unsigned char *buf, int bps, int n)
 }
 
 static void
-tiff_read_header(fz_context *ctx, struct tiff *tiff, unsigned char *buf, size_t len)
+tiff_read_header(fz_context *ctx, struct tiff *tiff, const unsigned char *buf, size_t len)
 {
 	unsigned version;
 
@@ -1295,7 +1295,7 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 }
 
 fz_pixmap *
-fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subimage)
+fz_load_tiff_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int subimage)
 {
 	fz_pixmap *image = NULL;
 	struct tiff tiff = { 0 };
@@ -1348,13 +1348,13 @@ fz_load_tiff_subimage(fz_context *ctx, unsigned char *buf, size_t len, int subim
 }
 
 fz_pixmap *
-fz_load_tiff(fz_context *ctx, unsigned char *buf, size_t len)
+fz_load_tiff(fz_context *ctx, const unsigned char *buf, size_t len)
 {
 	return fz_load_tiff_subimage(ctx, buf, len, 0);
 }
 
 void
-fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep, int subimage)
+fz_load_tiff_info_subimage(fz_context *ctx, const unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep, int subimage)
 {
 	struct tiff tiff = { 0 };
 
@@ -1391,13 +1391,13 @@ fz_load_tiff_info_subimage(fz_context *ctx, unsigned char *buf, size_t len, int 
 }
 
 void
-fz_load_tiff_info(fz_context *ctx, unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
+fz_load_tiff_info(fz_context *ctx, const unsigned char *buf, size_t len, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	fz_load_tiff_info_subimage(ctx, buf, len, wp, hp, xresp, yresp, cspacep, 0);
 }
 
 int
-fz_load_tiff_subimage_count(fz_context *ctx, unsigned char *buf, size_t len)
+fz_load_tiff_subimage_count(fz_context *ctx, const unsigned char *buf, size_t len)
 {
 	unsigned offset;
 	unsigned subimage_count = 0;
