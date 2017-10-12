@@ -265,6 +265,7 @@ int pdfportfolio_main(int argc, char **argv)
 			page_obj = pdf_add_page(ctx, doc, &mediabox, 0, resources, contents);
 			pdf_insert_page(ctx, doc, -1, page_obj);
 			pdf_drop_obj(ctx, page_obj);
+			pdf_drop_obj(ctx, resources);
 			fz_drop_buffer(ctx, contents);
 		}
 	}
