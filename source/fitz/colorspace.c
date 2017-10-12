@@ -3317,6 +3317,11 @@ void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_c
 		else
 			cc->convert = std_conv_color;
 	}
+	else if ((ss == fz_device_rgb(ctx) && ds == fz_device_bgr(ctx)) ||
+		(ss == fz_device_bgr(ctx) && ds == fz_device_rgb(ctx)))
+	{
+		cc->convert = rgb2bgr;
+	}
 	else
 	{
 		const fz_colorspace *ss_base = fz_source_colorspace_cm(ctx, ss);
