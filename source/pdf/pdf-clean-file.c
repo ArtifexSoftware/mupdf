@@ -234,9 +234,6 @@ static void retainpages(fz_context *ctx, globals *glo, int argc, char **argv)
 	pdf_dict_put_drop(ctx, pages, PDF_NAME_Count, countobj);
 	pdf_dict_put_drop(ctx, pages, PDF_NAME_Kids, kids);
 
-	/* Force the next call to pdf_count_pages to recount */
-	glo->doc->page_count = 0;
-
 	pagecount = pdf_count_pages(ctx, doc);
 	page_object_nums = fz_calloc(ctx, pagecount, sizeof(*page_object_nums));
 	for (i = 0; i < pagecount; i++)

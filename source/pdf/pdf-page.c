@@ -8,9 +8,7 @@
 int
 pdf_count_pages(fz_context *ctx, pdf_document *doc)
 {
-	if (doc->page_count == 0)
-		doc->page_count = pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count"));
-	return doc->page_count;
+	return pdf_to_int(ctx, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages/Count"));
 }
 
 static int
@@ -28,7 +26,7 @@ pdf_load_page_tree_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int id
 		{
 			for (i = 0; i < n; ++i)
 			{
-				if (idx >= doc->page_count)
+				if (idx >= doc->rev_page_count)
 					fz_throw(ctx, FZ_ERROR_GENERIC, "too many kids in page tree");
 				doc->rev_page_map[idx].page = idx;
 				doc->rev_page_map[idx].object = pdf_to_num(ctx, pdf_array_get(ctx, kids, i));
@@ -52,7 +50,7 @@ pdf_load_page_tree_imp(fz_context *ctx, pdf_document *doc, pdf_obj *node, int id
 	}
 	else if (pdf_name_eq(ctx, type, PDF_NAME_Page))
 	{
-		if (idx >= doc->page_count)
+		if (idx >= doc->rev_page_count)
 			fz_throw(ctx, FZ_ERROR_GENERIC, "too many kids in page tree");
 		doc->rev_page_map[idx].page = idx;
 		doc->rev_page_map[idx].object = pdf_to_num(ctx, node);
@@ -78,10 +76,10 @@ pdf_load_page_tree(fz_context *ctx, pdf_document *doc)
 {
 	if (!doc->rev_page_map)
 	{
-		int n = pdf_count_pages(ctx, doc);
-		doc->rev_page_map = fz_malloc_array(ctx, n, sizeof *doc->rev_page_map);
+		doc->rev_page_count = pdf_count_pages(ctx, doc);
+		doc->rev_page_map = fz_malloc_array(ctx, doc->rev_page_count, sizeof *doc->rev_page_map);
 		pdf_load_page_tree_imp(ctx, doc, pdf_dict_getp(ctx, pdf_trailer(ctx, doc), "Root/Pages"), 0);
-		qsort(doc->rev_page_map, n, sizeof *doc->rev_page_map, cmp_rev_page_map);
+		qsort(doc->rev_page_map, doc->rev_page_count, sizeof *doc->rev_page_map, cmp_rev_page_map);
 	}
 }
 
@@ -90,6 +88,7 @@ pdf_drop_page_tree(fz_context *ctx, pdf_document *doc)
 {
 	fz_free(ctx, doc->rev_page_map);
 	doc->rev_page_map = NULL;
+	doc->rev_page_count = 0;
 }
 
 enum
@@ -285,7 +284,7 @@ static int
 pdf_lookup_page_number_fast(fz_context *ctx, pdf_document *doc, int needle)
 {
 	int l = 0;
-	int r = doc->page_count - 1;
+	int r = doc->rev_page_count - 1;
 	while (l <= r)
 	{
 		int m = (l + r) >> 1;
@@ -1020,8 +1019,6 @@ pdf_delete_page(fz_context *ctx, pdf_document *doc, int at)
 		pdf_dict_put_drop(ctx, parent, PDF_NAME_Count, pdf_new_int(ctx, doc, count - 1));
 		parent = pdf_dict_get(ctx, parent, PDF_NAME_Parent);
 	}
-
-	doc->page_count = 0; /* invalidate cached value */
 }
 
 void
@@ -1117,6 +1114,4 @@ pdf_insert_page(fz_context *ctx, pdf_document *doc, int at, pdf_obj *page_ref)
 		pdf_dict_put_drop(ctx, parent, PDF_NAME_Count, pdf_new_int(ctx, doc, count + 1));
 		parent = pdf_dict_get(ctx, parent, PDF_NAME_Parent);
 	}
-
-	doc->page_count = 0; /* invalidate cached value */
 }

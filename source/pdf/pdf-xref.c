@@ -41,7 +41,6 @@ static void pdf_drop_xref_sections_imp(fz_context *ctx, pdf_document *doc, pdf_x
 			for (e = 0; e < sub->len; e++)
 			{
 				pdf_xref_entry *entry = &sub->table[e];
-
 				if (entry->obj)
 				{
 					pdf_drop_obj(ctx, entry->obj);
@@ -1299,9 +1298,9 @@ pdf_load_linear(fz_context *ctx, pdf_document *doc)
 
 		pdf_read_xref_sections(ctx, doc, fz_tell(ctx, doc->file), &doc->lexbuf.base, 0);
 
-		doc->page_count = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_N));
-		doc->linear_page_refs = fz_resize_array(ctx, doc->linear_page_refs, doc->page_count, sizeof(pdf_obj *));
-		memset(doc->linear_page_refs, 0, doc->page_count * sizeof(pdf_obj*));
+		doc->linear_page_count = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_N));
+		doc->linear_page_refs = fz_resize_array(ctx, doc->linear_page_refs, doc->linear_page_count, sizeof(pdf_obj *));
+		memset(doc->linear_page_refs, 0, doc->linear_page_count * sizeof(pdf_obj*));
 		doc->linear_obj = dict;
 		doc->linear_pos = fz_tell(ctx, doc->file);
 		doc->linear_page1_obj_num = pdf_to_int(ctx, pdf_dict_get(ctx, dict, PDF_NAME_O));
@@ -1503,7 +1502,7 @@ pdf_drop_document_imp(fz_context *ctx, pdf_document *doc)
 	pdf_drop_obj(ctx, doc->linear_obj);
 	if (doc->linear_page_refs)
 	{
-		for (i=0; i < doc->page_count; i++)
+		for (i=0; i < doc->linear_page_count; i++)
 			pdf_drop_obj(ctx, doc->linear_page_refs[i]);
 
 		fz_free(ctx, doc->linear_page_refs);
@@ -2321,8 +2320,8 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 
 		/* Malloc the structures (use realloc to cope with the fact we
 		 * may try this several times before enough data is loaded) */
-		doc->hint_page = fz_resize_array(ctx, doc->hint_page, doc->page_count+1, sizeof(*doc->hint_page));
-		memset(doc->hint_page, 0, sizeof(*doc->hint_page) * (doc->page_count+1));
+		doc->hint_page = fz_resize_array(ctx, doc->hint_page, doc->linear_page_count+1, sizeof(*doc->hint_page));
+		memset(doc->hint_page, 0, sizeof(*doc->hint_page) * (doc->linear_page_count+1));
 		doc->hint_obj_offsets = fz_resize_array(ctx, doc->hint_obj_offsets, max_object_num, sizeof(*doc->hint_obj_offsets));
 		memset(doc->hint_obj_offsets, 0, sizeof(*doc->hint_obj_offsets) * max_object_num);
 		doc->hint_obj_offsets_max = max_object_num;
@@ -2353,7 +2352,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		/* We don't care about the number of objects in the first page */
 		(void)fz_read_bits(ctx, stream, page_obj_num_bits);
 		j = 1;
-		for (i = 1; i < doc->page_count; i++)
+		for (i = 1; i < doc->linear_page_count; i++)
 		{
 			int delta_page_objs = fz_read_bits(ctx, stream, page_obj_num_bits);
 
@@ -2364,7 +2363,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		fz_sync_bits(ctx, stream);
 		/* Item 2: Page lengths */
 		j = doc->hint_page[0].offset;
-		for (i = 0; i < doc->page_count; i++)
+		for (i = 0; i < doc->linear_page_count; i++)
 		{
 			int delta_page_len = fz_read_bits(ctx, stream, page_len_num_bits);
 			int old = j;
@@ -2378,7 +2377,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		fz_sync_bits(ctx, stream);
 		/* Item 3: Shared references */
 		shared = 0;
-		for (i = 0; i < doc->page_count; i++)
+		for (i = 0; i < doc->linear_page_count; i++)
 		{
 			int num_shared_objs = fz_read_bits(ctx, stream, num_shared_obj_num_bits);
 			doc->hint_page[i].index = shared;
@@ -2483,7 +2482,7 @@ pdf_load_hints(fz_context *ctx, pdf_document *doc, int objnum)
 		{
 			doc->hint_obj_offsets[doc->hint_shared[i].number] = doc->hint_shared[i].offset;
 		}
-		for (i = 0; i < doc->page_count; i++)
+		for (i = 0; i < doc->linear_page_count; i++)
 		{
 			doc->hint_obj_offsets[doc->hint_page[i].number] = doc->hint_page[i].offset;
 		}
@@ -2554,8 +2553,8 @@ pdf_obj *pdf_progressive_advance(fz_context *ctx, pdf_document *doc, int pagenum
 
 	pdf_load_hinted_page(ctx, doc, pagenum);
 
-	if (pagenum < 0 || pagenum >= doc->page_count)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "page load out of range (%d of %d)", pagenum, doc->page_count);
+	if (pagenum < 0 || pagenum >= doc->linear_page_count)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "page load out of range (%d of %d)", pagenum, doc->linear_page_count);
 
 	if (doc->linear_pos == doc->file_length)
 		return doc->linear_page_refs[pagenum];

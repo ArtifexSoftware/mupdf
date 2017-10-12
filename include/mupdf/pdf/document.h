@@ -586,7 +586,7 @@ struct pdf_document_s
 	int freeze_updates;
 	int has_xref_streams;
 
-	int page_count;
+	int rev_page_count;
 	pdf_rev_page_map *rev_page_map;
 
 	int repair_attempted;
@@ -595,6 +595,7 @@ struct pdf_document_s
 	int file_reading_linearly;
 	fz_off_t file_length;
 
+	int linear_page_count;
 	pdf_obj *linear_obj; /* Linearized object (if used) */
 	pdf_obj **linear_page_refs; /* Page objects for linear loading */
 	int linear_page1_obj_num;
