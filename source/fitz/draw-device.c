@@ -2022,6 +2022,7 @@ typedef struct
 	int refs;
 	float ctm[4];
 	int id;
+	fz_colorspace *cs;
 } tile_key;
 
 typedef struct
@@ -2041,6 +2042,7 @@ fz_make_hash_tile_key(fz_context *ctx, fz_store_hash *hash, void *key_)
 	hash->u.im.m[1] = key->ctm[1];
 	hash->u.im.m[2] = key->ctm[2];
 	hash->u.im.m[3] = key->ctm[3];
+	hash->u.im.ptr = key->cs;
 	return 1;
 }
 
@@ -2056,7 +2058,10 @@ fz_drop_tile_key(fz_context *ctx, void *key_)
 {
 	tile_key *key = key_;
 	if (fz_drop_imp(ctx, key, &key->refs))
+	{
+		fz_drop_colorspace_store_key(ctx, key->cs);
 		fz_free(ctx, key);
+	}
 }
 
 static int
@@ -2068,15 +2073,16 @@ fz_cmp_tile_key(fz_context *ctx, void *k0_, void *k1_)
 		k0->ctm[0] == k1->ctm[0] &&
 		k0->ctm[1] == k1->ctm[1] &&
 		k0->ctm[2] == k1->ctm[2] &&
-		k0->ctm[3] == k1->ctm[3];
+		k0->ctm[3] == k1->ctm[3] &&
+		k0->cs == k1->cs;
 }
 
 static void
 fz_format_tile_key(fz_context *ctx, char *s, int n, void *key_)
 {
 	tile_key *key = (tile_key *)key_;
-	fz_snprintf(s, n, "(tile id=%x, ctm=%g %g %g %g)",
-			key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3]);
+	fz_snprintf(s, n, "(tile id=%x, ctm=%g %g %g %g, cs=%x)",
+			key->id, key->ctm[0], key->ctm[1], key->ctm[2], key->ctm[3], key->cs);
 }
 
 static const fz_store_type fz_tile_store_type =
@@ -2164,6 +2170,7 @@ fz_draw_begin_tile(fz_context *ctx, fz_device *devp, const fz_rect *area, const 
 		tk.ctm[2] = ctm.c;
 		tk.ctm[3] = ctm.d;
 		tk.id = id;
+		tk.cs = state[1].dest->colorspace;
 
 		tile = fz_find_item(ctx, fz_drop_tile_record_imp, &tk, &fz_tile_store_type);
 		if (tile)
@@ -2345,6 +2352,7 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 			key->ctm[1] = ctm.b;
 			key->ctm[2] = ctm.c;
 			key->ctm[3] = ctm.d;
+			key->cs = fz_keep_colorspace_store_key(ctx, state[1].dest->colorspace);
 			existing_tile = fz_store_item(ctx, key, tile, fz_tile_size(ctx, tile), &fz_tile_store_type);
 			if (existing_tile)
 			{

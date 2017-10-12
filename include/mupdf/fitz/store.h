@@ -134,6 +134,7 @@ typedef struct fz_store_hash_s
 		{
 			int id;
 			float m[4];
+			void *ptr;
 		} im; /* 20 bytes */
 		struct
 		{

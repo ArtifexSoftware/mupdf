@@ -113,6 +113,9 @@ void fz_colorspace_name_colorant(fz_context *ctx, fz_colorspace *cs, int n, cons
 const char *fz_colorspace_colorant(fz_context *ctx, const fz_colorspace *cs, int n);
 fz_colorspace *fz_new_indexed_colorspace(fz_context *ctx, fz_colorspace *base, int high, unsigned char *lookup);
 fz_colorspace *fz_keep_colorspace(fz_context *ctx, fz_colorspace *colorspace);
+fz_colorspace *fz_keep_colorspace_store_key(fz_context *ctx, fz_colorspace *colorspace);
+void fz_drop_colorspace_store_key(fz_context *ctx, fz_colorspace *colorspace);
+
 void fz_drop_colorspace(fz_context *ctx, fz_colorspace *colorspace);
 void fz_drop_colorspace_imp(fz_context *ctx, fz_storable *colorspace);
 

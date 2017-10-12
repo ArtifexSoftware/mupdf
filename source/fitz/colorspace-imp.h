@@ -24,7 +24,7 @@ void fz_cmm_fin_profile(fz_context *ctx, fz_iccprofile *profile);
 
 struct fz_colorspace_s
 {
-	fz_storable storable;
+	fz_key_storable key_storable;
 	size_t size;
 	char name[24];
 	unsigned char n;

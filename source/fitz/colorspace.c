@@ -160,7 +160,7 @@ fz_colorspace *
 fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, int is_device_n, fz_colorspace_convert_fn *to_ccs, fz_colorspace_convert_fn *from_ccs, fz_colorspace_base_fn *base, fz_colorspace_clamp_fn *clamp, fz_colorspace_destruct_fn *destruct, void *data, size_t size)
 {
 	fz_colorspace *cs = fz_malloc_struct(ctx, fz_colorspace);
-	FZ_INIT_STORABLE(cs, 1, fz_drop_colorspace_imp);
+	FZ_INIT_KEY_STORABLE(cs, 1, fz_drop_colorspace_imp);
 	cs->size = sizeof(fz_colorspace) + size;
 	fz_strlcpy(cs->name, name ? name : "UNKNOWN", sizeof cs->name);
 	cs->n = n;
@@ -183,13 +183,25 @@ fz_new_colorspace(fz_context *ctx, const char *name, int n, int is_subtractive, 
 fz_colorspace *
 fz_keep_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	return fz_keep_storable(ctx, &cs->storable);
+	return fz_keep_key_storable(ctx, &cs->key_storable);
 }
 
 void
 fz_drop_colorspace(fz_context *ctx, fz_colorspace *cs)
 {
-	fz_drop_storable(ctx, &cs->storable);
+	fz_drop_key_storable(ctx, &cs->key_storable);
+}
+
+fz_colorspace *
+fz_keep_colorspace_store_key(fz_context *ctx, fz_colorspace *cs)
+{
+	return fz_keep_key_storable_key(ctx, &cs->key_storable);
+}
+
+void
+fz_drop_colorspace_store_key(fz_context *ctx, fz_colorspace *cs)
+{
+	fz_drop_key_storable_key(ctx, &cs->key_storable);
 }
 
 /* icc links */
@@ -679,11 +691,11 @@ fz_colorspace_is_subtractive(fz_context *ctx, const fz_colorspace *cs)
 	return (cs && cs->is_subtractive);
 }
 
-static fz_colorspace k_default_gray = { {-1, fz_drop_colorspace_imp}, 0, "DeviceGray", 1, 0, 0, gray_to_rgb, rgb_to_gray, clamp_default, NULL, NULL, NULL, { "Gray" } };
-static fz_colorspace k_default_rgb = { {-1, fz_drop_colorspace_imp}, 0, "DeviceRGB", 3, 0, 0, rgb_to_rgb, rgb_to_rgb, clamp_default, NULL, NULL, NULL, { "Red", "Green", "Blue" } };
-static fz_colorspace k_default_bgr = { {-1, fz_drop_colorspace_imp}, 0, "DeviceBGR", 3, 0, 0, bgr_to_rgb, rgb_to_bgr, clamp_default, NULL, NULL, NULL, { "Blue", "Green", "Red" }  };
-static fz_colorspace k_default_cmyk = { {-1, fz_drop_colorspace_imp}, 0, "DeviceCMYK", 4, 1, 0, cmyk_to_rgb, rgb_to_cmyk, clamp_default, NULL, NULL, NULL, { "Cyan", "Magenta", "Yellow", "Black" } };
-static fz_colorspace k_default_lab = { {-1, fz_drop_colorspace_imp}, 0, "Lab", 3, 0, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL, { "L*", "a*", "b*" } };
+static fz_colorspace k_default_gray = { { {-1, fz_drop_colorspace_imp}, 0 },0, "DeviceGray", 1, 0, 0, gray_to_rgb, rgb_to_gray, clamp_default, NULL, NULL, NULL, { "Gray" } };
+static fz_colorspace k_default_rgb = { { {-1, fz_drop_colorspace_imp}, 0 },0, "DeviceRGB", 3, 0, 0, rgb_to_rgb, rgb_to_rgb, clamp_default, NULL, NULL, NULL, { "Red", "Green", "Blue" } };
+static fz_colorspace k_default_bgr = { { {-1, fz_drop_colorspace_imp}, 0 },0, "DeviceBGR", 3, 0, 0, bgr_to_rgb, rgb_to_bgr, clamp_default, NULL, NULL, NULL, { "Blue", "Green", "Red" }  };
+static fz_colorspace k_default_cmyk = { { {-1, fz_drop_colorspace_imp}, 0 },0, "DeviceCMYK", 4, 1, 0, cmyk_to_rgb, rgb_to_cmyk, clamp_default, NULL, NULL, NULL, { "Cyan", "Magenta", "Yellow", "Black" } };
+static fz_colorspace k_default_lab = { { {-1, fz_drop_colorspace_imp}, 0 }, 0, "Lab", 3, 0, 0, lab_to_rgb, rgb_to_lab, clamp_lab, NULL, NULL, NULL, { "L*", "a*", "b*" } };
 static fz_color_params k_default_color_params = { FZ_RI_RELATIVE_COLORIMETRIC, 1, 0, 0 };
 
 static fz_colorspace *default_gray = &k_default_gray;
@@ -3526,13 +3538,13 @@ void fz_init_cached_color_converter(fz_context *ctx, fz_color_converter *cc, fz_
 
 	cc->opaque = cached;
 	cc->convert = fz_cached_color_convert;
-	cc->ds = ds;
+	cc->ds = ds ? ds : fz_device_gray(ctx);
 	cc->ss = ss;
 	cc->is = is;
 
 	fz_try(ctx)
 	{
-		fz_find_color_converter(ctx, &cached->base, is, ds, ss, params);
+		fz_find_color_converter(ctx, &cached->base, is, cc->ds, ss, params);
 		cached->hash = fz_new_hash_table(ctx, 256, n * sizeof(float), -1, fz_free);
 	}
 	fz_catch(ctx)
