@@ -840,6 +840,10 @@
 			RelativePath="..\..\source\tools\pdfshow.c"
 			>
 		</File>
+		<File
+			RelativePath="..\..\source\tools\pdfsign.c"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
