@@ -3646,6 +3646,18 @@ int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs)
 	return cs && cs->clamp == clamp_lab_icc;
 }
 
+void fz_set_icc_bgr(fz_context *ctx, fz_colorspace *cs)
+{
+	fz_iccprofile *profile;
+
+	if (cs == NULL || !fz_colorspace_is_icc(ctx, cs))
+		return;
+
+	profile = cs->data;
+	profile->bgr = 1;
+	return;
+}
+
 fz_colorspace *
 fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf)
 {

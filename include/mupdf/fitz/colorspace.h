@@ -152,6 +152,7 @@ int fz_colorspace_is_lab(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_lab_icc(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_cal(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_is_indexed(fz_context *ctx, const fz_colorspace *cs);
+void fz_set_icc_bgr(fz_context *ctx, fz_colorspace *cs);
 int fz_colorspace_n(fz_context *ctx, const fz_colorspace *cs);
 int fz_colorspace_devicen_n(fz_context *ctx, const fz_colorspace *cs);
 const char *fz_colorspace_name(fz_context *ctx, const fz_colorspace *cs);
