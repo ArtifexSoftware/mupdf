@@ -3238,6 +3238,10 @@ cmyk2bgr(fz_context *ctx, fz_color_converter *cc, float *dv, const float *sv)
 
 void fz_find_color_converter(fz_context *ctx, fz_color_converter *cc, const fz_colorspace *is, const fz_colorspace *ds, const fz_colorspace *ss, const fz_color_params *params)
 {
+	if (ds == NULL)
+		ds = fz_device_gray(ctx);
+	if (ss == NULL)
+		ss = fz_device_gray(ctx);
 	cc->ds = ds;
 	cc->ss = ss;
 	cc->is = is;
