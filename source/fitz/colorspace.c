@@ -3056,7 +3056,11 @@ fz_pixmap_converter *fz_lookup_pixmap_converter(fz_context *ctx, fz_colorspace *
 		else if (ds == default_rgb) return fast_cmyk_to_rgb;
 		else return std_conv_pixmap;
 	}
-
+	else if ((ss == fz_device_rgb(ctx) && ds == fz_device_bgr(ctx)) ||
+		(ds == fz_device_rgb(ctx) && ss == fz_device_bgr(ctx)))
+	{
+		return fast_rgb_to_bgr;
+	}
 	else
 	{
 		const fz_colorspace *ss_base = fz_source_colorspace_cm(ctx, ss);
