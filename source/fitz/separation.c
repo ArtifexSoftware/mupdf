@@ -242,10 +242,6 @@ fz_clone_pixmap_area_with_different_seps(fz_context *ctx, fz_pixmap *src, const 
 {
 	fz_irect local_bbox;
 	fz_pixmap *dst;
-	fz_colorspace *oi = fz_default_output_intent(ctx, default_cs);
-
-	if (fz_colorspace_n(ctx, dcs) == fz_colorspace_n(ctx, oi))
-		dcs = oi;
 
 	if (bbox == NULL)
 	{
@@ -291,6 +287,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	unsigned char mapped[FZ_MAX_COLORS];
 	int unmapped = sseps_n;
 	int device_n = 0;
+	fz_colorspace *proof_cs = (prf == src->colorspace ? NULL : prf);
 
 	assert(da == sa);
 	assert(ss == fz_count_active_separations(ctx, sseps));
@@ -300,7 +297,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 	sstride -= sn * dw;
 
 	/* Process colorants first */
-	if (dst->colorspace == src->colorspace)
+	if (dst->colorspace == src->colorspace && proof_cs == NULL)
 	{
 		/* Simple copy */
 		unsigned char *dd = ddata;
@@ -327,7 +324,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 		{
 			fz_pixmap_converter *pc = fz_lookup_pixmap_converter(ctx, dst->colorspace, src->colorspace);
 
-			pc(ctx, dst, src, prf, default_cs, NULL, 0);
+			pc(ctx, dst, src, proof_cs, default_cs, NULL, 0);
 		}
 	}
 
@@ -398,7 +395,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 			if (mapped[i])
 				continue;
 			/* Src spot i is not mapped. We need to convert that down. */
-			fz_separation_equivalent(ctx, sseps, i, color_params, dst->colorspace, prf, convert);
+			fz_separation_equivalent(ctx, sseps, i, color_params, dst->colorspace, proof_cs, convert);
 
 			if (fz_colorspace_is_subtractive(ctx, dst->colorspace))
 			{
@@ -491,7 +488,7 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 		int n = fz_colorspace_n(ctx, src->colorspace);
 
 		fz_color_converter cc;
-		fz_find_color_converter(ctx, &cc, prf, dst->colorspace, src->colorspace, color_params);
+		fz_find_color_converter(ctx, &cc, proof_cs, dst->colorspace, src->colorspace, color_params);
 
 		fz_try(ctx)
 		{

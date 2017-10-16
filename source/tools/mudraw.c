@@ -246,6 +246,8 @@ static int alphabits_text = 8;
 static int alphabits_graphics = 8;
 
 static int out_cs = CS_UNSET;
+static const char *proof_filename = NULL;
+fz_colorspace *proof_cs = NULL;
 static const char *icc_filename = NULL;
 static float gamma_value = 1;
 static int invert = 0;
@@ -333,7 +335,8 @@ static void usage(void)
 		"\t-U -\tfile name of user stylesheet for EPUB layout\n"
 		"\t-X\tdisable document styles for EPUB layout\n"
 		"\n"
-		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha)\n"
+		"\t-c -\tcolorspace (mono, gray, grayalpha, rgb, rgba, cmyk, cmykalpha, filename of ICC profile)\n"
+		"\t-e -\tproof icc profile (filename of ICC profile)\n"
 		"\t-G -\tapply gamma correction\n"
 		"\t-I\tinvert colors\n"
 		"\n"
@@ -462,7 +465,7 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 		else
 			fz_clear_pixmap_with_value(ctx, pix, 255);
 
-		dev = fz_new_draw_device(ctx, NULL, pix);
+		dev = fz_new_draw_device_with_proof(ctx, NULL, pix, proof_cs);
 		if (lowmemory)
 			fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 		if (alphabits_graphics == 0)
@@ -1440,7 +1443,7 @@ int mudraw_main(int argc, char **argv)
 
 	fz_var(doc);
 
-	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:")) != -1)
+	while ((c = fz_getopt(argc, argv, "p:o:F:R:r:w:h:fB:c:e:G:Is:A:DiW:H:S:T:U:XLvPl:y:NO:")) != -1)
 	{
 		switch (c)
 		{
@@ -1459,6 +1462,7 @@ int mudraw_main(int argc, char **argv)
 		case 'B': band_height = atoi(fz_optarg); break;
 
 		case 'c': out_cs = parse_colorspace(fz_optarg); break;
+		case 'e': proof_filename = fz_optarg; break;
 		case 'G': gamma_value = fz_atof(fz_optarg); break;
 		case 'I': invert++; break;
 
@@ -1560,6 +1564,9 @@ int mudraw_main(int argc, char **argv)
 		fprintf(stderr, "cannot initialise context\n");
 		exit(1);
 	}
+
+	if (proof_filename)
+		proof_cs = fz_new_icc_colorspace_from_file(ctx, NULL, proof_filename);
 
 	fz_set_text_aa_level(ctx, alphabits_text);
 	fz_set_graphics_aa_level(ctx, alphabits_graphics);
@@ -1841,10 +1848,16 @@ int mudraw_main(int argc, char **argv)
 				oi = fz_document_output_intent(ctx, doc);
 				if (oi)
 				{
-					if (fz_colorspace_n(ctx, oi) == fz_colorspace_n(ctx, colorspace))
+					/* See if we had explicitly set a profile to render */
+					if (out_cs != CS_ICC)
 					{
-						fz_drop_colorspace(ctx, colorspace);
-						colorspace = fz_keep_colorspace(ctx, oi);
+						/* In this case, we want to render to the output intent
+						 * color space if the number of channels is the same */
+						if (fz_colorspace_n(ctx, oi) == fz_colorspace_n(ctx, colorspace))
+						{
+							fz_drop_colorspace(ctx, colorspace);
+							colorspace = fz_keep_colorspace(ctx, oi);
+						}
 					}
 				}
 
@@ -1980,6 +1993,7 @@ int mudraw_main(int argc, char **argv)
 #endif /* DISABLE_MUTHREADS */
 
 	fz_drop_colorspace(ctx, colorspace);
+	fz_drop_colorspace(ctx, proof_cs);
 	fz_drop_context(ctx);
 
 #ifndef DISABLE_MUTHREADS

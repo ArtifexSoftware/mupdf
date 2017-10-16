@@ -46,6 +46,7 @@ struct fz_draw_device_s
 	fz_matrix transform;
 	fz_rasterizer *rast;
 	fz_default_colorspaces *default_cs;
+	fz_colorspace *proof_cs;
 	int flags;
 	int resolve_spots;
 	int top;
@@ -113,21 +114,6 @@ static void stack_change(fz_context *ctx, fz_draw_device *dev, char *s)
 #define STACK_POPPED(A) do {} while (0)
 #define STACK_CONVERT(A) do {} while (0)
 #endif
-
-/* Based upon the existence of a proof color space, and if we happen to be
- * in a color space that is our target color space or a transparency group
- * color space decide if we should be using the proof color space at this time */
-static fz_colorspace *
-fz_proof_cs(fz_context *ctx, fz_draw_device *dev)
-{
-	fz_colorspace *prf = fz_default_output_intent(ctx, dev->default_cs);
-	fz_draw_state *state = &dev->stack[dev->top];
-	fz_colorspace *model = state->dest->colorspace;
-
-	if (prf == NULL || model == prf)
-		return NULL;
-	return prf;
-}
 
 /* Logic below assumes that default cs is set to color context cs if there
  * was not a default in the document for that particular cs
@@ -510,9 +496,24 @@ static fz_draw_state *
 push_group_for_separations(fz_context *ctx, fz_draw_device *dev, const fz_color_params *color_params, fz_default_colorspaces *default_cs)
 {
 	fz_separations *clone = fz_clone_separations_for_overprint(ctx, dev->stack[0].dest->seps);
+	fz_colorspace *oi = fz_default_output_intent(ctx, default_cs);
+	fz_colorspace *dcs = fz_device_cmyk(ctx);
+
+	/* Pick sep target CMYK based upon proof and output intent settings.  Priority
+	 * is oi, proof, devicecmyk. */
+	/* FIXME: Look into non-CMYK proofing profiles */
+	if (dev->proof_cs && fz_colorspace_n(ctx, dev->proof_cs) == 4)
+	{
+		dcs = dev->proof_cs;
+	}
+	/* FIXME : We need to create a file with an RGB output intent at some point and test a few things */
+	if (oi && fz_colorspace_n(ctx, oi) == 4)
+	{
+		dcs = oi;
+	}
 
 	/* Not needed */
-	if (clone == NULL)
+	if (clone == NULL && dev->proof_cs == NULL)
 	{
 		dev->resolve_spots = 0;
 		return &dev->stack[0];
@@ -523,7 +524,7 @@ push_group_for_separations(fz_context *ctx, fz_draw_device *dev, const fz_color_
 	{
 		dev->stack[1] = dev->stack[0];
 		dev->stack[1].dest = NULL; /* So we are safe to destroy */
-		dev->stack[1].dest = fz_clone_pixmap_area_with_different_seps(ctx, dev->stack[0].dest, &dev->stack[0].scissor, fz_device_cmyk(ctx), clone, color_params, default_cs);
+		dev->stack[1].dest = fz_clone_pixmap_area_with_different_seps(ctx, dev->stack[0].dest, &dev->stack[0].scissor, dcs, clone, color_params, default_cs);
 		dev->top++;
 	}
 	fz_always(ctx)
@@ -1641,6 +1642,7 @@ fz_draw_fill_image(fz_context *ctx, fz_device *devp, fz_image *image, const fz_m
 
 	if (dev->top == 0 && dev->resolve_spots)
 		state = push_group_for_separations(ctx, dev, color_params, dev->default_cs);
+	model = state->dest->colorspace;
 
 	model = state->dest->colorspace;
 
@@ -2817,7 +2819,6 @@ static void
 fz_draw_close_device(fz_context *ctx, fz_device *devp)
 {
 	fz_draw_device *dev = (fz_draw_device*)devp;
-	fz_colorspace *prf = fz_proof_cs(ctx, dev);
 
 	/* pop and free the stacks */
 	if (dev->top > dev->resolve_spots)
@@ -2839,7 +2840,7 @@ fz_draw_close_device(fz_context *ctx, fz_device *devp)
 	if (dev->resolve_spots && dev->top)
 	{
 		fz_draw_state *state = &dev->stack[--dev->top];
-		fz_copy_pixmap_area_converting_seps(ctx, state[0].dest, state[1].dest, fz_default_color_params(ctx)/* FIXME */, prf, dev->default_cs);
+		fz_copy_pixmap_area_converting_seps(ctx, state[0].dest, state[1].dest, fz_default_color_params(ctx)/* FIXME */, dev->proof_cs, dev->default_cs);
 		fz_drop_pixmap(ctx, state[1].dest);
 		assert(state[1].mask == NULL);
 		assert(state[1].shape == NULL);
@@ -2854,6 +2855,7 @@ fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 	fz_rasterizer *rast = dev->rast;
 
 	fz_drop_default_colorspaces(ctx, dev->default_cs);
+	fz_drop_colorspace(ctx, dev->proof_cs);
 
 	/* pop and free the stacks */
 	if (dev->top > 0)
@@ -2884,7 +2886,7 @@ fz_draw_drop_device(fz_context *ctx, fz_device *devp)
 }
 
 fz_device *
-new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, const fz_aa_context *aa, const fz_irect *clip)
+new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, const fz_aa_context *aa, const fz_irect *clip, fz_colorspace *proof_cs)
 {
 	fz_draw_device *dev = fz_new_derived_device(ctx, fz_draw_device);
 
@@ -2920,6 +2922,7 @@ new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, co
 	dev->super.render_flags = fz_draw_render_flags;
 	dev->super.set_default_colorspaces = fz_draw_set_default_colorspaces;
 
+	dev->proof_cs = fz_keep_colorspace(ctx, proof_cs);
 	dev->transform = transform ? *transform : fz_identity;
 	dev->flags = 0;
 	dev->resolve_spots = 0;
@@ -2965,7 +2968,7 @@ new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, co
 	 * the default_colorspaces etc are, so set a flag for us
 	 * to trigger on later.
 	 */
-	if (dest->seps)
+	if (dest->seps || dev->proof_cs != NULL)
 #ifdef FZ_ENABLE_SPOT_RENDERING
 		dev->resolve_spots = 1;
 #else
@@ -2990,13 +2993,25 @@ new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, co
 fz_device *
 fz_new_draw_device(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest)
 {
-	return new_draw_device(ctx, transform, dest, NULL, NULL);
+	return new_draw_device(ctx, transform, dest, NULL, NULL, NULL);
 }
 
 fz_device *
 fz_new_draw_device_with_bbox(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, const fz_irect *clip)
 {
-	return new_draw_device(ctx, transform, dest, NULL, clip);
+	return new_draw_device(ctx, transform, dest, NULL, clip, NULL);
+}
+
+fz_device *
+fz_new_draw_device_with_proof(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, fz_colorspace *cs)
+{
+	return new_draw_device(ctx, transform, dest, NULL, NULL, cs);
+}
+
+fz_device *
+fz_new_draw_device_with_bbox_proof(fz_context *ctx, const fz_matrix *transform, fz_pixmap *dest, const fz_irect *clip, fz_colorspace *cs)
+{
+	return new_draw_device(ctx, transform, dest, NULL, clip, cs);
 }
 
 fz_device *
