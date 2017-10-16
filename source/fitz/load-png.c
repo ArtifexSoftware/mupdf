@@ -14,6 +14,7 @@ struct info
 	int transparency;
 	int trns[3];
 	int xres, yres;
+	fz_colorspace *cs;
 };
 
 static inline unsigned int getuint(const unsigned char *p)
@@ -338,6 +339,30 @@ png_read_trns(fz_context *ctx, struct info *info, const unsigned char *p, unsign
 }
 
 static void
+png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size)
+{
+	fz_stream *stm, *stm2;
+	fz_colorspace *cs = NULL;
+	size_t skip = strnlen(p, size) + 2;
+
+	if (skip >= size)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad ICC Profile in PNG");
+
+	stm = fz_open_memory(ctx, p + skip, size - skip);
+	stm2 = fz_open_flated(ctx, stm, 15);
+
+	fz_try(ctx)
+		cs = fz_new_icc_colorspace_from_stream(ctx, NULL, stm2);
+	fz_always(ctx)
+		fz_drop_stream(ctx, stm2);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	fz_drop_colorspace(ctx, info->cs); /* should be null but just to be safe */
+	info->cs = cs;
+}
+
+static void
 png_read_idat(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size, z_stream *stm)
 {
 	int code;
@@ -450,6 +475,17 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 				png_read_phys(ctx, info, p + 8, size);
 			if (!memcmp(p + 4, "IDAT", 4) && !only_metadata)
 				png_read_idat(ctx, info, p + 8, size, &stm);
+			if (!memcmp(p + 4, "iCCP", 4))
+			{
+				fz_try(ctx)
+				{
+					png_read_icc(ctx, info, p + 8, size);
+				}
+				fz_catch(ctx)
+				{
+					info->cs = NULL;
+				}
+			}
 			if (!memcmp(p + 4, "IEND", 4))
 				break;
 
@@ -567,17 +603,25 @@ fz_load_png(fz_context *ctx, const unsigned char *p, size_t total)
 
 	png_read_image(ctx, &png, p, total, 0);
 
-	if (png.n == 3 || png.n == 4)
-		colorspace = fz_device_rgb(ctx);
-	else
-		colorspace = fz_device_gray(ctx);
+	if (png.cs == NULL)
+	{
+		if (png.n == 3 || png.n == 4)
+			colorspace = fz_device_rgb(ctx);
+		else
+			colorspace = fz_device_gray(ctx);
+	}
 
 	stride = (png.width * png.n * png.depth + 7) / 8;
 	alpha = (png.n == 2 || png.n == 4);
 
 	fz_try(ctx)
 	{
-		image = fz_new_pixmap(ctx, colorspace, png.width, png.height, NULL, alpha);
+		image = fz_new_pixmap(ctx, (png.cs == NULL ? colorspace : png.cs), png.width, png.height, NULL, alpha);
+	}
+	fz_always(ctx)
+	{
+		fz_drop_colorspace(ctx, png.cs); /* fz_new_pixmap took a reference */
+		png.cs = NULL;
 	}
 	fz_catch(ctx)
 	{
@@ -621,10 +665,17 @@ fz_load_png_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp,
 
 	png_read_image(ctx, &png, p, total, 1);
 
-	if (png.n == 3 || png.n == 4 || png.indexed)
-		*cspacep = fz_device_rgb(ctx);
+	if (png.cs == NULL)
+	{
+		if (png.n == 3 || png.n == 4 || png.indexed)
+			*cspacep = fz_device_rgb(ctx);
+		else
+			*cspacep = fz_device_gray(ctx);
+	}
 	else
-		*cspacep = fz_device_gray(ctx);
+	{
+		*cspacep = png.cs;
+	}
 
 	*wp = png.width;
 	*hp = png.height;
