@@ -594,6 +594,9 @@ pdf_load_version(fz_context *ctx, pdf_document *doc)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot recognize version marker");
 
 	doc->version = 10 * (fz_atof(buf+5) + 0.05f);
+	if (doc->version < 10 || doc->version > 17)
+		if (doc->version != 20)
+			fz_warn(ctx, "unknown PDF version: %d.%d", doc->version / 10, doc->version % 10);
 }
 
 static void
