@@ -115,6 +115,41 @@ static inline int read_value(const unsigned char *data, int bytes, int is_big_en
 	return value;
 }
 
+/* FIXME: We may need to worry about profiles spread out
+ * across multiple markers. */
+static fz_colorspace *extract_icc_profile(fz_context *ctx, jpeg_saved_marker_ptr init_marker)
+{
+	const unsigned char *data;
+	int size;
+	jpeg_saved_marker_ptr marker = init_marker;
+	fz_buffer *buff = NULL;
+	fz_colorspace *cs = NULL;
+
+	for (marker = init_marker; marker != NULL; marker = marker->next)
+	{
+		if (marker->marker == JPEG_APP0 + 2)
+		{
+			data = (const unsigned char *)marker->data + 14;
+			size = marker->data_length - 14;
+			break;
+		}
+	}
+	if (marker == NULL)
+		return NULL;
+
+	fz_try(ctx)
+	{
+		buff = fz_new_buffer_from_copied_data(ctx, data, size);
+		cs = fz_new_icc_colorspace(ctx, NULL, 0, buff);
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buff);
+	fz_catch(ctx)
+		fz_warn(ctx, "Failed to ICC Profile from JPEG");
+
+	return cs;
+}
+
 static int extract_exif_resolution(jpeg_saved_marker_ptr marker, int *xres, int *yres)
 {
 	int is_big_endian;
@@ -224,7 +259,7 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 	struct jpeg_error_mgr err;
 	struct jpeg_source_mgr src;
 	unsigned char *row[1], *sp, *dp;
-	fz_colorspace *colorspace;
+	fz_colorspace *colorspace, *cs = NULL;
 	unsigned int x;
 	int k, stride;
 	fz_pixmap *image = NULL;
@@ -270,6 +305,10 @@ fz_load_jpeg(fz_context *ctx, const unsigned char *rbuf, size_t rlen)
 			colorspace = fz_device_cmyk(ctx);
 		else
 			fz_throw(ctx, FZ_ERROR_GENERIC, "bad number of components in jpeg: %d", cinfo.num_components);
+
+		cs = extract_icc_profile(ctx, cinfo.marker_list);
+		if (cs != NULL)
+			colorspace = cs;
 
 		image = fz_new_pixmap(ctx, colorspace, cinfo.output_width, cinfo.output_height, NULL, 0);
 
@@ -339,6 +378,7 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 	struct jpeg_decompress_struct cinfo;
 	struct jpeg_error_mgr err;
 	struct jpeg_source_mgr src;
+	fz_colorspace *cs = NULL;
 
 	fz_try(ctx)
 	{
@@ -363,6 +403,7 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 
 		jpeg_save_markers(&cinfo, JPEG_APP0+1, 0xffff);
 		jpeg_save_markers(&cinfo, JPEG_APP0+13, 0xffff);
+		jpeg_save_markers(&cinfo, JPEG_APP0+2, 0xffff);
 
 		jpeg_read_header(&cinfo, 1);
 
@@ -397,6 +438,10 @@ fz_load_jpeg_info(fz_context *ctx, const unsigned char *rbuf, size_t rlen, int *
 			*xresp = 0;
 			*yresp = 0;
 		}
+
+		cs = extract_icc_profile(ctx, cinfo.marker_list);
+		if (cs != NULL)
+			*cspacep = cs;
 
 		if (*xresp <= 0) *xresp = 96;
 		if (*yresp <= 0) *yresp = 96;
