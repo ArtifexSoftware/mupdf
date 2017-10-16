@@ -196,6 +196,7 @@ struct fz_cal_colorspace_s {
 	icc methods
 */
 fz_colorspace *fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf);
+fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, const char *name, const char *path);
 fz_colorspace *fz_new_cal_colorspace(fz_context *ctx, const char *name, float *wp, float *bp, float *gamma, float *matrix);
 fz_buffer *fz_new_icc_data_from_cal_colorspace(fz_context *ctx, fz_cal_colorspace *cal);
 fz_buffer *fz_icc_data_from_icc_colorspace(fz_context *ctx, const fz_colorspace *cs);
