@@ -3735,6 +3735,19 @@ fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, const char *name
 	return cs;
 }
 
+fz_colorspace *fz_new_icc_colorspace_from_stream(fz_context *ctx, const char *name, fz_stream *in)
+{
+	fz_colorspace *cs = NULL;
+	fz_buffer *buffer = fz_read_all(ctx, in, 1024);
+	fz_try(ctx)
+		cs = fz_new_icc_colorspace(ctx, name, 0, buffer);
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buffer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return cs;
+}
+
 /* Gets the icc data from a color space. Used in the writing out of the icc
  * data for output formats.
  */
