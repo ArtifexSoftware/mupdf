@@ -685,6 +685,7 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			else
 				fz_run_page(ctx, page, dev, &ctm, cookie);
 			fz_close_device(ctx, dev);
+			fz_close_output(ctx, out);
 		}
 		fz_always(ctx)
 		{
@@ -1136,6 +1137,7 @@ static void drawpage(fz_context *ctx, fz_document *doc, int pagenum)
 		char text_buffer[512];
 
 		bgprint_flush();
+		fz_close_output(ctx, out);
 		fz_drop_output(ctx, out);
 		fz_snprintf(text_buffer, sizeof(text_buffer), output, pagenum);
 		out = fz_new_output_with_path(ctx, text_buffer, output_append);
@@ -1948,6 +1950,7 @@ int mudraw_main(int argc, char **argv)
 	}
 	else
 	{
+		fz_close_output(ctx, out);
 		fz_drop_output(ctx, out);
 		out = NULL;
 	}

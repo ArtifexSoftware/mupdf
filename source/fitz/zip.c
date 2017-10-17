@@ -84,6 +84,8 @@ fz_close_zip_writer(fz_context *ctx, fz_zip_writer *zip)
 
 	fz_write_data(ctx, zip->output, "MuPDF", 5);
 
+	fz_close_output(ctx, zip->output);
+
 	zip->closed = 1;
 }
 

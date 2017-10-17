@@ -3073,14 +3073,10 @@ void pdf_save_document(fz_context *ctx, pdf_document *doc, const char *filename,
 	{
 		opts.out = fz_new_output_with_path(ctx, filename, 0);
 	}
-
-	if (!opts.out)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open output file '%s'", filename);
-
 	fz_try(ctx)
 	{
 		do_pdf_save_document(ctx, doc, &opts, in_opts);
-
+		fz_close_output(ctx, opts.out);
 		complete_signatures(ctx, doc, &opts, filename);
 	}
 	fz_always(ctx)

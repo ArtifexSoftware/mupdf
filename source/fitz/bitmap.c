@@ -453,7 +453,10 @@ fz_save_bitmap_as_pbm(fz_context *ctx, fz_bitmap *bitmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
+	{
 		fz_write_bitmap_as_pbm(ctx, out, bitmap);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)
@@ -465,7 +468,10 @@ fz_save_bitmap_as_pkm(fz_context *ctx, fz_bitmap *bitmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
+	{
 		fz_write_bitmap_as_pkm(ctx, out, bitmap);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)

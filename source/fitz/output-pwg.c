@@ -150,6 +150,7 @@ fz_save_pixmap_as_pwg(fz_context *ctx, fz_pixmap *pixmap, char *filename, int ap
 		if (!append)
 			fz_write_pwg_file_header(ctx, out);
 		fz_write_pixmap_as_pwg_page(ctx, out, pixmap, pwg);
+		fz_close_output(ctx, out);
 	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
@@ -166,6 +167,7 @@ fz_save_bitmap_as_pwg(fz_context *ctx, fz_bitmap *bitmap, char *filename, int ap
 		if (!append)
 			fz_write_pwg_file_header(ctx, out);
 		fz_write_bitmap_as_pwg_page(ctx, out, bitmap, pwg);
+		fz_close_output(ctx, out);
 	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
@@ -448,6 +450,8 @@ pwg_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 static void
 pwg_close_writer(fz_context *ctx, fz_document_writer *wri_)
 {
+	fz_pwg_writer *wri = (fz_pwg_writer*)wri_;
+	fz_close_output(ctx, wri->out);
 }
 
 static void

@@ -298,7 +298,10 @@ fz_save_pixmap_as_pclm(fz_context *ctx, fz_pixmap *pixmap, char *filename, int a
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
+	{
 		fz_write_pixmap_as_pclm(ctx, out, pixmap, pclm);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)
@@ -354,6 +357,8 @@ pclm_close_writer(fz_context *ctx, fz_document_writer *wri_)
 
 	fz_drop_band_writer(ctx, wri->bander);
 	wri->bander = NULL;
+
+	fz_close_output(ctx, wri->out);
 }
 
 static void

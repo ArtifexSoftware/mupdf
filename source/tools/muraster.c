@@ -1718,6 +1718,7 @@ int main(int argc, char **argv)
 	}
 #endif /* DISABLE_MUTHREADS */
 
+	fz_close_output(ctx, out);
 	fz_drop_output(ctx, out);
 	out = NULL;
 

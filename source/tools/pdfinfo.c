@@ -1006,7 +1006,6 @@ int pdfinfo_main(int argc, char **argv)
 	char *password = "";
 	int show = ALL;
 	int c;
-	fz_output *out = NULL;
 	int ret;
 	fz_context *ctx;
 
@@ -1037,19 +1036,11 @@ int pdfinfo_main(int argc, char **argv)
 		exit(1);
 	}
 
-	fz_var(out);
-
 	ret = 0;
 	fz_try(ctx)
-	{
-		out = fz_stdout(ctx);
-		pdfinfo_info(ctx, out, filename, password, show, &argv[fz_optind], argc-fz_optind);
-	}
+		pdfinfo_info(ctx, fz_stdout(ctx), filename, password, show, &argv[fz_optind], argc-fz_optind);
 	fz_catch(ctx)
-	{
 		ret = 1;
-	}
-	fz_drop_output(ctx, out);
 	fz_drop_context(ctx);
 	return ret;
 }

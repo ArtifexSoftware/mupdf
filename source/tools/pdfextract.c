@@ -66,21 +66,18 @@ static void
 writejpeg(fz_context *ctx, const unsigned char *data, size_t len, const char *file)
 {
 	char buf[1024];
-	fz_output *out = NULL;
-
-	fz_var(out);
+	fz_output *out;
 
 	snprintf(buf, sizeof(buf), "%s.jpg", file);
 
+	out = fz_new_output_with_path(ctx, buf, 0);
 	fz_try(ctx)
 	{
-		out = fz_new_output_with_path(ctx, buf, 0);
 		fz_write_data(ctx, out, data, len);
+		fz_close_output(ctx, out);
 	}
 	fz_always(ctx)
-	{
 		fz_drop_output(ctx, out);
-	}
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 }
@@ -199,7 +196,10 @@ static void savefont(pdf_obj *dict, int num)
 		printf("extracting font %s\n", namebuf);
 		out = fz_new_output_with_path(ctx, namebuf, 0);
 		fz_try(ctx)
+		{
 			fz_write_data(ctx, out, data, len);
+			fz_close_output(ctx, out);
+		}
 		fz_always(ctx)
 			fz_drop_output(ctx, out);
 		fz_catch(ctx)

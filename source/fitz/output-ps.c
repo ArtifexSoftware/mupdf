@@ -179,7 +179,10 @@ void fz_save_pixmap_as_ps(fz_context *ctx, fz_pixmap *pixmap, char *filename, in
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
+	{
 		fz_write_pixmap_as_ps(ctx, out, pixmap);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)
@@ -314,6 +317,7 @@ ps_close_writer(fz_context *ctx, fz_document_writer *wri_)
 {
 	fz_ps_writer *wri = (fz_ps_writer*)wri_;
 	fz_write_ps_file_trailer(ctx, wri->out, wri->count);
+	fz_close_output(ctx, wri->out);
 }
 
 static void

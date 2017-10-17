@@ -150,16 +150,16 @@ file_tell(fz_context *ctx, void *opaque)
 }
 
 static void
-file_close(fz_context *ctx, void *opaque)
+file_drop(fz_context *ctx, void *opaque)
 {
 	FILE *file = opaque;
 	int n = fclose(file);
 	if (n < 0)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot fclose: %s", strerror(errno));
+		fz_warn(ctx, "cannot fclose: %s", strerror(errno));
 }
 
 fz_output *
-fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close)
+fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close, fz_output_drop_fn *drop)
 {
 	fz_output *out = NULL;
 
@@ -169,11 +169,12 @@ fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output
 		out->state = state;
 		out->write = write;
 		out->close = close;
+		out->drop = drop;
 	}
 	fz_catch(ctx)
 	{
-		if (close)
-			close(ctx, state);
+		if (drop)
+			drop(ctx, state);
 		fz_rethrow(ctx);
 	}
 	return out;
@@ -210,7 +211,7 @@ fz_new_output_with_path(fz_context *ctx, const char *filename, int append)
 	if (!file)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "cannot open file '%s': %s", filename, strerror(errno));
 
-	out = fz_new_output(ctx, file, file_write, file_close);
+	out = fz_new_output(ctx, file, file_write, NULL, file_drop);
 	out->seek = file_seek;
 	out->tell = file_tell;
 
@@ -238,7 +239,7 @@ buffer_tell(fz_context *ctx, void *opaque)
 }
 
 static void
-buffer_close(fz_context *ctx, void *opaque)
+buffer_drop(fz_context *ctx, void *opaque)
 {
 	fz_buffer *buffer = opaque;
 	fz_drop_buffer(ctx, buffer);
@@ -247,10 +248,19 @@ buffer_close(fz_context *ctx, void *opaque)
 fz_output *
 fz_new_output_with_buffer(fz_context *ctx, fz_buffer *buf)
 {
-	fz_output *out = fz_new_output(ctx, fz_keep_buffer(ctx, buf), buffer_write, buffer_close);
+	fz_output *out = fz_new_output(ctx, fz_keep_buffer(ctx, buf), buffer_write, NULL, buffer_drop);
 	out->seek = buffer_seek;
 	out->tell = buffer_tell;
 	return out;
+}
+
+void
+fz_close_output(fz_context *ctx, fz_output *out)
+{
+	if (!out) return;
+	if (out->close)
+		out->close(ctx, out->state);
+	out->close = NULL;
 }
 
 void
@@ -258,7 +268,9 @@ fz_drop_output(fz_context *ctx, fz_output *out)
 {
 	if (!out) return;
 	if (out->close)
-		out->close(ctx, out->state);
+		fz_warn(ctx, "dropping unclosed output");
+	if (out->drop)
+		out->drop(ctx, out->state);
 	if (out->state != &fz_stdout_global && out->state != &fz_stderr_global)
 		fz_free(ctx, out);
 }
@@ -434,7 +446,10 @@ fz_save_buffer(fz_context *ctx, fz_buffer *buf, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
+	{
 		fz_write_data(ctx, out, buf->data, buf->len);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)

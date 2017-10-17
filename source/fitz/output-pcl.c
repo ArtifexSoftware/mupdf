@@ -1379,7 +1379,10 @@ fz_save_pixmap_as_pcl(fz_context *ctx, fz_pixmap *pixmap, char *filename, int ap
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
+	{
 		fz_write_pixmap_as_pcl(ctx, out, pixmap, pcl);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)
@@ -1391,7 +1394,10 @@ fz_save_bitmap_as_pcl(fz_context *ctx, fz_bitmap *bitmap, char *filename, int ap
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, append);
 	fz_try(ctx)
+	{
 		fz_write_bitmap_as_pcl(ctx, out, bitmap, pcl);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)
@@ -1453,6 +1459,8 @@ pcl_end_page(fz_context *ctx, fz_document_writer *wri_, fz_device *dev)
 static void
 pcl_close_writer(fz_context *ctx, fz_document_writer *wri_)
 {
+	fz_pcl_writer *wri = (fz_pcl_writer*)wri_;
+	fz_close_output(ctx, wri->out);
 }
 
 static void

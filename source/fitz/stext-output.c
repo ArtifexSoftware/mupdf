@@ -516,6 +516,7 @@ text_close_writer(fz_context *ctx, fz_document_writer *wri_)
 		fz_write_string(ctx, wri->out, "</document>\n");
 		break;
 	}
+	fz_close_output(ctx, wri->out);
 }
 
 static void

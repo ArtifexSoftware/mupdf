@@ -55,7 +55,10 @@ fz_save_pixmap_as_tga(fz_context *ctx, fz_pixmap *pixmap, const char *filename)
 {
 	fz_output *out = fz_new_output_with_path(ctx, filename, 0);
 	fz_try(ctx)
+	{
 		fz_write_pixmap_as_tga(ctx, out, pixmap);
+		fz_close_output(ctx, out);
+	}
 	fz_always(ctx)
 		fz_drop_output(ctx, out);
 	fz_catch(ctx)

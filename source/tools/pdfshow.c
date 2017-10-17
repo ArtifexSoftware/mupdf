@@ -231,23 +231,12 @@ fz_print_outline(fz_context *ctx, fz_output *out, fz_outline *outline, int level
 static void showoutline(void)
 {
 	fz_outline *outline = fz_load_outline(ctx, (fz_document*)doc);
-	fz_output *out = NULL;
-
-	fz_var(out);
 	fz_try(ctx)
-	{
-		out = fz_stdout(ctx);
-		fz_print_outline(ctx, out, outline, 0);
-	}
+		fz_print_outline(ctx, fz_stdout(ctx), outline, 0);
 	fz_always(ctx)
-	{
-		fz_drop_output(ctx, out);
 		fz_drop_outline(ctx, outline);
-	}
 	fz_catch(ctx)
-	{
 		fz_rethrow(ctx);
-	}
 }
 
 int pdfshow_main(int argc, char **argv)
@@ -311,6 +300,8 @@ int pdfshow_main(int argc, char **argv)
 			}
 			fz_optind++;
 		}
+
+		fz_close_output(ctx, out);
 	}
 	fz_catch(ctx)
 	{

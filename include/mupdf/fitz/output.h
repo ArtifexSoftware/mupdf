@@ -50,12 +50,18 @@ typedef int64_t (fz_output_tell_fn)(fz_context *ctx, void *state);
 /*
 	fz_output_close_fn: A function type for use when implementing
 	fz_outputs. The supplied function of this type is called
-	when the output stream is closed, to release the stream specific
-	state information.
-
-	state: The output stream state to release.
+	when the output stream is closed, to flush any pending writes.
 */
 typedef void (fz_output_close_fn)(fz_context *ctx, void *state);
+
+/*
+	fz_output_drop_fn: A function type for use when implementing
+	fz_outputs. The supplied function of this type is called
+	when the output stream is dropped, to release the stream specific
+	state information.
+*/
+typedef void (fz_output_drop_fn)(fz_context *ctx, void *state);
+
 
 struct fz_output_s
 {
@@ -64,6 +70,7 @@ struct fz_output_s
 	fz_output_seek_fn *seek;
 	fz_output_tell_fn *tell;
 	fz_output_close_fn *close;
+	fz_output_drop_fn *drop;
 };
 
 /*
@@ -77,7 +84,7 @@ struct fz_output_s
 	close: Cleanup function to destroy state when output closed.
 	May permissibly be null.
 */
-fz_output *fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close);
+fz_output *fz_new_output(fz_context *ctx, void *state, fz_output_write_fn *write, fz_output_close_fn *close, fz_output_drop_fn *drop);
 
 /*
 	fz_new_output_with_path: Open an output stream that writes to a
@@ -155,7 +162,12 @@ void fz_seek_output(fz_context *ctx, fz_output *out, int64_t off, int whence);
 int64_t fz_tell_output(fz_context *ctx, fz_output *out);
 
 /*
-	fz_drop_output: Close and free an output stream.
+	fz_close_output: Flush pending output and close an output stream.
+*/
+void fz_close_output(fz_context *, fz_output *);
+
+/*
+	fz_drop_output: Free an output stream. Don't forget to close it first!
 */
 void fz_drop_output(fz_context *, fz_output *);
 
