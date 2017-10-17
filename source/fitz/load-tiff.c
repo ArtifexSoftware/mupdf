@@ -1065,9 +1065,27 @@ tiff_read_ifd(fz_context *ctx, struct tiff *tiff)
 }
 
 static void
+tiff_cielab_to_icclab(fz_context *ctx, struct tiff *tiff)
+{
+	unsigned x, y;
+	int offset = tiff->samplesperpixel;
+
+	for (y = 0; y < tiff->imagelength; y++)
+	{
+		unsigned char * row = &tiff->samples[tiff->stride * y];
+		for (x = 0; x < tiff->imagewidth; x++)
+		{
+			row[x * offset + 1] ^= 0x80;
+			row[x * offset + 2] ^= 0x80;
+		}
+	}
+}
+
+static void
 tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
 {
 	unsigned x, y;
+	int offset = tiff->samplesperpixel;
 
 	for (y = 0; y < tiff->imagelength; y++)
 	{
@@ -1075,13 +1093,13 @@ tiff_ycc_to_rgb(fz_context *ctx, struct tiff *tiff)
 		for (x = 0; x < tiff->imagewidth; x++)
 		{
 			int ycc[3];
-			ycc[0] = row[x * 3 + 0];
-			ycc[1] = row[x * 3 + 1] - 128;
-			ycc[2] = row[x * 3 + 2] - 128;
+			ycc[0] = row[x * offset + 0];
+			ycc[1] = row[x * offset + 1] - 128;
+			ycc[2] = row[x * offset + 2] - 128;
 
-			row[x * 3 + 0] = fz_clampi(ycc[0] + 1.402f * ycc[2], 0, 255);
-			row[x * 3 + 1] = fz_clampi(ycc[0] - 0.34413f * ycc[1] - 0.71414f * ycc[2], 0, 255);
-			row[x * 3 + 2] = fz_clampi(ycc[0] + 1.772f * ycc[1], 0, 255);
+			row[x * offset + 0] = fz_clampi(ycc[0] + 1.402f * ycc[2], 0, 255);
+			row[x * offset + 1] = fz_clampi(ycc[0] - 0.34413f * ycc[1] - 0.71414f * ycc[2], 0, 255);
+			row[x * offset + 2] = fz_clampi(ycc[0] + 1.772f * ycc[1], 0, 255);
 		}
 	}
 }
@@ -1136,7 +1154,8 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		/* it's probably a jpeg ... we let jpeg convert to rgb */
 		tiff->colorspace = fz_device_rgb(ctx);
 		break;
-	case 8: /* 1976 CIE L*a*b* */
+	case 8: /* Direct L*a*b* encoding. a*, b* signed values */
+	case 9: /* ICC Style L*a*b* encoding */
 		tiff->colorspace = fz_device_lab(ctx);
 		break;
 	case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
@@ -1248,6 +1267,10 @@ tiff_decode_samples(fz_context *ctx, struct tiff *tiff)
 			p += tiff->stride;
 		}
 	}
+
+	/* CIE Lab to ICC Lab */
+	if (tiff->photometric == 8)
+		tiff_cielab_to_icclab(ctx, tiff);
 
 	/* YCbCr -> RGB, but JPEG already has done this conversion  */
 	if (tiff->photometric == 6 && tiff->compression != 6 && tiff->compression != 7)
