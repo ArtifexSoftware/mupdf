@@ -1641,6 +1641,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\source\fitz\encode-basic.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\source\fitz\error.c"
 				>
 			</File>
