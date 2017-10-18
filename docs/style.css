@@ -14,12 +14,20 @@ h1 {
 	font-weight: normal;
 	margin: 0;
 	padding: 1rem 2rem;
-	background-color: black;
+}
+header {
 	color: white;
+	background: no-repeat;
+	background-color: #36648b;
+	background-image: url("logo/mupdf-icon.png");
+	background-position: bottom right;
+	padding-right: 72px;
+	min-height: 72px;
 }
 nav {
 	padding: 0.75rem 2rem;
 	background-color: #ddd;
+	no-text-transform: uppercase;
 }
 nav a { color: #303030; padding-right: 2rem; }
 article {
