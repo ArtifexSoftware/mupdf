@@ -18,7 +18,7 @@ h1 {
 	color: white;
 }
 nav {
-	padding: 1rem 2rem;
+	padding: 0.75rem 2rem;
 	background-color: #ddd;
 }
 nav a { color: #303030; padding-right: 2rem; }
