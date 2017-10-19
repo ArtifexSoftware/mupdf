@@ -95,6 +95,13 @@ img_lookup_metadata(fz_context *ctx, fz_document *doc_, const char *key, char *b
 	return -1;
 }
 
+static fz_colorspace*
+img_get_colorspace(fz_context *ctx, fz_document *doc_)
+{
+	img_document *doc = (img_document*)doc_;
+	return doc->image->colorspace;
+}
+
 static img_document *
 img_new_document(fz_context *ctx, fz_image *image)
 {
@@ -104,6 +111,7 @@ img_new_document(fz_context *ctx, fz_image *image)
 	doc->super.count_pages = img_count_pages;
 	doc->super.load_page = img_load_page;
 	doc->super.lookup_metadata = img_lookup_metadata;
+	doc->super.get_output_intent = img_get_colorspace;
 
 	doc->image = fz_keep_image(ctx, image);
 
