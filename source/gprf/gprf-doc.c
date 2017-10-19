@@ -323,6 +323,20 @@ unsigned char undelta(unsigned char delta, unsigned char *ptr, int len)
 	return delta;
 }
 
+static int
+gprf_separations_all_enabled(fz_context *ctx, fz_separations *seps)
+{
+	int num_seps = fz_count_separations(ctx, seps);
+	int k;
+
+	for (k = 0; k < num_seps; k++)
+	{
+		if (fz_separation_current_behavior(ctx, seps, k) == FZ_SEPARATION_DISABLED)
+			return 0;
+	}
+	return 1;
+}
+
 static fz_pixmap *
 gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h, int *l2factor)
 {
@@ -355,7 +369,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 		/* First off, figure out if we are doing RGB or separations
 		 * decoding. */
 		num_seps = 3 + fz_count_separations(ctx, image->separations);
-		if (fz_separations_all_enabled(ctx, image->separations))
+		if (gprf_separations_all_enabled(ctx, image->separations))
 		{
 			num_seps = 3;
 			for (i = 0; i < 3; i++)
@@ -365,7 +379,7 @@ gprf_get_pixmap(fz_context *ctx, fz_image *image_, fz_irect *area, int w, int h,
 		{
 			for (i = 3; i < num_seps; i++)
 			{
-				read_sep[i] = !FZ_SEPARATION_DISABLED(ctx, image->separations, i-3);
+				read_sep[i] = (fz_separation_current_behavior(ctx, image->separations, i - 3) != FZ_SEPARATION_DISABLED);
 				if (read_sep[i])
 				{
 					float cmyk[4];
@@ -831,27 +845,6 @@ gprf_run_page(fz_context *ctx, fz_page *page_, fz_device *dev, const fz_matrix *
 		}
 	}
 	fz_render_flags(ctx, dev, 0, FZ_DEVFLAG_GRIDFIT_AS_TILED);
-}
-
-static int gprf_count_separations(fz_context *ctx, fz_page *page_)
-{
-	gprf_page *page = (gprf_page *)page_;
-
-	return fz_count_separations(ctx, page->separations);
-}
-
-static void gprf_control_separation(fz_context *ctx, fz_page *page_, int sep, int disable)
-{
-	gprf_page *page = (gprf_page *)page_;
-
-	fz_control_separation(ctx, page->separations, sep, disable);
-}
-
-static int gprf_separation_disabled(fz_context *ctx, fz_page *page_, int sep)
-{
-	gprf_page *page = (gprf_page *)page_;
-
-	return FZ_SEPARATION_DISABLED(ctx, page->separations, sep);
 }
 
 static fz_separations *
