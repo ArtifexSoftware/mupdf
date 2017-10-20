@@ -248,4 +248,43 @@ void pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *do
 void pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_page *page, pdf_annot *annot, fz_cookie *cookie);
 void pdf_process_glyph(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *resources, fz_buffer *contents);
 
+/* Text handling helper functions */
+typedef struct pdf_text_state_s
+{
+	float char_space;
+	float word_space;
+	float scale;
+	float leading;
+	pdf_font_desc *font;
+	float size;
+	int render;
+	float rise;
+} pdf_text_state;
+
+typedef struct pdf_text_object_state_s
+{
+	fz_text *text;
+	fz_rect text_bbox;
+	fz_matrix tlm;
+	fz_matrix tm;
+	int text_mode;
+
+	int cid;
+	int gid;
+	fz_rect char_bbox;
+	pdf_font_desc *fontdesc;
+	float char_tx;
+	float char_ty;
+} pdf_text_object_state;
+
+void pdf_tos_save(fz_context *ctx, pdf_text_object_state *tos, fz_matrix save[2]);
+void pdf_tos_restore(fz_context *ctx, pdf_text_object_state *tos, fz_matrix save[2]);
+fz_text *pdf_tos_get_text(fz_context *ctx, pdf_text_object_state *tos);
+void pdf_tos_reset(fz_context *ctx, pdf_text_object_state *tos, int render);
+int pdf_tos_make_trm(fz_context *ctx, pdf_text_object_state *tos, pdf_text_state *text, pdf_font_desc *fontdesc, int cid, fz_matrix *trm);
+void pdf_tos_move_after_char(fz_context *ctx, pdf_text_object_state *tos);
+void pdf_tos_translate(pdf_text_object_state *tos, float tx, float ty);
+void pdf_tos_set_matrix(pdf_text_object_state *tos, float a, float b, float c, float d, float e, float f);
+void pdf_tos_newline(pdf_text_object_state *tos, float leading);
+
 #endif

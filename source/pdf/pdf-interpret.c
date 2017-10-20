@@ -3,6 +3,7 @@
 #include "pdf-imp.h"
 
 #include <string.h>
+#include <math.h>
 
 /* Maximum number of errors before aborting */
 #define MAX_SYNTAX_ERRORS 100
@@ -1139,4 +1140,112 @@ pdf_process_glyph(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_o
 	{
 		fz_rethrow(ctx);
 	}
+}
+
+void
+pdf_tos_save(fz_context *ctx, pdf_text_object_state *tos, fz_matrix save[2])
+{
+	save[0] = tos->tm;
+	save[1] = tos->tlm;
+}
+
+void
+pdf_tos_restore(fz_context *ctx, pdf_text_object_state *tos, fz_matrix save[2])
+{
+	tos->tm = save[0];
+	tos->tlm = save[1];
+}
+
+fz_text *
+pdf_tos_get_text(fz_context *ctx, pdf_text_object_state *tos)
+{
+	fz_text *text = tos->text;
+
+	tos->text = NULL;
+
+	return text;
+}
+
+void
+pdf_tos_reset(fz_context *ctx, pdf_text_object_state *tos, int render)
+{
+	tos->text = fz_new_text(ctx);
+	tos->text_mode = render;
+	tos->text_bbox = fz_empty_rect;
+}
+
+int
+pdf_tos_make_trm(fz_context *ctx, pdf_text_object_state *tos, pdf_text_state *text, pdf_font_desc *fontdesc, int cid, fz_matrix *trm)
+{
+	fz_matrix tsm;
+
+	tsm.a = text->size * text->scale;
+	tsm.b = 0;
+	tsm.c = 0;
+	tsm.d = text->size;
+	tsm.e = 0;
+	tsm.f = text->rise;
+
+	if (fontdesc->wmode == 0)
+	{
+		pdf_hmtx h = pdf_lookup_hmtx(ctx, fontdesc, cid);
+		float w0 = h.w * 0.001f;
+		tos->char_tx = (w0 * text->size + text->char_space) * text->scale;
+		tos->char_ty = 0;
+	}
+
+	if (fontdesc->wmode == 1)
+	{
+		pdf_vmtx v = pdf_lookup_vmtx(ctx, fontdesc, cid);
+		float w1 = v.w * 0.001f;
+		tsm.e -= v.x * fabsf(text->size) * 0.001f;
+		tsm.f -= v.y * text->size * 0.001f;
+		tos->char_tx = 0;
+		tos->char_ty = w1 * text->size + text->char_space;
+	}
+
+	fz_concat(trm, &tsm, &tos->tm);
+
+	tos->cid = cid;
+	tos->gid = pdf_font_cid_to_gid(ctx, fontdesc, cid);
+	tos->fontdesc = fontdesc;
+
+	/* Compensate for the glyph cache limited positioning precision */
+	fz_expand_rect(fz_bound_glyph(ctx, fontdesc->font, tos->gid, trm, &tos->char_bbox), 1);
+
+	return tos->gid;
+}
+
+void
+pdf_tos_move_after_char(fz_context *ctx, pdf_text_object_state *tos)
+{
+	fz_union_rect(&tos->text_bbox, &tos->char_bbox);
+
+	fz_pre_translate(&tos->tm, tos->char_tx, tos->char_ty);
+}
+
+void
+pdf_tos_translate(pdf_text_object_state *tos, float tx, float ty)
+{
+	fz_pre_translate(&tos->tlm, tx, ty);
+	tos->tm = tos->tlm;
+}
+
+void
+pdf_tos_set_matrix(pdf_text_object_state *tos, float a, float b, float c, float d, float e, float f)
+{
+	tos->tm.a = a;
+	tos->tm.b = b;
+	tos->tm.c = c;
+	tos->tm.d = d;
+	tos->tm.e = e;
+	tos->tm.f = f;
+	tos->tlm = tos->tm;
+}
+
+void
+pdf_tos_newline(pdf_text_object_state *tos, float leading)
+{
+	fz_pre_translate(&tos->tlm, 0, -leading);
+	tos->tm = tos->tlm;
 }

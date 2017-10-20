@@ -54,14 +54,7 @@ struct pdf_gstate_s
 	pdf_material fill;
 
 	/* text state */
-	float char_space;
-	float word_space;
-	float scale;
-	float leading;
-	pdf_font_desc *font;
-	float size;
-	int render;
-	float rise;
+	pdf_text_state text;
 
 	/* transparency */
 	int blendmode;
@@ -87,11 +80,7 @@ struct pdf_run_processor_s
 	int clip_even_odd;
 
 	/* text object state */
-	fz_text *text;
-	fz_rect text_bbox;
-	fz_matrix tlm;
-	fz_matrix tm;
-	int text_mode;
+	pdf_text_object_state tos;
 
 	/* graphics state */
 	pdf_gstate *gstate;
@@ -116,7 +105,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
 	pdf_xobject *softmask = gstate->softmask;
 	fz_rect mask_bbox;
-	fz_matrix save_tm, save_tlm, save_ctm;
+	fz_matrix tos_save[2], save_ctm;
 	fz_matrix mask_matrix;
 	fz_colorspace *mask_colorspace;
 
@@ -130,8 +119,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 	pdf_xobject_bbox(ctx, softmask, &mask_bbox);
 	pdf_xobject_matrix(ctx, softmask, &mask_matrix);
 
-	save_tm = pr->tm;
-	save_tlm = pr->tlm;
+	pdf_tos_save(ctx, &pr->tos, tos_save);
 
 	if (gstate->luminosity)
 		mask_bbox = fz_infinite_rect;
@@ -166,8 +154,7 @@ begin_softmask(fz_context *ctx, pdf_run_processor *pr, softmask_save *save)
 
 	fz_end_mask(ctx, pr->dev);
 
-	pr->tm = save_tm;
-	pr->tlm = save_tlm;
+	pdf_tos_restore(ctx, &pr->tos, tos_save);
 
 	gstate = pr->gstate + pr->gtop;
 	gstate->ctm = save_ctm;
@@ -258,8 +245,8 @@ pdf_copy_pattern_gstate(fz_context *ctx, pdf_gstate *gs, const pdf_gstate *old)
 {
 	gs->ctm = old->ctm;
 
-	pdf_drop_font(ctx, gs->font);
-	gs->font = pdf_keep_font(ctx, old->font);
+	pdf_drop_font(ctx, gs->text.font);
+	gs->text.font = pdf_keep_font(ctx, old->text.font);
 
 	pdf_drop_xobject(ctx, gs->softmask);
 	gs->softmask = pdf_keep_xobject(ctx, old->softmask);
@@ -287,8 +274,8 @@ pdf_keep_gstate(fz_context *ctx, pdf_gstate *gs)
 {
 	pdf_keep_material(ctx, &gs->stroke);
 	pdf_keep_material(ctx, &gs->fill);
-	if (gs->font)
-		pdf_keep_font(ctx, gs->font);
+	if (gs->text.font)
+		pdf_keep_font(ctx, gs->text.font);
 	if (gs->softmask)
 		pdf_keep_xobject(ctx, gs->softmask);
 	if (gs->softmask_resources)
@@ -301,7 +288,7 @@ pdf_drop_gstate(fz_context *ctx, pdf_gstate *gs)
 {
 	pdf_drop_material(ctx, &gs->stroke);
 	pdf_drop_material(ctx, &gs->fill);
-	pdf_drop_font(ctx, gs->font);
+	pdf_drop_font(ctx, gs->text.font);
 	pdf_drop_xobject(ctx, gs->softmask);
 	pdf_drop_obj(ctx, gs->softmask_resources);
 	fz_drop_stroke_state(ctx, gs->stroke_state);
@@ -738,13 +725,12 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 	softmask_save softmask = { NULL };
 	int knockout_group = 0;
 
-	if (!pr->text)
+	text = pdf_tos_get_text(ctx, &pr->tos);
+	if (!text)
 		return gstate;
-	text = pr->text;
-	pr->text = NULL;
 
 	dofill = dostroke = doclip = doinvisible = 0;
-	switch (pr->text_mode)
+	switch (pr->tos.text_mode)
 	{
 	case 0: dofill = 1; break;
 	case 1: dostroke = 1; break;
@@ -761,7 +747,7 @@ pdf_flush_text(fz_context *ctx, pdf_run_processor *pr)
 
 	fz_try(ctx)
 	{
-		fz_rect tb = pr->text_bbox;
+		fz_rect tb = pr->tos.text_bbox;
 
 		fz_transform_rect(&tb, &gstate->ctm);
 		if (dostroke)
@@ -882,24 +868,38 @@ static void
 pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	pdf_font_desc *fontdesc = gstate->font;
-	fz_matrix tsm, trm;
-	float w0, w1, tx, ty;
-	pdf_hmtx h;
-	pdf_vmtx v;
+	pdf_font_desc *fontdesc = gstate->text.font;
+	fz_matrix trm;
 	int gid;
 	int ucsbuf[8];
 	int ucslen;
 	int i;
-	fz_rect bbox;
 	int render_direct;
 
-	tsm.a = gstate->size * gstate->scale;
-	tsm.b = 0;
-	tsm.c = 0;
-	tsm.d = gstate->size;
-	tsm.e = 0;
-	tsm.f = gstate->rise;
+	gid = pdf_tos_make_trm(ctx, &pr->tos, &gstate->text, fontdesc, cid, &trm);
+
+	/* If we are a type3 font within a type 3 font, or are otherwise
+	 * uncachable, then render direct. */
+	render_direct = (!fz_font_ft_face(ctx, fontdesc->font) && pr->nested_depth > 0) || !fz_glyph_cacheable(ctx, fontdesc->font, gid);
+
+	/* flush buffered text if rendermode has changed */
+	if (!pr->tos.text || gstate->text.render != pr->tos.text_mode || render_direct)
+	{
+		gstate = pdf_flush_text(ctx, pr);
+		pdf_tos_reset(ctx, &pr->tos, gstate->text.render);
+	}
+
+	if (render_direct)
+	{
+		/* Render the glyph stream direct here (only happens for
+		 * type3 glyphs that seem to inherit current graphics
+		 * attributes, or type 3 glyphs within type3 glyphs). */
+		fz_matrix composed;
+		fz_concat(&composed, &trm, &gstate->ctm);
+		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, &composed, gstate, pr->nested_depth, pr->default_cs);
+		/* Render text invisibly so that it can still be extracted. */
+		pr->tos.text_mode = 3;
+	}
 
 	ucslen = 0;
 	if (fontdesc->to_unicode)
@@ -915,103 +915,36 @@ pdf_show_char(fz_context *ctx, pdf_run_processor *pr, int cid)
 		ucslen = 1;
 	}
 
-	gid = pdf_font_cid_to_gid(ctx, fontdesc, cid);
-
-	if (fontdesc->wmode == 1)
-	{
-		v = pdf_lookup_vmtx(ctx, fontdesc, cid);
-		tsm.e -= v.x * fabsf(gstate->size) * 0.001f;
-		tsm.f -= v.y * gstate->size * 0.001f;
-	}
-
-	fz_concat(&trm, &tsm, &pr->tm);
-
-	/* Compensate for the glyph cache limited positioning precision */
-	fz_expand_rect(fz_bound_glyph(ctx, fontdesc->font, gid, &trm, &bbox), 1);
-
-	/* If we are a type3 font within a type 3 font, or are otherwise
-	 * uncachable, then render direct. */
-	render_direct = (!fz_font_ft_face(ctx, fontdesc->font) && pr->nested_depth > 0) || !fz_glyph_cacheable(ctx, fontdesc->font, gid);
-
-	/* flush buffered text if rendermode has changed */
-	if (!pr->text || gstate->render != pr->text_mode || render_direct)
-	{
-		gstate = pdf_flush_text(ctx, pr);
-
-		pr->text = fz_new_text(ctx);
-		pr->text_mode = gstate->render;
-		pr->text_bbox = fz_empty_rect;
-	}
-
-	if (render_direct)
-	{
-		/* Render the glyph stream direct here (only happens for
-		 * type3 glyphs that seem to inherit current graphics
-		 * attributes, or type 3 glyphs within type3 glyphs). */
-		fz_matrix composed;
-		fz_concat(&composed, &trm, &gstate->ctm);
-		fz_render_t3_glyph_direct(ctx, pr->dev, fontdesc->font, gid, &composed, gstate, pr->nested_depth, pr->default_cs);
-		/* Render text invisibly so that it can still be extracted. */
-		pr->text_mode = 3;
-	}
-
-	fz_union_rect(&pr->text_bbox, &bbox);
-
 	/* add glyph to textobject */
-	fz_show_glyph(ctx, pr->text, fontdesc->font, &trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+	fz_show_glyph(ctx, pr->tos.text, fontdesc->font, &trm, gid, ucsbuf[0], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 
 	/* add filler glyphs for one-to-many unicode mapping */
 	for (i = 1; i < ucslen; i++)
-		fz_show_glyph(ctx, pr->text, fontdesc->font, &trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
+		fz_show_glyph(ctx, pr->tos.text, fontdesc->font, &trm, -1, ucsbuf[i], fontdesc->wmode, 0, FZ_BIDI_NEUTRAL, FZ_LANG_UNSET);
 
-	if (fontdesc->wmode == 0)
-	{
-		h = pdf_lookup_hmtx(ctx, fontdesc, cid);
-		w0 = h.w * 0.001f;
-		tx = (w0 * gstate->size + gstate->char_space) * gstate->scale;
-		fz_pre_translate(&pr->tm, tx, 0);
-	}
-
-	if (fontdesc->wmode == 1)
-	{
-		w1 = v.w * 0.001f;
-		ty = w1 * gstate->size + gstate->char_space;
-		fz_pre_translate(&pr->tm, 0, ty);
-	}
+	pdf_tos_move_after_char(ctx, &pr->tos);
 }
 
 static void
 pdf_show_space(fz_context *ctx, pdf_run_processor *pr, float tadj)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	pdf_font_desc *fontdesc = gstate->font;
-
-	if (!fontdesc)
-	{
-		fz_warn(ctx, "cannot draw text since font and size not set");
-		return;
-	}
+	pdf_font_desc *fontdesc = gstate->text.font;
 
 	if (fontdesc->wmode == 0)
-		fz_pre_translate(&pr->tm, tadj * gstate->scale, 0);
+		fz_pre_translate(&pr->tos.tm, tadj * gstate->text.scale, 0);
 	else
-		fz_pre_translate(&pr->tm, 0, tadj);
+		fz_pre_translate(&pr->tos.tm, 0, tadj);
 }
 
 static void
-pdf_show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
+show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	pdf_font_desc *fontdesc = gstate->font;
+	pdf_font_desc *fontdesc = gstate->text.font;
 	unsigned char *end = buf + len;
 	unsigned int cpt;
 	int cid;
-
-	if (!fontdesc)
-	{
-		fz_warn(ctx, "cannot draw text since font and size not set");
-		return;
-	}
 
 	while (buf < end)
 	{
@@ -1024,15 +957,37 @@ pdf_show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, int 
 		else
 			fz_warn(ctx, "cannot encode character");
 		if (cpt == 32 && w == 1)
-			pdf_show_space(ctx, pr, gstate->word_space);
+			pdf_show_space(ctx, pr, gstate->text.word_space);
 	}
+}
+
+static void
+pdf_show_string(fz_context *ctx, pdf_run_processor *pr, unsigned char *buf, int len)
+{
+	pdf_gstate *gstate = pr->gstate + pr->gtop;
+	pdf_font_desc *fontdesc = gstate->text.font;
+
+	if (!fontdesc)
+	{
+		fz_warn(ctx, "cannot draw text since font and size not set");
+		return;
+	}
+
+	show_string(ctx, pr, buf, len);
 }
 
 static void
 pdf_show_text(fz_context *ctx, pdf_run_processor *pr, pdf_obj *text)
 {
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
+	pdf_font_desc *fontdesc = gstate->text.font;
 	int i;
+
+	if (!fontdesc)
+	{
+		fz_warn(ctx, "cannot draw text since font and size not set");
+		return;
+	}
 
 	if (pdf_is_array(ctx, text))
 	{
@@ -1041,9 +996,9 @@ pdf_show_text(fz_context *ctx, pdf_run_processor *pr, pdf_obj *text)
 		{
 			pdf_obj *item = pdf_array_get(ctx, text, i);
 			if (pdf_is_string(ctx, item))
-				pdf_show_string(ctx, pr, (unsigned char *)pdf_to_str_buf(ctx, item), pdf_to_str_len(ctx, item));
+				show_string(ctx, pr, (unsigned char *)pdf_to_str_buf(ctx, item), pdf_to_str_len(ctx, item));
 			else
-				pdf_show_space(ctx, pr, - pdf_to_real(ctx, item) * gstate->size * 0.001f);
+				pdf_show_space(ctx, pr, - pdf_to_real(ctx, item) * gstate->text.size * 0.001f);
 		}
 	}
 	else if (pdf_is_string(ctx, text))
@@ -1080,14 +1035,14 @@ pdf_init_gstate(fz_context *ctx, pdf_gstate *gs, const fz_matrix *ctm)
 	gs->fill.alpha = 1;
 	gs->fill.gstate_num = -1;
 
-	gs->char_space = 0;
-	gs->word_space = 0;
-	gs->scale = 1;
-	gs->leading = 0;
-	gs->font = NULL;
-	gs->size = -1;
-	gs->render = 0;
-	gs->rise = 0;
+	gs->text.char_space = 0;
+	gs->text.word_space = 0;
+	gs->text.scale = 1;
+	gs->text.leading = 0;
+	gs->text.font = NULL;
+	gs->text.size = -1;
+	gs->text.render = 0;
+	gs->text.rise = 0;
 
 	gs->blendmode = 0;
 	gs->softmask = NULL;
@@ -1725,8 +1680,8 @@ static void pdf_run_Wstar(fz_context *ctx, pdf_processor *proc)
 static void pdf_run_BT(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	pr->tm = fz_identity;
-	pr->tlm = fz_identity;
+	pr->tos.tm = fz_identity;
+	pr->tos.tlm = fz_identity;
 }
 
 static void pdf_run_ET(fz_context *ctx, pdf_processor *proc)
@@ -1741,51 +1696,51 @@ static void pdf_run_Tc(fz_context *ctx, pdf_processor *proc, float charspace)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->char_space = charspace;
+	gstate->text.char_space = charspace;
 }
 
 static void pdf_run_Tw(fz_context *ctx, pdf_processor *proc, float wordspace)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->word_space = wordspace;
+	gstate->text.word_space = wordspace;
 }
 
 static void pdf_run_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->scale = scale / 100;
+	gstate->text.scale = scale / 100;
 }
 
 static void pdf_run_TL(fz_context *ctx, pdf_processor *proc, float leading)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->leading = leading;
+	gstate->text.leading = leading;
 }
 
 static void pdf_run_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_font_desc *font, float size)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	pdf_drop_font(ctx, gstate->font);
-	gstate->font = pdf_keep_font(ctx, font);
-	gstate->size = size;
+	pdf_drop_font(ctx, gstate->text.font);
+	gstate->text.font = pdf_keep_font(ctx, font);
+	gstate->text.size = size;
 }
 
 static void pdf_run_Tr(fz_context *ctx, pdf_processor *proc, int render)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->render = render;
+	gstate->text.render = render;
 }
 
 static void pdf_run_Ts(fz_context *ctx, pdf_processor *proc, float rise)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->rise = rise;
+	gstate->text.rise = rise;
 }
 
 /* text positioning */
@@ -1793,37 +1748,28 @@ static void pdf_run_Ts(fz_context *ctx, pdf_processor *proc, float rise)
 static void pdf_run_Td(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	fz_pre_translate(&pr->tlm, tx, ty);
-	pr->tm = pr->tlm;
+	pdf_tos_translate(&pr->tos, tx, ty);
 }
 
 static void pdf_run_TD(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->leading = -ty;
-	fz_pre_translate(&pr->tlm, tx, ty);
-	pr->tm = pr->tlm;
+	gstate->text.leading = -ty;
+	pdf_tos_translate(&pr->tos, tx, ty);
 }
 
 static void pdf_run_Tm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, float d, float e, float f)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
-	pr->tm.a = a;
-	pr->tm.b = b;
-	pr->tm.c = c;
-	pr->tm.d = d;
-	pr->tm.e = e;
-	pr->tm.f = f;
-	pr->tlm = pr->tm;
+	pdf_tos_set_matrix(&pr->tos, a, b, c, d, e, f);
 }
 
 static void pdf_run_Tstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	fz_pre_translate(&pr->tlm, 0, -gstate->leading);
-	pr->tm = pr->tlm;
+	pdf_tos_newline(&pr->tos, gstate->text.leading);
 }
 
 /* text showing */
@@ -1844,8 +1790,7 @@ static void pdf_run_squote(fz_context *ctx, pdf_processor *proc, char *string, i
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	fz_pre_translate(&pr->tlm, 0, -gstate->leading);
-	pr->tm = pr->tlm;
+	pdf_tos_newline(&pr->tos, gstate->text.leading);
 	pdf_show_string(ctx, pr, (unsigned char*)string, string_len);
 }
 
@@ -1853,10 +1798,9 @@ static void pdf_run_dquote(fz_context *ctx, pdf_processor *proc, float aw, float
 {
 	pdf_run_processor *pr = (pdf_run_processor *)proc;
 	pdf_gstate *gstate = pr->gstate + pr->gtop;
-	gstate->word_space = aw;
-	gstate->char_space = ac;
-	fz_pre_translate(&pr->tlm, 0, -gstate->leading);
-	pr->tm = pr->tlm;
+	gstate->text.word_space = aw;
+	gstate->text.char_space = ac;
+	pdf_tos_newline(&pr->tos, gstate->text.leading);
 	pdf_show_string(ctx, pr, (unsigned char*)string, string_len);
 }
 
@@ -2079,7 +2023,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 
 	pdf_drop_material(ctx, &pr->gstate[0].fill);
 	pdf_drop_material(ctx, &pr->gstate[0].stroke);
-	pdf_drop_font(ctx, pr->gstate[0].font);
+	pdf_drop_font(ctx, pr->gstate[0].text.font);
 	pdf_drop_xobject(ctx, pr->gstate[0].softmask);
 	fz_drop_stroke_state(ctx, pr->gstate[0].stroke_state);
 
@@ -2087,7 +2031,7 @@ pdf_drop_run_processor(fz_context *ctx, pdf_processor *proc)
 		fz_pop_clip(ctx, pr->dev);
 
 	fz_drop_path(ctx, pr->path);
-	fz_drop_text(ctx, pr->text);
+	fz_drop_text(ctx, pr->tos.text);
 
 	fz_drop_default_colorspaces(ctx, pr->default_cs);
 
@@ -2235,10 +2179,10 @@ pdf_new_run_processor(fz_context *ctx, fz_device *dev, const fz_matrix *ctm, con
 	proc->clip = 0;
 	proc->clip_even_odd = 0;
 
-	proc->text = NULL;
-	proc->tlm = fz_identity;
-	proc->tm = fz_identity;
-	proc->text_mode = 0;
+	proc->tos.text = NULL;
+	proc->tos.tlm = fz_identity;
+	proc->tos.tm = fz_identity;
+	proc->tos.text_mode = 0;
 
 	fz_try(ctx)
 	{
