@@ -812,7 +812,6 @@ svg_parse_viewport(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *
 	if (h_att) h = svg_parse_length(h_att, state->viewbox_h, state->fontsize);
 
 	/* TODO: new transform */
-	fz_warn(ctx, "push viewport: %g %g %g %g", x, y, w, h);
 
 	state->viewport_w = w;
 	state->viewport_h = h;
@@ -832,8 +831,7 @@ svg_parse_viewbox(fz_context *ctx, svg_document *doc, fz_xml *node, svg_state *s
 	{
 		sscanf(viewbox_att, "%g %g %g %g", &min_x, &min_y, &box_w, &box_h);
 
-		/* scale and translate to fit [x y w h] to [0 0 viewport.w viewport.h] */
-		fz_warn(ctx, "push viewbox: %g %g %g %g", min_x, min_y, box_w, box_h);
+		/* TODO: scale and translate to fit [x y w h] to [0 0 viewport.w viewport.h] */
 	}
 }
 
