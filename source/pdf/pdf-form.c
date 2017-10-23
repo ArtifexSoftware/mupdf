@@ -643,11 +643,11 @@ void pdf_update_page(fz_context *ctx, pdf_page *page)
 {
 	pdf_annot *annot;
 
-	/* Reset changed_annots to empty */
+	/* Mark all dirty annots as clean */
 	for (annot = page->annots; annot; annot = annot->next)
-		annot->changed = 0;
+		pdf_clean_annot(ctx, annot);
 
-	/* Flag all changed annots */
+	/* Flag all dirty annots */
 	for (annot = page->annots; annot; annot = annot->next)
 	{
 		pdf_xobject *ap = pdf_keep_xobject(ctx, annot->ap);
@@ -657,7 +657,7 @@ void pdf_update_page(fz_context *ctx, pdf_page *page)
 		{
 			pdf_update_annot(ctx, annot);
 			if ((ap != annot->ap || ap_iteration != annot->ap_iteration))
-				annot->changed = 1;
+				pdf_dirty_annot(ctx, annot);
 		}
 		fz_always(ctx)
 			pdf_drop_xobject(ctx, ap);

@@ -105,7 +105,7 @@ struct pdf_annot_s
 	pdf_xobject *ap;
 
 	int ap_iteration;
-	int changed;
+	int dirty;
 
 	pdf_annot *next;
 };
@@ -220,5 +220,9 @@ void pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos,
 	pdf_new_annot: Internal function for creating a new pdf annotation.
 */
 pdf_annot *pdf_new_annot(fz_context *ctx, pdf_page *page);
+
+void pdf_dirty_annot(fz_context *ctx, pdf_annot *annot);
+void pdf_clean_annot(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_is_dirty(fz_context *ctx, pdf_annot *annot);
 
 #endif

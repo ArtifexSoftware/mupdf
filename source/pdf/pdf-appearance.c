@@ -1645,7 +1645,7 @@ void pdf_set_annot_appearance(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 		pdf_drop_xobject(ctx, xobj);
 	}
 
-	doc->dirty = 1;
+	pdf_dirty_annot(ctx, annot);
 }
 
 static fz_point *

@@ -557,3 +557,27 @@ pdf_bound_annot(fz_context *ctx, pdf_annot *annot, fz_rect *rect)
 	fz_transform_rect(rect, &page_ctm);
 	return rect;
 }
+
+void
+pdf_dirty_annot(fz_context *ctx, pdf_annot *annot)
+{
+	if (annot)
+	{
+		annot->dirty = 1;
+		if (annot->page && annot->page->doc)
+			annot->page->doc->dirty = 1;
+	}
+}
+
+void
+pdf_clean_annot(fz_context *ctx, pdf_annot *annot)
+{
+	if (annot)
+		annot->dirty = 0;
+}
+
+int
+pdf_annot_is_dirty(fz_context *ctx, pdf_annot *annot)
+{
+	return annot ? annot->dirty: 0;
+}

@@ -807,7 +807,7 @@ static void pdfapp_updatepage(pdfapp_t *app)
 
 	for (pannot = pdf_first_annot(app->ctx, (pdf_page*)app->page); pannot; pannot = pdf_next_annot(app->ctx, pannot))
 	{
-		if (pannot->changed)
+		if (pdf_annot_is_dirty(app->ctx, pannot))
 		{
 			fz_annot *annot = (fz_annot*)pannot;
 			fz_rect bounds;
