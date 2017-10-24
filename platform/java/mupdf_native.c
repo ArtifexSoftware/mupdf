@@ -8403,7 +8403,7 @@ FUN(PDFAnnotation_setQuadPoints)(JNIEnv *env, jobject self, jobject jqps)
 		if (m > 8)
 			m = 8;
 
-		(*env)->GetFloatArrayRegion(env, jqp, i * 8, m, qp);
+		(*env)->GetFloatArrayRegion(env, jqp, 0, m, &qp[i * 8]);
 		if ((*env)->ExceptionCheck(env)) return;
 
 		if (m < 8)

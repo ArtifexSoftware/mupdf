@@ -4117,7 +4117,7 @@ static void ffi_PDFAnnotation_setQuadPoints(js_State *J)
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
 	float *qp = NULL;
-	int k, i, n = 0;
+	int k, i, n;
 
 	n = js_getlength(J, 1);
 

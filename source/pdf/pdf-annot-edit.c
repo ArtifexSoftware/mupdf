@@ -654,29 +654,25 @@ pdf_annot_quad_point_count(fz_context *ctx, pdf_annot *annot)
 	pdf_obj *quad_points;
 	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
 	quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);
-	return pdf_array_len(ctx, quad_points);
+	return pdf_array_len(ctx, quad_points) / 8;
 }
 
 void
 pdf_annot_quad_point(fz_context *ctx, pdf_annot *annot, int idx, float v[8])
 {
 	pdf_obj *quad_points;
-	pdf_obj *quad_point;
 	fz_matrix page_ctm;
 	int i;
 
 	check_allowed_subtypes(ctx, annot, PDF_NAME_QuadPoints, quad_point_subtypes);
-
 	quad_points = pdf_dict_get(ctx, annot->obj, PDF_NAME_QuadPoints);
-	quad_point = pdf_array_get(ctx, quad_points, idx);
-
 	pdf_page_transform(ctx, annot->page, NULL, &page_ctm);
 
 	for (i = 0; i < 8; i += 2)
 	{
 		fz_point point;
-		point.x = pdf_to_real(ctx, pdf_array_get(ctx, quad_point, i+0));
-		point.y = pdf_to_real(ctx, pdf_array_get(ctx, quad_point, i+1));
+		point.x = pdf_to_real(ctx, pdf_array_get(ctx, quad_points, idx * 8 + i + 0));
+		point.y = pdf_to_real(ctx, pdf_array_get(ctx, quad_points, idx * 8 + i + 1));
 		fz_transform_point(&point, &page_ctm);
 		v[i+0] = point.x;
 		v[i+1] = point.y;
