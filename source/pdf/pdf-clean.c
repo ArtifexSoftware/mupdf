@@ -31,7 +31,7 @@ pdf_clean_stream_object(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_ob
 		res = pdf_new_dict(ctx, doc, 1);
 
 		proc_buffer = pdf_new_buffer_processor(ctx, buffer, ascii);
-		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, orig_res, res);
+		proc_filter = pdf_new_filter_processor(ctx, doc, proc_buffer, orig_res, res);
 
 		pdf_process_contents(ctx, proc_filter, doc, orig_res, obj, cookie);
 		pdf_close_processor(ctx, proc_filter);
@@ -91,7 +91,7 @@ pdf_clean_type3(fz_context *ctx, pdf_document *doc, pdf_obj *obj, pdf_obj *orig_
 			fz_try(ctx)
 			{
 				proc_buffer = pdf_new_buffer_processor(ctx, buffer, ascii);
-				proc_filter = pdf_new_filter_processor(ctx, proc_buffer, orig_res, res);
+				proc_filter = pdf_new_filter_processor(ctx, doc, proc_buffer, orig_res, res);
 
 				pdf_process_contents(ctx, proc_filter, doc, orig_res, val, cookie);
 				pdf_close_processor(ctx, proc_filter);
@@ -157,7 +157,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 		resources = pdf_page_resources(ctx, page);
 
 		proc_buffer = pdf_new_buffer_processor(ctx, buffer, ascii);
-		proc_filter = pdf_new_filter_processor(ctx, proc_buffer, resources, res);
+		proc_filter = pdf_new_filter_processor(ctx, doc, proc_buffer, resources, res);
 
 		pdf_process_contents(ctx, proc_filter, doc, resources, contents, cookie);
 		pdf_close_processor(ctx, proc_filter);

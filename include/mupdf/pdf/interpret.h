@@ -241,7 +241,32 @@ pdf_processor *pdf_new_output_processor(fz_context *ctx, fz_output *out, int ahx
 	contains exactly those resource objects actually required.
 
 */
-pdf_processor *pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_obj *old_res, pdf_obj *new_res);
+pdf_processor *pdf_new_filter_processor(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_res, pdf_obj *new_res);
+
+typedef int (pdf_text_filter_fn)(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix *trm, fz_rect *bbox);
+
+typedef void (pdf_after_text_object_fn)(fz_context *ctx, void *opaque, pdf_document *doc, pdf_processor *chain);
+
+/*
+	pdf_new_filter_processor_with_text_filter: Create a filter
+	processor with a filter function for text. This filters the
+	PDF operators it is fed, and passes them down (with some
+	changes) to the child filter.
+
+	See pdf_new_filter_processor for documentation.
+
+	text_filter: A function called to assess whether a given
+	character should be removed or not.
+
+	after_text_object: A function to be called after each text object.
+	This allows the caller to insert some extra content if
+	required.
+
+	text_filter_opaque: Opaque value to be passed to the
+	text_filter function.
+*/
+pdf_processor *
+pdf_new_filter_processor_with_text_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after, void *text_filter_opaque);
 
 /* Functions to actually process annotations, glyphs and general stream objects */
 void pdf_process_contents(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_obj *obj, pdf_obj *res, fz_cookie *cookie);

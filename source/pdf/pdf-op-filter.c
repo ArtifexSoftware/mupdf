@@ -10,8 +10,9 @@ typedef enum
 	FLUSH_CTM = 1,
 	FLUSH_COLOR_F = 2,
 	FLUSH_COLOR_S = 4,
+	FLUSH_TEXT = 8,
 
-	FLUSH_ALL = 7,
+	FLUSH_ALL = 15,
 	FLUSH_STROKE = 1+4,
 	FLUSH_FILL = 1+2
 } gstate_flush_flags;
@@ -42,13 +43,20 @@ struct filter_gstate_s
 		float linewidth;
 		float miterlimit;
 	} stroke, current_stroke;
+	pdf_text_state text, current_text;
 };
 
 typedef struct pdf_filter_processor_s
 {
 	pdf_processor super;
+	pdf_document *doc;
 	pdf_processor *chain;
 	filter_gstate *gstate;
+	pdf_text_object_state tos;
+	void *font_name;
+	pdf_text_filter_fn *text_filter;
+	pdf_after_text_object_fn *after_text;
+	void *opaque;
 	pdf_obj *old_rdb, *new_rdb;
 } pdf_filter_processor;
 
@@ -83,6 +91,9 @@ filter_push(fz_context *ctx, pdf_filter_processor *p)
 	new_gstate->pushed = 0;
 	new_gstate->next = gstate;
 	p->gstate = new_gstate;
+
+	pdf_keep_font(ctx, new_gstate->text.font);
+	pdf_keep_font(ctx, new_gstate->current_text.font);
 }
 
 static int
@@ -99,6 +110,8 @@ filter_pop(fz_context *ctx, pdf_filter_processor *p)
 		if (p->chain->op_Q)
 			p->chain->op_Q(ctx, p->chain);
 
+	pdf_drop_font(ctx, gstate->text.font);
+	pdf_drop_font(ctx, gstate->current_text.font);
 	fz_free(ctx, gstate);
 	p->gstate = old;
 	return 0;
@@ -334,6 +347,293 @@ done_SC:
 		}
 		gstate->current_stroke = gstate->stroke;
 	}
+
+	if (flush & FLUSH_TEXT)
+	{
+		if (gstate->text.char_space != gstate->current_text.char_space)
+		{
+			if (p->chain->op_Tc)
+				p->chain->op_Tc(ctx, p->chain, gstate->text.char_space);
+		}
+		if (gstate->text.word_space != gstate->current_text.word_space)
+		{
+			if (p->chain->op_Tw)
+				p->chain->op_Tw(ctx, p->chain, gstate->text.word_space);
+		}
+		if (gstate->text.scale != gstate->current_text.scale)
+		{
+			if (p->chain->op_Tz)
+				p->chain->op_Tz(ctx, p->chain, gstate->text.scale);
+		}
+		if (gstate->text.leading != gstate->current_text.leading)
+		{
+			if (p->chain->op_TL)
+				p->chain->op_TL(ctx, p->chain, gstate->text.leading);
+		}
+		if (gstate->text.font != gstate->current_text.font ||
+			gstate->text.size != gstate->current_text.size)
+		{
+			if (p->chain->op_Tf)
+				p->chain->op_Tf(ctx, p->chain, p->font_name, gstate->text.font, gstate->text.size);
+		}
+		if (gstate->text.render != gstate->current_text.render)
+		{
+			if (p->chain->op_Tr)
+				p->chain->op_Tr(ctx, p->chain, gstate->text.render);
+		}
+		if (gstate->text.rise != gstate->current_text.rise)
+		{
+			if (p->chain->op_Ts)
+				p->chain->op_Ts(ctx, p->chain, gstate->text.rise);
+		}
+		pdf_drop_font(ctx, gstate->current_text.font);
+		gstate->current_text = gstate->text;
+		pdf_keep_font(ctx, gstate->current_text.font);
+	}
+}
+
+static int
+filter_show_char(fz_context *ctx, pdf_filter_processor *p, int cid)
+{
+	filter_gstate *gstate = p->gstate;
+	pdf_font_desc *fontdesc = gstate->text.font;
+	fz_matrix trm;
+	int ucsbuf[8];
+	int ucslen;
+	int remove = 0;
+
+	(void)pdf_tos_make_trm(ctx, &p->tos, &gstate->text, fontdesc, cid, &trm);
+
+	ucslen = 0;
+	if (fontdesc->to_unicode)
+		ucslen = pdf_lookup_cmap_full(fontdesc->to_unicode, cid, ucsbuf);
+	if (ucslen == 0 && (size_t)cid < fontdesc->cid_to_ucs_len)
+	{
+		ucsbuf[0] = fontdesc->cid_to_ucs[cid];
+		ucslen = 1;
+	}
+	if (ucslen == 0 || (ucslen == 1 && ucsbuf[0] == 0))
+	{
+		ucsbuf[0] = FZ_REPLACEMENT_CHARACTER;
+		ucslen = 1;
+	}
+
+	if (p->text_filter)
+		remove = p->text_filter(ctx, p->opaque, ucsbuf, ucslen, &trm, &p->tos.char_bbox);
+
+	pdf_tos_move_after_char(ctx, &p->tos);
+
+	return remove;
+}
+
+static void
+filter_show_space(fz_context *ctx, pdf_filter_processor *p, float tadj)
+{
+	filter_gstate *gstate = p->gstate;
+	pdf_font_desc *fontdesc = gstate->text.font;
+
+	if (fontdesc->wmode == 0)
+		fz_pre_translate(&p->tos.tm, tadj * gstate->text.scale, 0);
+	else
+		fz_pre_translate(&p->tos.tm, 0, tadj);
+}
+
+/* Process a string (from buf, of length len), from position *pos onwards.
+ * Stop when we hit the end, or when we find a character to remove. The
+ * caller will restart us again later. On exit, *pos = the point we got to,
+ * *inc = The number of bytes to skip to step over the next character (unless
+ * we hit the end).
+ */
+static void
+filter_string_to_segment(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf, int len, int *pos, int *inc)
+{
+	filter_gstate *gstate = p->gstate;
+	pdf_font_desc *fontdesc = gstate->text.font;
+	unsigned char *end = buf + len;
+	unsigned int cpt;
+	int cid;
+	int remove;
+
+	buf += *pos;
+
+	while (buf < end)
+	{
+		*inc = pdf_decode_cmap(fontdesc->encoding, buf, end, &cpt);
+		buf += *inc;
+
+		cid = pdf_lookup_cmap(fontdesc->encoding, cpt);
+		if (cid < 0)
+		{
+			fz_warn(ctx, "cannot encode character");
+		}
+		else
+			remove = filter_show_char(ctx, p, cid);
+		if (cpt == 32 && *inc == 1)
+			filter_show_space(ctx, p, gstate->text.word_space);
+		if (remove)
+			return;
+		*pos += *inc;
+	}
+}
+
+static void
+send_adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
+{
+	pdf_obj *arr = pdf_new_array(ctx, p->doc, 1);
+	pdf_obj *skip_obj = NULL;
+
+	fz_var(skip_obj);
+
+	fz_try(ctx)
+	{
+		float skip_dist = p->tos.fontdesc->wmode == 1 ? -skip.y : -skip.x;
+		skip_dist = skip_dist / p->gstate->text.size;
+		skip_obj = pdf_new_real(ctx, p->doc, skip_dist * 1000);
+
+		pdf_array_insert(ctx, arr, skip_obj, 0);
+
+		if (p->chain->op_TJ)
+			p->chain->op_TJ(ctx, p->chain, arr);
+	}
+	fz_always(ctx)
+	{
+		pdf_drop_obj(ctx, arr);
+		pdf_drop_obj(ctx, skip_obj);
+	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+}
+
+static void
+filter_show_string(fz_context *ctx, pdf_filter_processor *p, unsigned char *buf, int len)
+{
+	filter_gstate *gstate = p->gstate;
+	pdf_font_desc *fontdesc = gstate->text.font;
+	int i, inc;
+	fz_point skip = { 0, 0 };
+
+	if (!fontdesc)
+		return;
+
+	i = 0;
+	while (i < len)
+	{
+		int start = i;
+		filter_string_to_segment(ctx, p, buf, len, &i, &inc);
+		if (start != i)
+		{
+			/* We have *some* chars to send at least */
+			if (skip.x != 0 || skip.y != 0)
+			{
+				send_adjustment(ctx, p, skip);
+				skip.x = skip.y = 0;
+			}
+			if (p->chain->op_Tj && start != i)
+				p->chain->op_Tj(ctx, p->chain, (char *)buf+start, i-start);
+		}
+		if (i != len)
+		{
+			skip.x += p->tos.char_tx;
+			skip.y += p->tos.char_ty;
+			i += inc;
+		}
+	}
+	if (skip.x != 0 || skip.y != 0)
+		send_adjustment(ctx, p, skip);
+}
+
+static pdf_obj *
+adjustment(fz_context *ctx, pdf_filter_processor *p, fz_point skip)
+{
+	float skip_dist = p->tos.fontdesc->wmode == 1 ? -skip.y : -skip.x;
+	skip_dist = skip_dist / p->gstate->text.size;
+	return pdf_new_real(ctx, p->doc, skip_dist * 1000);
+}
+
+
+static void
+filter_show_text(fz_context *ctx, pdf_filter_processor *p, pdf_obj *text)
+{
+	filter_gstate *gstate = p->gstate;
+	pdf_font_desc *fontdesc = gstate->text.font;
+	int i, n;
+	fz_point skip;
+	pdf_obj *new_arr;
+	pdf_document *doc;
+
+	if (!fontdesc)
+		return;
+
+	if (pdf_is_string(ctx, text))
+	{
+		filter_show_string(ctx, p, (unsigned char *)pdf_to_str_buf(ctx, text), pdf_to_str_len(ctx, text));
+		return;
+	}
+	if (!pdf_is_array(ctx, text))
+		return;
+
+	n = pdf_array_len(ctx, text);
+	skip.x = skip.y = 0;
+	doc = pdf_get_bound_document(ctx, text);
+	new_arr = pdf_new_array(ctx, doc, 4);
+	fz_try(ctx)
+	{
+		for (i = 0; i < n; i++)
+		{
+			pdf_obj *item = pdf_array_get(ctx, text, i);
+			if (pdf_is_string(ctx, item))
+			{
+				unsigned char *buf = (unsigned char *)pdf_to_str_buf(ctx, item);
+				int len = pdf_to_str_len(ctx, item);
+				int j = 0;
+				while (j < len)
+				{
+					int inc;
+					int start = j;
+					filter_string_to_segment(ctx, p, buf, len, &j, &inc);
+					if (start != j)
+					{
+						/* We have *some* chars to send at least */
+						if (skip.x != 0 || skip.y != 0)
+						{
+							pdf_array_push_drop(ctx, new_arr, adjustment(ctx, p, skip));
+							skip.x = skip.y = 0;
+						}
+						pdf_array_push_drop(ctx, new_arr, pdf_new_string(ctx, doc, (char *)buf+start, j-start));
+					}
+					if (j != len)
+					{
+						skip.x += p->tos.char_tx;
+						skip.y += p->tos.char_ty;
+						j += inc;
+					}
+				}
+			}
+			else
+			{
+				float tadj = - pdf_to_real(ctx, item) * gstate->text.size * 0.001f;
+				if (fontdesc->wmode == 0)
+				{
+					skip.x += tadj;
+					fz_pre_translate(&p->tos.tm, tadj * p->gstate->text.scale, 0);
+				}
+				else
+				{
+					skip.y += tadj;
+					fz_pre_translate(&p->tos.tm, 0, tadj);
+				}
+
+			}
+		}
+		if (skip.x != 0 || skip.y != 0)
+			pdf_array_push_drop(ctx, new_arr, adjustment(ctx, p, skip));
+		if (p->chain->op_TJ && pdf_array_len(ctx, new_arr))
+			p->chain->op_TJ(ctx, p->chain, new_arr);
+	}
+	fz_always(ctx)
+		pdf_drop_obj(ctx, new_arr);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 }
 
 /* general graphics state */
@@ -716,6 +1016,8 @@ pdf_filter_ET(fz_context *ctx, pdf_processor *proc)
 	filter_flush(ctx, p, 0);
 	if (p->chain->op_ET)
 		p->chain->op_ET(ctx, p->chain);
+	if (p->after_text)
+		p->after_text(ctx, p->opaque, p->doc, p->chain);
 }
 
 /* text state */
@@ -725,8 +1027,7 @@ pdf_filter_Tc(fz_context *ctx, pdf_processor *proc, float charspace)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_Tc)
-		p->chain->op_Tc(ctx, p->chain, charspace);
+	p->gstate->text.char_space = charspace;
 }
 
 static void
@@ -734,8 +1035,7 @@ pdf_filter_Tw(fz_context *ctx, pdf_processor *proc, float wordspace)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_Tw)
-		p->chain->op_Tw(ctx, p->chain, wordspace);
+	p->gstate->text.word_space = wordspace;
 }
 
 static void
@@ -743,8 +1043,7 @@ pdf_filter_Tz(fz_context *ctx, pdf_processor *proc, float scale)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_Tz)
-		p->chain->op_Tz(ctx, p->chain, scale);
+	p->gstate->text.scale = scale / 100;
 }
 
 static void
@@ -752,8 +1051,7 @@ pdf_filter_TL(fz_context *ctx, pdf_processor *proc, float leading)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_TL)
-		p->chain->op_TL(ctx, p->chain, leading);
+	p->gstate->text.leading = leading;
 }
 
 static void
@@ -761,8 +1059,12 @@ pdf_filter_Tf(fz_context *ctx, pdf_processor *proc, const char *name, pdf_font_d
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_Tf)
-		p->chain->op_Tf(ctx, p->chain, name, font, size);
+	fz_free(ctx, p->font_name);
+	p->font_name = NULL;
+	p->font_name = name ? fz_strdup(ctx, name) : NULL;
+	pdf_drop_font(ctx, p->gstate->text.font);
+	p->gstate->text.font = pdf_keep_font(ctx, font);
+	p->gstate->text.size = size;
 	copy_resource(ctx, p, PDF_NAME_Font, name);
 }
 
@@ -771,8 +1073,7 @@ pdf_filter_Tr(fz_context *ctx, pdf_processor *proc, int render)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_Tr)
-		p->chain->op_Tr(ctx, p->chain, render);
+	p->gstate->text.render = render;
 }
 
 static void
@@ -780,8 +1081,7 @@ pdf_filter_Ts(fz_context *ctx, pdf_processor *proc, float rise)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
-	if (p->chain->op_Ts)
-		p->chain->op_Ts(ctx, p->chain, rise);
+	p->gstate->text.rise = rise;
 }
 
 /* text positioning */
@@ -790,7 +1090,8 @@ static void
 pdf_filter_Td(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_CTM);
+	filter_flush(ctx, p, FLUSH_ALL);
+	pdf_tos_translate(&p->tos, tx, ty);
 	if (p->chain->op_Td)
 		p->chain->op_Td(ctx, p->chain, tx, ty);
 }
@@ -799,7 +1100,9 @@ static void
 pdf_filter_TD(fz_context *ctx, pdf_processor *proc, float tx, float ty)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_CTM);
+	filter_flush(ctx, p, FLUSH_ALL);
+	p->gstate->text.leading = -ty;
+	pdf_tos_translate(&p->tos, tx, ty);
 	if (p->chain->op_TD)
 		p->chain->op_TD(ctx, p->chain, tx, ty);
 }
@@ -808,7 +1111,7 @@ static void
 pdf_filter_Tm(fz_context *ctx, pdf_processor *proc, float a, float b, float c, float d, float e, float f)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_CTM);
+	pdf_tos_set_matrix(&p->tos, a, b, c, d, e, f);
 	if (p->chain->op_Tm)
 		p->chain->op_Tm(ctx, p->chain, a, b, c, d, e, f);
 }
@@ -817,7 +1120,8 @@ static void
 pdf_filter_Tstar(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	filter_flush(ctx, p, FLUSH_CTM);
+	filter_flush(ctx, p, FLUSH_ALL);
+	pdf_tos_newline(&p->tos, p->gstate->text.leading);
 	if (p->chain->op_Tstar)
 		p->chain->op_Tstar(ctx, p->chain);
 }
@@ -829,8 +1133,7 @@ pdf_filter_TJ(fz_context *ctx, pdf_processor *proc, pdf_obj *array)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, FLUSH_ALL);
-	if (p->chain->op_TJ)
-		p->chain->op_TJ(ctx, p->chain, array);
+	filter_show_text(ctx, p, array);
 }
 
 static void
@@ -838,8 +1141,7 @@ pdf_filter_Tj(fz_context *ctx, pdf_processor *proc, char *str, int len)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, FLUSH_ALL);
-	if (p->chain->op_Tj)
-		p->chain->op_Tj(ctx, p->chain, str, len);
+	filter_show_string(ctx, p, (unsigned char *)str, len);
 }
 
 static void
@@ -847,17 +1149,23 @@ pdf_filter_squote(fz_context *ctx, pdf_processor *proc, char *str, int len)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, FLUSH_ALL);
-	if (p->chain->op_squote)
-		p->chain->op_squote(ctx, p->chain, str, len);
+	pdf_tos_newline(&p->tos, p->gstate->text.leading);
+	if (p->chain->op_Tstar)
+		p->chain->op_Tstar(ctx, p->chain);
+	filter_show_string(ctx, p, (unsigned char *)str, len);
 }
 
 static void
 pdf_filter_dquote(fz_context *ctx, pdf_processor *proc, float aw, float ac, char *str, int len)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
+	p->gstate->text.word_space = aw;
+	p->gstate->text.char_space = ac;
 	filter_flush(ctx, p, FLUSH_ALL);
-	if (p->chain->op_dquote)
-		p->chain->op_dquote(ctx, p->chain, aw, ac, str, len);
+	pdf_tos_newline(&p->tos, p->gstate->text.leading);
+	if (p->chain->op_Tstar)
+		p->chain->op_Tstar(ctx, p->chain);
+	filter_show_string(ctx, p, (unsigned char*)str, len);
 }
 
 /* type 3 fonts */
@@ -1154,11 +1462,27 @@ static void
 pdf_drop_filter_processor(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
-	fz_free(ctx, p->gstate);
+	filter_gstate *gs = p->gstate;
+	while (gs)
+	{
+		filter_gstate *next = gs->next;
+		pdf_drop_font(ctx, gs->text.font);
+		pdf_drop_font(ctx, gs->current_text.font);
+		fz_free(ctx, gs);
+		gs = next;
+	}
+	pdf_drop_document(ctx, p->doc);
+	fz_free(ctx, p->font_name);
 }
 
 pdf_processor *
-pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb)
+pdf_new_filter_processor(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb)
+{
+	return pdf_new_filter_processor_with_text_filter(ctx, doc, chain, old_rdb, new_rdb, NULL, NULL, NULL);
+}
+
+pdf_processor *
+pdf_new_filter_processor_with_text_filter(fz_context *ctx, pdf_document *doc, pdf_processor *chain, pdf_obj *old_rdb, pdf_obj *new_rdb, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after, void *text_filter_opaque)
 {
 	pdf_filter_processor *proc = pdf_new_processor(ctx, sizeof *proc);
 	{
@@ -1283,9 +1607,14 @@ pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_obj *old_rdb
 		proc->super.op_END = pdf_filter_END;
 	}
 
+	proc->doc = pdf_keep_document(ctx, doc);
 	proc->chain = chain;
 	proc->old_rdb = old_rdb;
 	proc->new_rdb = new_rdb;
+
+	proc->text_filter = text_filter;
+	proc->after_text = after;
+	proc->opaque = text_filter_opaque;
 
 	fz_try(ctx)
 	{
@@ -1295,6 +1624,22 @@ pdf_new_filter_processor(fz_context *ctx, pdf_processor *chain, pdf_obj *old_rdb
 
 		proc->gstate->stroke = proc->gstate->stroke;
 		proc->gstate->current_stroke = proc->gstate->stroke;
+		proc->gstate->text.char_space = 0;
+		proc->gstate->text.word_space = 0;
+		proc->gstate->text.scale = 1;
+		proc->gstate->text.leading = 0;
+		proc->gstate->text.font = NULL;
+		proc->gstate->text.size = -1;
+		proc->gstate->text.render = 0;
+		proc->gstate->text.rise = 0;
+		proc->gstate->current_text.char_space = 0;
+		proc->gstate->current_text.word_space = 0;
+		proc->gstate->current_text.scale = 1;
+		proc->gstate->current_text.leading = 0;
+		proc->gstate->current_text.font = NULL;
+		proc->gstate->current_text.size = -1;
+		proc->gstate->current_text.render = 0;
+		proc->gstate->current_text.rise = 0;
 	}
 	fz_catch(ctx)
 	{
