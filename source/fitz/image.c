@@ -948,8 +948,6 @@ fz_new_image_from_buffer(fz_context *ctx, fz_buffer *buffer)
 	if (len < 8)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "unknown image file format");
 
-	/* Note: cspace is only ever a borrowed reference here */
-
 	type = fz_recognize_image_format(ctx, buf);
 	switch (type)
 	{

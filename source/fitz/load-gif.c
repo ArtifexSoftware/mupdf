@@ -564,8 +564,7 @@ fz_load_gif_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp,
 	struct info gif;
 
 	gif_read_image(ctx, &gif, p, total, 1);
-
-	*cspacep = fz_device_rgb(ctx);
+	*cspacep = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 	*wp = gif.width;
 	*hp = gif.height;
 	*xresp = gif.xres;

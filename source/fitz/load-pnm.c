@@ -623,35 +623,18 @@ pnm_read_image(fz_context *ctx, struct info *pnm, const unsigned char *p, size_t
 fz_pixmap *
 fz_load_pnm(fz_context *ctx, const unsigned char *p, size_t total)
 {
-	fz_pixmap *img = NULL;
 	struct info pnm = { 0 };
-
-	fz_try(ctx)
-		img = pnm_read_image(ctx, &pnm, p, total, 0);
-	fz_always(ctx)
-		fz_drop_colorspace(ctx, pnm.cs);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
-
-	return img;
+	return pnm_read_image(ctx, &pnm, p, total, 0);
 }
 
 void
 fz_load_pnm_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp, int *hp, int *xresp, int *yresp, fz_colorspace **cspacep)
 {
 	struct info pnm = { 0 };
-
-	fz_try(ctx)
-	{
-		pnm_read_image(ctx, &pnm, p, total, 1);
-		*cspacep = pnm.cs;
-		*wp = pnm.width;
-		*hp = pnm.height;
-		*xresp = 72;
-		*yresp = 72;
-	}
-	fz_always(ctx)
-		fz_drop_colorspace(ctx, pnm.cs);
-	fz_catch(ctx)
-		fz_rethrow(ctx);
+	(void) pnm_read_image(ctx, &pnm, p, total, 1);
+	*cspacep = fz_keep_colorspace(ctx, pnm.cs); /* pnm.cs is a borrowed device colorspace */
+	*wp = pnm.width;
+	*hp = pnm.height;
+	*xresp = 72;
+	*yresp = 72;
 }

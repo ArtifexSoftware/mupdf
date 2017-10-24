@@ -961,7 +961,7 @@ fz_load_bmp_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp,
 
 	bmp_read_image(ctx, &bmp, p, total, 1);
 
-	*cspacep = fz_device_rgb(ctx);
+	*cspacep = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 	*wp = bmp.width;
 	*hp = bmp.height;
 	*xresp = bmp.xres / (1000.0f / 25.4f);

@@ -431,12 +431,11 @@ fz_load_jxr_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 	struct info info = { 0 };
 
 	jxr_read_image(ctx, data, size, &info, 1);
-
-	*xresp = info.xres;
-	*yresp = info.yres;
+	*cspacep = fz_keep_colorspace(ctx, info.cspace); /* info.cspace is a borrowed device colorspace */
 	*wp = info.width;
 	*hp = info.height;
-	*cspacep = info.cspace;
+	*xresp = info.xres;
+	*yresp = info.yres;
 }
 #else /* HAVE_JPEGXR */
 

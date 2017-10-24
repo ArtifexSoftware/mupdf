@@ -435,7 +435,7 @@ fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 
 	jpx_read_image(ctx, &state, data, size, NULL, 1);
 
-	*cspacep = state.cs;
+	*cspacep = fz_keep_colorspace(ctx, state.cs); /* state.cs is a borrowed device colorspace */
 	*wp = state.width;
 	*hp = state.height;
 	*xresp = state.xres;

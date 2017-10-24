@@ -1157,36 +1157,36 @@ tiff_decode_ifd(fz_context *ctx, struct tiff *tiff)
 		switch (tiff->photometric)
 		{
 		case 0: /* WhiteIsZero -- inverted */
-			tiff->colorspace = fz_device_gray(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			break;
 		case 1: /* BlackIsZero */
-			tiff->colorspace = fz_device_gray(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			break;
 		case 2: /* RGB */
-			tiff->colorspace = fz_device_rgb(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			break;
 		case 3: /* RGBPal */
-			tiff->colorspace = fz_device_rgb(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			break;
 		case 5: /* CMYK */
-			tiff->colorspace = fz_device_cmyk(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_cmyk(ctx));
 			break;
 		case 6: /* YCbCr */
 				/* it's probably a jpeg ... we let jpeg convert to rgb */
-			tiff->colorspace = fz_device_rgb(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			break;
 		case 8: /* Direct L*a*b* encoding. a*, b* signed values */
 		case 9: /* ICC Style L*a*b* encoding */
-			tiff->colorspace = fz_device_lab(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_lab(ctx));
 			break;
 		case 32844: /* SGI CIE Log 2 L (16bpp Greyscale) */
-			tiff->colorspace = fz_device_gray(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_gray(ctx));
 			if (tiff->bitspersample != 8)
 				tiff->bitspersample = 8;
 			tiff->stride >>= 1;
 			break;
 		case 32845: /* SGI CIE Log 2 L, u, v (24bpp or 32bpp) */
-			tiff->colorspace = fz_device_rgb(ctx);
+			tiff->colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
 			if (tiff->bitspersample != 8)
 				tiff->bitspersample = 8;
 			tiff->stride >>= 1;
@@ -1416,9 +1416,11 @@ fz_load_tiff_info_subimage(fz_context *ctx, const unsigned char *buf, size_t len
 		*xresp = (tiff.xresolution ? tiff.xresolution : 96);
 		*yresp = (tiff.yresolution ? tiff.yresolution : 96);
 		if (tiff.extrasamples /* == 2 */)
-			*cspacep = fz_device_rgb(ctx);
-		else
-			*cspacep = tiff.colorspace;
+		{
+			fz_drop_colorspace(ctx, tiff.colorspace);
+			tiff.colorspace = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		}
+		*cspacep = tiff.colorspace;
 	}
 	fz_always(ctx)
 	{

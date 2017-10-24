@@ -648,12 +648,10 @@ fz_load_png_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp,
 	struct info png;
 
 	png_read_image(ctx, &png, p, total, 1);
-	*cspacep = fz_keep_colorspace(ctx, png.cs);
+
+	*cspacep = png.cs;
 	*wp = png.width;
 	*hp = png.height;
 	*xresp = png.xres;
 	*yresp = png.xres;
-
-	fz_drop_colorspace(ctx, png.cs);
-	fz_free(ctx, png.samples);
 }
