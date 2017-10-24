@@ -8547,7 +8547,12 @@ FUN(PDFAnnotation_setInkList)(JNIEnv *env, jobject self, jobject jinklist)
 
 		counts[i] = (*env)->GetArrayLength(env, jpath) / 2;
 		(*env)->GetFloatArrayRegion(env, jpath, k, counts[i], points);
-		if ((*env)->ExceptionCheck(env)) return;
+		if ((*env)->ExceptionCheck(env))
+		{
+			fz_free(ctx, counts);
+			fz_free(ctx, points);
+			return;
+		}
 
 		(*env)->DeleteLocalRef(env, jpath);
 	}
