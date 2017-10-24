@@ -495,7 +495,7 @@ static int find_fids(JNIEnv *env)
 	fid_NativeDevice_nativeInfo = get_field(&err, env, "nativeInfo", "J");
 
 	cls_Outline = get_class(&err, env, PKG"Outline");
-	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;ILjava/lang/String;[L"PKG"Outline;)V");
+	mid_Outline_init = get_method(&err, env, "<init>", "(Ljava/lang/String;ILjava/lang/String;FF[L"PKG"Outline;)V");
 
 	cls_Page = get_class(&err, env, PKG"Page");
 	fid_Page_pointer = get_field(&err, env, "pointer", "J");
@@ -1232,6 +1232,8 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 		jint jpage = -1;
 		jstring juri = NULL;
 		jobject jdown = NULL;
+		float x = 0;
+		float y = 0;
 
 		if (outline->title)
 		{
@@ -1247,7 +1249,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 				if (!juri) return NULL;
 			}
 			else
-				jpage = fz_resolve_link(ctx, doc, outline->uri, NULL, NULL);
+				jpage = fz_resolve_link(ctx, doc, outline->uri, &x, &y);
 		}
 
 		if (outline->down)
@@ -1256,7 +1258,7 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 			if (!jdown) return NULL;
 		}
 
-		joutline = (*env)->NewObject(env, cls_Outline, mid_Outline_init, jtitle, jpage, juri, jdown);
+		joutline = (*env)->NewObject(env, cls_Outline, mid_Outline_init, jtitle, jpage, juri, x, y, jdown);
 		if (!joutline) return NULL;
 
 		if (jdown)

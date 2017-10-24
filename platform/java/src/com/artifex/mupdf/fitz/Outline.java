@@ -6,12 +6,16 @@ public class Outline
 	public String uri;
 	public int page;
 	public Outline down[];
+	public float x;
+	public float y;
 
-	public Outline(String title, int page, String uri, Outline[] down) {
+	public Outline(String title, int page, String uri, float x, float y, Outline[] down) {
 		this.title = title;
 		this.page = page;
 		this.uri = uri;
 		this.down = down;
+		this.x = x;
+		this.y = y;
 	}
 
 	public String toString()
