@@ -8447,7 +8447,7 @@ FUN(PDFAnnotation_getInkList)(JNIEnv *env, jobject self)
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		n = pdf_annot_quad_point_count(ctx, annot);
+		n = pdf_annot_ink_list_count(ctx, annot);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -8467,7 +8467,7 @@ FUN(PDFAnnotation_getInkList)(JNIEnv *env, jobject self)
 			return NULL;
 		}
 
-		jpath = (*env)->NewFloatArray(env, m);
+		jpath = (*env)->NewFloatArray(env, m * 2);
 		if (!jpath) return NULL;
 
 		for (k = 0; k < m; k++)
@@ -8480,7 +8480,7 @@ FUN(PDFAnnotation_getInkList)(JNIEnv *env, jobject self)
 				return NULL;
 			}
 
-			(*env)->SetFloatArrayRegion(env, jpath, 0, 2, &v[0]);
+			(*env)->SetFloatArrayRegion(env, jpath, k * 2, 2, &v[0]);
 			if ((*env)->ExceptionCheck(env)) return NULL;
 		}
 
@@ -8545,14 +8545,15 @@ FUN(PDFAnnotation_setInkList)(JNIEnv *env, jobject self, jobject jinklist)
 		if (!jpath)
 			continue;
 
-		counts[i] = (*env)->GetArrayLength(env, jpath) / 2;
-		(*env)->GetFloatArrayRegion(env, jpath, k, counts[i], points);
+		counts[i] = (*env)->GetArrayLength(env, jpath);
+		(*env)->GetFloatArrayRegion(env, jpath, 0, counts[i], &points[k]);
 		if ((*env)->ExceptionCheck(env))
 		{
 			fz_free(ctx, counts);
 			fz_free(ctx, points);
 			return;
 		}
+		counts[i] /= 2;
 
 		(*env)->DeleteLocalRef(env, jpath);
 	}

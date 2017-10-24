@@ -4158,7 +4158,7 @@ static void ffi_PDFAnnotation_getInkList(js_State *J)
 	fz_catch(ctx)
 		rethrow(J);
 
-	for (i = 0; i < n; ++n) {
+	for (i = 0; i < n; ++i) {
 		fz_try(ctx)
 			m = pdf_annot_ink_list_stroke_count(ctx, annot, i);
 		fz_catch(ctx)
@@ -4171,8 +4171,9 @@ static void ffi_PDFAnnotation_getInkList(js_State *J)
 			fz_catch(ctx)
 				rethrow(J);
 			js_pushnumber(J, v[0]);
+			js_setindex(J, -2, k * 2 + 0);
 			js_pushnumber(J, v[1]);
-			js_setindex(J, -2, k);
+			js_setindex(J, -2, k * 2 + 1);
 		}
 		js_setindex(J, -2, i);
 	}

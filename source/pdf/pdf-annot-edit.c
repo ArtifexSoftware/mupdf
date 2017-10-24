@@ -743,7 +743,7 @@ pdf_annot_ink_list_stroke_count(fz_context *ctx, pdf_annot *annot, int i)
 	check_allowed_subtypes(ctx, annot, PDF_NAME_InkList, ink_list_subtypes);
 	ink_list = pdf_dict_get(ctx, annot->obj, PDF_NAME_InkList);
 	stroke = pdf_array_get(ctx, ink_list, i);
-	return pdf_array_len(ctx, stroke);
+	return pdf_array_len(ctx, stroke) / 2;
 }
 
 void
