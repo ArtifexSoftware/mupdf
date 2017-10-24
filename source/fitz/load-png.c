@@ -341,24 +341,27 @@ png_read_trns(fz_context *ctx, struct info *info, const unsigned char *p, unsign
 static void
 png_read_icc(fz_context *ctx, struct info *info, const unsigned char *p, unsigned int size)
 {
-	fz_stream *stm, *stm2;
+	fz_stream *stm = NULL;
 	fz_colorspace *cs = NULL;
-	size_t skip = strnlen(p, size) + 2;
+	size_t m = fz_mini(80, size);
+	size_t n = strnlen((const char *)p, m);
+	if (n + 2 > m)
+	{
+		fz_warn(ctx, "invalid ICC profile name");
+		return;
+	}
 
-	if (skip >= size)
-		fz_throw(ctx, FZ_ERROR_GENERIC, "Bad ICC Profile in PNG");
-
-	stm = fz_open_memory(ctx, p + skip, size - skip);
-	stm2 = fz_open_flated(ctx, stm, 15);
-
+	stm = fz_open_memory(ctx, p + n + 2, size - n - 2);
+	stm = fz_open_flated(ctx, stm, 15);
 	fz_try(ctx)
-		cs = fz_new_icc_colorspace_from_stream(ctx, NULL, stm2);
+		cs = fz_new_icc_colorspace_from_stream(ctx, (const char *)p, stm);
 	fz_always(ctx)
-		fz_drop_stream(ctx, stm2);
+		fz_drop_stream(ctx, stm);
 	fz_catch(ctx)
 		fz_rethrow(ctx);
 
-	fz_drop_colorspace(ctx, info->cs); /* should be null but just to be safe */
+	/* drop old one in case we have multiple ICC profiles */
+	fz_drop_colorspace(ctx, info->cs);
 	info->cs = cs;
 }
 
@@ -476,16 +479,7 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 			if (!memcmp(p + 4, "IDAT", 4) && !only_metadata)
 				png_read_idat(ctx, info, p + 8, size, &stm);
 			if (!memcmp(p + 4, "iCCP", 4))
-			{
-				fz_try(ctx)
-				{
-					png_read_icc(ctx, info, p + 8, size);
-				}
-				fz_catch(ctx)
-				{
-					info->cs = NULL;
-				}
-			}
+				png_read_icc(ctx, info, p + 8, size);
 			if (!memcmp(p + 4, "IEND", 4))
 				break;
 
@@ -533,12 +527,20 @@ png_read_image(fz_context *ctx, struct info *info, const unsigned char *p, size_
 			fz_rethrow(ctx);
 		}
 	}
+
+	if (info->cs == NULL)
+	{
+		if (info->n == 3 || info->n == 4 || info->indexed)
+			info->cs = fz_keep_colorspace(ctx, fz_device_rgb(ctx));
+		else
+			info->cs = fz_keep_colorspace(ctx, fz_device_gray(ctx));
+	}
 }
 
 static fz_pixmap *
 png_expand_palette(fz_context *ctx, struct info *info, fz_pixmap *src)
 {
-	fz_pixmap *dst = fz_new_pixmap(ctx, fz_device_rgb(ctx), src->w, src->h, NULL, info->transparency);
+	fz_pixmap *dst = fz_new_pixmap(ctx, info->cs, src->w, src->h, NULL, info->transparency);
 	unsigned char *sp = src->samples;
 	unsigned char *dp = dst->samples;
 	unsigned int x, y;
@@ -596,64 +598,46 @@ fz_pixmap *
 fz_load_png(fz_context *ctx, const unsigned char *p, size_t total)
 {
 	fz_pixmap *image = NULL;
-	fz_colorspace *colorspace;
 	struct info png;
 	int stride;
 	int alpha;
 
+	fz_var(image);
+
 	png_read_image(ctx, &png, p, total, 0);
 
-	if (png.cs == NULL)
-	{
-		if (png.n == 3 || png.n == 4)
-			colorspace = fz_device_rgb(ctx);
-		else
-			colorspace = fz_device_gray(ctx);
-	}
-
 	stride = (png.width * png.n * png.depth + 7) / 8;
-	alpha = (png.n == 2 || png.n == 4);
+	alpha = (png.n == 2 || png.n == 4 || png.transparency);
 
 	fz_try(ctx)
 	{
-		image = fz_new_pixmap(ctx, (png.cs == NULL ? colorspace : png.cs), png.width, png.height, NULL, alpha);
+		if (png.indexed)
+		{
+			image = fz_new_pixmap(ctx, NULL, png.width, png.height, NULL, 1);
+			fz_unpack_tile(ctx, image, png.samples, png.n, png.depth, stride, 1);
+			image = png_expand_palette(ctx, &png, image);
+		}
+		else
+		{
+			image = fz_new_pixmap(ctx, png.cs, png.width, png.height, NULL, alpha);
+			fz_unpack_tile(ctx, image, png.samples, png.n, png.depth, stride, 0);
+			if (png.transparency)
+				png_mask_transparency(&png, image);
+		}
+		if (alpha)
+			fz_premultiply_pixmap(ctx, image);
+		fz_set_pixmap_resolution(ctx, image, png.xres, png.yres);
 	}
 	fz_always(ctx)
 	{
-		fz_drop_colorspace(ctx, png.cs); /* fz_new_pixmap took a reference */
-		png.cs = NULL;
+		fz_drop_colorspace(ctx, png.cs);
+		fz_free(ctx, png.samples);
 	}
 	fz_catch(ctx)
 	{
-		fz_free(ctx, png.samples);
+		fz_drop_pixmap(ctx, image);
 		fz_rethrow(ctx);
 	}
-
-	image->xres = png.xres;
-	image->yres = png.yres;
-
-	fz_unpack_tile(ctx, image, png.samples, png.n, png.depth, stride, png.indexed);
-
-	if (png.indexed)
-	{
-		fz_try(ctx)
-		{
-			image = png_expand_palette(ctx, &png, image);
-		}
-		fz_catch(ctx)
-		{
-			fz_free(ctx, png.samples);
-			fz_drop_pixmap(ctx, image);
-			fz_rethrow(ctx);
-		}
-	}
-	else if (png.transparency)
-		png_mask_transparency(&png, image);
-
-	if (png.transparency || png.n == 2 || png.n == 4)
-		fz_premultiply_pixmap(ctx, image);
-
-	fz_free(ctx, png.samples);
 
 	return image;
 }
@@ -664,22 +648,12 @@ fz_load_png_info(fz_context *ctx, const unsigned char *p, size_t total, int *wp,
 	struct info png;
 
 	png_read_image(ctx, &png, p, total, 1);
-
-	if (png.cs == NULL)
-	{
-		if (png.n == 3 || png.n == 4 || png.indexed)
-			*cspacep = fz_device_rgb(ctx);
-		else
-			*cspacep = fz_device_gray(ctx);
-	}
-	else
-	{
-		*cspacep = png.cs;
-	}
-
+	*cspacep = fz_keep_colorspace(ctx, png.cs);
 	*wp = png.width;
 	*hp = png.height;
 	*xresp = png.xres;
 	*yresp = png.xres;
+
+	fz_drop_colorspace(ctx, png.cs);
 	fz_free(ctx, png.samples);
 }
