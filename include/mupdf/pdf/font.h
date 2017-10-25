@@ -1,6 +1,8 @@
 #ifndef MUPDF_PDF_FONT_H
 #define MUPDF_PDF_FONT_H
 
+#include "mupdf/pdf/cmap.h"
+
 /*
  * Font
  */

@@ -1,6 +1,8 @@
 #ifndef MUPDF_PDF_PAGE_H
 #define MUPDF_PDF_PAGE_H
 
+#include "mupdf/pdf/interpret.h"
+
 int pdf_lookup_page_number(fz_context *ctx, pdf_document *doc, pdf_obj *pageobj);
 int pdf_count_pages(fz_context *ctx, pdf_document *doc);
 pdf_obj *pdf_lookup_page_obj(fz_context *ctx, pdf_document *doc, int needle);
@@ -167,6 +169,38 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 */
 void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie,
 	pdf_page_contents_process_fn *proc, void *proc_arg, int ascii);
+
+/*
+	pdf_filter_page_contents: Performs the same task as
+	pdf_clean_page_contents, but with an optional text filter
+	function.
+
+	text_filter: Function to assess whether a given character
+	should be kept (return 0) or removed (return 1).
+
+	after_text: Function called after each text object is closed
+	to allow other output to be sent.
+
+	arg: Opaque value to be passed to callback functions.
+*/
+void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie,
+	pdf_page_contents_process_fn *proc_fn, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *arg, int ascii);
+
+/*
+	pdf_filter_annot_contents: Performs the same task as
+	pdf_clean_annot_contents, but with an optional text filter
+	function.
+
+	text_filter: Function to assess whether a given character
+	should be kept (return 0) or removed (return 1).
+
+	after_text: Function called after each text object is closed
+	to allow other output to be sent.
+
+	arg: Opaque value to be passed to callback functions.
+*/
+void pdf_filter_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie,
+	pdf_page_contents_process_fn *proc, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *arg, int ascii);
 
 /*
 	Presentation interface.

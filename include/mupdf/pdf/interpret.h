@@ -1,6 +1,9 @@
 #ifndef PDF_INTERPRET_H
 #define PDF_INTERPRET_H
 
+#include "mupdf/pdf/font.h"
+#include "mupdf/pdf/resource.h"
+
 typedef struct pdf_csi_s pdf_csi;
 typedef struct pdf_gstate_s pdf_gstate;
 typedef struct pdf_processor_s pdf_processor;
