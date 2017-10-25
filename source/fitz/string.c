@@ -287,7 +287,7 @@ int
 fz_chartorune(int *rune, const char *str)
 {
 	int c, c1, c2, c3;
-	long l;
+	int l;
 
 	/*
 	 * one character sequence
@@ -362,7 +362,7 @@ int
 fz_runetochar(char *str, int rune)
 {
 	/* Runes are signed, so convert to unsigned for range check. */
-	unsigned long c = (unsigned long)rune;
+	unsigned int c = (unsigned int)rune;
 
 	/*
 	 * one character sequence
