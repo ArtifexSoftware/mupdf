@@ -881,7 +881,7 @@ static void fast_gray_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -1016,7 +1016,7 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -1113,7 +1113,7 @@ static void fast_gray_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 				d[0] = 0;
 				d[1] = 0;
 				d[2] = 0;
-				d[3] = s[0];
+				d[3] = 255 - s[0];
 				s += sn;
 				d += dn;
 				if (da)
@@ -1156,7 +1156,7 @@ static void fast_rgb_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -1281,7 +1281,7 @@ static void fast_bgr_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -1409,7 +1409,7 @@ static void fast_rgb_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -1569,7 +1569,7 @@ static void fast_bgr_to_cmyk(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -1729,7 +1729,7 @@ static void fast_cmyk_to_gray(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, f
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -2206,7 +2206,7 @@ static void fast_cmyk_to_rgb(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -2364,7 +2364,7 @@ static void fast_cmyk_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
@@ -2508,7 +2508,7 @@ static void fast_rgb_to_bgr(fz_context *ctx, fz_pixmap *dst, fz_pixmap *src, fz_
 		h = 1;
 	}
 
-	if (ss == 0)
+	if (ss == 0 && ds == 0)
 	{
 		/* Common, no spots case */
 		if (da)
