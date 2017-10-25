@@ -2692,6 +2692,9 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	fz_rect scissor_tmp, tile_tmp;
 	int x0, y0, x1, y1, x, y, extra_x, extra_y;
 	fz_draw_state *state;
+	fz_pixmap *dest = NULL;
+	fz_pixmap *shape = NULL;
+	fz_pixmap *group_alpha = NULL;
 
 	if (dev->top == 0)
 	{
@@ -2764,52 +2767,57 @@ fz_draw_end_tile(fz_context *ctx, fz_device *devp)
 	if (state[0].group_alpha)
 		fz_dump_blend(ctx, "/GA=", state[0].group_alpha);
 #endif
+	dest = fz_new_pixmap_from_pixmap(ctx, state[1].dest, NULL);
 
-	for (y = y0; y < y1; y++)
+	fz_var(shape);
+	fz_var(group_alpha);
+
+	fz_try(ctx)
 	{
-		for (x = x0; x < x1; x++)
+		shape = fz_new_pixmap_from_pixmap(ctx, state[1].shape, NULL);
+		group_alpha = fz_new_pixmap_from_pixmap(ctx, state[1].group_alpha, NULL);
+
+		for (y = y0; y < y1; y++)
 		{
-			ttm = ctm;
-			fz_pre_translate(&ttm, x * xstep, y * ystep);
-			state[1].dest->x = ttm.e;
-			state[1].dest->y = ttm.f;
-			/* Check for overflow due to float -> int conversions */
-			if (state[1].dest->x > 0 && state[1].dest->x + state[1].dest->w < 0)
-				continue;
-			if (state[1].dest->y > 0 && state[1].dest->y + state[1].dest->h < 0)
-				continue;
-			fz_paint_pixmap_with_bbox(state[0].dest, state[1].dest, 255, state[0].scissor);
-			if (state[1].shape)
+			for (x = x0; x < x1; x++)
 			{
-				ttm = shapectm;
+				ttm = ctm;
 				fz_pre_translate(&ttm, x * xstep, y * ystep);
-				state[1].shape->x = ttm.e;
-				state[1].shape->y = ttm.f;
-				fz_paint_pixmap_with_bbox(state[0].shape, state[1].shape, 255, state[0].scissor);
-			}
-			if (state[1].group_alpha)
-			{
-				ttm = gactm;
-				fz_pre_translate(&ttm, x * xstep, y * ystep);
-				state[1].group_alpha->x = ttm.e;
-				state[1].group_alpha->y = ttm.f;
-				fz_paint_pixmap_with_bbox(state[0].group_alpha, state[1].group_alpha, 255, state[0].scissor);
+				dest->x = ttm.e;
+				dest->y = ttm.f;
+				/* Check for overflow due to float -> int conversions */
+				if (dest->x > 0 && dest->x + dest->w < 0)
+					continue;
+				if (dest->y > 0 && dest->y + dest->h < 0)
+					continue;
+				fz_paint_pixmap_with_bbox(state[0].dest, dest, 255, state[0].scissor);
+				if (shape)
+				{
+					ttm = shapectm;
+					fz_pre_translate(&ttm, x * xstep, y * ystep);
+					shape->x = ttm.e;
+					shape->y = ttm.f;
+					fz_paint_pixmap_with_bbox(state[0].shape, shape, 255, state[0].scissor);
+				}
+				if (group_alpha)
+				{
+					ttm = gactm;
+					fz_pre_translate(&ttm, x * xstep, y * ystep);
+					group_alpha->x = ttm.e;
+					group_alpha->y = ttm.f;
+					fz_paint_pixmap_with_bbox(state[0].group_alpha, group_alpha, 255, state[0].scissor);
+				}
 			}
 		}
 	}
-
-	state[1].dest->x = ctm.e;
-	state[1].dest->y = ctm.f;
-	if (state[1].shape)
+	fz_always(ctx)
 	{
-		state[1].shape->x = shapectm.e;
-		state[1].shape->y = shapectm.f;
+		fz_drop_pixmap(ctx, dest);
+		fz_drop_pixmap(ctx, shape);
+		fz_drop_pixmap(ctx, group_alpha);
 	}
-	if (state[1].group_alpha)
-	{
-		state[1].group_alpha->x = gactm.e;
-		state[1].group_alpha->y = gactm.f;
-	}
+	fz_catch(ctx)
+		fz_rethrow(ctx);
 
 	/* Now we try to cache the tiles. Any failure here will just result in us not caching. */
 	if (state[1].encache && state[1].id != 0)

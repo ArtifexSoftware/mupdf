@@ -26,6 +26,7 @@ fz_drop_pixmap_imp(fz_context *ctx, fz_storable *pix_)
 	fz_drop_separations(ctx, pix->seps);
 	if (pix->flags & FZ_PIXMAP_FLAG_FREE_SAMPLES)
 		fz_free(ctx, pix->samples);
+	fz_drop_pixmap(ctx, pix->underlying);
 	fz_free(ctx, pix);
 }
 
@@ -124,6 +125,40 @@ fz_new_pixmap_with_bbox_and_data(fz_context *ctx, fz_colorspace *colorspace, con
 	pixmap->x = r->x0;
 	pixmap->y = r->y0;
 	return pixmap;
+}
+
+fz_pixmap *fz_new_pixmap_from_pixmap(fz_context *ctx, fz_pixmap *pixmap, const fz_irect *rect)
+{
+	fz_irect local_rect;
+	fz_pixmap *subpix;
+
+	if (!pixmap)
+		return NULL;
+
+	if (rect == NULL)
+	{
+		rect = &local_rect;
+		local_rect.x0 = pixmap->x;
+		local_rect.y0 = pixmap->y;
+		local_rect.x1 = pixmap->x + pixmap->w;
+		local_rect.y1 = pixmap->y + pixmap->h;
+	}
+	else if (rect->x0 < pixmap->x || rect->y0 < pixmap->y || rect->x1 > pixmap->x + pixmap->w || rect->y1 > pixmap->y + pixmap->h)
+		fz_throw(ctx, FZ_ERROR_GENERIC, "Pixmap region is not a subarea");
+
+	subpix = fz_malloc_struct(ctx, fz_pixmap);
+	*subpix = *pixmap;
+	subpix->x = rect->x0;
+	subpix->y = rect->y0;
+	subpix->w = rect->x1 - rect->x0;
+	subpix->h = rect->y1 - rect->y0;
+	subpix->samples += (rect->x0 - pixmap->x) + (rect->y0 - pixmap->y) * pixmap->stride;
+	subpix->underlying = fz_keep_pixmap(ctx, pixmap);
+	subpix->colorspace = fz_keep_colorspace(ctx, pixmap->colorspace);
+	subpix->seps = fz_keep_separations(ctx, pixmap->seps);
+	subpix->flags &= ~FZ_PIXMAP_FLAG_FREE_SAMPLES;
+
+	return subpix;
 }
 
 fz_irect *
