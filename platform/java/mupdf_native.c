@@ -5897,7 +5897,7 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 	for (b=0, block = page->first_block; block; ++b, block = block->next)
 	{
 		//  only do text blocks
-		if (block->type == FZ_STEXT_BLOCK_TEXT)
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
 			continue;
 
 		//  make a block
@@ -5963,6 +5963,9 @@ FUN(StructuredText_getBlocks)(JNIEnv *env, jobject self)
 
 				(*env)->DeleteLocalRef(env, jchar);
 			}
+
+			//  set the line's char array
+			(*env)->SetObjectField(env, jline, fid_TextLine_chars, carr);
 
 			//  add to the line array
 			(*env)->SetObjectArrayElement(env, larr, l, jline);
