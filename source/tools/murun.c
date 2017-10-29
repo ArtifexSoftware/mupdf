@@ -1648,13 +1648,17 @@ static void ffi_Document_getMetaData(js_State *J)
 	fz_document *doc = ffi_todocument(J, 0);
 	const char *key = js_tostring(J, 1);
 	char info[256];
+	int found;
 
 	fz_try(ctx)
-		fz_lookup_metadata(ctx, doc, key, info, sizeof info);
+		found = fz_lookup_metadata(ctx, doc, key, info, sizeof info);
 	fz_catch(ctx)
 		rethrow(J);
 
-	js_pushstring(J, info);
+	if (found)
+		js_pushstring(J, info);
+	else
+		js_pushundefined(J);
 }
 
 static void ffi_Document_isReflowable(js_State *J)
