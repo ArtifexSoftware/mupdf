@@ -1527,7 +1527,11 @@ fz_get_glyph_name(fz_context *ctx, fz_font *font, int glyph, char *buf, int size
 	if (face)
 	{
 		if (FT_HAS_GLYPH_NAMES(face))
-			FT_Get_Glyph_Name(face, glyph, buf, size);
+		{
+			int fterr = FT_Get_Glyph_Name(face, glyph, buf, size);
+			if (fterr)
+				fz_warn(ctx, "freetype get glyph name (gid %d): %s", glyph, ft_error_string(fterr));
+		}
 		else
 			fz_snprintf(buf, size, "%d", glyph);
 	}
