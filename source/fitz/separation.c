@@ -759,15 +759,19 @@ fz_copy_pixmap_area_converting_seps(fz_context *ctx, fz_pixmap *dst, fz_pixmap *
 		 * remain unmapped? */
 		if (unmapped)
 		{
+			int m;
 			/* Still need to handle mapping 'lost' spots down to process colors */
-			for (i = 0; i < sseps_n; i++)
+			for (i = -1, m = 0; m < sseps_n; m++)
 			{
 				float convert[FZ_MAX_COLORS];
 
-				if (mapped[i])
+				if (mapped[m])
 					continue;
-				/* Src spot i is not mapped. We need to convert that down. */
-				fz_separation_equivalent(ctx, sseps, i, color_params, dst->colorspace, proof_cs, convert);
+				if (fz_separation_current_behavior(ctx, sseps, m) != FZ_SEPARATION_SPOT)
+					continue;
+				i++;
+				/* Src spot m (the i'th one) is not mapped. We need to convert that down. */
+				fz_separation_equivalent(ctx, sseps, m, color_params, dst->colorspace, proof_cs, convert);
 
 				if (fz_colorspace_is_subtractive(ctx, dst->colorspace))
 				{
