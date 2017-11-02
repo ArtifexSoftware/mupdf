@@ -100,7 +100,7 @@ static void saveimage(int num)
 	{
 		image = pdf_load_image(ctx, doc, ref);
 		cbuf = fz_compressed_image_buffer(ctx, image);
-		snprintf(buf, sizeof(buf), "img-%04d", num);
+		fz_snprintf(buf, sizeof(buf), "img-%04d", num);
 		type = cbuf == NULL ? FZ_IMAGE_UNKNOWN : cbuf->params.type;
 		if (image->use_colorkey)
 			type = FZ_IMAGE_UNKNOWN;
@@ -114,7 +114,7 @@ static void saveimage(int num)
 		{
 			unsigned char *data;
 			size_t len = fz_buffer_storage(ctx, cbuf->buffer, &data);
-			snprintf(buf, sizeof(buf), "img-%04d", num);
+			fz_snprintf(buf, sizeof(buf), "img-%04d", num);
 			writejpeg(ctx, data, len, buf);
 			break;
 		}
@@ -192,7 +192,7 @@ static void savefont(pdf_obj *dict, int num)
 	len = fz_buffer_storage(ctx, buf, &data);
 	fz_try(ctx)
 	{
-		snprintf(namebuf, sizeof(namebuf), "%s-%04d.%s", fontname, num, ext);
+		fz_snprintf(namebuf, sizeof(namebuf), "%s-%04d.%s", fontname, num, ext);
 		printf("extracting font %s\n", namebuf);
 		out = fz_new_output_with_path(ctx, namebuf, 0);
 		fz_try(ctx)

@@ -303,7 +303,7 @@ static int pk7_verify(X509_STORE *cert_store, PKCS7 *p7, BIO *detached, char *eb
 			else
 			{
 				/* Error while checking the certificate chain */
-				snprintf(ebuf, ebufsize, "%s(%d): %s", X509_verify_cert_error_string(vctx.err), vctx.err, vctx.certdesc);
+				fz_snprintf(ebuf, ebufsize, "%s(%d): %s", X509_verify_cert_error_string(vctx.err), vctx.err, vctx.certdesc);
 			}
 
 			res = 0;
