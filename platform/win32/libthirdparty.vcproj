@@ -1860,11 +1860,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\thirdparty\lcms2\include\lcms2art.h"
+				RelativePath="..\..\thirdparty\lcms2\src\extra_xform.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\thirdparty\lcms2\src\lcms2_internal.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\thirdparty\lcms2\include\lcms2art.h"
 				>
 			</File>
 			<File
