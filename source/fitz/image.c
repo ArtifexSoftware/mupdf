@@ -4,6 +4,13 @@
 #include <math.h>
 #include <assert.h>
 
+/* TODO: here or public? */
+static int
+fz_key_storable_needs_reaping(fz_context *ctx, const fz_key_storable *ks)
+{
+	return ks == NULL ? 0 : (ks->store_key_refs == ks->storable.refs);
+}
+
 #define SANE_DPI 72.0f
 #define INSANE_DPI 4800.0f
 
