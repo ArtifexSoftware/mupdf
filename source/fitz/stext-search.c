@@ -40,8 +40,8 @@ int fz_stext_char_count(fz_context *ctx, fz_stext_page *page)
 
 const fz_stext_char *fz_stext_char_at(fz_context *ctx, fz_stext_page *page, int idx)
 {
-	static const fz_stext_char space = { ' ', 0, {0,0}, {0,0,0,0}, 0, NULL, NULL };
-	static const fz_stext_char zero = { '\0', 0, {0,0}, {0,0,0,0}, 0, NULL, NULL };
+	static const fz_stext_char space = { ' ', {0,0}, {0,0,0,0}, 0, NULL, NULL };
+	static const fz_stext_char zero = { '\0', {0,0}, {0,0,0,0}, 0, NULL, NULL };
 	fz_stext_block *block;
 	fz_stext_line *line;
 	fz_stext_char *ch;

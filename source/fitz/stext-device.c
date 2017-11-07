@@ -135,7 +135,7 @@ static float max4(float a, float b, float c, float d)
 }
 
 static fz_stext_char *
-add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, const fz_matrix *trm, fz_font *font, float size, int c, fz_point *p, fz_point *q, int rtl)
+add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, const fz_matrix *trm, fz_font *font, float size, int c, fz_point *p, fz_point *q)
 {
 	fz_stext_char *ch = fz_pool_alloc(ctx, page->pool, sizeof *line->first_char);
 	fz_point a, d;
@@ -149,7 +149,6 @@ add_char_to_line(fz_context *ctx, fz_stext_page *page, fz_stext_line *line, cons
 	}
 
 	ch->c = c;
-	ch->rtl = rtl;
 	ch->origin = *p;
 	ch->size = size;
 	ch->font = font; /* TODO: keep and drop */
@@ -294,7 +293,7 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 	if (cur_line && glyph < 0)
 	{
 		/* Don't advance pen or break lines for no-glyph characters in a cluster */
-		add_char_to_line(ctx, page, cur_line, trm, font, size, c, &dev->pen, &dev->pen, 0);
+		add_char_to_line(ctx, page, cur_line, trm, font, size, c, &dev->pen, &dev->pen);
 		dev->lastchar = c;
 		return;
 	}
@@ -395,9 +394,9 @@ fz_add_stext_char_imp(fz_context *ctx, fz_stext_device *dev, fz_font *font, int 
 
 	/* Add synthetic space */
 	if (add_space)
-		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', &dev->pen, &p, rtl);
+		add_char_to_line(ctx, page, cur_line, trm, font, size, ' ', &dev->pen, &p);
 
-	add_char_to_line(ctx, page, cur_line, trm, font, size, c, &p, &q, rtl);
+	add_char_to_line(ctx, page, cur_line, trm, font, size, c, &p, &q);
 	dev->lastchar = c;
 	dev->pen = q;
 
@@ -633,75 +632,6 @@ fz_stext_fill_shade(fz_context *ctx, fz_device *dev, fz_shade *shade, const fz_m
 		fz_rethrow(ctx);
 }
 
-/* RTL visual to logical order pass */
-
-static void
-fz_bidi_reorder_run(fz_stext_char *a, fz_stext_char *b, int dir)
-{
-	if (a < b && dir == -1)
-	{
-		fz_stext_char tmp;
-		fz_stext_char *m = a + (b - a) / 2;
-		while (a < m)
-		{
-			b--;
-
-			tmp.c = a->c;
-			tmp.origin = a->origin;
-			tmp.bbox = a->bbox;
-			tmp.size = a->size;
-			tmp.font = a->font;
-
-			a->c = b->c;
-			a->origin = b->origin;
-			a->bbox = b->bbox;
-			a->size = b->size;
-			a->font = b->font;
-
-			b->c = tmp.c;
-			b->origin = tmp.origin;
-			b->bbox = tmp.bbox;
-			b->size = tmp.size;
-			b->font = tmp.font;
-
-			a++;
-		}
-	}
-}
-
-static void
-fz_bidi_reorder_line(fz_stext_line *line)
-{
-	fz_stext_char *a, *b;
-	int dir, curdir;
-
-	a = line->first_char;
-	curdir = 0;
-	for (b = line->first_char; b; b = b->next)
-	{
-		dir = b->rtl;
-		if (dir != curdir)
-		{
-			fz_bidi_reorder_run(a, b, curdir);
-			curdir = dir;
-			a = b;
-		}
-	}
-	fz_bidi_reorder_run(a, b, curdir);
-}
-
-static void
-fz_bidi_reorder_stext_page(fz_context *ctx, fz_stext_page *page)
-{
-	fz_stext_block *block;
-	fz_stext_line *line;
-
-	for (block = page->first_block; block; block = block->next)
-		if (block->type == FZ_STEXT_BLOCK_TEXT)
-			for (line = block->u.t.first_line; line; line = line->next)
-				fz_bidi_reorder_line(line);
-}
-
 static void
 fz_stext_close_device(fz_context *ctx, fz_device *dev)
 {
@@ -726,8 +656,6 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 
 	/* TODO: smart sorting of blocks and lines in reading order */
 	/* TODO: unicode NFC normalization */
-
-	fz_bidi_reorder_stext_page(ctx, tdev->page);
 }
 
 static void

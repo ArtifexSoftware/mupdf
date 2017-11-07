@@ -93,7 +93,7 @@ struct fz_stext_line_s
 */
 struct fz_stext_char_s
 {
-	int c, rtl;
+	int c;
 	fz_point origin;
 	fz_rect bbox;
 	float size;
