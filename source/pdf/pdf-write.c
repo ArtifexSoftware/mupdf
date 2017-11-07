@@ -2952,7 +2952,7 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 				}
 			}
 
-			if (opts->do_linear)
+			if (opts->do_linear && opts->page_count > 0)
 			{
 				opts->main_xref_offset = fz_tell_output(ctx, opts->out);
 				writexref(ctx, doc, opts, 0, opts->start, 0, 0, opts->first_xref_offset);
