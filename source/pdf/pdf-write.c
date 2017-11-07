@@ -66,6 +66,7 @@ struct pdf_write_state_s
 	int do_linear;
 	int do_clean;
 
+	int list_len;
 	int *use_list;
 	int64_t *ofs_list;
 	int *gen_list;
@@ -627,13 +628,35 @@ static int markobj(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, pd
 	return 0;
 }
 
+static void
+expand_lists(fz_context *ctx, pdf_write_state *opts, int num)
+{
+	int i;
+
+	num++;
+	opts->use_list = fz_resize_array(ctx, opts->use_list, num, sizeof(*opts->use_list));
+	opts->ofs_list = fz_resize_array(ctx, opts->ofs_list, num, sizeof(*opts->ofs_list));
+	opts->gen_list = fz_resize_array(ctx, opts->gen_list, num, sizeof(*opts->gen_list));
+	opts->renumber_map = fz_resize_array(ctx, opts->renumber_map, num, sizeof(*opts->renumber_map));
+	opts->rev_renumber_map = fz_resize_array(ctx, opts->rev_renumber_map, num, sizeof(*opts->rev_renumber_map));
+
+	for (i = opts->list_len; i < num; i++)
+	{
+		opts->use_list[i] = 0;
+		opts->ofs_list[i] = 0;
+		opts->renumber_map[i] = i;
+		opts->rev_renumber_map[i] = i;
+	}
+	opts->list_len = num;
+}
+
 /*
  * Scan for and remove duplicate objects (slow)
  */
 
 static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_state *opts)
 {
-	int num, other;
+	int num, other, max_num;
 	int xref_len = pdf_xref_len(ctx, doc);
 
 	for (num = 1; num < xref_len; num++)
@@ -713,6 +736,9 @@ static void removeduplicateobjs(fz_context *ctx, pdf_document *doc, pdf_write_st
 
 			/* Keep the lowest numbered object */
 			newnum = fz_mini(num, other);
+			max_num = fz_maxi(num, other);
+			if (max_num >= opts->list_len)
+				expand_lists(ctx, opts, max_num);
 			opts->renumber_map[num] = newnum;
 			opts->renumber_map[other] = newnum;
 			opts->rev_renumber_map[newnum] = num; /* Either will do */
@@ -741,6 +767,9 @@ static void compactxref(fz_context *ctx, pdf_document *doc, pdf_write_state *opt
 	 * already should be renumbered will have their new
 	 * object ids be updated to reflect the compaction.
 	 */
+
+	if (xref_len > opts->list_len)
+		expand_lists(ctx, opts, xref_len-1);
 
 	newnum = 1;
 	for (num = 1; num < xref_len; num++)
@@ -2719,21 +2748,16 @@ static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf
 	/* We deliberately make these arrays long enough to cope with
 	* 1 to n access rather than 0..n-1, and add space for 2 new
 	* extra entries that may be required for linearization. */
-	opts->use_list = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
-	opts->ofs_list = fz_malloc_array(ctx, xref_len + 3, sizeof(int64_t));
-	opts->gen_list = fz_calloc(ctx, xref_len + 3, sizeof(int));
-	opts->renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
-	opts->rev_renumber_map = fz_malloc_array(ctx, xref_len + 3, sizeof(int));
+	opts->list_len = 0;
+	opts->use_list = NULL;
+	opts->ofs_list = NULL;
+	opts->gen_list = NULL;
+	opts->renumber_map = NULL;
+	opts->rev_renumber_map = NULL;
 	opts->continue_on_error = in_opts->continue_on_error;
 	opts->errors = in_opts->errors;
 
-	for (num = 0; num < xref_len; num++)
-	{
-		opts->use_list[num] = 0;
-		opts->ofs_list[num] = 0;
-		opts->renumber_map[num] = num;
-		opts->rev_renumber_map[num] = num;
-	}
+	expand_lists(ctx, opts, xref_len + 3);
 }
 
 /* Free the resources held by the dynamic write options */
@@ -2871,8 +2895,11 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 		if (opts->do_garbage >= 1 || opts->do_linear)
 			(void)markobj(ctx, doc, opts, pdf_trailer(ctx, doc));
 		else
+		{
+			xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
 			for (num = 0; num < xref_len; num++)
 				opts->use_list[num] = 1;
+		}
 
 		/* Coalesce and renumber duplicate objects */
 		if (opts->do_garbage >= 3)
@@ -2888,8 +2915,11 @@ do_pdf_save_document(fz_context *ctx, pdf_document *doc, pdf_write_state *opts, 
 
 		/* Truncate the xref after compacting and renumbering */
 		if ((opts->do_garbage >= 2 || opts->do_linear) && !opts->do_incremental)
+		{
+			xref_len = pdf_xref_len(ctx, doc); /* May have changed due to repair */
 			while (xref_len > 0 && !opts->use_list[xref_len-1])
 				xref_len--;
+		}
 
 		if (opts->do_linear)
 			linearize(ctx, doc, opts);
