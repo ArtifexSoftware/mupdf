@@ -153,6 +153,7 @@ static int layout_use_doc_css = 1;
 static const char *title = "MuPDF/GL";
 static fz_document *doc = NULL;
 static fz_page *page = NULL;
+static fz_stext_page *text = NULL;
 static pdf_document *pdf = NULL;
 static fz_outline *outline = NULL;
 static fz_link *links = NULL;
@@ -273,9 +274,13 @@ void load_page(void)
 	fz_pre_rotate(&page_ctm, -currentrotate);
 	fz_invert_matrix(&page_inv_ctm, &page_ctm);
 
+	fz_drop_stext_page(ctx, text);
+	fz_drop_link(ctx, links);
 	fz_drop_page(ctx, page);
 
 	page = fz_load_page(ctx, doc, currentpage);
+	links = fz_load_links(ctx, page);
+	text = fz_new_stext_page_from_page(ctx, page, NULL);
 
 	/* compute bounds here for initial window size */
 	fz_bound_page(ctx, page, &rect);
@@ -283,10 +288,6 @@ void load_page(void)
 	fz_round_rect(&irect, &rect);
 	page_tex.w = irect.x1 - irect.x0;
 	page_tex.h = irect.y1 - irect.y0;
-
-	fz_drop_link(ctx, links);
-	links = NULL;
-	links = fz_load_links(ctx, page);
 
 	loaded = 1;
 }
@@ -411,30 +412,6 @@ static void pop_future(void)
 	while (future_count > 0 && currentpage == here)
 		restore_mark(future[--future_count]);
 	push_history();
-}
-
-static void do_copy_region(fz_rect *screen_sel, int xofs, int yofs)
-{
-	fz_buffer *buf;
-	fz_rect page_sel;
-
-	xofs -= page_tex.x;
-	yofs -= page_tex.y;
-
-	page_sel.x0 = screen_sel->x0 - xofs;
-	page_sel.y0 = screen_sel->y0 - yofs;
-	page_sel.x1 = screen_sel->x1 - xofs;
-	page_sel.y1 = screen_sel->y1 - yofs;
-
-	fz_transform_rect(&page_sel, &page_inv_ctm);
-
-#ifdef _WIN32
-	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 1, NULL);
-#else
-	buf = fz_new_buffer_from_page(ctx, page, &page_sel, 0, NULL);
-#endif
-	ui_set_clipboard(fz_string_from_buffer(ctx, buf));
-	fz_drop_buffer(ctx, buf);
 }
 
 static void ui_label_draw(int x0, int y0, int x1, int y1, const char *text)
@@ -675,37 +652,58 @@ static void do_links(fz_link *link, int xofs, int yofs)
 
 static void do_page_selection(int x0, int y0, int x1, int y1)
 {
-	static fz_rect sel;
+	static fz_point pt = { 0, 0 };
+	fz_rect hits[1000];
+	int i, n;
 
 	if (ui.x >= x0 && ui.x < x1 && ui.y >= y0 && ui.y < y1)
 	{
-		ui.hot = &sel;
+		ui.hot = &pt;
 		if (!ui.active && ui.right)
 		{
-			ui.active = &sel;
-			sel.x0 = sel.x1 = ui.x;
-			sel.y0 = sel.y1 = ui.y;
+			ui.active = &pt;
+			pt.x = ui.x;
+			pt.y = ui.y;
 		}
 	}
 
-	if (ui.active == &sel)
+	if (ui.active == &pt)
 	{
-		sel.x1 = ui.x;
-		sel.y1 = ui.y;
+		int xofs = x0 - page_tex.x;
+		int yofs = y0 - page_tex.y;
+
+		fz_point page_a = (fz_point){ pt.x - xofs, pt.y - yofs };
+		fz_point page_b = (fz_point){ ui.x - xofs, ui.y - yofs };
+
+		fz_transform_point(&page_a, &page_inv_ctm);
+		fz_transform_point(&page_b, &page_inv_ctm);
+
+		n = fz_highlight_selection(ctx, text, page_a, page_b, hits, nelem(hits));
 
 		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO); /* invert destination color */
 		glEnable(GL_BLEND);
 
 		glColor4f(1, 1, 1, 1);
-		glRectf(sel.x0, sel.y0, sel.x1 + 1, sel.y1 + 1);
+		for (i = 0; i < n; ++i)
+		{
+			fz_transform_rect(&hits[i], &page_ctm);
+			glRectf(hits[i].x0+xofs, hits[i].y0+yofs, hits[i].x1 + 1 + xofs, hits[i].y1 + 1 + yofs);
+		}
 
 		glDisable(GL_BLEND);
-	}
 
-	if (ui.active == &sel && !ui.right)
-	{
-		do_copy_region(&sel, x0, y0);
-		glutPostRedisplay();
+		if (!ui.right)
+		{
+			char *s;
+#ifdef _WIN32
+			s = fz_copy_selection(ctx, text, page_a, page_b, 1);
+#else
+			s = fz_copy_selection(ctx, text, page_a, page_b, 0);
+#endif
+			ui_set_clipboard(s);
+			fz_free(ctx, s);
+			glutPostRedisplay();
+		}
 	}
 }
 
@@ -1514,11 +1512,17 @@ static void on_warning(const char *fmt, va_list ap)
 	fprintf(stderr, "\n");
 }
 
-// TODO: use native win32/x11 to get/set clipboard
+#if GLUT_API_VERSION < 5
+static char *clipboard_buffer = NULL;
+#endif
+
 void ui_set_clipboard(const char *buf)
 {
 #if GLUT_API_VERSION >= 5
 	glutSetClipboard(GLUT_CLIPBOARD, buf);
+#else
+	fz_free(ctx, clipboard_buffer);
+	clipboard_buffer = fz_strdup(ctx, buf);
 #endif
 }
 
@@ -1527,6 +1531,7 @@ const char *ui_get_clipboard(void)
 #if GLUT_API_VERSION >= 5
 	return glutGetClipboard(GLUT_CLIPBOARD);
 #else
+	return clipboard_buffer;
 	return NULL;
 #endif
 }

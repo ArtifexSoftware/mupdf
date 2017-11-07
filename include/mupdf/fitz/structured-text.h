@@ -151,18 +151,16 @@ void fz_print_stext_page_as_text(fz_context *ctx, fz_output *out, fz_stext_page 
 int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, fz_rect *hit_bbox, int hit_max);
 
 /*
-	fz_highlight_selection: Return a list of rectangles to highlight given a selection rectangle.
-
-	NOTE: This is an experimental interface and subject to change without notice.
+	fz_highlight_selection: Return a list of rectangles to highlight lines inside the selection points.
 */
-int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect, fz_rect *hit_bbox, int hit_max);
+int fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, fz_rect *hit_bbox, int hit_max);
 
 /*
-	fz_copy_selection: Return a newly allocated UTF-8 string with the text for a given selection rectangle.
+	fz_copy_selection: Return a newly allocated UTF-8 string with the text for a given selection.
 
-	NOTE: This is an experimental interface and subject to change without notice.
+	crlf: If true, write "\r\n" style line endings (otherwise "\n" only).
 */
-char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_rect rect);
+char *fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, int crlf);
 
 /*
 	struct fz_stext_options: Options for creating a pixmap and draw device.

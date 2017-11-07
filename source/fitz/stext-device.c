@@ -643,14 +643,13 @@ fz_stext_close_device(fz_context *ctx, fz_device *dev)
 
 	for (block = page->first_block; block; block = block->next)
 	{
-		if (block->type == FZ_STEXT_BLOCK_TEXT)
+		if (block->type != FZ_STEXT_BLOCK_TEXT)
+			continue;
+		for (line = block->u.t.first_line; line; line = line->next)
 		{
-			for (line = block->u.t.first_line; line; line = line->next)
-			{
-				for (ch = line->first_char; ch; ch = ch->next)
-					fz_union_rect(&line->bbox, &ch->bbox);
-				fz_union_rect(&block->bbox, &line->bbox);
-			}
+			for (ch = line->first_char; ch; ch = ch->next)
+				fz_union_rect(&line->bbox, &ch->bbox);
+			fz_union_rect(&block->bbox, &line->bbox);
 		}
 	}
 

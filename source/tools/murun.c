@@ -451,6 +451,14 @@ static void ffi_pushmatrix(js_State *J, fz_matrix matrix)
 	js_pushnumber(J, matrix.f); js_setindex(J, -2, 5);
 }
 
+static fz_point ffi_topoint(js_State *J, int idx)
+{
+	fz_point point;
+	js_getindex(J, idx, 0); point.x = js_tonumber(J, -1); js_pop(J, 1);
+	js_getindex(J, idx, 1); point.y = js_tonumber(J, -1); js_pop(J, 1);
+	return point;
+}
+
 static fz_rect ffi_torect(js_State *J, int idx)
 {
 	fz_rect rect;
@@ -2725,12 +2733,13 @@ static void ffi_StructuredText_highlight(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
-	fz_rect rect = ffi_torect(J, 1);
+	fz_point a = ffi_topoint(J, 1);
+	fz_point b = ffi_topoint(J, 2);
 	fz_rect hits[256];
 	int i, n = 0;
 
 	fz_try(ctx)
-		n = fz_highlight_selection(ctx, text, rect, hits, nelem(hits));
+		n = fz_highlight_selection(ctx, text, a, b, hits, nelem(hits));
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -2745,11 +2754,12 @@ static void ffi_StructuredText_copy(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	fz_stext_page *text = js_touserdata(J, 0, "fz_stext_page");
-	fz_rect rect = ffi_torect(J, 1);
+	fz_point a = ffi_topoint(J, 1);
+	fz_point b = ffi_topoint(J, 2);
 	char *s = NULL;
 
 	fz_try(ctx)
-		s = fz_copy_selection(ctx, text, rect);
+		s = fz_copy_selection(ctx, text, a, b, 0);
 	fz_catch(ctx)
 		rethrow(J);
 
@@ -4439,8 +4449,8 @@ int murun_main(int argc, char **argv)
 	js_newobject(J);
 	{
 		jsB_propfun(J, "StructuredText.search", ffi_StructuredText_search, 1);
-		jsB_propfun(J, "StructuredText.highlight", ffi_StructuredText_highlight, 1);
-		jsB_propfun(J, "StructuredText.copy", ffi_StructuredText_copy, 1);
+		jsB_propfun(J, "StructuredText.highlight", ffi_StructuredText_highlight, 2);
+		jsB_propfun(J, "StructuredText.copy", ffi_StructuredText_copy, 2);
 	}
 	js_setregistry(J, "fz_stext_page");
 

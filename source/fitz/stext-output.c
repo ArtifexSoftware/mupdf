@@ -244,8 +244,6 @@ static void fz_print_stext_block_as_xhtml(fz_context *ctx, fz_output *out, fz_st
 
 	for (line = block->u.t.first_line; line; line = line->next)
 	{
-		if (line != block->u.t.first_line)
-			fz_write_string(ctx, out, "\n");
 		for (ch = line->first_char; ch; ch = ch->next)
 		{
 			int ch_sup = detect_super_script(line, ch);
