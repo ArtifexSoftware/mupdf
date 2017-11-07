@@ -933,7 +933,7 @@ pdf_read_new_xref_section(fz_context *ctx, pdf_document *doc, fz_stream *stm, in
 	pdf_xref_entry *table;
 	int i, n;
 
-	if (i0 < 0 || i1 < 0 || (i0+i1) < 0)
+	if (i0 < 0 || i1 < 0 || i0 > INT_MAX - i1)
 		fz_throw(ctx, FZ_ERROR_GENERIC, "negative xref stream entry index");
 	//if (i0 + i1 > pdf_xref_len(ctx, doc))
 	//	fz_throw(ctx, FZ_ERROR_GENERIC, "xref stream has too many entries");
