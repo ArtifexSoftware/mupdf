@@ -490,9 +490,6 @@ static void drawband(fz_context *ctx, fz_page *page, fz_display_list *list, cons
 		if (gamma_value != 1)
 			fz_gamma_pixmap(ctx, pix, gamma_value);
 
-		if (pix->alpha)
-			fz_unmultiply_pixmap(ctx, pix);
-
 		if (((output_format == OUT_PCL || output_format == OUT_PWG) && out_cs == CS_MONO) || (output_format == OUT_PBM) || (output_format == OUT_PKM))
 			*bit = fz_new_bitmap_from_pixmap_band(ctx, pix, NULL, band_start);
 	}

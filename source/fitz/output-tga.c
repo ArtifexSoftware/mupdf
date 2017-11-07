@@ -13,19 +13,22 @@ typedef struct {
 
 static inline void tga_put_pixel(fz_context *ctx, fz_output *out, const unsigned char *data, int n, int is_bgr)
 {
+	int a, inva;
 	switch(n)
 	{
 	case 4: /* RGBA or BGRA */
+		a = data[3];
+		inva = a ? 256 * 255 / a : 0;
 		if (!is_bgr) {
-			fz_write_byte(ctx, out, data[2]);
-			fz_write_byte(ctx, out, data[1]);
-			fz_write_byte(ctx, out, data[0]);
+			fz_write_byte(ctx, out, (data[2] * inva + 128)>>8);
+			fz_write_byte(ctx, out, (data[1] * inva + 128)>>8);
+			fz_write_byte(ctx, out, (data[0] * inva + 128)>>8);
 		} else {
-			fz_write_byte(ctx, out, data[0]);
-			fz_write_byte(ctx, out, data[1]);
-			fz_write_byte(ctx, out, data[2]);
+			fz_write_byte(ctx, out, (data[0] * inva + 128)>>8);
+			fz_write_byte(ctx, out, (data[1] * inva + 128)>>8);
+			fz_write_byte(ctx, out, (data[2] * inva + 128)>>8);
 		}
-		fz_write_byte(ctx, out, data[3]);
+		fz_write_byte(ctx, out, a);
 		break;
 	case 3: /* RGB or BGR */
 		if (!is_bgr) {
@@ -39,10 +42,13 @@ static inline void tga_put_pixel(fz_context *ctx, fz_output *out, const unsigned
 		}
 		break;
 	case 2: /* GA */
-		fz_write_byte(ctx, out, data[0]);
-		fz_write_byte(ctx, out, data[0]);
-		fz_write_byte(ctx, out, data[0]);
-		fz_write_byte(ctx, out, data[1]);
+		a = data[1];
+		inva = a ? 256 * 255 / a : 0;
+		inva = (data[0] * inva + 128)>>8;
+		fz_write_byte(ctx, out, inva);
+		fz_write_byte(ctx, out, inva);
+		fz_write_byte(ctx, out, inva);
+		fz_write_byte(ctx, out, a);
 		break;
 	case 1: /* G */
 		fz_write_byte(ctx, out, data[0]);

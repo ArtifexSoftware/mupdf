@@ -254,8 +254,41 @@ psd_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 	plane_inc = w * (h - band_height);
 	line_skip = stride - w*n;
 	b = buffer;
-	for (k = 0; k < n; k++)
+	if (writer->super.alpha)
 	{
+		const unsigned char *ap = &sp[n-1];
+		for (k = 0; k < n-1; k++)
+		{
+			for (y = 0; y < band_height; y++)
+			{
+				for (x = 0; x < w; x++)
+				{
+					int a = *ap;
+					ap += n;
+					*b++ = a != 0 ? (*sp * 255 + 128)/a : 0;
+					sp += n;
+					if (b == buffer_end)
+					{
+						if (k >= num_additive)
+							psd_invert_buffer(buffer, sizeof(buffer));
+						fz_write_data(ctx, out, buffer, sizeof(buffer));
+						b = buffer;
+					}
+				}
+				sp += line_skip;
+				ap += line_skip;
+			}
+			sp -= stride * band_height - 1;
+			ap -= stride * band_height;
+			if (b != buffer)
+			{
+				if (k >= num_additive)
+					psd_invert_buffer(buffer, sizeof(buffer));
+				fz_write_data(ctx, out, buffer, b - buffer);
+				b = buffer;
+			}
+			fz_seek_output(ctx, out, plane_inc, SEEK_CUR);
+		}
 		for (y = 0; y < band_height; y++)
 		{
 			for (x = 0; x < w; x++)
@@ -264,25 +297,51 @@ psd_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 				sp += n;
 				if (b == buffer_end)
 				{
-					if (k >= num_additive)
-						psd_invert_buffer(buffer, sizeof(buffer));
 					fz_write_data(ctx, out, buffer, sizeof(buffer));
 					b = buffer;
 				}
 			}
 			sp += line_skip;
 		}
-		sp -= stride * band_height - 1;
 		if (b != buffer)
 		{
-			if (k >= num_additive)
-				psd_invert_buffer(buffer, sizeof(buffer));
 			fz_write_data(ctx, out, buffer, b - buffer);
 			b = buffer;
 		}
 		fz_seek_output(ctx, out, plane_inc, SEEK_CUR);
 	}
-	fz_seek_output(ctx, out, w * h * (1-n), SEEK_CUR);
+	else
+	{
+		for (k = 0; k < n; k++)
+		{
+			for (y = 0; y < band_height; y++)
+			{
+				for (x = 0; x < w; x++)
+				{
+					*b++ = *sp;
+					sp += n;
+					if (b == buffer_end)
+					{
+						if (k >= num_additive)
+							psd_invert_buffer(buffer, sizeof(buffer));
+						fz_write_data(ctx, out, buffer, sizeof(buffer));
+						b = buffer;
+					}
+				}
+				sp += line_skip;
+			}
+			sp -= stride * band_height - 1;
+			if (b != buffer)
+			{
+				if (k >= num_additive)
+					psd_invert_buffer(buffer, sizeof(buffer));
+				fz_write_data(ctx, out, buffer, b - buffer);
+				b = buffer;
+			}
+			fz_seek_output(ctx, out, plane_inc, SEEK_CUR);
+		}
+	}
+	fz_seek_output(ctx, out, w * (band_height - h * n), SEEK_CUR);
 }
 
 static void
