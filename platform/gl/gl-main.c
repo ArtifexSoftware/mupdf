@@ -1061,7 +1061,7 @@ static void do_app(void)
 static int do_info_line(int x, int y, char *label, char *text)
 {
 	char buf[512];
-	snprintf(buf, sizeof buf, "%s: %s", label, text);
+	fz_snprintf(buf, sizeof buf, "%s: %s", label, text);
 	ui_draw_string(ctx, x, y, buf);
 	return y + ui.lineheight;
 }

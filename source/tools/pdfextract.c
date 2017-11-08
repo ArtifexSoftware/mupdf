@@ -68,7 +68,7 @@ writejpeg(fz_context *ctx, const unsigned char *data, size_t len, const char *fi
 	char buf[1024];
 	fz_output *out;
 
-	snprintf(buf, sizeof(buf), "%s.jpg", file);
+	fz_snprintf(buf, sizeof(buf), "%s.jpg", file);
 
 	out = fz_new_output_with_path(ctx, buf, 0);
 	fz_try(ctx)

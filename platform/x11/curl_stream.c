@@ -305,7 +305,7 @@ fetch_chunk(curl_stream_state *state)
 		state->complete = 1;
 	if (state->content_length > 0 && end >= state->content_length)
 		end = state->content_length-1;
-	snprintf(text, 32, "%d-%d", start, end);
+	fz_snprintf(text, 32, "%d-%d", start, end);
 	curl_easy_setopt(state->handle, CURLOPT_RANGE, text);
 	ret = curl_easy_perform(state->handle);
 	if (ret != CURLE_OK)
