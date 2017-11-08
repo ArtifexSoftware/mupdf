@@ -556,6 +556,11 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 	else if (output_format == OUT_TEXT || output_format == OUT_HTML || output_format == OUT_XHTML || output_format == OUT_STEXT)
 	{
 		fz_stext_page *text = NULL;
+		float zoom;
+		fz_matrix ctm;
+
+		zoom = resolution / 72;
+		fz_pre_scale(fz_rotate(&ctm, rotation), zoom, zoom);
 
 		fz_var(text);
 
@@ -569,9 +574,9 @@ static void dodrawpage(fz_context *ctx, fz_page *page, fz_display_list *list, in
 			if (lowmemory)
 				fz_enable_device_hints(ctx, dev, FZ_NO_CACHE);
 			if (list)
-				fz_run_display_list(ctx, list, dev, &fz_identity, &fz_infinite_rect, cookie);
+				fz_run_display_list(ctx, list, dev, &ctm, &fz_infinite_rect, cookie);
 			else
-				fz_run_page(ctx, page, dev, &fz_identity, cookie);
+				fz_run_page(ctx, page, dev, &ctm, cookie);
 			fz_close_device(ctx, dev);
 			fz_drop_device(ctx, dev);
 			dev = NULL;
