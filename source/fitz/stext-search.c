@@ -76,7 +76,7 @@ static int line_length(fz_stext_line *line)
 static int find_closest_in_line(fz_stext_line *line, int idx, fz_point p)
 {
 	fz_stext_char *ch;
-	float closest_dist = 1e30;
+	float closest_dist = 1e30f;
 	int closest_idx = idx;
 
 	if (line->dir.x > line->dir.y)
@@ -118,7 +118,7 @@ static int find_closest_in_page(fz_stext_page *page, fz_point p)
 	fz_stext_line *line;
 	fz_stext_line *closest_line = NULL;
 	int closest_idx = 0;
-	float closest_dist = 1e30;
+	float closest_dist = 1e30f;
 	float this_dist;
 	int idx = 0;
 
