@@ -2728,7 +2728,6 @@ static void sanitize(fz_context *ctx, pdf_document *doc, int ascii)
  * pdf_write_options, passed into pdf_save_document */
 static void initialise_write_state(fz_context *ctx, pdf_document *doc, const pdf_write_options *in_opts, pdf_write_state *opts)
 {
-	int num;
 	int xref_len = pdf_xref_len(ctx, doc);
 
 	opts->do_incremental = in_opts->do_incremental;
