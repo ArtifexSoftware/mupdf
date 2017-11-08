@@ -5069,9 +5069,11 @@ FUN(Page_textAsHtml)(JNIEnv *env, jobject self)
 
 	len = fz_buffer_storage(ctx, buf, &data);
 	arr = (*env)->NewByteArray(env, (jsize)len);
+	if (arr)
+	{
+		(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (jbyte *)data);
+	}
 	fz_drop_buffer(ctx, buf);
-	if (!arr) return NULL;
-	(*env)->SetByteArrayRegion(env, arr, 0, (jsize)len, (jbyte *)data);
 	if ((*env)->ExceptionCheck(env)) return NULL;
 
 	return arr;
