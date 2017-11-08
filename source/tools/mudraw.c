@@ -327,7 +327,7 @@ static void usage(void)
 		"\t-w -\twidth (in pixels) (maximum width if -r is specified)\n"
 		"\t-h -\theight (in pixels) (maximum height if -r is specified)\n"
 		"\t-f -\tfit width and/or height exactly; ignore original aspect ratio\n"
-		"\t-B -\tmaximum band_height (pgm, ppm, pam, png output only)\n"
+		"\t-B -\tmaximum band_height (pXm, pcl, pclm, ps, psd and png output only)\n"
 #ifndef DISABLE_MUTHREADS
 		"\t-T -\tnumber of threads to use for rendering (banded mode only)\n"
 #else
@@ -1693,9 +1693,9 @@ int mudraw_main(int argc, char **argv)
 
 	if (band_height)
 	{
-		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PCLM && output_format != OUT_PS && output_format != OUT_PSD)
+		if (output_format != OUT_PAM && output_format != OUT_PGM && output_format != OUT_PPM && output_format != OUT_PNM && output_format != OUT_PNG && output_format != OUT_PBM && output_format != OUT_PKM && output_format != OUT_PCL && output_format != OUT_PCLM && output_format != OUT_PS && output_format != OUT_PSD && output_format != OUT_TGA)
 		{
-			fprintf(stderr, "Banded operation only possible with PAM, PBM, PGM, PKM, PPM, PNM, PCL, PCLM, PS, PSD and PNG outputs\n");
+			fprintf(stderr, "Banded operation only possible with PxM, PCL, PCLM, PS, PSD, PNG and TGA outputs\n");
 			exit(1);
 		}
 		if (showmd5)

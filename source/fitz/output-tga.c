@@ -125,7 +125,7 @@ tga_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 	int is_bgr = writer->is_bgr;
 	int k;
 
-	for (k = 0; k < h; k++)
+	for (k = 0; k < band_height; k++)
 	{
 		int i, j;
 		const unsigned char *line = samples + stride * k;
