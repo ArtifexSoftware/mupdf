@@ -391,61 +391,27 @@ fz_search_page_number(fz_context *ctx, fz_document *doc, int number, const char 
 }
 
 fz_buffer *
-fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *page, const fz_rect *sel, int crlf)
+fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *page)
 {
-	fz_buffer *buf;
-	float x0, y0, x1, y1;
 	fz_stext_block *block;
 	fz_stext_line *line;
 	fz_stext_char *ch;
-	int need_newline;
-
-	need_newline = 0;
-
-	if (fz_is_infinite_rect(sel))
-	{
-		x0 = y0 = -FLT_MAX;
-		x1 = y1 = FLT_MAX;
-	}
-	else
-	{
-		x0 = sel->x0;
-		y0 = sel->y0;
-		x1 = sel->x1;
-		y1 = sel->y1;
-	}
+	fz_buffer *buf;
 
 	buf = fz_new_buffer(ctx, 256);
 	fz_try(ctx)
 	{
 		for (block = page->first_block; block; block = block->next)
 		{
-			if (block->type != FZ_STEXT_BLOCK_TEXT)
-				continue;
-
-			for (line = block->u.t.first_line; line; line = line->next)
+			if (block->type == FZ_STEXT_BLOCK_TEXT)
 			{
-				int saw_text = 0;
-				for (ch = line->first_char; ch; ch = ch->next)
+				for (line = block->u.t.first_line; line; line = line->next)
 				{
-					int c = ch->c;
-					if (c < 32)
-						c = FZ_REPLACEMENT_CHARACTER;
-					if (ch->bbox.x1 >= x0 && ch->bbox.x0 <= x1 && ch->bbox.y1 >= y0 && ch->bbox.y0 <= y1)
-					{
-						saw_text = 1;
-						if (need_newline)
-						{
-							if (crlf)
-								fz_append_byte(ctx, buf, '\r');
-							fz_append_byte(ctx, buf, '\n');
-							need_newline = 0;
-						}
-						fz_append_rune(ctx, buf, c);
-					}
+					for (ch = line->first_char; ch; ch = ch->next)
+						fz_append_rune(ctx, buf, ch->c);
+					fz_append_byte(ctx, buf, '\n');
 				}
-				if (saw_text)
-					need_newline = 1;
+				fz_append_byte(ctx, buf, '\n');
 			}
 		}
 	}
@@ -459,14 +425,14 @@ fz_new_buffer_from_stext_page(fz_context *ctx, fz_stext_page *page, const fz_rec
 }
 
 fz_buffer *
-fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_rect *sel, int crlf, const fz_stext_options *options)
+fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz_stext_options *options)
 {
 	fz_stext_page *text;
 	fz_buffer *buf = NULL;
 
 	text = fz_new_stext_page_from_display_list(ctx, list, options);
 	fz_try(ctx)
-		buf = fz_new_buffer_from_stext_page(ctx, text, sel, crlf);
+		buf = fz_new_buffer_from_stext_page(ctx, text);
 	fz_always(ctx)
 		fz_drop_stext_page(ctx, text);
 	fz_catch(ctx)
@@ -475,14 +441,14 @@ fz_new_buffer_from_display_list(fz_context *ctx, fz_display_list *list, const fz
 }
 
 fz_buffer *
-fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int crlf, const fz_stext_options *options)
+fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_stext_options *options)
 {
 	fz_stext_page *text;
 	fz_buffer *buf = NULL;
 
 	text = fz_new_stext_page_from_page(ctx, page, options);
 	fz_try(ctx)
-		buf = fz_new_buffer_from_stext_page(ctx, text, sel, crlf);
+		buf = fz_new_buffer_from_stext_page(ctx, text);
 	fz_always(ctx)
 		fz_drop_stext_page(ctx, text);
 	fz_catch(ctx)
@@ -491,14 +457,14 @@ fz_new_buffer_from_page(fz_context *ctx, fz_page *page, const fz_rect *sel, int 
 }
 
 fz_buffer *
-fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_rect *sel, int crlf, const fz_stext_options *options)
+fz_new_buffer_from_page_number(fz_context *ctx, fz_document *doc, int number, const fz_stext_options *options)
 {
 	fz_page *page;
 	fz_buffer *buf = NULL;
 
 	page = fz_load_page(ctx, doc, number);
 	fz_try(ctx)
-		buf = fz_new_buffer_from_page(ctx, page, sel, crlf, options);
+		buf = fz_new_buffer_from_page(ctx, page, options);
 	fz_always(ctx)
 		fz_drop_page(ctx, page);
 	fz_catch(ctx)

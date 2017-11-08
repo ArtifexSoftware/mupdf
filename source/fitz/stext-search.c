@@ -2,21 +2,7 @@
 
 #include <string.h>
 #include <limits.h>
-#include <stdio.h>
-
-static inline int fz_tolower(int c)
-{
-	/* TODO: proper unicode case folding */
-	/* TODO: character equivalence (a matches ä, etc) */
-	if (c >= 'A' && c <= 'Z')
-		return c - 'A' + 'a';
-	return c;
-}
-
-static inline int iswhite(int c)
-{
-	return c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == 0xA0 || c == 0x2028 || c == 0x2029;
-}
+#include <assert.h>
 
 int fz_stext_char_count(fz_context *ctx, fz_stext_page *page)
 {
@@ -71,95 +57,7 @@ const fz_stext_char *fz_stext_char_at(fz_context *ctx, fz_stext_page *page, int 
 	return &zero;
 }
 
-static inline int charat(fz_context *ctx, fz_stext_page *page, int idx)
-{
-	return fz_stext_char_at(ctx, page, idx)->c;
-}
-
-static fz_rect *bboxat(fz_context *ctx, fz_stext_page *page, int idx, fz_rect *bbox)
-{
-	/* FIXME: Nasty extra copy */
-	*bbox = fz_stext_char_at(ctx, page, idx)->bbox;
-	return bbox;
-}
-
-static int match_stext(fz_context *ctx, fz_stext_page *page, const char *s, int n)
-{
-	int orig = n;
-	int c;
-	while (*s)
-	{
-		s += fz_chartorune(&c, (char *)s);
-		if (iswhite(c) && iswhite(charat(ctx, page, n)))
-		{
-			const char *s_next;
-
-			/* Skip over whitespace in the document */
-			do
-				n++;
-			while (iswhite(charat(ctx, page, n)));
-
-			/* Skip over multiple whitespace in the search string */
-			while (s_next = s + fz_chartorune(&c, (char *)s), iswhite(c))
-				s = s_next;
-		}
-		else
-		{
-			if (fz_tolower(c) != fz_tolower(charat(ctx, page, n)))
-				return 0;
-			n++;
-		}
-	}
-	return n - orig;
-}
-
-int
-fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, fz_rect *hit_bbox, int hit_max)
-{
-	int pos, len, i, n, hit_count;
-
-	if (strlen(needle) == 0)
-		return 0;
-
-	hit_count = 0;
-	len = fz_stext_char_count(ctx, text);
-	pos = 0;
-	while (pos < len)
-	{
-		n = match_stext(ctx, text, needle, pos);
-		if (n)
-		{
-			fz_rect linebox = fz_empty_rect;
-			for (i = 0; i < n; i++)
-			{
-				fz_rect charbox;
-				bboxat(ctx, text, pos + i, &charbox);
-				if (!fz_is_empty_rect(&charbox))
-				{
-					if (charbox.y0 != linebox.y0 || fz_abs(charbox.x0 - linebox.x1) > 5)
-					{
-						if (!fz_is_empty_rect(&linebox) && hit_count < hit_max)
-							hit_bbox[hit_count++] = linebox;
-						linebox = charbox;
-					}
-					else
-					{
-						fz_union_rect(&linebox, &charbox);
-					}
-				}
-			}
-			if (!fz_is_empty_rect(&linebox) && hit_count < hit_max)
-				hit_bbox[hit_count++] = linebox;
-			pos += n;
-		}
-		else
-		{
-			pos += 1;
-		}
-	}
-
-	return hit_count;
-}
+/* Enumerate marked selection */
 
 static float dist2(float a, float b)
 {
@@ -323,17 +221,20 @@ fz_enumerate_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 	}
 }
 
+/* Highlight selection */
+
 struct highlight
 {
 	int len, cap;
 	fz_rect *box;
+	float hfuzz, vfuzz;
 };
 
 static void on_highlight_char(fz_context *ctx, void *arg, fz_stext_line *line, fz_stext_char *ch)
 {
 	struct highlight *hits = arg;
-	float vfuzz = ch->size * 0.1f;
-	float hfuzz = ch->size * 0.5f;
+	float vfuzz = ch->size * hits->vfuzz;
+	float hfuzz = ch->size * hits->hfuzz;
 	fz_rect bbox;
 
 	if (line->dir.x > line->dir.y)
@@ -423,6 +324,8 @@ fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 	hits.len = 0;
 	hits.cap = hit_max;
 	hits.box = hit_bbox;
+	hits.hfuzz = 0.5f;
+	hits.vfuzz = 0.1f;
 
 	cb.on_char = on_highlight_char;
 	cb.on_line = on_highlight_line;
@@ -432,6 +335,8 @@ fz_highlight_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 
 	return hits.len;
 }
+
+/* Copy selection */
 
 static void on_copy_char(fz_context *ctx, void *arg, fz_stext_line *line, fz_stext_char *ch)
 {
@@ -474,4 +379,139 @@ fz_copy_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_point b, 
 	fz_buffer_extract(ctx, buffer, &s); /* take over the data */
 	fz_drop_buffer(ctx, buffer);
 	return (char*)s;
+}
+
+/* String search */
+
+static inline int canon(int c)
+{
+	/* TODO: proper unicode case folding */
+	/* TODO: character equivalence (a matches ä, etc) */
+	if (c == 0xA0 || c == 0x2028 || c == 0x2029)
+		return ' ';
+	if (c == '\r' || c == '\n' || c == '\t')
+		return ' ';
+	if (c >= 'A' && c <= 'Z')
+		return c - 'A' + 'a';
+	return c;
+}
+
+static inline int chartocanon(int *c, const char *s)
+{
+	int n = fz_chartorune(c, s);
+	*c = canon(*c);
+	return n;
+}
+
+static const char *match_string(const char *h, const char *n)
+{
+	int hc, nc;
+	const char *e = h;
+	h += chartocanon(&hc, h);
+	n += chartocanon(&nc, n);
+	while (hc == nc)
+	{
+		e = h;
+		if (hc == ' ')
+			do
+				h += chartocanon(&hc, h);
+			while (hc == ' ');
+		else
+			h += chartocanon(&hc, h);
+		if (nc == ' ')
+			do
+				n += chartocanon(&nc, n);
+			while (nc == ' ');
+		else
+			n += chartocanon(&nc, n);
+	}
+	return nc == 0 ? e : NULL;
+}
+
+static const char *find_string(const char *s, const char *needle, const char **endp)
+{
+	const char *end;
+	while (*s)
+	{
+		end = match_string(s, needle);
+		if (end)
+			return *endp = end, s;
+		++s;
+	}
+	return *endp = NULL, NULL;
+}
+
+int
+fz_search_stext_page(fz_context *ctx, fz_stext_page *page, const char *needle, fz_rect *hit_bbox, int hit_max)
+{
+	struct highlight hits;
+	fz_stext_block *block;
+	fz_stext_line *line;
+	fz_stext_char *ch;
+	fz_buffer *buffer;
+	const char *haystack, *begin, *end;
+	int c, inside;
+
+	if (strlen(needle) == 0)
+		return 0;
+
+	hits.len = 0;
+	hits.cap = hit_max;
+	hits.box = hit_bbox;
+	hits.hfuzz = 0.1f;
+	hits.vfuzz = 0.1f;
+
+	buffer = fz_new_buffer_from_stext_page(ctx, page);
+	fz_try(ctx)
+	{
+		haystack = fz_string_from_buffer(ctx, buffer);
+		begin = find_string(haystack, needle, &end);
+		if (!begin)
+			goto no_more_matches;
+
+		inside = 0;
+		for (block = page->first_block; block; block = block->next)
+		{
+			if (block->type != FZ_STEXT_BLOCK_TEXT)
+				continue;
+			for (line = block->u.t.first_line; line; line = line->next)
+			{
+				for (ch = line->first_char; ch; ch = ch->next)
+				{
+try_new_match:
+					if (!inside)
+					{
+						if (haystack >= begin)
+							inside = 1;
+					}
+					if (inside)
+					{
+						if (haystack < end)
+							on_highlight_char(ctx, &hits, line, ch);
+						else
+						{
+							inside = 0;
+							begin = find_string(haystack, needle, &end);
+							if (!begin)
+								goto no_more_matches;
+							else
+								goto try_new_match;
+						}
+					}
+					haystack += fz_chartorune(&c, haystack);
+				}
+				assert(*haystack == '\n');
+				++haystack;
+			}
+			assert(*haystack == '\n');
+			++haystack;
+		}
+no_more_matches:;
+	}
+	fz_always(ctx)
+		fz_drop_buffer(ctx, buffer);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+
+	return hits.len;
 }
