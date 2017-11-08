@@ -2,6 +2,7 @@
 #include "mupdf/pdf.h"
 
 #include "../fitz/font-imp.h"
+#include "../fitz/fitz-imp.h"
 
 #include <assert.h>
 

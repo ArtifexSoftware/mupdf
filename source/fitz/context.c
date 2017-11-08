@@ -181,7 +181,7 @@ new_context_phase1(const fz_alloc_context *alloc, const fz_locks_context *locks)
 	memset(ctx, 0, sizeof *ctx);
 	ctx->user = NULL;
 	ctx->alloc = alloc;
-	ctx->locks = locks;
+	ctx->locks = *locks;
 
 	ctx->glyph_cache = NULL;
 
@@ -265,7 +265,7 @@ fz_clone_context(fz_context *ctx)
 {
 	/* We cannot safely clone the context without having locking/
 	 * unlocking functions. */
-	if (ctx == NULL || ctx->locks == &fz_locks_default)
+	if (ctx == NULL || (ctx->locks.lock == fz_locks_default.lock && ctx->locks.unlock == fz_locks_default.unlock))
 		return NULL;
 	return fz_clone_context_internal(ctx);
 }
@@ -278,7 +278,7 @@ fz_clone_context_internal(fz_context *ctx)
 	if (ctx == NULL || ctx->alloc == NULL)
 		return NULL;
 
-	new_ctx = new_context_phase1(ctx->alloc, ctx->locks);
+	new_ctx = new_context_phase1(ctx->alloc, &ctx->locks);
 	if (!new_ctx)
 		return NULL;
 

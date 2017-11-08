@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 fz_link *
 fz_new_link(fz_context *ctx, const fz_rect *bbox, void *doc, const char *uri)

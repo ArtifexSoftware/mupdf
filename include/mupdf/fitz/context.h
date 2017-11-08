@@ -108,11 +108,46 @@ enum
 */
 void fz_flush_warnings(fz_context *ctx);
 
+/*
+	Locking functions
+
+	MuPDF is kept deliberately free of any knowledge of particular
+	threading systems. As such, in order for safe multi-threaded
+	operation, we rely on callbacks to client provided functions.
+
+	A client is expected to provide FZ_LOCK_MAX number of mutexes,
+	and a function to lock/unlock each of them. These may be
+	recursive mutexes, but do not have to be.
+
+	If a client does not intend to use multiple threads, then it
+	may pass NULL instead of a lock structure.
+
+	In order to avoid deadlocks, we have one simple rule
+	internally as to how we use locks: We can never take lock n
+	when we already hold any lock i, where 0 <= i <= n. In order
+	to verify this, we have some debugging code, that can be
+	enabled by defining FITZ_DEBUG_LOCKING.
+*/
+
+struct fz_locks_context_s
+{
+	void *user;
+	void (*lock)(void *user, int lock);
+	void (*unlock)(void *user, int lock);
+};
+
+enum {
+	FZ_LOCK_ALLOC = 0,
+	FZ_LOCK_FREETYPE,
+	FZ_LOCK_GLYPHCACHE,
+	FZ_LOCK_MAX
+};
+
 struct fz_context_s
 {
 	void *user;
 	const fz_alloc_context *alloc;
-	const fz_locks_context *locks;
+	fz_locks_context locks;
 	fz_id_context *id;
 	fz_error_context *error;
 	fz_warn_context *warn;
@@ -354,41 +389,6 @@ int fz_use_document_css(fz_context *ctx);
 void fz_set_use_document_css(fz_context *ctx, int use);
 
 /*
-	Locking functions
-
-	MuPDF is kept deliberately free of any knowledge of particular
-	threading systems. As such, in order for safe multi-threaded
-	operation, we rely on callbacks to client provided functions.
-
-	A client is expected to provide FZ_LOCK_MAX number of mutexes,
-	and a function to lock/unlock each of them. These may be
-	recursive mutexes, but do not have to be.
-
-	If a client does not intend to use multiple threads, then it
-	may pass NULL instead of a lock structure.
-
-	In order to avoid deadlocks, we have one simple rule
-	internally as to how we use locks: We can never take lock n
-	when we already hold any lock i, where 0 <= i <= n. In order
-	to verify this, we have some debugging code, that can be
-	enabled by defining FITZ_DEBUG_LOCKING.
-*/
-
-struct fz_locks_context_s
-{
-	void *user;
-	void (*lock)(void *user, int lock);
-	void (*unlock)(void *user, int lock);
-};
-
-enum {
-	FZ_LOCK_ALLOC = 0,
-	FZ_LOCK_FREETYPE,
-	FZ_LOCK_GLYPHCACHE,
-	FZ_LOCK_MAX
-};
-
-/*
 	Memory Allocation and Scavenging:
 
 	All calls to MuPDF's allocator functions pass through to the
@@ -562,153 +562,5 @@ extern fz_alloc_context fz_alloc_default;
 
 /* Default locks */
 extern fz_locks_context fz_locks_default;
-
-#if defined(MEMENTO) || !defined(NDEBUG)
-#define FITZ_DEBUG_LOCKING
-#endif
-
-#ifdef FITZ_DEBUG_LOCKING
-
-void fz_assert_lock_held(fz_context *ctx, int lock);
-void fz_assert_lock_not_held(fz_context *ctx, int lock);
-void fz_lock_debug_lock(fz_context *ctx, int lock);
-void fz_lock_debug_unlock(fz_context *ctx, int lock);
-
-#else
-
-#define fz_assert_lock_held(A,B) do { } while (0)
-#define fz_assert_lock_not_held(A,B) do { } while (0)
-#define fz_lock_debug_lock(A,B) do { } while (0)
-#define fz_lock_debug_unlock(A,B) do { } while (0)
-
-#endif /* !FITZ_DEBUG_LOCKING */
-
-static inline void
-fz_lock(fz_context *ctx, int lock)
-{
-	fz_lock_debug_lock(ctx, lock);
-	ctx->locks->lock(ctx->locks->user, lock);
-}
-
-static inline void
-fz_unlock(fz_context *ctx, int lock)
-{
-	fz_lock_debug_unlock(ctx, lock);
-	ctx->locks->unlock(ctx->locks->user, lock);
-}
-
-static inline void *
-fz_keep_imp(fz_context *ctx, void *p, int *refs)
-{
-	if (p)
-	{
-		(void)Memento_checkIntPointerOrNull(refs);
-		fz_lock(ctx, FZ_LOCK_ALLOC);
-		if (*refs > 0)
-		{
-			(void)Memento_takeRef(p);
-			++*refs;
-		}
-		fz_unlock(ctx, FZ_LOCK_ALLOC);
-	}
-	return p;
-}
-
-static inline void *
-fz_keep_imp8(fz_context *ctx, void *p, int8_t *refs)
-{
-	if (p)
-	{
-		(void)Memento_checkBytePointerOrNull(refs);
-		fz_lock(ctx, FZ_LOCK_ALLOC);
-		if (*refs > 0)
-		{
-			(void)Memento_takeRef(p);
-			++*refs;
-		}
-		fz_unlock(ctx, FZ_LOCK_ALLOC);
-	}
-	return p;
-}
-
-static inline void *
-fz_keep_imp16(fz_context *ctx, void *p, int16_t *refs)
-{
-	if (p)
-	{
-		(void)Memento_checkShortPointerOrNull(refs);
-		fz_lock(ctx, FZ_LOCK_ALLOC);
-		if (*refs > 0)
-		{
-			(void)Memento_takeRef(p);
-			++*refs;
-		}
-		fz_unlock(ctx, FZ_LOCK_ALLOC);
-	}
-	return p;
-}
-
-static inline int
-fz_drop_imp(fz_context *ctx, void *p, int *refs)
-{
-	if (p)
-	{
-		int drop;
-		(void)Memento_checkIntPointerOrNull(refs);
-		fz_lock(ctx, FZ_LOCK_ALLOC);
-		if (*refs > 0)
-		{
-			(void)Memento_dropIntRef(p);
-			drop = --*refs == 0;
-		}
-		else
-			drop = 0;
-		fz_unlock(ctx, FZ_LOCK_ALLOC);
-		return drop;
-	}
-	return 0;
-}
-
-static inline int
-fz_drop_imp8(fz_context *ctx, void *p, int8_t *refs)
-{
-	if (p)
-	{
-		int drop;
-		(void)Memento_checkBytePointerOrNull(refs);
-		fz_lock(ctx, FZ_LOCK_ALLOC);
-		if (*refs > 0)
-		{
-			(void)Memento_dropByteRef(p);
-			drop = --*refs == 0;
-		}
-		else
-			drop = 0;
-		fz_unlock(ctx, FZ_LOCK_ALLOC);
-		return drop;
-	}
-	return 0;
-}
-
-static inline int
-fz_drop_imp16(fz_context *ctx, void *p, int16_t *refs)
-{
-	if (p)
-	{
-		int drop;
-		(void)Memento_checkShortPointerOrNull(refs);
-		fz_lock(ctx, FZ_LOCK_ALLOC);
-		if (*refs > 0)
-		{
-			(void)Memento_dropShortRef(p);
-			drop = --*refs == 0;
-		}
-		else
-			drop = 0;
-		fz_unlock(ctx, FZ_LOCK_ALLOC);
-		return drop;
-	}
-	return 0;
-}
 
 #endif

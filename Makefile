@@ -155,8 +155,9 @@ THREAD_OBJ := $(THREAD_SRC:%.c=$(OUT)/%.o)
 
 $(FITZ_OBJ) : $(FITZ_HDR) $(FITZ_SRC_HDR)
 $(PDF_OBJ) : $(FITZ_HDR) $(PDF_HDR) $(PDF_SRC_HDR)
-$(PDF_OBJ) : $(FITZ_SRC_HDR) # ugh, ugly hack for colorspace-imp.h
+$(PDF_OBJ) : $(FITZ_SRC_HDR) # ugh, ugly hack for fitz-imp.h + colorspace-imp.h
 $(XPS_OBJ) : $(FITZ_HDR) $(XPS_HDR) $(XPS_SRC_HDR)
+$(XPS_OBJ) : $(FITZ_SRC_HDR) # ugh, ugly hack for fitz-imp.h
 $(SVG_OBJ) : $(FITZ_HDR) $(SVG_HDR) $(SVG_SRC_HDR)
 $(CBZ_OBJ) : $(FITZ_HDR) $(CBZ_HDR) $(CBZ_SRC_HDR)
 $(HTML_OBJ) : $(FITZ_HDR) $(HTML_HDR) $(HTML_SRC_HDR)

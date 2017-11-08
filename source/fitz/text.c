@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 #include <string.h>
 

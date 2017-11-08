@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -326,7 +327,7 @@ static int find_context(fz_context *ctx)
 			 * threads trying here too though so, so claim it
 			 * atomically. No one has locked on this context
 			 * before, so we are safe to take the ALLOC lock. */
-			ctx->locks->lock(ctx->locks->user, FZ_LOCK_ALLOC);
+			ctx->locks.lock(ctx->locks.user, FZ_LOCK_ALLOC);
 			/* If it's still free, then claim it as ours,
 			 * otherwise we'll keep hunting. */
 			if (fz_lock_debug_contexts[i] == NULL)
@@ -342,7 +343,7 @@ static int find_context(fz_context *ctx)
 				}
 #endif
 			}
-			ctx->locks->unlock(ctx->locks->user, FZ_LOCK_ALLOC);
+			ctx->locks.unlock(ctx->locks.user, FZ_LOCK_ALLOC);
 			if (gottit)
 				return i;
 		}

@@ -91,4 +91,152 @@ void fz_new_output_context(fz_context *ctx);
 void fz_drop_output_context(fz_context *ctx);
 fz_output_context *fz_keep_output_context(fz_context *ctx);
 
+#if defined(MEMENTO) || !defined(NDEBUG)
+#define FITZ_DEBUG_LOCKING
+#endif
+
+#ifdef FITZ_DEBUG_LOCKING
+
+void fz_assert_lock_held(fz_context *ctx, int lock);
+void fz_assert_lock_not_held(fz_context *ctx, int lock);
+void fz_lock_debug_lock(fz_context *ctx, int lock);
+void fz_lock_debug_unlock(fz_context *ctx, int lock);
+
+#else
+
+#define fz_assert_lock_held(A,B) do { } while (0)
+#define fz_assert_lock_not_held(A,B) do { } while (0)
+#define fz_lock_debug_lock(A,B) do { } while (0)
+#define fz_lock_debug_unlock(A,B) do { } while (0)
+
+#endif /* !FITZ_DEBUG_LOCKING */
+
+static inline void
+fz_lock(fz_context *ctx, int lock)
+{
+	fz_lock_debug_lock(ctx, lock);
+	ctx->locks.lock(ctx->locks.user, lock);
+}
+
+static inline void
+fz_unlock(fz_context *ctx, int lock)
+{
+	fz_lock_debug_unlock(ctx, lock);
+	ctx->locks.unlock(ctx->locks.user, lock);
+}
+
+static inline void *
+fz_keep_imp(fz_context *ctx, void *p, int *refs)
+{
+	if (p)
+	{
+		(void)Memento_checkIntPointerOrNull(refs);
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+		{
+			(void)Memento_takeRef(p);
+			++*refs;
+		}
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+	}
+	return p;
+}
+
+static inline void *
+fz_keep_imp8(fz_context *ctx, void *p, int8_t *refs)
+{
+	if (p)
+	{
+		(void)Memento_checkBytePointerOrNull(refs);
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+		{
+			(void)Memento_takeRef(p);
+			++*refs;
+		}
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+	}
+	return p;
+}
+
+static inline void *
+fz_keep_imp16(fz_context *ctx, void *p, int16_t *refs)
+{
+	if (p)
+	{
+		(void)Memento_checkShortPointerOrNull(refs);
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+		{
+			(void)Memento_takeRef(p);
+			++*refs;
+		}
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+	}
+	return p;
+}
+
+static inline int
+fz_drop_imp(fz_context *ctx, void *p, int *refs)
+{
+	if (p)
+	{
+		int drop;
+		(void)Memento_checkIntPointerOrNull(refs);
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+		{
+			(void)Memento_dropIntRef(p);
+			drop = --*refs == 0;
+		}
+		else
+			drop = 0;
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+		return drop;
+	}
+	return 0;
+}
+
+static inline int
+fz_drop_imp8(fz_context *ctx, void *p, int8_t *refs)
+{
+	if (p)
+	{
+		int drop;
+		(void)Memento_checkBytePointerOrNull(refs);
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+		{
+			(void)Memento_dropByteRef(p);
+			drop = --*refs == 0;
+		}
+		else
+			drop = 0;
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+		return drop;
+	}
+	return 0;
+}
+
+static inline int
+fz_drop_imp16(fz_context *ctx, void *p, int16_t *refs)
+{
+	if (p)
+	{
+		int drop;
+		(void)Memento_checkShortPointerOrNull(refs);
+		fz_lock(ctx, FZ_LOCK_ALLOC);
+		if (*refs > 0)
+		{
+			(void)Memento_dropShortRef(p);
+			drop = --*refs == 0;
+		}
+		else
+			drop = 0;
+		fz_unlock(ctx, FZ_LOCK_ALLOC);
+		return drop;
+	}
+	return 0;
+}
+
 #endif

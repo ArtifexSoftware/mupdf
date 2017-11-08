@@ -1,4 +1,5 @@
 #include "mupdf/fitz.h"
+#include "fitz-imp.h"
 
 #include <assert.h>
 #include <limits.h>
@@ -660,9 +661,7 @@ fz_empty_store(fz_context *ctx)
 	fz_lock(ctx, FZ_LOCK_ALLOC);
 	/* Run through all the items in the store */
 	while (store->head)
-	{
 		evict(ctx, store->head); /* Drops then retakes lock */
-	}
 	fz_unlock(ctx, FZ_LOCK_ALLOC);
 }
 
