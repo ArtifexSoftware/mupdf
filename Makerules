@@ -77,31 +77,6 @@ else ifeq "$(OS)" "MACOS"
 
 HAVE_X11 ?= no
 
-HAVE_PTHREAD := yes
-SYS_PTHREAD_CFLAGS :=
-SYS_PTHREAD_LIBS := -lpthread
-
-# Mac OS X deprecated libcrypto, so the default is to not include it.
-HAVE_LIBCRYTO := no
-SYS_LIBCRYPTO_CFLAGS :=
-SYS_LIBCRYPTO_LIBS :=
-ifeq "$(HAVE_LIBCRYPTO)" "yes"
-SYS_LIBCRYPTO_CFLAGS := -DHAVE_LIBCRYPTO
-SYS_LIBCRYPTO_LIBS := -lcrypto
-endif
-
-SYS_CURL_DEPS := -lpthread
-
-SYS_X11_CFLAGS := -I/usr/X11R6/include
-SYS_X11_LIBS := -L/usr/X11R6/lib -lX11 -lXext
-
-SYS_FREETYPE_CFLAGS := $(shell freetype-config --cflags)
-SYS_FREETYPE_LIBS := $(shell freetype-config --libs)
-SYS_OPENJPEG_LIBS := -lopenjpeg
-SYS_JBIG2DEC_LIBS := -ljbig2dec
-SYS_LIBJPEG_LIBS := -ljpeg
-SYS_ZLIB_LIBS := -lz
-
 CC = xcrun cc
 AR = xcrun ar
 LD = xcrun ld
