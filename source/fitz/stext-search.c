@@ -184,7 +184,6 @@ fz_enumerate_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 	fz_stext_line *line;
 	fz_stext_char *ch;
 	int idx, start, end;
-	int hit_count;
 	int inside;
 
 	start = find_closest_in_page(page, a);
@@ -196,7 +195,6 @@ fz_enumerate_selection(fz_context *ctx, fz_stext_page *page, fz_point a, fz_poin
 	if (start == end)
 		return;
 
-	hit_count = 0;
 	inside = 0;
 	idx = 0;
 	for (block = page->first_block; block; block = block->next)

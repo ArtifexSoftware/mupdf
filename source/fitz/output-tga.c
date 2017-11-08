@@ -119,7 +119,6 @@ tga_write_band(fz_context *ctx, fz_band_writer *writer_, int stride, int band_st
 	tga_band_writer *writer = (tga_band_writer *)writer_;
 	fz_output *out = writer->super.out;
 	int w = writer->super.w;
-	int h = writer->super.h;
 	int n = writer->super.n;
 	int d = (writer->super.alpha && n > 1) ? 4 : (n == 1 ? 1 : 3);
 	int is_bgr = writer->is_bgr;
