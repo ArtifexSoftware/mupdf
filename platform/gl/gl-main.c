@@ -275,8 +275,11 @@ void load_page(void)
 	fz_invert_matrix(&page_inv_ctm, &page_ctm);
 
 	fz_drop_stext_page(ctx, text);
+	text = NULL;
 	fz_drop_link(ctx, links);
+	links = NULL;
 	fz_drop_page(ctx, page);
+	page = NULL;
 
 	page = fz_load_page(ctx, doc, currentpage);
 	links = fz_load_links(ctx, page);
