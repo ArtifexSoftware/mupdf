@@ -23,6 +23,12 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 #include <sys/time.h>
 #endif
 
+/* Allow for windows stdout being made binary */
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 /* Enable for helpful threading debug */
 /* #define DEBUG_THREADS(A) do { printf A; fflush(stdout); } while (0) */
 #define DEBUG_THREADS(A) do { } while (0)
@@ -1837,7 +1843,14 @@ int mudraw_main(int argc, char **argv)
 			out = fz_new_output_with_path(ctx, output, 0);
 	}
 	else
+	{
+#ifdef _WIN32
+		/* Windows specific code to make stdout binary. */
+		if (output_format != OUT_TEXT && output_format != OUT_STEXT && output_format != OUT_HTML && output_format != OUT_XHTML && output_format != OUT_TRACE)
+			setmode(fileno(stdout), O_BINARY);
+#endif
 		out = fz_stdout(ctx);
+	}
 
 	if (!output_file_per_page)
 		file_level_headers(ctx);
