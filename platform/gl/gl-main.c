@@ -675,8 +675,8 @@ static void do_page_selection(int x0, int y0, int x1, int y1)
 		int xofs = x0 - page_tex.x;
 		int yofs = y0 - page_tex.y;
 
-		fz_point page_a = (fz_point){ pt.x - xofs, pt.y - yofs };
-		fz_point page_b = (fz_point){ ui.x - xofs, ui.y - yofs };
+		fz_point page_a = { pt.x - xofs, pt.y - yofs };
+		fz_point page_b = { ui.x - xofs, ui.y - yofs };
 
 		fz_transform_point(&page_a, &page_inv_ctm);
 		fz_transform_point(&page_b, &page_inv_ctm);
