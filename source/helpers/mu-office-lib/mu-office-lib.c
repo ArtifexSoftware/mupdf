@@ -138,6 +138,16 @@ static void muoffice_unlock(void *user, int lock)
 	mu_unlock_mutex(&mu->mutexes[lock]);
 }
 
+static void muoffice_doc_lock(MuOfficeLib *mu)
+{
+	mu_lock_mutex(&mu->mutexes[DOCLOCK]);
+}
+
+static void muoffice_doc_unlock(MuOfficeLib *mu)
+{
+	mu_unlock_mutex(&mu->mutexes[DOCLOCK]);
+}
+
 static void fin_muoffice_locks(MuOfficeLib *mu)
 {
 	int i;
@@ -339,7 +349,7 @@ static void load_worker(void *arg)
 		return;
 	}
 
-	fz_lock(ctx, DOCLOCK);
+	muoffice_doc_lock(doc->mu);
 
 	fz_try(ctx)
 	{
@@ -377,7 +387,7 @@ static void load_worker(void *arg)
 		err = MuOfficeDocErrorType_UnableToLoadDocument;
 
 fail:
-	fz_unlock(ctx, DOCLOCK);
+	muoffice_doc_unlock(doc->mu);
 
 	if (err)
 		doc->error(doc->cookie, err);
@@ -672,7 +682,7 @@ MuError MuOfficeDoc_getPage(	MuOfficeDoc          *doc,
 	if (page == NULL)
 		return MuError_OOM;
 
-	fz_lock(ctx, DOCLOCK);
+	muoffice_doc_lock(doc->mu);
 
 	fz_try(ctx)
 	{
@@ -691,7 +701,7 @@ MuError MuOfficeDoc_getPage(	MuOfficeDoc          *doc,
 		err = MuError_Generic;
 	}
 
-	fz_unlock(ctx, DOCLOCK);
+	muoffice_doc_unlock(doc->mu);
 
 	return err;
 }
@@ -736,14 +746,14 @@ MuError MuOfficeDoc_run(MuOfficeDoc *doc, void (*fn)(fz_context *ctx, fz_documen
 	if (ctx == NULL)
 		return MuError_OOM;
 
-	fz_lock(ctx, DOCLOCK);
+	muoffice_doc_lock(doc->mu);
 
 	fz_try(ctx)
 		fn(ctx, doc->doc, arg);
 	fz_catch(ctx)
 		err = MuError_Generic;
 
-	fz_unlock(ctx, DOCLOCK);
+	muoffice_doc_unlock(doc->mu);
 
 	fz_drop_context(ctx);
 
@@ -946,14 +956,14 @@ MuError MuOfficePage_run(MuOfficePage *page, void (*fn)(fz_context *ctx, fz_page
 	if (ctx == NULL)
 		return MuError_OOM;
 
-	fz_lock(ctx, DOCLOCK);
+	muoffice_doc_lock(page->doc->mu);
 
 	fz_try(ctx)
 		fn(ctx, page->page, arg);
 	fz_catch(ctx)
 		err = MuError_Generic;
 
-	fz_unlock(ctx, DOCLOCK);
+	muoffice_doc_unlock(page->doc->mu);
 
 	fz_drop_context(ctx);
 
@@ -985,11 +995,11 @@ static void render_worker(void *arg)
 	{
 		if (page->list == NULL)
 		{
-			fz_lock(ctx, DOCLOCK);
+			muoffice_doc_lock(page->doc->mu);
 			locked = 1;
 			page->list = fz_new_display_list_from_page(ctx, page->page);
 			locked = 0;
-			fz_unlock(ctx, DOCLOCK);
+			muoffice_doc_unlock(page->doc->mu);
 		}
 		/* Make a pixmap from the bitmap */
 		if (!render->area_valid)
@@ -1032,7 +1042,7 @@ static void render_worker(void *arg)
 	fz_catch(ctx)
 	{
 		if (locked)
-			fz_unlock(ctx, DOCLOCK);
+			muoffice_doc_unlock(page->doc->mu);
 		err = MuError_Generic;
 		goto fail;
 	}
