@@ -447,7 +447,7 @@ fz_load_jpx_info(fz_context *ctx, const unsigned char *data, size_t size, int *w
 
 #define OPJ_STATIC
 #define OPJ_HAVE_INTTYPES_H
-#if !defined(_WIN32) && !defined(_WIN64)
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #define OPJ_HAVE_STDINT_H
 #endif
 #define USE_JPIP
