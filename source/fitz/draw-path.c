@@ -472,6 +472,48 @@ fz_add_arc(fz_context *ctx, sctx *s,
 	}
 }
 
+/* FLT_TINY * FLT_TINY is approximately FLT_EPSILON */
+#define FLT_TINY 3.4e-4F
+static int find_normal_vectors(float dx, float dy, float linewidth, float *dlx, float *dly)
+{
+	if (dx == 0)
+	{
+		if (dy < FLT_TINY && dy > - FLT_TINY)
+			goto tiny;
+		else if (dy > 0)
+			*dlx = linewidth;
+		else
+			*dlx = -linewidth;
+		*dly = 0;
+	}
+	else if (dy == 0)
+	{
+		if (dx < FLT_TINY && dx > - FLT_TINY)
+			goto tiny;
+		else if (dx > 0)
+			*dly = -linewidth;
+		else
+			*dly = linewidth;
+		*dlx = 0;
+	}
+	else
+	{
+		float sq = dx * dx + dy * dy;
+		float scale;
+
+		if (sq < FLT_EPSILON)
+			goto tiny;
+		scale = linewidth / sqrtf(sq);
+		*dlx = dy * scale;
+		*dly = -dx * scale;
+	}
+	return 0;
+tiny:
+	*dlx = 0;
+	*dly = 0;
+	return 1;
+}
+
 static void
 fz_add_line_join(fz_context *ctx, sctx *s, float ax, float ay, float bx, float by, float cx, float cy, int join_under)
 {
@@ -486,7 +528,6 @@ fz_add_line_join(fz_context *ctx, sctx *s, float ax, float ay, float bx, float b
 	float dmr2;
 	float scale;
 	float cross;
-	float len0, len1;
 	int rev = 0;
 
 	dx0 = bx - ax;
@@ -506,33 +547,11 @@ fz_add_line_join(fz_context *ctx, sctx *s, float ax, float ay, float bx, float b
 		rev = !rev;
 	}
 
-	len0 = dx0 * dx0 + dy0 * dy0;
-	if (len0 < FLT_EPSILON)
-	{
+	if (find_normal_vectors(dx0, dy0, linewidth, &dlx0, &dly0))
 		linejoin = FZ_LINEJOIN_BEVEL;
-		dlx0 = 0;
-		dly0 = 0;
-	}
-	else
-	{
-		scale = linewidth / sqrtf(len0);
-		dlx0 = dy0 * scale;
-		dly0 = -dx0 * scale;
-	}
 
-	len1 = dx1 * dx1 + dy1 * dy1;
-	if (len1 < FLT_EPSILON)
-	{
+	if (find_normal_vectors(dx1, dy1, linewidth, &dlx1, &dly1))
 		linejoin = FZ_LINEJOIN_BEVEL;
-		dlx1 = 0;
-		dly1 = 0;
-	}
-	else
-	{
-		scale = linewidth / sqrtf(len1);
-		dlx1 = dy1 * scale;
-		dly1 = -dx1 * scale;
-	}
 
 	dmx = (dlx0 + dlx1) * 0.5f;
 	dmy = (dly0 + dly1) * 0.5f;
@@ -750,9 +769,9 @@ fz_stroke_lineto(fz_context *ctx, sctx *s, float x, float y, int from_bezier)
 	float oy = s->seg[s->sn-1].y;
 	float dx = x - ox;
 	float dy = y - oy;
-	float scale, dlx, dly;
+	float dlx, dly;
 
-	if (dx * dx + dy * dy < FLT_EPSILON)
+	if (find_normal_vectors(dx, dy, s->linewidth, &dlx, &dly))
 	{
 		if (s->dot == ONLY_MOVES && (s->cap == FZ_LINECAP_ROUND || s->dash_list))
 			s->dot = NULL_LINE;
@@ -762,10 +781,6 @@ fz_stroke_lineto(fz_context *ctx, sctx *s, float x, float y, int from_bezier)
 
 	if (s->sn == 2)
 		fz_add_line_join(ctx, s, s->seg[0].x, s->seg[0].y, ox, oy, x, y, s->from_bezier & from_bezier);
-
-	scale = s->linewidth / sqrtf(dx * dx + dy * dy);
-	dlx = dy * scale;
-	dly = -dx * scale;
 
 #if 1
 	if (0 && dx == 0)
@@ -805,10 +820,15 @@ fz_stroke_closepath(fz_context *ctx, sctx *s)
 	if (s->sn == 2)
 	{
 		fz_stroke_lineto(ctx, s, s->beg[0].x, s->beg[0].y, 0);
-		if (s->seg[1].x == s->beg[0].x && s->seg[1].y == s->beg[0].y)
-			fz_add_line_join(ctx, s, s->seg[0].x, s->seg[0].y, s->beg[0].x, s->beg[0].y, s->beg[1].x, s->beg[1].y, 0);
-		else
-			fz_add_line_join(ctx, s, s->seg[1].x, s->seg[1].y, s->beg[0].x, s->beg[0].y, s->beg[1].x, s->beg[1].y, 0);
+		/* fz_stroke_lineto will *normally* end up with s->seg[1] being the x,y coords passed in.
+		 * As such, the following line should draw a linejoin between the closing segment of this
+		 * subpath (seg[0]->seg[1]) == (seg[0]->beg[0]) and the first segment of this subpath
+		 * (beg[0]->beg[1]).
+		 * In cases where the line was already at an x,y infinitessimally close to s->beg[0],
+		 * fz_stroke_lineto may exit without doing any processing. This leaves seg[0]->seg[1]
+		 * pointing at the penultimate line segment. Thus this draws a linejoin between that
+		 * penultimate segment and the end segment. This is what we want. */
+		fz_add_line_join(ctx, s, s->seg[0].x, s->seg[0].y, s->beg[0].x, s->beg[0].y, s->beg[1].x, s->beg[1].y, 0);
 	}
 	else if (s->dot == NULL_LINE)
 		fz_add_line_dot(ctx, s, s->beg[0].x, s->beg[0].y);
