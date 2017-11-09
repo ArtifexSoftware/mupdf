@@ -305,6 +305,12 @@ fz_flatten_fill_path(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, 
 	return fz_is_empty_irect(fz_intersect_irect(bbox, &local_bbox));
 }
 
+enum {
+	ONLY_MOVES = 0,
+	NON_NULL_LINE = 1,
+	NULL_LINE
+};
+
 typedef struct sctx
 {
 	fz_rasterizer *rast;
@@ -720,10 +726,8 @@ fz_stroke_flush(fz_context *ctx, sctx *s, fz_linecap start_cap, fz_linecap end_c
 		fz_add_line_cap(ctx, s, s->beg[1].x, s->beg[1].y, s->beg[0].x, s->beg[0].y, start_cap, 2);
 		fz_add_line_cap(ctx, s, s->seg[0].x, s->seg[0].y, s->seg[1].x, s->seg[1].y, end_cap, 0);
 	}
-	else if (s->dot)
-	{
+	else if (s->dot == NULL_LINE)
 		fz_add_line_dot(ctx, s, s->beg[0].x, s->beg[0].y);
-	}
 	fz_gap_rasterizer(ctx, s->rast);
 }
 
@@ -735,7 +739,7 @@ fz_stroke_moveto(fz_context *ctx, void *s_, float x, float y)
 	s->seg[0].x = s->beg[0].x = x;
 	s->seg[0].y = s->beg[0].y = y;
 	s->sn = 1;
-	s->dot = 0;
+	s->dot = ONLY_MOVES;
 	s->from_bezier = 0;
 }
 
@@ -750,10 +754,11 @@ fz_stroke_lineto(fz_context *ctx, sctx *s, float x, float y, int from_bezier)
 
 	if (dx * dx + dy * dy < FLT_EPSILON)
 	{
-		if (s->cap == FZ_LINECAP_ROUND || s->dash_list)
-			s->dot = 1;
+		if (s->dot == ONLY_MOVES && (s->cap == FZ_LINECAP_ROUND || s->dash_list))
+			s->dot = NULL_LINE;
 		return;
 	}
+	s->dot = NON_NULL_LINE;
 
 	if (s->sn == 2)
 		fz_add_line_join(ctx, s, s->seg[0].x, s->seg[0].y, ox, oy, x, y, s->from_bezier & from_bezier);
@@ -805,12 +810,12 @@ fz_stroke_closepath(fz_context *ctx, sctx *s)
 		else
 			fz_add_line_join(ctx, s, s->seg[1].x, s->seg[1].y, s->beg[0].x, s->beg[0].y, s->beg[1].x, s->beg[1].y, 0);
 	}
-	else if (s->dot)
+	else if (s->dot == NULL_LINE)
 		fz_add_line_dot(ctx, s, s->beg[0].x, s->beg[0].y);
 
 	s->seg[0] = s->beg[0];
 	s->sn = 1;
-	s->dot = 0;
+	s->dot = ONLY_MOVES;
 	s->from_bezier = 0;
 
 	fz_gap_rasterizer(ctx, s->rast);
@@ -1409,7 +1414,7 @@ do_flatten_stroke(fz_context *ctx, fz_rasterizer *rast, const fz_path *path, con
 	s.linewidth = linewidth * 0.5f; /* hairlines use a different value from the path value */
 	s.miterlimit = stroke->miterlimit;
 	s.sn = 0;
-	s.dot = 0;
+	s.dot = ONLY_MOVES;
 	s.toggle = 0;
 	s.offset = 0;
 	s.phase = 0;
