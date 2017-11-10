@@ -3041,18 +3041,18 @@ JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_search
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
  * Method:    highlight
- * Signature: (Lcom/artifex/mupdf/fitz/Rect;)[Lcom/artifex/mupdf/fitz/Rect;
+ * Signature: (Lcom/artifex/mupdf/fitz/Point;Lcom/artifex/mupdf/fitz/Point;)[Lcom/artifex/mupdf/fitz/Rect;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_artifex_mupdf_fitz_StructuredText_highlight
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText
  * Method:    copy
- * Signature: (Lcom/artifex/mupdf/fitz/Rect;)Ljava/lang/String;
+ * Signature: (Lcom/artifex/mupdf/fitz/Point;Lcom/artifex/mupdf/fitz/Point;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_StructuredText_copy
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     com_artifex_mupdf_fitz_StructuredText

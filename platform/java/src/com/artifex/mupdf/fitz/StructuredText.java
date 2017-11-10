@@ -16,8 +16,8 @@ public class StructuredText
 	}
 
 	public native Rect[] search(String needle);
-	public native Rect[] highlight(Rect rect);
-	public native String copy(Rect rect);
+	public native Rect[] highlight(Point a, Point b);
+	public native String copy(Point a, Point b);
 
 	public native TextBlock[] getBlocks();
 

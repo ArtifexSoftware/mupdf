@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef HAVE_ANDROID
 #include <android/log.h>
@@ -128,6 +129,8 @@ static jfieldID fid_PDFGraftMap_pointer;
 static jfieldID fid_PDFObject_pointer;
 static jfieldID fid_PDFObject_Null;
 static jfieldID fid_Pixmap_pointer;
+static jfieldID fid_Point_x;
+static jfieldID fid_Point_y;
 static jfieldID fid_Rect_x0;
 static jfieldID fid_Rect_x1;
 static jfieldID fid_Rect_y0;
@@ -539,6 +542,8 @@ static int find_fids(JNIEnv *env)
 
 	cls_Point = get_class(&err, env, PKG"Point");
 	mid_Point_init = get_method(&err, env, "<init>", "(FF)V");
+	fid_Point_x = get_field(&err, env, "x", "F");
+	fid_Point_y = get_field(&err, env, "y", "F");
 
 	cls_Rect = get_class(&err, env, PKG"Rect");
 	fid_Rect_x0 = get_field(&err, env, "x0", "F");
@@ -1665,6 +1670,22 @@ static inline fz_matrix from_Matrix(JNIEnv *env, jobject jmat)
 	mat.f = (*env)->GetFloatField(env, jmat, fid_Matrix_f);
 
 	return mat;
+}
+
+static inline fz_point from_Point(JNIEnv *env, jobject jpt)
+{
+	fz_point pt;
+
+	if (!jpt)
+	{
+		pt.x = pt.y = 0;
+		return pt;
+	}
+
+	pt.x = (*env)->GetFloatField(env, jpt, fid_Point_x);
+	pt.y = (*env)->GetFloatField(env, jpt, fid_Point_y);
+
+	return pt;
 }
 
 static inline fz_rect from_Rect(JNIEnv *env, jobject jrect)
@@ -5760,18 +5781,19 @@ FUN(StructuredText_search)(JNIEnv *env, jobject self, jstring jneedle)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jrect)
+FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2)
 {
 	fz_context *ctx = get_context(env);
 	fz_stext_page *text = from_StructuredText(env, self);
-	fz_rect rect = from_Rect(env, jrect);
-	fz_rect hits[256];
+	fz_point pt1 = from_Point(env, jpt1);
+	fz_point pt2 = from_Point(env, jpt2);
+	fz_rect hits[1000];
 	int n = 0;
 
 	if (!ctx || !text) return NULL;
 
 	fz_try(ctx)
-		n = fz_highlight_selection(ctx, text, rect, hits, nelem(hits));
+		n = fz_highlight_selection(ctx, text, pt1, pt2, hits, nelem(hits));
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
@@ -5782,11 +5804,12 @@ FUN(StructuredText_highlight)(JNIEnv *env, jobject self, jobject jrect)
 }
 
 JNIEXPORT jobject JNICALL
-FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jrect)
+FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jpt1, jobject jpt2)
 {
 	fz_context *ctx = get_context(env);
 	fz_stext_page *text = from_StructuredText(env, self);
-	fz_rect rect = from_Rect(env, jrect);
+	fz_point pt1 = from_Point(env, jpt1);
+	fz_point pt2 = from_Point(env, jpt2);
 	jobject jstring = NULL;
 	char *s = NULL;
 
@@ -5795,7 +5818,7 @@ FUN(StructuredText_copy)(JNIEnv *env, jobject self, jobject jrect)
 	fz_var(s);
 
 	fz_try(ctx)
-		s = fz_copy_selection(ctx, text, rect);
+		s = fz_copy_selection(ctx, text, pt1, pt2, 0);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
