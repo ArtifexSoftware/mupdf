@@ -1,30 +1,30 @@
 [submodule "thirdparty/jbig2dec"]
 	path = thirdparty/jbig2dec
-	url = ../jbig2dec.git
+	url = https://github.com/ArtifexSoftware/jbig2dec
 [submodule "thirdparty/mujs"]
 	path = thirdparty/mujs
-	url = ../mujs.git
+	url = https://github.com/ArtifexSoftware/mujs
 [submodule "thirdparty/freetype"]
 	path = thirdparty/freetype
-	url = ../thirdparty-freetype2.git
+	url = https://github.com/ArtifexSoftware/thirdparty-freetype2
 [submodule "thirdparty/harfbuzz"]
 	path = thirdparty/harfbuzz
-	url = ../thirdparty-harfbuzz.git
+	url = https://github.com/ArtifexSoftware/thirdparty-harfbuzz
 [submodule "thirdparty/jpeg"]
 	path = thirdparty/libjpeg
-	url = ../thirdparty-libjpeg.git
+	url = https://github.com/ArtifexSoftware/thirdparty-libjpeg
 [submodule "thirdparty/lcms2"]
 	path = thirdparty/lcms2
-	url = ../thirdparty-lcms2.git
+	url = https://github.com/ArtifexSoftware/thirdparty-lcms2
 [submodule "thirdparty/openjpeg"]
 	path = thirdparty/openjpeg
-	url = ../thirdparty-openjpeg.git
+	url = https://github.com/ArtifexSoftware/thirdparty-openjpeg
 [submodule "thirdparty/zlib"]
 	path = thirdparty/zlib
-	url = ../thirdparty-zlib.git
+	url = https://github.com/ArtifexSoftware/thirdparty-zlib
 [submodule "thirdparty/curl"]
 	path = thirdparty/curl
-	url = ../thirdparty-curl.git
+	url = https://github.com/ArtifexSoftware/thirdparty-curl
 [submodule "thirdparty/freeglut"]
 	path = thirdparty/freeglut
-	url = ../thirdparty-freeglut.git
+	url = https://git.ghostscript.com/thirdparty-freeglut.git
