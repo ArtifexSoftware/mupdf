@@ -137,16 +137,6 @@ void fz_free_argv(int argc, char **argv);
 #define S_ISDIR(mode) ((mode) & S_IFDIR)
 #endif
 
-#ifdef __ANDROID__
-int fz_android_fprintf(void *file, const char *fmt, ...);
-#ifndef NDEBUG
-/* Capture fprintf for stdout/stderr to the android logging
- * stream. Only do this in debug builds as this implies a
- * delay */
-#define fprintf fz_android_fprintf
-#endif
-#endif
-
 /* inline is standard in C++. For some compilers we can enable it within C too. */
 
 #ifndef __cplusplus
