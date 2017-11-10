@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=mutool
+Comment=All purpose tool for dealing with PDF files
+Exec=mutool %f
+Icon=mupdf
+Terminal=true
+Type=Application
+MimeType=application/pdf;application/x-pdf
+Categories=Graphics;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=mujstest
+Comment=Test tool for PDF files
+Exec=mujstest %f
+Icon=mupdf
+Terminal=true
+Type=Application
+MimeType=application/pdf;application/x-pdf
+Categories=Graphics;

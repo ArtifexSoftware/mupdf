@@ -10,23 +10,39 @@ script:
   - gcc -Wl,--no-as-needed `pkg-config --cflags --libs gtk+-2.0` platform/x11/file_chooser.c -o file_chooser ; strip file_chooser
   - ( cd thirdparty/ ; git submodule init ; git submodule update )
   - make prefix=/usr install DESTDIR=$(readlink -f appdir) ; find appdir/
-  - cp file_chooser appdir/usr/bin
-  - mkdir -p ./appdir/usr/share/applications ; cp platform/x11/mupdf.desktop ./appdir/usr/share/applications/
+
   - mkdir -p ./appdir/usr/share/hicolor/scalable/apps ; wget -c "https://ghostscript.com/~tor/mupdf-logo/mupdf-logo.svg" -O ./appdir/usr/share/hicolor/scalable/apps/mupdf.svg
   - rm -rf  ./appdir/usr/include appdir/usr/lib/*.a # Don't need to ship developer files in AppImage
-  - rm ./appdir/usr/bin/{mjsgen,mujstest,mupdf-x11,mupdf-x11-curl,muraster,mutool} # Redundant?
+  
+  - # First, MuPDF
+  - cp -r appdir mupdf.AppDir
+  - cp file_chooser mupdf.AppDir/usr/bin
+  - mkdir -p ./mupdf.AppDir/usr/share/applications ; cp platform/x11/mupdf.desktop ./mupdf.AppDir/usr/share/applications/
+  - rm ./mupdf.AppDir/usr/bin/{mjsgen,mujstest,mupdf-x11,mupdf-x11-curl,muraster,mutool}
   - wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
   - chmod a+x linuxdeployqt*.AppImage
   - unset QTDIR; unset QT_PLUGIN_PATH ; unset LD_LIBRARY_PATH
   - export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for naming the file
-  - ./linuxdeployqt*.AppImage ./appdir/usr/bin/file_chooser -bundle-non-qt-libs
-  - ./linuxdeployqt*.AppImage ./appdir/usr/share/applications/*.desktop -bundle-non-qt-libs
-  - ./linuxdeployqt*.AppImage ./appdir/usr/share/applications/*.desktop -appimage
-
+  - ./linuxdeployqt*.AppImage ./mupdf.AppDir/usr/bin/file_chooser -bundle-non-qt-libs
+  - ./linuxdeployqt*.AppImage ./mupdf.AppDir/usr/share/applications/*.desktop -bundle-non-qt-libs
+  - ./linuxdeployqt*.AppImage ./mupdf.AppDir/usr/share/applications/*.desktop -appimage
+  - # Next, mutool
+  - cp -r appdir mutool.AppDir
+  - rm ./mutool.AppDir/usr/bin/{mjsgen,mujstest,muraster,mupdf*}
+  - mkdir -p ./mutool.AppDir/usr/share/applications ; cp platform/x11/mutool.desktop ./mutool.AppDir/usr/share/applications/
+  - ./linuxdeployqt*.AppImage ./mutool.AppDir/usr/share/applications/*.desktop -bundle-non-qt-libs
+  - ./linuxdeployqt*.AppImage ./mutool.AppDir/usr/share/applications/*.desktop -appimage
+  - # Next, mujstest
+  - cp -r appdir mujstest.AppDir
+  - rm ./mujstest.AppDir/usr/bin/{mjsgen,mutool,muraster,mupdf*}
+  - mkdir -p ./mujstest.AppDir/usr/share/applications ; cp platform/x11/mujstest.desktop ./mujstest.AppDir/usr/share/applications/
+  - ./linuxdeployqt*.AppImage ./mujstest.AppDir/usr/share/applications/*.desktop -bundle-non-qt-libs
+  - ./linuxdeployqt*.AppImage ./mujstest.AppDir/usr/share/applications/*.desktop -appimage
+  
 after_success:
-  - find ./appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
+  - rm ./linuxdeployqt*.AppImage
   - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
-  - bash upload.sh ./MuPDF*.AppImage*
+  - bash upload.sh ./*.AppImage*
   
 branches:
   except:
