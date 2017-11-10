@@ -201,12 +201,6 @@ int fz_android_fprintf(void *file, const char *fmt, ...);
 /* ARM assembly specific defines */
 
 #ifdef ARCH_ARM
-#ifdef NDK_PROFILER
-extern void __gnu_mcount_nc(void);
-#define ENTER_PG "push {lr}\nbl __gnu_mcount_nc\n"
-#else
-#define ENTER_PG
-#endif
 
 /* If we're compiling as thumb code, then we need to tell the compiler
  * to enter and exit ARM mode around our assembly sections. If we move
@@ -217,12 +211,13 @@ extern void __gnu_mcount_nc(void);
  * and undefined by #pragma arm/#pragma thumb - but we can't define a
  * macro to track that. */
 #if defined(__thumb__) || defined(__thumb2__)
-#define ENTER_ARM ".balign 4\nmov r12,pc\nbx r12\n0:.arm\n" ENTER_PG
-#define ENTER_THUMB "9:.thumb\n" ENTER_PG
+#define ENTER_ARM ".balign 4\nmov r12,pc\nbx r12\n0:.arm\n"
+#define ENTER_THUMB "9:.thumb\n"
 #else
 #define ENTER_ARM
 #define ENTER_THUMB
 #endif
+
 #endif
 
 #ifdef CLUSTER

@@ -5,10 +5,6 @@
 #include <pthread.h>
 #endif
 
-#ifdef NDK_PROFILER
-#include "prof.h"
-#endif
-
 #include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
 #include "mupdf/pdf.h"
