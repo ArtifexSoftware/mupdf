@@ -1,3 +1,41 @@
+List of changes in MuPDF 1.12.0
+
+* New Android SDK:
+	New git repositories for the SDK projects:
+		* mupdf-android-fitz.git has the JNI bindings in a library.
+		* mupdf-android-viewer.git has the viewer as an activity in a library.
+		* mupdf-android-viewer-mini.git has the minimalist viewer as an activity in a library.
+	Binary packages in our Maven repository at http://maven.ghostscript.com:
+		* com.artifex.mupdf:fitz:1.12.+
+		* com.artifex.mupdf:viewer:1.12.+
+		* com.artifex.mupdf:mini:1.12.+
+
+* Color management:
+	* LCMS2 library for color management.
+	* CMYK rendering with overprint simulation.
+	* Spot color rendering.
+	* Transparency rendering fixes.
+
+* Structured text output improvements:
+	* Reworked structured text API.
+	* Faster text searching.
+	* Highlight and copy text by selecting lines instead of by area.
+	* New semantic XHTML output format.
+	* New layout preserving HTML output format.
+
+* Features and improvements:
+	* Improved non-AA rendering with new scan converter.
+	* Improved LARGEFILE support.
+	* Improved TIFF support.
+	* Improved documentation.
+	* PCLm output.
+	* PSD output.
+	* New "mutool trace" tool.
+	* New "mutool sign" tool (work in progress).
+	* Text redaction (work in progress).
+
+* Lots of bug fixes.
+
 List of changes in MuPDF 1.11
 
 * This is primarily a bug fix release.
