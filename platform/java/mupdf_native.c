@@ -1018,7 +1018,7 @@ static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 
 	fz_keep_image(ctx, img);
 	jimg = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
-	if (!jimg)
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
 	return jimg;
@@ -1031,7 +1031,7 @@ static inline jobject to_Matrix(fz_context *ctx, JNIEnv *env, const fz_matrix *m
 	if (!ctx) return NULL;
 
 	jctm = (*env)->NewObject(env, cls_Matrix, mid_Matrix_init, mat->a, mat->b, mat->c, mat->d, mat->e, mat->f);
-	if (!jctm)
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
 	return jctm;
@@ -1045,7 +1045,7 @@ static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
 
 	fz_keep_path(ctx, path);
 	jpath = (*env)->NewObject(env, cls_Path, mid_Path_init, jlong_cast(path));
-	if (!jpath)
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
 	return jpath;
@@ -1058,7 +1058,7 @@ static inline jobject to_Rect(fz_context *ctx, JNIEnv *env, const fz_rect *rect)
 	if (!ctx) return NULL;
 
 	jrect = (*env)->NewObject(env, cls_Rect, mid_Rect_init, rect->x0, rect->y0, rect->x1, rect->y1);
-	if (!jrect)
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
 	return jrect;
@@ -1072,7 +1072,7 @@ static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shd)
 
 	fz_keep_shade(ctx, shd);
 	jshd = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
-	if (!jshd)
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
 	return jshd;
@@ -1086,7 +1086,7 @@ static inline jobject to_StrokeState(fz_context *ctx, JNIEnv *env, const fz_stro
 
 	fz_keep_stroke_state(ctx, state);
 	jstate = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
-	if (!jstate)
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
 	return jstate;
@@ -1100,7 +1100,7 @@ static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
 
 	fz_keep_text(ctx, text);
 	jtext = (*env)->NewObject(env, cls_Text, mid_Text_init, jlong_cast(text));
-	if (!jtext)
+	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
 	return jtext;
