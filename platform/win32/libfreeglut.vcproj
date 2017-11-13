@@ -4,7 +4,7 @@
 	Version="8.00"
 	Name="libfreeglut"
 	ProjectGUID="{A1B75D29-9F5C-4A0F-B368-322A10477D0C}"
-	RootNamespace="libglfw"
+	RootNamespace="libfreeglut"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
