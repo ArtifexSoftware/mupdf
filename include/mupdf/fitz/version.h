@@ -1,6 +1,6 @@
 #ifndef MUPDF_FITZ_VERSION_H
 #define MUPDF_FITZ_VERSION_H
 #ifndef FZ_VERSION
-#define FZ_VERSION "1.11"
+#define FZ_VERSION "1.12.0"
 #endif
 #endif
