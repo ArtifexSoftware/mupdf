@@ -1078,7 +1078,8 @@ pdf_process_annot(fz_context *ctx, pdf_processor *proc, pdf_document *doc, pdf_p
 	if (flags & (PDF_ANNOT_IS_INVISIBLE | PDF_ANNOT_IS_HIDDEN))
 		return;
 
-	if (pdf_annot_has_open(ctx, annot) && !pdf_annot_is_open(ctx, annot))
+	/* popup annotations should never be drawn */
+	if (pdf_annot_type(ctx, annot) == PDF_ANNOT_POPUP)
 		return;
 
 	if (proc->usage)
