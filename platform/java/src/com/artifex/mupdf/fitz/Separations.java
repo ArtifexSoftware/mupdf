@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class Separations
 {
+	static {
+		Context.init();
+	}
+
 	private long pointer;
 
 	public static final int SEPARATION_COMPOSITE = 0;

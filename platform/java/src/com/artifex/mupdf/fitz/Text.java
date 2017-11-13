@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class Text implements TextWalker
 {
+	static {
+		Context.init();
+	}
+
 	private long pointer;
 
 	protected native void finalize();

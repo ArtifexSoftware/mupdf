@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class StrokeState
 {
+	static {
+		Context.init();
+	}
+
 	public static final int LINECAP_BUTT = 0;
 	public static final int LINECAP_ROUND = 1;
 	public static final int LINECAP_SQUARE = 2;

@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class DisplayList
 {
+	static {
+		Context.init();
+	}
+
 	private long pointer;
 
 	protected native void finalize();

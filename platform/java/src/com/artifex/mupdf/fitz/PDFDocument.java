@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class PDFDocument extends Document
 {
+	static {
+		Context.init();
+	}
+
 	private static native long newNative();
 
 	protected PDFDocument(long p) {

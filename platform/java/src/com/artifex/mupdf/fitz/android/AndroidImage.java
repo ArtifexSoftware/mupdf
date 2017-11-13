@@ -7,6 +7,10 @@ import com.artifex.mupdf.fitz.Image;
 
 public final class AndroidImage extends Image
 {
+	static {
+		Context.init();
+	}
+
 	private native long newAndroidImageFromBitmap(Bitmap bitmap, long mask);
 
 	public AndroidImage(Bitmap bitmap, AndroidImage mask)

@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class NativeDevice extends Device
 {
+	static {
+		Context.init();
+	}
+
 	private long nativeInfo;
 	private Object nativeResource;
 

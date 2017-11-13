@@ -11,6 +11,10 @@ import com.artifex.mupdf.fitz.RectI;
 
 public final class AndroidDrawDevice extends NativeDevice
 {
+	static {
+		Context.init();
+	}
+
 	private native long newNative(Bitmap bitmap, int xOrigin, int yOrigin, int patchX0, int patchY0, int patchX1, int patchY1);
 
 	public AndroidDrawDevice(Bitmap bitmap, int xOrigin, int yOrigin, int patchX0, int patchY0, int patchX1, int patchY1) {

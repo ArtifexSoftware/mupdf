@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class Rect
 {
+	static {
+		Context.init();
+	}
+
 	public float x0;
 	public float y0;
 	public float x1;

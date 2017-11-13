@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class PDFAnnotation extends Annotation
 {
+	static {
+		Context.init();
+	}
+
 	private PDFAnnotation(long p) { super(p); }
 
 	/* IMPORTANT: Keep in sync with mupdf/pdf/annot.h */

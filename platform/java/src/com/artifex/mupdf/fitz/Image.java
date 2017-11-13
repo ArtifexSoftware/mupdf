@@ -2,6 +2,10 @@ package com.artifex.mupdf.fitz;
 
 public class Image
 {
+	static {
+		Context.init();
+	}
+
 	protected long pointer;
 
 	protected native void finalize();
