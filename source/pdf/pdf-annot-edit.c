@@ -2,8 +2,15 @@
 #include "mupdf/pdf.h"
 
 #include <string.h>
+#include <time.h>
+
+#ifdef _WIN32
+#define timegm _mkgmtime
+#endif
 
 #define TEXT_ANNOT_SIZE (25.0f)
+
+#define isdigit(c) (c >= '0' && c <= '9')
 
 const char *
 pdf_string_from_annot_type(fz_context *ctx, fz_annot_type type)
@@ -279,7 +286,6 @@ static pdf_obj *open_subtypes[] = {
 	PDF_NAME_Text,
 	NULL,
 };
-
 
 int
 pdf_annot_has_open(fz_context *ctx, pdf_annot *annot)
@@ -843,6 +849,106 @@ pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_F, pdf_new_int(ctx, doc, flags));
 }
 
+static void
+pdf_format_date(fz_context *ctx, char *s, int n, time_t secs)
+{
+#ifdef _POSIX_SOURCE
+	struct tm tmbuf, *tm = gmtime_r(&secs, &tmbuf);
+#else
+	struct tm *tm = gmtime(&secs);
+#endif
+	if (!tm)
+		fz_strlcpy(s, "D:19700101000000Z", n);
+	else
+		strftime(s, n, "D:%Y%m%d%H%M%SZ", tm);
+}
+
+static int
+pdf_parse_date(fz_context *ctx, const char *s)
+{
+	int tz_sign, tz_hour, tz_min, tz_adj;
+	struct tm tm;
+	time_t utc;
+
+	if (!s)
+		return 0;
+
+	memset(&tm, 0, sizeof tm);
+	tm.tm_mday = 1;
+
+	tz_sign = 1;
+	tz_hour = 0;
+	tz_min = 0;
+
+	if (s[0] == 'D' && s[1] == ':')
+		s += 2;
+
+	if (!isdigit(s[0]) || !isdigit(s[1]) || !isdigit(s[2]) || !isdigit(s[3]))
+	{
+		fz_warn(ctx, "invalid date format (missing year)");
+		return 0;
+	}
+	tm.tm_year = (s[0]-'0')*1000 + (s[1]-'0')*100 + (s[2]-'0')*10 + (s[3]-'0') - 1900;
+	s += 4;
+
+	if (isdigit(s[0]) && isdigit(s[1]))
+	{
+		tm.tm_mon = (s[0]-'0')*10 + (s[1]-'0') - 1; /* month is 0-11 in struct tm */
+		s += 2;
+		if (isdigit(s[0]) && isdigit(s[1]))
+		{
+			tm.tm_mday = (s[0]-'0')*10 + (s[1]-'0');
+			s += 2;
+			if (isdigit(s[0]) && isdigit(s[1]))
+			{
+				tm.tm_hour = (s[0]-'0')*10 + (s[1]-'0');
+				s += 2;
+				if (isdigit(s[0]) && isdigit(s[1]))
+				{
+					tm.tm_min = (s[0]-'0')*10 + (s[1]-'0');
+					s += 2;
+					if (isdigit(s[0]) && isdigit(s[1]))
+					{
+						tm.tm_sec = (s[0]-'0')*10 + (s[1]-'0');
+						s += 2;
+					}
+				}
+			}
+		}
+	}
+
+	if (s[0] == 'Z')
+	{
+		s += 1;
+	}
+	else if ((s[0] == '-' || s[0] == '+') && isdigit(s[1]) && isdigit(s[2]))
+	{
+		tz_sign = (s[0] == '-') ? -1 : 1;
+		tz_hour = (s[1]-'0')*10 + (s[2]-'0');
+		s += 3;
+		if (s[0] == '\'' && isdigit(s[1]) && isdigit(s[2]))
+		{
+			tz_min = (s[1]-'0')*10 + (s[2]-'0');
+			s += 3;
+			if (s[0] == '\'')
+				s += 1;
+		}
+	}
+
+	if (s[0] != 0)
+		fz_warn(ctx, "invalid date format (garbage at end)");
+
+	utc = timegm(&tm);
+	if (utc == (time_t)-1)
+	{
+		fz_warn(ctx, "date overflow error");
+		return 0;
+	}
+
+	tz_adj = tz_sign * (tz_hour * 3600 + tz_min * 60);
+	return utc - tz_adj;
+}
+
 static pdf_obj *markup_subtypes[] = {
 	PDF_NAME_Text,
 	PDF_NAME_FreeText,
@@ -863,11 +969,24 @@ static pdf_obj *markup_subtypes[] = {
 	NULL,
 };
 
-const char *
-pdf_annot_date(fz_context *ctx, pdf_annot *annot)
+int
+pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 {
-	// TODO: PDF_NAME_M
-	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_CreationDate));
+	pdf_obj *date = pdf_dict_get(ctx, annot->obj, PDF_NAME_M);
+	return date ? pdf_parse_date(ctx, pdf_to_str_buf(ctx, date)) : 0;
+}
+
+void
+pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int secs)
+{
+	pdf_document *doc = annot->page->doc;
+	char s[40];
+
+	check_allowed_subtypes(ctx, annot, PDF_NAME_M, markup_subtypes);
+
+	pdf_format_date(ctx, s, sizeof s, secs);
+	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_M, pdf_new_string(ctx, doc, s, strlen(s)));
+	pdf_dirty_annot(ctx, annot);
 }
 
 int

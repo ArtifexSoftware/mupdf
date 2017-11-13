@@ -1,5 +1,7 @@
 package com.artifex.mupdf.fitz;
 
+import java.util.Date;
+
 public class PDFAnnotation extends Annotation
 {
 	static {
@@ -62,6 +64,14 @@ public class PDFAnnotation extends Annotation
 	public native void setInteriorColor(float[] color);
 	public native String getAuthor();
 	public native void setAuthor(String author);
+	protected native long getModificationDateNative();
+	protected native void setModificationDate(long time);
+	public Date getModificationDate() {
+		return new Date(getModificationDateNative());
+	}
+	public void setModificationDate(Date date) {
+		setModificationDate(date.getTime());
+	}
 
 	public native int[] getLineEndingStyles();
 	public native void setLineEndingStyles(int startStyle, int endStyle);

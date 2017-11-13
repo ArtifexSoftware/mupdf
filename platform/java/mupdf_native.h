@@ -1522,6 +1522,22 @@ JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setAuthor
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    getModificationDateNative
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_getModificationDateNative
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
+ * Method:    setModificationDate
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_artifex_mupdf_fitz_PDFAnnotation_setModificationDate
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFAnnotation
  * Method:    getLineEndingStyles
  * Signature: ()[I
  */
