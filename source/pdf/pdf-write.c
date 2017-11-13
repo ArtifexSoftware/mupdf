@@ -2789,6 +2789,8 @@ const char *fz_pdf_write_options_usage =
 	"\tlinearize: optimize for web browsers\n"
 	"\tsanitize: clean up graphics commands in content streams\n"
 	"\tgarbage: garbage collect unused objects\n"
+	"\tincremental: write changes as incremental update\n"
+	"\tcontinue-on-error: continue saving the document even if there is an error\n"
 	"\tor garbage=compact: ... and compact cross reference table\n"
 	"\tor garbage=deduplicate: ... and remove duplicate objects\n"
 	"\n";
