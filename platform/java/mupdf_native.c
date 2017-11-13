@@ -8464,7 +8464,11 @@ FUN(PDFAnnotation_setQuadPoints)(JNIEnv *env, jobject self, jobject jqps)
 	for (i = 0; i < n; i++)
 	{
 		jqp = (*env)->GetObjectArrayElement(env, jqps, i);
-		if ((*env)->ExceptionCheck(env)) return;
+		if ((*env)->ExceptionCheck(env))
+		{
+			fz_free(ctx, qp);
+			return;
+		}
 
 		if (!jqp)
 			continue;
@@ -8474,7 +8478,11 @@ FUN(PDFAnnotation_setQuadPoints)(JNIEnv *env, jobject self, jobject jqps)
 			m = 8;
 
 		(*env)->GetFloatArrayRegion(env, jqp, 0, m, &qp[i * 8]);
-		if ((*env)->ExceptionCheck(env)) return;
+		if ((*env)->ExceptionCheck(env))
+		{
+			fz_free(ctx, qp);
+			return;
+		}
 
 		if (m < 8)
 			memset(&qp[i * 8 + m], 0, (8 - m) * sizeof (float));
@@ -8727,7 +8735,11 @@ FUN(PDFAnnotation_setVertices)(JNIEnv *env, jobject self, jobject jvertices)
 		jni_rethrow(env, ctx);
 
 	(*env)->GetFloatArrayRegion(env, jvertices, 0, n, vertices);
-	if ((*env)->ExceptionCheck(env)) return;
+	if ((*env)->ExceptionCheck(env))
+	{
+		fz_free(ctx, vertices);
+		return;
+	}
 
 	fz_try(ctx)
 		pdf_set_annot_vertices(ctx, annot, n, vertices);
