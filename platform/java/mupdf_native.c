@@ -1004,6 +1004,8 @@ static inline jobject to_ColorSpace(fz_context *ctx, JNIEnv *env, fz_colorspace 
 
 	fz_keep_colorspace(ctx, cs);
 	jcs = (*env)->CallStaticObjectMethod(env, cls_ColorSpace, mid_ColorSpace_fromPointer, jlong_cast(cs));
+	if (!jcs)
+		fz_drop_colorspace(ctx, cs);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
@@ -1018,6 +1020,8 @@ static inline jobject to_Image(fz_context *ctx, JNIEnv *env, fz_image *img)
 
 	fz_keep_image(ctx, img);
 	jimg = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
+	if (!jimg)
+		fz_drop_image(ctx, img);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
@@ -1045,6 +1049,8 @@ static inline jobject to_Path(fz_context *ctx, JNIEnv *env, const fz_path *path)
 
 	fz_keep_path(ctx, path);
 	jpath = (*env)->NewObject(env, cls_Path, mid_Path_init, jlong_cast(path));
+	if (!jpath)
+		fz_drop_path(ctx, path);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
@@ -1072,6 +1078,8 @@ static inline jobject to_Shade(fz_context *ctx, JNIEnv *env, fz_shade *shd)
 
 	fz_keep_shade(ctx, shd);
 	jshd = (*env)->NewObject(env, cls_Shade, mid_Shade_init, jlong_cast(shd));
+	if (!jshd)
+		fz_drop_shade(ctx, shd);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
@@ -1086,6 +1094,8 @@ static inline jobject to_StrokeState(fz_context *ctx, JNIEnv *env, const fz_stro
 
 	fz_keep_stroke_state(ctx, state);
 	jstate = (*env)->NewObject(env, cls_StrokeState, mid_StrokeState_init, jlong_cast(state));
+	if (!jstate)
+		fz_drop_stroke_state(ctx, state);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
@@ -1100,6 +1110,8 @@ static inline jobject to_Text(fz_context *ctx, JNIEnv *env, const fz_text *text)
 
 	fz_keep_text(ctx, text);
 	jtext = (*env)->NewObject(env, cls_Text, mid_Text_init, jlong_cast(text));
+	if (!jtext)
+		fz_drop_text(ctx, text);
 	if ((*env)->ExceptionCheck(env))
 		fz_throw_java(ctx, env);
 
@@ -1139,6 +1151,8 @@ static inline jobject to_Annotation_safe(fz_context *ctx, JNIEnv *env, fz_annot 
 		jannot = (*env)->NewObject(env, cls_PDFAnnotation, mid_PDFAnnotation_init, jlong_cast(annot));
 	else
 		jannot = (*env)->NewObject(env, cls_Annotation, mid_Annotation_init, jlong_cast(annot));
+	if (!jannot)
+		fz_drop_annot(ctx, annot);
 
 	return jannot;
 }
@@ -1159,6 +1173,7 @@ static inline jobject to_ColorSpace_safe(fz_context *ctx, JNIEnv *env, fz_colors
 
 	fz_keep_colorspace(ctx, cs);
 	jcs = (*env)->CallStaticObjectMethod(env, cls_ColorSpace, mid_ColorSpace_fromPointer, jlong_cast(cs));
+	if (!jcs) fz_drop_colorspace(ctx, cs);
 	if ((*env)->ExceptionCheck(env)) return NULL;
 
 	return jcs;
@@ -1172,16 +1187,24 @@ static inline jobject to_Font_safe(fz_context *ctx, JNIEnv *env, fz_font *font)
 
 	fz_keep_font(ctx, font);
 	jfont = (*env)->NewObject(env, cls_Font, mid_Font_init, jlong_cast(font));
+	if (!jfont)
+		fz_drop_font(ctx, font);
 
 	return jfont;
 }
 
 static inline jobject to_Image_safe(fz_context *ctx, JNIEnv *env, fz_image *img)
 {
+	jobject jimg;
+
 	if (!ctx || !img) return NULL;
 
 	fz_keep_image(ctx, img);
-	return (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
+	jimg = (*env)->NewObject(env, cls_Image, mid_Image_init, jlong_cast(img));
+	if (!jimg)
+		fz_drop_image(ctx, img);
+
+	return jimg;
 }
 
 static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document *doc, fz_outline *outline)
@@ -1255,12 +1278,19 @@ static inline jobject to_Outline_safe(fz_context *ctx, JNIEnv *env, fz_document 
 
 static inline jobject to_PDFObject_safe(fz_context *ctx, JNIEnv *env, jobject pdf, pdf_obj *obj)
 {
+	jobject jobj;
+
 	if (!ctx || !pdf) return NULL;
 
 	if (obj == NULL)
 		return (*env)->GetStaticObjectField(env, cls_PDFObject, fid_PDFObject_Null);
+
 	pdf_keep_obj(ctx, obj);
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), pdf);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+
+	return jobj;
 }
 
 static inline jobject to_Point_safe(fz_context *ctx, JNIEnv *env, fz_point point)
@@ -6011,6 +6041,7 @@ FUN(PDFDocument_newNull)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 
@@ -6022,7 +6053,10 @@ FUN(PDFDocument_newNull)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6031,6 +6065,7 @@ FUN(PDFDocument_newBoolean)(JNIEnv *env, jobject self, jboolean b)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 
@@ -6042,7 +6077,10 @@ FUN(PDFDocument_newBoolean)(JNIEnv *env, jobject self, jboolean b)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6051,6 +6089,7 @@ FUN(PDFDocument_newInteger)(JNIEnv *env, jobject self, jint i)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 
@@ -6062,7 +6101,10 @@ FUN(PDFDocument_newInteger)(JNIEnv *env, jobject self, jint i)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6071,6 +6113,7 @@ FUN(PDFDocument_newReal)(JNIEnv *env, jobject self, jfloat f)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 
@@ -6082,7 +6125,10 @@ FUN(PDFDocument_newReal)(JNIEnv *env, jobject self, jfloat f)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6092,6 +6138,7 @@ FUN(PDFDocument_newString)(JNIEnv *env, jobject self, jstring jstring)
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
 	const char *s = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 	if (!jstring) { jni_throw_arg(env, "string must not be null"); return NULL; }
@@ -6109,7 +6156,10 @@ FUN(PDFDocument_newString)(JNIEnv *env, jobject self, jstring jstring)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6119,6 +6169,7 @@ FUN(PDFDocument_newName)(JNIEnv *env, jobject self, jstring jname)
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
 	const char *name = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 	if (!jname) { jni_throw_arg(env, "name must not be null"); return NULL; }
@@ -6136,7 +6187,10 @@ FUN(PDFDocument_newName)(JNIEnv *env, jobject self, jstring jname)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6145,6 +6199,7 @@ FUN(PDFDocument_newIndirect)(JNIEnv *env, jobject self, jint num, jint gen)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 
@@ -6156,7 +6211,10 @@ FUN(PDFDocument_newIndirect)(JNIEnv *env, jobject self, jint num, jint gen)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6165,6 +6223,7 @@ FUN(PDFDocument_newArray)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 
@@ -6176,7 +6235,10 @@ FUN(PDFDocument_newArray)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -6185,6 +6247,7 @@ FUN(PDFDocument_newDictionary)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_document *pdf = from_PDFDocument(env, self);
 	pdf_obj *obj = NULL;
+	jobject jobj;
 
 	if (!ctx || !pdf) return NULL;
 
@@ -6196,7 +6259,10 @@ FUN(PDFDocument_newDictionary)(JNIEnv *env, jobject self)
 		return NULL;
 	}
 
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
@@ -7101,6 +7167,7 @@ FUN(PDFObject_resolve)(JNIEnv *env, jobject self)
 	fz_context *ctx = get_context(env);
 	pdf_obj *obj = from_PDFObject(env, self);
 	pdf_obj *ind = NULL;
+	jobject jobj;
 
 	if (!ctx || !obj) return NULL;
 
@@ -7113,7 +7180,10 @@ FUN(PDFObject_resolve)(JNIEnv *env, jobject self)
 	}
 
 	pdf_keep_obj(ctx, ind);
-	return (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(ind), self);
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, ind);
+	return jobj;
 }
 
 JNIEXPORT jobject JNICALL
