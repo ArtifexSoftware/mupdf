@@ -10,6 +10,14 @@
 #include <unistd.h> /* for fork and exec */
 #endif
 
+#ifndef FREEGLUT
+/* freeglut extension no-ops */
+void glutExit(void) {}
+void glutMouseWheelFunc(void *fn) {}
+void glutInitErrorFunc(void *fn) {}
+void glutInitWarningFunc(void *fn) {}
+#endif
+
 enum
 {
 	/* Screen furniture: aggregate size of unusable space from title bars, task bars, window borders, etc */
@@ -1347,6 +1355,9 @@ static void run_main_loop(void)
 	if (doquit)
 	{
 		glutDestroyWindow(window);
+#ifdef __APPLE__
+		exit(1); /* GLUT on MacOS keeps running even with no windows */
+#endif
 		return;
 	}
 
@@ -1406,21 +1417,25 @@ static void run_main_loop(void)
 	ogl_assert(ctx, "swap buffers");
 }
 
-static void on_keyboard_ext(int key, int x, int y)
+#if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)
+static void on_keyboard(int key, int x, int y)
+#else
+static void on_keyboard(unsigned char key, int x, int y)
+#endif
 {
+#ifdef __APPLE__
+	/* Apple's GLUT has swapped DELETE and BACKSPACE */
+	if (key == 8)
+		key = 127;
+	else if (key == 127)
+		key = 8;
+#endif
 	ui.key = key;
 	ui.mod = glutGetModifiers();
 	ui.plain = !(ui.mod & ~GLUT_ACTIVE_SHIFT);
 	run_main_loop();
 	ui.key = ui.mod = ui.plain = 0;
 }
-
-#if GLUT_API_VERSION < 5
-static void on_keyboard(unsigned char key, int x, int y)
-{
-	on_keyboard_ext(key, x, y);
-}
-#endif
 
 static void on_special(int key, int x, int y)
 {
@@ -1429,7 +1444,9 @@ static void on_special(int key, int x, int y)
 	switch (key)
 	{
 	case GLUT_KEY_INSERT: ui.key = KEY_INSERT; break;
+#ifdef GLUT_KEY_DELETE
 	case GLUT_KEY_DELETE: ui.key = KEY_DELETE; break;
+#endif
 	case GLUT_KEY_RIGHT: ui.key = KEY_RIGHT; break;
 	case GLUT_KEY_LEFT: ui.key = KEY_LEFT; break;
 	case GLUT_KEY_DOWN: ui.key = KEY_DOWN; break;
@@ -1522,29 +1539,34 @@ static void on_warning(const char *fmt, va_list ap)
 	fprintf(stderr, "\n");
 }
 
-#if GLUT_API_VERSION < 5
-static char *clipboard_buffer = NULL;
-#endif
+#if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)
 
 void ui_set_clipboard(const char *buf)
 {
-#if GLUT_API_VERSION >= 5
 	glutSetClipboard(GLUT_CLIPBOARD, buf);
-#else
-	fz_free(ctx, clipboard_buffer);
-	clipboard_buffer = fz_strdup(ctx, buf);
-#endif
 }
 
 const char *ui_get_clipboard(void)
 {
-#if GLUT_API_VERSION >= 5
 	return glutGetClipboard(GLUT_CLIPBOARD);
-#else
-	return clipboard_buffer;
-	return NULL;
-#endif
 }
+
+#else
+
+static char *clipboard_buffer = NULL;
+
+void ui_set_clipboard(const char *buf)
+{
+	fz_free(ctx, clipboard_buffer);
+	clipboard_buffer = fz_strdup(ctx, buf);
+}
+
+const char *ui_get_clipboard(void)
+{
+	return clipboard_buffer;
+}
+
+#endif
 
 static void usage(const char *argv0)
 {
@@ -1647,8 +1669,8 @@ int main(int argc, char **argv)
 
 	glutReshapeFunc(on_reshape);
 	glutDisplayFunc(on_display);
-#if GLUT_API_VERSION >= 5
-	glutKeyboardExtFunc(on_keyboard_ext);
+#if defined(FREEGLUT) && (GLUT_API_VERSION >= 6)
+	glutKeyboardExtFunc(on_keyboard);
 #else
 	glutKeyboardFunc(on_keyboard);
 #endif

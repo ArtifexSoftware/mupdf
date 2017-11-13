@@ -663,6 +663,11 @@ endif
 
 ifneq "$(wildcard $(GLUT_DIR)/README)" ""
 
+ifeq "$(OS)" "MACOS"
+GLUT_CFLAGS := $(SYS_GLUT_CFLAGS)
+GLUT_LIBS := $(SYS_GLUT_LIBS)
+else
+
 HAVE_GLUT := yes
 
 GLUT_LIB := $(OUT)/libfreeglut.a
@@ -727,6 +732,8 @@ $(GLUT_OUT)/%.o: $(GLUT_DIR)/src/x11/%.c | $(GLUT_OUT)
 
 GLUT_CFLAGS := -I$(GLUT_DIR)/include
 GLUT_LIBS := -lGL -lX11 -lXrandr
+
+endif
 else
 GLUT_CFLAGS := $(SYS_GLUT_CFLAGS)
 GLUT_LIBS := $(SYS_GLUT_LIBS)

@@ -7,7 +7,11 @@ int win_open_file(char *buf, int len);
 #include "mupdf/fitz.h"
 #include "mupdf/ucdn.h"
 
+#ifndef __APPLE__
 #include <GL/freeglut.h>
+#else
+#include <GLUT/glut.h>
+#endif
 
 extern fz_context *ctx;
 
