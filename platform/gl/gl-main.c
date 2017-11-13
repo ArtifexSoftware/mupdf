@@ -176,6 +176,7 @@ static float oldzoom = DEFRES, currentzoom = DEFRES;
 static float oldrotate = 0, currentrotate = 0;
 static fz_matrix page_ctm, page_inv_ctm;
 static int loaded = 0;
+static int window = 0;
 
 static int isfullscreen = 0;
 static int showoutline = 0;
@@ -1343,6 +1344,12 @@ static void run_main_loop(void)
 
 	do_app();
 
+	if (doquit)
+	{
+		glutDestroyWindow(window);
+		return;
+	}
+
 	canvas_w = window_w - canvas_x;
 	canvas_h = window_h - canvas_y;
 
@@ -1636,7 +1643,7 @@ int main(int argc, char **argv)
 	glutInitWarningFunc(on_warning);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
 	glutInitWindowSize(page_tex.w, page_tex.h);
-	glutCreateWindow(title);
+	window = glutCreateWindow(title);
 
 	glutReshapeFunc(on_reshape);
 	glutDisplayFunc(on_display);
@@ -1666,8 +1673,7 @@ int main(int argc, char **argv)
 	render_page();
 	update_title();
 
-	while (!doquit)
-		glutMainLoopEvent();
+	glutMainLoop();
 
 	ui_finish_fonts(ctx);
 
