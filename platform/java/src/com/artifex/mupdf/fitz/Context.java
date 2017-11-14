@@ -8,7 +8,14 @@ package com.artifex.mupdf.fitz;
 // function.
 public class Context
 {
+	// Make sure to initialize inited before calling
+	// init() from the static block below.
 	private static boolean inited = false;
+
+	static {
+		init();
+	}
+
 	private static native int initNative();
 	public static native int gprfSupportedNative();
 
@@ -28,8 +35,6 @@ public class Context
 				throw new RuntimeException("cannot initialize mupdf library");
 		}
 	}
-
-	static { init(); }
 
 	// FIXME: We should support the store size being changed dynamically.
 	// This requires changes within the MuPDF core.

@@ -2,12 +2,12 @@ package com.artifex.mupdf.fitz.android;
 
 import android.graphics.Bitmap;
 
-import com.artifex.mupdf.fitz.NativeDevice;
-import com.artifex.mupdf.fitz.RectI;
-import com.artifex.mupdf.fitz.Rect;
-
-import com.artifex.mupdf.fitz.Page;
+import com.artifex.mupdf.fitz.Context;
 import com.artifex.mupdf.fitz.Matrix;
+import com.artifex.mupdf.fitz.NativeDevice;
+import com.artifex.mupdf.fitz.Page;
+import com.artifex.mupdf.fitz.Rect;
+import com.artifex.mupdf.fitz.RectI;
 
 public final class AndroidDrawDevice extends NativeDevice
 {
