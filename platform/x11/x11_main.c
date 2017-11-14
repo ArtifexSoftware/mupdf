@@ -842,9 +842,9 @@ static void signal_handler(int signal)
 		reloading = 1;
 }
 
-static void usage(void)
+static void usage(const char *argv0)
 {
-	fprintf(stderr, "usage: mupdf [options] file.pdf [page]\n");
+	fprintf(stderr, "usage: %s [options] file.pdf [page]\n", argv0);
 	fprintf(stderr, "\t-p -\tpassword\n");
 	fprintf(stderr, "\t-r -\tresolution\n");
 	fprintf(stderr, "\t-A -\tset anti-aliasing quality in bits (0=off, 8=best)\n");
@@ -907,12 +907,12 @@ int main(int argc, char **argv)
 		case 'U': gapp.layout_css = fz_optarg; break;
 		case 'X': gapp.layout_use_doc_css = 0; break;
 		case 'b': bps = (fz_optarg && *fz_optarg) ? fz_atoi(fz_optarg) : 4096; break;
-		default: usage();
+		default: usage(argv[0]);
 		}
 	}
 
 	if (argc - fz_optind == 0)
-		usage();
+		usage(argv[0]);
 
 	filename = argv[fz_optind++];
 
