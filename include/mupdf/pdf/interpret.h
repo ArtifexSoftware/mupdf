@@ -248,7 +248,7 @@ pdf_processor *pdf_new_filter_processor(fz_context *ctx, pdf_document *doc, pdf_
 
 typedef int (pdf_text_filter_fn)(fz_context *ctx, void *opaque, int *ucsbuf, int ucslen, fz_matrix *trm, fz_rect *bbox);
 
-typedef void (pdf_after_text_object_fn)(fz_context *ctx, void *opaque, pdf_document *doc, pdf_processor *chain);
+typedef void (pdf_after_text_object_fn)(fz_context *ctx, void *opaque, pdf_document *doc, pdf_processor *chain, const fz_matrix *ctm);
 
 /*
 	pdf_new_filter_processor_with_text_filter: Create a filter

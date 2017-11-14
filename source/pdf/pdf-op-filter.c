@@ -1035,7 +1035,16 @@ pdf_filter_ET(fz_context *ctx, pdf_processor *proc)
 	if (p->chain->op_ET)
 		p->chain->op_ET(ctx, p->chain);
 	if (p->after_text)
-		p->after_text(ctx, p->opaque, p->doc, p->chain);
+	{
+		fz_matrix ctm;
+
+		fz_concat(&ctm, &p->gstate->sent.ctm, &p->gstate->pending.ctm);
+		if (p->chain->op_q)
+			p->chain->op_q(ctx, p->chain);
+		p->after_text(ctx, p->opaque, p->doc, p->chain, &ctm);
+		if (p->chain->op_Q)
+			p->chain->op_Q(ctx, p->chain);
+	}
 }
 
 /* text state */
