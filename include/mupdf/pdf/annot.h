@@ -144,6 +144,7 @@ int pdf_annot_has_interior_color(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_line_ending_styles(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_icon_name(fz_context *ctx, pdf_annot *annot);
 int pdf_annot_has_open(fz_context *ctx, pdf_annot *annot);
+int pdf_annot_has_author(fz_context *ctx, pdf_annot *annot);
 
 int pdf_annot_flags(fz_context *ctx, pdf_annot *annot);
 void pdf_annot_rect(fz_context *ctx, pdf_annot *annot, fz_rect *rect);
@@ -184,19 +185,24 @@ void pdf_annot_vertex(fz_context *ctx, pdf_annot *annot, int i, float v[2]);
 void pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt);
 
 /*
+	pdf_copy_annot_contents: return a copy of the contents of an annotation.
+*/
+char *pdf_copy_annot_contents(fz_context *ctx, pdf_annot *annot);
+
+/*
 	pdf_set_annot_contents: set the contents of an annotation.
 */
 void pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text);
 
 /*
-	pdf_annot_contents: return the contents of an annotation.
+	pdf_copy_annot_author: return a copy of the author of an annotation.
 */
-const char *pdf_annot_contents(fz_context *ctx, pdf_annot *annot);
+char *pdf_copy_annot_author(fz_context *ctx, pdf_annot *annot);
 
 /*
-	pdf_annot_author: return the author of an annotation.
+	pdf_set_annot_author: set the author of an annotation.
 */
-const char *pdf_annot_author(fz_context *ctx, pdf_annot *annot);
+void pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author);
 
 /*
 	pdf_annot_author: return the date of an annotation.

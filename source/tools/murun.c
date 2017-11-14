@@ -3988,12 +3988,21 @@ static void ffi_PDFAnnotation_getContents(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
-	const char *contents = NULL;
+	char *contents = NULL;
+
 	fz_try(ctx)
-		contents = pdf_annot_contents(ctx, annot);
+		contents = pdf_copy_annot_contents(ctx, annot);
 	fz_catch(ctx)
 		rethrow(J);
+
+	if (js_try(J)) {
+		fz_free(ctx, contents);
+		js_throw(J);
+	}
 	js_pushstring(J, contents);
+	js_endtry(J);
+
+	fz_free(ctx, contents);
 }
 
 static void ffi_PDFAnnotation_setContents(js_State *J)
@@ -4266,6 +4275,39 @@ static void ffi_PDFAnnotation_setInkList(js_State *J)
 		fz_free(ctx, counts);
 		fz_free(ctx, points);
 	}
+	fz_catch(ctx)
+		rethrow(J);
+}
+
+static void ffi_PDFAnnotation_getAuthor(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	char *author = NULL;
+
+	fz_try(ctx)
+		author = pdf_copy_annot_author(ctx, annot);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J)) {
+		fz_free(ctx, author);
+		js_throw(J);
+	}
+	js_pushstring(J, author);
+	js_endtry(J);
+
+	fz_free(ctx, author);
+}
+
+static void ffi_PDFAnnotation_setAuthor(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_annot *annot = js_touserdata(J, 0, "pdf_annot");
+	const char *author = js_tostring(J, 1);
+
+	fz_try(ctx)
+		pdf_set_annot_author(ctx, annot, author);
 	fz_catch(ctx)
 		rethrow(J);
 }
@@ -4599,6 +4641,8 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFAnnotation.setQuadPoints", ffi_PDFAnnotation_setQuadPoints, 1);
 		jsB_propfun(J, "PDFAnnotation.getInkList", ffi_PDFAnnotation_getInkList, 0);
 		jsB_propfun(J, "PDFAnnotation.setInkList", ffi_PDFAnnotation_setInkList, 1);
+		jsB_propfun(J, "PDFAnnotation.getAuthor", ffi_PDFAnnotation_getAuthor, 0);
+		jsB_propfun(J, "PDFAnnotation.setAuthor", ffi_PDFAnnotation_setAuthor, 1);
 		jsB_propfun(J, "PDFAnnotation.updateAppearance", ffi_PDFAnnotation_updateAppearance, 0);
 	}
 	js_setregistry(J, "pdf_annot");

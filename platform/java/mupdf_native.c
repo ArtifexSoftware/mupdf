@@ -8213,19 +8213,22 @@ FUN(PDFAnnotation_getContents)(JNIEnv *env, jobject self)
 {
 	fz_context *ctx = get_context(env);
 	pdf_annot *annot = from_PDFAnnotation(env, self);
-	const char *contents = NULL;
+	char *contents = NULL;
+	jstring result;
 
 	if (!ctx || !annot) return NULL;
 
 	fz_try(ctx)
-		contents = pdf_annot_contents(ctx, annot);
+		contents = pdf_copy_annot_contents(ctx, annot);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
 		return NULL;
 	}
 
-	return (*env)->NewStringUTF(env, contents);
+	result = (*env)->NewStringUTF(env, contents);
+	fz_free(ctx, contents);
+	return result;
 }
 
 JNIEXPORT void JNICALL
@@ -8247,6 +8250,52 @@ FUN(PDFAnnotation_setContents)(JNIEnv *env, jobject self, jstring jcontents)
 	fz_always(ctx)
 		if (contents)
 			(*env)->ReleaseStringUTFChars(env, jcontents, contents);
+	fz_catch(ctx)
+		jni_rethrow(env, ctx);
+}
+
+JNIEXPORT jstring JNICALL
+FUN(PDFAnnotation_getAuthor)(JNIEnv *env, jobject self)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	char *author = NULL;
+	jstring result;
+
+	if (!ctx || !annot) return NULL;
+
+	fz_try(ctx)
+		author = pdf_copy_annot_author(ctx, annot);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	result = (*env)->NewStringUTF(env, author);
+	fz_free(ctx, author);
+	return result;
+}
+
+JNIEXPORT void JNICALL
+FUN(PDFAnnotation_setAuthor)(JNIEnv *env, jobject self, jstring jauthor)
+{
+	fz_context *ctx = get_context(env);
+	pdf_annot *annot = from_PDFAnnotation(env, self);
+	const char *author = NULL;
+
+	if (!ctx || !annot) return;
+	if (jauthor)
+	{
+		author = (*env)->GetStringUTFChars(env, jauthor, NULL);
+		if (!author) return;
+	}
+
+	fz_try(ctx)
+		pdf_set_annot_author(ctx, annot, author);
+	fz_always(ctx)
+		if (author)
+			(*env)->ReleaseStringUTFChars(env, jauthor, author);
 	fz_catch(ctx)
 		jni_rethrow(env, ctx);
 }

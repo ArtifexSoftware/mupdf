@@ -259,17 +259,18 @@ pdf_set_annot_rect(fz_context *ctx, pdf_annot *annot, const fz_rect *rect)
 	pdf_dirty_annot(ctx, annot);
 }
 
-const char *
-pdf_annot_contents(fz_context *ctx, pdf_annot *annot)
+char *
+pdf_copy_annot_contents(fz_context *ctx, pdf_annot *annot)
 {
-	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Contents));
+	return pdf_to_utf8(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_Contents));
 }
 
 void
 pdf_set_annot_contents(fz_context *ctx, pdf_annot *annot, const char *text)
 {
 	pdf_document *doc = annot->page->doc;
-	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Contents, pdf_new_string(ctx, doc, text, strlen(text)));
+	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_Contents,
+			pdf_new_text_string(ctx, doc, text));
 	pdf_dirty_annot(ctx, annot);
 }
 
@@ -842,17 +843,53 @@ pdf_set_text_annot_position(fz_context *ctx, pdf_annot *annot, fz_point pt)
 	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_F, pdf_new_int(ctx, doc, flags));
 }
 
-const char *
-pdf_annot_author(fz_context *ctx, pdf_annot *annot)
-{
-	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_T));
-}
+static pdf_obj *markup_subtypes[] = {
+	PDF_NAME_Text,
+	PDF_NAME_FreeText,
+	PDF_NAME_Line,
+	PDF_NAME_Square,
+	PDF_NAME_Circle,
+	PDF_NAME_Polygon,
+	PDF_NAME_PolyLine,
+	PDF_NAME_Highlight,
+	PDF_NAME_Underline,
+	PDF_NAME_Squiggly,
+	PDF_NAME_StrikeOut,
+	PDF_NAME_Stamp,
+	PDF_NAME_Caret,
+	PDF_NAME_Ink,
+	PDF_NAME_FileAttachment,
+	PDF_NAME_Sound,
+	NULL,
+};
 
 const char *
 pdf_annot_date(fz_context *ctx, pdf_annot *annot)
 {
 	// TODO: PDF_NAME_M
 	return pdf_to_str_buf(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_CreationDate));
+}
+
+int
+pdf_annot_has_author(fz_context *ctx, pdf_annot *annot)
+{
+	return is_allowed_subtype(ctx, annot, PDF_NAME_T, markup_subtypes);
+}
+
+char *
+pdf_copy_annot_author(fz_context *ctx, pdf_annot *annot)
+{
+	check_allowed_subtypes(ctx, annot, PDF_NAME_T, markup_subtypes);
+	return pdf_to_utf8(ctx, pdf_dict_get(ctx, annot->obj, PDF_NAME_T));
+}
+
+void
+pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author)
+{
+	pdf_document *doc = annot->page->doc;
+	check_allowed_subtypes(ctx, annot, PDF_NAME_T, markup_subtypes);
+	pdf_dict_put_drop(ctx, annot->obj, PDF_NAME_T, pdf_new_text_string(ctx, doc, author));
+	pdf_dirty_annot(ctx, annot);
 }
 
 pdf_obj *

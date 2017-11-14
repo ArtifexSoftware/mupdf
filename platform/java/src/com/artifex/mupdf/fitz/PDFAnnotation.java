@@ -60,6 +60,8 @@ public class PDFAnnotation extends Annotation
 	public native void setColor(float[] color);
 	public native float[] getInteriorColor();
 	public native void setInteriorColor(float[] color);
+	public native String getAuthor();
+	public native void setAuthor(String author);
 
 	public native int[] getLineEndingStyles();
 	public native void setLineEndingStyles(int startStyle, int endStyle);
