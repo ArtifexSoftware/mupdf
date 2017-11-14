@@ -1021,6 +1021,8 @@ pdf_filter_BT(fz_context *ctx, pdf_processor *proc)
 {
 	pdf_filter_processor *p = (pdf_filter_processor*)proc;
 	filter_flush(ctx, p, 0);
+	p->tos.tm = fz_identity;
+	p->tos.tlm = fz_identity;
 	if (p->chain->op_BT)
 		p->chain->op_BT(ctx, p->chain);
 }
