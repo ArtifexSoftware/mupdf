@@ -3665,6 +3665,9 @@ void fz_set_icc_bgr(fz_context *ctx, fz_colorspace *cs)
 fz_colorspace *
 fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf)
 {
+#ifdef NO_ICC
+	fz_throw(ctx, FZ_ERROR_GENERIC, "ICC Profiles not supported in NO_ICC build");
+#else
 	fz_colorspace *cs = NULL;
 	fz_iccprofile *profile;
 	int is_lab = 0;
@@ -3720,6 +3723,7 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 		fz_free(ctx, profile);
 	}
 	return cs;
+#endif
 }
 
 fz_colorspace *fz_new_icc_colorspace_from_file(fz_context *ctx, const char *name, const char *path)
