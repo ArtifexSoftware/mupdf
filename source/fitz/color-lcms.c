@@ -1,4 +1,6 @@
 #include "mupdf/fitz.h"
+
+#ifndef NO_ICC
 #include "lcms2art.h"
 #include "lcms2art_plugin.h"
 #include "colorspace-imp.h"
@@ -356,3 +358,4 @@ fz_cmm_engine fz_cmm_engine_lcms = {
 	fz_lcms_fin_profile,
 	cmsFLAGS_NOWHITEONWHITEFIXUP
 };
+#endif

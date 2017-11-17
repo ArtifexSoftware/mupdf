@@ -575,8 +575,7 @@ $(LCMS2_OUT)/%.o: $(LCMS2_DIR)/src/%.c | $(LCMS2_OUT)
 
 LCMS2_CFLAGS := -I$(LCMS2_DIR)/include
 else
-LCMS2_CFLAGS := $(SYS_LCMS2_CFLAGS)
-LCMS2_LIBS := $(SYS_LCMS2_LIBS)
+LCMS2_CFLAGS := -DNO_ICC
 endif
 
 # --- cURL ---
