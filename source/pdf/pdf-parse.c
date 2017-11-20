@@ -317,6 +317,46 @@ pdf_to_utf8_name(fz_context *ctx, pdf_document *doc, pdf_obj *src)
 	return dst;
 }
 
+static pdf_obj *
+pdf_new_text_string_utf16be(fz_context *ctx, pdf_document *doc, const char *s)
+{
+	int c, i = 0, n = fz_utflen(s);
+	unsigned char *p = fz_malloc(ctx, n * 2 + 2);
+	pdf_obj *obj;
+	p[i++] = 254;
+	p[i++] = 255;
+	while (*s)
+	{
+		s += fz_chartorune(&c, s);
+		p[i++] = (c>>8) & 0xff;
+		p[i++] = (c) & 0xff;
+	}
+	fz_try(ctx)
+		obj = pdf_new_string(ctx, doc, (char*)p, i);
+	fz_always(ctx)
+		fz_free(ctx, p);
+	fz_catch(ctx)
+		fz_rethrow(ctx);
+	return obj;
+}
+
+/*
+ * Create a PDF 'text string' by encoding input string as either ASCII or UTF-16BE.
+ * In theory, we could also use PDFDocEncoding.
+ */
+pdf_obj *
+pdf_new_text_string(fz_context *ctx, pdf_document *doc, const char *s)
+{
+	int i = 0;
+	while (s[i] != 0)
+	{
+		if (((unsigned char)s[i]) >= 128)
+			return pdf_new_text_string_utf16be(ctx, doc, s);
+		++i;
+	}
+	return pdf_new_string(ctx, doc, s, i);
+}
+
 pdf_obj *
 pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *buf)
 {
