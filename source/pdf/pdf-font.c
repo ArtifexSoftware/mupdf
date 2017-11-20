@@ -598,15 +598,18 @@ select_truetype_cmap(FT_Face face, int symbolic)
 	/* Then look for a Microsoft Unicode cmap */
 	for (i = 0; i < face->num_charmaps; i++)
 		if (face->charmaps[i]->platform_id == 3 && face->charmaps[i]->encoding_id == 1)
-			return face->charmaps[i];
+			if (FT_Get_CMap_Format(face->charmaps[i]) != -1)
+				return face->charmaps[i];
 
 	/* Finally look for an Apple MacRoman cmap */
 	for (i = 0; i < face->num_charmaps; i++)
 		if (face->charmaps[i]->platform_id == 1 && face->charmaps[i]->encoding_id == 0)
-			return face->charmaps[i];
+			if (FT_Get_CMap_Format(face->charmaps[i]) != -1)
+				return face->charmaps[i];
 
 	if (face->num_charmaps > 0)
-		return face->charmaps[0];
+		if (FT_Get_CMap_Format(face->charmaps[0]) != -1)
+			return face->charmaps[0];
 	return NULL;
 }
 
