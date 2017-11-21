@@ -1693,6 +1693,14 @@ JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_newString
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFDocument
+ * Method:    newByteString
+ * Signature: ([B)Lcom/artifex/mupdf/fitz/PDFObject;
+ */
+JNIEXPORT jobject JNICALL Java_com_artifex_mupdf_fitz_PDFDocument_newByteString
+  (JNIEnv *, jobject, jbyteArray);
+
+/*
+ * Class:     com_artifex_mupdf_fitz_PDFDocument
  * Method:    newName
  * Signature: (Ljava/lang/String;)Lcom/artifex/mupdf/fitz/PDFObject;
  */

@@ -3370,12 +3370,48 @@ static void ffi_PDFDocument_newString(js_State *J)
 {
 	fz_context *ctx = js_getcontext(J);
 	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
-	// TODO: convert array of numbers to raw string
-	// TODO: convert to UCS-2 or PDFDocEncoding
 	const char *val = js_tostring(J, 1);
 	pdf_obj *obj = NULL;
+
 	fz_try(ctx)
-		obj = pdf_new_string(ctx, pdf, val, strlen(val));
+		obj = pdf_new_text_string(ctx, pdf, val);
+	fz_catch(ctx)
+		rethrow(J);
+	ffi_pushobj(J, obj);
+}
+
+static void ffi_PDFDocument_newByteString(js_State *J)
+{
+	fz_context *ctx = js_getcontext(J);
+	pdf_document *pdf = js_touserdata(J, 0, "pdf_document");
+	int n, i;
+	char *buf;
+	pdf_obj *obj = NULL;
+
+	n = js_getlength(J, 1);
+
+	fz_try(ctx)
+		buf = fz_malloc(ctx, n);
+	fz_catch(ctx)
+		rethrow(J);
+
+	if (js_try(J)) {
+		fz_free(ctx, buf);
+		js_throw(J);
+	}
+
+	for (i = 0; i < n; ++i) {
+		js_getindex(J, 1, i);
+		buf[i] = js_tonumber(J, -1);
+		js_pop(J, 1);
+	}
+
+	js_endtry(J);
+
+	fz_try(ctx)
+		obj = pdf_new_string(ctx, pdf, buf, n);
+	fz_always(ctx)
+		fz_free(ctx, buf);
 	fz_catch(ctx)
 		rethrow(J);
 	ffi_pushobj(J, obj);
@@ -4524,6 +4560,7 @@ int murun_main(int argc, char **argv)
 		jsB_propfun(J, "PDFDocument.newInteger", ffi_PDFDocument_newInteger, 1);
 		jsB_propfun(J, "PDFDocument.newReal", ffi_PDFDocument_newReal, 1);
 		jsB_propfun(J, "PDFDocument.newString", ffi_PDFDocument_newString, 1);
+		jsB_propfun(J, "PDFDocument.newByteString", ffi_PDFDocument_newByteString, 1);
 		jsB_propfun(J, "PDFDocument.newName", ffi_PDFDocument_newName, 1);
 		jsB_propfun(J, "PDFDocument.newIndirect", ffi_PDFDocument_newIndirect, 2);
 		jsB_propfun(J, "PDFDocument.newArray", ffi_PDFDocument_newArray, 1);

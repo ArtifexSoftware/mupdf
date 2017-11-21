@@ -30,6 +30,7 @@ public class PDFDocument extends Document
 	public native PDFObject newInteger(int i);
 	public native PDFObject newReal(float f);
 	public native PDFObject newString(String s);
+	public native PDFObject newByteString(byte[] bs);
 	public native PDFObject newName(String name);
 	public native PDFObject newIndirect(int num, int gen);
 	public native PDFObject newArray();

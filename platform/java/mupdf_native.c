@@ -6152,9 +6152,54 @@ FUN(PDFDocument_newString)(JNIEnv *env, jobject self, jstring jstring)
 	if (!s) return NULL;
 
 	fz_try(ctx)
-		obj = pdf_new_string(ctx, pdf, s, strlen(s));
+		obj = pdf_new_text_string(ctx, pdf, s);
 	fz_always(ctx)
 		(*env)->ReleaseStringUTFChars(env, jstring, s);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	jobj = (*env)->NewObject(env, cls_PDFObject, mid_PDFObject_init, jlong_cast(obj), self);
+	if (!jobj)
+		pdf_drop_obj(ctx, obj);
+	return jobj;
+}
+
+JNIEXPORT jobject JNICALL
+FUN(PDFDocument_newByteString)(JNIEnv *env, jobject self, jobject jbs)
+{
+	fz_context *ctx = get_context(env);
+	pdf_document *pdf = from_PDFDocument(env, self);
+	pdf_obj *obj = NULL;
+	jbyte *bs;
+	size_t bslen;
+	jobject jobj;
+
+	if (!ctx || !pdf) return NULL;
+	if (!jbs) { jni_throw_arg(env, "bs must not be null"); return NULL; }
+
+	bslen = (*env)->GetArrayLength(env, jbs);
+
+	fz_try(ctx)
+		bs = fz_malloc(ctx, bslen);
+	fz_catch(ctx)
+	{
+		jni_rethrow(env, ctx);
+		return NULL;
+	}
+
+	(*env)->GetByteArrayRegion(env, jbs, 0, bslen, bs);
+	if ((*env)->ExceptionCheck(env)) {
+		fz_free(ctx, bs);
+		return NULL;
+	}
+
+	fz_try(ctx)
+		obj = pdf_new_string(ctx, pdf, (char *) bs, bslen);
+	fz_always(ctx)
+		fz_free(ctx, bs);
 	fz_catch(ctx)
 	{
 		jni_rethrow(env, ctx);
