@@ -1560,7 +1560,7 @@ static fz_buffer *hexbuf(fz_context *ctx, const unsigned char *p, size_t n)
 {
 	static const char hex[17] = "0123456789abcdef";
 	int x = 0;
-	size_t len = n * 2 + (n / 32) + 2;
+	size_t len = n * 2 + (n / 32) + 1;
 	unsigned char *data = fz_malloc(ctx, len);
 	fz_buffer *buf = fz_new_buffer_from_data(ctx, data, len);
 
@@ -1577,7 +1577,6 @@ static fz_buffer *hexbuf(fz_context *ctx, const unsigned char *p, size_t n)
 	}
 
 	*data++ = '>';
-	*data++ = '\n';
 
 	return buf;
 }
