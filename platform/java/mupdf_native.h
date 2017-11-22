@@ -2043,14 +2043,6 @@ JNIEXPORT jstring JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asName
 
 /*
  * Class:     com_artifex_mupdf_fitz_PDFObject
- * Method:    asByteName
- * Signature: ()[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_artifex_mupdf_fitz_PDFObject_asByteName
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_artifex_mupdf_fitz_PDFObject
  * Method:    asString
  * Signature: ()Ljava/lang/String;
  */

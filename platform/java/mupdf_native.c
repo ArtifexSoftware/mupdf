@@ -7861,39 +7861,6 @@ FUN(PDFObject_asName)(JNIEnv *env, jobject self)
 	return (*env)->NewStringUTF(env, str);
 }
 
-JNIEXPORT jobject JNICALL
-FUN(PDFObject_asByteName)(JNIEnv *env, jobject self)
-{
-	fz_context *ctx = get_context(env);
-	pdf_obj *obj = from_PDFObject(env, self);
-	const char *str = NULL;
-	jobject jbs = NULL;
-	jbyte *bs = NULL;
-	size_t len;
-
-	if (!ctx || !obj) return NULL;
-
-	fz_try(ctx)
-		str = pdf_to_name(ctx, obj);
-	fz_catch(ctx)
-	{
-		jni_rethrow(env, ctx);
-		return NULL;
-	}
-
-	len = strlen(str);
-	jbs = (*env)->NewByteArray(env, (jsize)len);
-	if (!jbs) return NULL;
-	bs = (*env)->GetByteArrayElements(env, jbs, NULL);
-	if (!bs) return NULL;
-
-	memcpy(bs, str, len);
-
-	(*env)->ReleaseByteArrayElements(env, jbs, bs, 0);
-
-	return jbs;
-}
-
 JNIEXPORT jint JNICALL
 FUN(PDFObject_size)(JNIEnv *env, jobject self)
 {

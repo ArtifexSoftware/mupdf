@@ -38,7 +38,6 @@ public class PDFObject
 	public native float asFloat();
 	public native int asIndirect();
 	public native String asName();
-	public native byte[] asByteName();
 	public native String asString();
 	public native byte[] asByteString();
 
