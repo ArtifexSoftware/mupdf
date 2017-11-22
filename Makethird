@@ -670,7 +670,7 @@ else
 HAVE_GLUT := yes
 
 GLUT_LIB := $(OUT)/libfreeglut.a
-GLUT_OUT := $(OUT)/freeglut
+GLUT_OUT := $(OUT)/thirdparty/freeglut
 GLUT_SRC := \
 	fg_callbacks.c \
 	fg_cursor.c \
@@ -723,10 +723,10 @@ $(GLUT_LIB): $(GLUT_OBJ)
 $(GLUT_OUT):
 	$(MKDIR_CMD)
 $(GLUT_OUT)/%.o: $(GLUT_DIR)/src/%.c | $(GLUT_OUT)
-	$(CC_CMD) -I$(GLUT_DIR)/include -I$(GLUT_DIR)/src -Wno-unused-const-variable \
+	$(CC_CMD) -I$(GLUT_DIR)/include -I$(GLUT_DIR)/src -Wno-unused-function -Wno-unused-const-variable \
 		-DHAVE_UNISTD_H -DHAVE_STDINT_H -DHAVE_X11_EXTENSIONS_XRANDR_H
 $(GLUT_OUT)/%.o: $(GLUT_DIR)/src/x11/%.c | $(GLUT_OUT)
-	$(CC_CMD) -I$(GLUT_DIR)/include -I$(GLUT_DIR)/src \
+	$(CC_CMD) -I$(GLUT_DIR)/include -I$(GLUT_DIR)/src -Wno-unused-function \
 		-DHAVE_UNISTD_H -DHAVE_STDINT_H -DHAVE_X11_EXTENSIONS_XRANDR_H
 
 GLUT_CFLAGS := -I$(GLUT_DIR)/include
