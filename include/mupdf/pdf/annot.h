@@ -215,11 +215,6 @@ int pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot);
 void pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int time);
 
 /*
-	pdf_annot_irt: return the indirect reference that this annotation is in reply to.
-*/
-pdf_obj *pdf_annot_irt(fz_context *ctx, pdf_annot *annot);
-
-/*
 	pdf_set_free_text_details: set the position, text, font and color for a free text annotation.
 	Only base 14 fonts are supported and are specified by name.
 */

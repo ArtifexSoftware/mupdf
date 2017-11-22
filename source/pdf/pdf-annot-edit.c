@@ -1011,12 +1011,6 @@ pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author)
 	pdf_dirty_annot(ctx, annot);
 }
 
-pdf_obj *
-pdf_annot_irt(fz_context *ctx, pdf_annot *annot)
-{
-	return pdf_dict_get(ctx, annot->obj, PDF_NAME_IRT);
-}
-
 void
 pdf_set_free_text_details(fz_context *ctx, pdf_annot *annot, fz_point *pos, char *text, char *font_name, float font_size, float color[3])
 {
