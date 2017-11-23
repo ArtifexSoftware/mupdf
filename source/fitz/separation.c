@@ -985,6 +985,8 @@ void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_
 	{
 		const char *name = fz_colorspace_colorant(ctx, src_cs, i);
 
+		if (name == NULL)
+			continue;
 		if (i == 0 && !strcmp(name, "All"))
 		{
 			/* This is only supposed to happen in separation spaces, not DeviceN */
@@ -1002,19 +1004,19 @@ void fz_convert_separation_colors(fz_context *ctx, const fz_color_params *color_
 		for (j = pred; j < ds; j++)
 		{
 			const char *dname = dst_seps->name[j];
-			if (!strcmp(name, dname))
+			if (dname && !strcmp(name, dname))
 				goto found_sep;
 		}
 		for (j = 0; j < pred; j++)
 		{
 			const char *dname = dst_seps->name[j];
-			if (!strcmp(name, dname))
+			if (dname && !strcmp(name, dname))
 				goto found_sep;
 		}
 		for (j = 0; j < dc; j++)
 		{
 			const char *dname = fz_colorspace_colorant(ctx, dst_cs, j);
-			if (!strcmp(name, dname))
+			if (dname && !strcmp(name, dname))
 				goto found_process;
 		}
 		if (0) {
