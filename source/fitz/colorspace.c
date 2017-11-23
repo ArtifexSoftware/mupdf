@@ -3708,12 +3708,29 @@ fz_new_icc_colorspace(fz_context *ctx, const char *name, int num, fz_buffer *buf
 			flags |= FZ_CS_SUBTRACTIVE;
 		cs = fz_new_colorspace(ctx, name, profile->num_devcomp, flags, NULL, NULL, NULL, is_lab ? clamp_lab_icc : clamp_default_icc, free_icc, profile, sizeof(profile));
 
-		if (profile->num_devcomp == 4)
+		switch (profile->num_devcomp)
 		{
+		case 1:
+			fz_colorspace_name_colorant(ctx, cs, 0, "Gray");
+			break;
+		case 3:
+			if (is_lab)
+			{
+				fz_colorspace_name_colorant(ctx, cs, 0, "L*");
+				fz_colorspace_name_colorant(ctx, cs, 1, "a*");
+				fz_colorspace_name_colorant(ctx, cs, 2, "b*");
+			} else {
+				fz_colorspace_name_colorant(ctx, cs, profile->bgr ? 2 : 0, "Red");
+				fz_colorspace_name_colorant(ctx, cs, 1, "Green");
+				fz_colorspace_name_colorant(ctx, cs, profile->bgr ? 0 : 2, "Blue");
+			}
+			break;
+		case 4:
 			fz_colorspace_name_colorant(ctx, cs, 0, "Cyan");
 			fz_colorspace_name_colorant(ctx, cs, 1, "Magenta");
 			fz_colorspace_name_colorant(ctx, cs, 2, "Yellow");
 			fz_colorspace_name_colorant(ctx, cs, 3, "Black");
+			break;
 		}
 	}
 	fz_catch(ctx)
