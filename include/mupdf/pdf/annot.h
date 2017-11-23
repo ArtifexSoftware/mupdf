@@ -207,12 +207,12 @@ void pdf_set_annot_author(fz_context *ctx, pdf_annot *annot, const char *author)
 /*
 	pdf_annot_modification_date: Get annotation's modification date in seconds since the epoch.
 */
-int pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot);
+int64_t pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot);
 
 /*
 	pdf_set_annot_modification_date: Set annotation's modification date in seconds since the epoch.
 */
-void pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int time);
+void pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t time);
 
 /*
 	pdf_set_free_text_details: set the position, text, font and color for a free text annotation.

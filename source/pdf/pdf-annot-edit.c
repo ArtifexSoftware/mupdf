@@ -863,7 +863,7 @@ pdf_format_date(fz_context *ctx, char *s, int n, time_t secs)
 		strftime(s, n, "D:%Y%m%d%H%M%SZ", tm);
 }
 
-static int
+static int64_t
 pdf_parse_date(fz_context *ctx, const char *s)
 {
 	int tz_sign, tz_hour, tz_min, tz_adj;
@@ -969,7 +969,7 @@ static pdf_obj *markup_subtypes[] = {
 	NULL,
 };
 
-int
+int64_t
 pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 {
 	pdf_obj *date = pdf_dict_get(ctx, annot->obj, PDF_NAME_M);
@@ -977,7 +977,7 @@ pdf_annot_modification_date(fz_context *ctx, pdf_annot *annot)
 }
 
 void
-pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int secs)
+pdf_set_annot_modification_date(fz_context *ctx, pdf_annot *annot, int64_t secs)
 {
 	pdf_document *doc = annot->page->doc;
 	char s[40];
