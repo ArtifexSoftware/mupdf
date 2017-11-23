@@ -570,21 +570,21 @@ push_group_for_separations(fz_context *ctx, fz_draw_device *dev, const fz_color_
 	fz_colorspace *dcs = fz_device_cmyk(ctx);
 
 	/* Pick sep target CMYK based upon proof and output intent settings.  Priority
-	 * is oi, proof, devicecmyk. */
-	/* FIXME: Look into non-CMYK proofing profiles */
-	if (dev->proof_cs && fz_colorspace_n(ctx, dev->proof_cs) == 4)
+	* is oi, proof, devicecmyk. */
+	if (dev->proof_cs)
 	{
 		dcs = dev->proof_cs;
 	}
-	/* FIXME : We need to create a file with an RGB output intent at some point and test a few things */
-	if (oi && fz_colorspace_n(ctx, oi) == 4)
+
+	if (oi)
 	{
 		dcs = oi;
 	}
 
-	/* Not needed */
-	if (clone == NULL && dev->proof_cs == NULL && fz_colorspace_n(ctx, dev->stack[0].dest->colorspace) == 4)
+	/* Not needed if dest has the seps, and we are not using a proof or the target is the same as the prooof and we don't have an oi or the target is the same as the oi */
+	if ((clone == dev->stack[0].dest->seps) && (dev->proof_cs == NULL || dev->proof_cs == dev->stack[0].dest->colorspace) && (oi == NULL || oi == dev->stack[0].dest->colorspace))
 	{
+		fz_drop_separations(ctx, clone);
 		dev->resolve_spots = 0;
 		return &dev->stack[0];
 	}
