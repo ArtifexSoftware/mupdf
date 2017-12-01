@@ -844,7 +844,8 @@ struct pdf_write_options_s
 	int do_decompress; /* Decompress streams (except when compressing images/fonts). */
 	int do_garbage; /* Garbage collect objects before saving; 1=gc, 2=re-number, 3=de-duplicate. */
 	int do_linear; /* Write linearised. */
-	int do_clean; /* Sanitize content streams. */
+	int do_clean; /* Clean content streams. */
+	int do_sanitize; /* Sanitize content streams. */
 	int continue_on_error; /* If set, errors are (optionally) counted and writing continues. */
 	int *errors; /* Pointer to a place to store a count of errors */
 };
@@ -857,6 +858,7 @@ struct pdf_write_options_s
 		l: linearize
 		a: ascii hex encode
 		z: deflate
+		c: clean content streams
 		s: sanitize content streams
 */
 pdf_write_options *pdf_parse_write_options(fz_context *ctx, pdf_write_options *opts, const char *args);

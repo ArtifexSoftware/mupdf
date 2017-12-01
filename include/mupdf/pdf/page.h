@@ -141,7 +141,7 @@ typedef void (pdf_page_contents_process_fn)(fz_context *ctx, fz_buffer *buffer, 
 	to track progress, collect errors etc.
 */
 void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie,
-	pdf_page_contents_process_fn *proc, void *proc_arg, int ascii);
+	pdf_page_contents_process_fn *proc, void *proc_arg, int sanitize, int ascii);
 
 /*
 	pdf_clean_annot_contents: Clean a loaded annotations rendering operations,
@@ -168,7 +168,7 @@ void pdf_clean_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page,
 	to track progress, collect errors etc.
 */
 void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie,
-	pdf_page_contents_process_fn *proc, void *proc_arg, int ascii);
+	pdf_page_contents_process_fn *proc, void *proc_arg, int sanitize, int ascii);
 
 /*
 	pdf_filter_page_contents: Performs the same task as
@@ -184,7 +184,8 @@ void pdf_clean_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *ann
 	arg: Opaque value to be passed to callback functions.
 */
 void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page, fz_cookie *cookie,
-	pdf_page_contents_process_fn *proc_fn, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *arg, int ascii);
+	pdf_page_contents_process_fn *proc_fn, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *arg,
+	int sanitize, int ascii);
 
 /*
 	pdf_filter_annot_contents: Performs the same task as
@@ -200,7 +201,8 @@ void pdf_filter_page_contents(fz_context *ctx, pdf_document *doc, pdf_page *page
 	arg: Opaque value to be passed to callback functions.
 */
 void pdf_filter_annot_contents(fz_context *ctx, pdf_document *doc, pdf_annot *annot, fz_cookie *cookie,
-	pdf_page_contents_process_fn *proc, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *arg, int ascii);
+	pdf_page_contents_process_fn *proc, pdf_text_filter_fn *text_filter, pdf_after_text_object_fn *after_text, void *arg,
+	int sanitize, int ascii);
 
 /*
 	Presentation interface.
