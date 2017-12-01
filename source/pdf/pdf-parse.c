@@ -457,7 +457,8 @@ pdf_parse_array(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf 
 				break;
 
 			default:
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "cannot parse token in array");
+				pdf_array_push_drop(ctx, ary, pdf_new_null(ctx, doc));
+				break;
 			}
 		}
 end:
@@ -547,10 +548,13 @@ pdf_parse_dict(fz_context *ctx, pdf_document *doc, fz_stream *file, pdf_lexbuf *
 						break;
 					}
 				}
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "invalid indirect reference in dict");
+				fz_warn(ctx, "invalid indirect reference in dict");
+				val = pdf_new_null(ctx, doc);
+				break;
 
 			default:
-				fz_throw(ctx, FZ_ERROR_SYNTAX, "unknown token in dict");
+				val = pdf_new_null(ctx, doc);
+				break;
 			}
 
 			pdf_dict_put(ctx, dict, key, val);
