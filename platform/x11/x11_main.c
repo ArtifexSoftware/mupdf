@@ -317,13 +317,38 @@ void winreplacefile(char *source, char *target)
 
 void wincopyfile(char *source, char *target)
 {
-	char *buf = malloc(strlen(source)+strlen(target)+5);
-	if (buf)
+	FILE *in, *out;
+	char buf[32 << 10];
+	int n;
+
+	in = fopen(source, "rb");
+	if (!in)
 	{
-		sprintf(buf, "cp %s %s", source, target);
-		system(buf);
-		free(buf);
+		winerror(&gapp, "cannot open source file for copying");
+		return;
 	}
+	out = fopen(target, "wb");
+	if (!out)
+	{
+		winerror(&gapp, "cannot open target file for copying");
+		fclose(in);
+		return;
+	}
+
+	for (;;)
+	{
+		n = fread(buf, 1, sizeof buf, in);
+		fwrite(buf, 1, n, out);
+		if (n < sizeof buf)
+		{
+			if (ferror(in))
+				winerror(&gapp, "cannot read data from source file");
+			break;
+		}
+	}
+
+	fclose(out);
+	fclose(in);
 }
 
 void cleanup(pdfapp_t *app)
